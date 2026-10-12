@@ -121,6 +121,7 @@ class Store:
         self.lock = threading.RLock()
         self.cond = threading.Condition(self.lock)
         self.items, self.inputs, self.events = {}, {}, []
+        self.undone = set()  # seqs of your changes that were put back (F80)
         self.rev = 0  # bumps on every change, including transient organizer state
         self.boot = format(int(time.time() * 1000), "x")  # rev restarts with the process; boot tells pages apart
         self.maxn = self.nin = self.nfile = 0
@@ -204,6 +205,8 @@ class Store:
             it = self.items[e["n"]]
             it.update(e["f"])
             it["t1"] = e["t"]
+            if e.get("undo_of"):
+                self.undone.add(e["undo_of"])
             self.touch(it["n"], e.get("src"), ack=not e.get("keep"))
         elif k == "say":
             it = self.items[e["n"]]
@@ -471,6 +474,23 @@ class Store:
     def sorted(self, items):
         return sorted(items, key=lambda i: (i["when"] != "now", i["pri"], i["n"]))  # same priority: oldest first
 
+    def undoable(self, limit=5, scan=600):
+        """Your latest changes that can still be put back (F80), newest first: field changes by you that nobody
+        changed again since. An undo and the change it put back cancel out, so undoing again walks further back."""
+        out, seen = [], set()
+        for e in reversed(self.events[-scan:]):
+            if e["k"] != "set" or e.get("undo_of") or e["seq"] in self.undone:
+                continue
+            it = self.items.get(e["n"])
+            if e.get("by") == "you" and it and not it["merged_into"]:
+                f = {k: v for k, v in e["f"].items() if (e["n"], k) not in seen and it.get(k) == v}
+                if f:
+                    out.append({"seq": e["seq"], "n": e["n"], "f": f, "was": {k: e["was"].get(k) for k in f}, "t": e["t"]})
+                    if len(out) >= limit:
+                        break
+            seen.update((e["n"], k) for k in e["f"])
+        return out
+
     def pending(self):
         return [i for i in self.inputs.values() if not i["acked"]]
 
@@ -630,7 +650,7 @@ class Store:
                 left = self.open_kids(it)
                 if left:
                     note += f" (note: its subitems {' '.join(self.code(k['n']) for k in left)} are not finished yet)"
-            self.emit({"k": "set", "n": it["n"], "by": by, "f": f, "was": was, "src": src, **keep})
+            self.emit({"k": "set", "n": it["n"], "by": by, "f": f, "was": was, "src": src, **keep, **({"undo_of": op["undo_of"]} if op.get("undo_of") else {})})
             return f"ok {code} " + " ".join(f"{k}={v}" if k in ("pri", "when", "status", "type", "parent", "archived") else k for k, v in f.items()) + note, "Updated " + code
         if name == "say":
             kind = op.get("kind", "say")
@@ -702,7 +722,7 @@ class Store:
                 d["wait"] = {"id": w["id"], "kind": w["kind"], "text": w["text"], "by": w["by"], "files": w.get("files", [])} if w else None
                 d["reply"] = self.replied(it)
                 items.append(d)
-            return {"rev": self.rev, "boot": self.boot, "pv": self.pv, **self.presence(), "width": len(str(self.maxn)), "file": home_short(self.path), "cfg": self.cfg,
+            return {"rev": self.rev, "boot": self.boot, "pv": self.pv, **self.presence(), "width": len(str(self.maxn)), "file": home_short(self.path), "cfg": self.cfg, "undo": self.undoable(),
                     "org": {"on": self.org_on, "model": MODEL, "busy": self.org_busy},
                     "items": items, "inputs": list(self.inputs.values()),
                     "docs": [dict(d, blocks=self.doc_view(d)[0], detached=self.doc_view(d)[1], open=self.doc_open(d)) for d in self.docs.values()]}
@@ -825,7 +845,7 @@ class Store:
             elif k == "add":
                 s = f"new {self.code(e['n'])} {e['type']} {e['pri']} {e['when']} {first_line(e['title'])!r}" + (f" ←{e['src']}" if e.get("src") else "")
             elif k == "set":
-                s = f"{self.code(e['n'])} " + ", ".join(f"{a} {first_line(e['was'].get(a, ''), 24)}→{first_line(b, 24)}" for a, b in e["f"].items())
+                s = f"{self.code(e['n'])} " + ", ".join(f"{a} {first_line(e['was'].get(a, ''), 24)}→{first_line(b, 24)}" for a, b in e["f"].items()) + (f" (undo #{e['undo_of']})" if e.get("undo_of") else "")
             elif k == "say":
                 s = f"{self.code(e['n'])} {e['kind']} {first_line(e['text'])!r}"
             elif k == "merge":
@@ -1635,6 +1655,14 @@ class Handler(BaseHTTPRequestHandler):
                     raise Err(f"nothing to undo for {rid}")
                 s.emit({"k": "undo", "src": rid, "by": "you"})
             self.json({"ok": True})
+        elif p == "/api/revert":  # put back one of your changes (F80)
+            seq = int((json.loads(self.body(10_000) or b"{}")).get("seq") or 0)
+            with s.cond:
+                u = next((u for u in s.undoable(50) if u["seq"] == seq), None)
+                if not u:
+                    raise Err("that change can't be undone any more: it was undone already, or changed again since")
+                lines, _ = s.run_all([(0, {"op": "set", "ref": s.code(u["n"]), "f": u["was"], "undo_of": seq})], "you")
+            self.json({"ok": lines[0].startswith("ok"), "res": lines})
         elif p == "/api/move":  # an input sent to the wrong project goes to another one (F79)
             data = json.loads(self.body(10_000) or b"{}")
             rid, t = data.get("id"), HUB.projects.get(str(data.get("to") or ""))
@@ -3211,7 +3239,10 @@ function guideHtml(text, fold = false) {  // fold: the desktop page keeps the lo
     : `<details class="group"><summary class="flex h-9 cursor-pointer items-center gap-1 px-1 text-sm text-zinc-600 dark:text-zinc-300">${ico('right', 'size-4 transition-transform group-open:rotate-90')}What the agent reads</summary>
     <pre class="mt-2 overflow-x-auto rounded-xl bg-zinc-50 p-3 text-xs leading-relaxed whitespace-pre-wrap dark:bg-zinc-950">${esc(text || 'Loading…')}</pre></details>`}</div>`;
 }
-const logHtml = lines => `<ol class="divide-y divide-zinc-100 font-mono text-xs leading-relaxed text-zinc-600 dark:divide-zinc-800 dark:text-zinc-300">${lines.map(l => `<li class="py-1.5 break-words">${esc(l)}</li>`).join('')}</ol>`;
+const logHtml = lines => `<ol class="divide-y divide-zinc-100 font-mono text-xs leading-relaxed text-zinc-600 dark:divide-zinc-800 dark:text-zinc-300">${lines.map(l => {
+  const u = (S.undo || []).find(u => l.startsWith(`#${u.seq} `));  // one of your changes that can still be put back (F80)
+  return `<li class="flex items-start gap-2 py-1.5"><span class="min-w-0 flex-1 break-words">${esc(l)}</span>${u ? `<button data-act="revert" data-seq="${u.seq}" class="-my-1 shrink-0 rounded-md px-2 py-1 font-sans text-xs font-semibold text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10">Undo</button>` : ''}</li>`;
+}).join('')}</ol>`;
 function agentsHtml(connect = true) {
   const [tone, , line] = agentState(S.agents, S.work), ask = agentAsk();
   const queue = S.items.filter(it => !it.merged_into && !it.archived && it.type !== 'rule' && !needsYou(it) && (it.status === 'open' || it.status === 'doing')).length;
@@ -3335,7 +3366,12 @@ const SAID = {open: 'is open', doing: 'is in progress', done: 'is done', dropped
 async function change(n, f, v) {
   const before = byN.get(n)?.[f];
   const said = f === 'archived' ? (v ? 'archived' : 'unarchived') : f === 'status' && v === 'done' && before === 'review' ? 'accepted' : f === 'status' && v === 'open' && before === 'proposed' ? 'approved' : SAID[v];
-  const undo = () => { D.undo = null; return op({op: 'set', ref: code(n), f: {[f]: before}}).then(() => { if (U.go) { U.go.done.delete(n); render(); } toast(`${code(n)} put back`); }, () => {}); };
+  const undo = () => {
+    D.undo = null;
+    const u = (S.undo || []).find(u => u.n === n && f in u.f);  // the recorded change, so the change log knows it was undone (F80)
+    const back = u ? revert(u.seq) : op({op: 'set', ref: code(n), f: {[f]: before}});
+    return back.then(() => { if (U.go) { U.go.done.delete(n); render(); } toast(`${code(n)} put back`); }, () => {});
+  };
   const settles = desk() && U.go && U.go.list.includes(n) && f === 'status';
   if (settles) { U.go.done.add(n); U.go.how[n] = said.replace(/^is (marked )?/, '').replace(/^./, c => c.toUpperCase()); U.go.undo[n] = undo; }
   await op({op: 'set', ref: code(n), f: {[f]: v}});
@@ -3578,6 +3614,13 @@ const ACT = {
     U.lastSent = b.dataset.id; await load(); toast(`Undid the organizer's changes for ${b.dataset.id}`);
   },
   'move-input': b => moveInput(b.dataset.id),
+  revert: async b => {
+    const u = (S.undo || []).find(u => u.seq === Number(b.dataset.seq));
+    try { await revert(Number(b.dataset.seq)); } catch (_) { return; }
+    D.undo = null; toast(`Undid: ${u ? undoLabel(u) : 'the change'}`); renderDrawerSettings();
+    if (!$('overlay').hidden && $('dlgTitle').textContent === 'Change log') showLog();  // the log shows the undo too
+    else if (D.page) fetch(P + 'log?n=80&ui=1').then(r => r.text()).then(l => { P_CACHE.log = l.trim().split('\n').reverse(); renderProject(); }, () => {});
+  },
   'outbox-retry': () => { for (const q of U.outbox) q.failed = false; renderFeedback(); flushOutbox(); },
   'outbox-edit': () => {  // the unsent input back in the box, as long as the box is empty
     const q = U.outbox[0];
@@ -3901,7 +3944,11 @@ function deskKey(e) {
     case 'f': e.preventDefault(); return showFilters();
     case '?': e.preventDefault(); return showKeys();
     case 'c': e.preventDefault(); return ACT['new-input']();
-    case 'z': e.preventDefault(); return D.undo ? D.undo() : toast('Nothing to undo');
+    case 'z': {  // a blind key only reaches back half an hour; older changes are undone from the change log (F80)
+      e.preventDefault();
+      const u = S.undo?.[0];
+      return u && Date.now() - new Date(u.t) < 30 * 60e3 ? ACT.revert({dataset: {seq: String(u.seq)}}) : toast(u ? 'Nothing from the last 30 minutes. Older changes: This project › Undo or the change log' : 'Nothing to undo');
+    }
     case 'E': e.preventDefault(); return ACT['archive-all']();
     case 'v': e.preventDefault(); return R.rec ? finishRec(false) : startRec();
   }
@@ -3974,10 +4021,27 @@ async function fillDrawer() {
     ${p.needs ? `<span class="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900 dark:bg-amber-400/15 dark:text-amber-200">${p.needs} need you</span>` : ''}</a>`; }).join('');
   $('otherDot').hidden = !DR.list.some(p => p.name !== S.project && p.needs);
 }
+// Undo your last changes (F80): the server lists the ones nobody changed again since; each says what it did.
+function undoLabel(u) {
+  const f = u.f, w = u.was, c = code(u.n);
+  if ('status' in f) return f.status === 'done' && w.status === 'review' ? `${c} accepted` : f.status === 'open' && w.status === 'proposed' ? `${c} approved` : `${c} ${SAID[f.status] || f.status}`;
+  if ('archived' in f) return `${c} ${f.archived ? 'archived' : 'unarchived'}`;
+  if ('when' in f) return `${c} ${SAID[f.when]}`;
+  if ('pri' in f) return `${c} ${w.pri} → ${f.pri}`;
+  if ('type' in f) return `${c} became a ${f.type}`;
+  if ('parent' in f) return f.parent ? `${c} moved under ${code(f.parent)}` : `${c} stands on its own`;
+  return `${c} ${Object.keys(f).join(' and ')} edited`;
+}
+async function revert(seq) {
+  const d = await (await fetch(P + 'api/revert', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({seq})})).json();
+  if (!d.ok) { toast(d.error || (d.res || [])[0] || 'Could not undo'); throw new Error('revert failed'); }
+  await load();
+}
+const undoRow = () => { const u = S.undo?.[0]; return u ? `<button data-act="revert" data-seq="${u.seq}" class="flex min-h-12 w-full items-center gap-3 px-3.5 py-2.5 text-left text-[15px] lg:min-h-0 lg:gap-2.5 lg:rounded-lg lg:px-3 lg:py-1.5 lg:text-sm lg:text-zinc-600 lg:hover:bg-zinc-200/60 dark:lg:text-zinc-300 dark:lg:hover:bg-zinc-800">${ico('undo', 'size-5 shrink-0 text-zinc-500 lg:size-4 dark:text-zinc-400', '2')}<span class="min-w-0 flex-1 truncate">Undo: ${esc(undoLabel(u))}</span><span class="shrink-0 text-xs text-zinc-400">${agoShort(new Date(u.t))}</span></button>` : ''; };
 function renderDrawerSettings() {
   // On the desktop the same rows are compact sidebar links.
   const row = (act, icon, label) => `<button data-act="${act}" class="flex min-h-12 w-full items-center gap-3 px-3.5 py-2.5 text-left text-[15px] lg:min-h-0 lg:gap-2.5 lg:rounded-lg lg:px-3 lg:py-1.5 lg:text-sm lg:text-zinc-600 lg:hover:bg-zinc-200/60 dark:lg:text-zinc-300 dark:lg:hover:bg-zinc-800">${ico(icon, 'size-5 text-zinc-500 lg:size-4 dark:text-zinc-400')}<span class="min-w-0 flex-1">${label}</span><span class="lg:hidden">${ico('right', 'size-4 text-zinc-300 dark:text-zinc-600')}</span></button>`;
-  $('drawerSettings').innerHTML = `<button data-act="auto" aria-pressed="${!!S.cfg?.auto}" class="group flex w-full items-center gap-3 px-3.5 py-3 text-left lg:gap-2.5 lg:rounded-lg lg:px-3 lg:py-1.5 lg:hover:bg-zinc-200/60 dark:lg:hover:bg-zinc-800">${ico('loop', 'size-5 text-emerald-600 lg:size-4 dark:text-emerald-400')}
+  $('drawerSettings').innerHTML = `${undoRow()}<button data-act="auto" aria-pressed="${!!S.cfg?.auto}" class="group flex w-full items-center gap-3 px-3.5 py-3 text-left lg:gap-2.5 lg:rounded-lg lg:px-3 lg:py-1.5 lg:hover:bg-zinc-200/60 dark:lg:hover:bg-zinc-800">${ico('loop', 'size-5 text-emerald-600 lg:size-4 dark:text-emerald-400')}
       <span class="min-w-0 flex-1"><span class="block text-[15px] lg:text-sm">Keep going</span><span class="block text-xs leading-snug text-zinc-500 lg:text-[11px] dark:text-zinc-400">Agents take the next item without stopping</span></span>
       <span class="relative h-6.5 w-11 shrink-0 rounded-full bg-zinc-300 transition-colors group-aria-pressed:bg-emerald-500 lg:h-5 lg:w-8.5 dark:bg-zinc-600 dark:group-aria-pressed:bg-emerald-500"><span class="absolute top-0.75 left-0.75 size-5 rounded-full bg-white shadow transition-transform group-aria-pressed:translate-x-4.5 lg:size-3.5 lg:group-aria-pressed:translate-x-3.5"></span></span></button>
     ${row('guide', 'plug', 'Connect a coding agent')}${row('phone', 'phone', 'Use on your phone')}${row('log', 'history', 'Change log')}`;
