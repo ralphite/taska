@@ -2213,7 +2213,7 @@ async function copy(text, done = 'Copied') {
 async function load() {
   const d = await (await fetch(P + 'api/state', {cache: 'no-store'})).json();
   S = d; BASE = d.base || BASE; byN.clear(); byR.clear(); kids.clear();
-  for (const it of S.items) byN.set(it.n, it);
+  for (const it of S.items) { if (CLOSED(it.status)) it.wait = null; byN.set(it.n, it); }  // closed: its question is history, not a pending ask (B128)
   for (const r of S.inputs) byR.set(r.id, r);
   for (const it of S.items) if (it.parent && !it.merged_into) { if (!kids.has(it.parent)) kids.set(it.parent, []); kids.get(it.parent).push(it); }
   if (U.open && byN.get(U.open)?.merged_into) {  // the item you look at was merged: say so, and your draft goes along (B118)
@@ -2358,7 +2358,7 @@ function audioUi() {
 
 const SOFT = t => `<span class="rounded bg-zinc-100 px-1.5 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">${t}</span>`;
 const cnt = (icon, n, label) => `<span class="flex items-center gap-1" title="${label}">${ico(icon, 'size-3.5')}${n}</span>`;
-const needLabel = it => it.wait ? (it.wait.kind === 'block' ? 'Blocked' : 'Needs reply') : it.status === 'proposed' ? 'Approve?' : it.status === 'review' ? 'Review' : '';
+const needLabel = it => it.wait ? (it.wait.kind === 'block' ? 'Blocked' : 'Needs reply') : it.status === 'proposed' ? 'Approve?' : it.status === 'review' ? 'In review' : '';
 const lastAgentMsg = it => [...it.thread].reverse().find(x => x.by !== 'you');
 // One plain line of what the agent said: the conclusion it leads with (T58 #5).
 const oneLine = t => (String(t || '').split('\n').map(l => l.replace(/^\s*(#+|>|[-*+]\s+(\(|\[)[ xX]?(\)|\])|[-*+]|\d+[.)])\s*/, '').replace(/[*`]/g, '').trim()).find(Boolean) || '');
@@ -2368,10 +2368,22 @@ const excerpt = it => oneLine(it.wait ? it.wait.text : it.status === 'review' ? 
 const rowTint = it => U.open === it.n ? 'lg:bg-blue-50 dark:lg:bg-blue-400/10' : 'lg:hover:bg-zinc-50 dark:lg:hover:bg-zinc-900/70';
 const ACT_KEY = {Done: 'D', Accept: 'A', Approve: 'A', Archive: 'E', Unarchive: 'E', Later: 'L', Now: 'L', "Won't do": 'W', 'Not yet': 'N'};
 const ACT_TONE = {Done: 'text-emerald-600 dark:text-emerald-400', Accept: 'text-emerald-600 dark:text-emerald-400', Approve: 'text-blue-600 dark:text-blue-400', Archive: 'text-emerald-600 dark:text-emerald-400', Start: 'text-blue-600 dark:text-blue-400', "Won't do": 'text-red-600 dark:text-red-400'};
+// On the desktop each action keeps one place on every row (B128): forward · progress · Won't do · Later. A slot that
+// does not apply stays empty, so a habit click never lands on another action. Rows waiting on your answer offer
+// only Later: the pill answers. (The phone's swipes keep their own order.)
+function deskSlots(it, needs) {
+  const later = it.when === 'now' ? ['when', 'later', 'Later'] : ['when', 'now', 'Now'], drop = ['status', 'dropped', "Won't do"];
+  if (it.archived) return [['archived', 'false', 'Unarchive'], null, null, null];
+  if (it.wait) return [null, null, null, later];
+  const fwd = needs ? null : swipeRight(it);
+  const prog = it.status === 'open' ? ['status', 'doing', 'Start'] : it.status === 'doing' ? ['status', 'open', 'Pause'] : it.status === 'review' ? ['reopen', '', 'Not yet'] : CLOSED(it.status) ? ['status', 'open', 'Reopen'] : null;
+  return [fwd, prog, ['open', 'doing', 'proposed'].includes(it.status) ? drop : null, CLOSED(it.status) ? null : later];
+}
 function rowActs(it, needs = false) {
-  const acts = [...(needs ? [] : [swipeRight(it)].filter(Boolean)), ...swipeLeft(it)];  // the amber pill already is the forward step
-  return `<div class="hidden shrink-0 items-center gap-0.5 self-center lg:group-hover:flex">${acts.map(([f, v, label]) =>
-    `<button data-act="swipe" data-n="${it.n}" data-f="${f}" data-v="${v}" title="${label}${ACT_KEY[label] ? ' · ' + ACT_KEY[label] : ''}" aria-label="${label}" class="grid size-8 place-items-center rounded-lg hover:bg-zinc-200/70 dark:hover:bg-zinc-800 ${ACT_TONE[label] || 'text-zinc-500 dark:text-zinc-400'}">${ico(ACT_ICON[label], 'size-[18px]')}</button>`).join('')}</div>`;
+  const acts = deskSlots(it, needs);
+  return `<div class="hidden shrink-0 items-center gap-0.5 self-center lg:group-hover:flex">${acts.map(a => !a ? '<span class="size-8"></span>' : a[0] === 'reopen'
+    ? `<button data-act="reopen" data-n="${it.n}" title="Not yet · N" aria-label="Not yet" class="grid size-8 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-200/70 dark:text-zinc-400 dark:hover:bg-zinc-800">${ico('reopen', 'size-[18px]')}</button>`
+    : (([f, v, label]) => `<button data-act="swipe" data-n="${it.n}" data-f="${f}" data-v="${v}" title="${label}${ACT_KEY[label] ? ' · ' + ACT_KEY[label] : ''}" aria-label="${label}" class="grid size-8 place-items-center rounded-lg hover:bg-zinc-200/70 dark:hover:bg-zinc-800 ${ACT_TONE[label] || 'text-zinc-500 dark:text-zinc-400'}">${ico(ACT_ICON[label], 'size-[18px]')}</button>`)(a)).join('')}</div>`;
 }
 
 // A row you just acted on stays where it was, as one quiet line with Undo, while the pointer is over the list (or
@@ -3783,7 +3795,7 @@ const ACT = {
     const next = g && [...g.list.slice(i + 1), ...g.list.slice(0, i)].find(k => byN.get(k) && needsYou(byN.get(k)) && !g.done.has(k));
     if (next) peek(next, {focus: false}); else toast('Nothing else needs you');
   },
-  reopen: async b => { const n = Number(b.dataset.n); try { await setStatus(n, 'doing'); U.scopeOff = false; renderComposer(); $('text').focus(); toast(`${code(n)} reopened. Say what is missing.`); } catch (_) {} },
+  reopen: async b => { const n = Number(b.dataset.n); if (desk() && U.open !== n) openItem(n); try { await setStatus(n, 'doing'); U.scopeOff = false; renderComposer(); $('text').focus(); toast(`${code(n)} reopened. Say what is missing.`); } catch (_) {} },
   projects: () => openDrawer(),
   'new-project': async () => {
     const name = (prompt('Project name (a-z, 0-9 and -):') || '').trim().toLowerCase();
@@ -4162,9 +4174,10 @@ const noSelection = () => `<div class="grid h-full place-items-center p-8 text-c
 
 function renderDetailBar(it) {
   const b = (act, icon, title, attrs = '') => `<button data-act="${act}" ${attrs} title="${title}" aria-label="${title.split(' · ')[0]}" class="grid size-9 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200">${ico(icon, 'size-[18px]')}</button>`;
+  const gap = '<span class="size-9"></span>';  // B128: Later and Archive each keep their own place
   $('dActs').innerHTML = b('copy', 'copy', 'Copy for agent · ⇧C', `data-n="${it.n}"`)
-    + (it.archived ? b('archive', 'archive', 'Unarchive · E', `data-n="${it.n}" data-on="0"`) : CLOSED(it.status) ? b('archive', 'archive', 'Archive · E', `data-n="${it.n}" data-on="1"`)
-      : it.type === 'rule' ? '' : b('swipe', 'clock', it.when === 'now' ? 'Later · L' : 'Back to now · L', `data-n="${it.n}" data-f="when" data-v="${it.when === 'now' ? 'later' : 'now'}"`));
+    + (it.type === 'rule' || it.archived || CLOSED(it.status) ? gap : b('swipe', 'clock', it.when === 'now' ? 'Later · L' : 'Back to now · L', `data-n="${it.n}" data-f="when" data-v="${it.when === 'now' ? 'later' : 'now'}"`))
+    + (it.archived ? b('archive', 'archive', 'Unarchive · E', `data-n="${it.n}" data-on="0"`) : CLOSED(it.status) ? b('archive', 'archive', 'Archive · E', `data-n="${it.n}" data-on="1"`) : gap);
   $('dNav').innerHTML = b('prev', 'chevup', 'Previous · K') + b('next', 'down', 'Next · J') + b('full', D.full ? 'shrink' : 'open', D.full ? 'Back to the list · Esc' : 'Full width · O');
 }
 
@@ -4277,7 +4290,7 @@ function itemMenuDesk(n) {
   const state = it.archived ? row('archive', 'archive', 'Unarchive', 'E', 'data-on="0"') : CLOSED(it.status) ? row('archive', 'archive', 'Archive', 'E', 'data-on="1"')
     : it.type === 'rule' ? '' : row('swipe', 'clock', it.when === 'now' ? 'Later' : 'Back to now', 'L', `data-f="when" data-v="${it.when === 'now' ? 'later' : 'now'}"`);
   dialog('', `<div class="flex flex-col gap-3">
-    <div class="-mx-1">${row('edit', 'pencil', 'Edit', 'I')}${row('copy', 'copy', 'Copy for agent', '⇧C')}${row('doc-new', 'docplus', 'New doc', '⇧D')}${row('sub-new', 'listplus', 'Add subitem', '⇧A')}${row('reparent', 'indent', 'Move under…', 'M', '', it.parent ? 'now under ' + code(it.parent) : 'stands on its own')}${state}</div>
+    <div class="-mx-1">${row('edit', 'pencil', 'Edit', 'I')}${row('copy', 'copy', 'Copy for agent', '⇧C')}${it.type === 'rule' ? '' : row('doc-new', 'docplus', 'New doc', '⇧D') + row('sub-new', 'listplus', 'Add subitem', '⇧A') + row('reparent', 'indent', 'Move under…', 'M', '', it.parent ? 'now under ' + code(it.parent) : 'stands on its own')}${state}</div>
     <div class="border-t border-zinc-100 pt-3 dark:border-zinc-800">${lab('Type', 'T')}${segctl('set-field', 'type', [...TYPES, 'rule'].map(t => [t, letterOf(t) + `<span class="truncate">${t[0].toUpperCase() + t.slice(1)}</span>`]), it.type, true).replaceAll('data-k="type"', `data-f="type" data-n="${n}"`)}</div>
     ${it.type === 'rule' ? '' : `<div>${lab('Priority', 'P')}${segctl('set-field', 'pri', ['P0', 'P1', 'P2', 'P3'].map(p => [p, p === 'P0' ? '<span class="font-semibold text-red-600 dark:text-red-400">P0</span>' : p]), it.pri, true).replaceAll('data-k="pri"', `data-f="pri" data-n="${n}"`)}</div>`}
     <div>${lab('Status', 'S')}<div class="grid grid-cols-3 gap-1">${statuses.map(stat).join('')}</div></div>
