@@ -236,6 +236,16 @@ class Store:
             for rid in e["ids"]:
                 if rid in self.inputs:
                     self.inputs[rid]["acked"] = True
+        elif k == "amend":
+            inp = self.inputs[e["src"]]
+            inp.setdefault("history", []).append({"text": inp["text"], "t": e["t"], "mode": e["mode"]})
+            inp.update(text=e["text"], v=inp.get("v", 0) + 1, edit_seq=e["seq"], updated=e["t"], acked=False, org=None)
+            # Keep the original message as history; bring the new words to every linked item.
+            for n in dict.fromkeys(inp["touched"] + ([inp["scope"]] if inp["scope"] else [])):
+                it = self.items.get(n)
+                if it:
+                    text = f"{inp['id']} updated:\n{e['text']}"
+                    self.entry(it, e, "say", text, inp["id"])
         elif k == "undo":
             self.undo(e)
         elif k == "moved":  # sent to the wrong project (F79): it lives on in e["to"] as e["as"]
@@ -269,7 +279,8 @@ class Store:
     def undo(self, e):
         """Revert the organizer's changes for input e["src"]; fields changed again since stay as they are."""
         rid = e["src"]
-        for x in [x for x in self.events if x.get("src") == rid and x.get("by") == "org"]:
+        since = self.inputs.get(rid, {}).get("edit_seq", 0)
+        for x in [x for x in self.events if x.get("src") == rid and x.get("by") == "org" and x["seq"] > since]:
             k = x["k"]
             if k == "add" and x["n"] in self.items:
                 self.items[x["n"]].update(status="dropped", archived=True, t1=e["t"])
@@ -571,6 +582,29 @@ class Store:
                 e["from"] = "rules"
             self.emit(e)
             return f"ok {rid}", "Received"
+        if name == "amend":
+            rid = str(op.get("id") or "")
+            inp = self.inputs.get(rid)
+            if not inp:
+                raise Err(f"unknown input {rid}")
+            if inp.get("moved") or inp.get("moving"):
+                raise Err("this input has moved; edit it in the destination project")
+            if op.get("v") != inp.get("v", 0):
+                raise Err("this input changed in another window; reopen it before saving")
+            mode = op.get("mode")
+            if mode not in ("edit", "append"):
+                raise Err("choose edit or append")
+            text = str(op.get("text") or "").strip()
+            if not text:
+                raise Err("enter some text")
+            if mode == "append":
+                text = (inp["text"] + "\n\n" + text).strip()
+            if len(text) > MAX_TEXT:
+                raise Err(f"input is too long (maximum {MAX_TEXT} characters)")
+            if text == inp["text"]:
+                return f"ok {rid} unchanged", "Unchanged"
+            self.emit({"k": "amend", "src": rid, "mode": mode, "text": text, "by": by})
+            return f"ok {rid} updated", "Updated"
         if name == "doc":  # new document on an item, or new text for an existing one
             md = str(op.get("md") or "").strip()[:MAX_TEXT]
             if not md:
@@ -838,6 +872,9 @@ class Store:
             out.append("  files: " + " ".join(ref(f["f"]) for f in inp["files"]))
         if inp["org"]:
             out.append(f"  organizer: {inp['org']['msg']}")
+        if inp.get("history"):
+            out.append(f"  updated: {hm(inp['updated'])}; latest text above replaces earlier versions")
+            out.append("  linked items: " + " ".join(self.code(n) for n in inp["touched"]))
         return "\n".join(out)
 
     def inbox(self, ref=None):
@@ -872,6 +909,8 @@ class Store:
                 s = f"undo organizer changes for {e['src']}"
             elif k == "moved":
                 s = f"{e['src']} moved to {e['to']} as {e['as']}"
+            elif k == "amend":
+                s = f"{e['src']} {e['mode']}: {first_line(e['text'])!r}"
             elif e.get("retry"):
                 s = f"organizer {e['src']} retry"
             else:
@@ -1221,7 +1260,7 @@ class Organizer(threading.Thread):
                     if todo:
                         break
                     s.cond.wait(timeout=30)
-                inp = min(todo, key=lambda i: int(i["id"][1:]))
+                inp = dict(min(todo, key=lambda i: int(i["id"][1:])))
                 s.org_busy = inp["id"]
                 s.bump()
             self.process(inp)
@@ -1235,12 +1274,20 @@ class Organizer(threading.Thread):
         scope = f" [scope: {s.code(inp['scope'])}]" if inp["scope"] else " [no scope: whole project]"
         if inp.get("from") == "rules":
             scope += " [sent from the Rules view: most likely a rule]"
+        if inp.get("history"):
+            out.append("This is an update to an existing input, not a new submission. The latest text is authoritative. "
+                       "Update its linked items where relevant instead of duplicating them. Preserve unrelated work. "
+                       "Do not repeat completed external actions. The coding agent must see the update: include pass.")
+            out.append("Previous input text:\n" + inp["history"][-1]["text"])
+            out.append("Linked items:\n" + "\n".join(s.card(s.items[n]) for n in inp["touched"] if n in s.items))
         out.append(f"New input {inp['id']} at {hm(inp['t'])}{scope}:\n{inp['text'] or '(no text)'}")
         return "\n\n".join(out)
 
     def process(self, inp):
         s, t0 = self.s, time.time()
         with s.lock:  # writes may land while we build the prompt
+            inp = dict(inp)
+            version = inp.get("v", 0)
             parts, err = [{"text": self.context(inp)}], None
         try:
             for f in inp["files"]:
@@ -1255,10 +1302,14 @@ class Organizer(threading.Thread):
             plan, err = "", str(ex)
         with s.lock:
             s.org_busy = None
+            current = s.inputs[inp["id"]]
+            if current.get("v", 0) != version or current.get("moved") or current["acked"]:
+                s.bump()  # a stale plan must not overwrite or acknowledge a newer input
+                return
             if err:
                 s.emit({"k": "org", "src": inp["id"], "ok": False, "msg": err, "by": "org"})
                 return
-            keep = bool(re.search(r"(?im)^\s*pass\s*$", plan))
+            keep = bool(inp.get("history")) or bool(re.search(r"(?im)^\s*pass\s*$", plan))
             ops = parse_dsl(re.sub(r"(?im)^\s*pass\s*$", "", plan))
             if keep:  # the input is for the coding agent: changes may be applied, but it stays in the inbox
                 ops = [(no, op) for no, op in ops if isinstance(op, Err) or op.get("op") != "ack"]
@@ -1288,15 +1339,29 @@ def transcribe(store, data, mime, scope):
               "Write code identifiers, file paths, commands and product names the way they are normally written "
               "(Codex, pytest, tests/test_export.py). Do not summarize, translate or tidy the wording. "
               "Write Chinese in Simplified characters. If a word is unclear, give your best guess followed by (?). "
-              "Put only the spoken words in transcript: no preface, notes or timestamps.\n"
+              "Put only the spoken words in transcript: no preface, notes or timestamps. "
+              "If nobody speaks (silence, noise, a beep, music), the transcript is empty.\n"
+              "The terms and titles below only help with spelling. Never write them unless they are spoken.\n"
               "Terms from the project (prefer these spellings): " + ", ".join(w for w, _ in words.most_common(60)) +
               "\nRelated item titles: " + "; ".join(titles))
     # The model drifts into Traditional characters unless told so in Chinese, in the schema itself. The source stays
     # free of Chinese (R66), so the two Chinese strings are escaped. They say: "You transcribe speech. Always write
     # Chinese in Simplified characters, never Traditional." and "Transcribe word for word, Chinese in Simplified".
-    return gemini("\u4f60\u662f\u8bed\u97f3\u8f6c\u5199\u5458\u3002\u4e2d\u6587\u4e00\u5f8b\u7528\u7b80\u4f53\u5b57\u4e66\u5199\uff0c\u7edd\u4e0d\u7528\u7e41\u4f53\u5b57\u3002",
+    tr = gemini("\u4f60\u662f\u8bed\u97f3\u8f6c\u5199\u5458\u3002\u4e2d\u6587\u4e00\u5f8b\u7528\u7b80\u4f53\u5b57\u4e66\u5199\uff0c\u7edd\u4e0d\u7528\u7e41\u4f53\u5b57\u3002",
                   [{"text": prompt}, {"inline_data": {"mime_type": mime.split(";")[0], "data": base64.b64encode(data).decode()}}], think=0, field="transcript",
                   hint="\u9010\u5b57\u8f6c\u5199\uff0c\u4e2d\u6587\u7528\u7b80\u4f53\u5b57")
+    return "" if echoed(tr, titles) else tr
+
+
+def echoed(tr, titles):
+    """A transcript made only of item titles was copied from the prompt: nobody spoke (B092)."""
+    norm = lambda t: " ".join(re.sub(r"[\W_]+", " ", t.lower()).split())
+    rest = norm(tr)
+    if not rest:
+        return False
+    for t in sorted({norm(t) for t in titles if norm(t)}, key=len, reverse=True):
+        rest = rest.replace(t, " ")
+    return not rest.strip()
 
 
 # --------------------------------------------------------------------------- http
@@ -3043,6 +3108,31 @@ function restoreEdit(k) {
 
 // ---------------------------------------------------------------- inputs
 
+function inputActions(r, cls = LINK_BTN) {
+  if (r.moved) return '';
+  return `<button data-act="input-edit" data-id="${r.id}" class="${cls}">${ico('edit', 'size-3.5')}Edit</button><button data-act="input-append" data-id="${r.id}" class="${cls}">${ico('plus', 'size-3.5')}Add details</button>`
+    + (r.history?.length ? `<button data-act="input-history" data-id="${r.id}" class="${cls}">History</button>` : '');
+}
+
+function editInput(id, mode) {
+  const r = byR.get(id);
+  if (!r || r.moved) return;
+  U.inputEdit = {id, mode, v: r.v || 0};
+  const append = mode === 'append';
+  dialog(`${append ? 'Add details to' : 'Edit'} ${id}`, `${append ? `<p class="mb-3 max-h-36 overflow-auto whitespace-pre-wrap break-words text-sm text-zinc-500 dark:text-zinc-400">${esc(r.text)}</p>` : ''}
+    <label class="block"><span class="mb-2 block text-sm font-medium">${append ? 'Additional details' : 'Input text'}</span><textarea id="inputEditText" rows="8" class="${FIELD} resize-y">${esc(append ? '' : r.text)}</textarea></label>
+    <p id="inputEditError" role="alert" class="mt-2 text-sm text-red-600 dark:text-red-400"></p>`,
+    {focus: false, sub: '<span class="text-sm text-zinc-500">Saving updates the related items. Earlier text and files are kept.</span>', foot: `<div class="flex justify-end gap-2"><button data-act="close" class="${SECOND}">Cancel</button><button data-act="input-save" class="${PRIMARY}">${append ? 'Add details' : 'Save'}</button></div>`});
+  $('inputEditText').focus();
+}
+
+function inputHistory(id) {
+  const r = byR.get(id);
+  if (!r) return;
+  const versions = [{text: r.text, t: r.updated || r.t, label: 'Current'}, ...(r.history || []).map((h, i) => ({...h, t: i ? r.history[i - 1].t : r.t, label: i ? `Version ${i + 1}` : 'Original'})).reverse()];
+  dialog(`${id} history`, versions.map(h => `<section class="mb-5"><h3 class="mb-2 text-sm font-semibold">${h.label}<span class="ml-2 font-normal text-zinc-400">${when(h.t)}</span></h3><p class="whitespace-pre-wrap break-words text-[15px]">${esc(h.text)}</p></section>`).join(''));
+}
+
 function inputState(r) {  // -> [label, tone, icon]
   if (r.moved) return [`Moved to ${r.moved.to}`, 'text-zinc-500 dark:text-zinc-400', ico('arrow', 'size-3.5', '2')];
   if (S.org.busy === r.id) return ['Organizing…', 'text-blue-600 dark:text-blue-400', '<span class="size-1.5 animate-pulse rounded-full bg-blue-500 dark:bg-blue-400"></span>'];
@@ -3068,7 +3158,7 @@ function renderInputs() {
     const acts = r.moved ? `<a href="/p/${encodeURIComponent(r.moved.to)}/" class="${LINK_BTN}">${ico('arrow', 'size-3.5', '2')}Open ${esc(r.moved.to)} · ${esc(r.moved.as)}</a>` : (!r.acked && S.org.on && r.org && (!r.org.ok || r.org.undone) ? `<button data-act="retry" data-id="${r.id}" class="${LINK_BTN}">${ico('loop', 'size-3.5', '2')}${r.org.undone ? 'Organize again' : 'Retry'}</button>` : '')
       + (r.org && r.org.ok && !r.org.undone && !r.org.keep && r.touched.length ? `<button data-act="undo" data-id="${r.id}" class="${LINK_BTN} text-zinc-600 dark:text-zinc-300">${ico('undo', 'size-3.5', '2')}Undo</button>` : '')
       + (!r.acked && !r.scope && !(S.org.on && !r.org) && S.org.busy !== r.id ? `<button data-act="make-item" data-id="${r.id}" class="${LINK_BTN}">${ico('plus', 'size-3.5', '2')}Make item</button>` : '')
-      + (otherProjects().length && S.org.busy !== r.id ? `<button data-act="move-input" data-id="${r.id}" class="${LINK_BTN} text-zinc-600 dark:text-zinc-300">${ico('arrow', 'size-3.5', '2')}Move…</button>` : '');
+      + (otherProjects().length && S.org.busy !== r.id ? `<button data-act="move-input" data-id="${r.id}" class="${LINK_BTN} text-zinc-600 dark:text-zinc-300">${ico('arrow', 'size-3.5', '2')}Move…</button>` : '') + inputActions(r);
     // On the desktop each input is a ledger line: what you said on the left, what became of it on the right.
     return `${head}<article class="border-b border-zinc-100 px-4 py-2 lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-10 lg:px-0 lg:py-4 dark:border-zinc-800/70"><div class="min-w-0">
       <div class="flex min-h-5 items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400"><span class="font-mono">${r.id}</span><span>${when(r.t)}</span>
@@ -3746,6 +3836,20 @@ const ACT = {
     U.lastSent = b.dataset.id; await load(); toast(`Undid the organizer's changes for ${b.dataset.id}`);
   },
   'move-input': b => moveInput(b.dataset.id),
+  'input-edit': b => editInput(b.dataset.id, 'edit'),
+  'input-append': b => editInput(b.dataset.id, 'append'),
+  'input-history': b => inputHistory(b.dataset.id),
+  'input-save': async b => {
+    const draft = U.inputEdit, text = $('inputEditText').value;
+    b.disabled = true; $('inputEditError').textContent = '';
+    try {
+      const response = await fetch(P + 'api/op', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({op: 'amend', ...draft, text})});
+      const d = await response.json();
+      if (!d.ok) { $('inputEditError').textContent = (d.res || []).find(x => x.startsWith('err')) || d.error || 'Could not save'; return; }
+      U.inputEdit = null; closeDialog(); await load(); toast('Saved for the organizer and your agent');
+    } catch (_) { if ($('inputEditError')) $('inputEditError').textContent = 'Connection lost. Your text is still here; try again.'; }
+    finally { b.disabled = false; }
+  },
   revert: async b => {
     const u = (S.undo || []).find(u => u.seq === Number(b.dataset.seq));
     try { await revert(Number(b.dataset.seq)); } catch (_) { return; }
@@ -3909,7 +4013,7 @@ function saidRow(r, k, last) {
       + (r.org?.undone && !r.acked ? `<button data-act="retry" data-id="${r.id}" class="${SMALL_BTN}">${ico('loop', 'size-3.5', '2')}Organize again</button>` : '')
       + (!r.acked && !r.scope && !(S.org.on && !r.org) && !busy ? `<button data-act="make-item" data-id="${r.id}" class="${SMALL_BTN} text-blue-600 dark:text-blue-400">${ico('plus', 'size-3.5', '2')}Make item</button>` : '')
       + `<span class="ml-auto flex items-center ${later}">${r.org && r.org.ok && !r.org.undone && !r.org.keep && r.touched.length ? `<button data-act="undo" data-id="${r.id}" title="Undo what the organizer did with ${r.id}" class="${SMALL_BTN}">${ico('undo', 'size-3.5', '2')}Undo</button>` : ''}${otherProjects().length && !busy ? `<button data-act="move-input" data-id="${r.id}" title="Sent to the wrong project? Move it" class="${SMALL_BTN}">${ico('arrow', 'size-3.5', '2')}Move…</button>` : ''}</span>`;
-  return saidStep(DOT[dotOf(r)], bubble, `<span class="font-mono">${r.id}</span> · ${when(r.t)}`, `<span class="mr-1 text-[13px] font-semibold ${tone}">${label}</span>${chips}${acts}`, last);
+  return saidStep(DOT[dotOf(r)], bubble, `<span class="font-mono">${r.id}</span> · ${when(r.t)}`, `<span class="mr-1 text-[13px] font-semibold ${tone}">${label}</span>${chips}${inputActions(r, SMALL_BTN)}${acts}`, last);
 }
 function outboxStep(q, last) {  // still on its way (F85)
   const state = q.failed ? 'Not sent' : q.files.some(f => f.transcribing) ? 'Transcribing…' : q.files.some(f => !f.f && !f.failed) ? 'Uploading…' : 'Sending…';
