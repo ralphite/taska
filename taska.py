@@ -472,6 +472,21 @@ class Store:
                 except OSError:
                     pass
 
+    def read_next(self, name):
+        """An agent read /next: inputs older than this are ones it has been told about (T117)."""
+        name = re.sub(r"[^\w .-]", "", str(name or "agent"))[:40] or "agent"
+        with self.cond:
+            self.agents.setdefault(name, {"t": 0, "waiting": 0})["next"] = time.time()
+
+    def news_for(self, name):
+        """Inputs for the agent that came in after it last read /next: it hears of them when it writes back, at a
+        natural stop, instead of being woken in the middle of its work (T117)."""
+        name = re.sub(r"[^\w .-]", "", str(name or "agent"))[:40] or "agent"
+        since = self.agents.get(name, {}).get("next")
+        if not since:
+            return []
+        return [i["id"] for i in sorted(self.for_agent(), key=lambda i: int(i["id"][1:])) if datetime.fromisoformat(i["t"]).timestamp() >= int(since)]  # times are kept to the second
+
     def presence(self):
         """What the page shows about agents: who came when, who waits now, and whether work is waiting for them."""
         return {"agents": [{"name": k, "t": int(v["t"] * 1000), "waiting": v["waiting"] > 0} for k, v in self.agents.items()],
@@ -975,6 +990,8 @@ LOOP  doing means work has started (not that you are on it this second). Mark an
       move on; /next brings the item back once the user replies. Nothing to do and keep-going ON: wait with
       GET /next?wait=540 (returns when work arrives) and repeat. If a background command can wake you when it
       exits, end your turn with WATCH running instead: waiting costs no tokens and never interrupts your work.
+      While you work, a /do reply ending "N new inputs since your last /next" means the user wrote meanwhile:
+      finish the step you are on, then GET /next. Nothing else interrupts you.
       Big items have subitems (parent=B03): /next gives you the subitems first and the parent once they are
       finished; split big work the same way with `new ... parent=B03`.
       keep-going OFF: finish the current item, write back, stop. /next picks items marked now, ideas included:
@@ -1638,6 +1655,8 @@ class Handler(BaseHTTPRequestHandler):
             finally:
                 if q.get("wait"):
                     s.saw((q.get("by") or ["agent"])[0], -1)
+            if "ui" not in q:
+                s.read_next((q.get("by") or ["agent"])[0])
             self.send(200, text)
         elif p == "/rules":
             with s.lock:
@@ -1716,7 +1735,11 @@ class Handler(BaseHTTPRequestHandler):
                 s.saw(by)
             lines, _ = s.run_all(parse_dsl(text), by)
             tail = "GET /next to continue" if s.cfg["auto"] else "stop after the current item"
-            self.send(200, "\n".join(lines) + f"\nrev {s.rev} · {s.mode()}: {tail}\n")
+            with s.lock:
+                news = s.news_for(by) if by not in PEOPLE else []
+            note = (f"\n{len(news)} new input{'s' if len(news) != 1 else ''} since your last /next: {' '.join(news)}."
+                    " Finish the step you are on, then GET /next.") if news else ""
+            self.send(200, "\n".join(lines) + f"\nrev {s.rev} · {s.mode()}: {tail}{note}\n")
         elif p == "/api/op":
             data = json.loads(self.body(1_000_000) or b"{}")
             ops = [(0, x) for x in (data if isinstance(data, list) else [data])]
