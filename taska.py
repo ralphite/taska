@@ -1907,7 +1907,7 @@ addEventListener('pageshow', e => { if (e.persisted) load(); });  // back from a
 '''
 
 PAGE = r'''<!doctype html>
-<html lang="en" class="overflow-hidden">
+<html lang="en" class="overflow-hidden lg:scrollbar-thumb-zinc-500/50 dark:lg:scrollbar-thumb-zinc-400/40">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
@@ -1918,11 +1918,11 @@ PAGE = r'''<!doctype html>
 </head>
 <body class="h-dvh overflow-hidden bg-white text-zinc-900 antialiased lg:flex dark:bg-zinc-950 dark:text-zinc-100">
 <nav id="drawer" hidden aria-label="Projects" class="fixed top-0 left-0 flex h-dvh w-80 max-w-[85vw] flex-col bg-zinc-100 pt-[env(safe-area-inset-top)] pb-[max(1rem,env(safe-area-inset-bottom))] lg:z-40 lg:w-[var(--side-w,15rem)] lg:max-w-none lg:shrink-0 lg:border-r lg:border-zinc-200 lg:bg-zinc-50 lg:pb-0 2xl:w-[var(--side-w,16rem)] dark:bg-zinc-900 dark:lg:border-zinc-800">
-  <div data-grip="side" title="Drag to resize · double-click for the default" class="absolute inset-y-0 right-0 z-10 hidden w-2 translate-x-1/2 cursor-col-resize hover:bg-blue-500/30 lg:block"></div>
+  <div data-grip="side" title="Drag to resize · double-click for the default" class="absolute inset-y-0 right-0 z-10 hidden w-2 translate-x-full cursor-col-resize hover:bg-blue-500/30 lg:block"></div>
   <div class="flex h-14 shrink-0 items-center gap-2 px-5 lg:pr-2 lg:pl-4"><span id="drawerLogo" class="text-blue-600 dark:text-blue-400"></span><span class="text-xl font-semibold tracking-tight lg:text-[19px]">Taska</span>
     <button data-act="side" id="sideBtn" title="Hide the sidebar · [" aria-label="Hide the sidebar" class="ml-auto hidden size-8 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-200/70 lg:grid dark:text-zinc-400 dark:hover:bg-zinc-800"></button></div>
   <button data-act="new-input" id="newInputBtn" title="New input to the project · C · by voice ⇧V" aria-pressed="false" class="mx-2.5 mb-3 hidden h-9 shrink-0 items-center gap-2 rounded-xl bg-white px-3 text-sm font-medium text-zinc-800 shadow-sm ring-1 ring-zinc-900/10 hover:bg-zinc-50 lg:flex aria-pressed:bg-blue-50 aria-pressed:text-blue-700 aria-pressed:ring-blue-500/40 dark:bg-zinc-800 dark:text-zinc-100 dark:ring-white/10 dark:hover:bg-zinc-700 dark:aria-pressed:bg-blue-400/10 dark:aria-pressed:text-blue-300 dark:aria-pressed:ring-blue-400/40"></button>
-  <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 lg:pb-3">
+  <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 lg:pb-3 lg:scrollbar-thin lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70">
     <div class="px-3 pb-1.5 text-xs font-semibold text-zinc-500 lg:text-[11px] lg:tracking-wider lg:uppercase dark:text-zinc-400">Projects</div>
     <div id="drawerList" class="flex flex-col gap-0.5"></div>
     <button data-act="new-project" id="drawerNew" class="mt-1 flex h-12 w-full items-center gap-3 rounded-2xl px-3 text-[15px] font-medium text-blue-600 lg:h-9 lg:rounded-xl lg:text-sm dark:text-blue-400">New project</button>
@@ -1965,10 +1965,10 @@ PAGE = r'''<!doctype html>
   <div id="deskFilters" hidden class="border-zinc-200 lg:col-start-1 lg:row-start-2 lg:border-r lg:border-b dark:border-zinc-800"></div>
 
   <section id="itemsView" class="flex min-h-0 flex-1 flex-col lg:col-start-1 lg:row-span-2 lg:row-start-3 lg:border-r lg:border-zinc-200 dark:lg:border-zinc-800">
-    <div id="list" class="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-6"><div class="px-6 py-16 text-center text-sm text-zinc-400">Loading…</div></div>
+    <div id="list" class="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-6 lg:scrollbar-thin lg:scrollbar-gutter-stable lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70"><div class="px-6 py-16 text-center text-sm text-zinc-400">Loading…</div></div>
   </section>
 
-  <section id="inputsView" hidden class="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-6 lg:col-span-2 lg:col-start-1 lg:row-span-2 lg:row-start-2"></section>
+  <section id="inputsView" hidden class="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-6 lg:scrollbar-gutter-both lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70 lg:col-span-2 lg:col-start-1 lg:row-span-2 lg:row-start-2"></section>
 
   <section id="detailView" hidden class="flex min-h-0 flex-1 flex-col lg:col-start-2 lg:row-span-3 lg:row-start-1 lg:group-data-[compose]/app:row-span-1">
     <div id="goStrip" hidden class="flex h-11 shrink-0 items-center gap-3 border-b border-amber-200/70 bg-amber-50 px-4 text-[13px] dark:border-amber-400/15 dark:bg-amber-400/10"></div>
@@ -1979,21 +1979,21 @@ PAGE = r'''<!doctype html>
       <button data-act="item-menu" id="itemMenuBtn" aria-label="Item actions" title="All actions · ." class="grid size-11 shrink-0 place-items-center rounded-full text-zinc-600 active:bg-zinc-100 lg:size-9 lg:rounded-lg lg:hover:bg-zinc-100 dark:text-zinc-400 dark:active:bg-zinc-800 dark:lg:hover:bg-zinc-800"></button>
       <div id="dNav" class="hidden items-center gap-0.5 border-l border-zinc-200 pl-2 lg:ml-1.5 lg:flex dark:border-zinc-800"></div>
     </header>
-    <div id="detailBody" class="min-h-0 flex-1 overflow-y-auto overscroll-contain lg:group-data-[compose]/app:hidden"></div>
+    <div id="detailBody" class="min-h-0 flex-1 overflow-y-auto overscroll-contain lg:scrollbar-gutter-both lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70 lg:group-data-[compose]/app:hidden"></div>
   </section>
 
-  <section id="projectView" hidden class="min-h-0 overflow-y-auto overscroll-contain lg:col-span-2 lg:col-start-1 lg:row-span-4 lg:row-start-1"></section>
+  <section id="projectView" hidden class="min-h-0 overflow-y-auto overscroll-contain lg:scrollbar-gutter-both lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70 lg:col-span-2 lg:col-start-1 lg:row-span-4 lg:row-start-1"></section>
 
-  <div id="listGrip" data-grip="list" hidden title="Drag to resize · double-click for the default" class="z-30 cursor-col-resize hover:bg-blue-500/30 lg:col-start-1 lg:row-span-4 lg:row-start-1 lg:block lg:w-2 lg:translate-x-1/2 lg:justify-self-end"></div>
-  <footer id="foot" class="relative z-20 shrink-0 px-3 pt-1 pb-[max(1.25rem,env(safe-area-inset-bottom))] lg:col-start-2 lg:row-start-4 lg:px-8 lg:pb-5 lg:group-data-[compose]/app:row-start-2 lg:group-data-[compose]/app:row-span-3 lg:group-data-[compose]/app:overflow-y-auto lg:group-data-[compose]/app:overscroll-contain lg:group-data-[compose]/app:pt-[9vh] lg:group-data-[compose]/app:pb-16">
+  <div id="listGrip" data-grip="list" hidden title="Drag to resize · double-click for the default" class="z-30 cursor-col-resize hover:bg-blue-500/30 lg:col-start-1 lg:row-span-4 lg:row-start-1 lg:block lg:w-2 lg:translate-x-full lg:justify-self-end"></div>
+  <footer id="foot" class="relative z-20 shrink-0 lg:scrollbar-gutter-both lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70 px-3 pt-1 pb-[max(1.25rem,env(safe-area-inset-bottom))] lg:col-start-2 lg:row-start-4 lg:px-8 lg:pb-5 lg:group-data-[compose]/app:row-start-2 lg:group-data-[compose]/app:row-span-3 lg:group-data-[compose]/app:overflow-y-auto lg:group-data-[compose]/app:overscroll-contain lg:group-data-[compose]/app:pt-[9vh] lg:group-data-[compose]/app:pb-16">
     <div id="composeHead" class="hidden lg:group-data-[compose]/app:mx-auto lg:group-data-[compose]/app:mb-6 lg:group-data-[compose]/app:flex lg:group-data-[compose]/app:max-w-[42rem] lg:group-data-[compose]/app:flex-col lg:group-data-[compose]/app:items-center lg:group-data-[compose]/app:text-center"></div>
     <div id="feedback" hidden role="status" class="mb-1.5 flex min-h-7 items-center gap-2 pr-1 pl-2.5 text-[13px] text-zinc-600 lg:mx-auto lg:max-w-[42rem] dark:text-zinc-300 lg:group-data-[compose]/app:hidden"></div>
     <div id="composer" class="rounded-4xl border border-zinc-200/80 bg-white shadow-lg shadow-black/5 focus-within:border-zinc-300 lg:mx-auto lg:max-w-[42rem] dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-black/40 dark:focus-within:border-zinc-700 lg:group-data-[compose]/app:rounded-3xl lg:group-data-[compose]/app:border-zinc-300 lg:group-data-[compose]/app:shadow-xl lg:group-data-[compose]/app:shadow-zinc-900/[0.07] lg:group-data-[compose]/app:dark:border-zinc-700">
       <div id="scope" hidden class="flex h-8 items-center gap-1.5 pt-1 pr-1 pl-4 text-[13px] text-blue-700 dark:text-blue-300 lg:group-data-[compose]/app:hidden"></div>
-      <div id="drafts" hidden class="flex gap-2.5 overflow-x-auto px-3 pt-3 pb-1 lg:group-data-[compose]/app:px-4 lg:group-data-[compose]/app:pt-4 lg:group-data-[compose]/app:pb-0"></div>
+      <div id="drafts" hidden class="flex gap-2.5 overflow-x-auto lg:scrollbar-thin px-3 pt-3 pb-1 lg:group-data-[compose]/app:px-4 lg:group-data-[compose]/app:pt-4 lg:group-data-[compose]/app:pb-0"></div>
       <div class="flex items-end gap-0.5 p-1.5 lg:group-data-[compose]/app:flex-wrap lg:group-data-[compose]/app:items-center lg:group-data-[compose]/app:gap-1 lg:group-data-[compose]/app:px-3 lg:group-data-[compose]/app:pt-1 lg:group-data-[compose]/app:pb-3">
         <button id="attachBtn" data-act="attach" aria-label="Add images or files" title="Add images or files" class="grid size-11 shrink-0 place-items-center rounded-full text-zinc-500 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800 lg:group-data-[compose]/app:size-9"></button><span id="boxHint" class="hidden text-[13px] text-zinc-400 dark:text-zinc-500 lg:group-data-[compose]/app:mr-auto lg:group-data-[compose]/app:flex lg:group-data-[compose]/app:items-center lg:group-data-[compose]/app:gap-1.5 lg:group-data-[compose]/app:pl-1"></span>
-        <textarea id="text" rows="1" placeholder="Write anything…" aria-label="Input" class="max-h-48 min-h-11 min-w-0 flex-1 resize-none bg-transparent px-1 py-2.5 text-[17px] leading-6 outline-none placeholder:text-zinc-400 sm:text-[15px] dark:placeholder:text-zinc-500 lg:group-data-[compose]/app:order-first lg:group-data-[compose]/app:max-h-80 lg:group-data-[compose]/app:min-h-24 lg:group-data-[compose]/app:basis-full lg:group-data-[compose]/app:px-3 lg:group-data-[compose]/app:pt-4 lg:group-data-[compose]/app:pb-2 lg:group-data-[compose]/app:text-[17px] lg:group-data-[compose]/app:leading-7"></textarea>
+        <textarea id="text" rows="1" placeholder="Write anything…" aria-label="Input" class="lg:scrollbar-thin max-h-48 min-h-11 min-w-0 flex-1 resize-none bg-transparent px-1 py-2.5 text-[17px] leading-6 outline-none placeholder:text-zinc-400 sm:text-[15px] dark:placeholder:text-zinc-500 lg:group-data-[compose]/app:order-first lg:group-data-[compose]/app:max-h-80 lg:group-data-[compose]/app:min-h-24 lg:group-data-[compose]/app:basis-full lg:group-data-[compose]/app:px-3 lg:group-data-[compose]/app:pt-4 lg:group-data-[compose]/app:pb-2 lg:group-data-[compose]/app:text-[17px] lg:group-data-[compose]/app:leading-7"></textarea>
         <div id="recBar" hidden class="flex h-11 min-w-0 flex-1 items-center gap-2 lg:group-data-[compose]/app:order-first lg:group-data-[compose]/app:basis-full lg:group-data-[compose]/app:h-28 lg:group-data-[compose]/app:gap-3 lg:group-data-[compose]/app:px-2" role="status" aria-label="Recording">
           <button data-act="rec-cancel" aria-label="Cancel recording" id="recCancel" class="grid size-11 shrink-0 place-items-center rounded-full text-zinc-500 dark:text-zinc-400"></button>
           <span class="size-2.5 shrink-0 animate-pulse rounded-full bg-red-500"></span>
@@ -2019,7 +2019,7 @@ PAGE = r'''<!doctype html>
       <button data-act="close" aria-label="Close" class="grid size-11 shrink-0 place-items-center rounded-full outline-none" id="dlgClose"></button>
     </header>
     <div id="dlgSub" hidden class="shrink-0"></div>
-    <div id="dlgBody" class="min-h-0 flex-1 overflow-y-auto px-4 pt-2 pb-[max(1.25rem,env(safe-area-inset-bottom))]"></div>
+    <div id="dlgBody" class="min-h-0 flex-1 overflow-y-auto px-4 lg:scrollbar-thin lg:overscroll-contain lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70 pt-2 pb-[max(1.25rem,env(safe-area-inset-bottom))]"></div>
     <div id="dlgFoot" hidden class="shrink-0"></div>
   </section>
 </div>
@@ -2031,7 +2031,7 @@ PAGE = r'''<!doctype html>
     <a id="vOpen" target="_blank" rel="noopener" class="flex h-11 items-center rounded-full px-3 text-white/80 hover:bg-white/10">Original</a>
     <button data-act="v-close" aria-label="Close" class="grid size-11 place-items-center rounded-full hover:bg-white/10" id="vClose"></button>
   </header>
-  <div id="vStage" class="flex min-h-0 flex-1 overflow-auto"><img id="vImg" alt="" class="m-auto max-h-full max-w-full object-contain"></div>
+  <div id="vStage" class="flex min-h-0 flex-1 overflow-auto lg:scrollbar-thumb-white/40"><img id="vImg" alt="" class="m-auto max-h-full max-w-full object-contain"></div>
   <footer class="flex items-center justify-center gap-2 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] text-sm">
     <button data-act="v-prev" class="h-11 rounded-full px-4 hover:bg-white/10 disabled:opacity-30">Previous</button>
     <button data-act="v-zoom" id="vZoom" class="h-11 rounded-full bg-white/10 px-4">Actual size</button>
@@ -2595,7 +2595,7 @@ const KIND_TAG = x => KIND[x.kind] ? `<span class="rounded px-1.5 py-0.5 text-[1
 function msgText(x, gid, form = 0, done = null) {
   const long = x.by !== 'you' && x.kind !== 'ask' && (x.text.length > 240 || x.text.trim().split('\n').length > 3);
   const open = U.moreMsgs.has(x.id), more = `data-act="more-msg" data-expand data-id="${x.id}"`;  // F106: a click on the words opens them
-  if (long && desk() && !open) return `<div data-clip ${more} class="-mr-2 max-h-96 cursor-pointer overflow-y-auto pr-2 data-[over]:mask-b-from-80%">${rich(x.text, gid + 'md' + x.id, '', form, done)}</div>`;
+  if (long && desk() && !open) return `<div data-clip ${more} class="-mr-2 max-h-[min(24rem,50dvh)] cursor-pointer overflow-y-auto pr-2 lg:scrollbar-thin data-[over]:mask-b-from-80%">${rich(x.text, gid + 'md' + x.id, '', form, done)}</div>`;
   const folded = long && !desk() && !open;
   return (long ? `<div ${more} class="cursor-pointer">` : '') + rich(folded ? x.text.trim().split('\n')[0] : x.text, gid + 'md' + x.id, '', form, done) + (long ? '</div>' : '')
     + (long ? `<button data-act="more-msg" data-id="${x.id}" class="-mb-2 flex h-11 items-center text-sm font-medium text-blue-600 dark:text-blue-400">${folded ? 'Show more' : 'Show less'}</button>` : '');
@@ -2613,7 +2613,7 @@ function answerOf(thread, x) {
 }
 function msgHtml(x, gid, form = 0, done = null) {
   const you = x.by === 'you', src = you && x.src ? byR.get(x.src) : null;
-  const strip = (files, g, size) => files?.length ? `<div class="flex gap-2 overflow-x-auto ${you ? 'justify-end' : 'mt-3'}">${thumbs(files, g, size)}</div>` : '';
+  const strip = (files, g, size) => files?.length ? `<div class="flex gap-2 overflow-x-auto lg:scrollbar-thin ${you ? 'justify-end' : 'mt-3'}">${thumbs(files, g, size)}</div>` : '';
   if (you) return `<div class="flex flex-col items-end gap-1">
       ${x.text ? `<div class="max-w-[85%] rounded-2xl rounded-tr-md bg-blue-600 px-4 py-2.5 text-[15px] leading-relaxed text-white dark:bg-blue-500 [&_a]:text-white [&_a]:decoration-white/60">${msgText(x, gid)}</div>` : ''}
       ${strip(src?.files, gid + 't' + x.id)}
@@ -2658,7 +2658,7 @@ function tableHtml(text, gid) {
   const cells = l => l.trim().replace(/^\|/, '').replace(/\|$/, '').replace(/\\\|/g, '\u0002').split('|').map(c => c.trim().replace(/\u0002/g, '|'));
   const [head, sep, ...body] = text.trim().split('\n').map(cells);
   const align = (sep || []).map(c => /^:-+:$/.test(c) ? 'text-center' : /-:$/.test(c) ? 'text-right' : 'text-left');
-  return `<div class="overflow-x-auto"><table class="w-full border-collapse text-sm leading-snug">
+  return `<div class="overflow-x-auto lg:scrollbar-thin"><table class="w-full border-collapse text-sm leading-snug">
     <thead><tr>${head.map((c, i) => `<th class="border-b border-zinc-300 px-2 py-1.5 font-semibold dark:border-zinc-600 ${align[i] || 'text-left'}">${inlineMd(c, gid)}</th>`).join('')}</tr></thead>
     <tbody>${body.map(r => `<tr>${head.map((_, i) => `<td class="border-b border-zinc-100 px-2 py-1.5 align-top dark:border-zinc-800 ${align[i] || 'text-left'}">${inlineMd(r[i] || '', gid)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
 }
@@ -2669,7 +2669,7 @@ function blockHtml(b, isTitle, gid = '') {
     const level = b.text.match(/^#+/)[0].length;
     return `<div class="${level <= 2 ? 'mt-2 text-xl' : 'mt-1 text-[17px]'} leading-snug font-semibold">${inlineMd(b.text.replace(/^#+\s*/, ''), gid)}</div>`;
   }
-  if (b.kind === 'code') return `<pre class="overflow-x-auto rounded-lg bg-zinc-100 p-3 font-mono text-[13px] leading-relaxed dark:bg-zinc-800"><code>${esc(b.text.replace(/^\s*```[^\n]*\n?/, '').replace(/\n?\s*```\s*$/, ''))}</code></pre>`;
+  if (b.kind === 'code') return `<pre class="overflow-x-auto lg:scrollbar-thin rounded-lg bg-zinc-100 p-3 font-mono text-[13px] leading-relaxed dark:bg-zinc-800"><code>${esc(b.text.replace(/^\s*```[^\n]*\n?/, '').replace(/\n?\s*```\s*$/, ''))}</code></pre>`;
   if (b.kind === 'quote') return `<blockquote class="border-l-[3px] border-zinc-300 pl-3 text-zinc-600 dark:border-zinc-600 dark:text-zinc-300">${inlineMd(b.text.replace(/^\s*>\s?/gm, ''), gid).replace(/\n/g, '<br>')}</blockquote>`;
   if (b.kind === 'list') {
     const ordered = /^\s*\d/.test(b.text);
@@ -2850,7 +2850,7 @@ function peek(n, {focus = true} = {}) {
     <div class="mt-1 flex flex-wrap items-center gap-x-2.5 text-xs font-medium text-zinc-500 dark:text-zinc-400">${it.type === 'rule' ? '' : `<span class="${PRI_TEXT[it.pri]}">${it.pri}</span>`}<span>${statusName(it)}</span><span>${WHEN[it.when]}</span><span>${it.type[0].toUpperCase() + it.type.slice(1)}</span>${talk ? cnt('comment', talk, plural(talk, 'comment')) : ''}</div>
     ${it.body ? rich(it.body, 'pbody' + n, 'mt-2.5 text-[15px] text-zinc-700 dark:text-zinc-300') : ''}
     ${it.next ? `<div class="mt-2 flex gap-2 text-sm"><span class="shrink-0 font-semibold text-zinc-500 dark:text-zinc-400">Next</span><span class="min-w-0 break-words">${inlineMd(it.next)}</span></div>` : ''}
-    ${files.length ? `<div class="mt-3 flex items-end gap-2 overflow-x-auto">${thumbs(files, 'peek' + n)}</div>` : ''}
+    ${files.length ? `<div class="mt-3 flex items-end gap-2 overflow-x-auto lg:scrollbar-thin">${thumbs(files, 'peek' + n)}</div>` : ''}
     ${recent.length ? `<div class="mt-4 flex flex-col gap-4">${recent.map(x => msgHtml(x, 'p', it.wait?.kind === 'ask' && it.wait.id === x.id ? n : 0, answerOf(it.thread, x))).join('')}</div>` : ''}
   </div>`, {
     aboveComposer: true, focus, card: true, head,
@@ -2890,7 +2890,7 @@ function needsCard(it) {
   if (it.wait) {
     const w = it.wait, choices = w.kind === 'ask' && hasChoices(w.text);
     const body = rich(w.text, 'ask' + n, 'text-zinc-900 dark:text-zinc-100', w.kind === 'ask' ? n : 0)
-      + (w.files?.length ? `<div class="flex gap-2 overflow-x-auto">${thumbs(w.files, 'w' + n, 'h-48 w-24')}</div>` : '');
+      + (w.files?.length ? `<div class="flex gap-2 overflow-x-auto lg:scrollbar-thin">${thumbs(w.files, 'w' + n, 'h-48 w-24')}</div>` : '');
     return card(w.kind === 'block' ? 'alert' : 'ask', `${esc(whoName(w.by))} ${w.kind === 'block' ? 'is blocked and needs you' : 'asks you'}`, body,
       choices ? `<button data-act="reply" class="${SECOND} flex-1 lg:flex-none">${ico('reply', 'size-4')}Reply${KBD('R')}</button>${sendAnswerBtn(n, 'flex-[1.4] lg:flex-none', true)}`
         : `<button data-act="reply" class="${PRIMARY_BASE} ${NEED.reply.btn} flex-1 lg:flex-none">${ico('reply', 'size-4')}Reply${KBD('R')}</button>`,
@@ -2937,7 +2937,7 @@ function detailHtml(it) {
       ${hidden ? `<button data-act="more" data-n="${n}" class="-my-1 h-11 self-center rounded-lg px-3 text-sm font-medium text-blue-600 dark:text-blue-400">Show ${hidden} earlier</button>` : ''}
       ${thread.slice(hidden).map(x => msgHtml(x, '', 0, answerOf(thread, x))).join('')}</div>` : '';
   return `<div class="flex flex-col gap-6 px-5 pt-5 pb-10 lg:mx-auto lg:w-full lg:max-w-[46rem] lg:px-8 lg:pt-9">${[head, needsCard(it), desc,
-    files.length ? `<div class="flex items-end gap-2 overflow-x-auto">${thumbs(files, 'item' + n, 'h-24 w-16')}</div>` : '', docs, subs, talk].filter(Boolean).join('')}</div>`;
+    files.length ? `<div class="flex items-end gap-2 overflow-x-auto lg:scrollbar-thin">${thumbs(files, 'item' + n, 'h-24 w-16')}</div>` : '', docs, subs, talk].filter(Boolean).join('')}</div>`;
 }
 
 function renderDetail() {
@@ -3170,7 +3170,7 @@ function renderInputs() {
       <div ${long(r) ? `data-act="more-input" data-expand data-id="${r.id}"` : ''} class="mt-1.5 rounded-2xl rounded-tr-md bg-blue-50 px-3.5 py-2 text-[15px] leading-relaxed text-zinc-900 dark:bg-blue-400/10 dark:text-zinc-100 ${long(r) ? 'cursor-pointer' : ''}">
         ${r.text ? rich(r.text, 'in' + r.id, long(r) && !U.moreInputs.has(r.id) ? 'max-h-28 overflow-hidden' : '') : ''}
         ${long(r) ? `<button data-act="more-input" data-id="${r.id}" class="-my-2 flex h-11 items-center text-sm font-medium text-blue-600 dark:text-blue-400">${U.moreInputs.has(r.id) ? 'Less' : 'More'}</button>` : ''}
-        ${r.files.length ? `<div class="mt-2 flex items-end gap-2 overflow-x-auto">${thumbs(r.files, 'in' + r.id, 'size-11')}</div>` : ''}
+        ${r.files.length ? `<div class="mt-2 flex items-end gap-2 overflow-x-auto lg:scrollbar-thin">${thumbs(r.files, 'in' + r.id, 'size-11')}</div>` : ''}
       </div></div><div class="min-w-0 lg:pt-6">
       <div class="hidden items-center gap-1.5 text-[13px] font-semibold lg:flex ${tone}">${icon}${label}</div>
       ${note}${chips || acts ? `<div class="mt-1 flex flex-wrap items-center gap-x-1 gap-y-1.5">${chips}${acts}</div>` : ''}
@@ -3472,9 +3472,9 @@ function guideHtml(text, fold = false) {  // fold: the desktop page keeps the lo
     <div><p class="px-1 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">Or just send this to the agent:</p>
     ${box(short, false)}<button data-act="copy-text" data-text="${esc(short)}" class="${SECOND} mt-2.5 w-full">${ico('copy', 'size-4')}Copy</button></div>
     ${!fold ? `<div><p class="px-1 text-sm text-zinc-600 dark:text-zinc-300">What the agent reads:</p>
-    <pre class="mt-2 overflow-x-auto rounded-xl bg-zinc-50 p-3 text-xs leading-relaxed whitespace-pre-wrap dark:bg-zinc-950">${esc(text)}</pre></div>`
+    <pre class="mt-2 overflow-x-auto lg:scrollbar-thin rounded-xl bg-zinc-50 p-3 text-xs leading-relaxed whitespace-pre-wrap dark:bg-zinc-950">${esc(text)}</pre></div>`
     : `<details class="group"><summary class="flex h-9 cursor-pointer items-center gap-1 px-1 text-sm text-zinc-600 dark:text-zinc-300">${ico('right', 'size-4 transition-transform group-open:rotate-90')}What the agent reads</summary>
-    <pre class="mt-2 overflow-x-auto rounded-xl bg-zinc-50 p-3 text-xs leading-relaxed whitespace-pre-wrap dark:bg-zinc-950">${esc(text || 'Loading…')}</pre></details>`}</div>`;
+    <pre class="mt-2 overflow-x-auto lg:scrollbar-thin rounded-xl bg-zinc-50 p-3 text-xs leading-relaxed whitespace-pre-wrap dark:bg-zinc-950">${esc(text || 'Loading…')}</pre></details>`}</div>`;
 }
 const logHtml = lines => `<ol class="divide-y divide-zinc-100 font-mono text-xs leading-relaxed text-zinc-600 dark:divide-zinc-800 dark:text-zinc-300">${lines.map(l => {
   const u = (S.undo || []).find(u => l.startsWith(`#${u.seq} `));  // one of your changes that can still be put back (F80)
@@ -3506,7 +3506,7 @@ function showSources(n) {
   dialog(`Sources of ${code(n)}`, `<div class="flex flex-col gap-4">${it.srcs.map(id => byR.get(id)).filter(Boolean).map(r => `<div>
       <div class="px-1 text-xs text-zinc-500 dark:text-zinc-400"><span class="font-mono">${r.id}</span> · ${when(r.t)} · ${esc(who(r.by))}</div>
       <div class="mt-1.5 rounded-2xl rounded-tr-md bg-blue-50 px-3.5 py-2 text-[15px] leading-relaxed dark:bg-blue-400/10">${r.text ? rich(r.text, 'src' + r.id) : ''}
-      ${r.files.length ? `<div class="mt-2 flex items-end gap-2 overflow-x-auto">${thumbs(r.files, 'src' + r.id)}</div>` : ''}</div>
+      ${r.files.length ? `<div class="mt-2 flex items-end gap-2 overflow-x-auto lg:scrollbar-thin">${thumbs(r.files, 'src' + r.id)}</div>` : ''}</div>
       ${r.org ? `<div class="mt-1.5 flex items-center gap-1 px-1 text-xs text-zinc-500 dark:text-zinc-400">${ico('sparkle', 'size-3.5')}${esc(r.org.msg)}</div>` : ''}</div>`).join('') || '<p class="text-sm text-zinc-500">No sources.</p>'}</div>`);
 }
 
@@ -4167,7 +4167,7 @@ function movePicker(n) {
   walk(n);
   U.sheet = 'move'; U.moveFor = n;
   dialog('', `<div class="flex flex-col gap-2"><input id="moveQ" class="${FIELD} lg:h-9 lg:py-0 lg:text-sm" placeholder="Put ${code(n)} under…" autocomplete="off">
-    <div id="moveList" class="-mx-1 max-h-80 overflow-y-auto"></div></div>`, {pop: true, focus: false, head: `<span class="text-sm font-semibold">Move ${code(n)}</span>`});
+    <div id="moveList" class="-mx-1 max-h-80 overflow-y-auto lg:scrollbar-thin"></div></div>`, {pop: true, focus: false, head: `<span class="text-sm font-semibold">Move ${code(n)}</span>`});
   const draw = () => {
     const words = $('moveQ').value.trim().toLowerCase().split(/\s+/).filter(Boolean);
     const cands = S.items.filter(c => !below.has(c.n) && !c.merged_into && !c.archived && c.type !== 'rule' && words.every(w => hay(c).includes(w)))
