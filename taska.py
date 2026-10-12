@@ -2155,7 +2155,7 @@ const SECTION = (text, right = '') => `<div class="flex h-6 items-center justify
 let S = {rev: -1, boot: '', items: [], inputs: [], width: 1, org: {}};
 let offline = 0;  // consecutive failed polls
 const byN = new Map(), byR = new Map(), kids = new Map();
-const U = {doc: null, docNew: null, docEdit: false, docText: null, docSel: new Set(), docQuote: null, docCircle: false, docThreads: new Set(), docDrafts: {}, docScroll: {}, peek: null, moreInputs: new Set(), tab: 'items', q: '', type: 'all', when: 'all', status: 'all', pri: 'all', undoArch: null, folded: new Set(), moreMsgs: new Set(), subFor: null, choice: null, choiceLabels: {}, go: null, sheet: null, searching: false, open: null, scopeOff: false, editing: null, files: [], sending: false, lastSent: null, more: new Set(), tabOpen: {}};
+const U = {doc: null, docNew: null, docEdit: false, docText: null, docSel: new Set(), docQuote: null, docCircle: false, docThreads: new Set(), docDrafts: {}, docScroll: {}, peek: null, moreInputs: new Set(), tab: 'items', q: '', type: 'all', when: 'all', status: 'all', pri: 'all', undoArch: null, folded: new Set(), moreMsgs: new Set(), subFor: null, choice: null, choiceLabels: {}, go: null, sheet: null, searching: false, open: null, scopeOff: false, editing: null, files: [], sending: false, lastSent: null, more: new Set(), tabOpen: {}, editDrafts: {}};
 U.outbox = []; U.qn = 0;  // what you sent that hasn't reached the server yet (F85)
 const groups = new Map();
 let viewerGroup = [], viewerIdx = 0;
@@ -3101,6 +3101,14 @@ function showFilters() {
   </div>`, {extra: filtered() ? `<button data-act="reset" class="h-11 rounded-full px-3 text-sm font-semibold text-blue-600 dark:text-blue-400">Clear all</button>` : '', focus: false});
 }
 
+// Leaving the editor any way but Cancel keeps what you typed (B122); I on that item brings it back.
+function stashEdit() {
+  const n = U.editing, it = n && byN.get(n);
+  if (!it || !$('eTitle')) return;
+  const d = {title: $('eTitle').value, body: $('eBody').value, next: $('eNext').value};
+  if (d.title !== it.title || d.body !== it.body || d.next !== (it.next || '')) { U.editDrafts[n] = d; toast(`Your changes to ${code(n)} are kept: press I to go on`); }
+  else delete U.editDrafts[n];
+}
 function keepEdit() {
   const a = document.activeElement;
   const k = {focus: a && a.id && $('detailBody').contains(a) ? a.id : null, start: a?.selectionStart, end: a?.selectionEnd};
@@ -3607,7 +3615,7 @@ function showView() {
 function openItem(n, push = true) {
   if (!n || !byN.has(n)) return closeItem();
   if (!U.open && !desk()) U.listTop = [$('list').scrollTop, $('inputsView').scrollTop];
-  if (U.open !== n) { U.editing = null; U.subFor = null; }
+  if (U.open !== n) { stashEdit(); U.editing = null; U.subFor = null; }
   const fresh = U.open !== n;
   U.open = n; U.scopeOff = false;
   if (desk() && U.doc && !U.docEdit) { U.docScroll[U.doc] = $('detailBody').scrollTop; Object.assign(U, {doc: null, docReply: null, docSel: new Set(), docQuote: null, docCircle: false}); D.docKey = null; }  // another item: the document closes
@@ -3621,13 +3629,14 @@ function openItem(n, push = true) {
 
 function closeItem() {
   if (!U.open) return;
-  U.open = null; U.editing = null; U.subFor = null; BK.pull = false; D.full = false;
+  stashEdit(); U.open = null; U.editing = null; U.subFor = null; BK.pull = false; D.full = false;
   if (desk() && U.doc && !U.docEdit) { U.doc = null; U.docReply = null; D.docKey = null; }
   writeURL(false, null);
   render();
   if (!desk()) [$('list').scrollTop, $('inputsView').scrollTop] = U.listTop || [0, 0];
 }
 
+function clearSearch() { U.q = ''; $('q').value = ''; qSync(); writeURL(false); renderItems(); if (U.tab === 'inputs') renderInputs(); }
 function setTab(t) {
   const was = U.tab;
   U.asRule = null; if (t === 'inputs' && was !== 'inputs') U.inputsEnd = true;
@@ -3679,7 +3688,7 @@ const ACT = {
     try { await op({op: 'cfg', auto: on}); renderDrawerSettings(); toast(on ? 'Keep going is on: your agent works down the list' : 'Keep going is off: your agent stops after the current item'); } catch (_) {}
   },
   search: () => searchMode(!U.searching),
-  'search-clear': () => { U.q = ''; $('q').value = ''; $('q').focus(); qSync(); writeURL(false); renderItems(); if (U.tab === 'inputs') renderInputs(); },
+  'search-clear': () => { clearSearch(); $('q').focus(); },
   reply: () => { U.scopeOff = false; renderComposer(); $('text').focus(); },
   status: async b => {
     const n = Number(b.dataset.n);
@@ -3763,11 +3772,16 @@ const ACT = {
   goto: b => { closeDialog(); openItem(Number(b.dataset.n)); },
   more: b => { U.more.add(Number(b.dataset.n)); renderDetail(); },
   'more-input': b => { const id = b.dataset.id; if (U.moreInputs.has(id)) U.moreInputs.delete(id); else U.moreInputs.add(id); renderInputs(); if (desk() && D.compose) renderDetail(); },
-  edit: b => { closeDialog(); U.editing = Number(b.dataset.n); renderDetail(); $('eBody')?.focus(); },
-  'edit-cancel': () => { U.editing = null; renderDetail(); },
+  edit: b => {
+    closeDialog(); const n = U.editing = Number(b.dataset.n); renderDetail();
+    const d = U.editDrafts[n], body = $('eBody');
+    if (d && $('eTitle')) { $('eTitle').value = d.title; body.value = d.body; $('eNext').value = d.next; toast('Your unsaved changes are back'); }
+    if (body) { body.focus(); body.selectionStart = body.selectionEnd = body.value.length; }  // write on after the text, not before it
+  },
+  'edit-cancel': () => { delete U.editDrafts[U.editing]; U.editing = null; renderDetail(); },
   'edit-save': async b => {
     const n = Number(b.dataset.n);
-    try { await op({op: 'set', ref: code(n), f: {title: $('eTitle').value, body: $('eBody').value, next: $('eNext').value}}); U.editing = null; render(); toast('Saved'); } catch (_) {}
+    try { await op({op: 'set', ref: code(n), f: {title: $('eTitle').value, body: $('eBody').value, next: $('eNext').value}}); delete U.editDrafts[n]; U.editing = null; render(); toast('Saved'); } catch (_) {}
   },
   copy: b => { closeDialog(); copyItem(Number(b.dataset.n)); },
   'peek-set': async b => {
@@ -4570,8 +4584,7 @@ document.addEventListener('scroll', () => tipHide(), true);
 addEventListener('resize', () => tipHide());
 document.addEventListener('keydown', e => {
   if (!TIP.el && !TIP.t) return;
-  if (e.key === 'Escape' && TIP.el) { e.stopImmediatePropagation(); e.preventDefault(); }  // this Esc only closes the tooltip
-  tipHide();
+  tipHide();  // any key closes the tooltip; Esc also goes on to close what is below it (B122)
 }, true);
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
@@ -4582,17 +4595,18 @@ document.addEventListener('keydown', e => {
     if (U.doc && (U.docQuote || U.docSel.size || U.docReply)) return ACT['doc-unpick']();  // first Escape drops the selection
     if (desk() && U.doc && !U.docEdit && $('overlay').hidden && !/INPUT|TEXTAREA/.test(document.activeElement.tagName)) return closeDoc();  // then back to the item
     if (!$('overlay').hidden) return closeDialog();
-    if (U.editing) { U.editing = null; return renderDetail(); }
+    if (U.editing) { stashEdit(); U.editing = null; return renderDetail(); }
     if (desk()) {
       if (D.compose && document.activeElement === $('text') && !$('text').value.trim() && !U.files.length) return leaveCompose();  // nothing to lose
+      if (document.activeElement === $('q')) { if (U.q) clearSearch(); return $('q').blur(); }  // one Esc: no search, no filter (B122)
       if (/INPUT|TEXTAREA/.test(document.activeElement.tagName)) return document.activeElement.blur();
       if (D.sideOpen) { D.sideOpen = false; return render(); }
+      if (D.filters) { D.filters = false; return render(); }  // the panel you opened last goes first (B122)
       if (U.go) return ACT['go-end']();
       if (D.full) return fullWidth(false);
       if (D.page) return ACT['project-back']();
       if (D.compose) return leaveCompose();
-      if (D.filters) { D.filters = false; return render(); }
-      if (U.q) return ACT['search-clear']();
+      if (U.q) return clearSearch();
       if (U.open && U.tab !== 'inputs') return closeItem();  // last: back to nothing selected, the box a new input again (F119)
       return;
     }
