@@ -2191,12 +2191,21 @@ function when(t) {
   return d.toLocaleDateString('en-US', {month: 'short', day: 'numeric'});
 }
 
+const LAST = {pane: null};  // the pane you last acted in, for where feedback shows (B129)
+document.addEventListener('pointerdown', e => { LAST.pane = e.target.closest?.('#list, #detailView, #drawer, #inputsView, #projectView, #foot') || LAST.pane; }, true);
+document.addEventListener('keydown', e => { if (desk() && !/INPUT|TEXTAREA/.test(document.activeElement?.tagName)) LAST.pane = $('detailView'); }, true);  // keys act on the open item
 function toast(text, undo) {  // with `undo`, the toast carries an Undo button for a few seconds
   const el = $('toast');
   el.innerHTML = `<span class="min-w-0 truncate">${esc(text)}</span>${undo ? '<button class="relative h-8 shrink-0 rounded-full bg-white/15 px-3 text-sm font-semibold text-white after:absolute after:-inset-1.5 dark:bg-zinc-900/10 dark:text-zinc-900">Undo</button>' : ''}`;
   el.classList.toggle('pointer-events-none', !undo);
-  const up = !$('overlay').hidden && !desk();  // a sheet or the focus card is open: say it at the top, clear of its buttons (the desktop says it bottom left)
+  const up = !$('overlay').hidden && !desk();  // a sheet or the focus card is open: say it at the top, clear of its buttons
   el.classList.toggle('bottom-28', !up); el.classList.toggle('top-[calc(env(safe-area-inset-top)+0.75rem)]', up);
+  if (desk()) {  // B129: on the desktop it shows in the pane you acted in, above the box if the box is there
+    const pane = [LAST.pane, $('detailView'), $('inputsView'), $('projectView')].find(p => p?.isConnected && p.offsetParent), r = pane?.getBoundingClientRect();
+    const f = $('foot').getBoundingClientRect(), above = r && f.height < 300 && f.left < r.right && f.right > r.left;
+    if (r) { el.style.left = `${r.left + r.width / 2}px`; el.style.bottom = `${above ? innerHeight - f.top + 12 : 20}px`; }
+    el.classList.toggle('lg:-translate-x-1/2', !!r);
+  } else { el.style.left = el.style.bottom = ''; el.classList.remove('lg:-translate-x-1/2'); }
   if (undo) el.querySelector('button').onclick = () => { el.hidden = true; undo(); };
   el.hidden = false;
   clearTimeout(toast.t); toast.t = setTimeout(() => { el.hidden = true; }, undo ? 5000 : 2600);
@@ -3326,7 +3335,9 @@ async function moveInput(rid) {
 }
 
 function renderFeedback() {
-  const fb = $('feedback'), r = U.lastSent && byR.get(U.lastSent), q = U.outbox[0];
+  const fb = $('feedback'), q = U.outbox[0];
+  let r = U.lastSent && byR.get(U.lastSent);
+  if (r && (r.scope && byN.has(r.scope) ? code(r.scope) : null) !== (scopeN() ? code(scopeN()) : null)) r = null;  // B129: only where it went
   const link = (act, label, attrs) => `<button data-act="${act}" ${attrs} class="-my-2 h-11 shrink-0 rounded-full px-2 font-semibold text-blue-600 dark:text-blue-400">${label}</button>`;
   fb.hidden = !r && !q;
   if (q) {  // still on its way (F85): say so, and never lose it
@@ -3517,7 +3528,14 @@ function dialog(title, html, {aboveComposer = false, focus = true, tall = false,
   for (const c of ['lg:items-start', 'lg:justify-end', 'lg:bg-transparent', 'dark:lg:bg-transparent', 'lg:pt-[3.75rem]', 'lg:pr-3']) $('overlay').classList.toggle(c, pop && desk());
   for (const c of ['lg:w-[24rem]', 'lg:max-h-[80dvh]', 'lg:rounded-2xl', 'lg:ring-1', 'lg:ring-zinc-900/10', 'dark:lg:ring-white/10']) $('dlg').classList.toggle(c, pop && desk());
   $('overlay').style.bottom = aboveComposer ? $('composer').parentElement.offsetHeight + 'px' : '';  // keep the input box usable
+  $('overlay').style.paddingLeft = $('overlay').style.paddingTop = ''; $('overlay').classList.remove('lg:justify-start');  // set again by popAt
   if (focus) $('dlgClose').focus({preventScroll: true});
+}
+function popAt(x, y) {  // B129: a menu opened by right-click sits at the pointer, kept on screen
+  const o = $('overlay'), d = $('dlg');
+  o.classList.remove('lg:justify-end', 'lg:pt-[3.75rem]', 'lg:pr-3'); o.classList.add('lg:justify-start');
+  o.style.paddingLeft = `${Math.max(8, Math.min(x, innerWidth - d.offsetWidth - 8))}px`;
+  o.style.paddingTop = `${Math.max(8, Math.min(y, innerHeight - d.offsetHeight - 8))}px`;
 }
 const closeDialog = () => {
   const edit = U.docEdit;
@@ -4460,7 +4478,7 @@ document.addEventListener('click', e => {  // a double click: the first click re
 });
 document.addEventListener('contextmenu', e => {
   const r = desk() && e.target.closest('#list [data-act="open"][data-n]');
-  if (r) { e.preventDefault(); openItem(Number(r.dataset.n)); itemMenuDesk(Number(r.dataset.n)); }
+  if (r) { e.preventDefault(); openItem(Number(r.dataset.n)); itemMenuDesk(Number(r.dataset.n)); popAt(e.clientX, e.clientY); }
 });
 
 // ---------------------------------------------------------------- projects drawer
@@ -4744,8 +4762,9 @@ $('text').addEventListener('paste', e => { const files = [...(e.clipboardData?.f
 $('foot').addEventListener('dragover', e => e.preventDefault());  // on the New input page #foot is the whole pane
 $('foot').addEventListener('drop', e => { e.preventDefault(); if (e.dataTransfer.files.length) addFiles([...e.dataTransfer.files]); });
 $('fileInput').addEventListener('change', e => { addFiles([...e.target.files]); e.target.value = ''; });
-document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
-window.addEventListener('focus', refresh);
+const comeBack = () => { refresh(); checkOthers.t = 0; checkOthers(); };  // B129: the sidebar is fresh when you come back
+document.addEventListener('visibilitychange', () => { if (!document.hidden) comeBack(); });
+window.addEventListener('focus', comeBack);
 window.addEventListener('online', refresh);
 // The sheet sits above the input box; follow the box whenever it changes size (styles loading, keyboard, scope line).
 new ResizeObserver(() => { if (U.peek && !$('overlay').hidden) $('overlay').style.bottom = $('composer').parentElement.offsetHeight + 'px'; })
