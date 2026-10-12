@@ -2216,7 +2216,13 @@ async function load() {
   for (const it of S.items) byN.set(it.n, it);
   for (const r of S.inputs) byR.set(r.id, r);
   for (const it of S.items) if (it.parent && !it.merged_into) { if (!kids.has(it.parent)) kids.set(it.parent, []); kids.get(it.parent).push(it); }
-  if (U.open && byN.get(U.open)?.merged_into) U.open = byN.get(U.open).merged_into;
+  if (U.open && byN.get(U.open)?.merged_into) {  // the item you look at was merged: say so, and your draft goes along (B118)
+    const from = U.open, to = byN.get(from).merged_into;
+    U.open = to;
+    if (U.draftKey === code(from) && !draftStore()[code(to)]) { draftStore(all => delete all[code(from)]); U.draftKey = code(to); saveDraft(); }
+    toast(`${code(from)} was merged into ${code(to)}`);
+    writeURL(false);
+  }
   render();
 }
 
@@ -3190,6 +3196,7 @@ const scopeN = () => (U.peek && byN.has(U.peek)) ? U.peek : (U.open && !U.scopeO
 const canRecord = () => !!(window.isSecureContext && navigator.mediaDevices?.getUserMedia && window.MediaRecorder);
 
 function renderComposer() {
+  if (S.project && draftKey() !== U.draftKey) swapDraft(draftKey());
   const n = scopeN(), sc = $('scope');
   // On the desktop the line above the box always starts with the project (B78): "[M] my-app ›".
   const proj = desk() && S.project ? `<span class="mr-0.5 flex shrink-0 items-center gap-1.5 font-semibold text-zinc-800 dark:text-zinc-100">${projTile(S.project, 'size-[18px] rounded-[5px] text-[10px]')}<span class="max-w-40 truncate">${esc(S.project)}</span><span class="font-normal text-zinc-400 dark:text-zinc-500">›</span></span>` : '';
@@ -3312,7 +3319,7 @@ async function send() {
   U.outbox.push({id: 'q' + ++U.qn, text, files: U.files, scope: n ? code(n) : null, from: U.tab === 'rules' && !U.open ? 'rules' : null});
   $('text').value = ''; U.files = []; saveDraft(); grow();
   if (U.peek && U.go && n === U.peek) advance(U.peek);  // going through: your reply settles this one
-  else if (desk() && U.go && U.open && !U.scopeOff && U.go.list.includes(U.open)) advanceDesk(U.open, 'Replied');
+  else if (desk() && U.go && U.open && !U.scopeOff && U.go.list.includes(U.open)) { $('text').blur(); advanceDesk(U.open, 'Replied'); }  // B118
   render(); flushOutbox();
   if (desk() && D.compose) $('foot').scrollTop = 0;
 }
@@ -3406,7 +3413,26 @@ async function finishRec(andSend) {
 
 async function cancelRec() { await stopRec(); toast('Recording discarded. Your text and images are still here.'); }
 
-function saveDraft() { try { localStorage.setItem('taska.draft', $('text').value); } catch (_) {} }
+// A draft belongs to what it is written to (B118): an item (a reply, or a comment on one of its documents), a new
+// input, a new rule. Each project keeps them by target in this browser; when the box changes target, the words and
+// files stay with the old target and the new target's own draft comes back. So unsent words never go elsewhere.
+const draftKey = () => { const dt = docTarget(), n = scopeN(); return dt ? code(dt.d.n) : n ? code(n) : U.tab === 'rules' && !U.open ? 'rule' : 'new'; };  // a comment on a document shares its item's draft
+function draftStore(change) {
+  const key = 'taska.drafts.' + S.project;
+  try {
+    const all = JSON.parse(localStorage.getItem(key) || '{}');
+    if (U.oldDraft) { all.new = all.new || U.oldDraft; U.oldDraft = ''; change ||= () => {}; }  // the one draft from before goes to New input
+    if (change) { change(all); localStorage.setItem(key, JSON.stringify(all)); }
+    return all;
+  } catch (_) { return {}; }
+}
+function saveDraft() { const k = U.draftKey, v = $('text').value; if (k) draftStore(all => { if (v.trim()) all[k] = v; else delete all[k]; }); }
+function swapDraft(key) {
+  if (U.draftKey) { saveDraft(); U.parked[U.draftKey] = U.files; }
+  const t = $('text'); t.value = draftStore()[key] || ''; t.selectionStart = t.selectionEnd = t.value.length;  // the caret after your words
+  U.files = U.parked[key] || []; delete U.parked[key];
+  U.draftKey = key; grow();
+}
 
 // ---------------------------------------------------------------- dialogs + viewer
 
@@ -4657,7 +4683,8 @@ $('dlgClose').innerHTML = CLOSE_X;
 $('vClose').innerHTML = ico('x');
 $('backBtn').innerHTML = ico('left', 'size-6');
 $('itemMenuBtn').innerHTML = ico('more', 'size-6');
-try { $('text').value = localStorage.getItem('taska.draft') || ''; } catch (_) {}
+U.draftKey = null; U.parked = {};
+try { U.oldDraft = localStorage.getItem('taska.draft') || ''; localStorage.removeItem('taska.draft'); } catch (_) {}
 $('projName').textContent = decodeURIComponent(P.split('/')[2] || 'Taska');  // right away, before the data arrives
 grow();
 renderComposer();  // the big button's icon, before data arrives
