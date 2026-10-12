@@ -2034,6 +2034,7 @@ let S = {rev: -1, boot: '', items: [], inputs: [], width: 1, org: {}};
 let offline = 0;  // consecutive failed polls
 const byN = new Map(), byR = new Map(), kids = new Map();
 const U = {doc: null, docNew: null, docEdit: false, docText: null, docSel: new Set(), docQuote: null, docCircle: false, docThreads: new Set(), docDrafts: {}, docScroll: {}, peek: null, moreInputs: new Set(), tab: 'items', q: '', type: 'all', when: 'all', status: 'all', pri: 'all', undoArch: null, folded: new Set(), moreMsgs: new Set(), subFor: null, choice: null, choiceLabels: {}, go: null, sheet: null, searching: false, open: null, scopeOff: false, editing: null, files: [], sending: false, lastSent: null, more: new Set()};
+U.outbox = []; U.qn = 0;  // what you sent that hasn't reached the server yet (F85)
 const groups = new Map();
 let viewerGroup = [], viewerIdx = 0;
 // The desktop layout (I70, design A "three panes"): 1024px and wider. Below that the phone layout, untouched.
@@ -2150,7 +2151,7 @@ setInterval(() => { if (S.agents) renderAgent(); }, 30000);  // "2m" keeps count
 
 // Taska was updated: load the new page once nothing would be lost. Busy now? The next poll tries again.
 function freshen() {
-  const busy = R.rec || U.sending || U.files.length || U.editing || (U.open && !desk()) || D.full || U.doc || U.undoArch || (document.activeElement === $('text') && $('text').value.trim())
+  const busy = R.rec || U.outbox.length || U.files.length || U.editing || (U.open && !desk()) || D.full || U.doc || U.undoArch || (document.activeElement === $('text') && $('text').value.trim())
     || !$('overlay').hidden || !$('viewer').hidden || DR.open || U.searching;
   if (!busy) location.reload();
 }
@@ -2937,8 +2938,9 @@ function renderInputs() {
       <div class="hidden items-center gap-1.5 text-[13px] font-semibold lg:flex ${tone}">${icon}${label}</div>
       ${note}${chips || acts ? `<div class="mt-1 flex flex-wrap items-center gap-x-1 gap-y-1.5">${chips}${acts}</div>` : ''}
     </div></article>`;
-  }).join('') : EMPTY(words.length ? 'No matching inputs' : 'No inputs yet.');
-  if (desk() && rows.length) $('inputsView').innerHTML = `<div class="mx-auto max-w-5xl px-8 pb-6"><div class="sticky top-0 z-10 grid grid-cols-[minmax(0,1fr)_20rem] gap-10 border-b border-zinc-200 bg-white pt-5 pb-2 text-[11px] font-semibold tracking-wider text-zinc-400 uppercase dark:border-zinc-800 dark:bg-zinc-950"><span>You said</span><span>What became of it</span></div>${$('inputsView').innerHTML}</div>`;
+  }).join('') : U.outbox.length ? '' : EMPTY(words.length ? 'No matching inputs' : 'No inputs yet.');
+  if (U.outbox.length && !words.length) $('inputsView').innerHTML = outboxRows() + $('inputsView').innerHTML;
+  if (desk() && (rows.length || U.outbox.length)) $('inputsView').innerHTML = `<div class="mx-auto max-w-5xl px-8 pb-6"><div class="sticky top-0 z-10 grid grid-cols-[minmax(0,1fr)_20rem] gap-10 border-b border-zinc-200 bg-white pt-5 pb-2 text-[11px] font-semibold tracking-wider text-zinc-400 uppercase dark:border-zinc-800 dark:bg-zinc-950"><span>You said</span><span>What became of it</span></div>${$('inputsView').innerHTML}</div>`;
 }
 
 // ---------------------------------------------------------------- composer
@@ -2962,17 +2964,16 @@ function renderComposer() {
   const d = $('drafts');
   d.hidden = !U.files.length;
   d.innerHTML = U.files.map((f, i) => `<div class="relative shrink-0">${(f.mime || '').startsWith('audio/')
-      ? `<div class="flex h-16 items-center gap-2 rounded-xl border border-zinc-200 px-3 text-xs text-zinc-600 dark:border-zinc-700 dark:text-zinc-300">${ico('mic', 'size-4')}<span class="font-mono tabular-nums">${clock(f.ms || 0)}</span><span class="font-semibold ${f.transcribing ? 'animate-pulse text-blue-600 dark:text-blue-400' : f.tr ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-500'}">${f.transcribing ? (U.sendWhenReady ? 'Sends when transcribed…' : 'Transcribing…') : f.tr ? 'Transcribed' : 'No transcript, audio still sent'}</span></div>`
+      ? `<div class="flex h-16 items-center gap-2 rounded-xl border border-zinc-200 px-3 text-xs text-zinc-600 dark:border-zinc-700 dark:text-zinc-300">${ico('mic', 'size-4')}<span class="font-mono tabular-nums">${clock(f.ms || 0)}</span><span class="font-semibold ${f.transcribing ? 'animate-pulse text-blue-600 dark:text-blue-400' : f.tr ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-500'}">${f.transcribing ? 'Transcribing…' : f.tr ? 'Transcribed' : 'No transcript, audio still sent'}</span></div>`
       : (f.mime || '').startsWith('image/')
       ? `<img src="${f.preview || P + 'f/' + encodeURIComponent(f.f)}" alt="${esc(f.name)}" class="size-16 rounded-xl border border-zinc-200 object-cover dark:border-zinc-700 ${f.f ? '' : 'opacity-40'}">`
       : `<div class="flex h-16 w-28 items-center gap-1 rounded-xl border border-zinc-200 px-2 text-xs dark:border-zinc-700 ${f.f ? '' : 'opacity-40'}">${ico('file', 'size-4')}<span class="line-clamp-2 break-all">${esc(f.name)}</span></div>`}
     <button data-act="unfile" data-i="${i}" aria-label="Remove ${esc(f.name)}" class="absolute -top-3.5 -right-3.5 grid size-11 place-items-center"><span class="grid size-6 place-items-center rounded-full bg-zinc-900 text-white ring-2 ring-white dark:bg-zinc-100 dark:text-zinc-900 dark:ring-zinc-900">${ico('x', 'size-3.5', '2.5')}</span></button></div>`).join('');
-  const waitingVoice = U.files.some(f => f.transcribing);
-  const empty = !$('text').value.trim() && !U.files.length, voice = empty && !R.rec && !U.sending && canRecord();
+  const empty = !$('text').value.trim() && !U.files.length, voice = empty && !R.rec && canRecord();
   const sb = $('sendBtn'), icon = voice ? 'mic' : 'up';
   if (sb.dataset.icon !== icon) { sb.dataset.icon = icon; sb.innerHTML = ico(icon, voice ? 'size-6' : 'size-5'); }
   sb.dataset.act = voice ? 'mic' : 'send';
-  sb.disabled = !voice && !R.rec && !waitingVoice && (U.sending || U.files.some(f => !f.f) || empty);
+  sb.disabled = !voice && !R.rec && empty;
   sb.setAttribute('aria-label', voice ? 'Record a voice note' : R.rec ? 'Stop and send' : 'Send (Shift + Enter)');
   for (const id of ['attachBtn', 'text']) $(id).hidden = !!R.rec;
   $('micBtn').hidden = !!R.rec || voice || !canRecord();
@@ -2980,6 +2981,11 @@ function renderComposer() {
   if (U.peek && !$('overlay').hidden) $('overlay').style.bottom = $('composer').parentElement.offsetHeight + 'px';  // sheet stays above the input box
 }
 
+const outboxLine = q => q.text.split('\n')[0] || (q.files.some(f => (f.mime || '').startsWith('audio/')) ? 'Voice note' : `${q.files.length} file${q.files.length === 1 ? '' : 's'}`);
+// What is still on its way, shown first where your inputs are listed (F85).
+const outboxRows = () => [...U.outbox].reverse().map(q => `<article class="border-b border-zinc-100 px-4 py-2 lg:px-0 lg:py-4 dark:border-zinc-800/70">
+    <div class="flex min-h-5 items-center gap-2 text-xs ${q.failed ? 'text-red-600 dark:text-red-400' : 'text-blue-600 dark:text-blue-400'}">${q.failed ? ico('alert', 'size-3.5', '2') : '<span class="size-1.5 animate-pulse rounded-full bg-blue-500 dark:bg-blue-400"></span>'}<span class="font-medium">${q.failed ? 'Not sent' : q.files.some(f => f.transcribing) ? 'Transcribing…' : q.files.some(f => !f.f && !f.failed) ? 'Uploading…' : 'Sending…'}</span>${q.scope ? `<span class="min-w-0 truncate text-zinc-500 dark:text-zinc-400">↳ ${esc(q.scope)}</span>` : ''}</div>
+    <div class="mt-1.5 rounded-2xl rounded-tr-md bg-blue-50 px-3.5 py-2 text-[15px] leading-relaxed whitespace-pre-wrap text-zinc-900 opacity-70 lg:max-w-[calc(100%-22.5rem)] dark:bg-blue-400/10 dark:text-zinc-100">${esc(q.text || outboxLine(q))}${q.files.some(f => f.preview) ? `<div class="mt-2 flex gap-2">${q.files.filter(f => f.preview).map(f => `<img src="${f.preview}" alt="" class="size-11 rounded-lg border border-zinc-200 object-cover dark:border-zinc-700">`).join('')}</div>` : ''}</div></article>`).join('');
 const otherProjects = () => (DR.list || []).filter(p => p.name !== S.project);
 // An input sent to the wrong project goes to another one (F79). It is organized again there; what the organizer
 // made of it here is undone. Items your agent made from it stay, and the dialog says so.
@@ -2997,10 +3003,18 @@ async function moveInput(rid) {
 }
 
 function renderFeedback() {
-  const fb = $('feedback'), r = U.lastSent && byR.get(U.lastSent);
-  fb.hidden = !r;
-  if (!r) return;
+  const fb = $('feedback'), r = U.lastSent && byR.get(U.lastSent), q = U.outbox[0];
   const link = (act, label, attrs) => `<button data-act="${act}" ${attrs} class="-my-2 h-11 shrink-0 rounded-full px-2 font-semibold text-blue-600 dark:text-blue-400">${label}</button>`;
+  fb.hidden = !r && !q;
+  if (q) {  // still on its way (F85): say so, and never lose it
+    const more = U.outbox.length > 1 ? ` (+${U.outbox.length - 1})` : '';
+    clearTimeout(renderFeedback.t);
+    fb.innerHTML = q.failed
+      ? `${ico('alert', 'size-4 text-red-600 dark:text-red-400', '2')}<span class="min-w-0 flex-1 truncate text-red-600 dark:text-red-400">Not sent${more}: ${esc(outboxLine(q))}</span>${link('outbox-retry', 'Retry', '')}${link('outbox-edit', 'Edit', '')}`
+      : `<span class="size-2 shrink-0 animate-pulse rounded-full bg-blue-500 dark:bg-blue-400"></span><span class="min-w-0 flex-1 truncate">${q.files.some(f => f.transcribing) ? 'Transcribing, then sending' : q.files.some(f => !f.f && !f.failed) ? 'Uploading, then sending' : 'Sending'}${more}: ${esc(outboxLine(q))}</span>`;
+    return;
+  }
+  if (!r) return;
   let html;
   const move = otherProjects().length ? link('move-input', 'Move…', `data-id="${r.id}"`) : '';  // sent to the wrong project? (F79)
   if (r.moved) html = `${ico('arrow', 'size-4 text-zinc-500', '2')}<span class="min-w-0 flex-1 truncate">Moved ${r.id} to ${esc(r.moved.to)} as ${esc(r.moved.as)}</span><a href="/p/${encodeURIComponent(r.moved.to)}/" class="-my-2 flex h-11 shrink-0 items-center rounded-full px-2 font-semibold text-blue-600 dark:text-blue-400">Open</a>`;
@@ -3023,31 +3037,50 @@ function grow() {  // empty = one line from the classes; measuring a placeholder
 async function addFiles(list) {
   for (const file of list) {
     const f = {name: file.name || 'paste.png', mime: file.type || 'application/octet-stream'};
+    let settle; f.done = new Promise(r => { settle = r; });  // a sent input waits for its files, not the box (F85)
     if (f.mime.startsWith('image/')) f.preview = URL.createObjectURL(file);
     U.files.push(f); renderComposer();
     try {
       const r = await fetch(P + 'api/file?name=' + encodeURIComponent(f.name), {method: 'POST', headers: {'Content-Type': f.mime}, body: file});
       if (!r.ok) throw new Error();
       Object.assign(f, await r.json());
-    } catch (_) { U.files.splice(U.files.indexOf(f), 1); toast('Upload failed: ' + f.name); }
-    renderComposer();
+    } catch (_) { const i = U.files.indexOf(f); if (i >= 0) U.files.splice(i, 1); f.failed = true; toast('Upload failed: ' + f.name); }
+    settle(); renderComposer();
   }
 }
 
+// Sending never holds the box (F85): what you wrote goes into the outbox, the box is empty at once for the next
+// thought, and the outbox sends in order as soon as each input's uploads and transcripts are in.
 async function send() {
   if (R.rec) return finishRec(true);
-  if (U.files.some(f => f.transcribing)) { U.sendWhenReady = true; return renderComposer(); }  // sent once the transcript is in
-  const text = $('text').value.trim();
-  if (U.sending || (!text && !U.files.length) || U.files.some(f => !f.f || f.transcribing)) return;
-  U.sending = true; renderComposer();
-  try {
-    const d = await op({op: 'input', text, scope: scopeN() ? code(scopeN()) : null, ...(U.tab === 'rules' && !U.open ? {from: 'rules'} : {}), files: U.files.map(({f, name, mime, size, tr}) => ({f, name, mime, size, ...(tr ? {tr} : {})}))});
-    U.lastSent = d.res[0].split(' ')[1];
-    $('text').value = ''; U.files = []; saveDraft(); grow();
-    if (U.peek && U.go && scopeN() === U.peek) advance(U.peek);  // going through: your reply settles this one
-    else if (desk() && U.go && U.open && !U.scopeOff && U.go.list.includes(U.open)) advanceDesk(U.open, 'Replied');
-  } catch (_) {} finally { U.sending = false; render(); }
+  const text = $('text').value.trim(), n = scopeN();
+  if (!text && !U.files.length) return;
+  U.outbox.push({id: 'q' + ++U.qn, text, files: U.files, scope: n ? code(n) : null, from: U.tab === 'rules' && !U.open ? 'rules' : null});
+  $('text').value = ''; U.files = []; saveDraft(); grow();
+  if (U.peek && U.go && n === U.peek) advance(U.peek);  // going through: your reply settles this one
+  else if (desk() && U.go && U.open && !U.scopeOff && U.go.list.includes(U.open)) advanceDesk(U.open, 'Replied');
+  render(); flushOutbox();
 }
+async function flushOutbox() {
+  if (flushOutbox.busy) return;
+  flushOutbox.busy = true;
+  try {
+    while (U.outbox.length && !U.outbox[0].failed) {
+      const job = U.outbox[0];
+      await Promise.all(job.files.map(f => f.done));
+      const files = job.files.filter(f => f.f && !f.failed);
+      let text = job.text;
+      for (const f of files) if (f.tr && !text.includes(f.tr)) text = (text ? text + '\n' : '') + f.tr;  // a transcript that came after you sent
+      if (!text && !files.length) { U.outbox.shift(); continue; }
+      job.sending = true; renderFeedback();
+      try {
+        const d = await op({op: 'input', text, scope: job.scope, ...(job.from ? {from: job.from} : {}), files: files.map(({f, name, mime, size, tr}) => ({f, name, mime, size, ...(tr ? {tr} : {})}))});
+        U.lastSent = d.res[0].split(' ')[1]; U.outbox.shift();
+      } catch (_) { job.failed = true; job.sending = false; }
+    }
+  } finally { flushOutbox.busy = false; render(); }
+}
+addEventListener('beforeunload', e => { if (U.outbox.length) { e.preventDefault(); e.returnValue = ''; } });  // unsent words
 
 // ---------------------------------------------------------------- voice
 
@@ -3099,23 +3132,21 @@ async function finishRec(andSend) {
   if (ms < 800 || !blob.size) return toast('Too short, discarded');
   const ext = blob.type.includes('mp4') ? 'm4a' : blob.type.includes('ogg') ? 'ogg' : 'webm';
   const f = {name: `voice ${clock(ms).replace(':', '-')}.${ext}`, mime: blob.type, ms, transcribing: true};
+  let settle; f.done = new Promise(r => { settle = r; });
+  const scope = scopeN() ? '&scope=' + code(scopeN()) : '';
   U.files.push(f); renderComposer();
+  if (andSend) send();  // it goes out with its transcript; the box is free meanwhile (F85)
   try {
-    const scope = scopeN() ? '&scope=' + code(scopeN()) : '';
     const r = await fetch(`${P}api/file?name=${encodeURIComponent(f.name)}&transcribe=1${scope}`, {method: 'POST', headers: {'Content-Type': blob.type || 'audio/webm'}, body: blob});
     if (!r.ok) throw new Error();
     Object.assign(f, await r.json());
-  } catch (_) { U.files.splice(U.files.indexOf(f), 1); f.transcribing = false; renderComposer(); return toast('Could not upload the recording'); }
-  f.transcribing = false;
-  if (f.tr) {
-    const t = $('text');
-    t.value = (t.value.trim() ? t.value.trimEnd() + '\n' : '') + f.tr;
-    grow(); saveDraft();
-  } else toast('Transcription failed. The audio is kept and can be sent as is.');
-  const go = andSend || U.sendWhenReady;
-  U.sendWhenReady = false;
-  renderComposer();
-  if (go) send();
+  } catch (_) { const i = U.files.indexOf(f); if (i >= 0) U.files.splice(i, 1); f.failed = true; toast('Could not upload the recording'); }
+  f.transcribing = false; settle();
+  if (!f.failed && U.files.includes(f)) {  // still a draft: its words go into the box
+    if (f.tr) { const t = $('text'); t.value = (t.value.trim() ? t.value.trimEnd() + '\n' : '') + f.tr; grow(); saveDraft(); }
+    else toast('Transcription failed. The audio is kept and can be sent as is.');
+  } else if (!f.failed && !f.tr) toast('Transcription failed. The audio was sent as is.');
+  renderComposer(); renderFeedback();
 }
 
 async function cancelRec() { await stopRec(); toast('Recording discarded. Your text and images are still here.'); }
@@ -3547,6 +3578,12 @@ const ACT = {
     U.lastSent = b.dataset.id; await load(); toast(`Undid the organizer's changes for ${b.dataset.id}`);
   },
   'move-input': b => moveInput(b.dataset.id),
+  'outbox-retry': () => { for (const q of U.outbox) q.failed = false; renderFeedback(); flushOutbox(); },
+  'outbox-edit': () => {  // the unsent input back in the box, as long as the box is empty
+    const q = U.outbox[0];
+    if ($('text').value.trim() || U.files.length) return toast('Send or clear what is in the box first');
+    U.outbox.shift(); $('text').value = q.text; U.files = q.files; grow(); saveDraft(); render(); $('text').focus();
+  },
   'move-input-to': async b => {
     const id = b.dataset.id, to = b.dataset.to;
     b.disabled = true;
@@ -3669,7 +3706,7 @@ function composePane() {
     <p class="mt-2 text-[15px] leading-relaxed text-zinc-600 dark:text-zinc-300">For <span class="font-semibold text-zinc-900 dark:text-zinc-100">${esc(S.project)}</span>: a bug, an idea, a task, a screenshot or a voice note. ${S.org?.on ? 'The organizer turns it into items, or adds it to the ones that already exist.' : 'Your coding agent turns it into items.'}</p>
     <p class="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-[13px] text-zinc-500 dark:text-zinc-400">${tip('⌘↵', 'Send')}${canRecord() ? tip('V', 'Voice note') : ''}<span>Paste or drop screenshots</span>${tip('Esc', back ? 'Back to ' + code(D.prev) : 'Close')}</p>
     ${recent.length ? `<h2 class="mt-10 text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">You said lately</h2>
-      <div class="mt-1 divide-y divide-zinc-100 dark:divide-zinc-800/70">${recent.map(recentInput).join('')}</div>
+      <div class="mt-1 divide-y divide-zinc-100 dark:divide-zinc-800/70">${outboxRows()}${recent.map(recentInput).join('')}</div>
       <button data-act="tab" data-tab="inputs" class="mt-1 flex h-9 items-center text-sm font-medium text-blue-600 hover:underline dark:text-blue-400">All inputs${KBD('G N')}</button>` : ''}
   </div>`;
 }
