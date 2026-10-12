@@ -1830,7 +1830,8 @@ PAGE = r'''<!doctype html>
 <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3/dist/index.global.js" integrity="sha384-2ql948lIdLcGEE0/qxNiudyTjgauA3RDJERu5xW75kFCvSl5a9odyQYCb6tEjnmB" crossorigin="anonymous"></script>
 </head>
 <body class="h-dvh overflow-hidden bg-white text-zinc-900 antialiased lg:flex dark:bg-zinc-950 dark:text-zinc-100">
-<nav id="drawer" hidden aria-label="Projects" class="fixed top-0 left-0 flex h-dvh w-80 max-w-[85vw] flex-col bg-zinc-100 pt-[env(safe-area-inset-top)] pb-[max(1rem,env(safe-area-inset-bottom))] lg:z-40 lg:w-60 lg:max-w-none lg:shrink-0 lg:border-r lg:border-zinc-200 lg:bg-zinc-50 lg:pb-0 2xl:w-64 dark:bg-zinc-900 dark:lg:border-zinc-800">
+<nav id="drawer" hidden aria-label="Projects" class="fixed top-0 left-0 flex h-dvh w-80 max-w-[85vw] flex-col bg-zinc-100 pt-[env(safe-area-inset-top)] pb-[max(1rem,env(safe-area-inset-bottom))] lg:z-40 lg:w-[var(--side-w,15rem)] lg:max-w-none lg:shrink-0 lg:border-r lg:border-zinc-200 lg:bg-zinc-50 lg:pb-0 2xl:w-[var(--side-w,16rem)] dark:bg-zinc-900 dark:lg:border-zinc-800">
+  <div data-grip="side" title="Drag to resize · double-click for the default" class="absolute inset-y-0 right-0 z-10 hidden w-2 translate-x-1/2 cursor-col-resize hover:bg-blue-500/30 lg:block"></div>
   <div class="flex h-14 shrink-0 items-center gap-2 px-5 lg:pr-2 lg:pl-4"><span id="drawerLogo" class="text-blue-600 dark:text-blue-400"></span><span class="text-xl font-semibold tracking-tight lg:text-[19px]">Taska</span>
     <button data-act="side" id="sideBtn" title="Hide the sidebar · [" aria-label="Hide the sidebar" class="ml-auto hidden size-8 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-200/70 lg:grid dark:text-zinc-400 dark:hover:bg-zinc-800"></button></div>
   <button data-act="new-input" id="newInputBtn" title="New input to the project · C" aria-pressed="false" class="mx-2.5 mb-3 hidden h-9 shrink-0 items-center gap-2 rounded-xl bg-white px-3 text-sm font-medium text-zinc-800 shadow-sm ring-1 ring-zinc-900/10 hover:bg-zinc-50 lg:flex aria-pressed:bg-blue-50 aria-pressed:text-blue-700 aria-pressed:ring-blue-500/40 dark:bg-zinc-800 dark:text-zinc-100 dark:ring-white/10 dark:hover:bg-zinc-700 dark:aria-pressed:bg-blue-400/10 dark:aria-pressed:text-blue-300 dark:aria-pressed:ring-blue-400/40"></button>
@@ -1846,7 +1847,7 @@ PAGE = r'''<!doctype html>
 </nav>
 <nav id="rail" hidden aria-label="Projects and views" class="z-30 h-dvh w-14 shrink-0 flex-col items-center gap-1 border-r border-zinc-200 bg-zinc-50 py-2 lg:flex dark:border-zinc-800 dark:bg-zinc-900"></nav>
 <div id="drawerShade" hidden class="fixed top-0 right-0 z-30 h-dvh lg:bg-zinc-900/20 dark:lg:bg-black/50" aria-label="Close projects"></div>
-<div id="app" class="relative z-10 mx-auto flex h-full max-w-3xl flex-col bg-white pt-[env(safe-area-inset-top)] md:border-x md:border-zinc-200 lg:mx-0 lg:grid lg:min-w-0 lg:max-w-none lg:flex-1 lg:grid-cols-[360px_minmax(0,1fr)] lg:grid-rows-[auto_auto_minmax(0,1fr)_auto] lg:border-x-0 xl:grid-cols-[420px_minmax(0,1fr)] 2xl:grid-cols-[460px_minmax(0,1fr)] dark:bg-zinc-950 md:dark:border-zinc-800">
+<div id="app" class="relative z-10 mx-auto flex h-full max-w-3xl flex-col bg-white pt-[env(safe-area-inset-top)] md:border-x md:border-zinc-200 lg:mx-0 lg:grid lg:min-w-0 lg:max-w-none lg:flex-1 lg:grid-cols-[var(--list-w,360px)_minmax(0,1fr)] lg:grid-rows-[auto_auto_minmax(0,1fr)_auto] lg:border-x-0 xl:grid-cols-[var(--list-w,420px)_minmax(0,1fr)] 2xl:grid-cols-[var(--list-w,460px)_minmax(0,1fr)] dark:bg-zinc-950 md:dark:border-zinc-800">
 
   <header id="mainHead" class="flex h-14 shrink-0 items-center gap-1 px-2 lg:col-start-1 lg:row-start-1 lg:gap-2 lg:border-r lg:border-b lg:border-zinc-200 lg:px-3 dark:lg:border-zinc-800">
     <div id="deskTitle" class="hidden min-w-0 shrink-0 items-baseline gap-2 pl-1 lg:flex"></div>
@@ -1896,6 +1897,7 @@ PAGE = r'''<!doctype html>
 
   <section id="projectView" hidden class="min-h-0 overflow-y-auto overscroll-contain lg:col-span-2 lg:col-start-1 lg:row-span-4 lg:row-start-1"></section>
 
+  <div id="listGrip" data-grip="list" hidden title="Drag to resize · double-click for the default" class="z-30 cursor-col-resize hover:bg-blue-500/30 lg:col-start-1 lg:row-span-4 lg:row-start-1 lg:block lg:w-2 lg:translate-x-1/2 lg:justify-self-end"></div>
   <footer id="foot" class="relative z-20 shrink-0 px-3 pt-1 pb-[max(1.25rem,env(safe-area-inset-bottom))] lg:col-start-2 lg:row-start-4 lg:px-8 lg:pb-5">
     <div id="feedback" hidden role="status" class="mb-1.5 flex min-h-7 items-center gap-2 pr-1 pl-2.5 text-[13px] text-zinc-600 lg:mx-auto lg:max-w-[42rem] dark:text-zinc-300"></div>
     <div id="composer" class="rounded-4xl border border-zinc-200/80 bg-white shadow-lg shadow-black/5 focus-within:border-zinc-300 lg:mx-auto lg:max-w-[42rem] dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-black/40 dark:focus-within:border-zinc-700">
@@ -3681,6 +3683,7 @@ function showDesk() {
   $('projectView').hidden = !page;
   $('foot').hidden = page;
   $('deskFilters').hidden = page || full || inputs || !(D.filters || filtersSet().length);
+  $('listGrip').hidden = page || full || inputs;
   $('mainHead').classList.toggle('lg:col-span-2', inputs);
   for (const el of [$('detailView'), $('foot')]) {  // one wide page: the inputs, or an item at full width
     el.classList.toggle('lg:col-start-1', wide); el.classList.toggle('lg:col-start-2', !wide); el.classList.toggle('lg:col-span-2', wide);
@@ -3984,6 +3987,29 @@ function layoutChange() {  // crossing 1024px: each layout puts back what it own
   else { $('drawer').hidden = !DR.open; $('rail').hidden = true; $('drawerShade').hidden = !DR.open; $('headNormal').hidden = !!U.searching; $('headSearch').hidden = !U.searching; $('projectView').hidden = true; D.page = null; D.full = false; $('q').placeholder = 'Search title, text or code'; }
   closeDialog(); render();
 }
+// Drag the right edge of the sidebar or the list to resize it (F89). The width goes into a CSS variable that the
+// grid classes read; it is kept in this browser, and a double-click on the edge gives the default back.
+const GRIP = {side: ['drawer', '--side-w', 200, 360], list: ['app', '--list-w', 280, 720]};
+function setGrip(kind, px) { const [el, v] = GRIP[kind]; if (px) $(el).style.setProperty(v, px + 'px'); else $(el).style.removeProperty(v); }
+try { for (const k in GRIP) { const w = Number(localStorage.getItem('taska.w.' + k)); if (w) setGrip(k, w); } } catch (_) {}
+document.addEventListener('pointerdown', e => {
+  const g = desk() && e.target.closest('[data-grip]');
+  if (!g || e.button) return;
+  const kind = g.dataset.grip, [el, , min, max] = GRIP[kind], left = $(el).getBoundingClientRect().left;
+  const most = kind === 'list' ? Math.min(max, innerWidth - left - 480) : max;  // the item keeps room to read
+  let w = 0;
+  e.preventDefault(); g.setPointerCapture(e.pointerId); document.body.classList.add('select-none', 'cursor-col-resize');
+  const move = ev => { w = Math.round(Math.min(most, Math.max(min, ev.clientX - left))); setGrip(kind, w); };
+  const up = () => {
+    g.removeEventListener('pointermove', move); g.removeEventListener('pointerup', up); document.body.classList.remove('select-none', 'cursor-col-resize');
+    if (w) try { localStorage.setItem('taska.w.' + kind, w); } catch (_) {}
+  };
+  g.addEventListener('pointermove', move); g.addEventListener('pointerup', up);
+});
+document.addEventListener('dblclick', e => {
+  const g = desk() && e.target.closest('[data-grip]');
+  if (g) { setGrip(g.dataset.grip, 0); try { localStorage.removeItem('taska.w.' + g.dataset.grip); } catch (_) {} }
+});
 DESK.addEventListener('change', layoutChange);
 WIDE.addEventListener('change', () => { D.sideOpen = false; if (desk()) render(); });
 document.addEventListener('keydown', deskKey);
