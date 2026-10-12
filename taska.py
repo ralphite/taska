@@ -2008,6 +2008,7 @@ const ICON = {
   archive: '<rect width="20" height="5" x="2" y="3" rx="1"/><path d="M4 8v11a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8"/><path d="M10 12h4"/>',
   undo: '<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"/>',
   loop: '<path d="M21 12a9 9 0 1 1-9-9c2.52 0 4.93 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/>',
+  lasso: '<path d="M7 22a5 5 0 0 1-2-4"/><path d="M3.3 14A6.8 6.8 0 0 1 2 10c0-4.4 4.5-8 10-8s10 3.6 10 8-4.5 8-10 8a12 12 0 0 1-5-1"/><path d="M5 18a2 2 0 1 0 0-4 2 2 0 0 0 0 4z"/>',
   pencil: '<path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/><path d="m15 5 4 4"/>',
   copy: '<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
   docplus: '<path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M9 15h6"/><path d="M12 18v-6"/>',
@@ -2622,7 +2623,7 @@ const noteText = d => sameText(d.md.split('\n')[0].replace(/^#+\s*/, ''), d.titl
 // What a document comment goes to (I087): the picked paragraphs, the selected text, or a thread you reply in.
 // The one input box takes it: its line says "Comment on D4 · “…”", and sending posts the comment.
 function docTarget() {
-  if (!U.doc || U.docEdit || $('overlay').hidden) return null;
+  if (!U.doc || U.docEdit || (!desk() && $('overlay').hidden)) return null;
   const d = docById(U.doc);
   if (!d) return null;
   if (U.docReply) {
@@ -2645,23 +2646,38 @@ async function sendDocComment(t) {
 }
 function renderDocBar() { renderComposer(); }  // the comment target shows on the input box
 const docSig = d => d ? `${d.title}|${d.md}|${d.blocks.reduce((k, b) => k + b.comments.length, 0)}|${d.detached.length}` : '';
-function renderDoc({focus = false} = {}) {
-  if (U.docEdit) {
-    const d = docById(U.doc);
-    const md = U.docText ?? (d ? noteText(d) : '');
-    dialog(d ? `D${d.d}` : `New doc on ${code(U.docNew)}`, `<div class="flex min-h-full flex-col">
-      <div class="sticky -top-2 z-10 -mx-4 -mt-2 mb-2 flex items-center gap-2 bg-white px-4 py-2 text-xs text-zinc-500 dark:bg-zinc-900"><span class="min-w-0 flex-1">The first line is the title. Saved when you are done.</span><button data-act="doc-done" class="${PRIMARY}">Done</button></div>
-      <textarea id="docMd" placeholder="Title on the first line&#10;&#10;Then anything: a plan, a design, notes. Markdown works." class="min-h-[40dvh] w-full flex-1 resize-none bg-transparent text-base leading-relaxed outline-none placeholder:text-zinc-400">${esc(md)}</textarea></div>`, {focus: false, tall: true});
-    return;
-  }
-  const d = docById(U.doc);
-  if (!d) return closeDialog();
-  const a = document.activeElement, keep = a?.dataset?.docDraft ? [a.dataset.docDraft, a.value, a.selectionStart] : null;
-  const top = $('dlgBody').scrollTop;
+// On the desktop a document opens in the item pane, like the item it belongs to (T110): its header has Circle,
+// Edit and the way back to the item; the one input box below takes the comments (I087). It is drawn again only
+// when the document or what you picked in it changes, so a refresh never swallows a click.
+function docPane(d) {
+  const body = $('detailBody'), key = [docSig(d), [...U.docSel], U.docQuote?.text, [...U.docThreads], U.docReply, U.docCircle].join('|');
+  const b = (act, inner, title, attrs = '') => `<button data-act="${act}" ${attrs} title="${title}" class="flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm text-zinc-600 hover:bg-zinc-100 aria-pressed:bg-amber-100 aria-pressed:text-amber-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:aria-pressed:bg-amber-900/60 dark:aria-pressed:text-amber-100">${inner}</button>`;
+  $('itemMenuBtn').hidden = true;
+  $('dHead').innerHTML = `<span class="flex min-w-0 items-center gap-2 text-sm">${ico('file', 'size-[18px] text-zinc-500 dark:text-zinc-400')}<span class="font-mono font-bold text-zinc-700 dark:text-zinc-200">D${d.d}</span><span class="truncate font-semibold">${esc(d.title)}</span></span>`;
+  $('dActs').innerHTML = b('doc-circle', `${ico('lasso', 'size-4')}${U.docCircle ? 'Draw a circle…' : 'Circle'}`, 'Circle an area to comment on it', `aria-pressed="${!!U.docCircle}"`) + b('doc-edit', `${ico('pencil', 'size-4')}Edit`, 'Edit the text');
+  $('dNav').innerHTML = b('doc-close', `${ico('left', 'size-4')}Back to ${code(d.n)}${KBD('Esc')}`, `Back to ${code(d.n)} · Esc`);
+  if (D.docKey === key && body.querySelector('#docBlocks')) return;
+  D.docKey = key;
+  const top = body.querySelector('#docBlocks') ? body.scrollTop : (U.docScroll[d.d] || 0);
+  body.innerHTML = `<div class="mx-auto w-full max-w-[46rem] px-8 pt-8 pb-12">${docViewHtml(d)}</div>`;
+  body.scrollTop = top;
+  if (U.docCircle) wireLasso();
+}
+function closeDoc() {  // the desktop's way back from a document to its item
+  if (!U.doc) return;
+  const d = U.doc;
+  U.docScroll[d] = $('detailBody').scrollTop;
+  Object.assign(U, {doc: null, docReply: null, docSel: new Set(), docQuote: null, docCircle: false});
+  D.docKey = null; getSelection()?.removeAllRanges();
+  renderDetail(); renderComposer();
+  if (!leaveView(`D${d}`)) writeURL(false);
+}
+// A document's text with its comment threads: in a sheet on the phone, in the item pane on the desktop (T110).
+function docViewHtml(d) {
   const titled = !!d.blocks[0] && sameText(d.blocks[0].text.replace(/^#+\s*/, ''), d.title);
   groups.delete('doc' + d.d);  // its images, refilled as the blocks render
-  dialog(`D${d.d}`, `<div class="flex min-h-full flex-col"><div class="flex items-center gap-1 text-xs text-zinc-500"><span class="min-w-0 flex-1 truncate">on <button data-act="goto" data-n="${d.n}" class="text-blue-600 dark:text-blue-400">${code(d.n)}</button> · ${esc(who(d.by))} · ${when(d.t1)}</span>
-      <button data-act="doc-circle" aria-pressed="${!!U.docCircle}" class="${BTN} text-sm aria-pressed:bg-amber-100 aria-pressed:text-amber-900 dark:aria-pressed:bg-amber-900/60 dark:aria-pressed:text-amber-100">${U.docCircle ? 'Draw a circle…' : 'Circle'}</button><button data-act="doc-edit" class="${BTN} text-sm">Edit</button></div>
+  return `<div class="flex min-h-full flex-col"><div class="flex items-center gap-1 text-xs text-zinc-500"><span class="min-w-0 flex-1 truncate">on <button data-act="goto" data-n="${d.n}" class="text-blue-600 dark:text-blue-400">${code(d.n)}</button> · ${esc(who(d.by))} · ${when(d.t1)}</span>
+      <button data-act="doc-circle" aria-pressed="${!!U.docCircle}" class="${BTN} text-sm lg:hidden aria-pressed:bg-amber-100 aria-pressed:text-amber-900 dark:aria-pressed:bg-amber-900/60 dark:aria-pressed:text-amber-100">${U.docCircle ? 'Draw a circle…' : 'Circle'}</button><button data-act="doc-edit" class="${BTN} text-sm lg:hidden">Edit</button></div>
     ${titled ? '' : `<div class="mt-3 text-2xl leading-tight font-bold tracking-tight">${esc(d.title)}</div>`}
     <div id="docBlocks" class="relative mt-3 space-y-3 text-[15px] ${U.docCircle ? 'select-none' : ''}">
       ${d.blocks.map((b, i) => `<section data-act="doc-pick" data-key="${b.key}" class="-mx-2 rounded-lg px-2 py-1 transition-colors ${U.docSel.has(b.key) ? 'bg-amber-50 ring-2 ring-amber-300 dark:bg-amber-950/40 dark:ring-amber-600' : ''}">
@@ -2672,8 +2688,24 @@ function renderDoc({focus = false} = {}) {
     </div>
     ${d.detached.length ? `<div class="mt-6 space-y-4 border-t border-zinc-200 pt-4 dark:border-zinc-800"><div class="text-xs font-medium text-zinc-500">Original text changed</div>${d.detached.map(t => `<section>
       <div class="text-sm text-zinc-400 line-through">${esc(t.quote)}</div>${threadHtml(d, t.key, t.comments)}</section>`).join('')}</div>` : ''}
-    <p class="mt-6 text-center text-xs text-zinc-400">Tap paragraphs, select text or circle an area, then write your comment in the box below</p>
-    </div>`, {focus, tall: true, aboveComposer: true});
+    <p class="mt-6 text-center text-xs text-zinc-400">${desk() ? 'Click' : 'Tap'} paragraphs, select text or circle an area, then write your comment in the box below</p>
+    </div>`;
+}
+function renderDoc({focus = false} = {}) {
+  if (U.docEdit) {
+    const d = docById(U.doc);
+    const md = U.docText ?? (d ? noteText(d) : '');
+    dialog(d ? `D${d.d}` : `New doc on ${code(U.docNew)}`, `<div class="flex min-h-full flex-col">
+      <div class="sticky -top-2 z-10 -mx-4 -mt-2 mb-2 flex items-center gap-2 bg-white px-4 py-2 text-xs text-zinc-500 dark:bg-zinc-900"><span class="min-w-0 flex-1">The first line is the title. Saved when you are done.</span><button data-act="doc-done" class="${PRIMARY}">Done</button></div>
+      <textarea id="docMd" placeholder="Title on the first line&#10;&#10;Then anything: a plan, a design, notes. Markdown works." class="min-h-[40dvh] w-full flex-1 resize-none bg-transparent text-base leading-relaxed outline-none placeholder:text-zinc-400">${esc(md)}</textarea></div>`, {focus: false, tall: true});
+    return;
+  }
+  const d = docById(U.doc);
+  if (desk()) { if (!d) U.doc = null; renderDetail(); return renderComposer(); }  // the item pane shows it (T110)
+  if (!d) return closeDialog();
+  const a = document.activeElement, keep = a?.dataset?.docDraft ? [a.dataset.docDraft, a.value, a.selectionStart] : null;
+  const top = $('dlgBody').scrollTop;
+  dialog(`D${d.d}`, docViewHtml(d), {focus, tall: true, aboveComposer: true});
   U.docSig = docSig(d);
   renderComposer();
   if (!focus) $('dlgBody').scrollTop = top;
@@ -2682,6 +2714,14 @@ function renderDoc({focus = false} = {}) {
 }
 function openDoc(d) {
   if (U.doc !== d) setTimeout(() => writeURL(true));  // after the sheet is up
+  if (desk()) {  // T110: in the item pane, under its item
+    const doc = docById(d);
+    if (doc && U.open !== doc.n && byN.has(doc.n)) { U.open = doc.n; renderItems(); }
+    if (!$('overlay').hidden) { $('overlay').hidden = true; $('overlay').style.bottom = ''; U.sheet = null; }  // the editor, when you come back from it
+    Object.assign(U, {peek: null, doc: d, docReply: null, docNew: null, docEdit: false, docText: null, docSel: new Set(), docQuote: null, docCircle: false});
+    D.docKey = null; renderDetail(); renderComposer();
+    return;
+  }
   Object.assign(U, {peek: null, doc: d, docReply: null, docNew: null, docEdit: false, docText: null, docSel: new Set(), docQuote: null, docCircle: false});
   U.docDrafts.note = '';
   renderDoc({focus: true});
@@ -2837,6 +2877,7 @@ function detailHtml(it) {
 function renderDetail() {
   const it = U.open && byN.get(U.open), body = $('detailBody');
   if (desk()) renderGoStrip();
+  if (desk() && U.doc && !U.docEdit && docById(U.doc)) return docPane(docById(U.doc));
   if (!it) {  // the desktop's detail pane with nothing selected
     if (desk()) {
       const back = D.compose && D.prev && byN.has(D.prev);
@@ -3292,7 +3333,15 @@ function dialog(title, html, {aboveComposer = false, focus = true, tall = false,
   if (focus) $('dlgClose').focus({preventScroll: true});
 }
 const closeDialog = () => {
-  if (U.docEdit) saveDoc();  // closing the editor keeps what you wrote
+  const edit = U.docEdit;
+  if (edit) saveDoc();  // closing the editor keeps what you wrote
+  if (desk()) {  // a document lives in the item pane (T110): closing a sheet or the editor leaves it open there
+    U.docNew = null; U.docEdit = false; U.sheet = null; U.go = null;
+    $('overlay').hidden = true; $('overlay').style.bottom = '';
+    if (U.peek) { U.peek = null; renderComposer(); }
+    if (edit && U.doc) { D.docKey = null; renderDetail(); renderComposer(); }
+    return;
+  }
   if (U.doc) U.docScroll[U.doc] = $('dlgBody').scrollTop;
   const hadDoc = U.doc;
   U.doc = null; U.docNew = null; U.docEdit = false; U.sheet = null; U.go = null; U.docReply = null;
@@ -3429,6 +3478,7 @@ function openItem(n, push = true) {
   if (U.open !== n) { U.editing = null; U.subFor = null; }
   const fresh = U.open !== n;
   U.open = n; U.scopeOff = false;
+  if (desk() && U.doc && !U.docEdit) { U.docScroll[U.doc] = $('detailBody').scrollTop; Object.assign(U, {doc: null, docReply: null, docSel: new Set(), docQuote: null, docCircle: false}); D.docKey = null; }  // another item: the document closes
   if (desk() && U.tab === 'inputs') { const it = byN.get(n); U.tab = it.archived ? 'archive' : it.type === 'rule' ? 'rules' : 'items'; }  // Inputs has no item pane
   if (desk()) { D.page = null; D.compose = false; writeURL(false, history.state?.full ? {n, full: true} : null); }
   else if (push && !URLS.applying && location.pathname !== P + code(n)) history.pushState({n}, '', P + code(n) + viewQuery());
@@ -3440,6 +3490,7 @@ function openItem(n, push = true) {
 function closeItem() {
   if (!U.open) return;
   U.open = null; U.editing = null; U.subFor = null; BK.pull = false; D.full = false;
+  if (desk() && U.doc && !U.docEdit) { U.doc = null; U.docReply = null; D.docKey = null; }
   writeURL(false, null);
   render();
   if (!desk()) [$('list').scrollTop, $('inputsView').scrollTop] = U.listTop || [0, 0];
@@ -3595,6 +3646,7 @@ const ACT = {
     renderDoc();
   },
   'doc-unpick': () => { U.docSel = new Set(); U.docQuote = null; U.docReply = null; U.docDrafts.note = ''; getSelection()?.removeAllRanges(); renderDoc(); },
+  'doc-close': () => closeDoc(),
   'doc-reply': b => { U.docReply = b.dataset.key; U.docSel = new Set(); U.docQuote = null; renderDoc(); $('text').focus(); },
   'doc-circle': () => { U.docCircle = !U.docCircle; renderDoc(); },
   'doc-thread': b => { const k = b.dataset.key; if (U.docThreads.has(k)) U.docThreads.delete(k); else U.docThreads.add(k); renderDoc(); },
@@ -4355,6 +4407,7 @@ document.addEventListener('keydown', e => {
     if (!$('viewer').hidden) return ACT['v-close']();
     if (U.doc && U.docCircle) { U.docCircle = false; return renderDoc(); }
     if (U.doc && (U.docQuote || U.docSel.size || U.docReply)) return ACT['doc-unpick']();  // first Escape drops the selection
+    if (desk() && U.doc && !U.docEdit && $('overlay').hidden && !/INPUT|TEXTAREA/.test(document.activeElement.tagName)) return closeDoc();  // then back to the item
     if (!$('overlay').hidden) return closeDialog();
     if (R.rec) return cancelRec();
     if (U.editing) { U.editing = null; return renderDetail(); }
@@ -4492,7 +4545,7 @@ window.addEventListener('load', grow);  // a restored draft is measured again on
 
 load().then(() => {
   if (desk()) checkOthers();
-  const {seg} = readURL(), n = parseRef(seg);
+  const {seg} = readURL(), n = /^[Dd]\d+$/.test(seg) ? 0 : parseRef(seg);  // D1 is a document, not item 1
   if (n && byN.has(n) && !desk() && !history.state?.n) {  // a link to an item on the phone: put the list under it, so Back lands there
     history.replaceState(null, '', P + viewQuery()); history.pushState({n}, '', P + code(n) + viewQuery());
   }
