@@ -2594,9 +2594,10 @@ const KIND_TAG = x => KIND[x.kind] ? `<span class="rounded px-1.5 py-0.5 text-[1
 // shows whole, in a box of limited height that scrolls; a fade at the bottom says there is more (F93).
 function msgText(x, gid, form = 0, done = null) {
   const long = x.by !== 'you' && x.kind !== 'ask' && (x.text.length > 240 || x.text.trim().split('\n').length > 3);
-  if (long && desk()) return `<div data-clip class="-mr-2 max-h-96 overflow-y-auto pr-2 data-[over]:mask-b-from-80%">${rich(x.text, gid + 'md' + x.id, '', form, done)}</div>`;
-  const folded = long && !U.moreMsgs.has(x.id);
-  return rich(folded ? x.text.trim().split('\n')[0] : x.text, gid + 'md' + x.id, '', form, done)
+  const open = U.moreMsgs.has(x.id), more = `data-act="more-msg" data-expand data-id="${x.id}"`;  // F106: a click on the words opens them
+  if (long && desk() && !open) return `<div data-clip ${more} class="-mr-2 max-h-96 cursor-pointer overflow-y-auto pr-2 data-[over]:mask-b-from-80%">${rich(x.text, gid + 'md' + x.id, '', form, done)}</div>`;
+  const folded = long && !desk() && !open;
+  return (long ? `<div ${more} class="cursor-pointer">` : '') + rich(folded ? x.text.trim().split('\n')[0] : x.text, gid + 'md' + x.id, '', form, done) + (long ? '</div>' : '')
     + (long ? `<button data-act="more-msg" data-id="${x.id}" class="-mb-2 flex h-11 items-center text-sm font-medium text-blue-600 dark:text-blue-400">${folded ? 'Show more' : 'Show less'}</button>` : '');
 }
 // The fade shows while there is more below, and goes once you scroll to the end.
@@ -2950,7 +2951,7 @@ function renderDetail() {
       $('dHead').innerHTML = D.compose ? `<span class="flex items-center gap-2 text-sm font-semibold">${ico('newinput', 'size-[18px] text-blue-600 dark:text-blue-400')}New input</span>` : '';
       $('dNav').innerHTML = back ? `<button data-act="compose-back" class="flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800">${ico('left', 'size-4')}Back to ${code(D.prev)}${KBD('Esc')}</button>` : '';
       body.innerHTML = D.compose ? '' : noSelection();
-      if (D.compose) { $('composeHead').innerHTML = composeHead(); $('composeList').innerHTML = saidLately(); }
+      if (D.compose) { $('composeHead').innerHTML = composeHead(); $('composeList').innerHTML = saidLately(); markCut($('composeList')); }
     }
     return;
   }
@@ -3166,7 +3167,7 @@ function renderInputs() {
       <div class="flex min-h-5 items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400"><span class="font-mono">${r.id}</span><span>${when(r.t)}</span>
         ${scope ? `<button data-act="goto" data-n="${scope.n}" class="relative min-w-0 truncate text-blue-600 after:absolute after:inset-x-0 after:-inset-y-3 dark:text-blue-400">↳ ${code(scope.n)} ${esc(scope.title)}</button>` : ''}
         <span class="ml-auto flex shrink-0 items-center gap-1 font-medium lg:hidden ${tone}">${icon}${label}</span></div>
-      <div class="mt-1.5 rounded-2xl rounded-tr-md bg-blue-50 px-3.5 py-2 text-[15px] leading-relaxed text-zinc-900 dark:bg-blue-400/10 dark:text-zinc-100">
+      <div ${long(r) ? `data-act="more-input" data-expand data-id="${r.id}"` : ''} class="mt-1.5 rounded-2xl rounded-tr-md bg-blue-50 px-3.5 py-2 text-[15px] leading-relaxed text-zinc-900 dark:bg-blue-400/10 dark:text-zinc-100 ${long(r) ? 'cursor-pointer' : ''}">
         ${r.text ? rich(r.text, 'in' + r.id, long(r) && !U.moreInputs.has(r.id) ? 'max-h-28 overflow-hidden' : '') : ''}
         ${long(r) ? `<button data-act="more-input" data-id="${r.id}" class="-my-2 flex h-11 items-center text-sm font-medium text-blue-600 dark:text-blue-400">${U.moreInputs.has(r.id) ? 'Less' : 'More'}</button>` : ''}
         ${r.files.length ? `<div class="mt-2 flex items-end gap-2 overflow-x-auto">${thumbs(r.files, 'in' + r.id, 'size-11')}</div>` : ''}
@@ -3715,7 +3716,7 @@ const ACT = {
   },
   goto: b => { closeDialog(); openItem(Number(b.dataset.n)); },
   more: b => { U.more.add(Number(b.dataset.n)); renderDetail(); },
-  'more-input': b => { const id = b.dataset.id; if (U.moreInputs.has(id)) U.moreInputs.delete(id); else U.moreInputs.add(id); renderInputs(); },
+  'more-input': b => { const id = b.dataset.id; if (U.moreInputs.has(id)) U.moreInputs.delete(id); else U.moreInputs.add(id); renderInputs(); if (desk() && D.compose) renderDetail(); },
   edit: b => { closeDialog(); U.editing = Number(b.dataset.n); renderDetail(); $('eBody')?.focus(); },
   'edit-cancel': () => { U.editing = null; renderDetail(); },
   'edit-save': async b => {
@@ -3998,9 +3999,9 @@ const DOT = {
 const dotOf = r => r.moved ? 'wait' : S.org.busy === r.id ? 'pulse' : r.org && !r.org.ok ? 'bad' : r.org?.undone ? 'idle' : r.acked ? 'ok' : !r.org && S.org.on ? 'idle' : 'wait';
 const SMALL_BTN = 'flex h-7 shrink-0 items-center gap-1 rounded-lg px-2 text-[13px] font-medium text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200';
 // One step of the timeline: a dot, your words in a bubble, and the line saying what became of them.
-function saidStep(dot, bubble, meta, result, last) {
+function saidStep(dot, bubble, meta, result, last, attrs = '') {
   return `<li class="group/row relative flex gap-3 pb-5">${last ? '' : '<span aria-hidden="true" class="absolute top-7.5 -bottom-1.5 left-[11.5px] w-px bg-zinc-200 dark:bg-zinc-800"></span>'}<span class="relative mt-1.5 grid size-6 shrink-0 place-items-center">${dot}</span>
-    <div class="min-w-0 flex-1"><div class="flex items-start gap-3"><div class="w-fit max-w-full min-w-0 rounded-2xl rounded-tl-md bg-blue-50 px-3.5 py-1.5 text-[15px] leading-6 text-zinc-900 dark:bg-blue-400/10 dark:text-zinc-100">${bubble}</div>
+    <div class="min-w-0 flex-1"><div class="flex items-start gap-3"><div ${attrs} class="w-fit max-w-full min-w-0 rounded-2xl rounded-tl-md bg-blue-50 px-3.5 py-1.5 text-[15px] leading-6 text-zinc-900 dark:bg-blue-400/10 dark:text-zinc-100">${bubble}</div>
       <span class="ml-auto shrink-0 pt-1.5 text-xs whitespace-nowrap text-zinc-400 tabular-nums dark:text-zinc-500">${meta}</span></div>
       <div class="mt-1.5 flex min-w-0 flex-wrap items-center gap-1.5">${result}</div></div></li>`;
 }
@@ -4008,7 +4009,7 @@ function saidRow(r, k, last) {
   const [label, tone] = inputState(r), scope = r.scope && byN.get(r.scope), later = k ? 'lg:opacity-0 lg:group-hover/row:opacity-100 lg:focus:opacity-100' : '';
   const said = r.text || (r.files.some(f => (f.mime || '').startsWith('audio/')) ? 'Voice note' : '');
   const bubble = (scope ? `<button data-act="goto" data-n="${scope.n}" class="mb-0.5 flex max-w-full items-center gap-1 text-xs font-medium text-blue-700 hover:underline dark:text-blue-300">${ico('reply', 'size-3.5')}<span class="truncate">Reply to ${code(scope.n)} · ${esc(scope.title)}</span></button>` : '')
-    + (said ? `<p class="line-clamp-2 break-words">${esc(said)}</p>` : '') + (r.files.length ? `<div class="mt-2 flex items-end gap-2">${thumbs(r.files, 'cl' + r.id, 'size-12')}</div>` : '');
+    + (said ? `<p data-cut class="${U.moreInputs.has(r.id) ? 'whitespace-pre-line' : 'line-clamp-2'} break-words">${esc(said)}</p>` : '') + (r.files.length ? `<div class="mt-2 flex items-end gap-2">${thumbs(r.files, 'cl' + r.id, 'size-12')}</div>` : '');
   const chips = r.moved ? '' : r.touched.filter(n => byN.has(n)).map(n => { const it = byN.get(n); return `<button data-act="goto" data-n="${n}" title="Open ${code(n)}" class="flex h-7 max-w-60 min-w-0 items-center gap-1.5 rounded-lg bg-zinc-100 pr-2.5 pl-1.5 text-[13px] text-zinc-800 hover:bg-zinc-200/80 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700">${stateIcon(it.status, statusName(it), 'size-4')}<span class="font-mono text-xs font-bold ${TYPE_TEXT[it.type]}">${code(n)}</span><span class="truncate">${esc(it.title)}</span></button>`; }).join('');
   const busy = S.org.busy === r.id || (!r.acked && S.org.on && !r.org);
   const acts = r.moved ? `<a href="/p/${encodeURIComponent(r.moved.to)}/" class="${SMALL_BTN} text-blue-600 dark:text-blue-400">${ico('arrow', 'size-3.5', '2')}Open ${esc(r.moved.to)} · ${esc(r.moved.as)}</a>`
@@ -4017,7 +4018,7 @@ function saidRow(r, k, last) {
       + (r.org?.undone && !r.acked ? `<button data-act="retry" data-id="${r.id}" class="${SMALL_BTN}">${ico('loop', 'size-3.5', '2')}Organize again</button>` : '')
       + (!r.acked && !r.scope && !(S.org.on && !r.org) && !busy ? `<button data-act="make-item" data-id="${r.id}" class="${SMALL_BTN} text-blue-600 dark:text-blue-400">${ico('plus', 'size-3.5', '2')}Make item</button>` : '')
       + `<span class="ml-auto flex items-center ${later}">${canUndoInput(r) ? `<button data-act="undo" data-id="${r.id}" title="Undo what the organizer did with ${r.id}" class="${SMALL_BTN}">${ico('undo', 'size-3.5', '2')}Undo</button>` : ''}${otherProjects().length && !busy ? `<button data-act="move-input" data-id="${r.id}" title="Sent to the wrong project? Move it" class="${SMALL_BTN}">${ico('arrow', 'size-3.5', '2')}Move…</button>` : ''}</span>`;
-  return saidStep(DOT[dotOf(r)], bubble, `<span class="font-mono">${r.id}</span> · ${when(r.t)}`, `<span class="mr-1 text-[13px] font-semibold ${tone}">${label}</span>${chips}${inputActions(r, SMALL_BTN)}${acts}`, last);
+  return saidStep(DOT[dotOf(r)], bubble, `<span class="font-mono">${r.id}</span> · ${when(r.t)}`, `<span class="mr-1 text-[13px] font-semibold ${tone}">${label}</span>${chips}${inputActions(r, SMALL_BTN)}${acts}`, last, `data-expand data-id="${r.id}"`);
 }
 function outboxStep(q, last) {  // still on its way (F85)
   const state = q.failed ? 'Not sent' : q.files.some(f => f.transcribing) ? 'Transcribing…' : q.files.some(f => !f.f && !f.failed) ? 'Uploading…' : 'Sending…';
@@ -4030,6 +4031,13 @@ function saidLately() {
       ${S.inputs.length ? `<button data-act="tab" data-tab="inputs" title="All inputs · G N" class="flex h-8 items-center gap-1 rounded-lg pr-1.5 pl-2 text-[13px] font-medium text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10">All ${S.inputs.length} input${S.inputs.length === 1 ? '' : 's'}${KBD('G N')}</button>` : ''}</div>
     ${n ? `<ol class="mt-4">${queued.map((q, k) => outboxStep(q, k === n - 1)).join('')}${recent.map((r, k) => saidRow(r, queued.length + k, queued.length + k === n - 1)).join('')}</ol>`
       : '<p class="mt-3 text-sm text-zinc-400 dark:text-zinc-500">What you say shows up here, with the items it turns into.</p>'}`;
+}
+// F106: a bubble whose two lines cut the words opens on a click, and closes the same way.
+function markCut(root) {
+  for (const el of root.querySelectorAll('[data-expand]:not([data-act])')) {
+    const cut = el.querySelector('[data-cut]');
+    if (U.moreInputs.has(el.dataset.id) || (cut && cut.scrollHeight > cut.clientHeight + 1)) { el.dataset.act = 'more-input'; el.classList.add('cursor-pointer'); }
+  }
 }
 function leaveCompose() {  // back to the item you had open, if there was one
   const p = D.prev; D.compose = false; D.prev = null;
@@ -4444,6 +4452,7 @@ document.addEventListener('click', e => {
   if (Date.now() - SW.swallow < 400) { e.preventDefault(); e.stopPropagation(); return; }
   if (SW.open && !e.target.closest('[data-swipe-right]')) { closeSwipe(); e.preventDefault(); return; }
   const b = e.target.closest('[data-act]');
+  if (b?.hasAttribute('data-expand') && !getSelection().isCollapsed) return;  // selecting words to copy them
   if (e.target === $('overlay')) return closeDialog();
   if (b && ACT[b.dataset.act]) { e.preventDefault(); ACT[b.dataset.act](b, e); }
 });
