@@ -2359,18 +2359,25 @@ async function swipeEnd(e) {
 const docsOf = n => (S.docs || []).filter(d => d.n === n);
 const docById = d => (S.docs || []).find(x => x.d === d);
 function inlineMd(s, gid = '') {
-  const codes = [];  // `code` shows exactly as written: set aside until the rest is done
-  return esc(s)
+  const codes = [], links = [];  // `code` and finished links are set aside until the rest is done
+  const keep = html => `\u0001${links.push(html) - 1}\u0001`;
+  const emph = t => t.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>').replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<em>$2</em>');
+  return emph(esc(s)
     .replace(/`([^`]+)`/g, (_, c) => `\u0000${codes.push(c) - 1}\u0000`)
     .replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, (_, alt, src) => {  // ![alt](f12-a.png) for a file uploaded to Taska, or a web address
-      if (/^https?:\/\//.test(src)) return `<a href="${src}" target="_blank" rel="noopener"><img src="${src}" alt="${alt}" loading="lazy" class="my-1 max-h-96 max-w-full rounded-lg border border-zinc-200 dark:border-zinc-700"></a>`;
+      if (/^https?:\/\//.test(src)) return keep(`<a href="${src}" target="_blank" rel="noopener"><img src="${src}" alt="${alt}" loading="lazy" class="my-1 max-h-96 max-w-full rounded-lg border border-zinc-200 dark:border-zinc-700"></a>`);
       if (gid) { if (!groups.has(gid)) groups.set(gid, []); groups.get(gid).push(src); }
-      return `<button data-act="view" data-g="${gid}" data-f="${src}" class="my-1 block max-w-full"><img src="${P}f/${encodeURIComponent(src)}" alt="${alt}" loading="lazy" class="max-h-96 max-w-full rounded-lg border border-zinc-200 dark:border-zinc-700"></button>`;
+      return keep(`<button data-act="view" data-g="${gid}" data-f="${src}" class="my-1 block max-w-full"><img src="${P}f/${encodeURIComponent(src)}" alt="${alt}" loading="lazy" class="max-h-96 max-w-full rounded-lg border border-zinc-200 dark:border-zinc-700"></button>`);
     })
-    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
-    .replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<em>$2</em>')
-    .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener" class="text-blue-600 underline underline-offset-2 dark:text-blue-400">$1</a>')
-    .replace(/(^|[\s(（])(https?:\/\/[^\s<)）]+)/g, '$1<a href="$2" target="_blank" rel="noopener" class="break-all text-blue-600 underline decoration-blue-300 underline-offset-2 dark:text-blue-400">$2</a>')
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, (_, t, url) => keep(`<a href="${url}" target="_blank" rel="noopener" class="text-blue-600 underline underline-offset-2 dark:text-blue-400">${emph(t)}</a>`)))
+    // A bare web address becomes a link wherever it stands, also right after Chinese text or punctuation (F76). It
+    // ends at a space, a bracket or any character a URL can't hold; final punctuation stays outside the link.
+    .replace(/https?:\/\/(?:&amp;|[A-Za-z0-9\-._~:/?#@!$+,;=%])+/g, m => {  // the text is escaped: & only as &amp;
+      let url = m;
+      while (/[.,;:!?]$/.test(url) && !/&amp;$/.test(url)) url = url.slice(0, -1);
+      return `<a href="${url}" target="_blank" rel="noopener" class="break-all text-blue-600 underline decoration-blue-300 underline-offset-2 dark:text-blue-400">${url}</a>${m.slice(url.length)}`;
+    })
+    .replace(/\u0001(\d+)\u0001/g, (_, i) => links[i])
     .replace(/\u0000(\d+)\u0000/g, (_, i) => `<code class="rounded bg-zinc-100 px-1 font-mono text-[13px] dark:bg-zinc-800">${codes[i]}</code>`);
 }
 // Text the same way everywhere (messages, descriptions, inputs, comments): Markdown with paragraphs, lists,
