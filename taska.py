@@ -1924,7 +1924,7 @@ PAGE = r'''<!doctype html>
           <span id="recBars" class="flex h-8 min-w-0 flex-1 items-center justify-end gap-[3px] overflow-hidden lg:group-data-[compose]/app:h-14"></span>
           <button data-act="rec-stop" aria-label="Stop recording" id="recStop" class="grid size-11 shrink-0 place-items-center rounded-full bg-red-600 text-white dark:bg-red-500"></button>
         </div>
-        <button id="micBtn" data-act="mic" aria-label="Record a voice note" hidden class="grid size-11 shrink-0 place-items-center rounded-full text-zinc-500 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800 lg:group-data-[compose]/app:flex lg:group-data-[compose]/app:h-9 lg:group-data-[compose]/app:w-auto lg:group-data-[compose]/app:gap-0.5 lg:group-data-[compose]/app:px-2.5"></button>
+        <button id="micBtn" data-act="mic" aria-label="Record a voice note" hidden class="grid size-11 shrink-0 place-items-center rounded-full text-zinc-500 hover:bg-zinc-100 lg:flex lg:w-auto lg:items-center lg:gap-0.5 lg:px-2.5 dark:text-zinc-400 dark:hover:bg-zinc-800 lg:group-data-[compose]/app:flex lg:group-data-[compose]/app:h-9 lg:group-data-[compose]/app:w-auto lg:group-data-[compose]/app:gap-0.5 lg:group-data-[compose]/app:px-2.5"></button>
         <button id="sendBtn" data-act="send" aria-label="Send (Shift + Enter)" class="grid size-11 shrink-0 place-items-center rounded-full bg-zinc-900 text-white disabled:opacity-25 dark:bg-zinc-100 dark:text-zinc-900 lg:group-data-[compose]/app:flex lg:group-data-[compose]/app:h-9 lg:group-data-[compose]/app:w-auto lg:group-data-[compose]/app:gap-1 lg:group-data-[compose]/app:pr-2 lg:group-data-[compose]/app:pl-3.5 lg:group-data-[compose]/app:text-sm lg:group-data-[compose]/app:font-semibold"></button>
       </div>
       <input id="fileInput" type="file" multiple hidden>
@@ -3066,8 +3066,7 @@ function renderComposer() {
       ? `<img src="${f.preview || P + 'f/' + encodeURIComponent(f.f)}" alt="${esc(f.name)}" class="size-16 rounded-xl border border-zinc-200 object-cover dark:border-zinc-700 ${f.f ? '' : 'opacity-40'}">`
       : `<div class="flex h-16 w-28 items-center gap-1 rounded-xl border border-zinc-200 px-2 text-xs dark:border-zinc-700 ${f.f ? '' : 'opacity-40'}">${ico('file', 'size-4')}<span class="line-clamp-2 break-all">${esc(f.name)}</span></div>`}
     <button data-act="unfile" data-i="${i}" aria-label="Remove ${esc(f.name)}" class="absolute -top-3.5 -right-3.5 grid size-11 place-items-center"><span class="grid size-6 place-items-center rounded-full bg-zinc-900 text-white ring-2 ring-white dark:bg-zinc-100 dark:text-zinc-900 dark:ring-zinc-900">${ico('x', 'size-3.5', '2.5')}</span></button></div>`).join('');
-  const compose = desk() && D.compose && U.tab !== 'inputs';
-  const empty = !$('text').value.trim() && !U.files.length, voice = empty && !R.rec && canRecord() && !compose;  // the New input page shows mic and Send side by side
+  const empty = !$('text').value.trim() && !U.files.length, voice = empty && !R.rec && canRecord() && !desk();  // the desktop always shows the mic and Send side by side (B109)
   const sb = $('sendBtn'), icon = voice ? 'mic' : 'up';
   if (sb.dataset.icon !== icon) {
     sb.dataset.icon = icon;
@@ -4405,7 +4404,7 @@ $('searchBtn').innerHTML = ico('search', 'size-5.5');
 $('searchIcon').innerHTML = ico('search', 'size-4.5');
 $('qClear').innerHTML = ico('x', 'size-3', '3');
 $('attachBtn').innerHTML = ico('plus', 'size-6');
-$('micBtn').innerHTML = ico('mic', 'size-6') + `<kbd class="ml-1 hidden h-5 min-w-5 place-items-center rounded-md px-1 font-sans text-[11px] font-semibold opacity-60 ring-1 ring-current/30 lg:group-data-[compose]/app:inline-grid">⌥V</kbd>`;
+$('micBtn').innerHTML = ico('mic', 'size-6') + `<kbd class="ml-1 hidden h-5 min-w-5 place-items-center rounded-md px-1 font-sans text-[11px] font-semibold opacity-60 ring-1 ring-current/30 lg:inline-grid">⌥V</kbd>`;
 $('recCancel').innerHTML = ico('x');
 $('recStop').innerHTML = ico('stop');
 $('dlgClose').innerHTML = CLOSE_X;
