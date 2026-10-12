@@ -4567,6 +4567,7 @@ document.addEventListener('keydown', e => {
       if (D.compose) return leaveCompose();
       if (D.filters) { D.filters = false; return render(); }
       if (U.q) return ACT['search-clear']();
+      if (U.open && U.tab !== 'inputs') return closeItem();  // last: back to nothing selected, the box a new input again (F119)
       return;
     }
     if (U.open && !/INPUT|TEXTAREA/.test(document.activeElement.tagName)) return ACT.back();
@@ -4697,8 +4698,7 @@ load().then(() => {
     history.replaceState(null, '', P + viewQuery()); history.pushState({n}, '', P + code(n) + viewQuery());
   }
   applyURL();
-  if (desk() && !seg && !location.search && !U.open && !D.page && !D.compose) { const first = needsList()[0]; if (first) openItem(first); }
-  else writeURL(false);  // tidy the address: #B03 becomes /B03
+  writeURL(false);  // tidy the address: #B03 becomes /B03. Nothing is picked for you: the box is a new input until you open an item (F119)
   poll();
 });
 </script>
