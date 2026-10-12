@@ -212,7 +212,8 @@ public address from `$TASKA_PUBLIC` or `~/.taska/public-url`.
 - **Phone testing.** `.claude/skills/taska-mobile-qa` is a checklist for testing the phone UI on a copy of your
   data.
 - **Design exploration.** `scripts/ui_mocks.py` asks Gemini for several phone designs of one screen and takes
-  light and dark screenshots of each.
+  light and dark screenshots of each. `--shots-only <folder>` re-shoots designs edited by hand; add `--desktop` for
+  1440x900 screenshots.
 
 Taska grew out of [PROJECT_BRIEF.md](PROJECT_BRIEF.md), the original idea. It was then built by using it: coding
 agents worked through Taska's own items.

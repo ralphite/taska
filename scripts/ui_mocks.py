@@ -79,6 +79,33 @@ def ask(model, parts, temperature=1.0):
             time.sleep(5 * (attempt + 1))
 
 
+def shoot_desktop(html_path, png_path, dark, size=(1440, 900)):
+    """A desktop screenshot of the page itself, no phone frame, at 1x (wide enough to read, small enough to share)."""
+    html_path, png_path = os.path.abspath(html_path), os.path.abspath(png_path)
+    if os.path.exists(png_path):
+        os.remove(png_path)
+    with tempfile.TemporaryDirectory() as profile:
+        cmd = [CHROME, "--headless=new", "--disable-gpu", "--hide-scrollbars", "--no-first-run", f"--user-data-dir={profile}",
+               f"--window-size={size[0]},{size[1]}", "--force-device-scale-factor=1", "--virtual-time-budget=5000",
+               *(DARK if dark else LIGHT), f"--screenshot={png_path}", "file://" + html_path]
+        proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
+        size_now, deadline = -1, time.time() + 90
+        try:
+            while time.time() < deadline and proc.poll() is None:
+                time.sleep(0.5)
+                now = os.path.getsize(png_path) if os.path.exists(png_path) else -1
+                if now > 0 and now == size_now:
+                    break
+                size_now = now
+        finally:
+            try:
+                os.killpg(proc.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+    if not os.path.exists(png_path):
+        raise RuntimeError(f"no screenshot for {html_path}")
+
+
 def shoot(html_path, png_path, dark, flags=None):
     """390x844 phone screenshot at 2x. Headless Chrome is at least 500px wide, so the design goes into a 390x844 frame
     and the picture is cropped back to its center (sips, built into macOS). Chrome here does not always exit after the screenshot,
@@ -114,14 +141,14 @@ def shoot(html_path, png_path, dark, flags=None):
     subprocess.run(["sips", "-c", "1688", "780", png_path], check=True, capture_output=True)  # sips crops around the center
 
 
-def shots_for(out):
-    """Light and dark screenshots of every N.html in the folder, one Chrome at a time."""
+def shots_for(out, desktop=False):
+    """Light and dark screenshots of every N.html in the folder, one Chrome at a time (phone, or 1440x900 desktop)."""
     names = sorted((f for f in os.listdir(out) if f[:-5].isdigit() and f.endswith(".html")), key=lambda f: int(f[:-5]))
     for f in names:
         for dark in (False, True):
             png = os.path.join(out, f"{f[:-5]}{'-dark' if dark else ''}.png")
             try:
-                shoot(os.path.join(out, f), png, dark)
+                (shoot_desktop if desktop else shoot)(os.path.join(out, f), png, dark)
             except Exception as ex:
                 print(f"  screenshot failed for {png}: {ex}", file=sys.stderr, flush=True)
     print(f"screenshots for {len(names)} designs in {out}")
@@ -135,9 +162,10 @@ def main():
     ap.add_argument("--model", default="gemini-pro-latest")
     ap.add_argument("--out", default="", help="output folder (default .mocks/<time>)")
     ap.add_argument("--shots-only", action="store_true", help="only (re)take the screenshots of the designs in that folder")
+    ap.add_argument("--desktop", action="store_true", help="with --shots-only: 1440x900 desktop screenshots instead of phone ones")
     args = ap.parse_args()
     if args.shots_only:
-        return shots_for(args.brief)
+        return shots_for(args.brief, args.desktop)
     brief = open(args.brief, encoding="utf-8").read() if os.path.isfile(args.brief) else args.brief
     out = args.out or os.path.join(".mocks", time.strftime("%m%d-%H%M"))
     os.makedirs(out, exist_ok=True)
