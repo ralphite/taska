@@ -2054,7 +2054,8 @@ const WHO = by => by === 'you' ? 'font-medium text-blue-700 dark:text-blue-300' 
 const HIT = 'relative after:absolute after:inset-x-0 after:-inset-y-1.5';  // a 32px control gets a 44px touch area
 const BTN = 'rounded-lg px-2.5 py-2.5 sm:py-1.5 text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800';
 const LINK_BTN = `${HIT} flex h-8 items-center gap-1 rounded-lg px-2 text-[13px] font-semibold text-blue-600 dark:text-blue-400`;  // a quiet blue action
-const PRIMARY = 'inline-flex h-11 items-center justify-center gap-1.5 rounded-xl bg-zinc-900 px-4 text-[15px] font-semibold text-white disabled:opacity-40 dark:bg-zinc-100 dark:text-zinc-900';
+const PRIMARY_BASE = 'inline-flex h-11 items-center justify-center gap-1.5 rounded-xl px-4 text-[15px] font-semibold disabled:opacity-40';
+const PRIMARY = PRIMARY_BASE + ' bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900';
 const SECOND = 'inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-4 text-[15px] font-medium text-zinc-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200';
 const CHIP = `${HIT} flex h-8 items-center gap-1.5 rounded-lg bg-zinc-100 px-2.5 text-[13px] dark:bg-zinc-800/80`;
 const NEEDS_CARD = 'rounded-2xl border border-amber-200 bg-amber-50 dark:border-amber-400/25 dark:bg-amber-400/7';
@@ -2270,7 +2271,7 @@ const excerpt = it => oneLine(it.wait ? it.wait.text : it.status === 'review' ? 
 // Desktop: the selected row is tinted, others on hover; hovering shows the phone's swipe actions as buttons.
 const rowTint = it => U.open === it.n ? 'lg:bg-blue-50 dark:lg:bg-blue-400/10' : 'lg:hover:bg-zinc-50 dark:lg:hover:bg-zinc-900/70';
 const ACT_KEY = {Done: 'D', Accept: 'A', Approve: 'A', Archive: 'E', Unarchive: 'E', Later: 'L', Now: 'L', "Won't do": 'W', 'Not yet': 'N'};
-const ACT_TONE = {Done: 'text-emerald-600 dark:text-emerald-400', Accept: 'text-emerald-600 dark:text-emerald-400', Approve: 'text-emerald-600 dark:text-emerald-400', Archive: 'text-emerald-600 dark:text-emerald-400', Start: 'text-blue-600 dark:text-blue-400', "Won't do": 'text-red-600 dark:text-red-400'};
+const ACT_TONE = {Done: 'text-emerald-600 dark:text-emerald-400', Accept: 'text-emerald-600 dark:text-emerald-400', Approve: 'text-blue-600 dark:text-blue-400', Archive: 'text-emerald-600 dark:text-emerald-400', Start: 'text-blue-600 dark:text-blue-400', "Won't do": 'text-red-600 dark:text-red-400'};
 function rowActs(it, needs = false) {
   const acts = [...(needs ? [] : [swipeRight(it)].filter(Boolean)), ...swipeLeft(it)];  // the amber pill already is the forward step
   return `<div class="hidden shrink-0 items-center gap-0.5 self-center lg:group-hover:flex">${acts.map(([f, v, label]) =>
@@ -2311,7 +2312,15 @@ function itemRow(it, depth = 0, group = []) {
 
 // A row that waits on you (T65 "Needs you first"): an amber bar, what the agent said in one line, and the one
 // action right there on the thumb side.
-const ACTION_PILL = 'inline-flex h-8 min-w-18 items-center justify-center rounded-full bg-amber-100 px-3 text-[13px] font-semibold text-amber-950 ring-1 ring-amber-300/80 ring-inset dark:bg-amber-400/15 dark:text-amber-100 dark:ring-amber-400/30';
+// Each kind of "needs you" has its own color and icon (B96), on the row's pill, its label and the card's main
+// button: Accept green (it becomes done), Approve blue (work can start), Answer amber (a question), Reply red (stuck).
+const NEED = {
+  accept: {icon: 'check', pill: 'bg-emerald-100 text-emerald-900 ring-emerald-300/80 dark:bg-emerald-400/15 dark:text-emerald-100 dark:ring-emerald-400/30', text: 'text-emerald-700 dark:text-emerald-400', btn: 'bg-emerald-600 text-white dark:bg-emerald-500 dark:text-emerald-950'},
+  approve: {icon: 'thumb', pill: 'bg-blue-100 text-blue-900 ring-blue-300/80 dark:bg-blue-400/15 dark:text-blue-100 dark:ring-blue-400/30', text: 'text-blue-700 dark:text-blue-400', btn: 'bg-blue-600 text-white dark:bg-blue-500 dark:text-blue-950'},
+  answer: {icon: 'ask', pill: 'bg-amber-100 text-amber-950 ring-amber-300/80 dark:bg-amber-400/15 dark:text-amber-100 dark:ring-amber-400/30', text: 'text-amber-700 dark:text-amber-400', btn: 'bg-amber-500 text-amber-950 dark:bg-amber-400 dark:text-amber-950'},
+  reply: {icon: 'reply', pill: 'bg-rose-100 text-rose-900 ring-rose-300/80 dark:bg-rose-400/15 dark:text-rose-100 dark:ring-rose-400/30', text: 'text-rose-700 dark:text-rose-400', btn: 'bg-rose-600 text-white dark:bg-rose-500 dark:text-rose-950'},
+};
+const ACTION_PILL = v => `inline-flex h-8 min-w-18 items-center justify-center gap-1 rounded-full pr-3 pl-2.5 text-[13px] font-semibold ring-1 ring-inset ${NEED[v].pill}`;
 const rowAction = it => it.wait ? (it.wait.kind === 'block' ? ['reply', 'Reply'] : ['answer', 'Answer']) : it.status === 'proposed' ? ['approve', 'Approve'] : ['accept', 'Accept'];
 function needsRow(it) {
   const [v, label] = rowAction(it);
@@ -2321,12 +2330,12 @@ function needsRow(it) {
       <div class="min-w-0 flex-1">
         <p class="line-clamp-2 text-[15px] leading-snug font-medium lg:line-clamp-1"><span class="mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[it.type]}">${code(it.n)}</span>${esc(it.title)}</p>
         <div class="mt-1 flex min-w-0 items-center gap-2 text-xs font-medium">
-          ${it.type === 'rule' ? '' : `<span class="shrink-0 ${PRI_TEXT[it.pri]}">${it.pri}</span>`}<span class="shrink-0 font-semibold text-amber-700 dark:text-amber-400">${needLabel(it)}</span>${it.parent ? `<span class="shrink-0 text-zinc-500 dark:text-zinc-400">↳ ${code(it.parent)}</span>` : ''}
+          ${it.type === 'rule' ? '' : `<span class="shrink-0 ${PRI_TEXT[it.pri]}">${it.pri}</span>`}<span class="shrink-0 font-semibold ${NEED[v].text}">${needLabel(it)}</span>${it.parent ? `<span class="shrink-0 text-zinc-500 dark:text-zinc-400">↳ ${code(it.parent)}</span>` : ''}
           <span class="min-w-0 truncate font-normal text-zinc-500 dark:text-zinc-400">${esc(excerpt(it))}</span>
         </div>
       </div>
       ${it.type === 'rule' ? '' : rowActs(it, true)}
-      <button data-act="row-act" data-n="${it.n}" data-v="${v}" title="${label} · A" class="-my-1 grid h-11 shrink-0 place-items-center"><span class="${ACTION_PILL}">${label}</span></button>
+      <button data-act="row-act" data-n="${it.n}" data-v="${v}" title="${label} · A" class="-my-1 grid h-11 shrink-0 place-items-center"><span class="${ACTION_PILL(v)}">${ico(NEED[v].icon, 'size-3.5', '2.25')}${label}</span></button>
     </div>`;
   return `<article data-n="${it.n}" class="relative border-b border-zinc-100 dark:border-zinc-800/70">${it.type === 'rule' ? top : swipeRow(it, top)}</article>`;
 }
@@ -2489,7 +2498,7 @@ function choiceHtml(labels, multi, n, base, done = null) {  // done: the labels 
   }).join('')}</div>`;
 }
 const hasChoices = text => String(text || '').split('\n').some(l => CHOICE.test(l));
-const sendAnswerBtn = (n, cls = 'w-full', key = false) => `<button data-act="choice-send" data-n="${n}" ${U.choice?.n === n && U.choice.picked.size ? '' : 'disabled'} class="${PRIMARY} ${cls}">Send answer${key ? KBD('⌘↵') : ''}</button>`;
+const sendAnswerBtn = (n, cls = 'w-full', key = false) => `<button data-act="choice-send" data-n="${n}" ${U.choice?.n === n && U.choice.picked.size ? '' : 'disabled'} class="${PRIMARY_BASE} ${NEED.answer.btn} ${cls}">Send answer${key ? KBD('⌘↵') : ''}</button>`;
 const KIND_TAG = x => KIND[x.kind] ? `<span class="rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wider uppercase ${x.kind === 'decide' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-400/15 dark:text-emerald-300' : 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400'}">${KIND[x.kind]}</span>` : '';
 // A long agent message shows its first line, the conclusion, until you ask for more (T58 #5).
 function msgText(x, gid, form = 0, done = null) {
@@ -2718,14 +2727,14 @@ function needsCard(it) {
       + (w.files?.length ? `<div class="flex gap-2 overflow-x-auto">${thumbs(w.files, 'w' + n, 'h-48 w-24')}</div>` : '');
     return card(w.kind === 'block' ? 'alert' : 'ask', `${esc(whoName(w.by))} ${w.kind === 'block' ? 'is blocked and needs you' : 'asks you'}`, body,
       choices ? `<button data-act="reply" class="${SECOND} flex-1 lg:flex-none">${ico('reply', 'size-4')}Reply${KBD('R')}</button>${sendAnswerBtn(n, 'flex-[1.4] lg:flex-none', true)}`
-        : `<button data-act="reply" class="${PRIMARY} flex-1 lg:flex-none">${ico('reply', 'size-4')}Reply${KBD('R')}</button>`,
+        : `<button data-act="reply" class="${PRIMARY_BASE} ${NEED.reply.btn} flex-1 lg:flex-none">${ico('reply', 'size-4')}Reply${KBD('R')}</button>`,
       choices ? 'Pick with 1–9, send with ⌘↵' : 'It continues after you reply');
   }
   if (it.status === 'proposed') return card('propose', `${esc(name)} proposed this`, m ? msgText(m, 'card' + n) : '<p class="text-sm text-amber-900/80 dark:text-amber-200/80">Nobody works on it until you approve.</p>',
-    `<button data-act="status" data-n="${n}" data-v="dropped" class="${SECOND} flex-1 lg:flex-none">${ico('ban', 'size-4')}Won't do${KBD('W')}</button><button data-act="status" data-n="${n}" data-v="open" class="${PRIMARY} flex-[1.4] lg:flex-none">${ico('thumb', 'size-4.5')}Approve${KBD('A')}</button>`,
+    `<button data-act="status" data-n="${n}" data-v="dropped" class="${SECOND} flex-1 lg:flex-none">${ico('ban', 'size-4')}Won't do${KBD('W')}</button><button data-act="status" data-n="${n}" data-v="open" class="${PRIMARY_BASE} ${NEED.approve.btn} flex-[1.4] lg:flex-none">${ico('thumb', 'size-4.5')}Approve${KBD('A')}</button>`,
     'Nobody works on it until you approve');
   if (it.status === 'review') return card('done', `${esc(name)} finished this`, m ? msgText(m, 'card' + n) : '<p class="text-sm text-amber-900/80 dark:text-amber-200/80">Check its work, then accept or reopen.</p>',
-    `<button data-act="reopen" data-n="${n}" class="${SECOND} flex-1 lg:flex-none">${ico('reopen', 'size-4')}Not yet${KBD('N')}</button><button data-act="status" data-n="${n}" data-v="done" class="${PRIMARY} flex-[1.4] lg:flex-none">${ico('check', 'size-4.5', '2.25')}Accept${KBD('A')}</button>`,
+    `<button data-act="reopen" data-n="${n}" class="${SECOND} flex-1 lg:flex-none">${ico('reopen', 'size-4')}Not yet${KBD('N')}</button><button data-act="status" data-n="${n}" data-v="done" class="${PRIMARY_BASE} ${NEED.accept.btn} flex-[1.4] lg:flex-none">${ico('check', 'size-4.5', '2.25')}Accept${KBD('A')}</button>`,
     'Not yet reopens it and asks what is missing');
   return it.reply ? `<div class="flex items-center gap-2 text-sm font-medium text-emerald-700 dark:text-emerald-400">${ico('check', 'size-4', '2.25')}You replied. Waiting for your agent.</div>` : '';
 }
