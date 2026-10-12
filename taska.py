@@ -2155,7 +2155,7 @@ const SECTION = (text, right = '') => `<div class="flex h-6 items-center justify
 let S = {rev: -1, boot: '', items: [], inputs: [], width: 1, org: {}};
 let offline = 0;  // consecutive failed polls
 const byN = new Map(), byR = new Map(), kids = new Map();
-const U = {doc: null, docNew: null, docEdit: false, docText: null, docSel: new Set(), docQuote: null, docCircle: false, docThreads: new Set(), docDrafts: {}, docScroll: {}, peek: null, moreInputs: new Set(), tab: 'items', q: '', type: 'all', when: 'all', status: 'all', pri: 'all', undoArch: null, folded: new Set(), moreMsgs: new Set(), subFor: null, choice: null, choiceLabels: {}, go: null, sheet: null, searching: false, open: null, scopeOff: false, editing: null, files: [], sending: false, lastSent: null, more: new Set()};
+const U = {doc: null, docNew: null, docEdit: false, docText: null, docSel: new Set(), docQuote: null, docCircle: false, docThreads: new Set(), docDrafts: {}, docScroll: {}, peek: null, moreInputs: new Set(), tab: 'items', q: '', type: 'all', when: 'all', status: 'all', pri: 'all', undoArch: null, folded: new Set(), moreMsgs: new Set(), subFor: null, choice: null, choiceLabels: {}, go: null, sheet: null, searching: false, open: null, scopeOff: false, editing: null, files: [], sending: false, lastSent: null, more: new Set(), tabOpen: {}};
 U.outbox = []; U.qn = 0;  // what you sent that hasn't reached the server yet (F85)
 const groups = new Map();
 let viewerGroup = [], viewerIdx = 0;
@@ -3190,6 +3190,7 @@ function renderInputs() {
 
 // On the desktop the selected item counts only while its pane shows (not on Inputs or the project page).
 const detailShown = () => !desk() || (U.tab !== 'inputs' && !D.page);
+const inTab = (it, t) => t === 'rules' ? it.type === 'rule' && !it.archived : t === 'archive' ? it.archived : !it.archived && (it.type !== 'rule' || it.status === 'proposed');
 const scopeN = () => (U.peek && byN.has(U.peek)) ? U.peek : (U.open && !U.scopeOff && byN.has(U.open) && detailShown()) ? U.open : null;
 // Voice notes: desktop only (the user does not want them on the phone), and only where the browser allows it.
 // Phones too: over https (the tunnel) they record fine. Plain http can't reach the microphone, so no button there.
@@ -3622,7 +3623,14 @@ function setTab(t) {
   const was = U.tab;
   U.tab = t;
   if (t !== was) writeURL(true);
-  if (desk()) { D.page = null; D.sideOpen = false; D.compose = false; render(); return writeURL(false); }
+  if (desk()) {
+    if (t !== was && t !== 'inputs' && was !== 'inputs') {  // B120: the open item belongs to a tab; each tab keeps its own
+      U.tabOpen[was] = U.open;
+      const back = [U.tabOpen[t], U.open].find(k => k && byN.has(k) && inTab(byN.get(k), t));
+      if (back !== U.open) { U.open = back || null; U.go = null; }
+    }
+    D.page = null; D.sideOpen = false; D.compose = false; render(); return writeURL(false);
+  }
   document.querySelectorAll('[data-tab]').forEach(b => b.getAttribute('aria-selected') !== null && b.setAttribute('aria-selected', String(b.dataset.tab === t)));
   showView(); renderFilters();
   if (t === 'inputs') renderInputs(); else { renderItems(); $('list').scrollTop = 0; }
@@ -4233,7 +4241,9 @@ function deskKey(e) {
   if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && U.choice && U.choice.n === U.open) { e.preventDefault(); return document.querySelector(`[data-act="choice-send"][data-n="${U.open}"]`)?.click(); }
   if (e.metaKey || e.ctrlKey) return;
   if (!$('overlay').hidden) return;  // a sheet or menu is open: it has its own keys (Esc closes it)
-  const k = e.key, it = U.open && byN.get(U.open), n = U.open;
+  if (D.sideOpen && e.key !== '[') return;  // the sidebar is over the page: keys don't reach behind it (B120)
+  // Item keys act only on an item you can see (B120): not from Inputs, the project page or New input.
+  const k = e.key, n = detailShown() && !D.compose ? U.open : null, it = n && byN.get(n), lists = U.tab !== 'inputs' && !D.page;
   if (D.g && Date.now() - D.g < 1000) {  // G then a letter
     D.g = 0;
     const tab = {i: 'items', n: 'inputs', a: 'archive', r: 'rules'}[k.toLowerCase()];
@@ -4243,10 +4253,13 @@ function deskKey(e) {
   const act = (name, data = {}) => { e.preventDefault(); ACT[name]({dataset: {n: String(n), ...data}}, e); };
   const status = v => it && act('status', {v});
   switch (k) {
-    case 'j': case 'ArrowDown': e.preventDefault(); return stepItem(1);
-    case 'k': case 'ArrowUp': e.preventDefault(); return stepItem(-1);
-    case 'J': e.preventDefault(); return U.go ? ACT['go-next']() : startGoDesk(U.open);
-    case 'K': e.preventDefault(); return U.go ? ACT['go-prev']() : startGoDesk(U.open);
+    case 'j': case 'ArrowDown': if (lists) { e.preventDefault(); stepItem(1); } return;
+    case 'k': case 'ArrowUp': if (lists) { e.preventDefault(); stepItem(-1); } return;
+    case 'J': case 'K':  // what needs you lives in Items: from another tab or page, go there first
+      e.preventDefault();
+      if (U.go) return ACT[k === 'J' ? 'go-next' : 'go-prev']();
+      if (U.tab !== 'items' || D.page || D.compose) setTab('items');
+      return startGoDesk(U.open);
     case 'o': case 'Enter': if (it) { e.preventDefault(); fullWidth(!D.full); } return;
     case ' ': if (it) { e.preventDefault(); $('detailBody').scrollBy({top: (e.shiftKey ? -0.8 : 0.8) * $('detailBody').clientHeight, behavior: 'smooth'}); } return;
     case 'g': D.g = Date.now(); return;
