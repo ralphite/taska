@@ -2155,7 +2155,7 @@ const SECTION = (text, right = '') => `<div class="flex h-6 items-center justify
 let S = {rev: -1, boot: '', items: [], inputs: [], width: 1, org: {}};
 let offline = 0;  // consecutive failed polls
 const byN = new Map(), byR = new Map(), kids = new Map();
-const U = {doc: null, docNew: null, docEdit: false, docText: null, docSel: new Set(), docQuote: null, docCircle: false, docThreads: new Set(), docDrafts: {}, docScroll: {}, peek: null, moreInputs: new Set(), tab: 'items', q: '', type: 'all', when: 'all', status: 'all', pri: 'all', undoArch: null, folded: new Set(), moreMsgs: new Set(), subFor: null, choice: null, choiceLabels: {}, go: null, sheet: null, searching: false, open: null, scopeOff: false, editing: null, files: [], sending: false, lastSent: null, more: new Set(), tabOpen: {}, editDrafts: {}, settle: new Map(), tabTop: {}, stepFrom: null, mine: []};
+const U = {doc: null, docNew: null, docEdit: false, docText: null, docSel: new Set(), docQuote: null, docCircle: false, docThreads: new Set(), docDrafts: {}, docScroll: {}, peek: null, moreInputs: new Set(), tab: 'items', q: '', type: 'all', when: 'all', status: 'all', pri: 'all', undoArch: null, folded: new Set(), moreMsgs: new Set(), subFor: null, choice: null, choiceLabels: {}, go: null, sheet: null, searching: false, open: null, scopeOff: false, editing: null, files: [], sending: false, lastSent: null, more: new Set(), tabOpen: {}, editDrafts: {}, settle: new Map(), tabTop: {}, stepFrom: null, mine: [], tabView: {}};
 U.outbox = []; U.qn = 0;  // what you sent that hasn't reached the server yet (F85)
 const groups = new Map();
 let viewerGroup = [], viewerIdx = 0;
@@ -2313,6 +2313,7 @@ function hay(it) {
 }
 
 const filtered = () => !!(U.q.trim() || U.type !== 'all' || U.when !== 'all' || U.status !== 'all' || U.pri !== 'all');
+const openCount = () => S.items.filter(it => !it.merged_into && inTab(it, 'items') && !CLOSED(it.status)).length;  // B130: one meaning of "open"
 function visible(tab = U.tab) {
   const words = U.q.trim().toLowerCase().split(/\s+/).filter(Boolean);
   // Items shows the work, plus rules an agent proposed: they wait on you too (T65).
@@ -3048,7 +3049,7 @@ function itemMenu(n) {
   </div>`, {head: `<span class="block truncate text-[15px] font-semibold"><span class="mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[it.type]}">${code(n)}</span>${esc(it.title)}</span>`, focus: false});
 }
 
-const STATUS_FILTER = {active: 'Not finished', wait: 'Needs you', proposed: 'Proposed', doing: 'In progress', review: 'In review', done: 'Done', dropped: "Won't do", archived: 'Archived'};
+const STATUS_FILTER = {active: 'Not finished', wait: 'Needs you', proposed: 'Proposed', doing: 'In progress', review: 'In review', done: 'Done', dropped: "Won't do"};  // archived things live in the Archive tab (B130)
 // Rows hang under their parent when both are in the same group (I59); one whose parent is elsewhere stands alone.
 function tree(group) {
   const inG = new Set(group.map(it => it.n)), out = [];
@@ -3062,7 +3063,8 @@ function renderItems() {
   const list = $('list'), top = U.open && !desk() ? U.listTop?.[0] : list.scrollTop;  // under the phone's item page the list is hidden and reads 0
   SW.open = SW.el = null;  // rows are rebuilt closed; a stale reference would swallow the next tap
   const rows = visible();
-  $('nItems').textContent = (U.tab === 'items' ? rows : visible('items')).filter(it => !it.archived).length;
+  $('nItems').textContent = U.tab === 'items' && filtered() ? rows.filter(it => !it.archived).length : openCount();  // what is open; while you search, the matches (B130)
+  if (desk()) renderDeskHead();  // the title's count follows the search as you type
   $('nRules').textContent = S.items.filter(it => it.type === 'rule' && !it.merged_into && !it.archived && it.status !== 'dropped').length || '';
   $('nArchTab').textContent = S.items.filter(it => it.archived && !it.merged_into).length || '';
   renderFilters();
@@ -3089,7 +3091,7 @@ function renderItems() {
     const done = rows.filter(it => CLOSED(it.status) && !it.archived && !settled(it)), arch = rows.filter(it => it.archived);
     html = (needs.length ? zone('needs', 'Needs you', needs.filter(needsYou).length, going ? `<span class="text-xs font-medium text-amber-700 dark:text-amber-400">· Going through</span><button data-act="go-end" class="-my-1 ml-auto flex h-11 items-center gap-1 rounded-full pr-2 pl-3 text-[13px] font-semibold text-amber-800 dark:text-amber-300">End${KBD('Esc')}</button>` : goThroughBtn())
         + needs.map(it => going && going.done.has(it.n) ? settledRow(it) : needsRow(it)).join('') : '')  // nothing waiting: no band (I71)
-      + (queue.length ? zone('queue', 'Agent queue', queue.length, keepGoingSwitch()) + tree(queue) : '')
+      + (queue.length ? zone('queue', 'Agent queue', queue.filter(it => it.when === 'now').length, keepGoingSwitch()) + tree(queue) : '')  // Later items show, but agents don't take them (B130)
       + (U.undoArch ? `<div class="flex items-center gap-3 border-b border-blue-100 bg-blue-50 py-2 pr-2 pl-4 dark:border-blue-400/15 dark:bg-blue-400/10">
           ${ico('archive', 'size-5 text-blue-600 dark:text-blue-400')}
           <p class="min-w-0 flex-1 text-sm text-blue-950 dark:text-blue-100"><span class="font-semibold">Archived ${plural(U.undoArch.ids.length, 'finished item')}.</span> They are under Archive.</p>
@@ -3702,8 +3704,15 @@ function closeItem() {
 }
 
 function clearSearch() { U.q = ''; $('q').value = ''; qSync(); writeURL(false); renderItems(); if (U.tab === 'inputs') renderInputs(); }
+const VIEW_KEYS = ['q', 'type', 'when', 'status', 'pri'];
 function setTab(t) {
   const was = U.tab;
+  if (t !== was) {  // B130: each tab keeps its own search and filters; nothing leaks from one tab to another
+    U.tabView[was] = Object.fromEntries(VIEW_KEYS.map(k => [k, U[k]]));
+    const v = U.tabView[t] || {};
+    for (const k of VIEW_KEYS) U[k] = v[k] ?? (k === 'q' ? '' : 'all');
+    $('q').value = U.q; qSync();
+  }
   U.asRule = null; if (t === 'inputs' && was !== 'inputs') U.inputsEnd = true;
   U.tab = t;
   if (t !== was) writeURL(true);
@@ -4097,7 +4106,7 @@ function renderSidebar() {
     return `<a href="/p/${encodeURIComponent(p.name)}/" class="flex items-center gap-2.5 rounded-xl px-3 py-1.5 hover:bg-zinc-200/60 dark:hover:bg-zinc-800">${projTile(p.name, 'size-5 rounded-md text-[10px]')}
       <span class="min-w-0 flex-1"><span class="block truncate text-sm font-medium">${esc(p.name)}</span><span class="flex items-center gap-1.5 text-[11px] text-zinc-500 dark:text-zinc-400"><span class="size-1.5 shrink-0 rounded-full ${AGENT_TONE[tone][0]}"></span><span class="truncate ${tone === 'ok' ? 'text-emerald-700 dark:text-emerald-400' : AGENT_TONE[tone][1]}">${esc(label)}</span><span class="shrink-0">· ${p.open} open</span></span></span>
       ${p.needs ? `<span class="grid h-5 min-w-5 place-items-center rounded-full bg-amber-100 px-1 text-[11px] font-bold text-amber-900 dark:bg-amber-400/15 dark:text-amber-200">${p.needs}</span>` : ''}</a>`; }).join('');
-  const open = S.items.filter(it => !it.merged_into && !it.archived && !CLOSED(it.status) && it.type !== 'rule').length;
+  const open = openCount();
   $('drawerList').innerHTML = `<div class="mb-2 rounded-2xl bg-white p-1.5 shadow-sm ring-1 ring-zinc-900/5 dark:bg-zinc-800 dark:ring-white/5">
       <div class="flex items-center gap-2 px-1.5 pt-1">${projTile(S.project, 'size-6 rounded-lg text-xs')}<span class="min-w-0 flex-1 truncate text-[15px] font-semibold">${esc(S.project)}</span><span class="text-xs text-zinc-400">${open} open</span></div>
       <div id="deskAgent" class="px-1 pt-1 pb-1.5"></div>
@@ -4740,6 +4749,12 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && U.searching && document.activeElement === $('q') && !desk()) searchMode(false);
 });
 
+$('q').addEventListener('keydown', e => {  // B130: from the search, Down or Enter goes to the first result
+  if (!desk() || !(e.key === 'ArrowDown' || (e.key === 'Enter' && !e.isComposing))) return;
+  const first = U.tab === 'inputs' ? null : document.querySelector('#list [data-act="open"][data-n]');
+  e.preventDefault(); $('q').blur();
+  if (first) openItem(Number(first.dataset.n));
+});
 $('q').addEventListener('input', e => { U.q = e.target.value; qSync(); writeURL(false); if (U.tab === 'inputs') renderInputs(); else { renderItems(); $('list').scrollTop = 0; } });
 $('text').addEventListener('input', () => { saveDraft(); renderComposer(); grow(); });  // the buttons first: the mic showing up narrows the box
 document.addEventListener('input', e => { const k = e.target.dataset?.docDraft; if (k) U.docDrafts[k] = e.target.value; if (e.target.id === 'docMd') U.docText = e.target.value; });
