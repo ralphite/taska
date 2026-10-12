@@ -3110,7 +3110,7 @@ function restoreEdit(k) {
 
 function inputActions(r, cls = LINK_BTN) {
   if (r.moved) return '';
-  return `<button data-act="input-edit" data-id="${r.id}" class="${cls}">${ico('edit', 'size-3.5')}Edit</button><button data-act="input-append" data-id="${r.id}" class="${cls}">${ico('plus', 'size-3.5')}Add details</button>`
+  return `<button data-act="input-edit" data-id="${r.id}" class="${cls}">${ico('pencil', 'size-3.5')}Edit</button><button data-act="input-append" data-id="${r.id}" class="${cls}">${ico('plus', 'size-3.5')}Add details</button>`
     + (r.history?.length ? `<button data-act="input-history" data-id="${r.id}" class="${cls}">History</button>` : '');
 }
 
@@ -3122,7 +3122,7 @@ function editInput(id, mode) {
   dialog(`${append ? 'Add details to' : 'Edit'} ${id}`, `${append ? `<p class="mb-3 max-h-36 overflow-auto whitespace-pre-wrap break-words text-sm text-zinc-500 dark:text-zinc-400">${esc(r.text)}</p>` : ''}
     <label class="block"><span class="mb-2 block text-sm font-medium">${append ? 'Additional details' : 'Input text'}</span><textarea id="inputEditText" rows="8" class="${FIELD} resize-y">${esc(append ? '' : r.text)}</textarea></label>
     <p id="inputEditError" role="alert" class="mt-2 text-sm text-red-600 dark:text-red-400"></p>`,
-    {focus: false, sub: '<span class="text-sm text-zinc-500">Saving updates the related items. Earlier text and files are kept.</span>', foot: `<div class="flex justify-end gap-2"><button data-act="close" class="${SECOND}">Cancel</button><button data-act="input-save" class="${PRIMARY}">${append ? 'Add details' : 'Save'}</button></div>`});
+    {focus: false, sub: '<p class="px-4 pb-2 text-sm text-zinc-500 dark:text-zinc-400">Saving updates the related items. Earlier text and files are kept.</p>', foot: `<div class="flex justify-end gap-2"><button data-act="close" class="${SECOND}">Cancel</button><button data-act="input-save" class="${PRIMARY}">${append ? 'Add details' : 'Save'}</button></div>`});
   $('inputEditText').focus();
 }
 
@@ -3205,7 +3205,7 @@ function renderComposer() {
   const d = $('drafts');
   d.hidden = !U.files.length;
   d.innerHTML = U.files.map((f, i) => `<div class="relative shrink-0">${(f.mime || '').startsWith('audio/')
-      ? `<div class="flex h-16 items-center gap-2 rounded-xl border border-zinc-200 px-3 text-xs text-zinc-600 dark:border-zinc-700 dark:text-zinc-300">${ico('mic', 'size-4')}<span class="font-mono tabular-nums">${clock(f.ms || 0)}</span><span class="font-semibold ${f.transcribing ? 'animate-pulse text-blue-600 dark:text-blue-400' : f.tr ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-500'}">${f.transcribing ? 'Transcribing…' : f.tr ? 'Transcribed' : 'No transcript, audio still sent'}</span></div>`
+      ? `<div class="flex h-16 items-center gap-2 rounded-xl border border-zinc-200 px-3 text-xs text-zinc-600 dark:border-zinc-700 dark:text-zinc-300">${ico('mic', 'size-4')}<span class="font-mono tabular-nums">${clock(f.ms || 0)}</span><span class="font-semibold ${f.transcribing ? 'animate-pulse text-blue-600 dark:text-blue-400' : f.tr ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-500'}">${f.transcribing ? 'Transcribing…' : f.tr ? 'Transcribed' : f.tr_error ? 'No transcript, audio still sent' : 'No words heard, audio still sent'}</span></div>`
       : (f.mime || '').startsWith('image/')
       ? `<img src="${f.preview || P + 'f/' + encodeURIComponent(f.f)}" alt="${esc(f.name)}" class="size-16 rounded-xl border border-zinc-200 object-cover dark:border-zinc-700 ${f.f ? '' : 'opacity-40'}">`
       : `<div class="flex h-16 w-28 items-center gap-1 rounded-xl border border-zinc-200 px-2 text-xs dark:border-zinc-700 ${f.f ? '' : 'opacity-40'}">${ico('file', 'size-4')}<span class="line-clamp-2 break-all">${esc(f.name)}</span></div>`}
@@ -3216,11 +3216,13 @@ function renderComposer() {
   const sb = $('sendBtn'), icon = voice ? 'mic' : 'up';
   if (sb.dataset.icon !== icon) { sb.dataset.icon = icon; sb.innerHTML = ico(icon, voice ? 'size-6' : 'size-5'); }
   const micTip = !desk() ? '' : D.compose ? 'Record a voice note · ⌥V' : 'Record a voice note · V, or ⌥V while typing';
-  $('boxHint').innerHTML = R.rec ? `${KBD('V')}<span>stops ·</span>${KBD('Esc')}<span>cancels</span>` : `${ico('image', 'size-4')}Paste or drop screenshots`;
+  $('boxHint').innerHTML = R.rec ? `${KBD('↵')}<span>into the box ·</span>${KBD('⇧↵')}<span>sends ·</span>${KBD('Esc')}<span>discards</span>` : `${ico('image', 'size-4')}Paste or drop screenshots`;
   sb.dataset.act = voice ? 'mic' : 'send';
   sb.disabled = !voice && !R.rec && empty;
   sb.setAttribute('aria-label', voice ? 'Record a voice note' : R.rec ? 'Stop and send' : 'Send (Shift + Enter)');
-  sb.dataset.tip = desk() ? (voice ? micTip : R.rec ? 'Stop and send' : 'Send · ⌘↵') : '';
+  sb.dataset.tip = desk() ? (voice ? micTip : R.rec ? 'Stop and send · ⇧↵' : 'Send · ⌘↵') : '';
+  $('recStop').dataset.tip = desk() ? 'Stop, into the box · ↵' : '';
+  $('recCancel').dataset.tip = desk() ? 'Discard · Esc' : '';
   for (const id of ['attachBtn', 'text']) $(id).hidden = !!R.rec;
   $('micBtn').hidden = !!R.rec || voice || !canRecord();
   $('micBtn').dataset.tip = micTip;
@@ -3394,8 +3396,8 @@ async function finishRec(andSend) {
   f.transcribing = false; settle();
   if (!f.failed && U.files.includes(f)) {  // still a draft: its words go into the box
     if (f.tr) { const t = $('text'); t.value = (t.value.trim() ? t.value.trimEnd() + '\n' : '') + f.tr; grow(); saveDraft(); }
-    else toast('Transcription failed. The audio is kept and can be sent as is.');
-  } else if (!f.failed && !f.tr) toast('Transcription failed. The audio was sent as is.');
+    else toast(f.tr_error ? 'Transcription failed. The audio is kept and can be sent as is.' : 'No words heard. The audio is kept and can be sent as is.');
+  } else if (!f.failed && !f.tr) toast(f.tr_error ? 'Transcription failed. The audio was sent as is.' : 'No words heard. The audio was sent as is.');
   renderComposer(); renderFeedback();
 }
 
@@ -4171,7 +4173,7 @@ function movePicker(n) {
 const KEYS = [
   ['Move', [['J / K', 'Next or previous item'], ['⇧J / ⇧K', 'Next or previous item that needs you (Go through)'], ['O or ↵', 'Full width; Esc goes back'], ['Space', 'Scroll the item'], ['G then I N A R', 'Items, Inputs, Archive, Rules'], ['G then P', 'Switch project'], ['[', 'Show or hide the sidebar']]],
   ['Act on the selected item', [['A', 'The amber action: Accept, Approve or Answer'], ['R', 'Reply or add to it'], ['N', 'Not yet: reopen and say what is missing'], ['1–9, ⌘↵', 'Pick a choice, send the answer'], ['D · W · L', "Done · Won't do · Later / Now"], ['E / ⇧E', 'Archive or unarchive / archive every finished item'], ['S · P · T', 'Status, priority, type (the ⋯ menu)'], ['M · ⇧C', 'Move under… · Copy for agent'], ['I · ⇧D · ⇧A', 'Edit · New doc · Add subitem'], ['.', 'All actions'], ['Z', 'Undo the last change']]],
-  ['Write and find', [['C', 'New input to the project'], ['V', 'Voice note for the selected item; V again stops'], ['⇧V', 'New input by voice; ⇧V again stops and sends'], ['⌥V', 'Voice note while typing in the box'], ['⇧↵ or ⌘↵', 'Send'], ['/', 'Search'], ['F', 'Filters'], ['?', 'This sheet'], ['Esc', 'Step back one level']]],
+  ['Write and find', [['C', 'New input to the project'], ['V', 'Voice note for the selected item; V again stops'], ['⇧V', 'New input by voice; ⇧V again stops and sends'], ['⌥V', 'Voice note while typing in the box'], ['↵', 'While recording: stop, into the box'], ['⇧↵ or ⌘↵', 'Send; while recording: stop and send'], ['/', 'Search'], ['F', 'Filters'], ['?', 'This sheet'], ['Esc', 'Step back one level']]],
 ];
 function showKeys() {
   const sec = ([group, keys]) => `<section class="mb-5"><h3 class="mb-2 text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">${group}</h3>
@@ -4190,6 +4192,8 @@ function deskKey(e) {
   // ⌥V records even while you type in the box (B91): there a plain V is a letter.
   if (e.altKey && e.code === 'KeyV' && !e.metaKey && !e.ctrlKey && $('viewer').hidden && $('overlay').hidden) { e.preventDefault(); return R.rec ? finishRec(false) : startRec(); }
   if (typing || e.altKey || !$('viewer').hidden) return;
+  // While recording, the keys of the box (F095): ↵ stops into the box, ⇧↵ or ⌘↵ stops and sends, Esc discards.
+  if (R.rec && e.key === 'Enter' && !e.isComposing) { e.preventDefault(); return finishRec(e.shiftKey || e.metaKey || e.ctrlKey); }
   if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && U.choice && U.choice.n === U.open) { e.preventDefault(); return document.querySelector(`[data-act="choice-send"][data-n="${U.open}"]`)?.click(); }
   if (e.metaKey || e.ctrlKey) return;
   if (!$('overlay').hidden) return;  // a sheet or menu is open: it has its own keys (Esc closes it)
@@ -4510,11 +4514,11 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     if (DR.open) return closeDrawer();
     if (!$('viewer').hidden) return ACT['v-close']();
+    if (R.rec) return cancelRec();  // the recording first: it is what you are doing
     if (U.doc && U.docCircle) { U.docCircle = false; return renderDoc(); }
     if (U.doc && (U.docQuote || U.docSel.size || U.docReply)) return ACT['doc-unpick']();  // first Escape drops the selection
     if (desk() && U.doc && !U.docEdit && $('overlay').hidden && !/INPUT|TEXTAREA/.test(document.activeElement.tagName)) return closeDoc();  // then back to the item
     if (!$('overlay').hidden) return closeDialog();
-    if (R.rec) return cancelRec();
     if (U.editing) { U.editing = null; return renderDetail(); }
     if (desk()) {
       if (D.compose && document.activeElement === $('text') && !$('text').value.trim() && !U.files.length) return leaveCompose();  // nothing to lose
