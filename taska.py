@@ -1847,7 +1847,7 @@ PAGE = r'''<!doctype html>
 </nav>
 <nav id="rail" hidden aria-label="Projects and views" class="z-30 h-dvh w-14 shrink-0 flex-col items-center gap-1 border-r border-zinc-200 bg-zinc-50 py-2 lg:flex dark:border-zinc-800 dark:bg-zinc-900"></nav>
 <div id="drawerShade" hidden class="fixed top-0 right-0 z-30 h-dvh lg:bg-zinc-900/20 dark:lg:bg-black/50" aria-label="Close projects"></div>
-<div id="app" class="relative z-10 mx-auto flex h-full max-w-3xl flex-col bg-white pt-[env(safe-area-inset-top)] md:border-x md:border-zinc-200 lg:mx-0 lg:grid lg:min-w-0 lg:max-w-none lg:flex-1 lg:grid-cols-[var(--list-w,360px)_minmax(0,1fr)] lg:grid-rows-[auto_auto_minmax(0,1fr)_auto] lg:border-x-0 xl:grid-cols-[var(--list-w,420px)_minmax(0,1fr)] 2xl:grid-cols-[var(--list-w,460px)_minmax(0,1fr)] dark:bg-zinc-950 md:dark:border-zinc-800">
+<div id="app" class="group/app relative z-10 mx-auto flex h-full max-w-3xl flex-col bg-white pt-[env(safe-area-inset-top)] md:border-x md:border-zinc-200 lg:mx-0 lg:grid lg:min-w-0 lg:max-w-none lg:flex-1 lg:grid-cols-[var(--list-w,360px)_minmax(0,1fr)] lg:grid-rows-[auto_auto_minmax(0,1fr)_auto] lg:border-x-0 xl:grid-cols-[var(--list-w,420px)_minmax(0,1fr)] 2xl:grid-cols-[var(--list-w,460px)_minmax(0,1fr)] dark:bg-zinc-950 md:dark:border-zinc-800">
 
   <header id="mainHead" class="flex h-14 shrink-0 items-center gap-1 px-2 lg:col-start-1 lg:row-start-1 lg:gap-2 lg:border-r lg:border-b lg:border-zinc-200 lg:px-3 dark:lg:border-zinc-800">
     <div id="deskTitle" class="hidden min-w-0 shrink-0 items-baseline gap-2 pl-1 lg:flex"></div>
@@ -1883,7 +1883,7 @@ PAGE = r'''<!doctype html>
 
   <section id="inputsView" hidden class="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-6 lg:col-span-2 lg:col-start-1 lg:row-span-2 lg:row-start-2"></section>
 
-  <section id="detailView" hidden class="flex min-h-0 flex-1 flex-col lg:col-start-2 lg:row-span-3 lg:row-start-1">
+  <section id="detailView" hidden class="flex min-h-0 flex-1 flex-col lg:col-start-2 lg:row-span-3 lg:row-start-1 lg:group-data-[compose]/app:row-span-1">
     <div id="goStrip" hidden class="flex h-11 shrink-0 items-center gap-3 border-b border-amber-200/70 bg-amber-50 px-4 text-[13px] dark:border-amber-400/15 dark:bg-amber-400/10"></div>
     <header class="flex h-14 shrink-0 items-center gap-1 border-b border-zinc-100 px-1 lg:border-zinc-200 lg:px-3 dark:border-zinc-800/70 dark:lg:border-zinc-800">
       <button data-act="back" id="backBtn" aria-label="Back" class="grid size-11 shrink-0 place-items-center rounded-full text-zinc-600 active:bg-zinc-100 lg:hidden dark:text-zinc-400 dark:active:bg-zinc-800"></button>
@@ -1892,32 +1892,34 @@ PAGE = r'''<!doctype html>
       <button data-act="item-menu" id="itemMenuBtn" aria-label="Item actions" title="All actions · ." class="grid size-11 shrink-0 place-items-center rounded-full text-zinc-600 active:bg-zinc-100 lg:size-9 lg:rounded-lg lg:hover:bg-zinc-100 dark:text-zinc-400 dark:active:bg-zinc-800 dark:lg:hover:bg-zinc-800"></button>
       <div id="dNav" class="hidden items-center gap-0.5 border-l border-zinc-200 pl-2 lg:ml-1.5 lg:flex dark:border-zinc-800"></div>
     </header>
-    <div id="detailBody" class="min-h-0 flex-1 overflow-y-auto overscroll-contain"></div>
+    <div id="detailBody" class="min-h-0 flex-1 overflow-y-auto overscroll-contain lg:group-data-[compose]/app:hidden"></div>
   </section>
 
   <section id="projectView" hidden class="min-h-0 overflow-y-auto overscroll-contain lg:col-span-2 lg:col-start-1 lg:row-span-4 lg:row-start-1"></section>
 
   <div id="listGrip" data-grip="list" hidden title="Drag to resize · double-click for the default" class="z-30 cursor-col-resize hover:bg-blue-500/30 lg:col-start-1 lg:row-span-4 lg:row-start-1 lg:block lg:w-2 lg:translate-x-1/2 lg:justify-self-end"></div>
-  <footer id="foot" class="relative z-20 shrink-0 px-3 pt-1 pb-[max(1.25rem,env(safe-area-inset-bottom))] lg:col-start-2 lg:row-start-4 lg:px-8 lg:pb-5">
-    <div id="feedback" hidden role="status" class="mb-1.5 flex min-h-7 items-center gap-2 pr-1 pl-2.5 text-[13px] text-zinc-600 lg:mx-auto lg:max-w-[42rem] dark:text-zinc-300"></div>
-    <div id="composer" class="rounded-4xl border border-zinc-200/80 bg-white shadow-lg shadow-black/5 focus-within:border-zinc-300 lg:mx-auto lg:max-w-[42rem] dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-black/40 dark:focus-within:border-zinc-700">
-      <div id="scope" hidden class="flex h-8 items-center gap-1.5 pt-1 pr-1 pl-4 text-[13px] text-blue-700 dark:text-blue-300"></div>
-      <div id="drafts" hidden class="flex gap-2.5 overflow-x-auto px-3 pt-3 pb-1"></div>
-      <div class="flex items-end gap-0.5 p-1.5">
-        <button id="attachBtn" data-act="attach" aria-label="Add images or files" class="grid size-11 shrink-0 place-items-center rounded-full text-zinc-500 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"></button>
-        <textarea id="text" rows="1" placeholder="Write anything…" aria-label="Input" class="max-h-48 min-h-11 min-w-0 flex-1 resize-none bg-transparent px-1 py-2.5 text-[17px] leading-6 outline-none placeholder:text-zinc-400 sm:text-[15px] dark:placeholder:text-zinc-500"></textarea>
-        <div id="recBar" hidden class="flex h-11 min-w-0 flex-1 items-center gap-2" role="status" aria-label="Recording">
+  <footer id="foot" class="relative z-20 shrink-0 px-3 pt-1 pb-[max(1.25rem,env(safe-area-inset-bottom))] lg:col-start-2 lg:row-start-4 lg:px-8 lg:pb-5 lg:group-data-[compose]/app:row-start-2 lg:group-data-[compose]/app:row-span-3 lg:group-data-[compose]/app:overflow-y-auto lg:group-data-[compose]/app:overscroll-contain lg:group-data-[compose]/app:pt-[9vh] lg:group-data-[compose]/app:pb-16">
+    <div id="composeHead" class="hidden lg:group-data-[compose]/app:mx-auto lg:group-data-[compose]/app:mb-6 lg:group-data-[compose]/app:flex lg:group-data-[compose]/app:max-w-[42rem] lg:group-data-[compose]/app:flex-col lg:group-data-[compose]/app:items-center lg:group-data-[compose]/app:text-center"></div>
+    <div id="feedback" hidden role="status" class="mb-1.5 flex min-h-7 items-center gap-2 pr-1 pl-2.5 text-[13px] text-zinc-600 lg:mx-auto lg:max-w-[42rem] dark:text-zinc-300 lg:group-data-[compose]/app:hidden"></div>
+    <div id="composer" class="rounded-4xl border border-zinc-200/80 bg-white shadow-lg shadow-black/5 focus-within:border-zinc-300 lg:mx-auto lg:max-w-[42rem] dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-black/40 dark:focus-within:border-zinc-700 lg:group-data-[compose]/app:rounded-3xl lg:group-data-[compose]/app:border-zinc-300 lg:group-data-[compose]/app:shadow-xl lg:group-data-[compose]/app:shadow-zinc-900/[0.07] lg:group-data-[compose]/app:dark:border-zinc-700">
+      <div id="scope" hidden class="flex h-8 items-center gap-1.5 pt-1 pr-1 pl-4 text-[13px] text-blue-700 dark:text-blue-300 lg:group-data-[compose]/app:hidden"></div>
+      <div id="drafts" hidden class="flex gap-2.5 overflow-x-auto px-3 pt-3 pb-1 lg:group-data-[compose]/app:px-4 lg:group-data-[compose]/app:pt-4 lg:group-data-[compose]/app:pb-0"></div>
+      <div class="flex items-end gap-0.5 p-1.5 lg:group-data-[compose]/app:flex-wrap lg:group-data-[compose]/app:items-center lg:group-data-[compose]/app:gap-1 lg:group-data-[compose]/app:px-3 lg:group-data-[compose]/app:pt-1 lg:group-data-[compose]/app:pb-3">
+        <button id="attachBtn" data-act="attach" aria-label="Add images or files" title="Add images or files" class="grid size-11 shrink-0 place-items-center rounded-full text-zinc-500 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800 lg:group-data-[compose]/app:size-9"></button><span id="boxHint" class="hidden text-[13px] text-zinc-400 dark:text-zinc-500 lg:group-data-[compose]/app:mr-auto lg:group-data-[compose]/app:flex lg:group-data-[compose]/app:items-center lg:group-data-[compose]/app:gap-1.5 lg:group-data-[compose]/app:pl-1"></span>
+        <textarea id="text" rows="1" placeholder="Write anything…" aria-label="Input" class="max-h-48 min-h-11 min-w-0 flex-1 resize-none bg-transparent px-1 py-2.5 text-[17px] leading-6 outline-none placeholder:text-zinc-400 sm:text-[15px] dark:placeholder:text-zinc-500 lg:group-data-[compose]/app:order-first lg:group-data-[compose]/app:max-h-80 lg:group-data-[compose]/app:min-h-24 lg:group-data-[compose]/app:basis-full lg:group-data-[compose]/app:px-3 lg:group-data-[compose]/app:pt-4 lg:group-data-[compose]/app:pb-2 lg:group-data-[compose]/app:text-[17px] lg:group-data-[compose]/app:leading-7"></textarea>
+        <div id="recBar" hidden class="flex h-11 min-w-0 flex-1 items-center gap-2 lg:group-data-[compose]/app:order-first lg:group-data-[compose]/app:basis-full lg:group-data-[compose]/app:h-28 lg:group-data-[compose]/app:gap-3 lg:group-data-[compose]/app:px-2" role="status" aria-label="Recording">
           <button data-act="rec-cancel" aria-label="Cancel recording" id="recCancel" class="grid size-11 shrink-0 place-items-center rounded-full text-zinc-500 dark:text-zinc-400"></button>
           <span class="size-2.5 shrink-0 animate-pulse rounded-full bg-red-500"></span>
           <span id="recTime" class="w-10 shrink-0 font-mono text-[15px] text-zinc-700 tabular-nums dark:text-zinc-200">0:00</span>
-          <span id="recBars" class="flex h-8 min-w-0 flex-1 items-center justify-end gap-[3px] overflow-hidden"></span>
+          <span id="recBars" class="flex h-8 min-w-0 flex-1 items-center justify-end gap-[3px] overflow-hidden lg:group-data-[compose]/app:h-14"></span>
           <button data-act="rec-stop" aria-label="Stop recording" id="recStop" class="grid size-11 shrink-0 place-items-center rounded-full bg-red-600 text-white dark:bg-red-500"></button>
         </div>
-        <button id="micBtn" data-act="mic" aria-label="Record a voice note" hidden class="grid size-11 shrink-0 place-items-center rounded-full text-zinc-500 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"></button>
-        <button id="sendBtn" data-act="send" aria-label="Send (Shift + Enter)" class="grid size-11 shrink-0 place-items-center rounded-full bg-zinc-900 text-white disabled:opacity-25 dark:bg-zinc-100 dark:text-zinc-900"></button>
+        <button id="micBtn" data-act="mic" aria-label="Record a voice note" hidden class="grid size-11 shrink-0 place-items-center rounded-full text-zinc-500 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800 lg:group-data-[compose]/app:flex lg:group-data-[compose]/app:h-9 lg:group-data-[compose]/app:w-auto lg:group-data-[compose]/app:gap-0.5 lg:group-data-[compose]/app:px-2.5"></button>
+        <button id="sendBtn" data-act="send" aria-label="Send (Shift + Enter)" class="grid size-11 shrink-0 place-items-center rounded-full bg-zinc-900 text-white disabled:opacity-25 dark:bg-zinc-100 dark:text-zinc-900 lg:group-data-[compose]/app:flex lg:group-data-[compose]/app:h-9 lg:group-data-[compose]/app:w-auto lg:group-data-[compose]/app:gap-1 lg:group-data-[compose]/app:pr-2 lg:group-data-[compose]/app:pl-3.5 lg:group-data-[compose]/app:text-sm lg:group-data-[compose]/app:font-semibold"></button>
       </div>
       <input id="fileInput" type="file" multiple hidden>
     </div>
+    <section id="composeList" aria-label="You said lately" class="hidden lg:group-data-[compose]/app:mx-auto lg:group-data-[compose]/app:mt-10 lg:group-data-[compose]/app:block lg:group-data-[compose]/app:max-w-[42rem]"></section>
   </footer>
 </div>
 
@@ -2772,7 +2774,8 @@ function renderDetail() {
       $('dActs').innerHTML = ''; $('itemMenuBtn').hidden = true;
       $('dHead').innerHTML = D.compose ? `<span class="flex items-center gap-2 text-sm font-semibold">${ico('newinput', 'size-[18px] text-blue-600 dark:text-blue-400')}New input</span>` : '';
       $('dNav').innerHTML = back ? `<button data-act="compose-back" class="flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800">${ico('left', 'size-4')}Back to ${code(D.prev)}${KBD('Esc')}</button>` : '';
-      body.innerHTML = D.compose ? composePane() : noSelection();
+      body.innerHTML = D.compose ? '' : noSelection();
+      if (D.compose) { $('composeHead').innerHTML = composeHead(); $('composeList').innerHTML = saidLately(); }
     }
     return;
   }
@@ -2986,11 +2989,12 @@ function renderComposer() {
   const n = scopeN(), sc = $('scope');
   // On the desktop the line above the box always starts with the project (B78): "[M] my-app ›".
   const proj = desk() && S.project ? `<span class="mr-0.5 flex shrink-0 items-center gap-1.5 font-semibold text-zinc-800 dark:text-zinc-100">${projTile(S.project, 'size-[18px] rounded-[5px] text-[10px]')}<span class="max-w-40 truncate">${esc(S.project)}</span><span class="font-normal text-zinc-400 dark:text-zinc-500">›</span></span>` : '';
-  $('text').placeholder = desk() && S.project ? `Write to ${S.project}…` : 'Write anything…';
+  $('text').placeholder = !desk() || !S.project ? 'Write anything…' : n ? `Reply to ${code(n)}…` : `Write to ${S.project}…`;
   sc.hidden = !n;
   if (!n && !U.open && U.tab === 'rules') { sc.hidden = false; sc.innerHTML = `${proj}${ico('scope', 'size-3.5')}<span class="font-medium">New rule for this project</span>`; }
   else if (!n && desk()) { sc.hidden = false; sc.innerHTML = `${proj}<span class="flex min-w-0 flex-1 items-center gap-1.5 text-zinc-500 dark:text-zinc-400">${ico('inbox', 'size-3.5')}<span class="truncate"><span class="font-medium text-zinc-700 dark:text-zinc-200">New input</span> · ${S.org?.on ? 'the organizer files it' : 'your agent files it'}</span></span>${U.open && detailShown() ? `<button data-act="reply" class="h-8 shrink-0 rounded-full px-2 text-[13px] font-medium text-blue-600 dark:text-blue-400">Add to ${code(U.open)} instead${KBD('R')}</button>` : ''}`; }
-  if (n) sc.innerHTML = `${proj}${ico('scope', 'size-3.5')}<span class="min-w-0 flex-1 truncate"><span class="font-medium">${byN.get(n).wait ? 'Reply to' : 'Adding to'} ${code(n)}</span> ${esc(byN.get(n).title)}</span><button data-act="unscope" aria-label="Send to the whole project instead" class="-my-2 grid size-11 shrink-0 place-items-center rounded-full text-blue-600 dark:text-blue-300">${ico('x', 'size-4')}</button>`;
+  if (n && desk()) sc.innerHTML = `${proj}${ico('reply', 'size-3.5')}<span class="min-w-0 flex-1 truncate"><span class="font-medium">Reply to ${code(n)}</span> ${esc(byN.get(n).title)}</span><button data-act="new-input" title="Write a new input to the whole project instead · C" class="-my-2 flex h-8 shrink-0 items-center rounded-full px-2 text-[13px] font-medium text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200">New input instead${KBD('C')}</button>`;  // B83: a reply says so; a new input has its own page
+  else if (n) sc.innerHTML = `${proj}${ico('scope', 'size-3.5')}<span class="min-w-0 flex-1 truncate"><span class="font-medium">${byN.get(n).wait ? 'Reply to' : 'Adding to'} ${code(n)}</span> ${esc(byN.get(n).title)}</span><button data-act="unscope" aria-label="Send to the whole project instead" class="-my-2 grid size-11 shrink-0 place-items-center rounded-full text-blue-600 dark:text-blue-300">${ico('x', 'size-4')}</button>`;
   const d = $('drafts');
   d.hidden = !U.files.length;
   d.innerHTML = U.files.map((f, i) => `<div class="relative shrink-0">${(f.mime || '').startsWith('audio/')
@@ -2999,14 +3003,20 @@ function renderComposer() {
       ? `<img src="${f.preview || P + 'f/' + encodeURIComponent(f.f)}" alt="${esc(f.name)}" class="size-16 rounded-xl border border-zinc-200 object-cover dark:border-zinc-700 ${f.f ? '' : 'opacity-40'}">`
       : `<div class="flex h-16 w-28 items-center gap-1 rounded-xl border border-zinc-200 px-2 text-xs dark:border-zinc-700 ${f.f ? '' : 'opacity-40'}">${ico('file', 'size-4')}<span class="line-clamp-2 break-all">${esc(f.name)}</span></div>`}
     <button data-act="unfile" data-i="${i}" aria-label="Remove ${esc(f.name)}" class="absolute -top-3.5 -right-3.5 grid size-11 place-items-center"><span class="grid size-6 place-items-center rounded-full bg-zinc-900 text-white ring-2 ring-white dark:bg-zinc-100 dark:text-zinc-900 dark:ring-zinc-900">${ico('x', 'size-3.5', '2.5')}</span></button></div>`).join('');
-  const empty = !$('text').value.trim() && !U.files.length, voice = empty && !R.rec && canRecord();
+  const compose = desk() && D.compose && U.tab !== 'inputs';
+  const empty = !$('text').value.trim() && !U.files.length, voice = empty && !R.rec && canRecord() && !compose;  // the New input page shows mic and Send side by side
   const sb = $('sendBtn'), icon = voice ? 'mic' : 'up';
-  if (sb.dataset.icon !== icon) { sb.dataset.icon = icon; sb.innerHTML = ico(icon, voice ? 'size-6' : 'size-5'); }
+  if (sb.dataset.icon !== icon) {
+    sb.dataset.icon = icon;
+    sb.innerHTML = voice ? ico(icon, 'size-6') : `<span class="hidden lg:group-data-[compose]/app:inline">Send</span><span class="lg:group-data-[compose]/app:hidden">${ico(icon, 'size-5')}</span><kbd class="ml-1 hidden h-5 min-w-5 place-items-center rounded-md px-1 font-sans text-[11px] font-semibold opacity-60 ring-1 ring-current/30 lg:group-data-[compose]/app:inline-grid">⌘↵</kbd>`;
+  }
+  $('boxHint').innerHTML = R.rec ? `${KBD('V')}<span>stops ·</span>${KBD('Esc')}<span>cancels</span>` : `${ico('image', 'size-4')}Paste or drop screenshots`;
   sb.dataset.act = voice ? 'mic' : 'send';
   sb.disabled = !voice && !R.rec && empty;
   sb.setAttribute('aria-label', voice ? 'Record a voice note' : R.rec ? 'Stop and send' : 'Send (Shift + Enter)');
   for (const id of ['attachBtn', 'text']) $(id).hidden = !!R.rec;
   $('micBtn').hidden = !!R.rec || voice || !canRecord();
+  $('micBtn').title = desk() ? 'Record a voice note · ⌥V' : '';
   $('recBar').hidden = !R.rec;
   if (U.peek && !$('overlay').hidden) $('overlay').style.bottom = $('composer').parentElement.offsetHeight + 'px';  // sheet stays above the input box
 }
@@ -3061,7 +3071,7 @@ function renderFeedback() {
 
 function grow() {  // empty = one line from the classes; measuring a placeholder before styles load makes it tall
   const t = $('text'); t.style.height = '';
-  if (t.value) { t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight, 192) + 'px'; }
+  if (t.value) { t.style.height = 'auto'; t.style.height = Math.min(t.scrollHeight, desk() && D.compose ? 320 : 192) + 'px'; }
 }
 
 async function addFiles(list) {
@@ -3090,6 +3100,7 @@ async function send() {
   if (U.peek && U.go && n === U.peek) advance(U.peek);  // going through: your reply settles this one
   else if (desk() && U.go && U.open && !U.scopeOff && U.go.list.includes(U.open)) advanceDesk(U.open, 'Replied');
   render(); flushOutbox();
+  if (desk() && D.compose) $('foot').scrollTop = 0;
 }
 async function flushOutbox() {
   if (flushOutbox.busy) return;
@@ -3684,6 +3695,7 @@ function showDesk() {
   $('foot').hidden = page;
   $('deskFilters').hidden = page || full || inputs || !(D.filters || filtersSet().length);
   $('listGrip').hidden = page || full || inputs;
+  $('app').toggleAttribute('data-compose', D.compose && !page && !inputs);  // New input: the one box moves to the middle (B73)
   $('mainHead').classList.toggle('lg:col-span-2', inputs);
   for (const el of [$('detailView'), $('foot')]) {  // one wide page: the inputs, or an item at full width
     el.classList.toggle('lg:col-start-1', wide); el.classList.toggle('lg:col-start-2', !wide); el.classList.toggle('lg:col-span-2', wide);
@@ -3742,33 +3754,60 @@ function renderRail() {
     + b('keys', ico('keyboard', 'size-5'), 'Keyboard shortcuts · ?');
 }
 
-// The desktop's New input page (B73): no item in sight, so it is plain the words go to the project. Under it, what
-// you said lately and what became of it, so a new input can be followed into the items it turns into.
-function composePane() {
-  const recent = [...S.inputs].reverse().slice(0, 6), back = D.prev && byN.has(D.prev);
-  const tip = (k, what) => `<span class="inline-flex items-center">${KBD(k)}<span class="ml-1.5">${what}</span></span>`;
-  return `<div class="mx-auto w-full max-w-[46rem] px-8 pt-9 pb-6">
-    <h1 class="text-[22px] leading-tight font-semibold tracking-tight">Say something new</h1>
-    <p class="mt-2 text-[15px] leading-relaxed text-zinc-600 dark:text-zinc-300">For <span class="font-semibold text-zinc-900 dark:text-zinc-100">${esc(S.project)}</span>: a bug, an idea, a task, a screenshot or a voice note. ${S.org?.on ? 'The organizer turns it into items, or adds it to the ones that already exist.' : 'Your coding agent turns it into items.'}</p>
-    <p class="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-[13px] text-zinc-500 dark:text-zinc-400">${tip('⌘↵', 'Send')}${canRecord() ? tip('⌥V', 'Voice note') : ''}<span>Paste or drop screenshots</span>${tip('Esc', back ? 'Back to ' + code(D.prev) : 'Close')}</p>
-    ${recent.length ? `<h2 class="mt-10 text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">You said lately</h2>
-      <div class="mt-1 divide-y divide-zinc-100 dark:divide-zinc-800/70">${outboxRows()}${recent.map(recentInput).join('')}</div>
-      <button data-act="tab" data-tab="inputs" class="mt-1 flex h-9 items-center text-sm font-medium text-blue-600 hover:underline dark:text-blue-400">All inputs${KBD('G N')}</button>` : ''}
-  </div>`;
+// The desktop's New input page (B73): the one input box moves to the middle of the right pane, under the project's
+// tile and name, and what you said lately runs below it as a timeline of what each input became. A reply keeps
+// the box at the bottom of the item, so the two never look alike. Only the head and the list are drawn here;
+// the box itself is the same element as always, restyled by the data-compose switch on #app.
+function composeHead() {
+  return `<div class="flex items-center gap-3">${projTile(S.project, 'size-11 rounded-xl text-xl shadow-sm')}<h1 class="text-[28px] leading-none font-semibold tracking-tight">${esc(S.project)}</h1></div>
+    <p class="mt-3.5 text-[15px] text-zinc-500 dark:text-zinc-400">New input to the whole project<span class="px-1.5 text-zinc-300 dark:text-zinc-600">·</span><span class="inline-flex items-center gap-1 font-medium text-zinc-700 dark:text-zinc-200">${ico('sparkle', 'size-4 text-blue-600 dark:text-blue-400')}${S.org?.on ? 'the organizer files it' : 'your agent files it'}</span></p>`;
+}
+const DOT = {
+  pulse: '<span class="relative flex size-2.5"><span class="absolute inline-flex size-full animate-ping rounded-full bg-blue-400 opacity-75"></span><span class="relative inline-flex size-2.5 rounded-full bg-blue-500 dark:bg-blue-400"></span></span>',
+  ok: '<span class="size-2.5 rounded-full bg-emerald-500 ring-4 ring-emerald-500/15 dark:bg-emerald-400 dark:ring-emerald-400/15"></span>',
+  bad: '<span class="size-2.5 rounded-full bg-red-500 ring-4 ring-red-500/15 dark:bg-red-400 dark:ring-red-400/15"></span>',
+  idle: '<span class="size-2.5 rounded-full bg-zinc-300 dark:bg-zinc-600"></span>',
+  wait: '<span class="size-2.5 rounded-full border-2 border-zinc-300 dark:border-zinc-600"></span>'};
+const dotOf = r => r.moved ? 'wait' : S.org.busy === r.id ? 'pulse' : r.org && !r.org.ok ? 'bad' : r.org?.undone ? 'idle' : r.acked ? 'ok' : !r.org && S.org.on ? 'idle' : 'wait';
+const SMALL_BTN = 'flex h-7 shrink-0 items-center gap-1 rounded-lg px-2 text-[13px] font-medium text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200';
+// One step of the timeline: a dot, your words in a bubble, and the line saying what became of them.
+function saidStep(dot, bubble, meta, result, last) {
+  return `<li class="group/row relative flex gap-3 pb-5">${last ? '' : '<span aria-hidden="true" class="absolute top-7.5 -bottom-1.5 left-[11.5px] w-px bg-zinc-200 dark:bg-zinc-800"></span>'}<span class="relative mt-1.5 grid size-6 shrink-0 place-items-center">${dot}</span>
+    <div class="min-w-0 flex-1"><div class="flex items-start gap-3"><div class="w-fit max-w-full min-w-0 rounded-2xl rounded-tl-md bg-blue-50 px-3.5 py-1.5 text-[15px] leading-6 text-zinc-900 dark:bg-blue-400/10 dark:text-zinc-100">${bubble}</div>
+      <span class="ml-auto shrink-0 pt-1.5 text-xs whitespace-nowrap text-zinc-400 tabular-nums dark:text-zinc-500">${meta}</span></div>
+      <div class="mt-1.5 flex min-w-0 flex-wrap items-center gap-1.5">${result}</div></div></li>`;
+}
+function saidRow(r, k, last) {
+  const [label, tone] = inputState(r), scope = r.scope && byN.get(r.scope), later = k ? 'lg:opacity-0 lg:group-hover/row:opacity-100 lg:focus:opacity-100' : '';
+  const said = r.text || (r.files.some(f => (f.mime || '').startsWith('audio/')) ? 'Voice note' : '');
+  const bubble = (scope ? `<button data-act="goto" data-n="${scope.n}" class="mb-0.5 flex max-w-full items-center gap-1 text-xs font-medium text-blue-700 hover:underline dark:text-blue-300">${ico('reply', 'size-3.5')}<span class="truncate">Reply to ${code(scope.n)} · ${esc(scope.title)}</span></button>` : '')
+    + (said ? `<p class="line-clamp-2 break-words">${esc(said)}</p>` : '') + (r.files.length ? `<div class="mt-2 flex items-end gap-2">${thumbs(r.files, 'cl' + r.id, 'size-12')}</div>` : '');
+  const chips = r.moved ? '' : r.touched.filter(n => byN.has(n)).map(n => { const it = byN.get(n); return `<button data-act="goto" data-n="${n}" title="Open ${code(n)}" class="flex h-7 max-w-60 min-w-0 items-center gap-1.5 rounded-lg bg-zinc-100 pr-2.5 pl-1.5 text-[13px] text-zinc-800 hover:bg-zinc-200/80 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700">${stateIcon(it.status, statusName(it), 'size-4')}<span class="font-mono text-xs font-bold ${TYPE_TEXT[it.type]}">${code(n)}</span><span class="truncate">${esc(it.title)}</span></button>`; }).join('');
+  const busy = S.org.busy === r.id || (!r.acked && S.org.on && !r.org);
+  const acts = r.moved ? `<a href="/p/${encodeURIComponent(r.moved.to)}/" class="${SMALL_BTN} text-blue-600 dark:text-blue-400">${ico('arrow', 'size-3.5', '2')}Open ${esc(r.moved.to)} · ${esc(r.moved.as)}</a>`
+    : r.org && !r.org.ok ? `<span class="min-w-0 truncate text-[13px] text-red-600/80 dark:text-red-400/80">${esc(r.org.msg)}</span><button data-act="retry" data-id="${r.id}" class="ml-auto flex h-7 shrink-0 items-center gap-1 rounded-lg border border-zinc-200 bg-white px-2.5 text-[13px] font-semibold text-zinc-800 shadow-sm hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700">${ico('loop', 'size-3.5', '2')}Retry</button>`
+    : (busy ? '<span class="h-7 w-44 animate-pulse rounded-lg bg-zinc-100 dark:bg-zinc-800"></span>' : '')
+      + (r.org?.undone && !r.acked ? `<button data-act="retry" data-id="${r.id}" class="${SMALL_BTN}">${ico('loop', 'size-3.5', '2')}Organize again</button>` : '')
+      + (!r.acked && !r.scope && !(S.org.on && !r.org) && !busy ? `<button data-act="make-item" data-id="${r.id}" class="${SMALL_BTN} text-blue-600 dark:text-blue-400">${ico('plus', 'size-3.5', '2')}Make item</button>` : '')
+      + `<span class="ml-auto flex items-center ${later}">${r.org && r.org.ok && !r.org.undone && !r.org.keep && r.touched.length ? `<button data-act="undo" data-id="${r.id}" title="Undo what the organizer did with ${r.id}" class="${SMALL_BTN}">${ico('undo', 'size-3.5', '2')}Undo</button>` : ''}${otherProjects().length && !busy ? `<button data-act="move-input" data-id="${r.id}" title="Sent to the wrong project? Move it" class="${SMALL_BTN}">${ico('arrow', 'size-3.5', '2')}Move…</button>` : ''}</span>`;
+  return saidStep(DOT[dotOf(r)], bubble, `<span class="font-mono">${r.id}</span> · ${when(r.t)}`, `<span class="mr-1 text-[13px] font-semibold ${tone}">${label}</span>${chips}${acts}`, last);
+}
+function outboxStep(q, last) {  // still on its way (F85)
+  const state = q.failed ? 'Not sent' : q.files.some(f => f.transcribing) ? 'Transcribing…' : q.files.some(f => !f.f && !f.failed) ? 'Uploading…' : 'Sending…';
+  const bubble = (q.text ? `<p class="line-clamp-2 break-words">${esc(q.text)}</p>` : `<p>${esc(outboxLine(q))}</p>`) + (q.files.some(f => f.preview) ? `<div class="mt-2 flex gap-2">${q.files.filter(f => f.preview).map(f => `<img src="${f.preview}" alt="" class="size-12 rounded-lg border border-zinc-200 object-cover dark:border-zinc-700">`).join('')}</div>` : '');
+  return saidStep(q.failed ? DOT.bad : DOT.pulse, bubble, 'Just now', `<span class="mr-1 text-[13px] font-semibold ${q.failed ? 'text-red-600 dark:text-red-400' : 'text-blue-600 dark:text-blue-400'}">${state}</span>${q.failed ? `<button data-act="outbox-retry" class="${SMALL_BTN} text-blue-600 dark:text-blue-400">Retry</button><button data-act="outbox-edit" class="${SMALL_BTN}">Edit</button>` : ''}`, last);
+}
+function saidLately() {
+  const recent = [...S.inputs].reverse().slice(0, 5), queued = [...U.outbox].reverse(), n = queued.length + recent.length;
+  return `<div class="flex h-8 items-center justify-between"><h2 class="text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">You said lately</h2>
+      ${S.inputs.length ? `<button data-act="tab" data-tab="inputs" title="All inputs · G N" class="flex h-8 items-center gap-1 rounded-lg pr-1.5 pl-2 text-[13px] font-medium text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10">All ${S.inputs.length} input${S.inputs.length === 1 ? '' : 's'}${KBD('G N')}</button>` : ''}</div>
+    ${n ? `<ol class="mt-4">${queued.map((q, k) => outboxStep(q, k === n - 1)).join('')}${recent.map((r, k) => saidRow(r, queued.length + k, queued.length + k === n - 1)).join('')}</ol>`
+      : '<p class="mt-3 text-sm text-zinc-400 dark:text-zinc-500">What you say shows up here, with the items it turns into.</p>'}`;
 }
 function leaveCompose() {  // back to the item you had open, if there was one
   const p = D.prev; D.compose = false; D.prev = null;
   if (p && byN.has(p)) openItem(p); else render();
 }
-function recentInput(r) {
-  const [label, tone, icon] = inputState(r), scope = r.scope && byN.get(r.scope);
-  const said = r.text || (r.files.some(f => (f.mime || '').startsWith('audio/')) ? 'Voice note' : `${r.files.length} file${r.files.length === 1 ? '' : 's'}`);
-  const chips = r.touched.filter(n => byN.has(n)).map(n => `<button data-act="goto" data-n="${n}" class="flex h-7 max-w-full min-w-0 items-center gap-1.5 rounded-lg bg-zinc-100 px-2 text-[13px] hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700"><span class="font-mono text-xs font-bold ${TYPE_TEXT[byN.get(n).type]}">${code(n)}</span><span class="truncate">${esc(byN.get(n).title)}</span></button>`).join('');
-  return `<div class="py-3"><div class="flex min-w-0 items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400"><span class="font-mono">${r.id}</span><span class="shrink-0">${when(r.t)}</span>${scope ? `<span class="min-w-0 truncate">↳ ${code(scope.n)} ${esc(scope.title)}</span>` : ''}<span class="ml-auto flex shrink-0 items-center gap-1 font-medium ${tone}">${icon}${label}</span></div>
-    <p class="mt-1 line-clamp-2 text-[15px] leading-snug break-words text-zinc-800 dark:text-zinc-200">${esc(said)}</p>
-    ${chips ? `<div class="mt-2 flex flex-wrap gap-1.5">${chips}</div>` : ''}</div>`;
-}
-
 const noSelection = () => `<div class="grid h-full place-items-center p-8 text-center"><div>
   <p class="text-[15px] text-zinc-500 dark:text-zinc-400">Select an item</p>
   <p class="mt-2 flex items-center justify-center gap-1 text-[13px] text-zinc-400">${KBD('J')}${KBD('K')}<span class="ml-1">to move</span>${S.items.some(needsYou) ? `<span>·</span>${KBD('⇧J')}<span class="ml-1">to go through what needs you</span>` : ''}</p></div></div>`;
@@ -3990,7 +4029,7 @@ function deskKey(e) {
 
 function layoutChange() {  // crossing 1024px: each layout puts back what it owns
   if (desk()) { DR.open = false; $('app').style.transform = ''; for (const c of ['rounded-l-3xl', 'overflow-hidden', 'shadow-2xl']) $('app').classList.remove(c); }
-  else { $('drawer').hidden = !DR.open; $('rail').hidden = true; $('drawerShade').hidden = !DR.open; $('headNormal').hidden = !!U.searching; $('headSearch').hidden = !U.searching; $('projectView').hidden = true; D.page = null; D.full = false; $('q').placeholder = 'Search title, text or code'; }
+  else { $('drawer').hidden = !DR.open; $('rail').hidden = true; $('drawerShade').hidden = !DR.open; $('headNormal').hidden = !!U.searching; $('headSearch').hidden = !U.searching; $('projectView').hidden = true; D.page = null; D.full = false; D.compose = false; $('app').removeAttribute('data-compose'); $('q').placeholder = 'Search title, text or code'; }
   closeDialog(); render();
 }
 // Drag the right edge of the sidebar or the list to resize it (F89). The width goes into a CSS variable that the
@@ -4185,6 +4224,7 @@ document.addEventListener('keydown', e => {
     if (R.rec) return cancelRec();
     if (U.editing) { U.editing = null; return renderDetail(); }
     if (desk()) {
+      if (D.compose && document.activeElement === $('text') && !$('text').value.trim() && !U.files.length) return leaveCompose();  // nothing to lose
       if (/INPUT|TEXTAREA/.test(document.activeElement.tagName)) return document.activeElement.blur();
       if (D.sideOpen) { D.sideOpen = false; return render(); }
       if (U.go) return ACT['go-end']();
@@ -4222,8 +4262,8 @@ document.addEventListener('keydown', e => {  // Enter in the subitem box adds it
 });
 $('text').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing && (e.shiftKey || e.metaKey || e.ctrlKey)) { e.preventDefault(); send(); } });
 $('text').addEventListener('paste', e => { const files = [...(e.clipboardData?.files || [])]; if (files.length) { e.preventDefault(); addFiles(files); } });
-$('composer').addEventListener('dragover', e => e.preventDefault());
-$('composer').addEventListener('drop', e => { e.preventDefault(); if (e.dataTransfer.files.length) addFiles([...e.dataTransfer.files]); });
+$('foot').addEventListener('dragover', e => e.preventDefault());  // on the New input page #foot is the whole pane
+$('foot').addEventListener('drop', e => { e.preventDefault(); if (e.dataTransfer.files.length) addFiles([...e.dataTransfer.files]); });
 $('fileInput').addEventListener('change', e => { addFiles([...e.target.files]); e.target.value = ''; });
 document.addEventListener('visibilitychange', () => { if (!document.hidden) refresh(); });
 window.addEventListener('focus', refresh);
@@ -4248,7 +4288,7 @@ $('searchBtn').innerHTML = ico('search', 'size-5.5');
 $('searchIcon').innerHTML = ico('search', 'size-4.5');
 $('qClear').innerHTML = ico('x', 'size-3', '3');
 $('attachBtn').innerHTML = ico('plus', 'size-6');
-$('micBtn').innerHTML = ico('mic', 'size-6');
+$('micBtn').innerHTML = ico('mic', 'size-6') + `<kbd class="ml-1 hidden h-5 min-w-5 place-items-center rounded-md px-1 font-sans text-[11px] font-semibold opacity-60 ring-1 ring-current/30 lg:group-data-[compose]/app:inline-grid">⌥V</kbd>`;
 $('recCancel').innerHTML = ico('x');
 $('recStop').innerHTML = ico('stop');
 $('dlgClose').innerHTML = CLOSE_X;
