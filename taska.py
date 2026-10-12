@@ -3840,7 +3840,7 @@ const ACT = {
   'sub-add': async b => {  // same kind, priority and now/later as the parent; change them after if needed
     const n = Number(b.dataset.n), p = byN.get(n), title = ($('subTitle')?.value || '').trim();
     if (!title) return $('subTitle')?.focus();
-    try { await op({op: 'new', title, parent: code(n), type: p.type === 'rule' ? 'task' : p.type, pri: p.pri, when: p.when}); U.subFor = null; U.folded.delete(n); render(); toast(`Added under ${code(n)}`); } catch (_) {}
+    try { await op({op: 'new', title, parent: code(n), type: p.type === 'rule' ? 'task' : p.type, pri: p.pri, when: p.when}); U.folded.delete(n); render(); toast(`Added under ${code(n)}`); const f = $('subTitle'); if (f) { f.value = ''; f.focus(); } } catch (_) {}  // the field stays for the next one (B123)
   },
   'move-to': async b => {
     const n = Number(b.dataset.n), to = b.dataset.to;
@@ -4100,6 +4100,7 @@ function markCut(root) {
   }
 }
 function leaveCompose() {  // back where you were: the Inputs page, or the item you had open
+  $('text').blur();  // the box now points elsewhere: keys are keys again, not letters (B123)
   const p = D.prev, tab = D.prevTab; D.compose = false; D.prev = null; D.prevTab = null;
   if (tab) { U.tab = tab; U.open = p && byN.has(p) ? p : null; U.inputsEnd = true; }
   const back = leaveView('new');  // the step into the page goes; the address then follows what shows
@@ -4263,6 +4264,8 @@ function deskKey(e) {
   // ⌥V records even while you type in the box (B91): there a plain V is a letter.
   if (e.altKey && e.code === 'KeyV' && !e.metaKey && !e.ctrlKey && $('viewer').hidden && $('overlay').hidden) { e.preventDefault(); return R.rec ? finishRec(false) : startRec(); }
   if (typing || e.altKey || !$('viewer').hidden) return;
+  // Enter and Space press the button, link or choice you are on (B123); they are shortcuts only on the page or a row.
+  if ((e.key === 'Enter' || e.key === ' ') && el && el !== document.body && !el.closest('#list') && el.closest('button, a[href], [role=button], summary')) return;
   // While recording, the keys of the box (F095): ↵ stops into the box, ⇧↵ or ⌘↵ stops and sends, Esc discards.
   if (R.rec && e.key === 'Enter' && !e.isComposing) { e.preventDefault(); return finishRec(e.shiftKey || e.metaKey || e.ctrlKey); }
   if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && U.choice && U.choice.n === U.open) { e.preventDefault(); return document.querySelector(`[data-act="choice-send"][data-n="${U.open}"]`)?.click(); }
@@ -4595,6 +4598,7 @@ document.addEventListener('keydown', e => {
     if (U.doc && (U.docQuote || U.docSel.size || U.docReply)) return ACT['doc-unpick']();  // first Escape drops the selection
     if (desk() && U.doc && !U.docEdit && $('overlay').hidden && !/INPUT|TEXTAREA/.test(document.activeElement.tagName)) return closeDoc();  // then back to the item
     if (!$('overlay').hidden) return closeDialog();
+    if (document.activeElement?.id === 'subTitle') { U.subFor = null; return renderDetail(); }  // done adding subitems
     if (U.editing) { stashEdit(); U.editing = null; return renderDetail(); }
     if (desk()) {
       if (D.compose && document.activeElement === $('text') && !$('text').value.trim() && !U.files.length) return leaveCompose();  // nothing to lose
