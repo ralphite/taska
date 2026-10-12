@@ -2581,21 +2581,36 @@ const sameText = (a, b) => a.split(/\s+/).join(' ') === b.split(/\s+/).join(' ')
 function threadHtml(d, key, comments, blockText) {
   return `<div class="mt-2 space-y-2 border-l-2 border-amber-300 pl-3 dark:border-amber-600">
     ${comments.map(c => `<div class="text-sm ${MSG(c.by)}">${blockText !== undefined && !sameText(c.quote, blockText) ? `<div class="mb-0.5 line-clamp-2 text-xs text-zinc-500">“${esc(c.quote)}”</div>` : ''}<span class="${WHO(c.by)}">${esc(who(c.by))}</span> <span class="text-xs text-zinc-400">${when(c.t)}</span>${rich(c.text, 'dc' + c.t)}</div>`).join('')}
-    <div class="flex items-end gap-2"><textarea data-doc-draft="${key}" rows="1" placeholder="Reply…" class="${FIELD} min-w-0 flex-1 text-sm">${esc(U.docDrafts[key] || '')}</textarea><button data-act="doc-send" data-d="${d.d}" data-key="${key}" class="${PRIMARY}">Send</button></div>
+    <button data-act="doc-reply" data-key="${key}" class="flex h-8 items-center gap-1 text-xs font-semibold text-blue-600 dark:text-blue-400 ${U.docReply === key ? 'underline' : ''}">${ico('reply', 'size-3.5')}Reply</button>
   </div>`;
 }
 const noteText = d => sameText(d.md.split('\n')[0].replace(/^#+\s*/, ''), d.title) ? d.md : `# ${d.title}\n\n${d.md}`;
-function docBarHtml(d) {
-  if (!d || U.docEdit) return '';
+// What a document comment goes to (I087): the picked paragraphs, the selected text, or a thread you reply in.
+// The one input box takes it: its line says "Comment on D4 · “…”", and sending posts the comment.
+function docTarget() {
+  if (!U.doc || U.docEdit || $('overlay').hidden) return null;
+  const d = docById(U.doc);
+  if (!d) return null;
+  if (U.docReply) {
+    const b = d.blocks.find(b => b.key === U.docReply), t = d.detached.find(t => t.key === U.docReply);
+    return {d, key: U.docReply, reply: true, quote: b?.text || t?.quote || ''};
+  }
   const blocks = d.blocks.filter(b => U.docSel.has(b.key));
-  if (!blocks.length && !U.docQuote) return '';
-  const what = U.docQuote ? `“${esc(U.docQuote.text)}”` : blocks.length === 1 ? `“${esc(blocks[0].text)}”` : `${blocks.length} paragraphs selected`;
-  return `<div class="space-y-2 border-t border-zinc-200 bg-white/95 px-1 pt-2.5 pb-1 backdrop-blur dark:border-zinc-800 dark:bg-zinc-900/95">
-    <div class="line-clamp-2 text-xs text-zinc-500">${what}</div>
-    <div class="flex items-end gap-2"><textarea id="docNote" data-doc-draft="note" rows="1" placeholder="Comment on this…" class="${FIELD} min-w-0 flex-1 text-sm">${esc(U.docDrafts.note || '')}</textarea>
-    <button data-act="doc-comment" class="${PRIMARY}">Comment</button><button data-act="doc-unpick" aria-label="Clear selection" class="${BTN} text-sm">${ico('x', 'size-4')}</button></div></div>`;
+  if (U.docQuote) return {d, key: U.docQuote.key, quote: U.docQuote.text};
+  return blocks.length ? {d, key: blocks[0].key, quote: blocks.map(b => b.text).join('\n'), many: blocks.length} : null;
 }
-function renderDocBar() { const bar = $('docBar'); if (bar) bar.innerHTML = docBarHtml(docById(U.doc)); }
+async function sendDocComment(t) {
+  const text = $('text').value.trim();
+  if (!text) return;
+  if (U.files.length) toast('Comments are text only: the files stay in the box');
+  $('text').value = ''; saveDraft(); grow();
+  try { await op({op: 'dc', d: t.d.d, key: t.key, text, ...(t.reply ? {} : {quote: t.quote})}); }
+  catch (_) { $('text').value = text; grow(); return; }
+  U.docThreads.add(t.key); U.docSel = new Set(); U.docQuote = null; U.docReply = null;
+  getSelection()?.removeAllRanges(); renderDoc(); renderComposer(); toast(t.reply ? 'Reply added' : 'Comment added');
+}
+function renderDocBar() { renderComposer(); }  // the comment target shows on the input box
+const docSig = d => d ? `${d.title}|${d.md}|${d.blocks.reduce((k, b) => k + b.comments.length, 0)}|${d.detached.length}` : '';
 function renderDoc({focus = false} = {}) {
   if (U.docEdit) {
     const d = docById(U.doc);
@@ -2623,14 +2638,16 @@ function renderDoc({focus = false} = {}) {
     </div>
     ${d.detached.length ? `<div class="mt-6 space-y-4 border-t border-zinc-200 pt-4 dark:border-zinc-800"><div class="text-xs font-medium text-zinc-500">Original text changed</div>${d.detached.map(t => `<section>
       <div class="text-sm text-zinc-400 line-through">${esc(t.quote)}</div>${threadHtml(d, t.key, t.comments)}</section>`).join('')}</div>` : ''}
-    <p class="mt-6 text-center text-xs text-zinc-400">Tap paragraphs, select text or circle an area to comment</p>
-    <div id="docBar" class="sticky bottom-0 -mx-4 mt-auto px-4">${docBarHtml(d)}</div></div>`, {focus, tall: true});
+    <p class="mt-6 text-center text-xs text-zinc-400">Tap paragraphs, select text or circle an area, then write your comment in the box below</p>
+    </div>`, {focus, tall: true, aboveComposer: true});
+  U.docSig = docSig(d);
+  renderComposer();
   if (!focus) $('dlgBody').scrollTop = top;
   if (keep) { const el = document.querySelector(`[data-doc-draft="${keep[0]}"]`); if (el) { el.value = keep[1]; el.focus({preventScroll: true}); try { el.setSelectionRange(keep[2], keep[2]); } catch (_) {} } }
   if (U.docCircle) wireLasso();
 }
 function openDoc(d) {
-  Object.assign(U, {peek: null, doc: d, docNew: null, docEdit: false, docText: null, docSel: new Set(), docQuote: null, docCircle: false});
+  Object.assign(U, {peek: null, doc: d, docReply: null, docNew: null, docEdit: false, docText: null, docSel: new Set(), docQuote: null, docCircle: false});
   U.docDrafts.note = '';
   renderDoc({focus: true});
   $('dlgBody').scrollTop = U.docScroll[d] || 0;
@@ -3011,7 +3028,13 @@ function renderComposer() {
   sc.hidden = !n;
   if (!n && !U.open && U.tab === 'rules') { sc.hidden = false; sc.innerHTML = `${proj}${ico('scope', 'size-3.5')}<span class="font-medium">New rule for this project</span>`; }
   else if (!n && desk()) { sc.hidden = false; sc.innerHTML = `${proj}<span class="flex min-w-0 flex-1 items-center gap-1.5 text-zinc-500 dark:text-zinc-400">${ico('inbox', 'size-3.5')}<span class="truncate"><span class="font-medium text-zinc-700 dark:text-zinc-200">New input</span> · ${S.org?.on ? 'the organizer files it' : 'your agent files it'}</span></span>${U.open && detailShown() ? `<button data-act="reply" class="h-8 shrink-0 rounded-full px-2 text-[13px] font-medium text-blue-600 dark:text-blue-400">Add to ${code(U.open)} instead${KBD('R')}</button>` : ''}`; }
-  if (n && desk()) sc.innerHTML = `${proj}${ico('reply', 'size-3.5')}<span class="min-w-0 flex-1 truncate"><span class="font-medium">Reply to ${code(n)}</span> ${esc(byN.get(n).title)}</span><button data-act="new-input" title="Write a new input to the whole project instead · C" class="-my-2 flex h-8 shrink-0 items-center rounded-full px-2 text-[13px] font-medium text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200">New input instead${KBD('C')}</button>`;  // B83: a reply says so; a new input has its own page
+  const dt = docTarget();
+  if (dt) {
+    sc.hidden = false;
+    sc.innerHTML = `${ico(dt.reply ? 'reply' : 'comment', 'size-3.5')}<span class="min-w-0 flex-1 truncate"><span class="font-medium">${dt.reply ? 'Reply in' : 'Comment on'} D${dt.d.d}</span> ${dt.many > 1 ? `· ${dt.many} paragraphs` : dt.quote ? `“${esc(dt.quote.slice(0, 120))}”` : ''}</span><button data-act="doc-unpick" aria-label="Cancel the comment" class="-my-2 grid size-11 shrink-0 place-items-center rounded-full text-blue-600 dark:text-blue-300">${ico('x', 'size-4')}</button>`;
+    $('text').placeholder = `${dt.reply ? 'Reply' : 'Comment'} on D${dt.d.d}…`;
+  }
+  else if (n && desk()) sc.innerHTML = `${proj}${ico('reply', 'size-3.5')}<span class="min-w-0 flex-1 truncate"><span class="font-medium">Reply to ${code(n)}</span> ${esc(byN.get(n).title)}</span><button data-act="new-input" title="Write a new input to the whole project instead · C" class="-my-2 flex h-8 shrink-0 items-center rounded-full px-2 text-[13px] font-medium text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200">New input instead${KBD('C')}</button>`;  // B83: a reply says so; a new input has its own page
   else if (n) sc.innerHTML = `${proj}${ico('scope', 'size-3.5')}<span class="min-w-0 flex-1 truncate"><span class="font-medium">${byN.get(n).wait ? 'Reply to' : 'Adding to'} ${code(n)}</span> ${esc(byN.get(n).title)}</span><button data-act="unscope" aria-label="Send to the whole project instead" class="-my-2 grid size-11 shrink-0 place-items-center rounded-full text-blue-600 dark:text-blue-300">${ico('x', 'size-4')}</button>`;
   const d = $('drafts');
   d.hidden = !U.files.length;
@@ -3111,6 +3134,8 @@ async function addFiles(list) {
 // thought, and the outbox sends in order as soon as each input's uploads and transcripts are in.
 async function send() {
   if (R.rec) return finishRec(true);
+  const dt = docTarget();
+  if (dt) return sendDocComment(dt);  // a document comment (I087)
   const text = $('text').value.trim(), n = scopeN();
   if (!text && !U.files.length) return;
   U.outbox.push({id: 'q' + ++U.qn, text, files: U.files, scope: n ? code(n) : null, from: U.tab === 'rules' && !U.open ? 'rules' : null});
@@ -3235,9 +3260,11 @@ function dialog(title, html, {aboveComposer = false, focus = true, tall = false,
 const closeDialog = () => {
   if (U.docEdit) saveDoc();  // closing the editor keeps what you wrote
   if (U.doc) U.docScroll[U.doc] = $('dlgBody').scrollTop;
-  U.doc = null; U.docNew = null; U.docEdit = false; U.sheet = null; U.go = null;
+  const hadDoc = !!U.doc;
+  U.doc = null; U.docNew = null; U.docEdit = false; U.sheet = null; U.go = null; U.docReply = null;
   $('overlay').hidden = true; $('overlay').style.bottom = '';
   if (U.peek) { U.peek = null; renderComposer(); }
+  else if (hadDoc) renderComposer();  // the box goes back to the item or the project
 };
 
 // From outside this machine and its network Taska needs the key; one tap on the link puts it on a device for good.
@@ -3332,7 +3359,7 @@ function render() {
   showView(); renderItems(); renderDetail(); renderComposer(); renderFeedback(); renderAgent();
   if (desk()) { renderDeskHead(); renderSidebar(); renderRail(); renderFilters(); if (D.page) renderProject(); }
   if (U.peek && !$('overlay').hidden) { const top = $('dlgBody').scrollTop; peek(U.peek, {focus: false}); $('dlgBody').scrollTop = top; }
-  if (U.doc && !U.docEdit && !U.docQuote && !$('overlay').hidden) renderDoc();
+  if (U.doc && !U.docEdit && !U.docQuote && !$('overlay').hidden && docSig(docById(U.doc)) !== U.docSig) renderDoc();  // only when it changed: a redraw under a tap loses the tap
   if (U.tab === 'inputs') renderInputs();
   const pending = S.inputs.filter(r => !r.acked).length;
   $('nInputs').textContent = pending || '';
@@ -3528,29 +3555,13 @@ const ACT = {
     if (U.docCircle || e.target.closest('textarea, button, a') || getSelection()?.toString().trim()) return;
     const k = b.dataset.key;
     if (U.docSel.has(k)) U.docSel.delete(k); else U.docSel.add(k);
-    U.docQuote = null;
+    U.docQuote = null; U.docReply = null;
     renderDoc();
   },
-  'doc-unpick': () => { U.docSel = new Set(); U.docQuote = null; U.docDrafts.note = ''; getSelection()?.removeAllRanges(); renderDoc(); },
+  'doc-unpick': () => { U.docSel = new Set(); U.docQuote = null; U.docReply = null; U.docDrafts.note = ''; getSelection()?.removeAllRanges(); renderDoc(); },
+  'doc-reply': b => { U.docReply = b.dataset.key; U.docSel = new Set(); U.docQuote = null; renderDoc(); $('text').focus(); },
   'doc-circle': () => { U.docCircle = !U.docCircle; renderDoc(); },
   'doc-thread': b => { const k = b.dataset.key; if (U.docThreads.has(k)) U.docThreads.delete(k); else U.docThreads.add(k); renderDoc(); },
-  'doc-send': async b => {
-    const key = b.dataset.key, text = (U.docDrafts[key] || '').trim();
-    if (!text) return;
-    try { await op({op: 'dc', d: Number(b.dataset.d), key, text}); U.docDrafts[key] = ''; renderDoc(); } catch (_) {}
-  },
-  'doc-comment': async () => {
-    const d = docById(U.doc), text = ($('docNote')?.value || '').trim();
-    if (!d || !text) return;
-    const blocks = d.blocks.filter(b => U.docSel.has(b.key));
-    const key = U.docQuote ? U.docQuote.key : blocks[0]?.key;
-    const quote = U.docQuote ? U.docQuote.text : blocks.map(b => b.text).join('\n');
-    try {
-      await op({op: 'dc', d: d.d, key, quote, text});
-      U.docThreads.add(key); U.docSel = new Set(); U.docQuote = null; U.docDrafts.note = '';
-      getSelection()?.removeAllRanges(); renderDoc(); toast('Comment added');
-    } catch (_) {}
-  },
   swipe: async b => {
     const n = Number(b.dataset.n), f = b.dataset.f;
     SW.open = null; closeDialog();
@@ -4303,7 +4314,7 @@ document.addEventListener('keydown', e => {
     if (DR.open) return closeDrawer();
     if (!$('viewer').hidden) return ACT['v-close']();
     if (U.doc && U.docCircle) { U.docCircle = false; return renderDoc(); }
-    if (U.doc && (U.docQuote || U.docSel.size)) return ACT['doc-unpick']();  // first Escape drops the selection
+    if (U.doc && (U.docQuote || U.docSel.size || U.docReply)) return ACT['doc-unpick']();  // first Escape drops the selection
     if (!$('overlay').hidden) return closeDialog();
     if (R.rec) return cancelRec();
     if (U.editing) { U.editing = null; return renderDetail(); }
@@ -4337,7 +4348,7 @@ document.addEventListener('selectionchange', () => {
   if (!text || text.length < 2) return;  // a collapsed selection keeps the last quote until you comment or cancel
   const sec = (sel.anchorNode?.nodeType === 1 ? sel.anchorNode : sel.anchorNode?.parentElement)?.closest('#docBlocks > section[data-key]');
   if (!sec) return;
-  U.docQuote = {key: sec.dataset.key, text: text.slice(0, 500)}; U.docSel = new Set();
+  U.docQuote = {key: sec.dataset.key, text: text.slice(0, 500)}; U.docSel = new Set(); U.docReply = null;
   renderDocBar();
 });
 // Enter is a new line; Shift+Enter (or ⌘/Ctrl+Enter) sends. Not while an input method is still composing.
