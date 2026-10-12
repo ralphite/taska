@@ -185,7 +185,7 @@ class Store:
         k = e["k"]
         if k == "in":
             inp = {"id": e["id"], "t": e["t"], "by": e["by"], "text": e.get("text", ""), "scope": e.get("scope"),
-                   "files": e.get("files", []), "acked": False, "touched": [], "org": None, "from": e.get("from")}
+                   "files": e.get("files", []), "acked": False, "touched": [], "org": None, "from": e.get("from"), "seq": e["seq"]}
             self.inputs[inp["id"]] = inp
             self.nin = max(self.nin, int(inp["id"][1:]))
             it = self.items.get(inp["scope"])
@@ -225,6 +225,15 @@ class Store:
                     self.inputs[rid]["acked"] = True
         elif k == "undo":
             self.undo(e)
+        elif k == "moved":  # sent to the wrong project (F79): it lives on in e["to"] as e["as"]
+            inp = self.inputs.get(e["src"])
+            if inp:
+                inp.update(acked=True, moved={"to": e["to"], "as": e["as"]})
+                it = self.items.get(inp["scope"])
+                if it:  # its message on the item goes with it
+                    it["thread"] = [x for x in it["thread"] if x["id"] != inp["seq"]]
+                    if inp["id"] in it["srcs"] and inp["id"] not in [x.get("src") for x in it["thread"]]:
+                        it["srcs"].remove(inp["id"])
         elif k == "org":
             inp = self.inputs.get(e["src"])
             if inp:
@@ -831,6 +840,8 @@ class Store:
                 s = f"D{e['d']} comment {first_line(e['text'])!r}"
             elif k == "undo":
                 s = f"undo organizer changes for {e['src']}"
+            elif k == "moved":
+                s = f"{e['src']} moved to {e['to']} as {e['as']}"
             elif e.get("retry"):
                 s = f"organizer {e['src']} retry"
             else:
@@ -1624,6 +1635,42 @@ class Handler(BaseHTTPRequestHandler):
                     raise Err(f"nothing to undo for {rid}")
                 s.emit({"k": "undo", "src": rid, "by": "you"})
             self.json({"ok": True})
+        elif p == "/api/move":  # an input sent to the wrong project goes to another one (F79)
+            data = json.loads(self.body(10_000) or b"{}")
+            rid, t = data.get("id"), HUB.projects.get(str(data.get("to") or ""))
+            if not t or t is s:
+                raise Err("choose another project")
+            with s.cond:
+                inp = s.inputs.get(rid)
+                if not inp:
+                    raise Err(f"unknown input {rid}")
+                if inp.get("moved") or inp.get("moving"):
+                    raise Err(f"{rid} was moved already")
+                if s.org_busy == rid:
+                    raise Err(f"{rid} is being organized right now; try again in a moment")
+                inp["moving"] = True
+                blobs = []
+                for f in inp["files"]:
+                    with open(os.path.join(s.fdir, f["f"]), "rb") as fh:
+                        blobs.append((f, fh.read()))
+            try:
+                files = []
+                for f, blob in blobs:  # the files are copied: the other project keeps its own
+                    files.append(t.save_file(f.get("name"), f.get("mime"), blob))
+                    if f.get("tr"):
+                        files[-1]["tr"] = f["tr"]
+                lines, _ = t.run_all([(0, {"op": "input", "text": inp["text"], "files": files})], "you")
+                if not lines[0].startswith("ok"):
+                    raise Err(lines[0])
+                new = lines[0].split()[-1]
+                with s.cond:
+                    made = [x for x in s.events if x.get("src") == rid and x.get("by") == "org" and x["k"] in ("add", "set", "say", "merge")]
+                    if made and inp["org"] and not inp["org"].get("undone"):  # what the organizer made of it here is undone
+                        s.emit({"k": "undo", "src": rid, "by": "you"})
+                    s.emit({"k": "moved", "src": rid, "to": t.name, "as": new, "by": "you"})
+            finally:
+                inp.pop("moving", None)
+            self.json({"ok": True, "to": t.name, "as": new})
         elif p == "/api/organize":
             rid = (json.loads(self.body(10_000) or b"{}")).get("id")
             with s.cond:
@@ -2846,6 +2893,7 @@ function restoreEdit(k) {
 // ---------------------------------------------------------------- inputs
 
 function inputState(r) {  // -> [label, tone, icon]
+  if (r.moved) return [`Moved to ${r.moved.to}`, 'text-zinc-500 dark:text-zinc-400', ico('arrow', 'size-3.5', '2')];
   if (S.org.busy === r.id) return ['Organizing…', 'text-blue-600 dark:text-blue-400', '<span class="size-1.5 animate-pulse rounded-full bg-blue-500 dark:bg-blue-400"></span>'];
   if (r.org && !r.org.ok) return ['Organizer failed', 'text-red-600 dark:text-red-400', ico('alert', 'size-3.5', '2')];
   if (r.org?.undone) return ['Undone', 'text-zinc-500 dark:text-zinc-400', ico('undo', 'size-3.5', '2')];
@@ -2864,11 +2912,12 @@ function renderInputs() {
   $('inputsView').innerHTML = rows.length ? rows.map(r => {
     const [label, tone, icon] = inputState(r), scope = r.scope ? byN.get(r.scope) : null, d = dayOf(r.t);
     const head = d !== day ? `<div class="px-4 pt-2.5 pb-0.5 text-xs font-semibold text-zinc-500 lg:px-0 lg:pt-5 lg:pb-1 dark:text-zinc-400">${(day = d)}</div>` : '';
-    const note = r.org && !(r.acked && r.org.keep) ? `<div class="mt-1.5 flex min-h-5 items-center gap-1 text-xs ${r.org.ok ? 'text-zinc-500 dark:text-zinc-400' : 'text-red-600 dark:text-red-400'}">${ico('sparkle', 'size-3.5')}<span class="min-w-0">${esc(r.org.msg)}</span></div>` : '';
-    const chips = r.touched.filter(n => byN.has(n)).map(n => `<button data-act="goto" data-n="${n}" class="${HIT} flex h-8 max-w-full min-w-0 items-center gap-1.5 rounded-lg bg-zinc-100 px-2 text-[13px] dark:bg-zinc-800"><span class="font-mono text-xs font-bold ${TYPE_TEXT[byN.get(n).type]}">${code(n)}</span><span class="truncate">${esc(byN.get(n).title)}</span></button>`).join('');
-    const acts = (!r.acked && S.org.on && r.org && (!r.org.ok || r.org.undone) ? `<button data-act="retry" data-id="${r.id}" class="${LINK_BTN}">${ico('loop', 'size-3.5', '2')}${r.org.undone ? 'Organize again' : 'Retry'}</button>` : '')
+    const note = !r.moved && r.org && !(r.acked && r.org.keep) ? `<div class="mt-1.5 flex min-h-5 items-center gap-1 text-xs ${r.org.ok ? 'text-zinc-500 dark:text-zinc-400' : 'text-red-600 dark:text-red-400'}">${ico('sparkle', 'size-3.5')}<span class="min-w-0">${esc(r.org.msg)}</span></div>` : '';
+    const chips = r.moved ? '' : r.touched.filter(n => byN.has(n)).map(n => `<button data-act="goto" data-n="${n}" class="${HIT} flex h-8 max-w-full min-w-0 items-center gap-1.5 rounded-lg bg-zinc-100 px-2 text-[13px] dark:bg-zinc-800"><span class="font-mono text-xs font-bold ${TYPE_TEXT[byN.get(n).type]}">${code(n)}</span><span class="truncate">${esc(byN.get(n).title)}</span></button>`).join('');
+    const acts = r.moved ? `<a href="/p/${encodeURIComponent(r.moved.to)}/" class="${LINK_BTN}">${ico('arrow', 'size-3.5', '2')}Open ${esc(r.moved.to)} · ${esc(r.moved.as)}</a>` : (!r.acked && S.org.on && r.org && (!r.org.ok || r.org.undone) ? `<button data-act="retry" data-id="${r.id}" class="${LINK_BTN}">${ico('loop', 'size-3.5', '2')}${r.org.undone ? 'Organize again' : 'Retry'}</button>` : '')
       + (r.org && r.org.ok && !r.org.undone && !r.org.keep && r.touched.length ? `<button data-act="undo" data-id="${r.id}" class="${LINK_BTN} text-zinc-600 dark:text-zinc-300">${ico('undo', 'size-3.5', '2')}Undo</button>` : '')
-      + (!r.acked && !r.scope && !(S.org.on && !r.org) && S.org.busy !== r.id ? `<button data-act="make-item" data-id="${r.id}" class="${LINK_BTN}">${ico('plus', 'size-3.5', '2')}Make item</button>` : '');
+      + (!r.acked && !r.scope && !(S.org.on && !r.org) && S.org.busy !== r.id ? `<button data-act="make-item" data-id="${r.id}" class="${LINK_BTN}">${ico('plus', 'size-3.5', '2')}Make item</button>` : '')
+      + (otherProjects().length && S.org.busy !== r.id ? `<button data-act="move-input" data-id="${r.id}" class="${LINK_BTN} text-zinc-600 dark:text-zinc-300">${ico('arrow', 'size-3.5', '2')}Move…</button>` : '');
     // On the desktop each input is a ledger line: what you said on the left, what became of it on the right.
     return `${head}<article class="border-b border-zinc-100 px-4 py-2 lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-10 lg:px-0 lg:py-4 dark:border-zinc-800/70"><div class="min-w-0">
       <div class="flex min-h-5 items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400"><span class="font-mono">${r.id}</span><span>${when(r.t)}</span>
@@ -2925,18 +2974,36 @@ function renderComposer() {
   if (U.peek && !$('overlay').hidden) $('overlay').style.bottom = $('composer').parentElement.offsetHeight + 'px';  // sheet stays above the input box
 }
 
+const otherProjects = () => (DR.list || []).filter(p => p.name !== S.project);
+// An input sent to the wrong project goes to another one (F79). It is organized again there; what the organizer
+// made of it here is undone. Items your agent made from it stay, and the dialog says so.
+async function moveInput(rid) {
+  const r = byR.get(rid);
+  if (!r) return;
+  checkOthers.t = 0; await checkOthers();
+  const others = otherProjects(), made = r.touched.filter(n => n !== r.scope && byN.has(n) && !byN.get(n).archived);
+  const byOrg = r.org && r.org.ok && !r.org.undone && !r.org.keep;
+  const list = made.map(n => `${code(n)} ${esc(byN.get(n).title)}`).join(', ');
+  dialog(`Move ${rid} to another project`, `<div class="flex flex-col gap-3">
+    <p class="line-clamp-3 rounded-xl bg-blue-50 px-3 py-2 text-[15px] leading-snug break-words text-zinc-900 dark:bg-blue-400/10 dark:text-zinc-100">${esc(r.text) || `${r.files.length} file${r.files.length === 1 ? '' : 's'}`}</p>
+    <div class="-mx-1 flex flex-col gap-0.5">${others.map(p => `<button data-act="move-input-to" data-id="${rid}" data-to="${esc(p.name)}" class="flex h-12 items-center gap-3 rounded-xl px-3 text-left hover:bg-zinc-100 active:bg-zinc-100 dark:hover:bg-zinc-800 dark:active:bg-zinc-800">${projTile(p.name, 'size-7 rounded-lg text-xs')}<span class="min-w-0 flex-1 truncate font-medium">${esc(p.name)}</span><span class="text-xs text-zinc-400">${p.open} open</span></button>`).join('') || '<p class="px-3 text-sm text-zinc-500">There is no other project.</p>'}</div>
+    <p class="text-[13px] leading-snug text-zinc-500 dark:text-zinc-400">It goes there with its files and is organized again.${made.length ? byOrg ? ` What the organizer made of it here is undone: ${list}.` : ` Items made from it here stay: ${list}.` : ''}${r.scope && byN.has(r.scope) ? ` It also leaves the conversation of ${code(r.scope)}.` : ''}</p></div>`);
+}
+
 function renderFeedback() {
   const fb = $('feedback'), r = U.lastSent && byR.get(U.lastSent);
   fb.hidden = !r;
   if (!r) return;
   const link = (act, label, attrs) => `<button data-act="${act}" ${attrs} class="-my-2 h-11 shrink-0 rounded-full px-2 font-semibold text-blue-600 dark:text-blue-400">${label}</button>`;
   let html;
-  if (S.org.busy === r.id || (!r.acked && S.org.on && !r.org)) html = `<span class="size-2 shrink-0 animate-pulse rounded-full bg-blue-500 dark:bg-blue-400"></span><span class="min-w-0 flex-1 truncate">Got ${r.id}, organizing…</span>`;
+  const move = otherProjects().length ? link('move-input', 'Move…', `data-id="${r.id}"`) : '';  // sent to the wrong project? (F79)
+  if (r.moved) html = `${ico('arrow', 'size-4 text-zinc-500', '2')}<span class="min-w-0 flex-1 truncate">Moved ${r.id} to ${esc(r.moved.to)} as ${esc(r.moved.as)}</span><a href="/p/${encodeURIComponent(r.moved.to)}/" class="-my-2 flex h-11 shrink-0 items-center rounded-full px-2 font-semibold text-blue-600 dark:text-blue-400">Open</a>`;
+  else if (S.org.busy === r.id || (!r.acked && S.org.on && !r.org)) html = `<span class="size-2 shrink-0 animate-pulse rounded-full bg-blue-500 dark:bg-blue-400"></span><span class="min-w-0 flex-1 truncate">Got ${r.id}, organizing…</span>`;
   else if (r.org && !r.org.ok) html = `${ico('alert', 'size-4 text-red-600 dark:text-red-400', '2')}<span class="min-w-0 flex-1 truncate text-red-600 dark:text-red-400">Organizer failed: ${esc(r.org.msg)}</span>${link('retry', 'Retry', `data-id="${r.id}"`)}`;
   else if (r.org?.undone) html = `<span class="min-w-0 flex-1 truncate">Undid the changes for ${r.id}</span>`;
-  else if (r.acked) html = `<span class="grid size-4 shrink-0 place-items-center rounded-full bg-emerald-500 text-white dark:bg-emerald-400 dark:text-emerald-950">${ico('check', 'size-3', '3')}</span><span class="min-w-0 flex-1 truncate">${esc(r.org?.msg || 'Organized')}</span>${r.touched.length ? link('goto', 'View', `data-n="${r.touched[0]}"`) : ''}${r.org && r.org.ok && !r.org.undone && !r.org.keep && r.touched.length ? link('undo', 'Undo', `data-id="${r.id}"`) : ''}`;
-  else html = `<span class="size-2 shrink-0 rounded-full bg-zinc-400"></span><span class="min-w-0 flex-1 truncate">Got ${r.id}. ${r.org ? 'Left for your coding agent' : 'Waiting for your coding agent'}</span>`;
-  const final = r.acked || (r.org && r.org.ok);
+  else if (r.acked) html = `<span class="grid size-4 shrink-0 place-items-center rounded-full bg-emerald-500 text-white dark:bg-emerald-400 dark:text-emerald-950">${ico('check', 'size-3', '3')}</span><span class="min-w-0 flex-1 truncate">${esc(r.org?.msg || 'Organized')}</span>${r.touched.length ? link('goto', 'View', `data-n="${r.touched[0]}"`) : ''}${r.org && r.org.ok && !r.org.undone && !r.org.keep && r.touched.length ? link('undo', 'Undo', `data-id="${r.id}"`) : ''}${move}`;
+  else html = `<span class="size-2 shrink-0 rounded-full bg-zinc-400"></span><span class="min-w-0 flex-1 truncate">Got ${r.id}. ${r.org ? 'Left for your coding agent' : 'Waiting for your coding agent'}</span>${move}`;
+  const final = r.acked || (r.org && r.org.ok) || r.moved;
   clearTimeout(renderFeedback.t);
   if (final) renderFeedback.t = setTimeout(() => { if (U.lastSent === r.id) { U.lastSent = null; renderFeedback(); } }, 6000);
   fb.innerHTML = html + `<button data-act="dismiss" aria-label="Dismiss" class="-my-2 grid size-11 shrink-0 place-items-center rounded-full text-zinc-400">${ico('x', 'size-3.5', '2')}</button>`;
@@ -3472,6 +3539,16 @@ const ACT = {
     const d = await r.json();
     if (!d.ok) return toast(d.error || 'Could not undo');
     U.lastSent = b.dataset.id; await load(); toast(`Undid the organizer's changes for ${b.dataset.id}`);
+  },
+  'move-input': b => moveInput(b.dataset.id),
+  'move-input-to': async b => {
+    const id = b.dataset.id, to = b.dataset.to;
+    b.disabled = true;
+    try {
+      const d = await (await fetch(P + 'api/move', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id, to})})).json();
+      if (!d.ok) return toast(d.error || 'Could not move it');
+      closeDialog(); U.lastSent = id; await load(); toast(`Moved ${id} to ${to} as ${d.as}`);
+    } finally { b.disabled = false; }
   },
   retry: async b => { await fetch(P + 'api/organize', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id: b.dataset.id})}); U.lastSent = b.dataset.id; },
   view: b => openViewer(b.dataset.g, b.dataset.f),
