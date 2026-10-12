@@ -2155,7 +2155,7 @@ const SECTION = (text, right = '') => `<div class="flex h-6 items-center justify
 let S = {rev: -1, boot: '', items: [], inputs: [], width: 1, org: {}};
 let offline = 0;  // consecutive failed polls
 const byN = new Map(), byR = new Map(), kids = new Map();
-const U = {doc: null, docNew: null, docEdit: false, docText: null, docSel: new Set(), docQuote: null, docCircle: false, docThreads: new Set(), docDrafts: {}, docScroll: {}, peek: null, moreInputs: new Set(), tab: 'items', q: '', type: 'all', when: 'all', status: 'all', pri: 'all', undoArch: null, folded: new Set(), moreMsgs: new Set(), subFor: null, choice: null, choiceLabels: {}, go: null, sheet: null, searching: false, open: null, scopeOff: false, editing: null, files: [], sending: false, lastSent: null, more: new Set(), tabOpen: {}, editDrafts: {}, settle: new Map(), tabTop: {}, stepFrom: null};
+const U = {doc: null, docNew: null, docEdit: false, docText: null, docSel: new Set(), docQuote: null, docCircle: false, docThreads: new Set(), docDrafts: {}, docScroll: {}, peek: null, moreInputs: new Set(), tab: 'items', q: '', type: 'all', when: 'all', status: 'all', pri: 'all', undoArch: null, folded: new Set(), moreMsgs: new Set(), subFor: null, choice: null, choiceLabels: {}, go: null, sheet: null, searching: false, open: null, scopeOff: false, editing: null, files: [], sending: false, lastSent: null, more: new Set(), tabOpen: {}, editDrafts: {}, settle: new Map(), tabTop: {}, stepFrom: null, mine: []};
 U.outbox = []; U.qn = 0;  // what you sent that hasn't reached the server yet (F85)
 const groups = new Map();
 let viewerGroup = [], viewerIdx = 0;
@@ -3708,8 +3708,9 @@ async function change(n, f, v) {
   if (settles) { U.go.done.add(n); U.go.how[n] = said.replace(/^is (marked )?/, '').replace(/^./, c => c.toUpperCase()); U.go.undo[n] = undo; }
   if (desk() && !settles && (LIST.in || n !== U.open)) holdRow(n, `${said.replace(/^./, c => c.toUpperCase())}`, undo);
   try { await op({op: 'set', ref: code(n), f: {[f]: v}}); } catch (ex) { if (U.settle.delete(n)) renderItems(); throw ex; }
-  D.undo = undo;
-  toast(`${code(n)} ${said}`, undo);
+  const run = pushUndo(`${code(n)} ${said}`, undo);
+  D.undo = run;
+  toast(`${code(n)} ${said}`, run);
   if (settles && U.open === n) advanceDesk(n, U.go.how[n]);
 }
 // On the desktop the search box is always there: the clear button shows only with a query, the / hint only without.
@@ -3915,6 +3916,10 @@ const ACT = {
     try { await op(ids.map(n => ({op: 'set', ref: code(n), f: {archived: true}}))); } catch (_) { return; }
     clearInterval(U.undoArch?.timer);
     const u = U.undoArch = {ids, left: 3};
+    u.run = pushUndo(`${plural(ids.length, 'item')} archived`, async () => {  // the bar and Z put the whole batch back
+      clearInterval(u.timer); if (U.undoArch === u) U.undoArch = null;
+      try { await op(ids.map(n => ({op: 'set', ref: code(n), f: {archived: false}}))); toast(`Put back ${plural(ids.length, 'item')}`); } catch (_) { renderItems(); }
+    });
     u.timer = setInterval(() => {
       if (--u.left > 0) { const el = $('undoLeft'); if (el) el.textContent = u.left; return; }
       clearInterval(u.timer);
@@ -3922,12 +3927,7 @@ const ACT = {
     }, 1000);
     renderItems();
   },
-  'archive-undo': async () => {
-    const u = U.undoArch;
-    if (!u) return;
-    clearInterval(u.timer); U.undoArch = null;
-    try { await op(u.ids.map(n => ({op: 'set', ref: code(n), f: {archived: false}}))); toast(`Put back ${plural(u.ids.length, 'item')}`); } catch (_) { renderItems(); }
-  },
+  'archive-undo': () => U.undoArch?.run(),
   'copy-text': b => copy(b.dataset.text),
   sources: b => showSources(Number(b.dataset.n)),
   close: closeDialog,
@@ -3960,7 +3960,12 @@ const ACT = {
     } catch (_) { if ($('inputEditError')) $('inputEditError').textContent = 'Connection lost. Your text is still here; try again.'; }
     finally { b.disabled = false; }
   },
+  'undo-mine': () => undoMine(),
   revert: async b => {
+    if (!b.dataset.armed) {  // B127: an older change goes back only on a second click
+      b.dataset.armed = '1'; const was = b.textContent; b.textContent = 'Click again to undo';
+      return setTimeout(() => { if (b.isConnected) { delete b.dataset.armed; b.textContent = was; } }, 3000);
+    }
     const u = (S.undo || []).find(u => u.seq === Number(b.dataset.seq));
     try { await revert(Number(b.dataset.seq)); } catch (_) { return; }
     D.undo = null; toast(`Undid: ${u ? undoLabel(u) : 'the change'}`); renderDrawerSettings();
@@ -4300,7 +4305,7 @@ function movePicker(n) {
 
 const KEYS = [
   ['Move', [['J / K', 'Next or previous item'], ['⇧J / ⇧K', 'Next or previous item that needs you (Go through)'], ['O or ↵', 'Full width; Esc goes back'], ['Space', 'Scroll the item'], ['G then I N A R', 'Items, Inputs, Archive, Rules'], ['G then P', 'Switch project'], ['[', 'Show or hide the sidebar']]],
-  ['Act on the selected item', [['A', 'The amber action: Accept, Approve or Answer'], ['R', 'Reply or add to it'], ['N', 'Not yet: reopen and say what is missing'], ['1–9, ⌘↵', 'Pick a choice, send the answer'], ['D · W · L', "Done · Won't do · Later / Now"], ['E / ⇧E', 'Archive or unarchive / archive every finished item'], ['S · P · T', 'Status, priority, type (the ⋯ menu)'], ['M · ⇧C', 'Move under… · Copy for agent'], ['I · ⇧D · ⇧A', 'Edit · New doc · Add subitem'], ['.', 'All actions'], ['Z', 'Undo the last change']]],
+  ['Act on the selected item', [['A', 'The amber action: Accept, Approve or Answer'], ['R', 'Reply or add to it'], ['N', 'Not yet: reopen and say what is missing'], ['1–9, ⌘↵', 'Pick a choice, send the answer'], ['D · W · L', "Done · Won't do · Later / Now"], ['E / ⇧E', 'Archive or unarchive / archive every finished item'], ['S · P · T', 'Status, priority, type (the ⋯ menu)'], ['M · ⇧C', 'Move under… · Copy for agent'], ['I · ⇧D · ⇧A', 'Edit · New doc · Add subitem'], ['.', 'All actions'], ['Z', 'Undo your last action here, again for the one before; older changes: Change log']]],
   ['Write and find', [['C', 'New input to the project'], ['V', 'Voice note for the selected item; V again stops'], ['⇧V', 'New input by voice; ⇧V again stops and sends'], ['⌥V', 'Voice note while typing in the box'], ['↵', 'While recording: stop, into the box'], ['⇧↵ or ⌘↵', 'Send; while recording: stop and send'], ['/', 'Search'], ['F', 'Filters'], ['?', 'This sheet'], ['Esc', 'Step back one level']]],
 ];
 function showKeys() {
@@ -4370,11 +4375,7 @@ function deskKey(e) {
     case 'f': e.preventDefault(); return showFilters();
     case '?': e.preventDefault(); return showKeys();
     case 'c': e.preventDefault(); return ACT['new-input']();
-    case 'z': {  // a blind key only reaches back half an hour; older changes are undone from the change log (F80)
-      e.preventDefault();
-      const u = S.undo?.[0];
-      return u && Date.now() - new Date(u.t) < 30 * 60e3 ? ACT.revert({dataset: {seq: String(u.seq)}}) : toast(u ? 'Nothing from the last 30 minutes. Older changes: This project › Undo or the change log' : 'Nothing to undo');
-    }
+    case 'z': e.preventDefault(); return undoMine();  // your own last action here; older ones: the change log (B127)
     case 'E': e.preventDefault(); return ACT['archive-all']();
     case 'v': e.preventDefault(); return R.rec ? finishRec(false) : startRec();
     case 'V':  // a new input by voice in one key (B91); again stops and sends it
@@ -4485,12 +4486,26 @@ function undoLabel(u) {
   if ('parent' in f) return f.parent ? `${c} moved under ${code(f.parent)}` : `${c} stands on its own`;
   return `${c} ${Object.keys(f).join(' and ')} edited`;
 }
+// Z and the sidebar's Undo mean one thing (B127): put back your own last action on this page, newest first, a batch
+// as a batch. Anything older, or done elsewhere, is undone from the change log, after a second click to confirm.
+function pushUndo(label, undo) {  // -> the one way to undo it, from Z, the sidebar, the toast or a bar; it runs once
+  const e = {label, done: false};
+  e.run = async () => { if (e.done) return; e.done = true; U.mine = U.mine.filter(x => x !== e); renderDrawerSettings(); return undo(); };
+  U.mine.push(e); if (U.mine.length > 30) U.mine.shift();
+  renderDrawerSettings();
+  return e.run;
+}
+async function undoMine() {
+  const e = U.mine.at(-1);
+  if (!e) return toast('Nothing of yours to undo on this page. Older changes: Change log');
+  try { await e.run(); } catch (_) {}
+}
 async function revert(seq) {
   const d = await (await fetch(P + 'api/revert', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({seq})})).json();
   if (!d.ok) { toast(d.error || (d.res || [])[0] || 'Could not undo'); throw new Error('revert failed'); }
   await load();
 }
-const undoRow = () => { const u = S.undo?.[0]; return u ? `<button data-act="revert" data-seq="${u.seq}" class="flex min-h-12 w-full items-center gap-3 px-3.5 py-2.5 text-left text-[15px] lg:min-h-0 lg:gap-2.5 lg:rounded-lg lg:px-3 lg:py-1.5 lg:text-sm lg:text-zinc-600 lg:hover:bg-zinc-200/60 dark:lg:text-zinc-300 dark:lg:hover:bg-zinc-800">${ico('undo', 'size-5 shrink-0 text-zinc-500 lg:size-4 dark:text-zinc-400', '2')}<span class="min-w-0 flex-1 truncate">Undo: ${esc(undoLabel(u))}</span><span class="shrink-0 text-xs text-zinc-400">${agoShort(new Date(u.t))}</span></button>` : ''; };
+const undoRow = () => { const u = U.mine.at(-1); return u ? `<button data-act="undo-mine" title="Undo · Z" class="flex min-h-12 w-full items-center gap-3 px-3.5 py-2.5 text-left text-[15px] lg:min-h-0 lg:gap-2.5 lg:rounded-lg lg:px-3 lg:py-1.5 lg:text-sm lg:text-zinc-600 lg:hover:bg-zinc-200/60 dark:lg:text-zinc-300 dark:lg:hover:bg-zinc-800">${ico('undo', 'size-5 shrink-0 text-zinc-500 lg:size-4 dark:text-zinc-400', '2')}<span class="min-w-0 flex-1 leading-snug">Undo: ${esc(u.label)}</span>${desk() ? KBD('Z') : ''}</button>` : ''; };
 function renderDrawerSettings() {
   // On the desktop the same rows are compact sidebar links.
   const row = (act, icon, label) => `<button data-act="${act}" class="flex min-h-12 w-full items-center gap-3 px-3.5 py-2.5 text-left text-[15px] lg:min-h-0 lg:gap-2.5 lg:rounded-lg lg:px-3 lg:py-1.5 lg:text-sm lg:text-zinc-600 lg:hover:bg-zinc-200/60 dark:lg:text-zinc-300 dark:lg:hover:bg-zinc-800">${ico(icon, 'size-5 text-zinc-500 lg:size-4 dark:text-zinc-400')}<span class="min-w-0 flex-1">${label}</span><span class="lg:hidden">${ico('right', 'size-4 text-zinc-300 dark:text-zinc-600')}</span></button>`;
