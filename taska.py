@@ -2500,12 +2500,18 @@ function choiceHtml(labels, multi, n, base, done = null) {  // done: the labels 
 const hasChoices = text => String(text || '').split('\n').some(l => CHOICE.test(l));
 const sendAnswerBtn = (n, cls = 'w-full', key = false) => `<button data-act="choice-send" data-n="${n}" ${U.choice?.n === n && U.choice.picked.size ? '' : 'disabled'} class="${PRIMARY_BASE} ${NEED.answer.btn} ${cls}">Send answer${key ? KBD('⌘↵') : ''}</button>`;
 const KIND_TAG = x => KIND[x.kind] ? `<span class="rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wider uppercase ${x.kind === 'decide' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-400/15 dark:text-emerald-300' : 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400'}">${KIND[x.kind]}</span>` : '';
-// A long agent message shows its first line, the conclusion, until you ask for more (T58 #5).
+// A long agent message shows its first line, the conclusion, until you ask for more (T58 #5). On the desktop it
+// shows whole, in a box of limited height that scrolls; a fade at the bottom says there is more (F93).
 function msgText(x, gid, form = 0, done = null) {
-  const long = x.by !== 'you' && x.kind !== 'ask' && (x.text.length > 240 || x.text.trim().split('\n').length > 3), folded = long && !U.moreMsgs.has(x.id);
+  const long = x.by !== 'you' && x.kind !== 'ask' && (x.text.length > 240 || x.text.trim().split('\n').length > 3);
+  if (long && desk()) return `<div data-clip class="-mr-2 max-h-96 overflow-y-auto overscroll-contain pr-2 data-[over]:mask-b-from-80%">${rich(x.text, gid + 'md' + x.id, '', form, done)}</div>`;
+  const folded = long && !U.moreMsgs.has(x.id);
   return rich(folded ? x.text.trim().split('\n')[0] : x.text, gid + 'md' + x.id, '', form, done)
     + (long ? `<button data-act="more-msg" data-id="${x.id}" class="-mb-2 flex h-11 items-center text-sm font-medium text-blue-600 dark:text-blue-400">${folded ? 'Show more' : 'Show less'}</button>` : '');
 }
+// The fade shows while there is more below, and goes once you scroll to the end.
+const clipFade = el => el.toggleAttribute('data-over', el.scrollTop + el.clientHeight < el.scrollHeight - 2);
+document.addEventListener('scroll', e => { if (e.target.matches?.('[data-clip]')) clipFade(e.target); }, true);
 // One message of a conversation, the same on the item page and in the preview: yours on the right in blue,
 // an agent's on the left in a card under its name. An open question shows amber, with its options to tap.
 // A question someone answered says so, with the picked options ticked (I84): the answer is your next message.
@@ -2794,6 +2800,7 @@ function renderDetail() {
   if (desk()) renderDetailBar(it);
   body.innerHTML = detailHtml(it);
   body.scrollTop = top;
+  requestAnimationFrame(() => body.querySelectorAll('[data-clip]').forEach(clipFade));  // measured once it shows
   restoreEdit(keep);
 }
 
