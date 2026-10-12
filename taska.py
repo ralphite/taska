@@ -1995,8 +1995,16 @@ const desk = () => DESK.matches;
 const D = {page: null, full: false, sideHidden: false, sideOpen: false, filters: false, g: 0, undo: null, compose: false, prev: null};
 // Every project has its own colour (B78): a letter tile that tells at a glance which project you are in, so an
 // input doesn't land in the wrong one. The colour comes from the name, so it never changes.
-const PROJ_TONES = ['bg-violet-600 dark:bg-violet-500', 'bg-blue-600 dark:bg-blue-500', 'bg-teal-600 dark:bg-teal-500', 'bg-pink-600 dark:bg-pink-500', 'bg-indigo-600 dark:bg-indigo-500', 'bg-cyan-600 dark:bg-cyan-500', 'bg-fuchsia-600 dark:bg-fuchsia-500', 'bg-slate-600 dark:bg-slate-500'];
-const projTone = name => { let h = 0; for (const c of String(name)) h = (h * 31 + c.codePointAt(0)) >>> 0; return PROJ_TONES[h % PROJ_TONES.length]; };
+const PROJ_TONES = ['bg-violet-600 dark:bg-violet-500', 'bg-teal-600 dark:bg-teal-500', 'bg-pink-600 dark:bg-pink-500', 'bg-blue-600 dark:bg-blue-500', 'bg-slate-600 dark:bg-slate-500', 'bg-fuchsia-600 dark:bg-fuchsia-500', 'bg-cyan-600 dark:bg-cyan-500', 'bg-indigo-600 dark:bg-indigo-500'];
+const projHash = name => { let h = 0; for (const c of String(name)) h = (h * 31 + c.codePointAt(0)) >>> 0; return h; };
+function projTone(name) {  // the name picks the colour; if another of your projects has it already, the next free one
+  const names = [...new Set([S.project, ...(DR.list || []).map(p => p.name)].filter(Boolean))].sort(), L = PROJ_TONES.length;
+  if (projTone.key !== names.join('\n')) {
+    const taken = new Set(); projTone.map = new Map(); projTone.key = names.join('\n');
+    for (const n of names) { let i = projHash(n) % L; for (let k = 0; k < L && taken.has(i); k++) i = (i + 1) % L; taken.add(i); projTone.map.set(n, i); }
+  }
+  return PROJ_TONES[projTone.map.get(name) ?? projHash(name) % L];
+}
 const projTile = (name, cls = 'size-5 rounded-md text-[11px]') => `<span aria-hidden="true" class="grid shrink-0 place-items-center leading-none font-bold text-white uppercase ${cls} ${projTone(name)}">${esc([...String(name || '?')][0])}</span>`;
 const KBD = k => `<kbd class="ml-1 hidden h-5 min-w-5 place-items-center rounded-md px-1 font-sans text-[11px] font-semibold opacity-70 ring-1 ring-current/30 lg:inline-grid">${k}</kbd>`;
 
