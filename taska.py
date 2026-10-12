@@ -1952,6 +1952,7 @@ PAGE = r'''<!doctype html>
   </footer>
 </div>
 
+<div id="tip" role="tooltip" hidden class="pointer-events-auto fixed top-0 left-0 z-[80] max-w-[260px] rounded-lg bg-zinc-900 px-2 py-1.5 text-[13px] leading-snug text-white opacity-0 shadow-lg shadow-black/20 transition-[opacity,translate] duration-[120ms] data-[on]:opacity-100 motion-reduce:transition-none dark:bg-zinc-100 dark:text-zinc-900"><span id="tipText"></span><span id="tipArrow" class="absolute size-2 rotate-45 bg-inherit"></span></div>
 <div id="toast" hidden role="status" class="fixed inset-x-0 bottom-28 z-[60] mx-auto flex w-fit max-w-[92vw] lg:right-auto lg:bottom-5 lg:left-5 lg:mx-0 lg:max-w-md items-center gap-3 rounded-full bg-zinc-900 py-2 pr-4 pl-4 text-sm text-white shadow-lg has-[button]:py-1.5 has-[button]:pr-1.5 dark:bg-zinc-100 dark:text-zinc-900"></div>
 
 <script>
@@ -2074,6 +2075,7 @@ let viewerGroup = [], viewerIdx = 0;
 const DESK = matchMedia('(min-width: 1024px)'), WIDE = matchMedia('(min-width: 1280px)');
 const desk = () => DESK.matches;
 const D = {page: null, full: false, sideHidden: false, sideOpen: false, filters: false, g: 0, undo: null, compose: false, prev: null};
+const TIP = {el: null, t: 0, closedAt: 0, hush: null, fine: matchMedia('(hover: hover) and (pointer: fine)')};  // the one tooltip (T094)
 // Every project has its own colour (B78): a letter tile that tells at a glance which project you are in, so an
 // input doesn't land in the wrong one. The colour comes from the name, so it never changes.
 const PROJ_TONES = ['bg-violet-600 dark:bg-violet-500', 'bg-teal-600 dark:bg-teal-500', 'bg-pink-600 dark:bg-pink-500', 'bg-blue-600 dark:bg-blue-500', 'bg-slate-600 dark:bg-slate-500', 'bg-fuchsia-600 dark:bg-fuchsia-500', 'bg-cyan-600 dark:bg-cyan-500', 'bg-indigo-600 dark:bg-indigo-500'];
@@ -3326,6 +3328,7 @@ function showImage() {
 // ---------------------------------------------------------------- wiring
 
 function render() {
+  if (TIP.el && !TIP.el.isConnected) tipHide();  // its trigger was redrawn
   showView(); renderItems(); renderDetail(); renderComposer(); renderFeedback(); renderAgent();
   if (desk()) { renderDeskHead(); renderSidebar(); renderRail(); renderFilters(); if (D.page) renderProject(); }
   if (U.peek && !$('overlay').hidden) { const top = $('dlgBody').scrollTop; peek(U.peek, {focus: false}); $('dlgBody').scrollTop = top; }
@@ -4230,6 +4233,71 @@ document.addEventListener('click', e => {
   if (e.target === $('overlay')) return closeDialog();
   if (b && ACT[b.dataset.act]) { e.preventDefault(); ACT[b.dataset.act](b, e); }
 });
+// One tooltip for the whole page (T094, design in D4), on devices with a mouse or trackpad. It reads a trigger's
+// data-tip, else its title (moved to data-tip so the browser's own tooltip stays away), else the aria-label of
+// an icon-only button; "Label · key" shows the key as a key cap. It opens after 500ms of rest, or at once when
+// another one closed less than 300ms ago, or on keyboard focus; it stays while the pointer is on it; Esc, a
+// click, a key, a scroll or leaving closes it. It sits on the side with room, and its arrow points at the trigger.
+function tipText(el) {
+  if (el.title) { el.dataset.tip = el.title; el.removeAttribute('title'); }
+  return el.dataset.tip || (!el.textContent.trim() && el.getAttribute('aria-label')) || '';
+}
+function tipShow(el, quick) {
+  const text = tipText(el);
+  if (!text || !el.isConnected) return;
+  const tip = $('tip'), parts = text.split(' · '), key = parts.length > 1 && /^(\S{1,4}|G [A-Z]|Esc)$/.test(parts.at(-1)) ? parts.pop() : '';
+  $('tipText').innerHTML = esc(parts.join(' · ')) + (key ? `<kbd class="ml-1.5 inline-grid h-[18px] min-w-[18px] place-items-center rounded px-1 font-sans text-[11px] font-semibold ring-1 ring-current/30">${esc(key)}</kbd>` : '');
+  TIP.el = el; tip.hidden = false; tip.removeAttribute('data-on'); tip.style.transition = quick ? 'none' : '';
+  const r = el.getBoundingClientRect(), w = tip.offsetWidth, h = tip.offsetHeight, gap = 8, pad = 8;
+  let side = el.dataset.tipSide || (el.closest('#drawer, #rail') ? 'right' : el.closest('header, #goStrip') ? 'bottom' : 'top');
+  const room = {top: r.top - h - gap, bottom: innerHeight - r.bottom - h - gap, right: innerWidth - r.right - w - gap, left: r.left - w - gap};
+  const flip = {top: 'bottom', bottom: 'top', right: 'left', left: 'right'};
+  if (room[side] < pad && room[flip[side]] > room[side]) side = flip[side];  // no room: the other side
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  let x, y;
+  if (side === 'top' || side === 'bottom') { x = clamp(r.left + r.width / 2 - w / 2, pad, innerWidth - w - pad); y = side === 'top' ? r.top - h - gap : r.bottom + gap; }
+  else { y = clamp(r.top + r.height / 2 - h / 2, pad, innerHeight - h - pad); x = side === 'right' ? r.right + gap : r.left - w - gap; }
+  tip.style.translate = `${Math.round(x)}px ${Math.round(y)}px`;
+  const a = $('tipArrow'), ax = clamp(r.left + r.width / 2 - x - 4, 8, w - 16), ay = clamp(r.top + r.height / 2 - y - 4, 8, h - 16);
+  Object.assign(a.style, side === 'top' ? {left: ax + 'px', top: h - 4 + 'px'} : side === 'bottom' ? {left: ax + 'px', top: '-4px'} : side === 'right' ? {top: ay + 'px', left: '-4px'} : {top: ay + 'px', left: w - 4 + 'px'});
+  el.setAttribute('aria-describedby', 'tip');
+  requestAnimationFrame(() => tip.setAttribute('data-on', ''));
+}
+function tipHide() {
+  clearTimeout(TIP.t);
+  if (!TIP.el) return;
+  TIP.el.removeAttribute('aria-describedby'); TIP.el = null; TIP.closedAt = Date.now();
+  $('tip').hidden = true; $('tip').removeAttribute('data-on');
+}
+const tipTarget = t => t?.closest?.('[data-tip], [title], button[aria-label], a[aria-label]');
+document.addEventListener('pointerover', e => {
+  if (!TIP.fine.matches || e.pointerType === 'touch') return;
+  if (e.target.closest('#tip')) { clearTimeout(TIP.t); return; }  // on the tooltip itself: it stays
+  const el = tipTarget(e.target);
+  if (el === TIP.el) { clearTimeout(TIP.t); return; }
+  if (!el || el === TIP.hush || e.buttons) { if (TIP.el) { clearTimeout(TIP.t); TIP.t = setTimeout(tipHide, 100); } return; }
+  tipText(el);  // the browser's own tooltip must not start
+  const quick = Date.now() - TIP.closedAt < 300 || !!TIP.el;
+  clearTimeout(TIP.t);
+  if (quick) { tipHide(); tipShow(el, true); } else TIP.t = setTimeout(() => tipShow(el, false), 500);
+});
+document.addEventListener('pointerout', e => {
+  const to = e.relatedTarget;
+  if (TIP.hush && !TIP.hush.contains(to)) TIP.hush = null;
+  if (to && (to.closest?.('#tip') || (TIP.el && TIP.el.contains(to)))) return;
+  clearTimeout(TIP.t);
+  if (TIP.el) TIP.t = setTimeout(tipHide, 100);
+});
+document.addEventListener('focusin', e => { const el = tipTarget(e.target); if (TIP.fine.matches && el && e.target.matches(':focus-visible')) { tipHide(); tipShow(el, true); } });
+document.addEventListener('focusout', () => tipHide());
+document.addEventListener('pointerdown', e => { if (TIP.el || TIP.t) { TIP.hush = tipTarget(e.target); tipHide(); } }, true);  // you acted: no tooltip until you leave
+document.addEventListener('scroll', () => tipHide(), true);
+addEventListener('resize', () => tipHide());
+document.addEventListener('keydown', e => {
+  if (!TIP.el && !TIP.t) return;
+  if (e.key === 'Escape' && TIP.el) { e.stopImmediatePropagation(); e.preventDefault(); }  // this Esc only closes the tooltip
+  tipHide();
+}, true);
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     if (DR.open) return closeDrawer();
