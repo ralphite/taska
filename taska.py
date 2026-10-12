@@ -2442,15 +2442,15 @@ function inlineMd(s, gid = '') {
 }
 // Text the same way everywhere (messages, descriptions, inputs, comments): Markdown with paragraphs, lists,
 // quotes, headings, code, links and images. Line breaks stay as written.
-const rich = (text, gid = '', cls = '', form = 0) => `<div class="space-y-2 break-words [&_p]:leading-relaxed ${cls}">${mdHtml(text, gid, form)}</div>`;
+const rich = (text, gid = '', cls = '', form = 0, done = null) => `<div class="space-y-2 break-words [&_p]:leading-relaxed ${cls}">${mdHtml(text, gid, form, done)}</div>`;
 // Choices in a question (F56): "- ( ) option" picks one, "- [ ] option" picks any. In the open question of item
 // `form` they can be tapped and sent as the user's answer; elsewhere they just show.
 const CHOICE = /^\s*[-*+]\s+(\(|\[)[ xX]?(\)|\])\s+/;
-function choiceHtml(labels, multi, n, base) {
+function choiceHtml(labels, multi, n, base, done = null) {  // done: the labels picked in the answer (I84)
   const picked = n && U.choice?.n === n ? U.choice.picked : new Set();
   return `<div class="space-y-1.5" role="group">${labels.map((l, k) => {
-    const i = base + k, on = picked.has(i);
-    return `<button ${n ? `data-act="choice" data-n="${n}" data-i="${i}" data-multi="${multi ? 1 : ''}"` : 'disabled'} aria-pressed="${on}" class="flex min-h-11 w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left text-[15px] leading-snug ${on ? 'border-blue-500 bg-blue-50 dark:border-blue-400 dark:bg-blue-400/10' : 'border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900'}">
+    const i = base + k, on = done ? done.includes(l.trim()) : picked.has(i);
+    return `<button ${n ? `data-act="choice" data-n="${n}" data-i="${i}" data-multi="${multi ? 1 : ''}"` : 'disabled'} aria-pressed="${on}" class="flex min-h-11 w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left text-[15px] leading-snug ${on ? 'border-blue-500 bg-blue-50 dark:border-blue-400 dark:bg-blue-400/10' : 'border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900'} ${done && !on ? 'opacity-50' : ''}">
       <span class="grid size-5 shrink-0 place-items-center border-2 ${multi ? 'rounded-md' : 'rounded-full'} ${on ? 'border-blue-600 bg-blue-600 text-white dark:border-blue-400 dark:bg-blue-400 dark:text-zinc-900' : 'border-zinc-300 dark:border-zinc-600'}">${on ? ico('check', 'size-3.5', '3') : ''}</span>
       <span class="min-w-0 flex-1">${inlineMd(l)}</span>${n && i < 9 ? KBD(i + 1) : ''}</button>`;
   }).join('')}</div>`;
@@ -2459,14 +2459,20 @@ const hasChoices = text => String(text || '').split('\n').some(l => CHOICE.test(
 const sendAnswerBtn = (n, cls = 'w-full', key = false) => `<button data-act="choice-send" data-n="${n}" ${U.choice?.n === n && U.choice.picked.size ? '' : 'disabled'} class="${PRIMARY} ${cls}">Send answer${key ? KBD('⌘↵') : ''}</button>`;
 const KIND_TAG = x => KIND[x.kind] ? `<span class="rounded px-1.5 py-0.5 text-[10px] font-semibold tracking-wider uppercase ${x.kind === 'decide' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-400/15 dark:text-emerald-300' : 'bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400'}">${KIND[x.kind]}</span>` : '';
 // A long agent message shows its first line, the conclusion, until you ask for more (T58 #5).
-function msgText(x, gid, form = 0) {
+function msgText(x, gid, form = 0, done = null) {
   const long = x.by !== 'you' && x.kind !== 'ask' && (x.text.length > 240 || x.text.trim().split('\n').length > 3), folded = long && !U.moreMsgs.has(x.id);
-  return rich(folded ? x.text.trim().split('\n')[0] : x.text, gid + 'md' + x.id, '', form)
+  return rich(folded ? x.text.trim().split('\n')[0] : x.text, gid + 'md' + x.id, '', form, done)
     + (long ? `<button data-act="more-msg" data-id="${x.id}" class="-mb-2 flex h-11 items-center text-sm font-medium text-blue-600 dark:text-blue-400">${folded ? 'Show more' : 'Show less'}</button>` : '');
 }
 // One message of a conversation, the same on the item page and in the preview: yours on the right in blue,
 // an agent's on the left in a card under its name. An open question shows amber, with its options to tap.
-function msgHtml(x, gid, form = 0) {
+// A question someone answered says so, with the picked options ticked (I84): the answer is your next message.
+function answerOf(thread, x) {
+  if (x.kind !== 'ask') return null;
+  const a = thread.slice(thread.indexOf(x) + 1).find(y => y.by === 'you');
+  return a ? a.text.split('\n').map(l => l.match(/^\s*✓\s*(.+)$/)?.[1]?.trim()).filter(Boolean) : null;
+}
+function msgHtml(x, gid, form = 0, done = null) {
   const you = x.by === 'you', src = you && x.src ? byR.get(x.src) : null;
   const strip = (files, g, size) => files?.length ? `<div class="flex gap-2 overflow-x-auto ${you ? 'justify-end' : 'mt-3'}">${thumbs(files, g, size)}</div>` : '';
   if (you) return `<div class="flex flex-col items-end gap-1">
@@ -2475,10 +2481,10 @@ function msgHtml(x, gid, form = 0) {
       <span class="px-1 text-[11px] text-zinc-400 dark:text-zinc-500">You · ${when(x.t)}</span></div>`;
   const card = form ? 'space-y-2.5 border-amber-200 bg-amber-50 p-3 text-zinc-900 dark:border-amber-400/25 dark:bg-amber-400/7 dark:text-zinc-100' : 'border-zinc-200 bg-zinc-50 px-4 py-3 text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200';
   return `<div class="flex flex-col items-start gap-1.5">
-      <div class="flex items-center gap-2 px-1 text-[11px] text-zinc-400 dark:text-zinc-500">${avatar(x.by)}<span class="text-xs font-semibold text-zinc-700 dark:text-zinc-300">${esc(whoName(x.by))}</span>${KIND_TAG(x)}<span>${when(x.t)}</span></div>
-      <div class="w-full rounded-2xl rounded-tl-md border text-[15px] leading-relaxed ${card}">${form ? `<div class="px-1">${msgText(x, gid, form)}</div>${hasChoices(x.text) ? sendAnswerBtn(form) : ''}` : msgText(x, gid)}${strip(x.files, gid + 'm' + x.id, 'h-48 w-24')}</div></div>`;
+      <div class="flex items-center gap-2 px-1 text-[11px] text-zinc-400 dark:text-zinc-500">${avatar(x.by)}<span class="text-xs font-semibold text-zinc-700 dark:text-zinc-300">${esc(whoName(x.by))}</span>${done && !form ? `<span class="flex items-center gap-0.5 rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-emerald-800 uppercase dark:bg-emerald-400/15 dark:text-emerald-300">${ico('check', 'size-3', '3')}Answered</span>` : KIND_TAG(x)}<span>${when(x.t)}</span></div>
+      <div class="w-full rounded-2xl rounded-tl-md border text-[15px] leading-relaxed ${card}">${form ? `<div class="px-1">${msgText(x, gid, form)}</div>${hasChoices(x.text) ? sendAnswerBtn(form) : ''}` : msgText(x, gid, 0, done)}${strip(x.files, gid + 'm' + x.id, 'h-48 w-24')}</div></div>`;
 }
-function mdHtml(text, gid = '', form = 0) {
+function mdHtml(text, gid = '', form = 0, done = null) {
   if (gid) groups.delete(gid);
   const lines = text.replace(/\r/g, '').split('\n'), blocks = [];
   let cur = null;
@@ -2499,7 +2505,7 @@ function mdHtml(text, gid = '', form = 0) {
     if (items.length && items.every(l => CHOICE.test(l))) {
       const multi = items[0].match(CHOICE)[1] === '[', base = labels.length;
       labels.push(...items.map(l => l.replace(CHOICE, '')));
-      return choiceHtml(labels.slice(base), multi, form, base);
+      return choiceHtml(labels.slice(base), multi, form, base, done);
     }
     return blockHtml({kind: /^(ol|ul)$/.test(b.kind) ? 'list' : b.kind, text: b.lines.join('\n')}, false, gid);
   }).join('');
@@ -2637,7 +2643,7 @@ function peek(n, {focus = true} = {}) {
     ${it.body ? rich(it.body, 'pbody' + n, 'mt-2.5 text-[15px] text-zinc-700 dark:text-zinc-300') : ''}
     ${it.next ? `<div class="mt-2 flex gap-2 text-sm"><span class="shrink-0 font-semibold text-zinc-500 dark:text-zinc-400">Next</span><span class="min-w-0 break-words">${inlineMd(it.next)}</span></div>` : ''}
     ${files.length ? `<div class="mt-3 flex items-end gap-2 overflow-x-auto">${thumbs(files, 'peek' + n)}</div>` : ''}
-    ${recent.length ? `<div class="mt-4 flex flex-col gap-4">${recent.map(x => msgHtml(x, 'p', it.wait?.kind === 'ask' && it.wait.id === x.id ? n : 0)).join('')}</div>` : ''}
+    ${recent.length ? `<div class="mt-4 flex flex-col gap-4">${recent.map(x => msgHtml(x, 'p', it.wait?.kind === 'ask' && it.wait.id === x.id ? n : 0, answerOf(it.thread, x))).join('')}</div>` : ''}
   </div>`, {
     aboveComposer: true, focus, card: true, head,
     extra: g ? `<button data-act="go-next" class="ml-auto flex h-11 items-center gap-0.5 rounded-full pr-1.5 pl-3 text-sm font-semibold text-zinc-700 dark:text-zinc-200">Next${ico('right', 'size-4', '2.25')}</button>` : '',
@@ -2721,7 +2727,7 @@ function detailHtml(it) {
     </section>` : '';
   const talk = thread.length ? `<div class="flex flex-col gap-6 border-t border-zinc-100 pt-6 dark:border-zinc-800/70">
       ${hidden ? `<button data-act="more" data-n="${n}" class="-my-1 h-11 self-center rounded-lg px-3 text-sm font-medium text-blue-600 dark:text-blue-400">Show ${hidden} earlier</button>` : ''}
-      ${thread.slice(hidden).map(x => msgHtml(x, '')).join('')}</div>` : '';
+      ${thread.slice(hidden).map(x => msgHtml(x, '', 0, answerOf(thread, x))).join('')}</div>` : '';
   return `<div class="flex flex-col gap-6 px-5 pt-5 pb-10 lg:mx-auto lg:w-full lg:max-w-[46rem] lg:px-8 lg:pt-9">${[head, needsCard(it), desc,
     files.length ? `<div class="flex items-end gap-2 overflow-x-auto">${thumbs(files, 'item' + n, 'h-24 w-16')}</div>` : '', docs, subs, talk].filter(Boolean).join('')}</div>`;
 }
