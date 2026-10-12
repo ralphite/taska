@@ -18,17 +18,17 @@ they need you.
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/list-dark.png">
-    <img src="docs/screenshots/list.png" width="260" alt="The list: what needs you on top, with the action right on the row; then your agent's queue">
+    <img src="docs/screenshots/list.png" width="240" alt="The list: what needs you on top, with the action right on the row; then your agent's queue">
   </picture>
   &nbsp;
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/review-dark.png">
-    <img src="docs/screenshots/review.png" width="260" alt="An item the agent finished, with its report and Accept / Not yet">
+    <img src="docs/screenshots/review.png" width="240" alt="An item the agent finished, with its report and Accept / Not yet">
   </picture>
   &nbsp;
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/question-dark.png">
-    <img src="docs/screenshots/question.png" width="260" alt="The agent asks a question; you tap an answer">
+    <img src="docs/screenshots/question.png" width="240" alt="The agent asks a question; you tap an answer">
   </picture>
 </p>
 
