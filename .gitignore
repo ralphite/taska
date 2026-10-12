@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.DS_Store
+.logs/
+mobile-preview/
+mobile-preview.tar.gz
+.taska
+.mocks/
+
+.claude/scheduled_tasks.lock
+.claude/settings.local.json
