@@ -3143,7 +3143,8 @@ function stashEdit() {
 }
 function keepEdit() {
   const a = document.activeElement;
-  const k = {focus: a && a.id && $('detailBody').contains(a) ? a.id : null, start: a?.selectionStart, end: a?.selectionEnd};
+  const k = {focus: a && a.id && $('detailBody').contains(a) ? a.id : null, start: a?.selectionStart, end: a?.selectionEnd,
+    choice: a?.dataset?.act === 'choice' && $('detailBody').contains(a) ? [a.dataset.n, a.dataset.i] : null};  // a focused answer stays focused (B125)
   for (const id of ['eTitle', 'eBody', 'eNext', 'subTitle']) if ($(id)) k[id] = $(id).value;
   return k;
 }
@@ -3151,6 +3152,7 @@ function keepEdit() {
 function restoreEdit(k) {
   for (const id of ['eTitle', 'eBody', 'eNext', 'subTitle']) if ($(id) && k[id] !== undefined) $(id).value = k[id];
   if (k.focus && $(k.focus)) { const el = $(k.focus); el.focus({preventScroll: true}); try { el.setSelectionRange(k.start, k.end); } catch (_) {} }
+  if (k.choice) document.querySelector(`#detailBody [data-act="choice"][data-n="${k.choice[0]}"][data-i="${k.choice[1]}"]`)?.focus({preventScroll: true});
 }
 
 // ---------------------------------------------------------------- inputs
@@ -3736,7 +3738,13 @@ const ACT = {
   'row-act': async b => {
     const n = Number(b.dataset.n), v = b.dataset.v;
     if (v === 'accept' || v === 'approve') { try { await change(n, 'status', v === 'accept' ? 'done' : 'open'); } catch (_) {} return; }
-    U.go = null; peek(n);
+    U.go = null;
+    if (desk()) {  // B125: on the desktop the item opens in its pane: Answer goes to the first choice, Reply to the box
+      openItem(n);
+      const first = v === 'answer' && document.querySelector(`#detailBody [data-act="choice"][data-n="${n}"]`);
+      return first ? first.focus() : $('text').focus();
+    }
+    peek(n);
     if (v === 'reply' || !hasChoices(byN.get(n)?.wait?.text)) $('text').focus();
   },
   'go-through': () => { if (desk()) return startGoDesk(); U.go = {list: needsList(), done: new Set()}; if (U.go.list.length) peek(U.go.list[0]); },
