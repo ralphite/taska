@@ -260,7 +260,7 @@ class Store:
         elif k == "org":
             inp = self.inputs.get(e["src"])
             if inp:
-                inp["org"] = None if e.get("retry") else {"ok": e["ok"], "msg": e["msg"], "t": e["t"], "keep": e.get("keep", "Left for your coding agent" in e["msg"])}
+                inp["org"] = None if e.get("retry") else {"ok": e["ok"], "msg": e["msg"], "t": e["t"], "keep": e.get("keep", "Left for your coding agent" in e["msg"]), "changed": e.get("changed", False)}
         elif k == "cfg":
             self.cfg.update(e["f"])
         elif k == "doc":
@@ -1323,7 +1323,7 @@ class Organizer(threading.Thread):
                 msg = (msg + " · " if msg else "") + "Left for your coding agent"
             if bad:
                 msg += " · Some commands failed: " + "; ".join(bad)
-            s.emit({"k": "org", "src": inp["id"], "ok": not bad, "msg": msg, "plan": plan, "keep": keep, "ms": int((time.time() - t0) * 1000), "by": "org"})
+            s.emit({"k": "org", "src": inp["id"], "ok": not bad, "msg": msg, "plan": plan, "keep": keep, "changed": bool(labels), "ms": int((time.time() - t0) * 1000), "by": "org"})
 
 
 def transcribe(store, data, mime, scope):
@@ -3108,6 +3108,8 @@ function restoreEdit(k) {
 
 // ---------------------------------------------------------------- inputs
 
+const canUndoInput = r => r.org && r.org.ok && !r.org.undone && r.touched.length && (!r.org.keep || (r.history?.length && r.org.changed));
+
 function inputActions(r, cls = LINK_BTN) {
   if (r.moved) return '';
   return `<button data-act="input-edit" data-id="${r.id}" class="${cls}">${ico('pencil', 'size-3.5')}Edit</button><button data-act="input-append" data-id="${r.id}" class="${cls}">${ico('plus', 'size-3.5')}Add details</button>`
@@ -3156,7 +3158,7 @@ function renderInputs() {
     const note = !r.moved && r.org && !(r.acked && r.org.keep) ? `<div class="mt-1.5 flex min-h-5 items-center gap-1 text-xs ${r.org.ok ? 'text-zinc-500 dark:text-zinc-400' : 'text-red-600 dark:text-red-400'}">${ico('sparkle', 'size-3.5')}<span class="min-w-0">${esc(r.org.msg)}</span></div>` : '';
     const chips = r.moved ? '' : r.touched.filter(n => byN.has(n)).map(n => `<button data-act="goto" data-n="${n}" class="${HIT} flex h-8 max-w-full min-w-0 items-center gap-1.5 rounded-lg bg-zinc-100 px-2 text-[13px] dark:bg-zinc-800"><span class="font-mono text-xs font-bold ${TYPE_TEXT[byN.get(n).type]}">${code(n)}</span><span class="truncate">${esc(byN.get(n).title)}</span></button>`).join('');
     const acts = r.moved ? `<a href="/p/${encodeURIComponent(r.moved.to)}/" class="${LINK_BTN}">${ico('arrow', 'size-3.5', '2')}Open ${esc(r.moved.to)} · ${esc(r.moved.as)}</a>` : (!r.acked && S.org.on && r.org && (!r.org.ok || r.org.undone) ? `<button data-act="retry" data-id="${r.id}" class="${LINK_BTN}">${ico('loop', 'size-3.5', '2')}${r.org.undone ? 'Organize again' : 'Retry'}</button>` : '')
-      + (r.org && r.org.ok && !r.org.undone && !r.org.keep && r.touched.length ? `<button data-act="undo" data-id="${r.id}" class="${LINK_BTN} text-zinc-600 dark:text-zinc-300">${ico('undo', 'size-3.5', '2')}Undo</button>` : '')
+      + (canUndoInput(r) ? `<button data-act="undo" data-id="${r.id}" class="${LINK_BTN} text-zinc-600 dark:text-zinc-300">${ico('undo', 'size-3.5', '2')}Undo</button>` : '')
       + (!r.acked && !r.scope && !(S.org.on && !r.org) && S.org.busy !== r.id ? `<button data-act="make-item" data-id="${r.id}" class="${LINK_BTN}">${ico('plus', 'size-3.5', '2')}Make item</button>` : '')
       + (otherProjects().length && S.org.busy !== r.id ? `<button data-act="move-input" data-id="${r.id}" class="${LINK_BTN} text-zinc-600 dark:text-zinc-300">${ico('arrow', 'size-3.5', '2')}Move…</button>` : '') + inputActions(r);
     // On the desktop each input is a ledger line: what you said on the left, what became of it on the right.
@@ -4014,7 +4016,7 @@ function saidRow(r, k, last) {
     : (busy ? '<span class="h-7 w-44 animate-pulse rounded-lg bg-zinc-100 dark:bg-zinc-800"></span>' : '')
       + (r.org?.undone && !r.acked ? `<button data-act="retry" data-id="${r.id}" class="${SMALL_BTN}">${ico('loop', 'size-3.5', '2')}Organize again</button>` : '')
       + (!r.acked && !r.scope && !(S.org.on && !r.org) && !busy ? `<button data-act="make-item" data-id="${r.id}" class="${SMALL_BTN} text-blue-600 dark:text-blue-400">${ico('plus', 'size-3.5', '2')}Make item</button>` : '')
-      + `<span class="ml-auto flex items-center ${later}">${r.org && r.org.ok && !r.org.undone && !r.org.keep && r.touched.length ? `<button data-act="undo" data-id="${r.id}" title="Undo what the organizer did with ${r.id}" class="${SMALL_BTN}">${ico('undo', 'size-3.5', '2')}Undo</button>` : ''}${otherProjects().length && !busy ? `<button data-act="move-input" data-id="${r.id}" title="Sent to the wrong project? Move it" class="${SMALL_BTN}">${ico('arrow', 'size-3.5', '2')}Move…</button>` : ''}</span>`;
+      + `<span class="ml-auto flex items-center ${later}">${canUndoInput(r) ? `<button data-act="undo" data-id="${r.id}" title="Undo what the organizer did with ${r.id}" class="${SMALL_BTN}">${ico('undo', 'size-3.5', '2')}Undo</button>` : ''}${otherProjects().length && !busy ? `<button data-act="move-input" data-id="${r.id}" title="Sent to the wrong project? Move it" class="${SMALL_BTN}">${ico('arrow', 'size-3.5', '2')}Move…</button>` : ''}</span>`;
   return saidStep(DOT[dotOf(r)], bubble, `<span class="font-mono">${r.id}</span> · ${when(r.t)}`, `<span class="mr-1 text-[13px] font-semibold ${tone}">${label}</span>${chips}${inputActions(r, SMALL_BTN)}${acts}`, last);
 }
 function outboxStep(q, last) {  // still on its way (F85)
