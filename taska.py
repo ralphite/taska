@@ -2681,10 +2681,7 @@ function renderItems() {
     const needs = rows.filter(needsYou);
     const queue = rows.filter(it => !needsYou(it) && !CLOSED(it.status) && !it.archived && it.type !== 'rule').sort(queueOrder);
     const done = rows.filter(it => CLOSED(it.status) && !it.archived), arch = rows.filter(it => it.archived);
-    html = (needs.length ? zone('needs', 'Needs you', needs.length, goThroughBtn()) + needs.map(needsRow).join('')
-        : filtered() ? '' : `<div class="flex h-12 items-center gap-2.5 border-b border-emerald-100 bg-emerald-50 px-4 dark:border-emerald-400/15 dark:bg-emerald-400/10">
-          <span class="grid size-6 shrink-0 place-items-center rounded-full bg-emerald-500 text-white dark:bg-emerald-400 dark:text-emerald-950">${ico('check', 'size-4', '2.5')}</span>
-          <p class="text-sm font-semibold text-emerald-900 dark:text-emerald-100">Nothing needs you right now</p></div>`)
+    html = (needs.length ? zone('needs', 'Needs you', needs.length, goThroughBtn()) + needs.map(needsRow).join('') : '')  // nothing waiting: no band (I71)
       + (queue.length ? zone('queue', 'Agent queue', queue.length, keepGoingSwitch()) + tree(queue) : '')
       + (U.undoArch ? `<div class="flex items-center gap-3 border-b border-blue-100 bg-blue-50 py-2 pr-2 pl-4 dark:border-blue-400/15 dark:bg-blue-400/10">
           ${ico('archive', 'size-5 text-blue-600 dark:text-blue-400')}

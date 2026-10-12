@@ -24,8 +24,8 @@ the Home indicator, two taps where one should do, unclear state: all count.
 
 1. First screen: header (menu icon + project, agent pill, search), tabs with counts and the filter button, then
    the Items list in three groups: Needs you (amber, a one-line quote and an action pill per row, Go through),
-   Agent queue (Keep going switch, /next order), Finished (Archive N). With nothing waiting: the green "Nothing
-   needs you right now" band. Nothing cut off at 375 and 390 wide. Also the moment before the data arrives (a
+   Agent queue (Keep going switch, /next order), Finished (Archive N). With nothing waiting, the list starts at the
+   queue. Nothing cut off at 375 and 390 wide. Also the moment before the data arrives (a
    slow tunnel on a phone): the project name and "Loading…" show, not a blank page.
 2. Send: text with Shift+Enter, with an image, the mic button. The status line after sending; Undo. Put a long
    paragraph in at once (paste, or the keyboard's dictation): the box grows to fit, no line cut off.
