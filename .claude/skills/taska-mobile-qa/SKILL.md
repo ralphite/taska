@@ -16,6 +16,9 @@ after you found a problem, to explain it.
    (keep the organizer on only when you test it; it calls Gemini).
 2. Built-in browser on `http://127.0.0.1:7341/p/taska/`, viewport 390x844 (a phone: touch, coarse pointer).
    Do the pass in light mode, then the screens that matter again in dark mode.
+3. At 1024px and wider Taska switches to its desktop layout (three panes, keyboard; all `lg:` classes). A phone
+   pass never sees it, and a change to it must leave the phone pixel-identical: compare phone screenshots from
+   before and after.
 
 ## The pass
 

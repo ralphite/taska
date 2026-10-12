@@ -32,6 +32,13 @@ they need you.
   </picture>
 </p>
 
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/screenshots/desktop-dark.png">
+    <img src="docs/screenshots/desktop.png" width="760" alt="On a desktop: projects on the left, the list in the middle, the selected item on the right">
+  </picture>
+</p>
+
 ## Why Taska
 
 Coding agents work fast. Keeping up with them is the hard part:
@@ -72,6 +79,9 @@ flowchart LR
   Approve, Answer or Reply. **Go through** takes you through all of them, one card at a time.
 - **Built for the phone.** Swipe right to move an item forward and left for the rest. Long press for a preview.
   Every quick action can be undone.
+- **A desk on the desktop.** On a wide screen, Taska opens in three panes: your projects, the list, and the item
+  you are reading. Hover a row for its actions, and triage from the keyboard: `J`/`K` to move, `A` to accept or
+  approve, `R` to reply, `⇧J` to go through what needs you. Press `?` for every shortcut.
 - **Voice in, words out.** Voice notes are transcribed with your project's own terms, so names, paths and
   commands come out right.
 - **Answers in one tap.** Agents can ask multiple-choice questions, and you answer with a tap.
