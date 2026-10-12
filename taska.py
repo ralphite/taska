@@ -2155,7 +2155,7 @@ const SECTION = (text, right = '') => `<div class="flex h-6 items-center justify
 let S = {rev: -1, boot: '', items: [], inputs: [], width: 1, org: {}};
 let offline = 0;  // consecutive failed polls
 const byN = new Map(), byR = new Map(), kids = new Map();
-const U = {doc: null, docNew: null, docEdit: false, docText: null, docSel: new Set(), docQuote: null, docCircle: false, docThreads: new Set(), docDrafts: {}, docScroll: {}, peek: null, moreInputs: new Set(), tab: 'items', q: '', type: 'all', when: 'all', status: 'all', pri: 'all', undoArch: null, folded: new Set(), moreMsgs: new Set(), subFor: null, choice: null, choiceLabels: {}, go: null, sheet: null, searching: false, open: null, scopeOff: false, editing: null, files: [], sending: false, lastSent: null, more: new Set(), tabOpen: {}, editDrafts: {}};
+const U = {doc: null, docNew: null, docEdit: false, docText: null, docSel: new Set(), docQuote: null, docCircle: false, docThreads: new Set(), docDrafts: {}, docScroll: {}, peek: null, moreInputs: new Set(), tab: 'items', q: '', type: 'all', when: 'all', status: 'all', pri: 'all', undoArch: null, folded: new Set(), moreMsgs: new Set(), subFor: null, choice: null, choiceLabels: {}, go: null, sheet: null, searching: false, open: null, scopeOff: false, editing: null, files: [], sending: false, lastSent: null, more: new Set(), tabOpen: {}, editDrafts: {}, settle: new Map(), tabTop: {}, stepFrom: null};
 U.outbox = []; U.qn = 0;  // what you sent that hasn't reached the server yet (F85)
 const groups = new Map();
 let viewerGroup = [], viewerIdx = 0;
@@ -2373,6 +2373,37 @@ function rowActs(it, needs = false) {
   return `<div class="hidden shrink-0 items-center gap-0.5 self-center lg:group-hover:flex">${acts.map(([f, v, label]) =>
     `<button data-act="swipe" data-n="${it.n}" data-f="${f}" data-v="${v}" title="${label}${ACT_KEY[label] ? ' · ' + ACT_KEY[label] : ''}" aria-label="${label}" class="grid size-8 place-items-center rounded-lg hover:bg-zinc-200/70 dark:hover:bg-zinc-800 ${ACT_TONE[label] || 'text-zinc-500 dark:text-zinc-400'}">${ico(ACT_ICON[label], 'size-[18px]')}</button>`).join('')}</div>`;
 }
+
+// A row you just acted on stays where it was, as one quiet line with Undo, while the pointer is over the list (or
+// for 3 s after a key), so the next row never slides under a second click (B124). Then the list rearranges.
+const LIST = {in: false, t: 0, until: 0, sig: ''};
+const listSig = () => [U.tab, U.q, U.type, U.when, U.status, U.pri].join('|');
+function holding() {
+  if (!desk() || !U.settle.size) return false;
+  if (LIST.sig !== listSig()) { U.settle.clear(); return false; }  // another search, filter or tab: show the list as it is now
+  return !!$('list').querySelector('article[data-n]');
+}
+function holdRow(n, said, undo) {
+  U.settle.set(n, {said, undo}); LIST.sig = listSig();
+  LIST.until = Date.now() + (LIST.in ? 800 : 3000);
+  clearTimeout(LIST.t); LIST.t = setTimeout(releaseList, LIST.until - Date.now());
+}
+function releaseList() {
+  if (!U.settle.size || (LIST.in && Date.now() < LIST.until + 60000)) return;  // still over the list: wait until it leaves
+  U.settle.clear(); renderItems();
+}
+function patchList() {
+  for (const a of $('list').querySelectorAll('article[data-n]')) {
+    const n = Number(a.dataset.n), it = byN.get(n), s = U.settle.get(n), row = a.querySelector('[data-act="open"]');
+    if (s && it && !a.dataset.settled) {
+      const h = a.offsetHeight - 1;
+      a.dataset.settled = '1';
+      a.innerHTML = `<div data-act="open" data-n="${n}" class="flex min-h-[${h}px] cursor-pointer items-center gap-3 py-2 pr-3 pl-4 text-sm text-zinc-500 dark:text-zinc-400">${stateIcon(it.status, statusName(it))}<span class="min-w-0 flex-1 truncate"><span class="mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[it.type]}">${code(n)}</span>${esc(s.said)}</span><button data-act="settle-undo" data-n="${n}" class="h-8 shrink-0 rounded-lg px-2.5 text-[13px] font-semibold text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10">Undo</button></div>`;
+    } else if (row && !a.dataset.settled) for (const c of ['lg:bg-blue-50', 'dark:lg:bg-blue-400/10']) row.classList.toggle(c, U.open === n);
+  }
+}
+$('list').addEventListener('pointerenter', () => { LIST.in = true; });
+$('list').addEventListener('pointerleave', () => { LIST.in = false; if (U.settle.size) { clearTimeout(LIST.t); LIST.t = setTimeout(releaseList, Math.max(0, LIST.until - Date.now())); } });
 
 // A row in a list: state icon, coloured code and title, one meta line. Tapping anywhere opens the item (B62);
 // the image and the fold arrow keep their own taps. Nested subitems hang off an elbow line.
@@ -3007,13 +3038,14 @@ function tree(group) {
 const EMPTY = (text, extra = '') => `<div class="px-6 py-16 text-center text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">${text}${extra}</div>`;
 
 function renderItems() {
-  const list = $('list'), top = U.open ? U.listTop?.[0] : list.scrollTop;  // under the item page the list is hidden and reads 0
+  const list = $('list'), top = U.open && !desk() ? U.listTop?.[0] : list.scrollTop;  // under the phone's item page the list is hidden and reads 0
   SW.open = SW.el = null;  // rows are rebuilt closed; a stale reference would swallow the next tap
   const rows = visible();
   $('nItems').textContent = (U.tab === 'items' ? rows : visible('items')).filter(it => !it.archived).length;
   $('nRules').textContent = S.items.filter(it => it.type === 'rule' && !it.merged_into && !it.archived && it.status !== 'dropped').length || '';
   $('nArchTab').textContent = S.items.filter(it => it.archived && !it.merged_into).length || '';
   renderFilters();
+  if (holding()) return patchList();  // B124: rows hold still under the pointer after you act on one
   let html = '';
   if (!S.items.length) {
     html = EMPTY(`No items yet.<br>Write your first thought below${S.org.on ? ' and the organizer turns it into items' : ' and your coding agent turns it into items'}.`, `<br><button data-act="guide" class="mt-3 h-11 text-blue-600 dark:text-blue-400">Connect a coding agent</button>`);
@@ -3340,6 +3372,7 @@ async function send() {
   else if (desk() && U.go && U.open && !U.scopeOff && U.go.list.includes(U.open)) { $('text').blur(); advanceDesk(U.open, 'Replied'); }  // B118
   render(); flushOutbox();
   if (desk() && D.compose) $('foot').scrollTop = 0;
+  else if (desk() && n && n === U.open && !U.go) requestAnimationFrame(() => { $('detailBody').scrollTop = $('detailBody').scrollHeight; });  // B124
 }
 async function flushOutbox() {
   if (flushOutbox.busy) return;
@@ -3648,7 +3681,8 @@ function setTab(t) {
       const back = [U.tabOpen[t], U.open].find(k => k && byN.has(k) && inTab(byN.get(k), t));
       if (back !== U.open) { U.open = back || null; U.go = null; }
     }
-    D.page = null; D.sideOpen = false; D.compose = false; render(); return writeURL(false);
+    U.tabTop[was] = $('list').scrollTop;  // each tab keeps its place in the list (B124)
+    D.page = null; D.sideOpen = false; D.compose = false; U.settle.clear(); render(); $('list').scrollTop = U.tabTop[t] || 0; return writeURL(false);
   }
   document.querySelectorAll('[data-tab]').forEach(b => b.getAttribute('aria-selected') !== null && b.setAttribute('aria-selected', String(b.dataset.tab === t)));
   showView(); renderFilters();
@@ -3668,8 +3702,10 @@ async function change(n, f, v) {
     return back.then(() => { if (U.go) { U.go.done.delete(n); render(); } toast(`${code(n)} put back`); }, () => {});
   };
   const settles = desk() && U.go && U.go.list.includes(n) && f === 'status';
+  if (desk() && n === U.open) U.stepFrom = {n, rows: [...document.querySelectorAll('#list [data-act="open"][data-n]')].map(el => Number(el.dataset.n))};  // J goes on from here (B124)
   if (settles) { U.go.done.add(n); U.go.how[n] = said.replace(/^is (marked )?/, '').replace(/^./, c => c.toUpperCase()); U.go.undo[n] = undo; }
-  await op({op: 'set', ref: code(n), f: {[f]: v}});
+  if (desk() && !settles && (LIST.in || n !== U.open)) holdRow(n, `${said.replace(/^./, c => c.toUpperCase())}`, undo);
+  try { await op({op: 'set', ref: code(n), f: {[f]: v}}); } catch (ex) { if (U.settle.delete(n)) renderItems(); throw ex; }
   D.undo = undo;
   toast(`${code(n)} ${said}`, undo);
   if (settles && U.open === n) advanceDesk(n, U.go.how[n]);
@@ -3696,6 +3732,7 @@ const ACT = {
   },
   // The action on a row that waits on you: Accept and Approve happen at once (with Undo); Answer and Reply open
   // the focus card on that item, Reply with the input box ready.
+  'settle-undo': b => { const s = U.settle.get(Number(b.dataset.n)); U.settle.clear(); s?.undo(); renderItems(); },
   'row-act': async b => {
     const n = Number(b.dataset.n), v = b.dataset.v;
     if (v === 'accept' || v === 'approve') { try { await change(n, 'status', v === 'accept' ? 'done' : 'open'); } catch (_) {} return; }
@@ -3840,7 +3877,7 @@ const ACT = {
   'sub-add': async b => {  // same kind, priority and now/later as the parent; change them after if needed
     const n = Number(b.dataset.n), p = byN.get(n), title = ($('subTitle')?.value || '').trim();
     if (!title) return $('subTitle')?.focus();
-    try { await op({op: 'new', title, parent: code(n), type: p.type === 'rule' ? 'task' : p.type, pri: p.pri, when: p.when}); U.folded.delete(n); render(); toast(`Added under ${code(n)}`); const f = $('subTitle'); if (f) { f.value = ''; f.focus(); } } catch (_) {}  // the field stays for the next one (B123)
+    try { await op({op: 'new', title, parent: code(n), type: p.type === 'rule' ? 'task' : p.type, pri: p.pri, when: p.when}); U.folded.delete(n); render(); toast(`Added under ${code(n)}`); const f = $('subTitle'); if (f) { f.value = ''; f.focus(); } flashRow(Math.max(...(kids.get(n) || []).map(k => k.n))); } catch (_) {}  // the field stays for the next one (B123)
   },
   'move-to': async b => {
     const n = Number(b.dataset.n), to = b.dataset.to;
@@ -4155,8 +4192,19 @@ function advanceDesk(from, how) {  // after you settle one: the next that still 
   else { U.go = null; render(); toast('Nothing else needs you'); }
 }
 // J / K and the arrows in the detail bar walk the rows as the list shows them.
+function flashRow(n) {  // B124: something new in the list: bring it into view and light it up for a moment
+  const a = desk() && document.querySelector(`#list article[data-n="${n}"]`);
+  if (!a) return;
+  a.scrollIntoView({block: 'nearest'});
+  a.classList.add('bg-blue-50', 'dark:bg-blue-400/10', 'transition-colors', 'duration-700');
+  setTimeout(() => a.classList.remove('bg-blue-50', 'dark:bg-blue-400/10'), 1500);
+}
 function stepItem(dir) {
-  const rows = [...document.querySelectorAll('#list [data-act="open"][data-n]')].map(el => Number(el.dataset.n));
+  const now = [...document.querySelectorAll('#list [data-act="open"][data-n]')].map(el => Number(el.dataset.n));
+  const from = U.stepFrom?.n === U.open ? U.stepFrom.rows : null;  // you just settled it and it moved: go on from where it was (B124)
+  U.stepFrom = null;
+  if (from) { const i = from.indexOf(U.open), next = (dir > 0 ? from.slice(i + 1) : from.slice(0, i).reverse()).find(k => now.includes(k)); if (next) return openItem(next); }
+  const rows = now;
   if (!rows.length) return;
   const i = rows.indexOf(U.open), n = rows[i < 0 ? (dir > 0 ? 0 : rows.length - 1) : Math.max(0, Math.min(rows.length - 1, i + dir))];
   if (n !== U.open) openItem(n);
