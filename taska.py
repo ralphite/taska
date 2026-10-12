@@ -1303,6 +1303,7 @@ def transcribe(store, data, mime, scope):
 
 HUB = None
 ITEM_PATH = re.compile(r"/([A-Za-z]?\d+)")
+VIEW_PATH = re.compile(r"/(inputs|archive|rules|new|settings|log|connect|[A-Za-z]\d+)")  # the page's views (T102)
 NAME = re.compile(r"[a-z0-9][a-z0-9-]{0,39}")
 
 CONNECT = """#!/bin/sh
@@ -1541,8 +1542,16 @@ class Handler(BaseHTTPRequestHandler):
         except Err as ex:
             self.send(404, f"{ex}\n")
 
+    def wants_page(self):
+        """A person's browser opening an address, as opposed to an agent's curl (T102): the same /p/x/B03 shows the
+        page to one and the item's text to the other."""
+        accept, ua = self.headers.get("Accept") or "", self.headers.get("User-Agent") or ""
+        return self.headers.get("Sec-Fetch-Mode") == "navigate" or ("text/html" in accept and "Mozilla" in ua)
+
     def get(self, s, p, q, base):
         ref = self.fileref(s)
+        if p != "/" and VIEW_PATH.fullmatch(p) and self.wants_page():  # a view of the page: the page opens there
+            return self.send(200, PAGE.replace("__TASKA_VERSION__", VERSION), "text/html; charset=utf-8")
         if (p in ("/agent", "/next", "/rules", "/inbox", "/items", "/log") or ITEM_PATH.fullmatch(p)) and "ui" not in q:  # ui=1: the page itself, not an agent
             s.saw((q.get("by") or ["agent"])[0], 1 if p == "/next" and q.get("wait") else 0)
         if p == "/":
@@ -1570,9 +1579,12 @@ class Handler(BaseHTTPRequestHandler):
                 self.send(200, s.rules_text())
         elif p == "/connect":
             self.send(200, CONNECT.format(name=s.name, base=base, host=self.host() + self.prefix))
-        elif p == "/inbox":
+        elif p in ("/inbox", "/inputs"):  # /inputs: the same address as the page's Inputs view
             with s.lock:
                 self.send(200, s.inbox(ref))
+        elif p == "/archive":
+            with s.lock:
+                self.send(200, s.listing({"archived": ["1"], **q}))
         elif p == "/items":
             with s.lock:
                 self.send(200, s.listing(q))
@@ -2669,6 +2681,7 @@ function renderDoc({focus = false} = {}) {
   if (U.docCircle) wireLasso();
 }
 function openDoc(d) {
+  if (U.doc !== d) setTimeout(() => writeURL(true));  // after the sheet is up
   Object.assign(U, {peek: null, doc: d, docReply: null, docNew: null, docEdit: false, docText: null, docSel: new Set(), docQuote: null, docCircle: false});
   U.docDrafts.note = '';
   renderDoc({focus: true});
@@ -3281,11 +3294,11 @@ function dialog(title, html, {aboveComposer = false, focus = true, tall = false,
 const closeDialog = () => {
   if (U.docEdit) saveDoc();  // closing the editor keeps what you wrote
   if (U.doc) U.docScroll[U.doc] = $('dlgBody').scrollTop;
-  const hadDoc = !!U.doc;
+  const hadDoc = U.doc;
   U.doc = null; U.docNew = null; U.docEdit = false; U.sheet = null; U.go = null; U.docReply = null;
   $('overlay').hidden = true; $('overlay').style.bottom = '';
   if (U.peek) { U.peek = null; renderComposer(); }
-  else if (hadDoc) renderComposer();  // the box goes back to the item or the project
+  else if (hadDoc) { renderComposer(); if (!leaveView(`D${hadDoc}`)) writeURL(false); }  // the box goes back to the item or the project
 };
 
 // From outside this machine and its network Taska needs the key; one tap on the link puts it on a device for good.
@@ -3417,8 +3430,8 @@ function openItem(n, push = true) {
   const fresh = U.open !== n;
   U.open = n; U.scopeOff = false;
   if (desk() && U.tab === 'inputs') { const it = byN.get(n); U.tab = it.archived ? 'archive' : it.type === 'rule' ? 'rules' : 'items'; }  // Inputs has no item pane
-  if (desk()) { D.page = null; D.compose = false; history.replaceState(history.state?.full ? {n, full: true} : null, '', '#' + code(n)); }
-  else if (push && location.hash !== '#' + code(n)) history.pushState({n}, '', '#' + code(n));
+  if (desk()) { D.page = null; D.compose = false; writeURL(false, history.state?.full ? {n, full: true} : null); }
+  else if (push && !URLS.applying && location.pathname !== P + code(n)) history.pushState({n}, '', P + code(n) + viewQuery());
   render();
   if (fresh) $('detailBody').scrollTop = 0;
   if (desk()) document.querySelector(`#list [data-act="open"][data-n="${n}"]`)?.scrollIntoView({block: 'nearest'});
@@ -3427,14 +3440,16 @@ function openItem(n, push = true) {
 function closeItem() {
   if (!U.open) return;
   U.open = null; U.editing = null; U.subFor = null; BK.pull = false; D.full = false;
-  if (location.hash) history.replaceState(null, '', location.pathname);
+  writeURL(false, null);
   render();
   if (!desk()) [$('list').scrollTop, $('inputsView').scrollTop] = U.listTop || [0, 0];
 }
 
 function setTab(t) {
+  const was = U.tab;
   U.tab = t;
-  if (desk()) { D.page = null; D.sideOpen = false; D.compose = false; return render(); }
+  if (t !== was) writeURL(true);
+  if (desk()) { D.page = null; D.sideOpen = false; D.compose = false; render(); return writeURL(false); }
   document.querySelectorAll('[data-tab]').forEach(b => b.getAttribute('aria-selected') !== null && b.setAttribute('aria-selected', String(b.dataset.tab === t)));
   showView(); renderFilters();
   if (t === 'inputs') renderInputs(); else { renderItems(); $('list').scrollTop = 0; }
@@ -3473,7 +3488,7 @@ const ACT = {
     try { await op({op: 'cfg', auto: on}); renderDrawerSettings(); toast(on ? 'Keep going is on: your agent works down the list' : 'Keep going is off: your agent stops after the current item'); } catch (_) {}
   },
   search: () => searchMode(!U.searching),
-  'search-clear': () => { U.q = ''; $('q').value = ''; $('q').focus(); qSync(); renderItems(); if (U.tab === 'inputs') renderInputs(); },
+  'search-clear': () => { U.q = ''; $('q').value = ''; $('q').focus(); qSync(); writeURL(false); renderItems(); if (U.tab === 'inputs') renderInputs(); },
   reply: () => { U.scopeOff = false; renderComposer(); $('text').focus(); },
   status: async b => {
     const n = Number(b.dataset.n);
@@ -3503,12 +3518,12 @@ const ACT = {
       U.go = null;
       if (U.open) D.prev = U.open;
       U.open = null; U.editing = null; U.subFor = null; D.full = false; D.compose = true;
-      if (location.hash) history.replaceState(null, '', location.pathname);
+      writeURL(true);
     }
     U.scopeOff = true; render(); $('text').focus();
   },
   'compose-back': () => leaveCompose(),
-  'project-back': () => { D.page = null; render(); },
+  'project-back': () => { const back = leaveView('settings'); D.page = null; render(); if (!back) writeURL(false); },
   project: () => openProject('agents'),
   'go-next': () => {
     if (desk()) {
@@ -3538,10 +3553,10 @@ const ACT = {
   log: () => { if (desk()) return openProject('log'); closeDrawer(); showLog(); },
   tab: b => setTab(b.dataset.tab),
   filters: () => showFilters(),
-  'set-filter': b => { U[b.dataset.k] = b.dataset.v; if (desk()) return render(); renderItems(); $('list').scrollTop = 0; showFilters(); },
-  unfilter: b => { U[b.dataset.k] = 'all'; if (desk()) return render(); renderItems(); },
+  'set-filter': b => { U[b.dataset.k] = b.dataset.v; writeURL(false); if (desk()) return render(); renderItems(); $('list').scrollTop = 0; showFilters(); },
+  unfilter: b => { U[b.dataset.k] = 'all'; writeURL(false); if (desk()) return render(); renderItems(); },
   reset: () => {
-    U.q = ''; U.type = 'all'; U.when = 'all'; U.status = 'all'; U.pri = 'all'; $('q').value = '';
+    U.q = ''; U.type = 'all'; U.when = 'all'; U.status = 'all'; U.pri = 'all'; $('q').value = ''; writeURL(false);
     if (desk()) return render();
     renderItems(); if (U.tab === 'inputs') renderInputs(); if (U.sheet === 'filter') showFilters();
   },
@@ -3857,7 +3872,8 @@ function saidLately() {
 }
 function leaveCompose() {  // back to the item you had open, if there was one
   const p = D.prev; D.compose = false; D.prev = null;
-  if (p && byN.has(p)) openItem(p); else render();
+  const back = leaveView('new');  // the step into the page goes; the address then follows what shows
+  if (p && byN.has(p)) openItem(p); else { render(); if (!back) writeURL(false); }
 }
 const noSelection = () => `<div class="grid h-full place-items-center p-8 text-center"><div>
   <p class="text-[15px] text-zinc-500 dark:text-zinc-400">Select an item</p>
@@ -3916,7 +3932,7 @@ function stepItem(dir) {
 }
 function fullWidth(on) {
   if (!U.open || on === D.full) return;
-  if (on) { D.full = true; history.pushState({n: U.open, full: true}, '', '#' + code(U.open)); render(); }
+  if (on) { D.full = true; history.pushState({n: U.open, full: true}, '', P + code(U.open) + viewQuery()); render(); }
   else if (history.state?.full) history.back();  // popstate leaves full width
   else { D.full = false; render(); }
 }
@@ -3924,10 +3940,13 @@ function fullWidth(on) {
 // "This project": the agents, connecting one, the phone, the change log and the settings, on one page (A, screen 5).
 const P_CACHE = {guide: null, log: null};
 function openProject(sec) {
-  D.page = 'project'; D.sideOpen = false; U.go = null;
-  render();
+  D.page = 'project'; D.sideOpen = false; U.go = null; D.section = sec;
+  render(); writeURL(true);
   Promise.all([fetch(P + 'agent?ui=1').then(r => r.text()), fetch(P + 'log?n=80&ui=1').then(r => r.text())])
-    .then(([g, l]) => { P_CACHE.guide = g; P_CACHE.log = l.trim().split('\n').reverse(); if (D.page) renderProject(); }).catch(() => {});
+    .then(([g, l]) => {
+      P_CACHE.guide = g; P_CACHE.log = l.trim().split('\n').reverse();
+      if (D.page) { renderProject(); if (sec !== 'agents') document.getElementById('p-' + sec)?.scrollIntoView({block: 'start'}); }  // now it is tall enough to get there
+    }).catch(() => {});
   requestAnimationFrame(() => document.getElementById('p-' + sec)?.scrollIntoView({block: 'start'}));
 }
 function renderProject() {
@@ -4359,7 +4378,7 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && U.searching && document.activeElement === $('q') && !desk()) searchMode(false);
 });
 
-$('q').addEventListener('input', e => { U.q = e.target.value; qSync(); if (U.tab === 'inputs') renderInputs(); else { renderItems(); $('list').scrollTop = 0; } });
+$('q').addEventListener('input', e => { U.q = e.target.value; qSync(); writeURL(false); if (U.tab === 'inputs') renderInputs(); else { renderItems(); $('list').scrollTop = 0; } });
 $('text').addEventListener('input', () => { saveDraft(); renderComposer(); grow(); });  // the buttons first: the mic showing up narrows the box
 document.addEventListener('input', e => { const k = e.target.dataset?.docDraft; if (k) U.docDrafts[k] = e.target.value; if (e.target.id === 'docMd') U.docText = e.target.value; });
 // Selecting text inside an open document offers to comment on exactly that text.
@@ -4388,10 +4407,64 @@ window.addEventListener('online', refresh);
 new ResizeObserver(() => { if (U.peek && !$('overlay').hidden) $('overlay').style.bottom = $('composer').parentElement.offsetHeight + 'px'; })
   .observe($('composer').parentElement);
 window.addEventListener('pageshow', e => { if (e.persisted) refresh(); });
+// ---------------------------------------------------------------- the address (T102)
+// The address says what you look at: /p/<project>/ is Items; /inputs /archive /rules a tab; /B03 an item; /D4 a
+// document; /new the New input page; /settings this project (/log and /connect are parts of it); ?q= and the
+// filters ride along. The server sends the page for these when a browser asks, and text when an agent does.
+// Changing tab, opening a document, settings or New input, an item on the phone and full width are steps Back
+// can undo; choosing items on the desktop, search and filters only rewrite the address.
+const VIEW = /^(inputs|archive|rules|new|settings|log|connect)$/;
+const URLS = {applying: false, selfBack: false};
+const viewPath = () => desk() && D.page ? (/^(log|connect)$/.test(D.section) ? D.section : 'settings') : U.doc && !U.docEdit ? `D${U.doc}` : desk() && D.compose ? 'new'
+  : desk() && U.tab === 'inputs' ? 'inputs' : U.open ? code(U.open) : U.tab === 'items' ? '' : U.tab;  // on the desktop Inputs hides the item
+function viewQuery() {
+  const q = new URLSearchParams();
+  if (U.q) q.set('q', U.q);
+  for (const k of ['type', 'when', 'status', 'pri']) if (U[k] && U[k] !== 'all') q.set(k, U[k]);
+  const s = q.toString();
+  return s ? '?' + s : '';
+}
+function writeURL(push = false, state) {
+  if (URLS.applying) return;
+  const url = P + viewPath() + viewQuery(), now = location.pathname + location.search + location.hash;
+  if (push && url !== now) history.pushState(state ?? {v: viewPath()}, '', url);
+  else if (url !== now || state !== undefined) history.replaceState(state === undefined ? history.state : state, '', url);
+}
+// A view you leave by Esc or ×: if it was a step in the history, step back (the page then rewrites the address to
+// whatever shows by then, so an item opened in the same breath is kept); otherwise just rewrite the address.
+function leaveView(v) {
+  if (!URLS.applying && history.state?.v === v) { URLS.selfBack = true; history.back(); return true; }
+  return false;
+}
+function readURL() {
+  const seg = decodeURIComponent(location.pathname.slice(P.length)).replace(/\/$/, '');
+  const old = location.hash.slice(1);  // links from before: #B03
+  return {seg: seg || (parseRef(old) ? old : ''), qs: new URLSearchParams(location.search)};
+}
+function applyURL() {  // the page follows the address: when it loads, and on Back / Forward
+  URLS.applying = true;
+  try {
+    const {seg, qs} = readURL();
+    U.q = qs.get('q') || ''; $('q').value = U.q;
+    for (const k of ['type', 'when', 'status', 'pri']) U[k] = qs.get(k) || 'all';
+    if (desk()) { D.full = !!history.state?.full; D.compose = false; D.page = null; }
+    const doc = /^[Dd](\d+)$/.exec(seg), n = doc ? 0 : parseRef(seg);
+    if (!doc && U.doc && !$('overlay').hidden) closeDialog();
+    if (doc) { const d = docById(Number(doc[1])); if (d && !U.open && desk()) openItem(d.n, false); return openDoc(Number(doc[1])); }
+    if (n && byN.has(n)) { const it = byN.get(n); U.tab = it.archived ? 'archive' : it.type === 'rule' ? 'rules' : U.tab === 'inputs' ? 'items' : U.tab; return openItem(n, false); }
+    closeItem();
+    if (seg === 'settings' || seg === 'log' || seg === 'connect') {
+      if (desk()) return openProject(seg === 'settings' ? 'agents' : seg);
+      return seg === 'log' ? showLog() : seg === 'connect' ? showGuide() : openDrawer();
+    }
+    if (seg === 'new') { if (desk()) return ACT['new-input'](); return $('text').focus(); }
+    U.tab = /^(inputs|archive|rules)$/.test(seg) ? seg : 'items';
+    render();
+  } finally { URLS.applying = false; }
+}
 window.addEventListener('popstate', () => {
-  const n = parseRef(location.hash.slice(1));
-  if (desk()) D.full = !!history.state?.full;
-  if (n && byN.has(n)) openItem(n, false); else closeItem();
+  if (URLS.selfBack) { URLS.selfBack = false; return writeURL(false, history.state?.full ? history.state : null); }  // our own step back
+  applyURL();
 });
 
 $('logo').innerHTML = ico('menu', 'size-6');
@@ -4419,12 +4492,13 @@ window.addEventListener('load', grow);  // a restored draft is measured again on
 
 load().then(() => {
   if (desk()) checkOthers();
-  const n = parseRef(location.hash.slice(1));
-  if (n && byN.has(n)) {  // a link to an item: put the list under it, so Back lands there
-    if (!history.state?.n && !desk()) { history.replaceState(null, '', location.pathname); history.pushState({n}, '', '#' + code(n)); }
-    if (desk()) D.full = !!history.state?.full;
-    openItem(n, false);
-  } else if (desk()) { const first = needsList()[0]; if (first) openItem(first); }
+  const {seg} = readURL(), n = parseRef(seg);
+  if (n && byN.has(n) && !desk() && !history.state?.n) {  // a link to an item on the phone: put the list under it, so Back lands there
+    history.replaceState(null, '', P + viewQuery()); history.pushState({n}, '', P + code(n) + viewQuery());
+  }
+  applyURL();
+  if (desk() && !seg && !location.search && !U.open && !D.page && !D.compose) { const first = needsList()[0]; if (first) openItem(first); }
+  else writeURL(false);  // tidy the address: #B03 becomes /B03
   poll();
 });
 </script>
