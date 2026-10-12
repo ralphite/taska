@@ -74,6 +74,9 @@ def first_line(s, n=60):
 # --------------------------------------------------------------------------- documents
 
 
+TABLE_SEP = re.compile(r"\s*\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?\s*$")
+
+
 def md_blocks(md):
     """Split Markdown into blocks (kind, text). Comments attach to a block through its text, so an edit
     that changes a paragraph detaches its comments instead of moving them to another paragraph."""
@@ -93,6 +96,13 @@ def md_blocks(md):
         if re.match(r"#{1,6}\s", line):
             out.append(("heading", line))
             i += 1
+            continue
+        if line.lstrip().startswith("|") and i + 1 < len(lines) and TABLE_SEP.match(lines[i + 1]):  # a Markdown table
+            j = i + 2
+            while j < len(lines) and lines[j].lstrip().startswith("|"):
+                j += 1
+            out.append(("table", "\n".join(lines[i:j])))
+            i = j
             continue
         kind = "list" if re.match(r"\s*([-*+]|\d+[.)])\s", line) else "quote" if line.lstrip().startswith(">") else "para"
         j = i + 1
@@ -2299,7 +2309,7 @@ function itemRow(it, depth = 0, group = []) {
   const img = files.find(f => (f.mime || '').startsWith('image/'));
   const foldable = group.some(k => k.parent === it.n);  // its subitems are in this list
   const top = `<div data-act="open" data-n="${it.n}" class="group relative flex cursor-pointer items-start gap-3 py-2.5 pr-3 pl-${4 + 8 * depth} ${closed ? 'opacity-55' : ''} ${rowTint(it)}">
-      ${depth ? `<span class="absolute top-0 left-[${25 + 32 * (depth - 1)}px] h-6.25 w-4.5 rounded-bl-lg border-b-2 border-l-2 border-zinc-200 dark:border-zinc-700"></span>` : ''}
+      ${Array.from({length: depth}, (_, d) => `<span class="absolute inset-y-0 left-[${25 + 32 * d}px] w-px bg-zinc-200 dark:bg-zinc-700/70"></span>`).join('')}
       ${stateIcon(it.status, statusName(it))}
       <div class="min-w-0 flex-1">
         <p class="line-clamp-2 text-[15px] leading-snug font-medium lg:line-clamp-1 ${closed ? 'line-through decoration-zinc-400' : ''}"><span class="mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[it.type]}">${c}</span>${esc(it.title)}</p>
@@ -2506,7 +2516,7 @@ const KIND_TAG = x => KIND[x.kind] ? `<span class="rounded px-1.5 py-0.5 text-[1
 // shows whole, in a box of limited height that scrolls; a fade at the bottom says there is more (F93).
 function msgText(x, gid, form = 0, done = null) {
   const long = x.by !== 'you' && x.kind !== 'ask' && (x.text.length > 240 || x.text.trim().split('\n').length > 3);
-  if (long && desk()) return `<div data-clip class="-mr-2 max-h-96 overflow-y-auto overscroll-contain pr-2 data-[over]:mask-b-from-80%">${rich(x.text, gid + 'md' + x.id, '', form, done)}</div>`;
+  if (long && desk()) return `<div data-clip class="-mr-2 max-h-96 overflow-y-auto pr-2 data-[over]:mask-b-from-80%">${rich(x.text, gid + 'md' + x.id, '', form, done)}</div>`;
   const folded = long && !U.moreMsgs.has(x.id);
   return rich(folded ? x.text.trim().split('\n')[0] : x.text, gid + 'md' + x.id, '', form, done)
     + (long ? `<button data-act="more-msg" data-id="${x.id}" class="-mb-2 flex h-11 items-center text-sm font-medium text-blue-600 dark:text-blue-400">${folded ? 'Show more' : 'Show less'}</button>` : '');
@@ -2547,6 +2557,7 @@ function mdHtml(text, gid = '', form = 0, done = null) {
     else if (/^\s*>/.test(l)) add('quote', l);
     else if (/^\s*([-*+]|\d+[.)])\s/.test(l)) add(/^\s*\d/.test(l) ? 'ol' : 'ul', l);  // a list may follow a line directly
     else if (/^(ol|ul)$/.test(cur?.kind) && /^\s{2,}\S/.test(l)) cur.lines.push(l);  // an item's next line
+    else if (/^\s*\|/.test(l) && TABLE_SEP.test(lines[i + 1] || '')) { const a = i; i += 2; while (i < lines.length && /^\s*\|/.test(lines[i])) i++; blocks.push({kind: 'table', lines: lines.slice(a, i--)}); cur = null; }
     else add('para', l);
   }
   const labels = [];
@@ -2562,7 +2573,18 @@ function mdHtml(text, gid = '', form = 0, done = null) {
   if (form && labels.length) U.choiceLabels[form] = labels;  // the answer is sent with sendAnswerBtn, placed by the caller
   return html;
 }
+// A Markdown table: header, alignment row, body. Cells take inline Markdown; \| is a pipe inside a cell.
+const TABLE_SEP = /^\s*\|?\s*:?-+:?\s*(\|\s*:?-+:?\s*)*\|?\s*$/;
+function tableHtml(text, gid) {
+  const cells = l => l.trim().replace(/^\|/, '').replace(/\|$/, '').replace(/\\\|/g, '\u0002').split('|').map(c => c.trim().replace(/\u0002/g, '|'));
+  const [head, sep, ...body] = text.trim().split('\n').map(cells);
+  const align = (sep || []).map(c => /^:-+:$/.test(c) ? 'text-center' : /-:$/.test(c) ? 'text-right' : 'text-left');
+  return `<div class="overflow-x-auto"><table class="w-full border-collapse text-sm leading-snug">
+    <thead><tr>${head.map((c, i) => `<th class="border-b border-zinc-300 px-2 py-1.5 font-semibold dark:border-zinc-600 ${align[i] || 'text-left'}">${inlineMd(c, gid)}</th>`).join('')}</tr></thead>
+    <tbody>${body.map(r => `<tr>${head.map((_, i) => `<td class="border-b border-zinc-100 px-2 py-1.5 align-top dark:border-zinc-800 ${align[i] || 'text-left'}">${inlineMd(r[i] || '', gid)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+}
 function blockHtml(b, isTitle, gid = '') {
+  if (b.kind === 'table') return tableHtml(b.text, gid);
   if (isTitle) return `<div class="text-2xl leading-tight font-bold tracking-tight">${inlineMd(b.text.replace(/^#+\s*/, ''), gid)}</div>`;
   if (b.kind === 'heading') {
     const level = b.text.match(/^#+/)[0].length;
