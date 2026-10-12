@@ -1758,7 +1758,7 @@ PAGE = r'''<!doctype html>
 <nav id="drawer" hidden aria-label="Projects" class="fixed top-0 left-0 flex h-dvh w-80 max-w-[85vw] flex-col bg-zinc-100 pt-[env(safe-area-inset-top)] pb-[max(1rem,env(safe-area-inset-bottom))] lg:z-40 lg:w-60 lg:max-w-none lg:shrink-0 lg:border-r lg:border-zinc-200 lg:bg-zinc-50 lg:pb-0 2xl:w-64 dark:bg-zinc-900 dark:lg:border-zinc-800">
   <div class="flex h-14 shrink-0 items-center gap-2 px-5 lg:pr-2 lg:pl-4"><span id="drawerLogo" class="text-blue-600 dark:text-blue-400"></span><span class="text-xl font-semibold tracking-tight lg:text-[19px]">Taska</span>
     <button data-act="side" id="sideBtn" title="Hide the sidebar · [" aria-label="Hide the sidebar" class="ml-auto hidden size-8 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-200/70 lg:grid dark:text-zinc-400 dark:hover:bg-zinc-800"></button></div>
-  <button data-act="new-input" id="newInputBtn" title="New input to the project · C" class="mx-2.5 mb-3 hidden h-9 shrink-0 items-center gap-2 rounded-xl bg-white px-3 text-sm font-medium text-zinc-800 shadow-sm ring-1 ring-zinc-900/10 hover:bg-zinc-50 lg:flex dark:bg-zinc-800 dark:text-zinc-100 dark:ring-white/10 dark:hover:bg-zinc-700"></button>
+  <button data-act="new-input" id="newInputBtn" title="New input to the project · C" aria-pressed="false" class="mx-2.5 mb-3 hidden h-9 shrink-0 items-center gap-2 rounded-xl bg-white px-3 text-sm font-medium text-zinc-800 shadow-sm ring-1 ring-zinc-900/10 hover:bg-zinc-50 lg:flex aria-pressed:bg-blue-50 aria-pressed:text-blue-700 aria-pressed:ring-blue-500/40 dark:bg-zinc-800 dark:text-zinc-100 dark:ring-white/10 dark:hover:bg-zinc-700 dark:aria-pressed:bg-blue-400/10 dark:aria-pressed:text-blue-300 dark:aria-pressed:ring-blue-400/40"></button>
   <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 lg:pb-3">
     <div class="px-3 pb-1.5 text-xs font-semibold text-zinc-500 lg:text-[11px] lg:tracking-wider lg:uppercase dark:text-zinc-400">Projects</div>
     <div id="drawerList" class="flex flex-col gap-0.5"></div>
@@ -1992,7 +1992,7 @@ let viewerGroup = [], viewerIdx = 0;
 // The desktop layout (I70, design A "three panes"): 1024px and wider. Below that the phone layout, untouched.
 const DESK = matchMedia('(min-width: 1024px)'), WIDE = matchMedia('(min-width: 1280px)');
 const desk = () => DESK.matches;
-const D = {page: null, full: false, sideHidden: false, sideOpen: false, filters: false, g: 0, undo: null};
+const D = {page: null, full: false, sideHidden: false, sideOpen: false, filters: false, g: 0, undo: null, compose: false, prev: null};
 const KBD = k => `<kbd class="ml-1 hidden h-5 min-w-5 place-items-center rounded-md px-1 font-sans text-[11px] font-semibold opacity-70 ring-1 ring-current/30 lg:inline-grid">${k}</kbd>`;
 
 const code = n => { const it = byN.get(n); return (it ? LETTER[it.type] : '?') + String(n).padStart(S.width, '0'); };
@@ -2663,7 +2663,13 @@ function renderDetail() {
   const it = U.open && byN.get(U.open), body = $('detailBody');
   if (desk()) renderGoStrip();
   if (!it) {  // the desktop's detail pane with nothing selected
-    if (desk()) { $('dHead').innerHTML = $('dActs').innerHTML = $('dNav').innerHTML = ''; $('itemMenuBtn').hidden = true; body.innerHTML = noSelection(); }
+    if (desk()) {
+      const back = D.compose && D.prev && byN.has(D.prev);
+      $('dActs').innerHTML = ''; $('itemMenuBtn').hidden = true;
+      $('dHead').innerHTML = D.compose ? `<span class="flex items-center gap-2 text-sm font-semibold">${ico('newinput', 'size-[18px] text-blue-600 dark:text-blue-400')}New input</span>` : '';
+      $('dNav').innerHTML = back ? `<button data-act="compose-back" class="flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800">${ico('left', 'size-4')}Back to ${code(D.prev)}${KBD('Esc')}</button>` : '';
+      body.innerHTML = D.compose ? composePane() : noSelection();
+    }
     return;
   }
   $('itemMenuBtn').hidden = false;
@@ -2873,7 +2879,7 @@ function renderComposer() {
   const n = scopeN(), sc = $('scope');
   sc.hidden = !n;
   if (!n && !U.open && U.tab === 'rules') { sc.hidden = false; sc.innerHTML = `${ico('scope', 'size-3.5')}<span class="font-medium">New rule for this project</span>`; }
-  else if (!n && desk()) { sc.hidden = false; sc.innerHTML = `<span class="flex min-w-0 flex-1 items-center gap-1.5 text-zinc-500 dark:text-zinc-400">${ico('inbox', 'size-3.5')}<span class="truncate"><span class="font-medium text-zinc-700 dark:text-zinc-200">New input</span> for ${esc(S.project)} · the organizer files it</span></span>${U.open && detailShown() ? `<button data-act="reply" class="h-8 shrink-0 rounded-full px-2 text-[13px] font-medium text-blue-600 dark:text-blue-400">Add to ${code(U.open)} instead${KBD('R')}</button>` : ''}`; }
+  else if (!n && desk()) { sc.hidden = false; sc.innerHTML = `<span class="flex min-w-0 flex-1 items-center gap-1.5 text-zinc-500 dark:text-zinc-400">${ico('inbox', 'size-3.5')}<span class="truncate"><span class="font-medium text-zinc-700 dark:text-zinc-200">New input</span> for ${esc(S.project)} · ${S.org?.on ? 'the organizer files it' : 'your agent files it'}</span></span>${U.open && detailShown() ? `<button data-act="reply" class="h-8 shrink-0 rounded-full px-2 text-[13px] font-medium text-blue-600 dark:text-blue-400">Add to ${code(U.open)} instead${KBD('R')}</button>` : ''}`; }
   if (n) sc.innerHTML = `${ico('scope', 'size-3.5')}<span class="min-w-0 flex-1 truncate"><span class="font-medium">${byN.get(n).wait ? 'Reply to' : 'Adding to'} ${code(n)}</span> ${esc(byN.get(n).title)}</span><button data-act="unscope" aria-label="Send to the whole project instead" class="-my-2 grid size-11 shrink-0 place-items-center rounded-full text-blue-600 dark:text-blue-300">${ico('x', 'size-4')}</button>`;
   const d = $('drafts');
   d.hidden = !U.files.length;
@@ -3172,7 +3178,8 @@ function openItem(n, push = true) {
   if (U.open !== n) { U.editing = null; U.subFor = null; }
   const fresh = U.open !== n;
   U.open = n; U.scopeOff = false;
-  if (desk()) { D.page = null; history.replaceState(history.state?.full ? {n, full: true} : null, '', '#' + code(n)); }
+  if (desk() && U.tab === 'inputs') { const it = byN.get(n); U.tab = it.archived ? 'archive' : it.type === 'rule' ? 'rules' : 'items'; }  // Inputs has no item pane
+  if (desk()) { D.page = null; D.compose = false; history.replaceState(history.state?.full ? {n, full: true} : null, '', '#' + code(n)); }
   else if (push && location.hash !== '#' + code(n)) history.pushState({n}, '', '#' + code(n));
   render();
   if (fresh) $('detailBody').scrollTop = 0;
@@ -3189,7 +3196,7 @@ function closeItem() {
 
 function setTab(t) {
   U.tab = t;
-  if (desk()) { D.page = null; D.sideOpen = false; return render(); }
+  if (desk()) { D.page = null; D.sideOpen = false; D.compose = false; return render(); }
   document.querySelectorAll('[data-tab]').forEach(b => b.getAttribute('aria-selected') !== null && b.setAttribute('aria-selected', String(b.dataset.tab === t)));
   showView(); renderFilters();
   if (t === 'inputs') renderInputs(); else { renderItems(); $('list').scrollTop = 0; }
@@ -3247,7 +3254,17 @@ const ACT = {
   side: () => { if (WIDE.matches) D.sideHidden = !D.sideHidden; else D.sideOpen = !D.sideOpen; render(); },
   keys: () => showKeys(),
   switch: () => projectSwitcher(),
-  'new-input': () => { D.sideOpen = false; U.scopeOff = true; if (D.page) D.page = null; render(); $('text').focus(); },
+  'new-input': () => {
+    D.sideOpen = false; if (D.page) D.page = null;
+    if (desk() && U.tab !== 'inputs') {  // its own page in the detail pane (B73), not under the open item
+      U.go = null;
+      if (U.open) D.prev = U.open;
+      U.open = null; U.editing = null; U.subFor = null; D.full = false; D.compose = true;
+      if (location.hash) history.replaceState(null, '', location.pathname);
+    }
+    U.scopeOff = true; render(); $('text').focus();
+  },
+  'compose-back': () => leaveCompose(),
   'project-back': () => { D.page = null; render(); },
   project: () => openProject('agents'),
   'go-next': () => {
@@ -3516,6 +3533,7 @@ function renderSidebar() {
       <div class="flex items-baseline gap-2 px-2 pt-1"><span class="min-w-0 flex-1 truncate text-[15px] font-semibold">${esc(S.project)}</span><span class="text-xs text-zinc-400">${open} open</span></div>
       <div id="deskAgent" class="px-1 pt-1 pb-1.5"></div>
       <div class="flex flex-col gap-px">${['items', 'inputs', 'archive', 'rules'].map(tab).join('')}</div></div>${others}`;
+  $('newInputBtn').setAttribute('aria-pressed', String(D.compose));
   renderAgent(); renderDrawerSettings();
 }
 
@@ -3525,7 +3543,7 @@ function renderRail() {
   const b = (act, inner, title, attrs = '', on = false) => `<button data-act="${act}" ${attrs} title="${title}" aria-label="${title.split(' · ')[0]}" class="relative grid size-10 place-items-center rounded-xl ${on ? 'bg-zinc-200/80 text-zinc-900 dark:bg-zinc-700 dark:text-zinc-50' : 'text-zinc-500 hover:bg-zinc-200/60 dark:text-zinc-400 dark:hover:bg-zinc-800'}">${inner}</button>`;
   const badge = (n, amber) => n ? `<span class="absolute -top-0.5 -right-0.5 grid h-4 min-w-4 place-items-center rounded-full px-1 text-[10px] font-bold ${amber ? 'bg-amber-500 text-white dark:bg-amber-400 dark:text-amber-950' : 'bg-zinc-300 text-zinc-700 dark:bg-zinc-600 dark:text-zinc-100'}">${n}</span>` : '';
   $('rail').innerHTML = b('side', `<span class="text-blue-600 dark:text-blue-400">${ico('logo', 'size-6', '2.25')}</span>`, 'Show the sidebar · [')
-    + b('new-input', ico('newinput', 'size-5'), 'New input · C')
+    + b('new-input', ico('newinput', 'size-5'), 'New input · C', '', D.compose)
     + `<div class="my-1 h-px w-8 bg-zinc-200 dark:bg-zinc-800"></div>`
     + b('switch', `<span class="grid size-7 place-items-center rounded-lg bg-zinc-900 text-xs font-bold text-white uppercase dark:bg-zinc-100 dark:text-zinc-900">${esc((S.project || '?')[0])}</span>${other ? '<span class="absolute top-1 right-1 size-2.5 rounded-full bg-amber-500 ring-2 ring-zinc-50 dark:bg-amber-400 dark:ring-zinc-900"></span>' : ''}`, `${S.project} · switch project: G P`)
     + ['items', 'inputs', 'archive', 'rules'].map(t => b('tab', ico(TAB_ICON[t], 'size-5') + badge(t === 'items' ? needs : t === 'inputs' ? Number(tabCount('inputs')) || 0 : 0, t === 'items'), TAB_NAME[t], `data-tab="${t}"`, U.tab === t && !D.page)).join('')
@@ -3533,6 +3551,33 @@ function renderRail() {
     + b('agent-info', `${avatar('claude-code')}<span class="absolute right-1.5 bottom-1.5 size-2.5 rounded-full ring-2 ring-zinc-50 dark:ring-zinc-900 ${AGENT_TONE[tone][0]}"></span>`, agentState(S.agents, S.work)[2])
     + b('project', ico('sliders', 'size-5'), 'This project', '', !!D.page)
     + b('keys', ico('keyboard', 'size-5'), 'Keyboard shortcuts · ?');
+}
+
+// The desktop's New input page (B73): no item in sight, so it is plain the words go to the project. Under it, what
+// you said lately and what became of it, so a new input can be followed into the items it turns into.
+function composePane() {
+  const recent = [...S.inputs].reverse().slice(0, 6), back = D.prev && byN.has(D.prev);
+  const tip = (k, what) => `<span class="inline-flex items-center">${KBD(k)}<span class="ml-1.5">${what}</span></span>`;
+  return `<div class="mx-auto w-full max-w-[46rem] px-8 pt-9 pb-6">
+    <h1 class="text-[22px] leading-tight font-semibold tracking-tight">Say something new</h1>
+    <p class="mt-2 text-[15px] leading-relaxed text-zinc-600 dark:text-zinc-300">For <span class="font-semibold text-zinc-900 dark:text-zinc-100">${esc(S.project)}</span>: a bug, an idea, a task, a screenshot or a voice note. ${S.org?.on ? 'The organizer turns it into items, or adds it to the ones that already exist.' : 'Your coding agent turns it into items.'}</p>
+    <p class="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-[13px] text-zinc-500 dark:text-zinc-400">${tip('⌘↵', 'Send')}${canRecord() ? tip('V', 'Voice note') : ''}<span>Paste or drop screenshots</span>${tip('Esc', back ? 'Back to ' + code(D.prev) : 'Close')}</p>
+    ${recent.length ? `<h2 class="mt-10 text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">You said lately</h2>
+      <div class="mt-1 divide-y divide-zinc-100 dark:divide-zinc-800/70">${recent.map(recentInput).join('')}</div>
+      <button data-act="tab" data-tab="inputs" class="mt-1 flex h-9 items-center text-sm font-medium text-blue-600 hover:underline dark:text-blue-400">All inputs${KBD('G N')}</button>` : ''}
+  </div>`;
+}
+function leaveCompose() {  // back to the item you had open, if there was one
+  const p = D.prev; D.compose = false; D.prev = null;
+  if (p && byN.has(p)) openItem(p); else render();
+}
+function recentInput(r) {
+  const [label, tone, icon] = inputState(r), scope = r.scope && byN.get(r.scope);
+  const said = r.text || (r.files.some(f => (f.mime || '').startsWith('audio/')) ? 'Voice note' : `${r.files.length} file${r.files.length === 1 ? '' : 's'}`);
+  const chips = r.touched.filter(n => byN.has(n)).map(n => `<button data-act="goto" data-n="${n}" class="flex h-7 max-w-full min-w-0 items-center gap-1.5 rounded-lg bg-zinc-100 px-2 text-[13px] hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700"><span class="font-mono text-xs font-bold ${TYPE_TEXT[byN.get(n).type]}">${code(n)}</span><span class="truncate">${esc(byN.get(n).title)}</span></button>`).join('');
+  return `<div class="py-3"><div class="flex min-w-0 items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400"><span class="font-mono">${r.id}</span><span class="shrink-0">${when(r.t)}</span>${scope ? `<span class="min-w-0 truncate">↳ ${code(scope.n)} ${esc(scope.title)}</span>` : ''}<span class="ml-auto flex shrink-0 items-center gap-1 font-medium ${tone}">${icon}${label}</span></div>
+    <p class="mt-1 line-clamp-2 text-[15px] leading-snug break-words text-zinc-800 dark:text-zinc-200">${esc(said)}</p>
+    ${chips ? `<div class="mt-2 flex flex-wrap gap-1.5">${chips}</div>` : ''}</div>`;
 }
 
 const noSelection = () => `<div class="grid h-full place-items-center p-8 text-center"><div>
@@ -3906,6 +3951,7 @@ document.addEventListener('keydown', e => {
       if (U.go) return ACT['go-end']();
       if (D.full) return fullWidth(false);
       if (D.page) return ACT['project-back']();
+      if (D.compose) return leaveCompose();
       if (D.filters) { D.filters = false; return render(); }
       if (U.q) return ACT['search-clear']();
       return;
