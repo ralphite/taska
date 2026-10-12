@@ -2954,7 +2954,7 @@ function renderDetail() {
     if (desk()) {
       const back = D.compose && D.prev && byN.has(D.prev);
       $('dActs').innerHTML = ''; $('itemMenuBtn').hidden = true;
-      $('dHead').innerHTML = D.compose ? `<span class="flex items-center gap-2 text-sm font-semibold">${ico('newinput', 'size-[18px] text-blue-600 dark:text-blue-400')}New input</span>` : '';
+      $('dHead').innerHTML = D.compose ? `<span class="flex items-center gap-2 text-sm font-semibold">${ico('newinput', 'size-[18px] text-blue-600 dark:text-blue-400')}${ruleMode() ? 'New rule' : 'New input'}</span>` : '';
       $('dNav').innerHTML = back ? `<button data-act="compose-back" class="flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800">${ico('left', 'size-4')}Back to ${code(D.prev)}${KBD('Esc')}</button>` : '';
       body.innerHTML = D.compose ? '' : noSelection();
       if (D.compose) { $('composeHead').innerHTML = composeHead(); $('composeList').innerHTML = saidLately(); markCut($('composeList')); }
@@ -3156,8 +3156,11 @@ const long = r => r.text.length > 160 || r.text.split('\n').length > 4;  // show
 const dayOf = t => { const d = new Date(t), now = new Date(); return d.toDateString() === now.toDateString() ? 'Today' : new Date(now - 864e5).toDateString() === d.toDateString() ? 'Yesterday' : d.toLocaleDateString('en-US', {month: 'short', day: 'numeric'}); };
 // What you said, newest first, under day headers: your words in a light blue bubble, what became of them under it.
 function renderInputs() {
-  const words = U.q.trim().toLowerCase().split(/\s+/).filter(Boolean);
-  const rows = [...S.inputs].reverse().filter(r => words.every(w => (r.id + ' ' + r.text).toLowerCase().includes(w)));
+  const words = U.q.trim().toLowerCase().split(/\s+/).filter(Boolean), v = $('inputsView');
+  // On the desktop the newest input sits at the bottom, next to the box you write in, as in a chat (F121); the page
+  // opens at the end and stays there while you are at the end. The phone keeps the newest on top.
+  const chat = desk(), atEnd = U.inputsEnd || v.scrollHeight - v.scrollTop - v.clientHeight < 48;
+  const rows = (chat ? [...S.inputs] : [...S.inputs].reverse()).filter(r => words.every(w => (r.id + ' ' + r.text).toLowerCase().includes(w)));
   let day = '';
   $('inputsView').innerHTML = rows.length ? rows.map(r => {
     const [label, tone, icon] = inputState(r), scope = r.scope ? byN.get(r.scope) : null, d = dayOf(r.t);
@@ -3170,7 +3173,7 @@ function renderInputs() {
       + (otherProjects().length && S.org.busy !== r.id ? `<button data-act="move-input" data-id="${r.id}" class="${LINK_BTN} text-zinc-600 dark:text-zinc-300">${ico('arrow', 'size-3.5', '2')}Move…</button>` : '') + inputActions(r);
     // On the desktop each input is a ledger line: what you said on the left, what became of it on the right.
     return `${head}<article class="border-b border-zinc-100 px-4 py-2 lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-10 lg:px-0 lg:py-4 dark:border-zinc-800/70"><div class="min-w-0">
-      <div class="flex min-h-5 items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400"><span class="font-mono">${r.id}</span><span>${when(r.t)}</span>
+      <div class="flex min-h-5 items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400"><span class="font-mono">${r.id}</span><span>${when(r.t)}</span>${r.from === 'rules' ? '<span class="font-medium">as a rule</span>' : ''}
         ${scope ? `<button data-act="goto" data-n="${scope.n}" class="relative min-w-0 truncate text-blue-600 after:absolute after:inset-x-0 after:-inset-y-3 dark:text-blue-400">↳ ${code(scope.n)} ${esc(scope.title)}</button>` : ''}
         <span class="ml-auto flex shrink-0 items-center gap-1 font-medium lg:hidden ${tone}">${icon}${label}</span></div>
       <div ${long(r) ? `data-act="more-input" data-expand data-id="${r.id}"` : ''} class="mt-1.5 rounded-2xl rounded-tr-md bg-blue-50 px-3.5 py-2 text-[15px] leading-relaxed text-zinc-900 dark:bg-blue-400/10 dark:text-zinc-100 ${long(r) ? 'cursor-pointer' : ''}">
@@ -3182,7 +3185,9 @@ function renderInputs() {
       ${note}${chips || acts ? `<div class="mt-1 flex flex-wrap items-center gap-x-1 gap-y-1.5">${chips}${acts}</div>` : ''}
     </div></article>`;
   }).join('') : U.outbox.length ? '' : EMPTY(words.length ? 'No matching inputs' : 'No inputs yet.');
-  if (U.outbox.length && !words.length) $('inputsView').innerHTML = outboxRows() + $('inputsView').innerHTML;
+  if (U.outbox.length && !words.length) $('inputsView').innerHTML = chat ? $('inputsView').innerHTML + outboxRows(true) : outboxRows() + $('inputsView').innerHTML;
+  if (chat && atEnd) requestAnimationFrame(() => { v.scrollTop = v.scrollHeight; });
+  U.inputsEnd = false;
   if (desk() && (rows.length || U.outbox.length)) $('inputsView').innerHTML = `<div class="mx-auto max-w-5xl px-8 pb-6"><div class="sticky top-0 z-10 grid grid-cols-[minmax(0,1fr)_20rem] gap-10 border-b border-zinc-200 bg-white pt-5 pb-2 text-[11px] font-semibold tracking-wider text-zinc-400 uppercase dark:border-zinc-800 dark:bg-zinc-950"><span>You said</span><span>What became of it</span></div>${$('inputsView').innerHTML}</div>`;
 }
 
@@ -3190,6 +3195,10 @@ function renderInputs() {
 
 // On the desktop the selected item counts only while its pane shows (not on Inputs or the project page).
 const detailShown = () => !desk() || (U.tab !== 'inputs' && !D.page);
+// A new input written on the Rules tab is a new rule unless you switch that off; the box and the New input page
+// say which, and only "New rule" tells the organizer it is a rule (F121).
+const ruleMode = () => U.asRule ?? U.tab === 'rules';
+const ruleFlip = () => U.tab === 'rules' ? `<button data-act="as-rule" class="-my-2 flex h-8 shrink-0 items-center rounded-full px-2 text-[13px] font-medium text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200">${ruleMode() ? 'Plain input instead' : 'As a rule instead'}</button>` : '';
 const inTab = (it, t) => t === 'rules' ? it.type === 'rule' && !it.archived : t === 'archive' ? it.archived : !it.archived && (it.type !== 'rule' || it.status === 'proposed');
 const scopeN = () => (U.peek && byN.has(U.peek)) ? U.peek : (U.open && !U.scopeOff && byN.has(U.open) && detailShown()) ? U.open : null;
 // Voice notes: desktop only (the user does not want them on the phone), and only where the browser allows it.
@@ -3201,10 +3210,10 @@ function renderComposer() {
   const n = scopeN(), sc = $('scope');
   // On the desktop the line above the box always starts with the project (B78): "[M] my-app ›".
   const proj = desk() && S.project ? `<span class="mr-0.5 flex shrink-0 items-center gap-1.5 font-semibold text-zinc-800 dark:text-zinc-100">${projTile(S.project, 'size-[18px] rounded-[5px] text-[10px]')}<span class="max-w-40 truncate">${esc(S.project)}</span><span class="font-normal text-zinc-400 dark:text-zinc-500">›</span></span>` : '';
-  $('text').placeholder = !desk() || !S.project ? 'Write anything…' : n ? `Reply to ${code(n)}…` : `Write to ${S.project}…`;
+  $('text').placeholder = !desk() || !S.project ? 'Write anything…' : n ? `Reply to ${code(n)}…` : ruleMode() ? `New rule for ${S.project}…` : `Write to ${S.project}…`;
   sc.hidden = !n;
-  if (!n && !U.open && U.tab === 'rules') { sc.hidden = false; sc.innerHTML = `${proj}${ico('scope', 'size-3.5')}<span class="font-medium">New rule for this project</span>`; }
-  else if (!n && desk()) { sc.hidden = false; sc.innerHTML = `${proj}<span class="flex min-w-0 flex-1 items-center gap-1.5 text-zinc-500 dark:text-zinc-400">${ico('inbox', 'size-3.5')}<span class="truncate"><span class="font-medium text-zinc-700 dark:text-zinc-200">New input</span> · ${S.org?.on ? 'the organizer files it' : 'your agent files it'}</span></span>${U.open && detailShown() ? `<button data-act="reply" class="h-8 shrink-0 rounded-full px-2 text-[13px] font-medium text-blue-600 dark:text-blue-400">Add to ${code(U.open)} instead${KBD('R')}</button>` : ''}`; }
+  if (!n && ruleMode()) { sc.hidden = false; sc.innerHTML = `${proj}${ico('scope', 'size-3.5')}<span class="min-w-0 flex-1 truncate font-medium">New rule for this project</span>${desk() ? ruleFlip() : ''}`; }
+  else if (!n && desk()) { sc.hidden = false; sc.innerHTML = `${proj}<span class="flex min-w-0 flex-1 items-center gap-1.5 text-zinc-500 dark:text-zinc-400">${ico('inbox', 'size-3.5')}<span class="truncate"><span class="font-medium text-zinc-700 dark:text-zinc-200">New input</span> · ${S.org?.on ? 'the organizer files it' : 'your agent files it'}</span></span>${ruleFlip()}${U.open && detailShown() ? `<button data-act="reply" class="h-8 shrink-0 rounded-full px-2 text-[13px] font-medium text-blue-600 dark:text-blue-400">Add to ${code(U.open)} instead${KBD('R')}</button>` : ''}`; }
   const dt = docTarget();
   if (dt) {
     sc.hidden = false;
@@ -3243,7 +3252,7 @@ function renderComposer() {
 
 const outboxLine = q => q.text.split('\n')[0] || (q.files.some(f => (f.mime || '').startsWith('audio/')) ? 'Voice note' : `${q.files.length} file${q.files.length === 1 ? '' : 's'}`);
 // What is still on its way, shown first where your inputs are listed (F85).
-const outboxRows = () => [...U.outbox].reverse().map(q => `<article class="border-b border-zinc-100 px-4 py-2 lg:px-0 lg:py-4 dark:border-zinc-800/70">
+const outboxRows = (oldestFirst = false) => (oldestFirst ? [...U.outbox] : [...U.outbox].reverse()).map(q => `<article class="border-b border-zinc-100 px-4 py-2 lg:px-0 lg:py-4 dark:border-zinc-800/70">
     <div class="flex min-h-5 items-center gap-2 text-xs ${q.failed ? 'text-red-600 dark:text-red-400' : 'text-blue-600 dark:text-blue-400'}">${q.failed ? ico('alert', 'size-3.5', '2') : '<span class="size-1.5 animate-pulse rounded-full bg-blue-500 dark:bg-blue-400"></span>'}<span class="font-medium">${q.failed ? 'Not sent' : q.files.some(f => f.transcribing) ? 'Transcribing…' : q.files.some(f => !f.f && !f.failed) ? 'Uploading…' : 'Sending…'}</span>${q.scope ? `<span class="min-w-0 truncate text-zinc-500 dark:text-zinc-400">↳ ${esc(q.scope)}</span>` : ''}</div>
     <div class="mt-1.5 rounded-2xl rounded-tr-md bg-blue-50 px-3.5 py-2 text-[15px] leading-relaxed whitespace-pre-wrap text-zinc-900 opacity-70 lg:max-w-[calc(100%-22.5rem)] dark:bg-blue-400/10 dark:text-zinc-100">${esc(q.text || outboxLine(q))}${q.files.some(f => f.preview) ? `<div class="mt-2 flex gap-2">${q.files.filter(f => f.preview).map(f => `<img src="${f.preview}" alt="" class="size-11 rounded-lg border border-zinc-200 object-cover dark:border-zinc-700">`).join('')}</div>` : ''}</div></article>`).join('');
 const otherProjects = () => (DR.list || []).filter(p => p.name !== S.project);
@@ -3317,7 +3326,7 @@ async function send() {
   if (dt) return sendDocComment(dt);  // a document comment (I087)
   const text = $('text').value.trim(), n = scopeN();
   if (!text && !U.files.length) return;
-  U.outbox.push({id: 'q' + ++U.qn, text, files: U.files, scope: n ? code(n) : null, from: U.tab === 'rules' && !U.open ? 'rules' : null});
+  U.outbox.push({id: 'q' + ++U.qn, text, files: U.files, scope: n ? code(n) : null, from: !n && ruleMode() ? 'rules' : null});
   $('text').value = ''; U.files = []; saveDraft(); grow();
   if (U.peek && U.go && n === U.peek) advance(U.peek);  // going through: your reply settles this one
   else if (desk() && U.go && U.open && !U.scopeOff && U.go.list.includes(U.open)) { $('text').blur(); advanceDesk(U.open, 'Replied'); }  // B118
@@ -3414,10 +3423,10 @@ async function finishRec(andSend) {
 
 async function cancelRec() { await stopRec(); toast('Recording discarded. Your text and images are still here.'); }
 
-// A draft belongs to what it is written to (B118): an item (a reply, or a comment on one of its documents), a new
-// input, a new rule. Each project keeps them by target in this browser; when the box changes target, the words and
+// A draft belongs to what it is written to (B118): an item (a reply, or a comment on one of its documents), or a new
+// input (a new rule too). Each project keeps them by target in this browser; when the box changes target, the words and
 // files stay with the old target and the new target's own draft comes back. So unsent words never go elsewhere.
-const draftKey = () => { const dt = docTarget(), n = scopeN(); return dt ? code(dt.d.n) : n ? code(n) : U.tab === 'rules' && !U.open ? 'rule' : 'new'; };  // a comment on a document shares its item's draft
+const draftKey = () => { const dt = docTarget(), n = scopeN(); return dt ? code(dt.d.n) : n ? code(n) : 'new'; };  // a comment on a document shares its item's draft
 function draftStore(change) {
   const key = 'taska.drafts.' + S.project;
   try {
@@ -3621,6 +3630,7 @@ function closeItem() {
 
 function setTab(t) {
   const was = U.tab;
+  U.asRule = null; if (t === 'inputs' && was !== 'inputs') U.inputsEnd = true;
   U.tab = t;
   if (t !== was) writeURL(true);
   if (desk()) {
@@ -3693,9 +3703,11 @@ const ACT = {
   side: () => { if (WIDE.matches) D.sideHidden = !D.sideHidden; else D.sideOpen = !D.sideOpen; render(); },
   keys: () => showKeys(),
   switch: () => projectSwitcher(),
+  'as-rule': () => { U.asRule = !ruleMode(); renderComposer(); if (desk() && D.compose) renderDetail(); },
   'new-input': () => {
     D.sideOpen = false; if (D.page) D.page = null;
-    if (desk() && U.tab !== 'inputs') {  // its own page in the detail pane (B73), not under the open item
+    if (desk()) {  // its own page in the detail pane (B73), not under the open item; from Inputs too (F121)
+      if (U.tab === 'inputs') { D.prevTab = 'inputs'; U.tab = 'items'; }
       U.go = null;
       if (U.open) D.prev = U.open;
       U.open = null; U.editing = null; U.subFor = null; D.full = false; D.compose = true;
@@ -4022,7 +4034,7 @@ function renderRail() {
 // the box itself is the same element as always, restyled by the data-compose switch on #app.
 function composeHead() {
   return `<div class="flex items-center gap-3">${projTile(S.project, 'size-11 rounded-xl text-xl shadow-sm')}<h1 class="text-[28px] leading-none font-semibold tracking-tight">${esc(S.project)}</h1></div>
-    <p class="mt-3.5 text-[15px] text-zinc-500 dark:text-zinc-400">New input to the whole project<span class="px-1.5 text-zinc-300 dark:text-zinc-600">·</span><span class="inline-flex items-center gap-1 font-medium text-zinc-700 dark:text-zinc-200">${ico('sparkle', 'size-4 text-blue-600 dark:text-blue-400')}${S.org?.on ? 'the organizer files it' : 'your agent files it'}</span></p>`;
+    <p class="mt-3.5 flex items-center justify-center gap-0 text-[15px] text-zinc-500 dark:text-zinc-400">${ruleMode() ? '<span class="font-medium text-zinc-700 dark:text-zinc-200">New rule</span>&nbsp;for the whole project' : 'New input to the whole project'}<span class="px-1.5 text-zinc-300 dark:text-zinc-600">·</span><span class="inline-flex items-center gap-1 font-medium text-zinc-700 dark:text-zinc-200">${ico('sparkle', 'size-4 text-blue-600 dark:text-blue-400')}${S.org?.on ? 'the organizer files it' : 'your agent files it'}</span></p>${ruleFlip() ? `<div class="mt-2 flex justify-center">${ruleFlip()}</div>` : ''}`;
 }
 const DOT = {
   pulse: '<span class="relative flex size-2.5"><span class="absolute inline-flex size-full animate-ping rounded-full bg-blue-400 opacity-75"></span><span class="relative inline-flex size-2.5 rounded-full bg-blue-500 dark:bg-blue-400"></span></span>',
@@ -4052,7 +4064,7 @@ function saidRow(r, k, last) {
       + (r.org?.undone && !r.acked ? `<button data-act="retry" data-id="${r.id}" class="${SMALL_BTN}">${ico('loop', 'size-3.5', '2')}Organize again</button>` : '')
       + (!r.acked && !r.scope && !(S.org.on && !r.org) && !busy ? `<button data-act="make-item" data-id="${r.id}" class="${SMALL_BTN} text-blue-600 dark:text-blue-400">${ico('plus', 'size-3.5', '2')}Make item</button>` : '')
       + `<span class="ml-auto flex items-center ${later}">${canUndoInput(r) ? `<button data-act="undo" data-id="${r.id}" title="Undo what the organizer did with ${r.id}" class="${SMALL_BTN}">${ico('undo', 'size-3.5', '2')}Undo</button>` : ''}${otherProjects().length && !busy ? `<button data-act="move-input" data-id="${r.id}" title="Sent to the wrong project? Move it" class="${SMALL_BTN}">${ico('arrow', 'size-3.5', '2')}Move…</button>` : ''}</span>`;
-  return saidStep(DOT[dotOf(r)], bubble, `<span class="font-mono">${r.id}</span> · ${when(r.t)}`, `<span class="mr-1 text-[13px] font-semibold ${tone}">${label}</span>${chips}${inputActions(r, SMALL_BTN)}${acts}`, last, `data-expand data-id="${r.id}"`);
+  return saidStep(DOT[dotOf(r)], bubble, `<span class="font-mono">${r.id}</span> · ${when(r.t)}${r.from === 'rules' ? ' · as a rule' : ''}`, `<span class="mr-1 text-[13px] font-semibold ${tone}">${label}</span>${chips}${inputActions(r, SMALL_BTN)}${acts}`, last, `data-expand data-id="${r.id}"`);
 }
 function outboxStep(q, last) {  // still on its way (F85)
   const state = q.failed ? 'Not sent' : q.files.some(f => f.transcribing) ? 'Transcribing…' : q.files.some(f => !f.f && !f.failed) ? 'Uploading…' : 'Sending…';
@@ -4073,10 +4085,11 @@ function markCut(root) {
     if (U.moreInputs.has(el.dataset.id) || (cut && cut.scrollHeight > cut.clientHeight + 1)) { el.dataset.act = 'more-input'; el.classList.add('cursor-pointer'); }
   }
 }
-function leaveCompose() {  // back to the item you had open, if there was one
-  const p = D.prev; D.compose = false; D.prev = null;
+function leaveCompose() {  // back where you were: the Inputs page, or the item you had open
+  const p = D.prev, tab = D.prevTab; D.compose = false; D.prev = null; D.prevTab = null;
+  if (tab) { U.tab = tab; U.open = p && byN.has(p) ? p : null; U.inputsEnd = true; }
   const back = leaveView('new');  // the step into the page goes; the address then follows what shows
-  if (p && byN.has(p)) openItem(p); else { render(); if (!back) writeURL(false); }
+  if (p && byN.has(p) && !tab) openItem(p); else { render(); if (!back) writeURL(false); }
 }
 const noSelection = () => `<div class="grid h-full place-items-center p-8 text-center"><div>
   <p class="text-[15px] text-zinc-500 dark:text-zinc-400">Select an item</p>
@@ -4671,7 +4684,7 @@ function applyURL() {  // the page follows the address: when it loads, and on Ba
       return seg === 'log' ? showLog() : seg === 'connect' ? showGuide() : openDrawer();
     }
     if (seg === 'new') { if (desk()) return ACT['new-input'](); return $('text').focus(); }
-    U.tab = /^(inputs|archive|rules)$/.test(seg) ? seg : 'items';
+    U.tab = /^(inputs|archive|rules)$/.test(seg) ? seg : 'items'; U.asRule = null; U.inputsEnd = seg === 'inputs';
     render();
   } finally { URLS.applying = false; }
 }
