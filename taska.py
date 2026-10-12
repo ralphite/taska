@@ -1834,7 +1834,7 @@ PAGE = r'''<!doctype html>
   <div data-grip="side" title="Drag to resize · double-click for the default" class="absolute inset-y-0 right-0 z-10 hidden w-2 translate-x-1/2 cursor-col-resize hover:bg-blue-500/30 lg:block"></div>
   <div class="flex h-14 shrink-0 items-center gap-2 px-5 lg:pr-2 lg:pl-4"><span id="drawerLogo" class="text-blue-600 dark:text-blue-400"></span><span class="text-xl font-semibold tracking-tight lg:text-[19px]">Taska</span>
     <button data-act="side" id="sideBtn" title="Hide the sidebar · [" aria-label="Hide the sidebar" class="ml-auto hidden size-8 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-200/70 lg:grid dark:text-zinc-400 dark:hover:bg-zinc-800"></button></div>
-  <button data-act="new-input" id="newInputBtn" title="New input to the project · C" aria-pressed="false" class="mx-2.5 mb-3 hidden h-9 shrink-0 items-center gap-2 rounded-xl bg-white px-3 text-sm font-medium text-zinc-800 shadow-sm ring-1 ring-zinc-900/10 hover:bg-zinc-50 lg:flex aria-pressed:bg-blue-50 aria-pressed:text-blue-700 aria-pressed:ring-blue-500/40 dark:bg-zinc-800 dark:text-zinc-100 dark:ring-white/10 dark:hover:bg-zinc-700 dark:aria-pressed:bg-blue-400/10 dark:aria-pressed:text-blue-300 dark:aria-pressed:ring-blue-400/40"></button>
+  <button data-act="new-input" id="newInputBtn" title="New input to the project · C · by voice ⇧V" aria-pressed="false" class="mx-2.5 mb-3 hidden h-9 shrink-0 items-center gap-2 rounded-xl bg-white px-3 text-sm font-medium text-zinc-800 shadow-sm ring-1 ring-zinc-900/10 hover:bg-zinc-50 lg:flex aria-pressed:bg-blue-50 aria-pressed:text-blue-700 aria-pressed:ring-blue-500/40 dark:bg-zinc-800 dark:text-zinc-100 dark:ring-white/10 dark:hover:bg-zinc-700 dark:aria-pressed:bg-blue-400/10 dark:aria-pressed:text-blue-300 dark:aria-pressed:ring-blue-400/40"></button>
   <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 lg:pb-3">
     <div class="px-3 pb-1.5 text-xs font-semibold text-zinc-500 lg:text-[11px] lg:tracking-wider lg:uppercase dark:text-zinc-400">Projects</div>
     <div id="drawerList" class="flex flex-col gap-0.5"></div>
@@ -3750,7 +3750,7 @@ function composePane() {
   return `<div class="mx-auto w-full max-w-[46rem] px-8 pt-9 pb-6">
     <h1 class="text-[22px] leading-tight font-semibold tracking-tight">Say something new</h1>
     <p class="mt-2 text-[15px] leading-relaxed text-zinc-600 dark:text-zinc-300">For <span class="font-semibold text-zinc-900 dark:text-zinc-100">${esc(S.project)}</span>: a bug, an idea, a task, a screenshot or a voice note. ${S.org?.on ? 'The organizer turns it into items, or adds it to the ones that already exist.' : 'Your coding agent turns it into items.'}</p>
-    <p class="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-[13px] text-zinc-500 dark:text-zinc-400">${tip('⌘↵', 'Send')}${canRecord() ? tip('V', 'Voice note') : ''}<span>Paste or drop screenshots</span>${tip('Esc', back ? 'Back to ' + code(D.prev) : 'Close')}</p>
+    <p class="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-[13px] text-zinc-500 dark:text-zinc-400">${tip('⌘↵', 'Send')}${canRecord() ? tip('⌥V', 'Voice note') : ''}<span>Paste or drop screenshots</span>${tip('Esc', back ? 'Back to ' + code(D.prev) : 'Close')}</p>
     ${recent.length ? `<h2 class="mt-10 text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">You said lately</h2>
       <div class="mt-1 divide-y divide-zinc-100 dark:divide-zinc-800/70">${outboxRows()}${recent.map(recentInput).join('')}</div>
       <button data-act="tab" data-tab="inputs" class="mt-1 flex h-9 items-center text-sm font-medium text-blue-600 hover:underline dark:text-blue-400">All inputs${KBD('G N')}</button>` : ''}
@@ -3905,7 +3905,7 @@ function movePicker(n) {
 const KEYS = [
   ['Move', [['J / K', 'Next or previous item'], ['⇧J / ⇧K', 'Next or previous item that needs you (Go through)'], ['O or ↵', 'Full width; Esc goes back'], ['Space', 'Scroll the item'], ['G then I N A R', 'Items, Inputs, Archive, Rules'], ['G then P', 'Switch project'], ['[', 'Show or hide the sidebar']]],
   ['Act on the selected item', [['A', 'The amber action: Accept, Approve or Answer'], ['R', 'Reply or add to it'], ['N', 'Not yet: reopen and say what is missing'], ['1–9, ⌘↵', 'Pick a choice, send the answer'], ['D · W · L', "Done · Won't do · Later / Now"], ['E / ⇧E', 'Archive or unarchive / archive every finished item'], ['S · P · T', 'Status, priority, type (the ⋯ menu)'], ['M · ⇧C', 'Move under… · Copy for agent'], ['I · ⇧D · ⇧A', 'Edit · New doc · Add subitem'], ['.', 'All actions'], ['Z', 'Undo the last change']]],
-  ['Write and find', [['C', 'New input to the project'], ['V', 'Record a voice note; V again stops'], ['⇧↵ or ⌘↵', 'Send'], ['/', 'Search'], ['F', 'Filters'], ['?', 'This sheet'], ['Esc', 'Step back one level']]],
+  ['Write and find', [['C', 'New input to the project'], ['V', 'Voice note for the selected item; V again stops'], ['⇧V', 'New input by voice; ⇧V again stops and sends'], ['⌥V', 'Voice note while typing in the box'], ['⇧↵ or ⌘↵', 'Send'], ['/', 'Search'], ['F', 'Filters'], ['?', 'This sheet'], ['Esc', 'Step back one level']]],
 ];
 function showKeys() {
   const sec = ([group, keys]) => `<section class="mb-5"><h3 class="mb-2 text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">${group}</h3>
@@ -3921,6 +3921,8 @@ function projectSwitcher() {
 function deskKey(e) {
   if (!desk() || e.defaultPrevented) return;
   const el = document.activeElement, typing = /INPUT|TEXTAREA|SELECT/.test(el?.tagName) || el?.isContentEditable;
+  // ⌥V records even while you type in the box (B91): there a plain V is a letter.
+  if (e.altKey && e.code === 'KeyV' && !e.metaKey && !e.ctrlKey && $('viewer').hidden && $('overlay').hidden) { e.preventDefault(); return R.rec ? finishRec(false) : startRec(); }
   if (typing || e.altKey || !$('viewer').hidden) return;
   if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && U.choice && U.choice.n === U.open) { e.preventDefault(); return document.querySelector(`[data-act="choice-send"][data-n="${U.open}"]`)?.click(); }
   if (e.metaKey || e.ctrlKey) return;
@@ -3954,6 +3956,10 @@ function deskKey(e) {
     }
     case 'E': e.preventDefault(); return ACT['archive-all']();
     case 'v': e.preventDefault(); return R.rec ? finishRec(false) : startRec();
+    case 'V':  // a new input by voice in one key (B91); again stops and sends it
+      e.preventDefault();
+      if (R.rec) return finishRec(true);
+      ACT['new-input'](); return startRec();
   }
   if (!it) return;
   switch (k) {
