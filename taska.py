@@ -4308,10 +4308,26 @@ function showKeys() {
     <dl class="flex flex-col gap-1.5 text-sm">${keys.map(([k, what]) => `<div class="flex items-baseline gap-3"><dt class="w-28 shrink-0 font-mono text-xs font-semibold text-zinc-700 dark:text-zinc-200">${k}</dt><dd class="text-zinc-600 dark:text-zinc-300">${what}</dd></div>`).join('')}</dl></section>`;
   dialog('Keyboard shortcuts', `<div class="grid gap-x-8 sm:grid-cols-2"><div>${sec(KEYS[0])}${sec(KEYS[2])}</div><div>${sec(KEYS[1])}</div></div>`);  // moving and writing | acting
 }
-function projectSwitcher() {
-  dialog('Switch project', `<div class="-mx-1 flex flex-col gap-0.5">${(DR.list || []).map(p => `<a href="/p/${encodeURIComponent(p.name)}/" class="flex h-11 items-center gap-3 rounded-xl px-3 hover:bg-zinc-100 dark:hover:bg-zinc-800 ${p.name === S.project ? 'bg-zinc-100 font-semibold dark:bg-zinc-800' : ''}"><span class="min-w-0 flex-1 truncate">${esc(p.name)}</span>${p.needs ? `<span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900 dark:bg-amber-400/15 dark:text-amber-200">${p.needs} need you</span>` : ''}</a>`).join('')}</div>`);
-  checkOthers.t = 0; checkOthers().then(() => { if (!$('overlay').hidden && $('dlgTitle').textContent === 'Switch project') projectSwitcher(); });
+// G P: pick another project by typing (B126). The list loads once; ↑↓ choose, Enter opens, Esc closes.
+const PS = {q: '', i: -1};
+function projectSwitcher(fresh = true) {
+  if (fresh) { PS.q = ''; PS.i = -1; }
+  const q = PS.q.trim().toLowerCase(), rows = (DR.list || []).filter(p => p.name.toLowerCase().includes(q));
+  if (PS.i < 0 || PS.i >= rows.length) PS.i = Math.max(0, rows.findIndex(p => p.name !== S.project));
+  const list = rows.map((p, i) => `<a href="/p/${encodeURIComponent(p.name)}/" data-i="${i}" aria-selected="${i === PS.i}" class="flex h-11 items-center gap-3 rounded-xl px-3 hover:bg-zinc-100 aria-selected:bg-zinc-100 aria-selected:ring-1 aria-selected:ring-zinc-300 dark:hover:bg-zinc-800 dark:aria-selected:bg-zinc-800 dark:aria-selected:ring-zinc-600">${projTile(p.name, 'size-6 rounded-md text-xs')}<span class="min-w-0 flex-1 truncate ${p.name === S.project ? 'font-semibold' : ''}">${esc(p.name)}</span>${p.name === S.project ? '<span class="text-xs text-zinc-400">this one</span>' : ''}${p.needs ? `<span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900 dark:bg-amber-400/15 dark:text-amber-200">${p.needs} need you</span>` : ''}</a>`).join('')
+    || `<p class="px-3 py-2 text-sm text-zinc-500">${DR.list ? 'No project matches' : 'Loading…'}</p>`;
+  if (!fresh && $('projList')) { $('projList').innerHTML = list; $('projList').querySelector('[aria-selected=true]')?.scrollIntoView({block: 'nearest'}); return; }
+  dialog('Switch project', `<input id="projFilter" class="${FIELD}" placeholder="Type to find a project" aria-label="Find a project" autocomplete="off"><div id="projList" class="-mx-1 mt-2 flex flex-col gap-0.5">${list}</div>`, {focus: false});
+  $('projFilter').focus();
+  if (fresh) { checkOthers.t = 0; checkOthers().then(() => { if (!$('overlay').hidden && $('projList')) projectSwitcher(false); }); }  // once: no loop
 }
+document.addEventListener('input', e => { if (e.target.id === 'projFilter') { PS.q = e.target.value; PS.i = -1; projectSwitcher(false); } });
+document.addEventListener('keydown', e => {
+  if (e.target.id !== 'projFilter') return;
+  const rows = $('projList').querySelectorAll('a[data-i]');
+  if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && rows.length) { e.preventDefault(); PS.i = (PS.i + (e.key === 'ArrowDown' ? 1 : -1) + rows.length) % rows.length; projectSwitcher(false); }
+  else if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); rows[PS.i]?.click(); }
+});
 
 // One table drives the keys. Single keys only act while you are not typing; Esc first leaves a text field.
 function deskKey(e) {
