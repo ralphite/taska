@@ -211,6 +211,58 @@ def group_project(a):  # This project is a settings page: one section at a time,
     check('Esc leaves This project at once, back to the list', (a.js('D.page'), a.js("location.pathname.split('/').pop()")), (None, ''))
 
 
+def group_box(a):  # T113 group 1: the box writes where you started, and keeps the focus while it waits for words
+    post = lambda o: json.load(urllib.request.urlopen(urllib.request.Request(a.base + 'api/op', json.dumps(o).encode(), {'Content-Type': 'application/json'})))
+    post({'op': 'doc', 'ref': 'F04', 'md': '# Plan\n\nFirst paragraph.\n\nSecond paragraph.'})
+    line = lambda: a.js("$('scope').textContent")
+    a.go('D1')
+    a.click('#docBlocks > section:nth-of-type(2)')
+    check('A1: picking a paragraph to comment on puts the focus in the box', a.js('document.activeElement.id'), 'text')
+    a.js("$('text').blur()"); a.key('w', wait=0.3)
+    check('A1: a letter then is a word, not Won\'t do', (a.js("$('text').value"), status(a, 4)), ('w', 'open'))
+    a.enter(1.0, shift=True)
+    check('B2: after a comment the box stays in its thread', line(), lambda t: 'Reply in D1' in t)
+    a.key('Escape', wait=0.4); a.type('stray words'); n = a.js('S.inputs.length'); a.enter(0.8, shift=True)
+    check('B2: with nothing picked the box waits, it does not reply to F04', (line(), a.js('S.inputs.length'), a.js("$('text').value")), (lambda t: 'Comment on D1' in t[0] and t[1] == n and t[2] == 'stray words'))
+    a.js("$('text').value = ''; saveDraft()")
+    a.go('B07'); a.key('c', wait=0.8)
+    a.js('startRec()'); time.sleep(1.5); a.enter(1.2)  # B185: a voice note on the New input page, stopped into the box
+    a.type('About the export')
+    check('B185: the note and words are in the New input box, the focus too', (a.js('U.files.length'), a.js("$('text').value"), a.js('document.activeElement.id')), (1, 'About the export', 'text'))
+    a.click('#list [data-act="open"][data-n="8"]')
+    check('B185: another item opens: its box is its own, and the page says the new input waits', (a.js("$('text').value"), a.js('U.files.length'), a.toast()), (lambda t: t[0] == '' and t[1] == 0 and 'kept' in t[2]))
+    a.go('F08')
+    check('B185: after a reload the voice note is back in the New input box, not in F08\'s', (a.js('U.files.length'), a.js("(U.parked.new || []).length")), (0, 1))
+    a.js("$('toast').hidden = true"); a.click('#scope [data-act="new-input-instead"]')
+    check('B185, A8: New input instead brings the words and the voice note back', (a.js('D.compose'), a.js("$('text').value"), a.js('U.files.length')), (True, 'About the export', 1))
+    a.js("U.files.forEach(f => { f.gone = true; dropRec(f, false); }); U.files = []; $('text').value = ''; saveDraft(); renderComposer()")
+    a.go('F08'); a.click('#text'); a.type('For everyone')
+    a.js("$('toast').hidden = true"); a.click('#scope [data-act="new-input-instead"]')
+    check('A8: New input instead carries the words', a.js("$('text').value"), 'For everyone')
+    a.click('#toast button', 1.0)
+    check('A8: Undo puts them back on F08', (open_(a), a.js("$('text').value"), a.js("draftStore().new || ''")), ('F08', 'For everyone', ''))
+    a.js("$('text').value = ''; saveDraft()")
+    a.go('T13'); a.js("$('text').blur()"); a.key('v', wait=1.5); a.key('j', wait=0.6)
+    check('B1: moved on while recording, the line says where the note goes', line(), lambda t: 'Recording for T13' in t)
+    a.enter(1.2)
+    check('B1: stopped elsewhere, the note goes into T13\'s box', (a.js('U.files.length'), a.js("(U.parked.T13 || []).length")), (0, 1))
+    a.js("U.parked.T13.forEach(f => { f.gone = true; dropRec(f, false); }); delete U.parked.T13")
+    a.go(''); a.key('J', wait=0.8); a.click('#text'); a.type('Check the header row'); a.enter(1.2, shift=True)
+    check('A2: a reply while going through stays on its item, focus in the box', (open_(a), a.js('document.activeElement.id'), a.js('U.go.done.has(3)')), ('B03', 'text', True))
+    a.key('Escape'); a.key('Escape')
+    a.go('B03'); a.click('#text'); a.type('Add a test for three filters')
+    a.click('#detailBody [data-act="status"][data-v="done"]', 1.2)
+    check('B4: Accept sends the note with it', (status(a, 3), a.js("S.inputs.at(-1).text"), a.js("$('text').value")), ('done', 'Add a test for three filters', ''))
+    a.go('D1'); a.key('c', wait=0.8)
+    check('B14: C on a document opens the New input page, Back to D1', (a.js('location.pathname.split("/").pop()'), a.js("$('dNav').textContent")), lambda t: t[0] == 'new' and 'Back to D1' in t[1])
+    a.key('Escape', wait=0.8)
+    check('B14: Esc goes back to the document', (a.js('U.doc'), a.js('location.pathname.split("/").pop()')), (1, 'D1'))
+    a.go('rules'); a.key('c', wait=0.8)
+    check('B10: New rule has its own address', a.js('location.pathname.split("/").pop()'), 'new-rule')
+    a.go('new-rule')
+    check('B10: a reload stays a new rule', a.js("$('dHead').textContent"), 'New rule')
+
+
 def group_narrow(a):
     a.go('B03')
     a.key('['); check('[ at 1024 opens the sidebar over the page', a.js('D.sideOpen'), True)
@@ -219,7 +271,7 @@ def group_narrow(a):
 
 
 GROUPS = [('move', group_move, (1440, 900)), ('act', group_act, (1440, 900)), ('answer', group_answer, (1440, 900)),
-          ('write', group_write, (1440, 900)), ('context', group_context, (1440, 900)), ('project', group_project, (1440, 900)),
+          ('write', group_write, (1440, 900)), ('box', group_box, (1440, 900)), ('context', group_context, (1440, 900)), ('project', group_project, (1440, 900)),
           ('narrow', group_narrow, (1024, 768))]
 
 

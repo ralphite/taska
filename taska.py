@@ -5171,6 +5171,7 @@ function voiceFile(o) {
 async function keepRec(f) {  // what is known about a voice note, kept with its audio
   if (!f.rid || f.gone || f.sent) return;
   try { f.data ||= await f.blob.arrayBuffer(); } catch (_) { return; }
+  if (f.gone || f.sent) return;  // let go of meanwhile: it must not come back
   await VDB.put({id: f.rid, project: VPROJ, key: f.key, scope: f.scope, name: f.name, mime: f.mime, ms: f.ms, t: f.t, data: f.data, f: f.f || null,
                  tr: f.transcribing ? null : f.tr || '', tr_error: f.tr_error || '', doubts: f.doubts || [], added: f.trAdded || null, job: f.job || null});
 }
