@@ -45,9 +45,9 @@ class HubTests(unittest.TestCase):
                             '🚀 Launch': 'launch'}.items():
             s = self.hub.add(title)
             self.assertEqual((s.name, s.title), (slug, ' '.join(title.split())))
-        s = self.hub.add('笔记')
+        s = self.hub.add('\u7b14\u8bb0')
         self.assertRegex(s.name, r'^p-[a-z0-9]{4}$')
-        self.assertEqual(s.title, '笔记')
+        self.assertEqual(s.title, '\u7b14\u8bb0')
         self.assertEqual(self.hub.add('Home budget!').name, 'home-budget-2')  # an address in use: a number on the end
         self.assertFalse(any('"name"' in line for line in (self.root / 'my-app' / 'taska.jsonl').read_text().splitlines()),
                          'a name that is its own address needs no record')
@@ -61,16 +61,16 @@ class HubTests(unittest.TestCase):
     def test_rename_keeps_the_address_and_lasts(self):
         s = self.hub.add('notes')
         self.items(s, 'Buy milk')
-        r, was = self.hub.rename('notes', 'Notes 笔记')
-        self.assertEqual((r.name, r.title, was), ('notes', 'Notes 笔记', 'notes'))
-        self.assertIn("renamed the project 'Notes 笔记'", s.log(5))
+        r, was = self.hub.rename('notes', 'Notes \u7b14\u8bb0')
+        self.assertEqual((r.name, r.title, was), ('notes', 'Notes \u7b14\u8bb0', 'notes'))
+        self.assertIn("renamed the project 'Notes \u7b14\u8bb0'", s.log(5))
         self.hub.add('Other')
         with self.assertRaises(taska.Err):
             self.hub.rename('notes', 'other')  # another project's name
         again = taska.Hub(self.tmp.name, organizer=False)  # after a restart
         try:
-            self.assertEqual((again.projects['notes'].title, len(again.projects['notes'].active())), ('Notes 笔记', 1))
-            self.assertEqual({p['name']: p['title'] for p in again.summary()}['notes'], 'Notes 笔记')
+            self.assertEqual((again.projects['notes'].title, len(again.projects['notes'].active())), ('Notes \u7b14\u8bb0', 1))
+            self.assertEqual({p['name']: p['title'] for p in again.summary()}['notes'], 'Notes \u7b14\u8bb0')
         finally:
             close(again)
 
@@ -142,12 +142,12 @@ class ApiTests(unittest.TestCase):
             return ex.code, json.loads(text) if ex.headers.get_content_type() == 'application/json' else text
 
     def test_the_whole_way_round(self):
-        code, d = self.call('/api/projects', {'title': 'Website 官网'})
-        self.assertEqual((code, d['name'], d['title']), (200, 'website', 'Website 官网'))
+        code, d = self.call('/api/projects', {'title': 'Website \u5b98\u7f51'})
+        self.assertEqual((code, d['name'], d['title']), (200, 'website', 'Website \u5b98\u7f51'))
         self.assertEqual(self.call('/api/projects', {'name': 'plain'})[1]['name'], 'plain')  # the old way still works
-        self.assertEqual({p['name']: p['title'] for p in self.call('/api/projects')[1]}['website'], 'Website 官网')
+        self.assertEqual({p['name']: p['title'] for p in self.call('/api/projects')[1]}['website'], 'Website \u5b98\u7f51')
         code, d = self.call('/api/projects/rename', {'name': 'website', 'title': 'Site'})
-        self.assertEqual((code, d['title'], d['was']), (200, 'Site', 'Website 官网'))
+        self.assertEqual((code, d['title'], d['was']), (200, 'Site', 'Website \u5b98\u7f51'))
         self.assertEqual(self.call('/p/website/api/state')[1]['title'], 'Site')
         self.assertEqual(self.call('/api/projects/delete', {'name': 'website'})[0], 200)
         self.assertNotIn('website', [p['name'] for p in self.call('/api/projects')[1]])
