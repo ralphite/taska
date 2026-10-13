@@ -3332,7 +3332,11 @@ function patchList() {
   }
 }
 $('list').addEventListener('pointerenter', () => { LIST.in = true; });
-$('list').addEventListener('pointerleave', () => { LIST.in = false; if (U.settle.size) { clearTimeout(LIST.t); LIST.t = setTimeout(releaseList, Math.max(0, LIST.until - Date.now())); } });
+$('list').addEventListener('pointerleave', () => {
+  LIST.in = false;
+  if (U.settle.size) { clearTimeout(LIST.t); LIST.t = setTimeout(releaseList, Math.max(0, LIST.until - Date.now())); }
+  if (U.archHold && !U.undoArch) { U.archHold = null; renderItems(); }  // the place Archive N kept (B3)
+});
 
 // A row in a list: state icon, coloured code and title, one meta line. Tapping anywhere opens the item (B62);
 // the image and the fold arrow keep their own taps. Nested subitems hang off an elbow line.
@@ -3402,7 +3406,7 @@ function zone(kind, label, n, right = '') {
   const mark = needs ? '<span class="size-2 shrink-0 rounded-full bg-amber-500 ring-3 ring-amber-500/20 dark:bg-amber-400"></span>'
     : kind === 'rules' ? '<span class="mx-1 size-2 shrink-0 rounded-full bg-zinc-400 dark:bg-zinc-500"></span>'
     : stateIcon({queue: 'doing', done: 'done', retired: 'dropped', archived: 'done'}[kind], label, 'size-4');
-  return `<div class="flex h-9 items-center gap-2 border-b pr-1 pl-4 ${needs ? 'border-amber-200/70 bg-amber-50 dark:border-amber-400/15 dark:bg-amber-400/10' : 'border-zinc-100 bg-zinc-50 dark:border-zinc-800/70 dark:bg-zinc-900/60'}">
+  return `<div data-zone="${kind}" class="flex h-9 items-center gap-2 border-b pr-1 pl-4 ${needs ? 'border-amber-200/70 bg-amber-50 dark:border-amber-400/15 dark:bg-amber-400/10' : 'border-zinc-100 bg-zinc-50 dark:border-zinc-800/70 dark:bg-zinc-900/60'}">
     ${mark}<h2 class="text-sm font-semibold ${needs ? 'text-amber-950 dark:text-amber-100' : 'text-zinc-800 dark:text-zinc-200'}">${label}</h2><span class="grid h-5 min-w-5 place-items-center rounded-full px-1.5 text-[11px] font-bold tabular-nums ${needs ? 'bg-amber-500 text-white dark:bg-amber-400 dark:text-amber-950' : 'bg-zinc-200/80 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300'}">${n}</span>${right}
   </div>`;
 }
@@ -4064,22 +4068,26 @@ function renderItems() {
   } else {
     // Items, in the order of your loop (T65 "Needs you first"): what waits on you, the agent's queue, finished work.
     const going = desk() && U.go, needs = rows.filter(it => needsYou(it) || (going && going.done.has(it.n) && going.list.includes(it.n))).sort(laterLast);  // Later: still yours, below the rest (B153)
+    if (U.archHold?.sig !== listSig()) U.archHold = null;  // another tab, search or filter: no need to hold the place
+    const hold = U.archHold ? 'data-hold' : '';  // B3: the finished band keeps its height after Archive N, under the pointer
     const settled = it => going && going.done.has(it.n) && going.list.includes(it.n);
     const queue = rows.filter(it => inQueue(it) && !settled(it)).sort(queueOrder);
     const done = rows.filter(it => CLOSED(it.status) && !it.archived && !settled(it)), arch = rows.filter(it => it.archived);
     html = (needs.length ? zone('needs', 'Needs you', needs.filter(needsYou).length, going ? `<span class="text-xs font-medium text-amber-700 dark:text-amber-400">· Going through</span><button data-act="go-end" class="-my-1 ml-auto flex h-11 items-center gap-1 rounded-full pr-2 pl-3 text-[13px] font-semibold text-amber-800 hover:bg-amber-100 dark:text-amber-300 dark:hover:bg-amber-400/15">End${KBD('Esc')}</button>` : goThroughBtn())
         + needs.map(it => going && going.done.has(it.n) ? settledRow(it) : needsRow(it)).join('') : '')  // nothing waiting: no band (I71)
       + (queue.length ? zone('queue', 'Agent queue', queue.length, laterNote(queue) + (desk() ? keepGoingSwitch() : keepGoingNote())) + tree(queue) : '')  // every row it holds; the later ones, which agents don't take yet, are named (S3)
-      + (U.undoArch ? `<div class="flex items-center gap-3 border-b border-blue-100 bg-blue-50 py-2 pr-2 pl-4 dark:border-blue-400/15 dark:bg-blue-400/10">
+      + (U.undoArch ? `<div ${hold}><div class="flex items-center gap-3 border-b border-blue-100 bg-blue-50 py-2 pr-2 pl-4 dark:border-blue-400/15 dark:bg-blue-400/10">
           ${ico('archive', 'size-5 text-blue-600 dark:text-blue-400')}
           <p class="min-w-0 flex-1 text-sm text-blue-950 dark:text-blue-100"><span class="font-semibold">Archived ${plural(U.undoArch.ids.length, 'finished item')}.</span> They are under Archive.</p>
           <button data-act="archive-undo" class="flex h-11 shrink-0 items-center gap-2 rounded-full bg-blue-600 pr-1.5 pl-4 text-[15px] font-semibold text-white shadow-sm shadow-blue-600/30 dark:bg-blue-500">${ico('undo', 'size-4.5', '2.25')}Undo
-            <span id="undoLeft" class="grid size-8 place-items-center rounded-full bg-white/20 text-sm font-bold tabular-nums ring-2 ring-white/60">${U.undoArch.left}</span></button></div>`
-        : done.length ? zone('done', 'Finished', done.length, archiveAllBtn(done.length)) + tree(done) : '')
+            <span id="undoLeft" class="grid size-8 place-items-center rounded-full bg-white/20 text-sm font-bold tabular-nums ring-2 ring-white/60">${U.undoArch.left}</span></button></div></div>`
+        : done.length ? zone('done', 'Finished', done.length, archiveAllBtn(done.length)) + tree(done) : hold ? `<div aria-hidden="true" ${hold}></div>` : '')
       + (arch.length ? zone('archived', 'Archived', arch.length) + arch.map(it => itemRow(it)).join('') : '');
   }
   const more = rows.length ? searchHints(rows.length) : '';  // a short result: where else the words are (A9)
   list.innerHTML = html + (more ? `<div class="flex flex-col py-4">${more}</div>` : '');
+  const hd = list.querySelector('[data-hold]');
+  if (hd) hd.style.minHeight = U.archHold.h + 'px';  // a measured height: set before the scroll position comes back, so it isn't cut short
   list.scrollTop = top || 0;
 }
 
@@ -5421,7 +5429,11 @@ const ACT = {
     if (!ids.length) return;
     const all = on => ({op: 'archive', refs: ids.map(code), on});  // one change, however many (T113 A5)
     clearInterval(U.undoArch?.timer);
-    const u = U.undoArch = {ids, left: 3}, gone = () => { clearInterval(u.timer); if (U.undoArch === u) U.undoArch = null; };
+    const z = document.querySelector('#list [data-zone="done"]');
+    let h = 0;
+    for (let x = z; x && (x === z || !x.dataset.zone); x = x.nextElementSibling) h += x.offsetHeight;
+    U.archHold = h ? {h, sig: listSig()} : null;  // B3: the rows above don't slide under the pointer, so a second click lands where it was aimed
+    const u = U.undoArch = {ids, left: 3}, gone = () => { clearInterval(u.timer); if (U.undoArch === u) U.undoArch = null; U.archHold = null; };
     u.run = pushUndo(`${plural(ids.length, 'item')} archived`, () => {  // the bar and Z put the whole batch back
       gone(); toast(`Put back ${plural(ids.length, 'item')}`);
       return optimistic(ids.map(n => ({n, f: {archived: false}})), () => op(all(false)), ex => notSaved(ex, u.run));
@@ -5429,7 +5441,7 @@ const ACT = {
     u.timer = setInterval(() => {
       if (--u.left > 0) { const el = $('undoLeft'); if (el) el.textContent = u.left; return; }
       clearInterval(u.timer);
-      if (U.undoArch === u) { U.undoArch = null; renderItems(); }
+      if (U.undoArch === u) { U.undoArch = null; if (!LIST.in) U.archHold = null; renderItems(); }  // under the pointer the place stays until it leaves
     }, 1000);
     optimistic(ids.map(n => ({n, f: {archived: true}})), async () => {
       const left = ((await op(all(true))).res[0].match(/not archived: (.+)$/) || [])[1];  // reopened meanwhile: they stay
