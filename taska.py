@@ -235,7 +235,7 @@ class Store:
             self.items[n] = {"n": n, "type": e["type"], "title": e["title"], "body": e.get("body", ""),
                              "pri": e["pri"], "when": e["when"], "status": e["status"], "parent": e.get("parent"),
                              "next": e.get("next", ""), "thread": [], "srcs": [], "merged_into": None, "archived": False,
-                             "t0": e["t"], "t1": e["t"]}
+                             "t0": e["t"], "t1": e["t"], "by": e.get("by")}  # by: who made it, so the page names the same agent the same way (B157)
             self.touch(n, e.get("src"), ack=not e.get("keep"))
         elif k == "set":
             it = self.items[e["n"]]
@@ -3148,13 +3148,13 @@ const excerpt = it => oneLine(it.wait ? it.wait.text : it.status === 'review' ? 
 // Desktop: the selected row is tinted, others on hover; hovering shows the phone's swipe actions as buttons.
 // A row answers a press too (B159); the short delay keeps rows from flashing while a finger scrolls the list.
 const rowTint = it => (U.open === it.n ? 'lg:bg-blue-50 dark:lg:bg-blue-400/10' : 'lg:hover:bg-zinc-50 dark:lg:hover:bg-zinc-900/70') + ' pointer-coarse:transition-colors pointer-coarse:delay-75 active:bg-zinc-100 lg:active:bg-zinc-100 dark:active:bg-zinc-900 dark:lg:active:bg-zinc-900';  // the delay is for fingers only
-const ACT_KEY = {Done: 'D', Accept: 'A', Approve: 'A', Archive: 'E', Unarchive: 'E', Later: 'L', Now: 'L', "Won't do": 'W', 'Not yet': 'N'};
+const ACT_KEY = {Done: 'D', Accept: 'A', Approve: 'A', Archive: 'E', Unarchive: 'E', Later: 'L', 'Back to now': 'L', "Won't do": 'W', 'Not yet': 'N'};
 const ACT_TONE = {Done: 'text-emerald-600 dark:text-emerald-400', Accept: 'text-emerald-600 dark:text-emerald-400', Approve: 'text-blue-600 dark:text-blue-400', Archive: 'text-emerald-600 dark:text-emerald-400', Start: 'text-blue-600 dark:text-blue-400', "Won't do": 'text-red-600 dark:text-red-400'};
 // On the desktop the actions keep one order on every row (B128): forward · progress · Won't do · Later; the ones that
 // do not apply are left out, with no gaps (B135). Rows waiting on your answer offer only Later: the pill answers.
 // (The phone's swipes keep their own order.)
 function deskSlots(it, needs) {
-  const later = it.when === 'now' ? ['when', 'later', 'Later'] : ['when', 'now', 'Now'], drop = ['status', 'dropped', "Won't do"];
+  const later = it.when === 'now' ? ['when', 'later', 'Later'] : ['when', 'now', 'Back to now'], drop = ['status', 'dropped', "Won't do"];
   if (it.archived) return [['archived', 'false', 'Unarchive'], null, null, null];
   if (it.wait) return [null, null, null, later];
   const fwd = needs ? null : swipeRight(it);
@@ -3291,7 +3291,7 @@ function swipeRight(it) {
 // Swipe left: the way back. The one you want most sits at the edge, under your finger; a few more beside it. An item
 // that waits on your answer keeps Done here, last, out of the way of the answer (B147).
 function swipeLeft(it) {
-  const later = it.when === 'now' ? ['when', 'later', 'Later'] : ['when', 'now', 'Now'], drop = ['status', 'dropped', "Won't do"];
+  const later = it.when === 'now' ? ['when', 'later', 'Later'] : ['when', 'now', 'Back to now'], drop = ['status', 'dropped', "Won't do"];
   const done = it.wait ? [['status', 'done', 'Done']] : [];
   return it.archived ? [['archived', 'false', 'Unarchive']]
     : it.status === 'proposed' ? [later, drop]
@@ -3301,7 +3301,7 @@ function swipeLeft(it) {
     : [['status', 'doing', 'Start'], drop, later, ...done];
 }
 const openKids = n => (kids.get(n) || []).filter(k => !CLOSED(k.status)).length;  // a parent done before its subitems says so (B147)
-const ACT_ICON = {Approve: 'thumb', Accept: 'check', Done: 'done', Archive: 'archive', Later: 'clock', Now: 'clock', "Won't do": 'ban', 'Not yet': 'reopen', Pause: 'pause', Start: 'start', Reopen: 'reopen', Unarchive: 'archive', Answer: 'ask', Reply: 'reply'};
+const ACT_ICON = {Approve: 'thumb', Accept: 'check', Done: 'done', Archive: 'archive', Later: 'clock', 'Back to now': 'clock', "Won't do": 'ban', 'Not yet': 'reopen', Pause: 'pause', Start: 'start', Reopen: 'reopen', Unarchive: 'archive', Answer: 'ask', Reply: 'reply'};
 const ACT_BG = {Start: 'bg-blue-600 dark:bg-blue-500', "Won't do": 'bg-red-600 dark:bg-red-500', Done: 'bg-emerald-600 dark:bg-emerald-500'};
 function swipeRow(it, inner) {
   const fwd = swipeRight(it), back = swipeLeft(it), left = fwd?.[1] === 'done' ? openKids(it.n) : 0;
@@ -3449,13 +3449,28 @@ function answerOf(thread, x) {
   const a = thread.slice(thread.indexOf(x) + 1).find(userWord);
   return a ? a.text.split('\n').map(l => l.match(/^\s*✓\s*(.+)$/)?.[1]?.trim()).filter(Boolean) : null;
 }
-function msgHtml(x, gid, form = 0, done = null) {
-  const you = x.by === 'you', src = you && x.src ? byR.get(x.src) : null;
+// An input you edited or added details to shows once, as it is now (B157, A24): the earlier version folds to a dim line,
+// an edit says "edited", and added details show only what was added. Taska keeps every version for your agents.
+function versions(thread) {  // message id -> {old, text, label}, for your words that changed since
+  const by = new Map(), out = new Map(), plain = t => t.replace(/^r\d+ updated:\n/, '');
+  for (const x of thread) if (x.by === 'you' && x.src) { if (!by.has(x.src)) by.set(x.src, []); by.get(x.src).push(x); }
+  for (const list of by.values()) if (list.length > 1) {
+    const info = list.map((x, i) => {
+      const text = plain(x.text), prev = i ? plain(list[i - 1].text) : null;
+      const added = prev !== null && text.startsWith(prev) && text.length > prev.length ? text.slice(prev.length).trim() : null;
+      return {x, text: added ?? text, label: !i ? '' : added !== null ? 'added details' : 'edited', edit: i && added === null};
+    });
+    info.forEach((v, i) => out.set(v.x.id, {old: info.slice(i + 1).some(w => w.edit), text: v.text, label: v.label}));  // old: an edit since replaced it
+  }
+  return out;
+}
+function msgHtml(x, gid, form = 0, done = null, ver = null) {
+  const you = x.by === 'you', src = you && x.src ? byR.get(x.src) : null, y = ver ? {...x, text: ver.text} : x;
   const strip = (files, g, size) => files?.length ? `<div class="flex gap-2 overflow-x-auto lg:scrollbar-thin ${you ? 'justify-end' : 'mt-3'}">${thumbs(files, g, size)}</div>` : '';
-  if (you) return `<div ${x.src ? `data-src="${x.src}"` : ''} class="flex scroll-mb-4 flex-col items-end gap-1 rounded-2xl transition-colors duration-700">
-      ${x.text ? `<div ${voiceAttr(src)} class="max-w-[85%] rounded-2xl rounded-tr-md bg-blue-600 px-4 py-2.5 text-[15px] leading-relaxed text-white dark:bg-blue-500 [&_a]:text-white [&_a]:decoration-white/60">${msgText(x, gid)}</div>` : ''}
-      ${strip(src?.files, gid + 't' + x.id)}
-      <span class="px-1 text-[11px] text-zinc-400 dark:text-zinc-500">You · ${when(x.t)}${src?.tr_wait ? ' · <span class="animate-pulse text-blue-600 dark:text-blue-400">transcribing the voice note…</span>' : ''}</span></div>`;
+  if (you) return `<div ${x.src ? `data-src="${x.src}"` : ''} class="flex scroll-mb-4 flex-col items-end gap-1 rounded-2xl transition-colors duration-700 ${ver?.old ? 'opacity-60' : ''}">
+      ${y.text ? `<div ${voiceAttr(src)} class="max-w-[85%] rounded-2xl rounded-tr-md bg-blue-600 px-4 py-2.5 text-[15px] leading-relaxed text-white dark:bg-blue-500 [&_a]:text-white [&_a]:decoration-white/60">${ver?.old ? `<div class="line-clamp-2">${msgText(y, gid)}</div>` : msgText(y, gid)}</div>` : ''}
+      ${ver?.old ? '' : strip(src?.files, gid + 't' + x.id)}
+      <span class="px-1 text-[11px] text-zinc-400 dark:text-zinc-500">You · ${ver?.old ? 'earlier version · ' : ver?.label ? ver.label + ' · ' : ''}${when(x.t)}${src?.tr_wait ? ' · <span class="animate-pulse text-blue-600 dark:text-blue-400">transcribing the voice note…</span>' : ''}</span></div>`;
   const card = form ? 'space-y-2.5 border-amber-200 bg-amber-50 p-3 text-zinc-900 dark:border-amber-400/25 dark:bg-amber-400/7 dark:text-zinc-100' : 'border-zinc-200 bg-zinc-50 px-4 py-3 text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200';
   return `<div class="flex flex-col items-start gap-1.5">
       <div class="flex items-center gap-2 px-1 text-[11px] text-zinc-400 dark:text-zinc-500">${avatar(x.by)}<span class="text-xs font-semibold text-zinc-700 dark:text-zinc-300">${esc(whoName(x.by))}</span>${done && !form ? `<span class="flex items-center gap-0.5 rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-emerald-800 uppercase dark:bg-emerald-400/15 dark:text-emerald-300">${ico('check', 'size-3', '3')}Answered</span>` : KIND_TAG(x)}<span>${when(x.t)}</span></div>
@@ -3523,9 +3538,11 @@ function blockHtml(b, isTitle, gid = '') {
   return `<p class="leading-[1.75] whitespace-pre-wrap">${inlineMd(b.text, gid)}</p>`;
 }
 const sameText = (a, b) => a.split(/\s+/).join(' ') === b.split(/\s+/).join(' ');
+// A quote from a document reads as words, not Markdown: no ** or `, no table pipes or rules (B157).
+const plainQuote = s => String(s || '').split('\n').filter(l => !TABLE_SEP.test(l)).map(l => l.replace(/^\s*(#+|>|[-*+]|\d+[.)])\s+/, '').replace(/\*\*|__|`/g, '').replace(/^\s*\||\|\s*$/g, '').replace(/\s*\|\s*/g, ' · ').trim()).filter(Boolean).join(' ');
 function threadHtml(d, key, comments, blockText) {
   return `<div class="mt-2 space-y-2 border-l-2 border-amber-300 pl-3 dark:border-amber-600">
-    ${comments.map(c => `<div class="text-sm ${MSG(c.by)}">${blockText !== undefined && !sameText(c.quote, blockText) ? `<div class="mb-0.5 line-clamp-2 text-xs text-zinc-500">“${esc(c.quote)}”</div>` : ''}<span class="${WHO(c.by)}">${esc(who(c.by))}</span> <span class="text-xs text-zinc-400">${when(c.t)}</span>${rich(c.text, 'dc' + c.t)}</div>`).join('')}
+    ${comments.map(c => `<div class="text-sm ${MSG(c.by)}">${blockText !== undefined && !sameText(c.quote, blockText) ? `<div class="mb-0.5 line-clamp-2 text-xs text-zinc-500">“${esc(plainQuote(c.quote))}”</div>` : ''}<span class="${WHO(c.by)}">${esc(whoName(c.by))}</span> <span class="text-xs text-zinc-400">${when(c.t)}</span>${rich(c.text, 'dc' + c.t)}</div>`).join('')}
     <button data-act="doc-reply" data-key="${key}" class="flex h-8 items-center gap-1 text-xs font-semibold text-blue-600 dark:text-blue-400 ${U.docReply === key ? 'underline' : ''}">${ico('reply', 'size-3.5')}Reply</button>
   </div>`;
 }
@@ -3586,7 +3603,7 @@ function closeDoc() {  // the desktop's way back from a document to its item
 function docViewHtml(d) {
   const titled = !!d.blocks[0] && sameText(d.blocks[0].text.replace(/^#+\s*/, ''), d.title);
   groups.delete('doc' + d.d);  // its images, refilled as the blocks render
-  return `<div class="flex min-h-full flex-col"><div class="flex items-center gap-1 text-xs text-zinc-500"><span class="min-w-0 flex-1 truncate">on <button data-act="goto" data-n="${d.n}" class="text-blue-600 dark:text-blue-400">${code(d.n)}</button> · ${esc(who(d.by))} · ${when(d.t1)}</span>
+  return `<div class="flex min-h-full flex-col"><div class="flex items-center gap-1 text-xs text-zinc-500"><span class="min-w-0 flex-1 truncate">on <button data-act="goto" data-n="${d.n}" class="text-blue-600 dark:text-blue-400">${code(d.n)}</button> · ${esc(whoName(d.by))} · ${when(d.t1)}</span>
       <button data-act="doc-circle" aria-pressed="${!!U.docCircle}" class="${BTN} text-sm lg:hidden aria-pressed:bg-amber-100 aria-pressed:text-amber-900 dark:aria-pressed:bg-amber-900/60 dark:aria-pressed:text-amber-100">${U.docCircle ? 'Draw a circle…' : 'Circle'}</button><button data-act="doc-edit" class="${BTN} text-sm lg:hidden">Edit</button></div>
     ${titled ? '' : `<div class="mt-3 text-2xl leading-tight font-bold tracking-tight">${esc(d.title)}</div>`}
     <div id="docBlocks" class="relative mt-3 space-y-3 text-[15px] ${U.docCircle ? 'select-none' : ''}">
@@ -3714,7 +3731,7 @@ function peek(n, {focus = true} = {}) {
     ${it.next ? `<div class="mt-2 flex gap-2 text-sm"><span class="shrink-0 font-semibold text-zinc-500 dark:text-zinc-400">Next</span><span class="min-w-0 break-words">${inlineMd(it.next)}</span></div>` : ''}
     ${files.length ? `<div class="mt-3 flex items-end gap-2 overflow-x-auto lg:scrollbar-thin">${thumbs(files, 'peek' + n)}</div>` : ''}
     ${it.wait ? `<div data-need class="mt-4 scroll-mt-2">${needsCard(it)}</div>` : ''}
-    ${recent.length ? `<div class="mt-4 flex flex-col gap-4">${recent.map(x => msgHtml(x, 'p', 0, answerOf(it.thread, x))).join('')}</div>` : ''}
+    ${recent.length ? `<div class="mt-4 flex flex-col gap-4">${(vers => recent.map(x => msgHtml(x, 'p', 0, answerOf(it.thread, x), vers.get(x.id))).join(''))(versions(it.thread))}</div>` : ''}
   </div>`, {
     aboveComposer: true, focus, card: true, head, walk: !!g,
     sub: g ? `<div class="flex gap-1 px-4 pb-1" aria-hidden="true">${g.list.map(k => `<span class="h-1 flex-1 rounded-full ${k === n ? 'bg-amber-500 dark:bg-amber-400' : g.done.has(k) ? 'bg-emerald-500 dark:bg-emerald-400' : 'bg-zinc-200 dark:bg-zinc-700'}"></span>`).join('')}</div>` : '',
@@ -3747,7 +3764,7 @@ function endWalk(said = '') {
 // The message the needs card shows: the question, or the agent's report or proposal (then not repeated below).
 const cardMsg = it => it.wait ? it.thread.find(x => x.id === it.wait.id) || it.wait : (it.status === 'review' || it.status === 'proposed') ? lastAgentMsg(it) : null;
 function needsCard(it) {
-  const n = it.n, m = cardMsg(it), name = whoName(m?.by || it.wait?.by || 'agent');
+  const n = it.n, m = cardMsg(it), name = whoName(m?.by || it.wait?.by || (it.by && it.by !== 'you' ? it.by : 'agent'));  // one agent, one name (B157)
   // On the desktop the buttons sit on the right with their keys, and a hint says what the second one does.
   const card = (icon, title, body, buttons, hint = '') => `<section class="${NEEDS_CARD}">
       <div class="flex items-center gap-2.5 px-4 pt-3.5 lg:px-5 lg:pt-4">${ico(icon, 'size-5 text-amber-600 dark:text-amber-400')}<p class="min-w-0 flex-1 text-sm font-semibold text-amber-900 lg:text-[15px] dark:text-amber-200">${title}</p>${m?.t ? `<span class="text-xs text-amber-700/80 dark:text-amber-300/70">${when(m.t)}</span>` : ''}</div>
@@ -3801,7 +3818,7 @@ function detailHtml(it) {
     </section>` : '';
   const talk = thread.length ? `<div class="flex flex-col gap-6 border-t border-zinc-100 pt-6 dark:border-zinc-800/70">
       ${hidden ? `<button data-act="more" data-n="${n}" class="-my-1 h-11 self-center rounded-lg px-3 text-sm font-medium text-blue-600 dark:text-blue-400">Show ${hidden} earlier</button>` : ''}
-      ${thread.slice(hidden).map(x => msgHtml(x, '', 0, answerOf(thread, x))).join('')}</div>` : '';
+      ${(vers => thread.slice(hidden).map(x => msgHtml(x, '', 0, answerOf(thread, x), vers.get(x.id))).join(''))(versions(it.thread))}</div>` : '';
   return `<div class="flex flex-col gap-6 px-5 pt-5 pb-10 lg:mx-auto lg:w-full lg:max-w-[46rem] lg:px-8 lg:pt-9">${[head, needsCard(it), desc,
     files.length ? `<div class="flex items-end gap-2 overflow-x-auto lg:scrollbar-thin">${thumbs(files, 'item' + n, 'h-24 w-16')}</div>` : '', docs, subs, talk].filter(Boolean).join('')}</div>`;
 }
@@ -3970,7 +3987,7 @@ function stashEdit() {
   const n = U.editing, it = n && byN.get(n);
   if (!it || !$('eTitle')) return;
   const d = {title: $('eTitle').value, body: $('eBody').value, next: $('eNext').value};
-  if (d.title !== it.title || d.body !== it.body || d.next !== (it.next || '')) { U.editDrafts[n] = d; toast(`Your changes to ${code(n)} are kept: press I to go on`); }
+  if (d.title !== it.title || d.body !== it.body || d.next !== (it.next || '')) { U.editDrafts[n] = d; toast(`Your changes to ${code(n)} are kept: ${desk() ? 'press I' : 'Edit'} to go on`); }
   else delete U.editDrafts[n];
 }
 function keepEdit() {
@@ -4056,7 +4073,8 @@ function inputState(r) {  // -> [label, tone, icon]
   if (S.org.busy === r.id) return ['Organizing…', 'text-blue-600 dark:text-blue-400', '<span class="size-1.5 animate-pulse rounded-full bg-blue-500 dark:bg-blue-400"></span>'];
   if (r.org && !r.org.ok) return ['Organizer failed', 'text-red-600 dark:text-red-400', ico('alert', 'size-3.5', '2')];
   if (r.org?.undone) return ['Undone', 'text-zinc-500 dark:text-zinc-400', ico('undo', 'size-3.5', '2')];
-  if (r.acked) return r.org?.keep ? ['Handled by your agent', 'text-zinc-400 dark:text-zinc-500', ico('check', 'size-3.5', '2.25')] : ['Organized', 'text-emerald-700 dark:text-emerald-400', ico('check', 'size-3.5', '2.25')];
+  if (r.acked) return r.org?.keep ? ['Handled by your agent', 'text-zinc-400 dark:text-zinc-500', ico('check', 'size-3.5', '2.25')]
+    : !r.org && !r.touched.length ? ['Seen by your agent', 'text-zinc-500 dark:text-zinc-400', ico('check', 'size-3.5', '2.25')] : ['Organized', 'text-emerald-700 dark:text-emerald-400', ico('check', 'size-3.5', '2.25')];
   if (r.org) return ['Left for your agent', 'text-zinc-600 dark:text-zinc-300', ico('arrow', 'size-3.5', '2')];
   return [S.org.on ? 'Queued' : 'Waiting for your agent', 'text-zinc-600 dark:text-zinc-300', ico('hourglass', 'size-3.5', '2')];
 }
@@ -4080,7 +4098,7 @@ function renderInputs() {
     const acts = r.moved ? `<a href="/p/${encodeURIComponent(r.moved.to)}/" class="${LINK_BTN}">${ico('arrow', 'size-3.5', '2')}Open ${esc(r.moved.to)} · ${esc(r.moved.as)}</a>` : (!r.acked && S.org.on && r.org && (!r.org.ok || r.org.undone) ? `<button data-act="retry" data-id="${r.id}" class="${LINK_BTN}">${ico('loop', 'size-3.5', '2')}${r.org.undone ? 'Organize again' : 'Retry'}</button>` : '')
       + (canUndoInput(r) ? `<button data-act="undo" data-id="${r.id}" class="${LINK_BTN} text-zinc-600 dark:text-zinc-300">${ico('undo', 'size-3.5', '2')}Undo</button>` : '')
       + (!r.acked && !r.scope && !(S.org.on && !r.org) && S.org.busy !== r.id ? `<button data-act="make-item" data-id="${r.id}" class="${LINK_BTN}">${ico('plus', 'size-3.5', '2')}Make item</button>` : '')
-      + (otherProjects().length && S.org.busy !== r.id ? `<button data-act="move-input" data-id="${r.id}" class="${LINK_BTN} text-zinc-600 dark:text-zinc-300">${ico('arrow', 'size-3.5', '2')}Move…</button>` : '') + inputActions(r);
+      + (otherProjects().length && S.org.busy !== r.id ? `<button data-act="move-input" data-id="${r.id}" class="${LINK_BTN} text-zinc-600 dark:text-zinc-300">${ico('arrow', 'size-3.5', '2')}Move to…</button>` : '') + inputActions(r);
     // On the desktop each input is a ledger line: what you said on the left, what became of it on the right.
     return `${head}<article data-r="${r.id}" class="border-b border-zinc-100 px-4 py-2 transition-colors duration-700 lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-10 lg:px-0 lg:py-4 dark:border-zinc-800/70"><div class="min-w-0">
       <div class="flex min-h-5 items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400"><span class="font-mono">${r.id}</span><span>${when(r.t)}</span>${r.from === 'rules' ? '<span class="font-medium">as a rule</span>' : ''}
@@ -4147,7 +4165,7 @@ const ticked = n => n && U.choice?.n === n && U.choice.picked.size ? [...U.choic
 function renderComposer() {
   if (S.project && draftKey() !== U.draftKey) swapDraft(draftKey());
   const n = scopeN(), it = n && byN.get(n), dt = docTarget(), t = $('text'), ticks = U.correct || U.amend || dt ? [] : ticked(n);
-  let line = '', ph = !desk() || !S.project ? 'Write anything…' : `Write to ${S.project}…`, send = 'Send';
+  let line = '', ph = S.project ? `Write to ${S.project}…` : 'Write anything…', send = 'Send';  // the box says whom it writes to, on the phone too (B157)
   if (U.correct && byR.has(U.correct.id)) {  // F144: correcting a few words of a voice note
     line = scopeLine('pencil', `Correct “${esc(U.correct.wrong)}”`, `in ${U.correct.id} · remembered for every project`, scopeX('correct-cancel', 'Stop correcting'));
     ph = `The right words for “${U.correct.wrong}”…`; send = 'Save';
@@ -4156,17 +4174,17 @@ function renderComposer() {
     line = scopeLine(edit ? 'pencil' : 'listplus', `${edit ? 'Edit' : 'Add details to'} ${r.id}`, `“${esc(oneLine(r.text).slice(0, 120))}”`, scopeX('amend-cancel', edit ? 'Stop editing' : 'Stop adding details'));
     ph = edit ? `Edit ${r.id}…` : `Add details to ${r.id}…`; send = 'Save';
   } else if (dt) {  // I087: a comment on a document
-    line = scopeLine(dt.reply ? 'reply' : 'comment', `${dt.reply ? 'Reply in' : 'Comment on'} D${dt.d.d}`, dt.many > 1 ? `· ${dt.many} paragraphs` : dt.quote ? `“${esc(oneLine(dt.quote).slice(0, 120))}”` : '', scopeX('doc-unpick', 'Cancel the comment'));
+    line = scopeLine(dt.reply ? 'reply' : 'comment', `${dt.reply ? 'Reply in' : 'Comment on'} D${dt.d.d}`, dt.many > 1 ? `· ${dt.many} paragraphs` : dt.quote ? `“${esc(plainQuote(dt.quote).slice(0, 120))}”` : '', scopeX('doc-unpick', 'Cancel the comment'));
     ph = `${dt.reply ? 'Reply' : 'Comment'} on D${dt.d.d}…`; send = dt.reply ? 'Reply' : 'Comment';
   } else if (n) {  // B83: a reply says so; the choices you ticked go with it (B145)
-    line = scopeLine(desk() ? 'reply' : 'scope', `${desk() || it.wait ? 'Reply to' : 'Adding to'} ${code(n)}`, ticks.length ? ticks.map(l => '✓ ' + esc(oneLine(l))).join(' · ') : esc(it.title),
+    line = scopeLine(desk() ? 'reply' : 'scope', `Reply to ${code(n)}`, ticks.length ? ticks.map(l => '✓ ' + esc(oneLine(l))).join(' · ') : esc(it.title),  // one name for it, as on the desktop (B157)
       desk() ? scopeLink('new-input', 'New input instead', 'C', 'Write a new input to the whole project instead · C') : scopeX('unscope', 'Send to the whole project instead'));
-    if (desk()) ph = `Reply to ${code(n)}…`;
+    ph = `Reply to ${code(n)}…`;
     if (U.ask === n) ph = `What is missing in ${code(n)}?`;  // after Not yet (B153)
     if (ticks.length) send = 'Send answer';
   } else if (ruleMode()) {
     line = scopeLine('scope', 'New rule for this project', '', ruleFlip());  // the phone has the switch too (B156)
-    if (desk() && S.project) ph = `New rule for ${S.project}…`;
+    if (S.project) ph = `New rule for ${S.project}…`;
   } else if (desk()) line = scopeLine('inbox', 'New input', `· ${S.org?.on ? 'the organizer files it' : 'your agent files it'}`,
     ruleFlip() + (U.open && detailShown() ? scopeLink('reply', `Add to ${code(U.open)} instead`, 'R') : ''));
   else if (U.tab === 'rules') line = scopeLine('inbox', 'New input', '· not a rule', ruleFlip());
@@ -4243,14 +4261,14 @@ function renderFeedback() {
   }
   if (!r) return;
   let html;
-  const move = otherProjects().length ? link('move-input', 'Move…', `data-id="${r.id}"`) : '';  // sent to the wrong project? (F79)
+  const move = otherProjects().length ? link('move-input', 'Move to…', `data-id="${r.id}"`) : '';  // sent to the wrong project? (F79)
   if (r.moved) html = `${ico('arrow', 'size-4 text-zinc-500', '2')}<span class="min-w-0 flex-1 truncate">Moved ${r.id} to ${esc(r.moved.to)} as ${esc(r.moved.as)}</span><a href="/p/${encodeURIComponent(r.moved.to)}/" class="-my-2 flex h-11 shrink-0 items-center rounded-full px-2 font-semibold text-blue-600 dark:text-blue-400">Open</a>`;
-  else if (r.tr_wait) html = `<span class="size-2 shrink-0 animate-pulse rounded-full bg-blue-500 dark:bg-blue-400"></span><span class="min-w-0 flex-1 truncate">Got ${r.id}. Its voice note's words come next…</span>`;  // sent before they were in (B165)
-  else if (S.org.busy === r.id || (!r.acked && S.org.on && !r.org)) html = `<span class="size-2 shrink-0 animate-pulse rounded-full bg-blue-500 dark:bg-blue-400"></span><span class="min-w-0 flex-1 truncate">Got ${r.id}, organizing…</span>`;
+  else if (r.tr_wait) html = `<span class="size-2 shrink-0 animate-pulse rounded-full bg-blue-500 dark:bg-blue-400"></span><span class="min-w-0 flex-1 truncate">Sent. Its voice note's words come next…</span>`;  // sent before they were in (B165)
+  else if (S.org.busy === r.id || (!r.acked && S.org.on && !r.org)) html = `<span class="size-2 shrink-0 animate-pulse rounded-full bg-blue-500 dark:bg-blue-400"></span><span class="min-w-0 flex-1 truncate">Sent, organizing…</span>`;
   else if (r.org && !r.org.ok) html = `${ico('alert', 'size-4 text-red-600 dark:text-red-400', '2')}<span class="min-w-0 flex-1 truncate text-red-600 dark:text-red-400">Organizer failed: ${esc(r.org.msg)}</span>${link('retry', 'Retry', `data-id="${r.id}"`)}`;
   else if (r.org?.undone) html = `<span class="min-w-0 flex-1 truncate">Undid the changes for ${r.id}</span>`;
-  else if (r.acked) html = `<span class="grid size-4 shrink-0 place-items-center rounded-full bg-emerald-500 text-white dark:bg-emerald-400 dark:text-emerald-950">${ico('check', 'size-3', '3')}</span><span class="min-w-0 flex-1 truncate">${esc(r.org?.msg || 'Organized')}</span>${r.touched.length ? link('goto', 'View', `data-n="${r.touched[0]}"`) : ''}${r.org && r.org.ok && !r.org.undone && !r.org.keep && r.touched.length ? link('undo', 'Undo', `data-id="${r.id}"`) : ''}${move}`;
-  else html = `<span class="size-2 shrink-0 rounded-full bg-zinc-400"></span><span class="min-w-0 flex-1 truncate">Got ${r.id}. ${r.org ? 'Left for your coding agent' : 'Waiting for your coding agent'}</span>${move}`;
+  else if (r.acked) html = `<span class="grid size-4 shrink-0 place-items-center rounded-full bg-emerald-500 text-white dark:bg-emerald-400 dark:text-emerald-950">${ico('check', 'size-3', '3')}</span><span class="min-w-0 flex-1 truncate">${esc(r.org?.msg || (r.touched.length ? 'Organized' : 'Seen by your agent, no item made'))}</span>${r.touched.length ? link('goto', 'View', `data-n="${r.touched[0]}"`) : ''}${r.org && r.org.ok && !r.org.undone && !r.org.keep && r.touched.length ? link('undo', 'Undo', `data-id="${r.id}"`) : ''}${move}`;
+  else html = `<span class="size-2 shrink-0 rounded-full bg-zinc-400"></span><span class="min-w-0 flex-1 truncate">Sent. ${r.org ? 'Left for your coding agent' : 'Waiting for your coding agent'}</span>${move}`;
   const final = r.acked || (r.org && r.org.ok) || r.moved;
   clearTimeout(renderFeedback.t);
   if (final) renderFeedback.t = setTimeout(() => { if (U.lastSent === r.id) { U.lastSent = null; renderFeedback(); } }, 6000);
@@ -4743,7 +4761,7 @@ async function showLog() {  // with its own address on the phone (/log), a step 
 function showSources(n) {
   const it = byN.get(n);
   dialog(`Sources of ${code(n)}`, `<div class="flex flex-col gap-4">${it.srcs.map(id => byR.get(id)).filter(Boolean).map(r => `<div>
-      <div class="px-1 text-xs text-zinc-500 dark:text-zinc-400"><button data-act="go-input" data-id="${r.id}" class="font-mono text-blue-600 hover:underline dark:text-blue-400">${r.id}</button> · ${when(r.t)} · ${esc(who(r.by))}</div>
+      <div class="px-1 text-xs text-zinc-500 dark:text-zinc-400"><button data-act="go-input" data-id="${r.id}" class="font-mono text-blue-600 hover:underline dark:text-blue-400">${r.id}</button> · ${when(r.t)} · ${esc(whoName(r.by))}</div>
       <div class="mt-1.5 rounded-2xl rounded-tr-md bg-blue-50 px-3.5 py-2 text-[15px] leading-relaxed dark:bg-blue-400/10">${r.text ? rich(r.text, 'src' + r.id) : ''}
       ${r.files.length ? `<div class="mt-2 flex items-end gap-2 overflow-x-auto lg:scrollbar-thin">${thumbs(r.files, 'src' + r.id)}</div>` : ''}</div>
       ${r.org ? `<div class="mt-1.5 flex items-center gap-1 px-1 text-xs text-zinc-500 dark:text-zinc-400">${ico('sparkle', 'size-3.5')}${esc(r.org.msg)}</div>` : ''}</div>`).join('') || '<p class="text-sm text-zinc-500">No sources.</p>'}</div>`);
@@ -4908,7 +4926,7 @@ function setTab(t) {
 }
 const tabScroll = t => t === 'inputs' ? $('inputsView') : $('list');
 
-const SAID = {open: 'is open', doing: 'is in progress', done: 'is done', dropped: "is marked won't do", later: 'moved to Later', now: 'moved to Now', review: 'is in review', proposed: 'is proposed'};
+const SAID = {open: 'is open', doing: 'is in progress', done: 'is done', dropped: "is marked won't do", later: 'moved to Later', now: 'is back to now', review: 'is in review', proposed: 'is proposed'};
 // One-tap changes (swipes, row pills, the focus card) say what happened and offer Undo, which puts the old value back.
 async function change(n, f, v) {
   const before = byN.get(n)?.[f];
@@ -5058,7 +5076,7 @@ const ACT = {
   'agent-info': () => desk() ? openProject('agents') : dialog('Agents', agentsHtml()),
   phone: () => { if (desk()) return openProject('phone'); closeDrawer(); showPhone(); },
   'new-key': async b => {
-    if (!confirmClick(b, 'Click again: other devices will need the new link')) return;
+    if (!confirmClick(b, `${desk() ? 'Click' : 'Tap'} again: other devices will need the new link`)) return;
     try { await fetch('/api/key', {method: 'POST'}); await load(); if (desk()) renderProject(); else showPhone(); toast('New key made'); } catch (_) { toast('Not saved'); }
   },
   log: () => { if (desk()) return openProject('log'); closeDrawer(); showLog(); },
@@ -5190,7 +5208,7 @@ const ACT = {
     try {
       const d = await op({op: 'new', title, body, src: r.id});
       const n = Number((d.res[0].match(/[A-Z](\d+) new/) || [])[1]);
-      if (n) { ACT.goto({dataset: {n: String(n)}}); toast(`${code(n)} made from ${r.id}. Set its type and priority.`); }
+      if (n) { ACT.goto({dataset: {n: String(n)}}); if (!desk()) itemMenu(n); toast(`${code(n)} made from ${r.id}. Set its type and priority${desk() ? '' : ' here'}.`); }
     } catch (_) {}
   },
   'archive-all': async () => {  // no question first: it happens at once, and Undo stays in the same spot for 3 seconds
@@ -5281,7 +5299,7 @@ const ACT = {
   },
   'undo-mine': () => undoMine(),
   revert: async b => {
-    if (!confirmClick(b, 'Click again to undo')) return;  // B127: an older change goes back only on a second click
+    if (!confirmClick(b, `${desk() ? 'Click' : 'Tap'} again to undo`)) return;  // B127: an older change goes back only on a second click
     const u = (S.undo || []).find(u => u.seq === Number(b.dataset.seq));
     try { await revert(Number(b.dataset.seq)); } catch (_) { return; }
     D.undo = null; toast(`Undid: ${u ? undoLabel(u) : 'the change'}`); renderDrawerSettings();
@@ -5464,7 +5482,7 @@ function saidRow(r, k, last) {
     : (busy ? '<span class="h-7 w-44 animate-pulse rounded-lg bg-zinc-100 dark:bg-zinc-800"></span>' : '')
       + (r.org?.undone && !r.acked ? `<button data-act="retry" data-id="${r.id}" class="${SMALL_BTN}">${ico('loop', 'size-3.5', '2')}Organize again</button>` : '')
       + (!r.acked && !r.scope && !(S.org.on && !r.org) && !busy ? `<button data-act="make-item" data-id="${r.id}" class="${SMALL_BTN} text-blue-600 dark:text-blue-400">${ico('plus', 'size-3.5', '2')}Make item</button>` : '')
-      + `<span class="ml-auto flex items-center ${later}">${canUndoInput(r) ? `<button data-act="undo" data-id="${r.id}" title="Undo what the organizer did with ${r.id}" class="${SMALL_BTN}">${ico('undo', 'size-3.5', '2')}Undo</button>` : ''}${otherProjects().length && !busy ? `<button data-act="move-input" data-id="${r.id}" title="Sent to the wrong project? Move it" class="${SMALL_BTN}">${ico('arrow', 'size-3.5', '2')}Move…</button>` : ''}</span>`;
+      + `<span class="ml-auto flex items-center ${later}">${canUndoInput(r) ? `<button data-act="undo" data-id="${r.id}" title="Undo what the organizer did with ${r.id}" class="${SMALL_BTN}">${ico('undo', 'size-3.5', '2')}Undo</button>` : ''}${otherProjects().length && !busy ? `<button data-act="move-input" data-id="${r.id}" title="Sent to the wrong project? Move it" class="${SMALL_BTN}">${ico('arrow', 'size-3.5', '2')}Move to…</button>` : ''}</span>`;
   return saidStep(DOT[dotOf(r)], bubble, `<span class="font-mono">${r.id}</span> · ${when(r.t)}${r.from === 'rules' ? ' · as a rule' : ''}`, `<span class="mr-1 text-[13px] font-semibold ${tone}">${label}</span>${chips}${inputActions(r, SMALL_BTN)}${acts}`, last, `data-expand data-id="${r.id}" ${voiceAttr(r)}`);
 }
 function outboxStep(q, last) {  // still on its way (F85)
