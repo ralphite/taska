@@ -3247,6 +3247,14 @@ function toast(text, act, {error = false, label = 'Undo', ms = 0} = {}) {  // ms
   el.toggleAttribute('data-error', error); el.setAttribute('role', error ? 'alert' : 'status');
   el.innerHTML = `${error ? ico('alert', 'size-4', '2') : ''}<span class="line-clamp-2 min-w-0 leading-snug">${esc(text)}</span>${act ?`<button class="relative h-8 shrink-0 rounded-full px-3 text-sm font-semibold after:absolute after:-inset-1.5 ${error ? 'bg-white/20 text-white hover:bg-white/30' : 'bg-white/15 text-white hover:bg-white/25 dark:bg-zinc-900/10 dark:text-zinc-900 dark:hover:bg-zinc-900/20'}">${label}</button>` : ''}`;
   el.classList.toggle('pointer-events-none', !act);
+  placeToast(el);
+  if (act) el.querySelector('button').onclick = () => { el.hidden = true; act(); };
+  el.hidden = false;
+  clearTimeout(toast.t); toast.t = setTimeout(() => { el.hidden = true; if (error) SAVE.failed = []; }, ms || (error ? 8000 : act ? 5000 : 2600));
+}
+// Where the toast shows. On the phone it moves when a sheet opens or closes under it, so it never sits on the
+// sheet's buttons (a Restore right after a Delete).
+function placeToast(el = $('toast')) {
   const up = !$('overlay').hidden && !desk();  // a sheet or the focus card is open: say it at the top, clear of its buttons
   el.classList.toggle('bottom-28', !up); el.classList.toggle('top-[calc(env(safe-area-inset-top)+0.75rem)]', up);
   if (desk()) {  // B129: on the desktop it shows in the pane you acted in, above the box if the box is there
@@ -3259,9 +3267,6 @@ function toast(text, act, {error = false, label = 'Undo', ms = 0} = {}) {  // ms
     const bar = $('overlay').hidden ? !$('foot').hidden && $('foot') : !$('dlgFoot').hidden && $('dlgFoot').offsetHeight && $('dlgFoot');
     if (bar) { el.style.bottom = `${Math.round(innerHeight - bar.getBoundingClientRect().top + 8)}px`; el.classList.remove('bottom-28', 'top-[calc(env(safe-area-inset-top)+0.75rem)]'); }
   }
-  if (act) el.querySelector('button').onclick = () => { el.hidden = true; act(); };
-  el.hidden = false;
-  clearTimeout(toast.t); toast.t = setTimeout(() => { el.hidden = true; if (error) SAVE.failed = []; }, ms || (error ? 8000 : act ? 5000 : 2600));
 }
 
 async function copy(text, done = 'Copied') {
@@ -4591,7 +4596,7 @@ function voiceWhy() {  // why the mic can't record here, in the line above the b
 // the box is empty, Send as soon as there is something to send, ✓ while recording (stop, the words go into the
 // box). The quiet button next to it does the other thing: the mic while you write, send-at-once while recording.
 // On the desktop one line under the box says what the keys do right now.
-const scopeLink = (act, text, key = '', title = '') => `<button data-act="${act}" ${title ? `title="${title}"` : ''} class="-my-1 flex h-8 shrink-0 items-center rounded-full px-2 text-[13px] font-medium text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200">${text}${key ? KBD(key) : ''}</button>`;
+const scopeLink = (act, text, key = '', title = '') => `<button data-act="${act}" ${title ? `title="${title}"` : ''} class="${HIT} -my-1 flex h-8 shrink-0 items-center rounded-full px-2 text-[13px] font-medium text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200">${text}${key ? KBD(key) : ''}</button>`;
 const scopeX = (act, label) => `<button data-act="${act}" aria-label="${label}" title="${label} · Esc" class="-my-1.5 grid size-11 shrink-0 place-items-center rounded-full text-zinc-400 hover:text-zinc-800 lg:size-8 lg:hover:bg-zinc-100 dark:text-zinc-500 dark:hover:text-zinc-200 dark:lg:hover:bg-zinc-800">${ico('x', 'size-4')}</button>`;
 function scopeLine(icon, label, detail, right = '') {  // on the desktop it starts with the project (B78): "[M] my-app ›"
   const proj = desk() && S.project ? `<span class="mr-0.5 flex shrink-0 items-center gap-1.5 font-semibold text-zinc-800 dark:text-zinc-100">${projTile(S.project, 'size-[18px] rounded-[5px] text-[10px]')}<span class="max-w-40 truncate">${esc(S.project)}</span><span class="font-normal text-zinc-300 dark:text-zinc-600">›</span></span>` : '';
@@ -5082,6 +5087,7 @@ function dialog(title, html, {aboveComposer = false, focus = true, tall = false,
   $('dlgBody').classList.toggle('pb-[max(1.25rem,env(safe-area-inset-bottom))]', !foot); $('dlgBody').classList.toggle('pb-3', !!foot);
   if ($('overlay').hidden && !U.doc && U.sheet !== 'log') layerOpen('sheet');  // one step Back closes it (B150); a document and the log have their own address
   $('dlgBody').innerHTML = html; $('overlay').hidden = false;
+  if (!desk() && !$('toast').hidden) placeToast();
   for (const c of ['h-[88dvh]', 'sm:h-[85dvh]']) $('dlg').classList.toggle(c, tall);  // documents get the whole screen
   for (const c of ['rounded-3xl', 'shadow-2xl', 'overflow-hidden', 'max-h-[92%]']) $('dlg').classList.toggle(c, card);
   for (const c of ['rounded-t-3xl', 'max-h-[88dvh]']) $('dlg').classList.toggle(c, !card);
@@ -5120,6 +5126,7 @@ const closeDialog = () => {
   const hadDoc = U.doc, sheet = !$('overlay').hidden && !hadDoc, log = U.sheet === 'log';
   U.doc = null; U.docNew = null; U.docEdit = false; U.sheet = null; U.go = null; U.docReply = null;
   $('overlay').hidden = true; $('overlay').style.bottom = '';
+  if (!$('toast').hidden) placeToast();
   if (U.peek) { U.peek = null; renderComposer(); }
   else if (hadDoc) { renderComposer(); if (!leaveView(`D${hadDoc}`)) writeURL(false); }  // the box goes back to the item or the project
   if (sheet && !LAY.keep) { if (log) { if (!leaveView('log')) writeURL(false); } else layerShut('sheet'); }  // its step in the history goes too (B150)
