@@ -4918,10 +4918,16 @@ async function send() {
   outboxPush({text, files: U.files, scope: n ? code(n) : null, from: !n && ruleMode() ? 'rules' : null});
   $('text').value = ''; U.files = []; saveDraft(); grow();
   if (U.ask === n) U.ask = null;
-  if (U.peek && n === U.peek) advance(U.peek, `Sent to ${code(n)}`);  // going through: your reply settles this one; a card of one item closes (B153); the toast says where it went (B155)
+  // Going through what needs you, your reply settles this one (B118), but the box stays on it (A2, B146): what you write
+  // next still goes here. Next (⇧J, or Next on the card) is yours to press. A card of one item closes (B153).
+  const going = U.go && n && U.go.list.includes(n) && (n === U.peek || (desk() && n === U.open));
+  if (going) {
+    U.go.done.add(n); if (U.go.how) U.go.how[n] = 'Replied';
+    toast(`Sent to ${code(n)}. ${desk() ? 'Esc, then ⇧J for the next one' : 'Next when you are ready'}`);
+    if (U.peek) peek(U.peek, {focus: false});
+  } else if (U.peek && n === U.peek) advance(U.peek, `Sent to ${code(n)}`);  // the toast says where it went (B155)
   else if (!desk() && !n && U.tab === 'inputs' && !U.open) $('inputsView').scrollTop = 0;  // it shows at the top of Inputs (B155)
-  else if (desk() && U.go && U.open && !U.scopeOff && U.go.list.includes(U.open)) { $('text').blur(); advanceDesk(U.open, 'Replied'); }  // B118
-  else if (desk()) $('text').focus({preventScroll: true});  // A1: sent from the button, the box is where you go on writing, not the keys
+  if (desk()) $('text').focus({preventScroll: true});  // A1: sent from the button, the box is where you go on writing, not the keys
   render(); flushOutbox();
   if (desk() && D.compose) $('foot').scrollTop = 0;
   else if (desk() && n && n === U.open && !U.go) requestAnimationFrame(() => { $('detailBody').scrollTop = $('detailBody').scrollHeight; });  // B124
@@ -6285,7 +6291,7 @@ function renderGoStrip() {
   const b = (act, label, key) => `<button data-act="${act}" class="flex h-8 items-center gap-1 rounded-lg px-2 font-medium text-zinc-700 hover:bg-amber-100 dark:text-zinc-200 dark:hover:bg-amber-400/15">${label}${KBD(key)}</button>`;
   el.innerHTML = `<span class="text-xs font-bold tracking-wide text-amber-700 uppercase dark:text-amber-400">Needs you</span><span class="text-xs text-zinc-500 tabular-nums dark:text-zinc-400">${i < 0 ? '–' : i + 1} of ${g.list.length}</span>
     <span class="flex w-40 gap-1">${g.list.map(k => `<span class="h-1 flex-1 rounded-full ${k === U.open ? 'bg-amber-500 dark:bg-amber-400' : g.done.has(k) ? 'bg-emerald-500 dark:bg-emerald-400' : 'bg-zinc-200 dark:bg-zinc-700'}"></span>`).join('')}</span>
-    <span class="ml-auto flex items-center gap-0.5">${b('go-prev', 'Previous', '⇧K')}${b('go-next', 'Skip', '⇧J')}${b('go-end', 'End', 'Esc')}</span>`;
+    <span class="ml-auto flex items-center gap-0.5">${b('go-prev', 'Previous', '⇧K')}${b('go-next', g.done.has(U.open) ? 'Next' : 'Skip', '⇧J')}${b('go-end', 'End', 'Esc')}</span>`;
 }
 function settledRow(it) {
   const how = U.go.how[it.n] || 'Done';
