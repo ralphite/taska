@@ -2597,6 +2597,8 @@ INDEX = r'''<!doctype html>
   <h2 class="px-3 pb-1.5 text-xs font-semibold text-zinc-500 dark:text-zinc-400">Projects</h2>
   <ul id="list" class="flex flex-col gap-0.5"><li class="px-3 py-3 text-sm text-zinc-500">Loading…</li></ul>
   <button id="new" class="mt-1 flex h-12 w-full items-center gap-3 rounded-2xl px-3 text-[15px] font-medium text-blue-600 dark:text-blue-400"><svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>New project</button>
+  <div id="npRow" hidden class="mt-1 px-1"><div class="flex items-center gap-1.5"><input id="npName" class="h-11 w-full min-w-0 flex-1 rounded-xl border border-zinc-200 bg-white px-3 text-base outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-950" placeholder="Project name: a-z, 0-9, -" aria-label="New project name" autocomplete="off" autocapitalize="none" spellcheck="false"><button id="npCreate" class="h-11 shrink-0 rounded-xl bg-zinc-900 px-4 text-[15px] font-semibold text-white dark:bg-zinc-100 dark:text-zinc-900">Create</button><button id="npCancel" aria-label="Cancel" class="grid size-11 shrink-0 place-items-center rounded-xl text-zinc-500"><svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
+    <p id="npErr" hidden role="alert" class="px-2 pt-1.5 text-[13px] text-red-600 dark:text-red-400"></p></div>
 </main>
 <script>
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'})[c]);
@@ -2622,12 +2624,22 @@ async function load() {
     ${p.needs ? `<span class="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900 dark:bg-amber-400/15 dark:text-amber-200">${p.needs} need you</span>` : ''}
     <svg class="size-4 shrink-0 text-zinc-300 dark:text-zinc-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></li>`).join('');
 }
-document.getElementById('new').addEventListener('click', async () => {
-  const name = (prompt('Project name (a-z, 0-9 and -):') || '').trim().toLowerCase();
-  if (!name) return;
-  const d = await (await fetch('/api/projects', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name})})).json();
-  if (d.ok) location.href = `/p/${d.name}/`; else alert(d.error || 'Not created');
-});
+// New project: the button becomes a name field in place, as in a project's menu (B131, B156); Enter or Create makes it,
+// × or Esc stops, and a name Taska refuses says why under the field. No browser dialog.
+const $ = id => document.getElementById(id);
+const npShow = on => { $('new').hidden = on; $('npRow').hidden = !on; $('npErr').hidden = true; if (on) $('npName').focus(); else $('npName').value = ''; };
+async function npCreate() {
+  const name = $('npName').value.trim().toLowerCase();
+  if (!name) return $('npName').focus();
+  try {
+    const d = await (await fetch('/api/projects', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name})})).json();
+    if (d.ok) location.href = `/p/${d.name}/`; else { $('npErr').textContent = d.error || 'Not created'; $('npErr').hidden = false; }
+  } catch (_) { $('npErr').textContent = 'Connection lost; try again'; $('npErr').hidden = false; }
+}
+$('new').addEventListener('click', () => npShow(true));
+$('npCancel').addEventListener('click', () => npShow(false));
+$('npCreate').addEventListener('click', npCreate);
+$('npName').addEventListener('keydown', e => { if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); npCreate(); } if (e.key === 'Escape') npShow(false); });
 load();
 addEventListener('pageshow', e => { if (e.persisted) load(); });  // back from a project: fresh counts
 </script>
@@ -3796,6 +3808,7 @@ function detailHtml(it) {
 
 function renderDetail() {
   settleOpen();  // B5: never a merged item, whichever way it came back (a tab's last item, a document's item)
+  if (!desk()) $('foot').hidden = !!(U.editing && U.editing === U.open);  // editing an item: its form is the one place to type, the box steps aside (B156)
   const it = U.open && byN.get(U.open), body = $('detailBody');
   if (desk()) renderGoStrip();
   if (desk() && U.doc && !U.docEdit && docById(U.doc)) return docPane(docById(U.doc));
@@ -3838,7 +3851,7 @@ function itemMenu(n) {
   const statuses = it.type === 'rule' ? Object.entries(RULE_STATUS).filter(([v]) => v !== 'proposed' || it.status === 'proposed') : Object.entries(STATUS);
   dialog('', `<div class="flex flex-col gap-5">
     <div class="grid grid-cols-3 gap-2">${tile('edit', 'pencil', 'Edit')}${tile('copy', 'copy', 'Copy for agent')}${tile('doc-new', 'docplus', 'New doc')}
-      ${tile('sub-new', 'listplus', 'Add subitem')}${tile('reparent', 'indent', 'Move…', it.parent ? `now under ${code(it.parent)}` : '')}${state}</div>
+      ${tile('sub-new', 'listplus', 'Add subitem')}${tile('reparent', 'indent', 'Move under…', it.parent ? `now under ${code(it.parent)}` : '')}${state}</div>
     <div>${lab('Type')}${segctl('set-field', 'type', [...TYPES, 'rule'].map(t => [t, letterOf(t) + `<span class="truncate">${t[0].toUpperCase() + t.slice(1)}</span>`]), it.type).replaceAll('data-k="type"', `data-f="type" data-n="${n}"`)}</div>
     ${it.type === 'rule' ? '' : `<div>${lab('Priority')}${segctl('set-field', 'pri', ['P0', 'P1', 'P2', 'P3'].map(p => [p, p === 'P0' ? '<span class="font-semibold text-red-600 dark:text-red-400">P0</span>' : p]), it.pri).replaceAll('data-k="pri"', `data-f="pri" data-n="${n}"`)}</div>`}
     <div>${lab('Status')}<div class="grid grid-cols-3 gap-1.5">${statuses.map(stat).join('')}</div></div>
@@ -4152,10 +4165,11 @@ function renderComposer() {
     if (U.ask === n) ph = `What is missing in ${code(n)}?`;  // after Not yet (B153)
     if (ticks.length) send = 'Send answer';
   } else if (ruleMode()) {
-    line = scopeLine('scope', 'New rule for this project', '', desk() ? ruleFlip() : '');
+    line = scopeLine('scope', 'New rule for this project', '', ruleFlip());  // the phone has the switch too (B156)
     if (desk() && S.project) ph = `New rule for ${S.project}…`;
   } else if (desk()) line = scopeLine('inbox', 'New input', `· ${S.org?.on ? 'the organizer files it' : 'your agent files it'}`,
     ruleFlip() + (U.open && detailShown() ? scopeLink('reply', `Add to ${code(U.open)} instead`, 'R') : ''));
+  else if (U.tab === 'rules') line = scopeLine('inbox', 'New input', '· not a rule', ruleFlip());
   $('scope').hidden = !line; $('scope').innerHTML = line; t.placeholder = ph;
   const d = $('drafts');
   d.hidden = !U.files.length;
@@ -5166,13 +5180,9 @@ const ACT = {
     closeDialog();
     try { await op({op: 'set', ref: code(n), f: {parent: to}}); toast(to !== 'none' ? `${code(n)} is now under ${to}` : `${code(n)} stands on its own`); } catch (_) {}
   },
-  reparent: async b => {
-    if (desk()) { closeDialog(); return movePicker(Number(b.dataset.n)); }
-    const n = Number(b.dataset.n), it = byN.get(n);
-    closeDialog();
-    const to = prompt(`Put ${code(n)} under which item? Type its code${it.parent ? `, or leave empty to take it out of ${code(it.parent)}` : ''}.`, '');
-    if (to === null) return;
-    try { await op({op: 'set', ref: code(n), f: {parent: to.trim() || 'none'}}); toast(to.trim() ? `${code(n)} is now under ${to.trim().toUpperCase()}` : `${code(n)} stands on its own`); } catch (_) {}
+  reparent: b => {  // the phone picks from the same list as the desktop, in the menu's sheet: no typing a code (B156, R139)
+    if (desk()) closeDialog();
+    movePicker(Number(b.dataset.n));
   },
   'make-item': async b => {  // no organizer and no agent around: turn the input into an item yourself
     const r = byR.get(b.dataset.id), lines = r.text.trim().split('\n'), first = lines[0].trim();
@@ -5684,24 +5694,25 @@ function itemMenuDesk(n) {
     <div>${lab('Status', 'S')}<div class="grid grid-cols-3 gap-1">${statuses.map(stat).join('')}</div></div>
   </div>`, {pop: true, focus: false, head: `<span class="block truncate text-sm font-semibold"><span class="mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[it.type]}">${code(n)}</span>${esc(it.title)}</span>`});
 }
-// Move under… on the desktop: pick the parent from a list you can type into, instead of typing a code.
+// Move under…: pick the parent from a list you can type into, instead of typing a code. On the phone it is a sheet
+// with finger-sized rows, and the list shows before the keyboard does (B156).
 function movePicker(n) {
   const it = byN.get(n), below = new Set([n]);
   const walk = k => { for (const c of kids.get(k) || []) if (!below.has(c.n)) { below.add(c.n); walk(c.n); } };
   walk(n);
   U.sheet = 'move'; U.moveFor = n;
   dialog('', `<div class="flex flex-col gap-2"><input id="moveQ" class="${FIELD} lg:h-9 lg:py-0 lg:text-sm" placeholder="Put ${code(n)} under…" autocomplete="off">
-    <div id="moveList" class="-mx-1 max-h-80 overflow-y-auto lg:scrollbar-thin"></div></div>`, {pop: true, focus: false, head: `<span class="text-sm font-semibold">Move ${code(n)}</span>`});
+    <div id="moveList" class="-mx-1 max-h-[55dvh] overflow-y-auto lg:max-h-80 lg:scrollbar-thin"></div></div>`, {pop: true, focus: false, head: `<span class="text-[15px] font-semibold lg:text-sm">Move ${code(n)} under…</span>`});
   const draw = () => {
     const words = $('moveQ').value.trim().toLowerCase().split(/\s+/).filter(Boolean);
     const cands = S.items.filter(c => !below.has(c.n) && !c.merged_into && !c.archived && c.type !== 'rule' && words.every(w => hay(c).includes(w)))
       .sort((a, b) => CLOSED(a.status) - CLOSED(b.status) || a.n - b.n).slice(0, 40);  // open items first
-    $('moveList').innerHTML = cands.map(c => `<button data-act="move-to" data-n="${n}" data-to="${code(c.n)}" class="flex h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 ${c.n === it.parent ? 'bg-blue-50 dark:bg-blue-400/10' : ''}">${stateIcon(c.status, statusName(c), 'size-4')}<span class="font-mono text-xs font-bold ${TYPE_TEXT[c.type]}">${code(c.n)}</span><span class="min-w-0 flex-1 truncate">${esc(c.title)}</span></button>`).join('')
-      + `<button data-act="move-to" data-n="${n}" data-to="none" class="mt-1 flex h-9 w-full items-center gap-2.5 rounded-lg border-t border-zinc-100 px-2.5 text-left text-sm hover:bg-zinc-100 dark:border-zinc-800 dark:hover:bg-zinc-800">${ico(it.parent ? 'x' : 'check', 'size-4 text-zinc-500')}Stands on its own</button>`;
+    $('moveList').innerHTML = cands.map(c => `<button data-act="move-to" data-n="${n}" data-to="${code(c.n)}" class="flex h-12 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-[15px] hover:bg-zinc-100 lg:h-9 lg:text-sm dark:hover:bg-zinc-800 ${c.n === it.parent ? 'bg-blue-50 dark:bg-blue-400/10' : ''}">${stateIcon(c.status, statusName(c), 'size-4')}<span class="font-mono text-xs font-bold ${TYPE_TEXT[c.type]}">${code(c.n)}</span><span class="min-w-0 flex-1 truncate">${esc(c.title)}</span></button>`).join('')
+      + `<button data-act="move-to" data-n="${n}" data-to="none" class="mt-1 flex h-12 w-full items-center gap-2.5 rounded-lg border-t border-zinc-100 px-2.5 text-left text-[15px] hover:bg-zinc-100 lg:h-9 lg:text-sm dark:border-zinc-800 dark:hover:bg-zinc-800">${ico(it.parent ? 'x' : 'check', 'size-4 text-zinc-500')}Stands on its own</button>`;
   };
   draw();
   $('moveQ').addEventListener('input', draw);
-  $('moveQ').focus();
+  if (desk()) $('moveQ').focus();
 }
 
 const KEYS = [
