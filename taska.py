@@ -296,6 +296,14 @@ class Store:
                                 x["text"] = inp["text"] if seq == inp["seq"] else f"{inp['id']} updated:\n{inp['text']}"
         elif k == "undo":
             self.undo(e)
+        elif k == "unmake":  # "Make item" undone: the item goes, and its input waits for an agent again
+            it, inp = self.items.get(e["n"]), self.inputs.get(e["src"])
+            if it:
+                it.update(status="dropped", archived=True, t1=e["t"])
+            if inp and e["n"] in inp["touched"]:
+                inp["touched"].remove(e["n"])
+                if not inp["touched"]:
+                    inp["acked"] = False
         elif k == "moved":  # sent to the wrong project (F79): it lives on in e["to"] as e["as"]
             inp = self.inputs.get(e["src"])
             if inp:
@@ -323,6 +331,12 @@ class Store:
                 it["t1"] = e["t"]
         elif k == "dc":
             self.docs[e["d"]]["comments"].append({"id": e["seq"], "key": e["key"], "quote": e["quote"], "text": e["text"], "by": e["by"], "t": e["t"]})
+
+    def touched_since(self, n, seq):
+        """Did anything happen to item n after event `seq`: a change, a message, a reply, a subitem, a document?"""
+        docs = {d for d, x in self.docs.items() if x["n"] == n}
+        return any(e.get("n") == n or e.get("into") == n or e.get("scope") == n or e.get("parent") == n or e.get("d") in docs
+                   or (e.get("f") or {}).get("parent") == n for e in self.events[seq:])
 
     def undo(self, e):
         """Revert the organizer's changes for input e["src"]; fields changed again since stay as they are."""
@@ -853,6 +867,15 @@ class Store:
             self.emit({**e, **keep})
             ctx["last"] = e["n"]
             return f"ok {self.code(e['n'])} new" + (" (proposed: the user approves it before anyone works on it)" if e["status"] == "proposed" else ""), "Created " + self.code(e["n"])
+        if name == "unmake":  # undo "Make item" (T113 A7): the item goes (won't do, archived) and its input waits again
+            it = self.item(op.get("ref", ""), ctx, follow=False)
+            add = next((x for x in self.events if x["k"] == "add" and x["n"] == it["n"]), None)
+            if not add or add.get("by") != "you" or not add.get("src"):
+                raise Err(f"{self.code(it['n'])} was not made from an input")
+            if self.touched_since(it["n"], add["seq"]):
+                raise Err(f"{self.code(it['n'])} changed since it was made: set it to won't do instead")
+            self.emit({"k": "unmake", "n": it["n"], "src": add["src"], "by": by})
+            return f"ok {self.code(it['n'])} unmade", "Undid " + self.code(it["n"])
         it = self.item(op.get("ref", ""), ctx)
         code = self.code(it["n"])
         if name == "set":
@@ -1095,6 +1118,8 @@ class Store:
                 s = f"D{e['d']} comment {first_line(e['text'])!r}"
             elif k == "undo":
                 s = f"undo organizer changes for {e['src']}"
+            elif k == "unmake":
+                s = f"{self.code(e['n'])} unmade: {e['src']} waits again"
             elif k == "moved":
                 s = f"{e['src']} moved to {e['to']} as {e['as']}"
             elif k == "amend":
@@ -2948,6 +2973,7 @@ document.addEventListener('keydown', e => { if (desk() && !/INPUT|TEXTAREA/.test
 const SAVE = {q: Promise.resolve(), pend: [], failed: [], last: '', down: 0};  // saving behind you: see "saving" below
 function toast(text, act, {error = false, label = 'Undo'} = {}) {
   const el = $('toast');
+  if (act && label === 'Undo' && !act.entry) act = pushUndo(text, act);  // every Undo is also Z's, and runs once (T113 A7)
   if (!error) SAVE.failed = [];  // the red toast this one replaces takes its Retry along
   el.toggleAttribute('data-error', error); el.setAttribute('role', error ? 'alert' : 'status');
   el.innerHTML = `${error ? ico('alert', 'size-4', '2') : ''}<span class="min-w-0 truncate">${esc(text)}</span>${act ? `<button class="relative h-8 shrink-0 rounded-full px-3 text-sm font-semibold after:absolute after:-inset-1.5 ${error ? 'bg-white/20 text-white hover:bg-white/30' : 'bg-white/15 text-white hover:bg-white/25 dark:bg-zinc-900/10 dark:text-zinc-900 dark:hover:bg-zinc-900/20'}">${label}</button>` : ''}`;
@@ -5042,14 +5068,18 @@ function fitTabs() {
 }
 
 const SAID = {open: 'is open', doing: 'is in progress', done: 'is done', dropped: "is marked won't do", later: 'moved to Later', now: 'is back to now', review: 'is in review', proposed: 'is proposed'};
-// One-tap changes (swipes, row pills, the focus card, keys): they show at once and are saved behind you (T160), say
-// what happened and offer Undo, which puts the old value back. -> a promise: true once saved, false if it couldn't be.
-function change(n, f, v) {
+const saidOf = (f, v, before) => f === 'archived' ? (v ? 'archived' : 'unarchived') : f === 'status' && v === 'done' && before === 'review' ? 'accepted'
+  : f === 'status' && v === 'open' && before === 'proposed' ? 'approved' : f === 'pri' ? `is now ${v}` : f === 'type' ? `is now a ${v}`
+  : f === 'parent' ? (v ? `is now under ${code(v)}` : 'stands on its own') : SAID[v];
+const wire = (f, v) => f === 'parent' ? (v ? String(v) : 'none') : v;  // a parent goes to Taska as an item ref
+// One-tap changes (swipes, row pills, the focus card, keys, the ⋯ menu): they show at once and are saved behind you
+// (T160), say what happened and offer Undo, which puts the old value back; Z does the same (T113 A7). said / note:
+// other words for the toast. -> a promise: true once saved, false if it couldn't be.
+function change(n, f, v, {said, note} = {}) {
   const it = byN.get(n);
-  if (!it) return Promise.resolve(false);
+  if (!it || it[f] === v) return Promise.resolve(!!it);
   const before = it[f], ref = code(n), job = {saved: false, undone: false};
-  const said = f === 'archived' ? (v ? 'archived' : 'unarchived') : f === 'status' && v === 'done' && before === 'review' ? 'accepted' : f === 'status' && v === 'open' && before === 'proposed' ? 'approved'
-    : it.type === 'rule' && f === 'status' && before !== 'proposed' && {open: 'is active again', dropped: 'is retired'}[v] || SAID[v];  // a rule's words (B158)
+  said ||= it.type === 'rule' && f === 'status' && before !== 'proposed' && {open: 'is active again', dropped: 'is retired'}[v] || saidOf(f, v, before);  // a rule's words (B158)
   let run;
   const undo = () => {
     job.undone = true;
@@ -5057,7 +5087,7 @@ function change(n, f, v) {
     toast(`${ref} put back`);
     return optimistic([{n, f: {[f]: before}}], () => {
       const u = (S.undo || []).find(u => u.n === n && f in u.f);  // the recorded change, so the change log knows it was undone (F80)
-      return u ? revert(u.seq) : op({op: 'set', ref, f: {[f]: before}});
+      return u ? revert(u.seq) : op({op: 'set', ref, f: {[f]: wire(f, before)}});
     }, ex => notSaved(ex, run), () => job.saved);  // a change that never reached Taska has nothing to put back there
   };
   run = pushUndo(`${ref} ${said}`, undo);
@@ -5066,12 +5096,12 @@ function change(n, f, v) {
   if (settles) { U.go.done.add(n); U.go.how[n] = said.replace(/^is (marked )?/, '').replace(/^./, c => c.toUpperCase()); U.go.undo[n] = run; }
   if (!settles && (n !== U.open || (desk() && LIST.in))) holdRow(n, `${said.replace(/^./, c => c.toUpperCase())}`, run);  // the phone's list is under the card or the row you swiped (B148)
   const left = f === 'status' && v === 'done' ? openKids(n) : 0;  // done before its subitems: say so (B147)
-  toast(`${ref} ${said}${left ? ` · ${plural(left, 'subitem')} still open` : ''}`, run);
-  const saved = optimistic([{n, f: {[f]: v}}], () => op({op: 'set', ref, f: {[f]: v}}), ex => {  // taken back
+  toast(`${ref} ${said}${left ? ` · ${plural(left, 'subitem')} still open` : ''}${note ? `. ${note}.` : ''}`, run);
+  const saved = optimistic([{n, f: {[f]: v}}], () => op({op: 'set', ref, f: {[f]: wire(f, v)}}), ex => {  // taken back
     forget(run);
     if (U.settle.delete(n)) renderItems();
     if (U.go?.done.has(n)) { U.go.done.delete(n); delete U.go.how?.[n]; delete U.go.undo?.[n]; render(); }
-    if (!job.undone) notSaved(ex, () => change(n, f, v));
+    if (!job.undone) notSaved(ex, () => change(n, f, v, {said, note}));
   });
   saved.then(ok => { job.saved = ok; });
   if (settles && U.open === n) advanceDesk(n, U.go.how[n]);
@@ -5091,10 +5121,13 @@ const searchMode = on => {
   renderItems(); if (U.tab === 'inputs') renderInputs();
 };
 const ACT = {
-  auto: () => {
+  auto: () => {  // Keep going: at once, with Undo and Z (T113 A7)
     const on = !S.cfg?.auto;
-    optimistic([{cfg: {auto: on}}], () => op({op: 'cfg', auto: on}), ex => notSaved(ex, () => { if (!!S.cfg?.auto !== on) ACT.auto(); }));
-    renderDrawerSettings(); toast(on ? 'Keep going is on: your agent works down the list' : 'Keep going is off: your agent stops after the current item');
+    let run;
+    const set = to => optimistic([{cfg: {auto: to}}], () => op({op: 'cfg', auto: to}), ex => notSaved(ex, to === on ? () => { if (!!S.cfg?.auto !== on) ACT.auto(); } : run));
+    run = pushUndo(`Keep going ${on ? 'on' : 'off'}`, () => { toast(`Keep going is ${on ? 'off' : 'on'} again`); return set(!on); });
+    set(on).then(ok => { if (!ok) forget(run); });
+    renderDrawerSettings(); toast(on ? 'Keep going is on: your agent works down the list' : 'Keep going is off: your agent stops after the current item', run);
   },
   search: () => searchMode(!U.searching),
   'search-cancel': () => searchMode(false),  // also a search that came with the address or a tab (B152)
@@ -5167,11 +5200,11 @@ const ACT = {
     if (next) peek(next, {focus: false}); else if (g) endWalk();
   },
   // Not yet reopens and asks what is missing, wherever you tap it (B153): on the phone a row's Not yet opens its card.
-  reopen: b => {
+  reopen: b => {  // with Undo and Z (T113 A7)
     const n = Number(b.dataset.n);
     if (desk() && U.open !== n) openItem(n);
     if (!desk() && U.open !== n && U.peek !== n) { closeSwipe(); peek(n, {focus: false}); }
-    setNow(n, {status: 'doing'}, () => ACT.reopen(b)); U.ask = n; U.scopeOff = false; renderComposer(); $('text').focus(); toast(`${code(n)} reopened. Say what is missing.`);
+    change(n, 'status', 'doing', {said: 'reopened', note: 'Say what is missing'}); U.ask = n; U.scopeOff = false; renderComposer(); $('text').focus();
   },
   'card-copy': b => copyItem(Number(b.dataset.n)),  // the card stays: copying is no reason to lose your place (B153)
   projects: () => openDrawer(),
@@ -5225,9 +5258,9 @@ const ACT = {
   open: b => openItem(Number(b.dataset.n)),
   back: () => desk() ? fullWidth(false) : hist(() => history.state?.n ? history.back() : closeItem()),
   'item-menu': () => itemMenu(U.open),
-  'set-field': b => {
+  'set-field': b => {  // type, priority and status from the ⋯ menu: with Undo and Z (T113 A7)
     const n = Number(b.dataset.n), menu = () => { if (U.sheet === 'menu' && !$('overlay').hidden) itemMenu(n); };
-    setNow(n, {[b.dataset.f]: b.dataset.v}, () => ACT['set-field'](b)).then(ok => { if (!ok) menu(); });
+    change(n, b.dataset.f, b.dataset.v).then(ok => { if (!ok) menu(); });
     menu();
   },
   goto: b => {  // from a chip, a source, a subitem, the change log or Make item: to the item, leaving pages that hide it
@@ -5285,12 +5318,11 @@ const ACT = {
     SW.open = null; closeDialog();
     change(n, f, f === 'archived' ? b.dataset.v === 'true' : b.dataset.v);
   },
-  archive: b => {
+  archive: b => {  // E: with Undo and Z (T113 A7)
     const on = b.dataset.on === '1', n = Number(b.dataset.n);
     closeDialog();
-    setNow(n, {archived: on}, () => ACT.archive(b));
+    change(n, 'archived', on, {note: on ? 'Find it under Archive' : ''});
     if (on && U.open === n) ACT.back();
-    toast(on ? `${code(n)} archived. Find it under Archive.` : `${code(n)} unarchived`);
   },
   choice: b => {
     const n = Number(b.dataset.n), i = Number(b.dataset.i);
@@ -5329,11 +5361,10 @@ const ACT = {
     if (!title) return $('subTitle')?.focus();
     try { await save({op: 'new', title, parent: code(n), type: p.type === 'rule' ? 'task' : p.type, pri: p.pri, when: p.when}, () => ACT['sub-add'](b)); U.folded.delete(n); render(); toast(`Added under ${code(n)}`); const f = $('subTitle'); if (f) { f.value = ''; f.focus(); } flashRow(Math.max(...(kids.get(n) || []).map(k => k.n))); } catch (_) {}  // the field stays for the next one (B123)
   },
-  'move-to': b => {
-    const n = Number(b.dataset.n), to = b.dataset.to, ref = code(n);
+  'move-to': b => {  // M: with Undo and Z (T113 A7)
+    const n = Number(b.dataset.n), to = b.dataset.to;
     closeDialog();
-    optimistic([{n, f: {parent: to === 'none' ? null : parseRef(to)}}], () => op({op: 'set', ref, f: {parent: to}}), ex => notSaved(ex, () => ACT['move-to'](b)));
-    toast(to !== 'none' ? `${ref} is now under ${to}` : `${ref} stands on its own`);
+    change(n, 'parent', to === 'none' ? null : parseRef(to));
   },
   reparent: b => {  // the phone picks from the same list as the desktop, in the menu's sheet: no typing a code (B156, R139)
     if (desk()) closeDialog();
@@ -5345,7 +5376,10 @@ const ACT = {
     try {
       const d = await save({op: 'new', title, body, src: r.id}, () => ACT['make-item'](b));
       const n = Number((d.res[0].match(/[A-Z](\d+) new/) || [])[1]);
-      if (n) { ACT.goto({dataset: {n: String(n)}}); if (!desk()) itemMenu(n); toast(`${code(n)} made from ${r.id}. Set its type and priority${desk() ? '' : ' here'}.`); }
+      if (!n) return;
+      let run;  // Undo and Z: the item goes, and the input waits again (T113 A7)
+      run = pushUndo(`${code(n)} made from ${r.id}`, () => { toast(`${code(n)} undone: ${r.id} waits again`); return optimistic([{n, f: {status: 'dropped', archived: true}}], () => op({op: 'unmake', ref: code(n)}), ex => notSaved(ex, run)); });
+      ACT.goto({dataset: {n: String(n)}}); if (!desk()) itemMenu(n); toast(`${code(n)} made from ${r.id}. Set its type and priority${desk() ? '' : ' here'}.`, run);
     } catch (_) {}
   },
   'archive-all': () => {  // no question first: it happens at once, and Undo stays in the same spot for 3 seconds
