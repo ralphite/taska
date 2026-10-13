@@ -2669,7 +2669,7 @@ PAGE = r'''<!doctype html>
     <button data-act="new-project" id="drawerNew" class="mt-1 flex h-12 w-full items-center gap-3 rounded-2xl px-3 text-[15px] font-medium text-blue-600 lg:h-9 lg:rounded-xl lg:text-sm dark:text-blue-400">New project</button>
     <div class="mt-4 px-3 pb-1.5 text-xs font-semibold text-zinc-500 lg:text-[11px] lg:tracking-wider lg:uppercase dark:text-zinc-400">This project</div>
     <div id="drawerSettings" class="divide-y divide-zinc-100 overflow-hidden rounded-2xl bg-white lg:divide-y-0 lg:rounded-none lg:bg-transparent dark:divide-zinc-700/60 dark:bg-zinc-800 dark:lg:bg-transparent"></div>
-    <dl id="menuInfo" class="mt-3 space-y-0.5 px-3 pb-2 text-xs leading-relaxed break-all text-zinc-500 lg:text-[11px] dark:text-zinc-400"></dl>
+    <dl id="menuInfo" class="mt-3 hidden space-y-0.5 px-3 pb-2 text-xs leading-relaxed break-all text-zinc-500 lg:block lg:text-[11px] dark:text-zinc-400"></dl>
   </div>
   <button data-act="keys" id="keysBtn" class="hidden h-12 shrink-0 items-center gap-2 border-t border-zinc-200 px-4 text-[13px] text-zinc-500 hover:text-zinc-800 lg:flex dark:border-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"></button>
 </nav>
@@ -2699,7 +2699,7 @@ PAGE = r'''<!doctype html>
   </header>
 
   <nav id="tabs" class="flex h-11 shrink-0 items-stretch border-b border-zinc-200 pr-1 pl-4 lg:hidden dark:border-zinc-800">
-    <div role="tablist" class="flex min-w-0 items-stretch gap-4 overflow-x-auto [scrollbar-width:none]"><button data-act="tab" data-tab="items" role="tab" aria-selected="true" class="group -mb-px flex h-11 shrink-0 items-center gap-1 border-b-2 border-transparent text-[15px] font-medium text-zinc-500 aria-selected:border-zinc-900 aria-selected:font-semibold aria-selected:text-zinc-900 dark:text-zinc-400 dark:aria-selected:border-zinc-100 dark:aria-selected:text-zinc-50">Items<span id="nItems" class="rounded-full px-1.5 py-px font-mono text-[11px] font-medium text-zinc-400 tabular-nums empty:hidden group-aria-selected:bg-zinc-900/7 group-aria-selected:text-zinc-600 dark:text-zinc-500 dark:group-aria-selected:bg-white/10 dark:group-aria-selected:text-zinc-300"></span></button><button data-act="tab" data-tab="inputs" role="tab" aria-selected="false" class="group -mb-px flex h-11 shrink-0 items-center gap-1 border-b-2 border-transparent text-[15px] font-medium text-zinc-500 aria-selected:border-zinc-900 aria-selected:font-semibold aria-selected:text-zinc-900 dark:text-zinc-400 dark:aria-selected:border-zinc-100 dark:aria-selected:text-zinc-50">Inputs<span id="nInputs" class="rounded-full px-1.5 py-px font-mono text-[11px] font-medium text-zinc-400 tabular-nums empty:hidden group-aria-selected:bg-zinc-900/7 group-aria-selected:text-zinc-600 dark:text-zinc-500 dark:group-aria-selected:bg-white/10 dark:group-aria-selected:text-zinc-300"></span></button><button data-act="tab" data-tab="archive" role="tab" aria-selected="false" class="group -mb-px flex h-11 shrink-0 items-center gap-1 border-b-2 border-transparent text-[15px] font-medium text-zinc-500 aria-selected:border-zinc-900 aria-selected:font-semibold aria-selected:text-zinc-900 dark:text-zinc-400 dark:aria-selected:border-zinc-100 dark:aria-selected:text-zinc-50">Archive<span id="nArchTab" class="rounded-full px-1.5 py-px font-mono text-[11px] font-medium text-zinc-400 tabular-nums empty:hidden group-aria-selected:bg-zinc-900/7 group-aria-selected:text-zinc-600 dark:text-zinc-500 dark:group-aria-selected:bg-white/10 dark:group-aria-selected:text-zinc-300"></span></button><button data-act="tab" data-tab="rules" role="tab" aria-selected="false" class="group -mb-px flex h-11 shrink-0 items-center gap-1 border-b-2 border-transparent text-[15px] font-medium text-zinc-500 aria-selected:border-zinc-900 aria-selected:font-semibold aria-selected:text-zinc-900 dark:text-zinc-400 dark:aria-selected:border-zinc-100 dark:aria-selected:text-zinc-50">Rules<span id="nRules" class="rounded-full px-1.5 py-px font-mono text-[11px] font-medium text-zinc-400 tabular-nums empty:hidden group-aria-selected:bg-zinc-900/7 group-aria-selected:text-zinc-600 dark:text-zinc-500 dark:group-aria-selected:bg-white/10 dark:group-aria-selected:text-zinc-300"></span></button></div>
+    <div role="tablist" class="flex min-w-0 items-stretch gap-3 overflow-x-auto [scrollbar-width:none] min-[400px]:gap-4"><button data-act="tab" data-tab="items" role="tab" aria-selected="true" class="group -mb-px flex h-11 shrink-0 items-center gap-1 border-b-2 border-transparent text-[15px] font-medium text-zinc-500 aria-selected:border-zinc-900 aria-selected:font-semibold aria-selected:text-zinc-900 dark:text-zinc-400 dark:aria-selected:border-zinc-100 dark:aria-selected:text-zinc-50">Items<span id="nItems" class="rounded-full px-1.5 py-px font-mono text-[11px] font-medium text-zinc-400 tabular-nums empty:hidden group-aria-selected:bg-zinc-900/7 group-aria-selected:text-zinc-600 dark:text-zinc-500 dark:group-aria-selected:bg-white/10 dark:group-aria-selected:text-zinc-300"></span></button><button data-act="tab" data-tab="inputs" role="tab" aria-selected="false" class="group -mb-px flex h-11 shrink-0 items-center gap-1 border-b-2 border-transparent text-[15px] font-medium text-zinc-500 aria-selected:border-zinc-900 aria-selected:font-semibold aria-selected:text-zinc-900 dark:text-zinc-400 dark:aria-selected:border-zinc-100 dark:aria-selected:text-zinc-50">Inputs<span id="nInputs" class="rounded-full px-1.5 py-px font-mono text-[11px] font-medium text-zinc-400 tabular-nums empty:hidden group-aria-selected:bg-zinc-900/7 group-aria-selected:text-zinc-600 dark:text-zinc-500 dark:group-aria-selected:bg-white/10 dark:group-aria-selected:text-zinc-300"></span></button><button data-act="tab" data-tab="archive" role="tab" aria-selected="false" class="group -mb-px flex h-11 shrink-0 items-center gap-1 border-b-2 border-transparent text-[15px] font-medium text-zinc-500 aria-selected:border-zinc-900 aria-selected:font-semibold aria-selected:text-zinc-900 dark:text-zinc-400 dark:aria-selected:border-zinc-100 dark:aria-selected:text-zinc-50">Archive<span id="nArchTab" class="rounded-full px-1.5 py-px font-mono text-[11px] font-medium text-zinc-400 tabular-nums empty:hidden group-aria-selected:bg-zinc-900/7 group-aria-selected:text-zinc-600 dark:text-zinc-500 dark:group-aria-selected:bg-white/10 dark:group-aria-selected:text-zinc-300"></span></button><button data-act="tab" data-tab="rules" role="tab" aria-selected="false" class="group -mb-px flex h-11 shrink-0 items-center gap-1 border-b-2 border-transparent text-[15px] font-medium text-zinc-500 aria-selected:border-zinc-900 aria-selected:font-semibold aria-selected:text-zinc-900 dark:text-zinc-400 dark:aria-selected:border-zinc-100 dark:aria-selected:text-zinc-50">Rules<span id="nRules" class="rounded-full px-1.5 py-px font-mono text-[11px] font-medium text-zinc-400 tabular-nums empty:hidden group-aria-selected:bg-zinc-900/7 group-aria-selected:text-zinc-600 dark:text-zinc-500 dark:group-aria-selected:bg-white/10 dark:group-aria-selected:text-zinc-300"></span></button></div>
     <button id="filterBtn" data-act="filters" aria-label="Filters" class="relative ml-auto grid size-11 shrink-0 place-items-center text-zinc-500 dark:text-zinc-400"></button>
   </nav>
   <div id="filterStrip" hidden class="flex h-11 shrink-0 items-center gap-2 overflow-x-auto border-b border-zinc-100 px-4 [scrollbar-width:none] lg:hidden dark:border-zinc-800/70"></div>
@@ -2953,7 +2953,11 @@ function toast(text, undo) {  // with `undo`, the toast carries an Undo button f
     const f = $('foot').getBoundingClientRect(), above = r && f.height < 300 && f.left < r.right && f.right > r.left;
     if (r) { el.style.left = `${r.left + r.width / 2}px`; el.style.bottom = `${above ? innerHeight - f.top + 12 : 20}px`; }
     el.classList.toggle('lg:-translate-x-1/2', !!r);
-  } else { el.style.left = el.style.bottom = ''; el.classList.remove('lg:-translate-x-1/2'); }
+  } else {  // B158: on the phone it sits just above what you act on, the input box or an open card's bar, and never on it
+    el.style.left = el.style.bottom = ''; el.classList.remove('lg:-translate-x-1/2');
+    const bar = $('overlay').hidden ? !$('foot').hidden && $('foot') : !$('dlgFoot').hidden && $('dlgFoot').offsetHeight && $('dlgFoot');
+    if (bar) { el.style.bottom = `${Math.round(innerHeight - bar.getBoundingClientRect().top + 8)}px`; el.classList.remove('bottom-28', 'top-[calc(env(safe-area-inset-top)+0.75rem)]'); }
+  }
   if (undo) el.querySelector('button').onclick = () => { el.hidden = true; undo(); };
   el.hidden = false;
   clearTimeout(toast.t); toast.t = setTimeout(() => { el.hidden = true; }, undo ? 5000 : 2600);
@@ -3229,7 +3233,7 @@ function itemRow(it, depth = 0, group = []) {
       ${img ? `<button data-act="view" data-g="row${it.n}" data-f="${esc(img.f)}" aria-label="View image" class="-my-0.5 grid size-11 shrink-0 place-items-center">${(groups.set('row' + it.n, [img.f]), '')}<img src="${P}f/${encodeURIComponent(img.f)}" alt="" loading="lazy" class="size-10 rounded-lg border border-zinc-200 bg-zinc-50 object-cover dark:border-zinc-700 dark:bg-zinc-900"></button>` : ''}
       ${foldable ? `<button data-act="fold" data-n="${it.n}" aria-expanded="${!U.folded.has(it.n)}" aria-label="${U.folded.has(it.n) ? 'Show' : 'Hide'} subitems" class="-my-2 -mr-1 grid size-11 shrink-0 place-items-center rounded-full text-zinc-400 dark:text-zinc-500">${ico(U.folded.has(it.n) ? 'right' : 'down', 'size-4', '2')}</button>` : ''}
     </div>`;
-  return `<article data-n="${it.n}" class="relative border-b border-zinc-100 dark:border-zinc-800/70">${it.type === 'rule' ? top : swipeRow(it, top)}</article>`;
+  return `<article data-n="${it.n}" class="relative border-b border-zinc-100 dark:border-zinc-800/70">${it.type === 'rule' && desk() ? top : swipeRow(it, top)}</article>`;
 }
 
 // A row that waits on you (T65 "Needs you first"): an amber bar, what the agent said in one line, and the one
@@ -3259,7 +3263,7 @@ function needsRow(it) {
       ${it.type === 'rule' ? '' : rowActs(it, true)}
       <button data-act="row-act" data-n="${it.n}" data-v="${v}" title="${label} · A" class="-my-1 grid h-11 shrink-0 place-items-center"><span class="${ACTION_PILL(v)}">${ico(NEED[v].icon, 'size-3.5', '2.25')}${label}</span></button>
     </div>`;
-  return `<article data-n="${it.n}" class="relative border-b border-zinc-100 dark:border-zinc-800/70">${it.type === 'rule' ? top : swipeRow(it, top)}</article>`;
+  return `<article data-n="${it.n}" class="relative border-b border-zinc-100 dark:border-zinc-800/70">${it.type === 'rule' && desk() ? top : swipeRow(it, top)}</article>`;
 }
 
 // A group header in a list: Needs you (amber), the agent's queue, finished work, and the rule groups.
@@ -3273,6 +3277,7 @@ function zone(kind, label, n, right = '') {
   </div>`;
 }
 const goThroughBtn = () => `<button data-act="go-through" class="-my-1 ml-auto flex h-11 items-center gap-0.5 rounded-full pr-2 pl-3 text-[13px] font-semibold text-amber-800 dark:text-amber-300">Go through${ico('right', 'size-4', '2.25')}</button>`;
+const keepGoingNote = () => `<button data-act="agent-info" class="-my-1 ml-auto flex h-11 items-center gap-1.5 rounded-full pr-2.5 pl-3 text-xs font-semibold text-zinc-600 dark:text-zinc-300">${ico('loop', `size-3.5 ${S.cfg?.auto ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-400 dark:text-zinc-500'}`, '2')}Keep going ${S.cfg?.auto ? 'on' : 'off'}${ico('right', 'size-3.5 text-zinc-400 dark:text-zinc-500', '2')}</button>`;  // B158
 const keepGoingSwitch = () => `<button data-act="auto" aria-pressed="${!!S.cfg?.auto}" title="Agents take the next item without stopping" class="group -my-1 ml-auto flex h-11 items-center gap-2 rounded-full pr-2.5 pl-3 text-xs font-semibold text-zinc-600 dark:text-zinc-300">${ico('loop', 'size-3.5 text-emerald-600 dark:text-emerald-400', '2')}Keep going
     <span class="relative h-5.5 w-9.5 shrink-0 rounded-full bg-zinc-300 transition-colors group-aria-pressed:bg-emerald-500 dark:bg-zinc-600 dark:group-aria-pressed:bg-emerald-500"><span class="absolute top-0.75 left-0.75 size-4 rounded-full bg-white shadow-sm transition-transform group-aria-pressed:translate-x-4"></span></span></button>`;
 const archiveAllBtn = n => `<button data-act="archive-all" class="-my-1 ml-auto flex h-11 items-center pr-2"><span class="inline-flex h-8 items-center gap-1.5 rounded-full bg-emerald-50 px-3 text-[13px] font-semibold text-emerald-800 ring-1 ring-emerald-600/20 ring-inset dark:bg-emerald-400/10 dark:text-emerald-300 dark:ring-emerald-400/25">${ico('archive', 'size-4')}Archive ${n}</span></button>`;
@@ -3282,6 +3287,7 @@ const archiveAllBtn = n => `<button data-act="archive-all" class="-my-1 ml-auto 
 // your answer the step forward is that answer, as on its pill and the desktop's A: Answer or Reply, never Done (B147).
 function swipeRight(it) {
   return it.archived ? null
+    : it.type === 'rule' && it.status === 'open' ? null  // an active rule has no step forward; Retire is a swipe left (B158)
     : it.wait ? ['need', ...rowAction(it)]
     : it.status === 'proposed' ? ['status', 'open', 'Approve', 'approved']
     : it.status === 'review' ? ['status', 'done', 'Accept', 'accepted']
@@ -3293,6 +3299,7 @@ function swipeRight(it) {
 function swipeLeft(it) {
   const later = it.when === 'now' ? ['when', 'later', 'Later'] : ['when', 'now', 'Back to now'], drop = ['status', 'dropped', "Won't do"];
   const done = it.wait ? [['status', 'done', 'Done']] : [];
+  if (it.type === 'rule' && !it.archived) return it.status === 'proposed' ? [drop] : it.status === 'open' ? [['status', 'dropped', 'Retire']] : [['status', 'open', 'Reactivate']];  // a rule: no Later, no Start (B158)
   return it.archived ? [['archived', 'false', 'Unarchive']]
     : it.status === 'proposed' ? [later, drop]
     : it.status === 'review' ? [later, ['status', 'doing', 'Not yet']]
@@ -3301,7 +3308,7 @@ function swipeLeft(it) {
     : [['status', 'doing', 'Start'], drop, later, ...done];
 }
 const openKids = n => (kids.get(n) || []).filter(k => !CLOSED(k.status)).length;  // a parent done before its subitems says so (B147)
-const ACT_ICON = {Approve: 'thumb', Accept: 'check', Done: 'done', Archive: 'archive', Later: 'clock', 'Back to now': 'clock', "Won't do": 'ban', 'Not yet': 'reopen', Pause: 'pause', Start: 'start', Reopen: 'reopen', Unarchive: 'archive', Answer: 'ask', Reply: 'reply'};
+const ACT_ICON = {Approve: 'thumb', Accept: 'check', Done: 'done', Archive: 'archive', Later: 'clock', 'Back to now': 'clock', "Won't do": 'ban', 'Not yet': 'reopen', Pause: 'pause', Start: 'start', Reopen: 'reopen', Unarchive: 'archive', Answer: 'ask', Reply: 'reply', Retire: 'ban', Reactivate: 'reopen'};
 const ACT_BG = {Start: 'bg-blue-600 dark:bg-blue-500', "Won't do": 'bg-red-600 dark:bg-red-500', Done: 'bg-emerald-600 dark:bg-emerald-500'};
 function swipeRow(it, inner) {
   const fwd = swipeRight(it), back = swipeLeft(it), left = fwd?.[1] === 'done' ? openKids(it.n) : 0;
@@ -3518,8 +3525,8 @@ function tableHtml(text, gid) {
   const [head, sep, ...body] = text.trim().split('\n').map(cells);
   const align = (sep || []).map(c => /^:-+:$/.test(c) ? 'text-center' : /-:$/.test(c) ? 'text-right' : 'text-left');
   return `<div class="overflow-x-auto lg:scrollbar-thin"><table class="w-full border-collapse text-sm leading-snug">
-    <thead><tr>${head.map((c, i) => `<th class="border-b border-zinc-300 px-2 py-1.5 font-semibold dark:border-zinc-600 ${align[i] || 'text-left'}">${inlineMd(c, gid)}</th>`).join('')}</tr></thead>
-    <tbody>${body.map(r => `<tr>${head.map((_, i) => `<td class="border-b border-zinc-100 px-2 py-1.5 align-top dark:border-zinc-800 ${align[i] || 'text-left'}">${inlineMd(r[i] || '', gid)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
+    <thead><tr>${head.map((c, i) => `<th class="min-w-28 border-b border-zinc-300 px-2 py-1.5 font-semibold lg:min-w-0 dark:border-zinc-600 ${align[i] || 'text-left'}">${inlineMd(c, gid)}</th>`).join('')}</tr></thead>
+    <tbody>${body.map(r => `<tr>${head.map((_, i) => `<td class="min-w-28 border-b border-zinc-100 px-2 py-1.5 align-top lg:min-w-0 dark:border-zinc-800 ${align[i] || 'text-left'}">${inlineMd(r[i] || '', gid)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;  // a column keeps room for words on the phone; the table scrolls sideways (B158)
 }
 function blockHtml(b, isTitle, gid = '') {
   if (b.kind === 'table') return tableHtml(b.text, gid);
@@ -3702,6 +3709,7 @@ const FOCUS_TONE = {Start: 'text-blue-600 dark:text-blue-400', "Won't do": 'text
 const FWD_NEED = {Accept: 'accept', Approve: 'approve', Answer: 'answer', Reply: 'reply'};  // the forward step in the color of its kind, wherever it shows (B96, B41)
 function cardSlots(it) {
   if (it.archived) return [['archived', 'false', 'Unarchive'], null, null, null];
+  if (it.type === 'rule') return [swipeRight(it), null, swipeLeft(it)[0], null];  // a rule's own steps (B158)
   const [, prog, drop, later] = deskSlots({...it, wait: null}, false);
   return [swipeRight(it), prog, drop, later];
 }
@@ -3721,11 +3729,13 @@ function peek(n, {focus = true} = {}) {
       <button data-act="go-prev" ${i > 0 ? '' : 'disabled'} class="flex h-11 items-center gap-0.5 rounded-full pr-3 pl-1.5 text-sm font-semibold text-zinc-700 disabled:opacity-30 dark:text-zinc-200">${ico('left', 'size-4', '2.25')}Previous</button>
       <span class="min-w-0 flex-1 text-center text-xs font-medium text-zinc-500 tabular-nums dark:text-zinc-400">${i + 1} of ${g.list.length}</span>
       <button data-act="go-next" class="flex h-11 items-center gap-0.5 rounded-full pr-1.5 pl-3 text-sm font-semibold text-zinc-700 dark:text-zinc-200">${last ? 'End' : `Next${ico('right', 'size-4', '2.25')}`}</button></div>` : '';
-  const head = g ? `<span class="flex items-center gap-2"><span class="text-xs font-bold tracking-wide whitespace-nowrap text-amber-700 uppercase dark:text-amber-400">Needs you</span><span class="text-xs font-medium whitespace-nowrap text-zinc-500 tabular-nums dark:text-zinc-400">${i + 1} of ${g.list.length}</span></span>` : '';
+  // The item's code and Open sit in the card's header row beside ×, where a walk's "Needs you · 2 of 5" goes: no empty row on top (B158).
+  const idRow = `<div class="flex items-center gap-2">${stateIcon(it.status, statusName(it), 'size-5')}<span class="font-mono text-sm font-bold ${TYPE_TEXT[it.type]}">${code(n)}</span>${need ? `<span class="text-xs font-semibold text-amber-700 dark:text-amber-400">${need}</span>` : ''}
+      <button data-act="goto" data-n="${n}" class="-my-2 ml-auto flex h-11 items-center gap-1.5 rounded-full px-2 text-sm font-medium text-blue-600 dark:text-blue-400">${ico('open', 'size-4')}Open</button></div>`;
+  const head = g ? `<span class="flex items-center gap-2"><span class="text-xs font-bold tracking-wide whitespace-nowrap text-amber-700 uppercase dark:text-amber-400">Needs you</span><span class="text-xs font-medium whitespace-nowrap text-zinc-500 tabular-nums dark:text-zinc-400">${i + 1} of ${g.list.length}</span></span>` : idRow;
   dialog('', `<div class="pb-1">
-    <div class="flex items-center gap-2">${stateIcon(it.status, statusName(it), 'size-5')}<span class="font-mono text-sm font-bold ${TYPE_TEXT[it.type]}">${code(n)}</span>${need ? `<span class="text-xs font-semibold text-amber-700 dark:text-amber-400">${need}</span>` : ''}
-      <button data-act="goto" data-n="${n}" class="-my-2 ml-auto flex h-11 items-center gap-1.5 rounded-full px-2 text-sm font-medium text-blue-600 dark:text-blue-400">${ico('open', 'size-4')}Open</button></div>
-    <h2 class="mt-1 text-[19px] leading-snug font-semibold break-words">${esc(it.title)}</h2>
+    ${g ? idRow : ''}
+    <h2 class="${g ? 'mt-1' : ''} text-[19px] leading-snug font-semibold break-words">${esc(it.title)}</h2>
     <div class="mt-1 flex flex-wrap items-center gap-x-2.5 text-xs font-medium text-zinc-500 dark:text-zinc-400">${it.type === 'rule' ? '' : `<span class="${PRI_TEXT[it.pri]}">${it.pri}</span>`}<span>${statusName(it)}</span><span>${WHEN[it.when]}</span><span>${it.type[0].toUpperCase() + it.type.slice(1)}</span>${talk ? cnt('comment', talk, plural(talk, 'comment')) : ''}</div>
     ${it.body ? rich(it.body, 'pbody' + n, 'mt-2.5 text-[15px] text-zinc-700 dark:text-zinc-300') : ''}
     ${it.next ? `<div class="mt-2 flex gap-2 text-sm"><span class="shrink-0 font-semibold text-zinc-500 dark:text-zinc-400">Next</span><span class="min-w-0 break-words">${inlineMd(it.next)}</span></div>` : ''}
@@ -3889,10 +3899,11 @@ function renderItems() {
   const list = $('list'), top = U.open && !desk() ? U.listTop?.[0] : list.scrollTop;  // under the phone's item page the list is hidden and reads 0
   SW.open = SW.el = null;  // rows are rebuilt closed; a stale reference would swallow the next tap
   const rows = visible();
-  $('nItems').textContent = U.tab === 'items' && filtered() ? rows.filter(it => !it.archived).length : openCount();  // what is open; while you search, the matches (B130)
+  $('nItems').textContent = U.tab === 'items' && filtered() ? rows.filter(it => !it.archived).length : openCount() || '';  // what is open; while you search, the matches (B130)
   if (desk()) renderDeskHead();  // the title's count follows the search as you type
   $('nRules').textContent = S.items.filter(it => it.type === 'rule' && !it.merged_into && !it.archived && it.status !== 'dropped').length || '';
   $('nArchTab').textContent = S.items.filter(it => it.archived && !it.merged_into).length || '';
+  fitTabs();
   renderFilters();
   if (holding()) return patchList();  // B124: rows hold still under the pointer after you act on one
   let html = '';
@@ -3918,7 +3929,7 @@ function renderItems() {
     const done = rows.filter(it => CLOSED(it.status) && !it.archived && !settled(it)), arch = rows.filter(it => it.archived);
     html = (needs.length ? zone('needs', 'Needs you', needs.filter(needsYou).length, going ? `<span class="text-xs font-medium text-amber-700 dark:text-amber-400">· Going through</span><button data-act="go-end" class="-my-1 ml-auto flex h-11 items-center gap-1 rounded-full pr-2 pl-3 text-[13px] font-semibold text-amber-800 dark:text-amber-300">End${KBD('Esc')}</button>` : goThroughBtn())
         + needs.map(it => going && going.done.has(it.n) ? settledRow(it) : needsRow(it)).join('') : '')  // nothing waiting: no band (I71)
-      + (queue.length ? zone('queue', 'Agent queue', queue.length, laterNote(queue) + keepGoingSwitch()) + tree(queue) : '')  // every row it holds; the later ones, which agents don't take yet, are named (S3)
+      + (queue.length ? zone('queue', 'Agent queue', queue.length, laterNote(queue) + (desk() ? keepGoingSwitch() : keepGoingNote())) + tree(queue) : '')  // every row it holds; the later ones, which agents don't take yet, are named (S3)
       + (U.undoArch ? `<div class="flex items-center gap-3 border-b border-blue-100 bg-blue-50 py-2 pr-2 pl-4 dark:border-blue-400/15 dark:bg-blue-400/10">
           ${ico('archive', 'size-5 text-blue-600 dark:text-blue-400')}
           <p class="min-w-0 flex-1 text-sm text-blue-950 dark:text-blue-100"><span class="font-semibold">Archived ${plural(U.undoArch.ids.length, 'finished item')}.</span> They are under Archive.</p>
@@ -3975,10 +3986,10 @@ function filterControls(small = false) {
 }
 function showFilters() {
   if (desk()) { D.filters = !D.filters; return render(); }
-  const n = visible().length;
+  const rows = visible(), n = rows.length, open = rows.filter(it => !CLOSED(it.status) && !it.archived).length;  // the open ones, as the Items tab counts them (B158, B130)
   U.sheet = 'filter';
   dialog('Filter', `<div class="flex flex-col gap-5">${filterControls()}
-    <button data-act="close" class="${PRIMARY} w-full">Show ${plural(n, U.tab === 'rules' ? 'rule' : 'item')}</button>
+    <button data-act="close" class="${PRIMARY} w-full">Show ${U.tab === 'items' && open !== n ? `${open} open, ${n - open} finished` : plural(n, U.tab === 'rules' ? 'rule' : 'item')}</button>
   </div>`, {extra: filtered() ? `<button data-act="reset" class="h-11 rounded-full px-3 text-sm font-semibold text-blue-600 dark:text-blue-400">Clear all</button>` : '', focus: false});
 }
 
@@ -4110,7 +4121,7 @@ function renderInputs() {
         ${r.files.length ? `<div class="mt-2 flex items-end gap-2 overflow-x-auto lg:scrollbar-thin">${thumbs(r.files, 'in' + r.id, 'size-11')}</div>` : ''}
       </div></div><div class="min-w-0 lg:pt-6">
       <div class="hidden items-center gap-1.5 text-[13px] font-semibold lg:flex ${tone}">${icon}${label}</div>
-      ${note}${chips || acts ? `<div class="mt-1 flex flex-wrap items-center gap-x-1 gap-y-1.5">${chips}${acts}</div>` : ''}
+      ${note}${chips ? `<div class="mt-1 flex flex-wrap items-center gap-1.5">${chips}</div>` : ''}${acts ? `<div class="mt-1 flex flex-wrap items-center gap-x-1 gap-y-1.5">${acts}</div>` : ''}
     </div></article>`;
   }).join('') + (more ? `<div class="flex flex-col py-4">${more}</div>` : '') : U.outbox.length ? '' : EMPTY(words.length ? 'No matching inputs' : 'No inputs yet.', more ? `<span class="mt-3 flex flex-col">${more}</span>` : '');
   if (U.outbox.length && !words.length) $('inputsView').innerHTML = chat ? $('inputsView').innerHTML + outboxRows(true) : outboxRows() + $('inputsView').innerHTML;
@@ -4747,6 +4758,9 @@ function agentsHtml() {
     ${tone === 'ok' ? '' : `<div><p class="px-1 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">To get one working, open your coding agent in this project's folder and send it this:</p>
       <div class="mt-2 rounded-xl bg-zinc-100 p-3 text-sm leading-relaxed break-words text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200">${esc(ask)}</div>
       <button data-act="copy-text" data-text="${esc(ask)}" class="${PRIMARY} mt-2.5 w-full">${ico('copy', 'size-4.5')}Copy</button></div>`}
+    ${desk() ? '' : `<button data-act="auto" aria-pressed="${!!S.cfg?.auto}" class="group flex min-h-14 w-full items-center gap-3 rounded-2xl border border-zinc-200 px-3.5 py-2.5 text-left dark:border-zinc-800">${ico('loop', 'size-5 text-emerald-600 dark:text-emerald-400')}
+      <span class="min-w-0 flex-1"><span class="block text-[15px] font-medium">Keep going</span><span class="block text-xs leading-snug text-zinc-500 dark:text-zinc-400">Agents take the next item without stopping</span></span>
+      <span class="relative h-6.5 w-11 shrink-0 rounded-full bg-zinc-300 transition-colors group-aria-pressed:bg-emerald-500 dark:bg-zinc-600 dark:group-aria-pressed:bg-emerald-500"><span class="absolute top-0.75 left-0.75 size-5 rounded-full bg-white shadow transition-transform group-aria-pressed:translate-x-4.5"></span></span></button>`}
     <button data-act="guide" class="flex min-h-14 w-full items-center gap-3 rounded-2xl border border-zinc-200 px-3.5 py-2.5 text-left dark:border-zinc-800">${ico('plug', 'size-5 text-zinc-500 dark:text-zinc-400')}
       <span class="min-w-0 flex-1"><span class="block text-[15px] font-medium">Connect a coding agent</span><span class="block text-xs text-zinc-500 dark:text-zinc-400">First time on that machine? Run one command there.</span></span>${ico('right', 'size-4 text-zinc-300 dark:text-zinc-600')}</button></div>`;
 }
@@ -4819,10 +4833,12 @@ function render() {
   const pending = S.inputs.filter(r => !r.acked).length;
   $('nInputs').textContent = pending || '';
   $('nInputs').title = pending ? `${pending} not organized yet` : '';
+  fitTabs();
   const waiting = S.items.filter(needsYou).length, sec = desk() && D.page ? PSEC[D.section][2] + ' · ' : '';  // each section is a page of its own (B162)
   $('projName').textContent = S.project || 'Taska';
   document.title = (waiting ? `(${waiting}) ` : '') + sec + (S.project ? `${S.project} · Taska` : 'Taska');
   if (DR.open) renderDrawerSettings();
+  if (!desk() && U.sheet === 'agents' && !$('overlay').hidden) $('dlgBody').innerHTML = agentsHtml();
   if (AUD.el) audioUi();
 }
 
@@ -4925,12 +4941,21 @@ function setTab(t) {
   renderComposer();
 }
 const tabScroll = t => t === 'inputs' ? $('inputsView') : $('list');
+// On a narrow phone the four tabs and their counts may not fit: the least needed counts step aside, whole (Archive,
+// then Rules, then Inputs), so a count is never cut into a smaller number (B158: "Rules 13" read "Rules 1").
+function fitTabs() {
+  if (desk()) return;
+  const list = document.querySelector('#tabs [role=tablist]'), counts = ['nArchTab', 'nRules', 'nInputs'].map($);
+  for (const c of counts) c.hidden = false;
+  for (const c of counts) { if (list.scrollWidth <= list.clientWidth + 1) break; c.hidden = true; }
+}
 
 const SAID = {open: 'is open', doing: 'is in progress', done: 'is done', dropped: "is marked won't do", later: 'moved to Later', now: 'is back to now', review: 'is in review', proposed: 'is proposed'};
 // One-tap changes (swipes, row pills, the focus card) say what happened and offer Undo, which puts the old value back.
 async function change(n, f, v) {
   const before = byN.get(n)?.[f];
-  const said = f === 'archived' ? (v ? 'archived' : 'unarchived') : f === 'status' && v === 'done' && before === 'review' ? 'accepted' : f === 'status' && v === 'open' && before === 'proposed' ? 'approved' : SAID[v];
+  const said = f === 'archived' ? (v ? 'archived' : 'unarchived') : f === 'status' && v === 'done' && before === 'review' ? 'accepted' : f === 'status' && v === 'open' && before === 'proposed' ? 'approved'
+    : byN.get(n)?.type === 'rule' && f === 'status' && before !== 'proposed' && {open: 'is active again', dropped: 'is retired'}[v] || SAID[v];  // a rule's words (B158)
   const undo = () => {
     D.undo = null;
     const u = (S.undo || []).find(u => u.n === n && f in u.f);  // the recorded change, so the change log knows it was undone (F80)
@@ -5073,7 +5098,8 @@ const ACT = {
   },
   'np-cancel': () => { $('npRow')?.remove(); $('drawerNew').hidden = false; },
   guide: () => { if (desk()) return openProject('connect'); closeDrawer(); showGuide(); },
-  'agent-info': () => desk() ? openProject('agents') : dialog('Agents', agentsHtml()),
+  'agent-info': () => { if (desk()) return openProject('agents'); closeDrawer(); U.sheet = 'agents'; dialog('Agents', agentsHtml()); },
+  about: () => { closeDrawer(); dialog('About', PBODY.about()); },  // where the data lives and what organizes it, out of the menu's way (B158)
   phone: () => { if (desk()) return openProject('phone'); closeDrawer(); showPhone(); },
   'new-key': async b => {
     if (!confirmClick(b, `${desk() ? 'Click' : 'Tap'} again: other devices will need the new link`)) return;
@@ -5902,7 +5928,7 @@ function setDrawer(x, animate = true) {  // x: how far the page is pushed right
 async function fillDrawer() {
   if (!DR.list) $('drawerList').innerHTML = '<div class="px-3 py-3 text-sm text-zinc-400">Loading…</div>';
   try { DR.list = (await (await fetch('/api/projects', {cache: 'no-store'})).json()).sort((a, b) => b.t - a.t); } catch (_) { return; }
-  $('drawerList').innerHTML = DR.list.map(p => { const cur = p.name === S.project, [tone, label] = agentState(p.agents, p.work);
+  $('drawerList').innerHTML = [...DR.list].sort((a, b) => (b.name === S.project) - (a.name === S.project) || a.name.localeCompare(b.name)).map(p => { const cur = p.name === S.project, [tone, label] = agentState(p.agents, p.work);  // one order: rows don't move as projects get busy (B158)
     return `<a href="/p/${encodeURIComponent(p.name)}/" class="flex min-h-14 items-center gap-3 rounded-2xl px-3 py-2.5 ${cur ? 'bg-white shadow-sm ring-1 ring-zinc-900/5 dark:bg-zinc-800 dark:ring-white/5' : 'active:bg-zinc-200/70 dark:active:bg-zinc-800'}">
     <span class="min-w-0 flex-1"><span class="block truncate text-[17px] ${cur ? 'font-semibold' : 'font-medium'}">${esc(p.name)}</span>
     <span class="mt-0.5 flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400"><span class="size-1.5 shrink-0 rounded-full ${AGENT_TONE[tone][0]}"></span><span class="truncate ${tone === 'ok' ? 'text-emerald-700 dark:text-emerald-400' : AGENT_TONE[tone][1]}">${esc(label)}</span><span class="shrink-0">· ${p.open} open</span></span></span>
@@ -5947,7 +5973,7 @@ function renderDrawerSettings() {
   $('drawerSettings').innerHTML = `${undoRow()}<button data-act="auto" aria-pressed="${!!S.cfg?.auto}" class="group flex w-full items-center gap-3 px-3.5 py-3 text-left lg:gap-2.5 lg:rounded-lg lg:px-3 lg:py-1.5 lg:hover:bg-zinc-200/60 dark:lg:hover:bg-zinc-800">${ico('loop', 'size-5 text-emerald-600 lg:size-4 dark:text-emerald-400')}
       <span class="min-w-0 flex-1"><span class="block text-[15px] lg:text-sm">Keep going</span><span class="block text-xs leading-snug text-zinc-500 lg:text-[11px] dark:text-zinc-400">Agents take the next item without stopping</span></span>
       <span class="relative h-6.5 w-11 shrink-0 rounded-full bg-zinc-300 transition-colors group-aria-pressed:bg-emerald-500 lg:h-5 lg:w-8.5 dark:bg-zinc-600 dark:group-aria-pressed:bg-emerald-500"><span class="absolute top-0.75 left-0.75 size-5 rounded-full bg-white shadow transition-transform group-aria-pressed:translate-x-4.5 lg:size-3.5 lg:group-aria-pressed:translate-x-3.5"></span></span></button>
-    ${row('guide', 'plug', 'Connect a coding agent', 'connect')}${row('phone', 'phone', 'Use on your phone', 'phone')}${row('fixes', 'pencil', 'Voice spellings', 'fixes')}${row('log', 'history', 'Change log', 'log')}`;
+    ${row('guide', 'plug', 'Connect a coding agent', 'connect')}${row('phone', 'phone', 'Use on your phone', 'phone')}${row('fixes', 'pencil', 'Voice spellings', 'fixes')}${row('log', 'history', 'Change log', 'log')}${desk() ? '' : row('about', 'info', 'About', 'about')}`;
   $('menuInfo').innerHTML = `<div><dt class="inline">Project </dt><dd class="inline">${esc(S.project)}</dd></div>
     <div><dt class="inline">Data </dt><dd class="inline font-mono text-[11px]">${esc(S.file)}</dd></div>
     <div><dt class="inline">Organizer </dt><dd class="inline">${S.org?.on ? 'Gemini · ' + esc(S.org.model) : 'off (set GEMINI_API_KEY and restart)'}</dd></div>`;
@@ -6148,6 +6174,7 @@ document.addEventListener('focusout', () => tipHide());
 document.addEventListener('pointerdown', e => { if (TIP.el || TIP.t) { TIP.hush = tipTarget(e.target); tipHide(); } }, true);  // you acted: no tooltip until you leave
 document.addEventListener('scroll', () => tipHide(), true);
 addEventListener('resize', () => tipHide());
+addEventListener('resize', () => fitTabs());  // a phone turned sideways has room for every count (B158)
 document.addEventListener('keydown', e => {
   if (!TIP.el && !TIP.t) return;
   tipHide();  // any key closes the tooltip; Esc also goes on to close what is below it (B122)
@@ -6361,7 +6388,7 @@ function showURL() {
   closeItem();
   if (Object.hasOwn(PSEC_AT, seg)) {  // a section of This project; the phone opens its sheet, or its menu for Agents and About
     if (desk()) { if (history.state?.tab) U.tab = history.state.tab; return openProject(PSEC_AT[seg]); }  // Back into it from a tab (B9)
-    return ({log: showLog, connect: showGuide, phone: showPhone, spellings: ACT.fixes}[seg] || openDrawer)();
+    return ({log: showLog, connect: showGuide, phone: showPhone, spellings: ACT.fixes, about: ACT.about}[seg] || openDrawer)();
   }
   if (seg === 'new') { if (desk()) return ACT['new-input'](); return $('text').focus(); }
   const was = U.tab;
