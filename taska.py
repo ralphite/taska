@@ -4310,9 +4310,18 @@ addEventListener('beforeunload', e => {  // unsent words, a recording, or a voic
 const R = {rec: null, chunks: [], stream: null, t0: 0, tick: 0, ctx: null, levels: []};
 const clock = ms => `${Math.floor(ms / 60000)}:${String(Math.floor(ms / 1000) % 60).padStart(2, '0')}`;
 
+// A voice note as the microphone hears it (B182). By default a browser treats the microphone like a phone call: echo
+// cancelling, noise suppression and automatic gain. On an iPhone that turned pauses into digital silence and pushed
+// later speech down, so notes sounded wrong and transcribed badly; desktop Chrome did the same, only less. A browser
+// that refuses these asks records the default way.
+async function micStream() {
+  const md = navigator.mediaDevices;
+  try { return await md.getUserMedia({audio: {echoCancellation: false, noiseSuppression: false, autoGainControl: false}}); }
+  catch (e) { if (e?.name === 'NotAllowedError' || e?.name === 'SecurityError') throw e; return md.getUserMedia({audio: true}); }
+}
 async function startRec() {
   if (!canRecord()) return voiceWhy();  // B166
-  try { R.stream = await navigator.mediaDevices.getUserMedia({audio: true}); }
+  try { R.stream = await micStream(); }
   catch (_) { return toast('No microphone permission'); }
   R.chunks = []; R.levels = [];
   R.typing = document.activeElement === $('text');  // the box hides its text while recording; the caret comes back after
