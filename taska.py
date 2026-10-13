@@ -2167,24 +2167,25 @@ PAGE = r'''<!doctype html>
   <footer id="foot" class="relative z-20 shrink-0 lg:scrollbar-gutter-both lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70 px-3 pt-1 pb-[max(1.25rem,env(safe-area-inset-bottom))] lg:col-start-2 lg:row-start-4 lg:px-8 lg:pb-5 lg:group-data-[compose]/app:row-start-2 lg:group-data-[compose]/app:row-span-3 lg:group-data-[compose]/app:overflow-y-auto lg:group-data-[compose]/app:overscroll-contain lg:group-data-[compose]/app:pt-[9vh] lg:group-data-[compose]/app:pb-16">
     <div id="composeHead" class="hidden lg:group-data-[compose]/app:mx-auto lg:group-data-[compose]/app:mb-6 lg:group-data-[compose]/app:flex lg:group-data-[compose]/app:max-w-[42rem] lg:group-data-[compose]/app:flex-col lg:group-data-[compose]/app:items-center lg:group-data-[compose]/app:text-center"></div>
     <div id="feedback" hidden role="status" class="mb-1.5 flex min-h-7 items-center gap-2 pr-1 pl-2.5 text-[13px] text-zinc-600 lg:mx-auto lg:max-w-[42rem] dark:text-zinc-300 lg:group-data-[compose]/app:hidden"></div>
-    <div id="composer" class="rounded-4xl border border-zinc-200/80 bg-white shadow-lg shadow-black/5 focus-within:border-zinc-300 lg:mx-auto lg:max-w-[42rem] dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-black/40 dark:focus-within:border-zinc-700 lg:group-data-[compose]/app:rounded-3xl lg:group-data-[compose]/app:border-zinc-300 lg:group-data-[compose]/app:shadow-xl lg:group-data-[compose]/app:shadow-zinc-900/[0.07] lg:group-data-[compose]/app:dark:border-zinc-700">
-      <div id="scope" hidden class="flex h-8 items-center gap-1.5 pt-1 pr-1 pl-4 text-[13px] text-blue-700 dark:text-blue-300 lg:group-data-[compose]/app:hidden"></div>
-      <div id="drafts" hidden class="flex gap-2.5 overflow-x-auto lg:scrollbar-thin px-3 pt-3 pb-1 lg:group-data-[compose]/app:px-4 lg:group-data-[compose]/app:pt-4 lg:group-data-[compose]/app:pb-0"></div>
-      <div class="flex items-end gap-0.5 p-1.5 lg:group-data-[compose]/app:flex-wrap lg:group-data-[compose]/app:items-center lg:group-data-[compose]/app:gap-1 lg:group-data-[compose]/app:px-3 lg:group-data-[compose]/app:pt-1 lg:group-data-[compose]/app:pb-3">
-        <button id="attachBtn" data-act="attach" aria-label="Add images or files" title="Add images or files" class="grid size-11 shrink-0 place-items-center rounded-full text-zinc-500 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800 lg:group-data-[compose]/app:size-9"></button><span id="boxHint" class="hidden text-[13px] text-zinc-400 dark:text-zinc-500 lg:group-data-[compose]/app:mr-auto lg:group-data-[compose]/app:flex lg:group-data-[compose]/app:items-center lg:group-data-[compose]/app:gap-1.5 lg:group-data-[compose]/app:pl-1"></span>
-        <textarea id="text" rows="1" placeholder="Write anything…" aria-label="Input" class="lg:scrollbar-thin max-h-48 min-h-11 min-w-0 flex-1 resize-none bg-transparent px-1 py-2.5 text-[17px] leading-6 outline-none placeholder:text-zinc-400 sm:text-[15px] dark:placeholder:text-zinc-500 lg:group-data-[compose]/app:order-first lg:group-data-[compose]/app:max-h-80 lg:group-data-[compose]/app:min-h-24 lg:group-data-[compose]/app:basis-full lg:group-data-[compose]/app:px-3 lg:group-data-[compose]/app:pt-4 lg:group-data-[compose]/app:pb-2 lg:group-data-[compose]/app:text-[17px] lg:group-data-[compose]/app:leading-7"></textarea>
-        <div id="recBar" hidden class="flex h-11 min-w-0 flex-1 items-center gap-2 lg:group-data-[compose]/app:order-first lg:group-data-[compose]/app:basis-full lg:group-data-[compose]/app:h-28 lg:group-data-[compose]/app:gap-3 lg:group-data-[compose]/app:px-2" role="status" aria-label="Recording">
-          <button data-act="rec-cancel" aria-label="Cancel recording" id="recCancel" class="grid size-11 shrink-0 place-items-center rounded-full text-zinc-500 dark:text-zinc-400"></button>
-          <span class="size-2.5 shrink-0 animate-pulse rounded-full bg-red-500"></span>
-          <span id="recTime" class="w-10 shrink-0 font-mono text-[15px] text-zinc-700 tabular-nums dark:text-zinc-200">0:00</span>
-          <span id="recBars" class="flex h-8 min-w-0 flex-1 items-center justify-end gap-[3px] overflow-hidden lg:group-data-[compose]/app:h-14"></span>
-          <button data-act="rec-send" aria-label="Stop and send" id="recStop" class="mr-3 grid size-11 shrink-0 place-items-center rounded-full border border-zinc-300 text-zinc-700 dark:border-zinc-600 dark:text-zinc-200"></button>
+    <div id="composer" class="rounded-4xl border border-zinc-200 bg-white shadow-lg shadow-black/5 focus-within:border-zinc-300 lg:mx-auto lg:max-w-[42rem] dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-black/40 dark:focus-within:border-zinc-700">
+      <div id="scope" hidden class="flex h-8 items-center gap-1.5 pt-1 pr-1.5 pl-4 text-[13px] text-zinc-500 dark:text-zinc-400 lg:group-data-[compose]/app:hidden"></div>
+      <div id="drafts" hidden class="flex gap-2.5 overflow-x-auto px-3 pt-3 pb-1 lg:scrollbar-thin"></div>
+      <div class="flex items-end gap-0.5 p-1.5 lg:group-data-[compose]/app:flex-wrap lg:group-data-[compose]/app:items-center">
+        <button id="attachBtn" data-act="attach" aria-label="Add images or files" class="grid size-11 shrink-0 place-items-center rounded-full text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 lg:m-1 lg:size-9 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100 lg:group-data-[compose]/app:mr-auto"></button>
+        <div class="grid min-w-0 flex-1 lg:group-data-[compose]/app:order-first lg:group-data-[compose]/app:basis-full">
+          <textarea id="text" rows="1" placeholder="Write anything…" aria-label="Input" class="col-start-1 row-start-1 max-h-48 min-h-11 w-full min-w-0 resize-none bg-transparent px-1 py-2.5 text-[17px] leading-6 outline-none placeholder:text-zinc-400 sm:text-[15px] lg:scrollbar-thin dark:placeholder:text-zinc-500 lg:group-data-[compose]/app:max-h-80 lg:group-data-[compose]/app:min-h-24 lg:group-data-[compose]/app:px-3 lg:group-data-[compose]/app:pt-4 lg:group-data-[compose]/app:pb-2 lg:group-data-[compose]/app:text-[17px] lg:group-data-[compose]/app:leading-7"></textarea>
+          <div id="recBar" hidden role="status" aria-label="Recording" class="col-start-1 row-start-1 flex min-w-0 items-center gap-2.5 px-1 lg:group-data-[compose]/app:px-3">
+            <span class="size-2.5 shrink-0 animate-pulse rounded-full bg-red-500"></span>
+            <span id="recTime" class="shrink-0 font-mono text-[15px] text-zinc-800 tabular-nums dark:text-zinc-100">0:00</span>
+            <span id="recBars" class="flex h-8 min-w-0 flex-1 items-center justify-end gap-[3px] overflow-hidden lg:group-data-[compose]/app:h-14"></span>
+          </div>
         </div>
-        <button id="micBtn" data-act="mic" aria-label="Record a voice note" hidden class="grid size-11 shrink-0 place-items-center rounded-full text-zinc-500 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800 lg:group-data-[compose]/app:size-9"></button>
-        <button id="sendBtn" data-act="send" aria-label="Send (Shift + Enter)" class="grid size-11 shrink-0 place-items-center rounded-full bg-zinc-900 text-white disabled:opacity-25 dark:bg-zinc-100 dark:text-zinc-900 lg:group-data-[compose]/app:size-9"></button>
+        <button id="micBtn" data-act="mic" aria-label="Record a voice note" hidden class="grid size-11 shrink-0 place-items-center rounded-full text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 lg:m-1 lg:size-9 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"></button>
+        <button id="sendBtn" data-act="send" aria-label="Send (Shift + Enter)" class="grid size-11 shrink-0 place-items-center rounded-full bg-zinc-900 text-white disabled:opacity-25 lg:m-1 lg:size-9 lg:hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:lg:hover:bg-white"></button>
       </div>
       <input id="fileInput" type="file" multiple hidden>
     </div>
+    <p id="boxHint" class="mt-1.5 hidden h-5 items-center justify-center gap-1 text-xs text-zinc-400 lg:mx-auto lg:flex lg:max-w-[42rem] dark:text-zinc-500"></p>
     <section id="composeList" aria-label="You said lately" class="hidden lg:group-data-[compose]/app:mx-auto lg:group-data-[compose]/app:mt-10 lg:group-data-[compose]/app:block lg:group-data-[compose]/app:max-w-[42rem]"></section>
   </footer>
 </div>
@@ -3491,40 +3492,57 @@ const detailShown = () => !desk() || (U.tab !== 'inputs' && !D.page);
 // A new input written on the Rules tab is a new rule unless you switch that off; the box and the New input page
 // say which, and only "New rule" tells the organizer it is a rule (F121).
 const ruleMode = () => U.asRule ?? U.tab === 'rules';
-const ruleFlip = () => U.tab === 'rules' ? `<button data-act="as-rule" class="-my-2 flex h-8 shrink-0 items-center rounded-full px-2 text-[13px] font-medium text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200">${ruleMode() ? 'Plain input instead' : 'As a rule instead'}</button>` : '';
+const ruleFlip = () => U.tab === 'rules' ? scopeLink('as-rule', ruleMode() ? 'Plain input instead' : 'As a rule instead') : '';
 const inTab = (it, t) => t === 'rules' ? it.type === 'rule' && !it.archived : t === 'archive' ? it.archived : !it.archived && (it.type !== 'rule' || it.status === 'proposed');
 const scopeN = () => (U.peek && byN.has(U.peek)) ? U.peek : (U.open && !U.scopeOff && byN.has(U.open) && detailShown()) ? U.open : null;
 // Voice notes work wherever the browser lets a page use the microphone: https (the phone link goes through the
 // tunnel) or localhost. Plain http can't reach the microphone, so there is no button there.
 const canRecord = () => !!(window.isSecureContext && navigator.mediaDevices?.getUserMedia && window.MediaRecorder);
 
+// The one input box (B164), built like ChatGPT's or Codex's and the same in every state: the line on top says what it
+// writes to, then the files, then one row. On the left + (× while recording: discard); in the middle the text, or
+// the recording in the very same place and size; on the right one round button that never moves: the mic while
+// the box is empty, Send as soon as there is something to send, ✓ while recording (stop, the words go into the
+// box). The quiet button next to it does the other thing: the mic while you write, send-at-once while recording.
+// On the desktop one line under the box says what the keys do right now.
+const scopeLink = (act, text, key = '', title = '') => `<button data-act="${act}" ${title ? `title="${title}"` : ''} class="-my-1 flex h-8 shrink-0 items-center rounded-full px-2 text-[13px] font-medium text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200">${text}${key ? KBD(key) : ''}</button>`;
+const scopeX = (act, label) => `<button data-act="${act}" aria-label="${label}" title="${label} · Esc" class="-my-1.5 grid size-11 shrink-0 place-items-center rounded-full text-zinc-400 hover:text-zinc-800 lg:size-8 lg:hover:bg-zinc-100 dark:text-zinc-500 dark:hover:text-zinc-200 dark:lg:hover:bg-zinc-800">${ico('x', 'size-4')}</button>`;
+function scopeLine(icon, label, detail, right = '') {  // on the desktop it starts with the project (B78): "[M] my-app ›"
+  const proj = desk() && S.project ? `<span class="mr-0.5 flex shrink-0 items-center gap-1.5 font-semibold text-zinc-800 dark:text-zinc-100">${projTile(S.project, 'size-[18px] rounded-[5px] text-[10px]')}<span class="max-w-40 truncate">${esc(S.project)}</span><span class="font-normal text-zinc-300 dark:text-zinc-600">›</span></span>` : '';
+  return `${proj}${ico(icon, 'size-3.5 text-zinc-400 dark:text-zinc-500')}<span class="min-w-0 flex-1 truncate"><span class="font-medium text-zinc-800 dark:text-zinc-100">${label}</span>${detail ? ` ${detail}` : ''}</span>${right}`;
+}
+function boxBtn(b, act, icon, label, tip, iconCls = 'size-6 lg:size-5', sw = '1.75') {  // one of the box's three buttons takes a role
+  if (b.dataset.act !== act || b.dataset.icon !== icon) { b.dataset.act = act; b.dataset.icon = icon; b.innerHTML = ico(icon, iconCls, sw); }
+  b.setAttribute('aria-label', label); b.dataset.tip = desk() ? tip : '';
+}
+const boxKeys = (keys, rest = '') => keys.map(([k, what]) => `${KBD(k)}<span>${what}</span>`).join('<span class="px-0.5">·</span>') + (rest ? `<span class="px-0.5">·</span><span>${rest}</span>` : '');
+const ticked = n => n && U.choice?.n === n && U.choice.picked.size ? [...U.choice.picked].sort((a, c) => a - c).map(i => (U.choiceLabels[n] || [])[i]).filter(Boolean) : [];
+
 function renderComposer() {
   if (S.project && draftKey() !== U.draftKey) swapDraft(draftKey());
-  const n = scopeN(), sc = $('scope');
-  // On the desktop the line above the box always starts with the project (B78): "[M] my-app ›".
-  const proj = desk() && S.project ? `<span class="mr-0.5 flex shrink-0 items-center gap-1.5 font-semibold text-zinc-800 dark:text-zinc-100">${projTile(S.project, 'size-[18px] rounded-[5px] text-[10px]')}<span class="max-w-40 truncate">${esc(S.project)}</span><span class="font-normal text-zinc-400 dark:text-zinc-500">›</span></span>` : '';
-  $('text').placeholder = !desk() || !S.project ? 'Write anything…' : n ? `Reply to ${code(n)}…` : ruleMode() ? `New rule for ${S.project}…` : `Write to ${S.project}…`;
-  sc.hidden = !n;
-  if (!n && ruleMode()) { sc.hidden = false; sc.innerHTML = `${proj}${ico('scope', 'size-3.5')}<span class="min-w-0 flex-1 truncate font-medium">New rule for this project</span>${desk() ? ruleFlip() : ''}`; }
-  else if (!n && desk()) { sc.hidden = false; sc.innerHTML = `${proj}<span class="flex min-w-0 flex-1 items-center gap-1.5 text-zinc-500 dark:text-zinc-400">${ico('inbox', 'size-3.5')}<span class="truncate"><span class="font-medium text-zinc-700 dark:text-zinc-200">New input</span> · ${S.org?.on ? 'the organizer files it' : 'your agent files it'}</span></span>${ruleFlip()}${U.open && detailShown() ? `<button data-act="reply" class="h-8 shrink-0 rounded-full px-2 text-[13px] font-medium text-blue-600 dark:text-blue-400">Add to ${code(U.open)} instead${KBD('R')}</button>` : ''}`; }
-  const dt = docTarget();
-  if (dt) {
-    sc.hidden = false;
-    sc.innerHTML = `${ico(dt.reply ? 'reply' : 'comment', 'size-3.5')}<span class="min-w-0 flex-1 truncate"><span class="font-medium">${dt.reply ? 'Reply in' : 'Comment on'} D${dt.d.d}</span> ${dt.many > 1 ? `· ${dt.many} paragraphs` : dt.quote ? `“${esc(dt.quote.slice(0, 120))}”` : ''}</span><button data-act="doc-unpick" aria-label="Cancel the comment" class="-my-2 grid size-11 shrink-0 place-items-center rounded-full text-blue-600 dark:text-blue-300">${ico('x', 'size-4')}</button>`;
-    $('text').placeholder = `${dt.reply ? 'Reply' : 'Comment'} on D${dt.d.d}…`;
-  }
-  else if (n && desk()) sc.innerHTML = `${proj}${ico('reply', 'size-3.5')}<span class="min-w-0 flex-1 truncate"><span class="font-medium">Reply to ${code(n)}</span> ${esc(byN.get(n).title)}</span><button data-act="new-input" title="Write a new input to the whole project instead · C" class="-my-2 flex h-8 shrink-0 items-center rounded-full px-2 text-[13px] font-medium text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200">New input instead${KBD('C')}</button>`;  // B83: a reply says so; a new input has its own page
-  else if (n) sc.innerHTML = `${proj}${ico('scope', 'size-3.5')}<span class="min-w-0 flex-1 truncate"><span class="font-medium">${byN.get(n).wait ? 'Reply to' : 'Adding to'} ${code(n)}</span> ${esc(byN.get(n).title)}</span><button data-act="unscope" aria-label="Send to the whole project instead" class="-my-2 grid size-11 shrink-0 place-items-center rounded-full text-blue-600 dark:text-blue-300">${ico('x', 'size-4')}</button>`;
+  const n = scopeN(), it = n && byN.get(n), dt = docTarget(), t = $('text'), ticks = U.correct || U.amend || dt ? [] : ticked(n);
+  let line = '', ph = !desk() || !S.project ? 'Write anything…' : `Write to ${S.project}…`, send = 'Send';
   if (U.correct && byR.has(U.correct.id)) {  // F144: correcting a few words of a voice note
-    sc.hidden = false;
-    sc.innerHTML = `${proj}${ico('pencil', 'size-3.5')}<span class="min-w-0 flex-1 truncate"><span class="font-medium">Correct “${esc(U.correct.wrong)}”</span> <span class="text-zinc-500 dark:text-zinc-400">in ${U.correct.id} · remembered for every project</span></span><button data-act="correct-cancel" aria-label="Stop correcting" title="Stop · Esc" class="-my-2 grid size-11 shrink-0 place-items-center rounded-full text-blue-600 dark:text-blue-300">${ico('x', 'size-4')}</button>`;
-    $('text').placeholder = `The right words for “${U.correct.wrong}”…`;
+    line = scopeLine('pencil', `Correct “${esc(U.correct.wrong)}”`, `in ${U.correct.id} · remembered for every project`, scopeX('correct-cancel', 'Stop correcting'));
+    ph = `The right words for “${U.correct.wrong}”…`; send = 'Save';
   } else if (U.amend && byR.has(U.amend.id)) {  // B136: editing or adding to an input you sent
     const r = byR.get(U.amend.id), edit = U.amend.mode === 'edit';
-    sc.hidden = false;
-    sc.innerHTML = `${proj}${ico(edit ? 'pencil' : 'plus', 'size-3.5')}<span class="min-w-0 flex-1 truncate"><span class="font-medium">${edit ? 'Edit' : 'Add details to'} ${r.id}</span> “${esc(oneLine(r.text).slice(0, 120))}”</span><button data-act="amend-cancel" aria-label="Stop ${edit ? 'editing' : 'adding details'}" title="Stop · Esc" class="-my-2 grid size-11 shrink-0 place-items-center rounded-full text-blue-600 dark:text-blue-300">${ico('x', 'size-4')}</button>`;
-    $('text').placeholder = edit ? `Edit ${r.id}…` : `Add details to ${r.id}…`;
-  }
+    line = scopeLine(edit ? 'pencil' : 'listplus', `${edit ? 'Edit' : 'Add details to'} ${r.id}`, `“${esc(oneLine(r.text).slice(0, 120))}”`, scopeX('amend-cancel', edit ? 'Stop editing' : 'Stop adding details'));
+    ph = edit ? `Edit ${r.id}…` : `Add details to ${r.id}…`; send = 'Save';
+  } else if (dt) {  // I087: a comment on a document
+    line = scopeLine(dt.reply ? 'reply' : 'comment', `${dt.reply ? 'Reply in' : 'Comment on'} D${dt.d.d}`, dt.many > 1 ? `· ${dt.many} paragraphs` : dt.quote ? `“${esc(oneLine(dt.quote).slice(0, 120))}”` : '', scopeX('doc-unpick', 'Cancel the comment'));
+    ph = `${dt.reply ? 'Reply' : 'Comment'} on D${dt.d.d}…`; send = dt.reply ? 'Reply' : 'Comment';
+  } else if (n) {  // B83: a reply says so; the choices you ticked go with it (B145)
+    line = scopeLine(desk() ? 'reply' : 'scope', `${desk() || it.wait ? 'Reply to' : 'Adding to'} ${code(n)}`, ticks.length ? ticks.map(l => '✓ ' + esc(oneLine(l))).join(' · ') : esc(it.title),
+      desk() ? scopeLink('new-input', 'New input instead', 'C', 'Write a new input to the whole project instead · C') : scopeX('unscope', 'Send to the whole project instead'));
+    if (desk()) ph = `Reply to ${code(n)}…`;
+    if (ticks.length) send = 'Send answer';
+  } else if (ruleMode()) {
+    line = scopeLine('scope', 'New rule for this project', '', desk() ? ruleFlip() : '');
+    if (desk() && S.project) ph = `New rule for ${S.project}…`;
+  } else if (desk()) line = scopeLine('inbox', 'New input', `· ${S.org?.on ? 'the organizer files it' : 'your agent files it'}`,
+    ruleFlip() + (U.open && detailShown() ? scopeLink('reply', `Add to ${code(U.open)} instead`, 'R') : ''));
+  $('scope').hidden = !line; $('scope').innerHTML = line; t.placeholder = ph;
   const d = $('drafts');
   d.hidden = !U.files.length;
   d.innerHTML = U.files.map((f, i) => `<div class="relative shrink-0">${(f.mime || '').startsWith('audio/')
@@ -3533,28 +3551,26 @@ function renderComposer() {
       ? `<button data-act="view-draft" data-i="${i}" aria-label="Look at ${esc(f.name)}" class="block cursor-zoom-in rounded-xl"><img src="${f.preview || P + 'f/' + encodeURIComponent(f.f)}" alt="" class="size-16 rounded-xl border border-zinc-200 object-cover dark:border-zinc-700 ${f.f ? '' : 'opacity-40'}"></button>`
       : `<div class="flex h-16 w-28 items-center gap-1 rounded-xl border border-zinc-200 px-2 text-xs dark:border-zinc-700 ${f.f ? '' : 'opacity-40'}">${ico('file', 'size-4')}<span class="line-clamp-2 break-all">${esc(f.name)}</span></div>`}
     <button data-act="unfile" data-i="${i}" aria-label="Remove ${esc(f.name)}" class="absolute -top-3.5 -right-3.5 grid size-11 place-items-center"><span class="grid size-6 place-items-center rounded-full bg-zinc-900 text-white ring-2 ring-white dark:bg-zinc-100 dark:text-zinc-900 dark:ring-zinc-900">${ico('x', 'size-3.5', '2.5')}</span></button></div>`).join('');
-  // One round button in every box, as on the phone (B109): the mic while the box is empty, Send once you write;
-  // then a small mic sits next to it.
-  const empty = !$('text').value.trim() && !U.files.length, voice = empty && !R.rec && canRecord();
-  // While recording, the round button where the mic was stops it, into the box (B149): tapping the same spot twice
-  // never sends. Sending at once is its own button in the bar, apart from it.
-  const sb = $('sendBtn'), icon = R.rec ? 'stop' : voice ? 'mic' : 'up';
-  if (sb.dataset.icon !== icon) { sb.dataset.icon = icon; sb.innerHTML = ico(icon, voice ? 'size-6' : 'size-5'); }
-  for (const c of ['bg-zinc-900', 'dark:bg-zinc-100', 'dark:text-zinc-900']) sb.classList.toggle(c, !R.rec);
-  for (const c of ['bg-red-600', 'dark:bg-red-500']) sb.classList.toggle(c, !!R.rec);
-  const micTip = !desk() ? '' : D.compose ? 'Record a voice note · ⌥V' : 'Record a voice note · V, or ⌥V while typing';
-  $('boxHint').innerHTML = R.rec ? `${KBD('↵')}<span>into the box ·</span>${KBD('⇧↵')}<span>sends ·</span>${KBD('Esc')}<span>discards</span>` : `${ico('image', 'size-4')}Paste or drop screenshots`;
-  sb.dataset.act = R.rec ? 'rec-stop' : voice ? 'mic' : 'send';
-  sb.disabled = !voice && !R.rec && empty;
-  sb.setAttribute('aria-label', voice ? 'Record a voice note' : R.rec ? 'Stop recording, into the box' : 'Send (Shift + Enter)');
-  sb.dataset.tip = desk() ? (voice ? micTip : R.rec ? 'Stop, into the box · ↵' : 'Send · ⌘↵') : '';
-  $('recStop').dataset.tip = desk() ? 'Stop and send · ⇧↵' : '';
-  $('recCancel').dataset.tip = desk() ? 'Discard · Esc' : '';
-  for (const id of ['attachBtn', 'text']) $(id).hidden = !!R.rec;
-  $('micBtn').hidden = !!R.rec || voice || !canRecord();
-  $('micBtn').dataset.tip = micTip;
-  $('recBar').hidden = !R.rec;
-  if (U.peek && !$('overlay').hidden) $('overlay').style.bottom = $('composer').parentElement.offsetHeight + 'px';  // sheet stays above the input box
+  // The three buttons. While recording the textarea keeps its place (unseen), so the box keeps its size.
+  const rec = !!R.rec, has = !!(t.value.trim() || U.files.length || ticks.length), voice = canRecord();
+  const micTip = D.compose ? 'Record a voice note · ⌥V' : 'Record a voice note · V, or ⌥V while typing';
+  boxBtn($('attachBtn'), rec ? 'rec-cancel' : 'attach', rec ? 'x' : 'plus', rec ? 'Discard the recording' : 'Add images or files', rec ? 'Discard · Esc' : 'Add images or files');
+  const sb = $('sendBtn');
+  if (rec) boxBtn(sb, 'rec-stop', 'check', 'Stop recording, words into the box', 'Words into the box · ↵', 'size-5', '2.5');
+  else if (has || !voice) boxBtn(sb, 'send', 'up', `${send} (Shift + Enter)`, `${send} · ⇧↵`, 'size-5', '2.25');
+  else boxBtn(sb, 'mic', 'mic', 'Record a voice note', micTip);
+  sb.disabled = !rec && !has && !voice;
+  const aux = $('micBtn'), quiet = rec || (has && voice);
+  if (rec) boxBtn(aux, 'rec-send', 'up', 'Stop and send', 'Stop and send · ⇧↵', 'size-5', '2');
+  else if (quiet) boxBtn(aux, 'mic', 'mic', 'Record a voice note', micTip, 'size-5');
+  aux.hidden = !quiet;  // only beside a box with something in it: the round button never moves, the text never jumps
+  t.classList.toggle('invisible', rec); $('recBar').hidden = !rec;
+  $('boxHint').innerHTML = !desk() ? '' : rec ? boxKeys([['↵', 'words into the box'], ['⇧↵', 'stop and send'], ['Esc', 'discard']])
+    : U.correct || U.amend ? boxKeys([['⇧↵', 'save'], ['Esc', 'stop']])
+    : dt ? boxKeys([['⇧↵', send.toLowerCase()], ['Esc', 'cancel']])
+    : U.files.some(f => f.transcribing) ? boxKeys([['⇧↵', 'send now']], 'the words follow by themselves')
+    : boxKeys([['⇧↵', ticks.length ? 'send the answer' : 'send'], ['↵', 'new line'], ['⌥V', 'voice']], 'paste or drop screenshots');
+  if ($('overlay').dataset.above && !$('overlay').hidden) $('overlay').style.bottom = $('composer').parentElement.offsetHeight + 'px';  // a sheet over the page stays above the box: its line too
 }
 
 const outboxLine = q => q.text.split('\n')[0] || (q.files.some(f => (f.mime || '').startsWith('audio/')) ? 'Voice note' : `${q.files.length} file${q.files.length === 1 ? '' : 's'}`);
@@ -3683,6 +3699,8 @@ async function startRec() {
   try { R.stream = await navigator.mediaDevices.getUserMedia({audio: true}); }
   catch (_) { return toast('No microphone permission'); }
   R.chunks = []; R.levels = [];
+  R.typing = document.activeElement === $('text');  // the box hides its text while recording; the caret comes back after
+  if (R.typing) $('text').blur();
   R.rec = new MediaRecorder(R.stream);
   R.rec.ondataavailable = e => { if (e.data.size) R.chunks.push(e.data); };
   R.rec.start(1000);
@@ -3697,7 +3715,7 @@ async function startRec() {
   R.tick = setInterval(() => {
     $('recTime').textContent = clock(Date.now() - R.t0);
     R.levels.push(R.meter()); if (R.levels.length > 40) R.levels.shift();
-    $('recBars').innerHTML = R.levels.map(l => `<span class="w-[3px] shrink-0 rounded-full bg-red-400" style="height:${Math.round(4 + l * 24)}px"></span>`).join('');
+    $('recBars').innerHTML = R.levels.map(l => `<span class="w-[3px] shrink-0 rounded-full bg-zinc-500 dark:bg-zinc-400" style="height:${Math.round(4 + l * 24)}px"></span>`).join('');
   }, 100);
   renderComposer();
 }
@@ -3714,6 +3732,7 @@ function stopRec() {
     R.rec = null;
     $('recBars').innerHTML = ''; $('recTime').textContent = '0:00';
     renderComposer();
+    if (R.typing) { R.typing = false; $('text').focus(); }  // you were typing when you started: go on typing
   });
 }
 
@@ -3806,6 +3825,7 @@ function dialog(title, html, {aboveComposer = false, focus = true, tall = false,
   for (const c of ['lg:items-start', 'lg:justify-end', 'lg:bg-transparent', 'dark:lg:bg-transparent', 'lg:pt-[3.75rem]', 'lg:pr-3']) $('overlay').classList.toggle(c, pop && desk());
   for (const c of ['lg:w-[24rem]', 'lg:max-h-[80dvh]', 'lg:rounded-2xl', 'lg:ring-1', 'lg:ring-zinc-900/10', 'dark:lg:ring-white/10']) $('dlg').classList.toggle(c, pop && desk());
   $('overlay').style.bottom = aboveComposer ? $('composer').parentElement.offsetHeight + 'px' : '';  // keep the input box usable
+  $('overlay').dataset.above = aboveComposer ? '1' : '';  // and follow it when its line or files come and go
   $('overlay').style.paddingLeft = $('overlay').style.paddingTop = ''; $('overlay').classList.remove('lg:justify-start');  // set again by popAt
   if (focus) $('dlgClose').focus({preventScroll: true});
 }
@@ -4251,7 +4271,7 @@ const ACT = {
     const p = U.choice.picked;
     if (b.dataset.multi) p.has(i) ? p.delete(i) : p.add(i); else { p.clear(); p.add(i); }
     if (U.peek === n && !$('overlay').hidden) { const top = $('dlgBody').scrollTop; peek(n, {focus: false}); $('dlgBody').scrollTop = top; }
-    else renderDetail();
+    else { renderDetail(); renderComposer(); }  // the box says what goes with your words, and can send it (B164)
   },
   'choice-send': async b => {  // the answer is an ordinary reply on the item: one line per pick
     const n = Number(b.dataset.n), labels = U.choiceLabels[n] || [], picked = U.choice?.n === n ? [...U.choice.picked].sort((a, c) => a - c) : [];
@@ -4819,10 +4839,12 @@ function deskKey(e) {
   // ⌥V records even while you type in the box (B91): there a plain V is a letter.
   if (e.altKey && e.code === 'KeyV' && !e.metaKey && !e.ctrlKey && $('viewer').hidden && $('overlay').hidden) { e.preventDefault(); return R.rec ? finishRec(false) : startRec(); }
   if (typing || e.altKey || !$('viewer').hidden) return;
+  // While recording, the keys of the box (F095): ↵ stops into the box, ⇧↵ or ⌘↵ stops and sends, Esc discards.
+  // ⇧↵ means send even on the button you just clicked (B164); a plain ↵ there presses that button, as below.
+  if (R.rec && e.key === 'Enter' && !e.isComposing && (e.shiftKey || e.metaKey || e.ctrlKey)) { e.preventDefault(); return finishRec(true); }
   // Enter and Space press the button, link or choice you are on (B123); they are shortcuts only on the page or a row.
   if ((e.key === 'Enter' || e.key === ' ') && el && el !== document.body && !el.closest('#list') && el.closest('button, a[href], [role=button], summary')) return;
-  // While recording, the keys of the box (F095): ↵ stops into the box, ⇧↵ or ⌘↵ stops and sends, Esc discards.
-  if (R.rec && e.key === 'Enter' && !e.isComposing) { e.preventDefault(); return finishRec(e.shiftKey || e.metaKey || e.ctrlKey); }
+  if (R.rec && e.key === 'Enter' && !e.isComposing) { e.preventDefault(); return finishRec(false); }
   if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && U.choice && U.choice.n === U.open) { e.preventDefault(); return document.querySelector(`[data-act="choice-send"][data-n="${U.open}"]`)?.click(); }
   if (e.metaKey || e.ctrlKey) return;
   if (U.sheet === 'menu' && !$('overlay').hidden && /^[a-zA-Z]$/.test(e.key)) closeDialog();  // the keys the menu shows work from it (B131)
@@ -5245,7 +5267,7 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) come
 window.addEventListener('focus', comeBack);
 window.addEventListener('online', refresh);
 // The sheet sits above the input box; follow the box whenever it changes size (styles loading, keyboard, scope line).
-new ResizeObserver(() => { if (U.peek && !$('overlay').hidden) $('overlay').style.bottom = $('composer').parentElement.offsetHeight + 'px'; })
+new ResizeObserver(() => { if ($('overlay').dataset.above && !$('overlay').hidden) $('overlay').style.bottom = $('composer').parentElement.offsetHeight + 'px'; })
   .observe($('composer').parentElement);
 window.addEventListener('pageshow', e => { if (e.persisted) refresh(); });
 // ---------------------------------------------------------------- the address (T102)
@@ -5318,10 +5340,6 @@ $('keysBtn').innerHTML = `${ico('keyboard', 'size-4')}<span class="flex-1 text-l
 $('searchBtn').innerHTML = ico('search', 'size-5.5');
 $('searchIcon').innerHTML = ico('search', 'size-4.5');
 $('qClear').innerHTML = ico('x', 'size-3', '3');
-$('attachBtn').innerHTML = ico('plus', 'size-6');
-$('micBtn').innerHTML = ico('mic', 'size-6');
-$('recCancel').innerHTML = ico('x');
-$('recStop').innerHTML = ico('up', 'size-5');
 $('dlgClose').innerHTML = CLOSE_X;
 $('vClose').innerHTML = ico('x');
 $('backBtn').innerHTML = ico('left', 'size-6');
@@ -5330,7 +5348,7 @@ U.draftKey = null; U.parked = {};
 try { U.oldDraft = localStorage.getItem('taska.draft') || ''; localStorage.removeItem('taska.draft'); } catch (_) {}
 $('projName').textContent = decodeURIComponent(P.split('/')[2] || 'Taska');  // right away, before the data arrives
 grow();
-renderComposer();  // the big button's icon, before data arrives
+renderComposer();  // the box's buttons, before data arrives
 window.addEventListener('load', grow);  // a restored draft is measured again once styles are in
 
 load().then(() => {
