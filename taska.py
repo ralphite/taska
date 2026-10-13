@@ -3708,6 +3708,22 @@ function showImage() {
   document.querySelector('[data-act="v-next"]').disabled = viewerIdx === viewerGroup.length - 1;
 }
 
+// Closing and moving like a photo app (B140): a tap on the dark area closes; on a phone, at fit-to-screen size, a
+// sideways swipe goes to the next or previous image and a swipe down closes. Zoomed in, a swipe just scrolls.
+$('vStage').addEventListener('click', e => { if (e.target === e.currentTarget) ACT['v-close'](); });
+const VS = {x: 0, y: 0, on: false};
+$('vStage').addEventListener('touchstart', e => {
+  VS.on = e.touches.length === 1 && $('vImg').classList.contains('max-w-full');
+  if (VS.on) { VS.x = e.touches[0].clientX; VS.y = e.touches[0].clientY; }
+}, {passive: true});
+$('vStage').addEventListener('touchend', e => {
+  if (!VS.on) return;
+  VS.on = false;
+  const t = e.changedTouches[0], dx = t.clientX - VS.x, dy = t.clientY - VS.y;
+  if (Math.abs(dx) > 50 && Math.abs(dx) > 1.5 * Math.abs(dy)) ACT[dx < 0 ? 'v-next' : 'v-prev']();
+  else if (dy > 80 && dy > 1.5 * Math.abs(dx)) ACT['v-close']();
+}, {passive: true});
+
 // ---------------------------------------------------------------- wiring
 
 function render() {
