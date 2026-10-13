@@ -3496,8 +3496,18 @@ const ruleFlip = () => U.tab === 'rules' ? scopeLink('as-rule', ruleMode() ? 'Pl
 const inTab = (it, t) => t === 'rules' ? it.type === 'rule' && !it.archived : t === 'archive' ? it.archived : !it.archived && (it.type !== 'rule' || it.status === 'proposed');
 const scopeN = () => (U.peek && byN.has(U.peek)) ? U.peek : (U.open && !U.scopeOff && byN.has(U.open) && detailShown()) ? U.open : null;
 // Voice notes work wherever the browser lets a page use the microphone: https (the phone link goes through the
-// tunnel) or localhost. Plain http can't reach the microphone, so there is no button there.
+// tunnel) or localhost. On plain http, such as a LAN address like http://server.local:7340, no page gets it (B166):
+// the mic still shows, in its place, and a press says so and offers Taska's https link.
 const canRecord = () => !!(window.isSecureContext && navigator.mediaDevices?.getUserMedia && window.MediaRecorder);
+function voiceWhy() {  // why the mic can't record here, in the line above the box (no popup: R139)
+  if (window.isSecureContext) return toast('This browser can’t record voice notes');
+  const link = S.remote ? S.remote + '/' : '', a = 'flex h-11 shrink-0 items-center rounded-full px-2 font-semibold text-blue-600 dark:text-blue-400';
+  U.note = `${ico('mic', 'size-4 shrink-0 text-zinc-500 dark:text-zinc-400')}<span class="min-w-0 flex-1 py-1 leading-snug">${link
+    ? 'Voice needs a secure link, and this address is plain http. Open Taska’s https link to record:'
+    : 'Voice needs a secure link: https, or localhost on this computer. This address is plain http, and Taska has no https link yet (start it with <code class="whitespace-nowrap">--public</code>).'}</span>`
+    + (link ? `<a href="${esc(link)}" target="_blank" rel="noopener" class="-my-2 ${a}">Open</a><button data-act="copy-text" data-text="${esc(link)}" class="-my-2 ${a}">Copy</button>` : '');
+  renderFeedback();
+}
 
 // The one input box (B164), built like ChatGPT's or Codex's and the same in every state: the line on top says what it
 // writes to, then the files, then one row. On the left + (× while recording: discard); in the middle the text, or
@@ -3552,15 +3562,14 @@ function renderComposer() {
       : `<div class="flex h-16 w-28 items-center gap-1 rounded-xl border border-zinc-200 px-2 text-xs dark:border-zinc-700 ${f.f ? '' : 'opacity-40'}">${ico('file', 'size-4')}<span class="line-clamp-2 break-all">${esc(f.name)}</span></div>`}
     <button data-act="unfile" data-i="${i}" aria-label="Remove ${esc(f.name)}" class="absolute -top-3.5 -right-3.5 grid size-11 place-items-center"><span class="grid size-6 place-items-center rounded-full bg-zinc-900 text-white ring-2 ring-white dark:bg-zinc-100 dark:text-zinc-900 dark:ring-zinc-900">${ico('x', 'size-3.5', '2.5')}</span></button></div>`).join('');
   // The three buttons. While recording the textarea keeps its place (unseen), so the box keeps its size.
-  const rec = !!R.rec, has = !!(t.value.trim() || U.files.length || ticks.length), voice = canRecord();
-  const micTip = D.compose ? 'Record a voice note · ⌥V' : 'Record a voice note · V, or ⌥V while typing';
+  const rec = !!R.rec, has = !!(t.value.trim() || U.files.length || ticks.length);
+  const micTip = !window.isSecureContext ? 'Voice needs an https link here: press for it' : D.compose ? 'Record a voice note · ⌥V' : 'Record a voice note · V, or ⌥V while typing';
   boxBtn($('attachBtn'), rec ? 'rec-cancel' : 'attach', rec ? 'x' : 'plus', rec ? 'Discard the recording' : 'Add images or files', rec ? 'Discard · Esc' : 'Add images or files');
   const sb = $('sendBtn');
   if (rec) boxBtn(sb, 'rec-stop', 'check', 'Stop recording, words into the box', 'Words into the box · ↵', 'size-5', '2.5');
-  else if (has || !voice) boxBtn(sb, 'send', 'up', `${send} (Shift + Enter)`, `${send} · ⇧↵`, 'size-5', '2.25');
+  else if (has) boxBtn(sb, 'send', 'up', `${send} (Shift + Enter)`, `${send} · ⇧↵`, 'size-5', '2.25');
   else boxBtn(sb, 'mic', 'mic', 'Record a voice note', micTip);
-  sb.disabled = !rec && !has && !voice;
-  const aux = $('micBtn'), quiet = rec || (has && voice);
+  const aux = $('micBtn'), quiet = rec || has;
   if (rec) boxBtn(aux, 'rec-send', 'up', 'Stop and send', 'Stop and send · ⇧↵', 'size-5', '2');
   else if (quiet) boxBtn(aux, 'mic', 'mic', 'Record a voice note', micTip, 'size-5');
   aux.hidden = !quiet;  // only beside a box with something in it: the round button never moves, the text never jumps
@@ -3596,6 +3605,8 @@ async function moveInput(rid) {
 
 function renderFeedback() {
   const fb = $('feedback'), q = U.outbox[0];
+  fb.classList.toggle('lg:group-data-[compose]/app:hidden', !U.note);  // the New input page shows its own list, but not this
+  if (U.note) { fb.hidden = false; fb.innerHTML = U.note + `<button data-act="dismiss" aria-label="Dismiss" class="-my-2 grid size-11 shrink-0 place-items-center rounded-full text-zinc-400">${ico('x', 'size-3.5', '2')}</button>`; return; }
   let r = U.lastSent && byR.get(U.lastSent);
   if (r && (r.scope && byN.has(r.scope) ? code(r.scope) : null) !== (scopeN() ? code(scopeN()) : null)) r = null;  // B129: only where it went
   const link = (act, label, attrs) => `<button data-act="${act}" ${attrs} class="-my-2 h-11 shrink-0 rounded-full px-2 font-semibold text-blue-600 dark:text-blue-400">${label}</button>`;
@@ -3657,6 +3668,7 @@ async function send() {
   const text = [ch, $('text').value.trim()].filter(Boolean).join('\n\n');
   if (!text && !U.files.length) return;
   if (ch) U.choice = null;
+  U.note = null;
   U.outbox.push({id: 'q' + ++U.qn, text, files: U.files, scope: n ? code(n) : null, from: !n && ruleMode() ? 'rules' : null});
   $('text').value = ''; U.files = []; saveDraft(); grow();
   if (U.peek && U.go && n === U.peek) advance(U.peek);  // going through: your reply settles this one
@@ -3695,7 +3707,7 @@ const R = {rec: null, chunks: [], stream: null, t0: 0, tick: 0, ctx: null, level
 const clock = ms => `${Math.floor(ms / 60000)}:${String(Math.floor(ms / 1000) % 60).padStart(2, '0')}`;
 
 async function startRec() {
-  if (!canRecord()) return toast('Recording needs https or localhost in this browser');
+  if (!canRecord()) return voiceWhy();  // B166
   try { R.stream = await navigator.mediaDevices.getUserMedia({audio: true}); }
   catch (_) { return toast('No microphone permission'); }
   R.chunks = []; R.levels = [];
@@ -4366,7 +4378,7 @@ const ACT = {
   },
   unscope: () => { U.scopeOff = true; renderComposer(); $('text').focus(); },
   send,
-  dismiss: () => { U.lastSent = null; renderFeedback(); },
+  dismiss: () => { U.lastSent = null; U.note = null; renderFeedback(); },
   undo: async b => {
     const r = await fetch(P + 'api/undo', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id: b.dataset.id})});
     const d = await r.json();
