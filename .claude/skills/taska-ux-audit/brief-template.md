@@ -43,6 +43,9 @@ Design intent, where there is some: <paths to design notes>. Intent is not proof
 5. **Error prevention.** How easy is it to send to the wrong place, act on the wrong item, or lose work?
 6. **Keyboard and focus.** Where is focus after each action? Do keys do what the `?` sheet says everywhere?
 7. **Words and labels.** Does a label promise something else? Two names for one thing, or one name for two?
+8. **Changing what already exists.** Edit and add to a sent input, change an item's type, priority, status and
+   parent, rename it, merge it. What does the thread show afterwards, does the code or address change, and is
+   there a toast with Undo? (T113 run 1 missed both known answers in this area.)
 8. **Efficiency.** Count clicks and keys for common jobs; look for dead ends and detours.
 9. **Edge states.** Empty, very long, many, nothing selected, an item that disappears while open, two tabs.
 
