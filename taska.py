@@ -2401,9 +2401,9 @@ const excerpt = it => oneLine(it.wait ? it.wait.text : it.status === 'review' ? 
 const rowTint = it => U.open === it.n ? 'lg:bg-blue-50 dark:lg:bg-blue-400/10' : 'lg:hover:bg-zinc-50 dark:lg:hover:bg-zinc-900/70';
 const ACT_KEY = {Done: 'D', Accept: 'A', Approve: 'A', Archive: 'E', Unarchive: 'E', Later: 'L', Now: 'L', "Won't do": 'W', 'Not yet': 'N'};
 const ACT_TONE = {Done: 'text-emerald-600 dark:text-emerald-400', Accept: 'text-emerald-600 dark:text-emerald-400', Approve: 'text-blue-600 dark:text-blue-400', Archive: 'text-emerald-600 dark:text-emerald-400', Start: 'text-blue-600 dark:text-blue-400', "Won't do": 'text-red-600 dark:text-red-400'};
-// On the desktop each action keeps one place on every row (B128): forward · progress · Won't do · Later. A slot that
-// does not apply stays empty, so a habit click never lands on another action. Rows waiting on your answer offer
-// only Later: the pill answers. (The phone's swipes keep their own order.)
+// On the desktop the actions keep one order on every row (B128): forward · progress · Won't do · Later; the ones that
+// do not apply are left out, with no gaps (B135). Rows waiting on your answer offer only Later: the pill answers.
+// (The phone's swipes keep their own order.)
 function deskSlots(it, needs) {
   const later = it.when === 'now' ? ['when', 'later', 'Later'] : ['when', 'now', 'Now'], drop = ['status', 'dropped', "Won't do"];
   if (it.archived) return [['archived', 'false', 'Unarchive'], null, null, null];
@@ -2414,7 +2414,7 @@ function deskSlots(it, needs) {
 }
 function rowActs(it, needs = false) {
   const acts = deskSlots(it, needs);
-  return `<div class="hidden shrink-0 items-center gap-0.5 self-center lg:group-hover:flex">${acts.map(a => !a ? '<span class="size-8"></span>' : a[0] === 'reopen'
+  return `<div class="hidden shrink-0 items-center gap-0.5 self-center lg:group-hover:flex">${acts.filter(Boolean).map(a => a[0] === 'reopen'
     ? `<button data-act="reopen" data-n="${it.n}" title="Not yet · N" aria-label="Not yet" class="grid size-8 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-200/70 dark:text-zinc-400 dark:hover:bg-zinc-800">${ico('reopen', 'size-[18px]')}</button>`
     : (([f, v, label]) => `<button data-act="swipe" data-n="${it.n}" data-f="${f}" data-v="${v}" title="${label}${ACT_KEY[label] ? ' · ' + ACT_KEY[label] : ''}" aria-label="${label}" class="grid size-8 place-items-center rounded-lg hover:bg-zinc-200/70 dark:hover:bg-zinc-800 ${ACT_TONE[label] || 'text-zinc-500 dark:text-zinc-400'}">${ico(ACT_ICON[label], 'size-[18px]')}</button>`)(a)).join('')}</div>`;
 }
