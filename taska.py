@@ -3211,16 +3211,33 @@ function inputActions(r, cls = LINK_BTN) {
     + (r.history?.length ? `<button data-act="input-history" data-id="${r.id}" class="${cls}">History</button>` : '');
 }
 
+// Edit or add details to an input you sent (B136): the one input box does it, like a reply or a comment (I087).
+// The line above the box names the input; Send saves; Esc or × stops, and what you wrote waits for next time.
 function editInput(id, mode) {
   const r = byR.get(id);
   if (!r || r.moved) return;
-  U.inputEdit = {id, mode, v: r.v || 0};
-  const append = mode === 'append';
-  dialog(`${append ? 'Add details to' : 'Edit'} ${id}`, `${append ? `<p class="mb-3 max-h-36 overflow-auto whitespace-pre-wrap break-words text-sm text-zinc-500 dark:text-zinc-400">${esc(r.text)}</p>` : ''}
-    <label class="block"><span class="mb-2 block text-sm font-medium">${append ? 'Additional details' : 'Input text'}</span><textarea id="inputEditText" rows="8" class="${FIELD} resize-y">${esc(append ? '' : r.text)}</textarea></label>
-    <p id="inputEditError" role="alert" class="mt-2 text-sm text-red-600 dark:text-red-400"></p>`,
-    {focus: false, sub: '<p class="px-4 pb-2 text-sm text-zinc-500 dark:text-zinc-400">Saving updates the related items. Earlier text and files are kept.</p>', foot: `<div class="flex justify-end gap-2"><button data-act="close" class="${SECOND}">Cancel</button><button data-act="input-save" class="${PRIMARY}">${append ? 'Add details' : 'Save'}</button></div>`});
-  $('inputEditText').focus();
+  U.amend = {id, mode, v: r.v || 0};
+  renderComposer();
+  const t = $('text');
+  if (mode === 'edit' && !t.value.trim()) { t.value = r.text; saveDraft(); grow(); renderComposer(); }
+  if (desk() && D.compose) renderDetail();
+  t.focus(); t.selectionStart = t.selectionEnd = t.value.length;
+}
+function cancelAmend() {
+  U.amend = null; renderComposer();
+  if (desk() && D.compose) renderDetail();
+}
+async function sendAmend() {
+  const a = U.amend, text = $('text').value.trim();
+  if (!text) return $('text').focus();
+  if (U.files.length) return toast('Files can go with a new input, not with details added later');
+  try {
+    const d = await (await fetch(P + 'api/op', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({op: 'amend', id: a.id, mode: a.mode, v: a.v, text})})).json();
+    if (!d.ok) return toast((d.res || []).find(x => x.startsWith('err')) || d.error || 'Not saved');
+    $('text').value = ''; saveDraft(); grow(); U.amend = null;
+    await load(); toast(a.mode === 'edit' ? `${a.id} updated` : `Added to ${a.id}`);
+    if (desk() && D.compose) renderDetail();
+  } catch (_) { toast('Connection lost. Your words are still in the box; try again.'); }
 }
 
 function inputHistory(id) {
@@ -3310,6 +3327,12 @@ function renderComposer() {
   }
   else if (n && desk()) sc.innerHTML = `${proj}${ico('reply', 'size-3.5')}<span class="min-w-0 flex-1 truncate"><span class="font-medium">Reply to ${code(n)}</span> ${esc(byN.get(n).title)}</span><button data-act="new-input" title="Write a new input to the whole project instead · C" class="-my-2 flex h-8 shrink-0 items-center rounded-full px-2 text-[13px] font-medium text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200">New input instead${KBD('C')}</button>`;  // B83: a reply says so; a new input has its own page
   else if (n) sc.innerHTML = `${proj}${ico('scope', 'size-3.5')}<span class="min-w-0 flex-1 truncate"><span class="font-medium">${byN.get(n).wait ? 'Reply to' : 'Adding to'} ${code(n)}</span> ${esc(byN.get(n).title)}</span><button data-act="unscope" aria-label="Send to the whole project instead" class="-my-2 grid size-11 shrink-0 place-items-center rounded-full text-blue-600 dark:text-blue-300">${ico('x', 'size-4')}</button>`;
+  if (U.amend && byR.has(U.amend.id)) {  // B136: editing or adding to an input you sent
+    const r = byR.get(U.amend.id), edit = U.amend.mode === 'edit';
+    sc.hidden = false;
+    sc.innerHTML = `${proj}${ico(edit ? 'pencil' : 'plus', 'size-3.5')}<span class="min-w-0 flex-1 truncate"><span class="font-medium">${edit ? 'Edit' : 'Add details to'} ${r.id}</span> “${esc(oneLine(r.text).slice(0, 120))}”</span><button data-act="amend-cancel" aria-label="Stop ${edit ? 'editing' : 'adding details'}" title="Stop · Esc" class="-my-2 grid size-11 shrink-0 place-items-center rounded-full text-blue-600 dark:text-blue-300">${ico('x', 'size-4')}</button>`;
+    $('text').placeholder = edit ? `Edit ${r.id}…` : `Add details to ${r.id}…`;
+  }
   const d = $('drafts');
   d.hidden = !U.files.length;
   d.innerHTML = U.files.map((f, i) => `<div class="relative shrink-0">${(f.mime || '').startsWith('audio/')
@@ -3412,6 +3435,7 @@ async function addFiles(list) {
 // thought, and the outbox sends in order as soon as each input's uploads and transcripts are in.
 async function send() {
   if (R.rec) return finishRec(true);
+  if (U.amend) return sendAmend();  // details for an input you sent (B136)
   const dt = docTarget();
   if (dt) return sendDocComment(dt);  // a document comment (I087)
   const text = $('text').value.trim(), n = scopeN();
@@ -3517,7 +3541,7 @@ async function cancelRec() { await stopRec(); toast('Recording discarded. Your t
 // A draft belongs to what it is written to (B118): an item (a reply, or a comment on one of its documents), or a new
 // input (a new rule too). Each project keeps them by target in this browser; when the box changes target, the words and
 // files stay with the old target and the new target's own draft comes back. So unsent words never go elsewhere.
-const draftKey = () => { const dt = docTarget(), n = scopeN(); return dt ? code(dt.d.n) : n ? code(n) : 'new'; };  // a comment on a document shares its item's draft
+const draftKey = () => { if (U.amend) return `${U.amend.mode} ${U.amend.id}`; const dt = docTarget(), n = scopeN(); return dt ? code(dt.d.n) : n ? code(n) : 'new'; };  // a comment on a document shares its item's draft
 function draftStore(change) {
   const key = 'taska.drafts.' + S.project;
   try {
@@ -3705,7 +3729,7 @@ function showView() {
 function openItem(n, push = true) {
   if (!n || !byN.has(n)) return closeItem();
   if (!U.open && !desk()) U.listTop = [$('list').scrollTop, $('inputsView').scrollTop];
-  if (U.open !== n) { stashEdit(); U.editing = null; U.subFor = null; }
+  if (U.open !== n) { stashEdit(); U.editing = null; U.subFor = null; U.amend = null; }
   const fresh = U.open !== n;
   U.open = n; U.scopeOff = false;
   if (desk() && U.doc && !U.docEdit) { U.docScroll[U.doc] = $('detailBody').scrollTop; Object.assign(U, {doc: null, docReply: null, docSel: new Set(), docQuote: null, docCircle: false}); D.docKey = null; }  // another item: the document closes
@@ -3736,7 +3760,7 @@ function setTab(t) {
     for (const k of VIEW_KEYS) U[k] = v[k] ?? (k === 'q' ? '' : 'all');
     $('q').value = U.q; qSync();
   }
-  U.asRule = null; if (t === 'inputs' && was !== 'inputs') U.inputsEnd = true;
+  U.asRule = null; U.amend = null; if (t === 'inputs' && was !== 'inputs') U.inputsEnd = true;
   U.tab = t;
   if (t !== was) writeURL(true);
   if (desk()) {
@@ -4011,17 +4035,7 @@ const ACT = {
   'input-edit': b => editInput(b.dataset.id, 'edit'),
   'input-append': b => editInput(b.dataset.id, 'append'),
   'input-history': b => inputHistory(b.dataset.id),
-  'input-save': async b => {
-    const draft = U.inputEdit, text = $('inputEditText').value;
-    b.disabled = true; $('inputEditError').textContent = '';
-    try {
-      const response = await fetch(P + 'api/op', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({op: 'amend', ...draft, text})});
-      const d = await response.json();
-      if (!d.ok) { $('inputEditError').textContent = (d.res || []).find(x => x.startsWith('err')) || d.error || 'Could not save'; return; }
-      U.inputEdit = null; closeDialog(); await load(); toast('Saved for the organizer and your agent');
-    } catch (_) { if ($('inputEditError')) $('inputEditError').textContent = 'Connection lost. Your text is still here; try again.'; }
-    finally { b.disabled = false; }
-  },
+  'amend-cancel': () => cancelAmend(),
   'undo-mine': () => undoMine(),
   revert: async b => {
     if (!b.dataset.armed) {  // B127: an older change goes back only on a second click
@@ -4159,6 +4173,10 @@ function renderRail() {
 // the box at the bottom of the item, so the two never look alike. Only the head and the list are drawn here;
 // the box itself is the same element as always, restyled by the data-compose switch on #app.
 function composeHead() {
+  const a = U.amend && byR.get(U.amend.id);
+  if (a) return `<div class="flex items-center gap-3">${projTile(S.project, 'size-11 rounded-xl text-xl shadow-sm')}<h1 class="text-[28px] leading-none font-semibold tracking-tight">${U.amend.mode === 'edit' ? 'Edit' : 'Add details to'} ${a.id}</h1></div>
+    <p class="mt-3.5 line-clamp-2 max-w-full text-[15px] text-zinc-500 dark:text-zinc-400">“${esc(oneLine(a.text))}”</p>
+    <button data-act="amend-cancel" class="mt-2 h-8 rounded-full px-3 text-[13px] font-medium text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200">Back to a new input${KBD('Esc')}</button>`;
   return `<div class="flex items-center gap-3">${projTile(S.project, 'size-11 rounded-xl text-xl shadow-sm')}<h1 class="text-[28px] leading-none font-semibold tracking-tight">${esc(S.project)}</h1></div>
     <p class="mt-3.5 flex items-center justify-center gap-0 text-[15px] text-zinc-500 dark:text-zinc-400">${ruleMode() ? '<span class="font-medium text-zinc-700 dark:text-zinc-200">New rule</span>&nbsp;for the whole project' : 'New input to the whole project'}<span class="px-1.5 text-zinc-300 dark:text-zinc-600">·</span><span class="inline-flex items-center gap-1 font-medium text-zinc-700 dark:text-zinc-200">${ico('sparkle', 'size-4 text-blue-600 dark:text-blue-400')}${S.org?.on ? 'the organizer files it' : 'your agent files it'}</span></p>${ruleFlip() ? `<div class="mt-2 flex justify-center">${ruleFlip()}</div>` : ''}`;
 }
@@ -4744,6 +4762,7 @@ document.addEventListener('keydown', e => {
     if (DR.open) return closeDrawer();
     if (!$('viewer').hidden) return ACT['v-close']();
     if (R.rec) return cancelRec();  // the recording first: it is what you are doing
+    if (U.amend && !(document.activeElement === $('text') && $('text').value.trim() && desk())) return cancelAmend();  // B136
     if (U.doc && U.docCircle) { U.docCircle = false; return renderDoc(); }
     if (U.doc && (U.docQuote || U.docSel.size || U.docReply)) return ACT['doc-unpick']();  // first Escape drops the selection
     if (desk() && U.doc && !U.docEdit && $('overlay').hidden && !/INPUT|TEXTAREA/.test(document.activeElement.tagName)) return closeDoc();  // then back to the item
