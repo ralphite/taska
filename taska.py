@@ -155,6 +155,7 @@ class Store:
         self.qids = {}  # the page's id for an input it sent -> the input: sent again after a lost answer, it goes in once (T101)
         self.undone = set()  # seqs of your changes that were put back (F80)
         self.org_off, self.took = set(), {}  # organizer changes taken back by an undo; each undo's list of them (T113 A4)
+        self.stash = {}  # each deletion's seq -> what it took out of the items that stay, for a restore (F177)
         self.rev = 0  # bumps on every change, including transient organizer state
         self.boot = format(int(time.time() * 1000), "x")  # rev restarts with the process; boot tells pages apart
         self.maxn = self.nin = self.nfile = 0
@@ -312,6 +313,43 @@ class Store:
                 inp["touched"].remove(e["n"])
                 if not inp["touched"]:
                     inp["acked"] = False
+        elif k == "del":  # F177: an input deleted, with the items only it made (e["ns"]); restorable ("undel")
+            rid = e["src"]
+            inp = self.inputs.get(rid)
+            if inp:
+                inp["deleted"] = {"t": e["t"], "seq": e["seq"], "ns": list(e.get("ns") or []), "kept": list(e.get("kept") or [])}
+            for n in e.get("ns") or []:
+                if n in self.items:
+                    self.items[n]["deleted"] = rid
+            took = self.stash[e["seq"]] = []  # the items that stay lose it from their sources, and its words on them
+            for it in self.items.values():
+                if it.get("deleted") == rid:
+                    continue
+                if rid in it["srcs"]:
+                    took.append(("src", it["n"], it["srcs"].index(rid)))
+                    it["srcs"].remove(rid)
+                own = [x for x in it["thread"] if x.get("src") == rid and x["by"] == "you"]
+                if own:
+                    took += [("msg", it["n"], x) for x in own]
+                    it["thread"] = [x for x in it["thread"] if x not in own]
+        elif k == "undel":  # F177: a deleted input and its items back, as they were
+            rid = e["src"]
+            inp = self.inputs.get(rid)
+            gone = (inp or {}).get("deleted")
+            if inp:
+                inp["deleted"] = None
+            for it in self.items.values():
+                if it.get("deleted") == rid:
+                    it["deleted"] = None
+            for kind, n, x in reversed(self.stash.pop(gone["seq"], []) if gone else []):
+                it = self.items.get(n)
+                if not it:
+                    continue
+                if kind == "src" and rid not in it["srcs"]:
+                    it["srcs"].insert(min(x, len(it["srcs"])), rid)
+                elif kind == "msg" and all(t["id"] != x["id"] for t in it["thread"]):
+                    it["thread"].append(x)
+                    it["thread"].sort(key=lambda t: t["id"])
         elif k == "moved":  # sent to the wrong project (F79): it lives on in e["to"] as e["as"]
             inp = self.inputs.get(e["src"])
             if inp:
@@ -368,7 +406,7 @@ class Store:
         out = {}
         for rid, xs in by_src.items():
             inp = self.inputs.get(rid)
-            if not inp or not inp["org"] or not inp["org"].get("ok") or inp["org"].get("undone"):
+            if not inp or inp.get("deleted") or not inp["org"] or not inp["org"].get("ok") or inp["org"].get("undone"):
                 continue
             xs = [x for x in xs if x["seq"] > inp.get("edit_seq", 0)]
             mine = {m: x["seq"] for x in xs for m in (x.get("n"), x.get("into")) if m}
@@ -467,6 +505,58 @@ class Store:
         if o and rid in self.inputs:
             keep = o.get("keep", "Left for your coding agent" in o["msg"])
             self.inputs[rid].update(acked=not keep, org={"ok": o["ok"], "msg": o["msg"], "t": o["t"], "keep": keep, "changed": o.get("changed", False)})
+
+    # -- deleting an input (F177) ------------------------------------------------
+    # Delete moves an input to Deleted, with the items only it made, as long as no agent has worked on them. An item
+    # that has other inputs, or that an agent changed or wrote on, stays: it only loses this input from its sources (and
+    # the input's own words on it). Nothing is erased: Restore, Undo or Z put all of it back.
+
+    def deletions(self, only=None):
+        """What deleting each input would do: {rid: {"go": [n], "keep": [[n, why]]}}, for the inputs `only` (default all)."""
+        made, hands = {}, set()
+        for e in self.events:
+            if e["k"] == "add" and e.get("src"):
+                made.setdefault(e["src"], []).append(e["n"])
+            if e.get("by") and e["by"] not in PEOPLE:  # an agent's change, message, subitem, document or comment, not its making the item
+                hands.update(m for m in self.touches(e) if not (e["k"] == "add" and m == e["n"]))
+        out = {}
+        for rid in (only or [r for r, i in self.inputs.items() if not i.get("deleted")]):
+            go, keep = [], {}
+            for n in made.get(rid, []):
+                it = self.items.get(n)
+                if not it or it["merged_into"] or it.get("deleted"):
+                    continue
+                if any(r != rid and r in self.inputs and not self.inputs[r].get("deleted") for r in it["srcs"]):
+                    keep[n] = "it has other inputs"
+                elif n in hands:
+                    keep[n] = "an agent already worked on it"
+                else:
+                    go.append(n)
+            stays = True
+            while stays:  # a subitem that stays keeps its parent
+                stays = False
+                for n in list(go):
+                    if any(k["parent"] == n and not k["merged_into"] and not k.get("deleted") and k["n"] not in go for k in self.items.values()):
+                        go.remove(n)
+                        keep[n], stays = "a subitem of it stays", True
+            if go or keep:
+                out[rid] = {"go": sorted(go), "keep": [[n, keep[n]] for n in sorted(keep)]}
+        return out
+
+    def deleted_list(self):
+        """Deleted inputs, newest deletion first, with what went with them: Settings › Deleted restores them."""
+        rows = [i for i in self.inputs.values() if i.get("deleted")]
+        rows.sort(key=lambda i: -i["deleted"]["seq"])
+        item = lambda n: {"n": n, "code": self.code(n), "title": self.items[n]["title"], "type": self.items[n]["type"]}
+        return [{"id": i["id"], "t": i["t"], "at": i["deleted"]["t"], "text": i["text"], "files": len(i["files"]), "scope": i["scope"],
+                 "items": [item(n) for n in i["deleted"]["ns"] if n in self.items],
+                 "kept": [dict(item(n), why=why) for n, why in i["deleted"]["kept"] if n in self.items]} for i in rows]
+
+    def gone_note(self, it, by):
+        """What an agent hears when it writes to an item the user deleted (F177)."""
+        if not it.get("deleted") or by in PEOPLE:
+            return ""
+        return f" (note: the user deleted {self.code(it['n'])} together with input {it['deleted']}: stop working on it)"
 
     def emit(self, e):
         e["t"] = now()
@@ -702,7 +792,7 @@ class Store:
         inbox = self.for_agent()
         if inbox:
             return "\n".join(out) + f"\nfirst handle the inbox ({len(inbox)}):\n" + "".join(self.input_card(i, ref) + "\n" for i in sorted(inbox, key=lambda i: int(i["id"][1:]))), True
-        docs = [d for d in self.docs.values() if self.doc_open(d) and self.items.get(d["n"]) and not self.items[d["n"]]["merged_into"]]
+        docs = [d for d in self.docs.values() if self.doc_open(d) and self.items.get(d["n"]) and not self.items[d["n"]]["merged_into"] and not self.items[d["n"]].get("deleted")]
         if docs:
             d = min(docs, key=lambda d: d["t1"])
             return "\n".join(out) + f"\nanswer the user's comments on D{d['d']} (GET /D{d['d']}):\n" + self.doc_text(d), True
@@ -761,7 +851,7 @@ class Store:
                 "work": bool(self.cfg["auto"] and self.next_text()[1])}
 
     def active(self):
-        return [i for i in self.items.values() if not i["merged_into"]]
+        return [i for i in self.items.values() if not i["merged_into"] and not i.get("deleted")]  # deleted: in Deleted (F177)
 
     def open_kids(self, it):
         """Subitems not finished yet (any depth): a parent is done when they are."""
@@ -769,7 +859,7 @@ class Store:
         while todo:
             n = todo.pop()
             for k in self.items.values():
-                if k["parent"] == n and not k["merged_into"]:
+                if k["parent"] == n and not k["merged_into"] and not k.get("deleted"):
                     todo.append(k["n"])
                     if k["status"] not in CLOSED:
                         out.append(k)
@@ -788,7 +878,7 @@ class Store:
             if e["k"] != "set" or e.get("undo_of") or e["seq"] in self.undone:
                 continue
             it = self.items.get(e["n"])
-            if e.get("by") == "you" and it and not it["merged_into"]:
+            if e.get("by") == "you" and it and not it["merged_into"] and not it.get("deleted"):
                 f = {k: v for k, v in e["f"].items() if (e["n"], k) not in seen and it.get(k) == v}
                 if f:
                     out.append({"seq": e["seq"], "n": e["n"], "f": f, "was": {k: e["was"].get(k) for k in f}, "t": e["t"]})
@@ -798,7 +888,7 @@ class Store:
         return out
 
     def pending(self):
-        return [i for i in self.inputs.values() if not i["acked"]]
+        return [i for i in self.inputs.values() if not i["acked"] and not i.get("deleted")]
 
     # -- validation + execution -------------------------------------------------
 
@@ -895,6 +985,8 @@ class Store:
                 raise Err(f"unknown input {rid}")
             if inp.get("moved") or inp.get("moving"):
                 raise Err("this input has moved; edit it in the destination project")
+            if inp.get("deleted"):
+                raise Err(f"{rid} is deleted; restore it first (Settings, Deleted)")
             if op.get("v") != inp.get("v", 0):
                 raise Err("this input changed in another window; reopen it before saving")
             mode = op.get("mode")
@@ -923,11 +1015,11 @@ class Store:
             if op.get("d"):
                 d = self.doc(op["d"])
                 self.emit({"k": "doc", "d": d["d"], "n": d["n"], "title": title, "md": md, "by": by})
-                return f"ok D{d['d']} updated", f"Updated D{d['d']}"
+                return f"ok D{d['d']} updated" + self.gone_note(self.items.get(d["n"], {}), by), f"Updated D{d['d']}"
             it = self.item(op.get("ref", ""), ctx)
             dn = self.maxd + 1
             self.emit({"k": "doc", "d": dn, "n": it["n"], "title": title, "md": md, "by": by})
-            return f"ok D{dn} new on {self.code(it['n'])}", f"Wrote D{dn}"
+            return f"ok D{dn} new on {self.code(it['n'])}" + self.gone_note(it, by), f"Wrote D{dn}"
         if name == "dc":  # a comment on one paragraph of a document
             d = self.doc(op.get("d"))
             blocks = md_blocks(d["md"])
@@ -949,7 +1041,7 @@ class Store:
                 raise Err("empty comment")
             quote = " ".join(str(op.get("quote") or "").split()) or text_  # what the user selected, else the paragraph
             self.emit({"k": "dc", "d": d["d"], "key": key, "quote": quote[:500], "text": body, "by": by})
-            return f"ok D{d['d']} comment", f"Commented on D{d['d']}"
+            return f"ok D{d['d']} comment" + self.gone_note(self.items.get(d["n"], {}), by), f"Commented on D{d['d']}"
         if name == "cfg":
             f = {"auto": bool(op["auto"])} if "auto" in op else {}
             if not f:
@@ -988,6 +1080,31 @@ class Store:
             if ns:
                 self.emit({"k": "arch", "ns": ns, "on": on, "by": by})
             return f"ok {word} {len(ns)}" + (f"; not finished, so not archived: {' '.join(skip)}" if skip else ""), f"{word.capitalize()} {len(ns)}"
+        if name in ("delete", "restore"):  # F177: an input to Deleted with the items only it made, and back
+            rid = str(op.get("id") or "")
+            inp = self.inputs.get(rid)
+            if not inp:
+                raise Err(f"unknown input {rid}")
+            if by not in PEOPLE:
+                raise Err("only the user deletes inputs")
+            if name == "restore":
+                gone = inp.get("deleted")
+                if not gone:
+                    raise Err(f"{rid} is not deleted")
+                self.emit({"k": "undel", "src": rid, "ns": gone["ns"], "by": by})
+                return f"ok {rid} restored" + (" with " + " ".join(self.code(n) for n in gone["ns"]) if gone["ns"] else ""), f"Restored {rid}"
+            if inp.get("deleted"):
+                raise Err(f"{rid} is deleted already")
+            if inp.get("moved") or inp.get("moving"):
+                raise Err(f"{rid} has moved to another project; delete it there")
+            if self.org_busy == rid:
+                raise Err(f"{rid} is being organized right now; try again in a moment")
+            if self.held(inp):
+                raise Err(f"{rid}'s voice note is still being written down; try again in a moment")
+            plan = self.deletions([rid]).get(rid, {"go": [], "keep": []})
+            self.emit({"k": "del", "src": rid, "ns": plan["go"], "kept": plan["keep"], "by": by})
+            return f"ok {rid} deleted" + (" with " + " ".join(self.code(n) for n in plan["go"]) if plan["go"] else "") \
+                + ("; kept " + ", ".join(f"{self.code(n)} ({why})" for n, why in plan["keep"]) if plan["keep"] else ""), f"Deleted {rid}"
         if name == "unmake":  # undo "Make item" (T113 A7): the item goes (won't do, archived) and its input waits again
             it = self.item(op.get("ref", ""), ctx, follow=False)
             add = next((x for x in self.events if x["k"] == "add" and x["n"] == it["n"]), None)
@@ -1025,7 +1142,7 @@ class Store:
                 if left:
                     note += f" (note: its subitems {' '.join(self.code(k['n']) for k in left)} are not finished yet)"
             self.emit({"k": "set", "n": it["n"], "by": by, "f": f, "was": was, "src": src, **keep, **({"undo_of": op["undo_of"]} if op.get("undo_of") else {})})
-            return f"ok {code} " + " ".join(f"{k}={v}" if k in ("pri", "when", "status", "type", "parent", "archived") else k for k, v in f.items()) + note, "Updated " + code
+            return f"ok {code} " + " ".join(f"{k}={v}" if k in ("pri", "when", "status", "type", "parent", "archived") else k for k, v in f.items()) + note + self.gone_note(it, by), "Updated " + code
         if name == "say":
             kind = op.get("kind", "say")
             if kind not in KINDS:
@@ -1042,13 +1159,13 @@ class Store:
                     raise Err(f"unknown file {fid}: upload it first with POST /api/file?name=<name>")
                 files.append({"f": fid, "name": fid.split("-", 1)[-1], "mime": mimetypes.guess_type(fid)[0] or "application/octet-stream"})
             self.emit({"k": "say", "n": it["n"], "by": by, "kind": kind, "text": text, "src": src, **({"files": files} if files else {}), **keep})
-            return f"ok {code} {kind}", {"ask": "Asked on ", "block": "Blocked on ", "decide": "Decided on "}.get(kind, "Noted on ") + code
+            return f"ok {code} {kind}" + self.gone_note(it, by), {"ask": "Asked on ", "block": "Blocked on ", "decide": "Decided on "}.get(kind, "Noted on ") + code
         if name == "merge":
             into = self.item(op.get("into", ""), ctx)
             if into["n"] == it["n"]:
                 raise Err("cannot merge into itself")
             self.emit({"k": "merge", "n": it["n"], "into": into["n"], "by": by, "src": src, **keep})
-            return f"ok {code} merged into {self.code(into['n'])}", f"Merged {code}"
+            return f"ok {code} merged into {self.code(into['n'])}" + self.gone_note(it, by), f"Merged {code}"
         raise Err(f"unknown op '{name}'")
 
     def run_all(self, ops, by, src=None, keep=False):
@@ -1090,8 +1207,10 @@ class Store:
 
     def state(self):
         with self.lock:
-            items, F = [], self.filings()
+            items, F, G = [], self.filings(), self.deletions()
             for it in self.items.values():
+                if it.get("deleted"):
+                    continue
                 d = dict(it)
                 d["code"] = self.code(it["n"])
                 w = self.waiting(it)
@@ -1100,8 +1219,11 @@ class Store:
                 items.append(d)
             return {"rev": self.rev, "boot": self.boot, "pv": self.pv, **self.presence(), "width": len(str(self.maxn)), "file": home_short(self.path), "cfg": self.cfg, "undo": self.undoable(),
                     "org": {"on": self.org_on, "model": MODEL, "busy": self.org_busy},
-                    "items": items, "inputs": [dict(i, **({"tr_wait": True} if self.held(i) else {}), **({"filing": F[i["id"]]} if i["id"] in F else {})) for i in self.inputs.values()],
-                    "docs": [dict(d, blocks=self.doc_view(d)[0], detached=self.doc_view(d)[1], open=self.doc_open(d)) for d in self.docs.values()]}
+                    "items": items, "inputs": [dict(i, **({"tr_wait": True} if self.held(i) else {}), **({"filing": F[i["id"]]} if i["id"] in F else {}),
+                                                    **({"drop": G[i["id"]]} if i["id"] in G else {})) for i in self.inputs.values() if not i.get("deleted")],
+                    "deleted": self.deleted_list(),
+                    "docs": [dict(d, blocks=self.doc_view(d)[0], detached=self.doc_view(d)[1], open=self.doc_open(d)) for d in self.docs.values()
+                             if not self.items.get(d["n"], {}).get("deleted")]}
 
     def line(self, it):
         s = f"{self.code(it['n'])} {it['pri']} {it['when']} {it['status']} {it['title']}"
@@ -1163,6 +1285,8 @@ class Store:
     def card(self, it, ref=None):
         c = self.code(it["n"])
         out = [f"{c} {it['type']} {it['pri']} {it['when']} {it['status']}{' archived' if it['archived'] else ''}  {it['title']}"]
+        if it.get("deleted"):
+            out.append(f"deleted by the user together with input {it['deleted']}: stop working on it")
         if it["merged_into"]:
             out.append(f"merged into {self.code(it['merged_into'])}")
         kids = [self.code(i["n"]) for i in self.active() if i["parent"] == it["n"]]
@@ -1196,7 +1320,7 @@ class Store:
     def input_card(self, inp, ref=None):
         ref = ref or self.local
         scope = f" →{self.code(inp['scope'])} {self.items[inp['scope']]['title']}" if inp["scope"] else ""
-        head = f"{inp['id']} {hm(inp['t'])} {inp['by']}{scope}" + ("" if not inp["acked"] else " [handled]")
+        head = f"{inp['id']} {hm(inp['t'])} {inp['by']}{scope}" + ("" if not inp["acked"] else " [handled]") + (" [deleted by the user]" if inp.get("deleted") else "")
         out = [head]
         if inp["text"]:
             out.append(textwrap.indent(inp["text"], "  "))
@@ -1243,6 +1367,9 @@ class Store:
                 s = f"redo organizer changes for {e['src']}"
             elif k == "unmake":
                 s = f"{self.code(e['n'])} unmade: {e['src']} waits again"
+            elif k in ("del", "undel"):
+                s = f"{e['src']} {'deleted' if k == 'del' else 'restored'}" + (" with " + " ".join(self.code(n) for n in e["ns"]) if e.get("ns") else "") \
+                    + ("; kept " + ", ".join(f"{self.code(n)} ({why})" for n, why in e["kept"]) if e.get("kept") else "")
             elif k == "arch":
                 s = f"{'archived' if e['on'] else 'unarchived'} {len(e['ns'])}: " + " ".join(self.code(n) for n in e["ns"][:12]) + (" …" if len(e["ns"]) > 12 else "")
             elif k == "moved":
@@ -2133,7 +2260,7 @@ def voice_keep(store, fid, res):
 
 HUB = None
 ITEM_PATH = re.compile(r"/([A-Za-z]?\d+)")
-VIEW_PATH = re.compile(r"/(inputs|archive|rules|new|settings|connect|phone|spellings|log|about|[A-Za-z]\d+)")  # the page's views (T102, B162)
+VIEW_PATH = re.compile(r"/(inputs|archive|rules|new|settings|connect|phone|spellings|log|deleted|about|[A-Za-z]\d+)")  # the page's views (T102, B162)
 NAME = re.compile(r"[a-z0-9][a-z0-9-]{0,39}")
 
 CONNECT = """#!/bin/sh
@@ -2576,7 +2703,7 @@ class Handler(BaseHTTPRequestHandler):
             rid = (json.loads(self.body(10_000) or b"{}")).get("id")
             with s.cond:
                 inp = s.inputs.get(rid)
-                if not inp or not inp["org"] or inp["org"].get("undone"):
+                if not inp or inp.get("deleted") or not inp["org"] or inp["org"].get("undone"):
                     raise Err(f"nothing to undo for {rid}")
                 f = s.filings().get(rid)
                 if f and not f["can"]:  # T113 A4: only the organizer's own work, as it left it
@@ -2610,6 +2737,8 @@ class Handler(BaseHTTPRequestHandler):
                     raise Err(f"unknown input {rid}")
                 if inp.get("moved") or inp.get("moving"):
                     raise Err(f"{rid} was moved already")
+                if inp.get("deleted"):
+                    raise Err(f"{rid} is deleted; restore it first")
                 if s.org_busy == rid:
                     raise Err(f"{rid} is being organized right now; try again in a moment")
                 inp["moving"] = True
@@ -2649,6 +2778,8 @@ class Handler(BaseHTTPRequestHandler):
             with s.cond:
                 if rid not in s.inputs:
                     raise Err(f"unknown input {rid}")
+                if s.inputs[rid].get("deleted"):
+                    raise Err(f"{rid} is deleted; restore it first")
                 s.emit({"k": "org", "src": rid, "retry": True, "by": "you"})
             self.json({"ok": True})
         else:
@@ -2989,6 +3120,7 @@ const ICON = {
   clock: '<circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>',
   plug: '<path d="M12 22v-5"/><path d="M9 8V2"/><path d="M15 8V2"/><path d="M18 8v5a4 4 0 0 1-4 4h-4a4 4 0 0 1-4-4V8Z"/>',
   phone: '<rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/>',
+  trash: '<path d="M3 6h18"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
   history: '<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>',
   open: '<path d="M15 3h6v6"/><path d="m21 3-7 7"/><path d="m3 21 7-7"/><path d="M9 21H3v-6"/>',
   play: '<path d="M6 4.5v15a1 1 0 0 0 1.5.86l12.5-7.5a1 1 0 0 0 0-1.72L7.5 3.64A1 1 0 0 0 6 4.5z" fill="currentColor" stroke="none"/>',
@@ -3112,7 +3244,7 @@ function toast(text, act, {error = false, label = 'Undo', ms = 0} = {}) {  // ms
   if (act && label === 'Undo' && !act.entry) act = pushUndo(text, act);  // every Undo is also Z's, and runs once (T113 A7)
   if (!error) SAVE.failed = [];  // the red toast this one replaces takes its Retry along
   el.toggleAttribute('data-error', error); el.setAttribute('role', error ? 'alert' : 'status');
-  el.innerHTML = `${error ? ico('alert', 'size-4', '2') : ''}<span class="min-w-0 truncate">${esc(text)}</span>${act ? `<button class="relative h-8 shrink-0 rounded-full px-3 text-sm font-semibold after:absolute after:-inset-1.5 ${error ? 'bg-white/20 text-white hover:bg-white/30' : 'bg-white/15 text-white hover:bg-white/25 dark:bg-zinc-900/10 dark:text-zinc-900 dark:hover:bg-zinc-900/20'}">${label}</button>` : ''}`;
+  el.innerHTML = `${error ? ico('alert', 'size-4', '2') : ''}<span class="line-clamp-2 min-w-0 leading-snug">${esc(text)}</span>${act ?`<button class="relative h-8 shrink-0 rounded-full px-3 text-sm font-semibold after:absolute after:-inset-1.5 ${error ? 'bg-white/20 text-white hover:bg-white/30' : 'bg-white/15 text-white hover:bg-white/25 dark:bg-zinc-900/10 dark:text-zinc-900 dark:hover:bg-zinc-900/20'}">${label}</button>` : ''}`;
   el.classList.toggle('pointer-events-none', !act);
   const up = !$('overlay').hidden && !desk();  // a sheet or the focus card is open: say it at the top, clear of its buttons
   el.classList.toggle('bottom-28', !up); el.classList.toggle('top-[calc(env(safe-area-inset-top)+0.75rem)]', up);
@@ -3155,6 +3287,9 @@ function ingest(d) {  // Taska's state on screen, with your changes that are sti
     if (U.draftKey === code(from) && !draftStore()[code(to)]) { draftStore(all => delete all[code(from)]); U.draftKey = code(to); saveDraft(); }
     toast(`${code(from)} was merged into ${code(to)}`);
     writeURL(false);
+  }
+  if (U.open && !byN.has(U.open) && (S.deleted || []).some(x => x.items.some(i => i.n === U.open))) {  // deleted with its input (F177)
+    if (desk()) { U.open = null; writeURL(false); } else closeItem();
   }
   render(); fixURL();
 }
@@ -4309,7 +4444,17 @@ const filingTip = r => `Undo what the organizer did with ${r.id}: ${r.filing?.wh
 function inputActions(r, cls = LINK_BTN) {
   if (r.moved) return '';
   return `<button data-act="input-edit" data-id="${r.id}" class="${cls}">${ico('pencil', 'size-3.5')}Edit</button><button data-act="input-append" data-id="${r.id}" class="${cls}">${ico('plus', 'size-3.5')}Add details</button>`
-    + (r.history?.length ? `<button data-act="input-history" data-id="${r.id}" class="${cls}">History</button>` : '');
+    + (r.history?.length ? `<button data-act="input-history" data-id="${r.id}" class="${cls}">History</button>` : '')
+    + (S.org.busy !== r.id && !r.tr_wait ? `<button data-act="input-delete" data-id="${r.id}" title="${esc(deleteTip(r))}" class="${cls}${cls === LINK_BTN ? ' text-zinc-600 dark:text-zinc-300' : ''}">${ico('trash', 'size-3.5')}Delete</button>` : '');
+}
+// F177: Delete moves an input to Deleted (Settings), with the items only it made that no agent has worked on. The
+// others stay and only lose it from their sources. The toast says which, with Undo; Z and Settings put it back.
+const codes = ns => ns.map(code).join(', ');
+const deleteTip = r => `Delete ${r.id}` + (r.drop?.go.length ? ` and ${codes(r.drop.go)}` : '') + (r.drop?.keep.length ? `; ${codes(r.drop.keep.map(k => k[0]))} ${r.drop.keep.length === 1 ? 'stays' : 'stay'}` : '');
+function deletedSaid(x, id) {  // "Deleted r5 and T12, T13 · T14 kept: it has other inputs"
+  if (!x) return `Deleted ${id}`;
+  const k = x.kept;
+  return `Deleted ${id}${x.items.length ? ` and ${x.items.map(i => i.code).join(', ')}` : ''}${k.length ? ` · ${k[0].code} kept: ${k[0].why}${k.length > 1 ? ` · ${k.length - 1} more kept` : ''}` : ''}`;
 }
 
 // Edit or add details to an input you sent (B136): the one input box does it, like a reply or a comment (I087).
@@ -5050,6 +5195,14 @@ function agentsHtml() {
       <span class="min-w-0 flex-1"><span class="block text-[15px] font-medium">Connect a coding agent</span><span class="block text-xs text-zinc-500 dark:text-zinc-400">First time on that machine? Run one command there.</span></span>${ico('right', 'size-4 text-zinc-300 dark:text-zinc-600')}</button></div>`;
 }
 function showPhone() { dialog('Use on your phone', phoneHtml()); }
+const deletedRows = () => (S.deleted || []).map(x => `<li class="flex items-start gap-3 py-3.5">
+    <div class="min-w-0 flex-1"><p class="text-xs text-zinc-500 dark:text-zinc-400"><span class="font-mono">${x.id}</span> · ${when(x.t)} · deleted ${when(x.at)}</p>
+      <p class="mt-1 line-clamp-3 text-[15px] leading-snug break-words">${esc(x.text || (x.files ? plural(x.files, 'file') : ''))}</p>
+      ${x.items.length ? `<p class="mt-1.5 text-[13px] leading-snug text-zinc-500 dark:text-zinc-400">With ${x.items.map(i => `<span class="font-mono text-xs font-bold ${TYPE_TEXT[i.type]}">${i.code}</span> ${esc(i.title)}`).join(' · ')}</p>` : ''}</div>
+    <button data-act="input-restore" data-id="${x.id}" class="${SECOND} shrink-0">${ico('undo', 'size-4')}Restore</button></li>`).join('');
+const deletedHtml = () => (S.deleted || []).length ? `<ul class="divide-y divide-zinc-100 dark:divide-zinc-800">${deletedRows()}</ul>`
+  : '<p class="py-6 text-sm text-zinc-500 dark:text-zinc-400">Nothing deleted. An input you delete comes here, with the items that went with it.</p>';
+const showDeleted = () => dialog('Deleted', deletedHtml());
 // A sheet whose words come from Taska opens at once and fills when they arrive; if they can't, it says so (T160).
 const sheetIs = title => !$('overlay').hidden && $('dlgTitle').textContent === title;
 const sheetWait = '<p class="py-6 text-sm text-zinc-400">Loading…</p>';
@@ -5425,6 +5578,31 @@ const ACT = {
     if (desk()) renderProject(); else showPhone(); toast('New key made');
   },
   log: () => { if (desk()) return openProject('log'); closeDrawer(); showLog(); },
+  deleted: () => { if (desk()) return openProject('deleted'); closeDrawer(); showDeleted(); },
+  'input-delete': async b => {  // F177: to Deleted, with the items only it made; the toast says what went and what stayed, Undo and Z put it back
+    const id = b.dataset.id;
+    try { await save({op: 'delete', id}, () => ACT['input-delete'](b)); } catch (_) { return; }
+    const x = (S.deleted || []).find(x => x.id === id);
+    let run;
+    run = pushUndo(`${id} deleted`, async () => {
+      try { await save({op: 'restore', id}, run); } catch (_) { return false; }
+      if (sheetIs('Deleted')) showDeleted();
+      toast(`${id} is back${x?.items.length ? ` with ${x.items.map(i => i.code).join(', ')}` : ''}`);
+    });
+    toast(deletedSaid(x, id), run);
+  },
+  'input-restore': async b => {  // from Settings › Deleted: back as it was; Undo or Z deletes it again
+    const id = b.dataset.id, x = (S.deleted || []).find(x => x.id === id);
+    try { await save({op: 'restore', id}, () => ACT['input-restore'](b)); } catch (_) { return; }
+    if (sheetIs('Deleted')) showDeleted();
+    let run;
+    run = pushUndo(`${id} restored`, async () => {
+      try { await save({op: 'delete', id}, run); } catch (_) { return false; }
+      if (sheetIs('Deleted')) showDeleted();
+      toast(deletedSaid((S.deleted || []).find(x => x.id === id), id));
+    });
+    toast(`${id} is back${x?.items.length ? ` with ${x.items.map(i => i.code).join(', ')}` : ''}`, run);
+  },
   tab: b => setTab(b.dataset.tab),
   filters: () => showFilters(),
   'set-filter': b => { U[b.dataset.k] = b.dataset.v; writeURL(false); if (desk()) return render(); renderItems(); $('list').scrollTop = 0; showFilters(); },
@@ -5977,6 +6155,7 @@ const PSEC = {  // section: [address, icon, name, what it is for]
   phone: ['phone', 'phone', 'Use on your phone', 'Open Taska on your phone from anywhere, with a link or with the key.'],
   fixes: ['spellings', 'pencil', 'Voice spellings', "Every project's voice notes write these your way. To add one, select the wrong words in a voice note."],
   log: ['log', 'history', 'Change log', 'Every change to this project, newest first. Undo puts back one of your own changes.'],
+  deleted: ['deleted', 'trash', 'Deleted', 'Inputs you deleted, with the items that went with them. Restore puts them back as they were.'],
   about: ['about', 'info', 'About', "This project's name, where its data is kept, and what organizes your inputs."],
 };
 const PSEC_AT = Object.fromEntries(Object.entries(PSEC).map(([sec, [path]]) => [path, sec]));  // address -> section
@@ -6058,6 +6237,8 @@ const PBODY = {
   fixes: () => !P_CACHE.fixes ? P_LOADING : !P_CACHE.fixes.length ? pRuled(EMPTY('None yet. When a voice note gets words wrong, select them in the input and write the right ones: from then on every project writes them your way.'))
     : `<ul class="divide-y divide-zinc-200 border-y border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">${P_CACHE.fixes.map(c => `<li class="flex min-h-13 items-center gap-3 py-1.5 text-[15px]"><span class="min-w-0 flex-1 break-words"><span class="text-zinc-400 line-through decoration-zinc-400 dark:text-zinc-500">${esc(c.wrong)}</span><span class="px-2 text-zinc-400 dark:text-zinc-500">→</span><span class="font-medium">${esc(c.right)}</span></span>
       <button data-act="fix-remove" data-wrong="${esc(c.wrong)}" aria-label="Forget this spelling" title="Forget this spelling" class="grid size-9 shrink-0 place-items-center rounded-lg text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200">${ico('x', 'size-4')}</button></li>`).join('')}</ul>`,
+  deleted: () => (S.deleted || []).length ? `<ul class="divide-y divide-zinc-200 border-y border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">${deletedRows()}</ul>`
+    : pRuled(EMPTY('Nothing deleted. An input you delete comes here, with the items that went with it.')),
   log: () => !P_CACHE.log ? P_LOADING : !P_CACHE.log.length ? pRuled(EMPTY('Nothing has changed yet.'))
     : pRuled(`<div class="pt-2">${logHtml(P_CACHE.log)}</div>`) + (P_CACHE.log.length >= LOG_N ? `<p class="pt-4 text-[13px] text-zinc-400 dark:text-zinc-500">The latest ${LOG_N} changes</p>` : ''),
   about: () => `<dl class="border-t border-zinc-200 text-sm dark:border-zinc-800">${[['Project', esc(S.project)], ['Data', `<span class="font-mono text-[13px] break-all">${esc(S.file)}</span>`],
@@ -6343,7 +6524,7 @@ function renderDrawerSettings() {
   draw($('drawerSettings'), `${undoRow()}<button data-act="auto" aria-pressed="${!!S.cfg?.auto}" class="group flex w-full items-center gap-3 px-3.5 py-3 text-left lg:gap-2.5 lg:rounded-lg lg:px-3 lg:py-1.5 lg:hover:bg-zinc-200/60 dark:lg:hover:bg-zinc-800">${ico('loop', 'size-5 text-emerald-600 lg:size-4 dark:text-emerald-400')}
       <span class="min-w-0 flex-1"><span class="block text-[15px] lg:text-sm">Keep going</span><span class="block text-xs leading-snug text-zinc-500 lg:text-[11px] dark:text-zinc-400">Agents take the next item without stopping</span></span>
       <span class="relative h-6.5 w-11 shrink-0 rounded-full bg-zinc-300 transition-colors group-aria-pressed:bg-emerald-500 lg:h-5 lg:w-8.5 dark:bg-zinc-600 dark:group-aria-pressed:bg-emerald-500"><span class="absolute top-0.75 left-0.75 size-5 rounded-full bg-white shadow transition-transform group-aria-pressed:translate-x-4.5 lg:size-3.5 lg:group-aria-pressed:translate-x-3.5"></span></span></button>
-    ${row('guide', 'plug', 'Connect a coding agent', 'connect')}${row('phone', 'phone', 'Use on your phone', 'phone')}${row('fixes', 'pencil', 'Voice spellings', 'fixes')}${row('log', 'history', 'Change log', 'log')}${desk() ? '' : row('about', 'info', 'About', 'about')}`);
+    ${row('guide', 'plug', 'Connect a coding agent', 'connect')}${row('phone', 'phone', 'Use on your phone', 'phone')}${row('fixes', 'pencil', 'Voice spellings', 'fixes')}${row('log', 'history', 'Change log', 'log')}${row('deleted', 'trash', 'Deleted', 'deleted')}${desk() ? '' : row('about', 'info', 'About', 'about')}`);
   $('menuInfo').innerHTML = `<div><dt class="inline">Project </dt><dd class="inline">${esc(S.project)}</dd></div>
     <div><dt class="inline">Data </dt><dd class="inline font-mono text-[11px]">${esc(S.file)}</dd></div>
     <div><dt class="inline">Organizer </dt><dd class="inline">${S.org?.on ? 'Gemini · ' + esc(S.org.model) : 'off (set GEMINI_API_KEY and restart)'}</dd></div>`;
@@ -6715,7 +6896,7 @@ addEventListener('pagehide', () => {  // where you were in the list, for the rel
 // agent does (/connect and /log mean something to agents too). Changing tab, opening a document, a section of This
 // project or New input, an item on the phone and full width are steps Back can undo, and so is a link to an item (B9);
 // choosing items in the list on the desktop (a click, J/K), search and filters only rewrite the address.
-const VIEW = /^(inputs|archive|rules|new|settings|connect|phone|spellings|log|about)$/;
+const VIEW = /^(inputs|archive|rules|new|settings|connect|phone|spellings|log|deleted|about)$/;
 const URLS = {applying: false, selfBack: false, hold: false};  // hold: a link is on its way, its step is written once it is there
 // On the phone the change log has its own address too (B150), so Back from an item you opened there comes back to it.
 const viewPath = () => desk() && D.page ? PSEC[D.section][0] : U.doc && !U.docEdit ? `D${U.doc}` : desk() && D.compose ? 'new'
@@ -6823,7 +7004,7 @@ function showURL() {
   closeItem();
   if (Object.hasOwn(PSEC_AT, seg)) {  // a section of This project; the phone opens its sheet, or its menu for Agents and About
     if (desk()) { if (history.state?.tab) U.tab = history.state.tab; return openProject(PSEC_AT[seg]); }  // Back into it from a tab (B9)
-    return ({log: showLog, connect: showGuide, phone: showPhone, spellings: ACT.fixes, about: ACT.about}[seg] || openDrawer)();
+    return ({log: showLog, connect: showGuide, phone: showPhone, spellings: ACT.fixes, deleted: showDeleted, about: ACT.about}[seg] || openDrawer)();
   }
   if (seg === 'new') { if (desk()) return ACT['new-input'](); return $('text').focus(); }
   const was = U.tab;
