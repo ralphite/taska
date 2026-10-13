@@ -74,12 +74,12 @@ missed by both.
 
 ## Periodic runs (T113)
 
-The user decided (T113): run an audit **every two weeks, or after about 30 commits since the last one, whichever
+The user decided (T113): run an audit **every two weeks, or after about 100 commits since the last one, whichever
 comes first**, and fix what it finds **without asking first**; the fixes still go to review as usual.
 
 - **When to check:** whenever `/next` says there is nothing to do. The last run is recorded in
   `.mocks/audit-last.json` (`{"date": "YYYY-MM-DD", "commit": "<hash>", "item": "<code>"}`); it is due when
-  `date` is 14 or more days ago, or `git rev-list --count <commit>..HEAD` is 30 or more.
+  `date` is 14 or more days ago, or `git rev-list --count <commit>..HEAD` is 100 or more (changed from 30 on T113).
 - **Where the work lives:** T113 itself, which the user approved; agents cannot approve items they create, so a
   run files nothing new. Between runs T113 is `later`, so `/next` does not offer it. When a run is due, set
   `T113 now` and `T113 doing`, run the audit as above, and post in T113: the known-answer table, the groups by
