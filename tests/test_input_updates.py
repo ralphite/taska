@@ -50,6 +50,26 @@ class AmendTests(unittest.TestCase):
         self.assertEqual(replay.items, self.s.items)
         replay.out.close()
 
+    def test_an_edit_shows_on_its_message_not_as_a_copy(self):  # S1
+        self.runop({'op': 'input', 'text': 'The sing in button should sit under the password field', 'scope': 'F1'})
+        own = lambda: next(x for x in self.s.items[1]['thread'] if x['src'] == 'r2')
+        n = len(self.s.items[1]['thread'])
+        self.runop({'op': 'amend', 'id': 'r2', 'v': 0, 'mode': 'edit', 'text': 'The sign in button should sit under the password field'})
+        self.assertEqual(len(self.s.items[1]['thread']), n)  # nobody wrote since: no second copy
+        self.assertEqual(own()['text'], 'The sign in button should sit under the password field')
+        self.assertTrue(own()['edited'])
+        self.runop({'op': 'say', 'ref': 'F1', 'kind': 'ask', 'text': 'Which page?'}, 'codex')
+        self.runop({'op': 'amend', 'id': 'r2', 'v': 1, 'mode': 'append', 'text': 'On the login page.'})
+        last = self.s.items[1]['thread'][-1]  # an agent asked since: one short line after it says what changed
+        self.assertEqual(last['text'], 'Added to r2:\nOn the login page.')
+        self.assertTrue(self.s.replied(self.s.items[1]))
+        self.runop({'op': 'amend', 'id': 'r2', 'v': 2, 'mode': 'edit', 'text': 'The sign in button should sit under the email field\n\nOn the login page.'})
+        self.assertEqual(self.s.items[1]['thread'][-1]['text'], 'Edited r2: \u201cpassword\u201d \u2192 \u201cemail\u201d')
+        self.assertNotIn('r2 updated', json.dumps(self.s.items[1]['thread']))
+        replay = taska.Store(str(self.path))
+        self.assertEqual(replay.items, self.s.items)
+        replay.out.close()
+
     def test_conflict_and_oversize_do_not_mutate(self):
         self.amend()
         for op in [dict(v=0,text='stale'), dict(v=1,text='x'*taska.MAX_TEXT), dict(v=1,text=' ')]:

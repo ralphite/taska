@@ -103,7 +103,8 @@ class VoiceWordsTests(unittest.TestCase):
         self.assertNotIn(self.s.inputs[rid], self.s.for_agent())
         self.finish()
         self.assertEqual(self.s.inputs[rid]['text'], 'Dark mode please\n' + WORDS)
-        self.assertEqual(self.s.items[1]['thread'][-1]['text'], f'{rid} updated:\n' + 'Dark mode please\n' + WORDS)
+        own = self.s.items[1]['thread'][-1]  # S1: its own message shows the words, marked edited; nobody wrote since
+        self.assertEqual((own['src'], own['text'], bool(own.get('edited'))), (rid, 'Dark mode please\n' + WORDS, True))
 
     def test_words_after_an_agent_read_it_come_back_as_an_update(self):
         f = self.voice()
@@ -115,7 +116,9 @@ class VoiceWordsTests(unittest.TestCase):
         inp = self.s.inputs[rid]
         self.assertFalse(inp['acked'])
         self.assertEqual(inp['history'][-1]['text'], 'See the voice note')
-        self.assertIn(f'{rid} updated:', self.s.items[1]['thread'][-1]['text'])
+        own = self.s.items[1]['thread'][-1]  # S1: its message, edited in place (the agent wrote nothing since)
+        self.assertEqual((own['text'], bool(own.get('edited'))), ('See the voice note\n' + WORDS, True))
+        self.assertIn('(edited', self.s.card(self.s.items[1]))
         self.assertIn(WORDS, self.s.next_text()[0])
 
     def test_the_log_names_the_words(self):

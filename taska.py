@@ -133,6 +133,27 @@ def block_key(text):
 USER_KINDS = ("say", "decide", "propose")  # what the organizer files from your input: your words, your decision, your idea
 
 
+def edit_note(rid, old, new):
+    """S1: what changed in an input, short: the words added, or the part that changed ("old" -> "new")."""
+    if new.startswith(old) and old.strip():
+        return f"Added to {rid}:\n{new[len(old):].strip()}"
+    i = 0
+    while i < min(len(old), len(new)) and old[i] == new[i]:
+        i += 1
+    j = 0
+    while j < min(len(old), len(new)) - i and old[-1 - j] == new[-1 - j]:
+        j += 1
+    word = lambda c: c.isascii() and c.isalnum()
+    while i > 0 and word(old[i - 1]):  # whole words, where words have spaces
+        i -= 1
+    while j > 0 and word(old[len(old) - j]):
+        j -= 1
+    was, now = old[i:len(old) - j].strip(), new[i:len(new) - j].strip()
+    if not old.strip() or len(was) + len(now) > 400:
+        return f"Edited {rid}:\n{new}"
+    return f"Edited {rid}: \u201c{was}\u201d \u2192 \u201c{now}\u201d"
+
+
 def user_word(x):
     """A message on an item that is the user's own words: what you wrote there (a reply typed in the box, a picked
     choice, details added), or what the organizer filed there from one of your inputs (an answer written on the list
@@ -272,12 +293,7 @@ class Store:
             inp.update(text=e["text"], v=inp.get("v", 0) + 1, edit_seq=e["seq"], updated=e["t"], acked=False, org=None)
             if e.get("files"):  # files that came with the details (B168)
                 inp["files"] = inp["files"] + e["files"]
-            # Keep the original message as history; bring the new words to every linked item.
-            for n in dict.fromkeys(inp["touched"] + ([inp["scope"]] if inp["scope"] else [])):
-                it = self.items.get(n)
-                if it:
-                    text = f"{inp['id']} updated:\n{e['text']}"
-                    self.entry(it, e, "say", text, inp["id"])
+            self.show_edit(inp, e)  # the earlier versions stay in the input's history
         elif k == "tr":  # a voice note's words, in after its input was sent (B165)
             inp = self.inputs.get(e["src"])
             if inp:
@@ -285,19 +301,13 @@ class Store:
                 inp["files"] = [dict(f, tr=e["tr"]) if f["f"] == e["f"] else f for f in inp["files"]]
                 if e["tr"] not in old:
                     inp["text"] = old.rstrip() + "\n" + e["tr"] if old.strip() else e["tr"]
-                linked = [self.items[n] for n in dict.fromkeys(inp["touched"] + ([inp["scope"]] if inp["scope"] else [])) if n in self.items]
                 if e.get("late"):  # an agent or the organizer saw it without its words: it comes back to them updated
                     inp.setdefault("history", []).append({"text": old, "t": e["t"], "mode": "append"})
                     inp.update(v=inp.get("v", 0) + 1, edit_seq=e["seq"], updated=e["t"], acked=False, org=None)
-                    for it in linked:
-                        self.entry(it, e, "say", f"{inp['id']} updated:\n{inp['text']}", inp["id"])
+                    self.show_edit(inp, e)
                 else:  # nobody has read it yet: its message on the item simply shows the words now
                     inp["v"] = inp.get("v", 0) + 1  # an edit opened before the words came cannot save over them (T101)
-                    seq = inp.get("edit_seq") or inp["seq"]
-                    for it in linked:
-                        for x in it["thread"]:
-                            if x["id"] == seq and x["src"] == inp["id"]:
-                                x["text"] = inp["text"] if seq == inp["seq"] else f"{inp['id']} updated:\n{inp['text']}"
+                    self.show_edit(inp, e, mark=False)
         elif k == "undo":
             self.undo(e)
         elif k == "redo":
@@ -443,6 +453,35 @@ class Store:
                 if m and self.touched_since(m, last["seq"]):
                     return f"{self.code(m)} changed since the filing was undone"
         return None
+
+    def show_edit(self, inp, e, mark=True):
+        """S1: an input you changed shows as its one message, now with the new words and marked edited, wherever it is
+        in a thread. When someone wrote there since, one short message after theirs says what changed (so a question
+        asked meanwhile counts as answered); where the input only started an item (the organizer filed it) one
+        "rN updated" message carries the latest words. The earlier versions are the input's history."""
+        rid, head = inp["id"], f"{inp['id']} updated:\n"
+        old = inp["history"][-1]["text"] if inp.get("history") else ""
+        for n in dict.fromkeys(inp["touched"] + ([inp["scope"]] if inp["scope"] else [])):
+            it = self.items.get(n)
+            if not it:
+                continue
+            th = it["thread"]
+            own = next((x for x in th if x["src"] == rid and x["id"] == inp["seq"]), None)
+            if own:
+                own["text"] = inp["text"]
+                if mark:
+                    own["edited"] = e["t"]
+                    if any(x["by"] not in (inp["by"], "org") for x in th[th.index(own) + 1:]):
+                        self.entry(it, e, "say", edit_note(rid, old, inp["text"]), rid)
+                        th[-1]["change"] = True  # a note on the edit, not another version of the words
+                continue
+            note = next((x for x in reversed(th) if x["src"] == rid and x["text"].startswith(head)), None)
+            if note:
+                note["text"] = head + inp["text"]
+                if mark:
+                    note["edited"] = e["t"]
+            elif mark:
+                self.entry(it, e, "say", head + inp["text"], rid)
 
     def undo(self, e):
         """Revert the organizer's changes for input e["src"]; fields changed again since stay as they are."""
@@ -1328,7 +1367,7 @@ class Store:
             out.append("thread:")
             for x in it["thread"][-30:]:
                 tag = x["by"] + ("" if x["kind"] == "say" else " " + x["kind"])
-                out.append(f"#{x['id']} {hm(x['t'])} {tag}: {x['text']}" + "".join(f" [{(ref or self.local)(f['f'])}]" for f in x.get("files", [])))
+                out.append(f"#{x['id']} {hm(x['t'])} {tag}" + (f" (edited {hm(x['edited'])})" if x.get("edited") else "") + f": {x['text']}" + "".join(f" [{(ref or self.local)(f['f'])}]" for f in x.get("files", [])))
         return "\n".join(out) + "\n"
 
     def input_card(self, inp, ref=None):
@@ -3993,7 +4032,7 @@ function answerOf(thread, x) {
 // an edit says "edited", and added details show only what was added. Taska keeps every version for your agents.
 function versions(thread) {  // message id -> {old, text, label}, for your words that changed since
   const by = new Map(), out = new Map(), plain = t => t.replace(/^r\d+ updated:\n/, '');
-  for (const x of thread) if (x.by === 'you' && x.src) { if (!by.has(x.src)) by.set(x.src, []); by.get(x.src).push(x); }
+  for (const x of thread) if (x.by === 'you' && x.src && !x.change) { if (!by.has(x.src)) by.set(x.src, []); by.get(x.src).push(x); }  // S1: a note on an edit is not a version
   for (const list of by.values()) if (list.length > 1) {
     const info = list.map((x, i) => {
       const text = plain(x.text), prev = i ? plain(list[i - 1].text) : null;
@@ -4010,7 +4049,7 @@ function msgHtml(x, gid, form = 0, done = null, ver = null) {
   if (you) return `<div ${x.src ? `data-src="${x.src}"` : ''} class="flex scroll-mb-4 flex-col items-end gap-1 rounded-2xl transition-colors duration-700 ${ver?.old ? 'opacity-60' : ''}">
       ${y.text ? `<div ${voiceAttr(src)} class="max-w-[85%] rounded-2xl rounded-tr-md bg-blue-600 px-4 py-2.5 text-[15px] leading-relaxed text-white dark:bg-blue-500 [&_a]:text-white [&_a]:decoration-white/60">${ver?.old ? `<div class="line-clamp-2">${msgText(y, gid)}</div>` : msgText(y, gid)}</div>` : ''}
       ${ver?.old ? '' : strip(src?.files, gid + 't' + x.id)}
-      <span class="px-1 text-[11px] text-zinc-400 dark:text-zinc-500">You · ${ver?.old ? 'earlier version · ' : ver?.label ? ver.label + ' · ' : ''}${when(x.t)}${src?.tr_wait ? ' · <span class="animate-pulse text-blue-600 dark:text-blue-400">transcribing the voice note…</span>' : ''}</span></div>`;
+      <span class="px-1 text-[11px] text-zinc-400 dark:text-zinc-500">You · ${ver?.old ? 'earlier version · ' : ver?.label ? ver.label + ' · ' : ''}${when(x.t)}${x.edited && !ver?.old ? ` · ${src?.history?.length ? `<button data-act="input-history" data-id="${src.id}" title="See what changed" class="relative underline decoration-dotted underline-offset-2 after:absolute after:-inset-3 hover:text-zinc-700 dark:hover:text-zinc-300">edited ${when(x.edited)}</button>` : `edited ${when(x.edited)}`}` : ''}${src?.tr_wait ? ' · <span class="animate-pulse text-blue-600 dark:text-blue-400">transcribing the voice note…</span>' : ''}</span></div>`;
   const card = form ? 'space-y-2.5 border-amber-200 bg-amber-50 p-3 text-zinc-900 dark:border-amber-400/25 dark:bg-amber-400/7 dark:text-zinc-100' : 'border-zinc-200 bg-zinc-50 px-4 py-3 text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200';
   return `<div class="flex flex-col items-start gap-1.5">
       <div class="flex items-center gap-2 px-1 text-[11px] text-zinc-400 dark:text-zinc-500">${avatar(x.by)}<span class="text-xs font-semibold text-zinc-700 dark:text-zinc-300">${esc(whoName(x.by))}</span>${done && !form ? `<span class="flex items-center gap-0.5 rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-emerald-800 uppercase dark:bg-emerald-400/15 dark:text-emerald-300">${ico('check', 'size-3', '3')}Answered</span>` : KIND_TAG(x)}<span>${when(x.t)}</span></div>
