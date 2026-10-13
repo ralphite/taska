@@ -44,6 +44,7 @@ TEXT_VERBS = KINDS + ("title", "body", "next")
 MAX_TEXT = 200_000
 MAX_FILE = 25 * 1024 * 1024
 MAX_OPS = 50
+TR_HOLD = 150  # seconds an input sent before its voice note's words were in waits for them, at most (B165)
 MODEL = os.environ.get("TASKA_MODEL", "gemini-flash-latest")
 KEY_VARS = ("GEMINI_API_KEY", "GOOGLE_API_KEY", "GOOGLE_GENERATIVE_AI_API_KEY")
 
@@ -149,6 +150,7 @@ class Store:
         self.cfg = {"auto": True}  # auto = keep-going: agents keep taking the next item (on unless turned off)
         self.docs, self.maxd = {}, 0
         self.org_on, self.org_busy = False, None
+        self.trs = {}  # voice notes being transcribed in the background, by file (B165): t0, done, tr, err
         if os.path.exists(self.path):
             with open(self.path, encoding="utf-8") as f:
                 for i, line in enumerate(f, 1):
@@ -259,6 +261,25 @@ class Store:
                 if it:
                     text = f"{inp['id']} updated:\n{e['text']}"
                     self.entry(it, e, "say", text, inp["id"])
+        elif k == "tr":  # a voice note's words, in after its input was sent (B165)
+            inp = self.inputs.get(e["src"])
+            if inp:
+                old = inp["text"]
+                inp["files"] = [dict(f, tr=e["tr"]) if f["f"] == e["f"] else f for f in inp["files"]]
+                if e["tr"] not in old:
+                    inp["text"] = old.rstrip() + "\n" + e["tr"] if old.strip() else e["tr"]
+                linked = [self.items[n] for n in dict.fromkeys(inp["touched"] + ([inp["scope"]] if inp["scope"] else [])) if n in self.items]
+                if e.get("late"):  # an agent or the organizer saw it without its words: it comes back to them updated
+                    inp.setdefault("history", []).append({"text": old, "t": e["t"], "mode": "append"})
+                    inp.update(v=inp.get("v", 0) + 1, edit_seq=e["seq"], updated=e["t"], acked=False, org=None)
+                    for it in linked:
+                        self.entry(it, e, "say", f"{inp['id']} updated:\n{inp['text']}", inp["id"])
+                else:  # nobody has read it yet: its message on the item simply shows the words now
+                    seq = inp.get("edit_seq") or inp["seq"]
+                    for it in linked:
+                        for x in it["thread"]:
+                            if x["id"] == seq and x["src"] == inp["id"]:
+                                x["text"] = inp["text"] if seq == inp["seq"] else f"{inp['id']} updated:\n{inp['text']}"
         elif k == "undo":
             self.undo(e)
         elif k == "moved":  # sent to the wrong project (F79): it lives on in e["to"] as e["as"]
@@ -417,7 +438,46 @@ class Store:
 
     def for_agent(self):
         """Inputs a coding agent should handle (the organizer, when on, sees them first)."""
-        return [i for i in self.pending() if (not self.org_on or i["org"]) and not (i["org"] or {}).get("undone")]  # undone: parked until the user asks again
+        return [i for i in self.pending() if (not self.org_on or i["org"]) and not (i["org"] or {}).get("undone")  # undone: parked until the user asks again
+                and not self.held(i)]
+
+    # -- voice notes (B165): you can send before the words are in. The message goes at once with its recording; the
+    # words are worked out meanwhile and added to it, and agents and the organizer get it once they are in.
+
+    def held(self, inp):
+        """An input whose voice note is still being transcribed: it waits for its words (at most TR_HOLD seconds)."""
+        now = time.time()
+        return any((j := self.trs.get(f["f"])) and not j["done"] and now - j["t0"] < TR_HOLD for f in inp["files"])
+
+    def with_words(self, text, files):
+        """Words of voice notes that came in after the page let go of them: the files and the text get them."""
+        for f in files:
+            j = self.trs.get(f["f"])
+            if not f.get("tr") and j and j["done"] and j["tr"]:
+                f["tr"] = j["tr"]
+                if j["tr"] not in text:
+                    text = text.rstrip() + "\n" + j["tr"] if text.strip() else j["tr"]
+        return text
+
+    def transcribe_later(self, fid, data, mime, scope):
+        """Start working out a voice note's words in the background; an input that has the note by then gets them."""
+        with self.cond:
+            job = self.trs[fid] = {"t0": time.time(), "done": False, "tr": "", "err": ""}
+
+        def work():
+            tr, err = "", ""
+            try:
+                tr = transcribe(self, data, mime, scope)
+            except Exception as ex:
+                err = str(ex) or "transcription failed"
+            with self.cond:
+                job.update(done=True, tr=tr, err=err)
+                inp = next((i for i in self.inputs.values() if not i.get("moved") and any(f["f"] == fid for f in i["files"])), None)
+                if inp and tr and not any(f["f"] == fid and f.get("tr") for f in inp["files"]):
+                    self.emit({"k": "tr", "src": inp["id"], "f": fid, "tr": tr, "by": "you", **({"late": True} if inp["acked"] or inp["org"] else {})})
+                else:
+                    self.bump()  # an input waiting for these words goes on without them; the page hears it is done
+        threading.Thread(target=work, daemon=True).start()
 
     def rules(self):
         return [i for i in self.sorted(self.active()) if i["type"] == "rule" and i["status"] not in CLOSED + ("proposed",) and not i["archived"]]
@@ -440,9 +500,11 @@ class Store:
         if self.rules():
             out.append(f"{len(self.rules())} project rule{'s' if len(self.rules()) != 1 else ''}: read GET /rules once per session and follow those that apply.")
         live = self.sorted(i for i in self.active() if i["status"] not in CLOSED)
+        talking = {n for r in self.inputs.values() if self.held(r) for n in [r["scope"], *r["touched"]] if n}  # B165
         for label, rows in (("waiting on the user (skip)", [i for i in live if self.waiting(i)]),
                             ("proposed, the user has not approved yet (skip)", [i for i in live if i["status"] == "proposed"]),
-                            ("in review, the user accepts them (skip)", [i for i in live if i["status"] == "review"])):
+                            ("in review, the user accepts them (skip)", [i for i in live if i["status"] == "review"]),
+                            ("the user's voice note on it is being transcribed (skip, it comes next)", [i for i in live if i["n"] in talking])):
             if rows:
                 out.append(f"{label}: " + " ".join(self.code(i["n"]) for i in rows))
         inbox = self.for_agent()
@@ -452,6 +514,7 @@ class Store:
         if docs:
             d = min(docs, key=lambda d: d["t1"])
             return "\n".join(out) + f"\nanswer the user's comments on D{d['d']} (GET /D{d['d']}):\n" + self.doc_text(d), True
+        live = [i for i in live if i["n"] not in talking]  # their latest words are not in yet: they come next
         back = sorted((i for i in live if self.replied(i)), key=lambda i: i["t1"])
         if back:
             return "\n".join(out) + f"\nresume {self.code(back[0]['n'])}: the user replied\n" + self.card(back[0], ref), True
@@ -604,8 +667,8 @@ class Store:
         if src and src not in self.inputs:
             raise Err(f"unknown input {src}")
         if name == "input":
-            text = str(op.get("text") or "").strip()[:MAX_TEXT]
             files = self.op_files(op)
+            text = self.with_words(str(op.get("text") or "").strip(), files)[:MAX_TEXT]
             if not text and not files:
                 raise Err("empty input")
             scope = self.item(op["scope"], follow=False)["n"] if op.get("scope") else None
@@ -638,7 +701,8 @@ class Store:
             mode = op.get("mode")
             if mode not in ("edit", "append"):
                 raise Err("choose edit or append")
-            text, files = str(op.get("text") or "").strip(), self.op_files(op)
+            files = self.op_files(op)
+            text = self.with_words(str(op.get("text") or "").strip(), files)
             if not text and not files:
                 raise Err("enter some text")
             if mode == "append":
@@ -812,7 +876,7 @@ class Store:
                 items.append(d)
             return {"rev": self.rev, "boot": self.boot, "pv": self.pv, **self.presence(), "width": len(str(self.maxn)), "file": home_short(self.path), "cfg": self.cfg, "undo": self.undoable(),
                     "org": {"on": self.org_on, "model": MODEL, "busy": self.org_busy},
-                    "items": items, "inputs": list(self.inputs.values()),
+                    "items": items, "inputs": [dict(i, tr_wait=True) if self.held(i) else i for i in self.inputs.values()],
                     "docs": [dict(d, blocks=self.doc_view(d)[0], detached=self.doc_view(d)[1], open=self.doc_open(d)) for d in self.docs.values()]}
 
     def line(self, it):
@@ -955,6 +1019,8 @@ class Store:
                 s = f"{e['src']} moved to {e['to']} as {e['as']}"
             elif k == "amend":
                 s = f"{e['src']} {e['mode']}: {first_line(e['text'])!r}"
+            elif k == "tr":
+                s = f"{e['src']} voice note words: {first_line(e['tr'])!r}"
             elif e.get("retry"):
                 s = f"organizer {e['src']} retry"
             else:
@@ -1302,7 +1368,7 @@ class Organizer(threading.Thread):
         while True:
             with s.cond:
                 while True:
-                    todo = [i for i in s.pending() if not i["org"]]  # org is set (and logged) once tried
+                    todo = [i for i in s.pending() if not i["org"] and not s.held(i)]  # org is set (and logged) once tried; held: its words are coming (B165)
                     if todo:
                         break
                     s.cond.wait(timeout=30)
@@ -1658,6 +1724,13 @@ class Handler(BaseHTTPRequestHandler):
             return s, p, f"{self.host()}{self.prefix}/p/{s.name}"
         raise Err("which project? Use one of: " + "  ".join(f"{self.host()}/p/{n}" for n in sorted(HUB.projects)))
 
+    def scope_of(self, s, q):
+        """The item a voice note is about (?scope=B03): its words are spelled like that item's."""
+        try:
+            return s.item(q["scope"][0], follow=False)["n"] if q.get("scope") else None
+        except Err:
+            return None
+
     def fileref(self, s):
         """Files as local paths for an agent on this machine, as URLs for one elsewhere."""
         if self.local():
@@ -1821,13 +1894,22 @@ class Handler(BaseHTTPRequestHandler):
             data = self.body(MAX_FILE)
             mime = (self.headers.get("Content-Type") or "application/octet-stream").split(";")[0]
             f = s.save_file((q.get("name") or ["file"])[0], mime, data)
-            if q.get("transcribe") and mime.startswith("audio/"):
-                try:
-                    scope = s.item((q.get("scope") or [""])[0], follow=False)["n"] if q.get("scope") else None
-                    f["tr"] = transcribe(s, data, (self.headers.get("Content-Type") or mime), scope)
-                except Exception as ex:
-                    f["tr_error"] = str(ex)
+            if q.get("transcribe") and mime.startswith("audio/"):  # the words come later: ask /api/transcript (B165)
+                s.transcribe_later(f["f"], data, self.headers.get("Content-Type") or mime, self.scope_of(s, q))
+                f["pending"] = True
             self.json(f)
+        elif p == "/api/transcript":  # a voice note's words: waits for them a while, starts again after a restart (B165)
+            fid = os.path.basename((q.get("f") or [""])[0])
+            path, mime = os.path.join(s.fdir, fid), (mimetypes.guess_type(fid)[0] or "").replace("video/webm", "audio/webm")
+            if not s.trs.get(fid) and fid and os.path.isfile(path) and mime.startswith("audio/"):
+                with open(path, "rb") as fh:
+                    s.transcribe_later(fid, fh.read(), mime, self.scope_of(s, q))
+            with s.cond:
+                job = s.trs.get(fid)
+                if job:
+                    s.cond.wait_for(lambda: job["done"], timeout=45)
+            self.json({"f": fid, "done": not job or job["done"], "tr": job["tr"] if job else "",
+                       "tr_error": (job["err"] if job else "no such voice note") or ""})
         elif p == "/api/undo":
             rid = (json.loads(self.body(10_000) or b"{}")).get("id")
             with s.cond:
@@ -2780,7 +2862,7 @@ function msgHtml(x, gid, form = 0, done = null) {
   if (you) return `<div class="flex flex-col items-end gap-1">
       ${x.text ? `<div ${voiceAttr(src)} class="max-w-[85%] rounded-2xl rounded-tr-md bg-blue-600 px-4 py-2.5 text-[15px] leading-relaxed text-white dark:bg-blue-500 [&_a]:text-white [&_a]:decoration-white/60">${msgText(x, gid)}</div>` : ''}
       ${strip(src?.files, gid + 't' + x.id)}
-      <span class="px-1 text-[11px] text-zinc-400 dark:text-zinc-500">You · ${when(x.t)}</span></div>`;
+      <span class="px-1 text-[11px] text-zinc-400 dark:text-zinc-500">You · ${when(x.t)}${src?.tr_wait ? ' · <span class="animate-pulse text-blue-600 dark:text-blue-400">transcribing the voice note…</span>' : ''}</span></div>`;
   const card = form ? 'space-y-2.5 border-amber-200 bg-amber-50 p-3 text-zinc-900 dark:border-amber-400/25 dark:bg-amber-400/7 dark:text-zinc-100' : 'border-zinc-200 bg-zinc-50 px-4 py-3 text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200';
   return `<div class="flex flex-col items-start gap-1.5">
       <div class="flex items-center gap-2 px-1 text-[11px] text-zinc-400 dark:text-zinc-500">${avatar(x.by)}<span class="text-xs font-semibold text-zinc-700 dark:text-zinc-300">${esc(whoName(x.by))}</span>${done && !form ? `<span class="flex items-center gap-0.5 rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-emerald-800 uppercase dark:bg-emerald-400/15 dark:text-emerald-300">${ico('check', 'size-3', '3')}Answered</span>` : KIND_TAG(x)}<span>${when(x.t)}</span></div>
@@ -3338,6 +3420,7 @@ async function sendAmend() {
   try {
     const d = await (await fetch(P + 'api/op', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({op: 'amend', id: a.id, mode: a.mode, v: a.v, text, files})})).json();
     if (!d.ok) return toast((d.res || []).find(x => x.startsWith('err')) || d.error || 'Not saved');
+    for (const f of drafts) f.sent = true;  // words still to come go onto the input, on the server (B165)
     $('text').value = ''; U.files = []; saveDraft(); grow(); U.amend = null;
     await load(); toast(a.mode === 'edit' ? `${a.id} updated` : `Added to ${a.id}`);
     if (desk() && D.compose) renderDetail();
@@ -3353,6 +3436,7 @@ function inputHistory(id) {
 
 function inputState(r) {  // -> [label, tone, icon]
   if (r.moved) return [`Moved to ${r.moved.to}`, 'text-zinc-500 dark:text-zinc-400', ico('arrow', 'size-3.5', '2')];
+  if (r.tr_wait) return ['Transcribing…', 'text-blue-600 dark:text-blue-400', '<span class="size-1.5 animate-pulse rounded-full bg-blue-500 dark:bg-blue-400"></span>'];  // sent before its words were in (B165)
   if (S.org.busy === r.id) return ['Organizing…', 'text-blue-600 dark:text-blue-400', '<span class="size-1.5 animate-pulse rounded-full bg-blue-500 dark:bg-blue-400"></span>'];
   if (r.org && !r.org.ok) return ['Organizer failed', 'text-red-600 dark:text-red-400', ico('alert', 'size-3.5', '2')];
   if (r.org?.undone) return ['Undone', 'text-zinc-500 dark:text-zinc-400', ico('undo', 'size-3.5', '2')];
@@ -3476,7 +3560,7 @@ function renderComposer() {
 const outboxLine = q => q.text.split('\n')[0] || (q.files.some(f => (f.mime || '').startsWith('audio/')) ? 'Voice note' : `${q.files.length} file${q.files.length === 1 ? '' : 's'}`);
 // What is still on its way, shown first where your inputs are listed (F85).
 const outboxRows = (oldestFirst = false) => (oldestFirst ? [...U.outbox] : [...U.outbox].reverse()).map(q => `<article class="border-b border-zinc-100 px-4 py-2 lg:px-0 lg:py-4 dark:border-zinc-800/70">
-    <div class="flex min-h-5 items-center gap-2 text-xs ${q.failed ? 'text-red-600 dark:text-red-400' : 'text-blue-600 dark:text-blue-400'}">${q.failed ? ico('alert', 'size-3.5', '2') : '<span class="size-1.5 animate-pulse rounded-full bg-blue-500 dark:bg-blue-400"></span>'}<span class="font-medium">${q.failed ? 'Not sent' : q.files.some(f => f.transcribing) ? 'Transcribing…' : q.files.some(f => !f.f && !f.failed) ? 'Uploading…' : 'Sending…'}</span>${q.scope ? `<span class="min-w-0 truncate text-zinc-500 dark:text-zinc-400">↳ ${esc(q.scope)}</span>` : ''}</div>
+    <div class="flex min-h-5 items-center gap-2 text-xs ${q.failed ? 'text-red-600 dark:text-red-400' : 'text-blue-600 dark:text-blue-400'}">${q.failed ? ico('alert', 'size-3.5', '2') : '<span class="size-1.5 animate-pulse rounded-full bg-blue-500 dark:bg-blue-400"></span>'}<span class="font-medium">${q.failed ? 'Not sent' : q.files.some(f => !f.f && !f.failed) ? 'Uploading…' : 'Sending…'}</span>${q.scope ? `<span class="min-w-0 truncate text-zinc-500 dark:text-zinc-400">↳ ${esc(q.scope)}</span>` : ''}</div>
     <div class="mt-1.5 rounded-2xl rounded-tr-md bg-blue-50 px-3.5 py-2 text-[15px] leading-relaxed whitespace-pre-wrap text-zinc-900 opacity-70 lg:max-w-[calc(100%-22.5rem)] dark:bg-blue-400/10 dark:text-zinc-100">${esc(q.text || outboxLine(q))}${q.files.some(f => f.preview) ? `<div class="mt-2 flex gap-2">${q.files.filter(f => f.preview).map(f => `<img src="${f.preview}" alt="" class="size-11 rounded-lg border border-zinc-200 object-cover dark:border-zinc-700">`).join('')}</div>` : ''}</div></article>`).join('');
 const otherProjects = () => (DR.list || []).filter(p => p.name !== S.project);
 // An input sent to the wrong project goes to another one (F79). It is organized again there; what the organizer
@@ -3505,13 +3589,14 @@ function renderFeedback() {
     clearTimeout(renderFeedback.t);
     fb.innerHTML = q.failed
       ? `${ico('alert', 'size-4 text-red-600 dark:text-red-400', '2')}<span class="min-w-0 flex-1 truncate text-red-600 dark:text-red-400">Not sent${more}: ${esc(outboxLine(q))}</span>${link('outbox-retry', 'Retry', '')}${link('outbox-edit', 'Edit', '')}`
-      : `<span class="size-2 shrink-0 animate-pulse rounded-full bg-blue-500 dark:bg-blue-400"></span><span class="min-w-0 flex-1 truncate">${q.files.some(f => f.transcribing) ? 'Transcribing, then sending' : q.files.some(f => !f.f && !f.failed) ? 'Uploading, then sending' : 'Sending'}${more}: ${esc(outboxLine(q))}</span>`;
+      : `<span class="size-2 shrink-0 animate-pulse rounded-full bg-blue-500 dark:bg-blue-400"></span><span class="min-w-0 flex-1 truncate">${q.files.some(f => !f.f && !f.failed) ? 'Uploading, then sending' : 'Sending'}${more}: ${esc(outboxLine(q))}</span>`;
     return;
   }
   if (!r) return;
   let html;
   const move = otherProjects().length ? link('move-input', 'Move…', `data-id="${r.id}"`) : '';  // sent to the wrong project? (F79)
   if (r.moved) html = `${ico('arrow', 'size-4 text-zinc-500', '2')}<span class="min-w-0 flex-1 truncate">Moved ${r.id} to ${esc(r.moved.to)} as ${esc(r.moved.as)}</span><a href="/p/${encodeURIComponent(r.moved.to)}/" class="-my-2 flex h-11 shrink-0 items-center rounded-full px-2 font-semibold text-blue-600 dark:text-blue-400">Open</a>`;
+  else if (r.tr_wait) html = `<span class="size-2 shrink-0 animate-pulse rounded-full bg-blue-500 dark:bg-blue-400"></span><span class="min-w-0 flex-1 truncate">Got ${r.id}. Its voice note's words come next…</span>`;  // sent before they were in (B165)
   else if (S.org.busy === r.id || (!r.acked && S.org.on && !r.org)) html = `<span class="size-2 shrink-0 animate-pulse rounded-full bg-blue-500 dark:bg-blue-400"></span><span class="min-w-0 flex-1 truncate">Got ${r.id}, organizing…</span>`;
   else if (r.org && !r.org.ok) html = `${ico('alert', 'size-4 text-red-600 dark:text-red-400', '2')}<span class="min-w-0 flex-1 truncate text-red-600 dark:text-red-400">Organizer failed: ${esc(r.org.msg)}</span>${link('retry', 'Retry', `data-id="${r.id}"`)}`;
   else if (r.org?.undone) html = `<span class="min-w-0 flex-1 truncate">Undid the changes for ${r.id}</span>`;
@@ -3579,6 +3664,7 @@ async function flushOutbox() {
       try {
         const d = await op({op: 'input', text, scope: job.scope, ...(job.from ? {from: job.from} : {}), files: files.map(({f, name, mime, size, tr}) => ({f, name, mime, size, ...(tr ? {tr} : {})}))});
         U.lastSent = d.res[0].split(' ')[1]; U.outbox.shift();
+        for (const f of files) f.sent = true;  // words still to come go onto this input, on the server (B165)
       } catch (_) { job.failed = true; job.sending = false; }
     }
   } finally { flushOutbox.busy = false; render(); }
@@ -3636,21 +3722,42 @@ async function finishRec(andSend, kept) {
   if (!blob) return;
   if (ms < 800 || !blob.size) return toast('Too short, discarded');
   const ext = blob.type.includes('mp4') ? 'm4a' : blob.type.includes('ogg') ? 'ogg' : 'webm';
-  const f = {name: `voice ${clock(ms).replace(':', '-')}.${ext}`, mime: blob.type, ms, transcribing: true};
-  let settle; f.done = new Promise(r => { settle = r; });
-  const scope = scopeN() ? '&scope=' + code(scopeN()) : '';
+  // B165: the note is in the box at once and the box is yours: type, send. Its words come when they come: into the
+  // box where you recorded, or, if you sent it already, onto that message (the server adds them).
+  const f = {name: `voice ${clock(ms).replace(':', '-')}.${ext}`, mime: blob.type, ms, transcribing: true, at: $('text').value.length};
+  let settle; f.done = new Promise(r => { settle = r; });  // uploaded: all that sending waits for
   U.files.push(f); renderComposer();
-  if (andSend) send();  // it goes out with its transcript; the box is free meanwhile (F85)
+  if (andSend) send();
+  hear(f, blob, scopeN() ? '&scope=' + code(scopeN()) : '', settle);  // not awaited: nothing is held up meanwhile
+}
+async function hear(f, blob, scope, settle) {  // upload a voice note, then wait for its words, in the background (B165)
   try {
     const r = await fetch(`${P}api/file?name=${encodeURIComponent(f.name)}&transcribe=1${scope}`, {method: 'POST', headers: {'Content-Type': blob.type || 'audio/webm'}, body: blob});
     if (!r.ok) throw new Error();
     Object.assign(f, await r.json());
-  } catch (_) { const i = U.files.indexOf(f); if (i >= 0) U.files.splice(i, 1); f.failed = true; toast('Could not upload the recording'); }
-  f.transcribing = false; settle();
-  if (!f.failed && U.files.includes(f)) {  // still a draft: its words go into the box
-    if (f.tr) { const t = $('text'); t.value = (t.value.trim() ? t.value.trimEnd() + '\n' : '') + f.tr; f.trAdded = f.tr; grow(); saveDraft(); }
-    else toast(f.tr_error ? 'Transcription failed. The audio is kept and can be sent as is.' : 'No words heard. The audio is kept and can be sent as is.');
-  } else if (!f.failed && !f.tr) toast(f.tr_error ? 'Transcription failed. The audio was sent as is.' : 'No words heard. The audio was sent as is.');
+  } catch (_) {
+    const i = U.files.indexOf(f); if (i >= 0) U.files.splice(i, 1);
+    f.failed = true; f.transcribing = false; settle(); renderComposer();
+    return toast('Could not upload the recording');
+  }
+  settle(); renderComposer();
+  let d = f;
+  for (let k = 0; f.pending && k < 40; k++) {  // the server answers when the words are in, or after 45 s for another ask
+    try { d = await (await fetch(`${P}api/transcript?f=${encodeURIComponent(f.f)}${scope}`, {method: 'POST'})).json(); if (d.done) break; }
+    catch (_) { await sleep(3000); }
+  }
+  f.transcribing = false; f.tr = d.tr || ''; f.tr_error = d.tr_error || (d.done ? '' : 'no answer');
+  const key = U.files.includes(f) ? U.draftKey : Object.keys(U.parked || {}).find(k => U.parked[k].includes(f));
+  if (key && f.tr) {  // still a draft: its words go where you recorded it, around what you typed since
+    if (U.files.includes(f)) {
+      const t = $('text'), at = Math.min(f.at ?? t.value.length, t.value.length), before = t.value.slice(0, at), after = t.value.slice(at);
+      const caretHere = t.selectionStart === at && t.selectionEnd === at;
+      t.setRangeText((before.trim() && !before.endsWith('\n') ? '\n' : '') + f.tr + (after.trim() && !after.startsWith('\n') ? '\n' : ''), at, at, caretHere ? 'end' : 'preserve');
+      grow(); saveDraft();
+    } else draftStore(all => { all[key] = (all[key]?.trim() ? all[key].trimEnd() + '\n' : '') + f.tr; });  // its box shows another target now
+    f.trAdded = f.tr;
+  } else if (key) toast(f.tr_error ? 'Transcription failed. The audio is kept and can be sent as is.' : 'No words heard. The audio is kept and can be sent as is.');
+  else if (f.sent && !f.tr) toast(f.tr_error ? 'Transcription failed. The audio was sent as is.' : 'No words heard. The audio was sent as is.');
   renderComposer(); renderFeedback();
 }
 
@@ -4218,9 +4325,11 @@ const ACT = {
   close: closeDialog,
   attach: () => $('fileInput').click(),
   mic: startRec,
-  'rec-stop': () => finishRec(false),
-  'rec-send': () => finishRec(true),
-  'rec-cancel': cancelRec,
+  // These hand back no promise: a button stays dimmed and deaf while its promise runs (B159), and the round button
+  // is Send right after it stops a recording: the words must not hold it (B165).
+  'rec-stop': () => { finishRec(false); },
+  'rec-send': () => { finishRec(true); },
+  'rec-cancel': () => { cancelRec(); },
   unfile: b => {  // B149: removing a voice note also removes the words it put in the box; both come back with Undo
     const i = Number(b.dataset.i), f = U.files[i], t = $('text'), before = t.value;
     U.files.splice(i, 1);
@@ -4404,7 +4513,7 @@ const DOT = {
   bad: '<span class="size-2.5 rounded-full bg-red-500 ring-4 ring-red-500/15 dark:bg-red-400 dark:ring-red-400/15"></span>',
   idle: '<span class="size-2.5 rounded-full bg-zinc-300 dark:bg-zinc-600"></span>',
   wait: '<span class="size-2.5 rounded-full border-2 border-zinc-300 dark:border-zinc-600"></span>'};
-const dotOf = r => r.moved ? 'wait' : S.org.busy === r.id ? 'pulse' : r.org && !r.org.ok ? 'bad' : r.org?.undone ? 'idle' : r.acked ? 'ok' : !r.org && S.org.on ? 'idle' : 'wait';
+const dotOf = r => r.moved ? 'wait' : S.org.busy === r.id || r.tr_wait ? 'pulse' : r.org && !r.org.ok ? 'bad' : r.org?.undone ? 'idle' : r.acked ? 'ok' : !r.org && S.org.on ? 'idle' : 'wait';
 const SMALL_BTN = 'flex h-7 shrink-0 items-center gap-1 rounded-lg px-2 text-[13px] font-medium text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200';
 // One step of the timeline: a dot, your words in a bubble, and the line saying what became of them.
 function saidStep(dot, bubble, meta, result, last, attrs = '') {
@@ -4429,7 +4538,7 @@ function saidRow(r, k, last) {
   return saidStep(DOT[dotOf(r)], bubble, `<span class="font-mono">${r.id}</span> · ${when(r.t)}${r.from === 'rules' ? ' · as a rule' : ''}`, `<span class="mr-1 text-[13px] font-semibold ${tone}">${label}</span>${chips}${inputActions(r, SMALL_BTN)}${acts}`, last, `data-expand data-id="${r.id}" ${voiceAttr(r)}`);
 }
 function outboxStep(q, last) {  // still on its way (F85)
-  const state = q.failed ? 'Not sent' : q.files.some(f => f.transcribing) ? 'Transcribing…' : q.files.some(f => !f.f && !f.failed) ? 'Uploading…' : 'Sending…';
+  const state = q.failed ? 'Not sent' : q.files.some(f => !f.f && !f.failed) ? 'Uploading…' : 'Sending…';  // the words never hold it up (B165)
   const bubble = (q.text ? `<p class="line-clamp-2 break-words">${esc(q.text)}</p>` : `<p>${esc(outboxLine(q))}</p>`) + (q.files.some(f => f.preview) ? `<div class="mt-2 flex gap-2">${q.files.filter(f => f.preview).map(f => `<img src="${f.preview}" alt="" class="size-12 rounded-lg border border-zinc-200 object-cover dark:border-zinc-700">`).join('')}</div>` : '');
   return saidStep(q.failed ? DOT.bad : DOT.pulse, bubble, 'Just now', `<span class="mr-1 text-[13px] font-semibold ${q.failed ? 'text-red-600 dark:text-red-400' : 'text-blue-600 dark:text-blue-400'}">${state}</span>${q.failed ? `<button data-act="outbox-retry" class="${SMALL_BTN} text-blue-600 dark:text-blue-400">Retry</button><button data-act="outbox-edit" class="${SMALL_BTN}">Edit</button>` : ''}`, last);
 }
