@@ -3434,13 +3434,11 @@ function ingest(d) {  // Taska's state on screen, with your changes that are sti
   for (const r of S.inputs) byR.set(r.id, r);
   for (const p of SAVE.pend) patch(p);
   linkKids(); followCodes();
-  if (U.open && byN.get(U.open)?.merged_into) {  // the item you look at was merged: say so, and your draft goes along (B118)
-    const from = U.open, to = byN.get(from).merged_into;
-    U.open = to;
-    if (U.draftKey === code(from) && !draftStore()[code(to)]) { draftStore(all => delete all[code(from)]); U.draftKey = code(to); saveDraft(); }
-    toast(`${code(from)} was merged into ${code(to)}`);
-    writeURL(false);
-  }
+  const was = U.open && byN.get(U.open)?.merged_into ? U.open : null;
+  if (was) { U.open = liveN(was); writeURL(false); }  // the item you look at was merged: the one it went into shows (B118)
+  const moved = S.project ? mergeDrafts() : [], mine = was && moved.find(([f]) => f === code(was));
+  if (was) toast(`${code(was)} was merged into ${code(U.open)}${mine ? '. What you wrote for it is in this box now' : ''}`);
+  else if (moved.length) toast(`${moved.map(([f, t]) => `${f} → ${t}`).join(', ')}: merged, and what you wrote went along`, () => goDraft(moved[0][1]), {label: 'Go there'});
   if (U.open && !byN.has(U.open) && (S.deleted || []).some(x => x.items.some(i => i.n === U.open))) {  // deleted with its input (F177)
     if (desk()) { U.open = null; writeURL(false); } else closeItem();
   }
@@ -5263,6 +5261,25 @@ function draftStore(change) {
 function saveDraft() { const k = U.draftKey, v = $('text').value; if (k) draftStore(all => { if (v.trim()) all[k] = v; else delete all[k]; }); }
 // A8, B185: "New input instead", "Add to F06 instead", "As a rule instead": what you wrote (words, files, voice notes)
 // goes to the other target, after its own draft, and Undo puts both back.
+// A2: an item with an unsent draft was merged: the words and files go after the draft of the item it went into, and the
+// page says so. -> [[from, to]]
+function mergeDrafts() {
+  const keys = new Set([...Object.keys(draftStore()), ...Object.keys(U.parked), U.draftKey].filter(k => /^[A-Z]\d+$/.test(k || ''))), moved = [];
+  for (const key of keys) {
+    const n = parseRef(key);
+    if (!byN.get(n)?.merged_into || liveN(n) === n) continue;
+    const to = code(liveN(n));
+    if (key === U.draftKey) { saveDraft(); U.parked[key] = U.files; U.files = []; $('text').value = ''; U.draftKey = null; }
+    const text = draftStore()[key] || '', files = U.parked[key] || [];
+    draftStore(all => { delete all[key]; }); delete U.parked[key];
+    if (!text.trim() && !files.length) continue;
+    const was = to === U.draftKey ? $('text').value : draftStore()[to] || '', wasFiles = to === U.draftKey ? U.files : U.parked[to] || [];
+    for (const f of files) { f.key = to; f.scope = to; f.at = undefined; keepRec(f); }
+    setDraft(to, was.trim() ? was.trimEnd() + '\n\n' + text : text, [...wasFiles, ...files]);
+    moved.push([key, to]);
+  }
+  return moved;
+}
 function setDraft(key, text, files) {
   if (key === U.draftKey) { $('text').value = text; U.files = files; saveDraft(); grow(); }
   else { draftStore(all => { if (text.trim()) all[key] = text; else delete all[key]; }); if (files.length) U.parked[key] = files; else delete U.parked[key]; }
