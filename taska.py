@@ -3306,8 +3306,8 @@ const ruleMode = () => U.asRule ?? U.tab === 'rules';
 const ruleFlip = () => U.tab === 'rules' ? `<button data-act="as-rule" class="-my-2 flex h-8 shrink-0 items-center rounded-full px-2 text-[13px] font-medium text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200">${ruleMode() ? 'Plain input instead' : 'As a rule instead'}</button>` : '';
 const inTab = (it, t) => t === 'rules' ? it.type === 'rule' && !it.archived : t === 'archive' ? it.archived : !it.archived && (it.type !== 'rule' || it.status === 'proposed');
 const scopeN = () => (U.peek && byN.has(U.peek)) ? U.peek : (U.open && !U.scopeOff && byN.has(U.open) && detailShown()) ? U.open : null;
-// Voice notes: desktop only (the user does not want them on the phone), and only where the browser allows it.
-// Phones too: over https (the tunnel) they record fine. Plain http can't reach the microphone, so no button there.
+// Voice notes work wherever the browser lets a page use the microphone: https (the phone link goes through the
+// tunnel) or localhost. Plain http can't reach the microphone, so there is no button there.
 const canRecord = () => !!(window.isSecureContext && navigator.mediaDevices?.getUserMedia && window.MediaRecorder);
 
 function renderComposer() {
