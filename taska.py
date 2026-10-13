@@ -3131,7 +3131,7 @@ PAGE = r'''<!doctype html>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232563eb' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M13 5h8M13 12h8M13 19h8M3 17l2 2 4-4M3 7l2 2 4-4'/%3E%3C/svg%3E">
 <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3/dist/index.global.js" integrity="sha384-2ql948lIdLcGEE0/qxNiudyTjgauA3RDJERu5xW75kFCvSl5a9odyQYCb6tEjnmB" crossorigin="anonymous"></script>
 </head>
-<body class="h-dvh overflow-hidden bg-white text-zinc-900 antialiased [-webkit-tap-highlight-color:transparent] lg:flex dark:bg-zinc-950 dark:text-zinc-100 [&_:is(button,a[href],summary)[data-pressed]]:opacity-60 [&_[data-expand][data-pressed]]:opacity-70 [&_button:is(:disabled:not([aria-pressed]),[aria-busy=true])]:opacity-40 [&_button:disabled:not([aria-pressed])]:cursor-not-allowed [&_button[aria-busy=true]]:cursor-progress [&_:is(button,a[href],summary):focus-visible]:outline-2 [&_:is(button,a[href],summary):focus-visible]:outline-offset-2 [&_:is(button,a[href],summary):focus-visible]:outline-blue-500 dark:[&_:is(button,a[href],summary):focus-visible]:outline-blue-400 [&_:is(#list,#tabs,#drawerSettings,#moveList,.overflow-x-auto,.truncate)_:is(button,a[href]):focus-visible]:-outline-offset-2 [&_#keysBtn:focus-visible]:-outline-offset-2 motion-reduce:[&_*]:transition-none motion-reduce:[&_*]:animate-none">
+<body class="h-dvh overflow-hidden bg-white text-zinc-900 antialiased [-webkit-tap-highlight-color:transparent] lg:flex dark:bg-zinc-950 dark:text-zinc-100 [&_:is(button,a[href],summary)[data-pressed]]:opacity-60 [&_[data-expand][data-pressed]]:opacity-70 [&_button:is(:disabled:not([aria-pressed]),[aria-busy=true])]:opacity-40 [&_button:disabled:not([aria-pressed])]:cursor-not-allowed [&_button[aria-busy=true]]:cursor-progress [&_:is(button,a[href],summary):focus-visible]:outline-2 [&_:is(button,a[href],summary):focus-visible]:outline-offset-2 [&_:is(button,a[href],summary):focus-visible]:outline-blue-500 dark:[&_:is(button,a[href],summary):focus-visible]:outline-blue-400 [&_:is(#list,#tabs,#projBar,#rail,#projectNav,#drawerSettings,#moveList,.overflow-x-auto,.truncate)_:is(button,a[href]):focus-visible]:-outline-offset-2 motion-reduce:[&_*]:transition-none motion-reduce:[&_*]:animate-none">
 <nav id="drawer" hidden aria-label="Projects" class="fixed top-0 left-0 flex h-dvh w-80 max-w-[85vw] flex-col bg-zinc-100 pt-[env(safe-area-inset-top)] pb-[max(1rem,env(safe-area-inset-bottom))] lg:z-40 lg:w-[var(--side-w,15rem)] lg:max-w-none lg:shrink-0 lg:border-r lg:border-zinc-200 lg:bg-zinc-50 lg:pb-0 2xl:w-[var(--side-w,16rem)] dark:bg-zinc-900 dark:lg:border-zinc-800">
   <div data-grip="side" title="Drag to resize · double-click for the default" class="absolute inset-y-0 right-0 z-10 hidden w-2 translate-x-full cursor-col-resize hover:bg-blue-500/30 lg:block"></div>
   <div class="flex h-14 shrink-0 items-center gap-2 px-5 lg:pr-2 lg:pl-4"><span id="drawerLogo" class="text-blue-600 dark:text-blue-400"></span><span class="text-xl font-semibold tracking-tight lg:text-[19px]">Taska</span>
@@ -3141,18 +3141,17 @@ PAGE = r'''<!doctype html>
     <div class="px-3 pb-1.5 text-xs font-semibold text-zinc-500 lg:text-[11px] lg:tracking-wider lg:uppercase dark:text-zinc-400">Projects</div>
     <div id="drawerList" class="flex flex-col gap-0.5"></div>
     <button data-act="new-project" id="drawerNew" class="mt-1 flex h-12 w-full items-center gap-3 rounded-2xl px-3 text-[15px] font-medium text-blue-600 hover:bg-zinc-200/60 lg:h-9 lg:rounded-xl lg:text-sm dark:text-blue-400 dark:hover:bg-zinc-800">New project</button>
-    <div class="mt-4 px-3 pb-1.5 text-xs font-semibold text-zinc-500 lg:text-[11px] lg:tracking-wider lg:uppercase dark:text-zinc-400">This project</div>
-    <div id="drawerSettings" class="divide-y divide-zinc-100 overflow-hidden rounded-2xl bg-white lg:divide-y-0 lg:rounded-none lg:bg-transparent dark:divide-zinc-700/60 dark:bg-zinc-800 dark:lg:bg-transparent"></div>
-    <dl id="menuInfo" class="mt-3 hidden space-y-0.5 px-3 pb-2 text-xs leading-relaxed break-all text-zinc-500 lg:block lg:text-[11px] dark:text-zinc-400"></dl>
+    <div class="mt-4 px-3 pb-1.5 text-xs font-semibold text-zinc-500 lg:hidden dark:text-zinc-400">This project</div>
+    <div id="drawerSettings" class="divide-y divide-zinc-100 overflow-hidden rounded-2xl bg-white lg:hidden dark:divide-zinc-700/60 dark:bg-zinc-800"></div>
   </div>
-  <button data-act="keys" id="keysBtn" class="hidden h-12 shrink-0 items-center gap-2 border-t border-zinc-200 px-4 text-[13px] text-zinc-500 hover:text-zinc-800 lg:flex dark:border-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200"></button>
+  <div id="sideFoot" class="hidden shrink-0 flex-col gap-0.5 border-t border-zinc-200 p-2 lg:flex dark:border-zinc-800"></div>
 </nav>
-<nav id="rail" hidden aria-label="Projects and views" class="z-30 h-dvh w-14 shrink-0 flex-col items-center gap-1 border-r border-zinc-200 bg-zinc-50 py-2 lg:flex dark:border-zinc-800 dark:bg-zinc-900"></nav>
+<nav id="rail" hidden aria-label="Projects" class="z-30 h-dvh w-14 shrink-0 flex-col items-center gap-1 border-r border-zinc-200 bg-zinc-50 py-2 lg:flex dark:border-zinc-800 dark:bg-zinc-900"></nav>
 <div id="drawerShade" hidden class="fixed top-0 right-0 z-30 h-dvh lg:bg-zinc-900/20 dark:lg:bg-black/50" aria-label="Close projects"></div>
-<div id="app" class="group/app relative z-10 mx-auto flex h-full max-w-3xl flex-col bg-white pt-[env(safe-area-inset-top)] md:border-x md:border-zinc-200 lg:mx-0 lg:grid lg:min-w-0 lg:max-w-none lg:flex-1 lg:grid-cols-[var(--list-w,360px)_minmax(0,1fr)] lg:grid-rows-[auto_auto_minmax(0,1fr)_auto] lg:border-x-0 xl:grid-cols-[var(--list-w,420px)_minmax(0,1fr)] 2xl:grid-cols-[var(--list-w,460px)_minmax(0,1fr)] dark:bg-zinc-950 md:dark:border-zinc-800">
+<div id="app" class="group/app relative z-10 mx-auto flex h-full max-w-3xl flex-col bg-white pt-[env(safe-area-inset-top)] md:border-x md:border-zinc-200 lg:mx-0 lg:grid lg:min-w-0 lg:max-w-none lg:flex-1 lg:grid-cols-[var(--list-w,360px)_minmax(0,1fr)] lg:grid-rows-[auto_auto_auto_minmax(0,1fr)_auto] lg:border-x-0 xl:grid-cols-[var(--list-w,420px)_minmax(0,1fr)] 2xl:grid-cols-[var(--list-w,460px)_minmax(0,1fr)] dark:bg-zinc-950 md:dark:border-zinc-800">
 
-  <header id="mainHead" class="flex h-14 shrink-0 items-center gap-1 px-2 lg:col-start-1 lg:row-start-1 lg:gap-2 lg:border-r lg:border-b lg:border-zinc-200 lg:px-3 dark:lg:border-zinc-800">
-    <div id="deskTitle" class="hidden min-w-0 shrink-0 items-baseline gap-2 pl-1 lg:flex"></div>
+  <nav id="projBar" hidden aria-label="This project" class="h-12 min-w-0 items-stretch gap-1 border-b border-zinc-200 pr-3 pl-2 lg:col-span-2 lg:col-start-1 lg:row-start-1 lg:flex dark:border-zinc-800"></nav>
+  <header id="mainHead" class="flex h-14 shrink-0 items-center gap-1 px-2 lg:col-start-1 lg:row-start-2 lg:gap-2 lg:border-r lg:border-b lg:border-zinc-200 lg:px-3 dark:lg:border-zinc-800">
     <div id="headNormal" class="contents">
       <button id="projBtn" data-act="projects" aria-label="Projects and settings" class="flex h-12 min-w-0 flex-1 items-center gap-2.5 rounded-xl px-2.5 text-left data-pressed:bg-zinc-100 dark:data-pressed:bg-zinc-800">
         <span class="relative text-zinc-700 dark:text-zinc-300"><span id="logo"></span><span id="otherDot" hidden title="Another project needs you" class="absolute -top-0.5 -right-0.5 size-2.5 rounded-full bg-amber-500 ring-2 ring-white dark:bg-amber-400 dark:ring-zinc-950"></span></span>
@@ -3177,15 +3176,15 @@ PAGE = r'''<!doctype html>
     <button id="filterBtn" data-act="filters" aria-label="Filters" class="relative ml-auto grid size-11 shrink-0 place-items-center text-zinc-500 dark:text-zinc-400"></button>
   </nav>
   <div id="filterStrip" hidden class="flex h-11 shrink-0 items-center gap-2 overflow-x-auto border-b border-zinc-100 px-4 [scrollbar-width:none] lg:hidden dark:border-zinc-800/70"></div>
-  <div id="deskFilters" hidden class="border-zinc-200 lg:col-start-1 lg:row-start-2 lg:border-r lg:border-b dark:border-zinc-800"></div>
+  <div id="deskFilters" hidden class="border-zinc-200 lg:col-start-1 lg:row-start-3 lg:border-r lg:border-b dark:border-zinc-800"></div>
 
-  <section id="itemsView" class="flex min-h-0 flex-1 flex-col lg:col-start-1 lg:row-span-2 lg:row-start-3 lg:border-r lg:border-zinc-200 dark:lg:border-zinc-800">
+  <section id="itemsView" class="flex min-h-0 flex-1 flex-col lg:col-start-1 lg:row-span-2 lg:row-start-4 lg:border-r lg:border-zinc-200 dark:lg:border-zinc-800">
     <div id="list" class="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-6 lg:scrollbar-thin lg:scrollbar-gutter-stable lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70"><div class="px-6 py-16 text-center text-sm text-zinc-400">Loading…</div></div>
   </section>
 
-  <section id="inputsView" hidden class="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-6 lg:mask-b-from-[calc(100%-2rem)] lg:scrollbar-gutter-both lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70 lg:col-span-2 lg:col-start-1 lg:row-span-2 lg:row-start-2"></section>
+  <section id="inputsView" hidden class="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-6 lg:mask-b-from-[calc(100%-2rem)] lg:scrollbar-gutter-both lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70 lg:col-span-2 lg:col-start-1 lg:row-span-2 lg:row-start-3"></section>
 
-  <section id="detailView" hidden class="flex min-h-0 flex-1 flex-col lg:col-start-2 lg:row-span-3 lg:row-start-1 lg:group-data-[compose]/app:row-span-1">
+  <section id="detailView" hidden class="flex min-h-0 flex-1 flex-col lg:col-start-2 lg:row-span-3 lg:row-start-2 lg:group-data-[compose]/app:row-span-1">
     <div id="goStrip" hidden class="flex h-11 shrink-0 items-center gap-3 border-b border-amber-200/70 bg-amber-50 px-4 text-[13px] dark:border-amber-400/15 dark:bg-amber-400/10"></div>
     <header class="flex h-14 shrink-0 items-center gap-1 border-b border-zinc-100 px-1 lg:border-zinc-200 lg:px-3 dark:border-zinc-800/70 dark:lg:border-zinc-800">
       <button data-act="back" id="backBtn" aria-label="Back" class="grid size-11 shrink-0 place-items-center rounded-full text-zinc-600 data-pressed:bg-zinc-100 lg:hidden dark:text-zinc-400 dark:data-pressed:bg-zinc-800"></button>
@@ -3197,13 +3196,13 @@ PAGE = r'''<!doctype html>
     <div id="detailBody" class="min-h-0 flex-1 overflow-y-auto overscroll-contain lg:mask-b-from-[calc(100%-2rem)] lg:scrollbar-gutter-both lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70 lg:group-data-[compose]/app:hidden"></div>
   </section>
 
-  <section id="projectView" hidden aria-label="This project" class="min-h-0 lg:col-span-2 lg:col-start-1 lg:row-span-4 lg:row-start-1 lg:flex lg:overflow-hidden">
-    <nav id="projectNav" aria-label="Sections of this project" class="flex w-60 shrink-0 flex-col overflow-y-auto overscroll-contain border-r border-zinc-200 pb-4 lg:scrollbar-thin dark:border-zinc-800"></nav>
+  <section id="projectView" hidden aria-label="Settings" class="min-h-0 lg:col-span-2 lg:col-start-1 lg:row-span-5 lg:row-start-1 lg:flex lg:overflow-hidden">
+    <nav id="projectNav" aria-label="Sections of Settings" class="flex w-60 shrink-0 flex-col overflow-y-auto overscroll-contain border-r border-zinc-200 pb-4 lg:scrollbar-thin dark:border-zinc-800"></nav>
     <div id="projectBody" class="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain lg:scrollbar-gutter-both lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70"></div>
   </section>
 
-  <div id="listGrip" data-grip="list" hidden title="Drag to resize · double-click for the default" class="z-30 cursor-col-resize hover:bg-blue-500/30 lg:col-start-1 lg:row-span-4 lg:row-start-1 lg:block lg:w-2 lg:translate-x-full lg:justify-self-end"></div>
-  <footer id="foot" class="relative z-20 shrink-0 lg:scrollbar-gutter-both lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70 px-3 pt-1 pb-[max(1.25rem,env(safe-area-inset-bottom))] lg:col-start-2 lg:row-start-4 lg:px-8 lg:pb-5 lg:group-data-[compose]/app:row-start-2 lg:group-data-[compose]/app:row-span-3 lg:group-data-[compose]/app:overflow-y-auto lg:group-data-[compose]/app:overscroll-contain lg:group-data-[compose]/app:pt-[9vh] lg:group-data-[compose]/app:pb-16">
+  <div id="listGrip" data-grip="list" hidden title="Drag to resize · double-click for the default" class="z-30 cursor-col-resize hover:bg-blue-500/30 lg:col-start-1 lg:row-span-4 lg:row-start-2 lg:block lg:w-2 lg:translate-x-full lg:justify-self-end"></div>
+  <footer id="foot" class="relative z-20 shrink-0 lg:scrollbar-gutter-both lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70 px-3 pt-1 pb-[max(1.25rem,env(safe-area-inset-bottom))] lg:col-start-2 lg:row-start-5 lg:px-8 lg:pb-5 lg:group-data-[compose]/app:row-start-3 lg:group-data-[compose]/app:row-span-3 lg:group-data-[compose]/app:overflow-y-auto lg:group-data-[compose]/app:overscroll-contain lg:group-data-[compose]/app:pt-[9vh] lg:group-data-[compose]/app:pb-16">
     <div id="composeHead" class="hidden lg:group-data-[compose]/app:mx-auto lg:group-data-[compose]/app:mb-6 lg:group-data-[compose]/app:flex lg:group-data-[compose]/app:max-w-[42rem] lg:group-data-[compose]/app:flex-col lg:group-data-[compose]/app:items-center lg:group-data-[compose]/app:text-center"></div>
     <div id="feedback" hidden role="status" class="mb-1.5 flex min-h-7 items-center gap-2 pr-1 pl-2.5 text-[13px] text-zinc-600 lg:mx-auto lg:max-w-[42rem] dark:text-zinc-300 lg:group-data-[compose]/app:hidden"></div>
     <div id="composer" class="rounded-4xl border border-zinc-200 bg-white shadow-lg shadow-black/5 focus-within:border-zinc-300 lg:mx-auto lg:max-w-[42rem] dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-black/40 dark:focus-within:border-zinc-700">
@@ -5693,7 +5692,7 @@ function render() {
   if (TIP.el && !TIP.el.isConnected) tipHide();  // its trigger was redrawn
   settleOpen();  // B5
   showView(); renderItems(); renderDetail(); renderComposer(); renderFeedback(); renderAgent();
-  if (desk()) { renderDeskHead(); renderSidebar(); renderRail(); renderFilters(); if (D.page) renderProject(); }
+  if (desk()) { renderProjBar(); renderDeskHead(); renderSidebar(); renderRail(); renderFilters(); if (D.page) renderProject(); }
   if (U.peek && !$('overlay').hidden) { const top = $('dlgBody').scrollTop; peek(U.peek, {focus: false}); $('dlgBody').scrollTop = top; }
   if (U.doc && !U.docEdit && !U.docQuote && !$('overlay').hidden && docSig(docById(U.doc)) !== U.docSig) renderDoc();  // only when it changed: a redraw under a tap loses the tap
   if (U.tab === 'inputs') renderInputs();
@@ -5975,6 +5974,7 @@ const ACT = {
   'card-copy': b => copyItem(Number(b.dataset.n)),  // the card stays: copying is no reason to lose your place (B153)
   projects: () => openDrawer(),
   'new-project': () => {  // B131: the button becomes a name field in place; Enter makes it, Esc stops
+    if (desk() && $('drawer').hidden && !D.page) { D.sideOpen = true; render(); }  // from the rail or the bar's menu: the sidebar comes over the page (F173)
     if ($('npName')) return $('npName').focus();
     $('drawerNew').hidden = true;
     $('drawerNew').insertAdjacentHTML('afterend', `<div id="npRow" class="mt-1 px-1"><div class="flex items-center gap-1.5"><input id="npName" class="${FIELD} h-10 py-1.5 text-sm" placeholder="Project name" aria-label="New project name" autocomplete="off" spellcheck="false"><button data-act="np-create" class="h-10 shrink-0 rounded-xl bg-zinc-900 px-3 text-sm font-semibold text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200">Create</button><button data-act="np-cancel" aria-label="Cancel" class="grid size-10 shrink-0 place-items-center rounded-xl text-zinc-500 hover:bg-zinc-200/60 dark:hover:bg-zinc-800">${ico('x', 'size-4')}</button></div><p id="npErr" hidden class="px-2 pt-1 text-xs text-red-600 dark:text-red-400"></p></div>`);
@@ -6001,7 +6001,18 @@ const ACT = {
     }));
   },
   'np-cancel': () => { $('npRow')?.remove(); $('drawerNew').hidden = false; },
-  // Settings › Projects (F173)
+  // The project's menu on the bar, and Settings › Projects (F173)
+  'proj-menu': () => projectMenu(),
+  'proj-open': b => { closeDialog(); location.assign(`/p/${encodeURIComponent(b.dataset.slug)}/`); },
+  'proj-settings': b => { closeDialog(); location.assign(`/p/${encodeURIComponent(b.dataset.slug)}/settings`); },
+  'proj-rename': async b => {  // this project: its name on the bar becomes the field; another one: its row in Settings › Projects
+    const slug = b.dataset.slug || S.project;
+    closeDialog();
+    if (slug !== S.project) { openProject('projects'); if (!P_CACHE.projects) await loadProjects(); return ACT['p-rename']({dataset: {slug}}); }
+    U.renaming = slug; render(); const f = $('pRename'); if (f) { f.focus(); f.select(); }
+  },
+  'proj-new': () => { closeDialog(); ACT['new-project'](); },
+  'proj-delete': async b => { closeDialog(); try { await deleteProject(b.dataset.slug || S.project); } catch (ex) { toast(ex.message); } },
   'p-new': () => { U.pNew = true; U.pErr = ''; U.renaming = null; renderProject(); $('pNewName')?.focus(); },
   'p-new-cancel': () => { U.pNew = false; U.pNewText = ''; U.pErr = ''; renderProject(); },
   'p-create': async () => {
@@ -6378,6 +6389,7 @@ function showDesk() {
   }
   const rail = !WIDE.matches || D.sideHidden, over = rail && D.sideOpen;
   $('rail').hidden = !rail || page;  // Settings take the sidebar's place while open (B162): one column of places
+  $('projBar').hidden = page;
   $('drawer').hidden = (rail && !over) || page;
   $('drawer').classList.toggle('lg:relative', !over);
   for (const c of ['lg:fixed', 'lg:shadow-2xl']) $('drawer').classList.toggle(c, over);
@@ -6386,22 +6398,14 @@ function showDesk() {
 
 const TAB_NAME = {items: 'Items', inputs: 'Inputs', archive: 'Archive', rules: 'Rules'};
 const TAB_ICON = {items: 'items', inputs: 'inbox', archive: 'archive', rules: 'book'};
-// One count per thing, the same wherever it shows (A18, B18). The sidebar and the rail say what a tab holds, whatever
-// you search or filter there: Items the open ones, Inputs those not organized yet, Archive all, Rules those not retired.
-// The list's title starts with that number and says what else the list shows ("9 open · 2 finished"); while you search
-// or filter, how many of the tab's rows match ("2 of 11").
+// One count per thing, the same wherever it shows (A18, B18). A project's row in the sidebar says how many of its items
+// are open, whatever you search or filter. The tabs on the bar, as on the phone, say what each tab holds: Items the
+// open ones, Inputs those not organized yet, Archive all, Rules those not retired; while you search or filter Items,
+// how many match (B130). The bar's tabs are the list's title (B162).
 const tabRows = t => t === 'inputs' ? S.inputs : S.items.filter(it => !it.merged_into && inTab(it, t));
 const tabCount = t => t === 'items' ? openCount() : t === 'inputs' ? S.inputs.filter(r => !r.acked).length || ''
   : t === 'archive' ? tabRows('archive').length || '' : tabRows('rules').filter(it => it.status !== 'dropped').length || '';
-function listCount() {
-  const t = U.tab, all = tabRows(t).length, n = Number(tabCount(t)) || 0, words = searchWords();
-  if (t === 'inputs') return words.length ? `${S.inputs.filter(r => inputMatch(r, words)).length} of ${all}` : n ? `${n} not organized yet` : '';
-  if (filtered()) return `${visible().length} of ${all}`;
-  if (!all) return '';
-  return t === 'items' ? `${n} open${all > n ? `<span class="hidden xl:inline"> · ${all - n} finished</span>` : ''}` : t === 'rules' ? `${n}${all > n ? ` · ${all - n} retired` : ''}` : `${all}`;  // finished: where the search box keeps its room
-}
 function renderDeskHead() {
-  $('deskTitle').innerHTML = `<h1 class="text-[17px] font-semibold tracking-tight">${TAB_NAME[U.tab]}</h1><span class="text-sm text-zinc-400 tabular-nums">${listCount()}</span>`;
   $('q').placeholder = U.tab === 'inputs' ? 'Search what you said' : 'Search items';
   qSync();
   $('headSearch').firstElementChild.classList.toggle('lg:max-w-sm', U.tab === 'inputs');
@@ -6409,40 +6413,65 @@ function renderDeskHead() {
 }
 
 // The sidebar: this project as a card with its agent and its tabs, the other projects, and this project's settings.
+// The desktop, option B (B162): the sidebar holds New input and the projects, each with its agent and what needs you;
+// this project's tabs and its agent sit in a bar on top of the list and the item, as on the phone. Its name opens the
+// project's menu: settings, rename, switch, new, delete. Below 1280px the sidebar folds to a rail of project tiles.
+function renderProjBar() {
+  if (U.renaming === S.project && document.activeElement?.id === 'pRename') return renderAgent();  // a refresh must not take the name you are typing
+  const tab = t => { const n = t === 'archive' ? '' : t === 'items' && filtered() && U.tab === 'items' ? visible().filter(it => !it.archived).length : tabCount(t);
+    return `<button data-act="tab" data-tab="${t}" role="tab" aria-selected="${U.tab === t && !D.page}" class="group -mb-px flex shrink-0 items-center gap-1.5 border-b-2 border-transparent px-0.5 text-sm font-medium text-zinc-500 hover:text-zinc-800 aria-selected:border-zinc-900 aria-selected:font-semibold aria-selected:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200 dark:aria-selected:border-zinc-100 dark:aria-selected:text-zinc-50">${TAB_NAME[t]}<span class="font-mono text-[11px] font-medium text-zinc-400 tabular-nums">${n}</span></button>`; };
+  const name = U.renaming === S.project
+    ? `<div class="flex min-w-0 items-center gap-2 px-1">${projTile(S.project, 'size-6 rounded-md text-xs')}<input id="pRename" data-slug="${esc(S.project)}" class="${FIELD} h-8 w-64 py-1 text-[15px] font-semibold" value="${esc(projTitle())}" aria-label="New name for ${esc(projTitle())}" autocomplete="off" spellcheck="false"><span class="text-xs whitespace-nowrap text-zinc-500 dark:text-zinc-400">${KBD('↵')} save · ${KBD('Esc')} cancel</span></div>`
+    : `<button data-act="proj-menu" id="projMenuBtn" aria-haspopup="menu" title="${esc(projTitle())}: settings, rename, switch, delete" class="my-1.5 flex min-w-0 max-w-72 items-center gap-2 rounded-lg px-2 hover:bg-zinc-100 data-pressed:bg-zinc-200/70 dark:hover:bg-zinc-800">${projTile(S.project, 'size-6 rounded-md text-xs')}<span class="truncate text-[15px] font-semibold">${esc(projTitle())}</span>${ico('down', 'size-4 shrink-0 text-zinc-400', '2')}</button>`;
+  draw($('projBar'), `${name}<span class="mx-2 my-3.5 w-px shrink-0 bg-zinc-200 dark:bg-zinc-800"></span>
+    <div role="tablist" class="flex min-w-0 items-stretch gap-5">${['items', 'inputs', 'archive', 'rules'].map(tab).join('')}</div>
+    <div id="deskAgent" class="ml-auto flex shrink-0 items-center pl-3"></div>`);
+  renderAgent();
+}
+function sideProjects() {  // this project first, with what this page knows now; the others by name, so a row never moves under the pointer (B12)
+  const here = {name: S.project, title: S.title, open: openCount(), needs: S.items.filter(needsYou).length, agents: S.agents, work: S.work};
+  return [here, ...(DR.list || []).filter(p => p.name !== S.project).sort((a, b) => titleOf(a).localeCompare(titleOf(b)))];
+}
 function renderSidebar() {
-  const needs = S.items.filter(needsYou).length;
-  const tab = t => `<button data-act="tab" data-tab="${t}" ${U.tab === t && !D.page ? 'aria-current="page"' : ''} class="flex h-8 w-full items-center gap-2.5 rounded-lg px-2 text-left text-sm text-zinc-600 hover:bg-zinc-100 aria-[current=page]:bg-zinc-100 aria-[current=page]:font-semibold aria-[current=page]:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-700/40 dark:aria-[current=page]:bg-zinc-700/60 dark:aria-[current=page]:text-zinc-50">${ico(TAB_ICON[t], 'size-4 opacity-70')}<span class="min-w-0 flex-1">${TAB_NAME[t]}</span>
-      ${t === 'items' && needs ? `<span class="grid h-4.5 min-w-4.5 place-items-center rounded-full bg-amber-500 px-1 text-[10px] font-bold text-white dark:bg-amber-400 dark:text-amber-950">${needs}</span>` : ''}<span class="font-mono text-[11px] text-zinc-400 tabular-nums">${tabCount(t)}</span></button>`;
-  // B12: the other projects stay in one order, by name, so a row never moves under the pointer; what changes in a
-  // project shows on its row (its badge, its agent), not by moving it.
-  const others = (DR.list || []).filter(p => p.name !== S.project).sort((a, b) => titleOf(a).localeCompare(titleOf(b))).map(p => { const [tone, label] = agentState(p.agents, p.work);
-    return `<a href="/p/${encodeURIComponent(p.name)}/" class="flex items-center gap-2.5 rounded-xl px-3 py-1.5 hover:bg-zinc-200/60 dark:hover:bg-zinc-800">${projTile(p.name, 'size-5 rounded-md text-[10px]')}
-      <span class="min-w-0 flex-1"><span class="block truncate text-sm font-medium">${esc(titleOf(p))}</span><span class="flex items-center gap-1.5 text-[11px] text-zinc-500 dark:text-zinc-400"><span class="size-1.5 shrink-0 rounded-full ${AGENT_TONE[tone][0]}"></span><span class="truncate ${tone === 'ok' ? 'text-emerald-700 dark:text-emerald-400' : AGENT_TONE[tone][1]}">${esc(label)}</span><span class="shrink-0">· ${p.open} open</span></span></span>
-      ${p.needs ? `<span class="grid h-5 min-w-5 place-items-center rounded-full bg-amber-100 px-1 text-[11px] font-bold text-amber-900 dark:bg-amber-400/15 dark:text-amber-200">${p.needs}</span>` : ''}</a>`; }).join('');
-  const open = openCount();
-  draw($('drawerList'), `<div class="mb-2 rounded-2xl bg-white p-1.5 shadow-sm ring-1 ring-zinc-900/5 dark:bg-zinc-800 dark:ring-white/5">
-      <div class="flex items-center gap-2 px-1.5 pt-1">${projTile(S.project, 'size-6 rounded-lg text-xs')}<span class="min-w-0 flex-1 truncate text-[15px] font-semibold">${esc(projTitle())}</span><span class="text-xs text-zinc-400">${open} open</span></div>
-      <div id="deskAgent" class="px-1 pt-1 pb-1.5"></div>
-      <div class="flex flex-col gap-px">${['items', 'inputs', 'archive', 'rules'].map(tab).join('')}</div></div>${others}`);
+  draw($('drawerList'), sideProjects().map(p => { const cur = p.name === S.project, [tone, label] = agentState(p.agents, p.work);
+    return `<a href="/p/${encodeURIComponent(p.name)}/" data-slug="${esc(p.name)}" ${cur ? 'aria-current="page" data-act="tab" data-tab="items"' : ''} class="flex items-center gap-2.5 rounded-xl px-2.5 py-2 hover:bg-zinc-200/60 data-pressed:bg-zinc-200/80 aria-[current=page]:bg-white aria-[current=page]:shadow-sm aria-[current=page]:ring-1 aria-[current=page]:ring-zinc-900/5 dark:hover:bg-zinc-800 dark:aria-[current=page]:bg-zinc-800 dark:aria-[current=page]:ring-white/5">${projTile(p.name, 'size-6 rounded-md text-xs')}
+      <span class="min-w-0 flex-1"><span class="block truncate text-sm ${cur ? 'font-semibold' : 'font-medium'}">${esc(titleOf(p))}</span><span class="flex items-center gap-1.5 text-[11px] text-zinc-500 dark:text-zinc-400"><span class="size-1.5 shrink-0 rounded-full ${AGENT_TONE[tone][0]}"></span><span class="truncate ${tone === 'ok' ? 'text-emerald-700 dark:text-emerald-400' : AGENT_TONE[tone][1]}">${esc(label)}</span><span class="shrink-0">· ${p.open} open</span></span></span>
+      ${p.needs ? `<span title="${plural(p.needs, 'item')} need you" class="grid h-5 min-w-5 place-items-center rounded-full bg-amber-100 px-1 text-[11px] font-bold text-amber-900 dark:bg-amber-400/15 dark:text-amber-200">${p.needs}</span>` : ''}</a>`; }).join(''));
   $('newInputBtn').setAttribute('aria-pressed', String(D.compose && !D.page));
   renderAgent(); renderDrawerSettings();
 }
-
-// Below 1280px the sidebar is a rail of icons; the logo or [ brings the whole sidebar over the page.
+function renderSideFoot() {  // the sidebar's foot: Undo (when there is one), Settings, the keys
+  const foot = (act, icon, label, key, attrs = '') => `<button data-act="${act}" ${attrs} class="flex h-9 min-w-0 flex-1 items-center gap-2.5 rounded-lg px-2.5 text-left text-sm text-zinc-600 hover:bg-zinc-200/60 dark:text-zinc-300 dark:hover:bg-zinc-800">${ico(icon, 'size-4 shrink-0 text-zinc-500 dark:text-zinc-400', '2')}<span class="min-w-0 flex-1 truncate">${label}</span>${KBD(key)}</button>`;
+  const u = U.mine.at(-1);
+  draw($('sideFoot'), (u ? foot('undo-mine', 'undo', `Undo: ${esc(u.label)}`, 'Z', 'title="Undo · Z"') : '')
+    + `<div class="flex items-center gap-0.5">${foot('project', 'gear', 'Settings', 'G S', 'title="Settings · G S"')}<button data-act="keys" title="Keyboard shortcuts · ?" aria-label="Keyboard shortcuts" class="grid size-9 shrink-0 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-200/60 dark:text-zinc-400 dark:hover:bg-zinc-800">${ico('keyboard', 'size-4')}</button></div>`);
+}
 function renderRail() {
-  const needs = S.items.filter(needsYou).length, other = (DR.list || []).some(p => p.name !== S.project && p.needs), [tone] = agentState(S.agents, S.work);
   const b = (act, inner, title, attrs = '') => `<button data-act="${act}" ${attrs} title="${title}" aria-label="${title.split(' · ')[0]}" class="relative grid size-10 place-items-center rounded-xl text-zinc-500 hover:bg-zinc-200/60 aria-pressed:bg-zinc-200/80 aria-pressed:text-zinc-900 aria-[current=page]:bg-zinc-200/80 aria-[current=page]:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:aria-pressed:bg-zinc-700 dark:aria-pressed:text-zinc-50 dark:aria-[current=page]:bg-zinc-700 dark:aria-[current=page]:text-zinc-50">${inner}</button>`;
-  const cur = on => on ? 'aria-current="page"' : '';
-  const badge = (n, amber) => n ? `<span class="absolute -top-0.5 -right-0.5 grid h-4 min-w-4 place-items-center rounded-full px-1 text-[10px] font-bold ${amber ? 'bg-amber-500 text-white dark:bg-amber-400 dark:text-amber-950' : 'bg-zinc-300 text-zinc-700 dark:bg-zinc-600 dark:text-zinc-100'}">${n}</span>` : '';
+  const proj = p => { const cur = p.name === S.project;
+    return `<a href="/p/${encodeURIComponent(p.name)}/" data-slug="${esc(p.name)}" ${cur ? 'aria-current="page" data-act="tab" data-tab="items"' : ''} title="${esc(titleOf(p))}${p.needs ? ` · ${plural(p.needs, 'item')} need you` : ''}" aria-label="${esc(titleOf(p))}" class="relative grid size-10 place-items-center rounded-xl hover:bg-zinc-200/60 aria-[current=page]:bg-zinc-200/80 dark:hover:bg-zinc-800 dark:aria-[current=page]:bg-zinc-700">${projTile(p.name, 'size-7 rounded-lg text-xs')}${p.needs ? `<span class="absolute -top-0.5 -right-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-amber-500 px-1 text-[10px] font-bold text-white dark:bg-amber-400 dark:text-amber-950">${p.needs}</span>` : ''}</a>`; };
   draw($('rail'), b('side', `<span class="text-blue-600 dark:text-blue-400">${ico('logo', 'size-6', '2.25')}</span>`, 'Show the sidebar · [')
     + b('new-input', ico('newinput', 'size-5'), 'New input · C', `aria-pressed="${D.compose && !D.page}"`)
     + `<div class="my-1 h-px w-8 bg-zinc-200 dark:bg-zinc-800"></div>`
-    + b('switch', `${projTile(S.project, 'size-7 rounded-lg text-xs')}${other ? '<span class="absolute top-1 right-1 size-2.5 rounded-full bg-amber-500 ring-2 ring-zinc-50 dark:bg-amber-400 dark:ring-zinc-900"></span>' : ''}`, `${S.project} · switch project: G P`)
-    + ['items', 'inputs', 'archive', 'rules'].map(t => b('tab', ico(TAB_ICON[t], 'size-5') + badge(t === 'items' ? needs : t === 'inputs' ? Number(tabCount('inputs')) || 0 : 0, t === 'items'), TAB_NAME[t], `data-tab="${t}" ${cur(U.tab === t && !D.page)}`)).join('')
+    + `<div class="-my-1 flex min-h-0 flex-col items-center gap-1 overflow-y-auto p-1 [scrollbar-width:none]">${sideProjects().map(proj).join('')}</div>`  // room for the badges
+    + b('new-project', ico('plus', 'size-5'), 'New project')
     + `<div class="flex-1"></div>`
-    + b('agent-info', `${avatar('claude-code')}<span class="absolute right-1.5 bottom-1.5 size-2.5 rounded-full ring-2 ring-zinc-50 dark:ring-zinc-900 ${AGENT_TONE[tone][0]}"></span>`, agentState(S.agents, S.work)[2])
-    + b('project', ico('sliders', 'size-5'), 'This project', cur(!!D.page))
+    + b('project', ico('gear', 'size-5'), 'Settings · G S', D.page ? 'aria-current="page"' : '')
     + b('keys', ico('keyboard', 'size-5'), 'Keyboard shortcuts · ?'));
+}
+// The project's menu (F173), from its name on the bar, or for any project by right-clicking it in the sidebar or the
+// rail: its settings, rename it, switch or open, make a new one, delete it (Undo, or Restore in Settings › Projects).
+function projectMenu(slug = S.project, at = null) {
+  const here = slug === S.project, p = here ? {name: S.project, title: S.title, open: openCount()} : (DR.list || []).find(p => p.name === slug);
+  if (!p) return;
+  const r = !at && $('projMenuBtn')?.getBoundingClientRect(), on = `data-slug="${esc(slug)}"`;
+  const row = (act, icon, label, key = '', tone = '') => `<button data-act="${act}" ${on} class="flex h-9 w-full items-center gap-3 rounded-lg px-2.5 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 ${tone}">${ico(icon, `size-[18px] ${tone || 'text-zinc-500 dark:text-zinc-400'}`)}<span class="min-w-0 flex-1 truncate">${label}</span>${key ? `<kbd class="grid h-5 min-w-5 place-items-center rounded-md px-1 font-sans text-[11px] font-semibold text-zinc-400 ring-1 ring-zinc-300 dark:ring-zinc-600">${key}</kbd>` : ''}</button>`;
+  U.sheet = 'projmenu';
+  dialog('', `<div class="-mx-1 flex flex-col">${here ? '' : row('proj-open', 'arrow', 'Open')}${row(here ? 'project' : 'proj-settings', 'gear', 'Project settings', here ? 'G S' : '')}${row('proj-rename', 'pencil', 'Rename')}${here ? row('switch', 'updown', 'Switch project', 'G P') : ''}${row('proj-new', 'plus', 'New project')}
+    <div class="my-1.5 border-t border-zinc-100 dark:border-zinc-800"></div>${row('proj-delete', 'trash', 'Delete project', '', 'text-red-600 dark:text-red-400')}
+    <p class="px-2.5 pt-0.5 pb-1 text-xs leading-snug text-zinc-500 dark:text-zinc-400">Goes to Settings › Projects › Deleted. Restore it any time.</p></div>`,
+    {pop: true, focus: false, head: `<span class="flex items-center gap-2.5">${projTile(slug, 'size-8 rounded-lg text-sm')}<span class="min-w-0"><span class="block truncate text-sm font-semibold">${esc(titleOf(p))}</span><span class="block truncate font-mono text-xs font-normal text-zinc-500 dark:text-zinc-400">/p/${esc(slug)} · ${p.open} open</span></span></span>`});
+  if (at) popAt(...at); else if (r) popAt(r.left, r.bottom + 6);
 }
 
 // The desktop's New input page (B73): the one input box moves to the middle of the right pane, under the project's
@@ -6755,7 +6784,7 @@ function loadLog() {  // the log as it is now: when it opens, and after each cha
 // Every project and the deleted ones, for Projects (F173). After a change the sidebar's list follows too.
 async function loadProjects() {
   try {
-    const [live, gone] = await Promise.all(['/api/projects', '/api/projects/deleted'].map(u => fetch(u, {cache: 'no-store'}).then(r => r.json())));
+    const [live, gone] = await Promise.all(['/api/projects', '/api/projects/deleted'].map(u => net(u, {}, NET.get)));
     P_CACHE.projects = live; P_CACHE.trash = gone; DR.list = [...live].sort((a, b) => b.t - a.t);
   } catch (_) { return; }
   if (D.page) renderProject();
@@ -6867,9 +6896,11 @@ function renderProject() {
     <div class="flex flex-col gap-0.5 px-2">${PSEC_THIS.map(row).join('')}</div>
     ${group('All projects')}<div class="flex flex-col gap-0.5 px-2">${Object.keys(PSEC).filter(k => !PSEC_THIS.includes(k)).map(row).join('')}</div>
     <button data-act="keys" class="mt-auto flex h-12 shrink-0 items-center gap-2 border-t border-zinc-200 px-4 text-[13px] text-zinc-500 hover:text-zinc-800 dark:border-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200">${ico('keyboard', 'size-4')}<span class="flex-1 text-left">Keyboard shortcuts</span>${KBD('?')}</button>`);
+  const typing = {pRename: U.renaming, pNewName: U.pNew}[document.activeElement?.id];
+  if (typing && $('projectBody').contains(document.activeElement)) return;  // typing a name: a refresh waits; saved or stopped, the field goes
   setHtml($('projectBody'), 'body', `<div class="mx-auto w-full max-w-[46rem] px-8 pt-9 pb-16"><header class="pb-6"><h1 class="text-[22px] leading-tight font-semibold tracking-tight">${name}</h1>
     <p class="mt-2 text-[15px] leading-relaxed text-zinc-500 dark:text-zinc-400">${typeof about === 'function' ? about() : about}</p></header>${PBODY[sec]()}</div>`);
-  if (U.renaming && !$('pRename') && sec === 'projects') U.renaming = null;
+  if (U.renaming && P_CACHE.projects && !$('pRename') && sec === 'projects') U.renaming = null;  // that project is gone
 }
 // Projects (F173): new, rename, delete, restore and delete forever, in place. Rename and New project use a field in
 // the row (R139: no browser dialogs); every change says so with Undo where there is one.
@@ -7104,7 +7135,7 @@ function deskKey(e) {
 
 function layoutChange() {  // crossing 1024px: each layout puts back what it owns
   if (desk()) { DR.open = false; $('app').style.transform = ''; for (const c of ['rounded-l-3xl', 'overflow-hidden', 'shadow-2xl']) $('app').classList.remove(c); }
-  else { $('drawer').hidden = !DR.open; $('rail').hidden = true; $('drawerShade').hidden = !DR.open; $('headNormal').hidden = !!U.searching; $('headSearch').hidden = !U.searching; $('projectView').hidden = true; D.page = null; D.full = false; D.compose = false; $('app').removeAttribute('data-compose'); $('q').placeholder = 'Search title, text or code'; }
+  else { $('drawer').hidden = !DR.open; $('rail').hidden = true; $('projBar').hidden = true; $('drawerShade').hidden = !DR.open; $('headNormal').hidden = !!U.searching; $('headSearch').hidden = !U.searching; $('projectView').hidden = true; D.page = null; D.full = false; D.compose = false; $('app').removeAttribute('data-compose'); $('q').placeholder = 'Search title, text or code'; }
   closeDialog(); render();
 }
 // Drag the right edge of the sidebar or the list to resize it (F89). The width goes into a CSS variable that the
@@ -7140,6 +7171,8 @@ document.addEventListener('click', e => {  // a double click: the first click re
 document.addEventListener('contextmenu', e => {
   const r = desk() && e.target.closest('#list [data-act="open"][data-n]');
   if (r) { e.preventDefault(); openItem(Number(r.dataset.n)); itemMenuDesk(Number(r.dataset.n)); popAt(e.clientX, e.clientY); }
+  const p = desk() && e.target.closest('#drawerList a[data-slug], #rail a[data-slug]');  // a project: its menu (F173)
+  if (p) { e.preventDefault(); projectMenu(p.dataset.slug, [e.clientX, e.clientY]); }
 });
 
 // ---------------------------------------------------------------- projects drawer
@@ -7213,16 +7246,14 @@ async function revertNow(seq) {  // one of your changes, from the change log
 }
 const undoRow = () => { const u = U.mine.at(-1); return u ? `<button data-act="undo-mine" title="Undo · Z" class="flex min-h-12 w-full items-center gap-3 px-3.5 py-2.5 text-left text-[15px] lg:min-h-0 lg:gap-2.5 lg:rounded-lg lg:px-3 lg:py-1.5 lg:text-sm lg:text-zinc-600 lg:hover:bg-zinc-200/60 dark:lg:text-zinc-300 dark:lg:hover:bg-zinc-800">${ico('undo', 'size-5 shrink-0 text-zinc-500 lg:size-4 dark:text-zinc-400', '2')}<span class="min-w-0 flex-1 leading-snug">Undo: ${esc(u.label)}</span>${desk() ? KBD('Z') : ''}</button>` : ''; };
 function renderDrawerSettings() {
-  // On the desktop the same rows are compact sidebar links, and the one whose section shows is marked (B162).
+  if (desk()) renderSideFoot();  // Undo comes and goes with each change
+  // The phone's menu rows; on the desktop they stay hidden: the sidebar's foot has Undo and Settings instead (B162).
   const row = (act, icon, label, sec) => { const on = desk() && D.page && D.section === sec;
     return `<button data-act="${act}" ${on ? 'aria-current="page" ' : ''}class="flex min-h-12 w-full items-center gap-3 px-3.5 py-2.5 text-left text-[15px] lg:min-h-0 lg:gap-2.5 lg:rounded-lg lg:px-3 lg:py-1.5 lg:text-sm lg:text-zinc-600 lg:hover:bg-zinc-200/60 lg:aria-[current=page]:bg-zinc-200/70 lg:aria-[current=page]:font-semibold lg:aria-[current=page]:text-zinc-900 dark:lg:text-zinc-300 dark:lg:hover:bg-zinc-800 dark:lg:aria-[current=page]:bg-zinc-800 dark:lg:aria-[current=page]:text-zinc-50">${ico(icon, 'size-5 text-zinc-500 lg:size-4 dark:text-zinc-400')}<span class="min-w-0 flex-1">${label}</span><span class="lg:hidden">${ico('right', 'size-4 text-zinc-300 dark:text-zinc-600')}</span></button>`; };
   draw($('drawerSettings'), `${undoRow()}<button data-act="auto" aria-pressed="${!!S.cfg?.auto}" class="group flex w-full items-center gap-3 px-3.5 py-3 text-left lg:gap-2.5 lg:rounded-lg lg:px-3 lg:py-1.5 lg:hover:bg-zinc-200/60 dark:lg:hover:bg-zinc-800">${ico('loop', 'size-5 text-emerald-600 lg:size-4 dark:text-emerald-400')}
       <span class="min-w-0 flex-1"><span class="block text-[15px] lg:text-sm">Keep going</span><span class="block text-xs leading-snug text-zinc-500 lg:text-[11px] dark:text-zinc-400">Agents take the next item without stopping</span></span>
       <span class="relative h-6.5 w-11 shrink-0 rounded-full bg-zinc-300 transition-colors group-aria-pressed:bg-emerald-500 lg:h-5 lg:w-8.5 dark:bg-zinc-600 dark:group-aria-pressed:bg-emerald-500"><span class="absolute top-0.75 left-0.75 size-5 rounded-full bg-white shadow transition-transform group-aria-pressed:translate-x-4.5 lg:size-3.5 lg:group-aria-pressed:translate-x-3.5"></span></span></button>
     ${row('guide', 'plug', 'Connect a coding agent', 'connect')}${row('phone', 'phone', 'Use on your phone', 'phone')}${row('fixes', 'pencil', 'Voice spellings', 'fixes')}${row('log', 'history', 'Change log', 'log')}${row('deleted', 'trash', 'Deleted', 'deleted')}${desk() ? '' : row('about', 'info', 'About', 'about')}`);
-  $('menuInfo').innerHTML = `<div><dt class="inline">Project </dt><dd class="inline">${esc(projTitle())}</dd></div>
-    <div><dt class="inline">Data </dt><dd class="inline font-mono text-[11px]">${esc(S.file)}</dd></div>
-    <div><dt class="inline">Organizer </dt><dd class="inline">${S.org?.on ? 'Gemini · ' + esc(S.org.model) : 'off (set GEMINI_API_KEY and restart)'}</dd></div>`;
 }
 // The amber dot on the menu icon: another project waits on you. Checked now and then, not on every change.
 async function checkOthers() {
@@ -7514,16 +7545,17 @@ document.addEventListener('keydown', e => {
 document.addEventListener('keydown', async e => {  // Settings › Projects: Enter makes or saves, Esc stops (F173)
   const id = e.target.id;
   if (id !== 'pNewName' && id !== 'pRename') return;
-  if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); if (id === 'pNewName') ACT['p-new-cancel'](); else { U.renaming = null; renderProject(); } return; }
+  const stop = () => { U.renaming = null; renderProject(); if (desk()) renderProjBar(); };
+  if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); if (id === 'pNewName') ACT['p-new-cancel'](); else stop(); return; }
   if (e.key !== 'Enter' || e.isComposing) return;
   e.preventDefault(); e.stopImmediatePropagation();
   if (id === 'pNewName') return ACT['p-create']();
-  const slug = e.target.dataset.slug, title = e.target.value.trim(), was = titleOf((P_CACHE.projects || []).find(p => p.name === slug) || {name: slug});
-  if (!title || title === was) { U.renaming = null; return renderProject(); }
+  const slug = e.target.dataset.slug, title = e.target.value.trim(), was = slug === S.project ? projTitle() : titleOf((P_CACHE.projects || []).find(p => p.name === slug) || {name: slug});
+  if (!title || title === was) return stop();
   try {
     U.renaming = null; await renameProject(slug, title);
     toast(`Renamed to ${title}`, () => renameProject(slug, was).then(() => toast(`Back to ${was}`), ex => toast(ex.message)));
-  } catch (ex) { U.renaming = slug; renderProject(); toast(ex.message); const f = $('pRename'); if (f) { f.value = title; f.focus(); } }
+  } catch (ex) { U.renaming = slug; renderProject(); if (desk()) renderProjBar(); toast(ex.message); const f = $('pRename'); if (f) { f.value = title; f.focus(); } }
 }, true);
 document.addEventListener('keydown', e => {  // the new project field: Enter makes it, Esc stops (B131)
   if (e.target.id !== 'npName') return;
@@ -7751,7 +7783,6 @@ $('drawerLogo').innerHTML = ico('logo', 'size-6', '2.25');
 $('drawerNew').insertAdjacentHTML('afterbegin', ico('plus', 'size-5'));
 $('sideBtn').innerHTML = ico('panel', 'size-[18px]');
 $('newInputBtn').innerHTML = `${ico('newinput', 'size-4')}<span class="flex-1 text-left">New input</span>${KBD('C')}`;
-$('keysBtn').innerHTML = `${ico('keyboard', 'size-4')}<span class="flex-1 text-left">Keyboard shortcuts</span>${KBD('?')}`;
 $('searchBtn').innerHTML = ico('search', 'size-5.5');
 $('searchIcon').innerHTML = ico('search', 'size-4.5');
 $('qClear').innerHTML = ico('x', 'size-3', '3');

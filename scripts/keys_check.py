@@ -201,14 +201,17 @@ def group_context(a):
     a.key('j', wait=0.5); a.key('Escape', wait=0.5); check('Esc on the list goes back to nothing selected', open_(a), None)
 
 
-def group_project(a):  # This project is a settings page: one section at a time, each at its own address (B162)
+def group_project(a):  # Settings: one page in the sidebar's place, one section at a time, each at its own address (B162)
     a.go('')
-    a.click('#drawerSettings [data-act="log"]')
-    check('A sidebar row opens its own section of This project', (a.js("location.pathname.split('/').pop()"), a.js("$('projectBody').querySelector('h1').textContent")), ('log', 'Change log'))
-    a.click('#projectNav [data-sec="phone"]')
-    check('Each section has its own address', a.js("location.pathname.split('/').pop()"), 'phone')
+    a.click('#sideFoot [data-act="project"]')
+    check('Settings opens from the sidebar, at Agents, in the sidebar\'s place',
+          (a.js("location.pathname.split('/').pop()"), a.js("$('projectBody').querySelector('h1').textContent"), a.js("$('drawer').hidden")), ('settings', 'Agents', True))
+    a.click('#projectNav [data-sec="log"]')
+    check('Each section has its own address', (a.js("location.pathname.split('/').pop()"), a.js("$('projectBody').querySelector('h1').textContent")), ('log', 'Change log'))
     a.js('document.activeElement.blur()'); a.key('Escape', wait=0.8)
-    check('Esc leaves This project at once, back to the list', (a.js('D.page'), a.js("location.pathname.split('/').pop()")), (None, ''))
+    check('Esc leaves Settings at once, back to the list', (a.js('D.page'), a.js("location.pathname.split('/').pop()"), a.js("$('drawer').hidden")), (None, '', False))
+    a.key('g', wait=0.1); a.key('s', wait=0.8)
+    check('G S opens Settings', a.js('D.page'), 'project')
 
 
 def group_box(a):  # T113 group 1: the box writes where you started, and keeps the focus while it waits for words
