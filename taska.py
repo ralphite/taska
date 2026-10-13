@@ -2075,7 +2075,7 @@ PAGE = r'''<!doctype html>
           <span class="size-2.5 shrink-0 animate-pulse rounded-full bg-red-500"></span>
           <span id="recTime" class="w-10 shrink-0 font-mono text-[15px] text-zinc-700 tabular-nums dark:text-zinc-200">0:00</span>
           <span id="recBars" class="flex h-8 min-w-0 flex-1 items-center justify-end gap-[3px] overflow-hidden lg:group-data-[compose]/app:h-14"></span>
-          <button data-act="rec-stop" aria-label="Stop recording" id="recStop" class="grid size-11 shrink-0 place-items-center rounded-full bg-red-600 text-white dark:bg-red-500"></button>
+          <button data-act="rec-send" aria-label="Stop and send" id="recStop" class="mr-3 grid size-11 shrink-0 place-items-center rounded-full border border-zinc-300 text-zinc-700 dark:border-zinc-600 dark:text-zinc-200"></button>
         </div>
         <button id="micBtn" data-act="mic" aria-label="Record a voice note" hidden class="grid size-11 shrink-0 place-items-center rounded-full text-zinc-500 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800 lg:group-data-[compose]/app:size-9"></button>
         <button id="sendBtn" data-act="send" aria-label="Send (Shift + Enter)" class="grid size-11 shrink-0 place-items-center rounded-full bg-zinc-900 text-white disabled:opacity-25 dark:bg-zinc-100 dark:text-zinc-900 lg:group-data-[compose]/app:size-9"></button>
@@ -3411,21 +3411,25 @@ function renderComposer() {
   d.innerHTML = U.files.map((f, i) => `<div class="relative shrink-0">${(f.mime || '').startsWith('audio/')
       ? `<div class="flex h-16 items-center gap-2 rounded-xl border border-zinc-200 px-3 text-xs text-zinc-600 dark:border-zinc-700 dark:text-zinc-300">${ico('mic', 'size-4')}<span class="font-mono tabular-nums">${clock(f.ms || 0)}</span><span class="font-semibold ${f.transcribing ? 'animate-pulse text-blue-600 dark:text-blue-400' : f.tr ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-500'}">${f.transcribing ? 'Transcribing…' : f.tr ? 'Transcribed' : f.tr_error ? 'No transcript, audio still sent' : 'No words heard, audio still sent'}</span></div>`
       : (f.mime || '').startsWith('image/')
-      ? `<img src="${f.preview || P + 'f/' + encodeURIComponent(f.f)}" alt="${esc(f.name)}" class="size-16 rounded-xl border border-zinc-200 object-cover dark:border-zinc-700 ${f.f ? '' : 'opacity-40'}">`
+      ? `<button data-act="view-draft" data-i="${i}" aria-label="Look at ${esc(f.name)}" class="block cursor-zoom-in rounded-xl"><img src="${f.preview || P + 'f/' + encodeURIComponent(f.f)}" alt="" class="size-16 rounded-xl border border-zinc-200 object-cover dark:border-zinc-700 ${f.f ? '' : 'opacity-40'}"></button>`
       : `<div class="flex h-16 w-28 items-center gap-1 rounded-xl border border-zinc-200 px-2 text-xs dark:border-zinc-700 ${f.f ? '' : 'opacity-40'}">${ico('file', 'size-4')}<span class="line-clamp-2 break-all">${esc(f.name)}</span></div>`}
     <button data-act="unfile" data-i="${i}" aria-label="Remove ${esc(f.name)}" class="absolute -top-3.5 -right-3.5 grid size-11 place-items-center"><span class="grid size-6 place-items-center rounded-full bg-zinc-900 text-white ring-2 ring-white dark:bg-zinc-100 dark:text-zinc-900 dark:ring-zinc-900">${ico('x', 'size-3.5', '2.5')}</span></button></div>`).join('');
   // One round button in every box, as on the phone (B109): the mic while the box is empty, Send once you write;
   // then a small mic sits next to it.
   const empty = !$('text').value.trim() && !U.files.length, voice = empty && !R.rec && canRecord();
-  const sb = $('sendBtn'), icon = voice ? 'mic' : 'up';
+  // While recording, the round button where the mic was stops it, into the box (B149): tapping the same spot twice
+  // never sends. Sending at once is its own button in the bar, apart from it.
+  const sb = $('sendBtn'), icon = R.rec ? 'stop' : voice ? 'mic' : 'up';
   if (sb.dataset.icon !== icon) { sb.dataset.icon = icon; sb.innerHTML = ico(icon, voice ? 'size-6' : 'size-5'); }
+  for (const c of ['bg-zinc-900', 'dark:bg-zinc-100', 'dark:text-zinc-900']) sb.classList.toggle(c, !R.rec);
+  for (const c of ['bg-red-600', 'dark:bg-red-500']) sb.classList.toggle(c, !!R.rec);
   const micTip = !desk() ? '' : D.compose ? 'Record a voice note · ⌥V' : 'Record a voice note · V, or ⌥V while typing';
   $('boxHint').innerHTML = R.rec ? `${KBD('↵')}<span>into the box ·</span>${KBD('⇧↵')}<span>sends ·</span>${KBD('Esc')}<span>discards</span>` : `${ico('image', 'size-4')}Paste or drop screenshots`;
-  sb.dataset.act = voice ? 'mic' : 'send';
+  sb.dataset.act = R.rec ? 'rec-stop' : voice ? 'mic' : 'send';
   sb.disabled = !voice && !R.rec && empty;
-  sb.setAttribute('aria-label', voice ? 'Record a voice note' : R.rec ? 'Stop and send' : 'Send (Shift + Enter)');
-  sb.dataset.tip = desk() ? (voice ? micTip : R.rec ? 'Stop and send · ⇧↵' : 'Send · ⌘↵') : '';
-  $('recStop').dataset.tip = desk() ? 'Stop, into the box · ↵' : '';
+  sb.setAttribute('aria-label', voice ? 'Record a voice note' : R.rec ? 'Stop recording, into the box' : 'Send (Shift + Enter)');
+  sb.dataset.tip = desk() ? (voice ? micTip : R.rec ? 'Stop, into the box · ↵' : 'Send · ⌘↵') : '';
+  $('recStop').dataset.tip = desk() ? 'Stop and send · ⇧↵' : '';
   $('recCancel').dataset.tip = desk() ? 'Discard · Esc' : '';
   for (const id of ['attachBtn', 'text']) $(id).hidden = !!R.rec;
   $('micBtn').hidden = !!R.rec || voice || !canRecord();
@@ -3544,7 +3548,9 @@ async function flushOutbox() {
     }
   } finally { flushOutbox.busy = false; render(); }
 }
-addEventListener('beforeunload', e => { if (U.outbox.length) { e.preventDefault(); e.returnValue = ''; } });  // unsent words
+addEventListener('beforeunload', e => {  // unsent words, a recording, or a voice note still in the box (B149)
+  if (U.outbox.length || R.rec || U.files.some(f => (f.mime || '').startsWith('audio/'))) { e.preventDefault(); e.returnValue = ''; }
+});
 
 // ---------------------------------------------------------------- voice
 
@@ -3590,8 +3596,8 @@ function stopRec() {
   });
 }
 
-async function finishRec(andSend) {
-  const ms = Date.now() - R.t0, blob = await stopRec();
+async function finishRec(andSend, kept) {
+  const ms = kept?.ms ?? Date.now() - R.t0, blob = kept?.blob ?? await stopRec();
   if (!blob) return;
   if (ms < 800 || !blob.size) return toast('Too short, discarded');
   const ext = blob.type.includes('mp4') ? 'm4a' : blob.type.includes('ogg') ? 'ogg' : 'webm';
@@ -3607,13 +3613,17 @@ async function finishRec(andSend) {
   } catch (_) { const i = U.files.indexOf(f); if (i >= 0) U.files.splice(i, 1); f.failed = true; toast('Could not upload the recording'); }
   f.transcribing = false; settle();
   if (!f.failed && U.files.includes(f)) {  // still a draft: its words go into the box
-    if (f.tr) { const t = $('text'); t.value = (t.value.trim() ? t.value.trimEnd() + '\n' : '') + f.tr; grow(); saveDraft(); }
+    if (f.tr) { const t = $('text'); t.value = (t.value.trim() ? t.value.trimEnd() + '\n' : '') + f.tr; f.trAdded = f.tr; grow(); saveDraft(); }
     else toast(f.tr_error ? 'Transcription failed. The audio is kept and can be sent as is.' : 'No words heard. The audio is kept and can be sent as is.');
   } else if (!f.failed && !f.tr) toast(f.tr_error ? 'Transcription failed. The audio was sent as is.' : 'No words heard. The audio was sent as is.');
   renderComposer(); renderFeedback();
 }
 
-async function cancelRec() { await stopRec(); toast('Recording discarded. Your text and images are still here.'); }
+async function cancelRec() {  // B149: discarding can be undone for a few seconds
+  const ms = Date.now() - R.t0, blob = await stopRec();
+  if (!blob || ms < 800 || !blob.size) return;
+  toast('Recording discarded', () => finishRec(false, {blob, ms}));
+}
 
 // A draft belongs to what it is written to (B118): an item (a reply, or a comment on one of its documents), or a new
 // input (a new rule too). Each project keeps them by target in this browser; when the box changes target, the words and
@@ -4168,8 +4178,22 @@ const ACT = {
   attach: () => $('fileInput').click(),
   mic: startRec,
   'rec-stop': () => finishRec(false),
+  'rec-send': () => finishRec(true),
   'rec-cancel': cancelRec,
-  unfile: b => { U.files.splice(Number(b.dataset.i), 1); renderComposer(); },
+  unfile: b => {  // B149: removing a voice note also removes the words it put in the box; both come back with Undo
+    const i = Number(b.dataset.i), f = U.files[i], t = $('text'), before = t.value;
+    U.files.splice(i, 1);
+    if (f?.trAdded && t.value.includes(f.trAdded)) {
+      t.value = t.value.replace(f.trAdded, '').replace(/\n{3,}/g, '\n\n').trim(); saveDraft(); grow();
+      toast('Removed the voice note and its words', () => { U.files.splice(i, 0, f); t.value = before; saveDraft(); grow(); renderComposer(); });
+    }
+    renderComposer();
+  },
+  'view-draft': b => {  // a screenshot in the box: a tap looks at it, it does not remove it
+    const imgs = U.files.filter(f => f.f && (f.mime || '').startsWith('image/')).map(f => f.f), f = U.files[Number(b.dataset.i)];
+    if (!f?.f) return;
+    groups.set('draft', imgs); openViewer('draft', f.f);
+  },
   unscope: () => { U.scopeOff = true; renderComposer(); $('text').focus(); },
   send,
   dismiss: () => { U.lastSent = null; renderFeedback(); },
@@ -5085,7 +5109,7 @@ $('qClear').innerHTML = ico('x', 'size-3', '3');
 $('attachBtn').innerHTML = ico('plus', 'size-6');
 $('micBtn').innerHTML = ico('mic', 'size-6');
 $('recCancel').innerHTML = ico('x');
-$('recStop').innerHTML = ico('stop');
+$('recStop').innerHTML = ico('up', 'size-5');
 $('dlgClose').innerHTML = CLOSE_X;
 $('vClose').innerHTML = ico('x');
 $('backBtn').innerHTML = ico('left', 'size-6');
