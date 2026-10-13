@@ -240,6 +240,8 @@ class Store:
             inp = self.inputs[e["src"]]
             inp.setdefault("history", []).append({"text": inp["text"], "t": e["t"], "mode": e["mode"]})
             inp.update(text=e["text"], v=inp.get("v", 0) + 1, edit_seq=e["seq"], updated=e["t"], acked=False, org=None)
+            if e.get("files"):  # files that came with the details (B168)
+                inp["files"] = inp["files"] + e["files"]
             # Keep the original message as history; bring the new words to every linked item.
             for n in dict.fromkeys(inp["touched"] + ([inp["scope"]] if inp["scope"] else [])):
                 it = self.items.get(n)
@@ -573,6 +575,17 @@ class Store:
             raise Err(f"unknown field '{f}'")
         return v
 
+    def op_files(self, op):
+        """The uploaded files an op brings along, checked to exist."""
+        files = []
+        for f in op.get("files") or []:
+            fid = os.path.basename(str(f.get("f", "")))
+            if not os.path.isfile(os.path.join(self.fdir, fid)):
+                raise Err(f"unknown file {fid}")
+            files.append({k: f[k] for k in ("f", "name", "mime", "size", "tr") if k in f})
+            files[-1]["f"] = fid
+        return files
+
     def run(self, op, by, ctx):
         """Validate and apply one op. Returns (result line, label) or raises Err."""
         name, src = op.get("op"), op.get("src") or ctx.get("src")
@@ -581,13 +594,7 @@ class Store:
             raise Err(f"unknown input {src}")
         if name == "input":
             text = str(op.get("text") or "").strip()[:MAX_TEXT]
-            files = []
-            for f in op.get("files") or []:
-                fid = os.path.basename(str(f.get("f", "")))
-                if not os.path.isfile(os.path.join(self.fdir, fid)):
-                    raise Err(f"unknown file {fid}")
-                files.append({k: f[k] for k in ("f", "name", "mime", "size", "tr") if k in f})
-                files[-1]["f"] = fid
+            files = self.op_files(op)
             if not text and not files:
                 raise Err("empty input")
             scope = self.item(op["scope"], follow=False)["n"] if op.get("scope") else None
@@ -620,16 +627,16 @@ class Store:
             mode = op.get("mode")
             if mode not in ("edit", "append"):
                 raise Err("choose edit or append")
-            text = str(op.get("text") or "").strip()
-            if not text:
+            text, files = str(op.get("text") or "").strip(), self.op_files(op)
+            if not text and not files:
                 raise Err("enter some text")
             if mode == "append":
-                text = (inp["text"] + "\n\n" + text).strip()
+                text = (inp["text"] + ("\n\n" + text if text else "")).strip()
             if len(text) > MAX_TEXT:
                 raise Err(f"input is too long (maximum {MAX_TEXT} characters)")
-            if text == inp["text"]:
+            if text == inp["text"] and not files:
                 return f"ok {rid} unchanged", "Unchanged"
-            self.emit({"k": "amend", "src": rid, "mode": mode, "text": text, "by": by})
+            self.emit({"k": "amend", "src": rid, "mode": mode, "text": text, "by": by, **({"files": files} if files else {})})
             return f"ok {rid} updated", "Updated"
         if name == "doc":  # new document on an item, or new text for an existing one
             md = str(op.get("md") or "").strip()[:MAX_TEXT]
@@ -3298,13 +3305,14 @@ function cancelAmend() {
   if (desk() && D.compose) renderDetail();
 }
 async function sendAmend() {
-  const a = U.amend, text = $('text').value.trim();
-  if (!text) return $('text').focus();
-  if (U.files.length) return toast('Files can go with a new input, not with details added later');
+  const a = U.amend, text = $('text').value.trim(), drafts = [...U.files];
+  if (!text && !drafts.length) return $('text').focus();
+  await Promise.all(drafts.map(f => f.done));  // a voice note or screenshot goes along once uploaded (B168)
+  const files = drafts.filter(f => f.f && !f.failed).map(f => ({f: f.f, name: f.name, mime: f.mime, size: f.size, tr: f.tr}));
   try {
-    const d = await (await fetch(P + 'api/op', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({op: 'amend', id: a.id, mode: a.mode, v: a.v, text})})).json();
+    const d = await (await fetch(P + 'api/op', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({op: 'amend', id: a.id, mode: a.mode, v: a.v, text, files})})).json();
     if (!d.ok) return toast((d.res || []).find(x => x.startsWith('err')) || d.error || 'Not saved');
-    $('text').value = ''; saveDraft(); grow(); U.amend = null;
+    $('text').value = ''; U.files = []; saveDraft(); grow(); U.amend = null;
     await load(); toast(a.mode === 'edit' ? `${a.id} updated` : `Added to ${a.id}`);
     if (desk() && D.compose) renderDetail();
   } catch (_) { toast('Connection lost. Your words are still in the box; try again.'); }
@@ -3971,6 +3979,7 @@ const ACT = {
   switch: () => projectSwitcher(),
   'as-rule': () => { U.asRule = !ruleMode(); renderComposer(); if (desk() && D.compose) renderDetail(); },
   'new-input': () => {
+    U.amend = null; U.correct = null;  // New input is always a fresh new input (B168)
     D.sideOpen = false; if (D.page) D.page = null;
     if (desk()) {  // its own page in the detail pane (B73), not under the open item; from Inputs too (F121)
       if (U.tab === 'inputs') { D.prevTab = 'inputs'; U.tab = 'items'; }
