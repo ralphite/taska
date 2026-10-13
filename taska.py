@@ -2681,7 +2681,7 @@ PAGE = r'''<!doctype html>
         <kbd id="qKey" class="mr-2 hidden h-5 min-w-5 place-items-center rounded-md px-1 font-sans text-[11px] font-semibold text-zinc-400 ring-1 ring-zinc-300 lg:grid dark:ring-zinc-600">/</kbd>
         <button id="qX" data-act="search-clear" aria-label="Clear search" class="-mr-1 grid size-11 shrink-0 place-items-center rounded-full lg:size-9"><span id="qClear" class="grid size-5 place-items-center rounded-full bg-zinc-400 text-white dark:bg-zinc-600 dark:text-zinc-900"></span></button>
       </label>
-      <button data-act="search" class="h-11 shrink-0 px-2.5 text-[15px] font-medium text-blue-600 lg:hidden dark:text-blue-400">Cancel</button>
+      <button data-act="search-cancel" class="h-11 shrink-0 px-2.5 text-[15px] font-medium text-blue-600 lg:hidden dark:text-blue-400">Cancel</button>
     </div>
     <button id="deskFilterBtn" data-act="filters" title="Filter · F" aria-label="Filters" class="relative hidden size-9 shrink-0 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-100 lg:grid dark:text-zinc-400 dark:hover:bg-zinc-800"></button>
   </header>
@@ -4760,10 +4760,14 @@ function render() {
 
 // The item page covers the list and its tabs; the input box stays, now adding to that item. While you swipe the
 // page away (F63) it floats above the list, so the list shows underneath.
+// B152: the tab bar follows what shows (a reload, Back, a link), and a search in use is always in sight: its field
+// stays open while a word searches the list, also after a reload or when you come back to a tab that has one.
 function showView() {
   if (desk()) return showDesk();
-  const d = !!U.open, lift = d && BK.pull, under = !d || lift, v = $('detailView');
+  const d = !!U.open, lift = d && BK.pull, under = !d || lift, v = $('detailView'), sq = !!(U.searching || U.q);
   $('mainHead').hidden = $('tabs').hidden = !under;
+  $('headNormal').hidden = sq; $('headSearch').hidden = !sq;
+  for (const b of document.querySelectorAll('#tabs [data-tab]')) b.setAttribute('aria-selected', String(b.dataset.tab === U.tab));
   $('itemsView').hidden = !under || U.tab === 'inputs';
   $('inputsView').hidden = !under || U.tab !== 'inputs';
   v.hidden = !d;
@@ -4802,7 +4806,7 @@ function openItem(n, push = true) {
   if (desk() && U.doc && !U.docEdit) { U.docScroll[U.doc] = $('detailBody').scrollTop; Object.assign(U, {doc: null, docReply: null, docSel: new Set(), docQuote: null, docCircle: false}); D.docKey = null; }  // another item: the document closes
   if (desk() && U.tab === 'inputs') { const it = byN.get(n); U.tab = it.archived ? 'archive' : it.type === 'rule' ? 'rules' : 'items'; }  // Inputs has no item pane
   if (desk()) { D.page = null; D.compose = false; writeURL(false, history.state?.full ? {...history.state, n} : null); }
-  else if (push && !URLS.applying) hist(() => { if (location.pathname !== P + code(n)) history.pushState({n}, '', P + code(n) + viewQuery()); });  // after a sheet's step back (B150)
+  else if (push && !URLS.applying) hist(() => { if (location.pathname !== P + code(n)) history.pushState({n, ...searchStep()}, '', P + code(n) + viewQuery()); });  // after a sheet's step back (B150)
   render();
   if (fresh) $('detailBody').scrollTop = 0;
   if (desk()) document.querySelector(`#list [data-act="open"][data-n="${n}"]`)?.scrollIntoView({block: 'nearest'});
@@ -4829,6 +4833,7 @@ function setTab(t) {
     $('q').value = U.q; qSync();
   }
   U.asRule = null; U.amend = null; U.correct = null; if (t === 'inputs' && was !== 'inputs') U.inputsEnd = true;
+  if (!desk() && t !== was && !U.open) U.tabTop[was] = tabScroll(was).scrollTop;  // where you were in this tab (B152)
   U.tab = t;
   if (t !== was && !desk()) writeURL(true);
   if (desk()) {
@@ -4842,11 +4847,12 @@ function setTab(t) {
     U.tabTop[was] = $('list').scrollTop;  // each tab keeps its place in the list (B124)
     D.page = null; D.sideOpen = false; D.compose = false; U.settle.clear(); render(); $('list').scrollTop = U.tabTop[t] || 0; return writeURL(away);
   }
-  document.querySelectorAll('[data-tab]').forEach(b => b.getAttribute('aria-selected') !== null && b.setAttribute('aria-selected', String(b.dataset.tab === t)));
-  showView(); renderFilters();
-  if (t === 'inputs') renderInputs(); else { renderItems(); $('list').scrollTop = 0; }
+  showView(); renderFilters();  // the tab bar follows there (B152)
+  if (t === 'inputs') renderInputs(); else renderItems();
+  if (t !== was) tabScroll(t).scrollTop = U.tabTop[t] || 0;  // each tab keeps its place, as on the desktop (B152)
   renderComposer();
 }
+const tabScroll = t => t === 'inputs' ? $('inputsView') : $('list');
 
 const SAID = {open: 'is open', doing: 'is in progress', done: 'is done', dropped: "is marked won't do", later: 'moved to Later', now: 'moved to Now', review: 'is in review', proposed: 'is proposed'};
 // One-tap changes (swipes, row pills, the focus card) say what happened and offer Undo, which puts the old value back.
@@ -4875,8 +4881,12 @@ const qSync = () => { $('qX').classList.toggle('lg:hidden', !U.q); $('qKey').cla
 const searchMode = on => {
   if (on !== !!U.searching) { if (on) layerOpen('search'); else layerShut('search'); }  // Back closes it (B150)
   U.searching = on;
-  $('headNormal').hidden = on; $('headSearch').hidden = !on;
-  if (on) $('q').focus(); else { U.q = ''; $('q').value = ''; }
+  if (!on) {  // Cancel ends the search: on every tab, and in the address, so nothing filters the list unseen (B152)
+    U.q = ''; $('q').value = ''; for (const v of Object.values(U.tabView)) v.q = '';
+    if (!LAY.popping) writeURL(false);
+  }
+  if (!desk()) showView();
+  if (on) $('q').focus();
   renderItems(); if (U.tab === 'inputs') renderInputs();
 };
 const ACT = {
@@ -4885,6 +4895,7 @@ const ACT = {
     try { await op({op: 'cfg', auto: on}); renderDrawerSettings(); toast(on ? 'Keep going is on: your agent works down the list' : 'Keep going is off: your agent stops after the current item'); } catch (_) {}
   },
   search: () => searchMode(!U.searching),
+  'search-cancel': () => searchMode(false),  // also a search that came with the address or a tab (B152)
   'search-clear': () => { clearSearch(); $('q').focus(); },
   reply: () => { U.scopeOff = false; renderComposer(); $('text').focus(); },
   'card-answer': b => {  // the card's step forward on an item that waits on you (B147): its question, and the box to reply in
@@ -4968,7 +4979,8 @@ const ACT = {
   'go-input': b => {  // B131: from an item's source to that input in Inputs, lit up for a moment
     const id = b.dataset.id;
     LAY.keep = !desk() && U.sheet === 'log'; closeDialog(); if (D.page) D.page = null;  // the log keeps its step (B150)
-    if (U.tab !== 'inputs') setTab('inputs'); else render();
+    if (!desk() && U.open) { stashEdit(); U.open = null; U.editing = null; U.subFor = null; showView(); [$('list').scrollTop, $('inputsView').scrollTop] = U.listTop || [0, 0]; }  // the phone leaves the item page for Inputs; Back comes back to it (B152)
+    if (U.tab !== 'inputs') setTab('inputs'); else { render(); if (!desk()) writeURL(true); }
     requestAnimationFrame(() => requestAnimationFrame(() => {
       const a = document.querySelector(`#inputsView [data-r="${id}"]`);
       if (!a) return;
@@ -6065,7 +6077,7 @@ document.addEventListener('keydown', e => {
   if (!$('viewer').hidden && e.key === 'ArrowLeft') ACT['v-prev']();
   if (!$('viewer').hidden && e.key === 'ArrowRight') ACT['v-next']();
   if (e.key === '/' && !desk() && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) { e.preventDefault(); if (!U.searching) ACT.search(); else $('q').focus(); }
-  if (e.key === 'Escape' && U.searching && document.activeElement === $('q') && !desk()) searchMode(false);
+  if (e.key === 'Escape' && (U.searching || U.q) && document.activeElement === $('q') && !desk()) searchMode(false);
 });
 
 document.addEventListener('keydown', e => {  // the new project field: Enter makes it, Esc stops (B131)
@@ -6080,6 +6092,7 @@ $('q').addEventListener('keydown', e => {  // B130: from the search, Down or Ent
   if (first) openItem(Number(first.dataset.n));
 });
 $('q').addEventListener('input', e => { U.q = e.target.value; qSync(); writeURL(false); if (U.tab === 'inputs') renderInputs(); else { renderItems(); $('list').scrollTop = 0; } });
+$('q').addEventListener('focus', () => { if (!desk() && !U.searching) searchMode(true); });  // a search that came with the address: in your hands now, Cancel or Back ends it (B152)
 $('text').addEventListener('input', () => { saveDraft(); renderComposer(); grow(); });  // the buttons first: the mic showing up narrows the box
 document.addEventListener('input', e => { const k = e.target.dataset?.docDraft; if (k) U.docDrafts[k] = e.target.value; if (e.target.id === 'docMd') U.docText = e.target.value; });
 // Selecting words in what a voice note became offers to correct them, in the one box (F144). The fix goes into
@@ -6120,6 +6133,12 @@ window.addEventListener('online', () => { refresh(); resendOutbox(); });
 new ResizeObserver(() => { if ($('overlay').dataset.above && !$('overlay').hidden) $('overlay').style.bottom = $('composer').parentElement.offsetHeight + 'px'; })
   .observe($('composer').parentElement);
 window.addEventListener('pageshow', e => { if (e.persisted) refresh(); });
+addEventListener('pagehide', () => {  // where you were in the list, for the reload (B152)
+  if (desk() || !S.project) return;
+  const top = U.open ? (U.listTop || [])[U.tab === 'inputs' ? 1 : 0] : tabScroll(U.tab).scrollTop;
+  if (typeof top === 'number') U.tabTop[U.tab] = top;
+  try { sessionStorage.setItem('taska.top.' + S.project, JSON.stringify(U.tabTop)); } catch (_) {}
+});
 // ---------------------------------------------------------------- the address (T102)
 // The address says what you look at: /p/<project>/ is Items; /inputs /archive /rules a tab; /B03 an item; /D4 a
 // document; /new the New input page; /settings /connect /phone /spellings /log /about the sections of This project
@@ -6158,6 +6177,7 @@ function histDone() {
   LAY.at = here();
 }
 const layersNow = () => history.state?.layers || [];
+const searchStep = () => !desk() && U.searching ? {layers: ['search']} : {};  // pages you open while searching keep the search open under them
 function layerOpen(kind) {
   if (desk() || URLS.applying) return;
   hist(() => { if (!layersNow().includes(kind)) history.pushState({...(history.state || {}), layers: [...layersNow(), kind]}, '', location.href); });
@@ -6186,7 +6206,7 @@ function writeURL(push = false, state) {
   if (URLS.applying || URLS.hold) return;
   hist(() => {
     const url = P + viewPath() + viewQuery(), now = location.pathname + location.search + location.hash;
-    if (push && url !== now) history.pushState(state ?? {v: viewPath()}, '', url);
+    if (push && url !== now) history.pushState(state ?? {v: viewPath(), ...searchStep()}, '', url);
     else if (url !== now || state !== undefined) history.replaceState(state === undefined ? history.state : state, '', url);
   });
 }
@@ -6237,13 +6257,16 @@ function showURL() {
     return ({log: showLog, connect: showGuide, phone: showPhone, spellings: ACT.fixes}[seg] || openDrawer)();
   }
   if (seg === 'new') { if (desk()) return ACT['new-input'](); return $('text').focus(); }
+  const was = U.tab;
+  if (!desk()) U.tabTop[was] = tabScroll(was).scrollTop;  // Back or Forward to another tab: each keeps its place (B152)
   U.tab = /^(inputs|archive|rules)$/.test(seg) ? seg : 'items'; U.asRule = null; U.inputsEnd = seg === 'inputs' && typeof history.state?.top !== 'number';
   render();
+  if (!desk() && U.tab !== was) tabScroll(U.tab).scrollTop = U.tabTop[U.tab] || 0;
 }
 window.addEventListener('popstate', () => {
   if (LAY.back) { if (--LAY.back === 0) histDone(); return; }  // a step the page took back itself (B150)
   if (URLS.selfBack) { URLS.selfBack = false; return writeURL(false, history.state?.full ? history.state : null); }  // our own step back
-  if (!desk() && closeLayers() && here() === LAY.at) return;  // Back closed what was on top, and only that (B150)
+  if (!desk() && closeLayers() && here() === LAY.at) return writeURL(false);  // Back closed what was on top, and only that (B150); a closed search leaves the address too (B152)
   applyURL(); LAY.at = here();
 });
 
@@ -6275,6 +6298,11 @@ load().then(() => {
     history.replaceState(null, '', P + viewQuery()); history.pushState({n}, '', P + code(n) + viewQuery());
   }
   applyURL();
+  if (!desk()) {  // a reload keeps your place in each tab of the list, as it keeps your drafts (B152)
+    try { Object.assign(U.tabTop, JSON.parse(sessionStorage.getItem('taska.top.' + S.project) || '{}')); } catch (_) {}
+    const top = U.tabTop[U.tab] || 0;
+    if (U.open) U.listTop = U.tab === 'inputs' ? [U.tabTop.items || 0, top] : [top, U.tabTop.inputs || 0]; else tabScroll(U.tab).scrollTop = top;
+  }
   writeURL(false);  // tidy the address: #B03 becomes /B03. Nothing is picked for you: the box is a new input until you open an item (F119)
   restoreOutbox();  // inputs that did not go out last time (B151)
   restoreVoice();  // voice notes that did not go out last time (T101)
