@@ -49,6 +49,22 @@ class UndoTests(unittest.TestCase):
         self.assertIn('changed since', self.run_op({'op': 'unmake', 'ref': 'I1'}, ok=False))
         self.assertEqual(self.s.items[1]['status'], 'open')
 
+    def test_archive_many_in_one_change(self):  # A5: "Archive N" stopped at 50 and left 50 lines in the log
+        for k in range(60):
+            self.run_op({'op': 'new', 'title': f'Finished {k}', 'status': 'done'})
+        self.run_op({'op': 'new', 'title': 'Still open'})
+        before = len(self.s.events)
+        line = self.run_op({'op': 'archive', 'refs': [f'I{k}' for k in range(1, 62)], 'on': True})
+        self.assertEqual(line, 'ok archived 60; not finished, so not archived: I61')
+        self.assertEqual(len(self.s.events), before + 1)  # one change
+        self.assertTrue(all(self.s.items[k]['archived'] for k in range(1, 61)))
+        self.assertFalse(self.s.items[61]['archived'])
+        self.assertIn('archived 60: I01 I02', self.s.log(1))
+        self.run_op({'op': 'archive', 'refs': [f'I{k}' for k in range(1, 61)], 'on': False})  # its Undo
+        self.assertFalse(any(self.s.items[k]['archived'] for k in range(1, 61)))
+        again = self.replayed()
+        self.assertEqual(again.items, self.s.items)
+
     def test_only_items_made_from_an_input(self):
         self.run_op({'op': 'new', 'title': 'Typed in by hand'})
         self.assertIn('not made from an input', self.run_op({'op': 'unmake', 'ref': 'I1'}, ok=False))

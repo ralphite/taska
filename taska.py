@@ -296,6 +296,11 @@ class Store:
                                 x["text"] = inp["text"] if seq == inp["seq"] else f"{inp['id']} updated:\n{inp['text']}"
         elif k == "undo":
             self.undo(e)
+        elif k == "arch":  # many items archived or unarchived in one change (T113 A5)
+            for n in e["ns"]:
+                it = self.items.get(n)
+                if it:
+                    it["archived"], it["t1"] = e["on"], e["t"]
         elif k == "unmake":  # "Make item" undone: the item goes, and its input waits for an agent again
             it, inp = self.items.get(e["n"]), self.inputs.get(e["src"])
             if it:
@@ -678,6 +683,8 @@ class Store:
         changed again since. An undo and the change it put back cancel out, so undoing again walks further back."""
         out, seen = [], set()
         for e in reversed(self.events[-scan:]):
+            if e["k"] == "arch":  # archived in a batch since: an older archive change is not the latest any more
+                seen.update((n, "archived") for n in e["ns"])
             if e["k"] != "set" or e.get("undo_of") or e["seq"] in self.undone:
                 continue
             it = self.items.get(e["n"])
@@ -867,6 +874,20 @@ class Store:
             self.emit({**e, **keep})
             ctx["last"] = e["n"]
             return f"ok {self.code(e['n'])} new" + (" (proposed: the user approves it before anyone works on it)" if e["status"] == "proposed" else ""), "Created " + self.code(e["n"])
+        if name == "archive":  # many items in one change (T113 A5): the page's "Archive N" and its Undo, any number
+            on, ns, skip = bool(op.get("on", True)), [], []
+            for r in op.get("refs") or []:
+                it = self.item(r, ctx, follow=False)
+                if it["archived"] == on or it["n"] in ns:
+                    continue
+                if on and it["status"] not in CLOSED:
+                    skip.append(self.code(it["n"]))
+                    continue
+                ns.append(it["n"])
+            word = "archived" if on else "unarchived"
+            if ns:
+                self.emit({"k": "arch", "ns": ns, "on": on, "by": by})
+            return f"ok {word} {len(ns)}" + (f"; not finished, so not archived: {' '.join(skip)}" if skip else ""), f"{word.capitalize()} {len(ns)}"
         if name == "unmake":  # undo "Make item" (T113 A7): the item goes (won't do, archived) and its input waits again
             it = self.item(op.get("ref", ""), ctx, follow=False)
             add = next((x for x in self.events if x["k"] == "add" and x["n"] == it["n"]), None)
@@ -1120,6 +1141,8 @@ class Store:
                 s = f"undo organizer changes for {e['src']}"
             elif k == "unmake":
                 s = f"{self.code(e['n'])} unmade: {e['src']} waits again"
+            elif k == "arch":
+                s = f"{'archived' if e['on'] else 'unarchived'} {len(e['ns'])}: " + " ".join(self.code(n) for n in e["ns"][:12]) + (" …" if len(e["ns"]) > 12 else "")
             elif k == "moved":
                 s = f"{e['src']} moved to {e['to']} as {e['as']}"
             elif k == "amend":
@@ -5396,7 +5419,7 @@ const ACT = {
   'archive-all': () => {  // no question first: it happens at once, and Undo stays in the same spot for 3 seconds
     const ids = visible().filter(it => !it.archived && CLOSED(it.status)).map(it => it.n);
     if (!ids.length) return;
-    const all = on => ids.map(n => ({op: 'set', ref: code(n), f: {archived: on}}));
+    const all = on => ({op: 'archive', refs: ids.map(code), on});  // one change, however many (T113 A5)
     clearInterval(U.undoArch?.timer);
     const u = U.undoArch = {ids, left: 3}, gone = () => { clearInterval(u.timer); if (U.undoArch === u) U.undoArch = null; };
     u.run = pushUndo(`${plural(ids.length, 'item')} archived`, () => {  // the bar and Z put the whole batch back
@@ -5408,7 +5431,10 @@ const ACT = {
       clearInterval(u.timer);
       if (U.undoArch === u) { U.undoArch = null; renderItems(); }
     }, 1000);
-    optimistic(ids.map(n => ({n, f: {archived: true}})), () => op(all(true)), ex => { gone(); forget(u.run); renderItems(); notSaved(ex, () => ACT['archive-all']()); });
+    optimistic(ids.map(n => ({n, f: {archived: true}})), async () => {
+      const left = ((await op(all(true))).res[0].match(/not archived: (.+)$/) || [])[1];  // reopened meanwhile: they stay
+      if (left) toast(`${left.split(' ').length === 1 ? `${left} isn't` : `${left.split(' ').join(', ')} aren't`} finished any more, so ${left.split(' ').length === 1 ? 'it stays' : 'they stay'}`);
+    }, ex => { gone(); forget(u.run); renderItems(); notSaved(ex, () => ACT['archive-all']()); });
   },
   'archive-undo': () => U.undoArch?.run(),
   'search-in': b => { U.tabView[b.dataset.tab] = {q: U.q}; setTab(b.dataset.tab); },  // A9: the same search there, as the hint counted it (no filters)
