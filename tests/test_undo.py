@@ -3,6 +3,7 @@ import importlib.util
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 spec = importlib.util.spec_from_file_location('taska', Path(__file__).resolve().parents[1] / 'taska.py')
 taska = importlib.util.module_from_spec(spec)
@@ -64,6 +65,43 @@ class UndoTests(unittest.TestCase):
         self.assertFalse(any(self.s.items[k]['archived'] for k in range(1, 61)))
         again = self.replayed()
         self.assertEqual(again.items, self.s.items)
+
+    def file_r1(self):  # the organizer files r1: a new item F2, and a priority on F1
+        self.run_op({'op': 'new', 'title': 'Export as CSV', 'type': 'feature', 'pri': 'P2'})
+        self.run_op({'op': 'input', 'text': 'Excel export too, and CSV export is urgent'})
+        with patch.object(taska, 'gemini', return_value='new feature P2 Export as Excel\nF1 P0'):
+            taska.Organizer(self.s).process(self.s.inputs['r1'])
+        self.assertTrue(self.s.inputs['r1']['acked'])
+
+    def test_undo_filing_says_what_and_comes_back(self):  # A4
+        self.file_r1()
+        f = self.s.filings()['r1']
+        self.assertEqual(f, {'can': True, 'why': '', 'what': 'removes F2 · F1 back to P2'})
+        with self.s.lock:
+            self.s.emit({'k': 'undo', 'src': 'r1', 'by': 'you'})
+        self.assertEqual((self.s.items[2]['status'], self.s.items[2]['archived'], self.s.items[1]['pri']), ('dropped', True, 'P2'))
+        self.assertIsNone(self.s.redo_blocked('r1'))
+        with self.s.lock:  # Z: the filing comes back
+            self.s.emit({'k': 'redo', 'src': 'r1', 'by': 'you'})
+        self.assertEqual((self.s.items[2]['status'], self.s.items[2]['archived'], self.s.items[1]['pri']), ('open', False, 'P0'))
+        self.assertTrue(self.s.inputs['r1']['acked'])
+        self.assertFalse(self.s.inputs['r1']['org'].get('undone'))
+        self.assertTrue(self.s.filings()['r1']['can'])  # and it can be undone again
+        again = self.replayed()
+        self.assertEqual((again.items, again.inputs), (self.s.items, self.s.inputs))
+
+    def test_no_undo_filing_once_its_work_changed(self):  # A4: undo turned items finished since into won't do
+        self.file_r1()
+        self.run_op({'op': 'set', 'ref': 'F2', 'f': {'status': 'done'}}, 'codex')
+        f = self.s.filings()['r1']
+        self.assertEqual((f['can'], f['why']), (False, 'F2 changed since'))
+
+    def test_no_redo_once_its_items_changed(self):
+        self.file_r1()
+        with self.s.lock:
+            self.s.emit({'k': 'undo', 'src': 'r1', 'by': 'you'})
+        self.run_op({'op': 'set', 'ref': 'F1', 'f': {'pri': 'P1'}})
+        self.assertEqual(self.s.redo_blocked('r1'), 'F1 changed since the filing was undone')
 
     def test_only_items_made_from_an_input(self):
         self.run_op({'op': 'new', 'title': 'Typed in by hand'})

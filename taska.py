@@ -154,6 +154,7 @@ class Store:
         self.items, self.inputs, self.events = {}, {}, []
         self.qids = {}  # the page's id for an input it sent -> the input: sent again after a lost answer, it goes in once (T101)
         self.undone = set()  # seqs of your changes that were put back (F80)
+        self.org_off, self.took = set(), {}  # organizer changes taken back by an undo; each undo's list of them (T113 A4)
         self.rev = 0  # bumps on every change, including transient organizer state
         self.boot = format(int(time.time() * 1000), "x")  # rev restarts with the process; boot tells pages apart
         self.maxn = self.nin = self.nfile = 0
@@ -296,6 +297,8 @@ class Store:
                                 x["text"] = inp["text"] if seq == inp["seq"] else f"{inp['id']} updated:\n{inp['text']}"
         elif k == "undo":
             self.undo(e)
+        elif k == "redo":
+            self.redo(e)
         elif k == "arch":  # many items archived or unarchived in one change (T113 A5)
             for n in e["ns"]:
                 it = self.items.get(n)
@@ -337,18 +340,81 @@ class Store:
         elif k == "dc":
             self.docs[e["d"]]["comments"].append({"id": e["seq"], "key": e["key"], "quote": e["quote"], "text": e["text"], "by": e["by"], "t": e["t"]})
 
+    def touches(self, e):
+        """The items an event changes or adds to: a change, a message, a reply, a subitem, a document, a comment."""
+        out = [e[k] for k in ("n", "into", "scope", "parent") if e.get(k)] + list(e.get("ns") or [])
+        if (e.get("f") or {}).get("parent"):
+            out.append(e["f"]["parent"])
+        if e["k"] == "dc" and e["d"] in self.docs:
+            out.append(self.docs[e["d"]]["n"])
+        return out
+
     def touched_since(self, n, seq):
-        """Did anything happen to item n after event `seq`: a change, a message, a reply, a subitem, a document?"""
-        docs = {d for d, x in self.docs.items() if x["n"] == n}
-        return any(e.get("n") == n or e.get("into") == n or e.get("scope") == n or e.get("parent") == n or e.get("d") in docs
-                   or (e.get("f") or {}).get("parent") == n for e in self.events[seq:])
+        """Did anything happen to item n after event `seq`?"""
+        return any(n in self.touches(e) for e in self.events[seq:])
+
+    FILED_WAS = {"proposed": "proposed", "open": "open", "doing": "in progress", "review": "in review", "done": "done", "dropped": "won't do"}
+
+    def filings(self):
+        """What the organizer last did with each input (since its last edit), in words, and whether all of it is still as
+        it left it (T113 A4): an undo then takes back only its own work, not what you or an agent did after.
+        -> {rid: {"can": bool, "what": "removes F08 · B12 back to P2", "why": "F08 changed since"}}"""
+        last, by_src = {}, {}
+        for e in self.events:
+            for m in self.touches(e):
+                last[m] = e["seq"]
+            if e.get("by") == "org" and e.get("src") and e["k"] in ("add", "set", "say", "merge") and e["seq"] not in self.org_off:
+                by_src.setdefault(e["src"], []).append(e)
+        out = {}
+        for rid, xs in by_src.items():
+            inp = self.inputs.get(rid)
+            if not inp or not inp["org"] or not inp["org"].get("ok") or inp["org"].get("undone"):
+                continue
+            xs = [x for x in xs if x["seq"] > inp.get("edit_seq", 0)]
+            mine = {m: x["seq"] for x in xs for m in (x.get("n"), x.get("into")) if m}
+            changed = [m for m, s in mine.items() if last.get(m, 0) > s]
+            words = []
+            for x in xs:
+                c = self.code(x["n"])
+                if x["k"] == "add":
+                    words.append(f"removes {c}")
+                elif x["k"] == "set":
+                    words += [f"{c} back to {self.FILED_WAS.get(x['was'].get(f), x['was'].get(f))}" if f in ("pri", "status", "when", "type")
+                              else f"{c}'s old {f}" for f in x["f"]]
+                elif x["k"] == "say":
+                    words.append(f"takes back the note on {c}")
+                elif x["k"] == "merge":
+                    words.append(f"{c} no longer merged into {self.code(x['into'])}")
+            words = list(dict.fromkeys(words))
+            if words:
+                out[rid] = {"can": not changed, "why": f"{self.code(changed[0])} changed since" if changed else "",
+                            "what": " · ".join(words[:4]) + (f" · and {len(words) - 4} more" if len(words) > 4 else "")}
+        return out
+
+    def redo_blocked(self, rid):
+        """Why the filing an undo took back can't come back now, or None (T113 A4)."""
+        last = next((x for x in reversed(self.events) if x.get("src") == rid and (x["k"] in ("undo", "redo", "amend") or x.get("by") == "org")), None)
+        if not last or last["k"] != "undo":
+            return f"there is no undone filing of {rid} to put back"
+        for seq in self.took.get(last["seq"], []):
+            x = self.events[seq - 1]
+            for m in (x.get("n"), x.get("into")):
+                if m and self.touched_since(m, last["seq"]):
+                    return f"{self.code(m)} changed since the filing was undone"
+        return None
 
     def undo(self, e):
         """Revert the organizer's changes for input e["src"]; fields changed again since stay as they are."""
         rid = e["src"]
         since = self.inputs.get(rid, {}).get("edit_seq", 0)
+        took = self.took[e["seq"]] = []
         for x in [x for x in self.events if x.get("src") == rid and x.get("by") == "org" and x["seq"] > since]:
             k = x["k"]
+            if x["seq"] in self.org_off:  # taken back already
+                continue
+            if k in ("add", "set", "say", "merge"):
+                self.org_off.add(x["seq"])
+                took.append(x["seq"])
             if k == "add" and x["n"] in self.items:
                 self.items[x["n"]].update(status="dropped", archived=True, t1=e["t"])
             elif k == "set" and x["n"] in self.items:
@@ -367,6 +433,40 @@ class Store:
                     b["thread"] = [t for t in b["thread"] if t["id"] != x["seq"]]
         if rid in self.inputs:  # the input is unhandled again (the organizer's changes had marked it handled)
             self.inputs[rid].update(acked=False, org={"ok": True, "msg": "Undone", "t": e["t"], "keep": False, "undone": True})
+
+    def redo(self, e):
+        """Put back what the last undo of input e["src"]'s filing took back (T113 A4): Z after "Undo filing"."""
+        rid = e["src"]
+        u = next((x for x in reversed(self.events[:e["seq"] - 1]) if x["k"] == "undo" and x.get("src") == rid), None)
+        if not u:
+            return
+        for seq in self.took.get(u["seq"], []):
+            x = self.events[seq - 1]
+            self.org_off.discard(seq)
+            it = self.items.get(x["n"])
+            if not it:
+                continue
+            it["t1"] = e["t"]
+            if x["k"] == "add":
+                it.update(status=x["status"], archived=False)
+            elif x["k"] == "set":
+                for f, v in x["f"].items():
+                    if it.get(f) == x["was"].get(f):
+                        it[f] = v
+            elif x["k"] == "say":
+                if all(t["id"] != seq for t in it["thread"]):
+                    it["thread"].append({"id": seq, "by": x["by"], "kind": x["kind"], "text": x["text"], "t": x["t"], "src": x.get("src"), "files": x.get("files") or []})
+                    it["thread"].sort(key=lambda t: t["id"])
+            elif x["k"] == "merge":
+                it["merged_into"] = x["into"]
+                b = self.items.get(x["into"])
+                if b and all(t["id"] != seq for t in b["thread"]):
+                    b["thread"].append({"id": seq, "by": x["by"], "kind": "progress", "text": f"Merged in {self.code(it['n'])}: {it['title']}", "t": x["t"], "src": x.get("src"), "files": []})
+                    b["thread"].sort(key=lambda t: t["id"])
+        o = next((x for x in reversed(self.events[:u["seq"] - 1]) if x["k"] == "org" and x.get("src") == rid and not x.get("retry")), None)
+        if o and rid in self.inputs:
+            keep = o.get("keep", "Left for your coding agent" in o["msg"])
+            self.inputs[rid].update(acked=not keep, org={"ok": o["ok"], "msg": o["msg"], "t": o["t"], "keep": keep, "changed": o.get("changed", False)})
 
     def emit(self, e):
         e["t"] = now()
@@ -990,7 +1090,7 @@ class Store:
 
     def state(self):
         with self.lock:
-            items = []
+            items, F = [], self.filings()
             for it in self.items.values():
                 d = dict(it)
                 d["code"] = self.code(it["n"])
@@ -1000,7 +1100,7 @@ class Store:
                 items.append(d)
             return {"rev": self.rev, "boot": self.boot, "pv": self.pv, **self.presence(), "width": len(str(self.maxn)), "file": home_short(self.path), "cfg": self.cfg, "undo": self.undoable(),
                     "org": {"on": self.org_on, "model": MODEL, "busy": self.org_busy},
-                    "items": items, "inputs": [dict(i, tr_wait=True) if self.held(i) else i for i in self.inputs.values()],
+                    "items": items, "inputs": [dict(i, **({"tr_wait": True} if self.held(i) else {}), **({"filing": F[i["id"]]} if i["id"] in F else {})) for i in self.inputs.values()],
                     "docs": [dict(d, blocks=self.doc_view(d)[0], detached=self.doc_view(d)[1], open=self.doc_open(d)) for d in self.docs.values()]}
 
     def line(self, it):
@@ -1139,6 +1239,8 @@ class Store:
                 s = f"D{e['d']} comment {first_line(e['text'])!r}"
             elif k == "undo":
                 s = f"undo organizer changes for {e['src']}"
+            elif k == "redo":
+                s = f"redo organizer changes for {e['src']}"
             elif k == "unmake":
                 s = f"{self.code(e['n'])} unmade: {e['src']} waits again"
             elif k == "arch":
@@ -2476,7 +2578,18 @@ class Handler(BaseHTTPRequestHandler):
                 inp = s.inputs.get(rid)
                 if not inp or not inp["org"] or inp["org"].get("undone"):
                     raise Err(f"nothing to undo for {rid}")
+                f = s.filings().get(rid)
+                if f and not f["can"]:  # T113 A4: only the organizer's own work, as it left it
+                    raise Err(f"{f['why']}: undo that by hand")
                 s.emit({"k": "undo", "src": rid, "by": "you"})
+            self.json({"ok": True})
+        elif p == "/api/redo":  # the filing "Undo filing" took back comes back (T113 A4), while nothing changed since
+            rid = (json.loads(self.body(10_000) or b"{}")).get("id")
+            with s.cond:
+                why = s.redo_blocked(rid)
+                if why:
+                    raise Err(why)
+                s.emit({"k": "redo", "src": rid, "by": "you"})
             self.json({"ok": True})
         elif p == "/api/revert":  # put back one of your changes (F80)
             seq = int((json.loads(self.body(10_000) or b"{}")).get("seq") or 0)
@@ -4167,7 +4280,8 @@ function restoreEdit(k) {
 
 const isVoice = r => !!r?.files?.some(f => (f.mime || '').startsWith('audio/'));
 const voiceAttr = r => isVoice(r) ? `data-voice="${r.id}"` : '';  // F144: words selected here can be corrected
-const canUndoInput = r => r.org && r.org.ok && !r.org.undone && r.touched.length && (!r.org.keep || (r.history?.length && r.org.changed));
+const canUndoInput = r => r.org && r.org.ok && !r.org.undone && r.touched.length && (!r.org.keep || (r.history?.length && r.org.changed)) && r.filing?.can;  // T113 A4: while its work is as it left it
+const filingTip = r => `Undo what the organizer did with ${r.id}: ${r.filing?.what || ''}`;
 
 function inputActions(r, cls = LINK_BTN) {
   if (r.moved) return '';
@@ -4255,7 +4369,7 @@ function renderInputs() {
     const note = !r.moved && r.org && !(r.acked && r.org.keep) ? `<div class="mt-1.5 flex min-h-5 items-center gap-1 text-xs ${r.org.ok ? 'text-zinc-500 dark:text-zinc-400' : 'text-red-600 dark:text-red-400'}">${ico('sparkle', 'size-3.5')}<span class="min-w-0">${esc(r.org.msg)}</span></div>` : '';
     const chips = r.moved ? '' : r.touched.filter(n => byN.has(n)).map(n => `<button data-act="goto" data-n="${n}" class="${HIT} flex h-8 max-w-full min-w-0 items-center gap-1.5 rounded-lg bg-zinc-100 px-2 text-[13px] hover:bg-zinc-200/70 dark:bg-zinc-800 dark:hover:bg-zinc-700"><span class="font-mono text-xs font-bold ${TYPE_TEXT[byN.get(n).type]}">${code(n)}</span><span class="truncate">${esc(byN.get(n).title)}</span></button>`).join('');
     const acts = r.moved ? `<a href="/p/${encodeURIComponent(r.moved.to)}/" class="${LINK_BTN}">${ico('arrow', 'size-3.5', '2')}Open ${esc(r.moved.to)} · ${esc(r.moved.as)}</a>` : (!r.acked && S.org.on && r.org && (!r.org.ok || r.org.undone) ? `<button data-act="retry" data-id="${r.id}" class="${LINK_BTN}">${ico('loop', 'size-3.5', '2')}${r.org.undone ? 'Organize again' : 'Retry'}</button>` : '')
-      + (canUndoInput(r) ? `<button data-act="undo" data-id="${r.id}" class="${LINK_BTN} text-zinc-600 dark:text-zinc-300">${ico('undo', 'size-3.5', '2')}Undo</button>` : '')
+      + (canUndoInput(r) ? `<button data-act="undo" data-id="${r.id}" title="${esc(filingTip(r))}" class="${LINK_BTN} text-zinc-600 dark:text-zinc-300">${ico('undo', 'size-3.5', '2')}Undo filing</button>` : '')
       + (!r.acked && !r.scope && !(S.org.on && !r.org) && S.org.busy !== r.id ? `<button data-act="make-item" data-id="${r.id}" class="${LINK_BTN}">${ico('plus', 'size-3.5', '2')}Make item</button>` : '')
       + (otherProjects().length && S.org.busy !== r.id ? `<button data-act="move-input" data-id="${r.id}" class="${LINK_BTN} text-zinc-600 dark:text-zinc-300">${ico('arrow', 'size-3.5', '2')}Move to…</button>` : '') + inputActions(r);
     // On the desktop each input is a ledger line: what you said on the left, what became of it on the right.
@@ -5500,11 +5614,21 @@ const ACT = {
   unscope: () => { U.scopeOff = true; renderComposer(); $('text').focus(); },
   send,
   dismiss: () => { U.lastSent = null; U.note = null; renderFeedback(); },
-  undo: async b => {
+  undo: async b => {  // Undo filing (T113 A4): what the organizer did with an input, as it left it; it says what changed, and Z puts it back
+    const id = b.dataset.id, what = byR.get(id)?.filing?.what;
     let d;
-    try { d = await net(P + 'api/undo', JSON_POST({id: b.dataset.id}), NET.op); } catch (ex) { return notSaved(ex, () => ACT.undo(b)); }
+    try { d = await net(P + 'api/undo', JSON_POST({id}), NET.op); } catch (ex) { return notSaved(ex, () => ACT.undo(b)); }
     if (!d.ok) return toast(d.error || 'Could not undo', null, {error: true});
-    U.lastSent = b.dataset.id; try { await load(); } catch (_) {} toast(`Undid the organizer's changes for ${b.dataset.id}`);
+    U.lastSent = id; try { await load(); } catch (_) {}
+    let run;
+    run = pushUndo(`Filing of ${id} undone`, async () => {
+      let r;
+      try { r = await net(P + 'api/redo', JSON_POST({id}), NET.op); } catch (ex) { notSaved(ex, run); return false; }
+      if (!r.ok) { toast(r.error || 'Could not put it back', null, {error: true}); return false; }
+      try { await load(); } catch (_) {}
+      toast(`The filing of ${id} is back`);
+    });
+    toast(`Undid the filing of ${id}${what ? `: ${what}` : ''}`, run);
   },
   'move-input': b => moveInput(b.dataset.id),
   'input-edit': b => editInput(b.dataset.id, 'edit'),
@@ -5703,7 +5827,7 @@ function saidRow(r, k, last) {
     : (busy ? '<span class="h-7 w-44 animate-pulse rounded-lg bg-zinc-100 dark:bg-zinc-800"></span>' : '')
       + (r.org?.undone && !r.acked ? `<button data-act="retry" data-id="${r.id}" class="${SMALL_BTN}">${ico('loop', 'size-3.5', '2')}Organize again</button>` : '')
       + (!r.acked && !r.scope && !(S.org.on && !r.org) && !busy ? `<button data-act="make-item" data-id="${r.id}" class="${SMALL_BTN} text-blue-600 dark:text-blue-400">${ico('plus', 'size-3.5', '2')}Make item</button>` : '')
-      + `<span class="ml-auto flex items-center ${later}">${canUndoInput(r) ? `<button data-act="undo" data-id="${r.id}" title="Undo what the organizer did with ${r.id}" class="${SMALL_BTN}">${ico('undo', 'size-3.5', '2')}Undo</button>` : ''}${otherProjects().length && !busy ? `<button data-act="move-input" data-id="${r.id}" title="Sent to the wrong project? Move it" class="${SMALL_BTN}">${ico('arrow', 'size-3.5', '2')}Move to…</button>` : ''}</span>`;
+      + `<span class="ml-auto flex items-center ${later}">${canUndoInput(r) ? `<button data-act="undo" data-id="${r.id}" title="${esc(filingTip(r))}" class="${SMALL_BTN}">${ico('undo', 'size-3.5', '2')}Undo filing</button>` : ''}${otherProjects().length && !busy ? `<button data-act="move-input" data-id="${r.id}" title="Sent to the wrong project? Move it" class="${SMALL_BTN}">${ico('arrow', 'size-3.5', '2')}Move to…</button>` : ''}</span>`;
   return saidStep(DOT[dotOf(r)], bubble, `<span class="font-mono">${r.id}</span> · ${when(r.t)}${r.from === 'rules' ? ' · as a rule' : ''}`, `<span class="mr-1 text-[13px] font-semibold ${tone}">${label}</span>${chips}${inputActions(r, SMALL_BTN)}${acts}`, last, `data-expand data-id="${r.id}" ${voiceAttr(r)}`);
 }
 function outboxStep(q, last) {  // still on its way (F85)
