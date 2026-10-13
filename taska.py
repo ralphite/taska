@@ -3157,11 +3157,12 @@ function rowActs(it, needs = false) {
 }
 
 // A row you just acted on stays where it was, as one quiet line with Undo, while the pointer is over the list (or
-// for 3 s after a key), so the next row never slides under a second click (B124). Then the list rearranges.
+// for 3 s after a key, or a finger's tap), so the next row never slides under a second click (B124, B148). Then the
+// list rearranges. On a phone the line lets a double tap's second tap go by, so it neither opens nor undoes.
 const LIST = {in: false, t: 0, until: 0, sig: ''};
 const listSig = () => [U.tab, U.q, U.type, U.when, U.status, U.pri].join('|');
 function holding() {
-  if (!desk() || !U.settle.size) return false;
+  if (!U.settle.size) return false;
   if (LIST.sig !== listSig()) { U.settle.clear(); return false; }  // another search, filter or tab: show the list as it is now
   return !!$('list').querySelector('article[data-n]');
 }
@@ -3179,8 +3180,8 @@ function patchList() {
     const n = Number(a.dataset.n), it = byN.get(n), s = U.settle.get(n), row = a.querySelector('[data-act="open"]');
     if (s && it && !a.dataset.settled) {
       const h = a.offsetHeight - 1;
-      a.dataset.settled = '1';
-      a.innerHTML = `<div data-act="open" data-n="${n}" class="flex min-h-[${h}px] cursor-pointer items-center gap-3 py-2 pr-3 pl-4 text-sm text-zinc-500 dark:text-zinc-400">${stateIcon(it.status, statusName(it))}<span class="min-w-0 flex-1 truncate"><span class="mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[it.type]}">${code(n)}</span>${esc(s.said)}</span><button data-act="settle-undo" data-n="${n}" class="h-8 shrink-0 rounded-lg px-2.5 text-[13px] font-semibold text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10">Undo</button></div>`;
+      a.dataset.settled = Date.now();
+      a.innerHTML = `<div data-act="open" data-n="${n}" class="flex min-h-[${h}px] cursor-pointer items-center gap-3 py-2 pr-3 pl-4 text-sm text-zinc-500 dark:text-zinc-400">${stateIcon(it.status, statusName(it))}<span class="min-w-0 flex-1 truncate"><span class="mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[it.type]}">${code(n)}</span>${esc(s.said)}</span><button data-act="settle-undo" data-n="${n}" class="h-11 shrink-0 rounded-lg px-3 text-[13px] font-semibold text-blue-600 hover:bg-blue-50 lg:h-8 lg:px-2.5 dark:text-blue-400 dark:hover:bg-blue-400/10">Undo</button></div>`;
     } else if (row && !a.dataset.settled) for (const c of ['lg:bg-blue-50', 'dark:lg:bg-blue-400/10']) row.classList.toggle(c, U.open === n);
   }
 }
@@ -4822,7 +4823,7 @@ async function change(n, f, v) {
   const settles = desk() && U.go && U.go.list.includes(n) && f === 'status';
   if (desk() && n === U.open) U.stepFrom = {n, rows: [...document.querySelectorAll('#list [data-act="open"][data-n]')].map(el => Number(el.dataset.n))};  // J goes on from here (B124)
   if (settles) { U.go.done.add(n); U.go.how[n] = said.replace(/^is (marked )?/, '').replace(/^./, c => c.toUpperCase()); U.go.undo[n] = undo; }
-  if (desk() && !settles && (LIST.in || n !== U.open)) holdRow(n, `${said.replace(/^./, c => c.toUpperCase())}`, undo);
+  if (!settles && (n !== U.open || (desk() && LIST.in))) holdRow(n, `${said.replace(/^./, c => c.toUpperCase())}`, undo);  // the phone's list is under the card or the row you swiped (B148)
   const left = f === 'status' && v === 'done' ? openKids(n) : 0;  // done before its subitems: say so (B147)
   try { await op({op: 'set', ref: code(n), f: {[f]: v}}); } catch (ex) { if (U.settle.delete(n)) renderItems(); throw ex; }
   const run = pushUndo(`${code(n)} ${said}`, undo);
@@ -5910,6 +5911,8 @@ document.addEventListener('click', e => {
   if (SW.open && !e.target.closest('[data-swipe-right]')) { closeSwipe(); e.preventDefault(); return; }
   const b = e.target.closest('[data-act]');
   if (b?.getAttribute('aria-busy') === 'true') { e.preventDefault(); return; }  // still waiting on the server: a second tap does nothing, and doesn't fall through (B159)
+  const held = !desk() && b?.closest('article[data-settled]');
+  if (held && Date.now() - Number(held.dataset.settled) < 600) { e.preventDefault(); return; }  // a double tap's second tap, on the row it just settled (B148)
   if (b?.hasAttribute('data-expand') && !getSelection().isCollapsed) return;  // selecting words to copy them
   if (e.target === $('overlay')) return closeDialog();
   if (b && ACT[b.dataset.act]) {
