@@ -3265,30 +3265,35 @@ const keepGoingSwitch = () => `<button data-act="auto" aria-pressed="${!!S.cfg?.
 const archiveAllBtn = n => `<button data-act="archive-all" class="-my-1 ml-auto flex h-11 items-center pr-2"><span class="inline-flex h-8 items-center gap-1.5 rounded-full bg-emerald-50 px-3 text-[13px] font-semibold text-emerald-800 ring-1 ring-emerald-600/20 ring-inset dark:bg-emerald-400/10 dark:text-emerald-300 dark:ring-emerald-400/25">${ico('archive', 'size-4')}Archive ${n}</span></button>`;
 
 // Phone quick actions: swipe right = the natural next step, swipe left = reveal buttons. Touch only.
-// Swipe right all the way: the step forward you take most (F51). Archived items have none.
+// Swipe right all the way: the step forward you take most (F51). Archived items have none. On an item that waits on
+// your answer the step forward is that answer, as on its pill and the desktop's A: Answer or Reply, never Done (B147).
 function swipeRight(it) {
   return it.archived ? null
+    : it.wait ? ['need', ...rowAction(it)]
     : it.status === 'proposed' ? ['status', 'open', 'Approve', 'approved']
     : it.status === 'review' ? ['status', 'done', 'Accept', 'accepted']
     : CLOSED(it.status) ? ['archived', 'true', 'Archive', 'archived']
     : ['status', 'done', 'Done', 'done'];
 }
-// Swipe left: the way back. The one you want most sits at the edge, under your finger; a few more beside it.
+// Swipe left: the way back. The one you want most sits at the edge, under your finger; a few more beside it. An item
+// that waits on your answer keeps Done here, last, out of the way of the answer (B147).
 function swipeLeft(it) {
   const later = it.when === 'now' ? ['when', 'later', 'Later'] : ['when', 'now', 'Now'], drop = ['status', 'dropped', "Won't do"];
+  const done = it.wait ? [['status', 'done', 'Done']] : [];
   return it.archived ? [['archived', 'false', 'Unarchive']]
     : it.status === 'proposed' ? [later, drop]
     : it.status === 'review' ? [later, ['status', 'doing', 'Not yet']]
     : CLOSED(it.status) ? [['status', 'open', 'Reopen']]
-    : it.status === 'doing' ? [drop, later, ['status', 'open', 'Pause']]
-    : [['status', 'doing', 'Start'], drop, later];
+    : it.status === 'doing' ? [drop, later, ['status', 'open', 'Pause'], ...done]
+    : [['status', 'doing', 'Start'], drop, later, ...done];
 }
-const ACT_ICON = {Approve: 'thumb', Accept: 'check', Done: 'done', Archive: 'archive', Later: 'clock', Now: 'clock', "Won't do": 'ban', 'Not yet': 'reopen', Pause: 'pause', Start: 'start', Reopen: 'reopen', Unarchive: 'archive'};
-const ACT_BG = {Start: 'bg-blue-600 dark:bg-blue-500', "Won't do": 'bg-red-600 dark:bg-red-500'};
+const openKids = n => (kids.get(n) || []).filter(k => !CLOSED(k.status)).length;  // a parent done before its subitems says so (B147)
+const ACT_ICON = {Approve: 'thumb', Accept: 'check', Done: 'done', Archive: 'archive', Later: 'clock', Now: 'clock', "Won't do": 'ban', 'Not yet': 'reopen', Pause: 'pause', Start: 'start', Reopen: 'reopen', Unarchive: 'archive', Answer: 'ask', Reply: 'reply'};
+const ACT_BG = {Start: 'bg-blue-600 dark:bg-blue-500', "Won't do": 'bg-red-600 dark:bg-red-500', Done: 'bg-emerald-600 dark:bg-emerald-500'};
 function swipeRow(it, inner) {
-  const fwd = swipeRight(it), back = swipeLeft(it);
+  const fwd = swipeRight(it), back = swipeLeft(it), left = fwd?.[1] === 'done' ? openKids(it.n) : 0;
   return `<div class="relative overflow-hidden">
-    <div data-swipe-left hidden class="absolute inset-0 flex items-center gap-2 bg-emerald-600 pl-6 text-sm font-semibold text-white dark:bg-emerald-500">${fwd ? ico(ACT_ICON[fwd[2]], 'size-5') + fwd[2] : ''}</div>
+    <div data-swipe-left hidden class="absolute inset-0 flex items-center gap-2 pl-6 text-sm font-semibold ${fwd?.[0] === 'need' ? NEED[fwd[1]].btn : 'bg-emerald-600 text-white dark:bg-emerald-500'}">${fwd ? ico(ACT_ICON[fwd[2]], 'size-5') + fwd[2] : ''}${left ? `<span class="font-normal">· ${plural(left, 'subitem')} still open</span>` : ''}</div>
     <div data-swipe-right hidden class="absolute inset-y-0 right-0 flex">${back.map(([f, v, label], i) => `<button data-act="swipe" data-n="${it.n}" data-f="${f}" data-v="${v}" class="flex w-19 flex-col items-center justify-center gap-1 text-xs font-semibold text-white ${ACT_BG[label] || (i % 2 ? 'bg-zinc-500 dark:bg-zinc-600' : 'bg-zinc-600 dark:bg-zinc-700')}">${ico(ACT_ICON[label], 'size-5')}${label}</button>`).join('')}</div>
     <div data-swipe="${it.n}" class="relative touch-pan-y bg-white transition-transform duration-200 select-none [-webkit-touch-callout:none] dark:bg-zinc-950">${inner}</div>
   </div>`;
@@ -3356,8 +3361,9 @@ async function swipeEnd(e) {
   el.style.transition = '';
   const n = Number(el.dataset.swipe), it = byN.get(n);
   if (SW.dx > el.offsetWidth * 0.33) {
-    swipeTo(el, el.offsetWidth);
     const [f, v] = swipeRight(it);
+    if (f === 'need') { swipeTo(el, 0); return ACT['row-act']({dataset: {n: String(n), v}}); }  // the answer, as its pill (B147)
+    swipeTo(el, el.offsetWidth);
     try { await change(n, f, f === 'archived' ? v === 'true' : v); } catch (_) { swipeTo(el, 0); }
   } else if (SW.dx < -SW.reveal / 2) { swipeTo(el, -SW.reveal); SW.open = el; }
   else { swipeTo(el, 0); if (SW.open === el) SW.open = null; }
@@ -3657,7 +3663,7 @@ function wireLasso() {
 // Long press on a row, or "Go through" on Needs you (T65): the item in a card above the input box, with what it
 // needs and its actions. For things that wait on you it steps through them one by one: act, and the next comes.
 const needsList = () => visible('items').filter(needsYou).map(it => it.n);
-const FOCUS_TONE = {Start: 'text-blue-600 dark:text-blue-400', "Won't do": 'text-red-600 dark:text-red-400'};
+const FOCUS_TONE = {Start: 'text-blue-600 dark:text-blue-400', "Won't do": 'text-red-600 dark:text-red-400', Done: 'text-emerald-700 dark:text-emerald-400'};
 function peek(n, {focus = true} = {}) {
   const it = byN.get(n);
   if (!it) return;
@@ -3676,14 +3682,15 @@ function peek(n, {focus = true} = {}) {
     ${it.body ? rich(it.body, 'pbody' + n, 'mt-2.5 text-[15px] text-zinc-700 dark:text-zinc-300') : ''}
     ${it.next ? `<div class="mt-2 flex gap-2 text-sm"><span class="shrink-0 font-semibold text-zinc-500 dark:text-zinc-400">Next</span><span class="min-w-0 break-words">${inlineMd(it.next)}</span></div>` : ''}
     ${files.length ? `<div class="mt-3 flex items-end gap-2 overflow-x-auto lg:scrollbar-thin">${thumbs(files, 'peek' + n)}</div>` : ''}
-    ${it.wait ? `<div class="mt-4">${needsCard(it)}</div>` : ''}
+    ${it.wait ? `<div data-need class="mt-4 scroll-mt-2">${needsCard(it)}</div>` : ''}
     ${recent.length ? `<div class="mt-4 flex flex-col gap-4">${recent.map(x => msgHtml(x, 'p', 0, answerOf(it.thread, x))).join('')}</div>` : ''}
   </div>`, {
     aboveComposer: true, focus, card: true, head,
     extra: g ? `<button data-act="go-next" class="ml-auto flex h-11 items-center gap-0.5 rounded-full pr-1.5 pl-3 text-sm font-semibold text-zinc-700 dark:text-zinc-200">Next${ico('right', 'size-4', '2.25')}</button>` : '',
     sub: g ? `<div class="flex gap-1 px-4 pb-1" aria-hidden="true">${g.list.map(k => `<span class="h-1 flex-1 rounded-full ${k === n ? 'bg-amber-500 dark:bg-amber-400' : g.done.has(k) ? 'bg-emerald-500 dark:bg-emerald-400' : 'bg-zinc-200 dark:bg-zinc-700'}"></span>`).join('')}</div>` : '',
     foot: `<div class="flex gap-1 border-t border-zinc-100 px-2 py-1 dark:border-zinc-800">
-      ${fwd ? act(fwd[0], fwd[1], fwd[2], 'text-emerald-700 dark:text-emerald-400') : ''}${swipeLeft(it).map(([f, v, label]) => act(f, v, label, FOCUS_TONE[label] || 'text-zinc-700 dark:text-zinc-200')).join('')}
+      ${!fwd ? '' : fwd[0] === 'need' ? `<button data-act="card-answer" data-n="${n}" class="flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl text-[11px] font-semibold ${NEED[fwd[1]].text}">${ico(ACT_ICON[fwd[2]], 'size-5')}<span class="max-w-full truncate">${fwd[2]}</span></button>`
+        : act(fwd[0], fwd[1], fwd[2], 'text-emerald-700 dark:text-emerald-400')}${swipeLeft(it).map(([f, v, label]) => act(f, v, label, FOCUS_TONE[label] || 'text-zinc-700 dark:text-zinc-200')).join('')}
       <button data-act="copy" data-n="${n}" class="flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl text-[11px] font-semibold text-zinc-700 dark:text-zinc-200">${ico('copy', 'size-5')}Copy</button></div>`,
   });
   if (moved) $('dlgBody').scrollTop = 0;
@@ -4807,10 +4814,11 @@ async function change(n, f, v) {
   if (desk() && n === U.open) U.stepFrom = {n, rows: [...document.querySelectorAll('#list [data-act="open"][data-n]')].map(el => Number(el.dataset.n))};  // J goes on from here (B124)
   if (settles) { U.go.done.add(n); U.go.how[n] = said.replace(/^is (marked )?/, '').replace(/^./, c => c.toUpperCase()); U.go.undo[n] = undo; }
   if (desk() && !settles && (LIST.in || n !== U.open)) holdRow(n, `${said.replace(/^./, c => c.toUpperCase())}`, undo);
+  const left = f === 'status' && v === 'done' ? openKids(n) : 0;  // done before its subitems: say so (B147)
   try { await op({op: 'set', ref: code(n), f: {[f]: v}}); } catch (ex) { if (U.settle.delete(n)) renderItems(); throw ex; }
   const run = pushUndo(`${code(n)} ${said}`, undo);
   D.undo = run;
-  toast(`${code(n)} ${said}`, run);
+  toast(`${code(n)} ${said}${left ? ` · ${plural(left, 'subitem')} still open` : ''}`, run);
   if (settles && U.open === n) advanceDesk(n, U.go.how[n]);
 }
 // On the desktop the search box is always there: the clear button shows only with a query, the / hint only without.
@@ -4829,6 +4837,11 @@ const ACT = {
   search: () => searchMode(!U.searching),
   'search-clear': () => { clearSearch(); $('q').focus(); },
   reply: () => { U.scopeOff = false; renderComposer(); $('text').focus(); },
+  'card-answer': b => {  // the card's step forward on an item that waits on you (B147): its question, and the box to reply in
+    const it = byN.get(Number(b.dataset.n));
+    $('dlgBody').querySelector('[data-need]')?.scrollIntoView({block: 'start', behavior: 'smooth'});
+    if (it?.wait && (it.wait.kind === 'block' || !hasChoices(it.wait.text))) ACT.reply();  // with choices: tick them first
+  },
   status: async b => {
     const n = Number(b.dataset.n);
     try { await change(n, 'status', b.dataset.v); if (U.peek === n && U.go) advance(n); } catch (_) {}
