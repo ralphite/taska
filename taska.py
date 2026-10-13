@@ -2976,7 +2976,7 @@ async function poll() {
     const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 35000);  // a dead connection never answers
     try {
       const d = await (await fetch(`${P}api/poll?rev=${S.rev}&boot=${S.boot}&pv=${S.pv ?? -1}`, {cache: 'no-store', signal: ctl.signal})).json();
-      if (offline) { offline = 0; renderLive(); }
+      if (offline) { offline = 0; renderLive(); resendOutbox(); }  // Taska is back: what you sent meanwhile goes now (B151)
       if (d.rev !== S.rev || d.boot !== S.boot || d.pv !== S.pv) await load();
       if (d.ver && d.ver !== VER) freshen();
       checkOthers();
@@ -4265,11 +4265,40 @@ async function send() {
   else if (desk() && n && n === U.open && !U.go) requestAnimationFrame(() => { $('detailBody').scrollTop = $('detailBody').scrollHeight; });  // B124
 }
 // Each input carries the page's own id for it (q): sent again after its answer got lost, it still goes in once. When
-// Taska does not answer at all (no connection, a restart), it is tried again by itself, with growing pauses (T101).
+// Taska does not answer at all (no connection, a restart), it is tried again by itself, with growing pauses (T101),
+// and at once when the connection is back (B151).
 function outboxPush(job) {
-  Object.assign(job, {id: 'q' + ++U.qn, q: Date.now().toString(36) + Math.random().toString(36).slice(2, 10)});
+  Object.assign(job, {id: 'q' + ++U.qn, q: Date.now().toString(36) + Math.random().toString(36).slice(2, 10), t: Date.now()});
   for (const f of job.files) if (f.rid) { f.job = {id: job.q, text: job.text}; keepRec(f); }  // its words come back with it after a reload
   U.outbox.push(job);
+  keepJob(job);
+}
+// B151: an input that has not reached Taska yet is kept in this browser too, per project, so a reload, a closed page or
+// a phone that ends the tab never loses it: the next time the project opens, it goes out by itself. A voice note keeps
+// its audio and words its own way and comes back into the box (T101); a file still uploading has nothing to keep yet.
+function outboxStore(change) {
+  const key = 'taska.outbox.' + S.project;
+  try {
+    const all = JSON.parse(localStorage.getItem(key) || '{}');
+    if (change) { change(all); if (Object.keys(all).length) localStorage.setItem(key, JSON.stringify(all)); else localStorage.removeItem(key); }
+    return all;
+  } catch (_) { return {}; }
+}
+const keepable = job => job.files.every(f => f.f && !f.rid);
+function keepJob(job) {
+  if (S.project && keepable(job)) outboxStore(all => { all[job.q] = {text: job.text, scope: job.scope, from: job.from, t: job.t, files: job.files.map(({f, name, mime, size}) => ({f, name, mime, size}))}; });
+}
+const dropJob = job => outboxStore(all => { delete all[job.q]; });
+function restoreOutbox() {  // what did not go out last time goes now, in the order you sent it
+  const mine = new Set(U.outbox.map(j => j.q));
+  const back = Object.entries(outboxStore()).filter(([q]) => !mine.has(q)).sort((a, b) => (a[1].t || 0) - (b[1].t || 0));
+  for (const [q, j] of back) U.outbox.push({id: 'q' + ++U.qn, q, t: j.t, text: j.text || '', scope: j.scope || null, from: j.from || null, files: (j.files || []).map(f => ({...f, done: Promise.resolve()}))});
+  if (back.length) { renderFeedback(); flushOutbox(); }
+}
+function resendOutbox() {  // the connection is back: what failed for want of it goes now, not at its next try
+  let again = false;
+  for (const j of U.outbox) if (j.failed && j.net) { j.failed = false; again = true; }
+  if (again) { renderFeedback(); flushOutbox(); }
 }
 async function sendInput(o) {
   let d;
@@ -4286,24 +4315,25 @@ async function flushOutbox() {
     while (U.outbox.length && !U.outbox[0].failed) {
       const job = U.outbox[0];
       await Promise.all(job.files.map(f => f.done));
+      if (job.files.length) keepJob(job);  // its files are up now: kept with them (B151)
       const files = job.files.filter(f => f.f && !f.failed);
       let text = job.text;
       for (const f of files) if (f.tr && !f.trAdded && !text.includes(f.tr)) text = (text ? text + '\n' : '') + f.tr;  // a transcript that came after you sent
-      if (!text && !files.length) { U.outbox.shift(); continue; }
+      if (!text && !files.length) { U.outbox.shift(); dropJob(job); continue; }
       job.sending = true; renderFeedback();
       try {
         const d = await sendInput({op: 'input', text, scope: job.scope, q: job.q, ...(job.from ? {from: job.from} : {}), files: files.map(({f, name, mime, size, tr}) => ({f, name, mime, size, ...(tr ? {tr} : {})}))});
-        U.lastSent = d.res[0].split(' ')[1]; U.outbox.shift();
+        U.lastSent = d.res[0].split(' ')[1]; U.outbox.shift(); dropJob(job);
         for (const f of files) { f.sent = true; dropRec(f); }  // words still to come go onto this input, on the server (B165); this browser lets the recording go (T101)
       } catch (e) {
-        job.failed = true; job.sending = false;
+        job.failed = true; job.sending = false; job.net = !!e.again;
         if (e.again) setTimeout(() => { if (job.failed && U.outbox[0] === job) { job.failed = false; renderFeedback(); flushOutbox(); } }, Math.min(30000, 2000 * 2 ** Math.min(job.tries = (job.tries || 0) + 1, 4)));
       }
     }
   } finally { flushOutbox.busy = false; render(); }
 }
-addEventListener('beforeunload', e => {  // unsent words, a recording, or a voice note still in the box (B149)
-  if (U.outbox.length || R.rec || U.files.some(f => (f.mime || '').startsWith('audio/'))) { e.preventDefault(); e.returnValue = ''; }
+addEventListener('beforeunload', e => {  // unsent words this browser can't keep (B151), a recording, or a voice note still in the box (B149)
+  if (U.outbox.some(j => !keepable(j)) || R.rec || U.files.some(f => (f.mime || '').startsWith('audio/'))) { e.preventDefault(); e.returnValue = ''; }
 });
 
 // ---------------------------------------------------------------- voice
@@ -5185,7 +5215,7 @@ const ACT = {
   'outbox-edit': () => {  // the unsent input back in the box, as long as the box is empty
     const q = U.outbox[0];
     if ($('text').value.trim() || U.files.length) return toast('Send or clear what is in the box first');
-    U.outbox.shift(); $('text').value = q.text; U.files = q.files; grow(); saveDraft(); render(); $('text').focus();
+    U.outbox.shift(); dropJob(q); $('text').value = q.text; U.files = q.files; grow(); saveDraft(); render(); $('text').focus();
     for (const f of q.files) if (f.rid) { f.job = null; f.key = U.draftKey; keepRec(f); }  // T101: kept as a draft in this box again
   },
   'move-input-to': async b => {
@@ -6082,10 +6112,10 @@ $('text').addEventListener('paste', e => { const files = [...(e.clipboardData?.f
 $('foot').addEventListener('dragover', e => e.preventDefault());  // on the New input page #foot is the whole pane
 $('foot').addEventListener('drop', e => { e.preventDefault(); if (e.dataTransfer.files.length) addFiles([...e.dataTransfer.files]); });
 $('fileInput').addEventListener('change', e => { addFiles([...e.target.files]); e.target.value = ''; });
-const comeBack = () => { refresh(); checkOthers.t = 0; checkOthers(); };  // B129: the sidebar is fresh when you come back
+const comeBack = () => { refresh(); checkOthers.t = 0; checkOthers(); resendOutbox(); };  // B129: the sidebar is fresh when you come back; B151: unsent inputs go
 document.addEventListener('visibilitychange', () => { if (!document.hidden) comeBack(); });
 window.addEventListener('focus', comeBack);
-window.addEventListener('online', refresh);
+window.addEventListener('online', () => { refresh(); resendOutbox(); });
 // The sheet sits above the input box; follow the box whenever it changes size (styles loading, keyboard, scope line).
 new ResizeObserver(() => { if ($('overlay').dataset.above && !$('overlay').hidden) $('overlay').style.bottom = $('composer').parentElement.offsetHeight + 'px'; })
   .observe($('composer').parentElement);
@@ -6246,6 +6276,7 @@ load().then(() => {
   }
   applyURL();
   writeURL(false);  // tidy the address: #B03 becomes /B03. Nothing is picked for you: the box is a new input until you open an item (F119)
+  restoreOutbox();  // inputs that did not go out last time (B151)
   restoreVoice();  // voice notes that did not go out last time (T101)
   poll();
 });
