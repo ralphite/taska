@@ -119,6 +119,17 @@ def block_key(text):
     return hashlib.sha1(" ".join(text.split()).encode("utf-8")).hexdigest()[:10]
 
 
+USER_KINDS = ("say", "decide", "propose")  # what the organizer files from your input: your words, your decision, your idea
+
+
+def user_word(x):
+    """A message on an item that is the user's own words: what you wrote there (a reply typed in the box, a picked
+    choice, details added), or what the organizer filed there from one of your inputs (an answer written on the list
+    goes to the whole project, and the organizer files it here, often as a decision). Any of them answers an open ask
+    (B163); the page has the same rule (userWord). The organizer's own notes (merges) and questions are not yours."""
+    return x["by"] == "you" or (x["by"] == "org" and x["kind"] in USER_KINDS and bool(x.get("src")))
+
+
 # --------------------------------------------------------------------------- store
 
 
@@ -384,9 +395,10 @@ class Store:
 
     @staticmethod
     def waiting(it):
-        """The open ask/block an agent posted that the user has not answered yet."""
+        """The open ask/block an agent posted that the user has not answered yet. Whatever the user says after it
+        answers it, a picked choice or not (B163): the list, the item, Go through and /next all read it here."""
         for x in reversed(it["thread"]):
-            if x["by"] == "you" or x["kind"] == "withdraw":
+            if user_word(x) or x["kind"] == "withdraw":
                 return None
             if x["kind"] in ("ask", "block"):
                 return x
@@ -397,11 +409,10 @@ class Store:
         """The user wrote after an agent's last word on this item: the agent should pick it up."""
         user = False
         for x in reversed(it["thread"]):
-            if x["by"] == "org":
-                continue
-            if x["by"] != "you":
+            if user_word(x):
+                user = True
+            elif x["by"] != "org":  # the organizer's own notes are neither side's word
                 return user
-            user = True
         return False
 
     def for_agent(self):
@@ -2457,7 +2468,11 @@ function audioUi() {
 const SOFT = t => `<span class="rounded bg-zinc-100 px-1.5 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">${t}</span>`;
 const cnt = (icon, n, label) => `<span class="flex items-center gap-1" title="${label}">${ico(icon, 'size-3.5')}${n}</span>`;
 const needLabel = it => it.wait ? (it.wait.kind === 'block' ? 'Blocked' : 'Needs reply') : it.status === 'proposed' ? 'Approve?' : it.status === 'review' ? 'In review' : '';
-const lastAgentMsg = it => [...it.thread].reverse().find(x => x.by !== 'you');
+// Your words on an item: what you wrote there, or what the organizer filed there from one of your inputs (as your
+// words, your decision or your idea). Any of them answers a question, picked choices or not (B163); the server's
+// user_word is the same rule.
+const userWord = x => x.by === 'you' || (x.by === 'org' && ['say', 'decide', 'propose'].includes(x.kind) && !!x.src);
+const lastAgentMsg = it => [...it.thread].reverse().find(x => !userWord(x));
 // One plain line of what the agent said: the conclusion it leads with (T58 #5).
 const oneLine = t => (String(t || '').split('\n').map(l => l.replace(/^\s*(#+|>|[-*+]\s+(\(|\[)[ xX]?(\)|\])|[-*+]|\d+[.)])\s*/, '').replace(/[*`]/g, '').trim()).find(Boolean) || '');
 const excerpt = it => oneLine(it.wait ? it.wait.text : it.status === 'review' ? lastAgentMsg(it)?.text : (lastAgentMsg(it)?.text || it.body));
@@ -2756,7 +2771,7 @@ document.addEventListener('scroll', e => { if (e.target.matches?.('[data-clip]')
 // A question someone answered says so, with the picked options ticked (I84): the answer is your next message.
 function answerOf(thread, x) {
   if (x.kind !== 'ask') return null;
-  const a = thread.slice(thread.indexOf(x) + 1).find(y => y.by === 'you');
+  const a = thread.slice(thread.indexOf(x) + 1).find(userWord);
   return a ? a.text.split('\n').map(l => l.match(/^\s*✓\s*(.+)$/)?.[1]?.trim()).filter(Boolean) : null;
 }
 function msgHtml(x, gid, form = 0, done = null) {
@@ -2790,10 +2805,16 @@ function mdHtml(text, gid = '', form = 0, done = null) {
   const labels = [];
   const html = blocks.map(b => {
     const items = b.kind === 'ul' ? b.lines.reduce((acc, l) => { if (/^\s*[-*+]\s/.test(l)) acc.push(l); else acc[acc.length - 1] += ' ' + l.trim(); return acc; }, []) : [];
-    if (items.length && items.every(l => CHOICE.test(l))) {
-      const multi = items[0].match(CHOICE)[1] === '[', base = labels.length;
-      labels.push(...items.map(l => l.replace(CHOICE, '')));
-      return choiceHtml(labels.slice(base), multi, form, base, done);
+    // In a question, choices can be picked also when its list has other points before them (B163)
+    if (items.length && (items.every(l => CHOICE.test(l)) || ((form || done) && items.some(l => CHOICE.test(l))))) {
+      const runs = [];
+      for (const l of items) { const c = CHOICE.test(l); if (runs.at(-1)?.c !== c) runs.push({c, ls: []}); runs.at(-1).ls.push(l); }
+      return runs.map(r => {
+        if (!r.c) return blockHtml({kind: 'list', text: r.ls.join('\n')}, false, gid);
+        const multi = r.ls[0].match(CHOICE)[1] === '[', base = labels.length;
+        labels.push(...r.ls.map(l => l.replace(CHOICE, '')));
+        return choiceHtml(labels.slice(base), multi, form, base, done);
+      }).join('');
     }
     return blockHtml({kind: /^(ol|ul)$/.test(b.kind) ? 'list' : b.kind, text: b.lines.join('\n')}, false, gid);
   }).join('');
