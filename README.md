@@ -224,6 +224,9 @@ public address from `$TASKA_PUBLIC` or `~/.taska/public-url`.
   /tmp/taska-dev`.
 - **Phone testing.** `.claude/skills/taska-mobile-qa` is a checklist for testing the phone UI on a copy of your
   data.
+- **Transcription check.** `scripts/transcribe_check.py <folder>` replays your own recordings (kept outside the
+  repository, with what each should say) and reports key terms, error rate, notes cut short, Traditional
+  characters, refusals and words made up from silence. Run it before and after changing the voice models or prompt.
 - **Design exploration.** `scripts/ui_mocks.py` asks Gemini for several phone designs of one screen and takes
   light and dark screenshots of each. `--shots-only <folder>` re-shoots designs edited by hand; add `--desktop` for
   1440x900 screenshots.
