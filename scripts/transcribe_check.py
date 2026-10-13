@@ -19,7 +19,7 @@ DIR holds the recordings (.webm .m4a .mp4 .ogg .mp3 .wav .aac .flac) and expect.
 
 Recordings and what they say are yours: keep them outside the repository. This script holds none. Put phone recordings
 in too (.m4a from an iPhone is sent as audio/mp4, like the page does): two of them once came back as their first
-half-sentence only.
+half-sentence only, because the phone's voice processing had cut their pauses to silence.
 
 Per recording and run it prints the transcript's start and what went wrong; then the totals:
   key terms right   regexes in "ok" that matched
@@ -30,6 +30,7 @@ Per recording and run it prints the transcript's start and what went wrong; then
   made up           silent recordings that got words anyway (B092)
   speech model      runs that took the second, speech-to-text model's words (the main one refused, failed, stopped
                     early or was empty)
+  strong model      runs that took the strong model's words (a phone's voice-processed note, where it heard more)
   hints             "Maybe misheard" lines the page would show
 """
 import argparse
@@ -172,7 +173,7 @@ def main():
             srv.terminate()
             srv.wait(90)
             shutil.rmtree(root, ignore_errors=True)
-    t = dict(runs=0, key_ok=0, keys=0, edits=0, ref_chars=0, refs=0, short=0, trad=0, failed=0, silent=0, made_up=0, asr=0, hints=0)
+    t = dict(runs=0, key_ok=0, keys=0, edits=0, ref_chars=0, refs=0, short=0, trad=0, failed=0, silent=0, made_up=0, asr=0, pro=0, hints=0)
     ms = []
     for (name, run), d in zip(jobs, res):
         e, tr, notes = expect.get(name) or {}, d.get("tr") or "", []
@@ -207,6 +208,11 @@ def main():
         if d.get("tr_by") == "asr" and tr:
             t["asr"] += 1
             notes.append("speech model's words" + (f" ({d['main_error'][:60]})" if d.get("main_error") else ""))
+        if d.get("tr_by") == "pro" and tr:
+            t["pro"] += 1
+            notes.append("strong model's words")
+        if d.get("pro_error"):
+            notes.append("strong model: " + d["pro_error"][:60])
         t["hints"] += len(d.get("doubts") or [])
         print(f"{name[:36]:36} #{run} {d.get('ms', 0) / 1000:5.1f}s  {' '.join(tr.split())[:60]!r}  {'; '.join(notes)}")
     print()
@@ -221,6 +227,7 @@ def main():
     if t["silent"]:
         print(f"made up           {t['made_up']}/{t['silent']} silent runs got words")
     print(f"speech model      {t['asr']}/{t['runs']} runs used its words")
+    print(f"strong model      {t['pro']}/{t['runs']} runs used its words")
     print(f"hints             {t['hints']} 'Maybe misheard' lines")
     if args.out:
         with open(args.out, "w", encoding="utf-8") as f:
