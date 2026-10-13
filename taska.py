@@ -4791,6 +4791,7 @@ function renderComposer() {
   } else if (desk()) line = scopeLine('inbox', 'New input', `· ${S.org?.on ? 'the organizer files it' : 'your agent files it'}`,
     ruleFlip() + (U.open && detailShown() ? scopeLink('reply', `Add to ${code(U.open)} instead`, 'R') : ''));
   else if (U.tab === 'rules') line = scopeLine('inbox', 'New input', '· not a rule', ruleFlip());
+  if (R.rec && R.key && R.key !== U.draftKey) line = scopeLine('mic', `Recording for ${esc(draftName(R.key))}`, '· it goes there when you stop');  // B1
   $('scope').hidden = !line; $('scope').innerHTML = line; t.placeholder = ph;
   const d = $('drafts');
   d.hidden = !U.files.length;
@@ -5036,6 +5037,7 @@ async function startRec() {
   catch (_) { return toast('No microphone permission'); }
   R.chunks = []; R.levels = [];
   R.typing = document.activeElement === $('text');  // the box hides its text while recording; the caret comes back after
+  R.key = U.draftKey; R.scope = scopeN() ? code(scopeN()) : null;  // B1: the note belongs where you started it, whatever is open when it stops
   if (R.typing) $('text').blur();
   R.rec = new MediaRecorder(R.stream);
   R.rec.ondataavailable = e => { if (e.data.size) R.chunks.push(e.data); };
@@ -5073,6 +5075,7 @@ function stopRec() {
 }
 
 async function finishRec(andSend, kept) {
+  const key = kept ? kept.key : R.key ?? U.draftKey, scope = kept ? kept.scope : R.key ? R.scope : scopeN() ? code(scopeN()) : null;
   const ms = kept?.ms ?? Date.now() - R.t0, blob = kept?.blob ?? await stopRec();
   if (!blob) return;
   if (ms < 800 || !blob.size) return toast('Too short, discarded');
@@ -5080,11 +5083,16 @@ async function finishRec(andSend, kept) {
   // B165: the note is in the box at once and the box is yours: type, send. Its words come when they come: into the
   // box where you recorded, or, if you sent it already, onto that message (the server adds them). T101: from the
   // moment it stops it is also kept in this browser, until it is sent.
-  const f = voiceFile({name: `voice ${clock(ms).replace(':', '-')}.${ext}`, mime: blob.type || 'audio/webm', ms, blob, at: $('text').value.length,
-                       key: U.draftKey, scope: scopeN() ? code(scopeN()) : null});
-  U.files.push(f); renderComposer();
-  if (andSend) send();
-  else if (desk() && !kept) $('text').focus({preventScroll: true});  // A1: words into the box, and the box is where you go on
+  const f = voiceFile({name: `voice ${clock(ms).replace(':', '-')}.${ext}`, mime: blob.type || 'audio/webm', ms, blob, at: $('text').value.length, key, scope});
+  if (key && key !== U.draftKey) {  // B1, B185: you moved on while recording: the note goes into the box where you started it
+    (U.parked[key] ||= []).push(f); renderComposer();
+    if (andSend && (key === 'new' || key === 'rule' || /^[A-Z]\d+$/.test(key))) sendParked(key);
+    else toast(`The voice note is in the box for ${draftName(key)}, where you started it`, () => goDraft(key), {label: 'Go there'});
+  } else {
+    U.files.push(f); renderComposer();
+    if (andSend) send();
+    else if (desk() && !kept) $('text').focus({preventScroll: true});  // A1: words into the box, and the box is where you go on
+  }
   keepRec(f).then(() => hear(f));  // kept before anything goes over the network; not awaited: nothing is held up meanwhile
 }
 
@@ -5200,8 +5208,11 @@ async function restoreVoice() {
     if (r.project !== VPROJ || here.has(r.id)) continue;
     if (r.f && sent.has(r.f)) { VDB.del(r.id); continue; }  // it went out already
     if (navigator.locks && !await navigator.locks.request('taska-voice-' + r.id, {ifAvailable: true}, l => !!l)) continue;  // another tab has it
-    const n = /^[A-Z]\d+$/.test(r.key || '') ? parseRef(r.key) : 0, key = n && byN.has(n) ? code(n) : 'new';  // the item's box, or a new input
-    const f = voiceFile({rid: r.id, name: r.name, mime: r.mime, ms: r.ms, t: r.t, data: r.data, blob: new Blob([r.data], {type: r.mime}), key, scope: key === 'new' ? null : r.scope,
+    // B185: back into the box it was recorded in, never the one open now: the item's (or the one it was merged into), a
+    // new input or rule, an edit; a new input when that item or input is gone
+    const n = /^[A-Z]\d+$/.test(r.key || '') ? parseRef(r.key) : 0, inp = /^(edit|append|correct) (r\d+)$/.exec(r.key || '');
+    const key = n ? (byN.has(n) ? code(liveN(n)) : 'new') : r.key === 'rule' || (inp && byR.has(inp[2])) ? r.key : 'new';
+    const f = voiceFile({rid: r.id, name: r.name, mime: r.mime, ms: r.ms, t: r.t, data: r.data, blob: new Blob([r.data], {type: r.mime}), key, scope: /^[A-Z]\d+$/.test(key) ? key : null,
                          f: r.f || null, transcribing: r.tr == null && !r.tr_error, tr: r.tr || '', tr_error: r.tr_error || '', doubts: r.doubts || [], trAdded: r.added || undefined});
     if (key === U.draftKey) U.files.push(f); else (U.parked[key] ||= []).push(f);
     if (r.job && !jobs.has(r.job.id)) { jobs.add(r.job.id); if (r.job.text) addWords(key, r.job.text); }  // what was sent with it
@@ -5211,13 +5222,29 @@ async function restoreVoice() {
   if (!back.length) return;
   renderComposer();
   const away = back.find(k => k !== U.draftKey);
-  toast(`${back.length === 1 ? 'A voice note that did not go out is' : back.length + ' voice notes that did not go out are'} back in the box${away ? ` for ${away === 'new' ? 'a new input' : away}` : ''}`);
+  const say = `${back.length === 1 ? 'A voice note that did not go out is' : back.length + ' voice notes that did not go out are'} back in the box${away ? ` for ${draftName(away)}` : ''}`;
+  if (away) toast(say, () => goDraft(away), {label: 'Go there'}); else toast(say);
 }
 
 async function cancelRec() {  // B149: discarding can be undone for a few seconds
-  const ms = Date.now() - R.t0, blob = await stopRec();
+  const ms = Date.now() - R.t0, key = R.key, scope = R.scope, blob = await stopRec();
   if (!blob || ms < 800 || !blob.size) return;
-  toast('Recording discarded', () => finishRec(false, {blob, ms}));
+  toast('Recording discarded', () => finishRec(false, {blob, ms, key, scope}));
+}
+// The name of a draft's target, for what the box says about it (B1, B185).
+const draftName = key => key === 'new' ? 'a new input' : key === 'rule' ? 'a new rule' : /^[A-Z]\d+$/.test(key) ? key : key.replace(/^(\w+) /, (_, m) => ({edit: 'the edit of ', append: 'the details for ', correct: 'the correction in '}[m] || ''));
+function goDraft(key) {  // to the box a draft belongs to
+  if (key === 'new' || key === 'rule') { if (key === 'rule' && U.tab !== 'rules') setTab('rules'); return ACT['new-input'](); }
+  const n = /^[A-Z]\d+$/.test(key) && parseRef(key);
+  if (n && byN.has(n)) { if (desk() && !inTab(byN.get(n), U.tab)) setTab(tabOf(byN.get(n))); openItem(n); $('text').focus({preventScroll: true}); }
+}
+// Stop and send, after you moved on while recording: what waits in the box where you started goes there, with the note.
+function sendParked(key) {
+  const files = U.parked[key] || [], text = (draftStore()[key] || '').trim();
+  delete U.parked[key]; draftStore(all => { delete all[key]; });
+  outboxPush({text, files, scope: /^[A-Z]\d+$/.test(key) ? key : null, from: key === 'rule' ? 'rules' : null});
+  toast(`Sent to ${draftName(key)}, where you started the voice note`);
+  render(); flushOutbox();
 }
 
 // A draft belongs to what it is written to (B118): an item (a reply, or a comment on one of its documents), or a new
@@ -5235,7 +5262,9 @@ function draftStore(change) {
 }
 function saveDraft() { const k = U.draftKey, v = $('text').value; if (k) draftStore(all => { if (v.trim()) all[k] = v; else delete all[k]; }); }
 function swapDraft(key) {
+  const left = U.draftKey === 'new' && ($('text').value.trim() || U.files.length);  // B185: a new input you leave waits, and you are told where
   if (U.draftKey) { saveDraft(); U.parked[U.draftKey] = U.files; }
+  if (left && !R.rec) setTimeout(() => toast('Your new input is kept, not sent. C goes back to it', () => ACT['new-input'](), {label: 'Open'}));
   const t = $('text'); t.value = draftStore()[key] || ''; t.selectionStart = t.selectionEnd = t.value.length;  // the caret after your words
   U.files = U.parked[key] || []; delete U.parked[key];
   U.draftKey = key; grow();
