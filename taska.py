@@ -2276,7 +2276,7 @@ def voice_keep(store, fid, res):
 
 HUB = None
 ITEM_PATH = re.compile(r"/([A-Za-z]?\d+)")
-VIEW_PATH = re.compile(r"/(inputs|archive|rules|new|settings|connect|phone|spellings|log|deleted|about|projects|organizer|[A-Za-z]\d+)")  # the page's views (T102, B162)
+VIEW_PATH = re.compile(r"/(inputs|archive|rules|new-rule|new|settings|connect|phone|spellings|log|deleted|about|projects|organizer|[A-Za-z]\d+)")  # the page's views (T102, B162)
 NAME = re.compile(r"[a-z0-9][a-z0-9-]{0,39}")  # a project's address and folder: made from its name once, never changed (F173)
 TITLE_MAX = 60
 SLUG_CHARS = "abcdefghjkmnpqrstuvwxyz23456789"
@@ -5241,7 +5241,7 @@ async function cancelRec() {  // B149: discarding can be undone for a few second
 // The name of a draft's target, for what the box says about it (B1, B185).
 const draftName = key => key === 'new' ? 'a new input' : key === 'rule' ? 'a new rule' : /^[A-Z]\d+$/.test(key) ? key : key.replace(/^(\w+) /, (_, m) => ({edit: 'the edit of ', append: 'the details for ', correct: 'the correction in '}[m] || ''));
 function goDraft(key) {  // to the box a draft belongs to
-  if (key === 'new' || key === 'rule') { if (key === 'rule' && U.tab !== 'rules') setTab('rules'); return ACT['new-input'](); }
+  if (key === 'new' || key === 'rule') { if (key === 'rule' && U.tab !== 'rules') setTab('rules'); U.asRule = key === 'rule' ? null : U.tab === 'rules' ? false : null; return ACT['new-input'](); }
   const n = /^[A-Z]\d+$/.test(key) && parseRef(key);
   if (n && byN.has(n)) { if (desk() && !inTab(byN.get(n), U.tab)) setTab(tabOf(byN.get(n))); openItem(n); $('text').focus({preventScroll: true}); }
 }
@@ -5257,7 +5257,7 @@ function sendParked(key) {
 // A draft belongs to what it is written to (B118): an item (a reply, or a comment on one of its documents), or a new
 // input (a new rule too). Each project keeps them by target in this browser; when the box changes target, the words and
 // files stay with the old target and the new target's own draft comes back. So unsent words never go elsewhere.
-const draftKey = () => { if (U.correct) return `correct ${U.correct.id}`; if (U.amend) return `${U.amend.mode} ${U.amend.id}`; const od = docOpen(), n = scopeN(); return od ? code(liveN(od.n)) : n ? code(n) : 'new'; };  // a document's box shares its item's draft
+const draftKey = () => { if (U.correct) return `correct ${U.correct.id}`; if (U.amend) return `${U.amend.mode} ${U.amend.id}`; const od = docOpen(), n = scopeN(); return od ? code(liveN(od.n)) : n ? code(n) : ruleMode() ? 'rule' : 'new'; };  // B10: a new rule has its own draft  // a document's box shares its item's draft
 function draftStore(change) {
   const key = 'taska.drafts.' + S.project;
   try {
@@ -5311,9 +5311,9 @@ function carry(go) {
   $('text').focus({preventScroll: true});
 }
 function swapDraft(key) {
-  const left = U.draftKey === 'new' && ($('text').value.trim() || U.files.length);  // B185: a new input you leave waits, and you are told where
+  const left = (U.draftKey === 'new' || U.draftKey === 'rule') && ($('text').value.trim() || U.files.length) ? U.draftKey : null;  // B185: a new input you leave waits, and you are told where
   if (U.draftKey) { saveDraft(); U.parked[U.draftKey] = U.files; }
-  if (left && !R.rec) setTimeout(() => toast('Your new input is kept, not sent. C goes back to it', () => ACT['new-input'](), {label: 'Open'}));
+  if (left && !R.rec) setTimeout(() => toast(`Your ${left === 'rule' ? 'new rule' : 'new input'} is kept, not sent`, () => goDraft(left), {label: 'Open'}));
   const t = $('text'); t.value = draftStore()[key] || ''; t.selectionStart = t.selectionEnd = t.value.length;  // the caret after your words
   U.files = U.parked[key] || []; delete U.parked[key];
   U.draftKey = key; grow();
@@ -6359,7 +6359,7 @@ function leaveCompose() {  // back where you were: the Inputs page, or the item 
   $('text').blur();  // the box now points elsewhere: keys are keys again, not letters (B123)
   const p = D.prev, tab = D.prevTab, doc = D.prevDoc; D.compose = false; D.prev = null; D.prevTab = null; D.prevDoc = null;
   if (tab) { U.tab = tab; U.open = p && byN.has(p) ? p : null; U.inputsEnd = true; }
-  const back = leaveView('new');  // the step into the page goes; the address then follows what shows
+  const back = leaveView(/^new(-rule)?$/.test(history.state?.v) ? history.state.v : 'new');  // the step into the page goes; the address then follows what shows
   if (p && byN.has(p) && !tab) openItem(p); else { render(); if (!back) writeURL(false); }
   if (doc && docById(doc) && U.open === liveN(docById(doc).n)) {  // B14: back into the document you came from
     Object.assign(U, {doc, docReply: null, docSel: new Set(), docQuote: null, docCircle: false}); D.docKey = null;
@@ -7285,10 +7285,10 @@ addEventListener('pagehide', () => {  // where you were in the list, for the rel
 // agent does (/connect and /log mean something to agents too). Changing tab, opening a document, a section of This
 // project or New input, an item on the phone and full width are steps Back can undo, and so is a link to an item (B9);
 // choosing items in the list on the desktop (a click, J/K), search and filters only rewrite the address.
-const VIEW = /^(inputs|archive|rules|new|settings|connect|phone|spellings|log|deleted|about|projects|organizer)$/;
+const VIEW = /^(inputs|archive|rules|new-rule|new|settings|connect|phone|spellings|log|deleted|about|projects|organizer)$/;
 const URLS = {applying: false, selfBack: false, hold: false};  // hold: a link is on its way, its step is written once it is there
 // On the phone the change log has its own address too (B150), so Back from an item you opened there comes back to it.
-const viewPath = () => desk() && D.page ? PSEC[D.section][0] : U.doc && !U.docEdit ? `D${U.doc}` : desk() && D.compose ? 'new'
+const viewPath = () => desk() && D.page ? PSEC[D.section][0] : U.doc && !U.docEdit ? `D${U.doc}` : desk() && D.compose ? (ruleMode() ? 'new-rule' : 'new')
   : !desk() && U.sheet === 'log' && !$('overlay').hidden ? 'log'
   : desk() && U.tab === 'inputs' ? 'inputs' : U.open ? code(U.open) : U.tab === 'items' ? '' : U.tab;  // on the desktop Inputs hides the item
 function viewQuery() {
@@ -7395,7 +7395,9 @@ function showURL() {
     if (desk()) { if (history.state?.tab) U.tab = history.state.tab; return openProject(PSEC_AT[seg]); }  // Back into it from a tab (B9)
     return ({log: showLog, connect: showGuide, phone: showPhone, spellings: ACT.fixes, deleted: showDeleted, about: ACT.about}[seg] || openDrawer)();
   }
-  if (seg === 'new') { if (desk()) return ACT['new-input'](); return $('text').focus(); }
+  if (seg === 'new-rule') { U.tab = 'rules'; U.asRule = null; }  // B10: New rule has its own address; a reload stays a rule
+  else if (seg === 'new' && U.tab === 'rules') U.asRule = false;  // and New input stays an input
+  if (seg === 'new' || seg === 'new-rule') { if (desk()) return ACT['new-input'](); render(); return $('text').focus(); }
   const was = U.tab;
   if (!desk()) U.tabTop[was] = tabScroll(was).scrollTop;  // Back or Forward to another tab: each keeps its place (B152)
   U.tab = /^(inputs|archive|rules)$/.test(seg) ? seg : 'items'; U.asRule = null; U.inputsEnd = seg === 'inputs' && typeof history.state?.top !== 'number';
