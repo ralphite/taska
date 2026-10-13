@@ -11,6 +11,7 @@ fix it and run again. Then dedupe, verify and file everything as Taska subtasks 
 
 On T81 the two lenses below reported 67 findings in all, which grouped into 15 subtasks. The scenario lens
 found 2 of 4 known answers, and only partly; the matrix lens found all 4. They overlapped little, so run both.
+On the phone (T137) they reported 77 findings in 14 groups; the scenario lens found 3.5 of 4, the matrix lens 4.
 
 ## 1. Set up (the orchestrator, before any subagent)
 
@@ -22,7 +23,8 @@ found 2 of 4 known answers, and only partly; the matrix lens found all 4. They o
 4. **Data copy.** Copy the project folders from the data root into a scratch root
    (`<scratch>/audit/<letter>/root/<project>`), one root per auditor, plus a small demo project. Auditors work
    only there: never on the live app (port 7340) and never on the real data root.
-5. **Brief.** Fill `brief-template.md` (next to this file) into `.mocks/<id>/brief.md`: scope, what the product
+5. **Brief.** Fill `brief-template.md` (desktop) or `brief-phone.md` (phone; it shows how to tap and swipe with touch
+   events) next to this file into `.mocks/<id>/brief.md`: scope, what the product
    is, the environment (its own port, root, Chrome port), the lenses to stress, the finding format and the
    output. Keep it about the job, not about the known answers.
 
