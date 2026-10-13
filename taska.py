@@ -161,6 +161,7 @@ class Store:
         self.docs, self.maxd = {}, 0
         self.org_on, self.org_busy = False, None
         self.trs = {}  # voice notes being transcribed in the background, by file (B165): t0, done, tr, err
+        self.fwd = {}  # file -> [(project, file)]: copies of notes whose input moved before their words came (F79, T101)
         if os.path.exists(self.path):
             with open(self.path, encoding="utf-8") as f:
                 for i, line in enumerate(f, 1):
@@ -287,6 +288,7 @@ class Store:
                     for it in linked:
                         self.entry(it, e, "say", f"{inp['id']} updated:\n{inp['text']}", inp["id"])
                 else:  # nobody has read it yet: its message on the item simply shows the words now
+                    inp["v"] = inp.get("v", 0) + 1  # an edit opened before the words came cannot save over them (T101)
                     seq = inp.get("edit_seq") or inp["seq"]
                     for it in linked:
                         for x in it["thread"]:
@@ -462,13 +464,18 @@ class Store:
         return any((j := self.trs.get(f["f"])) and not j["done"] and now - j["t0"] < TR_HOLD for f in inp["files"])
 
     def with_words(self, text, files):
-        """Words of voice notes that came in after the page let go of them: the files and the text get them."""
+        """Words of voice notes that came in after the page let go of them: the files and the text get them. A note
+        whose words are still to come is marked wait, so they are worked out again if Taska stops before (T101)."""
         for f in files:
-            j = self.trs.get(f["f"])
-            if not f.get("tr") and j and j["done"] and j["tr"]:
+            if f.get("tr") or not (f.get("mime") or "").startswith("audio/"):
+                continue
+            j = self.trs.get(f["f"]) or self.saved_job(f["f"])
+            if j and j["done"] and j["tr"]:
                 f["tr"] = j["tr"]
                 if j["tr"] not in text:
                     text = text.rstrip() + "\n" + j["tr"] if text.strip() else j["tr"]
+            elif j and not (j["done"] and not j["err"]):  # still being worked out, or failed and may be asked for again
+                f["wait"] = True
         return text
 
     def saved_job(self, fid):
@@ -484,6 +491,7 @@ class Store:
             job = self.trs[fid] = saved or {"t0": time.time(), "done": False, "tr": "", "err": ""}
             if saved:
                 return self.words_in(fid, job)
+        hold = self.hold_timer(job)
 
         def work():
             res, err = {}, ""
@@ -492,19 +500,57 @@ class Store:
                 voice_keep(self, fid, res)
             except Exception as ex:
                 err = str(ex) or "transcription failed"
+            hold.cancel()
             with self.cond:
                 job.update(done=True, tr=res.get("tr", ""), err=err, res=res)
                 self.words_in(fid, job)
+                fwd = list(self.fwd.get(fid, ()))
+            for t, tfid in fwd:  # its input went to another project meanwhile (F79): the copy there gets the words
+                if not err:
+                    voice_keep(t, tfid, res)
+                with t.cond:
+                    t.words_in(tfid, job)
         threading.Thread(target=work, daemon=True).start()
 
+    def hold_timer(self, job):
+        """When an input's hold for its words runs out, whoever waits for work (/next?wait, the organizer) hears it."""
+        def over():
+            with self.cond:
+                if not job["done"]:
+                    self.bump()
+        t = threading.Timer(max(0.0, job["t0"] + TR_HOLD - time.time()) + 0.05, over)
+        t.daemon = True
+        t.start()
+        return t
+
     def words_in(self, fid, job):
-        """A voice note's words are in: the input that has the note gets them (under the lock)."""
+        """A voice note's words are in: the input that has the note gets them (under the lock). They come late when an
+        agent or the organizer has had the input, or while the organizer works on it: a plan made without them is
+        then dropped, and the input is organized again with them (T101)."""
         tr = job["tr"]
         inp = next((i for i in self.inputs.values() if not i.get("moved") and any(f["f"] == fid for f in i["files"])), None)
         if inp and tr and not any(f["f"] == fid and f.get("tr") for f in inp["files"]):
-            self.emit({"k": "tr", "src": inp["id"], "f": fid, "tr": tr, "by": "you", **({"late": True} if inp["acked"] or inp["org"] else {})})
+            late = inp["acked"] or inp["org"] or self.org_busy == inp["id"]
+            self.emit({"k": "tr", "src": inp["id"], "f": fid, "tr": tr, "by": "you", **({"late": True} if late else {})})
         else:
             self.bump()  # an input waiting for these words goes on without them; the page hears it is done
+
+    def resume_words(self):
+        """Voice notes sent before their words were in (marked wait) whose transcription a restart or a crash cut off:
+        worked out again when Taska starts, so the words still reach their input though the page let go of the
+        recording (T101). Words kept next to the audio are used as they are."""
+        with self.lock:
+            todo = [(f["f"], f.get("mime") or "", i["scope"]) for i in self.inputs.values() if not i.get("moved")
+                    for f in i["files"] if f.get("wait") and not f.get("tr") and f["f"] not in self.trs]
+        for fid, mime, scope in todo:
+            data = b""
+            if not voice_saved(self, fid):
+                try:
+                    with open(self.local(fid), "rb") as fh:
+                        data = fh.read()
+                except OSError:
+                    continue  # its audio is gone
+            self.transcribe_later(fid, data, mime, scope)
 
     def rules(self):
         return [i for i in self.sorted(self.active()) if i["type"] == "rule" and i["status"] not in CLOSED + ("proposed",) and not i["archived"]]
@@ -2018,6 +2064,7 @@ class Hub:
     def open(self, name):
         s = Store(os.path.join(self.root, name, "taska.jsonl"))
         s.name, s.org_on = name, self.organizer
+        s.resume_words()  # before the organizer: an input waiting for its words is held for them again (B165)
         if s.org_on:
             Organizer(s).start()
         self.projects[name] = s
@@ -2413,6 +2460,15 @@ class Handler(BaseHTTPRequestHandler):
                     files.append(t.save_file(f.get("name"), f.get("mime"), blob))
                     if f.get("tr"):
                         files[-1]["tr"] = f["tr"]
+                        continue
+                    with s.cond:  # words still being worked out here go to the copy too, and hold it there (T101)
+                        job = s.trs.get(f["f"])
+                        if job:
+                            s.fwd.setdefault(f["f"], []).append((t, files[-1]["f"]))
+                    if job:
+                        with t.cond:
+                            t.trs[files[-1]["f"]] = job
+                        t.hold_timer(job)
                 lines, _ = t.run_all([(0, {"op": "input", "text": inp["text"], "files": files})], "you")
                 if not lines[0].startswith("ok"):
                     raise Err(lines[0])

@@ -1,6 +1,6 @@
 """Voice notes (T101): the two transcriptions, a phone's processed notes heard by the strong model too, Traditional to
 Simplified, the spelling hints, what may be misheard, transcripts kept next to the audio, inputs that go in once, and a
-stop that finishes the work at hand.
+stop that finishes the work at hand. Words sent for later (B165) are tested in test_voice_words.py.
 Gemini is replaced by a fake here; scripts/transcribe_check.py runs the real thing on real recordings.
 Chinese is written escaped (R66)."""
 import array
