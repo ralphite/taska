@@ -3064,7 +3064,7 @@ const SECTION = (text, right = '') => `<div class="flex h-6 items-center justify
 let S = {rev: -1, boot: '', items: [], inputs: [], width: 1, org: {}};
 let offline = 0;  // consecutive failed polls
 const byN = new Map(), byR = new Map(), kids = new Map();
-const U = {doc: null, docNew: null, docEdit: false, docText: null, docSel: new Set(), docQuote: null, docCircle: false, docThreads: new Set(), docDrafts: {}, docScroll: {}, peek: null, moreInputs: new Set(), tab: 'items', q: '', type: 'all', when: 'all', status: 'all', pri: 'all', undoArch: null, folded: new Set(), moreMsgs: new Set(), subFor: null, choice: null, choiceLabels: {}, go: null, sheet: null, searching: false, open: null, scopeOff: false, editing: null, files: [], sending: false, lastSent: null, more: new Set(), tabOpen: {}, editDrafts: {}, settle: new Map(), tabTop: {}, stepFrom: null, mine: [], tabView: {}};
+const U = {doc: null, docNew: null, docEdit: false, docText: null, docSel: new Set(), docQuote: null, docCircle: false, docThreads: new Set(), docDrafts: {}, docScroll: {}, peek: null, moreInputs: new Set(), tab: 'items', q: '', type: 'all', when: 'all', status: 'all', pri: 'all', undoArch: null, folded: new Set(), moreMsgs: new Set(), subFor: null, choice: null, choiceLabels: {}, go: null, sheet: null, searching: false, open: null, scopeOff: false, editing: null, files: [], sending: false, lastSent: null, more: new Set(), tabOpen: {}, settle: new Map(), tabTop: {}, stepFrom: null, mine: [], tabView: {}};
 U.outbox = []; U.qn = 0;  // what you sent that hasn't reached the server yet (F85)
 const groups = new Map();
 let viewerGroup = [], viewerIdx = 0;
@@ -3877,7 +3877,7 @@ function renderDoc({focus = false} = {}) {
     const d = docById(U.doc);
     const md = U.docText ?? (d ? noteText(d) : '');
     dialog(d ? `D${d.d}` : `New doc on ${code(U.docNew)}`, `<div class="flex min-h-full flex-col">
-      <div class="sticky -top-2 z-10 -mx-4 -mt-2 mb-2 flex items-center gap-2 bg-white px-4 py-2 text-xs text-zinc-500 dark:bg-zinc-900"><span class="min-w-0 flex-1">The first line is the title. Saved when you are done.</span><button data-act="doc-done" class="${PRIMARY}">Done</button></div>
+      <div class="sticky -top-2 z-10 -mx-4 -mt-2 mb-2 flex items-center gap-2 bg-white px-4 py-2 text-xs text-zinc-500 dark:bg-zinc-900"><span class="min-w-0 flex-1">The first line is the title. Esc keeps it as a draft.</span><button data-act="doc-discard" class="h-11 shrink-0 rounded-xl px-3 text-sm font-semibold text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800">Discard</button><button data-act="doc-done" class="${PRIMARY}">${d ? 'Save' : 'Create'}</button></div>
       <textarea id="docMd" placeholder="Title on the first line&#10;&#10;Then anything: a plan, a design, notes. Markdown works." class="min-h-[40dvh] w-full flex-1 resize-none bg-transparent text-base leading-relaxed outline-none placeholder:text-zinc-400">${esc(md)}</textarea></div>`, {focus: false, tall: true});
     return;
   }
@@ -3908,14 +3908,22 @@ function openDoc(d) {
   renderDoc({focus: true});
   $('dlgBody').scrollTop = U.docScroll[d] || 0;
 }
+const docKey = () => U.doc ? `D${U.doc}` : `new ${U.docNew}`;  // where a document's draft is kept
 function newDoc(n) {
-  Object.assign(U, {peek: null, doc: null, docNew: n, docEdit: true, docText: ''});
+  Object.assign(U, {peek: null, doc: null, docNew: n, docEdit: true, docText: kept('docs')[`new ${n}`] || ''});
   renderDoc();
+  if (U.docText) toast('Your draft is back');
   $('docMd').focus();
 }
+function keepDoc() {  // leaving the editor without Create or Save keeps the text as a draft (T113 B6)
+  const d = docById(U.doc), md = ($('docMd')?.value ?? U.docText ?? '').trim(), key = docKey(), was = d ? noteText(d).trim() : '';
+  kept('docs', all => { if (md && md !== was) all[key] = md; else delete all[key]; });
+  if (md && md !== was) toast(d ? `Your edit of D${d.d} is kept as a draft: Edit brings it back` : `Your new document is kept as a draft: ${desk() ? '⇧D' : 'New doc'} brings it back`);
+}
 async function saveDoc() {  // leaving the editor saves; an empty new note is dropped
-  const md = ($('docMd')?.value ?? U.docText ?? '').trim(), d = docById(U.doc), n = U.docNew;
+  const md = ($('docMd')?.value ?? U.docText ?? '').trim(), d = docById(U.doc), n = U.docNew, key = docKey();
   U.docEdit = false; U.docText = null;
+  kept('docs', all => delete all[key]);  // saved, or nothing to save: no draft any more (if saving fails, the editor comes back)
   if (!md || (d && md === noteText(d).trim())) return d;
   return saveDocText(d, n, md);
 }
@@ -4255,12 +4263,27 @@ function showFilters() {
 }
 
 // Leaving the editor any way but Cancel keeps what you typed (B122); I on that item brings it back.
-function stashEdit() {
+// Half-written text has one rule (T113 B6): leaving it any way but Cancel or Discard keeps it as a draft, until you
+// save, send or discard it: an item's edit, a subitem's title, a document. Drafts are kept in this browser per
+// project, like the box's, so they survive a reload and a switch to another project.
+function kept(kind, change) {  // -> {key: draft}; change(all) edits and saves them
+  const key = `taska.${kind}.${S.project}`;
+  try {
+    const all = JSON.parse(localStorage.getItem(key) || '{}');
+    if (change) { change(all); localStorage.setItem(key, JSON.stringify(all)); }
+    return all;
+  } catch (_) { return {}; }
+}
+function editNow() {  // the item editor's text, and whether it differs from the item
   const n = U.editing, it = n && byN.get(n);
-  if (!it || !$('eTitle')) return;
+  if (!it || !$('eTitle')) return null;
   const d = {title: $('eTitle').value, body: $('eBody').value, next: $('eNext').value};
-  if (d.title !== it.title || d.body !== it.body || d.next !== (it.next || '')) { U.editDrafts[n] = d; toast(`Your changes to ${code(n)} are kept: ${desk() ? 'press I' : 'Edit'} to go on`); }
-  else delete U.editDrafts[n];
+  return {n, d, changed: d.title !== it.title || d.body !== it.body || d.next !== (it.next || '')};
+}
+function keepItemEdit() { const e = editNow(); if (e) kept('edits', all => { if (e.changed) all[e.n] = e.d; else delete all[e.n]; }); return e; }
+function stashEdit() {
+  const e = keepItemEdit();
+  if (e?.changed) toast(`Your changes to ${code(e.n)} are kept: ${desk() ? 'press I' : 'Edit'} to go on`);
 }
 function keepEdit() {
   const a = document.activeElement;
@@ -4939,7 +4962,7 @@ function popAt(x, y) {  // B129: a menu opened by right-click sits at the pointe
 }
 const closeDialog = () => {
   const edit = U.docEdit;
-  if (edit) saveDoc();  // closing the editor keeps what you wrote
+  if (edit) keepDoc();  // closing the editor keeps what you wrote, as a draft: only Create or Save publish it (T113 B6)
   if (desk()) {  // a document lives in the item pane (T110): closing a sheet or the editor leaves it open there
     U.docNew = null; U.docEdit = false; U.sheet = null; U.go = null;
     $('overlay').hidden = true; $('overlay').style.bottom = '';
@@ -5437,14 +5460,14 @@ const ACT = {
   'more-input': b => { const id = b.dataset.id; if (U.moreInputs.has(id)) U.moreInputs.delete(id); else U.moreInputs.add(id); renderInputs(); if (desk() && D.compose) renderDetail(); },
   edit: b => {
     closeDialog(); const n = U.editing = Number(b.dataset.n); renderDetail();
-    const d = U.editDrafts[n], body = $('eBody');
+    const d = kept('edits')[n], body = $('eBody');
     if (d && $('eTitle')) { $('eTitle').value = d.title; body.value = d.body; $('eNext').value = d.next; toast('Your unsaved changes are back'); }
     if (body) { body.focus(); body.selectionStart = body.selectionEnd = body.value.length; }  // write on after the text, not before it
   },
-  'edit-cancel': () => { delete U.editDrafts[U.editing]; U.editing = null; renderDetail(); },
+  'edit-cancel': () => { const n = U.editing; kept('edits', all => delete all[n]); U.editing = null; renderDetail(); },
   'edit-save': async b => {
     const n = Number(b.dataset.n);
-    try { await save({op: 'set', ref: code(n), f: {title: $('eTitle').value, body: $('eBody').value, next: $('eNext').value}}, () => $('eTitle') && ACT['edit-save'](b)); delete U.editDrafts[n]; U.editing = null; render(); toast('Saved'); } catch (_) {}
+    try { await save({op: 'set', ref: code(n), f: {title: $('eTitle').value, body: $('eBody').value, next: $('eNext').value}}, () => $('eTitle') && ACT['edit-save'](b)); kept('edits', all => delete all[n]); U.editing = null; render(); toast('Saved'); } catch (_) {}
   },
   copy: b => { closeDialog(); copyItem(Number(b.dataset.n)); },
   'peek-set': b => {
@@ -5455,8 +5478,13 @@ const ACT = {
   play: b => playAudio(b),
   'doc-open': b => openDoc(Number(b.dataset.d)),
   'doc-new': b => newDoc(Number(b.dataset.n)),
-  'doc-edit': () => { U.docEdit = true; U.docText = null; renderDoc(); $('docMd').focus(); },
-  'doc-done': async () => { const d = await saveDoc(); if (d) openDoc(d.d); else if (!U.docEdit) closeDialog(); },
+  'doc-edit': () => { const was = kept('docs')[`D${U.doc}`]; U.docEdit = true; U.docText = was ?? null; renderDoc(); if (was) toast('Your draft is back'); $('docMd').focus(); },
+  'doc-done': async () => { const d = await saveDoc(); if (d) openDoc(d.d); else if (!U.docEdit) closeDialog(); },  // Create or Save
+  'doc-discard': () => {  // the draft goes; the document stays as it is
+    const d = U.doc, key = docKey();
+    kept('docs', all => delete all[key]); U.docEdit = false; U.docText = null;
+    if (d && docById(d)) openDoc(d); else closeDialog();
+  },
   'doc-pick': (b, e) => {
     if (U.docCircle || e.target.closest('textarea, button, a') || getSelection()?.toString().trim()) return;
     const k = b.dataset.key;
@@ -5510,12 +5538,17 @@ const ACT = {
     if (U.peek && !$('overlay').hidden) { const top = $('dlgBody').scrollTop; peek(U.peek, {focus: false}); $('dlgBody').scrollTop = top; } else renderDetail();
   },
   fold: b => { const n = Number(b.dataset.n); U.folded.has(n) ? U.folded.delete(n) : U.folded.add(n); renderItems(); },
-  'sub-new': b => { closeDialog(); U.subFor = Number(b.dataset.n); renderDetail(); $('subTitle')?.focus(); },
-  'sub-cancel': () => { U.subFor = null; renderDetail(); },
+  'sub-new': b => {
+    closeDialog(); const n = U.subFor = Number(b.dataset.n); renderDetail();
+    const f = $('subTitle'), was = kept('subs')[n];
+    if (f && was) { f.value = was; toast('Your subitem title is back'); }
+    f?.focus();
+  },
+  'sub-cancel': () => { const n = U.subFor; kept('subs', all => delete all[n]); U.subFor = null; renderDetail(); },
   'sub-add': async b => {  // same kind, priority and now/later as the parent; change them after if needed
     const n = Number(b.dataset.n), p = byN.get(n), title = ($('subTitle')?.value || '').trim();
     if (!title) return $('subTitle')?.focus();
-    try { await save({op: 'new', title, parent: code(n), type: p.type === 'rule' ? 'task' : p.type, pri: p.pri, when: p.when}, () => ACT['sub-add'](b)); U.folded.delete(n); render(); toast(`Added under ${code(n)}`); const f = $('subTitle'); if (f) { f.value = ''; f.focus(); } flashRow(Math.max(...(kids.get(n) || []).map(k => k.n))); } catch (_) {}  // the field stays for the next one (B123)
+    try { await save({op: 'new', title, parent: code(n), type: p.type === 'rule' ? 'task' : p.type, pri: p.pri, when: p.when}, () => ACT['sub-add'](b)); kept('subs', all => delete all[n]); U.folded.delete(n); render(); toast(`Added under ${code(n)}`); const f = $('subTitle'); if (f) { f.value = ''; f.focus(); } flashRow(Math.max(...(kids.get(n) || []).map(k => k.n))); } catch (_) {}  // the field stays for the next one (B123)
   },
   'move-to': b => {  // M: with Undo and Z (T113 A7)
     const n = Number(b.dataset.n), to = b.dataset.to;
@@ -6571,7 +6604,12 @@ document.addEventListener('keydown', e => {
     if (U.doc && (U.docQuote || U.docSel.size || U.docReply)) return ACT['doc-unpick']();  // first Escape drops the selection
     if (desk() && U.doc && !U.docEdit && $('overlay').hidden && !/INPUT|TEXTAREA/.test(document.activeElement.tagName)) return closeDoc();  // then back to the item
     if (!$('overlay').hidden) return closeDialog();
-    if (document.activeElement?.id === 'subTitle') { U.subFor = null; return renderDetail(); }  // done adding subitems
+    if (document.activeElement?.id === 'subTitle') {  // done adding subitems; a title you started is kept (T113 A15)
+      const n = U.subFor, v = $('subTitle').value.trim();
+      kept('subs', all => { if (v) all[n] = v; else delete all[n]; });
+      if (v) toast(`Your subitem title is kept: ${desk() ? '⇧A' : 'Add'} brings it back`);
+      U.subFor = null; return renderDetail();
+    }
     if (U.editing) { stashEdit(); U.editing = null; return renderDetail(); }
     if (desk()) {
       if (D.compose && document.activeElement === $('text') && !$('text').value.trim() && !U.files.length) return leaveCompose();  // nothing to lose
@@ -6609,7 +6647,22 @@ $('q').addEventListener('keydown', e => {  // B130: from the search, Down or Ent
 $('q').addEventListener('input', e => { U.q = e.target.value; qSync(); writeURL(false); if (U.tab === 'inputs') renderInputs(); else { renderItems(); $('list').scrollTop = 0; } });
 $('q').addEventListener('focus', () => { if (!desk() && !U.searching) searchMode(true); });  // a search that came with the address: in your hands now, Cancel or Back ends it (B152)
 $('text').addEventListener('input', () => { saveDraft(); renderComposer(); grow(); });  // the buttons first: the mic showing up narrows the box
-document.addEventListener('input', e => { const k = e.target.dataset?.docDraft; if (k) U.docDrafts[k] = e.target.value; if (e.target.id === 'docMd') U.docText = e.target.value; });
+document.addEventListener('input', e => {
+  const k = e.target.dataset?.docDraft, id = e.target.id;
+  if (k) U.docDrafts[k] = e.target.value;
+  if (id === 'docMd') { U.docText = e.target.value; const key = docKey(), v = U.docText.trim(), d = docById(U.doc); kept('docs', all => { if (v && v !== (d ? noteText(d).trim() : '')) all[key] = U.docText; else delete all[key]; }); }
+  if (/^e(Title|Body|Next)$/.test(id)) keepItemEdit();  // T113 A6: the edit survives a reload or a switch of project
+  if (id === 'subTitle' && U.subFor) { const n = U.subFor, v = e.target.value.trim(); kept('subs', all => { if (v) all[n] = v; else delete all[n]; }); }
+});
+document.addEventListener('keydown', e => {  // ⌘↵ (Ctrl+↵) saves the item you edit (T113 A6)
+  if (/^e(Title|Body|Next)$/.test(e.target.id) && e.key === 'Enter' && (e.metaKey || e.ctrlKey) && !e.isComposing && U.editing) {
+    e.preventDefault(); ACT['edit-save']({dataset: {n: String(U.editing)}});
+  }
+});
+addEventListener('beforeunload', e => {  // leaving with an edit or a document not saved: the browser asks first (T113 A6)
+  const d = U.docEdit && docById(U.doc), md = ($('docMd')?.value || '').trim();
+  if (editNow()?.changed || (U.docEdit && md && md !== (d ? noteText(d).trim() : ''))) { e.preventDefault(); e.returnValue = ''; }
+});
 // Selecting words in what a voice note became offers to correct them, in the one box (F144). The fix goes into
 // that input and is remembered for every project's transcriptions.
 document.addEventListener('selectionchange', () => {
