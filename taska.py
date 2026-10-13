@@ -3783,10 +3783,12 @@ function setTab(t) {
   U.tab = t;
   if (t !== was) writeURL(true);
   if (desk()) {
-    if (t !== was && t !== 'inputs' && was !== 'inputs') {  // B120: the open item belongs to a tab; each tab keeps its own
-      U.tabOpen[was] = U.open;
-      const back = [U.tabOpen[t], U.open].find(k => k && byN.has(k) && inTab(byN.get(k), t));
-      if (back !== U.open) { U.open = back || null; U.go = null; }
+    if (t !== was) {  // B120: the open item belongs to a tab; each tab keeps its own (Inputs shows none, so it keeps the last)
+      if (was !== 'inputs') U.tabOpen[was] = U.open;
+      if (t !== 'inputs') {
+        const back = [U.tabOpen[t], U.open].find(k => k && byN.has(k) && inTab(byN.get(k), t));
+        if (back !== U.open) { U.open = back || null; U.go = null; }
+      }
     }
     U.tabTop[was] = $('list').scrollTop;  // each tab keeps its place in the list (B124)
     D.page = null; D.sideOpen = false; D.compose = false; U.settle.clear(); render(); $('list').scrollTop = U.tabTop[t] || 0; return writeURL(false);
