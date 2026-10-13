@@ -197,5 +197,115 @@ class DoubtTests(unittest.TestCase):
         self.assertEqual(d('agent lamp ok', 'agent lab ok'), [{'was': 'lamp', 'alt': 'lab', 'why': 'english'}])
 
 
+class KeptTranscriptTests(StoreCase):
+    def wait(self, fid):
+        for _ in range(300):
+            if self.s.trs[fid]['done']:
+                return self.s.trs[fid]
+            time.sleep(0.01)
+        self.fail('the transcription never finished')
+
+    def test_kept_next_to_the_audio_and_used_after_a_restart(self):
+        f = self.s.save_file('voice 0-03.webm', 'audio/webm', b'audio')
+        fake, p = self.fake(['hello'], 'hello')
+        with p:
+            self.s.transcribe_later(f['f'], b'audio', 'audio/webm', None)
+            self.assertEqual(self.wait(f['f'])['tr'], 'hello')
+        self.assertEqual(len(fake.calls), 2)  # both models, once
+        self.assertTrue(Path(self.s.local(f['f']) + '.tr.json').is_file())
+        again = taska.Store(self.s.path)  # Taska restarted: the page asks again
+        fake2, p2 = self.fake([], None)
+        with p2:
+            again.transcribe_later(f['f'], b'audio', 'audio/webm', None)
+        self.assertEqual((again.trs[f['f']]['done'], again.trs[f['f']]['tr'], fake2.calls), (True, 'hello', []))
+        again.out.close()
+
+    def test_failures_are_not_kept(self):
+        f = self.s.save_file('voice 0-03.webm', 'audio/webm', b'audio')
+        fake, p = self.fake([taska.Err('down')], taska.Err('down'))
+        with p:
+            self.s.transcribe_later(f['f'], b'audio', 'audio/webm', None)
+            self.assertIn('down', self.wait(f['f'])['err'])
+        self.assertFalse(Path(self.s.local(f['f']) + '.tr.json').exists())
+
+    def test_an_input_sent_twice_goes_in_once(self):
+        op = {'op': 'input', 'text': 'hello', 'q': 'abc123'}
+        a, _ = self.s.run_all([(0, op)], 'you')
+        b, _ = self.s.run_all([(0, op)], 'you')
+        self.assertEqual(a, b)
+        self.assertEqual(sum(1 for i in self.s.inputs.values() if i['text'] == 'hello'), 1)
+        replay = taska.Store(self.s.path)
+        self.assertEqual(replay.qids, {'abc123': a[0].split()[1]})
+        replay.out.close()
+
+
+def free_port():
+    with socket.socket() as so:
+        so.bind(('127.0.0.1', 0))
+        return so.getsockname()[1]
+
+
+class ServerTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.hub = patch.object(taska, 'HUB', taska.Hub(self.tmp.name, False))
+        self.hub.start()
+        self.port = free_port()
+        self.srv = taska.Server(('127.0.0.1', self.port), taska.Handler)
+        self.t = threading.Thread(target=self.srv.serve_forever, daemon=True)
+        self.t.start()
+        self.base = f'http://127.0.0.1:{self.port}/p/default/'
+
+    def tearDown(self):
+        self.srv.shutdown()
+        self.srv.server_close()
+        self.hub.stop()
+        self.tmp.cleanup()
+
+    def call(self, path, data=None, ctype='application/octet-stream'):
+        req = urllib.request.Request(self.base + path, data=data, headers={'Content-Type': ctype}, method='POST' if data is not None else 'GET')
+        try:
+            with urllib.request.urlopen(req, timeout=20) as r:
+                return r.status, json.load(r)
+        except urllib.error.HTTPError as ex:
+            return ex.code, json.load(ex)
+
+    def test_upload_then_words_then_again_by_file_id(self):
+        fake = FakeGemini(['hello Taska'], 'hello Taska')
+        with patch.object(taska, 'gemini_call', fake):
+            code, f = self.call('api/file?name=voice.webm&transcribe=1', b'audio', 'audio/webm')
+            self.assertEqual((code, f['pending']), (200, True))  # B165: the answer comes at once
+            code, d = self.call(f'api/transcript?f={f["f"]}', b'')  # waits for the words
+        self.assertEqual((code, d['done'], d['tr'], d['tr_by']), (200, True, 'hello Taska', 'main'))
+        code, d = self.call(f'api/transcript?f={f["f"]}')  # again, by file id, without waiting
+        self.assertEqual((code, d['tr']), (200, 'hello Taska'))
+        self.assertEqual(self.call('api/transcript?f=f99-nothing.webm')[0], 404)
+
+    def test_a_failed_one_is_tried_again_when_asked(self):
+        with patch.object(taska, 'gemini_call', FakeGemini([taska.Err('down')], taska.Err('down'))):
+            code, f = self.call('api/file?name=voice.webm&transcribe=1', b'audio', 'audio/webm')
+            code, d = self.call(f'api/transcript?f={f["f"]}', b'')
+        self.assertIn('down', d['tr_error'])
+        with patch.object(taska, 'gemini_call', FakeGemini(['second try'], 'second try')):
+            code, d = self.call(f'api/transcript?f={f["f"]}&again=1', b'')
+        self.assertEqual((d['tr'], d['tr_error']), ('second try', ''))
+
+    def test_a_stop_finishes_the_transcription_at_hand(self):
+        def slow(*a, **k):
+            time.sleep(1.5)
+            return {'tr': 'finished', 'tr_by': 'main', 'alt': 'finished', 'doubts': []}
+        with patch.object(taska, 'transcribe', slow):
+            code, f = self.call('api/file?name=voice.webm&transcribe=1', b'audio', 'audio/webm')
+            time.sleep(0.3)
+            self.srv.shutdown()  # what SIGTERM does
+            t0 = time.time()
+            self.srv.drain(10)
+        self.assertGreater(time.time() - t0, 0.5)  # it waited for the transcription running in the background
+        self.assertEqual(taska.HUB.projects['default'].trs[f['f']]['tr'], 'finished')
+        self.assertTrue(Path(taska.HUB.projects['default'].local(f['f']) + '.tr.json').is_file())
+        with self.assertRaises(OSError):  # and takes no new requests
+            urllib.request.urlopen(self.base + 'agent', timeout=2)
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)

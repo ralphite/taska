@@ -12,6 +12,7 @@ state is the replay of that log.
 
 import argparse
 import base64
+import contextlib
 import difflib
 import hashlib
 import hmac
@@ -22,6 +23,7 @@ import mimetypes
 import os
 import re
 import secrets
+import signal
 import sys
 import textwrap
 import threading
@@ -145,6 +147,7 @@ class Store:
         self.lock = threading.RLock()
         self.cond = threading.Condition(self.lock)
         self.items, self.inputs, self.events = {}, {}, []
+        self.qids = {}  # the page's id for an input it sent -> the input: sent again after a lost answer, it goes in once (T101)
         self.undone = set()  # seqs of your changes that were put back (F80)
         self.rev = 0  # bumps on every change, including transient organizer state
         self.boot = format(int(time.time() * 1000), "x")  # rev restarts with the process; boot tells pages apart
@@ -214,6 +217,8 @@ class Store:
                    "files": e.get("files", []), "acked": False, "touched": [], "org": None, "from": e.get("from"), "seq": e["seq"]}
             self.inputs[inp["id"]] = inp
             self.nin = max(self.nin, int(inp["id"][1:]))
+            if e.get("q"):
+                self.qids[e["q"]] = inp["id"]
             it = self.items.get(inp["scope"])
             if it:
                 self.entry(it, e, "say", inp["text"], inp["id"])
@@ -461,26 +466,40 @@ class Store:
                     text = text.rstrip() + "\n" + j["tr"] if text.strip() else j["tr"]
         return text
 
+    def saved_job(self, fid):
+        """A voice note worked out before, its words kept next to its audio (T101), as a finished job."""
+        res = voice_saved(self, fid)
+        return {"t0": time.time(), "done": True, "tr": res.get("tr", ""), "err": "", "res": res} if res else None
+
     def transcribe_later(self, fid, data, mime, scope):
-        """Start working out a voice note's words in the background; an input that has the note by then gets them."""
+        """Start working out a voice note's words in the background; an input that has the note by then gets them.
+        Words kept next to the audio from before (a restart, a page asking again) are used as they are (T101)."""
+        saved = self.saved_job(fid)
         with self.cond:
-            job = self.trs[fid] = {"t0": time.time(), "done": False, "tr": "", "err": ""}
+            job = self.trs[fid] = saved or {"t0": time.time(), "done": False, "tr": "", "err": ""}
+            if saved:
+                return self.words_in(fid, job)
 
         def work():
             res, err = {}, ""
             try:
                 res = transcribe(self, data, mime, scope) or {}
+                voice_keep(self, fid, res)
             except Exception as ex:
                 err = str(ex) or "transcription failed"
-            tr = res.get("tr", "")
             with self.cond:
-                job.update(done=True, tr=tr, err=err, res=res)
-                inp = next((i for i in self.inputs.values() if not i.get("moved") and any(f["f"] == fid for f in i["files"])), None)
-                if inp and tr and not any(f["f"] == fid and f.get("tr") for f in inp["files"]):
-                    self.emit({"k": "tr", "src": inp["id"], "f": fid, "tr": tr, "by": "you", **({"late": True} if inp["acked"] or inp["org"] else {})})
-                else:
-                    self.bump()  # an input waiting for these words goes on without them; the page hears it is done
+                job.update(done=True, tr=res.get("tr", ""), err=err, res=res)
+                self.words_in(fid, job)
         threading.Thread(target=work, daemon=True).start()
+
+    def words_in(self, fid, job):
+        """A voice note's words are in: the input that has the note gets them (under the lock)."""
+        tr = job["tr"]
+        inp = next((i for i in self.inputs.values() if not i.get("moved") and any(f["f"] == fid for f in i["files"])), None)
+        if inp and tr and not any(f["f"] == fid and f.get("tr") for f in inp["files"]):
+            self.emit({"k": "tr", "src": inp["id"], "f": fid, "tr": tr, "by": "you", **({"late": True} if inp["acked"] or inp["org"] else {})})
+        else:
+            self.bump()  # an input waiting for these words goes on without them; the page hears it is done
 
     def rules(self):
         return [i for i in self.sorted(self.active()) if i["type"] == "rule" and i["status"] not in CLOSED + ("proposed",) and not i["archived"]]
@@ -670,6 +689,9 @@ class Store:
         if src and src not in self.inputs:
             raise Err(f"unknown input {src}")
         if name == "input":
+            q = str(op.get("q") or "")[:64]
+            if q in self.qids:  # the page sent it again because the answer got lost: it is in already
+                return f"ok {self.qids[q]}", "Received"
             files = self.op_files(op)
             text = self.with_words(str(op.get("text") or "").strip(), files)[:MAX_TEXT]
             if not text and not files:
@@ -679,6 +701,8 @@ class Store:
             e = {"k": "in", "id": rid, "by": by, "text": text, "scope": scope, "files": files}
             if op.get("from") == "rules":
                 e["from"] = "rules"
+            if q:
+                e["q"] = q
             self.emit(e)
             return f"ok {rid}", "Received"
         if name == "correct":  # F144: the wrong words in an input, fixed there and remembered for every project
@@ -1801,6 +1825,40 @@ def echoed(tr, titles):
     return not rest.strip()
 
 
+def voice_mime(fid):
+    """The audio type of an uploaded voice note, by its name; "" for anything else."""
+    mime = AUDIO_MIME.get(os.path.splitext(fid)[1].lower()) or (mimetypes.guess_type(fid)[0] or "").replace("video/webm", "audio/webm")
+    return mime if mime.startswith("audio/") else ""
+
+
+def voice_answer(fid, job):
+    """What a page gets for a voice note: its words once they are in, which model's they are, what may be misheard."""
+    res = (job or {}).get("res") or {}
+    return {"f": fid, "done": not job or job["done"], "tr": job["tr"] if job else "",
+            "tr_error": (job["err"] if job else "no such voice note") or "", **{k: res[k] for k in ("tr_by", "doubts") if k in res}}
+
+
+def voice_saved(store, fid):
+    """The transcript kept next to a voice note (<file>.tr.json), or None (T101)."""
+    try:
+        with open(store.local(fid) + ".tr.json", encoding="utf-8") as f:
+            return json.load(f)
+    except (OSError, ValueError):
+        return None
+
+
+def voice_keep(store, fid, res):
+    """Keep a voice note's transcript next to its audio, so it is not worked out again after a restart and a page
+    that lost the answer gets it by file id (T101)."""
+    side = store.local(fid) + ".tr.json"
+    try:
+        with open(side + ".tmp", "w", encoding="utf-8") as f:
+            json.dump(dict(res, t=now()), f, ensure_ascii=False)
+        os.replace(side + ".tmp", side)
+    except OSError:
+        pass
+
+
 # --------------------------------------------------------------------------- http
 
 HUB = None
@@ -1926,16 +1984,19 @@ class Handler(BaseHTTPRequestHandler):
     def send(self, code, body, ctype="text/plain; charset=utf-8", extra=None):
         if isinstance(body, str):
             body = body.encode("utf-8")
-        self.send_response(code)
-        self.send_header("Content-Type", ctype)
-        self.send_header("Content-Length", str(len(body)))
-        self.send_header("Cache-Control", "no-store")
-        self.send_header("X-Content-Type-Options", "nosniff")
-        for k, v in (extra or {}).items():
-            self.send_header(k, v)
-        self.end_headers()
-        if self.command != "HEAD":
-            self.wfile.write(body)
+        try:
+            self.send_response(code)
+            self.send_header("Content-Type", ctype)
+            self.send_header("Content-Length", str(len(body)))
+            self.send_header("Cache-Control", "no-store")
+            self.send_header("X-Content-Type-Options", "nosniff")
+            for k, v in (extra or {}).items():
+                self.send_header(k, v)
+            self.end_headers()
+            if self.command != "HEAD":
+                self.wfile.write(body)
+        except (BrokenPipeError, ConnectionResetError):  # the caller left before the answer; what was done stays done
+            self.close_connection = True
 
     def json(self, obj, code=200):
         self.send(code, json.dumps(obj, ensure_ascii=False), "application/json; charset=utf-8")
@@ -2145,6 +2206,12 @@ class Handler(BaseHTTPRequestHandler):
                 self.json({"rev": s.rev, "boot": s.boot, "pv": s.pv, "ver": VERSION})
         elif p.startswith("/f/"):
             self.serve_file(s, os.path.basename(p[3:]))
+        elif p == "/api/transcript":  # a voice note's words again, by file id, without waiting: POST waits for them (T101)
+            fid = os.path.basename((q.get("f") or [""])[0])
+            job = s.trs.get(fid) or (s.saved_job(fid) if fid else None)
+            if not job:
+                return self.json({"ok": False, "f": fid, "error": f"no words for {fid} yet: POST /api/transcript?f={fid} works them out"}, 404)
+            self.json(voice_answer(fid, job))
         elif ITEM_PATH.fullmatch(p):
             ref_ = p[1:]
             with s.lock:
@@ -2170,6 +2237,10 @@ class Handler(BaseHTTPRequestHandler):
         self.send(200, data, mime, {"Content-Security-Policy": "sandbox", "Content-Disposition": f"inline; filename*=UTF-8''{quote(name)}"})
 
     def do_POST(self):
+        with self.server.working():  # a stop waits for it (T101)
+            self.handle_post()
+
+    def handle_post(self):
         if not self.guard():
             return
         u = self.url()
@@ -2218,19 +2289,18 @@ class Handler(BaseHTTPRequestHandler):
                 s.transcribe_later(f["f"], data, self.headers.get("Content-Type") or mime, self.scope_of(s, q))
                 f["pending"] = True
             self.json(f)
-        elif p == "/api/transcript":  # a voice note's words: waits for them a while, starts again after a restart (B165)
-            fid = os.path.basename((q.get("f") or [""])[0])
-            path, mime = os.path.join(s.fdir, fid), (mimetypes.guess_type(fid)[0] or "").replace("video/webm", "audio/webm")
-            if not s.trs.get(fid) and fid and os.path.isfile(path) and mime.startswith("audio/"):
+        elif p == "/api/transcript":  # a voice note's words: waits for them a while, starts again after a restart (B165);
+            fid = os.path.basename((q.get("f") or [""])[0])  # again=1 tries a failed one once more (T101)
+            path, mime = s.local(fid), voice_mime(fid)
+            job = s.trs.get(fid)
+            if fid and mime and os.path.isfile(path) and (not job or (job["done"] and job["err"] and q.get("again"))):
                 with open(path, "rb") as fh:
                     s.transcribe_later(fid, fh.read(), mime, self.scope_of(s, q))
             with s.cond:
                 job = s.trs.get(fid)
                 if job:
                     s.cond.wait_for(lambda: job["done"], timeout=45)
-            res = (job or {}).get("res") or {}  # which model's words, and the spots that may be misheard (T101)
-            self.json({"f": fid, "done": not job or job["done"], "tr": job["tr"] if job else "",
-                       "tr_error": (job["err"] if job else "no such voice note") or "", **{k: res[k] for k in ("tr_by", "doubts") if k in res}})
+            self.json(voice_answer(fid, job))
         elif p == "/api/undo":
             rid = (json.loads(self.body(10_000) or b"{}")).get("id")
             with s.cond:
@@ -2298,6 +2368,35 @@ class Server(ThreadingHTTPServer):
     daemon_threads = True
     allow_reuse_address = True
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.busy, self.idle = 0, threading.Condition()
+
+    @contextlib.contextmanager
+    def working(self):
+        """A request doing work (any POST: an upload, a transcription, a change), as opposed to one waiting for news."""
+        with self.idle:
+            self.busy += 1
+        try:
+            yield
+        finally:
+            with self.idle:
+                self.busy -= 1
+                self.idle.notify_all()
+
+    def drain(self, wait=60):
+        """Stop taking requests, then give the work at hand up to `wait` seconds to finish: requests being answered and
+        voice notes being transcribed in the background. A restart (launchctl kickstart -k sends SIGTERM first) must
+        not cut a transcription (T101)."""
+        self.socket.close()
+        end = time.time() + wait
+        jobs = lambda: sum(1 for s in list(HUB.projects.values() if HUB else ()) for j in list(s.trs.values()) if not j["done"])
+        if self.busy or jobs():
+            print(f"taska: stopping after the work at hand: {self.busy} request(s), {jobs()} transcription(s)", flush=True)
+        with self.idle:
+            while (self.busy or jobs()) and time.time() < end:
+                self.idle.wait(min(0.25, max(0.01, end - time.time())))
+
 
 def main():
     global HUB
@@ -2322,10 +2421,13 @@ def main():
     print(f"Taska  http://{args.host}:{args.port}/\n  data       {HUB.root}  ({', '.join(sorted(HUB.projects))})\n  organizer  "
           + (f"Gemini {MODEL}" if HUB.organizer else "off (set GEMINI_API_KEY to turn it on)")
           + f"\n  key        {HUB.key}  (needed from outside this machine and its network)", flush=True)
+    # SIGTERM (a restart, a deploy): stop taking requests and finish the ones at work first (T101)
+    signal.signal(signal.SIGTERM, lambda *_: threading.Thread(target=srv.shutdown, daemon=True).start())
     try:
         srv.serve_forever()
     except KeyboardInterrupt:
         pass
+    srv.drain()
 
 
 LOGIN = '''<!doctype html>

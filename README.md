@@ -210,7 +210,7 @@ public address from `$TASKA_PUBLIC` or `~/.taska/public-url`.
 
 - **Where it lives.** Everything is on your machine, in `~/.taska/<project>/`:
   - `taska.jsonl` holds every input, item, message and change, one JSON record per line, append only;
-  - `taska-files/` holds images, files and voice notes.
+  - `taska-files/` holds images, files and voice notes, each voice note with its transcript (`<file>.tr.json`).
 - **What leaves your machine.** Only what you send to Gemini for organizing and transcription. That happens only
   when you set `GEMINI_API_KEY`.
 
