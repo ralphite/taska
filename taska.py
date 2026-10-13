@@ -4112,6 +4112,7 @@ async function sendDocComment(t) {
   catch (_) { $('text').value = text; saveDraft(); grow(); return; }
   U.docThreads.add(t.key); U.docSel = new Set(); U.docQuote = null; U.docReply = null;
   getSelection()?.removeAllRanges(); renderDoc(); renderComposer(); toast(t.reply ? 'Reply added' : 'Comment added');
+  if (desk()) $('text').focus({preventScroll: true});
 }
 function renderDocBar() { renderComposer(); }  // the comment target shows on the input box
 const docSig = d => d ? `${d.title}|${d.md}|${d.blocks.reduce((k, b) => k + b.comments.length, 0)}|${d.detached.length}` : '';
@@ -4631,6 +4632,7 @@ async function sendCorrect() {
     $('text').value = ''; saveDraft(); grow(); U.correct = null; getSelection()?.removeAllRanges();
     await load(); toast(`Fixed ${c.id}. Voice notes will write “${right}” from now on`);
     if (desk() && D.compose) renderDetail();
+    if (desk()) $('text').focus({preventScroll: true});
     P_CACHE.fixes = null;
   } catch (_) { toast('Connection lost. Your words are still in the box; try again.'); }
 }
@@ -4651,6 +4653,7 @@ async function sendAmend() {
     $('text').value = ''; U.files = []; saveDraft(); grow(); U.amend = null;
     await load(); toast(a.mode === 'edit' ? `${a.id} updated` : `Added to ${a.id}`);
     if (desk() && D.compose) renderDetail();
+    if (desk()) $('text').focus({preventScroll: true});
   } catch (_) { toast('Connection lost. Your words are still in the box; try again.'); }
 }
 
@@ -4909,6 +4912,7 @@ async function send() {
   if (U.peek && n === U.peek) advance(U.peek, `Sent to ${code(n)}`);  // going through: your reply settles this one; a card of one item closes (B153); the toast says where it went (B155)
   else if (!desk() && !n && U.tab === 'inputs' && !U.open) $('inputsView').scrollTop = 0;  // it shows at the top of Inputs (B155)
   else if (desk() && U.go && U.open && !U.scopeOff && U.go.list.includes(U.open)) { $('text').blur(); advanceDesk(U.open, 'Replied'); }  // B118
+  else if (desk()) $('text').focus({preventScroll: true});  // A1: sent from the button, the box is where you go on writing, not the keys
   render(); flushOutbox();
   if (desk() && D.compose) $('foot').scrollTop = 0;
   else if (desk() && n && n === U.open && !U.go) requestAnimationFrame(() => { $('detailBody').scrollTop = $('detailBody').scrollHeight; });  // B124
@@ -5065,6 +5069,7 @@ async function finishRec(andSend, kept) {
                        key: U.draftKey, scope: scopeN() ? code(scopeN()) : null});
   U.files.push(f); renderComposer();
   if (andSend) send();
+  else if (desk() && !kept) $('text').focus({preventScroll: true});  // A1: words into the box, and the box is where you go on
   keepRec(f).then(() => hear(f));  // kept before anything goes over the network; not awaited: nothing is held up meanwhile
 }
 
@@ -5843,6 +5848,7 @@ const ACT = {
     if (U.docSel.has(k)) U.docSel.delete(k); else U.docSel.add(k);
     U.docQuote = null; U.docReply = null;
     renderDoc();
+    if (desk() && docTarget()) $('text').focus({preventScroll: true});  // A1: you picked what to comment on: now write
   },
   'doc-unpick': () => { U.docSel = new Set(); U.docQuote = null; U.docReply = null; U.docDrafts.note = ''; getSelection()?.removeAllRanges(); renderDoc(); },
   'doc-close': () => closeDoc(),
@@ -6578,6 +6584,9 @@ function deskKey(e) {
   // ⌥V records even while you type in the box (B91): there a plain V is a letter.
   if (e.altKey && e.code === 'KeyV' && !e.metaKey && !e.ctrlKey && $('viewer').hidden && $('overlay').hidden) { e.preventDefault(); return R.rec ? finishRec(false) : startRec(); }
   if (typing || e.altKey || !$('viewer').hidden) return;
+  // A1: while the box waits for words (a correction, an edit, a comment on what you picked) a letter is a word, not a
+  // command: it goes into the box, which takes the key as it is pressed.
+  if (!R.rec && $('overlay').hidden && e.key.length === 1 && !e.metaKey && !e.ctrlKey && (U.correct || U.amend || docTarget())) return $('text').focus({preventScroll: true});
   // While recording, the keys of the box (F095): ↵ stops into the box, ⇧↵ or ⌘↵ stops and sends, Esc discards.
   // ⇧↵ means send even on the button you just clicked (B164); a plain ↵ there presses that button, as below.
   if (R.rec && e.key === 'Enter' && !e.isComposing && (e.shiftKey || e.metaKey || e.ctrlKey)) { e.preventDefault(); return finishRec(true); }
