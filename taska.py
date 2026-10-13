@@ -3240,7 +3240,7 @@ function needsRow(it) {
       <div class="min-w-0 flex-1">
         <p class="line-clamp-2 text-[15px] leading-snug font-medium lg:line-clamp-1"><span class="mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[it.type]}">${code(it.n)}</span>${esc(it.title)}</p>
         <div class="mt-1 flex min-w-0 items-center gap-2 text-xs font-medium">
-          ${it.type === 'rule' ? '' : `<span class="shrink-0 ${PRI_TEXT[it.pri]}">${it.pri}</span>`}<span class="shrink-0 font-semibold ${NEED[v].text}">${needLabel(it)}</span>${it.parent ? `<span class="shrink-0 text-zinc-500 dark:text-zinc-400">↳ ${code(it.parent)}</span>` : ''}
+          ${it.type === 'rule' ? '' : `<span class="shrink-0 ${PRI_TEXT[it.pri]}">${it.pri}</span>`}<span class="shrink-0 font-semibold ${NEED[v].text}">${needLabel(it)}</span>${it.when === 'later' ? `<span class="shrink-0">${SOFT('Later')}</span>` : ''}${it.parent ? `<span class="shrink-0 text-zinc-500 dark:text-zinc-400">↳ ${code(it.parent)}</span>` : ''}
           <span class="min-w-0 truncate font-normal text-zinc-500 dark:text-zinc-400">${esc(excerpt(it))}</span>
         </div>
       </div>
@@ -3294,8 +3294,8 @@ const ACT_BG = {Start: 'bg-blue-600 dark:bg-blue-500', "Won't do": 'bg-red-600 d
 function swipeRow(it, inner) {
   const fwd = swipeRight(it), back = swipeLeft(it), left = fwd?.[1] === 'done' ? openKids(it.n) : 0;
   return `<div class="relative overflow-hidden">
-    <div data-swipe-left hidden class="absolute inset-0 flex items-center gap-2 pl-6 text-sm font-semibold ${fwd?.[0] === 'need' ? NEED[fwd[1]].btn : 'bg-emerald-600 text-white dark:bg-emerald-500'}">${fwd ? ico(ACT_ICON[fwd[2]], 'size-5') + fwd[2] : ''}${left ? `<span class="font-normal">· ${plural(left, 'subitem')} still open</span>` : ''}</div>
-    <div data-swipe-right hidden class="absolute inset-y-0 right-0 flex">${back.map(([f, v, label], i) => `<button data-act="swipe" data-n="${it.n}" data-f="${f}" data-v="${v}" class="flex w-19 flex-col items-center justify-center gap-1 text-xs font-semibold text-white ${ACT_BG[label] || (i % 2 ? 'bg-zinc-500 dark:bg-zinc-600' : 'bg-zinc-600 dark:bg-zinc-700')}">${ico(ACT_ICON[label], 'size-5')}${label}</button>`).join('')}</div>
+    <div data-swipe-left hidden class="absolute inset-0 flex items-center gap-2 pl-6 text-sm font-semibold ${fwd && FWD_NEED[fwd[2]] ? NEED[FWD_NEED[fwd[2]]].btn : 'bg-emerald-600 text-white dark:bg-emerald-500'}">${fwd ? ico(ACT_ICON[fwd[2]], 'size-5') + fwd[2] : ''}${left ? `<span class="font-normal">· ${plural(left, 'subitem')} still open</span>` : ''}</div>
+    <div data-swipe-right hidden class="absolute inset-y-0 right-0 flex">${back.map(([f, v, label], i) => `<button data-act="${label === 'Not yet' ? 'reopen' : 'swipe'}" data-n="${it.n}" data-f="${f}" data-v="${v}" class="flex w-19 flex-col items-center justify-center gap-1 text-xs font-semibold text-white ${ACT_BG[label] || (i % 2 ? 'bg-zinc-500 dark:bg-zinc-600' : 'bg-zinc-600 dark:bg-zinc-700')}">${ico(ACT_ICON[label], 'size-5')}${label}</button>`).join('')}</div>
     <div data-swipe="${it.n}" class="relative touch-pan-y bg-white transition-transform duration-200 select-none [-webkit-touch-callout:none] dark:bg-zinc-950">${inner}</div>
   </div>`;
 }
@@ -3661,20 +3661,38 @@ function wireLasso() {
 }
 
 // ---------------------------------------------------------------- focus card
-// Long press on a row, or "Go through" on Needs you (T65): the item in a card above the input box, with what it
-// needs and its actions. For things that wait on you it steps through them one by one: act, and the next comes.
-const needsList = () => visible('items').filter(needsYou).map(it => it.n);
-const FOCUS_TONE = {Start: 'text-blue-600 dark:text-blue-400', "Won't do": 'text-red-600 dark:text-red-400', Done: 'text-emerald-700 dark:text-emerald-400'};
+// Long press on a row, a row's Answer or Reply, or "Go through" on Needs you (T65): the item in a card above the input
+// box, with what it needs and its actions. A row opens the card of that item only; Go through steps through what
+// waits on you, one card after another, and ends after the last (B153). While you go through, the card keeps its
+// height and place, Previous and Next sit at the bottom under your thumb, and every action keeps one slot in every
+// state, as on the desktop (B128): forward · progress · Won't do · Later · Copy. Opening the item or copying it
+// leaves the walk where it was. A swipe on the card means what it means on a row: right is its step forward.
+const laterLast = (a, b) => (a.when === 'later') - (b.when === 'later');  // Later moves an item that needs you down, out of the way (B153)
+const needsList = () => visible('items').filter(needsYou).sort(laterLast).map(it => it.n);
+const FOCUS_TONE = {Start: 'text-blue-600 dark:text-blue-400', "Won't do": 'text-red-600 dark:text-red-400', Done: 'text-emerald-700 dark:text-emerald-400', Archive: 'text-emerald-700 dark:text-emerald-400', Unarchive: 'text-emerald-700 dark:text-emerald-400'};
+const FWD_NEED = {Accept: 'accept', Approve: 'approve', Answer: 'answer', Reply: 'reply'};  // the forward step in the color of its kind, wherever it shows (B96, B41)
+function cardSlots(it) {
+  if (it.archived) return [['archived', 'false', 'Unarchive'], null, null, null];
+  const [, prog, drop, later] = deskSlots({...it, wait: null}, false);
+  return [swipeRight(it), prog, drop, later];
+}
 function peek(n, {focus = true} = {}) {
   const it = byN.get(n);
   if (!it) return;
   const moved = U.peek !== n;
-  if (needsYou(it) && !U.go) U.go = {list: needsList(), done: new Set()};  // something that waits on you: step through all of them
   U.peek = n;
-  const g = U.go && U.go.list.includes(n) ? U.go : null, files = filesOf(it), fwd = swipeRight(it), need = needLabel(it);
+  const g = U.go && U.go.list.includes(n) ? U.go : null, files = filesOf(it), need = needLabel(it), i = g ? g.list.indexOf(n) : -1;
   const recent = it.thread.filter(x => x.id !== it.wait?.id).slice(-3), talk = it.thread.length;  // the question itself is pinned above (B145)
-  const act = (f, v, label, tone) => `<button data-act="peek-set" data-n="${n}" data-f="${f}" data-v="${v}" class="flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl text-[11px] font-semibold ${tone}">${ico(ACT_ICON[label], 'size-5')}<span class="max-w-full truncate">${label}</span></button>`;
-  const head = g ? `<span class="flex items-center gap-2"><span class="text-xs font-bold tracking-wide whitespace-nowrap text-amber-700 uppercase dark:text-amber-400">Needs you</span><span class="text-xs font-medium whitespace-nowrap text-zinc-500 tabular-nums dark:text-zinc-400">${g.list.indexOf(n) + 1} of ${g.list.length}</span></span>` : '';
+  const btn = (attrs, icon, label, tone) => `<button ${attrs} class="flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl text-[11px] font-semibold ${tone}">${ico(icon, 'size-5')}<span class="max-w-full truncate">${label}</span></button>`;
+  const slot = (a, k) => !a ? '<span class="h-14 min-w-0 flex-1"></span>'
+    : btn(`${k ? '' : 'data-slot="fwd" '}data-n="${n}" ${a[0] === 'need' ? 'data-act="card-answer"' : a[0] === 'reopen' ? 'data-act="reopen"' : `data-act="peek-set" data-f="${a[0]}" data-v="${a[1]}"`}`,
+      ACT_ICON[a[2]], a[2], FWD_NEED[a[2]] ? NEED[FWD_NEED[a[2]]].text : FOCUS_TONE[a[2]] || 'text-zinc-700 dark:text-zinc-200');
+  const last = g && !g.list.slice(i + 1).some(k => !g.done.has(k) && byN.get(k) && needsYou(byN.get(k)));  // nothing after this one: Next ends the walk
+  const nav = g ? `<div class="flex items-center gap-1 px-2 pt-1">
+      <button data-act="go-prev" ${i > 0 ? '' : 'disabled'} class="flex h-11 items-center gap-0.5 rounded-full pr-3 pl-1.5 text-sm font-semibold text-zinc-700 disabled:opacity-30 dark:text-zinc-200">${ico('left', 'size-4', '2.25')}Previous</button>
+      <span class="min-w-0 flex-1 text-center text-xs font-medium text-zinc-500 tabular-nums dark:text-zinc-400">${i + 1} of ${g.list.length}</span>
+      <button data-act="go-next" class="flex h-11 items-center gap-0.5 rounded-full pr-1.5 pl-3 text-sm font-semibold text-zinc-700 dark:text-zinc-200">${last ? 'End' : `Next${ico('right', 'size-4', '2.25')}`}</button></div>` : '';
+  const head = g ? `<span class="flex items-center gap-2"><span class="text-xs font-bold tracking-wide whitespace-nowrap text-amber-700 uppercase dark:text-amber-400">Needs you</span><span class="text-xs font-medium whitespace-nowrap text-zinc-500 tabular-nums dark:text-zinc-400">${i + 1} of ${g.list.length}</span></span>` : '';
   dialog('', `<div class="pb-1">
     <div class="flex items-center gap-2">${stateIcon(it.status, statusName(it), 'size-5')}<span class="font-mono text-sm font-bold ${TYPE_TEXT[it.type]}">${code(n)}</span>${need ? `<span class="text-xs font-semibold text-amber-700 dark:text-amber-400">${need}</span>` : ''}
       <button data-act="goto" data-n="${n}" class="-my-2 ml-auto flex h-11 items-center gap-1.5 rounded-full px-2 text-sm font-medium text-blue-600 dark:text-blue-400">${ico('open', 'size-4')}Open</button></div>
@@ -3686,26 +3704,27 @@ function peek(n, {focus = true} = {}) {
     ${it.wait ? `<div data-need class="mt-4 scroll-mt-2">${needsCard(it)}</div>` : ''}
     ${recent.length ? `<div class="mt-4 flex flex-col gap-4">${recent.map(x => msgHtml(x, 'p', 0, answerOf(it.thread, x))).join('')}</div>` : ''}
   </div>`, {
-    aboveComposer: true, focus, card: true, head,
-    extra: g ? `<button data-act="go-next" class="ml-auto flex h-11 items-center gap-0.5 rounded-full pr-1.5 pl-3 text-sm font-semibold text-zinc-700 dark:text-zinc-200">Next${ico('right', 'size-4', '2.25')}</button>` : '',
+    aboveComposer: true, focus, card: true, head, walk: !!g,
     sub: g ? `<div class="flex gap-1 px-4 pb-1" aria-hidden="true">${g.list.map(k => `<span class="h-1 flex-1 rounded-full ${k === n ? 'bg-amber-500 dark:bg-amber-400' : g.done.has(k) ? 'bg-emerald-500 dark:bg-emerald-400' : 'bg-zinc-200 dark:bg-zinc-700'}"></span>`).join('')}</div>` : '',
-    foot: `<div class="flex gap-1 border-t border-zinc-100 px-2 py-1 dark:border-zinc-800">
-      ${!fwd ? '' : fwd[0] === 'need' ? `<button data-act="card-answer" data-n="${n}" class="flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl text-[11px] font-semibold ${NEED[fwd[1]].text}">${ico(ACT_ICON[fwd[2]], 'size-5')}<span class="max-w-full truncate">${fwd[2]}</span></button>`
-        : act(fwd[0], fwd[1], fwd[2], 'text-emerald-700 dark:text-emerald-400')}${swipeLeft(it).map(([f, v, label]) => act(f, v, label, FOCUS_TONE[label] || 'text-zinc-700 dark:text-zinc-200')).join('')}
-      <button data-act="copy" data-n="${n}" class="flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl text-[11px] font-semibold text-zinc-700 dark:text-zinc-200">${ico('copy', 'size-5')}Copy</button></div>`,
+    foot: `<div class="border-t border-zinc-100 dark:border-zinc-800">${nav}<div class="flex gap-1 px-2 py-1">${cardSlots(it).map(slot).join('')}
+      ${btn(`data-act="card-copy" data-n="${n}"`, 'copy', 'Copy', 'text-zinc-700 dark:text-zinc-200')}</div></div>`,
   });
   if (moved) $('dlgBody').scrollTop = 0;
   renderComposer();
 }
-// After you act on an item while going through: the next one that still waits on you, or done.
+// After you act on an item while going through: the next one after it that still waits on you. After the last, the
+// walk ends and says what is left: the ones you skipped still wait in the list (B153). A card of one item closes.
 function advance(from) {
   const g = U.go;
   if (!g) return closeDialog();
   if (from) g.done.add(from);
-  const left = g.list.filter(k => !g.done.has(k) && byN.get(k) && needsYou(byN.get(k)) && k !== from);
-  const next = left.find(k => g.list.indexOf(k) > g.list.indexOf(from)) ?? left[0];
-  if (next) peek(next, {focus: false});
-  else { closeDialog(); toast('Nothing else needs you'); }
+  const next = g.list.slice(g.list.indexOf(from) + 1).find(k => !g.done.has(k) && byN.get(k) && needsYou(byN.get(k)));
+  if (next) peek(next, {focus: false}); else endWalk();
+}
+function endWalk() {
+  const g = U.go, left = g ? g.list.filter(k => !g.done.has(k) && byN.get(k) && needsYou(byN.get(k))).length : 0;
+  closeDialog();
+  toast(left ? `That was the last one · ${left} still need${left === 1 ? 's' : ''} you` : 'Nothing else needs you');
 }
 
 // ---------------------------------------------------------------- item page
@@ -3862,7 +3881,7 @@ function renderItems() {
     html = rows.length ? rows.map(it => itemRow(it)).join('') : EMPTY('Nothing archived yet.<br>Archive finished items from the end of the Items list, or from an item\'s ⋯.');
   } else {
     // Items, in the order of your loop (T65 "Needs you first"): what waits on you, the agent's queue, finished work.
-    const going = desk() && U.go, needs = rows.filter(it => needsYou(it) || (going && going.done.has(it.n) && going.list.includes(it.n)));
+    const going = desk() && U.go, needs = rows.filter(it => needsYou(it) || (going && going.done.has(it.n) && going.list.includes(it.n))).sort(laterLast);  // Later: still yours, below the rest (B153)
     const settled = it => going && going.done.has(it.n) && going.list.includes(it.n);
     const queue = rows.filter(it => inQueue(it) && !settled(it)).sort(queueOrder);
     const done = rows.filter(it => CLOSED(it.status) && !it.archived && !settled(it)), arch = rows.filter(it => it.archived);
@@ -4129,6 +4148,7 @@ function renderComposer() {
     line = scopeLine(desk() ? 'reply' : 'scope', `${desk() || it.wait ? 'Reply to' : 'Adding to'} ${code(n)}`, ticks.length ? ticks.map(l => '✓ ' + esc(oneLine(l))).join(' · ') : esc(it.title),
       desk() ? scopeLink('new-input', 'New input instead', 'C', 'Write a new input to the whole project instead · C') : scopeX('unscope', 'Send to the whole project instead'));
     if (desk()) ph = `Reply to ${code(n)}…`;
+    if (U.ask === n) ph = `What is missing in ${code(n)}?`;  // after Not yet (B153)
     if (ticks.length) send = 'Send answer';
   } else if (ruleMode()) {
     line = scopeLine('scope', 'New rule for this project', '', desk() ? ruleFlip() : '');
@@ -4258,7 +4278,8 @@ async function send() {
   U.note = null;
   outboxPush({text, files: U.files, scope: n ? code(n) : null, from: !n && ruleMode() ? 'rules' : null});
   $('text').value = ''; U.files = []; saveDraft(); grow();
-  if (U.peek && U.go && n === U.peek) advance(U.peek);  // going through: your reply settles this one
+  if (U.ask === n) U.ask = null;
+  if (U.peek && n === U.peek) advance(U.peek);  // going through: your reply settles this one; a card of one item closes (B153)
   else if (desk() && U.go && U.open && !U.scopeOff && U.go.list.includes(U.open)) { $('text').blur(); advanceDesk(U.open, 'Replied'); }  // B118
   render(); flushOutbox();
   if (desk() && D.compose) $('foot').scrollTop = 0;
@@ -4564,11 +4585,12 @@ function swapDraft(key) {
 
 // Every sheet: a handle, a title row (or `head`), optional `extra` buttons beside the close button, an optional
 // `sub` line under it and a fixed `foot`. The focus card (`card`) floats above the input box instead.
-function dialog(title, html, {aboveComposer = false, focus = true, tall = false, card = false, head = '', extra = '', sub = '', foot = '', pop = false} = {}) {
+function dialog(title, html, {aboveComposer = false, focus = true, tall = false, card = false, head = '', extra = '', sub = '', foot = '', pop = false, walk = false} = {}) {
+  $('dlg').classList.toggle('h-[92%]', walk);  // going through, every card has the same height: nothing moves under your thumb (B153)
   if (head) $('dlgTitle').innerHTML = head; else $('dlgTitle').textContent = title;
   $('dlgExtra').innerHTML = extra;
   $('dlgSub').innerHTML = sub; $('dlgSub').hidden = !sub;
-  $('dlgFoot').innerHTML = foot; $('dlgFoot').hidden = !foot;
+  $('dlgFoot').innerHTML = foot; $('dlgFoot').hidden = !foot || (card && !desk() && document.activeElement === $('text'));  // typing on the card: room for the question (B153)
   $('dlgBody').classList.toggle('pb-[max(1.25rem,env(safe-area-inset-bottom))]', !foot); $('dlgBody').classList.toggle('pb-3', !!foot);
   if ($('overlay').hidden && !U.doc && U.sheet !== 'log') layerOpen('sheet');  // one step Back closes it (B150); a document and the log have their own address
   $('dlgBody').innerHTML = html; $('overlay').hidden = false;
@@ -4819,6 +4841,10 @@ function closeItem() {
   writeURL(false, null);
   render();
   if (!desk()) [$('list').scrollTop, $('inputsView').scrollTop] = U.listTop || [0, 0];
+  if (!desk() && U.goBack) {  // back from the item you opened while going through: the walk goes on where it was (B153)
+    const w = U.goBack; U.goBack = null;
+    requestAnimationFrame(() => { U.go = w.go; const it = byN.get(w.n); if (it && needsYou(it) && !w.go.done.has(w.n)) peek(w.n, {focus: false}); else advance(w.n); });
+  }
 }
 
 function clearSearch() { U.q = ''; $('q').value = ''; qSync(); writeURL(false); renderItems(); if (U.tab === 'inputs') renderInputs(); }
@@ -4832,7 +4858,7 @@ function setTab(t) {
     for (const k of VIEW_KEYS) U[k] = v[k] ?? (k === 'q' ? '' : 'all');
     $('q').value = U.q; qSync();
   }
-  U.asRule = null; U.amend = null; U.correct = null; if (t === 'inputs' && was !== 'inputs') U.inputsEnd = true;
+  U.asRule = null; U.amend = null; U.correct = null; U.goBack = null; if (t === 'inputs' && was !== 'inputs') U.inputsEnd = true;
   if (!desk() && t !== was && !U.open) U.tabTop[was] = tabScroll(was).scrollTop;  // where you were in this tab (B152)
   U.tab = t;
   if (t !== was && !desk()) writeURL(true);
@@ -4905,7 +4931,7 @@ const ACT = {
   },
   status: async b => {
     const n = Number(b.dataset.n);
-    try { await change(n, 'status', b.dataset.v); if (U.peek === n && U.go) advance(n); } catch (_) {}
+    try { await change(n, 'status', b.dataset.v); if (U.peek === n) advance(n); } catch (_) {}  // the next card, or the card of one item closes (B153)
   },
   // The action on a row that waits on you: Accept and Approve happen at once (with Undo); Answer and Reply open
   // the focus card on that item, Reply with the input box ready.
@@ -4922,8 +4948,12 @@ const ACT = {
     peek(n);
     if (v === 'reply' || !hasChoices(byN.get(n)?.wait?.text)) $('text').focus();
   },
-  'go-through': () => { if (desk()) return startGoDesk(); U.go = {list: needsList(), done: new Set()}; if (U.go.list.length) peek(U.go.list[0]); },
-  'go-prev': () => { const g = U.go; if (!g) return; const i = g.list.indexOf(U.open); if (i <= 0) return toast('This is the first one'); openItem(g.list[i - 1]); },
+  'go-through': () => { if (desk()) return startGoDesk(); const list = needsList(); if (!list.length) return toast('Nothing needs you right now'); U.go = {list, done: new Set()}; peek(list[0]); },
+  'go-prev': () => {
+    const g = U.go; if (!g) return;
+    if (!desk()) { const i = g.list.indexOf(U.peek); if (i > 0 && byN.get(g.list[i - 1])) peek(g.list[i - 1], {focus: false}); return; }  // the card before, as you left it (B153)
+    const i = g.list.indexOf(U.open); if (i <= 0) return toast('This is the first one'); openItem(g.list[i - 1]);
+  },
   'go-end': () => { U.go = null; render(); },
   'go-undo': b => { const n = Number(b.dataset.n); U.go?.undo[n]?.(); },
   prev: () => stepItem(-1),
@@ -4957,10 +4987,17 @@ const ACT = {
       return next ? openItem(next) : toast('Nothing else needs you');
     }
     const g = U.go, i = g ? g.list.indexOf(U.peek) : -1;
-    const next = g && [...g.list.slice(i + 1), ...g.list.slice(0, i)].find(k => byN.get(k) && needsYou(byN.get(k)) && !g.done.has(k));
-    if (next) peek(next, {focus: false}); else toast('Nothing else needs you');
+    const next = g && g.list.slice(i + 1).find(k => byN.get(k) && needsYou(byN.get(k)) && !g.done.has(k));  // no going round: after the last, the walk ends (B153)
+    if (next) peek(next, {focus: false}); else if (g) endWalk();
   },
-  reopen: async b => { const n = Number(b.dataset.n); if (desk() && U.open !== n) openItem(n); try { await setStatus(n, 'doing'); U.scopeOff = false; renderComposer(); $('text').focus(); toast(`${code(n)} reopened. Say what is missing.`); } catch (_) {} },
+  // Not yet reopens and asks what is missing, wherever you tap it (B153): on the phone a row's Not yet opens its card.
+  reopen: async b => {
+    const n = Number(b.dataset.n);
+    if (desk() && U.open !== n) openItem(n);
+    if (!desk() && U.open !== n && U.peek !== n) { closeSwipe(); peek(n, {focus: false}); }
+    try { await setStatus(n, 'doing'); U.ask = n; U.scopeOff = false; renderComposer(); $('text').focus(); toast(`${code(n)} reopened. Say what is missing.`); } catch (_) {}
+  },
+  'card-copy': b => copyItem(Number(b.dataset.n)),  // the card stays: copying is no reason to lose your place (B153)
   projects: () => openDrawer(),
   'new-project': () => {  // B131: the button becomes a name field in place; Enter makes it, Esc stops
     if ($('npName')) return $('npName').focus();
@@ -5014,9 +5051,10 @@ const ACT = {
     try { await op({op: 'set', ref: code(n), f: {[b.dataset.f]: b.dataset.v}}); if (!$('overlay').hidden) itemMenu(n); } catch (_) {}
   },
   goto: b => {  // from a chip, a source, a subitem, the change log or Make item: to the item, leaving pages that hide it
+    const walk = !desk() && U.go && U.peek && !$('overlay').hidden ? {go: U.go, n: U.peek} : null;  // Open on a card while going through: back from the item, the walk goes on (B153)
     LAY.keep = !desk() && U.sheet === 'log'; closeDialog();  // the log keeps its step: Back comes back to it (B150)
     const n = Number(b.dataset.n), it = byN.get(liveN(n));
-    if (!desk()) return openItem(n);
+    if (!desk()) { openItem(n); U.goBack = walk; return; }
     keepPlace();  // B9: one step in the history, so Back comes back here, scrolled as it was
     URLS.hold = true;
     try {
@@ -5945,20 +5983,44 @@ function backEnd() {
 $('detailView').addEventListener('touchend', backEnd);
 $('detailView').addEventListener('touchcancel', () => { BK.dx = 0; backEnd(); });
 
-// Going through what needs you: swipe the card sideways for the next or the previous item.
+// A swipe on the card means what it means on a row (B153): right is its step forward (Accept, Approve, Answer, Reply,
+// Done), left skips to the next card while you go through. The card follows the finger, and the button that letting
+// go will press lights up first.
 const FC = {x: null};
+function cardAim(dx) {
+  const f = $('dlgFoot').querySelector('[data-slot="fwd"]'), nx = $('dlgFoot').querySelector('[data-act="go-next"]');
+  for (const [b, on] of [[f, dx > 80], [nx, dx < -80]]) if (b) for (const c of ['bg-zinc-100', 'dark:bg-zinc-800']) b.classList.toggle(c, on);
+}
 $('dlgBody').addEventListener('touchstart', e => {
-  FC.x = U.go && e.touches.length === 1 && !e.target.closest('.overflow-x-auto, pre, textarea, input') ? e.touches[0].clientX : null;
-  FC.y = e.touches[0].clientY;
+  FC.x = U.peek && e.touches.length === 1 && !e.target.closest('.overflow-x-auto, pre, textarea, input') ? e.touches[0].clientX : null;
+  FC.y = e.touches[0].clientY; FC.dx = 0; FC.on = false;
 }, {passive: true});
-$('dlgBody').addEventListener('touchend', e => {
-  if (FC.x === null || !U.go) return;
-  const t = e.changedTouches[0], dx = t.clientX - FC.x, dy = t.clientY - FC.y, g = U.go;
-  FC.x = null;
-  if (Math.abs(dx) < 70 || Math.abs(dx) < 2 * Math.abs(dy)) return;
-  const i = g.list.indexOf(U.peek), k = g.list[(i + (dx < 0 ? 1 : -1) + g.list.length) % g.list.length];
-  if (k !== U.peek && byN.get(k)) peek(k, {focus: false});
+$('dlgBody').addEventListener('touchmove', e => {
+  if (FC.x === null) return;
+  const t = e.touches[0], dx = t.clientX - FC.x, dy = t.clientY - FC.y;
+  if (!FC.on) {
+    if (Math.abs(dy) > 12 && Math.abs(dy) > Math.abs(dx)) { FC.x = null; return; }  // scrolling the card
+    if (Math.abs(dx) < 12) return;
+    FC.on = true; $('dlg').style.transition = 'none';
+  }
+  FC.dx = dx; $('dlg').style.transform = `translateX(${dx}px)`; cardAim(dx);
 }, {passive: true});
+function cardLetGo() {
+  if (FC.x === null) return;
+  const dx = FC.dx, on = FC.on;
+  FC.x = null; FC.on = false; $('dlg').style.transition = ''; $('dlg').style.transform = ''; cardAim(0);
+  if (on && Math.abs(dx) > 80) $('dlgFoot').querySelector(dx > 0 ? '[data-slot="fwd"]' : '[data-act="go-next"]')?.click();
+}
+$('dlgBody').addEventListener('touchend', cardLetGo, {passive: true});
+$('dlgBody').addEventListener('touchcancel', () => { FC.dx = 0; cardLetGo(); }, {passive: true});
+// While you type with the card open, what you answer stays in sight (B153): the card scrolls to the question, and its
+// buttons make room until the keyboard goes.
+$('text').addEventListener('focus', () => {
+  if (desk() || !U.peek || $('overlay').hidden) return;
+  $('dlgFoot').hidden = true;
+  requestAnimationFrame(() => $('dlgBody').querySelector('[data-need]')?.scrollIntoView({block: 'start'}));
+});
+$('text').addEventListener('blur', () => { if (!desk() && U.peek && !$('overlay').hidden && $('dlgFoot').innerHTML) $('dlgFoot').hidden = false; });
 
 $('list').addEventListener('pointerdown', swipeStart);
 $('list').addEventListener('pointermove', swipeMove);
