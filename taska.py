@@ -3720,8 +3720,10 @@ const excerpt = it => oneLine(it.wait ? it.wait.text : it.status === 'review' ? 
 // a finger scrolls the list.
 const rowTint = () => 'lg:hover:bg-zinc-50 dark:lg:hover:bg-zinc-900/70 lg:aria-[current=true]:bg-blue-50 dark:lg:aria-[current=true]:bg-blue-400/10 pointer-coarse:transition-colors pointer-coarse:delay-75 data-pressed:bg-zinc-100 lg:data-pressed:bg-zinc-100 dark:data-pressed:bg-zinc-900 dark:lg:data-pressed:bg-zinc-900';
 const rowCur = it => U.open === it.n ? 'aria-current="true"' : '';
-const ACT_KEY = {Done: 'D', Accept: 'A', Approve: 'A', Archive: 'E', Unarchive: 'E', Later: 'L', 'Back to now': 'L', "Won't do": 'W', 'Not yet': 'N'};
-const ACT_TONE = {Done: 'text-emerald-600 dark:text-emerald-400', Accept: 'text-emerald-600 dark:text-emerald-400', Approve: 'text-blue-600 dark:text-blue-400', Archive: 'text-emerald-600 dark:text-emerald-400', Start: 'text-blue-600 dark:text-blue-400', "Won't do": 'text-red-600 dark:text-red-400'};
+const ACT_KEY = {Done: 'D', Accept: 'A', Approve: 'A', Archive: 'E', Unarchive: 'E', Later: 'L', 'Back to now': 'L', "Won't do": 'W', 'Not yet': 'N',
+  Start: 'S then 3', Pause: 'S then 2', Reopen: 'S then 2', Retire: 'W', Reactivate: 'D'};  // S then a digit: the ⋯ menu's status (T113 B30, A16)
+const ACT_TONE = {Done: 'text-emerald-600 dark:text-emerald-400', Accept: 'text-emerald-600 dark:text-emerald-400', Approve: 'text-blue-600 dark:text-blue-400', Archive: 'text-emerald-600 dark:text-emerald-400', Start: 'text-blue-600 dark:text-blue-400', "Won't do": 'text-red-600 dark:text-red-400',
+  Retire: 'text-red-600 dark:text-red-400', Reactivate: 'text-blue-600 dark:text-blue-400'};
 // On the desktop the actions keep one order on every row (B128): forward · progress · Won't do · Later; the ones that
 // do not apply are left out, with no gaps (B135). Rows waiting on your answer offer only Later: the pill answers.
 // (The phone's swipes keep their own order.)
@@ -3729,6 +3731,8 @@ function deskSlots(it, needs) {
   const later = it.when === 'now' ? ['when', 'later', 'Later'] : ['when', 'now', 'Back to now'], drop = ['status', 'dropped', "Won't do"];
   if (it.archived) return [['archived', 'false', 'Unarchive'], null, null, null];
   if (it.wait) return [null, null, null, later];
+  if (it.type === 'rule') return it.status === 'proposed' ? [needs ? null : ['status', 'open', 'Approve'], null, drop, null]  // a rule's own words (T113 B21)
+    : it.status === 'open' ? [null, null, ['status', 'dropped', 'Retire'], null] : [['archived', 'true', 'Archive'], ['status', 'open', 'Reactivate'], null, null];
   const fwd = needs ? null : swipeRight(it);
   const prog = it.status === 'open' ? ['status', 'doing', 'Start'] : it.status === 'doing' ? ['status', 'open', 'Pause'] : it.status === 'review' ? ['reopen', '', 'Not yet'] : CLOSED(it.status) ? ['status', 'open', 'Reopen'] : null;
   return [fwd, prog, ['open', 'doing', 'proposed'].includes(it.status) ? drop : null, CLOSED(it.status) ? null : later];
@@ -5401,7 +5405,7 @@ const closeDialog = () => {
   const edit = U.docEdit;
   if (edit) keepDoc();  // closing the editor keeps what you wrote, as a draft: only Create or Save publish it (T113 B6)
   if (desk()) {  // a document lives in the item pane (T110): closing a sheet or the editor leaves it open there
-    U.docNew = null; U.docEdit = false; U.sheet = null; U.go = null;
+    U.docNew = null; U.docEdit = false; U.sheet = null; U.go = null; U.menuArm = null;
     $('overlay').hidden = true; $('overlay').style.bottom = '';
     if (U.peek) { U.peek = null; renderComposer(); }
     if (edit && U.doc) { D.docKey = null; renderDetail(); renderComposer(); }
@@ -5412,6 +5416,7 @@ const closeDialog = () => {
   U.doc = null; U.docNew = null; U.docEdit = false; U.sheet = null; U.go = null; U.docReply = null;
   $('overlay').hidden = true; $('overlay').style.bottom = '';
   if (!$('toast').hidden) placeToast();
+  U.menuArm = null;
   if (U.peek) { U.peek = null; renderComposer(); }
   else if (hadDoc) { renderComposer(); if (!leaveView(`D${hadDoc}`)) writeURL(false); }  // the box goes back to the item or the project
   if (sheet && !LAY.keep) { if (log) { if (!leaveView('log')) writeURL(false); } else layerShut('sheet'); }  // its step in the history goes too (B150)
@@ -5729,7 +5734,7 @@ function change(n, f, v, {said, note} = {}) {
   const settles = desk() && U.go && U.go.list.includes(n) && f === 'status';
   if (desk() && n === U.open) U.stepFrom = {n, rows: [...document.querySelectorAll('#list [data-act="open"][data-n]')].map(el => Number(el.dataset.n))};  // J goes on from here (B124)
   if (settles) { U.go.done.add(n); U.go.how[n] = said.replace(/^is (marked )?/, '').replace(/^./, c => c.toUpperCase()); U.go.undo[n] = run; }
-  if (!settles && (n !== U.open || (desk() && LIST.in))) holdRow(n, `${said.replace(/^./, c => c.toUpperCase())}`, run);  // the phone's list is under the card or the row you swiped (B148)
+  if (!settles && (n !== U.open || desk())) holdRow(n, `${said.replace(/^./, c => c.toUpperCase())}`, run);  // the phone's list is under the card or the row you swiped (B148)
   const left = f === 'status' && v === 'done' ? openKids(n) : 0;  // done before its subitems: say so (B147)
   const noted = f === 'status' && noteWith(n);  // B4: what you wrote for it goes with your decision
   toast(`${ref} ${said}${noted ? ', with your note' : ''}${left ? ` · ${plural(left, 'subitem')} still open` : ''}${note && !noted ? `. ${note}.` : ''}`, run);
@@ -6475,11 +6480,12 @@ function stepItem(dir) {
   const rows = now;
   if (!rows.length) return;
   const i = rows.indexOf(U.open), n = rows[i < 0 ? (dir > 0 ? 0 : rows.length - 1) : Math.max(0, Math.min(rows.length - 1, i + dir))];
-  if (n !== U.open) openItem(n);
+  if (n !== U.open) openItem(n); else hint(dir < 0 ? 'This is the first item' : 'This is the last item');  // a key that does nothing says why (T113 B26)
 }
 function fullWidth(on) {
   if (!U.open || on === D.full) return;
-  if (on) { keepPlace(); D.full = true; history.pushState({n: U.open, full: true}, '', P + code(U.open) + viewQuery()); render(); }
+  const doc = desk() && U.doc && !U.docEdit ? `D${U.doc}` : null;  // a document open over its item goes full width itself (T113 B20)
+  if (on) { keepPlace(); D.full = true; history.pushState({n: U.open, full: true, ...(doc ? {v: doc} : {})}, '', P + (doc || code(U.open)) + viewQuery()); render(); }
   else if (history.state?.full && !history.state.link) history.back();  // popstate leaves full width
   else { D.full = false; render(); if (history.state?.full) writeURL(false, null); }  // reached by a link (B9): Back goes to where it was
 }
@@ -6665,23 +6671,50 @@ async function deleteProject(slug) {
   toast(`Deleted ${d.title}`, () => projectCall('restore', {name: slug}).then(loadProjects).then(() => toast(`${d.title} is back`), ex => toast(ex.message)));
 }
 // The ⋯ menu on the desktop: a popover with the actions as rows, each with its key, then type, priority, status.
-function itemMenuDesk(n) {
+function itemMenuDesk(n, arm = U.menuArm) {  // arm: 's', 'p' or 't', the part the next digit or letter sets (T113 A16)
   const it = byN.get(n);
   if (!it) return;
-  U.sheet = 'menu';
+  const pick = x => x?.dataset?.act ? `[data-act="${x.dataset.act}"]${x.dataset.f ? `[data-f="${x.dataset.f}"]` : ''}${x.dataset.v ? `[data-v="${CSS.escape(x.dataset.v)}"]` : ''}` : '';
+  const again = U.sheet === 'menu' && !$('overlay').hidden && $('dlgBody').contains(document.activeElement) ? pick(document.activeElement) : '';  // redrawn after a change: the key stays where it was
+  U.sheet = 'menu'; U.menuFor = n; U.menuArm = arm;
   const row = (act, icon, label, key, attrs = '', sub = '') => `<button data-act="${act}" data-n="${n}" ${attrs} class="flex h-9 w-full items-center gap-3 rounded-lg px-2.5 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800">${ico(icon, 'size-[18px] text-zinc-500 dark:text-zinc-400')}<span class="min-w-0 flex-1 truncate">${label}${sub ? `<span class="ml-2 text-xs text-zinc-400">${sub}</span>` : ''}</span>${key ? `<kbd class="grid h-5 min-w-5 place-items-center rounded-md px-1 font-sans text-[11px] font-semibold text-zinc-400 ring-1 ring-zinc-300 dark:ring-zinc-600">${key}</kbd>` : ''}</button>`;
-  const lab = (t, keys) => `<div class="flex items-center justify-between px-1 pb-1.5 text-xs font-semibold text-zinc-500 dark:text-zinc-400">${t}<span class="font-normal text-zinc-400">${keys}</span></div>`;
-  const stat = ([v, t]) => { const on = it.status === v;
-    return `<button data-act="set-field" data-n="${n}" data-f="status" data-v="${v}" aria-pressed="${on}" class="${STAT_BTN} h-8 rounded-lg px-2">${statIcon(v, t, 'size-4')}<span class="truncate">${t}</span></button>`; };
+  const lab = (t, keys, on) => `<div class="flex items-center justify-between px-1 pb-1.5 text-xs font-semibold ${on ? 'text-blue-600 dark:text-blue-400' : 'text-zinc-500 dark:text-zinc-400'}">${t}<span class="font-normal ${on ? '' : 'text-zinc-400'}">${keys}</span></div>`;
+  const stat = ([v, t], i) => { const on = it.status === v;
+    return `<button data-act="set-field" data-n="${n}" data-f="status" data-v="${v}" aria-pressed="${on}" class="${STAT_BTN} h-8 rounded-lg px-2">${statIcon(v, t, 'size-4')}<span class="truncate">${t}</span>${arm === 's' ? `<span class="ml-auto pl-1 font-mono text-[11px] text-zinc-400 group-aria-pressed:text-white/70 dark:group-aria-pressed:text-zinc-900/60">${i + 1}</span>` : ''}</button>`; };  // after S: the digit that sets it
   const statuses = it.type === 'rule' ? Object.entries(RULE_STATUS).filter(([v]) => v !== 'proposed' || it.status === 'proposed') : Object.entries(STATUS);
   const state = it.archived ? row('archive', 'archive', 'Unarchive', 'E', 'data-on="0"') : CLOSED(it.status) ? row('archive', 'archive', 'Archive', 'E', 'data-on="1"')
     : it.type === 'rule' ? '' : row('swipe', 'clock', it.when === 'now' ? 'Later' : 'Back to now', 'L', `data-f="when" data-v="${it.when === 'now' ? 'later' : 'now'}"`);
   dialog('', `<div class="flex flex-col gap-3">
     <div class="-mx-1">${row('edit', 'pencil', 'Edit', 'I')}${row('copy', 'copy', 'Copy for agent', '⇧C')}${it.type === 'rule' ? '' : row('doc-new', 'docplus', 'New doc', '⇧D') + row('sub-new', 'listplus', 'Add subitem', '⇧A') + row('reparent', 'indent', 'Move under…', 'M', '', it.parent ? 'now under ' + code(it.parent) : 'stands on its own')}${state}</div>
-    <div class="border-t border-zinc-100 pt-3 dark:border-zinc-800">${lab('Type', 'T')}${segctl('set-field', 'type', [...TYPES, 'rule'].map(t => [t, letterOf(t) + `<span class="truncate">${t[0].toUpperCase() + t.slice(1)}</span>`]), it.type, true).replaceAll('data-k="type"', `data-f="type" data-n="${n}"`)}</div>
-    ${it.type === 'rule' ? '' : `<div>${lab('Priority', 'P')}${segctl('set-field', 'pri', ['P0', 'P1', 'P2', 'P3'].map(p => [p, p === 'P0' ? '<span class="font-semibold text-red-600 dark:text-red-400">P0</span>' : p]), it.pri, true).replaceAll('data-k="pri"', `data-f="pri" data-n="${n}"`)}</div>`}
-    <div>${lab('Status', 'S')}<div class="grid grid-cols-3 gap-1">${statuses.map(stat).join('')}</div></div>
+    <div class="border-t border-zinc-100 pt-3 dark:border-zinc-800">${lab('Type', 'T then F B I T R', arm === 't')}${segctl('set-field', 'type', [...TYPES, 'rule'].map(t => [t, letterOf(t) + `<span class="truncate">${t[0].toUpperCase() + t.slice(1)}</span>`]), it.type, true).replaceAll('data-k="type"', `data-f="type" data-n="${n}"`)}</div>
+    ${it.type === 'rule' ? '' : `<div>${lab('Priority', 'P then 0–3', arm === 'p')}${segctl('set-field', 'pri', ['P0', 'P1', 'P2', 'P3'].map(p => [p, p === 'P0' ? '<span class="font-semibold text-red-600 dark:text-red-400">P0</span>' : p]), it.pri, true).replaceAll('data-k="pri"', `data-f="pri" data-n="${n}"`)}</div>`}
+    <div>${lab('Status', `S then 1–${statuses.length}`, arm === 's')}<div class="grid grid-cols-3 gap-1">${statuses.map(stat).join('')}</div></div>
   </div>`, {pop: true, focus: false, head: `<span class="block truncate text-sm font-semibold"><span class="mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[it.type]}">${code(n)}</span>${esc(it.title)}</span>`});
+  const box = $('dlgBody'), f = {t: 'type', p: 'pri', s: 'status'}[arm];  // the keys stay in the menu (B8)
+  ((again && box.querySelector(again)) || (f && (box.querySelector(`[data-f="${f}"][aria-pressed="true"]`) || box.querySelector(`[data-f="${f}"]`))) || box.querySelector('button'))?.focus({preventScroll: true});
+}
+// The ⋯ menu's own keys (T113 A16, B8): ↑ ↓ ← → and Tab move in it and never leave it; after S, P or T a digit or a
+// letter sets that part, as the menu shows (S then 1–6, P then 0–3, T then F B I T R); S, P or T again switch part.
+// -> true when the menu took the key; other letters close it and do what they do (B131).
+const TYPE_OF_LETTER = Object.fromEntries(Object.entries(LETTER).map(([t, l]) => [l.toLowerCase(), t]));
+function menuKey(e) {
+  const k = e.key, box = $('dlgBody');
+  if (['ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(k)) {
+    const btns = [...box.querySelectorAll('button:not(:disabled)')], i = btns.indexOf(document.activeElement);
+    const d = k === 'ArrowDown' || k === 'ArrowRight' || (k === 'Tab' && !e.shiftKey) ? 1 : -1;
+    e.preventDefault();
+    btns[i < 0 ? (d > 0 ? 0 : btns.length - 1) : (i + d + btns.length) % btns.length]?.focus();
+    return true;
+  }
+  if (k.length !== 1 || (e.shiftKey && k !== k.toLowerCase())) return false;  // ⇧C, ⇧D, ⇧A: the menu's own shortcuts (B131)
+  const low = k.toLowerCase(), f = {p: 'pri', t: 'type', s: 'status'}[U.menuArm];
+  const v = U.menuArm === 'p' && /^[0-3]$/.test(k) ? 'P' + k : U.menuArm === 't' ? TYPE_OF_LETTER[low]
+    : U.menuArm === 's' && /^[1-9]$/.test(k) ? box.querySelectorAll('[data-f="status"]')[Number(k) - 1]?.dataset.v : null;
+  const b = f && v && box.querySelector(`[data-f="${f}"][data-v="${v}"]`);
+  if (b) { e.preventDefault(); b.focus({preventScroll: true}); b.click(); return true; }  // the key stays on what it set
+  if (['s', 'p', 't'].includes(low)) { e.preventDefault(); itemMenuDesk(U.menuFor, low); return true; }
+  if (/^[0-9]$/.test(k)) { e.preventDefault(); hint(f ? `${{pri: 'Priority', type: 'Type', status: 'Status'}[f]}: ${{pri: '0–3', type: 'F B I T R', status: `1–${box.querySelectorAll('[data-f="status"]').length}`}[f]}` : 'First S, P or T: then a digit'); return true; }
+  return false;
 }
 // Move under…: pick the parent from a list you can type into, instead of typing a code. On the phone it is a sheet
 // with finger-sized rows, and the list shows before the keyboard does (B156).
@@ -6706,7 +6739,7 @@ function movePicker(n) {
 
 const KEYS = [
   ['Move', [['J / K', 'Next or previous item'], ['⇧J / ⇧K', 'Next or previous item that needs you (Go through)'], ['O or ↵', 'Full width; Esc goes back'], ['Space', 'Scroll the item'], ['G then I N A R', 'Items, Inputs, Archive, Rules'], ['G then P', 'Switch project (type to find it)'], ['G then S', 'Settings'], ['[', 'Show or hide the sidebar']]],
-  ['Act on the selected item', [['A', "The item's next step: Accept, Approve, Answer or Reply"], ['R', 'Reply or add to it'], ['N', 'Not yet: reopen and say what is missing'], ['1–9, ⌘↵', 'Pick a choice, send the answer'], ['D · W · L', "Done · Won't do · Later / Now"], ['E / ⇧E', 'Archive or unarchive / archive every finished item'], ['S · P · T', 'Status, priority, type (the ⋯ menu)'], ['M · ⇧C', 'Move under… · Copy for agent'], ['I · ⇧D · ⇧A', 'Edit · New doc · Add subitem'], ['.', 'All actions'], ['Z', 'Undo your last action here, again for the one before; older changes: Change log']]],
+  ['Act on the selected item', [['A', "The item's next step: Accept, Approve, Answer or Reply"], ['R', 'Reply or add to it'], ['N', 'Not yet: reopen and say what is missing'], ['1–9, ⌘↵', 'Pick a choice, send the answer'], ['D · W · L', "Done · Won't do · Later / Now"], ['E / ⇧E', 'Archive or unarchive / archive every finished item'], ['S · P · T', 'Status, priority, type: then the digit or letter the ⋯ menu shows'], ['M · ⇧C', 'Move under… · Copy for agent'], ['I · ⇧D · ⇧A', 'Edit · New doc · Add subitem'], ['.', 'All actions'], ['Z', 'Undo your last action here, again for the one before; older changes: Change log']]],
   ['Mouse', [['Hover a row', 'Its quick actions, always in the same places'], ['Right-click a row', 'Its menu, at the pointer'], ['Click cut-off words', 'Show them all'], ['Drag a pane edge', 'Resize; double-click for the default']]],
   ['Write and find', [['C', 'New input to the project'], ['V', 'Voice note for the selected item; V again stops'], ['⇧V', 'New input by voice; ⇧V again stops and sends'], ['⌥V', 'Voice note while typing in the box'], ['↵', 'While recording: stop, into the box'], ['⇧↵ or ⌘↵', 'Send; while recording: stop and send'], ['/', 'Search'], ['F', 'Filters'], ['?', 'This sheet'], ['Esc', 'Step back one level']]],
 ];
@@ -6737,6 +6770,8 @@ document.addEventListener('keydown', e => {
 });
 
 // One table drives the keys. Single keys only act while you are not typing; Esc first leaves a text field.
+const ITEM_KEYS = new Set([...'arndwle.sptmiCDA']);  // the keys that act on the selected item
+const hint = t => toast(t);  // a key that can't act here says why, in a few words (T113 B26)
 function deskKey(e) {
   if (!desk() || e.defaultPrevented) return;
   const el = document.activeElement, typing = /INPUT|TEXTAREA|SELECT/.test(el?.tagName) || el?.isContentEditable;
@@ -6754,11 +6789,15 @@ function deskKey(e) {
   if (R.rec && e.key === 'Enter' && !e.isComposing) { e.preventDefault(); return finishRec(false); }
   if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && U.choice && U.choice.n === U.open) { e.preventDefault(); return document.querySelector(`[data-act="choice-send"][data-n="${U.open}"]`)?.click(); }
   if (e.metaKey || e.ctrlKey) return;
+  if (U.sheet === 'menu' && !$('overlay').hidden && menuKey(e)) return;  // S P T then a digit or letter; arrows and Tab stay in it (T113 A16, B8)
   if (U.sheet === 'menu' && !$('overlay').hidden && /^[a-zA-Z]$/.test(e.key)) closeDialog();  // the keys the menu shows work from it (B131)
   if (!$('overlay').hidden) return;  // a sheet or menu is open: it has its own keys (Esc closes it)
-  if (D.sideOpen && e.key !== '[') return;  // the sidebar is over the page: keys don't reach behind it (B120)
-  // Item keys act only on an item you can see (B120): not from Inputs, the project page or New input.
-  const k = e.key, n = detailShown() && !D.compose ? U.open : null, it = n && byN.get(n), lists = U.tab !== 'inputs' && !D.page;
+  const k = e.key, one = /^[a-zA-Z0-9./[?]$/.test(k);  // a key that does something here; one that can't says why (T113 B26, A20)
+  if (D.sideOpen && k !== '[') { if (one) hint('The sidebar is over the page: [ closes it'); return; }  // keys don't reach behind it (B120)
+  // Item keys act only on an item you can see (B120): not from Inputs, the project page or New input; on a document
+  // open over its item, I edits the document and O shows it full width, and the others wait for Esc (T113 B20).
+  const n = detailShown() && !D.compose ? U.open : null, it = n && byN.get(n), lists = U.tab !== 'inputs' && !D.page;
+  const doc = desk() && U.doc && !U.docEdit && docById(U.doc), back = n ? `Back to ${code(n)} first: Esc` : '';
   if (D.g && Date.now() - D.g < 1000) {  // G then a letter
     D.g = 0;
     const tab = {i: 'items', n: 'inputs', a: 'archive', r: 'rules'}[k.toLowerCase()];
@@ -6769,19 +6808,28 @@ function deskKey(e) {
   const act = (name, data = {}) => { e.preventDefault(); ACT[name]({dataset: {n: String(n), ...data}}, e); };
   const status = v => it && act('status', {v});
   switch (k) {
-    case 'j': case 'ArrowDown': if (lists) { e.preventDefault(); stepItem(1); } return;
-    case 'k': case 'ArrowUp': if (lists) { e.preventDefault(); stepItem(-1); } return;
+    case 'j': case 'ArrowDown': case 'k': case 'ArrowUp': {
+      const dir = k === 'j' || k === 'ArrowDown' ? 1 : -1, letter = k === 'j' || k === 'k';
+      if (doc) { if (letter) hint(back); return; }
+      if (lists) { e.preventDefault(); return stepItem(dir); }
+      if (letter) hint(D.page ? 'J and K move in a list: Esc goes back to it' : 'J and K move in Items, Archive and Rules');
+      return;
+    }
     case 'J': case 'K':  // what needs you lives in Items: from another tab or page, go there first
       e.preventDefault();
       if (U.go) return ACT[k === 'J' ? 'go-next' : 'go-prev']();
       if (U.tab !== 'items' || D.page || D.compose) setTab('items');
       return startGoDesk(U.open);
-    case 'o': case 'Enter': if (it) { e.preventDefault(); fullWidth(!D.full); } return;
+    case 'o': case 'Enter': if (it) { e.preventDefault(); fullWidth(!D.full); } else if (k === 'o') hint('First pick an item: J or a click'); return;
     case ' ': if (it) { e.preventDefault(); $('detailBody').scrollBy({top: (e.shiftKey ? -0.8 : 0.8) * $('detailBody').clientHeight, behavior: REDUCE.matches ? 'auto' : 'smooth'}); } return;
     case 'g': D.g = Date.now(); return;
     case '[': e.preventDefault(); return ACT.side();
-    case '/': e.preventDefault(); return $('q').focus();
-    case 'f': e.preventDefault(); return showFilters();
+    case '/': e.preventDefault(); if (!$('q').offsetParent) return hint(D.page ? 'Search works on a list: Esc goes back to it' : 'Search works on the list: Esc leaves full width'); return $('q').focus();
+    case 'f':
+      e.preventDefault();
+      if (D.page || D.full) return hint(D.page ? 'Filters work on a list: Esc goes back to it' : 'Filters work on the list: Esc leaves full width');
+      if (U.tab === 'inputs') return hint('Filters work in Items, Archive and Rules');
+      return showFilters();
     case '?': e.preventDefault(); return showKeys();
     case 'c': e.preventDefault(); return ACT['new-input']();
     case 'z': e.preventDefault(); return undoMine();  // your own last action here; older ones: the change log (B127)
@@ -6792,7 +6840,15 @@ function deskKey(e) {
       if (R.rec) return finishRec(true);
       ACT['new-input'](); return startRec();
   }
-  if (!it) return;
+  if (!it) { if (ITEM_KEYS.has(k)) hint(U.tab === 'inputs' || D.page || D.compose ? 'Item keys work on an item: open one in Items, Archive or Rules' : 'First pick an item: J or a click'); return; }
+  if (doc) {
+    if (k === 'i') { e.preventDefault(); return ACT['doc-edit'](); }
+    if (k === 'r') { e.preventDefault(); return ACT.reply(); }  // the box writes on the document
+    if (ITEM_KEYS.has(k)) hint(back);
+    return;
+  }
+  const ruleTo = v => it.status === v ? hint(`${code(n)} is ${v === 'open' ? 'active' : 'retired'} already`) : status(v);  // a rule: D makes it active, W retires it (T113 B21)
+  const waits = () => hint(`${code(n)} waits for your answer: A answers it`);  // as its row's hover: no Done or Won't do (T113 B21)
   switch (k) {
     case 'a':  // the amber action
       if (it.status === 'review') return status('done');
@@ -6802,11 +6858,12 @@ function deskKey(e) {
       return toast(`Nothing waits on you in ${code(n)}`);
     case 'r': e.preventDefault(); return ACT.reply();
     case 'n': if (it.status === 'review') return act('reopen'); return toast('Not yet works on items in review');
-    case 'd': return CLOSED(it.status) ? undefined : status('done');
-    case 'w': return status('dropped');
-    case 'l': if (it.type !== 'rule' && !CLOSED(it.status)) act('swipe', {f: 'when', v: it.when === 'now' ? 'later' : 'now'}); else toast('Later works on open items'); return;
+    case 'd': return it.type === 'rule' ? ruleTo('open') : it.wait ? waits() : CLOSED(it.status) ? hint(`${code(n)} is ${it.status === 'done' ? 'done' : "marked won't do"} already`) : status('done');
+    case 'w': return it.type === 'rule' ? ruleTo('dropped') : it.wait ? waits() : it.status === 'dropped' ? hint(`${code(n)} is marked won't do already`) : status('dropped');
+    case 'l': if (it.type !== 'rule' && !CLOSED(it.status)) act('swipe', {f: 'when', v: it.when === 'now' ? 'later' : 'now'}); else hint(it.type === 'rule' ? 'Rules have no Later' : 'Later works on open items'); return;
     case 'e': if (it.archived || CLOSED(it.status)) act('archive', {on: it.archived ? '0' : '1'}); else { e.preventDefault(); toast('Archive works on finished items'); } return;
-    case '.': case 's': case 'p': case 't': e.preventDefault(); return itemMenuDesk(n);
+    case '.': e.preventDefault(); return itemMenuDesk(n, null);
+    case 's': case 'p': case 't': e.preventDefault(); return itemMenuDesk(n, k);  // at its part: the next digit or letter sets it (T113 A16)
     case 'm': e.preventDefault(); return movePicker(n);
     case 'C': return act('copy');
     case 'i': return act('edit');
@@ -7196,6 +7253,7 @@ document.addEventListener('keydown', e => {
     if (U.amend && !(document.activeElement === $('text') && $('text').value.trim() && desk())) return cancelAmend();  // B136
     if (U.doc && U.docCircle) { U.docCircle = false; return renderDoc(); }
     if (U.doc && (U.docQuote || U.docSel.size || U.docReply)) return ACT['doc-unpick']();  // first Escape drops the selection
+    if (desk() && U.doc && !U.docEdit && $('overlay').hidden && D.full && !/INPUT|TEXTAREA/.test(document.activeElement.tagName)) return fullWidth(false);  // one level: full width first (T113 B20)
     if (desk() && U.doc && !U.docEdit && $('overlay').hidden && !/INPUT|TEXTAREA/.test(document.activeElement.tagName)) return closeDoc();  // then back to the item
     if (!$('overlay').hidden) return closeDialog();
     if (document.activeElement?.id === 'subTitle') {  // done adding subitems; a title you started is kept (T113 A15)

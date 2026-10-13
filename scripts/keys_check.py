@@ -267,12 +267,68 @@ def group_narrow(a):
     a.go('B03')
     a.key('['); check('[ at 1024 opens the sidebar over the page', a.js('D.sideOpen'), True)
     a.key('j'); a.key('f'); check('Keys do not reach behind it', (open_(a), a.js('D.filters')), ('B03', False))
+    check('and say why', a.toast(), 'The sidebar is over the page: [ closes it')
     a.key('Escape'); check('Esc closes it', a.js('D.sideOpen'), False)
+
+
+def post(a, path, body):
+    req = urllib.request.Request(a.base + path, data=json.dumps(body).encode(), headers={'Content-Type': 'application/json'}, method='POST')
+    return json.loads(urllib.request.urlopen(req, timeout=10).read())
+
+
+def group_unseen(a):  # T113 group 3: keys act on what you see, and say why when they can't
+    post(a, 'api/op', {'op': 'doc', 'ref': 'F06', 'md': '# Rollout plan\n\nStaging first, then everyone.'})
+    a.go('D1', 3)
+    when, st = a.js('byN.get(6).when'), status(a, 6)
+    for k in ('l', 'd', '.', 'j'):
+        a.key(k, wait=0.4)
+    check('On a document, item keys leave its item alone and say so', (a.js('byN.get(6).when'), status(a, 6), a.js("$('overlay').hidden"), a.js('U.doc'), a.toast()), (when, st, True, 1, 'Back to F06 first: Esc'))
+    a.key('o', wait=0.8); check('O shows the document full width', (a.js('D.full'), a.js('U.doc'), a.js("location.pathname.split('/').pop()")), (True, 1, 'D1'))
+    a.key('Escape', wait=0.8); check('Esc leaves full width first, the document stays', (a.js('D.full'), a.js('U.doc')), (False, 1))
+    a.key('i', wait=0.8); check('I edits the document', (a.js('U.docEdit'), a.js("!!$('docMd')")), (True, True))
+    a.click('[data-act="doc-discard"]', 0.8); a.js('document.activeElement.blur()')
+    a.key('Escape', wait=0.8); check('Esc goes back to its item', (a.js('U.doc'), open_(a)), (None, 'F06'))
+    a.go('F04')
+    a.key('d', wait=0.5); a.key('w', wait=0.5)
+    check("D and W leave an item that waits for your answer, as its hover does", (status(a, 4), a.toast()), ('open', 'F04 waits for your answer: A answers it'))
+    a.go('R10')
+    a.key('d', wait=0.5); check('On a rule, D says it is active already', a.toast(), 'R10 is active already')
+    a.key('w', wait=1.2); check('W retires a rule, in its words', (status(a, 10), a.toast()), ('dropped', 'R10 is retiredUndo'))
+    a.key('d', wait=1.2); check('D makes it active again', (status(a, 10), a.toast()), ('open', 'R10 is active againUndo'))
+    a.go('B07')
+    a.key('p', wait=0.6)
+    check('P opens the menu at Priority, the keys in it', (a.js('U.menuArm'), a.js("document.activeElement.dataset.f"), a.js("$('dlgBody').contains(document.activeElement)")), ('p', 'pri', True))
+    a.key('1', wait=1.0); check('then 1 sets P1, and the menu stays', (a.js('byN.get(7).pri'), a.js('U.sheet'), a.js("document.activeElement.dataset.v")), ('P1', 'menu', 'P1'))
+    a.key('s', wait=0.5); a.key('3', wait=1.0); check('S then 3 sets In progress', status(a, 7), 'doing')
+    a.key('t', wait=0.5); a.key('i', wait=1.2); check('T then I sets Idea, it does not open Edit', (a.js('byN.get(7).type'), a.js('U.editing')), ('idea', None))
+    a.key('b', wait=1.2); check('then B sets Bug', a.js('byN.get(7).type'), 'bug')
+    for k in ('ArrowDown', 'ArrowDown', 'Tab', 'Tab', 'Tab', 'Tab', 'Tab', 'Tab', 'Tab', 'Tab', 'Tab', 'Tab', 'Tab', 'Tab', 'Tab', 'Tab', 'Tab', 'Tab', 'Tab', 'Tab', 'Tab', 'Tab'):
+        a.key(k, wait=0.05)
+    check('The arrows and Tab move in the menu and never leave it', a.js("$('dlgBody').contains(document.activeElement)"), True)
+    a.key('Escape', wait=0.5); a.key('z', wait=1.2); a.key('z', wait=1.2); a.key('z', wait=1.2); a.key('z', wait=1.2); a.key('z', wait=1.2)
+    check('Z undoes each of them', (status(a, 7), a.js('byN.get(7).pri'), a.js('byN.get(7).type')), ('open', 'P0', 'bug'))
+    a.js("document.querySelector('#list').dispatchEvent(new PointerEvent('pointerleave'))"); time.sleep(3.5)
+    a.key('l', wait=0.4)
+    check('L holds the row in place as the hover button does', a.js("!!document.querySelector('#list article[data-n=\"7\"][data-settled]')"), True)
+    time.sleep(3.5); check('and lets it go after 3 s', a.js("!!document.querySelector('#list article[data-n=\"7\"][data-settled]')"), False)
+    a.key('l', wait=1.0)
+    tips = lambda n: a.js(f"""[...document.querySelectorAll('#list [data-act="open"][data-n="{n}"] button[title]')].map(b => b.title)""")
+    check('Start, Pause and Reopen say their keys', ['Start · S then 3' in tips(8), 'Pause · S then 2' in tips(6), 'Reopen · S then 2' in tips(2)], [True, True, True])
+    a.go('')
+    a.key('d', wait=0.4); check('With nothing picked, an item key says so', a.toast(), 'First pick an item: J or a click')
+    a.key('j', wait=0.6); a.key('k', wait=0.5); check('K on the first row says so', a.toast(), 'This is the first item')
+    a.go('B02'); a.key('d', wait=0.4); check('D on a done item says so', a.toast(), 'B02 is done already')
+    a.key('g', wait=0.1); a.key('n', wait=0.8)
+    a.key('j', wait=0.4); check('J on Inputs says where it works', a.toast(), 'J and K move in Items, Archive and Rules')
+    a.key('f', wait=0.4); check('F on Inputs says where it works', a.toast(), 'Filters work in Items, Archive and Rules')
+    a.go('log', 3); a.js('document.activeElement.blur()')
+    a.key('j', wait=0.4); check('J in This project says why not', a.toast(), 'J and K move in a list: Esc goes back to it')
+    a.key('/', wait=0.4); check('/ in This project says why not', a.toast(), 'Search works on a list: Esc goes back to it')
 
 
 GROUPS = [('move', group_move, (1440, 900)), ('act', group_act, (1440, 900)), ('answer', group_answer, (1440, 900)),
           ('write', group_write, (1440, 900)), ('box', group_box, (1440, 900)), ('context', group_context, (1440, 900)), ('project', group_project, (1440, 900)),
-          ('narrow', group_narrow, (1024, 768))]
+          ('unseen', group_unseen, (1440, 900)), ('narrow', group_narrow, (1024, 768))]
 
 
 def main():
