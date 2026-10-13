@@ -32,6 +32,7 @@ import sys
 import tempfile
 import textwrap
 import threading
+import unicodedata
 import time
 import urllib.error
 import urllib.request
@@ -159,7 +160,8 @@ class Store:
         self.rev = 0  # bumps on every change, including transient organizer state
         self.boot = format(int(time.time() * 1000), "x")  # rev restarts with the process; boot tells pages apart
         self.maxn = self.nin = self.nfile = 0
-        self.cfg = {"auto": True}  # auto = keep-going: agents keep taking the next item (on unless turned off)
+        self.cfg = {"auto": True}  # auto = keep-going: agents keep taking the next item (on unless turned off); name: what people call it (F173)
+        self.name, self.gone = "", False  # name: the project's address and folder; gone: deleted while this ran (F173)
         self.docs, self.maxd = {}, 0
         self.org_on, self.org_busy = False, None
         self.trs = {}  # voice notes being transcribed in the background, by file (B165): t0, done, tr, err
@@ -559,7 +561,14 @@ class Store:
             return ""
         return f" (note: the user deleted {self.code(it['n'])} together with input {it['deleted']}: stop working on it)"
 
+    @property
+    def title(self):
+        """What the project is called (F173): any name; its address (self.name) was made from it once and never changes."""
+        return self.cfg.get("name") or self.name
+
     def emit(self, e):
+        if self.gone:
+            raise Err(f"project {self.name} was deleted")
         e["t"] = now()
         self.out.write(json.dumps(e, ensure_ascii=False, separators=(",", ":")) + "\n")
         self.out.flush()
@@ -777,6 +786,8 @@ class Store:
 
     def next_text(self, ref=None):
         """-> (text, has_work)"""
+        if self.gone:
+            return f"Project {self.name} was deleted: there is no work here. The user can restore it in Taska (Settings › Projects).\n", False
         auto = self.cfg["auto"]
         out = [self.mode() + (": keep working without stopping. After each item, write back, then GET /next again."
                               if auto else ": finish what you are doing, write back, then stop and wait for the user.")]
@@ -823,7 +834,7 @@ class Store:
             if (a["waiting"] > 0, True) != before:
                 self.pv += 1
                 self.cond.notify_all()
-            if waiting or now - self.saved > 60:
+            if (waiting or now - self.saved > 60) and not self.gone:
                 self.saved = now
                 try:
                     with open(self.agents_file, "w", encoding="utf-8") as f:
@@ -1045,10 +1056,12 @@ class Store:
             return f"ok D{d['d']} comment" + self.gone_note(self.items.get(d["n"], {}), by), f"Commented on D{d['d']}"
         if name == "cfg":
             f = {"auto": bool(op["auto"])} if "auto" in op else {}
+            if "name" in op:  # the project's name for people (F173); its address stays
+                f["name"] = title_of(op["name"])
             if not f:
-                raise Err("cfg needs auto")
+                raise Err("cfg needs auto or name")
             self.emit({"k": "cfg", "f": f, "by": by})
-            return f"ok {self.mode()}", ""
+            return f"ok {self.mode()}" if "auto" in f else f"ok named {f['name']}", ""
         if name == "ack":
             ids = [i for i in op.get("ids", []) if i in self.inputs]
             bad = [i for i in op.get("ids", []) if i not in self.inputs]
@@ -1357,7 +1370,7 @@ class Store:
             elif k == "ack":
                 s = "ack " + " ".join(e["ids"])
             elif k == "cfg":
-                s = "keep-going " + ("ON" if e["f"].get("auto") else "OFF")
+                s = f"renamed the project {e['f']['name']!r}" if "name" in e["f"] else "keep-going " + ("ON" if e["f"].get("auto") else "OFF")
             elif k == "doc":
                 s = f"doc D{e['d']} on {self.code(e['n'])} {first_line(e.get('title', ''))!r}"
             elif k == "dc":
@@ -1742,6 +1755,8 @@ class Organizer(threading.Thread):
         while True:
             with s.cond:
                 while True:
+                    if s.gone:  # the project was deleted: its organizer stops; restoring it starts a new one (F173)
+                        return
                     todo = [i for i in s.pending() if not i["org"] and not s.held(i)]  # org is set (and logged) once tried; held: its words are coming (B165)
                     if todo:
                         break
@@ -2262,7 +2277,30 @@ def voice_keep(store, fid, res):
 HUB = None
 ITEM_PATH = re.compile(r"/([A-Za-z]?\d+)")
 VIEW_PATH = re.compile(r"/(inputs|archive|rules|new|settings|connect|phone|spellings|log|deleted|about|[A-Za-z]\d+)")  # the page's views (T102, B162)
-NAME = re.compile(r"[a-z0-9][a-z0-9-]{0,39}")
+NAME = re.compile(r"[a-z0-9][a-z0-9-]{0,39}")  # a project's address and folder: made from its name once, never changed (F173)
+TITLE_MAX = 60
+SLUG_CHARS = "abcdefghjkmnpqrstuvwxyz23456789"
+
+
+def title_of(name):
+    """A project's name for people (F173): any text, spaces, Chinese, emoji; one line, up to TITLE_MAX characters."""
+    t = " ".join(str(name or "").split())
+    if not t:
+        raise Err("give the project a name")
+    if len(t) > TITLE_MAX:
+        raise Err(f"a project name is up to {TITLE_MAX} characters")
+    return t
+
+
+def slug_of(title):
+    """The address a new project gets from its name (F173): Home Budget -> home-budget, Café -> cafe; "" for a name
+    with no a-z or 0-9 in it (it gets a short code instead, see short_slug)."""
+    t = unicodedata.normalize("NFKD", title).encode("ascii", "ignore").decode().lower()
+    return re.sub(r"[^a-z0-9]+", "-", t).strip("-")[:40].strip("-")
+
+
+def short_slug():
+    return "p-" + "".join(secrets.choice(SLUG_CHARS) for _ in range(4))  # p-7k2m
 
 CONNECT = """#!/bin/sh
 # Connects the current folder to the Taska project {name}. Run it in the project's folder on the machine
@@ -2291,6 +2329,7 @@ class Hub:
         self.public = public.rstrip("/")  # the tunnel's address, for the phone link
         self.lock = threading.Lock()
         self.projects = {}
+        self.trash = os.path.join(self.root, ".deleted")  # deleted projects, as they were: Restore brings one back (F173)
         os.makedirs(self.root, exist_ok=True)
         try:
             with open(os.path.join(self.root, "key"), encoding="utf-8") as f:
@@ -2350,15 +2389,95 @@ class Hub:
         self.projects[name] = s
         return s
 
+    # Projects have a name for people and an address (F173). The address (/p/<address>, also the folder) is made from
+    # the name once and never changes, so agents, .taska files, phone links and bookmarks keep working through a
+    # rename. A deleted project moves to .deleted/ with everything in it and keeps its address, so Restore is exact.
+    def taken(self, slug):
+        return slug in self.projects or os.path.exists(os.path.join(self.root, slug)) or os.path.exists(os.path.join(self.trash, slug))
+
+    def clash(self, title, but=None):
+        if any(s is not but and s.title.lower() == title.lower() for s in self.projects.values()):
+            raise Err(f"a project called {title} exists already")
+
     def add(self, name):
-        name = str(name).strip().lower()
-        if not NAME.fullmatch(name):
-            raise Err("a project name uses a-z, 0-9 and -, up to 40 characters")
+        title = title_of(name)
         with self.lock:
-            if name in self.projects:
-                raise Err(f"project {name} already exists")
-            os.makedirs(os.path.join(self.root, name), exist_ok=True)
-            return self.open(name)
+            self.clash(title)
+            base = slug_of(title)
+            slug, k = base or short_slug(), 2
+            while self.taken(slug):  # an address in use, also by a deleted project, is never given twice
+                slug, k = f"{base[:36].rstrip('-')}-{k}" if base else short_slug(), k + 1
+            os.makedirs(os.path.join(self.root, slug), exist_ok=True)
+            s = self.open(slug)
+        if title != slug:
+            s.run_all([(0, {"op": "cfg", "name": title})], "you")
+        return s
+
+    def live(self, slug):
+        s = self.projects.get(str(slug or ""))
+        if not s:
+            raise Err(f"no project {slug}")
+        return s
+
+    def rename(self, slug, name):
+        title = title_of(name)
+        with self.lock:
+            s = self.live(slug)
+            self.clash(title, but=s)
+            was = s.title
+        if title != was:
+            s.run_all([(0, {"op": "cfg", "name": title})], "you")
+        return s, was
+
+    def delete(self, slug):
+        """Out of the way, nothing lost: the folder moves to .deleted/; agents asking for work hear it was deleted."""
+        with self.lock:
+            s = self.live(slug)
+            with s.cond:
+                s.gone, info = True, {"t": now(), "title": s.title, "items": len(s.active())}
+                s.bump()  # pages and agents waiting on it hear at once
+                s.out.close()
+            del self.projects[s.name]
+            os.makedirs(self.trash, exist_ok=True)
+            os.rename(os.path.join(self.root, s.name), os.path.join(self.trash, s.name))
+            with open(os.path.join(self.trash, s.name, "deleted.json"), "w", encoding="utf-8") as f:
+                json.dump(info, f, ensure_ascii=False)
+            return s
+
+    def restore(self, slug):
+        slug = str(slug or "")
+        with self.lock:
+            src = os.path.join(self.trash, slug)
+            if not NAME.fullmatch(slug) or not os.path.isfile(os.path.join(src, "taska.jsonl")):
+                raise Err(f"no deleted project {slug}")
+            if slug in self.projects or os.path.exists(os.path.join(self.root, slug)):
+                raise Err(f"the address {slug} is in use")
+            with contextlib.suppress(FileNotFoundError):
+                os.remove(os.path.join(src, "deleted.json"))
+            os.rename(src, os.path.join(self.root, slug))
+            return self.open(slug)
+
+    def purge(self, slug):
+        """The one step that can't be undone: a deleted project's folder goes for good."""
+        slug = str(slug or "")
+        with self.lock:
+            src = os.path.join(self.trash, slug)
+            if not NAME.fullmatch(slug) or not os.path.isdir(src):
+                raise Err(f"no deleted project {slug}")
+            shutil.rmtree(src)
+
+    def deleted(self):
+        out = []
+        for slug in sorted(os.listdir(self.trash)) if os.path.isdir(self.trash) else []:
+            if not NAME.fullmatch(slug) or not os.path.isfile(os.path.join(self.trash, slug, "taska.jsonl")):
+                continue
+            try:
+                with open(os.path.join(self.trash, slug, "deleted.json"), encoding="utf-8") as f:
+                    info = json.load(f)
+            except (OSError, ValueError):
+                info = {}
+            out.append({"name": slug, "title": info.get("title") or slug, "t": info.get("t") or "", "items": info.get("items", 0)})
+        return sorted(out, key=lambda d: d["t"], reverse=True)
 
     def summary(self):
         out = []
@@ -2367,7 +2486,7 @@ class Hub:
                 live = [i for i in s.active() if i["status"] not in CLOSED]
                 # "open" as the project's own page counts it (A18): what Items holds that isn't finished, rules an agent
                 # proposed included, since they wait in Items too
-                out.append({"name": name, "open": sum(1 for i in live if not i["archived"] and (i["type"] != "rule" or i["status"] == "proposed")), "auto": s.cfg["auto"],
+                out.append({"name": name, "title": s.title, "open": sum(1 for i in live if not i["archived"] and (i["type"] != "rule" or i["status"] == "proposed")), "auto": s.cfg["auto"],
                             "needs": sum(1 for i in live if s.waiting(i) or i["status"] in ("proposed", "review")), **s.presence(),
                             "t": int(os.path.getmtime(s.path) * 1000)})
         return out
@@ -2496,6 +2615,8 @@ class Handler(BaseHTTPRequestHandler):
         m = re.fullmatch(r"/p/([a-z0-9][a-z0-9-]*)(/.*)?", p)
         if m:
             s = HUB.projects.get(m.group(1))
+            if not s and os.path.isdir(os.path.join(HUB.trash, m.group(1))):  # F173: agents asking for work hear why there is none
+                raise Err(f"project {m.group(1)} was deleted: there is no work here. The user can restore it in Taska (Settings › Projects).")
             if not s:
                 raise Err(f"no project {m.group(1)}. Projects: {', '.join(sorted(HUB.projects))}")
             return s, m.group(2) or "", f"{self.host()}{self.prefix}/p/{s.name}"
@@ -2535,6 +2656,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send(200, SKILL, "text/markdown; charset=utf-8")
             if p == "/api/projects":
                 return self.json(HUB.summary())
+            if p == "/api/projects/deleted":  # F173: what Settings › Projects can restore
+                return self.json(HUB.deleted())
             if p == "/api/corrections":
                 return self.json(HUB.corrections())
             s, sub, base = self.project(p)
@@ -2569,7 +2692,7 @@ class Handler(BaseHTTPRequestHandler):
             try:
                 with s.cond:  # ?wait=N: while keep-going is on and there is nothing to do, hold until work arrives
                     text, work = s.next_text(ref)
-                    while not work and s.cfg["auto"] and time.time() < end:
+                    while not work and s.cfg["auto"] and not s.gone and time.time() < end:  # a deleted project lets its agents go (F173)
                         s.cond.wait(timeout=end - time.time())
                         text, work = s.next_text(ref)
             finally:
@@ -2596,7 +2719,7 @@ class Handler(BaseHTTPRequestHandler):
             with s.lock:
                 self.send(200, s.log(int((q.get("n") or ["30"])[0])))
         elif p == "/api/state":
-            self.json(dict(s.state(), project=s.name, base=base, key=HUB.key,
+            self.json(dict(s.state(), project=s.name, title=s.title, base=base, key=HUB.key,
                            remote=f"{HUB.public}/k/{HUB.key}/p/{s.name}" if HUB.public else ""))
         elif p == "/api/poll":
             rev, boot, pv = int((q.get("rev") or ["0"])[0]), (q.get("boot") or [""])[0], int((q.get("pv") or ["-1"])[0])
@@ -2645,9 +2768,24 @@ class Handler(BaseHTTPRequestHandler):
         u = self.url()
         q, p = parse_qs(u.query), unquote(u.path)
         try:
-            if p == "/api/projects":
-                s = HUB.add(json.loads(self.body(10_000) or b"{}").get("name", ""))
-                return self.json({"ok": True, "name": s.name})
+            if p.startswith("/api/projects"):  # F173: new, rename, delete, restore, delete forever. name = the address
+                d = json.loads(self.body(10_000) or b"{}")
+                if p == "/api/projects":  # {title} (or {name}, as before): any name; the address is made from it
+                    s = HUB.add(d.get("title") or d.get("name", ""))
+                    return self.json({"ok": True, "name": s.name, "title": s.title})
+                if p == "/api/projects/rename":
+                    s, was = HUB.rename(d.get("name"), d.get("title"))
+                    return self.json({"ok": True, "name": s.name, "title": s.title, "was": was})
+                if p == "/api/projects/delete":
+                    s = HUB.delete(d.get("name"))
+                    return self.json({"ok": True, "name": s.name, "title": s.title})
+                if p == "/api/projects/restore":
+                    s = HUB.restore(d.get("name"))
+                    return self.json({"ok": True, "name": s.name, "title": s.title})
+                if p == "/api/projects/purge":
+                    HUB.purge(d.get("name"))
+                    return self.json({"ok": True, "name": d.get("name")})
+                return self.send(404, "not found\n")
             if p == "/api/corrections":  # {wrong, right} remembers a spelling fix for every project; {wrong} forgets it
                 d = json.loads(self.body(10_000) or b"{}")
                 HUB.correct(d.get("wrong"), d.get("right") if "right" in d else None)
@@ -2890,7 +3028,7 @@ INDEX = r'''<!doctype html>
   <h2 class="px-3 pb-1.5 text-xs font-semibold text-zinc-500 dark:text-zinc-400">Projects</h2>
   <ul id="list" class="flex flex-col gap-0.5"><li class="px-3 py-3 text-sm text-zinc-500">Loading…</li></ul>
   <button id="new" class="mt-1 flex h-12 w-full items-center gap-3 rounded-2xl px-3 text-[15px] font-medium text-blue-600 dark:text-blue-400"><svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>New project</button>
-  <div id="npRow" hidden class="mt-1 px-1"><div class="flex items-center gap-1.5"><input id="npName" class="h-11 w-full min-w-0 flex-1 rounded-xl border border-zinc-200 bg-white px-3 text-base outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-950" placeholder="Project name: a-z, 0-9, -" aria-label="New project name" autocomplete="off" autocapitalize="none" spellcheck="false"><button id="npCreate" class="h-11 shrink-0 rounded-xl bg-zinc-900 px-4 text-[15px] font-semibold text-white dark:bg-zinc-100 dark:text-zinc-900">Create</button><button id="npCancel" aria-label="Cancel" class="grid size-11 shrink-0 place-items-center rounded-xl text-zinc-500"><svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
+  <div id="npRow" hidden class="mt-1 px-1"><div class="flex items-center gap-1.5"><input id="npName" class="h-11 w-full min-w-0 flex-1 rounded-xl border border-zinc-200 bg-white px-3 text-base outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-950" placeholder="Project name" aria-label="New project name" autocomplete="off" spellcheck="false"><button id="npCreate" class="h-11 shrink-0 rounded-xl bg-zinc-900 px-4 text-[15px] font-semibold text-white dark:bg-zinc-100 dark:text-zinc-900">Create</button><button id="npCancel" aria-label="Cancel" class="grid size-11 shrink-0 place-items-center rounded-xl text-zinc-500"><svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
     <p id="npErr" hidden role="alert" class="px-2 pt-1.5 text-[13px] text-red-600 dark:text-red-400"></p></div>
 </main>
 <script>
@@ -2913,7 +3051,7 @@ function agentLine(p) {  // the latest agent, or a red "No agent" when work wait
 async function load() {
   const list = (await (await fetch('/api/projects', {cache: 'no-store'})).json()).sort((a, b) => b.t - a.t);
   document.getElementById('list').innerHTML = list.map(p => `<li><a href="/p/${encodeURIComponent(p.name)}/" class="flex min-h-14 items-center gap-3 rounded-2xl bg-white px-3 py-2.5 shadow-sm ring-1 ring-zinc-900/5 active:bg-zinc-50 dark:bg-zinc-800 dark:ring-white/5 dark:active:bg-zinc-700">
-    <span class="min-w-0 flex-1"><span class="block truncate text-[17px] font-medium">${esc(p.name)}</span><span class="mt-0.5 flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400">${agentLine(p)}<span class="min-w-0 truncate">· ${p.open} open · ${when(p.t)}${p.auto ? '' : ' · keep-going off'}</span></span></span>
+    <span class="min-w-0 flex-1"><span class="block truncate text-[17px] font-medium">${esc(p.title || p.name)}</span><span class="mt-0.5 flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400">${agentLine(p)}<span class="min-w-0 truncate">· ${p.open} open · ${when(p.t)}${p.auto ? '' : ' · keep-going off'}</span></span></span>
     ${p.needs ? `<span class="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900 dark:bg-amber-400/15 dark:text-amber-200">${p.needs} need you</span>` : ''}
     <svg class="size-4 shrink-0 text-zinc-300 dark:text-zinc-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></li>`).join('');
 }
@@ -2922,10 +3060,10 @@ async function load() {
 const $ = id => document.getElementById(id);
 const npShow = on => { $('new').hidden = on; $('npRow').hidden = !on; $('npErr').hidden = true; if (on) $('npName').focus(); else $('npName').value = ''; };
 async function npCreate() {
-  const name = $('npName').value.trim().toLowerCase();
-  if (!name) return $('npName').focus();
+  const title = $('npName').value.trim();  // any name: spaces, Chinese, emoji; its address is made from it (F173)
+  if (!title) return $('npName').focus();
   try {
-    const d = await (await fetch('/api/projects', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name})})).json();
+    const d = await (await fetch('/api/projects', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({title})})).json();
     if (d.ok) location.href = `/p/${d.name}/`; else { $('npErr').textContent = d.error || 'Not created'; $('npErr').hidden = false; }
   } catch (_) { $('npErr').textContent = 'Connection lost; try again'; $('npErr').hidden = false; }
 }
@@ -3219,7 +3357,12 @@ function projTone(name) {  // the name picks the colour; if another of your proj
   }
   return PROJ_TONES[projTone.map.get(name) ?? projHash(name) % L];
 }
-const projTile = (name, cls = 'size-5 rounded-md text-[11px]') => `<span aria-hidden="true" class="grid shrink-0 place-items-center leading-none font-bold text-white uppercase ${cls} ${projTone(name)}">${esc([...String(name || '?')][0])}</span>`;
+// A project has a name for people and an address (F173): it shows by its name; its address (S.project, p.name) stays for
+// links, this browser's drafts and its colour, so a rename changes none of them.
+const projTitle = () => S.title || S.project;
+const titleOf = p => p.title || p.name;
+const titleFor = slug => slug === S.project ? projTitle() : titleOf((DR.list || []).find(p => p.name === slug) || {name: slug});
+const projTile = (name, cls = 'size-5 rounded-md text-[11px]') => `<span aria-hidden="true" class="grid shrink-0 place-items-center leading-none font-bold text-white uppercase ${cls} ${projTone(name)}">${esc([...String(titleFor(name) || '?')][0])}</span>`;
 const KBD = k => `<kbd class="ml-1 hidden h-5 min-w-5 place-items-center rounded-md px-1 font-sans text-[11px] font-semibold opacity-70 ring-1 ring-current/30 lg:inline-grid">${k}</kbd>`;
 
 const code = n => { const it = byN.get(n); return (it ? LETTER[it.type] : '?') + String(n).padStart(S.width, '0'); };
@@ -4599,7 +4742,7 @@ function voiceWhy() {  // why the mic can't record here, in the line above the b
 const scopeLink = (act, text, key = '', title = '') => `<button data-act="${act}" ${title ? `title="${title}"` : ''} class="${HIT} -my-1 flex h-8 shrink-0 items-center rounded-full px-2 text-[13px] font-medium text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200">${text}${key ? KBD(key) : ''}</button>`;
 const scopeX = (act, label) => `<button data-act="${act}" aria-label="${label}" title="${label} · Esc" class="-my-1.5 grid size-11 shrink-0 place-items-center rounded-full text-zinc-400 hover:text-zinc-800 lg:size-8 lg:hover:bg-zinc-100 dark:text-zinc-500 dark:hover:text-zinc-200 dark:lg:hover:bg-zinc-800">${ico('x', 'size-4')}</button>`;
 function scopeLine(icon, label, detail, right = '') {  // on the desktop it starts with the project (B78): "[M] my-app ›"
-  const proj = desk() && S.project ? `<span class="mr-0.5 flex shrink-0 items-center gap-1.5 font-semibold text-zinc-800 dark:text-zinc-100">${projTile(S.project, 'size-[18px] rounded-[5px] text-[10px]')}<span class="max-w-40 truncate">${esc(S.project)}</span><span class="font-normal text-zinc-300 dark:text-zinc-600">›</span></span>` : '';
+  const proj = desk() && S.project ? `<span class="mr-0.5 flex shrink-0 items-center gap-1.5 font-semibold text-zinc-800 dark:text-zinc-100">${projTile(S.project, 'size-[18px] rounded-[5px] text-[10px]')}<span class="max-w-40 truncate">${esc(projTitle())}</span><span class="font-normal text-zinc-300 dark:text-zinc-600">›</span></span>` : '';
   return `${proj}${ico(icon, 'size-3.5 text-zinc-400 dark:text-zinc-500')}<span class="min-w-0 flex-1 truncate"><span class="font-medium text-zinc-800 dark:text-zinc-100">${label}</span>${detail ? ` ${detail}` : ''}</span>${right}`;
 }
 function boxBtn(b, act, icon, label, tip, iconCls = 'size-6 lg:size-5', sw = '1.75') {  // one of the box's three buttons takes a role
@@ -4612,7 +4755,7 @@ const ticked = n => n && U.choice?.n === n && U.choice.picked.size ? [...U.choic
 function renderComposer() {
   if (S.project && draftKey() !== U.draftKey) swapDraft(draftKey());
   const n = scopeN(), it = n && byN.get(n), dt = docTarget(), t = $('text'), ticks = U.correct || U.amend || dt ? [] : ticked(n);
-  let line = '', ph = S.project ? `Write to ${S.project}…` : 'Write anything…', send = 'Send';  // the box says whom it writes to, on the phone too (B157)
+  let line = '', ph = S.project ? `Write to ${projTitle()}…` : 'Write anything…', send = 'Send';  // the box says whom it writes to, on the phone too (B157)
   if (U.correct && byR.has(U.correct.id)) {  // F144: correcting a few words of a voice note
     line = scopeLine('pencil', `Correct “${esc(U.correct.wrong)}”`, `in ${U.correct.id} · remembered for every project`, scopeX('correct-cancel', 'Stop correcting'));
     ph = `The right words for “${U.correct.wrong}”…`; send = 'Save';
@@ -4631,7 +4774,7 @@ function renderComposer() {
     if (ticks.length) send = 'Send answer';
   } else if (ruleMode()) {
     line = scopeLine('scope', 'New rule for this project', '', ruleFlip());  // the phone has the switch too (B156)
-    if (S.project) ph = `New rule for ${S.project}…`;
+    if (S.project) ph = `New rule for ${projTitle()}…`;
   } else if (desk()) line = scopeLine('inbox', 'New input', `· ${S.org?.on ? 'the organizer files it' : 'your agent files it'}`,
     ruleFlip() + (U.open && detailShown() ? scopeLink('reply', `Add to ${code(U.open)} instead`, 'R') : ''));
   else if (U.tab === 'rules') line = scopeLine('inbox', 'New input', '· not a rule', ruleFlip());
@@ -4686,7 +4829,7 @@ async function moveInput(rid) {
   const list = made.map(n => `${code(n)} ${esc(byN.get(n).title)}`).join(', ');
   dialog(`Move ${rid} to another project`, `<div class="flex flex-col gap-3">
     <p class="line-clamp-3 rounded-xl bg-blue-50 px-3 py-2 text-[15px] leading-snug break-words text-zinc-900 dark:bg-blue-400/10 dark:text-zinc-100">${esc(r.text) || `${r.files.length} file${r.files.length === 1 ? '' : 's'}`}</p>
-    <div class="-mx-1 flex flex-col gap-0.5">${others.map(p => `<button data-act="move-input-to" data-id="${rid}" data-to="${esc(p.name)}" class="flex h-12 items-center gap-3 rounded-xl px-3 text-left hover:bg-zinc-100 data-pressed:bg-zinc-100 dark:hover:bg-zinc-800 dark:data-pressed:bg-zinc-800">${projTile(p.name, 'size-7 rounded-lg text-xs')}<span class="min-w-0 flex-1 truncate font-medium">${esc(p.name)}</span><span class="text-xs text-zinc-400">${p.open} open</span></button>`).join('') || '<p class="px-3 text-sm text-zinc-500">There is no other project.</p>'}</div>
+    <div class="-mx-1 flex flex-col gap-0.5">${others.map(p => `<button data-act="move-input-to" data-id="${rid}" data-to="${esc(p.name)}" class="flex h-12 items-center gap-3 rounded-xl px-3 text-left hover:bg-zinc-100 data-pressed:bg-zinc-100 dark:hover:bg-zinc-800 dark:data-pressed:bg-zinc-800">${projTile(p.name, 'size-7 rounded-lg text-xs')}<span class="min-w-0 flex-1 truncate font-medium">${esc(titleOf(p))}</span><span class="text-xs text-zinc-400">${p.open} open</span></button>`).join('') || '<p class="px-3 text-sm text-zinc-500">There is no other project.</p>'}</div>
     <p class="text-[13px] leading-snug text-zinc-500 dark:text-zinc-400">It goes there with its files and is organized again.${made.length ? byOrg ? ` What the organizer made of it here is undone: ${list}.` : ` Items made from it here stay: ${list}.` : ''}${r.scope && byN.has(r.scope) ? ` It also leaves the conversation of ${code(r.scope)}.` : ''}</p></div>`);
 }
 
@@ -5292,8 +5435,8 @@ function render() {
   $('nInputs').title = pending ? `${pending} not organized yet` : '';
   fitTabs();
   const waiting = S.items.filter(needsYou).length, sec = desk() && D.page ? PSEC[D.section][2] + ' · ' : '';  // each section is a page of its own (B162)
-  $('projName').textContent = S.project || 'Taska';
-  document.title = (waiting ? `(${waiting}) ` : '') + sec + (S.project ? `${S.project} · Taska` : 'Taska');
+  $('projName').textContent = S.project ? projTitle() : 'Taska';
+  document.title = (waiting ? `(${waiting}) ` : '') + sec + (S.project ? `${projTitle()} · Taska` : 'Taska');
   if (DR.open) renderDrawerSettings();
   if (!desk() && U.sheet === 'agents' && !$('overlay').hidden) $('dlgBody').innerHTML = agentsHtml();
   if (AUD.el) audioUi();
@@ -5551,14 +5694,14 @@ const ACT = {
   'new-project': () => {  // B131: the button becomes a name field in place; Enter makes it, Esc stops
     if ($('npName')) return $('npName').focus();
     $('drawerNew').hidden = true;
-    $('drawerNew').insertAdjacentHTML('afterend', `<div id="npRow" class="mt-1 px-1"><div class="flex items-center gap-1.5"><input id="npName" class="${FIELD} h-10 py-1.5 text-sm" placeholder="Project name: a-z, 0-9, -" aria-label="New project name" autocomplete="off" autocapitalize="none" spellcheck="false"><button data-act="np-create" class="h-10 shrink-0 rounded-xl bg-zinc-900 px-3 text-sm font-semibold text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200">Create</button><button data-act="np-cancel" aria-label="Cancel" class="grid size-10 shrink-0 place-items-center rounded-xl text-zinc-500 hover:bg-zinc-200/60 dark:hover:bg-zinc-800">${ico('x', 'size-4')}</button></div><p id="npErr" hidden class="px-2 pt-1 text-xs text-red-600 dark:text-red-400"></p></div>`);
+    $('drawerNew').insertAdjacentHTML('afterend', `<div id="npRow" class="mt-1 px-1"><div class="flex items-center gap-1.5"><input id="npName" class="${FIELD} h-10 py-1.5 text-sm" placeholder="Project name" aria-label="New project name" autocomplete="off" spellcheck="false"><button data-act="np-create" class="h-10 shrink-0 rounded-xl bg-zinc-900 px-3 text-sm font-semibold text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200">Create</button><button data-act="np-cancel" aria-label="Cancel" class="grid size-10 shrink-0 place-items-center rounded-xl text-zinc-500 hover:bg-zinc-200/60 dark:hover:bg-zinc-800">${ico('x', 'size-4')}</button></div><p id="npErr" hidden class="px-2 pt-1 text-xs text-red-600 dark:text-red-400"></p></div>`);
     $('npName').focus();
   },
   'np-create': async () => {
-    const name = ($('npName')?.value || '').trim().toLowerCase();
-    if (!name) return $('npName')?.focus();
+    const title = ($('npName')?.value || '').trim();  // any name (F173)
+    if (!title) return $('npName')?.focus();
     try {
-      const d = await net('/api/projects', JSON_POST({name}), NET.op);
+      const d = await net('/api/projects', JSON_POST({title}), NET.op);
       if (d.ok) location.href = `/p/${d.name}/`; else { $('npErr').textContent = d.error || 'Not created'; $('npErr').hidden = false; }
     } catch (_) { $('npErr').textContent = 'Connection lost; try again'; $('npErr').hidden = false; }
   },
@@ -5975,13 +6118,13 @@ function renderSidebar() {
       ${t === 'items' && needs ? `<span class="grid h-4.5 min-w-4.5 place-items-center rounded-full bg-amber-500 px-1 text-[10px] font-bold text-white dark:bg-amber-400 dark:text-amber-950">${needs}</span>` : ''}<span class="font-mono text-[11px] text-zinc-400 tabular-nums">${tabCount(t)}</span></button>`;
   // B12: the other projects stay in one order, by name, so a row never moves under the pointer; what changes in a
   // project shows on its row (its badge, its agent), not by moving it.
-  const others = (DR.list || []).filter(p => p.name !== S.project).sort((a, b) => a.name.localeCompare(b.name)).map(p => { const [tone, label] = agentState(p.agents, p.work);
+  const others = (DR.list || []).filter(p => p.name !== S.project).sort((a, b) => titleOf(a).localeCompare(titleOf(b))).map(p => { const [tone, label] = agentState(p.agents, p.work);
     return `<a href="/p/${encodeURIComponent(p.name)}/" class="flex items-center gap-2.5 rounded-xl px-3 py-1.5 hover:bg-zinc-200/60 dark:hover:bg-zinc-800">${projTile(p.name, 'size-5 rounded-md text-[10px]')}
-      <span class="min-w-0 flex-1"><span class="block truncate text-sm font-medium">${esc(p.name)}</span><span class="flex items-center gap-1.5 text-[11px] text-zinc-500 dark:text-zinc-400"><span class="size-1.5 shrink-0 rounded-full ${AGENT_TONE[tone][0]}"></span><span class="truncate ${tone === 'ok' ? 'text-emerald-700 dark:text-emerald-400' : AGENT_TONE[tone][1]}">${esc(label)}</span><span class="shrink-0">· ${p.open} open</span></span></span>
+      <span class="min-w-0 flex-1"><span class="block truncate text-sm font-medium">${esc(titleOf(p))}</span><span class="flex items-center gap-1.5 text-[11px] text-zinc-500 dark:text-zinc-400"><span class="size-1.5 shrink-0 rounded-full ${AGENT_TONE[tone][0]}"></span><span class="truncate ${tone === 'ok' ? 'text-emerald-700 dark:text-emerald-400' : AGENT_TONE[tone][1]}">${esc(label)}</span><span class="shrink-0">· ${p.open} open</span></span></span>
       ${p.needs ? `<span class="grid h-5 min-w-5 place-items-center rounded-full bg-amber-100 px-1 text-[11px] font-bold text-amber-900 dark:bg-amber-400/15 dark:text-amber-200">${p.needs}</span>` : ''}</a>`; }).join('');
   const open = openCount();
   draw($('drawerList'), `<div class="mb-2 rounded-2xl bg-white p-1.5 shadow-sm ring-1 ring-zinc-900/5 dark:bg-zinc-800 dark:ring-white/5">
-      <div class="flex items-center gap-2 px-1.5 pt-1">${projTile(S.project, 'size-6 rounded-lg text-xs')}<span class="min-w-0 flex-1 truncate text-[15px] font-semibold">${esc(S.project)}</span><span class="text-xs text-zinc-400">${open} open</span></div>
+      <div class="flex items-center gap-2 px-1.5 pt-1">${projTile(S.project, 'size-6 rounded-lg text-xs')}<span class="min-w-0 flex-1 truncate text-[15px] font-semibold">${esc(projTitle())}</span><span class="text-xs text-zinc-400">${open} open</span></div>
       <div id="deskAgent" class="px-1 pt-1 pb-1.5"></div>
       <div class="flex flex-col gap-px">${['items', 'inputs', 'archive', 'rules'].map(tab).join('')}</div></div>${others}`);
   $('newInputBtn').setAttribute('aria-pressed', String(D.compose && !D.page));
@@ -6017,7 +6160,7 @@ function composeHead() {
   if (a) return `<div class="flex items-center gap-3">${projTile(S.project, 'size-11 rounded-xl text-xl shadow-sm')}<h1 class="text-[28px] leading-none font-semibold tracking-tight">${U.amend.mode === 'edit' ? 'Edit' : 'Add details to'} ${a.id}</h1></div>
     <p class="mt-3.5 line-clamp-2 max-w-full text-[15px] text-zinc-500 dark:text-zinc-400">“${esc(oneLine(a.text))}”</p>
     <button data-act="amend-cancel" class="mt-2 h-8 rounded-full px-3 text-[13px] font-medium text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200">Back to a new input${KBD('Esc')}</button>`;
-  return `<div class="flex items-center gap-3">${projTile(S.project, 'size-11 rounded-xl text-xl shadow-sm')}<h1 class="text-[28px] leading-none font-semibold tracking-tight">${esc(S.project)}</h1></div>
+  return `<div class="flex items-center gap-3">${projTile(S.project, 'size-11 rounded-xl text-xl shadow-sm')}<h1 class="text-[28px] leading-none font-semibold tracking-tight">${esc(projTitle())}</h1></div>
     <p class="mt-3.5 flex items-center justify-center gap-0 text-[15px] text-zinc-500 dark:text-zinc-400">${ruleMode() ? '<span class="font-medium text-zinc-700 dark:text-zinc-200">New rule</span>&nbsp;for the whole project' : 'New input to the whole project'}<span class="px-1.5 text-zinc-300 dark:text-zinc-600">·</span><span class="inline-flex items-center gap-1 font-medium text-zinc-700 dark:text-zinc-200">${ico('sparkle', 'size-4 text-blue-600 dark:text-blue-400')}${S.org?.on ? 'the organizer files it' : 'your agent files it'}</span></p>${ruleFlip() ? `<div class="mt-2 flex justify-center">${ruleFlip()}</div>` : ''}`;
 }
 const DOT = {
@@ -6249,7 +6392,7 @@ const PBODY = {
     : pRuled(EMPTY('Nothing deleted. An input you delete comes here, with the items that went with it.')),
   log: () => !P_CACHE.log ? P_LOADING : !P_CACHE.log.length ? pRuled(EMPTY('Nothing has changed yet.'))
     : pRuled(`<div class="pt-2">${logHtml(P_CACHE.log)}</div>`) + (P_CACHE.log.length >= LOG_N ? `<p class="pt-4 text-[13px] text-zinc-400 dark:text-zinc-500">The latest ${LOG_N} changes</p>` : ''),
-  about: () => `<dl class="border-t border-zinc-200 text-sm dark:border-zinc-800">${[['Project', esc(S.project)], ['Data', `<span class="font-mono text-[13px] break-all">${esc(S.file)}</span>`],
+  about: () => `<dl class="border-t border-zinc-200 text-sm dark:border-zinc-800">${[['Project', `${esc(projTitle())} <span class="font-mono text-[13px] text-zinc-500 dark:text-zinc-400">/p/${esc(S.project)}</span>`], ['Data', `<span class="font-mono text-[13px] break-all">${esc(S.file)}</span>`],
     ['Organizer', S.org?.on ? 'Gemini · ' + esc(S.org.model) : 'off (set GEMINI_API_KEY and restart)']].map(([k, v]) => `<div class="grid grid-cols-[8rem_minmax(0,1fr)] items-baseline gap-4 border-b border-zinc-200 py-4 dark:border-zinc-800"><dt class="text-zinc-500 dark:text-zinc-400">${k}</dt><dd class="text-zinc-800 dark:text-zinc-200">${v}</dd></div>`).join('')}</dl>`,
 };
 function renderProject() {
@@ -6258,7 +6401,7 @@ function renderProject() {
   if (sec === 'log' && P_CACHE.logRev !== S.rev) loadLog();  // the project changed, so did its log
   const row = ([k, [path, icon, label]]) => `<a href="${P}${path}" data-act="psec" data-sec="${k}" ${k === sec ? 'aria-current="page" ' : ''}class="flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-sm text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 aria-[current=page]:bg-zinc-100 aria-[current=page]:font-semibold aria-[current=page]:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800/60 dark:hover:text-zinc-100 dark:aria-[current=page]:bg-zinc-800 dark:aria-[current=page]:text-zinc-50">${ico(icon, 'size-4 opacity-70')}<span class="min-w-0 flex-1 truncate">${label}</span></a>`;
   setHtml($('projectNav'), 'nav', `<div class="flex h-14 shrink-0 items-center px-2"><button data-act="project-back" class="flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800">${ico('left', 'size-4')}Back to ${D.compose ? 'New input' : TAB_NAME[U.tab]}${KBD('Esc')}</button></div>
-    <div class="flex items-center gap-2.5 px-4 pt-2 pb-4">${projTile(S.project, 'size-8 rounded-lg text-sm')}<div class="min-w-0"><p class="truncate text-[15px] leading-tight font-semibold">${esc(S.project)}</p><p class="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">This project</p></div></div>
+    <div class="flex items-center gap-2.5 px-4 pt-2 pb-4">${projTile(S.project, 'size-8 rounded-lg text-sm')}<div class="min-w-0"><p class="truncate text-[15px] leading-tight font-semibold">${esc(projTitle())}</p><p class="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">This project</p></div></div>
     <div class="flex flex-col gap-0.5 px-2">${Object.entries(PSEC).map(row).join('')}</div>`);
   setHtml($('projectBody'), 'body', `<div class="mx-auto w-full max-w-[46rem] px-8 pt-9 pb-16"><header class="pb-6"><h1 class="text-[22px] leading-tight font-semibold tracking-tight">${name}</h1>
     <p class="mt-2 text-[15px] leading-relaxed text-zinc-500 dark:text-zinc-400">${about}</p></header>${PBODY[sec]()}</div>`);
@@ -6319,9 +6462,9 @@ function showKeys() {
 const PS = {q: '', i: -1};
 function projectSwitcher(fresh = true) {
   if (fresh) { PS.q = ''; PS.i = -1; }
-  const q = PS.q.trim().toLowerCase(), rows = (DR.list || []).filter(p => p.name.toLowerCase().includes(q));
+  const q = PS.q.trim().toLowerCase(), rows = (DR.list || []).filter(p => (titleOf(p) + ' ' + p.name).toLowerCase().includes(q));
   if (PS.i < 0 || PS.i >= rows.length) PS.i = Math.max(0, rows.findIndex(p => p.name !== S.project));
-  const list = rows.map((p, i) => `<a href="/p/${encodeURIComponent(p.name)}/" data-i="${i}" aria-selected="${i === PS.i}" class="flex h-11 items-center gap-3 rounded-xl px-3 hover:bg-zinc-100 aria-selected:bg-zinc-100 aria-selected:ring-1 aria-selected:ring-zinc-300 dark:hover:bg-zinc-800 dark:aria-selected:bg-zinc-800 dark:aria-selected:ring-zinc-600">${projTile(p.name, 'size-6 rounded-md text-xs')}<span class="min-w-0 flex-1 truncate ${p.name === S.project ? 'font-semibold' : ''}">${esc(p.name)}</span>${p.name === S.project ? '<span class="text-xs text-zinc-400">this one</span>' : ''}${p.needs ? `<span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900 dark:bg-amber-400/15 dark:text-amber-200">${p.needs} need you</span>` : ''}</a>`).join('')
+  const list = rows.map((p, i) => `<a href="/p/${encodeURIComponent(p.name)}/" data-i="${i}" aria-selected="${i === PS.i}" class="flex h-11 items-center gap-3 rounded-xl px-3 hover:bg-zinc-100 aria-selected:bg-zinc-100 aria-selected:ring-1 aria-selected:ring-zinc-300 dark:hover:bg-zinc-800 dark:aria-selected:bg-zinc-800 dark:aria-selected:ring-zinc-600">${projTile(p.name, 'size-6 rounded-md text-xs')}<span class="min-w-0 flex-1 truncate ${p.name === S.project ? 'font-semibold' : ''}">${esc(titleOf(p))}</span>${p.name === S.project ? '<span class="text-xs text-zinc-400">this one</span>' : ''}${p.needs ? `<span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900 dark:bg-amber-400/15 dark:text-amber-200">${p.needs} need you</span>` : ''}</a>`).join('')
     || `<p class="px-3 py-2 text-sm text-zinc-500">${DR.list ? 'No project matches' : 'Loading…'}</p>`;
   if (!fresh && $('projList')) { $('projList').innerHTML = list; $('projList').querySelector('[aria-selected=true]')?.scrollIntoView({block: 'nearest'}); return; }
   dialog('Switch project', `<input id="projFilter" class="${FIELD}" placeholder="Type to find a project" aria-label="Find a project" autocomplete="off"><div id="projList" class="-mx-1 mt-2 flex flex-col gap-0.5">${list}</div>`, {focus: false});
@@ -6473,9 +6616,9 @@ function setDrawer(x, animate = true) {  // x: how far the page is pushed right
 async function fillDrawer() {
   if (!DR.list) draw($('drawerList'), '<div class="px-3 py-3 text-sm text-zinc-400">Loading…</div>');
   try { DR.list = (await net('/api/projects')).sort((a, b) => b.t - a.t); } catch (_) { if (!DR.list) draw($('drawerList'), `<div class="px-3 py-3 text-sm text-zinc-500 dark:text-zinc-400">Couldn't load the projects</div>`); return; }
-  draw($('drawerList'), [...DR.list].sort((a, b) => (b.name === S.project) - (a.name === S.project) || a.name.localeCompare(b.name)).map(p => { const cur = p.name === S.project, [tone, label] = agentState(p.agents, p.work);  // one order: rows don't move as projects get busy (B158)
+  draw($('drawerList'), [...DR.list].sort((a, b) => (b.name === S.project) - (a.name === S.project) || titleOf(a).localeCompare(titleOf(b))).map(p => { const cur = p.name === S.project, [tone, label] = agentState(p.agents, p.work);  // one order: rows don't move as projects get busy (B158)
     return `<a href="/p/${encodeURIComponent(p.name)}/" ${cur ? 'aria-current="page"' : ''} class="group flex min-h-14 items-center gap-3 rounded-2xl px-3 py-2.5 hover:bg-zinc-200/50 data-pressed:bg-zinc-200/70 aria-[current=page]:bg-white aria-[current=page]:shadow-sm aria-[current=page]:ring-1 aria-[current=page]:ring-zinc-900/5 dark:hover:bg-zinc-800/60 dark:data-pressed:bg-zinc-800 dark:aria-[current=page]:bg-zinc-800 dark:aria-[current=page]:ring-white/5">
-    <span class="min-w-0 flex-1"><span class="block truncate text-[17px] font-medium group-aria-[current=page]:font-semibold">${esc(p.name)}</span>
+    <span class="min-w-0 flex-1"><span class="block truncate text-[17px] font-medium group-aria-[current=page]:font-semibold">${esc(titleOf(p))}</span>
     <span class="mt-0.5 flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400"><span class="size-1.5 shrink-0 rounded-full ${AGENT_TONE[tone][0]}"></span><span class="truncate ${tone === 'ok' ? 'text-emerald-700 dark:text-emerald-400' : AGENT_TONE[tone][1]}">${esc(label)}</span><span class="shrink-0">· ${p.open} open</span></span></span>
     ${p.needs ? `<span class="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900 dark:bg-amber-400/15 dark:text-amber-200">${p.needs} need you</span>` : ''}</a>`; }).join(''));
   $('otherDot').hidden = !DR.list.some(p => p.name !== S.project && p.needs);
@@ -6533,7 +6676,7 @@ function renderDrawerSettings() {
       <span class="min-w-0 flex-1"><span class="block text-[15px] lg:text-sm">Keep going</span><span class="block text-xs leading-snug text-zinc-500 lg:text-[11px] dark:text-zinc-400">Agents take the next item without stopping</span></span>
       <span class="relative h-6.5 w-11 shrink-0 rounded-full bg-zinc-300 transition-colors group-aria-pressed:bg-emerald-500 lg:h-5 lg:w-8.5 dark:bg-zinc-600 dark:group-aria-pressed:bg-emerald-500"><span class="absolute top-0.75 left-0.75 size-5 rounded-full bg-white shadow transition-transform group-aria-pressed:translate-x-4.5 lg:size-3.5 lg:group-aria-pressed:translate-x-3.5"></span></span></button>
     ${row('guide', 'plug', 'Connect a coding agent', 'connect')}${row('phone', 'phone', 'Use on your phone', 'phone')}${row('fixes', 'pencil', 'Voice spellings', 'fixes')}${row('log', 'history', 'Change log', 'log')}${row('deleted', 'trash', 'Deleted', 'deleted')}${desk() ? '' : row('about', 'info', 'About', 'about')}`);
-  $('menuInfo').innerHTML = `<div><dt class="inline">Project </dt><dd class="inline">${esc(S.project)}</dd></div>
+  $('menuInfo').innerHTML = `<div><dt class="inline">Project </dt><dd class="inline">${esc(projTitle())}</dd></div>
     <div><dt class="inline">Data </dt><dd class="inline font-mono text-[11px]">${esc(S.file)}</dd></div>
     <div><dt class="inline">Organizer </dt><dd class="inline">${S.org?.on ? 'Gemini · ' + esc(S.org.model) : 'off (set GEMINI_API_KEY and restart)'}</dd></div>`;
 }
