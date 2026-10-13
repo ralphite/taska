@@ -671,7 +671,7 @@ class Store:
             text = self.with_words(str(op.get("text") or "").strip(), files)[:MAX_TEXT]
             if not text and not files:
                 raise Err("empty input")
-            scope = self.item(op["scope"], follow=False)["n"] if op.get("scope") else None
+            scope = self.item(op["scope"])["n"] if op.get("scope") else None  # a merged item's replies go where it went (B5)
             rid = f"r{self.nin + 1}"
             e = {"k": "in", "id": rid, "by": by, "text": text, "scope": scope, "files": files}
             if op.get("from") == "rules":
@@ -2973,7 +2973,7 @@ function docPane(d) {
   $('itemMenuBtn').hidden = true;
   $('dHead').innerHTML = `<span class="flex min-w-0 items-center gap-2 text-sm">${ico('file', 'size-[18px] text-zinc-500 dark:text-zinc-400')}<span class="font-mono font-bold text-zinc-700 dark:text-zinc-200">D${d.d}</span><span class="truncate font-semibold">${esc(d.title)}</span></span>`;
   $('dActs').innerHTML = b('doc-circle', `${ico('lasso', 'size-4')}${U.docCircle ? 'Draw a circle…' : 'Circle'}`, 'Circle an area to comment on it', `aria-pressed="${!!U.docCircle}"`) + b('doc-edit', `${ico('pencil', 'size-4')}Edit`, 'Edit the text');
-  $('dNav').innerHTML = b('doc-close', `${ico('left', 'size-4')}Back to ${code(d.n)}${KBD('Esc')}`, `Back to ${code(d.n)} · Esc`);
+  $('dNav').innerHTML = b('doc-close', `${ico('left', 'size-4')}Back to ${code(liveN(d.n))}${KBD('Esc')}`, `Back to ${code(liveN(d.n))} · Esc`);
   if (D.docKey === key && body.querySelector('#docBlocks')) return;
   D.docKey = key;
   const top = body.querySelector('#docBlocks') ? body.scrollTop : (U.docScroll[d.d] || 0);
@@ -3032,9 +3032,9 @@ function renderDoc({focus = false} = {}) {
 }
 function openDoc(d) {
   if (U.doc !== d) setTimeout(() => writeURL(true));  // after the sheet is up
-  if (desk()) {  // T110: in the item pane, under its item
-    const doc = docById(d);
-    if (doc && U.open !== doc.n && byN.has(doc.n)) { U.open = doc.n; renderItems(); }
+  if (desk()) {  // T110: in the item pane, under its item (a merged one's: the item it went into, B5)
+    const doc = docById(d), host = doc && liveN(doc.n);
+    if (doc && U.open !== host && byN.has(host)) { U.open = host; renderItems(); }
     if (!$('overlay').hidden) { $('overlay').hidden = true; $('overlay').style.bottom = ''; U.sheet = null; }  // the editor, when you come back from it
     Object.assign(U, {peek: null, doc: d, docReply: null, docNew: null, docEdit: false, docText: null, docSel: new Set(), docQuote: null, docCircle: false});
     D.docKey = null; renderDetail(); renderComposer();
@@ -3194,6 +3194,7 @@ function detailHtml(it) {
 }
 
 function renderDetail() {
+  settleOpen();  // B5: never a merged item, whichever way it came back (a tab's last item, a document's item)
   const it = U.open && byN.get(U.open), body = $('detailBody');
   if (desk()) renderGoStrip();
   if (desk() && U.doc && !U.docEdit && docById(U.doc)) return docPane(docById(U.doc));
@@ -3992,6 +3993,7 @@ $('vStage').addEventListener('touchend', e => {
 
 function render() {
   if (TIP.el && !TIP.el.isConnected) tipHide();  // its trigger was redrawn
+  settleOpen();  // B5
   showView(); renderItems(); renderDetail(); renderComposer(); renderFeedback(); renderAgent();
   if (desk()) { renderDeskHead(); renderSidebar(); renderRail(); renderFilters(); if (D.page) renderProject(); }
   if (U.peek && !$('overlay').hidden) { const top = $('dlgBody').scrollTop; peek(U.peek, {focus: false}); $('dlgBody').scrollTop = top; }
@@ -4021,19 +4023,36 @@ function showView() {
   if (!lift) { v.style.transform = ''; v.style.transition = ''; }
 }
 
+// B5: a merged item lives on in the one it went into. Opened by a link, its address, a reload or Back, it opens that
+// one and says so, as when the merge happens while it is open (B118): the merged one never shows, or takes replies.
+const liveN = n => { let it = byN.get(n); for (let i = 0; it?.merged_into && byN.has(it.merged_into) && i < 50; i++) it = byN.get(it.merged_into); return it ? it.n : n; };
+function mergedTo(n) {
+  const to = liveN(n);
+  if (to !== n) toast(`${code(n)} was merged into ${code(to)}`);
+  return to;
+}
+function settleOpen() {  // the item on screen was merged: the one it went into takes its place
+  if (!U.open || !byN.get(U.open)?.merged_into) return;
+  U.open = mergedTo(U.open);
+  if (!URLS.applying) writeURL(false);
+}
+
 // Opening an item is a step in the browser's history, so Back, the back button and the phone's back swipe
 // all return to the list where you were.
 // On the desktop opening an item only selects it: the list stays, the detail pane shows it, and the address
-// follows without adding history. Full width (O) is the step Back undoes there.
+// follows without adding history. Full width (O) is the step Back undoes there, and so is a link (B9: goto).
 function openItem(n, push = true) {
   if (!n || !byN.has(n)) return closeItem();
+  const asked = n;
+  n = mergedTo(n);
+  if (n !== asked && URLS.applying) history.replaceState(desk() ? history.state : {n}, '', P + code(n) + viewQuery());  // the address names what shows
   if (!U.open && !desk()) U.listTop = [$('list').scrollTop, $('inputsView').scrollTop];
   if (U.open !== n) { stashEdit(); U.editing = null; U.subFor = null; U.amend = null; U.correct = null; }
   const fresh = U.open !== n;
   U.open = n; U.scopeOff = false;
   if (desk() && U.doc && !U.docEdit) { U.docScroll[U.doc] = $('detailBody').scrollTop; Object.assign(U, {doc: null, docReply: null, docSel: new Set(), docQuote: null, docCircle: false}); D.docKey = null; }  // another item: the document closes
   if (desk() && U.tab === 'inputs') { const it = byN.get(n); U.tab = it.archived ? 'archive' : it.type === 'rule' ? 'rules' : 'items'; }  // Inputs has no item pane
-  if (desk()) { D.page = null; D.compose = false; writeURL(false, history.state?.full ? {n, full: true} : null); }
+  if (desk()) { D.page = null; D.compose = false; writeURL(false, history.state?.full ? {...history.state, n} : null); }
   else if (push && !URLS.applying && location.pathname !== P + code(n)) history.pushState({n}, '', P + code(n) + viewQuery());
   render();
   if (fresh) $('detailBody').scrollTop = 0;
@@ -4052,7 +4071,8 @@ function closeItem() {
 function clearSearch() { U.q = ''; $('q').value = ''; qSync(); writeURL(false); renderItems(); if (U.tab === 'inputs') renderInputs(); }
 const VIEW_KEYS = ['q', 'type', 'when', 'status', 'pri'];
 function setTab(t) {
-  const was = U.tab;
+  const was = U.tab, away = desk() && (t !== was || !!D.page || D.compose);  // another tab, or out of This project or New input: a step Back undoes (B9)
+  if (away) keepPlace();
   if (t !== was) {  // B130: each tab keeps its own search and filters; nothing leaks from one tab to another
     U.tabView[was] = Object.fromEntries(VIEW_KEYS.map(k => [k, U[k]]));
     const v = U.tabView[t] || {};
@@ -4061,7 +4081,7 @@ function setTab(t) {
   }
   U.asRule = null; U.amend = null; U.correct = null; if (t === 'inputs' && was !== 'inputs') U.inputsEnd = true;
   U.tab = t;
-  if (t !== was) writeURL(true);
+  if (t !== was && !desk()) writeURL(true);
   if (desk()) {
     if (t !== was) {  // B120: the open item belongs to a tab; each tab keeps its own (Inputs shows none, so it keeps the last)
       if (was !== 'inputs') U.tabOpen[was] = U.open;
@@ -4071,7 +4091,7 @@ function setTab(t) {
       }
     }
     U.tabTop[was] = $('list').scrollTop;  // each tab keeps its place in the list (B124)
-    D.page = null; D.sideOpen = false; D.compose = false; U.settle.clear(); render(); $('list').scrollTop = U.tabTop[t] || 0; return writeURL(false);
+    D.page = null; D.sideOpen = false; D.compose = false; U.settle.clear(); render(); $('list').scrollTop = U.tabTop[t] || 0; return writeURL(away);
   }
   document.querySelectorAll('[data-tab]').forEach(b => b.getAttribute('aria-selected') !== null && b.setAttribute('aria-selected', String(b.dataset.tab === t)));
   showView(); renderFilters();
@@ -4225,11 +4245,18 @@ const ACT = {
     const n = Number(b.dataset.n);
     try { await op({op: 'set', ref: code(n), f: {[b.dataset.f]: b.dataset.v}}); if (!$('overlay').hidden) itemMenu(n); } catch (_) {}
   },
-  goto: b => {  // from a chip, a source or the change log: to the item, leaving pages that hide it
+  goto: b => {  // from a chip, a source, a subitem, the change log or Make item: to the item, leaving pages that hide it
     closeDialog();
-    const n = Number(b.dataset.n), it = byN.get(n);
-    if (desk()) { D.page = null; D.compose = false; if (it && !inTab(it, U.tab)) setTab(it.archived ? 'archive' : it.type === 'rule' ? 'rules' : 'items'); }
-    openItem(n);
+    const n = Number(b.dataset.n), it = byN.get(liveN(n));
+    if (!desk()) return openItem(n);
+    keepPlace();  // B9: one step in the history, so Back comes back here, scrolled as it was
+    URLS.hold = true;
+    try {
+      D.page = null; D.compose = false;
+      if (it && (U.tab === 'inputs' || !inTab(it, U.tab))) setTab(tabOf(it));
+      openItem(n);
+    } finally { URLS.hold = false; }
+    writeURL(true, D.full ? {n: U.open, full: true, link: true} : undefined);
   },
   more: b => { U.more.add(Number(b.dataset.n)); renderDetail(); },
   'more-input': b => { const id = b.dataset.id; if (U.moreInputs.has(id)) U.moreInputs.delete(id); else U.moreInputs.add(id); renderInputs(); if (desk() && D.compose) renderDetail(); },
@@ -4495,7 +4522,9 @@ function renderSidebar() {
   const needs = S.items.filter(needsYou).length;
   const tab = t => `<button data-act="tab" data-tab="${t}" class="flex h-8 w-full items-center gap-2.5 rounded-lg px-2 text-left text-sm ${U.tab === t && !D.page ? 'bg-zinc-100 font-semibold text-zinc-900 dark:bg-zinc-700/60 dark:text-zinc-50' : 'text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-700/40'}">${ico(TAB_ICON[t], 'size-4 opacity-70')}<span class="min-w-0 flex-1">${TAB_NAME[t]}</span>
       ${t === 'items' && needs ? `<span class="grid h-4.5 min-w-4.5 place-items-center rounded-full bg-amber-500 px-1 text-[10px] font-bold text-white dark:bg-amber-400 dark:text-amber-950">${needs}</span>` : ''}<span class="font-mono text-[11px] text-zinc-400 tabular-nums">${tabCount(t)}</span></button>`;
-  const others = (DR.list || []).filter(p => p.name !== S.project).map(p => { const [tone, label] = agentState(p.agents, p.work);
+  // B12: the other projects stay in one order, by name, so a row never moves under the pointer; what changes in a
+  // project shows on its row (its badge, its agent), not by moving it.
+  const others = (DR.list || []).filter(p => p.name !== S.project).sort((a, b) => a.name.localeCompare(b.name)).map(p => { const [tone, label] = agentState(p.agents, p.work);
     return `<a href="/p/${encodeURIComponent(p.name)}/" class="flex items-center gap-2.5 rounded-xl px-3 py-1.5 hover:bg-zinc-200/60 dark:hover:bg-zinc-800">${projTile(p.name, 'size-5 rounded-md text-[10px]')}
       <span class="min-w-0 flex-1"><span class="block truncate text-sm font-medium">${esc(p.name)}</span><span class="flex items-center gap-1.5 text-[11px] text-zinc-500 dark:text-zinc-400"><span class="size-1.5 shrink-0 rounded-full ${AGENT_TONE[tone][0]}"></span><span class="truncate ${tone === 'ok' ? 'text-emerald-700 dark:text-emerald-400' : AGENT_TONE[tone][1]}">${esc(label)}</span><span class="shrink-0">· ${p.open} open</span></span></span>
       ${p.needs ? `<span class="grid h-5 min-w-5 place-items-center rounded-full bg-amber-100 px-1 text-[11px] font-bold text-amber-900 dark:bg-amber-400/15 dark:text-amber-200">${p.needs}</span>` : ''}</a>`; }).join('');
@@ -4664,9 +4693,9 @@ function stepItem(dir) {
 }
 function fullWidth(on) {
   if (!U.open || on === D.full) return;
-  if (on) { D.full = true; history.pushState({n: U.open, full: true}, '', P + code(U.open) + viewQuery()); render(); }
-  else if (history.state?.full) history.back();  // popstate leaves full width
-  else { D.full = false; render(); }
+  if (on) { keepPlace(); D.full = true; history.pushState({n: U.open, full: true}, '', P + code(U.open) + viewQuery()); render(); }
+  else if (history.state?.full && !history.state.link) history.back();  // popstate leaves full width
+  else { D.full = false; render(); if (history.state?.full) writeURL(false, null); }  // reached by a link (B9): Back goes to where it was
 }
 
 // "This project" on the desktop (B162): a settings page, like those of GitHub, Linear or macOS. The sections are rows
@@ -4704,9 +4733,10 @@ function loadLog() {  // the log as it is now: when it opens, and after each cha
 function openProject(sec) {
   sec = Object.hasOwn(PSEC, sec) ? sec : 'agents';
   const from = D.page && D.section;
+  if (from !== sec) keepPlace();  // B9
   D.page = 'project'; D.sideOpen = false; U.go = null; D.section = sec;
   render();
-  if (from !== sec) { $('projectBody').scrollTop = 0; writeURL(true, {v: viewPath(), page: from ? (history.state?.page || 0) + 1 : 1}); }
+  if (from !== sec) { $('projectBody').scrollTop = 0; writeURL(true, {v: viewPath(), page: from ? (history.state?.page || 0) + 1 : 1, tab: U.tab}); }  // tab: what Back to … goes to
   if (sec === 'connect') fetch(P + 'agent?ui=1').then(r => r.text()).then(g => { P_CACHE.guide = g; renderProject(); }, () => {});
   if (sec === 'fixes') loadFixes();
 }
@@ -5035,8 +5065,10 @@ function renderDrawerSettings() {
 async function checkOthers() {
   if (Date.now() - (checkOthers.t || 0) < 20000) return;
   checkOthers.t = Date.now();
+  const names = () => (DR.list || []).map(p => p.name).sort().join('\n'), had = names();
   try { DR.list = (await (await fetch('/api/projects', {cache: 'no-store'})).json()).sort((a, b) => b.t - a.t); } catch (_) { return; }
   $('otherDot').hidden = !DR.list.some(p => p.name !== S.project && p.needs);
+  if (names() !== had && S.rev >= 0) return render();  // A12, B13: Move… on Inputs and New input needs the other projects, the tiles' colours too
   if (desk()) { renderSidebar(); renderRail(); }
 }
 function openDrawer() { DR.open = true; renderDrawerSettings(); fillDrawer(); setDrawer(drawerW()); }
@@ -5287,10 +5319,10 @@ window.addEventListener('pageshow', e => { if (e.persisted) refresh(); });
 // document; /new the New input page; /settings /connect /phone /spellings /log /about the sections of This project
 // (B162); ?q= and the filters ride along. The server sends the page for these when a browser asks, and text when an
 // agent does (/connect and /log mean something to agents too). Changing tab, opening a document, a section of This
-// project or New input, an item on the phone and full width are steps Back can undo; choosing items on the desktop,
-// search and filters only rewrite the address.
+// project or New input, an item on the phone and full width are steps Back can undo, and so is a link to an item (B9);
+// choosing items in the list on the desktop (a click, J/K), search and filters only rewrite the address.
 const VIEW = /^(inputs|archive|rules|new|settings|connect|phone|spellings|log|about)$/;
-const URLS = {applying: false, selfBack: false};
+const URLS = {applying: false, selfBack: false, hold: false};  // hold: a link is on its way, its step is written once it is there
 const viewPath = () => desk() && D.page ? PSEC[D.section][0] : U.doc && !U.docEdit ? `D${U.doc}` : desk() && D.compose ? 'new'
   : desk() && U.tab === 'inputs' ? 'inputs' : U.open ? code(U.open) : U.tab === 'items' ? '' : U.tab;  // on the desktop Inputs hides the item
 function viewQuery() {
@@ -5301,7 +5333,7 @@ function viewQuery() {
   return s ? '?' + s : '';
 }
 function writeURL(push = false, state) {
-  if (URLS.applying) return;
+  if (URLS.applying || URLS.hold) return;
   const url = P + viewPath() + viewQuery(), now = location.pathname + location.search + location.hash;
   if (push && url !== now) history.pushState(state ?? {v: viewPath()}, '', url);
   else if (url !== now || state !== undefined) history.replaceState(state === undefined ? history.state : state, '', url);
@@ -5317,26 +5349,40 @@ function readURL() {
   const old = location.hash.slice(1);  // links from before: #B03
   return {seg: seg || (parseRef(old) ? old : ''), qs: new URLSearchParams(location.search)};
 }
+// The tab an item lives in (an item outside the tab you are in opens there).
+const tabOf = it => it.archived ? 'archive' : it.type === 'rule' ? 'rules' : 'items';
+// B9: a step you leave keeps how far its page was scrolled, and Back puts it there again. The desktop redraws its lists
+// as you go, so the browser can't; the Inputs page would otherwise jump to its end.
+const scroller = () => D.page ? $('projectBody') : U.tab === 'inputs' ? $('inputsView') : $('list');
+function keepPlace() {
+  if (desk() && !URLS.applying && !URLS.hold) history.replaceState({...history.state, top: scroller().scrollTop}, '');
+}
+function restorePlace() {
+  const top = history.state?.top, el = desk() && typeof top === 'number' && scroller();
+  if (el) requestAnimationFrame(() => { el.scrollTop = top; });  // after the Inputs page's own jump to its end
+}
 function applyURL() {  // the page follows the address: when it loads, and on Back / Forward
   URLS.applying = true;
-  try {
-    const {seg, qs} = readURL();
-    U.q = qs.get('q') || ''; $('q').value = U.q;
-    for (const k of ['type', 'when', 'status', 'pri']) U[k] = qs.get(k) || 'all';
-    if (desk()) { D.full = !!history.state?.full; D.compose = false; D.page = null; }
-    const doc = /^[Dd](\d+)$/.exec(seg), n = doc ? 0 : parseRef(seg);
-    if (!doc && U.doc && !$('overlay').hidden) closeDialog();
-    if (doc) { const d = docById(Number(doc[1])); if (d && !U.open && desk()) openItem(d.n, false); return openDoc(Number(doc[1])); }
-    if (n && byN.has(n)) { const it = byN.get(n); U.tab = it.archived ? 'archive' : it.type === 'rule' ? 'rules' : U.tab === 'inputs' ? 'items' : U.tab; return openItem(n, false); }
-    closeItem();
-    if (Object.hasOwn(PSEC_AT, seg)) {  // a section of This project; the phone opens its sheet, or its menu for Agents and About
-      if (desk()) return openProject(PSEC_AT[seg]);
-      return ({log: showLog, connect: showGuide, phone: showPhone, spellings: ACT.fixes}[seg] || openDrawer)();
-    }
-    if (seg === 'new') { if (desk()) return ACT['new-input'](); return $('text').focus(); }
-    U.tab = /^(inputs|archive|rules)$/.test(seg) ? seg : 'items'; U.asRule = null; U.inputsEnd = seg === 'inputs';
-    render();
-  } finally { URLS.applying = false; }
+  try { showURL(); } finally { URLS.applying = false; }
+  restorePlace();
+}
+function showURL() {
+  const {seg, qs} = readURL();
+  U.q = qs.get('q') || ''; $('q').value = U.q;
+  for (const k of ['type', 'when', 'status', 'pri']) U[k] = qs.get(k) || 'all';
+  if (desk()) { D.full = !!history.state?.full; D.compose = false; D.page = null; }
+  const doc = /^[Dd](\d+)$/.exec(seg), n = doc ? 0 : parseRef(seg);
+  if (!doc && U.doc && !$('overlay').hidden) closeDialog();
+  if (doc) { const d = docById(Number(doc[1])); if (d && !U.open && desk()) openItem(d.n, false); return openDoc(Number(doc[1])); }
+  if (n && byN.has(n)) { U.tab = tabOf(byN.get(liveN(n))); return openItem(n, false); }  // a merged item: the one it went into (B5)
+  closeItem();
+  if (Object.hasOwn(PSEC_AT, seg)) {  // a section of This project; the phone opens its sheet, or its menu for Agents and About
+    if (desk()) { if (history.state?.tab) U.tab = history.state.tab; return openProject(PSEC_AT[seg]); }  // Back into it from a tab (B9)
+    return ({log: showLog, connect: showGuide, phone: showPhone, spellings: ACT.fixes}[seg] || openDrawer)();
+  }
+  if (seg === 'new') { if (desk()) return ACT['new-input'](); return $('text').focus(); }
+  U.tab = /^(inputs|archive|rules)$/.test(seg) ? seg : 'items'; U.asRule = null; U.inputsEnd = seg === 'inputs' && typeof history.state?.top !== 'number';
+  render();
 }
 window.addEventListener('popstate', () => {
   if (URLS.selfBack) { URLS.selfBack = false; return writeURL(false, history.state?.full ? history.state : null); }  // our own step back
@@ -5364,7 +5410,7 @@ renderComposer();  // the box's buttons, before data arrives
 window.addEventListener('load', grow);  // a restored draft is measured again once styles are in
 
 load().then(() => {
-  if (desk()) checkOthers();
+  checkOthers();  // the other projects: the sidebar, and Move… on your inputs (A12)
   const {seg} = readURL(), n = /^[Dd]\d+$/.test(seg) ? 0 : parseRef(seg);  // D1 is a document, not item 1
   if (n && byN.has(n) && !desk() && !history.state?.n) {  // a link to an item on the phone: put the list under it, so Back lands there
     history.replaceState(null, '', P + viewQuery()); history.pushState({n}, '', P + code(n) + viewQuery());
