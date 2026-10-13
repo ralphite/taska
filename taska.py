@@ -4091,9 +4091,11 @@ function threadHtml(d, key, comments, blockText) {
 const noteText = d => sameText(d.md.split('\n')[0].replace(/^#+\s*/, ''), d.title) ? d.md : `# ${d.title}\n\n${d.md}`;
 // What a document comment goes to (I087): the picked paragraphs, the selected text, or a thread you reply in.
 // The one input box takes it: its line says "Comment on D4 · “…”", and sending posts the comment.
+// B2: while a document is open the box belongs to it. With nothing picked it says so and waits; it never turns into a
+// reply to the item by itself. "Reply to F06 instead" (or Esc) closes the document, and only then is it a reply.
+const docOpen = () => U.doc && !U.docEdit && (desk() || !$('overlay').hidden) ? docById(U.doc) : null;
 function docTarget() {
-  if (!U.doc || U.docEdit || (!desk() && $('overlay').hidden)) return null;
-  const d = docById(U.doc);
+  const d = docOpen();
   if (!d) return null;
   if (U.docReply) {
     const b = d.blocks.find(b => b.key === U.docReply), t = d.detached.find(t => t.key === U.docReply);
@@ -4110,7 +4112,7 @@ async function sendDocComment(t) {
   $('text').value = ''; saveDraft(); grow();
   try { await save({op: 'dc', d: t.d.d, key: t.key, text, ...(t.reply ? {} : {quote: t.quote})}, () => { const t2 = docTarget(); if (t2 && $('text').value.trim()) sendDocComment(t2); }); }
   catch (_) { $('text').value = text; saveDraft(); grow(); return; }
-  U.docThreads.add(t.key); U.docSel = new Set(); U.docQuote = null; U.docReply = null;
+  U.docThreads.add(t.key); U.docSel = new Set(); U.docQuote = null; U.docReply = t.key;  // B2: what you write next goes on in that thread
   getSelection()?.removeAllRanges(); renderDoc(); renderComposer(); toast(t.reply ? 'Reply added' : 'Comment added');
   if (desk()) $('text').focus({preventScroll: true});
 }
@@ -4761,7 +4763,7 @@ const ticked = n => n && U.choice?.n === n && U.choice.picked.size ? [...U.choic
 
 function renderComposer() {
   if (S.project && draftKey() !== U.draftKey) swapDraft(draftKey());
-  const n = scopeN(), it = n && byN.get(n), dt = docTarget(), t = $('text'), ticks = U.correct || U.amend || dt ? [] : ticked(n);
+  const n = scopeN(), it = n && byN.get(n), dt = docTarget(), dOpen = !U.correct && !U.amend && !dt && docOpen(), t = $('text'), ticks = U.correct || U.amend || dt || dOpen ? [] : ticked(n);
   let line = '', ph = S.project ? `Write to ${projTitle()}…` : 'Write anything…', send = 'Send';  // the box says whom it writes to, on the phone too (B157)
   if (U.correct && byR.has(U.correct.id)) {  // F144: correcting a few words of a voice note
     line = scopeLine('pencil', `Correct “${esc(U.correct.wrong)}”`, `in ${U.correct.id} · remembered for every project`, scopeX('correct-cancel', 'Stop correcting'));
@@ -4773,6 +4775,10 @@ function renderComposer() {
   } else if (dt) {  // I087: a comment on a document
     line = scopeLine(dt.reply ? 'reply' : 'comment', `${dt.reply ? 'Reply in' : 'Comment on'} D${dt.d.d}`, dt.many > 1 ? `· ${dt.many} paragraphs` : dt.quote ? `“${esc(plainQuote(dt.quote).slice(0, 120))}”` : '', scopeX('doc-unpick', 'Cancel the comment'));
     ph = `${dt.reply ? 'Reply' : 'Comment'} on D${dt.d.d}…`; send = dt.reply ? 'Reply' : 'Comment';
+  } else if (dOpen) {  // B2: a document is open and nothing is picked: the box waits for a pick, it does not reply to the item
+    const host = liveN(dOpen.n);
+    line = scopeLine('comment', `Comment on D${dOpen.d}`, `· ${desk() ? 'click' : 'tap'} a paragraph or select text first`, byN.has(host) ? scopeLink('doc-to-item', `Reply to ${code(host)} instead`) : '');
+    ph = desk() ? `Click a paragraph of D${dOpen.d}, then comment…` : `Comment on D${dOpen.d}…`; send = 'Comment';
   } else if (n) {  // B83: a reply says so; the choices you ticked go with it (B145)
     line = scopeLine(desk() ? 'reply' : 'scope', `Reply to ${code(n)}`, ticks.length ? ticks.map(l => '✓ ' + esc(oneLine(l))).join(' · ') : esc(it.title),  // one name for it, as on the desktop (B157)
       desk() ? scopeLink('new-input', 'New input instead', 'C', 'Write a new input to the whole project instead · C') : scopeX('unscope', 'Send to the whole project instead'));
@@ -4814,6 +4820,7 @@ function renderComposer() {
   $('boxHint').innerHTML = !desk() ? '' : rec ? boxKeys([['↵', 'words into the box'], ['⇧↵', 'stop and send'], ['Esc', 'discard']])
     : U.correct || U.amend ? boxKeys([['⇧↵', 'save'], ['Esc', 'stop']])
     : dt ? boxKeys([['⇧↵', send.toLowerCase()], ['Esc', 'cancel']])
+    : dOpen ? boxKeys([['Esc', `back to ${code(liveN(dOpen.n))}`]], 'click a paragraph or select text to comment on it')
     : U.files.some(f => f.transcribing) ? boxKeys([['⇧↵', 'send now']], 'the words follow by themselves')
     : boxKeys([['⇧↵', ticks.length ? 'send the answer' : 'send'], ['↵', 'new line'], ['⌥V', 'voice']], 'paste or drop screenshots');
   if ($('overlay').dataset.above && !$('overlay').hidden) $('overlay').style.bottom = $('composer').parentElement.offsetHeight + 'px';  // a sheet over the page stays above the box: its line too
@@ -4900,6 +4907,8 @@ async function send() {
   if (U.amend) return sendAmend();  // details for an input you sent (B136)
   const dt = docTarget();
   if (dt) return sendDocComment(dt);  // a document comment (I087)
+  const od = docOpen();
+  if (od) return toast(`First ${desk() ? 'click' : 'tap'} a paragraph or select text in D${od.d}`);  // B2: never a reply to the item by accident
   const n = scopeN(), ch = n && U.choice?.n === n && U.choice.picked.size  // B145: ticked choices go with what you wrote
     ? [...U.choice.picked].sort((a, c) => a - c).map(i => '✓ ' + (U.choiceLabels[n] || [])[i]).join('\n') : '';
   const text = [ch, $('text').value.trim()].filter(Boolean).join('\n\n');
@@ -5208,7 +5217,7 @@ async function cancelRec() {  // B149: discarding can be undone for a few second
 // A draft belongs to what it is written to (B118): an item (a reply, or a comment on one of its documents), or a new
 // input (a new rule too). Each project keeps them by target in this browser; when the box changes target, the words and
 // files stay with the old target and the new target's own draft comes back. So unsent words never go elsewhere.
-const draftKey = () => { if (U.correct) return `correct ${U.correct.id}`; if (U.amend) return `${U.amend.mode} ${U.amend.id}`; const dt = docTarget(), n = scopeN(); return dt ? code(dt.d.n) : n ? code(n) : 'new'; };  // a comment on a document shares its item's draft
+const draftKey = () => { if (U.correct) return `correct ${U.correct.id}`; if (U.amend) return `${U.amend.mode} ${U.amend.id}`; const od = docOpen(), n = scopeN(); return od ? code(liveN(od.n)) : n ? code(n) : 'new'; };  // a document's box shares its item's draft
 function draftStore(change) {
   const key = 'taska.drafts.' + S.project;
   try {
@@ -5852,6 +5861,11 @@ const ACT = {
   },
   'doc-unpick': () => { U.docSel = new Set(); U.docQuote = null; U.docReply = null; U.docDrafts.note = ''; getSelection()?.removeAllRanges(); renderDoc(); },
   'doc-close': () => closeDoc(),
+  'doc-to-item': () => {  // B2: the words stay, now a reply to the document's item
+    const n = liveN(docById(U.doc)?.n);
+    if (desk()) closeDoc(); else { if (byN.has(n) && U.open !== n) openItem(n); closeDialog(); }
+    $('text').focus({preventScroll: true});
+  },  // B2: the words stay, now a reply to the item
   'doc-reply': b => { U.docReply = b.dataset.key; U.docSel = new Set(); U.docQuote = null; renderDoc(); $('text').focus(); },
   'doc-circle': () => { U.docCircle = !U.docCircle; renderDoc(); },
   'doc-thread': b => { const k = b.dataset.key; if (U.docThreads.has(k)) U.docThreads.delete(k); else U.docThreads.add(k); renderDoc(); },
@@ -5879,7 +5893,7 @@ const ACT = {
     if (!picked.length) return;
     const picks = picked.map(i => '✓ ' + labels[i]).join('\n');
     // B145: what you wrote in the box for this item goes with the answer, files too: one answer, one send
-    const withBox = scopeN() === n && !U.amend && !U.correct && !docTarget(), note = withBox ? $('text').value.trim() : '', files = withBox ? U.files : [];
+    const withBox = scopeN() === n && !U.amend && !U.correct && !docOpen(), note = withBox ? $('text').value.trim() : '', files = withBox ? U.files : [];
     try {
       let rid = null;
       if (note || files.length) {
