@@ -268,6 +268,19 @@ def group_box(a):  # T113 group 1: the box writes where you started, and keeps t
     check('B14: C on a document opens the New input page, Back to D1', (a.js('location.pathname.split("/").pop()'), a.js("$('dNav').textContent")), lambda t: t[0] == 'new' and 'Back to D1' in t[1])
     a.key('Escape', wait=0.8)
     check('B14: Esc goes back to the document', (a.js('U.doc'), a.js('location.pathname.split("/").pop()')), (1, 'D1'))
+    a.go('new')  # I176 + F186: the draft card, its toggles, a word corrected in place
+    a.js("""(() => { const f = voiceFile({name: 'voice 0-09.webm', mime: 'audio/webm', ms: 9000, blob: new Blob(['x'], {type: 'audio/webm'}), at: 0, key: U.draftKey, scope: null});
+      U.files.push(f); f.transcribing = false; f.tr = 'Move the sub project filter up and stop the notices'; f.doubts = [{was: 'sub project filter', alt: 'subproject filter', show: ['sub project', 'subproject']}];
+      f.settle(); placeWords(f); renderComposer(); })()""")
+    check('I176: the draft shows on the New input page, the box points to it', (a.js("$('draftText')?.textContent"), a.js("$('doubts').textContent")), lambda t: 'stop the notices' in t[0] and '1 word may be misheard' in t[1])
+    a.click('#draftText [data-act="doubt-pick"][data-side="alt"]', 0.5)
+    check('F186: a pick changes the box, and can be switched back', (a.js("$('text').value"), a.js("$('doubts').hidden")), ('Move the subproject filter up and stop the notices', True))
+    a.click('#draftText [data-act="doubt-pick"][data-side="was"]', 0.5)
+    check('F186: switched back', a.js("$('text').value"), 'Move the sub project filter up and stop the notices')
+    a.js("""(() => { const sp = [...document.querySelectorAll('#draftText [data-v]')].find(s => s.textContent.includes('notices')); const n = sp.firstChild, i = n.data.indexOf('notices'); const r = document.createRange(); r.setStart(n, i); r.setEnd(n, i + 7); getSelection().removeAllRanges(); getSelection().addRange(r); draftFix(); })()""")
+    a.type('notifications'); a.enter(1.2)
+    check('I176: a word corrected in the card: the box follows and the spelling is kept', (a.js("$('text').value"), a.toast()), lambda t: t[0].endswith('stop the notifications') and 'Remembered' in t[1])
+    a.js("U.files.forEach(f => { f.gone = true; dropRec(f, false); }); U.files = []; $('text').value = ''; saveDraft(); renderComposer()")
     a.go('rules'); a.key('c', wait=0.8)
     check('B10: New rule has its own address', a.js('location.pathname.split("/").pop()'), 'new-rule')
     a.go('new-rule')

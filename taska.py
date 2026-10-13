@@ -3214,6 +3214,7 @@ PAGE = r'''<!doctype html>
         <button id="attachBtn" data-act="attach" aria-label="Add images or files" class="grid size-11 shrink-0 place-items-center rounded-full text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 lg:m-1 lg:size-9 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100 lg:group-data-[compose]/app:mr-auto"></button>
         <div class="grid min-w-0 flex-1 lg:group-data-[compose]/app:order-first lg:group-data-[compose]/app:basis-full">
           <textarea id="text" rows="1" placeholder="Write anything…" aria-label="Input" class="col-start-1 row-start-1 max-h-48 min-h-11 w-full min-w-0 resize-none bg-transparent px-1 py-2.5 text-[17px] leading-6 outline-none placeholder:text-zinc-400 sm:text-[15px] lg:scrollbar-thin dark:placeholder:text-zinc-500 lg:group-data-[compose]/app:max-h-80 lg:group-data-[compose]/app:min-h-24 lg:group-data-[compose]/app:px-3 lg:group-data-[compose]/app:pt-4 lg:group-data-[compose]/app:pb-2 lg:group-data-[compose]/app:text-[17px] lg:group-data-[compose]/app:leading-7"></textarea>
+          <div id="boxView" hidden class="col-start-1 row-start-1 max-h-48 min-h-11 overflow-y-auto px-1 py-1.5 text-[17px] leading-8 whitespace-pre-wrap break-words text-zinc-900 sm:text-[15px] dark:text-zinc-100"></div>
           <div id="recBar" hidden role="status" aria-label="Recording" class="col-start-1 row-start-1 flex min-w-0 items-center gap-2.5 px-1 lg:group-data-[compose]/app:px-3">
             <span class="size-2.5 shrink-0 animate-pulse rounded-full bg-red-500"></span>
             <span id="recTime" class="shrink-0 font-mono text-[15px] text-zinc-800 tabular-nums dark:text-zinc-100">0:00</span>
@@ -4445,7 +4446,7 @@ function renderDetail() {
       $('dHead').innerHTML = D.compose ? `<span class="flex items-center gap-2 text-sm font-semibold">${ico('newinput', 'size-[18px] text-blue-600 dark:text-blue-400')}${ruleMode() ? 'New rule' : 'New input'}</span>` : '';
       $('dNav').innerHTML = back ? `<button data-act="compose-back" class="flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800">${ico('left', 'size-4')}Back to ${D.prevDoc ? 'D' + D.prevDoc : code(D.prev)}${KBD('Esc')}</button>` : '';
       body.innerHTML = D.compose ? '' : noSelection();
-      if (D.compose) { $('composeHead').innerHTML = composeHead(); $('composeList').innerHTML = saidLately(); markCut($('composeList')); }
+      if (D.compose) { $('composeHead').innerHTML = composeHead(); if (!U.fixEd) { $('composeList').innerHTML = saidLately(); markCut($('composeList')); } }  // not under a word you are correcting (I176)
     }
     return;
   }
@@ -4861,9 +4862,17 @@ function renderComposer() {
       : `<div class="flex h-16 w-28 items-center gap-1 rounded-xl border border-zinc-200 px-2 text-xs dark:border-zinc-700 ${f.f ? '' : 'opacity-40'}">${ico('file', 'size-4')}<span class="line-clamp-2 break-all">${esc(f.name)}</span></div>`}
     <button data-act="unfile" data-i="${i}" aria-label="Remove ${esc(f.name)}" class="absolute -top-3.5 -right-3.5 grid size-11 place-items-center"><span class="grid size-6 place-items-center rounded-full bg-zinc-900 text-white ring-2 ring-white dark:bg-zinc-100 dark:text-zinc-900 dark:ring-zinc-900">${ico('x', 'size-3.5', '2.5')}</span></button></div>`).join('');
   // T101: where the two transcriptions disagree on what changes the meaning, said under the voice note before you send
-  const words = $('text').value, spots = U.files.flatMap((f, i) => (f.doubts || []).map((x, k) => ({i, k, x}))).filter(({x}) => words.includes(x.was));
-  $('doubts').hidden = !spots.length;
-  $('doubts').innerHTML = spots.map(({i, k, x}) => { const [said, heard] = x.show || [x.was, x.alt]; return `<p class="flex min-h-8 items-center gap-1.5">${ico('alert', 'size-3.5 shrink-0 text-amber-600 dark:text-amber-400', '2')}<span class="min-w-0">Maybe misheard: “${esc(unmarked(said))}”${x.alt ? ` — the other model heard “${esc(heard)}”${x.also?.length ? ` (${x.also.length + 1} places)` : ''} ·` : ' — the model was not sure'}</span>${x.alt ? `<button data-act="doubt-use" data-i="${i}" data-k="${k}" class="${LINK_BTN} -my-1 -ml-1.5 shrink-0">Use it</button>` : ''}</p>`; }).join('');
+  // F186: on the New input page they are marked in the draft below, on the phone in the box itself, both as toggles;
+  // a reply box on the desktop (no draft there) keeps one line each.
+  const words = $('text').value, spots = U.files.flatMap((f, i) => (f.doubts || []).map((x, k) => ({i, k, x}))).filter(({x}) => !x.pick && words.includes(x.was));
+  const toCheck = spots.filter(({x}) => x.alt).length, alert = ico('alert', 'size-3.5 shrink-0 text-amber-600 dark:text-amber-400', '2');
+  const pickable = !desk() && draftSpots(words).some(p => p.x.alt), view = pickable && U.boxView && !R.rec;
+  $('doubts').innerHTML = desk() && D.compose ? (toCheck ? `<p class="flex min-h-8 items-center gap-1.5">${alert}<span class="min-w-0">${plural(toCheck, 'word')} may be misheard. They are marked in the draft below: pick there.</span></p>` : '')
+    : !desk() ? (pickable ? `<p class="flex min-h-8 items-start gap-1.5 py-1">${alert}<span class="min-w-0">${toCheck ? `<b class="font-semibold text-zinc-800 dark:text-zinc-100">${plural(toCheck, 'word')} to check.</b> Left: main model, right: the other. A tap changes every place.` : 'Picked. Tap the other side to switch back before you send.'}${view ? '' : ` <button data-act="box-view" class="${LINK_BTN} -my-2 inline-flex">Show them</button>`}</span></p>` : '')
+    : spots.map(({i, k, x}) => { const [said, heard] = x.show || [x.was, x.alt]; return `<p class="flex min-h-8 items-center gap-1.5">${alert}<span class="min-w-0">Maybe misheard: “${esc(unmarked(said))}”${x.alt ? ` — the other model heard “${esc(heard)}”${x.also?.length ? ` (${x.also.length + 1} places)` : ''} ·` : ' — the model was not sure'}</span>${x.alt ? `<button data-act="doubt-use" data-i="${i}" data-k="${k}" class="${LINK_BTN} -my-1 -ml-1.5 shrink-0">Use it</button>` : ''}</p>`; }).join('');
+  $('doubts').hidden = !$('doubts').innerHTML;
+  $('boxView').hidden = !view;
+  if (view) $('boxView').innerHTML = draftHtml(words);
   // The three buttons. While recording the textarea keeps its place (unseen), so the box keeps its size.
   const rec = !!R.rec, has = !!(t.value.trim() || U.files.length || ticks.length);
   const micTip = !window.isSecureContext ? 'Voice needs an https link here: press for it' : D.compose ? 'Record a voice note · ⌥V' : 'Record a voice note · V, or ⌥V while typing';
@@ -4876,7 +4885,7 @@ function renderComposer() {
   if (rec) boxBtn(aux, 'rec-send', 'up', 'Stop and send', 'Stop and send · ⇧↵', 'size-5', '2');
   else if (quiet) boxBtn(aux, 'mic', 'mic', 'Record a voice note', micTip, 'size-5');
   aux.hidden = !quiet;  // only beside a box with something in it: the round button never moves, the text never jumps
-  t.classList.toggle('invisible', rec); $('recBar').hidden = !rec;
+  t.classList.toggle('invisible', rec || view); $('recBar').hidden = !rec;
   $('boxHint').innerHTML = !desk() ? '' : rec ? boxKeys([['↵', 'words into the box'], ['⇧↵', 'stop and send'], ['Esc', 'discard']])
     : U.correct || U.amend ? boxKeys([['⇧↵', 'save'], ['Esc', 'stop']])
     : vcN ? boxKeys([['⇧↵', send.toLowerCase()]], 'select more text for another voice comment')
@@ -4885,7 +4894,7 @@ function renderComposer() {
     : U.files.some(f => f.transcribing) ? boxKeys([['⇧↵', 'send now']], 'the words follow by themselves')
     : boxKeys([['⇧↵', ticks.length ? 'send the answer' : 'send'], ['↵', 'new line'], ['⌥V', 'voice']], 'paste or drop screenshots');
   if ($('overlay').dataset.above && !$('overlay').hidden) $('overlay').style.bottom = $('composer').parentElement.offsetHeight + 'px';  // a sheet over the page stays above the box: its line too
-  vcPlace();
+  vcPlace(); renderDraft();
 }
 
 const outboxLine = q => q.text.split('\n')[0] || (q.files.some(f => (f.mime || '').startsWith('audio/')) ? 'Voice note' : `${q.files.length} file${q.files.length === 1 ? '' : 's'}`);
@@ -5250,6 +5259,7 @@ function addWords(key, words) {  // into the box, or into the draft of the targe
   else draftStore(all => { all[key] = (all[key]?.trim() ? all[key].trimEnd() + '\n' : '') + words; });
 }
 function placeWords(f) {  // B165: a voice note's words go where you recorded it, around what you typed since; one sent already gets them on the server
+  if (!desk() && f.doubts?.some(x => x.alt)) U.boxView = true;  // F186: the words to check show in the box on the phone
   const key = U.files.includes(f) ? U.draftKey : Object.keys(U.parked || {}).find(k => U.parked[k].includes(f));
   if (key && f.tr && !f.trAdded) {
     if (U.files.includes(f)) {
@@ -6250,24 +6260,12 @@ const ACT = {
     renderComposer();
   },
   'doubt-use': b => {  // T101: the other transcription's words in place of the ones that may be misheard, in every place
-    const f = U.files[Number(b.dataset.i)], x = f?.doubts?.[Number(b.dataset.k)], t = $('text'), before = t.value;
-    if (!x) return;
-    const was = {trAdded: f.trAdded, doubts: f.doubts};
-    let text = before, from = f.trAdded ? text.indexOf(f.trAdded) : -1, len = f.trAdded?.length || 0, done = 0;
-    for (const s of [x, ...(x.also || [])]) {
-      const own = from >= 0 ? text.indexOf(s.was, from) : -1, mine = own >= 0 && own + s.was.length <= from + len;  // in the voice note's own words first
-      const at = mine ? own : text.indexOf(s.was), delta = s.alt.length - s.was.length;
-      if (at < 0) continue;
-      text = text.slice(0, at) + s.alt + text.slice(at + s.was.length); done++;
-      if (mine) len += delta; else if (at < from) from += delta;
-    }
-    if (!done) return;
-    t.value = text;
-    if (from >= 0) f.trAdded = text.slice(from, from + len);
-    f.doubts = f.doubts.filter(d => d !== x);
-    saveDraft(); grow(); renderComposer(); keepRec(f);
-    toast(`Changed to “${(x.show || [])[1] || x.alt}”`, () => { t.value = before; Object.assign(f, was); saveDraft(); grow(); renderComposer(); keepRec(f); });
+    const f = U.files[Number(b.dataset.i)], x = f?.doubts?.[Number(b.dataset.k)];
+    if (!x || !doubtPick(f, x, 'alt')) return;
+    toast(`Changed to “${(x.show || [])[1] || x.alt}”`, () => { doubtPick(f, x, 'was'); delete x.pick; keepRec(f); renderComposer(); });
   },
+  'doubt-pick': b => { const f = U.files[Number(b.dataset.i)], x = f?.doubts?.[Number(b.dataset.k)]; if (x) doubtPick(f, x, b.dataset.side); },  // F186
+  'box-view': () => { U.boxView = true; renderComposer(); },
   'view-draft': b => {  // a screenshot in the box: a tap looks at it, it does not remove it
     const imgs = U.files.filter(f => f.f && (f.mime || '').startsWith('image/')).map(f => f.f), f = U.files[Number(b.dataset.i)];
     if (!f?.f) return;
@@ -6497,12 +6495,129 @@ function outboxStep(q, last) {  // still on its way (F85)
   const bubble = (q.text ? `<p class="line-clamp-2 break-words">${esc(q.text)}</p>` : `<p>${esc(outboxLine(q))}</p>`) + (q.files.some(f => f.preview) ? `<div class="mt-2 flex gap-2">${q.files.filter(f => f.preview).map(f => `<img src="${f.preview}" alt="" class="size-12 rounded-lg border border-zinc-200 object-cover dark:border-zinc-700">`).join('')}</div>` : '');
   return saidStep(q.failed ? DOT.bad : DOT.pulse, bubble, 'Just now', `<span class="mr-1 text-[13px] font-semibold ${q.failed ? 'text-red-600 dark:text-red-400' : 'text-blue-600 dark:text-blue-400'}">${state}</span>${q.failed ? `<button data-act="outbox-retry" class="${SMALL_BTN} text-blue-600 dark:text-blue-400">Retry</button><button data-act="outbox-edit" class="${SMALL_BTN}">Edit</button>` : ''}`, last);
 }
+// I176: on the New input page what is in the box shows at the top of "You said lately" as a Draft card, kept in step
+// with the box both ways. F186: each word the two transcriptions heard differently is a toggle there, the main model's
+// word on the left (in the text at first), the other model's on the right; amber until you pick, grey with a check after,
+// and switchable until you send; a pick changes every place of it, in the box too. Words of a voice note can be selected
+// in the card and corrected in place: the box follows, and Taska remembers the spelling (F144), with Undo. Words typed in
+// the box are just words. The draft stays in this browser until you send it.
+const dForm = (x, o) => x.pick === 'alt' ? o.alt : o.was;  // what is in the text now, at one place of a doubt
+function draftSpots(text) {  // -> the places of each doubt in the text now, in order, not overlapping
+  const out = [];
+  U.files.forEach((f, i) => (f.doubts || []).forEach((x, k) => {
+    for (const o of [x, ...(x.also || [])]) {
+      const cur = dForm(x, o), at = cur ? text.indexOf(cur) : -1;
+      if (at >= 0) out.push({s: at, e: at + cur.length, f, i, k, x, o});
+    }
+  }));
+  out.sort((a, b) => a.s - b.s);
+  return out.filter((p, j) => !out.slice(0, j).some(q => q.e > p.s));
+}
+function draftHtml(text, fix = false) {  // the text, with the toggles; fix: the voice note's words can be selected to correct them
+  const vr = U.files.filter(f => f.trAdded).map(f => { const at = text.indexOf(f.trAdded); return at < 0 ? null : [at, at + f.trAdded.length]; }).filter(Boolean);
+  const inV = o => vr.some(([a, b]) => o >= a && o < b);
+  const plain = (a, b) => { let out = ''; for (let i = a; i < b;) { const v = inV(i); let j = i + 1; while (j < b && inV(j) === v) j++; out += `<span data-o="${i}"${v && fix ? ' data-v' : ''}>${esc(text.slice(i, j))}</span>`; i = j; } return out; };
+  let html = '', at = 0;
+  for (const p of draftSpots(text)) {
+    const {x, o, i, k} = p, cur = text.slice(p.s, p.e);
+    html += plain(at, p.s); at = p.e;
+    if (!x.alt) { html += `<span data-o="${p.s}"${fix ? ' data-v data-unsure' : ''} title="The model was not sure of these words" class="underline decoration-amber-500 decoration-dotted decoration-2 underline-offset-4 ${fix ? 'cursor-text' : ''}">${esc(cur)}</span>`; continue; }
+    let [c0, c1] = x.show && o.was.includes(x.show[0]) && o.alt.includes(x.show[1]) ? x.show : [o.was, o.alt];  // just the words that differ
+    const core = x.pick === 'alt' ? c1 : c0, ix = core ? cur.indexOf(core) : -1;
+    if (ix < 0) [c0, c1] = [o.was, o.alt];
+    const pre = ix < 0 ? '' : cur.slice(0, ix), post = ix < 0 ? '' : cur.slice(ix + core.length), side = x.pick || 'was';
+    const btn = (sd, label) => { const on = side === sd; return `<button data-act="doubt-pick" data-i="${i}" data-k="${k}" data-side="${sd}" aria-pressed="${on}" title="${sd === 'was' ? 'Main model' : 'Other model'}${on ? ' · in the text now' : ''}" class="inline-flex items-center gap-1 rounded-md px-1.5 leading-6 ${on ? 'bg-white text-zinc-900 shadow-sm ring-1 ring-zinc-900/10 dark:bg-zinc-700 dark:text-zinc-50 dark:ring-white/10' : 'text-zinc-500 hover:bg-white/60 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-700/50 dark:hover:text-zinc-100'}">${on && x.pick ? ico('check', 'size-3.5 text-emerald-600 dark:text-emerald-400', '2.5') : ''}${esc(unmarked(label))}</button>`; };
+    html += plain(p.s, p.s + pre.length) + `<span class="mx-0.5 inline-flex items-center gap-px rounded-lg p-0.5 align-baseline whitespace-nowrap ring-1 ${x.pick ? 'bg-zinc-100 ring-zinc-200 dark:bg-zinc-800 dark:ring-zinc-700' : 'bg-amber-100/80 ring-amber-300 dark:bg-amber-400/15 dark:ring-amber-400/40'}">${btn('was', c0)}${btn('alt', c1)}</span>` + plain(p.e - post.length, p.e);
+  }
+  return html + plain(at, text.length);
+}
+function doubtPick(f, x, side) {  // -> true if the text changed
+  const t = $('text'), from = x.pick === 'alt' ? 'alt' : 'was';
+  let text = t.value, vAt = f.trAdded ? text.indexOf(f.trAdded) : -1, vLen = f.trAdded?.length || 0, done = 0;
+  if (from !== side) for (const o of [x, ...(x.also || [])]) {
+    const a = o[from], b = o[side], own = vAt >= 0 && a ? text.indexOf(a, vAt) : -1, mine = own >= 0 && own + a.length <= vAt + vLen;  // in the voice note's own words first
+    const at = mine ? own : a ? text.indexOf(a) : -1;
+    if (at < 0) continue;
+    text = text.slice(0, at) + b + text.slice(at + a.length); done++;
+    if (mine) vLen += b.length - a.length; else if (vAt >= 0 && at < vAt) vAt += b.length - a.length;
+  }
+  if (done) { t.value = text; if (vAt >= 0) f.trAdded = text.slice(vAt, vAt + vLen); saveDraft(); grow(); }
+  x.pick = side; keepRec(f); renderComposer();
+  return !!done;
+}
+function draftCard() {
+  const t = $('text'), text = t.value;
+  if (!desk() || !D.compose || U.amend || U.correct || (!text.trim() && !U.files.length)) return '';
+  const voice = U.files.filter(f => (f.mime || '').startsWith('audio/')), other = U.files.length - voice.length, ms = voice.reduce((a, f) => a + (f.ms || 0), 0);
+  const spots = draftSpots(text), open = new Set(spots.filter(p => p.x.alt && !p.x.pick).map(p => p.x)).size, picked = spots.some(p => p.x.pick);
+  const fixable = U.files.some(f => f.trAdded && text.includes(f.trAdded));
+  const hint = open ? `<b class="font-semibold text-zinc-700 dark:text-zinc-200">${plural(open, 'word')} to check.</b> Left: the main model, in the text now. Right: the other model. A click picks it in every place; click again to switch back, any time before you send.`
+    : picked ? 'Picked. Click the other side to switch back, any time before you send.' : fixable ? 'Select words of the voice note to correct them here: Taska remembers the spelling.' : '';
+  return `<li class="group/row relative flex gap-3 pb-6"><span class="relative mt-1.5 grid size-6 shrink-0 place-items-center"><span class="size-3 rounded-full border-2 border-dashed border-blue-400 dark:border-blue-400/80"></span></span>
+    <div class="min-w-0 flex-1">
+      <div class="flex h-7 items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400"><span class="font-semibold tracking-wider text-blue-700 uppercase dark:text-blue-300">Draft</span><span>· not sent</span>${voice.length ? `<span class="flex items-center gap-1">· ${ico('mic', 'size-3.5')}<span class="font-mono tabular-nums">${clock(ms)}</span> voice note${voice.length > 1 ? 's' : ''}</span>` : ''}${other ? `<span>· ${plural(other, 'file')}</span>` : ''}
+        <span class="ml-auto flex items-center gap-1 text-zinc-400 dark:text-zinc-500">${KBD('⇧↵')}<span>send</span></span></div>
+      <div id="draftText" class="mt-1 w-full rounded-2xl rounded-tl-md border border-dashed border-blue-300 bg-blue-50/60 px-4 py-2.5 text-[15px] leading-8 whitespace-pre-wrap break-words text-zinc-900 dark:border-blue-400/40 dark:bg-blue-400/5 dark:text-zinc-100">${text.trim() ? draftHtml(text, true) : `<span class="text-zinc-400 dark:text-zinc-500">${U.files.some(f => f.transcribing) ? 'The words of the voice note are on their way…' : 'No words yet'}</span>`}</div>
+      ${hint ? `<div class="mt-2 text-[13px] leading-snug text-zinc-500 dark:text-zinc-400"><p class="flex items-start gap-1.5">${open ? ico('alert', 'mt-px size-3.5 shrink-0 text-amber-600 dark:text-amber-400', '2') : ico('pencil', 'mt-px size-3.5 shrink-0')}<span>${hint}</span></p></div>` : ''}
+    </div></li>`;
+}
+function renderDraft() {  // the card follows the box as you type (not while you correct a word in it)
+  const el = $('draftSlot');
+  if (!el || U.fixEd || !(desk() && D.compose)) return;
+  const html = draftCard();
+  if (el.dataset.html === html) return;
+  el.dataset.html = html; el.innerHTML = html; el.className = html ? 'mt-4' : '';
+}
+function draftFix() {  // the voice note's words you selected in the card turn into a small field, right there
+  const sel = getSelection();
+  if (U.fixEd || !sel?.rangeCount || sel.isCollapsed) return;
+  const a = sel.anchorNode?.parentElement?.closest?.('#draftText [data-o]'), b = sel.focusNode?.parentElement?.closest?.('#draftText [data-o]');
+  if (!a || a !== b || !a.hasAttribute('data-v')) return;  // within one stretch of the voice note's own words
+  const text = $('text').value, o = Number(a.dataset.o);
+  let s = o + Math.min(sel.anchorOffset, sel.focusOffset), e = o + Math.max(sel.anchorOffset, sel.focusOffset);
+  while (s < e && /\s/.test(text[s])) s++;
+  while (e > s && /\s/.test(text[e - 1])) e--;
+  const wrong = text.slice(s, e);
+  if (!wrong) return;
+  if (wrong.length > 60) return toast('Select up to 60 characters to correct');
+  U.fixEd = {s, e, wrong};
+  const r = sel.getRangeAt(0), ed = document.createElement('span');
+  r.deleteContents();
+  ed.id = 'fixEd'; ed.contentEditable = 'plaintext-only'; ed.textContent = wrong; ed.title = 'The right words · Enter keeps them, Esc stops';
+  ed.className = 'rounded-md bg-white px-1 py-0.5 text-zinc-900 outline-none ring-2 ring-amber-400 dark:bg-zinc-800 dark:text-zinc-50';
+  r.insertNode(ed); ed.focus();
+  const all = document.createRange(); all.selectNodeContents(ed); sel.removeAllRanges(); sel.addRange(all);
+  ed.addEventListener('keydown', ev => {
+    if (ev.key === 'Enter' && !ev.isComposing) { ev.preventDefault(); ev.stopPropagation(); draftFixSave(); }
+    else if (ev.key === 'Escape') { ev.preventDefault(); ev.stopPropagation(); U.fixEd = null; renderDraft(); }
+  });
+  ed.addEventListener('blur', () => { if (U.fixEd) { U.fixEd = null; renderDraft(); } });
+}
+async function draftFixSave() {
+  const ed = $('fixEd'), x = U.fixEd, right = (ed?.textContent || '').replace(/\s+/g, ' ').trim(), t = $('text'), before = t.value;
+  U.fixEd = null;
+  if (!x || !right || right === x.wrong || before.slice(x.s, x.e) !== x.wrong) { $('draftSlot').dataset.html = ''; return renderDraft(); }
+  for (const f of U.files) {  // the voice note's words keep their stretch
+    const at = f.trAdded ? before.indexOf(f.trAdded) : -1;
+    if (at >= 0 && x.s >= at && x.e <= at + f.trAdded.length) f.trAdded = f.trAdded.slice(0, x.s - at) + right + f.trAdded.slice(x.e - at);
+  }
+  t.value = before.slice(0, x.s) + right + before.slice(x.e); saveDraft(); grow(); $('draftSlot').dataset.html = ''; renderComposer();
+  let had = null;
+  try { had = (await (await fetch('/api/corrections', {cache: 'no-store'})).json()).find(c => c.wrong === x.wrong) || null; } catch (_) {}
+  try { await setFix({wrong: x.wrong, right}); } catch (_) { return; }  // setFix said why; the draft keeps your words
+  toast(`Remembered: “${x.wrong}” → “${right}”`, async () => {
+    const cur = $('text').value;
+    if (cur.slice(x.s, x.s + right.length) === right) { $('text').value = cur.slice(0, x.s) + x.wrong + cur.slice(x.s + right.length); saveDraft(); grow(); renderComposer(); }
+    await setFix(had ? {wrong: x.wrong, right: had.right} : {wrong: x.wrong});
+  });
+}
 function saidLately() {
   const recent = [...S.inputs].reverse().slice(0, 5), queued = [...U.outbox].reverse(), n = queued.length + recent.length;
   return `<div class="flex h-8 items-center justify-between"><h2 class="text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">You said lately</h2>
       ${S.inputs.length ? `<button data-act="tab" data-tab="inputs" title="All inputs · G N" class="flex h-8 items-center gap-1 rounded-lg pr-1.5 pl-2 text-[13px] font-medium text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10">All ${S.inputs.length} input${S.inputs.length === 1 ? '' : 's'}${KBD('G N')}</button>` : ''}</div>
+    <ol id="draftSlot" class="${draftCard() ? 'mt-4' : ''}">${draftCard()}</ol>
     ${n ? `<ol class="mt-4">${queued.map((q, k) => outboxStep(q, k === n - 1)).join('')}${recent.map((r, k) => saidRow(r, queued.length + k, queued.length + k === n - 1)).join('')}</ol>`
-      : '<p class="mt-3 text-sm text-zinc-400 dark:text-zinc-500">What you say shows up here, with the items it turns into.</p>'}`;
+      : draftCard() ? '' : '<p class="mt-3 text-sm text-zinc-400 dark:text-zinc-500">What you say shows up here, with the items it turns into.</p>'}`;
 }
 // F106: a bubble whose two lines cut the words opens on a click, and closes the same way.
 function markCut(root) {
@@ -7465,6 +7580,13 @@ document.addEventListener('selectionchange', () => {
   renderDocBar();
 });
 document.addEventListener('selectionchange', () => vcPlace());  // F184: the button follows the selection
+document.addEventListener('mouseup', e => { if (e.target.closest?.('#draftText')) setTimeout(draftFix); });  // I176
+document.addEventListener('click', e => {  // I176: a word the model was not sure of: correct it with one click
+  const u = e.target.closest?.('#draftText [data-unsure]');
+  if (!u || U.fixEd) return;
+  const r = document.createRange(); r.selectNodeContents(u); getSelection().removeAllRanges(); getSelection().addRange(r); draftFix();
+});
+$('boxView').addEventListener('click', e => { if (e.target.closest('button')) return; U.boxView = false; renderComposer(); $('text').focus(); });  // F186: plain text: back to typing
 for (const t of ['pointerdown', 'mousedown']) $('vcBar').addEventListener(t, e => e.preventDefault());  // a press keeps the selection
 document.addEventListener('scroll', () => { if (!$('vcBar').hidden) vcPlace(); }, true);
 addEventListener('resize', () => vcPlace());
