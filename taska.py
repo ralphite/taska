@@ -3012,7 +3012,7 @@ function ingest(d) {  // Taska's state on screen, with your changes that are sti
   for (const it of S.items) { if (CLOSED(it.status)) it.wait = null; byN.set(it.n, it); }  // closed: its question is history, not a pending ask (B128)
   for (const r of S.inputs) byR.set(r.id, r);
   for (const p of SAVE.pend) patch(p);
-  linkKids();
+  linkKids(); followCodes();
   if (U.open && byN.get(U.open)?.merged_into) {  // the item you look at was merged: say so, and your draft goes along (B118)
     const from = U.open, to = byN.get(from).merged_into;
     U.open = to;
@@ -3020,7 +3020,18 @@ function ingest(d) {  // Taska's state on screen, with your changes that are sti
     toast(`${code(from)} was merged into ${code(to)}`);
     writeURL(false);
   }
-  render();
+  render(); fixURL();
+}
+// An item's code follows its type: T13 becomes B13 (T113 S2). What you wrote to it goes along, and the address too.
+function followCodes() {
+  const now = k => { const m = /^[A-Z](\d+)$/.exec(k || ''), n = m && Number(m[1]); return n && byN.has(n) && code(n) !== k ? code(n) : null; };
+  for (const k of Object.keys(draftStore()).filter(now)) draftStore(all => { if (!all[now(k)]) all[now(k)] = all[k]; delete all[k]; });
+  for (const k of Object.keys(U.parked || {}).filter(now)) { U.parked[now(k)] ||= U.parked[k]; delete U.parked[k]; }
+  if (now(U.draftKey)) U.draftKey = now(U.draftKey);
+}
+function fixURL() {
+  const seg = decodeURIComponent(location.pathname.slice(P.length)).replace(/\/$/, '');
+  if (U.open && parseRef(seg) === U.open && seg !== code(U.open) && !/^[Dd]\d+$/.test(seg)) writeURL(false);
 }
 
 async function poll() {
@@ -3137,7 +3148,7 @@ function optimistic(patches, send, fail = ex => notSaved(ex), needed = () => tru
   const drop = () => { SAVE.pend = SAVE.pend.filter(p => !patches.includes(p)); };
   SAVE.pend.push(...patches);
   for (const p of patches) patch(p);
-  linkKids(); render();
+  linkKids(); followCodes(); render(); fixURL();
   const made = Date.now();
   return SAVE.q = SAVE.q.then(async () => {
     try {
@@ -5068,8 +5079,8 @@ function fitTabs() {
 }
 
 const SAID = {open: 'is open', doing: 'is in progress', done: 'is done', dropped: "is marked won't do", later: 'moved to Later', now: 'is back to now', review: 'is in review', proposed: 'is proposed'};
-const saidOf = (f, v, before) => f === 'archived' ? (v ? 'archived' : 'unarchived') : f === 'status' && v === 'done' && before === 'review' ? 'accepted'
-  : f === 'status' && v === 'open' && before === 'proposed' ? 'approved' : f === 'pri' ? `is now ${v}` : f === 'type' ? `is now a ${v}`
+const saidOf = (f, v, before, ref) => f === 'archived' ? (v ? 'archived' : 'unarchived') : f === 'status' && v === 'done' && before === 'review' ? 'accepted'
+  : f === 'status' && v === 'open' && before === 'proposed' ? 'approved' : f === 'pri' ? `is now ${v}` : f === 'type' ? `is now ${LETTER[v]}${ref.slice(1)}, ${/^[aeiou]/.test(v) ? 'an' : 'a'} ${v}`
   : f === 'parent' ? (v ? `is now under ${code(v)}` : 'stands on its own') : SAID[v];
 const wire = (f, v) => f === 'parent' ? (v ? String(v) : 'none') : v;  // a parent goes to Taska as an item ref
 // One-tap changes (swipes, row pills, the focus card, keys, the ⋯ menu): they show at once and are saved behind you
@@ -5079,7 +5090,7 @@ function change(n, f, v, {said, note} = {}) {
   const it = byN.get(n);
   if (!it || it[f] === v) return Promise.resolve(!!it);
   const before = it[f], ref = code(n), job = {saved: false, undone: false};
-  said ||= it.type === 'rule' && f === 'status' && before !== 'proposed' && {open: 'is active again', dropped: 'is retired'}[v] || saidOf(f, v, before);  // a rule's words (B158)
+  said ||= it.type === 'rule' && f === 'status' && before !== 'proposed' && {open: 'is active again', dropped: 'is retired'}[v] || saidOf(f, v, before, ref);  // a rule's words (B158)
   let run;
   const undo = () => {
     job.undone = true;
