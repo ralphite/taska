@@ -225,6 +225,17 @@ def group_box(a):  # T113 group 1: the box writes where you started, and keeps t
     a.key('Escape', wait=0.4); a.type('stray words'); n = a.js('S.inputs.length'); a.enter(0.8, shift=True)
     check('B2: with nothing picked the box waits, it does not reply to F04', (line(), a.js('S.inputs.length'), a.js("$('text').value")), (lambda t: 'Comment on D1' in t[0] and t[1] == n and t[2] == 'stray words'))
     a.js("$('text').value = ''; saveDraft()")
+    a.go('D1')  # F184: select, speak, select, speak, one send
+    sel = "(i => { const n = document.querySelectorAll('#docBlocks > section')[i].querySelector('p') || document.querySelectorAll('#docBlocks > section')[i]; const t = document.createTreeWalker(n, NodeFilter.SHOW_TEXT).nextNode(); const r = document.createRange(); r.setStart(t, 0); r.setEnd(t, 5); getSelection().removeAllRanges(); getSelection().addRange(r); })"
+    words = "(i => { const f = U.files[i]; f.transcribing = false; f.tr = 'Words ' + i; f.settle(); placeWords(f); renderComposer(); })"
+    for i in (1, 2):
+        a.js(sel + f'({i})'); time.sleep(0.4)
+        check(f'F184: selected text shows Voice comment ({i})', a.js("$('vcBar').hidden ? '' : $('vcBtn').textContent"), 'Voice comment')
+        a.click('#vcBtn', 1.5); a.click('#vcBtn', 1.2)
+        a.js(words + f'({i - 1})')
+    check('F184: the quotes and the words wait in the box, unsent', (a.js("vcCount($('text').value)"), a.js('U.files.length'), a.js("$('scope').textContent")), lambda t: t[0] == 2 and t[1] == 2 and '2 comments on D1' in t[2])
+    a.click('#text'); a.enter(2.5, shift=True)
+    check('F184: one send posts each as a comment on its passage, with its recording', a.js("docById(1).blocks.flatMap(b => b.comments).filter(c => c.files?.length).map(c => c.text + ':' + (c.files || []).length).join('|')"), 'Words 0:1|Words 1:1')
     a.go('B07'); a.key('c', wait=0.8)
     a.js('startRec()'); time.sleep(1.5); a.enter(1.2)  # B185: a voice note on the New input page, stopped into the box
     a.type('About the export')

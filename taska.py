@@ -388,7 +388,8 @@ class Store:
             if it:
                 it["t1"] = e["t"]
         elif k == "dc":
-            self.docs[e["d"]]["comments"].append({"id": e["seq"], "key": e["key"], "quote": e["quote"], "text": e["text"], "by": e["by"], "t": e["t"]})
+            self.docs[e["d"]]["comments"].append({"id": e["seq"], "key": e["key"], "quote": e["quote"], "text": e["text"], "by": e["by"], "t": e["t"],
+                                                  "files": e.get("files", [])})  # a voice comment keeps its recording (F184)
 
     def touches(self, e):
         """The items an event changes or adds to: a change, a message, a reply, a subitem, a document, a comment."""
@@ -677,7 +678,7 @@ class Store:
             out.append(f"¶{i} " + b["text"].replace("\n", "\n   "))
             for c in b["comments"]:
                 part = "" if " ".join(c["quote"].split()) == " ".join(b["text"].split()) else f"on \"{first_line(c['quote'], 120)}\": "
-                out.append(f"   > {c['by']} {hm(c['t'])}: {part}{c['text']}")
+                out.append(f"   > {c['by']} {hm(c['t'])}: {part}{c['text']}" + "".join(f" [{self.local(f['f'])}]" for f in c.get("files", [])))
         if detached:
             out.append("comments whose paragraph was rewritten or removed:")
             for t in detached:
@@ -1087,11 +1088,14 @@ class Store:
                 if text_ is None and not old:
                     raise Err("that paragraph is not in the document")
                 text_ = text_ if text_ is not None else old["quote"]
-            body = str(op.get("text", "")).strip()[:MAX_TEXT]
-            if not body:
+            files = self.op_files(op)  # F184: a voice comment brings its recording; its words are in the text
+            body = self.with_words(str(op.get("text", "")).strip(), files)[:MAX_TEXT]
+            for f in files:  # words still to come stay with the recording: the page waits for them before it sends
+                f.pop("wait", None)
+            if not body and not files:
                 raise Err("empty comment")
             quote = " ".join(str(op.get("quote") or "").split()) or text_  # what the user selected, else the paragraph
-            self.emit({"k": "dc", "d": d["d"], "key": key, "quote": quote[:500], "text": body, "by": by})
+            self.emit({"k": "dc", "d": d["d"], "key": key, "quote": quote[:500], "text": body, "by": by, **({"files": files} if files else {})})
             return f"ok D{d['d']} comment" + self.gone_note(self.items.get(d["n"], {}), by), f"Commented on D{d['d']}"
         if name == "cfg":
             f = {"auto": bool(op["auto"])} if "auto" in op else {}
@@ -3256,6 +3260,7 @@ PAGE = r'''<!doctype html>
 </div>
 
 <div id="tip" role="tooltip" hidden class="pointer-events-auto fixed top-0 left-0 z-[80] max-w-[260px] rounded-lg bg-zinc-900 px-2 py-1.5 text-[13px] leading-snug text-white opacity-0 shadow-lg shadow-black/20 transition-[opacity,translate] duration-[120ms] data-[on]:opacity-100 motion-reduce:transition-none dark:bg-zinc-100 dark:text-zinc-900"><span id="tipText"></span><span id="tipArrow" class="absolute size-2 rotate-45 bg-inherit"></span></div>
+<div id="vcBar" hidden role="toolbar" aria-label="On the selected text" class="fixed z-[65] flex rounded-full bg-zinc-900 p-1 shadow-lg ring-1 ring-black/10 dark:bg-zinc-100 dark:ring-white/10"><button id="vcBtn" data-act="vc" class="flex h-9 items-center gap-1.5 rounded-full pr-3.5 pl-2.5 text-sm font-semibold whitespace-nowrap text-white hover:bg-white/15 data-on:bg-red-600 data-on:text-white dark:text-zinc-900 dark:hover:bg-zinc-900/10 dark:data-on:bg-red-600 dark:data-on:text-white"></button></div>
 <div id="toast" hidden role="status" class="fixed inset-x-0 bottom-28 z-[60] mx-auto flex w-fit max-w-[92vw] lg:right-auto lg:bottom-5 lg:left-5 lg:mx-0 lg:max-w-md items-center gap-3 rounded-full bg-zinc-900 py-2 pr-4 pl-4 text-sm text-white shadow-lg has-[button]:py-1.5 has-[button]:pr-1.5 data-error:bg-red-600 data-error:text-white dark:bg-zinc-100 dark:text-zinc-900 dark:data-error:bg-red-600 dark:data-error:text-white"></div>
 
 <script>
@@ -4125,7 +4130,7 @@ const sameText = (a, b) => a.split(/\s+/).join(' ') === b.split(/\s+/).join(' ')
 const plainQuote = s => String(s || '').split('\n').filter(l => !TABLE_SEP.test(l)).map(l => l.replace(/^\s*(#+|>|[-*+]|\d+[.)])\s+/, '').replace(/\*\*|__|`/g, '').replace(/^\s*\||\|\s*$/g, '').replace(/\s*\|\s*/g, ' · ').trim()).filter(Boolean).join(' ');
 function threadHtml(d, key, comments, blockText) {
   return `<div class="mt-2 space-y-2 border-l-2 border-amber-300 pl-3 dark:border-amber-600">
-    ${comments.map(c => `<div class="text-sm ${MSG(c.by)}">${blockText !== undefined && !sameText(c.quote, blockText) ? `<div class="mb-0.5 line-clamp-2 text-xs text-zinc-500">“${esc(plainQuote(c.quote))}”</div>` : ''}<span class="${WHO(c.by)}">${esc(whoName(c.by))}</span> <span class="text-xs text-zinc-400">${when(c.t)}</span>${rich(c.text, 'dc' + c.t)}</div>`).join('')}
+    ${comments.map(c => `<div class="text-sm ${MSG(c.by)}">${blockText !== undefined && !sameText(c.quote, blockText) ? `<div class="mb-0.5 line-clamp-2 text-xs text-zinc-500">“${esc(plainQuote(c.quote))}”</div>` : ''}<span class="${WHO(c.by)}">${esc(whoName(c.by))}</span> <span class="text-xs text-zinc-400">${when(c.t)}</span>${rich(c.text, 'dc' + c.t)}${c.files?.length ? `<div class="mt-1.5 flex gap-2 overflow-x-auto">${thumbs(c.files, 'dcf' + c.id, 'size-11')}</div>` : ''}</div>`).join('')}
     <button data-act="doc-reply" data-key="${key}" aria-pressed="${U.docReply === key}" class="${HIT} flex h-8 items-center gap-1 rounded-lg px-1.5 -mx-1.5 text-xs font-semibold text-blue-600 hover:bg-blue-50 aria-pressed:underline dark:text-blue-400 dark:hover:bg-blue-400/10">${ico('reply', 'size-3.5')}Reply</button>
   </div>`;
 }
@@ -4813,6 +4818,7 @@ const ticked = n => n && U.choice?.n === n && U.choice.picked.size ? [...U.choic
 function renderComposer() {
   if (S.project && draftKey() !== U.draftKey) swapDraft(draftKey());
   const n = scopeN(), it = n && byN.get(n), dt = docTarget(), dOpen = !U.correct && !U.amend && !dt && docOpen(), t = $('text'), ticks = U.correct || U.amend || dt || dOpen ? [] : ticked(n);
+  const vcd = !U.correct && !U.amend && docOpen(), vcN = vcd ? vcCount(t.value) : 0;  // F184: voice comments collected in the box
   let line = '', ph = S.project ? `Write to ${projTitle()}…` : 'Write anything…', send = 'Send';  // the box says whom it writes to, on the phone too (B157)
   if (U.correct && byR.has(U.correct.id)) {  // F144: correcting a few words of a voice note
     const right = t.value.replace(/\s+/g, ' ').trim();  // A3: before → after, as you type
@@ -4822,6 +4828,9 @@ function renderComposer() {
     const r = byR.get(U.amend.id), edit = U.amend.mode === 'edit';
     line = scopeLine(edit ? 'pencil' : 'listplus', `${edit ? 'Edit' : 'Add details to'} ${r.id}`, `“${esc(oneLine(r.text).slice(0, 120))}”`, scopeX('amend-cancel', edit ? 'Stop editing' : 'Stop adding details'));
     ph = edit ? `Edit ${r.id}…` : `Add details to ${r.id}…`; send = 'Save';
+  } else if (vcN) {  // F184: one send posts each quote's words as a comment on its passage
+    line = scopeLine('comment', `${plural(vcN, 'comment')} on D${vcd.d}`, '· one send posts each on its passage', '');
+    ph = 'Words for the comments…'; send = vcN > 1 ? `Post ${vcN} comments` : 'Post the comment';
   } else if (dt) {  // I087: a comment on a document
     line = scopeLine(dt.reply ? 'reply' : 'comment', `${dt.reply ? 'Reply in' : 'Comment on'} D${dt.d.d}`, dt.many > 1 ? `· ${dt.many} paragraphs` : dt.quote ? `“${esc(plainQuote(dt.quote).slice(0, 120))}”` : '', scopeX('doc-unpick', 'Cancel the comment'));
     ph = `${dt.reply ? 'Reply' : 'Comment'} on D${dt.d.d}…`; send = dt.reply ? 'Reply' : 'Comment';
@@ -4870,11 +4879,13 @@ function renderComposer() {
   t.classList.toggle('invisible', rec); $('recBar').hidden = !rec;
   $('boxHint').innerHTML = !desk() ? '' : rec ? boxKeys([['↵', 'words into the box'], ['⇧↵', 'stop and send'], ['Esc', 'discard']])
     : U.correct || U.amend ? boxKeys([['⇧↵', 'save'], ['Esc', 'stop']])
+    : vcN ? boxKeys([['⇧↵', send.toLowerCase()]], 'select more text for another voice comment')
     : dt ? boxKeys([['⇧↵', send.toLowerCase()], ['Esc', 'cancel']])
     : dOpen ? boxKeys([['Esc', `back to ${code(liveN(dOpen.n))}`]], 'click a paragraph or select text to comment on it')
     : U.files.some(f => f.transcribing) ? boxKeys([['⇧↵', 'send now']], 'the words follow by themselves')
     : boxKeys([['⇧↵', ticks.length ? 'send the answer' : 'send'], ['↵', 'new line'], ['⌥V', 'voice']], 'paste or drop screenshots');
   if ($('overlay').dataset.above && !$('overlay').hidden) $('overlay').style.bottom = $('composer').parentElement.offsetHeight + 'px';  // a sheet over the page stays above the box: its line too
+  vcPlace();
 }
 
 const outboxLine = q => q.text.split('\n')[0] || (q.files.some(f => (f.mime || '').startsWith('audio/')) ? 'Voice note' : `${q.files.length} file${q.files.length === 1 ? '' : 's'}`);
@@ -4956,6 +4967,7 @@ async function send() {
   if (R.rec) return finishRec(true);
   if (U.correct) return sendCorrect();  // F144
   if (U.amend) return sendAmend();  // details for an input you sent (B136)
+  if (docOpen() && vcCount($('text').value)) return sendVoiceComments();  // F184
   const dt = docTarget();
   if (dt) return sendDocComment(dt);  // a document comment (I087)
   const od = docOpen();
@@ -5126,14 +5138,16 @@ function stopRec() {
 
 async function finishRec(andSend, kept) {
   const key = kept ? kept.key : R.key ?? U.draftKey, scope = kept ? kept.scope : R.key ? R.scope : scopeN() ? code(scopeN()) : null;
+  const vc = kept ? kept.vc : R.vc; R.vc = null;
   const ms = kept?.ms ?? Date.now() - R.t0, blob = kept?.blob ?? await stopRec();
   if (!blob) return;
   if (ms < 800 || !blob.size) return toast('Too short, discarded');
+  const label = vc && vcQuote(vc, key);  // F184: the quote first, then its words
   const ext = blob.type.includes('mp4') ? 'm4a' : blob.type.includes('ogg') ? 'ogg' : 'webm';
   // B165: the note is in the box at once and the box is yours: type, send. Its words come when they come: into the
   // box where you recorded, or, if you sent it already, onto that message (the server adds them). T101: from the
   // moment it stops it is also kept in this browser, until it is sent.
-  const f = voiceFile({name: `voice ${clock(ms).replace(':', '-')}.${ext}`, mime: blob.type || 'audio/webm', ms, blob, at: $('text').value.length, key, scope});
+  const f = voiceFile({name: `voice ${clock(ms).replace(':', '-')}.${ext}`, mime: blob.type || 'audio/webm', ms, blob, at: $('text').value.length, key, scope, ...(label ? {vc: label} : {})});
   if (key && key !== U.draftKey) {  // B1, B185: you moved on while recording: the note goes into the box where you started it
     (U.parked[key] ||= []).push(f); renderComposer();
     if (andSend && (key === 'new' || key === 'rule' || /^[A-Z]\d+$/.test(key))) sendParked(key);
@@ -5177,7 +5191,7 @@ async function keepRec(f) {  // what is known about a voice note, kept with its 
   try { f.data ||= await f.blob.arrayBuffer(); } catch (_) { return; }
   if (f.gone || f.sent) return;  // let go of meanwhile: it must not come back
   await VDB.put({id: f.rid, project: VPROJ, key: f.key, scope: f.scope, name: f.name, mime: f.mime, ms: f.ms, t: f.t, data: f.data, f: f.f || null,
-                 tr: f.transcribing ? null : f.tr || '', tr_error: f.tr_error || '', doubts: f.doubts || [], added: f.trAdded || null, job: f.job || null});
+                 tr: f.transcribing ? null : f.tr || '', tr_error: f.tr_error || '', doubts: f.doubts || [], added: f.trAdded || null, job: f.job || null, vc: f.vc || null});
 }
 function dropRec(f, sent = true) {  // sent, or removed from the box: this browser lets it go
   if (!f.rid) return;
@@ -5239,7 +5253,8 @@ function placeWords(f) {  // B165: a voice note's words go where you recorded it
   const key = U.files.includes(f) ? U.draftKey : Object.keys(U.parked || {}).find(k => U.parked[k].includes(f));
   if (key && f.tr && !f.trAdded) {
     if (U.files.includes(f)) {
-      const t = $('text'), at = Math.min(f.at ?? t.value.length, t.value.length), before = t.value.slice(0, at), after = t.value.slice(at);
+      const t = $('text'), q = f.vc ? vcLineEnd(t.value, f.vc) : -1;  // F184: under its quote, wherever that is now
+      const at = q >= 0 ? q : Math.min(f.at ?? t.value.length, t.value.length), before = t.value.slice(0, at), after = t.value.slice(at);
       const caretHere = t.selectionStart === at && t.selectionEnd === at;
       t.setRangeText((before.trim() && !before.endsWith('\n') ? '\n' : '') + f.tr + (after.trim() && !after.startsWith('\n') ? '\n' : ''), at, at, caretHere ? 'end' : 'preserve');
       grow(); saveDraft();
@@ -5264,7 +5279,7 @@ async function restoreVoice() {
     const n = /^[A-Z]\d+$/.test(r.key || '') ? parseRef(r.key) : 0, inp = /^(edit|append|correct) (r\d+)$/.exec(r.key || '');
     const key = n ? (byN.has(n) ? code(liveN(n)) : 'new') : r.key === 'rule' || (inp && byR.has(inp[2])) ? r.key : 'new';
     const f = voiceFile({rid: r.id, name: r.name, mime: r.mime, ms: r.ms, t: r.t, data: r.data, blob: new Blob([r.data], {type: r.mime}), key, scope: /^[A-Z]\d+$/.test(key) ? key : null,
-                         f: r.f || null, transcribing: r.tr == null && !r.tr_error, tr: r.tr || '', tr_error: r.tr_error || '', doubts: r.doubts || [], trAdded: r.added || undefined});
+                         f: r.f || null, transcribing: r.tr == null && !r.tr_error, tr: r.tr || '', tr_error: r.tr_error || '', doubts: r.doubts || [], trAdded: r.added || undefined, ...(r.vc ? {vc: r.vc} : {})});
     if (key === U.draftKey) U.files.push(f); else (U.parked[key] ||= []).push(f);
     if (r.job && !jobs.has(r.job.id)) { jobs.add(r.job.id); if (r.job.text) addWords(key, r.job.text); }  // what was sent with it
     if (f.transcribing) hear(f); else { f.settle(); placeWords(f); }
@@ -5278,9 +5293,104 @@ async function restoreVoice() {
 }
 
 async function cancelRec() {  // B149: discarding can be undone for a few seconds
-  const ms = Date.now() - R.t0, key = R.key, scope = R.scope, blob = await stopRec();
+  const ms = Date.now() - R.t0, key = R.key, scope = R.scope, vc = R.vc, blob = await stopRec();
+  R.vc = null; vcPlace();
   if (!blob || ms < 800 || !blob.size) return;
-  toast('Recording discarded', () => finishRec(false, {blob, ms, key, scope}));
+  toast('Recording discarded', () => finishRec(false, {blob, ms, key, scope, vc}));
+}
+// F184: a voice comment on what you selected in a document. A small button by the selection starts recording at once;
+// the same button stops it. The quote ("> “…”") and the voice note go into the box after what is there, its words
+// under its quote when they come, and nothing is sent: select, speak, select, speak..., then one Send posts each
+// quote's words (and its recording) as a comment on its passage.
+const VC_MARK = /^> “(.+)”[ \t]*$/;
+const vcCount = text => text.split('\n').filter(l => VC_MARK.test(l)).length;
+function vcLineEnd(text, label) {  // where a quote's words go: right under its line, or -1
+  const lines = text.split('\n'); let at = 0;
+  for (const l of lines) { at += l.length + 1; if (VC_MARK.exec(l)?.[1] === label) return Math.min(at, text.length); }
+  return -1;
+}
+function vcQuote(vc, key) {  // puts the quote line into the box the note belongs to -> its label
+  let label = plainQuote(vc.quote).replace(/\s+/g, ' ');
+  if (label.length > 300) label = label.slice(0, 300) + '…';
+  const add = v => (v.trim() ? v.trimEnd() + '\n\n' : '') + `> “${label}”\n`;
+  if (!key || key === U.draftKey) { const t = $('text'); t.value = add(t.value); saveDraft(); grow(); }
+  else draftStore(all => { all[key] = add(all[key] || ''); });
+  U.vcMarks = [...U.vcMarks.filter(m => m.label !== label), {label, d: vc.d, key: vc.key, quote: vc.quote}];
+  U.docQuote = null; getSelection()?.removeAllRanges();
+  return label;
+}
+function vcSelection() {  // the text selected in the open document right now, or null
+  const sel = getSelection();
+  if (!docOpen() || U.docCircle || !sel?.rangeCount || sel.isCollapsed) return null;
+  const text = sel.toString().trim(), node = sel.anchorNode?.nodeType === 1 ? sel.anchorNode : sel.anchorNode?.parentElement;
+  const sec = text.length >= 2 && node?.closest('#docBlocks > section[data-key]');
+  return sec ? {key: sec.dataset.key, text: text.slice(0, 500), range: sel.getRangeAt(0)} : null;
+}
+const vcScroller = () => desk() ? $('detailBody') : $('dlgBody');
+function vcPlace() {  // the button by the selection, or by the passage you are speaking about
+  const bar = $('vcBar'), on = !!(R.vc && R.rec), s = on || R.rec ? null : vcSelection(), range = on ? R.vc.range : s?.range;
+  let r = range?.getBoundingClientRect();
+  if (on && !r?.width && !r?.height) {  // the page was drawn again meanwhile: where the selection was, as the page scrolled since
+    const dy = vcScroller().scrollTop - R.vc.top, o = R.vc.rect;
+    r = {top: o.top - dy, bottom: o.bottom - dy, left: o.left, width: o.width, height: o.height};
+  }
+  bar.hidden = !r || (!r.width && !r.height) || !docOpen();
+  if (bar.hidden) return;
+  const b = $('vcBtn');
+  if (b.dataset.rec !== String(on)) {
+    b.dataset.rec = String(on); b.toggleAttribute('data-on', on);
+    b.innerHTML = on ? '<span class="size-2 animate-pulse rounded-full bg-white"></span>Stop' : `${ico('mic', 'size-4')}Voice comment`;
+    b.setAttribute('aria-label', on ? 'Stop: the quote and the voice note go into the box' : 'Voice comment: record a comment on the selected text');
+  }
+  const below = r.bottom + 8 + bar.offsetHeight < innerHeight - 8;
+  bar.style.top = `${below ? r.bottom + 8 : Math.max(8, r.top - bar.offsetHeight - 8)}px`;
+  bar.style.left = `${Math.max(8, Math.min(innerWidth - bar.offsetWidth - 8, r.left + r.width / 2 - bar.offsetWidth / 2))}px`;
+}
+async function vcToggle() {
+  if (R.vc && R.rec) return finishRec(false);
+  if (R.rec) return;
+  const s = vcSelection();
+  if (!s) return;
+  R.vc = {d: U.doc, key: s.key, quote: s.text, range: s.range.cloneRange(), rect: s.range.getBoundingClientRect(), top: vcScroller().scrollTop};
+  await startRec();
+  if (!R.rec) R.vc = null;
+  vcPlace();
+}
+// The box as comments: each quote line, the words under it (words above the first quote go with the first).
+function vcSegments(text, d) {
+  const segs = [], pre = [];
+  for (const l of text.split('\n')) { const m = VC_MARK.exec(l); if (m) segs.push({label: m[1], lines: []}); else (segs.at(-1)?.lines || pre).push(l); }
+  if (pre.join('').trim()) segs[0].lines.unshift(...pre, '');
+  for (const s of segs) {
+    const m = U.vcMarks.find(x => x.label === s.label && x.d === d.d), b = !m && d.blocks.find(b => plainQuote(b.text).replace(/\s+/g, ' ').includes(s.label.replace(/…$/, '')));
+    if (!m && !b) return {err: `“${s.label.slice(0, 60)}” is not in D${d.d} any more: change or remove that quote line`};
+    Object.assign(s, {key: m ? m.key : b.key, quote: m ? m.quote : s.label, text: s.lines.join('\n').trim()});
+  }
+  return {segs};
+}
+async function sendVoiceComments() {
+  const d = docOpen();
+  if (!d || U.vcSending) return;
+  U.vcSending = true;
+  try {
+    const files = [...U.files];
+    await Promise.all(files.map(f => f.done));
+    if (files.some(f => f.transcribing)) toast('Posting as soon as the words of the voice notes are in…');
+    for (let i = 0; files.some(f => f.transcribing) && i < 240; i++) await sleep(500);  // their words go into the comments, under their quotes
+    const {segs, err} = vcSegments($('text').value, d);
+    if (err) return toast(err, null, {error: true});
+    const ups = fs => fs.filter(f => f.f && !f.failed).map(({f, name, mime, size, tr}) => ({f, name, mime, size, ...(tr ? {tr} : {})}));
+    const ops = segs.map(s => ({op: 'dc', d: d.d, key: s.key, quote: s.quote, text: s.text, files: ups(files.filter(f => f.vc === s.label))}));
+    ops.at(-1).files.push(...ups(files.filter(f => !segs.some(s => s.label === f.vc))));  // other files go with the last
+    const send = ops.filter(o => o.text || o.files.length);
+    if (!send.length) return toast('Nothing to post yet: say or write something under a quote');
+    await save(send, () => sendVoiceComments());
+    for (const f of files) { f.sent = true; dropRec(f); }
+    $('text').value = ''; U.files = []; U.vcMarks = U.vcMarks.filter(m => m.d !== d.d); saveDraft(); grow();
+    for (const s of segs) U.docThreads.add(s.key);
+    Object.assign(U, {docQuote: null, docSel: new Set(), docReply: null});
+    renderDoc(); renderComposer(); toast(`Posted ${plural(send.length, 'comment')} on D${d.d}`);
+  } catch (_) {} finally { U.vcSending = false; }
 }
 // The name of a draft's target, for what the box says about it (B1, B185).
 const draftName = key => key === 'new' ? 'a new input' : key === 'rule' ? 'a new rule' : /^[A-Z]\d+$/.test(key) ? key : key.replace(/^(\w+) /, (_, m) => ({edit: 'the edit of ', append: 'the details for ', correct: 'the correction in '}[m] || ''));
@@ -6006,6 +6116,7 @@ const ACT = {
   },
   'doc-unpick': () => { U.docSel = new Set(); U.docQuote = null; U.docReply = null; U.docDrafts.note = ''; getSelection()?.removeAllRanges(); renderDoc(); },
   'doc-close': () => closeDoc(),
+  vc: () => vcToggle(),  // F184
   'doc-to-item': () => {  // B2: the words stay, now a reply to the document's item
     const n = liveN(docById(U.doc)?.n);
     if (desk()) closeDoc(); else { if (byN.has(n) && U.open !== n) openItem(n); closeDialog(); }
@@ -7353,6 +7464,10 @@ document.addEventListener('selectionchange', () => {
   U.docQuote = {key: sec.dataset.key, text: text.slice(0, 500)}; U.docSel = new Set(); U.docReply = null;
   renderDocBar();
 });
+document.addEventListener('selectionchange', () => vcPlace());  // F184: the button follows the selection
+for (const t of ['pointerdown', 'mousedown']) $('vcBar').addEventListener(t, e => e.preventDefault());  // a press keeps the selection
+document.addEventListener('scroll', () => { if (!$('vcBar').hidden) vcPlace(); }, true);
+addEventListener('resize', () => vcPlace());
 // Enter is a new line; Shift+Enter (or ⌘/Ctrl+Enter) sends. Not while an input method is still composing.
 document.addEventListener('keydown', e => {  // Enter in the subitem box adds it
   if (e.target.id === 'subTitle' && e.key === 'Enter' && !e.isComposing) { e.preventDefault(); document.querySelector('[data-act="sub-add"]')?.click(); }
@@ -7522,7 +7637,7 @@ $('dlgClose').innerHTML = CLOSE_X;
 $('vClose').innerHTML = ico('x');
 $('backBtn').innerHTML = ico('left', 'size-6');
 $('itemMenuBtn').innerHTML = ico('more', 'size-6');
-U.draftKey = null; U.parked = {};
+U.draftKey = null; U.parked = {}; U.vcMarks = [];
 try { U.oldDraft = localStorage.getItem('taska.draft') || ''; localStorage.removeItem('taska.draft'); } catch (_) {}
 $('projName').textContent = decodeURIComponent(P.split('/')[2] || 'Taska');  // right away, before the data arrives
 grow();

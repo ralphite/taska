@@ -70,6 +70,22 @@ class AmendTests(unittest.TestCase):
         self.assertEqual(replay.items, self.s.items)
         replay.out.close()
 
+    def test_a_voice_comment_keeps_its_recording(self):  # F184: one send posts each quote's words, with its recording
+        self.runop({'op': 'doc', 'ref': 'F1', 'md': '# Plan\n\nFirst part.\n\nSecond part.'})
+        f = self.s.save_file('voice 0-03.webm', 'audio/webm', b'fake audio')
+        d = self.s.docs[1]
+        keys = [taska.block_key(t) for _, t in taska.md_blocks(d['md'])]
+        self.runop({'op': 'dc', 'd': 1, 'key': keys[1], 'quote': 'First', 'text': 'Say why', 'files': [dict(f, tr='Say why')]})
+        self.runop({'op': 'dc', 'd': 1, 'key': keys[2], 'quote': 'Second part', 'text': 'Drop it'})
+        c = d['comments']
+        self.assertEqual([(x['text'], [y['f'] for y in x['files']]) for x in c], [('Say why', [f['f']]), ('Drop it', [])])
+        self.assertIn(f['f'], self.s.doc_text(d))
+        with self.assertRaises(AssertionError):
+            self.runop({'op': 'dc', 'd': 1, 'key': keys[1], 'text': ''})
+        replay = taska.Store(str(self.path))
+        self.assertEqual(replay.docs[1]['comments'], c)
+        replay.out.close()
+
     def test_conflict_and_oversize_do_not_mutate(self):
         self.amend()
         for op in [dict(v=0,text='stale'), dict(v=1,text='x'*taska.MAX_TEXT), dict(v=1,text=' ')]:
