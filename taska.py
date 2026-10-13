@@ -4781,7 +4781,7 @@ function renderComposer() {
     ph = desk() ? `Click a paragraph of D${dOpen.d}, then comment…` : `Comment on D${dOpen.d}…`; send = 'Comment';
   } else if (n) {  // B83: a reply says so; the choices you ticked go with it (B145)
     line = scopeLine(desk() ? 'reply' : 'scope', `Reply to ${code(n)}`, ticks.length ? ticks.map(l => '✓ ' + esc(oneLine(l))).join(' · ') : esc(it.title),  // one name for it, as on the desktop (B157)
-      desk() ? scopeLink('new-input', 'New input instead', 'C', 'Write a new input to the whole project instead · C') : scopeX('unscope', 'Send to the whole project instead'));
+      desk() ? scopeLink('new-input-instead', 'New input instead', '', 'What you wrote becomes a new input to the whole project') : scopeX('unscope', 'Send to the whole project instead'));
     ph = `Reply to ${code(n)}…`;
     if (U.ask === n) ph = `What is missing in ${code(n)}?`;  // after Not yet (B153)
     if (ticks.length) send = 'Send answer';
@@ -4789,7 +4789,7 @@ function renderComposer() {
     line = scopeLine('scope', 'New rule for this project', '', ruleFlip());  // the phone has the switch too (B156)
     if (S.project) ph = `New rule for ${projTitle()}…`;
   } else if (desk()) line = scopeLine('inbox', 'New input', `· ${S.org?.on ? 'the organizer files it' : 'your agent files it'}`,
-    ruleFlip() + (U.open && detailShown() ? scopeLink('reply', `Add to ${code(U.open)} instead`, 'R') : ''));
+    ruleFlip() + (U.open && detailShown() ? scopeLink('reply-instead', `Add to ${code(U.open)} instead`, 'R') : ''));
   else if (U.tab === 'rules') line = scopeLine('inbox', 'New input', '· not a rule', ruleFlip());
   if (R.rec && R.key && R.key !== U.draftKey) line = scopeLine('mic', `Recording for ${esc(draftName(R.key))}`, '· it goes there when you stop');  // B1
   $('scope').hidden = !line; $('scope').innerHTML = line; t.placeholder = ph;
@@ -5261,6 +5261,29 @@ function draftStore(change) {
   } catch (_) { return {}; }
 }
 function saveDraft() { const k = U.draftKey, v = $('text').value; if (k) draftStore(all => { if (v.trim()) all[k] = v; else delete all[k]; }); }
+// A8, B185: "New input instead", "Add to F06 instead", "As a rule instead": what you wrote (words, files, voice notes)
+// goes to the other target, after its own draft, and Undo puts both back.
+function setDraft(key, text, files) {
+  if (key === U.draftKey) { $('text').value = text; U.files = files; saveDraft(); grow(); }
+  else { draftStore(all => { if (text.trim()) all[key] = text; else delete all[key]; }); if (files.length) U.parked[key] = files; else delete U.parked[key]; }
+}
+function carry(go) {
+  const from = U.draftKey, text = $('text').value, files = U.files;
+  if (!from || (!text.trim() && !files.length)) return go();
+  setDraft(from, '', []);
+  go();
+  const to = U.draftKey;
+  if (to === from) return setDraft(to, text, files), renderComposer();
+  const was = $('text').value, wasFiles = [...U.files];
+  for (const f of files) { f.key = to; f.scope = /^[A-Z]\d+$/.test(to) ? to : null; f.at = undefined; keepRec(f); }  // its words, and a restored note, follow
+  setDraft(to, was.trim() ? was.trimEnd() + '\n\n' + text : text, [...wasFiles, ...files]); renderComposer();
+  toast(`What you wrote moved to ${draftName(to)}`, () => {
+    for (const f of files) { f.key = from; f.scope = /^[A-Z]\d+$/.test(from) ? from : null; keepRec(f); }
+    setDraft(to, was, wasFiles); setDraft(from, text, files);
+    goDraft(from); renderComposer();
+  });
+  $('text').focus({preventScroll: true});
+}
 function swapDraft(key) {
   const left = U.draftKey === 'new' && ($('text').value.trim() || U.files.length);  // B185: a new input you leave waits, and you are told where
   if (U.draftKey) { saveDraft(); U.parked[U.draftKey] = U.files; }
@@ -5669,6 +5692,8 @@ const ACT = {
   'search-cancel': () => searchMode(false),  // also a search that came with the address or a tab (B152)
   'search-clear': () => { clearSearch(); $('q').focus(); },
   reply: () => { U.scopeOff = false; renderComposer(); $('text').focus(); },
+  'reply-instead': () => carry(ACT.reply),  // A8: what you wrote goes along
+  'new-input-instead': () => carry(ACT['new-input']),
   'card-answer': b => {  // the card's step forward on an item that waits on you (B147): its question, and the box to reply in
     const it = byN.get(Number(b.dataset.n));
     $('dlgBody').querySelector('[data-need]')?.scrollIntoView({block: 'start', behavior: 'smooth'});
@@ -5707,7 +5732,7 @@ const ACT = {
   side: () => { if (WIDE.matches) D.sideHidden = !D.sideHidden; else D.sideOpen = !D.sideOpen; render(); },
   keys: () => showKeys(),
   switch: () => projectSwitcher(),
-  'as-rule': () => { U.asRule = !ruleMode(); renderComposer(); if (desk() && D.compose) renderDetail(); },
+  'as-rule': () => carry(() => { U.asRule = !ruleMode(); renderComposer(); if (desk() && D.compose) renderDetail(); writeURL(false); }),
   'new-input': () => {
     U.amend = null; U.correct = null;  // New input is always a fresh new input (B168)
     D.sideOpen = false; if (D.page) D.page = null;
@@ -6052,7 +6077,7 @@ const ACT = {
     if (!f?.f) return;
     groups.set('draft', imgs); openViewer('draft', f.f);
   },
-  unscope: () => { U.scopeOff = true; renderComposer(); $('text').focus(); },
+  unscope: () => carry(() => { U.scopeOff = true; renderComposer(); $('text').focus(); }),
   send,
   dismiss: () => { U.lastSent = null; U.note = null; renderFeedback(); },
   undo: async b => {  // Undo filing (T113 A4): what the organizer did with an input, as it left it; it says what changed, and Z puts it back
