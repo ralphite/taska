@@ -4395,7 +4395,7 @@ function renderDetail() {
       const back = D.compose && D.prev && byN.has(D.prev);
       $('dActs').innerHTML = ''; $('itemMenuBtn').hidden = true;
       $('dHead').innerHTML = D.compose ? `<span class="flex items-center gap-2 text-sm font-semibold">${ico('newinput', 'size-[18px] text-blue-600 dark:text-blue-400')}${ruleMode() ? 'New rule' : 'New input'}</span>` : '';
-      $('dNav').innerHTML = back ? `<button data-act="compose-back" class="flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800">${ico('left', 'size-4')}Back to ${code(D.prev)}${KBD('Esc')}</button>` : '';
+      $('dNav').innerHTML = back ? `<button data-act="compose-back" class="flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800">${ico('left', 'size-4')}Back to ${D.prevDoc ? 'D' + D.prevDoc : code(D.prev)}${KBD('Esc')}</button>` : '';
       body.innerHTML = D.compose ? '' : noSelection();
       if (D.compose) { $('composeHead').innerHTML = composeHead(); $('composeList').innerHTML = saidLately(); markCut($('composeList')); }
     }
@@ -5777,6 +5777,8 @@ const ACT = {
       if (U.tab === 'inputs') { D.prevTab = 'inputs'; U.tab = 'items'; }
       U.go = null;
       if (U.open) D.prev = U.open;
+      D.prevDoc = U.doc && !U.docEdit && docById(U.doc) ? U.doc : null;  // B14: from a document, the page is the same New input page, and Back goes to the document
+      if (D.prevDoc) { U.docScroll[U.doc] = $('detailBody').scrollTop; Object.assign(U, {doc: null, docReply: null, docSel: new Set(), docQuote: null, docCircle: false}); D.docKey = null; }
       U.open = null; U.editing = null; U.subFor = null; D.full = false; D.compose = true;
       writeURL(true);
     }
@@ -6355,10 +6357,15 @@ function markCut(root) {
 }
 function leaveCompose() {  // back where you were: the Inputs page, or the item you had open
   $('text').blur();  // the box now points elsewhere: keys are keys again, not letters (B123)
-  const p = D.prev, tab = D.prevTab; D.compose = false; D.prev = null; D.prevTab = null;
+  const p = D.prev, tab = D.prevTab, doc = D.prevDoc; D.compose = false; D.prev = null; D.prevTab = null; D.prevDoc = null;
   if (tab) { U.tab = tab; U.open = p && byN.has(p) ? p : null; U.inputsEnd = true; }
   const back = leaveView('new');  // the step into the page goes; the address then follows what shows
   if (p && byN.has(p) && !tab) openItem(p); else { render(); if (!back) writeURL(false); }
+  if (doc && docById(doc) && U.open === liveN(docById(doc).n)) {  // B14: back into the document you came from
+    Object.assign(U, {doc, docReply: null, docSel: new Set(), docQuote: null, docCircle: false}); D.docKey = null;
+    renderDetail(); renderComposer(); $('detailBody').scrollTop = U.docScroll[doc] || 0;
+    if (!back) writeURL(false);
+  }
 }
 const noSelection = () => `<div class="grid h-full place-items-center p-8 text-center"><div>
   <p class="text-[15px] text-zinc-500 dark:text-zinc-400">Select an item</p>
