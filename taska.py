@@ -2657,7 +2657,7 @@ PAGE = r'''<!doctype html>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232563eb' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M13 5h8M13 12h8M13 19h8M3 17l2 2 4-4M3 7l2 2 4-4'/%3E%3C/svg%3E">
 <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3/dist/index.global.js" integrity="sha384-2ql948lIdLcGEE0/qxNiudyTjgauA3RDJERu5xW75kFCvSl5a9odyQYCb6tEjnmB" crossorigin="anonymous"></script>
 </head>
-<body class="h-dvh overflow-hidden bg-white text-zinc-900 antialiased [-webkit-tap-highlight-color:transparent] lg:flex dark:bg-zinc-950 dark:text-zinc-100 [&_a[href]:active]:opacity-60 [&_button:not(:disabled):active]:opacity-60 [&_button[aria-busy=true]]:opacity-50">
+<body class="h-dvh overflow-hidden bg-white text-zinc-900 antialiased [-webkit-tap-highlight-color:transparent] lg:flex dark:bg-zinc-950 dark:text-zinc-100 [&_:is(button,a[href],summary)[data-pressed]]:opacity-60 [&_[data-expand][data-pressed]]:opacity-70 [&_button:is(:disabled:not([aria-pressed]),[aria-busy=true])]:opacity-40 [&_button:disabled:not([aria-pressed])]:cursor-not-allowed [&_button[aria-busy=true]]:cursor-progress [&_:is(button,a[href],summary):focus-visible]:outline-2 [&_:is(button,a[href],summary):focus-visible]:outline-offset-2 [&_:is(button,a[href],summary):focus-visible]:outline-blue-500 dark:[&_:is(button,a[href],summary):focus-visible]:outline-blue-400 [&_:is(#list,#tabs,#drawerSettings,#moveList,.overflow-x-auto,.truncate)_:is(button,a[href]):focus-visible]:-outline-offset-2 [&_#keysBtn:focus-visible]:-outline-offset-2 motion-reduce:[&_*]:transition-none motion-reduce:[&_*]:animate-none">
 <nav id="drawer" hidden aria-label="Projects" class="fixed top-0 left-0 flex h-dvh w-80 max-w-[85vw] flex-col bg-zinc-100 pt-[env(safe-area-inset-top)] pb-[max(1rem,env(safe-area-inset-bottom))] lg:z-40 lg:w-[var(--side-w,15rem)] lg:max-w-none lg:shrink-0 lg:border-r lg:border-zinc-200 lg:bg-zinc-50 lg:pb-0 2xl:w-[var(--side-w,16rem)] dark:bg-zinc-900 dark:lg:border-zinc-800">
   <div data-grip="side" title="Drag to resize · double-click for the default" class="absolute inset-y-0 right-0 z-10 hidden w-2 translate-x-full cursor-col-resize hover:bg-blue-500/30 lg:block"></div>
   <div class="flex h-14 shrink-0 items-center gap-2 px-5 lg:pr-2 lg:pl-4"><span id="drawerLogo" class="text-blue-600 dark:text-blue-400"></span><span class="text-xl font-semibold tracking-tight lg:text-[19px]">Taska</span>
@@ -2666,7 +2666,7 @@ PAGE = r'''<!doctype html>
   <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 lg:pb-3 lg:scrollbar-thin lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70">
     <div class="px-3 pb-1.5 text-xs font-semibold text-zinc-500 lg:text-[11px] lg:tracking-wider lg:uppercase dark:text-zinc-400">Projects</div>
     <div id="drawerList" class="flex flex-col gap-0.5"></div>
-    <button data-act="new-project" id="drawerNew" class="mt-1 flex h-12 w-full items-center gap-3 rounded-2xl px-3 text-[15px] font-medium text-blue-600 lg:h-9 lg:rounded-xl lg:text-sm dark:text-blue-400">New project</button>
+    <button data-act="new-project" id="drawerNew" class="mt-1 flex h-12 w-full items-center gap-3 rounded-2xl px-3 text-[15px] font-medium text-blue-600 hover:bg-zinc-200/60 lg:h-9 lg:rounded-xl lg:text-sm dark:text-blue-400 dark:hover:bg-zinc-800">New project</button>
     <div class="mt-4 px-3 pb-1.5 text-xs font-semibold text-zinc-500 lg:text-[11px] lg:tracking-wider lg:uppercase dark:text-zinc-400">This project</div>
     <div id="drawerSettings" class="divide-y divide-zinc-100 overflow-hidden rounded-2xl bg-white lg:divide-y-0 lg:rounded-none lg:bg-transparent dark:divide-zinc-700/60 dark:bg-zinc-800 dark:lg:bg-transparent"></div>
     <dl id="menuInfo" class="mt-3 hidden space-y-0.5 px-3 pb-2 text-xs leading-relaxed break-all text-zinc-500 lg:block lg:text-[11px] dark:text-zinc-400"></dl>
@@ -2680,22 +2680,22 @@ PAGE = r'''<!doctype html>
   <header id="mainHead" class="flex h-14 shrink-0 items-center gap-1 px-2 lg:col-start-1 lg:row-start-1 lg:gap-2 lg:border-r lg:border-b lg:border-zinc-200 lg:px-3 dark:lg:border-zinc-800">
     <div id="deskTitle" class="hidden min-w-0 shrink-0 items-baseline gap-2 pl-1 lg:flex"></div>
     <div id="headNormal" class="contents">
-      <button id="projBtn" data-act="projects" aria-label="Projects and settings" class="flex h-12 min-w-0 flex-1 items-center gap-2.5 rounded-xl px-2.5 text-left active:bg-zinc-100 dark:active:bg-zinc-800">
+      <button id="projBtn" data-act="projects" aria-label="Projects and settings" class="flex h-12 min-w-0 flex-1 items-center gap-2.5 rounded-xl px-2.5 text-left data-pressed:bg-zinc-100 dark:data-pressed:bg-zinc-800">
         <span class="relative text-zinc-700 dark:text-zinc-300"><span id="logo"></span><span id="otherDot" hidden title="Another project needs you" class="absolute -top-0.5 -right-0.5 size-2.5 rounded-full bg-amber-500 ring-2 ring-white dark:bg-amber-400 dark:ring-zinc-950"></span></span>
         <span id="projName" class="truncate text-[19px] font-semibold tracking-tight">Taska</span>
       </button>
       <button id="agentBtn" data-act="agent-info" aria-label="Agents" class="flex h-11 shrink-0 items-center px-1"></button>
-      <button id="searchBtn" data-act="search" aria-label="Search" class="grid size-11 shrink-0 place-items-center rounded-full text-zinc-500 active:bg-zinc-100 dark:text-zinc-400 dark:active:bg-zinc-800"></button>
+      <button id="searchBtn" data-act="search" aria-label="Search" class="grid size-11 shrink-0 place-items-center rounded-full text-zinc-500 data-pressed:bg-zinc-100 dark:text-zinc-400 dark:data-pressed:bg-zinc-800"></button>
     </div>
     <div id="headSearch" hidden class="contents">
       <label class="ml-1 flex h-11 min-w-0 flex-1 items-center gap-2 rounded-xl bg-zinc-100 pl-3 text-zinc-400 lg:ml-0 lg:h-9 lg:ring-blue-500/40 lg:focus-within:bg-white lg:focus-within:ring-2 dark:bg-zinc-800 dark:text-zinc-500 dark:lg:focus-within:bg-zinc-900"><span id="searchIcon"></span>
         <input id="q" type="search" autocomplete="off" placeholder="Search title, text or code" class="min-w-0 flex-1 bg-transparent text-base text-zinc-900 outline-none placeholder:text-zinc-400 lg:text-sm dark:text-zinc-100 [&::-webkit-search-cancel-button]:hidden">
         <kbd id="qKey" class="mr-2 hidden h-5 min-w-5 place-items-center rounded-md px-1 font-sans text-[11px] font-semibold text-zinc-400 ring-1 ring-zinc-300 lg:grid dark:ring-zinc-600">/</kbd>
-        <button id="qX" data-act="search-clear" aria-label="Clear search" class="-mr-1 grid size-11 shrink-0 place-items-center rounded-full lg:size-9"><span id="qClear" class="grid size-5 place-items-center rounded-full bg-zinc-400 text-white dark:bg-zinc-600 dark:text-zinc-900"></span></button>
+        <button id="qX" data-act="search-clear" aria-label="Clear search" class="group -mr-1 grid size-11 shrink-0 place-items-center rounded-full lg:size-9"><span id="qClear" class="grid size-5 place-items-center rounded-full bg-zinc-400 text-white group-hover:bg-zinc-500 dark:bg-zinc-600 dark:text-zinc-900 dark:group-hover:bg-zinc-500"></span></button>
       </label>
       <button data-act="search-cancel" class="h-11 shrink-0 px-2.5 text-[15px] font-medium text-blue-600 lg:hidden dark:text-blue-400">Cancel</button>
     </div>
-    <button id="deskFilterBtn" data-act="filters" title="Filter · F" aria-label="Filters" class="relative hidden size-9 shrink-0 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-100 lg:grid dark:text-zinc-400 dark:hover:bg-zinc-800"></button>
+    <button id="deskFilterBtn" data-act="filters" title="Filter · F" aria-label="Filters" aria-expanded="false" class="relative hidden size-9 shrink-0 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-100 aria-expanded:bg-zinc-100 lg:grid dark:text-zinc-400 dark:hover:bg-zinc-800 dark:aria-expanded:bg-zinc-800"></button>
   </header>
 
   <nav id="tabs" class="flex h-11 shrink-0 items-stretch border-b border-zinc-200 pr-1 pl-4 lg:hidden dark:border-zinc-800">
@@ -2714,10 +2714,10 @@ PAGE = r'''<!doctype html>
   <section id="detailView" hidden class="flex min-h-0 flex-1 flex-col lg:col-start-2 lg:row-span-3 lg:row-start-1 lg:group-data-[compose]/app:row-span-1">
     <div id="goStrip" hidden class="flex h-11 shrink-0 items-center gap-3 border-b border-amber-200/70 bg-amber-50 px-4 text-[13px] dark:border-amber-400/15 dark:bg-amber-400/10"></div>
     <header class="flex h-14 shrink-0 items-center gap-1 border-b border-zinc-100 px-1 lg:border-zinc-200 lg:px-3 dark:border-zinc-800/70 dark:lg:border-zinc-800">
-      <button data-act="back" id="backBtn" aria-label="Back" class="grid size-11 shrink-0 place-items-center rounded-full text-zinc-600 active:bg-zinc-100 lg:hidden dark:text-zinc-400 dark:active:bg-zinc-800"></button>
+      <button data-act="back" id="backBtn" aria-label="Back" class="grid size-11 shrink-0 place-items-center rounded-full text-zinc-600 data-pressed:bg-zinc-100 lg:hidden dark:text-zinc-400 dark:data-pressed:bg-zinc-800"></button>
       <div id="dHead" class="flex min-w-0 flex-1 flex-col items-center leading-tight lg:flex-row lg:items-center lg:gap-2 lg:pl-2"></div>
       <div id="dActs" class="hidden items-center gap-0.5 lg:flex"></div>
-      <button data-act="item-menu" id="itemMenuBtn" aria-label="Item actions" title="All actions · ." class="grid size-11 shrink-0 place-items-center rounded-full text-zinc-600 active:bg-zinc-100 lg:size-9 lg:rounded-lg lg:hover:bg-zinc-100 dark:text-zinc-400 dark:active:bg-zinc-800 dark:lg:hover:bg-zinc-800"></button>
+      <button data-act="item-menu" id="itemMenuBtn" aria-label="Item actions" title="All actions · ." class="grid size-11 shrink-0 place-items-center rounded-full text-zinc-600 data-pressed:bg-zinc-100 lg:size-9 lg:rounded-lg lg:hover:bg-zinc-100 dark:text-zinc-400 dark:data-pressed:bg-zinc-800 dark:lg:hover:bg-zinc-800"></button>
       <div id="dNav" class="hidden items-center gap-0.5 border-l border-zinc-200 pl-2 lg:ml-1.5 lg:flex dark:border-zinc-800"></div>
     </header>
     <div id="detailBody" class="min-h-0 flex-1 overflow-y-auto overscroll-contain lg:mask-b-from-[calc(100%-2rem)] lg:scrollbar-gutter-both lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70 lg:group-data-[compose]/app:hidden"></div>
@@ -2762,7 +2762,7 @@ PAGE = r'''<!doctype html>
     <header class="flex shrink-0 touch-none items-center gap-2 py-1 pr-2 pl-5">
       <h2 id="dlgTitle" class="min-w-0 flex-1 truncate text-[17px] font-semibold"></h2>
       <span id="dlgExtra" class="contents"></span>
-      <button data-act="close" aria-label="Close" class="grid size-11 shrink-0 place-items-center rounded-full outline-none" id="dlgClose"></button>
+      <button data-act="close" aria-label="Close" class="group grid size-11 shrink-0 place-items-center rounded-full" id="dlgClose"></button>
     </header>
     <div id="dlgSub" hidden class="shrink-0"></div>
     <div id="dlgBody" class="min-h-0 flex-1 overflow-y-auto px-4 lg:scrollbar-thin lg:overscroll-contain lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70 pt-2 pb-[max(1.25rem,env(safe-area-inset-bottom))]"></div>
@@ -2779,9 +2779,9 @@ PAGE = r'''<!doctype html>
   </header>
   <div id="vStage" class="flex min-h-0 flex-1 overflow-auto lg:scrollbar-thumb-white/40"><img id="vImg" alt="" class="m-auto max-h-full max-w-full object-contain"></div>
   <footer class="flex items-center justify-center gap-2 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] text-sm">
-    <button data-act="v-prev" class="h-11 rounded-full px-4 hover:bg-white/10 disabled:opacity-30">Previous</button>
-    <button data-act="v-zoom" id="vZoom" class="h-11 rounded-full bg-white/10 px-4">Actual size</button>
-    <button data-act="v-next" class="h-11 rounded-full px-4 hover:bg-white/10 disabled:opacity-30">Next</button>
+    <button data-act="v-prev" class="h-11 rounded-full px-4 hover:bg-white/10">Previous</button>
+    <button data-act="v-zoom" id="vZoom" class="h-11 rounded-full bg-white/10 px-4 hover:bg-white/20">Actual size</button>
+    <button data-act="v-next" class="h-11 rounded-full px-4 hover:bg-white/10">Next</button>
   </footer>
 </div>
 
@@ -2890,14 +2890,14 @@ const MSG = by => by === 'you' ? 'ml-8 rounded-xl bg-blue-100/80 px-3 py-2 dark:
 const WHO = by => by === 'you' ? 'font-medium text-blue-700 dark:text-blue-300' : 'font-medium text-zinc-700 dark:text-zinc-300';
 const HIT = 'relative after:absolute after:inset-x-0 after:-inset-y-1.5';  // a 32px control gets a 44px touch area
 const BTN = 'rounded-lg px-2.5 py-2.5 sm:py-1.5 text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800';
-const LINK_BTN = `${HIT} flex h-8 items-center gap-1 rounded-lg px-2 text-[13px] font-semibold text-blue-600 dark:text-blue-400`;  // a quiet blue action
-const PRIMARY_BASE = 'inline-flex h-11 items-center justify-center gap-1.5 rounded-xl px-4 text-[15px] font-semibold disabled:opacity-40';
-const PRIMARY = PRIMARY_BASE + ' bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900';
-const SECOND = 'inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-4 text-[15px] font-medium text-zinc-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200';
-const CHIP = `${HIT} flex h-8 items-center gap-1.5 rounded-lg bg-zinc-100 px-2.5 text-[13px] dark:bg-zinc-800/80`;
+const LINK_BTN = `${HIT} flex h-8 items-center gap-1 rounded-lg px-2 text-[13px] font-semibold text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10`;  // a quiet blue action
+const PRIMARY_BASE = 'inline-flex h-11 items-center justify-center gap-1.5 rounded-xl px-4 text-[15px] font-semibold';  // disabled and busy look: the rule on <body>
+const PRIMARY = PRIMARY_BASE + ' bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200';
+const SECOND = 'inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-4 text-[15px] font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700';
+const CHIP = `${HIT} flex h-8 items-center gap-1.5 rounded-lg bg-zinc-100 px-2.5 text-[13px] hover:bg-zinc-200/70 dark:bg-zinc-800/80 dark:hover:bg-zinc-700/80`;
 const NEEDS_CARD = 'rounded-2xl border border-amber-200 bg-amber-50 dark:border-amber-400/25 dark:bg-amber-400/7';
 const FIELD = 'w-full rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-base outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-950';
-const CLOSE_X = `<span class="grid size-8 place-items-center rounded-full bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">${'<svg class="size-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>'}</span>`;
+const CLOSE_X = `<span class="grid size-8 place-items-center rounded-full bg-zinc-100 text-zinc-500 group-hover:bg-zinc-200 group-hover:text-zinc-700 dark:bg-zinc-800 dark:text-zinc-400 dark:group-hover:bg-zinc-700 dark:group-hover:text-zinc-200">${'<svg class="size-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>'}</span>`;
 const SECTION = (text, right = '') => `<div class="flex h-6 items-center justify-between"><h2 class="text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">${text}</h2>${right}</div>`;
 
 let S = {rev: -1, boot: '', items: [], inputs: [], width: 1, org: {}};
@@ -2909,6 +2909,7 @@ const groups = new Map();
 let viewerGroup = [], viewerIdx = 0;
 // The desktop layout (I70, design A "three panes"): 1024px and wider. Below that the phone layout, untouched.
 const DESK = matchMedia('(min-width: 1024px)'), WIDE = matchMedia('(min-width: 1280px)');
+const REDUCE = matchMedia('(prefers-reduced-motion: reduce)');  // the system's "reduce motion": no slides (T160); a rule on <body> stops the CSS ones
 const desk = () => DESK.matches;
 const D = {page: null, full: false, sideHidden: false, sideOpen: false, filters: false, g: 0, undo: null, compose: false, prev: null};
 const TIP = {el: null, t: 0, closedAt: 0, hush: null, fine: matchMedia('(hover: hover) and (pointer: fine)')};  // the one tooltip (T094)
@@ -2944,7 +2945,7 @@ document.addEventListener('pointerdown', e => { LAST.pane = e.target.closest?.('
 document.addEventListener('keydown', e => { if (desk() && !/INPUT|TEXTAREA/.test(document.activeElement?.tagName)) LAST.pane = $('detailView'); }, true);  // keys act on the open item
 function toast(text, undo) {  // with `undo`, the toast carries an Undo button for a few seconds
   const el = $('toast');
-  el.innerHTML = `<span class="min-w-0 truncate">${esc(text)}</span>${undo ? '<button class="relative h-8 shrink-0 rounded-full bg-white/15 px-3 text-sm font-semibold text-white after:absolute after:-inset-1.5 dark:bg-zinc-900/10 dark:text-zinc-900">Undo</button>' : ''}`;
+  el.innerHTML = `<span class="min-w-0 truncate">${esc(text)}</span>${undo ? '<button class="relative h-8 shrink-0 rounded-full bg-white/15 px-3 text-sm font-semibold text-white after:absolute after:-inset-1.5 hover:bg-white/25 dark:bg-zinc-900/10 dark:text-zinc-900 dark:hover:bg-zinc-900/20">Undo</button>' : ''}`;
   el.classList.toggle('pointer-events-none', !undo);
   const up = !$('overlay').hidden && !desk();  // a sheet or the focus card is open: say it at the top, clear of its buttons
   el.classList.toggle('bottom-28', !up); el.classList.toggle('top-[calc(env(safe-area-inset-top)+0.75rem)]', up);
@@ -3035,7 +3036,7 @@ function renderAgent() {
     ? `<span role="status" class="flex h-8 items-center gap-2 rounded-full bg-zinc-100 px-3 text-[13px] font-medium text-zinc-600 ring-1 ring-zinc-900/5 ring-inset dark:bg-zinc-800/80 dark:text-zinc-300 dark:ring-white/5">${ico('spinner', 'size-3.5 animate-spin', '2.25')}Offline, retrying…</span>`
     : `<span class="flex h-8 max-w-44 items-center gap-2 rounded-full px-3 text-[13px] font-medium ring-1 ring-inset ${PILL[kind][0]}"><span class="size-2 shrink-0 rounded-full ${PILL[kind][1]}"></span><span class="truncate">${esc(label)}</span></span>`;
   b.title = offline >= 2 ? 'Taska is out of reach. It reconnects by itself.' : line;
-  if ($('deskAgent')) $('deskAgent').innerHTML = `<button data-act="agent-info" title="${esc(b.title)}" class="flex">${b.innerHTML}</button>`;
+  if ($('deskAgent')) $('deskAgent').innerHTML = `<button data-act="agent-info" title="${esc(b.title)}" class="flex rounded-full hover:brightness-95 dark:hover:brightness-125">${b.innerHTML}</button>`;
 }
 setInterval(() => { if (S.agents) renderAgent(); }, 30000);  // "2m" keeps counting between changes
 
@@ -3110,11 +3111,11 @@ function thumbs(files, gid, size = 'size-20') {
   const imgs = files.filter(f => (f.mime || '').startsWith('image/'));
   groups.set(gid, imgs.map(f => f.f));
   return files.map(f => (f.mime || '').startsWith('audio/')
-    ? `<button data-act="play" data-src="${P}f/${encodeURIComponent(f.f)}" aria-label="Play ${esc(f.name)}" class="flex h-11 shrink-0 items-center gap-2 self-end rounded-full border border-zinc-200 pr-3.5 pl-1.5 text-xs text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
+    ? `<button data-act="play" data-src="${P}f/${encodeURIComponent(f.f)}" aria-label="Play ${esc(f.name)}" class="flex h-11 shrink-0 items-center gap-2 self-end rounded-full border border-zinc-200 pr-3.5 pl-1.5 text-xs text-zinc-500 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800">
         <span data-icon class="grid size-8 place-items-center rounded-full bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">${ico('play', 'size-4')}</span><span class="flex h-5 items-center gap-[2px]">${WAVE}</span><span data-time class="font-mono tabular-nums">Voice</span></button>`
     : (f.mime || '').startsWith('image/')
-    ? `<button data-act="view" data-g="${gid}" data-f="${esc(f.f)}" title="${esc(f.name)}" class="${size} shrink-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900"><img src="${P}f/${encodeURIComponent(f.f)}" alt="${esc(f.name)}" loading="lazy" class="size-full object-contain"></button>`
-    : `<a href="${P}f/${encodeURIComponent(f.f)}" target="_blank" rel="noopener" class="flex h-11 max-w-56 shrink-0 items-center gap-1.5 self-end rounded-xl border border-zinc-200 px-3 text-xs text-zinc-600 dark:border-zinc-700 dark:text-zinc-300">${ico('file', 'size-4')}<span class="truncate">${esc(f.name)}</span></a>`).join('');
+    ? `<button data-act="view" data-g="${gid}" data-f="${esc(f.f)}" title="${esc(f.name)}" class="${size} shrink-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 hover:brightness-95 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:brightness-110"><img src="${P}f/${encodeURIComponent(f.f)}" alt="${esc(f.name)}" loading="lazy" class="size-full object-contain"></button>`
+    : `<a href="${P}f/${encodeURIComponent(f.f)}" target="_blank" rel="noopener" class="flex h-11 max-w-56 shrink-0 items-center gap-1.5 self-end rounded-xl border border-zinc-200 px-3 text-xs text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800">${ico('file', 'size-4')}<span class="truncate">${esc(f.name)}</span></a>`).join('');
 }
 // Voice notes play in place: one player for the page; each chip shows play / pause and the time.
 const AUD = {el: null, src: ''};
@@ -3149,9 +3150,11 @@ const lastAgentMsg = it => [...it.thread].reverse().find(x => !userWord(x));
 const oneLine = t => (String(t || '').split('\n').map(l => l.replace(/^\s*(#+|>|[-*+]\s+(\(|\[)[ xX]?(\)|\])|[-*+]|\d+[.)])\s*/, '').replace(/[*`]/g, '').trim()).find(Boolean) || '');
 const excerpt = it => oneLine(it.wait ? it.wait.text : it.status === 'review' ? lastAgentMsg(it)?.text : (lastAgentMsg(it)?.text || it.body));
 
-// Desktop: the selected row is tinted, others on hover; hovering shows the phone's swipe actions as buttons.
-// A row answers a press too (B159); the short delay keeps rows from flashing while a finger scrolls the list.
-const rowTint = it => (U.open === it.n ? 'lg:bg-blue-50 dark:lg:bg-blue-400/10' : 'lg:hover:bg-zinc-50 dark:lg:hover:bg-zinc-900/70') + ' pointer-coarse:transition-colors pointer-coarse:delay-75 active:bg-zinc-100 lg:active:bg-zinc-100 dark:active:bg-zinc-900 dark:lg:active:bg-zinc-900';  // the delay is for fingers only
+// Desktop: the selected row (aria-current) is tinted, others on hover; hovering shows the phone's swipe actions as
+// buttons. A row answers a press too (B159, T160); the short delay, for fingers only, keeps rows from flashing while
+// a finger scrolls the list.
+const rowTint = () => 'lg:hover:bg-zinc-50 dark:lg:hover:bg-zinc-900/70 lg:aria-[current=true]:bg-blue-50 dark:lg:aria-[current=true]:bg-blue-400/10 pointer-coarse:transition-colors pointer-coarse:delay-75 data-pressed:bg-zinc-100 lg:data-pressed:bg-zinc-100 dark:data-pressed:bg-zinc-900 dark:lg:data-pressed:bg-zinc-900';
+const rowCur = it => U.open === it.n ? 'aria-current="true"' : '';
 const ACT_KEY = {Done: 'D', Accept: 'A', Approve: 'A', Archive: 'E', Unarchive: 'E', Later: 'L', 'Back to now': 'L', "Won't do": 'W', 'Not yet': 'N'};
 const ACT_TONE = {Done: 'text-emerald-600 dark:text-emerald-400', Accept: 'text-emerald-600 dark:text-emerald-400', Approve: 'text-blue-600 dark:text-blue-400', Archive: 'text-emerald-600 dark:text-emerald-400', Start: 'text-blue-600 dark:text-blue-400', "Won't do": 'text-red-600 dark:text-red-400'};
 // On the desktop the actions keep one order on every row (B128): forward · progress · Won't do · Later; the ones that
@@ -3197,8 +3200,8 @@ function patchList() {
     if (s && it && !a.dataset.settled) {
       const h = a.offsetHeight - 1;
       a.dataset.settled = Date.now();
-      a.innerHTML = `<div data-act="open" data-n="${n}" class="flex min-h-[${h}px] cursor-pointer items-center gap-3 py-2 pr-3 pl-4 text-sm text-zinc-500 dark:text-zinc-400">${stateIcon(it.status, statusName(it))}<span class="min-w-0 flex-1 truncate"><span class="mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[it.type]}">${code(n)}</span>${esc(s.said)}</span><button data-act="settle-undo" data-n="${n}" class="h-11 shrink-0 rounded-lg px-3 text-[13px] font-semibold text-blue-600 hover:bg-blue-50 lg:h-8 lg:px-2.5 dark:text-blue-400 dark:hover:bg-blue-400/10">Undo</button></div>`;
-    } else if (row && !a.dataset.settled) for (const c of ['lg:bg-blue-50', 'dark:lg:bg-blue-400/10']) row.classList.toggle(c, U.open === n);
+      a.innerHTML = `<div data-act="open" data-n="${n}" class="flex min-h-[${h}px] cursor-pointer items-center gap-3 py-2 pr-3 pl-4 text-sm text-zinc-500 hover:bg-zinc-50 data-pressed:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-900/70 dark:data-pressed:bg-zinc-900">${stateIcon(it.status, statusName(it))}<span class="min-w-0 flex-1 truncate"><span class="mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[it.type]}">${code(n)}</span>${esc(s.said)}</span><button data-act="settle-undo" data-n="${n}" class="h-11 shrink-0 rounded-lg px-3 text-[13px] font-semibold text-blue-600 hover:bg-blue-50 lg:h-8 lg:px-2.5 dark:text-blue-400 dark:hover:bg-blue-400/10">Undo</button></div>`;
+    } else if (row && !a.dataset.settled) { if (U.open === n) row.setAttribute('aria-current', 'true'); else row.removeAttribute('aria-current'); }
   }
 }
 $('list').addEventListener('pointerenter', () => { LIST.in = true; });
@@ -3222,7 +3225,7 @@ function itemRow(it, depth = 0, group = []) {
   ].join('');
   const img = files.find(f => (f.mime || '').startsWith('image/'));
   const foldable = group.some(k => k.parent === it.n);  // its subitems are in this list
-  const top = `<div data-act="open" data-n="${it.n}" class="group relative flex cursor-pointer items-start gap-3 py-2.5 pr-3 pl-${4 + 8 * depth} ${closed ? 'opacity-55' : ''} ${rowTint(it)}">
+  const top = `<div data-act="open" data-n="${it.n}" ${rowCur(it)} class="group relative flex cursor-pointer items-start gap-3 py-2.5 pr-3 pl-${4 + 8 * depth} ${closed ? 'opacity-55' : ''} ${rowTint(it)}">
       ${Array.from({length: depth}, (_, d) => `<span class="absolute inset-y-0 left-[${25 + 32 * d}px] w-px bg-zinc-200 dark:bg-zinc-700/70"></span>`).join('')}
       ${stateIcon(it.status, statusName(it))}
       <div class="min-w-0 flex-1">
@@ -3230,8 +3233,8 @@ function itemRow(it, depth = 0, group = []) {
         ${meta ? `<div class="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs font-medium text-zinc-500 dark:text-zinc-400">${meta}</div>` : ''}
       </div>
       ${it.type === 'rule' ? '' : rowActs(it)}
-      ${img ? `<button data-act="view" data-g="row${it.n}" data-f="${esc(img.f)}" aria-label="View image" class="-my-0.5 grid size-11 shrink-0 place-items-center">${(groups.set('row' + it.n, [img.f]), '')}<img src="${P}f/${encodeURIComponent(img.f)}" alt="" loading="lazy" class="size-10 rounded-lg border border-zinc-200 bg-zinc-50 object-cover dark:border-zinc-700 dark:bg-zinc-900"></button>` : ''}
-      ${foldable ? `<button data-act="fold" data-n="${it.n}" aria-expanded="${!U.folded.has(it.n)}" aria-label="${U.folded.has(it.n) ? 'Show' : 'Hide'} subitems" class="-my-2 -mr-1 grid size-11 shrink-0 place-items-center rounded-full text-zinc-400 dark:text-zinc-500">${ico(U.folded.has(it.n) ? 'right' : 'down', 'size-4', '2')}</button>` : ''}
+      ${img ? `<button data-act="view" data-g="row${it.n}" data-f="${esc(img.f)}" aria-label="View image" class="-my-0.5 grid size-11 shrink-0 place-items-center rounded-lg hover:brightness-95 dark:hover:brightness-110">${(groups.set('row' + it.n, [img.f]), '')}<img src="${P}f/${encodeURIComponent(img.f)}" alt="" loading="lazy" class="size-10 rounded-lg border border-zinc-200 bg-zinc-50 object-cover dark:border-zinc-700 dark:bg-zinc-900"></button>` : ''}
+      ${foldable ? `<button data-act="fold" data-n="${it.n}" aria-expanded="${!U.folded.has(it.n)}" aria-label="${U.folded.has(it.n) ? 'Show' : 'Hide'} subitems" class="-my-2 -mr-1 grid size-11 shrink-0 place-items-center rounded-full text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:text-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-zinc-300">${ico(U.folded.has(it.n) ? 'right' : 'down', 'size-4', '2')}</button>` : ''}
     </div>`;
   return `<article data-n="${it.n}" class="relative border-b border-zinc-100 dark:border-zinc-800/70">${it.type === 'rule' && desk() ? top : swipeRow(it, top)}</article>`;
 }
@@ -3241,16 +3244,16 @@ function itemRow(it, depth = 0, group = []) {
 // Each kind of "needs you" has its own color and icon (B96), on the row's pill, its label and the card's main
 // button: Accept green (it becomes done), Approve blue (work can start), Answer amber (a question), Reply red (stuck).
 const NEED = {
-  accept: {icon: 'check', pill: 'bg-emerald-100 text-emerald-900 ring-emerald-300/80 dark:bg-emerald-400/15 dark:text-emerald-100 dark:ring-emerald-400/30', text: 'text-emerald-700 dark:text-emerald-400', btn: 'bg-emerald-600 text-white dark:bg-emerald-500 dark:text-emerald-950'},
-  approve: {icon: 'thumb', pill: 'bg-blue-100 text-blue-900 ring-blue-300/80 dark:bg-blue-400/15 dark:text-blue-100 dark:ring-blue-400/30', text: 'text-blue-700 dark:text-blue-400', btn: 'bg-blue-600 text-white dark:bg-blue-500 dark:text-blue-950'},
-  answer: {icon: 'ask', pill: 'bg-amber-100 text-amber-950 ring-amber-300/80 dark:bg-amber-400/15 dark:text-amber-100 dark:ring-amber-400/30', text: 'text-amber-700 dark:text-amber-400', btn: 'bg-amber-500 text-amber-950 dark:bg-amber-400 dark:text-amber-950'},
-  reply: {icon: 'reply', pill: 'bg-rose-100 text-rose-900 ring-rose-300/80 dark:bg-rose-400/15 dark:text-rose-100 dark:ring-rose-400/30', text: 'text-rose-700 dark:text-rose-400', btn: 'bg-rose-600 text-white dark:bg-rose-500 dark:text-rose-950'},
+  accept: {icon: 'check', pill: 'bg-emerald-100 text-emerald-900 ring-emerald-300/80 dark:bg-emerald-400/15 dark:text-emerald-100 dark:ring-emerald-400/30', text: 'text-emerald-700 dark:text-emerald-400', btn: 'bg-emerald-600 text-white hover:brightness-95 dark:bg-emerald-500 dark:text-emerald-950 dark:hover:brightness-110'},
+  approve: {icon: 'thumb', pill: 'bg-blue-100 text-blue-900 ring-blue-300/80 dark:bg-blue-400/15 dark:text-blue-100 dark:ring-blue-400/30', text: 'text-blue-700 dark:text-blue-400', btn: 'bg-blue-600 text-white hover:brightness-95 dark:bg-blue-500 dark:text-blue-950 dark:hover:brightness-110'},
+  answer: {icon: 'ask', pill: 'bg-amber-100 text-amber-950 ring-amber-300/80 dark:bg-amber-400/15 dark:text-amber-100 dark:ring-amber-400/30', text: 'text-amber-700 dark:text-amber-400', btn: 'bg-amber-500 text-amber-950 hover:brightness-95 dark:bg-amber-400 dark:text-amber-950 dark:hover:brightness-110'},
+  reply: {icon: 'reply', pill: 'bg-rose-100 text-rose-900 ring-rose-300/80 dark:bg-rose-400/15 dark:text-rose-100 dark:ring-rose-400/30', text: 'text-rose-700 dark:text-rose-400', btn: 'bg-rose-600 text-white hover:brightness-95 dark:bg-rose-500 dark:text-rose-950 dark:hover:brightness-110'},
 };
 const ACTION_PILL = v => `inline-flex h-8 min-w-18 items-center justify-center gap-1 rounded-full pr-3 pl-2.5 text-[13px] font-semibold ring-1 ring-inset ${NEED[v].pill}`;
 const rowAction = it => it.wait ? (it.wait.kind === 'block' ? ['reply', 'Reply'] : ['answer', 'Answer']) : it.status === 'proposed' ? ['approve', 'Approve'] : ['accept', 'Accept'];
 function needsRow(it) {
   const [v, label] = rowAction(it);
-  const top = `<div data-act="open" data-n="${it.n}" class="group relative flex cursor-pointer items-center gap-2.5 py-2.5 pr-3 pl-4 ${rowTint(it)}">
+  const top = `<div data-act="open" data-n="${it.n}" ${rowCur(it)} class="group relative flex cursor-pointer items-center gap-2.5 py-2.5 pr-3 pl-4 ${rowTint(it)}">
       <span class="absolute inset-y-0 left-0 w-1 bg-amber-500 dark:bg-amber-400"></span>
       <span class="self-start">${stateIcon(it.status, statusName(it))}</span>
       <div class="min-w-0 flex-1">
@@ -3261,7 +3264,7 @@ function needsRow(it) {
         </div>
       </div>
       ${it.type === 'rule' ? '' : rowActs(it, true)}
-      <button data-act="row-act" data-n="${it.n}" data-v="${v}" title="${label} · A" class="-my-1 grid h-11 shrink-0 place-items-center"><span class="${ACTION_PILL(v)}">${ico(NEED[v].icon, 'size-3.5', '2.25')}${label}</span></button>
+      <button data-act="row-act" data-n="${it.n}" data-v="${v}" title="${label} · A" class="group/pill -my-1 grid h-11 shrink-0 place-items-center"><span class="${ACTION_PILL(v)} group-hover/pill:brightness-95 dark:group-hover/pill:brightness-125">${ico(NEED[v].icon, 'size-3.5', '2.25')}${label}</span></button>
     </div>`;
   return `<article data-n="${it.n}" class="relative border-b border-zinc-100 dark:border-zinc-800/70">${it.type === 'rule' && desk() ? top : swipeRow(it, top)}</article>`;
 }
@@ -3276,11 +3279,11 @@ function zone(kind, label, n, right = '') {
     ${mark}<h2 class="text-sm font-semibold ${needs ? 'text-amber-950 dark:text-amber-100' : 'text-zinc-800 dark:text-zinc-200'}">${label}</h2><span class="grid h-5 min-w-5 place-items-center rounded-full px-1.5 text-[11px] font-bold tabular-nums ${needs ? 'bg-amber-500 text-white dark:bg-amber-400 dark:text-amber-950' : 'bg-zinc-200/80 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300'}">${n}</span>${right}
   </div>`;
 }
-const goThroughBtn = () => `<button data-act="go-through" class="-my-1 ml-auto flex h-11 items-center gap-0.5 rounded-full pr-2 pl-3 text-[13px] font-semibold text-amber-800 dark:text-amber-300">Go through${ico('right', 'size-4', '2.25')}</button>`;
-const keepGoingNote = () => `<button data-act="agent-info" class="-my-1 ml-auto flex h-11 items-center gap-1.5 rounded-full pr-2.5 pl-3 text-xs font-semibold text-zinc-600 dark:text-zinc-300">${ico('loop', `size-3.5 ${S.cfg?.auto ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-400 dark:text-zinc-500'}`, '2')}Keep going ${S.cfg?.auto ? 'on' : 'off'}${ico('right', 'size-3.5 text-zinc-400 dark:text-zinc-500', '2')}</button>`;  // B158
-const keepGoingSwitch = () => `<button data-act="auto" aria-pressed="${!!S.cfg?.auto}" title="Agents take the next item without stopping" class="group -my-1 ml-auto flex h-11 items-center gap-2 rounded-full pr-2.5 pl-3 text-xs font-semibold text-zinc-600 dark:text-zinc-300">${ico('loop', 'size-3.5 text-emerald-600 dark:text-emerald-400', '2')}Keep going
+const goThroughBtn = () => `<button data-act="go-through" class="-my-1 ml-auto flex h-11 items-center gap-0.5 rounded-full pr-2 pl-3 text-[13px] font-semibold text-amber-800 hover:bg-amber-100 dark:text-amber-300 dark:hover:bg-amber-400/15">Go through${ico('right', 'size-4', '2.25')}</button>`;
+const keepGoingNote = () => `<button data-act="agent-info" class="-my-1 ml-auto flex h-11 items-center gap-1.5 rounded-full pr-2.5 pl-3 text-xs font-semibold text-zinc-600 hover:bg-zinc-200/60 dark:text-zinc-300 dark:hover:bg-zinc-800">${ico('loop', `size-3.5 ${S.cfg?.auto ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-400 dark:text-zinc-500'}`, '2')}Keep going ${S.cfg?.auto ? 'on' : 'off'}${ico('right', 'size-3.5 text-zinc-400 dark:text-zinc-500', '2')}</button>`;  // B158
+const keepGoingSwitch = () => `<button data-act="auto" aria-pressed="${!!S.cfg?.auto}" title="Agents take the next item without stopping" class="group -my-1 ml-auto flex h-11 items-center gap-2 rounded-full pr-2.5 pl-3 text-xs font-semibold text-zinc-600 hover:bg-zinc-200/60 dark:text-zinc-300 dark:hover:bg-zinc-800">${ico('loop', 'size-3.5 text-emerald-600 dark:text-emerald-400', '2')}Keep going
     <span class="relative h-5.5 w-9.5 shrink-0 rounded-full bg-zinc-300 transition-colors group-aria-pressed:bg-emerald-500 dark:bg-zinc-600 dark:group-aria-pressed:bg-emerald-500"><span class="absolute top-0.75 left-0.75 size-4 rounded-full bg-white shadow-sm transition-transform group-aria-pressed:translate-x-4"></span></span></button>`;
-const archiveAllBtn = n => `<button data-act="archive-all" class="-my-1 ml-auto flex h-11 items-center pr-2"><span class="inline-flex h-8 items-center gap-1.5 rounded-full bg-emerald-50 px-3 text-[13px] font-semibold text-emerald-800 ring-1 ring-emerald-600/20 ring-inset dark:bg-emerald-400/10 dark:text-emerald-300 dark:ring-emerald-400/25">${ico('archive', 'size-4')}Archive ${n}</span></button>`;
+const archiveAllBtn = n => `<button data-act="archive-all" class="group/arch -my-1 ml-auto flex h-11 items-center pr-2"><span class="inline-flex h-8 items-center gap-1.5 rounded-full bg-emerald-50 px-3 text-[13px] font-semibold text-emerald-800 ring-1 ring-emerald-600/20 ring-inset group-hover/arch:bg-emerald-100 dark:bg-emerald-400/10 dark:text-emerald-300 dark:ring-emerald-400/25 dark:group-hover/arch:bg-emerald-400/20">${ico('archive', 'size-4')}Archive ${n}</span></button>`;
 
 // Phone quick actions: swipe right = the natural next step, swipe left = reveal buttons. Touch only.
 // Swipe right all the way: the step forward you take most (F51). Archived items have none. On an item that waits on
@@ -3427,8 +3430,8 @@ function choiceHtml(labels, multi, n, base, done = null) {  // done: the labels 
   const picked = n && U.choice?.n === n ? U.choice.picked : new Set();
   return `<div class="space-y-1.5" role="group">${labels.map((l, k) => {
     const i = base + k, on = done ? done.includes(l.trim()) : picked.has(i);
-    return `<button ${n ? `data-act="choice" data-n="${n}" data-i="${i}" data-multi="${multi ? 1 : ''}"` : 'disabled'} aria-pressed="${on}" class="flex min-h-11 w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-left text-[15px] leading-snug ${on ? 'border-blue-500 bg-blue-50 dark:border-blue-400 dark:bg-blue-400/10' : 'border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-900'} ${done && !on ? 'opacity-50' : ''}">
-      <span class="grid size-5 shrink-0 place-items-center border-2 ${multi ? 'rounded-md' : 'rounded-full'} ${on ? 'border-blue-600 bg-blue-600 text-white dark:border-blue-400 dark:bg-blue-400 dark:text-zinc-900' : 'border-zinc-300 dark:border-zinc-600'}">${on ? ico('check', 'size-3.5', '3') : ''}</span>
+    return `<button ${n ? `data-act="choice" data-n="${n}" data-i="${i}" data-multi="${multi ? 1 : ''}"` : 'disabled'} aria-pressed="${on}" class="group flex min-h-11 w-full items-center gap-3 rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-left text-[15px] leading-snug aria-pressed:border-blue-500 aria-pressed:bg-blue-50 dark:border-zinc-700 dark:bg-zinc-900 dark:aria-pressed:border-blue-400 dark:aria-pressed:bg-blue-400/10 ${n ? 'hover:border-zinc-300 hover:bg-zinc-50 dark:hover:border-zinc-600 dark:hover:bg-zinc-800/70' : ''} ${done && !on ? 'opacity-50' : ''}">
+      <span class="grid size-5 shrink-0 place-items-center border-2 ${multi ? 'rounded-md' : 'rounded-full'} border-zinc-300 group-aria-pressed:border-blue-600 group-aria-pressed:bg-blue-600 group-aria-pressed:text-white dark:border-zinc-600 dark:group-aria-pressed:border-blue-400 dark:group-aria-pressed:bg-blue-400 dark:group-aria-pressed:text-zinc-900">${ico('check', 'size-3.5 invisible group-aria-pressed:visible', '3')}</span>
       <span class="min-w-0 flex-1">${inlineMd(l)}</span>${n && i < 9 ? KBD(i + 1) : ''}</button>`;
   }).join('')}</div>`;
 }
@@ -3550,7 +3553,7 @@ const plainQuote = s => String(s || '').split('\n').filter(l => !TABLE_SEP.test(
 function threadHtml(d, key, comments, blockText) {
   return `<div class="mt-2 space-y-2 border-l-2 border-amber-300 pl-3 dark:border-amber-600">
     ${comments.map(c => `<div class="text-sm ${MSG(c.by)}">${blockText !== undefined && !sameText(c.quote, blockText) ? `<div class="mb-0.5 line-clamp-2 text-xs text-zinc-500">“${esc(plainQuote(c.quote))}”</div>` : ''}<span class="${WHO(c.by)}">${esc(whoName(c.by))}</span> <span class="text-xs text-zinc-400">${when(c.t)}</span>${rich(c.text, 'dc' + c.t)}</div>`).join('')}
-    <button data-act="doc-reply" data-key="${key}" class="flex h-8 items-center gap-1 text-xs font-semibold text-blue-600 dark:text-blue-400 ${U.docReply === key ? 'underline' : ''}">${ico('reply', 'size-3.5')}Reply</button>
+    <button data-act="doc-reply" data-key="${key}" aria-pressed="${U.docReply === key}" class="${HIT} flex h-8 items-center gap-1 rounded-lg px-1.5 -mx-1.5 text-xs font-semibold text-blue-600 hover:bg-blue-50 aria-pressed:underline dark:text-blue-400 dark:hover:bg-blue-400/10">${ico('reply', 'size-3.5')}Reply</button>
   </div>`;
 }
 const noteText = d => sameText(d.md.split('\n')[0].replace(/^#+\s*/, ''), d.title) ? d.md : `# ${d.title}\n\n${d.md}`;
@@ -3610,13 +3613,13 @@ function closeDoc() {  // the desktop's way back from a document to its item
 function docViewHtml(d) {
   const titled = !!d.blocks[0] && sameText(d.blocks[0].text.replace(/^#+\s*/, ''), d.title);
   groups.delete('doc' + d.d);  // its images, refilled as the blocks render
-  return `<div class="flex min-h-full flex-col"><div class="flex items-center gap-1 text-xs text-zinc-500"><span class="min-w-0 flex-1 truncate">on <button data-act="goto" data-n="${d.n}" class="text-blue-600 dark:text-blue-400">${code(d.n)}</button> · ${esc(whoName(d.by))} · ${when(d.t1)}</span>
-      <button data-act="doc-circle" aria-pressed="${!!U.docCircle}" class="${BTN} text-sm lg:hidden aria-pressed:bg-amber-100 aria-pressed:text-amber-900 dark:aria-pressed:bg-amber-900/60 dark:aria-pressed:text-amber-100">${U.docCircle ? 'Draw a circle…' : 'Circle'}</button><button data-act="doc-edit" class="${BTN} text-sm lg:hidden">Edit</button></div>
+  return `<div class="flex min-h-full flex-col"><div class="flex items-center gap-1 text-xs text-zinc-500"><span class="min-w-0 flex-1 truncate">on <button data-act="goto" data-n="${d.n}" class="text-blue-600 hover:underline dark:text-blue-400">${code(d.n)}</button> · ${esc(whoName(d.by))} · ${when(d.t1)}</span>
+      <button data-act="doc-circle" aria-pressed="${!!U.docCircle}" class="${HIT} ${BTN} text-sm lg:hidden aria-pressed:bg-amber-100 aria-pressed:text-amber-900 dark:aria-pressed:bg-amber-900/60 dark:aria-pressed:text-amber-100">${U.docCircle ? 'Draw a circle…' : 'Circle'}</button><button data-act="doc-edit" class="${HIT} ${BTN} text-sm lg:hidden">Edit</button></div>
     ${titled ? '' : `<div class="mt-3 text-2xl leading-tight font-bold tracking-tight">${esc(d.title)}</div>`}
     <div id="docBlocks" class="relative mt-3 space-y-3 text-[15px] ${U.docCircle ? 'select-none' : ''}">
-      ${d.blocks.map((b, i) => `<section data-act="doc-pick" data-key="${b.key}" class="-mx-2 rounded-lg px-2 py-1 transition-colors ${U.docSel.has(b.key) ? 'bg-amber-50 ring-2 ring-amber-300 dark:bg-amber-950/40 dark:ring-amber-600' : ''}">
+      ${d.blocks.map((b, i) => `<section data-act="doc-pick" data-key="${b.key}" ${U.docSel.has(b.key) ? 'data-picked' : ''} class="-mx-2 rounded-lg px-2 py-1 transition-colors hover:bg-zinc-50 data-picked:bg-amber-50 data-picked:ring-2 data-picked:ring-amber-300 data-pressed:opacity-70 dark:hover:bg-zinc-800/50 dark:data-picked:bg-amber-950/40 dark:data-picked:ring-amber-600">
         <div class="flex items-start gap-2"><div class="min-w-0 flex-1 break-words">${blockHtml(b, i === 0 && titled, 'doc' + d.d)}</div>
-        ${b.comments.length ? `<button data-act="doc-thread" data-key="${b.key}" aria-label="${plural(b.comments.length, 'comment')}" class="mt-0.5 flex h-6 shrink-0 items-center gap-1 rounded-md bg-amber-100 px-1.5 text-xs font-medium text-amber-900 dark:bg-amber-900/60 dark:text-amber-100">${ico('comment', 'size-3.5')}${b.comments.length}</button>` : ''}</div>
+        ${b.comments.length ? `<button data-act="doc-thread" data-key="${b.key}" aria-label="${plural(b.comments.length, 'comment')}" class="relative mt-0.5 flex h-6 shrink-0 items-center gap-1 rounded-md bg-amber-100 px-1.5 text-xs font-medium text-amber-900 after:absolute after:-inset-2.5 hover:bg-amber-200 dark:bg-amber-900/60 dark:text-amber-100 dark:hover:bg-amber-900">${ico('comment', 'size-3.5')}${b.comments.length}</button>` : ''}</div>
         ${U.docThreads.has(b.key) ? threadHtml(d, b.key, b.comments, b.text) : ''}</section>`).join('')}
       ${U.docCircle ? `<svg id="lasso" class="absolute inset-0 z-10 h-full w-full touch-none" aria-label="Draw around the part you want to comment on"><path id="lassoPath" d="" fill="rgba(251,191,36,.15)" stroke="rgb(245,158,11)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/></svg>` : ''}
     </div>
@@ -3720,18 +3723,18 @@ function peek(n, {focus = true} = {}) {
   U.peek = n;
   const g = U.go && U.go.list.includes(n) ? U.go : null, files = filesOf(it), need = needLabel(it), i = g ? g.list.indexOf(n) : -1;
   const recent = it.thread.filter(x => x.id !== it.wait?.id).slice(-3), talk = it.thread.length;  // the question itself is pinned above (B145)
-  const btn = (attrs, icon, label, tone) => `<button ${attrs} class="flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl text-[11px] font-semibold ${tone}">${ico(icon, 'size-5')}<span class="max-w-full truncate">${label}</span></button>`;
+  const btn = (attrs, icon, label, tone) => `<button ${attrs} class="flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl text-[11px] font-semibold hover:bg-zinc-100 dark:hover:bg-zinc-800 ${tone}">${ico(icon, 'size-5')}<span class="max-w-full truncate">${label}</span></button>`;
   const slot = (a, k) => !a ? '<span class="h-14 min-w-0 flex-1"></span>'
     : btn(`${k ? '' : 'data-slot="fwd" '}data-n="${n}" ${a[0] === 'need' ? 'data-act="card-answer"' : a[0] === 'reopen' ? 'data-act="reopen"' : `data-act="peek-set" data-f="${a[0]}" data-v="${a[1]}"`}`,
       ACT_ICON[a[2]], a[2], FWD_NEED[a[2]] ? NEED[FWD_NEED[a[2]]].text : FOCUS_TONE[a[2]] || 'text-zinc-700 dark:text-zinc-200');
   const last = g && !g.list.slice(i + 1).some(k => !g.done.has(k) && byN.get(k) && needsYou(byN.get(k)));  // nothing after this one: Next ends the walk
   const nav = g ? `<div class="flex items-center gap-1 px-2 pt-1">
-      <button data-act="go-prev" ${i > 0 ? '' : 'disabled'} class="flex h-11 items-center gap-0.5 rounded-full pr-3 pl-1.5 text-sm font-semibold text-zinc-700 disabled:opacity-30 dark:text-zinc-200">${ico('left', 'size-4', '2.25')}Previous</button>
+      <button data-act="go-prev" ${i > 0 ? '' : 'disabled'} class="flex h-11 items-center gap-0.5 rounded-full pr-3 pl-1.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800">${ico('left', 'size-4', '2.25')}Previous</button>
       <span class="min-w-0 flex-1 text-center text-xs font-medium text-zinc-500 tabular-nums dark:text-zinc-400">${i + 1} of ${g.list.length}</span>
-      <button data-act="go-next" class="flex h-11 items-center gap-0.5 rounded-full pr-1.5 pl-3 text-sm font-semibold text-zinc-700 dark:text-zinc-200">${last ? 'End' : `Next${ico('right', 'size-4', '2.25')}`}</button></div>` : '';
+      <button data-act="go-next" class="flex h-11 items-center gap-0.5 rounded-full pr-1.5 pl-3 text-sm font-semibold text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800">${last ? 'End' : `Next${ico('right', 'size-4', '2.25')}`}</button></div>` : '';
   // The item's code and Open sit in the card's header row beside ×, where a walk's "Needs you · 2 of 5" goes: no empty row on top (B158).
   const idRow = `<div class="flex items-center gap-2">${stateIcon(it.status, statusName(it), 'size-5')}<span class="font-mono text-sm font-bold ${TYPE_TEXT[it.type]}">${code(n)}</span>${need ? `<span class="text-xs font-semibold text-amber-700 dark:text-amber-400">${need}</span>` : ''}
-      <button data-act="goto" data-n="${n}" class="-my-2 ml-auto flex h-11 items-center gap-1.5 rounded-full px-2 text-sm font-medium text-blue-600 dark:text-blue-400">${ico('open', 'size-4')}Open</button></div>`;
+      <button data-act="goto" data-n="${n}" class="-my-2 ml-auto flex h-11 items-center gap-1.5 rounded-full px-2 text-sm font-medium text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10">${ico('open', 'size-4')}Open</button></div>`;
   const head = g ? `<span class="flex items-center gap-2"><span class="text-xs font-bold tracking-wide whitespace-nowrap text-amber-700 uppercase dark:text-amber-400">Needs you</span><span class="text-xs font-medium whitespace-nowrap text-zinc-500 tabular-nums dark:text-zinc-400">${i + 1} of ${g.list.length}</span></span>` : idRow;
   dialog('', `<div class="pb-1">
     ${g ? idRow : ''}
@@ -3804,7 +3807,7 @@ function detailHtml(it) {
   const n = it.n, files = filesOf(it), children = kids.get(n) || [], parent = it.parent && byN.get(it.parent), shown = cardMsg(it);
   const thread = it.thread.filter(x => x.id !== it.wait?.id && x.id !== shown?.id), hidden = U.more.has(n) ? 0 : Math.max(0, thread.length - 8);
   const chips = [
-    it.type === 'rule' ? '' : `<button data-act="item-menu" class="${CHIP} shrink-0 ${it.pri === 'P0' ? 'font-semibold text-red-600 dark:text-red-400' : 'font-semibold text-zinc-700 dark:text-zinc-200'}">${it.pri}</button>`,
+    it.type === 'rule' ? '' : `<button data-act="item-menu" class="${CHIP.replace('after:inset-x-0', 'after:-inset-x-1.5')} shrink-0 ${it.pri === 'P0' ? 'font-semibold text-red-600 dark:text-red-400' : 'font-semibold text-zinc-700 dark:text-zinc-200'}">${it.pri}</button>`,
     it.when === 'later' && !CLOSED(it.status) ? `<span class="${CHIP} shrink-0 text-zinc-600 dark:text-zinc-300">${ico('clock', 'size-3.5 opacity-60')}Later</span>` : '',
     it.archived ? `<span class="${CHIP} shrink-0 text-zinc-600 dark:text-zinc-300">${ico('archive', 'size-3.5 opacity-60')}Archived</span>` : '',
     it.srcs.length ? `<button data-act="sources" data-n="${n}" class="${CHIP} shrink-0 text-zinc-600 dark:text-zinc-300">${plural(it.srcs.length, 'source')}</button>` : '',
@@ -3820,14 +3823,14 @@ function detailHtml(it) {
   const desc = U.editing !== n && (it.body || it.next) ? `<div class="flex flex-col gap-3">
       ${it.body ? rich(it.body, 'body' + n, 'text-base text-zinc-800 dark:text-zinc-200') : ''}
       ${it.next ? `<div class="flex gap-2 text-sm"><span class="shrink-0 font-semibold text-zinc-500 dark:text-zinc-400">Next</span><span class="min-w-0 break-words text-zinc-700 dark:text-zinc-300">${inlineMd(it.next)}</span></div>` : ''}</div>` : '';
-  const docs = docsOf(n).length ? `<section class="flex flex-col gap-2">${SECTION('Documents')}${docsOf(n).map(d => `<button data-act="doc-open" data-d="${d.d}" class="flex w-full items-center gap-3 rounded-xl border border-zinc-200 px-3 py-2.5 text-left dark:border-zinc-800">${ico('doc', 'size-5 text-zinc-500 dark:text-zinc-400')}<span class="min-w-0 flex-1"><span class="block truncate text-[15px] font-medium">${esc(d.title)}</span><span class="block text-xs text-zinc-500 dark:text-zinc-400">D${d.d} · ${plural(d.comments.length, 'comment')} · ${when(d.t1)}</span></span>${ico('right', 'size-4 text-zinc-300 dark:text-zinc-600')}</button>`).join('')}</section>` : '';
+  const docs = docsOf(n).length ? `<section class="flex flex-col gap-2">${SECTION('Documents')}${docsOf(n).map(d => `<button data-act="doc-open" data-d="${d.d}" class="flex w-full items-center gap-3 rounded-xl border border-zinc-200 px-3 py-2.5 text-left hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-900">${ico('doc', 'size-5 text-zinc-500 dark:text-zinc-400')}<span class="min-w-0 flex-1"><span class="block truncate text-[15px] font-medium">${esc(d.title)}</span><span class="block text-xs text-zinc-500 dark:text-zinc-400">D${d.d} · ${plural(d.comments.length, 'comment')} · ${when(d.t1)}</span></span>${ico('right', 'size-4 text-zinc-300 dark:text-zinc-600')}</button>`).join('')}</section>` : '';
   const subs = children.length || U.subFor === n ? `<section class="flex flex-col gap-2">
-      ${SECTION(`Subitems${children.length ? ` · ${children.filter(k => CLOSED(k.status)).length}/${children.length}` : ''}`, U.subFor === n ? '' : `<button data-act="sub-new" data-n="${n}" class="-my-2.5 flex h-11 items-center gap-1 rounded-lg px-2 text-sm font-medium text-blue-600 dark:text-blue-400">${ico('plus', 'size-4', '2')}Add</button>`)}
-      ${children.length ? `<div class="divide-y divide-zinc-100 rounded-xl border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">${children.map(k => `<button data-act="goto" data-n="${k.n}" class="flex w-full items-start gap-3 px-3 py-3 text-left ${CLOSED(k.status) ? 'opacity-55' : ''}">${stateIcon(k.status, statusName(k))}<span class="min-w-0 flex-1 text-[15px] leading-snug ${CLOSED(k.status) ? 'line-through' : ''}"><span class="mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[k.type]}">${code(k.n)}</span>${esc(k.title)}</span></button>`).join('')}</div>` : ''}
-      ${U.subFor === n ? `<div class="flex items-center gap-2"><input id="subTitle" class="${FIELD} min-w-0 flex-1" placeholder="Subitem of ${code(n)}" aria-label="Subitem title"><button data-act="sub-add" data-n="${n}" class="${PRIMARY}">Add</button><button data-act="sub-cancel" aria-label="Cancel" class="grid size-11 shrink-0 place-items-center rounded-full text-zinc-500">${ico('x', 'size-5')}</button></div>` : ''}
+      ${SECTION(`Subitems${children.length ? ` · ${children.filter(k => CLOSED(k.status)).length}/${children.length}` : ''}`, U.subFor === n ? '' : `<button data-act="sub-new" data-n="${n}" class="-my-2.5 flex h-11 items-center gap-1 rounded-lg px-2 text-sm font-medium text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10">${ico('plus', 'size-4', '2')}Add</button>`)}
+      ${children.length ? `<div class="divide-y divide-zinc-100 rounded-xl border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">${children.map(k => `<button data-act="goto" data-n="${k.n}" class="flex w-full items-start gap-3 px-3 py-3 text-left first:rounded-t-xl last:rounded-b-xl hover:bg-zinc-50 data-pressed:bg-zinc-100 dark:hover:bg-zinc-900 dark:data-pressed:bg-zinc-800 ${CLOSED(k.status) ? 'opacity-55' : ''}">${stateIcon(k.status, statusName(k))}<span class="min-w-0 flex-1 text-[15px] leading-snug ${CLOSED(k.status) ? 'line-through' : ''}"><span class="mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[k.type]}">${code(k.n)}</span>${esc(k.title)}</span></button>`).join('')}</div>` : ''}
+      ${U.subFor === n ? `<div class="flex items-center gap-2"><input id="subTitle" class="${FIELD} min-w-0 flex-1" placeholder="Subitem of ${code(n)}" aria-label="Subitem title"><button data-act="sub-add" data-n="${n}" class="${PRIMARY}">Add</button><button data-act="sub-cancel" aria-label="Cancel" class="grid size-11 shrink-0 place-items-center rounded-full text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800">${ico('x', 'size-5')}</button></div>` : ''}
     </section>` : '';
   const talk = thread.length ? `<div class="flex flex-col gap-6 border-t border-zinc-100 pt-6 dark:border-zinc-800/70">
-      ${hidden ? `<button data-act="more" data-n="${n}" class="-my-1 h-11 self-center rounded-lg px-3 text-sm font-medium text-blue-600 dark:text-blue-400">Show ${hidden} earlier</button>` : ''}
+      ${hidden ? `<button data-act="more" data-n="${n}" class="-my-1 h-11 self-center rounded-lg px-3 text-sm font-medium text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10">Show ${hidden} earlier</button>` : ''}
       ${(vers => thread.slice(hidden).map(x => msgHtml(x, '', 0, answerOf(thread, x), vers.get(x.id))).join(''))(versions(it.thread))}</div>` : '';
   return `<div class="flex flex-col gap-6 px-5 pt-5 pb-10 lg:mx-auto lg:w-full lg:max-w-[46rem] lg:px-8 lg:pt-9">${[head, needsCard(it), desc,
     files.length ? `<div class="flex items-end gap-2 overflow-x-auto lg:scrollbar-thin">${thumbs(files, 'item' + n, 'h-24 w-16')}</div>` : '', docs, subs, talk].filter(Boolean).join('')}</div>`;
@@ -3863,18 +3866,21 @@ function renderDetail() {
 // "⋯": everything you change now and then, out of the way of reading. Tiles for actions, segmented controls
 // for type and priority, and the status grid with the same icons as the list (T65).
 const STATE_ON = {proposed: 'text-amber-400 dark:text-amber-600', review: 'text-amber-400 dark:text-amber-600', doing: 'text-blue-400 dark:text-blue-600', done: 'text-emerald-400 dark:text-emerald-600', open: 'text-zinc-400 dark:text-zinc-500', dropped: 'text-zinc-400 dark:text-zinc-500'};  // icons on the dark "selected" fill
+// A status button in the ⋯ menu: the one the item has is aria-pressed, and its fill and icon follow that (T160).
+const STAT_BTN = 'group flex min-w-0 items-center gap-1.5 bg-zinc-100 text-[13px] font-medium whitespace-nowrap text-zinc-700 hover:bg-zinc-200 aria-pressed:bg-zinc-900 aria-pressed:text-white dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700 dark:aria-pressed:bg-zinc-100 dark:aria-pressed:text-zinc-900';
+const statIcon = (s, t, size) => stateIcon(s, t, size, STATE_ICON[s][1] + ' ' + STATE_ON[s].split(' ').map(c => c.replace(/^(dark:)?/, '$1group-aria-pressed:')).join(' '));
 function itemMenu(n) {
   if (desk()) return itemMenuDesk(n);
   const it = byN.get(n);
   if (!it) return;
   U.sheet = 'menu';
-  const tile = (act, icon, label, sub = '', attrs = '') => `<button data-act="${act}" data-n="${n}" ${attrs} class="flex h-19 flex-col items-center justify-center gap-1.5 rounded-2xl bg-zinc-100 px-1 text-[13px] leading-tight font-medium text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200">${ico(icon, 'size-5.5 text-zinc-600 dark:text-zinc-300')}<span class="text-center">${label}${sub ? `<span class="block text-[11px] font-normal text-zinc-500 dark:text-zinc-400">${sub}</span>` : ''}</span></button>`;
+  const tile = (act, icon, label, sub = '', attrs = '') => `<button data-act="${act}" data-n="${n}" ${attrs} class="flex h-19 flex-col items-center justify-center gap-1.5 rounded-2xl bg-zinc-100 px-1 text-[13px] leading-tight font-medium text-zinc-800 hover:bg-zinc-200/80 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700">${ico(icon, 'size-5.5 text-zinc-600 dark:text-zinc-300')}<span class="text-center">${label}${sub ? `<span class="block text-[11px] font-normal text-zinc-500 dark:text-zinc-400">${sub}</span>` : ''}</span></button>`;
   const state = it.archived ? tile('archive', 'archive', 'Unarchive', '', 'data-on="0"')
     : CLOSED(it.status) ? tile('archive', 'archive', 'Archive', '', 'data-on="1"')
     : it.type === 'rule' ? '' : tile('swipe', 'clock', it.when === 'now' ? 'Later' : 'Back to now', '', `data-f="when" data-v="${it.when === 'now' ? 'later' : 'now'}"`);
   const lab = t => `<div class="px-1 pb-2 text-xs font-semibold text-zinc-500 dark:text-zinc-400">${t}</div>`;
   const stat = ([s, t]) => { const on = it.status === s;
-    return `<button data-act="set-field" data-n="${n}" data-f="status" data-v="${s}" aria-pressed="${on}" class="flex h-11 min-w-0 items-center gap-1.5 rounded-xl px-2.5 text-[13px] font-medium whitespace-nowrap ${on ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900' : 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300'}">${stateIcon(s, t, 'size-4.5', on ? STATE_ON[s] : STATE_ICON[s][1])}<span class="truncate">${t}</span></button>`; };
+    return `<button data-act="set-field" data-n="${n}" data-f="status" data-v="${s}" aria-pressed="${on}" class="${STAT_BTN} h-11 rounded-xl px-2.5">${statIcon(s, t, 'size-4.5')}<span class="truncate">${t}</span></button>`; };
   const statuses = it.type === 'rule' ? Object.entries(RULE_STATUS).filter(([v]) => v !== 'proposed' || it.status === 'proposed') : Object.entries(STATUS);
   dialog('', `<div class="flex flex-col gap-5">
     <div class="grid grid-cols-3 gap-2">${tile('edit', 'pencil', 'Edit')}${tile('copy', 'copy', 'Copy for agent')}${tile('doc-new', 'docplus', 'New doc')}
@@ -3908,10 +3914,10 @@ function renderItems() {
   if (holding()) return patchList();  // B124: rows hold still under the pointer after you act on one
   let html = '';
   if (!S.items.length) {
-    html = EMPTY(`No items yet.<br>Write your first thought below${S.org.on ? ' and the organizer turns it into items' : ' and your coding agent turns it into items'}.`, `<br><button data-act="guide" class="mt-3 h-11 text-blue-600 dark:text-blue-400">Connect a coding agent</button>`);
+    html = EMPTY(`No items yet.<br>Write your first thought below${S.org.on ? ' and the organizer turns it into items' : ' and your coding agent turns it into items'}.`, `<br><button data-act="guide" class="mt-3 h-11 text-blue-600 hover:underline dark:text-blue-400">Connect a coding agent</button>`);
   } else if (!rows.length && filtered()) {
     const more = searchHints(0);
-    html = EMPTY('No matching items', `${more ? `<span class="mt-3 flex flex-col">${more}</span>` : '<br>'}<button data-act="reset" class="mt-3 h-11 text-blue-600 dark:text-blue-400">Clear search and filters</button>`);
+    html = EMPTY('No matching items', `${more ? `<span class="mt-3 flex flex-col">${more}</span>` : '<br>'}<button data-act="reset" class="mt-3 h-11 text-blue-600 hover:underline dark:text-blue-400">Clear search and filters</button>`);
   } else if (U.tab === 'rules') {
     // Rules: the ones an agent proposed wait on you; then the rules in force, then the retired ones.
     const wait = rows.filter(it => it.status === 'proposed'), on = rows.filter(it => it.status === 'open'), off = rows.filter(it => it.status === 'dropped');
@@ -3927,7 +3933,7 @@ function renderItems() {
     const settled = it => going && going.done.has(it.n) && going.list.includes(it.n);
     const queue = rows.filter(it => inQueue(it) && !settled(it)).sort(queueOrder);
     const done = rows.filter(it => CLOSED(it.status) && !it.archived && !settled(it)), arch = rows.filter(it => it.archived);
-    html = (needs.length ? zone('needs', 'Needs you', needs.filter(needsYou).length, going ? `<span class="text-xs font-medium text-amber-700 dark:text-amber-400">· Going through</span><button data-act="go-end" class="-my-1 ml-auto flex h-11 items-center gap-1 rounded-full pr-2 pl-3 text-[13px] font-semibold text-amber-800 dark:text-amber-300">End${KBD('Esc')}</button>` : goThroughBtn())
+    html = (needs.length ? zone('needs', 'Needs you', needs.filter(needsYou).length, going ? `<span class="text-xs font-medium text-amber-700 dark:text-amber-400">· Going through</span><button data-act="go-end" class="-my-1 ml-auto flex h-11 items-center gap-1 rounded-full pr-2 pl-3 text-[13px] font-semibold text-amber-800 hover:bg-amber-100 dark:text-amber-300 dark:hover:bg-amber-400/15">End${KBD('Esc')}</button>` : goThroughBtn())
         + needs.map(it => going && going.done.has(it.n) ? settledRow(it) : needsRow(it)).join('') : '')  // nothing waiting: no band (I71)
       + (queue.length ? zone('queue', 'Agent queue', queue.length, laterNote(queue) + (desk() ? keepGoingSwitch() : keepGoingNote())) + tree(queue) : '')  // every row it holds; the later ones, which agents don't take yet, are named (S3)
       + (U.undoArch ? `<div class="flex items-center gap-3 border-b border-blue-100 bg-blue-50 py-2 pr-2 pl-4 dark:border-blue-400/15 dark:bg-blue-400/10">
@@ -3950,7 +3956,7 @@ const filtersSet = () => [
   U.status !== 'all' ? ['status', U.tab === 'rules' ? RULE_STATUS[U.status] || STATUS[U.status] : STATUS_FILTER[U.status]] : null,
   U.pri !== 'all' ? ['pri', U.pri] : null,
 ].filter(Boolean);
-const filterChips = set => set.map(([k, label]) => `<button data-act="unfilter" data-k="${k}" class="${HIT} flex h-8 shrink-0 items-center gap-1 rounded-full bg-blue-50 pr-2 pl-3 text-[13px] font-medium text-blue-800 ring-1 ring-blue-200 ring-inset lg:h-7 dark:bg-blue-400/10 dark:text-blue-200 dark:ring-blue-400/25">${label}${ico('x', 'size-3.5', '2.25')}</button>`).join('');
+const filterChips = set => set.map(([k, label]) => `<button data-act="unfilter" data-k="${k}" class="${HIT} flex h-8 shrink-0 items-center gap-1 rounded-full bg-blue-50 pr-2 pl-3 text-[13px] font-medium text-blue-800 ring-1 ring-blue-200 ring-inset hover:bg-blue-100 lg:h-7 dark:bg-blue-400/10 dark:text-blue-200 dark:ring-blue-400/25 dark:hover:bg-blue-400/20">${label}${ico('x', 'size-3.5', '2.25')}</button>`).join('');
 // The filter button and, under the tabs, the filters that are set as chips you can remove one by one. On the
 // desktop the same controls open in place under the list header instead of a sheet.
 function renderFilters() {
@@ -3959,25 +3965,25 @@ function renderFilters() {
   $('filterBtn').innerHTML = ico('sliders', 'size-5') + dot;
   $('deskFilterBtn').hidden = U.tab === 'inputs';
   $('deskFilterBtn').innerHTML = ico('sliders', 'size-[18px]') + dot;
-  $('deskFilterBtn').classList.toggle('bg-zinc-100', D.filters);
+  $('deskFilterBtn').setAttribute('aria-expanded', String(!!D.filters));
   const strip = $('filterStrip');
   strip.hidden = !set.length || U.tab === 'inputs' || !!U.open;
-  strip.innerHTML = filterChips(set) + `<button data-act="reset" class="ml-auto h-11 shrink-0 px-1 text-[13px] font-semibold text-blue-600 dark:text-blue-400">Clear</button>`;
+  strip.innerHTML = filterChips(set) + `<button data-act="reset" class="ml-auto h-11 shrink-0 px-1 text-[13px] font-semibold text-blue-600 hover:underline dark:text-blue-400">Clear</button>`;
   if (!desk()) return;  // the count is in the list's title, right above (A18)
   $('deskFilters').innerHTML = !set.length && !D.filters ? '' : `<div class="flex min-h-11 flex-wrap items-center gap-2 px-3 py-1.5">${filterChips(set)}
-      ${set.length ? `<button data-act="reset" class="ml-auto h-8 px-1 text-[13px] font-semibold text-blue-600 dark:text-blue-400">Clear</button>` : '<span class="ml-auto"></span>'}
+      ${set.length ? `<button data-act="reset" class="ml-auto h-8 px-1 text-[13px] font-semibold text-blue-600 hover:underline dark:text-blue-400">Clear</button>` : '<span class="ml-auto"></span>'}
       <button data-act="filters" aria-label="${D.filters ? 'Fold the filters' : 'Show the filters'}" class="grid size-8 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800">${ico(D.filters ? 'chevup' : 'down', 'size-4', '2')}</button></div>
     ${D.filters ? `<div class="flex flex-col gap-3 px-3 pb-3">${filterControls(true)}</div>` : ''}`;
 }
 
 // Filters live in a sheet: segmented controls and pills instead of dropdowns (T65).
-const SEG_ON = 'bg-white text-zinc-900 shadow-sm ring-1 ring-zinc-900/5 dark:bg-zinc-600 dark:text-white dark:ring-white/10';
+const SEG_ON = 'aria-pressed:bg-white aria-pressed:text-zinc-900 aria-pressed:shadow-sm aria-pressed:ring-1 aria-pressed:ring-zinc-900/5 dark:aria-pressed:bg-zinc-600 dark:aria-pressed:text-white dark:aria-pressed:ring-white/10';  // the one picked (aria-pressed)
 const segctl = (act, key, opts, on, small = false) => `<div class="flex rounded-xl bg-zinc-100 p-1 dark:bg-zinc-800">${opts.map(([v, t]) =>
-  `<button data-act="${act}" data-k="${key}" data-v="${v}" aria-pressed="${v === on}" class="relative flex ${small ? 'h-7' : 'h-9'} min-w-0 flex-1 items-center justify-center gap-1 rounded-lg text-[13px] font-medium after:absolute after:inset-x-0 after:-inset-y-1 ${v === on ? SEG_ON : 'text-zinc-600 dark:text-zinc-300'}">${t}</button>`).join('')}</div>`;
+  `<button data-act="${act}" data-k="${key}" data-v="${v}" aria-pressed="${v === on}" class="relative flex ${small ? 'h-7' : 'h-9'} min-w-0 flex-1 items-center justify-center gap-1 rounded-lg text-[13px] font-medium text-zinc-600 after:absolute after:inset-x-0 after:-inset-y-1 hover:bg-zinc-200/70 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-700/70 dark:hover:text-zinc-100 ${SEG_ON}">${t}</button>`).join('')}</div>`;
 const letterOf = t => `<span class="font-mono text-xs font-bold ${TYPE_TEXT[t]}">${LETTER[t]}</span>`;
 function filterControls(small = false) {
   const lab = t => `<div class="px-1 ${small ? 'pb-1 text-[11px]' : 'pb-2 text-xs'} font-semibold text-zinc-500 dark:text-zinc-400">${t}</div>`;
-  const pill = (v, t) => `<button data-act="set-filter" data-k="status" data-v="${v}" aria-pressed="${U.status === v}" class="relative ${small ? 'h-7 px-2.5' : 'h-9 px-3.5'} rounded-full text-[13px] font-medium after:absolute after:inset-x-0 after:-inset-y-1 ${U.status === v ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900' : 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300'}">${t}</button>`;
+  const pill = (v, t) => `<button data-act="set-filter" data-k="status" data-v="${v}" aria-pressed="${U.status === v}" class="relative ${small ? 'h-7 px-2.5' : 'h-9 px-3.5'} rounded-full bg-zinc-100 text-[13px] font-medium text-zinc-700 after:absolute after:inset-x-0 after:-inset-y-1 hover:bg-zinc-200 aria-pressed:bg-zinc-900 aria-pressed:text-white dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700 dark:aria-pressed:bg-zinc-100 dark:aria-pressed:text-zinc-900">${t}</button>`;
   const statuses = U.tab === 'rules' ? [['all', 'All'], ...Object.entries(RULE_STATUS)] : [['all', 'All'], ...Object.entries(STATUS_FILTER)];
   return `${U.tab === 'rules' ? '' : `<div>${lab('Type')}${segctl('set-filter', 'type', [['all', 'All'], ...TYPES.map(t => [t, letterOf(t) + `<span class="truncate">${t[0].toUpperCase() + t.slice(1)}</span>`])], U.type, small)}</div>`}
     <div>${lab('When')}${segctl('set-filter', 'when', [['all', 'Any time'], ['now', 'Now'], ['later', 'Later']], U.when, small)}</div>
@@ -3990,7 +3996,7 @@ function showFilters() {
   U.sheet = 'filter';
   dialog('Filter', `<div class="flex flex-col gap-5">${filterControls()}
     <button data-act="close" class="${PRIMARY} w-full">Show ${U.tab === 'items' && open !== n ? `${open} open, ${n - open} finished` : plural(n, U.tab === 'rules' ? 'rule' : 'item')}</button>
-  </div>`, {extra: filtered() ? `<button data-act="reset" class="h-11 rounded-full px-3 text-sm font-semibold text-blue-600 dark:text-blue-400">Clear all</button>` : '', focus: false});
+  </div>`, {extra: filtered() ? `<button data-act="reset" class="h-11 rounded-full px-3 text-sm font-semibold text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10">Clear all</button>` : '', focus: false});
 }
 
 // Leaving the editor any way but Cancel keeps what you typed (B122); I on that item brings it back.
@@ -4105,7 +4111,7 @@ function renderInputs() {
     const [label, tone, icon] = inputState(r), scope = r.scope ? byN.get(r.scope) : null, d = dayOf(r.t);
     const head = d !== day ? `<div class="px-4 pt-2.5 pb-0.5 text-xs font-semibold text-zinc-500 lg:px-0 lg:pt-5 lg:pb-1 dark:text-zinc-400">${(day = d)}</div>` : '';
     const note = !r.moved && r.org && !(r.acked && r.org.keep) ? `<div class="mt-1.5 flex min-h-5 items-center gap-1 text-xs ${r.org.ok ? 'text-zinc-500 dark:text-zinc-400' : 'text-red-600 dark:text-red-400'}">${ico('sparkle', 'size-3.5')}<span class="min-w-0">${esc(r.org.msg)}</span></div>` : '';
-    const chips = r.moved ? '' : r.touched.filter(n => byN.has(n)).map(n => `<button data-act="goto" data-n="${n}" class="${HIT} flex h-8 max-w-full min-w-0 items-center gap-1.5 rounded-lg bg-zinc-100 px-2 text-[13px] dark:bg-zinc-800"><span class="font-mono text-xs font-bold ${TYPE_TEXT[byN.get(n).type]}">${code(n)}</span><span class="truncate">${esc(byN.get(n).title)}</span></button>`).join('');
+    const chips = r.moved ? '' : r.touched.filter(n => byN.has(n)).map(n => `<button data-act="goto" data-n="${n}" class="${HIT} flex h-8 max-w-full min-w-0 items-center gap-1.5 rounded-lg bg-zinc-100 px-2 text-[13px] hover:bg-zinc-200/70 dark:bg-zinc-800 dark:hover:bg-zinc-700"><span class="font-mono text-xs font-bold ${TYPE_TEXT[byN.get(n).type]}">${code(n)}</span><span class="truncate">${esc(byN.get(n).title)}</span></button>`).join('');
     const acts = r.moved ? `<a href="/p/${encodeURIComponent(r.moved.to)}/" class="${LINK_BTN}">${ico('arrow', 'size-3.5', '2')}Open ${esc(r.moved.to)} · ${esc(r.moved.as)}</a>` : (!r.acked && S.org.on && r.org && (!r.org.ok || r.org.undone) ? `<button data-act="retry" data-id="${r.id}" class="${LINK_BTN}">${ico('loop', 'size-3.5', '2')}${r.org.undone ? 'Organize again' : 'Retry'}</button>` : '')
       + (canUndoInput(r) ? `<button data-act="undo" data-id="${r.id}" class="${LINK_BTN} text-zinc-600 dark:text-zinc-300">${ico('undo', 'size-3.5', '2')}Undo</button>` : '')
       + (!r.acked && !r.scope && !(S.org.on && !r.org) && S.org.busy !== r.id ? `<button data-act="make-item" data-id="${r.id}" class="${LINK_BTN}">${ico('plus', 'size-3.5', '2')}Make item</button>` : '')
@@ -4113,11 +4119,11 @@ function renderInputs() {
     // On the desktop each input is a ledger line: what you said on the left, what became of it on the right.
     return `${head}<article data-r="${r.id}" class="border-b border-zinc-100 px-4 py-2 transition-colors duration-700 lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-10 lg:px-0 lg:py-4 dark:border-zinc-800/70"><div class="min-w-0">
       <div class="flex min-h-5 items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400"><span class="font-mono">${r.id}</span><span>${when(r.t)}</span>${r.from === 'rules' ? '<span class="font-medium">as a rule</span>' : ''}
-        ${scope ? `<button data-act="goto" data-n="${scope.n}" class="relative min-w-0 truncate text-blue-600 after:absolute after:inset-x-0 after:-inset-y-3 dark:text-blue-400">↳ ${code(scope.n)} ${esc(scope.title)}</button>` : ''}
+        ${scope ? `<button data-act="goto" data-n="${scope.n}" class="relative min-w-0 truncate text-blue-600 after:absolute after:inset-x-0 after:-inset-y-3.5 hover:underline dark:text-blue-400">↳ ${code(scope.n)} ${esc(scope.title)}</button>` : ''}
         <span class="ml-auto flex shrink-0 items-center gap-1 font-medium lg:hidden ${tone}">${icon}${label}</span></div>
       <div ${long(r) ? `data-act="more-input" data-expand data-id="${r.id}"` : ''} ${voiceAttr(r)} class="mt-1.5 rounded-2xl rounded-tr-md bg-blue-50 px-3.5 py-2 text-[15px] leading-relaxed text-zinc-900 dark:bg-blue-400/10 dark:text-zinc-100 ${long(r) ? 'cursor-pointer' : ''}">
         ${r.text ? rich(r.text, 'in' + r.id, long(r) && !U.moreInputs.has(r.id) ? 'max-h-28 overflow-hidden' : '') : ''}
-        ${long(r) ? `<button data-act="more-input" data-id="${r.id}" class="-my-2 flex h-11 items-center text-sm font-medium text-blue-600 dark:text-blue-400">${U.moreInputs.has(r.id) ? 'Less' : 'More'}</button>` : ''}
+        ${long(r) ? `<button data-act="more-input" data-id="${r.id}" class="-my-2 flex h-11 items-center text-sm font-medium text-blue-600 hover:underline dark:text-blue-400">${U.moreInputs.has(r.id) ? 'Less' : 'More'}</button>` : ''}
         ${r.files.length ? `<div class="mt-2 flex items-end gap-2 overflow-x-auto lg:scrollbar-thin">${thumbs(r.files, 'in' + r.id, 'size-11')}</div>` : ''}
       </div></div><div class="min-w-0 lg:pt-6">
       <div class="hidden items-center gap-1.5 text-[13px] font-semibold lg:flex ${tone}">${icon}${label}</div>
@@ -4250,7 +4256,7 @@ async function moveInput(rid) {
   const list = made.map(n => `${code(n)} ${esc(byN.get(n).title)}`).join(', ');
   dialog(`Move ${rid} to another project`, `<div class="flex flex-col gap-3">
     <p class="line-clamp-3 rounded-xl bg-blue-50 px-3 py-2 text-[15px] leading-snug break-words text-zinc-900 dark:bg-blue-400/10 dark:text-zinc-100">${esc(r.text) || `${r.files.length} file${r.files.length === 1 ? '' : 's'}`}</p>
-    <div class="-mx-1 flex flex-col gap-0.5">${others.map(p => `<button data-act="move-input-to" data-id="${rid}" data-to="${esc(p.name)}" class="flex h-12 items-center gap-3 rounded-xl px-3 text-left hover:bg-zinc-100 active:bg-zinc-100 dark:hover:bg-zinc-800 dark:active:bg-zinc-800">${projTile(p.name, 'size-7 rounded-lg text-xs')}<span class="min-w-0 flex-1 truncate font-medium">${esc(p.name)}</span><span class="text-xs text-zinc-400">${p.open} open</span></button>`).join('') || '<p class="px-3 text-sm text-zinc-500">There is no other project.</p>'}</div>
+    <div class="-mx-1 flex flex-col gap-0.5">${others.map(p => `<button data-act="move-input-to" data-id="${rid}" data-to="${esc(p.name)}" class="flex h-12 items-center gap-3 rounded-xl px-3 text-left hover:bg-zinc-100 data-pressed:bg-zinc-100 dark:hover:bg-zinc-800 dark:data-pressed:bg-zinc-800">${projTile(p.name, 'size-7 rounded-lg text-xs')}<span class="min-w-0 flex-1 truncate font-medium">${esc(p.name)}</span><span class="text-xs text-zinc-400">${p.open} open</span></button>`).join('') || '<p class="px-3 text-sm text-zinc-500">There is no other project.</p>'}</div>
     <p class="text-[13px] leading-snug text-zinc-500 dark:text-zinc-400">It goes there with its files and is organized again.${made.length ? byOrg ? ` What the organizer made of it here is undone: ${list}.` : ` Items made from it here stay: ${list}.` : ''}${r.scope && byN.has(r.scope) ? ` It also leaves the conversation of ${code(r.scope)}.` : ''}</p></div>`);
 }
 
@@ -4758,10 +4764,10 @@ function agentsHtml() {
     ${tone === 'ok' ? '' : `<div><p class="px-1 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">To get one working, open your coding agent in this project's folder and send it this:</p>
       <div class="mt-2 rounded-xl bg-zinc-100 p-3 text-sm leading-relaxed break-words text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200">${esc(ask)}</div>
       <button data-act="copy-text" data-text="${esc(ask)}" class="${PRIMARY} mt-2.5 w-full">${ico('copy', 'size-4.5')}Copy</button></div>`}
-    ${desk() ? '' : `<button data-act="auto" aria-pressed="${!!S.cfg?.auto}" class="group flex min-h-14 w-full items-center gap-3 rounded-2xl border border-zinc-200 px-3.5 py-2.5 text-left dark:border-zinc-800">${ico('loop', 'size-5 text-emerald-600 dark:text-emerald-400')}
+    ${desk() ? '' : `<button data-act="auto" aria-pressed="${!!S.cfg?.auto}" class="group flex min-h-14 w-full items-center gap-3 rounded-2xl border border-zinc-200 px-3.5 py-2.5 text-left hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800/60">${ico('loop', 'size-5 text-emerald-600 dark:text-emerald-400')}
       <span class="min-w-0 flex-1"><span class="block text-[15px] font-medium">Keep going</span><span class="block text-xs leading-snug text-zinc-500 dark:text-zinc-400">Agents take the next item without stopping</span></span>
       <span class="relative h-6.5 w-11 shrink-0 rounded-full bg-zinc-300 transition-colors group-aria-pressed:bg-emerald-500 dark:bg-zinc-600 dark:group-aria-pressed:bg-emerald-500"><span class="absolute top-0.75 left-0.75 size-5 rounded-full bg-white shadow transition-transform group-aria-pressed:translate-x-4.5"></span></span></button>`}
-    <button data-act="guide" class="flex min-h-14 w-full items-center gap-3 rounded-2xl border border-zinc-200 px-3.5 py-2.5 text-left dark:border-zinc-800">${ico('plug', 'size-5 text-zinc-500 dark:text-zinc-400')}
+    <button data-act="guide" class="flex min-h-14 w-full items-center gap-3 rounded-2xl border border-zinc-200 px-3.5 py-2.5 text-left hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800/60">${ico('plug', 'size-5 text-zinc-500 dark:text-zinc-400')}
       <span class="min-w-0 flex-1"><span class="block text-[15px] font-medium">Connect a coding agent</span><span class="block text-xs text-zinc-500 dark:text-zinc-400">First time on that machine? Run one command there.</span></span>${ico('right', 'size-4 text-zinc-300 dark:text-zinc-600')}</button></div>`;
 }
 function showPhone() { dialog('Use on your phone', phoneHtml()); }
@@ -5073,7 +5079,7 @@ const ACT = {
   'new-project': () => {  // B131: the button becomes a name field in place; Enter makes it, Esc stops
     if ($('npName')) return $('npName').focus();
     $('drawerNew').hidden = true;
-    $('drawerNew').insertAdjacentHTML('afterend', `<div id="npRow" class="mt-1 px-1"><div class="flex items-center gap-1.5"><input id="npName" class="${FIELD} h-10 py-1.5 text-sm" placeholder="Project name: a-z, 0-9, -" aria-label="New project name" autocomplete="off" autocapitalize="none" spellcheck="false"><button data-act="np-create" class="h-10 shrink-0 rounded-xl bg-zinc-900 px-3 text-sm font-semibold text-white dark:bg-zinc-100 dark:text-zinc-900">Create</button><button data-act="np-cancel" aria-label="Cancel" class="grid size-10 shrink-0 place-items-center rounded-xl text-zinc-500 hover:bg-zinc-200/60 dark:hover:bg-zinc-800">${ico('x', 'size-4')}</button></div><p id="npErr" hidden class="px-2 pt-1 text-xs text-red-600 dark:text-red-400"></p></div>`);
+    $('drawerNew').insertAdjacentHTML('afterend', `<div id="npRow" class="mt-1 px-1"><div class="flex items-center gap-1.5"><input id="npName" class="${FIELD} h-10 py-1.5 text-sm" placeholder="Project name: a-z, 0-9, -" aria-label="New project name" autocomplete="off" autocapitalize="none" spellcheck="false"><button data-act="np-create" class="h-10 shrink-0 rounded-xl bg-zinc-900 px-3 text-sm font-semibold text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200">Create</button><button data-act="np-cancel" aria-label="Cancel" class="grid size-10 shrink-0 place-items-center rounded-xl text-zinc-500 hover:bg-zinc-200/60 dark:hover:bg-zinc-800">${ico('x', 'size-4')}</button></div><p id="npErr" hidden class="px-2 pt-1 text-xs text-red-600 dark:text-red-400"></p></div>`);
     $('npName').focus();
   },
   'np-create': async () => {
@@ -5433,7 +5439,7 @@ function renderDeskHead() {
 // The sidebar: this project as a card with its agent and its tabs, the other projects, and this project's settings.
 function renderSidebar() {
   const needs = S.items.filter(needsYou).length;
-  const tab = t => `<button data-act="tab" data-tab="${t}" class="flex h-8 w-full items-center gap-2.5 rounded-lg px-2 text-left text-sm ${U.tab === t && !D.page ? 'bg-zinc-100 font-semibold text-zinc-900 dark:bg-zinc-700/60 dark:text-zinc-50' : 'text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-700/40'}">${ico(TAB_ICON[t], 'size-4 opacity-70')}<span class="min-w-0 flex-1">${TAB_NAME[t]}</span>
+  const tab = t => `<button data-act="tab" data-tab="${t}" ${U.tab === t && !D.page ? 'aria-current="page"' : ''} class="flex h-8 w-full items-center gap-2.5 rounded-lg px-2 text-left text-sm text-zinc-600 hover:bg-zinc-100 aria-[current=page]:bg-zinc-100 aria-[current=page]:font-semibold aria-[current=page]:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-700/40 dark:aria-[current=page]:bg-zinc-700/60 dark:aria-[current=page]:text-zinc-50">${ico(TAB_ICON[t], 'size-4 opacity-70')}<span class="min-w-0 flex-1">${TAB_NAME[t]}</span>
       ${t === 'items' && needs ? `<span class="grid h-4.5 min-w-4.5 place-items-center rounded-full bg-amber-500 px-1 text-[10px] font-bold text-white dark:bg-amber-400 dark:text-amber-950">${needs}</span>` : ''}<span class="font-mono text-[11px] text-zinc-400 tabular-nums">${tabCount(t)}</span></button>`;
   // B12: the other projects stay in one order, by name, so a row never moves under the pointer; what changes in a
   // project shows on its row (its badge, its agent), not by moving it.
@@ -5453,16 +5459,17 @@ function renderSidebar() {
 // Below 1280px the sidebar is a rail of icons; the logo or [ brings the whole sidebar over the page.
 function renderRail() {
   const needs = S.items.filter(needsYou).length, other = (DR.list || []).some(p => p.name !== S.project && p.needs), [tone] = agentState(S.agents, S.work);
-  const b = (act, inner, title, attrs = '', on = false) => `<button data-act="${act}" ${attrs} title="${title}" aria-label="${title.split(' · ')[0]}" class="relative grid size-10 place-items-center rounded-xl ${on ? 'bg-zinc-200/80 text-zinc-900 dark:bg-zinc-700 dark:text-zinc-50' : 'text-zinc-500 hover:bg-zinc-200/60 dark:text-zinc-400 dark:hover:bg-zinc-800'}">${inner}</button>`;
+  const b = (act, inner, title, attrs = '') => `<button data-act="${act}" ${attrs} title="${title}" aria-label="${title.split(' · ')[0]}" class="relative grid size-10 place-items-center rounded-xl text-zinc-500 hover:bg-zinc-200/60 aria-pressed:bg-zinc-200/80 aria-pressed:text-zinc-900 aria-[current=page]:bg-zinc-200/80 aria-[current=page]:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:aria-pressed:bg-zinc-700 dark:aria-pressed:text-zinc-50 dark:aria-[current=page]:bg-zinc-700 dark:aria-[current=page]:text-zinc-50">${inner}</button>`;
+  const cur = on => on ? 'aria-current="page"' : '';
   const badge = (n, amber) => n ? `<span class="absolute -top-0.5 -right-0.5 grid h-4 min-w-4 place-items-center rounded-full px-1 text-[10px] font-bold ${amber ? 'bg-amber-500 text-white dark:bg-amber-400 dark:text-amber-950' : 'bg-zinc-300 text-zinc-700 dark:bg-zinc-600 dark:text-zinc-100'}">${n}</span>` : '';
   $('rail').innerHTML = b('side', `<span class="text-blue-600 dark:text-blue-400">${ico('logo', 'size-6', '2.25')}</span>`, 'Show the sidebar · [')
-    + b('new-input', ico('newinput', 'size-5'), 'New input · C', '', D.compose && !D.page)
+    + b('new-input', ico('newinput', 'size-5'), 'New input · C', `aria-pressed="${D.compose && !D.page}"`)
     + `<div class="my-1 h-px w-8 bg-zinc-200 dark:bg-zinc-800"></div>`
     + b('switch', `${projTile(S.project, 'size-7 rounded-lg text-xs')}${other ? '<span class="absolute top-1 right-1 size-2.5 rounded-full bg-amber-500 ring-2 ring-zinc-50 dark:bg-amber-400 dark:ring-zinc-900"></span>' : ''}`, `${S.project} · switch project: G P`)
-    + ['items', 'inputs', 'archive', 'rules'].map(t => b('tab', ico(TAB_ICON[t], 'size-5') + badge(t === 'items' ? needs : t === 'inputs' ? Number(tabCount('inputs')) || 0 : 0, t === 'items'), TAB_NAME[t], `data-tab="${t}"`, U.tab === t && !D.page)).join('')
+    + ['items', 'inputs', 'archive', 'rules'].map(t => b('tab', ico(TAB_ICON[t], 'size-5') + badge(t === 'items' ? needs : t === 'inputs' ? Number(tabCount('inputs')) || 0 : 0, t === 'items'), TAB_NAME[t], `data-tab="${t}" ${cur(U.tab === t && !D.page)}`)).join('')
     + `<div class="flex-1"></div>`
     + b('agent-info', `${avatar('claude-code')}<span class="absolute right-1.5 bottom-1.5 size-2.5 rounded-full ring-2 ring-zinc-50 dark:ring-zinc-900 ${AGENT_TONE[tone][0]}"></span>`, agentState(S.agents, S.work)[2])
-    + b('project', ico('sliders', 'size-5'), 'This project', '', !!D.page)
+    + b('project', ico('sliders', 'size-5'), 'This project', cur(!!D.page))
     + b('keys', ico('keyboard', 'size-5'), 'Keyboard shortcuts · ?');
 }
 
@@ -5564,7 +5571,7 @@ function renderGoStrip() {
 }
 function settledRow(it) {
   const how = U.go.how[it.n] || 'Done';
-  return `<article data-n="${it.n}" class="relative border-b border-zinc-100 dark:border-zinc-800/70"><div data-act="open" data-n="${it.n}" class="group relative flex cursor-pointer items-center gap-2.5 py-2.5 pr-3 pl-4 ${rowTint(it)}">
+  return `<article data-n="${it.n}" class="relative border-b border-zinc-100 dark:border-zinc-800/70"><div data-act="open" data-n="${it.n}" ${rowCur(it)} class="group relative flex cursor-pointer items-center gap-2.5 py-2.5 pr-3 pl-4 ${rowTint(it)}">
       <span class="absolute inset-y-0 left-0 w-1 bg-emerald-500 dark:bg-emerald-400"></span>
       <span class="self-start">${stateIcon('done', how)}</span>
       <div class="min-w-0 flex-1"><p class="line-clamp-1 text-[15px] leading-snug font-medium text-zinc-500 dark:text-zinc-400"><span class="mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[it.type]}">${code(it.n)}</span>${esc(it.title)}</p>
@@ -5678,7 +5685,7 @@ const PBODY = {
       + (tone === 'ok' ? '' : pPart('Get one working', `Open your coding agent in this project's folder and send it this. First time on that machine? <a href="${P}connect" data-act="psec" data-sec="connect" class="font-medium text-blue-600 hover:underline dark:text-blue-400">Connect it</a> first.`,
         pBox(ask, false) + pCopy(ask, 'Copy', true)))
       + pSetting('Keep going', 'Agents take the next item without stopping. Off: they stop after the current one.',
-        `<button data-act="auto" aria-pressed="${!!S.cfg?.auto}" aria-label="Keep going" class="group relative h-6.5 w-11 shrink-0 rounded-full bg-zinc-300 transition-colors aria-pressed:bg-emerald-500 dark:bg-zinc-600"><span class="absolute top-0.75 left-0.75 size-5 rounded-full bg-white shadow transition-transform group-aria-pressed:translate-x-4.5"></span></button>`)
+        `<button data-act="auto" aria-pressed="${!!S.cfg?.auto}" aria-label="Keep going" class="group relative h-6.5 w-11 shrink-0 rounded-full bg-zinc-300 transition-colors hover:brightness-95 aria-pressed:bg-emerald-500 dark:bg-zinc-600 dark:hover:brightness-125"><span class="absolute top-0.75 left-0.75 size-5 rounded-full bg-white shadow transition-transform group-aria-pressed:translate-x-4.5"></span></button>`)
       + (seen ? pPart('Seen in this project', '', `<ul class="mt-2 divide-y divide-zinc-100 dark:divide-zinc-800">${seen}</ul>`) : '');
   },
   connect: () => {
@@ -5686,7 +5693,7 @@ const PBODY = {
     return pPart('Run this once', `On the machine where your agent works, in the project's folder. It saves this project's address in <code class="font-mono text-[13px]">.taska</code> and installs the Taska skill for Claude Code, Codex and Antigravity.`, pBox(cmd) + pCopy(cmd, 'Copy command', true))
       + (far ? pPart('From another network', 'On a machine outside this network, run this one instead. It carries the key.', pBox(far) + pCopy(far, 'Copy')) : '')
       + pPart('Or send it to the agent', "Open your coding agent in the project's folder and send it this. It reads the rest from Taska.", pBox(ask, false) + pCopy(ask, 'Copy'))
-      + `<details class="group border-t border-zinc-200 py-6 dark:border-zinc-800"><summary class="flex cursor-pointer items-center gap-1.5 text-[15px] font-semibold">${ico('right', 'size-4 text-zinc-400 transition-transform group-open:rotate-90')}What the agent reads</summary>
+      + `<details class="group border-t border-zinc-200 py-6 dark:border-zinc-800"><summary class="flex cursor-pointer items-center gap-1.5 text-[15px] font-semibold hover:text-zinc-600 dark:hover:text-zinc-300">${ico('right', 'size-4 text-zinc-400 transition-transform group-open:rotate-90')}What the agent reads</summary>
         <pre class="mt-3 overflow-x-auto rounded-xl bg-zinc-50 p-3.5 text-xs leading-relaxed whitespace-pre-wrap lg:scrollbar-thin dark:bg-zinc-900">${esc(P_CACHE.guide || 'Loading…')}</pre></details>`;
   },
   phone: () => {
@@ -5710,8 +5717,7 @@ function renderProject() {
   if (!D.page) return;
   const sec = D.section, [, , name, about] = PSEC[sec];
   if (sec === 'log' && P_CACHE.logRev !== S.rev) loadLog();  // the project changed, so did its log
-  const row = ([k, [path, icon, label]]) => `<a href="${P}${path}" data-act="psec" data-sec="${k}" ${k === sec ? 'aria-current="page" ' : ''}class="flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-sm ${k === sec
-    ? 'bg-zinc-100 font-semibold text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50' : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800/60 dark:hover:text-zinc-100'}">${ico(icon, 'size-4 opacity-70')}<span class="min-w-0 flex-1 truncate">${label}</span></a>`;
+  const row = ([k, [path, icon, label]]) => `<a href="${P}${path}" data-act="psec" data-sec="${k}" ${k === sec ? 'aria-current="page" ' : ''}class="flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-sm text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 aria-[current=page]:bg-zinc-100 aria-[current=page]:font-semibold aria-[current=page]:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800/60 dark:hover:text-zinc-100 dark:aria-[current=page]:bg-zinc-800 dark:aria-[current=page]:text-zinc-50">${ico(icon, 'size-4 opacity-70')}<span class="min-w-0 flex-1 truncate">${label}</span></a>`;
   setHtml($('projectNav'), 'nav', `<div class="flex h-14 shrink-0 items-center px-2"><button data-act="project-back" class="flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800">${ico('left', 'size-4')}Back to ${D.compose ? 'New input' : TAB_NAME[U.tab]}${KBD('Esc')}</button></div>
     <div class="flex items-center gap-2.5 px-4 pt-2 pb-4">${projTile(S.project, 'size-8 rounded-lg text-sm')}<div class="min-w-0"><p class="truncate text-[15px] leading-tight font-semibold">${esc(S.project)}</p><p class="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">This project</p></div></div>
     <div class="flex flex-col gap-0.5 px-2">${Object.entries(PSEC).map(row).join('')}</div>`);
@@ -5727,7 +5733,7 @@ function itemMenuDesk(n) {
   const row = (act, icon, label, key, attrs = '', sub = '') => `<button data-act="${act}" data-n="${n}" ${attrs} class="flex h-9 w-full items-center gap-3 rounded-lg px-2.5 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800">${ico(icon, 'size-[18px] text-zinc-500 dark:text-zinc-400')}<span class="min-w-0 flex-1 truncate">${label}${sub ? `<span class="ml-2 text-xs text-zinc-400">${sub}</span>` : ''}</span>${key ? `<kbd class="grid h-5 min-w-5 place-items-center rounded-md px-1 font-sans text-[11px] font-semibold text-zinc-400 ring-1 ring-zinc-300 dark:ring-zinc-600">${key}</kbd>` : ''}</button>`;
   const lab = (t, keys) => `<div class="flex items-center justify-between px-1 pb-1.5 text-xs font-semibold text-zinc-500 dark:text-zinc-400">${t}<span class="font-normal text-zinc-400">${keys}</span></div>`;
   const stat = ([v, t]) => { const on = it.status === v;
-    return `<button data-act="set-field" data-n="${n}" data-f="status" data-v="${v}" aria-pressed="${on}" class="flex h-8 min-w-0 items-center gap-1.5 rounded-lg px-2 text-[13px] font-medium whitespace-nowrap ${on ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900' : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300'}">${stateIcon(v, t, 'size-4', on ? STATE_ON[v] : STATE_ICON[v][1])}<span class="truncate">${t}</span></button>`; };
+    return `<button data-act="set-field" data-n="${n}" data-f="status" data-v="${v}" aria-pressed="${on}" class="${STAT_BTN} h-8 rounded-lg px-2">${statIcon(v, t, 'size-4')}<span class="truncate">${t}</span></button>`; };
   const statuses = it.type === 'rule' ? Object.entries(RULE_STATUS).filter(([v]) => v !== 'proposed' || it.status === 'proposed') : Object.entries(STATUS);
   const state = it.archived ? row('archive', 'archive', 'Unarchive', 'E', 'data-on="0"') : CLOSED(it.status) ? row('archive', 'archive', 'Archive', 'E', 'data-on="1"')
     : it.type === 'rule' ? '' : row('swipe', 'clock', it.when === 'now' ? 'Later' : 'Back to now', 'L', `data-f="when" data-v="${it.when === 'now' ? 'later' : 'now'}"`);
@@ -5751,7 +5757,7 @@ function movePicker(n) {
     const words = $('moveQ').value.trim().toLowerCase().split(/\s+/).filter(Boolean);
     const cands = S.items.filter(c => !below.has(c.n) && !c.merged_into && !c.archived && c.type !== 'rule' && words.every(w => hay(c).includes(w)))
       .sort((a, b) => CLOSED(a.status) - CLOSED(b.status) || a.n - b.n).slice(0, 40);  // open items first
-    $('moveList').innerHTML = cands.map(c => `<button data-act="move-to" data-n="${n}" data-to="${code(c.n)}" class="flex h-12 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-[15px] hover:bg-zinc-100 lg:h-9 lg:text-sm dark:hover:bg-zinc-800 ${c.n === it.parent ? 'bg-blue-50 dark:bg-blue-400/10' : ''}">${stateIcon(c.status, statusName(c), 'size-4')}<span class="font-mono text-xs font-bold ${TYPE_TEXT[c.type]}">${code(c.n)}</span><span class="min-w-0 flex-1 truncate">${esc(c.title)}</span></button>`).join('')
+    $('moveList').innerHTML = cands.map(c => `<button data-act="move-to" data-n="${n}" data-to="${code(c.n)}" ${c.n === it.parent ? 'aria-current="true"' : ''} class="flex h-12 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-[15px] hover:bg-zinc-100 aria-[current=true]:bg-blue-50 lg:h-9 lg:text-sm dark:hover:bg-zinc-800 dark:aria-[current=true]:bg-blue-400/10">${stateIcon(c.status, statusName(c), 'size-4')}<span class="font-mono text-xs font-bold ${TYPE_TEXT[c.type]}">${code(c.n)}</span><span class="min-w-0 flex-1 truncate">${esc(c.title)}</span></button>`).join('')
       + `<button data-act="move-to" data-n="${n}" data-to="none" class="mt-1 flex h-12 w-full items-center gap-2.5 rounded-lg border-t border-zinc-100 px-2.5 text-left text-[15px] hover:bg-zinc-100 lg:h-9 lg:text-sm dark:border-zinc-800 dark:hover:bg-zinc-800">${ico(it.parent ? 'x' : 'check', 'size-4 text-zinc-500')}Stands on its own</button>`;
   };
   draw();
@@ -5828,7 +5834,7 @@ function deskKey(e) {
       if (U.tab !== 'items' || D.page || D.compose) setTab('items');
       return startGoDesk(U.open);
     case 'o': case 'Enter': if (it) { e.preventDefault(); fullWidth(!D.full); } return;
-    case ' ': if (it) { e.preventDefault(); $('detailBody').scrollBy({top: (e.shiftKey ? -0.8 : 0.8) * $('detailBody').clientHeight, behavior: 'smooth'}); } return;
+    case ' ': if (it) { e.preventDefault(); $('detailBody').scrollBy({top: (e.shiftKey ? -0.8 : 0.8) * $('detailBody').clientHeight, behavior: REDUCE.matches ? 'auto' : 'smooth'}); } return;
     case 'g': D.g = Date.now(); return;
     case '[': e.preventDefault(); return ACT.side();
     case '/': e.preventDefault(); return $('q').focus();
@@ -5919,7 +5925,7 @@ const drawerW = () => Math.min(innerWidth * 0.85, 320);
 function setDrawer(x, animate = true) {  // x: how far the page is pushed right
   const app = $('app'), shade = $('drawerShade');
   if (x > 0) $('drawer').hidden = false;
-  app.style.transition = animate ? 'transform 220ms ease-out' : 'none';
+  app.style.transition = animate && !REDUCE.matches ? 'transform 220ms ease-out' : 'none';
   app.style.transform = x > 0 ? `translateX(${x}px)` : '';
   for (const c of ['rounded-l-3xl', 'overflow-hidden', 'shadow-2xl']) app.classList.toggle(c, x > 0);
   shade.hidden = x <= 0; shade.style.left = x + 'px';
@@ -5929,8 +5935,8 @@ async function fillDrawer() {
   if (!DR.list) $('drawerList').innerHTML = '<div class="px-3 py-3 text-sm text-zinc-400">Loading…</div>';
   try { DR.list = (await (await fetch('/api/projects', {cache: 'no-store'})).json()).sort((a, b) => b.t - a.t); } catch (_) { return; }
   $('drawerList').innerHTML = [...DR.list].sort((a, b) => (b.name === S.project) - (a.name === S.project) || a.name.localeCompare(b.name)).map(p => { const cur = p.name === S.project, [tone, label] = agentState(p.agents, p.work);  // one order: rows don't move as projects get busy (B158)
-    return `<a href="/p/${encodeURIComponent(p.name)}/" class="flex min-h-14 items-center gap-3 rounded-2xl px-3 py-2.5 ${cur ? 'bg-white shadow-sm ring-1 ring-zinc-900/5 dark:bg-zinc-800 dark:ring-white/5' : 'active:bg-zinc-200/70 dark:active:bg-zinc-800'}">
-    <span class="min-w-0 flex-1"><span class="block truncate text-[17px] ${cur ? 'font-semibold' : 'font-medium'}">${esc(p.name)}</span>
+    return `<a href="/p/${encodeURIComponent(p.name)}/" ${cur ? 'aria-current="page"' : ''} class="group flex min-h-14 items-center gap-3 rounded-2xl px-3 py-2.5 hover:bg-zinc-200/50 data-pressed:bg-zinc-200/70 aria-[current=page]:bg-white aria-[current=page]:shadow-sm aria-[current=page]:ring-1 aria-[current=page]:ring-zinc-900/5 dark:hover:bg-zinc-800/60 dark:data-pressed:bg-zinc-800 dark:aria-[current=page]:bg-zinc-800 dark:aria-[current=page]:ring-white/5">
+    <span class="min-w-0 flex-1"><span class="block truncate text-[17px] font-medium group-aria-[current=page]:font-semibold">${esc(p.name)}</span>
     <span class="mt-0.5 flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400"><span class="size-1.5 shrink-0 rounded-full ${AGENT_TONE[tone][0]}"></span><span class="truncate ${tone === 'ok' ? 'text-emerald-700 dark:text-emerald-400' : AGENT_TONE[tone][1]}">${esc(label)}</span><span class="shrink-0">· ${p.open} open</span></span></span>
     ${p.needs ? `<span class="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900 dark:bg-amber-400/15 dark:text-amber-200">${p.needs} need you</span>` : ''}</a>`; }).join('');
   $('otherDot').hidden = !DR.list.some(p => p.name !== S.project && p.needs);
@@ -5969,7 +5975,7 @@ const undoRow = () => { const u = U.mine.at(-1); return u ? `<button data-act="u
 function renderDrawerSettings() {
   // On the desktop the same rows are compact sidebar links, and the one whose section shows is marked (B162).
   const row = (act, icon, label, sec) => { const on = desk() && D.page && D.section === sec;
-    return `<button data-act="${act}" ${on ? 'aria-current="page" ' : ''}class="flex min-h-12 w-full items-center gap-3 px-3.5 py-2.5 text-left text-[15px] lg:min-h-0 lg:gap-2.5 lg:rounded-lg lg:px-3 lg:py-1.5 lg:text-sm ${on ? 'lg:bg-zinc-200/70 lg:font-semibold lg:text-zinc-900 dark:lg:bg-zinc-800 dark:lg:text-zinc-50' : 'lg:text-zinc-600 lg:hover:bg-zinc-200/60 dark:lg:text-zinc-300 dark:lg:hover:bg-zinc-800'}">${ico(icon, 'size-5 text-zinc-500 lg:size-4 dark:text-zinc-400')}<span class="min-w-0 flex-1">${label}</span><span class="lg:hidden">${ico('right', 'size-4 text-zinc-300 dark:text-zinc-600')}</span></button>`; };
+    return `<button data-act="${act}" ${on ? 'aria-current="page" ' : ''}class="flex min-h-12 w-full items-center gap-3 px-3.5 py-2.5 text-left text-[15px] lg:min-h-0 lg:gap-2.5 lg:rounded-lg lg:px-3 lg:py-1.5 lg:text-sm lg:text-zinc-600 lg:hover:bg-zinc-200/60 lg:aria-[current=page]:bg-zinc-200/70 lg:aria-[current=page]:font-semibold lg:aria-[current=page]:text-zinc-900 dark:lg:text-zinc-300 dark:lg:hover:bg-zinc-800 dark:lg:aria-[current=page]:bg-zinc-800 dark:lg:aria-[current=page]:text-zinc-50">${ico(icon, 'size-5 text-zinc-500 lg:size-4 dark:text-zinc-400')}<span class="min-w-0 flex-1">${label}</span><span class="lg:hidden">${ico('right', 'size-4 text-zinc-300 dark:text-zinc-600')}</span></button>`; };
   $('drawerSettings').innerHTML = `${undoRow()}<button data-act="auto" aria-pressed="${!!S.cfg?.auto}" class="group flex w-full items-center gap-3 px-3.5 py-3 text-left lg:gap-2.5 lg:rounded-lg lg:px-3 lg:py-1.5 lg:hover:bg-zinc-200/60 dark:lg:hover:bg-zinc-800">${ico('loop', 'size-5 text-emerald-600 lg:size-4 dark:text-emerald-400')}
       <span class="min-w-0 flex-1"><span class="block text-[15px] lg:text-sm">Keep going</span><span class="block text-xs leading-snug text-zinc-500 lg:text-[11px] dark:text-zinc-400">Agents take the next item without stopping</span></span>
       <span class="relative h-6.5 w-11 shrink-0 rounded-full bg-zinc-300 transition-colors group-aria-pressed:bg-emerald-500 lg:h-5 lg:w-8.5 dark:bg-zinc-600 dark:group-aria-pressed:bg-emerald-500"><span class="absolute top-0.75 left-0.75 size-5 rounded-full bg-white shadow transition-transform group-aria-pressed:translate-x-4.5 lg:size-3.5 lg:group-aria-pressed:translate-x-3.5"></span></span></button>
@@ -6047,7 +6053,7 @@ function backEnd() {
   if (!BK.pull) return;
   BK.on = false;
   const v = $('detailView'), w = v.offsetWidth, go = BK.dx > w * 0.3 || (BK.dx > 60 && Date.now() - BK.t0 < 300);  // far enough, or a flick
-  v.style.transition = 'transform 180ms ease-out';
+  v.style.transition = REDUCE.matches ? 'none' : 'transform 180ms ease-out';
   v.style.transform = go ? `translateX(${w}px)` : '';
   setTimeout(() => { if (go) ACT.back(); else { BK.pull = false; showView(); } }, 180);
 }
@@ -6097,6 +6103,51 @@ $('list').addEventListener('pointerdown', swipeStart);
 $('list').addEventListener('pointermove', swipeMove);
 $('list').addEventListener('pointerup', swipeEnd);
 $('list').addEventListener('pointercancel', e => { if (SW.el && e.pointerId === SW.id) { swipeTo(SW.el, SW.el === SW.open ? -SW.reveal : 0); SW.el.style.transition = ''; SW.el = null; } });
+
+// ---------------------------------------------------------------- press feedback (T160)
+// Anything you can press answers the moment a finger or the mouse goes down: it gets data-pressed, and the classes
+// give the look (a rule on <body> dims buttons and links; rows and other tappable areas darken). It stays at least
+// 130 ms, so a quick tap shows too. A finger that moves is scrolling or swiping: the press ends at once, as it does
+// when the mouse leaves. :active alone came too late on phones: Chrome shows it only once the finger lifts.
+// The other rules on <body> keep every control alike: disabled and busy buttons at 40 %, one focus ring for the
+// keyboard (drawn inside where an edge would cut it off), and no transitions or animations with "reduce motion".
+// scripts/feedback_check.py checks all of this on every screen.
+const PRESS = {el: null, id: null, x: 0, y: 0, t: 0, off: 0, mouse: false};
+const PRESSABLE = 'button, a[href], summary, [data-act], [role=button]';
+function press(el) {
+  clearTimeout(PRESS.off);
+  if (PRESS.el && PRESS.el !== el) PRESS.el.removeAttribute('data-pressed');
+  PRESS.el = el; PRESS.t = performance.now(); el.setAttribute('data-pressed', '');
+}
+function unpress(tap = false) {  // tap: it ends in a tap, so it stays the 130 ms; otherwise it goes now
+  const el = PRESS.el;
+  PRESS.id = null;
+  if (!el) return;
+  clearTimeout(PRESS.off);
+  const end = () => { el.removeAttribute('data-pressed'); if (PRESS.el === el) PRESS.el = null; };
+  const left = tap ? 130 - (performance.now() - PRESS.t) : 0;
+  if (left > 0) PRESS.off = setTimeout(end, left); else end();
+}
+document.addEventListener('pointerdown', e => {
+  if (!e.isPrimary || e.button > 0) return;
+  const el = e.target.closest?.(PRESSABLE);
+  unpress();
+  if (!el || el.disabled || el.matches('[aria-busy=true], [aria-disabled=true]')) return;
+  press(el); Object.assign(PRESS, {id: e.pointerId, x: e.clientX, y: e.clientY, mouse: e.pointerType === 'mouse'});
+}, true);
+document.addEventListener('pointermove', e => {
+  if (e.pointerId !== PRESS.id) return;
+  if (Math.hypot(e.clientX - PRESS.x, e.clientY - PRESS.y) > 10 || (PRESS.mouse && !PRESS.el?.contains(e.target))) unpress();
+}, true);
+document.addEventListener('pointerup', e => { if (e.pointerId === PRESS.id) unpress(true); }, true);
+document.addEventListener('pointercancel', () => unpress(), true);
+document.addEventListener('scroll', e => { if (PRESS.id !== null && e.target.contains?.(PRESS.el)) unpress(); }, true);  // what it sits in scrolled
+document.addEventListener('contextmenu', () => { if (PRESS.id !== null) unpress(); }, true);
+addEventListener('blur', () => unpress());
+document.addEventListener('click', e => {  // Enter or Space on a button, or a key that clicks one, shows the press too
+  const el = !e.detail && e.target.closest?.(PRESSABLE);
+  if (el && !el.disabled) { press(el); unpress(true); }
+}, true);
 
 document.addEventListener('click', e => {
   if (e.target.closest('a[href]:not([data-act])')) return;  // a link inside a tappable paragraph still opens
