@@ -3440,7 +3440,7 @@ function answerOf(thread, x) {
 function msgHtml(x, gid, form = 0, done = null) {
   const you = x.by === 'you', src = you && x.src ? byR.get(x.src) : null;
   const strip = (files, g, size) => files?.length ? `<div class="flex gap-2 overflow-x-auto lg:scrollbar-thin ${you ? 'justify-end' : 'mt-3'}">${thumbs(files, g, size)}</div>` : '';
-  if (you) return `<div class="flex flex-col items-end gap-1">
+  if (you) return `<div ${x.src ? `data-src="${x.src}"` : ''} class="flex scroll-mb-4 flex-col items-end gap-1 rounded-2xl transition-colors duration-700">
       ${x.text ? `<div ${voiceAttr(src)} class="max-w-[85%] rounded-2xl rounded-tr-md bg-blue-600 px-4 py-2.5 text-[15px] leading-relaxed text-white dark:bg-blue-500 [&_a]:text-white [&_a]:decoration-white/60">${msgText(x, gid)}</div>` : ''}
       ${strip(src?.files, gid + 't' + x.id)}
       <span class="px-1 text-[11px] text-zinc-400 dark:text-zinc-500">You · ${when(x.t)}${src?.tr_wait ? ' · <span class="animate-pulse text-blue-600 dark:text-blue-400">transcribing the voice note…</span>' : ''}</span></div>`;
@@ -3714,17 +3714,18 @@ function peek(n, {focus = true} = {}) {
 }
 // After you act on an item while going through: the next one after it that still waits on you. After the last, the
 // walk ends and says what is left: the ones you skipped still wait in the list (B153). A card of one item closes.
-function advance(from) {
+function advance(from, said = '') {  // said: what you just sent, for the toast, as the card it was on goes (B155)
   const g = U.go;
-  if (!g) return closeDialog();
+  if (!g) { closeDialog(); if (said) toast(said); return; }
   if (from) g.done.add(from);
   const next = g.list.slice(g.list.indexOf(from) + 1).find(k => !g.done.has(k) && byN.get(k) && needsYou(byN.get(k)));
-  if (next) peek(next, {focus: false}); else endWalk();
+  if (next) { peek(next, {focus: false}); if (said) toast(said); } else endWalk(said);
 }
-function endWalk() {
+function endWalk(said = '') {
   const g = U.go, left = g ? g.list.filter(k => !g.done.has(k) && byN.get(k) && needsYou(byN.get(k))).length : 0;
   closeDialog();
-  toast(left ? `That was the last one · ${left} still need${left === 1 ? 's' : ''} you` : 'Nothing else needs you');
+  const end = left ? `that was the last one, ${left} still need${left === 1 ? 's' : ''} you` : 'nothing else needs you';
+  toast(said ? `${said} · ${end}` : end[0].toUpperCase() + end.slice(1));
 }
 
 // ---------------------------------------------------------------- item page
@@ -4279,7 +4280,8 @@ async function send() {
   outboxPush({text, files: U.files, scope: n ? code(n) : null, from: !n && ruleMode() ? 'rules' : null});
   $('text').value = ''; U.files = []; saveDraft(); grow();
   if (U.ask === n) U.ask = null;
-  if (U.peek && n === U.peek) advance(U.peek);  // going through: your reply settles this one; a card of one item closes (B153)
+  if (U.peek && n === U.peek) advance(U.peek, `Sent to ${code(n)}`);  // going through: your reply settles this one; a card of one item closes (B153); the toast says where it went (B155)
+  else if (!desk() && !n && U.tab === 'inputs' && !U.open) $('inputsView').scrollTop = 0;  // it shows at the top of Inputs (B155)
   else if (desk() && U.go && U.open && !U.scopeOff && U.go.list.includes(U.open)) { $('text').blur(); advanceDesk(U.open, 'Replied'); }  // B118
   render(); flushOutbox();
   if (desk() && D.compose) $('foot').scrollTop = 0;
@@ -4329,9 +4331,21 @@ async function sendInput(o) {
   try { await load(); } catch (_) {}  // it is in; the next poll shows it
   return d;
 }
+// B155: what you sent shows up where you are, in view and lit up for a moment: your reply at the end of the item's
+// page, just above the box; a new input at the top of Inputs (the phone's newest is first).
+function showSent(rid, scope) {
+  if (desk() || !rid) return;
+  const el = scope && U.open && code(U.open) === scope ? document.querySelector(`#detailBody [data-src="${rid}"]`)
+    : U.tab === 'inputs' && !U.open ? document.querySelector(`#inputsView [data-r="${rid}"]`) : null;
+  if (!el) return;
+  el.scrollIntoView({block: 'nearest'});
+  el.classList.add('bg-blue-50', 'dark:bg-blue-400/10');
+  setTimeout(() => el.classList.remove('bg-blue-50', 'dark:bg-blue-400/10'), 1500);
+}
 async function flushOutbox() {
   if (flushOutbox.busy) return;
   flushOutbox.busy = true;
+  let sent = null;
   try {
     while (U.outbox.length && !U.outbox[0].failed) {
       const job = U.outbox[0];
@@ -4344,14 +4358,14 @@ async function flushOutbox() {
       job.sending = true; renderFeedback();
       try {
         const d = await sendInput({op: 'input', text, scope: job.scope, q: job.q, ...(job.from ? {from: job.from} : {}), files: files.map(({f, name, mime, size, tr}) => ({f, name, mime, size, ...(tr ? {tr} : {})}))});
-        U.lastSent = d.res[0].split(' ')[1]; U.outbox.shift(); dropJob(job);
+        U.lastSent = d.res[0].split(' ')[1]; U.outbox.shift(); dropJob(job); sent = [U.lastSent, job.scope];
         for (const f of files) { f.sent = true; dropRec(f); }  // words still to come go onto this input, on the server (B165); this browser lets the recording go (T101)
       } catch (e) {
         job.failed = true; job.sending = false; job.net = !!e.again;
         if (e.again) setTimeout(() => { if (job.failed && U.outbox[0] === job) { job.failed = false; renderFeedback(); flushOutbox(); } }, Math.min(30000, 2000 * 2 ** Math.min(job.tries = (job.tries || 0) + 1, 4)));
       }
     }
-  } finally { flushOutbox.busy = false; render(); }
+  } finally { flushOutbox.busy = false; render(); if (sent) showSent(...sent); }
 }
 addEventListener('beforeunload', e => {  // unsent words this browser can't keep (B151), a recording, or a voice note still in the box (B149)
   if (U.outbox.some(j => !keepable(j)) || R.rec || U.files.some(f => (f.mime || '').startsWith('audio/'))) { e.preventDefault(); e.returnValue = ''; }
@@ -5125,11 +5139,13 @@ const ACT = {
     // B145: what you wrote in the box for this item goes with the answer, files too: one answer, one send
     const withBox = scopeN() === n && !U.amend && !U.correct && !docTarget(), note = withBox ? $('text').value.trim() : '', files = withBox ? U.files : [];
     try {
+      let rid = null;
       if (note || files.length) {
         outboxPush({text: picks + (note ? '\n\n' + note : ''), files, scope: code(n), from: null});
         $('text').value = ''; U.files = []; saveDraft(); grow(); flushOutbox();
-      } else await op({op: 'input', text: picks, scope: code(n)});
-      U.choice = null; if (U.peek === n) advance(n); toast(note || files.length ? 'Answer sent with your note' : 'Answer sent'); if (desk() && U.go && U.open === n) advanceDesk(n, 'Answered');
+      } else rid = (await op({op: 'input', text: picks, scope: code(n)})).res[0].split(' ')[1];
+      const said = `Answer sent to ${code(n)}${note || files.length ? ' with your note' : ''}`;  // where it went (B155)
+      U.choice = null; if (U.peek === n) advance(n, said); else { toast(said); showSent(rid, code(n)); } if (desk() && U.go && U.open === n) advanceDesk(n, 'Answered');
     } catch (_) {}
   },
   'more-msg': b => {
