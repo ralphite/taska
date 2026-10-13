@@ -204,6 +204,7 @@ Taska is designed for the phone first. Open it in your phone's browser and add i
 | `GEMINI_API_KEY` | Turns on the organizer and voice transcription |
 | `TASKA_MODEL` | The organizer's Gemini model (default `gemini-flash-latest`) |
 | `TASKA_VOICE_MODEL`, `TASKA_ASR_MODEL` | The two transcription models (default `gemini-3.8-flash`, a fixed version, and `gemini-3.5-transcribe`) |
+| `TASKA_PRO_MODEL` | The strong model that also hears a phone's voice-processed notes (default `gemini-3.1-pro-preview`; needs macOS `afconvert` to tell such notes) |
 
 To keep Taska running, start `scripts/taska-service.sh` from a macOS LaunchAgent or a systemd unit. It reads the
 public address from `$TASKA_PUBLIC` or `~/.taska/public-url`.

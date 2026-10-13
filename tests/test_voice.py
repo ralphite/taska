@@ -1,9 +1,14 @@
-"""Voice notes (T101): the two transcriptions, Traditional to Simplified, the spelling hints, what may be misheard,
-transcripts kept next to the audio, inputs that go in once, and a stop that finishes the work at hand.
+"""Voice notes (T101): the two transcriptions, a phone's processed notes heard by the strong model too, Traditional to
+Simplified, the spelling hints, what may be misheard, transcripts kept next to the audio, inputs that go in once, and a
+stop that finishes the work at hand.
 Gemini is replaced by a fake here; scripts/transcribe_check.py runs the real thing on real recordings.
 Chinese is written escaped (R66)."""
+import array
 import importlib.util
 import json
+import math
+import os
+import shutil
 import socket
 import tempfile
 import threading
@@ -11,6 +16,7 @@ import time
 import unittest
 import urllib.error
 import urllib.request
+import wave
 from collections import Counter
 from pathlib import Path
 from unittest.mock import patch
@@ -38,10 +44,11 @@ def reply(text=None, block=None, asr=False):
 
 
 class FakeGemini:
-    """Answers by model: main -> self.main (a list, one per call), speech model -> self.asr, text-only -> self.t2s."""
+    """Answers by model: main -> self.main (a list, one per call), speech model -> self.asr, text-only -> self.t2s,
+    the strong model -> self.pro (a list, one per call)."""
 
-    def __init__(self, main, asr, t2s=None):
-        self.main, self.asr, self.t2s, self.calls = list(main), asr, t2s, []
+    def __init__(self, main, asr, t2s=None, pro=()):
+        self.main, self.asr, self.t2s, self.pro, self.calls = list(main), asr, t2s, list(pro), []
 
     def __call__(self, model, body, timeout=120):
         self.calls.append((model, body))
@@ -52,7 +59,7 @@ class FakeGemini:
         parts = body['contents'][0]['parts']
         if not any('inline_data' in p for p in parts):  # the Traditional -> Simplified request
             return reply(json.dumps({'text': self.t2s}))
-        r = self.main.pop(0)
+        r = (self.pro if model == taska.PRO_MODEL else self.main).pop(0)
         if isinstance(r, Exception):
             raise r
         return r if isinstance(r, dict) else reply(json.dumps({'transcript': r}))
@@ -70,8 +77,8 @@ class StoreCase(unittest.TestCase):
         self.s.out.close()
         self.tmp.cleanup()
 
-    def fake(self, main, asr, t2s=None):
-        f = FakeGemini(main, asr, t2s)
+    def fake(self, main, asr, t2s=None, pro=()):
+        f = FakeGemini(main, asr, t2s, pro)
         return f, patch.object(taska, 'gemini_call', f)
 
 
@@ -114,6 +121,40 @@ class TranscribeTests(StoreCase):
             out = taska.transcribe(self.s, b'x', 'audio/mp4', None)
         self.assertEqual((out['tr'], out['tr_by']), (full, 'asr'))
         self.assertIn('stopped early', out['main_error'])
+
+    def test_a_phone_note_with_its_pauses_cut_to_silence(self):  # both models stopped early on such iPhone notes
+        full = 'one two three four five six seven eight nine ten eleven twelve'
+        with patch.object(taska, 'voice_gated', lambda path, mime: 1.8):
+            f, p = self.fake(['one two three'], 'one two three four', pro=[full])
+            with p:
+                out = taska.transcribe(self.s, b'x', 'audio/mp4', None, path='voice.m4a')
+            self.assertEqual((out['tr'], out['tr_by'], out['gated'], out['doubts']), (full, 'pro', True, []))
+            f, p = self.fake(['one two three'], full, pro=[full + ' thirteen'])  # stopped early: not asked again, the strong one heard it
+            with p:
+                out = taska.transcribe(self.s, b'x', 'audio/mp4', None, path='voice.m4a')
+            self.assertEqual((out['tr'], out['tr_by']), (full + ' thirteen', 'pro'))
+            self.assertEqual([m for m, _ in f.calls].count(taska.VOICE_MODEL), 1)
+            f, p = self.fake([full], full, pro=['one two'])  # the strong one heard less: the main one's words
+            with p:
+                out = taska.transcribe(self.s, b'x', 'audio/mp4', None, path='voice.m4a')
+            self.assertEqual((out['tr'], out['tr_by']), (full, 'main'))
+            f, p = self.fake([full], full, pro=[taska.Err('Gemini HTTP 503'), taska.Err('Gemini HTTP 503')])
+            with p:
+                out = taska.transcribe(self.s, b'x', 'audio/mp4', None, path='voice.m4a')
+            self.assertEqual((out['tr'], out['tr_by']), (full, 'main'))
+            self.assertIn('503', out['pro_error'])
+            f, p = self.fake(['DevTools export'], None, pro=['DevTools export'])  # nobody spoke (B092)
+            with p:
+                out = taska.transcribe(self.s, b'x', 'audio/mp4', None, path='voice.m4a')
+            self.assertEqual(out['tr'], '')
+            f, p = self.fake([taska.Err('down')], taska.Err('down'), pro=['only the strong one'])
+            with p:
+                out = taska.transcribe(self.s, b'x', 'audio/mp4', None, path='voice.m4a')
+            self.assertEqual((out['tr'], out['tr_by']), ('only the strong one', 'pro'))
+        f, p = self.fake([full], full)  # any other note: two models, not three
+        with p:
+            taska.transcribe(self.s, b'x', 'audio/webm', None, path='voice.webm')
+        self.assertNotIn(taska.PRO_MODEL, [m for m, _ in f.calls])
 
     def test_both_failing_is_an_error(self):
         f, p = self.fake([taska.Err('Gemini HTTP 500')], taska.Err('Gemini unreachable'))
@@ -163,6 +204,29 @@ class HintTests(unittest.TestCase):
     def test_traditional_characters(self):
         self.assertEqual(taska.traditional(TRAD + SIMP + 'abc'), list(TRAD))
         self.assertEqual(taska.traditional('\u55ef\u5443 ok'), [])  # um, uh: Simplified
+
+
+@unittest.skipUnless(shutil.which('afconvert'), 'needs macOS afconvert')
+class GatedTests(unittest.TestCase):
+    """A phone's voice processing cuts the pauses inside speech to exact digital silence; a computer's leaves noise."""
+
+    def note(self, gap):
+        tmp = tempfile.NamedTemporaryFile(suffix='.wav', delete=False)
+        tmp.close()
+        self.addCleanup(os.unlink, tmp.name)
+        tone = [int(6000 * math.sin(i / 3)) for i in range(16000)]
+        with wave.open(tmp.name, 'wb') as w:
+            w.setnchannels(1)
+            w.setsampwidth(2)
+            w.setframerate(16000)
+            w.writeframes(array.array('h', tone + gap + tone).tobytes())
+        return tmp.name
+
+    def test_exact_silence_inside_speech(self):
+        self.assertAlmostEqual(taska.voice_gated(self.note([0] * 16000), 'audio/wav'), 1.0, delta=0.1)
+        self.assertEqual(taska.voice_gated(self.note([(i * 7919) % 5 - 2 for i in range(16000)]), 'audio/wav'), 0.0)  # a quiet room
+        self.assertEqual(taska.voice_gated(self.note([0] * 16000), 'audio/webm'), 0.0)  # not one macOS decodes: not looked at
+        self.assertEqual(taska.voice_gated('/nonexistent.m4a', 'audio/mp4'), 0.0)
 
 
 class DoubtTests(unittest.TestCase):

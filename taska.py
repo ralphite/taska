@@ -11,6 +11,7 @@ state is the replay of that log.
 """
 
 import argparse
+import array
 import base64
 import contextlib
 import difflib
@@ -19,12 +20,16 @@ import hmac
 import http.client
 import ipaddress
 import json
+import math
 import mimetypes
 import os
 import re
 import secrets
+import shutil
 import signal
+import subprocess
 import sys
+import tempfile
 import textwrap
 import threading
 import time
@@ -483,7 +488,7 @@ class Store:
         def work():
             res, err = {}, ""
             try:
-                res = transcribe(self, data, mime, scope) or {}
+                res = transcribe(self, data, mime, scope, path=self.local(fid)) or {}
                 voice_keep(self, fid, res)
             except Exception as ex:
                 err = str(ex) or "transcription failed"
@@ -1489,8 +1494,13 @@ class Organizer(threading.Thread):
 #   never refused and never wrote Traditional characters, but it renders some English words in Chinese. So it only
 #   decides whether anyone spoke, stands in when the main one gives nothing, and shows where the two disagree;
 # - Traditional characters, which still slip in now and then, turned Simplified by one cheap text-only request.
+# - A phone's voice processing (iPhone Safari records through the one made for calls) can cut every pause to digital
+#   silence and turn later phrases 10 to 30 dB quieter. On two such notes both models kept only the first few words,
+#   whatever the format, loudness or silence was changed to; only the strong model heard the rest. Such a note (exact
+#   digital silence inside the speech, which none of 59 notes from a computer had) is heard by it too.
 VOICE_MODEL = os.environ.get("TASKA_VOICE_MODEL", "gemini-3.8-flash")
 ASR_MODEL = os.environ.get("TASKA_ASR_MODEL", "gemini-3.5-transcribe")
+PRO_MODEL = os.environ.get("TASKA_PRO_MODEL", "gemini-3.1-pro-preview")
 # The source stays free of Chinese (R66), so the Chinese below is escaped. VOICE_SYSTEM says: "You transcribe speech.
 # Write only the words really spoken in the recording; if nobody speaks, return an empty string. Always write Chinese
 # in Simplified characters, never Traditional." VOICE_HINT: "Word for word, Chinese in Simplified characters; empty
@@ -1575,16 +1585,20 @@ def voice_prompt(terms, items, fixes):
     return "\n".join(lines)
 
 
-def voice_main(audio, prompt):
-    """The main transcript (VOICE_MODEL, in a JSON field so no preface or notes get in). Gemini sometimes refuses a
-    voice note for no reason it gives (promptFeedback.blockReason): asked once more, then left to the speech model."""
+def voice_main(audio, prompt, model=None):
+    """The main transcript (VOICE_MODEL, in a JSON field so no preface or notes get in), or the strong model's. Gemini
+    sometimes refuses a voice note for no reason it gives (promptFeedback.blockReason): asked once more, then left
+    to the speech model."""
     for attempt in (1, 2):
         body = {"contents": [{"role": "user", "parts": [{"text": prompt}, audio]}],
                 "systemInstruction": {"parts": [{"text": VOICE_SYSTEM}]},
-                "generationConfig": {"temperature": 0.2, "thinkingConfig": {"thinkingBudget": 0}, "responseMimeType": "application/json",
+                "generationConfig": {"temperature": 0.2, "responseMimeType": "application/json",
                                      "responseSchema": {"type": "OBJECT", "properties": {"transcript": {"type": "STRING", "description": VOICE_HINT}},
                                                         "required": ["transcript"]}}}
-        text, why = reply_text(gemini_call(VOICE_MODEL, body))
+        # The main one answers without thinking. The strong one thinks a little: on two phone notes it heard as much
+        # as with more thinking, in 7 s instead of 16.
+        body["generationConfig"]["thinkingConfig"] = {"thinkingLevel": "low"} if model else {"thinkingBudget": 0}
+        text, why = reply_text(gemini_call(model or VOICE_MODEL, body, timeout=240 if model else 120))
         if why and attempt == 1:
             continue
         if why:
@@ -1605,20 +1619,64 @@ def voice_asr(audio, vocab):
     return text
 
 
-def side_by_side(first, second, wait=300):
-    """first() here and second() in a thread, at the same time -> ((result, None) or (None, error)) for each."""
-    out = [None, (None, Err("no answer in time"))]
+def together(*fns, wait=360):
+    """The first function here and the others in threads, all at the same time -> [(result, None) or (None, error)]."""
+    out = [(None, Err("no answer in time"))] * len(fns)
 
     def run(i, fn):
         try:
             out[i] = (fn(), None)
-        except Exception as ex:  # one failing must not lose the other's answer
+        except Exception as ex:  # one failing must not lose the others' answers
             out[i] = (None, ex)
-    t = threading.Thread(target=run, args=(1, second), daemon=True)
-    t.start()
-    run(0, first)
-    t.join(wait)
-    return out[0], out[1]
+    threads = [threading.Thread(target=run, args=(i, fn), daemon=True) for i, fn in enumerate(fns) if i]
+    for t in threads:
+        t.start()
+    run(0, fns[0])
+    end = time.time() + wait
+    for t in threads:
+        t.join(max(0, end - time.time()))
+    return list(out)
+
+
+def voice_gated(path, mime):
+    """Seconds of exact digital silence inside the speech of a recording macOS can decode (an iPhone's m4a): the mark
+    of a phone's voice processing. 0.0 when there is none, or when this machine cannot tell (no afconvert)."""
+    tool = shutil.which("afconvert")
+    if not tool or not path or mime.split(";")[0] not in ("audio/mp4", "audio/x-m4a", "audio/m4a", "audio/aac", "audio/wav", "audio/x-wav", "audio/mpeg"):
+        return 0.0
+    fd, wav = tempfile.mkstemp(suffix=".wav")
+    os.close(fd)
+    try:
+        subprocess.run([tool, "-f", "WAVE", "-d", "LEI16@16000", "-c", "1", path, wav], capture_output=True, timeout=60, check=True)
+        with open(wav, "rb") as f:
+            raw = f.read()
+    except (OSError, subprocess.SubprocessError):
+        return 0.0
+    finally:
+        try:
+            os.unlink(wav)
+        except OSError:
+            pass
+    pos, data = 12, b""  # the samples are in the "data" chunk (Python 3.9's wave cannot read the header afconvert writes)
+    while pos + 8 <= len(raw):
+        size = int.from_bytes(raw[pos + 4:pos + 8], "little")
+        if raw[pos:pos + 4] == b"data":
+            data = raw[pos + 8:pos + 8 + size]
+            break
+        pos += 8 + size + (size & 1)
+    a = array.array("h", data[:min(len(data) // 2, 16000 * 600) * 2])  # ten minutes is plenty to tell
+    if sys.byteorder == "big":
+        a.byteswap()
+    n = 800  # 50 ms
+    frames = [a[i:i + n] for i in range(0, len(a) - n + 1, n)]
+    db = [20 * math.log10(max(1.0, math.sqrt(sum(v * v for v in f) / n)) / 32768) for f in frames]
+    if not db:
+        return 0.0
+    top = sorted(db)[-max(1, len(db) // 20)]  # the loud end of the note, not one click
+    voiced = [i for i, d in enumerate(db) if d > max(-60.0, top - 40)]
+    if not voiced:
+        return 0.0
+    return sum(1 for f in frames[voiced[0]:voiced[-1] + 1] if not any(f)) * 0.05
 
 
 def traditional(text):
@@ -1773,17 +1831,20 @@ def voice_doubts(tr, alt, most=4):
     return [{k: v for k, v in x.items() if k not in ("s", "e", "key")} for x in spots[:most]]
 
 
-def transcribe(store, data, mime, scope):
-    """Voice note -> {"tr": its words ("" when nobody spoke), "tr_by": "main" or "asr", "alt": the other model's words,
-    "doubts": what may be misheard}, biased toward the project's own vocabulary. Raises Err when neither model answered."""
+def transcribe(store, data, mime, scope, path=None):
+    """Voice note -> {"tr": its words ("" when nobody spoke), "tr_by": "main", "asr" or "pro", "alt": the other model's
+    words, "doubts": what may be misheard}, biased toward the project's own vocabulary. path: the note on disk, to tell
+    a phone's voice-processed recording, which the strong model hears too. Raises Err when no model answered."""
     words, items, titles = voice_context(store, scope)
     fixes = HUB.corrections() if HUB else []
     terms = voice_terms(words, fixes)
     audio = {"inline_data": {"mime_type": mime.split(";")[0], "data": base64.b64encode(data).decode()}}
     vocab = list(dict.fromkeys(["Taska", "P0", "P1", "P2", "P3"] + terms))[:100]
     prompt = voice_prompt(terms, items, fixes)
-    (tr, err), (alt, alt_err) = side_by_side(lambda: voice_main(audio, prompt), lambda: voice_asr(audio, vocab))
-    out = {"tr": "", "tr_by": "asr"}
+    gated = voice_gated(path, mime) >= 0.5
+    calls = [lambda: voice_main(audio, prompt), lambda: voice_asr(audio, vocab)] + ([lambda: voice_main(audio, prompt, PRO_MODEL)] if gated else [])
+    (tr, err), (alt, alt_err), *pro = together(*calls)
+    out = {"tr": "", "tr_by": "asr", **({"gated": True} if gated else {})}
     if err:
         out["main_error"] = str(err)
     if alt_err:
@@ -1791,8 +1852,8 @@ def transcribe(store, data, mime, scope):
     if alt_err is None and not alt:  # the speech model heard nobody: what the other wrote was made up (B092)
         return out
     if err is None and tr and not echoed(tr, titles) and alt_err is None and voice_short(tr, alt):
-        try:  # it stopped early, as on some iPhone notes: asked once more, then the speech model's words
-            again = voice_main(audio, prompt)
+        try:  # it stopped early: asked once more (not when the strong model heard it too), then the speech model's words
+            again = "" if pro and pro[0][0] else voice_main(audio, prompt)
         except Exception:
             again = ""
         if again and not voice_short(again, alt):
@@ -1805,9 +1866,19 @@ def transcribe(store, data, mime, scope):
     elif alt_err is None:  # the main one refused, failed, stopped early, heard nothing or wrote only item titles: the speech model's words
         tr, alt = alt, ""
     elif err is None:  # nothing heard but item titles, and no second opinion
-        return dict(out, tr_by="main")
+        out["tr_by"], tr = "main", ""
     else:
+        tr = None
+    if pro:  # a phone's processed voice: the strong model heard it too, and its words win when it heard as much or more
+        ptr, perr = pro[0]
+        if perr:
+            out["pro_error"] = str(perr)
+        elif ptr and not echoed(ptr, titles) and (not tr or len(voice_tokens(ptr)) >= 0.9 * len(voice_tokens(tr))):
+            out["tr_by"], tr, alt = "pro", ptr, ""
+    if tr is None:
         raise Err(f"{err}; the speech model: {alt_err}")
+    if not tr:
+        return out
     tr, alt = simplified(tr), simplified(alt or "")
     for c in fixes:  # what the user fixed once stays fixed (F144)
         tr, alt = tr.replace(c["wrong"], c["right"]), alt.replace(c["wrong"], c["right"])
@@ -1835,7 +1906,8 @@ def voice_answer(fid, job):
     """What a page gets for a voice note: its words once they are in, which model's they are, what may be misheard."""
     res = (job or {}).get("res") or {}
     return {"f": fid, "done": not job or job["done"], "tr": job["tr"] if job else "",
-            "tr_error": (job["err"] if job else "no such voice note") or "", **{k: res[k] for k in ("tr_by", "doubts") if k in res}}
+            "tr_error": (job["err"] if job else "no such voice note") or "",
+            **{k: res[k] for k in ("tr_by", "doubts", "gated", "main_error", "asr_error", "pro_error") if k in res}}
 
 
 def voice_saved(store, fid):
