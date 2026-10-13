@@ -11,7 +11,7 @@ import urllib.request
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
-SECTIONS = ('settings', 'connect', 'phone', 'spellings', 'log', 'about')  # the sections of This project
+SECTIONS = ('settings', 'connect', 'phone', 'spellings', 'log', 'deleted', 'about', 'projects', 'organizer')  # Settings' sections (B162); /connect and /about lead to Agents and Projects
 BROWSER = {'Sec-Fetch-Mode': 'navigate', 'Accept': 'text/html', 'User-Agent': 'Mozilla/5.0'}
 
 

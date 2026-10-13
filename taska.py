@@ -2276,7 +2276,7 @@ def voice_keep(store, fid, res):
 
 HUB = None
 ITEM_PATH = re.compile(r"/([A-Za-z]?\d+)")
-VIEW_PATH = re.compile(r"/(inputs|archive|rules|new|settings|connect|phone|spellings|log|deleted|about|[A-Za-z]\d+)")  # the page's views (T102, B162)
+VIEW_PATH = re.compile(r"/(inputs|archive|rules|new|settings|connect|phone|spellings|log|deleted|about|projects|organizer|[A-Za-z]\d+)")  # the page's views (T102, B162)
 NAME = re.compile(r"[a-z0-9][a-z0-9-]{0,39}")  # a project's address and folder: made from its name once, never changed (F173)
 TITLE_MAX = 60
 SLUG_CHARS = "abcdefghjkmnpqrstuvwxyz23456789"
@@ -3284,6 +3284,9 @@ const ICON = {
   book: '<path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/>',
   bot: '<path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/>',
   info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
+  folder: '<path d="M20 17a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3.9a2 2 0 0 1-1.69-.9l-.81-1.2a2 2 0 0 0-1.67-.9H8a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2Z"/><path d="M2 8v11a2 2 0 0 0 2 2h14"/>',
+  gear: '<path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/>',
+  updown: '<path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/>',
 };
 const ico = (n, c = 'size-5', sw = '1.75') => `<svg class="${c} shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[n]}</svg>`;
 const $ = id => document.getElementById(id);
@@ -3422,6 +3425,7 @@ async function copy(text, done = 'Copied') {
 
 async function load() {
   const text = await net(P + 'api/state', {}, NET.state, 'text');
+  if (/^project \S+ was deleted/.test(text)) { if (!U.leaving) location.replace('/'); return; }  // deleted on another device or tab (F173); this one moves on by itself
   SAVE.last = text; ingest(JSON.parse(text));
 }
 function ingest(d) {  // Taska's state on screen, with your changes that are still on their way (T160)
@@ -5718,9 +5722,28 @@ const ACT = {
     }));
   },
   'np-cancel': () => { $('npRow')?.remove(); $('drawerNew').hidden = false; },
+  // Settings › Projects (F173)
+  'p-new': () => { U.pNew = true; U.pErr = ''; U.renaming = null; renderProject(); $('pNewName')?.focus(); },
+  'p-new-cancel': () => { U.pNew = false; U.pNewText = ''; U.pErr = ''; renderProject(); },
+  'p-create': async () => {
+    const title = ($('pNewName')?.value || '').trim();
+    if (!title) return $('pNewName')?.focus();
+    try { const d = await projectCall('', {title}); location.assign(`/p/${encodeURIComponent(d.name)}/`); }  // made: open it
+    catch (ex) { U.pErr = ex.message; U.pNewText = title; renderProject(); $('pNewName')?.focus(); }
+  },
+  'p-rename': b => { U.renaming = b.dataset.slug; U.pNew = false; renderProject(); const f = $('pRename'); if (f) { f.focus(); f.select(); } },
+  'p-delete': async b => { try { await deleteProject(b.dataset.slug); } catch (ex) { toast(ex.message); } },
+  'p-restore': async b => {
+    try { const d = await projectCall('restore', {name: b.dataset.slug}); await loadProjects(); toast(`${d.title} is back`); } catch (ex) { toast(ex.message); }
+  },
+  'p-purge': async b => {
+    if (!confirmClick(b, `${desk() ? 'Click' : 'Tap'} again: it can't be undone`)) return;
+    try { await projectCall('purge', {name: b.dataset.slug}); await loadProjects(); toast('Deleted for good'); } catch (ex) { toast(ex.message); }
+  },
   guide: () => { if (desk()) return openProject('connect'); closeDrawer(); showGuide(); },
   'agent-info': () => { if (desk()) return openProject('agents'); closeDrawer(); U.sheet = 'agents'; dialog('Agents', agentsHtml()); },
-  about: () => { closeDrawer(); dialog('About', PBODY.about()); },  // where the data lives and what organizes it, out of the menu's way (B158)
+  about: () => { closeDrawer(); dialog('About', `<dl class="border-t border-zinc-200 text-sm dark:border-zinc-800">${[['Project', `${esc(projTitle())} <span class="font-mono text-[13px] text-zinc-500 dark:text-zinc-400">/p/${esc(S.project)}</span>`], ['Data', `<span class="font-mono text-[13px] break-all">${esc(S.file)}</span>`],
+    ['Organizer', S.org?.on ? 'Gemini · ' + esc(S.org.model) : 'off (set GEMINI_API_KEY and restart)']].map(([k, v]) => `<div class="grid grid-cols-[6rem_minmax(0,1fr)] items-baseline gap-4 border-b border-zinc-200 py-4 dark:border-zinc-800"><dt class="text-zinc-500 dark:text-zinc-400">${k}</dt><dd class="text-zinc-800 dark:text-zinc-200">${v}</dd></div>`).join('')}</dl>`); },  // where the data lives and what organizes it, out of the menu's way (B158)
   phone: () => { if (desk()) return openProject('phone'); closeDrawer(); showPhone(); },
   'new-key': async b => {
     if (!confirmClick(b, `${desk() ? 'Click' : 'Tap'} again: other devices will need the new link`)) return;
@@ -6080,8 +6103,8 @@ function showDesk() {
     el.classList.toggle('lg:col-start-1', wide); el.classList.toggle('lg:col-start-2', !wide); el.classList.toggle('lg:col-span-2', wide);
   }
   const rail = !WIDE.matches || D.sideHidden, over = rail && D.sideOpen;
-  $('rail').hidden = !rail;
-  $('drawer').hidden = rail && !over;
+  $('rail').hidden = !rail || page;  // Settings take the sidebar's place while open (B162): one column of places
+  $('drawer').hidden = (rail && !over) || page;
   $('drawer').classList.toggle('lg:relative', !over);
   for (const c of ['lg:fixed', 'lg:shadow-2xl']) $('drawer').classList.toggle(c, over);
   $('drawerShade').hidden = !over; $('drawerShade').style.left = over ? $('drawer').offsetWidth + 'px' : '';
@@ -6296,21 +6319,25 @@ function fullWidth(on) {
   else { D.full = false; render(); if (history.state?.full) writeURL(false, null); }  // reached by a link (B9): Back goes to where it was
 }
 
-// "This project" on the desktop (B162): a settings page, like those of GitHub, Linear or macOS. The sections are rows
-// on the left; the right shows one section at a time under its heading: what it is for, then its parts, with at
-// most one main action. Each section has its own address, so Back, Forward and reload work (/settings is Agents).
-// The phone shows the same things as sheets from its menu.
+// Settings (B162, option B): one page for everything you change now and then, like Linear's or macOS's. While it is
+// open it takes the sidebar's place, so there is only ever one column of places on the left. Its sections come in two
+// groups: this project (Agents, with connecting one; the Change log; the inputs you deleted, F177) and all projects
+// (Projects, Use on your phone, Voice spellings, the Organizer). The right shows one section at a time under its
+// heading: what it is for, then its parts, with at most one main action. Each section has its own address, so Back,
+// Forward and reload work; /settings is Agents, and the old /connect and /about lead to Agents and Projects. G S
+// opens it. The phone shows the same.
 const PSEC = {  // section: [address, icon, name, what it is for]
-  agents: ['settings', 'bot', 'Agents', 'The coding agents that work on this project, and whether they go on to the next item by themselves.'],
-  connect: ['connect', 'plug', 'Connect a coding agent', 'Do this once on each machine where a coding agent works. From then on the agent finds its work here and writes back what it did.'],
-  phone: ['phone', 'phone', 'Use on your phone', 'Open Taska on your phone from anywhere, with a link or with the key.'],
-  fixes: ['spellings', 'pencil', 'Voice spellings', "Every project's voice notes write these your way. To add one, select the wrong words in a voice note."],
+  agents: ['settings', 'bot', 'Agents', () => `The coding agents that work on ${esc(projTitle())}: who is here, whether they go on by themselves, and how to connect one more.`],
   log: ['log', 'history', 'Change log', 'Every change to this project, newest first. Undo puts back one of your own changes.'],
   deleted: ['deleted', 'trash', 'Deleted', 'Inputs you deleted, with the items that went with them. Restore puts them back as they were.'],
-  about: ['about', 'info', 'About', "This project's name, where its data is kept, and what organizes your inputs."],
+  projects: ['projects', 'folder', 'Projects', 'Every project on this Taska. Give a project any name; its address never changes, so agents and phone links keep working.'],
+  phone: ['phone', 'phone', 'Use on your phone', 'Open Taska on your phone from anywhere, with a link or with the key.'],
+  fixes: ['spellings', 'pencil', 'Voice spellings', "Every project's voice notes write these your way. To add one, select the wrong words in a voice note."],
+  organizer: ['organizer', 'sparkle', 'Organizer', 'What turns what you say into items, for every project.'],
 };
-const PSEC_AT = Object.fromEntries(Object.entries(PSEC).map(([sec, [path]]) => [path, sec]));  // address -> section
-const P_CACHE = {guide: null, log: null, logRev: -1, fixes: null, nav: '', body: ''};
+const PSEC_THIS = ['agents', 'log', 'deleted'];  // the rest are for all projects
+const PSEC_AT = {...Object.fromEntries(Object.entries(PSEC).map(([sec, [path]]) => [path, sec])), connect: 'connect', about: 'projects'};  // address -> section; /connect: Agents, at Connect
+const P_CACHE = {guide: null, log: null, logRev: -1, fixes: null, nav: '', body: '', projects: null, trash: null};
 const LOG_N = 300;  // the change log shows the latest 300 changes, here and on the phone
 // The voice spellings you corrected (F144): the same list in every project, each one can be forgotten.
 const fixesHtml = () => !P_CACHE.fixes ? '<p class="text-sm text-zinc-400">Loading…</p>' : P_CACHE.fixes.length
@@ -6328,16 +6355,28 @@ function loadLog() {  // the log as it is now: when it opens, and after each cha
   P_CACHE.logRev = S.rev;
   net(P + `log?n=${LOG_N}&ui=1`, {}, NET.get, 'text').then(l => { P_CACHE.log = l.trim().split('\n').filter(Boolean).reverse(); renderProject(); }, () => { if (D.page) notLoaded('the change log', loadLog); });
 }
+// Every project and the deleted ones, for Projects (F173). After a change the sidebar's list follows too.
+async function loadProjects() {
+  try {
+    const [live, gone] = await Promise.all(['/api/projects', '/api/projects/deleted'].map(u => fetch(u, {cache: 'no-store'}).then(r => r.json())));
+    P_CACHE.projects = live; P_CACHE.trash = gone; DR.list = [...live].sort((a, b) => b.t - a.t);
+  } catch (_) { return; }
+  if (D.page) renderProject();
+  if (desk()) { renderSidebar(); renderRail(); }
+}
 // Opening a section is a step Back undoes; history.state.page counts the steps, so Back to Items undoes them all.
 function openProject(sec) {
-  sec = Object.hasOwn(PSEC, sec) ? sec : 'agents';
+  const part = sec === 'connect' ? 'pConnect' : null;  // the old Connect is a part of Agents now
+  sec = sec === 'connect' ? 'agents' : sec === 'about' ? 'projects' : Object.hasOwn(PSEC, sec) ? sec : 'agents';
   const from = D.page && D.section;
   if (from !== sec) keepPlace();  // B9
   D.page = 'project'; D.sideOpen = false; U.go = null; D.section = sec;
   render();
   if (from !== sec) { $('projectBody').scrollTop = 0; writeURL(true, {v: viewPath(), page: from ? (history.state?.page || 0) + 1 : 1, tab: U.tab}); }  // tab: what Back to … goes to
-  if (sec === 'connect') net(P + 'agent?ui=1', {}, NET.get, 'text').then(g => { P_CACHE.guide = g; renderProject(); }, () => notLoaded('what the agent reads', () => openProject('connect')));
-  if (sec === 'fixes') loadFixes();
+  if (sec === 'agents' && !P_CACHE.guide) net(P + 'agent?ui=1', {}, NET.get, 'text').then(g => { P_CACHE.guide = g; renderProject(); }, () => {});
+  if (!P_CACHE.fixes) loadFixes();  // its count shows in the list of sections
+  if (sec === 'projects' || !P_CACHE.projects) loadProjects();
+  if (part) requestAnimationFrame(() => $(part)?.scrollIntoView({block: 'start'}));
 }
 // Redraw only what changed: a redraw on every poll would drop the focus, a selection or a half-done second click.
 // The sidebar, the rail and the drawer are drawn again only when they changed (T160): a refresh that replaces them
@@ -6346,35 +6385,55 @@ const DRAWN = new WeakMap();
 function draw(el, html) { if (DRAWN.get(el) === html && el.firstChild) return; DRAWN.set(el, html); el.innerHTML = html; }
 function setHtml(el, key, html) {
   if (P_CACHE[key] === html) return;
-  const sig = x => [x.dataset.act, x.dataset.sec, x.dataset.text, x.dataset.wrong, x.dataset.seq].join('|');
+  const sig = x => [x.dataset.act, x.dataset.sec, x.dataset.text, x.dataset.wrong, x.dataset.seq, x.dataset.slug].join('|');
   const had = el.contains(document.activeElement) && sig(document.activeElement);
   P_CACHE[key] = html; el.innerHTML = html;
   if (had) [...el.querySelectorAll('[data-act]')].find(x => sig(x) === had)?.focus({preventScroll: true});
 }
 // The parts of a section, under thin rules: a title and what it is for, then its box and button.
-const pPart = (title, about, body = '') => `<section class="border-t border-zinc-200 py-6 dark:border-zinc-800"><h2 class="text-[15px] font-semibold">${title}</h2>${about ? `<p class="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">${about}</p>` : ''}${body}</section>`;
+const pPart = (title, about, body = '', id = '') => `<section ${id ? `id="${id}" ` : ''}class="scroll-mt-6 border-t border-zinc-200 py-6 dark:border-zinc-800"><h2 class="text-[15px] font-semibold">${title}</h2>${about ? `<p class="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">${about}</p>` : ''}${body}</section>`;
 const pSetting = (title, about, control) => `<section class="flex items-center gap-6 border-t border-zinc-200 py-6 dark:border-zinc-800"><div class="min-w-0 flex-1"><h2 class="text-[15px] font-semibold">${title}</h2><p class="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">${about}</p></div>${control}</section>`;
 const pBox = (t, mono = true) => `<div class="mt-3 rounded-xl bg-zinc-100 px-3.5 py-3 leading-relaxed text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200 ${mono ? 'font-mono text-[13px] break-all' : 'text-sm break-words'}">${esc(t)}</div>`;
 const pCopy = (t, label, main = false) => `<button data-act="copy-text" data-text="${esc(t)}" class="${main ? PRIMARY : SECOND} mt-3">${ico('copy', main ? 'size-4.5' : 'size-4')}${label}</button>`;
 const pRuled = html => `<div class="border-t border-zinc-200 dark:border-zinc-800">${html}</div>`;
 const P_LOADING = pRuled('<p class="py-6 text-sm text-zinc-400">Loading…</p>');
+const keepGoingToggle = () => `<button data-act="auto" aria-pressed="${!!S.cfg?.auto}" aria-label="Keep going" class="group relative h-6.5 w-11 shrink-0 rounded-full bg-zinc-300 transition-colors hover:brightness-95 aria-pressed:bg-emerald-500 dark:bg-zinc-600 dark:hover:brightness-125"><span class="absolute top-0.75 left-0.75 size-5 rounded-full bg-white shadow transition-transform group-aria-pressed:translate-x-4.5"></span></button>`;
+const P_BTN = 'inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-zinc-100';
+const dayShort = t => t ? new Date(t).toLocaleDateString('en-US', {month: 'short', day: 'numeric'}) : '';
 const PBODY = {
   agents: () => {
-    const [tone] = agentState(S.agents, S.work), seen = agentsSeen(), ask = agentAsk();
+    const cmd = `curl -s ${BASE}/connect | sh`, far = S.remote && S.remote !== BASE ? `curl -s ${S.remote}/connect | sh` : '', ask = agentAsk(), seen = agentsSeen();
     return pRuled(`<div class="py-6">${agentCard()}</div>`)
-      + (tone === 'ok' ? '' : pPart('Get one working', `Open your coding agent in this project's folder and send it this. First time on that machine? <a href="${P}connect" data-act="psec" data-sec="connect" class="font-medium text-blue-600 hover:underline dark:text-blue-400">Connect it</a> first.`,
-        pBox(ask, false) + pCopy(ask, 'Copy', true)))
-      + pSetting('Keep going', 'Agents take the next item without stopping. Off: they stop after the current one.',
-        `<button data-act="auto" aria-pressed="${!!S.cfg?.auto}" aria-label="Keep going" class="group relative h-6.5 w-11 shrink-0 rounded-full bg-zinc-300 transition-colors hover:brightness-95 aria-pressed:bg-emerald-500 dark:bg-zinc-600 dark:hover:brightness-125"><span class="absolute top-0.75 left-0.75 size-5 rounded-full bg-white shadow transition-transform group-aria-pressed:translate-x-4.5"></span></button>`)
-      + (seen ? pPart('Seen in this project', '', `<ul class="mt-2 divide-y divide-zinc-100 dark:divide-zinc-800">${seen}</ul>`) : '');
-  },
-  connect: () => {
-    const cmd = `curl -s ${BASE}/connect | sh`, far = S.remote && S.remote !== BASE ? `curl -s ${S.remote}/connect | sh` : '', ask = agentAsk();
-    return pPart('Run this once', `On the machine where your agent works, in the project's folder. It saves this project's address in <code class="font-mono text-[13px]">.taska</code> and installs the Taska skill for Claude Code, Codex and Antigravity.`, pBox(cmd) + pCopy(cmd, 'Copy command', true))
+      + pSetting('Keep going', 'Agents take the next item without stopping. Off: they stop after the current one. The same switch sits on the Agent queue in the list.', keepGoingToggle())
+      + pPart('Connect a machine', `Once on each machine where a coding agent works, in the project's folder. It saves this project's address in <code class="font-mono text-[13px]">.taska</code> and installs the Taska skill for Claude Code, Codex and Antigravity.`, pBox(cmd) + pCopy(cmd, 'Copy command', true), 'pConnect')
       + (far ? pPart('From another network', 'On a machine outside this network, run this one instead. It carries the key.', pBox(far) + pCopy(far, 'Copy')) : '')
       + pPart('Or send it to the agent', "Open your coding agent in the project's folder and send it this. It reads the rest from Taska.", pBox(ask, false) + pCopy(ask, 'Copy'))
+      + (seen ? pPart('Seen in this project', '', `<ul class="mt-2 divide-y divide-zinc-100 dark:divide-zinc-800">${seen}</ul>`) : '')
       + `<details class="group border-t border-zinc-200 py-6 dark:border-zinc-800"><summary class="flex cursor-pointer items-center gap-1.5 text-[15px] font-semibold hover:text-zinc-600 dark:hover:text-zinc-300">${ico('right', 'size-4 text-zinc-400 transition-transform group-open:rotate-90')}What the agent reads</summary>
         <pre class="mt-3 overflow-x-auto rounded-xl bg-zinc-50 p-3.5 text-xs leading-relaxed whitespace-pre-wrap lg:scrollbar-thin dark:bg-zinc-900">${esc(P_CACHE.guide || 'Loading…')}</pre></details>`;
+  },
+  log: () => !P_CACHE.log ? P_LOADING : !P_CACHE.log.length ? pRuled(EMPTY('Nothing has changed yet.'))
+    : pRuled(`<div class="pt-2">${logHtml(P_CACHE.log)}</div>`) + (P_CACHE.log.length >= LOG_N ? `<p class="pt-4 text-[13px] text-zinc-400 dark:text-zinc-500">The latest ${LOG_N} changes</p>` : ''),
+  projects: () => {
+    if (!P_CACHE.projects) return P_LOADING;
+    const live = [...P_CACHE.projects].sort((a, b) => (b.name === S.project) - (a.name === S.project) || titleOf(a).localeCompare(titleOf(b))), gone = P_CACHE.trash || [];
+    const add = U.pNew ? `<div class="flex min-w-0 flex-1 flex-col gap-1.5"><div class="flex items-center gap-1.5"><input id="pNewName" class="${FIELD} h-10 py-1.5 text-sm" placeholder="Project name" aria-label="New project name" autocomplete="off" spellcheck="false" value="${esc(U.pNewText || '')}"><button data-act="p-create" class="h-10 shrink-0 rounded-xl bg-zinc-900 px-3.5 text-sm font-semibold text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200">Create</button><button data-act="p-new-cancel" aria-label="Cancel" class="grid size-10 shrink-0 place-items-center rounded-xl text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800">${ico('x', 'size-4')}</button></div>
+        ${U.pErr ? `<p class="px-1 text-xs text-red-600 dark:text-red-400">${esc(U.pErr)}</p>` : `<p class="px-1 text-xs text-zinc-500 dark:text-zinc-400">${KBD('↵')} create and open it · ${KBD('Esc')} cancel</p>`}</div>`
+      : `<button data-act="p-new" class="${SECOND} shrink-0">${ico('plus', 'size-4', '2')}New project</button><p class="min-w-0 text-[13px] leading-snug text-zinc-500 dark:text-zinc-400">Any name: spaces, 中文, emoji. Its address is made from the name once, e.g. <code class="font-mono">/p/home-budget</code>.</p>`;
+    const row = p => { const cur = p.name === S.project, ren = U.renaming === p.name;
+      return `<li class="flex min-h-16 items-center gap-3 py-3">${projTile(p.name, 'size-8 rounded-lg text-sm')}<div class="min-w-0 flex-1">${ren
+        ? `<input id="pRename" data-slug="${esc(p.name)}" class="${FIELD} h-10 max-w-[22rem] py-1.5 text-[15px] font-medium" value="${esc(titleOf(p))}" aria-label="New name for ${esc(titleOf(p))}" autocomplete="off" spellcheck="false">
+          <p class="mt-1.5 flex items-center gap-1 px-0.5 text-xs text-zinc-500 dark:text-zinc-400">${KBD('↵')}<span>save ·</span>${KBD('Esc')}<span>cancel · the address stays <code class="font-mono">/p/${esc(p.name)}</code></span></p>`
+        : `<p class="flex min-w-0 items-center gap-2"><span class="truncate text-[15px] font-semibold">${esc(titleOf(p))}</span>${cur ? '<span class="shrink-0 rounded-md bg-zinc-100 px-1.5 py-0.5 text-[11px] font-medium text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">This project</span>' : ''}</p>
+          <p class="mt-0.5 truncate font-mono text-xs text-zinc-500 dark:text-zinc-400">/p/${esc(p.name)} · ${p.open} open${cur && S.file ? ` · ${esc(S.file)}` : ''}</p>`}</div>
+        ${ren ? '' : `<button data-act="p-rename" data-slug="${esc(p.name)}" class="${P_BTN}">${ico('pencil', 'size-4')}Rename</button><button data-act="p-delete" data-slug="${esc(p.name)}" class="${P_BTN}">${ico('trash', 'size-4')}Delete</button>`}</li>`; };
+    return `<section class="flex items-center gap-4 border-t border-zinc-200 py-5 dark:border-zinc-800">${add}</section>
+      <ul class="divide-y divide-zinc-200 border-y border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">${live.map(row).join('')}</ul>
+      ${gone.length ? `<section class="pt-8"><h2 class="text-[15px] font-semibold">Deleted projects</h2><p class="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">A deleted project leaves the sidebar and stops giving work to agents. Nothing in it is lost: Restore brings it back as it was.</p>
+        <ul class="mt-3 flex flex-col gap-2">${gone.map(d => `<li class="flex items-center gap-3 rounded-xl bg-zinc-50 px-3 py-2.5 dark:bg-zinc-900"><span aria-hidden="true" class="grid size-8 shrink-0 place-items-center rounded-lg bg-zinc-400 text-sm leading-none font-bold text-white uppercase dark:bg-zinc-600">${esc([...String(d.title || '?')][0])}</span>
+          <div class="min-w-0 flex-1"><p class="truncate text-[15px] font-medium text-zinc-600 dark:text-zinc-300">${esc(d.title)}</p><p class="truncate text-xs text-zinc-500 dark:text-zinc-400">Deleted ${dayShort(d.t)} · ${plural(d.items, 'item')} · <span class="font-mono">/p/${esc(d.name)}</span></p></div>
+          <button data-act="p-restore" data-slug="${esc(d.name)}" class="${P_BTN}">${ico('undo', 'size-4', '2')}Restore</button><button data-act="p-purge" data-slug="${esc(d.name)}" class="${P_BTN} hover:text-red-600 dark:hover:text-red-400">Delete forever</button></li>`).join('')}</ul>
+        <p class="mt-3 text-xs text-zinc-500 dark:text-zinc-400">Delete forever asks for a second click. It is the only step that cannot be undone.</p></section>` : ''}`;
   },
   phone: () => {
     const link = S.remote ? S.remote + '/' : '';
@@ -6390,23 +6449,56 @@ const PBODY = {
       <button data-act="fix-remove" data-wrong="${esc(c.wrong)}" aria-label="Forget this spelling" title="Forget this spelling" class="grid size-9 shrink-0 place-items-center rounded-lg text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200">${ico('x', 'size-4')}</button></li>`).join('')}</ul>`,
   deleted: () => (S.deleted || []).length ? `<ul class="divide-y divide-zinc-200 border-y border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">${deletedRows()}</ul>`
     : pRuled(EMPTY('Nothing deleted. An input you delete comes here, with the items that went with it.')),
-  log: () => !P_CACHE.log ? P_LOADING : !P_CACHE.log.length ? pRuled(EMPTY('Nothing has changed yet.'))
-    : pRuled(`<div class="pt-2">${logHtml(P_CACHE.log)}</div>`) + (P_CACHE.log.length >= LOG_N ? `<p class="pt-4 text-[13px] text-zinc-400 dark:text-zinc-500">The latest ${LOG_N} changes</p>` : ''),
-  about: () => `<dl class="border-t border-zinc-200 text-sm dark:border-zinc-800">${[['Project', `${esc(projTitle())} <span class="font-mono text-[13px] text-zinc-500 dark:text-zinc-400">/p/${esc(S.project)}</span>`], ['Data', `<span class="font-mono text-[13px] break-all">${esc(S.file)}</span>`],
-    ['Organizer', S.org?.on ? 'Gemini · ' + esc(S.org.model) : 'off (set GEMINI_API_KEY and restart)']].map(([k, v]) => `<div class="grid grid-cols-[8rem_minmax(0,1fr)] items-baseline gap-4 border-b border-zinc-200 py-4 dark:border-zinc-800"><dt class="text-zinc-500 dark:text-zinc-400">${k}</dt><dd class="text-zinc-800 dark:text-zinc-200">${v}</dd></div>`).join('')}</dl>`,
+  organizer: () => S.org?.on
+    ? pPart('On', `Gemini (${esc(S.org.model)}) reads each input you send and turns it into items, or updates the ones that exist, in every project. What it does with an input shows under it in Inputs, with Undo.`)
+    : pPart('Off', 'Your coding agent files what you send: it reads new inputs first when it asks for work. To have them filed as soon as you send them, set GEMINI_API_KEY where Taska runs and restart it.'),
+};
+const PSEC_RIGHT = {  // what a section's row in the list says on its right
+  agents: () => esc(agentState(S.agents, S.work)[1]), projects: () => P_CACHE.projects ? P_CACHE.projects.length : '',
+  fixes: () => P_CACHE.fixes?.length || '', organizer: () => S.org?.on ? 'On' : 'Off', deleted: () => (S.deleted || []).length || '',
 };
 function renderProject() {
   if (!D.page) return;
   const sec = D.section, [, , name, about] = PSEC[sec];
   if (sec === 'log' && P_CACHE.logRev !== S.rev) loadLog();  // the project changed, so did its log
-  const row = ([k, [path, icon, label]]) => `<a href="${P}${path}" data-act="psec" data-sec="${k}" ${k === sec ? 'aria-current="page" ' : ''}class="flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-sm text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 aria-[current=page]:bg-zinc-100 aria-[current=page]:font-semibold aria-[current=page]:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800/60 dark:hover:text-zinc-100 dark:aria-[current=page]:bg-zinc-800 dark:aria-[current=page]:text-zinc-50">${ico(icon, 'size-4 opacity-70')}<span class="min-w-0 flex-1 truncate">${label}</span></a>`;
-  setHtml($('projectNav'), 'nav', `<div class="flex h-14 shrink-0 items-center px-2"><button data-act="project-back" class="flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800">${ico('left', 'size-4')}Back to ${D.compose ? 'New input' : TAB_NAME[U.tab]}${KBD('Esc')}</button></div>
-    <div class="flex items-center gap-2.5 px-4 pt-2 pb-4">${projTile(S.project, 'size-8 rounded-lg text-sm')}<div class="min-w-0"><p class="truncate text-[15px] leading-tight font-semibold">${esc(projTitle())}</p><p class="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">This project</p></div></div>
-    <div class="flex flex-col gap-0.5 px-2">${Object.entries(PSEC).map(row).join('')}</div>`);
+  const row = k => { const [path, icon, label] = PSEC[k], on = k === sec;
+    return `<a href="${P}${path}" data-act="psec" data-sec="${k}" ${on ? 'aria-current="page" ' : ''}class="flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-sm text-zinc-600 hover:bg-zinc-200/60 hover:text-zinc-900 data-pressed:bg-zinc-200/80 aria-[current=page]:bg-zinc-200/70 aria-[current=page]:font-semibold aria-[current=page]:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800/60 dark:hover:text-zinc-100 dark:aria-[current=page]:bg-zinc-800 dark:aria-[current=page]:text-zinc-50">${ico(icon, 'size-4 opacity-70')}<span class="min-w-0 flex-1 truncate">${label}</span><span class="max-w-28 truncate text-xs font-normal text-zinc-400 tabular-nums dark:text-zinc-500">${PSEC_RIGHT[k]?.() ?? ''}</span></a>`; };
+  const group = t => `<div class="px-3.5 pt-5 pb-1.5 text-[11px] font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">${t}</div>`;
+  setHtml($('projectNav'), 'nav', `<div class="flex h-14 shrink-0 items-center px-2"><button data-act="project-back" class="flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm text-zinc-600 hover:bg-zinc-200/60 dark:text-zinc-300 dark:hover:bg-zinc-800">${ico('left', 'size-4')}Back to ${D.compose ? 'New input' : TAB_NAME[U.tab]}${KBD('Esc')}</button></div>
+    <h1 class="px-4 pt-1 text-[19px] font-semibold tracking-tight">Settings</h1>
+    ${group('This project')}<div class="flex items-center gap-2 px-3.5 pb-1.5">${projTile(S.project, 'size-5 rounded-md text-[11px]')}<span class="min-w-0 truncate text-sm font-semibold">${esc(projTitle())}</span></div>
+    <div class="flex flex-col gap-0.5 px-2">${PSEC_THIS.map(row).join('')}</div>
+    ${group('All projects')}<div class="flex flex-col gap-0.5 px-2">${Object.keys(PSEC).filter(k => !PSEC_THIS.includes(k)).map(row).join('')}</div>
+    <button data-act="keys" class="mt-auto flex h-12 shrink-0 items-center gap-2 border-t border-zinc-200 px-4 text-[13px] text-zinc-500 hover:text-zinc-800 dark:border-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200">${ico('keyboard', 'size-4')}<span class="flex-1 text-left">Keyboard shortcuts</span>${KBD('?')}</button>`);
   setHtml($('projectBody'), 'body', `<div class="mx-auto w-full max-w-[46rem] px-8 pt-9 pb-16"><header class="pb-6"><h1 class="text-[22px] leading-tight font-semibold tracking-tight">${name}</h1>
-    <p class="mt-2 text-[15px] leading-relaxed text-zinc-500 dark:text-zinc-400">${about}</p></header>${PBODY[sec]()}</div>`);
+    <p class="mt-2 text-[15px] leading-relaxed text-zinc-500 dark:text-zinc-400">${typeof about === 'function' ? about() : about}</p></header>${PBODY[sec]()}</div>`);
+  if (U.renaming && !$('pRename') && sec === 'projects') U.renaming = null;
 }
-
+// Projects (F173): new, rename, delete, restore and delete forever, in place. Rename and New project use a field in
+// the row (R139: no browser dialogs); every change says so with Undo where there is one.
+async function projectCall(what, body) {
+  const d = await (await fetch(`/api/projects${what ? '/' + what : ''}`, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)})).json();
+  if (!d.ok) throw new Error(d.error || 'Not saved');
+  return d;
+}
+async function renameProject(slug, title) {
+  const d = await projectCall('rename', {name: slug, title});
+  if (slug === S.project) { S.title = d.title; render(); }
+  await loadProjects();
+  return d;
+}
+async function deleteProject(slug) {
+  if (slug === S.project) U.leaving = true;
+  let d;
+  try { d = await projectCall('delete', {name: slug}); } catch (ex) { U.leaving = false; throw ex; }
+  if (slug === S.project) {  // this project is gone: on to another one, whose Projects offers it back
+    const next = (P_CACHE.projects || []).find(p => p.name !== slug);
+    try { sessionStorage.setItem('taska.deleted', JSON.stringify({name: slug, title: d.title})); } catch (_) {}
+    return location.assign(next ? `/p/${encodeURIComponent(next.name)}/projects` : '/');
+  }
+  await loadProjects();
+  toast(`Deleted ${d.title}`, () => projectCall('restore', {name: slug}).then(loadProjects).then(() => toast(`${d.title} is back`), ex => toast(ex.message)));
+}
 // The ⋯ menu on the desktop: a popover with the actions as rows, each with its key, then type, priority, status.
 function itemMenuDesk(n) {
   const it = byN.get(n);
@@ -6448,7 +6540,7 @@ function movePicker(n) {
 }
 
 const KEYS = [
-  ['Move', [['J / K', 'Next or previous item'], ['⇧J / ⇧K', 'Next or previous item that needs you (Go through)'], ['O or ↵', 'Full width; Esc goes back'], ['Space', 'Scroll the item'], ['G then I N A R', 'Items, Inputs, Archive, Rules'], ['G then P', 'Switch project (type to find it)'], ['[', 'Show or hide the sidebar']]],
+  ['Move', [['J / K', 'Next or previous item'], ['⇧J / ⇧K', 'Next or previous item that needs you (Go through)'], ['O or ↵', 'Full width; Esc goes back'], ['Space', 'Scroll the item'], ['G then I N A R', 'Items, Inputs, Archive, Rules'], ['G then P', 'Switch project (type to find it)'], ['G then S', 'Settings'], ['[', 'Show or hide the sidebar']]],
   ['Act on the selected item', [['A', "The item's next step: Accept, Approve, Answer or Reply"], ['R', 'Reply or add to it'], ['N', 'Not yet: reopen and say what is missing'], ['1–9, ⌘↵', 'Pick a choice, send the answer'], ['D · W · L', "Done · Won't do · Later / Now"], ['E / ⇧E', 'Archive or unarchive / archive every finished item'], ['S · P · T', 'Status, priority, type (the ⋯ menu)'], ['M · ⇧C', 'Move under… · Copy for agent'], ['I · ⇧D · ⇧A', 'Edit · New doc · Add subitem'], ['.', 'All actions'], ['Z', 'Undo your last action here, again for the one before; older changes: Change log']]],
   ['Mouse', [['Hover a row', 'Its quick actions, always in the same places'], ['Right-click a row', 'Its menu, at the pointer'], ['Click cut-off words', 'Show them all'], ['Drag a pane edge', 'Resize; double-click for the default']]],
   ['Write and find', [['C', 'New input to the project'], ['V', 'Voice note for the selected item; V again stops'], ['⇧V', 'New input by voice; ⇧V again stops and sends'], ['⌥V', 'Voice note while typing in the box'], ['↵', 'While recording: stop, into the box'], ['⇧↵ or ⌘↵', 'Send; while recording: stop and send'], ['/', 'Search'], ['F', 'Filters'], ['?', 'This sheet'], ['Esc', 'Step back one level']]],
@@ -6504,6 +6596,7 @@ function deskKey(e) {
     const tab = {i: 'items', n: 'inputs', a: 'archive', r: 'rules'}[k.toLowerCase()];
     if (tab) { e.preventDefault(); return setTab(tab); }
     if (k.toLowerCase() === 'p') { e.preventDefault(); return projectSwitcher(); }
+    if (k.toLowerCase() === 's') { e.preventDefault(); return openProject(D.page ? D.section : 'agents'); }  // Settings (B162)
   }
   const act = (name, data = {}) => { e.preventDefault(); ACT[name]({dataset: {n: String(n), ...data}}, e); };
   const status = v => it && act('status', {v});
@@ -6966,6 +7059,20 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && (U.searching || U.q) && document.activeElement === $('q') && !desk()) searchMode(false);
 });
 
+document.addEventListener('keydown', async e => {  // Settings › Projects: Enter makes or saves, Esc stops (F173)
+  const id = e.target.id;
+  if (id !== 'pNewName' && id !== 'pRename') return;
+  if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); if (id === 'pNewName') ACT['p-new-cancel'](); else { U.renaming = null; renderProject(); } return; }
+  if (e.key !== 'Enter' || e.isComposing) return;
+  e.preventDefault(); e.stopImmediatePropagation();
+  if (id === 'pNewName') return ACT['p-create']();
+  const slug = e.target.dataset.slug, title = e.target.value.trim(), was = titleOf((P_CACHE.projects || []).find(p => p.name === slug) || {name: slug});
+  if (!title || title === was) { U.renaming = null; return renderProject(); }
+  try {
+    U.renaming = null; await renameProject(slug, title);
+    toast(`Renamed to ${title}`, () => renameProject(slug, was).then(() => toast(`Back to ${was}`), ex => toast(ex.message)));
+  } catch (ex) { U.renaming = slug; renderProject(); toast(ex.message); const f = $('pRename'); if (f) { f.value = title; f.focus(); } }
+}, true);
 document.addEventListener('keydown', e => {  // the new project field: Enter makes it, Esc stops (B131)
   if (e.target.id !== 'npName') return;
   if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); ACT['np-create'](); }
@@ -7047,7 +7154,7 @@ addEventListener('pagehide', () => {  // where you were in the list, for the rel
 // agent does (/connect and /log mean something to agents too). Changing tab, opening a document, a section of This
 // project or New input, an item on the phone and full width are steps Back can undo, and so is a link to an item (B9);
 // choosing items in the list on the desktop (a click, J/K), search and filters only rewrite the address.
-const VIEW = /^(inputs|archive|rules|new|settings|connect|phone|spellings|log|deleted|about)$/;
+const VIEW = /^(inputs|archive|rules|new|settings|connect|phone|spellings|log|deleted|about|projects|organizer)$/;
 const URLS = {applying: false, selfBack: false, hold: false};  // hold: a link is on its way, its step is written once it is there
 // On the phone the change log has its own address too (B150), so Back from an item you opened there comes back to it.
 const viewPath = () => desk() && D.page ? PSEC[D.section][0] : U.doc && !U.docEdit ? `D${U.doc}` : desk() && D.compose ? 'new'
@@ -7206,6 +7313,10 @@ load().then(() => {
   }
   writeURL(false);  // tidy the address: #B03 becomes /B03. Nothing is picked for you: the box is a new input until you open an item (F119)
   restoreOutbox();  // inputs that did not go out last time (B151)
+  try {  // you deleted the project you were in: this is where you landed, and Undo brings it back (F173)
+    const gone = JSON.parse(sessionStorage.getItem('taska.deleted') || 'null');
+    if (gone) { sessionStorage.removeItem('taska.deleted'); toast(`Deleted ${gone.title}`, () => projectCall('restore', {name: gone.name}).then(() => location.assign(`/p/${encodeURIComponent(gone.name)}/`), ex => toast(ex.message))); }
+  } catch (_) {}
   restoreVoice();  // voice notes that did not go out last time (T101)
   poll();
 });
