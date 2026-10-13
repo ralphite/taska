@@ -4627,10 +4627,18 @@ async function sendCorrect() {
   const c = U.correct, right = $('text').value.replace(/\s+/g, ' ').trim();
   if (!right) return $('text').focus();
   try {
+    const before = byR.get(c.id)?.text, had = (await (await fetch('/api/corrections', {cache: 'no-store'})).json()).find(x => x.wrong === c.wrong);  // A3: what Undo puts back
     const d = await (await fetch(P + 'api/op', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({op: 'correct', id: c.id, wrong: c.wrong, right, v: c.v})})).json();
     if (!d.ok) return toast((d.res || []).find(x => x.startsWith('err')) || d.error || 'Not saved');
     $('text').value = ''; saveDraft(); grow(); U.correct = null; getSelection()?.removeAllRanges();
-    await load(); toast(`Fixed ${c.id}. Voice notes will write “${right}” from now on`);
+    await load();
+    const run = pushUndo(`Fix “${c.wrong}” → “${right}” in ${c.id}`, async () => {  // A3: Z puts back the words and the spelling
+      const r = byR.get(c.id);
+      if (r && before != null && r.text !== before) await op({op: 'amend', id: c.id, mode: 'edit', v: r.v || 0, text: before});
+      await setFix(had ? {wrong: c.wrong, right: had.right} : {wrong: c.wrong});
+      toast(`Put back “${c.wrong}” in ${c.id}${had ? '' : ', and forgot the spelling'}`);
+    });
+    toast(`Fixed ${c.id}. Voice notes will write “${right}” from now on`, run);
     if (desk() && D.compose) renderDetail();
     if (desk()) $('text').focus({preventScroll: true});
     P_CACHE.fixes = null;
@@ -4764,7 +4772,8 @@ function renderComposer() {
   const n = scopeN(), it = n && byN.get(n), dt = docTarget(), dOpen = !U.correct && !U.amend && !dt && docOpen(), t = $('text'), ticks = U.correct || U.amend || dt || dOpen ? [] : ticked(n);
   let line = '', ph = S.project ? `Write to ${projTitle()}…` : 'Write anything…', send = 'Send';  // the box says whom it writes to, on the phone too (B157)
   if (U.correct && byR.has(U.correct.id)) {  // F144: correcting a few words of a voice note
-    line = scopeLine('pencil', `Correct “${esc(U.correct.wrong)}”`, `in ${U.correct.id} · remembered for every project`, scopeX('correct-cancel', 'Stop correcting'));
+    const right = t.value.replace(/\s+/g, ' ').trim();  // A3: before → after, as you type
+    line = scopeLine('pencil', `Correct “${esc(U.correct.wrong)}”${right ? ` → “${esc(right.slice(0, 60))}”` : ''}`, `in ${U.correct.id} · remembered for every project`, scopeX('correct-cancel', 'Stop correcting'));
     ph = `The right words for “${U.correct.wrong}”…`; send = 'Save';
   } else if (U.amend && byR.has(U.amend.id)) {  // B136: editing or adding to an input you sent
     const r = byR.get(U.amend.id), edit = U.amend.mode === 'edit';
@@ -7207,11 +7216,14 @@ addEventListener('beforeunload', e => {  // leaving with an edit or a document n
 // that input and is remembered for every project's transcriptions.
 document.addEventListener('selectionchange', () => {
   const sel = getSelection(), text = sel?.toString().replace(/\s+/g, ' ').trim();
+  // A3: the selection went (a click elsewhere) before you wrote anything into the box: no more correcting, so the next
+  // thing you write is not taken for the right words
+  if (U.correct && U.correctSel && !text && !$('text').value.trim() && !$('composer').contains(document.activeElement)) { U.correctSel = false; return cancelCorrect(); }
   if (!text || text.length > 60) return;
   const el = (sel.anchorNode?.nodeType === 1 ? sel.anchorNode : sel.anchorNode?.parentElement)?.closest('[data-voice]');
   const r = el && el.contains(sel.focusNode) && byR.get(el.dataset.voice);
   if (!r || !r.text.includes(text) || (U.correct?.id === r.id && U.correct.wrong === text)) return;
-  U.correct = {id: r.id, wrong: text, v: r.v || 0}; U.amend = null;
+  U.correct = {id: r.id, wrong: text, v: r.v || 0}; U.amend = null; U.correctSel = true;
   renderComposer(); if (desk() && D.compose) renderDetail();
 });
 // Selecting text inside an open document offers to comment on exactly that text.
