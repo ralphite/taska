@@ -3107,7 +3107,7 @@ document.addEventListener('keydown', e => { if (desk() && !/INPUT|TEXTAREA/.test
 // What just happened, in one line. With `act` it carries a button for a few seconds: Undo, or `label`. An error is
 // red, is read out at once (role=alert) and stays longer (T160).
 const SAVE = {q: Promise.resolve(), pend: [], failed: [], last: '', down: 0};  // saving behind you: see "saving" below
-function toast(text, act, {error = false, label = 'Undo'} = {}) {
+function toast(text, act, {error = false, label = 'Undo', ms = 0} = {}) {  // ms: how long it stays, if not the usual
   const el = $('toast');
   if (act && label === 'Undo' && !act.entry) act = pushUndo(text, act);  // every Undo is also Z's, and runs once (T113 A7)
   if (!error) SAVE.failed = [];  // the red toast this one replaces takes its Retry along
@@ -3128,7 +3128,7 @@ function toast(text, act, {error = false, label = 'Undo'} = {}) {
   }
   if (act) el.querySelector('button').onclick = () => { el.hidden = true; act(); };
   el.hidden = false;
-  clearTimeout(toast.t); toast.t = setTimeout(() => { el.hidden = true; if (error) SAVE.failed = []; }, error ? 8000 : act ? 5000 : 2600);
+  clearTimeout(toast.t); toast.t = setTimeout(() => { el.hidden = true; if (error) SAVE.failed = []; }, ms || (error ? 8000 : act ? 5000 : 2600));
 }
 
 async function copy(text, done = 'Copied') {
@@ -5571,7 +5571,7 @@ const ACT = {
       ACT.goto({dataset: {n: String(n)}}); if (!desk()) itemMenu(n); toast(`${code(n)} made from ${r.id}. Set its type and priority${desk() ? '' : ' here'}.`, run);
     } catch (_) {}
   },
-  'archive-all': () => {  // no question first: it happens at once, and Undo stays in the same spot for 3 seconds
+  'archive-all': () => {  // no question first: it happens at once; Undo stays 10 seconds in the same spot and in the toast (B154), then Z or the menu's Undo
     const ids = visible().filter(it => !it.archived && CLOSED(it.status)).map(it => it.n);
     if (!ids.length) return;
     const all = on => ({op: 'archive', refs: ids.map(code), on});  // one change, however many (T113 A5)
@@ -5580,7 +5580,7 @@ const ACT = {
     let h = 0;
     for (let x = z; x && (x === z || !x.dataset.zone); x = x.nextElementSibling) h += x.offsetHeight;
     U.archHold = h ? {h, sig: listSig()} : null;  // B3: the rows above don't slide under the pointer, so a second click lands where it was aimed
-    const u = U.undoArch = {ids, left: 3}, gone = () => { clearInterval(u.timer); if (U.undoArch === u) U.undoArch = null; U.archHold = null; };
+    const u = U.undoArch = {ids, left: 10}, gone = () => { clearInterval(u.timer); if (U.undoArch === u) U.undoArch = null; U.archHold = null; };  // 3 s was too short to reach on a phone (B154)
     u.run = pushUndo(`${plural(ids.length, 'item')} archived`, () => {  // the bar and Z put the whole batch back
       gone(); toast(`Put back ${plural(ids.length, 'item')}`);
       return optimistic(ids.map(n => ({n, f: {archived: false}})), () => op(all(false)), ex => notSaved(ex, u.run));
@@ -5594,6 +5594,7 @@ const ACT = {
       const left = ((await op(all(true))).res[0].match(/not archived: (.+)$/) || [])[1];  // reopened meanwhile: they stay
       if (left) toast(`${left.split(' ').length === 1 ? `${left} isn't` : `${left.split(' ').join(', ')} aren't`} finished any more, so ${left.split(' ').length === 1 ? 'it stays' : 'they stay'}`);
     }, ex => { gone(); forget(u.run); renderItems(); notSaved(ex, () => ACT['archive-all']()); });
+    toast(`Archived ${plural(ids.length, 'item')}`, u.run, {ms: 10000});  // where every Undo is, at the thumb on a phone (B154)
   },
   'archive-undo': () => U.undoArch?.run(),
   'search-in': b => { U.tabView[b.dataset.tab] = {q: U.q}; setTab(b.dataset.tab); },  // A9: the same search there, as the hint counted it (no filters)
