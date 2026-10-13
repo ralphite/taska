@@ -5652,6 +5652,16 @@ function fitTabs() {
   for (const c of counts) { if (list.scrollWidth <= list.clientWidth + 1) break; c.hidden = true; }
 }
 
+// B4: words (and files) you wrote in the box for an item go with your decision on it (Accept, Approve, Not yet, Won't do),
+// as they go with an answer (B145): one decision, one send. Undoing the decision leaves the note sent.
+function noteWith(n) {
+  if (scopeN() !== n || U.amend || U.correct || docOpen() || R.rec) return false;
+  const text = $('text').value.trim(), files = U.files;
+  if (!text && !files.length) return false;
+  outboxPush({text, files, scope: code(n), from: null});
+  $('text').value = ''; U.files = []; saveDraft(); grow(); renderComposer(); flushOutbox();
+  return true;
+}
 const SAID = {open: 'is open', doing: 'is in progress', done: 'is done', dropped: "is marked won't do", later: 'moved to Later', now: 'is back to now', review: 'is in review', proposed: 'is proposed'};
 const saidOf = (f, v, before, ref) => f === 'archived' ? (v ? 'archived' : 'unarchived') : f === 'status' && v === 'done' && before === 'review' ? 'accepted'
   : f === 'status' && v === 'open' && before === 'proposed' ? 'approved' : f === 'pri' ? `is now ${v}` : f === 'type' ? `is now ${LETTER[v]}${ref.slice(1)}, ${/^[aeiou]/.test(v) ? 'an' : 'a'} ${v}`
@@ -5681,7 +5691,8 @@ function change(n, f, v, {said, note} = {}) {
   if (settles) { U.go.done.add(n); U.go.how[n] = said.replace(/^is (marked )?/, '').replace(/^./, c => c.toUpperCase()); U.go.undo[n] = run; }
   if (!settles && (n !== U.open || (desk() && LIST.in))) holdRow(n, `${said.replace(/^./, c => c.toUpperCase())}`, run);  // the phone's list is under the card or the row you swiped (B148)
   const left = f === 'status' && v === 'done' ? openKids(n) : 0;  // done before its subitems: say so (B147)
-  toast(`${ref} ${said}${left ? ` · ${plural(left, 'subitem')} still open` : ''}${note ? `. ${note}.` : ''}`, run);
+  const noted = f === 'status' && noteWith(n);  // B4: what you wrote for it goes with your decision
+  toast(`${ref} ${said}${noted ? ', with your note' : ''}${left ? ` · ${plural(left, 'subitem')} still open` : ''}${note && !noted ? `. ${note}.` : ''}`, run);
   const saved = optimistic([{n, f: {[f]: v}}], () => op({op: 'set', ref, f: {[f]: wire(f, v)}}), ex => {  // taken back
     forget(run);
     if (U.settle.delete(n)) renderItems();
@@ -5791,7 +5802,8 @@ const ACT = {
     const n = Number(b.dataset.n);
     if (desk() && U.open !== n) openItem(n);
     if (!desk() && U.open !== n && U.peek !== n) { closeSwipe(); peek(n, {focus: false}); }
-    change(n, 'status', 'doing', {said: 'reopened', note: 'Say what is missing'}); U.ask = n; U.scopeOff = false; renderComposer(); $('text').focus();
+    const typed = scopeN() === n && !!($('text').value.trim() || U.files.length);  // B4: what you wrote already is what is missing: it goes with it
+    change(n, 'status', 'doing', {said: 'reopened', note: 'Say what is missing'}); if (!typed) U.ask = n; U.scopeOff = false; renderComposer(); $('text').focus();
   },
   'card-copy': b => copyItem(Number(b.dataset.n)),  // the card stays: copying is no reason to lose your place (B153)
   projects: () => openDrawer(),
