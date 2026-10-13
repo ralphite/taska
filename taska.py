@@ -893,6 +893,8 @@ class Store:
             for f in op.get("files") or []:  # images or other files shown with the message, uploaded first with POST /api/file
                 fid = os.path.basename(str(f.get("f", "") if isinstance(f, dict) else f))
                 if not os.path.isfile(os.path.join(self.fdir, fid)):
+                    if by == "org":  # the organizer took a link in your words for a file (B172): the link stays in the text
+                        continue
                     raise Err(f"unknown file {fid}: upload it first with POST /api/file?name=<name>")
                 files.append({"f": fid, "name": fid.split("-", 1)[-1], "mime": mimetypes.guess_type(fid)[0] or "application/octet-stream"})
             self.emit({"k": "say", "n": it["n"], "by": by, "kind": kind, "text": text, "src": src, **({"files": files} if files else {}), **keep})

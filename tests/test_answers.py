@@ -117,3 +117,26 @@ class AnswerTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
+
+
+class OrganizerLinkTests(unittest.TestCase):
+    """A screenshot link in the user's words is not a file the organizer can attach (B172)."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.s = taska.Store(str(Path(self.tmp.name) / 'taska.jsonl'))
+        self.s.name = 'qa'
+        self.s.run_all(taska.parse_dsl('new bug The list is messy'), 'you')
+
+    def tearDown(self):
+        self.s.out.close()
+        self.tmp.cleanup()
+
+    def test_the_organizer_keeps_the_note_when_a_file_is_unknown(self):
+        lines, _ = self.s.run_all(taska.parse_dsl('B1 say files=0123abcd.png See http://localhost:8088/screenshot/0123abcd.png'), 'org')
+        self.assertTrue(lines[0].startswith('ok'), lines)
+        self.assertIn('screenshot/0123abcd.png', self.s.items[1]['thread'][-1]['text'])
+
+    def test_an_agent_still_hears_about_an_unknown_file(self):
+        lines, _ = self.s.run_all(taska.parse_dsl('B1 say files=0123abcd.png See it'), 'claude-code')
+        self.assertIn('unknown file', lines[0])
