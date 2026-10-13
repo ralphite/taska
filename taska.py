@@ -597,6 +597,17 @@ class Store:
                 e["from"] = "rules"
             self.emit(e)
             return f"ok {rid}", "Received"
+        if name == "correct":  # F144: the wrong words in an input, fixed there and remembered for every project
+            rid = str(op.get("id") or "")
+            inp = self.inputs.get(rid)
+            if not inp:
+                raise Err(f"unknown input {rid}")
+            wrong, right = " ".join(str(op.get("wrong") or "").split()), " ".join(str(op.get("right") or "").split())
+            if not wrong or wrong not in inp["text"]:
+                raise Err(f"{rid} does not say that")
+            if HUB:
+                HUB.correct(wrong, right)
+            op, name = {"op": "amend", "id": rid, "mode": "edit", "v": op.get("v"), "text": inp["text"].replace(wrong, right)}, "amend"
         if name == "amend":
             rid = str(op.get("id") or "")
             inp = self.inputs.get(rid)
@@ -1352,13 +1363,16 @@ def transcribe(store, data, mime, scope):
         for it in pool:
             words.update(re.findall(r"[A-Za-z_][\w./\-]{2,}", it["title"] + " " + it["body"]))
         titles = [it["title"] for it in pool[:40]]
+    fixes = HUB.corrections() if HUB else []
     prompt = ("Transcribe this voice note verbatim. The speaker mixes Chinese and English while talking about software work. "
               "Write code identifiers, file paths, commands and product names the way they are normally written "
               "(Codex, pytest, tests/test_export.py). Do not summarize, translate or tidy the wording. "
               "Write Chinese in Simplified characters. If a word is unclear, give your best guess followed by (?). "
               "Put only the spoken words in transcript: no preface, notes or timestamps. "
               "If nobody speaks (silence, noise, a beep, music), the transcript is empty.\n"
-              "The terms and titles below only help with spelling. Never write them unless they are spoken.\n"
+              "The terms and titles below only help with spelling. Never write them unless they are spoken.\n" +
+              ("Spellings the user corrected before (write the right form when you hear it): " +
+               "; ".join(f"{c['right']} (not {c['wrong']})" for c in fixes[-40:]) + "\n" if fixes else "") +
               "Terms from the project (prefer these spellings): " + ", ".join(w for w, _ in words.most_common(60)) +
               "\nRelated item titles: " + "; ".join(titles))
     # The model drifts into Traditional characters unless told so in Chinese, in the schema itself. The source stays
@@ -1367,7 +1381,11 @@ def transcribe(store, data, mime, scope):
     tr = gemini("\u4f60\u662f\u8bed\u97f3\u8f6c\u5199\u5458\u3002\u4e2d\u6587\u4e00\u5f8b\u7528\u7b80\u4f53\u5b57\u4e66\u5199\uff0c\u7edd\u4e0d\u7528\u7e41\u4f53\u5b57\u3002",
                   [{"text": prompt}, {"inline_data": {"mime_type": mime.split(";")[0], "data": base64.b64encode(data).decode()}}], think=0, field="transcript",
                   hint="\u9010\u5b57\u8f6c\u5199\uff0c\u4e2d\u6587\u7528\u7b80\u4f53\u5b57")
-    return "" if echoed(tr, titles) else tr
+    if echoed(tr, titles):
+        return ""
+    for c in fixes:  # what the user fixed once stays fixed (F144)
+        tr = tr.replace(c["wrong"], c["right"])
+    return tr
 
 
 def echoed(tr, titles):
@@ -1421,11 +1439,40 @@ class Hub:
                 self.key = f.read().strip()
         except FileNotFoundError:
             self.new_key()
+        try:
+            with open(os.path.join(self.root, "corrections.json"), encoding="utf-8") as f:
+                self.fixes = [c for c in json.load(f) if isinstance(c, dict) and c.get("wrong") and c.get("right")]
+        except (FileNotFoundError, ValueError):
+            self.fixes = []
         for name in sorted(os.listdir(self.root)):
             if NAME.fullmatch(name) and os.path.isfile(os.path.join(self.root, name, "taska.jsonl")):
                 self.open(name)
         if not self.projects:
             self.add("default")
+
+    # Spelling fixes the user made to voice transcripts (F144): one list for every project, kept in the data root.
+    # Transcription is told about them, and puts the right form in for a wrong one it still writes.
+    def corrections(self):
+        with self.lock:
+            return [dict(c) for c in self.fixes]
+
+    def correct(self, wrong, right=None):
+        """Remember wrong -> right (or forget wrong, when right is None)."""
+        wrong = " ".join(str(wrong or "").split())
+        if not wrong or len(wrong) > 60:
+            raise Err("pick the wrong words: up to 60 characters")
+        if right is not None:
+            right = " ".join(str(right).split())
+            if not right or len(right) > 60 or right == wrong:
+                raise Err("write the right words: up to 60 characters, different from the wrong ones")
+        with self.lock:
+            self.fixes = [c for c in self.fixes if c["wrong"] != wrong]
+            if right is not None:
+                self.fixes.append({"wrong": wrong, "right": right, "t": datetime.now().astimezone().isoformat(timespec="seconds")})
+            tmp = os.path.join(self.root, "corrections.json.tmp")
+            with open(tmp, "w", encoding="utf-8") as f:
+                json.dump(self.fixes, f, ensure_ascii=False, indent=1)
+            os.replace(tmp, os.path.join(self.root, "corrections.json"))
 
     def new_key(self):
         """The key that opens Taska from outside this machine and its network. A new one locks out every other device.
@@ -1617,6 +1664,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send(200, SKILL, "text/markdown; charset=utf-8")
             if p == "/api/projects":
                 return self.json(HUB.summary())
+            if p == "/api/corrections":
+                return self.json(HUB.corrections())
             s, sub, base = self.project(p)
             if sub == "":
                 return self.redirect(p + "/")
@@ -1718,6 +1767,10 @@ class Handler(BaseHTTPRequestHandler):
             if p == "/api/projects":
                 s = HUB.add(json.loads(self.body(10_000) or b"{}").get("name", ""))
                 return self.json({"ok": True, "name": s.name})
+            if p == "/api/corrections":  # {wrong, right} remembers a spelling fix for every project; {wrong} forgets it
+                d = json.loads(self.body(10_000) or b"{}")
+                HUB.correct(d.get("wrong"), d.get("right") if "right" in d else None)
+                return self.json({"ok": True, "corrections": HUB.corrections()})
             if p == "/api/key":  # a new key; this device keeps working, every other one needs the new link
                 HUB.new_key()
                 return self.send(200, json.dumps({"ok": True, "key": HUB.key}), "application/json; charset=utf-8",
@@ -2697,7 +2750,7 @@ function msgHtml(x, gid, form = 0, done = null) {
   const you = x.by === 'you', src = you && x.src ? byR.get(x.src) : null;
   const strip = (files, g, size) => files?.length ? `<div class="flex gap-2 overflow-x-auto lg:scrollbar-thin ${you ? 'justify-end' : 'mt-3'}">${thumbs(files, g, size)}</div>` : '';
   if (you) return `<div class="flex flex-col items-end gap-1">
-      ${x.text ? `<div class="max-w-[85%] rounded-2xl rounded-tr-md bg-blue-600 px-4 py-2.5 text-[15px] leading-relaxed text-white dark:bg-blue-500 [&_a]:text-white [&_a]:decoration-white/60">${msgText(x, gid)}</div>` : ''}
+      ${x.text ? `<div ${voiceAttr(src)} class="max-w-[85%] rounded-2xl rounded-tr-md bg-blue-600 px-4 py-2.5 text-[15px] leading-relaxed text-white dark:bg-blue-500 [&_a]:text-white [&_a]:decoration-white/60">${msgText(x, gid)}</div>` : ''}
       ${strip(src?.files, gid + 't' + x.id)}
       <span class="px-1 text-[11px] text-zinc-400 dark:text-zinc-500">You · ${when(x.t)}</span></div>`;
   const card = form ? 'space-y-2.5 border-amber-200 bg-amber-50 p-3 text-zinc-900 dark:border-amber-400/25 dark:bg-amber-400/7 dark:text-zinc-100' : 'border-zinc-200 bg-zinc-50 px-4 py-3 text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200';
@@ -3203,6 +3256,8 @@ function restoreEdit(k) {
 
 // ---------------------------------------------------------------- inputs
 
+const isVoice = r => !!r?.files?.some(f => (f.mime || '').startsWith('audio/'));
+const voiceAttr = r => isVoice(r) ? `data-voice="${r.id}"` : '';  // F144: words selected here can be corrected
 const canUndoInput = r => r.org && r.org.ok && !r.org.undone && r.touched.length && (!r.org.keep || (r.history?.length && r.org.changed));
 
 function inputActions(r, cls = LINK_BTN) {
@@ -3223,6 +3278,19 @@ function editInput(id, mode) {
   if (desk() && D.compose) renderDetail();
   t.focus(); t.selectionStart = t.selectionEnd = t.value.length;
 }
+async function sendCorrect() {
+  const c = U.correct, right = $('text').value.replace(/\s+/g, ' ').trim();
+  if (!right) return $('text').focus();
+  try {
+    const d = await (await fetch(P + 'api/op', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({op: 'correct', id: c.id, wrong: c.wrong, right, v: c.v})})).json();
+    if (!d.ok) return toast((d.res || []).find(x => x.startsWith('err')) || d.error || 'Not saved');
+    $('text').value = ''; saveDraft(); grow(); U.correct = null; getSelection()?.removeAllRanges();
+    await load(); toast(`Fixed ${c.id}. Voice notes will write “${right}” from now on`);
+    if (desk() && D.compose) renderDetail();
+    P_CACHE.fixes = null;
+  } catch (_) { toast('Connection lost. Your words are still in the box; try again.'); }
+}
+function cancelCorrect() { U.correct = null; getSelection()?.removeAllRanges(); renderComposer(); if (desk() && D.compose) renderDetail(); }
 function cancelAmend() {
   U.amend = null; renderComposer();
   if (desk() && D.compose) renderDetail();
@@ -3281,7 +3349,7 @@ function renderInputs() {
       <div class="flex min-h-5 items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400"><span class="font-mono">${r.id}</span><span>${when(r.t)}</span>${r.from === 'rules' ? '<span class="font-medium">as a rule</span>' : ''}
         ${scope ? `<button data-act="goto" data-n="${scope.n}" class="relative min-w-0 truncate text-blue-600 after:absolute after:inset-x-0 after:-inset-y-3 dark:text-blue-400">↳ ${code(scope.n)} ${esc(scope.title)}</button>` : ''}
         <span class="ml-auto flex shrink-0 items-center gap-1 font-medium lg:hidden ${tone}">${icon}${label}</span></div>
-      <div ${long(r) ? `data-act="more-input" data-expand data-id="${r.id}"` : ''} class="mt-1.5 rounded-2xl rounded-tr-md bg-blue-50 px-3.5 py-2 text-[15px] leading-relaxed text-zinc-900 dark:bg-blue-400/10 dark:text-zinc-100 ${long(r) ? 'cursor-pointer' : ''}">
+      <div ${long(r) ? `data-act="more-input" data-expand data-id="${r.id}"` : ''} ${voiceAttr(r)} class="mt-1.5 rounded-2xl rounded-tr-md bg-blue-50 px-3.5 py-2 text-[15px] leading-relaxed text-zinc-900 dark:bg-blue-400/10 dark:text-zinc-100 ${long(r) ? 'cursor-pointer' : ''}">
         ${r.text ? rich(r.text, 'in' + r.id, long(r) && !U.moreInputs.has(r.id) ? 'max-h-28 overflow-hidden' : '') : ''}
         ${long(r) ? `<button data-act="more-input" data-id="${r.id}" class="-my-2 flex h-11 items-center text-sm font-medium text-blue-600 dark:text-blue-400">${U.moreInputs.has(r.id) ? 'Less' : 'More'}</button>` : ''}
         ${r.files.length ? `<div class="mt-2 flex items-end gap-2 overflow-x-auto lg:scrollbar-thin">${thumbs(r.files, 'in' + r.id, 'size-11')}</div>` : ''}
@@ -3327,7 +3395,11 @@ function renderComposer() {
   }
   else if (n && desk()) sc.innerHTML = `${proj}${ico('reply', 'size-3.5')}<span class="min-w-0 flex-1 truncate"><span class="font-medium">Reply to ${code(n)}</span> ${esc(byN.get(n).title)}</span><button data-act="new-input" title="Write a new input to the whole project instead · C" class="-my-2 flex h-8 shrink-0 items-center rounded-full px-2 text-[13px] font-medium text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200">New input instead${KBD('C')}</button>`;  // B83: a reply says so; a new input has its own page
   else if (n) sc.innerHTML = `${proj}${ico('scope', 'size-3.5')}<span class="min-w-0 flex-1 truncate"><span class="font-medium">${byN.get(n).wait ? 'Reply to' : 'Adding to'} ${code(n)}</span> ${esc(byN.get(n).title)}</span><button data-act="unscope" aria-label="Send to the whole project instead" class="-my-2 grid size-11 shrink-0 place-items-center rounded-full text-blue-600 dark:text-blue-300">${ico('x', 'size-4')}</button>`;
-  if (U.amend && byR.has(U.amend.id)) {  // B136: editing or adding to an input you sent
+  if (U.correct && byR.has(U.correct.id)) {  // F144: correcting a few words of a voice note
+    sc.hidden = false;
+    sc.innerHTML = `${proj}${ico('pencil', 'size-3.5')}<span class="min-w-0 flex-1 truncate"><span class="font-medium">Correct “${esc(U.correct.wrong)}”</span> <span class="text-zinc-500 dark:text-zinc-400">in ${U.correct.id} · remembered for every project</span></span><button data-act="correct-cancel" aria-label="Stop correcting" title="Stop · Esc" class="-my-2 grid size-11 shrink-0 place-items-center rounded-full text-blue-600 dark:text-blue-300">${ico('x', 'size-4')}</button>`;
+    $('text').placeholder = `The right words for “${U.correct.wrong}”…`;
+  } else if (U.amend && byR.has(U.amend.id)) {  // B136: editing or adding to an input you sent
     const r = byR.get(U.amend.id), edit = U.amend.mode === 'edit';
     sc.hidden = false;
     sc.innerHTML = `${proj}${ico(edit ? 'pencil' : 'plus', 'size-3.5')}<span class="min-w-0 flex-1 truncate"><span class="font-medium">${edit ? 'Edit' : 'Add details to'} ${r.id}</span> “${esc(oneLine(r.text).slice(0, 120))}”</span><button data-act="amend-cancel" aria-label="Stop ${edit ? 'editing' : 'adding details'}" title="Stop · Esc" class="-my-2 grid size-11 shrink-0 place-items-center rounded-full text-blue-600 dark:text-blue-300">${ico('x', 'size-4')}</button>`;
@@ -3435,6 +3507,7 @@ async function addFiles(list) {
 // thought, and the outbox sends in order as soon as each input's uploads and transcripts are in.
 async function send() {
   if (R.rec) return finishRec(true);
+  if (U.correct) return sendCorrect();  // F144
   if (U.amend) return sendAmend();  // details for an input you sent (B136)
   const dt = docTarget();
   if (dt) return sendDocComment(dt);  // a document comment (I087)
@@ -3541,7 +3614,7 @@ async function cancelRec() { await stopRec(); toast('Recording discarded. Your t
 // A draft belongs to what it is written to (B118): an item (a reply, or a comment on one of its documents), or a new
 // input (a new rule too). Each project keeps them by target in this browser; when the box changes target, the words and
 // files stay with the old target and the new target's own draft comes back. So unsent words never go elsewhere.
-const draftKey = () => { if (U.amend) return `${U.amend.mode} ${U.amend.id}`; const dt = docTarget(), n = scopeN(); return dt ? code(dt.d.n) : n ? code(n) : 'new'; };  // a comment on a document shares its item's draft
+const draftKey = () => { if (U.correct) return `correct ${U.correct.id}`; if (U.amend) return `${U.amend.mode} ${U.amend.id}`; const dt = docTarget(), n = scopeN(); return dt ? code(dt.d.n) : n ? code(n) : 'new'; };  // a comment on a document shares its item's draft
 function draftStore(change) {
   const key = 'taska.drafts.' + S.project;
   try {
@@ -3764,7 +3837,7 @@ function showView() {
 function openItem(n, push = true) {
   if (!n || !byN.has(n)) return closeItem();
   if (!U.open && !desk()) U.listTop = [$('list').scrollTop, $('inputsView').scrollTop];
-  if (U.open !== n) { stashEdit(); U.editing = null; U.subFor = null; U.amend = null; }
+  if (U.open !== n) { stashEdit(); U.editing = null; U.subFor = null; U.amend = null; U.correct = null; }
   const fresh = U.open !== n;
   U.open = n; U.scopeOff = false;
   if (desk() && U.doc && !U.docEdit) { U.docScroll[U.doc] = $('detailBody').scrollTop; Object.assign(U, {doc: null, docReply: null, docSel: new Set(), docQuote: null, docCircle: false}); D.docKey = null; }  // another item: the document closes
@@ -3795,7 +3868,7 @@ function setTab(t) {
     for (const k of VIEW_KEYS) U[k] = v[k] ?? (k === 'q' ? '' : 'all');
     $('q').value = U.q; qSync();
   }
-  U.asRule = null; U.amend = null; if (t === 'inputs' && was !== 'inputs') U.inputsEnd = true;
+  U.asRule = null; U.amend = null; U.correct = null; if (t === 'inputs' && was !== 'inputs') U.inputsEnd = true;
   U.tab = t;
   if (t !== was) writeURL(true);
   if (desk()) {
@@ -4098,6 +4171,12 @@ const ACT = {
   'input-append': b => editInput(b.dataset.id, 'append'),
   'input-history': b => inputHistory(b.dataset.id),
   'amend-cancel': () => cancelAmend(),
+  'correct-cancel': () => cancelCorrect(),
+  fixes: () => { if (desk()) return openProject('fixes'); closeDrawer(); dialog('Voice spellings', fixesHtml()); loadFixes(); },
+  'fix-remove': async b => {
+    const wrong = b.dataset.wrong, c = (P_CACHE.fixes || []).find(x => x.wrong === wrong);
+    try { await setFix({wrong}); toast(`Forgot “${wrong}”`, () => setFix({wrong, right: c.right}).catch(() => {})); } catch (_) {}
+  },
   'undo-mine': () => undoMine(),
   revert: async b => {
     if (!confirmClick(b, 'Click again to undo')) return;  // B127: an older change goes back only on a second click
@@ -4232,6 +4311,9 @@ function renderRail() {
 // the box at the bottom of the item, so the two never look alike. Only the head and the list are drawn here;
 // the box itself is the same element as always, restyled by the data-compose switch on #app.
 function composeHead() {
+  if (U.correct && byR.has(U.correct.id)) return `<div class="flex items-center gap-3">${projTile(S.project, 'size-11 rounded-xl text-xl shadow-sm')}<h1 class="text-[28px] leading-none font-semibold tracking-tight">Correct “${esc(U.correct.wrong)}”</h1></div>
+    <p class="mt-3.5 text-[15px] text-zinc-500 dark:text-zinc-400">in ${U.correct.id}; voice notes in every project will write it your way from now on</p>
+    <button data-act="correct-cancel" class="mt-2 h-8 rounded-full px-3 text-[13px] font-medium text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200">Back to a new input${KBD('Esc')}</button>`;
   const a = U.amend && byR.get(U.amend.id);
   if (a) return `<div class="flex items-center gap-3">${projTile(S.project, 'size-11 rounded-xl text-xl shadow-sm')}<h1 class="text-[28px] leading-none font-semibold tracking-tight">${U.amend.mode === 'edit' ? 'Edit' : 'Add details to'} ${a.id}</h1></div>
     <p class="mt-3.5 line-clamp-2 max-w-full text-[15px] text-zinc-500 dark:text-zinc-400">“${esc(oneLine(a.text))}”</p>
@@ -4267,7 +4349,7 @@ function saidRow(r, k, last) {
       + (r.org?.undone && !r.acked ? `<button data-act="retry" data-id="${r.id}" class="${SMALL_BTN}">${ico('loop', 'size-3.5', '2')}Organize again</button>` : '')
       + (!r.acked && !r.scope && !(S.org.on && !r.org) && !busy ? `<button data-act="make-item" data-id="${r.id}" class="${SMALL_BTN} text-blue-600 dark:text-blue-400">${ico('plus', 'size-3.5', '2')}Make item</button>` : '')
       + `<span class="ml-auto flex items-center ${later}">${canUndoInput(r) ? `<button data-act="undo" data-id="${r.id}" title="Undo what the organizer did with ${r.id}" class="${SMALL_BTN}">${ico('undo', 'size-3.5', '2')}Undo</button>` : ''}${otherProjects().length && !busy ? `<button data-act="move-input" data-id="${r.id}" title="Sent to the wrong project? Move it" class="${SMALL_BTN}">${ico('arrow', 'size-3.5', '2')}Move…</button>` : ''}</span>`;
-  return saidStep(DOT[dotOf(r)], bubble, `<span class="font-mono">${r.id}</span> · ${when(r.t)}${r.from === 'rules' ? ' · as a rule' : ''}`, `<span class="mr-1 text-[13px] font-semibold ${tone}">${label}</span>${chips}${inputActions(r, SMALL_BTN)}${acts}`, last, `data-expand data-id="${r.id}"`);
+  return saidStep(DOT[dotOf(r)], bubble, `<span class="font-mono">${r.id}</span> · ${when(r.t)}${r.from === 'rules' ? ' · as a rule' : ''}`, `<span class="mr-1 text-[13px] font-semibold ${tone}">${label}</span>${chips}${inputActions(r, SMALL_BTN)}${acts}`, last, `data-expand data-id="${r.id}" ${voiceAttr(r)}`);
 }
 function outboxStep(q, last) {  // still on its way (F85)
   const state = q.failed ? 'Not sent' : q.files.some(f => f.transcribing) ? 'Transcribing…' : q.files.some(f => !f.f && !f.failed) ? 'Uploading…' : 'Sending…';
@@ -4370,10 +4452,22 @@ function fullWidth(on) {
 }
 
 // "This project": the agents, connecting one, the phone, the change log and the settings, on one page (A, screen 5).
-const P_CACHE = {guide: null, log: null};
+const P_CACHE = {guide: null, log: null, fixes: null};
+// The voice spellings you corrected (F144): the same list in every project, each one can be forgotten.
+const fixesHtml = () => !P_CACHE.fixes ? '<p class="text-sm text-zinc-400">Loading…</p>' : P_CACHE.fixes.length
+  ? `<p class="mb-2 text-[13px] leading-snug text-zinc-500 dark:text-zinc-400">Every project's voice notes write these your way. To add one, select the wrong words in a voice note.</p>
+    <ul class="flex flex-col divide-y divide-zinc-100 dark:divide-zinc-800">${P_CACHE.fixes.map(c => `<li class="flex min-h-11 items-center gap-2 text-sm"><span class="min-w-0 flex-1 break-words"><span class="text-zinc-400 line-through decoration-zinc-400">${esc(c.wrong)}</span> → <span class="font-medium">${esc(c.right)}</span></span><button data-act="fix-remove" data-wrong="${esc(c.wrong)}" aria-label="Forget this spelling" class="grid size-11 shrink-0 place-items-center rounded-lg text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200">${ico('x', 'size-4')}</button></li>`).join('')}</ul>`
+  : '<p class="text-[13px] leading-snug text-zinc-500 dark:text-zinc-400">None yet. When a voice note gets words wrong, select them in the input and write the right ones: from then on every project writes them your way.</p>';
+async function loadFixes() { try { P_CACHE.fixes = await (await fetch('/api/corrections', {cache: 'no-store'})).json(); } catch (_) {} refreshFixes(); }
+function refreshFixes() { if (D.page) renderProject(); else if (!$('overlay').hidden && $('dlgTitle').textContent === 'Voice spellings') dialog('Voice spellings', fixesHtml()); }
+async function setFix(body) {
+  const d = await (await fetch('/api/corrections', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)})).json();
+  if (!d.ok) { toast(d.error || 'Not saved'); throw new Error(); }
+  P_CACHE.fixes = d.corrections; refreshFixes();
+}
 function openProject(sec) {
   D.page = 'project'; D.sideOpen = false; U.go = null; D.section = sec;
-  render(); writeURL(true);
+  render(); writeURL(true); loadFixes();
   Promise.all([fetch(P + 'agent?ui=1').then(r => r.text()), fetch(P + 'log?n=80&ui=1').then(r => r.text())])
     .then(([g, l]) => {
       P_CACHE.guide = g; P_CACHE.log = l.trim().split('\n').reverse();
@@ -4399,6 +4493,7 @@ function renderProject() {
         ${card('keep', '', '', `<div class="flex items-start gap-3">${ico('loop', 'mt-0.5 size-5 text-emerald-600 dark:text-emerald-400')}<div class="min-w-0 flex-1"><p class="text-[15px] font-semibold">Keep going</p><p class="mt-0.5 text-[13px] leading-snug text-zinc-500 dark:text-zinc-400">Agents take the next item without stopping. Off: they stop after the current one.</p></div>
           <button data-act="auto" aria-pressed="${!!S.cfg?.auto}" aria-label="Keep going" class="group relative h-6.5 w-11 shrink-0 rounded-full bg-zinc-300 transition-colors aria-pressed:bg-emerald-500 dark:bg-zinc-600"><span class="absolute top-0.75 left-0.75 size-5 rounded-full bg-white shadow transition-transform group-aria-pressed:translate-x-4.5"></span></button></div>`)}
         ${card('phone', 'phone', 'Use on your phone', phoneHtml())}
+        ${card('fixes', 'pencil', 'Voice spellings', fixesHtml())}
         ${card('info', '', '', `<dl class="grid grid-cols-[5.5rem_minmax(0,1fr)] gap-y-1.5 text-[13px]"><dt class="text-zinc-500">Project</dt><dd>${esc(S.project)}</dd><dt class="text-zinc-500">Data</dt><dd class="font-mono text-xs break-all">${esc(S.file)}</dd><dt class="text-zinc-500">Organizer</dt><dd>${S.org?.on ? 'Gemini · ' + esc(S.org.model) : 'off (set GEMINI_API_KEY and restart)'}</dd></dl>`)}
       </div></div>`;
   $('projectView').scrollTop = top;
@@ -4654,7 +4749,7 @@ function renderDrawerSettings() {
   $('drawerSettings').innerHTML = `${undoRow()}<button data-act="auto" aria-pressed="${!!S.cfg?.auto}" class="group flex w-full items-center gap-3 px-3.5 py-3 text-left lg:gap-2.5 lg:rounded-lg lg:px-3 lg:py-1.5 lg:hover:bg-zinc-200/60 dark:lg:hover:bg-zinc-800">${ico('loop', 'size-5 text-emerald-600 lg:size-4 dark:text-emerald-400')}
       <span class="min-w-0 flex-1"><span class="block text-[15px] lg:text-sm">Keep going</span><span class="block text-xs leading-snug text-zinc-500 lg:text-[11px] dark:text-zinc-400">Agents take the next item without stopping</span></span>
       <span class="relative h-6.5 w-11 shrink-0 rounded-full bg-zinc-300 transition-colors group-aria-pressed:bg-emerald-500 lg:h-5 lg:w-8.5 dark:bg-zinc-600 dark:group-aria-pressed:bg-emerald-500"><span class="absolute top-0.75 left-0.75 size-5 rounded-full bg-white shadow transition-transform group-aria-pressed:translate-x-4.5 lg:size-3.5 lg:group-aria-pressed:translate-x-3.5"></span></span></button>
-    ${row('guide', 'plug', 'Connect a coding agent')}${row('phone', 'phone', 'Use on your phone')}${row('log', 'history', 'Change log')}`;
+    ${row('guide', 'plug', 'Connect a coding agent')}${row('phone', 'phone', 'Use on your phone')}${row('fixes', 'pencil', 'Voice spellings')}${row('log', 'history', 'Change log')}`;
   $('menuInfo').innerHTML = `<div><dt class="inline">Project </dt><dd class="inline">${esc(S.project)}</dd></div>
     <div><dt class="inline">Data </dt><dd class="inline font-mono text-[11px]">${esc(S.file)}</dd></div>
     <div><dt class="inline">Organizer </dt><dd class="inline">${S.org?.on ? 'Gemini · ' + esc(S.org.model) : 'off (set GEMINI_API_KEY and restart)'}</dd></div>`;
@@ -4823,6 +4918,7 @@ document.addEventListener('keydown', e => {
     if (DR.open) return closeDrawer();
     if (!$('viewer').hidden) return ACT['v-close']();
     if (R.rec) return cancelRec();  // the recording first: it is what you are doing
+    if (U.correct && !(document.activeElement === $('text') && $('text').value.trim() && desk())) return cancelCorrect();  // F144
     if (U.amend && !(document.activeElement === $('text') && $('text').value.trim() && desk())) return cancelAmend();  // B136
     if (U.doc && U.docCircle) { U.docCircle = false; return renderDoc(); }
     if (U.doc && (U.docQuote || U.docSel.size || U.docReply)) return ACT['doc-unpick']();  // first Escape drops the selection
@@ -4866,6 +4962,17 @@ $('q').addEventListener('keydown', e => {  // B130: from the search, Down or Ent
 $('q').addEventListener('input', e => { U.q = e.target.value; qSync(); writeURL(false); if (U.tab === 'inputs') renderInputs(); else { renderItems(); $('list').scrollTop = 0; } });
 $('text').addEventListener('input', () => { saveDraft(); renderComposer(); grow(); });  // the buttons first: the mic showing up narrows the box
 document.addEventListener('input', e => { const k = e.target.dataset?.docDraft; if (k) U.docDrafts[k] = e.target.value; if (e.target.id === 'docMd') U.docText = e.target.value; });
+// Selecting words in what a voice note became offers to correct them, in the one box (F144). The fix goes into
+// that input and is remembered for every project's transcriptions.
+document.addEventListener('selectionchange', () => {
+  const sel = getSelection(), text = sel?.toString().replace(/\s+/g, ' ').trim();
+  if (!text || text.length > 60) return;
+  const el = (sel.anchorNode?.nodeType === 1 ? sel.anchorNode : sel.anchorNode?.parentElement)?.closest('[data-voice]');
+  const r = el && el.contains(sel.focusNode) && byR.get(el.dataset.voice);
+  if (!r || !r.text.includes(text) || (U.correct?.id === r.id && U.correct.wrong === text)) return;
+  U.correct = {id: r.id, wrong: text, v: r.v || 0}; U.amend = null;
+  renderComposer(); if (desk() && D.compose) renderDetail();
+});
 // Selecting text inside an open document offers to comment on exactly that text.
 document.addEventListener('selectionchange', () => {
   if (!U.doc || U.docEdit || U.docCircle) return;
