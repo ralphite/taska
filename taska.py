@@ -3277,7 +3277,7 @@ function renderInputs() {
       + (!r.acked && !r.scope && !(S.org.on && !r.org) && S.org.busy !== r.id ? `<button data-act="make-item" data-id="${r.id}" class="${LINK_BTN}">${ico('plus', 'size-3.5', '2')}Make item</button>` : '')
       + (otherProjects().length && S.org.busy !== r.id ? `<button data-act="move-input" data-id="${r.id}" class="${LINK_BTN} text-zinc-600 dark:text-zinc-300">${ico('arrow', 'size-3.5', '2')}Move…</button>` : '') + inputActions(r);
     // On the desktop each input is a ledger line: what you said on the left, what became of it on the right.
-    return `${head}<article class="border-b border-zinc-100 px-4 py-2 lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-10 lg:px-0 lg:py-4 dark:border-zinc-800/70"><div class="min-w-0">
+    return `${head}<article data-r="${r.id}" class="border-b border-zinc-100 px-4 py-2 transition-colors duration-700 lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-10 lg:px-0 lg:py-4 dark:border-zinc-800/70"><div class="min-w-0">
       <div class="flex min-h-5 items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400"><span class="font-mono">${r.id}</span><span>${when(r.t)}</span>${r.from === 'rules' ? '<span class="font-medium">as a rule</span>' : ''}
         ${scope ? `<button data-act="goto" data-n="${scope.n}" class="relative min-w-0 truncate text-blue-600 after:absolute after:inset-x-0 after:-inset-y-3 dark:text-blue-400">↳ ${code(scope.n)} ${esc(scope.title)}</button>` : ''}
         <span class="ml-auto flex shrink-0 items-center gap-1 font-medium lg:hidden ${tone}">${icon}${label}</span></div>
@@ -3580,6 +3580,13 @@ function dialog(title, html, {aboveComposer = false, focus = true, tall = false,
   $('overlay').style.paddingLeft = $('overlay').style.paddingTop = ''; $('overlay').classList.remove('lg:justify-start');  // set again by popAt
   if (focus) $('dlgClose').focus({preventScroll: true});
 }
+// A second click within 3 s confirms (B127, B131): the page asks in place, never in a browser dialog.
+function confirmClick(b, ask) {
+  if (b.dataset.armed) return true;
+  b.dataset.armed = '1'; const was = b.innerHTML; b.textContent = ask;
+  setTimeout(() => { if (b.isConnected && b.dataset.armed) { delete b.dataset.armed; b.innerHTML = was; } }, 3000);
+  return false;
+}
 function popAt(x, y) {  // B129: a menu opened by right-click sits at the pointer, kept on screen
   const o = $('overlay'), d = $('dlg');
   o.classList.remove('lg:justify-end', 'lg:pt-[3.75rem]', 'lg:pr-3'); o.classList.add('lg:justify-start');
@@ -3634,9 +3641,21 @@ function guideHtml(text, fold = false) {  // fold: the desktop page keeps the lo
     : `<details class="group"><summary class="flex h-9 cursor-pointer items-center gap-1 px-1 text-sm text-zinc-600 dark:text-zinc-300">${ico('right', 'size-4 transition-transform group-open:rotate-90')}What the agent reads</summary>
     <pre class="mt-2 overflow-x-auto lg:scrollbar-thin rounded-xl bg-zinc-50 p-3 text-xs leading-relaxed whitespace-pre-wrap dark:bg-zinc-950">${esc(text || 'Loading…')}</pre></details>`}</div>`;
 }
-const logHtml = lines => `<ol class="divide-y divide-zinc-100 font-mono text-xs leading-relaxed text-zinc-600 dark:divide-zinc-800 dark:text-zinc-300">${lines.map(l => {
+// One change, as a sentence (B131): who, then what, with item codes and inputs as links; the time in grey.
+function logLine(l) {
+  const m = /^#(\d+) (\S+ \S+) (\S+) (.*)$/s.exec(l);
+  if (!m) return esc(l);
+  let what = esc(m[4])
+    .replace(/^in (r\d+)(?: →([A-Z]\d+))? /, (_, r, c) => c ? `wrote ${r} to ${c} ` : `wrote ${r} `)
+    .replace(/\b(status|when) (\w+)→(\w+)/g, (_, f, a, b) => f === 'status' ? `${STATUS[a] || a} → ${STATUS[b] || b}` : `${WHEN[a] || a} → ${WHEN[b] || b}`)
+    .replace(/\b(say|ask|block|propose) (?=&#39;|&#x27;|')/g, (_, k) => `${{say: 'said', ask: 'asked', block: 'is blocked:', propose: 'proposed'}[k]} `)  // the quote is escaped by now
+    .replace(/\b([A-Z]\d{1,5})\b/g, (c, x) => { const n = parseRef(c); return n && byN.has(n) && code(n) === c ? `<button data-act="goto" data-n="${n}" class="font-semibold text-blue-600 hover:underline dark:text-blue-400">${c}</button>` : c; })
+    .replace(/\b(r\d+)\b/g, (r) => byR.has(r) ? `<button data-act="go-input" data-id="${r}" class="font-mono text-blue-600 hover:underline dark:text-blue-400">${r}</button>` : r);
+  return `<span class="font-medium text-zinc-800 dark:text-zinc-100">${esc(whoName(m[3]))}</span> ${what} <span class="font-mono text-[11px] text-zinc-400">${esc(m[2])}</span>`;
+}
+const logHtml = lines => `<ol class="divide-y divide-zinc-100 text-[13px] leading-relaxed text-zinc-600 dark:divide-zinc-800 dark:text-zinc-300">${lines.map(l => {
   const u = (S.undo || []).find(u => l.startsWith(`#${u.seq} `));  // one of your changes that can still be put back (F80)
-  return `<li class="flex items-start gap-2 py-1.5"><span class="min-w-0 flex-1 break-words">${esc(l)}</span>${u ? `<button data-act="revert" data-seq="${u.seq}" class="-my-1 shrink-0 rounded-md px-2 py-1 font-sans text-xs font-semibold text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10">Undo</button>` : ''}</li>`;
+  return `<li class="flex items-start gap-2 py-1.5"><span class="min-w-0 flex-1 break-words">${logLine(l)}</span>${u ? `<button data-act="revert" data-seq="${u.seq}" class="-my-1 shrink-0 rounded-md px-2 py-1 font-sans text-xs font-semibold text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10">Undo</button>` : ''}</li>`;
 }).join('')}</ol>`;
 function agentsHtml(connect = true) {
   const [tone, , line] = agentState(S.agents, S.work), ask = agentAsk();
@@ -3662,7 +3681,7 @@ async function showLog() { const text = await (await fetch(P + 'log?n=300&ui=1')
 function showSources(n) {
   const it = byN.get(n);
   dialog(`Sources of ${code(n)}`, `<div class="flex flex-col gap-4">${it.srcs.map(id => byR.get(id)).filter(Boolean).map(r => `<div>
-      <div class="px-1 text-xs text-zinc-500 dark:text-zinc-400"><span class="font-mono">${r.id}</span> · ${when(r.t)} · ${esc(who(r.by))}</div>
+      <div class="px-1 text-xs text-zinc-500 dark:text-zinc-400"><button data-act="go-input" data-id="${r.id}" class="font-mono text-blue-600 hover:underline dark:text-blue-400">${r.id}</button> · ${when(r.t)} · ${esc(who(r.by))}</div>
       <div class="mt-1.5 rounded-2xl rounded-tr-md bg-blue-50 px-3.5 py-2 text-[15px] leading-relaxed dark:bg-blue-400/10">${r.text ? rich(r.text, 'src' + r.id) : ''}
       ${r.files.length ? `<div class="mt-2 flex items-end gap-2 overflow-x-auto lg:scrollbar-thin">${thumbs(r.files, 'src' + r.id)}</div>` : ''}</div>
       ${r.org ? `<div class="mt-1.5 flex items-center gap-1 px-1 text-xs text-zinc-500 dark:text-zinc-400">${ico('sparkle', 'size-3.5')}${esc(r.org.msg)}</div>` : ''}</div>`).join('') || '<p class="text-sm text-zinc-500">No sources.</p>'}</div>`);
@@ -3835,7 +3854,7 @@ const ACT = {
     if (v === 'reply' || !hasChoices(byN.get(n)?.wait?.text)) $('text').focus();
   },
   'go-through': () => { if (desk()) return startGoDesk(); U.go = {list: needsList(), done: new Set()}; if (U.go.list.length) peek(U.go.list[0]); },
-  'go-prev': () => { const g = U.go; if (!g) return; const i = g.list.indexOf(U.open); openItem(g.list[(i - 1 + g.list.length) % g.list.length]); },
+  'go-prev': () => { const g = U.go; if (!g) return; const i = g.list.indexOf(U.open); if (i <= 0) return toast('This is the first one'); openItem(g.list[i - 1]); },
   'go-end': () => { U.go = null; render(); },
   'go-undo': b => { const n = Number(b.dataset.n); U.go?.undo[n]?.(); },
   prev: () => stepItem(-1),
@@ -3871,17 +3890,37 @@ const ACT = {
   },
   reopen: async b => { const n = Number(b.dataset.n); if (desk() && U.open !== n) openItem(n); try { await setStatus(n, 'doing'); U.scopeOff = false; renderComposer(); $('text').focus(); toast(`${code(n)} reopened. Say what is missing.`); } catch (_) {} },
   projects: () => openDrawer(),
-  'new-project': async () => {
-    const name = (prompt('Project name (a-z, 0-9 and -):') || '').trim().toLowerCase();
-    if (!name) return;
-    const d = await (await fetch('/api/projects', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name})})).json();
-    if (d.ok) location.href = `/p/${d.name}/`; else toast(d.error || 'Not created');
+  'new-project': () => {  // B131: the button becomes a name field in place; Enter makes it, Esc stops
+    if ($('npName')) return $('npName').focus();
+    $('drawerNew').hidden = true;
+    $('drawerNew').insertAdjacentHTML('afterend', `<div id="npRow" class="mt-1 px-1"><div class="flex items-center gap-1.5"><input id="npName" class="${FIELD} h-10 py-1.5 text-sm" placeholder="Project name: a-z, 0-9, -" aria-label="New project name" autocomplete="off" autocapitalize="none" spellcheck="false"><button data-act="np-create" class="h-10 shrink-0 rounded-xl bg-zinc-900 px-3 text-sm font-semibold text-white dark:bg-zinc-100 dark:text-zinc-900">Create</button><button data-act="np-cancel" aria-label="Cancel" class="grid size-10 shrink-0 place-items-center rounded-xl text-zinc-500 hover:bg-zinc-200/60 dark:hover:bg-zinc-800">${ico('x', 'size-4')}</button></div><p id="npErr" hidden class="px-2 pt-1 text-xs text-red-600 dark:text-red-400"></p></div>`);
+    $('npName').focus();
   },
+  'np-create': async () => {
+    const name = ($('npName')?.value || '').trim().toLowerCase();
+    if (!name) return $('npName')?.focus();
+    try {
+      const d = await (await fetch('/api/projects', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name})})).json();
+      if (d.ok) location.href = `/p/${d.name}/`; else { $('npErr').textContent = d.error || 'Not created'; $('npErr').hidden = false; }
+    } catch (_) { $('npErr').textContent = 'Connection lost; try again'; $('npErr').hidden = false; }
+  },
+  'go-input': b => {  // B131: from an item's source to that input in Inputs, lit up for a moment
+    const id = b.dataset.id;
+    closeDialog(); if (D.page) D.page = null;
+    if (U.tab !== 'inputs') setTab('inputs'); else render();
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      const a = document.querySelector(`#inputsView [data-r="${id}"]`);
+      if (!a) return;
+      a.scrollIntoView({block: 'center'}); a.classList.add('bg-blue-50', 'dark:bg-blue-400/10');
+      setTimeout(() => a.classList.remove('bg-blue-50', 'dark:bg-blue-400/10'), 1600);
+    }));
+  },
+  'np-cancel': () => { $('npRow')?.remove(); $('drawerNew').hidden = false; },
   guide: () => { if (desk()) return openProject('connect'); closeDrawer(); showGuide(); },
   'agent-info': () => desk() ? openProject('agents') : dialog('Agents', agentsHtml()),
   phone: () => { if (desk()) return openProject('phone'); closeDrawer(); showPhone(); },
-  'new-key': async () => {
-    if (!confirm('Make a new key? Every other device has to open the new link or type the new key.')) return;
+  'new-key': async b => {
+    if (!confirmClick(b, 'Click again: other devices will need the new link')) return;
     try { await fetch('/api/key', {method: 'POST'}); await load(); if (desk()) renderProject(); else showPhone(); toast('New key made'); } catch (_) { toast('Not saved'); }
   },
   log: () => { if (desk()) return openProject('log'); closeDrawer(); showLog(); },
@@ -3901,7 +3940,12 @@ const ACT = {
     const n = Number(b.dataset.n);
     try { await op({op: 'set', ref: code(n), f: {[b.dataset.f]: b.dataset.v}}); if (!$('overlay').hidden) itemMenu(n); } catch (_) {}
   },
-  goto: b => { closeDialog(); openItem(Number(b.dataset.n)); },
+  goto: b => {  // from a chip, a source or the change log: to the item, leaving pages that hide it
+    closeDialog();
+    const n = Number(b.dataset.n), it = byN.get(n);
+    if (desk()) { D.page = null; D.compose = false; if (it && !inTab(it, U.tab)) setTab(it.archived ? 'archive' : it.type === 'rule' ? 'rules' : 'items'); }
+    openItem(n);
+  },
   more: b => { U.more.add(Number(b.dataset.n)); renderDetail(); },
   'more-input': b => { const id = b.dataset.id; if (U.moreInputs.has(id)) U.moreInputs.delete(id); else U.moreInputs.add(id); renderInputs(); if (desk() && D.compose) renderDetail(); },
   edit: b => {
@@ -4038,10 +4082,7 @@ const ACT = {
   'amend-cancel': () => cancelAmend(),
   'undo-mine': () => undoMine(),
   revert: async b => {
-    if (!b.dataset.armed) {  // B127: an older change goes back only on a second click
-      b.dataset.armed = '1'; const was = b.textContent; b.textContent = 'Click again to undo';
-      return setTimeout(() => { if (b.isConnected) { delete b.dataset.armed; b.textContent = was; } }, 3000);
-    }
+    if (!confirmClick(b, 'Click again to undo')) return;  // B127: an older change goes back only on a second click
     const u = (S.undo || []).find(u => u.seq === Number(b.dataset.seq));
     try { await revert(Number(b.dataset.seq)); } catch (_) { return; }
     D.undo = null; toast(`Undid: ${u ? undoLabel(u) : 'the change'}`); renderDrawerSettings();
@@ -4385,14 +4426,15 @@ function movePicker(n) {
 }
 
 const KEYS = [
-  ['Move', [['J / K', 'Next or previous item'], ['⇧J / ⇧K', 'Next or previous item that needs you (Go through)'], ['O or ↵', 'Full width; Esc goes back'], ['Space', 'Scroll the item'], ['G then I N A R', 'Items, Inputs, Archive, Rules'], ['G then P', 'Switch project'], ['[', 'Show or hide the sidebar']]],
-  ['Act on the selected item', [['A', 'The amber action: Accept, Approve or Answer'], ['R', 'Reply or add to it'], ['N', 'Not yet: reopen and say what is missing'], ['1–9, ⌘↵', 'Pick a choice, send the answer'], ['D · W · L', "Done · Won't do · Later / Now"], ['E / ⇧E', 'Archive or unarchive / archive every finished item'], ['S · P · T', 'Status, priority, type (the ⋯ menu)'], ['M · ⇧C', 'Move under… · Copy for agent'], ['I · ⇧D · ⇧A', 'Edit · New doc · Add subitem'], ['.', 'All actions'], ['Z', 'Undo your last action here, again for the one before; older changes: Change log']]],
+  ['Move', [['J / K', 'Next or previous item'], ['⇧J / ⇧K', 'Next or previous item that needs you (Go through)'], ['O or ↵', 'Full width; Esc goes back'], ['Space', 'Scroll the item'], ['G then I N A R', 'Items, Inputs, Archive, Rules'], ['G then P', 'Switch project (type to find it)'], ['[', 'Show or hide the sidebar']]],
+  ['Act on the selected item', [['A', "The item's next step: Accept, Approve, Answer or Reply"], ['R', 'Reply or add to it'], ['N', 'Not yet: reopen and say what is missing'], ['1–9, ⌘↵', 'Pick a choice, send the answer'], ['D · W · L', "Done · Won't do · Later / Now"], ['E / ⇧E', 'Archive or unarchive / archive every finished item'], ['S · P · T', 'Status, priority, type (the ⋯ menu)'], ['M · ⇧C', 'Move under… · Copy for agent'], ['I · ⇧D · ⇧A', 'Edit · New doc · Add subitem'], ['.', 'All actions'], ['Z', 'Undo your last action here, again for the one before; older changes: Change log']]],
+  ['Mouse', [['Hover a row', 'Its quick actions, always in the same places'], ['Right-click a row', 'Its menu, at the pointer'], ['Click cut-off words', 'Show them all'], ['Drag a pane edge', 'Resize; double-click for the default']]],
   ['Write and find', [['C', 'New input to the project'], ['V', 'Voice note for the selected item; V again stops'], ['⇧V', 'New input by voice; ⇧V again stops and sends'], ['⌥V', 'Voice note while typing in the box'], ['↵', 'While recording: stop, into the box'], ['⇧↵ or ⌘↵', 'Send; while recording: stop and send'], ['/', 'Search'], ['F', 'Filters'], ['?', 'This sheet'], ['Esc', 'Step back one level']]],
 ];
 function showKeys() {
   const sec = ([group, keys]) => `<section class="mb-5"><h3 class="mb-2 text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">${group}</h3>
     <dl class="flex flex-col gap-1.5 text-sm">${keys.map(([k, what]) => `<div class="flex items-baseline gap-3"><dt class="w-28 shrink-0 font-mono text-xs font-semibold text-zinc-700 dark:text-zinc-200">${k}</dt><dd class="text-zinc-600 dark:text-zinc-300">${what}</dd></div>`).join('')}</dl></section>`;
-  dialog('Keyboard shortcuts', `<div class="grid gap-x-8 sm:grid-cols-2"><div>${sec(KEYS[0])}${sec(KEYS[2])}</div><div>${sec(KEYS[1])}</div></div>`);  // moving and writing | acting
+  dialog('Keyboard shortcuts', `<div class="grid gap-x-8 sm:grid-cols-2"><div>${sec(KEYS[0])}${sec(KEYS[3])}</div><div>${sec(KEYS[1])}${sec(KEYS[2])}</div></div>`);  // moving and writing | acting
 }
 // G P: pick another project by typing (B126). The list loads once; ↑↓ choose, Enter opens, Esc closes.
 const PS = {q: '', i: -1};
@@ -4428,6 +4470,7 @@ function deskKey(e) {
   if (R.rec && e.key === 'Enter' && !e.isComposing) { e.preventDefault(); return finishRec(e.shiftKey || e.metaKey || e.ctrlKey); }
   if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && U.choice && U.choice.n === U.open) { e.preventDefault(); return document.querySelector(`[data-act="choice-send"][data-n="${U.open}"]`)?.click(); }
   if (e.metaKey || e.ctrlKey) return;
+  if (U.sheet === 'menu' && !$('overlay').hidden && /^[a-zA-Z]$/.test(e.key)) closeDialog();  // the keys the menu shows work from it (B131)
   if (!$('overlay').hidden) return;  // a sheet or menu is open: it has its own keys (Esc closes it)
   if (D.sideOpen && e.key !== '[') return;  // the sidebar is over the page: keys don't reach behind it (B120)
   // Item keys act only on an item you can see (B120): not from Inputs, the project page or New input.
@@ -4471,12 +4514,12 @@ function deskKey(e) {
       if (it.status === 'proposed') return status('open');
       if (it.wait?.kind === 'ask' && hasChoices(it.wait.text)) { e.preventDefault(); return document.querySelector(`#detailBody [data-act="choice"][data-n="${n}"]`)?.focus(); }
       if (it.wait) { e.preventDefault(); return ACT.reply(); }
-      return;
+      return toast(`Nothing waits on you in ${code(n)}`);
     case 'r': e.preventDefault(); return ACT.reply();
-    case 'n': if (it.status === 'review') return act('reopen'); return;
+    case 'n': if (it.status === 'review') return act('reopen'); return toast('Not yet works on items in review');
     case 'd': return CLOSED(it.status) ? undefined : status('done');
     case 'w': return status('dropped');
-    case 'l': if (it.type !== 'rule' && !CLOSED(it.status)) act('swipe', {f: 'when', v: it.when === 'now' ? 'later' : 'now'}); return;
+    case 'l': if (it.type !== 'rule' && !CLOSED(it.status)) act('swipe', {f: 'when', v: it.when === 'now' ? 'later' : 'now'}); else toast('Later works on open items'); return;
     case 'e': if (it.archived || CLOSED(it.status)) act('archive', {on: it.archived ? '0' : '1'}); else { e.preventDefault(); toast('Archive works on finished items'); } return;
     case '.': case 's': case 'p': case 't': e.preventDefault(); return itemMenuDesk(n);
     case 'm': e.preventDefault(); return movePicker(n);
@@ -4791,6 +4834,11 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && U.searching && document.activeElement === $('q') && !desk()) searchMode(false);
 });
 
+document.addEventListener('keydown', e => {  // the new project field: Enter makes it, Esc stops (B131)
+  if (e.target.id !== 'npName') return;
+  if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); ACT['np-create'](); }
+  if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); ACT['np-cancel'](); }
+}, true);
 $('q').addEventListener('keydown', e => {  // B130: from the search, Down or Enter goes to the first result
   if (!desk() || !(e.key === 'ArrowDown' || (e.key === 'Enter' && !e.isComposing))) return;
   const first = U.tab === 'inputs' ? null : document.querySelector('#list [data-act="open"][data-n]');
