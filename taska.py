@@ -2593,6 +2593,7 @@ PAGE = r'''<!doctype html>
     <div id="composer" class="rounded-4xl border border-zinc-200 bg-white shadow-lg shadow-black/5 focus-within:border-zinc-300 lg:mx-auto lg:max-w-[42rem] dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-black/40 dark:focus-within:border-zinc-700">
       <div id="scope" hidden class="flex h-8 items-center gap-1.5 pt-1 pr-1.5 pl-4 text-[13px] text-zinc-500 dark:text-zinc-400 lg:group-data-[compose]/app:hidden"></div>
       <div id="drafts" hidden class="flex gap-2.5 overflow-x-auto px-3 pt-3 pb-1 lg:scrollbar-thin"></div>
+      <div id="doubts" hidden class="flex flex-col px-4 pt-1 text-[13px] leading-snug text-zinc-600 dark:text-zinc-300"></div>
       <div class="flex items-end gap-0.5 p-1.5 lg:group-data-[compose]/app:flex-wrap lg:group-data-[compose]/app:items-center">
         <button id="attachBtn" data-act="attach" aria-label="Add images or files" class="grid size-11 shrink-0 place-items-center rounded-full text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 lg:m-1 lg:size-9 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100 lg:group-data-[compose]/app:mr-auto"></button>
         <div class="grid min-w-0 flex-1 lg:group-data-[compose]/app:order-first lg:group-data-[compose]/app:basis-full">
@@ -4005,6 +4006,10 @@ function renderComposer() {
       ? `<button data-act="view-draft" data-i="${i}" aria-label="Look at ${esc(f.name)}" class="block cursor-zoom-in rounded-xl"><img src="${f.preview || P + 'f/' + encodeURIComponent(f.f)}" alt="" class="size-16 rounded-xl border border-zinc-200 object-cover dark:border-zinc-700 ${f.f ? '' : 'opacity-40'}"></button>`
       : `<div class="flex h-16 w-28 items-center gap-1 rounded-xl border border-zinc-200 px-2 text-xs dark:border-zinc-700 ${f.f ? '' : 'opacity-40'}">${ico('file', 'size-4')}<span class="line-clamp-2 break-all">${esc(f.name)}</span></div>`}
     <button data-act="unfile" data-i="${i}" aria-label="Remove ${esc(f.name)}" class="absolute -top-3.5 -right-3.5 grid size-11 place-items-center"><span class="grid size-6 place-items-center rounded-full bg-zinc-900 text-white ring-2 ring-white dark:bg-zinc-100 dark:text-zinc-900 dark:ring-zinc-900">${ico('x', 'size-3.5', '2.5')}</span></button></div>`).join('');
+  // T101: where the two transcriptions disagree on what changes the meaning, said under the voice note before you send
+  const words = $('text').value, spots = U.files.flatMap((f, i) => (f.doubts || []).map((x, k) => ({i, k, x}))).filter(({x}) => words.includes(x.was));
+  $('doubts').hidden = !spots.length;
+  $('doubts').innerHTML = spots.map(({i, k, x}) => { const [said, heard] = x.show || [x.was, x.alt]; return `<p class="flex min-h-8 items-center gap-1.5">${ico('alert', 'size-3.5 shrink-0 text-amber-600 dark:text-amber-400', '2')}<span class="min-w-0">Maybe misheard: “${esc(unmarked(said))}”${x.alt ? ` — the other model heard “${esc(heard)}”${x.also?.length ? ` (${x.also.length + 1} places)` : ''} ·` : ' — the model was not sure'}</span>${x.alt ? `<button data-act="doubt-use" data-i="${i}" data-k="${k}" class="${LINK_BTN} -my-1 -ml-1.5 shrink-0">Use it</button>` : ''}</p>`; }).join('');
   // The three buttons. While recording the textarea keeps its place (unseen), so the box keeps its size.
   const rec = !!R.rec, has = !!(t.value.trim() || U.files.length || ticks.length);
   const micTip = !window.isSecureContext ? 'Voice needs an https link here: press for it' : D.compose ? 'Record a voice note · ⌥V' : 'Record a voice note · V, or ⌥V while typing';
@@ -4326,6 +4331,7 @@ function placeWords(f) {  // B165: a voice note's words go where you recorded it
   } else if (key && !f.tr) toast(f.tr_error ? 'Transcription failed. The audio is kept and can be sent as is.' : 'No words heard. The audio is kept and can be sent as is.');
   else if (!key && f.sent && !f.tr) toast(f.tr_error ? 'Transcription failed. The audio was sent as is.' : 'No words heard. The audio was sent as is.');
 }
+const unmarked = s => s.replace(/\s*[(\uff08][?\uff1f][)\uff09]/g, '');  // without the model's "(?)"
 // Voice notes this browser kept that never went out (the page was closed, Taska restarted...) come back into the box
 // they were recorded in, with the words that were on their way with them. One that went out already is let go.
 async function restoreVoice() {
@@ -4959,6 +4965,25 @@ const ACT = {
       });
     }
     renderComposer();
+  },
+  'doubt-use': b => {  // T101: the other transcription's words in place of the ones that may be misheard, in every place
+    const f = U.files[Number(b.dataset.i)], x = f?.doubts?.[Number(b.dataset.k)], t = $('text'), before = t.value;
+    if (!x) return;
+    const was = {trAdded: f.trAdded, doubts: f.doubts};
+    let text = before, from = f.trAdded ? text.indexOf(f.trAdded) : -1, len = f.trAdded?.length || 0, done = 0;
+    for (const s of [x, ...(x.also || [])]) {
+      const own = from >= 0 ? text.indexOf(s.was, from) : -1, mine = own >= 0 && own + s.was.length <= from + len;  // in the voice note's own words first
+      const at = mine ? own : text.indexOf(s.was), delta = s.alt.length - s.was.length;
+      if (at < 0) continue;
+      text = text.slice(0, at) + s.alt + text.slice(at + s.was.length); done++;
+      if (mine) len += delta; else if (at < from) from += delta;
+    }
+    if (!done) return;
+    t.value = text;
+    if (from >= 0) f.trAdded = text.slice(from, from + len);
+    f.doubts = f.doubts.filter(d => d !== x);
+    saveDraft(); grow(); renderComposer(); keepRec(f);
+    toast(`Changed to “${(x.show || [])[1] || x.alt}”`, () => { t.value = before; Object.assign(f, was); saveDraft(); grow(); renderComposer(); keepRec(f); });
   },
   'view-draft': b => {  // a screenshot in the box: a tap looks at it, it does not remove it
     const imgs = U.files.filter(f => f.f && (f.mime || '').startsWith('image/')).map(f => f.f), f = U.files[Number(b.dataset.i)];
