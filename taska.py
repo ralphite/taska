@@ -5357,7 +5357,7 @@ function vcPlace() {  // the button by the selection, or by the passage you are 
   bar.style.left = `${Math.max(8, Math.min(innerWidth - bar.offsetWidth - 8, r.left + r.width / 2 - bar.offsetWidth / 2))}px`;
 }
 async function vcToggle() {
-  if (R.vc && R.rec) return finishRec(false);
+  if (R.vc) return R.rec ? finishRec(false) : undefined;  // starting: the microphone is on its way
   if (R.rec) return;
   const s = vcSelection();
   if (!s) return;
