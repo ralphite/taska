@@ -1992,7 +1992,7 @@ PAGE = r'''<!doctype html>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232563eb' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M13 5h8M13 12h8M13 19h8M3 17l2 2 4-4M3 7l2 2 4-4'/%3E%3C/svg%3E">
 <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3/dist/index.global.js" integrity="sha384-2ql948lIdLcGEE0/qxNiudyTjgauA3RDJERu5xW75kFCvSl5a9odyQYCb6tEjnmB" crossorigin="anonymous"></script>
 </head>
-<body class="h-dvh overflow-hidden bg-white text-zinc-900 antialiased [-webkit-tap-highlight-color:transparent] lg:flex dark:bg-zinc-950 dark:text-zinc-100 [&_a[href]:active]:opacity-60 [&_button:not(:disabled):active]:opacity-60 [&_button[aria-busy=true]]:pointer-events-none [&_button[aria-busy=true]]:opacity-50">
+<body class="h-dvh overflow-hidden bg-white text-zinc-900 antialiased [-webkit-tap-highlight-color:transparent] lg:flex dark:bg-zinc-950 dark:text-zinc-100 [&_a[href]:active]:opacity-60 [&_button:not(:disabled):active]:opacity-60 [&_button[aria-busy=true]]:opacity-50">
 <nav id="drawer" hidden aria-label="Projects" class="fixed top-0 left-0 flex h-dvh w-80 max-w-[85vw] flex-col bg-zinc-100 pt-[env(safe-area-inset-top)] pb-[max(1rem,env(safe-area-inset-bottom))] lg:z-40 lg:w-[var(--side-w,15rem)] lg:max-w-none lg:shrink-0 lg:border-r lg:border-zinc-200 lg:bg-zinc-50 lg:pb-0 2xl:w-[var(--side-w,16rem)] dark:bg-zinc-900 dark:lg:border-zinc-800">
   <div data-grip="side" title="Drag to resize · double-click for the default" class="absolute inset-y-0 right-0 z-10 hidden w-2 translate-x-full cursor-col-resize hover:bg-blue-500/30 lg:block"></div>
   <div class="flex h-14 shrink-0 items-center gap-2 px-5 lg:pr-2 lg:pl-4"><span id="drawerLogo" class="text-blue-600 dark:text-blue-400"></span><span class="text-xl font-semibold tracking-tight lg:text-[19px]">Taska</span>
@@ -2452,7 +2452,7 @@ const excerpt = it => oneLine(it.wait ? it.wait.text : it.status === 'review' ? 
 
 // Desktop: the selected row is tinted, others on hover; hovering shows the phone's swipe actions as buttons.
 // A row answers a press too (B159); the short delay keeps rows from flashing while a finger scrolls the list.
-const rowTint = it => (U.open === it.n ? 'lg:bg-blue-50 dark:lg:bg-blue-400/10' : 'lg:hover:bg-zinc-50 dark:lg:hover:bg-zinc-900/70') + ' transition-colors delay-75 active:bg-zinc-100 lg:active:bg-zinc-100 dark:active:bg-zinc-900 dark:lg:active:bg-zinc-900';
+const rowTint = it => (U.open === it.n ? 'lg:bg-blue-50 dark:lg:bg-blue-400/10' : 'lg:hover:bg-zinc-50 dark:lg:hover:bg-zinc-900/70') + ' pointer-coarse:transition-colors pointer-coarse:delay-75 active:bg-zinc-100 lg:active:bg-zinc-100 dark:active:bg-zinc-900 dark:lg:active:bg-zinc-900';  // the delay is for fingers only
 const ACT_KEY = {Done: 'D', Accept: 'A', Approve: 'A', Archive: 'E', Unarchive: 'E', Later: 'L', Now: 'L', "Won't do": 'W', 'Not yet': 'N'};
 const ACT_TONE = {Done: 'text-emerald-600 dark:text-emerald-400', Accept: 'text-emerald-600 dark:text-emerald-400', Approve: 'text-blue-600 dark:text-blue-400', Archive: 'text-emerald-600 dark:text-emerald-400', Start: 'text-blue-600 dark:text-blue-400', "Won't do": 'text-red-600 dark:text-red-400'};
 // On the desktop the actions keep one order on every row (B128): forward · progress · Won't do · Later; the ones that
@@ -4883,6 +4883,7 @@ document.addEventListener('click', e => {
   if (Date.now() - SW.swallow < 400) { e.preventDefault(); e.stopPropagation(); return; }
   if (SW.open && !e.target.closest('[data-swipe-right]')) { closeSwipe(); e.preventDefault(); return; }
   const b = e.target.closest('[data-act]');
+  if (b?.getAttribute('aria-busy') === 'true') { e.preventDefault(); return; }  // still waiting on the server: a second tap does nothing, and doesn't fall through (B159)
   if (b?.hasAttribute('data-expand') && !getSelection().isCollapsed) return;  // selecting words to copy them
   if (e.target === $('overlay')) return closeDialog();
   if (b && ACT[b.dataset.act]) {
