@@ -25,7 +25,7 @@ class VoiceWordsTests(unittest.TestCase):
         self.op({'op': 'new', 'title': 'Dark mode', 'type': 'feature'})
         self.go = threading.Event()  # the stand-in for Gemini answers when this is set
         self.answer = WORDS
-        patcher = patch.object(taska, 'transcribe', side_effect=lambda *a: self.go.wait(5) and self.answer)
+        patcher = patch.object(taska, 'transcribe', side_effect=lambda *a, **k: self.go.wait(5) and {'tr': self.answer, 'tr_by': 'main'})
         patcher.start()
         self.addCleanup(patcher.stop)
 

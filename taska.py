@@ -12,8 +12,10 @@ state is the replay of that log.
 
 import argparse
 import base64
+import difflib
 import hashlib
 import hmac
+import http.client
 import ipaddress
 import json
 import mimetypes
@@ -465,13 +467,14 @@ class Store:
             job = self.trs[fid] = {"t0": time.time(), "done": False, "tr": "", "err": ""}
 
         def work():
-            tr, err = "", ""
+            res, err = {}, ""
             try:
-                tr = transcribe(self, data, mime, scope)
+                res = transcribe(self, data, mime, scope) or {}
             except Exception as ex:
                 err = str(ex) or "transcription failed"
+            tr = res.get("tr", "")
             with self.cond:
-                job.update(done=True, tr=tr, err=err)
+                job.update(done=True, tr=tr, err=err, res=res)
                 inp = next((i for i in self.inputs.values() if not i.get("moved") and any(f["f"] == fid for f in i["files"])), None)
                 if inp and tr and not any(f["f"] == fid and f.get("tr") for f in inp["files"]):
                     self.emit({"k": "tr", "src": inp["id"], "f": fid, "tr": tr, "by": "you", **({"late": True} if inp["acked"] or inp["org"] else {})})
@@ -1276,7 +1279,46 @@ def api_key():
     return None
 
 
-def gemini(system, parts, think=0, temperature=0.2, timeout=120, field=None, hint=""):
+def gemini_call(model, body, timeout=120):
+    """One generateContent request -> the parsed reply. Busy and network errors are tried again; a model without a
+    thinking switch is asked again without thinkingConfig."""
+    for attempt in range(3):
+        req = urllib.request.Request(
+            f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
+            data=json.dumps(body).encode(), headers={"x-goog-api-key": api_key() or "", "Content-Type": "application/json"})
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as r:
+                return json.load(r)
+        except urllib.error.HTTPError as ex:
+            detail = ex.read().decode("utf-8", "replace")
+            gen = body.get("generationConfig") or {}
+            if ex.code == 400 and "hinking" in detail and "thinkingConfig" in gen:
+                del gen["thinkingConfig"]  # model without a thinking switch
+                continue
+            if ex.code in (429, 500, 502, 503, 504) and attempt < 2:
+                time.sleep(2 * (attempt + 1))
+                continue
+            raise Err(f"Gemini HTTP {ex.code}: {first_line(detail, 160)}")
+        except (OSError, http.client.HTTPException) as ex:  # unreachable, timed out, connection dropped
+            if attempt < 2:
+                time.sleep(2)
+                continue
+            raise Err(f"Gemini unreachable: {ex}")
+    raise Err("Gemini failed")
+
+
+def reply_text(data):
+    """(text, why it was refused or None) from a generateContent reply. A speech model's words count as text."""
+    cand = (data.get("candidates") or [{}])[0]
+    text = "".join(p.get("text", "") or (p.get("audioTranscription") or {}).get("text", "")
+                   for p in cand.get("content", {}).get("parts", []) if not p.get("thought")).strip()
+    why = (data.get("promptFeedback") or {}).get("blockReason")
+    if not why and not text and cand.get("finishReason") not in (None, "STOP", "MAX_TOKENS"):
+        why = cand["finishReason"]
+    return text, why
+
+
+def gemini(system, parts, think=0, temperature=0.2, timeout=120, field=None, hint="", model=None):
     """field: answer as JSON {field: "..."} (hint describes it) and return that string; keeps prefaces and notes out."""
     body = {"contents": [{"role": "user", "parts": parts}],
             "generationConfig": {"temperature": temperature, "thinkingConfig": {"thinkingBudget": think}}}
@@ -1285,36 +1327,13 @@ def gemini(system, parts, think=0, temperature=0.2, timeout=120, field=None, hin
             "type": "OBJECT", "properties": {field: {"type": "STRING", "description": hint}}, "required": [field]})
     if system:
         body["systemInstruction"] = {"parts": [{"text": system}]}
-    for attempt in range(3):
-        req = urllib.request.Request(
-            f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:generateContent",
-            data=json.dumps(body).encode(), headers={"x-goog-api-key": api_key(), "Content-Type": "application/json"})
+    text, _ = reply_text(gemini_call(model or MODEL, body, timeout))
+    if field:
         try:
-            with urllib.request.urlopen(req, timeout=timeout) as r:
-                data = json.load(r)
-            parts_out = (data.get("candidates") or [{}])[0].get("content", {}).get("parts", [])
-            text = "".join(p.get("text", "") for p in parts_out if not p.get("thought")).strip()
-            if field:
-                try:
-                    return str(json.loads(text).get(field) or "").strip()
-                except (ValueError, AttributeError):
-                    raise Err("Gemini answered in an unexpected format")
-            return text
-        except urllib.error.HTTPError as ex:
-            detail = ex.read().decode("utf-8", "replace")
-            if ex.code == 400 and "hinking" in detail and "thinkingConfig" in body["generationConfig"]:
-                del body["generationConfig"]["thinkingConfig"]  # model without a thinking switch
-                continue
-            if ex.code in (429, 500, 502, 503, 504) and attempt < 2:
-                time.sleep(2 * (attempt + 1))
-                continue
-            raise Err(f"Gemini HTTP {ex.code}: {first_line(detail, 160)}")
-        except (urllib.error.URLError, TimeoutError) as ex:
-            if attempt < 2:
-                time.sleep(2)
-                continue
-            raise Err(f"Gemini unreachable: {ex}")
-    raise Err("Gemini failed")
+            return str(json.loads(text).get(field) or "").strip()
+        except (ValueError, AttributeError):
+            raise Err("Gemini answered in an unexpected format")
+    return text
 
 
 ORG = """\
@@ -1438,38 +1457,337 @@ class Organizer(threading.Thread):
             s.emit({"k": "org", "src": inp["id"], "ok": not bad, "msg": msg, "plan": plan, "keep": keep, "changed": bool(labels), "ms": int((time.time() - t0) * 1000), "by": "org"})
 
 
-def transcribe(store, data, mime, scope):
-    """Voice note -> text, biased toward the project's own vocabulary."""
+# --------------------------------------------------------------------------- voice notes
+
+# How voice notes become text, measured on 59 real notes and 5 where nobody speaks (T101):
+# - a fixed model version: an alias such as gemini-flash-latest moves to a newer model without notice;
+# - a dedicated speech-to-text model at the same time, as a second opinion. It never made words up from silence,
+#   never refused and never wrote Traditional characters, but it renders some English words in Chinese. So it only
+#   decides whether anyone spoke, stands in when the main one gives nothing, and shows where the two disagree;
+# - Traditional characters, which still slip in now and then, turned Simplified by one cheap text-only request.
+VOICE_MODEL = os.environ.get("TASKA_VOICE_MODEL", "gemini-3.8-flash")
+ASR_MODEL = os.environ.get("TASKA_ASR_MODEL", "gemini-3.5-transcribe")
+# The source stays free of Chinese (R66), so the Chinese below is escaped. VOICE_SYSTEM says: "You transcribe speech.
+# Write only the words really spoken in the recording; if nobody speaks, return an empty string. Always write Chinese
+# in Simplified characters, never Traditional." VOICE_HINT: "Word for word, Chinese in Simplified characters; empty
+# when nobody speaks". VOICE_RULES quotes "Simplified / Traditional characters", "P zero/one/two" and "B seventy-three".
+VOICE_SYSTEM = ("\u4f60\u662f\u8bed\u97f3\u8f6c\u5199\u5458\u3002\u53ea\u5199\u5f55\u97f3\u91cc\u771f\u6b63\u8bf4\u51fa\u7684\u8bdd\uff1b"
+                "\u6ca1\u6709\u4eba\u8bf4\u8bdd\u5c31\u8fd4\u56de\u7a7a\u5b57\u7b26\u4e32\u3002"
+                "\u4e2d\u6587\u4e00\u5f8b\u7528\u7b80\u4f53\u5b57\u4e66\u5199\uff0c\u7edd\u4e0d\u7528\u7e41\u4f53\u5b57\u3002")
+VOICE_HINT = "\u9010\u5b57\u8f6c\u5199\uff0c\u4e2d\u6587\u7528\u7b80\u4f53\u5b57\uff1b\u6ca1\u6709\u4eba\u8bf4\u8bdd\u65f6\u4e3a\u7a7a"
+VOICE_RULES = """\
+Transcribe this voice note verbatim. The speaker mixes Mandarin Chinese and English while talking about software work.
+Rules:
+- Write only words that are actually spoken. If nobody speaks (silence, noise, a beep, music), return an empty transcript. Never output the hint words or item titles below unless the speaker says them.
+- Write Chinese in Simplified characters (\u7b80\u4f53\u5b57) only, never Traditional (\u7e41\u9ad4\u5b57).
+- Keep English words in Latin letters as spoken; never translate them. Write code identifiers, file paths, commands and product names the normal way (Codex, pytest, tests/test_export.py).
+- Priorities are spoken as "P\u96f6", "P0", "P\u4e00", "P\u4e8c": write P0, P1, P2, P3. Item codes are a letter and a number, like B73, F12, R66, T101; the letter is often said in English and the number in Chinese ("B\u4e03\u5341\u4e09" is B73).
+- Do not summarize, translate or tidy the wording. Keep self-corrections and repetitions. Use normal Chinese punctuation.
+- If a word is unclear, give your best guess followed by (?).
+- Put only the spoken words in transcript: no preface, notes or timestamps."""
+# T2S_SYSTEM: "You turn Traditional characters into Simplified ones. Change only the character forms, never a word,
+# punctuation, English or spaces." T2S_HINT: "The same text, Traditional characters made Simplified, nothing else changed".
+T2S_SYSTEM = ("\u4f60\u628a\u7e41\u4f53\u5b57\u8f6c\u6362\u6210\u7b80\u4f53\u5b57\u3002"
+              "\u53ea\u6539\u5b57\u5f62\uff0c\u4e0d\u6539\u4efb\u4f55\u8bcd\u8bed\u3001\u6807\u70b9\u3001\u82f1\u6587\u6216\u7a7a\u683c\u3002")
+T2S_HINT = "\u540c\u4e00\u6bb5\u6587\u5b57\uff0c\u7e41\u4f53\u5b57\u6362\u6210\u7b80\u4f53\u5b57\uff0c\u5176\u4f59\u4e00\u5b57\u4e0d\u6539"
+# Everyday English words: no help as spelling hints, and they push the project's own names down the list.
+VOICE_COMMON = frozenset("""a about above after again all also always an and another any are as ask at away back be
+because been before being best better between both but by can cannot could did do does doing done down each easy else
+even every few first for from get gets give go goes going good got had has have here how however if in into is it its
+just keep last later less let like look made make makes many may maybe more most much must my need needs never new
+next no not now of off often old on once one only open or other our out over own per put really same see set should
+since so some still such sure take than that the their them then there these they thing things this those though
+through to too try two under until up use used uses using very via want was way we well were what when where which
+while who why will with without would yes yet you your com org net www http https src localhost""".split())
+FILE_NAME = re.compile(r"\.(png|jpe?g|gif|webp|heic|svg|webm|m4a|mp3|mp4|ogg|wav|pdf|txt|md|json|jsonl|html?|css|csv|log|zip|py|js|ts|sh)$")
+AUDIO_MIME = {".webm": "audio/webm", ".ogg": "audio/ogg", ".m4a": "audio/mp4", ".mp4": "audio/mp4", ".mp3": "audio/mpeg",
+              ".wav": "audio/wav", ".aac": "audio/aac", ".flac": "audio/flac"}
+
+
+def voice_term_ok(t):
+    """A word worth a spelling hint: not a URL, a document id or key, an input ref (r119), a file name, a plain number
+    or code, or an everyday English word."""
+    low = t.lower()
+    return (3 <= len(t) <= 30 and low not in VOICE_COMMON and not re.search(r"://|^www\.|localhost", low)
+            and not ("/" in t and "." in t) and not FILE_NAME.search(low) and not re.fullmatch(r"[a-z]{0,2}\d+", low)
+            and not re.search(r"\d{4,}", t) and not re.fullmatch(r"[0-9a-f]{10,}", low)
+            and not (len(t) >= 16 and re.search(r"\d", t) and re.search(r"[A-Z]", t) and re.search(r"[a-z]", t)))
+
+
+def voice_terms(words, fixes, limit=60):
+    """Spelling hints, each once: the words you corrected before and Taska first, then the project's own words, unusual
+    ones (CamelCase names, acronyms, snake_case) before capitalized names before plain words, most used first in each."""
+    out, seen = [], set()
+    picked = [t for t in (w.strip("._/-") for w, _ in words.most_common()) if voice_term_ok(t)]
+    rank = lambda t: 0 if re.search(r"[A-Z0-9_./-]", t[1:]) else 1 if t[0].isupper() else 2
+    for t in [c["right"] for c in reversed(fixes)] + ["Taska"] + sorted(picked, key=rank):
+        if t.lower() not in seen:
+            seen.add(t.lower())
+            out.append(t)
+    return out[:limit]
+
+
+def voice_context(store, scope):
+    """(the project's words, its open items as "B73 title", their titles): what the transcription is told."""
     with store.lock:
-        words = Counter()
         pool = [store.items[scope]] if scope in store.items else []
-        pool += [i for i in store.sorted(store.active()) if i["status"] in ("open", "doing")][:80]
+        pool += [i for i in store.sorted(store.active()) if i["status"] in ("open", "doing") and i["n"] != scope][:80]
+        words = Counter()
         for it in pool:
-            words.update(re.findall(r"[A-Za-z_][\w./\-]{2,}", it["title"] + " " + it["body"]))
-        titles = [it["title"] for it in pool[:40]]
+            words.update(re.findall(r"[A-Za-z_][A-Za-z0-9_./\-]{2,}", it["title"] + " " + it["body"]))
+        # B73, not B073: the way people say it. No "src=r119" left over in a title.
+        items = [f"{LETTER[it['type']]}{it['n']} " + " ".join(re.sub(r"\bsrc=r\d+", " ", it["title"]).split())[:100] for it in pool[:30]]
+        return words, items, [it["title"] for it in pool[:40]]
+
+
+def voice_prompt(terms, items, fixes):
+    lines = [VOICE_RULES]
+    if fixes:  # F144
+        lines.append("Spellings the user corrected before (write the right form when you hear it): " +
+                     "; ".join(f"{c['right']} (not {c['wrong']})" for c in fixes[-40:]))
+    lines.append("Spelling hints, only for words you actually hear: " + ", ".join(terms))
+    if items:
+        lines.append("Open items, only to recognize names and codes (do not copy them): " + "; ".join(items))
+    return "\n".join(lines)
+
+
+def voice_main(audio, prompt):
+    """The main transcript (VOICE_MODEL, in a JSON field so no preface or notes get in). Gemini sometimes refuses a
+    voice note for no reason it gives (promptFeedback.blockReason): asked once more, then left to the speech model."""
+    for attempt in (1, 2):
+        body = {"contents": [{"role": "user", "parts": [{"text": prompt}, audio]}],
+                "systemInstruction": {"parts": [{"text": VOICE_SYSTEM}]},
+                "generationConfig": {"temperature": 0.2, "thinkingConfig": {"thinkingBudget": 0}, "responseMimeType": "application/json",
+                                     "responseSchema": {"type": "OBJECT", "properties": {"transcript": {"type": "STRING", "description": VOICE_HINT}},
+                                                        "required": ["transcript"]}}}
+        text, why = reply_text(gemini_call(VOICE_MODEL, body))
+        if why and attempt == 1:
+            continue
+        if why:
+            raise Err(f"Gemini refused it twice ({why})")
+        try:
+            return str(json.loads(text).get("transcript") or "").strip()
+        except (ValueError, AttributeError):
+            raise Err("Gemini answered in an unexpected format")
+
+
+def voice_asr(audio, vocab):
+    """The second opinion: the dedicated speech-to-text model, with the project's words. "" = nobody spoke."""
+    body = {"contents": [{"role": "user", "parts": [audio]}], "generationConfig": {"audioTranscriptionConfig": {
+        "mode": "VERBATIM", "languageCodes": ["cmn-Hans-CN", "en-US"], "customVocabulary": vocab}}}
+    text, why = reply_text(gemini_call(ASR_MODEL, body))
+    if why:
+        raise Err(f"the speech model refused it ({why})")
+    return text
+
+
+def side_by_side(first, second, wait=300):
+    """first() here and second() in a thread, at the same time -> ((result, None) or (None, error)) for each."""
+    out = [None, (None, Err("no answer in time"))]
+
+    def run(i, fn):
+        try:
+            out[i] = (fn(), None)
+        except Exception as ex:  # one failing must not lose the other's answer
+            out[i] = (None, ex)
+    t = threading.Thread(target=run, args=(1, second), daemon=True)
+    t.start()
+    run(0, first)
+    t.join(wait)
+    return out[0], out[1]
+
+
+def traditional(text):
+    """The Traditional characters in text: CJK ones that GB2312 (Simplified) cannot encode but Big5 can."""
+    out = []
+    for ch in text or "":
+        if "\u4e00" <= ch <= "\u9fff":
+            try:
+                ch.encode("gb2312")
+            except UnicodeEncodeError:
+                try:
+                    ch.encode("big5")
+                    out.append(ch)
+                except UnicodeEncodeError:
+                    pass
+    return out
+
+
+def simplified(text):
+    """text with its Traditional characters made Simplified by one cheap text-only request, made only when there are
+    any. Nothing else may change (the same Latin words and numbers, about the same length), or text stays as it was."""
+    before = traditional(text)
+    if not before:
+        return text
+    try:
+        out = gemini(T2S_SYSTEM, [{"text": text}], think=0, temperature=0, timeout=60, field="text", hint=T2S_HINT, model=VOICE_MODEL)
+    except Exception:
+        return text
+    latin = lambda s: re.findall(r"[A-Za-z0-9]+", s)
+    same = latin(out) == latin(text) and abs(len(out) - len(text)) <= max(2, len(text) // 50)
+    return out if out and same and len(traditional(out)) < len(before) else text
+
+
+VOICE_TOKEN = re.compile(r"[A-Za-z0-9](?:[A-Za-z0-9_.+'/-]*[A-Za-z0-9])?|[\u3400-\u9fff]")  # a word, or one Chinese character
+VOICE_FILLERS = {"\u55ef", "\u5443", "\u989d", "\u6b38", "\u8bf6", "um", "uh", "hmm", "er"}  # um, uh: the same in Chinese
+NEGATION = set("\u4e0d\u6ca1\u672a\u522b\u65e0\u975e")  # not, have not, not yet, do not, without, non-
+NUMBER = re.compile(r"[0-9\u96f6\u4e00\u4e8c\u4e09\u56db\u4e94\u516d\u4e03\u516b\u4e5d\u5341\u767e\u4e24]+")  # digits; zero..nine, ten, hundred, two
+UNSURE = re.compile(r"[ \t]*[(\uff08][?\uff1f][)\uff09]")  # "(?)": the model was unsure of the word before it
+
+
+EN_NUMBERS = {"zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"}
+
+
+def voice_tokens(text):
+    return [(m.group().lower(), m.start(), m.end()) for m in VOICE_TOKEN.finditer(text) if m.group().lower() not in VOICE_FILLERS]
+
+
+def voice_number(s):
+    return bool(s) and (bool(NUMBER.fullmatch(s)) or s in EN_NUMBERS)
+
+
+def voice_short(tr, alt):
+    """The main transcript holds much less than the speech model heard: it stopped early (two iPhone notes kept only
+    their first half-sentence). On 328 pairs from real notes the main one always held at least 90%."""
+    a, b = len(voice_tokens(tr)), len(voice_tokens(alt))
+    return b >= 10 and a < 0.7 * b
+
+
+def voice_either(s):
+    """"X not X" (can or cannot, is or is not, have or have not): a question in Chinese, not a negation."""
+    return len(s) == 3 and s[1] in "\u4e0d\u6ca1" and s[0] == s[2]
+
+
+def voice_doubts(tr, alt, most=4):
+    """Spots where tr may be misheard: where the other transcript alt disagrees on something that changes the meaning
+    (English words, numbers and codes such as P0 or B73, a negation, or 3+ characters on both sides), and words the
+    model marked (?). -> [{"was": words of tr, "alt": what the other model heard there ("" for a mark alone), "why"}].
+    Each "was" is widened with the words around it until it reads as words and occurs once in tr, so the page can swap
+    it for "alt"."""
+    A, spots = voice_tokens(tr), []
+    marked = {max((i for i, t in enumerate(A) if t[2] <= m.start()), default=-1) for m in UNSURE.finditer(tr)}  # words before "(?)"
+    if alt:
+        B = voice_tokens(alt)
+        ops = difflib.SequenceMatcher(None, [t for t, _, _ in A], [t for t, _, _ in B], autojunk=False).get_opcodes()
+        for k, (tag, i1, i2, j1, j2) in enumerate(ops):
+            if tag == "equal":
+                continue
+            x, y = (re.sub(r"[^a-z0-9\u3400-\u9fff]", "", "".join(t for t, _, _ in T[a:b])) for T, a, b in ((A, i1, i2), (B, j1, j2)))
+            short, long_ = sorted((x, y), key=len)
+            variant = (re.fullmatch(r"[a-z]{4,}", short) and re.fullmatch(r"[a-z]+", long_) and long_.startswith(short.rstrip("e"))
+                       and len(long_) - len(short.rstrip("e")) <= 4)  # dialog / dialogue, organize / organizing
+            n = 0  # what both sides share at the start and at the end is no difference (changelog / change log)
+            while n < min(len(x), len(y)) and x[n] == y[n]:
+                n += 1
+            x, y = x[n:], y[n:]
+            n = 0
+            while n < min(len(x), len(y)) and x[-1 - n] == y[-1 - n]:
+                n += 1
+            x, y = x[:len(x) - n], y[:len(y) - n]
+            unsure = any(i1 <= i < max(i2, i1 + 1) for i in marked)
+            if not unsure:
+                if x == y or variant or (voice_number(x) and voice_number(y)):
+                    continue  # DevTools / Dev Tools, Shift+V / shift + V, 3 / three / 1-pager / one pager
+                if not (x and y) and re.fullmatch(r"s|es|d|ed|ing|ly", x or y):
+                    continue  # form / forms, approve / approved
+                if re.search(r"[a-z]", x) and not re.search(r"[a-z0-9]", y):
+                    continue  # English kept as spoken where the speech model put it in Chinese or left it out (merge, pull)
+                if any(not v and len(u) == 2 and (voice_either(T[a - 1][0] + u if a else "") or voice_either(u + T[b][0] if b < len(T) else ""))
+                       for u, v, T, a, b in ((x, y, A, i1, i2), (y, x, B, j1, j2))):
+                    continue  # "can or cannot", "is or is not": a question, not a negation
+                if any(u and not v and u in ("".join(t for t, _, _ in T[max(0, a - len(u)):a]), "".join(t for t, _, _ in T[b:b + len(u)]))
+                       for u, v, T, a, b in ((x, y, A, i1, i2), (y, x, B, j1, j2))):
+                    continue  # a word said twice on one side only: a stutter
+            neg, latin = bool(set(x) & NEGATION) != bool(set(y) & NEGATION), re.search(r"[a-z0-9]", x + y)  # a "not" on one side only
+            if not (unsure or latin or neg or (len(x) >= 3 and len(y) >= 3)):
+                continue
+            lo = ops[k - 1][1] if k else i1  # the same words on either side, to widen it with
+            hi = ops[k + 1][2] if k + 1 < len(ops) else i2
+            a1, a2, b1, b2 = i1, i2, j1, j2
+            span = lambda T, s, e: (T[s][1], T[e - 1][2]) if e > s else (None, None)
+            (cs, ce), (cbs, cbe) = span(A, i1, i2), span(B, j1, j2)  # the differing words alone, to show when they read well
+            joined = lambda i: i <= 0 or i >= len(A) or not tr[A[i - 1][2]:A[i][1]].strip()  # no punctuation between A[i-1] and A[i]
+            for _ in range(8):  # too short to read: the words next to it first; not the only one: the words before it
+                s, e = span(A, a1, a2)
+                readable = sum(1 if t >= "\u3400" else 3 for t, _, _ in A[a1:a2]) >= 3
+                if readable and tr.count(tr[s:e]) == 1:
+                    break
+                right = a2 < hi and (a1 <= lo or (not readable and (joined(a2) or not joined(a1))))
+                if right:
+                    a2, b2 = a2 + 1, b2 + 1
+                elif a1 > lo:
+                    a1, b1 = a1 - 1, b1 - 1
+                else:
+                    break
+            s, e = span(A, a1, a2)
+            bs, be = span(B, b1, b2)
+            if s is None or bs is None or e - s > 40 or be - bs > 40:
+                continue  # nothing to swap, or too long to be a few words
+            why = "negation" if neg else "english" if re.search(r"[a-z]", x + y) else "number" if latin else "unsure" if unsure else "words"
+            same = next((o for o in spots if o["key"] == (x, y)), None) if not unsure else None
+            if same:  # the same two words again: one line, and Use it changes every place
+                same.setdefault("also", []).append({"was": tr[s:e], "alt": alt[bs:be]})
+                continue
+            show = cs is not None and cbs is not None and re.search(r"[A-Za-z0-9]", tr[cs:ce] + alt[cbs:cbe]) and (cs, ce) != (s, e)
+            spots.append({"was": tr[s:e], "alt": alt[bs:be], "why": why, "s": s, "e": e, "key": (x, y), **({"unsure": True} if unsure else {}),
+                          **({"show": [tr[cs:ce], alt[cbs:cbe]]} if show else {})})
+    for m in UNSURE.finditer(tr):
+        words = [t for t in A if t[2] <= m.start()]
+        if not words:
+            continue
+        hit = next((x for x in spots if x["s"] <= words[-1][1] < x["e"]), None)
+        if hit:
+            if hit["e"] <= m.start():
+                hit["e"], hit["was"] = m.end(), tr[hit["s"]:m.end()]  # "Use it" takes the mark away too
+            hit["unsure"] = True
+            continue
+        k = len(words) - 1  # a Chinese word: up to three characters before the mark, to be read
+        while k and words[k][0] >= "\u3400" and words[k - 1][2] == words[k][1] and m.start() - words[k - 1][1] <= 3:
+            k -= 1
+        spots.append({"was": tr[words[k][1]:m.end()], "alt": "", "why": "unsure", "unsure": True, "s": words[k][1], "e": m.end()})
+    spots.sort(key=lambda x: x["s"])
+    return [{k: v for k, v in x.items() if k not in ("s", "e", "key")} for x in spots[:most]]
+
+
+def transcribe(store, data, mime, scope):
+    """Voice note -> {"tr": its words ("" when nobody spoke), "tr_by": "main" or "asr", "alt": the other model's words,
+    "doubts": what may be misheard}, biased toward the project's own vocabulary. Raises Err when neither model answered."""
+    words, items, titles = voice_context(store, scope)
     fixes = HUB.corrections() if HUB else []
-    prompt = ("Transcribe this voice note verbatim. The speaker mixes Chinese and English while talking about software work. "
-              "Write code identifiers, file paths, commands and product names the way they are normally written "
-              "(Codex, pytest, tests/test_export.py). Do not summarize, translate or tidy the wording. "
-              "Write Chinese in Simplified characters. If a word is unclear, give your best guess followed by (?). "
-              "Put only the spoken words in transcript: no preface, notes or timestamps. "
-              "If nobody speaks (silence, noise, a beep, music), the transcript is empty.\n"
-              "The terms and titles below only help with spelling. Never write them unless they are spoken.\n" +
-              ("Spellings the user corrected before (write the right form when you hear it): " +
-               "; ".join(f"{c['right']} (not {c['wrong']})" for c in fixes[-40:]) + "\n" if fixes else "") +
-              "Terms from the project (prefer these spellings): " + ", ".join(w for w, _ in words.most_common(60)) +
-              "\nRelated item titles: " + "; ".join(titles))
-    # The model drifts into Traditional characters unless told so in Chinese, in the schema itself. The source stays
-    # free of Chinese (R66), so the two Chinese strings are escaped. They say: "You transcribe speech. Always write
-    # Chinese in Simplified characters, never Traditional." and "Transcribe word for word, Chinese in Simplified".
-    tr = gemini("\u4f60\u662f\u8bed\u97f3\u8f6c\u5199\u5458\u3002\u4e2d\u6587\u4e00\u5f8b\u7528\u7b80\u4f53\u5b57\u4e66\u5199\uff0c\u7edd\u4e0d\u7528\u7e41\u4f53\u5b57\u3002",
-                  [{"text": prompt}, {"inline_data": {"mime_type": mime.split(";")[0], "data": base64.b64encode(data).decode()}}], think=0, field="transcript",
-                  hint="\u9010\u5b57\u8f6c\u5199\uff0c\u4e2d\u6587\u7528\u7b80\u4f53\u5b57")
-    if echoed(tr, titles):
-        return ""
+    terms = voice_terms(words, fixes)
+    audio = {"inline_data": {"mime_type": mime.split(";")[0], "data": base64.b64encode(data).decode()}}
+    vocab = list(dict.fromkeys(["Taska", "P0", "P1", "P2", "P3"] + terms))[:100]
+    prompt = voice_prompt(terms, items, fixes)
+    (tr, err), (alt, alt_err) = side_by_side(lambda: voice_main(audio, prompt), lambda: voice_asr(audio, vocab))
+    out = {"tr": "", "tr_by": "asr"}
+    if err:
+        out["main_error"] = str(err)
+    if alt_err:
+        out["asr_error"] = str(alt_err)
+    if alt_err is None and not alt:  # the speech model heard nobody: what the other wrote was made up (B092)
+        return out
+    if err is None and tr and not echoed(tr, titles) and alt_err is None and voice_short(tr, alt):
+        try:  # it stopped early, as on some iPhone notes: asked once more, then the speech model's words
+            again = voice_main(audio, prompt)
+        except Exception:
+            again = ""
+        if again and not voice_short(again, alt):
+            tr = again
+        else:
+            out["main_error"] = f"the main transcript stopped early ({len(voice_tokens(tr))} of {len(voice_tokens(alt))} words)"
+            tr = ""
+    if err is None and tr and not echoed(tr, titles):
+        out["tr_by"] = "main"
+    elif alt_err is None:  # the main one refused, failed, stopped early, heard nothing or wrote only item titles: the speech model's words
+        tr, alt = alt, ""
+    elif err is None:  # nothing heard but item titles, and no second opinion
+        return dict(out, tr_by="main")
+    else:
+        raise Err(f"{err}; the speech model: {alt_err}")
+    tr, alt = simplified(tr), simplified(alt or "")
     for c in fixes:  # what the user fixed once stays fixed (F144)
-        tr = tr.replace(c["wrong"], c["right"])
-    return tr
+        tr, alt = tr.replace(c["wrong"], c["right"]), alt.replace(c["wrong"], c["right"])
+    return dict(out, tr=tr, alt=alt, doubts=voice_doubts(tr, alt))
 
 
 def echoed(tr, titles):
@@ -1910,8 +2228,9 @@ class Handler(BaseHTTPRequestHandler):
                 job = s.trs.get(fid)
                 if job:
                     s.cond.wait_for(lambda: job["done"], timeout=45)
+            res = (job or {}).get("res") or {}  # which model's words, and the spots that may be misheard (T101)
             self.json({"f": fid, "done": not job or job["done"], "tr": job["tr"] if job else "",
-                       "tr_error": (job["err"] if job else "no such voice note") or ""})
+                       "tr_error": (job["err"] if job else "no such voice note") or "", **{k: res[k] for k in ("tr_by", "doubts") if k in res}})
         elif p == "/api/undo":
             rid = (json.loads(self.body(10_000) or b"{}")).get("id")
             with s.cond:
