@@ -1590,7 +1590,9 @@ class Hub:
         for name, s in sorted(self.projects.items()):
             with s.lock:
                 live = [i for i in s.active() if i["status"] not in CLOSED]
-                out.append({"name": name, "open": sum(1 for i in live if i["type"] != "rule"), "auto": s.cfg["auto"],
+                # "open" as the project's own page counts it (A18): what Items holds that isn't finished, rules an agent
+                # proposed included, since they wait in Items too
+                out.append({"name": name, "open": sum(1 for i in live if not i["archived"] and (i["type"] != "rule" or i["status"] == "proposed")), "auto": s.cfg["auto"],
                             "needs": sum(1 for i in live if s.waiting(i) or i["status"] in ("proposed", "review")), **s.presence(),
                             "t": int(os.path.getmtime(s.path) * 1000)})
         return out
@@ -2490,8 +2492,22 @@ const setStatus = (n, status) => op({op: 'set', ref: code(n), f: {status}});
 
 // ---------------------------------------------------------------- items
 
+const HAY = new WeakMap();  // an item's words, worked out once per load (each load brings new item objects)
 function hay(it) {
-  return (code(it.n) + ' ' + LETTER[it.type] + it.n + ' ' + it.title + ' ' + it.body + ' ' + it.next + ' ' + it.thread.map(x => x.text).join(' ')).toLowerCase();
+  let h = HAY.get(it);
+  if (h === undefined) HAY.set(it, h = (code(it.n) + ' ' + LETTER[it.type] + it.n + ' ' + it.title + ' ' + it.body + ' ' + it.next + ' ' + it.thread.map(x => x.text).join(' ')).toLowerCase());
+  return h;
+}
+// A9, B15: a search looks in one tab. When it finds little there, the list says where else the words are, one click
+// away: that tab, with the same search.
+const searchWords = () => U.q.trim().toLowerCase().split(/\s+/).filter(Boolean);
+const inputMatch = (r, words) => words.every(w => (r.id + ' ' + r.text).toLowerCase().includes(w));
+function searchHints(shown) {
+  const words = searchWords();
+  if (!words.length || shown >= 5) return '';
+  return ['items', 'inputs', 'archive', 'rules'].filter(t => t !== U.tab)
+    .map(t => [t, t === 'inputs' ? S.inputs.filter(r => inputMatch(r, words)).length : S.items.filter(it => !it.merged_into && inTab(it, t) && words.every(w => hay(it).includes(w))).length])
+    .filter(([, n]) => n).map(([t, n]) => `<p class="flex items-center justify-center gap-1 text-sm text-zinc-500 dark:text-zinc-400">${n === 1 ? '1 match' : `${n} matches`} in ${TAB_NAME[t]}<button data-act="search-in" data-tab="${t}" class="${LINK_BTN}">Show</button></p>`).join('');
 }
 
 const filtered = () => !!(U.q.trim() || U.type !== 'all' || U.when !== 'all' || U.status !== 'all' || U.pri !== 'all');
@@ -2509,6 +2525,11 @@ function visible(tab = U.tab) {
 }
 // The agent's queue in the order it takes the work (/next): now before later, in progress first, then P0→P3, oldest first.
 const queueOrder = (a, b) => (a.when !== 'now') - (b.when !== 'now') || (a.status !== 'doing') - (b.status !== 'doing') || a.pri.localeCompare(b.pri) || a.n - b.n;
+// The queue is one thing wherever it is counted (S3): the band in Items and This project's Agents both count every item in
+// it and say how many of them are later (shown, but agents take them only once they are back to now).
+const inQueue = it => !it.merged_into && !it.archived && it.type !== 'rule' && !needsYou(it) && !CLOSED(it.status);
+const laterOf = q => q.filter(it => it.when === 'later').length;
+const laterNote = q => laterOf(q) ? `<span class="hidden text-xs font-medium whitespace-nowrap text-zinc-500 xl:inline dark:text-zinc-400">· ${laterOf(q)} later</span>` : '';  // where it fits; the rows say Later anyway
 
 function filesOf(it) {
   const seen = new Set(), out = [];
@@ -3268,7 +3289,8 @@ function renderItems() {
   if (!S.items.length) {
     html = EMPTY(`No items yet.<br>Write your first thought below${S.org.on ? ' and the organizer turns it into items' : ' and your coding agent turns it into items'}.`, `<br><button data-act="guide" class="mt-3 h-11 text-blue-600 dark:text-blue-400">Connect a coding agent</button>`);
   } else if (!rows.length && filtered()) {
-    html = EMPTY('No matching items', `<br><button data-act="reset" class="mt-3 h-11 text-blue-600 dark:text-blue-400">Clear search and filters</button>`);
+    const more = searchHints(0);
+    html = EMPTY('No matching items', `${more ? `<span class="mt-3 flex flex-col">${more}</span>` : '<br>'}<button data-act="reset" class="mt-3 h-11 text-blue-600 dark:text-blue-400">Clear search and filters</button>`);
   } else if (U.tab === 'rules') {
     // Rules: the ones an agent proposed wait on you; then the rules in force, then the retired ones.
     const wait = rows.filter(it => it.status === 'proposed'), on = rows.filter(it => it.status === 'open'), off = rows.filter(it => it.status === 'dropped');
@@ -3282,11 +3304,11 @@ function renderItems() {
     // Items, in the order of your loop (T65 "Needs you first"): what waits on you, the agent's queue, finished work.
     const going = desk() && U.go, needs = rows.filter(it => needsYou(it) || (going && going.done.has(it.n) && going.list.includes(it.n)));
     const settled = it => going && going.done.has(it.n) && going.list.includes(it.n);
-    const queue = rows.filter(it => !needsYou(it) && !settled(it) && !CLOSED(it.status) && !it.archived && it.type !== 'rule').sort(queueOrder);
+    const queue = rows.filter(it => inQueue(it) && !settled(it)).sort(queueOrder);
     const done = rows.filter(it => CLOSED(it.status) && !it.archived && !settled(it)), arch = rows.filter(it => it.archived);
     html = (needs.length ? zone('needs', 'Needs you', needs.filter(needsYou).length, going ? `<span class="text-xs font-medium text-amber-700 dark:text-amber-400">· Going through</span><button data-act="go-end" class="-my-1 ml-auto flex h-11 items-center gap-1 rounded-full pr-2 pl-3 text-[13px] font-semibold text-amber-800 dark:text-amber-300">End${KBD('Esc')}</button>` : goThroughBtn())
         + needs.map(it => going && going.done.has(it.n) ? settledRow(it) : needsRow(it)).join('') : '')  // nothing waiting: no band (I71)
-      + (queue.length ? zone('queue', 'Agent queue', queue.filter(it => it.when === 'now').length, keepGoingSwitch()) + tree(queue) : '')  // Later items show, but agents don't take them (B130)
+      + (queue.length ? zone('queue', 'Agent queue', queue.length, laterNote(queue) + keepGoingSwitch()) + tree(queue) : '')  // every row it holds; the later ones, which agents don't take yet, are named (S3)
       + (U.undoArch ? `<div class="flex items-center gap-3 border-b border-blue-100 bg-blue-50 py-2 pr-2 pl-4 dark:border-blue-400/15 dark:bg-blue-400/10">
           ${ico('archive', 'size-5 text-blue-600 dark:text-blue-400')}
           <p class="min-w-0 flex-1 text-sm text-blue-950 dark:text-blue-100"><span class="font-semibold">Archived ${plural(U.undoArch.ids.length, 'finished item')}.</span> They are under Archive.</p>
@@ -3295,7 +3317,8 @@ function renderItems() {
         : done.length ? zone('done', 'Finished', done.length, archiveAllBtn(done.length)) + tree(done) : '')
       + (arch.length ? zone('archived', 'Archived', arch.length) + arch.map(it => itemRow(it)).join('') : '');
   }
-  list.innerHTML = html;
+  const more = rows.length ? searchHints(rows.length) : '';  // a short result: where else the words are (A9)
+  list.innerHTML = html + (more ? `<div class="flex flex-col py-4">${more}</div>` : '');
   list.scrollTop = top || 0;
 }
 
@@ -3319,10 +3342,8 @@ function renderFilters() {
   const strip = $('filterStrip');
   strip.hidden = !set.length || U.tab === 'inputs' || !!U.open;
   strip.innerHTML = filterChips(set) + `<button data-act="reset" class="ml-auto h-11 shrink-0 px-1 text-[13px] font-semibold text-blue-600 dark:text-blue-400">Clear</button>`;
-  if (!desk()) return;
-  const all = visible(), total = S.items.filter(it => !it.merged_into && (U.tab === 'rules' ? it.type === 'rule' : U.tab === 'archive' ? it.archived : !it.archived && it.type !== 'rule')).length;
+  if (!desk()) return;  // the count is in the list's title, right above (A18)
   $('deskFilters').innerHTML = !set.length && !D.filters ? '' : `<div class="flex min-h-11 flex-wrap items-center gap-2 px-3 py-1.5">${filterChips(set)}
-      <span class="text-xs text-zinc-400">${all.length} of ${total}</span>
       ${set.length ? `<button data-act="reset" class="ml-auto h-8 px-1 text-[13px] font-semibold text-blue-600 dark:text-blue-400">Clear</button>` : '<span class="ml-auto"></span>'}
       <button data-act="filters" aria-label="${D.filters ? 'Fold the filters' : 'Show the filters'}" class="grid size-8 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800">${ico(D.filters ? 'chevup' : 'down', 'size-4', '2')}</button></div>
     ${D.filters ? `<div class="flex flex-col gap-3 px-3 pb-3">${filterControls(true)}</div>` : ''}`;
@@ -3451,11 +3472,12 @@ const long = r => r.text.length > 160 || r.text.split('\n').length > 4;  // show
 const dayOf = t => { const d = new Date(t), now = new Date(); return d.toDateString() === now.toDateString() ? 'Today' : new Date(now - 864e5).toDateString() === d.toDateString() ? 'Yesterday' : d.toLocaleDateString('en-US', {month: 'short', day: 'numeric'}); };
 // What you said, newest first, under day headers: your words in a light blue bubble, what became of them under it.
 function renderInputs() {
-  const words = U.q.trim().toLowerCase().split(/\s+/).filter(Boolean), v = $('inputsView');
+  const words = searchWords(), v = $('inputsView');
   // On the desktop the newest input sits at the bottom, next to the box you write in, as in a chat (F121); the page
   // opens at the end and stays there while you are at the end. The phone keeps the newest on top.
   const chat = desk(), atEnd = U.inputsEnd || v.scrollHeight - v.scrollTop - v.clientHeight < 48;
-  const rows = (chat ? [...S.inputs] : [...S.inputs].reverse()).filter(r => words.every(w => (r.id + ' ' + r.text).toLowerCase().includes(w)));
+  const rows = (chat ? [...S.inputs] : [...S.inputs].reverse()).filter(r => inputMatch(r, words)), more = searchHints(rows.length);  // more: A9
+  if (desk()) renderDeskHead();  // the title's count follows the search as you type (B18)
   let day = '';
   $('inputsView').innerHTML = rows.length ? rows.map(r => {
     const [label, tone, icon] = inputState(r), scope = r.scope ? byN.get(r.scope) : null, d = dayOf(r.t);
@@ -3479,7 +3501,7 @@ function renderInputs() {
       <div class="hidden items-center gap-1.5 text-[13px] font-semibold lg:flex ${tone}">${icon}${label}</div>
       ${note}${chips || acts ? `<div class="mt-1 flex flex-wrap items-center gap-x-1 gap-y-1.5">${chips}${acts}</div>` : ''}
     </div></article>`;
-  }).join('') : U.outbox.length ? '' : EMPTY(words.length ? 'No matching inputs' : 'No inputs yet.');
+  }).join('') + (more ? `<div class="flex flex-col py-4">${more}</div>` : '') : U.outbox.length ? '' : EMPTY(words.length ? 'No matching inputs' : 'No inputs yet.', more ? `<span class="mt-3 flex flex-col">${more}</span>` : '');
   if (U.outbox.length && !words.length) $('inputsView').innerHTML = chat ? $('inputsView').innerHTML + outboxRows(true) : outboxRows() + $('inputsView').innerHTML;
   if (chat && atEnd) requestAnimationFrame(() => { v.scrollTop = v.scrollHeight; });
   U.inputsEnd = false;
@@ -3920,12 +3942,12 @@ const logHtml = lines => `<ol class="divide-y divide-zinc-100 text-[13px] leadin
 // How the agents are doing, in one coloured card: the phone's Agents sheet and the desktop's Agents section.
 function agentCard() {
   const [tone, , line] = agentState(S.agents, S.work);
-  const queue = S.items.filter(it => !it.merged_into && !it.archived && it.type !== 'rule' && !needsYou(it) && (it.status === 'open' || it.status === 'doing')).length;
+  const queue = S.items.filter(inQueue), later = laterOf(queue);  // the same count as the band in Items (S3)
   const look = {bad: ['bg-red-50 dark:bg-red-400/10', 'bg-red-500 ring-4 ring-red-500/20 dark:bg-red-400', 'text-red-800 dark:text-red-200', 'text-red-700/80 dark:text-red-300/80'],
     ok: ['bg-emerald-50 dark:bg-emerald-400/10', 'bg-emerald-500 ring-4 ring-emerald-500/20 dark:bg-emerald-400', 'text-emerald-900 dark:text-emerald-100', 'text-emerald-800/80 dark:text-emerald-300/80'],
     idle: ['bg-zinc-100 dark:bg-zinc-800', 'bg-zinc-400 ring-4 ring-zinc-400/20', 'text-zinc-800 dark:text-zinc-100', 'text-zinc-500 dark:text-zinc-400']}[tone];
   return `<div class="flex gap-3 rounded-2xl p-4 ${look[0]}"><span class="mt-1.5 size-2.5 shrink-0 rounded-full ${look[1]}"></span>
-      <div><p class="text-[15px] leading-snug font-semibold ${look[2]}">${esc(line)}</p><p class="mt-1 text-[13px] leading-snug ${look[3]}">${plural(queue, 'item')} in the queue · Keep going is ${S.cfg?.auto ? 'on' : 'off'}</p></div></div>`;
+      <div><p class="text-[15px] leading-snug font-semibold ${look[2]}">${esc(line)}</p><p class="mt-1 text-[13px] leading-snug ${look[3]}">${plural(queue.length, 'item')} in the queue${later ? ` (${later} later)` : ''} · Keep going is ${S.cfg?.auto ? 'on' : 'off'}</p></div></div>`;
 }
 const agentsSeen = () => [...(S.agents || [])].sort((a, b) => b.t - a.t).map(a => `<li class="flex h-11 items-center gap-3">${avatar(a.name)}<span class="min-w-0 flex-1 text-[15px]">${esc(AGENT_NAME[a.name] || a.name)}</span><span class="text-sm text-zinc-500 dark:text-zinc-400">${a.waiting ? 'waiting for work' : agoLong(a.t)}</span></li>`).join('');
 function agentsHtml() {
@@ -4379,6 +4401,7 @@ const ACT = {
     renderItems();
   },
   'archive-undo': () => U.undoArch?.run(),
+  'search-in': b => { U.tabView[b.dataset.tab] = {q: U.q}; setTab(b.dataset.tab); },  // A9: the same search there, as the hint counted it (no filters)
   'copy-text': b => copy(b.dataset.text),
   sources: b => showSources(Number(b.dataset.n)),
   close: closeDialog,
@@ -4507,10 +4530,22 @@ function showDesk() {
 
 const TAB_NAME = {items: 'Items', inputs: 'Inputs', archive: 'Archive', rules: 'Rules'};
 const TAB_ICON = {items: 'items', inputs: 'inbox', archive: 'archive', rules: 'book'};
-const tabCount = t => t === 'items' ? $('nItems').textContent : t === 'inputs' ? $('nInputs').textContent : t === 'archive' ? $('nArchTab').textContent : $('nRules').textContent;
+// One count per thing, the same wherever it shows (A18, B18). The sidebar and the rail say what a tab holds, whatever
+// you search or filter there: Items the open ones, Inputs those not organized yet, Archive all, Rules those not retired.
+// The list's title starts with that number and says what else the list shows ("9 open · 2 finished"); while you search
+// or filter, how many of the tab's rows match ("2 of 11").
+const tabRows = t => t === 'inputs' ? S.inputs : S.items.filter(it => !it.merged_into && inTab(it, t));
+const tabCount = t => t === 'items' ? openCount() : t === 'inputs' ? S.inputs.filter(r => !r.acked).length || ''
+  : t === 'archive' ? tabRows('archive').length || '' : tabRows('rules').filter(it => it.status !== 'dropped').length || '';
+function listCount() {
+  const t = U.tab, all = tabRows(t).length, n = Number(tabCount(t)) || 0, words = searchWords();
+  if (t === 'inputs') return words.length ? `${S.inputs.filter(r => inputMatch(r, words)).length} of ${all}` : n ? `${n} not organized yet` : '';
+  if (filtered()) return `${visible().length} of ${all}`;
+  if (!all) return '';
+  return t === 'items' ? `${n} open${all > n ? `<span class="hidden xl:inline"> · ${all - n} finished</span>` : ''}` : t === 'rules' ? `${n}${all > n ? ` · ${all - n} retired` : ''}` : `${all}`;  // finished: where the search box keeps its room
+}
 function renderDeskHead() {
-  const pending = S.inputs.filter(r => !r.acked).length;
-  $('deskTitle').innerHTML = `<h1 class="text-[17px] font-semibold tracking-tight">${TAB_NAME[U.tab]}</h1><span class="text-sm text-zinc-400 tabular-nums">${U.tab === 'inputs' ? (pending ? `${pending} not organized yet` : '') : tabCount(U.tab)}</span>`;
+  $('deskTitle').innerHTML = `<h1 class="text-[17px] font-semibold tracking-tight">${TAB_NAME[U.tab]}</h1><span class="text-sm text-zinc-400 tabular-nums">${listCount()}</span>`;
   $('q').placeholder = U.tab === 'inputs' ? 'Search what you said' : 'Search items';
   qSync();
   $('headSearch').firstElementChild.classList.toggle('lg:max-w-sm', U.tab === 'inputs');
@@ -4660,7 +4695,10 @@ function settledRow(it) {
 }
 function startGoDesk(from) {
   const list = needsList();
-  if (!list.length) return toast('Nothing needs you right now');
+  if (!list.length) {  // B15: say so when your search or filter hides what needs you
+    const hidden = S.items.filter(it => needsYou(it) && inTab(it, 'items')).length, by = U.q.trim() ? (filtersSet().length ? 'search and filter' : 'search') : 'filter';
+    return toast(hidden ? `Nothing that needs you is in this ${by} (${hidden} hidden)` : 'Nothing needs you right now');
+  }
   U.go = {list, done: new Set(), how: {}, undo: {}};
   openItem(list.includes(from) ? from : list[0]);
 }
