@@ -3611,7 +3611,7 @@ function renderDoc({focus = false} = {}) {
   if (U.docCircle) wireLasso();
 }
 function openDoc(d) {
-  if (U.doc !== d) setTimeout(() => writeURL(true));  // after the sheet is up
+  if (U.doc !== d) setTimeout(() => !desk() && layersNow().at(-1) === 'sheet' && $('overlay').hidden === false ? writeURL(false, {v: `D${d}`}) : writeURL(true));  // after the sheet is up; a new document's editor gives it its step (B150)
   if (desk()) {  // T110: in the item pane, under its item (a merged one's: the item it went into, B5)
     const doc = docById(d), host = doc && liveN(doc.n);
     if (doc && U.open !== host && byN.has(host)) { U.open = host; renderItems(); }
@@ -4540,6 +4540,7 @@ function dialog(title, html, {aboveComposer = false, focus = true, tall = false,
   $('dlgSub').innerHTML = sub; $('dlgSub').hidden = !sub;
   $('dlgFoot').innerHTML = foot; $('dlgFoot').hidden = !foot;
   $('dlgBody').classList.toggle('pb-[max(1.25rem,env(safe-area-inset-bottom))]', !foot); $('dlgBody').classList.toggle('pb-3', !!foot);
+  if ($('overlay').hidden && !U.doc && U.sheet !== 'log') layerOpen('sheet');  // one step Back closes it (B150); a document and the log have their own address
   $('dlgBody').innerHTML = html; $('overlay').hidden = false;
   for (const c of ['h-[88dvh]', 'sm:h-[85dvh]']) $('dlg').classList.toggle(c, tall);  // documents get the whole screen
   for (const c of ['rounded-3xl', 'shadow-2xl', 'overflow-hidden', 'max-h-[92%]']) $('dlg').classList.toggle(c, card);
@@ -4576,11 +4577,13 @@ const closeDialog = () => {
     return;
   }
   if (U.doc) U.docScroll[U.doc] = $('dlgBody').scrollTop;
-  const hadDoc = U.doc;
+  const hadDoc = U.doc, sheet = !$('overlay').hidden && !hadDoc, log = U.sheet === 'log';
   U.doc = null; U.docNew = null; U.docEdit = false; U.sheet = null; U.go = null; U.docReply = null;
   $('overlay').hidden = true; $('overlay').style.bottom = '';
   if (U.peek) { U.peek = null; renderComposer(); }
   else if (hadDoc) { renderComposer(); if (!leaveView(`D${hadDoc}`)) writeURL(false); }  // the box goes back to the item or the project
+  if (sheet && !LAY.keep) { if (log) { if (!leaveView('log')) writeURL(false); } else layerShut('sheet'); }  // its step in the history goes too (B150)
+  LAY.keep = false;
 };
 
 // From outside this machine and its network Taska needs the key; one tap on the link puts it on a device for good.
@@ -4651,7 +4654,11 @@ function agentsHtml() {
 }
 function showPhone() { dialog('Use on your phone', phoneHtml()); }
 async function showGuide() { const text = await (await fetch(P + 'agent?ui=1')).text(); dialog('Connect a coding agent', guideHtml(text)); }
-async function showLog() { const text = await (await fetch(P + `log?n=${LOG_N}&ui=1`)).text(); dialog('Change log', logHtml(text.trim().split('\n').reverse())); }
+async function showLog() {  // with its own address on the phone (/log), a step Back undoes (B150)
+  const text = await (await fetch(P + `log?n=${LOG_N}&ui=1`)).text();
+  U.sheet = 'log'; dialog('Change log', logHtml(text.trim().split('\n').reverse()));
+  if (!desk()) writeURL(true);
+}
 
 function showSources(n) {
   const it = byN.get(n);
@@ -4672,8 +4679,10 @@ function copyItem(n) {
 
 function openViewer(gid, f) {
   viewerGroup = groups.get(gid) || [f]; viewerIdx = Math.max(0, viewerGroup.indexOf(f));
+  if ($('viewer').hidden) layerOpen('viewer');  // Back closes it (B150)
   $('viewer').hidden = false; showImage(); $('vClose').focus();
 }
+function closeViewer() { $('viewer').hidden = true; $('vImg').removeAttribute('src'); }
 function showImage() {
   const f = viewerGroup[viewerIdx], url = P + 'f/' + encodeURIComponent(f), img = $('vImg');
   img.className = 'm-auto max-h-full max-w-full object-contain'; $('vZoom').textContent = 'Actual size';
@@ -4763,7 +4772,7 @@ function openItem(n, push = true) {
   if (desk() && U.doc && !U.docEdit) { U.docScroll[U.doc] = $('detailBody').scrollTop; Object.assign(U, {doc: null, docReply: null, docSel: new Set(), docQuote: null, docCircle: false}); D.docKey = null; }  // another item: the document closes
   if (desk() && U.tab === 'inputs') { const it = byN.get(n); U.tab = it.archived ? 'archive' : it.type === 'rule' ? 'rules' : 'items'; }  // Inputs has no item pane
   if (desk()) { D.page = null; D.compose = false; writeURL(false, history.state?.full ? {...history.state, n} : null); }
-  else if (push && !URLS.applying && location.pathname !== P + code(n)) history.pushState({n}, '', P + code(n) + viewQuery());
+  else if (push && !URLS.applying) hist(() => { if (location.pathname !== P + code(n)) history.pushState({n}, '', P + code(n) + viewQuery()); });  // after a sheet's step back (B150)
   render();
   if (fresh) $('detailBody').scrollTop = 0;
   if (desk()) document.querySelector(`#list [data-act="open"][data-n="${n}"]`)?.scrollIntoView({block: 'nearest'});
@@ -4834,6 +4843,7 @@ async function change(n, f, v) {
 // On the desktop the search box is always there: the clear button shows only with a query, the / hint only without.
 const qSync = () => { $('qX').classList.toggle('lg:hidden', !U.q); $('qKey').classList.toggle('lg:grid', !U.q); };
 const searchMode = on => {
+  if (on !== !!U.searching) { if (on) layerOpen('search'); else layerShut('search'); }  // Back closes it (B150)
   U.searching = on;
   $('headNormal').hidden = on; $('headSearch').hidden = !on;
   if (on) $('q').focus(); else { U.q = ''; $('q').value = ''; }
@@ -4927,7 +4937,7 @@ const ACT = {
   },
   'go-input': b => {  // B131: from an item's source to that input in Inputs, lit up for a moment
     const id = b.dataset.id;
-    closeDialog(); if (D.page) D.page = null;
+    LAY.keep = !desk() && U.sheet === 'log'; closeDialog(); if (D.page) D.page = null;  // the log keeps its step (B150)
     if (U.tab !== 'inputs') setTab('inputs'); else render();
     requestAnimationFrame(() => requestAnimationFrame(() => {
       const a = document.querySelector(`#inputsView [data-r="${id}"]`);
@@ -4955,14 +4965,14 @@ const ACT = {
     renderItems(); if (U.tab === 'inputs') renderInputs(); if (U.sheet === 'filter') showFilters();
   },
   open: b => openItem(Number(b.dataset.n)),
-  back: () => desk() ? fullWidth(false) : history.state?.n ? history.back() : closeItem(),
+  back: () => desk() ? fullWidth(false) : hist(() => history.state?.n ? history.back() : closeItem()),
   'item-menu': () => itemMenu(U.open),
   'set-field': async b => {
     const n = Number(b.dataset.n);
     try { await op({op: 'set', ref: code(n), f: {[b.dataset.f]: b.dataset.v}}); if (!$('overlay').hidden) itemMenu(n); } catch (_) {}
   },
   goto: b => {  // from a chip, a source, a subitem, the change log or Make item: to the item, leaving pages that hide it
-    closeDialog();
+    LAY.keep = !desk() && U.sheet === 'log'; closeDialog();  // the log keeps its step: Back comes back to it (B150)
     const n = Number(b.dataset.n), it = byN.get(liveN(n));
     if (!desk()) return openItem(n);
     keepPlace();  // B9: one step in the history, so Back comes back here, scrolled as it was
@@ -5189,7 +5199,7 @@ const ACT = {
   },
   retry: async b => { await fetch(P + 'api/organize', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id: b.dataset.id})}); U.lastSent = b.dataset.id; },
   view: b => openViewer(b.dataset.g, b.dataset.f),
-  'v-close': () => { $('viewer').hidden = true; $('vImg').removeAttribute('src'); },
+  'v-close': () => { if ($('viewer').hidden) return; closeViewer(); layerShut('viewer'); },
   'v-prev': () => { if (viewerIdx > 0) { viewerIdx--; showImage(); } },
   'v-next': () => { if (viewerIdx < viewerGroup.length - 1) { viewerIdx++; showImage(); } },
   'v-zoom': b => { const img = $('vImg'), fit = img.classList.contains('max-w-full'); img.className = fit ? 'm-auto max-w-none' : 'm-auto max-h-full max-w-full object-contain'; b.textContent = fit ? 'Fit to screen' : 'Actual size'; },
@@ -5827,9 +5837,14 @@ async function checkOthers() {
   if (names() !== had && S.rev >= 0) return render();  // A12, B13: Move… on Inputs and New input needs the other projects, the tiles' colours too
   if (desk()) { renderSidebar(); renderRail(); }
 }
-function openDrawer() { DR.open = true; renderDrawerSettings(); fillDrawer(); setDrawer(drawerW()); }
-function closeDrawer() { if (desk()) { if (D.sideOpen) { D.sideOpen = false; render(); } return; } DR.open = false; setDrawer(0); }
+function openDrawer() { if (!DR.open) layerOpen('drawer'); DR.open = true; renderDrawerSettings(); fillDrawer(); setDrawer(drawerW()); }  // Back closes it (B150)
+function closeDrawer() { if (desk()) { if (D.sideOpen) { D.sideOpen = false; render(); } return; } if (DR.open) layerShut('drawer'); DR.open = false; setDrawer(0); }
 $('drawerShade').addEventListener('click', closeDrawer);
+// Another project takes the drawer's step, so Back from there comes to this page as you left it, not to the drawer.
+$('drawerList').addEventListener('click', e => {
+  const a = e.target.closest('a[href]');
+  if (a && !desk() && layersNow().includes('drawer') && !e.metaKey && !e.ctrlKey && !e.shiftKey) { e.preventDefault(); location.replace(a.href); }
+});
 document.addEventListener('touchstart', e => {
   const t = e.touches[0];
   DR.g = null;
@@ -5850,7 +5865,10 @@ document.addEventListener('touchend', () => {
   if (!g?.pull) return;
   if (g.x > drawerW() * 0.7) openDrawer(); else closeDrawer();
 });
-addEventListener('pageshow', () => { DR.open = false; setDrawer(0, false); $('drawer').hidden = true; });  // back from another project
+addEventListener('pageshow', () => {  // back from another project
+  DR.open = false; setDrawer(0, false); $('drawer').hidden = true;
+  if (layersNow().includes('drawer')) history.replaceState({...history.state, layers: layersNow().filter(k => k !== 'drawer')}, '');  // its step is not open any more (B150)
+});
 
 // Swipe right on an item page to go back (F63): the page follows the finger, the list shows underneath. The
 // first 24px from the edge stay the phone's own back; strips that scroll sideways keep their own swipe.
@@ -6081,7 +6099,9 @@ window.addEventListener('pageshow', e => { if (e.persisted) refresh(); });
 // choosing items in the list on the desktop (a click, J/K), search and filters only rewrite the address.
 const VIEW = /^(inputs|archive|rules|new|settings|connect|phone|spellings|log|about)$/;
 const URLS = {applying: false, selfBack: false, hold: false};  // hold: a link is on its way, its step is written once it is there
+// On the phone the change log has its own address too (B150), so Back from an item you opened there comes back to it.
 const viewPath = () => desk() && D.page ? PSEC[D.section][0] : U.doc && !U.docEdit ? `D${U.doc}` : desk() && D.compose ? 'new'
+  : !desk() && U.sheet === 'log' && !$('overlay').hidden ? 'log'
   : desk() && U.tab === 'inputs' ? 'inputs' : U.open ? code(U.open) : U.tab === 'items' ? '' : U.tab;  // on the desktop Inputs hides the item
 function viewQuery() {
   const q = new URLSearchParams();
@@ -6090,16 +6110,63 @@ function viewQuery() {
   const s = q.toString();
   return s ? '?' + s : '';
 }
+// Back on the phone (B150): every sheet, the Go through card, the image viewer, the projects drawer and search is one
+// step in the history, as a document is, so Back closes what is on top and only that. The step keeps the address of
+// the page under it (history.state.layers lists what is open over it), so nothing behind moves. Closed by its own
+// button, a tap outside or a swipe, a layer takes its step back. Going back takes a moment: what wants to write the
+// address meanwhile waits for it (hist), or it would land before the step and the step back would take it away.
+const LAY = {back: 0, q: [], t: 0, at: '', keep: false, popping: false};
+const here = () => location.pathname + location.search;
+function hist(fn) { if (LAY.back) LAY.q.push(fn); else { fn(); LAY.at = here(); } }
+function histBack() {  // a step back the page takes itself: its popstate changes nothing
+  LAY.back++; history.back();
+  clearTimeout(LAY.t); LAY.t = setTimeout(histDone, 1500);  // no step to go back to: go on anyway
+}
+function histDone() {
+  LAY.back = 0; clearTimeout(LAY.t);
+  while (!LAY.back && LAY.q.length) LAY.q.shift()();
+  LAY.at = here();
+}
+const layersNow = () => history.state?.layers || [];
+function layerOpen(kind) {
+  if (desk() || URLS.applying) return;
+  hist(() => { if (!layersNow().includes(kind)) history.pushState({...(history.state || {}), layers: [...layersNow(), kind]}, '', location.href); });
+}
+function layerShut(kind) {  // closed by its own button: its step goes too
+  if (desk() || LAY.popping) return;
+  hist(() => {
+    const l = layersNow();
+    if (l.at(-1) === kind) histBack();
+    else if (l.includes(kind)) history.replaceState({...history.state, layers: l.filter(k => k !== kind)}, '');
+  });
+}
+function closeLayers() {  // Back: what is open but has no step any more closes, top first -> whether anything closed
+  const keep = layersNow();
+  let shut = false;
+  LAY.popping = true;
+  try {
+    if (!$('viewer').hidden && !keep.includes('viewer')) { closeViewer(); shut = true; }
+    if (!$('overlay').hidden && !U.doc && U.sheet !== 'log' && !keep.includes('sheet')) { closeDialog(); shut = true; }
+    if (DR.open && !keep.includes('drawer')) { closeDrawer(); shut = true; }
+    if (U.searching && !keep.includes('search')) { searchMode(false); shut = true; }
+  } finally { LAY.popping = false; }
+  return shut;
+}
 function writeURL(push = false, state) {
   if (URLS.applying || URLS.hold) return;
-  const url = P + viewPath() + viewQuery(), now = location.pathname + location.search + location.hash;
-  if (push && url !== now) history.pushState(state ?? {v: viewPath()}, '', url);
-  else if (url !== now || state !== undefined) history.replaceState(state === undefined ? history.state : state, '', url);
+  hist(() => {
+    const url = P + viewPath() + viewQuery(), now = location.pathname + location.search + location.hash;
+    if (push && url !== now) history.pushState(state ?? {v: viewPath()}, '', url);
+    else if (url !== now || state !== undefined) history.replaceState(state === undefined ? history.state : state, '', url);
+  });
 }
 // A view you leave by Esc or ×: if it was a step in the history, step back (the page then rewrites the address to
-// whatever shows by then, so an item opened in the same breath is kept); otherwise just rewrite the address.
+// whatever shows by then, so an item opened in the same breath is kept); otherwise just rewrite the address. On the
+// phone what writes the address waits for the step back instead (B150), so a step like an item's keeps its place.
 function leaveView(v) {
-  if (!URLS.applying && history.state?.v === v) { URLS.selfBack = true; history.back(); return true; }
+  if (URLS.applying) return false;
+  if (!desk()) { hist(() => { if (history.state?.v === v) histBack(); else writeURL(false); }); return true; }
+  if (history.state?.v === v) { URLS.selfBack = true; history.back(); return true; }
   return false;
 }
 function readURL() {
@@ -6131,6 +6198,7 @@ function showURL() {
   if (desk()) { D.full = !!history.state?.full; D.compose = false; D.page = null; }
   const doc = /^[Dd](\d+)$/.exec(seg), n = doc ? 0 : parseRef(seg);
   if (!doc && U.doc && !$('overlay').hidden) closeDialog();
+  if (seg !== 'log' && U.sheet === 'log' && !$('overlay').hidden) closeDialog();  // Back from the change log (B150)
   if (doc) { const d = docById(Number(doc[1])); if (d && !U.open && desk()) openItem(d.n, false); return openDoc(Number(doc[1])); }
   if (n && byN.has(n)) { U.tab = tabOf(byN.get(liveN(n))); return openItem(n, false); }  // a merged item: the one it went into (B5)
   closeItem();
@@ -6143,8 +6211,10 @@ function showURL() {
   render();
 }
 window.addEventListener('popstate', () => {
+  if (LAY.back) { if (--LAY.back === 0) histDone(); return; }  // a step the page took back itself (B150)
   if (URLS.selfBack) { URLS.selfBack = false; return writeURL(false, history.state?.full ? history.state : null); }  // our own step back
-  applyURL();
+  if (!desk() && closeLayers() && here() === LAY.at) return;  // Back closed what was on top, and only that (B150)
+  applyURL(); LAY.at = here();
 });
 
 $('logo').innerHTML = ico('menu', 'size-6');
@@ -6170,6 +6240,7 @@ window.addEventListener('load', grow);  // a restored draft is measured again on
 load().then(() => {
   checkOthers();  // the other projects: the sidebar, and Move… on your inputs (A12)
   const {seg} = readURL(), n = /^[Dd]\d+$/.test(seg) ? 0 : parseRef(seg);  // D1 is a document, not item 1
+  if (history.state?.layers) history.replaceState({...history.state, layers: undefined}, '');  // a sheet open before a reload is not open now (B150)
   if (n && byN.has(n) && !desk() && !history.state?.n) {  // a link to an item on the phone: put the list under it, so Back lands there
     history.replaceState(null, '', P + viewQuery()); history.pushState({n}, '', P + code(n) + viewQuery());
   }
