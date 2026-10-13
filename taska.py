@@ -2786,7 +2786,7 @@ PAGE = r'''<!doctype html>
 </div>
 
 <div id="tip" role="tooltip" hidden class="pointer-events-auto fixed top-0 left-0 z-[80] max-w-[260px] rounded-lg bg-zinc-900 px-2 py-1.5 text-[13px] leading-snug text-white opacity-0 shadow-lg shadow-black/20 transition-[opacity,translate] duration-[120ms] data-[on]:opacity-100 motion-reduce:transition-none dark:bg-zinc-100 dark:text-zinc-900"><span id="tipText"></span><span id="tipArrow" class="absolute size-2 rotate-45 bg-inherit"></span></div>
-<div id="toast" hidden role="status" class="fixed inset-x-0 bottom-28 z-[60] mx-auto flex w-fit max-w-[92vw] lg:right-auto lg:bottom-5 lg:left-5 lg:mx-0 lg:max-w-md items-center gap-3 rounded-full bg-zinc-900 py-2 pr-4 pl-4 text-sm text-white shadow-lg has-[button]:py-1.5 has-[button]:pr-1.5 dark:bg-zinc-100 dark:text-zinc-900"></div>
+<div id="toast" hidden role="status" class="fixed inset-x-0 bottom-28 z-[60] mx-auto flex w-fit max-w-[92vw] lg:right-auto lg:bottom-5 lg:left-5 lg:mx-0 lg:max-w-md items-center gap-3 rounded-full bg-zinc-900 py-2 pr-4 pl-4 text-sm text-white shadow-lg has-[button]:py-1.5 has-[button]:pr-1.5 data-error:bg-red-600 data-error:text-white dark:bg-zinc-100 dark:text-zinc-900 dark:data-error:bg-red-600 dark:data-error:text-white"></div>
 
 <script>
 'use strict';
@@ -2943,10 +2943,15 @@ function when(t) {
 const LAST = {pane: null};  // the pane you last acted in, for where feedback shows (B129)
 document.addEventListener('pointerdown', e => { LAST.pane = e.target.closest?.('#list, #detailView, #drawer, #inputsView, #projectBody, #projectView, #foot') || LAST.pane; }, true);
 document.addEventListener('keydown', e => { if (desk() && !/INPUT|TEXTAREA/.test(document.activeElement?.tagName)) LAST.pane = $('detailView'); }, true);  // keys act on the open item
-function toast(text, undo) {  // with `undo`, the toast carries an Undo button for a few seconds
+// What just happened, in one line. With `act` it carries a button for a few seconds: Undo, or `label`. An error is
+// red, is read out at once (role=alert) and stays longer (T160).
+const SAVE = {q: Promise.resolve(), pend: [], failed: [], last: '', down: 0};  // saving behind you: see "saving" below
+function toast(text, act, {error = false, label = 'Undo'} = {}) {
   const el = $('toast');
-  el.innerHTML = `<span class="min-w-0 truncate">${esc(text)}</span>${undo ? '<button class="relative h-8 shrink-0 rounded-full bg-white/15 px-3 text-sm font-semibold text-white after:absolute after:-inset-1.5 hover:bg-white/25 dark:bg-zinc-900/10 dark:text-zinc-900 dark:hover:bg-zinc-900/20">Undo</button>' : ''}`;
-  el.classList.toggle('pointer-events-none', !undo);
+  if (!error) SAVE.failed = [];  // the red toast this one replaces takes its Retry along
+  el.toggleAttribute('data-error', error); el.setAttribute('role', error ? 'alert' : 'status');
+  el.innerHTML = `${error ? ico('alert', 'size-4', '2') : ''}<span class="min-w-0 truncate">${esc(text)}</span>${act ? `<button class="relative h-8 shrink-0 rounded-full px-3 text-sm font-semibold after:absolute after:-inset-1.5 ${error ? 'bg-white/20 text-white hover:bg-white/30' : 'bg-white/15 text-white hover:bg-white/25 dark:bg-zinc-900/10 dark:text-zinc-900 dark:hover:bg-zinc-900/20'}">${label}</button>` : ''}`;
+  el.classList.toggle('pointer-events-none', !act);
   const up = !$('overlay').hidden && !desk();  // a sheet or the focus card is open: say it at the top, clear of its buttons
   el.classList.toggle('bottom-28', !up); el.classList.toggle('top-[calc(env(safe-area-inset-top)+0.75rem)]', up);
   if (desk()) {  // B129: on the desktop it shows in the pane you acted in, above the box if the box is there
@@ -2959,9 +2964,9 @@ function toast(text, undo) {  // with `undo`, the toast carries an Undo button f
     const bar = $('overlay').hidden ? !$('foot').hidden && $('foot') : !$('dlgFoot').hidden && $('dlgFoot').offsetHeight && $('dlgFoot');
     if (bar) { el.style.bottom = `${Math.round(innerHeight - bar.getBoundingClientRect().top + 8)}px`; el.classList.remove('bottom-28', 'top-[calc(env(safe-area-inset-top)+0.75rem)]'); }
   }
-  if (undo) el.querySelector('button').onclick = () => { el.hidden = true; undo(); };
+  if (act) el.querySelector('button').onclick = () => { el.hidden = true; act(); };
   el.hidden = false;
-  clearTimeout(toast.t); toast.t = setTimeout(() => { el.hidden = true; }, undo ? 5000 : 2600);
+  clearTimeout(toast.t); toast.t = setTimeout(() => { el.hidden = true; if (error) SAVE.failed = []; }, error ? 8000 : act ? 5000 : 2600);
 }
 
 async function copy(text, done = 'Copied') {
@@ -2973,11 +2978,15 @@ async function copy(text, done = 'Copied') {
 // ---------------------------------------------------------------- data
 
 async function load() {
-  const d = await (await fetch(P + 'api/state', {cache: 'no-store'})).json();
-  S = d; BASE = d.base || BASE; byN.clear(); byR.clear(); kids.clear();
+  const text = await net(P + 'api/state', {}, NET.state, 'text');
+  SAVE.last = text; ingest(JSON.parse(text));
+}
+function ingest(d) {  // Taska's state on screen, with your changes that are still on their way (T160)
+  S = d; BASE = d.base || BASE; byN.clear(); byR.clear();
   for (const it of S.items) { if (CLOSED(it.status)) it.wait = null; byN.set(it.n, it); }  // closed: its question is history, not a pending ask (B128)
   for (const r of S.inputs) byR.set(r.id, r);
-  for (const it of S.items) if (it.parent && !it.merged_into) { if (!kids.has(it.parent)) kids.set(it.parent, []); kids.get(it.parent).push(it); }
+  for (const p of SAVE.pend) patch(p);
+  linkKids();
   if (U.open && byN.get(U.open)?.merged_into) {  // the item you look at was merged: say so, and your draft goes along (B118)
     const from = U.open, to = byN.get(from).merged_into;
     U.open = to;
@@ -3042,22 +3051,80 @@ setInterval(() => { if (S.agents) renderAgent(); }, 30000);  // "2m" keeps count
 
 // Taska was updated: load the new page once nothing would be lost. Busy now? The next poll tries again.
 function freshen() {
-  const busy = R.rec || U.outbox.length || U.files.length || U.editing || (U.open && !desk()) || D.full || U.doc || U.undoArch || (document.activeElement === $('text') && $('text').value.trim())
+  const busy = R.rec || U.outbox.length || U.files.length || SAVE.pend.length || SAVE.failed.length || U.editing || (U.open && !desk()) || D.full || U.doc || U.undoArch || (document.activeElement === $('text') && $('text').value.trim())
     || !$('overlay').hidden || !$('viewer').hidden || DR.open || U.searching;
   if (!busy) location.reload();
 }
 
 async function refresh() { try { await load(); if (offline) { offline = 0; renderLive(); } } catch (_) {} }
 
+// ---------------------------------------------------------------- saving (T160)
+// Every request has a time limit: a dead connection fails after a while instead of hanging for good, and the screen
+// says so. One-tap changes show at once and are saved behind you, one save at a time and in order. Until Taska has a
+// change it is kept as a patch over Taska's last state, so a refresh meanwhile doesn't take it off the screen. A save
+// that fails takes its patch back (the screen shows Taska's state again), and a red toast says so, with Retry.
+const NET = {op: 10000, state: 30000, get: 15000};  // ms
+async function net(url, opts = {}, ms = NET.get, as = 'json') {
+  const ctl = new AbortController(), t = setTimeout(() => ctl.abort(), ms);
+  try {
+    const r = await fetch(url, {cache: 'no-store', ...opts, signal: ctl.signal});
+    return as === 'text' ? await r.text() : await r.json();
+  } catch (_) { throw Object.assign(new Error(ctl.signal.aborted ? 'No answer from Taska' : 'Taska is out of reach'), {net: true}); }
+  finally { clearTimeout(t); }
+}
+const JSON_POST = body => ({method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)});
 async function op(o) {
-  const r = await fetch(P + 'api/op', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(o)});
-  const d = await r.json();
-  if (!d.ok) { toast((d.res || []).find(x => x.startsWith('err')) || d.error || 'Not saved'); throw new Error('op failed'); }
-  await load();
+  const d = await net(P + 'api/op', JSON_POST(o), NET.op);
+  if (!d.ok) { toast((d.res || []).find(x => x.startsWith('err')) || d.error || 'Not saved', null, {error: true}); throw new Error('op failed'); }
+  try { await load(); } catch (_) {}  // it is saved; the next refresh brings the rest
   return d;
 }
-
-const setStatus = (n, status) => op({op: 'set', ref: code(n), f: {status}});
+// A save that didn't reach Taska (one Taska refused, op() has explained in its own words). Several in a row are
+// retried together, in order.
+function notSaved(ex, retry) {
+  if (!ex?.net) return;
+  if (retry) SAVE.failed.push(retry);
+  const k = SAVE.failed.length;
+  toast(k > 1 ? `${k} changes not saved` : 'Not saved', k ? () => { for (const r of SAVE.failed.splice(0)) r(); } : null, {error: true, label: 'Retry'});
+}
+const notLoaded = (what, retry) => toast(`Couldn't load ${what}`, retry, {error: true, label: 'Retry'});
+// Something that waits for Taska before it shows (it makes something new, or saves what you typed): its button stays
+// busy meanwhile; if Taska can't be reached, a red toast says so, and Retry does it again.
+async function save(o, retry) {
+  try { return await op(o); } catch (ex) { notSaved(ex, retry); throw ex; }
+}
+function patch(p) {  // one change on screen: {n, f} for an item, {cfg} for the project
+  if (p.cfg) { S.cfg = {...S.cfg, ...p.cfg}; return; }
+  const it = byN.get(p.n);
+  if (!it) return;
+  const back = 'status' in p.f && !CLOSED(p.f.status) && it.archived && !('archived' in p.f);
+  Object.assign(it, p.f);
+  if (back) it.archived = false;  // reopening brings an archived item back, as Taska does
+  if (CLOSED(it.status)) it.wait = null;
+}
+function linkKids() { kids.clear(); for (const it of S.items) if (it.parent && !it.merged_into) { if (!kids.has(it.parent)) kids.set(it.parent, []); kids.get(it.parent).push(it); } }
+const restore = () => { if (SAVE.last) ingest(JSON.parse(SAVE.last)); };
+// Show a change at once and save it behind you. patches: what changes on screen; send(): what goes to Taska, in turn;
+// fail(ex): after it was taken back; needed(): false when, by its turn, there is nothing to send (an undo of a change
+// that never reached Taska). -> a promise: true once saved, false if it couldn't be.
+function optimistic(patches, send, fail = ex => notSaved(ex), needed = () => true) {
+  const drop = () => { SAVE.pend = SAVE.pend.filter(p => !patches.includes(p)); };
+  SAVE.pend.push(...patches);
+  for (const p of patches) patch(p);
+  linkKids(); render();
+  const made = Date.now();
+  return SAVE.q = SAVE.q.then(async () => {
+    try {
+      if (!needed()) return true;
+      if (SAVE.down > made) throw Object.assign(new Error('Taska is out of reach'), {net: true});  // it waited behind a save that couldn't reach Taska: it fails with it, at once and in the same toast
+      await send(); return true;
+    }
+    catch (ex) { if (ex.net) SAVE.down = Date.now(); drop(); try { restore(); fail(ex); } catch (_) {} return false; }
+    finally { drop(); }
+  });
+}
+// A one-tap change of an item's fields, without Undo.
+const setNow = (n, f, retry) => { const ref = code(n); return optimistic([{n, f}], () => op({op: 'set', ref, f}), ex => notSaved(ex, retry)); };
 
 // ---------------------------------------------------------------- items
 
@@ -3387,7 +3454,7 @@ async function swipeEnd(e) {
     const [f, v] = swipeRight(it);
     if (f === 'need') { swipeTo(el, 0); return ACT['row-act']({dataset: {n: String(n), v}}); }  // the answer, as its pill (B147)
     swipeTo(el, el.offsetWidth);
-    try { await change(n, f, f === 'archived' ? v === 'true' : v); } catch (_) { swipeTo(el, 0); }
+    setTimeout(() => change(n, f, f === 'archived' ? v === 'true' : v), REDUCE.matches ? 0 : 180);  // the row slides out first
   } else if (SW.dx < -SW.reveal / 2) { swipeTo(el, -SW.reveal); SW.open = el; }
   else { swipeTo(el, 0); if (SW.open === el) SW.open = null; }
 }
@@ -3576,8 +3643,8 @@ async function sendDocComment(t) {
   if (!text) return;
   if (U.files.length) toast('Comments are text only: the files stay in the box');
   $('text').value = ''; saveDraft(); grow();
-  try { await op({op: 'dc', d: t.d.d, key: t.key, text, ...(t.reply ? {} : {quote: t.quote})}); }
-  catch (_) { $('text').value = text; grow(); return; }
+  try { await save({op: 'dc', d: t.d.d, key: t.key, text, ...(t.reply ? {} : {quote: t.quote})}, () => { const t2 = docTarget(); if (t2 && $('text').value.trim()) sendDocComment(t2); }); }
+  catch (_) { $('text').value = text; saveDraft(); grow(); return; }
   U.docThreads.add(t.key); U.docSel = new Set(); U.docQuote = null; U.docReply = null;
   getSelection()?.removeAllRanges(); renderDoc(); renderComposer(); toast(t.reply ? 'Reply added' : 'Comment added');
 }
@@ -3670,14 +3737,21 @@ function newDoc(n) {
   $('docMd').focus();
 }
 async function saveDoc() {  // leaving the editor saves; an empty new note is dropped
-  const md = ($('docMd')?.value ?? U.docText ?? '').trim(), d = docById(U.doc);
+  const md = ($('docMd')?.value ?? U.docText ?? '').trim(), d = docById(U.doc), n = U.docNew;
   U.docEdit = false; U.docText = null;
   if (!md || (d && md === noteText(d).trim())) return d;
+  return saveDocText(d, n, md);
+}
+async function saveDocText(d, n, md) {
   try {
-    if (d) { await op({op: 'doc', d: d.d, md}); toast('Saved'); return docById(d.d); }
-    const n = U.docNew; await op({op: 'doc', ref: code(n), md}); toast('Document created');
+    if (d) { await save({op: 'doc', d: d.d, md}); toast('Saved'); return docById(d.d); }
+    await save({op: 'doc', ref: code(n), md}); toast('Document created');
     return docById(Math.max(...docsOf(n).map(x => x.d)));
-  } catch (_) { return d; }
+  } catch (_) {  // not saved (T160): the editor comes back with your text, and Done tries again
+    Object.assign(U, {doc: d ? d.d : null, docNew: d ? null : n, docEdit: true, docText: md});
+    renderDoc();
+    return null;
+  }
 }
 // Circle to select: the paragraphs the loop goes around become the selection.
 function wireLasso() {
@@ -4771,11 +4845,22 @@ function agentsHtml() {
       <span class="min-w-0 flex-1"><span class="block text-[15px] font-medium">Connect a coding agent</span><span class="block text-xs text-zinc-500 dark:text-zinc-400">First time on that machine? Run one command there.</span></span>${ico('right', 'size-4 text-zinc-300 dark:text-zinc-600')}</button></div>`;
 }
 function showPhone() { dialog('Use on your phone', phoneHtml()); }
-async function showGuide() { const text = await (await fetch(P + 'agent?ui=1')).text(); dialog('Connect a coding agent', guideHtml(text)); }
-async function showLog() {  // with its own address on the phone (/log), a step Back undoes (B150)
-  const text = await (await fetch(P + `log?n=${LOG_N}&ui=1`)).text();
-  U.sheet = 'log'; dialog('Change log', logHtml(text.trim().split('\n').reverse()));
-  if (!desk()) writeURL(true);
+// A sheet whose words come from Taska opens at once and fills when they arrive; if they can't, it says so (T160).
+const sheetIs = title => !$('overlay').hidden && $('dlgTitle').textContent === title;
+const sheetWait = '<p class="py-6 text-sm text-zinc-400">Loading…</p>';
+const sheetFail = act => `<p class="py-6 text-sm text-zinc-500 dark:text-zinc-400">Couldn't load it. <button data-act="${act}" class="${HIT} font-semibold text-blue-600 hover:underline dark:text-blue-400">Try again</button></p>`;
+async function sheetFrom(title, url, html, act) {
+  if (!sheetIs(title)) dialog(title, sheetWait);
+  try { const text = await net(url, {}, NET.get, 'text'); if (sheetIs(title)) dialog(title, html(text)); }
+  catch (_) { if (sheetIs(title)) dialog(title, sheetFail(act)); }
+}
+const showGuide = () => sheetFrom('Connect a coding agent', P + 'agent?ui=1', guideHtml, 'guide');
+function showLog() {  // with its own address on the phone (/log), a step Back undoes (B150)
+  const again = sheetIs('Change log');  // Try again: the same sheet, the same step
+  U.sheet = 'log';
+  const done = sheetFrom('Change log', P + `log?n=${LOG_N}&ui=1`, text => logHtml(text.trim().split('\n').reverse()), 'log');
+  if (!again && !desk()) writeURL(true);
+  return done;
 }
 
 function showSources(n) {
@@ -4957,27 +5042,40 @@ function fitTabs() {
 }
 
 const SAID = {open: 'is open', doing: 'is in progress', done: 'is done', dropped: "is marked won't do", later: 'moved to Later', now: 'is back to now', review: 'is in review', proposed: 'is proposed'};
-// One-tap changes (swipes, row pills, the focus card) say what happened and offer Undo, which puts the old value back.
-async function change(n, f, v) {
-  const before = byN.get(n)?.[f];
+// One-tap changes (swipes, row pills, the focus card, keys): they show at once and are saved behind you (T160), say
+// what happened and offer Undo, which puts the old value back. -> a promise: true once saved, false if it couldn't be.
+function change(n, f, v) {
+  const it = byN.get(n);
+  if (!it) return Promise.resolve(false);
+  const before = it[f], ref = code(n), job = {saved: false, undone: false};
   const said = f === 'archived' ? (v ? 'archived' : 'unarchived') : f === 'status' && v === 'done' && before === 'review' ? 'accepted' : f === 'status' && v === 'open' && before === 'proposed' ? 'approved'
-    : byN.get(n)?.type === 'rule' && f === 'status' && before !== 'proposed' && {open: 'is active again', dropped: 'is retired'}[v] || SAID[v];  // a rule's words (B158)
+    : it.type === 'rule' && f === 'status' && before !== 'proposed' && {open: 'is active again', dropped: 'is retired'}[v] || SAID[v];  // a rule's words (B158)
+  let run;
   const undo = () => {
-    D.undo = null;
-    const u = (S.undo || []).find(u => u.n === n && f in u.f);  // the recorded change, so the change log knows it was undone (F80)
-    const back = u ? revert(u.seq) : op({op: 'set', ref: code(n), f: {[f]: before}});
-    return back.then(() => { if (U.go) { U.go.done.delete(n); render(); } toast(`${code(n)} put back`); }, () => {});
+    job.undone = true;
+    if (U.go) { U.go.done.delete(n); delete U.go.how?.[n]; }
+    toast(`${ref} put back`);
+    return optimistic([{n, f: {[f]: before}}], () => {
+      const u = (S.undo || []).find(u => u.n === n && f in u.f);  // the recorded change, so the change log knows it was undone (F80)
+      return u ? revert(u.seq) : op({op: 'set', ref, f: {[f]: before}});
+    }, ex => notSaved(ex, run), () => job.saved);  // a change that never reached Taska has nothing to put back there
   };
+  run = pushUndo(`${ref} ${said}`, undo);
   const settles = desk() && U.go && U.go.list.includes(n) && f === 'status';
   if (desk() && n === U.open) U.stepFrom = {n, rows: [...document.querySelectorAll('#list [data-act="open"][data-n]')].map(el => Number(el.dataset.n))};  // J goes on from here (B124)
-  if (settles) { U.go.done.add(n); U.go.how[n] = said.replace(/^is (marked )?/, '').replace(/^./, c => c.toUpperCase()); U.go.undo[n] = undo; }
-  if (!settles && (n !== U.open || (desk() && LIST.in))) holdRow(n, `${said.replace(/^./, c => c.toUpperCase())}`, undo);  // the phone's list is under the card or the row you swiped (B148)
+  if (settles) { U.go.done.add(n); U.go.how[n] = said.replace(/^is (marked )?/, '').replace(/^./, c => c.toUpperCase()); U.go.undo[n] = run; }
+  if (!settles && (n !== U.open || (desk() && LIST.in))) holdRow(n, `${said.replace(/^./, c => c.toUpperCase())}`, run);  // the phone's list is under the card or the row you swiped (B148)
   const left = f === 'status' && v === 'done' ? openKids(n) : 0;  // done before its subitems: say so (B147)
-  try { await op({op: 'set', ref: code(n), f: {[f]: v}}); } catch (ex) { if (U.settle.delete(n)) renderItems(); throw ex; }
-  const run = pushUndo(`${code(n)} ${said}`, undo);
-  D.undo = run;
-  toast(`${code(n)} ${said}${left ? ` · ${plural(left, 'subitem')} still open` : ''}`, run);
+  toast(`${ref} ${said}${left ? ` · ${plural(left, 'subitem')} still open` : ''}`, run);
+  const saved = optimistic([{n, f: {[f]: v}}], () => op({op: 'set', ref, f: {[f]: v}}), ex => {  // taken back
+    forget(run);
+    if (U.settle.delete(n)) renderItems();
+    if (U.go?.done.has(n)) { U.go.done.delete(n); delete U.go.how?.[n]; delete U.go.undo?.[n]; render(); }
+    if (!job.undone) notSaved(ex, () => change(n, f, v));
+  });
+  saved.then(ok => { job.saved = ok; });
   if (settles && U.open === n) advanceDesk(n, U.go.how[n]);
+  return saved;
 }
 // On the desktop the search box is always there: the clear button shows only with a query, the / hint only without.
 const qSync = () => { $('qX').classList.toggle('lg:hidden', !U.q); $('qKey').classList.toggle('lg:grid', !U.q); };
@@ -4993,9 +5091,10 @@ const searchMode = on => {
   renderItems(); if (U.tab === 'inputs') renderInputs();
 };
 const ACT = {
-  auto: async () => {
+  auto: () => {
     const on = !S.cfg?.auto;
-    try { await op({op: 'cfg', auto: on}); renderDrawerSettings(); toast(on ? 'Keep going is on: your agent works down the list' : 'Keep going is off: your agent stops after the current item'); } catch (_) {}
+    optimistic([{cfg: {auto: on}}], () => op({op: 'cfg', auto: on}), ex => notSaved(ex, () => { if (!!S.cfg?.auto !== on) ACT.auto(); }));
+    renderDrawerSettings(); toast(on ? 'Keep going is on: your agent works down the list' : 'Keep going is off: your agent stops after the current item');
   },
   search: () => searchMode(!U.searching),
   'search-cancel': () => searchMode(false),  // also a search that came with the address or a tab (B152)
@@ -5006,16 +5105,16 @@ const ACT = {
     $('dlgBody').querySelector('[data-need]')?.scrollIntoView({block: 'start', behavior: 'smooth'});
     if (it?.wait && (it.wait.kind === 'block' || !hasChoices(it.wait.text))) ACT.reply();  // with choices: tick them first
   },
-  status: async b => {
+  status: b => {
     const n = Number(b.dataset.n);
-    try { await change(n, 'status', b.dataset.v); if (U.peek === n) advance(n); } catch (_) {}  // the next card, or the card of one item closes (B153)
+    change(n, 'status', b.dataset.v); if (U.peek === n) advance(n);  // the next card, or the card of one item closes (B153)
   },
   // The action on a row that waits on you: Accept and Approve happen at once (with Undo); Answer and Reply open
   // the focus card on that item, Reply with the input box ready.
   'settle-undo': b => { const s = U.settle.get(Number(b.dataset.n)); U.settle.clear(); s?.undo(); renderItems(); },
-  'row-act': async b => {
+  'row-act': b => {
     const n = Number(b.dataset.n), v = b.dataset.v;
-    if (v === 'accept' || v === 'approve') { try { await change(n, 'status', v === 'accept' ? 'done' : 'open'); } catch (_) {} return; }
+    if (v === 'accept' || v === 'approve') { change(n, 'status', v === 'accept' ? 'done' : 'open'); return; }
     U.go = null;
     if (desk()) {  // B125: on the desktop the item opens in its pane: Answer goes to the first choice, Reply to the box
       openItem(n);
@@ -5068,11 +5167,11 @@ const ACT = {
     if (next) peek(next, {focus: false}); else if (g) endWalk();
   },
   // Not yet reopens and asks what is missing, wherever you tap it (B153): on the phone a row's Not yet opens its card.
-  reopen: async b => {
+  reopen: b => {
     const n = Number(b.dataset.n);
     if (desk() && U.open !== n) openItem(n);
     if (!desk() && U.open !== n && U.peek !== n) { closeSwipe(); peek(n, {focus: false}); }
-    try { await setStatus(n, 'doing'); U.ask = n; U.scopeOff = false; renderComposer(); $('text').focus(); toast(`${code(n)} reopened. Say what is missing.`); } catch (_) {}
+    setNow(n, {status: 'doing'}, () => ACT.reopen(b)); U.ask = n; U.scopeOff = false; renderComposer(); $('text').focus(); toast(`${code(n)} reopened. Say what is missing.`);
   },
   'card-copy': b => copyItem(Number(b.dataset.n)),  // the card stays: copying is no reason to lose your place (B153)
   projects: () => openDrawer(),
@@ -5086,7 +5185,7 @@ const ACT = {
     const name = ($('npName')?.value || '').trim().toLowerCase();
     if (!name) return $('npName')?.focus();
     try {
-      const d = await (await fetch('/api/projects', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name})})).json();
+      const d = await net('/api/projects', JSON_POST({name}), NET.op);
       if (d.ok) location.href = `/p/${d.name}/`; else { $('npErr').textContent = d.error || 'Not created'; $('npErr').hidden = false; }
     } catch (_) { $('npErr').textContent = 'Connection lost; try again'; $('npErr').hidden = false; }
   },
@@ -5109,7 +5208,9 @@ const ACT = {
   phone: () => { if (desk()) return openProject('phone'); closeDrawer(); showPhone(); },
   'new-key': async b => {
     if (!confirmClick(b, `${desk() ? 'Click' : 'Tap'} again: other devices will need the new link`)) return;
-    try { await fetch('/api/key', {method: 'POST'}); await load(); if (desk()) renderProject(); else showPhone(); toast('New key made'); } catch (_) { toast('Not saved'); }
+    try { await net('/api/key', {method: 'POST'}, NET.op); } catch (ex) { return notSaved(ex); }
+    try { await load(); } catch (_) {}
+    if (desk()) renderProject(); else showPhone(); toast('New key made');
   },
   log: () => { if (desk()) return openProject('log'); closeDrawer(); showLog(); },
   tab: b => setTab(b.dataset.tab),
@@ -5124,9 +5225,10 @@ const ACT = {
   open: b => openItem(Number(b.dataset.n)),
   back: () => desk() ? fullWidth(false) : hist(() => history.state?.n ? history.back() : closeItem()),
   'item-menu': () => itemMenu(U.open),
-  'set-field': async b => {
-    const n = Number(b.dataset.n);
-    try { await op({op: 'set', ref: code(n), f: {[b.dataset.f]: b.dataset.v}}); if (!$('overlay').hidden) itemMenu(n); } catch (_) {}
+  'set-field': b => {
+    const n = Number(b.dataset.n), menu = () => { if (U.sheet === 'menu' && !$('overlay').hidden) itemMenu(n); };
+    setNow(n, {[b.dataset.f]: b.dataset.v}, () => ACT['set-field'](b)).then(ok => { if (!ok) menu(); });
+    menu();
   },
   goto: b => {  // from a chip, a source, a subitem, the change log or Make item: to the item, leaving pages that hide it
     const walk = !desk() && U.go && U.peek && !$('overlay').hidden ? {go: U.go, n: U.peek} : null;  // Open on a card while going through: back from the item, the walk goes on (B153)
@@ -5153,19 +5255,19 @@ const ACT = {
   'edit-cancel': () => { delete U.editDrafts[U.editing]; U.editing = null; renderDetail(); },
   'edit-save': async b => {
     const n = Number(b.dataset.n);
-    try { await op({op: 'set', ref: code(n), f: {title: $('eTitle').value, body: $('eBody').value, next: $('eNext').value}}); delete U.editDrafts[n]; U.editing = null; render(); toast('Saved'); } catch (_) {}
+    try { await save({op: 'set', ref: code(n), f: {title: $('eTitle').value, body: $('eBody').value, next: $('eNext').value}}, () => $('eTitle') && ACT['edit-save'](b)); delete U.editDrafts[n]; U.editing = null; render(); toast('Saved'); } catch (_) {}
   },
   copy: b => { closeDialog(); copyItem(Number(b.dataset.n)); },
-  'peek-set': async b => {
+  'peek-set': b => {
     const n = Number(b.dataset.n), f = b.dataset.f, going = !!U.go;
     if (!going) closeDialog();
-    try { await change(n, f, f === 'archived' ? b.dataset.v === 'true' : b.dataset.v); if (going) advance(n); } catch (_) {}
+    change(n, f, f === 'archived' ? b.dataset.v === 'true' : b.dataset.v); if (going) advance(n);
   },
   play: b => playAudio(b),
   'doc-open': b => openDoc(Number(b.dataset.d)),
   'doc-new': b => newDoc(Number(b.dataset.n)),
   'doc-edit': () => { U.docEdit = true; U.docText = null; renderDoc(); $('docMd').focus(); },
-  'doc-done': async () => { const d = await saveDoc(); if (d) openDoc(d.d); else closeDialog(); },
+  'doc-done': async () => { const d = await saveDoc(); if (d) openDoc(d.d); else if (!U.docEdit) closeDialog(); },
   'doc-pick': (b, e) => {
     if (U.docCircle || e.target.closest('textarea, button, a') || getSelection()?.toString().trim()) return;
     const k = b.dataset.key;
@@ -5178,15 +5280,17 @@ const ACT = {
   'doc-reply': b => { U.docReply = b.dataset.key; U.docSel = new Set(); U.docQuote = null; renderDoc(); $('text').focus(); },
   'doc-circle': () => { U.docCircle = !U.docCircle; renderDoc(); },
   'doc-thread': b => { const k = b.dataset.key; if (U.docThreads.has(k)) U.docThreads.delete(k); else U.docThreads.add(k); renderDoc(); },
-  swipe: async b => {
+  swipe: b => {
     const n = Number(b.dataset.n), f = b.dataset.f;
     SW.open = null; closeDialog();
-    try { await change(n, f, f === 'archived' ? b.dataset.v === 'true' : b.dataset.v); } catch (_) {}
+    change(n, f, f === 'archived' ? b.dataset.v === 'true' : b.dataset.v);
   },
-  archive: async b => {
+  archive: b => {
     const on = b.dataset.on === '1', n = Number(b.dataset.n);
     closeDialog();
-    try { await op({op: 'set', ref: code(n), f: {archived: on}}); if (on && U.open === n) ACT.back(); toast(on ? `${code(n)} archived. Find it under Archive.` : `${code(n)} unarchived`); } catch (_) {}
+    setNow(n, {archived: on}, () => ACT.archive(b));
+    if (on && U.open === n) ACT.back();
+    toast(on ? `${code(n)} archived. Find it under Archive.` : `${code(n)} unarchived`);
   },
   choice: b => {
     const n = Number(b.dataset.n), i = Number(b.dataset.i);
@@ -5207,7 +5311,7 @@ const ACT = {
       if (note || files.length) {
         outboxPush({text: picks + (note ? '\n\n' + note : ''), files, scope: code(n), from: null});
         $('text').value = ''; U.files = []; saveDraft(); grow(); flushOutbox();
-      } else rid = (await op({op: 'input', text: picks, scope: code(n)})).res[0].split(' ')[1];
+      } else rid = (await save({op: 'input', text: picks, scope: code(n)}, () => ACT['choice-send'](b))).res[0].split(' ')[1];
       const said = `Answer sent to ${code(n)}${note || files.length ? ' with your note' : ''}`;  // where it went (B155)
       U.choice = null; if (U.peek === n) advance(n, said); else { toast(said); showSent(rid, code(n)); } if (desk() && U.go && U.open === n) advanceDesk(n, 'Answered');
     } catch (_) {}
@@ -5223,12 +5327,13 @@ const ACT = {
   'sub-add': async b => {  // same kind, priority and now/later as the parent; change them after if needed
     const n = Number(b.dataset.n), p = byN.get(n), title = ($('subTitle')?.value || '').trim();
     if (!title) return $('subTitle')?.focus();
-    try { await op({op: 'new', title, parent: code(n), type: p.type === 'rule' ? 'task' : p.type, pri: p.pri, when: p.when}); U.folded.delete(n); render(); toast(`Added under ${code(n)}`); const f = $('subTitle'); if (f) { f.value = ''; f.focus(); } flashRow(Math.max(...(kids.get(n) || []).map(k => k.n))); } catch (_) {}  // the field stays for the next one (B123)
+    try { await save({op: 'new', title, parent: code(n), type: p.type === 'rule' ? 'task' : p.type, pri: p.pri, when: p.when}, () => ACT['sub-add'](b)); U.folded.delete(n); render(); toast(`Added under ${code(n)}`); const f = $('subTitle'); if (f) { f.value = ''; f.focus(); } flashRow(Math.max(...(kids.get(n) || []).map(k => k.n))); } catch (_) {}  // the field stays for the next one (B123)
   },
-  'move-to': async b => {
-    const n = Number(b.dataset.n), to = b.dataset.to;
+  'move-to': b => {
+    const n = Number(b.dataset.n), to = b.dataset.to, ref = code(n);
     closeDialog();
-    try { await op({op: 'set', ref: code(n), f: {parent: to}}); toast(to !== 'none' ? `${code(n)} is now under ${to}` : `${code(n)} stands on its own`); } catch (_) {}
+    optimistic([{n, f: {parent: to === 'none' ? null : parseRef(to)}}], () => op({op: 'set', ref, f: {parent: to}}), ex => notSaved(ex, () => ACT['move-to'](b)));
+    toast(to !== 'none' ? `${ref} is now under ${to}` : `${ref} stands on its own`);
   },
   reparent: b => {  // the phone picks from the same list as the desktop, in the menu's sheet: no typing a code (B156, R139)
     if (desk()) closeDialog();
@@ -5238,27 +5343,27 @@ const ACT = {
     const r = byR.get(b.dataset.id), lines = r.text.trim().split('\n'), first = lines[0].trim();
     const title = (first || `Files from ${r.id}`).slice(0, 120), body = first.length > 120 ? r.text.trim() : lines.slice(1).join('\n').trim();
     try {
-      const d = await op({op: 'new', title, body, src: r.id});
+      const d = await save({op: 'new', title, body, src: r.id}, () => ACT['make-item'](b));
       const n = Number((d.res[0].match(/[A-Z](\d+) new/) || [])[1]);
       if (n) { ACT.goto({dataset: {n: String(n)}}); if (!desk()) itemMenu(n); toast(`${code(n)} made from ${r.id}. Set its type and priority${desk() ? '' : ' here'}.`); }
     } catch (_) {}
   },
-  'archive-all': async () => {  // no question first: it happens at once, and Undo stays in the same spot for 3 seconds
+  'archive-all': () => {  // no question first: it happens at once, and Undo stays in the same spot for 3 seconds
     const ids = visible().filter(it => !it.archived && CLOSED(it.status)).map(it => it.n);
     if (!ids.length) return;
-    try { await op(ids.map(n => ({op: 'set', ref: code(n), f: {archived: true}}))); } catch (_) { return; }
+    const all = on => ids.map(n => ({op: 'set', ref: code(n), f: {archived: on}}));
     clearInterval(U.undoArch?.timer);
-    const u = U.undoArch = {ids, left: 3};
-    u.run = pushUndo(`${plural(ids.length, 'item')} archived`, async () => {  // the bar and Z put the whole batch back
-      clearInterval(u.timer); if (U.undoArch === u) U.undoArch = null;
-      try { await op(ids.map(n => ({op: 'set', ref: code(n), f: {archived: false}}))); toast(`Put back ${plural(ids.length, 'item')}`); } catch (_) { renderItems(); }
+    const u = U.undoArch = {ids, left: 3}, gone = () => { clearInterval(u.timer); if (U.undoArch === u) U.undoArch = null; };
+    u.run = pushUndo(`${plural(ids.length, 'item')} archived`, () => {  // the bar and Z put the whole batch back
+      gone(); toast(`Put back ${plural(ids.length, 'item')}`);
+      return optimistic(ids.map(n => ({n, f: {archived: false}})), () => op(all(false)), ex => notSaved(ex, u.run));
     });
     u.timer = setInterval(() => {
       if (--u.left > 0) { const el = $('undoLeft'); if (el) el.textContent = u.left; return; }
       clearInterval(u.timer);
       if (U.undoArch === u) { U.undoArch = null; renderItems(); }
     }, 1000);
-    renderItems();
+    optimistic(ids.map(n => ({n, f: {archived: true}})), () => op(all(true)), ex => { gone(); forget(u.run); renderItems(); notSaved(ex, () => ACT['archive-all']()); });
   },
   'archive-undo': () => U.undoArch?.run(),
   'search-in': b => { U.tabView[b.dataset.tab] = {q: U.q}; setTab(b.dataset.tab); },  // A9: the same search there, as the hint counted it (no filters)
@@ -5313,10 +5418,10 @@ const ACT = {
   send,
   dismiss: () => { U.lastSent = null; U.note = null; renderFeedback(); },
   undo: async b => {
-    const r = await fetch(P + 'api/undo', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id: b.dataset.id})});
-    const d = await r.json();
-    if (!d.ok) return toast(d.error || 'Could not undo');
-    U.lastSent = b.dataset.id; await load(); toast(`Undid the organizer's changes for ${b.dataset.id}`);
+    let d;
+    try { d = await net(P + 'api/undo', JSON_POST({id: b.dataset.id}), NET.op); } catch (ex) { return notSaved(ex, () => ACT.undo(b)); }
+    if (!d.ok) return toast(d.error || 'Could not undo', null, {error: true});
+    U.lastSent = b.dataset.id; try { await load(); } catch (_) {} toast(`Undid the organizer's changes for ${b.dataset.id}`);
   },
   'move-input': b => moveInput(b.dataset.id),
   'input-edit': b => editInput(b.dataset.id, 'edit'),
@@ -5327,15 +5432,12 @@ const ACT = {
   fixes: () => { if (desk()) return openProject('fixes'); closeDrawer(); dialog('Voice spellings', fixesHtml()); loadFixes(); },
   'fix-remove': async b => {
     const wrong = b.dataset.wrong, c = (P_CACHE.fixes || []).find(x => x.wrong === wrong);
-    try { await setFix({wrong}); toast(`Forgot “${wrong}”`, () => setFix({wrong, right: c.right}).catch(() => {})); } catch (_) {}
+    try { await setFix({wrong}); toast(`Forgot “${wrong}”`, () => setFix({wrong, right: c.right}).catch(ex => notSaved(ex))); } catch (ex) { notSaved(ex, () => ACT['fix-remove'](b)); }
   },
   'undo-mine': () => undoMine(),
-  revert: async b => {
+  revert: b => {
     if (!confirmClick(b, `${desk() ? 'Click' : 'Tap'} again to undo`)) return;  // B127: an older change goes back only on a second click
-    const u = (S.undo || []).find(u => u.seq === Number(b.dataset.seq));
-    try { await revert(Number(b.dataset.seq)); } catch (_) { return; }
-    D.undo = null; toast(`Undid: ${u ? undoLabel(u) : 'the change'}`); renderDrawerSettings();
-    if (!$('overlay').hidden && $('dlgTitle').textContent === 'Change log') showLog();  // the log shows the undo too (the desktop's reloads by itself)
+    return revertNow(Number(b.dataset.seq));
   },
   'outbox-retry': () => { for (const q of U.outbox) q.failed = false; renderFeedback(); flushOutbox(); },
   'outbox-edit': () => {  // the unsent input back in the box, as long as the box is empty
@@ -5348,12 +5450,15 @@ const ACT = {
     const id = b.dataset.id, to = b.dataset.to;
     b.disabled = true;
     try {
-      const d = await (await fetch(P + 'api/move', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id, to})})).json();
-      if (!d.ok) return toast(d.error || 'Could not move it');
-      closeDialog(); U.lastSent = id; await load(); toast(`Moved ${id} to ${to} as ${d.as}`);
-    } finally { b.disabled = false; }
+      const d = await net(P + 'api/move', JSON_POST({id, to}), NET.op);
+      if (!d.ok) return toast(d.error || 'Could not move it', null, {error: true});
+      closeDialog(); U.lastSent = id; try { await load(); } catch (_) {} toast(`Moved ${id} to ${to} as ${d.as}`);
+    } catch (ex) { notSaved(ex, () => ACT['move-input-to'](b)); }
+    finally { b.disabled = false; }
   },
-  retry: async b => { await fetch(P + 'api/organize', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({id: b.dataset.id})}); U.lastSent = b.dataset.id; },
+  retry: async b => {
+    try { await net(P + 'api/organize', JSON_POST({id: b.dataset.id}), NET.op); U.lastSent = b.dataset.id; } catch (ex) { notSaved(ex, () => ACT.retry(b)); }
+  },
   view: b => openViewer(b.dataset.g, b.dataset.f),
   'v-close': () => { if ($('viewer').hidden) return; closeViewer(); layerShut('viewer'); },
   'v-prev': () => { if (viewerIdx > 0) { viewerIdx--; showImage(); } },
@@ -5641,16 +5746,16 @@ const fixesHtml = () => !P_CACHE.fixes ? '<p class="text-sm text-zinc-400">Loadi
   ? `<p class="mb-2 text-[13px] leading-snug text-zinc-500 dark:text-zinc-400">Every project's voice notes write these your way. To add one, select the wrong words in a voice note.</p>
     <ul class="flex flex-col divide-y divide-zinc-100 dark:divide-zinc-800">${P_CACHE.fixes.map(c => `<li class="flex min-h-11 items-center gap-2 text-sm"><span class="min-w-0 flex-1 break-words"><span class="text-zinc-400 line-through decoration-zinc-400">${esc(c.wrong)}</span> → <span class="font-medium">${esc(c.right)}</span></span><button data-act="fix-remove" data-wrong="${esc(c.wrong)}" aria-label="Forget this spelling" class="grid size-11 shrink-0 place-items-center rounded-lg text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200">${ico('x', 'size-4')}</button></li>`).join('')}</ul>`
   : '<p class="text-[13px] leading-snug text-zinc-500 dark:text-zinc-400">None yet. When a voice note gets words wrong, select them in the input and write the right ones: from then on every project writes them your way.</p>';
-async function loadFixes() { try { P_CACHE.fixes = await (await fetch('/api/corrections', {cache: 'no-store'})).json(); } catch (_) {} refreshFixes(); }
+async function loadFixes() { try { P_CACHE.fixes = await net('/api/corrections'); } catch (_) { notLoaded('the voice spellings', loadFixes); } refreshFixes(); }
 function refreshFixes() { if (D.page) renderProject(); else if (!$('overlay').hidden && $('dlgTitle').textContent === 'Voice spellings') dialog('Voice spellings', fixesHtml()); }
 async function setFix(body) {
-  const d = await (await fetch('/api/corrections', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body)})).json();
-  if (!d.ok) { toast(d.error || 'Not saved'); throw new Error(); }
+  const d = await net('/api/corrections', JSON_POST(body), NET.op);
+  if (!d.ok) { toast(d.error || 'Not saved', null, {error: true}); throw new Error(); }
   P_CACHE.fixes = d.corrections; refreshFixes();
 }
 function loadLog() {  // the log as it is now: when it opens, and after each change to the project
   P_CACHE.logRev = S.rev;
-  fetch(P + `log?n=${LOG_N}&ui=1`).then(r => r.text()).then(l => { P_CACHE.log = l.trim().split('\n').filter(Boolean).reverse(); renderProject(); }, () => {});
+  net(P + `log?n=${LOG_N}&ui=1`, {}, NET.get, 'text').then(l => { P_CACHE.log = l.trim().split('\n').filter(Boolean).reverse(); renderProject(); }, () => { if (D.page) notLoaded('the change log', loadLog); });
 }
 // Opening a section is a step Back undoes; history.state.page counts the steps, so Back to Items undoes them all.
 function openProject(sec) {
@@ -5660,7 +5765,7 @@ function openProject(sec) {
   D.page = 'project'; D.sideOpen = false; U.go = null; D.section = sec;
   render();
   if (from !== sec) { $('projectBody').scrollTop = 0; writeURL(true, {v: viewPath(), page: from ? (history.state?.page || 0) + 1 : 1, tab: U.tab}); }  // tab: what Back to … goes to
-  if (sec === 'connect') fetch(P + 'agent?ui=1').then(r => r.text()).then(g => { P_CACHE.guide = g; renderProject(); }, () => {});
+  if (sec === 'connect') net(P + 'agent?ui=1', {}, NET.get, 'text').then(g => { P_CACHE.guide = g; renderProject(); }, () => notLoaded('what the agent reads', () => openProject('connect')));
   if (sec === 'fixes') loadFixes();
 }
 // Redraw only what changed: a redraw on every poll would drop the focus, a selection or a half-done second click.
@@ -5933,7 +6038,7 @@ function setDrawer(x, animate = true) {  // x: how far the page is pushed right
 }
 async function fillDrawer() {
   if (!DR.list) $('drawerList').innerHTML = '<div class="px-3 py-3 text-sm text-zinc-400">Loading…</div>';
-  try { DR.list = (await (await fetch('/api/projects', {cache: 'no-store'})).json()).sort((a, b) => b.t - a.t); } catch (_) { return; }
+  try { DR.list = (await net('/api/projects')).sort((a, b) => b.t - a.t); } catch (_) { if (!DR.list) $('drawerList').innerHTML = `<div class="px-3 py-3 text-sm text-zinc-500 dark:text-zinc-400">Couldn't load the projects</div>`; return; }
   $('drawerList').innerHTML = [...DR.list].sort((a, b) => (b.name === S.project) - (a.name === S.project) || a.name.localeCompare(b.name)).map(p => { const cur = p.name === S.project, [tone, label] = agentState(p.agents, p.work);  // one order: rows don't move as projects get busy (B158)
     return `<a href="/p/${encodeURIComponent(p.name)}/" ${cur ? 'aria-current="page"' : ''} class="group flex min-h-14 items-center gap-3 rounded-2xl px-3 py-2.5 hover:bg-zinc-200/50 data-pressed:bg-zinc-200/70 aria-[current=page]:bg-white aria-[current=page]:shadow-sm aria-[current=page]:ring-1 aria-[current=page]:ring-zinc-900/5 dark:hover:bg-zinc-800/60 dark:data-pressed:bg-zinc-800 dark:aria-[current=page]:bg-zinc-800 dark:aria-[current=page]:ring-white/5">
     <span class="min-w-0 flex-1"><span class="block truncate text-[17px] font-medium group-aria-[current=page]:font-semibold">${esc(p.name)}</span>
@@ -5956,20 +6061,34 @@ function undoLabel(u) {
 // as a batch. Anything older, or done elsewhere, is undone from the change log, after a second click to confirm.
 function pushUndo(label, undo) {  // -> the one way to undo it, from Z, the sidebar, the toast or a bar; it runs once
   const e = {label, done: false};
-  e.run = async () => { if (e.done) return; e.done = true; U.mine = U.mine.filter(x => x !== e); renderDrawerSettings(); return undo(); };
+  e.run = async () => {
+    if (e.done) return;
+    e.done = true; U.mine = U.mine.filter(x => x !== e); renderDrawerSettings();
+    const ok = await undo();
+    if (ok === false) { e.done = false; U.mine.push(e); renderDrawerSettings(); }  // it couldn't be put back: Z can try again (T160)
+    return ok;
+  };
+  e.run.entry = e;
   U.mine.push(e); if (U.mine.length > 30) U.mine.shift();
   renderDrawerSettings();
   return e.run;
 }
+function forget(run) { const e = run?.entry; if (!e || e.done) return; e.done = true; U.mine = U.mine.filter(x => x !== e); renderDrawerSettings(); }  // it never happened
 async function undoMine() {
   const e = U.mine.at(-1);
   if (!e) return toast('Nothing of yours to undo on this page. Older changes: Change log');
   try { await e.run(); } catch (_) {}
 }
 async function revert(seq) {
-  const d = await (await fetch(P + 'api/revert', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({seq})})).json();
-  if (!d.ok) { toast(d.error || (d.res || [])[0] || 'Could not undo'); throw new Error('revert failed'); }
-  await load();
+  const d = await net(P + 'api/revert', JSON_POST({seq}), NET.op);
+  if (!d.ok) { toast(d.error || (d.res || [])[0] || 'Could not undo', null, {error: true}); throw new Error('revert failed'); }
+  try { await load(); } catch (_) {}
+}
+async function revertNow(seq) {  // one of your changes, from the change log
+  const u = (S.undo || []).find(u => u.seq === seq);
+  try { await revert(seq); } catch (ex) { return notSaved(ex, () => revertNow(seq)); }
+  toast(`Undid: ${u ? undoLabel(u) : 'the change'}`); renderDrawerSettings();
+  if (sheetIs('Change log')) showLog();  // the log shows the undo too (the desktop's reloads by itself)
 }
 const undoRow = () => { const u = U.mine.at(-1); return u ? `<button data-act="undo-mine" title="Undo · Z" class="flex min-h-12 w-full items-center gap-3 px-3.5 py-2.5 text-left text-[15px] lg:min-h-0 lg:gap-2.5 lg:rounded-lg lg:px-3 lg:py-1.5 lg:text-sm lg:text-zinc-600 lg:hover:bg-zinc-200/60 dark:lg:text-zinc-300 dark:lg:hover:bg-zinc-800">${ico('undo', 'size-5 shrink-0 text-zinc-500 lg:size-4 dark:text-zinc-400', '2')}<span class="min-w-0 flex-1 leading-snug">Undo: ${esc(u.label)}</span>${desk() ? KBD('Z') : ''}</button>` : ''; };
 function renderDrawerSettings() {
@@ -5989,7 +6108,7 @@ async function checkOthers() {
   if (Date.now() - (checkOthers.t || 0) < 20000) return;
   checkOthers.t = Date.now();
   const names = () => (DR.list || []).map(p => p.name).sort().join('\n'), had = names();
-  try { DR.list = (await (await fetch('/api/projects', {cache: 'no-store'})).json()).sort((a, b) => b.t - a.t); } catch (_) { return; }
+  try { DR.list = (await net('/api/projects')).sort((a, b) => b.t - a.t); } catch (_) { return; }  // it tries again soon
   $('otherDot').hidden = !DR.list.some(p => p.name !== S.project && p.needs);
   if (names() !== had && S.rev >= 0) return render();  // A12, B13: Move… on Inputs and New input needs the other projects, the tiles' colours too
   if (desk()) { renderSidebar(); renderRail(); }
