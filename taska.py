@@ -3082,7 +3082,7 @@ function renderAgent() {
     ? `<span role="status" class="flex h-8 items-center gap-2 rounded-full bg-zinc-100 px-3 text-[13px] font-medium text-zinc-600 ring-1 ring-zinc-900/5 ring-inset dark:bg-zinc-800/80 dark:text-zinc-300 dark:ring-white/5">${ico('spinner', 'size-3.5 animate-spin', '2.25')}Offline, retrying…</span>`
     : `<span class="flex h-8 max-w-44 items-center gap-2 rounded-full px-3 text-[13px] font-medium ring-1 ring-inset ${PILL[kind][0]}"><span class="size-2 shrink-0 rounded-full ${PILL[kind][1]}"></span><span class="truncate">${esc(label)}</span></span>`;
   b.title = offline >= 2 ? 'Taska is out of reach. It reconnects by itself.' : line;
-  if ($('deskAgent')) $('deskAgent').innerHTML = `<button data-act="agent-info" title="${esc(b.title)}" class="flex rounded-full hover:brightness-95 dark:hover:brightness-125">${b.innerHTML}</button>`;
+  if ($('deskAgent')) draw($('deskAgent'), `<button data-act="agent-info" title="${esc(b.title)}" class="flex rounded-full hover:brightness-95 dark:hover:brightness-125">${b.innerHTML}</button>`);
 }
 setInterval(() => { if (S.agents) renderAgent(); }, 30000);  // "2m" keeps counting between changes
 
@@ -5598,10 +5598,10 @@ function renderSidebar() {
       <span class="min-w-0 flex-1"><span class="block truncate text-sm font-medium">${esc(p.name)}</span><span class="flex items-center gap-1.5 text-[11px] text-zinc-500 dark:text-zinc-400"><span class="size-1.5 shrink-0 rounded-full ${AGENT_TONE[tone][0]}"></span><span class="truncate ${tone === 'ok' ? 'text-emerald-700 dark:text-emerald-400' : AGENT_TONE[tone][1]}">${esc(label)}</span><span class="shrink-0">· ${p.open} open</span></span></span>
       ${p.needs ? `<span class="grid h-5 min-w-5 place-items-center rounded-full bg-amber-100 px-1 text-[11px] font-bold text-amber-900 dark:bg-amber-400/15 dark:text-amber-200">${p.needs}</span>` : ''}</a>`; }).join('');
   const open = openCount();
-  $('drawerList').innerHTML = `<div class="mb-2 rounded-2xl bg-white p-1.5 shadow-sm ring-1 ring-zinc-900/5 dark:bg-zinc-800 dark:ring-white/5">
+  draw($('drawerList'), `<div class="mb-2 rounded-2xl bg-white p-1.5 shadow-sm ring-1 ring-zinc-900/5 dark:bg-zinc-800 dark:ring-white/5">
       <div class="flex items-center gap-2 px-1.5 pt-1">${projTile(S.project, 'size-6 rounded-lg text-xs')}<span class="min-w-0 flex-1 truncate text-[15px] font-semibold">${esc(S.project)}</span><span class="text-xs text-zinc-400">${open} open</span></div>
       <div id="deskAgent" class="px-1 pt-1 pb-1.5"></div>
-      <div class="flex flex-col gap-px">${['items', 'inputs', 'archive', 'rules'].map(tab).join('')}</div></div>${others}`;
+      <div class="flex flex-col gap-px">${['items', 'inputs', 'archive', 'rules'].map(tab).join('')}</div></div>${others}`);
   $('newInputBtn').setAttribute('aria-pressed', String(D.compose && !D.page));
   renderAgent(); renderDrawerSettings();
 }
@@ -5612,7 +5612,7 @@ function renderRail() {
   const b = (act, inner, title, attrs = '') => `<button data-act="${act}" ${attrs} title="${title}" aria-label="${title.split(' · ')[0]}" class="relative grid size-10 place-items-center rounded-xl text-zinc-500 hover:bg-zinc-200/60 aria-pressed:bg-zinc-200/80 aria-pressed:text-zinc-900 aria-[current=page]:bg-zinc-200/80 aria-[current=page]:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:aria-pressed:bg-zinc-700 dark:aria-pressed:text-zinc-50 dark:aria-[current=page]:bg-zinc-700 dark:aria-[current=page]:text-zinc-50">${inner}</button>`;
   const cur = on => on ? 'aria-current="page"' : '';
   const badge = (n, amber) => n ? `<span class="absolute -top-0.5 -right-0.5 grid h-4 min-w-4 place-items-center rounded-full px-1 text-[10px] font-bold ${amber ? 'bg-amber-500 text-white dark:bg-amber-400 dark:text-amber-950' : 'bg-zinc-300 text-zinc-700 dark:bg-zinc-600 dark:text-zinc-100'}">${n}</span>` : '';
-  $('rail').innerHTML = b('side', `<span class="text-blue-600 dark:text-blue-400">${ico('logo', 'size-6', '2.25')}</span>`, 'Show the sidebar · [')
+  draw($('rail'), b('side', `<span class="text-blue-600 dark:text-blue-400">${ico('logo', 'size-6', '2.25')}</span>`, 'Show the sidebar · [')
     + b('new-input', ico('newinput', 'size-5'), 'New input · C', `aria-pressed="${D.compose && !D.page}"`)
     + `<div class="my-1 h-px w-8 bg-zinc-200 dark:bg-zinc-800"></div>`
     + b('switch', `${projTile(S.project, 'size-7 rounded-lg text-xs')}${other ? '<span class="absolute top-1 right-1 size-2.5 rounded-full bg-amber-500 ring-2 ring-zinc-50 dark:bg-amber-400 dark:ring-zinc-900"></span>' : ''}`, `${S.project} · switch project: G P`)
@@ -5620,7 +5620,7 @@ function renderRail() {
     + `<div class="flex-1"></div>`
     + b('agent-info', `${avatar('claude-code')}<span class="absolute right-1.5 bottom-1.5 size-2.5 rounded-full ring-2 ring-zinc-50 dark:ring-zinc-900 ${AGENT_TONE[tone][0]}"></span>`, agentState(S.agents, S.work)[2])
     + b('project', ico('sliders', 'size-5'), 'This project', cur(!!D.page))
-    + b('keys', ico('keyboard', 'size-5'), 'Keyboard shortcuts · ?');
+    + b('keys', ico('keyboard', 'size-5'), 'Keyboard shortcuts · ?'));
 }
 
 // The desktop's New input page (B73): the one input box moves to the middle of the right pane, under the project's
@@ -5814,6 +5814,10 @@ function openProject(sec) {
   if (sec === 'fixes') loadFixes();
 }
 // Redraw only what changed: a redraw on every poll would drop the focus, a selection or a half-done second click.
+// The sidebar, the rail and the drawer are drawn again only when they changed (T160): a refresh that replaces them
+// while a button in them is held down (as when a click also brings the window to the front) loses the click.
+const DRAWN = new WeakMap();
+function draw(el, html) { if (DRAWN.get(el) === html && el.firstChild) return; DRAWN.set(el, html); el.innerHTML = html; }
 function setHtml(el, key, html) {
   if (P_CACHE[key] === html) return;
   const sig = x => [x.dataset.act, x.dataset.sec, x.dataset.text, x.dataset.wrong, x.dataset.seq].join('|');
@@ -6082,13 +6086,13 @@ function setDrawer(x, animate = true) {  // x: how far the page is pushed right
   if (x <= 0 && animate) setTimeout(() => { if (!DR.open && !app.style.transform) $('drawer').hidden = true; }, 240);
 }
 async function fillDrawer() {
-  if (!DR.list) $('drawerList').innerHTML = '<div class="px-3 py-3 text-sm text-zinc-400">Loading…</div>';
-  try { DR.list = (await net('/api/projects')).sort((a, b) => b.t - a.t); } catch (_) { if (!DR.list) $('drawerList').innerHTML = `<div class="px-3 py-3 text-sm text-zinc-500 dark:text-zinc-400">Couldn't load the projects</div>`; return; }
-  $('drawerList').innerHTML = [...DR.list].sort((a, b) => (b.name === S.project) - (a.name === S.project) || a.name.localeCompare(b.name)).map(p => { const cur = p.name === S.project, [tone, label] = agentState(p.agents, p.work);  // one order: rows don't move as projects get busy (B158)
+  if (!DR.list) draw($('drawerList'), '<div class="px-3 py-3 text-sm text-zinc-400">Loading…</div>');
+  try { DR.list = (await net('/api/projects')).sort((a, b) => b.t - a.t); } catch (_) { if (!DR.list) draw($('drawerList'), `<div class="px-3 py-3 text-sm text-zinc-500 dark:text-zinc-400">Couldn't load the projects</div>`); return; }
+  draw($('drawerList'), [...DR.list].sort((a, b) => (b.name === S.project) - (a.name === S.project) || a.name.localeCompare(b.name)).map(p => { const cur = p.name === S.project, [tone, label] = agentState(p.agents, p.work);  // one order: rows don't move as projects get busy (B158)
     return `<a href="/p/${encodeURIComponent(p.name)}/" ${cur ? 'aria-current="page"' : ''} class="group flex min-h-14 items-center gap-3 rounded-2xl px-3 py-2.5 hover:bg-zinc-200/50 data-pressed:bg-zinc-200/70 aria-[current=page]:bg-white aria-[current=page]:shadow-sm aria-[current=page]:ring-1 aria-[current=page]:ring-zinc-900/5 dark:hover:bg-zinc-800/60 dark:data-pressed:bg-zinc-800 dark:aria-[current=page]:bg-zinc-800 dark:aria-[current=page]:ring-white/5">
     <span class="min-w-0 flex-1"><span class="block truncate text-[17px] font-medium group-aria-[current=page]:font-semibold">${esc(p.name)}</span>
     <span class="mt-0.5 flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400"><span class="size-1.5 shrink-0 rounded-full ${AGENT_TONE[tone][0]}"></span><span class="truncate ${tone === 'ok' ? 'text-emerald-700 dark:text-emerald-400' : AGENT_TONE[tone][1]}">${esc(label)}</span><span class="shrink-0">· ${p.open} open</span></span></span>
-    ${p.needs ? `<span class="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900 dark:bg-amber-400/15 dark:text-amber-200">${p.needs} need you</span>` : ''}</a>`; }).join('');
+    ${p.needs ? `<span class="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900 dark:bg-amber-400/15 dark:text-amber-200">${p.needs} need you</span>` : ''}</a>`; }).join(''));
   $('otherDot').hidden = !DR.list.some(p => p.name !== S.project && p.needs);
 }
 // Undo your last changes (F80): the server lists the ones nobody changed again since; each says what it did.
@@ -6140,10 +6144,10 @@ function renderDrawerSettings() {
   // On the desktop the same rows are compact sidebar links, and the one whose section shows is marked (B162).
   const row = (act, icon, label, sec) => { const on = desk() && D.page && D.section === sec;
     return `<button data-act="${act}" ${on ? 'aria-current="page" ' : ''}class="flex min-h-12 w-full items-center gap-3 px-3.5 py-2.5 text-left text-[15px] lg:min-h-0 lg:gap-2.5 lg:rounded-lg lg:px-3 lg:py-1.5 lg:text-sm lg:text-zinc-600 lg:hover:bg-zinc-200/60 lg:aria-[current=page]:bg-zinc-200/70 lg:aria-[current=page]:font-semibold lg:aria-[current=page]:text-zinc-900 dark:lg:text-zinc-300 dark:lg:hover:bg-zinc-800 dark:lg:aria-[current=page]:bg-zinc-800 dark:lg:aria-[current=page]:text-zinc-50">${ico(icon, 'size-5 text-zinc-500 lg:size-4 dark:text-zinc-400')}<span class="min-w-0 flex-1">${label}</span><span class="lg:hidden">${ico('right', 'size-4 text-zinc-300 dark:text-zinc-600')}</span></button>`; };
-  $('drawerSettings').innerHTML = `${undoRow()}<button data-act="auto" aria-pressed="${!!S.cfg?.auto}" class="group flex w-full items-center gap-3 px-3.5 py-3 text-left lg:gap-2.5 lg:rounded-lg lg:px-3 lg:py-1.5 lg:hover:bg-zinc-200/60 dark:lg:hover:bg-zinc-800">${ico('loop', 'size-5 text-emerald-600 lg:size-4 dark:text-emerald-400')}
+  draw($('drawerSettings'), `${undoRow()}<button data-act="auto" aria-pressed="${!!S.cfg?.auto}" class="group flex w-full items-center gap-3 px-3.5 py-3 text-left lg:gap-2.5 lg:rounded-lg lg:px-3 lg:py-1.5 lg:hover:bg-zinc-200/60 dark:lg:hover:bg-zinc-800">${ico('loop', 'size-5 text-emerald-600 lg:size-4 dark:text-emerald-400')}
       <span class="min-w-0 flex-1"><span class="block text-[15px] lg:text-sm">Keep going</span><span class="block text-xs leading-snug text-zinc-500 lg:text-[11px] dark:text-zinc-400">Agents take the next item without stopping</span></span>
       <span class="relative h-6.5 w-11 shrink-0 rounded-full bg-zinc-300 transition-colors group-aria-pressed:bg-emerald-500 lg:h-5 lg:w-8.5 dark:bg-zinc-600 dark:group-aria-pressed:bg-emerald-500"><span class="absolute top-0.75 left-0.75 size-5 rounded-full bg-white shadow transition-transform group-aria-pressed:translate-x-4.5 lg:size-3.5 lg:group-aria-pressed:translate-x-3.5"></span></span></button>
-    ${row('guide', 'plug', 'Connect a coding agent', 'connect')}${row('phone', 'phone', 'Use on your phone', 'phone')}${row('fixes', 'pencil', 'Voice spellings', 'fixes')}${row('log', 'history', 'Change log', 'log')}${desk() ? '' : row('about', 'info', 'About', 'about')}`;
+    ${row('guide', 'plug', 'Connect a coding agent', 'connect')}${row('phone', 'phone', 'Use on your phone', 'phone')}${row('fixes', 'pencil', 'Voice spellings', 'fixes')}${row('log', 'history', 'Change log', 'log')}${desk() ? '' : row('about', 'info', 'About', 'about')}`);
   $('menuInfo').innerHTML = `<div><dt class="inline">Project </dt><dd class="inline">${esc(S.project)}</dd></div>
     <div><dt class="inline">Data </dt><dd class="inline font-mono text-[11px]">${esc(S.file)}</dd></div>
     <div><dt class="inline">Organizer </dt><dd class="inline">${S.org?.on ? 'Gemini · ' + esc(S.org.model) : 'off (set GEMINI_API_KEY and restart)'}</dd></div>`;
