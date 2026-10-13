@@ -1410,7 +1410,7 @@ def echoed(tr, titles):
 
 HUB = None
 ITEM_PATH = re.compile(r"/([A-Za-z]?\d+)")
-VIEW_PATH = re.compile(r"/(inputs|archive|rules|new|settings|log|connect|[A-Za-z]\d+)")  # the page's views (T102)
+VIEW_PATH = re.compile(r"/(inputs|archive|rules|new|settings|connect|phone|spellings|log|about|[A-Za-z]\d+)")  # the page's views (T102, B162)
 NAME = re.compile(r"[a-z0-9][a-z0-9-]{0,39}")
 
 CONNECT = """#!/bin/sh
@@ -2065,7 +2065,10 @@ PAGE = r'''<!doctype html>
     <div id="detailBody" class="min-h-0 flex-1 overflow-y-auto overscroll-contain lg:mask-b-from-[calc(100%-2rem)] lg:scrollbar-gutter-both lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70 lg:group-data-[compose]/app:hidden"></div>
   </section>
 
-  <section id="projectView" hidden class="min-h-0 overflow-y-auto overscroll-contain lg:scrollbar-gutter-both lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70 lg:col-span-2 lg:col-start-1 lg:row-span-4 lg:row-start-1"></section>
+  <section id="projectView" hidden aria-label="This project" class="min-h-0 lg:col-span-2 lg:col-start-1 lg:row-span-4 lg:row-start-1 lg:flex lg:overflow-hidden">
+    <nav id="projectNav" aria-label="Sections of this project" class="flex w-60 shrink-0 flex-col overflow-y-auto overscroll-contain border-r border-zinc-200 pb-4 lg:scrollbar-thin dark:border-zinc-800"></nav>
+    <div id="projectBody" class="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain lg:scrollbar-gutter-both lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70"></div>
+  </section>
 
   <div id="listGrip" data-grip="list" hidden title="Drag to resize · double-click for the default" class="z-30 cursor-col-resize hover:bg-blue-500/30 lg:col-start-1 lg:row-span-4 lg:row-start-1 lg:block lg:w-2 lg:translate-x-full lg:justify-self-end"></div>
   <footer id="foot" class="relative z-20 shrink-0 lg:scrollbar-gutter-both lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70 px-3 pt-1 pb-[max(1.25rem,env(safe-area-inset-bottom))] lg:col-start-2 lg:row-start-4 lg:px-8 lg:pb-5 lg:group-data-[compose]/app:row-start-2 lg:group-data-[compose]/app:row-span-3 lg:group-data-[compose]/app:overflow-y-auto lg:group-data-[compose]/app:overscroll-contain lg:group-data-[compose]/app:pt-[9vh] lg:group-data-[compose]/app:pb-16">
@@ -2187,6 +2190,8 @@ const ICON = {
   items: '<path d="M3 12h.01"/><path d="M3 18h.01"/><path d="M3 6h.01"/><path d="M8 12h13"/><path d="M8 18h13"/><path d="M8 6h13"/>',
   inbox: '<polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>',
   book: '<path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/>',
+  bot: '<path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/>',
+  info: '<circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/>',
 };
 const ico = (n, c = 'size-5', sw = '1.75') => `<svg class="${c} shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[n]}</svg>`;
 const $ = id => document.getElementById(id);
@@ -2275,7 +2280,7 @@ function when(t) {
 }
 
 const LAST = {pane: null};  // the pane you last acted in, for where feedback shows (B129)
-document.addEventListener('pointerdown', e => { LAST.pane = e.target.closest?.('#list, #detailView, #drawer, #inputsView, #projectView, #foot') || LAST.pane; }, true);
+document.addEventListener('pointerdown', e => { LAST.pane = e.target.closest?.('#list, #detailView, #drawer, #inputsView, #projectBody, #projectView, #foot') || LAST.pane; }, true);
 document.addEventListener('keydown', e => { if (desk() && !/INPUT|TEXTAREA/.test(document.activeElement?.tagName)) LAST.pane = $('detailView'); }, true);  // keys act on the open item
 function toast(text, undo) {  // with `undo`, the toast carries an Undo button for a few seconds
   const el = $('toast');
@@ -2284,7 +2289,7 @@ function toast(text, undo) {  // with `undo`, the toast carries an Undo button f
   const up = !$('overlay').hidden && !desk();  // a sheet or the focus card is open: say it at the top, clear of its buttons
   el.classList.toggle('bottom-28', !up); el.classList.toggle('top-[calc(env(safe-area-inset-top)+0.75rem)]', up);
   if (desk()) {  // B129: on the desktop it shows in the pane you acted in, above the box if the box is there
-    const pane = [LAST.pane, $('detailView'), $('inputsView'), $('projectView')].find(p => p?.isConnected && p.offsetParent), r = pane?.getBoundingClientRect();
+    const pane = [LAST.pane, $('detailView'), $('inputsView'), $('projectBody')].find(p => p?.isConnected && p.offsetParent), r = pane?.getBoundingClientRect();
     const f = $('foot').getBoundingClientRect(), above = r && f.height < 300 && f.left < r.right && f.right > r.left;
     if (r) { el.style.left = `${r.left + r.width / 2}px`; el.style.bottom = `${above ? innerHeight - f.top + 12 : 20}px`; }
     el.classList.toggle('lg:-translate-x-1/2', !!r);
@@ -2340,7 +2345,7 @@ function renderLive() { renderAgent(); }
 // waits and nobody has come for a while.
 const AGENT_NAME = {'claude-code': 'Claude Code', codex: 'Codex', antigravity: 'Antigravity', agent: 'Agent'};
 const agoShort = t => { const m = Math.max(0, Math.round((Date.now() - t) / 60000)); return m < 1 ? 'now' : m < 60 ? m + 'm' : m < 1440 ? Math.round(m / 60) + 'h' : Math.round(m / 1440) + 'd'; };
-const agoLong = t => { const m = Math.max(0, Math.round((Date.now() - t) / 60000)); return m < 1 ? 'just now' : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} days ago`; };
+const agoLong = t => { const m = Math.max(0, Math.round((Date.now() - t) / 60000)); return m < 1 ? 'just now' : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${plural(Math.round(m / 1440), 'day')} ago`; };
 function agentState(agents, work) {  // -> [tone: ok | bad | idle, short label, sentence]
   const list = [...(agents || [])].sort((a, b) => b.t - a.t), a = list.find(x => x.waiting) || list[0];
   const name = a ? AGENT_NAME[a.name] || a.name : '';
@@ -3708,8 +3713,8 @@ const closeDialog = () => {
 };
 
 // From outside this machine and its network Taska needs the key; one tap on the link puts it on a device for good.
-// The bodies of the project sheets. The phone shows each in a sheet; the desktop puts them together on the
-// "This project" page (I70).
+// The bodies of the project sheets on the phone. The desktop shows the same things as sections of its "This
+// project" page (B162), laid out for a wide screen.
 function phoneHtml() {
   const link = S.remote ? S.remote + '/' : '';
   return `<div class="flex flex-col gap-5">
@@ -3722,7 +3727,7 @@ function phoneHtml() {
     <button data-act="new-key" class="mt-1 h-11 rounded-xl px-1 text-sm font-semibold text-red-600 dark:text-red-400">New key</button></div></div>`;
 }
 const agentAsk = () => `This project tracks work in Taska. Run \`curl -s ${BASE}/agent\` to learn the interface, then follow \`curl -s ${BASE}/next\` and write your progress back to the items.`;
-function guideHtml(text, fold = false) {  // fold: the desktop page keeps the long agent text behind a disclosure
+function guideHtml(text) {
   const connect = `curl -s ${BASE}/connect | sh`, far = S.remote && S.remote !== BASE ? `curl -s ${S.remote}/connect | sh` : '', short = agentAsk();
   const box = (t, mono = true) => `<div class="mt-2 rounded-xl bg-zinc-100 p-3 text-sm leading-relaxed break-all dark:bg-zinc-800 ${mono ? 'font-mono text-xs' : ''}">${esc(t)}</div>`;
   return `<div class="flex flex-col gap-5">
@@ -3732,10 +3737,8 @@ function guideHtml(text, fold = false) {  // fold: the desktop page keeps the lo
     ${box(far)}<button data-act="copy-text" data-text="${esc(far)}" class="${SECOND} mt-2.5 w-full">${ico('copy', 'size-4')}Copy</button></div>` : ''}
     <div><p class="px-1 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">Or just send this to the agent:</p>
     ${box(short, false)}<button data-act="copy-text" data-text="${esc(short)}" class="${SECOND} mt-2.5 w-full">${ico('copy', 'size-4')}Copy</button></div>
-    ${!fold ? `<div><p class="px-1 text-sm text-zinc-600 dark:text-zinc-300">What the agent reads:</p>
-    <pre class="mt-2 overflow-x-auto lg:scrollbar-thin rounded-xl bg-zinc-50 p-3 text-xs leading-relaxed whitespace-pre-wrap dark:bg-zinc-950">${esc(text)}</pre></div>`
-    : `<details class="group"><summary class="flex h-9 cursor-pointer items-center gap-1 px-1 text-sm text-zinc-600 dark:text-zinc-300">${ico('right', 'size-4 transition-transform group-open:rotate-90')}What the agent reads</summary>
-    <pre class="mt-2 overflow-x-auto lg:scrollbar-thin rounded-xl bg-zinc-50 p-3 text-xs leading-relaxed whitespace-pre-wrap dark:bg-zinc-950">${esc(text || 'Loading…')}</pre></details>`}</div>`;
+    <div><p class="px-1 text-sm text-zinc-600 dark:text-zinc-300">What the agent reads:</p>
+    <pre class="mt-2 overflow-x-auto lg:scrollbar-thin rounded-xl bg-zinc-50 p-3 text-xs leading-relaxed whitespace-pre-wrap dark:bg-zinc-950">${esc(text)}</pre></div></div>`;
 }
 // One change, as a sentence (B131): who, then what, with item codes and inputs as links; the time in grey.
 function logLine(l) {
@@ -3753,26 +3756,31 @@ const logHtml = lines => `<ol class="divide-y divide-zinc-100 text-[13px] leadin
   const u = (S.undo || []).find(u => l.startsWith(`#${u.seq} `));  // one of your changes that can still be put back (F80)
   return `<li class="flex items-start gap-2 py-1.5"><span class="min-w-0 flex-1 break-words">${logLine(l)}</span>${u ? `<button data-act="revert" data-seq="${u.seq}" class="-my-1 shrink-0 rounded-md px-2 py-1 font-sans text-xs font-semibold text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10">Undo</button>` : ''}</li>`;
 }).join('')}</ol>`;
-function agentsHtml(connect = true) {
-  const [tone, , line] = agentState(S.agents, S.work), ask = agentAsk();
+// How the agents are doing, in one coloured card: the phone's Agents sheet and the desktop's Agents section.
+function agentCard() {
+  const [tone, , line] = agentState(S.agents, S.work);
   const queue = S.items.filter(it => !it.merged_into && !it.archived && it.type !== 'rule' && !needsYou(it) && (it.status === 'open' || it.status === 'doing')).length;
   const look = {bad: ['bg-red-50 dark:bg-red-400/10', 'bg-red-500 ring-4 ring-red-500/20 dark:bg-red-400', 'text-red-800 dark:text-red-200', 'text-red-700/80 dark:text-red-300/80'],
     ok: ['bg-emerald-50 dark:bg-emerald-400/10', 'bg-emerald-500 ring-4 ring-emerald-500/20 dark:bg-emerald-400', 'text-emerald-900 dark:text-emerald-100', 'text-emerald-800/80 dark:text-emerald-300/80'],
     idle: ['bg-zinc-100 dark:bg-zinc-800', 'bg-zinc-400 ring-4 ring-zinc-400/20', 'text-zinc-800 dark:text-zinc-100', 'text-zinc-500 dark:text-zinc-400']}[tone];
-  const seen = [...(S.agents || [])].sort((a, b) => b.t - a.t).map(a => `<li class="flex h-11 items-center gap-3">${avatar(a.name)}<span class="min-w-0 flex-1 text-[15px]">${esc(AGENT_NAME[a.name] || a.name)}</span><span class="text-sm text-zinc-500 dark:text-zinc-400">${a.waiting ? 'waiting for work' : agoLong(a.t)}</span></li>`).join('');
+  return `<div class="flex gap-3 rounded-2xl p-4 ${look[0]}"><span class="mt-1.5 size-2.5 shrink-0 rounded-full ${look[1]}"></span>
+      <div><p class="text-[15px] leading-snug font-semibold ${look[2]}">${esc(line)}</p><p class="mt-1 text-[13px] leading-snug ${look[3]}">${plural(queue, 'item')} in the queue · Keep going is ${S.cfg?.auto ? 'on' : 'off'}</p></div></div>`;
+}
+const agentsSeen = () => [...(S.agents || [])].sort((a, b) => b.t - a.t).map(a => `<li class="flex h-11 items-center gap-3">${avatar(a.name)}<span class="min-w-0 flex-1 text-[15px]">${esc(AGENT_NAME[a.name] || a.name)}</span><span class="text-sm text-zinc-500 dark:text-zinc-400">${a.waiting ? 'waiting for work' : agoLong(a.t)}</span></li>`).join('');
+function agentsHtml() {
+  const [tone] = agentState(S.agents, S.work), ask = agentAsk(), seen = agentsSeen();
   return `<div class="flex flex-col gap-5">
-    <div class="flex gap-3 rounded-2xl p-4 ${look[0]}"><span class="mt-1.5 size-2.5 shrink-0 rounded-full ${look[1]}"></span>
-      <div><p class="text-[15px] leading-snug font-semibold ${look[2]}">${esc(line)}</p><p class="mt-1 text-[13px] leading-snug ${look[3]}">${plural(queue, 'item')} in the queue · Keep going is ${S.cfg?.auto ? 'on' : 'off'}</p></div></div>
+    ${agentCard()}
     ${seen ? `<div><div class="px-1 pb-1 text-xs font-semibold text-zinc-500 dark:text-zinc-400">Seen in this project</div><ul class="divide-y divide-zinc-100 px-1 dark:divide-zinc-800">${seen}</ul></div>` : ''}
     ${tone === 'ok' ? '' : `<div><p class="px-1 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">To get one working, open your coding agent in this project's folder and send it this:</p>
       <div class="mt-2 rounded-xl bg-zinc-100 p-3 text-sm leading-relaxed break-words text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200">${esc(ask)}</div>
       <button data-act="copy-text" data-text="${esc(ask)}" class="${PRIMARY} mt-2.5 w-full">${ico('copy', 'size-4.5')}Copy</button></div>`}
-    ${connect ? `<button data-act="guide" class="flex min-h-14 w-full items-center gap-3 rounded-2xl border border-zinc-200 px-3.5 py-2.5 text-left dark:border-zinc-800">${ico('plug', 'size-5 text-zinc-500 dark:text-zinc-400')}
-      <span class="min-w-0 flex-1"><span class="block text-[15px] font-medium">Connect a coding agent</span><span class="block text-xs text-zinc-500 dark:text-zinc-400">First time on that machine? Run one command there.</span></span>${ico('right', 'size-4 text-zinc-300 dark:text-zinc-600')}</button>` : ''}</div>`;
+    <button data-act="guide" class="flex min-h-14 w-full items-center gap-3 rounded-2xl border border-zinc-200 px-3.5 py-2.5 text-left dark:border-zinc-800">${ico('plug', 'size-5 text-zinc-500 dark:text-zinc-400')}
+      <span class="min-w-0 flex-1"><span class="block text-[15px] font-medium">Connect a coding agent</span><span class="block text-xs text-zinc-500 dark:text-zinc-400">First time on that machine? Run one command there.</span></span>${ico('right', 'size-4 text-zinc-300 dark:text-zinc-600')}</button></div>`;
 }
 function showPhone() { dialog('Use on your phone', phoneHtml()); }
 async function showGuide() { const text = await (await fetch(P + 'agent?ui=1')).text(); dialog('Connect a coding agent', guideHtml(text)); }
-async function showLog() { const text = await (await fetch(P + 'log?n=300&ui=1')).text(); dialog('Change log', logHtml(text.trim().split('\n').reverse())); }
+async function showLog() { const text = await (await fetch(P + `log?n=${LOG_N}&ui=1`)).text(); dialog('Change log', logHtml(text.trim().split('\n').reverse())); }
 
 function showSources(n) {
   const it = byN.get(n);
@@ -3832,9 +3840,9 @@ function render() {
   const pending = S.inputs.filter(r => !r.acked).length;
   $('nInputs').textContent = pending || '';
   $('nInputs').title = pending ? `${pending} not organized yet` : '';
-  const waiting = S.items.filter(needsYou).length;
+  const waiting = S.items.filter(needsYou).length, sec = desk() && D.page ? PSEC[D.section][2] + ' · ' : '';  // each section is a page of its own (B162)
   $('projName').textContent = S.project || 'Taska';
-  document.title = (waiting ? `(${waiting}) ` : '') + (S.project ? `${S.project} · Taska` : 'Taska');
+  document.title = (waiting ? `(${waiting}) ` : '') + sec + (S.project ? `${S.project} · Taska` : 'Taska');
   if (DR.open) renderDrawerSettings();
   if (AUD.el) audioUi();
 }
@@ -3991,8 +3999,10 @@ const ACT = {
     U.scopeOff = true; render(); $('text').focus();
   },
   'compose-back': () => leaveCompose(),
-  'project-back': () => { const back = leaveView('settings'); D.page = null; render(); if (!back) writeURL(false); },
+  // Back where you came from (B162): the sections you went through here were steps in the history; they go at once.
+  'project-back': () => { const k = !URLS.applying && history.state?.page; D.page = null; render(); if (k) { URLS.selfBack = true; history.go(-k); } else writeURL(false); },
   project: () => openProject('agents'),
+  psec: (b, e) => e?.metaKey || e?.ctrlKey || e?.shiftKey ? window.open(b.href, '_blank') : openProject(b.dataset.sec),  // ⌘-click: in a new tab
   'go-next': () => {
     if (desk()) {
       const g = U.go; if (!g) return startGoDesk();
@@ -4230,8 +4240,7 @@ const ACT = {
     const u = (S.undo || []).find(u => u.seq === Number(b.dataset.seq));
     try { await revert(Number(b.dataset.seq)); } catch (_) { return; }
     D.undo = null; toast(`Undid: ${u ? undoLabel(u) : 'the change'}`); renderDrawerSettings();
-    if (!$('overlay').hidden && $('dlgTitle').textContent === 'Change log') showLog();  // the log shows the undo too
-    else if (D.page) fetch(P + 'log?n=80&ui=1').then(r => r.text()).then(l => { P_CACHE.log = l.trim().split('\n').reverse(); renderProject(); }, () => {});
+    if (!$('overlay').hidden && $('dlgTitle').textContent === 'Change log') showLog();  // the log shows the undo too (the desktop's reloads by itself)
   },
   'outbox-retry': () => { for (const q of U.outbox) q.failed = false; renderFeedback(); flushOutbox(); },
   'outbox-edit': () => {  // the unsent input back in the box, as long as the box is empty
@@ -4333,7 +4342,7 @@ function renderSidebar() {
       <div class="flex items-center gap-2 px-1.5 pt-1">${projTile(S.project, 'size-6 rounded-lg text-xs')}<span class="min-w-0 flex-1 truncate text-[15px] font-semibold">${esc(S.project)}</span><span class="text-xs text-zinc-400">${open} open</span></div>
       <div id="deskAgent" class="px-1 pt-1 pb-1.5"></div>
       <div class="flex flex-col gap-px">${['items', 'inputs', 'archive', 'rules'].map(tab).join('')}</div></div>${others}`;
-  $('newInputBtn').setAttribute('aria-pressed', String(D.compose));
+  $('newInputBtn').setAttribute('aria-pressed', String(D.compose && !D.page));
   renderAgent(); renderDrawerSettings();
 }
 
@@ -4343,7 +4352,7 @@ function renderRail() {
   const b = (act, inner, title, attrs = '', on = false) => `<button data-act="${act}" ${attrs} title="${title}" aria-label="${title.split(' · ')[0]}" class="relative grid size-10 place-items-center rounded-xl ${on ? 'bg-zinc-200/80 text-zinc-900 dark:bg-zinc-700 dark:text-zinc-50' : 'text-zinc-500 hover:bg-zinc-200/60 dark:text-zinc-400 dark:hover:bg-zinc-800'}">${inner}</button>`;
   const badge = (n, amber) => n ? `<span class="absolute -top-0.5 -right-0.5 grid h-4 min-w-4 place-items-center rounded-full px-1 text-[10px] font-bold ${amber ? 'bg-amber-500 text-white dark:bg-amber-400 dark:text-amber-950' : 'bg-zinc-300 text-zinc-700 dark:bg-zinc-600 dark:text-zinc-100'}">${n}</span>` : '';
   $('rail').innerHTML = b('side', `<span class="text-blue-600 dark:text-blue-400">${ico('logo', 'size-6', '2.25')}</span>`, 'Show the sidebar · [')
-    + b('new-input', ico('newinput', 'size-5'), 'New input · C', '', D.compose)
+    + b('new-input', ico('newinput', 'size-5'), 'New input · C', '', D.compose && !D.page)
     + `<div class="my-1 h-px w-8 bg-zinc-200 dark:bg-zinc-800"></div>`
     + b('switch', `${projTile(S.project, 'size-7 rounded-lg text-xs')}${other ? '<span class="absolute top-1 right-1 size-2.5 rounded-full bg-amber-500 ring-2 ring-zinc-50 dark:bg-amber-400 dark:ring-zinc-900"></span>' : ''}`, `${S.project} · switch project: G P`)
     + ['items', 'inputs', 'archive', 'rules'].map(t => b('tab', ico(TAB_ICON[t], 'size-5') + badge(t === 'items' ? needs : t === 'inputs' ? Number(tabCount('inputs')) || 0 : 0, t === 'items'), TAB_NAME[t], `data-tab="${t}"`, U.tab === t && !D.page)).join('')
@@ -4498,8 +4507,21 @@ function fullWidth(on) {
   else { D.full = false; render(); }
 }
 
-// "This project": the agents, connecting one, the phone, the change log and the settings, on one page (A, screen 5).
-const P_CACHE = {guide: null, log: null, fixes: null};
+// "This project" on the desktop (B162): a settings page, like those of GitHub, Linear or macOS. The sections are rows
+// on the left; the right shows one section at a time under its heading: what it is for, then its parts, with at
+// most one main action. Each section has its own address, so Back, Forward and reload work (/settings is Agents).
+// The phone shows the same things as sheets from its menu.
+const PSEC = {  // section: [address, icon, name, what it is for]
+  agents: ['settings', 'bot', 'Agents', 'The coding agents that work on this project, and whether they go on to the next item by themselves.'],
+  connect: ['connect', 'plug', 'Connect a coding agent', 'Do this once on each machine where a coding agent works. From then on the agent finds its work here and writes back what it did.'],
+  phone: ['phone', 'phone', 'Use on your phone', 'Open Taska on your phone from anywhere, with a link or with the key.'],
+  fixes: ['spellings', 'pencil', 'Voice spellings', "Every project's voice notes write these your way. To add one, select the wrong words in a voice note."],
+  log: ['log', 'history', 'Change log', 'Every change to this project, newest first. Undo puts back one of your own changes.'],
+  about: ['about', 'info', 'About', "This project's name, where its data is kept, and what organizes your inputs."],
+};
+const PSEC_AT = Object.fromEntries(Object.entries(PSEC).map(([sec, [path]]) => [path, sec]));  // address -> section
+const P_CACHE = {guide: null, log: null, logRev: -1, fixes: null, nav: '', body: ''};
+const LOG_N = 300;  // the change log shows the latest 300 changes, here and on the phone
 // The voice spellings you corrected (F144): the same list in every project, each one can be forgotten.
 const fixesHtml = () => !P_CACHE.fixes ? '<p class="text-sm text-zinc-400">Loading…</p>' : P_CACHE.fixes.length
   ? `<p class="mb-2 text-[13px] leading-snug text-zinc-500 dark:text-zinc-400">Every project's voice notes write these your way. To add one, select the wrong words in a voice note.</p>
@@ -4512,38 +4534,81 @@ async function setFix(body) {
   if (!d.ok) { toast(d.error || 'Not saved'); throw new Error(); }
   P_CACHE.fixes = d.corrections; refreshFixes();
 }
-function openProject(sec) {
-  D.page = 'project'; D.sideOpen = false; U.go = null; D.section = sec;
-  render(); writeURL(true); loadFixes();
-  Promise.all([fetch(P + 'agent?ui=1').then(r => r.text()), fetch(P + 'log?n=80&ui=1').then(r => r.text())])
-    .then(([g, l]) => {
-      P_CACHE.guide = g; P_CACHE.log = l.trim().split('\n').reverse();
-      if (D.page) { renderProject(); if (sec !== 'agents') document.getElementById('p-' + sec)?.scrollIntoView({block: 'start'}); }  // now it is tall enough to get there
-    }).catch(() => {});
-  requestAnimationFrame(() => document.getElementById('p-' + sec)?.scrollIntoView({block: 'start'}));
+function loadLog() {  // the log as it is now: when it opens, and after each change to the project
+  P_CACHE.logRev = S.rev;
+  fetch(P + `log?n=${LOG_N}&ui=1`).then(r => r.text()).then(l => { P_CACHE.log = l.trim().split('\n').filter(Boolean).reverse(); renderProject(); }, () => {});
 }
+// Opening a section is a step Back undoes; history.state.page counts the steps, so Back to Items undoes them all.
+function openProject(sec) {
+  sec = Object.hasOwn(PSEC, sec) ? sec : 'agents';
+  const from = D.page && D.section;
+  D.page = 'project'; D.sideOpen = false; U.go = null; D.section = sec;
+  render();
+  if (from !== sec) { $('projectBody').scrollTop = 0; writeURL(true, {v: viewPath(), page: from ? (history.state?.page || 0) + 1 : 1}); }
+  if (sec === 'connect') fetch(P + 'agent?ui=1').then(r => r.text()).then(g => { P_CACHE.guide = g; renderProject(); }, () => {});
+  if (sec === 'fixes') loadFixes();
+}
+// Redraw only what changed: a redraw on every poll would drop the focus, a selection or a half-done second click.
+function setHtml(el, key, html) {
+  if (P_CACHE[key] === html) return;
+  const sig = x => [x.dataset.act, x.dataset.sec, x.dataset.text, x.dataset.wrong, x.dataset.seq].join('|');
+  const had = el.contains(document.activeElement) && sig(document.activeElement);
+  P_CACHE[key] = html; el.innerHTML = html;
+  if (had) [...el.querySelectorAll('[data-act]')].find(x => sig(x) === had)?.focus({preventScroll: true});
+}
+// The parts of a section, under thin rules: a title and what it is for, then its box and button.
+const pPart = (title, about, body = '') => `<section class="border-t border-zinc-200 py-6 dark:border-zinc-800"><h2 class="text-[15px] font-semibold">${title}</h2>${about ? `<p class="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">${about}</p>` : ''}${body}</section>`;
+const pSetting = (title, about, control) => `<section class="flex items-center gap-6 border-t border-zinc-200 py-6 dark:border-zinc-800"><div class="min-w-0 flex-1"><h2 class="text-[15px] font-semibold">${title}</h2><p class="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">${about}</p></div>${control}</section>`;
+const pBox = (t, mono = true) => `<div class="mt-3 rounded-xl bg-zinc-100 px-3.5 py-3 leading-relaxed text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200 ${mono ? 'font-mono text-[13px] break-all' : 'text-sm break-words'}">${esc(t)}</div>`;
+const pCopy = (t, label, main = false) => `<button data-act="copy-text" data-text="${esc(t)}" class="${main ? PRIMARY : SECOND} mt-3">${ico('copy', main ? 'size-4.5' : 'size-4')}${label}</button>`;
+const pRuled = html => `<div class="border-t border-zinc-200 dark:border-zinc-800">${html}</div>`;
+const P_LOADING = pRuled('<p class="py-6 text-sm text-zinc-400">Loading…</p>');
+const PBODY = {
+  agents: () => {
+    const [tone] = agentState(S.agents, S.work), seen = agentsSeen(), ask = agentAsk();
+    return pRuled(`<div class="py-6">${agentCard()}</div>`)
+      + (tone === 'ok' ? '' : pPart('Get one working', `Open your coding agent in this project's folder and send it this. First time on that machine? <a href="${P}connect" data-act="psec" data-sec="connect" class="font-medium text-blue-600 hover:underline dark:text-blue-400">Connect it</a> first.`,
+        pBox(ask, false) + pCopy(ask, 'Copy', true)))
+      + pSetting('Keep going', 'Agents take the next item without stopping. Off: they stop after the current one.',
+        `<button data-act="auto" aria-pressed="${!!S.cfg?.auto}" aria-label="Keep going" class="group relative h-6.5 w-11 shrink-0 rounded-full bg-zinc-300 transition-colors aria-pressed:bg-emerald-500 dark:bg-zinc-600"><span class="absolute top-0.75 left-0.75 size-5 rounded-full bg-white shadow transition-transform group-aria-pressed:translate-x-4.5"></span></button>`)
+      + (seen ? pPart('Seen in this project', '', `<ul class="mt-2 divide-y divide-zinc-100 dark:divide-zinc-800">${seen}</ul>`) : '');
+  },
+  connect: () => {
+    const cmd = `curl -s ${BASE}/connect | sh`, far = S.remote && S.remote !== BASE ? `curl -s ${S.remote}/connect | sh` : '', ask = agentAsk();
+    return pPart('Run this once', `On the machine where your agent works, in the project's folder. It saves this project's address in <code class="font-mono text-[13px]">.taska</code> and installs the Taska skill for Claude Code, Codex and Antigravity.`, pBox(cmd) + pCopy(cmd, 'Copy command', true))
+      + (far ? pPart('From another network', 'On a machine outside this network, run this one instead. It carries the key.', pBox(far) + pCopy(far, 'Copy')) : '')
+      + pPart('Or send it to the agent', "Open your coding agent in the project's folder and send it this. It reads the rest from Taska.", pBox(ask, false) + pCopy(ask, 'Copy'))
+      + `<details class="group border-t border-zinc-200 py-6 dark:border-zinc-800"><summary class="flex cursor-pointer items-center gap-1.5 text-[15px] font-semibold">${ico('right', 'size-4 text-zinc-400 transition-transform group-open:rotate-90')}What the agent reads</summary>
+        <pre class="mt-3 overflow-x-auto rounded-xl bg-zinc-50 p-3.5 text-xs leading-relaxed whitespace-pre-wrap lg:scrollbar-thin dark:bg-zinc-900">${esc(P_CACHE.guide || 'Loading…')}</pre></details>`;
+  },
+  phone: () => {
+    const link = S.remote ? S.remote + '/' : '';
+    return (link ? pPart('Link', 'Send this link to your phone and open it once. From then on Taska opens there just like here, from anywhere.', pBox(link) + pCopy(link, 'Copy link', true))
+      : pPart('Link', 'Taska has no public address yet (start it with --public). On the same network your phone needs no key.'))
+      + pPart('Key', `${link ? 'Or type' : 'Type'} the key once on the device. Taska on the Home Screen needs it.`,
+        `<div class="mt-3 flex items-center gap-4"><span class="font-mono text-2xl tracking-wider select-all">${esc(S.key)}</span><button data-act="copy-text" data-text="${esc(S.key)}" class="${SECOND}">${ico('copy', 'size-4')}Copy key</button></div>`)
+      + pSetting('New key', 'This computer and your local network never need the key. A new key signs out every other device.',
+        '<button data-act="new-key" class="inline-flex h-11 shrink-0 items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 text-[15px] font-semibold text-red-600 hover:bg-red-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-red-400 dark:hover:bg-red-400/10">New key</button>');
+  },
+  fixes: () => !P_CACHE.fixes ? P_LOADING : !P_CACHE.fixes.length ? pRuled(EMPTY('None yet. When a voice note gets words wrong, select them in the input and write the right ones: from then on every project writes them your way.'))
+    : `<ul class="divide-y divide-zinc-200 border-y border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">${P_CACHE.fixes.map(c => `<li class="flex min-h-13 items-center gap-3 py-1.5 text-[15px]"><span class="min-w-0 flex-1 break-words"><span class="text-zinc-400 line-through decoration-zinc-400 dark:text-zinc-500">${esc(c.wrong)}</span><span class="px-2 text-zinc-400 dark:text-zinc-500">→</span><span class="font-medium">${esc(c.right)}</span></span>
+      <button data-act="fix-remove" data-wrong="${esc(c.wrong)}" aria-label="Forget this spelling" title="Forget this spelling" class="grid size-9 shrink-0 place-items-center rounded-lg text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200">${ico('x', 'size-4')}</button></li>`).join('')}</ul>`,
+  log: () => !P_CACHE.log ? P_LOADING : !P_CACHE.log.length ? pRuled(EMPTY('Nothing has changed yet.'))
+    : pRuled(`<div class="pt-2">${logHtml(P_CACHE.log)}</div>`) + (P_CACHE.log.length >= LOG_N ? `<p class="pt-4 text-[13px] text-zinc-400 dark:text-zinc-500">The latest ${LOG_N} changes</p>` : ''),
+  about: () => `<dl class="border-t border-zinc-200 text-sm dark:border-zinc-800">${[['Project', esc(S.project)], ['Data', `<span class="font-mono text-[13px] break-all">${esc(S.file)}</span>`],
+    ['Organizer', S.org?.on ? 'Gemini · ' + esc(S.org.model) : 'off (set GEMINI_API_KEY and restart)']].map(([k, v]) => `<div class="grid grid-cols-[8rem_minmax(0,1fr)] items-baseline gap-4 border-b border-zinc-200 py-4 dark:border-zinc-800"><dt class="text-zinc-500 dark:text-zinc-400">${k}</dt><dd class="text-zinc-800 dark:text-zinc-200">${v}</dd></div>`).join('')}</dl>`,
+};
 function renderProject() {
   if (!D.page) return;
-  const card = (id, icon, title, body) => `<section id="p-${id}" class="scroll-mt-20 rounded-2xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900">
-      ${title ? `<h2 class="mb-4 flex items-center gap-2.5 text-[15px] font-semibold">${ico(icon, 'size-5 text-zinc-500 dark:text-zinc-400')}${title}</h2>` : ''}${body}</section>`;
-  const top = $('projectView').scrollTop;
-  $('projectView').innerHTML = `<header class="sticky top-0 z-10 flex h-14 items-center gap-2 border-b border-zinc-200 bg-white px-6 dark:border-zinc-800 dark:bg-zinc-950">
-      <h1 class="text-[17px] font-semibold">${esc(S.project)}</h1><span class="text-sm text-zinc-400">This project</span>
-      <button data-act="project-back" class="ml-auto flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800">${ico('left', 'size-4')}Back to ${TAB_NAME[U.tab]}${KBD('Esc')}</button></header>
-    <div class="mx-auto grid max-w-6xl grid-cols-[minmax(0,1fr)_22rem] gap-5 px-6 py-6">
-      <div class="flex min-w-0 flex-col gap-5">
-        ${card('agents', 'loop', 'Agents', agentsHtml(false))}
-        ${card('connect', 'plug', 'Connect a coding agent', guideHtml(P_CACHE.guide, true))}
-        ${card('log', 'history', 'Change log', P_CACHE.log ? logHtml(P_CACHE.log) : '<p class="text-sm text-zinc-400">Loading…</p>')}
-      </div>
-      <div class="flex min-w-0 flex-col gap-5">
-        ${card('keep', '', '', `<div class="flex items-start gap-3">${ico('loop', 'mt-0.5 size-5 text-emerald-600 dark:text-emerald-400')}<div class="min-w-0 flex-1"><p class="text-[15px] font-semibold">Keep going</p><p class="mt-0.5 text-[13px] leading-snug text-zinc-500 dark:text-zinc-400">Agents take the next item without stopping. Off: they stop after the current one.</p></div>
-          <button data-act="auto" aria-pressed="${!!S.cfg?.auto}" aria-label="Keep going" class="group relative h-6.5 w-11 shrink-0 rounded-full bg-zinc-300 transition-colors aria-pressed:bg-emerald-500 dark:bg-zinc-600"><span class="absolute top-0.75 left-0.75 size-5 rounded-full bg-white shadow transition-transform group-aria-pressed:translate-x-4.5"></span></button></div>`)}
-        ${card('phone', 'phone', 'Use on your phone', phoneHtml())}
-        ${card('fixes', 'pencil', 'Voice spellings', fixesHtml())}
-        ${card('info', '', '', `<dl class="grid grid-cols-[5.5rem_minmax(0,1fr)] gap-y-1.5 text-[13px]"><dt class="text-zinc-500">Project</dt><dd>${esc(S.project)}</dd><dt class="text-zinc-500">Data</dt><dd class="font-mono text-xs break-all">${esc(S.file)}</dd><dt class="text-zinc-500">Organizer</dt><dd>${S.org?.on ? 'Gemini · ' + esc(S.org.model) : 'off (set GEMINI_API_KEY and restart)'}</dd></dl>`)}
-      </div></div>`;
-  $('projectView').scrollTop = top;
+  const sec = D.section, [, , name, about] = PSEC[sec];
+  if (sec === 'log' && P_CACHE.logRev !== S.rev) loadLog();  // the project changed, so did its log
+  const row = ([k, [path, icon, label]]) => `<a href="${P}${path}" data-act="psec" data-sec="${k}" ${k === sec ? 'aria-current="page" ' : ''}class="flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-sm ${k === sec
+    ? 'bg-zinc-100 font-semibold text-zinc-900 dark:bg-zinc-800 dark:text-zinc-50' : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800/60 dark:hover:text-zinc-100'}">${ico(icon, 'size-4 opacity-70')}<span class="min-w-0 flex-1 truncate">${label}</span></a>`;
+  setHtml($('projectNav'), 'nav', `<div class="flex h-14 shrink-0 items-center px-2"><button data-act="project-back" class="flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800">${ico('left', 'size-4')}Back to ${D.compose ? 'New input' : TAB_NAME[U.tab]}${KBD('Esc')}</button></div>
+    <div class="flex items-center gap-2.5 px-4 pt-2 pb-4">${projTile(S.project, 'size-8 rounded-lg text-sm')}<div class="min-w-0"><p class="truncate text-[15px] leading-tight font-semibold">${esc(S.project)}</p><p class="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">This project</p></div></div>
+    <div class="flex flex-col gap-0.5 px-2">${Object.entries(PSEC).map(row).join('')}</div>`);
+  setHtml($('projectBody'), 'body', `<div class="mx-auto w-full max-w-[46rem] px-8 pt-9 pb-16"><header class="pb-6"><h1 class="text-[22px] leading-tight font-semibold tracking-tight">${name}</h1>
+    <p class="mt-2 text-[15px] leading-relaxed text-zinc-500 dark:text-zinc-400">${about}</p></header>${PBODY[sec]()}</div>`);
 }
 
 // The ⋯ menu on the desktop: a popover with the actions as rows, each with its key, then type, priority, status.
@@ -4791,12 +4856,13 @@ async function revert(seq) {
 }
 const undoRow = () => { const u = U.mine.at(-1); return u ? `<button data-act="undo-mine" title="Undo · Z" class="flex min-h-12 w-full items-center gap-3 px-3.5 py-2.5 text-left text-[15px] lg:min-h-0 lg:gap-2.5 lg:rounded-lg lg:px-3 lg:py-1.5 lg:text-sm lg:text-zinc-600 lg:hover:bg-zinc-200/60 dark:lg:text-zinc-300 dark:lg:hover:bg-zinc-800">${ico('undo', 'size-5 shrink-0 text-zinc-500 lg:size-4 dark:text-zinc-400', '2')}<span class="min-w-0 flex-1 leading-snug">Undo: ${esc(u.label)}</span>${desk() ? KBD('Z') : ''}</button>` : ''; };
 function renderDrawerSettings() {
-  // On the desktop the same rows are compact sidebar links.
-  const row = (act, icon, label) => `<button data-act="${act}" class="flex min-h-12 w-full items-center gap-3 px-3.5 py-2.5 text-left text-[15px] lg:min-h-0 lg:gap-2.5 lg:rounded-lg lg:px-3 lg:py-1.5 lg:text-sm lg:text-zinc-600 lg:hover:bg-zinc-200/60 dark:lg:text-zinc-300 dark:lg:hover:bg-zinc-800">${ico(icon, 'size-5 text-zinc-500 lg:size-4 dark:text-zinc-400')}<span class="min-w-0 flex-1">${label}</span><span class="lg:hidden">${ico('right', 'size-4 text-zinc-300 dark:text-zinc-600')}</span></button>`;
+  // On the desktop the same rows are compact sidebar links, and the one whose section shows is marked (B162).
+  const row = (act, icon, label, sec) => { const on = desk() && D.page && D.section === sec;
+    return `<button data-act="${act}" ${on ? 'aria-current="page" ' : ''}class="flex min-h-12 w-full items-center gap-3 px-3.5 py-2.5 text-left text-[15px] lg:min-h-0 lg:gap-2.5 lg:rounded-lg lg:px-3 lg:py-1.5 lg:text-sm ${on ? 'lg:bg-zinc-200/70 lg:font-semibold lg:text-zinc-900 dark:lg:bg-zinc-800 dark:lg:text-zinc-50' : 'lg:text-zinc-600 lg:hover:bg-zinc-200/60 dark:lg:text-zinc-300 dark:lg:hover:bg-zinc-800'}">${ico(icon, 'size-5 text-zinc-500 lg:size-4 dark:text-zinc-400')}<span class="min-w-0 flex-1">${label}</span><span class="lg:hidden">${ico('right', 'size-4 text-zinc-300 dark:text-zinc-600')}</span></button>`; };
   $('drawerSettings').innerHTML = `${undoRow()}<button data-act="auto" aria-pressed="${!!S.cfg?.auto}" class="group flex w-full items-center gap-3 px-3.5 py-3 text-left lg:gap-2.5 lg:rounded-lg lg:px-3 lg:py-1.5 lg:hover:bg-zinc-200/60 dark:lg:hover:bg-zinc-800">${ico('loop', 'size-5 text-emerald-600 lg:size-4 dark:text-emerald-400')}
       <span class="min-w-0 flex-1"><span class="block text-[15px] lg:text-sm">Keep going</span><span class="block text-xs leading-snug text-zinc-500 lg:text-[11px] dark:text-zinc-400">Agents take the next item without stopping</span></span>
       <span class="relative h-6.5 w-11 shrink-0 rounded-full bg-zinc-300 transition-colors group-aria-pressed:bg-emerald-500 lg:h-5 lg:w-8.5 dark:bg-zinc-600 dark:group-aria-pressed:bg-emerald-500"><span class="absolute top-0.75 left-0.75 size-5 rounded-full bg-white shadow transition-transform group-aria-pressed:translate-x-4.5 lg:size-3.5 lg:group-aria-pressed:translate-x-3.5"></span></span></button>
-    ${row('guide', 'plug', 'Connect a coding agent')}${row('phone', 'phone', 'Use on your phone')}${row('fixes', 'pencil', 'Voice spellings')}${row('log', 'history', 'Change log')}`;
+    ${row('guide', 'plug', 'Connect a coding agent', 'connect')}${row('phone', 'phone', 'Use on your phone', 'phone')}${row('fixes', 'pencil', 'Voice spellings', 'fixes')}${row('log', 'history', 'Change log', 'log')}`;
   $('menuInfo').innerHTML = `<div><dt class="inline">Project </dt><dd class="inline">${esc(S.project)}</dd></div>
     <div><dt class="inline">Data </dt><dd class="inline font-mono text-[11px]">${esc(S.file)}</dd></div>
     <div><dt class="inline">Organizer </dt><dd class="inline">${S.org?.on ? 'Gemini · ' + esc(S.org.model) : 'off (set GEMINI_API_KEY and restart)'}</dd></div>`;
@@ -4983,10 +5049,10 @@ document.addEventListener('keydown', e => {
       if (document.activeElement === $('q')) { if (U.q) clearSearch(); return $('q').blur(); }  // one Esc: no search, no filter (B122)
       if (/INPUT|TEXTAREA/.test(document.activeElement.tagName)) return document.activeElement.blur();
       if (D.sideOpen) { D.sideOpen = false; return render(); }
+      if (D.page) return ACT['project-back']();  // This project covers the filters and the item: it goes first (B162)
       if (D.filters) { D.filters = false; return render(); }  // the panel you opened last goes first (B122)
       if (U.go) return ACT['go-end']();
       if (D.full) return fullWidth(false);
-      if (D.page) return ACT['project-back']();
       if (D.compose) return leaveCompose();
       if (U.q) return clearSearch();
       if (U.open && U.tab !== 'inputs') return closeItem();  // last: back to nothing selected, the box a new input again (F119)
@@ -5054,13 +5120,14 @@ new ResizeObserver(() => { if (U.peek && !$('overlay').hidden) $('overlay').styl
 window.addEventListener('pageshow', e => { if (e.persisted) refresh(); });
 // ---------------------------------------------------------------- the address (T102)
 // The address says what you look at: /p/<project>/ is Items; /inputs /archive /rules a tab; /B03 an item; /D4 a
-// document; /new the New input page; /settings this project (/log and /connect are parts of it); ?q= and the
-// filters ride along. The server sends the page for these when a browser asks, and text when an agent does.
-// Changing tab, opening a document, settings or New input, an item on the phone and full width are steps Back
-// can undo; choosing items on the desktop, search and filters only rewrite the address.
-const VIEW = /^(inputs|archive|rules|new|settings|log|connect)$/;
+// document; /new the New input page; /settings /connect /phone /spellings /log /about the sections of This project
+// (B162); ?q= and the filters ride along. The server sends the page for these when a browser asks, and text when an
+// agent does (/connect and /log mean something to agents too). Changing tab, opening a document, a section of This
+// project or New input, an item on the phone and full width are steps Back can undo; choosing items on the desktop,
+// search and filters only rewrite the address.
+const VIEW = /^(inputs|archive|rules|new|settings|connect|phone|spellings|log|about)$/;
 const URLS = {applying: false, selfBack: false};
-const viewPath = () => desk() && D.page ? (/^(log|connect)$/.test(D.section) ? D.section : 'settings') : U.doc && !U.docEdit ? `D${U.doc}` : desk() && D.compose ? 'new'
+const viewPath = () => desk() && D.page ? PSEC[D.section][0] : U.doc && !U.docEdit ? `D${U.doc}` : desk() && D.compose ? 'new'
   : desk() && U.tab === 'inputs' ? 'inputs' : U.open ? code(U.open) : U.tab === 'items' ? '' : U.tab;  // on the desktop Inputs hides the item
 function viewQuery() {
   const q = new URLSearchParams();
@@ -5098,9 +5165,9 @@ function applyURL() {  // the page follows the address: when it loads, and on Ba
     if (doc) { const d = docById(Number(doc[1])); if (d && !U.open && desk()) openItem(d.n, false); return openDoc(Number(doc[1])); }
     if (n && byN.has(n)) { const it = byN.get(n); U.tab = it.archived ? 'archive' : it.type === 'rule' ? 'rules' : U.tab === 'inputs' ? 'items' : U.tab; return openItem(n, false); }
     closeItem();
-    if (seg === 'settings' || seg === 'log' || seg === 'connect') {
-      if (desk()) return openProject(seg === 'settings' ? 'agents' : seg);
-      return seg === 'log' ? showLog() : seg === 'connect' ? showGuide() : openDrawer();
+    if (Object.hasOwn(PSEC_AT, seg)) {  // a section of This project; the phone opens its sheet, or its menu for Agents and About
+      if (desk()) return openProject(PSEC_AT[seg]);
+      return ({log: showLog, connect: showGuide, phone: showPhone, spellings: ACT.fixes}[seg] || openDrawer)();
     }
     if (seg === 'new') { if (desk()) return ACT['new-input'](); return $('text').focus(); }
     U.tab = /^(inputs|archive|rules)$/.test(seg) ? seg : 'items'; U.asRule = null; U.inputsEnd = seg === 'inputs';

@@ -201,6 +201,16 @@ def group_context(a):
     a.key('j', wait=0.5); a.key('Escape', wait=0.5); check('Esc on the list goes back to nothing selected', open_(a), None)
 
 
+def group_project(a):  # This project is a settings page: one section at a time, each at its own address (B162)
+    a.go('')
+    a.click('#drawerSettings [data-act="log"]')
+    check('A sidebar row opens its own section of This project', (a.js("location.pathname.split('/').pop()"), a.js("$('projectBody').querySelector('h1').textContent")), ('log', 'Change log'))
+    a.click('#projectNav [data-sec="phone"]')
+    check('Each section has its own address', a.js("location.pathname.split('/').pop()"), 'phone')
+    a.js('document.activeElement.blur()'); a.key('Escape', wait=0.8)
+    check('Esc leaves This project at once, back to the list', (a.js('D.page'), a.js("location.pathname.split('/').pop()")), (None, ''))
+
+
 def group_narrow(a):
     a.go('B03')
     a.key('['); check('[ at 1024 opens the sidebar over the page', a.js('D.sideOpen'), True)
@@ -209,7 +219,8 @@ def group_narrow(a):
 
 
 GROUPS = [('move', group_move, (1440, 900)), ('act', group_act, (1440, 900)), ('answer', group_answer, (1440, 900)),
-          ('write', group_write, (1440, 900)), ('context', group_context, (1440, 900)), ('narrow', group_narrow, (1024, 768))]
+          ('write', group_write, (1440, 900)), ('context', group_context, (1440, 900)), ('project', group_project, (1440, 900)),
+          ('narrow', group_narrow, (1024, 768))]
 
 
 def main():
