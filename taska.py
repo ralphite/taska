@@ -2975,7 +2975,7 @@ function peek(n, {focus = true} = {}) {
   if (needsYou(it) && !U.go) U.go = {list: needsList(), done: new Set()};  // something that waits on you: step through all of them
   U.peek = n;
   const g = U.go && U.go.list.includes(n) ? U.go : null, files = filesOf(it), fwd = swipeRight(it), need = needLabel(it);
-  const recent = it.thread.slice(-3), talk = it.thread.length;
+  const recent = it.thread.filter(x => x.id !== it.wait?.id).slice(-3), talk = it.thread.length;  // the question itself is pinned above (B145)
   const act = (f, v, label, tone) => `<button data-act="peek-set" data-n="${n}" data-f="${f}" data-v="${v}" class="flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl text-[11px] font-semibold ${tone}">${ico(ACT_ICON[label], 'size-5')}<span class="max-w-full truncate">${label}</span></button>`;
   const head = g ? `<span class="flex items-center gap-2"><span class="text-xs font-bold tracking-wide whitespace-nowrap text-amber-700 uppercase dark:text-amber-400">Needs you</span><span class="text-xs font-medium whitespace-nowrap text-zinc-500 tabular-nums dark:text-zinc-400">${g.list.indexOf(n) + 1} of ${g.list.length}</span></span>` : '';
   dialog('', `<div class="pb-1">
@@ -2986,7 +2986,8 @@ function peek(n, {focus = true} = {}) {
     ${it.body ? rich(it.body, 'pbody' + n, 'mt-2.5 text-[15px] text-zinc-700 dark:text-zinc-300') : ''}
     ${it.next ? `<div class="mt-2 flex gap-2 text-sm"><span class="shrink-0 font-semibold text-zinc-500 dark:text-zinc-400">Next</span><span class="min-w-0 break-words">${inlineMd(it.next)}</span></div>` : ''}
     ${files.length ? `<div class="mt-3 flex items-end gap-2 overflow-x-auto lg:scrollbar-thin">${thumbs(files, 'peek' + n)}</div>` : ''}
-    ${recent.length ? `<div class="mt-4 flex flex-col gap-4">${recent.map(x => msgHtml(x, 'p', it.wait?.kind === 'ask' && it.wait.id === x.id ? n : 0, answerOf(it.thread, x))).join('')}</div>` : ''}
+    ${it.wait ? `<div class="mt-4">${needsCard(it)}</div>` : ''}
+    ${recent.length ? `<div class="mt-4 flex flex-col gap-4">${recent.map(x => msgHtml(x, 'p', 0, answerOf(it.thread, x))).join('')}</div>` : ''}
   </div>`, {
     aboveComposer: true, focus, card: true, head,
     extra: g ? `<button data-act="go-next" class="ml-auto flex h-11 items-center gap-0.5 rounded-full pr-1.5 pl-3 text-sm font-semibold text-zinc-700 dark:text-zinc-200">Next${ico('right', 'size-4', '2.25')}</button>` : '',
@@ -3511,8 +3512,11 @@ async function send() {
   if (U.amend) return sendAmend();  // details for an input you sent (B136)
   const dt = docTarget();
   if (dt) return sendDocComment(dt);  // a document comment (I087)
-  const text = $('text').value.trim(), n = scopeN();
+  const n = scopeN(), ch = n && U.choice?.n === n && U.choice.picked.size  // B145: ticked choices go with what you wrote
+    ? [...U.choice.picked].sort((a, c) => a - c).map(i => '✓ ' + (U.choiceLabels[n] || [])[i]).join('\n') : '';
+  const text = [ch, $('text').value.trim()].filter(Boolean).join('\n\n');
   if (!text && !U.files.length) return;
+  if (ch) U.choice = null;
   U.outbox.push({id: 'q' + ++U.qn, text, files: U.files, scope: n ? code(n) : null, from: !n && ruleMode() ? 'rules' : null});
   $('text').value = ''; U.files = []; saveDraft(); grow();
   if (U.peek && U.go && n === U.peek) advance(U.peek);  // going through: your reply settles this one
@@ -4094,7 +4098,16 @@ const ACT = {
   'choice-send': async b => {  // the answer is an ordinary reply on the item: one line per pick
     const n = Number(b.dataset.n), labels = U.choiceLabels[n] || [], picked = U.choice?.n === n ? [...U.choice.picked].sort((a, c) => a - c) : [];
     if (!picked.length) return;
-    try { await op({op: 'input', text: picked.map(i => '✓ ' + labels[i]).join('\n'), scope: code(n)}); U.choice = null; if (U.peek === n) advance(n); toast('Answer sent'); if (desk() && U.go && U.open === n) advanceDesk(n, 'Answered'); } catch (_) {}
+    const picks = picked.map(i => '✓ ' + labels[i]).join('\n');
+    // B145: what you wrote in the box for this item goes with the answer, files too: one answer, one send
+    const withBox = scopeN() === n && !U.amend && !U.correct && !docTarget(), note = withBox ? $('text').value.trim() : '', files = withBox ? U.files : [];
+    try {
+      if (note || files.length) {
+        U.outbox.push({id: 'q' + ++U.qn, text: picks + (note ? '\n\n' + note : ''), files, scope: code(n), from: null});
+        $('text').value = ''; U.files = []; saveDraft(); grow(); flushOutbox();
+      } else await op({op: 'input', text: picks, scope: code(n)});
+      U.choice = null; if (U.peek === n) advance(n); toast(note || files.length ? 'Answer sent with your note' : 'Answer sent'); if (desk() && U.go && U.open === n) advanceDesk(n, 'Answered');
+    } catch (_) {}
   },
   'more-msg': b => {
     const id = Number(b.dataset.id);
