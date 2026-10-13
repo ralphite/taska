@@ -72,8 +72,22 @@ missed by both.
 
 ## Periodic runs (T113)
 
-Run the same process on a schedule or after a large batch of changes. Seed the known answers with the latest
-user reports in the audited area, so every run also checks that the brief still catches what the user sees.
+The user decided (T113): run an audit **every two weeks, or after about 30 commits since the last one, whichever
+comes first**, and fix what it finds **without asking first**; the fixes still go to review as usual.
+
+- **When to check:** whenever `/next` says there is nothing to do. The last run is recorded in
+  `.mocks/audit-last.json` (`{"date": "YYYY-MM-DD", "commit": "<hash>", "item": "<code>"}`); it is due when
+  `date` is 14 or more days ago, or `git rev-list --count <commit>..HEAD` is 30 or more.
+- **Where the work lives:** T113 itself, which the user approved; agents cannot approve items they create, so a
+  run files nothing new. Between runs T113 is `later`, so `/next` does not offer it. When a run is due, set
+  `T113 now` and `T113 doing`, run the audit as above, and post in T113: the known-answer table, the groups by
+  priority, then one message per fix (one commit each, `(T113: <group>)` in the subject).
+- **Seed** the known answers with the user's latest reports in the area most changed since the last run.
+- **Fix without asking** (the user's choice), highest priority first; anything that changes how the app works in
+  a big way still gets a question first (R133).
+- **Close the run:** post the summary (what was found, what was fixed, what is left), then set `T113 open` and
+  `T113 later`, never done: it stays for the next run. Write today's date, `git rev-parse --short HEAD` and
+  `T113` to `.mocks/audit-last.json`.
 
 ## Rules that apply
 
