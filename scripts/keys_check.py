@@ -166,7 +166,7 @@ def group_write(a):
     a.key('j', wait=0.5); check('After that, J moves instead of typing', (a.js("$('text').value"), open_(a)), ('', 'F04'))
     a.go('B07'); a.key('v', wait=1.5); check('V starts a voice note', a.js('!!R.rec'), True)
     a.enter(2.0); check('Enter stops it into the box', (a.js('!!R.rec'), a.js('U.files.length')), (False, 1))
-    a.js("U.files = []; renderComposer(); document.activeElement.blur()")
+    a.click('[data-act=unfile]'); a.js("document.activeElement.blur()")  # removed with its X: a kept recording would come back (T101)
     a.key('V', wait=1.5); check('Shift+V starts a new input by voice', (a.js('!!R.rec'), a.js('D.compose')), (True, True))
     a.key('Escape', wait=0.8); check('Esc discards the recording', a.js('!!R.rec'), False)
     a.key('Escape'); a.go('B07')

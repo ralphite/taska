@@ -3864,7 +3864,7 @@ async function sendAmend() {
   try {
     const d = await (await fetch(P + 'api/op', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({op: 'amend', id: a.id, mode: a.mode, v: a.v, text, files})})).json();
     if (!d.ok) return toast((d.res || []).find(x => x.startsWith('err')) || d.error || 'Not saved');
-    for (const f of drafts) f.sent = true;  // words still to come go onto the input, on the server (B165)
+    for (const f of drafts) { f.sent = true; dropRec(f); }  // words still to come go onto the input, on the server (B165); this browser lets the recording go (T101)
     $('text').value = ''; U.files = []; saveDraft(); grow(); U.amend = null;
     await load(); toast(a.mode === 'edit' ? `${a.id} updated` : `Added to ${a.id}`);
     if (desk() && D.compose) renderDetail();
@@ -4000,7 +4000,7 @@ function renderComposer() {
   const d = $('drafts');
   d.hidden = !U.files.length;
   d.innerHTML = U.files.map((f, i) => `<div class="relative shrink-0">${(f.mime || '').startsWith('audio/')
-      ? `<div class="flex h-16 items-center gap-2 rounded-xl border border-zinc-200 px-3 text-xs text-zinc-600 dark:border-zinc-700 dark:text-zinc-300">${ico('mic', 'size-4')}<span class="font-mono tabular-nums">${clock(f.ms || 0)}</span><span class="font-semibold ${f.transcribing ? 'animate-pulse text-blue-600 dark:text-blue-400' : f.tr ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-500'}">${f.transcribing ? 'Transcribing…' : f.tr ? 'Transcribed' : f.tr_error ? 'No transcript, audio still sent' : 'No words heard, audio still sent'}</span></div>`
+      ? `<div class="flex h-16 items-center gap-2 rounded-xl border border-zinc-200 px-3 text-xs text-zinc-600 dark:border-zinc-700 dark:text-zinc-300">${ico('mic', 'size-4')}<span class="font-mono tabular-nums">${clock(f.ms || 0)}</span><span class="font-semibold ${f.transcribing ? 'animate-pulse text-blue-600 dark:text-blue-400' : f.tr ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-500'}">${f.transcribing ? (f.retrying ? 'Retrying…' : 'Transcribing…') : f.tr ? 'Transcribed' : f.tr_error ? 'No transcript, audio still sent' : 'No words heard, audio still sent'}</span></div>`
       : (f.mime || '').startsWith('image/')
       ? `<button data-act="view-draft" data-i="${i}" aria-label="Look at ${esc(f.name)}" class="block cursor-zoom-in rounded-xl"><img src="${f.preview || P + 'f/' + encodeURIComponent(f.f)}" alt="" class="size-16 rounded-xl border border-zinc-200 object-cover dark:border-zinc-700 ${f.f ? '' : 'opacity-40'}"></button>`
       : `<div class="flex h-16 w-28 items-center gap-1 rounded-xl border border-zinc-200 px-2 text-xs dark:border-zinc-700 ${f.f ? '' : 'opacity-40'}">${ico('file', 'size-4')}<span class="line-clamp-2 break-all">${esc(f.name)}</span></div>`}
@@ -4113,13 +4113,28 @@ async function send() {
   if (!text && !U.files.length) return;
   if (ch) U.choice = null;
   U.note = null;
-  U.outbox.push({id: 'q' + ++U.qn, text, files: U.files, scope: n ? code(n) : null, from: !n && ruleMode() ? 'rules' : null});
+  outboxPush({text, files: U.files, scope: n ? code(n) : null, from: !n && ruleMode() ? 'rules' : null});
   $('text').value = ''; U.files = []; saveDraft(); grow();
   if (U.peek && U.go && n === U.peek) advance(U.peek);  // going through: your reply settles this one
   else if (desk() && U.go && U.open && !U.scopeOff && U.go.list.includes(U.open)) { $('text').blur(); advanceDesk(U.open, 'Replied'); }  // B118
   render(); flushOutbox();
   if (desk() && D.compose) $('foot').scrollTop = 0;
   else if (desk() && n && n === U.open && !U.go) requestAnimationFrame(() => { $('detailBody').scrollTop = $('detailBody').scrollHeight; });  // B124
+}
+// Each input carries the page's own id for it (q): sent again after its answer got lost, it still goes in once. When
+// Taska does not answer at all (no connection, a restart), it is tried again by itself, with growing pauses (T101).
+function outboxPush(job) {
+  Object.assign(job, {id: 'q' + ++U.qn, q: Date.now().toString(36) + Math.random().toString(36).slice(2, 10)});
+  for (const f of job.files) if (f.rid) { f.job = {id: job.q, text: job.text}; keepRec(f); }  // its words come back with it after a reload
+  U.outbox.push(job);
+}
+async function sendInput(o) {
+  let d;
+  try { d = await (await fetch(P + 'api/op', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(o)})).json(); }
+  catch (_) { throw Object.assign(new Error('no answer'), {again: true}); }
+  if (!d.ok) { toast((d.res || []).find(x => x.startsWith('err')) || d.error || 'Not saved'); throw new Error('op failed'); }
+  try { await load(); } catch (_) {}  // it is in; the next poll shows it
+  return d;
 }
 async function flushOutbox() {
   if (flushOutbox.busy) return;
@@ -4130,14 +4145,17 @@ async function flushOutbox() {
       await Promise.all(job.files.map(f => f.done));
       const files = job.files.filter(f => f.f && !f.failed);
       let text = job.text;
-      for (const f of files) if (f.tr && !text.includes(f.tr)) text = (text ? text + '\n' : '') + f.tr;  // a transcript that came after you sent
+      for (const f of files) if (f.tr && !f.trAdded && !text.includes(f.tr)) text = (text ? text + '\n' : '') + f.tr;  // a transcript that came after you sent
       if (!text && !files.length) { U.outbox.shift(); continue; }
       job.sending = true; renderFeedback();
       try {
-        const d = await op({op: 'input', text, scope: job.scope, ...(job.from ? {from: job.from} : {}), files: files.map(({f, name, mime, size, tr}) => ({f, name, mime, size, ...(tr ? {tr} : {})}))});
+        const d = await sendInput({op: 'input', text, scope: job.scope, q: job.q, ...(job.from ? {from: job.from} : {}), files: files.map(({f, name, mime, size, tr}) => ({f, name, mime, size, ...(tr ? {tr} : {})}))});
         U.lastSent = d.res[0].split(' ')[1]; U.outbox.shift();
-        for (const f of files) f.sent = true;  // words still to come go onto this input, on the server (B165)
-      } catch (_) { job.failed = true; job.sending = false; }
+        for (const f of files) { f.sent = true; dropRec(f); }  // words still to come go onto this input, on the server (B165); this browser lets the recording go (T101)
+      } catch (e) {
+        job.failed = true; job.sending = false;
+        if (e.again) setTimeout(() => { if (job.failed && U.outbox[0] === job) { job.failed = false; renderFeedback(); flushOutbox(); } }, Math.min(30000, 2000 * 2 ** Math.min(job.tries = (job.tries || 0) + 1, 4)));
+      }
     }
   } finally { flushOutbox.busy = false; render(); }
 }
@@ -4198,42 +4216,138 @@ async function finishRec(andSend, kept) {
   if (ms < 800 || !blob.size) return toast('Too short, discarded');
   const ext = blob.type.includes('mp4') ? 'm4a' : blob.type.includes('ogg') ? 'ogg' : 'webm';
   // B165: the note is in the box at once and the box is yours: type, send. Its words come when they come: into the
-  // box where you recorded, or, if you sent it already, onto that message (the server adds them).
-  const f = {name: `voice ${clock(ms).replace(':', '-')}.${ext}`, mime: blob.type, ms, transcribing: true, at: $('text').value.length};
-  let settle; f.done = new Promise(r => { settle = r; });  // uploaded: all that sending waits for
+  // box where you recorded, or, if you sent it already, onto that message (the server adds them). T101: from the
+  // moment it stops it is also kept in this browser, until it is sent.
+  const f = voiceFile({name: `voice ${clock(ms).replace(':', '-')}.${ext}`, mime: blob.type || 'audio/webm', ms, blob, at: $('text').value.length,
+                       key: U.draftKey, scope: scopeN() ? code(scopeN()) : null});
   U.files.push(f); renderComposer();
   if (andSend) send();
-  hear(f, blob, scopeN() ? '&scope=' + code(scopeN()) : '', settle);  // not awaited: nothing is held up meanwhile
+  keepRec(f).then(() => hear(f));  // kept before anything goes over the network; not awaited: nothing is held up meanwhile
 }
-async function hear(f, blob, scope, settle) {  // upload a voice note, then wait for its words, in the background (B165)
-  try {
-    const r = await fetch(`${P}api/file?name=${encodeURIComponent(f.name)}&transcribe=1${scope}`, {method: 'POST', headers: {'Content-Type': blob.type || 'audio/webm'}, body: blob});
-    if (!r.ok) throw new Error();
-    Object.assign(f, await r.json());
-  } catch (_) {
-    const i = U.files.indexOf(f); if (i >= 0) U.files.splice(i, 1);
-    f.failed = true; f.transcribing = false; settle(); renderComposer();
+
+// A voice note is kept in this browser (IndexedDB) from the moment the recording stops until the input it belongs to
+// is in, so a restart, a dropped connection or a closed tab never loses it: when the project opens again, it is back
+// in the box it was recorded in, and its words are worked out if they were not yet (T101).
+const VPROJ = decodeURIComponent(P.split('/')[2] || '');
+const VDB = {
+  open: () => VDB.db ||= new Promise((ok, no) => {
+    const r = indexedDB.open('taska-voice', 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('notes', {keyPath: 'id'});
+    r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error);
+  }),
+  async run(mode, fn) {
+    try {
+      const db = await VDB.open();
+      return await new Promise((ok, no) => { const t = db.transaction('notes', mode), q = fn(t.objectStore('notes')); t.oncomplete = () => ok(q.result); t.onerror = t.onabort = () => no(t.error); });
+    } catch (_) { return null; }  // no storage here (a private window...): voice notes still work, they are just not kept
+  },
+  put: rec => VDB.run('readwrite', s => s.put(rec)),
+  del: id => VDB.run('readwrite', s => s.delete(id)),
+  all: () => VDB.run('readonly', s => s.getAll()).then(a => a || []),
+};
+function voiceFile(o) {
+  const f = {transcribing: true, t: Date.now(), rid: 'v' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8), ...o};
+  f.done = new Promise(r => { f.settle = r; });  // uploaded: all that sending waits for (B165)
+  holdRec(f);
+  return f;
+}
+async function keepRec(f) {  // what is known about a voice note, kept with its audio
+  if (!f.rid || f.gone || f.sent) return;
+  try { f.data ||= await f.blob.arrayBuffer(); } catch (_) { return; }
+  await VDB.put({id: f.rid, project: VPROJ, key: f.key, scope: f.scope, name: f.name, mime: f.mime, ms: f.ms, t: f.t, data: f.data, f: f.f || null,
+                 tr: f.transcribing ? null : f.tr || '', tr_error: f.tr_error || '', doubts: f.doubts || [], added: f.trAdded || null, job: f.job || null});
+}
+function dropRec(f, sent = true) {  // sent, or removed from the box: this browser lets it go
+  if (!f.rid) return;
+  if (sent) f.sent = true;
+  VDB.del(f.rid); f.release?.(); f.release = f.held = null;
+}
+function holdRec(f) {  // while this page has the voice note, another tab of the project leaves it alone
+  if (!f.rid || f.held || !navigator.locks) return;
+  f.held = navigator.locks.request('taska-voice-' + f.rid, () => new Promise(r => { f.release = r; if (f.sent || f.gone) r(); })).catch(() => {});
+}
+// Upload a voice note, then wait for its words, in the background (B165). When Taska does not answer (no connection,
+// a restart) both are tried again with growing pauses for as long as it takes, and a transcription that failed a few
+// more times (T101). Taska keeps the words next to the audio, so asking again after a lost answer costs nothing.
+async function hear(f) {
+  if (f.loop) return;
+  f.loop = true;
+  const scope = f.scope ? '&scope=' + encodeURIComponent(f.scope) : '';
+  let d = null;
+  if (f.f) f.settle();  // uploaded before (put back after a reload): sending does not wait for its words
+  for (let n = 0, tries = 0, waits = 0; !f.gone; n++) {
+    try {
+      if (!f.f) {
+        const r = await fetch(`${P}api/file?name=${encodeURIComponent(f.name)}&transcribe=1${scope}`, {method: 'POST', headers: {'Content-Type': f.mime}, body: f.blob});
+        if (r.status === 400 || r.status === 413) { f.failed = true; break; }  // refused (too big): trying again will not help
+        if (!r.ok) throw new Error();
+        const u = await r.json(); Object.assign(f, {f: u.f, size: u.size}); keepRec(f);
+        f.settle(); renderComposer();
+      }
+      const r = await fetch(`${P}api/transcript?f=${encodeURIComponent(f.f)}${scope}${tries ? '&again=1' : ''}`, {method: 'POST'});
+      if (!r.ok) throw new Error();
+      d = await r.json();
+      if (d.tr_error === 'no such voice note') { f.f = null; throw new Error(); }  // the audio is not there any more: up again
+      if (!d.done && ++waits < 20) continue;  // still working: the server answers after 45 s for another ask
+      if (d.done && d.tr_error && ++tries < 4) throw new Error();  // the models had trouble: a few more tries
+      break;
+    } catch (_) {
+      if (f.gone) break;
+      f.retrying = true; renderComposer(); renderFeedback();
+      await sleep(Math.min(30000, 2000 * 2 ** Math.min(n, 4)));
+    }
+  }
+  f.loop = false;
+  if (f.gone) return;  // removed from the box meanwhile; its Undo starts it again
+  f.transcribing = f.retrying = false; f.settle();
+  if (f.failed) {
+    for (const list of [U.files, ...Object.values(U.parked || {})]) { const i = list.indexOf(f); if (i >= 0) list.splice(i, 1); }
+    dropRec(f, false); renderComposer();
     return toast('Could not upload the recording');
   }
-  settle(); renderComposer();
-  let d = f;
-  for (let k = 0; f.pending && k < 40; k++) {  // the server answers when the words are in, or after 45 s for another ask
-    try { d = await (await fetch(`${P}api/transcript?f=${encodeURIComponent(f.f)}${scope}`, {method: 'POST'})).json(); if (d.done) break; }
-    catch (_) { await sleep(3000); }
-  }
-  f.transcribing = false; f.tr = d.tr || ''; f.tr_error = d.tr_error || (d.done ? '' : 'no answer');
+  Object.assign(f, {tr: d?.tr || '', tr_error: d?.tr_error || (d?.done ? '' : 'no answer'), doubts: d?.doubts || []});
+  placeWords(f); keepRec(f);
+  renderComposer(); renderFeedback();
+}
+function addWords(key, words) {  // into the box, or into the draft of the target it waits for
+  if (key === U.draftKey) { const t = $('text'); t.value = (t.value.trim() ? t.value.trimEnd() + '\n' : '') + words; grow(); saveDraft(); }
+  else draftStore(all => { all[key] = (all[key]?.trim() ? all[key].trimEnd() + '\n' : '') + words; });
+}
+function placeWords(f) {  // B165: a voice note's words go where you recorded it, around what you typed since; one sent already gets them on the server
   const key = U.files.includes(f) ? U.draftKey : Object.keys(U.parked || {}).find(k => U.parked[k].includes(f));
-  if (key && f.tr) {  // still a draft: its words go where you recorded it, around what you typed since
+  if (key && f.tr && !f.trAdded) {
     if (U.files.includes(f)) {
       const t = $('text'), at = Math.min(f.at ?? t.value.length, t.value.length), before = t.value.slice(0, at), after = t.value.slice(at);
       const caretHere = t.selectionStart === at && t.selectionEnd === at;
       t.setRangeText((before.trim() && !before.endsWith('\n') ? '\n' : '') + f.tr + (after.trim() && !after.startsWith('\n') ? '\n' : ''), at, at, caretHere ? 'end' : 'preserve');
       grow(); saveDraft();
-    } else draftStore(all => { all[key] = (all[key]?.trim() ? all[key].trimEnd() + '\n' : '') + f.tr; });  // its box shows another target now
+    } else addWords(key, f.tr);  // its box shows another target now
     f.trAdded = f.tr;
-  } else if (key) toast(f.tr_error ? 'Transcription failed. The audio is kept and can be sent as is.' : 'No words heard. The audio is kept and can be sent as is.');
-  else if (f.sent && !f.tr) toast(f.tr_error ? 'Transcription failed. The audio was sent as is.' : 'No words heard. The audio was sent as is.');
-  renderComposer(); renderFeedback();
+  } else if (key && !f.tr) toast(f.tr_error ? 'Transcription failed. The audio is kept and can be sent as is.' : 'No words heard. The audio is kept and can be sent as is.');
+  else if (!key && f.sent && !f.tr) toast(f.tr_error ? 'Transcription failed. The audio was sent as is.' : 'No words heard. The audio was sent as is.');
+}
+// Voice notes this browser kept that never went out (the page was closed, Taska restarted...) come back into the box
+// they were recorded in, with the words that were on their way with them. One that went out already is let go.
+async function restoreVoice() {
+  const sent = new Set(S.inputs.flatMap(r => r.files.map(x => x.f)));
+  const here = new Set([...U.files, ...Object.values(U.parked).flat(), ...U.outbox.flatMap(q => q.files)].map(f => f.rid));
+  const jobs = new Set(), back = [];
+  for (const r of (await VDB.all()).sort((a, b) => a.t - b.t)) {
+    if (r.project !== VPROJ || here.has(r.id)) continue;
+    if (r.f && sent.has(r.f)) { VDB.del(r.id); continue; }  // it went out already
+    if (navigator.locks && !await navigator.locks.request('taska-voice-' + r.id, {ifAvailable: true}, l => !!l)) continue;  // another tab has it
+    const n = /^[A-Z]\d+$/.test(r.key || '') ? parseRef(r.key) : 0, key = n && byN.has(n) ? code(n) : 'new';  // the item's box, or a new input
+    const f = voiceFile({rid: r.id, name: r.name, mime: r.mime, ms: r.ms, t: r.t, data: r.data, blob: new Blob([r.data], {type: r.mime}), key, scope: key === 'new' ? null : r.scope,
+                         f: r.f || null, transcribing: r.tr == null && !r.tr_error, tr: r.tr || '', tr_error: r.tr_error || '', doubts: r.doubts || [], trAdded: r.added || undefined});
+    if (key === U.draftKey) U.files.push(f); else (U.parked[key] ||= []).push(f);
+    if (r.job && !jobs.has(r.job.id)) { jobs.add(r.job.id); if (r.job.text) addWords(key, r.job.text); }  // what was sent with it
+    if (f.transcribing) hear(f); else { f.settle(); placeWords(f); }
+    keepRec(f); back.push(key);
+  }
+  if (!back.length) return;
+  renderComposer();
+  const away = back.find(k => k !== U.draftKey);
+  toast(`${back.length === 1 ? 'A voice note that did not go out is' : back.length + ' voice notes that did not go out are'} back in the box${away ? ` for ${away === 'new' ? 'a new input' : away}` : ''}`);
 }
 
 async function cancelRec() {  // B149: discarding can be undone for a few seconds
@@ -4763,7 +4877,7 @@ const ACT = {
     const withBox = scopeN() === n && !U.amend && !U.correct && !docTarget(), note = withBox ? $('text').value.trim() : '', files = withBox ? U.files : [];
     try {
       if (note || files.length) {
-        U.outbox.push({id: 'q' + ++U.qn, text: picks + (note ? '\n\n' + note : ''), files, scope: code(n), from: null});
+        outboxPush({text: picks + (note ? '\n\n' + note : ''), files, scope: code(n), from: null});
         $('text').value = ''; U.files = []; saveDraft(); grow(); flushOutbox();
       } else await op({op: 'input', text: picks, scope: code(n)});
       U.choice = null; if (U.peek === n) advance(n); toast(note || files.length ? 'Answer sent with your note' : 'Answer sent'); if (desk() && U.go && U.open === n) advanceDesk(n, 'Answered');
@@ -4836,9 +4950,13 @@ const ACT = {
   unfile: b => {  // B149: removing a voice note also removes the words it put in the box; both come back with Undo
     const i = Number(b.dataset.i), f = U.files[i], t = $('text'), before = t.value;
     U.files.splice(i, 1);
+    if (f?.rid) { f.gone = true; dropRec(f, false); }  // T101: no longer kept in this browser either
     if (f?.trAdded && t.value.includes(f.trAdded)) {
       t.value = t.value.replace(f.trAdded, '').replace(/\n{3,}/g, '\n\n').trim(); saveDraft(); grow();
-      toast('Removed the voice note and its words', () => { U.files.splice(i, 0, f); t.value = before; saveDraft(); grow(); renderComposer(); });
+      toast('Removed the voice note and its words', () => {
+        U.files.splice(i, 0, f); t.value = before; saveDraft(); grow(); renderComposer();
+        if (f.rid) { f.gone = false; holdRec(f); keepRec(f); if (f.transcribing) hear(f); }
+      });
     }
     renderComposer();
   },
@@ -4880,6 +4998,7 @@ const ACT = {
     const q = U.outbox[0];
     if ($('text').value.trim() || U.files.length) return toast('Send or clear what is in the box first');
     U.outbox.shift(); $('text').value = q.text; U.files = q.files; grow(); saveDraft(); render(); $('text').focus();
+    for (const f of q.files) if (f.rid) { f.job = null; f.key = U.draftKey; keepRec(f); }  // T101: kept as a draft in this box again
   },
   'move-input-to': async b => {
     const id = b.dataset.id, to = b.dataset.to;
@@ -5876,6 +5995,7 @@ load().then(() => {
   }
   applyURL();
   writeURL(false);  // tidy the address: #B03 becomes /B03. Nothing is picked for you: the box is a new input until you open an item (F119)
+  restoreVoice();  // voice notes that did not go out last time (T101)
   poll();
 });
 </script>
