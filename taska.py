@@ -381,8 +381,9 @@ class Store:
     def touches(self, e):
         """The items an event changes or adds to: a change, a message, a reply, a subitem, a document, a comment."""
         out = [e[k] for k in ("n", "into", "scope", "parent") if e.get(k)] + list(e.get("ns") or [])
-        if (e.get("f") or {}).get("parent"):
-            out.append(e["f"]["parent"])
+        f = e.get("f")  # a set's fields; a voice note's file name on "tr" events
+        if isinstance(f, dict) and f.get("parent"):
+            out.append(f["parent"])
         if e["k"] == "dc" and e["d"] in self.docs:
             out.append(self.docs[e["d"]]["n"])
         return out

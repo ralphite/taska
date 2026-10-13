@@ -110,3 +110,18 @@ class UndoTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
+
+
+class VoiceEventTests(unittest.TestCase):
+    """A voice note's "tr" event carries its file name in "f", not a dict of fields: the page state must still build."""
+
+    def test_state_builds_with_a_transcript_event(self):
+        with tempfile.TemporaryDirectory() as d:
+            s = taska.Store(str(Path(d) / 'taska.jsonl'))
+            s.name = 'qa'
+            s.run_all(taska.parse_dsl('new bug A crash'), 'you')
+            with s.cond:
+                s.emit({'k': 'in', 'id': 'r9', 'by': 'you', 'text': '', 'scope': None, 'files': [{'f': 'f1-voice.webm', 'name': 'voice.webm', 'mime': 'audio/webm', 'size': 1}]})
+                s.emit({'k': 'tr', 'src': 'r9', 'f': 'f1-voice.webm', 'tr': 'hello', 'by': 'you'})
+            self.assertEqual(len(s.state()['items']), 1)
+            s.out.close()
