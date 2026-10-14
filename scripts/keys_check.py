@@ -288,6 +288,10 @@ def group_box(a):  # T113 group 1: the box writes where you started, and keeps t
     a.type('notifications'); a.enter(1.2)
     check('I176: a word corrected in the card: the box follows and the spelling is kept', (a.js("$('text').value"), a.toast()), lambda t: t[0].endswith('stop the notifications') and 'Remembered' in t[1])
     a.js("U.files.forEach(f => { f.gone = true; dropRec(f, false); }); U.files = []; $('text').value = ''; saveDraft(); renderComposer()")
+    a.go('spellings'); a.click('[data-act="prefs-edit"]')  # F183: transcription preferences, edited in the one box
+    check('F183: Edit puts the preferences into the box', (a.js("$('foot').hidden"), a.js("$('scope').textContent"), a.js("$('text').value.startsWith('Chinese in Simplified')")), lambda t: not t[0] and 'Edit transcription preferences' in t[1] and t[2])
+    a.js("const t = $('text'); t.selectionStart = t.selectionEnd = t.value.length"); a.type('\nTimes on a 24-hour clock.'); a.enter(1.2, shift=True)
+    check('F183: Save keeps them for every project', a.js("fetch('/api/voiceprefs').then(r => r.json()).then(d => d.text.endsWith('24-hour clock.') && !d.default)"), True)
     a.go('rules'); a.key('c', wait=0.8)
     check('B10: New rule has its own address', a.js('location.pathname.split("/").pop()'), 'new-rule')
     a.go('new-rule')

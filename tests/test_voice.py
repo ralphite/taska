@@ -334,6 +334,23 @@ class ServerTests(unittest.TestCase):
         except urllib.error.HTTPError as ex:
             return ex.code, json.load(ex)
 
+    def test_transcription_preferences_for_every_project(self):  # F183
+        def prefs(text=None):
+            req = urllib.request.Request(f'http://127.0.0.1:{self.port}/api/voiceprefs', method='GET' if text is None else 'POST',
+                                         data=None if text is None else json.dumps({'text': text}).encode(), headers={'Content-Type': 'application/json'})
+            with urllib.request.urlopen(req, timeout=20) as r:
+                return json.load(r)
+        self.assertEqual(prefs(), {'text': taska.VOICE_PREFS, 'default': True})
+        self.assertEqual(prefs('Write numbers as digits.\nKeep English as spoken.  ')['text'], 'Write numbers as digits.\nKeep English as spoken.')
+        self.assertEqual(taska.Hub(self.tmp.name, False).voice_prefs()['text'], 'Write numbers as digits.\nKeep English as spoken.')  # kept on disk
+        fake = FakeGemini(['hello Taska'], 'hello Taska')
+        with patch.object(taska, 'gemini_call', fake):
+            code, f = self.call('api/file?name=voice.webm&transcribe=1', b'audio', 'audio/webm')
+            self.call(f'api/transcript?f={f["f"]}', b'')
+        prompt = next(b for m, b in fake.calls if m == taska.VOICE_MODEL)['contents'][0]['parts'][0]['text']
+        self.assertIn("preferences for the transcript (follow them, but never add words nobody said):\nWrite numbers as digits.", prompt)
+        self.assertEqual(prefs(''), {'ok': True, 'text': taska.VOICE_PREFS, 'default': True})  # empty: the default again
+
     def test_upload_then_words_then_again_by_file_id(self):
         fake = FakeGemini(['hello Taska'], 'hello Taska')
         with patch.object(taska, 'gemini_call', fake):

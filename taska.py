@@ -1903,6 +1903,14 @@ Rules:
 - Do not summarize, translate or tidy the wording. Keep self-corrections and repetitions. Use normal Chinese punctuation.
 - If a word is unclear, give your best guess followed by (?).
 - Put only the spoken words in transcript: no preface, notes or timestamps."""
+# F183: how the user wants voice notes written down, in their own words: one text for every project, kept in the data
+# root, edited on the Voice spellings page. Transcription follows it after the rules above.
+VOICE_PREFS = """\
+Chinese in Simplified characters, never Traditional.
+Technical terms stay in English, as spoken: code names, commands, file names, product names.
+Numbers, priorities and item codes the short way: 3, P1, B73.
+My own words, as I said them: no summary, no translation."""
+MAX_PREFS = 4000
 # T2S_SYSTEM: "You turn Traditional characters into Simplified ones. Change only the character forms, never a word,
 # punctuation, English or spaces." T2S_HINT: "The same text, Traditional characters made Simplified, nothing else changed".
 T2S_SYSTEM = ("\u4f60\u628a\u7e41\u4f53\u5b57\u8f6c\u6362\u6210\u7b80\u4f53\u5b57\u3002"
@@ -1958,8 +1966,10 @@ def voice_context(store, scope):
         return words, items, [it["title"] for it in pool[:40]]
 
 
-def voice_prompt(terms, items, fixes):
+def voice_prompt(terms, items, fixes, prefs=VOICE_PREFS):
     lines = [VOICE_RULES]
+    if prefs.strip():  # F183
+        lines.append("The user's own preferences for the transcript (follow them, but never add words nobody said):\n" + prefs.strip())
     if fixes:  # F144
         lines.append("Spellings the user corrected before (write the right form when you hear it): " +
                      "; ".join(f"{c['right']} (not {c['wrong']})" for c in fixes[-40:]))
@@ -2224,7 +2234,7 @@ def transcribe(store, data, mime, scope, path=None):
     terms = voice_terms(words, fixes)
     audio = {"inline_data": {"mime_type": mime.split(";")[0], "data": base64.b64encode(data).decode()}}
     vocab = list(dict.fromkeys(["Taska", "P0", "P1", "P2", "P3"] + terms))[:100]
-    prompt = voice_prompt(terms, items, fixes)
+    prompt = voice_prompt(terms, items, fixes, HUB.voice_prefs()["text"] if hasattr(HUB, "voice_prefs") else VOICE_PREFS)
     gated = voice_gated(path, mime) >= 0.5
     calls = [lambda: voice_main(audio, prompt), lambda: voice_asr(audio, vocab)] + ([lambda: voice_main(audio, prompt, PRO_MODEL)] if gated else [])
     (tr, err), (alt, alt_err), *pro = together(*calls)
@@ -2384,6 +2394,11 @@ class Hub:
                 self.fixes = [c for c in json.load(f) if isinstance(c, dict) and c.get("wrong") and c.get("right")]
         except (FileNotFoundError, ValueError):
             self.fixes = []
+        try:
+            with open(os.path.join(self.root, "voice-prefs.txt"), encoding="utf-8") as f:
+                self.prefs = f.read().strip() or None
+        except FileNotFoundError:
+            self.prefs = None
         for name in sorted(os.listdir(self.root)):
             if NAME.fullmatch(name) and os.path.isfile(os.path.join(self.root, name, "taska.jsonl")):
                 self.open(name)
@@ -2395,6 +2410,29 @@ class Hub:
     def corrections(self):
         with self.lock:
             return [dict(c) for c in self.fixes]
+
+    def voice_prefs(self):
+        """F183: {"text": how voice notes are written down, "default": True while the user never changed it}."""
+        with self.lock:
+            return {"text": self.prefs or VOICE_PREFS, "default": self.prefs is None}
+
+    def set_voice_prefs(self, text):
+        """New preferences for every project; empty text goes back to the default."""
+        text = "\n".join(line.rstrip() for line in str(text or "").strip().splitlines())
+        if len(text) > MAX_PREFS:
+            raise Err(f"keep the preferences under {MAX_PREFS} characters")
+        path = os.path.join(self.root, "voice-prefs.txt")
+        with self.lock:
+            self.prefs = text if text and text != VOICE_PREFS else None
+            if self.prefs is None:
+                try:
+                    os.remove(path)
+                except FileNotFoundError:
+                    pass
+                return
+            with open(path + ".tmp", "w", encoding="utf-8") as f:
+                f.write(self.prefs + "\n")
+            os.replace(path + ".tmp", path)
 
     def correct(self, wrong, right=None):
         """Remember wrong -> right (or forget wrong, when right is None)."""
@@ -2703,6 +2741,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self.json(HUB.deleted())
             if p == "/api/corrections":
                 return self.json(HUB.corrections())
+            if p == "/api/voiceprefs":  # F183
+                return self.json(HUB.voice_prefs())
             s, sub, base = self.project(p)
             if sub == "":
                 return self.redirect(p + "/")
@@ -2833,6 +2873,10 @@ class Handler(BaseHTTPRequestHandler):
                 d = json.loads(self.body(10_000) or b"{}")
                 HUB.correct(d.get("wrong"), d.get("right") if "right" in d else None)
                 return self.json({"ok": True, "corrections": HUB.corrections()})
+            if p == "/api/voiceprefs":  # F183: {text} for every project's transcription; "" = the default again
+                d = json.loads(self.body(20_000) or b"{}")
+                HUB.set_voice_prefs(d.get("text", ""))
+                return self.json({"ok": True, **HUB.voice_prefs()})
             if p == "/api/key":  # a new key; this device keeps working, every other one needs the new link
                 HUB.new_key()
                 return self.send(200, json.dumps({"ok": True, "key": HUB.key}), "application/json; charset=utf-8",
@@ -4820,7 +4864,10 @@ function renderComposer() {
   const n = scopeN(), it = n && byN.get(n), dt = docTarget(), dOpen = !U.correct && !U.amend && !dt && docOpen(), t = $('text'), ticks = U.correct || U.amend || dt || dOpen ? [] : ticked(n);
   const vcd = !U.correct && !U.amend && docOpen(), vcN = vcd ? vcCount(t.value) : 0;  // F184: voice comments collected in the box
   let line = '', ph = S.project ? `Write to ${projTitle()}…` : 'Write anything…', send = 'Send';  // the box says whom it writes to, on the phone too (B157)
-  if (U.correct && byR.has(U.correct.id)) {  // F144: correcting a few words of a voice note
+  if (U.prefsEdit) {  // F183: how voice notes are written down, for every project
+    line = scopeLine('pencil', 'Edit transcription preferences', '· every project', scopeX('prefs-cancel', 'Stop editing'));
+    ph = 'How voice notes should be written down…'; send = 'Save';
+  } else if (U.correct && byR.has(U.correct.id)) {  // F144: correcting a few words of a voice note
     const right = t.value.replace(/\s+/g, ' ').trim();  // A3: before → after, as you type
     line = scopeLine('pencil', `Correct “${esc(U.correct.wrong)}”${right ? ` → “${esc(right.slice(0, 60))}”` : ''}`, `in ${U.correct.id} · remembered for every project`, scopeX('correct-cancel', 'Stop correcting'));
     ph = `The right words for “${U.correct.wrong}”…`; send = 'Save';
@@ -4886,7 +4933,7 @@ function renderComposer() {
   aux.hidden = !quiet;  // only beside a box with something in it: the round button never moves, the text never jumps
   t.classList.toggle('invisible', rec || view); $('recBar').hidden = !rec;
   $('boxHint').innerHTML = !desk() ? '' : rec ? boxKeys([['↵', 'words into the box'], ['⇧↵', 'stop and send'], ['Esc', 'discard']])
-    : U.correct || U.amend ? boxKeys([['⇧↵', 'save'], ['Esc', 'stop']])
+    : U.correct || U.amend || U.prefsEdit ? boxKeys([['⇧↵', 'save'], ['Esc', 'stop']])
     : vcN ? boxKeys([['⇧↵', send.toLowerCase()]], 'select more text for another voice comment')
     : dt ? boxKeys([['⇧↵', send.toLowerCase()], ['Esc', 'cancel']])
     : dOpen ? boxKeys([['Esc', `back to ${code(liveN(dOpen.n))}`]], 'click a paragraph or select text to comment on it')
@@ -4973,6 +5020,7 @@ async function addFiles(list) {
 // thought, and the outbox sends in order as soon as each input's uploads and transcripts are in.
 async function send() {
   if (R.rec) return finishRec(true);
+  if (U.prefsEdit) return sendPrefs();  // F183
   if (U.correct) return sendCorrect();  // F144
   if (U.amend) return sendAmend();  // details for an input you sent (B136)
   if (docOpen() && vcCount($('text').value)) return sendVoiceComments();  // F184
@@ -5420,7 +5468,7 @@ function sendParked(key) {
 // A draft belongs to what it is written to (B118): an item (a reply, or a comment on one of its documents), or a new
 // input (a new rule too). Each project keeps them by target in this browser; when the box changes target, the words and
 // files stay with the old target and the new target's own draft comes back. So unsent words never go elsewhere.
-const draftKey = () => { if (U.correct) return `correct ${U.correct.id}`; if (U.amend) return `${U.amend.mode} ${U.amend.id}`; const od = docOpen(), n = scopeN(); return od ? code(liveN(od.n)) : n ? code(n) : ruleMode() ? 'rule' : 'new'; };  // B10: a new rule has its own draft  // a document's box shares its item's draft
+const draftKey = () => { if (U.prefsEdit) return 'prefs'; if (U.correct) return `correct ${U.correct.id}`; if (U.amend) return `${U.amend.mode} ${U.amend.id}`; const od = docOpen(), n = scopeN(); return od ? code(liveN(od.n)) : n ? code(n) : ruleMode() ? 'rule' : 'new'; };  // B10: a new rule has its own draft  // a document's box shares its item's draft
 function draftStore(change) {
   const key = 'taska.drafts.' + S.project;
   try {
@@ -5750,7 +5798,7 @@ function openItem(n, push = true) {
   n = mergedTo(n);
   if (n !== asked && URLS.applying) history.replaceState(desk() ? history.state : {n}, '', P + code(n) + viewQuery());  // the address names what shows
   if (!U.open && !desk()) U.listTop = [$('list').scrollTop, $('inputsView').scrollTop];
-  if (U.open !== n) { stashEdit(); U.editing = null; U.subFor = null; U.amend = null; U.correct = null; }
+  if (U.open !== n) { stashEdit(); U.editing = null; U.subFor = null; U.amend = null; U.correct = null; U.prefsEdit = null; }
   const fresh = U.open !== n;
   U.open = n; U.scopeOff = false;
   if (desk() && U.doc && !U.docEdit) { U.docScroll[U.doc] = $('detailBody').scrollTop; Object.assign(U, {doc: null, docReply: null, docSel: new Set(), docQuote: null, docCircle: false}); D.docKey = null; }  // another item: the document closes
@@ -5786,7 +5834,7 @@ function setTab(t) {
     for (const k of VIEW_KEYS) U[k] = v[k] ?? (k === 'q' ? '' : 'all');
     $('q').value = U.q; qSync();
   }
-  U.asRule = null; U.amend = null; U.correct = null; U.goBack = null; if (t === 'inputs' && was !== 'inputs') U.inputsEnd = true;
+  U.asRule = null; U.amend = null; U.correct = null; U.prefsEdit = null; U.goBack = null; if (t === 'inputs' && was !== 'inputs') U.inputsEnd = true;
   if (!desk() && t !== was && !U.open) U.tabTop[was] = tabScroll(was).scrollTop;  // where you were in this tab (B152)
   U.tab = t;
   if (t !== was && !desk()) writeURL(true);
@@ -5935,7 +5983,7 @@ const ACT = {
   switch: () => projectSwitcher(),
   'as-rule': () => carry(() => { U.asRule = !ruleMode(); renderComposer(); if (desk() && D.compose) renderDetail(); writeURL(false); }),
   'new-input': () => {
-    U.amend = null; U.correct = null;  // New input is always a fresh new input (B168)
+    U.amend = null; U.correct = null; U.prefsEdit = null;  // New input is always a fresh new input (B168)
     D.sideOpen = false; if (D.page) D.page = null;
     if (desk()) {  // its own page in the detail pane (B73), not under the open item; from Inputs too (F121)
       if (U.tab === 'inputs') { D.prevTab = 'inputs'; U.tab = 'items'; }
@@ -6306,6 +6354,8 @@ const ACT = {
   'input-append': b => editInput(b.dataset.id, 'append'),
   'input-history': b => inputHistory(b.dataset.id),
   'amend-cancel': () => cancelAmend(),
+  'prefs-edit': () => editPrefs(),  // F183
+  'prefs-cancel': () => cancelPrefs(),
   'correct-cancel': () => cancelCorrect(),
   fixes: () => { if (desk()) return openProject('fixes'); closeDrawer(); dialog('Voice spellings', fixesHtml()); loadFixes(); },
   'fix-remove': async b => {
@@ -6379,7 +6429,8 @@ function showDesk() {
   $('inputsView').hidden = page || !inputs;
   $('detailView').hidden = page || inputs;
   $('projectView').hidden = !page;
-  $('foot').hidden = page;
+  $('foot').hidden = page && !U.prefsEdit;  // the one box shows on Voice spellings while you edit the preferences (F183)
+  $('projectBody').classList.toggle('pb-64', page && !!U.prefsEdit);  // and the page's end stays clear of it
   $('deskFilters').hidden = page || full || inputs || !(D.filters || filtersSet().length);
   $('listGrip').hidden = page || full || inputs;
   $('app').toggleAttribute('data-compose', D.compose && !page && !inputs);  // New input: the one box moves to the middle (B73)
@@ -6763,14 +6814,42 @@ const PSEC = {  // section: [address, icon, name, what it is for]
 };
 const PSEC_THIS = ['agents', 'log', 'deleted'];  // the rest are for all projects
 const PSEC_AT = {...Object.fromEntries(Object.entries(PSEC).map(([sec, [path]]) => [path, sec])), connect: 'connect', about: 'projects'};  // address -> section; /connect: Agents, at Connect
-const P_CACHE = {guide: null, log: null, logRev: -1, fixes: null, nav: '', body: '', projects: null, trash: null};
+const P_CACHE = {guide: null, log: null, logRev: -1, fixes: null, prefs: null, nav: '', body: '', projects: null, trash: null};
 const LOG_N = 300;  // the change log shows the latest 300 changes, here and on the phone
 // The voice spellings you corrected (F144): the same list in every project, each one can be forgotten.
-const fixesHtml = () => !P_CACHE.fixes ? '<p class="text-sm text-zinc-400">Loading…</p>' : P_CACHE.fixes.length
+const fixesHtml = () => !P_CACHE.fixes ? '<p class="text-sm text-zinc-400">Loading…</p>' : prefsHtml() + (P_CACHE.fixes.length
   ? `<p class="mb-2 text-[13px] leading-snug text-zinc-500 dark:text-zinc-400">Every project's voice notes write these your way. To add one, select the wrong words in a voice note.</p>
     <ul class="flex flex-col divide-y divide-zinc-100 dark:divide-zinc-800">${P_CACHE.fixes.map(c => `<li class="flex min-h-11 items-center gap-2 text-sm"><span class="min-w-0 flex-1 break-words"><span class="text-zinc-400 line-through decoration-zinc-400">${esc(c.wrong)}</span> → <span class="font-medium">${esc(c.right)}</span></span><button data-act="fix-remove" data-wrong="${esc(c.wrong)}" aria-label="Forget this spelling" class="grid size-11 shrink-0 place-items-center rounded-lg text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200">${ico('x', 'size-4')}</button></li>`).join('')}</ul>`
-  : '<p class="text-[13px] leading-snug text-zinc-500 dark:text-zinc-400">None yet. When a voice note gets words wrong, select them in the input and write the right ones: from then on every project writes them your way.</p>';
-async function loadFixes() { try { P_CACHE.fixes = await net('/api/corrections'); } catch (_) { notLoaded('the voice spellings', loadFixes); } refreshFixes(); }
+  : '<p class="text-[13px] leading-snug text-zinc-500 dark:text-zinc-400">None yet. When a voice note gets words wrong, select them in the input and write the right ones: from then on every project writes them your way.</p>');
+async function loadFixes() { try { [P_CACHE.fixes, P_CACHE.prefs] = await Promise.all(['/api/corrections', '/api/voiceprefs'].map(u => net(u))); } catch (_) { notLoaded('the voice spellings', loadFixes); } refreshFixes(); }
+// F183: how voice notes are written down, for every project. Edit puts the text into the one box; Save keeps it.
+const prefsBox = (cls = 'mt-3') => `<div class="${cls} rounded-xl bg-zinc-100 px-3.5 py-3 text-[15px] leading-relaxed whitespace-pre-wrap break-words text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100">${esc(P_CACHE.prefs?.text || '')}</div>`;
+const prefsEditBtn = () => U.prefsEdit ? '<p class="mt-3 text-[13px] text-blue-600 dark:text-blue-400">Editing in the box below</p>' : `<button data-act="prefs-edit" class="${SECOND} mt-3">${ico('pencil', 'size-4')}Edit</button>`;
+const prefsHtml = () => P_CACHE.prefs ? `<section class="mb-5"><h3 class="text-sm font-semibold">Transcription preferences${P_CACHE.prefs.default ? '<span class="ml-2 font-normal text-zinc-400">default</span>' : ''}</h3>
+    <p class="mt-1 text-[13px] leading-snug text-zinc-500 dark:text-zinc-400">How every project's voice notes are written down, in your words.</p>${prefsBox()}${prefsEditBtn()}</section>
+    <h3 class="mb-1 text-sm font-semibold">Spellings</h3>` : '';
+function editPrefs() {
+  if (!P_CACHE.prefs) return;
+  U.prefsEdit = {was: P_CACHE.prefs.text}; U.amend = null; U.correct = null;
+  if (!desk()) dialog('Voice spellings', fixesHtml(), {aboveComposer: true, focus: false});
+  render();
+  const t = $('text');
+  if (!t.value.trim()) { t.value = P_CACHE.prefs.text; saveDraft(); grow(); renderComposer(); }
+  t.focus(); t.selectionStart = t.selectionEnd = t.value.length;
+}
+function cancelPrefs() { U.prefsEdit = null; render(); refreshFixes(); }
+async function sendPrefs() {
+  const text = $('text').value.trim(), was = U.prefsEdit?.was ?? '';
+  if (!text) return toast('Write how voice notes should be written down, or Esc to stop');
+  try {
+    const d = await net('/api/voiceprefs', JSON_POST({text}), NET.op);
+    if (!d.ok) return toast(d.error || 'Not saved', null, {error: true});
+    P_CACHE.prefs = d; U.prefsEdit = null; $('text').value = ''; saveDraft(); grow(); render(); refreshFixes();
+    toast("Saved: every project's voice notes follow these from now on", async () => {
+      const b = await net('/api/voiceprefs', JSON_POST({text: was}), NET.op); if (b.ok) { P_CACHE.prefs = b; refreshFixes(); }
+    });
+  } catch (_) { toast('Connection lost. Your words are still in the box; try again.', null, {error: true}); }
+}
 function refreshFixes() { if (D.page) renderProject(); else if (!$('overlay').hidden && $('dlgTitle').textContent === 'Voice spellings') dialog('Voice spellings', fixesHtml()); }
 async function setFix(body) {
   const d = await net('/api/corrections', JSON_POST(body), NET.op);
@@ -6870,9 +6949,9 @@ const PBODY = {
       + pSetting('New key', 'This computer and your local network never need the key. A new key signs out every other device.',
         '<button data-act="new-key" class="inline-flex h-11 shrink-0 items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 text-[15px] font-semibold text-red-600 hover:bg-red-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-red-400 dark:hover:bg-red-400/10">New key</button>');
   },
-  fixes: () => !P_CACHE.fixes ? P_LOADING : !P_CACHE.fixes.length ? pRuled(EMPTY('None yet. When a voice note gets words wrong, select them in the input and write the right ones: from then on every project writes them your way.'))
+  fixes: () => !P_CACHE.fixes ? P_LOADING : (P_CACHE.prefs ? pPart(`Transcription preferences${P_CACHE.prefs.default ? '<span class="ml-2 text-[13px] font-normal text-zinc-400">default</span>' : ''}`, "How every project's voice notes are written down, in your own words. Transcription follows them after its own rules.", prefsBox() + prefsEditBtn()) + pPart('Spellings', P_CACHE.fixes.length ? 'The words you corrected once, written your way from then on.' : 'None yet. When a voice note gets words wrong, select them in the input and write the right ones: from then on every project writes them your way.') : '') + (!P_CACHE.fixes.length ? (P_CACHE.prefs ? '' : pRuled(EMPTY('None yet. When a voice note gets words wrong, select them in the input and write the right ones: from then on every project writes them your way.')))
     : `<ul class="divide-y divide-zinc-200 border-y border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">${P_CACHE.fixes.map(c => `<li class="flex min-h-13 items-center gap-3 py-1.5 text-[15px]"><span class="min-w-0 flex-1 break-words"><span class="text-zinc-400 line-through decoration-zinc-400 dark:text-zinc-500">${esc(c.wrong)}</span><span class="px-2 text-zinc-400 dark:text-zinc-500">→</span><span class="font-medium">${esc(c.right)}</span></span>
-      <button data-act="fix-remove" data-wrong="${esc(c.wrong)}" aria-label="Forget this spelling" title="Forget this spelling" class="grid size-9 shrink-0 place-items-center rounded-lg text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200">${ico('x', 'size-4')}</button></li>`).join('')}</ul>`,
+      <button data-act="fix-remove" data-wrong="${esc(c.wrong)}" aria-label="Forget this spelling" title="Forget this spelling" class="grid size-9 shrink-0 place-items-center rounded-lg text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200">${ico('x', 'size-4')}</button></li>`).join('')}</ul>`),
   deleted: () => (S.deleted || []).length ? `<ul class="divide-y divide-zinc-200 border-y border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">${deletedRows()}</ul>`
     : pRuled(EMPTY('Nothing deleted. An input you delete comes here, with the items that went with it.')),
   organizer: () => S.org?.on
@@ -7037,7 +7116,7 @@ function deskKey(e) {
   if (typing || e.altKey || !$('viewer').hidden) return;
   // A1: while the box waits for words (a correction, an edit, a comment on what you picked) a letter is a word, not a
   // command: it goes into the box, which takes the key as it is pressed.
-  if (!R.rec && $('overlay').hidden && e.key.length === 1 && !e.metaKey && !e.ctrlKey && (U.correct || U.amend || docTarget())) return $('text').focus({preventScroll: true});
+  if (!R.rec && $('overlay').hidden && e.key.length === 1 && !e.metaKey && !e.ctrlKey && (U.correct || U.amend || U.prefsEdit || docTarget())) return $('text').focus({preventScroll: true});
   // While recording, the keys of the box (F095): ↵ stops into the box, ⇧↵ or ⌘↵ stops and sends, Esc discards.
   // ⇧↵ means send even on the button you just clicked (B164); a plain ↵ there presses that button, as below.
   if (R.rec && e.key === 'Enter' && !e.isComposing && (e.shiftKey || e.metaKey || e.ctrlKey)) { e.preventDefault(); return finishRec(true); }
@@ -7508,6 +7587,7 @@ document.addEventListener('keydown', e => {
     if (R.rec) return cancelRec();  // the recording first: it is what you are doing
     if (U.correct && !(document.activeElement === $('text') && $('text').value.trim() && desk())) return cancelCorrect();  // F144
     if (U.amend && !(document.activeElement === $('text') && $('text').value.trim() && desk())) return cancelAmend();  // B136
+    if (U.prefsEdit && !(document.activeElement === $('text') && $('text').value.trim() && desk())) return cancelPrefs();  // F183
     if (U.doc && U.docCircle) { U.docCircle = false; return renderDoc(); }
     if (U.doc && (U.docQuote || U.docSel.size || U.docReply)) return ACT['doc-unpick']();  // first Escape drops the selection
     if (desk() && U.doc && !U.docEdit && $('overlay').hidden && D.full && !/INPUT|TEXTAREA/.test(document.activeElement.tagName)) return fullWidth(false);  // one level: full width first (T113 B20)
