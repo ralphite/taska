@@ -3848,7 +3848,7 @@ function audioUi() {
 
 const SOFT = t => `<span class="rounded bg-zinc-100 px-1.5 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">${t}</span>`;
 const cnt = (icon, n, label) => `<span class="flex items-center gap-1" title="${label}">${ico(icon, 'size-3.5')}${n}</span>`;
-const needLabel = it => it.wait ? (it.wait.kind === 'block' ? 'Blocked' : 'Needs reply') : it.status === 'proposed' ? 'Approve?' : it.status === 'review' ? 'In review' : '';
+const needLabel = it => it.wait ? (it.wait.kind === 'block' ? 'Blocked' : 'Needs reply') : it.status === 'proposed' ? 'Proposed' : it.status === 'review' ? 'In review' : '';
 // Your words on an item: what you wrote there, or what the organizer filed there from one of your inputs (as your
 // words, your decision or your idea). Any of them answers a question, picked choices or not (B163); the server's
 // user_word is the same rule.
@@ -5000,7 +5000,7 @@ function renderComposer() {
     ph = `The right words for “${U.correct.wrong}”…`; send = 'Save';
   } else if (U.amend && byR.has(U.amend.id)) {  // B136: editing or adding to an input you sent
     const r = byR.get(U.amend.id), edit = U.amend.mode === 'edit';
-    line = scopeLine(edit ? 'pencil' : 'listplus', `${edit ? 'Edit' : 'Add details to'} ${r.id}`, `“${esc(oneLine(r.text).slice(0, 120))}”`, scopeX('amend-cancel', edit ? 'Stop editing' : 'Stop adding details'));
+    line = scopeLine(edit ? 'pencil' : 'listplus', `${edit ? 'Edit' : 'Add details to'} ${r.id}`, oneLine(r.text) ? `“${esc(oneLine(r.text).slice(0, 120))}”` : `· ${isVoice(r) ? 'a voice note' : plural(r.files.length, 'file')}`, scopeX('amend-cancel', edit ? 'Stop editing' : 'Stop adding details'));
     ph = edit ? `Edit ${r.id}…` : `Add details to ${r.id}…`; send = 'Save';
   } else if (vcN) {  // F184: one send posts each quote's words as a comment on its passage
     line = scopeLine('comment', `${plural(vcN, 'comment')} on D${vcd.d}`, '· one send posts each on its passage', '');
@@ -6230,7 +6230,7 @@ const ACT = {
     if (desk() && U.open !== n) openItem(n);
     if (!desk() && U.open !== n && U.peek !== n) { closeSwipe(); peek(n, {focus: false}); }
     const typed = scopeN() === n && !!($('text').value.trim() || U.files.length);  // B4: what you wrote already is what is missing: it goes with it
-    change(n, 'status', 'doing', {said: 'reopened', note: 'Say what is missing'}); if (!typed) U.ask = n; U.scopeOff = false; renderComposer(); $('text').focus();
+    change(n, 'status', 'doing', {said: 'is back in progress', note: 'Say what is missing'}); if (!typed) U.ask = n; U.scopeOff = false; renderComposer(); $('text').focus();
   },
   'card-copy': b => copyItem(Number(b.dataset.n)),  // the card stays: copying is no reason to lose your place (B153)
   projects: () => openDrawer(),
