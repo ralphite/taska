@@ -4810,6 +4810,15 @@ function inputActs(r, cls = LINK_BTN) {
     + (otherProjects().length && !busy ? `<button data-act="move-input" data-id="${r.id}" title="Sent to the wrong project? Move it" class="${cls}${quiet}">${ico('arrow', 'size-3.5', '2')}Move to…</button>` : '');
   return [now, inputActions(r, cls)];
 }
+// Make item's title (T113 A25): the first line, or when that is long, its first sentence, or its first words.
+function shortTitle(s) {
+  s = String(s || '').trim();
+  if (s.length <= 80) return s;
+  const m = s.slice(0, 81).match(/^.{12,79}?(?:[.!?](?=\s)|[。！？])/u);
+  if (m) return m[0].replace(/[.。]$/u, '');
+  const cut = s.slice(0, 80), sp = cut.lastIndexOf(' ');
+  return (sp > 40 ? cut.slice(0, sp) : cut).replace(/[\s,;:，；：]+$/u, '') + '…';
+}
 // F177: Delete moves an input to Deleted (Settings), with the items only it made that no agent has worked on. The
 // others stay and only lose it from their sources. The toast says which, with Undo; Z and Settings put it back.
 const codes = ns => ns.map(code).join(', ');
@@ -5790,11 +5799,12 @@ function confirmClick(b, ask) {
   setTimeout(() => { if (b.isConnected && b.dataset.armed) { delete b.dataset.armed; b.innerHTML = was; } }, 3000);
   return false;
 }
-function popAt(x, y) {  // B129: a menu opened by right-click sits at the pointer, kept on screen
-  const o = $('overlay'), d = $('dlg');
+function popAt(x, y, again = 2) {  // B129: a menu opened by right-click sits at the pointer, kept on screen
+  const o = $('overlay'), d = $('dlg'), xy = U.popXY = [x, y];  // a redraw of the same menu stays there (itemMenuDesk)
   o.classList.remove('lg:justify-end', 'lg:pt-[3.75rem]', 'lg:pr-3'); o.classList.add('lg:justify-start');
   o.style.paddingLeft = `${Math.max(8, Math.min(x, innerWidth - d.offsetWidth - 8))}px`;
   o.style.paddingTop = `${Math.max(8, Math.min(y, innerHeight - d.offsetHeight - 8))}px`;
+  if (again) requestAnimationFrame(() => { if (U.popXY === xy && !o.hidden) popAt(x, y, again - 1); });  // its width may come a frame later: measure again
 }
 const closeDialog = () => {
   const edit = U.docEdit;
@@ -6445,14 +6455,19 @@ const ACT = {
   },
   'make-item': async b => {  // no organizer and no agent around: turn the input into an item yourself
     const r = byR.get(b.dataset.id), lines = r.text.trim().split('\n'), first = lines[0].trim();
-    const title = (first || `Files from ${r.id}`).slice(0, 120), body = first.length > 120 ? r.text.trim() : lines.slice(1).join('\n').trim();
+    const title = shortTitle(first) || `Files from ${r.id}`, body = title !== first ? r.text.trim() : lines.slice(1).join('\n').trim();  // a long first line stays whole in the body (T113 A25)
     try {
       const d = await save({op: 'new', title, body, src: r.id}, () => ACT['make-item'](b));
       const n = Number((d.res[0].match(/[A-Z](\d+) new/) || [])[1]);
       if (!n) return;
       let run;  // Undo and Z: the item goes, and the input waits again (T113 A7)
       run = pushUndo(`${code(n)} made from ${r.id}`, () => { toast(`${code(n)} undone: ${r.id} waits again`); return optimistic([{n, f: {status: 'dropped', archived: true}}], () => op({op: 'unmake', ref: code(n)}), ex => notSaved(ex, run)); });
-      ACT.goto({dataset: {n: String(n)}}); if (!desk()) itemMenu(n); toast(`${code(n)} made from ${r.id}. Set its type and priority${desk() ? '' : ' here'}.`, run);
+      // T113 A25: you stay where you were; the new item's type and priority open right there, by its chip
+      toast(`${code(n)} made from ${r.id}: set its type and priority`, run);
+      if (!desk()) return itemMenu(n);
+      const chip = [...document.querySelectorAll(`:is(#inputsView, #composeList) [data-act="goto"][data-n="${n}"]`)].find(el => el.offsetParent), at = chip?.getBoundingClientRect();
+      itemMenuDesk(n, 't');
+      if (at) popAt(at.left, at.bottom + 6);
     } catch (_) {}
   },
   'archive-all': () => {  // no question first: it happens at once; Undo stays 10 seconds in the same spot and in the toast (B154), then Z or the menu's Undo
@@ -7303,6 +7318,7 @@ function itemMenuDesk(n, arm = U.menuArm) {  // arm: 's', 'p' or 't', the part t
   if (!it) return;
   const pick = x => x?.dataset?.act ? `[data-act="${x.dataset.act}"]${x.dataset.f ? `[data-f="${x.dataset.f}"]` : ''}${x.dataset.v ? `[data-v="${CSS.escape(x.dataset.v)}"]` : ''}` : '';
   const again = U.sheet === 'menu' && !$('overlay').hidden && $('dlgBody').contains(document.activeElement) ? pick(document.activeElement) : '';  // redrawn after a change: the key stays where it was
+  const xy = U.sheet === 'menu' && !$('overlay').hidden && U.menuFor === n ? U.popXY : null;  // and a menu opened at a spot stays at it
   U.sheet = 'menu'; U.menuFor = n; U.menuArm = arm;
   const row = (act, icon, label, key, attrs = '', sub = '') => `<button data-act="${act}" data-n="${n}" ${attrs} class="flex h-9 w-full items-center gap-3 rounded-lg px-2.5 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800">${ico(icon, 'size-[18px] text-zinc-500 dark:text-zinc-400')}<span class="min-w-0 flex-1 truncate">${label}${sub ? `<span class="ml-2 text-xs text-zinc-400">${sub}</span>` : ''}</span>${key ? `<kbd class="grid h-5 min-w-5 place-items-center rounded-md px-1 font-sans text-[11px] font-semibold text-zinc-400 ring-1 ring-zinc-300 dark:ring-zinc-600">${key}</kbd>` : ''}</button>`;
   const lab = (t, keys, on) => `<div class="flex items-center justify-between px-1 pb-1.5 text-xs font-semibold ${on ? 'text-blue-600 dark:text-blue-400' : 'text-zinc-500 dark:text-zinc-400'}">${t}<span class="font-normal ${on ? '' : 'text-zinc-400'}">${keys}</span></div>`;
@@ -7317,6 +7333,7 @@ function itemMenuDesk(n, arm = U.menuArm) {  // arm: 's', 'p' or 't', the part t
     ${it.type === 'rule' ? '' : `<div>${lab('Priority', 'P then 0–3', arm === 'p')}${segctl('set-field', 'pri', ['P0', 'P1', 'P2', 'P3'].map(p => [p, p === 'P0' ? '<span class="font-semibold text-red-600 dark:text-red-400">P0</span>' : p]), it.pri, true).replaceAll('data-k="pri"', `data-f="pri" data-n="${n}"`)}</div>`}
     <div>${lab('Status', `S then 1–${statuses.length}`, arm === 's')}<div class="grid grid-cols-3 gap-1">${statuses.map(stat).join('')}</div></div>
   </div>`, {pop: true, focus: false, head: `<span class="block truncate text-sm font-semibold"><span class="mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[it.type]}">${code(n)}</span>${esc(it.title)}</span>`});
+  if (xy) popAt(...xy); else U.popXY = null;
   const box = $('dlgBody'), f = {t: 'type', p: 'pri', s: 'status'}[arm];  // the keys stay in the menu (B8)
   ((again && box.querySelector(again)) || (f && (box.querySelector(`[data-f="${f}"][aria-pressed="true"]`) || box.querySelector(`[data-f="${f}"]`))) || box.querySelector('button'))?.focus({preventScroll: true});
 }
