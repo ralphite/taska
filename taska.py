@@ -4443,7 +4443,7 @@ function wireLasso() {
 // state, as on the desktop (B128): forward · progress · Won't do · Later · Copy. Opening the item or copying it
 // leaves the walk where it was. A swipe on the card means what it means on a row: right is its step forward.
 const laterLast = (a, b) => (a.when === 'later') - (b.when === 'later');  // Later moves an item that needs you down, out of the way (B153)
-const walkTab = () => U.tab === 'rules' && !D.page && !D.compose ? 'rules' : 'items';  // on Rules, the rules waiting on you (T113 B29)
+const walkTab = () => U.tab === 'rules' && !D.page && !D.compose && visible('rules').some(needsYou) ? 'rules' : 'items';  // on Rules, the rules waiting on you (T113 B29); none: Items'
 const needsList = (t = walkTab()) => visible(t).filter(needsYou).sort(laterLast).map(it => it.n);
 const FOCUS_TONE = {Start: 'text-blue-600 dark:text-blue-400', "Won't do": 'text-red-600 dark:text-red-400', Done: 'text-emerald-700 dark:text-emerald-400', Archive: 'text-emerald-700 dark:text-emerald-400', Unarchive: 'text-emerald-700 dark:text-emerald-400'};
 const FWD_NEED = {Accept: 'accept', Approve: 'approve', Answer: 'answer', Reply: 'reply'};  // the forward step in the color of its kind, wherever it shows (B96, B41)
