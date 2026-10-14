@@ -114,7 +114,9 @@ def group_move(a):
     check('G then P loads the projects once', a.js("performance.getEntriesByType('resource').filter(e => e.name.includes('projects')).length"), lambda n: n <= 2)
     a.key('Escape'); check('Esc closes the switcher at once', a.js("$('overlay').hidden"), True)
     a.key('['); check('[ hides the sidebar', a.js('D.sideHidden'), True)
+    a.go('B03'); check('A reload keeps it hidden (B25)', (a.js('D.sideHidden'), a.js("$('rail').hidden")), (True, False))
     a.key('['); check('[ shows it again', a.js('D.sideHidden'), False)
+    a.go('B03'); check('and a reload keeps it shown', a.js('D.sideHidden'), False)
 
 
 def group_act(a):

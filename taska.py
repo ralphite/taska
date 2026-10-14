@@ -3528,7 +3528,7 @@ let viewerGroup = [], viewerIdx = 0;
 const DESK = matchMedia('(min-width: 1024px)'), WIDE = matchMedia('(min-width: 1280px)');
 const REDUCE = matchMedia('(prefers-reduced-motion: reduce)');  // the system's "reduce motion": no slides (T160); a rule on <body> stops the CSS ones
 const desk = () => DESK.matches;
-const D = {page: null, full: false, sideHidden: false, sideOpen: false, filters: false, g: 0, undo: null, compose: false, prev: null};
+const D = {page: null, full: false, sideHidden: (() => { try { return !!localStorage.getItem('taska.sideHidden'); } catch (_) { return false; } })(), sideOpen: false, filters: false, g: 0, undo: null, compose: false, prev: null};
 const TIP = {el: null, t: 0, closedAt: 0, hush: null, fine: matchMedia('(hover: hover) and (pointer: fine)')};  // the one tooltip (T094)
 // Every project has its own colour (B78): a letter tile that tells at a glance which project you are in, so an
 // input doesn't land in the wrong one. The colour comes from the name, so it never changes.
@@ -6109,7 +6109,11 @@ const ACT = {
   prev: () => stepItem(-1),
   next: () => stepItem(1),
   full: () => fullWidth(!D.full),
-  side: () => { if (WIDE.matches) D.sideHidden = !D.sideHidden; else D.sideOpen = !D.sideOpen; render(); },
+  side: () => {
+    if (WIDE.matches) { D.sideHidden = !D.sideHidden; try { localStorage.setItem('taska.sideHidden', D.sideHidden ? '1' : ''); } catch (_) {} }  // T113 B25: a reload keeps it hidden
+    else D.sideOpen = !D.sideOpen;
+    render();
+  },
   keys: () => showKeys(),
   switch: () => projectSwitcher(),
   'as-rule': () => carry(() => { U.asRule = !ruleMode(); renderComposer(); if (desk() && D.compose) renderDetail(); writeURL(false); }),
