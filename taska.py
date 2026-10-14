@@ -4796,8 +4796,19 @@ const filingTip = r => `Undo what the organizer did with ${r.id}: ${r.filing?.wh
 function inputActions(r, cls = LINK_BTN) {
   if (r.moved) return '';
   return `<button data-act="input-edit" data-id="${r.id}" class="${cls}">${ico('pencil', 'size-3.5')}Edit</button><button data-act="input-append" data-id="${r.id}" class="${cls}">${ico('plus', 'size-3.5')}Add details</button>`
-    + (r.history?.length ? `<button data-act="input-history" data-id="${r.id}" class="${cls}">History</button>` : '')
-    + (S.org.busy !== r.id && !r.tr_wait ? `<button data-act="input-delete" data-id="${r.id}" title="${esc(deleteTip(r))}" class="${cls}${cls === LINK_BTN ? ' text-zinc-600 dark:text-zinc-300' : ''}">${ico('trash', 'size-3.5')}Delete</button>` : '');
+    + (S.org.busy !== r.id && !r.tr_wait ? `<button data-act="input-delete" data-id="${r.id}" title="${esc(deleteTip(r))}" class="${cls}${cls === LINK_BTN ? ' text-zinc-600 dark:text-zinc-300' : ''}">${ico('trash', 'size-3.5')}Delete</button>` : '')
+    + (r.history?.length ? `<button data-act="input-history" data-id="${r.id}" class="${cls}">History</button>` : '');  // last: the ones every input has keep their places (T113 A21)
+}
+// What became of an input, and what you can do about it now: the same on Inputs and in "You said lately" (T113 A26,
+// B32), all in sight. -> [the actions for its state, the actions every input has], each a line of its own.
+function inputActs(r, cls = LINK_BTN) {
+  if (r.moved) return [`<a href="/p/${encodeURIComponent(r.moved.to)}/" class="${cls}">${ico('arrow', 'size-3.5', '2')}Open ${esc(r.moved.to)} · ${esc(r.moved.as)}</a>`, ''];
+  const busy = S.org.busy === r.id || (!r.acked && S.org.on && !r.org), quiet = cls === LINK_BTN ? ' text-zinc-600 dark:text-zinc-300' : '';
+  const now = (!r.acked && S.org.on && r.org && (!r.org.ok || r.org.undone) ? `<button data-act="retry" data-id="${r.id}" class="${cls}">${ico('loop', 'size-3.5', '2')}${r.org.undone ? 'Organize again' : 'Retry'}</button>` : '')
+    + (!r.acked && !r.scope && !busy ? `<button data-act="make-item" data-id="${r.id}" class="${cls.replace(/text-zinc-500|hover:text-zinc-800/g, 'text-blue-600').replace(/dark:text-zinc-400|dark:hover:text-zinc-200/g, 'dark:text-blue-400')}">${ico('plus', 'size-3.5', '2')}Make item</button>` : '')
+    + (canUndoInput(r) ? `<button data-act="undo" data-id="${r.id}" title="${esc(filingTip(r))}" class="${cls}${quiet}">${ico('undo', 'size-3.5', '2')}Undo filing</button>` : '')
+    + (otherProjects().length && !busy ? `<button data-act="move-input" data-id="${r.id}" title="Sent to the wrong project? Move it" class="${cls}${quiet}">${ico('arrow', 'size-3.5', '2')}Move to…</button>` : '');
+  return [now, inputActions(r, cls)];
 }
 // F177: Delete moves an input to Deleted (Settings), with the items only it made that no agent has worked on. The
 // others stay and only lose it from their sources. The toast says which, with Undo; Z and Settings put it back.
@@ -4898,10 +4909,7 @@ function renderInputs() {
     const head = d !== day ? `<div class="px-4 pt-2.5 pb-0.5 text-xs font-semibold text-zinc-500 lg:px-0 lg:pt-5 lg:pb-1 dark:text-zinc-400">${(day = d)}</div>` : '';
     const note = !r.moved && r.org && !(r.acked && r.org.keep) ? `<div class="mt-1.5 flex min-h-5 items-center gap-1 text-xs ${r.org.ok ? 'text-zinc-500 dark:text-zinc-400' : 'text-red-600 dark:text-red-400'}">${ico('sparkle', 'size-3.5')}<span class="min-w-0">${esc(r.org.msg)}</span></div>` : '';
     const chips = r.moved ? '' : r.touched.filter(n => byN.has(n)).map(n => `<button data-act="goto" data-n="${n}" class="${HIT} flex h-8 max-w-full min-w-0 items-center gap-1.5 rounded-lg bg-zinc-100 px-2 text-[13px] hover:bg-zinc-200/70 dark:bg-zinc-800 dark:hover:bg-zinc-700"><span class="font-mono text-xs font-bold ${TYPE_TEXT[byN.get(n).type]}">${code(n)}</span><span class="truncate">${esc(byN.get(n).title)}</span></button>`).join('');
-    const acts = r.moved ? `<a href="/p/${encodeURIComponent(r.moved.to)}/" class="${LINK_BTN}">${ico('arrow', 'size-3.5', '2')}Open ${esc(r.moved.to)} · ${esc(r.moved.as)}</a>` : (!r.acked && S.org.on && r.org && (!r.org.ok || r.org.undone) ? `<button data-act="retry" data-id="${r.id}" class="${LINK_BTN}">${ico('loop', 'size-3.5', '2')}${r.org.undone ? 'Organize again' : 'Retry'}</button>` : '')
-      + (canUndoInput(r) ? `<button data-act="undo" data-id="${r.id}" title="${esc(filingTip(r))}" class="${LINK_BTN} text-zinc-600 dark:text-zinc-300">${ico('undo', 'size-3.5', '2')}Undo filing</button>` : '')
-      + (!r.acked && !r.scope && !(S.org.on && !r.org) && S.org.busy !== r.id ? `<button data-act="make-item" data-id="${r.id}" class="${LINK_BTN}">${ico('plus', 'size-3.5', '2')}Make item</button>` : '')
-      + (otherProjects().length && S.org.busy !== r.id ? `<button data-act="move-input" data-id="${r.id}" class="${LINK_BTN} text-zinc-600 dark:text-zinc-300">${ico('arrow', 'size-3.5', '2')}Move to…</button>` : '') + inputActions(r);
+    const acts = inputActs(r).filter(Boolean).map(a => `<div class="mt-1 flex flex-wrap items-center gap-x-1 gap-y-1.5">${a}</div>`).join('');
     // On the desktop each input is a ledger line: what you said on the left, what became of it on the right.
     return `${head}<article data-r="${r.id}" class="border-b border-zinc-100 px-4 py-2 transition-colors duration-700 lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-10 lg:px-0 lg:py-4 dark:border-zinc-800/70"><div class="min-w-0">
       <div class="flex min-h-5 items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400"><span class="font-mono">${r.id}</span><span>${when(r.t)}</span>${r.from === 'rules' ? '<span class="font-medium">as a rule</span>' : ''}
@@ -4913,7 +4921,7 @@ function renderInputs() {
         ${r.files.length ? `<div class="mt-2 flex items-end gap-2 overflow-x-auto lg:scrollbar-thin">${thumbs(r.files, 'in' + r.id, 'size-11')}</div>` : ''}
       </div></div><div class="min-w-0 lg:pt-6">
       <div class="hidden items-center gap-1.5 text-[13px] font-semibold lg:flex ${tone}">${icon}${label}</div>
-      ${note}${chips ? `<div class="mt-1 flex flex-wrap items-center gap-1.5">${chips}</div>` : ''}${acts ? `<div class="mt-1 flex flex-wrap items-center gap-x-1 gap-y-1.5">${acts}</div>` : ''}
+      ${note}${chips ? `<div class="mt-1 flex flex-wrap items-center gap-1.5">${chips}</div>` : ''}${acts}
     </div></article>`;
   }).join('') + (more ? `<div class="flex flex-col py-4">${more}</div>` : '') : U.outbox.length ? '' : EMPTY(words.length ? 'No matching inputs' : 'No inputs yet.', more ? `<span class="mt-3 flex flex-col">${more}</span>` : '');
   if (U.outbox.length && !words.length) $('inputsView').innerHTML = chat ? $('inputsView').innerHTML + outboxRows(true) : outboxRows() + $('inputsView').innerHTML;
@@ -6737,19 +6745,18 @@ function saidStep(dot, bubble, meta, result, last, attrs = '') {
       <div class="mt-1.5 flex min-w-0 flex-wrap items-center gap-1.5">${result}</div></div></li>`;
 }
 function saidRow(r, k, last) {
-  const [label, tone] = inputState(r), scope = r.scope && byN.get(r.scope), later = k ? 'lg:opacity-0 lg:group-hover/row:opacity-100 lg:focus:opacity-100' : '';
+  const [label, tone] = inputState(r), scope = r.scope && byN.get(r.scope);
   const said = r.text || (r.files.some(f => (f.mime || '').startsWith('audio/')) ? 'Voice note' : '');
   const bubble = (scope ? `<button data-act="goto" data-n="${scope.n}" class="mb-0.5 flex max-w-full items-center gap-1 text-xs font-medium text-blue-700 hover:underline dark:text-blue-300">${ico('reply', 'size-3.5')}<span class="truncate">Reply to ${code(scope.n)} · ${esc(scope.title)}</span></button>` : '')
     + (said ? `<p data-cut class="${U.moreInputs.has(r.id) ? 'whitespace-pre-line' : 'line-clamp-2'} break-words">${esc(said)}</p>` : '') + (r.files.length ? `<div class="mt-2 flex items-end gap-2">${thumbs(r.files, 'cl' + r.id, 'size-12')}</div>` : '');
   const chips = r.moved ? '' : r.touched.filter(n => byN.has(n)).map(n => { const it = byN.get(n); return `<button data-act="goto" data-n="${n}" title="Open ${code(n)}" class="flex h-7 max-w-60 min-w-0 items-center gap-1.5 rounded-lg bg-zinc-100 pr-2.5 pl-1.5 text-[13px] text-zinc-800 hover:bg-zinc-200/80 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700">${stateIcon(it.status, statusName(it), 'size-4')}<span class="font-mono text-xs font-bold ${TYPE_TEXT[it.type]}">${code(n)}</span><span class="truncate">${esc(it.title)}</span></button>`; }).join('');
   const busy = S.org.busy === r.id || (!r.acked && S.org.on && !r.org);
-  const acts = r.moved ? `<a href="/p/${encodeURIComponent(r.moved.to)}/" class="${SMALL_BTN} text-blue-600 dark:text-blue-400">${ico('arrow', 'size-3.5', '2')}Open ${esc(r.moved.to)} · ${esc(r.moved.as)}</a>`
-    : r.org && !r.org.ok ? `<span class="min-w-0 truncate text-[13px] text-red-600/80 dark:text-red-400/80">${esc(r.org.msg)}</span><button data-act="retry" data-id="${r.id}" class="ml-auto flex h-7 shrink-0 items-center gap-1 rounded-lg border border-zinc-200 bg-white px-2.5 text-[13px] font-semibold text-zinc-800 shadow-sm hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700">${ico('loop', 'size-3.5', '2')}Retry</button>`
-    : (busy ? '<span class="h-7 w-44 animate-pulse rounded-lg bg-zinc-100 dark:bg-zinc-800"></span>' : '')
-      + (r.org?.undone && !r.acked ? `<button data-act="retry" data-id="${r.id}" class="${SMALL_BTN}">${ico('loop', 'size-3.5', '2')}Organize again</button>` : '')
-      + (!r.acked && !r.scope && !(S.org.on && !r.org) && !busy ? `<button data-act="make-item" data-id="${r.id}" class="${SMALL_BTN} text-blue-600 dark:text-blue-400">${ico('plus', 'size-3.5', '2')}Make item</button>` : '')
-      + `<span class="ml-auto flex items-center ${later}">${canUndoInput(r) ? `<button data-act="undo" data-id="${r.id}" title="${esc(filingTip(r))}" class="${SMALL_BTN}">${ico('undo', 'size-3.5', '2')}Undo filing</button>` : ''}${otherProjects().length && !busy ? `<button data-act="move-input" data-id="${r.id}" title="Sent to the wrong project? Move it" class="${SMALL_BTN}">${ico('arrow', 'size-3.5', '2')}Move to…</button>` : ''}</span>`;
-  return saidStep(DOT[dotOf(r)], bubble, `<span class="font-mono">${r.id}</span> · ${when(r.t)}${r.from === 'rules' ? ' · as a rule' : ''}`, `<span class="mr-1 text-[13px] font-semibold ${tone}">${label}</span>${chips}${inputActions(r, SMALL_BTN)}${acts}`, last, `data-expand data-id="${r.id}" ${voiceAttr(r)}`);
+  // The same actions as on Inputs, in the same order and always in sight (T113 A26, B32): what its state allows on
+  // one line, then what every input has.
+  const acts = (busy ? '<span class="h-7 w-44 animate-pulse rounded-lg bg-zinc-100 dark:bg-zinc-800"></span>' : '')
+    + (r.org && !r.org.ok ? `<span class="min-w-0 basis-full truncate text-[13px] text-red-600/80 dark:text-red-400/80">${esc(r.org.msg)}</span>` : '')
+    + inputActs(r, SMALL_BTN).filter(Boolean).map(a => `<div class="flex basis-full flex-wrap items-center gap-1">${a}</div>`).join('');
+  return saidStep(DOT[dotOf(r)], bubble, `<span class="font-mono">${r.id}</span> · ${when(r.t)}${r.from === 'rules' ? ' · as a rule' : ''}`, `<span class="mr-1 text-[13px] font-semibold ${tone}">${label}</span>${chips}${acts}`, last, `data-expand data-id="${r.id}" ${voiceAttr(r)}`);
 }
 function outboxStep(q, last) {  // still on its way (F85)
   const state = q.failed ? 'Not sent' : q.files.some(f => !f.f && !f.failed) ? 'Uploading…' : 'Sending…';  // the words never hold it up (B165)
