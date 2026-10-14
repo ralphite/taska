@@ -47,6 +47,7 @@ PRIS = ("P0", "P1", "P2", "P3")
 WHENS = ("now", "later")
 STATUSES = ("proposed", "open", "doing", "review", "done", "dropped")
 CLOSED = ("done", "dropped")
+CLAIM_TTL = 30 * 60  # an agent's hold on an item it works on: quiet longer than this, another agent may take it (F194)
 PEOPLE = ("you", "org")  # the organizer writes down what the user said, so it acts for the user
 KINDS = ("say", "ask", "block", "withdraw", "propose", "decide", "progress")
 WORK_TYPES = ("bug", "feature", "task", "idea")  # what keep-going picks up
@@ -186,6 +187,7 @@ class Store:
         self.docs, self.maxd = {}, 0
         self.org_on, self.org_busy = False, None
         self.trs = {}  # voice notes being transcribed in the background, by file (B165): t0, done, tr, err
+        self.claims = {}  # n -> (agent, time): what /next gave an agent, so another one asking now gets something else (F194)
         self.fwd = {}  # file -> [(project, file)]: copies of notes whose input moved before their words came (F79, T101)
         if os.path.exists(self.path):
             with open(self.path, encoding="utf-8") as f:
@@ -394,6 +396,8 @@ class Store:
         elif k == "dc":
             self.docs[e["d"]]["comments"].append({"id": e["seq"], "key": e["key"], "quote": e["quote"], "text": e["text"], "by": e["by"], "t": e["t"],
                                                   "files": e.get("files", [])})  # a voice comment keeps its recording (F184)
+        if e.get("by") and e["by"] not in PEOPLE and k in ("add", "set", "say") and e.get("n") in self.items:
+            self.items[e["n"]]["agent"] = {"by": e["by"], "t": e["t"]}  # who works on it, and since when it was last heard of (F194)
 
     def touches(self, e):
         """The items an event changes or adds to: a change, a message, a reply, a subitem, a document, a comment."""
@@ -854,8 +858,8 @@ class Store:
     def mode(self):
         return "keep-going ON" if self.cfg["auto"] else "keep-going OFF"
 
-    def next_text(self, ref=None):
-        """-> (text, has_work)"""
+    def next_text(self, ref=None, who=None):
+        """-> (text, has_work). who: the agent asking: items another agent is on are skipped for it (F194)."""
         if self.gone:
             return f"Project {self.name} was deleted: there is no work here. The user can restore it in Taska (Settings › Projects).\n", False
         auto = self.cfg["auto"]
@@ -885,13 +889,33 @@ class Store:
         queue = sorted((i for i in live if i["when"] == "now" and i["type"] in WORK_TYPES and i["status"] in ("open", "doing") and not self.waiting(i)
                         and not self.open_kids(i)),  # subitems first: the parent comes when they are finished
                        key=lambda i: (i["status"] != "doing", i["pri"], i["n"]))  # same priority: oldest first
+        if who:  # F194: what another agent is on is theirs; each agent gets its own next item
+            theirs = [(i, c[0]) for i in queue for c in [self.claimer(i)] if c and c[0] != who]
+            if theirs:
+                out.append("others are on (skip): " + " ".join(f"{self.code(i['n'])} ({a})" for i, a in theirs))
+                queue = [i for i in queue if all(i is not x for x, _ in theirs)]
         if queue:
             it = queue[0]
+            if who:
+                self.claims[it["n"]] = (who, time.time())
             how = ("\nan idea: think it through first. Small and clear: do it. Bigger, or more than one way to go: "
                    f"post your plan ({self.code(it['n'])} propose ...) and ask before building.") if it["type"] == "idea" else ""
             return "\n".join(out) + f"\nnext {self.code(it['n'])} ({len(queue)} in queue: doing first, then P0→P3, oldest first){how}\n" + self.card(it, ref), True
         idle = "nothing to do now." + (" Wait for work: GET /next?wait=540 (returns as soon as something comes in)." if auto else "")
         return "\n".join(out) + "\n" + idle + "\n", False
+
+    def claimer(self, it, now=None):
+        """The agent working on an item (F194): the last one /next gave it to or that wrote to it, while it is fresh
+        (CLAIM_TTL). Quiet longer than that, the item is free again for any agent."""
+        now = now or time.time()
+        c = self.claims.get(it["n"])
+        best = c if c and now - c[1] < CLAIM_TTL else None
+        a = it.get("agent")
+        if a and it["status"] == "doing":
+            t = datetime.fromisoformat(a["t"]).timestamp()
+            if now - t < CLAIM_TTL and (not best or t >= best[1]):
+                best = (a["by"], t)
+        return best
 
     def saw(self, name, waiting=0):
         """An agent called the API (waiting: +1 when it starts holding /next?wait, -1 when that returns)."""
@@ -1533,6 +1557,9 @@ LOOP  doing means work has started (not that you are on it this second). Mark an
       finish the step you are on, then GET /next. Nothing else interrupts you.
       Big items have subitems (parent=B03): /next gives you the subitems first and the parent once they are
       finished; split big work the same way with `new ... parent=B03`.
+      Always call /next and /do with ?by=<your name>: with several agents on one project, /next gives each of you
+      its own item and lists "others are on (skip)": another agent holds those, leave them. A hold lapses after
+      30 minutes without a word from that agent.
       keep-going OFF: finish the current item, write back, stop. /next picks items marked now, ideas included:
       an idea is something to think through; do it when small and clear, otherwise propose a plan and ask.
 WATCH while o=$(curl -s "BASE/next?wait=540"); [ -z "$o" ] || echo "$o" | grep -qE 'nothing to do now|keep-going OFF'; do sleep 20; done
@@ -2894,10 +2921,11 @@ class Handler(BaseHTTPRequestHandler):
             end = time.time() + wait
             try:
                 with s.cond:  # ?wait=N: while keep-going is on and there is nothing to do, hold until work arrives
-                    text, work = s.next_text(ref)
+                    who = (q.get("by") or [None])[0] if "ui" not in q else None  # each agent gets an item no other one is on (F194)
+                    text, work = s.next_text(ref, who)
                     while not work and s.cfg["auto"] and not s.gone and time.time() < end:  # a deleted project lets its agents go (F173)
                         s.cond.wait(timeout=end - time.time())
-                        text, work = s.next_text(ref)
+                        text, work = s.next_text(ref, who)
             finally:
                 if q.get("wait"):
                     s.saw((q.get("by") or ["agent"])[0], -1)
@@ -3777,6 +3805,14 @@ function renderLive() { renderAgent(); }
 // Is anyone working? (T58 #1) The latest agent, whether it waits for work right now, and a red flag when work
 // waits and nobody has come for a while.
 const AGENT_NAME = {'claude-code': 'Claude Code', codex: 'Codex', antigravity: 'Antigravity', agent: 'Agent'};
+const QUIET_MS = 30 * 60 * 1000;  // the server's CLAIM_TTL: quiet longer than this, another agent may take the item (F194)
+function workerMark(it) {  // F194: the agent working on an item in progress; amber once it has gone quiet
+  const a = it.agent;
+  if (!a) return '';
+  const name = esc(AGENT_NAME[a.by] || a.by), quiet = Date.now() - new Date(a.t).getTime();
+  return quiet > QUIET_MS ? `<span class="text-amber-700 dark:text-amber-400" title="${name} last wrote ${when(a.t)}; another agent may take it">${name} · quiet ${agoShort(new Date(a.t).getTime())}</span>`
+    : `<span title="${name} is on it">${name}</span>`;
+}
 const agoShort = t => { const m = Math.max(0, Math.round((Date.now() - t) / 60000)); return m < 1 ? 'now' : m < 60 ? m + 'm' : m < 1440 ? Math.round(m / 60) + 'h' : Math.round(m / 1440) + 'd'; };
 const agoLong = t => { const m = Math.max(0, Math.round((Date.now() - t) / 60000)); return m < 1 ? 'just now' : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${plural(Math.round(m / 1440), 'day')} ago`; };
 function agentState(agents, work) {  // -> [tone: ok | bad | idle, short label, sentence]
@@ -4050,6 +4086,7 @@ function itemRow(it, depth = 0, group = []) {
     needsYou(it) ? `<span class="font-semibold text-amber-700 dark:text-amber-400">${needLabel(it)}</span>` : it.reply && !closed ? '<span class="text-emerald-700 dark:text-emerald-400">Replied</span>' : '',
     hasDraft(c) ? DRAFT_MARK() : '',  // T113 B24: a reply you have not sent yet
     it.status === 'doing' ? '<span class="text-blue-600 dark:text-blue-400">In progress</span>' : closed ? `<span>${statusName(it)}</span>` : '',
+    it.status === 'doing' ? workerMark(it) : '',  // F194: which agent is on it, and whether it went quiet
     it.archived && U.tab !== 'archive' ? SOFT('Archived') : '',
     it.when === 'later' && !closed ? SOFT('Later') : '',
     it.parent && !depth ? `<span>↳ ${code(it.parent)}</span>` : '',  // nested rows already hang under it
