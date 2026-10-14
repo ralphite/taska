@@ -3478,7 +3478,7 @@ __APP_HEAD__
 </div>
 
 <div id="tip" role="tooltip" hidden class="pointer-events-auto fixed top-0 left-0 z-[80] max-w-[260px] rounded-lg bg-zinc-900 px-2 py-1.5 text-[13px] leading-snug text-white opacity-0 shadow-lg shadow-black/20 transition-[opacity,translate] duration-[120ms] data-[on]:opacity-100 motion-reduce:transition-none dark:bg-zinc-100 dark:text-zinc-900"><span id="tipText"></span><span id="tipArrow" class="absolute size-2 rotate-45 bg-inherit"></span></div>
-<div id="vcBar" hidden role="toolbar" aria-label="On the selected text" class="fixed z-[65] flex rounded-full bg-zinc-900 p-1 shadow-lg ring-1 ring-black/10 dark:bg-zinc-100 dark:ring-white/10"><button id="vcBtn" data-act="vc" class="flex h-9 items-center gap-1.5 rounded-full pr-3.5 pl-2.5 text-sm font-semibold whitespace-nowrap text-white hover:bg-white/15 data-on:bg-red-600 data-on:text-white dark:text-zinc-900 dark:hover:bg-zinc-900/10 dark:data-on:bg-red-600 dark:data-on:text-white"></button></div>
+<div id="vcBar" hidden role="toolbar" aria-label="On the selected text" class="fixed z-[65] flex rounded-full bg-zinc-900 p-1 shadow-lg ring-1 ring-black/10 dark:bg-zinc-100 dark:ring-white/10"><button id="vcBtn" data-act="vc" class="flex h-9 items-center gap-1.5 rounded-full pr-3.5 pl-2.5 text-sm font-semibold whitespace-nowrap text-white hover:bg-white/15 data-on:bg-red-600 data-on:text-white dark:text-zinc-900 dark:hover:bg-zinc-900/10 dark:data-on:bg-red-600 dark:data-on:text-white"></button><button id="fixBtn" data-act="vc-fix" hidden aria-label="Correct: write the right words for the selected ones" class="flex h-9 items-center gap-1.5 rounded-full pr-3.5 pl-2.5 text-sm font-semibold whitespace-nowrap text-white hover:bg-white/15 dark:text-zinc-900 dark:hover:bg-zinc-900/10"></button></div>
 <div id="toast" hidden role="status" class="fixed inset-x-0 bottom-28 z-[60] mx-auto flex w-fit max-w-[92vw] lg:right-auto lg:bottom-5 lg:left-5 lg:mx-0 lg:max-w-md items-center gap-3 rounded-full bg-zinc-900 py-2 pr-4 pl-4 text-sm text-white shadow-lg has-[button]:py-1.5 has-[button]:pr-1.5 data-error:bg-red-600 data-error:text-white dark:bg-zinc-100 dark:text-zinc-900 dark:data-error:bg-red-600 dark:data-error:text-white"></div>
 
 <script>
@@ -5721,12 +5721,19 @@ function vcQuote(vc, key) {  // puts the quote line into the box the note belong
   U.docQuote = null; getSelection()?.removeAllRanges();
   return label;
 }
-function vcSelection() {  // the text selected in the open document right now, or null
+function vcSelection() {  // the text selected right now that a voice comment can be about, or null
   const sel = getSelection();
-  if (!docOpen() || U.docCircle || !sel?.rangeCount || sel.isCollapsed) return null;
+  if (U.docCircle || !sel?.rangeCount || sel.isCollapsed) return null;
   const text = sel.toString().trim(), node = sel.anchorNode?.nodeType === 1 ? sel.anchorNode : sel.anchorNode?.parentElement;
-  const sec = text.length >= 2 && node?.closest('#docBlocks > section[data-key]');
-  return sec ? {key: sec.dataset.key, text: text.slice(0, 500), range: sel.getRangeAt(0)} : null;
+  if (text.length < 2 || !node) return null;
+  if (docOpen()) {  // a document: the comment goes on that passage (F184)
+    const sec = node.closest('#docBlocks > section[data-key]');
+    return sec ? {key: sec.dataset.key, text: text.slice(0, 500), range: sel.getRangeAt(0)} : null;
+  }
+  // F199: anything else worth talking about: an item's text and its thread, what you said in Inputs. The quote and
+  // the voice note go into the box, to whatever it writes to (a reply to that item, a new input).
+  if (node.closest('#composer, input, textarea, [contenteditable], button, #vcBar, #toast')) return null;
+  return node.closest('#detailBody, #dlgBody, #inputsView') ? {key: null, text: text.slice(0, 500), range: sel.getRangeAt(0)} : null;
 }
 const vcScroller = () => desk() ? $('detailBody') : $('dlgBody');
 function vcPlace() {  // the button by the selection, or by the passage you are speaking about
@@ -5736,8 +5743,11 @@ function vcPlace() {  // the button by the selection, or by the passage you are 
     const dy = vcScroller().scrollTop - R.vc.top, o = R.vc.rect;
     r = {top: o.top - dy, bottom: o.bottom - dy, left: o.left, width: o.width, height: o.height};
   }
-  bar.hidden = !r || (!r.width && !r.height) || !docOpen();
+  bar.hidden = !r || (!r.width && !r.height);
   if (bar.hidden) return;
+  const fix = !on && !R.rec && U.fixCand && getSelection()?.toString().replace(/\s+/g, ' ').trim() === U.fixCand.wrong;  // F204
+  $('fixBtn').hidden = !fix;
+  if (fix && !$('fixBtn').innerHTML) $('fixBtn').innerHTML = `${ico('pencil', 'size-4')}Correct`;
   const b = $('vcBtn');
   if (b.dataset.rec !== String(on)) {
     b.dataset.rec = String(on); b.toggleAttribute('data-on', on);
@@ -6557,6 +6567,12 @@ const ACT = {
   'doc-unpick': () => { U.docSel = new Set(); U.docQuote = null; U.docReply = null; U.docDrafts.note = ''; getSelection()?.removeAllRanges(); renderDoc(); },
   'doc-close': () => closeDoc(),
   vc: () => vcToggle(),  // F184
+  'vc-fix': () => {  // F204: the words you selected in a voice note get corrected in the box, and remembered
+    const c = U.fixCand;
+    if (!c) return;
+    U.correct = c; U.amend = null; U.correctSel = true; U.fixCand = null;
+    $('vcBar').hidden = true; renderComposer(); if (desk() && D.compose) renderDetail(); $('text').focus();
+  },
   'doc-to-item': () => {  // B2: the words stay, now a reply to the document's item
     const n = liveN(docById(U.doc)?.n);
     if (desk()) closeDoc(); else { if (byN.has(n) && U.open !== n) openItem(n); closeDialog(); }
@@ -8212,12 +8228,12 @@ document.addEventListener('selectionchange', () => {
   // A3: the selection went (a click elsewhere) before you wrote anything into the box: no more correcting, so the next
   // thing you write is not taken for the right words
   if (U.correct && U.correctSel && !text && !$('text').value.trim() && !$('composer').contains(document.activeElement)) { U.correctSel = false; return cancelCorrect(); }
+  U.fixCand = null;
   if (!text || text.length > 60) return;
   const el = (sel.anchorNode?.nodeType === 1 ? sel.anchorNode : sel.anchorNode?.parentElement)?.closest('[data-voice]');
   const r = el && el.contains(sel.focusNode) && byR.get(el.dataset.voice);
   if (!r || !r.text.includes(text) || (U.correct?.id === r.id && U.correct.wrong === text)) return;
-  U.correct = {id: r.id, wrong: text, v: r.v || 0}; U.amend = null; U.correctSel = true;
-  renderComposer(); if (desk() && D.compose) renderDetail();
+  U.fixCand = {id: r.id, wrong: text, v: r.v || 0};  // words of a voice note: Correct by the selection arms it (F204)
 });
 // Selecting text inside an open document offers to comment on exactly that text.
 document.addEventListener('selectionchange', () => {
