@@ -888,7 +888,7 @@ class Store:
             return "\n".join(out) + f"\nresume {self.code(back[0]['n'])}: the user replied\n" + self.card(back[0], ref), True
         queue = sorted((i for i in live if i["when"] == "now" and i["type"] in WORK_TYPES and i["status"] in ("open", "doing") and not self.waiting(i)
                         and not self.open_kids(i)),  # subitems first: the parent comes when they are finished
-                       key=lambda i: (i["status"] != "doing", i["pri"], i["n"]))  # same priority: oldest first
+                       key=lambda i: (i["status"] != "doing", i["pri"], i.get("rank") is None, i.get("rank") or 0, i["n"]))  # same priority: what you put next, then oldest first (F197)
         if who:  # F194: what another agent is on is theirs; each agent gets its own next item
             theirs = [(i, c[0]) for i in queue for c in [self.claimer(i)] if c and c[0] != who]
             if theirs:
@@ -1024,6 +1024,13 @@ class Store:
             v = str(v).strip()[:MAX_TEXT]
         elif f == "archived":
             v = v if isinstance(v, bool) else str(v).lower() in ("1", "true", "yes", "on")
+        elif f == "rank":  # F197: "do this next" puts it first in its priority (smaller goes first); none keeps the usual order
+            if v is None or str(v).strip().lower() in ("", "-", "none", "null"):
+                return None
+            try:
+                v = float(v)
+            except ValueError:
+                raise Err("rank must be a number, or - for the usual order")
         elif f == "parent":
             if str(v).strip().lower() in ("", "-", "none", "null"):
                 return None
@@ -3999,7 +4006,8 @@ function visible(tab = U.tab) {
     .sort((a, b) => a.pri.localeCompare(b.pri) || a.n - b.n);  // same priority: oldest first, like /next
 }
 // The agent's queue in the order it takes the work (/next): now before later, in progress first, then P0→P3, oldest first.
-const queueOrder = (a, b) => (a.when !== 'now') - (b.when !== 'now') || (a.status !== 'doing') - (b.status !== 'doing') || a.pri.localeCompare(b.pri) || a.n - b.n;
+const queueOrder = (a, b) => (a.when !== 'now') - (b.when !== 'now') || (a.status !== 'doing') - (b.status !== 'doing') || a.pri.localeCompare(b.pri)
+  || (a.rank == null) - (b.rank == null) || (a.rank || 0) - (b.rank || 0) || a.n - b.n;  // same priority: what you put next first (F197), then oldest
 // The queue is one thing wherever it is counted (S3): the band in Items and This project's Agents both count every item in
 // it and say how many of them are later (shown, but agents take them only once they are back to now).
 const inQueue = it => !it.merged_into && !it.archived && it.type !== 'rule' && !needsYou(it) && !CLOSED(it.status);
@@ -4133,6 +4141,7 @@ function itemRow(it, depth = 0, group = []) {
     it.status === 'doing' ? workerMark(it) : '',  // F194: which agent is on it, and whether it went quiet
     it.archived && U.tab !== 'archive' ? SOFT('Archived') : '',
     it.when === 'later' && !closed ? SOFT('Later') : '',
+    it.rank != null && inQueue(it) && it.when === 'now' ? '<span class="font-semibold text-blue-600 dark:text-blue-400" title="You put it first of its priority: agents take it next">Next</span>' : '',  // F197
     it.parent && !depth ? `<span>↳ ${code(it.parent)}</span>` : '',  // nested rows already hang under it
     children.length ? cnt('subitems', `${children.filter(k => CLOSED(k.status)).length}/${children.length}`, 'Subitems finished') : '',
     talk ? cnt('comment', talk, plural(talk, 'comment')) : '',
@@ -4799,6 +4808,7 @@ function itemMenu(n) {
   if (!it) return;
   U.sheet = 'menu';
   const tile = (act, icon, label, sub = '', attrs = '') => `<button data-act="${act}" data-n="${n}" ${attrs} class="flex h-19 flex-col items-center justify-center gap-1.5 rounded-2xl bg-zinc-100 px-1 text-[13px] leading-tight font-medium text-zinc-800 hover:bg-zinc-200/80 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700">${ico(icon, 'size-5.5 text-zinc-600 dark:text-zinc-300')}<span class="text-center">${label}${sub ? `<span class="block text-[11px] font-normal text-zinc-500 dark:text-zinc-400">${sub}</span>` : ''}</span></button>`;
+  const next = inQueue(it) && it.when === 'now' ? tile('do-next', 'up', it.rank == null ? 'Do this next' : 'Back in order', it.rank == null ? `first of the ${it.pri}s` : '') : '';  // F197
   const state = it.archived ? tile('archive', 'archive', 'Unarchive', '', 'data-on="0"')
     : CLOSED(it.status) ? tile('archive', 'archive', 'Archive', '', 'data-on="1"')
     : it.type === 'rule' ? '' : tile('swipe', 'clock', it.when === 'now' ? 'Later' : 'Back to now', '', `data-f="when" data-v="${it.when === 'now' ? 'later' : 'now'}"`);
@@ -4808,7 +4818,7 @@ function itemMenu(n) {
   const statuses = it.type === 'rule' ? Object.entries(RULE_STATUS).filter(([v]) => v !== 'proposed' || it.status === 'proposed') : Object.entries(STATUS);
   dialog('', `<div class="flex flex-col gap-5">
     <div class="grid grid-cols-3 gap-2">${tile('edit', 'pencil', 'Edit')}${tile('copy', 'copy', 'Copy for agent')}${tile('doc-new', 'docplus', 'New doc')}
-      ${tile('sub-new', 'listplus', 'Add subitem')}${tile('reparent', 'indent', 'Move under…', it.parent ? `now under ${code(it.parent)}` : '')}${state}</div>
+      ${tile('sub-new', 'listplus', 'Add subitem')}${tile('reparent', 'indent', 'Move under…', it.parent ? `now under ${code(it.parent)}` : '')}${state}${next}</div>
     <div>${lab('Type')}${segctl('set-field', 'type', [...TYPES, 'rule'].map(t => [t, letterOf(t) + `<span class="truncate">${t[0].toUpperCase() + t.slice(1)}</span>`]), it.type).replaceAll('data-k="type"', `data-f="type" data-n="${n}"`)}</div>
     ${it.type === 'rule' ? '' : `<div>${lab('Priority')}${segctl('set-field', 'pri', ['P0', 'P1', 'P2', 'P3'].map(p => [p, p === 'P0' ? '<span class="font-semibold text-red-600 dark:text-red-400">P0</span>' : p]), it.pri).replaceAll('data-k="pri"', `data-f="pri" data-n="${n}"`)}</div>`}
     <div>${lab('Status')}<div class="grid grid-cols-3 gap-1.5">${statuses.map(stat).join('')}</div></div>
@@ -6263,7 +6273,7 @@ function noteWith(n) {
 const SAID = {open: 'is open', doing: 'is in progress', done: 'is done', dropped: "is marked won't do", later: 'moved to Later', now: 'is back to now', review: 'is in review', proposed: 'is proposed'};
 const saidOf = (f, v, before, ref) => f === 'archived' ? (v ? 'archived' : 'unarchived') : f === 'status' && v === 'done' && before === 'review' ? 'accepted'
   : f === 'status' && v === 'open' && before === 'proposed' ? 'approved' : f === 'pri' ? `is now ${v}` : f === 'type' ? `is now ${LETTER[v]}${ref.slice(1)}, ${/^[aeiou]/.test(v) ? 'an' : 'a'} ${v}`
-  : f === 'parent' ? (v ? `is now under ${code(v)}` : 'stands on its own') : SAID[v];
+  : f === 'parent' ? (v ? `is now under ${code(v)}` : 'stands on its own') : f === 'rank' ? (v == null ? 'is back in order' : 'goes next in its priority') : SAID[v];
 const wire = (f, v) => f === 'parent' ? (v ? String(v) : 'none') : v;  // a parent goes to Taska as an item ref
 // One-tap changes (swipes, row pills, the focus card, keys, the ⋯ menu): they show at once and are saved behind you
 // (T160), say what happened and offer Undo, which puts the old value back; Z does the same (T113 A7). said / note:
@@ -6535,6 +6545,12 @@ const ACT = {
   open: b => openItem(Number(b.dataset.n)),
   back: () => desk() ? fullWidth(false) : hist(() => history.state?.n ? history.back() : closeItem()),
   'item-menu': () => itemMenu(U.open),
+  'do-next': b => {  // F197: first of its priority in the agent's queue, or back where it was; with Undo and Z
+    const n = Number(b.dataset.n), it = byN.get(n);
+    if (!it) return;
+    change(n, 'rank', it.rank == null ? -Math.round(Date.now() / 1000) : null);  // the latest "next" goes first
+    if (U.sheet === 'menu' && !$('overlay').hidden) closeDialog();
+  },
   'set-field': b => {  // type, priority and status from the ⋯ menu: with Undo and Z (T113 A7)
     const n = Number(b.dataset.n), menu = () => { if (U.sheet === 'menu' && !$('overlay').hidden) itemMenu(n); };
     change(n, b.dataset.f, b.dataset.v).then(ok => { if (!ok) menu(); });
@@ -7594,10 +7610,11 @@ function itemMenuDesk(n, arm = U.menuArm) {  // arm: 's', 'p' or 't', the part t
   const stat = ([v, t], i) => { const on = it.status === v;
     return `<button data-act="set-field" data-n="${n}" data-f="status" data-v="${v}" aria-pressed="${on}" class="${STAT_BTN} h-8 rounded-lg px-2">${statIcon(v, t, 'size-4')}<span class="truncate">${t}</span>${arm === 's' ? `<span class="ml-auto pl-1 font-mono text-[11px] text-zinc-400 group-aria-pressed:text-white/70 dark:group-aria-pressed:text-zinc-900/60">${i + 1}</span>` : ''}</button>`; };  // after S: the digit that sets it
   const statuses = it.type === 'rule' ? Object.entries(RULE_STATUS).filter(([v]) => v !== 'proposed' || it.status === 'proposed') : Object.entries(STATUS);
+  const next = inQueue(it) && it.when === 'now' ? row('do-next', 'up', it.rank == null ? 'Do this next' : 'Back in order', '', '', it.rank == null ? `first of the ${it.pri}s in the queue` : 'where it was, by age') : '';  // F197
   const state = it.archived ? row('archive', 'archive', 'Unarchive', 'E', 'data-on="0"') : CLOSED(it.status) ? row('archive', 'archive', 'Archive', 'E', 'data-on="1"')
     : it.type === 'rule' ? '' : row('swipe', 'clock', it.when === 'now' ? 'Later' : 'Back to now', 'L', `data-f="when" data-v="${it.when === 'now' ? 'later' : 'now'}"`);
   dialog('', `<div class="flex flex-col gap-3">
-    <div class="-mx-1">${row('edit', 'pencil', 'Edit', 'I')}${row('copy', 'copy', 'Copy for agent', '⇧C')}${it.type === 'rule' ? '' : row('doc-new', 'docplus', 'New doc', '⇧D') + row('sub-new', 'listplus', 'Add subitem', '⇧A') + row('reparent', 'indent', 'Move under…', 'M', '', it.parent ? 'now under ' + code(it.parent) : 'stands on its own')}${state}</div>
+    <div class="-mx-1">${row('edit', 'pencil', 'Edit', 'I')}${row('copy', 'copy', 'Copy for agent', '⇧C')}${it.type === 'rule' ? '' : row('doc-new', 'docplus', 'New doc', '⇧D') + row('sub-new', 'listplus', 'Add subitem', '⇧A') + row('reparent', 'indent', 'Move under…', 'M', '', it.parent ? 'now under ' + code(it.parent) : 'stands on its own')}${state}${next}</div>
     <div class="border-t border-zinc-100 pt-3 dark:border-zinc-800">${lab('Type', 'T then F B I T R', arm === 't')}${segctl('set-field', 'type', [...TYPES, 'rule'].map(t => [t, letterOf(t) + `<span class="truncate">${t[0].toUpperCase() + t.slice(1)}</span>`]), it.type, true).replaceAll('data-k="type"', `data-f="type" data-n="${n}"`)}</div>
     ${it.type === 'rule' ? '' : `<div>${lab('Priority', 'P then 0–3', arm === 'p')}${segctl('set-field', 'pri', ['P0', 'P1', 'P2', 'P3'].map(p => [p, p === 'P0' ? '<span class="font-semibold text-red-600 dark:text-red-400">P0</span>' : p]), it.pri, true).replaceAll('data-k="pri"', `data-f="pri" data-n="${n}"`)}</div>`}
     <div>${lab('Status', `S then 1–${statuses.length}`, arm === 's')}<div class="grid grid-cols-3 gap-1">${statuses.map(stat).join('')}</div></div>
