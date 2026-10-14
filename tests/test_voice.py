@@ -144,6 +144,21 @@ class TranscribeTests(StoreCase):
         self.assertEqual((out['tr'], out['tr_by']), (full, 'asr'))
         self.assertIn('timed out', out['main_error'])
 
+    def test_the_strong_model_past_its_cap_sends_fuller_words_later(self):
+        short = 'one two three four five six seven eight nine ten'
+        full = short + ' eleven twelve thirteen fourteen'
+        for pro, want in ((full, full), (short + ' eleven', None)):  # clearly more words: they follow; about as many: no
+            f, p = self.fake([short], short)
+            slow = lambda model, body, timeout=120: (time.sleep(0.8), reply(json.dumps({'transcript': pro})))[1] if model == taska.PRO_MODEL else f(model, body, timeout)
+            got = threading.Event()
+            box = {}
+            with patch.object(taska, 'voice_gated', lambda path, mime: 1.8), patch.object(taska, 'gemini_call', slow), \
+                    patch.object(taska, 'PRO_CAP', 0.3), patch.object(taska, 'PRO_LATE', 5):
+                out = taska.transcribe(self.s, b'x', 'audio/mp4', None, path='voice.m4a', later=lambda w: (box.update(w=w), got.set()))
+                self.assertEqual((out['tr'], out['more']), (short, True))
+                self.assertTrue(got.wait(5))
+            self.assertEqual(box['w'], want)
+
     def test_a_phone_note_with_its_pauses_cut_to_silence(self):  # both models stopped early on such iPhone notes
         full = 'one two three four five six seven eight nine ten eleven twelve'
         with patch.object(taska, 'voice_gated', lambda path, mime: 1.8):

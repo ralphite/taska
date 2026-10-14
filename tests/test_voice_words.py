@@ -74,6 +74,36 @@ class VoiceWordsTests(unittest.TestCase):
         self.assertEqual(replay.items[1]['thread'][-1]['text'], inp['text'])
         replay.out.close()
 
+    def test_fuller_words_after_the_strong_model_ran_out_of_time(self):  # f227: it came back cut short once
+        short, full = 'Look at how Taska calls', 'Look at how Taska calls the agent when it runs the next job, and why it waits'
+        late = threading.Event()
+
+        def fake(*a, later=None, **k):  # the strong model goes on in the background and is done once `late` is set
+            threading.Thread(target=lambda: late.wait(5) and later(full), daemon=True).start()
+            return {'tr': short, 'tr_by': 'main', 'more': True}
+        with patch.object(taska, 'transcribe', side_effect=fake):
+            f = self.voice()
+            self.finish()
+            self.assertEqual(taska.voice_answer(f['f'], self.s.trs[f['f']])['more'], True)  # the page: may be cut short
+            rid = self.op({'op': 'input', 'text': short, 'scope': 'F1', 'files': [dict(f, tr=short)]})
+            self.op({'op': 'ack', 'ids': [rid]}, by='claude-code')  # an agent read the short words
+            late.set()
+            for _ in range(200):
+                if self.s.inputs[rid]['text'] != short:
+                    break
+                time.sleep(0.01)
+        inp, it = self.s.inputs[rid], self.s.items[1]
+        self.assertEqual((inp['text'], inp['files'][0]['tr']), (full, full))
+        self.assertEqual(inp['history'][-1]['text'], short)  # an update for the agent that read it
+        self.assertFalse(inp['acked'])
+        own = next(x for x in it['thread'] if x['src'] == rid)
+        self.assertEqual((own['text'], bool(own.get('edited'))), (full, True))  # the message on the item follows
+        answer = taska.voice_answer(f['f'], self.s.trs[f['f']])
+        self.assertEqual((answer['tr'], answer['tr_by'], 'more' in answer), (full, 'pro', False))
+        replay = taska.Store(str(self.path))
+        self.assertEqual(replay.inputs[rid]['text'], full)
+        replay.out.close()
+
     def test_words_in_before_the_send_go_with_it(self):
         f = self.voice()
         self.finish()  # in, but the page sent before it heard

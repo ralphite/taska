@@ -299,7 +299,11 @@ class Store:
             if inp:
                 old = inp["text"]
                 inp["files"] = [dict(f, tr=e["tr"]) if f["f"] == e["f"] else f for f in inp["files"]]
-                if e["tr"] not in old:
+                if e.get("was") and e["was"] in old:  # fuller words in place of the shorter ones given first
+                    inp["text"] = old.replace(e["was"], e["tr"], 1)
+                elif e.get("was"):  # you changed those words: the fuller ones follow, said as such
+                    inp["text"] = old.rstrip() + "\n\nFuller words of the voice note:\n" + e["tr"]
+                elif e["tr"] not in old:
                     inp["text"] = old.rstrip() + "\n" + e["tr"] if old.strip() else e["tr"]
                 if e.get("late"):  # an agent or the organizer saw it without its words: it comes back to them updated
                     inp.setdefault("history", []).append({"text": old, "t": e["t"], "mode": "append"})
@@ -740,6 +744,8 @@ class Store:
     def saved_job(self, fid):
         """A voice note worked out before, its words kept next to its audio (T101), as a finished job."""
         res = voice_saved(self, fid)
+        if res:  # fuller words still to come were lost with the restart that came between
+            res = {k: v for k, v in res.items() if k != "more"}
         return {"t0": time.time(), "done": True, "tr": res.get("tr", ""), "err": "", "res": res} if res else None
 
     def transcribe_later(self, fid, data, mime, scope):
@@ -752,10 +758,26 @@ class Store:
                 return self.words_in(fid, job)
         hold = self.hold_timer(job)
 
+        def more(words):  # the strong model's words after its cap: fuller ones replace those given
+            with self.cond:
+                self.cond.wait_for(lambda: job["done"], timeout=PRO_LATE)
+                was = job["tr"]
+                res = {k: v for k, v in (job.get("res") or {}).items() if k != "more"}
+                if words:
+                    res.update(tr=words, tr_by="pro", alt="", doubts=[], pro_error="", times=dict(res.get("times") or {}, late=round(time.time() - job["t0"], 1)))
+                    job["tr"] = words
+                job["res"] = res
+                if words and was:
+                    self.words_more(fid, was, words)
+                elif words:
+                    self.words_in(fid, job)
+                self.bump()
+            voice_keep(self, fid, res)
+
         def work():
             res, err = {}, ""
             try:
-                res = transcribe(self, data, mime, scope, path=self.local(fid)) or {}
+                res = transcribe(self, data, mime, scope, path=self.local(fid), later=more) or {}
                 voice_keep(self, fid, res)
             except Exception as ex:
                 err = str(ex) or "transcription failed"
@@ -793,6 +815,14 @@ class Store:
             self.emit({"k": "tr", "src": inp["id"], "f": fid, "tr": tr, "by": "you", **({"late": True} if late else {})})
         else:
             self.bump()  # an input waiting for these words goes on without them; the page hears it is done
+
+    def words_more(self, fid, was, tr):
+        """Fuller words for a voice note whose shorter ones were given already (under the lock): the input that has it
+        gets them in place of those, as an update when an agent or the organizer had it."""
+        inp = next((i for i in self.inputs.values() if not i.get("moved") and any(f["f"] == fid for f in i["files"])), None)
+        if inp:
+            late = inp["acked"] or inp["org"] or self.org_busy == inp["id"]
+            self.emit({"k": "tr", "src": inp["id"], "f": fid, "tr": tr, "was": was, "by": "you", **({"late": True} if late else {})})
 
     def resume_words(self):
         """Voice notes sent before their words were in (marked wait) whose transcription a restart or a crash cut off:
@@ -1890,6 +1920,7 @@ PRO_MODEL = os.environ.get("TASKA_PRO_MODEL", "gemini-3.1-pro-preview")
 VOICE_BUDGET = float(os.environ.get("TASKA_VOICE_BUDGET", 60))
 VOICE_CAP = float(os.environ.get("TASKA_VOICE_CAP", 50))  # the main and the speech model
 PRO_CAP = float(os.environ.get("TASKA_PRO_CAP", 45))  # the strong model
+PRO_LATE = float(os.environ.get("TASKA_PRO_LATE", 180))  # past its cap it may go on this long; fuller words then follow
 # The source stays free of Chinese (R66), so the Chinese below is escaped. VOICE_SYSTEM says: "You transcribe speech.
 # Write only the words really spoken in the recording; if nobody speaks, return an empty string. Always write Chinese
 # in Simplified characters, never Traditional." VOICE_HINT: "Word for word, Chinese in Simplified characters; empty
@@ -2037,9 +2068,9 @@ def together(*fns, wait=360):
     return list(out)
 
 
-def capped(fn, secs, what, times=None, key=None):
+def capped(fn, secs, what, times=None, key=None, keep=None):
     """fn() in a thread, given secs at most: its answer, or Err("<what> timed out after N s"); the thread is left to
-    finish on its own. times[key]: how long it took (or the cap)."""
+    finish on its own, and keep (a dict) gets it and its box, to wait for it longer. times[key]: how long it took."""
     box, t0 = {}, time.time()
 
     def run():
@@ -2053,6 +2084,8 @@ def capped(fn, secs, what, times=None, key=None):
     if times is not None and key:
         times[key] = round(time.time() - t0, 1)
     if t.is_alive():
+        if keep is not None:
+            keep.update(thread=t, box=box)
         raise Err(f"{what} timed out after {secs:.0f} s")
     if "e" in box:
         raise box["e"]
@@ -2252,10 +2285,13 @@ def voice_doubts(tr, alt, most=4):
     return [{k: v for k, v in x.items() if k not in ("s", "e", "key")} for x in spots[:most]]
 
 
-def transcribe(store, data, mime, scope, path=None):
+def transcribe(store, data, mime, scope, path=None, later=None):
     """Voice note -> {"tr": its words ("" when nobody spoke), "tr_by": "main", "asr" or "pro", "alt": the other model's
     words, "doubts": what may be misheard}, biased toward the project's own vocabulary. path: the note on disk, to tell
-    a phone's voice-processed recording, which the strong model hears too. Raises Err when no model answered."""
+    a phone's voice-processed recording, which the strong model hears too. Raises Err when no model answered.
+    later(words or None): when the strong model ran out of time, it goes on for up to PRO_LATE; later gets its words
+    once they are in, if they hold clearly more than the words given (these hold under 90% of them), else None. The
+    answer then says "more": the words may be cut short, fuller ones may follow."""
     words, items, titles = voice_context(store, scope)
     fixes = HUB.corrections() if HUB else []
     terms = voice_terms(words, fixes)
@@ -2266,8 +2302,9 @@ def transcribe(store, data, mime, scope, path=None):
     gated = voice_gated(path, mime) >= 0.5
     calls = [lambda: capped(lambda: voice_main(audio, prompt), VOICE_CAP, "the main model", times, "main"),
              lambda: capped(lambda: voice_asr(audio, vocab), VOICE_CAP, "the speech model", times, "asr")]
+    slow = {}  # the strong model's run, when it ran out of time
     if gated:  # the strong model is slow at times: it gets PRO_CAP, then the others' words go on without it
-        calls.append(lambda: capped(lambda: voice_main(audio, prompt, PRO_MODEL), PRO_CAP, "the strong model", times, "pro"))
+        calls.append(lambda: capped(lambda: voice_main(audio, prompt, PRO_MODEL), PRO_CAP, "the strong model", times, "pro", slow))
     (tr, err), (alt, alt_err), *pro = together(*calls)
     out = {"tr": "", "tr_by": "asr", "times": times, **({"gated": True} if gated else {})}
     if err:
@@ -2313,7 +2350,27 @@ def transcribe(store, data, mime, scope, path=None):
     times["total"] = round(time.time() - t0, 1)
     for c in fixes:  # what the user fixed once stays fixed (F144)
         tr, alt = tr.replace(c["wrong"], c["right"]), alt.replace(c["wrong"], c["right"])
+    if later and slow.get("thread"):  # its words may still come: wait for them in the background
+        threading.Thread(target=pro_later, args=(slow, t0, tr, titles, fixes, later), daemon=True).start()
+        out["more"] = True
     return dict(out, tr=tr, alt=alt, doubts=voice_doubts(tr, alt))
+
+
+def fuller(tr, ptr):
+    """The strong model's late words hold clearly more than those given: those hold under 90% of its words."""
+    a, b = len(voice_tokens(tr)), len(voice_tokens(ptr))
+    return b > a and a < 0.9 * b
+
+
+def pro_later(slow, t0, tr, titles, fixes, later):
+    """Wait for a strong model that ran out of time, up to PRO_LATE from the start; later(its words or None)."""
+    slow["thread"].join(max(0.0, t0 + PRO_LATE - time.time()))
+    ptr = slow["box"].get("v") if not slow["thread"].is_alive() else None
+    if ptr and not echoed(ptr, titles):
+        ptr = simplified(ptr)
+        for c in fixes:
+            ptr = ptr.replace(c["wrong"], c["right"])
+    later(ptr if ptr and fuller(tr, ptr) else None)
 
 
 def echoed(tr, titles):
@@ -2338,7 +2395,7 @@ def voice_answer(fid, job):
     res = (job or {}).get("res") or {}
     return {"f": fid, "done": not job or job["done"], "tr": job["tr"] if job else "",
             "tr_error": (job["err"] if job else "no such voice note") or "",
-            **{k: res[k] for k in ("tr_by", "doubts", "gated", "main_error", "asr_error", "pro_error", "times") if k in res}}
+            **{k: res[k] for k in ("tr_by", "doubts", "gated", "main_error", "asr_error", "pro_error", "times", "more") if k in res}}
 
 
 def voice_saved(store, fid):
@@ -2959,8 +3016,8 @@ class Handler(BaseHTTPRequestHandler):
                     s.transcribe_later(fid, fh.read(), mime, self.scope_of(s, q))
             with s.cond:
                 job = s.trs.get(fid)
-                if job:
-                    s.cond.wait_for(lambda: job["done"], timeout=45)
+                if job:  # more=1: waits for the fuller words of a note whose strong model ran out of time
+                    s.cond.wait_for(lambda: job["done"] and not (q.get("more") and (job.get("res") or {}).get("more")), timeout=45)
             self.json(voice_answer(fid, job))
         elif p == "/api/undo":
             rid = (json.loads(self.body(10_000) or b"{}")).get("id")
@@ -4940,7 +4997,7 @@ function renderComposer() {
   const d = $('drafts');
   d.hidden = !U.files.length;
   d.innerHTML = U.files.map((f, i) => `<div class="relative shrink-0">${(f.mime || '').startsWith('audio/')
-      ? `<div class="flex h-16 items-center gap-2 rounded-xl border border-zinc-200 px-3 text-xs text-zinc-600 dark:border-zinc-700 dark:text-zinc-300">${ico('mic', 'size-4')}<span class="font-mono tabular-nums">${clock(f.ms || 0)}</span><span class="font-semibold ${f.transcribing ? 'animate-pulse text-blue-600 dark:text-blue-400' : f.tr ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-500'}">${f.transcribing ? (f.retrying ? 'Retrying…' : 'Transcribing…') : f.tr ? 'Transcribed' : f.tr_error ? 'No transcript, audio still sent' : 'No words heard, audio still sent'}</span></div>`
+      ? `<div class="flex h-16 items-center gap-2 rounded-xl border border-zinc-200 px-3 text-xs text-zinc-600 dark:border-zinc-700 dark:text-zinc-300">${ico('mic', 'size-4')}<span class="font-mono tabular-nums">${clock(f.ms || 0)}</span><span class="font-semibold ${f.transcribing ? 'animate-pulse text-blue-600 dark:text-blue-400' : f.more ? 'max-w-40 leading-snug text-amber-700 dark:text-amber-400' : f.tr ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-500'}">${f.transcribing ? (f.retrying ? 'Retrying…' : 'Transcribing…') : f.more ? 'May be cut short · fuller words on the way' : f.tr ? 'Transcribed' : f.tr_error ? 'No transcript, audio still sent' : 'No words heard, audio still sent'}</span></div>`
       : (f.mime || '').startsWith('image/')
       ? `<button data-act="view-draft" data-i="${i}" aria-label="Look at ${esc(f.name)}" class="block cursor-zoom-in rounded-xl"><img src="${f.preview || P + 'f/' + encodeURIComponent(f.f)}" alt="" class="size-16 rounded-xl border border-zinc-200 object-cover dark:border-zinc-700 ${f.f ? '' : 'opacity-40'}"></button>`
       : `<div class="flex h-16 w-28 items-center gap-1 rounded-xl border border-zinc-200 px-2 text-xs dark:border-zinc-700 ${f.f ? '' : 'opacity-40'}">${ico('file', 'size-4')}<span class="line-clamp-2 break-all">${esc(f.name)}</span></div>`}
@@ -5335,9 +5392,34 @@ async function hear(f) {
     dropRec(f, false); renderComposer();
     return toast('Could not upload the recording');
   }
-  Object.assign(f, {tr: d?.tr || '', tr_error: d?.tr_error || (d?.done ? '' : 'no answer'), doubts: d?.doubts || []});
+  Object.assign(f, {tr: d?.tr || '', tr_error: d?.tr_error || (d?.done ? '' : 'no answer'), doubts: d?.doubts || [], more: !!d?.more});
   placeWords(f); keepRec(f);
   renderComposer(); renderFeedback();
+  if (f.more) hearMore(f);
+}
+// The strong model ran out of time on this note (a phone's, with digital silence): the words may be cut short, and
+// its fuller words may come within a few minutes. Taska puts them into the input if the note was sent meanwhile; while
+// the note is still in a box, they take the place of the shorter ones there.
+async function hearMore(f) {
+  for (let n = 0, t0 = Date.now(); f.more && !f.gone && Date.now() - t0 < 5 * 60000; n++) {
+    let d = null;
+    try { d = await net(`${P}api/transcript?f=${encodeURIComponent(f.f)}&more=1`, {method: 'POST'}, 60000); } catch (_) { await sleep(Math.min(30000, 2000 * 2 ** Math.min(n, 4))); continue; }
+    if (d.more) continue;
+    f.more = false;
+    if (d.tr && d.tr !== f.tr && !f.sent) fullerWords(f, d.tr);
+    if (!f.sent) { keepRec(f); renderComposer(); }
+    return;
+  }
+  f.more = false; renderComposer();
+}
+function fullerWords(f, words) {
+  const key = U.files.includes(f) ? U.draftKey : Object.keys(U.parked || {}).find(k => U.parked[k].includes(f));
+  if (!key) return;
+  const was = f.trAdded || f.tr, put = v => was && v.includes(was) ? v.replace(was, words) : (v.trim() ? v.trimEnd() + '\n' : '') + words;
+  if (key === U.draftKey) { const t = $('text'); t.value = put(t.value); saveDraft(); grow(); }
+  else draftStore(all => { all[key] = put(all[key] || ''); });
+  Object.assign(f, {tr: words, trAdded: words, doubts: []});
+  toast('The fuller words of the voice note are in');
 }
 function addWords(key, words) {  // into the box, or into the draft of the target it waits for
   if (key === U.draftKey) { const t = $('text'); t.value = (t.value.trim() ? t.value.trimEnd() + '\n' : '') + words; grow(); saveDraft(); }

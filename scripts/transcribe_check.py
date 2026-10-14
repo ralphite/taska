@@ -32,6 +32,8 @@ Per recording and run it prints the transcript's start and what went wrong; then
                     early or was empty)
   strong model      runs that took the strong model's words (a phone's voice-processed note, where it heard more)
   hints             "Maybe misheard" lines the page would show
+  strong model late runs where the strong model ran out of time and went on: did fuller words follow, and were the
+                    words given first cut short (the transcript, CER and cut short above are the final words)
   time ...          seconds per stage on the server, median and max: the main, speech (asr) and strong (pro) model,
                     the main model asked again, and the whole note (total); a model that ran out of time shows its cap
 """
@@ -143,6 +145,13 @@ def transcribe(base, path, scope):
             d = post(f"{base}/api/transcript?f={urllib.request.quote(f['f'])}{sc}")
             if d.get("done") or time.time() - t0 > 900:
                 break
+        if d.get("more"):  # the strong model ran out of time: its fuller words may still come
+            first, ms = d.get("tr") or "", int((time.time() - t0) * 1000)
+            while time.time() - t0 < 900:
+                d = post(f"{base}/api/transcript?f={urllib.request.quote(f['f'])}{sc}&more=1")
+                if not d.get("more"):
+                    break
+            return dict(d, first=first, ms=ms, ms_late=int((time.time() - t0) * 1000))
     except OSError as ex:
         d = {"tr_error": str(ex)}
     return dict(d, ms=int((time.time() - t0) * 1000))
@@ -175,7 +184,7 @@ def main():
             srv.terminate()
             srv.wait(90)
             shutil.rmtree(root, ignore_errors=True)
-    t = dict(runs=0, key_ok=0, keys=0, edits=0, ref_chars=0, refs=0, short=0, trad=0, failed=0, silent=0, made_up=0, asr=0, pro=0, hints=0)
+    t = dict(runs=0, key_ok=0, keys=0, edits=0, ref_chars=0, refs=0, short=0, trad=0, failed=0, silent=0, made_up=0, asr=0, pro=0, hints=0, late=0, fuller=0, first_short=0)
     ms = []
     for (name, run), d in zip(jobs, res):
         e, tr, notes = expect.get(name) or {}, d.get("tr") or "", []
@@ -215,6 +224,13 @@ def main():
             notes.append("strong model's words")
         if d.get("pro_error"):
             notes.append("strong model: " + d["pro_error"][:60])
+        if "first" in d:  # given first while the strong model ran on: were those cut short, did fuller ones follow?
+            t["late"] += 1
+            if d.get("tr") != d["first"]:
+                t["fuller"] += 1
+            notes.append(f"strong model ran late: {len(norm(d['first']))} chars first, {len(norm(tr))} after {d.get('ms_late', 0) / 1000:.0f}s")
+            if e.get("ref") and len(norm(d["first"])) < 0.7 * len(norm(e["ref"])):
+                t["first_short"] += 1
         t["hints"] += len(d.get("doubts") or [])
         print(f"{name[:36]:36} #{run} {d.get('ms', 0) / 1000:5.1f}s  {' '.join(tr.split())[:60]!r}  {'; '.join(notes)}")
     print()
@@ -231,6 +247,8 @@ def main():
     print(f"speech model      {t['asr']}/{t['runs']} runs used its words")
     print(f"strong model      {t['pro']}/{t['runs']} runs used its words")
     print(f"hints             {t['hints']} 'Maybe misheard' lines")
+    if t["late"]:
+        print(f"strong model late {t['late']}/{t['runs']} runs: fuller words followed in {t['fuller']}, the first words were cut short in {t['first_short']}")
     stages = [(k, [d["times"][k] for d in res if isinstance(d.get("times"), dict) and d["times"].get(k) is not None]) for k in ("main", "asr", "pro", "again", "total")]
     for k, v in stages:  # seconds each model took on the server (a model that ran out of time shows its cap)
         if v:
