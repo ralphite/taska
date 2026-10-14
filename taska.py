@@ -3599,7 +3599,7 @@ __APP_HEAD__
   <div id="deskFilters" hidden class="border-zinc-200 lg:col-start-1 lg:row-start-3 lg:border-r lg:border-b dark:border-zinc-800"></div>
 
   <section id="itemsView" class="flex min-h-0 flex-1 flex-col lg:col-start-1 lg:row-span-2 lg:row-start-4 lg:border-r lg:border-zinc-200 dark:lg:border-zinc-800">
-    <div id="list" class="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-6 lg:scrollbar-thin lg:scrollbar-gutter-stable lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70"><div class="px-6 py-16 text-center text-sm text-zinc-400">Loading…</div></div>
+    <div id="list" class="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-6 data-drop-out:bg-blue-50/60 dark:data-drop-out:bg-blue-400/5 lg:scrollbar-thin lg:scrollbar-gutter-stable lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70"><div class="px-6 py-16 text-center text-sm text-zinc-400">Loading…</div></div>
   </section>
 
   <section id="inputsView" hidden class="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-6 lg:mask-b-from-[calc(100%-2rem)] lg:scrollbar-gutter-both lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70 lg:col-span-2 lg:col-start-1 lg:row-span-2 lg:row-start-3"></section>
@@ -4366,7 +4366,7 @@ function itemRow(it, depth = 0, group = []) {
       ${img ? `<button data-act="view" data-g="row${it.n}" data-f="${esc(img.f)}" aria-label="View image" class="-my-0.5 grid size-11 shrink-0 place-items-center rounded-lg hover:brightness-95 dark:hover:brightness-110">${(groups.set('row' + it.n, [img.f]), '')}<img src="${P}f/${encodeURIComponent(img.f)}" alt="" loading="lazy" class="size-10 rounded-lg border border-zinc-200 bg-zinc-50 object-cover dark:border-zinc-700 dark:bg-zinc-900"></button>` : ''}
       ${foldable ? `<button data-act="fold" data-n="${it.n}" aria-expanded="${!U.folded.has(it.n)}" aria-label="${U.folded.has(it.n) ? 'Show' : 'Hide'} subitems" class="-my-2 -mr-1 grid size-11 shrink-0 place-items-center rounded-full text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:text-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-zinc-300">${ico(U.folded.has(it.n) ? 'right' : 'down', 'size-4', '2')}</button>` : ''}
     </div>`;
-  return `<article data-n="${it.n}" class="relative border-b border-zinc-100 dark:border-zinc-800/70">${it.type === 'rule' && desk() ? top : swipeRow(it, top)}</article>`;
+  return `<article data-n="${it.n}" class="relative border-b border-zinc-100 data-dragging:opacity-40 data-[drop=before]:shadow-[inset_0_2px_0_0_var(--color-blue-500)] data-[drop=after]:shadow-[inset_0_-2px_0_0_var(--color-blue-500)] data-[drop=into]:bg-blue-50 data-[drop=into]:ring-2 data-[drop=into]:ring-blue-500 data-[drop=into]:ring-inset dark:border-zinc-800/70 dark:data-[drop=into]:bg-blue-400/10">${it.type === 'rule' && desk() ? top : swipeRow(it, top)}</article>`;
 }
 
 // A row that waits on you (T65 "Needs you first"): an amber bar, what the agent said in one line, and the one
@@ -4396,7 +4396,7 @@ function needsRow(it) {
       ${it.type === 'rule' ? '' : rowActs(it, true)}
       <button data-act="row-act" data-n="${it.n}" data-v="${v}" title="${label} · A" class="group/pill -my-1 grid h-11 shrink-0 place-items-center"><span class="${ACTION_PILL(v)} group-hover/pill:brightness-95 dark:group-hover/pill:brightness-125">${ico(NEED[v].icon, 'size-3.5', '2.25')}${label}</span></button>
     </div>`;
-  return `<article data-n="${it.n}" class="relative border-b border-zinc-100 dark:border-zinc-800/70">${it.type === 'rule' && desk() ? top : swipeRow(it, top)}</article>`;
+  return `<article data-n="${it.n}" class="relative border-b border-zinc-100 data-dragging:opacity-40 data-[drop=before]:shadow-[inset_0_2px_0_0_var(--color-blue-500)] data-[drop=after]:shadow-[inset_0_-2px_0_0_var(--color-blue-500)] data-[drop=into]:bg-blue-50 data-[drop=into]:ring-2 data-[drop=into]:ring-blue-500 data-[drop=into]:ring-inset dark:border-zinc-800/70 dark:data-[drop=into]:bg-blue-400/10">${it.type === 'rule' && desk() ? top : swipeRow(it, top)}</article>`;
 }
 
 // A group header in a list: Needs you (amber), the agent's queue, finished work, and the rule groups.
@@ -7504,6 +7504,71 @@ function advanceDesk(from, how) {  // after you settle one: the next that still 
   const next = g.list.slice(g.list.indexOf(from) + 1).find(k => !g.done.has(k) && byN.get(k) && needsYou(byN.get(k)));  // no going round: it ends after the last one
   if (next) openItem(next); else endGoDesk('last');
 }
+// F187: drag a row on the desktop. Onto another row's top or bottom edge, in the agent's queue: before or after it, at its
+// priority (the queue's order is kept as ranks, F197). Onto the middle of a row: under it, as a subitem. Onto the
+// list's empty space: on its own again. Each with Undo and Z.
+const DRAG = {n: 0, at: null};
+function dropAt(e) {  // -> {el, n, how: 'before' | 'after' | 'into'} under the pointer, or {how: 'out'}, or null
+  const it = byN.get(DRAG.n), el = e.target.closest('#list article[data-n]');
+  if (!it) return null;
+  if (!el) return it.parent && e.target.closest('#list') ? {how: 'out'} : null;
+  const n = Number(el.dataset.n), t = byN.get(n);
+  if (!t || n === DRAG.n || t.type === 'rule' || CLOSED(t.status)) return null;
+  for (let p = t.parent; p; p = byN.get(p)?.parent) if (p === DRAG.n) return null;  // not under one of its own subitems
+  const r = el.getBoundingClientRect(), y = (e.clientY - r.top) / r.height, line = queued(it) && queued(t);
+  return {el, n, how: line && y < 0.3 ? 'before' : line && y > 0.7 ? 'after' : 'into'};
+}
+const queued = it => inQueue(it) && it.when === 'now';
+function dropMark(at) {
+  if (DRAG.at?.el && DRAG.at.el !== at?.el) delete DRAG.at.el.dataset.drop;
+  if (at?.el) at.el.dataset.drop = at.how;
+  $('list').toggleAttribute('data-drop-out', at?.how === 'out');
+  DRAG.at = at;
+}
+function dragMove(n, at) {  // put n where the drop says, as one change with one Undo
+  const it = byN.get(n), ref = code(n);
+  if (at.how === 'into') return change(n, 'parent', at.n);
+  if (at.how === 'out') return change(n, 'parent', null);
+  const t = byN.get(at.n), group = S.items.filter(x => queued(x) && x.pri === t.pri && x.n !== n).sort(queueOrder);
+  group.splice(group.indexOf(t) + (at.how === 'after' ? 1 : 0), 0, it);
+  const patches = group.map((x, i) => ({n: x.n, f: {rank: i, ...(x.n === n && it.pri !== t.pri ? {pri: t.pri} : {})}}))
+    .filter(p => byN.get(p.n).rank !== p.f.rank || p.f.pri);
+  const before = patches.map(p => ({n: p.n, f: Object.fromEntries(Object.keys(p.f).map(k => [k, byN.get(p.n)[k] ?? null]))}));
+  const send = list => () => op(list.map(p => ({op: 'set', ref: code(p.n), f: p.f})));
+  let run;
+  const undo = () => { toast(`${ref} put back`); return optimistic(before, send(before), ex => notSaved(ex, run)); };
+  run = pushUndo(`${ref} moved`, undo);
+  toast(`${ref} ${at.how === 'after' ? 'after' : 'before'} ${code(at.n)}${it.pri !== t.pri ? `, now ${t.pri}` : ''}`, run);
+  return optimistic(patches, send(patches), ex => notSaved(ex, () => dragMove(n, at)));
+}
+$('list').addEventListener('pointerdown', e => {  // only a mouse drags a row (a finger scrolls and swipes)
+  const a = e.target.closest('#list article[data-n]');
+  if (a) a.draggable = desk() && e.pointerType === 'mouse' && !e.target.closest('button, a, input, textarea, [data-act="fold"]');
+});
+$('list').addEventListener('dragstart', e => {
+  const a = e.target.closest?.('#list article[data-n]'), it = a && byN.get(Number(a.dataset.n));
+  if (!it || it.type === 'rule' || CLOSED(it.status)) { e.preventDefault(); return; }
+  DRAG.n = it.n; a.dataset.dragging = '';
+  e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', code(it.n));
+});
+$('list').addEventListener('dragover', e => {
+  if (!DRAG.n) return;
+  const at = dropAt(e);
+  if (at) { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; }
+  dropMark(at);
+});
+$('list').addEventListener('drop', e => {
+  if (!DRAG.n) return;
+  e.preventDefault();
+  const n = DRAG.n, at = dropAt(e);
+  dropMark(null);
+  if (at) dragMove(n, at);
+});
+$('list').addEventListener('dragend', () => {
+  dropMark(null);
+  $('list').querySelector('[data-dragging]')?.removeAttribute('data-dragging');
+  DRAG.n = 0;
+});
 // J / K and the arrows in the detail bar walk the rows as the list shows them.
 function flashRow(n) {  // B124: something new in the list: bring it into view and light it up for a moment
   const a = desk() && document.querySelector(`#list article[data-n="${n}"]`);
