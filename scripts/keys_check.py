@@ -361,9 +361,47 @@ def group_unseen(a):  # T113 group 3: keys act on what you see, and say why when
     a.key('/', wait=0.4); check('/ in This project says why not', a.toast(), 'Search works on a list: Esc goes back to it')
 
 
+def group_walk(a):  # T113 group 4: Go through keeps its place, ends with what you did, says what a filter hides
+    strip = lambda: a.js("$('goStrip').hidden ? '' : [...$('goStrip').children].map(e => e.textContent.trim()).filter(Boolean).join(' ')")
+    a.go('B03'); a.key('J', wait=0.8)
+    check('Shift+J starts at the first that needs you', (open_(a), strip().startswith('Needs you 1 of 4')), ('B03', True))
+    a.click('#list [data-act="open"][data-n="8"]', 0.8)
+    check('Another item: Go through waits, and says where you left off', (a.js('!!U.go'), strip().startswith('Going through paused at 1 of 4')), (True, True))
+    a.key('J', wait=0.8); check('Shift+J goes back there, not to the start', (open_(a), strip().startswith('Needs you 1 of 4')), ('B03', True))
+    a.key('J', wait=0.8); check('Shift+J goes on', open_(a), 'F04')
+    a.key('g', wait=0.1); a.key('a', wait=0.8); a.key('g', wait=0.1); a.key('i', wait=0.8)
+    check('A trip to Archive keeps it', (a.js('!!U.go'), open_(a), strip().startswith('Needs you 2 of 4')), (True, 'F04', True))
+    for keys in (('.', 'Escape'), ('c', 'Escape'), ('i', 'Escape'), ('A', 'Escape')):
+        for k in keys:
+            a.key(k, wait=0.6)
+        a.js('document.activeElement.blur()')
+    check('The menu, New input, Edit and a subitem keep it', a.js('!!U.go'), True)
+    a.key('J', wait=0.8)
+    a.go(a.js("location.pathname.split('/').pop()"), 3)
+    check('A reload keeps it, where you were', (a.js('!!U.go'), strip().startswith('Needs you')), (True, True))
+    while open_(a) != 'I05' and a.js('!!U.go'):
+        a.key('J', wait=0.8)
+    a.key('J', wait=0.8)
+    check('Skip on the last one ends it, and says what is left', (a.js('!!U.go'), a.toast()), (False, 'That was the last one · 0 settled · 4 still need you'))
+    a.go('B03'); a.key('J', wait=0.8); a.key('a', wait=1.5)
+    check('Settling one goes to the next', (status(a, 3), open_(a)), ('done', 'F04'))
+    a.click('#text'); a.type('Follow the system, please'); a.enter(1.5, shift=True)
+    check('A reply settles it, and the box stays on it (A2, B146)', (open_(a), a.js('U.go.done.has(4)'), a.js('document.activeElement.id')), ('F04', True, 'text'))
+    a.key('Escape', wait=0.4); check('Esc leaves the box, Go through goes on', a.js('!!U.go'), True)
+    a.key('J', wait=0.8); check('Shift+J goes to the next', open_(a), 'T14')
+    a.key('Escape', wait=0.6); check('Esc ends it, with what you settled', (a.js('!!U.go'), a.toast()), (False, 'Stopped going through · 2 settled · 2 still need you'))
+    a.go('?type=task', 3); a.key('J', wait=1.0)
+    check('Under a filter it says what the filter hides', (open_(a), a.toast(), 'more hidden by your filter' in strip()), ('T14', 'Going through the 1 your filter shows · 1 more needs you', True))
+    a.key('Escape', wait=0.6)
+    a.click('#list [data-act="open"][data-n="12"]', 0.8)
+    post(a, 'api/op', {'op': 'set', 'ref': 'T12', 'f': {'type': 'bug'}}); time.sleep(2.0)
+    check('The open item left the list', a.js("!!document.querySelector('#list [data-act=open][data-n=\"12\"]')"), False)
+    a.key('j', wait=0.8); check('J goes on from where it was, not from the top', open_(a), 'T13')
+
+
 GROUPS = [('move', group_move, (1440, 900)), ('act', group_act, (1440, 900)), ('answer', group_answer, (1440, 900)),
           ('write', group_write, (1440, 900)), ('box', group_box, (1440, 900)), ('context', group_context, (1440, 900)), ('project', group_project, (1440, 900)),
-          ('unseen', group_unseen, (1440, 900)), ('narrow', group_narrow, (1024, 768))]
+          ('unseen', group_unseen, (1440, 900)), ('walk', group_walk, (1440, 900)), ('narrow', group_narrow, (1024, 768))]
 
 
 def main():

@@ -3796,7 +3796,7 @@ function rowActs(it, needs = false) {
 // A row you just acted on stays where it was, as one quiet line with Undo, while the pointer is over the list (or
 // for 3 s after a key, or a finger's tap), so the next row never slides under a second click (B124, B148). Then the
 // list rearranges. On a phone the line lets a double tap's second tap go by, so it neither opens nor undoes.
-const LIST = {in: false, t: 0, until: 0, sig: ''};
+const LIST = {in: false, t: 0, until: 0, sig: '', at: null};  // at: the rows when the open item was last among them (T113 A14)
 const listSig = () => [U.tab, U.q, U.type, U.when, U.status, U.pri].join('|');
 function holding() {
   if (!U.settle.size) return false;
@@ -4591,6 +4591,7 @@ function renderItems() {
   const hd = list.querySelector('[data-hold]');
   if (hd) hd.style.minHeight = U.archHold.h + 'px';  // a measured height: set before the scroll position comes back, so it isn't cut short
   list.scrollTop = top || 0;
+  if (desk() && U.open) { const rows = [...list.querySelectorAll('[data-act="open"][data-n]')].map(el => Number(el.dataset.n)); if (rows.includes(U.open)) LIST.at = {n: U.open, rows}; }
 }
 
 // The filters that are set, as [key, label] pairs.
@@ -5572,7 +5573,7 @@ const closeDialog = () => {
   const edit = U.docEdit;
   if (edit) keepDoc();  // closing the editor keeps what you wrote, as a draft: only Create or Save publish it (T113 B6)
   if (desk()) {  // a document lives in the item pane (T110): closing a sheet or the editor leaves it open there
-    U.docNew = null; U.docEdit = false; U.sheet = null; U.go = null; U.menuArm = null;
+    U.docNew = null; U.docEdit = false; U.sheet = null; U.menuArm = null;  // Go through goes on after a menu or a sheet (T113 B17)
     $('overlay').hidden = true; $('overlay').style.bottom = '';
     if (U.peek) { U.peek = null; renderComposer(); }
     if (edit && U.doc) { D.docKey = null; renderDetail(); renderComposer(); }
@@ -5843,7 +5844,7 @@ function setTab(t) {
       if (was !== 'inputs') U.tabOpen[was] = U.open;
       if (t !== 'inputs') {
         const back = [U.tabOpen[t], U.open].find(k => k && byN.has(k) && inTab(byN.get(k), t));
-        if (back !== U.open) { U.open = back || null; U.go = null; }
+        if (back !== U.open) U.open = back || null;  // Go through waits for you to come back (T113 B17)
       }
     }
     U.tabTop[was] = $('list').scrollTop;  // each tab keeps its place in the list (B124)
@@ -5958,7 +5959,7 @@ const ACT = {
   'row-act': b => {
     const n = Number(b.dataset.n), v = b.dataset.v;
     if (v === 'accept' || v === 'approve') { change(n, 'status', v === 'accept' ? 'done' : 'open'); return; }
-    U.go = null;
+    if (!desk()) U.go = null;  // a row's card is that item's only (B153); the desktop's Go through goes on (T113 B17)
     if (desk()) {  // B125: on the desktop the item opens in its pane: Answer goes to the first choice, Reply to the box
       openItem(n);
       const first = v === 'answer' && document.querySelector(`#detailBody [data-act="choice"][data-n="${n}"]`);
@@ -5971,9 +5972,18 @@ const ACT = {
   'go-prev': () => {
     const g = U.go; if (!g) return;
     if (!desk()) { const i = g.list.indexOf(U.peek); if (i > 0 && byN.get(g.list[i - 1])) peek(g.list[i - 1], {focus: false}); return; }  // the card before, as you left it (B153)
+    if (!g.list.includes(U.open) || U.tab !== 'items' || D.page || D.compose) return ACT['go-resume']();
     const i = g.list.indexOf(U.open); if (i <= 0) return toast('This is the first one'); openItem(g.list[i - 1]);
   },
-  'go-end': () => { U.go = null; render(); },
+  'go-resume': () => {  // back to where you left off, in Items (T113 A13)
+    const g = U.go;
+    if (!g) return;
+    if (U.tab !== 'items' || D.page || D.compose) setTab('items');
+    const waits = k => byN.get(k) && needsYou(byN.get(k)) && !g.done.has(k), i = g.list.indexOf(g.at);
+    const next = waits(g.at) ? g.at : g.list.slice(i + 1).find(waits);
+    return next ? openItem(next) : endGoDesk('last');
+  },
+  'go-end': () => { if (desk()) return endGoDesk('end'); U.go = null; render(); },
   'go-undo': b => { const n = Number(b.dataset.n); U.go?.undo[n]?.(); },
   prev: () => stepItem(-1),
   next: () => stepItem(1),
@@ -5987,7 +5997,6 @@ const ACT = {
     D.sideOpen = false; if (D.page) D.page = null;
     if (desk()) {  // its own page in the detail pane (B73), not under the open item; from Inputs too (F121)
       if (U.tab === 'inputs') { D.prevTab = 'inputs'; U.tab = 'items'; }
-      U.go = null;
       if (U.open) D.prev = U.open;
       D.prevDoc = U.doc && !U.docEdit && docById(U.doc) ? U.doc : null;  // B14: from a document, the page is the same New input page, and Back goes to the document
       if (D.prevDoc) { U.docScroll[U.doc] = $('detailBody').scrollTop; Object.assign(U, {doc: null, docReply: null, docSel: new Set(), docQuote: null, docCircle: false}); D.docKey = null; }
@@ -6004,8 +6013,9 @@ const ACT = {
   'go-next': () => {
     if (desk()) {
       const g = U.go; if (!g) return startGoDesk();
-      const i = g.list.indexOf(U.open), next = [...g.list.slice(i + 1), ...g.list.slice(0, Math.max(0, i))].find(k => byN.get(k) && needsYou(byN.get(k)) && !g.done.has(k));
-      return next ? openItem(next) : toast('Nothing else needs you');
+      if (!g.list.includes(U.open) || U.tab !== 'items' || D.page || D.compose) return ACT['go-resume']();  // paused: back to it first
+      const i = g.list.indexOf(U.open), next = g.list.slice(i + 1).find(k => byN.get(k) && needsYou(byN.get(k)) && !g.done.has(k));
+      return next ? openItem(next) : endGoDesk('last');  // no going round (T113 A13)
     }
     const g = U.go, i = g ? g.list.indexOf(U.peek) : -1;
     const next = g && g.list.slice(i + 1).find(k => byN.get(k) && needsYou(byN.get(k)) && !g.done.has(k));  // no going round: after the last, the walk ends (B153)
@@ -6226,7 +6236,7 @@ const ACT = {
         $('text').value = ''; U.files = []; saveDraft(); grow(); flushOutbox();
       } else rid = (await save({op: 'input', text: picks, scope: code(n)}, () => ACT['choice-send'](b))).res[0].split(' ')[1];
       const said = `Answer sent to ${code(n)}${note || files.length ? ' with your note' : ''}`;  // where it went (B155)
-      U.choice = null; if (U.peek === n) advance(n, said); else { toast(said); showSent(rid, code(n)); } if (desk() && U.go && U.open === n) advanceDesk(n, 'Answered');
+      U.choice = null; if (U.peek === n) advance(n, said); else { toast(said); showSent(rid, code(n)); } if (desk() && U.go && U.open === n && U.go.list.includes(n)) advanceDesk(n, 'Answered');  // only an item of the walk moves it on (T113 A13)
     } catch (_) {}
   },
   'more-msg': b => {
@@ -6733,15 +6743,46 @@ function renderDetailBar(it) {
 
 // Going through what needs you on the desktop: an amber strip on the detail pane; what you settle stays in the
 // list, green, with Undo, until you end it.
+// It keeps its place while you look elsewhere (another item, tab or page, New input) and across a reload; the strip
+// then says where you left off, and ⇧J goes back there. It ends when you end it, or after the last one, with what
+// you settled and what still needs you. Started under a search or filter, it says how many that hides (T113 A13, B17).
 function renderGoStrip() {
   const g = U.go, el = $('goStrip');
-  el.hidden = !(g && desk());
+  if (g?.list.includes(U.open)) g.at = U.open;
+  if (desk()) keepGo();
+  el.hidden = !(g && desk() && !D.compose);
   if (el.hidden) return;
-  const i = g.list.indexOf(U.open);
+  const i = g.list.indexOf(U.open), here = i >= 0, at = g.list.indexOf(g.at);
   const b = (act, label, key) => `<button data-act="${act}" class="flex h-8 items-center gap-1 rounded-lg px-2 font-medium text-zinc-700 hover:bg-amber-100 dark:text-zinc-200 dark:hover:bg-amber-400/15">${label}${KBD(key)}</button>`;
-  el.innerHTML = `<span class="text-xs font-bold tracking-wide text-amber-700 uppercase dark:text-amber-400">Needs you</span><span class="text-xs text-zinc-500 tabular-nums dark:text-zinc-400">${i < 0 ? '–' : i + 1} of ${g.list.length}</span>
-    <span class="flex w-40 gap-1">${g.list.map(k => `<span class="h-1 flex-1 rounded-full ${k === U.open ? 'bg-amber-500 dark:bg-amber-400' : g.done.has(k) ? 'bg-emerald-500 dark:bg-emerald-400' : 'bg-zinc-200 dark:bg-zinc-700'}"></span>`).join('')}</span>
-    <span class="ml-auto flex items-center gap-0.5">${b('go-prev', 'Previous', '⇧K')}${b('go-next', g.done.has(U.open) ? 'Next' : 'Skip', '⇧J')}${b('go-end', 'End', 'Esc')}</span>`;
+  const hidden = g.hidden ? `<span class="min-w-0 truncate text-xs text-zinc-500 dark:text-zinc-400">· ${g.hidden} more hidden by your ${g.by}</span>` : '';
+  el.innerHTML = `<span class="shrink-0 text-xs font-bold tracking-wide text-amber-700 uppercase dark:text-amber-400">${here ? 'Needs you' : 'Going through'}</span><span class="shrink-0 text-xs text-zinc-500 tabular-nums dark:text-zinc-400">${here ? `${i + 1} of ${g.list.length}` : `paused at ${at + 1} of ${g.list.length}`}</span>
+    <span class="flex w-40 shrink-0 gap-1">${g.list.map(k => `<span class="h-1 flex-1 rounded-full ${k === g.at ? (here ? 'bg-amber-500 dark:bg-amber-400' : 'bg-amber-300 dark:bg-amber-400/50') : g.done.has(k) ? 'bg-emerald-500 dark:bg-emerald-400' : 'bg-zinc-200 dark:bg-zinc-700'}"></span>`).join('')}</span>${hidden}
+    <span class="ml-auto flex shrink-0 items-center gap-0.5">${here ? b('go-prev', 'Previous', '⇧K') + b('go-next', g.done.has(U.open) ? 'Next' : 'Skip', '⇧J') : b('go-resume', 'Back to it', '⇧J')}${b('go-end', 'End', 'Esc')}</span>`;
+}
+const GO_KEY = () => 'taska.go.' + S.project, GO = {ready: false};  // ready: after the start looked for a walk to go on with
+function keepGo() {  // the walk, for a reload (sessionStorage: this tab only)
+  if (!GO.ready) return;
+  try {
+    const g = U.go;
+    if (g) sessionStorage.setItem(GO_KEY(), JSON.stringify({list: g.list, done: [...g.done], how: g.how, at: g.at, hidden: g.hidden, by: g.by}));
+    else sessionStorage.removeItem(GO_KEY());
+  } catch (_) {}
+}
+function restoreGo() {
+  GO.ready = true;
+  if (!desk() || U.go) return;
+  try {
+    const x = JSON.parse(sessionStorage.getItem(GO_KEY()) || 'null');
+    if (x?.list?.length) U.go = {list: x.list.filter(n => byN.has(n)), done: new Set(x.done || []), how: x.how || {}, undo: {}, at: x.at, hidden: x.hidden || 0, by: x.by || 'filter'};
+  } catch (_) {}
+}
+function endGoDesk(how) {  // 'end': you ended it; 'last': after the last one
+  const g = U.go;
+  if (!g) return;
+  const settled = g.done.size, left = g.list.filter(k => !g.done.has(k) && byN.get(k) && needsYou(byN.get(k))).length;
+  const tally = `${settled} settled${left ? ` · ${left} still need${left === 1 ? 's' : ''} you` : ''}`;
+  U.go = null; render();
+  toast(how === 'end' ? `Stopped going through · ${tally}` : left ? `That was the last one · ${tally}` : `Nothing else needs you · ${tally}`);
 }
 function settledRow(it) {
   const how = U.go.how[it.n] || 'Done';
@@ -6753,22 +6794,18 @@ function settledRow(it) {
       ${U.go.undo[it.n] ? `<button data-act="go-undo" data-n="${it.n}" class="flex h-8 shrink-0 items-center gap-1 rounded-lg px-2 text-[13px] font-semibold text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10">${ico('undo', 'size-4', '2')}Undo</button>` : ''}</div></article>`;
 }
 function startGoDesk(from) {
-  const list = needsList();
-  if (!list.length) {  // B15: say so when your search or filter hides what needs you
-    const hidden = S.items.filter(it => needsYou(it) && inTab(it, 'items')).length, by = U.q.trim() ? (filtersSet().length ? 'search and filter' : 'search') : 'filter';
-    return toast(hidden ? `Nothing that needs you is in this ${by} (${hidden} hidden)` : 'Nothing needs you right now');
-  }
-  U.go = {list, done: new Set(), how: {}, undo: {}};
+  const list = needsList(), all = S.items.filter(it => needsYou(it) && inTab(it, 'items')).length, by = U.q.trim() ? (filtersSet().length ? 'search and filter' : 'search') : 'filter';
+  if (!list.length) return toast(all ? `Nothing that needs you is in this ${by} (${all} hidden)` : 'Nothing needs you right now');  // B15: say so when your search or filter hides what needs you
+  U.go = {list, done: new Set(), how: {}, undo: {}, at: null, hidden: all - list.length, by};
+  if (U.go.hidden) toast(`Going through the ${list.length} your ${by} shows · ${U.go.hidden} more need${U.go.hidden === 1 ? 's' : ''} you`);  // it runs over this search or filter (T113 A13)
   openItem(list.includes(from) ? from : list[0]);
 }
 function advanceDesk(from, how) {  // after you settle one: the next that still waits on you
   const g = U.go;
   if (!g) return;
   g.done.add(from); g.how[from] = how;
-  const left = g.list.filter(k => !g.done.has(k) && byN.get(k) && needsYou(byN.get(k)));
-  const next = left.find(k => g.list.indexOf(k) > g.list.indexOf(from)) ?? left[0];
-  if (next) openItem(next);
-  else { U.go = null; render(); toast('Nothing else needs you'); }
+  const next = g.list.slice(g.list.indexOf(from) + 1).find(k => !g.done.has(k) && byN.get(k) && needsYou(byN.get(k)));  // no going round: it ends after the last one
+  if (next) openItem(next); else endGoDesk('last');
 }
 // J / K and the arrows in the detail bar walk the rows as the list shows them.
 function flashRow(n) {  // B124: something new in the list: bring it into view and light it up for a moment
@@ -6780,7 +6817,8 @@ function flashRow(n) {  // B124: something new in the list: bring it into view a
 }
 function stepItem(dir) {
   const now = [...document.querySelectorAll('#list [data-act="open"][data-n]')].map(el => Number(el.dataset.n));
-  const from = U.stepFrom?.n === U.open ? U.stepFrom.rows : null;  // you just settled it and it moved: go on from where it was (B124)
+  const from = U.stepFrom?.n === U.open ? U.stepFrom.rows  // you just settled it and it moved: go on from where it was (B124)
+    : !now.includes(U.open) && LIST.at?.n === U.open ? LIST.at.rows : null;  // it left the list some other way: the same (T113 A14)
   U.stepFrom = null;
   if (from) { const i = from.indexOf(U.open), next = (dir > 0 ? from.slice(i + 1) : from.slice(0, i).reverse()).find(k => now.includes(k)); if (next) return openItem(next); }
   const rows = now;
@@ -6875,7 +6913,7 @@ function openProject(sec) {
   sec = sec === 'connect' ? 'agents' : sec === 'about' ? 'projects' : Object.hasOwn(PSEC, sec) ? sec : 'agents';
   const from = D.page && D.section;
   if (from !== sec) keepPlace();  // B9
-  D.page = 'project'; D.sideOpen = false; U.go = null; D.section = sec;
+  D.page = 'project'; D.sideOpen = false; D.section = sec;
   render();
   if (from !== sec) { $('projectBody').scrollTop = 0; writeURL(true, {v: viewPath(), page: from ? (history.state?.page || 0) + 1 : 1, tab: U.tab}); }  // tab: what Back to … goes to
   if (sec === 'agents' && !P_CACHE.guide) net(P + 'agent?ui=1', {}, NET.get, 'text').then(g => { P_CACHE.guide = g; renderProject(); }, () => {});
@@ -7884,6 +7922,7 @@ load().then(() => {
   if (n && byN.has(n) && !desk() && !history.state?.n) {  // a link to an item on the phone: put the list under it, so Back lands there
     history.replaceState(null, '', P + viewQuery()); history.pushState({n}, '', P + code(n) + viewQuery());
   }
+  restoreGo();  // a walk you were on goes on after a reload (T113 B17)
   applyURL();
   if (!desk()) {  // a reload keeps your place in each tab of the list, as it keeps your drafts (B152)
     try { Object.assign(U.tabTop, JSON.parse(sessionStorage.getItem('taska.top.' + S.project) || '{}')); } catch (_) {}
