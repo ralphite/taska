@@ -4212,27 +4212,12 @@ function swipeStart(e) {
   // as a hover and never sends the click, so the row would not open (B62).
   const reveal = SW.open === el ? el.parentElement.querySelector('[data-swipe-right]').offsetWidth : 0;
   Object.assign(SW, {el, id: e.pointerId, x0: e.clientX, y0: e.clientY, mode: null, dx: 0, reveal, base: -reveal});
-  clearTimeout(SW.press);
-  SW.press = setTimeout(() => {  // held still: show the whole item without leaving the list
-    if (SW.el !== el || SW.mode) return;
-    SW.el = null; SW.pressed = true;
-    navigator.vibrate?.(8);
-    $('dlg').classList.add('select-none', '[-webkit-touch-callout:none]');
-    peek(Number(el.dataset.swipe));
-    const lift = () => setTimeout(() => {
-      $('dlg').classList.remove('select-none', '[-webkit-touch-callout:none]');
-      getSelection()?.removeAllRanges();
-    }, 60);
-    document.addEventListener('pointerup', lift, {once: true, capture: true});
-    document.addEventListener('touchend', lift, {once: true, capture: true});
-  }, 450);
-}
+}  // a finger held still does nothing special: a tap opens the item, which does all a preview did (T203)
 function swipeMove(e) {
   if (!SW.el || e.pointerId !== SW.id) return;
   const dx = e.clientX - SW.x0, dy = e.clientY - SW.y0;
   if (!SW.mode) {
     if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
-    clearTimeout(SW.press);
     SW.mode = Math.abs(dx) > Math.abs(dy) * 1.2 ? 'h' : 'v';
     if (SW.mode === 'v') { SW.el = null; return; }
     try { SW.el.setPointerCapture(e.pointerId); } catch (_) {}  // the pointer may already be gone
@@ -4246,8 +4231,6 @@ function swipeMove(e) {
   swipeTo(SW.el, SW.dx);
 }
 async function swipeEnd(e) {
-  clearTimeout(SW.press);
-  if (SW.pressed) { SW.pressed = false; SW.swallow = Date.now(); return; }  // the finger lifts after a long press: no tap
   const el = SW.el;
   if (!el || e.pointerId !== SW.id) return;
   SW.el = null;
@@ -4591,7 +4574,7 @@ function wireLasso() {
 }
 
 // ---------------------------------------------------------------- focus card
-// Long press on a row, a row's Answer or Reply, or "Go through" on Needs you (T65): the item in a card above the input
+// A row's Answer or Reply, or "Go through" on Needs you (T65): the item in a card above the input
 // box, with what it needs and its actions. A row opens the card of that item only; Go through steps through what
 // waits on you, one card after another, and ends after the last (B153). While you go through, the card keeps its
 // height and place, Previous and Next sit at the bottom under your thumb, and every action keeps one slot in every
@@ -6810,7 +6793,6 @@ const dragEnd = () => {
 };
 $('dlg').addEventListener('pointerup', dragEnd);
 $('dlg').addEventListener('pointercancel', dragEnd);
-$('list').addEventListener('contextmenu', e => { if (SW.pressed || SW.press && e.target.closest('[data-swipe]') && matchMedia('(pointer: coarse)').matches) e.preventDefault(); });
 
 // ---------------------------------------------------------------- desktop (I70, design A "three panes")
 // From 1024px: a sidebar (projects, the tabs, this project's settings), the list, and the selected item beside
