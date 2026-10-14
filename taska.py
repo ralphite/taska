@@ -1244,6 +1244,8 @@ class Store:
             if by not in PEOPLE and "status" in f:
                 if it["status"] == "proposed" and f["status"] != "dropped":
                     raise Err(f"{code} is proposed: only the user can approve it")
+                if it["status"] == "dropped" and was_by(self, it) in PEOPLE:  # the user said no: an agent doesn't reopen it (F197)
+                    raise Err(f"{code}: the user marked it won't do. Don't reopen or work on it; to ask, post `{code} ask <why it is worth doing>`")
                 if f["status"] == "done":
                     f["status"], note = "review", " (the user accepts it to make it done)"
                     if it["status"] == "review":
@@ -2548,6 +2550,16 @@ def es256(d, msg):
         sig = pow(k, -1, P256_N) * (z + r * d) % P256_N
         if r and sig:
             return r.to_bytes(32, "big") + sig.to_bytes(32, "big")
+
+
+def was_by(store, it):
+    """Who last set an item's status (F197): an agent may not reopen what the user dropped."""
+    for e in reversed(store.events):
+        if e.get("n") == it["n"] and e["k"] == "set" and "status" in (e.get("f") or {}) and not isinstance(e.get("f"), str):
+            return e.get("by")
+        if e.get("n") == it["n"] and e["k"] == "add":
+            return e.get("by")
+    return None
 
 
 class Push:

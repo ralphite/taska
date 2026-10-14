@@ -66,3 +66,35 @@ class ClaimTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class WontDoTests(unittest.TestCase):
+    """What the user marked won't do stays so: an agent can't set it going again, it is told to ask (F197)."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.s = taska.Store(str(Path(self.tmp.name) / 'taska.jsonl'))
+        self.s.name = 'qa'
+
+    def tearDown(self):
+        self.s.out.close()
+        self.tmp.cleanup()
+
+    def run_as(self, text, by):
+        with self.s.cond:
+            lines, _ = self.s.run_all(taska.parse_dsl(text), by)
+        return lines
+
+    def test_an_agent_cannot_reopen_what_the_user_dropped(self):
+        self.run_as('new feature Fancy thing\nF1 drop', 'you')
+        lines = self.run_as('F1 doing', 'claude-code')
+        self.assertTrue(lines[0].startswith('err'), lines)
+        self.assertIn("won't do", lines[0])
+        self.assertEqual(self.s.items[1]['status'], 'dropped')
+        self.assertTrue(self.run_as('F1 ask Worth doing after all?', 'claude-code')[0].startswith('ok'))  # it may still ask
+
+    def test_the_user_and_an_agents_own_drop_are_free(self):
+        self.run_as('new feature Fancy thing\nF1 drop', 'you')
+        self.assertTrue(self.run_as('F1 open', 'you')[0].startswith('ok'))  # the user changes their mind
+        self.run_as('F1 drop', 'claude-code')
+        self.assertTrue(self.run_as('F1 doing', 'claude-code')[0].startswith('ok'))  # it dropped it itself
