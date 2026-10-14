@@ -35,7 +35,20 @@ class Page:
                 break
             except Exception:
                 time.sleep(0.25)
-        ws = next(t for t in tabs if t['type'] == 'page')['webSocketDebuggerUrl']
+        self.port, self.dark = port, dark
+        self._connect(next(t for t in tabs if t['type'] == 'page')['webSocketDebuggerUrl'], size)
+
+    def new_tab(self):
+        """A second tab of the same browser (the same localStorage), driven like this one; close it with close()."""
+        t = json.load(urllib.request.urlopen(urllib.request.Request(f'http://127.0.0.1:{self.port}/json/new?about:blank', method='PUT')))
+        tab = object.__new__(Page)
+        tab.prof = tab.p = None
+        tab.port, tab.dark = self.port, self.dark
+        tab._connect(t['webSocketDebuggerUrl'], self.size)
+        return tab
+
+    def _connect(self, ws, size):
+        dark = self.dark
         host, path = ws[5:].split('/', 1)
         h, pt = host.split(':')
         self.s = socket.create_connection((h, int(pt)))
@@ -126,6 +139,9 @@ class Page:
             f.write(base64.b64decode(d))
 
     def close(self):
+        if self.p is None:  # a tab from new_tab(): the browser stays
+            self.s.close()
+            return
         try:
             os.killpg(self.p.pid, signal.SIGKILL)
         except ProcessLookupError:

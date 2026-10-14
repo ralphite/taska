@@ -399,9 +399,31 @@ def group_walk(a):  # T113 group 4: Go through keeps its place, ends with what y
     a.key('j', wait=0.8); check('J goes on from where it was, not from the top', open_(a), 'T13')
 
 
+def group_tabs(a):  # T113 group 7: two tabs show one draft; a draft sent in one leaves the other; rows say "Draft"
+    send = lambda p: (p.call('Input.dispatchKeyEvent', type='rawKeyDown', key='Enter', code='Enter', windowsVirtualKeyCode=13, modifiers=4),
+                      p.call('Input.dispatchKeyEvent', type='keyUp', key='Enter', code='Enter', windowsVirtualKeyCode=13, modifiers=4), time.sleep(1.5))
+    mark = lambda p, n: p.js(f"!!document.querySelector('#list article[data-n=\"{n}\"] [data-draft]')")
+    a.go('F06'); a.click('#text'); a.type('Check the Android build too', 0.6)
+    b = a.p.new_tab()
+    try:
+        b.go(a.base + 'F06', 3)
+        check('Tab B: the draft from tab A is in the box', b.js("$('text').value"), 'Check the Android build too')
+        check('Tab B: its row and its project say Draft', (mark(b, 6), b.js("!!document.querySelector('#drawerList [aria-current=page] [data-draft]')")), (True, True))
+        send(a.p)
+        check('Sent in tab A: tab B\'s box is empty, and it says why', (b.js("$('text').value"), b.js("$('toast').hidden ? '' : $('toast').textContent.trim()")), ('', 'Your reply to F06 was sent from another tab'))
+        b.js("$('text').focus()"); send(b)
+        sent = json.loads(urllib.request.urlopen(a.base + 'api/state', timeout=5).read())['inputs']
+        check('It went once, not twice', sum('Android build' in (r.get('text') or '') for r in sent), 1)
+        check('No Draft mark once it went', mark(b, 6), False)
+        b.js("$('text').focus()"); b.call('Input.insertText', text='also '); time.sleep(0.6)
+        check('Typing in tab B shows in tab A as you type', a.js("$('text').value"), 'also ')
+    finally:
+        b.close()
+
+
 GROUPS = [('move', group_move, (1440, 900)), ('act', group_act, (1440, 900)), ('answer', group_answer, (1440, 900)),
           ('write', group_write, (1440, 900)), ('box', group_box, (1440, 900)), ('context', group_context, (1440, 900)), ('project', group_project, (1440, 900)),
-          ('unseen', group_unseen, (1440, 900)), ('walk', group_walk, (1440, 900)), ('narrow', group_narrow, (1024, 768))]
+          ('unseen', group_unseen, (1440, 900)), ('walk', group_walk, (1440, 900)), ('tabs', group_tabs, (1440, 900)), ('narrow', group_narrow, (1024, 768))]
 
 
 def main():

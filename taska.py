@@ -3930,6 +3930,7 @@ function itemRow(it, depth = 0, group = []) {
   const meta = [
     it.type === 'rule' ? '' : `<span class="${PRI_TEXT[it.pri]}">${it.pri}</span>`,
     needsYou(it) ? `<span class="font-semibold text-amber-700 dark:text-amber-400">${needLabel(it)}</span>` : it.reply && !closed ? '<span class="text-emerald-700 dark:text-emerald-400">Replied</span>' : '',
+    hasDraft(c) ? DRAFT_MARK() : '',  // T113 B24: a reply you have not sent yet
     it.status === 'doing' ? '<span class="text-blue-600 dark:text-blue-400">In progress</span>' : closed ? `<span>${statusName(it)}</span>` : '',
     it.archived && U.tab !== 'archive' ? SOFT('Archived') : '',
     it.when === 'later' && !closed ? SOFT('Later') : '',
@@ -3975,7 +3976,7 @@ function needsRow(it) {
       <div class="min-w-0 flex-1">
         <p class="line-clamp-2 text-[15px] leading-snug font-medium lg:line-clamp-1"><span class="mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[it.type]}">${code(it.n)}</span>${esc(it.title)}</p>
         <div class="mt-1 flex min-w-0 items-center gap-2 text-xs font-medium">
-          ${it.type === 'rule' ? '' : `<span class="shrink-0 ${PRI_TEXT[it.pri]}">${it.pri}</span>`}<span class="shrink-0 font-semibold ${NEED[v].text}">${needLabel(it)}</span>${it.when === 'later' ? `<span class="shrink-0">${SOFT('Later')}</span>` : ''}${it.parent ? `<span class="shrink-0 text-zinc-500 dark:text-zinc-400">↳ ${code(it.parent)}</span>` : ''}
+          ${it.type === 'rule' ? '' : `<span class="shrink-0 ${PRI_TEXT[it.pri]}">${it.pri}</span>`}<span class="shrink-0 font-semibold ${NEED[v].text}">${needLabel(it)}</span>${hasDraft(code(it.n)) ? DRAFT_MARK() : ''}${it.when === 'later' ? `<span class="shrink-0">${SOFT('Later')}</span>` : ''}${it.parent ? `<span class="shrink-0 text-zinc-500 dark:text-zinc-400">↳ ${code(it.parent)}</span>` : ''}
           <span class="min-w-0 truncate font-normal text-zinc-500 dark:text-zinc-400">${esc(excerpt(it))}</span>
         </div>
       </div>
@@ -4293,7 +4294,7 @@ async function sendDocComment(t) {
   const text = $('text').value.trim();
   if (!text) return;
   if (U.files.length) toast('Comments are text only: the files stay in the box');
-  $('text').value = ''; saveDraft(); grow();
+  markSent(U.draftKey); $('text').value = ''; saveDraft(); grow();
   try { await save({op: 'dc', d: t.d.d, key: t.key, text, ...(t.reply ? {} : {quote: t.quote})}, () => { const t2 = docTarget(); if (t2 && $('text').value.trim()) sendDocComment(t2); }); }
   catch (_) { $('text').value = text; saveDraft(); grow(); return; }
   U.docThreads.add(t.key); U.docSel = new Set(); U.docQuote = null; U.docReply = t.key;  // B2: what you write next goes on in that thread
@@ -5154,6 +5155,7 @@ function outboxPush(job) {
   for (const f of job.files) if (f.rid) { f.job = {id: job.q, text: job.text}; keepRec(f); }  // its words come back with it after a reload
   U.outbox.push(job);
   keepJob(job);
+  markSent(job.scope || (job.from === 'rules' ? 'rule' : 'new'));  // T113 A10: the other tabs drop it from their box
 }
 // B151: an input that has not reached Taska yet is kept in this browser too, per project, so a reload, a closed page or
 // a phone that ends the tab never loses it: the next time the project opens, it goes out by itself. A voice note keeps
@@ -5598,7 +5600,55 @@ function draftStore(change) {
     return all;
   } catch (_) { return {}; }
 }
-function saveDraft() { const k = U.draftKey, v = $('text').value; if (k) draftStore(all => { if (v.trim()) all[k] = v; else delete all[k]; }); }
+function saveDraft() { const k = U.draftKey, v = $('text').value; if (k) draftStore(all => { if (v.trim()) all[k] = v; else delete all[k]; }); draftMarks(); }
+// T113 A10, B11, B24: every tab of this browser shows the same drafts. What you write in one tab shows in the others as
+// you type, a draft sent in one tab leaves the others' boxes (so it can't go twice), and an item or a project with an
+// unsent draft says "Draft" on its row. A draft's files and voice notes stay in the tab that has them.
+const DRAFTS = {raw: {}, val: {}, sig: ''};
+function draftsOf(slug) {  // -> {key: text} of any project, read again only when it changed
+  let raw = null; try { raw = localStorage.getItem('taska.drafts.' + slug); } catch (_) {}
+  if (DRAFTS.raw[slug] !== raw || !DRAFTS.val[slug]) { DRAFTS.raw[slug] = raw; try { DRAFTS.val[slug] = JSON.parse(raw || '{}') || {}; } catch (_) { DRAFTS.val[slug] = {}; } }
+  return DRAFTS.val[slug];
+}
+function draftCodes() {  // -> the items of this project with an unsent draft (words in any tab, or files in this one)
+  const d = draftsOf(S.project), out = new Set();
+  for (const k of [...Object.keys(d), ...Object.keys(U.parked), U.draftKey]) if (/^[A-Z]\d+$/.test(k || '') && hasDraft(k, d)) out.add(k);
+  return out;
+}
+const hasDraft = (c, d = draftsOf(S.project)) => c === U.draftKey ? !!($('text').value.trim() || U.files.length) : !!(String(d[c] || '').trim() || U.parked[c]?.length);
+const projDraft = slug => Object.values(draftsOf(slug)).some(v => String(v || '').trim())
+  || (slug === S.project && !!(U.files.length || $('text').value.trim() || Object.values(U.parked).some(f => f.length)));
+const DRAFT_MARK = (small = false) => `<span data-draft title="Not sent yet: kept in this browser" class="inline-flex shrink-0 items-center gap-1 font-semibold text-blue-600 dark:text-blue-400">${ico('pencil', small ? 'size-2.5' : 'size-3', '2.25')}Draft</span>`;
+function draftMarks() {  // a draft started or went: the rows and the sidebar say so
+  if (!S.project) return;
+  const sig = [S.project, ...draftCodes(), '|', ...sideProjects().filter(p => projDraft(p.name)).map(p => p.name)].join(' ');
+  if (sig === DRAFTS.sig) return;
+  DRAFTS.sig = sig; renderItems();
+  if (desk()) { renderSidebar(); renderRail(); }
+}
+function markSent(key) {  // the other tabs: this draft went out from here
+  try { if (S.project && key) localStorage.setItem('taska.sent.' + S.project, JSON.stringify({k: key, t: Date.now()})); } catch (_) {}
+}
+addEventListener('storage', e => {
+  if (!S.project || !e.key) return;
+  if (e.key === 'taska.sent.' + S.project) {
+    let x = null; try { x = JSON.parse(e.newValue || 'null'); } catch (_) {}
+    if (x && x.k === U.draftKey && ($('text').value.trim() || (U.boxGone?.k === x.k && Date.now() - U.boxGone.t < 3000)))
+      toast(`${/^[A-Z]\d+$/.test(x.k) ? `Your reply to ${x.k}` : x.k === 'rule' ? 'Your new rule' : x.k === 'new' ? 'Your new input' : 'What you wrote'} was sent from another tab`);
+    return;
+  }
+  if (e.key === 'taska.drafts.' + S.project && U.draftKey && !R.rec) {
+    const t = $('text'), was = t.value, now = String(draftsOf(S.project)[U.draftKey] || '');
+    if (now !== was && now.trim() !== was.trim()) {
+      const [s, en] = [t.selectionStart, t.selectionEnd];
+      t.value = now;
+      if (now.startsWith(was)) { t.selectionStart = s; t.selectionEnd = en; } else t.selectionStart = t.selectionEnd = now.length;
+      if (was.trim() && !now.trim()) U.boxGone = {k: U.draftKey, t: Date.now()};
+      grow(); renderComposer();
+    }
+  }
+  if (e.key.startsWith('taska.drafts.')) draftMarks();
+});
 // A8, B185: "New input instead", "Add to F06 instead", "As a rule instead": what you wrote (words, files, voice notes)
 // goes to the other target, after its own draft, and Undo puts both back.
 // A2: an item with an unsent draft was merged: the words and files go after the draft of the item it went into, and the
@@ -6616,6 +6666,7 @@ function renderSidebar() {
   draw($('drawerList'), sideProjects().map(p => { const cur = p.name === S.project, [tone, label] = agentState(p.agents, p.work);
     return `<a href="/p/${encodeURIComponent(p.name)}/" data-slug="${esc(p.name)}" ${cur ? 'aria-current="page" data-act="tab" data-tab="items"' : ''} class="flex items-center gap-2.5 rounded-xl px-2.5 py-2 hover:bg-zinc-200/60 data-pressed:bg-zinc-200/80 aria-[current=page]:bg-white aria-[current=page]:shadow-sm aria-[current=page]:ring-1 aria-[current=page]:ring-zinc-900/5 dark:hover:bg-zinc-800 dark:aria-[current=page]:bg-zinc-800 dark:aria-[current=page]:ring-white/5">${projTile(p.name, 'size-6 rounded-md text-xs')}
       <span class="min-w-0 flex-1"><span class="block truncate text-sm ${cur ? 'font-semibold' : 'font-medium'}">${esc(titleOf(p))}</span><span class="flex items-center gap-1.5 text-[11px] text-zinc-500 dark:text-zinc-400"><span class="size-1.5 shrink-0 rounded-full ${AGENT_TONE[tone][0]}"></span><span class="truncate ${tone === 'ok' ? 'text-emerald-700 dark:text-emerald-400' : AGENT_TONE[tone][1]}">${esc(label)}</span><span class="shrink-0">· ${p.open} open</span></span></span>
+      ${projDraft(p.name) ? `<span data-draft title="A draft not sent yet, kept in this browser" aria-label="Draft" class="grid size-5 shrink-0 place-items-center rounded-full bg-blue-100 text-blue-700 dark:bg-blue-400/15 dark:text-blue-300">${ico('pencil', 'size-3', '2.25')}</span>` : ''}
       ${p.needs ? `<span title="${plural(p.needs, 'item')} need you" class="grid h-5 min-w-5 place-items-center rounded-full bg-amber-100 px-1 text-[11px] font-bold text-amber-900 dark:bg-amber-400/15 dark:text-amber-200">${p.needs}</span>` : ''}</a>`; }).join(''));
   $('newInputBtn').setAttribute('aria-pressed', String(D.compose && !D.page));
   renderAgent(); renderDrawerSettings();
@@ -6628,8 +6679,8 @@ function renderSideFoot() {  // the sidebar's foot: Undo (when there is one), Se
 }
 function renderRail() {
   const b = (act, inner, title, attrs = '') => `<button data-act="${act}" ${attrs} title="${title}" aria-label="${title.split(' · ')[0]}" class="relative grid size-10 place-items-center rounded-xl text-zinc-500 hover:bg-zinc-200/60 aria-pressed:bg-zinc-200/80 aria-pressed:text-zinc-900 aria-[current=page]:bg-zinc-200/80 aria-[current=page]:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:aria-pressed:bg-zinc-700 dark:aria-pressed:text-zinc-50 dark:aria-[current=page]:bg-zinc-700 dark:aria-[current=page]:text-zinc-50">${inner}</button>`;
-  const proj = p => { const cur = p.name === S.project;
-    return `<a href="/p/${encodeURIComponent(p.name)}/" data-slug="${esc(p.name)}" ${cur ? 'aria-current="page" data-act="tab" data-tab="items"' : ''} title="${esc(titleOf(p))}${p.needs ? ` · ${plural(p.needs, 'item')} need you` : ''}" aria-label="${esc(titleOf(p))}" class="relative grid size-10 place-items-center rounded-xl hover:bg-zinc-200/60 aria-[current=page]:bg-zinc-200/80 dark:hover:bg-zinc-800 dark:aria-[current=page]:bg-zinc-700">${projTile(p.name, 'size-7 rounded-lg text-xs')}${p.needs ? `<span class="absolute -top-0.5 -right-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-amber-500 px-1 text-[10px] font-bold text-white dark:bg-amber-400 dark:text-amber-950">${p.needs}</span>` : ''}</a>`; };
+  const proj = p => { const cur = p.name === S.project, dr = projDraft(p.name);
+    return `<a href="/p/${encodeURIComponent(p.name)}/" data-slug="${esc(p.name)}" ${cur ? 'aria-current="page" data-act="tab" data-tab="items"' : ''} title="${esc(titleOf(p))}${p.needs ? ` · ${plural(p.needs, 'item')} need you` : ''}${dr ? ' · a draft not sent yet' : ''}" aria-label="${esc(titleOf(p))}" class="relative grid size-10 place-items-center rounded-xl hover:bg-zinc-200/60 aria-[current=page]:bg-zinc-200/80 dark:hover:bg-zinc-800 dark:aria-[current=page]:bg-zinc-700">${projTile(p.name, 'size-7 rounded-lg text-xs')}${dr ? '<span data-draft class="absolute right-0 bottom-0 grid size-4 place-items-center rounded-full bg-blue-600 text-white ring-2 ring-zinc-100 dark:bg-blue-500 dark:ring-zinc-900">' + ico('pencil', 'size-2.5', '2.5') + '</span>' : ''}${p.needs ? `<span class="absolute -top-0.5 -right-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-amber-500 px-1 text-[10px] font-bold text-white dark:bg-amber-400 dark:text-amber-950">${p.needs}</span>` : ''}</a>`; };
   draw($('rail'), b('side', `<span class="text-blue-600 dark:text-blue-400">${ico('logo', 'size-6', '2.25')}</span>`, 'Show the sidebar · [')
     + b('new-input', ico('newinput', 'size-5'), 'New input · C', `aria-pressed="${D.compose && !D.page}"`)
     + `<div class="my-1 h-px w-8 bg-zinc-200 dark:bg-zinc-800"></div>`
@@ -7433,6 +7484,7 @@ async function fillDrawer() {
     return `<a href="/p/${encodeURIComponent(p.name)}/" ${cur ? 'aria-current="page"' : ''} class="group flex min-h-14 items-center gap-3 rounded-2xl px-3 py-2.5 hover:bg-zinc-200/50 data-pressed:bg-zinc-200/70 aria-[current=page]:bg-white aria-[current=page]:shadow-sm aria-[current=page]:ring-1 aria-[current=page]:ring-zinc-900/5 dark:hover:bg-zinc-800/60 dark:data-pressed:bg-zinc-800 dark:aria-[current=page]:bg-zinc-800 dark:aria-[current=page]:ring-white/5">
     <span class="min-w-0 flex-1"><span class="block truncate text-[17px] font-medium group-aria-[current=page]:font-semibold">${esc(titleOf(p))}</span>
     <span class="mt-0.5 flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400"><span class="size-1.5 shrink-0 rounded-full ${AGENT_TONE[tone][0]}"></span><span class="truncate ${tone === 'ok' ? 'text-emerald-700 dark:text-emerald-400' : AGENT_TONE[tone][1]}">${esc(label)}</span><span class="shrink-0">· ${p.open} open</span></span></span>
+    ${projDraft(p.name) ? `<span data-draft title="A draft not sent yet, kept in this browser" class="flex shrink-0 items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-800 dark:bg-blue-400/15 dark:text-blue-200">${ico('pencil', 'size-3', '2.25')}Draft</span>` : ''}
     ${p.needs ? `<span class="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900 dark:bg-amber-400/15 dark:text-amber-200">${p.needs} need you</span>` : ''}</a>`; }).join(''));
   $('otherDot').hidden = !DR.list.some(p => p.name !== S.project && p.needs);
 }
