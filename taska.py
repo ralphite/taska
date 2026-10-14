@@ -4229,7 +4229,6 @@ const queueOrder = (a, b) => (a.when !== 'now') - (b.when !== 'now') || (a.statu
 // it and say how many of them are later (shown, but agents take them only once they are back to now).
 const inQueue = it => !it.merged_into && !it.archived && it.type !== 'rule' && !needsYou(it) && !CLOSED(it.status);
 const laterOf = q => q.filter(it => it.when === 'later').length;
-const laterNote = q => laterOf(q) ? `<span class="hidden text-xs font-medium whitespace-nowrap text-zinc-500 xl:inline dark:text-zinc-400">· ${laterOf(q)} later</span>` : '';  // where it fits; the rows say Later anyway
 
 function filesOf(it) {
   const seen = new Set(), out = [];
@@ -4416,9 +4415,11 @@ function zone(kind, label, n, right = '') {
   const needs = kind === 'needs';
   const mark = needs ? '<span class="size-2 shrink-0 rounded-full bg-amber-500 ring-3 ring-amber-500/20 dark:bg-amber-400"></span>'
     : kind === 'rules' ? '<span class="mx-1 size-2 shrink-0 rounded-full bg-zinc-400 dark:bg-zinc-500"></span>'
+    : kind === 'later' ? ico('clock', 'size-4 text-zinc-500 dark:text-zinc-400', '2')
     : stateIcon({queue: 'doing', done: 'done', retired: 'dropped', archived: 'done'}[kind], label, 'size-4');
-  return `<div data-zone="${kind}" class="flex h-9 items-center gap-2 border-b pr-1 pl-4 ${needs ? 'border-amber-200/70 bg-amber-50 dark:border-amber-400/15 dark:bg-amber-400/10' : 'border-zinc-100 bg-zinc-50 dark:border-zinc-800/70 dark:bg-zinc-900/60'}">
-    ${mark}<h2 class="text-sm font-semibold ${needs ? 'text-amber-950 dark:text-amber-100' : 'text-zinc-800 dark:text-zinc-200'}">${label}</h2><span class="grid h-5 min-w-5 place-items-center rounded-full px-1.5 text-[11px] font-bold tabular-nums ${needs ? 'bg-amber-500 text-white dark:bg-amber-400 dark:text-amber-950' : 'bg-zinc-200/80 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300'}">${n}</span>${right}
+  // F210: every group header has the same background, clearly darker than the rows; Needs you keeps its amber dot and count
+  return `<div data-zone="${kind}" class="flex h-9 items-center gap-2 border-y border-zinc-200 bg-zinc-100 pr-1 pl-4 dark:border-zinc-700/70 dark:bg-zinc-800">
+    ${mark}<h2 class="text-sm font-semibold text-zinc-900 dark:text-zinc-100">${label}</h2><span class="grid h-5 min-w-5 place-items-center rounded-full px-1.5 text-[11px] font-bold tabular-nums ${needs ? 'bg-amber-500 text-white dark:bg-amber-400 dark:text-amber-950' : 'bg-zinc-200/80 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300'}">${n}</span>${right}
   </div>`;
 }
 const goThroughBtn = () => `<button data-act="go-through" class="-my-1 ml-auto flex h-11 items-center gap-0.5 rounded-full pr-2 pl-3 text-[13px] font-semibold text-amber-800 hover:bg-amber-100 dark:text-amber-300 dark:hover:bg-amber-400/15">Go through${ico('right', 'size-4', '2.25')}</button>`;
@@ -5055,8 +5056,17 @@ function tree(group) {
 const EMPTY = (text, extra = '') => `<div class="px-6 py-16 text-center text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">${text}${extra}</div>`;
 
 // What waits on you, at the top of Items and of Rules: Go through, or while you go through, End and what you settled.
-const needsBand = (needs, going) => needs.length ? zone('needs', 'Needs you', needs.filter(needsYou).length, going ? `<span class="text-xs font-medium text-amber-700 dark:text-amber-400">· Going through</span><button data-act="go-end" class="-my-1 ml-auto flex h-11 items-center gap-1 rounded-full pr-2 pl-3 text-[13px] font-semibold text-amber-800 hover:bg-amber-100 dark:text-amber-300 dark:hover:bg-amber-400/15">End${KBD('Esc')}</button>` : goThroughBtn())
-  + needs.map(it => going && going.done.has(it.n) ? settledRow(it) : needsRow(it)).join('') : '';  // nothing waiting: no band (I71)
+// F209: on the desktop it shows the first 5 and a row for the rest, so the queue stays in sight; not while you go
+// through them, and not when the open item is among the rest.
+const NEEDS_SHOWN = 5;
+function needsBand(needs, going) {
+  if (!needs.length) return '';  // nothing waiting: no band (I71)
+  const long = desk() && !going && needs.length > NEEDS_SHOWN + 1, cut = long && !U.needsAll && !needs.slice(NEEDS_SHOWN).some(it => it.n === U.open);
+  const rest = needs.length - NEEDS_SHOWN, toggle = (act, label, icon) => `<button data-act="${act}" class="flex h-10 w-full items-center gap-1.5 border-b border-zinc-100 pl-4 text-[13px] font-semibold text-amber-800 hover:bg-amber-50 dark:border-zinc-800/70 dark:text-amber-300 dark:hover:bg-amber-400/10">${ico(icon, 'size-4', '2.25')}${label}</button>`;
+  return zone('needs', 'Needs you', needs.filter(needsYou).length, going ? `<span class="text-xs font-medium text-amber-700 dark:text-amber-400">· Going through</span><button data-act="go-end" class="-my-1 ml-auto flex h-11 items-center gap-1 rounded-full pr-2 pl-3 text-[13px] font-semibold text-amber-800 hover:bg-amber-100 dark:text-amber-300 dark:hover:bg-amber-400/15">End${KBD('Esc')}</button>` : goThroughBtn())
+    + (cut ? needs.slice(0, NEEDS_SHOWN) : needs).map(it => going && going.done.has(it.n) ? settledRow(it) : needsRow(it)).join('')
+    + (cut ? toggle('needs-all', `Show ${rest} more`, 'down') : long && U.needsAll ? toggle('needs-all', 'Show fewer', 'chevup') : '');
+}
 function renderItems() {
   const list = $('list'), top = U.open && !desk() ? U.listTop?.[0] : list.scrollTop;  // under the phone's item page the list is hidden and reads 0
   SW.open = SW.el = null;  // rows are rebuilt closed; a stale reference would swallow the next tap
@@ -5091,10 +5101,12 @@ function renderItems() {
     if (U.archHold?.sig !== listSig()) U.archHold = null;  // another tab, search or filter: no need to hold the place
     const hold = U.archHold ? 'data-hold' : '';  // B3: the finished band keeps its height after Archive N, under the pointer
     const settled = it => going && going.done.has(it.n) && going.list.includes(it.n);
-    const queue = rows.filter(it => inQueue(it) && !settled(it)).sort(queueOrder);
+    const queued = rows.filter(it => inQueue(it) && !settled(it)).sort(queueOrder);
+    const queue = queued.filter(it => it.when !== 'later'), later = queued.filter(it => it.when === 'later');  // F212: Later is its own group, under the queue
     const done = rows.filter(it => CLOSED(it.status) && !it.archived && !settled(it)), arch = rows.filter(it => it.archived);
     html = needsBand(needs, going)
-      + (queue.length ? zone('queue', 'Agent queue', queue.length, laterNote(queue) + (desk() ? keepGoingSwitch() : keepGoingNote())) + tree(queue) : '')  // every row it holds; the later ones, which agents don't take yet, are named (S3)
+      + (queue.length ? zone('queue', 'Agent queue', queue.length, desk() ? keepGoingSwitch() : keepGoingNote()) + tree(queue) : '')  // what agents take
+      + (later.length ? zone('later', 'Later', later.length, `<span class="hidden text-xs font-medium text-zinc-500 lg:inline dark:text-zinc-400">· agents wait until it is back to now</span>`) + tree(later) : '')
       + (U.undoArch ? `<div ${hold}><div class="flex items-center gap-3 border-b border-blue-100 bg-blue-50 py-2 pr-2 pl-4 dark:border-blue-400/15 dark:bg-blue-400/10">
           ${ico('archive', 'size-5 text-blue-600 dark:text-blue-400')}
           <p class="min-w-0 flex-1 text-sm text-blue-950 dark:text-blue-100"><span class="font-semibold">Archived ${plural(U.undoArch.ids.length, 'finished item')}.</span> They are under Archive.</p>
@@ -6925,6 +6937,7 @@ const ACT = {
   'doc-edit': () => { const was = kept('docs')[`D${U.doc}`]; U.docEdit = true; U.docText = was ?? null; renderDoc(); if (was) toast('Your draft is back'); $('docMd').focus(); },
   'doc-done': async () => { if (!await docVoiceSettled()) return; const d = await saveDoc(); if (d) openDoc(d.d); else if (!U.docEdit) closeDialog(); },  // Create or Save; F208: the words you spoke go in first
   'doc-mic': () => DV.rec ? docRecStop() : docRecStart(),
+  'needs-all': () => { U.needsAll = !U.needsAll; renderItems(); },  // F209
   'doc-discard': () => {  // the draft goes; the document stays as it is
     const d = U.doc, key = docKey();
     docRecStop(false); DV.notes.forEach(v => { if (v.key === key) v.key = null; });  // F208: words still coming have nowhere to go
