@@ -448,9 +448,24 @@ def group_tabs(a):  # T113 group 7: two tabs show one draft; a draft sent in one
         b.close()
 
 
+def group_inputs(a):  # T113 A21, A25, A26/B32: inputs' actions in fixed places, the same in both lists; Make item in place
+    post(a, 'api/op', {'op': 'input', 'text': 'Offer Excel files in the export too'})
+    a.go('inputs', 3)
+    xs = a.js("[...document.querySelectorAll('#inputsView [data-act=input-edit]')].map(b => Math.round(b.getBoundingClientRect().x))")
+    check('Inputs: Edit sits at the same place on every input (A21)', len(set(xs or [])) == 1 and len(xs) >= 2, True)
+    acts = lambda sel: a.js(f"[...document.querySelectorAll('{sel} [data-act]')].map(b => b.dataset.act).filter(x => !['goto', 'more-input'].includes(x)).join(' ')")
+    on_inputs = acts('#inputsView article[data-r=\"r2\"]')
+    a.key('c', wait=1.0)
+    check('You said lately offers what Inputs offers, in its order (A26, B32)', acts('#composeList li:has([data-id=\"r2\"])'), on_inputs)
+    a.key('Escape', wait=0.6); a.go('inputs', 3)
+    a.js("document.querySelector('#inputsView [data-act=make-item]').click()"); time.sleep(1.5)
+    check('Make item stays on Inputs, its type ready to set (A25)', (a.js('U.tab'), a.js('U.open'), a.js("U.sheet === 'menu' && U.menuArm")), ('inputs', None, 't'))
+    a.key('b', wait=1.0); check('T then B there makes it a bug', a.js('S.items.at(-1).type'), 'bug')
+
+
 GROUPS = [('move', group_move, (1440, 900)), ('act', group_act, (1440, 900)), ('answer', group_answer, (1440, 900)),
           ('write', group_write, (1440, 900)), ('box', group_box, (1440, 900)), ('context', group_context, (1440, 900)), ('project', group_project, (1440, 900)),
-          ('unseen', group_unseen, (1440, 900)), ('walk', group_walk, (1440, 900)), ('tabs', group_tabs, (1440, 900)), ('narrow', group_narrow, (1024, 768))]
+          ('unseen', group_unseen, (1440, 900)), ('walk', group_walk, (1440, 900)), ('tabs', group_tabs, (1440, 900)), ('inputs', group_inputs, (1440, 900)), ('narrow', group_narrow, (1024, 768))]
 
 
 def main():
