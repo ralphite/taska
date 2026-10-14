@@ -2423,7 +2423,7 @@ def voice_keep(store, fid, res):
 
 HUB = None
 ITEM_PATH = re.compile(r"/([A-Za-z]?\d+)")
-VIEW_PATH = re.compile(r"/(inputs|archive|rules|new-rule|new|settings|connect|phone|spellings|log|deleted|about|projects|organizer|[A-Za-z]\d+)")  # the page's views (T102, B162)
+VIEW_PATH = re.compile(r"/(inputs|archive|rules|new-rule|new|settings|agents|connect|phone|spellings|log|deleted|about|projects|organizer|[A-Za-z]\d+)")  # the page's views (T102, B162)
 NAME = re.compile(r"[a-z0-9][a-z0-9-]{0,39}")  # a project's address and folder: made from its name once, never changed (F173)
 TITLE_MAX = 60
 SLUG_CHARS = "abcdefghjkmnpqrstuvwxyz23456789"
@@ -3279,9 +3279,8 @@ PAGE = r'''<!doctype html>
     <div class="px-3 pb-1.5 text-xs font-semibold text-zinc-500 lg:text-[11px] lg:tracking-wider lg:uppercase dark:text-zinc-400">Projects</div>
     <div id="drawerList" class="flex flex-col gap-0.5"></div>
     <button data-act="new-project" id="drawerNew" class="mt-1 flex h-12 w-full items-center gap-3 rounded-2xl px-3 text-[15px] font-medium text-blue-600 hover:bg-zinc-200/60 lg:h-9 lg:rounded-xl lg:text-sm dark:text-blue-400 dark:hover:bg-zinc-800">New project</button>
-    <div class="mt-4 px-3 pb-1.5 text-xs font-semibold text-zinc-500 lg:hidden dark:text-zinc-400">This project</div>
-    <div id="drawerSettings" class="divide-y divide-zinc-100 overflow-hidden rounded-2xl bg-white lg:hidden dark:divide-zinc-700/60 dark:bg-zinc-800"></div>
   </div>
+  <div id="drawerSettings" class="mx-2 mt-2 shrink-0 divide-y divide-zinc-100 overflow-hidden rounded-2xl bg-white lg:hidden dark:divide-zinc-700/60 dark:bg-zinc-800"></div>
   <div id="sideFoot" class="hidden shrink-0 flex-col gap-0.5 border-t border-zinc-200 p-2 lg:flex dark:border-zinc-800"></div>
 </nav>
 <nav id="rail" hidden aria-label="Projects" class="z-30 h-dvh w-14 shrink-0 flex-col items-center gap-1 border-r border-zinc-200 bg-zinc-50 py-2 lg:flex dark:border-zinc-800 dark:bg-zinc-900"></nav>
@@ -3334,8 +3333,8 @@ PAGE = r'''<!doctype html>
     <div id="detailBody" class="min-h-0 flex-1 overflow-y-auto overscroll-contain lg:mask-b-from-[calc(100%-2rem)] lg:scrollbar-gutter-both lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70 lg:group-data-[compose]/app:hidden"></div>
   </section>
 
-  <section id="projectView" hidden aria-label="Settings" class="min-h-0 lg:col-span-2 lg:col-start-1 lg:row-span-5 lg:row-start-1 lg:flex lg:overflow-hidden">
-    <nav id="projectNav" aria-label="Sections of Settings" class="flex w-60 shrink-0 flex-col overflow-y-auto overscroll-contain border-r border-zinc-200 pb-4 lg:scrollbar-thin dark:border-zinc-800"></nav>
+  <section id="projectView" hidden aria-label="Settings" class="flex min-h-0 flex-1 flex-col bg-zinc-100 lg:col-span-2 lg:col-start-1 lg:row-span-5 lg:row-start-1 lg:flex-row lg:overflow-hidden lg:bg-transparent dark:bg-zinc-950 dark:lg:bg-transparent">
+    <nav id="projectNav" aria-label="Sections of Settings" class="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain pb-10 lg:w-60 lg:flex-none lg:shrink-0 lg:border-r lg:border-zinc-200 lg:pb-4 lg:scrollbar-thin dark:lg:border-zinc-800"></nav>
     <div id="projectBody" class="min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain lg:scrollbar-gutter-both lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70"></div>
   </section>
 
@@ -3592,7 +3591,7 @@ function placeToast(el = $('toast')) {
     el.classList.toggle('lg:-translate-x-1/2', !!r);
   } else {  // B158: on the phone it sits just above what you act on, the input box or an open card's bar, and never on it
     el.style.left = el.style.bottom = ''; el.classList.remove('lg:-translate-x-1/2');
-    const bar = $('overlay').hidden ? !$('foot').hidden && $('foot') : !$('dlgFoot').hidden && $('dlgFoot').offsetHeight && $('dlgFoot');
+    const bar = DR.open ? $('drawerSettings') : $('overlay').hidden ? !$('foot').hidden && $('foot') : !$('dlgFoot').hidden && $('dlgFoot').offsetHeight && $('dlgFoot');
     if (bar) { el.style.bottom = `${Math.round(innerHeight - bar.getBoundingClientRect().top + 8)}px`; el.classList.remove('bottom-28', 'top-[calc(env(safe-area-inset-top)+0.75rem)]'); }
   }
 }
@@ -3693,7 +3692,7 @@ setInterval(() => { if (S.agents) renderAgent(); }, 30000);  // "2m" keeps count
 // Taska was updated: load the new page once nothing would be lost. Busy now? The next poll tries again.
 function freshen() {
   const busy = R.rec || U.outbox.length || U.files.length || SAVE.pend.length || SAVE.failed.length || U.editing || (U.open && !desk()) || D.full || U.doc || U.undoArch || (document.activeElement === $('text') && $('text').value.trim())
-    || !$('overlay').hidden || !$('viewer').hidden || DR.open || U.searching;
+    || !$('overlay').hidden || !$('viewer').hidden || DR.open || U.searching || U.renaming || U.pNew;
   if (!busy) location.reload();
 }
 
@@ -4573,7 +4572,7 @@ function detailHtml(it) {
 
 function renderDetail() {
   settleOpen();  // B5: never a merged item, whichever way it came back (a tab's last item, a document's item)
-  if (!desk()) $('foot').hidden = !!(U.editing && U.editing === U.open);  // editing an item: its form is the one place to type, the box steps aside (B156)
+  if (!desk()) $('foot').hidden = !!(U.editing && U.editing === U.open) || (!!D.page && !U.prefsEdit);  // editing an item: its form is the one place to type, the box steps aside (B156); Settings has no box but for F183
   const it = U.open && byN.get(U.open), body = $('detailBody');
   if (desk()) renderGoStrip();
   if (desk() && U.doc && !U.docEdit && docById(U.doc)) return docPane(docById(U.doc));
@@ -4707,7 +4706,7 @@ function renderFilters() {
   $('deskFilterBtn').innerHTML = ico('sliders', 'size-[18px]') + dot;
   $('deskFilterBtn').setAttribute('aria-expanded', String(!!D.filters));
   const strip = $('filterStrip');
-  strip.hidden = !set.length || U.tab === 'inputs' || !!U.open;
+  strip.hidden = !set.length || U.tab === 'inputs' || !!U.open || !!D.page;
   strip.innerHTML = filterChips(set) + `<button data-act="reset" class="ml-auto h-11 shrink-0 px-1 text-[13px] font-semibold text-blue-600 hover:underline dark:text-blue-400">Clear</button>`;
   if (!desk()) return;  // the count is in the list's title, right above (A18)
   $('deskFilters').innerHTML = !set.length && !D.filters ? '' : `<div class="flex min-h-11 flex-wrap items-center gap-2 px-3 py-1.5">${filterChips(set)}
@@ -5711,7 +5710,7 @@ function dialog(title, html, {aboveComposer = false, focus = true, tall = false,
   $('dlgSub').innerHTML = sub; $('dlgSub').hidden = !sub;
   $('dlgFoot').innerHTML = foot; $('dlgFoot').hidden = !foot || (card && !desk() && document.activeElement === $('text'));  // typing on the card: room for the question (B153)
   $('dlgBody').classList.toggle('pb-[max(1.25rem,env(safe-area-inset-bottom))]', !foot); $('dlgBody').classList.toggle('pb-3', !!foot);
-  if ($('overlay').hidden && !U.doc && U.sheet !== 'log') layerOpen('sheet');  // one step Back closes it (B150); a document and the log have their own address
+  if ($('overlay').hidden && !U.doc) layerOpen('sheet');  // one step Back closes it (B150); a document has its own address
   $('dlgBody').innerHTML = html; $('overlay').hidden = false;
   if (!desk() && !$('toast').hidden) placeToast();
   for (const c of ['h-[88dvh]', 'sm:h-[85dvh]']) $('dlg').classList.toggle(c, tall);  // documents get the whole screen
@@ -5749,45 +5748,17 @@ const closeDialog = () => {
     return;
   }
   if (U.doc) U.docScroll[U.doc] = $('dlgBody').scrollTop;
-  const hadDoc = U.doc, sheet = !$('overlay').hidden && !hadDoc, log = U.sheet === 'log';
+  const hadDoc = U.doc, sheet = !$('overlay').hidden && !hadDoc;
   U.doc = null; U.docNew = null; U.docEdit = false; U.sheet = null; U.go = null; U.docReply = null;
   $('overlay').hidden = true; $('overlay').style.bottom = '';
   if (!$('toast').hidden) placeToast();
   U.menuArm = null;
   if (U.peek) { U.peek = null; renderComposer(); }
   else if (hadDoc) { renderComposer(); if (!leaveView(`D${hadDoc}`)) writeURL(false); }  // the box goes back to the item or the project
-  if (sheet && !LAY.keep) { if (log) { if (!leaveView('log')) writeURL(false); } else layerShut('sheet'); }  // its step in the history goes too (B150)
-  LAY.keep = false;
+  if (sheet) layerShut('sheet');  // its step in the history goes too (B150)
 };
 
-// From outside this machine and its network Taska needs the key; one tap on the link puts it on a device for good.
-// The bodies of the project sheets on the phone. The desktop shows the same things as sections of its "This
-// project" page (B162), laid out for a wide screen.
-function phoneHtml() {
-  const link = S.remote ? S.remote + '/' : '';
-  return `<div class="flex flex-col gap-5">
-    <div><p class="px-1 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">${link ? 'Send this link to your phone and open it once. From then on Taska opens there just like here, from anywhere.' : 'Taska has no public address yet (start it with --public). On the same network your phone needs no key.'}</p>
-    ${link ? `<div class="mt-2 rounded-xl bg-zinc-100 p-3 font-mono text-xs leading-relaxed break-all dark:bg-zinc-800">${esc(link)}</div>
-    <button data-act="copy-text" data-text="${esc(link)}" class="${PRIMARY} mt-2.5 w-full">${ico('copy', 'size-4.5')}Copy link</button>` : ''}</div>
-    <div><p class="px-1 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">Or type the key once on the device (Taska on the Home Screen needs this):</p>
-    <div class="mt-2 flex items-center gap-2"><span class="min-w-0 flex-1 px-1 font-mono text-2xl tracking-wider select-all">${esc(S.key)}</span><button data-act="copy-text" data-text="${esc(S.key)}" class="${SECOND}">${ico('copy', 'size-4')}Copy key</button></div></div>
-    <div><p class="px-1 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">This computer and your local network never need the key. A new key signs out every other device.</p>
-    <button data-act="new-key" class="mt-1 h-11 rounded-xl px-1 text-sm font-semibold text-red-600 dark:text-red-400">New key</button></div></div>`;
-}
 const agentAsk = () => `This project tracks work in Taska. Run \`curl -s ${BASE}/agent\` to learn the interface, then follow \`curl -s ${BASE}/next\` and write your progress back to the items.`;
-function guideHtml(text) {
-  const connect = `curl -s ${BASE}/connect | sh`, far = S.remote && S.remote !== BASE ? `curl -s ${S.remote}/connect | sh` : '', short = agentAsk();
-  const box = (t, mono = true) => `<div class="mt-2 rounded-xl bg-zinc-100 p-3 text-sm leading-relaxed break-all dark:bg-zinc-800 ${mono ? 'font-mono text-xs' : ''}">${esc(t)}</div>`;
-  return `<div class="flex flex-col gap-5">
-    <div><p class="px-1 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">On the machine where your agent works, run this once in the project's folder. It saves this project's address in <code>.taska</code> and installs the Taska skill for Claude Code, Codex and Antigravity:</p>
-    ${box(connect)}<button data-act="copy-text" data-text="${esc(connect)}" class="${PRIMARY} mt-2.5 w-full">${ico('copy', 'size-4.5')}Copy command</button></div>
-    ${far ? `<div><p class="px-1 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">On a machine outside this network, use this one instead (it carries the key):</p>
-    ${box(far)}<button data-act="copy-text" data-text="${esc(far)}" class="${SECOND} mt-2.5 w-full">${ico('copy', 'size-4')}Copy</button></div>` : ''}
-    <div><p class="px-1 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">Or just send this to the agent:</p>
-    ${box(short, false)}<button data-act="copy-text" data-text="${esc(short)}" class="${SECOND} mt-2.5 w-full">${ico('copy', 'size-4')}Copy</button></div>
-    <div><p class="px-1 text-sm text-zinc-600 dark:text-zinc-300">What the agent reads:</p>
-    <pre class="mt-2 overflow-x-auto lg:scrollbar-thin rounded-xl bg-zinc-50 p-3 text-xs leading-relaxed whitespace-pre-wrap dark:bg-zinc-950">${esc(text)}</pre></div></div>`;
-}
 // One change, as a sentence (B131): who, then what, with item codes and inputs as links; the time in grey.
 function logLine(l) {
   const m = /^#(\d+) (\S+ \S+) (\S+) (.*)$/s.exec(l);
@@ -5802,9 +5773,9 @@ function logLine(l) {
 }
 const logHtml = lines => `<ol class="divide-y divide-zinc-100 text-[13px] leading-relaxed text-zinc-600 dark:divide-zinc-800 dark:text-zinc-300">${lines.map(l => {
   const u = (S.undo || []).find(u => l.startsWith(`#${u.seq} `));  // one of your changes that can still be put back (F80)
-  return `<li class="flex items-start gap-2 py-1.5"><span class="min-w-0 flex-1 break-words">${logLine(l)}</span>${u ? `<button data-act="revert" data-seq="${u.seq}" class="-my-1 shrink-0 rounded-md px-2 py-1 font-sans text-xs font-semibold text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10">Undo</button>` : ''}</li>`;
+  return `<li class="flex items-start gap-2 py-1.5"><span class="min-w-0 flex-1 break-words">${logLine(l)}</span>${u ? `<button data-act="revert" data-seq="${u.seq}" class="relative -my-1 shrink-0 rounded-md px-2 py-1 after:absolute after:-inset-x-1 after:-inset-y-2.5 lg:after:hidden font-sans text-xs font-semibold text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10">Undo</button>` : ''}</li>`;
 }).join('')}</ol>`;
-// How the agents are doing, in one coloured card: the phone's Agents sheet and the desktop's Agents section.
+// How the agents are doing, in one coloured card, on top of Settings › Agents.
 function agentCard() {
   const [tone, , line] = agentState(S.agents, S.work);
   const queue = S.items.filter(inQueue), later = laterOf(queue);  // the same count as the band in Items (S3)
@@ -5815,46 +5786,11 @@ function agentCard() {
       <div><p class="text-[15px] leading-snug font-semibold ${look[2]}">${esc(line)}</p><p class="mt-1 text-[13px] leading-snug ${look[3]}">${plural(queue.length, 'item')} in the queue${later ? ` (${later} later)` : ''} · Keep going is ${S.cfg?.auto ? 'on' : 'off'}</p></div></div>`;
 }
 const agentsSeen = () => [...(S.agents || [])].sort((a, b) => b.t - a.t).map(a => `<li class="flex h-11 items-center gap-3">${avatar(a.name)}<span class="min-w-0 flex-1 text-[15px]">${esc(AGENT_NAME[a.name] || a.name)}</span><span class="text-sm text-zinc-500 dark:text-zinc-400">${a.waiting ? 'waiting for work' : agoLong(a.t)}</span></li>`).join('');
-function agentsHtml() {
-  const [tone] = agentState(S.agents, S.work), ask = agentAsk(), seen = agentsSeen();
-  return `<div class="flex flex-col gap-5">
-    ${agentCard()}
-    ${seen ? `<div><div class="px-1 pb-1 text-xs font-semibold text-zinc-500 dark:text-zinc-400">Seen in this project</div><ul class="divide-y divide-zinc-100 px-1 dark:divide-zinc-800">${seen}</ul></div>` : ''}
-    ${tone === 'ok' ? '' : `<div><p class="px-1 text-sm leading-relaxed text-zinc-600 dark:text-zinc-300">To get one working, open your coding agent in this project's folder and send it this:</p>
-      <div class="mt-2 rounded-xl bg-zinc-100 p-3 text-sm leading-relaxed break-words text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200">${esc(ask)}</div>
-      <button data-act="copy-text" data-text="${esc(ask)}" class="${PRIMARY} mt-2.5 w-full">${ico('copy', 'size-4.5')}Copy</button></div>`}
-    ${desk() ? '' : `<button data-act="auto" aria-pressed="${!!S.cfg?.auto}" class="group flex min-h-14 w-full items-center gap-3 rounded-2xl border border-zinc-200 px-3.5 py-2.5 text-left hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800/60">${ico('loop', 'size-5 text-emerald-600 dark:text-emerald-400')}
-      <span class="min-w-0 flex-1"><span class="block text-[15px] font-medium">Keep going</span><span class="block text-xs leading-snug text-zinc-500 dark:text-zinc-400">Agents take the next item without stopping</span></span>
-      <span class="relative h-6.5 w-11 shrink-0 rounded-full bg-zinc-300 transition-colors group-aria-pressed:bg-emerald-500 dark:bg-zinc-600 dark:group-aria-pressed:bg-emerald-500"><span class="absolute top-0.75 left-0.75 size-5 rounded-full bg-white shadow transition-transform group-aria-pressed:translate-x-4.5"></span></span></button>`}
-    <button data-act="guide" class="flex min-h-14 w-full items-center gap-3 rounded-2xl border border-zinc-200 px-3.5 py-2.5 text-left hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-800/60">${ico('plug', 'size-5 text-zinc-500 dark:text-zinc-400')}
-      <span class="min-w-0 flex-1"><span class="block text-[15px] font-medium">Connect a coding agent</span><span class="block text-xs text-zinc-500 dark:text-zinc-400">First time on that machine? Run one command there.</span></span>${ico('right', 'size-4 text-zinc-300 dark:text-zinc-600')}</button></div>`;
-}
-function showPhone() { dialog('Use on your phone', phoneHtml()); }
 const deletedRows = () => (S.deleted || []).map(x => `<li class="flex items-start gap-3 py-3.5">
     <div class="min-w-0 flex-1"><p class="text-xs text-zinc-500 dark:text-zinc-400"><span class="font-mono">${x.id}</span> · ${when(x.t)} · deleted ${when(x.at)}</p>
       <p class="mt-1 line-clamp-3 text-[15px] leading-snug break-words">${esc(x.text || (x.files ? plural(x.files, 'file') : ''))}</p>
       ${x.items.length ? `<p class="mt-1.5 text-[13px] leading-snug text-zinc-500 dark:text-zinc-400">With ${x.items.map(i => `<span class="font-mono text-xs font-bold ${TYPE_TEXT[i.type]}">${i.code}</span> ${esc(i.title)}`).join(' · ')}</p>` : ''}</div>
     <button data-act="input-restore" data-id="${x.id}" class="${SECOND} shrink-0">${ico('undo', 'size-4')}Restore</button></li>`).join('');
-const deletedHtml = () => (S.deleted || []).length ? `<ul class="divide-y divide-zinc-100 dark:divide-zinc-800">${deletedRows()}</ul>`
-  : '<p class="py-6 text-sm text-zinc-500 dark:text-zinc-400">Nothing deleted. An input you delete comes here, with the items that went with it.</p>';
-const showDeleted = () => dialog('Deleted', deletedHtml());
-// A sheet whose words come from Taska opens at once and fills when they arrive; if they can't, it says so (T160).
-const sheetIs = title => !$('overlay').hidden && $('dlgTitle').textContent === title;
-const sheetWait = '<p class="py-6 text-sm text-zinc-400">Loading…</p>';
-const sheetFail = act => `<p class="py-6 text-sm text-zinc-500 dark:text-zinc-400">Couldn't load it. <button data-act="${act}" class="${HIT} font-semibold text-blue-600 hover:underline dark:text-blue-400">Try again</button></p>`;
-async function sheetFrom(title, url, html, act) {
-  if (!sheetIs(title)) dialog(title, sheetWait);
-  try { const text = await net(url, {}, NET.get, 'text'); if (sheetIs(title)) dialog(title, html(text)); }
-  catch (_) { if (sheetIs(title)) dialog(title, sheetFail(act)); }
-}
-const showGuide = () => sheetFrom('Connect a coding agent', P + 'agent?ui=1', guideHtml, 'guide');
-function showLog() {  // with its own address on the phone (/log), a step Back undoes (B150)
-  const again = sheetIs('Change log');  // Try again: the same sheet, the same step
-  U.sheet = 'log';
-  const done = sheetFrom('Change log', P + `log?n=${LOG_N}&ui=1`, text => logHtml(text.trim().split('\n').reverse()), 'log');
-  if (!again && !desk()) writeURL(true);
-  return done;
-}
 
 function showSources(n) {
   const it = byN.get(n);
@@ -5910,7 +5846,8 @@ function render() {
   if (TIP.el && !TIP.el.isConnected) tipHide();  // its trigger was redrawn
   settleOpen();  // B5
   showView(); renderItems(); renderDetail(); renderComposer(); renderFeedback(); renderAgent();
-  if (desk()) { renderProjBar(); renderDeskHead(); renderSidebar(); renderRail(); renderFilters(); if (D.page) renderProject(); }
+  if (desk()) { renderProjBar(); renderDeskHead(); renderSidebar(); renderRail(); renderFilters(); }
+  if (D.page) renderProject();
   if (U.peek && !$('overlay').hidden) { const top = $('dlgBody').scrollTop; peek(U.peek, {focus: false}); $('dlgBody').scrollTop = top; }
   if (U.doc && !U.docEdit && !U.docQuote && !$('overlay').hidden && docSig(docById(U.doc)) !== U.docSig) renderDoc();  // only when it changed: a redraw under a tap loses the tap
   if (U.tab === 'inputs') renderInputs();
@@ -5918,11 +5855,10 @@ function render() {
   $('nInputs').textContent = pending || '';
   $('nInputs').title = pending ? `${pending} not organized yet` : '';
   fitTabs();
-  const waiting = S.items.filter(needsYou).length, sec = desk() && D.page ? PSEC[D.section][2] + ' · ' : '';  // each section is a page of its own (B162)
+  const waiting = S.items.filter(needsYou).length, sec = D.page ? (D.section ? PSEC[D.section][2] : 'Settings') + ' · ' : '';  // each section is a page of its own (B162)
   $('projName').textContent = S.project ? projTitle() : 'Taska';
   document.title = (waiting ? `(${waiting}) ` : '') + sec + (S.project ? `${projTitle()} · Taska` : 'Taska');
   if (DR.open) renderDrawerSettings();
-  if (!desk() && U.sheet === 'agents' && !$('overlay').hidden) $('dlgBody').innerHTML = agentsHtml();
   if (AUD.el) audioUi();
 }
 
@@ -5932,7 +5868,10 @@ function render() {
 // stays open while a word searches the list, also after a reload or when you come back to a tab that has one.
 function showView() {
   if (desk()) return showDesk();
-  const d = !!U.open, lift = d && BK.pull, under = !d || lift, v = $('detailView'), sq = !!(U.searching || U.q);
+  const page = !!D.page, d = !!U.open && !page, lift = d && BK.pull, under = (!d || lift) && !page, v = $('detailView'), sq = !!(U.searching || U.q);
+  $('projectView').hidden = !page; $('projectNav').hidden = !!D.section; $('projectBody').hidden = !D.section;  // Settings: a page at a time (B162)
+  if (page) { $('filterStrip').hidden = true; $('foot').hidden = !U.prefsEdit; }  // the box only while you edit the voice preferences (F183)
+  $('projectBody').classList.toggle('pb-64', page && !!U.prefsEdit);
   $('mainHead').hidden = $('tabs').hidden = !under;
   $('headNormal').hidden = sq; $('headSearch').hidden = !sq;
   for (const b of document.querySelectorAll('#tabs [data-tab]')) b.setAttribute('aria-selected', String(b.dataset.tab === U.tab));
@@ -6176,8 +6115,11 @@ const ACT = {
   },
   'compose-back': () => leaveCompose(),
   // Back where you came from (B162): the sections you went through here were steps in the history; they go at once.
-  'project-back': () => { const k = !URLS.applying && history.state?.page; D.page = null; render(); if (k) { URLS.selfBack = true; history.go(-k); } else writeURL(false); },
-  project: () => openProject('agents'),
+  'project-back': () => {
+    if (!desk()) return pageUp();
+    const k = !URLS.applying && history.state?.page; D.page = null; render(); if (k) { URLS.selfBack = true; history.go(-k); } else writeURL(false);
+  },
+  project: () => { if (!desk()) closeDrawer(); openProject(desk() ? 'agents' : null); },  // the phone: the Settings page with its list of sections
   psec: (b, e) => e?.metaKey || e?.ctrlKey || e?.shiftKey ? window.open(b.href, '_blank') : openProject(b.dataset.sec),  // ⌘-click: in a new tab
   'go-next': () => {
     if (desk()) {
@@ -6217,7 +6159,7 @@ const ACT = {
   },
   'go-input': b => {  // B131: from an item's source to that input in Inputs, lit up for a moment
     const id = b.dataset.id;
-    LAY.keep = !desk() && U.sheet === 'log'; closeDialog(); if (D.page) D.page = null;  // the log keeps its step (B150)
+    closeDialog(); if (D.page && !desk()) keepPlace(); if (D.page) D.page = null;  // on the phone a page of Settings keeps its step and its place: Back comes back to it (B150)
     if (!desk() && U.open) { stashEdit(); U.open = null; U.editing = null; U.subFor = null; showView(); [$('list').scrollTop, $('inputsView').scrollTop] = U.listTop || [0, 0]; }  // the phone leaves the item page for Inputs; Back comes back to it (B152)
     if (U.tab !== 'inputs') setTab('inputs'); else { render(); if (!desk()) writeURL(true); }
     requestAnimationFrame(() => requestAnimationFrame(() => {
@@ -6240,7 +6182,7 @@ const ACT = {
   },
   'proj-new': () => { closeDialog(); ACT['new-project'](); },
   'proj-delete': async b => { closeDialog(); try { await deleteProject(b.dataset.slug || S.project); } catch (ex) { toast(ex.message); } },
-  'p-new': () => { U.pNew = true; U.pErr = ''; U.renaming = null; renderProject(); $('pNewName')?.focus(); },
+  'p-new': () => { U.pNew = true; U.pErr = ''; U.renaming = null; U.pMenu = null; renderProject(); $('pNewName')?.focus(); },
   'p-new-cancel': () => { U.pNew = false; U.pNewText = ''; U.pErr = ''; renderProject(); },
   'p-create': async () => {
     const title = ($('pNewName')?.value || '').trim();
@@ -6248,28 +6190,30 @@ const ACT = {
     try { const d = await projectCall('', {title}); location.assign(`/p/${encodeURIComponent(d.name)}/`); }  // made: open it
     catch (ex) { U.pErr = ex.message; U.pNewText = title; renderProject(); $('pNewName')?.focus(); }
   },
-  'p-rename': b => { U.renaming = b.dataset.slug; U.pNew = false; renderProject(); const f = $('pRename'); if (f) { f.focus(); f.select(); } },
-  'p-delete': async b => { try { await deleteProject(b.dataset.slug); } catch (ex) { toast(ex.message); } },
+  'p-rename': b => { U.renaming = b.dataset.slug; U.pNew = false; U.pMenu = null; renderProject(); const f = $('pRename'); if (f) { f.focus(); f.select(); } },
+  'p-rename-save': () => saveRename($('pRename')),  // the phone's Save; Enter does the same
+  'p-rename-cancel': () => { U.renaming = null; renderProject(); if (desk()) renderProjBar(); },
+  'p-more': b => { const k = b.dataset.key; U.pMenu = U.pMenu === k ? null : k; U.renaming = null; renderProject(); },  // the phone: a row's ⋯ opens a line of its actions
+  'p-delete': async b => { U.pMenu = null; try { await deleteProject(b.dataset.slug); } catch (ex) { toast(ex.message); } },
   'p-restore': async b => {
-    try { const d = await projectCall('restore', {name: b.dataset.slug}); await loadProjects(); toast(`${d.title} is back`); } catch (ex) { toast(ex.message); }
+    try { const d = await projectCall('restore', {name: b.dataset.slug}); U.pMenu = null; await loadProjects(); toast(`${d.title} is back`); } catch (ex) { toast(ex.message); }
   },
   'p-purge': async b => {
     if (!confirmClick(b, `${desk() ? 'Click' : 'Tap'} again: it can't be undone`)) return;
-    try { await projectCall('purge', {name: b.dataset.slug}); await loadProjects(); toast('Deleted for good'); } catch (ex) { toast(ex.message); }
+    try { await projectCall('purge', {name: b.dataset.slug}); U.pMenu = null; await loadProjects(); toast('Deleted for good'); } catch (ex) { toast(ex.message); }
   },
-  guide: () => { if (desk()) return openProject('connect'); closeDrawer(); showGuide(); },
-  'agent-info': () => { if (desk()) return openProject('agents'); closeDrawer(); U.sheet = 'agents'; dialog('Agents', agentsHtml()); },
-  about: () => { closeDrawer(); dialog('About', `<dl class="border-t border-zinc-200 text-sm dark:border-zinc-800">${[['Project', `${esc(projTitle())} <span class="font-mono text-[13px] text-zinc-500 dark:text-zinc-400">/p/${esc(S.project)}</span>`], ['Data', `<span class="font-mono text-[13px] break-all">${esc(S.file)}</span>`],
-    ['Organizer', S.org?.on ? 'Gemini · ' + esc(S.org.model) : 'off (set GEMINI_API_KEY and restart)']].map(([k, v]) => `<div class="grid grid-cols-[6rem_minmax(0,1fr)] items-baseline gap-4 border-b border-zinc-200 py-4 dark:border-zinc-800"><dt class="text-zinc-500 dark:text-zinc-400">${k}</dt><dd class="text-zinc-800 dark:text-zinc-200">${v}</dd></div>`).join('')}</dl>`); },  // where the data lives and what organizes it, out of the menu's way (B158)
-  phone: () => { if (desk()) return openProject('phone'); closeDrawer(); showPhone(); },
+  guide: () => openProject('connect'),
+  'agent-info': () => openProject('agents'),
+  about: () => openProject('about'),
+  phone: () => openProject('phone'),
   'new-key': async b => {
     if (!confirmClick(b, `${desk() ? 'Click' : 'Tap'} again: other devices will need the new link`)) return;
     try { await net('/api/key', {method: 'POST'}, NET.op); } catch (ex) { return notSaved(ex); }
     try { await load(); } catch (_) {}
-    if (desk()) renderProject(); else showPhone(); toast('New key made');
+    renderProject(); toast('New key made');
   },
-  log: () => { if (desk()) return openProject('log'); closeDrawer(); showLog(); },
-  deleted: () => { if (desk()) return openProject('deleted'); closeDrawer(); showDeleted(); },
+  log: () => openProject('log'),
+  deleted: () => openProject('deleted'),
   'input-delete': async b => {  // F177: to Deleted, with the items only it made; the toast says what went and what stayed, Undo and Z put it back
     const id = b.dataset.id;
     try { await save({op: 'delete', id}, () => ACT['input-delete'](b)); } catch (_) { return; }
@@ -6277,7 +6221,6 @@ const ACT = {
     let run;
     run = pushUndo(`${id} deleted`, async () => {
       try { await save({op: 'restore', id}, run); } catch (_) { return false; }
-      if (sheetIs('Deleted')) showDeleted();
       toast(`${id} is back${x?.items.length ? ` with ${x.items.map(i => i.code).join(', ')}` : ''}`);
     });
     toast(deletedSaid(x, id), run);
@@ -6285,11 +6228,9 @@ const ACT = {
   'input-restore': async b => {  // from Settings › Deleted: back as it was; Undo or Z deletes it again
     const id = b.dataset.id, x = (S.deleted || []).find(x => x.id === id);
     try { await save({op: 'restore', id}, () => ACT['input-restore'](b)); } catch (_) { return; }
-    if (sheetIs('Deleted')) showDeleted();
     let run;
     run = pushUndo(`${id} restored`, async () => {
       try { await save({op: 'delete', id}, run); } catch (_) { return false; }
-      if (sheetIs('Deleted')) showDeleted();
       toast(deletedSaid((S.deleted || []).find(x => x.id === id), id));
     });
     toast(`${id} is back${x?.items.length ? ` with ${x.items.map(i => i.code).join(', ')}` : ''}`, run);
@@ -6313,9 +6254,9 @@ const ACT = {
   },
   goto: b => {  // from a chip, a source, a subitem, the change log or Make item: to the item, leaving pages that hide it
     const walk = !desk() && U.go && U.peek && !$('overlay').hidden ? {go: U.go, n: U.peek} : null;  // Open on a card while going through: back from the item, the walk goes on (B153)
-    LAY.keep = !desk() && U.sheet === 'log'; closeDialog();  // the log keeps its step: Back comes back to it (B150)
+    closeDialog();
     const n = Number(b.dataset.n), it = byN.get(liveN(n));
-    if (!desk()) { openItem(n); U.goBack = walk; return; }
+    if (!desk()) { if (D.page) { keepPlace(); D.page = null; } openItem(n); U.goBack = walk; return; }  // from a page of Settings: Back comes back to it, where it was (B150)
     keepPlace();  // B9: one step in the history, so Back comes back here, scrolled as it was
     URLS.hold = true;
     try {
@@ -6536,7 +6477,7 @@ const ACT = {
   'prefs-edit': () => editPrefs(),  // F183
   'prefs-cancel': () => cancelPrefs(),
   'correct-cancel': () => cancelCorrect(),
-  fixes: () => { if (desk()) return openProject('fixes'); closeDrawer(); dialog('Voice spellings', fixesHtml()); loadFixes(); },
+  fixes: () => openProject('fixes'),
   'fix-remove': async b => {
     const wrong = b.dataset.wrong, c = (P_CACHE.fixes || []).find(x => x.wrong === wrong);
     try { await setFix({wrong}); toast(`Forgot “${wrong}”`, () => setFix({wrong, right: c.right}).catch(ex => notSaved(ex))); } catch (ex) { notSaved(ex, () => ACT['fix-remove'](b)); }
@@ -6607,7 +6548,7 @@ function showDesk() {
   $('itemsView').hidden = page || inputs || full;
   $('inputsView').hidden = page || !inputs;
   $('detailView').hidden = page || inputs;
-  $('projectView').hidden = !page;
+  $('projectView').hidden = !page; $('projectNav').hidden = $('projectBody').hidden = false;  // the phone shows one of the two at a time
   $('foot').hidden = page && !U.prefsEdit;  // the one box shows on Voice spellings while you edit the preferences (F183)
   $('projectBody').classList.toggle('pb-64', page && !!U.prefsEdit);  // and the page's end stays clear of it
   $('deskFilters').hidden = page || full || inputs || !(D.filters || filtersSet().length);
@@ -7009,10 +6950,10 @@ function fullWidth(on) {
 // groups: this project (Agents, with connecting one; the Change log; the inputs you deleted, F177) and all projects
 // (Projects, Use on your phone, Voice spellings, the Organizer). The right shows one section at a time under its
 // heading: what it is for, then its parts, with at most one main action. Each section has its own address, so Back,
-// Forward and reload work; /settings is Agents, and the old /connect and /about lead to Agents and Projects. G S
-// opens it. The phone shows the same.
+// Forward and reload work; Agents is /agents, /settings leads to it, and the old /connect and /about lead to Agents and
+// Projects. G S opens it. The phone shows the same as pages: /settings is the list of sections, each section a page.
 const PSEC = {  // section: [address, icon, name, what it is for]
-  agents: ['settings', 'bot', 'Agents', () => `The coding agents that work on ${esc(projTitle())}: who is here, whether they go on by themselves, and how to connect one more.`],
+  agents: ['agents', 'bot', 'Agents', () => `The coding agents that work on ${esc(projTitle())}: who is here, whether they go on by themselves, and how to connect one more.`],
   log: ['log', 'history', 'Change log', 'Every change to this project, newest first. Undo puts back one of your own changes.'],
   deleted: ['deleted', 'trash', 'Deleted', 'Inputs you deleted, with the items that went with them. Restore puts them back as they were.'],
   projects: ['projects', 'folder', 'Projects', 'Every project on this Taska. Give a project any name; its address never changes, so agents and phone links keep working.'],
@@ -7021,25 +6962,17 @@ const PSEC = {  // section: [address, icon, name, what it is for]
   organizer: ['organizer', 'sparkle', 'Organizer', 'What turns what you say into items, for every project.'],
 };
 const PSEC_THIS = ['agents', 'log', 'deleted'];  // the rest are for all projects
-const PSEC_AT = {...Object.fromEntries(Object.entries(PSEC).map(([sec, [path]]) => [path, sec])), connect: 'connect', about: 'projects'};  // address -> section; /connect: Agents, at Connect
+const PSEC_AT = {...Object.fromEntries(Object.entries(PSEC).map(([sec, [path]]) => [path, sec])), settings: 'agents', connect: 'connect', about: 'projects'};  // address -> section; /settings: Agents (the phone: the list), /connect: Agents, at Connect
 const P_CACHE = {guide: null, log: null, logRev: -1, fixes: null, prefs: null, nav: '', body: '', projects: null, trash: null};
 const LOG_N = 300;  // the change log shows the latest 300 changes, here and on the phone
 // The voice spellings you corrected (F144): the same list in every project, each one can be forgotten.
-const fixesHtml = () => !P_CACHE.fixes ? '<p class="text-sm text-zinc-400">Loading…</p>' : prefsHtml() + (P_CACHE.fixes.length
-  ? `<p class="mb-2 text-[13px] leading-snug text-zinc-500 dark:text-zinc-400">Every project's voice notes write these your way. To add one, select the wrong words in a voice note.</p>
-    <ul class="flex flex-col divide-y divide-zinc-100 dark:divide-zinc-800">${P_CACHE.fixes.map(c => `<li class="flex min-h-11 items-center gap-2 text-sm"><span class="min-w-0 flex-1 break-words"><span class="text-zinc-400 line-through decoration-zinc-400">${esc(c.wrong)}</span> → <span class="font-medium">${esc(c.right)}</span></span><button data-act="fix-remove" data-wrong="${esc(c.wrong)}" aria-label="Forget this spelling" class="grid size-11 shrink-0 place-items-center rounded-lg text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200">${ico('x', 'size-4')}</button></li>`).join('')}</ul>`
-  : '<p class="text-[13px] leading-snug text-zinc-500 dark:text-zinc-400">None yet. When a voice note gets words wrong, select them in the input and write the right ones: from then on every project writes them your way.</p>');
 async function loadFixes() { try { [P_CACHE.fixes, P_CACHE.prefs] = await Promise.all(['/api/corrections', '/api/voiceprefs'].map(u => net(u))); } catch (_) { notLoaded('the voice spellings', loadFixes); } refreshFixes(); }
 // F183: how voice notes are written down, for every project. Edit puts the text into the one box; Save keeps it.
 const prefsBox = (cls = 'mt-3') => `<div class="${cls} rounded-xl bg-zinc-100 px-3.5 py-3 text-[15px] leading-relaxed whitespace-pre-wrap break-words text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100">${esc(P_CACHE.prefs?.text || '')}</div>`;
 const prefsEditBtn = () => U.prefsEdit ? '<p class="mt-3 text-[13px] text-blue-600 dark:text-blue-400">Editing in the box below</p>' : `<button data-act="prefs-edit" class="${SECOND} mt-3">${ico('pencil', 'size-4')}Edit</button>`;
-const prefsHtml = () => P_CACHE.prefs ? `<section class="mb-5"><h3 class="text-sm font-semibold">Transcription preferences${P_CACHE.prefs.default ? '<span class="ml-2 font-normal text-zinc-400">default</span>' : ''}</h3>
-    <p class="mt-1 text-[13px] leading-snug text-zinc-500 dark:text-zinc-400">How every project's voice notes are written down, in your words.</p>${prefsBox()}${prefsEditBtn()}</section>
-    <h3 class="mb-1 text-sm font-semibold">Spellings</h3>` : '';
 function editPrefs() {
   if (!P_CACHE.prefs) return;
   U.prefsEdit = {was: P_CACHE.prefs.text}; U.amend = null; U.correct = null;
-  if (!desk()) dialog('Voice spellings', fixesHtml(), {aboveComposer: true, focus: false});
   render();
   const t = $('text');
   if (!t.value.trim()) { t.value = P_CACHE.prefs.text; saveDraft(); grow(); renderComposer(); }
@@ -7058,7 +6991,7 @@ async function sendPrefs() {
     });
   } catch (_) { toast('Connection lost. Your words are still in the box; try again.', null, {error: true}); }
 }
-function refreshFixes() { if (D.page) renderProject(); else if (!$('overlay').hidden && $('dlgTitle').textContent === 'Voice spellings') dialog('Voice spellings', fixesHtml()); }
+function refreshFixes() { if (D.page) renderProject(); }
 async function setFix(body) {
   const d = await net('/api/corrections', JSON_POST(body), NET.op);
   if (!d.ok) { toast(d.error || 'Not saved', null, {error: true}); throw new Error(); }
@@ -7078,18 +7011,28 @@ async function loadProjects() {
   if (desk()) { renderSidebar(); renderRail(); }
 }
 // Opening a section is a step Back undoes; history.state.page counts the steps, so Back to Items undoes them all.
+// sec null: the phone's Settings page, the list of sections (on the desktop that list is always beside the section).
 function openProject(sec) {
   const part = sec === 'connect' ? 'pConnect' : null;  // the old Connect is a part of Agents now
-  sec = sec === 'connect' ? 'agents' : sec === 'about' ? 'projects' : Object.hasOwn(PSEC, sec) ? sec : 'agents';
-  const from = D.page && D.section;
+  sec = sec === 'connect' ? 'agents' : sec === 'about' ? 'projects' : Object.hasOwn(PSEC, sec) ? sec : desk() ? 'agents' : null;
+  const was = !!D.page, from = was ? D.section : undefined;
   if (from !== sec) keepPlace();  // B9
+  if (!desk() && !was && U.open) { stashEdit(); U.open = null; U.editing = null; U.subFor = null; }  // the phone: a page of its own
   D.page = 'project'; D.sideOpen = false; D.section = sec;
+  if (sec !== 'projects') { U.pMenu = null; U.pNew = false; U.renaming = null; }
   render();
-  if (from !== sec) { $('projectBody').scrollTop = 0; writeURL(true, {v: viewPath(), page: from ? (history.state?.page || 0) + 1 : 1, tab: U.tab}); }  // tab: what Back to … goes to
+  if (from !== sec) { (sec || desk() ? $('projectBody') : $('projectNav')).scrollTop = 0; writeURL(true, {v: viewPath(), page: was ? (history.state?.page || 0) + 1 : 1, tab: U.tab}); }  // tab: what Back to … goes to
   if (sec === 'agents' && !P_CACHE.guide) net(P + 'agent?ui=1', {}, NET.get, 'text').then(g => { P_CACHE.guide = g; renderProject(); }, () => {});
   if (!P_CACHE.fixes) loadFixes();  // its count shows in the list of sections
   if (sec === 'projects' || !P_CACHE.projects) loadProjects();
   if (part) requestAnimationFrame(() => $(part)?.scrollIntoView({block: 'start'}));
+}
+// The phone's ‹ on a page of Settings: back where you came from when that was a step here, else one level up, from a
+// section to the list of sections and from there to the list of items (a reload, or a link from outside).
+function pageUp() {
+  if (history.state?.page) return hist(() => history.back());
+  if (D.section) D.section = null; else D.page = null;
+  render(); writeURL(false);
 }
 // Redraw only what changed: a redraw on every poll would drop the focus, a selection or a half-done second click.
 // The sidebar, the rail and the drawer are drawn again only when they changed (T160): a refresh that replaces them
@@ -7104,13 +7047,13 @@ function setHtml(el, key, html) {
   if (had) [...el.querySelectorAll('[data-act]')].find(x => sig(x) === had)?.focus({preventScroll: true});
 }
 // The parts of a section, under thin rules: a title and what it is for, then its box and button.
-const pPart = (title, about, body = '', id = '') => `<section ${id ? `id="${id}" ` : ''}class="scroll-mt-6 border-t border-zinc-200 py-6 dark:border-zinc-800"><h2 class="text-[15px] font-semibold">${title}</h2>${about ? `<p class="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">${about}</p>` : ''}${body}</section>`;
+const pPart = (title, about, body = '', id = '') => `<section ${id ? `id="${id}" ` : ''}class="scroll-mt-16 border-t lg:scroll-mt-6 border-zinc-200 py-6 dark:border-zinc-800"><h2 class="text-[15px] font-semibold">${title}</h2>${about ? `<p class="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">${about}</p>` : ''}${body}</section>`;
 const pSetting = (title, about, control) => `<section class="flex items-center gap-6 border-t border-zinc-200 py-6 dark:border-zinc-800"><div class="min-w-0 flex-1"><h2 class="text-[15px] font-semibold">${title}</h2><p class="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">${about}</p></div>${control}</section>`;
 const pBox = (t, mono = true) => `<div class="mt-3 rounded-xl bg-zinc-100 px-3.5 py-3 leading-relaxed text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200 ${mono ? 'font-mono text-[13px] break-all' : 'text-sm break-words'}">${esc(t)}</div>`;
 const pCopy = (t, label, main = false) => `<button data-act="copy-text" data-text="${esc(t)}" class="${main ? PRIMARY : SECOND} mt-3">${ico('copy', main ? 'size-4.5' : 'size-4')}${label}</button>`;
 const pRuled = html => `<div class="border-t border-zinc-200 dark:border-zinc-800">${html}</div>`;
 const P_LOADING = pRuled('<p class="py-6 text-sm text-zinc-400">Loading…</p>');
-const keepGoingToggle = () => `<button data-act="auto" aria-pressed="${!!S.cfg?.auto}" aria-label="Keep going" class="group relative h-6.5 w-11 shrink-0 rounded-full bg-zinc-300 transition-colors hover:brightness-95 aria-pressed:bg-emerald-500 dark:bg-zinc-600 dark:hover:brightness-125"><span class="absolute top-0.75 left-0.75 size-5 rounded-full bg-white shadow transition-transform group-aria-pressed:translate-x-4.5"></span></button>`;
+const keepGoingToggle = () => `<button data-act="auto" aria-pressed="${!!S.cfg?.auto}" aria-label="Keep going" class="group relative h-6.5 w-11 shrink-0 rounded-full after:absolute after:inset-x-0 after:-inset-y-[9px] bg-zinc-300 transition-colors hover:brightness-95 aria-pressed:bg-emerald-500 dark:bg-zinc-600 dark:hover:brightness-125"><span class="absolute top-0.75 left-0.75 size-5 rounded-full bg-white shadow transition-transform group-aria-pressed:translate-x-4.5"></span></button>`;
 const P_BTN = 'inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-zinc-100';
 const dayShort = t => t ? new Date(t).toLocaleDateString('en-US', {month: 'short', day: 'numeric'}) : '';
 const PBODY = {
@@ -7122,7 +7065,7 @@ const PBODY = {
       + (far ? pPart('From another network', 'On a machine outside this network, run this one instead. It carries the key.', pBox(far) + pCopy(far, 'Copy')) : '')
       + pPart('Or send it to the agent', "Open your coding agent in the project's folder and send it this. It reads the rest from Taska.", pBox(ask, false) + pCopy(ask, 'Copy'))
       + (seen ? pPart('Seen in this project', '', `<ul class="mt-2 divide-y divide-zinc-100 dark:divide-zinc-800">${seen}</ul>`) : '')
-      + `<details class="group border-t border-zinc-200 py-6 dark:border-zinc-800"><summary class="flex cursor-pointer items-center gap-1.5 text-[15px] font-semibold hover:text-zinc-600 dark:hover:text-zinc-300">${ico('right', 'size-4 text-zinc-400 transition-transform group-open:rotate-90')}What the agent reads</summary>
+      + `<details class="group border-t border-zinc-200 py-6 dark:border-zinc-800"><summary class="-my-2.5 flex min-h-11 cursor-pointer items-center gap-1.5 text-[15px] font-semibold lg:my-0 lg:min-h-0 hover:text-zinc-600 dark:hover:text-zinc-300">${ico('right', 'size-4 text-zinc-400 transition-transform group-open:rotate-90')}What the agent reads</summary>
         <pre class="mt-3 overflow-x-auto rounded-xl bg-zinc-50 p-3.5 text-xs leading-relaxed whitespace-pre-wrap lg:scrollbar-thin dark:bg-zinc-900">${esc(P_CACHE.guide || 'Loading…')}</pre></details>`;
   },
   log: () => !P_CACHE.log ? P_LOADING : !P_CACHE.log.length ? pRuled(EMPTY('Nothing has changed yet.'))
@@ -7159,7 +7102,7 @@ const PBODY = {
   },
   fixes: () => !P_CACHE.fixes ? P_LOADING : (P_CACHE.prefs ? pPart(`Transcription preferences${P_CACHE.prefs.default ? '<span class="ml-2 text-[13px] font-normal text-zinc-400">default</span>' : ''}`, "How every project's voice notes are written down, in your own words. Transcription follows them after its own rules.", prefsBox() + prefsEditBtn()) + pPart('Spellings', P_CACHE.fixes.length ? 'The words you corrected once, written your way from then on.' : 'None yet. When a voice note gets words wrong, select them in the input and write the right ones: from then on every project writes them your way.') : '') + (!P_CACHE.fixes.length ? (P_CACHE.prefs ? '' : pRuled(EMPTY('None yet. When a voice note gets words wrong, select them in the input and write the right ones: from then on every project writes them your way.')))
     : `<ul class="divide-y divide-zinc-200 border-y border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">${P_CACHE.fixes.map(c => `<li class="flex min-h-13 items-center gap-3 py-1.5 text-[15px]"><span class="min-w-0 flex-1 break-words"><span class="text-zinc-400 line-through decoration-zinc-400 dark:text-zinc-500">${esc(c.wrong)}</span><span class="px-2 text-zinc-400 dark:text-zinc-500">→</span><span class="font-medium">${esc(c.right)}</span></span>
-      <button data-act="fix-remove" data-wrong="${esc(c.wrong)}" aria-label="Forget this spelling" title="Forget this spelling" class="grid size-9 shrink-0 place-items-center rounded-lg text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200">${ico('x', 'size-4')}</button></li>`).join('')}</ul>`),
+      <button data-act="fix-remove" data-wrong="${esc(c.wrong)}" aria-label="Forget this spelling" title="Forget this spelling" class="grid size-11 shrink-0 lg:size-9 place-items-center rounded-lg text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200">${ico('x', 'size-4')}</button></li>`).join('')}</ul>`),
   deleted: () => (S.deleted || []).length ? `<ul class="divide-y divide-zinc-200 border-y border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">${deletedRows()}</ul>`
     : pRuled(EMPTY('Nothing deleted. An input you delete comes here, with the items that went with it.')),
   organizer: () => S.org?.on
@@ -7172,8 +7115,17 @@ const PSEC_RIGHT = {  // what a section's row in the list says on its right
 };
 function renderProject() {
   if (!D.page) return;
-  const sec = D.section, [, , name, about] = PSEC[sec];
+  const sec = D.section;
   if (sec === 'log' && P_CACHE.logRev !== S.rev) loadLog();  // the project changed, so did its log
+  const typing = {pRename: U.renaming, pNewName: U.pNew}[document.activeElement?.id];
+  if (!desk()) {  // the phone: the list of sections, or one section, each a page of its own
+    if (!sec) return setHtml($('projectNav'), 'nav', phoneIndex());
+    if (typing && $('projectBody').contains(document.activeElement)) return;
+    setHtml($('projectBody'), 'body', phoneSection(sec));
+    if (U.renaming && P_CACHE.projects && !$('pRename') && sec === 'projects') U.renaming = null;
+    return;
+  }
+  const [, , name, about] = PSEC[sec];
   const row = k => { const [path, icon, label] = PSEC[k], on = k === sec;
     return `<a href="${P}${path}" data-act="psec" data-sec="${k}" ${on ? 'aria-current="page" ' : ''}class="flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-sm text-zinc-600 hover:bg-zinc-200/60 hover:text-zinc-900 data-pressed:bg-zinc-200/80 aria-[current=page]:bg-zinc-200/70 aria-[current=page]:font-semibold aria-[current=page]:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800/60 dark:hover:text-zinc-100 dark:aria-[current=page]:bg-zinc-800 dark:aria-[current=page]:text-zinc-50">${ico(icon, 'size-4 opacity-70')}<span class="min-w-0 flex-1 truncate">${label}</span><span class="max-w-28 truncate text-xs font-normal text-zinc-400 tabular-nums dark:text-zinc-500">${PSEC_RIGHT[k]?.() ?? ''}</span></a>`; };
   const group = t => `<div class="px-3.5 pt-5 pb-1.5 text-[11px] font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">${t}</div>`;
@@ -7183,11 +7135,56 @@ function renderProject() {
     <div class="flex flex-col gap-0.5 px-2">${PSEC_THIS.map(row).join('')}</div>
     ${group('All projects')}<div class="flex flex-col gap-0.5 px-2">${Object.keys(PSEC).filter(k => !PSEC_THIS.includes(k)).map(row).join('')}</div>
     <button data-act="keys" class="mt-auto flex h-12 shrink-0 items-center gap-2 border-t border-zinc-200 px-4 text-[13px] text-zinc-500 hover:text-zinc-800 dark:border-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200">${ico('keyboard', 'size-4')}<span class="flex-1 text-left">Keyboard shortcuts</span>${KBD('?')}</button>`);
-  const typing = {pRename: U.renaming, pNewName: U.pNew}[document.activeElement?.id];
   if (typing && $('projectBody').contains(document.activeElement)) return;  // typing a name: a refresh waits; saved or stopped, the field goes
   setHtml($('projectBody'), 'body', `<div class="mx-auto w-full max-w-[46rem] px-8 pt-9 pb-16"><header class="pb-6"><h1 class="text-[22px] leading-tight font-semibold tracking-tight">${name}</h1>
     <p class="mt-2 text-[15px] leading-relaxed text-zinc-500 dark:text-zinc-400">${typeof about === 'function' ? about() : about}</p></header>${PBODY[sec]()}</div>`);
   if (U.renaming && P_CACHE.projects && !$('pRename') && sec === 'projects') U.renaming = null;  // that project is gone
+}
+// Settings on the phone (B162): pages in the grouped style of a phone's own settings. /settings lists the sections in
+// two groups, as the desktop's column does; each section is a page with ‹ and its name, what it is for, then the same
+// parts as on the desktop in a card. Projects has its own phone layout: a ⋯ on each row holds Rename and Delete, and
+// a deleted project's ⋯ holds Delete forever. A phone has no Esc, so a name field comes with Save and Cancel buttons.
+const PH_GROUP = 'mx-3 divide-y divide-zinc-100 overflow-hidden rounded-2xl bg-white dark:divide-zinc-800 dark:bg-zinc-900';
+const phHead = title => `<header class="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-1 bg-zinc-100/90 px-1 backdrop-blur dark:bg-zinc-950/90"><button data-act="project-back" aria-label="Back" class="grid size-11 shrink-0 place-items-center rounded-full text-zinc-600 dark:text-zinc-400">${ico('left', 'size-6')}</button><h1 class="min-w-0 truncate text-[17px] font-semibold">${title}</h1></header>`;
+const phLabel = t => `<div class="flex min-w-0 items-center gap-1.5 px-5 pt-6 pb-1.5 text-xs font-semibold text-zinc-500 dark:text-zinc-400">${t}</div>`;
+const phNote = t => `<p class="px-5 pt-2 text-xs leading-snug text-zinc-500 dark:text-zinc-400">${t}</p>`;
+function phoneIndex() {
+  const row = k => { const [path, icon, label] = PSEC[k], [tone, agent] = agentState(S.agents, S.work);
+    const right = k === 'agents' ? `<span class="size-2 shrink-0 rounded-full ${AGENT_TONE[tone][0]}"></span><span class="truncate">${esc(agent)}</span>` : `<span class="truncate">${PSEC_RIGHT[k]?.() ?? ''}</span>`;
+    return `<a href="${P}${path}" data-act="psec" data-sec="${k}" class="flex min-h-12 items-center gap-3 px-3.5 py-2.5 text-[15px]">${ico(icon, 'size-5 shrink-0 text-zinc-500 dark:text-zinc-400')}<span class="shrink-0">${label}</span><span class="ml-auto flex min-w-0 items-center gap-1.5 text-[13px] text-zinc-500 tabular-nums dark:text-zinc-400">${right}</span>${ico('right', 'size-4 shrink-0 text-zinc-300 dark:text-zinc-600')}</a>`; };
+  return phHead('Settings')
+    + phLabel(`<span class="shrink-0">This project ·</span>${projTile(S.project, 'size-4 rounded text-[9px]')}<span class="truncate font-semibold text-zinc-700 dark:text-zinc-200">${esc(projTitle())}</span>`)
+    + `<div class="${PH_GROUP}">${PSEC_THIS.map(row).join('')}</div>` + phNote('Keep going and connecting an agent are in Agents. The agent pill on the list opens it too.')
+    + phLabel('All projects') + `<div class="${PH_GROUP}">${Object.keys(PSEC).filter(k => !PSEC_THIS.includes(k)).map(row).join('')}</div>` + phNote('Projects: new, rename, delete and restore.');
+}
+function phoneSection(sec) {
+  const [, , name, about] = PSEC[sec];
+  return phHead(name) + `<p class="px-5 pt-1 text-[13px] leading-snug text-zinc-500 dark:text-zinc-400">${typeof about === 'function' ? about() : about}</p>`
+    + (sec === 'projects' ? phoneProjects() : `<div class="mx-3 mt-4 rounded-2xl bg-white px-4 dark:bg-zinc-900 [&>:first-child]:border-t-0 [&>:last-child]:border-b-0">${PBODY[sec]()}</div>`)
+    + '<div class="h-10"></div>';
+}
+function phoneProjects() {
+  if (!P_CACHE.projects) return '<p class="px-5 py-6 text-sm text-zinc-400">Loading…</p>';
+  const live = [...P_CACHE.projects].sort((a, b) => (b.name === S.project) - (a.name === S.project) || titleOf(a).localeCompare(titleOf(b))), gone = P_CACHE.trash || [];
+  const pill = 'flex h-11 shrink-0 items-center gap-1.5 rounded-xl bg-zinc-100 px-3.5 text-sm font-medium dark:bg-zinc-800';
+  const more = (key, title) => `<button data-act="p-more" data-key="${esc(key)}" aria-label="More for ${esc(title)}" aria-expanded="${U.pMenu === key}" class="grid size-11 shrink-0 place-items-center rounded-full text-zinc-400 aria-expanded:bg-zinc-100 aria-expanded:text-zinc-700 dark:text-zinc-500 dark:aria-expanded:bg-zinc-800 dark:aria-expanded:text-zinc-200">${ico('more', 'size-5')}</button>`;
+  const twoButtons = (save, saveLabel, cancel, slug = '') => `<div class="mt-2 flex gap-2"><button data-act="${save}" ${slug ? `data-slug="${esc(slug)}" ` : ''}class="h-11 shrink-0 rounded-xl bg-zinc-900 px-4 text-[15px] font-semibold text-white dark:bg-zinc-100 dark:text-zinc-900">${saveLabel}</button><button data-act="${cancel}" class="h-11 shrink-0 rounded-xl px-4 text-[15px] font-medium text-zinc-600 dark:text-zinc-300">Cancel</button></div>`;
+  const add = U.pNew
+    ? `<div class="px-3.5 py-3"><input id="pNewName" class="${FIELD} h-11 py-2" placeholder="Project name" aria-label="New project name" autocomplete="off" spellcheck="false" value="${esc(U.pNewText || '')}">${twoButtons('p-create', 'Create', 'p-new-cancel')}
+        <p class="mt-2 text-xs leading-snug ${U.pErr ? 'text-red-600 dark:text-red-400' : 'text-zinc-500 dark:text-zinc-400'}">${U.pErr ? esc(U.pErr) : 'Any name: spaces, \u4e2d\u6587, emoji. Its address is made from the name once.'}</p></div>`
+    : `<button data-act="p-new" class="flex min-h-12 w-full items-center gap-3 px-3.5 py-2.5 text-left text-[15px] font-medium text-blue-600 dark:text-blue-400">${ico('plus', 'size-5')}New project</button>`;
+  const row = p => { const cur = p.name === S.project, t = titleOf(p);
+    if (U.renaming === p.name) return `<div class="flex items-start gap-3 px-3.5 py-3">${projTile(p.name, 'mt-1.5 size-8 rounded-lg text-sm')}<div class="min-w-0 flex-1"><input id="pRename" data-slug="${esc(p.name)}" class="${FIELD} h-11 py-2 font-medium" value="${esc(t)}" aria-label="New name for ${esc(t)}" autocomplete="off" spellcheck="false">
+        ${twoButtons('p-rename-save', 'Save', 'p-rename-cancel', p.name)}<p class="mt-2 text-xs text-zinc-500 dark:text-zinc-400">The address stays <span class="font-mono">/p/${esc(p.name)}</span></p></div></div>`;
+    return `<div><div class="flex min-h-14 items-center gap-3 py-2 pr-1.5 pl-3.5">${projTile(p.name, 'size-8 rounded-lg text-sm')}<span class="min-w-0 flex-1"><span class="flex min-w-0 items-center gap-2 text-[15px] font-semibold"><span class="truncate">${esc(t)}</span>${cur ? '<span class="shrink-0 rounded-md bg-zinc-100 px-1.5 py-px text-[11px] font-medium text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">This project</span>' : ''}</span>
+        <span class="mt-0.5 block truncate text-xs text-zinc-500 dark:text-zinc-400"><span class="font-mono">/p/${esc(p.name)}</span> · ${p.open} open</span></span>${more(p.name, t)}</div>
+      ${U.pMenu === p.name ? `<div class="flex gap-2 pr-3.5 pb-3 pl-[3.75rem]"><button data-act="p-rename" data-slug="${esc(p.name)}" class="${pill}">${ico('pencil', 'size-4')}Rename</button><button data-act="p-delete" data-slug="${esc(p.name)}" class="${pill} text-red-600 dark:text-red-400">${ico('trash', 'size-4')}Delete</button></div>` : ''}</div>`; };
+  const was = d => `<div><div class="flex min-h-14 items-center gap-3 py-2 pr-1.5 pl-3.5"><span aria-hidden="true" class="grid size-8 shrink-0 place-items-center rounded-lg bg-zinc-400 text-sm leading-none font-bold text-white uppercase dark:bg-zinc-600">${esc([...String(d.title || '?')][0])}</span>
+      <span class="min-w-0 flex-1"><span class="block truncate text-[15px] font-medium text-zinc-500 dark:text-zinc-400">${esc(d.title)}</span><span class="mt-0.5 block truncate text-xs text-zinc-400 dark:text-zinc-500">Deleted ${dayShort(d.t)} · ${plural(d.items, 'item')}</span></span>
+      <button data-act="p-restore" data-slug="${esc(d.name)}" class="flex h-11 shrink-0 items-center gap-1.5 rounded-xl bg-blue-50 px-3 text-sm font-semibold text-blue-700 dark:bg-blue-400/10 dark:text-blue-300">${ico('undo', 'size-4', '2')}Restore</button>${more('gone:' + d.name, d.title)}</div>
+    ${U.pMenu === 'gone:' + d.name ? `<div class="flex pr-3.5 pb-3 pl-[3.75rem]"><button data-act="p-purge" data-slug="${esc(d.name)}" class="${pill} text-red-600 dark:text-red-400">${ico('trash', 'size-4')}Delete forever</button></div>` : ''}</div>`;
+  return `<div class="${PH_GROUP} mt-4">${add}</div>` + phLabel('Projects') + `<div class="${PH_GROUP}">${live.map(row).join('')}</div>`
+    + (gone.length ? phLabel('Deleted') + `<div class="${PH_GROUP}">${gone.map(was).join('')}</div>` + phNote('Nothing in a deleted project is lost. Delete forever is in its ⋯ and needs a second tap.') : '');
 }
 // Projects (F173): new, rename, delete, restore and delete forever, in place. Rename and New project use a field in
 // the row (R139: no browser dialogs); every change says so with Undo where there is one.
@@ -7421,7 +7418,7 @@ function deskKey(e) {
 }
 
 function layoutChange() {  // crossing 1024px: each layout puts back what it owns
-  if (desk()) { DR.open = false; $('app').style.transform = ''; for (const c of ['rounded-l-3xl', 'overflow-hidden', 'shadow-2xl']) $('app').classList.remove(c); }
+  if (desk()) { DR.open = false; if (D.page && !D.section) D.section = 'agents'; $('app').style.transform = ''; for (const c of ['rounded-l-3xl', 'overflow-hidden', 'shadow-2xl']) $('app').classList.remove(c); }
   else { $('drawer').hidden = !DR.open; $('rail').hidden = true; $('projBar').hidden = true; $('drawerShade').hidden = !DR.open; $('headNormal').hidden = !!U.searching; $('headSearch').hidden = !U.searching; $('projectView').hidden = true; D.page = null; D.full = false; D.compose = false; $('app').removeAttribute('data-compose'); $('q').placeholder = 'Search title, text or code'; }
   closeDialog(); render();
 }
@@ -7481,7 +7478,7 @@ async function fillDrawer() {
   if (!DR.list) draw($('drawerList'), '<div class="px-3 py-3 text-sm text-zinc-400">Loading…</div>');
   try { DR.list = (await net('/api/projects')).sort((a, b) => b.t - a.t); } catch (_) { if (!DR.list) draw($('drawerList'), `<div class="px-3 py-3 text-sm text-zinc-500 dark:text-zinc-400">Couldn't load the projects</div>`); return; }
   draw($('drawerList'), [...DR.list].sort((a, b) => (b.name === S.project) - (a.name === S.project) || titleOf(a).localeCompare(titleOf(b))).map(p => { const cur = p.name === S.project, [tone, label] = agentState(p.agents, p.work);  // one order: rows don't move as projects get busy (B158)
-    return `<a href="/p/${encodeURIComponent(p.name)}/" ${cur ? 'aria-current="page"' : ''} class="group flex min-h-14 items-center gap-3 rounded-2xl px-3 py-2.5 hover:bg-zinc-200/50 data-pressed:bg-zinc-200/70 aria-[current=page]:bg-white aria-[current=page]:shadow-sm aria-[current=page]:ring-1 aria-[current=page]:ring-zinc-900/5 dark:hover:bg-zinc-800/60 dark:data-pressed:bg-zinc-800 dark:aria-[current=page]:bg-zinc-800 dark:aria-[current=page]:ring-white/5">
+    return `<a href="/p/${encodeURIComponent(p.name)}/" ${cur ? 'aria-current="page"' : ''} class="group flex min-h-14 items-center gap-3 rounded-2xl px-3 py-2.5 hover:bg-zinc-200/50 data-pressed:bg-zinc-200/70 aria-[current=page]:bg-white aria-[current=page]:shadow-sm aria-[current=page]:ring-1 aria-[current=page]:ring-zinc-900/5 dark:hover:bg-zinc-800/60 dark:data-pressed:bg-zinc-800 dark:aria-[current=page]:bg-zinc-800 dark:aria-[current=page]:ring-white/5">${projTile(p.name, 'size-8 rounded-lg text-sm')}
     <span class="min-w-0 flex-1"><span class="block truncate text-[17px] font-medium group-aria-[current=page]:font-semibold">${esc(titleOf(p))}</span>
     <span class="mt-0.5 flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400"><span class="size-1.5 shrink-0 rounded-full ${AGENT_TONE[tone][0]}"></span><span class="truncate ${tone === 'ok' ? 'text-emerald-700 dark:text-emerald-400' : AGENT_TONE[tone][1]}">${esc(label)}</span><span class="shrink-0">· ${p.open} open</span></span></span>
     ${projDraft(p.name) ? `<span data-draft title="A draft not sent yet, kept in this browser" class="flex shrink-0 items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-800 dark:bg-blue-400/15 dark:text-blue-200">${ico('pencil', 'size-3', '2.25')}Draft</span>` : ''}
@@ -7530,18 +7527,13 @@ async function revertNow(seq) {  // one of your changes, from the change log
   const u = (S.undo || []).find(u => u.seq === seq);
   try { await revert(seq); } catch (ex) { return notSaved(ex, () => revertNow(seq)); }
   toast(`Undid: ${u ? undoLabel(u) : 'the change'}`); renderDrawerSettings();
-  if (sheetIs('Change log')) showLog();  // the log shows the undo too (the desktop's reloads by itself)
 }
-const undoRow = () => { const u = U.mine.at(-1); return u ? `<button data-act="undo-mine" title="Undo · Z" class="flex min-h-12 w-full items-center gap-3 px-3.5 py-2.5 text-left text-[15px] lg:min-h-0 lg:gap-2.5 lg:rounded-lg lg:px-3 lg:py-1.5 lg:text-sm lg:text-zinc-600 lg:hover:bg-zinc-200/60 dark:lg:text-zinc-300 dark:lg:hover:bg-zinc-800">${ico('undo', 'size-5 shrink-0 text-zinc-500 lg:size-4 dark:text-zinc-400', '2')}<span class="min-w-0 flex-1 leading-snug">Undo: ${esc(u.label)}</span>${desk() ? KBD('Z') : ''}</button>` : ''; };
+const undoRow = () => { const u = U.mine.at(-1); return u ? `<button data-act="undo-mine" class="flex min-h-12 w-full items-center gap-3 px-3.5 py-2.5 text-left text-[15px]">${ico('undo', 'size-5 shrink-0 text-zinc-500 dark:text-zinc-400', '2')}<span class="min-w-0 flex-1 leading-snug">Undo: ${esc(u.label)}</span></button>` : ''; };
 function renderDrawerSettings() {
-  if (desk()) renderSideFoot();  // Undo comes and goes with each change
-  // The phone's menu rows; on the desktop they stay hidden: the sidebar's foot has Undo and Settings instead (B162).
-  const row = (act, icon, label, sec) => { const on = desk() && D.page && D.section === sec;
-    return `<button data-act="${act}" ${on ? 'aria-current="page" ' : ''}class="flex min-h-12 w-full items-center gap-3 px-3.5 py-2.5 text-left text-[15px] lg:min-h-0 lg:gap-2.5 lg:rounded-lg lg:px-3 lg:py-1.5 lg:text-sm lg:text-zinc-600 lg:hover:bg-zinc-200/60 lg:aria-[current=page]:bg-zinc-200/70 lg:aria-[current=page]:font-semibold lg:aria-[current=page]:text-zinc-900 dark:lg:text-zinc-300 dark:lg:hover:bg-zinc-800 dark:lg:aria-[current=page]:bg-zinc-800 dark:lg:aria-[current=page]:text-zinc-50">${ico(icon, 'size-5 text-zinc-500 lg:size-4 dark:text-zinc-400')}<span class="min-w-0 flex-1">${label}</span><span class="lg:hidden">${ico('right', 'size-4 text-zinc-300 dark:text-zinc-600')}</span></button>`; };
-  draw($('drawerSettings'), `${undoRow()}<button data-act="auto" aria-pressed="${!!S.cfg?.auto}" class="group flex w-full items-center gap-3 px-3.5 py-3 text-left lg:gap-2.5 lg:rounded-lg lg:px-3 lg:py-1.5 lg:hover:bg-zinc-200/60 dark:lg:hover:bg-zinc-800">${ico('loop', 'size-5 text-emerald-600 lg:size-4 dark:text-emerald-400')}
-      <span class="min-w-0 flex-1"><span class="block text-[15px] lg:text-sm">Keep going</span><span class="block text-xs leading-snug text-zinc-500 lg:text-[11px] dark:text-zinc-400">Agents take the next item without stopping</span></span>
-      <span class="relative h-6.5 w-11 shrink-0 rounded-full bg-zinc-300 transition-colors group-aria-pressed:bg-emerald-500 lg:h-5 lg:w-8.5 dark:bg-zinc-600 dark:group-aria-pressed:bg-emerald-500"><span class="absolute top-0.75 left-0.75 size-5 rounded-full bg-white shadow transition-transform group-aria-pressed:translate-x-4.5 lg:size-3.5 lg:group-aria-pressed:translate-x-3.5"></span></span></button>
-    ${row('guide', 'plug', 'Connect a coding agent', 'connect')}${row('phone', 'phone', 'Use on your phone', 'phone')}${row('fixes', 'pencil', 'Voice spellings', 'fixes')}${row('log', 'history', 'Change log', 'log')}${row('deleted', 'trash', 'Deleted', 'deleted')}${desk() ? '' : row('about', 'info', 'About', 'about')}`);
+  if (desk()) return renderSideFoot();  // Undo comes and goes with each change
+  // The phone's drawer ends in a card (B162): Undo, while there is one (a phone has no Z), and Settings, whose pages hold
+  // the rest. Keep going stays on the list's Agent queue and in Settings › Agents.
+  draw($('drawerSettings'), `${undoRow()}<button data-act="project" class="flex min-h-12 w-full items-center gap-3 px-3.5 py-2.5 text-left text-[15px]">${ico('gear', 'size-5 shrink-0 text-zinc-500 dark:text-zinc-400')}<span class="min-w-0 flex-1">Settings</span>${ico('right', 'size-4 shrink-0 text-zinc-300 dark:text-zinc-600')}</button>`);
 }
 // The amber dot on the menu icon: another project waits on you. Checked now and then, not on every change.
 async function checkOthers() {
@@ -7553,8 +7545,8 @@ async function checkOthers() {
   if (names() !== had && S.rev >= 0) return render();  // A12, B13: Move… on Inputs and New input needs the other projects, the tiles' colours too
   if (desk()) { renderSidebar(); renderRail(); }
 }
-function openDrawer() { if (!DR.open) layerOpen('drawer'); DR.open = true; renderDrawerSettings(); fillDrawer(); setDrawer(drawerW()); }  // Back closes it (B150)
-function closeDrawer() { if (desk()) { if (D.sideOpen) { D.sideOpen = false; render(); } return; } if (DR.open) layerShut('drawer'); DR.open = false; setDrawer(0); }
+function openDrawer() { if (!DR.open) layerOpen('drawer'); DR.open = true; renderDrawerSettings(); fillDrawer(); setDrawer(drawerW()); if (!$('toast').hidden) placeToast(); }  // Back closes it (B150); a toast moves above its card
+function closeDrawer() { if (desk()) { if (D.sideOpen) { D.sideOpen = false; render(); } return; } if (DR.open) layerShut('drawer'); DR.open = false; setDrawer(0); if (!$('toast').hidden) placeToast(); }
 $('drawerShade').addEventListener('click', closeDrawer);
 // Another project takes the drawer's step, so Back from there comes to this page as you left it, not to the drawer.
 $('drawerList').addEventListener('click', e => {
@@ -7834,18 +7826,21 @@ document.addEventListener('keydown', e => {
 document.addEventListener('keydown', async e => {  // Settings › Projects: Enter makes or saves, Esc stops (F173)
   const id = e.target.id;
   if (id !== 'pNewName' && id !== 'pRename') return;
-  const stop = () => { U.renaming = null; renderProject(); if (desk()) renderProjBar(); };
-  if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); if (id === 'pNewName') ACT['p-new-cancel'](); else stop(); return; }
+  if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); ACT[id === 'pNewName' ? 'p-new-cancel' : 'p-rename-cancel'](); return; }
   if (e.key !== 'Enter' || e.isComposing) return;
   e.preventDefault(); e.stopImmediatePropagation();
   if (id === 'pNewName') return ACT['p-create']();
-  const slug = e.target.dataset.slug, title = e.target.value.trim(), was = slug === S.project ? projTitle() : titleOf((P_CACHE.projects || []).find(p => p.name === slug) || {name: slug});
-  if (!title || title === was) return stop();
+  saveRename(e.target);
+}, true);
+async function saveRename(f) {  // Enter, or Save on the phone: the new name, with Undo
+  if (!f) return;
+  const slug = f.dataset.slug, title = f.value.trim(), was = slug === S.project ? projTitle() : titleOf((P_CACHE.projects || []).find(p => p.name === slug) || {name: slug});
+  if (!title || title === was) return ACT['p-rename-cancel']();
   try {
     U.renaming = null; await renameProject(slug, title);
     toast(`Renamed to ${title}`, () => renameProject(slug, was).then(() => toast(`Back to ${was}`), ex => toast(ex.message)));
-  } catch (ex) { U.renaming = slug; renderProject(); if (desk()) renderProjBar(); toast(ex.message); const f = $('pRename'); if (f) { f.value = title; f.focus(); } }
-}, true);
+  } catch (ex) { U.renaming = slug; renderProject(); if (desk()) renderProjBar(); toast(ex.message); const g = $('pRename'); if (g) { g.value = title; g.focus(); } }
+}
 document.addEventListener('keydown', e => {  // the new project field: Enter makes it, Esc stops (B131)
   if (e.target.id !== 'npName') return;
   if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); ACT['np-create'](); }
@@ -7936,16 +7931,15 @@ addEventListener('pagehide', () => {  // where you were in the list, for the rel
 });
 // ---------------------------------------------------------------- the address (T102)
 // The address says what you look at: /p/<project>/ is Items; /inputs /archive /rules a tab; /B03 an item; /D4 a
-// document; /new the New input page; /settings /connect /phone /spellings /log /about the sections of This project
+// document; /new the New input page; /agents /log /projects /phone /spellings … the sections of Settings, /settings their list
 // (B162); ?q= and the filters ride along. The server sends the page for these when a browser asks, and text when an
 // agent does (/connect and /log mean something to agents too). Changing tab, opening a document, a section of This
 // project or New input, an item on the phone and full width are steps Back can undo, and so is a link to an item (B9);
 // choosing items in the list on the desktop (a click, J/K), search and filters only rewrite the address.
-const VIEW = /^(inputs|archive|rules|new-rule|new|settings|connect|phone|spellings|log|deleted|about|projects|organizer)$/;
+const VIEW = /^(inputs|archive|rules|new-rule|new|settings|agents|connect|phone|spellings|log|deleted|about|projects|organizer)$/;
 const URLS = {applying: false, selfBack: false, hold: false};  // hold: a link is on its way, its step is written once it is there
-// On the phone the change log has its own address too (B150), so Back from an item you opened there comes back to it.
-const viewPath = () => desk() && D.page ? PSEC[D.section][0] : U.doc && !U.docEdit ? `D${U.doc}` : desk() && D.compose ? (ruleMode() ? 'new-rule' : 'new')
-  : !desk() && U.sheet === 'log' && !$('overlay').hidden ? 'log'
+// Each page of Settings has its own address on the phone too (B150, B162): /settings is its list of sections there.
+const viewPath = () => D.page ? (D.section ? PSEC[D.section][0] : 'settings') : U.doc && !U.docEdit ? `D${U.doc}` : desk() && D.compose ? (ruleMode() ? 'new-rule' : 'new')
   : desk() && U.tab === 'inputs' ? 'inputs' : U.open ? code(U.open) : U.tab === 'items' ? '' : U.tab;  // on the desktop Inputs hides the item
 function viewQuery() {
   const q = new URLSearchParams();
@@ -7959,7 +7953,7 @@ function viewQuery() {
 // the page under it (history.state.layers lists what is open over it), so nothing behind moves. Closed by its own
 // button, a tap outside or a swipe, a layer takes its step back. Going back takes a moment: what wants to write the
 // address meanwhile waits for it (hist), or it would land before the step and the step back would take it away.
-const LAY = {back: 0, q: [], t: 0, at: '', keep: false, popping: false};
+const LAY = {back: 0, q: [], t: 0, at: '', popping: false};
 const here = () => location.pathname + location.search;
 function hist(fn) { if (LAY.back) LAY.q.push(fn); else { fn(); LAY.at = here(); } }
 function histBack() {  // a step back the page takes itself: its popstate changes nothing
@@ -7991,7 +7985,7 @@ function closeLayers() {  // Back: what is open but has no step any more closes,
   LAY.popping = true;
   try {
     if (!$('viewer').hidden && !keep.includes('viewer')) { closeViewer(); shut = true; }
-    if (!$('overlay').hidden && !U.doc && U.sheet !== 'log' && !keep.includes('sheet')) { closeDialog(); shut = true; }
+    if (!$('overlay').hidden && !U.doc && !keep.includes('sheet')) { closeDialog(); shut = true; }
     if (DR.open && !keep.includes('drawer')) { closeDrawer(); shut = true; }
     if (U.searching && !keep.includes('search')) { searchMode(false); shut = true; }
   } finally { LAY.popping = false; }
@@ -8023,12 +8017,15 @@ function readURL() {
 const tabOf = it => it.archived ? 'archive' : it.type === 'rule' ? 'rules' : 'items';
 // B9: a step you leave keeps how far its page was scrolled, and Back puts it there again. The desktop redraws its lists
 // as you go, so the browser can't; the Inputs page would otherwise jump to its end.
-const scroller = () => D.page ? $('projectBody') : U.tab === 'inputs' ? $('inputsView') : $('list');
+// On the phone the pages of Settings do the same (the list and the tabs keep their places their own way, B152).
+const scroller = () => D.page ? (D.section || desk() ? $('projectBody') : $('projectNav')) : U.tab === 'inputs' ? $('inputsView') : $('list');
 function keepPlace() {
-  if (desk() && !URLS.applying && !URLS.hold) history.replaceState({...history.state, top: scroller().scrollTop}, '');
+  if (URLS.applying || URLS.hold || !(desk() || D.page)) return;
+  const top = scroller().scrollTop, keep = () => history.replaceState({...history.state, top}, '');
+  if (desk()) keep(); else hist(keep);  // after a step back that is on its way (B150)
 }
 function restorePlace() {
-  const top = history.state?.top, el = desk() && typeof top === 'number' && scroller();
+  const top = history.state?.top, el = (desk() || D.page) && typeof top === 'number' && scroller();
   if (el) requestAnimationFrame(() => { el.scrollTop = top; });  // after the Inputs page's own jump to its end
 }
 function applyURL() {  // the page follows the address: when it loads, and on Back / Forward
@@ -8040,16 +8037,16 @@ function showURL() {
   const {seg, qs} = readURL();
   U.q = qs.get('q') || ''; $('q').value = U.q;
   for (const k of ['type', 'when', 'status', 'pri']) U[k] = qs.get(k) || 'all';
-  if (desk()) { D.full = !!history.state?.full; D.compose = false; D.page = null; }
+  if (desk()) { D.full = !!history.state?.full; D.compose = false; }
+  D.page = null;
   const doc = /^[Dd](\d+)$/.exec(seg), n = doc ? 0 : parseRef(seg);
   if (!doc && U.doc && !$('overlay').hidden) closeDialog();
-  if (seg !== 'log' && U.sheet === 'log' && !$('overlay').hidden) closeDialog();  // Back from the change log (B150)
   if (doc) { const d = docById(Number(doc[1])); if (d && !U.open && desk()) openItem(d.n, false); return openDoc(Number(doc[1])); }
   if (n && byN.has(n)) { U.tab = tabOf(byN.get(liveN(n))); return openItem(n, false); }  // a merged item: the one it went into (B5)
   closeItem();
-  if (Object.hasOwn(PSEC_AT, seg)) {  // a section of This project; the phone opens its sheet, or its menu for Agents and About
-    if (desk()) { if (history.state?.tab) U.tab = history.state.tab; return openProject(PSEC_AT[seg]); }  // Back into it from a tab (B9)
-    return ({log: showLog, connect: showGuide, phone: showPhone, spellings: ACT.fixes, deleted: showDeleted, about: ACT.about}[seg] || openDrawer)();
+  if (Object.hasOwn(PSEC_AT, seg)) {  // a page of Settings; /settings is Agents on the desktop, the list of sections on the phone
+    if (desk()) { if (history.state?.tab) U.tab = history.state.tab; } else U.tab = history.state?.tab || 'items';  // Back into it from a tab (B9); on the phone, the tab its ‹ goes up to
+    return openProject(seg === 'settings' && !desk() ? null : PSEC_AT[seg]);
   }
   if (seg === 'new-rule') { U.tab = 'rules'; U.asRule = null; }  // B10: New rule has its own address; a reload stays a rule
   else if (seg === 'new' && U.tab === 'rules') U.asRule = false;  // and New input stays an input

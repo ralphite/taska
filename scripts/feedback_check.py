@@ -338,6 +338,22 @@ def press_timing(a):
     a.touch('touchCancel'); a.js('window.__noclick = false')
 
 
+def phone_settings(a, tone, dark):  # Settings on the phone (B162): its list of sections, and each section as a page
+    root = a.base.split('/p/')[0]
+    req = lambda path, body: urllib.request.urlopen(urllib.request.Request(root + path, json.dumps(body).encode(), {'Content-Type': 'application/json'}), timeout=5).read()
+    req('/api/projects', {'title': 'old-prototype'}); req('/api/projects/delete', {'name': 'old-prototype'})  # a deleted project, with its Restore
+    req('/api/corrections', {'wrong': 'task a', 'right': 'Taska'})  # a voice spelling to forget
+    a.post('api/op', {'op': 'input', 'text': 'A thought to delete'})
+    a.post('api/op', {'op': 'delete', 'id': json.loads(urllib.request.urlopen(a.base + 'api/state', timeout=5).read())['inputs'][-1]['id']})  # a deleted input
+    a.go('settings'); survey(a, f'{tone} settings')
+    a.go('projects', 3); a.tap('#projectBody [data-act="p-more"]'); survey(a, f'{tone} settings: projects, a row\'s actions open')
+    if dark:
+        return
+    a.tap('#projectBody [data-act="p-rename"]'); survey(a, f'{tone} settings: projects, renaming')
+    for sec in ('agents', 'log', 'deleted', 'phone', 'spellings', 'organizer'):
+        a.go(sec, 3); survey(a, f'{tone} settings: {sec}')
+
+
 def group_phone(a, dark=False):
     tone = 'phone dark' if dark else 'phone'
     if not dark:
@@ -345,6 +361,7 @@ def group_phone(a, dark=False):
     a.go(''); survey(a, f'{tone} list')
     a.go('B03'); survey(a, f'{tone} item in review')
     a.go('F04'); survey(a, f'{tone} item with a question')
+    phone_settings(a, tone, dark)
     if dark:
         return
     a.go('I05'); survey(a, f'{tone} blocked item')
@@ -376,7 +393,7 @@ def group_desk(a, dark=False):
     a.go('D1', 3); survey(a, f'{tone} document', desk=True)
     a.go('inputs'); survey(a, f'{tone} inputs', desk=True)
     a.go('new'); survey(a, f'{tone} new input', desk=True)
-    for sec in ('settings', 'connect', 'phone', 'log'):
+    for sec in ('agents', 'connect', 'phone', 'log', 'projects'):
         a.go(sec, 3); survey(a, f'{tone} this project: {sec}', desk=True)
 
 

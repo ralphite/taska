@@ -205,7 +205,7 @@ def group_project(a):  # Settings: one page in the sidebar's place, one section 
     a.go('')
     a.click('#sideFoot [data-act="project"]')
     check('Settings opens from the sidebar, at Agents, in the sidebar\'s place',
-          (a.js("location.pathname.split('/').pop()"), a.js("$('projectBody').querySelector('h1').textContent"), a.js("$('drawer').hidden")), ('settings', 'Agents', True))
+          (a.js("location.pathname.split('/').pop()"), a.js("$('projectBody').querySelector('h1').textContent"), a.js("$('drawer').hidden")), ('agents', 'Agents', True))
     a.click('#projectNav [data-sec="log"]')
     check('Each section has its own address', (a.js("location.pathname.split('/').pop()"), a.js("$('projectBody').querySelector('h1').textContent")), ('log', 'Change log'))
     a.js('document.activeElement.blur()'); a.key('Escape', wait=0.8)
