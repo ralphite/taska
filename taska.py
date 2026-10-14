@@ -5833,10 +5833,24 @@ const agentAsk = () => `This project tracks work in Taska. Run \`curl -s ${BASE}
 function logLine(l) {
   const m = /^#(\d+) (\S+ \S+) (\S+) (.*)$/s.exec(l);
   if (!m) return esc(l);
+  // T113 A22: in plain words, not the agents' shorthand (archived False→True, keep-going ON, new I15 idea P2 now …)
+  const FIELD = 'status|when|pri|type|archived|parent|title|body|next', cap = s => s.replace(/^./, c => c.toUpperCase());
+  const setPart = (f, a, b) => f === 'status' ? `${STATUS[a] || a} → ${STATUS[b] || b}` : f === 'when' ? `${WHEN[a] || a} → ${WHEN[b] || b}`
+    : f === 'archived' ? (b === 'True' ? 'archived' : 'unarchived') : f === 'pri' ? `priority ${a} → ${b}` : f === 'type' ? `type ${cap(a)} → ${cap(b)}`
+    : f === 'parent' ? (/^\d+$/.test(b) ? `moved under ${code(Number(b))}` : /^\d+$/.test(a) ? `taken out from under ${code(Number(a))}` : 'parent changed')
+    : f === 'title' ? `renamed “${b}”` : f === 'body' ? 'description edited' : 'next step edited';
   let what = esc(m[4])
     .replace(/^in (r\d+)(?: →([A-Z]\d+))? /, (_, r, c) => c ? `wrote ${r} to ${c} ` : `wrote ${r} `)
-    .replace(/\b(status|when) (\w+)→(\w+)/g, (_, f, a, b) => f === 'status' ? `${STATUS[a] || a} → ${STATUS[b] || b}` : `${WHEN[a] || a} → ${WHEN[b] || b}`)
-    .replace(/\b(say|ask|block|propose) (?=&#39;|&#x27;|')/g, (_, k) => `${{say: 'said', ask: 'asked', block: 'is blocked:', propose: 'proposed'}[k]} `)  // the quote is escaped by now
+    .replace(/^new ([A-Z]\d+) (\w+) (P\d) (now|later) (.*?)(?: ←(r\d+))?$/s, (_, c, t, p, w, title, r) => `made ${c}, ${/^[aeiou]/.test(t) ? 'an' : 'a'} ${t} (${p}${w === 'later' ? ', later' : ''}): ${title}${r ? ` from ${r}` : ''}`)
+    .replace(new RegExp(`\\b(${FIELD}) (.*?)→(.*?)(?=, (?:${FIELD}) |$| \\(undo #)`, 'gs'), (_, f, a, b) => setPart(f, a, b))
+    .replace(/ \(undo #(\d+)\)$/, ' (undoing #$1)')
+    .replace(/^keep-going (ON|OFF)$/, (_, v) => `turned Keep going ${v.toLowerCase()}`)
+    .replace(/^ack (.+)$/, (_, rs) => `saw ${rs.split(' ').join(', ')}`)
+    .replace(/^doc (D\d+) on ([A-Z]\d+) /, 'wrote $1 on $2: ').replace(/^(D\d+) comment /, 'commented on $1: ')
+    .replace(/^(undo|redo) organizer changes for (r\d+)$/, (_, k, r) => k === 'undo' ? `undid the filing of ${r}` : `put back the filing of ${r}`)
+    .replace(/^(r\d+) (edit|append): /, (_, r, k) => k === 'edit' ? `edited ${r}: ` : `added details to ${r}: `)
+    .replace(/^organizer (r\d+) retry$/, 'filed $1 again').replace(/^organizer (r\d+) (ok|FAILED): /, (_, r, k) => k === 'ok' ? `filed ${r}: ` : `could not file ${r}: `)
+    .replace(/\b(say|ask|block|propose|progress|decide|withdraw) (?=&#39;|&#x27;|'|&quot;|")/g, (_, k) => `${{say: 'said', ask: 'asked', block: 'is blocked:', propose: 'proposed', progress: 'progress:', decide: 'decided', withdraw: 'took back the question:'}[k]} `)  // the quote is escaped by now
     .replace(/\b([A-Z]\d{1,5})\b/g, (c, x) => { const n = parseRef(c); return n && byN.has(n) && code(n) === c ? `<button data-act="goto" data-n="${n}" class="font-semibold text-blue-600 hover:underline dark:text-blue-400">${c}</button>` : c; })
     .replace(/\b(r\d+)\b/g, (r) => byR.has(r) ? `<button data-act="go-input" data-id="${r}" class="font-mono text-blue-600 hover:underline dark:text-blue-400">${r}</button>` : r);
   return `<span class="font-medium text-zinc-800 dark:text-zinc-100">${esc(whoName(m[3]))}</span> ${what} <span class="font-mono text-[11px] text-zinc-400">${esc(m[2])}</span>`;
@@ -6699,6 +6713,8 @@ function renderSidebar() {
       ${projDraft(p.name) ? `<span data-draft title="A draft not sent yet, kept in this browser" aria-label="Draft" class="grid size-5 shrink-0 place-items-center rounded-full bg-blue-100 text-blue-700 dark:bg-blue-400/15 dark:text-blue-300">${ico('pencil', 'size-3', '2.25')}</span>` : ''}
       ${p.needs ? `<span title="${plural(p.needs, 'item')} need you" class="grid h-5 min-w-5 place-items-center rounded-full bg-amber-100 px-1 text-[11px] font-bold text-amber-900 dark:bg-amber-400/15 dark:text-amber-200">${p.needs}</span>` : ''}</a>`; }).join(''));
   $('newInputBtn').setAttribute('aria-pressed', String(D.compose && !D.page));
+  const nb = $('newInputBtn').querySelector('span'), rule = U.tab === 'rules' && !D.page;  // on Rules it makes a new rule, and says so (T113 A22)
+  if (nb && nb.textContent !== (rule ? 'New rule' : 'New input')) { nb.textContent = rule ? 'New rule' : 'New input'; $('newInputBtn').title = rule ? 'New rule for the project · C' : 'New input to the project · C · by voice ⇧V'; }
   if (S.project) renderAgent();
   renderDrawerSettings();
 }
@@ -6713,7 +6729,7 @@ function renderRail() {
   const proj = p => { const cur = p.name === (S.project || HERE), dr = projDraft(p.name);
     return `<a href="/p/${encodeURIComponent(p.name)}/" data-slug="${esc(p.name)}" ${cur ? 'aria-current="page" data-act="tab" data-tab="items"' : ''} title="${esc(titleOf(p))}${p.needs ? ` · ${plural(p.needs, 'item')} need you` : ''}${dr ? ' · a draft not sent yet' : ''}" aria-label="${esc(titleOf(p))}" class="relative grid size-10 place-items-center rounded-xl hover:bg-zinc-200/60 aria-[current=page]:bg-zinc-200/80 dark:hover:bg-zinc-800 dark:aria-[current=page]:bg-zinc-700">${projTile(p.name, 'size-7 rounded-lg text-xs')}${dr ? '<span data-draft class="absolute right-0 bottom-0 grid size-4 place-items-center rounded-full bg-blue-600 text-white ring-2 ring-zinc-100 dark:bg-blue-500 dark:ring-zinc-900">' + ico('pencil', 'size-2.5', '2.5') + '</span>' : ''}${p.needs ? `<span class="absolute -top-0.5 -right-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-amber-500 px-1 text-[10px] font-bold text-white dark:bg-amber-400 dark:text-amber-950">${p.needs}</span>` : ''}</a>`; };
   draw($('rail'), b('side', `<span class="text-blue-600 dark:text-blue-400">${ico('logo', 'size-6', '2.25')}</span>`, 'Show the sidebar · [')
-    + b('new-input', ico('newinput', 'size-5'), 'New input · C', `aria-pressed="${D.compose && !D.page}"`)
+    + b('new-input', ico('newinput', 'size-5'), U.tab === 'rules' && !D.page ? 'New rule · C' : 'New input · C', `aria-pressed="${D.compose && !D.page}"`)
     + `<div class="my-1 h-px w-8 bg-zinc-200 dark:bg-zinc-800"></div>`
     + `<div class="-my-1 flex min-h-0 flex-col items-center gap-1 overflow-y-auto p-1 [scrollbar-width:none]">${sideProjects().map(proj).join('')}</div>`  // room for the badges
     + b('new-project', ico('plus', 'size-5'), 'New project')
@@ -7174,7 +7190,8 @@ const PBODY = {
         <pre class="mt-3 overflow-x-auto rounded-xl bg-zinc-50 p-3.5 text-xs leading-relaxed whitespace-pre-wrap lg:scrollbar-thin dark:bg-zinc-900">${esc(P_CACHE.guide || 'Loading…')}</pre></details>`;
   },
   log: () => !P_CACHE.log ? P_LOADING : !P_CACHE.log.length ? pRuled(EMPTY('Nothing has changed yet.'))
-    : pRuled(`<div class="pt-2">${logHtml(P_CACHE.log)}</div>`) + (P_CACHE.log.length >= LOG_N ? `<p class="pt-4 text-[13px] text-zinc-400 dark:text-zinc-500">The latest ${LOG_N} changes</p>` : ''),
+    : `<p class="pb-3 text-[13px] leading-snug text-zinc-500 dark:text-zinc-400">Undo shows on your own latest changes to an item that nothing changed since.</p>`  // why some of your lines have it and some don't (T113 A22)
+      + pRuled(`<div class="pt-2">${logHtml(P_CACHE.log)}</div>`) + (P_CACHE.log.length >= LOG_N ? `<p class="pt-4 text-[13px] text-zinc-400 dark:text-zinc-500">The latest ${LOG_N} changes</p>` : ''),
   projects: () => {
     if (!P_CACHE.projects) return P_LOADING;
     const live = [...P_CACHE.projects].sort((a, b) => (b.name === S.project) - (a.name === S.project) || titleOf(a).localeCompare(titleOf(b))), gone = P_CACHE.trash || [];
@@ -7389,7 +7406,7 @@ const KEYS = [
   ['Move', [['J / K', 'Next or previous item'], ['⇧J / ⇧K', 'Next or previous item that needs you (Go through)'], ['O or ↵', 'Full width; Esc goes back'], ['Space', 'Scroll the item'], ['G then I N A R', 'Items, Inputs, Archive, Rules'], ['G then P', 'Switch project (type to find it)'], ['G then S', 'Settings'], ['[', 'Show or hide the sidebar']]],
   ['Act on the selected item', [['A', "The item's next step: Accept, Approve, Answer or Reply"], ['R', 'Reply or add to it'], ['N', 'Not yet: reopen and say what is missing'], ['1–9, ⌘↵', 'Pick a choice, send the answer'], ['D · W · L', "Done · Won't do · Later / Now"], ['E / ⇧E', 'Archive or unarchive / archive every finished item'], ['S · P · T', 'Status, priority, type: then the digit or letter the ⋯ menu shows'], ['M · ⇧C', 'Move under… · Copy for agent'], ['I · ⇧D · ⇧A', 'Edit · New doc · Add subitem'], ['.', 'All actions'], ['Z', 'Undo your last action here, again for the one before; older changes: Change log']]],
   ['Mouse', [['Hover a row', 'Its quick actions, always in the same places'], ['Right-click a row', 'Its menu, at the pointer'], ['Click cut-off words', 'Show them all'], ['Drag a pane edge', 'Resize; double-click for the default']]],
-  ['Write and find', [['C', 'New input to the project'], ['V', 'Voice note for the selected item; V again stops'], ['⇧V', 'New input by voice; ⇧V again stops and sends'], ['⌥V', 'Voice note while typing in the box'], ['↵', 'While recording: stop, into the box'], ['⇧↵ or ⌘↵', 'Send; while recording: stop and send'], ['/', 'Search'], ['F', 'Filters'], ['?', 'This sheet'], ['Esc', 'Step back one level']]],
+  ['Write and find', [['C', 'New input to the project (on Rules, a new rule)'], ['V', 'Voice note for the selected item; V again stops'], ['⇧V', 'New input by voice; ⇧V again stops and sends'], ['⌥V', 'Voice note while typing in the box'], ['↵', 'While recording: stop, into the box'], ['⇧↵ or ⌘↵', 'Send; while recording: stop and send'], ['/', 'Search'], ['F', 'Filters'], ['?', 'This sheet'], ['Esc', 'Step back one level']]],
 ];
 function showKeys() {
   const sec = ([group, keys]) => `<section class="mb-5"><h3 class="mb-2 text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">${group}</h3>
