@@ -4653,9 +4653,12 @@ function tableHtml(text, gid) {
   const cells = l => l.trim().replace(/^\|/, '').replace(/\|$/, '').replace(/\\\|/g, '\u0002').split('|').map(c => c.trim().replace(/\u0002/g, '|'));
   const [head, sep, ...body] = text.trim().split('\n').map(cells);
   const align = (sep || []).map(c => /^:-+:$/.test(c) ? 'text-center' : /-:$/.test(c) ? 'text-right' : 'text-left');
-  return `<div class="overflow-x-auto lg:scrollbar-thin"><table class="w-full border-collapse text-sm leading-snug">
-    <thead><tr>${head.map((c, i) => `<th class="min-w-28 border-b border-zinc-300 px-2 py-1.5 font-semibold lg:min-w-0 dark:border-zinc-600 ${align[i] || 'text-left'}">${inlineMd(c, gid)}</th>`).join('')}</tr></thead>
-    <tbody>${body.map(r => `<tr>${head.map((_, i) => `<td class="min-w-28 border-b border-zinc-100 px-2 py-1.5 align-top lg:min-w-0 dark:border-zinc-800 ${align[i] || 'text-left'}">${inlineMd(r[i] || '', gid)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;  // a column keeps room for words on the phone; the table scrolls sideways (B158)
+  // F215: a framed table that fits its column: long words, code and links wrap anywhere, so no column pushes the
+  // others out of sight; each column keeps room for a few words and the table scrolls sideways only when it must (B158)
+  const cell = 'min-w-32 max-w-[28rem] border-r border-b px-3 py-2 wrap-anywhere last:border-r-0';
+  return `<div class="overflow-x-auto rounded-lg border border-zinc-200 lg:scrollbar-thin dark:border-zinc-700"><table class="w-full border-collapse text-[13.5px] leading-relaxed">
+    <thead class="bg-zinc-50 dark:bg-zinc-800/60"><tr>${head.map((c, i) => `<th class="${cell} border-zinc-200 align-bottom font-semibold text-zinc-800 dark:border-zinc-700 dark:text-zinc-100 ${align[i] || 'text-left'}">${inlineMd(c, gid)}</th>`).join('')}</tr></thead>
+    <tbody>${body.map(r => `<tr class="even:bg-zinc-50/60 last:[&>td]:border-b-0 dark:even:bg-zinc-800/25">${head.map((_, i) => `<td class="${cell} border-zinc-100 align-top dark:border-zinc-800 ${align[i] || 'text-left'}">${inlineMd(r[i] || '', gid)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
 }
 function blockHtml(b, isTitle, gid = '') {
   if (b.kind === 'table') return tableHtml(b.text, gid);
