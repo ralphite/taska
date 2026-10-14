@@ -2423,7 +2423,7 @@ def voice_keep(store, fid, res):
 
 HUB = None
 ITEM_PATH = re.compile(r"/([A-Za-z]?\d+)")
-VIEW_PATH = re.compile(r"/(inputs|archive|rules|new-rule|new|settings|agents|connect|phone|spellings|log|deleted|about|projects|organizer|[A-Za-z]\d+)")  # the page's views (T102, B162)
+VIEW_PATH = re.compile(r"/(inputs|archive|rules|new-rule|new|settings|agents|connect|phone|notifications|spellings|log|deleted|about|projects|organizer|[A-Za-z]\d+)")  # the page's views (T102, B162)
 NAME = re.compile(r"[a-z0-9][a-z0-9-]{0,39}")  # a project's address and folder: made from its name once, never changed (F173)
 TITLE_MAX = 60
 SLUG_CHARS = "abcdefghjkmnpqrstuvwxyz23456789"
@@ -3589,6 +3589,70 @@ const parseRef = s => { const m = /^[A-Za-z]?0*(\d+)$/.exec(String(s).trim()); r
 // The user's move: an agent asked or is blocked, proposed an item, or wants a finished item accepted.
 const needsYou = it => !it.merged_into && !CLOSED(it.status) && (!!it.wait || it.status === 'proposed' || it.status === 'review');
 
+// Desktop notifications (F191). Observe even while quiet or focused, so those events never become a backlog.
+const NOTICE = {items: false, projects: false, pending: new Map(), timer: 0, memory: {}};
+function noticeRead(key, fallback) {
+  try { return JSON.parse(localStorage.getItem('taska.notifications.' + key)) ?? fallback; } catch (_) { return NOTICE.memory[key] ?? fallback; }
+}
+function noticeWrite(key, value) {
+  NOTICE.memory[key] = value;
+  try { localStorage.setItem('taska.notifications.' + key, JSON.stringify(value)); } catch (_) {}
+}
+const noticeOn = () => 'Notification' in window && Notification.permission === 'granted' && noticeRead('on', false);
+const noticeState = () => !('Notification' in window) || Notification.permission === 'denied' ? 'Blocked by the browser' : noticeOn() ? 'On' : 'Off';
+const noticeQuiet = () => noticeRead('quiet', true) && (new Date().getHours() >= 22 || new Date().getHours() < 8);
+const noticeAllowed = () => desk() && noticeOn() && (document.hidden || !document.hasFocus()) && !noticeQuiet();
+async function turnOnNotices() {
+  if (!desk() || !('Notification' in window)) return;
+  try { noticeWrite('on', await Notification.requestPermission() === 'granted'); } catch (_) {}
+  renderProject();
+}
+function queueNotice(key, event) {
+  if (!noticeAllowed()) return;
+  const prev = NOTICE.pending.get(key);
+  NOTICE.pending.set(key, {...event, count: event.code ? 1 : event.count + (prev?.count || 0)});
+  if (!NOTICE.timer) NOTICE.timer = setTimeout(sendNotice, 8000);
+}
+function sendNotice() {
+  const events = [...NOTICE.pending.values()]; NOTICE.pending.clear(); NOTICE.timer = 0;
+  if (!events.length || !noticeAllowed()) return;
+  const count = events.reduce((n, e) => n + e.count, 0), first = events[0];
+  const labels = events.map(e => e.code ? `${e.code} ${e.kind === 'ask' ? 'asks' : e.kind === 'block' ? 'is blocked' : e.kind === 'review' ? 'is ready to accept' : 'needs approval'} in ${e.title}` : `${plural(e.count, 'new thing')} need${e.count === 1 ? 's' : ''} you in ${e.title}`);
+  try {
+    const notification = new Notification(count === 1 ? labels[0] : `${count} things need you: ${labels.slice(0, 3).join(', ')}${labels.length > 3 ? ', …' : ''}`, {tag: 'taska-needs-you'});
+    notification.onclick = () => {
+      notification.close(); window.focus();
+      location.assign(`/p/${encodeURIComponent(first.project)}/${count === 1 && first.code ? encodeURIComponent(first.code) : ''}`);
+    };
+  } catch (_) {}  // a permission change or an unavailable desktop service must not interrupt polling
+}
+function noticeItems(d) {
+  if (!desk()) return;
+  const saved = 'items.' + d.project, before = noticeRead(saved, {}), next = {};
+  for (const it of d.items.filter(needsYou)) {
+    const kinds = [...(it.wait ? [it.wait.kind] : []), ...(['proposed', 'review'].includes(it.status) ? [it.status] : [])];
+    let event = null;
+    for (const kind of kinds) {
+      const key = `${d.project}:${it.code}:${kind}`, token = kind === it.wait?.kind ? it.wait.id : kind;
+      next[key] = token;
+      if (NOTICE.items && before[key] !== token && !event) event = {project: d.project, title: d.title || d.project, code: it.code, kind, count: 1};
+    }
+    if (event) queueNotice(`${d.project}:${it.code}`, event);
+  }
+  for (const [key, e] of NOTICE.pending) if (e.project === d.project && e.code && !(`${e.project}:${e.code}:${e.kind}` in next)) NOTICE.pending.delete(key);
+  noticeWrite(saved, next); NOTICE.items = true;
+}
+function noticeProjects(projects) {
+  if (!desk()) return;
+  const before = noticeRead('counts', {}), next = {};
+  for (const p of projects) {
+    next[p.name] = p.needs;
+    if (NOTICE.projects && p.name !== HERE && p.needs > (before[p.name] ?? 0))
+      queueNotice(`${p.name}:*:needs`, {project: p.name, title: titleOf(p), count: p.needs - (before[p.name] ?? 0)});
+  }
+  noticeWrite('counts', next); NOTICE.projects = true;
+}
+
 function when(t) {
   const d = new Date(t), now = new Date(), hm = d.toTimeString().slice(0, 5);
   if (d.toDateString() === now.toDateString()) return hm;
@@ -3645,6 +3709,7 @@ async function load() {
   SAVE.last = text; ingest(JSON.parse(text));
 }
 function ingest(d) {  // Taska's state on screen, with your changes that are still on their way (T160)
+  noticeItems(d);
   S = d; BASE = d.base || BASE; byN.clear(); byR.clear();
   for (const it of S.items) { if (CLOSED(it.status)) it.wait = null; byN.set(it.n, it); }  // closed: its question is history, not a pending ask (B128)
   for (const r of S.inputs) byR.set(r.id, r);
@@ -6247,6 +6312,8 @@ const ACT = {
   },
   project: () => { if (!desk()) closeDrawer(); openProject(desk() ? 'agents' : null); },  // the phone: the Settings page with its list of sections
   psec: (b, e) => e?.metaKey || e?.ctrlKey || e?.shiftKey ? window.open(b.href, '_blank') : openProject(b.dataset.sec),  // ⌘-click: in a new tab
+  'notifications-on': () => turnOnNotices(),
+  'notifications-quiet': () => { noticeWrite('quiet', !noticeRead('quiet', true)); renderProject(); },
   'go-next': () => {
     if (desk()) {
       const g = U.go; if (!g) return startGoDesk();
@@ -7113,6 +7180,7 @@ const PSEC = {  // section: [address, icon, name, what it is for]
   deleted: ['deleted', 'trash', 'Deleted', 'Inputs you deleted, with the items that went with them. Restore puts them back as they were.'],
   projects: ['projects', 'folder', 'Projects', 'Every project on this Taska. Give a project any name; its address never changes, so agents and phone links keep working.'],
   phone: ['phone', 'phone', 'Use on your phone', 'Open Taska on your phone from anywhere, with a link or with the key.'],
+  notifications: ['notifications', 'alert', 'Notifications', 'Desktop alerts when something needs you in any project, while Taska is open in the background.'],
   fixes: ['spellings', 'pencil', 'Voice spellings', "Every project's voice notes write these your way. To add one, select the wrong words in a voice note."],
   organizer: ['organizer', 'sparkle', 'Organizer', 'What turns what you say into items, for every project.'],
 };
@@ -7212,6 +7280,9 @@ const keepGoingToggle = () => `<button data-act="auto" aria-pressed="${!!S.cfg?.
 const P_BTN = 'inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-zinc-100';
 const dayShort = t => t ? new Date(t).toLocaleDateString('en-US', {month: 'short', day: 'numeric'}) : '';
 const PBODY = {
+  notifications: () => !desk() ? pPart('Desktop only', 'Open Taska in a desktop window to turn on notifications.')
+    : pSetting(noticeState(), 'For this browser.', noticeOn() ? '' : `<button data-act="notifications-on" ${noticeState() === 'Blocked by the browser' ? 'disabled ' : ''}class="${PRIMARY}">Turn on</button>`)
+      + (noticeOn() ? pSetting('Quiet 22:00–08:00', 'Your local time.', `<button data-act="notifications-quiet" aria-pressed="${noticeRead('quiet', true)}" aria-label="Quiet 22:00–08:00" class="group relative h-6.5 w-11 shrink-0 rounded-full after:absolute after:inset-x-0 after:-inset-y-[9px] bg-zinc-300 transition-colors hover:brightness-95 aria-pressed:bg-emerald-500 dark:bg-zinc-600 dark:hover:brightness-125"><span class="absolute top-0.75 left-0.75 size-5 rounded-full bg-white shadow transition-transform group-aria-pressed:translate-x-4.5"></span></button>`) : ''),
   agents: () => {
     const cmd = `curl -s ${BASE}/connect | sh`, far = S.remote && S.remote !== BASE ? `curl -s ${S.remote}/connect | sh` : '', ask = agentAsk(), seen = agentsSeen();
     return pRuled(`<div class="py-6">${agentCard()}</div>`)
@@ -7267,6 +7338,7 @@ const PBODY = {
     : pPart('Off', 'Your coding agent files what you send: it reads new inputs first when it asks for work. To have them filed as soon as you send them, set GEMINI_API_KEY where Taska runs and restart it.'),
 };
 const PSEC_RIGHT = {  // what a section's row in the list says on its right
+  notifications: () => noticeState(),
   agents: () => esc(agentState(S.agents, S.work)[1]), projects: () => P_CACHE.projects ? P_CACHE.projects.length : '',
   fixes: () => P_CACHE.fixes?.length || '', organizer: () => S.org?.on ? 'On' : 'Off', deleted: () => (S.deleted || []).length || '',
 };
@@ -7624,7 +7696,7 @@ document.addEventListener('contextmenu', e => {
 // so row swipes start away from the edge.
 const EDGE_W = 24, DR = {open: false, g: null};
 // B190: the projects as this browser last saw them, so the next page (a reload, another project) draws its sidebar at once
-function keepProjects() { try { localStorage.setItem('taska.projects', JSON.stringify(DR.list)); } catch (_) {} }
+function keepProjects() { noticeProjects(DR.list); try { localStorage.setItem('taska.projects', JSON.stringify(DR.list)); } catch (_) {} }
 try { DR.list = JSON.parse(localStorage.getItem('taska.projects') || 'null'); } catch (_) {}
 const drawerW = () => Math.min(innerWidth * 0.85, 320);
 function setDrawer(x, animate = true) {  // x: how far the page is pushed right
@@ -8099,7 +8171,7 @@ addEventListener('pagehide', () => {  // where you were in the list, for the rel
 // agent does (/connect and /log mean something to agents too). Changing tab, opening a document, a section of This
 // project or New input, an item on the phone and full width are steps Back can undo, and so is a link to an item (B9);
 // choosing items in the list on the desktop (a click, J/K), search and filters only rewrite the address.
-const VIEW = /^(inputs|archive|rules|new-rule|new|settings|agents|connect|phone|spellings|log|deleted|about|projects|organizer)$/;
+const VIEW = /^(inputs|archive|rules|new-rule|new|settings|agents|connect|phone|notifications|spellings|log|deleted|about|projects|organizer)$/;
 const URLS = {applying: false, selfBack: false, hold: false};  // hold: a link is on its way, its step is written once it is there
 // Each page of Settings has its own address on the phone too (B150, B162): /settings is its list of sections there.
 const viewPath = () => D.page ? (D.section ? PSEC[D.section][0] : 'settings') : U.doc && !U.docEdit ? `D${U.doc}` : desk() && D.compose ? (ruleMode() ? 'new-rule' : 'new')

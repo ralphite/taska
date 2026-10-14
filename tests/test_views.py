@@ -11,7 +11,7 @@ import urllib.request
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
-SECTIONS = ('settings', 'agents', 'connect', 'phone', 'spellings', 'log', 'deleted', 'about', 'projects', 'organizer')  # Settings' sections (B162); /settings, /connect and /about lead to Agents (the phone: the list of sections), Agents and Projects
+SECTIONS = ('settings', 'agents', 'connect', 'phone', 'notifications', 'spellings', 'log', 'deleted', 'about', 'projects', 'organizer')  # Settings' sections (B162); /settings, /connect and /about lead to Agents (the phone: the list of sections), Agents and Projects
 BROWSER = {'Sec-Fetch-Mode': 'navigate', 'Accept': 'text/html', 'User-Agent': 'Mozilla/5.0'}
 
 
@@ -61,7 +61,7 @@ class ViewTests(unittest.TestCase):
         self.assertTrue(body.strip() and all(line.startswith('#') for line in body.strip().split('\n')), body)
 
     def test_the_other_sections_are_not_agent_addresses(self):
-        for sec in ('settings', 'agents', 'phone', 'spellings', 'about'):
+        for sec in ('settings', 'agents', 'phone', 'notifications', 'spellings', 'about'):
             self.assertEqual(self.get(sec)[0], 404, sec)
 
     # Taska on a phone's Home Screen (F192): the manifest, the service worker and the icons, with no key, even from
