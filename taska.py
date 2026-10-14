@@ -4298,6 +4298,7 @@ async function sendDocComment(t) {
   try { await save({op: 'dc', d: t.d.d, key: t.key, text, ...(t.reply ? {} : {quote: t.quote})}, () => { const t2 = docTarget(); if (t2 && $('text').value.trim()) sendDocComment(t2); }); }
   catch (_) { $('text').value = text; saveDraft(); grow(); return; }
   U.docThreads.add(t.key); U.docSel = new Set(); U.docQuote = null; U.docReply = t.key;  // B2: what you write next goes on in that thread
+  if (U.lastSent) { U.lastSent = null; renderFeedback(); }  // T113 A19: the toast says it; an older "Sent." line doesn't stay beside it
   getSelection()?.removeAllRanges(); renderDoc(); renderComposer(); toast(t.reply ? 'Reply added' : 'Comment added');
   if (desk()) $('text').focus({preventScroll: true});
 }
@@ -5091,7 +5092,7 @@ async function moveInput(rid) {
 }
 
 function renderFeedback() {
-  const fb = $('feedback'), q = U.outbox[0];
+  const fb = $('feedback'), q = U.outbox[0]?.quiet && !U.outbox[0].failed ? null : U.outbox[0];  // a note that went with a decision: its toast said it (T113 A19)
   fb.classList.toggle('lg:group-data-[compose]/app:hidden', !U.note);  // the New input page shows its own list, but not this
   if (U.note) { fb.hidden = false; fb.innerHTML = U.note + `<button data-act="dismiss" aria-label="Dismiss" class="-my-2 grid size-11 shrink-0 place-items-center rounded-full text-zinc-400">${ico('x', 'size-3.5', '2')}</button>`; return; }
   let r = U.lastSent && byR.get(U.lastSent);
@@ -5108,7 +5109,7 @@ function renderFeedback() {
   }
   if (!r) return;
   let html;
-  const move = otherProjects().length ? link('move-input', 'Move to…', `data-id="${r.id}"`) : '';  // sent to the wrong project? (F79)
+  const move = otherProjects().length && !r.scope ? link('move-input', 'Move to…', `data-id="${r.id}"`) : '';  // sent to the wrong project? (F79) Not a reply: it went to an item here (T113 A19)
   if (r.moved) html = `${ico('arrow', 'size-4 text-zinc-500', '2')}<span class="min-w-0 flex-1 truncate">Moved ${r.id} to ${esc(r.moved.to)} as ${esc(r.moved.as)}</span><a href="/p/${encodeURIComponent(r.moved.to)}/" class="-my-2 flex h-11 shrink-0 items-center rounded-full px-2 font-semibold text-blue-600 dark:text-blue-400">Open</a>`;
   else if (r.tr_wait) html = `<span class="size-2 shrink-0 animate-pulse rounded-full bg-blue-500 dark:bg-blue-400"></span><span class="min-w-0 flex-1 truncate">Sent. Its voice note's words come next…</span>`;  // sent before they were in (B165)
   else if (S.org.busy === r.id || (!r.acked && S.org.on && !r.org)) html = `<span class="size-2 shrink-0 animate-pulse rounded-full bg-blue-500 dark:bg-blue-400"></span><span class="min-w-0 flex-1 truncate">Sent, organizing…</span>`;
@@ -5283,7 +5284,7 @@ async function flushOutbox() {
       job.sending = true; renderFeedback();
       try {
         const d = await sendInput({op: 'input', text, scope: job.scope, q: job.q, ...(job.from ? {from: job.from} : {}), files: files.map(({f, name, mime, size, tr}) => ({f, name, mime, size, ...(tr ? {tr} : {})}))});
-        U.lastSent = job.rid = d.res[0].split(' ')[1]; U.outbox.shift(); dropJob(job); sent = [U.lastSent, job.scope];
+        job.rid = d.res[0].split(' ')[1]; U.lastSent = job.quiet ? null : job.rid; U.outbox.shift(); dropJob(job); sent = [job.rid, job.scope];  // quiet: its toast said it (T113 A19)
         for (const f of files) { f.sent = true; dropRec(f); }  // words still to come go onto this input, on the server (B165); this browser lets the recording go (T101)
       } catch (e) {
         job.failed = true; job.sending = false; job.net = !!e.again;
@@ -6049,7 +6050,7 @@ function noteWith(n) {
   if (scopeN() !== n || U.amend || U.correct || docOpen() || R.rec) return false;
   const text = $('text').value.trim(), files = U.files;
   if (!text && !files.length) return false;
-  outboxPush({text, files, scope: code(n), from: null});
+  outboxPush({text, files, scope: code(n), from: null, quiet: true});  // the decision's toast says "with your note" (T113 A19)
   $('text').value = ''; U.files = []; saveDraft(); grow(); renderComposer(); flushOutbox();
   return true;
 }
@@ -6419,7 +6420,7 @@ const ACT = {
     try {
       let rid = null;
       if (note || files.length) {
-        outboxPush({text: picks + (note ? '\n\n' + note : ''), files, scope: code(n), from: null});
+        outboxPush({text: picks + (note ? '\n\n' + note : ''), files, scope: code(n), from: null, quiet: true});  // the toast says it (T113 A19)
         $('text').value = ''; U.files = []; saveDraft(); grow(); flushOutbox();
       } else rid = (await save({op: 'input', text: picks, scope: code(n)}, () => ACT['choice-send'](b))).res[0].split(' ')[1];
       const said = `Answer sent to ${code(n)}${note || files.length ? ' with your note' : ''}`;  // where it went (B155)
@@ -6540,7 +6541,8 @@ const ACT = {
     let d;
     try { d = await net(P + 'api/undo', JSON_POST({id}), NET.op); } catch (ex) { return notSaved(ex, () => ACT.undo(b)); }
     if (!d.ok) return toast(d.error || 'Could not undo', null, {error: true});
-    U.lastSent = id; try { await load(); } catch (_) {}
+    if (U.lastSent === id) U.lastSent = null;  // T113 A19: the toast says it; the line under the box doesn't say it again
+    try { await load(); } catch (_) {}
     let run;
     run = pushUndo(`Filing of ${id} undone`, async () => {
       let r;
@@ -6583,7 +6585,9 @@ const ACT = {
     try {
       const d = await net(P + 'api/move', JSON_POST({id, to}), NET.op);
       if (!d.ok) return toast(d.error || 'Could not move it', null, {error: true});
-      closeDialog(); U.lastSent = id; try { await load(); } catch (_) {} toast(`Moved ${id} to ${to} as ${d.as}`);
+      closeDialog(); if (U.lastSent === id) U.lastSent = null;  // T113 A19: one message, the toast, with Open
+      try { await load(); } catch (_) {}
+      toast(`Moved ${id} to ${to} as ${d.as}`, () => location.assign(`/p/${encodeURIComponent(to)}/`), {label: 'Open'});
     } catch (ex) { notSaved(ex, () => ACT['move-input-to'](b)); }
     finally { b.disabled = false; }
   },
