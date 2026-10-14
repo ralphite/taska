@@ -238,7 +238,7 @@ def group_box(a):  # T113 group 1: the box writes where you started, and keeps t
         if not a.js('!!R.rec'):  # the microphone was slow to start: once more
             a.js(sel + f'({i})'); time.sleep(0.4); a.click('#vcBtn', 2.0)
         check(f'F184: the same button records ({i})', a.js("[!!R.rec, $('vcBtn').textContent]"), [True, 'Stop'])
-        a.click('#vcBtn', 1.2)
+        time.sleep(1.0); a.click('#vcBtn', 1.2)  # a note under a second, or with nothing recorded yet, is dropped as too short
         a.js(words + f'({i - 1})')
     check('F184: the quotes and the words wait in the box, unsent', (a.js("vcCount($('text').value)"), a.js('U.files.length'), a.js("$('scope').textContent")), lambda t: t[0] == 2 and t[1] == 2 and '2 comments on D1' in t[2])
     a.click('#text'); a.enter(2.5, shift=True)

@@ -4584,7 +4584,12 @@ function renderDetail() {
       $('dHead').innerHTML = D.compose ? `<span class="flex items-center gap-2 text-sm font-semibold">${ico('newinput', 'size-[18px] text-blue-600 dark:text-blue-400')}${ruleMode() ? 'New rule' : 'New input'}</span>` : '';
       $('dNav').innerHTML = back ? `<button data-act="compose-back" class="flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800">${ico('left', 'size-4')}Back to ${D.prevDoc ? 'D' + D.prevDoc : code(D.prev)}${KBD('Esc')}</button>` : '';
       body.innerHTML = D.compose ? '' : noSelection();
-      if (D.compose) { $('composeHead').innerHTML = composeHead(); if (!U.fixEd) { $('composeList').innerHTML = saidLately(); markCut($('composeList')); } }  // not under a word you are correcting (I176)
+      if (D.compose) {  // drawn again only when it changed, and not under a word you are correcting (I176): a redraw under a press loses the click
+        $('composeHead').innerHTML = composeHead();
+        const said = saidLately(), list = $('composeList');
+        if (!U.fixEd && (list.dataset.html !== said || !list.firstChild)) { list.dataset.html = said; list.innerHTML = said; markCut(list); }
+        renderDraft();  // the draft card has its own redraw, by what changed in it
+      }
     }
     return;
   }
@@ -4955,6 +4960,9 @@ function boxBtn(b, act, icon, label, tip, iconCls = 'size-6 lg:size-5', sw = '1.
 const boxKeys = (keys, rest = '') => keys.map(([k, what]) => `${KBD(k)}<span>${what}</span>`).join('<span class="px-0.5">·</span>') + (rest ? `<span class="px-0.5">·</span><span>${rest}</span>` : '');
 const ticked = n => n && U.choice?.n === n && U.choice.picked.size ? [...U.choice.picked].sort((a, c) => a - c).map(i => (U.choiceLabels[n] || [])[i]).filter(Boolean) : [];
 
+// Drawn again only when it changed: the box is drawn on every keystroke and every refresh, and a redraw between the
+// press and the release of a button loses the click (the "... instead" links, a voice note's x, a toggle).
+function paint(el, html) { if (el.dataset.html !== html || el.innerHTML === '' && html) { el.dataset.html = html; el.innerHTML = html; } }
 function renderComposer() {
   if (S.project && draftKey() !== U.draftKey) swapDraft(draftKey());
   const n = scopeN(), it = n && byN.get(n), dt = docTarget(), dOpen = !U.correct && !U.amend && !dt && docOpen(), t = $('text'), ticks = U.correct || U.amend || dt || dOpen ? [] : ticked(n);
@@ -4994,27 +5002,27 @@ function renderComposer() {
     ruleFlip() + (U.open && detailShown() ? scopeLink('reply-instead', `Add to ${code(U.open)} instead`, 'R') : ''));
   else if (U.tab === 'rules') line = scopeLine('inbox', 'New input', '· not a rule', ruleFlip());
   if (R.rec && R.key && R.key !== U.draftKey) line = scopeLine('mic', `Recording for ${esc(draftName(R.key))}`, '· it goes there when you stop');  // B1
-  $('scope').hidden = !line; $('scope').innerHTML = line; t.placeholder = ph;
+  $('scope').hidden = !line; paint($('scope'), line); t.placeholder = ph;
   const d = $('drafts');
   d.hidden = !U.files.length;
-  d.innerHTML = U.files.map((f, i) => `<div class="relative shrink-0">${(f.mime || '').startsWith('audio/')
+  paint(d, U.files.map((f, i) => `<div class="relative shrink-0">${(f.mime || '').startsWith('audio/')
       ? `<div class="flex h-16 items-center gap-2 rounded-xl border border-zinc-200 px-3 text-xs text-zinc-600 dark:border-zinc-700 dark:text-zinc-300">${ico('mic', 'size-4')}<span class="font-mono tabular-nums">${clock(f.ms || 0)}</span><span class="font-semibold ${f.transcribing ? 'animate-pulse text-blue-600 dark:text-blue-400' : f.more ? 'max-w-40 leading-snug text-amber-700 dark:text-amber-400' : f.tr ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-500'}">${f.transcribing ? (f.retrying ? 'Retrying…' : 'Transcribing…') : f.more ? 'May be cut short · fuller words on the way' : f.tr ? 'Transcribed' : f.tr_error ? 'No transcript, audio still sent' : 'No words heard, audio still sent'}</span></div>`
       : (f.mime || '').startsWith('image/')
       ? `<button data-act="view-draft" data-i="${i}" aria-label="Look at ${esc(f.name)}" class="block cursor-zoom-in rounded-xl"><img src="${f.preview || P + 'f/' + encodeURIComponent(f.f)}" alt="" class="size-16 rounded-xl border border-zinc-200 object-cover dark:border-zinc-700 ${f.f ? '' : 'opacity-40'}"></button>`
       : `<div class="flex h-16 w-28 items-center gap-1 rounded-xl border border-zinc-200 px-2 text-xs dark:border-zinc-700 ${f.f ? '' : 'opacity-40'}">${ico('file', 'size-4')}<span class="line-clamp-2 break-all">${esc(f.name)}</span></div>`}
-    <button data-act="unfile" data-i="${i}" aria-label="Remove ${esc(f.name)}" class="absolute -top-3.5 -right-3.5 grid size-11 place-items-center"><span class="grid size-6 place-items-center rounded-full bg-zinc-900 text-white ring-2 ring-white dark:bg-zinc-100 dark:text-zinc-900 dark:ring-zinc-900">${ico('x', 'size-3.5', '2.5')}</span></button></div>`).join('');
+    <button data-act="unfile" data-i="${i}" aria-label="Remove ${esc(f.name)}" class="absolute -top-3.5 -right-3.5 grid size-11 place-items-center"><span class="grid size-6 place-items-center rounded-full bg-zinc-900 text-white ring-2 ring-white dark:bg-zinc-100 dark:text-zinc-900 dark:ring-zinc-900">${ico('x', 'size-3.5', '2.5')}</span></button></div>`).join(''));
   // T101: where the two transcriptions disagree on what changes the meaning, said under the voice note before you send
   // F186: on the New input page they are marked in the draft below, on the phone in the box itself, both as toggles;
   // a reply box on the desktop (no draft there) keeps one line each.
   const words = $('text').value, spots = U.files.flatMap((f, i) => (f.doubts || []).map((x, k) => ({i, k, x}))).filter(({x}) => !x.pick && words.includes(x.was));
   const toCheck = spots.filter(({x}) => x.alt).length, alert = ico('alert', 'size-3.5 shrink-0 text-amber-600 dark:text-amber-400', '2');
   const pickable = !desk() && draftSpots(words).some(p => p.x.alt), view = pickable && U.boxView && !R.rec;
-  $('doubts').innerHTML = desk() && D.compose ? (toCheck ? `<p class="flex min-h-8 items-center gap-1.5">${alert}<span class="min-w-0">${plural(toCheck, 'word')} may be misheard. They are marked in the draft below: pick there.</span></p>` : '')
+  paint($('doubts'), desk() && D.compose ? (toCheck ? `<p class="flex min-h-8 items-center gap-1.5">${alert}<span class="min-w-0">${plural(toCheck, 'word')} may be misheard. They are marked in the draft below: pick there.</span></p>` : '')
     : !desk() ? (pickable ? `<p class="flex min-h-8 items-start gap-1.5 py-1">${alert}<span class="min-w-0">${toCheck ? `<b class="font-semibold text-zinc-800 dark:text-zinc-100">${plural(toCheck, 'word')} to check.</b> Left: main model, right: the other. A tap changes every place.` : 'Picked. Tap the other side to switch back before you send.'}${view ? '' : ` <button data-act="box-view" class="${LINK_BTN} -my-2 inline-flex">Show them</button>`}</span></p>` : '')
-    : spots.map(({i, k, x}) => { const [said, heard] = x.show || [x.was, x.alt]; return `<p class="flex min-h-8 items-center gap-1.5">${alert}<span class="min-w-0">Maybe misheard: “${esc(unmarked(said))}”${x.alt ? ` — the other model heard “${esc(heard)}”${x.also?.length ? ` (${x.also.length + 1} places)` : ''} ·` : ' — the model was not sure'}</span>${x.alt ? `<button data-act="doubt-use" data-i="${i}" data-k="${k}" class="${LINK_BTN} -my-1 -ml-1.5 shrink-0">Use it</button>` : ''}</p>`; }).join('');
+    : spots.map(({i, k, x}) => { const [said, heard] = x.show || [x.was, x.alt]; return `<p class="flex min-h-8 items-center gap-1.5">${alert}<span class="min-w-0">Maybe misheard: “${esc(unmarked(said))}”${x.alt ? ` — the other model heard “${esc(heard)}”${x.also?.length ? ` (${x.also.length + 1} places)` : ''} ·` : ' — the model was not sure'}</span>${x.alt ? `<button data-act="doubt-use" data-i="${i}" data-k="${k}" class="${LINK_BTN} -my-1 -ml-1.5 shrink-0">Use it</button>` : ''}</p>`; }).join(''));
   $('doubts').hidden = !$('doubts').innerHTML;
   $('boxView').hidden = !view;
-  if (view) $('boxView').innerHTML = draftHtml(words);
+  if (view) paint($('boxView'), draftHtml(words));
   // The three buttons. While recording the textarea keeps its place (unseen), so the box keeps its size.
   const rec = !!R.rec, has = !!(t.value.trim() || U.files.length || ticks.length);
   const micTip = !window.isSecureContext ? 'Voice needs an https link here: press for it' : D.compose ? 'Record a voice note · ⌥V' : 'Record a voice note · V, or ⌥V while typing';
@@ -5248,11 +5256,14 @@ async function micStream() {
 }
 async function startRec() {
   if (!canRecord()) return voiceWhy();  // B166
+  // B1: the note belongs where you started it, whatever is open when it stops: taken before the microphone is asked,
+  // which can take a moment (a J pressed meanwhile must not move it)
+  const key = U.draftKey, scope = scopeN() ? code(scopeN()) : null, typing = document.activeElement === $('text');
   try { R.stream = await micStream(); }
   catch (_) { return toast('No microphone permission'); }
   R.chunks = []; R.levels = [];
-  R.typing = document.activeElement === $('text');  // the box hides its text while recording; the caret comes back after
-  R.key = U.draftKey; R.scope = scopeN() ? code(scopeN()) : null;  // B1: the note belongs where you started it, whatever is open when it stops
+  R.typing = typing;  // the box hides its text while recording; the caret comes back after
+  R.key = key; R.scope = scope;
   if (R.typing) $('text').blur();
   R.rec = new MediaRecorder(R.stream);
   R.rec.ondataavailable = e => { if (e.data.size) R.chunks.push(e.data); };
@@ -6773,6 +6784,7 @@ function renderDraft() {  // the card follows the box as you type (not while you
   const html = draftCard();
   if (el.dataset.html === html) return;
   el.dataset.html = html; el.innerHTML = html; el.className = html ? 'mt-4' : '';
+  if ($('saidNone')) $('saidNone').hidden = !!html;
 }
 function draftFix() {  // the voice note's words you selected in the card turn into a small field, right there
   const sel = getSelection();
@@ -6821,9 +6833,9 @@ function saidLately() {
   const recent = [...S.inputs].reverse().slice(0, 5), queued = [...U.outbox].reverse(), n = queued.length + recent.length;
   return `<div class="flex h-8 items-center justify-between"><h2 class="text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">You said lately</h2>
       ${S.inputs.length ? `<button data-act="tab" data-tab="inputs" title="All inputs · G N" class="flex h-8 items-center gap-1 rounded-lg pr-1.5 pl-2 text-[13px] font-medium text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10">All ${S.inputs.length} input${S.inputs.length === 1 ? '' : 's'}${KBD('G N')}</button>` : ''}</div>
-    <ol id="draftSlot" class="${draftCard() ? 'mt-4' : ''}">${draftCard()}</ol>
+    <ol id="draftSlot"></ol>
     ${n ? `<ol class="mt-4">${queued.map((q, k) => outboxStep(q, k === n - 1)).join('')}${recent.map((r, k) => saidRow(r, queued.length + k, queued.length + k === n - 1)).join('')}</ol>`
-      : draftCard() ? '' : '<p class="mt-3 text-sm text-zinc-400 dark:text-zinc-500">What you say shows up here, with the items it turns into.</p>'}`;
+      : '<p id="saidNone" class="mt-3 text-sm text-zinc-400 dark:text-zinc-500">What you say shows up here, with the items it turns into.</p>'}`;
 }
 // F106: a bubble whose two lines cut the words opens on a click, and closes the same way.
 function markCut(root) {
