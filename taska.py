@@ -4442,7 +4442,8 @@ function wireLasso() {
 // state, as on the desktop (B128): forward · progress · Won't do · Later · Copy. Opening the item or copying it
 // leaves the walk where it was. A swipe on the card means what it means on a row: right is its step forward.
 const laterLast = (a, b) => (a.when === 'later') - (b.when === 'later');  // Later moves an item that needs you down, out of the way (B153)
-const needsList = () => visible('items').filter(needsYou).sort(laterLast).map(it => it.n);
+const walkTab = () => U.tab === 'rules' && !D.page && !D.compose ? 'rules' : 'items';  // on Rules, the rules waiting on you (T113 B29)
+const needsList = (t = walkTab()) => visible(t).filter(needsYou).sort(laterLast).map(it => it.n);
 const FOCUS_TONE = {Start: 'text-blue-600 dark:text-blue-400', "Won't do": 'text-red-600 dark:text-red-400', Done: 'text-emerald-700 dark:text-emerald-400', Archive: 'text-emerald-700 dark:text-emerald-400', Unarchive: 'text-emerald-700 dark:text-emerald-400'};
 const FWD_NEED = {Accept: 'accept', Approve: 'approve', Answer: 'answer', Reply: 'reply'};  // the forward step in the color of its kind, wherever it shows (B96, B41)
 function cardSlots(it) {
@@ -4641,6 +4642,9 @@ function tree(group) {
 }
 const EMPTY = (text, extra = '') => `<div class="px-6 py-16 text-center text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">${text}${extra}</div>`;
 
+// What waits on you, at the top of Items and of Rules: Go through, or while you go through, End and what you settled.
+const needsBand = (needs, going) => needs.length ? zone('needs', 'Needs you', needs.filter(needsYou).length, going ? `<span class="text-xs font-medium text-amber-700 dark:text-amber-400">· Going through</span><button data-act="go-end" class="-my-1 ml-auto flex h-11 items-center gap-1 rounded-full pr-2 pl-3 text-[13px] font-semibold text-amber-800 hover:bg-amber-100 dark:text-amber-300 dark:hover:bg-amber-400/15">End${KBD('Esc')}</button>` : goThroughBtn())
+  + needs.map(it => going && going.done.has(it.n) ? settledRow(it) : needsRow(it)).join('') : '';  // nothing waiting: no band (I71)
 function renderItems() {
   const list = $('list'), top = U.open && !desk() ? U.listTop?.[0] : list.scrollTop;  // under the phone's item page the list is hidden and reads 0
   SW.open = SW.el = null;  // rows are rebuilt closed; a stale reference would swallow the next tap
@@ -4660,9 +4664,11 @@ function renderItems() {
     html = EMPTY('No matching items', `${more ? `<span class="mt-3 flex flex-col">${more}</span>` : '<br>'}<button data-act="reset" class="mt-3 h-11 text-blue-600 hover:underline dark:text-blue-400">Clear search and filters</button>`);
   } else if (U.tab === 'rules') {
     // Rules: the ones an agent proposed wait on you; then the rules in force, then the retired ones.
-    const wait = rows.filter(it => it.status === 'proposed'), on = rows.filter(it => it.status === 'open'), off = rows.filter(it => it.status === 'dropped');
+    // Their Needs you band works like Items' (T113 B29): Go through, and what you settle stays in it while you go.
+    const going = desk() && U.go, settled = it => going && going.done.has(it.n) && going.list.includes(it.n);
+    const wait = rows.filter(it => it.status === 'proposed' || settled(it)), on = rows.filter(it => it.status === 'open' && !settled(it)), off = rows.filter(it => it.status === 'dropped' && !settled(it));
     html = !rows.length ? EMPTY('No rules yet.<br>Rules are standing instructions for agents in this project,<br>for example how to write commit messages or who reviews.<br>Say one in the box below and it is filed here.')
-      : (wait.length ? zone('needs', 'Needs you', wait.length) + wait.map(needsRow).join('') : '')
+      : needsBand(wait, going)
       + (on.length ? zone('rules', 'Active', on.length) + on.map(it => itemRow(it)).join('') : '')
       + (off.length ? zone('retired', 'Retired', off.length) + off.map(it => itemRow(it)).join('') : '');
   } else if (U.tab === 'archive') {
@@ -4675,8 +4681,7 @@ function renderItems() {
     const settled = it => going && going.done.has(it.n) && going.list.includes(it.n);
     const queue = rows.filter(it => inQueue(it) && !settled(it)).sort(queueOrder);
     const done = rows.filter(it => CLOSED(it.status) && !it.archived && !settled(it)), arch = rows.filter(it => it.archived);
-    html = (needs.length ? zone('needs', 'Needs you', needs.filter(needsYou).length, going ? `<span class="text-xs font-medium text-amber-700 dark:text-amber-400">· Going through</span><button data-act="go-end" class="-my-1 ml-auto flex h-11 items-center gap-1 rounded-full pr-2 pl-3 text-[13px] font-semibold text-amber-800 hover:bg-amber-100 dark:text-amber-300 dark:hover:bg-amber-400/15">End${KBD('Esc')}</button>` : goThroughBtn())
-        + needs.map(it => going && going.done.has(it.n) ? settledRow(it) : needsRow(it)).join('') : '')  // nothing waiting: no band (I71)
+    html = needsBand(needs, going)
       + (queue.length ? zone('queue', 'Agent queue', queue.length, laterNote(queue) + (desk() ? keepGoingSwitch() : keepGoingNote())) + tree(queue) : '')  // every row it holds; the later ones, which agents don't take yet, are named (S3)
       + (U.undoArch ? `<div ${hold}><div class="flex items-center gap-3 border-b border-blue-100 bg-blue-50 py-2 pr-2 pl-4 dark:border-blue-400/15 dark:bg-blue-400/10">
           ${ico('archive', 'size-5 text-blue-600 dark:text-blue-400')}
@@ -6941,7 +6946,7 @@ function settledRow(it) {
       ${U.go.undo[it.n] ? `<button data-act="go-undo" data-n="${it.n}" class="flex h-8 shrink-0 items-center gap-1 rounded-lg px-2 text-[13px] font-semibold text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10">${ico('undo', 'size-4', '2')}Undo</button>` : ''}</div></article>`;
 }
 function startGoDesk(from) {
-  const list = needsList(), all = S.items.filter(it => needsYou(it) && inTab(it, 'items')).length, by = U.q.trim() ? (filtersSet().length ? 'search and filter' : 'search') : 'filter';
+  const t = walkTab(), list = needsList(t), all = S.items.filter(it => needsYou(it) && inTab(it, t)).length, by = U.q.trim() ? (filtersSet().length ? 'search and filter' : 'search') : 'filter';
   if (!list.length) return toast(all ? `Nothing that needs you is in this ${by} (${all} hidden)` : 'Nothing needs you right now');  // B15: say so when your search or filter hides what needs you
   U.go = {list, done: new Set(), how: {}, undo: {}, at: null, hidden: all - list.length, by};
   if (U.go.hidden) toast(`Going through the ${list.length} your ${by} shows · ${U.go.hidden} more need${U.go.hidden === 1 ? 's' : ''} you`);  // it runs over this search or filter (T113 A13)
@@ -7392,10 +7397,10 @@ function deskKey(e) {
       if (letter) hint(D.page ? 'J and K move in a list: Esc goes back to it' : 'J and K move in Items, Archive and Rules');
       return;
     }
-    case 'J': case 'K':  // what needs you lives in Items: from another tab or page, go there first
+    case 'J': case 'K':  // what needs you lives in Items (and Rules has its own): from another tab or page, go to Items first
       e.preventDefault();
       if (U.go) return ACT[k === 'J' ? 'go-next' : 'go-prev']();
-      if (U.tab !== 'items' || D.page || D.compose) setTab('items');
+      if (walkTab() !== U.tab || D.page || D.compose) setTab('items');
       return startGoDesk(U.open);
     case 'o': case 'Enter': if (it) { e.preventDefault(); fullWidth(!D.full); } else if (k === 'o') hint('First pick an item: J or a click'); return;
     case ' ': if (it) { e.preventDefault(); $('detailBody').scrollBy({top: (e.shiftKey ? -0.8 : 0.8) * $('detailBody').clientHeight, behavior: REDUCE.matches ? 'auto' : 'smooth'}); } return;

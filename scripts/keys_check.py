@@ -409,6 +409,11 @@ def group_walk(a):  # T113 group 4: Go through keeps its place, ends with what y
     post(a, 'api/op', {'op': 'set', 'ref': 'T12', 'f': {'type': 'bug'}}); time.sleep(2.0)
     check('The open item left the list', a.js("!!document.querySelector('#list [data-act=open][data-n=\"12\"]')"), False)
     a.key('j', wait=0.8); check('J goes on from where it was, not from the top', open_(a), 'T13')
+    post(a, 'api/op', {'op': 'set', 'ref': 'R10', 'f': {'status': 'proposed'}}); time.sleep(1.5)  # T113 B29: Rules' Needs you band
+    a.key('g', wait=0.1); a.key('r', wait=0.8)
+    check('Rules: its Needs you band has Go through', a.js("!!document.querySelector('#list [data-zone=needs] [data-act=go-through]')"), True)
+    a.key('J', wait=0.8); check('Shift+J on Rules goes through its rules, on Rules', (a.js('U.tab'), open_(a), strip().startswith('Needs you 1 of 1')), ('rules', 'R10', True))
+    a.key('a', wait=1.5); check('Approving it ends the walk, and says so', (status(a, 10), a.js('!!U.go'), a.toast()), ('open', False, 'Nothing else needs you · 1 settled'))
 
 
 def group_tabs(a):  # T113 group 7: two tabs show one draft; a draft sent in one leaves the other; rows say "Draft"
