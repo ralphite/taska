@@ -3473,6 +3473,7 @@ const ico = (n, c = 'size-5', sw = '1.75') => `<svg class="${c} shrink-0" viewBo
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
 const P = location.pathname.replace(/[^/]*$/, '');  // /p/<project>/
+const HERE = decodeURIComponent(P.split('/')[2] || '');  // this project's address, known before its data arrives (B190)
 const VER = '__TASKA_VERSION__';  // this page's code; the server sends its own with every poll
 let BASE = location.origin + P.replace(/\/$/, '');  // what a coding agent calls BASE; from outside it carries the key
 const sleep = ms => new Promise(r => setTimeout(r, ms));
@@ -5854,6 +5855,7 @@ function render() {
   const pending = S.inputs.filter(r => !r.acked).length;
   $('nInputs').textContent = pending || '';
   $('nInputs').title = pending ? `${pending} not organized yet` : '';
+  if (S.project && !filtered()) try { localStorage.setItem('taska.counts.' + S.project, JSON.stringify(COUNTS.map(id => $(id).textContent))); } catch (_) {}  // for the next page's first paint (B190)
   fitTabs();
   const waiting = S.items.filter(needsYou).length, sec = D.page ? (D.section ? PSEC[D.section][2] : 'Settings') + ' · ' : '';  // each section is a page of its own (B162)
   $('projName').textContent = S.project ? projTitle() : 'Taska';
@@ -6589,28 +6591,31 @@ function renderDeskHead() {
 // project's menu: settings, rename, switch, new, delete. Below 1280px the sidebar folds to a rail of project tiles.
 function renderProjBar() {
   if (U.renaming === S.project && document.activeElement?.id === 'pRename') return renderAgent();  // a refresh must not take the name you are typing
-  const tab = t => { const n = t === 'archive' ? '' : t === 'items' && filtered() && U.tab === 'items' ? visible().filter(it => !it.archived).length : tabCount(t);
+  const pre = !S.project && sideProjects()[0];  // before the data (B190): the frame as it will be, with what this browser last saw
+  const kept = pre && keptCounts(), tab = t => { const n = pre ? (t === 'archive' ? '' : kept ? kept[TABS.indexOf(t)] : t === 'items' ? pre.open : '') : t === 'archive' ? '' : t === 'items' && filtered() && U.tab === 'items' ? visible().filter(it => !it.archived).length : tabCount(t);
     return `<button data-act="tab" data-tab="${t}" role="tab" aria-selected="${U.tab === t && !D.page}" class="group -mb-px flex shrink-0 items-center gap-1.5 border-b-2 border-transparent px-0.5 text-sm font-medium text-zinc-500 hover:text-zinc-800 aria-selected:border-zinc-900 aria-selected:font-semibold aria-selected:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200 dark:aria-selected:border-zinc-100 dark:aria-selected:text-zinc-50">${TAB_NAME[t]}<span class="font-mono text-[11px] font-medium text-zinc-400 tabular-nums">${n}</span></button>`; };
-  const name = U.renaming === S.project
+  const name = U.renaming && U.renaming === S.project
     ? `<div class="flex min-w-0 items-center gap-2 px-1">${projTile(S.project, 'size-6 rounded-md text-xs')}<input id="pRename" data-slug="${esc(S.project)}" class="${FIELD} h-8 w-64 py-1 text-[15px] font-semibold" value="${esc(projTitle())}" aria-label="New name for ${esc(projTitle())}" autocomplete="off" spellcheck="false"><span class="text-xs whitespace-nowrap text-zinc-500 dark:text-zinc-400">${KBD('↵')} save · ${KBD('Esc')} cancel</span></div>`
-    : `<button data-act="proj-menu" id="projMenuBtn" aria-haspopup="menu" title="${esc(projTitle())}: settings, rename, switch, delete" class="my-1.5 flex min-w-0 max-w-72 items-center gap-2 rounded-lg px-2 hover:bg-zinc-100 data-pressed:bg-zinc-200/70 dark:hover:bg-zinc-800">${projTile(S.project, 'size-6 rounded-md text-xs')}<span class="truncate text-[15px] font-semibold">${esc(projTitle())}</span>${ico('down', 'size-4 shrink-0 text-zinc-400', '2')}</button>`;
+    : `<button data-act="proj-menu" id="projMenuBtn" aria-haspopup="menu" title="${esc(pre ? titleOf(pre) : projTitle())}: settings, rename, switch, delete" class="my-1.5 flex min-w-0 max-w-72 items-center gap-2 rounded-lg px-2 hover:bg-zinc-100 data-pressed:bg-zinc-200/70 dark:hover:bg-zinc-800">${projTile(S.project || HERE, 'size-6 rounded-md text-xs')}<span class="truncate text-[15px] font-semibold">${esc(pre ? titleOf(pre) : projTitle())}</span>${ico('down', 'size-4 shrink-0 text-zinc-400', '2')}</button>`;
   draw($('projBar'), `${name}<span class="mx-2 my-3.5 w-px shrink-0 bg-zinc-200 dark:bg-zinc-800"></span>
     <div role="tablist" class="flex min-w-0 items-stretch gap-5">${['items', 'inputs', 'archive', 'rules'].map(tab).join('')}</div>
     <div id="deskAgent" class="ml-auto flex shrink-0 items-center pl-3"></div>`);
-  renderAgent();
+  if (S.project) renderAgent();  // the agent's pill comes with the data
 }
 function sideProjects() {  // this project first, with what this page knows now; the others by name, so a row never moves under the pointer (B12)
-  const here = {name: S.project, title: S.title, open: openCount(), needs: S.items.filter(needsYou).length, agents: S.agents, work: S.work};
-  return [here, ...(DR.list || []).filter(p => p.name !== S.project).sort((a, b) => titleOf(a).localeCompare(titleOf(b)))];
+  const here = S.project ? {name: S.project, title: S.title, open: openCount(), needs: S.items.filter(needsYou).length, agents: S.agents, work: S.work}
+    : (DR.list || []).find(p => p.name === HERE) || {name: HERE, title: '', open: '…', needs: 0};  // before the data (B190): as this browser last saw it
+  return [here, ...(DR.list || []).filter(p => p.name !== here.name).sort((a, b) => titleOf(a).localeCompare(titleOf(b)))];
 }
 function renderSidebar() {
-  draw($('drawerList'), sideProjects().map(p => { const cur = p.name === S.project, [tone, label] = agentState(p.agents, p.work);
+  draw($('drawerList'), sideProjects().map(p => { const cur = p.name === (S.project || HERE), [tone, label] = agentState(p.agents, p.work);
     return `<a href="/p/${encodeURIComponent(p.name)}/" data-slug="${esc(p.name)}" ${cur ? 'aria-current="page" data-act="tab" data-tab="items"' : ''} class="flex items-center gap-2.5 rounded-xl px-2.5 py-2 hover:bg-zinc-200/60 data-pressed:bg-zinc-200/80 aria-[current=page]:bg-white aria-[current=page]:shadow-sm aria-[current=page]:ring-1 aria-[current=page]:ring-zinc-900/5 dark:hover:bg-zinc-800 dark:aria-[current=page]:bg-zinc-800 dark:aria-[current=page]:ring-white/5">${projTile(p.name, 'size-6 rounded-md text-xs')}
       <span class="min-w-0 flex-1"><span class="block truncate text-sm ${cur ? 'font-semibold' : 'font-medium'}">${esc(titleOf(p))}</span><span class="flex items-center gap-1.5 text-[11px] text-zinc-500 dark:text-zinc-400"><span class="size-1.5 shrink-0 rounded-full ${AGENT_TONE[tone][0]}"></span><span class="truncate ${tone === 'ok' ? 'text-emerald-700 dark:text-emerald-400' : AGENT_TONE[tone][1]}">${esc(label)}</span><span class="shrink-0">· ${p.open} open</span></span></span>
       ${projDraft(p.name) ? `<span data-draft title="A draft not sent yet, kept in this browser" aria-label="Draft" class="grid size-5 shrink-0 place-items-center rounded-full bg-blue-100 text-blue-700 dark:bg-blue-400/15 dark:text-blue-300">${ico('pencil', 'size-3', '2.25')}</span>` : ''}
       ${p.needs ? `<span title="${plural(p.needs, 'item')} need you" class="grid h-5 min-w-5 place-items-center rounded-full bg-amber-100 px-1 text-[11px] font-bold text-amber-900 dark:bg-amber-400/15 dark:text-amber-200">${p.needs}</span>` : ''}</a>`; }).join(''));
   $('newInputBtn').setAttribute('aria-pressed', String(D.compose && !D.page));
-  renderAgent(); renderDrawerSettings();
+  if (S.project) renderAgent();
+  renderDrawerSettings();
 }
 function renderSideFoot() {  // the sidebar's foot: Undo (when there is one), Settings, the keys
   const foot = (act, icon, label, key, attrs = '') => `<button data-act="${act}" ${attrs} class="flex h-9 min-w-0 flex-1 items-center gap-2.5 rounded-lg px-2.5 text-left text-sm text-zinc-600 hover:bg-zinc-200/60 dark:text-zinc-300 dark:hover:bg-zinc-800">${ico(icon, 'size-4 shrink-0 text-zinc-500 dark:text-zinc-400', '2')}<span class="min-w-0 flex-1 truncate">${label}</span>${KBD(key)}</button>`;
@@ -6620,7 +6625,7 @@ function renderSideFoot() {  // the sidebar's foot: Undo (when there is one), Se
 }
 function renderRail() {
   const b = (act, inner, title, attrs = '') => `<button data-act="${act}" ${attrs} title="${title}" aria-label="${title.split(' · ')[0]}" class="relative grid size-10 place-items-center rounded-xl text-zinc-500 hover:bg-zinc-200/60 aria-pressed:bg-zinc-200/80 aria-pressed:text-zinc-900 aria-[current=page]:bg-zinc-200/80 aria-[current=page]:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:aria-pressed:bg-zinc-700 dark:aria-pressed:text-zinc-50 dark:aria-[current=page]:bg-zinc-700 dark:aria-[current=page]:text-zinc-50">${inner}</button>`;
-  const proj = p => { const cur = p.name === S.project, dr = projDraft(p.name);
+  const proj = p => { const cur = p.name === (S.project || HERE), dr = projDraft(p.name);
     return `<a href="/p/${encodeURIComponent(p.name)}/" data-slug="${esc(p.name)}" ${cur ? 'aria-current="page" data-act="tab" data-tab="items"' : ''} title="${esc(titleOf(p))}${p.needs ? ` · ${plural(p.needs, 'item')} need you` : ''}${dr ? ' · a draft not sent yet' : ''}" aria-label="${esc(titleOf(p))}" class="relative grid size-10 place-items-center rounded-xl hover:bg-zinc-200/60 aria-[current=page]:bg-zinc-200/80 dark:hover:bg-zinc-800 dark:aria-[current=page]:bg-zinc-700">${projTile(p.name, 'size-7 rounded-lg text-xs')}${dr ? '<span data-draft class="absolute right-0 bottom-0 grid size-4 place-items-center rounded-full bg-blue-600 text-white ring-2 ring-zinc-100 dark:bg-blue-500 dark:ring-zinc-900">' + ico('pencil', 'size-2.5', '2.5') + '</span>' : ''}${p.needs ? `<span class="absolute -top-0.5 -right-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-amber-500 px-1 text-[10px] font-bold text-white dark:bg-amber-400 dark:text-amber-950">${p.needs}</span>` : ''}</a>`; };
   draw($('rail'), b('side', `<span class="text-blue-600 dark:text-blue-400">${ico('logo', 'size-6', '2.25')}</span>`, 'Show the sidebar · [')
     + b('new-input', ico('newinput', 'size-5'), 'New input · C', `aria-pressed="${D.compose && !D.page}"`)
@@ -7005,7 +7010,7 @@ function loadLog() {  // the log as it is now: when it opens, and after each cha
 async function loadProjects() {
   try {
     const [live, gone] = await Promise.all(['/api/projects', '/api/projects/deleted'].map(u => net(u, {}, NET.get)));
-    P_CACHE.projects = live; P_CACHE.trash = gone; DR.list = [...live].sort((a, b) => b.t - a.t);
+    P_CACHE.projects = live; P_CACHE.trash = gone; DR.list = [...live].sort((a, b) => b.t - a.t); keepProjects();
   } catch (_) { return; }
   if (D.page) renderProject();
   if (desk()) { renderSidebar(); renderRail(); }
@@ -7464,6 +7469,9 @@ document.addEventListener('contextmenu', e => {
 // it back, or tap what is left of the page, to close. The swipe in from the left edge stays the phone's "back",
 // so row swipes start away from the edge.
 const EDGE_W = 24, DR = {open: false, g: null};
+// B190: the projects as this browser last saw them, so the next page (a reload, another project) draws its sidebar at once
+function keepProjects() { try { localStorage.setItem('taska.projects', JSON.stringify(DR.list)); } catch (_) {} }
+try { DR.list = JSON.parse(localStorage.getItem('taska.projects') || 'null'); } catch (_) {}
 const drawerW = () => Math.min(innerWidth * 0.85, 320);
 function setDrawer(x, animate = true) {  // x: how far the page is pushed right
   const app = $('app'), shade = $('drawerShade');
@@ -7476,7 +7484,7 @@ function setDrawer(x, animate = true) {  // x: how far the page is pushed right
 }
 async function fillDrawer() {
   if (!DR.list) draw($('drawerList'), '<div class="px-3 py-3 text-sm text-zinc-400">Loading…</div>');
-  try { DR.list = (await net('/api/projects')).sort((a, b) => b.t - a.t); } catch (_) { if (!DR.list) draw($('drawerList'), `<div class="px-3 py-3 text-sm text-zinc-500 dark:text-zinc-400">Couldn't load the projects</div>`); return; }
+  try { DR.list = (await net('/api/projects')).sort((a, b) => b.t - a.t); keepProjects(); } catch (_) { if (!DR.list) draw($('drawerList'), `<div class="px-3 py-3 text-sm text-zinc-500 dark:text-zinc-400">Couldn't load the projects</div>`); return; }
   draw($('drawerList'), [...DR.list].sort((a, b) => (b.name === S.project) - (a.name === S.project) || titleOf(a).localeCompare(titleOf(b))).map(p => { const cur = p.name === S.project, [tone, label] = agentState(p.agents, p.work);  // one order: rows don't move as projects get busy (B158)
     return `<a href="/p/${encodeURIComponent(p.name)}/" ${cur ? 'aria-current="page"' : ''} class="group flex min-h-14 items-center gap-3 rounded-2xl px-3 py-2.5 hover:bg-zinc-200/50 data-pressed:bg-zinc-200/70 aria-[current=page]:bg-white aria-[current=page]:shadow-sm aria-[current=page]:ring-1 aria-[current=page]:ring-zinc-900/5 dark:hover:bg-zinc-800/60 dark:data-pressed:bg-zinc-800 dark:aria-[current=page]:bg-zinc-800 dark:aria-[current=page]:ring-white/5">${projTile(p.name, 'size-8 rounded-lg text-sm')}
     <span class="min-w-0 flex-1"><span class="block truncate text-[17px] font-medium group-aria-[current=page]:font-semibold">${esc(titleOf(p))}</span>
@@ -7540,7 +7548,7 @@ async function checkOthers() {
   if (Date.now() - (checkOthers.t || 0) < 20000) return;
   checkOthers.t = Date.now();
   const names = () => (DR.list || []).map(p => p.name).sort().join('\n'), had = names();
-  try { DR.list = (await net('/api/projects')).sort((a, b) => b.t - a.t); } catch (_) { return; }  // it tries again soon
+  try { DR.list = (await net('/api/projects')).sort((a, b) => b.t - a.t); keepProjects(); } catch (_) { return; }  // it tries again soon
   $('otherDot').hidden = !DR.list.some(p => p.name !== S.project && p.needs);
   if (names() !== had && S.rev >= 0) return render();  // A12, B13: Move… on Inputs and New input needs the other projects, the tiles' colours too
   if (desk()) { renderSidebar(); renderRail(); }
@@ -7574,6 +7582,7 @@ document.addEventListener('touchend', () => {
   if (g.x > drawerW() * 0.7) openDrawer(); else closeDrawer();
 });
 addEventListener('pageshow', () => {  // back from another project
+  if (desk()) return;  // the desktop's sidebar is not a drawer: it stays (B190)
   DR.open = false; setDrawer(0, false); $('drawer').hidden = true;
   if (layersNow().includes('drawer')) history.replaceState({...history.state, layers: layersNow().filter(k => k !== 'drawer')}, '');  // its step is not open any more (B150)
 });
@@ -8081,6 +8090,23 @@ try { U.oldDraft = localStorage.getItem('taska.draft') || ''; localStorage.remov
 $('projName').textContent = decodeURIComponent(P.split('/')[2] || 'Taska');  // right away, before the data arrives
 grow();
 renderComposer();  // the box's buttons, before data arrives
+// B190: before the data arrives the desktop already shows its frame where it will be: the sidebar (or the rail), the
+// project's bar with its tabs, the list's head, the empty item pane and the box. The data then fills it; nothing moves.
+// The phone's frame is the page as written. The tabs' counts are the ones this browser last saw, so the tabs keep their
+// widths; a tab or filters in the address are read now too, as showURL does later.
+const COUNTS = ['nItems', 'nInputs', 'nArchTab', 'nRules'], TABS = ['items', 'inputs', 'archive', 'rules'];
+function keptCounts() { try { return JSON.parse(localStorage.getItem('taska.counts.' + HERE) || 'null'); } catch (_) { return null; } }
+function shell() {
+  const kept = keptCounts();
+  if (kept) COUNTS.forEach((id, i) => { $(id).textContent = kept[i] ?? ''; });
+  if (!desk()) return;
+  const {seg, qs} = readURL();
+  U.q = qs.get('q') || ''; $('q').value = U.q;
+  for (const k of ['type', 'when', 'status', 'pri']) U[k] = qs.get(k) || 'all';
+  if (/^(inputs|archive|rules)$/.test(seg)) U.tab = seg;
+  showDesk(); renderProjBar(); renderSidebar(); renderRail(); renderDeskHead(); renderFilters();
+}
+shell();
 window.addEventListener('load', grow);  // a restored draft is measured again once styles are in
 
 load().then(() => {
