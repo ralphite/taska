@@ -4762,8 +4762,9 @@ function renderDoc({focus = false} = {}) {
     const d = docById(U.doc);
     const md = U.docText ?? (d ? noteText(d) : '');
     dialog(d ? `D${d.d}` : `New doc on ${code(U.docNew)}`, `<div class="flex min-h-full flex-col">
-      <div class="sticky -top-2 z-10 -mx-4 -mt-2 mb-2 flex items-center gap-2 bg-white px-4 py-2 text-xs text-zinc-500 dark:bg-zinc-900"><span class="min-w-0 flex-1">The first line is the title. Esc keeps it as a draft.</span><button data-act="doc-discard" class="h-11 shrink-0 rounded-xl px-3 text-sm font-semibold text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800">Discard</button><button data-act="doc-done" class="${PRIMARY}">${d ? 'Save' : 'Create'}</button></div>
+      <div class="sticky -top-2 z-10 -mx-4 -mt-2 mb-2 flex items-center gap-2 bg-white px-4 py-2 text-xs text-zinc-500 dark:bg-zinc-900"><span id="docHint" class="min-w-0 flex-1">The first line is the title. Esc keeps it as a draft.</span><button id="docMic" data-act="doc-mic" class="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold text-zinc-600 tabular-nums hover:bg-zinc-100 data-on:bg-red-600 data-on:text-white data-on:hover:bg-red-700 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:data-on:bg-red-600 dark:data-on:text-white">${ico('mic')}<span>Speak</span></button><button data-act="doc-discard" class="h-11 shrink-0 rounded-xl px-3 text-sm font-semibold text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800">Discard</button><button data-act="doc-done" class="${PRIMARY}">${d ? 'Save' : 'Create'}</button></div>
       <textarea id="docMd" placeholder="Title on the first line&#10;&#10;Then anything: a plan, a design, notes. Markdown works." class="min-h-[40dvh] w-full flex-1 resize-none bg-transparent text-base leading-relaxed outline-none placeholder:text-zinc-400">${esc(md)}</textarea></div>`, {focus: false, tall: true});
+    docMicShow();
     return;
   }
   const d = docById(U.doc);
@@ -4801,6 +4802,7 @@ function newDoc(n) {
   $('docMd').focus();
 }
 function keepDoc() {  // leaving the editor without Create or Save keeps the text as a draft (T113 B6)
+  docRecStop();  // its words go into the draft when they come (F208)
   const d = docById(U.doc), md = ($('docMd')?.value ?? U.docText ?? '').trim(), key = docKey(), was = d ? noteText(d).trim() : '';
   kept('docs', all => { if (md && md !== was) all[key] = md; else delete all[key]; });
   if (md && md !== was) toast(d ? `Your edit of D${d.d} is kept as a draft: Edit brings it back` : `Your new document is kept as a draft: ${desk() ? '⇧D' : 'New doc'} brings it back`);
@@ -5900,6 +5902,115 @@ function fullerWords(f, words) {
   Object.assign(f, {tr: words, trAdded: words, doubts: []});
   toast('The fuller words of the voice note are in');
 }
+// Speaking into a document (F208). In the editor the microphone puts its words where the caret is: a mark holds the
+// place while you speak and while the words are worked out, so you can go on typing anywhere; the words take the mark's
+// place when they come. Leaving the editor keeps the mark in the draft and the words land there; Save waits for them.
+const DV = {rec: null, n: 0, notes: []};
+const dvMark = i => `⟦🎙 ${i}⟧`;  // the place the words will go
+const docScope = () => { const d = docById(U.doc), n = d ? liveN(d.n) : U.docNew; return n ? code(n) : null; };
+function docMicShow() {
+  const b = $('docMic'), h = $('docHint');
+  if (!b) return;
+  const key = U.docEdit ? docKey() : null, waiting = DV.notes.filter(v => v.key === key).length;
+  b.toggleAttribute('data-on', !!DV.rec);
+  b.lastElementChild.textContent = DV.rec ? `Stop ${clock(Date.now() - DV.rec.t0)}` : 'Speak';
+  b.setAttribute('aria-label', DV.rec ? 'Stop: the words go where the mark is' : 'Speak: the words go where the caret is');
+  b.dataset.tip = desk() ? (DV.rec ? 'Stop · ⌥V' : 'Speak at the caret · ⌥V') : '';
+  if (h) h.textContent = DV.rec ? 'Listening. Your words go where the mark is; you can go on typing.'
+    : waiting ? `Working out the words of ${waiting > 1 ? waiting + ' voice notes' : 'the voice note'}…`
+    : 'The first line is the title. Esc keeps it as a draft.';
+}
+async function docRecStart() {
+  if (DV.rec || !$('docMd')) return;
+  if (R.rec) return toast('A voice note is recording for the box: stop it first');
+  if (!canRecord()) return toast('This browser cannot record here');
+  let stream;
+  try { stream = await micStream(); } catch (_) { return toast('No microphone permission'); }
+  const t = $('docMd');
+  if (!t || !U.docEdit || DV.rec) { stream.getTracks().forEach(x => x.stop()); return; }  // the editor closed meanwhile
+  const mark = dvMark(++DV.n), a = t.selectionStart, b = t.selectionEnd;
+  t.focus({preventScroll: true});
+  t.setRangeText(mark, a, b, 'end');  // like dictation: what you selected is what you speak over
+  const rec = new MediaRecorder(stream), chunks = [];
+  rec.ondataavailable = e => { if (e.data.size) chunks.push(e.data); };
+  rec.start(1000);
+  DV.rec = {rec, stream, chunks, mark, t0: Date.now(), key: docKey(), scope: docScope()};
+  DV.rec.tick = setInterval(docMicShow, 500);
+  docMicShow();
+}
+function docRecStop(keep = true) {
+  const r = DV.rec;
+  if (!r) return;
+  DV.rec = null; clearInterval(r.tick);
+  const ms = Date.now() - r.t0, note = {...r, key: keep ? r.key : null, ms};
+  let stopped;
+  DV.stopping = new Promise(res => { stopped = res; });
+  r.rec.onstop = () => {
+    DV.stopping = null; stopped();
+    note.blob = new Blob(r.chunks, {type: r.rec.mimeType || 'audio/webm'});
+    if (ms < 800 || !note.blob.size) { dvPut(note, ''); return toast('Too short, discarded'); }
+    DV.notes.push(note);
+    note.done = dvHear(note).then(words => {
+      DV.notes.splice(DV.notes.indexOf(note), 1);
+      if (words == null) toast('Could not work out the words of the voice note');
+      dvPut(note, words || '');
+      docMicShow();
+    });
+    docMicShow();
+  };
+  r.rec.stop(); r.stream.getTracks().forEach(x => x.stop());
+  docMicShow();
+}
+async function dvHear(note) {  // upload, then wait for the words; tried again with growing pauses, as for the box (B165)
+  const ext = note.blob.type.includes('mp4') ? 'm4a' : note.blob.type.includes('ogg') ? 'ogg' : 'webm';
+  const scope = note.scope ? '&scope=' + encodeURIComponent(note.scope) : '', t0 = Date.now();
+  for (let n = 0, tries = 0, waits = 0; Date.now() - t0 < 10 * 60000; ) {
+    try {
+      if (!note.f) {
+        const r = await fetch(`${P}api/file?name=${encodeURIComponent(`voice ${clock(note.ms).replace(':', '-')}.${ext}`)}&transcribe=1${scope}`, {method: 'POST', headers: {'Content-Type': note.blob.type || 'audio/webm'}, body: note.blob});
+        if (r.status === 400 || r.status === 413) return null;  // refused (too big): trying again will not help
+        if (!r.ok) throw new Error();
+        note.f = (await r.json()).f;
+      }
+      const r = await fetch(`${P}api/transcript?f=${encodeURIComponent(note.f)}${scope}${tries ? '&again=1' : ''}`, {method: 'POST'});
+      if (!r.ok) throw new Error();
+      const d = await r.json();
+      if (d.tr_error === 'no such voice note') { note.f = null; throw new Error(); }
+      if (!d.done && ++waits < 20) continue;  // still working: the server answers after a while for another ask
+      if (d.done && d.tr_error && ++tries < 4) throw new Error();
+      return d.done ? d.tr || '' : null;
+    } catch (_) { await sleep(Math.min(30000, 2000 * 2 ** Math.min(n++, 4))); }
+  }
+  return null;
+}
+function dvPut(note, words) {  // the words take the mark's place: in the editor, or in the draft it was left as
+  const t = $('docMd');
+  if (t && U.docEdit && docKey() === note.key) {
+    const at = t.value.indexOf(note.mark);
+    if (at < 0) {  // the mark was deleted: the words still go in, at the end
+      if (words) { t.value = t.value.trimEnd() + '\n\n' + words; toast('The mark was gone: the words are at the end'); }
+      return;
+    }
+    const end = at + note.mark.length, caretAfter = t.selectionStart === end && t.selectionEnd === end;
+    t.setRangeText(words, at, end, caretAfter ? 'end' : 'preserve');
+    return;
+  }
+  if (!note.key) return;
+  kept('docs', all => {
+    const v = all[note.key];
+    if (v == null) return;
+    all[note.key] = v.includes(note.mark) ? v.replace(note.mark, words) : words ? v.trimEnd() + '\n\n' + words : v;
+  });
+  if (words) toast('The words of your voice note are in the draft');
+}
+async function docVoiceSettled() {  // before Save: stop the microphone, wait for the words still coming
+  docRecStop();
+  const key = docKey(), mine = () => DV.notes.filter(v => v.key === key);
+  if (DV.stopping) await DV.stopping;  // a recording that just stopped joins the list
+  if (mine().length) { toast('Saving once the words of your voice note are in…'); await Promise.all(mine().map(v => v.done)); }
+  return U.docEdit && !!$('docMd') && docKey() === key;
+}
+
 function addWords(key, words) {  // into the box, or into the draft of the target it waits for
   if (key === U.draftKey) { const t = $('text'); t.value = (t.value.trim() ? t.value.trimEnd() + '\n' : '') + words; grow(); saveDraft(); }
   else draftStore(all => { all[key] = (all[key]?.trim() ? all[key].trimEnd() + '\n' : '') + words; });
@@ -6812,9 +6923,11 @@ const ACT = {
   'doc-open': b => openDoc(Number(b.dataset.d)),
   'doc-new': b => newDoc(Number(b.dataset.n)),
   'doc-edit': () => { const was = kept('docs')[`D${U.doc}`]; U.docEdit = true; U.docText = was ?? null; renderDoc(); if (was) toast('Your draft is back'); $('docMd').focus(); },
-  'doc-done': async () => { const d = await saveDoc(); if (d) openDoc(d.d); else if (!U.docEdit) closeDialog(); },  // Create or Save
+  'doc-done': async () => { if (!await docVoiceSettled()) return; const d = await saveDoc(); if (d) openDoc(d.d); else if (!U.docEdit) closeDialog(); },  // Create or Save; F208: the words you spoke go in first
+  'doc-mic': () => DV.rec ? docRecStop() : docRecStart(),
   'doc-discard': () => {  // the draft goes; the document stays as it is
     const d = U.doc, key = docKey();
+    docRecStop(false); DV.notes.forEach(v => { if (v.key === key) v.key = null; });  // F208: words still coming have nowhere to go
     kept('docs', all => delete all[key]); U.docEdit = false; U.docText = null;
     if (d && docById(d)) openDoc(d); else closeDialog();
   },
@@ -7989,7 +8102,9 @@ const hint = t => toast(t);  // a key that can't act here says why, in a few wor
 function deskKey(e) {
   if (!desk() || e.defaultPrevented) return;
   const el = document.activeElement, typing = /INPUT|TEXTAREA|SELECT/.test(el?.tagName) || el?.isContentEditable;
-  // ⌥V records even while you type in the box (B91): there a plain V is a letter.
+  // ⌥V records even while you type in the box (B91): there a plain V is a letter. In the document editor it speaks
+  // into the document, where the caret is (F208).
+  if (e.altKey && e.code === 'KeyV' && !e.metaKey && !e.ctrlKey && U.docEdit && $('docMd')) { e.preventDefault(); return DV.rec ? docRecStop() : docRecStart(); }
   if (e.altKey && e.code === 'KeyV' && !e.metaKey && !e.ctrlKey && $('viewer').hidden && $('overlay').hidden) { e.preventDefault(); return R.rec ? finishRec(false) : startRec(); }
   if (typing || e.altKey || !$('viewer').hidden) return;
   // A1: while the box waits for words (a correction, an edit, a comment on what you picked) a letter is a word, not a
