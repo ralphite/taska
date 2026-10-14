@@ -3544,7 +3544,7 @@ function projTone(name) {  // the name picks the colour; if another of your proj
 }
 // A project has a name for people and an address (F173): it shows by its name; its address (S.project, p.name) stays for
 // links, this browser's drafts and its colour, so a rename changes none of them.
-const projTitle = () => S.title || S.project;
+const projTitle = () => S.title || S.project || titleOf((DR.list || []).find(p => p.name === HERE) || {name: HERE});  // before the data: as last seen (B190)
 const titleOf = p => p.title || p.name;
 const titleFor = slug => slug === S.project ? projTitle() : titleOf((DR.list || []).find(p => p.name === slug) || {name: slug});
 const projTile = (name, cls = 'size-5 rounded-md text-[11px]') => `<span aria-hidden="true" class="grid shrink-0 place-items-center leading-none font-bold text-white uppercase ${cls} ${projTone(name)}">${esc([...String(titleFor(name) || '?')][0])}</span>`;
@@ -7121,7 +7121,7 @@ const PSEC_RIGHT = {  // what a section's row in the list says on its right
 function renderProject() {
   if (!D.page) return;
   const sec = D.section;
-  if (sec === 'log' && P_CACHE.logRev !== S.rev) loadLog();  // the project changed, so did its log
+  if (sec === 'log' && S.project && P_CACHE.logRev !== S.rev) loadLog();  // the project changed, so did its log
   const typing = {pRename: U.renaming, pNewName: U.pNew}[document.activeElement?.id];
   if (!desk()) {  // the phone: the list of sections, or one section, each a page of its own
     if (!sec) return setHtml($('projectNav'), 'nav', phoneIndex());
@@ -7132,17 +7132,17 @@ function renderProject() {
   }
   const [, , name, about] = PSEC[sec];
   const row = k => { const [path, icon, label] = PSEC[k], on = k === sec;
-    return `<a href="${P}${path}" data-act="psec" data-sec="${k}" ${on ? 'aria-current="page" ' : ''}class="flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-sm text-zinc-600 hover:bg-zinc-200/60 hover:text-zinc-900 data-pressed:bg-zinc-200/80 aria-[current=page]:bg-zinc-200/70 aria-[current=page]:font-semibold aria-[current=page]:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800/60 dark:hover:text-zinc-100 dark:aria-[current=page]:bg-zinc-800 dark:aria-[current=page]:text-zinc-50">${ico(icon, 'size-4 opacity-70')}<span class="min-w-0 flex-1 truncate">${label}</span><span class="max-w-28 truncate text-xs font-normal text-zinc-400 tabular-nums dark:text-zinc-500">${PSEC_RIGHT[k]?.() ?? ''}</span></a>`; };
+    return `<a href="${P}${path}" data-act="psec" data-sec="${k}" ${on ? 'aria-current="page" ' : ''}class="flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-sm text-zinc-600 hover:bg-zinc-200/60 hover:text-zinc-900 data-pressed:bg-zinc-200/80 aria-[current=page]:bg-zinc-200/70 aria-[current=page]:font-semibold aria-[current=page]:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800/60 dark:hover:text-zinc-100 dark:aria-[current=page]:bg-zinc-800 dark:aria-[current=page]:text-zinc-50">${ico(icon, 'size-4 opacity-70')}<span class="min-w-0 flex-1 truncate">${label}</span><span class="max-w-28 truncate text-xs font-normal text-zinc-400 tabular-nums dark:text-zinc-500">${S.project ? PSEC_RIGHT[k]?.() ?? '' : ''}</span></a>`; };
   const group = t => `<div class="px-3.5 pt-5 pb-1.5 text-[11px] font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">${t}</div>`;
   setHtml($('projectNav'), 'nav', `<div class="flex h-14 shrink-0 items-center px-2"><button data-act="project-back" class="flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm text-zinc-600 hover:bg-zinc-200/60 dark:text-zinc-300 dark:hover:bg-zinc-800">${ico('left', 'size-4')}Back to ${D.compose ? 'New input' : TAB_NAME[U.tab]}${KBD('Esc')}</button></div>
     <h1 class="px-4 pt-1 text-[19px] font-semibold tracking-tight">Settings</h1>
-    ${group('This project')}<div class="flex items-center gap-2 px-3.5 pb-1.5">${projTile(S.project, 'size-5 rounded-md text-[11px]')}<span class="min-w-0 truncate text-sm font-semibold">${esc(projTitle())}</span></div>
+    ${group('This project')}<div class="flex items-center gap-2 px-3.5 pb-1.5">${projTile(S.project || HERE, 'size-5 rounded-md text-[11px]')}<span class="min-w-0 truncate text-sm font-semibold">${esc(projTitle())}</span></div>
     <div class="flex flex-col gap-0.5 px-2">${PSEC_THIS.map(row).join('')}</div>
     ${group('All projects')}<div class="flex flex-col gap-0.5 px-2">${Object.keys(PSEC).filter(k => !PSEC_THIS.includes(k)).map(row).join('')}</div>
     <button data-act="keys" class="mt-auto flex h-12 shrink-0 items-center gap-2 border-t border-zinc-200 px-4 text-[13px] text-zinc-500 hover:text-zinc-800 dark:border-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200">${ico('keyboard', 'size-4')}<span class="flex-1 text-left">Keyboard shortcuts</span>${KBD('?')}</button>`);
   if (typing && $('projectBody').contains(document.activeElement)) return;  // typing a name: a refresh waits; saved or stopped, the field goes
   setHtml($('projectBody'), 'body', `<div class="mx-auto w-full max-w-[46rem] px-8 pt-9 pb-16"><header class="pb-6"><h1 class="text-[22px] leading-tight font-semibold tracking-tight">${name}</h1>
-    <p class="mt-2 text-[15px] leading-relaxed text-zinc-500 dark:text-zinc-400">${typeof about === 'function' ? about() : about}</p></header>${PBODY[sec]()}</div>`);
+    <p class="mt-2 text-[15px] leading-relaxed text-zinc-500 dark:text-zinc-400">${typeof about === 'function' ? about() : about}</p></header>${S.project ? PBODY[sec]() : P_LOADING}</div>`);  // before the data: the frame (B190)
   if (U.renaming && P_CACHE.projects && !$('pRename') && sec === 'projects') U.renaming = null;  // that project is gone
 }
 // Settings on the phone (B162): pages in the grouped style of a phone's own settings. /settings lists the sections in
@@ -7155,17 +7155,17 @@ const phLabel = t => `<div class="flex min-w-0 items-center gap-1.5 px-5 pt-6 pb
 const phNote = t => `<p class="px-5 pt-2 text-xs leading-snug text-zinc-500 dark:text-zinc-400">${t}</p>`;
 function phoneIndex() {
   const row = k => { const [path, icon, label] = PSEC[k], [tone, agent] = agentState(S.agents, S.work);
-    const right = k === 'agents' ? `<span class="size-2 shrink-0 rounded-full ${AGENT_TONE[tone][0]}"></span><span class="truncate">${esc(agent)}</span>` : `<span class="truncate">${PSEC_RIGHT[k]?.() ?? ''}</span>`;
+    const right = !S.project ? '' : k === 'agents' ? `<span class="size-2 shrink-0 rounded-full ${AGENT_TONE[tone][0]}"></span><span class="truncate">${esc(agent)}</span>` : `<span class="truncate">${PSEC_RIGHT[k]?.() ?? ''}</span>`;
     return `<a href="${P}${path}" data-act="psec" data-sec="${k}" class="flex min-h-12 items-center gap-3 px-3.5 py-2.5 text-[15px]">${ico(icon, 'size-5 shrink-0 text-zinc-500 dark:text-zinc-400')}<span class="shrink-0">${label}</span><span class="ml-auto flex min-w-0 items-center gap-1.5 text-[13px] text-zinc-500 tabular-nums dark:text-zinc-400">${right}</span>${ico('right', 'size-4 shrink-0 text-zinc-300 dark:text-zinc-600')}</a>`; };
   return phHead('Settings')
-    + phLabel(`<span class="shrink-0">This project ·</span>${projTile(S.project, 'size-4 rounded text-[9px]')}<span class="truncate font-semibold text-zinc-700 dark:text-zinc-200">${esc(projTitle())}</span>`)
+    + phLabel(`<span class="shrink-0">This project ·</span>${projTile(S.project || HERE, 'size-4 rounded text-[9px]')}<span class="truncate font-semibold text-zinc-700 dark:text-zinc-200">${esc(projTitle())}</span>`)
     + `<div class="${PH_GROUP}">${PSEC_THIS.map(row).join('')}</div>` + phNote('Keep going and connecting an agent are in Agents. The agent pill on the list opens it too.')
     + phLabel('All projects') + `<div class="${PH_GROUP}">${Object.keys(PSEC).filter(k => !PSEC_THIS.includes(k)).map(row).join('')}</div>` + phNote('Projects: new, rename, delete and restore.');
 }
 function phoneSection(sec) {
   const [, , name, about] = PSEC[sec];
   return phHead(name) + `<p class="px-5 pt-1 text-[13px] leading-snug text-zinc-500 dark:text-zinc-400">${typeof about === 'function' ? about() : about}</p>`
-    + (sec === 'projects' ? phoneProjects() : `<div class="mx-3 mt-4 rounded-2xl bg-white px-4 dark:bg-zinc-900 [&>:first-child]:border-t-0 [&>:last-child]:border-b-0">${PBODY[sec]()}</div>`)
+    + (sec === 'projects' ? phoneProjects() : `<div class="mx-3 mt-4 rounded-2xl bg-white px-4 dark:bg-zinc-900 [&>:first-child]:border-t-0 [&>:last-child]:border-b-0">${S.project ? PBODY[sec]() : P_LOADING}</div>`)
     + '<div class="h-10"></div>';
 }
 function phoneProjects() {
@@ -8093,14 +8093,21 @@ renderComposer();  // the box's buttons, before data arrives
 // B190: before the data arrives the desktop already shows its frame where it will be: the sidebar (or the rail), the
 // project's bar with its tabs, the list's head, the empty item pane and the box. The data then fills it; nothing moves.
 // The phone's frame is the page as written. The tabs' counts are the ones this browser last saw, so the tabs keep their
-// widths; a tab or filters in the address are read now too, as showURL does later.
+// widths; a tab or filters in the address are read now too, as showURL does later. A page of Settings opened by its
+// address shows its own frame: the column of sections and the page's head (the phone: the page's head).
 const COUNTS = ['nItems', 'nInputs', 'nArchTab', 'nRules'], TABS = ['items', 'inputs', 'archive', 'rules'];
 function keptCounts() { try { return JSON.parse(localStorage.getItem('taska.counts.' + HERE) || 'null'); } catch (_) { return null; } }
 function shell() {
   const kept = keptCounts();
   if (kept) COUNTS.forEach((id, i) => { $(id).textContent = kept[i] ?? ''; });
-  if (!desk()) return;
   const {seg, qs} = readURL();
+  if (Object.hasOwn(PSEC_AT, seg)) {  // a page of Settings: its frame, as openProject will draw it once the data is here
+    const sec = PSEC_AT[seg];
+    D.page = 'project'; D.section = seg === 'settings' && !desk() ? null : sec === 'connect' ? 'agents' : sec;
+    if (desk()) { showDesk(); renderSidebar(); } else showView();
+    return renderProject();
+  }
+  if (!desk()) return;
   U.q = qs.get('q') || ''; $('q').value = U.q;
   for (const k of ['type', 'when', 'status', 'pri']) U[k] = qs.get(k) || 'all';
   if (/^(inputs|archive|rules)$/.test(seg)) U.tab = seg;
