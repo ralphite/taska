@@ -2501,6 +2501,136 @@ KEY_CHARS = "abcdefghjkmnpqrstuvwxyz23456789"  # no 0/o, 1/l/i: easy to type on 
 plain_key = lambda k: re.sub(r"[^a-z0-9]", "", str(k or "").lower())
 
 
+# Push to a phone (F195). A Home Screen Taska subscribes with the browser's push service; Taska tells that service
+# "something needs you" with an empty push, signed with its own key (VAPID, RFC 8292: an ES256 token). The phone then
+# asks Taska itself what needs you, so the push service never sees what it is. Only the standard library: P-256 ECDSA
+# is a few lines of arithmetic.
+P256_P = 2 ** 256 - 2 ** 224 + 2 ** 192 + 2 ** 96 - 1
+P256_N = 0xFFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551
+P256_G = (0x6B17D1F2E12C4247F8BCE6E563A440F277037D812DEB33A0F4A13945D898C296,
+          0x4FE342E2FE1A7F9B8EE7EB4A7C0F9E162BCE33576B315ECECBB6406837BF51F5)
+
+
+def p256_add(a, b):
+    if a is None:
+        return b
+    if b is None:
+        return a
+    if a[0] == b[0] and (a[1] + b[1]) % P256_P == 0:
+        return None
+    if a == b:
+        m = (3 * a[0] * a[0] - 3) * pow(2 * a[1], -1, P256_P) % P256_P  # the curve's a is -3
+    else:
+        m = (b[1] - a[1]) * pow(b[0] - a[0], -1, P256_P) % P256_P
+    x = (m * m - a[0] - b[0]) % P256_P
+    return x, (m * (a[0] - x) - a[1]) % P256_P
+
+
+def p256_mul(k, pt=P256_G):
+    out = None
+    while k:
+        if k & 1:
+            out = p256_add(out, pt)
+        pt, k = p256_add(pt, pt), k >> 1
+    return out
+
+
+def b64u(b):
+    return base64.urlsafe_b64encode(b).rstrip(b"=").decode()
+
+
+def es256(d, msg):
+    """An ES256 signature of msg with private key d: r and s, 32 bytes each (JWS form)."""
+    z = int.from_bytes(hashlib.sha256(msg).digest(), "big")
+    while True:
+        k = secrets.randbelow(P256_N - 1) + 1
+        r = p256_mul(k)[0] % P256_N
+        sig = pow(k, -1, P256_N) * (z + r * d) % P256_N
+        if r and sig:
+            return r.to_bytes(32, "big") + sig.to_bytes(32, "big")
+
+
+class Push:
+    """The phones that asked for pushes, Taska's push key, and the pushes themselves, for every project (F195)."""
+    QUIET = (22, 8)  # local hours with no push, for a subscription that keeps quiet hours
+
+    def __init__(self, root):
+        self.dir = os.path.join(root, ".push")
+        self.lock = threading.Lock()
+        os.makedirs(self.dir, exist_ok=True)
+        try:
+            with open(os.path.join(self.dir, "vapid.json"), encoding="utf-8") as f:
+                self.d = int(json.load(f)["d"], 16)
+        except (FileNotFoundError, ValueError, KeyError):
+            self.d = secrets.randbelow(P256_N - 1) + 1
+            with open(os.path.join(self.dir, "vapid.json"), "w", encoding="utf-8") as f:
+                json.dump({"d": format(self.d, "x")}, f)
+            os.chmod(os.path.join(self.dir, "vapid.json"), 0o600)
+        x, y = p256_mul(self.d)
+        self.public = b64u(b"\x04" + x.to_bytes(32, "big") + y.to_bytes(32, "big"))
+        try:
+            with open(os.path.join(self.dir, "subs.json"), encoding="utf-8") as f:
+                self.subs = [x for x in json.load(f) if isinstance(x, dict) and x.get("endpoint", "").startswith("https://")]
+        except (FileNotFoundError, ValueError):
+            self.subs = []
+        self.seen = None  # what needed you at the last look: only what is new is pushed
+
+    def save(self):
+        with open(os.path.join(self.dir, "subs.json"), "w", encoding="utf-8") as f:
+            json.dump(self.subs, f)
+
+    def subscribe(self, sub, quiet=True):
+        ep = str((sub or {}).get("endpoint", ""))
+        if not ep.startswith("https://"):
+            raise Err("a push subscription needs an https endpoint")
+        with self.lock:
+            self.subs = [x for x in self.subs if x["endpoint"] != ep] + [{"endpoint": ep, "quiet": bool(quiet), "t": int(time.time())}]
+            self.save()
+
+    def unsubscribe(self, ep):
+        with self.lock:
+            self.subs = [x for x in self.subs if x["endpoint"] != ep]
+            self.save()
+
+    def has(self, ep):
+        with self.lock:
+            return any(x["endpoint"] == ep for x in self.subs)
+
+    def token(self, endpoint):
+        """The VAPID header for a push service: who sends (this Taska), for 12 hours."""
+        u = urlsplit(endpoint)
+        claims = {"aud": f"{u.scheme}://{u.netloc}", "exp": int(time.time()) + 12 * 3600, "sub": "mailto:taska@example.invalid"}
+        head = b64u(json.dumps({"typ": "JWT", "alg": "ES256"}).encode()) + "." + b64u(json.dumps(claims).encode())
+        return f"vapid t={head}.{b64u(es256(self.d, head.encode()))}, k={self.public}"
+
+    def send(self, sub):
+        """An empty push to one phone. False when the push service says the subscription is gone."""
+        req = urllib.request.Request(sub["endpoint"], data=b"", method="POST",
+                                     headers={"Authorization": self.token(sub["endpoint"]), "TTL": "3600", "Urgency": "high", "Content-Length": "0"})
+        try:
+            with urllib.request.urlopen(req, timeout=15):
+                return True
+        except urllib.error.HTTPError as ex:
+            return ex.code not in (404, 410)
+        except OSError:
+            return True  # the network: try again with the next news
+
+    def check(self, needs):
+        """needs: what needs you now (Hub.needs). New since the last look: one push to every phone not in quiet hours."""
+        now = {(x["project"], x["code"], x["kind"]) for x in needs}
+        new, self.seen = (now - self.seen if self.seen is not None else set()), now
+        if not new:
+            return 0
+        hour = time.localtime().tm_hour
+        quiet = hour >= self.QUIET[0] or hour < self.QUIET[1]
+        with self.lock:
+            subs = [x for x in self.subs if not (x.get("quiet", True) and quiet)]
+        gone = [x["endpoint"] for x in subs if not self.send(x)]
+        for ep in gone:
+            self.unsubscribe(ep)
+        return len(subs) - len(gone)
+
+
 class Hub:
     """Projects: one folder each under the data root, holding taska.jsonl and its files."""
 
@@ -2512,6 +2642,7 @@ class Hub:
         self.projects = {}
         self.trash = os.path.join(self.root, ".deleted")  # deleted projects, as they were: Restore brings one back (F173)
         os.makedirs(self.root, exist_ok=True)
+        self.push = Push(self.root)  # phones that want a push when something needs you (F195)
         try:
             with open(os.path.join(self.root, "key"), encoding="utf-8") as f:
                 self.key = f.read().strip()
@@ -2922,6 +3053,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self.json(HUB.corrections())
             if p == "/api/voiceprefs":  # F183
                 return self.json(HUB.voice_prefs())
+            if p == "/api/push":  # F195: the key a phone subscribes with, and whether this subscription is on
+                return self.json({"key": HUB.push.public, "on": HUB.push.has((q.get("endpoint") or [""])[0])})
             s, sub, base = self.project(p)
             if sub == "":
                 return self.redirect(p + "/")
@@ -3053,6 +3186,13 @@ class Handler(BaseHTTPRequestHandler):
                 d = json.loads(self.body(10_000) or b"{}")
                 HUB.correct(d.get("wrong"), d.get("right") if "right" in d else None)
                 return self.json({"ok": True, "corrections": HUB.corrections()})
+            if p == "/api/push":  # F195: {sub, quiet} turns pushes on for a phone; {endpoint, off: true} turns them off
+                d = json.loads(self.body(10_000) or b"{}")
+                if d.get("off"):
+                    HUB.push.unsubscribe(str(d.get("endpoint", "")))
+                else:
+                    HUB.push.subscribe(d.get("sub"), d.get("quiet", True))
+                return self.json({"ok": True})
             if p == "/api/voiceprefs":  # F183: {text} for every project's transcription; "" = the default again
                 d = json.loads(self.body(20_000) or b"{}")
                 HUB.set_voice_prefs(d.get("text", ""))
@@ -3249,6 +3389,17 @@ def main():
     print(f"Taska  http://{args.host}:{args.port}/\n  data       {HUB.root}  ({', '.join(sorted(HUB.projects))})\n  organizer  "
           + (f"Gemini {MODEL}" if HUB.organizer else "off (set GEMINI_API_KEY to turn it on)")
           + f"\n  key        {HUB.key}  (needed from outside this machine and its network)", flush=True)
+    def pushes():  # F195: every 15 s, what newly needs you goes to the phones that asked
+        while True:
+            time.sleep(15)
+            try:
+                if HUB.push.subs:
+                    HUB.push.check(HUB.needs())
+                else:
+                    HUB.push.seen = None
+            except Exception as ex:  # a push must never stop Taska
+                print(f"taska: push: {ex}", file=sys.stderr)
+    threading.Thread(target=pushes, daemon=True).start()
     # SIGTERM (a restart, a deploy): stop taking requests and finish the ones at work first (T101)
     signal.signal(signal.SIGTERM, lambda *_: threading.Thread(target=srv.shutdown, daemon=True).start())
     try:
@@ -3272,6 +3423,25 @@ SW = """// Taska's service worker (F192): it makes Taska installable and is wher
 // It caches nothing: everything in Taska is live, so every request goes to the network as usual.
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
+// A push carries nothing (F195): what needs you is asked of Taska itself, so the push service never sees it.
+const WORDS = {ask: 'asks you', block: 'is blocked', proposed: 'waits for approval', review: 'is ready to accept'};
+self.addEventListener('push', e => e.waitUntil((async () => {
+  let list = [];
+  try { list = await (await fetch('/api/needs', {credentials: 'include', cache: 'no-store'})).json(); } catch (_) {}
+  const one = list.length === 1 && list[0], say = x => `${x.code} ${WORDS[x.kind] || 'needs you'} · ${x.ptitle || x.project}`;
+  await self.registration.showNotification(one ? `${one.code} ${WORDS[one.kind] || 'needs you'}` : list.length ? `${list.length} things need you` : 'Taska', {
+    body: one ? `${one.title} · ${one.ptitle || one.project}` : list.length ? list.slice(0, 3).map(say).join('\\n') : 'Something new needs you',
+    tag: 'taska-needs-you', renotify: true, icon: '/icon-192.png', badge: '/icon-192.png',
+    data: {url: one ? `/p/${encodeURIComponent(one.project)}/${encodeURIComponent(one.code)}` : list.length ? `/p/${encodeURIComponent(list[0].project)}/` : '/'}});
+})()));
+self.addEventListener('notificationclick', e => {
+  e.notification.close();
+  e.waitUntil((async () => {
+    const url = e.notification.data?.url || '/', open = await self.clients.matchAll({type: 'window', includeUncontrolled: true});
+    if (open[0]) { await open[0].focus(); return open[0].navigate(url); }
+    return self.clients.openWindow(url);
+  })());
+});
 """
 APP_PATHS = {"/manifest.webmanifest", "/sw.js"} | {f"/icon-{n}.png" for n in ICONS}
 APP_HEAD = """<link rel="manifest" href="/manifest.webmanifest">
@@ -3668,6 +3838,41 @@ const parseRef = s => { const m = /^[A-Za-z]?0*(\d+)$/.exec(String(s).trim()); r
 // The user's move: an agent asked or is blocked, proposed an item, or wants a finished item accepted.
 const needsYou = it => !it.merged_into && !CLOSED(it.status) && (!!it.wait || it.status === 'proposed' || it.status === 'review');
 
+// Pushes to the phone (F195): Taska on the Home Screen subscribes with the browser's push service; Taska then pushes
+// when something newly needs you in any project, and the phone shows what it is.
+const PUSH = {sub: undefined};
+const standalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+const pushable = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window && isSecureContext;
+const keyBytes = k => Uint8Array.from(atob(k.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((k.length + 3) % 4)), c => c.charCodeAt(0));
+async function pushState() {
+  try { PUSH.sub = await (await navigator.serviceWorker.ready).pushManager.getSubscription(); } catch (_) { PUSH.sub = null; }
+  renderProject();
+}
+async function pushOn() {
+  try {
+    if (Notification.permission !== 'granted' && await Notification.requestPermission() !== 'granted') return toast("Notifications are off for Taska in this phone's settings", null, {error: true});
+    const reg = await navigator.serviceWorker.ready, {key} = await net('/api/push');
+    const sub = await reg.pushManager.getSubscription() || await reg.pushManager.subscribe({userVisibleOnly: true, applicationServerKey: keyBytes(key)});
+    await net('/api/push', JSON_POST({sub: sub.toJSON(), quiet: noticeRead('quiet', true)}), NET.op);
+    if (!PUSH.sub) toast('Notifications are on for this phone');
+    PUSH.sub = sub;
+  } catch (ex) { toast(`Couldn't turn notifications on: ${ex.message || ex}`, null, {error: true}); }
+  renderProject();
+}
+async function pushOff() {
+  const sub = PUSH.sub;
+  try { if (sub) { await net('/api/push', JSON_POST({endpoint: sub.endpoint, off: true}), NET.op); await sub.unsubscribe(); } } catch (_) {}
+  PUSH.sub = null; renderProject(); toast('Notifications are off for this phone');
+}
+function phonePushBody() {
+  if (!pushable() || !standalone()) return pPart(standalone() ? "This phone can't get notifications" : 'Add Taska to the Home Screen first',
+    standalone() ? 'Its browser has no push service.' : 'Open Settings › Use on your phone, add Taska to the Home Screen, open it from there, and turn notifications on here.');
+  if (PUSH.sub === undefined) { pushState(); return P_LOADING; }
+  const blocked = Notification.permission === 'denied';
+  return pSetting(blocked ? 'Blocked by the phone' : PUSH.sub ? 'On' : 'Off', 'A notification when something needs you in any project, even with Taska closed.',
+    PUSH.sub ? `<button data-act="push-off" class="${SECOND}">Turn off</button>` : `<button data-act="push-on" ${blocked ? 'disabled ' : ''}class="${PRIMARY}">Turn on</button>`)
+    + (PUSH.sub ? pSetting('Quiet 22:00–08:00', 'Taska keeps them till the morning.', `<button data-act="notifications-quiet" aria-pressed="${noticeRead('quiet', true)}" aria-label="Quiet 22:00–08:00" class="group relative h-6.5 w-11 shrink-0 rounded-full after:absolute after:inset-x-0 after:-inset-y-[9px] bg-zinc-300 transition-colors hover:brightness-95 aria-pressed:bg-emerald-500 dark:bg-zinc-600 dark:hover:brightness-125"><span class="absolute top-0.75 left-0.75 size-5 rounded-full bg-white shadow transition-transform group-aria-pressed:translate-x-4.5"></span></button>`) : '');
+}
 // Desktop notifications (F191). Observe even while quiet or focused, so those events never become a backlog.
 const NOTICE = {items: false, projects: false, pending: new Map(), timer: 0, memory: {}};
 function noticeRead(key, fallback) {
@@ -6418,7 +6623,9 @@ const ACT = {
   project: () => { if (!desk()) closeDrawer(); openProject(desk() ? 'agents' : null); },  // the phone: the Settings page with its list of sections
   psec: (b, e) => e?.metaKey || e?.ctrlKey || e?.shiftKey ? window.open(b.href, '_blank') : openProject(b.dataset.sec),  // ⌘-click: in a new tab
   'notifications-on': () => turnOnNotices(),
-  'notifications-quiet': () => { noticeWrite('quiet', !noticeRead('quiet', true)); renderProject(); },
+  'notifications-quiet': () => { noticeWrite('quiet', !noticeRead('quiet', true)); renderProject(); if (!desk() && PUSH.sub) pushOn(); },  // the phone: Taska keeps the quiet hours (F195)
+  'push-on': () => pushOn(),
+  'push-off': () => pushOff(),
   'go-next': () => {
     if (desk()) {
       const g = U.go; if (!g) return startGoDesk();
@@ -7337,7 +7544,7 @@ const PSEC = {  // section: [address, icon, name, what it is for]
   deleted: ['deleted', 'trash', 'Deleted', 'Inputs you deleted, with the items that went with them. Restore puts them back as they were.'],
   projects: ['projects', 'folder', 'Projects', 'Every project on this Taska. Give a project any name; its address never changes, so agents and phone links keep working.'],
   phone: ['phone', 'phone', 'Use on your phone', 'Open Taska on your phone from anywhere, with a link or with the key.'],
-  notifications: ['notifications', 'alert', 'Notifications', 'Desktop alerts when something needs you in any project, while Taska is open in the background.'],
+  notifications: ['notifications', 'alert', 'Notifications', 'An alert when something needs you in any project: on a computer while Taska is open, on the phone even when it is closed.'],
   fixes: ['spellings', 'pencil', 'Voice spellings', "Every project's voice notes write these your way. To add one, select the wrong words in a voice note."],
   organizer: ['organizer', 'sparkle', 'Organizer', 'What turns what you say into items, for every project.'],
 };
@@ -7437,7 +7644,7 @@ const keepGoingToggle = () => `<button data-act="auto" aria-pressed="${!!S.cfg?.
 const P_BTN = 'inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-zinc-100';
 const dayShort = t => t ? new Date(t).toLocaleDateString('en-US', {month: 'short', day: 'numeric'}) : '';
 const PBODY = {
-  notifications: () => !desk() ? pPart('Desktop only', 'Open Taska in a desktop window to turn on notifications.')
+  notifications: () => !desk() ? phonePushBody()
     : pSetting(noticeState(), 'For this browser.', noticeOn() ? '' : `<button data-act="notifications-on" ${noticeState() === 'Blocked by the browser' ? 'disabled ' : ''}class="${PRIMARY}">Turn on</button>`)
       + (noticeOn() ? pSetting('Quiet 22:00–08:00', 'Your local time.', `<button data-act="notifications-quiet" aria-pressed="${noticeRead('quiet', true)}" aria-label="Quiet 22:00–08:00" class="group relative h-6.5 w-11 shrink-0 rounded-full after:absolute after:inset-x-0 after:-inset-y-[9px] bg-zinc-300 transition-colors hover:brightness-95 aria-pressed:bg-emerald-500 dark:bg-zinc-600 dark:hover:brightness-125"><span class="absolute top-0.75 left-0.75 size-5 rounded-full bg-white shadow transition-transform group-aria-pressed:translate-x-4.5"></span></button>`) : ''),
   agents: () => {
@@ -7495,7 +7702,7 @@ const PBODY = {
     : pPart('Off', 'Your coding agent files what you send: it reads new inputs first when it asks for work. To have them filed as soon as you send them, set GEMINI_API_KEY where Taska runs and restart it.'),
 };
 const PSEC_RIGHT = {  // what a section's row in the list says on its right
-  notifications: () => noticeState(),
+  notifications: () => desk() ? noticeState() : PUSH.sub ? 'On' : 'Off',
   agents: () => esc(agentState(S.agents, S.work)[1]), projects: () => P_CACHE.projects ? P_CACHE.projects.length : '',
   fixes: () => P_CACHE.fixes?.length || '', organizer: () => S.org?.on ? 'On' : 'Off', deleted: () => (S.deleted || []).length || '',
 };
