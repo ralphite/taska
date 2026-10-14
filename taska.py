@@ -6722,9 +6722,9 @@ const dForm = (x, o) => x.pick === 'alt' ? o.alt : o.was;  // what is in the tex
 function draftSpots(text) {  // -> the places of each doubt in the text now, in order, not overlapping
   const out = [];
   U.files.forEach((f, i) => (f.doubts || []).forEach((x, k) => {
-    for (const o of [x, ...(x.also || [])]) {
-      const cur = dForm(x, o), at = cur ? text.indexOf(cur) : -1;
-      if (at >= 0) out.push({s: at, e: at + cur.length, f, i, k, x, o});
+    for (const o of [x, ...(x.also || [])]) {  // every place it is in the text now, typed again or pasted too
+      const cur = dForm(x, o);
+      for (let at = cur ? text.indexOf(cur) : -1; at >= 0; at = text.indexOf(cur, at + cur.length)) out.push({s: at, e: at + cur.length, f, i, k, x, o});
     }
   }));
   out.sort((a, b) => a.s - b.s);
@@ -6743,25 +6743,40 @@ function draftHtml(text, fix = false) {  // the text, with the toggles; fix: the
     const core = x.pick === 'alt' ? c1 : c0, ix = core ? cur.indexOf(core) : -1;
     if (ix < 0) [c0, c1] = [o.was, o.alt];
     const pre = ix < 0 ? '' : cur.slice(0, ix), post = ix < 0 ? '' : cur.slice(ix + core.length), side = x.pick || 'was';
-    const btn = (sd, label) => { const on = side === sd; return `<button data-act="doubt-pick" data-i="${i}" data-k="${k}" data-side="${sd}" aria-pressed="${on}" title="${sd === 'was' ? 'Main model' : 'Other model'}${on ? ' · in the text now' : ''}" class="inline-flex items-center gap-1 rounded-md px-1.5 leading-6 ${on ? 'bg-white text-zinc-900 shadow-sm ring-1 ring-zinc-900/10 dark:bg-zinc-700 dark:text-zinc-50 dark:ring-white/10' : 'text-zinc-500 hover:bg-white/60 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-700/50 dark:hover:text-zinc-100'}">${on && x.pick ? ico('check', 'size-3.5 text-emerald-600 dark:text-emerald-400', '2.5') : ''}${esc(unmarked(label))}</button>`; };
-    html += plain(p.s, p.s + pre.length) + `<span class="mx-0.5 inline-flex items-center gap-px rounded-lg p-0.5 align-baseline whitespace-nowrap ring-1 ${x.pick ? 'bg-zinc-100 ring-zinc-200 dark:bg-zinc-800 dark:ring-zinc-700' : 'bg-amber-100/80 ring-amber-300 dark:bg-amber-400/15 dark:ring-amber-400/40'}">${btn('was', c0)}${btn('alt', c1)}</span>` + plain(p.e - post.length, p.e);
+    const btn = (sd, label) => { const on = side === sd; return `<button data-act="doubt-pick" data-i="${i}" data-k="${k}" data-side="${sd}" aria-pressed="${on}" tabindex="${on ? 0 : -1}" title="${sd === 'was' ? 'Main model' : 'Other model'}${on ? ' · in the text now' : ''} · ← → or 1 2 to pick, Esc to the box" class="inline-flex items-center gap-1 rounded-md px-1.5 leading-6 ${on ? 'bg-white text-zinc-900 shadow-sm ring-1 ring-zinc-900/10 dark:bg-zinc-700 dark:text-zinc-50 dark:ring-white/10' : 'text-zinc-500 hover:bg-white/60 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-700/50 dark:hover:text-zinc-100'}">${on && x.pick ? ico('check', 'size-3.5 text-emerald-600 dark:text-emerald-400', '2.5') : ''}${esc(unmarked(label))}</button>`; };
+    html += plain(p.s, p.s + pre.length) + `<span data-tog role="group" aria-label="Maybe misheard: two versions" class="mx-0.5 inline-flex items-center gap-px rounded-lg p-0.5 align-baseline whitespace-nowrap ring-1 ${x.pick ? 'bg-zinc-100 ring-zinc-200 dark:bg-zinc-800 dark:ring-zinc-700' : 'bg-amber-100/80 ring-amber-300 dark:bg-amber-400/15 dark:ring-amber-400/40'}">${btn('was', c0)}${btn('alt', c1)}</span>` + plain(p.e - post.length, p.e);
   }
   return html + plain(at, text.length);
 }
 function doubtPick(f, x, side) {  // -> true if the text changed
   const t = $('text'), from = x.pick === 'alt' ? 'alt' : 'was';
   let text = t.value, vAt = f.trAdded ? text.indexOf(f.trAdded) : -1, vLen = f.trAdded?.length || 0, done = 0;
-  if (from !== side) for (const o of [x, ...(x.also || [])]) {
-    const a = o[from], b = o[side], own = vAt >= 0 && a ? text.indexOf(a, vAt) : -1, mine = own >= 0 && own + a.length <= vAt + vLen;  // in the voice note's own words first
-    const at = mine ? own : a ? text.indexOf(a) : -1;
-    if (at < 0) continue;
-    text = text.slice(0, at) + b + text.slice(at + a.length); done++;
-    if (mine) vLen += b.length - a.length; else if (vAt >= 0 && at < vAt) vAt += b.length - a.length;
+  if (from !== side) for (const o of [x, ...(x.also || [])]) {  // every place, the voice note's stretch kept in step
+    const a = o[from], b = o[side];
+    for (let at = a ? text.indexOf(a) : -1; at >= 0; at = text.indexOf(a, at + b.length)) {
+      text = text.slice(0, at) + b + text.slice(at + a.length); done++;
+      if (vAt >= 0 && at >= vAt && at < vAt + vLen) vLen += b.length - a.length; else if (vAt >= 0 && at < vAt) vAt += b.length - a.length;
+    }
   }
   if (done) { t.value = text; if (vAt >= 0) f.trAdded = text.slice(vAt, vAt + vLen); saveDraft(); grow(); }
   x.pick = side; keepRec(f); renderComposer();
   return !!done;
 }
+// F186 keys, in the draft or the phone's box: Tab goes from toggle to toggle (one stop each), ← or 1 picks the main
+// model's word, → or 2 the other model's, and the toggle keeps the focus; Esc goes back to the box.
+document.addEventListener('keydown', e => {
+  const b = e.target.closest?.('[data-act="doubt-pick"]'), box = b?.closest('#draftText, #boxView');
+  if (!box || e.metaKey || e.ctrlKey || e.altKey) return;
+  const side = {ArrowLeft: 'was', 1: 'was', ArrowRight: 'alt', 2: 'alt'}[e.key];
+  if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); return $('text').focus(); }
+  if (!side) return;
+  e.preventDefault(); e.stopPropagation();
+  const n = [...box.querySelectorAll('[data-tog]')].indexOf(b.closest('[data-tog]')), f = U.files[Number(b.dataset.i)], x = f?.doubts?.[Number(b.dataset.k)];
+  if (!x) return;
+  doubtPick(f, x, side);
+  const again = $(box.id).querySelectorAll('[data-tog]')[n];  // drawn again: the same toggle, on the side now in the text
+  again?.querySelector(`[aria-pressed="true"]`)?.focus({preventScroll: true});
+}, true);
 function draftCard() {
   const t = $('text'), text = t.value;
   if (!desk() || !D.compose || U.amend || U.correct || (!text.trim() && !U.files.length)) return '';
