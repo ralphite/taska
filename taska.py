@@ -5207,8 +5207,9 @@ async function sendInput(o) {
 }
 // B155: what you sent shows up where you are, in view and lit up for a moment: your reply at the end of the item's
 // page, just above the box; a new input at the top of Inputs (the phone's newest is first).
+// The desktop too (T113 B19): the reply lands after the line under it ("Sent. Waiting…") made the pane shorter.
 function showSent(rid, scope) {
-  if (desk() || !rid) return;
+  if (!rid) return;
   const el = scope && U.open && code(U.open) === scope ? document.querySelector(`#detailBody [data-src="${rid}"]`)
     : U.tab === 'inputs' && !U.open ? document.querySelector(`#inputsView [data-r="${rid}"]`) : null;
   if (!el) return;
