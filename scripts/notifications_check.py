@@ -66,6 +66,7 @@ def main():
         try:
             p = Page(port=free_port())
             p.call('Browser.grantPermissions', origin=origin, permissions=['notifications'])
+            p.call('Page.enable')  # the stub below only runs on new documents with the Page domain on
             p.call('Page.addScriptToEvaluateOnNewDocument', source=STUB)
             p.go(origin + '/p/my-app/notifications')
             until(p, 'NOTICE.projects && NOTICE.items')
