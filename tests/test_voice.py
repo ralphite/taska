@@ -122,6 +122,28 @@ class TranscribeTests(StoreCase):
         self.assertEqual((out['tr'], out['tr_by']), (full, 'asr'))
         self.assertIn('stopped early', out['main_error'])
 
+    def test_a_slow_strong_model_is_not_waited_for(self):  # it once took 250 s on a phone note: capped, the others' words go on
+        full = 'one two three four five six seven eight nine ten eleven twelve'
+        f, p = self.fake([full], full)
+        slow = lambda model, body, timeout=120: (time.sleep(3), {})[1] if model == taska.PRO_MODEL else f(model, body, timeout)
+        with patch.object(taska, 'voice_gated', lambda path, mime: 1.8), patch.object(taska, 'gemini_call', slow), \
+                patch.object(taska, 'PRO_CAP', 0.5), patch.object(taska, 'VOICE_BUDGET', 2):
+            t0 = time.time()
+            out = taska.transcribe(self.s, b'x', 'audio/mp4', None, path='voice.m4a')
+        self.assertLess(time.time() - t0, 2)
+        self.assertEqual((out['tr'], out['tr_by'], out['pro_error']), (full, 'main', 'the strong model timed out after 0 s'))
+        self.assertEqual(set(out['times']), {'main', 'asr', 'pro', 'total'})
+        self.assertGreaterEqual(out['times']['pro'], 0.5)
+        f, p = self.fake([], full)  # the main model hangs too: the speech model's words, within the budget
+        hang = lambda model, body, timeout=120: f(model, body, timeout) if model == taska.ASR_MODEL else (time.sleep(3), {})[1]
+        with patch.object(taska, 'voice_gated', lambda path, mime: 1.8), patch.object(taska, 'gemini_call', hang), \
+                patch.object(taska, 'PRO_CAP', 0.5), patch.object(taska, 'VOICE_CAP', 0.8):
+            t0 = time.time()
+            out = taska.transcribe(self.s, b'x', 'audio/mp4', None, path='voice.m4a')
+        self.assertLess(time.time() - t0, 2)
+        self.assertEqual((out['tr'], out['tr_by']), (full, 'asr'))
+        self.assertIn('timed out', out['main_error'])
+
     def test_a_phone_note_with_its_pauses_cut_to_silence(self):  # both models stopped early on such iPhone notes
         full = 'one two three four five six seven eight nine ten eleven twelve'
         with patch.object(taska, 'voice_gated', lambda path, mime: 1.8):

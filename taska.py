@@ -1885,6 +1885,11 @@ class Organizer(threading.Thread):
 VOICE_MODEL = os.environ.get("TASKA_VOICE_MODEL", "gemini-3.8-flash")
 ASR_MODEL = os.environ.get("TASKA_ASR_MODEL", "gemini-3.5-transcribe")
 PRO_MODEL = os.environ.get("TASKA_PRO_MODEL", "gemini-3.1-pro-preview")
+# How long one voice note may take, in seconds: the strong model once took 250 s on a phone note. Each model gets its
+# own cap; what one did not finish in time is left out, and the whole note never takes much longer than VOICE_BUDGET.
+VOICE_BUDGET = float(os.environ.get("TASKA_VOICE_BUDGET", 60))
+VOICE_CAP = float(os.environ.get("TASKA_VOICE_CAP", 50))  # the main and the speech model
+PRO_CAP = float(os.environ.get("TASKA_PRO_CAP", 45))  # the strong model
 # The source stays free of Chinese (R66), so the Chinese below is escaped. VOICE_SYSTEM says: "You transcribe speech.
 # Write only the words really spoken in the recording; if nobody speaks, return an empty string. Always write Chinese
 # in Simplified characters, never Traditional." VOICE_HINT: "Word for word, Chinese in Simplified characters; empty
@@ -2030,6 +2035,28 @@ def together(*fns, wait=360):
     for t in threads:
         t.join(max(0, end - time.time()))
     return list(out)
+
+
+def capped(fn, secs, what, times=None, key=None):
+    """fn() in a thread, given secs at most: its answer, or Err("<what> timed out after N s"); the thread is left to
+    finish on its own. times[key]: how long it took (or the cap)."""
+    box, t0 = {}, time.time()
+
+    def run():
+        try:
+            box["v"] = fn()
+        except Exception as ex:
+            box["e"] = ex
+    t = threading.Thread(target=run, daemon=True)
+    t.start()
+    t.join(max(0.0, secs))
+    if times is not None and key:
+        times[key] = round(time.time() - t0, 1)
+    if t.is_alive():
+        raise Err(f"{what} timed out after {secs:.0f} s")
+    if "e" in box:
+        raise box["e"]
+    return box["v"]
 
 
 def voice_gated(path, mime):
@@ -2235,19 +2262,25 @@ def transcribe(store, data, mime, scope, path=None):
     audio = {"inline_data": {"mime_type": mime.split(";")[0], "data": base64.b64encode(data).decode()}}
     vocab = list(dict.fromkeys(["Taska", "P0", "P1", "P2", "P3"] + terms))[:100]
     prompt = voice_prompt(terms, items, fixes, HUB.voice_prefs()["text"] if hasattr(HUB, "voice_prefs") else VOICE_PREFS)
+    t0, times = time.time(), {}
     gated = voice_gated(path, mime) >= 0.5
-    calls = [lambda: voice_main(audio, prompt), lambda: voice_asr(audio, vocab)] + ([lambda: voice_main(audio, prompt, PRO_MODEL)] if gated else [])
+    calls = [lambda: capped(lambda: voice_main(audio, prompt), VOICE_CAP, "the main model", times, "main"),
+             lambda: capped(lambda: voice_asr(audio, vocab), VOICE_CAP, "the speech model", times, "asr")]
+    if gated:  # the strong model is slow at times: it gets PRO_CAP, then the others' words go on without it
+        calls.append(lambda: capped(lambda: voice_main(audio, prompt, PRO_MODEL), PRO_CAP, "the strong model", times, "pro"))
     (tr, err), (alt, alt_err), *pro = together(*calls)
-    out = {"tr": "", "tr_by": "asr", **({"gated": True} if gated else {})}
+    out = {"tr": "", "tr_by": "asr", "times": times, **({"gated": True} if gated else {})}
     if err:
         out["main_error"] = str(err)
     if alt_err:
         out["asr_error"] = str(alt_err)
     if alt_err is None and not alt:  # the speech model heard nobody: what the other wrote was made up (B092)
+        times["total"] = round(time.time() - t0, 1)
         return out
     if err is None and tr and not echoed(tr, titles) and alt_err is None and voice_short(tr, alt):
-        try:  # it stopped early: asked once more (not when the strong model heard it too), then the speech model's words
-            again = "" if pro and pro[0][0] else voice_main(audio, prompt)
+        left = VOICE_BUDGET - (time.time() - t0)
+        try:  # it stopped early: asked once more (not when the strong model heard it too, nor past the budget), then the speech model's words
+            again = "" if (pro and pro[0][0]) or left < 10 else capped(lambda: voice_main(audio, prompt), left, "the main model, asked again", times, "again")
         except Exception:
             again = ""
         if again and not voice_short(again, alt):
@@ -2269,11 +2302,15 @@ def transcribe(store, data, mime, scope, path=None):
             out["pro_error"] = str(perr)
         elif ptr and not echoed(ptr, titles) and (not tr or len(voice_tokens(ptr)) >= 0.9 * len(voice_tokens(tr))):
             out["tr_by"], tr, alt = "pro", ptr, ""
+    times["total"] = round(time.time() - t0, 1)
     if tr is None:
         raise Err(f"{err}; the speech model: {alt_err}")
     if not tr:
         return out
-    tr, alt = simplified(tr), simplified(alt or "")
+    cap = max(5.0, VOICE_BUDGET + 5 - (time.time() - t0))  # Traditional characters made Simplified, in what time is left
+    (tr2, _), (alt2, _) = together(lambda: capped(lambda: simplified(tr), cap, "simplifying"), lambda: capped(lambda: simplified(alt or ""), cap, "simplifying"))
+    tr, alt = tr2 if tr2 is not None else tr, alt2 if alt2 is not None else (alt or "")
+    times["total"] = round(time.time() - t0, 1)
     for c in fixes:  # what the user fixed once stays fixed (F144)
         tr, alt = tr.replace(c["wrong"], c["right"]), alt.replace(c["wrong"], c["right"])
     return dict(out, tr=tr, alt=alt, doubts=voice_doubts(tr, alt))
@@ -2301,7 +2338,7 @@ def voice_answer(fid, job):
     res = (job or {}).get("res") or {}
     return {"f": fid, "done": not job or job["done"], "tr": job["tr"] if job else "",
             "tr_error": (job["err"] if job else "no such voice note") or "",
-            **{k: res[k] for k in ("tr_by", "doubts", "gated", "main_error", "asr_error", "pro_error") if k in res}}
+            **{k: res[k] for k in ("tr_by", "doubts", "gated", "main_error", "asr_error", "pro_error", "times") if k in res}}
 
 
 def voice_saved(store, fid):

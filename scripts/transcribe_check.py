@@ -32,6 +32,8 @@ Per recording and run it prints the transcript's start and what went wrong; then
                     early or was empty)
   strong model      runs that took the strong model's words (a phone's voice-processed note, where it heard more)
   hints             "Maybe misheard" lines the page would show
+  time ...          seconds per stage on the server, median and max: the main, speech (asr) and strong (pro) model,
+                    the main model asked again, and the whole note (total); a model that ran out of time shows its cap
 """
 import argparse
 import json
@@ -229,6 +231,10 @@ def main():
     print(f"speech model      {t['asr']}/{t['runs']} runs used its words")
     print(f"strong model      {t['pro']}/{t['runs']} runs used its words")
     print(f"hints             {t['hints']} 'Maybe misheard' lines")
+    stages = [(k, [d["times"][k] for d in res if isinstance(d.get("times"), dict) and d["times"].get(k) is not None]) for k in ("main", "asr", "pro", "again", "total")]
+    for k, v in stages:  # seconds each model took on the server (a model that ran out of time shows its cap)
+        if v:
+            print(f"{'time ' + k:17} median {statistics.median(v):.1f}s, max {max(v):.1f}s ({len(v)} runs)")
     if args.out:
         with open(args.out, "w", encoding="utf-8") as f:
             json.dump([dict(d, file=n, run=r) for (n, r), d in zip(jobs, res)], f, ensure_ascii=False, indent=1)
