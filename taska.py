@@ -2693,6 +2693,29 @@ class Hub:
                             "t": int(os.path.getmtime(s.path) * 1000)})
         return out
 
+    def search(self, q, skip=""):
+        """Words in every project but `skip` (F196): items by their code, title, text and thread, and what you said
+        (inputs). Every word must be there. Newest first, at most 30."""
+        words = [w for w in q.lower().split() if w][:8]
+        out = []
+        if not words:
+            return out
+        for name, s in sorted(self.projects.items()):
+            if name == skip:
+                continue
+            with s.lock:
+                for i in s.items.values():
+                    if i["merged_into"] or i.get("deleted"):
+                        continue
+                    hay = " ".join([s.code(i["n"]), i["title"], i["body"], i.get("next", ""), *(x.get("text", "") for x in i["thread"])]).lower()
+                    if all(w in hay for w in words):
+                        out.append({"project": name, "ptitle": s.title, "kind": "item", "code": s.code(i["n"]), "title": i["title"],
+                                    "status": i["status"], "archived": i["archived"], "t": i.get("t1") or i.get("t0") or ""})
+                for r in s.inputs.values():
+                    if not r.get("deleted") and all(w in (r["id"] + " " + r["text"]).lower() for w in words):
+                        out.append({"project": name, "ptitle": s.title, "kind": "input", "code": r["id"], "title": r["text"][:200], "t": r["t"]})
+        return sorted(out, key=lambda x: x["t"], reverse=True)[:30]
+
     def needs(self):
         """What needs you in every project (F193): an agent asks or is blocked, an item waits for approval or acceptance.
         Newest first, so the sidebar's list leads with what just came in."""
@@ -2884,6 +2907,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self.json(HUB.summary())
             if p == "/api/needs":  # F193: what needs you, in every project
                 return self.json(HUB.needs())
+            if p == "/api/search":  # F196: the same words in the other projects
+                return self.json(HUB.search((q.get("q") or [""])[0], (q.get("skip") or [""])[0]))
             if p == "/api/projects/deleted":  # F173: what Settings › Projects can restore
                 return self.json(HUB.deleted())
             if p == "/api/corrections":
@@ -3935,10 +3960,29 @@ const searchWords = () => U.q.trim().toLowerCase().split(/\s+/).filter(Boolean);
 const inputMatch = (r, words) => words.every(w => (r.id + ' ' + r.text).toLowerCase().includes(w));
 function searchHints(shown) {
   const words = searchWords();
-  if (!words.length || shown >= 5) return '';
-  return ['items', 'inputs', 'archive', 'rules'].filter(t => t !== U.tab)
+  crossSearch();
+  if (!words.length) return '';
+  return (shown >= 5 ? '' : ['items', 'inputs', 'archive', 'rules'].filter(t => t !== U.tab)
     .map(t => [t, t === 'inputs' ? S.inputs.filter(r => inputMatch(r, words)).length : S.items.filter(it => !it.merged_into && inTab(it, t) && words.every(w => hay(it).includes(w))).length])
-    .filter(([, n]) => n).map(([t, n]) => `<p class="flex items-center justify-center gap-1 text-sm text-zinc-500 dark:text-zinc-400">${n === 1 ? '1 match' : `${n} matches`} in ${TAB_NAME[t]}<button data-act="search-in" data-tab="${t}" class="${LINK_BTN}">Show</button></p>`).join('');
+    .filter(([, n]) => n).map(([t, n]) => `<p class="flex items-center justify-center gap-1 text-sm text-zinc-500 dark:text-zinc-400">${n === 1 ? '1 match' : `${n} matches`} in ${TAB_NAME[t]}<button data-act="search-in" data-tab="${t}" class="${LINK_BTN}">Show</button></p>`).join(''))
+    + crossHits();
+}
+// F196: the same words in the other projects, asked of the server once the typing pauses, under what this one found
+const XS = {q: '', list: null, timer: 0};
+function crossSearch() {
+  const q = searchWords().join(' ');
+  if (q === XS.q) return;
+  XS.q = q; XS.list = null; clearTimeout(XS.timer);
+  if (!q) return;
+  XS.timer = setTimeout(async () => {
+    try { const r = await net(`/api/search?q=${encodeURIComponent(q)}&skip=${encodeURIComponent(S.project)}`); if (XS.q === q) { XS.list = r; render(); } } catch (_) {}
+  }, 300);
+}
+function crossHits() {
+  const list = XS.q === searchWords().join(' ') ? XS.list : null;
+  if (!list?.length) return '';
+  const row = x => `<a href="/p/${encodeURIComponent(x.project)}/${x.kind === 'input' ? 'inputs?q=' + encodeURIComponent(XS.q) : encodeURIComponent(x.code)}" title="${esc(x.ptitle || x.project)} · ${esc(x.code)}" class="flex items-center gap-2.5 rounded-lg px-3 py-2 text-left hover:bg-zinc-100 dark:hover:bg-zinc-900">${projTile(x.project, 'size-5 rounded text-[10px]')}<span class="min-w-0 flex-1"><span class="block truncate text-sm"><span class="font-mono text-xs font-bold text-zinc-500 dark:text-zinc-400">${esc(x.code)}</span> ${esc(x.title)}</span><span class="block truncate text-xs text-zinc-500 dark:text-zinc-400">${esc(x.ptitle || x.project)}${x.kind === 'input' ? ' · what you said' : x.archived ? ' · archived' : CLOSED(x.status) ? ` · ${STATUS[x.status] || x.status}` : ''}</span></span></a>`;
+  return `<div class="mx-auto mt-4 w-full max-w-xl px-2 text-left"><p class="px-3 pb-1 text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">In other projects · ${list.length}${list.length === 30 ? '+' : ''}</p>${list.slice(0, 8).map(row).join('')}${list.length > 8 ? `<p class="px-3 py-1 text-xs text-zinc-500 dark:text-zinc-400">and ${list.length - 8} more: a longer search narrows them</p>` : ''}</div>`;
 }
 
 const filtered = () => !!(U.q.trim() || U.type !== 'all' || U.when !== 'all' || U.status !== 'all' || U.pri !== 'all');
@@ -4830,7 +4874,7 @@ function renderItems() {
         : done.length ? zone('done', 'Finished', done.length, archiveAllBtn(done.length)) + tree(done) : hold ? `<div aria-hidden="true" ${hold}></div>` : '')
       + (arch.length ? zone('archived', 'Archived', arch.length) + arch.map(it => itemRow(it)).join('') : '');
   }
-  const more = rows.length ? searchHints(rows.length) : '';  // a short result: where else the words are (A9)
+  const more = rows.length ? searchHints(rows.length) : '';  // where else the words are: other tabs for a short result (A9), other projects (F196)
   list.innerHTML = html + (more ? `<div class="flex flex-col py-4">${more}</div>` : '');
   const hd = list.querySelector('[data-hold]');
   if (hd) hd.style.minHeight = U.archHold.h + 'px';  // a measured height: set before the scroll position comes back, so it isn't cut short
