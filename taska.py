@@ -6073,7 +6073,10 @@ function change(n, f, v, {said, note} = {}) {
   if (!settles && (n !== U.open || desk())) holdRow(n, `${said.replace(/^./, c => c.toUpperCase())}`, run);  // the phone's list is under the card or the row you swiped (B148)
   const left = f === 'status' && v === 'done' ? openKids(n) : 0;  // done before its subitems: say so (B147)
   const noted = f === 'status' && noteWith(n);  // B4: what you wrote for it goes with your decision
-  toast(`${ref} ${said}${noted ? ', with your note' : ''}${left ? ` · ${plural(left, 'subitem')} still open` : ''}${note && !noted ? `. ${note}.` : ''}`, run);
+  // T113 B28: one Undo in sight. On the desktop the row you acted on holds in place with its Undo (or Go through's row
+  // does), and the sidebar keeps it for Z: the toast then only says what happened.
+  const inPlace = desk() && !!document.querySelector(`#list article[data-n="${n}"]`);
+  toast(`${ref} ${said}${noted ? ', with your note' : ''}${left ? ` · ${plural(left, 'subitem')} still open` : ''}${note && !noted ? `. ${note}.` : ''}`, inPlace ? null : run);
   const saved = optimistic([{n, f: {[f]: v}}], () => op({op: 'set', ref, f: {[f]: wire(f, v)}}), ex => {  // taken back
     forget(run);
     if (U.settle.delete(n)) renderItems();
@@ -6683,7 +6686,7 @@ function renderSidebar() {
 function renderSideFoot() {  // the sidebar's foot: Undo (when there is one), Settings, the keys
   const foot = (act, icon, label, key, attrs = '') => `<button data-act="${act}" ${attrs} class="flex h-9 min-w-0 flex-1 items-center gap-2.5 rounded-lg px-2.5 text-left text-sm text-zinc-600 hover:bg-zinc-200/60 dark:text-zinc-300 dark:hover:bg-zinc-800">${ico(icon, 'size-4 shrink-0 text-zinc-500 dark:text-zinc-400', '2')}<span class="min-w-0 flex-1 truncate">${label}</span>${KBD(key)}</button>`;
   const u = U.mine.at(-1);
-  draw($('sideFoot'), (u ? foot('undo-mine', 'undo', `Undo: ${esc(u.label)}`, 'Z', 'title="Undo · Z"') : '')
+  draw($('sideFoot'), foot('undo-mine', 'undo', u ? `Undo: ${esc(u.label)}` : 'Nothing to undo', 'Z', u ? 'title="Undo · Z"' : 'disabled')  // always there: the sidebar never moves (T113 B28)
     + `<div class="flex items-center gap-0.5">${foot('project', 'gear', 'Settings', 'G S', 'title="Settings · G S"')}<button data-act="keys" title="Keyboard shortcuts · ?" aria-label="Keyboard shortcuts" class="grid size-9 shrink-0 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-200/60 dark:text-zinc-400 dark:hover:bg-zinc-800">${ico('keyboard', 'size-4')}</button></div>`);
 }
 function renderRail() {
