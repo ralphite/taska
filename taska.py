@@ -2666,6 +2666,22 @@ class Hub:
                             "t": int(os.path.getmtime(s.path) * 1000)})
         return out
 
+    def needs(self):
+        """What needs you in every project (F193): an agent asks or is blocked, an item waits for approval or acceptance.
+        Newest first, so the sidebar's list leads with what just came in."""
+        out = []
+        for name, s in sorted(self.projects.items()):
+            with s.lock:
+                for i in s.active():
+                    if i["status"] in CLOSED or i.get("merged_into"):
+                        continue
+                    w = s.waiting(i)
+                    kind = w["kind"] if w else i["status"] if i["status"] in ("proposed", "review") else None
+                    if kind:
+                        out.append({"project": name, "ptitle": s.title, "n": i["n"], "code": s.code(i["n"]), "title": i["title"],
+                                    "kind": kind, "pri": i["pri"], "t": i.get("t1") or i.get("t") or ""})
+        return sorted(out, key=lambda x: x["t"], reverse=True)
+
 
 class Handler(BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
@@ -2839,6 +2855,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send(200, SKILL, "text/markdown; charset=utf-8")
             if p == "/api/projects":
                 return self.json(HUB.summary())
+            if p == "/api/needs":  # F193: what needs you, in every project
+                return self.json(HUB.needs())
             if p == "/api/projects/deleted":  # F173: what Settings › Projects can restore
                 return self.json(HUB.deleted())
             if p == "/api/corrections":
@@ -3310,6 +3328,7 @@ __APP_HEAD__
     <button data-act="side" id="sideBtn" title="Hide the sidebar · [" aria-label="Hide the sidebar" class="ml-auto hidden size-8 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-200/70 lg:grid dark:text-zinc-400 dark:hover:bg-zinc-800"></button></div>
   <button data-act="new-input" id="newInputBtn" title="New input to the project · C · by voice ⇧V" aria-pressed="false" class="mx-2.5 mb-3 hidden h-9 shrink-0 items-center gap-2 rounded-xl bg-white px-3 text-sm font-medium text-zinc-800 shadow-sm ring-1 ring-zinc-900/10 hover:bg-zinc-50 lg:flex aria-pressed:bg-blue-50 aria-pressed:text-blue-700 aria-pressed:ring-blue-500/40 dark:bg-zinc-800 dark:text-zinc-100 dark:ring-white/10 dark:hover:bg-zinc-700 dark:aria-pressed:bg-blue-400/10 dark:aria-pressed:text-blue-300 dark:aria-pressed:ring-blue-400/40"></button>
   <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 lg:pb-3 lg:scrollbar-thin lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70">
+    <div id="sideNeeds" class="mb-3 hidden lg:block"></div>
     <div class="px-3 pb-1.5 text-xs font-semibold text-zinc-500 lg:text-[11px] lg:tracking-wider lg:uppercase dark:text-zinc-400">Projects</div>
     <div id="drawerList" class="flex flex-col gap-0.5"></div>
     <button data-act="new-project" id="drawerNew" class="mt-1 flex h-12 w-full items-center gap-3 rounded-2xl px-3 text-[15px] font-medium text-blue-600 hover:bg-zinc-200/60 lg:h-9 lg:rounded-xl lg:text-sm dark:text-blue-400 dark:hover:bg-zinc-800">New project</button>
@@ -6225,6 +6244,8 @@ const searchMode = on => {
   renderItems(); if (U.tab === 'inputs') renderInputs();
 };
 const ACT = {
+  'needs-all': () => { NEEDS.open = !NEEDS.open; renderSideNeeds(); if (NEEDS.open) loadNeeds(); },  // F193
+  'need-open': b => b.dataset.project === S.project ? openItem(Number(b.dataset.n)) : location.assign(b.href),
   auto: () => {  // Keep going: at once, with Undo and Z (T113 A7)
     const on = !S.cfg?.auto;
     let run;
@@ -6817,7 +6838,45 @@ function renderSidebar() {
   const nb = $('newInputBtn').querySelector('span'), rule = U.tab === 'rules' && !D.page;  // on Rules it makes a new rule, and says so (T113 A22)
   if (nb && nb.textContent !== (rule ? 'New rule' : 'New input')) { nb.textContent = rule ? 'New rule' : 'New input'; $('newInputBtn').title = rule ? 'New rule for the project · C' : 'New input to the project · C · by voice ⇧V'; }
   if (S.project) renderAgent();
+  renderSideNeeds();
   renderDrawerSettings();
+}
+// What needs you in every project (F193): one row at the top of the sidebar, always there so the projects below never
+// move; it opens into the list of those items, each a click away, whichever project it is in.
+const NEEDS = {open: false, list: null};
+const othersNeeding = () => (DR.list || []).filter(p => p.name !== (S.project || HERE) && p.needs).sort((a, b) => titleOf(a).localeCompare(titleOf(b)));
+const NEED_WORD = {ask: 'asks you', block: 'is blocked', proposed: 'waits for approval', review: 'is ready to accept'};
+function renderSideNeeds() {
+  const here = S.project ? S.items.filter(needsYou).length : 0, others = othersNeeding(), total = here + others.reduce((n, p) => n + p.needs, 0), projects = (here ? 1 : 0) + others.length;
+  const head = `<button data-act="needs-all" aria-expanded="${NEEDS.open}" ${total ? '' : 'disabled'} title="${total ? `What needs you in every project${projects > 1 ? ` (${projects} projects)` : ''}` : 'Nothing needs you in any project'}" class="flex h-9 w-full items-center gap-2.5 rounded-xl px-2.5 text-left text-sm hover:bg-zinc-200/60 aria-expanded:bg-amber-50 dark:hover:bg-zinc-800 dark:aria-expanded:bg-amber-400/10">
+      <span class="size-2 shrink-0 rounded-full ${total ? 'bg-amber-500 dark:bg-amber-400' : 'bg-zinc-300 dark:bg-zinc-600'}"></span>
+      <span class="min-w-0 flex-1 truncate font-medium ${total ? '' : 'text-zinc-500 dark:text-zinc-400'}">${total ? 'Needs you' : 'Nothing needs you'}</span>
+      ${total ? `<span class="grid h-5 min-w-5 place-items-center rounded-full bg-amber-100 px-1 text-[11px] font-bold text-amber-900 dark:bg-amber-400/15 dark:text-amber-200">${total}</span>${ico('down', `size-4 shrink-0 text-zinc-400 ${NEEDS.open ? 'rotate-180' : ''}`, '2')}` : ''}</button>`;
+  const rows = !NEEDS.open || !total ? '' : !NEEDS.list ? `<p class="px-3 py-2 text-xs text-zinc-500 dark:text-zinc-400">Loading…</p>`
+    : `<div class="mt-0.5 flex flex-col">${NEEDS.list.slice(0, 8).map(x => `<a href="/p/${encodeURIComponent(x.project)}/${encodeURIComponent(x.code)}" data-act="need-open" data-project="${esc(x.project)}" data-n="${x.n}" title="${esc(x.ptitle || x.project)} · ${esc(x.code)} ${esc(NEED_WORD[x.kind] || 'needs you')}" class="flex items-center gap-2 rounded-lg px-2.5 py-1.5 hover:bg-zinc-200/60 dark:hover:bg-zinc-800">${projTile(x.project, 'size-4 rounded text-[9px]')}<span class="min-w-0 flex-1"><span class="block truncate text-[13px]"><span class="font-mono text-xs font-bold text-zinc-500 dark:text-zinc-400">${esc(x.code)}</span> ${esc(x.title)}</span><span class="block truncate text-[11px] text-amber-700 dark:text-amber-300">${esc(NEED_WORD[x.kind] || 'needs you')}</span></span></a>`).join('')}
+      ${NEEDS.list.length > 8 ? `<p class="px-2.5 py-1 text-[11px] text-zinc-500 dark:text-zinc-400">and ${NEEDS.list.length - 8} more · ⇧J goes through them all</p>` : ''}</div>`;
+  draw($('sideNeeds'), head + rows);
+}
+async function loadNeeds() {
+  try { NEEDS.list = await net('/api/needs'); } catch (_) { NEEDS.list = []; }
+  renderSideNeeds();
+}
+// Go through goes on in the next project that has something for you (F193): ⇧J in a project with nothing left
+// for you, or Go on at the end of a walk, opens it and starts going through there.
+const nextNeeding = () => { const others = othersNeeding(); return others.find(p => titleOf(p).localeCompare(projTitle()) > 0) || others[0]; };  // the one after this, by name
+function goNextProject() {
+  const after = nextNeeding();
+  if (!after) return false;
+  try { sessionStorage.setItem('taska.go.start', after.name); } catch (_) {}
+  location.assign(`/p/${encodeURIComponent(after.name)}/`);
+  return true;
+}
+function startGoFromAnotherProject() {
+  try {
+    if (sessionStorage.getItem('taska.go.start') !== S.project) return;
+    sessionStorage.removeItem('taska.go.start');
+  } catch (_) { return; }
+  if (desk() && !U.go) startGoDesk();
 }
 function renderSideFoot() {  // the sidebar's foot: Undo (when there is one), Settings, the keys
   const foot = (act, icon, label, key, attrs = '') => `<button data-act="${act}" ${attrs} class="flex h-9 min-w-0 flex-1 items-center gap-2.5 rounded-lg px-2.5 text-left text-sm text-zinc-600 hover:bg-zinc-200/60 dark:text-zinc-300 dark:hover:bg-zinc-800">${ico(icon, 'size-4 shrink-0 text-zinc-500 dark:text-zinc-400', '2')}<span class="min-w-0 flex-1 truncate">${label}</span>${KBD(key)}</button>`;
@@ -7115,6 +7174,8 @@ function endGoDesk(how) {  // 'end': you ended it; 'last': after the last one
   const settled = g.done.size, left = g.list.filter(k => !g.done.has(k) && byN.get(k) && needsYou(byN.get(k))).length;
   const tally = `${settled} settled${left ? ` · ${left} still need${left === 1 ? 's' : ''} you` : ''}`;
   U.go = null; render();
+  const next = how !== 'end' && !left && nextNeeding();  // F193: another project has something for you, the one Go on opens
+  if (next) return toast(`Nothing else needs you here · ${tally} · ${titleOf(next)} has ${next.needs}`, () => goNextProject(), {label: 'Go on ⇧J'});
   toast(how === 'end' ? `Stopped going through · ${tally}` : left ? `That was the last one · ${tally}` : `Nothing else needs you · ${tally}`);
 }
 function settledRow(it) {
@@ -7128,6 +7189,7 @@ function settledRow(it) {
 }
 function startGoDesk(from) {
   const t = walkTab(), list = needsList(t), all = S.items.filter(it => needsYou(it) && inTab(it, t)).length, by = U.q.trim() ? (filtersSet().length ? 'search and filter' : 'search') : 'filter';
+  if (!list.length && !all && goNextProject()) return;  // F193: nothing here, so on to the next project with something for you
   if (!list.length) return toast(all ? `Nothing that needs you is in this ${by} (${all} hidden)` : 'Nothing needs you right now');  // B15: say so when your search or filter hides what needs you
   U.go = {list, done: new Set(), how: {}, undo: {}, at: null, hidden: all - list.length, by};
   if (U.go.hidden) toast(`Going through the ${list.length} your ${by} shows · ${U.go.hidden} more need${U.go.hidden === 1 ? 's' : ''} you`);  // it runs over this search or filter (T113 A13)
@@ -7777,7 +7839,7 @@ async function checkOthers() {
   try { DR.list = (await net('/api/projects')).sort((a, b) => b.t - a.t); keepProjects(); } catch (_) { return; }  // it tries again soon
   $('otherDot').hidden = !DR.list.some(p => p.name !== S.project && p.needs);
   if (names() !== had && S.rev >= 0) return render();  // A12, B13: Move… on Inputs and New input needs the other projects, the tiles' colours too
-  if (desk()) { renderSidebar(); renderRail(); }
+  if (desk()) { renderSidebar(); renderRail(); if (NEEDS.open) loadNeeds(); }  // the list of what needs you stays current too (F193)
 }
 function openDrawer() { if (!DR.open) layerOpen('drawer'); DR.open = true; renderDrawerSettings(); fillDrawer(); setDrawer(drawerW()); if (!$('toast').hidden) placeToast(); }  // Back closes it (B150); a toast moves above its card
 function closeDrawer() { if (desk()) { if (D.sideOpen) { D.sideOpen = false; render(); } return; } if (DR.open) layerShut('drawer'); DR.open = false; setDrawer(0); if (!$('toast').hidden) placeToast(); }
@@ -8351,6 +8413,7 @@ load().then(() => {
     history.replaceState(null, '', P + viewQuery()); history.pushState({n}, '', P + code(n) + viewQuery());
   }
   restoreGo();  // a walk you were on goes on after a reload (T113 B17)
+  startGoFromAnotherProject();  // or one that came over from another project (F193)
   applyURL();
   if (!desk()) {  // a reload keeps your place in each tab of the list, as it keeps your drafts (B152)
     try { Object.assign(U.tabTop, JSON.parse(sessionStorage.getItem('taska.top.' + S.project) || '{}')); } catch (_) {}
