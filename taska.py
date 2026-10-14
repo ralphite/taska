@@ -5086,7 +5086,7 @@ function renderFeedback() {
     clearTimeout(renderFeedback.t);
     fb.innerHTML = q.failed
       ? `${ico('alert', 'size-4 text-red-600 dark:text-red-400', '2')}<span class="min-w-0 flex-1 truncate text-red-600 dark:text-red-400">Not sent${more}: ${esc(outboxLine(q))}</span>${link('outbox-retry', 'Retry', '')}${link('outbox-edit', 'Edit', '')}`
-      : `<span class="size-2 shrink-0 animate-pulse rounded-full bg-blue-500 dark:bg-blue-400"></span><span class="min-w-0 flex-1 truncate">${q.files.some(f => !f.f && !f.failed) ? 'Uploading, then sending' : 'Sending'}${more}: ${esc(outboxLine(q))}</span>`;
+      : `<span class="size-2 shrink-0 animate-pulse rounded-full bg-blue-500 dark:bg-blue-400"></span><span class="min-w-0 flex-1 truncate">${q.files.some(f => !f.f && !f.failed) ? 'Uploading, then sending' : 'Sending'}${more}: ${esc(outboxLine(q))}</span>${unsendBtn(q)}`;
     return;
   }
   if (!r) return;
@@ -5098,7 +5098,7 @@ function renderFeedback() {
   else if (r.org && !r.org.ok) html = `${ico('alert', 'size-4 text-red-600 dark:text-red-400', '2')}<span class="min-w-0 flex-1 truncate text-red-600 dark:text-red-400">Organizer failed: ${esc(r.org.msg)}</span>${link('retry', 'Retry', `data-id="${r.id}"`)}`;
   else if (r.org?.undone) html = `<span class="min-w-0 flex-1 truncate">Undid the changes for ${r.id}</span>`;
   else if (r.acked) html = `<span class="grid size-4 shrink-0 place-items-center rounded-full bg-emerald-500 text-white dark:bg-emerald-400 dark:text-emerald-950">${ico('check', 'size-3', '3')}</span><span class="min-w-0 flex-1 truncate">${esc(r.org?.msg || (r.touched.length ? 'Organized' : 'Seen by your agent, no item made'))}</span>${r.touched.length ? link('goto', 'View', `data-n="${r.touched[0]}"`) : ''}${r.org && r.org.ok && !r.org.undone && !r.org.keep && r.touched.length ? link('undo', 'Undo', `data-id="${r.id}"`) : ''}${move}`;
-  else html = `<span class="size-2 shrink-0 rounded-full bg-zinc-400"></span><span class="min-w-0 flex-1 truncate">Sent. ${r.org ? 'Left for your coding agent' : 'Waiting for your coding agent'}</span>${move}`;
+  else html = `<span class="size-2 shrink-0 rounded-full bg-zinc-400"></span><span class="min-w-0 flex-1 truncate">Sent. ${r.org ? 'Left for your coding agent' : 'Waiting for your coding agent'}</span>${unsendBtn((U.sentJobs || []).find(j => j.rid === r.id))}${move}`;  // T113 A27
   const final = r.acked || (r.org && r.org.ok) || r.moved;
   clearTimeout(renderFeedback.t);
   if (final) renderFeedback.t = setTimeout(() => { if (U.lastSent === r.id) { U.lastSent = null; renderFeedback(); } }, 6000);
@@ -5143,7 +5143,9 @@ async function send() {
   if (!text && !U.files.length) return;
   if (ch) U.choice = null;
   U.note = null;
-  outboxPush({text, files: U.files, scope: n ? code(n) : null, from: !n && ruleMode() ? 'rules' : null});
+  const job = outboxPush({text, files: U.files, scope: n ? code(n) : null, from: !n && ruleMode() ? 'rules' : null});
+  unsendable(job);
+  if (desk() && D.compose) toast(job.from ? 'Sent as a new rule' : 'Sent', job.undo);  // the New input page has no line under the box: the toast's Undo (A27)
   $('text').value = ''; U.files = []; saveDraft(); grow();
   if (U.ask === n) U.ask = null;
   // Going through what needs you, your reply settles this one (B118), but the box stays on it (A2, B146): what you write
@@ -5168,7 +5170,38 @@ function outboxPush(job) {
   for (const f of job.files) if (f.rid) { f.job = {id: job.q, text: job.text}; keepRec(f); }  // its words come back with it after a reload
   U.outbox.push(job);
   keepJob(job);
-  markSent(job.scope || (job.from === 'rules' ? 'rule' : 'new'));  // T113 A10: the other tabs drop it from their box
+  markSent(jobKey(job));  // T113 A10: the other tabs drop it from their box
+  return job;
+}
+const jobKey = job => job.scope || (job.from === 'rules' ? 'rule' : 'new');  // the box it was written in
+// T113 A27: what you just sent can be taken back for a short while, with Undo on the line under the box or Z. Still
+// on its way, it doesn't go; already in, it goes to Deleted (F177), with what was made of it alone. Either way your
+// words and files come back into the box they were written in. Once your agent or the organizer has it, Undo is gone.
+const UNSEND_MS = 10000;
+function unsendable(job) {
+  let run;
+  run = job.undo = pushUndo(`Send to ${draftName(jobKey(job))}`, () => unsend(job, run));
+  U.sentJobs = [...(U.sentJobs || []), job];
+  setTimeout(() => { forget(run); job.undo = null; U.sentJobs = U.sentJobs.filter(j => j !== job); renderFeedback(); }, UNSEND_MS);
+}
+const unsendBtn = job => job?.undo && !job.undo.entry.done ? `<button data-act="unsend" data-q="${job.q}" class="-my-2 h-11 shrink-0 rounded-full px-2 font-semibold text-blue-600 dark:text-blue-400">Undo</button>` : '';
+async function unsend(job, run) {
+  const key = jobKey(job), i = U.outbox.indexOf(job);
+  if (i >= 0 && !job.sending) { U.outbox.splice(i, 1); dropJob(job); }  // not gone yet: it stays here
+  else {
+    for (let t = 0; t < 100 && U.outbox.includes(job); t++) await new Promise(r => setTimeout(r, 100));  // on its way: wait for Taska's answer
+    const r = job.rid && byR.get(job.rid);
+    if (!job.rid || U.outbox.includes(job)) return toast('It could not be taken back: try again', null, {error: true}), false;
+    if (r && (r.acked || S.org.busy === r.id || r.org)) return toast(`${job.rid} is already with ${r.org ? 'the organizer' : 'your agent'}: delete it from Inputs`), true;
+    try { await save({op: 'delete', id: job.rid}, run); } catch (_) { return false; }
+    if (U.lastSent === job.rid) U.lastSent = null;
+  }
+  const files = job.files.filter(f => !f.failed).map(f => Object.assign(f, {sent: false, job: null}));
+  const was = key === U.draftKey ? $('text').value : String(draftStore()[key] || ''), wasFiles = key === U.draftKey ? U.files : U.parked[key] || [];
+  setDraft(key, was.trim() ? job.text + '\n\n' + was : job.text, [...files, ...wasFiles]); draftMarks();
+  render();
+  if (key === U.draftKey) { renderComposer(); $('text').focus({preventScroll: true}); }
+  toast(key === U.draftKey ? 'Not sent: your words are back in the box' : `Not sent: your words are back in the box of ${draftName(key)}`, key === U.draftKey ? null : () => goDraft(key), {label: 'Open'});
 }
 // B151: an input that has not reached Taska yet is kept in this browser too, per project, so a reload, a closed page or
 // a phone that ends the tab never loses it: the next time the project opens, it goes out by itself. A voice note keeps
@@ -5233,7 +5266,7 @@ async function flushOutbox() {
       job.sending = true; renderFeedback();
       try {
         const d = await sendInput({op: 'input', text, scope: job.scope, q: job.q, ...(job.from ? {from: job.from} : {}), files: files.map(({f, name, mime, size, tr}) => ({f, name, mime, size, ...(tr ? {tr} : {})}))});
-        U.lastSent = d.res[0].split(' ')[1]; U.outbox.shift(); dropJob(job); sent = [U.lastSent, job.scope];
+        U.lastSent = job.rid = d.res[0].split(' ')[1]; U.outbox.shift(); dropJob(job); sent = [U.lastSent, job.scope];
         for (const f of files) { f.sent = true; dropRec(f); }  // words still to come go onto this input, on the server (B165); this browser lets the recording go (T101)
       } catch (e) {
         job.failed = true; job.sending = false; job.net = !!e.again;
@@ -6506,6 +6539,7 @@ const ACT = {
     try { await setFix({wrong}); toast(`Forgot “${wrong}”`, () => setFix({wrong, right: c.right}).catch(ex => notSaved(ex))); } catch (ex) { notSaved(ex, () => ACT['fix-remove'](b)); }
   },
   'undo-mine': () => undoMine(),
+  unsend: b => [...U.outbox, ...(U.sentJobs || [])].find(j => j.q === b.dataset.q)?.undo?.(),  // T113 A27
   revert: b => {
     if (!confirmClick(b, `${desk() ? 'Click' : 'Tap'} again to undo`)) return;  // B127: an older change goes back only on a second click
     return revertNow(Number(b.dataset.seq));

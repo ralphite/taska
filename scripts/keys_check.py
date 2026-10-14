@@ -187,9 +187,12 @@ def group_write(a):
     a.key('Escape', wait=0.5); check('One Esc closes it', a.js("$('overlay').hidden"), True)
     for i in range(6):  # T113 B19: on a long thread, a sent reply shows whole, above the box
         post(a, 'api/op', {'op': 'say', 'ref': 'B07', 'text': f'Note {i}: ' + 'a long line of progress text. ' * 8})
-    a.go('B07', 3); a.click('#text'); a.type('The reply to see'); a.enter(2.5, shift=True)
+    a.go('B07', 3); a.click('#text'); a.js("$('text').value = ''"); a.type('The reply to see'); a.enter(2.5, shift=True)
     check('A sent reply on a long thread shows whole, above the box', a.js("""(() => { const el = [...document.querySelectorAll('#detailBody [data-src]')].at(-1);
       return !!el && el.textContent.includes('The reply to see') && el.getBoundingClientRect().bottom <= $('detailBody').getBoundingClientRect().bottom + 1; })()"""), True)
+    check('Just sent: the line under the box offers Undo (A27)', a.js("!!document.querySelector('#feedback [data-act=unsend]')"), True)
+    a.js('document.activeElement.blur()'); a.key('z', wait=1.5)
+    check('Z takes it back: not sent, the words back in the box', (a.js("S.inputs.some(r => (r.text || '').includes('The reply to see'))"), a.js("$('text').value")), (False, 'The reply to see'))
 
 
 def group_context(a):
