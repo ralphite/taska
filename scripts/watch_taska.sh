@@ -24,6 +24,18 @@ while true; do
       echo $c >> $SEEN
       [ -s $DIR/.started-$p ] && echo "[$p] NEW ITEM $(echo "$items" | grep -w "^$c" | cut -c1-160)"
     done
+    # /next names only the item it puts first: a reply on another item, or an item the user approved, is seen in
+    # the list itself ("<" ends a line the user replied on; a status leaves "proposed" when they approve it)
+    STATE=$DIR/state-$p.txt; touch $STATE
+    now=$(echo "$items" | awk 'NR>1{print $1, $4, ($NF == "<" ? "<" : "-")}' | sort)
+    if [ -s $DIR/.started-$p ]; then
+      for row in ${(f)now}; do
+        c=${row%% *} was=$(grep "^$c " $STATE)
+        [ "${row##* }" = "<" ] && [ "${was##* }" != "<" ] && echo "[$p] REPLIED $c: $(echo "$items" | grep -w "^$c" | cut -c1-140)"
+        echo "$was" | grep -q " proposed " && ! echo "$row" | grep -q " proposed " && echo "[$p] APPROVED $c: $(echo "$items" | grep -w "^$c" | cut -c1-140)"
+      done
+    fi
+    echo "$now" > $STATE
     echo 1 > $DIR/.started-$p  # the first pass only learns what is there
   done
   sleep 20
