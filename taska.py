@@ -5733,10 +5733,28 @@ const clock = ms => `${Math.floor(ms / 60000)}:${String(Math.floor(ms / 1000) % 
 // later speech down, so notes sounded wrong and transcribed badly; desktop Chrome did the same, only less. A browser
 // that refuses these asks records the default way.
 async function micStream() {
+  if (MIC.stream?.getAudioTracks().some(t => t.readyState === 'live')) return MIC.stream;  // B217: the one kept open
   const md = navigator.mediaDevices;
-  try { return await md.getUserMedia({audio: {echoCancellation: false, noiseSuppression: false, autoGainControl: false}}); }
-  catch (e) { if (e?.name === 'NotAllowedError' || e?.name === 'SecurityError') throw e; return md.getUserMedia({audio: true}); }
+  let s;
+  try { s = await md.getUserMedia({audio: {echoCancellation: false, noiseSuppression: false, autoGainControl: false}}); }
+  catch (e) { if (e?.name === 'NotAllowedError' || e?.name === 'SecurityError') throw e; s = await md.getUserMedia({audio: true}); }
+  if (standalone()) MIC.stream = s;
+  return s;
 }
+// B217: Taska from the Home Screen asks for the microphone each time it is opened again, and a page asks again for
+// every new recording. There it keeps the microphone it was given while it is on screen (nothing is recorded or sent
+// until you record) and lets it go when it goes to the background; in a browser tab each recording opens and closes it.
+const MIC = {stream: null};
+const micDone = s => {  // after a recording
+  if (s && s !== MIC.stream) s.getTracks().forEach(t => t.stop());
+  else if (document.visibilityState === 'hidden') setTimeout(micRelease);  // it ended in the background
+};
+function micRelease() {
+  if (!MIC.stream || R.rec || DV.rec) return;
+  MIC.stream.getTracks().forEach(t => t.stop()); MIC.stream = null;
+}
+addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') micRelease(); });
+addEventListener('pagehide', micRelease);
 async function startRec() {
   if (!canRecord()) return voiceWhy();  // B166
   // B1: the note belongs where you started it, whatever is open when it stops: taken before the microphone is asked,
@@ -5774,7 +5792,7 @@ function stopRec() {
     rec.onstop = () => done(new Blob(R.chunks, {type: rec.mimeType || 'audio/webm'}));
     rec.stop();
     clearInterval(R.tick);
-    R.stream.getTracks().forEach(t => t.stop());
+    micDone(R.stream);
     R.ctx?.close();
     R.rec = null;
     $('recBars').innerHTML = ''; $('recTime').textContent = '0:00';
@@ -5942,7 +5960,7 @@ async function docRecStart() {
   let stream;
   try { stream = await micStream(); } catch (_) { return toast('No microphone permission'); }
   const t = $('docMd');
-  if (!t || !U.docEdit || DV.rec) { stream.getTracks().forEach(x => x.stop()); return; }  // the editor closed meanwhile
+  if (!t || !U.docEdit || DV.rec) { micDone(stream); return; }  // the editor closed meanwhile
   const mark = dvMark(++DV.n), a = t.selectionStart, b = t.selectionEnd;
   t.focus({preventScroll: true});
   t.setRangeText(mark, a, b, 'end');  // like dictation: what you selected is what you speak over
@@ -5973,7 +5991,7 @@ function docRecStop(keep = true) {
     });
     docMicShow();
   };
-  r.rec.stop(); r.stream.getTracks().forEach(x => x.stop());
+  r.rec.stop(); micDone(r.stream);
   docMicShow();
 }
 async function dvHear(note) {  // upload, then wait for the words; tried again with growing pauses, as for the box (B165)
