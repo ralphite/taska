@@ -4803,7 +4803,7 @@ const plainQuote = s => String(s || '').split('\n').filter(l => !TABLE_SEP.test(
 function threadHtml(d, key, comments, blockText) {
   return `<div class="mt-2 space-y-2 border-l-2 border-amber-300 pl-3 dark:border-amber-600">
     ${comments.map(c => `<div class="text-sm ${MSG(c.by)}">${blockText !== undefined && !sameText(c.quote, blockText) ? `<div class="mb-0.5 line-clamp-2 text-xs text-zinc-500">“${esc(plainQuote(c.quote))}”</div>` : ''}<span class="${WHO(c.by)}">${esc(whoName(c.by))}</span> <span class="text-xs text-zinc-400">${when(c.t)}</span>${rich(c.text, 'dc' + c.t)}${c.files?.length ? `<div class="mt-1.5 flex gap-2 overflow-x-auto">${thumbs(c.files, 'dcf' + c.id, 'size-11')}</div>` : ''}</div>`).join('')}
-    <button data-act="doc-reply" data-key="${key}" aria-pressed="${U.docReply === key}" class="${HIT} flex h-8 items-center gap-1 rounded-lg px-1.5 -mx-1.5 text-xs font-semibold text-blue-600 hover:bg-blue-50 aria-pressed:underline dark:text-blue-400 dark:hover:bg-blue-400/10">${ico('reply', 'size-3.5')}Reply</button>
+    ${U.docReply === key ? '' : `<button data-act="doc-reply" data-key="${key}" class="${HIT} flex h-8 items-center gap-1 rounded-lg px-1.5 -mx-1.5 text-xs font-semibold text-blue-600 hover:bg-blue-50 aria-pressed:underline dark:text-blue-400 dark:hover:bg-blue-400/10">${ico('reply', 'size-3.5')}Reply</button>`}
   </div>`;
 }
 const noteText = d => sameText(d.md.split('\n')[0].replace(/^#+\s*/, ''), d.title) ? d.md : `# ${d.title}\n\n${d.md}`;
@@ -5552,7 +5552,7 @@ function renderComposer() {
     ph = 'Words for the comments…'; send = vcN > 1 ? `Post ${vcN} comments` : 'Post the comment';
   } else if (dt) {  // I087: a comment on a document
     line = scopeLine(dt.reply ? 'reply' : 'comment', `${dt.reply ? 'Reply in' : 'Comment on'} D${dt.d.d}`, dt.many > 1 ? `· ${dt.many} paragraphs` : dt.quote ? `“${esc(plainQuote(dt.quote).slice(0, 120))}”` : '', scopeX('doc-unpick', 'Cancel the comment'));
-    ph = `${dt.reply ? 'Reply' : 'Comment'} on D${dt.d.d}…`; send = dt.reply ? 'Reply' : 'Comment';
+    ph = `${dt.reply ? 'Reply in' : 'Comment on'} D${dt.d.d}…`; send = dt.reply ? 'Reply' : 'Comment';  // the same words as the line (T225 #16)
   } else if (dOpen) {  // B2: a document is open and nothing is picked: the box waits for a pick, it does not reply to the item
     const host = liveN(dOpen.n);
     line = desk() ? scopeLine('comment', `Comment on D${dOpen.d}`, '· click a paragraph or select text first', byN.has(host) ? scopeLink('doc-to-item', `Reply to ${code(host)} instead`) : '')
