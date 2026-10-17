@@ -1292,10 +1292,6 @@ class Store:
                 raise Err(f"{rid} is deleted already")
             if inp.get("moved") or inp.get("moving"):
                 raise Err(f"{rid} has moved to another project; delete it there")
-            if self.org_busy == rid:
-                raise Err(f"{rid} is being organized right now; try again in a moment")
-            if self.held(inp):
-                raise Err(f"{rid}'s voice note is still being written down; try again in a moment")
             plan = self.deletions([rid]).get(rid, {"go": [], "keep": []})
             self.emit({"k": "del", "src": rid, "ns": plan["go"], "kept": plan["keep"], "by": by})
             return f"ok {rid} deleted" + (" with " + " ".join(self.code(n) for n in plan["go"]) if plan["go"] else "") \
@@ -4456,7 +4452,7 @@ const ACT_TONE = {Done: 'text-emerald-600 dark:text-emerald-400', Accept: 'text-
 function deskSlots(it, needs) {
   const later = it.when === 'now' ? ['when', 'later', 'Later'] : ['when', 'now', 'Back to now'], drop = ['status', 'dropped', "Won't do"];
   if (it.archived) return [['archived', 'false', 'Unarchive'], null, null, null];
-  if (it.wait) return [null, null, null, later];
+  if (it.wait) return [null, ['status', 'done', 'Done'], drop, later];  // T268: an agent asking doesn't stop you finishing or dropping it
   if (it.type === 'rule') return it.status === 'proposed' ? [needs ? null : ['status', 'open', 'Approve'], null, drop, null]  // a rule's own words (T113 B21)
     : it.status === 'open' ? [null, null, ['status', 'dropped', 'Retire'], null] : [['archived', 'true', 'Archive'], ['status', 'open', 'Reactivate'], null, null];
   const fwd = needs ? null : swipeRight(it);
@@ -5455,7 +5451,7 @@ const filingTip = r => `Undo what the organizer did with ${r.id}: ${r.filing?.wh
 function inputActions(r, cls = LINK_BTN) {
   if (r.moved) return '';
   return `<button data-act="input-edit" data-id="${r.id}" class="${cls}">${ico('pencil', 'size-3.5')}Edit</button><button data-act="input-append" data-id="${r.id}" class="${cls}">${ico('plus', 'size-3.5')}Add details</button>`
-    + (S.org.busy !== r.id && !r.tr_wait ? `<button data-act="input-delete" data-id="${r.id}" title="${esc(deleteTip(r))}" class="${cls}${cls === LINK_BTN ? ' text-zinc-600 dark:text-zinc-300' : ''}">${ico('trash', 'size-3.5')}Delete</button>` : '')
+    + `<button data-act="input-delete" data-id="${r.id}" title="${esc(deleteTip(r))}" class="${cls}${cls === LINK_BTN ? ' text-zinc-600 dark:text-zinc-300' : ''}">${ico('trash', 'size-3.5')}Delete</button>`  // T268: also while it is organized or its words are still coming
     + (r.history?.length ? `<button data-act="input-history" data-id="${r.id}" class="${cls}">History</button>` : '');  // last: the ones every input has keep their places (T113 A21)
 }
 // What became of an input, and what you can do about it now: the same on Inputs and in "You said lately" (T113 A26,
@@ -8517,12 +8513,10 @@ function deskKey(e) {
     case ' ': if (it) { e.preventDefault(); $('detailBody').scrollBy({top: (e.shiftKey ? -0.8 : 0.8) * $('detailBody').clientHeight, behavior: REDUCE.matches ? 'auto' : 'smooth'}); } return;
     case 'g': D.g = Date.now(); return;
     case '[': e.preventDefault(); return ACT.side();
-    case '/': e.preventDefault(); if (!$('q').offsetParent) return hint(D.page ? 'Search works on a list: Esc goes back to it' : 'Search works on the list: Esc leaves full width'); return $('q').focus();
+    case '/': e.preventDefault(); toList(); return requestAnimationFrame(() => $('q').focus());  // T268: from anywhere, back to the list and search
     case 'f':
       e.preventDefault();
-      if (D.page || D.full) return hint(D.page ? 'Filters work on a list: Esc goes back to it' : 'Filters work on the list: Esc leaves full width');
-      if (U.tab === 'inputs') return hint('Filters work in Items, Archive and Rules');
-      return showFilters();
+      toList(); return showFilters();  // T268: from anywhere, back to the list and its filters
     case '?': e.preventDefault(); return showKeys();
     case 'c': e.preventDefault(); return ACT['new-input']();
     case 'z': e.preventDefault(); return undoMine();  // your own last action here; older ones: the change log (B127)
@@ -8541,7 +8535,6 @@ function deskKey(e) {
     return;
   }
   const ruleTo = v => it.status === v ? hint(`${code(n)} is ${v === 'open' ? 'active' : 'retired'} already`) : status(v);  // a rule: D makes it active, W retires it (T113 B21)
-  const waits = () => hint(`${code(n)} waits for your answer: A answers it`);  // as its row's hover: no Done or Won't do (T113 B21)
   switch (k) {
     case 'a':  // the amber action
       if (it.status === 'review') return status('done');
@@ -8551,8 +8544,8 @@ function deskKey(e) {
       return toast(`Nothing waits on you in ${code(n)}`);
     case 'r': e.preventDefault(); return ACT.reply();
     case 'n': if (it.status === 'review') return act('reopen'); return toast('Not yet works on items in review');
-    case 'd': return it.type === 'rule' ? ruleTo('open') : it.wait ? waits() : CLOSED(it.status) ? hint(`${code(n)} is ${it.status === 'done' ? 'done' : "marked won't do"} already`) : status('done');
-    case 'w': return it.type === 'rule' ? ruleTo('dropped') : it.wait ? waits() : it.status === 'dropped' ? hint(`${code(n)} is marked won't do already`) : status('dropped');
+    case 'd': return it.type === 'rule' ? ruleTo('open') : CLOSED(it.status) ? hint(`${code(n)} is ${it.status === 'done' ? 'done' : "marked won't do"} already`) : status('done');
+    case 'w': return it.type === 'rule' ? ruleTo('dropped') : it.status === 'dropped' ? hint(`${code(n)} is marked won't do already`) : status('dropped');
     case 'l': if (it.type !== 'rule' && !CLOSED(it.status)) act('swipe', {f: 'when', v: it.when === 'now' ? 'later' : 'now'}); else hint(it.type === 'rule' ? 'Rules have no Later' : 'Later works on open items'); return;
     case 'e': if (it.archived || CLOSED(it.status)) act('archive', {on: it.archived ? '0' : '1'}); else { e.preventDefault(); toast('Archive works on finished items'); } return;
     case '.': e.preventDefault(); return itemMenuDesk(n, null);
@@ -9159,6 +9152,13 @@ function writeURL(push = false, state) {
 // A view you leave by Esc or ×: if it was a step in the history, step back (the page then rewrites the address to
 // whatever shows by then, so an item opened in the same breath is kept); otherwise just rewrite the address. On the
 // phone what writes the address waits for the step back instead (B150), so a step like an item's keeps its place.
+function toList() {  // T268: Settings, full width or Inputs give way to the list
+  if (!desk()) return;
+  if (D.page) D.page = null;
+  if (D.full) D.full = false;
+  if (U.tab === 'inputs') return setTab('items');
+  render(); writeURL(false);
+}
 function leaveView(v) {
   if (URLS.applying) return false;
   if (!desk()) { hist(() => { if (history.state?.v === v) histBack(); else writeURL(false); }); return true; }
