@@ -5654,6 +5654,7 @@ function restoreEdit(k) {
 
 // ---------------------------------------------------------------- inputs
 
+const projName = slug => titleOf((DR.list || []).find(p => p.name === slug) || {name: slug});  // T244 #4: a project as people call it
 const isVoice = r => !!r?.files?.some(f => (f.mime || '').startsWith('audio/'));
 const voiceAttr = r => isVoice(r) ? `data-voice="${r.id}"` : '';  // F144: words selected here can be corrected
 const canUndoInput = r => r.org && r.org.ok && !r.org.undone && r.touched.length && (!r.org.keep || (r.history?.length && r.org.changed)) && r.filing?.can;  // T113 A4: while its work is as it left it
@@ -5668,7 +5669,7 @@ function inputActions(r, cls = LINK_BTN) {
 // What became of an input, and what you can do about it now: the same on Inputs and in "You said lately" (T113 A26,
 // B32), all in sight. -> [the actions for its state, the actions every input has], each a line of its own.
 function inputActs(r, cls = LINK_BTN) {
-  if (r.moved) return [`<a href="/p/${encodeURIComponent(r.moved.to)}/" class="${cls}">${ico('arrow', 'size-3.5', '2')}Open ${esc(r.moved.to)} · ${esc(r.moved.as)}</a>`, ''];
+  if (r.moved) return [`<a href="/p/${encodeURIComponent(r.moved.to)}/" class="${cls}">${ico('arrow', 'size-3.5', '2')}Open ${esc(projName(r.moved.to))} · ${esc(r.moved.as)}</a>`, ''];
   const busy = S.org.busy === r.id || (!r.acked && S.org.on && !r.org), quiet = cls === LINK_BTN ? ' text-zinc-600 dark:text-zinc-300' : '';
   const now = (!r.acked && S.org.on && r.org && (!r.org.ok || r.org.undone) ? `<button data-act="retry" data-id="${r.id}" class="${cls}">${ico('loop', 'size-3.5', '2')}${r.org.undone ? 'Organize again' : 'Retry'}</button>` : '')
     + (!r.acked && !r.scope && !busy ? `<button data-act="make-item" data-id="${r.id}" class="${cls.replace(/text-zinc-500|hover:text-zinc-800/g, 'text-blue-600').replace(/dark:text-zinc-400|dark:hover:text-zinc-200/g, 'dark:text-blue-400')}">${ico('plus', 'size-3.5', '2')}Make item</button>` : '')
@@ -5765,7 +5766,7 @@ function inputHistory(id) {
 }
 
 function inputState(r) {  // -> [label, tone, icon]
-  if (r.moved) return [`Moved to ${r.moved.to}`, 'text-zinc-500 dark:text-zinc-400', ico('arrow', 'size-3.5', '2')];
+  if (r.moved) return [`Moved to ${projName(r.moved.to)}`, 'text-zinc-500 dark:text-zinc-400', ico('arrow', 'size-3.5', '2')];
   if (r.tr_wait) return ['Transcribing…', 'text-blue-600 dark:text-blue-400', '<span class="size-1.5 animate-pulse rounded-full bg-blue-500 dark:bg-blue-400"></span>'];  // sent before its words were in (B165)
   if (S.org.busy === r.id) return ['Organizing…', 'text-blue-600 dark:text-blue-400', '<span class="size-1.5 animate-pulse rounded-full bg-blue-500 dark:bg-blue-400"></span>'];
   if (r.org?.undone) return ['Undone', 'text-zinc-500 dark:text-zinc-400', ico('undo', 'size-3.5', '2')];
@@ -6036,7 +6037,7 @@ function renderFeedback() {
   if (!r) return;
   let html;
   const move = otherProjects().length && !r.scope ? link('move-input', 'Move to…', `data-id="${r.id}"`) : '';  // sent to the wrong project? (F79) Not a reply: it went to an item here (T113 A19)
-  if (r.moved) html = `${ico('arrow', 'size-4 text-zinc-500', '2')}<span class="min-w-0 flex-1 truncate">Moved ${r.id} to ${esc(r.moved.to)} as ${esc(r.moved.as)}</span><a href="/p/${encodeURIComponent(r.moved.to)}/" class="-my-2 flex h-11 shrink-0 items-center rounded-full px-2 font-semibold text-blue-600 dark:text-blue-400">Open</a>`;
+  if (r.moved) html = `${ico('arrow', 'size-4 text-zinc-500', '2')}<span class="min-w-0 flex-1 truncate">Moved ${r.id} to ${esc(projName(r.moved.to))} as ${esc(r.moved.as)}</span><a href="/p/${encodeURIComponent(r.moved.to)}/" class="-my-2 flex h-11 shrink-0 items-center rounded-full px-2 font-semibold text-blue-600 dark:text-blue-400">Open</a>`;
   else if (r.tr_wait) html = `<span class="size-2 shrink-0 animate-pulse rounded-full bg-blue-500 dark:bg-blue-400"></span><span class="min-w-0 flex-1 truncate">Sent. Its voice note's words come next…</span>`;  // sent before they were in (B165)
   else if (S.org.busy === r.id || (!r.acked && S.org.on && !r.org)) html = `<span class="size-2 shrink-0 animate-pulse rounded-full bg-blue-500 dark:bg-blue-400"></span><span class="min-w-0 flex-1 truncate">Sent, organizing…</span>`;
   else if (r.org && !r.org.ok) html = `${ico('alert', 'size-4 text-red-600 dark:text-red-400', '2')}<span class="min-w-0 flex-1 truncate text-red-600 dark:text-red-400">Organizer failed: ${esc(r.org.msg)}</span>${link('retry', 'Retry', `data-id="${r.id}"`)}`;
@@ -7575,7 +7576,7 @@ const ACT = {
     const r = byR.get(b.dataset.id), lines = r.text.trim().split('\n'), first = lines[0].trim();
     const title = shortTitle(first) || `Files from ${r.id}`, body = title !== first ? r.text.trim() : lines.slice(1).join('\n').trim();  // a long first line stays whole in the body (T113 A25)
     try {
-      const d = await save({op: 'new', title, body, src: r.id}, () => ACT['make-item'](b));
+      const d = await save({op: 'new', title, body, src: r.id, ...(r.from === 'rules' ? {type: 'rule'} : {})}, () => ACT['make-item'](b));  // T244 #3: written as a rule, made a rule
       const n = Number((d.res[0].match(/[A-Z](\d+) new/) || [])[1]);
       if (!n) return;
       let run;  // Undo and Z: the item goes, and the input waits again (T113 A7)
