@@ -4579,36 +4579,43 @@ function swipeTo(el, x) {
   }, 250);
 }
 function closeSwipe() { if (SW.open) { swipeTo(SW.open, 0); SW.open = null; } }
+// A finger on a row (B237): after it has moved 10 px the gesture is one thing for good. Within 45° of level it is the
+// row's swipe: from then on only the sideways part counts, so a thumb that drifts up or down still finishes it, and
+// the list neither scrolls nor takes the touch back (touch events, so a move can be kept from the browser). Steeper,
+// it is the list's scroll and the row stays put. The screen edge belongs to the phone's "back"; the drawer is not
+// touched by any of this.
 function swipeStart(e) {
-  if (e.pointerType === 'mouse' || e.clientX <= EDGE_W || DR.open) return;  // the screen edge belongs to the phone's "back"
+  SW.el = null;
+  const t = e.touches[0];
+  if (e.touches.length !== 1 || t.clientX <= EDGE_W || DR.open) return;
   const el = e.target.closest('[data-swipe]');
   if (!el) return;
   if (SW.open && SW.open !== el) closeSwipe();
   // Show nothing new until the finger really moves sideways: iPhone Safari treats a tap that reveals content
   // as a hover and never sends the click, so the row would not open (B62).
   const reveal = SW.open === el ? el.parentElement.querySelector('[data-swipe-right]').offsetWidth : 0;
-  Object.assign(SW, {el, id: e.pointerId, x0: e.clientX, y0: e.clientY, mode: null, dx: 0, reveal, base: -reveal});
+  Object.assign(SW, {el, x0: t.clientX, y0: t.clientY, mode: null, dx: 0, reveal, base: -reveal});
 }  // a finger held still does nothing special: a tap opens the item, which does all a preview did (T203)
 function swipeMove(e) {
-  if (!SW.el || e.pointerId !== SW.id) return;
-  const dx = e.clientX - SW.x0, dy = e.clientY - SW.y0;
+  if (!SW.el || e.touches.length !== 1) return;
+  const t = e.touches[0], dx = t.clientX - SW.x0, dy = t.clientY - SW.y0;
   if (!SW.mode) {
-    if (Math.abs(dx) < 10 && Math.abs(dy) < 10) return;
-    SW.mode = Math.abs(dx) > Math.abs(dy) * 1.2 ? 'h' : 'v';
+    if (Math.hypot(dx, dy) < 10) return;
+    SW.mode = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v';
     if (SW.mode === 'v') { SW.el = null; return; }
-    try { SW.el.setPointerCapture(e.pointerId); } catch (_) {}  // the pointer may already be gone
     SW.el.style.transition = 'none';
     const right = SW.el.parentElement.querySelector('[data-swipe-right]');
     right.hidden = false; SW.reveal = right.offsetWidth;
   }
+  if (e.cancelable) e.preventDefault();  // a sideways swipe: the list doesn't scroll under it
   SW.dx = Math.max(-SW.reveal - 30, Math.min(swipeRight(byN.get(Number(SW.el.dataset.swipe))) ? SW.el.offsetWidth * 0.7 : 0, SW.base + dx));
   SW.el.parentElement.querySelector('[data-swipe-left]').hidden = SW.dx < 0;
   SW.el.parentElement.querySelector('[data-swipe-right]').hidden = SW.dx > 0;
   swipeTo(SW.el, SW.dx);
 }
-async function swipeEnd(e) {
+async function swipeEnd() {
   const el = SW.el;
-  if (!el || e.pointerId !== SW.id) return;
+  if (!el) return;
   SW.el = null;
   if (SW.mode !== 'h') return;
   SW.swallow = Date.now();
@@ -8607,10 +8614,10 @@ $('text').addEventListener('focus', () => {
 });
 $('text').addEventListener('blur', () => { if (!desk() && U.peek && !$('overlay').hidden && $('dlgFoot').innerHTML) $('dlgFoot').hidden = false; });
 
-$('list').addEventListener('pointerdown', swipeStart);
-$('list').addEventListener('pointermove', swipeMove);
-$('list').addEventListener('pointerup', swipeEnd);
-$('list').addEventListener('pointercancel', e => { if (SW.el && e.pointerId === SW.id) { swipeTo(SW.el, SW.el === SW.open ? -SW.reveal : 0); SW.el.style.transition = ''; SW.el = null; } });
+$('list').addEventListener('touchstart', swipeStart, {passive: true});
+$('list').addEventListener('touchmove', swipeMove, {passive: false});  // not passive: a sideways swipe keeps the list still
+$('list').addEventListener('touchend', swipeEnd);
+$('list').addEventListener('touchcancel', () => { if (SW.el) { swipeTo(SW.el, SW.el === SW.open ? -SW.reveal : 0); SW.el.style.transition = ''; SW.el = null; } });
 
 // ---------------------------------------------------------------- press feedback (T160)
 // Anything you can press answers the moment a finger or the mouse goes down: it gets data-pressed, and the classes
