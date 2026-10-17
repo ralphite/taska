@@ -4298,6 +4298,7 @@ function toast(text, act, {error = false, label = 'Undo', ms = 0} = {}) {  // ms
 function placeToast(el = $('toast')) {
   const up = (!$('overlay').hidden && !desk()) || !!D.page;  // a sheet, the focus card or a Settings page: at the top, clear of their buttons (T228 #3, #5, #17)
   el.classList.toggle('bottom-28', !up); el.classList.toggle('top-[calc(env(safe-area-inset-top)+0.75rem)]', up); el.classList.toggle('lg:bottom-auto', up);
+  el.classList.toggle('lg:top-32', !!D.page && desk());  // T243 #3: under the Settings page's title, not on it
   if (desk()) {  // B129: on the desktop it shows in the pane you acted in, above the box if the box is there
     const pane = [LAST.pane, $('detailView'), $('inputsView'), $('projectBody')].find(p => p?.isConnected && p.offsetParent), r = pane?.getBoundingClientRect();
     const f = $('foot').getBoundingClientRect(), above = r && f.height < 300 && f.left < r.right && f.right > r.left;
@@ -8440,7 +8441,7 @@ const PBODY = {
     : pPart('Off', 'Your coding agent files what you send: it reads new inputs first when it asks for work. To have them filed as soon as you send them, set GEMINI_API_KEY where Taska runs and restart it.'),
 };
 const PSEC_RIGHT = {  // what a section's row in the list says on its right
-  notifications: () => desk() ? noticeState() : PUSH.sub ? 'On' : 'Off',
+  notifications: () => desk() ? noticeState().replace('Blocked by the browser', 'Blocked') : PUSH.sub ? 'On' : 'Off',  // T243 #2: fits the menu
   agents: () => esc(agentState(S.agents, S.work)[1]), projects: () => P_CACHE.projects ? P_CACHE.projects.length : '',
   fixes: () => P_CACHE.fixes?.length || '', organizer: () => S.org?.on ? 'On' : 'Off', deleted: () => (S.deleted || []).length || '',
 };
