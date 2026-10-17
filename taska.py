@@ -458,8 +458,7 @@ class Store:
             if inp:
                 old = inp.get("scope")
                 inp["scope"] = e["to"]
-                if e["to"] not in inp["touched"]:
-                    inp["touched"].append(e["to"])
+                inp["touched"] = [n for n in inp["touched"] if n != old] + ([] if e["to"] in inp["touched"] else [e["to"]])  # what it went with before is not what it became
                 was = self.items.get(old)
                 if was:
                     moved = [x for x in was["thread"] if x.get("src") == e["src"] and x["by"] == "you"]
@@ -3281,7 +3280,7 @@ class Hub:
                 # "open" as the project's own page counts it (A18): what Items holds that isn't finished, rules an agent
                 # proposed included, since they wait in Items too
                 out.append({"name": name, "title": s.title, "open": sum(1 for i in live if not i["archived"] and (i["type"] != "rule" or i["status"] == "proposed")), "auto": s.cfg["auto"],
-                            "needs": sum(1 for i in live if s.waiting(i) or i["status"] in ("proposed", "review")), **s.presence(),
+                            "needs": sum(1 for i in live if not i["archived"] and (s.waiting(i) or i["status"] in ("proposed", "review"))), **s.presence(),  # archived: not on the page's list either
                             "t": int(os.path.getmtime(s.path) * 1000), **({"pos": self.order.index(name)} if name in self.order else {})})
         return out
 
@@ -3326,7 +3325,7 @@ class Hub:
         for name, s in sorted(self.projects.items()):
             with s.lock:
                 for i in s.active():
-                    if i["status"] in CLOSED or i.get("merged_into"):
+                    if i["status"] in CLOSED or i.get("merged_into") or i["archived"]:  # as the project's own page counts them
                         continue
                     w = s.waiting(i)
                     kind = w["kind"] if w else i["status"] if i["status"] in ("proposed", "review") else None
@@ -4046,7 +4045,7 @@ async function load() {
 $('goAll').addEventListener('click', () => {
   const x = NEEDS[0];
   if (!x) return;
-  try { sessionStorage.setItem('taska.go.start', x.project); } catch (_) {}
+  try { sessionStorage.setItem('taska.go.start', x.project); sessionStorage.setItem('taska.go.all', '1'); } catch (_) {}
   location.href = `/p/${encodeURIComponent(x.project)}/`;
 });
 // Search every project (F196's search, here too): ⌘K or / puts you in the box
@@ -5517,6 +5516,7 @@ function docViewHtml(d) {
   const shown = (b, i) => i === 0 && titleLine ? {...b, text: rest0.join('\n')} : b;
   groups.delete('doc' + d.d);  // its images, refilled as the blocks render
   return `<div class="flex min-h-full flex-col"><div class="flex items-center gap-1 text-xs text-zinc-500"><span class="min-w-0 flex-1 truncate">on <button data-act="goto" data-n="${d.n}" class="text-blue-600 hover:underline dark:text-blue-400">${code(d.n)}</button> · ${esc(whoName(d.by))} · ${when(d.t1)}</span>
+      <button data-act="doc-move" class="${HIT} ${BTN} text-sm lg:hidden">Move</button><button data-act="doc-delete" class="${HIT} ${BTN} text-sm lg:hidden">Delete</button>
       <button data-act="doc-circle" aria-pressed="${!!U.docCircle}" class="${HIT} ${BTN} text-sm lg:hidden aria-pressed:bg-amber-100 aria-pressed:text-amber-900 dark:aria-pressed:bg-amber-900/60 dark:aria-pressed:text-amber-100">${U.docCircle ? 'Draw around it…' : 'Mark an area'}</button><button data-act="doc-edit" class="${HIT} ${BTN} text-sm lg:hidden">Edit</button></div>
     ${titled ? '' : `<div class="mt-3 text-2xl leading-tight font-bold tracking-tight">${esc(d.title)}</div>`}
     ${docOutline(d)}
@@ -5705,6 +5705,8 @@ function advance(from, said = '') {  // said: what you just sent, for the toast,
 function endWalk(said = '') {
   const g = U.go, left = g ? g.list.filter(k => !g.done.has(k) && byN.get(k) && needsYou(byN.get(k))).length : 0;
   closeDialog();
+  if (!left && goAll() && nextNeeding()) return goNextProject();  // F251
+  goAllOff();
   const end = left ? `that was the last one, ${left} still need${left === 1 ? 's' : ''} you` : 'nothing else needs you';
   toast(said ? `${said} · ${end}` : end[0].toUpperCase() + end.slice(1));
 }
@@ -8352,8 +8354,11 @@ function startGoFromAnotherProject() {
     if (sessionStorage.getItem('taska.go.start') !== S.project) return;
     sessionStorage.removeItem('taska.go.start');
   } catch (_) { return; }
-  if (desk() && !U.go) startGoDesk();
+  if (!U.go) ACT['go-through']();  // the phone too (F251)
 }
+// F251: Go through from the home page goes on from project to project by itself, until nothing needs you
+const goAll = () => { try { return sessionStorage.getItem('taska.go.all') === '1'; } catch (_) { return false; } };
+const goAllOff = () => { try { sessionStorage.removeItem('taska.go.all'); } catch (_) {} };
 function renderSideFoot() {  // the sidebar's foot: Settings and the keys (T274 #24: Undo is on the toast and Z)
   const foot = (act, icon, label, key, attrs = '') => `<button data-act="${act}" ${attrs} class="flex h-9 min-w-0 flex-1 items-center gap-2.5 rounded-lg px-2.5 text-left text-sm text-zinc-600 hover:bg-zinc-200/60 dark:text-zinc-300 dark:hover:bg-zinc-800">${ico(icon, 'size-4 shrink-0 text-zinc-500 dark:text-zinc-400', '2')}<span class="min-w-0 flex-1 truncate">${label}</span>${KBD(key)}</button>`;
   const u = U.mine.at(-1);
@@ -8652,6 +8657,8 @@ function endGoDesk(how) {  // 'end': you ended it; 'last': after the last one
   const tally = `${settled} settled${left ? ` · ${left} still need${left === 1 ? 's' : ''} you` : ''}`;
   U.go = null; render();
   const next = how !== 'end' && !left && nextNeeding();  // F193: another project has something for you, the one Go on opens
+  if (next && goAll()) return goNextProject();
+  goAllOff();
   if (next) return toast(`Nothing else needs you here · ${tally} · ${titleOf(next)} has ${next.needs}`, () => goNextProject(), {label: 'Go on ⇧J'});
   toast(how === 'end' ? `Stopped going through · ${tally}` : left ? `That was the last one · ${tally}` : `Nothing else needs you · ${tally}`);
 }
