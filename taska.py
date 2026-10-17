@@ -2715,7 +2715,7 @@ def voice_keep(store, fid, res):
 
 HUB = None
 ITEM_PATH = re.compile(r"/([A-Za-z]?\d+)")
-VIEW_PATH = re.compile(r"/(inputs|archive|rules|new-rule|new|settings|agents|connect|phone|notifications|spellings|log|deleted|about|projects|organizer|[A-Za-z]\d+)")  # the page's views (T102, B162)
+VIEW_PATH = re.compile(r"/(inputs|archive|rules|new-rule|new|settings|agents|connect|phone|notifications|spellings|log|deleted|docs|about|projects|organizer|[A-Za-z]\d+)")  # the page's views (T102, B162)
 NAME = re.compile(r"[a-z0-9][a-z0-9-]{0,39}")  # a project's address and folder: made from its name once, never changed (F173)
 TITLE_MAX = 60
 SLUG_CHARS = "abcdefghjkmnpqrstuvwxyz23456789"
@@ -5211,6 +5211,13 @@ function closeDoc() {  // the desktop's way back from a document to its item
   renderDetail(); renderComposer();
   if (!leaveView(`D${d}`)) writeURL(false);
 }
+// T274 #18: a long document (three headings or more) starts with its contents; a heading there goes to its part
+function docOutline(d) {
+  const hs = d.blocks.slice(1).filter(b => b.kind === 'heading');
+  if (hs.length < 3) return '';
+  return `<details open class="mt-3 rounded-xl border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800"><summary class="cursor-pointer text-xs font-semibold text-zinc-500 dark:text-zinc-400">Contents · ${hs.length}</summary>
+    <div class="mt-1 flex flex-col">${hs.map(b => { const lv = (b.text.match(/^#+/) || ['#'])[0].length; return `<button data-act="doc-jump" data-key="${b.key}" class="truncate rounded-md py-1 text-left text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 ${lv > 2 ? 'pl-6' : 'pl-2'}">${esc(b.text.replace(/^#+\s*/, ''))}</button>`; }).join('')}</div></details>`;
+}
 // A document's text with its comment threads: in a sheet on the phone, in the item pane on the desktop (T110).
 function docViewHtml(d) {
   const titled = !!d.blocks[0] && sameText(d.blocks[0].text.replace(/^#+\s*/, ''), d.title);
@@ -5220,6 +5227,7 @@ function docViewHtml(d) {
   return `<div class="flex min-h-full flex-col"><div class="flex items-center gap-1 text-xs text-zinc-500"><span class="min-w-0 flex-1 truncate">on <button data-act="goto" data-n="${d.n}" class="text-blue-600 hover:underline dark:text-blue-400">${code(d.n)}</button> · ${esc(whoName(d.by))} · ${when(d.t1)}</span>
       <button data-act="doc-circle" aria-pressed="${!!U.docCircle}" class="${HIT} ${BTN} text-sm lg:hidden aria-pressed:bg-amber-100 aria-pressed:text-amber-900 dark:aria-pressed:bg-amber-900/60 dark:aria-pressed:text-amber-100">${U.docCircle ? 'Draw around it…' : 'Mark an area'}</button><button data-act="doc-edit" class="${HIT} ${BTN} text-sm lg:hidden">Edit</button></div>
     ${titled ? '' : `<div class="mt-3 text-2xl leading-tight font-bold tracking-tight">${esc(d.title)}</div>`}
+    ${docOutline(d)}
     <div id="docBlocks" class="relative mt-3 space-y-3 text-[15px] ${U.docCircle ? 'select-none' : ''}">
       ${d.blocks.map((b, i) => `<section data-act="doc-pick" data-key="${b.key}" ${U.docSel.has(b.key) ? 'data-picked' : ''} class="-mx-2 rounded-lg px-2 py-1 transition-colors hover:bg-zinc-50 data-picked:bg-amber-50 data-picked:ring-2 data-picked:ring-amber-300 data-pressed:opacity-70 dark:hover:bg-zinc-800/50 dark:data-picked:bg-amber-950/40 dark:data-picked:ring-amber-600">
         <div class="relative flex flex-col gap-1 lg:flex-row lg:items-start lg:gap-2"><div class="min-w-0 flex-1 break-words ${b.kind === 'heading' ? 'pr-14 lg:pr-0' : ''}">${blockHtml(shown(b, i), i === 0 && titled, 'doc' + d.d)}</div>
@@ -5266,6 +5274,7 @@ function openDoc(d) {
     if (doc && U.open !== host && byN.has(host)) { U.open = host; renderItems(); }
     if (!$('overlay').hidden) { $('overlay').hidden = true; $('overlay').style.bottom = ''; U.sheet = null; }  // the editor, when you come back from it
     Object.assign(U, {peek: null, doc: d, docReply: null, docNew: null, docEdit: false, docText: null, docSel: new Set(), docQuote: null, docCircle: false});
+    if (D.compose) { D.compose = false; render(); }  // a document shows in the item pane, never under the New input page
     pickBack(d);
     D.docKey = null; renderDetail(); renderComposer();
     return;
@@ -7527,6 +7536,13 @@ const ACT = {
   },
   play: b => playAudio(b),
   'doc-open': b => openDoc(Number(b.dataset.d)),
+  'docs-go': b => {  // T274 #18: from the list of documents, in the tab its item is in; Back comes back to the list
+    const d = Number(b.dataset.d), it = byN.get(liveN(docById(d)?.n)), t = it?.archived ? 'archive' : it?.type === 'rule' ? 'rules' : 'items';
+    D.page = null;
+    if (U.tab !== t) setTab(t); else render();
+    openDoc(d);
+  },
+  'doc-jump': b => { const el = document.querySelector(`#docBlocks [data-key="${CSS.escape(b.dataset.key)}"]`); el?.scrollIntoView({block: 'start', behavior: REDUCE.matches ? 'auto' : 'smooth'}); },
   'doc-new': b => newDoc(Number(b.dataset.n)),
   'doc-edit': () => { const was = kept('docs')[`D${U.doc}`]; U.docEdit = true; U.docText = was ?? null; renderDoc(); if (was) toast('Your draft is back'); $('docMd').focus(); },
   'doc-done': async () => { if (!await docVoiceSettled()) return; const d = await saveDoc(); if (d) openDoc(d.d); else if (!U.docEdit) closeDialog(); },  // Create or Save; F208: the words you spoke go in first
@@ -7913,7 +7929,7 @@ function renderSideFoot() {  // the sidebar's foot: Settings and the keys (T274 
   const foot = (act, icon, label, key, attrs = '') => `<button data-act="${act}" ${attrs} class="flex h-9 min-w-0 flex-1 items-center gap-2.5 rounded-lg px-2.5 text-left text-sm text-zinc-600 hover:bg-zinc-200/60 dark:text-zinc-300 dark:hover:bg-zinc-800">${ico(icon, 'size-4 shrink-0 text-zinc-500 dark:text-zinc-400', '2')}<span class="min-w-0 flex-1 truncate">${label}</span>${KBD(key)}</button>`;
   const u = U.mine.at(-1);
   const side = (sec, icon, label) => `<a href="${P}${PSEC[sec][0]}" data-act="psec" data-sec="${sec}" class="flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-sm text-zinc-600 hover:bg-zinc-200/60 dark:text-zinc-300 dark:hover:bg-zinc-800">${ico(icon, 'size-4 shrink-0 text-zinc-500 dark:text-zinc-400', '2')}<span class="min-w-0 flex-1 truncate">${label}</span>${sec === 'log' && unreadCount() ? `<span class="rounded-full bg-blue-600 px-1.5 text-[11px] font-semibold text-white dark:bg-blue-500">${unreadCount()}</span>` : ''}</a>`;
-  draw($('sideFoot'), `${S.project ? side('log', 'history', 'Activity') + side('deleted', 'trash', 'Deleted') : ''}<div class="flex items-center gap-0.5">${foot('project', 'gear', 'Settings', 'G S', 'title="Settings · G S"')}<button data-act="keys" title="Keyboard shortcuts · ?" aria-label="Keyboard shortcuts" class="grid size-9 shrink-0 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-200/60 dark:text-zinc-400 dark:hover:bg-zinc-800">${ico('keyboard', 'size-4')}</button></div>`);
+  draw($('sideFoot'), `${S.project ? side('docs', 'file', 'Documents') + side('log', 'history', 'Activity') + side('deleted', 'trash', 'Deleted') : ''}<div class="flex items-center gap-0.5">${foot('project', 'gear', 'Settings', 'G S', 'title="Settings · G S"')}<button data-act="keys" title="Keyboard shortcuts · ?" aria-label="Keyboard shortcuts" class="grid size-9 shrink-0 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-200/60 dark:text-zinc-400 dark:hover:bg-zinc-800">${ico('keyboard', 'size-4')}</button></div>`);
 }
 function renderRail() {
   const b = (act, inner, title, attrs = '') => `<button data-act="${act}" ${attrs} title="${title}" aria-label="${title.split(' · ')[0]}" class="relative grid size-10 place-items-center rounded-xl text-zinc-500 hover:bg-zinc-200/60 aria-pressed:bg-zinc-200/80 aria-pressed:text-zinc-900 aria-[current=page]:bg-zinc-200/80 aria-[current=page]:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:aria-pressed:bg-zinc-700 dark:aria-pressed:text-zinc-50 dark:aria-[current=page]:bg-zinc-700 dark:aria-[current=page]:text-zinc-50">${inner}</button>`;
@@ -8335,6 +8351,7 @@ function fullWidth(on) {
 // Projects. G S opens it. The phone shows the same as pages: /settings is the list of sections, each section a page.
 const PSEC = {  // section: [address, icon, name, what it is for]
   agents: ['agents', 'bot', 'Agents', () => `The coding agents that work on ${esc(projTitle())}: who is here, whether they go on by themselves, and how to connect one more.`],
+  docs: ['docs', 'file', 'Documents', 'Every document in this project, the newest first. Open one to read it with its item.'],
   log: ['log', 'history', 'Activity', 'What agents and you did in this project, newest first. Undo puts back one of your own changes.'],
   deleted: ['deleted', 'trash', 'Deleted', 'Inputs you deleted, with the items that went with them. Restore puts them back as they were.'],
   projects: ['projects', 'folder', 'Projects', 'Every project on this Taska. Give a project any name; its address never changes, so agents and phone links keep working.'],
@@ -8344,7 +8361,7 @@ const PSEC = {  // section: [address, icon, name, what it is for]
   organizer: ['organizer', 'sparkle', 'Organizer', 'What turns what you say into items, for every project.'],
 };
 const PSEC_THIS = ['agents'];  // the rest are for all projects
-const PSEC_SIDE = ['log', 'deleted'];  // T274 #20: not settings; the sidebar opens them
+const PSEC_SIDE = ['docs', 'log', 'deleted'];  // T274 #20: not settings; the sidebar opens them
 const PSEC_AT = {...Object.fromEntries(Object.entries(PSEC).map(([sec, [path]]) => [path, sec])), settings: 'agents', connect: 'connect', about: 'projects'};  // address -> section; /settings: Agents (the phone: the list), /connect: Agents, at Connect
 const P_CACHE = {guide: null, log: null, logRev: -1, fixes: null, prefs: null, nav: '', body: '', projects: null, trash: null};
 const LOG_N = 300;  // the change log shows the latest 300 changes, here and on the phone
@@ -8492,6 +8509,8 @@ const PBODY = {
       `<div class="mt-3 flex items-center gap-1.5"><input id="fixWord" class="${FIELD} h-10 py-1.5 text-sm" placeholder="A name or term to hear right, e.g. Needs you" aria-label="A word to hear right" autocomplete="off" spellcheck="false"><button data-act="fix-add" class="h-10 shrink-0 rounded-xl bg-zinc-900 px-3.5 text-sm font-semibold text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200">Add</button></div>`) : '') + (!P_CACHE.fixes.length ? (P_CACHE.prefs ? '' : pRuled(EMPTY('None yet. When a voice note gets words wrong, select them in the input and write the right ones: from then on every project writes them your way.')))
     : `<ul class="divide-y divide-zinc-200 border-y border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">${P_CACHE.fixes.map(c => `<li class="flex min-h-13 items-center gap-3 py-1.5 text-[15px]"><span class="min-w-0 flex-1 break-words">${c.wrong ? `<span class="text-zinc-400 line-through decoration-zinc-400 dark:text-zinc-500">${esc(c.wrong)}</span><span class="px-2 text-zinc-400 dark:text-zinc-500">→</span>` : ''}<span class="font-medium">${esc(c.right)}</span></span>
       <button data-act="fix-remove" data-wrong="${esc(c.wrong || '')}" data-right="${esc(c.right)}" aria-label="Forget this spelling" title="Forget this spelling" class="grid size-11 shrink-0 lg:size-9 place-items-center rounded-lg text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200">${ico('x', 'size-4')}</button></li>`).join('')}</ul>`),
+  docs: () => (S.docs || []).length ? `<ul class="divide-y divide-zinc-200 border-y border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">${[...S.docs].sort((a, b) => String(b.t || '').localeCompare(String(a.t || '')) || b.d - a.d).map(d => { const it = byN.get(liveN(d.n)), c = d.blocks.reduce((k, b) => k + b.comments.length, 0) + (d.whole?.length || 0);
+      return `<li><button data-act="docs-go" data-d="${d.d}" class="flex w-full items-center gap-3 px-1 py-3 text-left hover:bg-zinc-50 dark:hover:bg-zinc-900">${ico('file', 'size-5 shrink-0 text-zinc-500 dark:text-zinc-400')}<span class="min-w-0 flex-1"><span class="block truncate text-[15px] font-medium">${esc(d.title)}</span><span class="block truncate text-xs text-zinc-500 dark:text-zinc-400"><span class="font-mono">D${d.d}</span>${it ? ` · ${code(it.n)} ${esc(it.title)}` : ''}${c ? ` · ${plural(c, 'comment')}` : ''}${d.t ? ` · ${when(d.t)}` : ''}</span></span></button></li>`; }).join('')}</ul>` : pRuled(EMPTY('No documents yet.<br>Agents write them on items; an item\'s ⋯ makes one too.')),
   deleted: () => (S.deleted || []).length ? `<ul class="divide-y divide-zinc-200 border-y border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">${deletedRows()}</ul>`
     : pRuled(EMPTY('Nothing deleted. An input you delete comes here, with the items that went with it.')),
   organizer: () => S.org?.on
@@ -9098,7 +9117,7 @@ function renderDrawerSettings() {
   // The phone's drawer ends in a card (B162): Undo, while there is one (a phone has no Z), and Settings, whose pages hold
   // the rest. Keep going stays on the list's Agent queue and in Settings › Agents.
   const side = (sec, icon, label) => `<a href="${P}${PSEC[sec][0]}" data-act="psec" data-sec="${sec}" class="flex min-h-12 w-full items-center gap-3 px-3.5 py-2.5 text-left text-[15px]">${ico(icon, 'size-5 shrink-0 text-zinc-500 dark:text-zinc-400')}<span class="min-w-0 flex-1">${label}</span>${ico('right', 'size-4 shrink-0 text-zinc-300 dark:text-zinc-600')}</a>`;
-  draw($('drawerSettings'), `${undoRow()}${S.project ? side('log', 'history', 'Activity') + side('deleted', 'trash', 'Deleted') : ''}<button data-act="project" class="flex min-h-12 w-full items-center gap-3 px-3.5 py-2.5 text-left text-[15px]">${ico('gear', 'size-5 shrink-0 text-zinc-500 dark:text-zinc-400')}<span class="min-w-0 flex-1">Settings</span>${ico('right', 'size-4 shrink-0 text-zinc-300 dark:text-zinc-600')}</button>`);
+  draw($('drawerSettings'), `${undoRow()}${S.project ? side('docs', 'file', 'Documents') + side('log', 'history', 'Activity') + side('deleted', 'trash', 'Deleted') : ''}<button data-act="project" class="flex min-h-12 w-full items-center gap-3 px-3.5 py-2.5 text-left text-[15px]">${ico('gear', 'size-5 shrink-0 text-zinc-500 dark:text-zinc-400')}<span class="min-w-0 flex-1">Settings</span>${ico('right', 'size-4 shrink-0 text-zinc-300 dark:text-zinc-600')}</button>`);
 }
 // The amber dot on the menu icon: another project waits on you. Checked now and then, not on every change.
 async function checkOthers() {
@@ -9512,7 +9531,7 @@ addEventListener('pagehide', () => {  // where you were in the list, for the rel
 // agent does (/connect and /log mean something to agents too). Changing tab, opening a document, a section of This
 // project or New input, an item on the phone and full width are steps Back can undo, and so is a link to an item (B9);
 // choosing items in the list on the desktop (a click, J/K), search and filters only rewrite the address.
-const VIEW = /^(inputs|archive|rules|new-rule|new|settings|agents|connect|phone|notifications|spellings|log|deleted|about|projects|organizer)$/;
+const VIEW = /^(inputs|archive|rules|new-rule|new|settings|agents|connect|phone|notifications|spellings|log|deleted|docs|about|projects|organizer)$/;
 const URLS = {applying: false, selfBack: false, hold: false};  // hold: a link is on its way, its step is written once it is there
 // Each page of Settings has its own address on the phone too (B150, B162): /settings is its list of sections there.
 const viewPath = () => D.page ? (D.section ? PSEC[D.section][0] : 'settings') : U.doc && !U.docEdit ? `D${U.doc}` : desk() && D.compose ? (ruleMode() ? 'new-rule' : 'new')
