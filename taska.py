@@ -5692,8 +5692,7 @@ async function send() {
   // next still goes here. Next (⇧J, or Next on the card) is yours to press. A card of one item closes (B153).
   const going = U.go && n && U.go.list.includes(n) && (n === U.peek || (desk() && n === U.open));
   if (going) {
-    U.go.done.add(n); if (U.go.how) U.go.how[n] = 'Replied';
-    toast(`Sent to ${code(n)}. ${desk() ? 'Esc, then ⇧J for the next one' : 'Next when you are ready'}`);
+    U.go.done.add(n); if (U.go.how) U.go.how[n] = 'Replied';  // T225 #6: the line under the box says it was sent, with Undo: no toast besides
     if (U.peek) peek(U.peek, {focus: false});
   } else if (U.peek && n === U.peek) advance(U.peek, `Sent to ${code(n)}`);  // the toast says where it went (B155)
   else if (!desk() && !n && U.tab === 'inputs' && !U.open) $('inputsView').scrollTop = 0;  // it shows at the top of Inputs (B155)
