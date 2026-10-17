@@ -111,6 +111,15 @@ class AmendTests(unittest.TestCase):
         self.assertEqual(replay.docs[1].get('resolved'), {})
         replay.out.close()
 
+    def test_an_edit_adds_files_to_a_comment(self):  # T257 #3
+        self.runop({'op': 'doc', 'ref': 'F1', 'md': '# Plan\n\nFirst part.'})
+        self.runop({'op': 'dc', 'd': 1, 'key': 'doc', 'text': 'See this'})
+        c = self.s.docs[1]['comments'][0]
+        f = self.s.save_file('shot.png', 'image/png', b'png')
+        self.runop({'op': 'dcedit', 'd': 1, 'id': c['id'], 'text': 'See this picture', 'files': [f]})
+        self.assertEqual(c['text'], 'See this picture')
+        self.assertEqual([x['f'] for x in c['files']], [f['f']])
+
     def test_your_comment_can_be_edited_deleted_and_brought_back(self):  # B258
         self.runop({'op': 'doc', 'ref': 'F1', 'md': '# Plan\n\nFirst part.'})
         self.runop({'op': 'dc', 'd': 1, 'key': 'doc', 'text': 'In the wrong place'})

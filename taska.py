@@ -431,6 +431,8 @@ class Store:
                 c = next((c for c in d["comments"] if c["id"] == e["id"]), None)
                 if c and k == "dcedit":
                     c.update(text=e["text"], edited=e["t"])
+                    if e.get("files"):
+                        c["files"] = c.get("files", []) + e["files"]
                 elif c:
                     d["comments"].remove(c)
                     d.setdefault("gone", {})[e["id"]] = c
@@ -1246,10 +1248,11 @@ class Store:
             if by not in PEOPLE or (name == "dcedit" and c["by"] not in PEOPLE):
                 raise Err("only the user deletes comments, and edits only their own")  # F262: an agent's comment can go too
             if name == "dcedit":
-                text_ = str(op.get("text") or "").strip()[:MAX_TEXT]
-                if not text_ and not c.get("files"):
+                files = self.op_files(op)  # T257 #3: files added while editing go with it
+                text_ = self.with_words(str(op.get("text") or "").strip(), files)[:MAX_TEXT]
+                if not text_ and not c.get("files") and not files:
                     raise Err("empty comment: delete it instead")
-                self.emit({"k": "dcedit", "d": d["d"], "id": cid, "text": text_, "by": by})
+                self.emit({"k": "dcedit", "d": d["d"], "id": cid, "text": text_, "by": by, **({"files": files} if files else {})})
                 return f"ok D{d['d']} comment {cid} edited", f"Edited a comment on D{d['d']}"
             self.emit({"k": name, "d": d["d"], "id": cid, "by": by})
             return f"ok D{d['d']} comment {cid} {'deleted' if name == 'dcdel' else 'restored'}", f"{'Deleted' if name == 'dcdel' else 'Restored'} a comment on D{d['d']}"
@@ -5899,9 +5902,11 @@ function cancelAmend() {
 async function sendAmend() {
   const a = U.amend, text = $('text').value.trim(), drafts = [...U.files];
   if (a.mode === 'dc') {  // B258
-    if (!text && !dcFind(a.d, a.id)?.files?.length) return toast('Write something, or delete the comment instead');
-    try { await save({op: 'dcedit', d: a.d, id: a.id, text}); } catch (_) { return; }
-    $('text').value = ''; saveDraft(); grow(); U.amend = null;
+    if (!text && !drafts.length && !dcFind(a.d, a.id)?.files?.length) return toast('Write something, or delete the comment instead');
+    await Promise.all(drafts.map(f => f.done));  // T257 #3: what you added goes along once uploaded
+    const files = drafts.filter(f => f.f && !f.failed).map(f => ({f: f.f, name: f.name, mime: f.mime, size: f.size, tr: f.tr}));
+    try { await save({op: 'dcedit', d: a.d, id: a.id, text, ...(files.length ? {files} : {})}); } catch (_) { return; }
+    $('text').value = ''; U.files = []; saveDraft(); grow(); U.amend = null;
     renderDoc(); renderComposer(); toast('Comment updated');
     if (desk()) $('text').focus({preventScroll: true});
     return;
@@ -6075,7 +6080,16 @@ function placeBox() {
   $('boxHint').hidden = !!a;
   if ($('overlay').dataset.above && !$('overlay').hidden) $('overlay').style.bottom = footRoom() + 'px';
 }
+// T257 #4: pictures and files in a draft survive a reload of this tab (they stay in the tab, as before: sessionStorage).
+// Voice notes have their own keeping (T101).
+const FILES_KEY = 'taska.draftfiles.' + decodeURIComponent(P.split('/')[2] || '');
+function keepDraftFiles() {
+  const all = {...U.parked, ...(U.draftKey ? {[U.draftKey]: U.files} : {})}, out = {};
+  for (const [k, fs] of Object.entries(all)) { const ok = (fs || []).filter(f => f.f && !f.failed && !(f.mime || '').startsWith('audio/')).map(f => ({f: f.f, name: f.name, mime: f.mime, size: f.size})); if (ok.length) out[k] = ok; }
+  try { sessionStorage.setItem(FILES_KEY, JSON.stringify(out)); } catch (_) {}
+}
 function renderComposer() {
+  keepDraftFiles();
   if (S.project && draftKey() !== U.draftKey) swapDraft(draftKey());
   const n = scopeN(), it = n && byN.get(n), dt = docTarget(), dOpen = !U.correct && !U.amend && !dt && docOpen(), t = $('text'), ticks = U.correct || U.amend || dt || dOpen ? [] : ticked(n);
   if (U.fbFor !== (n || null)) { U.fbFor = n || null; renderFeedback(); }  // T225 #1: the box writes elsewhere now: the "Sent" line about the other item goes
@@ -7629,7 +7643,9 @@ const ACT = {
   'more-input': b => { const id = b.dataset.id; if (U.moreInputs.has(id)) U.moreInputs.delete(id); else U.moreInputs.add(id); renderInputs(); if (desk()) renderDetail(); },
   'in-pick': b => { U.inSel = b.dataset.id; renderInputs(); renderDetail(); renderComposer(); },  // T274 #9
   edit: b => {
-    closeDialog(); const n = U.editing = Number(b.dataset.n); renderDetail();
+    closeDialog(); const n = Number(b.dataset.n);
+    if (U.open !== n || !detailShown()) { if (desk() && U.tab === 'inputs') setTab(byN.get(n)?.type === 'rule' ? 'rules' : 'items'); openItem(n); }  // T257 #1: from Inputs too, the item opens to edit
+    U.editing = n; renderDetail();
     const d = kept('edits')[n], body = $('eBody');
     if (d && $('eTitle')) { $('eTitle').value = d.title; body.value = d.body; $('eNext').value = d.next; toast('Your unsaved changes are back'); }
     if (body) { body.focus(); body.selectionStart = body.selectionEnd = body.value.length; }  // write on after the text, not before it
@@ -7637,7 +7653,10 @@ const ACT = {
   'edit-cancel': () => { const n = U.editing; kept('edits', all => delete all[n]); U.editing = null; renderDetail(); },
   'edit-save': async b => {
     const n = Number(b.dataset.n);
-    try { await save({op: 'set', ref: code(n), f: {title: $('eTitle').value, body: $('eBody').value, next: $('eNext').value}}, () => $('eTitle') && ACT['edit-save'](b)); kept('edits', all => delete all[n]); U.editing = null; render(); toast('Saved'); } catch (_) {}
+    const it = byN.get(n), was = it && {title: it.title, body: it.body, next: it.next}, ref = code(n);
+    try { await save({op: 'set', ref, f: {title: $('eTitle').value, body: $('eBody').value, next: $('eNext').value}}, () => $('eTitle') && ACT['edit-save'](b)); kept('edits', all => delete all[n]); U.editing = null; render(); } catch (_) { return; }
+    // T257 #2: Z puts back this edit, not an older change
+    toast('Saved', was ? pushUndo(`${ref} edited`, async () => { await save({op: 'set', ref, f: was}); toast(`${ref} put back`); }) : null);
   },
   copy: b => { closeDialog(); copyItem(Number(b.dataset.n)); },
   'peek-set': b => {
@@ -9805,6 +9824,7 @@ $('vClose').innerHTML = ico('x');
 $('backBtn').innerHTML = ico('left', 'size-6');
 $('itemMenuBtn').innerHTML = ico('more', 'size-6');
 U.draftKey = null; U.parked = {}; U.vcMarks = [];
+try { for (const [k, fs] of Object.entries(JSON.parse(sessionStorage.getItem(FILES_KEY) || '{}'))) U.parked[k] = fs.map(f => { const x = {...f}; x.done = Promise.resolve(x); return x; }); } catch (_) {}  // T257 #4
 try { U.oldDraft = localStorage.getItem('taska.draft') || ''; localStorage.removeItem('taska.draft'); } catch (_) {}
 $('projName').textContent = decodeURIComponent(P.split('/')[2] || 'Taska');  // right away, before the data arrives
 grow();
