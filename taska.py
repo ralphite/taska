@@ -5484,9 +5484,11 @@ function renderInputs() {
       if (n && shown.includes(n)) did[n] ||= m[1]; else rest.push(part);  // the same item said again ("Updated R141 · Updated R141"): once
     }
     const org = !r.moved && r.org && !(r.acked && r.org.keep);
-    const note = org && rest.length ? `<div class="mt-1.5 flex min-h-5 items-center gap-1 text-xs ${r.org.ok ? 'text-zinc-500 dark:text-zinc-400' : 'text-red-600 dark:text-red-400'}">${ico('sparkle', 'size-3.5')}<span class="min-w-0">${esc(rest.join(' · '))}</span></div>` : '';
-    const chips = (org && !note && shown.some(n => did[n]) ? `<span class="text-zinc-400 dark:text-zinc-500">${ico('sparkle', 'size-3.5')}</span>` : '')
-      + shown.map(n => `<button data-act="goto" data-n="${n}" class="${HIT} flex h-8 max-w-full min-w-0 items-center gap-1.5 rounded-lg bg-zinc-100 px-2 text-[13px] hover:bg-zinc-200/70 dark:bg-zinc-800 dark:hover:bg-zinc-700">${did[n] ? `<span class="shrink-0 text-zinc-500 dark:text-zinc-400">${esc(did[n])}</span>` : ''}<span class="font-mono text-xs font-bold ${TYPE_TEXT[byN.get(n).type]}">${code(n)}</span><span class="truncate">${esc(byN.get(n).title)}</span></button>`).join('');
+    const told = p => p.toLowerCase() === label.toLowerCase() || (/^Left for your/.test(p) && /^Left for your/.test(label));  // the status at the top says it already (T225 #18 follow-up 2)
+    const left = rest.filter(p => !told(p));
+    const note = org && left.length ? `<div class="mt-1.5 flex min-h-5 items-center gap-1 text-xs ${r.org.ok ? 'text-zinc-500 dark:text-zinc-400' : 'text-red-600 dark:text-red-400'}">${ico('sparkle', 'size-3.5')}<span class="min-w-0">${esc(left.join(' · '))}</span></div>` : '';
+    const spark = org && !note && shown.some(n => did[n]) ? `<span class="grid h-8 shrink-0 place-items-center text-zinc-400 dark:text-zinc-500">${ico('sparkle', 'size-3.5')}</span>` : '';  // the organizer's mark, on the chips' first line
+    const chips = shown.map(n => `<button data-act="goto" data-n="${n}" class="${HIT} flex h-8 max-w-full min-w-0 items-center gap-1.5 rounded-lg bg-zinc-100 px-2 text-[13px] hover:bg-zinc-200/70 dark:bg-zinc-800 dark:hover:bg-zinc-700">${did[n] ? `<span class="shrink-0 text-zinc-500 dark:text-zinc-400">${esc(did[n])}</span>` : ''}<span class="font-mono text-xs font-bold ${TYPE_TEXT[byN.get(n).type]}">${code(n)}</span><span class="truncate">${esc(byN.get(n).title)}</span></button>`).join('');
     const acts = inputActs(r).filter(Boolean).map(a => `<div class="mt-1 flex flex-wrap items-center gap-x-1 gap-y-1.5">${a}</div>`).join('');
     // On the desktop each input is a ledger line: what you said on the left, what became of it on the right.
     return `${head}<article data-r="${r.id}" class="border-b border-zinc-100 px-4 py-2 transition-colors duration-700 lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-10 lg:px-0 lg:py-4 dark:border-zinc-800/70"><div class="min-w-0">
@@ -5499,7 +5501,7 @@ function renderInputs() {
         ${r.files.length ? `<div class="mt-2 flex items-end gap-2 overflow-x-auto lg:scrollbar-thin">${thumbs(r.files, 'in' + r.id, 'size-11')}</div>` : ''}
       </div></div><div class="min-w-0 lg:pt-6">
       <div class="hidden items-center gap-1.5 text-[13px] font-semibold lg:flex ${tone}">${icon}${label}</div>
-      ${note}${chips ? `<div class="mt-1 flex flex-wrap items-center gap-1.5">${chips}</div>` : ''}${acts}
+      ${note}${chips ? `<div class="mt-1 flex items-start gap-1.5">${spark}<div class="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">${chips}</div></div>` : ''}${acts}
     </div></article>`;
   }).join('') + (more ? `<div class="flex flex-col py-4">${more}</div>` : '') : U.outbox.length ? '' : EMPTY(words.length ? 'No matching inputs' : 'No inputs yet.', more ? `<span class="mt-3 flex flex-col">${more}</span>` : '');
   if (U.outbox.length && !words.length) $('inputsView').innerHTML = chat ? $('inputsView').innerHTML + outboxRows(true) : outboxRows() + $('inputsView').innerHTML;
