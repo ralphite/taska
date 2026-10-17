@@ -4980,7 +4980,11 @@ function wireLasso() {
 // Opening the item or copying it leaves the walk where it was. A swipe on the card means what it means on a row: right is its step forward.
 const laterLast = (a, b) => (a.when === 'later') - (b.when === 'later');  // Later moves an item that needs you down, out of the way (B153)
 const walkTab = () => U.tab === 'rules' && !D.page && !D.compose && visible('rules').some(needsYou) ? 'rules' : 'items';  // on Rules, the rules waiting on you (T113 B29); none: Items'
-const needsList = (t = walkTab()) => visible(t).filter(needsYou).sort(laterLast).map(it => it.n);
+// What needs you, newest first (B238): what changed last on top, the Later ones under the rest (B153). While you go
+// through, the band keeps the walk's order, so nothing moves under you as you settle one.
+const needsOrder = (a, b) => laterLast(a, b) || (b.t1 > a.t1 ? 1 : b.t1 < a.t1 ? -1 : b.n - a.n);
+const walkOrder = g => (a, b) => ((g.list.indexOf(a.n) + 1 || 1e9) - (g.list.indexOf(b.n) + 1 || 1e9)) || needsOrder(a, b);
+const needsList = (t = walkTab()) => visible(t).filter(needsYou).sort(needsOrder).map(it => it.n);
 const FOCUS_TONE = {Start: 'text-blue-600 dark:text-blue-400', "Won't do": 'text-red-600 dark:text-red-400', Done: 'text-emerald-700 dark:text-emerald-400', Archive: 'text-emerald-700 dark:text-emerald-400', Unarchive: 'text-emerald-700 dark:text-emerald-400'};
 const FWD_NEED = {Accept: 'accept', Approve: 'approve', Answer: 'answer', Reply: 'reply'};  // the forward step in the color of its kind, wherever it shows (B96, B41)
 function cardSlots(it) {
@@ -5212,7 +5216,7 @@ function renderItems() {
     // Rules: the ones an agent proposed wait on you; then the rules in force, then the retired ones.
     // Their Needs you band works like Items' (T113 B29): Go through, and what you settle stays in it while you go.
     const going = desk() && U.go, settled = it => going && going.done.has(it.n) && going.list.includes(it.n);
-    const wait = rows.filter(it => it.status === 'proposed' || settled(it)), on = rows.filter(it => it.status === 'open' && !settled(it)), off = rows.filter(it => it.status === 'dropped' && !settled(it));
+    const wait = rows.filter(it => it.status === 'proposed' || settled(it)).sort(going ? walkOrder(going) : needsOrder), on = rows.filter(it => it.status === 'open' && !settled(it)), off = rows.filter(it => it.status === 'dropped' && !settled(it));
     html = !rows.length ? EMPTY('No rules yet.<br>Rules are standing instructions for agents in this project,<br>for example how to write commit messages or who reviews.<br>Say one in the box below and it is filed here.')
       : needsBand(wait, going)
       + (on.length ? zone('rules', 'Active', on.length) + on.map(it => itemRow(it)).join('') : '')
@@ -5221,7 +5225,7 @@ function renderItems() {
     html = rows.length ? rows.map(it => itemRow(it)).join('') : EMPTY('Nothing archived yet.<br>Archive finished items from the end of the Items list, or from an item\'s ⋯.');
   } else {
     // Items, in the order of your loop (T65 "Needs you first"): what waits on you, the agent's queue, finished work.
-    const going = desk() && U.go, needs = rows.filter(it => needsYou(it) || (going && going.done.has(it.n) && going.list.includes(it.n))).sort(laterLast);  // Later: still yours, below the rest (B153)
+    const going = desk() && U.go, needs = rows.filter(it => needsYou(it) || (going && going.done.has(it.n) && going.list.includes(it.n))).sort(going ? walkOrder(going) : needsOrder);  // newest first (B238); Later below the rest (B153)
     if (U.archHold?.sig !== listSig()) U.archHold = null;  // another tab, search or filter: no need to hold the place
     const hold = U.archHold ? 'data-hold' : '';  // B3: the finished band keeps its height after Archive N, under the pointer
     const settled = it => going && going.done.has(it.n) && going.list.includes(it.n);
