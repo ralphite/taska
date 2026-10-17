@@ -4401,13 +4401,20 @@ function releaseList() {
   if (!U.settle.size || (LIST.in && Date.now() < LIST.until + 60000)) return;  // still over the list: wait until it leaves
   U.settle.clear(); renderItems();
 }
+function syncNeeds() {  // while rows hold still, the Needs you count and Go through follow at once (T225 #10)
+  const z = $('list').querySelector('[data-zone="needs"]');
+  if (!z) return;
+  const n = visible().filter(needsYou).length;
+  z.querySelector('[data-count]').textContent = n;
+  z.querySelector('[data-act="go-through"]')?.toggleAttribute('hidden', !n);
+}
 function patchList() {
   for (const a of $('list').querySelectorAll('article[data-n]')) {
     const n = Number(a.dataset.n), it = byN.get(n), s = U.settle.get(n), row = a.querySelector('[data-act="open"]');
     if (s && it && !a.dataset.settled) {
       const h = a.offsetHeight - 1;
       a.dataset.settled = Date.now();
-      a.innerHTML = `<div data-act="open" data-n="${n}" class="flex min-h-[${h}px] cursor-pointer items-center gap-3 py-2 pr-3 pl-4 text-sm text-zinc-500 hover:bg-zinc-50 data-pressed:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-900/70 dark:data-pressed:bg-zinc-900">${stateIcon(it.status, statusName(it))}<span class="min-w-0 flex-1 truncate"><span class="mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[it.type]}">${code(n)}</span>${esc(s.said)}</span><button data-act="settle-undo" data-n="${n}" class="h-11 shrink-0 rounded-lg px-3 text-[13px] font-semibold text-blue-600 hover:bg-blue-50 lg:h-8 lg:px-2.5 dark:text-blue-400 dark:hover:bg-blue-400/10">Undo</button></div>`;
+      a.innerHTML = `<div data-act="open" data-n="${n}" class="flex min-h-[${h}px] cursor-pointer items-center gap-3 py-2 pr-3 pl-4 text-sm text-zinc-500 hover:bg-zinc-50 data-pressed:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-900/70 dark:data-pressed:bg-zinc-900">${stateIcon(it.status, statusName(it))}<span class="min-w-0 flex-1 truncate"><span class="mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[it.type]}">${code(n)}</span>${esc(s.said)}</span>${desk() ? `<button data-act="settle-undo" data-n="${n}" class="h-8 shrink-0 rounded-lg px-2.5 text-[13px] font-semibold text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10">Undo</button>` : ''}</div>`;  // the phone's Undo is the toast's, at the thumb: one Undo (T225 #10)
     } else if (row && !a.dataset.settled) { if (U.open === n) row.setAttribute('aria-current', 'true'); else row.removeAttribute('aria-current'); }
   }
 }
@@ -4495,7 +4502,7 @@ function zone(kind, label, n, right = '') {
     : stateIcon({queue: 'doing', done: 'done', retired: 'dropped', archived: 'done'}[kind], label, 'size-4');
   // F210: every group header has the same background, clearly darker than the rows; Needs you keeps its amber dot and count
   return `<div data-zone="${kind}" class="flex h-9 items-center gap-2 border-y border-zinc-200 bg-zinc-100 pr-1 pl-4 dark:border-zinc-700/70 dark:bg-zinc-800">
-    ${mark}<h2 class="text-sm font-semibold text-zinc-900 dark:text-zinc-100">${label}</h2><span class="grid h-5 min-w-5 place-items-center rounded-full px-1.5 text-[11px] font-bold tabular-nums ${needs ? 'bg-amber-500 text-white dark:bg-amber-400 dark:text-amber-950' : 'bg-zinc-200/80 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300'}">${n}</span>${right}
+    ${mark}<h2 class="text-sm font-semibold text-zinc-900 dark:text-zinc-100">${label}</h2><span data-count class="grid h-5 min-w-5 place-items-center rounded-full px-1.5 text-[11px] font-bold tabular-nums ${needs ? 'bg-amber-500 text-white dark:bg-amber-400 dark:text-amber-950' : 'bg-zinc-200/80 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300'}">${n}</span>${right}
   </div>`;
 }
 const goThroughBtn = () => `<button data-act="go-through" class="-my-1 ml-auto flex h-11 items-center gap-0.5 rounded-full pr-2 pl-3 text-[13px] font-semibold text-amber-800 hover:bg-amber-100 dark:text-amber-300 dark:hover:bg-amber-400/15">Go through${ico('right', 'size-4', '2.25')}</button>`;
@@ -5173,7 +5180,7 @@ function renderItems() {
   $('nArchTab').textContent = S.items.filter(it => it.archived && !it.merged_into).length || '';
   fitTabs();
   renderFilters();
-  if (holding()) return patchList();  // B124: rows hold still under the pointer after you act on one
+  if (holding()) { patchList(); return syncNeeds(); }  // B124: rows hold still under the pointer after you act on one
   let html = '';
   if (!S.items.length) {
     html = EMPTY(`No items yet.<br>Write your first thought below${S.org.on ? ' and the organizer turns it into items' : ' and your coding agent turns it into items'}.`, `<br><button data-act="guide" class="mt-3 h-11 text-blue-600 hover:underline dark:text-blue-400">Connect a coding agent</button>`);
