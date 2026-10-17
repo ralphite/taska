@@ -7779,7 +7779,7 @@ function sideProjects() {  // every project in your order, this one with what th
 }
 function renderSidebar() {
   draw($('drawerList'), sideProjects().map(p => { const cur = p.name === (S.project || HERE), [tone, label] = agentState(p.agents, p.work);
-    return `<a href="/p/${encodeURIComponent(p.name)}/" data-slug="${esc(p.name)}" ${cur ? 'aria-current="page" data-act="tab" data-tab="items"' : ''} class="flex items-center gap-2.5 rounded-xl px-2.5 py-2 select-none [-webkit-touch-callout:none] data-dragging:bg-zinc-200/70 data-dragging:ring-0 data-dragging:[&>*]:invisible dark:data-dragging:bg-zinc-800/70 hover:bg-zinc-200/60 data-pressed:bg-zinc-200/80 aria-[current=page]:bg-blue-100 aria-[current=page]:ring-1 aria-[current=page]:ring-blue-200 aria-[current=page]:hover:bg-blue-100 dark:hover:bg-zinc-800 dark:aria-[current=page]:bg-blue-400/15 dark:aria-[current=page]:ring-blue-400/30 dark:aria-[current=page]:hover:bg-blue-400/20">${projTile(p.name, 'size-6 rounded-md text-xs')}
+    return `<a href="/p/${encodeURIComponent(p.name)}/" data-slug="${esc(p.name)}" ${cur ? 'aria-current="page" data-act="new-input"' : ''} class="flex items-center gap-2.5 rounded-xl px-2.5 py-2 select-none [-webkit-touch-callout:none] data-dragging:bg-zinc-200/70 data-dragging:ring-0 data-dragging:[&>*]:invisible dark:data-dragging:bg-zinc-800/70 hover:bg-zinc-200/60 data-pressed:bg-zinc-200/80 aria-[current=page]:bg-blue-100 aria-[current=page]:ring-1 aria-[current=page]:ring-blue-200 aria-[current=page]:hover:bg-blue-100 dark:hover:bg-zinc-800 dark:aria-[current=page]:bg-blue-400/15 dark:aria-[current=page]:ring-blue-400/30 dark:aria-[current=page]:hover:bg-blue-400/20">${projTile(p.name, 'size-6 rounded-md text-xs')}
       <span class="min-w-0 flex-1"><span class="flex items-center gap-1.5"><span class="min-w-0 flex-1 truncate text-sm ${cur ? 'font-semibold' : 'font-medium'}">${esc(titleOf(p))}</span>${p.needs ? `<span title="${plural(p.needs, 'item')} need you" class="grid h-5 min-w-5 shrink-0 place-items-center rounded-full bg-amber-100 px-1 text-[11px] font-bold text-amber-900 dark:bg-amber-400/15 dark:text-amber-200">${p.needs}</span>` : ''}</span><span class="flex items-center gap-1.5 text-[11px] text-zinc-500 dark:text-zinc-400"><span class="size-1.5 shrink-0 rounded-full ${AGENT_TONE[tone][0]}"></span><span class="truncate ${tone === 'ok' ? 'text-emerald-700 dark:text-emerald-400' : AGENT_TONE[tone][1]}">${esc(label)}</span><span class="shrink-0">· ${p.open} open</span></span></span></a>`; }).join(''));
   $('newInputBtn').setAttribute('aria-pressed', String(D.compose && !D.page));
   const nb = $('newInputBtn').querySelector('span'), rule = U.tab === 'rules' && !D.page;  // on Rules it makes a new rule, and says so (T113 A22)
@@ -7814,7 +7814,7 @@ function renderSideFoot() {  // the sidebar's foot: Undo (when there is one), Se
 function renderRail() {
   const b = (act, inner, title, attrs = '') => `<button data-act="${act}" ${attrs} title="${title}" aria-label="${title.split(' · ')[0]}" class="relative grid size-10 place-items-center rounded-xl text-zinc-500 hover:bg-zinc-200/60 aria-pressed:bg-zinc-200/80 aria-pressed:text-zinc-900 aria-[current=page]:bg-zinc-200/80 aria-[current=page]:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:aria-pressed:bg-zinc-700 dark:aria-pressed:text-zinc-50 dark:aria-[current=page]:bg-zinc-700 dark:aria-[current=page]:text-zinc-50">${inner}</button>`;
   const proj = p => { const cur = p.name === (S.project || HERE);
-    return `<a href="/p/${encodeURIComponent(p.name)}/" data-slug="${esc(p.name)}" ${cur ? 'aria-current="page" data-act="tab" data-tab="items"' : ''} title="${esc(titleOf(p))}${p.needs ? ` · ${plural(p.needs, 'item')} need you` : ''}" aria-label="${esc(titleOf(p))}" class="relative grid size-10 place-items-center rounded-xl hover:bg-zinc-200/60 aria-[current=page]:bg-blue-100 aria-[current=page]:ring-1 aria-[current=page]:ring-blue-300 dark:hover:bg-zinc-800 dark:aria-[current=page]:bg-blue-400/20 dark:aria-[current=page]:ring-blue-400/40">${projTile(p.name, 'size-7 rounded-lg text-xs')}${p.needs ? `<span class="absolute -top-0.5 -right-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-amber-500 px-1 text-[10px] font-bold text-white dark:bg-amber-400 dark:text-amber-950">${p.needs}</span>` : ''}</a>`; };
+    return `<a href="/p/${encodeURIComponent(p.name)}/" data-slug="${esc(p.name)}" ${cur ? 'aria-current="page" data-act="new-input"' : ''} title="${esc(titleOf(p))}${p.needs ? ` · ${plural(p.needs, 'item')} need you` : ''}" aria-label="${esc(titleOf(p))}" class="relative grid size-10 place-items-center rounded-xl hover:bg-zinc-200/60 aria-[current=page]:bg-blue-100 aria-[current=page]:ring-1 aria-[current=page]:ring-blue-300 dark:hover:bg-zinc-800 dark:aria-[current=page]:bg-blue-400/20 dark:aria-[current=page]:ring-blue-400/40">${projTile(p.name, 'size-7 rounded-lg text-xs')}${p.needs ? `<span class="absolute -top-0.5 -right-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-amber-500 px-1 text-[10px] font-bold text-white dark:bg-amber-400 dark:text-amber-950">${p.needs}</span>` : ''}</a>`; };
   draw($('rail'), b('side', `<span class="text-blue-600 dark:text-blue-400">${ico('logo', 'size-6', '2.25')}</span>`, 'Show the sidebar · [')
     + b('new-input', ico('newinput', 'size-5'), U.tab === 'rules' && !D.page ? 'New rule · C' : 'New input · C', `aria-pressed="${D.compose && !D.page}"`)
     + `<div class="my-1 h-px w-8 bg-zinc-200 dark:bg-zinc-800"></div>`
@@ -8481,12 +8481,21 @@ async function renameProject(slug, title) {
   await loadProjects();
   return d;
 }
+// The projects you opened, the latest first, kept in this browser (T228 #2)
+function recentProjects(add) {
+  let list = [];
+  try { list = JSON.parse(localStorage.getItem('taska.recent') || '[]'); } catch (_) {}
+  if (add) { list = [add, ...list.filter(n => n !== add)].slice(0, 20); try { localStorage.setItem('taska.recent', JSON.stringify(list)); } catch (_) {} }
+  return list;
+}
+if (HERE) recentProjects(HERE);
 async function deleteProject(slug) {
   if (slug === S.project) U.leaving = true;
   let d;
   try { d = await projectCall('delete', {name: slug}); } catch (ex) { U.leaving = false; throw ex; }
   if (slug === S.project) {  // this project is gone: on to another one, whose Projects offers it back
-    const next = [...(P_CACHE.projects || DR.list || [])].filter(p => p.name !== slug).sort((a, b) => b.t - a.t)[0];  // T228 #2: the one you used most lately
+    const all = P_CACHE.projects || DR.list || [], seen = recentProjects().filter(n => n !== slug && all.some(p => p.name === n));
+    const next = all.find(p => p.name === seen[0]) || [...all].filter(p => p.name !== slug).sort((a, b) => b.t - a.t)[0];  // T228 #2: the one you had open before
     try { sessionStorage.setItem('taska.deleted', JSON.stringify({name: slug, title: d.title})); } catch (_) {}
     return location.assign(next ? `/p/${encodeURIComponent(next.name)}/projects` : '/');
   }
