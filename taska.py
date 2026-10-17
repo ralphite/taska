@@ -411,7 +411,14 @@ class Store:
             it = self.items.get(d["n"])
             if it:
                 it["t1"] = e["t"]
+        elif k == "dcres":  # T274 #2: a thread resolved, or open again
+            res = self.docs[e["d"]].setdefault("resolved", {})
+            if e.get("on"):
+                res[e["key"]] = e["t"]
+            else:
+                res.pop(e["key"], None)
         elif k == "dc":
+            self.docs[e["d"]].get("resolved", {}).pop(e["key"], None)  # a new word opens a resolved thread again
             self.docs[e["d"]]["comments"].append({"id": e["seq"], "key": e["key"], "quote": e["quote"], "text": e["text"], "by": e["by"], "t": e["t"],
                                                   "files": e.get("files", [])})  # a voice comment keeps its recording (F184)
         elif k in ("dcedit", "dcdel", "dcundel"):  # B258: your comment changed, deleted (kept aside) or back where it was
@@ -436,7 +443,7 @@ class Store:
         f = e.get("f")  # a set's fields; a voice note's file name on "tr" events
         if isinstance(f, dict) and f.get("parent"):
             out.append(f["parent"])
-        if e["k"] in ("dc", "dcedit", "dcdel", "dcundel") and e["d"] in self.docs:
+        if e["k"] in ("dc", "dcedit", "dcdel", "dcundel", "dcres") and e["d"] in self.docs:
             out.append(self.docs[e["d"]]["n"])
         return out
 
@@ -712,7 +719,7 @@ class Store:
         last = {}
         for c in d["comments"]:
             last[c["key"]] = c["by"]
-        return sum(1 for by in last.values() if by == "you")
+        return sum(1 for k, by in last.items() if by == "you" and k not in d.get("resolved", {}))
 
     def doc_text(self, d):
         blocks, detached = self.doc_view(d)
@@ -1223,6 +1230,13 @@ class Store:
             quote = " ".join(str(op.get("quote") or "").split()) or text_  # what the user selected, else the paragraph
             self.emit({"k": "dc", "d": d["d"], "key": key, "quote": quote[:500], "text": body, "by": by, **({"files": files} if files else {})})
             return f"ok D{d['d']} comment" + self.gone_note(self.items.get(d["n"], {}), by), f"Commented on D{d['d']}"
+        if name == "dcres":  # T274 #2: resolve a comment thread, or open it again
+            d = self.doc(op.get("d"))
+            key, on = str(op.get("key") or ""), op.get("on", True) not in (False, "0", "false", 0)
+            if not any(c["key"] == key for c in d["comments"]):
+                raise Err(f"D{d['d']} has no thread {key!r}")
+            self.emit({"k": "dcres", "d": d["d"], "key": key, "on": on, "by": by})
+            return f"ok D{d['d']} thread {'resolved' if on else 'open again'}", f"{'Resolved' if on else 'Reopened'} a thread on D{d['d']}"
         if name in ("dcedit", "dcdel", "dcundel"):  # B258: you change or delete a comment of yours, or bring it back
             d = self.doc(op.get("d"))
             cid = int(op.get("id") or 0)
@@ -1561,6 +1575,8 @@ class Store:
                 s = f"doc D{e['d']} on {self.code(e['n'])} {first_line(e.get('title', ''))!r}"
             elif k == "dc":
                 s = f"D{e['d']} comment {first_line(e['text'])!r}"
+            elif k == "dcres":
+                s = f"{'resolved' if e.get('on') else 'reopened'} a thread on D{e['d']}"
             elif k in ("dcedit", "dcdel", "dcundel"):
                 s = {"dcedit": f"edited a comment on D{e['d']}: {first_line(e.get('text', ''))!r}", "dcdel": f"deleted a comment on D{e['d']}", "dcundel": f"restored a comment on D{e['d']}"}[k]
             elif k == "undo":
@@ -4002,7 +4018,7 @@ __APP_HEAD__
 </div>
 
 <div id="tip" role="tooltip" hidden class="pointer-events-auto fixed top-0 left-0 z-[80] max-w-[260px] rounded-lg bg-zinc-900 px-2 py-1.5 text-[13px] leading-snug text-white opacity-0 shadow-lg shadow-black/20 transition-[opacity,translate] duration-[120ms] data-[on]:opacity-100 motion-reduce:transition-none dark:bg-zinc-100 dark:text-zinc-900"><span id="tipText"></span><span id="tipArrow" class="absolute size-2 rotate-45 bg-inherit"></span></div>
-<div id="vcBar" hidden role="toolbar" aria-label="On the selected text" class="fixed z-[65] flex rounded-full bg-zinc-900 p-1 shadow-lg ring-1 ring-black/10 dark:bg-zinc-100 dark:ring-white/10"><button id="vcBtn" data-act="vc" class="flex h-9 items-center gap-1.5 rounded-full pr-3.5 pl-2.5 text-sm font-semibold whitespace-nowrap text-white hover:bg-white/15 data-on:bg-red-600 data-on:text-white dark:text-zinc-900 dark:hover:bg-zinc-900/10 dark:data-on:bg-red-600 dark:data-on:text-white"></button><button id="fixBtn" data-act="vc-fix" hidden aria-label="Correct: write the right words for the selected ones" class="flex h-9 items-center gap-1.5 rounded-full pr-3.5 pl-2.5 text-sm font-semibold whitespace-nowrap text-white hover:bg-white/15 dark:text-zinc-900 dark:hover:bg-zinc-900/10"></button></div>
+<div id="vcBar" hidden role="toolbar" aria-label="On the selected text" class="fixed z-[65] flex rounded-full bg-zinc-900 p-1 shadow-lg ring-1 ring-black/10 dark:bg-zinc-100 dark:ring-white/10"><button id="cmtBtn" data-act="doc-comment-sel" hidden class="flex h-9 items-center gap-1.5 rounded-full pr-3.5 pl-2.5 text-sm font-semibold whitespace-nowrap text-white hover:bg-white/15 dark:text-zinc-900 dark:hover:bg-zinc-900/10"></button><button id="vcBtn" data-act="vc" class="flex h-9 items-center gap-1.5 rounded-full pr-3.5 pl-2.5 text-sm font-semibold whitespace-nowrap text-white hover:bg-white/15 data-on:bg-red-600 data-on:text-white dark:text-zinc-900 dark:hover:bg-zinc-900/10 dark:data-on:bg-red-600 dark:data-on:text-white"></button><button id="fixBtn" data-act="vc-fix" hidden aria-label="Correct: write the right words for the selected ones" class="flex h-9 items-center gap-1.5 rounded-full pr-3.5 pl-2.5 text-sm font-semibold whitespace-nowrap text-white hover:bg-white/15 dark:text-zinc-900 dark:hover:bg-zinc-900/10"></button></div>
 <div id="toast" hidden role="status" class="fixed inset-x-0 bottom-28 z-[60] mx-auto flex w-fit max-w-[92vw] lg:right-auto lg:bottom-5 lg:left-5 lg:mx-0 lg:max-w-md items-center gap-3 rounded-full bg-zinc-900 py-2 pr-4 pl-4 text-sm text-white shadow-lg has-[button]:py-1.5 has-[button]:pr-1.5 data-error:bg-red-600 data-error:text-white dark:bg-zinc-100 dark:text-zinc-900 dark:data-error:bg-red-600 dark:data-error:text-white"></div>
 
 <script>
@@ -5144,10 +5160,41 @@ async function deleteComment(dn, id) {
   renderDoc(); renderComposer();
   toast('Comment deleted', pushUndo(`Delete a comment on D${dn}`, async () => { await save({op: 'dcundel', d: +dn, id: +id}); renderDoc(); toast('Comment back'); }));
 }
-function threadHtml(d, key, comments, blockText) {
-  return `<div data-thread="${key}" class="mt-2 space-y-2 border-l-2 border-amber-300 pl-3 dark:border-amber-600">
+// T274 #2: the words a comment is on are marked in the text (when they sit in one run of text)
+function markQuotes(root, d) {
+  for (const b of d.blocks) for (const c of b.comments) {
+    const q = plainQuote(c.quote || '').trim(), sec = root.querySelector(`#docBlocks > section[data-key="${CSS.escape(b.key)}"] > div`);
+    if (!q || !sec || sameText(q, plainQuote(b.text)) || q.length > 300) continue;
+    const walk = document.createTreeWalker(sec, NodeFilter.SHOW_TEXT);
+    while (walk.nextNode()) {
+      const t = walk.currentNode, at = t.data.indexOf(q);
+      if (at < 0 || t.parentElement.closest('mark, button')) continue;
+      const m = document.createElement('mark'), rest = t.splitText(at);
+      rest.splitText(q.length);
+      m.className = `rounded-sm ${docResolved(d, b.key) ? 'bg-transparent text-inherit underline decoration-zinc-300 decoration-dotted' : 'bg-amber-100 text-inherit dark:bg-amber-400/25'}`;
+      rest.replaceWith(m); m.append(rest);
+      break;
+    }
+  }
+}
+// T274 #2: a thread can be resolved (it folds to one line, and a new word opens it again); an agent's word you have
+// not seen has a blue dot until the document shows it
+const docResolved = (d, key) => !!d.resolved?.[key];
+const NEW_DOT = '<span class="ml-0.5 size-1.5 rounded-full bg-blue-600 dark:bg-blue-400" title="New from an agent"></span>';
+function threadNew(d, key, comments) {
+  const c = comments.at(-1);
+  return !!c && c.by !== 'you' && c.t > (seenMap()[`D${d.d}:${key}`] || seenMap().since);
+}
+function seeThreads(d) {  // what the document shows now counts as seen
+  const m = seenMap();
+  let changed = false;
+  for (const [key, cs] of [...d.blocks.map(b => [b.key, b.comments]), ['doc', d.whole || []]]) { const c = cs.at(-1); if (c && threadNew(d, key, cs)) { m[`D${d.d}:${key}`] = c.t; changed = true; } }
+  if (changed) saveSeen();
+}
+function threadHtml(d, key, comments, blockText, rail = false) {
+  return `<div data-thread="${key}" class="mt-2 space-y-2 border-l-2 border-amber-300 pl-3 dark:border-amber-600 ${rail ? 'lg:col-start-2 lg:row-start-1 lg:mt-0' : ''}">${threadNew(d, key, comments) ? `<div class="flex items-center gap-1 text-[11px] font-semibold text-blue-600 dark:text-blue-400">${NEW_DOT}New</div>` : ''}
     ${comments.map(c => `<div data-dc="${c.id}" class="group text-sm ${MSG(c.by).replace(/\b(ml|mr)-8\b/, '')}">${blockText !== undefined && !sameText(c.quote, blockText) ? `<div class="mb-0.5 line-clamp-2 text-xs text-zinc-500 dark:text-zinc-300">“${esc(plainQuote(c.quote))}”</div>` : ''}<div class="flex min-h-6 items-center gap-1"><span class="${WHO(c.by)}">${esc(whoName(c.by))}</span> <span class="text-xs text-zinc-400">${when(c.t)}${c.edited ? ` · edited ${when(c.edited)}` : ''}</span>${dcActs(d, c)}</div>${rich(c.text, 'dc' + c.t)}${c.files?.some(f => !(f.mime || '').startsWith('audio/')) ? `<div class="mt-1.5 flex gap-2 overflow-x-auto">${thumbs(c.files.filter(f => !(f.mime || '').startsWith('audio/')), 'dcf' + c.id, 'size-11')}</div>` : ''}${voiceLine(c.files)}</div>`).join('')}
-    ${U.docReply === key ? '' : `<button data-act="doc-reply" data-key="${key}" class="${HIT} flex h-8 items-center gap-1 rounded-lg px-1.5 -mx-1.5 text-xs font-semibold text-blue-600 hover:bg-blue-50 aria-pressed:underline dark:text-blue-400 dark:hover:bg-blue-400/10">${ico('reply', 'size-3.5')}Reply</button>`}
+    ${`<button data-act="doc-resolve" data-key="${key}" data-on="${docResolved(d, key) ? 0 : 1}" class="${HIT} float-right flex h-8 items-center gap-1 rounded-lg px-1.5 text-xs font-medium text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800">${ico('check', 'size-3.5')}${docResolved(d, key) ? 'Reopen' : 'Resolve'}</button>`}${U.docReply === key ? '' : `<button data-act="doc-reply" data-key="${key}" class="${HIT} flex h-8 items-center gap-1 rounded-lg px-1.5 -mx-1.5 text-xs font-semibold text-blue-600 hover:bg-blue-50 aria-pressed:underline dark:text-blue-400 dark:hover:bg-blue-400/10">${ico('reply', 'size-3.5')}Reply</button>`}
   </div>`;
 }
 const noteText = d => sameText(d.md.split('\n')[0].replace(/^#+\s*/, ''), d.title) ? d.md : `# ${d.title}\n\n${d.md}`;
@@ -5187,7 +5234,7 @@ async function sendDocComment(t) {
       () => { const t2 = docTarget() || (docOpen() && {d: docOpen(), key: 'doc', whole: true}); if (t2) sendDocComment(t2); });
   } catch (_) { return back(); }
   for (const f of files) { f.sent = true; dropRec(f); }
-  U.docThreads.add(t.key); U.docSel = new Set(); U.docQuote = null; U.docReply = t.whole ? null : t.key;  // B2: what you write next goes on in that thread (the whole document's: on the document)
+  U.docThreads.add(t.key); U.docSel = new Set(); U.docQuote = null; U.docReply = null;  // T274 #3: sent, the box is the document's again (Reply in the thread goes on there)
   if (U.lastSent) { U.lastSent = null; renderFeedback(); }  // T113 A19: the toast says it; an older "Sent." line doesn't stay beside it
   getSelection()?.removeAllRanges(); renderDoc(); renderComposer(); toast(t.reply ? 'Reply added' : 'Comment added');
   if (desk()) $('text').focus({preventScroll: true});
@@ -5207,8 +5254,9 @@ function docPane(d) {
   if (D.docKey === key && body.querySelector('#docBlocks')) return;
   D.docKey = key;
   const top = body.querySelector('#docBlocks') ? body.scrollTop : (U.docScroll[d.d] || 0);
-  parkBox(); body.innerHTML = `<div class="mx-auto w-full max-w-[46rem] px-8 pt-8 pb-12">${docViewHtml(d)}</div>`;
+  parkBox(); body.innerHTML = `<div class="mx-auto w-full max-w-[64rem] px-8 pt-8 pb-12">${docViewHtml(d)}</div>`;
   body.scrollTop = top;
+  markQuotes(body, d); seeThreads(d);  // T274 #2
   if (U.docCircle) wireLasso();
 }
 function closeDoc() {  // the desktop's way back from a document to its item
@@ -5224,7 +5272,7 @@ function closeDoc() {  // the desktop's way back from a document to its item
 function docOutline(d) {
   const hs = d.blocks.slice(1).filter(b => b.kind === 'heading');
   if (hs.length < 3) return '';
-  return `<details open class="mt-3 rounded-xl border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800"><summary class="cursor-pointer text-xs font-semibold text-zinc-500 dark:text-zinc-400">Contents · ${hs.length}</summary>
+  return `<details class="mt-3 rounded-xl border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800"><summary class="cursor-pointer text-xs font-semibold text-zinc-500 dark:text-zinc-400">Contents · ${hs.length}</summary>
     <div class="mt-1 flex flex-col">${hs.map(b => { const lv = (b.text.match(/^#+/) || ['#'])[0].length; return `<button data-act="doc-jump" data-key="${b.key}" class="truncate rounded-md py-1 text-left text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 ${lv > 2 ? 'pl-6' : 'pl-2'}">${esc(b.text.replace(/^#+\s*/, ''))}</button>`; }).join('')}</div></details>`;
 }
 // A document's text with its comment threads: in a sheet on the phone, in the item pane on the desktop (T110).
@@ -5238,16 +5286,17 @@ function docViewHtml(d) {
     ${titled ? '' : `<div class="mt-3 text-2xl leading-tight font-bold tracking-tight">${esc(d.title)}</div>`}
     ${docOutline(d)}
     <div id="docBlocks" class="relative mt-3 space-y-3 text-[15px] ${U.docCircle ? 'select-none' : ''}">
-      ${d.blocks.map((b, i) => `<section data-act="doc-pick" data-key="${b.key}" ${U.docSel.has(b.key) ? 'data-picked' : ''} class="-mx-2 rounded-lg px-2 py-1 transition-colors hover:bg-zinc-50 data-picked:bg-amber-50 data-picked:ring-2 data-picked:ring-amber-300 data-pressed:opacity-70 dark:hover:bg-zinc-800/50 dark:data-picked:bg-amber-950/40 dark:data-picked:ring-amber-600">
+      ${d.blocks.map((b, i) => `<section data-act="doc-pick" data-key="${b.key}" ${U.docSel.has(b.key) ? 'data-picked' : ''} class="group/blk -mx-2 rounded-lg px-2 py-1 transition-colors lg:grid lg:grid-cols-[minmax(0,1fr)_15rem] lg:gap-x-5 lg:cursor-text hover:bg-zinc-50 data-picked:bg-amber-50 data-picked:ring-2 data-picked:ring-amber-300 data-pressed:opacity-70 dark:hover:bg-zinc-800/50 dark:data-picked:bg-amber-950/40 dark:data-picked:ring-amber-600">
         <div class="relative flex flex-col gap-1 lg:flex-row lg:items-start lg:gap-2"><div class="min-w-0 flex-1 break-words ${b.kind === 'heading' ? 'pr-14 lg:pr-0' : ''}">${blockHtml(shown(b, i), i === 0 && titled, 'doc' + d.d)}</div>
-        ${b.comments.length ? `<button data-act="doc-thread" data-key="${b.key}" aria-label="${plural(b.comments.length, 'comment')}" class="${b.kind === 'heading' ? `absolute right-0 lg:relative lg:top-0 ${i === 0 && titled ? 'top-0.5' : (b.text.match(/^#+/) || ['#'])[0].length <= 2 ? 'top-2.5' : 'top-1'}` : 'relative self-end'} flex h-6 shrink-0 lg:mt-0.5 lg:self-start items-center gap-1 rounded-md bg-amber-100 px-1.5 text-xs font-medium text-amber-900 after:absolute after:-inset-2.5 hover:bg-amber-200 dark:bg-amber-900/60 dark:text-amber-100 dark:hover:bg-amber-900">${ico('comment', 'size-3.5')}${b.comments.length}</button>` : ''}</div>
-        ${U.docThreads.has(b.key) ? threadHtml(d, b.key, b.comments, b.text) : ''}</section>`).join('')}
+        ${b.comments.length ? `<button data-act="doc-thread" data-key="${b.key}" aria-label="${plural(b.comments.length, 'comment')}" class="${b.kind === 'heading' ? `absolute right-0 lg:relative lg:top-0 ${i === 0 && titled ? 'top-0.5' : (b.text.match(/^#+/) || ['#'])[0].length <= 2 ? 'top-2.5' : 'top-1'}` : 'relative self-end'} flex h-6 shrink-0 lg:mt-0.5 lg:self-start items-center gap-1 rounded-md bg-amber-100 px-1.5 text-xs font-medium text-amber-900 after:absolute after:-inset-2.5 hover:bg-amber-200 lg:hidden dark:bg-amber-900/60 dark:text-amber-100 dark:hover:bg-amber-900">${ico('comment', 'size-3.5')}${b.comments.length}${threadNew(d, b.key, b.comments) ? NEW_DOT : ''}</button>` : `<button data-act="doc-pick" data-key="${b.key}" data-pick-btn title="Comment on this paragraph" class="hidden h-6 shrink-0 items-center gap-1 self-start rounded-md px-1.5 text-xs font-medium text-zinc-500 hover:bg-zinc-200/70 hover:text-zinc-800 lg:group-hover/blk:flex dark:text-zinc-400 dark:hover:bg-zinc-700">${ico('comment', 'size-3.5')}Comment</button>`}</div>
+        ${b.comments.length && (desk() ? !docResolved(d, b.key) || U.docThreads.has(b.key) : U.docThreads.has(b.key)) ? threadHtml(d, b.key, b.comments, b.text, true)
+          : b.comments.length && desk() ? `<button data-act="doc-thread" data-key="${b.key}" class="hidden h-7 items-center gap-1 self-start justify-self-start rounded-md px-1.5 text-xs text-zinc-500 hover:bg-zinc-100 lg:col-start-2 lg:row-start-1 lg:flex dark:text-zinc-400 dark:hover:bg-zinc-800">${ico('check', 'size-3.5')}Resolved · ${plural(b.comments.length, 'comment')}</button>` : ''}</section>`).join('')}
       ${U.docCircle ? `<svg id="lasso" class="absolute inset-0 z-10 h-full w-full touch-none" aria-label="Draw around the part you want to comment on"><path id="lassoPath" d="" fill="rgba(251,191,36,.15)" stroke="rgb(245,158,11)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/></svg>` : ''}
     </div>
     ${d.whole?.length ? `<section class="mt-6 border-t border-zinc-200 pt-4 dark:border-zinc-800"><div class="text-xs font-medium text-zinc-500">On the whole document</div>${threadHtml(d, 'doc', d.whole)}</section>` : ''}
     ${d.detached.length ? `<div class="mt-6 space-y-4 border-t border-zinc-200 pt-4 dark:border-zinc-800"><div class="text-xs font-medium text-zinc-500">Original text changed</div>${d.detached.map(t => `<section>
       <div class="text-sm text-zinc-400 line-through">${esc(t.quote)}</div>${threadHtml(d, t.key, t.comments)}</section>`).join('')}</div>` : ''}
-    <p class="mt-6 text-center text-xs text-zinc-400">${desk() ? 'Click' : 'Tap'} paragraphs, select text or circle an area to comment on them, or write in the box below about the whole document</p>
+    <p class="mt-6 text-center text-xs text-zinc-400">${desk() ? 'Select words, or Comment beside a paragraph, to comment on them; or write in the box below about the whole document' : 'Tap paragraphs, select text or circle an area to comment on them, or write in the box below about the whole document'}</p>
     </div>`;
 }
 function renderDoc({focus = false} = {}) {
@@ -6025,7 +6074,7 @@ function renderComposer() {
     ph = `${dt.reply ? 'Reply in' : 'Comment on'} D${dt.d.d}…`; send = dt.reply ? 'Reply' : 'Comment';  // the same words as the line (T225 #16)
   } else if (dOpen) {  // B247: a document open and nothing picked: a comment on the whole document (never a reply to the item, B2)
     const host = liveN(dOpen.n);
-    line = desk() ? scopeLine('comment', `Comment on D${dOpen.d}`, '· the whole document, or click a paragraph', byN.has(host) ? scopeLink('doc-to-item', `Reply to ${code(host)} instead`) : '')
+    line = desk() ? scopeLine('comment', `Comment on D${dOpen.d}`, '· the whole document, or select words in it', byN.has(host) ? scopeLink('doc-to-item', `Reply to ${code(host)} instead`) : '')
       : scopeLine('comment', `Comment on D${dOpen.d}`, '· or tap a part', byN.has(host) ? scopeLink('doc-to-item', `Reply to ${code(host)}`, '', `Reply to ${code(host)} instead`) : '');  // fits a phone (T225 #14)
     ph = `Comment on D${dOpen.d}…`; send = 'Comment';
   } else if (n) {  // B83: a reply says so; the choices you ticked go with it (B145)
@@ -6732,7 +6781,7 @@ function vcSelection() {  // the text selected right now that a voice comment ca
   const text = sel.toString().trim(), node = sel.anchorNode?.nodeType === 1 ? sel.anchorNode : sel.anchorNode?.parentElement;
   if (text.length < 2 || !node) return null;
   if (docOpen()) {  // a document: the comment goes on that passage (F184)
-    const sec = node.closest('#docBlocks > section[data-key]');
+    const sec = !node.closest('[data-thread]') && node.closest('#docBlocks > section[data-key]');
     return sec ? {key: sec.dataset.key, text: text.slice(0, 500), range: sel.getRangeAt(0)} : null;
   }
   // F199: anything else worth talking about: an item's text and its thread, what you said in Inputs. The quote and
@@ -6752,6 +6801,9 @@ function vcPlace() {  // the button by the selection, or by the passage you are 
   if (bar.hidden) return;
   const fix = !on && !R.rec && U.fixCand && getSelection()?.toString().replace(/\s+/g, ' ').trim() === U.fixCand.wrong;  // F204
   $('fixBtn').hidden = !fix;
+  const cmt = !on && !R.rec && !!s?.key && !!U.doc;  // T274 #1: words selected in a document: comment on them by typing, or by voice
+  $('cmtBtn').hidden = !cmt;
+  if (cmt && !$('cmtBtn').innerHTML) $('cmtBtn').innerHTML = `${ico('comment', 'size-4')}Comment`;
   if (fix && !$('fixBtn').innerHTML) $('fixBtn').innerHTML = `${ico('pencil', 'size-4')}Correct`;
   const b = $('vcBtn');
   if (b.dataset.rec !== String(on)) {
@@ -7590,7 +7642,8 @@ const ACT = {
     if (d && docById(d)) openDoc(d); else closeDialog();
   },
   'doc-pick': (b, e) => {
-    if (U.docCircle || e.target.closest('textarea, button, a') || getSelection()?.toString().trim()) return;
+    if (U.docCircle || (e.target.closest('textarea, button, a') && !e.target.closest('[data-pick-btn]')) || getSelection()?.toString().trim()) return;
+    if (desk() && !b.hasAttribute('data-pick-btn') && !U.docSel.size) return;  // T274 #1: reading and copying never pick; Comment does
     const k = b.dataset.key;
     if (U.docSel.has(k)) U.docSel.delete(k); else U.docSel.add(k);
     U.docQuote = null; U.docReply = null;
@@ -7599,6 +7652,14 @@ const ACT = {
   },
   'doc-unpick': () => { U.docSel = new Set(); U.docQuote = null; U.docReply = null; U.docDrafts.note = ''; getSelection()?.removeAllRanges(); renderDoc(); },
   'doc-close': () => closeDoc(),
+  'doc-resolve': async b => {  // T274 #2
+    const d = U.doc, key = b.dataset.key, on = b.dataset.on === '1';
+    try { await save({op: 'dcres', d, key, on}); } catch (_) { return; }
+    if (!on) U.docThreads.add(key); else U.docThreads.delete(key);
+    D.docKey = null; renderDetail(); if (!desk()) renderDoc();
+    toast(on ? 'Resolved' : 'Open again', pushUndo(on ? 'Resolve a thread' : 'Reopen a thread', async () => { await save({op: 'dcres', d, key, on: !on}); D.docKey = null; renderDetail(); }));
+  },
+  'doc-comment-sel': () => { $('text').focus({preventScroll: true}); },  // T274 #1: the selected words are what the box comments on
   vc: () => vcToggle(),  // F184
   'vc-fix': () => {  // F204: the words you selected in a voice note get corrected in the box, and remembered
     const c = U.fixCand;
@@ -9519,8 +9580,8 @@ document.addEventListener('selectionchange', () => {
   if (!U.doc || U.docEdit || U.docCircle) return;
   const sel = getSelection(), text = sel?.toString().trim();
   if (!text || text.length < 2) return;  // a collapsed selection keeps the last quote until you comment or cancel
-  const sec = (sel.anchorNode?.nodeType === 1 ? sel.anchorNode : sel.anchorNode?.parentElement)?.closest('#docBlocks > section[data-key]');
-  if (!sec) return;
+  const at = sel.anchorNode?.nodeType === 1 ? sel.anchorNode : sel.anchorNode?.parentElement, sec = at?.closest('#docBlocks > section[data-key]');
+  if (!sec || at.closest('[data-thread]')) return;  // words of a comment are not the text
   U.docQuote = {key: sec.dataset.key, text: text.slice(0, 500)}; U.docSel = new Set(); U.docReply = null;
   renderDocBar();
 });

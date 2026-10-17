@@ -96,6 +96,21 @@ class AmendTests(unittest.TestCase):
         self.assertIn('¶0 comments on the whole document:\n   > you', self.s.doc_text(d))
         self.assertEqual(self.s.doc_open(d), 0)  # the agent answered it
 
+    def test_a_thread_can_be_resolved_and_a_new_word_opens_it(self):  # T274 #2
+        self.runop({'op': 'doc', 'ref': 'F1', 'md': '# Plan\n\nFirst part.'})
+        self.runop({'op': 'dc', 'd': 1, 'key': 'doc', 'text': 'Is this final?'})
+        d = self.s.docs[1]
+        self.assertEqual(self.s.doc_open(d), 1)
+        self.runop({'op': 'dcres', 'd': 1, 'key': 'doc'})
+        self.assertIn('doc', d['resolved'])
+        self.assertEqual(self.s.doc_open(d), 0)  # agents are not asked about a resolved thread
+        self.runop({'op': 'dc', 'd': 1, 'key': 'doc', 'text': 'One more thing'})
+        self.assertNotIn('doc', d['resolved'])
+        self.runop({'op': 'dcres', 'd': 1, 'key': 'doc', 'on': False})
+        replay = taska.Store(str(self.path))
+        self.assertEqual(replay.docs[1].get('resolved'), {})
+        replay.out.close()
+
     def test_your_comment_can_be_edited_deleted_and_brought_back(self):  # B258
         self.runop({'op': 'doc', 'ref': 'F1', 'md': '# Plan\n\nFirst part.'})
         self.runop({'op': 'dc', 'd': 1, 'key': 'doc', 'text': 'In the wrong place'})
