@@ -1558,7 +1558,7 @@ class Store:
             elif k == "dc":
                 s = f"D{e['d']} comment {first_line(e['text'])!r}"
             elif k in ("dcedit", "dcdel", "dcundel"):
-                s = f"D{e['d']} comment {e['id']} " + {"dcedit": f"edited {first_line(e.get('text', ''))!r}", "dcdel": "deleted", "dcundel": "restored"}[k]
+                s = {"dcedit": f"edited a comment on D{e['d']}: {first_line(e.get('text', ''))!r}", "dcdel": f"deleted a comment on D{e['d']}", "dcundel": f"restored a comment on D{e['d']}"}[k]
             elif k == "undo":
                 s = f"undo organizer changes for {e['src']}"
             elif k == "redo":
@@ -4112,7 +4112,8 @@ async function pushOff() {
 }
 function phonePushBody() {
   if (!pushable() || !standalone()) return pPart(standalone() ? "This phone can't get notifications" : 'Add Taska to the Home Screen first',
-    standalone() ? 'Its browser has no push service.' : 'Open Settings › Use on your phone, add Taska to the Home Screen, open it from there, and turn notifications on here.');
+    standalone() ? 'Its browser has no push service.' : 'Add Taska to the Home Screen (how: Use on your phone), open it from there, and turn notifications on here.',
+    standalone() ? '' : `<a href="${P}phone" data-act="psec" data-sec="phone" class="${SECOND} mt-3">${ico('phone', 'size-4')}Use on your phone</a>`);  // T228 #15: a way there
   if (PUSH.sub === undefined) { pushState(); return P_LOADING; }
   const blocked = Notification.permission === 'denied';
   return pSetting(blocked ? 'Blocked by the phone' : PUSH.sub ? 'On' : 'Off', 'A notification when something needs you in any project, even with Taska closed.',
@@ -4211,12 +4212,12 @@ function toast(text, act, {error = false, label = 'Undo', ms = 0} = {}) {  // ms
 // Where the toast shows. On the phone it moves when a sheet opens or closes under it, so it never sits on the
 // sheet's buttons (a Restore right after a Delete).
 function placeToast(el = $('toast')) {
-  const up = !$('overlay').hidden && !desk();  // a sheet or the focus card is open: say it at the top, clear of its buttons
+  const up = (!$('overlay').hidden && !desk()) || !!D.page;  // a sheet, the focus card or a Settings page: at the top, clear of their buttons (T228 #3, #5, #17)
   el.classList.toggle('bottom-28', !up); el.classList.toggle('top-[calc(env(safe-area-inset-top)+0.75rem)]', up);
   if (desk()) {  // B129: on the desktop it shows in the pane you acted in, above the box if the box is there
     const pane = [LAST.pane, $('detailView'), $('inputsView'), $('projectBody')].find(p => p?.isConnected && p.offsetParent), r = pane?.getBoundingClientRect();
     const f = $('foot').getBoundingClientRect(), above = r && f.height < 300 && f.left < r.right && f.right > r.left;
-    if (r) { el.style.left = `${r.left + r.width / 2}px`; el.style.bottom = `${above ? innerHeight - f.top + 12 : 20}px`; }
+    if (r) { el.style.left = `${r.left + r.width / 2}px`; el.style.bottom = up ? '' : `${above ? innerHeight - f.top + 12 : 20}px`; }
     el.classList.toggle('lg:-translate-x-1/2', !!r);
   } else {  // B158: on the phone it sits just above what you act on, the input box or an open card's bar, and never on it
     el.style.left = el.style.bottom = ''; el.classList.remove('lg:-translate-x-1/2');
@@ -6778,7 +6779,8 @@ function logLine(l) {
     : f === 'archived' ? (b === 'True' ? 'archived' : 'unarchived') : f === 'pri' ? `priority ${a} → ${b}` : f === 'type' ? `type ${cap(a)} → ${cap(b)}`
     : f === 'parent' ? (/^\d+$/.test(b) ? `moved under ${code(Number(b))}` : /^\d+$/.test(a) ? `taken out from under ${code(Number(a))}` : 'parent changed')
     : f === 'title' ? `renamed “${b}”` : f === 'body' ? 'description edited' : 'next step edited';
-  let what = esc(m[4])
+  const plain = String(m[4]).replace(/\*\*|__|`/g, '').replace(/\[src=[^\]]*\]/g, '').replace(/^(\s*)- \( \) /gm, '$1').replace(/ ''$/, ' a voice note');  // T228 #11, #12
+  let what = esc(plain)
     .replace(/^in (r\d+)(?: →([A-Z]\d+))? /, (_, r, c) => c ? `wrote ${r} to ${c} ` : `wrote ${r} `)
     .replace(/^new ([A-Z]\d+) (\w+) (P\d) (now|later) (.*?)(?: ←(r\d+))?$/s, (_, c, t, p, w, title, r) => `made ${c}, ${/^[aeiou]/.test(t) ? 'an' : 'a'} ${t} (${p}${w === 'later' ? ', later' : ''}): ${title}${r ? ` from ${r}` : ''}`)
     .replace(new RegExp(`\\b(${FIELD}) (.*?)→(.*?)(?=, (?:${FIELD}) |$| \\(undo #)`, 'gs'), (_, f, a, b) => setPart(f, a, b))
@@ -6792,7 +6794,7 @@ function logLine(l) {
     .replace(/\b(say|ask|block|propose|progress|decide|withdraw) (?=&#39;|&#x27;|'|&quot;|")/g, (_, k) => `${{say: 'said', ask: 'asked', block: 'is blocked:', propose: 'proposed', progress: 'progress:', decide: 'decided', withdraw: 'took back the question:'}[k]} `)  // the quote is escaped by now
     .replace(/\b([A-Z]\d{1,5})\b/g, (c, x) => { const n = parseRef(c); return n && byN.has(n) && code(n) === c ? `<button data-act="goto" data-n="${n}" class="font-semibold text-blue-600 hover:underline dark:text-blue-400">${c}</button>` : c; })
     .replace(/\b(r\d+)\b/g, (r) => byR.has(r) ? `<button data-act="go-input" data-id="${r}" class="font-mono text-blue-600 hover:underline dark:text-blue-400">${r}</button>` : r);
-  return `<span class="font-medium text-zinc-800 dark:text-zinc-100">${esc(whoName(m[3]))}</span> ${what} <span class="font-mono text-[11px] text-zinc-400">${esc(m[2])}</span>`;
+  return `<span class="font-medium text-zinc-800 dark:text-zinc-100">${esc(whoName(m[3]))}</span> ${what} <span class="font-mono text-[11px] whitespace-nowrap text-zinc-400">${esc(m[2])}</span>`;
 }
 const logHtml = lines => `<ol class="divide-y divide-zinc-100 text-[13px] leading-relaxed text-zinc-600 dark:divide-zinc-800 dark:text-zinc-300">${lines.map(l => {
   const u = (S.undo || []).find(u => l.startsWith(`#${u.seq} `));  // one of your changes that can still be put back (F80)
@@ -6806,7 +6808,7 @@ function agentCard() {
     ok: ['bg-emerald-50 dark:bg-emerald-400/10', 'bg-emerald-500 ring-4 ring-emerald-500/20 dark:bg-emerald-400', 'text-emerald-900 dark:text-emerald-100', 'text-emerald-800/80 dark:text-emerald-300/80'],
     idle: ['bg-zinc-100 dark:bg-zinc-800', 'bg-zinc-400 ring-4 ring-zinc-400/20', 'text-zinc-800 dark:text-zinc-100', 'text-zinc-500 dark:text-zinc-400']}[tone];
   return `<div class="flex gap-3 rounded-2xl p-4 ${look[0]}"><span class="mt-1.5 size-2.5 shrink-0 rounded-full ${look[1]}"></span>
-      <div><p class="text-[15px] leading-snug font-semibold ${look[2]}">${esc(line)}</p><p class="mt-1 text-[13px] leading-snug ${look[3]}">${plural(queue.length, 'item')} in the queue${later ? ` (${later} later)` : ''} · Keep going is ${S.cfg?.auto ? 'on' : 'off'}</p></div></div>`;
+      <div><p class="text-[15px] leading-snug font-semibold ${look[2]}">${esc(line)}</p><p class="mt-1 text-[13px] leading-snug ${look[3]}">${plural(queue.length, 'item')} in the queue${later ? ` (${later} later)` : ''}</p></div></div>`;  // Keep going: its switch is right below (T228 #9)
 }
 const agentsSeen = () => [...(S.agents || [])].sort((a, b) => b.t - a.t).map(a => `<li class="flex h-11 items-center gap-3">${avatar(a.name)}<span class="min-w-0 flex-1 text-[15px]">${esc(AGENT_NAME[a.name] || a.name)}</span><span class="text-sm text-zinc-500 dark:text-zinc-400">${a.waiting ? 'waiting for work' : agoLong(a.t)}</span></li>`).join('');
 const deletedRows = () => (S.deleted || []).map(x => `<li class="flex items-start gap-3 py-3.5">
@@ -8234,7 +8236,7 @@ function setHtml(el, key, html) {
 // The parts of a section, under thin rules: a title and what it is for, then its box and button.
 const pPart = (title, about, body = '', id = '') => `<section ${id ? `id="${id}" ` : ''}class="scroll-mt-16 border-t lg:scroll-mt-6 border-zinc-200 py-6 dark:border-zinc-800"><h2 class="text-[15px] font-semibold">${title}</h2>${about ? `<p class="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">${about}</p>` : ''}${body}</section>`;
 const pSetting = (title, about, control) => `<section class="flex items-center gap-6 border-t border-zinc-200 py-6 dark:border-zinc-800"><div class="min-w-0 flex-1"><h2 class="text-[15px] font-semibold">${title}</h2><p class="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">${about}</p></div>${control}</section>`;
-const pBox = (t, mono = true) => `<div class="mt-3 rounded-xl bg-zinc-100 px-3.5 py-3 leading-relaxed text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200 ${mono ? 'font-mono text-[13px] break-all' : 'text-sm break-words'}">${esc(t)}</div>`;
+const pBox = (t, mono = true) => `<div class="mt-3 rounded-xl bg-zinc-100 px-3.5 py-3 leading-relaxed text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200 ${mono ? 'font-mono text-[13px] break-words' : 'text-sm break-words'}">${esc(mono ? t : t.replace(/`/g, ''))}</div>`;  // T228 #6, #7: no word cut in two, no backticks shown
 const pCopy = (t, label, main = false) => `<button data-act="copy-text" data-text="${esc(t)}" class="${main ? PRIMARY : SECOND} mt-3">${ico('copy', main ? 'size-4.5' : 'size-4')}${label}</button>`;
 const pRuled = html => `<div class="border-t border-zinc-200 dark:border-zinc-800">${html}</div>`;
 const P_LOADING = pRuled('<p class="py-6 text-sm text-zinc-400">Loading…</p>');
@@ -8254,11 +8256,10 @@ const PBODY = {
       + pPart('Or send it to the agent', "Open your coding agent in the project's folder and send it this. It reads the rest from Taska.", pBox(ask, false) + pCopy(ask, 'Copy'))
       + (seen ? pPart('Seen in this project', '', `<ul class="mt-2 divide-y divide-zinc-100 dark:divide-zinc-800">${seen}</ul>`) : '')
       + `<details class="group border-t border-zinc-200 py-6 dark:border-zinc-800"><summary class="-my-2.5 flex min-h-11 cursor-pointer items-center gap-1.5 text-[15px] font-semibold lg:my-0 lg:min-h-0 hover:text-zinc-600 dark:hover:text-zinc-300">${ico('right', 'size-4 text-zinc-400 transition-transform group-open:rotate-90')}What the agent reads</summary>
-        <pre class="mt-3 overflow-x-auto rounded-xl bg-zinc-50 p-3.5 text-xs leading-relaxed whitespace-pre-wrap lg:scrollbar-thin dark:bg-zinc-900">${esc(P_CACHE.guide || 'Loading…')}</pre></details>`;
+        <pre class="mt-3 overflow-x-auto rounded-xl bg-zinc-50 p-3.5 text-xs leading-relaxed whitespace-pre-wrap wrap-anywhere lg:scrollbar-thin dark:bg-zinc-900">${esc(P_CACHE.guide || 'Loading…')}</pre></details>`;
   },
   log: () => !P_CACHE.log ? P_LOADING : !P_CACHE.log.length ? pRuled(EMPTY('Nothing has changed yet.'))
-    : `<p class="pb-3 text-[13px] leading-snug text-zinc-500 dark:text-zinc-400">Undo shows on your own latest changes to an item that nothing changed since.</p>`  // why some of your lines have it and some don't (T113 A22)
-      + pRuled(`<div class="pt-2">${logHtml(P_CACHE.log)}</div>`) + (P_CACHE.log.length >= LOG_N ? `<p class="pt-4 text-[13px] text-zinc-400 dark:text-zinc-500">The latest ${LOG_N} changes</p>` : ''),
+    : pRuled(`<div class="pt-2">${logHtml(P_CACHE.log)}</div>`) + (P_CACHE.log.length >= LOG_N ? `<p class="pt-4 text-[13px] text-zinc-400 dark:text-zinc-500">The latest ${LOG_N} changes</p>` : ''),
   projects: () => {
     if (!P_CACHE.projects) return P_LOADING;
     const live = [...P_CACHE.projects].sort(projOrder), gone = P_CACHE.trash || [];
@@ -8269,28 +8270,28 @@ const PBODY = {
       return `<li class="flex min-h-16 items-center gap-3 py-3">${projTile(p.name, 'size-8 rounded-lg text-sm')}<div class="min-w-0 flex-1">${ren
         ? `<input id="pRename" data-slug="${esc(p.name)}" class="${FIELD} h-10 max-w-[22rem] py-1.5 text-[15px] font-medium" value="${esc(titleOf(p))}" aria-label="New name for ${esc(titleOf(p))}" autocomplete="off" spellcheck="false">
           <p class="mt-1.5 flex items-center gap-1 px-0.5 text-xs text-zinc-500 dark:text-zinc-400">${KBD('↵')}<span>save ·</span>${KBD('Esc')}<span>cancel · the address stays <code class="font-mono">/p/${esc(p.name)}</code></span></p>`
-        : `<p class="flex min-w-0 items-center gap-2"><span class="truncate text-[15px] font-semibold">${esc(titleOf(p))}</span>${cur ? '<span class="shrink-0 rounded-md bg-zinc-100 px-1.5 py-0.5 text-[11px] font-medium text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">This project</span>' : ''}</p>
-          <p class="mt-0.5 truncate font-mono text-xs text-zinc-500 dark:text-zinc-400">/p/${esc(p.name)} · ${p.open} open${cur && S.file ? ` · ${esc(S.file)}` : ''}</p>`}</div>
+        : `<a href="/p/${encodeURIComponent(p.name)}/" class="block rounded-lg hover:opacity-80"><p class="flex min-w-0 items-center gap-2"><span class="truncate text-[15px] font-semibold">${esc(titleOf(p))}</span>${cur ? '<span class="shrink-0 rounded-md bg-zinc-100 px-1.5 py-0.5 text-[11px] font-medium text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">This project</span>' : ''}</p>
+          <p class="mt-0.5 truncate font-mono text-xs text-zinc-500 dark:text-zinc-400">/p/${esc(p.name)} · ${p.open} open${cur && S.file ? ` · ${esc(S.file)}` : ''}</p></a>`}</div>
         ${ren ? '' : `<button data-act="p-rename" data-slug="${esc(p.name)}" class="${P_BTN}">${ico('pencil', 'size-4')}Rename</button><button data-act="p-delete" data-slug="${esc(p.name)}" class="${P_BTN}">${ico('trash', 'size-4')}Delete</button>`}</li>`; };
     return `<section class="flex items-center gap-4 border-t border-zinc-200 py-5 dark:border-zinc-800">${add}</section>
       <ul class="divide-y divide-zinc-200 border-y border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">${live.map(row).join('')}</ul>
       ${gone.length ? `<section class="pt-8"><h2 class="text-[15px] font-semibold">Deleted projects</h2><p class="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">A deleted project leaves the sidebar and stops giving work to agents. Nothing in it is lost: Restore brings it back as it was.</p>
         <ul class="mt-3 flex flex-col gap-2">${gone.map(d => `<li class="flex items-center gap-3 rounded-xl bg-zinc-50 px-3 py-2.5 dark:bg-zinc-900"><span aria-hidden="true" class="grid size-8 shrink-0 place-items-center rounded-lg bg-zinc-400 text-sm leading-none font-bold text-white uppercase dark:bg-zinc-600">${esc([...String(d.title || '?')][0])}</span>
-          <div class="min-w-0 flex-1"><p class="truncate text-[15px] font-medium text-zinc-600 dark:text-zinc-300">${esc(d.title)}</p><p class="truncate text-xs text-zinc-500 dark:text-zinc-400">Deleted ${dayShort(d.t)} · ${plural(d.items, 'item')} · <span class="font-mono">/p/${esc(d.name)}</span></p></div>
+          <div class="min-w-0 flex-1"><p class="truncate text-[15px] font-medium text-zinc-600 dark:text-zinc-300">${esc(d.title)}</p><p class="text-xs break-words text-zinc-500 dark:text-zinc-400">Deleted ${dayShort(d.t)} · ${plural(d.items, 'item')} · <span class="font-mono">/p/${esc(d.name)}</span></p></div>
           <button data-act="p-restore" data-slug="${esc(d.name)}" class="${P_BTN}">${ico('undo', 'size-4', '2')}Restore</button><button data-act="p-purge" data-slug="${esc(d.name)}" class="${P_BTN} hover:text-red-600 dark:hover:text-red-400">Delete forever</button></li>`).join('')}</ul>
         <p class="mt-3 text-xs text-zinc-500 dark:text-zinc-400">Delete forever asks for a second click. It is the only step that cannot be undone.</p></section>` : ''}`;
   },
   phone: () => {
     const link = S.remote ? S.remote + '/' : '';
     return (link ? pPart('Link', 'Send this link to your phone and open it once. From then on Taska opens there just like here, from anywhere.', pBox(link) + pCopy(link, 'Copy link', true))
-      : pPart('Link', 'Taska has no public address yet (start it with --public). On the same network your phone needs no key.'))
+      : pPart('Link', 'Taska has no public address yet (start it with <code class="font-mono whitespace-nowrap">--public</code>). On the same network your phone needs no key.'))
       + pPart('On the Home Screen', 'Open the link, then on iPhone tap Share and Add to Home Screen; on Android, the menu and Install app. Taska then opens full screen, like an app, and can record voice notes.')
       + pPart('Key', `${link ? 'Or type' : 'Type'} the key once on the device. Taska on the Home Screen needs it.`,
         `<div class="mt-3 flex items-center gap-4"><span class="font-mono text-2xl tracking-wider select-all">${esc(S.key)}</span><button data-act="copy-text" data-text="${esc(S.key)}" class="${SECOND}">${ico('copy', 'size-4')}Copy key</button></div>`)
       + pSetting('New key', 'This computer and your local network never need the key. A new key signs out every other device.',
         '<button data-act="new-key" class="inline-flex h-11 shrink-0 items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 text-[15px] font-semibold text-red-600 hover:bg-red-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-red-400 dark:hover:bg-red-400/10">New key</button>');
   },
-  fixes: () => !P_CACHE.fixes ? P_LOADING : (P_CACHE.prefs ? pPart(`Transcription preferences${P_CACHE.prefs.default ? '<span class="ml-2 text-[13px] font-normal text-zinc-400">default</span>' : ''}`, "How every project's voice notes are written down, in your own words. Transcription follows them after its own rules.", prefsBox() + prefsEditBtn()) + pSetting('Tidy voice notes', P_CACHE.prefs.tidy ? 'On: fillers and repeats out, sentences joined, every detail kept. The words as said stay one tap away (As said, on the voice note).' : 'Off: voice notes are written down word for word.',
+  fixes: () => !P_CACHE.fixes ? P_LOADING : (P_CACHE.prefs ? pPart(`Transcription preferences${P_CACHE.prefs.default ? '<span class="ml-2 text-[13px] font-normal text-zinc-400">default</span>' : ''}`, "How every project's voice notes are written down, in your own words. Transcription follows them after its own rules.", (U.prefsEdit ? '<p class="mt-3 text-sm text-zinc-500 dark:text-zinc-400">Editing in the box below.</p>' : prefsBox() + prefsEditBtn())) + pSetting('Tidy voice notes', P_CACHE.prefs.tidy ? 'On: fillers and repeats out, sentences joined, every detail kept. The words as said stay one tap away (As said, on the voice note).' : 'Off: voice notes are written down word for word.',
       `<button data-act="tidy-toggle" role="switch" aria-checked="${!!P_CACHE.prefs.tidy}" class="${SECOND}">${P_CACHE.prefs.tidy ? 'Turn off' : 'Turn on'}</button>`) + pPart('Spellings', P_CACHE.fixes.length ? 'Words voice notes hear your way: ones you corrected, and ones you added here.' : 'None yet. Add a word below, or select wrong words in a voice note and write the right ones.',
       `<div class="mt-3 flex items-center gap-1.5"><input id="fixWord" class="${FIELD} h-10 py-1.5 text-sm" placeholder="A name or term to hear right, e.g. Needs you" aria-label="A word to hear right" autocomplete="off" spellcheck="false"><button data-act="fix-add" class="h-10 shrink-0 rounded-xl bg-zinc-900 px-3.5 text-sm font-semibold text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200">Add</button></div>`) : '') + (!P_CACHE.fixes.length ? (P_CACHE.prefs ? '' : pRuled(EMPTY('None yet. When a voice note gets words wrong, select them in the input and write the right ones: from then on every project writes them your way.')))
     : `<ul class="divide-y divide-zinc-200 border-y border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">${P_CACHE.fixes.map(c => `<li class="flex min-h-13 items-center gap-3 py-1.5 text-[15px]"><span class="min-w-0 flex-1 break-words">${c.wrong ? `<span class="text-zinc-400 line-through decoration-zinc-400 dark:text-zinc-500">${esc(c.wrong)}</span><span class="px-2 text-zinc-400 dark:text-zinc-500">→</span>` : ''}<span class="font-medium">${esc(c.right)}</span></span>
@@ -8397,7 +8398,7 @@ async function deleteProject(slug) {
   let d;
   try { d = await projectCall('delete', {name: slug}); } catch (ex) { U.leaving = false; throw ex; }
   if (slug === S.project) {  // this project is gone: on to another one, whose Projects offers it back
-    const next = (P_CACHE.projects || []).find(p => p.name !== slug);
+    const next = [...(P_CACHE.projects || [])].filter(p => p.name !== slug).sort((a, b) => b.t - a.t)[0];  // T228 #2: the one you used most lately
     try { sessionStorage.setItem('taska.deleted', JSON.stringify({name: slug, title: d.title})); } catch (_) {}
     return location.assign(next ? `/p/${encodeURIComponent(next.name)}/projects` : '/');
   }
