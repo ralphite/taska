@@ -7469,6 +7469,7 @@ const ACT = {
   },
   open: b => openItem(Number(b.dataset.n)),
   back: () => desk() ? fullWidth(false) : hist(() => history.state?.n ? history.back() : closeItem()),
+  'cp-run': b => paletteRun(b),
   'item-menu': b => b?.dataset.arm && desk() ? itemMenuDesk(U.open, b.dataset.arm) : itemMenu(U.open),  // a property's chip opens the menu at that part (T274 #10)
   'do-next': b => {  // F197: first of its priority in the agent's queue, or back where it was; with Undo and Z
     const n = Number(b.dataset.n), it = byN.get(n);
@@ -8670,7 +8671,7 @@ const KEYS = [
   ['Move', [['J / K', 'Next or previous item'], ['⇧J / ⇧K', 'Next or previous item that needs you (Go through)'], ['O or ↵', 'Full width; Esc goes back'], ['Space', 'Scroll the item'], ['G then I N A R', 'Items, Inputs, Archive, Rules'], ['G then P', 'Switch project (type to find it)'], ['G then S', 'Settings'], ['[', 'Show or hide the sidebar']]],
   ['Act on the selected item', [['A', "The item's next step: Accept, Approve, Answer or Reply"], ['R', 'Reply or add to it'], ['N', 'Not yet: say what is missing, then it goes back'], ['1–9, ⌘↵', 'Pick a choice, send the answer'], ['D · W · L', "Done · Won't do · Later / Now"], ['E / ⇧E', 'Archive or unarchive / archive every finished item'], ['S · P · T', 'Status, priority, type: then the digit or letter the ⋯ menu shows'], ['M · ⇧C', 'Put under… · Copy for agent'], ['I · ⇧D · ⇧A', 'Edit · New doc · Add subitem'], ['.', 'All actions'], ['Z', 'Undo your last action here, again for the one before; older changes: Change log']]],
   ['Mouse', [['Hover a row', 'Its quick actions, always in the same places'], ['Right-click a row', 'Its menu, at the pointer'], ['Click cut-off words', 'Show them all'], ['Drag a pane edge', 'Resize; double-click for the default']]],
-  ['Write and find', [['C', 'New input to the project (on Rules, a new rule)'], ['V', 'Voice note for the selected item; V again stops'], ['⇧V', 'New input by voice; ⇧V again stops and sends'], ['⌥V', 'Voice note while typing in the box'], ['↵', 'While recording: stop, into the box'], ['⇧↵ or ⌘↵', 'Send; while recording: stop and send'], ['/', 'Search'], ['F', 'Filters'], ['?', 'This sheet'], ['Esc', 'Step back one level']]],
+  ['Write and find', [['⌘K', 'Go to an item or do anything here'], ['C', 'New input to the project (on Rules, a new rule)'], ['V', 'Voice note for the selected item; V again stops'], ['⇧V', 'New input by voice; ⇧V again stops and sends'], ['⌥V', 'Voice note while typing in the box'], ['↵', 'While recording: stop, into the box'], ['⇧↵ or ⌘↵', 'Send; while recording: stop and send'], ['/', 'Search'], ['F', 'Filters'], ['?', 'This sheet'], ['Esc', 'Step back one level']]],
 ];
 function showKeys() {
   const sec = ([group, keys]) => `<section class="mb-5"><h3 class="mb-2 text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">${group}</h3>
@@ -8770,6 +8771,54 @@ document.addEventListener('keydown', e => {
   if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && rows.length) { e.preventDefault(); PS.i = (PS.i + (e.key === 'ArrowDown' ? 1 : -1) + rows.length) % rows.length; projectSwitcher(false); }
   else if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); rows[PS.i]?.click(); }
 });
+
+// T274 #33: ⌘K, one place to find an item or do anything the keys do. A command replays its keys, so it does
+// exactly what the key does where you are.
+const CP = {q: '', i: 0};
+const CP_PAGE = [['New input', 'c'], ['Search', '/'], ['Filter', 'f'], ['Go through what needs you', 'J'], ['Record a voice input', 'V'], ['Items', 'g i'], ['Inputs', 'g n'], ['Archive', 'g a'], ['Rules', 'g r'],
+  ['Switch project', 'g p'], ['Settings', 'g s'], ['Show or hide the sidebar', '['], ['Undo', 'z'], ['Keyboard shortcuts', '?']];
+const CP_ITEM = [['Accept or approve', 'a'], ['Reply', 'r'], ['Not yet', 'n'], ['Done', 'd'], ['Later or back to now', 'l'], ['Archive', 'e'], ["Won't do", 'w'], ['Edit', 'i'],
+  ['Status…', 's'], ['Priority…', 'p'], ['Type…', 't'], ['Put under…', 'm'], ['Add subitem', 'A'], ['New doc', 'D'], ['Copy for agent', 'C'], ['Full width', 'o']];
+function palette(fresh = true) {
+  if (fresh) { CP.q = ''; CP.i = 0; }
+  const q = CP.q.trim().toLowerCase(), n = detailShown() && !D.compose ? U.open : null, has = t => !q || t.toLowerCase().includes(q);
+  const items = q ? S.items.filter(it => !it.merged_into && hay(it).includes(q)).sort((a, b) => CLOSED(a.status) - CLOSED(b.status) || b.n - a.n).slice(0, 6) : [];
+  const rows = [...(n ? CP_ITEM.filter(([t]) => has(t) || has(code(n))).map(([t, k]) => ({t: `${t}`, sub: code(n), k})) : []),
+    ...CP_PAGE.filter(([t]) => has(t)).map(([t, k]) => ({t, k})),
+    ...items.map(it => ({t: it.title, n: it.n}))];
+  CP.i = Math.min(CP.i, Math.max(0, rows.length - 1));
+  const list = rows.map((r, i) => `<button data-act="cp-run" data-i="${i}" ${r.n ? `data-n="${r.n}"` : `data-k="${esc(r.k)}"`} aria-selected="${i === CP.i}" class="flex h-10 w-full min-w-0 items-center gap-3 rounded-lg px-3 text-left text-sm hover:bg-zinc-100 aria-selected:bg-zinc-100 dark:hover:bg-zinc-800 dark:aria-selected:bg-zinc-800">
+      ${r.n ? `${stateIcon(byN.get(r.n).status, statusName(byN.get(r.n)), 'size-4')}<span class="font-mono text-xs font-bold ${TYPE_TEXT[byN.get(r.n).type]}">${code(r.n)}</span><span class="min-w-0 flex-1 truncate">${esc(r.t)}</span>`
+        : `<span class="min-w-0 flex-1 truncate">${esc(r.t)}${r.sub ? `<span class="ml-1.5 font-mono text-xs text-zinc-500 dark:text-zinc-400">${r.sub}</span>` : ''}</span>${r.k.split(' ').map(x => `<kbd class="grid h-5 min-w-5 place-items-center rounded-md px-1 font-sans text-[11px] font-semibold text-zinc-500 ring-1 ring-zinc-300 dark:text-zinc-400 dark:ring-zinc-600">${esc(x)}</kbd>`).join('')}`}</button>`).join('')
+    || `<p class="px-3 py-2 text-sm text-zinc-500 dark:text-zinc-400">Nothing matches</p>`;
+  if (!fresh && $('cpList')) { $('cpList').innerHTML = list; $('cpList').querySelector('[aria-selected=true]')?.scrollIntoView({block: 'nearest'}); return; }
+  dialog('Go to or do', `<input id="cpFilter" class="${FIELD}" placeholder="Type a command, a code or words of an item" aria-label="Command or item" autocomplete="off"><div id="cpList" class="-mx-1 mt-2 flex max-h-[60dvh] flex-col gap-0.5 overflow-y-auto">${list}</div>`, {focus: false});
+  $('cpFilter').focus();
+}
+function paletteRun(b) {
+  closeDialog();
+  if (b.dataset.n) return openItem(Number(b.dataset.n));
+  document.activeElement?.blur();
+  const keys = b.dataset.k.split(' '), t0 = Date.now();
+  const go = () => {  // once the sheet is gone (it closes with a short fade): its keys are the page's again
+    if (!$('overlay').hidden && Date.now() - t0 < 1000) return requestAnimationFrame(go);
+    for (const key of keys) document.dispatchEvent(new KeyboardEvent('keydown', {key, bubbles: true, cancelable: true}));
+  };
+  go();
+}
+document.addEventListener('input', e => { if (e.target.id === 'cpFilter') { CP.q = e.target.value; CP.i = 0; palette(false); } });
+document.addEventListener('keydown', e => {
+  if (e.target.id !== 'cpFilter') return;
+  const rows = $('cpList').querySelectorAll('[data-act="cp-run"]');
+  if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && rows.length) { e.preventDefault(); CP.i = (CP.i + (e.key === 'ArrowDown' ? 1 : -1) + rows.length) % rows.length; palette(false); }
+  else if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); if (rows[CP.i]) paletteRun(rows[CP.i]); }
+});
+document.addEventListener('keydown', e => {  // ⌘K anywhere on the desktop, even while typing
+  if (!desk() || !(e.metaKey || e.ctrlKey) || e.altKey || e.key.toLowerCase() !== 'k') return;
+  e.preventDefault();
+  if (!$('overlay').hidden) { const again = !!$('cpFilter'); closeDialog(); if (again) return; }  // ⌘K again closes it
+  palette();
+}, true);
 
 // One table drives the keys. Single keys only act while you are not typing; Esc first leaves a text field.
 const ITEM_KEYS = new Set([...'arndwle.sptmiCDA']);  // the keys that act on the selected item
