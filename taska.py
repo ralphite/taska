@@ -5705,7 +5705,7 @@ function advance(from, said = '') {  // said: what you just sent, for the toast,
 function endWalk(said = '') {
   const g = U.go, left = g ? g.list.filter(k => !g.done.has(k) && byN.get(k) && needsYou(byN.get(k))).length : 0;
   closeDialog();
-  if (!left && goAll() && nextNeeding()) return goNextProject();  // F251
+  if (goAll() && goAllNext()) return;  // F251
   goAllOff();
   const end = left ? `that was the last one, ${left} still need${left === 1 ? 's' : ''} you` : 'nothing else needs you';
   toast(said ? `${said} · ${end}` : end[0].toUpperCase() + end.slice(1));
@@ -8358,7 +8358,17 @@ function startGoFromAnotherProject() {
 }
 // F251: Go through from the home page goes on from project to project by itself, until nothing needs you
 const goAll = () => { try { return sessionStorage.getItem('taska.go.all') === '1'; } catch (_) { return false; } };
-const goAllOff = () => { try { sessionStorage.removeItem('taska.go.all'); } catch (_) {} };
+const goAllOff = () => { try { sessionStorage.removeItem('taska.go.all'); sessionStorage.removeItem('taska.go.seen'); } catch (_) {} };
+function goAllNext() {  // the next project not walked yet in this round; skipped items don't bring you back to one
+  let seen = [];
+  try { seen = JSON.parse(sessionStorage.getItem('taska.go.seen') || '[]'); } catch (_) {}
+  seen = [...new Set([...seen, S.project])];
+  const next = othersNeeding().find(p => !seen.includes(p.name));
+  if (!next) return false;
+  try { sessionStorage.setItem('taska.go.seen', JSON.stringify(seen)); sessionStorage.setItem('taska.go.start', next.name); } catch (_) {}
+  location.assign(`/p/${encodeURIComponent(next.name)}/`);
+  return true;
+}
 function renderSideFoot() {  // the sidebar's foot: Settings and the keys (T274 #24: Undo is on the toast and Z)
   const foot = (act, icon, label, key, attrs = '') => `<button data-act="${act}" ${attrs} class="flex h-9 min-w-0 flex-1 items-center gap-2.5 rounded-lg px-2.5 text-left text-sm text-zinc-600 hover:bg-zinc-200/60 dark:text-zinc-300 dark:hover:bg-zinc-800">${ico(icon, 'size-4 shrink-0 text-zinc-500 dark:text-zinc-400', '2')}<span class="min-w-0 flex-1 truncate">${label}</span>${KBD(key)}</button>`;
   const u = U.mine.at(-1);
@@ -8656,8 +8666,8 @@ function endGoDesk(how) {  // 'end': you ended it; 'last': after the last one
   const settled = g.done.size, left = g.list.filter(k => !g.done.has(k) && byN.get(k) && needsYou(byN.get(k))).length;
   const tally = `${settled} settled${left ? ` · ${left} still need${left === 1 ? 's' : ''} you` : ''}`;
   U.go = null; render();
+  if (how !== 'end' && goAll() && goAllNext()) return;  // F251: from home, on to the next project, skipped ones or not
   const next = how !== 'end' && !left && nextNeeding();  // F193: another project has something for you, the one Go on opens
-  if (next && goAll()) return goNextProject();
   goAllOff();
   if (next) return toast(`Nothing else needs you here · ${tally} · ${titleOf(next)} has ${next.needs}`, () => goNextProject(), {label: 'Go on ⇧J'});
   toast(how === 'end' ? `Stopped going through · ${tally}` : left ? `That was the last one · ${tally}` : `Nothing else needs you · ${tally}`);
