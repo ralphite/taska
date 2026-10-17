@@ -5412,7 +5412,10 @@ function detailHtml(it) {
   const talk = thread.length ? `<div class="flex flex-col gap-6 border-t border-zinc-100 pt-6 dark:border-zinc-800/70">
       ${hidden ? `<button data-act="more" data-n="${n}" class="-my-1 h-11 self-center rounded-lg px-3 text-sm font-medium text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10">Show ${hidden} earlier</button>` : ''}
       ${talkHtml(it, thread.slice(hidden))}</div>` : '';
-  return `<div class="flex flex-col gap-6 px-5 pt-5 pb-10 lg:mx-auto lg:w-full lg:max-w-[46rem] lg:px-8 lg:pt-9">${[head, needsCard(it), desc,
+  // B279: on the desktop the item itself (title, state, what it needs from you, its text) stays at the top of the pane;
+  // the rest (files, documents, subitems, the talk) scrolls under it, and an item opens at its latest message
+  const top = [head, needsCard(it), desc].filter(Boolean).join('');
+  return `<div class="flex flex-col gap-6 px-5 pt-5 pb-10 lg:mx-auto lg:w-full lg:max-w-[46rem] lg:px-8 lg:pt-0"><div class="flex flex-col gap-6 lg:sticky lg:top-0 lg:z-10 lg:-mx-8 lg:max-h-[45vh] lg:overflow-y-auto lg:border-b lg:border-zinc-200 lg:bg-white lg:px-8 lg:pt-7 lg:pb-5 lg:scrollbar-thin dark:lg:border-zinc-800 dark:lg:bg-zinc-950">${top}</div>${[
     files.length ? fileRows(files, 'item' + n, 'h-24 w-16') : '', docs, subs, talk].filter(Boolean).join('')}</div>`;
 }
 
@@ -7070,7 +7073,7 @@ function openItem(n, push = true) {
   if (desk()) { D.page = null; D.compose = false; writeURL(false, history.state?.full ? {...history.state, n} : null); }
   else if (push && !URLS.applying) hist(() => { if (location.pathname !== P + code(n)) history.pushState({n, ...searchStep()}, '', P + code(n) + viewQuery()); });  // after a sheet's step back (B150)
   render();
-  if (fresh) $('detailBody').scrollTop = 0;
+  if (fresh) $('detailBody').scrollTop = desk() ? $('detailBody').scrollHeight : 0;  // B279: the desktop opens an item at its latest message, its top stays in sight
   if (desk()) document.querySelector(`#list [data-act="open"][data-n="${n}"]`)?.scrollIntoView({block: 'nearest'});
 }
 
