@@ -5593,7 +5593,7 @@ function renderComposer() {
   $('boxView').hidden = !view;
   if (view) paint($('boxView'), draftHtml(words));
   // The three buttons. While recording the textarea keeps its place (unseen), so the box keeps its size.
-  const rec = !!R.rec, has = !!(t.value.trim() || U.files.length || ticks.length);
+  const rec = !!R.rec, has = !!(t.value.trim() || U.files.length);  // T225 #19: ticked choices alone are sent by the question's own Send answer, not a second button here
   const micTip = !window.isSecureContext ? 'Voice needs an https link here: press for it' : D.compose ? 'Record a voice note · ⌥V' : 'Record a voice note · V, or ⌥V while typing';
   boxBtn($('attachBtn'), rec ? 'rec-cancel' : 'attach', rec ? 'x' : 'plus', rec ? 'Discard the recording' : 'Add images or files', rec ? 'Discard · Esc' : 'Add images or files');
   const sb = $('sendBtn'), recSend = [aux => boxBtn(aux, 'rec-send', 'up', 'Stop and send', 'Stop and send · ⇧↵', 'size-5', '2'), b => boxBtn(b, 'rec-stop', 'check', 'Stop recording, words into the box', 'Words into the box · ↵', 'size-5', '2.5')];
