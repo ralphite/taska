@@ -1658,6 +1658,8 @@ LOOP  doing means work has started (not that you are on it this second). Mark an
 WATCH while o=$(curl -s "BASE/next?wait=540"); [ -z "$o" ] || echo "$o" | grep -qE 'nothing to do now|keep-going OFF'; do sleep 20; done
 YOURS Items you create start as proposed: the user approves them before anyone works on them. `B03 done`
       from you puts the item in review; the user accepts it. Write item content in the user's language.
+      The message with done has four parts, in this order: Result (what is different now, one line); How to
+      check (where to look or what to tap); What changed (a short list); a picture of it (T274 #41).
 WHO   Add ?by=<you> (claude-code, codex, antigravity) to /next and /do: the user sees whether an agent is around.
 TELL  The user reads Taska only, often on a phone: never your terminal or chat. Everything they should see
       (what you did, how you checked it, screenshots, plans, questions) goes into the item's messages.
@@ -4565,6 +4567,7 @@ function visible(tab = U.tab) {
     .sort((a, b) => a.pri.localeCompare(b.pri) || a.n - b.n);  // same priority: oldest first, like /next
 }
 // The agent's queue in the order it takes the work (/next): now before later, in progress first, then P0→P3, oldest first.
+const queueHead = () => S.items.filter(it => inQueue(it) && it.when === 'now' && it.status !== 'doing').sort(queueOrder)[0]?.n;  // T274 #12: the one agents take next
 const queueOrder = (a, b) => (a.when !== 'now') - (b.when !== 'now') || (a.status !== 'doing') - (b.status !== 'doing') || a.pri.localeCompare(b.pri)
   || (a.rank == null) - (b.rank == null) || (a.rank || 0) - (b.rank || 0) || a.n - b.n;  // same priority: what you put next first (F197), then oldest
 // The queue is one thing wherever it is counted (S3): the band in Items and This project's Agents both count every item in
@@ -4586,6 +4589,12 @@ const WAVE = 'h-2 h-3 h-4 h-2 h-5 h-3 h-2 h-4 h-3 h-2 h-1.5 h-3 h-4 h-2'.split('
 function fileRows(files, gid, size, cls = '') {
   const audio = files.filter(f => (f.mime || '').startsWith('audio/')), rest = files.filter(f => !(f.mime || '').startsWith('audio/'));
   return `<div class="${cls} flex flex-col gap-2">${rest.length ? `<div class="flex items-end gap-2 overflow-x-auto lg:scrollbar-thin ${rest.length > 3 ? '[mask-image:linear-gradient(to_right,black_85%,transparent)]' : ''}">${thumbs(rest, gid, size)}</div>` : ''}${audio.length ? `<div class="flex flex-wrap gap-2">${thumbs(audio, gid + 'a', size)}</div>` : ''}</div>`;
+}
+// T274 #40: your voice note under your words is one small line: play, its length, the original words
+function voiceLine(files) {
+  const audio = (files || []).filter(f => (f.mime || '').startsWith('audio/'));
+  return audio.map(f => { const m = /(\d+)-(\d+)\.\w+$/.exec(f.name || ''), len = m ? `${+m[1]}:${m[2]}` : 'Voice';
+    return `<span class="flex items-center gap-1 px-1 text-[11px] text-zinc-400 dark:text-zinc-500"><button data-act="play" data-src="${P}f/${encodeURIComponent(f.f)}" aria-label="Play ${esc(f.name)}" class="${HIT} flex h-7 items-center gap-1 rounded-full px-1.5 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"><span data-icon>${ico('play', 'size-3.5')}</span><span data-time class="font-mono tabular-nums">${len}</span></button>${P_CACHE.prefs?.tidy !== false ? `·<button data-act="as-said" data-f="${esc(f.f)}" class="${HIT} h-7 rounded-lg px-1 font-medium hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200">Original words</button>` : ''}</span>`; }).join('');
 }
 function thumbs(files, gid, size = 'size-20') {
   const imgs = files.filter(f => (f.mime || '').startsWith('image/'));
@@ -4712,12 +4721,12 @@ function itemRow(it, depth = 0, group = [], band = '') {  // band: the band it i
   const isImg = f => (f.mime || '').startsWith('image/'), imgs = files.filter(isImg).length, other = files.filter(f => !isImg(f) && !(f.mime || '').startsWith('audio/')).length;
   const meta = [
     it.type === 'rule' ? '' : `<span class="${PRI_TEXT[it.pri]}">${it.pri}</span>`,
-    needsYou(it) ? `<span class="font-semibold text-amber-700 dark:text-amber-400">${needWord(it)}</span>` : it.reply && !closed ? '<span class="text-emerald-700 dark:text-emerald-400">Replied</span>' : '',
+    needsYou(it) ? `<span class="font-semibold text-amber-700 dark:text-amber-400">${needWord(it)}</span>` : it.reply && !closed ? '<span class="text-zinc-500 dark:text-zinc-400">Replied</span>' : '',  // T274 #42: green is for done
     hasDraft(c) ? DRAFT_MARK() : '',  // T113 B24: a reply you have not sent yet
     it.status === 'doing' ? '<span class="text-blue-600 dark:text-blue-400">In progress</span>' : closed && band !== 'retired' ? `<span>${statusName(it)}</span>` : '',  // the Retired band says it once (T225 #11 follow-up)
     it.archived && U.tab !== 'archive' ? SOFT('Archived') : '',
     it.when === 'later' && !closed && band !== 'later' ? SOFT('Later') : '',
-    it.rank != null && inQueue(it) && it.when === 'now' ? '<span class="font-semibold text-blue-600 dark:text-blue-400" title="You put it first of its priority: agents take it next">Next</span>' : '',  // F197
+    it.n === queueHead() ? '<span class="font-semibold text-blue-600 dark:text-blue-400" title="Agents take this one next">Next</span>' : '',  // T274 #12: only the true next one;  // F197
     it.parent && !depth ? `<span>↳ ${code(it.parent)}</span>` : '',  // nested rows already hang under it
     children.length ? cnt('subitems', `${children.filter(k => CLOSED(k.status)).length}/${children.length}`, 'Subitems finished') : '',
     talk ? cnt('comment', talk, plural(talk, 'comment')) : '',
@@ -4753,7 +4762,7 @@ const NEED = {
   reply: {icon: 'reply', pill: 'bg-rose-100 text-rose-900 ring-rose-300/80 dark:bg-rose-400/15 dark:text-rose-100 dark:ring-rose-400/30', text: 'text-rose-700 dark:text-rose-400', btn: 'bg-rose-600 text-white hover:brightness-95 dark:bg-rose-500 dark:text-rose-950 dark:hover:brightness-110'},
 };
 const ACTION_PILL = v => `inline-flex h-8 min-w-18 items-center justify-center gap-1 rounded-full pr-3 pl-2.5 text-[13px] font-semibold ring-1 ring-inset ${NEED[v].pill}`;
-const rowAction = it => it.wait ? (it.wait.kind === 'block' ? ['reply', 'Reply'] : ['answer', 'Answer']) : it.status === 'proposed' ? ['approve', 'Approve'] : ['accept', 'Accept'];
+const rowAction = it => it.wait ? ['answer', 'Answer'] : it.status === 'proposed' ? ['approve', 'Approve'] : ['accept', 'Accept'];  // T274 #31: asked or blocked, it is answering
 function needsRow(it) {
   const [v, label] = rowAction(it);
   const top = `<div data-act="open" data-n="${it.n}" ${rowCur(it)} class="group relative flex cursor-pointer items-center gap-2.5 py-2.5 pr-3 pl-4 ${rowTint(it)}">
@@ -4936,7 +4945,7 @@ const KIND_TAG = x => KIND[x.kind] ? `<span class="rounded px-1.5 py-0.5 text-[1
 function msgText(x, gid, form = 0, done = null) {
   const long = x.by !== 'you' && x.kind !== 'ask' && (x.text.length > 240 || x.text.trim().split('\n').length > 3);
   const open = U.moreMsgs.has(x.id), more = `data-act="more-msg" data-expand data-id="${x.id}"`;  // F106: a click on the words opens them
-  if (long && desk() && !open) return `<div data-clip ${more} class="-mr-2 max-h-[min(24rem,50dvh)] cursor-pointer overflow-y-auto pr-2 lg:scrollbar-thin data-[over]:mask-b-from-80%">${rich(x.text, gid + 'md' + x.id, '', form, done)}</div>`;
+  if (long && desk() && !open) return `<div data-clip ${more} class="max-h-48 cursor-pointer overflow-hidden mask-b-from-60%">${rich(x.text, gid + 'md' + x.id, '', form, done)}</div><button data-act="more-msg" data-id="${x.id}" class="-mb-2 flex h-9 items-center text-sm font-medium text-blue-600 dark:text-blue-400">Show all</button>`;  // T274 #15: no box scrolling inside the pane
   const folded = long && !desk() && !open;
   return (long ? `<div ${more} class="cursor-pointer">` : '') + rich(folded ? x.text.trim().split('\n')[0] : x.text, gid + 'md' + x.id, '', form, done) + (long ? '</div>' : '')
     + (long ? `<button data-act="more-msg" data-id="${x.id}" class="-mb-2 flex h-11 items-center text-sm font-medium text-blue-600 dark:text-blue-400">${folded ? 'Show more' : 'Show less'}</button>` : '');
@@ -4947,6 +4956,11 @@ document.addEventListener('scroll', e => { if (e.target.matches?.('[data-clip]')
 // One message of a conversation, the same on the item page and in the preview: yours on the right in blue,
 // an agent's on the left in a card under its name. An open question shows amber, with its options to tap.
 // A question someone answered says so, with the picked options ticked (I84): the answer is your next message.
+// T274 #27: an answered question folds to its question and what you chose, not a row of choices that look clickable
+function answered(x, gid, done) {
+  const q = x.text.split('\n').filter(l => !CHOICE.test(l)).join('\n').trim();
+  return `${q ? rich(q, gid + 'q' + x.id) : ''}<div class="mt-1.5 font-semibold text-emerald-700 dark:text-emerald-400">✓ You chose: ${done.map(esc).join(' · ')}</div>`;
+}
 function answerOf(thread, x) {
   if (x.kind !== 'ask') return null;
   const a = thread.slice(thread.indexOf(x) + 1).find(userWord);
@@ -4982,9 +4996,10 @@ function talkHtml(it, list, gid = '') {
 function msgHtml(x, gid, form = 0, done = null, ver = null, m = {}) {
   const you = x.by === 'you', src = you && x.src ? byR.get(x.src) : null, y = ver ? {...x, text: ver.text} : x;
   const strip = (files, g, size) => files?.length ? fileRows(files, g, size, you ? 'items-end max-w-full [&>div]:max-w-full' : 'mt-3') : '';  // T230: pictures and voice notes in their own rows
+  if (you && y.text && y.text.trim().split('\n').every(l => /^\s*✓/.test(l)) && !src?.files?.length) return '';  // T274 #27: the picks show on the question
   if (you) return `<div ${x.src ? `data-src="${x.src}"` : ''} class="group flex scroll-mb-4 flex-col items-end gap-1 rounded-2xl transition-colors duration-700 ${ver?.old ? 'opacity-60' : ''}">
       ${y.text ? `<div ${voiceAttr(src)} class="max-w-[85%] rounded-2xl rounded-tr-md bg-blue-600 px-4 py-2.5 text-[15px] leading-relaxed text-white dark:bg-blue-500 [&_a]:text-white [&_a]:decoration-white/60 [&_blockquote]:border-white/50 [&_blockquote]:text-white/85 [&_code]:bg-white/15 [&_code]:text-white [&_pre]:bg-white/15 [&_pre]:text-white [&_mark]:text-zinc-900">${ver?.old ? `<div class="line-clamp-2">${msgText(y, gid)}</div>` : msgText(y, gid)}</div>` : ''}
-      ${ver?.old ? '' : strip(src?.files, gid + 't' + x.id)}
+      ${ver?.old ? '' : strip(src?.files?.filter(f => !(f.mime || '').startsWith('audio/')), gid + 't' + x.id) + voiceLine(src?.files)}
       <span class="px-1 text-[11px] text-zinc-400 dark:text-zinc-500">You · ${ver?.old ? 'earlier version · ' : ver?.label ? ver.label + ' · ' : ''}${when(x.t)}${x.edited && !ver?.old ? ` · ${src?.history?.length ? `<button data-act="input-history" data-id="${src.id}" title="See what changed" class="relative underline decoration-dotted underline-offset-2 after:absolute after:-inset-3 hover:text-zinc-700 dark:hover:text-zinc-300">edited ${when(x.edited)}</button>` : `edited ${when(x.edited)}`}` : ''}${src?.tr_wait ? ' · <span class="animate-pulse text-blue-600 dark:text-blue-400">transcribing the voice note…</span>' : ''}${m.read ? ` · <span title="${esc(m.read.names.join(', '))} read it ${when(new Date(m.read.t).toISOString())}" class="inline-flex items-center gap-0.5 font-medium text-zinc-500 dark:text-zinc-400">${ico('check', 'size-3', '2.5')}Read by ${esc(m.read.names.join(', '))}</span>` : ''}</span>${src && !ver?.old && !src.moved && !src.deleted ? `<div class="flex gap-0.5 lg:opacity-0 lg:group-hover:opacity-100 lg:focus-within:opacity-100"><button data-act="input-edit" data-id="${src.id}" class="${DC_BTN}">${ico('pencil', 'size-3.5')}Edit</button><button data-act="input-append" data-id="${src.id}" class="${DC_BTN}">${ico('plus', 'size-3.5')}Add more</button></div>` : ''}</div>`;  // B265: edit it right here
   if (x.kind === 'withdraw') return `<div class="flex items-start gap-2 px-1 text-[13px] leading-snug text-zinc-500 dark:text-zinc-400">${ico('undo', 'mt-0.5 size-3.5 shrink-0')}
       <div class="min-w-0 flex-1"><span class="font-medium text-zinc-600 dark:text-zinc-300">${esc(whoName(x.by))} took back its question</span> <span class="text-[11px] text-zinc-400 dark:text-zinc-500">${when(x.t)}</span>${x.text.trim() ? rich(x.text, gid + 'w' + x.id, 'mt-0.5') : ''}</div></div>`;  // F220: a line, not a message
@@ -4994,7 +5009,7 @@ function msgHtml(x, gid, form = 0, done = null, ver = null, m = {}) {
   const card = form ? 'space-y-2.5 border-amber-200 bg-amber-50 p-3 text-zinc-900 dark:border-amber-400/25 dark:bg-amber-400/7 dark:text-zinc-100' : 'border-zinc-200 bg-zinc-50 px-4 py-3 text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200';
   return `<div class="flex flex-col items-start gap-1.5">
       <div class="flex items-center gap-2 px-1 text-[11px] text-zinc-400 dark:text-zinc-500">${avatar(x.by)}<span class="text-xs font-semibold text-zinc-700 dark:text-zinc-300">${esc(whoName(x.by))}</span>${done && !form ? `<span class="flex items-center gap-0.5 rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-emerald-800 uppercase dark:bg-emerald-400/15 dark:text-emerald-300">${ico('check', 'size-3', '3')}Answered</span>` : KIND_TAG(x)}<span>${when(x.t)}</span></div>
-      <div class="w-full rounded-2xl rounded-tl-md border text-[15px] leading-relaxed ${card}">${form ? `<div class="px-1">${msgText(x, gid, form)}</div>${hasChoices(x.text) ? sendAnswerBtn(form) : ''}` : msgText(x, gid, 0, done)}${strip(x.files, gid + 'm' + x.id, 'h-48 w-24')}</div></div>`;
+      <div class="w-full rounded-2xl rounded-tl-md border text-[15px] leading-relaxed ${card}">${form ? `<div class="px-1">${msgText(x, gid, form)}</div>${hasChoices(x.text) ? sendAnswerBtn(form) : ''}` : done?.length && hasChoices(x.text) ? answered(x, gid, done) : msgText(x, gid, 0, done)}${strip(x.files, gid + 'm' + x.id, 'h-48 w-24')}</div></div>`;
 }
 function mdHtml(text, gid = '', form = 0, done = null) {
   if (gid) groups.delete(gid);
@@ -5146,7 +5161,7 @@ function docPane(d) {
   const b = (act, inner, title, attrs = '') => `<button data-act="${act}" ${attrs} title="${title}" class="flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm text-zinc-600 hover:bg-zinc-100 aria-pressed:bg-amber-100 aria-pressed:text-amber-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:aria-pressed:bg-amber-900/60 dark:aria-pressed:text-amber-100">${inner}</button>`;
   $('itemMenuBtn').hidden = true;
   $('dHead').innerHTML = `<span class="flex min-w-0 items-center gap-2 text-sm">${ico('file', 'size-[18px] text-zinc-500 dark:text-zinc-400')}<span class="font-mono font-bold text-zinc-700 dark:text-zinc-200">D${d.d}</span><span class="truncate font-semibold">${esc(d.title)}</span></span>`;
-  $('dActs').innerHTML = b('doc-circle', `${ico('lasso', 'size-4')}${U.docCircle ? 'Draw around it…' : 'Mark an area'}`, 'Circle an area to comment on it', `aria-pressed="${!!U.docCircle}"`) + b('doc-edit', `${ico('pencil', 'size-4')}Edit`, 'Edit the text');
+  $('dActs').innerHTML = b('doc-edit', `${ico('pencil', 'size-4')}Edit`, 'Edit the text');
   $('dNav').innerHTML = b('doc-close', `${ico('left', 'size-4')}Back to ${code(liveN(d.n))}${KBD('Esc')}`, `Back to ${code(liveN(d.n))} · Esc`);
   if (D.docKey === key && body.querySelector('#docBlocks')) return;
   D.docKey = key;
@@ -5370,16 +5385,14 @@ function needsCard(it, onCard = false) {  // onCard: in a Go through card, whose
   const card = (icon, title, body, buttons, hint = '') => `<section class="${NEEDS_CARD}">
       <div class="flex items-center gap-2.5 px-4 pt-3.5 lg:px-5 lg:pt-4">${ico(icon, 'size-5 text-amber-600 dark:text-amber-400')}<p class="min-w-0 flex-1 text-sm font-semibold text-amber-900 lg:text-[15px] dark:text-amber-200">${title}</p>${m?.t ? `<span class="text-xs text-amber-700/80 dark:text-amber-300/70">${when(m.t)}</span>` : ''}</div>
       ${body ? `<div class="space-y-2 px-4 pt-2 text-[15px] leading-relaxed text-zinc-800 lg:px-5 lg:pl-12 dark:text-zinc-200">${body}</div>` : ''}
-      ${buttons ? `<div class="flex gap-2.5 p-3 pt-3.5 lg:items-center lg:justify-end lg:px-5 lg:pb-4">${hint ? `<p class="mr-auto hidden text-xs text-amber-700/80 xl:block dark:text-amber-300/70">${hint}</p>` : ''}${buttons}</div>` : '<div class="h-3.5"></div>'}</section>`;
+      ${buttons ? `<div class="flex gap-2.5 p-3 pt-3.5 lg:items-center lg:justify-end lg:px-5 lg:pb-4">${hint ? `<p class="mr-auto hidden text-xs text-amber-700/80 xl:block dark:text-amber-300/70">${hint}</p>` : ''}${buttons}</div>` : hint ? `<p class="px-4 pt-2 pb-3.5 text-xs text-amber-700/80 lg:px-5 lg:pl-12 dark:text-amber-300/70">${hint}</p>` : '<div class="h-3.5"></div>'}</section>`;
   if (it.wait) {
     const w = it.wait, choices = w.kind === 'ask' && hasChoices(w.text);
     const body = rich(w.text, 'ask' + n, 'text-zinc-900 dark:text-zinc-100', w.kind === 'ask' ? n : 0)
       + (w.files?.length ? `<div class="flex gap-2 overflow-x-auto lg:scrollbar-thin">${thumbs(w.files, 'w' + n, 'h-48 w-24')}</div>` : '');
     return card(w.kind === 'block' ? 'alert' : 'ask', `${esc(whoName(w.by))} ${w.kind === 'block' ? 'is blocked and needs you' : 'asks you'}`, body,
-      onCard ? (choices ? sendAnswerBtn(n, 'flex-1', true) : '')
-        : choices ? `<button data-act="reply" class="${SECOND} flex-1 lg:flex-none">${ico('reply', 'size-4')}Reply${KBD('R')}</button>${sendAnswerBtn(n, 'flex-[1.4] lg:flex-none', true)}`
-        : `<button data-act="reply" class="${PRIMARY_BASE} ${NEED.reply.btn} flex-1 lg:flex-none">${ico('reply', 'size-4')}Reply${KBD('R')}</button>`,
-      choices ? 'Pick with 1–9, send with ⌘↵' : 'It continues after you reply');
+      choices ? sendAnswerBtn(n, onCard ? 'flex-1' : 'flex-[1.4] lg:flex-none', true) : '',  // T274 #29: no Reply that only moves the caret: the box is right there
+      choices ? 'Pick with 1–9, send with ⌘↵' : '↓ Answer in the box below');
   }
   if (it.status === 'proposed') return card('propose', `${esc(name)} proposed this`, m ? msgText(m, 'card' + n) : '<p class="text-sm text-amber-900/80 dark:text-amber-200/80">Nobody works on it until you approve.</p>',
     `<button data-act="status" data-n="${n}" data-v="dropped" class="${SECOND} flex-1 lg:flex-none">${ico('ban', 'size-4')}Won't do${KBD('W')}</button><button data-act="status" data-n="${n}" data-v="open" class="${PRIMARY_BASE} ${NEED.approve.btn} flex-[1.4] lg:flex-none">${ico('thumb', 'size-4.5')}Approve${KBD('A')}</button>`,
@@ -5507,7 +5520,7 @@ function needsBand(needs, going) {
   if (!needs.length) return '';  // nothing waiting: no band (I71)
   const long = desk() && !going && needs.length > NEEDS_SHOWN + 1, cut = long && !U.needsAll && !needs.slice(NEEDS_SHOWN).some(it => it.n === U.open);
   const rest = needs.length - NEEDS_SHOWN, toggle = (act, label, icon) => `<button data-act="${act}" class="flex h-10 w-full items-center gap-1.5 border-b border-zinc-100 pl-4 text-[13px] font-semibold text-amber-800 hover:bg-amber-50 dark:border-zinc-800/70 dark:text-amber-300 dark:hover:bg-amber-400/10">${ico(icon, 'size-4', '2.25')}${label}</button>`;
-  return zone('needs', 'Needs you', needs.filter(needsYou).length, going ? `<span class="text-xs font-medium text-amber-700 dark:text-amber-400">· Going through</span><button data-act="go-end" class="-my-1 ml-auto flex h-11 items-center gap-1 rounded-full pr-2 pl-3 text-[13px] font-semibold text-amber-800 hover:bg-amber-100 dark:text-amber-300 dark:hover:bg-amber-400/15">End${KBD('Esc')}</button>` : goThroughBtn())
+  return zone('needs', 'Needs you', needs.filter(needsYou).length, going ? `<span class="text-xs font-medium text-amber-700 dark:text-amber-400">· Going through</span>${desk() ? '' : `<button data-act="go-end" class="-my-1 ml-auto flex h-11 items-center gap-1 rounded-full pr-2 pl-3 text-[13px] font-semibold text-amber-800 hover:bg-amber-100 dark:text-amber-300 dark:hover:bg-amber-400/15">End${KBD('Esc')}</button>`}` : goThroughBtn())
     + (cut ? needs.slice(0, NEEDS_SHOWN) : needs).map(it => going && going.done.has(it.n) ? settledRow(it) : needsRow(it)).join('')
     + (cut ? toggle('needs-more', `Show ${rest} more`, 'down') : long && U.needsAll ? toggle('needs-more', 'Show fewer', 'chevup') : '');
 }
@@ -8096,10 +8109,12 @@ const noSelection = () => `<div class="grid h-full place-items-center p-8 text-c
 function renderDetailBar(it) {
   const b = (act, icon, title, attrs = '') => `<button data-act="${act}" ${attrs} title="${title}" aria-label="${title.split(' · ')[0]}" class="grid size-9 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200">${ico(icon, 'size-[18px]')}</button>`;
   const gap = '<span class="size-9"></span>';  // B128: Later and Archive each keep their own place
-  $('dActs').innerHTML = b('copy', 'copy', 'Copy for agent · ⇧C', `data-n="${it.n}"`)
-    + (it.type === 'rule' || it.archived || CLOSED(it.status) ? gap : b('swipe', 'clock', it.when === 'now' ? 'Later · L' : 'Back to now · L', `data-n="${it.n}" data-f="when" data-v="${it.when === 'now' ? 'later' : 'now'}"`))
-    + (it.archived ? b('archive', 'archive', 'Unarchive · E', `data-n="${it.n}" data-on="0"`) : b('archive', 'archive', 'Archive · E', `data-n="${it.n}" data-on="1"`));  // F281: any state
-  $('dNav').innerHTML = b('prev', 'chevup', 'Previous · K') + b('next', 'down', 'Next · J') + b('full', D.full ? 'shrink' : 'open', D.full ? 'Back to the list · Esc' : 'Full width · O');
+  // T274 #26: the actions you use, with their words, first; Copy for agent is in ⋯ (and ⇧C); Later is a pause, not a clock
+  const t = (act, icon, label, title, attrs = '') => `<button data-act="${act}" ${attrs} title="${title}" class="flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-zinc-100">${ico(icon, 'size-4')}${label}</button>`;
+  $('dActs').innerHTML = (it.type === 'rule' || CLOSED(it.status) || needsYou(it) ? '' : t('status', 'check', 'Done', 'Done · D', `data-n="${it.n}" data-v="done"`))
+    + (it.type === 'rule' || it.archived || CLOSED(it.status) ? '' : t('swipe', 'pause', it.when === 'now' ? 'Later' : 'Back to now', it.when === 'now' ? 'Later · L' : 'Back to now · L', `data-n="${it.n}" data-f="when" data-v="${it.when === 'now' ? 'later' : 'now'}"`))
+    + (it.archived ? t('archive', 'archive', 'Unarchive', 'Unarchive · E', `data-n="${it.n}" data-on="0"`) : t('archive', 'archive', 'Archive', 'Archive · E', `data-n="${it.n}" data-on="1"`));  // F281: any state
+  $('dNav').innerHTML = (U.go ? '' : b('prev', 'chevup', 'Previous · K') + b('next', 'down', 'Next · J')) + b('full', D.full ? 'shrink' : 'open', D.full ? 'Back to the list · Esc' : 'Full width · O');
 }
 
 // Going through what needs you on the desktop: an amber strip on the detail pane; what you settle stays in the
