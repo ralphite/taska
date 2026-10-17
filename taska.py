@@ -4057,7 +4057,8 @@ function placeToast(el = $('toast')) {
     el.classList.toggle('lg:-translate-x-1/2', !!r);
   } else {  // B158: on the phone it sits just above what you act on, the input box or an open card's bar, and never on it
     el.style.left = el.style.bottom = ''; el.classList.remove('lg:-translate-x-1/2');
-    const bar = DR.open ? $('drawerSettings') : $('overlay').hidden ? !$('foot').hidden && $('foot') : !$('dlgFoot').hidden && $('dlgFoot').offsetHeight && $('dlgFoot');
+    // The card (Go through, a row's Answer) has buttons from top to bottom: the toast goes above it, never on them (T225 #7).
+    const bar = DR.open ? $('drawerSettings') : $('overlay').hidden ? !$('foot').hidden && $('foot') : $('overlay').dataset.card ? null : !$('dlgFoot').hidden && $('dlgFoot').offsetHeight && $('dlgFoot');
     if (bar) { el.style.bottom = `${Math.round(innerHeight - bar.getBoundingClientRect().top + 8)}px`; el.classList.remove('bottom-28', 'top-[calc(env(safe-area-inset-top)+0.75rem)]'); }
   }
 }
@@ -6467,8 +6468,7 @@ function dialog(title, html, {aboveComposer = false, focus = true, tall = false,
   $('dlgFoot').innerHTML = foot; $('dlgFoot').hidden = !foot || (card && !desk() && document.activeElement === $('text'));  // typing on the card: room for the question (B153)
   $('dlgBody').classList.toggle('pb-[max(1.25rem,env(safe-area-inset-bottom))]', !foot); $('dlgBody').classList.toggle('pb-3', !!foot);
   if ($('overlay').hidden && !U.doc) layerOpen('sheet');  // one step Back closes it (B150); a document has its own address
-  $('dlgBody').innerHTML = html; $('overlay').hidden = false;
-  if (!desk() && !$('toast').hidden) placeToast();
+  $('dlgBody').innerHTML = html; $('overlay').hidden = false; $('overlay').dataset.card = card ? '1' : '';
   for (const c of ['h-[88dvh]', 'sm:h-[85dvh]']) $('dlg').classList.toggle(c, tall);  // documents get the whole screen
   const flush = card && aboveComposer;  // the card above the input box sits on it, as a sheet does: no strip of the list between them (T225 #2)
   for (const c of ['shadow-2xl', 'overflow-hidden', 'max-h-[92%]']) $('dlg').classList.toggle(c, card);
@@ -6480,6 +6480,7 @@ function dialog(title, html, {aboveComposer = false, focus = true, tall = false,
   $('overlay').style.bottom = aboveComposer ? $('composer').parentElement.offsetHeight + 'px' : '';  // keep the input box usable
   $('overlay').dataset.above = aboveComposer ? '1' : '';  // and follow it when its line or files come and go
   $('overlay').style.paddingLeft = $('overlay').style.paddingTop = ''; $('overlay').classList.remove('lg:justify-start');  // set again by popAt
+  if (!desk() && !$('toast').hidden) placeToast();  // once the sheet or card has its place
   if (focus) $('dlgClose').focus({preventScroll: true});
 }
 // A second click within 3 s confirms (B127, B131): the page asks in place, never in a browser dialog.
