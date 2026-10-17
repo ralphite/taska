@@ -4981,10 +4981,10 @@ function talkHtml(it, list, gid = '') {
 function msgHtml(x, gid, form = 0, done = null, ver = null, m = {}) {
   const you = x.by === 'you', src = you && x.src ? byR.get(x.src) : null, y = ver ? {...x, text: ver.text} : x;
   const strip = (files, g, size) => files?.length ? fileRows(files, g, size, you ? 'items-end max-w-full [&>div]:max-w-full' : 'mt-3') : '';  // T230: pictures and voice notes in their own rows
-  if (you) return `<div ${x.src ? `data-src="${x.src}"` : ''} class="flex scroll-mb-4 flex-col items-end gap-1 rounded-2xl transition-colors duration-700 ${ver?.old ? 'opacity-60' : ''}">
+  if (you) return `<div ${x.src ? `data-src="${x.src}"` : ''} class="group flex scroll-mb-4 flex-col items-end gap-1 rounded-2xl transition-colors duration-700 ${ver?.old ? 'opacity-60' : ''}">
       ${y.text ? `<div ${voiceAttr(src)} class="max-w-[85%] rounded-2xl rounded-tr-md bg-blue-600 px-4 py-2.5 text-[15px] leading-relaxed text-white dark:bg-blue-500 [&_a]:text-white [&_a]:decoration-white/60 [&_blockquote]:border-white/50 [&_blockquote]:text-white/85 [&_code]:bg-white/15 [&_code]:text-white [&_pre]:bg-white/15 [&_pre]:text-white [&_mark]:text-zinc-900">${ver?.old ? `<div class="line-clamp-2">${msgText(y, gid)}</div>` : msgText(y, gid)}</div>` : ''}
       ${ver?.old ? '' : strip(src?.files, gid + 't' + x.id)}
-      <span class="px-1 text-[11px] text-zinc-400 dark:text-zinc-500">You · ${ver?.old ? 'earlier version · ' : ver?.label ? ver.label + ' · ' : ''}${when(x.t)}${x.edited && !ver?.old ? ` · ${src?.history?.length ? `<button data-act="input-history" data-id="${src.id}" title="See what changed" class="relative underline decoration-dotted underline-offset-2 after:absolute after:-inset-3 hover:text-zinc-700 dark:hover:text-zinc-300">edited ${when(x.edited)}</button>` : `edited ${when(x.edited)}`}` : ''}${src?.tr_wait ? ' · <span class="animate-pulse text-blue-600 dark:text-blue-400">transcribing the voice note…</span>' : ''}${m.read ? ` · <span title="${esc(m.read.names.join(', '))} read it ${when(new Date(m.read.t).toISOString())}" class="inline-flex items-center gap-0.5 font-medium text-zinc-500 dark:text-zinc-400">${ico('check', 'size-3', '2.5')}Read by ${esc(m.read.names.join(', '))}</span>` : ''}</span></div>`;
+      <span class="px-1 text-[11px] text-zinc-400 dark:text-zinc-500">You · ${ver?.old ? 'earlier version · ' : ver?.label ? ver.label + ' · ' : ''}${when(x.t)}${x.edited && !ver?.old ? ` · ${src?.history?.length ? `<button data-act="input-history" data-id="${src.id}" title="See what changed" class="relative underline decoration-dotted underline-offset-2 after:absolute after:-inset-3 hover:text-zinc-700 dark:hover:text-zinc-300">edited ${when(x.edited)}</button>` : `edited ${when(x.edited)}`}` : ''}${src?.tr_wait ? ' · <span class="animate-pulse text-blue-600 dark:text-blue-400">transcribing the voice note…</span>' : ''}${m.read ? ` · <span title="${esc(m.read.names.join(', '))} read it ${when(new Date(m.read.t).toISOString())}" class="inline-flex items-center gap-0.5 font-medium text-zinc-500 dark:text-zinc-400">${ico('check', 'size-3', '2.5')}Read by ${esc(m.read.names.join(', '))}</span>` : ''}</span>${src && !ver?.old && !src.moved && !src.deleted ? `<div class="flex gap-0.5 lg:opacity-0 lg:group-hover:opacity-100 lg:focus-within:opacity-100"><button data-act="input-edit" data-id="${src.id}" class="${DC_BTN}">${ico('pencil', 'size-3.5')}Edit</button><button data-act="input-append" data-id="${src.id}" class="${DC_BTN}">${ico('plus', 'size-3.5')}Add details</button></div>` : ''}</div>`;  // B265: edit it right here
   if (x.kind === 'withdraw') return `<div class="flex items-start gap-2 px-1 text-[13px] leading-snug text-zinc-500 dark:text-zinc-400">${ico('undo', 'mt-0.5 size-3.5 shrink-0')}
       <div class="min-w-0 flex-1"><span class="font-medium text-zinc-600 dark:text-zinc-300">${esc(whoName(x.by))} took back its question</span> <span class="text-[11px] text-zinc-400 dark:text-zinc-500">${when(x.t)}</span>${x.text.trim() ? rich(x.text, gid + 'w' + x.id, 'mt-0.5') : ''}</div></div>`;  // F220: a line, not a message
   if (m.withdrawn) return `<div class="flex flex-col items-start gap-1.5 opacity-60">
@@ -5207,6 +5207,10 @@ function renderDoc({focus = false} = {}) {
   if (keep) { const el = document.querySelector(`[data-doc-draft="${keep[0]}"]`); if (el) { el.value = keep[1]; el.focus({preventScroll: true}); try { el.setSelectionRange(keep[2], keep[2]); } catch (_) {} } }
   if (U.docCircle) wireLasso();
 }
+function pickBack(d) {  // B265: words waiting in the box for a passage still go to that passage
+  const m = U.docPick?.[d];
+  if (m && ($('text').value.trim() || U.files.length)) Object.assign(U, {docSel: new Set(m.sel), docQuote: m.quote, docReply: m.reply});
+}
 function openDoc(d) {
   if (U.doc !== d) setTimeout(() => !desk() && layersNow().at(-1) === 'sheet' && $('overlay').hidden === false ? writeURL(false, {v: `D${d}`}) : writeURL(true));  // after the sheet is up; a new document's editor gives it its step (B150)
   if (desk()) {  // T110: in the item pane, under its item (a merged one's: the item it went into, B5)
@@ -5214,10 +5218,12 @@ function openDoc(d) {
     if (doc && U.open !== host && byN.has(host)) { U.open = host; renderItems(); }
     if (!$('overlay').hidden) { $('overlay').hidden = true; $('overlay').style.bottom = ''; U.sheet = null; }  // the editor, when you come back from it
     Object.assign(U, {peek: null, doc: d, docReply: null, docNew: null, docEdit: false, docText: null, docSel: new Set(), docQuote: null, docCircle: false});
+    pickBack(d);
     D.docKey = null; renderDetail(); renderComposer();
     return;
   }
   Object.assign(U, {peek: null, doc: d, docReply: null, docNew: null, docEdit: false, docText: null, docSel: new Set(), docQuote: null, docCircle: false});
+  pickBack(d);
   U.docDrafts.note = '';
   renderDoc({focus: true});
   $('dlgBody').scrollTop = U.docScroll[d] || 0;
@@ -5416,9 +5422,9 @@ function detailHtml(it) {
       ${talkHtml(it, thread.slice(hidden))}</div>` : '';
   // B279: on the desktop the item itself (title, state, what it needs from you, its text) stays at the top of the pane;
   // the rest (files, documents, subitems, the talk) scrolls under it, and an item opens at its latest message
-  const top = [head, needsCard(it), desc].filter(Boolean).join('');
+  const top = [head, desc].filter(Boolean).join('');  // B279: what it needs from you sits with the latest messages, below
   return `<div class="flex flex-col gap-6 px-5 pt-5 pb-10 lg:mx-auto lg:w-full lg:max-w-[46rem] lg:px-8 lg:pt-0"><div class="flex flex-col gap-6 lg:sticky lg:top-0 lg:z-10 lg:-mx-8 lg:max-h-[45vh] lg:overflow-y-auto lg:border-b lg:border-zinc-200 lg:bg-white lg:px-8 lg:pt-7 lg:pb-5 lg:scrollbar-thin dark:lg:border-zinc-800 dark:lg:bg-zinc-950">${top}</div>${[
-    files.length ? fileRows(files, 'item' + n, 'h-24 w-16') : '', docs, subs, talk].filter(Boolean).join('')}</div>`;
+    files.length ? fileRows(files, 'item' + n, 'h-24 w-16') : '', docs, subs, talk, needsCard(it)].filter(Boolean).join('')}</div>`;
 }
 
 function renderDetail() {
@@ -5468,7 +5474,7 @@ function itemMenu(n) {
   const next = inQueue(it) && it.when === 'now' ? tile('do-next', 'up', it.rank == null ? 'Do this next' : 'Back in order', it.rank == null ? `first of the ${it.pri}s` : '') : '';  // F197
   const state = it.archived ? tile('archive', 'archive', 'Unarchive', '', 'data-on="0"')
     : CLOSED(it.status) ? tile('archive', 'archive', 'Archive', '', 'data-on="1"')
-    : it.type === 'rule' ? '' : tile('swipe', 'clock', it.when === 'now' ? 'Later' : 'Back to now', '', `data-f="when" data-v="${it.when === 'now' ? 'later' : 'now'}"`);
+    : (it.type === 'rule' ? '' : tile('swipe', 'clock', it.when === 'now' ? 'Later' : 'Back to now', '', `data-f="when" data-v="${it.when === 'now' ? 'later' : 'now'}"`)) + tile('archive', 'archive', 'Archive', '', 'data-on="1"');  // F281: any state
   const lab = t => `<div class="px-1 pb-2 text-xs font-semibold text-zinc-500 dark:text-zinc-400">${t}</div>`;
   const stat = ([s, t]) => { const on = it.status === s;
     return `<button data-act="set-field" data-n="${n}" data-f="status" data-v="${s}" aria-pressed="${on}" class="${STAT_BTN} h-11 rounded-xl px-2.5">${statIcon(s, t, 'size-4.5')}<span class="truncate">${t}</span></button>`; };
@@ -5884,10 +5890,11 @@ function boxAnchor() {
   if (t) return [...root.querySelectorAll('#docBlocks section[data-key]')].filter(sec => sec.dataset.key === t.key || U.docSel.has(sec.dataset.key)).at(-1) || null;
   return root.querySelector('#docBlocks');
 }
-function parkBox() {  // home, before a pane that may hold it is drawn again
-  if (BOX.parentNode !== $('foot')) { const had = document.activeElement === $('text'); $('boxHome').before(BOX); BOX.classList.remove('my-3'); if (had) $('text').focus({preventScroll: true}); }
+function parkBox() {  // home, before a pane that may hold it is drawn again; it goes back once the pane is there
+  if (BOX.parentNode !== $('foot')) { const had = document.activeElement === $('text'); $('boxHome').before(BOX); BOX.classList.remove('my-3'); if (had) $('text').focus({preventScroll: true}); requestAnimationFrame(placeBox); }
 }
 function placeBox() {
+  if (U.doc && !U.docEdit) (U.docPick ||= {})[U.doc] = {sel: [...U.docSel], quote: U.docQuote, reply: U.docReply};  // B265: kept for when it opens again
   const a = boxAnchor(), had = document.activeElement === $('text');
   if (a && a.nextElementSibling !== BOX) { a.after(BOX); BOX.classList.add('my-3'); if (had) $('text').focus({preventScroll: true}); BOX.scrollIntoView({block: 'nearest'}); }
   else if (!a) parkBox();
@@ -7075,7 +7082,8 @@ function openItem(n, push = true) {
   if (desk()) { D.page = null; D.compose = false; writeURL(false, history.state?.full ? {...history.state, n} : null); }
   else if (push && !URLS.applying) hist(() => { if (location.pathname !== P + code(n)) history.pushState({n, ...searchStep()}, '', P + code(n) + viewQuery()); });  // after a sheet's step back (B150)
   render();
-  if (fresh) $('detailBody').scrollTop = desk() ? $('detailBody').scrollHeight : 0;  // B279: the desktop opens an item at its latest message, its top stays in sight
+  if (fresh) $('detailBody').scrollTop = desk() ? $('detailBody').scrollHeight : 0;
+  if (fresh && desk()) for (const ms of [120, 400, 1000]) setTimeout(() => { if (U.open === n && !U.doc) $('detailBody').scrollTop = $('detailBody').scrollHeight; }, ms);  // B279: after pictures and late parts take their room  // B279: the desktop opens an item at its latest message, its top stays in sight
   if (desk()) document.querySelector(`#list [data-act="open"][data-n="${n}"]`)?.scrollIntoView({block: 'nearest'});
 }
 
@@ -8300,7 +8308,7 @@ async function sendPrefs() {
   try {
     const d = await net('/api/voiceprefs', JSON_POST({text}), NET.op);
     if (!d.ok) return toast(d.error || 'Not saved', null, {error: true});
-    P_CACHE.prefs = d; U.prefsEdit = null; $('text').value = ''; saveDraft(); grow(); render(); refreshFixes();
+    P_CACHE.prefs = d; U.prefsEdit = null; $('text').value = ''; U.files = []; saveDraft(); grow(); render(); refreshFixes();  // B265: nothing left over for next time
     toast("Saved: every project's voice notes follow these from now on", async () => {
       const b = await net('/api/voiceprefs', JSON_POST({text: was}), NET.op); if (b.ok) { P_CACHE.prefs = b; refreshFixes(); }
     });
@@ -8556,7 +8564,7 @@ function itemMenuDesk(n, arm = U.menuArm) {  // arm: 's', 'p' or 't', the part t
   const statuses = it.type === 'rule' ? Object.entries(RULE_STATUS).filter(([v]) => v !== 'proposed' || it.status === 'proposed') : Object.entries(STATUS);
   const next = inQueue(it) && it.when === 'now' ? row('do-next', 'up', it.rank == null ? 'Do this next' : 'Back in order', '', '', it.rank == null ? `first of the ${it.pri}s in the queue` : 'where it was, by age') : '';  // F197
   const state = it.archived ? row('archive', 'archive', 'Unarchive', 'E', 'data-on="0"') : CLOSED(it.status) ? row('archive', 'archive', 'Archive', 'E', 'data-on="1"')
-    : it.type === 'rule' ? '' : row('swipe', 'clock', it.when === 'now' ? 'Later' : 'Back to now', 'L', `data-f="when" data-v="${it.when === 'now' ? 'later' : 'now'}"`);
+    : (it.type === 'rule' ? '' : row('swipe', 'clock', it.when === 'now' ? 'Later' : 'Back to now', 'L', `data-f="when" data-v="${it.when === 'now' ? 'later' : 'now'}"`)) + row('archive', 'archive', 'Archive', 'E', 'data-on="1"');  // F281: any state
   dialog('', `<div class="flex flex-col gap-3">
     <div class="-mx-1">${row('edit', 'pencil', 'Edit', 'I')}${row('copy', 'copy', 'Copy for agent', '⇧C')}${it.type === 'rule' ? '' : row('doc-new', 'docplus', 'New doc', '⇧D') + row('sub-new', 'listplus', 'Add subitem', '⇧A') + row('reparent', 'indent', 'Move under…', 'M', '', it.parent ? 'now under ' + code(it.parent) : 'stands on its own')}${state}${next}</div>
     <div class="border-t border-zinc-100 pt-3 dark:border-zinc-800">${lab('Type', 'T then F B I T R', arm === 't')}${segctl('set-field', 'type', [...TYPES, 'rule'].map(t => [t, letterOf(t) + `<span class="truncate">${t[0].toUpperCase() + t.slice(1)}</span>`]), it.type, true).replaceAll('data-k="type"', `data-f="type" data-n="${n}"`)}</div>
