@@ -7078,7 +7078,6 @@ $('vStage').addEventListener('touchend', e => {
 function render() {
   if (TIP.el && !TIP.el.isConnected) tipHide();  // its trigger was redrawn
   settleOpen();  // B5
-  if (desk() && S.project && !U.open && !D.page && !D.full && U.tab !== 'inputs') D.compose = true;  // B269: nothing open is the New input page, the same as clicking New input
   showView(); renderItems(); renderDetail(); renderComposer(); renderFeedback(); renderAgent();
   if (desk()) { renderProjBar(); renderDeskHead(); renderSidebar(); renderRail(); renderFilters(); }
   if (D.page) renderProject();
@@ -7341,7 +7340,10 @@ const ACT = {
   'new-input': () => {
     U.amend = null; U.correct = null; U.prefsEdit = null;  // New input is always a fresh new input (B168)
     D.sideOpen = false; if (D.page) D.page = null;
-    if (desk()) {  // its own page in the detail pane (B73), not under the open item; from Inputs too (F121)
+    if (desk() && !U.doc) {  // T274 #8: where you are: the box below turns to a new input, the item you read stays
+      D.compose = false; U.scopeOff = true; render(); return $('text').focus();
+    }
+    if (desk()) {  // from a document: the New input page, and Back goes to the document (B14)
       if (U.tab === 'inputs') { D.prevTab = 'inputs'; U.tab = 'items'; }
       if (U.open) D.prev = U.open;
       D.prevDoc = U.doc && !U.docEdit && docById(U.doc) ? U.doc : null;  // B14: from a document, the page is the same New input page, and Back goes to the document
@@ -8167,7 +8169,7 @@ function leaveCompose() {  // back where you were: the Inputs page, or the item 
   }
 }
 const noSelection = () => `<div class="grid h-full place-items-center p-8 text-center"><div>
-  <p class="text-[15px] text-zinc-500 dark:text-zinc-400">Select an item</p>
+  <p class="text-[15px] text-zinc-500 dark:text-zinc-400">Select an item, or write a new input below</p>
   <p class="mt-2 flex items-center justify-center gap-1 text-[13px] text-zinc-400">${KBD('J')}${KBD('K')}<span class="ml-1">to move</span>${S.items.some(needsYou) ? `<span>·</span>${KBD('⇧J')}<span class="ml-1">to go through what needs you</span>` : ''}</p></div></div>`;
 
 function renderDetailBar(it) {
