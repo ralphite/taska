@@ -6195,7 +6195,8 @@ const clock = ms => `${Math.floor(ms / 60000)}:${String(Math.floor(ms / 1000) % 
 // later speech down, so notes sounded wrong and transcribed badly; desktop Chrome did the same, only less. A browser
 // that refuses these asks records the default way.
 async function micStream() {
-  if (MIC.stream?.getAudioTracks().some(t => t.readyState === 'live')) return MIC.stream;  // B217: the one kept open
+  if (MIC.stream?.getAudioTracks().some(t => t.readyState === 'live' && !t.muted)) return MIC.stream;  // B217: the one kept open (B277: not one the phone has muted)
+  if (MIC.stream) { MIC.stream.getTracks().forEach(t => t.stop()); MIC.stream = null; }
   const md = navigator.mediaDevices;
   let s;
   try { s = await md.getUserMedia({audio: {echoCancellation: false, noiseSuppression: false, autoGainControl: false}}); }
@@ -6228,6 +6229,8 @@ async function startRec() {
   R.typing = typing;  // the box hides its text while recording; the caret comes back after
   R.key = key; R.scope = scope;
   if (R.typing) $('text').blur();
+  R.muted = false;  // B277: the phone took the microphone away mid-note (a call, a sound, another app): say so when it stops
+  for (const t of R.stream.getAudioTracks()) { t.onmute = () => { R.muted = true; }; t.onended = () => { R.muted = true; }; }
   R.rec = new MediaRecorder(R.stream);
   R.rec.ondataavailable = e => { if (e.data.size) R.chunks.push(e.data); };
   R.rec.start(1000);
@@ -6253,6 +6256,7 @@ function stopRec() {
     if (!rec) return done(null);
     rec.onstop = () => done(new Blob(R.chunks, {type: rec.mimeType || 'audio/webm'}));
     rec.stop();
+    if (R.muted) { R.muted = false; if (MIC.stream) { MIC.stream.getTracks().forEach(t => t.stop()); MIC.stream = null; } toast('The phone muted the microphone during this note: what you said after that was not recorded', null, {error: true}); }
     clearInterval(R.tick);
     micDone(R.stream);
     R.ctx?.close();
