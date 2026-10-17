@@ -3834,32 +3834,87 @@ __APP_HEAD__
 <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4.3.3/dist/index.global.js" integrity="sha384-2ql948lIdLcGEE0/qxNiudyTjgauA3RDJERu5xW75kFCvSl5a9odyQYCb6tEjnmB" crossorigin="anonymous"></script>
 </head>
 <body class="min-h-dvh bg-zinc-100 text-zinc-900 antialiased dark:bg-zinc-900 dark:text-zinc-100">
-<main class="mx-auto max-w-3xl px-2 pt-[env(safe-area-inset-top)] pb-[max(1.5rem,env(safe-area-inset-bottom))]">
-  <h1 class="flex h-14 items-center gap-2 px-3 text-xl font-semibold tracking-tight"><svg class="size-6 text-blue-600 dark:text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 5h8"/><path d="M13 12h8"/><path d="M13 19h8"/><path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/></svg>Taska</h1>
-  <h2 class="px-3 pb-1.5 text-xs font-semibold text-zinc-500 dark:text-zinc-400">Projects</h2>
-  <ul id="list" class="flex flex-col gap-0.5"><li class="px-3 py-3 text-sm text-zinc-500">Loading…</li></ul>
+<main class="mx-auto max-w-[1200px] px-3 pt-[env(safe-area-inset-top)] pb-[max(1.5rem,env(safe-area-inset-bottom))] lg:px-10 lg:pt-8">
+  <!-- F251 B: one table of the projects, what needs you in each, and one button that goes through all of it -->
+  <header class="flex min-h-14 flex-wrap items-center gap-x-3 gap-y-2 px-1 py-2">
+    <h1 class="flex items-center gap-2 text-xl font-semibold tracking-tight"><svg class="size-6 text-blue-600 dark:text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 5h8M13 12h8M13 19h8M3 17l2 2 4-4M3 7l2 2 4-4"/></svg>Taska</h1>
+    <span id="sum" class="hidden text-sm text-zinc-500 sm:inline dark:text-zinc-400"></span>
+    <span class="flex-1"></span>
+    <label class="order-last flex h-10 w-full items-center gap-2 rounded-xl bg-white px-3 text-sm text-zinc-400 ring-1 ring-zinc-900/10 focus-within:ring-2 focus-within:ring-blue-500/40 sm:order-none sm:w-72 dark:bg-zinc-800 dark:ring-white/10"><svg class="size-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="q" type="search" autocomplete="off" placeholder="Search every project" aria-label="Search every project" class="min-w-0 flex-1 bg-transparent text-base text-zinc-900 outline-none placeholder:text-zinc-400 sm:text-sm dark:text-zinc-100"><kbd class="hidden h-5 min-w-5 place-items-center rounded-md px-1 font-sans text-[11px] font-semibold ring-1 ring-zinc-300 lg:grid dark:ring-zinc-600">⌘K</kbd></label>
+    <button id="goAll" hidden class="h-10 shrink-0 rounded-xl bg-amber-500 px-3.5 text-sm font-semibold text-amber-950 hover:brightness-95 dark:bg-amber-400"></button>
+  </header>
+  <div id="hits" hidden class="mb-3 overflow-hidden rounded-xl bg-white ring-1 ring-zinc-900/10 dark:bg-zinc-800 dark:ring-white/10"></div>
+  <div class="overflow-hidden rounded-xl bg-white ring-1 ring-zinc-900/10 dark:bg-zinc-800 dark:ring-white/10">
+    <div class="hidden grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_4.5rem_5.5rem_minmax(0,2.4fr)] gap-3 border-b border-zinc-200 bg-zinc-50 px-4 py-2 text-xs font-semibold text-zinc-500 lg:grid dark:border-zinc-700 dark:bg-zinc-800/60 dark:text-zinc-400"><span>Project</span><span>Agent</span><span>Open</span><span>Needs you</span><span>Next for you</span></div>
+    <ul id="list"><li class="px-4 py-3 text-sm text-zinc-500">Loading…</li></ul>
+  </div>
   <button id="new" class="mt-1 flex h-12 w-full items-center gap-3 rounded-2xl px-3 text-[15px] font-medium text-blue-600 dark:text-blue-400"><svg class="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/><path d="M12 5v14"/></svg>New project</button>
   <div id="npRow" hidden class="mt-1 px-1"><div class="flex items-center gap-1.5"><input id="npName" class="h-11 w-full min-w-0 flex-1 rounded-xl border border-zinc-200 bg-white px-3 text-base outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-950" placeholder="Project name" aria-label="New project name" autocomplete="off" spellcheck="false"><button id="npCreate" class="h-11 shrink-0 rounded-xl bg-zinc-900 px-4 text-[15px] font-semibold text-white dark:bg-zinc-100 dark:text-zinc-900">Create</button><button id="npCancel" aria-label="Cancel" class="grid size-11 shrink-0 place-items-center rounded-xl text-zinc-500"><svg class="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
     <p id="npErr" hidden role="alert" class="px-2 pt-1.5 text-[13px] text-red-600 dark:text-red-400"></p></div>
 </main>
 <script>
+const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'})[c]);
-function when(t) {
-  const d = new Date(t), now = new Date(), hm = d.toTimeString().slice(0, 5);
-  if (d.toDateString() === now.toDateString()) return hm;
-  if (new Date(now - 864e5).toDateString() === d.toDateString()) return 'Yesterday ' + hm;
-  return d.toLocaleDateString('en-US', {month: 'short', day: 'numeric'});
+// The same colour per project as inside it (B78): from the name, the next free one when two would share
+const TONES = ['bg-violet-600 dark:bg-violet-500', 'bg-teal-600 dark:bg-teal-500', 'bg-pink-600 dark:bg-pink-500', 'bg-blue-600 dark:bg-blue-500', 'bg-slate-600 dark:bg-slate-500', 'bg-fuchsia-600 dark:bg-fuchsia-500', 'bg-cyan-600 dark:bg-cyan-500', 'bg-indigo-600 dark:bg-indigo-500'];
+const hash = n => { let h = 0; for (const c of String(n)) h = (h * 31 + c.codePointAt(0)) >>> 0; return h; };
+function tones(names) {
+  const taken = new Set(), m = new Map();
+  for (const n of [...new Set(names)].sort()) { let i = hash(n) % TONES.length; for (let k = 0; k < TONES.length && taken.has(i); k++) i = (i + 1) % TONES.length; taken.add(i); m.set(n, TONES[i]); }
+  return m;
 }
+const AGENT = {'claude-code': 'Claude Code', codex: 'Codex', antigravity: 'Antigravity', agent: 'Agent'};
+function agentCell(p) {  // the agent last heard of: green while it is around, gray once it went quiet
+  const a = [...(p.agents || [])].sort((x, y) => y.t - x.t)[0];
+  const on = a && (a.waiting || Date.now() - a.t < 10 * 60e3), name = a ? AGENT[a.name] || esc(a.name) : 'No agent';
+  return `<span class="flex min-w-0 items-center gap-1.5 text-zinc-600 dark:text-zinc-300"><span class="size-1.5 shrink-0 rounded-full ${on ? 'bg-emerald-500' : 'bg-zinc-300 dark:bg-zinc-600'}"></span><span class="truncate">${on ? name : a ? name + ' · idle' : name}</span></span>`;
+}
+const VERB = {ask: 'Answer', block: 'Answer', proposed: 'Approve', review: 'Accept'};
+let NEEDS = [];
 async function load() {
-  const list = (await (await fetch('/api/projects', {cache: 'no-store'})).json()).sort((a, b) => b.t - a.t);
-  document.getElementById('list').innerHTML = list.map(p => `<li><a href="/p/${encodeURIComponent(p.name)}/" class="flex min-h-14 items-center gap-3 rounded-2xl bg-white px-3 py-2.5 shadow-sm ring-1 ring-zinc-900/5 active:bg-zinc-50 dark:bg-zinc-800 dark:ring-white/5 dark:active:bg-zinc-700">
-    <span class="min-w-0 flex-1"><span class="block truncate text-[17px] font-medium">${esc(p.title || p.name)}</span><span class="mt-0.5 block truncate text-xs text-zinc-500 dark:text-zinc-400">${p.open} open</span></span>
-    ${p.needs ? `<span class="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900 dark:bg-amber-400/15 dark:text-amber-200">${p.needs} need you</span>` : ''}
-    <svg class="size-4 shrink-0 text-zinc-300 dark:text-zinc-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></li>`).join('');
+  const [list, needs] = await Promise.all([fetch('/api/projects', {cache: 'no-store'}).then(r => r.json()), fetch('/api/needs', {cache: 'no-store'}).then(r => r.json()).catch(() => [])]);
+  NEEDS = needs;
+  list.sort((a, b) => (a.pos ?? 1e9) - (b.pos ?? 1e9) || b.t - a.t);  // your order (F253), else the latest first
+  const tone = tones(list.map(p => p.name)), top = name => needs.find(x => x.project === name);
+  const total = needs.length;
+  $('sum').textContent = `${list.length} projects · ${total ? `${total} need you` : 'nothing needs you'}`;
+  $('goAll').hidden = !total; $('goAll').textContent = `Go through ${total}`;
+  $('list').innerHTML = list.map(p => {
+    const x = top(p.name), tile = c => `<span aria-hidden="true" class="grid shrink-0 place-items-center font-bold text-white uppercase ${c} ${tone.get(p.name)}">${esc([...(p.title || p.name)][0] || '?')}</span>`;
+    const next = x ? `<span class="font-mono text-xs font-bold text-zinc-500 dark:text-zinc-400">${esc(x.code)}</span> ${esc(x.title)}` : '<span class="text-zinc-300 dark:text-zinc-600">—</span>';
+    return `<li class="border-b border-zinc-100 last:border-b-0 dark:border-zinc-700/60"><a href="/p/${encodeURIComponent(p.name)}/${x ? encodeURIComponent(x.code) : ''}" class="flex items-center gap-3 px-3 py-2.5 hover:bg-zinc-50 active:bg-zinc-100 lg:grid lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_4.5rem_5.5rem_minmax(0,2.4fr)] lg:px-4 lg:py-3 lg:text-[13px] dark:hover:bg-zinc-700/40">
+      <span class="flex min-w-0 items-center gap-2.5">${tile('size-8 rounded-lg text-sm lg:size-6 lg:rounded-md lg:text-xs')}<span class="min-w-0"><span class="block truncate text-[15px] font-semibold lg:text-[13px]">${esc(p.title || p.name)}</span><span class="block truncate text-xs text-zinc-500 lg:hidden dark:text-zinc-400">${x ? next : `${p.open} open`}</span></span></span>
+      <span class="hidden lg:flex">${agentCell(p)}</span>
+      <span class="hidden tabular-nums lg:block">${p.open}</span>
+      <span class="ml-auto shrink-0 lg:ml-0">${p.needs ? `<span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900 dark:bg-amber-400/15 dark:text-amber-200">${p.needs}</span>` : '<span class="hidden text-zinc-300 lg:inline dark:text-zinc-600">—</span>'}</span>
+      <span class="hidden min-w-0 truncate text-zinc-600 lg:block dark:text-zinc-300">${next}${x ? ` <span class="ml-1 text-[11px] font-semibold text-amber-700 dark:text-amber-400">${VERB[x.kind] || ''}</span>` : ''}</span></a></li>`;
+  }).join('') || '<li class="px-4 py-3 text-sm text-zinc-500">No projects yet.</li>';
 }
+// Go through everything that needs you: it starts in the project of the first one and goes on project by project
+$('goAll').addEventListener('click', () => {
+  const x = NEEDS[0];
+  if (!x) return;
+  try { sessionStorage.setItem('taska.go.start', x.project); } catch (_) {}
+  location.href = `/p/${encodeURIComponent(x.project)}/`;
+});
+// Search every project (F196's search, here too): ⌘K or / puts you in the box
+let qTimer = 0;
+$('q').addEventListener('input', () => { clearTimeout(qTimer); qTimer = setTimeout(search, 250); });
+async function search() {
+  const q = $('q').value.trim(), box = $('hits');
+  if (!q) { box.hidden = true; return; }
+  let r = [];
+  try { r = await (await fetch(`/api/search?q=${encodeURIComponent(q)}`, {cache: 'no-store'})).json(); } catch (_) {}
+  if ($('q').value.trim() !== q) return;
+  box.hidden = false;
+  box.innerHTML = r.length ? r.slice(0, 12).map(x => `<a href="/p/${encodeURIComponent(x.project)}/${x.kind === 'input' ? 'inputs?q=' + encodeURIComponent(q) : encodeURIComponent(x.code)}" class="flex items-center gap-2.5 border-b border-zinc-100 px-4 py-2.5 text-sm last:border-b-0 hover:bg-zinc-50 dark:border-zinc-700/60 dark:hover:bg-zinc-700/40"><span class="font-mono text-xs font-bold text-zinc-500 dark:text-zinc-400">${esc(String(x.code).replace(/^r(\d+)$/, '#$1'))}</span><span class="min-w-0 flex-1 truncate">${esc(x.title)}</span><span class="shrink-0 text-xs text-zinc-500 dark:text-zinc-400">${esc(x.ptitle || x.project)}</span></a>`).join('') : '<p class="px-4 py-3 text-sm text-zinc-500">Nothing found</p>';
+}
+addEventListener('keydown', e => {
+  if (((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') || (e.key === '/' && !/INPUT|TEXTAREA/.test(document.activeElement?.tagName))) { e.preventDefault(); $('q').focus(); }
+  if (e.key === 'Escape' && document.activeElement === $('q')) { $('q').value = ''; $('hits').hidden = true; $('q').blur(); }
+});
 // New project: the button becomes a name field in place, as in a project's menu (B131, B156); Enter or Create makes it,
 // × or Esc stops, and a name Taska refuses says why under the field. No browser dialog.
-const $ = id => document.getElementById(id);
 const npShow = on => { $('new').hidden = on; $('npRow').hidden = !on; $('npErr').hidden = true; if (on) $('npName').focus(); else $('npName').value = ''; };
 async function npCreate() {
   const title = $('npName').value.trim();  // any name: spaces, Chinese, emoji; its address is made from it (F173)
