@@ -127,6 +127,9 @@ def md_blocks(md):
     return out
 
 
+DOC_KEY = "doc"  # B247: the thread of comments on the document as a whole (a paragraph's key is 10 hex digits)
+
+
 def block_key(text):
     return hashlib.sha1(" ".join(text.split()).encode("utf-8")).hexdigest()[:10]
 
@@ -678,9 +681,14 @@ class Store:
                            "comments": [c for c in d["comments"] if c["key"] == key] if first else []})
         detached = {}
         for c in d["comments"]:
-            if c["key"] not in keys:
+            if c["key"] not in keys and c["key"] != DOC_KEY:
                 detached.setdefault(c["key"], {"key": c["key"], "quote": c["quote"], "comments": []})["comments"].append(c)
         return blocks, list(detached.values())
+
+    @staticmethod
+    def doc_whole(d):
+        """B247: the comments on the document as a whole."""
+        return [c for c in d["comments"] if c["key"] == DOC_KEY]
 
     def doc_open(self, d):
         """Threads whose last word is the user's: the agent should answer them."""
@@ -692,7 +700,12 @@ class Store:
     def doc_text(self, d):
         blocks, detached = self.doc_view(d)
         titled = blocks and " ".join(blocks[0]["text"].lstrip("#").split()) == d["title"]
-        out = [f"D{d['d']} on {self.code(d['n'])}{'' if titled else ': ' + d['title']}  (updated {hm(d['t1'])} by {d['by']}; reply with: D{d['d']} reply ¶N <text>)"]
+        out = [f"D{d['d']} on {self.code(d['n'])}{'' if titled else ': ' + d['title']}  (updated {hm(d['t1'])} by {d['by']}; reply with: D{d['d']} reply ¶N <text>, ¶0 for the whole document)"]
+        whole = self.doc_whole(d)
+        if whole:  # B247
+            out.append("¶0 comments on the whole document:")
+            for c in whole:
+                out.append(f"   > {c['by']} {hm(c['t'])}: {c['text']}" + "".join(f" [{self.local(f['f'])}]" for f in c.get("files", [])))
         for i, b in enumerate(blocks, 1):
             out.append(f"¶{i} " + b["text"].replace("\n", "\n   "))
             for c in b["comments"]:
@@ -1166,10 +1179,12 @@ class Store:
             dn = self.maxd + 1
             self.emit({"k": "doc", "d": dn, "n": it["n"], "title": title, "md": md, "by": by})
             return f"ok D{dn} new on {self.code(it['n'])}" + self.gone_note(it, by), f"Wrote D{dn}"
-        if name == "dc":  # a comment on one paragraph of a document
+        if name == "dc":  # a comment on one paragraph of a document, or on all of it (key "doc", ¶0: B247)
             d = self.doc(op.get("d"))
             blocks = md_blocks(d["md"])
-            if op.get("para"):
+            if str(op.get("para", "")) == "0" or op.get("key") == DOC_KEY:
+                key, text_ = DOC_KEY, ""
+            elif op.get("para"):
                 k_ = int(op["para"])
                 if not 1 <= k_ <= len(blocks):
                     raise Err(f"D{d['d']} has paragraphs 1-{len(blocks)}")
@@ -1377,7 +1392,7 @@ class Store:
                     "items": items, "inputs": [dict(i, **({"tr_wait": True} if self.held(i) else {}), **({"filing": F[i["id"]]} if i["id"] in F else {}),
                                                     **({"drop": G[i["id"]]} if i["id"] in G else {})) for i in self.inputs.values() if not i.get("deleted")],
                     "deleted": self.deleted_list(),
-                    "docs": [dict(d, blocks=self.doc_view(d)[0], detached=self.doc_view(d)[1], open=self.doc_open(d)) for d in self.docs.values()
+                    "docs": [dict(d, blocks=self.doc_view(d)[0], detached=self.doc_view(d)[1], whole=self.doc_whole(d), open=self.doc_open(d)) for d in self.docs.values()
                              if not self.items.get(d["n"], {}).get("deleted")]}
 
     def line(self, it):
@@ -4839,13 +4854,13 @@ async function sendDocComment(t) {
   markSent(U.draftKey); $('text').value = ''; saveDraft(); grow();
   try { await save({op: 'dc', d: t.d.d, key: t.key, text, ...(t.reply ? {} : {quote: t.quote})}, () => { const t2 = docTarget(); if (t2 && $('text').value.trim()) sendDocComment(t2); }); }
   catch (_) { $('text').value = text; saveDraft(); grow(); return; }
-  U.docThreads.add(t.key); U.docSel = new Set(); U.docQuote = null; U.docReply = t.key;  // B2: what you write next goes on in that thread
+  U.docThreads.add(t.key); U.docSel = new Set(); U.docQuote = null; U.docReply = t.whole ? null : t.key;  // B2: what you write next goes on in that thread (the whole document's: on the document)
   if (U.lastSent) { U.lastSent = null; renderFeedback(); }  // T113 A19: the toast says it; an older "Sent." line doesn't stay beside it
   getSelection()?.removeAllRanges(); renderDoc(); renderComposer(); toast(t.reply ? 'Reply added' : 'Comment added');
   if (desk()) $('text').focus({preventScroll: true});
 }
 function renderDocBar() { renderComposer(); }  // the comment target shows on the input box
-const docSig = d => d ? `${d.title}|${d.md}|${d.blocks.reduce((k, b) => k + b.comments.length, 0)}|${d.detached.length}` : '';
+const docSig = d => d ? `${d.title}|${d.md}|${d.blocks.reduce((k, b) => k + b.comments.length, 0)}|${d.detached.length}|${d.whole?.length || 0}` : '';
 // On the desktop a document opens in the item pane, like the item it belongs to (T110): its header has Circle,
 // Edit and the way back to the item; the one input box below takes the comments (I087). It is drawn again only
 // when the document or what you picked in it changes, so a refresh never swallows a click.
@@ -4886,9 +4901,10 @@ function docViewHtml(d) {
         ${U.docThreads.has(b.key) ? threadHtml(d, b.key, b.comments, b.text) : ''}</section>`).join('')}
       ${U.docCircle ? `<svg id="lasso" class="absolute inset-0 z-10 h-full w-full touch-none" aria-label="Draw around the part you want to comment on"><path id="lassoPath" d="" fill="rgba(251,191,36,.15)" stroke="rgb(245,158,11)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/></svg>` : ''}
     </div>
+    ${d.whole?.length ? `<section class="mt-6 border-t border-zinc-200 pt-4 dark:border-zinc-800"><div class="text-xs font-medium text-zinc-500">On the whole document</div>${threadHtml(d, 'doc', d.whole)}</section>` : ''}
     ${d.detached.length ? `<div class="mt-6 space-y-4 border-t border-zinc-200 pt-4 dark:border-zinc-800"><div class="text-xs font-medium text-zinc-500">Original text changed</div>${d.detached.map(t => `<section>
       <div class="text-sm text-zinc-400 line-through">${esc(t.quote)}</div>${threadHtml(d, t.key, t.comments)}</section>`).join('')}</div>` : ''}
-    <p class="mt-6 text-center text-xs text-zinc-400">${desk() ? 'Click' : 'Tap'} paragraphs, select text or circle an area, then write your comment in the box below</p>
+    <p class="mt-6 text-center text-xs text-zinc-400">${desk() ? 'Click' : 'Tap'} paragraphs, select text or circle an area to comment on them, or write in the box below about the whole document</p>
     </div>`;
 }
 function renderDoc({focus = false} = {}) {
@@ -5582,11 +5598,11 @@ function renderComposer() {
   } else if (dt) {  // I087: a comment on a document
     line = scopeLine(dt.reply ? 'reply' : 'comment', `${dt.reply ? 'Reply in' : 'Comment on'} D${dt.d.d}`, dt.many > 1 ? `· ${dt.many} paragraphs` : dt.quote ? `“${esc(plainQuote(dt.quote).slice(0, 120))}”` : '', scopeX('doc-unpick', 'Cancel the comment'));
     ph = `${dt.reply ? 'Reply in' : 'Comment on'} D${dt.d.d}…`; send = dt.reply ? 'Reply' : 'Comment';  // the same words as the line (T225 #16)
-  } else if (dOpen) {  // B2: a document is open and nothing is picked: the box waits for a pick, it does not reply to the item
+  } else if (dOpen) {  // B247: a document open and nothing picked: a comment on the whole document (never a reply to the item, B2)
     const host = liveN(dOpen.n);
-    line = desk() ? scopeLine('comment', `Comment on D${dOpen.d}`, '· click a paragraph or select text first', byN.has(host) ? scopeLink('doc-to-item', `Reply to ${code(host)} instead`) : '')
-      : scopeLine('comment', 'Tap a paragraph to comment', '', byN.has(host) ? scopeLink('doc-to-item', `Reply to ${code(host)}`, '', `Reply to ${code(host)} instead`) : '');  // T225 #14: fits a phone
-    ph = desk() ? `Click a paragraph of D${dOpen.d}, then comment…` : `Comment on D${dOpen.d}…`; send = 'Comment';
+    line = desk() ? scopeLine('comment', `Comment on D${dOpen.d}`, '· the whole document, or click a paragraph', byN.has(host) ? scopeLink('doc-to-item', `Reply to ${code(host)} instead`) : '')
+      : scopeLine('comment', `Comment on D${dOpen.d}`, '· or tap a part', byN.has(host) ? scopeLink('doc-to-item', `Reply to ${code(host)}`, '', `Reply to ${code(host)} instead`) : '');  // fits a phone (T225 #14)
+    ph = `Comment on D${dOpen.d}…`; send = 'Comment';
   } else if (n) {  // B83: a reply says so; the choices you ticked go with it (B145)
     line = scopeLine(desk() ? 'reply' : 'scope', `Reply to ${code(n)}`, ticks.length ? ticks.map(l => '✓ ' + esc(oneLine(l))).join(' · ') : esc(it.title),  // one name for it, as on the desktop (B157)
       desk() ? scopeLink('new-input-instead', 'New input instead', '', 'What you wrote becomes a new input to the whole project') : scopeX('unscope', 'Send to the whole project instead'));
@@ -5641,7 +5657,7 @@ function renderComposer() {
     : U.correct || U.amend || U.prefsEdit ? boxKeys([['⇧↵', 'save'], ['Esc', 'stop']])
     : vcN ? boxKeys([['⇧↵', send.toLowerCase()]], 'select more text for another voice comment')
     : dt ? boxKeys([['⇧↵', send.toLowerCase()], ['Esc', 'cancel']])
-    : dOpen ? boxKeys([['Esc', `back to ${code(liveN(dOpen.n))}`]], 'click a paragraph or select text to comment on it')
+    : dOpen ? boxKeys([['⇧↵', 'comment on the whole document'], ['Esc', `back to ${code(liveN(dOpen.n))}`]], 'or click a paragraph first')
     : U.files.some(f => f.transcribing) ? boxKeys([['⇧↵', 'send now']], 'the words follow by themselves')
     : boxKeys([['⇧↵', ticks.length ? 'send the answer' : 'send'], ['↵', 'new line'], ['⌥V', 'voice']], 'paste or drop screenshots');
   if ($('overlay').dataset.above && !$('overlay').hidden) $('overlay').style.bottom = $('composer').parentElement.offsetHeight + 'px';  // a sheet over the page stays above the box: its line too
@@ -5732,7 +5748,7 @@ async function send() {
   const dt = docTarget();
   if (dt) return sendDocComment(dt);  // a document comment (I087)
   const od = docOpen();
-  if (od) return toast(`First ${desk() ? 'click' : 'tap'} a paragraph or select text in D${od.d}`);  // B2: never a reply to the item by accident
+  if (od) return sendDocComment({d: od, key: 'doc', whole: true});  // B247: nothing picked: on the whole document (never a reply to the item, B2)
   const n = scopeN(), ch = n && U.choice?.n === n && U.choice.picked.size  // B145: ticked choices go with what you wrote
     ? [...U.choice.picked].sort((a, c) => a - c).map(i => '✓ ' + (U.choiceLabels[n] || [])[i]).join('\n') : '';
   const text = [ch, $('text').value.trim()].filter(Boolean).join('\n\n');

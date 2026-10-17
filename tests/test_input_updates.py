@@ -86,6 +86,16 @@ class AmendTests(unittest.TestCase):
         self.assertEqual(replay.docs[1]['comments'], c)
         replay.out.close()
 
+    def test_a_comment_on_the_whole_document(self):  # B247: nothing picked is still a comment, on all of it
+        self.runop({'op': 'doc', 'ref': 'F1', 'md': '# Plan\n\nFirst part.\n\nSecond part.'})
+        self.runop({'op': 'dc', 'd': 1, 'key': 'doc', 'text': 'Looks right overall'})
+        self.runop({'op': 'dc', 'd': 1, 'para': '0', 'text': 'Thanks, done'}, 'codex')  # an agent answers with D1 reply 0
+        d = self.s.docs[1]
+        self.assertEqual([(c['key'], c['text']) for c in self.s.doc_whole(d)], [('doc', 'Looks right overall'), ('doc', 'Thanks, done')])
+        self.assertEqual(self.s.doc_view(d)[1], [])  # not a comment whose paragraph went away
+        self.assertIn('¶0 comments on the whole document:\n   > you', self.s.doc_text(d))
+        self.assertEqual(self.s.doc_open(d), 0)  # the agent answered it
+
     def test_conflict_and_oversize_do_not_mutate(self):
         self.amend()
         for op in [dict(v=0,text='stale'), dict(v=1,text='x'*taska.MAX_TEXT), dict(v=1,text=' ')]:

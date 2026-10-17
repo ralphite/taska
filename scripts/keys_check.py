@@ -237,7 +237,7 @@ def group_box(a):  # T113 group 1: the box writes where you started, and keeps t
     a.enter(1.0, shift=True)
     check('B2: after a comment the box stays in its thread', line(), lambda t: 'Reply in D1' in t)
     a.key('Escape', wait=0.4); a.type('stray words'); n = a.js('S.inputs.length'); a.enter(0.8, shift=True)
-    check('B2: with nothing picked the box waits, it does not reply to F04', (line(), a.js('S.inputs.length'), a.js("$('text').value")), (lambda t: 'Comment on D1' in t[0] and t[1] == n and t[2] == 'stray words'))
+    check('B247: with nothing picked it is a comment on the whole document, not a reply to F04', (line(), a.js('S.inputs.length'), a.js("$('text').value"), a.js("docById(1).whole.map(c => c.text)")), (lambda t: 'Comment on D1' in t[0] and t[1] == n and t[2] == '' and t[3] == ['stray words']))
     a.js("$('text').value = ''; saveDraft()")
     a.go('D1')  # F184: select, speak, select, speak, one send
     sel = "(i => { const n = document.querySelectorAll('#docBlocks > section')[i].querySelector('p') || document.querySelectorAll('#docBlocks > section')[i]; const t = document.createTreeWalker(n, NodeFilter.SHOW_TEXT).nextNode(); const r = document.createRange(); r.setStart(t, 0); r.setEnd(t, 5); getSelection().removeAllRanges(); getSelection().addRange(r); })"
