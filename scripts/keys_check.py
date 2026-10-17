@@ -97,7 +97,7 @@ status = lambda a, n: a.js(f'byN.get({n}).status')
 
 def group_move(a):
     a.go('B03')
-    check('The sidebar keeps a place for Undo, so it never moves (B28)', a.js("$('sideFoot').querySelector('[data-act=undo-mine]')?.disabled"), True)
+    check('The sidebar has no Undo of its own: the toast and Z do it (T274 #24)', a.js("!$('sideFoot').querySelector('[data-act=undo-mine]')"), True)
     a.key('j'); check('J goes to the next row', open_(a), 'F06')  # B238: Needs you lists the newest first, B03 last
     a.key('k'); check('K goes back', open_(a), 'B03')
     a.key('o'); check('O opens full width', a.js('D.full'), True)

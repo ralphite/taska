@@ -555,7 +555,7 @@ class Store:
             self.inputs[rid].update(acked=False, org={"ok": True, "msg": "Undone", "t": e["t"], "keep": False, "undone": True})
 
     def redo(self, e):
-        """Put back what the last undo of input e["src"]'s filing took back (T113 A4): Z after "Undo filing"."""
+        """Put back what the last undo of input e["src"]'s filing took back (T113 A4): Z after "Undo organizing"."""
         rid = e["src"]
         u = next((x for x in reversed(self.events[:e["seq"] - 1]) if x["k"] == "undo" and x.get("src") == rid), None)
         if not u:
@@ -3584,7 +3584,7 @@ class Handler(BaseHTTPRequestHandler):
                     raise Err(f"{f['why']}: undo that by hand")
                 s.emit({"k": "undo", "src": rid, "by": "you"})
             self.json({"ok": True})
-        elif p == "/api/redo":  # the filing "Undo filing" took back comes back (T113 A4), while nothing changed since
+        elif p == "/api/redo":  # the filing "Undo organizing" took back comes back (T113 A4), while nothing changed since
             rid = (json.loads(self.body(10_000) or b"{}")).get("id")
             with s.cond:
                 why = s.redo_blocked(rid)
@@ -4592,7 +4592,7 @@ function thumbs(files, gid, size = 'size-20') {
   groups.set(gid, imgs.map(f => f.f));
   return files.map(f => (f.mime || '').startsWith('audio/')
     ? `<button data-act="play" data-src="${P}f/${encodeURIComponent(f.f)}" aria-label="Play ${esc(f.name)}" class="flex h-11 shrink-0 items-center gap-2 self-end rounded-full border border-zinc-200 pr-3.5 pl-1.5 text-xs text-zinc-500 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800">
-        <span data-icon class="grid size-8 place-items-center rounded-full bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">${ico('play', 'size-4')}</span><span class="flex h-5 items-center gap-[2px]">${WAVE}</span><span data-time class="font-mono tabular-nums">Voice</span></button>${P_CACHE.prefs?.tidy !== false ? `<button data-act="as-said" data-f="${esc(f.f)}" class="${HIT} h-8 shrink-0 self-end rounded-lg px-1.5 text-xs font-semibold text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200">As said</button>` : ''}`
+        <span data-icon class="grid size-8 place-items-center rounded-full bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">${ico('play', 'size-4')}</span><span class="flex h-5 items-center gap-[2px]">${WAVE}</span><span data-time class="font-mono tabular-nums">Voice</span></button>${P_CACHE.prefs?.tidy !== false ? `<button data-act="as-said" data-f="${esc(f.f)}" class="${HIT} h-8 shrink-0 self-end rounded-lg px-1.5 text-xs font-semibold text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200">Original words</button>` : ''}`
     : (f.mime || '').startsWith('image/')
     ? `<button data-act="view" data-g="${gid}" data-f="${esc(f.f)}" title="${esc(f.name)}" class="${size} shrink-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 hover:brightness-95 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:brightness-110"><img src="${P}f/${encodeURIComponent(f.f)}" alt="${esc(f.name)}" loading="lazy" class="size-full object-contain"></button>`
     : `<a href="${P}f/${encodeURIComponent(f.f)}" target="_blank" rel="noopener" class="flex h-11 max-w-56 shrink-0 items-center gap-1.5 self-end rounded-xl border border-zinc-200 px-3 text-xs text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800">${ico('file', 'size-4')}<span class="truncate">${esc(f.name)}</span></a>`).join('');
@@ -4985,7 +4985,7 @@ function msgHtml(x, gid, form = 0, done = null, ver = null, m = {}) {
   if (you) return `<div ${x.src ? `data-src="${x.src}"` : ''} class="group flex scroll-mb-4 flex-col items-end gap-1 rounded-2xl transition-colors duration-700 ${ver?.old ? 'opacity-60' : ''}">
       ${y.text ? `<div ${voiceAttr(src)} class="max-w-[85%] rounded-2xl rounded-tr-md bg-blue-600 px-4 py-2.5 text-[15px] leading-relaxed text-white dark:bg-blue-500 [&_a]:text-white [&_a]:decoration-white/60 [&_blockquote]:border-white/50 [&_blockquote]:text-white/85 [&_code]:bg-white/15 [&_code]:text-white [&_pre]:bg-white/15 [&_pre]:text-white [&_mark]:text-zinc-900">${ver?.old ? `<div class="line-clamp-2">${msgText(y, gid)}</div>` : msgText(y, gid)}</div>` : ''}
       ${ver?.old ? '' : strip(src?.files, gid + 't' + x.id)}
-      <span class="px-1 text-[11px] text-zinc-400 dark:text-zinc-500">You · ${ver?.old ? 'earlier version · ' : ver?.label ? ver.label + ' · ' : ''}${when(x.t)}${x.edited && !ver?.old ? ` · ${src?.history?.length ? `<button data-act="input-history" data-id="${src.id}" title="See what changed" class="relative underline decoration-dotted underline-offset-2 after:absolute after:-inset-3 hover:text-zinc-700 dark:hover:text-zinc-300">edited ${when(x.edited)}</button>` : `edited ${when(x.edited)}`}` : ''}${src?.tr_wait ? ' · <span class="animate-pulse text-blue-600 dark:text-blue-400">transcribing the voice note…</span>' : ''}${m.read ? ` · <span title="${esc(m.read.names.join(', '))} read it ${when(new Date(m.read.t).toISOString())}" class="inline-flex items-center gap-0.5 font-medium text-zinc-500 dark:text-zinc-400">${ico('check', 'size-3', '2.5')}Read by ${esc(m.read.names.join(', '))}</span>` : ''}</span>${src && !ver?.old && !src.moved && !src.deleted ? `<div class="flex gap-0.5 lg:opacity-0 lg:group-hover:opacity-100 lg:focus-within:opacity-100"><button data-act="input-edit" data-id="${src.id}" class="${DC_BTN}">${ico('pencil', 'size-3.5')}Edit</button><button data-act="input-append" data-id="${src.id}" class="${DC_BTN}">${ico('plus', 'size-3.5')}Add details</button></div>` : ''}</div>`;  // B265: edit it right here
+      <span class="px-1 text-[11px] text-zinc-400 dark:text-zinc-500">You · ${ver?.old ? 'earlier version · ' : ver?.label ? ver.label + ' · ' : ''}${when(x.t)}${x.edited && !ver?.old ? ` · ${src?.history?.length ? `<button data-act="input-history" data-id="${src.id}" title="See what changed" class="relative underline decoration-dotted underline-offset-2 after:absolute after:-inset-3 hover:text-zinc-700 dark:hover:text-zinc-300">edited ${when(x.edited)}</button>` : `edited ${when(x.edited)}`}` : ''}${src?.tr_wait ? ' · <span class="animate-pulse text-blue-600 dark:text-blue-400">transcribing the voice note…</span>' : ''}${m.read ? ` · <span title="${esc(m.read.names.join(', '))} read it ${when(new Date(m.read.t).toISOString())}" class="inline-flex items-center gap-0.5 font-medium text-zinc-500 dark:text-zinc-400">${ico('check', 'size-3', '2.5')}Read by ${esc(m.read.names.join(', '))}</span>` : ''}</span>${src && !ver?.old && !src.moved && !src.deleted ? `<div class="flex gap-0.5 lg:opacity-0 lg:group-hover:opacity-100 lg:focus-within:opacity-100"><button data-act="input-edit" data-id="${src.id}" class="${DC_BTN}">${ico('pencil', 'size-3.5')}Edit</button><button data-act="input-append" data-id="${src.id}" class="${DC_BTN}">${ico('plus', 'size-3.5')}Add more</button></div>` : ''}</div>`;  // B265: edit it right here
   if (x.kind === 'withdraw') return `<div class="flex items-start gap-2 px-1 text-[13px] leading-snug text-zinc-500 dark:text-zinc-400">${ico('undo', 'mt-0.5 size-3.5 shrink-0')}
       <div class="min-w-0 flex-1"><span class="font-medium text-zinc-600 dark:text-zinc-300">${esc(whoName(x.by))} took back its question</span> <span class="text-[11px] text-zinc-400 dark:text-zinc-500">${when(x.t)}</span>${x.text.trim() ? rich(x.text, gid + 'w' + x.id, 'mt-0.5') : ''}</div></div>`;  // F220: a line, not a message
   if (m.withdrawn) return `<div class="flex flex-col items-start gap-1.5 opacity-60">
@@ -5146,7 +5146,7 @@ function docPane(d) {
   const b = (act, inner, title, attrs = '') => `<button data-act="${act}" ${attrs} title="${title}" class="flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm text-zinc-600 hover:bg-zinc-100 aria-pressed:bg-amber-100 aria-pressed:text-amber-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:aria-pressed:bg-amber-900/60 dark:aria-pressed:text-amber-100">${inner}</button>`;
   $('itemMenuBtn').hidden = true;
   $('dHead').innerHTML = `<span class="flex min-w-0 items-center gap-2 text-sm">${ico('file', 'size-[18px] text-zinc-500 dark:text-zinc-400')}<span class="font-mono font-bold text-zinc-700 dark:text-zinc-200">D${d.d}</span><span class="truncate font-semibold">${esc(d.title)}</span></span>`;
-  $('dActs').innerHTML = b('doc-circle', `${ico('lasso', 'size-4')}${U.docCircle ? 'Draw a circle…' : 'Circle'}`, 'Circle an area to comment on it', `aria-pressed="${!!U.docCircle}"`) + b('doc-edit', `${ico('pencil', 'size-4')}Edit`, 'Edit the text');
+  $('dActs').innerHTML = b('doc-circle', `${ico('lasso', 'size-4')}${U.docCircle ? 'Draw around it…' : 'Mark an area'}`, 'Circle an area to comment on it', `aria-pressed="${!!U.docCircle}"`) + b('doc-edit', `${ico('pencil', 'size-4')}Edit`, 'Edit the text');
   $('dNav').innerHTML = b('doc-close', `${ico('left', 'size-4')}Back to ${code(liveN(d.n))}${KBD('Esc')}`, `Back to ${code(liveN(d.n))} · Esc`);
   if (D.docKey === key && body.querySelector('#docBlocks')) return;
   D.docKey = key;
@@ -5171,7 +5171,7 @@ function docViewHtml(d) {
   const shown = (b, i) => i === 0 && titleLine ? {...b, text: rest0.join('\n')} : b;
   groups.delete('doc' + d.d);  // its images, refilled as the blocks render
   return `<div class="flex min-h-full flex-col"><div class="flex items-center gap-1 text-xs text-zinc-500"><span class="min-w-0 flex-1 truncate">on <button data-act="goto" data-n="${d.n}" class="text-blue-600 hover:underline dark:text-blue-400">${code(d.n)}</button> · ${esc(whoName(d.by))} · ${when(d.t1)}</span>
-      <button data-act="doc-circle" aria-pressed="${!!U.docCircle}" class="${HIT} ${BTN} text-sm lg:hidden aria-pressed:bg-amber-100 aria-pressed:text-amber-900 dark:aria-pressed:bg-amber-900/60 dark:aria-pressed:text-amber-100">${U.docCircle ? 'Draw a circle…' : 'Circle'}</button><button data-act="doc-edit" class="${HIT} ${BTN} text-sm lg:hidden">Edit</button></div>
+      <button data-act="doc-circle" aria-pressed="${!!U.docCircle}" class="${HIT} ${BTN} text-sm lg:hidden aria-pressed:bg-amber-100 aria-pressed:text-amber-900 dark:aria-pressed:bg-amber-900/60 dark:aria-pressed:text-amber-100">${U.docCircle ? 'Draw around it…' : 'Mark an area'}</button><button data-act="doc-edit" class="${HIT} ${BTN} text-sm lg:hidden">Edit</button></div>
     ${titled ? '' : `<div class="mt-3 text-2xl leading-tight font-bold tracking-tight">${esc(d.title)}</div>`}
     <div id="docBlocks" class="relative mt-3 space-y-3 text-[15px] ${U.docCircle ? 'select-none' : ''}">
       ${d.blocks.map((b, i) => `<section data-act="doc-pick" data-key="${b.key}" ${U.docSel.has(b.key) ? 'data-picked' : ''} class="-mx-2 rounded-lg px-2 py-1 transition-colors hover:bg-zinc-50 data-picked:bg-amber-50 data-picked:ring-2 data-picked:ring-amber-300 data-pressed:opacity-70 dark:hover:bg-zinc-800/50 dark:data-picked:bg-amber-950/40 dark:data-picked:ring-amber-600">
@@ -5399,7 +5399,7 @@ function detailHtml(it) {
     it.type === 'rule' ? '' : `<button data-act="item-menu" class="${CHIP.replace('after:inset-x-0', 'after:-inset-x-1.5')} shrink-0 ${it.pri === 'P0' ? 'font-semibold text-red-600 dark:text-red-400' : 'font-semibold text-zinc-700 dark:text-zinc-200'}">${it.pri}</button>`,
     it.when === 'later' && !CLOSED(it.status) ? `<span class="${CHIP} shrink-0 text-zinc-600 dark:text-zinc-300">${ico('clock', 'size-3.5 opacity-60')}Later</span>` : '',
     it.archived ? `<span class="${CHIP} shrink-0 text-zinc-600 dark:text-zinc-300">${ico('archive', 'size-3.5 opacity-60')}Archived</span>` : '',
-    it.srcs.length ? `<button data-act="sources" data-n="${n}" class="${CHIP} shrink-0 text-zinc-600 dark:text-zinc-300">${plural(it.srcs.length, 'source')}</button>` : '',
+    it.srcs.length ? `<button data-act="sources" data-n="${n}" class="${CHIP} shrink-0 text-zinc-600 dark:text-zinc-300">${it.srcs.length === 1 ? 'From 1 input' : `From ${it.srcs.length} inputs`}}</button>` : '',
     parent ? `<button data-act="goto" data-n="${parent.n}" class="${CHIP} min-w-0 flex-1 basis-32 text-zinc-700 dark:text-zinc-300">${ico('link', 'size-3.5 opacity-60')}<span class="truncate"><span class="mr-1 font-mono font-bold ${TYPE_TEXT[parent.type]}">${code(parent.n)}</span>${esc(parent.title)}</span></button>` : '',
   ].join('');
   const head = U.editing === n ? `<div class="flex flex-col gap-2">
@@ -5482,7 +5482,7 @@ function itemMenu(n) {
   const statuses = it.type === 'rule' ? Object.entries(RULE_STATUS).filter(([v]) => v !== 'proposed' || it.status === 'proposed') : Object.entries(STATUS);
   dialog('', `<div class="flex flex-col gap-5">
     <div class="grid grid-cols-3 gap-2">${tile('edit', 'pencil', 'Edit')}${tile('copy', 'copy', 'Copy for agent')}${tile('doc-new', 'docplus', 'New doc')}
-      ${tile('sub-new', 'listplus', 'Add subitem')}${tile('reparent', 'indent', 'Move under…', it.parent ? `now under ${code(it.parent)}` : '')}${state}${next}</div>
+      ${tile('sub-new', 'listplus', 'Add subitem')}${tile('reparent', 'indent', 'Put under…', it.parent ? `now under ${code(it.parent)}` : '')}${state}${next}</div>
     <div>${lab('Type')}${segctl('set-field', 'type', [...TYPES, 'rule'].map(t => [t, letterOf(t) + `<span class="truncate">${t[0].toUpperCase() + t.slice(1)}</span>`]), it.type).replaceAll('data-k="type"', `data-f="type" data-n="${n}"`)}</div>
     ${it.type === 'rule' ? '' : `<div>${lab('Priority')}${segctl('set-field', 'pri', ['P0', 'P1', 'P2', 'P3'].map(p => [p, p === 'P0' ? '<span class="font-semibold text-red-600 dark:text-red-400">P0</span>' : p]), it.pri).replaceAll('data-k="pri"', `data-f="pri" data-n="${n}"`)}</div>`}
     <div>${lab('Status')}<div class="grid grid-cols-3 gap-1.5">${statuses.map(stat).join('')}</div></div>
@@ -5656,14 +5656,15 @@ function restoreEdit(k) {
 // ---------------------------------------------------------------- inputs
 
 const projName = slug => titleOf((DR.list || []).find(p => p.name === slug) || {name: slug});  // T244 #4: a project as people call it
+const rcode = id => String(id || '').replace(/^r(\d+)$/, '#$1');  // T274 #22: an input reads #315, never like the rule R315
 const isVoice = r => !!r?.files?.some(f => (f.mime || '').startsWith('audio/'));
 const voiceAttr = r => isVoice(r) ? `data-voice="${r.id}"` : '';  // F144: words selected here can be corrected
 const canUndoInput = r => r.org && r.org.ok && !r.org.undone && r.touched.length && (!r.org.keep || (r.history?.length && r.org.changed)) && r.filing?.can;  // T113 A4: while its work is as it left it
-const filingTip = r => `Undo what the organizer did with ${r.id}: ${r.filing?.what || ''}`;
+const filingTip = r => `Undo what the organizer did with ${rcode(r.id)}: ${r.filing?.what || ''}`;
 
 function inputActions(r, cls = LINK_BTN) {
   if (r.moved) return '';
-  return `<button data-act="input-edit" data-id="${r.id}" class="${cls}">${ico('pencil', 'size-3.5')}Edit</button><button data-act="input-append" data-id="${r.id}" class="${cls}">${ico('plus', 'size-3.5')}Add details</button>`
+  return `<button data-act="input-edit" data-id="${r.id}" class="${cls}">${ico('pencil', 'size-3.5')}Edit</button><button data-act="input-append" data-id="${r.id}" class="${cls}">${ico('plus', 'size-3.5')}Add more</button>`
     + `<button data-act="input-delete" data-id="${r.id}" title="${esc(deleteTip(r))}" class="${cls}${cls === LINK_BTN ? ' text-zinc-600 dark:text-zinc-300' : ''}">${ico('trash', 'size-3.5')}Delete</button>`  // T268: also while it is organized or its words are still coming
     + (r.history?.length ? `<button data-act="input-history" data-id="${r.id}" class="${cls}">History</button>` : '');  // last: the ones every input has keep their places (T113 A21)
 }
@@ -5673,8 +5674,8 @@ function inputActs(r, cls = LINK_BTN) {
   if (r.moved) return [`<a href="/p/${encodeURIComponent(r.moved.to)}/" class="${cls}">${ico('arrow', 'size-3.5', '2')}Open ${esc(projName(r.moved.to))} · ${esc(r.moved.as)}</a>`, ''];
   const busy = S.org.busy === r.id || (!r.acked && S.org.on && !r.org), quiet = cls === LINK_BTN ? ' text-zinc-600 dark:text-zinc-300' : '';
   const now = (!r.acked && S.org.on && r.org && (!r.org.ok || r.org.undone) ? `<button data-act="retry" data-id="${r.id}" class="${cls}">${ico('loop', 'size-3.5', '2')}${r.org.undone ? 'Organize again' : 'Retry'}</button>` : '')
-    + (!r.acked && !r.scope && !busy ? `<button data-act="make-item" data-id="${r.id}" class="${cls.replace(/text-zinc-500|hover:text-zinc-800/g, 'text-blue-600').replace(/dark:text-zinc-400|dark:hover:text-zinc-200/g, 'dark:text-blue-400')}">${ico('plus', 'size-3.5', '2')}Make item</button>` : '')
-    + (canUndoInput(r) ? `<button data-act="undo" data-id="${r.id}" title="${esc(filingTip(r))}" class="${cls}${quiet}">${ico('undo', 'size-3.5', '2')}Undo filing</button>` : '')
+    + (!r.acked && !r.scope && !busy ? `<button data-act="make-item" data-id="${r.id}" class="${cls.replace(/text-zinc-500|hover:text-zinc-800/g, 'text-blue-600').replace(/dark:text-zinc-400|dark:hover:text-zinc-200/g, 'dark:text-blue-400')}">${ico('plus', 'size-3.5', '2')}Turn into item</button>` : '')
+    + (canUndoInput(r) ? `<button data-act="undo" data-id="${r.id}" title="${esc(filingTip(r))}" class="${cls}${quiet}">${ico('undo', 'size-3.5', '2')}Undo organizing</button>` : '')
     + (otherProjects().length && !busy ? `<button data-act="move-input" data-id="${r.id}" title="Sent to the wrong project? Move it" class="${cls}${quiet}">${ico('arrow', 'size-3.5', '2')}Move to…</button>` : '');
   return [now, inputActions(r, cls)];
 }
@@ -5690,7 +5691,7 @@ function shortTitle(s) {
 // F177: Delete moves an input to Deleted (Settings), with the items only it made that no agent has worked on. The
 // others stay and only lose it from their sources. The toast says which, with Undo; Z and Settings put it back.
 const codes = ns => ns.map(code).join(', ');
-const deleteTip = r => `Delete ${r.id}` + (r.drop?.go.length ? ` and ${codes(r.drop.go)}` : '') + (r.drop?.keep.length ? `; ${codes(r.drop.keep.map(k => k[0]))} ${r.drop.keep.length === 1 ? 'stays' : 'stay'}` : '');
+const deleteTip = r => `Delete ${rcode(r.id)}` + (r.drop?.go.length ? ` and ${codes(r.drop.go)}` : '') + (r.drop?.keep.length ? `; ${codes(r.drop.keep.map(k => k[0]))} ${r.drop.keep.length === 1 ? 'stays' : 'stay'}` : '');
 function deletedSaid(x, id) {  // "Deleted r5 and T12, T13 · T14 kept: it has other inputs"
   if (!x) return `Deleted ${id}`;
   const k = x.kept;
@@ -5811,7 +5812,7 @@ function renderInputs() {
     const acts = parts.length ? `<div class="mt-1 flex flex-wrap items-center gap-y-1.5 max-lg:[&_:is(button,a)]:px-1.5 lg:block">${parts.map(a => `<div class="contents lg:mt-1 lg:flex lg:flex-wrap lg:items-center lg:gap-x-1 lg:gap-y-1.5">${a}</div>`).join('')}</div>` : '';
     // On the desktop each input is a ledger line: what you said on the left, what became of it on the right.
     return `${head}<article data-r="${r.id}" class="border-b border-zinc-100 px-4 py-2 transition-colors duration-700 lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-10 lg:px-0 lg:py-4 dark:border-zinc-800/70"><div class="min-w-0">
-      <div class="flex min-h-5 items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400"><span class="shrink-0 font-mono">${r.id}</span><span class="shrink-0 whitespace-nowrap">${when(r.t)}</span>${r.from === 'rules' ? '<span class="font-medium">as a rule</span>' : ''}
+      <div class="flex min-h-5 items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400"><span class="shrink-0 font-mono">${rcode(r.id)}</span><span class="shrink-0 whitespace-nowrap">${when(r.t)}</span>${r.from === 'rules' ? '<span class="font-medium">as a rule</span>' : ''}
         ${scope ? `<button data-act="goto" data-n="${scope.n}" class="relative min-w-0 truncate text-blue-600 after:absolute after:inset-x-0 after:-inset-y-3.5 hover:underline dark:text-blue-400">↳ ${code(scope.n)} ${esc(scope.title)}</button>` : ''}
         <span class="ml-auto flex shrink-0 items-center gap-1 font-medium lg:hidden ${tone}">${icon}${label}</span></div>
       <div ${long(r) ? `data-act="more-input" data-expand data-id="${r.id}"` : ''} ${voiceAttr(r)} class="mt-1.5 rounded-2xl rounded-tr-md bg-blue-50 px-3.5 py-2 text-[15px] leading-relaxed text-zinc-900 dark:bg-blue-400/10 dark:text-zinc-100 ${long(r) ? 'cursor-pointer' : ''}">
@@ -5921,8 +5922,8 @@ function renderComposer() {
     ph = 'Edit your comment…'; send = 'Save';
   } else if (U.amend && byR.has(U.amend.id)) {  // B136: editing or adding to an input you sent
     const r = byR.get(U.amend.id), edit = U.amend.mode === 'edit';
-    line = scopeLine(edit ? 'pencil' : 'listplus', `${edit ? 'Edit' : 'Add details to'} ${r.id}`, oneLine(r.text) ? `“${esc(oneLine(r.text).slice(0, 120))}”` : `· ${isVoice(r) ? 'a voice note' : plural(r.files.length, 'file')}`, scopeX('amend-cancel', edit ? 'Stop editing' : 'Stop adding details'));
-    ph = edit ? `Edit ${r.id}…` : `Add details to ${r.id}…`; send = 'Save';
+    line = scopeLine(edit ? 'pencil' : 'listplus', `${edit ? 'Edit' : 'Add details to'} ${rcode(r.id)}`, oneLine(r.text) ? `“${esc(oneLine(r.text).slice(0, 120))}”` : `· ${isVoice(r) ? 'a voice note' : plural(r.files.length, 'file')}`, scopeX('amend-cancel', edit ? 'Stop editing' : 'Stop adding details'));
+    ph = edit ? `Edit ${rcode(r.id)}…` : `Add details to ${rcode(r.id)}…`; send = 'Save';
   } else if (vcN) {  // F184: one send posts each quote's words as a comment on its passage
     line = scopeLine('comment', `${plural(vcN, 'comment')} on D${vcd.d}`, '· one send posts each on its passage', '');
     ph = 'Words for the comments…'; send = vcN > 1 ? `Post ${vcN} comments` : 'Post the comment';
@@ -5986,13 +5987,7 @@ function renderComposer() {
   else if (quiet) boxBtn(aux, 'mic', 'mic', 'Record a voice note', micTip, 'size-5');
   aux.hidden = !quiet;  // only beside a box with something in it: the round button never moves, the text never jumps
   t.classList.toggle('invisible', rec || view); $('recBar').hidden = !rec;
-  $('boxHint').innerHTML = !desk() ? '' : rec ? boxKeys([['↵', 'words into the box'], ['⇧↵', 'stop and send'], ['Esc', 'discard']])
-    : U.correct || U.amend || U.prefsEdit ? boxKeys([['⇧↵', 'save'], ['Esc', 'stop']])
-    : vcN ? boxKeys([['⇧↵', send.toLowerCase()]], 'select more text for another voice comment')
-    : dt ? boxKeys([['⇧↵', send.toLowerCase()], ['Esc', 'cancel']])
-    : dOpen ? boxKeys([['⇧↵', 'comment on the whole document'], ['Esc', `back to ${code(liveN(dOpen.n))}`]], 'or click a paragraph first')
-    : U.files.some(f => f.transcribing) ? boxKeys([['⇧↵', 'send now']], 'the words follow by themselves')
-    : boxKeys([['⇧↵', ticks.length ? 'send the answer' : 'send'], ['↵', 'new line'], ['⌥V', 'voice']], 'paste or drop screenshots');
+  $('boxHint').innerHTML = desk() && rec ? boxKeys([['↵', 'words into the box'], ['⇧↵', 'stop and send'], ['Esc', 'discard']]) : '';  // T274 #25: no standing key line; the keys are in ? (while recording they matter, so they show)
   if ($('overlay').dataset.above && !$('overlay').hidden) $('overlay').style.bottom = footRoom() + 'px';  // a sheet over the page stays above the box: its line too
   vcPlace(); renderDraft();
   placeBox();
@@ -6038,11 +6033,11 @@ function renderFeedback() {
   if (!r) return;
   let html;
   const move = otherProjects().length && !r.scope ? link('move-input', 'Move to…', `data-id="${r.id}"`) : '';  // sent to the wrong project? (F79) Not a reply: it went to an item here (T113 A19)
-  if (r.moved) html = `${ico('arrow', 'size-4 text-zinc-500', '2')}<span class="min-w-0 flex-1 truncate">Moved ${r.id} to ${esc(projName(r.moved.to))} as ${esc(r.moved.as)}</span><a href="/p/${encodeURIComponent(r.moved.to)}/" class="-my-2 flex h-11 shrink-0 items-center rounded-full px-2 font-semibold text-blue-600 dark:text-blue-400">Open</a>`;
+  if (r.moved) html = `${ico('arrow', 'size-4 text-zinc-500', '2')}<span class="min-w-0 flex-1 truncate">Moved ${rcode(r.id)} to ${esc(projName(r.moved.to))} as ${esc(r.moved.as)}</span><a href="/p/${encodeURIComponent(r.moved.to)}/" class="-my-2 flex h-11 shrink-0 items-center rounded-full px-2 font-semibold text-blue-600 dark:text-blue-400">Open</a>`;
   else if (r.tr_wait) html = `<span class="size-2 shrink-0 animate-pulse rounded-full bg-blue-500 dark:bg-blue-400"></span><span class="min-w-0 flex-1 truncate">Sent. Its voice note's words come next…</span>`;  // sent before they were in (B165)
   else if (S.org.busy === r.id || (!r.acked && S.org.on && !r.org)) html = `<span class="size-2 shrink-0 animate-pulse rounded-full bg-blue-500 dark:bg-blue-400"></span><span class="min-w-0 flex-1 truncate">Sent, organizing…</span>`;
   else if (r.org && !r.org.ok) html = `${ico('alert', 'size-4 text-red-600 dark:text-red-400', '2')}<span class="min-w-0 flex-1 truncate text-red-600 dark:text-red-400">Organizer failed: ${esc(r.org.msg)}</span>${link('retry', 'Retry', `data-id="${r.id}"`)}`;
-  else if (r.org?.undone) html = `<span class="min-w-0 flex-1 truncate">Undid the changes for ${r.id}</span>`;
+  else if (r.org?.undone) html = `<span class="min-w-0 flex-1 truncate">Undid the changes for ${rcode(r.id)}</span>`;
   else if (r.acked) html = `<span class="grid size-4 shrink-0 place-items-center rounded-full bg-emerald-500 text-white dark:bg-emerald-400 dark:text-emerald-950">${ico('check', 'size-3', '3')}</span><span class="min-w-0 flex-1 truncate">${esc(r.org?.msg || (r.touched.length ? 'Organized' : 'Seen by your agent, no item made'))}</span>${r.touched.length ? link('goto', 'View', `data-n="${r.touched[0]}"`) : ''}${r.org && r.org.ok && !r.org.undone && !r.org.keep && r.touched.length ? link('undo', 'Undo', `data-id="${r.id}"`) : ''}${move}`;
   else html = `<span class="size-2 shrink-0 rounded-full bg-zinc-400"></span><span class="line-clamp-2 min-w-0 flex-1 leading-snug">Sent. ${r.org ? 'Left for your agent' : 'Waiting for your agent'}</span>${unsendBtn((U.sentJobs || []).find(j => j.rid === r.id))}${move}`;  // T113 A27
   const final = r.acked || (r.org && r.org.ok) || r.moved;
@@ -6937,7 +6932,7 @@ function logLine(l) {
     .replace(/^organizer (r\d+) retry$/, 'filed $1 again').replace(/^organizer (r\d+) (ok|FAILED): /, (_, r, k) => k === 'ok' ? `filed ${r}: ` : `could not file ${r}: `)
     .replace(/\b(say|ask|block|propose|progress|decide|withdraw) (?=&#39;|&#x27;|'|&quot;|")/g, (_, k) => `${{say: 'said', ask: 'asked', block: 'is blocked:', propose: 'proposed', progress: 'progress:', decide: 'decided', withdraw: 'took back the question:'}[k]} `)  // the quote is escaped by now
     .replace(/\b([A-Z]\d{1,5})\b/g, (c, x) => { const n = parseRef(c); return n && byN.has(n) && code(n) === c ? `<button data-act="goto" data-n="${n}" class="font-semibold text-blue-600 hover:underline dark:text-blue-400">${c}</button>` : c; })
-    .replace(/\b(r\d+)\b/g, (r) => byR.has(r) ? `<button data-act="go-input" data-id="${r}" class="font-mono text-blue-600 hover:underline dark:text-blue-400">${r}</button>` : r);
+    .replace(/\b(r\d+)\b/g, (r) => byR.has(r) ? `<button data-act="go-input" data-id="${r}" class="font-mono text-blue-600 hover:underline dark:text-blue-400">${rcode(r)}</button>` : rcode(r));
   return `<span class="font-medium text-zinc-800 dark:text-zinc-100">${esc(whoName(m[3]))}</span> ${what} <span class="font-mono text-[11px] whitespace-nowrap text-zinc-400">${esc(m[2])}</span>`;
 }
 const logHtml = lines => `<ol class="divide-y divide-zinc-100 text-[13px] leading-relaxed text-zinc-600 dark:divide-zinc-800 dark:text-zinc-300">${lines.map(l => {
@@ -6956,15 +6951,15 @@ function agentCard() {
 }
 const agentsSeen = () => [...(S.agents || [])].sort((a, b) => b.t - a.t).map(a => `<li class="flex h-11 items-center gap-3">${avatar(a.name)}<span class="min-w-0 flex-1 text-[15px]">${esc(AGENT_NAME[a.name] || a.name)}</span><span class="text-sm text-zinc-500 dark:text-zinc-400">${a.waiting ? 'waiting for work' : agoLong(a.t)}</span></li>`).join('');
 const deletedRows = () => (S.deleted || []).map(x => `<li class="flex items-start gap-3 py-3.5">
-    <div class="min-w-0 flex-1"><p class="text-xs text-zinc-500 dark:text-zinc-400"><span class="font-mono">${x.id}</span> · ${when(x.t)} · deleted ${when(x.at)}</p>
+    <div class="min-w-0 flex-1"><p class="text-xs text-zinc-500 dark:text-zinc-400"><span class="font-mono">${rcode(x.id)}</span> · ${when(x.t)} · deleted ${when(x.at)}</p>
       <p class="mt-1 line-clamp-3 text-[15px] leading-snug break-words">${esc(x.text || (x.files ? plural(x.files, 'file') : ''))}</p>
       ${x.items.length ? `<p class="mt-1.5 text-[13px] leading-snug text-zinc-500 dark:text-zinc-400">With ${x.items.map(i => `<span class="font-mono text-xs font-bold ${TYPE_TEXT[i.type]}">${i.code}</span> ${esc(i.title)}`).join(' · ')}</p>` : ''}</div>
     <button data-act="input-restore" data-id="${x.id}" class="${SECOND} shrink-0">${ico('undo', 'size-4')}Restore</button></li>`).join('');
 
 function showSources(n) {
   const it = byN.get(n);
-  dialog(`Sources of ${code(n)}`, `<div class="flex flex-col gap-4">${it.srcs.map(id => byR.get(id)).filter(Boolean).map(r => `<div>
-      <div class="px-1 text-xs text-zinc-500 dark:text-zinc-400"><button data-act="go-input" data-id="${r.id}" class="font-mono text-blue-600 hover:underline dark:text-blue-400">${r.id}</button> · ${when(r.t)} · ${esc(whoName(r.by))}</div>
+  dialog(`What ${code(n)} came from`, `<div class="flex flex-col gap-4">${it.srcs.map(id => byR.get(id)).filter(Boolean).map(r => `<div>
+      <div class="px-1 text-xs text-zinc-500 dark:text-zinc-400"><button data-act="go-input" data-id="${r.id}" class="font-mono text-blue-600 hover:underline dark:text-blue-400">${rcode(r.id)}</button> · ${when(r.t)} · ${esc(whoName(r.by))}</div>
       <div class="mt-1.5 rounded-2xl rounded-tr-md bg-blue-50 px-3.5 py-2 text-[15px] leading-relaxed dark:bg-blue-400/10">${r.text ? rich(r.text, 'src' + r.id) : ''}
       ${r.files.length ? `<div class="mt-2 flex items-end gap-2 overflow-x-auto lg:scrollbar-thin">${thumbs(r.files, 'src' + r.id)}</div>` : ''}</div>
       ${r.org ? `<div class="mt-1.5 flex items-center gap-1 px-1 text-xs text-zinc-500 dark:text-zinc-400">${ico('sparkle', 'size-3.5')}${esc(r.org.msg)}</div>` : ''}</div>`).join('') || '<p class="text-sm text-zinc-500">No sources.</p>'}</div>`);
@@ -7575,15 +7570,15 @@ const ACT = {
   },
   'make-item': async b => {  // no organizer and no agent around: turn the input into an item yourself
     const r = byR.get(b.dataset.id), lines = r.text.trim().split('\n'), first = lines[0].trim();
-    const title = shortTitle(first) || `Files from ${r.id}`, body = title !== first ? r.text.trim() : lines.slice(1).join('\n').trim();  // a long first line stays whole in the body (T113 A25)
+    const title = shortTitle(first) || `Files from ${rcode(r.id)}`, body = title !== first ? r.text.trim() : lines.slice(1).join('\n').trim();  // a long first line stays whole in the body (T113 A25)
     try {
       const d = await save({op: 'new', title, body, src: r.id, ...(r.from === 'rules' ? {type: 'rule'} : {})}, () => ACT['make-item'](b));  // T244 #3: written as a rule, made a rule
       const n = Number((d.res[0].match(/[A-Z](\d+) new/) || [])[1]);
       if (!n) return;
       let run;  // Undo and Z: the item goes, and the input waits again (T113 A7)
-      run = pushUndo(`${code(n)} made from ${r.id}`, () => { toast(`${code(n)} undone: ${r.id} waits again`); return optimistic([{n, f: {status: 'dropped', archived: true}}], () => op({op: 'unmake', ref: code(n)}), ex => notSaved(ex, run)); });
+      run = pushUndo(`${code(n)} made from ${rcode(r.id)}`, () => { toast(`${code(n)} undone: ${rcode(r.id)} waits again`); return optimistic([{n, f: {status: 'dropped', archived: true}}], () => op({op: 'unmake', ref: code(n)}), ex => notSaved(ex, run)); });
       // T113 A25: you stay where you were; the new item's type and priority open right there, by its chip
-      toast(`${code(n)} made from ${r.id}: set its type and priority`, run);
+      toast(`${code(n)} made from ${rcode(r.id)}: set its type and priority`, run);
       if (!desk()) return itemMenu(n);
       const chip = [...document.querySelectorAll(`:is(#inputsView, #composeList) [data-act="goto"][data-n="${n}"]`)].find(el => el.offsetParent), at = chip?.getBoundingClientRect();
       itemMenuDesk(n, 't');
@@ -7655,7 +7650,7 @@ const ACT = {
   unscope: () => carry(() => { U.scopeOff = true; renderComposer(); $('text').focus(); }),
   send,
   dismiss: () => { U.lastSent = null; U.note = null; renderFeedback(); },
-  undo: async b => {  // Undo filing (T113 A4): what the organizer did with an input, as it left it; it says what changed, and Z puts it back
+  undo: async b => {  // Undo organizing (T113 A4): what the organizer did with an input, as it left it; it says what changed, and Z puts it back
     const id = b.dataset.id, what = byR.get(id)?.filing?.what;
     let d;
     try { d = await net(P + 'api/undo', JSON_POST({id}), NET.op); } catch (ex) { return notSaved(ex, () => ACT.undo(b)); }
@@ -7685,7 +7680,7 @@ const ACT = {
     try { const d = await net('/api/voicetidy', JSON_POST({on: !P_CACHE.prefs.tidy}), NET.op); P_CACHE.prefs.tidy = d.tidy; renderProject(); toast(d.tidy ? 'Voice notes are tidied' : 'Voice notes are kept word for word'); } catch (ex) { notSaved(ex); }
   },
   'as-said': async b => {  // T256: the words of a tidied voice note as they were said
-    try { const d = await net(`${P}api/transcript?f=${encodeURIComponent(b.dataset.f)}`, {method: 'POST'}); dialog('As said', `<p class="whitespace-pre-wrap break-words text-[15px]">${esc(d.heard || d.tr || 'No words were heard.')}</p>${d.heard ? '' : '<p class="mt-3 text-sm text-zinc-500 dark:text-zinc-400">Nothing was tidied in this one: the words are as said.</p>'}`); } catch (_) { notLoaded('the words as said', () => ACT['as-said'](b)); }
+    try { const d = await net(`${P}api/transcript?f=${encodeURIComponent(b.dataset.f)}`, {method: 'POST'}); dialog('Original words', `<p class="whitespace-pre-wrap break-words text-[15px]">${esc(d.heard || d.tr || 'No words were heard.')}</p>${d.heard ? '' : '<p class="mt-3 text-sm text-zinc-500 dark:text-zinc-400">Nothing was tidied in this one: the words are as said.</p>'}`); } catch (_) { notLoaded('the words as said', () => ACT['as-said'](b)); }
   },
   'fix-add': async () => {  // T256: a word to hear right, no wrong form needed
     const right = ($('fixWord')?.value || '').trim();
@@ -7828,7 +7823,7 @@ function sideProjects() {  // every project in your order, this one with what th
 function renderSidebar() {
   draw($('drawerList'), sideProjects().map(p => { const cur = p.name === (S.project || HERE), [tone, label] = agentState(p.agents, p.work);
     return `<a href="/p/${encodeURIComponent(p.name)}/" data-slug="${esc(p.name)}" ${cur ? 'aria-current="page" data-act="new-input"' : ''} class="flex items-center gap-2.5 rounded-xl px-2.5 py-2 select-none [-webkit-touch-callout:none] data-dragging:bg-zinc-200/70 data-dragging:ring-0 data-dragging:[&>*]:invisible dark:data-dragging:bg-zinc-800/70 hover:bg-zinc-200/60 data-pressed:bg-zinc-200/80 aria-[current=page]:bg-blue-100 aria-[current=page]:ring-1 aria-[current=page]:ring-blue-200 aria-[current=page]:hover:bg-blue-100 dark:hover:bg-zinc-800 dark:aria-[current=page]:bg-blue-400/15 dark:aria-[current=page]:ring-blue-400/30 dark:aria-[current=page]:hover:bg-blue-400/20">${projTile(p.name, 'size-6 rounded-md text-xs')}
-      <span class="min-w-0 flex-1"><span class="flex items-center gap-1.5"><span class="min-w-0 flex-1 truncate text-sm ${cur ? 'font-semibold' : 'font-medium'}">${esc(titleOf(p))}</span>${p.needs ? `<span title="${plural(p.needs, 'item')} need you" class="grid h-5 min-w-5 shrink-0 place-items-center rounded-full bg-amber-100 px-1 text-[11px] font-bold text-amber-900 dark:bg-amber-400/15 dark:text-amber-200">${p.needs}</span>` : ''}</span><span class="flex items-center gap-1.5 text-[11px] text-zinc-500 dark:text-zinc-400"><span class="size-1.5 shrink-0 rounded-full ${AGENT_TONE[tone][0]}"></span><span class="truncate ${tone === 'ok' ? 'text-emerald-700 dark:text-emerald-400' : AGENT_TONE[tone][1]}">${esc(label)}</span><span class="shrink-0">· ${p.open} open</span></span></span></a>`; }).join(''));
+      <span class="min-w-0 flex-1"><span class="flex items-center gap-1.5"><span class="min-w-0 flex-1 truncate text-sm ${cur ? 'font-semibold' : 'font-medium'}">${esc(titleOf(p))}</span>${p.needs ? `<span title="${plural(p.needs, 'item')} need you" class="grid h-5 min-w-5 shrink-0 place-items-center rounded-full bg-amber-100 px-1 text-[11px] font-bold text-amber-900 dark:bg-amber-400/15 dark:text-amber-200">${p.needs}</span>` : ''}</span><span class="block text-[11px] text-zinc-500 dark:text-zinc-400">${p.open} open</span></span></a>`; }).join(''));
   $('newInputBtn').setAttribute('aria-pressed', String(D.compose && !D.page));
   const nb = $('newInputBtn').querySelector('span'), rule = U.tab === 'rules' && !D.page;  // on Rules it makes a new rule, and says so (T113 A22)
   if (nb && nb.textContent !== (rule ? 'New rule' : 'New input')) { nb.textContent = rule ? 'New rule' : 'New input'; $('newInputBtn').title = rule ? 'New rule for the project · C' : 'New input to the project · C · by voice ⇧V'; }
@@ -7853,11 +7848,10 @@ function startGoFromAnotherProject() {
   } catch (_) { return; }
   if (desk() && !U.go) startGoDesk();
 }
-function renderSideFoot() {  // the sidebar's foot: Undo (when there is one), Settings, the keys
+function renderSideFoot() {  // the sidebar's foot: Settings and the keys (T274 #24: Undo is on the toast and Z)
   const foot = (act, icon, label, key, attrs = '') => `<button data-act="${act}" ${attrs} class="flex h-9 min-w-0 flex-1 items-center gap-2.5 rounded-lg px-2.5 text-left text-sm text-zinc-600 hover:bg-zinc-200/60 dark:text-zinc-300 dark:hover:bg-zinc-800">${ico(icon, 'size-4 shrink-0 text-zinc-500 dark:text-zinc-400', '2')}<span class="min-w-0 flex-1 truncate">${label}</span>${KBD(key)}</button>`;
   const u = U.mine.at(-1);
-  draw($('sideFoot'), foot('undo-mine', 'undo', u ? `Undo: ${esc(u.label)}` : 'Nothing to undo', 'Z', u ? 'title="Undo · Z"' : 'disabled')  // always there: the sidebar never moves (T113 B28)
-    + `<div class="flex items-center gap-0.5">${foot('project', 'gear', 'Settings', 'G S', 'title="Settings · G S"')}<button data-act="keys" title="Keyboard shortcuts · ?" aria-label="Keyboard shortcuts" class="grid size-9 shrink-0 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-200/60 dark:text-zinc-400 dark:hover:bg-zinc-800">${ico('keyboard', 'size-4')}</button></div>`);
+  draw($('sideFoot'), `<div class="flex items-center gap-0.5">${foot('project', 'gear', 'Settings', 'G S', 'title="Settings · G S"')}<button data-act="keys" title="Keyboard shortcuts · ?" aria-label="Keyboard shortcuts" class="grid size-9 shrink-0 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-200/60 dark:text-zinc-400 dark:hover:bg-zinc-800">${ico('keyboard', 'size-4')}</button></div>`);
 }
 function renderRail() {
   const b = (act, inner, title, attrs = '') => `<button data-act="${act}" ${attrs} title="${title}" aria-label="${title.split(' · ')[0]}" class="relative grid size-10 place-items-center rounded-xl text-zinc-500 hover:bg-zinc-200/60 aria-pressed:bg-zinc-200/80 aria-pressed:text-zinc-900 aria-[current=page]:bg-zinc-200/80 aria-[current=page]:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:aria-pressed:bg-zinc-700 dark:aria-pressed:text-zinc-50 dark:aria-[current=page]:bg-zinc-700 dark:aria-[current=page]:text-zinc-50">${inner}</button>`;
@@ -7929,7 +7923,7 @@ function saidRow(r, k, last) {
   const acts = (busy ? '<span class="h-7 w-44 animate-pulse rounded-lg bg-zinc-100 dark:bg-zinc-800"></span>' : '')
     + (r.org && !r.org.ok ? `<span class="min-w-0 basis-full truncate text-[13px] text-red-600/80 dark:text-red-400/80">${esc(r.org.msg)}</span>` : '')
     + inputActs(r, SMALL_BTN).filter(Boolean).map(a => `<div class="flex basis-full flex-wrap items-center gap-1">${a}</div>`).join('');
-  return saidStep(DOT[dotOf(r)], bubble, `<span class="font-mono">${r.id}</span> · ${when(r.t)}${r.from === 'rules' ? ' · as a rule' : ''}`, `<span class="mr-1 text-[13px] font-semibold ${tone}">${label}</span>${chips}${acts}`, last, `data-expand data-id="${r.id}" ${voiceAttr(r)}`);
+  return saidStep(DOT[dotOf(r)], bubble, `<span class="font-mono">${rcode(r.id)}</span> · ${when(r.t)}${r.from === 'rules' ? ' · as a rule' : ''}`, `<span class="mr-1 text-[13px] font-semibold ${tone}">${label}</span>${chips}${acts}`, last, `data-expand data-id="${r.id}" ${voiceAttr(r)}`);
 }
 function outboxStep(q, last) {  // still on its way (F85)
   const state = q.failed ? 'Not sent' : q.files.some(f => !f.f && !f.failed) ? 'Uploading…' : 'Sending…';  // the words never hold it up (B165)
@@ -8429,7 +8423,7 @@ const PBODY = {
       + pSetting('New key', 'This computer and your local network never need the key. A new key signs out every other device.',
         '<button data-act="new-key" class="inline-flex h-11 shrink-0 items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 text-[15px] font-semibold text-red-600 hover:bg-red-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-red-400 dark:hover:bg-red-400/10">New key</button>');
   },
-  fixes: () => !P_CACHE.fixes ? P_LOADING : (P_CACHE.prefs ? pPart(`Transcription preferences${P_CACHE.prefs.default ? '<span class="ml-2 text-[13px] font-normal text-zinc-400">default</span>' : ''}`, "How every project's voice notes are written down, in your own words. Transcription follows them after its own rules.", (U.prefsEdit ? '<div data-prefs-slot class="mt-3"></div>' : prefsBox() + prefsEditBtn())) + pSetting('Tidy voice notes', P_CACHE.prefs.tidy ? 'On: fillers and repeats out, sentences joined, every detail kept. The words as said stay one tap away (As said, on the voice note).' : 'Off: voice notes are written down word for word.',
+  fixes: () => !P_CACHE.fixes ? P_LOADING : (P_CACHE.prefs ? pPart(`Transcription preferences${P_CACHE.prefs.default ? '<span class="ml-2 text-[13px] font-normal text-zinc-400">default</span>' : ''}`, "How every project's voice notes are written down, in your own words. Transcription follows them after its own rules.", (U.prefsEdit ? '<div data-prefs-slot class="mt-3"></div>' : prefsBox() + prefsEditBtn())) + pSetting('Tidy voice notes', P_CACHE.prefs.tidy ? 'On: fillers and repeats out, sentences joined, every detail kept. The words as said stay one tap away (Original words, on the voice note).' : 'Off: voice notes are written down word for word.',
       `<button data-act="tidy-toggle" role="switch" aria-checked="${!!P_CACHE.prefs.tidy}" class="${SECOND}">${P_CACHE.prefs.tidy ? 'Turn off' : 'Turn on'}</button>`) + pPart('Spellings', P_CACHE.fixes.length ? 'Words voice notes hear your way: ones you corrected, and ones you added here.' : 'None yet. Add a word below, or select wrong words in a voice note and write the right ones.',
       `<div class="mt-3 flex items-center gap-1.5"><input id="fixWord" class="${FIELD} h-10 py-1.5 text-sm" placeholder="A name or term to hear right, e.g. Needs you" aria-label="A word to hear right" autocomplete="off" spellcheck="false"><button data-act="fix-add" class="h-10 shrink-0 rounded-xl bg-zinc-900 px-3.5 text-sm font-semibold text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200">Add</button></div>`) : '') + (!P_CACHE.fixes.length ? (P_CACHE.prefs ? '' : pRuled(EMPTY('None yet. When a voice note gets words wrong, select them in the input and write the right ones: from then on every project writes them your way.')))
     : `<ul class="divide-y divide-zinc-200 border-y border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">${P_CACHE.fixes.map(c => `<li class="flex min-h-13 items-center gap-3 py-1.5 text-[15px]"><span class="min-w-0 flex-1 break-words">${c.wrong ? `<span class="text-zinc-400 line-through decoration-zinc-400 dark:text-zinc-500">${esc(c.wrong)}</span><span class="px-2 text-zinc-400 dark:text-zinc-500">→</span>` : ''}<span class="font-medium">${esc(c.right)}</span></span>
@@ -8569,7 +8563,7 @@ function itemMenuDesk(n, arm = U.menuArm) {  // arm: 's', 'p' or 't', the part t
   const state = it.archived ? row('archive', 'archive', 'Unarchive', 'E', 'data-on="0"') : CLOSED(it.status) ? row('archive', 'archive', 'Archive', 'E', 'data-on="1"')
     : (it.type === 'rule' ? '' : row('swipe', 'clock', it.when === 'now' ? 'Later' : 'Back to now', 'L', `data-f="when" data-v="${it.when === 'now' ? 'later' : 'now'}"`)) + row('archive', 'archive', 'Archive', 'E', 'data-on="1"');  // F281: any state
   dialog('', `<div class="flex flex-col gap-3">
-    <div class="-mx-1">${row('edit', 'pencil', 'Edit', 'I')}${row('copy', 'copy', 'Copy for agent', '⇧C')}${it.type === 'rule' ? '' : row('doc-new', 'docplus', 'New doc', '⇧D') + row('sub-new', 'listplus', 'Add subitem', '⇧A') + row('reparent', 'indent', 'Move under…', 'M', '', it.parent ? 'now under ' + code(it.parent) : 'stands on its own')}${state}${next}</div>
+    <div class="-mx-1">${row('edit', 'pencil', 'Edit', 'I')}${row('copy', 'copy', 'Copy for agent', '⇧C')}${it.type === 'rule' ? '' : row('doc-new', 'docplus', 'New doc', '⇧D') + row('sub-new', 'listplus', 'Add subitem', '⇧A') + row('reparent', 'indent', 'Put under…', 'M', '', it.parent ? 'now under ' + code(it.parent) : 'stands on its own')}${state}${next}</div>
     <div class="border-t border-zinc-100 pt-3 dark:border-zinc-800">${lab('Type', 'T then F B I T R', arm === 't')}${segctl('set-field', 'type', [...TYPES, 'rule'].map(t => [t, letterOf(t) + `<span class="truncate">${t[0].toUpperCase() + t.slice(1)}</span>`]), it.type, true).replaceAll('data-k="type"', `data-f="type" data-n="${n}"`)}</div>
     ${it.type === 'rule' ? '' : `<div>${lab('Priority', 'P then 0–3', arm === 'p')}${segctl('set-field', 'pri', ['P0', 'P1', 'P2', 'P3'].map(p => [p, p === 'P0' ? '<span class="font-semibold text-red-600 dark:text-red-400">P0</span>' : p]), it.pri, true).replaceAll('data-k="pri"', `data-f="pri" data-n="${n}"`)}</div>`}
     <div>${lab('Status', `S then 1–${statuses.length}`, arm === 's')}<div class="grid grid-cols-3 gap-1">${statuses.map(stat).join('')}</div></div>
@@ -8601,7 +8595,7 @@ function menuKey(e) {
   if (/^[0-9]$/.test(k)) { e.preventDefault(); hint(f ? `${{pri: 'Priority', type: 'Type', status: 'Status'}[f]}: ${{pri: '0–3', type: 'F B I T R', status: `1–${box.querySelectorAll('[data-f="status"]').length}`}[f]}` : 'First S, P or T: then a digit'); return true; }
   return false;
 }
-// Move under…: pick the parent from a list you can type into, instead of typing a code. On the phone it is a sheet
+// Put under…: pick the parent from a list you can type into, instead of typing a code. On the phone it is a sheet
 // with finger-sized rows, and the list shows before the keyboard does (B156).
 function movePicker(n) {
   const it = byN.get(n), below = new Set([n]);
@@ -8624,7 +8618,7 @@ function movePicker(n) {
 
 const KEYS = [
   ['Move', [['J / K', 'Next or previous item'], ['⇧J / ⇧K', 'Next or previous item that needs you (Go through)'], ['O or ↵', 'Full width; Esc goes back'], ['Space', 'Scroll the item'], ['G then I N A R', 'Items, Inputs, Archive, Rules'], ['G then P', 'Switch project (type to find it)'], ['G then S', 'Settings'], ['[', 'Show or hide the sidebar']]],
-  ['Act on the selected item', [['A', "The item's next step: Accept, Approve, Answer or Reply"], ['R', 'Reply or add to it'], ['N', 'Not yet: reopen and say what is missing'], ['1–9, ⌘↵', 'Pick a choice, send the answer'], ['D · W · L', "Done · Won't do · Later / Now"], ['E / ⇧E', 'Archive or unarchive / archive every finished item'], ['S · P · T', 'Status, priority, type: then the digit or letter the ⋯ menu shows'], ['M · ⇧C', 'Move under… · Copy for agent'], ['I · ⇧D · ⇧A', 'Edit · New doc · Add subitem'], ['.', 'All actions'], ['Z', 'Undo your last action here, again for the one before; older changes: Change log']]],
+  ['Act on the selected item', [['A', "The item's next step: Accept, Approve, Answer or Reply"], ['R', 'Reply or add to it'], ['N', 'Not yet: reopen and say what is missing'], ['1–9, ⌘↵', 'Pick a choice, send the answer'], ['D · W · L', "Done · Won't do · Later / Now"], ['E / ⇧E', 'Archive or unarchive / archive every finished item'], ['S · P · T', 'Status, priority, type: then the digit or letter the ⋯ menu shows'], ['M · ⇧C', 'Put under… · Copy for agent'], ['I · ⇧D · ⇧A', 'Edit · New doc · Add subitem'], ['.', 'All actions'], ['Z', 'Undo your last action here, again for the one before; older changes: Change log']]],
   ['Mouse', [['Hover a row', 'Its quick actions, always in the same places'], ['Right-click a row', 'Its menu, at the pointer'], ['Click cut-off words', 'Show them all'], ['Drag a pane edge', 'Resize; double-click for the default']]],
   ['Write and find', [['C', 'New input to the project (on Rules, a new rule)'], ['V', 'Voice note for the selected item; V again stops'], ['⇧V', 'New input by voice; ⇧V again stops and sends'], ['⌥V', 'Voice note while typing in the box'], ['↵', 'While recording: stop, into the box'], ['⇧↵ or ⌘↵', 'Send; while recording: stop and send'], ['/', 'Search'], ['F', 'Filters'], ['?', 'This sheet'], ['Esc', 'Step back one level']]],
 ];
@@ -8910,7 +8904,7 @@ function drawDrawer() {  // the phone's menu of projects, from what DR.list hold
   draw($('drawerList'), [...DR.list].sort(projOrder).map(p => { const cur = p.name === S.project, [tone, label] = agentState(p.agents, p.work);  // one order, yours (F253): rows don't move as projects get busy or when you pick one (B158, B200)
     return `<a href="/p/${encodeURIComponent(p.name)}/" data-slug="${esc(p.name)}" ${cur ? 'aria-current="page"' : ''} class="group flex min-h-14 items-center gap-3 rounded-2xl px-3 py-2.5 select-none [-webkit-touch-callout:none] data-dragging:bg-zinc-200/70 data-dragging:ring-0 data-dragging:[&>*]:invisible dark:data-dragging:bg-zinc-800/70 hover:bg-zinc-200/50 data-pressed:bg-zinc-200/70 aria-[current=page]:bg-blue-100 aria-[current=page]:ring-1 aria-[current=page]:ring-blue-200 dark:hover:bg-zinc-800/60 dark:data-pressed:bg-zinc-800 dark:aria-[current=page]:bg-blue-400/15 dark:aria-[current=page]:ring-blue-400/30">${projTile(p.name, 'size-8 rounded-lg text-sm')}
     <span class="min-w-0 flex-1"><span class="flex items-center gap-2"><span class="min-w-0 flex-1 truncate text-[17px] font-medium group-aria-[current=page]:font-semibold">${esc(titleOf(p))}</span>${p.needs ? `<span class="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900 dark:bg-amber-400/15 dark:text-amber-200">${p.needs} need you</span>` : ''}</span>
-    <span class="mt-0.5 flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400"><span class="size-1.5 shrink-0 rounded-full ${AGENT_TONE[tone][0]}"></span><span class="truncate ${tone === 'ok' ? 'text-emerald-700 dark:text-emerald-400' : AGENT_TONE[tone][1]}">${esc(label)}</span><span class="shrink-0">· ${p.open} open</span></span></span></a>`; }).join(''));  // T234: the draft mark (a quiet word, not an edit button) and the count on the name's line, the agent's state on a line of its own
+    <span class="mt-0.5 block text-xs text-zinc-500 dark:text-zinc-400">${p.open} open</span></span></a>`; }).join(''));  // T274 #21: the agent's state is said once, at the top  // T234: the draft mark (a quiet word, not an edit button) and the count on the name's line, the agent's state on a line of its own
   $('otherDot').hidden = !DR.list.some(p => p.name !== S.project && p.needs);
 }
 // Undo your last changes (F80): the server lists the ones nobody changed again since; each says what it did.
