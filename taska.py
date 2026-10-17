@@ -6467,9 +6467,11 @@ function dialog(title, html, {aboveComposer = false, focus = true, tall = false,
   $('dlgBody').innerHTML = html; $('overlay').hidden = false;
   if (!desk() && !$('toast').hidden) placeToast();
   for (const c of ['h-[88dvh]', 'sm:h-[85dvh]']) $('dlg').classList.toggle(c, tall);  // documents get the whole screen
-  for (const c of ['rounded-3xl', 'shadow-2xl', 'overflow-hidden', 'max-h-[92%]']) $('dlg').classList.toggle(c, card);
-  for (const c of ['rounded-t-3xl', 'max-h-[88dvh]']) $('dlg').classList.toggle(c, !card);
-  for (const c of ['px-2', 'pb-2']) $('overlay').classList.toggle(c, card);
+  const flush = card && aboveComposer;  // the card above the input box sits on it, as a sheet does: no strip of the list between them (T225 #2)
+  for (const c of ['shadow-2xl', 'overflow-hidden', 'max-h-[92%]']) $('dlg').classList.toggle(c, card);
+  $('dlg').classList.toggle('rounded-3xl', card && !flush); $('dlg').classList.toggle('rounded-t-3xl', !card || flush);
+  $('dlg').classList.toggle('max-h-[88dvh]', !card);
+  $('overlay').classList.toggle('px-2', card); $('overlay').classList.toggle('pb-2', card && !flush);
   for (const c of ['lg:items-start', 'lg:justify-end', 'lg:bg-transparent', 'dark:lg:bg-transparent', 'lg:pt-[3.75rem]', 'lg:pr-3']) $('overlay').classList.toggle(c, pop && desk());
   for (const c of ['lg:w-[24rem]', 'lg:max-h-[80dvh]', 'lg:rounded-2xl', 'lg:ring-1', 'lg:ring-zinc-900/10', 'dark:lg:ring-white/10']) $('dlg').classList.toggle(c, pop && desk());
   $('overlay').style.bottom = aboveComposer ? $('composer').parentElement.offsetHeight + 'px' : '';  // keep the input box usable
