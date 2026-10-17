@@ -4496,6 +4496,12 @@ function filesOf(it) {
 }
 
 const WAVE = 'h-2 h-3 h-4 h-2 h-5 h-3 h-2 h-4 h-3 h-2 h-1.5 h-3 h-4 h-2'.split(' ').map(h => `<span class="w-[2px] rounded-full bg-zinc-300 dark:bg-zinc-600 ${h}"></span>`).join('');
+// T230 #1: pictures and files in one row you can slide (faded at the right when there are more), voice notes in a row
+// of their own below, so tall pictures and short voice bars never sit side by side
+function fileRows(files, gid, size, cls = '') {
+  const audio = files.filter(f => (f.mime || '').startsWith('audio/')), rest = files.filter(f => !(f.mime || '').startsWith('audio/'));
+  return `<div class="${cls} flex flex-col gap-2">${rest.length ? `<div class="flex items-end gap-2 overflow-x-auto lg:scrollbar-thin ${rest.length > 3 ? '[mask-image:linear-gradient(to_right,black_85%,transparent)]' : ''}">${thumbs(rest, gid, size)}</div>` : ''}${audio.length ? `<div class="flex flex-wrap gap-2">${thumbs(audio, gid + 'a', size)}</div>` : ''}</div>`;
+}
 function thumbs(files, gid, size = 'size-20') {
   const imgs = files.filter(f => (f.mime || '').startsWith('image/'));
   groups.set(gid, imgs.map(f => f.f));
@@ -5228,7 +5234,7 @@ function peek(n, {focus = true} = {}) {
     ${it.wait ? `<div data-need class="mt-4 scroll-mt-2">${needsCard(it, true)}</div>` : pin ? `<div data-need class="mt-4 flex flex-col gap-4">${talkHtml(it, [pin], 'p')}</div>` : ''}
     ${it.body ? rich(it.body, 'pbody' + n, 'mt-4 text-[15px] text-zinc-700 dark:text-zinc-300') : ''}
     ${it.next ? `<div class="mt-2 flex gap-2 text-sm"><span class="shrink-0 font-semibold text-zinc-500 dark:text-zinc-400">Next</span><span class="min-w-0 break-words">${inlineMd(it.next)}</span></div>` : ''}
-    ${files.length ? `<div class="mt-3 flex items-end gap-2 overflow-x-auto lg:scrollbar-thin">${thumbs(files, 'peek' + n)}</div>` : ''}
+    ${files.length ? fileRows(files, 'peek' + n, undefined, 'mt-3') : ''}
     ${recent.length ? `<div class="mt-4 flex flex-col gap-4">${talkHtml(it, recent, 'p')}</div>` : ''}
   </div>`, {
     aboveComposer: true, focus, card: true, head, walk: !!g,
@@ -5319,7 +5325,7 @@ function detailHtml(it) {
       ${hidden ? `<button data-act="more" data-n="${n}" class="-my-1 h-11 self-center rounded-lg px-3 text-sm font-medium text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10">Show ${hidden} earlier</button>` : ''}
       ${talkHtml(it, thread.slice(hidden))}</div>` : '';
   return `<div class="flex flex-col gap-6 px-5 pt-5 pb-10 lg:mx-auto lg:w-full lg:max-w-[46rem] lg:px-8 lg:pt-9">${[head, needsCard(it), desc,
-    files.length ? `<div class="flex items-end gap-2 overflow-x-auto lg:scrollbar-thin">${thumbs(files, 'item' + n, 'h-24 w-16')}</div>` : '', docs, subs, talk].filter(Boolean).join('')}</div>`;
+    files.length ? fileRows(files, 'item' + n, 'h-24 w-16') : '', docs, subs, talk].filter(Boolean).join('')}</div>`;
 }
 
 function renderDetail() {
@@ -5346,7 +5352,7 @@ function renderDetail() {
   }
   $('itemMenuBtn').hidden = false;
   const top = body.scrollTop, keep = keepEdit();
-  $('dHead').innerHTML = `<span class="hidden lg:inline">${stateIcon(it.status, statusName(it), 'size-[18px]')}</span><span class="font-mono text-sm font-bold ${TYPE_TEXT[it.type]}">${code(it.n)}</span><span class="text-[11px] font-semibold tracking-wider uppercase"><span class="${statusTone(it)}">${statusName(it)}</span>${it.wait ? `<span class="text-zinc-300 dark:text-zinc-600"> · </span><span class="text-amber-600 dark:text-amber-400">${needWord(it)}</span>` : ''}</span>`;
+  $('dHead').innerHTML = `<span class="hidden lg:inline">${stateIcon(it.status, statusName(it), 'size-[18px]')}</span><span class="font-mono text-sm font-bold ${TYPE_TEXT[it.type]}">${code(it.n)}</span><span class="text-[11px] font-semibold tracking-wider uppercase">${it.wait ? `<span class="text-amber-600 dark:text-amber-400">${it.wait.kind === 'block' ? 'Blocked' : 'Asks you'}</span>` : `<span class="${statusTone(it)}">${statusName(it)}</span>`}</span>`;  // T230 #2: a state, the card's and the row's word, not a button's
   if (desk()) renderDetailBar(it);
   body.innerHTML = detailHtml(it);
   body.scrollTop = top;
@@ -5802,7 +5808,7 @@ function renderComposer() {
   } else if (n) {  // B83: a reply says so; the choices you ticked go with it (B145)
     // B266: the box itself says "Reply to F06…": the line above it doesn't say it again; it keeps the choices you ticked
     // and the way to send it to the whole project instead
-    const instead = desk() ? scopeLink('new-input-instead', 'New input instead', '', 'What you wrote becomes a new input to the whole project') : scopeX('unscope', 'Send to the whole project instead');
+    const instead = desk() ? scopeLink('new-input-instead', 'New input instead', '', 'What you wrote becomes a new input to the whole project') : scopeLink('unscope', 'New input instead', '', 'Send to the whole project instead');  // a word, not a bare ×
     line = ticks.length ? scopeLine(desk() ? 'reply' : 'scope', `Reply to ${code(n)}`, ticks.map(l => '✓ ' + esc(oneLine(l))).join(' · '), instead) : `<span class="min-w-0 flex-1"></span>${instead}`;
     ph = `Reply to ${code(n)}…`;
     if (U.ask === n) ph = `What is missing in ${code(n)}?`;  // after Not yet (B153)
