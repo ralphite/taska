@@ -4300,7 +4300,7 @@ function placeToast(el = $('toast')) {
   el.classList.toggle('bottom-28', !up); el.classList.toggle('top-[calc(env(safe-area-inset-top)+0.75rem)]', up); el.classList.toggle('lg:bottom-auto', up);
   el.classList.toggle('lg:top-32', !!D.page && desk());  // T243 #3: under the Settings page's title, not on it
   if (desk()) {  // B129: on the desktop it shows in the pane you acted in, above the box if the box is there
-    const pane = [LAST.pane, $('detailView'), $('inputsView'), $('projectBody')].find(p => p?.isConnected && p.offsetParent), r = pane?.getBoundingClientRect();
+    const pane = [LAST.pane?.id === 'drawer' ? null : LAST.pane, $('detailView'), $('inputsView'), $('projectBody')].find(p => p?.isConnected && p.offsetParent), r = pane?.getBoundingClientRect();  // T245: never over the sidebar
     const f = $('foot').getBoundingClientRect(), above = r && f.height < 300 && f.left < r.right && f.right > r.left;
     if (r) { el.style.left = `${r.left + r.width / 2}px`; el.style.bottom = up ? '' : `${above ? innerHeight - f.top + 12 : 20}px`; }
     el.classList.toggle('lg:-translate-x-1/2', !!r);
