@@ -4295,8 +4295,9 @@ function workerMark(it) {  // F194: the agent working on an item in progress; am
   const a = it.agent;
   if (!a) return '';
   const name = esc(AGENT_NAME[a.by] || a.by), quiet = Date.now() - new Date(a.t).getTime();
-  return quiet > QUIET_MS ? `<span class="min-w-0 truncate text-amber-700 dark:text-amber-400" title="${name} last wrote ${when(a.t)}; another agent may take it">${name} · quiet ${agoShort(new Date(a.t).getTime())}</span>`
-    : `<span class="min-w-0 truncate" title="${name} is on it">${name}</span>`;  // on a full line it gives way first, the counts stay (T225 #8)
+  // T229 #1: only the agent's small mark; its name and how long it has been quiet are in the tip (hover, long press)
+  const tip = quiet > QUIET_MS ? `${name}: quiet ${agoShort(new Date(a.t).getTime())}, last wrote ${when(a.t)}; another agent may take it` : `${name} is on it`;
+  return `<span title="${tip}" aria-label="${tip}" data-tip="${tip}" class="inline-flex shrink-0 rounded-md ${quiet > QUIET_MS ? 'ring-2 ring-amber-400 dark:ring-amber-500' : ''}">${avatar(a.by)}</span>`;
 }
 const agoShort = t => { const m = Math.max(0, Math.round((Date.now() - t) / 60000)); return m < 1 ? 'now' : m < 60 ? m + 'm' : m < 1440 ? Math.round(m / 60) + 'h' : Math.round(m / 1440) + 'd'; };
 const agoLong = t => { const m = Math.max(0, Math.round((Date.now() - t) / 60000)); return m < 1 ? 'just now' : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${plural(Math.round(m / 1440), 'day')} ago`; };
@@ -9033,6 +9034,15 @@ function tipHide() {
   $('tip').hidden = true; $('tip').removeAttribute('data-on');
 }
 const tipTarget = t => t?.closest?.('[data-tip], [title], button[aria-label], a[aria-label]');
+// T229 #1: on a touch screen, holding a mark with a tip (a row's agent) says it in a toast
+document.addEventListener('pointerdown', e => {
+  const el = e.pointerType !== 'mouse' && e.target.closest?.('#list [data-tip]');
+  if (!el) return;
+  const t = setTimeout(() => { hint(el.dataset.tip); const eat = ev => { ev.preventDefault(); ev.stopPropagation(); }; addEventListener('click', eat, {capture: true, once: true}); setTimeout(() => removeEventListener('click', eat, true), 600); }, 450);
+  const stop = () => { clearTimeout(t); removeEventListener('pointerup', stop); removeEventListener('pointercancel', stop); removeEventListener('pointermove', move); };
+  const move = ev => { if (Math.hypot(ev.clientX - e.clientX, ev.clientY - e.clientY) > 8) stop(); };
+  addEventListener('pointerup', stop); addEventListener('pointercancel', stop); addEventListener('pointermove', move);
+});
 document.addEventListener('pointerover', e => {
   if (!TIP.fine.matches || e.pointerType === 'touch') return;
   if (e.target.closest('#tip')) { clearTimeout(TIP.t); return; }  // on the tooltip itself: it stays
