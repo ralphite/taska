@@ -218,7 +218,7 @@ def group_project(a):  # Settings: one page in the sidebar's place, one section 
     check('Settings opens from the sidebar, at Agents, in the sidebar\'s place',
           (a.js("location.pathname.split('/').pop()"), a.js("$('projectBody').querySelector('h1').textContent"), a.js("$('drawer').hidden")), ('agents', 'Agents', True))
     a.click('#projectNav [data-sec="log"]')
-    check('Each section has its own address', (a.js("location.pathname.split('/').pop()"), a.js("$('projectBody').querySelector('h1').textContent")), ('log', 'Change log'))
+    check('Each section has its own address', (a.js("location.pathname.split('/').pop()"), a.js("$('projectBody').querySelector('h1').textContent")), ('log', 'Activity'))
     a.js('document.activeElement.blur()'); a.key('Escape', wait=0.8)
     check('Esc leaves Settings at once, back to the list', (a.js('D.page'), a.js("location.pathname.split('/').pop()"), a.js("$('drawer').hidden")), lambda g: g[0] is None and g[1] in ('', 'new') and g[2] is False)  # B269: the New input page beside the list
     a.key('g', wait=0.1); a.key('s', wait=0.8)
