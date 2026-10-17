@@ -4295,7 +4295,7 @@ function toast(text, act, {error = false, label = 'Undo', ms = 0} = {}) {  // ms
 // sheet's buttons (a Restore right after a Delete).
 function placeToast(el = $('toast')) {
   const up = (!$('overlay').hidden && !desk()) || !!D.page;  // a sheet, the focus card or a Settings page: at the top, clear of their buttons (T228 #3, #5, #17)
-  el.classList.toggle('bottom-28', !up); el.classList.toggle('top-[calc(env(safe-area-inset-top)+0.75rem)]', up);
+  el.classList.toggle('bottom-28', !up); el.classList.toggle('top-[calc(env(safe-area-inset-top)+0.75rem)]', up); el.classList.toggle('lg:bottom-auto', up);
   if (desk()) {  // B129: on the desktop it shows in the pane you acted in, above the box if the box is there
     const pane = [LAST.pane, $('detailView'), $('inputsView'), $('projectBody')].find(p => p?.isConnected && p.offsetParent), r = pane?.getBoundingClientRect();
     const f = $('foot').getBoundingClientRect(), above = r && f.height < 300 && f.left < r.right && f.right > r.left;
@@ -4979,7 +4979,7 @@ function talkHtml(it, list, gid = '') {
 }
 function msgHtml(x, gid, form = 0, done = null, ver = null, m = {}) {
   const you = x.by === 'you', src = you && x.src ? byR.get(x.src) : null, y = ver ? {...x, text: ver.text} : x;
-  const strip = (files, g, size) => files?.length ? `<div class="flex gap-2 overflow-x-auto lg:scrollbar-thin ${you ? 'justify-end' : 'mt-3'}">${thumbs(files, g, size)}</div>` : '';
+  const strip = (files, g, size) => files?.length ? fileRows(files, g, size, you ? 'items-end max-w-full [&>div]:max-w-full' : 'mt-3') : '';  // T230: pictures and voice notes in their own rows
   if (you) return `<div ${x.src ? `data-src="${x.src}"` : ''} class="flex scroll-mb-4 flex-col items-end gap-1 rounded-2xl transition-colors duration-700 ${ver?.old ? 'opacity-60' : ''}">
       ${y.text ? `<div ${voiceAttr(src)} class="max-w-[85%] rounded-2xl rounded-tr-md bg-blue-600 px-4 py-2.5 text-[15px] leading-relaxed text-white dark:bg-blue-500 [&_a]:text-white [&_a]:decoration-white/60">${ver?.old ? `<div class="line-clamp-2">${msgText(y, gid)}</div>` : msgText(y, gid)}</div>` : ''}
       ${ver?.old ? '' : strip(src?.files, gid + 't' + x.id)}
@@ -6878,7 +6878,7 @@ function logLine(l) {
     : f === 'archived' ? (b === 'True' ? 'archived' : 'unarchived') : f === 'pri' ? `priority ${a} → ${b}` : f === 'type' ? `type ${cap(a)} → ${cap(b)}`
     : f === 'parent' ? (/^\d+$/.test(b) ? `moved under ${code(Number(b))}` : /^\d+$/.test(a) ? `taken out from under ${code(Number(a))}` : 'parent changed')
     : f === 'title' ? `renamed “${b}”` : f === 'body' ? 'description edited' : 'next step edited';
-  const plain = String(m[4]).replace(/\*\*|__|`/g, '').replace(/\[src=[^\]]*\]/g, '').replace(/^(\s*)- \( \) /gm, '$1').replace(/ ''$/, ' a voice note');  // T228 #11, #12
+  const plain = String(m[4]).replace(/\*\*|__|`/g, '').replace(/\[src=[^\]]*\]/g, '').replace(/(^|\s)- (?:\( \)|\[ \]) /g, '$1').replace(/ ''$/, ' a voice note');  // T228 #11, #12
   let what = esc(plain)
     .replace(/^in (r\d+)(?: →([A-Z]\d+))? /, (_, r, c) => c ? `wrote ${r} to ${c} ` : `wrote ${r} `)
     .replace(/^new ([A-Z]\d+) (\w+) (P\d) (now|later) (.*?)(?: ←(r\d+))?$/s, (_, c, t, p, w, title, r) => `made ${c}, ${/^[aeiou]/.test(t) ? 'an' : 'a'} ${t} (${p}${w === 'later' ? ', later' : ''}): ${title}${r ? ` from ${r}` : ''}`)
@@ -8366,7 +8366,7 @@ const PBODY = {
       <ul class="divide-y divide-zinc-200 border-y border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">${live.map(row).join('')}</ul>
       ${gone.length ? `<section class="pt-8"><h2 class="text-[15px] font-semibold">Deleted projects</h2><p class="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">A deleted project leaves the sidebar and stops giving work to agents. Nothing in it is lost: Restore brings it back as it was.</p>
         <ul class="mt-3 flex flex-col gap-2">${gone.map(d => `<li class="flex items-center gap-3 rounded-xl bg-zinc-50 px-3 py-2.5 dark:bg-zinc-900"><span aria-hidden="true" class="grid size-8 shrink-0 place-items-center rounded-lg bg-zinc-400 text-sm leading-none font-bold text-white uppercase dark:bg-zinc-600">${esc([...String(d.title || '?')][0])}</span>
-          <div class="min-w-0 flex-1"><p class="truncate text-[15px] font-medium text-zinc-600 dark:text-zinc-300">${esc(d.title)}</p><p class="text-xs break-words text-zinc-500 dark:text-zinc-400">Deleted ${dayShort(d.t)} · ${plural(d.items, 'item')} · <span class="font-mono">/p/${esc(d.name)}</span></p></div>
+          <div class="min-w-0 flex-1"><p class="text-[15px] font-medium break-words text-zinc-600 dark:text-zinc-300">${esc(d.title)}</p><p class="text-xs break-words text-zinc-500 dark:text-zinc-400">Deleted ${dayShort(d.t)} · ${plural(d.items, 'item')} · <span class="font-mono">/p/${esc(d.name)}</span></p></div>
           <button data-act="p-restore" data-slug="${esc(d.name)}" class="${P_BTN}">${ico('undo', 'size-4', '2')}Restore</button><button data-act="p-purge" data-slug="${esc(d.name)}" class="${P_BTN} hover:text-red-600 dark:hover:text-red-400">Delete forever</button></li>`).join('')}</ul>
         <p class="mt-3 text-xs text-zinc-500 dark:text-zinc-400">Delete forever asks for a second click. It is the only step that cannot be undone.</p></section>` : ''}`;
   },
@@ -8459,11 +8459,11 @@ function phoneProjects() {
   const row = p => { const cur = p.name === S.project, t = titleOf(p);
     if (U.renaming === p.name) return `<div class="flex items-start gap-3 px-3.5 py-3">${projTile(p.name, 'mt-1.5 size-8 rounded-lg text-sm')}<div class="min-w-0 flex-1"><input id="pRename" data-slug="${esc(p.name)}" class="${FIELD} h-11 py-2 font-medium" value="${esc(t)}" aria-label="New name for ${esc(t)}" autocomplete="off" spellcheck="false">
         ${twoButtons('p-rename-save', 'Save', 'p-rename-cancel', p.name)}<p class="mt-2 text-xs text-zinc-500 dark:text-zinc-400">The address stays <span class="font-mono">/p/${esc(p.name)}</span></p></div></div>`;
-    return `<div><div class="flex min-h-14 items-center gap-3 py-2 pr-1.5 pl-3.5">${projTile(p.name, 'size-8 rounded-lg text-sm')}<span class="min-w-0 flex-1"><span class="flex min-w-0 items-center gap-2 text-[15px] font-semibold"><span class="truncate">${esc(t)}</span>${cur ? '<span class="shrink-0 rounded-md bg-zinc-100 px-1.5 py-px text-[11px] font-medium text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">This project</span>' : ''}</span>
-        <span class="mt-0.5 block truncate text-xs text-zinc-500 dark:text-zinc-400"><span class="font-mono">/p/${esc(p.name)}</span> · ${p.open} open</span></span>${more(p.name, t)}</div>
+    return `<div><div class="flex min-h-14 items-center gap-3 py-2 pr-1.5 pl-3.5"><a href="/p/${encodeURIComponent(p.name)}/" class="flex min-w-0 flex-1 items-center gap-3">${projTile(p.name, 'size-8 rounded-lg text-sm')}<span class="min-w-0 flex-1"><span class="flex min-w-0 items-center gap-2 text-[15px] font-semibold"><span class="truncate">${esc(t)}</span>${cur ? '<span class="shrink-0 rounded-md bg-zinc-100 px-1.5 py-px text-[11px] font-medium text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">This project</span>' : ''}</span>
+        <span class="mt-0.5 block truncate text-xs text-zinc-500 dark:text-zinc-400"><span class="font-mono">/p/${esc(p.name)}</span> · ${p.open} open</span></span></a>${more(p.name, t)}</div>
       ${U.pMenu === p.name ? `<div class="flex gap-2 pr-3.5 pb-3 pl-[3.75rem]"><button data-act="p-rename" data-slug="${esc(p.name)}" class="${pill}">${ico('pencil', 'size-4')}Rename</button><button data-act="p-delete" data-slug="${esc(p.name)}" class="${pill} text-red-600 dark:text-red-400">${ico('trash', 'size-4')}Delete</button></div>` : ''}</div>`; };
   const was = d => `<div><div class="flex min-h-14 items-center gap-3 py-2 pr-1.5 pl-3.5"><span aria-hidden="true" class="grid size-8 shrink-0 place-items-center rounded-lg bg-zinc-400 text-sm leading-none font-bold text-white uppercase dark:bg-zinc-600">${esc([...String(d.title || '?')][0])}</span>
-      <span class="min-w-0 flex-1"><span class="block truncate text-[15px] font-medium text-zinc-500 dark:text-zinc-400">${esc(d.title)}</span><span class="mt-0.5 block truncate text-xs text-zinc-400 dark:text-zinc-500">Deleted ${dayShort(d.t)} · ${plural(d.items, 'item')}</span></span>
+      <span class="min-w-0 flex-1"><span class="block text-[15px] font-medium break-words text-zinc-500 dark:text-zinc-400">${esc(d.title)}</span><span class="mt-0.5 block truncate text-xs text-zinc-400 dark:text-zinc-500">Deleted ${dayShort(d.t)} · ${plural(d.items, 'item')}</span></span>
       <button data-act="p-restore" data-slug="${esc(d.name)}" class="flex h-11 shrink-0 items-center gap-1.5 rounded-xl bg-blue-50 px-3 text-sm font-semibold text-blue-700 dark:bg-blue-400/10 dark:text-blue-300">${ico('undo', 'size-4', '2')}Restore</button>${more('gone:' + d.name, d.title)}</div>
     ${U.pMenu === 'gone:' + d.name ? `<div class="flex pr-3.5 pb-3 pl-[3.75rem]"><button data-act="p-purge" data-slug="${esc(d.name)}" class="${pill} text-red-600 dark:text-red-400">${ico('trash', 'size-4')}Delete forever</button></div>` : ''}</div>`;
   return `<div class="${PH_GROUP} mt-4">${add}</div>` + phLabel('Projects') + `<div class="${PH_GROUP}">${live.map(row).join('')}</div>`
@@ -8487,7 +8487,7 @@ async function deleteProject(slug) {
   let d;
   try { d = await projectCall('delete', {name: slug}); } catch (ex) { U.leaving = false; throw ex; }
   if (slug === S.project) {  // this project is gone: on to another one, whose Projects offers it back
-    const next = [...(P_CACHE.projects || [])].filter(p => p.name !== slug).sort((a, b) => b.t - a.t)[0];  // T228 #2: the one you used most lately
+    const next = [...(P_CACHE.projects || DR.list || [])].filter(p => p.name !== slug).sort((a, b) => b.t - a.t)[0];  // T228 #2: the one you used most lately
     try { sessionStorage.setItem('taska.deleted', JSON.stringify({name: slug, title: d.title})); } catch (_) {}
     return location.assign(next ? `/p/${encodeURIComponent(next.name)}/projects` : '/');
   }
