@@ -5476,12 +5476,15 @@ function renderComposer() {
   const rec = !!R.rec, has = !!(t.value.trim() || U.files.length || ticks.length);
   const micTip = !window.isSecureContext ? 'Voice needs an https link here: press for it' : D.compose ? 'Record a voice note · ⌥V' : 'Record a voice note · V, or ⌥V while typing';
   boxBtn($('attachBtn'), rec ? 'rec-cancel' : 'attach', rec ? 'x' : 'plus', rec ? 'Discard the recording' : 'Add images or files', rec ? 'Discard · Esc' : 'Add images or files');
-  const sb = $('sendBtn');
-  if (rec) boxBtn(sb, 'rec-stop', 'check', 'Stop recording, words into the box', 'Words into the box · ↵', 'size-5', '2.5');
+  const sb = $('sendBtn'), recSend = [aux => boxBtn(aux, 'rec-send', 'up', 'Stop and send', 'Stop and send · ⇧↵', 'size-5', '2'), b => boxBtn(b, 'rec-stop', 'check', 'Stop recording, words into the box', 'Words into the box · ↵', 'size-5', '2.5')];
+  // F221: on the phone a second tap where you started recording sends it; the other button stops it into the box.
+  // The desktop keeps Enter's way: the round button puts the words into the box, the one beside it sends.
+  const sendAtStart = rec && !desk(), started = R.from === 'aux' ? 'aux' : 'main';
+  if (rec) recSend[sendAtStart && started === 'main' ? 0 : 1](sb);
   else if (has) boxBtn(sb, 'send', 'up', `${send} (Shift + Enter)`, `${send} · ⇧↵`, 'size-5', '2.25');
   else boxBtn(sb, 'mic', 'mic', 'Record a voice note', micTip);
   const aux = $('micBtn'), quiet = rec || has;
-  if (rec) boxBtn(aux, 'rec-send', 'up', 'Stop and send', 'Stop and send · ⇧↵', 'size-5', '2');
+  if (rec) recSend[sendAtStart && started === 'main' ? 1 : 0](aux);
   else if (quiet) boxBtn(aux, 'mic', 'mic', 'Record a voice note', micTip, 'size-5');
   aux.hidden = !quiet;  // only beside a box with something in it: the round button never moves, the text never jumps
   t.classList.toggle('invisible', rec || view); $('recBar').hidden = !rec;
@@ -5794,7 +5797,7 @@ function stopRec() {
     clearInterval(R.tick);
     micDone(R.stream);
     R.ctx?.close();
-    R.rec = null;
+    R.rec = null; R.from = null;
     $('recBars').innerHTML = ''; $('recTime').textContent = '0:00';
     renderComposer();
     if (R.typing) { R.typing = false; $('text').focus(); }  // you were typing when you started: go on typing
@@ -7100,7 +7103,7 @@ const ACT = {
   sources: b => showSources(Number(b.dataset.n)),
   close: closeDialog,
   attach: () => $('fileInput').click(),
-  mic: startRec,
+  mic: b => { R.from = b?.id === 'micBtn' ? 'aux' : 'main'; return startRec(); },  // F221: where you started is where a second tap sends
   // These hand back no promise: a button stays dimmed and deaf while its promise runs (B159), and the round button
   // is Send right after it stops a recording: the words must not hold it (B165).
   'rec-stop': () => { finishRec(false); },
