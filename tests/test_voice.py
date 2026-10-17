@@ -402,7 +402,7 @@ class ServerTests(unittest.TestCase):
             self.call(f'api/transcript?f={f["f"]}', b'')
         prompt = next(b for m, b in fake.calls if m == taska.VOICE_MODEL)['contents'][0]['parts'][0]['text']
         self.assertIn("preferences for the transcript (follow them, but never add words nobody said):\nWrite numbers as digits.", prompt)
-        self.assertEqual(prefs(''), {'ok': True, 'text': taska.VOICE_PREFS, 'default': True})  # empty: the default again
+        self.assertEqual(prefs(''), {'ok': True, 'text': taska.VOICE_PREFS, 'default': True, 'tidy': True})  # empty: the default again
 
     def test_upload_then_words_then_again_by_file_id(self):
         fake = FakeGemini(['hello Taska'], 'hello Taska')

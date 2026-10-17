@@ -3467,6 +3467,8 @@ class Handler(BaseHTTPRequestHandler):
         if not name or not os.path.isfile(path):
             return self.send(404, "not found\n")
         mime = mimetypes.guess_type(name)[0] or "application/octet-stream"
+        if mime.startswith("text/") or mime in ("application/json", "application/javascript"):
+            mime += "; charset=utf-8"  # T244: Chinese in a .txt reads right
         with open(path, "rb") as f:
             data = f.read()
         self.send(200, data, mime, {"Content-Security-Policy": "sandbox", "Content-Disposition": f"inline; filename*=UTF-8''{quote(name)}"})
@@ -3522,7 +3524,7 @@ class Handler(BaseHTTPRequestHandler):
             if p == "/api/voiceprefs":  # F183: {text} for every project's transcription; "" = the default again
                 d = json.loads(self.body(20_000) or b"{}")
                 HUB.set_voice_prefs(d.get("text", ""))
-                return self.json({"ok": True, **HUB.voice_prefs()})
+                return self.json({"ok": True, **HUB.voice_prefs(), "tidy": HUB.tidy_on()})  # T243: the page keeps knowing the tidy switch
             if p == "/api/key":  # a new key; this device keeps working, every other one needs the new link
                 HUB.new_key()
                 return self.send(200, json.dumps({"ok": True, "key": HUB.key}), "application/json; charset=utf-8",
@@ -5065,7 +5067,7 @@ function blockHtml(b, isTitle, gid = '') {
 }
 const sameText = (a, b) => a.split(/\s+/).join(' ') === b.split(/\s+/).join(' ');
 // A quote from a document reads as words, not Markdown: no ** or `, no table pipes or rules (B157).
-const plainQuote = s => String(s || '').split('\n').filter(l => !TABLE_SEP.test(l)).map(l => l.replace(/^\s*(#+|>|[-*+]|\d+[.)])\s+/, '').replace(/\*\*|__|`/g, '').replace(/^\s*\||\|\s*$/g, '').replace(/\s*\|\s*/g, ' · ').trim()).filter(Boolean).join(' ');
+const plainQuote = s => String(s || '').split('\n').filter(l => !TABLE_SEP.test(l)).map(l => l.replace(/!?\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/^\s*(#+|>|[-*+]|\d+[.)])\s+/, '').replace(/\*\*|__|`/g, '').replace(/^\s*\||\|\s*$/g, '').replace(/\s*\|\s*/g, ' · ').trim()).filter(Boolean).join(' ');
 // B258: your own comment can be changed or deleted, the way an input you sent can (Edit, Delete, and Undo after it);
 // an agent's can be deleted, not edited (F262).
 const DC_BTN = `${HIT} flex h-6 items-center gap-1 rounded-lg px-1.5 text-xs font-semibold text-zinc-500 hover:bg-blue-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-blue-400/10 dark:hover:text-zinc-200`;
@@ -5087,7 +5089,7 @@ async function deleteComment(dn, id) {
 }
 function threadHtml(d, key, comments, blockText) {
   return `<div data-thread="${key}" class="mt-2 space-y-2 border-l-2 border-amber-300 pl-3 dark:border-amber-600">
-    ${comments.map(c => `<div data-dc="${c.id}" class="group text-sm ${MSG(c.by).replace(/\b(ml|mr)-8\b/, '')}">${blockText !== undefined && !sameText(c.quote, blockText) ? `<div class="mb-0.5 line-clamp-2 text-xs text-zinc-500">“${esc(plainQuote(c.quote))}”</div>` : ''}<div class="flex min-h-6 items-center gap-1"><span class="${WHO(c.by)}">${esc(whoName(c.by))}</span> <span class="text-xs text-zinc-400">${when(c.t)}${c.edited ? ` · edited ${when(c.edited)}` : ''}</span>${dcActs(d, c)}</div>${rich(c.text, 'dc' + c.t)}${c.files?.length ? `<div class="mt-1.5 flex gap-2 overflow-x-auto">${thumbs(c.files, 'dcf' + c.id, 'size-11')}</div>` : ''}</div>`).join('')}
+    ${comments.map(c => `<div data-dc="${c.id}" class="group text-sm ${MSG(c.by).replace(/\b(ml|mr)-8\b/, '')}">${blockText !== undefined && !sameText(c.quote, blockText) ? `<div class="mb-0.5 line-clamp-2 text-xs text-zinc-500 dark:text-zinc-300">“${esc(plainQuote(c.quote))}”</div>` : ''}<div class="flex min-h-6 items-center gap-1"><span class="${WHO(c.by)}">${esc(whoName(c.by))}</span> <span class="text-xs text-zinc-400">${when(c.t)}${c.edited ? ` · edited ${when(c.edited)}` : ''}</span>${dcActs(d, c)}</div>${rich(c.text, 'dc' + c.t)}${c.files?.length ? `<div class="mt-1.5 flex gap-2 overflow-x-auto">${thumbs(c.files, 'dcf' + c.id, 'size-11')}</div>` : ''}</div>`).join('')}
     ${U.docReply === key ? '' : `<button data-act="doc-reply" data-key="${key}" class="${HIT} flex h-8 items-center gap-1 rounded-lg px-1.5 -mx-1.5 text-xs font-semibold text-blue-600 hover:bg-blue-50 aria-pressed:underline dark:text-blue-400 dark:hover:bg-blue-400/10">${ico('reply', 'size-3.5')}Reply</button>`}
   </div>`;
 }
@@ -5942,7 +5944,7 @@ function renderComposer() {
   const d = $('drafts');
   d.hidden = !U.files.length;
   paint(d, U.files.map((f, i) => `<div class="relative shrink-0">${(f.mime || '').startsWith('audio/')
-      ? `<div class="flex h-16 items-center gap-2 rounded-xl border border-zinc-200 px-3 text-xs text-zinc-600 dark:border-zinc-700 dark:text-zinc-300">${ico('mic', 'size-4')}<span class="font-mono tabular-nums">${clock(f.ms || 0)}</span><span class="font-semibold ${f.transcribing ? 'animate-pulse text-blue-600 dark:text-blue-400' : f.more ? 'max-w-40 leading-snug text-amber-700 dark:text-amber-400' : f.tr ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-500'}">${f.transcribing ? (f.retrying ? 'Retrying…' : 'Transcribing…') : f.more ? 'May be cut short · fuller words on the way' : f.tr ? 'Transcribed' : f.tr_error ? 'No transcript, audio still sent' : 'No words heard, audio still sent'}</span></div>`
+      ? `<div class="flex h-16 items-center gap-2 rounded-xl border border-zinc-200 px-3 text-xs text-zinc-600 dark:border-zinc-700 dark:text-zinc-300">${ico('mic', 'size-4')}<span class="font-mono tabular-nums">${clock(f.ms || 0)}</span><span class="font-semibold ${f.transcribing ? 'animate-pulse text-blue-600 dark:text-blue-400' : f.more ? 'max-w-40 leading-snug text-amber-700 dark:text-amber-400' : f.tr ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-500'}">${f.transcribing ? (f.retrying ? 'Retrying…' : 'Transcribing…') : f.more ? 'May be cut short · fuller words on the way' : f.tr ? 'Transcribed' : f.tr_error ? 'No transcript: the audio goes as it is' : 'No words heard: the audio goes as it is'}</span></div>`
       : (f.mime || '').startsWith('image/')
       ? `<button data-act="view-draft" data-i="${i}" aria-label="Look at ${esc(f.name)}" class="block cursor-zoom-in rounded-xl"><img src="${f.preview || P + 'f/' + encodeURIComponent(f.f)}" alt="" class="size-16 rounded-xl border border-zinc-200 object-cover dark:border-zinc-700 ${f.f ? '' : 'opacity-40'}"></button>`
       : `<div class="flex h-16 w-28 items-center gap-1 rounded-xl border border-zinc-200 px-2 text-xs dark:border-zinc-700 ${f.f ? '' : 'opacity-40'}">${ico('file', 'size-4')}<span class="line-clamp-2 break-all">${esc(f.name)}</span></div>`}
@@ -7161,6 +7163,7 @@ function change(n, f, v, {said, note} = {}) {
   let run;
   const undo = () => {
     job.undone = true;
+    U.settle.delete(n);  // T241: the row shows the item again, not the line saying what was done
     if (U.go) { U.go.done.delete(n); delete U.go.how?.[n]; }
     toast(`${ref} put back`);
     return optimistic([{n, f: {[f]: before}}], () => {
