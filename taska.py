@@ -5489,7 +5489,10 @@ function renderInputs() {
     const note = org && left.length ? `<div class="mt-1.5 flex min-h-5 items-center gap-1 text-xs ${r.org.ok ? 'text-zinc-500 dark:text-zinc-400' : 'text-red-600 dark:text-red-400'}">${ico('sparkle', 'size-3.5')}<span class="min-w-0">${esc(left.join(' · '))}</span></div>` : '';
     const spark = org && !note && shown.some(n => did[n]) ? `<span class="grid h-8 shrink-0 place-items-center text-zinc-400 dark:text-zinc-500">${ico('sparkle', 'size-3.5')}</span>` : '';  // the organizer's mark, on the chips' first line
     const chips = shown.map(n => `<button data-act="goto" data-n="${n}" class="${HIT} flex h-8 max-w-full min-w-0 items-center gap-1.5 rounded-lg bg-zinc-100 px-2 text-[13px] hover:bg-zinc-200/70 dark:bg-zinc-800 dark:hover:bg-zinc-700">${did[n] ? `<span class="shrink-0 text-zinc-500 dark:text-zinc-400">${esc(did[n])}</span>` : ''}<span class="font-mono text-xs font-bold ${TYPE_TEXT[byN.get(n).type]}">${code(n)}</span><span class="truncate">${esc(byN.get(n).title)}</span></button>`).join('');
-    const acts = inputActs(r).filter(Boolean).map(a => `<div class="mt-1 flex flex-wrap items-center gap-x-1 gap-y-1.5">${a}</div>`).join('');
+    // T232 #1: on the phone one row of actions (a row of its own for Move to… cost each input a line); the desktop
+    // keeps two lines, so Edit and Add details stay in their places (T113 A21)
+    const parts = inputActs(r).filter(Boolean);
+    const acts = parts.length ? `<div class="mt-1 flex flex-wrap items-center gap-y-1.5 max-lg:[&_:is(button,a)]:px-1.5 lg:block">${parts.map(a => `<div class="contents lg:mt-1 lg:flex lg:flex-wrap lg:items-center lg:gap-x-1 lg:gap-y-1.5">${a}</div>`).join('')}</div>` : '';
     // On the desktop each input is a ledger line: what you said on the left, what became of it on the right.
     return `${head}<article data-r="${r.id}" class="border-b border-zinc-100 px-4 py-2 transition-colors duration-700 lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-10 lg:px-0 lg:py-4 dark:border-zinc-800/70"><div class="min-w-0">
       <div class="flex min-h-5 items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400"><span class="font-mono">${r.id}</span><span>${when(r.t)}</span>${r.from === 'rules' ? '<span class="font-medium">as a rule</span>' : ''}
