@@ -5431,9 +5431,13 @@ const statusTone = it => it.status === 'doing' ? 'text-blue-600 dark:text-blue-4
 function detailHtml(it) {
   const n = it.n, files = filesOf(it), children = kids.get(n) || [], parent = it.parent && byN.get(it.parent), shown = cardMsg(it);
   const thread = it.thread.filter(x => x.id !== it.wait?.id && x.id !== shown?.id), hidden = U.more.has(n) ? 0 : Math.max(0, thread.length - 8);
+  // T274 #10: the properties in one row, each one a tap away: status, priority, type, now or later
+  const caret = ico('down', 'size-3 opacity-50', '2.25');
   const chips = [
-    it.type === 'rule' ? '' : `<button data-act="item-menu" class="${CHIP.replace('after:inset-x-0', 'after:-inset-x-1.5')} shrink-0 ${it.pri === 'P0' ? 'font-semibold text-red-600 dark:text-red-400' : 'font-semibold text-zinc-700 dark:text-zinc-200'}">${it.pri}</button>`,
-    it.when === 'later' && !CLOSED(it.status) ? `<span class="${CHIP} shrink-0 text-zinc-600 dark:text-zinc-300">${ico('clock', 'size-3.5 opacity-60')}Later</span>` : '',
+    `<button data-act="item-menu" data-arm="s" title="Status · S" class="${CHIP} shrink-0 text-zinc-700 dark:text-zinc-200">${stateIcon(it.status, statusName(it), 'size-3.5')}${statusName(it)}${caret}</button>`,
+    it.type === 'rule' ? '' : `<button data-act="item-menu" data-arm="p" title="Priority · P" class="${CHIP} shrink-0 ${it.pri === 'P0' ? 'font-semibold text-red-600 dark:text-red-400' : 'font-semibold text-zinc-700 dark:text-zinc-200'}">${it.pri}${caret}</button>`,
+    it.type === 'rule' ? '' : `<button data-act="item-menu" data-arm="t" title="Type · T" class="${CHIP} shrink-0 text-zinc-700 dark:text-zinc-200">${letterOf(it.type)}${it.type[0].toUpperCase() + it.type.slice(1)}${caret}</button>`,
+    CLOSED(it.status) || it.type === 'rule' ? '' : `<button data-act="swipe" data-n="${n}" data-f="when" data-v="${it.when === 'later' ? 'now' : 'later'}" title="${it.when === 'later' ? 'Back to now' : 'Later'} · L" class="${CHIP} shrink-0 text-zinc-700 dark:text-zinc-200">${ico('clock', 'size-3.5 opacity-60')}${it.when === 'later' ? 'Later' : 'Now'}</button>`,
     it.archived ? `<span class="${CHIP} shrink-0 text-zinc-600 dark:text-zinc-300">${ico('archive', 'size-3.5 opacity-60')}Archived</span>` : '',
     it.srcs.length ? `<button data-act="sources" data-n="${n}" class="${CHIP} shrink-0 text-zinc-600 dark:text-zinc-300">${it.srcs.length === 1 ? 'From 1 input' : `From ${it.srcs.length} inputs`}</button>` : '',
     parent ? `<button data-act="goto" data-n="${parent.n}" class="${CHIP} min-w-0 flex-1 basis-32 text-zinc-700 dark:text-zinc-300">${ico('link', 'size-3.5 opacity-60')}<span class="truncate"><span class="mr-1 font-mono font-bold ${TYPE_TEXT[parent.type]}">${code(parent.n)}</span>${esc(parent.title)}</span></button>` : '',
@@ -7465,7 +7469,7 @@ const ACT = {
   },
   open: b => openItem(Number(b.dataset.n)),
   back: () => desk() ? fullWidth(false) : hist(() => history.state?.n ? history.back() : closeItem()),
-  'item-menu': () => itemMenu(U.open),
+  'item-menu': b => b?.dataset.arm && desk() ? itemMenuDesk(U.open, b.dataset.arm) : itemMenu(U.open),  // a property's chip opens the menu at that part (T274 #10)
   'do-next': b => {  // F197: first of its priority in the agent's queue, or back where it was; with Undo and Z
     const n = Number(b.dataset.n), it = byN.get(n);
     if (!it) return;
