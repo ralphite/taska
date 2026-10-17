@@ -5701,12 +5701,6 @@ const voiceAttr = r => isVoice(r) ? `data-voice="${r.id}"` : '';  // F144: words
 const canUndoInput = r => r.org && r.org.ok && !r.org.undone && r.touched.length && (!r.org.keep || (r.history?.length && r.org.changed)) && r.filing?.can;  // T113 A4: while its work is as it left it
 const filingTip = r => `Undo what the organizer did with ${rcode(r.id)}: ${r.filing?.what || ''}`;
 
-function inputActions(r, cls = LINK_BTN) {
-  if (r.moved) return '';
-  return `<button data-act="input-edit" data-id="${r.id}" class="${cls}">${ico('pencil', 'size-3.5')}Edit</button><button data-act="input-append" data-id="${r.id}" class="${cls}">${ico('plus', 'size-3.5')}Add more</button>`
-    + `<button data-act="input-delete" data-id="${r.id}" title="${esc(deleteTip(r))}" class="${cls}${cls === LINK_BTN ? ' text-zinc-600 dark:text-zinc-300' : ''}">${ico('trash', 'size-3.5')}Delete</button>`  // T268: also while it is organized or its words are still coming
-    + (r.history?.length ? `<button data-act="input-history" data-id="${r.id}" class="${cls}">History</button>` : '');  // last: the ones every input has keep their places (T113 A21)
-}
 // What became of an input, and what you can do about it now: the same on Inputs and in "You said lately" (T113 A26,
 // B32), all in sight. -> [the actions for its state, the actions every input has], each a line of its own.
 function inputActs(r, cls = LINK_BTN) {
@@ -5714,9 +5708,21 @@ function inputActs(r, cls = LINK_BTN) {
   const busy = S.org.busy === r.id || (!r.acked && S.org.on && !r.org), quiet = cls === LINK_BTN ? ' text-zinc-600 dark:text-zinc-300' : '';
   const now = (!r.acked && S.org.on && r.org && (!r.org.ok || r.org.undone) ? `<button data-act="retry" data-id="${r.id}" class="${cls}">${ico('loop', 'size-3.5', '2')}${r.org.undone ? 'Organize again' : 'Retry'}</button>` : '')
     + (!r.acked && !r.scope && !busy ? `<button data-act="make-item" data-id="${r.id}" class="${cls.replace(/text-zinc-500|hover:text-zinc-800/g, 'text-blue-600').replace(/dark:text-zinc-400|dark:hover:text-zinc-200/g, 'dark:text-blue-400')}">${ico('plus', 'size-3.5', '2')}Turn into item</button>` : '')
-    + (canUndoInput(r) ? `<button data-act="undo" data-id="${r.id}" title="${esc(filingTip(r))}" class="${cls}${quiet}">${ico('undo', 'size-3.5', '2')}Undo organizing</button>` : '')
-    + (otherProjects().length && !busy ? `<button data-act="move-input" data-id="${r.id}" title="Sent to the wrong project? Move it" class="${cls}${quiet}">${ico('arrow', 'size-3.5', '2')}Move to…</button>` : '');
-  return [now, inputActions(r, cls)];
+    + `<button data-act="input-more" data-id="${r.id}" title="Edit, add more, move, delete…" aria-label="More for ${rcode(r.id)}" class="${cls}${quiet}">${ico('more', 'size-4')}</button>`;
+  return [now];  // T274 #16: what it became is in sight; the rest is behind ⋯
+}
+function inputMenu(b) {
+  const r = byR.get(b.dataset.id);
+  if (!r) return;
+  const row = (act, icon, label, tip = '') => `<button data-act="input-pick" data-pick="${act}" data-id="${r.id}" ${tip ? `title="${esc(tip)}"` : ''} class="flex h-10 w-full items-center gap-2.5 rounded-lg px-3 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800">${ico(icon, 'size-4 text-zinc-500 dark:text-zinc-400')}${label}</button>`;
+  const busy = S.org.busy === r.id || (!r.acked && S.org.on && !r.org);
+  dialog(rcode(r.id), `<div class="-mx-1 flex flex-col gap-0.5">${row('input-edit', 'pencil', 'Edit')}${row('input-append', 'plus', 'Add more')}`
+    + (canUndoInput(r) ? row('undo', 'undo', 'Undo organizing', filingTip(r)) : '')
+    + (otherProjects().length && !busy ? row('move-input', 'arrow', 'Move to…', 'Sent to the wrong project? Move it') : '')
+    + (r.history?.length ? row('input-history', 'clock', 'History') : '')
+    + row('input-delete', 'trash', 'Delete', deleteTip(r)) + '</div>', {pop: true, focus: false});
+  const at = b.getBoundingClientRect();
+  if (desk()) popAt(at.left, at.bottom + 4);
 }
 // Make item's title (T113 A25): the first line, or when that is long, its first sentence, or its first words.
 function shortTitle(s) {
@@ -5845,22 +5851,19 @@ function renderInputs() {
     const note = org && left.length ? `<div class="mt-1.5 flex min-h-5 items-center gap-1 text-xs ${r.org.ok ? 'text-zinc-500 dark:text-zinc-400' : 'text-red-600 dark:text-red-400'}">${ico('sparkle', 'size-3.5')}<span class="min-w-0">${esc(left.join(' · '))}</span></div>` : '';
     const spark = org && !note && shown.some(n => did[n]) ? `<span class="grid h-8 shrink-0 place-items-center text-zinc-400 dark:text-zinc-500">${ico('sparkle', 'size-3.5')}</span>` : '';  // the organizer's mark, on the chips' first line
     const chips = shown.map(n => `<button data-act="goto" data-n="${n}" class="${HIT} flex h-8 max-w-full min-w-0 items-center gap-1.5 rounded-lg bg-zinc-100 px-2 text-[13px] hover:bg-zinc-200/70 dark:bg-zinc-800 dark:hover:bg-zinc-700">${did[n] ? `<span class="shrink-0 text-zinc-500 dark:text-zinc-400">${esc(did[n])}</span>` : ''}<span class="font-mono text-xs font-bold ${TYPE_TEXT[byN.get(n).type]}">${code(n)}</span><span class="truncate">${esc(byN.get(n).title)}</span></button>`).join('');
-    // T232 #1: on the phone one row of actions (a row of its own for Move to… cost each input a line); the desktop
-    // keeps two lines, so Edit and Add details stay in their places (T113 A21)
-    const parts = inputActs(r).filter(Boolean);
-    const acts = parts.length ? `<div class="mt-1 flex flex-wrap items-center gap-y-1.5 max-lg:[&_:is(button,a)]:px-1.5 lg:block">${parts.map(a => `<div class="contents lg:mt-1 lg:flex lg:flex-wrap lg:items-center lg:gap-x-1 lg:gap-y-1.5">${a}</div>`).join('')}</div>` : '';
+    const parts = inputActs(r).filter(Boolean);  // T274 #16: on the line with what became of it, at its right
     // On the desktop each input is a ledger line: what you said on the left, what became of it on the right.
     return `${head}<article data-r="${r.id}" class="border-b border-zinc-100 px-4 py-2 transition-colors duration-700 lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-10 lg:px-0 lg:py-4 dark:border-zinc-800/70"><div class="min-w-0">
       <div class="flex min-h-5 items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400"><span class="shrink-0 font-mono">${rcode(r.id)}</span><span class="shrink-0 whitespace-nowrap">${when(r.t)}</span>${r.from === 'rules' ? '<span class="font-medium">as a rule</span>' : ''}
         ${scope ? `<button data-act="goto" data-n="${scope.n}" class="relative min-w-0 truncate text-blue-600 after:absolute after:inset-x-0 after:-inset-y-3.5 hover:underline dark:text-blue-400">↳ ${code(scope.n)} ${esc(scope.title)}</button>` : ''}
-        <span class="ml-auto flex shrink-0 items-center gap-1 font-medium lg:hidden ${tone}">${icon}${label}</span></div>
+        <span class="ml-auto flex shrink-0 items-center gap-1 font-medium lg:hidden ${tone}">${icon}${label}</span>${parts.length ? `<span class="-my-2 -mr-2 flex shrink-0 items-center lg:hidden">${parts.join('')}</span>` : ''}</div>
       <div data-hit ${long(r) ? `data-act="more-input" data-expand data-id="${r.id}"` : ''} ${voiceAttr(r)} class="mt-1.5 rounded-2xl rounded-tr-md bg-blue-50 px-3.5 py-2 text-[15px] leading-relaxed text-zinc-900 dark:bg-blue-400/10 dark:text-zinc-100 ${long(r) ? 'cursor-pointer' : ''}">
         ${r.text ? rich(r.text, 'in' + r.id, long(r) && !U.moreInputs.has(r.id) ? 'max-h-28 overflow-hidden' : '') : ''}
         ${long(r) ? `<button data-act="more-input" data-id="${r.id}" class="-my-2 flex h-11 items-center text-sm font-medium text-blue-600 hover:underline dark:text-blue-400">${U.moreInputs.has(r.id) ? 'Less' : 'More'}</button>` : ''}
         ${r.files.length ? `<div class="mt-2 flex items-end gap-2 overflow-x-auto lg:scrollbar-thin">${thumbs(r.files, 'in' + r.id, 'size-11')}</div>` : ''}
       </div></div><div class="min-w-0 lg:pt-6">
-      <div class="hidden items-center gap-1.5 text-[13px] font-semibold lg:flex ${tone}">${icon}${label}</div>
-      ${note}${chips ? `<div class="mt-1 flex items-start gap-1.5">${spark}<div class="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">${chips}</div></div>` : ''}${acts}
+      <div class="hidden items-center gap-1.5 text-[13px] font-semibold lg:flex ${tone}">${icon}${label}${parts.length ? `<span class="-my-2 ml-auto flex items-center gap-1 font-normal">${parts.join('')}</span>` : ''}</div>
+      ${note}${chips ? `<div class="mt-1 flex items-start gap-1.5">${spark}<div class="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">${chips}</div></div>` : ''}
     </div></article>`;
   }).join('') + (more ? `<div class="flex flex-col py-4">${more}</div>` : '') : U.outbox.length ? '' : EMPTY(words.length ? 'No matching inputs' : 'No inputs yet.', more ? `<span class="mt-3 flex flex-col">${more}</span>` : '');
   if (U.outbox.length && !words.length) $('inputsView').innerHTML = chat ? $('inputsView').innerHTML + outboxRows(true) : outboxRows() + $('inputsView').innerHTML;
@@ -7713,6 +7716,8 @@ const ACT = {
     toast(`Undid the filing of ${id}${what ? `: ${what}` : ''}`, run);
   },
   'move-input': b => moveInput(b.dataset.id),
+  'input-more': b => inputMenu(b),
+  'input-pick': b => { closeDialog(); ACT[b.dataset.pick]({dataset: {id: b.dataset.id}}); },
   'input-edit': b => editInput(b.dataset.id, 'edit'),
   'input-append': b => editInput(b.dataset.id, 'append'),
   'input-history': b => inputHistory(b.dataset.id),
