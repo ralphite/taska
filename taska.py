@@ -4458,7 +4458,7 @@ function itemRow(it, depth = 0, group = [], band = '') {  // band: the band it i
     it.type === 'rule' ? '' : `<span class="${PRI_TEXT[it.pri]}">${it.pri}</span>`,
     needsYou(it) ? `<span class="font-semibold text-amber-700 dark:text-amber-400">${needWord(it)}</span>` : it.reply && !closed ? '<span class="text-emerald-700 dark:text-emerald-400">Replied</span>' : '',
     hasDraft(c) ? DRAFT_MARK() : '',  // T113 B24: a reply you have not sent yet
-    it.status === 'doing' ? '<span class="text-blue-600 dark:text-blue-400">In progress</span>' : closed ? `<span>${statusName(it)}</span>` : '',
+    it.status === 'doing' ? '<span class="text-blue-600 dark:text-blue-400">In progress</span>' : closed && band !== 'retired' ? `<span>${statusName(it)}</span>` : '',  // the Retired band says it once (T225 #11 follow-up)
     it.archived && U.tab !== 'archive' ? SOFT('Archived') : '',
     it.when === 'later' && !closed && band !== 'later' ? SOFT('Later') : '',
     it.rank != null && inQueue(it) && it.when === 'now' ? '<span class="font-semibold text-blue-600 dark:text-blue-400" title="You put it first of its priority: agents take it next">Next</span>' : '',  // F197
@@ -5228,7 +5228,7 @@ function renderItems() {
     html = !rows.length ? EMPTY('No rules yet.<br>Rules are standing instructions for agents in this project,<br>for example how to write commit messages or who reviews.<br>Say one in the box below and it is filed here.')
       : needsBand(wait, going)
       + (on.length ? zone('rules', 'Active', on.length) + on.map(it => itemRow(it)).join('') : '')
-      + (off.length ? zone('retired', 'Retired', off.length) + off.map(it => itemRow(it)).join('') : '');
+      + (off.length ? zone('retired', 'Retired', off.length) + off.map(it => itemRow(it, 0, [], 'retired')).join('') : '');
   } else if (U.tab === 'archive') {
     html = rows.length ? rows.map(it => itemRow(it)).join('') : EMPTY('Nothing archived yet.<br>Archive finished items from the end of the Items list, or from an item\'s ⋯.');
   } else {
