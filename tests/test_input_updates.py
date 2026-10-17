@@ -104,15 +104,17 @@ class AmendTests(unittest.TestCase):
         mine, theirs = d['comments']
         self.runop({'op': 'dcedit', 'd': 1, 'id': mine['id'], 'text': 'Better words'})
         self.assertEqual((mine['text'], bool(mine.get('edited'))), ('Better words', True))
-        for op, by in [({'op': 'dcdel', 'd': 1, 'id': theirs['id']}, 'you'), ({'op': 'dcdel', 'd': 1, 'id': mine['id']}, 'codex'),
+        for op, by in [({'op': 'dcedit', 'd': 1, 'id': theirs['id'], 'text': 'x'}, 'you'), ({'op': 'dcdel', 'd': 1, 'id': mine['id']}, 'codex'),
                        ({'op': 'dcedit', 'd': 1, 'id': mine['id'], 'text': ' '}, 'you'), ({'op': 'dcundel', 'd': 1, 'id': mine['id']}, 'you')]:
-            lines, _ = self.s.run_all([(0, op)], by)  # only your own, never empty, and only a deleted one comes back
+            lines, _ = self.s.run_all([(0, op)], by)  # edits only your own, deletes only by you, never empty, only a deleted one comes back
             self.assertTrue(lines[0].startswith('err'), (op, lines))
         self.runop({'op': 'dcdel', 'd': 1, 'id': mine['id']})
         self.assertEqual([c['text'] for c in d['comments']], ['Noted'])
         self.assertNotIn('Better words', self.s.doc_text(d))
         self.runop({'op': 'dcundel', 'd': 1, 'id': mine['id']})
         self.assertEqual([c['text'] for c in d['comments']], ['Better words', 'Noted'])  # back in its place
+        self.runop({'op': 'dcdel', 'd': 1, 'id': theirs['id']})  # F262: an agent's comment can go too
+        self.assertEqual([c['text'] for c in d['comments']], ['Better words'])
         replay = taska.Store(str(self.path))
         self.assertEqual(replay.docs[1]['comments'], d['comments'])
         replay.out.close()

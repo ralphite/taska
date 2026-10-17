@@ -1225,8 +1225,8 @@ class Store:
             c = (d.get("gone") or {}).get(cid) if name == "dcundel" else next((c for c in d["comments"] if c["id"] == cid), None)
             if not c:
                 raise Err(f"D{d['d']} has no comment {cid}" + (" to restore" if name == "dcundel" else ""))
-            if by not in PEOPLE or c["by"] not in PEOPLE:
-                raise Err("only the user changes or deletes their own comments")
+            if by not in PEOPLE or (name == "dcedit" and c["by"] not in PEOPLE):
+                raise Err("only the user deletes comments, and edits only their own")  # F262: an agent's comment can go too
             if name == "dcedit":
                 text_ = str(op.get("text") or "").strip()[:MAX_TEXT]
                 if not text_ and not c.get("files"):
@@ -2779,6 +2779,11 @@ class Hub:
                 self.prefs = f.read().strip() or None
         except FileNotFoundError:
             self.prefs = None
+        try:  # F253: the order you dragged the projects into; one for every page that lists them
+            with open(os.path.join(self.root, "project-order.json"), encoding="utf-8") as f:
+                self.order = [n for n in json.load(f) if isinstance(n, str)]
+        except (FileNotFoundError, ValueError):
+            self.order = []
         for name in sorted(os.listdir(self.root)):
             if NAME.fullmatch(name) and os.path.isfile(os.path.join(self.root, name, "taska.jsonl")):
                 self.open(name)
@@ -2949,8 +2954,19 @@ class Hub:
                 # proposed included, since they wait in Items too
                 out.append({"name": name, "title": s.title, "open": sum(1 for i in live if not i["archived"] and (i["type"] != "rule" or i["status"] == "proposed")), "auto": s.cfg["auto"],
                             "needs": sum(1 for i in live if s.waiting(i) or i["status"] in ("proposed", "review")), **s.presence(),
-                            "t": int(os.path.getmtime(s.path) * 1000)})
+                            "t": int(os.path.getmtime(s.path) * 1000), **({"pos": self.order.index(name)} if name in self.order else {})})
         return out
+
+    def set_order(self, names):
+        """F253: the projects in the order you put them; ones left out keep their places after these, by name."""
+        if not isinstance(names, list) or not all(isinstance(n, str) for n in names):
+            raise Err("give the projects' names in their new order")
+        with self.lock:
+            self.order = list(dict.fromkeys(n for n in names if n in self.projects))
+            path = os.path.join(self.root, "project-order.json")
+            with open(path + ".tmp", "w", encoding="utf-8") as f:
+                json.dump(self.order, f)
+            os.replace(path + ".tmp", path)
 
     def search(self, q, skip=""):
         """Words in every project but `skip` (F196): items by their code, title, text and thread, and what you said
@@ -3309,6 +3325,9 @@ class Handler(BaseHTTPRequestHandler):
                 if p == "/api/projects/purge":
                     HUB.purge(d.get("name"))
                     return self.json({"ok": True, "name": d.get("name")})
+                if p == "/api/projects/order":  # F253: {names: [...]} as you dragged them
+                    HUB.set_order(d.get("names"))
+                    return self.json({"ok": True})
                 return self.send(404, "not found\n")
             if p == "/api/corrections":  # {wrong, right} remembers a spelling fix for every project; {wrong} forgets it
                 d = json.loads(self.body(10_000) or b"{}")
@@ -3682,11 +3701,10 @@ __APP_HEAD__
 <body class="h-dvh overflow-hidden bg-white text-zinc-900 antialiased [-webkit-tap-highlight-color:transparent] lg:flex dark:bg-zinc-950 dark:text-zinc-100 [&_:is(button,a[href],summary)[data-pressed]]:opacity-60 [&_[data-expand][data-pressed]]:opacity-70 [&_button:is(:disabled:not([aria-pressed]),[aria-busy=true])]:opacity-40 [&_button:disabled:not([aria-pressed])]:cursor-not-allowed [&_button[aria-busy=true]]:cursor-progress [&_:is(button,a[href],summary):focus-visible]:outline-2 [&_:is(button,a[href],summary):focus-visible]:outline-offset-2 [&_:is(button,a[href],summary):focus-visible]:outline-blue-500 dark:[&_:is(button,a[href],summary):focus-visible]:outline-blue-400 [&_:is(#list,#tabs,#projBar,#rail,#projectNav,#drawerSettings,#moveList,.overflow-x-auto,.truncate)_:is(button,a[href]):focus-visible]:-outline-offset-2 motion-reduce:[&_*]:transition-none motion-reduce:[&_*]:animate-none">
 <nav id="drawer" hidden aria-label="Projects" class="fixed top-0 left-0 flex h-dvh w-80 max-w-[85vw] flex-col bg-zinc-100 pt-[env(safe-area-inset-top)] pb-[max(1rem,env(safe-area-inset-bottom))] lg:z-40 lg:w-[var(--side-w,15rem)] lg:max-w-none lg:shrink-0 lg:border-r lg:border-zinc-200 lg:bg-zinc-50 lg:pb-0 2xl:w-[var(--side-w,16rem)] dark:bg-zinc-900 dark:lg:border-zinc-800">
   <div data-grip="side" title="Drag to resize · double-click for the default" class="absolute inset-y-0 right-0 z-10 hidden w-2 translate-x-full cursor-col-resize hover:bg-blue-500/30 lg:block"></div>
-  <div class="flex h-14 shrink-0 items-center gap-2 px-5 lg:pr-2 lg:pl-4"><a href="/" id="homeLink" title="All projects" class="-mx-1.5 flex h-9 items-center gap-2 rounded-lg px-1.5 hover:bg-zinc-200/60 dark:hover:bg-zinc-800"><span id="drawerLogo" class="text-blue-600 dark:text-blue-400"></span><span class="text-xl font-semibold tracking-tight lg:text-[19px]">Taska</span></a>
+  <div class="flex h-14 shrink-0 items-center gap-2 px-5 lg:pr-2 lg:pl-4"><a href="/" id="homeLink" title="All projects" class="-mx-1.5 flex h-11 items-center gap-2 rounded-lg px-1.5 hover:bg-zinc-200/60 lg:h-9 dark:hover:bg-zinc-800"><span id="drawerLogo" class="text-blue-600 dark:text-blue-400"></span><span class="text-xl font-semibold tracking-tight lg:text-[19px]">Taska</span></a>
     <button data-act="side" id="sideBtn" title="Hide the sidebar · [" aria-label="Hide the sidebar" class="ml-auto hidden size-8 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-200/70 lg:grid dark:text-zinc-400 dark:hover:bg-zinc-800"></button></div>
   <button data-act="new-input" id="newInputBtn" title="New input to the project · C · by voice ⇧V" aria-pressed="false" class="mx-2.5 mb-3 hidden h-9 shrink-0 items-center gap-2 rounded-xl bg-white px-3 text-sm font-medium text-zinc-800 shadow-sm ring-1 ring-zinc-900/10 hover:bg-zinc-50 lg:flex aria-pressed:bg-blue-50 aria-pressed:text-blue-700 aria-pressed:ring-blue-500/40 dark:bg-zinc-800 dark:text-zinc-100 dark:ring-white/10 dark:hover:bg-zinc-700 dark:aria-pressed:bg-blue-400/10 dark:aria-pressed:text-blue-300 dark:aria-pressed:ring-blue-400/40"></button>
   <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 lg:pb-3 lg:scrollbar-thin lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70">
-    <div id="sideNeeds" class="mb-3 hidden lg:block"></div>
     <div class="px-3 pb-1.5 text-xs font-semibold text-zinc-500 lg:text-[11px] lg:tracking-wider lg:uppercase dark:text-zinc-400">Projects</div>
     <div id="drawerList" class="flex flex-col gap-0.5"></div>
     <button data-act="new-project" id="drawerNew" class="mt-1 flex h-12 w-full items-center gap-3 rounded-2xl px-3 text-[15px] font-medium text-blue-600 hover:bg-zinc-200/60 lg:h-9 lg:rounded-xl lg:text-sm dark:text-blue-400 dark:hover:bg-zinc-800">New project</button>
@@ -3778,8 +3796,9 @@ __APP_HEAD__
   </footer>
 </div>
 
-<div id="overlay" hidden class="fixed inset-0 z-40 flex items-end justify-center bg-black/40 sm:items-center sm:p-6 dark:bg-black/60">
-  <section id="dlg" role="dialog" aria-modal="true" aria-labelledby="dlgTitle" class="flex max-h-[88dvh] w-full max-w-2xl flex-col rounded-t-3xl bg-white shadow-xl transition-transform duration-150 sm:rounded-3xl dark:bg-zinc-900 dark:ring-1 dark:ring-white/10">
+<!-- B263: a sheet is never taller than the room above the input box, and stays clear of the iPhone's status bar -->
+<div id="overlay" hidden class="fixed inset-0 z-40 flex items-end justify-center bg-black/40 pt-[max(env(safe-area-inset-top),0.75rem)] sm:items-center sm:p-6 dark:bg-black/60">
+  <section id="dlg" role="dialog" aria-modal="true" aria-labelledby="dlgTitle" class="flex max-h-[min(88dvh,100%)] w-full max-w-2xl flex-col rounded-t-3xl bg-white shadow-xl transition-transform duration-150 sm:rounded-3xl dark:bg-zinc-900 dark:ring-1 dark:ring-white/10">
     <div data-handle class="flex shrink-0 touch-none justify-center pt-2 sm:hidden"><span class="h-1 w-10 rounded-full bg-zinc-300 dark:bg-zinc-600"></span></div>
     <header class="flex shrink-0 touch-none items-center gap-2 py-1 pr-2 pl-5">
       <h2 id="dlgTitle" class="min-w-0 flex-1 truncate text-[17px] font-semibold"></h2>
@@ -4518,8 +4537,8 @@ function itemRow(it, depth = 0, group = [], band = '') {  // band: the band it i
   ].join('');
   const img = files.find(f => (f.mime || '').startsWith('image/'));
   const foldable = group.some(k => k.parent === it.n);  // its subitems are in this list
-  const top = `<div data-act="open" data-n="${it.n}" ${rowCur(it)} class="group relative flex cursor-pointer items-start gap-3 py-2.5 pr-3 pl-${4 + 8 * depth} ${closed ? 'opacity-55' : ''} ${rowTint(it)}">
-      ${Array.from({length: depth}, (_, d) => `<span class="absolute inset-y-0 left-[${25 + 32 * d}px] w-px bg-zinc-200 dark:bg-zinc-700/70"></span>`).join('')}
+  // B254: a subitem is set in 24 px a level, with no line beside it
+  const top = `<div data-act="open" data-n="${it.n}" ${rowCur(it)} class="group relative flex cursor-pointer items-start gap-3 py-2.5 pr-3 pl-${4 + 6 * depth} ${closed ? 'opacity-55' : ''} ${rowTint(it)}">
       ${stateIcon(it.status, statusName(it))}
       <div class="min-w-0 flex-1">
         <p class="line-clamp-2 text-[15px] leading-snug font-medium lg:line-clamp-1 ${closed ? 'line-through decoration-zinc-400' : ''}"><span class="mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[it.type]}">${c}</span>${esc(it.title)}</p>
@@ -4855,9 +4874,10 @@ function blockHtml(b, isTitle, gid = '') {
 const sameText = (a, b) => a.split(/\s+/).join(' ') === b.split(/\s+/).join(' ');
 // A quote from a document reads as words, not Markdown: no ** or `, no table pipes or rules (B157).
 const plainQuote = s => String(s || '').split('\n').filter(l => !TABLE_SEP.test(l)).map(l => l.replace(/^\s*(#+|>|[-*+]|\d+[.)])\s+/, '').replace(/\*\*|__|`/g, '').replace(/^\s*\||\|\s*$/g, '').replace(/\s*\|\s*/g, ' · ').trim()).filter(Boolean).join(' ');
-// B258: your own comment can be changed or deleted, the way an input you sent can (Edit, Delete, and Undo after it).
+// B258: your own comment can be changed or deleted, the way an input you sent can (Edit, Delete, and Undo after it);
+// an agent's can be deleted, not edited (F262).
 const DC_BTN = `${HIT} flex h-6 items-center gap-1 rounded-lg px-1.5 text-xs font-semibold text-zinc-500 hover:bg-blue-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-blue-400/10 dark:hover:text-zinc-200`;
-const dcActs = (d, c) => `<div class="-mr-1.5 ml-auto flex gap-0.5 lg:opacity-0 lg:group-hover:opacity-100 lg:focus-within:opacity-100"><button data-act="dc-edit" data-d="${d.d}" data-id="${c.id}" class="${DC_BTN}">${ico('pencil', 'size-3.5')}Edit</button><button data-act="dc-delete" data-d="${d.d}" data-id="${c.id}" class="${DC_BTN}">${ico('trash', 'size-3.5')}Delete</button></div>`;
+const dcActs = (d, c) => `<div class="-mr-1.5 ml-auto flex gap-0.5 lg:opacity-0 lg:group-hover:opacity-100 lg:focus-within:opacity-100">${c.by === 'you' ? `<button data-act="dc-edit" data-d="${d.d}" data-id="${c.id}" class="${DC_BTN}">${ico('pencil', 'size-3.5')}Edit</button>` : ''}<button data-act="dc-delete" data-d="${d.d}" data-id="${c.id}" class="${DC_BTN}">${ico('trash', 'size-3.5')}Delete</button></div>`;
 const dcFind = (dn, id) => { const d = docById(+dn); return d && [...d.whole || [], ...d.blocks.flatMap(b => b.comments), ...d.detached.flatMap(t => t.comments)].find(c => c.id === +id); };
 function editComment(dn, id) {
   const c = dcFind(dn, id);
@@ -4875,7 +4895,7 @@ async function deleteComment(dn, id) {
 }
 function threadHtml(d, key, comments, blockText) {
   return `<div class="mt-2 space-y-2 border-l-2 border-amber-300 pl-3 dark:border-amber-600">
-    ${comments.map(c => `<div class="group text-sm ${MSG(c.by)}">${blockText !== undefined && !sameText(c.quote, blockText) ? `<div class="mb-0.5 line-clamp-2 text-xs text-zinc-500">“${esc(plainQuote(c.quote))}”</div>` : ''}<div class="flex min-h-6 items-center gap-1"><span class="${WHO(c.by)}">${esc(whoName(c.by))}</span> <span class="text-xs text-zinc-400">${when(c.t)}${c.edited ? ` · edited ${when(c.edited)}` : ''}</span>${c.by === 'you' ? dcActs(d, c) : ''}</div>${rich(c.text, 'dc' + c.t)}${c.files?.length ? `<div class="mt-1.5 flex gap-2 overflow-x-auto">${thumbs(c.files, 'dcf' + c.id, 'size-11')}</div>` : ''}</div>`).join('')}
+    ${comments.map(c => `<div class="group text-sm ${MSG(c.by)}">${blockText !== undefined && !sameText(c.quote, blockText) ? `<div class="mb-0.5 line-clamp-2 text-xs text-zinc-500">“${esc(plainQuote(c.quote))}”</div>` : ''}<div class="flex min-h-6 items-center gap-1"><span class="${WHO(c.by)}">${esc(whoName(c.by))}</span> <span class="text-xs text-zinc-400">${when(c.t)}${c.edited ? ` · edited ${when(c.edited)}` : ''}</span>${dcActs(d, c)}</div>${rich(c.text, 'dc' + c.t)}${c.files?.length ? `<div class="mt-1.5 flex gap-2 overflow-x-auto">${thumbs(c.files, 'dcf' + c.id, 'size-11')}</div>` : ''}</div>`).join('')}
     ${U.docReply === key ? '' : `<button data-act="doc-reply" data-key="${key}" class="${HIT} flex h-8 items-center gap-1 rounded-lg px-1.5 -mx-1.5 text-xs font-semibold text-blue-600 hover:bg-blue-50 aria-pressed:underline dark:text-blue-400 dark:hover:bg-blue-400/10">${ico('reply', 'size-3.5')}Reply</button>`}
   </div>`;
 }
@@ -5105,7 +5125,7 @@ function peek(n, {focus = true} = {}) {
     ${g ? idRow : ''}
     <h2 class="${g ? 'mt-1' : ''} text-[19px] leading-snug font-semibold break-words">${esc(it.title)}</h2>
     <div class="mt-1 flex flex-wrap items-center gap-x-2.5 text-xs font-medium text-zinc-500 dark:text-zinc-400">${it.type === 'rule' ? '' : `<span class="${PRI_TEXT[it.pri]}">${it.pri}</span>`}<span>${statusName(it)}</span><span>${WHEN[it.when]}</span><span>${it.type[0].toUpperCase() + it.type.slice(1)}</span>${talk ? cnt('comment', talk, plural(talk, 'comment')) : ''}</div>
-    ${it.wait ? `<div data-need class="mt-4 scroll-mt-2">${needsCard(it)}</div>` : pin ? `<div data-need class="mt-4 flex flex-col gap-4">${talkHtml(it, [pin], 'p')}</div>` : ''}
+    ${it.wait ? `<div data-need class="mt-4 scroll-mt-2">${needsCard(it, true)}</div>` : pin ? `<div data-need class="mt-4 flex flex-col gap-4">${talkHtml(it, [pin], 'p')}</div>` : ''}
     ${it.body ? rich(it.body, 'pbody' + n, 'mt-4 text-[15px] text-zinc-700 dark:text-zinc-300') : ''}
     ${it.next ? `<div class="mt-2 flex gap-2 text-sm"><span class="shrink-0 font-semibold text-zinc-500 dark:text-zinc-400">Next</span><span class="min-w-0 break-words">${inlineMd(it.next)}</span></div>` : ''}
     ${files.length ? `<div class="mt-3 flex items-end gap-2 overflow-x-auto lg:scrollbar-thin">${thumbs(files, 'peek' + n)}</div>` : ''}
@@ -5141,19 +5161,20 @@ function endWalk(said = '') {
 
 // The message the needs card shows: the question, or the agent's report or proposal (then not repeated below).
 const cardMsg = it => it.wait ? it.thread.find(x => x.id === it.wait.id) || it.wait : (it.status === 'review' || it.status === 'proposed') ? lastAgentMsg(it) : null;
-function needsCard(it) {
+function needsCard(it, onCard = false) {  // onCard: in a Go through card, whose bottom bar has the Reply (T236 #1)
   const n = it.n, m = cardMsg(it), name = whoName(m?.by || it.wait?.by || (it.by && it.by !== 'you' ? it.by : 'agent'));  // one agent, one name (B157)
   // On the desktop the buttons sit on the right with their keys, and a hint says what the second one does.
   const card = (icon, title, body, buttons, hint = '') => `<section class="${NEEDS_CARD}">
       <div class="flex items-center gap-2.5 px-4 pt-3.5 lg:px-5 lg:pt-4">${ico(icon, 'size-5 text-amber-600 dark:text-amber-400')}<p class="min-w-0 flex-1 text-sm font-semibold text-amber-900 lg:text-[15px] dark:text-amber-200">${title}</p>${m?.t ? `<span class="text-xs text-amber-700/80 dark:text-amber-300/70">${when(m.t)}</span>` : ''}</div>
       ${body ? `<div class="space-y-2 px-4 pt-2 text-[15px] leading-relaxed text-zinc-800 lg:px-5 lg:pl-12 dark:text-zinc-200">${body}</div>` : ''}
-      <div class="flex gap-2.5 p-3 pt-3.5 lg:items-center lg:justify-end lg:px-5 lg:pb-4">${hint ? `<p class="mr-auto hidden text-xs text-amber-700/80 xl:block dark:text-amber-300/70">${hint}</p>` : ''}${buttons}</div></section>`;
+      ${buttons ? `<div class="flex gap-2.5 p-3 pt-3.5 lg:items-center lg:justify-end lg:px-5 lg:pb-4">${hint ? `<p class="mr-auto hidden text-xs text-amber-700/80 xl:block dark:text-amber-300/70">${hint}</p>` : ''}${buttons}</div>` : '<div class="h-3.5"></div>'}</section>`;
   if (it.wait) {
     const w = it.wait, choices = w.kind === 'ask' && hasChoices(w.text);
     const body = rich(w.text, 'ask' + n, 'text-zinc-900 dark:text-zinc-100', w.kind === 'ask' ? n : 0)
       + (w.files?.length ? `<div class="flex gap-2 overflow-x-auto lg:scrollbar-thin">${thumbs(w.files, 'w' + n, 'h-48 w-24')}</div>` : '');
     return card(w.kind === 'block' ? 'alert' : 'ask', `${esc(whoName(w.by))} ${w.kind === 'block' ? 'is blocked and needs you' : 'asks you'}`, body,
-      choices ? `<button data-act="reply" class="${SECOND} flex-1 lg:flex-none">${ico('reply', 'size-4')}Reply${KBD('R')}</button>${sendAnswerBtn(n, 'flex-[1.4] lg:flex-none', true)}`
+      onCard ? (choices ? sendAnswerBtn(n, 'flex-1', true) : '')
+        : choices ? `<button data-act="reply" class="${SECOND} flex-1 lg:flex-none">${ico('reply', 'size-4')}Reply${KBD('R')}</button>${sendAnswerBtn(n, 'flex-[1.4] lg:flex-none', true)}`
         : `<button data-act="reply" class="${PRIMARY_BASE} ${NEED.reply.btn} flex-1 lg:flex-none">${ico('reply', 'size-4')}Reply${KBD('R')}</button>`,
       choices ? 'Pick with 1–9, send with ⌘↵' : 'It continues after you reply');
   }
@@ -6933,8 +6954,6 @@ const searchMode = on => {
   renderItems(); if (U.tab === 'inputs') renderInputs();
 };
 const ACT = {
-  'needs-all': () => { NEEDS.open = !NEEDS.open; renderSideNeeds(); if (NEEDS.open) loadNeeds(); },  // F193
-  'need-open': b => b.dataset.project === S.project ? openItem(Number(b.dataset.n)) : location.assign(b.href),
   auto: () => {  // Keep going: at once, with Undo and Z (T113 A7)
     const on = !S.cfg?.auto;
     let run;
@@ -7077,6 +7096,8 @@ const ACT = {
   'np-cancel': () => { $('npRow')?.remove(); $('drawerNew').hidden = false; },
   // The project's menu on the bar, and Settings › Projects (F173)
   'proj-menu': () => projectMenu(),
+  'proj-up': b => { closeDialog(); projMove(b.dataset.slug, -1); },  // F253: when dragging is awkward
+  'proj-down': b => { closeDialog(); projMove(b.dataset.slug, 1); },
   'proj-open': b => { closeDialog(); location.assign(`/p/${encodeURIComponent(b.dataset.slug)}/`); },
   'proj-settings': b => { closeDialog(); location.assign(`/p/${encodeURIComponent(b.dataset.slug)}/settings`); },
   'proj-rename': async b => {  // this project: its name on the bar becomes the field; another one: its row in Settings › Projects
@@ -7530,44 +7551,25 @@ function renderProjBar() {
     <div id="deskAgent" class="ml-auto flex shrink-0 items-center pl-3"></div>`);
   if (S.project) renderAgent();  // the agent's pill comes with the data
 }
-function sideProjects() {  // every project by name, this one with what this page knows now: no row moves when you pick one (B12, B200)
-  const here = S.project ? {name: S.project, title: S.title, open: openCount(), needs: S.items.filter(needsYou).length, agents: S.agents, work: S.work}
-    : (DR.list || []).find(p => p.name === HERE) || {name: HERE, title: '', open: '…', needs: 0};  // before the data (B190): as this browser last saw it
-  return [here, ...(DR.list || []).filter(p => p.name !== here.name)].sort((a, b) => titleOf(a).localeCompare(titleOf(b)));
+// F253: the projects in the order you dragged them into (the same on every page that lists them), the rest by name
+const projOrder = (a, b) => (a.pos ?? 1e9) - (b.pos ?? 1e9) || titleOf(a).localeCompare(titleOf(b));
+function sideProjects() {  // every project in your order, this one with what this page knows now: no row moves when you pick one (B12, B200)
+  const seen = (DR.list || []).find(p => p.name === (S.project || HERE));
+  const here = S.project ? {name: S.project, title: S.title, open: openCount(), needs: S.items.filter(needsYou).length, agents: S.agents, work: S.work, pos: seen?.pos}
+    : seen || {name: HERE, title: '', open: '…', needs: 0};  // before the data (B190): as this browser last saw it
+  return [here, ...(DR.list || []).filter(p => p.name !== here.name)].sort(projOrder);
 }
 function renderSidebar() {
   draw($('drawerList'), sideProjects().map(p => { const cur = p.name === (S.project || HERE), [tone, label] = agentState(p.agents, p.work);
-    return `<a href="/p/${encodeURIComponent(p.name)}/" data-slug="${esc(p.name)}" ${cur ? 'aria-current="page" data-act="tab" data-tab="items"' : ''} class="flex items-center gap-2.5 rounded-xl px-2.5 py-2 hover:bg-zinc-200/60 data-pressed:bg-zinc-200/80 aria-[current=page]:bg-blue-100 aria-[current=page]:ring-1 aria-[current=page]:ring-blue-200 aria-[current=page]:hover:bg-blue-100 dark:hover:bg-zinc-800 dark:aria-[current=page]:bg-blue-400/15 dark:aria-[current=page]:ring-blue-400/30 dark:aria-[current=page]:hover:bg-blue-400/20">${projTile(p.name, 'size-6 rounded-md text-xs')}
-      <span class="min-w-0 flex-1"><span class="block truncate text-sm ${cur ? 'font-semibold' : 'font-medium'}">${esc(titleOf(p))}</span><span class="flex items-center gap-1.5 text-[11px] text-zinc-500 dark:text-zinc-400"><span class="size-1.5 shrink-0 rounded-full ${AGENT_TONE[tone][0]}"></span><span class="truncate ${tone === 'ok' ? 'text-emerald-700 dark:text-emerald-400' : AGENT_TONE[tone][1]}">${esc(label)}</span><span class="shrink-0">· ${p.open} open</span></span></span>
-      ${projDraft(p.name) ? `<span data-draft title="A draft not sent yet, kept in this browser" aria-label="Draft" class="grid size-5 shrink-0 place-items-center rounded-full bg-blue-100 text-blue-700 dark:bg-blue-400/15 dark:text-blue-300">${ico('pencil', 'size-3', '2.25')}</span>` : ''}
-      ${p.needs ? `<span title="${plural(p.needs, 'item')} need you" class="grid h-5 min-w-5 place-items-center rounded-full bg-amber-100 px-1 text-[11px] font-bold text-amber-900 dark:bg-amber-400/15 dark:text-amber-200">${p.needs}</span>` : ''}</a>`; }).join(''));
+    return `<a href="/p/${encodeURIComponent(p.name)}/" data-slug="${esc(p.name)}" ${cur ? 'aria-current="page" data-act="tab" data-tab="items"' : ''} class="flex items-center gap-2.5 rounded-xl px-2.5 py-2 select-none [-webkit-touch-callout:none] data-dragging:relative data-dragging:z-10 data-dragging:bg-white data-dragging:shadow-lg data-dragging:ring-2 data-dragging:ring-blue-400 dark:data-dragging:bg-zinc-800 hover:bg-zinc-200/60 data-pressed:bg-zinc-200/80 aria-[current=page]:bg-blue-100 aria-[current=page]:ring-1 aria-[current=page]:ring-blue-200 aria-[current=page]:hover:bg-blue-100 dark:hover:bg-zinc-800 dark:aria-[current=page]:bg-blue-400/15 dark:aria-[current=page]:ring-blue-400/30 dark:aria-[current=page]:hover:bg-blue-400/20">${projTile(p.name, 'size-6 rounded-md text-xs')}
+      <span class="min-w-0 flex-1"><span class="flex items-center gap-1.5"><span class="min-w-0 flex-1 truncate text-sm ${cur ? 'font-semibold' : 'font-medium'}">${esc(titleOf(p))}</span>${projDraft(p.name) ? `<span data-draft title="A draft not sent yet, kept in this browser" aria-label="Draft" class="grid size-5 shrink-0 place-items-center rounded-full bg-blue-100 text-blue-700 dark:bg-blue-400/15 dark:text-blue-300">${ico('pencil', 'size-3', '2.25')}</span>` : ''}${p.needs ? `<span title="${plural(p.needs, 'item')} need you" class="grid h-5 min-w-5 shrink-0 place-items-center rounded-full bg-amber-100 px-1 text-[11px] font-bold text-amber-900 dark:bg-amber-400/15 dark:text-amber-200">${p.needs}</span>` : ''}</span><span class="flex items-center gap-1.5 text-[11px] text-zinc-500 dark:text-zinc-400"><span class="size-1.5 shrink-0 rounded-full ${AGENT_TONE[tone][0]}"></span><span class="truncate ${tone === 'ok' ? 'text-emerald-700 dark:text-emerald-400' : AGENT_TONE[tone][1]}">${esc(label)}</span><span class="shrink-0">· ${p.open} open</span></span></span></a>`; }).join(''));
   $('newInputBtn').setAttribute('aria-pressed', String(D.compose && !D.page));
   const nb = $('newInputBtn').querySelector('span'), rule = U.tab === 'rules' && !D.page;  // on Rules it makes a new rule, and says so (T113 A22)
   if (nb && nb.textContent !== (rule ? 'New rule' : 'New input')) { nb.textContent = rule ? 'New rule' : 'New input'; $('newInputBtn').title = rule ? 'New rule for the project · C' : 'New input to the project · C · by voice ⇧V'; }
   if (S.project) renderAgent();
-  renderSideNeeds();
   renderDrawerSettings();
 }
-// What needs you in every project (F193): one row at the top of the sidebar, always there so the projects below never
-// move; it opens into the list of those items, each a click away, whichever project it is in.
-const NEEDS = {open: false, list: null};
-const othersNeeding = () => (DR.list || []).filter(p => p.name !== (S.project || HERE) && p.needs).sort((a, b) => titleOf(a).localeCompare(titleOf(b)));
-const NEED_WORD = {ask: 'asks you', block: 'is blocked', proposed: 'waits for approval', review: 'is ready to accept'};
-function renderSideNeeds() {
-  const here = S.project ? S.items.filter(needsYou).length : 0, others = othersNeeding(), total = here + others.reduce((n, p) => n + p.needs, 0), projects = (here ? 1 : 0) + others.length;
-  const head = `<button data-act="needs-all" aria-expanded="${NEEDS.open}" ${total ? '' : 'disabled'} title="${total ? `What needs you in every project${projects > 1 ? ` (${projects} projects)` : ''}` : 'Nothing needs you in any project'}" class="flex h-9 w-full items-center gap-2.5 rounded-xl px-2.5 text-left text-sm hover:bg-zinc-200/60 aria-expanded:bg-amber-50 dark:hover:bg-zinc-800 dark:aria-expanded:bg-amber-400/10">
-      <span class="size-2 shrink-0 rounded-full ${total ? 'bg-amber-500 dark:bg-amber-400' : 'bg-zinc-300 dark:bg-zinc-600'}"></span>
-      <span class="min-w-0 flex-1 truncate font-medium ${total ? '' : 'text-zinc-500 dark:text-zinc-400'}">${total ? 'Needs you' : 'Nothing needs you'}</span>
-      ${total ? `<span class="grid h-5 min-w-5 place-items-center rounded-full bg-amber-100 px-1 text-[11px] font-bold text-amber-900 dark:bg-amber-400/15 dark:text-amber-200">${total}</span>${ico('down', `size-4 shrink-0 text-zinc-400 ${NEEDS.open ? 'rotate-180' : ''}`, '2')}` : ''}</button>`;
-  const rows = !NEEDS.open || !total ? '' : !NEEDS.list ? `<p class="px-3 py-2 text-xs text-zinc-500 dark:text-zinc-400">Loading…</p>`
-    : `<div class="mt-0.5 flex flex-col">${NEEDS.list.slice(0, 8).map(x => `<a href="/p/${encodeURIComponent(x.project)}/${encodeURIComponent(x.code)}" data-act="need-open" data-project="${esc(x.project)}" data-n="${x.n}" title="${esc(x.ptitle || x.project)} · ${esc(x.code)} ${esc(NEED_WORD[x.kind] || 'needs you')}" class="flex items-center gap-2 rounded-lg px-2.5 py-1.5 hover:bg-zinc-200/60 dark:hover:bg-zinc-800">${projTile(x.project, 'size-4 rounded text-[9px]')}<span class="min-w-0 flex-1"><span class="block truncate text-[13px]"><span class="font-mono text-xs font-bold text-zinc-500 dark:text-zinc-400">${esc(x.code)}</span> ${esc(x.title)}</span><span class="block truncate text-[11px] text-amber-700 dark:text-amber-300">${esc(NEED_WORD[x.kind] || 'needs you')}</span></span></a>`).join('')}
-      ${NEEDS.list.length > 8 ? `<p class="px-2.5 py-1 text-[11px] text-zinc-500 dark:text-zinc-400">and ${NEEDS.list.length - 8} more · ⇧J goes through them all</p>` : ''}</div>`;
-  draw($('sideNeeds'), head + rows);
-}
-async function loadNeeds() {
-  try { NEEDS.list = await net('/api/needs'); } catch (_) { NEEDS.list = []; }
-  renderSideNeeds();
-}
+const othersNeeding = () => (DR.list || []).filter(p => p.name !== (S.project || HERE) && p.needs).sort(projOrder);
 // Go through goes on in the next project that has something for you (F193): ⇧J in a project with nothing left
 // for you, or Go on at the end of a walk, opens it and starts going through there.
 const nextNeeding = () => { const others = othersNeeding(); return others.find(p => titleOf(p).localeCompare(projTitle()) > 0) || others[0]; };  // the one after this, by name
@@ -7612,7 +7614,7 @@ function projectMenu(slug = S.project, at = null) {
   const r = !at && $('projMenuBtn')?.getBoundingClientRect(), on = `data-slug="${esc(slug)}"`;
   const row = (act, icon, label, key = '', tone = '') => `<button data-act="${act}" ${on} class="flex h-9 w-full items-center gap-3 rounded-lg px-2.5 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 ${tone}">${ico(icon, `size-[18px] ${tone || 'text-zinc-500 dark:text-zinc-400'}`)}<span class="min-w-0 flex-1 truncate">${label}</span>${key ? `<kbd class="grid h-5 min-w-5 place-items-center rounded-md px-1 font-sans text-[11px] font-semibold text-zinc-400 ring-1 ring-zinc-300 dark:ring-zinc-600">${key}</kbd>` : ''}</button>`;
   U.sheet = 'projmenu';
-  dialog('', `<div class="-mx-1 flex flex-col">${here ? '' : row('proj-open', 'arrow', 'Open')}${row(here ? 'project' : 'proj-settings', 'gear', 'Project settings', here ? 'G S' : '')}${row('proj-rename', 'pencil', 'Rename')}${here ? row('switch', 'updown', 'Switch project', 'G P') : ''}${row('proj-new', 'plus', 'New project')}
+  dialog('', `<div class="-mx-1 flex flex-col">${here ? '' : row('proj-open', 'arrow', 'Open')}${row(here ? 'project' : 'proj-settings', 'gear', 'Project settings', here ? 'G S' : '')}${row('proj-rename', 'pencil', 'Rename')}${here ? row('switch', 'updown', 'Switch project', 'G P') : ''}${(DR.list || []).length > 1 ? row('proj-up', 'chevup', 'Move up') + row('proj-down', 'down', 'Move down') : ''}${row('proj-new', 'plus', 'New project')}
     <div class="my-1.5 border-t border-zinc-100 dark:border-zinc-800"></div>${row('proj-delete', 'trash', 'Delete project', '', 'text-red-600 dark:text-red-400')}
     <p class="px-2.5 pt-0.5 pb-1 text-xs leading-snug text-zinc-500 dark:text-zinc-400">Goes to Settings › Projects › Deleted. Restore it any time.</p></div>`,
     {pop: true, focus: false, head: `<span class="flex items-center gap-2.5">${projTile(slug, 'size-8 rounded-lg text-sm')}<span class="min-w-0"><span class="block truncate text-sm font-semibold">${esc(titleOf(p))}</span><span class="block truncate font-mono text-xs font-normal text-zinc-500 dark:text-zinc-400">/p/${esc(slug)} · ${p.open} open</span></span></span>`});
@@ -8133,7 +8135,7 @@ const PBODY = {
       + pRuled(`<div class="pt-2">${logHtml(P_CACHE.log)}</div>`) + (P_CACHE.log.length >= LOG_N ? `<p class="pt-4 text-[13px] text-zinc-400 dark:text-zinc-500">The latest ${LOG_N} changes</p>` : ''),
   projects: () => {
     if (!P_CACHE.projects) return P_LOADING;
-    const live = [...P_CACHE.projects].sort((a, b) => (b.name === S.project) - (a.name === S.project) || titleOf(a).localeCompare(titleOf(b))), gone = P_CACHE.trash || [];
+    const live = [...P_CACHE.projects].sort(projOrder), gone = P_CACHE.trash || [];
     const add = U.pNew ? `<div class="flex min-w-0 flex-1 flex-col gap-1.5"><div class="flex items-center gap-1.5"><input id="pNewName" class="${FIELD} h-10 py-1.5 text-sm" placeholder="Project name" aria-label="New project name" autocomplete="off" spellcheck="false" value="${esc(U.pNewText || '')}"><button data-act="p-create" class="h-10 shrink-0 rounded-xl bg-zinc-900 px-3.5 text-sm font-semibold text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200">Create</button><button data-act="p-new-cancel" aria-label="Cancel" class="grid size-10 shrink-0 place-items-center rounded-xl text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800">${ico('x', 'size-4')}</button></div>
         ${U.pErr ? `<p class="px-1 text-xs text-red-600 dark:text-red-400">${esc(U.pErr)}</p>` : `<p class="px-1 text-xs text-zinc-500 dark:text-zinc-400">${KBD('↵')} create and open it · ${KBD('Esc')} cancel</p>`}</div>`
       : `<button data-act="p-new" class="${SECOND} shrink-0">${ico('plus', 'size-4', '2')}New project</button><p class="min-w-0 text-[13px] leading-snug text-zinc-500 dark:text-zinc-400">Any name: spaces, \u4e2d\u6587, emoji. Its address is made from the name once, e.g. <code class="font-mono">/p/home-budget</code>.</p>`;
@@ -8228,7 +8230,7 @@ function phoneSection(sec) {
 }
 function phoneProjects() {
   if (!P_CACHE.projects) return '<p class="px-5 py-6 text-sm text-zinc-400">Loading…</p>';
-  const live = [...P_CACHE.projects].sort((a, b) => (b.name === S.project) - (a.name === S.project) || titleOf(a).localeCompare(titleOf(b))), gone = P_CACHE.trash || [];
+  const live = [...P_CACHE.projects].sort(projOrder), gone = P_CACHE.trash || [];
   const pill = 'flex h-11 shrink-0 items-center gap-1.5 rounded-xl bg-zinc-100 px-3.5 text-sm font-medium dark:bg-zinc-800';
   const more = (key, title) => `<button data-act="p-more" data-key="${esc(key)}" aria-label="More for ${esc(title)}" aria-expanded="${U.pMenu === key}" class="grid size-11 shrink-0 place-items-center rounded-full text-zinc-400 aria-expanded:bg-zinc-100 aria-expanded:text-zinc-700 dark:text-zinc-500 dark:aria-expanded:bg-zinc-800 dark:aria-expanded:text-zinc-200">${ico('more', 'size-5')}</button>`;
   const twoButtons = (save, saveLabel, cancel, slug = '') => `<div class="mt-2 flex gap-2"><button data-act="${save}" ${slug ? `data-slug="${esc(slug)}" ` : ''}class="h-11 shrink-0 rounded-xl bg-zinc-900 px-4 text-[15px] font-semibold text-white dark:bg-zinc-100 dark:text-zinc-900">${saveLabel}</button><button data-act="${cancel}" class="h-11 shrink-0 rounded-xl px-4 text-[15px] font-medium text-zinc-600 dark:text-zinc-300">Cancel</button></div>`;
@@ -8355,11 +8357,68 @@ function showKeys() {
     <dl class="flex flex-col gap-1.5 text-sm">${keys.map(([k, what]) => `<div class="flex items-baseline gap-3"><dt class="w-28 shrink-0 font-mono text-xs font-semibold text-zinc-700 dark:text-zinc-200">${k}</dt><dd class="text-zinc-600 dark:text-zinc-300">${what}</dd></div>`).join('')}</dl></section>`;
   dialog('Keyboard shortcuts', `<div class="grid gap-x-8 sm:grid-cols-2"><div>${sec(KEYS[0])}${sec(KEYS[3])}</div><div>${sec(KEYS[1])}${sec(KEYS[2])}</div></div>`);  // moving and writing | acting
 }
+// F253: put the projects in your order. Drag a row in the sidebar (the phone's menu: hold it still, then drag), or
+// Move up / Move down in its menu. The order is kept with Taska, for every page that lists projects; Undo puts it back.
+async function saveProjOrder(names, said) {
+  const was = [...(DR.list || [])].sort(projOrder).map(p => p.name);
+  const put = list => { for (const p of DR.list || []) { const i = list.indexOf(p.name); if (i >= 0) p.pos = i; else delete p.pos; } keepProjects(); if (desk()) { renderSidebar(); renderRail(); } else drawDrawer(); };
+  put(names);
+  try { await net('/api/projects/order', JSON_POST({names}), NET.op); } catch (_) { put(was); return toast('Order not saved', () => saveProjOrder(names, said), {error: true, label: 'Retry'}); }
+  toast(said, pushUndo(said, async () => { put(was); try { await net('/api/projects/order', JSON_POST({names: was}), NET.op); } catch (_) {} }));
+}
+function projMove(slug, dir) {
+  const names = [...(DR.list || [])].sort(projOrder).map(p => p.name), i = names.indexOf(slug), j = i + dir;
+  if (i < 0 || j < 0 || j >= names.length) return hint(dir < 0 ? 'It is the first project' : 'It is the last project');
+  names.splice(j, 0, names.splice(i, 1)[0]);
+  saveProjOrder(names, `${titleOf(DR.list.find(p => p.name === slug))} moved ${dir < 0 ? 'up' : 'down'}`);
+}
+const PDRAG = {};
+$('drawerList').addEventListener('dragstart', e => { if (e.target.closest?.('a[data-slug]')) e.preventDefault(); });  // not the browser's own link dragging
+$('drawerList').addEventListener('pointerdown', e => {
+  const a = e.target.closest('a[data-slug]');
+  if (!a || e.button || (DR.list || []).length < 2) return;
+  clearTimeout(PDRAG.t);
+  Object.assign(PDRAG, {a, id: e.pointerId, x: e.clientX, y: e.clientY, on: false, touch: e.pointerType !== 'mouse'});
+  if (PDRAG.touch) PDRAG.t = setTimeout(() => { if (PDRAG.a === a) pdragStart(); }, 450);  // a finger holds still first; moving at once scrolls
+});
+function pdragStart() {
+  PDRAG.on = true; PDRAG.from = [...$('drawerList').querySelectorAll('a[data-slug]')].map(r => r.dataset.slug);
+  PDRAG.a.dataset.dragging = ''; navigator.vibrate?.(10);
+}
+addEventListener('pointermove', e => {
+  const g = PDRAG;
+  if (!g.a || e.pointerId !== g.id) return;
+  if (!g.on) {
+    if (Math.hypot(e.clientX - g.x, e.clientY - g.y) < 6) return;
+    if (g.touch) { clearTimeout(g.t); g.a = null; return; }
+    pdragStart();
+  }
+  const rows = [...$('drawerList').querySelectorAll('a[data-slug]')], over = rows.find(r => { const b = r.getBoundingClientRect(); return e.clientY >= b.top && e.clientY < b.bottom; });
+  if (over && over !== g.a) { const down = rows.indexOf(over) > rows.indexOf(g.a); over.parentNode.insertBefore(g.a, down ? over.nextSibling : over); }
+});
+$('drawerList').addEventListener('touchmove', e => { if (PDRAG.on) e.preventDefault(); }, {passive: false});  // dragging, not scrolling
+function pdragEnd(e) {
+  const g = PDRAG;
+  clearTimeout(g.t);
+  if (!g.a || (e && e.pointerId !== g.id)) return;
+  const a = g.a, on = g.on;
+  g.a = null; g.on = false;
+  if (!on) return;
+  delete a.dataset.dragging;
+  const eat = ev => { ev.preventDefault(); ev.stopPropagation(); };  // the drop is not a click on the row
+  addEventListener('click', eat, {capture: true, once: true}); setTimeout(() => removeEventListener('click', eat, true), 400);
+  const names = [...$('drawerList').querySelectorAll('a[data-slug]')].map(r => r.dataset.slug);
+  if (names.join() !== g.from.join()) saveProjOrder(names, `${titleOf((DR.list || []).find(p => p.name === a.dataset.slug) || {name: a.dataset.slug})} moved`);
+}
+addEventListener('pointerup', pdragEnd);
+addEventListener('pointercancel', pdragEnd);
+$('drawerList').addEventListener('contextmenu', e => { if (PDRAG.a && PDRAG.touch) e.preventDefault(); });  // a long press is for dragging here
+
 // G P: pick another project by typing (B126). The list loads once; ↑↓ choose, Enter opens, Esc closes.
 const PS = {q: '', i: -1};
 function projectSwitcher(fresh = true) {
   if (fresh) { PS.q = ''; PS.i = -1; }
-  const q = PS.q.trim().toLowerCase(), rows = (DR.list || []).filter(p => (titleOf(p) + ' ' + p.name).toLowerCase().includes(q));
+  const q = PS.q.trim().toLowerCase(), rows = (DR.list || []).filter(p => (titleOf(p) + ' ' + p.name).toLowerCase().includes(q)).sort(projOrder);
   if (PS.i < 0 || PS.i >= rows.length) PS.i = Math.max(0, rows.findIndex(p => p.name !== S.project));
   const list = rows.map((p, i) => `<a href="/p/${encodeURIComponent(p.name)}/" data-i="${i}" aria-selected="${i === PS.i}" class="flex h-11 items-center gap-3 rounded-xl px-3 hover:bg-zinc-100 aria-selected:bg-zinc-100 aria-selected:ring-1 aria-selected:ring-zinc-300 dark:hover:bg-zinc-800 dark:aria-selected:bg-zinc-800 dark:aria-selected:ring-zinc-600">${projTile(p.name, 'size-6 rounded-md text-xs')}<span class="min-w-0 flex-1 truncate ${p.name === S.project ? 'font-semibold' : ''}">${esc(titleOf(p))}</span>${p.name === S.project ? '<span class="text-xs text-zinc-400">this one</span>' : ''}${p.needs ? `<span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900 dark:bg-amber-400/15 dark:text-amber-200">${p.needs} need you</span>` : ''}</a>`).join('')
     || `<p class="px-3 py-2 text-sm text-zinc-500">${DR.list ? 'No project matches' : 'Loading…'}</p>`;
@@ -8548,12 +8607,13 @@ function setDrawer(x, animate = true) {  // x: how far the page is pushed right
 async function fillDrawer() {
   if (!DR.list) draw($('drawerList'), '<div class="px-3 py-3 text-sm text-zinc-400">Loading…</div>');
   try { DR.list = (await net('/api/projects')).sort((a, b) => b.t - a.t); keepProjects(); } catch (_) { if (!DR.list) draw($('drawerList'), `<div class="px-3 py-3 text-sm text-zinc-500 dark:text-zinc-400">Couldn't load the projects</div>`); return; }
-  draw($('drawerList'), [...DR.list].sort((a, b) => titleOf(a).localeCompare(titleOf(b))).map(p => { const cur = p.name === S.project, [tone, label] = agentState(p.agents, p.work);  // one order, by name: rows don't move as projects get busy or when you pick one (B158, B200)
-    return `<a href="/p/${encodeURIComponent(p.name)}/" ${cur ? 'aria-current="page"' : ''} class="group flex min-h-14 items-center gap-3 rounded-2xl px-3 py-2.5 hover:bg-zinc-200/50 data-pressed:bg-zinc-200/70 aria-[current=page]:bg-blue-100 aria-[current=page]:ring-1 aria-[current=page]:ring-blue-200 dark:hover:bg-zinc-800/60 dark:data-pressed:bg-zinc-800 dark:aria-[current=page]:bg-blue-400/15 dark:aria-[current=page]:ring-blue-400/30">${projTile(p.name, 'size-8 rounded-lg text-sm')}
-    <span class="min-w-0 flex-1"><span class="block truncate text-[17px] font-medium group-aria-[current=page]:font-semibold">${esc(titleOf(p))}</span>
-    <span class="mt-0.5 flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400"><span class="size-1.5 shrink-0 rounded-full ${AGENT_TONE[tone][0]}"></span><span class="truncate ${tone === 'ok' ? 'text-emerald-700 dark:text-emerald-400' : AGENT_TONE[tone][1]}">${esc(label)}</span><span class="shrink-0">· ${p.open} open</span></span></span>
-    ${projDraft(p.name) ? `<span data-draft title="A draft not sent yet, kept in this browser" class="flex shrink-0 items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 text-xs font-semibold text-blue-800 dark:bg-blue-400/15 dark:text-blue-200">${ico('pencil', 'size-3', '2.25')}Draft</span>` : ''}
-    ${p.needs ? `<span class="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900 dark:bg-amber-400/15 dark:text-amber-200">${p.needs} need you</span>` : ''}</a>`; }).join(''));
+  drawDrawer();
+}
+function drawDrawer() {  // the phone's menu of projects, from what DR.list holds now
+  draw($('drawerList'), [...DR.list].sort(projOrder).map(p => { const cur = p.name === S.project, [tone, label] = agentState(p.agents, p.work);  // one order, yours (F253): rows don't move as projects get busy or when you pick one (B158, B200)
+    return `<a href="/p/${encodeURIComponent(p.name)}/" data-slug="${esc(p.name)}" ${cur ? 'aria-current="page"' : ''} class="group flex min-h-14 items-center gap-3 rounded-2xl px-3 py-2.5 select-none [-webkit-touch-callout:none] data-dragging:relative data-dragging:z-10 data-dragging:bg-white data-dragging:shadow-lg data-dragging:ring-2 data-dragging:ring-blue-400 dark:data-dragging:bg-zinc-800 hover:bg-zinc-200/50 data-pressed:bg-zinc-200/70 aria-[current=page]:bg-blue-100 aria-[current=page]:ring-1 aria-[current=page]:ring-blue-200 dark:hover:bg-zinc-800/60 dark:data-pressed:bg-zinc-800 dark:aria-[current=page]:bg-blue-400/15 dark:aria-[current=page]:ring-blue-400/30">${projTile(p.name, 'size-8 rounded-lg text-sm')}
+    <span class="min-w-0 flex-1"><span class="flex items-center gap-2"><span class="min-w-0 flex-1 truncate text-[17px] font-medium group-aria-[current=page]:font-semibold">${esc(titleOf(p))}</span>${projDraft(p.name) ? `<span data-draft title="A draft not sent yet, kept in this browser" aria-label="Draft" class="grid size-6 shrink-0 place-items-center rounded-full bg-blue-100 text-blue-700 dark:bg-blue-400/15 dark:text-blue-300">${ico('pencil', 'size-3.5', '2.25')}</span>` : ''}${p.needs ? `<span class="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900 dark:bg-amber-400/15 dark:text-amber-200">${p.needs} need you</span>` : ''}</span>
+    <span class="mt-0.5 flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400"><span class="size-1.5 shrink-0 rounded-full ${AGENT_TONE[tone][0]}"></span><span class="truncate ${tone === 'ok' ? 'text-emerald-700 dark:text-emerald-400' : AGENT_TONE[tone][1]}">${esc(label)}</span><span class="shrink-0">· ${p.open} open</span></span></span></a>`; }).join(''));  // T234: the draft mark and the count on the name's line, the agent's state on a line of its own
   $('otherDot').hidden = !DR.list.some(p => p.name !== S.project && p.needs);
 }
 // Undo your last changes (F80): the server lists the ones nobody changed again since; each says what it did.
@@ -8614,7 +8674,7 @@ async function checkOthers() {
   try { DR.list = (await net('/api/projects')).sort((a, b) => b.t - a.t); keepProjects(); } catch (_) { return; }  // it tries again soon
   $('otherDot').hidden = !DR.list.some(p => p.name !== S.project && p.needs);
   if (names() !== had && S.rev >= 0) return render();  // A12, B13: Move… on Inputs and New input needs the other projects, the tiles' colours too
-  if (desk()) { renderSidebar(); renderRail(); if (NEEDS.open) loadNeeds(); }  // the list of what needs you stays current too (F193)
+  if (desk()) { renderSidebar(); renderRail(); }
 }
 function openDrawer() { if (!DR.open) layerOpen('drawer'); DR.open = true; renderDrawerSettings(); fillDrawer(); setDrawer(drawerW()); if (!$('toast').hidden) placeToast(); }  // Back closes it (B150); a toast moves above its card
 function closeDrawer() { if (desk()) { if (D.sideOpen) { D.sideOpen = false; render(); } return; } if (DR.open) layerShut('drawer'); DR.open = false; setDrawer(0); if (!$('toast').hidden) placeToast(); }
