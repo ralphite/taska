@@ -4230,9 +4230,11 @@ const queueOrder = (a, b) => (a.when !== 'now') - (b.when !== 'now') || (a.statu
 const inQueue = it => !it.merged_into && !it.archived && it.type !== 'rule' && !needsYou(it) && !CLOSED(it.status);
 const laterOf = q => q.filter(it => it.when === 'later').length;
 
+// An item's own files: those of the inputs it was made from. A reply on it keeps its files to itself, in the thread
+// with its words (B224), so they don't show again among the item's files.
 function filesOf(it) {
-  const seen = new Set(), out = [];
-  for (const rid of it.srcs) for (const f of byR.get(rid)?.files || []) if (!seen.has(f.f)) { seen.add(f.f); out.push(f); }
+  const replies = new Set(it.thread.filter(x => x.by === 'you' && x.src).map(x => x.src)), seen = new Set(), out = [];
+  for (const rid of it.srcs) if (!replies.has(rid)) for (const f of byR.get(rid)?.files || []) if (!seen.has(f.f)) { seen.add(f.f); out.push(f); }
   return out;
 }
 
