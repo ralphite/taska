@@ -4135,7 +4135,7 @@ const SECTION = (text, right = '') => `<div class="flex h-6 items-center justify
 let S = {rev: -1, boot: '', items: [], inputs: [], width: 1, org: {}};
 let offline = 0;  // consecutive failed polls
 const byN = new Map(), byR = new Map(), kids = new Map();
-const U = {doc: null, docNew: null, docEdit: false, docText: null, docSel: new Set(), docQuote: null, docCircle: false, docThreads: new Set(), docDrafts: {}, docScroll: {}, peek: null, moreInputs: new Set(), tab: 'items', q: '', type: 'all', when: 'all', status: 'all', pri: 'all', sort: 'all', undoArch: null, folded: new Set(), moreMsgs: new Set(), subFor: null, choice: null, choiceLabels: {}, go: null, sheet: null, searching: false, open: null, scopeOff: false, editing: null, files: [], sending: false, lastSent: null, more: new Set(), tabOpen: {}, settle: new Map(), tabTop: {}, stepFrom: null, mine: [], tabView: {}};
+const U = {doc: null, docNew: null, docEdit: false, docText: null, docSel: new Set(), docQuote: null, docCircle: false, docThreads: new Set(), docDrafts: {}, docScroll: {}, peek: null, moreInputs: new Set(), tab: 'items', q: '', type: 'all', when: 'all', status: 'all', pri: 'all', sort: 'all', undoArch: null, folded: new Set(), moreMsgs: new Set(), subFor: null, choice: null, choiceLabels: {}, go: null, sheet: null, searching: false, open: null, scopeOff: false, editing: null, files: [], sending: false, lastSent: null, more: new Set(), tabOpen: {}, settle: new Map(), tabTop: {}, stepFrom: null, mine: [], tabView: {}, sel: new Set(), selFrom: null};
 U.outbox = []; U.qn = 0;  // what you sent that hasn't reached the server yet (F85)
 const groups = new Map();
 let viewerGroup = [], viewerIdx = 0;
@@ -4672,8 +4672,8 @@ const excerpt = it => oneLine(it.wait ? it.wait.text : it.status === 'review' ? 
 // Desktop: the selected row (aria-current) is tinted, others on hover; hovering shows the phone's swipe actions as
 // buttons. A row answers a press too (B159, T160); the short delay, for fingers only, keeps rows from flashing while
 // a finger scrolls the list.
-const rowTint = () => 'lg:hover:bg-zinc-50 dark:lg:hover:bg-zinc-900/70 lg:aria-[current=true]:bg-blue-50 dark:lg:aria-[current=true]:bg-blue-400/10 pointer-coarse:transition-colors pointer-coarse:delay-75 data-pressed:bg-zinc-100 lg:data-pressed:bg-zinc-100 dark:data-pressed:bg-zinc-900 dark:lg:data-pressed:bg-zinc-900';
-const rowCur = it => U.open === it.n ? 'aria-current="true"' : '';
+const rowTint = () => 'data-sel:bg-blue-100 dark:data-sel:bg-blue-400/20 lg:hover:bg-zinc-50 dark:lg:hover:bg-zinc-900/70 lg:aria-[current=true]:bg-blue-50 dark:lg:aria-[current=true]:bg-blue-400/10 pointer-coarse:transition-colors pointer-coarse:delay-75 data-pressed:bg-zinc-100 lg:data-pressed:bg-zinc-100 dark:data-pressed:bg-zinc-900 dark:lg:data-pressed:bg-zinc-900';
+const rowCur = it => (U.open === it.n ? 'aria-current="true" ' : '') + (U.sel.has(it.n) ? 'data-sel' : '');  // data-sel: picked with ⌘ or ⇧ (T274 #34)
 const ACT_KEY = {Done: 'D', Accept: 'A', Approve: 'A', Archive: 'E', Unarchive: 'E', Later: 'L', 'Back to now': 'L', "Won't do": 'W', 'Not yet': 'N',
   Start: 'S then 3', Pause: 'S then 2', Reopen: 'S then 2', Retire: 'W', Reactivate: 'D'};  // S then a digit: the ⋯ menu's status (T113 B30, A16)
 const ACT_TONE = {Done: 'text-emerald-600 dark:text-emerald-400', Accept: 'text-emerald-600 dark:text-emerald-400', Approve: 'text-blue-600 dark:text-blue-400', Archive: 'text-emerald-600 dark:text-emerald-400', Start: 'text-blue-600 dark:text-blue-400', "Won't do": 'text-red-600 dark:text-red-400',
@@ -5601,7 +5601,8 @@ function renderItems() {
       + (arch.length ? zone('archived', 'Archived', arch.length) + arch.map(it => itemRow(it)).join('') : '');
   }
   const more = rows.length ? searchHints(rows.length) : '';  // where else the words are: other tabs for a short result (A9), other projects (F196)
-  list.innerHTML = html + (more ? `<div class="flex flex-col py-4">${more}</div>` : '');
+  for (const n of U.sel) if (!rows.some(it => it.n === n)) U.sel.delete(n);  // picked rows that left the list are let go
+  list.innerHTML = (U.sel.size && desk() ? selBar() : '') + html + (more ? `<div class="flex flex-col py-4">${more}</div>` : '');
   markHits(list);
   const hd = list.querySelector('[data-hold]');
   if (hd) hd.style.minHeight = U.archHold.h + 'px';  // a measured height: set before the scroll position comes back, so it isn't cut short
@@ -7467,7 +7468,9 @@ const ACT = {
     if (desk()) return render();
     renderItems(); if (U.tab === 'inputs') renderInputs(); if (U.sheet === 'filter') showFilters();
   },
-  open: b => openItem(Number(b.dataset.n)),
+  open: (b, e) => desk() && e && (e.metaKey || e.ctrlKey || e.shiftKey) && b.closest('#list') ? pickRow(Number(b.dataset.n), e.shiftKey) : openItem(Number(b.dataset.n)),
+  'sel-do': b => batchSet(b.dataset.f, JSON.parse(b.dataset.v), b.dataset.said),
+  'sel-clear': () => { U.sel.clear(); renderItems(); },
   back: () => desk() ? fullWidth(false) : hist(() => history.state?.n ? history.back() : closeItem()),
   'cp-run': b => paletteRun(b),
   'item-menu': b => b?.dataset.arm && desk() ? itemMenuDesk(U.open, b.dataset.arm) : itemMenu(U.open),  // a property's chip opens the menu at that part (T274 #10)
@@ -8818,6 +8821,36 @@ document.addEventListener('keydown', e => {  // ⌘K anywhere on the desktop, ev
   e.preventDefault();
   if (!$('overlay').hidden) { const again = !!$('cpFilter'); closeDialog(); if (again) return; }  // ⌘K again closes it
   palette();
+}, true);
+
+// T274 #34: pick several rows with ⌘-click (one more) or ⇧-click (all from the last one), then act on them at once
+function pickRow(n, range) {
+  const rows = [...$('list').querySelectorAll('[data-act="open"][data-n]')].map(el => Number(el.dataset.n));
+  if (!U.sel.size && U.open && rows.includes(U.open)) U.sel.add(U.open), U.selFrom = U.open;  // the open one is where a range starts
+  const a = rows.indexOf(U.selFrom), b = rows.indexOf(n);
+  if (range && a >= 0 && b >= 0) for (const k of rows.slice(Math.min(a, b), Math.max(a, b) + 1)) U.sel.add(k);
+  else if (U.sel.has(n)) U.sel.delete(n); else U.sel.add(n);
+  U.selFrom = n;
+  renderItems();
+}
+const SEL_ACTS = [['status', '"done"', 'Done', 'are done'], ['when', '"later"', 'Later', 'moved to Later'], ['when', '"now"', 'Now', 'are back to now'], ['archived', 'true', 'Archive', 'archived'], ['status', '"dropped"', "Won't do", "are marked won't do"]];
+const selBar = () => `<div class="sticky top-0 z-20 flex items-center gap-1 border-b border-blue-200 bg-blue-50 py-1.5 pr-2 pl-4 dark:border-blue-400/25 dark:bg-zinc-900">
+    <span class="mr-auto text-sm font-semibold whitespace-nowrap text-blue-950 dark:text-blue-100">${U.sel.size} selected</span>
+    ${SEL_ACTS.map(([f, v, label, said]) => `<button data-act="sel-do" data-f="${f}" data-v='${v}' data-said="${esc(said)}" class="flex h-8 items-center rounded-lg px-2 text-[13px] font-medium whitespace-nowrap text-zinc-700 hover:bg-white dark:text-zinc-200 dark:hover:bg-zinc-800">${label}</button>`).join('')}
+    <button data-act="sel-clear" title="Clear · Esc" aria-label="Clear the selection" class="grid size-8 place-items-center rounded-lg text-zinc-500 hover:bg-white dark:hover:bg-zinc-800">${ico('x', 'size-4')}</button></div>`;
+function batchSet(f, v, said) {
+  const ns = [...U.sel].filter(n => byN.get(n) && byN.get(n)[f] !== v);
+  U.sel.clear(); U.selFrom = null;
+  if (!ns.length) { renderItems(); return toast('Nothing to change'); }
+  const before = new Map(ns.map(n => [n, byN.get(n)[f]]));
+  let run;
+  const set = to => optimistic(ns.map(n => ({n, f: {[f]: to(n)}})), () => Promise.all(ns.map(n => op({op: 'set', ref: code(n), f: {[f]: wire(f, to(n))}}))), ex => notSaved(ex, run));
+  run = pushUndo(`${plural(ns.length, 'item')} ${said}`, () => { toast(`Put back ${plural(ns.length, 'item')}`); return set(n => before.get(n)); });
+  toast(`${plural(ns.length, 'item')} ${said}`, run);
+  set(() => v);
+}
+document.addEventListener('keydown', e => {  // Esc lets go of the picked rows first
+  if (e.key === 'Escape' && U.sel.size && $('overlay').hidden && !/INPUT|TEXTAREA/.test(document.activeElement?.tagName)) { e.preventDefault(); e.stopImmediatePropagation(); U.sel.clear(); renderItems(); }
 }, true);
 
 // One table drives the keys. Single keys only act while you are not typing; Esc first leaves a text field.
