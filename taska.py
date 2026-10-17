@@ -4135,7 +4135,7 @@ const SECTION = (text, right = '') => `<div class="flex h-6 items-center justify
 let S = {rev: -1, boot: '', items: [], inputs: [], width: 1, org: {}};
 let offline = 0;  // consecutive failed polls
 const byN = new Map(), byR = new Map(), kids = new Map();
-const U = {doc: null, docNew: null, docEdit: false, docText: null, docSel: new Set(), docQuote: null, docCircle: false, docThreads: new Set(), docDrafts: {}, docScroll: {}, peek: null, moreInputs: new Set(), tab: 'items', q: '', type: 'all', when: 'all', status: 'all', pri: 'all', undoArch: null, folded: new Set(), moreMsgs: new Set(), subFor: null, choice: null, choiceLabels: {}, go: null, sheet: null, searching: false, open: null, scopeOff: false, editing: null, files: [], sending: false, lastSent: null, more: new Set(), tabOpen: {}, settle: new Map(), tabTop: {}, stepFrom: null, mine: [], tabView: {}};
+const U = {doc: null, docNew: null, docEdit: false, docText: null, docSel: new Set(), docQuote: null, docCircle: false, docThreads: new Set(), docDrafts: {}, docScroll: {}, peek: null, moreInputs: new Set(), tab: 'items', q: '', type: 'all', when: 'all', status: 'all', pri: 'all', sort: 'all', undoArch: null, folded: new Set(), moreMsgs: new Set(), subFor: null, choice: null, choiceLabels: {}, go: null, sheet: null, searching: false, open: null, scopeOff: false, editing: null, files: [], sending: false, lastSent: null, more: new Set(), tabOpen: {}, settle: new Map(), tabTop: {}, stepFrom: null, mine: [], tabView: {}};
 U.outbox = []; U.qn = 0;  // what you sent that hasn't reached the server yet (F85)
 const groups = new Map();
 let viewerGroup = [], viewerIdx = 0;
@@ -4588,10 +4588,11 @@ function visible(tab = U.tab) {
   const okTab = it => tab === 'rules' ? it.type === 'rule' && !it.archived : tab === 'archive' || it.type !== 'rule' || (it.status === 'proposed' && !it.archived);
   const okStatus = it => tab === 'rules' ? U.status === 'all' || it.status === U.status : tab === 'archive' ? it.archived && (U.status === 'all' || U.status === 'archived' || it.status === U.status)
     : U.status === 'archived' ? it.archived
-    : !it.archived && (U.status === 'all' || (U.status === 'active' ? !CLOSED(it.status) : U.status === 'wait' ? needsYou(it) : it.status === U.status));
+    : !it.archived && (U.status === 'all' || (U.status === 'active' ? !CLOSED(it.status) : U.status === 'closed' ? CLOSED(it.status) : U.status === 'wait' ? needsYou(it) : it.status === U.status));
   return S.items.filter(it => !it.merged_into && okTab(it)
     && (U.type === 'all' || tab === 'rules' || it.type === U.type) && (U.when === 'all' || it.when === U.when) && (U.pri === 'all' || it.pri === U.pri) && okStatus(it) && words.every(w => hay(it).includes(w)))
-    .sort((a, b) => a.pri.localeCompare(b.pri) || a.n - b.n);  // same priority: oldest first, like /next
+    .sort(U.sort === 'new' ? (a, b) => b.n - a.n : U.sort === 'upd' ? (a, b) => (b.t1 || '').localeCompare(a.t1 || '') || b.n - a.n
+      : (a, b) => a.pri.localeCompare(b.pri) || a.n - b.n);  // same priority: oldest first, like /next
 }
 // The agent's queue in the order it takes the work (/next): now before later, in progress first, then P0→P3, oldest first.
 const queueHead = () => S.items.filter(it => inQueue(it) && it.when === 'now' && it.status !== 'doing').sort(queueOrder)[0]?.n;  // T274 #12: the one agents take next
@@ -5531,7 +5532,9 @@ function itemMenu(n) {
   </div>`, {head: `<span class="block truncate text-[15px] font-semibold"><span class="mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[it.type]}">${code(n)}</span>${esc(it.title)}</span>`, focus: false});
 }
 
-const STATUS_FILTER = {active: 'Not finished', wait: 'Needs you', proposed: 'Proposed', doing: 'In progress', review: 'In review', done: 'Done', dropped: "Won't do"};  // archived things live in the Archive tab (B130)
+const STATUS_FILTER = {active: 'Not finished', wait: 'Needs you', proposed: 'Proposed', doing: 'In progress', review: 'In review', closed: 'Finished'};  // archived things live in the Archive tab (B130)
+const SORTS = [['all', 'Priority'], ['new', 'Newest'], ['upd', 'Last updated']];  // T274 #36
+const ARCH_FILTER = {done: 'Done', dropped: "Won't do"};  // T274 #36: in Archive, what became of them; in Items one Finished, as its band
 // Rows hang under their parent when both are in the same group (I59); one whose parent is elsewhere stands alone.
 function tree(group, band = '') {
   const inG = new Set(group.map(it => it.n)), out = [];
@@ -5578,8 +5581,8 @@ function renderItems() {
       : needsBand(wait, going)
       + (on.length ? zone('rules', 'Active', on.length) + on.map(it => itemRow(it)).join('') : '')
       + (off.length ? zone('retired', 'Retired', off.length) + off.map(it => itemRow(it, 0, [], 'retired')).join('') : '');
-  } else if (U.tab === 'archive') {
-    html = rows.length ? rows.map(it => itemRow(it)).join('') : EMPTY('Nothing archived yet.<br>Archive finished items from the end of the Items list, or from an item\'s ⋯.');
+  } else if (U.tab === 'archive' || U.sort !== 'all') {  // T274 #36: sorted another way, the list is in that order
+    html = rows.length ? rows.map(it => itemRow(it)).join('') : EMPTY(U.tab === 'archive' ? 'Nothing archived yet.<br>Archive finished items from the end of the Items list, or from an item\'s ⋯.' : 'No items');
   } else {
     // Items, in the order of your loop (T65 "Needs you first"): what waits on you, the agent's queue, finished work.
     const going = desk() && U.go, needs = rows.filter(it => needsYou(it) || (going && going.done.has(it.n) && going.list.includes(it.n))).sort(going ? walkOrder(going) : needsOrder);  // newest first (B238); Later below the rest (B153)
@@ -5613,8 +5616,9 @@ function renderItems() {
 const filtersSet = () => [
   U.type !== 'all' && U.tab !== 'rules' ? ['type', `<span class="font-mono text-xs font-bold ${TYPE_TEXT[U.type]}">${LETTER[U.type]}</span>${U.type[0].toUpperCase() + U.type.slice(1)}`] : null,
   U.when !== 'all' ? ['when', WHEN[U.when]] : null,
-  U.status !== 'all' ? ['status', U.tab === 'rules' ? RULE_STATUS[U.status] || STATUS[U.status] : STATUS_FILTER[U.status]] : null,
+  U.status !== 'all' ? ['status', U.tab === 'rules' ? RULE_STATUS[U.status] || STATUS[U.status] : STATUS_FILTER[U.status] || ARCH_FILTER[U.status] || STATUS[U.status]] : null,
   U.pri !== 'all' ? ['pri', U.pri] : null,
+  U.sort !== 'all' ? ['sort', SORTS.find(([v]) => v === U.sort)?.[1]] : null,
 ].filter(Boolean);
 const filterChips = set => set.map(([k, label]) => `<button data-act="unfilter" data-k="${k}" class="${HIT} flex h-8 shrink-0 items-center gap-1 rounded-full bg-blue-50 pr-2 pl-3 text-[13px] font-medium text-blue-800 ring-1 ring-blue-200 ring-inset hover:bg-blue-100 lg:h-7 dark:bg-blue-400/10 dark:text-blue-200 dark:ring-blue-400/25 dark:hover:bg-blue-400/20">${label}${ico('x', 'size-3.5', '2.25')}</button>`).join('');
 // The filter button and, under the tabs, the filters that are set as chips you can remove one by one. On the
@@ -5644,11 +5648,12 @@ const letterOf = t => `<span class="font-mono text-xs font-bold ${TYPE_TEXT[t]}"
 function filterControls(small = false) {
   const lab = t => `<div class="px-1 ${small ? 'pb-1 text-[11px]' : 'pb-2 text-xs'} font-semibold text-zinc-500 dark:text-zinc-400">${t}</div>`;
   const pill = (v, t) => `<button data-act="set-filter" data-k="status" data-v="${v}" aria-pressed="${U.status === v}" class="relative ${small ? 'h-7 px-2.5' : 'h-9 px-3.5'} rounded-full bg-zinc-100 text-[13px] font-medium text-zinc-700 after:absolute after:inset-x-0 after:-inset-y-1 hover:bg-zinc-200 aria-pressed:bg-zinc-900 aria-pressed:text-white dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700 dark:aria-pressed:bg-zinc-100 dark:aria-pressed:text-zinc-900">${t}</button>`;
-  const statuses = U.tab === 'rules' ? [['all', 'All'], ...Object.entries(RULE_STATUS)] : [['all', 'All'], ...Object.entries(STATUS_FILTER)];
+  const statuses = [['all', 'All'], ...Object.entries(U.tab === 'rules' ? RULE_STATUS : U.tab === 'archive' ? ARCH_FILTER : STATUS_FILTER)];
   return `${U.tab === 'rules' ? '' : `<div>${lab('Type')}${segctl('set-filter', 'type', [['all', 'All'], ...TYPES.map(t => [t, letterOf(t) + `<span class="truncate">${t[0].toUpperCase() + t.slice(1)}</span>`])], U.type, small)}</div>`}
     <div>${lab('When')}${segctl('set-filter', 'when', [['all', 'Any time'], ['now', 'Now'], ['later', 'Later']], U.when, small)}</div>
     <div>${lab('Status')}<div class="flex flex-wrap gap-1.5">${statuses.map(([v, t]) => pill(v, t)).join('')}</div></div>
-    ${U.tab === 'rules' ? '' : `<div>${lab('Priority')}${segctl('set-filter', 'pri', [['all', 'Any'], ['P0', '<span class="font-semibold text-red-600 dark:text-red-400">P0</span>'], ['P1', 'P1'], ['P2', 'P2'], ['P3', 'P3']], U.pri, small)}</div>`}`;
+    ${U.tab === 'rules' ? '' : `<div>${lab('Priority')}${segctl('set-filter', 'pri', [['all', 'Any'], ['P0', '<span class="font-semibold text-red-600 dark:text-red-400">P0</span>'], ['P1', 'P1'], ['P2', 'P2'], ['P3', 'P3']], U.pri, small)}</div>`}
+    <div>${lab('Sort')}${segctl('set-filter', 'sort', SORTS, U.sort, small)}</div>`;
 }
 function showFilters() {
   if (desk()) { D.filters = !D.filters; return render(); }
@@ -7142,7 +7147,7 @@ function closeItem() {
 }
 
 function clearSearch() { U.q = ''; $('q').value = ''; qSync(); writeURL(false); renderItems(); if (U.tab === 'inputs') renderInputs(); }
-const VIEW_KEYS = ['q', 'type', 'when', 'status', 'pri'];
+const VIEW_KEYS = ['q', 'type', 'when', 'status', 'pri', 'sort'];
 function setTab(t) {
   const was = U.tab, away = desk() && (t !== was || !!D.page || D.compose);  // another tab, or out of This project or New input: a step Back undoes (B9)
   if (away) keepPlace();
@@ -7459,7 +7464,7 @@ const ACT = {
   'set-filter': b => { U[b.dataset.k] = b.dataset.v; writeURL(false); if (desk()) return render(); renderItems(); $('list').scrollTop = 0; showFilters(); },
   unfilter: b => { U[b.dataset.k] = 'all'; writeURL(false); if (desk()) return render(); renderItems(); },
   reset: () => {
-    U.q = ''; U.type = 'all'; U.when = 'all'; U.status = 'all'; U.pri = 'all'; $('q').value = ''; writeURL(false);
+    U.q = ''; U.type = 'all'; U.when = 'all'; U.status = 'all'; U.pri = 'all'; U.sort = 'all'; $('q').value = ''; writeURL(false);
     if (desk()) return render();
     renderItems(); if (U.tab === 'inputs') renderInputs(); if (U.sheet === 'filter') showFilters();
   },
@@ -9423,7 +9428,7 @@ const viewPath = () => D.page ? (D.section ? PSEC[D.section][0] : 'settings') : 
 function viewQuery() {
   const q = new URLSearchParams();
   if (U.q) q.set('q', U.q);
-  for (const k of ['type', 'when', 'status', 'pri']) if (U[k] && U[k] !== 'all') q.set(k, U[k]);
+  for (const k of ['type', 'when', 'status', 'pri', 'sort']) if (U[k] && U[k] !== 'all') q.set(k, U[k]);
   const s = q.toString();
   return s ? '?' + s : '';
 }
@@ -9522,7 +9527,7 @@ function applyURL() {  // the page follows the address: when it loads, and on Ba
 function showURL() {
   const {seg, qs} = readURL();
   U.q = qs.get('q') || ''; $('q').value = U.q;
-  for (const k of ['type', 'when', 'status', 'pri']) U[k] = qs.get(k) || 'all';
+  for (const k of ['type', 'when', 'status', 'pri', 'sort']) U[k] = qs.get(k) || 'all';
   if (desk()) { D.full = !!history.state?.full; D.compose = false; }
   D.page = null;
   const doc = /^[Dd](\d+)$/.exec(seg), n = doc ? 0 : parseRef(seg);
@@ -9586,7 +9591,7 @@ function shell() {
   }
   if (!desk()) return;
   U.q = qs.get('q') || ''; $('q').value = U.q;
-  for (const k of ['type', 'when', 'status', 'pri']) U[k] = qs.get(k) || 'all';
+  for (const k of ['type', 'when', 'status', 'pri', 'sort']) U[k] = qs.get(k) || 'all';
   if (/^(inputs|archive|rules)$/.test(seg)) U.tab = seg;
   showDesk(); renderProjBar(); renderSidebar(); renderRail(); renderDeskHead(); renderFilters();
 }
