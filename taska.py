@@ -5014,7 +5014,14 @@ function versions(thread) {  // message id -> {old, text, label}, for your words
   return out;
 }
 // F220: what the thread knows about its messages: the questions an agent took back, and who read your last words.
-function talkHtml(it, list, gid = '') {
+// T274 #4: one stream for an item: a comment on one of its documents shows among its messages, in time, as one line
+// that opens the document at that part
+function docNotes(n, from = '') {
+  return docsOf(n).flatMap(d => [...d.blocks.flatMap(b => b.comments.map(c => ({c, d, key: b.key}))), ...(d.whole || []).map(c => ({c, d, key: 'doc'})), ...d.detached.flatMap(t => t.comments.map(c => ({c, d, key: t.key})))])
+    .filter(({c}) => c.t && (!from || c.t >= from)).sort((a, b) => a.c.t.localeCompare(b.c.t))
+    .map(({c, d, key}) => ({t: c.t, html: `<button data-act="doc-at" data-d="${d.d}" data-key="${esc(key)}" class="flex items-start gap-2 self-stretch rounded-lg px-1 py-0.5 text-left text-[13px] leading-snug text-zinc-500 hover:bg-zinc-50 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-200">${ico('comment', 'mt-0.5 size-3.5 shrink-0')}<span class="min-w-0 flex-1"><span class="font-medium text-zinc-700 dark:text-zinc-300">${esc(c.by === 'you' ? 'You' : whoName(c.by))}</span> on <span class="font-mono">D${d.d}</span>${c.quote ? ` · “${esc(oneLine(c.quote).slice(0, 40))}${oneLine(c.quote).length > 40 ? '…' : ''}”` : ''}: ${esc(oneLine(c.text).slice(0, 160))}</span><span class="shrink-0 text-[11px] text-zinc-400 dark:text-zinc-500">${when(c.t)}</span></button>`}));
+}
+function talkHtml(it, list, gid = '', notes = []) {
   const th = it.thread, vers = versions(th), gone = new Set();
   th.forEach((x, i) => {  // a withdraw takes back the open question or block before it (nothing of yours in between)
     const q = x.kind === 'withdraw' && th.slice(0, i).reverse().find(y => y.kind === 'ask' || y.kind === 'block' || userWord(y));
@@ -5023,7 +5030,9 @@ function talkHtml(it, list, gid = '') {
   const mine = th.findLastIndex(x => x.by === 'you'), theirs = th.findLastIndex(x => x.by !== 'you' && x.by !== 'org'), t = mine >= 0 && Date.parse(th[mine].t);
   const readers = mine > theirs && it.read ? Object.entries(it.read).filter(([, ms]) => ms >= t).sort((a, b) => b[1] - a[1]) : [];  // no answer yet, but read after your words
   const read = readers.length ? {id: th[mine].id, names: readers.map(([n]) => whoName(n)), t: readers[0][1]} : null;
-  return list.map(x => msgHtml(x, gid, 0, gone.has(x.id) ? null : answerOf(th, x), vers.get(x.id), {withdrawn: gone.has(x.id), read: read?.id === x.id ? read : null})).join('');
+  let k = 0;
+  const before = t => { let h = ''; while (k < notes.length && (!t || notes[k].t < t)) h += notes[k++].html; return h; };
+  return list.map(x => before(x.t) + msgHtml(x, gid, 0, gone.has(x.id) ? null : answerOf(th, x), vers.get(x.id), {withdrawn: gone.has(x.id), read: read?.id === x.id ? read : null})).join('') + before('');
 }
 function msgHtml(x, gid, form = 0, done = null, ver = null, m = {}) {
   const you = x.by === 'you', src = you && x.src ? byR.get(x.src) : null, y = ver ? {...x, text: ver.text} : x;
@@ -5476,9 +5485,10 @@ function detailHtml(it) {
       ${children.length ? `<div class="divide-y divide-zinc-100 rounded-xl border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">${children.map(k => `<button data-act="goto" data-n="${k.n}" class="flex w-full items-start gap-3 px-3 py-3 text-left first:rounded-t-xl last:rounded-b-xl hover:bg-zinc-50 data-pressed:bg-zinc-100 dark:hover:bg-zinc-900 dark:data-pressed:bg-zinc-800 ${CLOSED(k.status) ? 'opacity-55' : ''}">${stateIcon(k.status, statusName(k))}<span class="min-w-0 flex-1 text-[15px] leading-snug ${CLOSED(k.status) ? 'line-through' : ''}"><span class="mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[k.type]}">${code(k.n)}</span>${esc(k.title)}</span></button>`).join('')}</div>` : ''}
       ${U.subFor === n ? `<div class="flex items-center gap-2"><input id="subTitle" class="${FIELD} min-w-0 flex-1" placeholder="Subitem of ${code(n)}" aria-label="Subitem title"><button data-act="sub-add" data-n="${n}" class="${PRIMARY}">Add</button><button data-act="sub-cancel" aria-label="Cancel" class="grid size-11 shrink-0 place-items-center rounded-full text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800">${ico('x', 'size-5')}</button></div>` : ''}
     </section>` : '';
-  const talk = thread.length ? `<div class="flex flex-col gap-6 border-t border-zinc-100 pt-6 dark:border-zinc-800/70">
+  const notes = docNotes(n, hidden ? thread[hidden]?.t : '');  // T274 #4: its documents' comments, in the same stream
+  const talk = thread.length || notes.length ? `<div class="flex flex-col gap-6 border-t border-zinc-100 pt-6 dark:border-zinc-800/70">
       ${hidden ? `<button data-act="more" data-n="${n}" class="-my-1 h-11 self-center rounded-lg px-3 text-sm font-medium text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10">Show ${hidden} earlier</button>` : ''}
-      ${talkHtml(it, thread.slice(hidden))}</div>` : '';
+      ${talkHtml(it, thread.slice(hidden), '', notes)}</div>` : '';
   // B279: on the desktop the item itself (title, state, what it needs from you, its text) stays at the top of the pane;
   // the rest (files, documents, subitems, the talk) scrolls under it, and an item opens at its latest message
   const top = [head, desc].filter(Boolean).join('');  // B279: what it needs from you sits with the latest messages, below
@@ -7555,6 +7565,12 @@ const ACT = {
   },
   play: b => playAudio(b),
   'doc-open': b => openDoc(Number(b.dataset.d)),
+  'doc-at': b => {  // T274 #4: from the item's stream to that comment in its document
+    const d = Number(b.dataset.d), key = b.dataset.key;
+    openDoc(d);
+    if (key !== 'doc') { U.docThreads.add(key); D.docKey = null; renderDetail(); }
+    requestAnimationFrame(() => document.querySelector(key === 'doc' ? '#detailBody section:last-of-type' : `#docBlocks [data-key="${CSS.escape(key)}"]`)?.scrollIntoView({block: 'center'}));
+  },
   'docs-go': b => {  // T274 #18: from the list of documents, in the tab its item is in; Back comes back to the list
     const d = Number(b.dataset.d), it = byN.get(liveN(docById(d)?.n)), t = it?.archived ? 'archive' : it?.type === 'rule' ? 'rules' : 'items';
     D.page = null;
