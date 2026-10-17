@@ -5638,7 +5638,7 @@ function renderFeedback() {
   else if (r.org && !r.org.ok) html = `${ico('alert', 'size-4 text-red-600 dark:text-red-400', '2')}<span class="min-w-0 flex-1 truncate text-red-600 dark:text-red-400">Organizer failed: ${esc(r.org.msg)}</span>${link('retry', 'Retry', `data-id="${r.id}"`)}`;
   else if (r.org?.undone) html = `<span class="min-w-0 flex-1 truncate">Undid the changes for ${r.id}</span>`;
   else if (r.acked) html = `<span class="grid size-4 shrink-0 place-items-center rounded-full bg-emerald-500 text-white dark:bg-emerald-400 dark:text-emerald-950">${ico('check', 'size-3', '3')}</span><span class="min-w-0 flex-1 truncate">${esc(r.org?.msg || (r.touched.length ? 'Organized' : 'Seen by your agent, no item made'))}</span>${r.touched.length ? link('goto', 'View', `data-n="${r.touched[0]}"`) : ''}${r.org && r.org.ok && !r.org.undone && !r.org.keep && r.touched.length ? link('undo', 'Undo', `data-id="${r.id}"`) : ''}${move}`;
-  else html = `<span class="size-2 shrink-0 rounded-full bg-zinc-400"></span><span class="min-w-0 flex-1 truncate">Sent. ${r.org ? 'Left for your coding agent' : 'Waiting for your coding agent'}</span>${unsendBtn((U.sentJobs || []).find(j => j.rid === r.id))}${move}`;  // T113 A27
+  else html = `<span class="size-2 shrink-0 rounded-full bg-zinc-400"></span><span class="line-clamp-2 min-w-0 flex-1 leading-snug">Sent. ${r.org ? 'Left for your agent' : 'Waiting for your agent'}</span>${unsendBtn((U.sentJobs || []).find(j => j.rid === r.id))}${move}`;  // T113 A27
   const final = r.acked || (r.org && r.org.ok) || r.moved;
   clearTimeout(renderFeedback.t);
   if (final) renderFeedback.t = setTimeout(() => { if (U.lastSent === r.id) { U.lastSent = null; renderFeedback(); } }, 6000);
