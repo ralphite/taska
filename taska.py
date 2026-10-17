@@ -4693,16 +4693,17 @@ function deskSlots(it, needs) {
 }
 function rowActs(it, needs = false) {
   const acts = deskSlots(it, needs);
-  return `<div class="hidden shrink-0 items-center gap-0.5 self-center lg:group-hover:flex">${acts.filter(Boolean).map(a => a[0] === 'reopen'
-    ? `<button data-act="reopen" data-n="${it.n}" title="Not yet · N" aria-label="Not yet" class="grid size-8 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-200/70 dark:text-zinc-400 dark:hover:bg-zinc-800">${ico('reopen', 'size-[18px]')}</button>`
-    : (([f, v, label]) => `<button data-act="swipe" data-n="${it.n}" data-f="${f}" data-v="${v}" title="${label}${ACT_KEY[label] ? ' · ' + ACT_KEY[label] : ''}" aria-label="${label}" class="grid size-8 place-items-center rounded-lg hover:bg-zinc-200/70 dark:hover:bg-zinc-800 ${ACT_TONE[label] || 'text-zinc-500 dark:text-zinc-400'}">${ico(ACT_ICON[label], 'size-[18px]')}</button>`)(a)).join('')}</div>`;
+  // T274 #13: named buttons, floating over the row's second line, so the title stays in sight
+  return `<div class="absolute right-2 bottom-1 z-10 hidden items-center gap-0.5 rounded-lg bg-white p-0.5 shadow-sm ring-1 ring-zinc-900/10 lg:group-hover:flex dark:bg-zinc-900 dark:ring-white/10">${acts.filter(Boolean).map(a => a[0] === 'reopen'
+    ? `<button data-act="reopen" data-n="${it.n}" title="Not yet · N" class="flex h-7 items-center gap-1 rounded-md px-2 text-[13px] font-medium whitespace-nowrap text-zinc-600 hover:bg-zinc-200/70 dark:text-zinc-300 dark:hover:bg-zinc-800">${ico('reopen', 'size-4')}Not yet</button>`
+    : (([f, v, label]) => `<button data-act="swipe" data-n="${it.n}" data-f="${f}" data-v="${v}" title="${label}${ACT_KEY[label] ? ' · ' + ACT_KEY[label] : ''}" class="flex h-7 items-center gap-1 rounded-md px-2 text-[13px] font-medium whitespace-nowrap hover:bg-zinc-200/70 dark:hover:bg-zinc-800 ${ACT_TONE[label] || 'text-zinc-600 dark:text-zinc-300'}">${ico(ACT_ICON[label], 'size-4')}${label}</button>`)(a)).join('')}</div>`;
 }
 
 // A row you just acted on stays where it was, as one quiet line with Undo, while the pointer is over the list (or
 // for 3 s after a key, or a finger's tap), so the next row never slides under a second click (B124, B148). Then the
 // list rearranges. On a phone the line lets a double tap's second tap go by, so it neither opens nor undoes.
 const LIST = {in: false, t: 0, until: 0, sig: '', at: null};  // at: the rows when the open item was last among them (T113 A14)
-const listSig = () => [U.tab, U.q, U.type, U.when, U.status, U.pri].join('|');
+const listSig = () => [U.tab, U.q, U.type, U.when, U.status, U.pri, U.sort].join('|');
 function holding() {
   if (!U.settle.size) return false;
   if (LIST.sig !== listSig()) { U.settle.clear(); return false; }  // another search, filter or tab: show the list as it is now
@@ -4744,24 +4745,16 @@ $('list').addEventListener('pointerleave', () => {
 // A row in a list: state icon, coloured code and title, one meta line. Tapping anywhere opens the item (B62);
 // the image and the fold arrow keep their own taps. Nested subitems hang off an elbow line.
 function itemRow(it, depth = 0, group = [], band = '') {  // band: the band it is in ('later': no Later chip there, T225 #11)
-  const c = code(it.n), files = filesOf(it), children = kids.get(it.n) || [], closed = CLOSED(it.status), talk = it.thread.length, docs = docsOf(it.n).length;
-  // Images count as images, other files as files; a voice note is not counted: its words are in the item (B223).
-  const isImg = f => (f.mime || '').startsWith('image/'), imgs = files.filter(isImg).length, other = files.filter(f => !isImg(f) && !(f.mime || '').startsWith('audio/')).length;
+  const c = code(it.n), files = filesOf(it), children = kids.get(it.n) || [], closed = CLOSED(it.status), talk = it.thread.length;
+  // T274 #13: the second line says little: priority, where it stands, one count. Only what needs you has a color.
   const meta = [
     it.type === 'rule' ? '' : `<span class="${PRI_TEXT[it.pri]}">${it.pri}</span>`,
-    needsYou(it) ? `<span class="font-semibold text-amber-700 dark:text-amber-400">${needWord(it)}</span>` : it.reply && !closed ? '<span class="text-zinc-500 dark:text-zinc-400">Replied</span>' : '',  // T274 #42: green is for done
-    hasDraft(c) ? DRAFT_MARK() : '',  // T113 B24: a reply you have not sent yet
-    it.status === 'doing' ? '<span class="text-blue-600 dark:text-blue-400">In progress</span>' : closed && band !== 'retired' ? `<span>${statusName(it)}</span>` : '',  // the Retired band says it once (T225 #11 follow-up)
-    it.archived && U.tab !== 'archive' ? SOFT('Archived') : '',
-    it.when === 'later' && !closed && band !== 'later' ? SOFT('Later') : '',
-    it.n === queueHead() ? '<span class="font-semibold text-blue-600 dark:text-blue-400" title="Agents take this one next">Next</span>' : '',  // T274 #12: only the true next one;  // F197
+    needsYou(it) ? `<span class="font-semibold text-amber-700 dark:text-amber-400">${needWord(it)}</span>` : hasDraft(c) ? DRAFT_MARK()
+      : it.status === 'doing' ? '<span>In progress</span>' : closed && band !== 'retired' ? `<span>${statusName(it)}</span>` : it.reply && !closed ? '<span>Replied</span>' : '',
+    it.when === 'later' && !closed && band !== 'later' ? SOFT('Later') : it.n === queueHead() ? '<span class="font-semibold text-zinc-700 dark:text-zinc-200" title="Agents take this one next">Next</span>' : '',  // T274 #12
     it.parent && !depth ? `<span>↳ ${code(it.parent)}</span>` : '',  // nested rows already hang under it
-    children.length ? cnt('subitems', `${children.filter(k => CLOSED(k.status)).length}/${children.length}`, 'Subitems finished') : '',
-    talk ? cnt('comment', talk, plural(talk, 'comment')) : '',
-    docs ? cnt('doc', docs, plural(docs, 'doc')) : '',  // a document and a file each have their own icon (T225 #8)
-    imgs ? cnt('image', imgs, plural(imgs, 'image')) : '',
-    other ? cnt('clip', other, plural(other, 'file')) : '',
-    it.status === 'doing' ? workerMark(it) : '',  // F194: which agent is on it, and whether it went quiet; last, so on a full line it is what shortens (T225 #8)
+    children.length ? cnt('subitems', `${children.filter(k => CLOSED(k.status)).length}/${children.length}`, 'Subitems finished') : talk ? cnt('comment', talk, plural(talk, 'comment')) : '',
+    it.status === 'doing' ? workerMark(it) : '',  // F194: which agent is on it, and whether it went quiet
   ].join('');
   const img = files.find(f => (f.mime || '').startsWith('image/'));
   const foldable = group.some(k => k.parent === it.n);  // its subitems are in this list
