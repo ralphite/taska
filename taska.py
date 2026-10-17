@@ -185,6 +185,7 @@ class Store:
         self.undone = set()  # seqs of your changes that were put back (F80)
         self.org_off, self.took = set(), {}  # organizer changes taken back by an undo; each undo's list of them (T113 A4)
         self.stash = {}  # each deletion's seq -> what it took out of the items that stay, for a restore (F177)
+        self.gone_items = []  # T257 #5: items deleted by themselves (with their subitems), for Deleted and a restore
         self.rev = 0  # bumps on every change, including transient organizer state
         self.boot = format(int(time.time() * 1000), "x")  # rev restarts with the process; boot tells pages apart
         self.maxn = self.nin = self.nfile = 0
@@ -411,6 +412,61 @@ class Store:
             it = self.items.get(d["n"])
             if it:
                 it["t1"] = e["t"]
+        elif k == "idel":  # T257 #5: an item deleted by itself, with its subitems; restorable ("iundel")
+            for n in e["ns"]:
+                if n in self.items:
+                    self.items[n]["deleted"] = "#item"
+                    self.items[n]["deleted_at"] = e["t"]
+            self.gone_items.append({"ns": list(e["ns"]), "t": e["t"], "seq": e["seq"]})
+        elif k == "iundel":
+            for n in e["ns"]:
+                if n in self.items and self.items[n].get("deleted") == "#item":
+                    self.items[n]["deleted"] = None
+            self.gone_items = [g for g in self.gone_items if g["ns"] != list(e["ns"])]
+        elif k == "ddel":  # T257 #8: a document deleted, restorable
+            d = self.docs.get(e["d"])
+            if d:
+                d["deleted"] = e["t"] if e.get("on", True) else None
+        elif k == "dmove":  # T257 #9: a document goes with another item
+            d = self.docs.get(e["d"])
+            if d and e["to"] in self.items:
+                d["n"] = e["to"]
+        elif k == "dcmove":  # T257 #10: a comment goes on another paragraph
+            c = next((c for c in self.docs[e["d"]]["comments"] if c["id"] == e["id"]), None)
+            if c:
+                c.update(key=e["key"], quote=e.get("quote", ""))
+        elif k == "unfile":  # T257 #11: a file taken off what you sent (an input, so your reply too), or off a comment
+            if e.get("d"):
+                c = next((c for c in self.docs[e["d"]]["comments"] if c["id"] == e["id"]), None)
+                if c:
+                    c["files"] = [f for f in c.get("files", []) if f["f"] != e["f"]]
+            else:
+                inp = self.inputs.get(e["src"])
+                if inp:
+                    inp["files"] = [f for f in inp["files"] if f["f"] != e["f"]]
+                    for it in self.items.values():
+                        for x in it["thread"]:
+                            if x.get("src") == e["src"] and x.get("files"):
+                                x["files"] = [f for f in x["files"] if f["f"] != e["f"]]
+        elif k == "hide":  # T257 #12: an agent's message folded away, or shown again
+            it = self.items.get(e["n"])
+            for x in (it or {}).get("thread", []):
+                if x["id"] == e["id"]:
+                    x["hidden"] = bool(e.get("on", True))
+        elif k == "rescope":  # T257 #7: what you said goes with another item: the input, and your reply in its thread
+            inp = self.inputs.get(e["src"])
+            if inp:
+                old = inp.get("scope")
+                inp["scope"] = e["to"]
+                if e["to"] not in inp["touched"]:
+                    inp["touched"].append(e["to"])
+                was = self.items.get(old)
+                if was:
+                    moved = [x for x in was["thread"] if x.get("src") == e["src"] and x["by"] == "you"]
+                    was["thread"] = [x for x in was["thread"] if x not in moved]
+                    new = self.items.get(e["to"])
+                    if new:
+                        new["thread"] = sorted(new["thread"] + moved, key=lambda x: x["id"])
         elif k == "dcres":  # T274 #2: a thread resolved, or open again
             res = self.docs[e["d"]].setdefault("resolved", {})
             if e.get("on"):
@@ -445,7 +501,7 @@ class Store:
         f = e.get("f")  # a set's fields; a voice note's file name on "tr" events
         if isinstance(f, dict) and f.get("parent"):
             out.append(f["parent"])
-        if e["k"] in ("dc", "dcedit", "dcdel", "dcundel", "dcres") and e["d"] in self.docs:
+        if e["k"] in ("dc", "dcedit", "dcdel", "dcundel", "dcres", "ddel", "dmove", "dcmove") and e.get("d") in self.docs:
             out.append(self.docs[e["d"]]["n"])
         return out
 
@@ -929,7 +985,7 @@ class Store:
         inbox = self.for_agent()
         if inbox:
             return "\n".join(out) + f"\nfirst handle the inbox ({len(inbox)}):\n" + "".join(self.input_card(i, ref) + "\n" for i in sorted(inbox, key=lambda i: int(i["id"][1:]))), True
-        docs = [d for d in self.docs.values() if self.doc_open(d) and self.items.get(d["n"]) and not self.items[d["n"]]["merged_into"] and not self.items[d["n"]].get("deleted")]
+        docs = [d for d in self.docs.values() if self.doc_open(d) and not d.get("deleted") and self.items.get(d["n"]) and not self.items[d["n"]]["merged_into"] and not self.items[d["n"]].get("deleted")]
         if docs:
             d = min(docs, key=lambda d: d["t1"])
             return "\n".join(out) + f"\nanswer the user's comments on D{d['d']} (GET /D{d['d']}):\n" + self.doc_text(d), True
@@ -1232,6 +1288,75 @@ class Store:
             quote = " ".join(str(op.get("quote") or "").split()) or text_  # what the user selected, else the paragraph
             self.emit({"k": "dc", "d": d["d"], "key": key, "quote": quote[:500], "text": body, "by": by, **({"files": files} if files else {})})
             return f"ok D{d['d']} comment" + self.gone_note(self.items.get(d["n"], {}), by), f"Commented on D{d['d']}"
+        if name in ("idel", "iundel"):  # T257 #5
+            it = self.item(op.get("ref"), ctx, follow=False)
+            if name == "iundel":
+                g = next((g for g in reversed(self.gone_items) if it["n"] in g["ns"]), None)
+                if not g:
+                    raise Err(f"{self.code(it['n'])} is not deleted")
+                self.emit({"k": "iundel", "ns": g["ns"], "by": by})
+                return f"ok {self.code(it['n'])} restored", f"Restored {self.code(it['n'])}"
+            if it.get("deleted"):
+                raise Err(f"{self.code(it['n'])} is deleted already")
+            ns, todo = [], [it["n"]]
+            while todo:  # its subitems go with it
+                n = todo.pop()
+                ns.append(n)
+                todo += [k["n"] for k in self.items.values() if k["parent"] == n and not k.get("deleted") and not k["merged_into"]]
+            self.emit({"k": "idel", "ns": ns, "by": by})
+            return f"ok {self.code(it['n'])} deleted" + (f" with {len(ns) - 1} subitems" if len(ns) > 1 else ""), f"Deleted {self.code(it['n'])}"
+        if name == "ddel":  # T257 #8
+            d = self.doc(op.get("d"))
+            on = op.get("on", True) not in (False, "0", "false", 0)
+            self.emit({"k": "ddel", "d": d["d"], "on": on, "by": by})
+            return f"ok D{d['d']} {'deleted' if on else 'restored'}", f"{'Deleted' if on else 'Restored'} D{d['d']}"
+        if name == "dmove":  # T257 #9
+            d, it = self.doc(op.get("d")), self.item(op.get("to"), ctx)
+            self.emit({"k": "dmove", "d": d["d"], "to": it["n"], "by": by})
+            return f"ok D{d['d']} now on {self.code(it['n'])}", f"Moved D{d['d']} to {self.code(it['n'])}"
+        if name == "dcmove":  # T257 #10
+            d = self.doc(op.get("d"))
+            cid, key = int(op.get("id") or 0), str(op.get("key") or "")
+            c = next((c for c in d["comments"] if c["id"] == cid), None)
+            if not c:
+                raise Err(f"D{d['d']} has no comment {cid}")
+            blocks = {b["key"]: b for b in self.doc_view(d)[0]}
+            if key != DOC_KEY and key not in blocks:
+                raise Err(f"D{d['d']} has no such paragraph")
+            self.emit({"k": "dcmove", "d": d["d"], "id": cid, "key": key, "quote": "" if key == DOC_KEY else " ".join(blocks[key]["text"].split())[:500], "by": by})
+            return f"ok D{d['d']} comment {cid} moved", f"Moved a comment on D{d['d']}"
+        if name == "unfile":  # T257 #11
+            f = str(op.get("f") or "")
+            if op.get("d"):
+                d = self.doc(op.get("d"))
+                cid = int(op.get("id") or 0)
+                c = next((c for c in d["comments"] if c["id"] == cid), None)
+                if not c or not any(x["f"] == f for x in c.get("files", [])):
+                    raise Err("no such file on that comment")
+                if c["by"] not in PEOPLE:
+                    raise Err("only files you sent can be taken off")
+                self.emit({"k": "unfile", "d": d["d"], "id": cid, "f": f, "by": by})
+            else:
+                inp = self.inputs.get(str(op.get("id") or ""))
+                if not inp or not any(x["f"] == f for x in inp["files"]):
+                    raise Err("no such file on that input")
+                self.emit({"k": "unfile", "src": inp["id"], "f": f, "by": by})
+            return "ok file taken off", "Took off a file"
+        if name == "hide":  # T257 #12
+            it = self.item(op.get("ref"), ctx)
+            mid, on = int(op.get("id") or 0), op.get("on", True) not in (False, "0", "false", 0)
+            x = next((x for x in it["thread"] if x["id"] == mid), None)
+            if not x or x["by"] in PEOPLE:
+                raise Err("only an agent's message can be hidden")
+            self.emit({"k": "hide", "n": it["n"], "id": mid, "on": on, "by": by})
+            return f"ok {'hidden' if on else 'shown'}", f"{'Hid' if on else 'Showed'} a message on {self.code(it['n'])}"
+        if name == "rescope":  # T257 #7
+            inp = self.inputs.get(str(op.get("id") or ""))
+            if not inp:
+                raise Err("no such input")
+            it = self.item(op.get("to"), ctx)
+            self.emit({"k": "rescope", "src": inp["id"], "to": it["n"], "by": by})
+            return f"ok {inp['id']} now goes with {self.code(it['n'])}", f"Moved {inp['id']} to {self.code(it['n'])}"
         if name == "dcres":  # T274 #2: resolve a comment thread, or open it again
             d = self.doc(op.get("d"))
             key, on = str(op.get("key") or ""), op.get("on", True) not in (False, "0", "false", 0)
@@ -1440,7 +1565,16 @@ class Store:
                                                     **({"drop": G[i["id"]]} if i["id"] in G else {})) for i in self.inputs.values() if not i.get("deleted")],
                     "deleted": self.deleted_list(),
                     "docs": [dict({k: v for k, v in d.items() if k != "gone"}, blocks=self.doc_view(d)[0], detached=self.doc_view(d)[1], whole=self.doc_whole(d), open=self.doc_open(d)) for d in self.docs.values()
-                             if not self.items.get(d["n"], {}).get("deleted")]}
+                             if not self.items.get(d["n"], {}).get("deleted") and not d.get("deleted")],
+                    "gone": self.gone_list()}
+
+    def gone_list(self):
+        """T257 #5, #8: items and documents deleted by themselves, newest first, for Deleted."""
+        items = [{"kind": "item", "n": g["ns"][0], "code": self.code(g["ns"][0]), "title": self.items[g["ns"][0]]["title"], "at": g["t"], "more": len(g["ns"]) - 1}
+                 for g in self.gone_items if g["ns"] and g["ns"][0] in self.items and self.items[g["ns"][0]].get("deleted") == "#item"]
+        docs = [{"kind": "doc", "d": d["d"], "title": d["title"], "at": d["deleted"], "on": self.code(d["n"]) if d["n"] in self.items else ""}
+                for d in self.docs.values() if d.get("deleted")]
+        return sorted(items + docs, key=lambda x: x["at"], reverse=True)
 
     def line(self, it):
         s = f"{self.code(it['n'])} {it['pri']} {it['when']} {it['status']} {it['title']}"
@@ -1524,7 +1658,7 @@ class Store:
         files = self.files_of(it, ref)
         if files:
             out.append("files: " + " ".join(files))
-        docs = [d for d in self.docs.values() if d["n"] == it["n"]]
+        docs = [d for d in self.docs.values() if d["n"] == it["n"] and not d.get("deleted")]
         if docs:
             out.append("docs: " + "; ".join(f"D{d['d']} {d['title']} ({len(d['comments'])} comments" + (f", {self.doc_open(d)} unanswered" if self.doc_open(d) else "") + ")" for d in docs))
         if it["thread"]:
@@ -3621,6 +3755,24 @@ class Handler(BaseHTTPRequestHandler):
                     raise Err("that change can't be undone any more: it was undone already, or changed again since")
                 lines, _ = s.run_all([(0, {"op": "set", "ref": s.code(u["n"]), "f": u["was"], "undo_of": seq})], "you")
             self.json({"ok": lines[0].startswith("ok"), "res": lines})
+        elif p == "/api/move-item":  # T257 #6: an item goes to another project: made there with its words and talk, done here
+            data = json.loads(self.body(10_000) or b"{}")
+            t = HUB.projects.get(str(data.get("to") or ""))
+            if not t or t is s:
+                raise Err("choose another project")
+            with s.cond:
+                it = s.item(data.get("ref"), follow=False)
+                if it.get("deleted") or it["merged_into"]:
+                    raise Err(f"{s.code(it['n'])} cannot be moved")
+                ref, talk = s.code(it["n"]), "\n\n".join(f"{x['by']} ({x['t'][:16].replace('T', ' ')}): {x['text']}" for x in it["thread"] if x.get("text") and not x.get("hidden"))
+                body = it["body"] + (f"\n\n---\nTalk in {s.cfg.get('name') or s.name} {ref}:\n\n{talk}" if talk else "")
+                fields = {"title": it["title"], "body": body[:MAX_TEXT], "type": it["type"], "pri": it["pri"], "when": it["when"], "next": it["next"]}
+            lines, _ = t.run_all([(0, {"op": "new", **fields})], "you")
+            if not lines[0].startswith("ok"):
+                raise Err(lines[0])
+            new = lines[0].split()[1]
+            s.run_all([(0, {"op": "say", "ref": ref, "kind": "progress", "text": f"Moved to {t.cfg.get('name') or t.name} as {new}"}), (1, {"op": "set", "ref": ref, "f": {"status": "dropped", "archived": True}})], "you")  # run_all takes the lock itself
+            self.json({"ok": True, "as": new})
         elif p == "/api/move":  # an input sent to the wrong project goes to another one (F79)
             data = json.loads(self.body(10_000) or b"{}")
             rid, t = data.get("id"), HUB.projects.get(str(data.get("to") or ""))
@@ -5130,15 +5282,16 @@ function msgHtml(x, gid, form = 0, done = null, ver = null, m = {}) {
   if (you) return `<div ${x.src ? `data-src="${x.src}"` : ''} class="group flex scroll-mb-4 flex-col items-end gap-1 rounded-2xl transition-colors duration-700 ${ver?.old ? 'opacity-60' : ''}">
       ${y.text ? `<div ${voiceAttr(src)} class="max-w-[85%] rounded-2xl rounded-tr-md bg-blue-600 px-4 py-2.5 text-[15px] leading-relaxed text-white dark:bg-blue-500 [&_a]:text-white [&_a]:decoration-white/60 [&_blockquote]:border-white/50 [&_blockquote]:text-white/85 [&_code]:bg-white/15 [&_code]:text-white [&_pre]:bg-white/15 [&_pre]:text-white [&_mark]:text-zinc-900 [&_button[data-act=more-msg]]:text-white">${ver?.old ? `<div class="line-clamp-2">${msgText(y, gid)}</div>` : msgText(y, gid)}</div>` : ''}
       ${ver?.old ? '' : strip(src?.files?.filter(f => !(f.mime || '').startsWith('audio/')), gid + 't' + x.id) + voiceLine(src?.files)}
-      <span class="px-1 text-[11px] text-zinc-400 dark:text-zinc-500">You · ${ver?.old ? 'earlier version · ' : ver?.label ? ver.label + ' · ' : ''}${when(x.t)}${x.edited && !ver?.old ? ` · ${src?.history?.length ? `<button data-act="input-history" data-id="${src.id}" title="See what changed" class="relative underline decoration-dotted underline-offset-2 after:absolute after:-inset-3 hover:text-zinc-700 dark:hover:text-zinc-300">edited ${when(x.edited)}</button>` : `edited ${when(x.edited)}`}` : ''}${src?.tr_wait ? ' · <span class="animate-pulse text-blue-600 dark:text-blue-400">transcribing the voice note…</span>' : ''}${m.read ? ` · <span title="${esc(m.read.names.join(', '))} read it ${when(new Date(m.read.t).toISOString())}" class="inline-flex items-center gap-0.5 font-medium text-zinc-500 dark:text-zinc-400">${ico('check', 'size-3', '2.5')}Read by ${esc(m.read.names.join(', '))}</span>` : ''}</span>${src && !ver?.old && !src.moved && !src.deleted ? `<div class="flex gap-0.5 lg:opacity-0 lg:group-hover:opacity-100 lg:focus-within:opacity-100"><button data-act="input-edit" data-id="${src.id}" class="${DC_BTN}">${ico('pencil', 'size-3.5')}Edit</button><button data-act="input-append" data-id="${src.id}" class="${DC_BTN}">${ico('plus', 'size-3.5')}Add more</button></div>` : ''}</div>`;  // B265: edit it right here
+      <span class="px-1 text-[11px] text-zinc-400 dark:text-zinc-500">You · ${ver?.old ? 'earlier version · ' : ver?.label ? ver.label + ' · ' : ''}${when(x.t)}${x.edited && !ver?.old ? ` · ${src?.history?.length ? `<button data-act="input-history" data-id="${src.id}" title="See what changed" class="relative underline decoration-dotted underline-offset-2 after:absolute after:-inset-3 hover:text-zinc-700 dark:hover:text-zinc-300">edited ${when(x.edited)}</button>` : `edited ${when(x.edited)}`}` : ''}${src?.tr_wait ? ' · <span class="animate-pulse text-blue-600 dark:text-blue-400">transcribing the voice note…</span>' : ''}${m.read ? ` · <span title="${esc(m.read.names.join(', '))} read it ${when(new Date(m.read.t).toISOString())}" class="inline-flex items-center gap-0.5 font-medium text-zinc-500 dark:text-zinc-400">${ico('check', 'size-3', '2.5')}Read by ${esc(m.read.names.join(', '))}</span>` : ''}</span>${src && !ver?.old && !src.moved && !src.deleted ? `<div class="flex gap-0.5 lg:opacity-0 lg:group-hover:opacity-100 lg:focus-within:opacity-100"><button data-act="input-edit" data-id="${src.id}" class="${DC_BTN}">${ico('pencil', 'size-3.5')}Edit</button><button data-act="input-append" data-id="${src.id}" class="${DC_BTN}">${ico('plus', 'size-3.5')}Add more</button><button data-act="input-more" data-id="${src.id}" aria-label="More for ${rcode(src.id)}" class="${DC_BTN}">${ico('more', 'size-3.5')}</button></div>` : ''}</div>`;  // B265: edit it right here
   if (x.kind === 'withdraw') return `<div class="flex items-start gap-2 px-1 text-[13px] leading-snug text-zinc-500 dark:text-zinc-400">${ico('undo', 'mt-0.5 size-3.5 shrink-0')}
       <div class="min-w-0 flex-1"><span class="font-medium text-zinc-600 dark:text-zinc-300">${esc(whoName(x.by))} took back its question</span> <span class="text-[11px] text-zinc-400 dark:text-zinc-500">${when(x.t)}</span>${x.text.trim() ? rich(x.text, gid + 'w' + x.id, 'mt-0.5') : ''}</div></div>`;  // F220: a line, not a message
   if (m.withdrawn) return `<div class="flex flex-col items-start gap-1.5 opacity-60">
       <div class="flex items-center gap-2 px-1 text-[11px] text-zinc-400 dark:text-zinc-500">${avatar(x.by)}<span class="text-xs font-semibold text-zinc-700 dark:text-zinc-300">${esc(whoName(x.by))}</span><span class="rounded bg-zinc-100 px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-zinc-500 uppercase dark:bg-zinc-800 dark:text-zinc-400">Withdrawn</span><span>${when(x.t)}</span></div>
       <div class="w-full rounded-2xl rounded-tl-md border border-dashed border-zinc-300 px-4 py-3 text-[15px] leading-relaxed text-zinc-500 dark:border-zinc-700 dark:text-zinc-400"><div class="line-clamp-2 line-through decoration-zinc-400 dark:decoration-zinc-500">${esc(oneLine(x.text))}</div></div></div>`;  // F220: taken back: dimmed, struck, two lines
+  if (x.hidden && !form && !(U.showHidden || new Set()).has(x.id)) return `<button data-act="msg-peek" data-id="${x.id}" class="flex items-center gap-1.5 self-start px-1 text-[12px] text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300">${esc(whoName(x.by))} · hidden message · ${when(x.t)} · Show</button>`;  // T257 #12
   const card = form ? 'space-y-2.5 border-amber-200 bg-amber-50 p-3 text-zinc-900 dark:border-amber-400/25 dark:bg-amber-400/7 dark:text-zinc-100' : 'border-zinc-200 bg-zinc-50 px-4 py-3 text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200';
-  return `<div class="flex flex-col items-start gap-1.5">
-      <div class="flex items-center gap-2 px-1 text-[11px] text-zinc-400 dark:text-zinc-500">${avatar(x.by)}<span class="text-xs font-semibold text-zinc-700 dark:text-zinc-300">${esc(whoName(x.by))}</span>${done && !form ? `<span class="flex items-center gap-0.5 rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-emerald-800 uppercase dark:bg-emerald-400/15 dark:text-emerald-300">${ico('check', 'size-3', '3')}Answered</span>` : KIND_TAG(x)}<span>${when(x.t)}</span></div>
+  return `<div class="group/msg flex flex-col items-start gap-1.5">
+      <div class="flex items-center gap-2 px-1 text-[11px] text-zinc-400 dark:text-zinc-500">${avatar(x.by)}<span class="text-xs font-semibold text-zinc-700 dark:text-zinc-300">${esc(whoName(x.by))}</span>${done && !form ? `<span class="flex items-center gap-0.5 rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-emerald-800 uppercase dark:bg-emerald-400/15 dark:text-emerald-300">${ico('check', 'size-3', '3')}Answered</span>` : KIND_TAG(x)}<span>${when(x.t)}</span>${form || !U.open ? '' : `<button data-act="msg-hide" data-n="${U.open}" data-id="${x.id}" data-on="${x.hidden ? 0 : 1}" class="${DC_BTN} lg:opacity-0 lg:group-hover/msg:opacity-100">${x.hidden ? 'Keep shown' : 'Hide'}</button>`}</div>
       <div class="w-full rounded-2xl rounded-tl-md border text-[15px] leading-relaxed ${card}">${form ? `<div class="px-1">${msgText(x, gid, form)}</div>${hasChoices(x.text) ? sendAnswerBtn(form) : ''}` : done?.length && hasChoices(x.text) ? answered(x, gid, done) : msgText(x, gid, 0, done)}${strip(x.files, gid + 'm' + x.id, 'h-48 w-24')}</div></div>`;
 }
 function mdHtml(text, gid = '', form = 0, done = null) {
@@ -5217,7 +5370,7 @@ const plainQuote = s => String(s || '').split('\n').filter(l => !TABLE_SEP.test(
 // B258: your own comment can be changed or deleted, the way an input you sent can (Edit, Delete, and Undo after it);
 // an agent's can be deleted, not edited (F262).
 const DC_BTN = `${HIT} flex h-6 items-center gap-1 rounded-lg px-1.5 text-xs font-semibold text-zinc-500 hover:bg-blue-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-blue-400/10 dark:hover:text-zinc-200`;
-const dcActs = (d, c) => `<div class="-mr-1.5 ml-auto flex gap-0.5 lg:opacity-0 lg:group-hover:opacity-100 lg:focus-within:opacity-100">${c.by === 'you' ? `<button data-act="dc-edit" data-d="${d.d}" data-id="${c.id}" class="${DC_BTN}">${ico('pencil', 'size-3.5')}Edit</button>` : ''}<button data-act="dc-delete" data-d="${d.d}" data-id="${c.id}" class="${DC_BTN}">${ico('trash', 'size-3.5')}Delete</button></div>`;
+const dcActs = (d, c) => `<div class="-mr-1.5 ml-auto flex gap-0.5 lg:opacity-0 lg:group-hover:opacity-100 lg:focus-within:opacity-100">${c.by === 'you' ? `<button data-act="dc-edit" data-d="${d.d}" data-id="${c.id}" class="${DC_BTN}">${ico('pencil', 'size-3.5')}Edit</button>` : ''}<button data-act="dc-move" data-d="${d.d}" data-id="${c.id}" class="${DC_BTN}">${ico('arrow', 'size-3.5')}Move</button>${c.by === 'you' ? (c.files || []).map(f => `<button data-act="sent-unfile" data-d="${d.d}" data-id="${c.id}" data-f="${esc(f.f)}" title="Take off ${esc(f.name || 'the file')}" class="${DC_BTN}">${ico('x', 'size-3.5')}File</button>`).join('') : ''}<button data-act="dc-delete" data-d="${d.d}" data-id="${c.id}" class="${DC_BTN}">${ico('trash', 'size-3.5')}Delete</button></div>`;
 const dcFind = (dn, id) => { const d = docById(+dn); return d && [...d.whole || [], ...d.blocks.flatMap(b => b.comments), ...d.detached.flatMap(t => t.comments)].find(c => c.id === +id); };
 function editComment(dn, id) {
   const c = dcFind(dn, id);
@@ -5266,7 +5419,7 @@ function seeThreads(d) {  // what the document shows now counts as seen
 }
 function threadHtml(d, key, comments, blockText, rail = false) {
   return `<div data-thread="${key}" class="mt-2 space-y-2 border-l-2 border-amber-300 pl-3 dark:border-amber-600 ${rail ? 'lg:col-start-2 lg:row-start-1 lg:mt-0' : ''}">${threadNew(d, key, comments) ? `<div class="flex items-center gap-1 text-[11px] font-semibold text-blue-600 dark:text-blue-400">${NEW_DOT}New</div>` : ''}
-    ${comments.map(c => `<div data-dc="${c.id}" class="group text-sm ${MSG(c.by).replace(/\b(ml|mr)-8\b/, '')}">${blockText !== undefined && !sameText(c.quote, blockText) ? `<div class="mb-0.5 line-clamp-2 text-xs text-zinc-500 dark:text-zinc-300">“${esc(plainQuote(c.quote))}”</div>` : ''}<div class="flex min-h-6 items-center gap-1"><span class="${WHO(c.by)}">${esc(whoName(c.by))}</span> <span class="text-xs text-zinc-400">${when(c.t)}${c.edited ? ` · edited ${when(c.edited)}` : ''}</span>${dcActs(d, c)}</div>${rich(c.text, 'dc' + c.t)}${c.files?.some(f => !(f.mime || '').startsWith('audio/')) ? `<div class="mt-1.5 flex gap-2 overflow-x-auto">${thumbs(c.files.filter(f => !(f.mime || '').startsWith('audio/')), 'dcf' + c.id, 'size-11')}</div>` : ''}${voiceLine(c.files)}</div>`).join('')}
+    ${comments.map(c => `<div data-dc="${c.id}" class="group text-sm ${MSG(c.by).replace(/\b(ml|mr)-8\b/, '')}">${blockText !== undefined && !sameText(c.quote, blockText) ? `<div class="mb-0.5 line-clamp-2 text-xs text-zinc-500 dark:text-zinc-300">“${esc(plainQuote(c.quote))}”</div>` : ''}<div class="flex min-h-6 flex-wrap items-center gap-1"><span class="${WHO(c.by)}">${esc(whoName(c.by))}</span> <span class="text-xs text-zinc-400">${when(c.t)}${c.edited ? ` · edited ${when(c.edited)}` : ''}</span>${dcActs(d, c)}</div>${rich(c.text, 'dc' + c.t)}${c.files?.some(f => !(f.mime || '').startsWith('audio/')) ? `<div class="mt-1.5 flex gap-2 overflow-x-auto">${thumbs(c.files.filter(f => !(f.mime || '').startsWith('audio/')), 'dcf' + c.id, 'size-11')}</div>` : ''}${voiceLine(c.files)}</div>`).join('')}
     ${`<button data-act="doc-resolve" data-key="${key}" data-on="${docResolved(d, key) ? 0 : 1}" class="${HIT} float-right flex h-8 items-center gap-1 rounded-lg px-1.5 text-xs font-medium text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800">${ico('check', 'size-3.5')}${docResolved(d, key) ? 'Reopen' : 'Resolve'}</button>`}${U.docReply === key ? '' : `<button data-act="doc-reply" data-key="${key}" class="${HIT} flex h-8 items-center gap-1 rounded-lg px-1.5 -mx-1.5 text-xs font-semibold text-blue-600 hover:bg-blue-50 aria-pressed:underline dark:text-blue-400 dark:hover:bg-blue-400/10">${ico('reply', 'size-3.5')}Reply</button>`}
   </div>`;
 }
@@ -5322,7 +5475,7 @@ function docPane(d) {
   const b = (act, inner, title, attrs = '') => `<button data-act="${act}" ${attrs} title="${title}" class="flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm text-zinc-600 hover:bg-zinc-100 aria-pressed:bg-amber-100 aria-pressed:text-amber-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:aria-pressed:bg-amber-900/60 dark:aria-pressed:text-amber-100">${inner}</button>`;
   $('itemMenuBtn').hidden = true;
   $('dHead').innerHTML = `<span class="flex min-w-0 items-center gap-2 text-sm">${ico('file', 'size-[18px] text-zinc-500 dark:text-zinc-400')}<span class="font-mono font-bold text-zinc-700 dark:text-zinc-200">D${d.d}</span><span class="truncate font-semibold">${esc(d.title)}</span></span>`;
-  $('dActs').innerHTML = b('doc-edit', `${ico('pencil', 'size-4')}Edit`, 'Edit the text');
+  $('dActs').innerHTML = b('doc-edit', `${ico('pencil', 'size-4')}Edit`, 'Edit the text') + b('doc-move', `${ico('arrow', 'size-4')}Move`, 'Put it on another item') + b('doc-delete', `${ico('trash', 'size-4')}Delete`, 'Delete the document (Deleted brings it back)');
   $('dNav').innerHTML = b('doc-close', `${ico('left', 'size-4')}Back to ${code(liveN(d.n))}${KBD('Esc')}`, `Back to ${code(liveN(d.n))} · Esc`);
   if (D.docKey === key && body.querySelector('#docBlocks')) return;
   D.docKey = key;
@@ -5687,7 +5840,7 @@ function itemMenu(n) {
   const statuses = it.type === 'rule' ? Object.entries(RULE_STATUS).filter(([v]) => v !== 'proposed' || it.status === 'proposed') : Object.entries(STATUS);
   dialog('', `<div class="flex flex-col gap-5">
     <div class="grid grid-cols-3 gap-2">${tile('edit', 'pencil', 'Edit')}${tile('copy', 'copy', 'Copy for agent')}${tile('doc-new', 'docplus', 'New doc')}
-      ${tile('sub-new', 'listplus', 'Add subitem')}${tile('reparent', 'indent', 'Put under…', it.parent ? `now under ${code(it.parent)}` : '')}${state}${next}</div>
+      ${tile('sub-new', 'listplus', 'Add subitem')}${tile('reparent', 'indent', 'Put under…', it.parent ? `now under ${code(it.parent)}` : '')}${state}${next}${tile('item-move-proj', 'arrow', 'Move to project…')}${tile('item-delete', 'trash', 'Delete')}</div>
     <div>${lab('Type')}${segctl('set-field', 'type', [...TYPES, 'rule'].map(t => [t, letterOf(t) + `<span class="truncate">${t[0].toUpperCase() + t.slice(1)}</span>`]), it.type).replaceAll('data-k="type"', `data-f="type" data-n="${n}"`)}</div>
     ${it.type === 'rule' ? '' : `<div>${lab('Priority')}${segctl('set-field', 'pri', ['P0', 'P1', 'P2', 'P3'].map(p => [p, p === 'P0' ? '<span class="font-semibold text-red-600 dark:text-red-400">P0</span>' : p]), it.pri).replaceAll('data-k="pri"', `data-f="pri" data-n="${n}"`)}</div>`}
     <div>${lab('Status')}<div class="grid grid-cols-3 gap-1.5">${statuses.map(stat).join('')}</div></div>
@@ -5893,6 +6046,8 @@ function inputMenu(b) {
     + (canUndoInput(r) ? row('undo', 'undo', 'Undo organizing', filingTip(r)) : '')
     + (otherProjects().length && !busy ? row('move-input', 'arrow', 'Move to…', 'Sent to the wrong project? Move it') : '')
     + (r.history?.length ? row('input-history', 'clock', 'History') : '')
+    + row('rescope-pick', 'reply', r.scope ? `Put with another item (now ${code(r.scope)})…` : 'Put with an item…')  // T257 #7
+    + r.files.map(f => `<button data-act="sent-unfile" data-id="${r.id}" data-f="${esc(f.f)}" class="flex h-10 w-full items-center gap-2.5 rounded-lg px-3 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800">${ico('x', 'size-4 text-zinc-500 dark:text-zinc-400')}<span class="min-w-0 flex-1 truncate">Take off ${esc(f.name || 'a file')}</span></button>`).join('')  // T257 #11
     + row('input-delete', 'trash', 'Delete', deleteTip(r)) + '</div>', {pop: true, focus: false});
   const at = b.getBoundingClientRect();
   if (desk()) popAt(at.left, at.bottom + 4);
@@ -7944,6 +8099,81 @@ const ACT = {
   },
   'move-input': b => moveInput(b.dataset.id),
   'input-more': b => inputMenu(b),
+  // T257: what was missing
+  'item-delete': async b => {  // #5: with its subitems, to Deleted; Undo or Restore brings them back
+    const n = Number(b.dataset.n), ref = code(n);
+    if (!confirmClick(b, `Delete ${ref}?`)) return;
+    closeDialog();
+    try { await save({op: 'idel', ref}); } catch (_) { return; }
+    if (U.open === n) { if (desk()) { U.open = null; render(); } else closeItem(); }
+    toast(`Deleted ${ref}`, pushUndo(`${ref} deleted`, async () => { await save({op: 'iundel', ref}); toast(`${ref} is back`); }));
+  },
+  'item-move-proj': b => {  // #6
+    const n = Number(b.dataset.n), others = otherProjects();
+    if (!others.length) return toast('There is no other project to move it to');
+    dialog(`Move ${code(n)} to another project`, `<div class="-mx-1 flex flex-col gap-0.5">${others.map(p => `<button data-act="item-move-to" data-n="${n}" data-to="${esc(p.name)}" class="flex h-12 items-center gap-3 rounded-xl px-3 text-left hover:bg-zinc-100 lg:h-10 dark:hover:bg-zinc-800">${projTile(p.name, 'size-7 rounded-lg text-sm')}<span class="min-w-0 flex-1 truncate">${esc(titleOf(p))}</span></button>`).join('')}</div>
+      <p class="mt-3 text-[13px] leading-snug text-zinc-500 dark:text-zinc-400">It is made there with its text and its talk; here it is marked won't do and archived, with a note where it went.</p>`, {focus: false});
+  },
+  'item-move-to': async b => {
+    const n = Number(b.dataset.n), ref = code(n), to = b.dataset.to;
+    try { const d = await net(P + 'api/move-item', JSON_POST({ref, to}), NET.op); closeDialog(); await load(); toast(`Moved ${ref} to ${projName(to)} as ${d.as}`, () => location.assign(`/p/${encodeURIComponent(to)}/${d.as}`), {label: 'Open'}); }
+    catch (ex) { toast(ex.message || 'Not moved', null, {error: true}); }
+  },
+  'rescope-pick': b => { closeDialog(); const r = byR.get(b.dataset.id); itemPicker(`Put ${rcode(b.dataset.id)} with…`, 'rescope-to', {id: b.dataset.id}, new Set(r?.scope ? [r.scope] : [])); },  // #7
+  'rescope-to': async b => {
+    const id = b.dataset.id, was = byR.get(id)?.scope, to = b.dataset.to;
+    closeDialog();
+    try { await save({op: 'rescope', id, to}); } catch (_) { return; }
+    toast(`${rcode(id)} now goes with ${to}`, was ? pushUndo(`${rcode(id)} moved`, async () => { await save({op: 'rescope', id, to: code(was)}); toast(`${rcode(id)} is back with ${code(was)}`); }) : null);
+  },
+  'doc-delete': async b => {  // #8
+    const d = U.doc;
+    if (!d || !confirmClick(b, `Delete D${d}?`)) return;
+    const host = liveN(docById(d)?.n);
+    try { await save({op: 'ddel', d}); } catch (_) { return; }
+    closeDoc(); if (!desk()) closeDialog();
+    toast(`Deleted D${d}`, pushUndo(`D${d} deleted`, async () => { await save({op: 'ddel', d, on: false}); toast(`D${d} is back`); }));
+    if (host && byN.has(host) && desk()) openItem(host);
+  },
+  'doc-move': () => { const doc = docById(U.doc); if (doc) itemPicker(`Put D${doc.d} on…`, 'doc-move-to', {d: doc.d}, new Set([liveN(doc.n)])); },  // #9
+  'doc-move-to': async b => {
+    const d = Number(b.dataset.d), was = docById(d)?.n, to = b.dataset.to;
+    closeDialog();
+    try { await save({op: 'dmove', d, to}); } catch (_) { return; }
+    openDoc(d);
+    toast(`D${d} is now on ${to}`, pushUndo(`D${d} moved`, async () => { await save({op: 'dmove', d, to: code(was)}); toast(`D${d} is back on ${code(was)}`); }));
+  },
+  'dc-move': b => {  // #10: the comment goes on another paragraph, or on the whole document
+    const doc = docById(+b.dataset.d), c = dcFind(b.dataset.d, b.dataset.id);
+    if (!doc || !c) return;
+    const opt = (key, label) => `<button data-act="dc-move-to" data-d="${doc.d}" data-id="${c.id}" data-key="${esc(key)}" ${key === c.key ? 'aria-current="true"' : ''} class="flex min-h-11 w-full items-center rounded-lg px-3 py-1.5 text-left text-sm hover:bg-zinc-100 aria-[current=true]:bg-blue-50 dark:hover:bg-zinc-800 dark:aria-[current=true]:bg-blue-400/10"><span class="line-clamp-2">${label}</span></button>`;
+    dialog('Move the comment to…', `<div class="-mx-1 flex max-h-[60dvh] flex-col gap-0.5 overflow-y-auto">${opt('doc', '<b>The whole document</b>')}${doc.blocks.map(x => opt(x.key, esc(oneLine(x.text).slice(0, 120)))).join('')}</div>`, {focus: false});
+  },
+  'dc-move-to': async b => {
+    const d = Number(b.dataset.d), id = Number(b.dataset.id), was = dcFind(d, id)?.key, key = b.dataset.key;
+    closeDialog();
+    if (key === was) return;
+    try { await save({op: 'dcmove', d, id, key}); } catch (_) { return; }
+    U.docThreads.add(key); D.docKey = null; renderDetail(); if (!desk()) renderDoc();
+    toast('Comment moved', pushUndo('Move a comment', async () => { await save({op: 'dcmove', d, id, key: was}); D.docKey = null; renderDetail(); }));
+  },
+  'sent-unfile': async b => {  // #11: one file taken off what you sent
+    if (!confirmClick(b, 'Take it off?')) return;
+    closeDialog();
+    try { await save(b.dataset.d ? {op: 'unfile', d: +b.dataset.d, id: +b.dataset.id, f: b.dataset.f} : {op: 'unfile', id: b.dataset.id, f: b.dataset.f}); } catch (_) { return; }
+    D.docKey = null; render(); toast('File taken off');
+  },
+  'msg-hide': async b => {  // #12
+    const on = b.dataset.on === '1', ref = code(+b.dataset.n), id = +b.dataset.id;
+    try { await save({op: 'hide', ref, id, on}); } catch (_) { return; }
+    (U.showHidden ||= new Set()).delete(id);
+    toast(on ? 'Message hidden' : 'Message shown', pushUndo(on ? 'Hide a message' : 'Show a message', () => save({op: 'hide', ref, id, on: !on})));
+  },
+  'msg-peek': b => { (U.showHidden ||= new Set()).add(+b.dataset.id); renderDetail(); },
+  'gone-restore': async b => {  // Deleted: an item or a document deleted by itself
+    try { await save(b.dataset.kind === 'item' ? {op: 'iundel', ref: b.dataset.ref} : {op: 'ddel', d: +b.dataset.d, on: false}); } catch (_) { return; }
+    toast(`${b.dataset.label} is back`); renderProject();
+  },
   'input-pick': b => { closeDialog(); ACT[b.dataset.pick]({dataset: {id: b.dataset.id}}); },
   'input-edit': b => editInput(b.dataset.id, 'edit'),
   'input-append': b => editInput(b.dataset.id, 'append'),
@@ -8710,8 +8940,8 @@ const PBODY = {
       <button data-act="fix-remove" data-wrong="${esc(c.wrong || '')}" data-right="${esc(c.right)}" aria-label="Forget this spelling" title="Forget this spelling" class="grid size-11 shrink-0 lg:size-9 place-items-center rounded-lg text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200">${ico('x', 'size-4')}</button></li>`).join('')}</ul>`),
   docs: () => (S.docs || []).length ? `<ul class="divide-y divide-zinc-200 border-y border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">${[...S.docs].sort((a, b) => String(b.t || '').localeCompare(String(a.t || '')) || b.d - a.d).map(d => { const it = byN.get(liveN(d.n)), c = d.blocks.reduce((k, b) => k + b.comments.length, 0) + (d.whole?.length || 0);
       return `<li><button data-act="docs-go" data-d="${d.d}" class="flex w-full items-center gap-3 px-1 py-3 text-left hover:bg-zinc-50 dark:hover:bg-zinc-900">${ico('file', 'size-5 shrink-0 text-zinc-500 dark:text-zinc-400')}<span class="min-w-0 flex-1"><span class="block truncate text-[15px] font-medium">${esc(d.title)}</span><span class="block truncate text-xs text-zinc-500 dark:text-zinc-400"><span class="font-mono">D${d.d}</span>${it ? ` · ${code(it.n)} ${esc(it.title)}` : ''}${c ? ` · ${plural(c, 'comment')}` : ''}${d.t ? ` · ${when(d.t)}` : ''}</span></span></button></li>`; }).join('')}</ul>` : pRuled(EMPTY('No documents yet.<br>Agents write them on items; an item\'s ⋯ makes one too.')),
-  deleted: () => (S.deleted || []).length ? `<ul class="divide-y divide-zinc-200 border-y border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">${deletedRows()}</ul>`
-    : pRuled(EMPTY('Nothing deleted. An input you delete comes here, with the items that went with it.')),
+  deleted: () => goneRows() + ((S.deleted || []).length ? `<ul class="divide-y divide-zinc-200 border-y border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">${deletedRows()}</ul>`
+    : (S.gone || []).length ? '' : pRuled(EMPTY('Nothing deleted. An input, an item or a document you delete comes here.'))),
   organizer: () => S.org?.on
     ? pPart('On', `Gemini (${esc(S.org.model)}) reads each input you send and turns it into items, or updates the ones that exist, in every project. What it does with an input shows under it in Inputs, with Undo.`)
     : pPart('Off', 'Your coding agent files what you send: it reads new inputs first when it asks for work. To have them filed as soon as you send them, set GEMINI_API_KEY where Taska runs and restart it.'),
@@ -8845,7 +9075,7 @@ function itemMenuDesk(n, arm = U.menuArm) {  // arm: 's', 'p' or 't', the part t
   const state = it.archived ? row('archive', 'archive', 'Unarchive', 'E', 'data-on="0"') : CLOSED(it.status) ? row('archive', 'archive', 'Archive', 'E', 'data-on="1"')
     : (it.type === 'rule' ? '' : row('swipe', 'clock', it.when === 'now' ? 'Later' : 'Back to now', 'L', `data-f="when" data-v="${it.when === 'now' ? 'later' : 'now'}"`)) + row('archive', 'archive', 'Archive', 'E', 'data-on="1"');  // F281: any state
   dialog('', `<div class="flex flex-col gap-3">
-    <div class="-mx-1">${row('edit', 'pencil', 'Edit', 'I')}${row('copy', 'copy', 'Copy for agent', '⇧C')}${it.type === 'rule' ? '' : row('doc-new', 'docplus', 'New doc', '⇧D') + row('sub-new', 'listplus', 'Add subitem', '⇧A') + row('reparent', 'indent', 'Put under…', 'M', '', it.parent ? 'now under ' + code(it.parent) : 'stands on its own')}${state}${next}</div>
+    <div class="-mx-1">${row('edit', 'pencil', 'Edit', 'I')}${row('copy', 'copy', 'Copy for agent', '⇧C')}${it.type === 'rule' ? '' : row('doc-new', 'docplus', 'New doc', '⇧D') + row('sub-new', 'listplus', 'Add subitem', '⇧A') + row('reparent', 'indent', 'Put under…', 'M', '', it.parent ? 'now under ' + code(it.parent) : 'stands on its own')}${state}${next}${row('item-move-proj', 'arrow', 'Move to project…')}${row('item-delete', 'trash', 'Delete')}</div>
     <div class="border-t border-zinc-100 pt-3 dark:border-zinc-800">${lab('Type', 'T then F B I T R', arm === 't')}${segctl('set-field', 'type', [...TYPES, 'rule'].map(t => [t, letterOf(t) + `<span class="truncate">${t[0].toUpperCase() + t.slice(1)}</span>`]), it.type, true).replaceAll('data-k="type"', `data-f="type" data-n="${n}"`)}</div>
     ${it.type === 'rule' ? '' : `<div>${lab('Priority', 'P then 0–3', arm === 'p')}${segctl('set-field', 'pri', ['P0', 'P1', 'P2', 'P3'].map(p => [p, p === 'P0' ? '<span class="font-semibold text-red-600 dark:text-red-400">P0</span>' : p]), it.pri, true).replaceAll('data-k="pri"', `data-f="pri" data-n="${n}"`)}</div>`}
     <div>${lab('Status', `S then 1–${statuses.length}`, arm === 's')}<div class="grid grid-cols-3 gap-1">${statuses.map(stat).join('')}</div></div>
@@ -8877,6 +9107,22 @@ function menuKey(e) {
   if (/^[0-9]$/.test(k)) { e.preventDefault(); hint(f ? `${{pri: 'Priority', type: 'Type', status: 'Status'}[f]}: ${{pri: '0–3', type: 'F B I T R', status: `1–${box.querySelectorAll('[data-f="status"]').length}`}[f]}` : 'First S, P or T: then a digit'); return true; }
   return false;
 }
+// T257: pick an item from a list you can type into (for an input, a reply or a document to go with)
+function itemPicker(head, act, data, skip = new Set()) {
+  const attrs = Object.entries(data).map(([k, v]) => `data-${k}="${esc(v)}"`).join(' ');
+  dialog('', `<div class="flex flex-col gap-2"><input id="pickQ" class="${FIELD} lg:h-9 lg:py-0 lg:text-sm" placeholder="Find an item" autocomplete="off"><div id="pickList" class="-mx-1 max-h-[55dvh] overflow-y-auto lg:max-h-80 lg:scrollbar-thin"></div></div>`, {pop: true, focus: false, head: `<span class="text-[15px] font-semibold lg:text-sm">${esc(head)}</span>`});
+  const draw = () => {
+    const words = $('pickQ').value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+    const cands = S.items.filter(c => !skip.has(c.n) && !c.merged_into && !c.archived && c.type !== 'rule' && words.every(w => hay(c).includes(w))).sort((a, b) => CLOSED(a.status) - CLOSED(b.status) || b.n - a.n).slice(0, 40);
+    $('pickList').innerHTML = cands.map(c => `<button data-act="${act}" ${attrs} data-to="${code(c.n)}" class="flex h-12 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-[15px] hover:bg-zinc-100 lg:h-9 lg:text-sm dark:hover:bg-zinc-800">${stateIcon(c.status, statusName(c), 'size-4')}<span class="font-mono text-xs font-bold ${TYPE_TEXT[c.type]}">${code(c.n)}</span><span class="min-w-0 flex-1 truncate">${esc(c.title)}</span></button>`).join('') || '<p class="px-2.5 py-2 text-sm text-zinc-500 dark:text-zinc-400">Nothing matches</p>';
+  };
+  draw();
+  $('pickQ').addEventListener('input', draw);
+  if (desk()) $('pickQ').focus();
+}
+// T257 #5, #8: what was deleted by itself, at the top of Deleted
+const goneRows = () => (S.gone || []).length ? `<ul class="mb-6 divide-y divide-zinc-200 border-y border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">${S.gone.map(x => { const label = x.kind === 'item' ? x.code : `D${x.d}`;
+  return `<li class="flex items-center gap-3 py-3"><span class="min-w-0 flex-1"><span class="block truncate text-[15px]"><span class="mr-1.5 font-mono text-[13px] font-bold">${esc(label)}</span>${esc(x.title)}</span><span class="block text-xs text-zinc-500 dark:text-zinc-400">${x.kind === 'item' ? `Item${x.more ? `, with ${plural(x.more, 'subitem')}` : ''}` : `Document${x.on ? ` on ${esc(x.on)}` : ''}`} · deleted ${when(x.at)}</span></span><button data-act="gone-restore" data-kind="${x.kind}" data-ref="${esc(x.code || '')}" data-d="${x.d || ''}" data-label="${esc(label)}" class="${P_BTN}">Restore</button></li>`; }).join('')}</ul>` : '';
 // Put under…: pick the parent from a list you can type into, instead of typing a code. On the phone it is a sheet
 // with finger-sized rows, and the list shows before the keyboard does (B156).
 function movePicker(n) {

@@ -207,3 +207,48 @@ class AmendTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main(verbosity=2)
+
+
+class CompletenessTests(AmendTests):  # T257: what you can now do with what you made
+    def test_an_item_with_its_subitems_is_deleted_and_restored(self):
+        self.runop({'op': 'new', 'title': 'Child', 'parent': 'F1'})
+        self.runop({'op': 'idel', 'ref': 'F1'})
+        self.assertEqual([it['n'] for it in self.s.state()['items']], [])
+        self.assertEqual(self.s.state()['gone'][0]['n'], 1)
+        self.runop({'op': 'iundel', 'ref': 'F1'})
+        self.assertEqual(len(self.s.state()['items']), 2)
+        replay = taska.Store(str(self.path))
+        self.assertEqual(len(replay.state()['items']), 2)
+        replay.out.close()
+
+    def test_a_document_is_deleted_moved_and_its_comment_moved(self):
+        self.runop({'op': 'new', 'title': 'Other'})
+        self.runop({'op': 'doc', 'ref': 'F1', 'md': '# Plan\n\nFirst part.\n\nSecond part.'})
+        self.runop({'op': 'dc', 'd': 1, 'key': 'doc', 'text': 'Wrong place'})
+        c = self.s.docs[1]['comments'][0]
+        second = self.s.doc_view(self.s.docs[1])[0][2]['key']
+        self.runop({'op': 'dcmove', 'd': 1, 'id': c['id'], 'key': second})
+        self.assertEqual(c['key'], second)
+        self.runop({'op': 'dmove', 'd': 1, 'to': 'F2'})
+        self.assertEqual(self.s.docs[1]['n'], 2)
+        self.runop({'op': 'ddel', 'd': 1})
+        self.assertEqual(self.s.state()['docs'], [])
+        self.runop({'op': 'ddel', 'd': 1, 'on': False})
+        self.assertEqual(len(self.s.state()['docs']), 1)
+
+    def test_a_file_comes_off_an_input_and_a_message_hides(self):
+        f = self.s.inputs['r1']['files'][0]['f']
+        self.runop({'op': 'unfile', 'id': 'r1', 'f': f})
+        self.assertEqual(self.s.inputs['r1']['files'], [])
+        mid = self.s.items[1]['thread'][-1]['id']
+        self.runop({'op': 'hide', 'ref': 'F1', 'id': mid})
+        self.assertTrue(self.s.items[1]['thread'][-1]['hidden'])
+
+    def test_what_you_said_goes_with_another_item(self):
+        self.runop({'op': 'new', 'title': 'Other'})
+        self.runop({'op': 'input', 'text': 'About the first one', 'scope': 'F1'})
+        rid = max(self.s.inputs, key=lambda r: int(r[1:]))
+        self.runop({'op': 'rescope', 'id': rid, 'to': 'F2'})
+        self.assertEqual(self.s.inputs[rid]['scope'], 2)
+        self.assertTrue(any(x.get('src') == rid for x in self.s.items[2]['thread']))
+        self.assertFalse(any(x.get('src') == rid for x in self.s.items[1]['thread']))
