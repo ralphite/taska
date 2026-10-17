@@ -5715,9 +5715,9 @@ function renderComposer() {
   const micTip = !window.isSecureContext ? 'Voice needs an https link here: press for it' : D.compose ? 'Record a voice note · ⌥V' : 'Record a voice note · V, or ⌥V while typing';
   boxBtn($('attachBtn'), rec ? 'rec-cancel' : 'attach', rec ? 'x' : 'plus', rec ? 'Discard the recording' : 'Add images or files', rec ? 'Discard · Esc' : 'Add images or files');
   const sb = $('sendBtn'), recSend = [aux => boxBtn(aux, 'rec-send', 'up', 'Stop and send', 'Stop and send · ⇧↵', 'size-5', '2'), b => boxBtn(b, 'rec-stop', 'check', 'Stop recording, words into the box', 'Words into the box · ↵', 'size-5', '2.5')];
-  // F221: on the phone a second tap where you started recording sends it; the other button stops it into the box.
-  // The desktop keeps Enter's way: the round button puts the words into the box, the one beside it sends.
-  const sendAtStart = rec && !desk(), started = R.from === 'aux' ? 'aux' : 'main';
+  // F221, B248: a second tap or click where you started recording sends it, in every box, on the phone and the desktop;
+  // the other button stops it into the box (Enter does that too, ⇧Enter sends).
+  const sendAtStart = rec, started = R.from === 'aux' ? 'aux' : 'main';
   if (rec) recSend[sendAtStart && started === 'main' ? 0 : 1](sb);
   else if (has) boxBtn(sb, 'send', 'up', `${send} (Shift + Enter)`, `${send} · ⇧↵`, 'size-5', '2.25');
   else boxBtn(sb, 'mic', 'mic', 'Record a voice note', micTip);
