@@ -4505,6 +4505,33 @@ function hay(it) {
 // A9, B15: a search looks in one tab. When it finds little there, the list says where else the words are, one click
 // away: that tab, with the same search.
 const searchWords = () => U.q.trim().toLowerCase().split(/\s+/).filter(Boolean);
+// T274 #35, F227: the searched words are marked where they show ([data-hit] parts of the rows)
+function markHits(root) {
+  const words = searchWords();
+  if (!words.length || !root) return;
+  const re = new RegExp(`(${words.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'i');
+  for (const el of root.querySelectorAll('[data-hit]')) {
+    const walk = document.createTreeWalker(el, NodeFilter.SHOW_TEXT), nodes = [];
+    while (walk.nextNode()) if (!walk.currentNode.parentElement.closest('mark') && re.test(walk.currentNode.data)) nodes.push(walk.currentNode);
+    for (const t of nodes) t.replaceWith(...t.data.split(re).map((s, i) => {  // split with a group: the odd parts are the words
+      if (!(i % 2)) return document.createTextNode(s);
+      const m = document.createElement('mark');
+      m.className = 'rounded-sm bg-yellow-200 text-inherit dark:bg-yellow-400/30';
+      m.textContent = s;
+      return m;
+    }));
+  }
+}
+// The words found only in an item's text or thread: the line they are in, under the title, so you see why it matched
+function hitLine(it) {
+  const words = searchWords(), title = (code(it.n) + ' ' + LETTER[it.type] + it.n + ' ' + it.title).toLowerCase();
+  const w = words.find(w => !title.includes(w));
+  if (!w) return '';
+  const text = [it.body, it.next, ...it.thread.map(x => x.text)].find(t => (t || '').toLowerCase().includes(w)) || '';
+  const at = text.toLowerCase().indexOf(w), from = Math.max(0, at - 12);  // a few words before it: the word stays in sight on a narrow row
+  const line = (from ? '…' : '') + text.slice(from, at + w.length + 80).replace(/[*`#>]+/g, '').replace(/\s+/g, ' ').trim();
+  return line ? `<p data-hit class="mt-0.5 line-clamp-1 text-[13px] text-zinc-500 dark:text-zinc-400">${esc(line)}</p>` : '';
+}
 const inputMatch = (r, words) => words.every(w => (r.id + ' ' + r.text).toLowerCase().includes(w));
 function searchHints(shown) {
   const words = searchWords();
@@ -4741,7 +4768,8 @@ function itemRow(it, depth = 0, group = [], band = '') {  // band: the band it i
   const top = `<div data-act="open" data-n="${it.n}" ${rowCur(it)} class="group relative flex cursor-pointer items-start gap-3 py-2.5 pr-3 pl-${4 + 6 * depth} ${closed ? 'opacity-55' : ''} ${rowTint(it)}">
       ${stateIcon(it.status, statusName(it))}
       <div class="min-w-0 flex-1">
-        <p class="line-clamp-2 text-[15px] leading-snug font-medium lg:line-clamp-1 ${closed ? 'line-through decoration-zinc-400' : ''}"><span class="mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[it.type]}">${c}</span>${esc(it.title)}</p>
+        <p data-hit class="line-clamp-2 text-[15px] leading-snug font-medium lg:line-clamp-1 ${closed ? 'line-through decoration-zinc-400' : ''}"><span class="mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[it.type]}">${c}</span>${esc(it.title)}</p>
+        ${U.q.trim() ? hitLine(it) : ''}
         ${meta ? `<div class="mt-1 flex items-center gap-x-2.5 overflow-hidden text-xs font-medium whitespace-nowrap text-zinc-500 dark:text-zinc-400">${meta}</div>` : ''}
       </div>
       ${it.type === 'rule' ? '' : rowActs(it)}
@@ -4769,7 +4797,8 @@ function needsRow(it) {
       <span class="absolute inset-y-0 left-0 w-1 bg-amber-500 dark:bg-amber-400"></span>
       <span class="self-start">${stateIcon(it.status, statusName(it))}</span>
       <div class="min-w-0 flex-1">
-        <p class="line-clamp-2 text-[15px] leading-snug font-medium lg:line-clamp-1"><span class="mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[it.type]}">${code(it.n)}</span>${esc(it.title)}</p>
+        <p data-hit class="line-clamp-2 text-[15px] leading-snug font-medium lg:line-clamp-1"><span class="mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[it.type]}">${code(it.n)}</span>${esc(it.title)}</p>
+        ${U.q.trim() ? hitLine(it) : ''}
         <div class="mt-1 flex min-w-0 items-center gap-2 text-xs font-medium">
           ${it.type === 'rule' ? '' : `<span class="shrink-0 ${PRI_TEXT[it.pri]}">${it.pri}</span>`}${hasDraft(code(it.n)) ? DRAFT_MARK() : ''}${it.when === 'later' ? `<span class="shrink-0">${SOFT('Later')}</span>` : ''}${it.parent ? `<span class="shrink-0 text-zinc-500 dark:text-zinc-400">↳ ${code(it.parent)}</span>` : ''}
           <span class="min-w-0 truncate font-normal text-zinc-500 dark:text-zinc-400">${esc(excerpt(it))}</span>
@@ -5573,6 +5602,7 @@ function renderItems() {
   }
   const more = rows.length ? searchHints(rows.length) : '';  // where else the words are: other tabs for a short result (A9), other projects (F196)
   list.innerHTML = html + (more ? `<div class="flex flex-col py-4">${more}</div>` : '');
+  markHits(list);
   const hd = list.querySelector('[data-hold]');
   if (hd) hd.style.minHeight = U.archHold.h + 'px';  // a measured height: set before the scroll position comes back, so it isn't cut short
   list.scrollTop = top || 0;
@@ -5828,7 +5858,7 @@ function renderInputs() {
       <div class="flex min-h-5 items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400"><span class="shrink-0 font-mono">${rcode(r.id)}</span><span class="shrink-0 whitespace-nowrap">${when(r.t)}</span>${r.from === 'rules' ? '<span class="font-medium">as a rule</span>' : ''}
         ${scope ? `<button data-act="goto" data-n="${scope.n}" class="relative min-w-0 truncate text-blue-600 after:absolute after:inset-x-0 after:-inset-y-3.5 hover:underline dark:text-blue-400">↳ ${code(scope.n)} ${esc(scope.title)}</button>` : ''}
         <span class="ml-auto flex shrink-0 items-center gap-1 font-medium lg:hidden ${tone}">${icon}${label}</span></div>
-      <div ${long(r) ? `data-act="more-input" data-expand data-id="${r.id}"` : ''} ${voiceAttr(r)} class="mt-1.5 rounded-2xl rounded-tr-md bg-blue-50 px-3.5 py-2 text-[15px] leading-relaxed text-zinc-900 dark:bg-blue-400/10 dark:text-zinc-100 ${long(r) ? 'cursor-pointer' : ''}">
+      <div data-hit ${long(r) ? `data-act="more-input" data-expand data-id="${r.id}"` : ''} ${voiceAttr(r)} class="mt-1.5 rounded-2xl rounded-tr-md bg-blue-50 px-3.5 py-2 text-[15px] leading-relaxed text-zinc-900 dark:bg-blue-400/10 dark:text-zinc-100 ${long(r) ? 'cursor-pointer' : ''}">
         ${r.text ? rich(r.text, 'in' + r.id, long(r) && !U.moreInputs.has(r.id) ? 'max-h-28 overflow-hidden' : '') : ''}
         ${long(r) ? `<button data-act="more-input" data-id="${r.id}" class="-my-2 flex h-11 items-center text-sm font-medium text-blue-600 hover:underline dark:text-blue-400">${U.moreInputs.has(r.id) ? 'Less' : 'More'}</button>` : ''}
         ${r.files.length ? `<div class="mt-2 flex items-end gap-2 overflow-x-auto lg:scrollbar-thin">${thumbs(r.files, 'in' + r.id, 'size-11')}</div>` : ''}
@@ -5838,6 +5868,7 @@ function renderInputs() {
     </div></article>`;
   }).join('') + (more ? `<div class="flex flex-col py-4">${more}</div>` : '') : U.outbox.length ? '' : EMPTY(words.length ? 'No matching inputs' : 'No inputs yet.', more ? `<span class="mt-3 flex flex-col">${more}</span>` : '');
   if (U.outbox.length && !words.length) $('inputsView').innerHTML = chat ? $('inputsView').innerHTML + outboxRows(true) : outboxRows() + $('inputsView').innerHTML;
+  markHits(v);
   if (chat && atEnd) requestAnimationFrame(() => { v.scrollTop = v.scrollHeight; });
   U.inputsEnd = false;
   if (desk() && (rows.length || U.outbox.length)) $('inputsView').innerHTML = `<div class="mx-auto max-w-5xl px-8 pb-6"><div class="sticky top-0 z-10 grid grid-cols-[minmax(0,1fr)_20rem] gap-10 border-b border-zinc-200 bg-white pt-5 pb-2 text-[11px] font-semibold tracking-wider text-zinc-400 uppercase dark:border-zinc-800 dark:bg-zinc-950"><span>You said</span><span>What became of it</span></div>${$('inputsView').innerHTML}</div>`;
