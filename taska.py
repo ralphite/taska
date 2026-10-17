@@ -3775,10 +3775,10 @@ __APP_HEAD__
       <div id="scope" hidden class="flex h-8 items-center gap-1.5 pt-1 pr-1.5 pl-4 text-[13px] text-zinc-500 dark:text-zinc-400 lg:group-data-[compose]/app:hidden"></div>
       <div id="drafts" hidden class="flex gap-2.5 overflow-x-auto px-3 pt-3 pb-1 lg:scrollbar-thin"></div>
       <div id="doubts" hidden class="flex flex-col px-4 pt-1 text-[13px] leading-snug text-zinc-600 dark:text-zinc-300"></div>
-      <div class="flex items-end gap-0.5 p-1.5 lg:group-data-[compose]/app:flex-wrap lg:group-data-[compose]/app:items-center">
-        <button id="attachBtn" data-act="attach" aria-label="Add images or files" class="grid size-11 shrink-0 place-items-center rounded-full text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 lg:m-1 lg:size-9 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100 lg:group-data-[compose]/app:mr-auto"></button>
-        <div class="grid min-w-0 flex-1 lg:group-data-[compose]/app:order-first lg:group-data-[compose]/app:basis-full">
-          <textarea id="text" rows="1" placeholder="Write anything…" aria-label="Input" class="col-start-1 row-start-1 max-h-48 min-h-11 w-full min-w-0 resize-none bg-transparent px-1 py-2.5 text-[17px] leading-6 outline-none placeholder:text-zinc-400 sm:text-[15px] lg:scrollbar-thin dark:placeholder:text-zinc-500 lg:group-data-[compose]/app:max-h-80 lg:group-data-[compose]/app:min-h-24 lg:group-data-[compose]/app:px-3 lg:group-data-[compose]/app:pt-4 lg:group-data-[compose]/app:pb-2 lg:group-data-[compose]/app:text-[17px] lg:group-data-[compose]/app:leading-7"></textarea>
+      <div class="flex items-end gap-0.5 p-1.5">
+        <button id="attachBtn" data-act="attach" aria-label="Add images or files" class="grid size-11 shrink-0 place-items-center rounded-full text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 lg:m-1 lg:size-9 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"></button>
+        <div class="grid min-w-0 flex-1">
+          <textarea id="text" rows="1" placeholder="Write anything…" aria-label="Input" class="col-start-1 row-start-1 max-h-48 min-h-11 w-full min-w-0 resize-none bg-transparent px-1 py-2.5 text-[17px] leading-6 outline-none placeholder:text-zinc-400 sm:text-[15px] lg:scrollbar-thin dark:placeholder:text-zinc-500"></textarea>
           <div id="boxView" hidden class="col-start-1 row-start-1 max-h-48 min-h-11 overflow-y-auto px-1 py-1.5 text-[17px] leading-8 whitespace-pre-wrap break-words text-zinc-900 sm:text-[15px] dark:text-zinc-100"></div>
           <div id="recBar" hidden role="status" aria-label="Recording" class="col-start-1 row-start-1 flex min-w-0 items-center gap-2.5 px-1 lg:group-data-[compose]/app:px-3">
             <span class="size-2.5 shrink-0 animate-pulse rounded-full bg-red-500"></span>
@@ -5698,8 +5698,10 @@ function renderComposer() {
       : scopeLine('comment', `Comment on D${dOpen.d}`, '· or tap a part', byN.has(host) ? scopeLink('doc-to-item', `Reply to ${code(host)}`, '', `Reply to ${code(host)} instead`) : '');  // fits a phone (T225 #14)
     ph = `Comment on D${dOpen.d}…`; send = 'Comment';
   } else if (n) {  // B83: a reply says so; the choices you ticked go with it (B145)
-    line = scopeLine(desk() ? 'reply' : 'scope', `Reply to ${code(n)}`, ticks.length ? ticks.map(l => '✓ ' + esc(oneLine(l))).join(' · ') : esc(it.title),  // one name for it, as on the desktop (B157)
-      desk() ? scopeLink('new-input-instead', 'New input instead', '', 'What you wrote becomes a new input to the whole project') : scopeX('unscope', 'Send to the whole project instead'));
+    // B266: the box itself says "Reply to F06…": the line above it doesn't say it again; it keeps the choices you ticked
+    // and the way to send it to the whole project instead
+    const instead = desk() ? scopeLink('new-input-instead', 'New input instead', '', 'What you wrote becomes a new input to the whole project') : scopeX('unscope', 'Send to the whole project instead');
+    line = ticks.length ? scopeLine(desk() ? 'reply' : 'scope', `Reply to ${code(n)}`, ticks.map(l => '✓ ' + esc(oneLine(l))).join(' · '), instead) : `<span class="min-w-0 flex-1"></span>${instead}`;
     ph = `Reply to ${code(n)}…`;
     if (U.ask === n) ph = `What is missing in ${code(n)}?`;  // after Not yet (B153)
     if (ticks.length) send = 'Send answer';
@@ -6755,6 +6757,7 @@ $('vStage').addEventListener('touchend', e => {
 function render() {
   if (TIP.el && !TIP.el.isConnected) tipHide();  // its trigger was redrawn
   settleOpen();  // B5
+  if (desk() && S.project && !U.open && !D.page && !D.full && U.tab !== 'inputs') D.compose = true;  // B269: nothing open is the New input page, the same as clicking New input
   showView(); renderItems(); renderDetail(); renderComposer(); renderFeedback(); renderAgent();
   if (desk()) { renderProjBar(); renderDeskHead(); renderSidebar(); renderRail(); renderFilters(); }
   if (D.page) renderProject();
@@ -7561,8 +7564,8 @@ function sideProjects() {  // every project in your order, this one with what th
 }
 function renderSidebar() {
   draw($('drawerList'), sideProjects().map(p => { const cur = p.name === (S.project || HERE), [tone, label] = agentState(p.agents, p.work);
-    return `<a href="/p/${encodeURIComponent(p.name)}/" data-slug="${esc(p.name)}" ${cur ? 'aria-current="page" data-act="tab" data-tab="items"' : ''} class="flex items-center gap-2.5 rounded-xl px-2.5 py-2 select-none [-webkit-touch-callout:none] data-dragging:relative data-dragging:z-10 data-dragging:bg-white data-dragging:shadow-lg data-dragging:ring-2 data-dragging:ring-blue-400 dark:data-dragging:bg-zinc-800 hover:bg-zinc-200/60 data-pressed:bg-zinc-200/80 aria-[current=page]:bg-blue-100 aria-[current=page]:ring-1 aria-[current=page]:ring-blue-200 aria-[current=page]:hover:bg-blue-100 dark:hover:bg-zinc-800 dark:aria-[current=page]:bg-blue-400/15 dark:aria-[current=page]:ring-blue-400/30 dark:aria-[current=page]:hover:bg-blue-400/20">${projTile(p.name, 'size-6 rounded-md text-xs')}
-      <span class="min-w-0 flex-1"><span class="flex items-center gap-1.5"><span class="min-w-0 flex-1 truncate text-sm ${cur ? 'font-semibold' : 'font-medium'}">${esc(titleOf(p))}</span>${projDraft(p.name) ? `<span data-draft title="A draft not sent yet, kept in this browser" aria-label="Draft" class="grid size-5 shrink-0 place-items-center rounded-full bg-blue-100 text-blue-700 dark:bg-blue-400/15 dark:text-blue-300">${ico('pencil', 'size-3', '2.25')}</span>` : ''}${p.needs ? `<span title="${plural(p.needs, 'item')} need you" class="grid h-5 min-w-5 shrink-0 place-items-center rounded-full bg-amber-100 px-1 text-[11px] font-bold text-amber-900 dark:bg-amber-400/15 dark:text-amber-200">${p.needs}</span>` : ''}</span><span class="flex items-center gap-1.5 text-[11px] text-zinc-500 dark:text-zinc-400"><span class="size-1.5 shrink-0 rounded-full ${AGENT_TONE[tone][0]}"></span><span class="truncate ${tone === 'ok' ? 'text-emerald-700 dark:text-emerald-400' : AGENT_TONE[tone][1]}">${esc(label)}</span><span class="shrink-0">· ${p.open} open</span></span></span></a>`; }).join(''));
+    return `<a href="/p/${encodeURIComponent(p.name)}/" data-slug="${esc(p.name)}" ${cur ? 'aria-current="page" data-act="tab" data-tab="items"' : ''} class="flex items-center gap-2.5 rounded-xl px-2.5 py-2 select-none [-webkit-touch-callout:none] data-dragging:bg-zinc-200/70 data-dragging:ring-0 data-dragging:[&>*]:invisible dark:data-dragging:bg-zinc-800/70 hover:bg-zinc-200/60 data-pressed:bg-zinc-200/80 aria-[current=page]:bg-blue-100 aria-[current=page]:ring-1 aria-[current=page]:ring-blue-200 aria-[current=page]:hover:bg-blue-100 dark:hover:bg-zinc-800 dark:aria-[current=page]:bg-blue-400/15 dark:aria-[current=page]:ring-blue-400/30 dark:aria-[current=page]:hover:bg-blue-400/20">${projTile(p.name, 'size-6 rounded-md text-xs')}
+      <span class="min-w-0 flex-1"><span class="flex items-center gap-1.5"><span class="min-w-0 flex-1 truncate text-sm ${cur ? 'font-semibold' : 'font-medium'}">${esc(titleOf(p))}</span>${p.needs ? `<span title="${plural(p.needs, 'item')} need you" class="grid h-5 min-w-5 shrink-0 place-items-center rounded-full bg-amber-100 px-1 text-[11px] font-bold text-amber-900 dark:bg-amber-400/15 dark:text-amber-200">${p.needs}</span>` : ''}</span><span class="flex items-center gap-1.5 text-[11px] text-zinc-500 dark:text-zinc-400"><span class="size-1.5 shrink-0 rounded-full ${AGENT_TONE[tone][0]}"></span><span class="truncate ${tone === 'ok' ? 'text-emerald-700 dark:text-emerald-400' : AGENT_TONE[tone][1]}">${esc(label)}</span><span class="shrink-0">· ${p.open} open</span></span></span></a>`; }).join(''));
   $('newInputBtn').setAttribute('aria-pressed', String(D.compose && !D.page));
   const nb = $('newInputBtn').querySelector('span'), rule = U.tab === 'rules' && !D.page;  // on Rules it makes a new rule, and says so (T113 A22)
   if (nb && nb.textContent !== (rule ? 'New rule' : 'New input')) { nb.textContent = rule ? 'New rule' : 'New input'; $('newInputBtn').title = rule ? 'New rule for the project · C' : 'New input to the project · C · by voice ⇧V'; }
@@ -7595,8 +7598,8 @@ function renderSideFoot() {  // the sidebar's foot: Undo (when there is one), Se
 }
 function renderRail() {
   const b = (act, inner, title, attrs = '') => `<button data-act="${act}" ${attrs} title="${title}" aria-label="${title.split(' · ')[0]}" class="relative grid size-10 place-items-center rounded-xl text-zinc-500 hover:bg-zinc-200/60 aria-pressed:bg-zinc-200/80 aria-pressed:text-zinc-900 aria-[current=page]:bg-zinc-200/80 aria-[current=page]:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:aria-pressed:bg-zinc-700 dark:aria-pressed:text-zinc-50 dark:aria-[current=page]:bg-zinc-700 dark:aria-[current=page]:text-zinc-50">${inner}</button>`;
-  const proj = p => { const cur = p.name === (S.project || HERE), dr = projDraft(p.name);
-    return `<a href="/p/${encodeURIComponent(p.name)}/" data-slug="${esc(p.name)}" ${cur ? 'aria-current="page" data-act="tab" data-tab="items"' : ''} title="${esc(titleOf(p))}${p.needs ? ` · ${plural(p.needs, 'item')} need you` : ''}${dr ? ' · a draft not sent yet' : ''}" aria-label="${esc(titleOf(p))}" class="relative grid size-10 place-items-center rounded-xl hover:bg-zinc-200/60 aria-[current=page]:bg-blue-100 aria-[current=page]:ring-1 aria-[current=page]:ring-blue-300 dark:hover:bg-zinc-800 dark:aria-[current=page]:bg-blue-400/20 dark:aria-[current=page]:ring-blue-400/40">${projTile(p.name, 'size-7 rounded-lg text-xs')}${dr ? '<span data-draft class="absolute right-0 bottom-0 grid size-4 place-items-center rounded-full bg-blue-600 text-white ring-2 ring-zinc-100 dark:bg-blue-500 dark:ring-zinc-900">' + ico('pencil', 'size-2.5', '2.5') + '</span>' : ''}${p.needs ? `<span class="absolute -top-0.5 -right-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-amber-500 px-1 text-[10px] font-bold text-white dark:bg-amber-400 dark:text-amber-950">${p.needs}</span>` : ''}</a>`; };
+  const proj = p => { const cur = p.name === (S.project || HERE);
+    return `<a href="/p/${encodeURIComponent(p.name)}/" data-slug="${esc(p.name)}" ${cur ? 'aria-current="page" data-act="tab" data-tab="items"' : ''} title="${esc(titleOf(p))}${p.needs ? ` · ${plural(p.needs, 'item')} need you` : ''}" aria-label="${esc(titleOf(p))}" class="relative grid size-10 place-items-center rounded-xl hover:bg-zinc-200/60 aria-[current=page]:bg-blue-100 aria-[current=page]:ring-1 aria-[current=page]:ring-blue-300 dark:hover:bg-zinc-800 dark:aria-[current=page]:bg-blue-400/20 dark:aria-[current=page]:ring-blue-400/40">${projTile(p.name, 'size-7 rounded-lg text-xs')}${p.needs ? `<span class="absolute -top-0.5 -right-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-amber-500 px-1 text-[10px] font-bold text-white dark:bg-amber-400 dark:text-amber-950">${p.needs}</span>` : ''}</a>`; };
   draw($('rail'), b('side', `<span class="text-blue-600 dark:text-blue-400">${ico('logo', 'size-6', '2.25')}</span>`, 'Show the sidebar · [')
     + b('new-input', ico('newinput', 'size-5'), U.tab === 'rules' && !D.page ? 'New rule · C' : 'New input · C', `aria-pressed="${D.compose && !D.page}"`)
     + `<div class="my-1 h-px w-8 bg-zinc-200 dark:bg-zinc-800"></div>`
@@ -8381,9 +8384,22 @@ $('drawerList').addEventListener('pointerdown', e => {
   Object.assign(PDRAG, {a, id: e.pointerId, x: e.clientX, y: e.clientY, on: false, touch: e.pointerType !== 'mouse'});
   if (PDRAG.touch) PDRAG.t = setTimeout(() => { if (PDRAG.a === a) pdragStart(); }, 450);  // a finger holds still first; moving at once scrolls
 });
+// As drag and drop usually looks: the row you hold follows the pointer, lifted; where it would land is an empty slot;
+// the other rows slide out of its way; on release it settles into the slot.
 function pdragStart() {
+  const a = PDRAG.a, r = a.getBoundingClientRect(), g = a.cloneNode(true);
   PDRAG.on = true; PDRAG.from = [...$('drawerList').querySelectorAll('a[data-slug]')].map(r => r.dataset.slug);
-  PDRAG.a.dataset.dragging = ''; navigator.vibrate?.(10);
+  g.removeAttribute('href'); g.removeAttribute('data-act'); g.setAttribute('aria-hidden', 'true');
+  g.classList.add('pointer-events-none', 'fixed', 'z-50', 'm-0', 'bg-white', 'shadow-xl', 'ring-1', 'ring-black/10', 'dark:bg-zinc-800', 'dark:ring-white/10');
+  Object.assign(g.style, {left: r.left + 'px', top: r.top + 'px', width: r.width + 'px', transform: 'scale(1.03)', transition: 'transform 120ms'});
+  document.body.append(g);
+  PDRAG.ghost = g; PDRAG.dy = PDRAG.y - r.top;
+  a.dataset.dragging = ''; navigator.vibrate?.(10);
+}
+function pdragSlide(rows, change) {  // the rows move to their new places smoothly (they are measured before and after)
+  const before = new Map(rows.map(r => [r, r.getBoundingClientRect().top]));
+  change();
+  for (const r of rows) { const d = before.get(r) - r.getBoundingClientRect().top; if (d && !REDUCE.matches) r.animate([{transform: `translateY(${d}px)`}, {transform: 'none'}], {duration: 160, easing: 'ease-out'}); }
 }
 addEventListener('pointermove', e => {
   const g = PDRAG;
@@ -8393,8 +8409,9 @@ addEventListener('pointermove', e => {
     if (g.touch) { clearTimeout(g.t); g.a = null; return; }
     pdragStart();
   }
-  const rows = [...$('drawerList').querySelectorAll('a[data-slug]')], over = rows.find(r => { const b = r.getBoundingClientRect(); return e.clientY >= b.top && e.clientY < b.bottom; });
-  if (over && over !== g.a) { const down = rows.indexOf(over) > rows.indexOf(g.a); over.parentNode.insertBefore(g.a, down ? over.nextSibling : over); }
+  g.ghost.style.top = (e.clientY - g.dy) + 'px';
+  const rows = [...$('drawerList').querySelectorAll('a[data-slug]')], over = rows.find(r => { const b = r.getBoundingClientRect(); return r !== g.a && e.clientY >= b.top + b.height / 4 && e.clientY < b.bottom - b.height / 4; });
+  if (over && !over.getAnimations().length) { const down = rows.indexOf(over) > rows.indexOf(g.a); pdragSlide(rows, () => over.parentNode.insertBefore(g.a, down ? over.nextSibling : over)); }
 });
 $('drawerList').addEventListener('touchmove', e => { if (PDRAG.on) e.preventDefault(); }, {passive: false});  // dragging, not scrolling
 function pdragEnd(e) {
@@ -8404,7 +8421,9 @@ function pdragEnd(e) {
   const a = g.a, on = g.on;
   g.a = null; g.on = false;
   if (!on) return;
-  delete a.dataset.dragging;
+  const ghost = g.ghost, to = a.getBoundingClientRect(); g.ghost = null;
+  const done = () => { ghost.remove(); delete a.dataset.dragging; };
+  if (REDUCE.matches) done(); else { Object.assign(ghost.style, {transition: 'top 150ms ease-out, left 150ms ease-out, transform 150ms ease-out', top: to.top + 'px', left: to.left + 'px', transform: 'none'}); setTimeout(done, 160); }
   const eat = ev => { ev.preventDefault(); ev.stopPropagation(); };  // the drop is not a click on the row
   addEventListener('click', eat, {capture: true, once: true}); setTimeout(() => removeEventListener('click', eat, true), 400);
   const names = [...$('drawerList').querySelectorAll('a[data-slug]')].map(r => r.dataset.slug);
@@ -8475,6 +8494,12 @@ function deskKey(e) {
   }
   const act = (name, data = {}) => { e.preventDefault(); ACT[name]({dataset: {n: String(n), ...data}}, e); };
   const status = v => it && act('status', {v});
+  const arm = U.armKey; U.armKey = null;
+  if (arm && arm.n === n && Date.now() - arm.t < 3000) {  // B264: S, P or T, then the key that says what to set
+    const sts = (it.type === 'rule' ? Object.keys(RULE_STATUS) : Object.keys(STATUS));
+    const [f, v] = arm.k === 'p' ? ['pri', /^[0-3]$/.test(k) && 'P' + k] : arm.k === 't' ? ['type', TYPE_OF_LETTER[k.toLowerCase()]] : ['status', /^[1-9]$/.test(k) && sts[Number(k) - 1]];
+    if (v) { e.preventDefault(); return f === 'status' ? status(v) : change(n, f, v); }
+  }
   switch (k) {
     case 'j': case 'ArrowDown': case 'k': case 'ArrowUp': {
       const dir = k === 'j' || k === 'ArrowDown' ? 1 : -1, letter = k === 'j' || k === 'k';
@@ -8486,7 +8511,7 @@ function deskKey(e) {
     case 'J': case 'K':  // what needs you lives in Items (and Rules has its own): from another tab or page, go to Items first
       e.preventDefault();
       if (U.go) return ACT[k === 'J' ? 'go-next' : 'go-prev']();
-      if (walkTab() !== U.tab || D.page || D.compose) setTab('items');
+      if (walkTab() !== U.tab || D.page) setTab('items');  // the New input page is any tab's page with nothing open (B269)
       return startGoDesk(U.open);
     case 'o': case 'Enter': if (it) { e.preventDefault(); fullWidth(!D.full); } else if (k === 'o') hint('First pick an item: J or a click'); return;
     case ' ': if (it) { e.preventDefault(); $('detailBody').scrollBy({top: (e.shiftKey ? -0.8 : 0.8) * $('detailBody').clientHeight, behavior: REDUCE.matches ? 'auto' : 'smooth'}); } return;
@@ -8531,7 +8556,7 @@ function deskKey(e) {
     case 'l': if (it.type !== 'rule' && !CLOSED(it.status)) act('swipe', {f: 'when', v: it.when === 'now' ? 'later' : 'now'}); else hint(it.type === 'rule' ? 'Rules have no Later' : 'Later works on open items'); return;
     case 'e': if (it.archived || CLOSED(it.status)) act('archive', {on: it.archived ? '0' : '1'}); else { e.preventDefault(); toast('Archive works on finished items'); } return;
     case '.': e.preventDefault(); return itemMenuDesk(n, null);
-    case 's': case 'p': case 't': e.preventDefault(); return itemMenuDesk(n, k);  // at its part: the next digit or letter sets it (T113 A16)
+    case 's': case 'p': case 't': e.preventDefault(); U.armKey = {k, n, t: Date.now()}; return hint({s: 'Status: 1–6', p: 'Priority: 0–3', t: 'Type: F B I T R'}[k]);  // B264: the next key sets it, no menu; the toast says what changed
     case 'm': e.preventDefault(); return movePicker(n);
     case 'C': return act('copy');
     case 'i': return act('edit');
@@ -8611,9 +8636,9 @@ async function fillDrawer() {
 }
 function drawDrawer() {  // the phone's menu of projects, from what DR.list holds now
   draw($('drawerList'), [...DR.list].sort(projOrder).map(p => { const cur = p.name === S.project, [tone, label] = agentState(p.agents, p.work);  // one order, yours (F253): rows don't move as projects get busy or when you pick one (B158, B200)
-    return `<a href="/p/${encodeURIComponent(p.name)}/" data-slug="${esc(p.name)}" ${cur ? 'aria-current="page"' : ''} class="group flex min-h-14 items-center gap-3 rounded-2xl px-3 py-2.5 select-none [-webkit-touch-callout:none] data-dragging:relative data-dragging:z-10 data-dragging:bg-white data-dragging:shadow-lg data-dragging:ring-2 data-dragging:ring-blue-400 dark:data-dragging:bg-zinc-800 hover:bg-zinc-200/50 data-pressed:bg-zinc-200/70 aria-[current=page]:bg-blue-100 aria-[current=page]:ring-1 aria-[current=page]:ring-blue-200 dark:hover:bg-zinc-800/60 dark:data-pressed:bg-zinc-800 dark:aria-[current=page]:bg-blue-400/15 dark:aria-[current=page]:ring-blue-400/30">${projTile(p.name, 'size-8 rounded-lg text-sm')}
-    <span class="min-w-0 flex-1"><span class="flex items-center gap-2"><span class="min-w-0 flex-1 truncate text-[17px] font-medium group-aria-[current=page]:font-semibold">${esc(titleOf(p))}</span>${projDraft(p.name) ? `<span data-draft title="A draft not sent yet, kept in this browser" aria-label="Draft" class="grid size-6 shrink-0 place-items-center rounded-full bg-blue-100 text-blue-700 dark:bg-blue-400/15 dark:text-blue-300">${ico('pencil', 'size-3.5', '2.25')}</span>` : ''}${p.needs ? `<span class="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900 dark:bg-amber-400/15 dark:text-amber-200">${p.needs} need you</span>` : ''}</span>
-    <span class="mt-0.5 flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400"><span class="size-1.5 shrink-0 rounded-full ${AGENT_TONE[tone][0]}"></span><span class="truncate ${tone === 'ok' ? 'text-emerald-700 dark:text-emerald-400' : AGENT_TONE[tone][1]}">${esc(label)}</span><span class="shrink-0">· ${p.open} open</span></span></span></a>`; }).join(''));  // T234: the draft mark and the count on the name's line, the agent's state on a line of its own
+    return `<a href="/p/${encodeURIComponent(p.name)}/" data-slug="${esc(p.name)}" ${cur ? 'aria-current="page"' : ''} class="group flex min-h-14 items-center gap-3 rounded-2xl px-3 py-2.5 select-none [-webkit-touch-callout:none] data-dragging:bg-zinc-200/70 data-dragging:ring-0 data-dragging:[&>*]:invisible dark:data-dragging:bg-zinc-800/70 hover:bg-zinc-200/50 data-pressed:bg-zinc-200/70 aria-[current=page]:bg-blue-100 aria-[current=page]:ring-1 aria-[current=page]:ring-blue-200 dark:hover:bg-zinc-800/60 dark:data-pressed:bg-zinc-800 dark:aria-[current=page]:bg-blue-400/15 dark:aria-[current=page]:ring-blue-400/30">${projTile(p.name, 'size-8 rounded-lg text-sm')}
+    <span class="min-w-0 flex-1"><span class="flex items-center gap-2"><span class="min-w-0 flex-1 truncate text-[17px] font-medium group-aria-[current=page]:font-semibold">${esc(titleOf(p))}</span>${p.needs ? `<span class="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900 dark:bg-amber-400/15 dark:text-amber-200">${p.needs} need you</span>` : ''}</span>
+    <span class="mt-0.5 flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400"><span class="size-1.5 shrink-0 rounded-full ${AGENT_TONE[tone][0]}"></span><span class="truncate ${tone === 'ok' ? 'text-emerald-700 dark:text-emerald-400' : AGENT_TONE[tone][1]}">${esc(label)}</span><span class="shrink-0">· ${p.open} open</span></span></span></a>`; }).join(''));  // T234: the draft mark (a quiet word, not an edit button) and the count on the name's line, the agent's state on a line of its own
   $('otherDot').hidden = !DR.list.some(p => p.name !== S.project && p.needs);
 }
 // Undo your last changes (F80): the server lists the ones nobody changed again since; each says what it did.

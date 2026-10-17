@@ -220,7 +220,7 @@ def group_project(a):  # Settings: one page in the sidebar's place, one section 
     a.click('#projectNav [data-sec="log"]')
     check('Each section has its own address', (a.js("location.pathname.split('/').pop()"), a.js("$('projectBody').querySelector('h1').textContent")), ('log', 'Change log'))
     a.js('document.activeElement.blur()'); a.key('Escape', wait=0.8)
-    check('Esc leaves Settings at once, back to the list', (a.js('D.page'), a.js("location.pathname.split('/').pop()"), a.js("$('drawer').hidden")), (None, '', False))
+    check('Esc leaves Settings at once, back to the list', (a.js('D.page'), a.js("location.pathname.split('/').pop()"), a.js("$('drawer').hidden")), lambda g: g[0] is None and g[1] in ('', 'new') and g[2] is False)  # B269: the New input page beside the list
     a.key('g', wait=0.1); a.key('s', wait=0.8)
     check('G S opens Settings', a.js('D.page'), 'project')
 
@@ -353,12 +353,12 @@ def group_unseen(a):  # T113 group 3: keys act on what you see, and say why when
     a.key('d', wait=1.2); check('D makes it active again', (status(a, 10), a.toast()), ('open', 'R10 is active again'))
     check('One Undo in sight: on the row, not the toast too (B28)', (a.js("!!document.querySelector('#list [data-act=settle-undo][data-n=\"10\"]')"), a.js("!$('toast').querySelector('button')")), (True, True))
     a.go('B07')
-    a.key('p', wait=0.6)
-    check('P opens the menu at Priority, the keys in it', (a.js('U.menuArm'), a.js("document.activeElement.dataset.f"), a.js("$('dlgBody').contains(document.activeElement)")), ('p', 'pri', True))
-    a.key('1', wait=1.0); check('then 1 sets P1, and the menu stays', (a.js('byN.get(7).pri'), a.js('U.sheet'), a.js("document.activeElement.dataset.v")), ('P1', 'menu', 'P1'))
-    a.key('s', wait=0.5); a.key('3', wait=1.0); check('S then 3 sets In progress', status(a, 7), 'doing')
-    a.key('t', wait=0.5); a.key('i', wait=1.2); check('T then I sets Idea, it does not open Edit', (a.js('byN.get(7).type'), a.js('U.editing')), ('idea', None))
-    a.key('b', wait=1.2); check('then B sets Bug', a.js('byN.get(7).type'), 'bug')
+    a.key('p', wait=0.3); a.key('1', wait=1.0)  # B264: no menu; the next key sets it and a toast says so
+    check('P then 1 sets P1, no menu, the toast says it', (a.js('byN.get(7).pri'), a.js("$('overlay').hidden"), a.toast()), ('P1', True, 'B07 is now P1'))
+    a.key('s', wait=0.3); a.key('3', wait=1.0); check('S then 3 sets In progress', status(a, 7), 'doing')
+    a.key('t', wait=0.3); a.key('i', wait=1.2); check('T then I sets Idea, it does not open Edit', (a.js('byN.get(7).type'), a.js('U.editing')), ('idea', None))
+    a.key('t', wait=0.3); a.key('b', wait=1.2); check('T then B sets Bug', a.js('byN.get(7).type'), 'bug')
+    a.key('.', wait=0.6)
     for k in ('ArrowDown', 'ArrowDown', 'Tab', 'Tab', 'Tab', 'Tab', 'Tab', 'Tab', 'Tab', 'Tab', 'Tab', 'Tab', 'Tab', 'Tab', 'Tab', 'Tab', 'Tab', 'Tab', 'Tab', 'Tab', 'Tab', 'Tab'):
         a.key(k, wait=0.05)
     check('The arrows and Tab move in the menu and never leave it', a.js("$('dlgBody').contains(document.activeElement)"), True)
@@ -372,7 +372,7 @@ def group_unseen(a):  # T113 group 3: keys act on what you see, and say why when
     tips = lambda n: a.js(f"""[...document.querySelectorAll('#list [data-act="open"][data-n="{n}"] button[title]')].map(b => b.title)""")
     check('Start, Pause and Reopen say their keys', ['Start · S then 3' in tips(8), 'Pause · S then 2' in tips(6), 'Reopen · S then 2' in tips(2)], [True, True, True])
     a.go('')
-    a.key('d', wait=0.4); check('With nothing picked, an item key says so', a.toast(), 'First pick an item: J or a click')
+    a.key('d', wait=0.4); check('With nothing picked, an item key says so', a.toast(), lambda t: t in ('First pick an item: J or a click', 'Item keys work on an item: open one in Items, Archive or Rules'))
     a.key('j', wait=0.6); a.key('k', wait=0.5); check('K on the first row says so', a.toast(), 'This is the first item')
     a.go('B02'); a.key('d', wait=0.4); check('D on a done item says so', a.toast(), 'B02 is done already')
     a.key('g', wait=0.1); a.key('n', wait=0.8)
@@ -436,7 +436,7 @@ def group_tabs(a):  # T113 group 7: two tabs show one draft; a draft sent in one
     try:
         b.go(a.base + 'F06', 3)
         check('Tab B: the draft from tab A is in the box', b.js("$('text').value"), 'Check the Android build too')
-        check('Tab B: its row and its project say Draft', (mark(b, 6), b.js("!!document.querySelector('#drawerList [aria-current=page] [data-draft]')")), (True, True))
+        check('Tab B: its row says Draft, its project does not (B270)', (mark(b, 6), b.js("!!document.querySelector('#drawerList [aria-current=page] [data-draft]')")), (True, False))
         send(a.p)
         check('Sent in tab A: tab B\'s box is empty, and it says why', (b.js("$('text').value"), b.js("$('toast').hidden ? '' : $('toast').textContent.trim()")), ('', 'Your reply to F06 was sent from another tab'))
         b.js("$('text').focus()"); send(b)
