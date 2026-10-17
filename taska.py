@@ -215,6 +215,12 @@ class Store:
                         self.agents[e["by"]] = {"t": datetime.fromisoformat(e["t"]).timestamp(), "waiting": 0}
                     except ValueError:
                         pass
+        self.reads_file = os.path.join(os.path.dirname(self.path), "reads.json")
+        try:  # F220: item -> agent -> when it last read it (the item's card, or /next giving it)
+            with open(self.reads_file, encoding="utf-8") as f:
+                self.reads = {int(n): dict(v) for n, v in json.load(f).items()}
+        except (OSError, ValueError):
+            self.reads = {}
         self.pv, self.saved = 0, 0  # pv: bumps when an agent turns up, starts or stops waiting
         if self.out.tell() and not self._ends_with_newline():
             self.out.write("\n")
@@ -863,8 +869,9 @@ class Store:
     def mode(self):
         return "keep-going ON" if self.cfg["auto"] else "keep-going OFF"
 
-    def next_text(self, ref=None, who=None):
-        """-> (text, has_work). who: the agent asking: items another agent is on are skipped for it (F194)."""
+    def next_text(self, ref=None, who=None, given=None):
+        """-> (text, has_work). who: the agent asking: items another agent is on are skipped for it (F194). given (a
+        list) gets the item whose card it holds, if any."""
         if self.gone:
             return f"Project {self.name} was deleted: there is no work here. The user can restore it in Taska (Settings › Projects).\n", False
         auto = self.cfg["auto"]
@@ -890,6 +897,8 @@ class Store:
         live = [i for i in live if i["n"] not in talking]  # their latest words are not in yet: they come next
         back = sorted((i for i in live if self.replied(i)), key=lambda i: i["t1"])
         if back:
+            if given is not None:
+                given.append(back[0]["n"])
             return "\n".join(out) + f"\nresume {self.code(back[0]['n'])}: the user replied\n" + self.card(back[0], ref), True
         queue = sorted((i for i in live if i["when"] == "now" and i["type"] in WORK_TYPES and i["status"] in ("open", "doing") and not self.waiting(i)
                         and not self.open_kids(i)),  # subitems first: the parent comes when they are finished
@@ -903,6 +912,8 @@ class Store:
             it = queue[0]
             if who:
                 self.claims[it["n"]] = (who, time.time())
+            if given is not None:
+                given.append(it["n"])
             how = ("\nan idea: think it through first. Small and clear: do it. Bigger, or more than one way to go: "
                    f"post your plan ({self.code(it['n'])} propose ...) and ask before building.") if it["type"] == "idea" else ""
             return "\n".join(out) + f"\nnext {self.code(it['n'])} ({len(queue)} in queue: doing first, then P0→P3, oldest first){how}\n" + self.card(it, ref), True
@@ -938,6 +949,23 @@ class Store:
                 try:
                     with open(self.agents_file, "w", encoding="utf-8") as f:
                         json.dump({k: v["t"] for k, v in self.agents.items()}, f)
+                except OSError:
+                    pass
+
+    def read_item(self, n, name):
+        """F220: an agent read item n (its card, or /next gave it): the page says "Read by" under your last words."""
+        name = re.sub(r"[^\w .-]", "", str(name or "agent"))[:40] or "agent"
+        if name in PEOPLE or n not in self.items:
+            return
+        with self.cond:
+            self.reads.setdefault(n, {})[name] = time.time()
+            self.pv += 1
+            self.cond.notify_all()
+            if not self.gone:
+                try:
+                    with open(self.reads_file + ".tmp", "w", encoding="utf-8") as f:
+                        json.dump({str(k): v for k, v in self.reads.items()}, f)
+                    os.replace(self.reads_file + ".tmp", self.reads_file)
                 except OSError:
                     pass
 
@@ -1341,6 +1369,8 @@ class Store:
                 w = self.waiting(it)
                 d["wait"] = {"id": w["id"], "kind": w["kind"], "text": w["text"], "by": w["by"], "files": w.get("files", [])} if w else None
                 d["reply"] = self.replied(it)
+                if self.reads.get(it["n"]):
+                    d["read"] = {k: int(v * 1000) for k, v in self.reads[it["n"]].items()}
                 items.append(d)
             return {"rev": self.rev, "boot": self.boot, "pv": self.pv, **self.presence(), "width": len(str(self.maxn)), "file": home_short(self.path), "cfg": self.cfg, "undo": self.undoable(),
                     "org": {"on": self.org_on, "model": MODEL, "busy": self.org_busy},
@@ -3132,15 +3162,19 @@ class Handler(BaseHTTPRequestHandler):
             try:
                 with s.cond:  # ?wait=N: while keep-going is on and there is nothing to do, hold until work arrives
                     who = (q.get("by") or [None])[0] if "ui" not in q else None  # each agent gets an item no other one is on (F194)
-                    text, work = s.next_text(ref, who)
+                    given = []
+                    text, work = s.next_text(ref, who, given)
                     while not work and s.cfg["auto"] and not s.gone and time.time() < end:  # a deleted project lets its agents go (F173)
                         s.cond.wait(timeout=end - time.time())
-                        text, work = s.next_text(ref, who)
+                        given = []
+                        text, work = s.next_text(ref, who, given)
             finally:
                 if q.get("wait"):
                     s.saw((q.get("by") or ["agent"])[0], -1)
             if "ui" not in q:
                 s.read_next((q.get("by") or ["agent"])[0])
+                if given:  # F220: the item it was given, it has read
+                    s.read_item(given[-1], (q.get("by") or ["agent"])[0])
             self.send(200, text)
         elif p == "/rules":
             with s.lock:
@@ -3186,7 +3220,10 @@ class Handler(BaseHTTPRequestHandler):
                         raise Err(f"{ref_} not found")
                     self.send(200, s.input_card(inp, ref) + "\n")
                 else:
-                    self.send(200, s.card(s.item(ref_, follow=False), ref))
+                    it = s.item(ref_, follow=False)
+                    self.send(200, s.card(it, ref))
+            if ref_[0] not in "dDrR" and "ui" not in q:  # F220: an agent read the item, and so your words on it
+                s.read_item(it["n"], (q.get("by") or ["agent"])[0])
         else:
             self.send(404, "not found\n")
 
@@ -4638,13 +4675,30 @@ function versions(thread) {  // message id -> {old, text, label}, for your words
   }
   return out;
 }
-function msgHtml(x, gid, form = 0, done = null, ver = null) {
+// F220: what the thread knows about its messages: the questions an agent took back, and who read your last words.
+function talkHtml(it, list, gid = '') {
+  const th = it.thread, vers = versions(th), gone = new Set();
+  th.forEach((x, i) => {  // a withdraw takes back the open question or block before it (nothing of yours in between)
+    const q = x.kind === 'withdraw' && th.slice(0, i).reverse().find(y => y.kind === 'ask' || y.kind === 'block' || userWord(y));
+    if (q && !userWord(q)) gone.add(q.id);
+  });
+  const mine = th.findLastIndex(x => x.by === 'you'), theirs = th.findLastIndex(x => x.by !== 'you' && x.by !== 'org'), t = mine >= 0 && Date.parse(th[mine].t);
+  const readers = mine > theirs && it.read ? Object.entries(it.read).filter(([, ms]) => ms >= t).sort((a, b) => b[1] - a[1]) : [];  // no answer yet, but read after your words
+  const read = readers.length ? {id: th[mine].id, names: readers.map(([n]) => whoName(n)), t: readers[0][1]} : null;
+  return list.map(x => msgHtml(x, gid, 0, gone.has(x.id) ? null : answerOf(th, x), vers.get(x.id), {withdrawn: gone.has(x.id), read: read?.id === x.id ? read : null})).join('');
+}
+function msgHtml(x, gid, form = 0, done = null, ver = null, m = {}) {
   const you = x.by === 'you', src = you && x.src ? byR.get(x.src) : null, y = ver ? {...x, text: ver.text} : x;
   const strip = (files, g, size) => files?.length ? `<div class="flex gap-2 overflow-x-auto lg:scrollbar-thin ${you ? 'justify-end' : 'mt-3'}">${thumbs(files, g, size)}</div>` : '';
   if (you) return `<div ${x.src ? `data-src="${x.src}"` : ''} class="flex scroll-mb-4 flex-col items-end gap-1 rounded-2xl transition-colors duration-700 ${ver?.old ? 'opacity-60' : ''}">
       ${y.text ? `<div ${voiceAttr(src)} class="max-w-[85%] rounded-2xl rounded-tr-md bg-blue-600 px-4 py-2.5 text-[15px] leading-relaxed text-white dark:bg-blue-500 [&_a]:text-white [&_a]:decoration-white/60">${ver?.old ? `<div class="line-clamp-2">${msgText(y, gid)}</div>` : msgText(y, gid)}</div>` : ''}
       ${ver?.old ? '' : strip(src?.files, gid + 't' + x.id)}
-      <span class="px-1 text-[11px] text-zinc-400 dark:text-zinc-500">You · ${ver?.old ? 'earlier version · ' : ver?.label ? ver.label + ' · ' : ''}${when(x.t)}${x.edited && !ver?.old ? ` · ${src?.history?.length ? `<button data-act="input-history" data-id="${src.id}" title="See what changed" class="relative underline decoration-dotted underline-offset-2 after:absolute after:-inset-3 hover:text-zinc-700 dark:hover:text-zinc-300">edited ${when(x.edited)}</button>` : `edited ${when(x.edited)}`}` : ''}${src?.tr_wait ? ' · <span class="animate-pulse text-blue-600 dark:text-blue-400">transcribing the voice note…</span>' : ''}</span></div>`;
+      <span class="px-1 text-[11px] text-zinc-400 dark:text-zinc-500">You · ${ver?.old ? 'earlier version · ' : ver?.label ? ver.label + ' · ' : ''}${when(x.t)}${x.edited && !ver?.old ? ` · ${src?.history?.length ? `<button data-act="input-history" data-id="${src.id}" title="See what changed" class="relative underline decoration-dotted underline-offset-2 after:absolute after:-inset-3 hover:text-zinc-700 dark:hover:text-zinc-300">edited ${when(x.edited)}</button>` : `edited ${when(x.edited)}`}` : ''}${src?.tr_wait ? ' · <span class="animate-pulse text-blue-600 dark:text-blue-400">transcribing the voice note…</span>' : ''}${m.read ? ` · <span title="${esc(m.read.names.join(', '))} read it ${when(new Date(m.read.t).toISOString())}" class="inline-flex items-center gap-0.5 font-medium text-zinc-500 dark:text-zinc-400">${ico('check', 'size-3', '2.5')}Read by ${esc(m.read.names.join(', '))}</span>` : ''}</span></div>`;
+  if (x.kind === 'withdraw') return `<div class="flex items-start gap-2 px-1 text-[13px] leading-snug text-zinc-500 dark:text-zinc-400">${ico('undo', 'mt-0.5 size-3.5 shrink-0')}
+      <div class="min-w-0 flex-1"><span class="font-medium text-zinc-600 dark:text-zinc-300">${esc(whoName(x.by))} took back its question</span> <span class="text-[11px] text-zinc-400 dark:text-zinc-500">${when(x.t)}</span>${x.text.trim() ? rich(x.text, gid + 'w' + x.id, 'mt-0.5') : ''}</div></div>`;  // F220: a line, not a message
+  if (m.withdrawn) return `<div class="flex flex-col items-start gap-1.5 opacity-60">
+      <div class="flex items-center gap-2 px-1 text-[11px] text-zinc-400 dark:text-zinc-500">${avatar(x.by)}<span class="text-xs font-semibold text-zinc-700 dark:text-zinc-300">${esc(whoName(x.by))}</span><span class="rounded bg-zinc-100 px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-zinc-500 uppercase dark:bg-zinc-800 dark:text-zinc-400">Withdrawn</span><span>${when(x.t)}</span></div>
+      <div class="w-full rounded-2xl rounded-tl-md border border-dashed border-zinc-300 px-4 py-3 text-[15px] leading-relaxed text-zinc-500 dark:border-zinc-700 dark:text-zinc-400"><div class="line-clamp-2 line-through decoration-zinc-400 dark:decoration-zinc-500">${esc(oneLine(x.text))}</div></div></div>`;  // F220: taken back: dimmed, struck, two lines
   const card = form ? 'space-y-2.5 border-amber-200 bg-amber-50 p-3 text-zinc-900 dark:border-amber-400/25 dark:bg-amber-400/7 dark:text-zinc-100' : 'border-zinc-200 bg-zinc-50 px-4 py-3 text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200';
   return `<div class="flex flex-col items-start gap-1.5">
       <div class="flex items-center gap-2 px-1 text-[11px] text-zinc-400 dark:text-zinc-500">${avatar(x.by)}<span class="text-xs font-semibold text-zinc-700 dark:text-zinc-300">${esc(whoName(x.by))}</span>${done && !form ? `<span class="flex items-center gap-0.5 rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-emerald-800 uppercase dark:bg-emerald-400/15 dark:text-emerald-300">${ico('check', 'size-3', '3')}Answered</span>` : KIND_TAG(x)}<span>${when(x.t)}</span></div>
@@ -4933,7 +4987,7 @@ function peek(n, {focus = true} = {}) {
     ${it.next ? `<div class="mt-2 flex gap-2 text-sm"><span class="shrink-0 font-semibold text-zinc-500 dark:text-zinc-400">Next</span><span class="min-w-0 break-words">${inlineMd(it.next)}</span></div>` : ''}
     ${files.length ? `<div class="mt-3 flex items-end gap-2 overflow-x-auto lg:scrollbar-thin">${thumbs(files, 'peek' + n)}</div>` : ''}
     ${it.wait ? `<div data-need class="mt-4 scroll-mt-2">${needsCard(it)}</div>` : ''}
-    ${recent.length ? `<div class="mt-4 flex flex-col gap-4">${(vers => recent.map(x => msgHtml(x, 'p', 0, answerOf(it.thread, x), vers.get(x.id))).join(''))(versions(it.thread))}</div>` : ''}
+    ${recent.length ? `<div class="mt-4 flex flex-col gap-4">${talkHtml(it, recent, 'p')}</div>` : ''}
   </div>`, {
     aboveComposer: true, focus, card: true, head, walk: !!g,
     sub: g ? `<div class="flex gap-1 px-4 pb-1" aria-hidden="true">${g.list.map(k => `<span class="h-1 flex-1 rounded-full ${k === n ? 'bg-amber-500 dark:bg-amber-400' : g.done.has(k) ? 'bg-emerald-500 dark:bg-emerald-400' : 'bg-zinc-200 dark:bg-zinc-700'}"></span>`).join('')}</div>` : '',
@@ -5020,7 +5074,7 @@ function detailHtml(it) {
     </section>` : '';
   const talk = thread.length ? `<div class="flex flex-col gap-6 border-t border-zinc-100 pt-6 dark:border-zinc-800/70">
       ${hidden ? `<button data-act="more" data-n="${n}" class="-my-1 h-11 self-center rounded-lg px-3 text-sm font-medium text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10">Show ${hidden} earlier</button>` : ''}
-      ${(vers => thread.slice(hidden).map(x => msgHtml(x, '', 0, answerOf(thread, x), vers.get(x.id))).join(''))(versions(it.thread))}</div>` : '';
+      ${talkHtml(it, thread.slice(hidden))}</div>` : '';
   return `<div class="flex flex-col gap-6 px-5 pt-5 pb-10 lg:mx-auto lg:w-full lg:max-w-[46rem] lg:px-8 lg:pt-9">${[head, needsCard(it), desc,
     files.length ? `<div class="flex items-end gap-2 overflow-x-auto lg:scrollbar-thin">${thumbs(files, 'item' + n, 'h-24 w-16')}</div>` : '', docs, subs, talk].filter(Boolean).join('')}</div>`;
 }

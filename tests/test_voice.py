@@ -371,6 +371,22 @@ class ServerTests(unittest.TestCase):
         except urllib.error.HTTPError as ex:
             return ex.code, json.load(ex)
 
+    def test_an_agent_reading_an_item_is_kept(self):  # F220: "Read by" under your words, with no answer yet
+        get = lambda path: urllib.request.urlopen(self.base + path, timeout=20).read().decode()
+        self.call('api/op', json.dumps({'op': 'new', 'title': 'Dark mode', 'type': 'feature'}).encode(), 'application/json')
+        self.call('api/op', json.dumps({'op': 'input', 'text': 'Follow the system', 'scope': 'F1'}).encode(), 'application/json')
+        read = lambda: next(i for i in json.loads(get('api/state'))['items'] if i['n'] == 1).get('read', {})
+        get('F1?ui=1')  # the page itself is no agent
+        self.assertEqual(read(), {})
+        get('F1?by=codex')
+        self.assertEqual(set(read()), {'codex'})
+        self.call('api/op', json.dumps({'op': 'cfg', 'auto': True}).encode(), 'application/json')
+        self.call('api/op', json.dumps({'op': 'ack', 'ids': ['r1']}).encode(), 'application/json')
+        self.assertIn('F1', get('next?by=claude-code'))  # /next gave it: read too
+        self.assertEqual(set(read()), {'codex', 'claude-code'})
+        hub = taska.Hub(self.tmp.name, False)  # kept on disk
+        self.assertEqual(set(hub.projects['default'].reads[1]), {'codex', 'claude-code'})
+
     def test_transcription_preferences_for_every_project(self):  # F183
         def prefs(text=None):
             req = urllib.request.Request(f'http://127.0.0.1:{self.port}/api/voiceprefs', method='GET' if text is None else 'POST',
