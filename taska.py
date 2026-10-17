@@ -4349,6 +4349,8 @@ $('list').addEventListener('pointerleave', () => {
 // the image and the fold arrow keep their own taps. Nested subitems hang off an elbow line.
 function itemRow(it, depth = 0, group = []) {
   const c = code(it.n), files = filesOf(it), children = kids.get(it.n) || [], closed = CLOSED(it.status), talk = it.thread.length, docs = docsOf(it.n).length;
+  // Images count as images, other files as files; a voice note is not counted: its words are in the item (B223).
+  const isImg = f => (f.mime || '').startsWith('image/'), imgs = files.filter(isImg).length, other = files.filter(f => !isImg(f) && !(f.mime || '').startsWith('audio/')).length;
   const meta = [
     it.type === 'rule' ? '' : `<span class="${PRI_TEXT[it.pri]}">${it.pri}</span>`,
     needsYou(it) ? `<span class="font-semibold text-amber-700 dark:text-amber-400">${needLabel(it)}</span>` : it.reply && !closed ? '<span class="text-emerald-700 dark:text-emerald-400">Replied</span>' : '',
@@ -4362,7 +4364,8 @@ function itemRow(it, depth = 0, group = []) {
     children.length ? cnt('subitems', `${children.filter(k => CLOSED(k.status)).length}/${children.length}`, 'Subitems finished') : '',
     talk ? cnt('comment', talk, plural(talk, 'comment')) : '',
     docs ? cnt('file', docs, plural(docs, 'doc')) : '',
-    files.length ? cnt(files.some(f => (f.mime || '').startsWith('image/')) ? 'image' : 'file', files.length, plural(files.length, 'file')) : '',
+    imgs ? cnt('image', imgs, plural(imgs, 'image')) : '',
+    other ? cnt('file', other, plural(other, 'file')) : '',
   ].join('');
   const img = files.find(f => (f.mime || '').startsWith('image/'));
   const foldable = group.some(k => k.parent === it.n);  // its subitems are in this list
