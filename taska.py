@@ -3922,7 +3922,7 @@ __APP_HEAD__
     <div id="list" class="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-6 data-drop-out:bg-blue-50/60 dark:data-drop-out:bg-blue-400/5 lg:scrollbar-thin lg:scrollbar-gutter-stable lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70"><div class="px-6 py-16 text-center text-sm text-zinc-400">Loading…</div></div>
   </section>
 
-  <section id="inputsView" hidden class="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-6 lg:mask-b-from-[calc(100%-2rem)] lg:scrollbar-gutter-both lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70 lg:col-span-2 lg:col-start-1 lg:row-span-2 lg:row-start-3"></section>
+  <section id="inputsView" hidden class="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-6 lg:col-start-1 lg:row-span-2 lg:row-start-4 lg:border-r lg:border-zinc-200 lg:scrollbar-thin lg:scrollbar-gutter-stable lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:border-zinc-800 dark:lg:hover:scrollbar-thumb-zinc-400/70"></section>
 
   <section id="detailView" hidden class="flex min-h-0 flex-1 flex-col lg:col-start-2 lg:row-span-3 lg:row-start-2 lg:group-data-[compose]/app:row-span-1">
     <div id="goStrip" hidden class="flex h-11 shrink-0 items-center gap-3 border-b border-amber-200/70 bg-amber-50 px-4 text-[13px] dark:border-amber-400/15 dark:bg-amber-400/10"></div>
@@ -5493,6 +5493,7 @@ function renderDetail() {
   if (it && S.project) markSeen(it);  // T274 #5
   if (desk()) renderGoStrip();
   if (desk() && U.doc && !U.docEdit && docById(U.doc)) return docPane(docById(U.doc));
+  if (desk() && U.tab === 'inputs' && !D.page) return inputPane();
   if (!it) {  // the desktop's detail pane with nothing selected
     if (desk()) {
       const back = D.compose && D.prev && byN.has(D.prev);
@@ -5734,8 +5735,8 @@ function inputActs(r, cls = LINK_BTN) {
   const busy = S.org.busy === r.id || (!r.acked && S.org.on && !r.org), quiet = cls === LINK_BTN ? ' text-zinc-600 dark:text-zinc-300' : '';
   const now = (!r.acked && S.org.on && r.org && (!r.org.ok || r.org.undone) ? `<button data-act="retry" data-id="${r.id}" class="${cls}">${ico('loop', 'size-3.5', '2')}${r.org.undone ? 'Organize again' : 'Retry'}</button>` : '')
     + (!r.acked && !r.scope && !busy ? `<button data-act="make-item" data-id="${r.id}" class="${cls.replace(/text-zinc-500|hover:text-zinc-800/g, 'text-blue-600').replace(/dark:text-zinc-400|dark:hover:text-zinc-200/g, 'dark:text-blue-400')}">${ico('plus', 'size-3.5', '2')}Turn into item</button>` : '')
-    + `<button data-act="input-more" data-id="${r.id}" title="Edit, add more, move, delete…" aria-label="More for ${rcode(r.id)}" class="${cls}${quiet}">${ico('more', 'size-4')}</button>`;
-  return [now];  // T274 #16: what it became is in sight; the rest is behind ⋯
+    , more = `<button data-act="input-more" data-id="${r.id}" title="Edit, add more, move, delete…" aria-label="More for ${rcode(r.id)}" class="${cls}${quiet}">${ico('more', 'size-4')}</button>`;
+  return [now, more];  // T274 #16: what it became is in sight; the rest is behind ⋯
 }
 function inputMenu(b) {
   const r = byR.get(b.dataset.id);
@@ -5853,50 +5854,63 @@ function inputState(r) {  // -> [label, tone, icon]
 const long = r => r.text.length > 160 || r.text.split('\n').length > 4;  // show four lines, the rest on demand
 const dayOf = t => { const d = new Date(t), now = new Date(); return d.toDateString() === now.toDateString() ? 'Today' : new Date(now - 864e5).toDateString() === d.toDateString() ? 'Yesterday' : d.toLocaleDateString('en-US', {month: 'short', day: 'numeric'}); };
 // What you said, newest first, under day headers: your words in a light blue bubble, what became of them under it.
+// One input with what became of it and what you can do with it: a row of Inputs on the phone, the pane on the desktop
+function inputCard(r, pane = false) {
+  const [label, tone, icon] = inputState(r), scope = r.scope ? byN.get(r.scope) : null;
+  // The organizer's "Created B224" over a B224 chip named the item twice (T225 #18 follow-up): the chip says what was
+  // done with its item ("Created B224 …"), and the line above keeps only what no chip says.
+  const shown = r.moved ? [] : r.touched.filter(n => byN.has(n) && n !== r.scope), did = {}, rest = [];
+  for (const part of (r.org?.msg || '').split(' · ').map(p => p.trim()).filter(Boolean)) {
+    const m = /^(.+?) ([A-Z]\d+)$/.exec(part), n = m && parseRef(m[2]);
+    if (n && shown.includes(n)) did[n] ||= m[1]; else rest.push(part);  // the same item said again ("Updated R141 · Updated R141"): once
+  }
+  const org = !r.moved && r.org && !(r.acked && r.org.keep);
+  const told = p => p.toLowerCase() === label.toLowerCase() || (/^Left for your/.test(p) && /^Left for your/.test(label));  // the status at the top says it already (T225 #18 follow-up 2)
+  const left = rest.filter(p => !told(p));
+  const note = org && left.length ? `<div class="mt-1.5 flex min-h-5 items-center gap-1 text-xs ${r.org.ok ? 'text-zinc-500 dark:text-zinc-400' : 'text-red-600 dark:text-red-400'}">${ico('sparkle', 'size-3.5')}<span class="min-w-0">${esc(left.join(' · '))}</span></div>` : '';
+  const spark = org && !note && shown.some(n => did[n]) ? `<span class="grid h-8 shrink-0 place-items-center text-zinc-400 dark:text-zinc-500">${ico('sparkle', 'size-3.5')}</span>` : '';  // the organizer's mark, on the chips' first line
+  const chips = shown.map(n => `<button data-act="goto" data-n="${n}" class="${HIT} flex h-8 max-w-full min-w-0 items-center gap-1.5 rounded-lg bg-zinc-100 px-2 text-[13px] hover:bg-zinc-200/70 dark:bg-zinc-800 dark:hover:bg-zinc-700">${did[n] ? `<span class="shrink-0 text-zinc-500 dark:text-zinc-400">${esc(did[n])}</span>` : ''}<span class="font-mono text-xs font-bold ${TYPE_TEXT[byN.get(n).type]}">${code(n)}</span><span class="truncate">${esc(byN.get(n).title)}</span></button>`).join('');
+  const [now, more] = inputActs(r), parts = [now, more].filter(Boolean);  // T274 #16: on the line with what became of it, at its right
+  return `<article data-r="${r.id}" class="${pane ? 'rounded-xl transition-colors duration-700' : 'border-b border-zinc-100 px-4 py-2 transition-colors duration-700 dark:border-zinc-800/70'}"><div class="min-w-0">
+    <div class="flex min-h-5 items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400"><span class="shrink-0 font-mono">${rcode(r.id)}</span><span class="shrink-0 whitespace-nowrap">${when(r.t)}</span>${r.from === 'rules' ? '<span class="font-medium">as a rule</span>' : ''}
+      ${scope ? `<button data-act="goto" data-n="${scope.n}" class="relative min-w-0 truncate text-blue-600 after:absolute after:inset-x-0 after:-inset-y-3.5 hover:underline dark:text-blue-400">↳ ${code(scope.n)} ${esc(scope.title)}</button>` : ''}
+      <span class="ml-auto flex shrink-0 items-center gap-1 font-medium lg:hidden ${tone}">${icon}${label}</span>${more ? `<span class="-my-2 -mr-2 flex shrink-0 items-center lg:hidden">${more}</span>` : ''}</div>
+    <div data-hit ${long(r) ? `data-act="more-input" data-expand data-id="${r.id}"` : ''} ${voiceAttr(r)} class="mt-1.5 rounded-2xl rounded-tr-md bg-blue-50 px-3.5 py-2 text-[15px] leading-relaxed text-zinc-900 dark:bg-blue-400/10 dark:text-zinc-100 ${long(r) ? 'cursor-pointer' : ''}">
+      ${r.text ? rich(r.text, 'in' + r.id, long(r) && !U.moreInputs.has(r.id) ? 'max-h-28 overflow-hidden' : '') : ''}
+      ${long(r) ? `<button data-act="more-input" data-id="${r.id}" class="-my-2 flex h-11 items-center text-sm font-medium text-blue-600 hover:underline dark:text-blue-400">${U.moreInputs.has(r.id) ? 'Less' : 'More'}</button>` : ''}
+      ${r.files.length ? `<div class="mt-2 flex items-end gap-2 overflow-x-auto lg:scrollbar-thin">${thumbs(r.files, 'in' + r.id, 'size-11')}</div>` : ''}
+    </div>${now ? `<div class="mt-1 flex flex-wrap items-center gap-1 lg:hidden">${now}</div>` : ''}</div><div class="min-w-0 lg:pt-4">
+    <div class="hidden items-center gap-1.5 text-[13px] font-semibold lg:flex ${tone}">${icon}${label}${parts.length ? `<span class="-my-2 ml-auto flex items-center gap-1 font-normal">${parts.join('')}</span>` : ''}</div>
+    ${note}${chips ? `<div class="mt-1 flex items-start gap-1.5">${spark}<div class="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">${chips}</div></div>` : ''}
+  </div></article>`;
+}
 function renderInputs() {
   const words = searchWords(), v = $('inputsView');
-  // On the desktop the newest input sits at the bottom, next to the box you write in, as in a chat (F121); the page
-  // opens at the end and stays there while you are at the end. The phone keeps the newest on top.
-  const chat = desk(), atEnd = U.inputsEnd || v.scrollHeight - v.scrollTop - v.clientHeight < 48;
-  const rows = (chat ? [...S.inputs] : [...S.inputs].reverse()).filter(r => inputMatch(r, words)), more = searchHints(rows.length);  // more: A9
-  if (desk()) renderDeskHead();  // the title's count follows the search as you type (B18)
+  // T274 #9: Inputs is a list like the other tabs, the newest first: on the desktop the one you pick shows in the pane
+  // beside it, with what became of it; the phone shows each whole, as before.
+  const rows = [...S.inputs].reverse().filter(r => inputMatch(r, words)), more = searchHints(rows.length);  // more: A9
+  if (desk()) { renderDeskHead(); if (!rows.some(r => r.id === U.inSel)) U.inSel = rows[0]?.id || null; }
   let day = '';
-  parkBox(); $('inputsView').innerHTML = rows.length ? rows.map(r => {
-    const [label, tone, icon] = inputState(r), scope = r.scope ? byN.get(r.scope) : null, d = dayOf(r.t);
-    const head = d !== day ? `<div class="px-4 pt-2.5 pb-0.5 text-xs font-semibold text-zinc-500 lg:px-0 lg:pt-5 lg:pb-1 dark:text-zinc-400">${(day = d)}</div>` : '';
-    // The organizer's "Created B224" over a B224 chip named the item twice (T225 #18 follow-up): the chip says what was
-    // done with its item ("Created B224 …"), and the line above keeps only what no chip says.
-    const shown = r.moved ? [] : r.touched.filter(n => byN.has(n) && n !== r.scope), did = {}, rest = [];
-    for (const part of (r.org?.msg || '').split(' · ').map(p => p.trim()).filter(Boolean)) {
-      const m = /^(.+?) ([A-Z]\d+)$/.exec(part), n = m && parseRef(m[2]);
-      if (n && shown.includes(n)) did[n] ||= m[1]; else rest.push(part);  // the same item said again ("Updated R141 · Updated R141"): once
-    }
-    const org = !r.moved && r.org && !(r.acked && r.org.keep);
-    const told = p => p.toLowerCase() === label.toLowerCase() || (/^Left for your/.test(p) && /^Left for your/.test(label));  // the status at the top says it already (T225 #18 follow-up 2)
-    const left = rest.filter(p => !told(p));
-    const note = org && left.length ? `<div class="mt-1.5 flex min-h-5 items-center gap-1 text-xs ${r.org.ok ? 'text-zinc-500 dark:text-zinc-400' : 'text-red-600 dark:text-red-400'}">${ico('sparkle', 'size-3.5')}<span class="min-w-0">${esc(left.join(' · '))}</span></div>` : '';
-    const spark = org && !note && shown.some(n => did[n]) ? `<span class="grid h-8 shrink-0 place-items-center text-zinc-400 dark:text-zinc-500">${ico('sparkle', 'size-3.5')}</span>` : '';  // the organizer's mark, on the chips' first line
-    const chips = shown.map(n => `<button data-act="goto" data-n="${n}" class="${HIT} flex h-8 max-w-full min-w-0 items-center gap-1.5 rounded-lg bg-zinc-100 px-2 text-[13px] hover:bg-zinc-200/70 dark:bg-zinc-800 dark:hover:bg-zinc-700">${did[n] ? `<span class="shrink-0 text-zinc-500 dark:text-zinc-400">${esc(did[n])}</span>` : ''}<span class="font-mono text-xs font-bold ${TYPE_TEXT[byN.get(n).type]}">${code(n)}</span><span class="truncate">${esc(byN.get(n).title)}</span></button>`).join('');
-    const parts = inputActs(r).filter(Boolean);  // T274 #16: on the line with what became of it, at its right
-    // On the desktop each input is a ledger line: what you said on the left, what became of it on the right.
-    return `${head}<article data-r="${r.id}" class="border-b border-zinc-100 px-4 py-2 transition-colors duration-700 lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-10 lg:px-0 lg:py-4 dark:border-zinc-800/70"><div class="min-w-0">
-      <div class="flex min-h-5 items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400"><span class="shrink-0 font-mono">${rcode(r.id)}</span><span class="shrink-0 whitespace-nowrap">${when(r.t)}</span>${r.from === 'rules' ? '<span class="font-medium">as a rule</span>' : ''}
-        ${scope ? `<button data-act="goto" data-n="${scope.n}" class="relative min-w-0 truncate text-blue-600 after:absolute after:inset-x-0 after:-inset-y-3.5 hover:underline dark:text-blue-400">↳ ${code(scope.n)} ${esc(scope.title)}</button>` : ''}
-        <span class="ml-auto flex shrink-0 items-center gap-1 font-medium lg:hidden ${tone}">${icon}${label}</span>${parts.length ? `<span class="-my-2 -mr-2 flex shrink-0 items-center lg:hidden">${parts.join('')}</span>` : ''}</div>
-      <div data-hit ${long(r) ? `data-act="more-input" data-expand data-id="${r.id}"` : ''} ${voiceAttr(r)} class="mt-1.5 rounded-2xl rounded-tr-md bg-blue-50 px-3.5 py-2 text-[15px] leading-relaxed text-zinc-900 dark:bg-blue-400/10 dark:text-zinc-100 ${long(r) ? 'cursor-pointer' : ''}">
-        ${r.text ? rich(r.text, 'in' + r.id, long(r) && !U.moreInputs.has(r.id) ? 'max-h-28 overflow-hidden' : '') : ''}
-        ${long(r) ? `<button data-act="more-input" data-id="${r.id}" class="-my-2 flex h-11 items-center text-sm font-medium text-blue-600 hover:underline dark:text-blue-400">${U.moreInputs.has(r.id) ? 'Less' : 'More'}</button>` : ''}
-        ${r.files.length ? `<div class="mt-2 flex items-end gap-2 overflow-x-auto lg:scrollbar-thin">${thumbs(r.files, 'in' + r.id, 'size-11')}</div>` : ''}
-      </div></div><div class="min-w-0 lg:pt-6">
-      <div class="hidden items-center gap-1.5 text-[13px] font-semibold lg:flex ${tone}">${icon}${label}${parts.length ? `<span class="-my-2 ml-auto flex items-center gap-1 font-normal">${parts.join('')}</span>` : ''}</div>
-      ${note}${chips ? `<div class="mt-1 flex items-start gap-1.5">${spark}<div class="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">${chips}</div></div>` : ''}
-    </div></article>`;
+  parkBox(); v.innerHTML = rows.length ? rows.map(r => {
+    const d = dayOf(r.t), head = d !== day ? `<div class="px-4 pt-2.5 pb-0.5 text-xs font-semibold text-zinc-500 dark:text-zinc-400">${(day = d)}</div>` : '';
+    return head + (desk() ? inputRow(r) : inputCard(r));
   }).join('') + (more ? `<div class="flex flex-col py-4">${more}</div>` : '') : U.outbox.length ? '' : EMPTY(words.length ? 'No matching inputs' : 'No inputs yet.', more ? `<span class="mt-3 flex flex-col">${more}</span>` : '');
-  if (U.outbox.length && !words.length) $('inputsView').innerHTML = chat ? $('inputsView').innerHTML + outboxRows(true) : outboxRows() + $('inputsView').innerHTML;
+  if (U.outbox.length && !words.length) v.innerHTML = outboxRows() + v.innerHTML;
   markHits(v);
-  if (chat && atEnd) requestAnimationFrame(() => { v.scrollTop = v.scrollHeight; });
   U.inputsEnd = false;
-  if (desk() && (rows.length || U.outbox.length)) $('inputsView').innerHTML = `<div class="mx-auto max-w-5xl px-8 pb-6"><div class="sticky top-0 z-10 grid grid-cols-[minmax(0,1fr)_20rem] gap-10 border-b border-zinc-200 bg-white pt-5 pb-2 text-[11px] font-semibold tracking-wider text-zinc-400 uppercase dark:border-zinc-800 dark:bg-zinc-950"><span>You said</span><span>What became of it</span></div>${$('inputsView').innerHTML}</div>`;
+}
+function inputRow(r) {  // the desktop's list of inputs: what you said in two lines, where it stands
+  const [label, tone] = inputState(r), said = r.text ? r.text.replace(/\s+/g, ' ').trim() : r.files.some(f => (f.mime || '').startsWith('audio/')) ? 'Voice note' : plural(r.files.length, 'file');
+  return `<article data-ri="${r.id}" class="border-b border-zinc-100 dark:border-zinc-800/70"><div data-act="in-pick" data-id="${r.id}" ${U.inSel === r.id ? 'aria-current="true"' : ''} class="cursor-pointer px-4 py-2.5 ${rowTint()}">
+    <div class="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400"><span class="font-mono">${rcode(r.id)}</span><span>${when(r.t)}</span><span class="ml-auto font-medium ${tone}">${label}</span></div>
+    <p data-hit class="mt-0.5 line-clamp-2 text-[15px] leading-snug">${esc(said)}</p></div></article>`;
+}
+function inputPane() {  // T274 #9: the input picked in the list, whole
+  const r = byR.get(U.inSel), body = $('detailBody');
+  $('itemMenuBtn').hidden = true; $('dActs').innerHTML = ''; $('dNav').innerHTML = '';
+  $('dHead').innerHTML = r ? `<span class="font-mono text-sm font-bold">${rcode(r.id)}</span><span class="text-sm text-zinc-500 dark:text-zinc-400">${when(r.t)}</span>` : '';
+  parkBox(); body.innerHTML = r ? `<div class="mx-auto w-full max-w-[46rem] px-8 pt-6 pb-12">${inputCard(r, true)}</div>` : `<div class="grid h-full place-items-center p-8 text-center text-[15px] text-zinc-500 dark:text-zinc-400">Pick an input, or write one below</div>`;
+  markHits(body);
 }
 
 // ---------------------------------------------------------------- composer
@@ -5954,7 +5968,7 @@ const footRoom = () => BOX.parentNode === $('foot') ? $('foot').offsetHeight : 0
 function boxAnchor() {
   if (U.prefsEdit) return document.querySelector('#projectBody [data-prefs-slot]');
   if (U.amend) return U.amend.mode === 'dc' ? document.querySelector(`[data-dc="${U.amend.id}"]`)
-    : document.querySelector(`#detailBody [data-src="${U.amend.id}"], #inputsView [data-r="${U.amend.id}"], #foot [data-src="${U.amend.id}"]`);
+    : document.querySelector(`#detailBody [data-src="${U.amend.id}"], #inputsView [data-r="${U.amend.id}"], #detailBody [data-r="${U.amend.id}"], #foot [data-src="${U.amend.id}"]`);
   const d = docOpen();
   if (!d) return null;
   const root = desk() ? $('detailBody') : $('dlgBody'), t = docTarget();
@@ -6256,7 +6270,7 @@ async function sendInput(o) {
 function showSent(rid, scope) {
   if (!rid) return;
   const el = scope && U.open && code(U.open) === scope ? document.querySelector(`#detailBody [data-src="${rid}"]`)
-    : U.tab === 'inputs' && !U.open ? document.querySelector(`#inputsView [data-r="${rid}"]`) : null;
+    : U.tab === 'inputs' && (desk() || !U.open) ? (desk() && (U.inSel = rid, renderInputs(), renderDetail()), document.querySelector(`:is(#inputsView, #detailBody) [data-r="${rid}"]`)) : null;
   if (!el) return;
   el.scrollIntoView({block: 'nearest'});
   el.classList.add('bg-blue-50', 'dark:bg-blue-400/10');
@@ -7407,9 +7421,11 @@ const ACT = {
     const id = b.dataset.id;
     closeDialog(); if (D.page && !desk()) keepPlace(); if (D.page) D.page = null;  // on the phone a page of Settings keeps its step and its place: Back comes back to it (B150)
     if (!desk() && U.open) { stashEdit(); U.open = null; U.editing = null; U.subFor = null; showView(); [$('list').scrollTop, $('inputsView').scrollTop] = U.listTop || [0, 0]; }  // the phone leaves the item page for Inputs; Back comes back to it (B152)
+    if (desk()) U.inSel = id;  // T274 #9: picked, in the pane
     if (U.tab !== 'inputs') setTab('inputs'); else { render(); if (!desk()) writeURL(true); }
     requestAnimationFrame(() => requestAnimationFrame(() => {
-      const a = document.querySelector(`#inputsView [data-r="${id}"]`);
+      document.querySelector(`#inputsView [data-ri="${id}"]`)?.scrollIntoView({block: 'nearest'});
+      const a = document.querySelector(`:is(#inputsView, #detailBody) [data-r="${id}"]`);
       if (!a) return;
       a.scrollIntoView({block: 'center'}); a.classList.add('bg-blue-50', 'dark:bg-blue-400/10');
       setTimeout(() => a.classList.remove('bg-blue-50', 'dark:bg-blue-400/10'), 1600);
@@ -7518,7 +7534,8 @@ const ACT = {
     writeURL(true, D.full ? {n: U.open, full: true, link: true} : undefined);
   },
   more: b => { U.more.add(Number(b.dataset.n)); renderDetail(); },
-  'more-input': b => { const id = b.dataset.id; if (U.moreInputs.has(id)) U.moreInputs.delete(id); else U.moreInputs.add(id); renderInputs(); if (desk() && D.compose) renderDetail(); },
+  'more-input': b => { const id = b.dataset.id; if (U.moreInputs.has(id)) U.moreInputs.delete(id); else U.moreInputs.add(id); renderInputs(); if (desk()) renderDetail(); },
+  'in-pick': b => { U.inSel = b.dataset.id; renderInputs(); renderDetail(); renderComposer(); },  // T274 #9
   edit: b => {
     closeDialog(); const n = U.editing = Number(b.dataset.n); renderDetail();
     const d = kept('edits')[n], body = $('eBody');
@@ -7833,19 +7850,18 @@ $('dlg').addEventListener('pointercancel', dragEnd);
 // below 1024px is not touched by any of this.
 
 function showDesk() {
-  const inputs = U.tab === 'inputs', page = !!D.page, full = D.full && !!U.open && !inputs && !page, wide = inputs || full;
+  const inputs = U.tab === 'inputs', page = !!D.page, full = D.full && !!U.open && !inputs && !page, wide = full;  // T274 #9: Inputs is a list and a pane too
   $('headNormal').hidden = true; $('headSearch').hidden = false;
   $('mainHead').hidden = page || full;
   $('itemsView').hidden = page || inputs || full;
   $('inputsView').hidden = page || !inputs;
-  $('detailView').hidden = page || inputs;
+  $('detailView').hidden = page;
   $('projectView').hidden = !page; $('projectNav').hidden = $('projectBody').hidden = false;  // the phone shows one of the two at a time
   $('foot').hidden = page && !U.prefsEdit;  // the one box shows on Voice spellings while you edit the preferences (F183)
   $('projectBody').classList.toggle('pb-64', page && !!U.prefsEdit);  // and the page's end stays clear of it
   $('deskFilters').hidden = page || full || inputs || !(D.filters || filtersSet().length);
-  $('listGrip').hidden = page || full || inputs;
+  $('listGrip').hidden = page || full;
   $('app').toggleAttribute('data-compose', D.compose && !page && !inputs);  // New input: the one box moves to the middle (B73)
-  $('mainHead').classList.toggle('lg:col-span-2', inputs);
   for (const el of [$('detailView'), $('foot')]) {  // one wide page: the inputs, or an item at full width
     el.classList.toggle('lg:col-start-1', wide); el.classList.toggle('lg:col-start-2', !wide); el.classList.toggle('lg:col-span-2', wide);
   }
