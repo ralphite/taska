@@ -400,6 +400,7 @@ class Store:
                 inp["org"] = None if e.get("retry") else {"ok": e["ok"], "msg": e["msg"], "t": e["t"], "keep": e.get("keep", "Left for your coding agent" in e["msg"]), "changed": e.get("changed", False)}
         elif k == "cfg":
             self.cfg.update(e["f"])
+            self.cfg["auto"] = True  # T260: agents always keep going; an old "off" in the log no longer stops them
         elif k == "doc":
             d = self.docs.get(e["d"])
             if not d:
@@ -1239,7 +1240,9 @@ class Store:
             self.emit({"k": name, "d": d["d"], "id": cid, "by": by})
             return f"ok D{d['d']} comment {cid} {'deleted' if name == 'dcdel' else 'restored'}", f"{'Deleted' if name == 'dcdel' else 'Restored'} a comment on D{d['d']}"
         if name == "cfg":
-            f = {"auto": bool(op["auto"])} if "auto" in op else {}
+            if "auto" in op and "name" not in op:  # T260: there is no switch any more
+                return f"ok {self.mode()} (always on)", ""
+            f = {}
             if "name" in op:  # the project's name for people (F173); its address stays
                 f["name"] = title_of(op["name"])
             if not f:
@@ -4779,8 +4782,7 @@ function zone(kind, label, n, right = '') {
   </div>`;
 }
 const goThroughBtn = () => `<button data-act="go-through" class="-my-1 ml-auto flex h-11 items-center gap-0.5 rounded-full pr-2 pl-3 text-[13px] font-semibold text-amber-800 hover:bg-amber-100 dark:text-amber-300 dark:hover:bg-amber-400/15">Go through${ico('right', 'size-4', '2.25')}</button>`;
-const keepGoingNote = () => `<button data-act="agent-info" class="-my-1 ml-auto flex h-11 items-center gap-1.5 rounded-full pr-2.5 pl-3 text-xs font-semibold text-zinc-600 hover:bg-zinc-200/60 dark:text-zinc-300 dark:hover:bg-zinc-800">${ico('loop', `size-3.5 ${S.cfg?.auto ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-400 dark:text-zinc-500'}`, '2')}Keep going ${S.cfg?.auto ? 'on' : 'off'}${ico('right', 'size-3.5 text-zinc-400 dark:text-zinc-500', '2')}</button>`;  // B158
-const keepGoingSwitch = () => `<button data-act="auto" aria-pressed="${!!S.cfg?.auto}" title="Agents take the next item without stopping" class="group -my-1 ml-auto flex h-11 items-center gap-2 rounded-full pr-2.5 pl-3 text-xs font-semibold text-zinc-600 hover:bg-zinc-200/60 dark:text-zinc-300 dark:hover:bg-zinc-800">${ico('loop', 'size-3.5 text-emerald-600 dark:text-emerald-400', '2')}Keep going
+// T260: no Keep going switch: agents always take the next item
     <span class="relative h-5.5 w-9.5 shrink-0 rounded-full bg-zinc-300 transition-colors group-aria-pressed:bg-emerald-500 dark:bg-zinc-600 dark:group-aria-pressed:bg-emerald-500"><span class="absolute top-0.75 left-0.75 size-4 rounded-full bg-white shadow-sm transition-transform group-aria-pressed:translate-x-4"></span></span></button>`;
 const archiveAllBtn = n => `<button data-act="archive-all" class="group/arch -my-1 ml-auto flex h-11 items-center pr-2"><span class="inline-flex h-8 items-center gap-1.5 rounded-full bg-emerald-50 px-3 text-[13px] font-semibold text-emerald-800 ring-1 ring-emerald-600/20 ring-inset group-hover/arch:bg-emerald-100 dark:bg-emerald-400/10 dark:text-emerald-300 dark:ring-emerald-400/25 dark:group-hover/arch:bg-emerald-400/20">${ico('archive', 'size-4')}Archive ${n}</span></button>`;
 
@@ -5535,7 +5537,7 @@ function renderItems() {
     const queue = queued.filter(it => it.when !== 'later'), later = queued.filter(it => it.when === 'later');  // F212: Later is its own group, under the queue
     const done = rows.filter(it => CLOSED(it.status) && !it.archived && !settled(it)), arch = rows.filter(it => it.archived);
     html = needsBand(needs, going)
-      + (queue.length ? zone('queue', 'Agent queue', queue.length, desk() ? keepGoingSwitch() : keepGoingNote()) + tree(queue) : '')  // what agents take
+      + (queue.length ? zone('queue', 'Agent queue', queue.length, '') + tree(queue) : '')  // what agents take
       + (later.length ? zone('later', 'Later', later.length, `<span class="hidden text-xs font-medium text-zinc-500 lg:inline dark:text-zinc-400">· agents wait until it is back to now</span>`) + tree(later, 'later') : '')
       + (U.undoArch ? `<div ${hold}><div class="flex items-center gap-3 border-b border-blue-100 bg-blue-50 py-2 pr-2 pl-4 dark:border-blue-400/15 dark:bg-blue-400/10">
           ${ico('archive', 'size-5 text-blue-600 dark:text-blue-400')}
@@ -7167,14 +7169,6 @@ const searchMode = on => {
   renderItems(); if (U.tab === 'inputs') renderInputs();
 };
 const ACT = {
-  auto: () => {  // Keep going: at once, with Undo and Z (T113 A7)
-    const on = !S.cfg?.auto;
-    let run;
-    const set = to => optimistic([{cfg: {auto: to}}], () => op({op: 'cfg', auto: to}), ex => notSaved(ex, to === on ? () => { if (!!S.cfg?.auto !== on) ACT.auto(); } : run));
-    run = pushUndo(`Keep going ${on ? 'on' : 'off'}`, () => { toast(`Keep going is ${on ? 'off' : 'on'} again`); return set(!on); });
-    set(on).then(ok => { if (!ok) forget(run); });
-    renderDrawerSettings(); toast(on ? 'Keep going is on: your agent works down the list' : 'Keep going is off: your agent stops after the current item', run);
-  },
   search: () => searchMode(!U.searching),
   'search-cancel': () => searchMode(false),  // also a search that came with the address or a tab (B152)
   'search-clear': () => { clearSearch(); $('q').focus(); },
@@ -8337,7 +8331,6 @@ const pBox = (t, mono = true) => `<div class="mt-3 rounded-xl bg-zinc-100 px-3.5
 const pCopy = (t, label, main = false) => `<button data-act="copy-text" data-text="${esc(t)}" class="${main ? PRIMARY : SECOND} mt-3">${ico('copy', main ? 'size-4.5' : 'size-4')}${label}</button>`;
 const pRuled = html => `<div class="border-t border-zinc-200 dark:border-zinc-800">${html}</div>`;
 const P_LOADING = pRuled('<p class="py-6 text-sm text-zinc-400">Loading…</p>');
-const keepGoingToggle = () => `<button data-act="auto" aria-pressed="${!!S.cfg?.auto}" aria-label="Keep going" class="group relative h-6.5 w-11 shrink-0 rounded-full after:absolute after:inset-x-0 after:-inset-y-[9px] bg-zinc-300 transition-colors hover:brightness-95 aria-pressed:bg-emerald-500 dark:bg-zinc-600 dark:hover:brightness-125"><span class="absolute top-0.75 left-0.75 size-5 rounded-full bg-white shadow transition-transform group-aria-pressed:translate-x-4.5"></span></button>`;
 const P_BTN = 'inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-zinc-100';
 const dayShort = t => t ? new Date(t).toLocaleDateString('en-US', {month: 'short', day: 'numeric'}) : '';
 const PBODY = {
@@ -8347,7 +8340,6 @@ const PBODY = {
   agents: () => {
     const cmd = `curl -s ${BASE}/connect | sh`, far = S.remote && S.remote !== BASE ? `curl -s ${S.remote}/connect | sh` : '', ask = agentAsk(), seen = agentsSeen();
     return pRuled(`<div class="py-6">${agentCard()}</div>`)
-      + pSetting('Keep going', 'Agents take the next item without stopping. Off: they stop after the current one. The same switch sits on the Agent queue in the list.', keepGoingToggle())
       + pPart('Connect a machine', `Once on each machine where a coding agent works, in the project's folder. It saves this project's address in <code class="font-mono text-[13px]">.taska</code> and installs the Taska skill for Claude Code, Codex and Antigravity.`, pBox(cmd) + pCopy(cmd, 'Copy command', true), 'pConnect')
       + (far ? pPart('From another network', 'On a machine outside this network, run this one instead. It carries the key.', pBox(far) + pCopy(far, 'Copy')) : '')
       + pPart('Or send it to the agent', "Open your coding agent in the project's folder and send it this. It reads the rest from Taska.", pBox(ask, false) + pCopy(ask, 'Copy'))
@@ -8445,7 +8437,7 @@ function phoneIndex() {
     return `<a href="${P}${path}" data-act="psec" data-sec="${k}" class="flex min-h-12 items-center gap-3 px-3.5 py-2.5 text-[15px]">${ico(icon, 'size-5 shrink-0 text-zinc-500 dark:text-zinc-400')}<span class="shrink-0">${label}</span><span class="ml-auto flex min-w-0 items-center gap-1.5 text-[13px] text-zinc-500 tabular-nums dark:text-zinc-400">${right}</span>${ico('right', 'size-4 shrink-0 text-zinc-300 dark:text-zinc-600')}</a>`; };
   return phHead('Settings')
     + phLabel(`<span class="shrink-0">This project ·</span>${projTile(S.project || HERE, 'size-4 rounded text-[9px]')}<span class="truncate font-semibold text-zinc-700 dark:text-zinc-200">${esc(projTitle())}</span>`)
-    + `<div class="${PH_GROUP}">${PSEC_THIS.map(row).join('')}</div>` + phNote('Keep going and connecting an agent are in Agents. The agent pill on the list opens it too.')
+    + `<div class="${PH_GROUP}">${PSEC_THIS.map(row).join('')}</div>` + phNote('Connecting an agent is in Agents. The agent pill on the list opens it too.')
     + phLabel('All projects') + `<div class="${PH_GROUP}">${Object.keys(PSEC).filter(k => !PSEC_THIS.includes(k)).map(row).join('')}</div>` + phNote('Projects: new, rename, delete and restore.');
 }
 function phoneSection(sec) {
