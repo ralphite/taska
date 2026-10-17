@@ -5412,7 +5412,9 @@ function renderItems() {
   renderFilters();
   if (holding()) { patchList(); return syncNeeds(); }  // B124: rows hold still under the pointer after you act on one
   let html = '';
-  if (!S.items.length) {
+  if (!S.items.length && U.tab === 'rules') html = EMPTY('No rules yet.<br>A rule is a standing instruction for the agents here: write one in the box below.');  // T233 #2
+  else if (!S.items.length && U.tab === 'archive') html = EMPTY('Nothing archived yet.<br>Finished items you archive show here.');
+  else if (!S.items.length) {
     html = EMPTY(`No items yet.<br>Write your first thought below${S.org.on ? ' and the organizer turns it into items' : ' and your coding agent turns it into items'}.`, `<br><button data-act="guide" class="mt-3 h-11 text-blue-600 hover:underline dark:text-blue-400">Connect a coding agent</button>`);
   } else if (!rows.length && filtered()) {
     const more = searchHints(0);
