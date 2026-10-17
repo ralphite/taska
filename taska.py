@@ -4700,7 +4700,10 @@ const unread = it => { const m = lastAgentMsg(it), s = seenMap(); return !!m && 
 const unreadCount = () => S.items.filter(it => !it.merged_into && unread(it)).length;
 function markSeen(it) {
   const m = lastAgentMsg(it);
-  if (m && unread(it)) { seenMap()[it.n] = m.t; saveSeen(); }
+  if (!m || !unread(it)) return;
+  seenMap()[it.n] = m.t; saveSeen();
+  document.querySelector(`#list article[data-n="${it.n}"] [title="New from an agent"]`)?.remove();  // the list was drawn first: its dot goes now
+  if (desk()) renderSideFoot();
 }
 // One plain line of what the agent said: the conclusion it leads with (T58 #5).
 const oneLine = t => (String(t || '').split('\n').map(l => l.replace(/^\s*(#+|>|[-*+]\s+(\(|\[)[ xX]?(\)|\])|[-*+]|\d+[.)])\s*/, '').replace(/[*`]/g, '').trim()).find(Boolean) || '');
@@ -5941,7 +5944,7 @@ const dayOf = t => { const d = new Date(t), now = new Date(); return d.toDateStr
 // What you said, newest first, under day headers: your words in a light blue bubble, what became of them under it.
 // One input with what became of it and what you can do with it: a row of Inputs on the phone, the pane on the desktop
 function inputCard(r, pane = false) {
-  const [label, tone, icon] = inputState(r), scope = r.scope ? byN.get(r.scope) : null;
+  const [label, tone, icon] = inputState(r), scope = r.scope ? byN.get(r.scope) : null, fold = !pane && long(r);  // T274 #9: the pane shows it whole
   // The organizer's "Created B224" over a B224 chip named the item twice (T225 #18 follow-up): the chip says what was
   // done with its item ("Created B224 …"), and the line above keeps only what no chip says.
   const shown = r.moved ? [] : r.touched.filter(n => byN.has(n) && n !== r.scope), did = {}, rest = [];
@@ -5957,12 +5960,12 @@ function inputCard(r, pane = false) {
   const chips = shown.map(n => `<button data-act="goto" data-n="${n}" class="${HIT} flex h-8 max-w-full min-w-0 items-center gap-1.5 rounded-lg bg-zinc-100 px-2 text-[13px] hover:bg-zinc-200/70 dark:bg-zinc-800 dark:hover:bg-zinc-700">${did[n] ? `<span class="shrink-0 text-zinc-500 dark:text-zinc-400">${esc(did[n])}</span>` : ''}<span class="font-mono text-xs font-bold ${TYPE_TEXT[byN.get(n).type]}">${code(n)}</span><span class="truncate">${esc(byN.get(n).title)}</span></button>`).join('');
   const [now, more] = inputActs(r), parts = [now, more].filter(Boolean);  // T274 #16: on the line with what became of it, at its right
   return `<article data-r="${r.id}" class="${pane ? 'rounded-xl transition-colors duration-700' : 'border-b border-zinc-100 px-4 py-2 transition-colors duration-700 dark:border-zinc-800/70'}"><div class="min-w-0">
-    <div class="flex min-h-5 items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400"><span class="shrink-0 font-mono">${rcode(r.id)}</span><span class="shrink-0 whitespace-nowrap">${when(r.t)}</span>${r.from === 'rules' ? '<span class="font-medium">as a rule</span>' : ''}
+    <div class="flex min-h-5 items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">${pane ? '' : `<span class="shrink-0 font-mono">${rcode(r.id)}</span><span class="shrink-0 whitespace-nowrap">${when(r.t)}</span>`}${r.from === 'rules' ? '<span class="font-medium">as a rule</span>' : ''}
       ${scope ? `<button data-act="goto" data-n="${scope.n}" class="relative min-w-0 truncate text-blue-600 after:absolute after:inset-x-0 after:-inset-y-3.5 hover:underline dark:text-blue-400">↳ ${code(scope.n)} ${esc(scope.title)}</button>` : ''}
       <span class="ml-auto flex shrink-0 items-center gap-1 font-medium lg:hidden ${tone}">${icon}${label}</span>${more ? `<span class="-my-2 -mr-2 flex shrink-0 items-center lg:hidden">${more}</span>` : ''}</div>
-    <div data-hit ${long(r) ? `data-act="more-input" data-expand data-id="${r.id}"` : ''} ${voiceAttr(r)} class="mt-1.5 rounded-2xl rounded-tr-md bg-blue-50 px-3.5 py-2 text-[15px] leading-relaxed text-zinc-900 dark:bg-blue-400/10 dark:text-zinc-100 ${long(r) ? 'cursor-pointer' : ''}">
-      ${r.text ? rich(r.text, 'in' + r.id, long(r) && !U.moreInputs.has(r.id) ? 'max-h-28 overflow-hidden' : '') : ''}
-      ${long(r) ? `<button data-act="more-input" data-id="${r.id}" class="-my-2 flex h-11 items-center text-sm font-medium text-blue-600 hover:underline dark:text-blue-400">${U.moreInputs.has(r.id) ? 'Less' : 'More'}</button>` : ''}
+    <div data-hit ${fold ? `data-act="more-input" data-expand data-id="${r.id}"` : ''} ${voiceAttr(r)} class="mt-1.5 rounded-2xl rounded-tr-md bg-blue-50 px-3.5 py-2 text-[15px] leading-relaxed text-zinc-900 dark:bg-blue-400/10 dark:text-zinc-100 ${fold ? 'cursor-pointer' : ''}">
+      ${r.text ? rich(r.text, 'in' + r.id, fold && !U.moreInputs.has(r.id) ? 'max-h-28 overflow-hidden' : '') : ''}
+      ${fold ? `<button data-act="more-input" data-id="${r.id}" class="-my-2 flex h-11 items-center text-sm font-medium text-blue-600 hover:underline dark:text-blue-400">${U.moreInputs.has(r.id) ? 'Less' : 'More'}</button>` : ''}
       ${r.files.length ? `<div class="mt-2 flex items-end gap-2 overflow-x-auto lg:scrollbar-thin">${thumbs(r.files, 'in' + r.id, 'size-11')}</div>` : ''}
     </div>${now ? `<div class="mt-1 flex flex-wrap items-center gap-1 lg:hidden">${now}</div>` : ''}</div><div class="min-w-0 lg:pt-4">
     <div class="hidden items-center gap-1.5 text-[13px] font-semibold lg:flex ${tone}">${icon}${label}${parts.length ? `<span class="-my-2 ml-auto flex items-center gap-1 font-normal">${parts.join('')}</span>` : ''}</div>
@@ -6479,6 +6482,7 @@ async function finishRec(andSend, kept) {
   if (!blob) return;
   if (ms < 800 || !blob.size) return toast('Too short, discarded');
   const label = vc && vcQuote(vc, key);  // F184: the quote first, then its words
+  if (vc && U.doc === vc.d && vc.key) { U.docQuote = {key: vc.key, text: vc.quote}; U.docSel = new Set(); U.docReply = null; }  // T274 #3: the box stays by the words you spoke about
   const ext = blob.type.includes('mp4') ? 'm4a' : blob.type.includes('ogg') ? 'ogg' : 'webm';
   // B165: the note is in the box at once and the box is yours: type, send. Its words come when they come: into the
   // box where you recorded, or, if you sent it already, onto that message (the server adds them). T101: from the
@@ -8120,8 +8124,8 @@ function saidRow(r, k, last) {
   // one line, then what every input has.
   const acts = (busy ? '<span class="h-7 w-44 animate-pulse rounded-lg bg-zinc-100 dark:bg-zinc-800"></span>' : '')
     + (r.org && !r.org.ok ? `<span class="min-w-0 basis-full truncate text-[13px] text-red-600/80 dark:text-red-400/80">${esc(r.org.msg)}</span>` : '')
-    + (([now, more]) => (now ? `<div class="flex basis-full flex-wrap items-center gap-1">${now}</div>` : '') + (more ? `<span class="ml-auto">${more}</span>` : ''))(inputActs(r, SMALL_BTN));
-  return saidStep(DOT[dotOf(r)], bubble, `<span class="font-mono">${rcode(r.id)}</span> · ${when(r.t)}${r.from === 'rules' ? ' · as a rule' : ''}`, `<span class="mr-1 text-[13px] font-semibold ${tone}">${label}</span>${chips}${acts}`, last, `data-expand data-id="${r.id}" ${voiceAttr(r)}`);
+    , [now, more] = inputActs(r, SMALL_BTN);  // T274 #16: ⋯ at the end of the state's line; what its state allows under it
+  return saidStep(DOT[dotOf(r)], bubble, `<span class="font-mono">${rcode(r.id)}</span> · ${when(r.t)}${r.from === 'rules' ? ' · as a rule' : ''}`, `<span class="mr-1 text-[13px] font-semibold ${tone}">${label}</span>${more ? `<span class="-my-1 ml-auto">${more}</span>` : ''}<div class="flex basis-full flex-wrap items-center gap-1.5 empty:hidden">${chips}${acts}${now || ''}</div>`, last, `data-expand data-id="${r.id}" ${voiceAttr(r)}`);
 }
 function outboxStep(q, last) {  // still on its way (F85)
   const state = q.failed ? 'Not sent' : q.files.some(f => !f.f && !f.failed) ? 'Uploading…' : 'Sending…';  // the words never hold it up (B165)
@@ -9506,6 +9510,7 @@ document.addEventListener('keydown', e => {
     if (U.prefsEdit && !(document.activeElement === $('text') && $('text').value.trim() && desk())) return cancelPrefs();  // F183
     if (U.doc && U.docCircle) { U.docCircle = false; return renderDoc(); }
     if (U.doc && (U.docQuote || U.docSel.size || U.docReply)) return ACT['doc-unpick']();  // first Escape drops the selection
+    if (desk() && U.doc && U.docEdit && $('overlay').hidden) { e.preventDefault(); return closeDoc(); }  // T274 #11: editing in the pane: Esc goes back to reading, the edit kept as a draft
     if (desk() && U.doc && !U.docEdit && $('overlay').hidden && D.full && !/INPUT|TEXTAREA/.test(document.activeElement.tagName)) return fullWidth(false);  // one level: full width first (T113 B20)
     if (desk() && U.doc && !U.docEdit && $('overlay').hidden && !/INPUT|TEXTAREA/.test(document.activeElement.tagName)) return closeDoc();  // then back to the item
     if (!$('overlay').hidden) return closeDialog();
