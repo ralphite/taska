@@ -6731,12 +6731,13 @@ const VIEW_KEYS = ['q', 'type', 'when', 'status', 'pri'];
 function setTab(t) {
   const was = U.tab, away = desk() && (t !== was || !!D.page || D.compose);  // another tab, or out of This project or New input: a step Back undoes (B9)
   if (away) keepPlace();
+  let carried = false;  // a search came along: the tab opens at the top of its results, not where you left it (T225 #13 follow-up)
   if (t !== was) {  // B130: each tab keeps its own search and filters; nothing leaks from one tab to another
     const words = U.q.trim() ? U.q : '';  // T225 #13: but words in the search box go along, as the tabs' counts promised
     U.tabView[was] = Object.fromEntries(VIEW_KEYS.map(k => [k, U[k]]));
     const v = U.tabView[t] || {};
     for (const k of VIEW_KEYS) U[k] = v[k] ?? (k === 'q' ? '' : 'all');
-    if (words) U.q = words;
+    if (words) { U.q = words; carried = true; }
     $('q').value = U.q; qSync();
   }
   U.asRule = null; U.amend = null; U.correct = null; U.prefsEdit = null; U.goBack = null; if (t === 'inputs' && was !== 'inputs') U.inputsEnd = true;
@@ -6752,11 +6753,11 @@ function setTab(t) {
       }
     }
     U.tabTop[was] = $('list').scrollTop;  // each tab keeps its place in the list (B124)
-    D.page = null; D.sideOpen = false; D.compose = false; U.settle.clear(); render(); $('list').scrollTop = U.tabTop[t] || 0; return writeURL(away);
+    D.page = null; D.sideOpen = false; D.compose = false; U.settle.clear(); render(); $('list').scrollTop = carried ? 0 : U.tabTop[t] || 0; return writeURL(away);
   }
   showView(); renderFilters();  // the tab bar follows there (B152)
   if (t === 'inputs') renderInputs(); else renderItems();
-  if (t !== was) tabScroll(t).scrollTop = U.tabTop[t] || 0;  // each tab keeps its place, as on the desktop (B152)
+  if (t !== was) tabScroll(t).scrollTop = carried ? 0 : U.tabTop[t] || 0;  // each tab keeps its place, as on the desktop (B152)
   renderComposer();
 }
 const tabScroll = t => t === 'inputs' ? $('inputsView') : $('list');
