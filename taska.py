@@ -4281,6 +4281,25 @@ function crossHits() {
 }
 
 const filtered = () => !!(U.q.trim() || U.type !== 'all' || U.when !== 'all' || U.status !== 'all' || U.pri !== 'all');
+// While the search box has words, a tab's count is what that tab shows with them (T225 #13): its own filters, these
+// words. Switching tabs then takes the words along (setTab), so the count is what you see when you open it.
+function searchCount(t) {
+  const words = searchWords();
+  if (t === 'inputs') return S.inputs.filter(r => !r.deleted && inputMatch(r, words)).length;
+  const keep = Object.fromEntries(VIEW_KEYS.map(k => [k, U[k]])), v = t === U.tab ? keep : U.tabView[t] || {};
+  for (const k of VIEW_KEYS) if (k !== 'q') U[k] = v[k] ?? 'all';
+  try { return visible(t).length; } finally { Object.assign(U, keep); }
+}
+function phoneCounts(rows = visible()) {  // the tabs' counts: what is open or waiting; while you search, the matches
+  const words = searchWords().length, pending = S.inputs.filter(r => !r.acked).length;
+  $('nItems').textContent = (words ? searchCount('items') : U.tab === 'items' && filtered() ? rows.filter(it => !it.archived).length : openCount()) || '';  // B130
+  $('nInputs').textContent = (words ? searchCount('inputs') : pending) || '';
+  $('nInputs').title = words ? '' : pending ? `${pending} not organized yet` : '';
+  $('nRules').textContent = (words ? searchCount('rules') : S.items.filter(it => it.type === 'rule' && !it.merged_into && !it.archived && it.status !== 'dropped').length) || '';
+  $('nArchTab').textContent = (words ? searchCount('archive') : S.items.filter(it => it.archived && !it.merged_into).length) || '';
+  fitTabs();
+  if (desk() && S.project) renderProjBar();  // the desktop's tabs say the same
+}
 const openCount = () => S.items.filter(it => !it.merged_into && inTab(it, 'items') && !CLOSED(it.status)).length;  // B130: one meaning of "open"
 function visible(tab = U.tab) {
   const words = U.q.trim().toLowerCase().split(/\s+/).filter(Boolean);
@@ -5176,11 +5195,8 @@ function renderItems() {
   const list = $('list'), top = U.open && !desk() ? U.listTop?.[0] : list.scrollTop;  // under the phone's item page the list is hidden and reads 0
   SW.open = SW.el = null;  // rows are rebuilt closed; a stale reference would swallow the next tap
   const rows = visible();
-  $('nItems').textContent = U.tab === 'items' && filtered() ? rows.filter(it => !it.archived).length : openCount() || '';  // what is open; while you search, the matches (B130)
+  phoneCounts(rows);
   if (desk()) renderDeskHead();  // the title's count follows the search as you type
-  $('nRules').textContent = S.items.filter(it => it.type === 'rule' && !it.merged_into && !it.archived && it.status !== 'dropped').length || '';
-  $('nArchTab').textContent = S.items.filter(it => it.archived && !it.merged_into).length || '';
-  fitTabs();
   renderFilters();
   if (holding()) { patchList(); return syncNeeds(); }  // B124: rows hold still under the pointer after you act on one
   let html = '';
@@ -6603,9 +6619,7 @@ function render() {
   if (U.peek && !$('overlay').hidden) { const top = $('dlgBody').scrollTop; peek(U.peek, {focus: false}); $('dlgBody').scrollTop = top; }
   if (U.doc && !U.docEdit && !U.docQuote && !$('overlay').hidden && docSig(docById(U.doc)) !== U.docSig) renderDoc();  // only when it changed: a redraw under a tap loses the tap
   if (U.tab === 'inputs') renderInputs();
-  const pending = S.inputs.filter(r => !r.acked).length;
-  $('nInputs').textContent = pending || '';
-  $('nInputs').title = pending ? `${pending} not organized yet` : '';
+  phoneCounts();
   if (S.project && !filtered()) try { localStorage.setItem('taska.counts.' + S.project, JSON.stringify(COUNTS.map(id => $(id).textContent))); } catch (_) {}  // for the next page's first paint (B190)
   fitTabs();
   const waiting = S.items.filter(needsYou).length, sec = D.page ? (D.section ? PSEC[D.section][2] : 'Settings') + ' · ' : '';  // each section is a page of its own (B162)
@@ -6691,9 +6705,11 @@ function setTab(t) {
   const was = U.tab, away = desk() && (t !== was || !!D.page || D.compose);  // another tab, or out of This project or New input: a step Back undoes (B9)
   if (away) keepPlace();
   if (t !== was) {  // B130: each tab keeps its own search and filters; nothing leaks from one tab to another
+    const words = U.q.trim() ? U.q : '';  // T225 #13: but words in the search box go along, as the tabs' counts promised
     U.tabView[was] = Object.fromEntries(VIEW_KEYS.map(k => [k, U[k]]));
     const v = U.tabView[t] || {};
     for (const k of VIEW_KEYS) U[k] = v[k] ?? (k === 'q' ? '' : 'all');
+    if (words) U.q = words;
     $('q').value = U.q; qSync();
   }
   U.asRule = null; U.amend = null; U.correct = null; U.prefsEdit = null; U.goBack = null; if (t === 'inputs' && was !== 'inputs') U.inputsEnd = true;
@@ -7379,7 +7395,7 @@ function renderDeskHead() {
 function renderProjBar() {
   if (U.renaming === S.project && document.activeElement?.id === 'pRename') return renderAgent();  // a refresh must not take the name you are typing
   const pre = !S.project && sideProjects()[0];  // before the data (B190): the frame as it will be, with what this browser last saw
-  const kept = pre && keptCounts(), tab = t => { const n = pre ? (t === 'archive' ? '' : kept ? kept[TABS.indexOf(t)] : t === 'items' ? pre.open : '') : t === 'archive' ? '' : t === 'items' && filtered() && U.tab === 'items' ? visible().filter(it => !it.archived).length : tabCount(t);
+  const kept = pre && keptCounts(), tab = t => { const n = pre ? (t === 'archive' ? '' : kept ? kept[TABS.indexOf(t)] : t === 'items' ? pre.open : '') : searchWords().length ? searchCount(t) || '' : t === 'archive' ? '' : t === 'items' && filtered() && U.tab === 'items' ? visible().filter(it => !it.archived).length : tabCount(t);
     return `<button data-act="tab" data-tab="${t}" role="tab" aria-selected="${U.tab === t && !D.page}" class="group -mb-px flex shrink-0 items-center gap-1.5 border-b-2 border-transparent px-0.5 text-sm font-medium text-zinc-500 hover:text-zinc-800 aria-selected:border-zinc-900 aria-selected:font-semibold aria-selected:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200 dark:aria-selected:border-zinc-100 dark:aria-selected:text-zinc-50">${TAB_NAME[t]}<span class="font-mono text-[11px] font-medium text-zinc-400 tabular-nums">${n}</span></button>`; };
   const name = U.renaming && U.renaming === S.project
     ? `<div class="flex min-w-0 items-center gap-2 px-1">${projTile(S.project, 'size-6 rounded-md text-xs')}<input id="pRename" data-slug="${esc(S.project)}" class="${FIELD} h-8 w-64 py-1 text-[15px] font-semibold" value="${esc(projTitle())}" aria-label="New name for ${esc(projTitle())}" autocomplete="off" spellcheck="false"><span class="text-xs whitespace-nowrap text-zinc-500 dark:text-zinc-400">${KBD('↵')} save · ${KBD('Esc')} cancel</span></div>`
@@ -8783,7 +8799,7 @@ $('q').addEventListener('keydown', e => {  // B130: from the search, Down or Ent
   e.preventDefault(); $('q').blur();
   if (first) openItem(Number(first.dataset.n));
 });
-$('q').addEventListener('input', e => { U.q = e.target.value; qSync(); writeURL(false); if (U.tab === 'inputs') renderInputs(); else { renderItems(); $('list').scrollTop = 0; } });
+$('q').addEventListener('input', e => { U.q = e.target.value; qSync(); writeURL(false); if (U.tab === 'inputs') { renderInputs(); phoneCounts(); } else { renderItems(); $('list').scrollTop = 0; } });
 $('q').addEventListener('focus', () => { if (!desk() && !U.searching) searchMode(true); });  // a search that came with the address: in your hands now, Cancel or Back ends it (B152)
 $('text').addEventListener('input', () => { saveDraft(); renderComposer(); grow(); });  // the buttons first: the mic showing up narrows the box
 document.addEventListener('input', e => {
