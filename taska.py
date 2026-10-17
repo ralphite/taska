@@ -5383,7 +5383,7 @@ function needsCard(it, onCard = false) {  // onCard: in a Go through card, whose
   }
   if (it.status === 'proposed') return card('propose', `${esc(name)} proposed this`, m ? msgText(m, 'card' + n) : '<p class="text-sm text-amber-900/80 dark:text-amber-200/80">Nobody works on it until you approve.</p>',
     `<button data-act="status" data-n="${n}" data-v="dropped" class="${SECOND} flex-1 lg:flex-none">${ico('ban', 'size-4')}Won't do${KBD('W')}</button><button data-act="status" data-n="${n}" data-v="open" class="${PRIMARY_BASE} ${NEED.approve.btn} flex-[1.4] lg:flex-none">${ico('thumb', 'size-4.5')}Approve${KBD('A')}</button>`,
-    'Nobody works on it until you approve');
+    m ? 'Nobody works on it until you approve' : '');  // T242 #2: said once (the card's text says it when there is no message)
   if (it.status === 'review') return card('done', `${esc(name)} finished this`, m ? msgText(m, 'card' + n) : '<p class="text-sm text-amber-900/80 dark:text-amber-200/80">Check its work, then accept or reopen.</p>',
     `<button data-act="reopen" data-n="${n}" class="${SECOND} flex-1 lg:flex-none">${ico('reopen', 'size-4')}Not yet${KBD('N')}</button><button data-act="status" data-n="${n}" data-v="done" class="${PRIMARY_BASE} ${NEED.accept.btn} flex-[1.4] lg:flex-none">${ico('check', 'size-4.5', '2.25')}Accept${KBD('A')}</button>`,
     'Not yet reopens it and asks what is missing');
@@ -8744,6 +8744,8 @@ function deskKey(e) {
   // While recording, the keys of the box (F095): ↵ stops into the box, ⇧↵ or ⌘↵ stops and sends, Esc discards.
   // ⇧↵ means send even on the button you just clicked (B164); a plain ↵ there presses that button, as below.
   if (R.rec && e.key === 'Enter' && !e.isComposing && (e.shiftKey || e.metaKey || e.ctrlKey)) { e.preventDefault(); return finishRec(true); }
+  // T242 #1: on the box's own buttons (the one you started recording with) a plain ↵ still puts the words into the box
+  if (R.rec && e.key === 'Enter' && !e.isComposing && el?.closest?.('#composer, #vcBar')) { e.preventDefault(); return finishRec(false); }
   // Enter and Space press the button, link or choice you are on (B123); they are shortcuts only on the page or a row.
   if ((e.key === 'Enter' || e.key === ' ') && el && el !== document.body && !el.closest('#list') && el.closest('button, a[href], [role=button], summary')) return;
   if (R.rec && e.key === 'Enter' && !e.isComposing) { e.preventDefault(); return finishRec(false); }
