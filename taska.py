@@ -2141,17 +2141,23 @@ def voice_context(store, scope):
             words.update(re.findall(r"[A-Za-z_][A-Za-z0-9_./\-]{2,}", it["title"] + " " + it["body"]))
         # B73, not B073: the way people say it. No "src=r119" left over in a title.
         items = [f"{LETTER[it['type']]}{it['n']} " + " ".join(re.sub(r"\bsrc=r\d+", " ", it["title"]).split())[:100] for it in pool[:30]]
-        # T271: the documents of the item you speak to (a comment on one): their words are hints first, Chinese names
-        # from their headings and bold text too, and their start is context to recognize words, never to copy
-        for d in [d for d in store.docs.values() if d["n"] == scope][-3:]:
-            md = d.get("md") or ""
-            for w in re.findall(r"[A-Za-z_][A-Za-z0-9_./\-]{2,}", md):
+        # T271: everything about the item you speak to is context: its text, every message in its thread (the agents'
+        # replies and yours), its subitems and its documents. Their words are hints first (Chinese names from headings and
+        # bold text too); the text itself goes to the main model to recognize words, never to copy (about 6000 characters)
+        it0 = store.items.get(scope)
+        if it0:
+            kids = [k for k in store.items.values() if k.get("parent") == scope]
+            docs = [d for d in store.docs.values() if d["n"] == scope][-3:]
+            parts = [it0["title"], it0.get("body") or "", it0.get("next") or ""] + [x.get("text") or "" for x in it0.get("thread", [])][-40:] \
+                + [k["title"] for k in kids] + [d.get("md") or "" for d in docs]
+            text = "\n".join(p for p in parts if p)
+            for w in re.findall(r"[A-Za-z_][A-Za-z0-9_./\-]{2,}", text):
                 words[w] += 3
-            for w in re.findall(r"(?:^#+\s*|\*\*)([^*\n]{2,24}?)(?:\*\*|$)", md, re.M):
-                for part in re.split(r"[\s，。、：:；;（）()／/·|+＋-]+", w):
+            for w in re.findall(r"(?:^#+\s*|\*\*)([^*\n]{2,24}?)(?:\*\*|$)", text, re.M):
+                for part in re.split(r"[\s\uff0c\u3002\u3001\uff1a:\uff1b;\uff08\uff09()\uff0f/\u00b7|+\uff0b-]+", w):
                     if re.search(r"[\u4e00-\u9fff]", part) and 2 <= len(part) <= 12:
                         words[part] += 3
-            items.insert(0, f"D{d['d']} (the document being discussed) " + " ".join(re.sub(r"[#*`>|_-]+", " ", md).split())[:800])
+            items.insert(0, f"{LETTER[it0['type']]}{it0['n']} (the item being discussed: its text, thread, subitems and documents) " + " ".join(re.sub(r"[#*`>|_-]+", " ", text).split())[-6000:])
         return words, items, [it["title"] for it in pool[:40]]
 
 
