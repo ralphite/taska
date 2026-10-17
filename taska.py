@@ -3750,13 +3750,13 @@ __APP_HEAD__
   <header class="flex items-center gap-2 px-2 py-1 text-sm">
     <span id="vName" class="min-w-0 flex-1 truncate pl-2"></span>
     <span id="vIdx" class="text-white/60"></span>
-    <a id="vOpen" target="_blank" rel="noopener" class="flex h-11 items-center rounded-full px-3 text-white/80 hover:bg-white/10">Original</a>
+    <a id="vOpen" target="_blank" rel="noopener" class="flex h-11 items-center rounded-full px-3 text-white/80 hover:bg-white/10">Open file</a>
     <button data-act="v-close" aria-label="Close" class="grid size-11 place-items-center rounded-full hover:bg-white/10" id="vClose"></button>
   </header>
   <div id="vStage" class="flex min-h-0 flex-1 overflow-auto lg:scrollbar-thumb-white/40"><img id="vImg" alt="" class="m-auto max-h-full max-w-full object-contain"></div>
   <footer class="flex items-center justify-center gap-2 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] text-sm">
     <button data-act="v-prev" class="h-11 rounded-full px-4 hover:bg-white/10">Previous</button>
-    <button data-act="v-zoom" id="vZoom" class="h-11 rounded-full bg-white/10 px-4 hover:bg-white/20">Actual size</button>
+    <button data-act="v-zoom" id="vZoom" class="h-11 rounded-full bg-white/10 px-4 hover:bg-white/20">Zoom to 100%</button>
     <button data-act="v-next" class="h-11 rounded-full px-4 hover:bg-white/10">Next</button>
   </footer>
 </div>
@@ -6559,7 +6559,7 @@ function openViewer(gid, f) {
 function closeViewer() { $('viewer').hidden = true; $('vImg').removeAttribute('src'); }
 function showImage() {
   const f = viewerGroup[viewerIdx], url = P + 'f/' + encodeURIComponent(f), img = $('vImg');
-  img.className = 'm-auto max-h-full max-w-full object-contain'; $('vZoom').textContent = 'Actual size';
+  img.className = 'm-auto max-h-full max-w-full object-contain'; $('vZoom').textContent = 'Zoom to 100%';
   img.src = url; $('vOpen').href = url; $('vName').textContent = f.replace(/^f\d+-/, '');
   $('vIdx').textContent = viewerGroup.length > 1 ? `${viewerIdx + 1} / ${viewerGroup.length}` : '';
   document.querySelector('[data-act="v-prev"]').disabled = viewerIdx === 0;
@@ -7291,7 +7291,7 @@ const ACT = {
   'v-close': () => { if ($('viewer').hidden) return; closeViewer(); layerShut('viewer'); },
   'v-prev': () => { if (viewerIdx > 0) { viewerIdx--; showImage(); } },
   'v-next': () => { if (viewerIdx < viewerGroup.length - 1) { viewerIdx++; showImage(); } },
-  'v-zoom': b => { const img = $('vImg'), fit = img.classList.contains('max-w-full'); img.className = fit ? 'm-auto max-w-none' : 'm-auto max-h-full max-w-full object-contain'; b.textContent = fit ? 'Fit to screen' : 'Actual size'; },
+  'v-zoom': b => { const img = $('vImg'), fit = img.classList.contains('max-w-full'); img.className = fit ? 'm-auto max-w-none' : 'm-auto max-h-full max-w-full object-contain'; b.textContent = fit ? 'Fit to screen' : 'Zoom to 100%'; },
 };
 
 const drag = {};
