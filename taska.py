@@ -4696,7 +4696,7 @@ function seenMap() {
   return SEEN.map;
 }
 const saveSeen = () => { try { localStorage.setItem(SEEN.key, JSON.stringify(SEEN.map)); } catch (_) {} };
-const unread = it => { const m = lastAgentMsg(it), s = seenMap(); return !!m && !it.archived && m.t > (s[it.n] || s.since); };
+const unread = it => { const m = lastAgentMsg(it), s = seenMap(); return !!m && !it.archived && Date.parse(m.t) > Date.parse(s[it.n] || s.since); };  // times, not strings: -07:00 and Z
 const unreadCount = () => S.items.filter(it => !it.merged_into && unread(it)).length;
 function markSeen(it) {
   const m = lastAgentMsg(it);
@@ -5195,7 +5195,7 @@ const docResolved = (d, key) => !!d.resolved?.[key];
 const NEW_DOT = '<span class="ml-0.5 size-1.5 rounded-full bg-blue-600 dark:bg-blue-400" title="New from an agent"></span>';
 function threadNew(d, key, comments) {
   const c = comments.at(-1);
-  return !!c && c.by !== 'you' && c.t > (seenMap()[`D${d.d}:${key}`] || seenMap().since);
+  return !!c && c.by !== 'you' && Date.parse(c.t) > Date.parse(seenMap()[`D${d.d}:${key}`] || seenMap().since);
 }
 function seeThreads(d) {  // what the document shows now counts as seen
   const m = seenMap();
@@ -5294,7 +5294,7 @@ function docOutline(d) {
   const hs = d.blocks.slice(1).filter(b => b.kind === 'heading');
   if (hs.length < 3) return '';
   return `<details class="mt-3 rounded-xl border border-zinc-200 px-3 py-2 text-sm dark:border-zinc-800"><summary class="cursor-pointer text-xs font-semibold text-zinc-500 dark:text-zinc-400">Contents · ${hs.length}</summary>
-    <div class="mt-1 flex flex-col">${hs.map(b => { const lv = (b.text.match(/^#+/) || ['#'])[0].length; return `<button data-act="doc-jump" data-key="${b.key}" class="truncate rounded-md py-1 text-left text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 ${lv > 2 ? 'pl-6' : 'pl-2'}">${esc(b.text.replace(/^#+\s*/, ''))}</button>`; }).join('')}</div></details>`;
+    <div class="mt-1 flex flex-col">${hs.map(b => { const lv = (b.text.match(/^#+/) || ['#'])[0].length; return `<button data-act="doc-jump" data-key="${b.key}" class="truncate rounded-md py-1 text-left text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-zinc-100 ${lv > 2 ? 'pl-6' : 'pl-2'}">${esc(b.text.replace(/^#+\s*/, ''))}</button>`; }).join('')}</div></details>`;
 }
 // A document's text with its comment threads: in a sheet on the phone, in the item pane on the desktop (T110).
 function docViewHtml(d) {
@@ -5533,7 +5533,7 @@ function detailHtml(it) {
   // T274 #10: the properties in one row, each one a tap away: status, priority, type, now or later
   const caret = ico('down', 'size-3 opacity-50', '2.25');
   const chips = [
-    `<button data-act="item-menu" data-arm="s" title="Status · S" class="${CHIP} shrink-0 text-zinc-700 dark:text-zinc-200">${stateIcon(it.status, statusName(it), 'size-3.5')}${statusName(it)}${caret}</button>`,
+    `<button data-act="item-menu" data-arm="s" title="Status · S" class="${CHIP} shrink-0 ${stuck(it) ? 'font-semibold text-amber-700 dark:text-amber-400' : 'text-zinc-700 dark:text-zinc-200'}">${stateIcon(it.status, statusName(it), 'size-3.5')}${statusName(it)}${caret}</button>`,
     it.type === 'rule' ? '' : `<button data-act="item-menu" data-arm="p" title="Priority · P" class="${CHIP} shrink-0 ${it.pri === 'P0' ? 'font-semibold text-red-600 dark:text-red-400' : 'font-semibold text-zinc-700 dark:text-zinc-200'}">${it.pri}${caret}</button>`,
     it.type === 'rule' ? '' : `<button data-act="item-menu" data-arm="t" title="Type · T" class="${CHIP} shrink-0 text-zinc-700 dark:text-zinc-200">${letterOf(it.type)}${it.type[0].toUpperCase() + it.type.slice(1)}${caret}</button>`,
     CLOSED(it.status) || it.type === 'rule' ? '' : `<button data-act="swipe" data-n="${n}" data-f="when" data-v="${it.when === 'later' ? 'now' : 'later'}" title="${it.when === 'later' ? 'Back to now' : 'Later'} · L" class="${CHIP} shrink-0 text-zinc-700 dark:text-zinc-200">${ico('clock', 'size-3.5 opacity-60')}${it.when === 'later' ? 'Later' : 'Now'}</button>`,
@@ -5572,7 +5572,6 @@ function renderDetail() {
   settleOpen();  // B5: never a merged item, whichever way it came back (a tab's last item, a document's item)
   if (!desk()) $('foot').hidden = !!(U.editing && U.editing === U.open) || (!!D.page && !U.prefsEdit);  // editing an item: its form is the one place to type, the box steps aside (B156); Settings has no box but for F183
   const it = U.open && byN.get(U.open), body = $('detailBody');
-  if (it && S.project) markSeen(it);  // T274 #5
   if (desk()) renderGoStrip();
   if (desk()) $('foot').hidden = (!!D.page && !U.prefsEdit) || !!(U.doc && U.docEdit);  // editing a document in its pane: the box steps aside
   if (desk() && U.doc && !U.docEdit && docById(U.doc)) return docPane(docById(U.doc));
@@ -5598,6 +5597,7 @@ function renderDetail() {
   const top = body.scrollTop, keep = keepEdit();
   $('dHead').innerHTML = `<span class="hidden lg:inline">${stateIcon(it.status, statusName(it), 'size-[18px]')}</span><span class="font-mono text-sm font-bold ${TYPE_TEXT[it.type]}">${code(it.n)}</span><span class="text-[11px] font-semibold tracking-wider uppercase">${it.wait ? `<span class="text-amber-600 dark:text-amber-400">${it.wait.kind === 'block' ? 'Blocked' : 'Asks you'}</span>` : `<span class="${statusTone(it)}">${statusName(it)}</span>`}</span>`;  // T230 #2: a state, the card's and the row's word, not a button's
   if (desk()) renderDetailBar(it);
+  if (S.project && (!desk() || detailShown())) markSeen(it);  // T274 #5: seen once it shows
   parkBox(); body.innerHTML = detailHtml(it);
   body.scrollTop = top;
   requestAnimationFrame(() => body.querySelectorAll('[data-clip]').forEach(clipFade));  // measured once it shows
@@ -5816,7 +5816,7 @@ const filingTip = r => `Undo what the organizer did with ${rcode(r.id)}: ${r.fil
 // What became of an input, and what you can do about it now: the same on Inputs and in "You said lately" (T113 A26,
 // B32), all in sight. -> [the actions for its state, the actions every input has], each a line of its own.
 function inputActs(r, cls = LINK_BTN) {
-  if (r.moved) return [`<a href="/p/${encodeURIComponent(r.moved.to)}/" class="${cls}">${ico('arrow', 'size-3.5', '2')}Open ${esc(projName(r.moved.to))} · ${esc(r.moved.as)}</a>`, ''];
+  if (r.moved) return [`<a href="/p/${encodeURIComponent(r.moved.to)}/" class="${cls} min-w-0 max-w-full">${ico('arrow', 'size-3.5', '2')}<span class="truncate">Open ${esc(projName(r.moved.to))} · ${rcode(r.moved.as)}</span></a>`, ''];
   const busy = S.org.busy === r.id || (!r.acked && S.org.on && !r.org), quiet = cls === LINK_BTN ? ' text-zinc-600 dark:text-zinc-300' : '';
   const now = (!r.acked && S.org.on && r.org && (!r.org.ok || r.org.undone) ? `<button data-act="retry" data-id="${r.id}" class="${cls}">${ico('loop', 'size-3.5', '2')}${r.org.undone ? 'Organize again' : 'Retry'}</button>` : '')
     + (!r.acked && !r.scope && !busy ? `<button data-act="make-item" data-id="${r.id}" class="${cls.replace(/text-zinc-500|hover:text-zinc-800/g, 'text-blue-600').replace(/dark:text-zinc-400|dark:hover:text-zinc-200/g, 'dark:text-blue-400')}">${ico('plus', 'size-3.5', '2')}Turn into item</button>` : '')
@@ -6201,7 +6201,7 @@ function renderFeedback() {
   if (!r) return;
   let html;
   const move = otherProjects().length && !r.scope ? link('move-input', 'Move to…', `data-id="${r.id}"`) : '';  // sent to the wrong project? (F79) Not a reply: it went to an item here (T113 A19)
-  if (r.moved) html = `${ico('arrow', 'size-4 text-zinc-500', '2')}<span class="min-w-0 flex-1 truncate">Moved ${rcode(r.id)} to ${esc(projName(r.moved.to))} as ${esc(r.moved.as)}</span><a href="/p/${encodeURIComponent(r.moved.to)}/" class="-my-2 flex h-11 shrink-0 items-center rounded-full px-2 font-semibold text-blue-600 dark:text-blue-400">Open</a>`;
+  if (r.moved) html = `${ico('arrow', 'size-4 text-zinc-500', '2')}<span class="min-w-0 flex-1 truncate">Moved ${rcode(r.id)} to ${esc(projName(r.moved.to))} as ${rcode(r.moved.as)}</span><a href="/p/${encodeURIComponent(r.moved.to)}/" class="-my-2 flex h-11 shrink-0 items-center rounded-full px-2 font-semibold text-blue-600 dark:text-blue-400">Open</a>`;
   else if (r.tr_wait) html = `<span class="size-2 shrink-0 animate-pulse rounded-full bg-blue-500 dark:bg-blue-400"></span><span class="min-w-0 flex-1 truncate">Sent. Its voice note's words come next…</span>`;  // sent before they were in (B165)
   else if (S.org.busy === r.id || (!r.acked && S.org.on && !r.org)) html = `<span class="size-2 shrink-0 animate-pulse rounded-full bg-blue-500 dark:bg-blue-400"></span><span class="min-w-0 flex-1 truncate">Sent, organizing…</span>`;
   else if (r.org && !r.org.ok) html = `${ico('alert', 'size-4 text-red-600 dark:text-red-400', '2')}<span class="min-w-0 flex-1 truncate text-red-600 dark:text-red-400">Organizer failed: ${esc(r.org.msg)}</span>${link('retry', 'Retry', `data-id="${r.id}"`)}`;
@@ -7461,8 +7461,8 @@ const ACT = {
     if (!desk()) return pageUp();
     const k = !URLS.applying && history.state?.page; D.page = null; render(); if (k) { URLS.selfBack = true; history.go(-k); } else writeURL(false);
   },
-  project: () => { if (!desk()) closeDrawer(); openProject(desk() ? 'agents' : null); },  // the phone: the Settings page with its list of sections
-  psec: (b, e) => e?.metaKey || e?.ctrlKey || e?.shiftKey ? window.open(b.href, '_blank') : openProject(b.dataset.sec),  // ⌘-click: in a new tab
+  project: () => { if (!desk()) closeDrawer(); if (U.sheet === 'projmenu') closeDialog(); openProject(desk() ? 'agents' : null); },  // the phone: the Settings page with its list of sections
+  psec: (b, e) => e?.metaKey || e?.ctrlKey || e?.shiftKey ? window.open(b.href, '_blank') : (!desk() && DR.open && closeDrawer(), openProject(b.dataset.sec)),  // ⌘-click: in a new tab
   'notifications-on': () => turnOnNotices(),
   'notifications-quiet': () => { noticeWrite('quiet', !noticeRead('quiet', true)); renderProject(); if (!desk() && PUSH.sub) pushOn(); },  // the phone: Taska keeps the quiet hours (F195)
   'push-on': () => pushOn(),
@@ -7862,7 +7862,7 @@ const ACT = {
       try { await load(); } catch (_) {}
       toast(`The filing of ${rcode(id)} is back`);
     });
-    toast(`Undid the filing of ${id}${what ? `: ${what}` : ''}`, run);
+    toast(`Undid the filing of ${rcode(id)}${what ? `: ${what}` : ''}`, run);
   },
   'move-input': b => moveInput(b.dataset.id),
   'input-more': b => inputMenu(b),
@@ -7912,7 +7912,7 @@ const ACT = {
       if (!d.ok) return toast(d.error || 'Could not move it', null, {error: true});
       closeDialog(); if (U.lastSent === id) U.lastSent = null;  // T113 A19: one message, the toast, with Open
       try { await load(); } catch (_) {}
-      toast(`Moved ${id} to ${to} as ${d.as}`, () => location.assign(`/p/${encodeURIComponent(to)}/`), {label: 'Open'});
+      toast(`Moved ${rcode(id)} to ${projName(to)} as ${rcode(d.as)}`, () => location.assign(`/p/${encodeURIComponent(to)}/`), {label: 'Open'});
     } catch (ex) { notSaved(ex, () => ACT['move-input-to'](b)); }
     finally { b.disabled = false; }
   },
@@ -8120,7 +8120,7 @@ function saidRow(r, k, last) {
   // one line, then what every input has.
   const acts = (busy ? '<span class="h-7 w-44 animate-pulse rounded-lg bg-zinc-100 dark:bg-zinc-800"></span>' : '')
     + (r.org && !r.org.ok ? `<span class="min-w-0 basis-full truncate text-[13px] text-red-600/80 dark:text-red-400/80">${esc(r.org.msg)}</span>` : '')
-    + inputActs(r, SMALL_BTN).filter(Boolean).map(a => `<div class="flex basis-full flex-wrap items-center gap-1">${a}</div>`).join('');
+    + (([now, more]) => (now ? `<div class="flex basis-full flex-wrap items-center gap-1">${now}</div>` : '') + (more ? `<span class="ml-auto">${more}</span>` : ''))(inputActs(r, SMALL_BTN));
   return saidStep(DOT[dotOf(r)], bubble, `<span class="font-mono">${rcode(r.id)}</span> · ${when(r.t)}${r.from === 'rules' ? ' · as a rule' : ''}`, `<span class="mr-1 text-[13px] font-semibold ${tone}">${label}</span>${chips}${acts}`, last, `data-expand data-id="${r.id}" ${voiceAttr(r)}`);
 }
 function outboxStep(q, last) {  // still on its way (F85)
