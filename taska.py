@@ -31,6 +31,7 @@ import subprocess
 import sys
 import tempfile
 import textwrap
+import queue
 import threading
 import unicodedata
 import time
@@ -2158,9 +2159,9 @@ def voice_prompt(terms, items, fixes, prefs=VOICE_PREFS):
     lines = [VOICE_RULES]
     if prefs.strip():  # F183
         lines.append("The user's own preferences for the transcript (follow them, but never add words nobody said):\n" + prefs.strip())
-    if fixes:  # F144
+    if any(c.get("wrong") for c in fixes):  # F144
         lines.append("Spellings the user corrected before (write the right form when you hear it): " +
-                     "; ".join(f"{c['right']} (not {c['wrong']})" for c in fixes[-40:]))
+                     "; ".join(f"{c['right']} (not {c['wrong']})" for c in [c for c in fixes if c.get("wrong")][-40:]))
     lines.append("Spelling hints, only for words you actually hear: " + ", ".join(terms))
     if items:
         lines.append("Open items, only to recognize names and codes (do not copy them): " + "; ".join(items))
@@ -2437,6 +2438,47 @@ def voice_doubts(tr, alt, most=4):
     return [{k: v for k, v in x.items() if k not in ("s", "e", "key")} for x in spots[:most]]
 
 
+# T256 (from Nota, T619): the words as said, made smooth to read. The fillers named are "en, a, e, jiu shi, zhe ge".
+TIDY_SYSTEM = ("Below is a voice note as transcribed (Mandarin Chinese mixed with English). Rewrite it as smooth, easy to read "
+               "written text: drop filler words (\u55ef, \u554a, \u5443, \u5c31\u662f, \u8fd9\u4e2a used as fillers), stutters, "
+               "repetitions and false starts (keep only what the speaker settled on), join broken sentences, fix word order "
+               "and punctuation. Keep every meaning and detail; add nothing; do not summarize or translate; keep the speaker's "
+               "own words where you can; keep English words, names, links, numbers and item codes exactly as they are.")
+TIDY_CAP, TIDY_TRIES = float(os.environ.get("TASKA_TIDY_CAP", 8)), 3
+
+
+def tidy_ok(heard, out):
+    """Tidied words count only when they keep the words: about as long as what was heard, and every link still in."""
+    links = re.findall(r"https?://[^\s\uff0c\u3002\u3001\uff09)]+", heard)
+    return bool(out) and 0.5 * len(heard) <= len(out) <= 1.15 * len(heard) and all(u in out for u in links)
+
+
+def tidy(text):
+    """text made smooth to read (TIDY_SYSTEM), or as it was: short words, no good answer within TIDY_CAP, or words lost.
+    Asked TIDY_TRIES times at once; the first answer that keeps the words wins (Nota's T678)."""
+    if len(text) < 12:
+        return text
+    got = queue.Queue()
+
+    def one():
+        try:
+            out = gemini(TIDY_SYSTEM, [{"text": text}], think=0, temperature=0.2, timeout=60, field="text", hint="the tidied text", model=VOICE_MODEL)
+        except Exception:
+            out = ""
+        got.put(out if tidy_ok(text, out) else None)
+    for _ in range(TIDY_TRIES):
+        threading.Thread(target=one, daemon=True).start()
+    end = time.time() + TIDY_CAP
+    for _ in range(TIDY_TRIES):
+        try:
+            out = got.get(timeout=max(0.0, end - time.time()))
+        except queue.Empty:
+            break
+        if out:
+            return out
+    return text
+
+
 def transcribe(store, data, mime, scope, path=None, later=None):
     """Voice note -> {"tr": its words ("" when nobody spoke), "tr_by": "main", "asr" or "pro", "alt": the other model's
     words, "doubts": what may be misheard}, biased toward the project's own vocabulary. path: the note on disk, to tell
@@ -2501,11 +2543,19 @@ def transcribe(store, data, mime, scope, path=None, later=None):
     tr, alt = tr2 if tr2 is not None else tr, alt2 if alt2 is not None else (alt or "")
     times["total"] = round(time.time() - t0, 1)
     for c in fixes:  # what the user fixed once stays fixed (F144)
-        tr, alt = tr.replace(c["wrong"], c["right"]), alt.replace(c["wrong"], c["right"])
+        if c.get("wrong"):
+            tr, alt = tr.replace(c["wrong"], c["right"]), alt.replace(c["wrong"], c["right"])
     if later and slow.get("thread"):  # its words may still come: wait for them in the background
         threading.Thread(target=pro_later, args=(slow, t0, tr, titles, fixes, later), daemon=True).start()
         out["more"] = True
-    return dict(out, tr=tr, alt=alt, doubts=voice_doubts(tr, alt))
+    doubts = voice_doubts(tr, alt)
+    if HUB and getattr(HUB, 'tidy_on', lambda: False)():  # T256: smooth to read, the words as said kept as "heard"
+        t0_ = time.time()
+        nice = tidy(tr)
+        times["tidy"] = round(time.time() - t0_, 1)
+        if nice != tr:
+            out["heard"], tr = tr, nice
+    return dict(out, tr=tr, alt=alt, doubts=doubts)
 
 
 def fuller(tr, ptr):
@@ -2521,7 +2571,8 @@ def pro_later(slow, t0, tr, titles, fixes, later):
     if ptr and not echoed(ptr, titles):
         ptr = simplified(ptr)
         for c in fixes:
-            ptr = ptr.replace(c["wrong"], c["right"])
+            if c.get("wrong"):
+                ptr = ptr.replace(c["wrong"], c["right"])
     later(ptr if ptr and fuller(tr, ptr) else None)
 
 
@@ -2547,7 +2598,7 @@ def voice_answer(fid, job):
     res = (job or {}).get("res") or {}
     return {"f": fid, "done": not job or job["done"], "tr": job["tr"] if job else "",
             "tr_error": (job["err"] if job else "no such voice note") or "",
-            **{k: res[k] for k in ("tr_by", "doubts", "gated", "main_error", "asr_error", "pro_error", "times", "more") if k in res}}
+            **{k: res[k] for k in ("tr_by", "doubts", "gated", "main_error", "asr_error", "pro_error", "times", "more", "heard") if k in res}}
 
 
 def voice_saved(store, fid):
@@ -2778,7 +2829,7 @@ class Hub:
             self.new_key()
         try:
             with open(os.path.join(self.root, "corrections.json"), encoding="utf-8") as f:
-                self.fixes = [c for c in json.load(f) if isinstance(c, dict) and c.get("wrong") and c.get("right")]
+                self.fixes = [c for c in json.load(f) if isinstance(c, dict) and c.get("right")]  # T256: a right word alone is one to hear right
         except (FileNotFoundError, ValueError):
             self.fixes = []
         try:
@@ -2836,9 +2887,37 @@ class Hub:
             if not right or len(right) > 60 or right == wrong:
                 raise Err("write the right words: up to 60 characters, different from the wrong ones")
         with self.lock:
-            self.fixes = [c for c in self.fixes if c["wrong"] != wrong]
+            self.fixes = [c for c in self.fixes if c.get("wrong") != wrong]
             if right is not None:
                 self.fixes.append({"wrong": wrong, "right": right, "t": datetime.now().astimezone().isoformat(timespec="seconds")})
+            tmp = os.path.join(self.root, "corrections.json.tmp")
+            with open(tmp, "w", encoding="utf-8") as f:
+                json.dump(self.fixes, f, ensure_ascii=False, indent=1)
+            os.replace(tmp, os.path.join(self.root, "corrections.json"))
+
+    def tidy_on(self):
+        """T256: voice notes are tidied unless the user turned it off (a file in the data root says off)."""
+        return not os.path.exists(os.path.join(self.root, "voice-tidy-off"))
+
+    def set_tidy(self, on):
+        path = os.path.join(self.root, "voice-tidy-off")
+        if on:
+            try:
+                os.remove(path)
+            except FileNotFoundError:
+                pass
+        else:
+            open(path, "w").close()
+
+    def word(self, right, forget=False):
+        """T256 (from Nota): a word to hear right, without a wrong form first; or forget it."""
+        right = " ".join(str(right or "").split())
+        if not right or len(right) > 60:
+            raise Err("write the word: up to 60 characters")
+        with self.lock:
+            self.fixes = [c for c in self.fixes if c.get("wrong") or c["right"] != right]
+            if not forget:
+                self.fixes.append({"right": right, "t": datetime.now().astimezone().isoformat(timespec="seconds")})
             tmp = os.path.join(self.root, "corrections.json.tmp")
             with open(tmp, "w", encoding="utf-8") as f:
                 json.dump(self.fixes, f, ensure_ascii=False, indent=1)
@@ -3196,7 +3275,7 @@ class Handler(BaseHTTPRequestHandler):
             if p == "/api/corrections":
                 return self.json(HUB.corrections())
             if p == "/api/voiceprefs":  # F183
-                return self.json(HUB.voice_prefs())
+                return self.json(dict(HUB.voice_prefs(), tidy=HUB.tidy_on()))
             if p == "/api/push":  # F195: the key a phone subscribes with, and whether this subscription is on
                 return self.json({"key": HUB.push.public, "on": HUB.push.has((q.get("endpoint") or [""])[0])})
             s, sub, base = self.project(p)
@@ -3338,7 +3417,10 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send(404, "not found\n")
             if p == "/api/corrections":  # {wrong, right} remembers a spelling fix for every project; {wrong} forgets it
                 d = json.loads(self.body(10_000) or b"{}")
-                HUB.correct(d.get("wrong"), d.get("right") if "right" in d else None)
+                if "wrong" not in d:  # T256: {right} adds a word to hear right, {right, forget: true} forgets it
+                    HUB.word(d.get("right"), bool(d.get("forget")))
+                else:
+                    HUB.correct(d.get("wrong"), d.get("right") if "right" in d else None)
                 return self.json({"ok": True, "corrections": HUB.corrections()})
             if p == "/api/push":  # F195: {sub, quiet} turns pushes on for a phone; {endpoint, off: true} turns them off
                 d = json.loads(self.body(10_000) or b"{}")
@@ -3347,6 +3429,9 @@ class Handler(BaseHTTPRequestHandler):
                 else:
                     HUB.push.subscribe(d.get("sub"), d.get("quiet", True))
                 return self.json({"ok": True})
+            if p == "/api/voicetidy":  # T256: {on}
+                HUB.set_tidy(bool(json.loads(self.body(1000) or b"{}").get("on")))
+                return self.json({"ok": True, "tidy": HUB.tidy_on()})
             if p == "/api/voiceprefs":  # F183: {text} for every project's transcription; "" = the default again
                 d = json.loads(self.body(20_000) or b"{}")
                 HUB.set_voice_prefs(d.get("text", ""))
@@ -4408,7 +4493,7 @@ function thumbs(files, gid, size = 'size-20') {
   groups.set(gid, imgs.map(f => f.f));
   return files.map(f => (f.mime || '').startsWith('audio/')
     ? `<button data-act="play" data-src="${P}f/${encodeURIComponent(f.f)}" aria-label="Play ${esc(f.name)}" class="flex h-11 shrink-0 items-center gap-2 self-end rounded-full border border-zinc-200 pr-3.5 pl-1.5 text-xs text-zinc-500 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800">
-        <span data-icon class="grid size-8 place-items-center rounded-full bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">${ico('play', 'size-4')}</span><span class="flex h-5 items-center gap-[2px]">${WAVE}</span><span data-time class="font-mono tabular-nums">Voice</span></button>`
+        <span data-icon class="grid size-8 place-items-center rounded-full bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">${ico('play', 'size-4')}</span><span class="flex h-5 items-center gap-[2px]">${WAVE}</span><span data-time class="font-mono tabular-nums">Voice</span></button>${P_CACHE.prefs?.tidy !== false ? `<button data-act="as-said" data-f="${esc(f.f)}" class="${HIT} h-8 shrink-0 self-end rounded-lg px-1.5 text-xs font-semibold text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200">As said</button>` : ''}`
     : (f.mime || '').startsWith('image/')
     ? `<button data-act="view" data-g="${gid}" data-f="${esc(f.f)}" title="${esc(f.name)}" class="${size} shrink-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 hover:brightness-95 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:brightness-110"><img src="${P}f/${encodeURIComponent(f.f)}" alt="${esc(f.name)}" loading="lazy" class="size-full object-contain"></button>`
     : `<a href="${P}f/${encodeURIComponent(f.f)}" target="_blank" rel="noopener" class="flex h-11 max-w-56 shrink-0 items-center gap-1.5 self-end rounded-xl border border-zinc-200 px-3 text-xs text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800">${ico('file', 'size-4')}<span class="truncate">${esc(f.name)}</span></a>`).join('');
@@ -6031,7 +6116,7 @@ async function startRec() {
   // which can take a moment (a J pressed meanwhile must not move it)
   const key = U.draftKey, scope = scopeN() ? code(scopeN()) : null, typing = document.activeElement === $('text');
   try { R.stream = await micStream(); }
-  catch (_) { return toast('No microphone permission'); }
+  catch (e) { return toast(micError(e), null, {error: true}); }
   R.chunks = []; R.levels = [];
   R.typing = typing;  // the box hides its text while recording; the caret comes back after
   R.key = key; R.scope = scope;
@@ -6115,6 +6200,17 @@ const VDB = {
   del: id => VDB.run('readwrite', s => s.delete(id)),
   all: () => VDB.run('readonly', s => s.getAll()).then(a => a || []),
 };
+// T256 (from Nota, B731): why the microphone did not start, and what to do, instead of one line for every reason
+function micError(e) {
+  const name = e?.name || '';
+  if (!window.isSecureContext) return 'The microphone only works on a secure address: open Taska from its https link.';
+  if (name === 'NotAllowedError' || name === 'SecurityError') return standalone()
+    ? 'Taska may not use the microphone. On iPhone: Settings › Apps › Safari › Microphone › Allow, then open Taska again.'
+    : 'Taska may not use the microphone. Allow it for this site (Safari: aA › Website Settings › Microphone), then try again.';
+  if (name === 'NotFoundError' || name === 'OverconstrainedError') return 'No microphone was found on this device.';
+  if (name === 'NotReadableError' || name === 'AbortError') return 'The microphone is busy (a call, another app or tab). Stop that, then try again.';
+  return `The microphone did not start (${name || 'unknown error'}). Try again.`;
+}
 function voiceFile(o) {
   const f = {transcribing: true, t: Date.now(), rid: 'v' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8), ...o};
   f.done = new Promise(r => { f.settle = r; });  // uploaded: all that sending waits for (B165)
@@ -6228,7 +6324,7 @@ async function docRecStart() {
   if (R.rec) return toast('A voice note is recording for the box: stop it first');
   if (!canRecord()) return toast('This browser cannot record here');
   let stream;
-  try { stream = await micStream(); } catch (_) { return toast('No microphone permission'); }
+  try { stream = await micStream(); } catch (e) { return toast(micError(e), null, {error: true}); }
   const t = $('docMd');
   if (!t || !U.docEdit || DV.rec) { micDone(stream); return; }  // the editor closed meanwhile
   const mark = dvMark(++DV.n), a = t.selectionStart, b = t.selectionEnd;
@@ -7437,7 +7533,19 @@ const ACT = {
   'prefs-cancel': () => cancelPrefs(),
   'correct-cancel': () => cancelCorrect(),
   fixes: () => openProject('fixes'),
+  'tidy-toggle': async () => {  // T256
+    try { const d = await net('/api/voicetidy', JSON_POST({on: !P_CACHE.prefs.tidy}), NET.op); P_CACHE.prefs.tidy = d.tidy; renderProject(); toast(d.tidy ? 'Voice notes are tidied' : 'Voice notes are kept word for word'); } catch (ex) { notSaved(ex); }
+  },
+  'as-said': async b => {  // T256: the words of a tidied voice note as they were said
+    try { const d = await net(`${P}api/transcript?f=${encodeURIComponent(b.dataset.f)}`, {method: 'POST'}); dialog('As said', `<p class="whitespace-pre-wrap break-words text-[15px]">${esc(d.heard || d.tr || 'No words were heard.')}</p>${d.heard ? '' : '<p class="mt-3 text-sm text-zinc-500 dark:text-zinc-400">Nothing was tidied in this one: the words are as said.</p>'}`); } catch (_) { notLoaded('the words as said', () => ACT['as-said'](b)); }
+  },
+  'fix-add': async () => {  // T256: a word to hear right, no wrong form needed
+    const right = ($('fixWord')?.value || '').trim();
+    if (!right) return $('fixWord')?.focus();
+    try { await setFix({right}); toast(`Voice notes will hear “${right}”`); } catch (_) {}
+  },
   'fix-remove': async b => {
+    if (!b.dataset.wrong) { const right = b.dataset.right; try { await setFix({right, forget: true}); toast(`Forgot “${right}”`, () => setFix({right}).catch(ex => notSaved(ex))); } catch (ex) { notSaved(ex, () => ACT['fix-remove'](b)); } return; }
     const wrong = b.dataset.wrong, c = (P_CACHE.fixes || []).find(x => x.wrong === wrong);
     try { await setFix({wrong}); toast(`Forgot “${wrong}”`, () => setFix({wrong, right: c.right}).catch(ex => notSaved(ex))); } catch (ex) { notSaved(ex, () => ACT['fix-remove'](b)); }
   },
@@ -8174,9 +8282,11 @@ const PBODY = {
       + pSetting('New key', 'This computer and your local network never need the key. A new key signs out every other device.',
         '<button data-act="new-key" class="inline-flex h-11 shrink-0 items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 text-[15px] font-semibold text-red-600 hover:bg-red-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-red-400 dark:hover:bg-red-400/10">New key</button>');
   },
-  fixes: () => !P_CACHE.fixes ? P_LOADING : (P_CACHE.prefs ? pPart(`Transcription preferences${P_CACHE.prefs.default ? '<span class="ml-2 text-[13px] font-normal text-zinc-400">default</span>' : ''}`, "How every project's voice notes are written down, in your own words. Transcription follows them after its own rules.", prefsBox() + prefsEditBtn()) + pPart('Spellings', P_CACHE.fixes.length ? 'The words you corrected once, written your way from then on.' : 'None yet. When a voice note gets words wrong, select them in the input and write the right ones: from then on every project writes them your way.') : '') + (!P_CACHE.fixes.length ? (P_CACHE.prefs ? '' : pRuled(EMPTY('None yet. When a voice note gets words wrong, select them in the input and write the right ones: from then on every project writes them your way.')))
-    : `<ul class="divide-y divide-zinc-200 border-y border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">${P_CACHE.fixes.map(c => `<li class="flex min-h-13 items-center gap-3 py-1.5 text-[15px]"><span class="min-w-0 flex-1 break-words"><span class="text-zinc-400 line-through decoration-zinc-400 dark:text-zinc-500">${esc(c.wrong)}</span><span class="px-2 text-zinc-400 dark:text-zinc-500">→</span><span class="font-medium">${esc(c.right)}</span></span>
-      <button data-act="fix-remove" data-wrong="${esc(c.wrong)}" aria-label="Forget this spelling" title="Forget this spelling" class="grid size-11 shrink-0 lg:size-9 place-items-center rounded-lg text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200">${ico('x', 'size-4')}</button></li>`).join('')}</ul>`),
+  fixes: () => !P_CACHE.fixes ? P_LOADING : (P_CACHE.prefs ? pPart(`Transcription preferences${P_CACHE.prefs.default ? '<span class="ml-2 text-[13px] font-normal text-zinc-400">default</span>' : ''}`, "How every project's voice notes are written down, in your own words. Transcription follows them after its own rules.", prefsBox() + prefsEditBtn()) + pSetting('Tidy voice notes', P_CACHE.prefs.tidy ? 'On: fillers and repeats out, sentences joined, every detail kept. The words as said stay one tap away (As said, on the voice note).' : 'Off: voice notes are written down word for word.',
+      `<button data-act="tidy-toggle" role="switch" aria-checked="${!!P_CACHE.prefs.tidy}" class="${SECOND}">${P_CACHE.prefs.tidy ? 'Turn off' : 'Turn on'}</button>`) + pPart('Spellings', P_CACHE.fixes.length ? 'Words voice notes hear your way: ones you corrected, and ones you added here.' : 'None yet. Add a word below, or select wrong words in a voice note and write the right ones.',
+      `<div class="mt-3 flex items-center gap-1.5"><input id="fixWord" class="${FIELD} h-10 py-1.5 text-sm" placeholder="A name or term to hear right, e.g. Needs you" aria-label="A word to hear right" autocomplete="off" spellcheck="false"><button data-act="fix-add" class="h-10 shrink-0 rounded-xl bg-zinc-900 px-3.5 text-sm font-semibold text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200">Add</button></div>`) : '') + (!P_CACHE.fixes.length ? (P_CACHE.prefs ? '' : pRuled(EMPTY('None yet. When a voice note gets words wrong, select them in the input and write the right ones: from then on every project writes them your way.')))
+    : `<ul class="divide-y divide-zinc-200 border-y border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">${P_CACHE.fixes.map(c => `<li class="flex min-h-13 items-center gap-3 py-1.5 text-[15px]"><span class="min-w-0 flex-1 break-words">${c.wrong ? `<span class="text-zinc-400 line-through decoration-zinc-400 dark:text-zinc-500">${esc(c.wrong)}</span><span class="px-2 text-zinc-400 dark:text-zinc-500">→</span>` : ''}<span class="font-medium">${esc(c.right)}</span></span>
+      <button data-act="fix-remove" data-wrong="${esc(c.wrong || '')}" data-right="${esc(c.right)}" aria-label="Forget this spelling" title="Forget this spelling" class="grid size-11 shrink-0 lg:size-9 place-items-center rounded-lg text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200">${ico('x', 'size-4')}</button></li>`).join('')}</ul>`),
   deleted: () => (S.deleted || []).length ? `<ul class="divide-y divide-zinc-200 border-y border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">${deletedRows()}</ul>`
     : pRuled(EMPTY('Nothing deleted. An input you delete comes here, with the items that went with it.')),
   organizer: () => S.org?.on
@@ -8984,6 +9094,7 @@ document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && (U.searching || U.q) && document.activeElement === $('q') && !desk()) searchMode(false);
 });
 
+document.addEventListener('keydown', e => { if (e.target.id === 'fixWord' && e.key === 'Enter' && !e.isComposing) { e.preventDefault(); ACT['fix-add'](); } });  // T256
 document.addEventListener('keydown', async e => {  // Settings › Projects: Enter makes or saves, Esc stops (F173)
   const id = e.target.id;
   if (id !== 'pNewName' && id !== 'pRename') return;

@@ -393,7 +393,7 @@ class ServerTests(unittest.TestCase):
                                          data=None if text is None else json.dumps({'text': text}).encode(), headers={'Content-Type': 'application/json'})
             with urllib.request.urlopen(req, timeout=20) as r:
                 return json.load(r)
-        self.assertEqual(prefs(), {'text': taska.VOICE_PREFS, 'default': True})
+        self.assertEqual(prefs(), {'text': taska.VOICE_PREFS, 'default': True, 'tidy': True})
         self.assertEqual(prefs('Write numbers as digits.\nKeep English as spoken.  ')['text'], 'Write numbers as digits.\nKeep English as spoken.')
         self.assertEqual(taska.Hub(self.tmp.name, False).voice_prefs()['text'], 'Write numbers as digits.\nKeep English as spoken.')  # kept on disk
         fake = FakeGemini(['hello Taska'], 'hello Taska')
