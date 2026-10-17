@@ -5507,6 +5507,7 @@ function paint(el, html) { if (el.dataset.html !== html || el.innerHTML === '' &
 function renderComposer() {
   if (S.project && draftKey() !== U.draftKey) swapDraft(draftKey());
   const n = scopeN(), it = n && byN.get(n), dt = docTarget(), dOpen = !U.correct && !U.amend && !dt && docOpen(), t = $('text'), ticks = U.correct || U.amend || dt || dOpen ? [] : ticked(n);
+  if (U.fbFor !== (n || null)) { U.fbFor = n || null; renderFeedback(); }  // T225 #1: the box writes elsewhere now: the "Sent" line about the other item goes
   const vcd = !U.correct && !U.amend && docOpen(), vcN = vcd ? vcCount(t.value) : 0;  // F184: voice comments collected in the box
   let line = '', ph = S.project ? `Write to ${projTitle()}…` : 'Write anything…', send = 'Send';  // the box says whom it writes to, on the phone too (B157)
   if (U.prefsEdit) {  // F183: how voice notes are written down, for every project
