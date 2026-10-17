@@ -4957,7 +4957,11 @@ function tableHtml(text, gid) {
   // F215: a framed table that fits its column: long words, code and links wrap anywhere, so no column pushes the
   // others out of sight; each column keeps room for a few words and the table scrolls sideways only when it must (B158)
   const cell = 'min-w-32 max-w-[28rem] border-r border-b px-3 py-2 wrap-anywhere last:border-r-0';
-  return `<div class="overflow-x-auto rounded-lg border border-zinc-200 lg:scrollbar-thin dark:border-zinc-700"><table class="w-full border-collapse text-[13.5px] leading-relaxed">
+  // T252, B275: on a phone a table of 3 or more columns reads as cards, one per row: its first cell the title, the others
+  // "column: value". No sideways scrolling inside the page, which the iPhone also failed to paint while scrolling
+  const cards = head.length >= 3 ? `<div class="flex flex-col divide-y divide-zinc-200 overflow-hidden rounded-lg border border-zinc-200 text-[14.5px] leading-relaxed sm:hidden dark:divide-zinc-700 dark:border-zinc-700">${body.map(r => `<div class="px-3.5 py-3 even:bg-zinc-50/60 dark:even:bg-zinc-800/25">
+      <div class="font-semibold wrap-anywhere text-zinc-900 dark:text-zinc-100">${inlineMd(r[0] || '', gid)}</div>${head.slice(1).map((h, i) => (r[i + 1] || '').trim() ? `<div class="mt-1.5"><div class="text-xs font-medium text-zinc-500 dark:text-zinc-400">${inlineMd(h, gid)}</div><div class="wrap-anywhere">${inlineMd(r[i + 1], gid)}</div></div>` : '').join('')}</div>`).join('')}</div>` : '';
+  return cards + `<div class="${cards ? 'hidden sm:block ' : ''}overflow-x-auto rounded-lg border border-zinc-200 lg:scrollbar-thin dark:border-zinc-700"><table class="w-full border-collapse text-[13.5px] leading-relaxed">
     <thead class="bg-zinc-50 dark:bg-zinc-800/60"><tr>${head.map((c, i) => `<th class="${cell} border-zinc-200 align-bottom font-semibold text-zinc-800 dark:border-zinc-700 dark:text-zinc-100 ${align[i] || 'text-left'}">${inlineMd(c, gid)}</th>`).join('')}</tr></thead>
     <tbody>${body.map(r => `<tr class="even:bg-zinc-50/60 last:[&>td]:border-b-0 dark:even:bg-zinc-800/25">${head.map((_, i) => `<td class="${cell} border-zinc-100 align-top dark:border-zinc-800 ${align[i] || 'text-left'}">${inlineMd(r[i] || '', gid)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`;
 }
