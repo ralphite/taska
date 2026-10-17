@@ -4994,7 +4994,9 @@ function peek(n, {focus = true} = {}) {
   const moved = U.peek !== n;
   U.peek = n;
   const g = U.go && U.go.list.includes(n) ? U.go : null, files = filesOf(it), need = '', i = g ? g.list.indexOf(n) : -1;  // its button says what it needs (T225 #9)
-  const recent = it.thread.filter(x => x.id !== it.wait?.id).slice(-3), talk = it.thread.length;  // the question itself is pinned above (B145)
+  // What it needs from you comes right under the title, as on the item page: the question (B145), or for In review and
+  // Proposed the agent's latest report, which Accept / Not yet / Approve are about (T225 #3). The talk before it follows.
+  const pin = !it.wait && cardMsg(it), recent = it.thread.filter(x => x.id !== it.wait?.id && x.id !== pin?.id).slice(-3), talk = it.thread.length;
   const btn = (attrs, icon, label, tone) => `<button ${attrs} class="flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl text-[11px] font-semibold hover:bg-zinc-100 dark:hover:bg-zinc-800 ${tone}">${ico(icon, 'size-5')}<span class="max-w-full truncate">${label}</span></button>`;
   const slot = (a, k) => btn(`${k ? '' : 'data-slot="fwd" '}data-n="${n}" ${a[0] === 'need' ? 'data-act="card-answer"' : a[0] === 'reopen' ? 'data-act="reopen"' : `data-act="peek-set" data-f="${a[0]}" data-v="${a[1]}"`}`,
       ACT_ICON[a[2]], a[2], FWD_NEED[a[2]] ? NEED[FWD_NEED[a[2]]].text : FOCUS_TONE[a[2]] || 'text-zinc-700 dark:text-zinc-200');
@@ -5012,10 +5014,10 @@ function peek(n, {focus = true} = {}) {
     ${g ? idRow : ''}
     <h2 class="${g ? 'mt-1' : ''} text-[19px] leading-snug font-semibold break-words">${esc(it.title)}</h2>
     <div class="mt-1 flex flex-wrap items-center gap-x-2.5 text-xs font-medium text-zinc-500 dark:text-zinc-400">${it.type === 'rule' ? '' : `<span class="${PRI_TEXT[it.pri]}">${it.pri}</span>`}<span>${statusName(it)}</span><span>${WHEN[it.when]}</span><span>${it.type[0].toUpperCase() + it.type.slice(1)}</span>${talk ? cnt('comment', talk, plural(talk, 'comment')) : ''}</div>
-    ${it.body ? rich(it.body, 'pbody' + n, 'mt-2.5 text-[15px] text-zinc-700 dark:text-zinc-300') : ''}
+    ${it.wait ? `<div data-need class="mt-4 scroll-mt-2">${needsCard(it)}</div>` : pin ? `<div data-need class="mt-4 flex flex-col gap-4">${talkHtml(it, [pin], 'p')}</div>` : ''}
+    ${it.body ? rich(it.body, 'pbody' + n, 'mt-4 text-[15px] text-zinc-700 dark:text-zinc-300') : ''}
     ${it.next ? `<div class="mt-2 flex gap-2 text-sm"><span class="shrink-0 font-semibold text-zinc-500 dark:text-zinc-400">Next</span><span class="min-w-0 break-words">${inlineMd(it.next)}</span></div>` : ''}
     ${files.length ? `<div class="mt-3 flex items-end gap-2 overflow-x-auto lg:scrollbar-thin">${thumbs(files, 'peek' + n)}</div>` : ''}
-    ${it.wait ? `<div data-need class="mt-4 scroll-mt-2">${needsCard(it)}</div>` : ''}
     ${recent.length ? `<div class="mt-4 flex flex-col gap-4">${talkHtml(it, recent, 'p')}</div>` : ''}
   </div>`, {
     aboveComposer: true, focus, card: true, head, walk: !!g,
