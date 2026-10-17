@@ -5002,9 +5002,10 @@ function peek(n, {focus = true} = {}) {
   const last = g && !g.list.slice(i + 1).some(k => !g.done.has(k) && byN.get(k) && needsYou(byN.get(k)));  // nothing after this one: Next ends the walk
   const nav = g ? `<div class="flex items-center gap-1 px-2 pt-1">
       <button data-act="go-prev" ${i > 0 ? '' : 'disabled'} class="flex h-11 items-center gap-0.5 rounded-full pr-3 pl-1.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800">${ico('left', 'size-4', '2.25')}Previous</button>
-      <span class="min-w-0 flex-1 text-center text-xs font-medium text-zinc-500 tabular-nums dark:text-zinc-400">${i + 1} of ${g.list.length}</span>
+      <span class="min-w-0 flex-1"></span>
       <button data-act="go-next" class="flex h-11 items-center gap-0.5 rounded-full pr-1.5 pl-3 text-sm font-semibold text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800">${last ? 'End' : `Next${ico('right', 'size-4', '2.25')}`}</button></div>` : '';
   // The item's code and Open sit in the card's header row beside ×, where a walk's "Needs you · 2 of 5" goes: no empty row on top (B158).
+  // That "2 of 5" is the walk's one count: Previous and Next at the bottom don't repeat it (T225 #4).
   const idRow = `<div class="flex items-center gap-2">${stateIcon(it.status, statusName(it), 'size-5')}<span class="font-mono text-sm font-bold ${TYPE_TEXT[it.type]}">${code(n)}</span>${need ? `<span class="text-xs font-semibold text-amber-700 dark:text-amber-400">${need}</span>` : ''}
       <button data-act="goto" data-n="${n}" class="-my-2 ml-auto flex h-11 items-center gap-1.5 rounded-full px-2 text-sm font-medium text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10">${ico('open', 'size-4')}Open</button></div>`;
   const head = g ? `<span class="flex items-center gap-2"><span class="text-xs font-bold tracking-wide whitespace-nowrap text-amber-700 uppercase dark:text-amber-400">Needs you</span><span class="text-xs font-medium whitespace-nowrap text-zinc-500 tabular-nums dark:text-zinc-400">${i + 1} of ${g.list.length}</span></span>` : idRow;
