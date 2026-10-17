@@ -2140,6 +2140,17 @@ def voice_context(store, scope):
             words.update(re.findall(r"[A-Za-z_][A-Za-z0-9_./\-]{2,}", it["title"] + " " + it["body"]))
         # B73, not B073: the way people say it. No "src=r119" left over in a title.
         items = [f"{LETTER[it['type']]}{it['n']} " + " ".join(re.sub(r"\bsrc=r\d+", " ", it["title"]).split())[:100] for it in pool[:30]]
+        # T271: the documents of the item you speak to (a comment on one): their words are hints first, Chinese names
+        # from their headings and bold text too, and their start is context to recognize words, never to copy
+        for d in [d for d in store.docs.values() if d["n"] == scope][-3:]:
+            md = d.get("md") or ""
+            for w in re.findall(r"[A-Za-z_][A-Za-z0-9_./\-]{2,}", md):
+                words[w] += 3
+            for w in re.findall(r"(?:^#+\s*|\*\*)([^*\n]{2,24}?)(?:\*\*|$)", md, re.M):
+                for part in re.split(r"[\s，。、：:；;（）()／/·|+＋-]+", w):
+                    if re.search(r"[\u4e00-\u9fff]", part) and 2 <= len(part) <= 12:
+                        words[part] += 3
+            items.insert(0, f"D{d['d']} (the document being discussed) " + " ".join(re.sub(r"[#*`>|_-]+", " ", md).split())[:800])
         return words, items, [it["title"] for it in pool[:40]]
 
 
