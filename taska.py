@@ -3967,7 +3967,7 @@ __APP_HEAD__
             <span id="recBars" class="flex h-8 min-w-0 flex-1 items-center justify-end gap-[3px] overflow-hidden lg:group-data-[compose]/app:h-14"></span>
           </div>
         </div>
-        <button id="micBtn" data-act="mic" aria-label="Record a voice note" hidden class="grid size-11 shrink-0 place-items-center rounded-full text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 lg:m-1 lg:size-9 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"></button>
+        <button id="micBtn" data-act="mic" aria-label="Record a voice note" hidden class="mr-4 grid size-11 shrink-0 place-items-center rounded-full lg:mr-0 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 lg:m-1 lg:size-9 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"></button>
         <button id="sendBtn" data-act="send" aria-label="Send (Shift + Enter)" class="grid size-11 shrink-0 place-items-center rounded-full bg-zinc-900 text-white disabled:opacity-25 lg:m-1 lg:size-9 lg:hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:lg:hover:bg-white"></button>
       </div>
       <input id="fileInput" type="file" multiple hidden>
@@ -5891,7 +5891,7 @@ function boxAnchor() {
   const root = desk() ? $('detailBody') : $('dlgBody'), t = docTarget();
   if (t?.reply) return root.querySelector(`[data-thread="${t.reply ? t.key : ''}"]`);
   if (t) return [...root.querySelectorAll('#docBlocks section[data-key]')].filter(sec => sec.dataset.key === t.key || U.docSel.has(sec.dataset.key)).at(-1) || null;
-  return root.querySelector('#docBlocks');
+  return null;  // B282: nothing picked: a comment on the whole document is written at the bottom, always in sight
 }
 function parkBox() {  // home, before a pane that may hold it is drawn again; it goes back once the pane is there
   if (BOX.parentNode !== $('foot')) { const had = document.activeElement === $('text'); $('boxHome').before(BOX); BOX.classList.remove('my-3'); if (had) $('text').focus({preventScroll: true}); requestAnimationFrame(placeBox); }
