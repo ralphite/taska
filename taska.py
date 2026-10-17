@@ -4658,6 +4658,22 @@ const needWord = it => needsYou(it) ? rowAction(it)[1] : '';
 // user_word is the same rule.
 const userWord = x => x.by === 'you' || (x.by === 'org' && ['say', 'decide', 'propose'].includes(x.kind) && !!x.src);
 const lastAgentMsg = it => [...it.thread].reverse().find(x => !userWord(x));
+// T274 #5: what an agent wrote since you last looked at an item: a blue dot on its row. Kept in this browser; on the
+// first visit everything there is counts as seen.
+const SEEN = {key: '', map: null};
+function seenMap() {
+  const key = 'taska.seen.' + S.project;
+  if (SEEN.key !== key) { SEEN.key = key; try { SEEN.map = JSON.parse(localStorage.getItem(key) || 'null'); } catch (_) { SEEN.map = null; } }
+  if (!SEEN.map) { SEEN.map = {since: new Date().toISOString()}; saveSeen(); }
+  return SEEN.map;
+}
+const saveSeen = () => { try { localStorage.setItem(SEEN.key, JSON.stringify(SEEN.map)); } catch (_) {} };
+const unread = it => { const m = lastAgentMsg(it), s = seenMap(); return !!m && !it.archived && m.t > (s[it.n] || s.since); };
+const unreadCount = () => S.items.filter(it => !it.merged_into && unread(it)).length;
+function markSeen(it) {
+  const m = lastAgentMsg(it);
+  if (m && unread(it)) { seenMap()[it.n] = m.t; saveSeen(); }
+}
 // One plain line of what the agent said: the conclusion it leads with (T58 #5).
 const oneLine = t => (String(t || '').split('\n').map(l => l.replace(/^\s*(#+|>|[-*+]\s+(\(|\[)[ xX]?(\)|\])|[-*+]|\d+[.)])\s*/, '').replace(/[*`]/g, '').trim()).find(Boolean) || '');
 const excerpt = it => oneLine(it.wait ? it.wait.text : it.status === 'review' ? lastAgentMsg(it)?.text : (lastAgentMsg(it)?.text || it.body));
@@ -4753,7 +4769,7 @@ function itemRow(it, depth = 0, group = [], band = '') {  // band: the band it i
   const foldable = group.some(k => k.parent === it.n);  // its subitems are in this list
   // B254: a subitem is set in 24 px a level, with no line beside it
   const top = `<div data-act="open" data-n="${it.n}" ${rowCur(it)} class="group relative flex cursor-pointer items-start gap-3 py-2.5 pr-3 pl-${4 + 6 * depth} ${closed ? 'opacity-55' : ''} ${rowTint(it)}">
-      ${stateIcon(it.status, statusName(it))}
+      ${unread(it) ? '<span class="absolute top-4.5 left-1 size-2 rounded-full bg-blue-600 dark:bg-blue-400" title="New from an agent"></span>' : ''}${stateIcon(it.status, statusName(it))}
       <div class="min-w-0 flex-1">
         <p data-hit class="line-clamp-2 text-[15px] leading-snug font-medium lg:line-clamp-1 ${closed ? 'line-through decoration-zinc-400' : ''}"><span class="mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[it.type]}">${c}</span>${esc(it.title)}</p>
         ${U.q.trim() ? hitLine(it) : ''}
@@ -5465,6 +5481,7 @@ function renderDetail() {
   settleOpen();  // B5: never a merged item, whichever way it came back (a tab's last item, a document's item)
   if (!desk()) $('foot').hidden = !!(U.editing && U.editing === U.open) || (!!D.page && !U.prefsEdit);  // editing an item: its form is the one place to type, the box steps aside (B156); Settings has no box but for F183
   const it = U.open && byN.get(U.open), body = $('detailBody');
+  if (it && S.project) markSeen(it);  // T274 #5
   if (desk()) renderGoStrip();
   if (desk() && U.doc && !U.docEdit && docById(U.doc)) return docPane(docById(U.doc));
   if (!it) {  // the desktop's detail pane with nothing selected
@@ -7901,7 +7918,8 @@ function startGoFromAnotherProject() {
 function renderSideFoot() {  // the sidebar's foot: Settings and the keys (T274 #24: Undo is on the toast and Z)
   const foot = (act, icon, label, key, attrs = '') => `<button data-act="${act}" ${attrs} class="flex h-9 min-w-0 flex-1 items-center gap-2.5 rounded-lg px-2.5 text-left text-sm text-zinc-600 hover:bg-zinc-200/60 dark:text-zinc-300 dark:hover:bg-zinc-800">${ico(icon, 'size-4 shrink-0 text-zinc-500 dark:text-zinc-400', '2')}<span class="min-w-0 flex-1 truncate">${label}</span>${KBD(key)}</button>`;
   const u = U.mine.at(-1);
-  draw($('sideFoot'), `<div class="flex items-center gap-0.5">${foot('project', 'gear', 'Settings', 'G S', 'title="Settings · G S"')}<button data-act="keys" title="Keyboard shortcuts · ?" aria-label="Keyboard shortcuts" class="grid size-9 shrink-0 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-200/60 dark:text-zinc-400 dark:hover:bg-zinc-800">${ico('keyboard', 'size-4')}</button></div>`);
+  const side = (sec, icon, label) => `<a href="${P}${PSEC[sec][0]}" data-act="psec" data-sec="${sec}" class="flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-sm text-zinc-600 hover:bg-zinc-200/60 dark:text-zinc-300 dark:hover:bg-zinc-800">${ico(icon, 'size-4 shrink-0 text-zinc-500 dark:text-zinc-400', '2')}<span class="min-w-0 flex-1 truncate">${label}</span>${sec === 'log' && unreadCount() ? `<span class="rounded-full bg-blue-600 px-1.5 text-[11px] font-semibold text-white dark:bg-blue-500">${unreadCount()}</span>` : ''}</a>`;
+  draw($('sideFoot'), `${S.project ? side('log', 'history', 'Activity') + side('deleted', 'trash', 'Deleted') : ''}<div class="flex items-center gap-0.5">${foot('project', 'gear', 'Settings', 'G S', 'title="Settings · G S"')}<button data-act="keys" title="Keyboard shortcuts · ?" aria-label="Keyboard shortcuts" class="grid size-9 shrink-0 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-200/60 dark:text-zinc-400 dark:hover:bg-zinc-800">${ico('keyboard', 'size-4')}</button></div>`);
 }
 function renderRail() {
   const b = (act, inner, title, attrs = '') => `<button data-act="${act}" ${attrs} title="${title}" aria-label="${title.split(' · ')[0]}" class="relative grid size-10 place-items-center rounded-xl text-zinc-500 hover:bg-zinc-200/60 aria-pressed:bg-zinc-200/80 aria-pressed:text-zinc-900 aria-[current=page]:bg-zinc-200/80 aria-[current=page]:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:aria-pressed:bg-zinc-700 dark:aria-pressed:text-zinc-50 dark:aria-[current=page]:bg-zinc-700 dark:aria-[current=page]:text-zinc-50">${inner}</button>`;
@@ -8324,7 +8342,7 @@ function fullWidth(on) {
 // Projects. G S opens it. The phone shows the same as pages: /settings is the list of sections, each section a page.
 const PSEC = {  // section: [address, icon, name, what it is for]
   agents: ['agents', 'bot', 'Agents', () => `The coding agents that work on ${esc(projTitle())}: who is here, whether they go on by themselves, and how to connect one more.`],
-  log: ['log', 'history', 'Change log', 'Every change to this project, newest first. Undo puts back one of your own changes.'],
+  log: ['log', 'history', 'Activity', 'What agents and you did in this project, newest first. Undo puts back one of your own changes.'],
   deleted: ['deleted', 'trash', 'Deleted', 'Inputs you deleted, with the items that went with them. Restore puts them back as they were.'],
   projects: ['projects', 'folder', 'Projects', 'Every project on this Taska. Give a project any name; its address never changes, so agents and phone links keep working.'],
   phone: ['phone', 'phone', 'Use on your phone', 'Open Taska on your phone from anywhere, with a link or with the key.'],
@@ -8332,7 +8350,8 @@ const PSEC = {  // section: [address, icon, name, what it is for]
   fixes: ['spellings', 'pencil', 'Voice spellings', "Every project's voice notes write these your way. To add one, select the wrong words in a voice note."],
   organizer: ['organizer', 'sparkle', 'Organizer', 'What turns what you say into items, for every project.'],
 };
-const PSEC_THIS = ['agents', 'log', 'deleted'];  // the rest are for all projects
+const PSEC_THIS = ['agents'];  // the rest are for all projects
+const PSEC_SIDE = ['log', 'deleted'];  // T274 #20: not settings; the sidebar opens them
 const PSEC_AT = {...Object.fromEntries(Object.entries(PSEC).map(([sec, [path]]) => [path, sec])), settings: 'agents', connect: 'connect', about: 'projects'};  // address -> section; /settings: Agents (the phone: the list), /connect: Agents, at Connect
 const P_CACHE = {guide: null, log: null, logRev: -1, fixes: null, prefs: null, nav: '', body: '', projects: null, trash: null};
 const LOG_N = 300;  // the change log shows the latest 300 changes, here and on the phone
@@ -8508,10 +8527,10 @@ function renderProject() {
     return `<a href="${P}${path}" data-act="psec" data-sec="${k}" ${on ? 'aria-current="page" ' : ''}class="flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-sm text-zinc-600 hover:bg-zinc-200/60 hover:text-zinc-900 data-pressed:bg-zinc-200/80 aria-[current=page]:bg-zinc-200/70 aria-[current=page]:font-semibold aria-[current=page]:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800/60 dark:hover:text-zinc-100 dark:aria-[current=page]:bg-zinc-800 dark:aria-[current=page]:text-zinc-50">${ico(icon, 'size-4 opacity-70')}<span class="min-w-0 flex-1 truncate">${label}</span><span class="max-w-28 truncate text-xs font-normal text-zinc-400 tabular-nums dark:text-zinc-500">${S.project ? PSEC_RIGHT[k]?.() ?? '' : ''}</span></a>`; };
   const group = t => `<div class="px-3.5 pt-5 pb-1.5 text-[11px] font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">${t}</div>`;
   setHtml($('projectNav'), 'nav', `<div class="flex h-14 shrink-0 items-center px-2"><button data-act="project-back" class="flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm text-zinc-600 hover:bg-zinc-200/60 dark:text-zinc-300 dark:hover:bg-zinc-800">${ico('left', 'size-4')}Back to ${D.compose ? 'New input' : TAB_NAME[U.tab]}${KBD('Esc')}</button></div>
-    <h1 class="px-4 pt-1 text-[19px] font-semibold tracking-tight">Settings</h1>
+    ${PSEC_SIDE.includes(sec) ? `<h1 class="px-4 pt-1 text-[19px] font-semibold tracking-tight">${esc(projTitle())}</h1><div class="mt-3 flex flex-col gap-0.5 px-2">${PSEC_SIDE.map(row).join('')}</div>` : `<h1 class="px-4 pt-1 text-[19px] font-semibold tracking-tight">Settings</h1>
     ${group('This project')}<div class="flex items-center gap-2 px-3.5 pb-1.5">${projTile(S.project || HERE, 'size-5 rounded-md text-[11px]')}<span class="min-w-0 truncate text-sm font-semibold">${esc(projTitle())}</span></div>
     <div class="flex flex-col gap-0.5 px-2">${PSEC_THIS.map(row).join('')}</div>
-    ${group('All projects')}<div class="flex flex-col gap-0.5 px-2">${Object.keys(PSEC).filter(k => !PSEC_THIS.includes(k)).map(row).join('')}</div>
+    ${group('All projects')}<div class="flex flex-col gap-0.5 px-2">${Object.keys(PSEC).filter(k => !PSEC_THIS.includes(k) && !PSEC_SIDE.includes(k)).map(row).join('')}</div>`}
     <button data-act="keys" class="mt-auto flex h-12 shrink-0 items-center gap-2 border-t border-zinc-200 px-4 text-[13px] text-zinc-500 hover:text-zinc-800 dark:border-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200">${ico('keyboard', 'size-4')}<span class="flex-1 text-left">Keyboard shortcuts</span>${KBD('?')}</button>`);
   if (typing && $('projectBody').contains(document.activeElement)) return;  // typing a name: a refresh waits; saved or stopped, the field goes
   setHtml($('projectBody'), 'body', `<div class="mx-auto w-full max-w-[46rem] px-8 pt-9 pb-16"><header class="pb-6"><h1 class="text-[22px] leading-tight font-semibold tracking-tight">${name}</h1>
@@ -8533,7 +8552,7 @@ function phoneIndex() {
   return phHead('Settings')
     + phLabel(`<span class="shrink-0">This project ·</span>${projTile(S.project || HERE, 'size-4 rounded text-[9px]')}<span class="truncate font-semibold text-zinc-700 dark:text-zinc-200">${esc(projTitle())}</span>`)
     + `<div class="${PH_GROUP}">${PSEC_THIS.map(row).join('')}</div>` + phNote('Connecting an agent is in Agents. The agent pill on the list opens it too.')
-    + phLabel('All projects') + `<div class="${PH_GROUP}">${Object.keys(PSEC).filter(k => !PSEC_THIS.includes(k)).map(row).join('')}</div>` + phNote('Projects: new, rename, delete and restore.');
+    + phLabel('All projects') + `<div class="${PH_GROUP}">${Object.keys(PSEC).filter(k => !PSEC_THIS.includes(k) && !PSEC_SIDE.includes(k)).map(row).join('')}</div>` + phNote('Projects: new, rename, delete and restore.');
 }
 function phoneSection(sec) {
   const [, , name, about] = PSEC[sec];
@@ -9085,7 +9104,8 @@ function renderDrawerSettings() {
   if (desk()) return renderSideFoot();  // Undo comes and goes with each change
   // The phone's drawer ends in a card (B162): Undo, while there is one (a phone has no Z), and Settings, whose pages hold
   // the rest. Keep going stays on the list's Agent queue and in Settings › Agents.
-  draw($('drawerSettings'), `${undoRow()}<button data-act="project" class="flex min-h-12 w-full items-center gap-3 px-3.5 py-2.5 text-left text-[15px]">${ico('gear', 'size-5 shrink-0 text-zinc-500 dark:text-zinc-400')}<span class="min-w-0 flex-1">Settings</span>${ico('right', 'size-4 shrink-0 text-zinc-300 dark:text-zinc-600')}</button>`);
+  const side = (sec, icon, label) => `<a href="${P}${PSEC[sec][0]}" data-act="psec" data-sec="${sec}" class="flex min-h-12 w-full items-center gap-3 px-3.5 py-2.5 text-left text-[15px]">${ico(icon, 'size-5 shrink-0 text-zinc-500 dark:text-zinc-400')}<span class="min-w-0 flex-1">${label}</span>${ico('right', 'size-4 shrink-0 text-zinc-300 dark:text-zinc-600')}</a>`;
+  draw($('drawerSettings'), `${undoRow()}${S.project ? side('log', 'history', 'Activity') + side('deleted', 'trash', 'Deleted') : ''}<button data-act="project" class="flex min-h-12 w-full items-center gap-3 px-3.5 py-2.5 text-left text-[15px]">${ico('gear', 'size-5 shrink-0 text-zinc-500 dark:text-zinc-400')}<span class="min-w-0 flex-1">Settings</span>${ico('right', 'size-4 shrink-0 text-zinc-300 dark:text-zinc-600')}</button>`);
 }
 // The amber dot on the menu icon: another project waits on you. Checked now and then, not on every change.
 async function checkOthers() {
