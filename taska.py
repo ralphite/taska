@@ -909,7 +909,7 @@ class Store:
                               if auto else ": finish what you are doing, write back, then stop and wait for the user.")]
         if self.rules():
             out.append(f"{len(self.rules())} project rule{'s' if len(self.rules()) != 1 else ''}: read GET /rules once per session and follow those that apply.")
-        live = self.sorted(i for i in self.active() if i["status"] not in CLOSED)
+        live = self.sorted(i for i in self.active() if i["status"] not in CLOSED and not i["archived"])  # F281: an archived item rests, whatever its state
         talking = {n for r in self.inputs.values() if self.held(r) for n in [r["scope"], *r["touched"]] if n}  # B165
         for label, rows in (("waiting on the user (skip)", [i for i in live if self.waiting(i)]),
                             ("proposed, the user has not approved yet (skip)", [i for i in live if i["status"] == "proposed"]),
@@ -1330,9 +1330,8 @@ class Store:
                     if it["status"] == "review":
                         del f["status"], was["status"]
             status = f.get("status", it["status"])
-            if f.get("archived") and status not in CLOSED:
-                raise Err(f"{code} is {status}: only done/dropped items can be archived")
-            if it.get("archived") and status not in CLOSED and "archived" not in f:
+            # F281: any item can be archived, in any state; only setting it open again brings it back
+            if it.get("archived") and "status" in f and status not in CLOSED and "archived" not in f:
                 f["archived"], was["archived"] = False, True  # reopening brings it back
             if not f:
                 return f"ok {code} no change{note}", ""
@@ -3955,7 +3954,7 @@ __APP_HEAD__
       <div id="scope" hidden class="flex h-8 items-center gap-1.5 pt-1 pr-1.5 pl-4 text-[13px] text-zinc-500 dark:text-zinc-400 lg:group-data-[compose]/app:hidden"></div>
       <div id="drafts" hidden class="flex gap-2.5 overflow-x-auto px-3 pt-3 pb-1 lg:scrollbar-thin"></div>
       <div id="doubts" hidden class="flex flex-col px-4 pt-1 text-[13px] leading-snug text-zinc-600 dark:text-zinc-300"></div>
-      <div class="flex items-end gap-0.5 p-1.5 group-data-[multi]/box:flex-wrap">
+      <div class="flex items-end gap-2 p-1.5 lg:gap-0.5 group-data-[multi]/box:flex-wrap">
         <button id="attachBtn" data-act="attach" aria-label="Add images or files" class="grid size-11 shrink-0 place-items-center rounded-full text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 lg:m-1 lg:size-9 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100 group-data-[multi]/box:mr-auto"></button>
         <div class="grid min-w-0 flex-1 group-data-[multi]/box:order-first group-data-[multi]/box:basis-full group-data-[multi]/box:px-2 group-data-[multi]/box:pt-1">
           <textarea id="text" rows="1" placeholder="Write anything…" aria-label="Input" class="col-start-1 row-start-1 max-h-48 min-h-11 w-full min-w-0 resize-none bg-transparent px-1 py-2.5 text-[17px] leading-6 outline-none placeholder:text-zinc-400 sm:text-[15px] lg:scrollbar-thin dark:placeholder:text-zinc-500"></textarea>
@@ -3971,6 +3970,7 @@ __APP_HEAD__
       </div>
       <input id="fileInput" type="file" multiple hidden>
     </div>
+    <span id="boxHome" hidden></span>
     <p id="boxHint" class="mt-1.5 hidden h-5 items-center justify-center gap-1 text-xs text-zinc-400 lg:mx-auto lg:flex lg:max-w-[42rem] dark:text-zinc-500"></p>
     <section id="composeList" aria-label="You said lately" class="hidden lg:group-data-[compose]/app:mx-auto lg:group-data-[compose]/app:mt-10 lg:group-data-[compose]/app:block lg:group-data-[compose]/app:max-w-[42rem]"></section>
   </footer>
@@ -5086,8 +5086,8 @@ async function deleteComment(dn, id) {
   toast('Comment deleted', pushUndo(`Delete a comment on D${dn}`, async () => { await save({op: 'dcundel', d: +dn, id: +id}); renderDoc(); toast('Comment back'); }));
 }
 function threadHtml(d, key, comments, blockText) {
-  return `<div class="mt-2 space-y-2 border-l-2 border-amber-300 pl-3 dark:border-amber-600">
-    ${comments.map(c => `<div class="group text-sm ${MSG(c.by).replace(/\b(ml|mr)-8\b/, '')}">${blockText !== undefined && !sameText(c.quote, blockText) ? `<div class="mb-0.5 line-clamp-2 text-xs text-zinc-500">“${esc(plainQuote(c.quote))}”</div>` : ''}<div class="flex min-h-6 items-center gap-1"><span class="${WHO(c.by)}">${esc(whoName(c.by))}</span> <span class="text-xs text-zinc-400">${when(c.t)}${c.edited ? ` · edited ${when(c.edited)}` : ''}</span>${dcActs(d, c)}</div>${rich(c.text, 'dc' + c.t)}${c.files?.length ? `<div class="mt-1.5 flex gap-2 overflow-x-auto">${thumbs(c.files, 'dcf' + c.id, 'size-11')}</div>` : ''}</div>`).join('')}
+  return `<div data-thread="${key}" class="mt-2 space-y-2 border-l-2 border-amber-300 pl-3 dark:border-amber-600">
+    ${comments.map(c => `<div data-dc="${c.id}" class="group text-sm ${MSG(c.by).replace(/\b(ml|mr)-8\b/, '')}">${blockText !== undefined && !sameText(c.quote, blockText) ? `<div class="mb-0.5 line-clamp-2 text-xs text-zinc-500">“${esc(plainQuote(c.quote))}”</div>` : ''}<div class="flex min-h-6 items-center gap-1"><span class="${WHO(c.by)}">${esc(whoName(c.by))}</span> <span class="text-xs text-zinc-400">${when(c.t)}${c.edited ? ` · edited ${when(c.edited)}` : ''}</span>${dcActs(d, c)}</div>${rich(c.text, 'dc' + c.t)}${c.files?.length ? `<div class="mt-1.5 flex gap-2 overflow-x-auto">${thumbs(c.files, 'dcf' + c.id, 'size-11')}</div>` : ''}</div>`).join('')}
     ${U.docReply === key ? '' : `<button data-act="doc-reply" data-key="${key}" class="${HIT} flex h-8 items-center gap-1 rounded-lg px-1.5 -mx-1.5 text-xs font-semibold text-blue-600 hover:bg-blue-50 aria-pressed:underline dark:text-blue-400 dark:hover:bg-blue-400/10">${ico('reply', 'size-3.5')}Reply</button>`}
   </div>`;
 }
@@ -5148,7 +5148,7 @@ function docPane(d) {
   if (D.docKey === key && body.querySelector('#docBlocks')) return;
   D.docKey = key;
   const top = body.querySelector('#docBlocks') ? body.scrollTop : (U.docScroll[d.d] || 0);
-  body.innerHTML = `<div class="mx-auto w-full max-w-[46rem] px-8 pt-8 pb-12">${docViewHtml(d)}</div>`;
+  parkBox(); body.innerHTML = `<div class="mx-auto w-full max-w-[46rem] px-8 pt-8 pb-12">${docViewHtml(d)}</div>`;
   body.scrollTop = top;
   if (U.docCircle) wireLasso();
 }
@@ -5428,7 +5428,7 @@ function renderDetail() {
       $('dActs').innerHTML = ''; $('itemMenuBtn').hidden = true;
       $('dHead').innerHTML = D.compose ? `<span class="flex items-center gap-2 text-sm font-semibold">${ico('newinput', 'size-[18px] text-blue-600 dark:text-blue-400')}${ruleMode() ? 'New rule' : 'New input'}</span>` : '';
       $('dNav').innerHTML = back ? `<button data-act="compose-back" class="flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800">${ico('left', 'size-4')}Back to ${D.prevDoc ? 'D' + D.prevDoc : code(D.prev)}${KBD('Esc')}</button>` : '';
-      body.innerHTML = D.compose ? '' : noSelection();
+      parkBox(); body.innerHTML = D.compose ? '' : noSelection();
       if (D.compose) {  // drawn again only when it changed, and not under a word you are correcting (I176): a redraw under a press loses the click
         $('composeHead').innerHTML = composeHead();
         const said = saidLately(), list = $('composeList');
@@ -5442,7 +5442,7 @@ function renderDetail() {
   const top = body.scrollTop, keep = keepEdit();
   $('dHead').innerHTML = `<span class="hidden lg:inline">${stateIcon(it.status, statusName(it), 'size-[18px]')}</span><span class="font-mono text-sm font-bold ${TYPE_TEXT[it.type]}">${code(it.n)}</span><span class="text-[11px] font-semibold tracking-wider uppercase">${it.wait ? `<span class="text-amber-600 dark:text-amber-400">${it.wait.kind === 'block' ? 'Blocked' : 'Asks you'}</span>` : `<span class="${statusTone(it)}">${statusName(it)}</span>`}</span>`;  // T230 #2: a state, the card's and the row's word, not a button's
   if (desk()) renderDetailBar(it);
-  body.innerHTML = detailHtml(it);
+  parkBox(); body.innerHTML = detailHtml(it);
   body.scrollTop = top;
   requestAnimationFrame(() => body.querySelectorAll('[data-clip]').forEach(clipFade));  // measured once it shows
   restoreEdit(keep);
@@ -5776,7 +5776,7 @@ function renderInputs() {
   const rows = (chat ? [...S.inputs] : [...S.inputs].reverse()).filter(r => inputMatch(r, words)), more = searchHints(rows.length);  // more: A9
   if (desk()) renderDeskHead();  // the title's count follows the search as you type (B18)
   let day = '';
-  $('inputsView').innerHTML = rows.length ? rows.map(r => {
+  parkBox(); $('inputsView').innerHTML = rows.length ? rows.map(r => {
     const [label, tone, icon] = inputState(r), scope = r.scope ? byN.get(r.scope) : null, d = dayOf(r.t);
     const head = d !== day ? `<div class="px-4 pt-2.5 pb-0.5 text-xs font-semibold text-zinc-500 lg:px-0 lg:pt-5 lg:pb-1 dark:text-zinc-400">${(day = d)}</div>` : '';
     // The organizer's "Created B224" over a B224 chip named the item twice (T225 #18 follow-up): the chip says what was
@@ -5862,6 +5862,31 @@ const ticked = n => n && U.choice?.n === n && U.choice.picked.size ? [...U.choic
 // Drawn again only when it changed: the box is drawn on every keystroke and every refresh, and a redraw between the
 // press and the release of a button loses the click (the "... instead" links, a voice note's x, a toggle).
 function paint(el, html) { if (el.dataset.html !== html || el.innerHTML === '' && html) { el.dataset.html = html; el.innerHTML = html; } }
+// B265 (option B): one box, written where it belongs. A comment opens under the passage you picked (the whole
+// document's at its end), a reply in a thread under that thread, an edit or details under that input or comment,
+// the transcription preferences in their section; replies to an item and new inputs stay at the bottom. The same
+// element moves, so voice, files and drafts work alike everywhere. Before a pane is drawn again it comes home.
+const BOX = document.getElementById('composer');
+function boxAnchor() {
+  if (U.prefsEdit) return document.querySelector('#projectBody [data-prefs-slot]');
+  if (U.amend) return U.amend.mode === 'dc' ? document.querySelector(`[data-dc="${U.amend.id}"]`)
+    : document.querySelector(`#detailBody [data-src="${U.amend.id}"], #inputsView [data-r="${U.amend.id}"], #foot [data-src="${U.amend.id}"]`);
+  const d = docOpen();
+  if (!d) return null;
+  const root = desk() ? $('detailBody') : $('dlgBody'), t = docTarget();
+  if (t?.reply) return root.querySelector(`[data-thread="${t.reply ? t.key : ''}"]`);
+  if (t) return [...root.querySelectorAll('#docBlocks section[data-key]')].filter(sec => sec.dataset.key === t.key || U.docSel.has(sec.dataset.key)).at(-1) || null;
+  return root.querySelector('#docBlocks');
+}
+function parkBox() {  // home, before a pane that may hold it is drawn again
+  if (BOX.parentNode !== $('foot')) { const had = document.activeElement === $('text'); $('boxHome').before(BOX); BOX.classList.remove('my-3'); if (had) $('text').focus({preventScroll: true}); }
+}
+function placeBox() {
+  const a = boxAnchor(), had = document.activeElement === $('text');
+  if (a && a.nextElementSibling !== BOX) { a.after(BOX); BOX.classList.add('my-3'); if (had) $('text').focus({preventScroll: true}); BOX.scrollIntoView({block: 'nearest'}); }
+  else if (!a) parkBox();
+  $('boxHint').hidden = !!a;
+}
 function renderComposer() {
   if (S.project && draftKey() !== U.draftKey) swapDraft(draftKey());
   const n = scopeN(), it = n && byN.get(n), dt = docTarget(), dOpen = !U.correct && !U.amend && !dt && docOpen(), t = $('text'), ticks = U.correct || U.amend || dt || dOpen ? [] : ticked(n);
@@ -5952,8 +5977,9 @@ function renderComposer() {
     : dOpen ? boxKeys([['⇧↵', 'comment on the whole document'], ['Esc', `back to ${code(liveN(dOpen.n))}`]], 'or click a paragraph first')
     : U.files.some(f => f.transcribing) ? boxKeys([['⇧↵', 'send now']], 'the words follow by themselves')
     : boxKeys([['⇧↵', ticks.length ? 'send the answer' : 'send'], ['↵', 'new line'], ['⌥V', 'voice']], 'paste or drop screenshots');
-  if ($('overlay').dataset.above && !$('overlay').hidden) $('overlay').style.bottom = $('composer').parentElement.offsetHeight + 'px';  // a sheet over the page stays above the box: its line too
+  if ($('overlay').dataset.above && !$('overlay').hidden) $('overlay').style.bottom = $('foot').offsetHeight + 'px';  // a sheet over the page stays above the box: its line too
   vcPlace(); renderDraft();
+  placeBox();
 }
 
 const outboxLine = q => q.text.split('\n')[0] || (q.files.some(f => (f.mime || '').startsWith('audio/')) ? 'Voice note' : `${q.files.length} file${q.files.length === 1 ? '' : 's'}`);
@@ -6820,7 +6846,7 @@ function dialog(title, html, {aboveComposer = false, focus = true, tall = false,
   $('dlgFoot').innerHTML = foot; $('dlgFoot').hidden = !foot || (card && !desk() && document.activeElement === $('text'));  // typing on the card: room for the question (B153)
   $('dlgBody').classList.toggle('pb-[max(1.25rem,env(safe-area-inset-bottom))]', !foot); $('dlgBody').classList.toggle('pb-3', !!foot);
   if ($('overlay').hidden && !U.doc) layerOpen('sheet');  // one step Back closes it (B150); a document has its own address
-  $('dlgBody').innerHTML = html; $('overlay').hidden = false; $('overlay').dataset.card = card ? '1' : '';
+  parkBox(); $('dlgBody').innerHTML = html; $('overlay').hidden = false; $('overlay').dataset.card = card ? '1' : '';
   for (const c of ['h-[88dvh]', 'sm:h-[85dvh]']) $('dlg').classList.toggle(c, tall);  // documents get the whole screen
   const flush = card && aboveComposer;  // the card above the input box sits on it, as a sheet does: no strip of the list between them (T225 #2)
   for (const c of ['shadow-2xl', 'overflow-hidden', 'max-h-[92%]']) $('dlg').classList.toggle(c, card);
@@ -6829,7 +6855,7 @@ function dialog(title, html, {aboveComposer = false, focus = true, tall = false,
   $('overlay').classList.toggle('px-2', card); $('overlay').classList.toggle('pb-2', card && !flush);
   for (const c of ['lg:items-start', 'lg:justify-end', 'lg:bg-transparent', 'dark:lg:bg-transparent', 'lg:pt-[3.75rem]', 'lg:pr-3']) $('overlay').classList.toggle(c, pop && desk());
   for (const c of ['lg:w-[24rem]', 'lg:max-h-[80dvh]', 'lg:rounded-2xl', 'lg:ring-1', 'lg:ring-zinc-900/10', 'dark:lg:ring-white/10']) $('dlg').classList.toggle(c, pop && desk());
-  $('overlay').style.bottom = aboveComposer ? $('composer').parentElement.offsetHeight + 'px' : '';  // keep the input box usable
+  $('overlay').style.bottom = aboveComposer ? $('foot').offsetHeight + 'px' : '';  // keep the input box usable
   $('overlay').dataset.above = aboveComposer ? '1' : '';  // and follow it when its line or files come and go
   $('overlay').style.paddingLeft = $('overlay').style.paddingTop = ''; $('overlay').classList.remove('lg:justify-start');  // set again by popAt
   if (!desk() && !$('toast').hidden) placeToast();  // once the sheet or card has its place
@@ -7006,7 +7032,7 @@ function showView() {
   $('inputsView').hidden = !under || U.tab !== 'inputs';
   v.hidden = !d;
   for (const c of ['absolute', 'inset-x-0', 'top-[env(safe-area-inset-top)]', 'z-20', 'bg-white', 'dark:bg-zinc-950', 'shadow-2xl']) v.classList.toggle(c, lift);
-  v.style.bottom = lift ? $('composer').parentElement.offsetHeight + 'px' : '';
+  v.style.bottom = lift ? $('foot').offsetHeight + 'px' : '';
   if (!lift) { v.style.transform = ''; v.style.transition = ''; }
 }
 
@@ -8060,7 +8086,7 @@ function renderDetailBar(it) {
   const gap = '<span class="size-9"></span>';  // B128: Later and Archive each keep their own place
   $('dActs').innerHTML = b('copy', 'copy', 'Copy for agent · ⇧C', `data-n="${it.n}"`)
     + (it.type === 'rule' || it.archived || CLOSED(it.status) ? gap : b('swipe', 'clock', it.when === 'now' ? 'Later · L' : 'Back to now · L', `data-n="${it.n}" data-f="when" data-v="${it.when === 'now' ? 'later' : 'now'}"`))
-    + (it.archived ? b('archive', 'archive', 'Unarchive · E', `data-n="${it.n}" data-on="0"`) : CLOSED(it.status) ? b('archive', 'archive', 'Archive · E', `data-n="${it.n}" data-on="1"`) : gap);
+    + (it.archived ? b('archive', 'archive', 'Unarchive · E', `data-n="${it.n}" data-on="0"`) : b('archive', 'archive', 'Archive · E', `data-n="${it.n}" data-on="1"`));  // F281: any state
   $('dNav').innerHTML = b('prev', 'chevup', 'Previous · K') + b('next', 'down', 'Next · J') + b('full', D.full ? 'shrink' : 'open', D.full ? 'Back to the list · Esc' : 'Full width · O');
 }
 
@@ -8321,6 +8347,7 @@ function pageUp() {
 const DRAWN = new WeakMap();
 function draw(el, html) { if (DRAWN.get(el) === html && el.firstChild) return; DRAWN.set(el, html); el.innerHTML = html; }
 function setHtml(el, key, html) {
+  if (el.contains(BOX)) parkBox();  // B265: the box comes home before the page holding it is drawn again
   if (P_CACHE[key] === html) return;
   const sig = x => [x.dataset.act, x.dataset.sec, x.dataset.text, x.dataset.wrong, x.dataset.seq, x.dataset.slug].join('|');
   const had = el.contains(document.activeElement) && sig(document.activeElement);
@@ -8383,7 +8410,7 @@ const PBODY = {
       + pSetting('New key', 'This computer and your local network never need the key. A new key signs out every other device.',
         '<button data-act="new-key" class="inline-flex h-11 shrink-0 items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 text-[15px] font-semibold text-red-600 hover:bg-red-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-red-400 dark:hover:bg-red-400/10">New key</button>');
   },
-  fixes: () => !P_CACHE.fixes ? P_LOADING : (P_CACHE.prefs ? pPart(`Transcription preferences${P_CACHE.prefs.default ? '<span class="ml-2 text-[13px] font-normal text-zinc-400">default</span>' : ''}`, "How every project's voice notes are written down, in your own words. Transcription follows them after its own rules.", (U.prefsEdit ? '<p class="mt-3 text-sm text-zinc-500 dark:text-zinc-400">Editing in the box below.</p>' : prefsBox() + prefsEditBtn())) + pSetting('Tidy voice notes', P_CACHE.prefs.tidy ? 'On: fillers and repeats out, sentences joined, every detail kept. The words as said stay one tap away (As said, on the voice note).' : 'Off: voice notes are written down word for word.',
+  fixes: () => !P_CACHE.fixes ? P_LOADING : (P_CACHE.prefs ? pPart(`Transcription preferences${P_CACHE.prefs.default ? '<span class="ml-2 text-[13px] font-normal text-zinc-400">default</span>' : ''}`, "How every project's voice notes are written down, in your own words. Transcription follows them after its own rules.", (U.prefsEdit ? '<div data-prefs-slot class="mt-3"></div>' : prefsBox() + prefsEditBtn())) + pSetting('Tidy voice notes', P_CACHE.prefs.tidy ? 'On: fillers and repeats out, sentences joined, every detail kept. The words as said stay one tap away (As said, on the voice note).' : 'Off: voice notes are written down word for word.',
       `<button data-act="tidy-toggle" role="switch" aria-checked="${!!P_CACHE.prefs.tidy}" class="${SECOND}">${P_CACHE.prefs.tidy ? 'Turn off' : 'Turn on'}</button>`) + pPart('Spellings', P_CACHE.fixes.length ? 'Words voice notes hear your way: ones you corrected, and ones you added here.' : 'None yet. Add a word below, or select wrong words in a voice note and write the right ones.',
       `<div class="mt-3 flex items-center gap-1.5"><input id="fixWord" class="${FIELD} h-10 py-1.5 text-sm" placeholder="A name or term to hear right, e.g. Needs you" aria-label="A word to hear right" autocomplete="off" spellcheck="false"><button data-act="fix-add" class="h-10 shrink-0 rounded-xl bg-zinc-900 px-3.5 text-sm font-semibold text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200">Add</button></div>`) : '') + (!P_CACHE.fixes.length ? (P_CACHE.prefs ? '' : pRuled(EMPTY('None yet. When a voice note gets words wrong, select them in the input and write the right ones: from then on every project writes them your way.')))
     : `<ul class="divide-y divide-zinc-200 border-y border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">${P_CACHE.fixes.map(c => `<li class="flex min-h-13 items-center gap-3 py-1.5 text-[15px]"><span class="min-w-0 flex-1 break-words">${c.wrong ? `<span class="text-zinc-400 line-through decoration-zinc-400 dark:text-zinc-500">${esc(c.wrong)}</span><span class="px-2 text-zinc-400 dark:text-zinc-500">→</span>` : ''}<span class="font-medium">${esc(c.right)}</span></span>
@@ -8778,7 +8805,7 @@ function deskKey(e) {
     case 'd': return it.type === 'rule' ? ruleTo('open') : CLOSED(it.status) ? hint(`${code(n)} is ${it.status === 'done' ? 'done' : "marked won't do"} already`) : status('done');
     case 'w': return it.type === 'rule' ? ruleTo('dropped') : it.status === 'dropped' ? hint(`${code(n)} is marked won't do already`) : status('dropped');
     case 'l': if (it.type !== 'rule' && !CLOSED(it.status)) act('swipe', {f: 'when', v: it.when === 'now' ? 'later' : 'now'}); else hint(it.type === 'rule' ? 'Rules have no Later' : 'Later works on open items'); return;
-    case 'e': if (it.archived || CLOSED(it.status)) act('archive', {on: it.archived ? '0' : '1'}); else { e.preventDefault(); toast('Archive works on finished items'); } return;
+    case 'e': act('archive', {on: it.archived ? '0' : '1'}); return;  // F281: any state
     case '.': e.preventDefault(); return itemMenuDesk(n, null);
     case 's': case 'p': case 't': e.preventDefault(); U.armKey = {k, n, t: Date.now()}; return hint({s: 'Status: 1–6', p: 'Priority: 0–3', t: 'Type: F B I T R'}[k]);  // B264: the next key sets it, no menu; the toast says what changed
     case 'm': e.preventDefault(); return movePicker(n);
@@ -9311,8 +9338,8 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) come
 window.addEventListener('focus', comeBack);
 window.addEventListener('online', () => { refresh(); resendOutbox(); });
 // The sheet sits above the input box; follow the box whenever it changes size (styles loading, keyboard, scope line).
-new ResizeObserver(() => { if ($('overlay').dataset.above && !$('overlay').hidden) $('overlay').style.bottom = $('composer').parentElement.offsetHeight + 'px'; })
-  .observe($('composer').parentElement);
+new ResizeObserver(() => { if ($('overlay').dataset.above && !$('overlay').hidden) $('overlay').style.bottom = $('foot').offsetHeight + 'px'; })
+  .observe($('foot'));
 window.addEventListener('pageshow', e => { if (e.persisted) refresh(); });
 addEventListener('pagehide', () => {  // where you were in the list, for the reload (B152)
   if (desk() || !S.project) return;
