@@ -5399,7 +5399,7 @@ function detailHtml(it) {
     it.type === 'rule' ? '' : `<button data-act="item-menu" class="${CHIP.replace('after:inset-x-0', 'after:-inset-x-1.5')} shrink-0 ${it.pri === 'P0' ? 'font-semibold text-red-600 dark:text-red-400' : 'font-semibold text-zinc-700 dark:text-zinc-200'}">${it.pri}</button>`,
     it.when === 'later' && !CLOSED(it.status) ? `<span class="${CHIP} shrink-0 text-zinc-600 dark:text-zinc-300">${ico('clock', 'size-3.5 opacity-60')}Later</span>` : '',
     it.archived ? `<span class="${CHIP} shrink-0 text-zinc-600 dark:text-zinc-300">${ico('archive', 'size-3.5 opacity-60')}Archived</span>` : '',
-    it.srcs.length ? `<button data-act="sources" data-n="${n}" class="${CHIP} shrink-0 text-zinc-600 dark:text-zinc-300">${it.srcs.length === 1 ? 'From 1 input' : `From ${it.srcs.length} inputs`}}</button>` : '',
+    it.srcs.length ? `<button data-act="sources" data-n="${n}" class="${CHIP} shrink-0 text-zinc-600 dark:text-zinc-300">${it.srcs.length === 1 ? 'From 1 input' : `From ${it.srcs.length} inputs`}</button>` : '',
     parent ? `<button data-act="goto" data-n="${parent.n}" class="${CHIP} min-w-0 flex-1 basis-32 text-zinc-700 dark:text-zinc-300">${ico('link', 'size-3.5 opacity-60')}<span class="truncate"><span class="mr-1 font-mono font-bold ${TYPE_TEXT[parent.type]}">${code(parent.n)}</span>${esc(parent.title)}</span></button>` : '',
   ].join('');
   const head = U.editing === n ? `<div class="flex flex-col gap-2">
