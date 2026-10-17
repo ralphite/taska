@@ -96,6 +96,27 @@ class AmendTests(unittest.TestCase):
         self.assertIn('¶0 comments on the whole document:\n   > you', self.s.doc_text(d))
         self.assertEqual(self.s.doc_open(d), 0)  # the agent answered it
 
+    def test_your_comment_can_be_edited_deleted_and_brought_back(self):  # B258
+        self.runop({'op': 'doc', 'ref': 'F1', 'md': '# Plan\n\nFirst part.'})
+        self.runop({'op': 'dc', 'd': 1, 'key': 'doc', 'text': 'In the wrong place'})
+        self.runop({'op': 'dc', 'd': 1, 'para': '0', 'text': 'Noted'}, 'codex')
+        d = self.s.docs[1]
+        mine, theirs = d['comments']
+        self.runop({'op': 'dcedit', 'd': 1, 'id': mine['id'], 'text': 'Better words'})
+        self.assertEqual((mine['text'], bool(mine.get('edited'))), ('Better words', True))
+        for op, by in [({'op': 'dcdel', 'd': 1, 'id': theirs['id']}, 'you'), ({'op': 'dcdel', 'd': 1, 'id': mine['id']}, 'codex'),
+                       ({'op': 'dcedit', 'd': 1, 'id': mine['id'], 'text': ' '}, 'you'), ({'op': 'dcundel', 'd': 1, 'id': mine['id']}, 'you')]:
+            lines, _ = self.s.run_all([(0, op)], by)  # only your own, never empty, and only a deleted one comes back
+            self.assertTrue(lines[0].startswith('err'), (op, lines))
+        self.runop({'op': 'dcdel', 'd': 1, 'id': mine['id']})
+        self.assertEqual([c['text'] for c in d['comments']], ['Noted'])
+        self.assertNotIn('Better words', self.s.doc_text(d))
+        self.runop({'op': 'dcundel', 'd': 1, 'id': mine['id']})
+        self.assertEqual([c['text'] for c in d['comments']], ['Better words', 'Noted'])  # back in its place
+        replay = taska.Store(str(self.path))
+        self.assertEqual(replay.docs[1]['comments'], d['comments'])
+        replay.out.close()
+
     def test_conflict_and_oversize_do_not_mutate(self):
         self.amend()
         for op in [dict(v=0,text='stale'), dict(v=1,text='x'*taska.MAX_TEXT), dict(v=1,text=' ')]:

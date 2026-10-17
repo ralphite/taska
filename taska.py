@@ -410,6 +410,19 @@ class Store:
         elif k == "dc":
             self.docs[e["d"]]["comments"].append({"id": e["seq"], "key": e["key"], "quote": e["quote"], "text": e["text"], "by": e["by"], "t": e["t"],
                                                   "files": e.get("files", [])})  # a voice comment keeps its recording (F184)
+        elif k in ("dcedit", "dcdel", "dcundel"):  # B258: your comment changed, deleted (kept aside) or back where it was
+            d = self.docs[e["d"]]
+            if k == "dcundel":
+                c = d.setdefault("gone", {}).pop(e["id"], None)
+                if c:
+                    d["comments"] = sorted(d["comments"] + [c], key=lambda c: c["id"])
+            else:
+                c = next((c for c in d["comments"] if c["id"] == e["id"]), None)
+                if c and k == "dcedit":
+                    c.update(text=e["text"], edited=e["t"])
+                elif c:
+                    d["comments"].remove(c)
+                    d.setdefault("gone", {})[e["id"]] = c
         if e.get("by") and e["by"] not in PEOPLE and k in ("add", "set", "say") and e.get("n") in self.items:
             self.items[e["n"]]["agent"] = {"by": e["by"], "t": e["t"]}  # who works on it, and since when it was last heard of (F194)
 
@@ -419,7 +432,7 @@ class Store:
         f = e.get("f")  # a set's fields; a voice note's file name on "tr" events
         if isinstance(f, dict) and f.get("parent"):
             out.append(f["parent"])
-        if e["k"] == "dc" and e["d"] in self.docs:
+        if e["k"] in ("dc", "dcedit", "dcdel", "dcundel") and e["d"] in self.docs:
             out.append(self.docs[e["d"]]["n"])
         return out
 
@@ -1206,6 +1219,22 @@ class Store:
             quote = " ".join(str(op.get("quote") or "").split()) or text_  # what the user selected, else the paragraph
             self.emit({"k": "dc", "d": d["d"], "key": key, "quote": quote[:500], "text": body, "by": by, **({"files": files} if files else {})})
             return f"ok D{d['d']} comment" + self.gone_note(self.items.get(d["n"], {}), by), f"Commented on D{d['d']}"
+        if name in ("dcedit", "dcdel", "dcundel"):  # B258: you change or delete a comment of yours, or bring it back
+            d = self.doc(op.get("d"))
+            cid = int(op.get("id") or 0)
+            c = (d.get("gone") or {}).get(cid) if name == "dcundel" else next((c for c in d["comments"] if c["id"] == cid), None)
+            if not c:
+                raise Err(f"D{d['d']} has no comment {cid}" + (" to restore" if name == "dcundel" else ""))
+            if by not in PEOPLE or c["by"] not in PEOPLE:
+                raise Err("only the user changes or deletes their own comments")
+            if name == "dcedit":
+                text_ = str(op.get("text") or "").strip()[:MAX_TEXT]
+                if not text_ and not c.get("files"):
+                    raise Err("empty comment: delete it instead")
+                self.emit({"k": "dcedit", "d": d["d"], "id": cid, "text": text_, "by": by})
+                return f"ok D{d['d']} comment {cid} edited", f"Edited a comment on D{d['d']}"
+            self.emit({"k": name, "d": d["d"], "id": cid, "by": by})
+            return f"ok D{d['d']} comment {cid} {'deleted' if name == 'dcdel' else 'restored'}", f"{'Deleted' if name == 'dcdel' else 'Restored'} a comment on D{d['d']}"
         if name == "cfg":
             f = {"auto": bool(op["auto"])} if "auto" in op else {}
             if "name" in op:  # the project's name for people (F173); its address stays
@@ -1392,7 +1421,7 @@ class Store:
                     "items": items, "inputs": [dict(i, **({"tr_wait": True} if self.held(i) else {}), **({"filing": F[i["id"]]} if i["id"] in F else {}),
                                                     **({"drop": G[i["id"]]} if i["id"] in G else {})) for i in self.inputs.values() if not i.get("deleted")],
                     "deleted": self.deleted_list(),
-                    "docs": [dict(d, blocks=self.doc_view(d)[0], detached=self.doc_view(d)[1], whole=self.doc_whole(d), open=self.doc_open(d)) for d in self.docs.values()
+                    "docs": [dict({k: v for k, v in d.items() if k != "gone"}, blocks=self.doc_view(d)[0], detached=self.doc_view(d)[1], whole=self.doc_whole(d), open=self.doc_open(d)) for d in self.docs.values()
                              if not self.items.get(d["n"], {}).get("deleted")]}
 
     def line(self, it):
@@ -1531,6 +1560,8 @@ class Store:
                 s = f"doc D{e['d']} on {self.code(e['n'])} {first_line(e.get('title', ''))!r}"
             elif k == "dc":
                 s = f"D{e['d']} comment {first_line(e['text'])!r}"
+            elif k in ("dcedit", "dcdel", "dcundel"):
+                s = f"D{e['d']} comment {e['id']} " + {"dcedit": f"edited {first_line(e.get('text', ''))!r}", "dcdel": "deleted", "dcundel": "restored"}[k]
             elif k == "undo":
                 s = f"undo organizer changes for {e['src']}"
             elif k == "redo":
@@ -3651,7 +3682,7 @@ __APP_HEAD__
 <body class="h-dvh overflow-hidden bg-white text-zinc-900 antialiased [-webkit-tap-highlight-color:transparent] lg:flex dark:bg-zinc-950 dark:text-zinc-100 [&_:is(button,a[href],summary)[data-pressed]]:opacity-60 [&_[data-expand][data-pressed]]:opacity-70 [&_button:is(:disabled:not([aria-pressed]),[aria-busy=true])]:opacity-40 [&_button:disabled:not([aria-pressed])]:cursor-not-allowed [&_button[aria-busy=true]]:cursor-progress [&_:is(button,a[href],summary):focus-visible]:outline-2 [&_:is(button,a[href],summary):focus-visible]:outline-offset-2 [&_:is(button,a[href],summary):focus-visible]:outline-blue-500 dark:[&_:is(button,a[href],summary):focus-visible]:outline-blue-400 [&_:is(#list,#tabs,#projBar,#rail,#projectNav,#drawerSettings,#moveList,.overflow-x-auto,.truncate)_:is(button,a[href]):focus-visible]:-outline-offset-2 motion-reduce:[&_*]:transition-none motion-reduce:[&_*]:animate-none">
 <nav id="drawer" hidden aria-label="Projects" class="fixed top-0 left-0 flex h-dvh w-80 max-w-[85vw] flex-col bg-zinc-100 pt-[env(safe-area-inset-top)] pb-[max(1rem,env(safe-area-inset-bottom))] lg:z-40 lg:w-[var(--side-w,15rem)] lg:max-w-none lg:shrink-0 lg:border-r lg:border-zinc-200 lg:bg-zinc-50 lg:pb-0 2xl:w-[var(--side-w,16rem)] dark:bg-zinc-900 dark:lg:border-zinc-800">
   <div data-grip="side" title="Drag to resize · double-click for the default" class="absolute inset-y-0 right-0 z-10 hidden w-2 translate-x-full cursor-col-resize hover:bg-blue-500/30 lg:block"></div>
-  <div class="flex h-14 shrink-0 items-center gap-2 px-5 lg:pr-2 lg:pl-4"><span id="drawerLogo" class="text-blue-600 dark:text-blue-400"></span><span class="text-xl font-semibold tracking-tight lg:text-[19px]">Taska</span>
+  <div class="flex h-14 shrink-0 items-center gap-2 px-5 lg:pr-2 lg:pl-4"><a href="/" id="homeLink" title="All projects" class="-mx-1.5 flex h-9 items-center gap-2 rounded-lg px-1.5 hover:bg-zinc-200/60 dark:hover:bg-zinc-800"><span id="drawerLogo" class="text-blue-600 dark:text-blue-400"></span><span class="text-xl font-semibold tracking-tight lg:text-[19px]">Taska</span></a>
     <button data-act="side" id="sideBtn" title="Hide the sidebar · [" aria-label="Hide the sidebar" class="ml-auto hidden size-8 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-200/70 lg:grid dark:text-zinc-400 dark:hover:bg-zinc-800"></button></div>
   <button data-act="new-input" id="newInputBtn" title="New input to the project · C · by voice ⇧V" aria-pressed="false" class="mx-2.5 mb-3 hidden h-9 shrink-0 items-center gap-2 rounded-xl bg-white px-3 text-sm font-medium text-zinc-800 shadow-sm ring-1 ring-zinc-900/10 hover:bg-zinc-50 lg:flex aria-pressed:bg-blue-50 aria-pressed:text-blue-700 aria-pressed:ring-blue-500/40 dark:bg-zinc-800 dark:text-zinc-100 dark:ring-white/10 dark:hover:bg-zinc-700 dark:aria-pressed:bg-blue-400/10 dark:aria-pressed:text-blue-300 dark:aria-pressed:ring-blue-400/40"></button>
   <div class="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 lg:pb-3 lg:scrollbar-thin lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70">
@@ -4824,9 +4855,27 @@ function blockHtml(b, isTitle, gid = '') {
 const sameText = (a, b) => a.split(/\s+/).join(' ') === b.split(/\s+/).join(' ');
 // A quote from a document reads as words, not Markdown: no ** or `, no table pipes or rules (B157).
 const plainQuote = s => String(s || '').split('\n').filter(l => !TABLE_SEP.test(l)).map(l => l.replace(/^\s*(#+|>|[-*+]|\d+[.)])\s+/, '').replace(/\*\*|__|`/g, '').replace(/^\s*\||\|\s*$/g, '').replace(/\s*\|\s*/g, ' · ').trim()).filter(Boolean).join(' ');
+// B258: your own comment can be changed or deleted, the way an input you sent can (Edit, Delete, and Undo after it).
+const DC_BTN = `${HIT} flex h-6 items-center gap-1 rounded-lg px-1.5 text-xs font-semibold text-zinc-500 hover:bg-blue-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-blue-400/10 dark:hover:text-zinc-200`;
+const dcActs = (d, c) => `<div class="-mr-1.5 ml-auto flex gap-0.5 lg:opacity-0 lg:group-hover:opacity-100 lg:focus-within:opacity-100"><button data-act="dc-edit" data-d="${d.d}" data-id="${c.id}" class="${DC_BTN}">${ico('pencil', 'size-3.5')}Edit</button><button data-act="dc-delete" data-d="${d.d}" data-id="${c.id}" class="${DC_BTN}">${ico('trash', 'size-3.5')}Delete</button></div>`;
+const dcFind = (dn, id) => { const d = docById(+dn); return d && [...d.whole || [], ...d.blocks.flatMap(b => b.comments), ...d.detached.flatMap(t => t.comments)].find(c => c.id === +id); };
+function editComment(dn, id) {
+  const c = dcFind(dn, id);
+  if (!c) return;
+  U.amend = {mode: 'dc', d: +dn, id: +id, was: c.text};
+  renderComposer();
+  const t = $('text');
+  if (!t.value.trim()) { t.value = c.text; saveDraft(); grow(); renderComposer(); }
+  t.focus(); t.selectionStart = t.selectionEnd = t.value.length;
+}
+async function deleteComment(dn, id) {
+  try { await save({op: 'dcdel', d: +dn, id: +id}, () => deleteComment(dn, id)); } catch (_) { return; }
+  renderDoc(); renderComposer();
+  toast('Comment deleted', pushUndo(`Delete a comment on D${dn}`, async () => { await save({op: 'dcundel', d: +dn, id: +id}); renderDoc(); toast('Comment back'); }));
+}
 function threadHtml(d, key, comments, blockText) {
   return `<div class="mt-2 space-y-2 border-l-2 border-amber-300 pl-3 dark:border-amber-600">
-    ${comments.map(c => `<div class="text-sm ${MSG(c.by)}">${blockText !== undefined && !sameText(c.quote, blockText) ? `<div class="mb-0.5 line-clamp-2 text-xs text-zinc-500">“${esc(plainQuote(c.quote))}”</div>` : ''}<span class="${WHO(c.by)}">${esc(whoName(c.by))}</span> <span class="text-xs text-zinc-400">${when(c.t)}</span>${rich(c.text, 'dc' + c.t)}${c.files?.length ? `<div class="mt-1.5 flex gap-2 overflow-x-auto">${thumbs(c.files, 'dcf' + c.id, 'size-11')}</div>` : ''}</div>`).join('')}
+    ${comments.map(c => `<div class="group text-sm ${MSG(c.by)}">${blockText !== undefined && !sameText(c.quote, blockText) ? `<div class="mb-0.5 line-clamp-2 text-xs text-zinc-500">“${esc(plainQuote(c.quote))}”</div>` : ''}<div class="flex min-h-6 items-center gap-1"><span class="${WHO(c.by)}">${esc(whoName(c.by))}</span> <span class="text-xs text-zinc-400">${when(c.t)}${c.edited ? ` · edited ${when(c.edited)}` : ''}</span>${c.by === 'you' ? dcActs(d, c) : ''}</div>${rich(c.text, 'dc' + c.t)}${c.files?.length ? `<div class="mt-1.5 flex gap-2 overflow-x-auto">${thumbs(c.files, 'dcf' + c.id, 'size-11')}</div>` : ''}</div>`).join('')}
     ${U.docReply === key ? '' : `<button data-act="doc-reply" data-key="${key}" class="${HIT} flex h-8 items-center gap-1 rounded-lg px-1.5 -mx-1.5 text-xs font-semibold text-blue-600 hover:bg-blue-50 aria-pressed:underline dark:text-blue-400 dark:hover:bg-blue-400/10">${ico('reply', 'size-3.5')}Reply</button>`}
   </div>`;
 }
@@ -4847,20 +4896,33 @@ function docTarget() {
   if (U.docQuote) return {d, key: U.docQuote.key, quote: U.docQuote.text};
   return blocks.length ? {d, key: blocks[0].key, quote: blocks.map(b => b.text).join('\n'), many: blocks.length} : null;
 }
+// B259: it takes what any box takes: words, pictures, files and voice notes ("Stop and send" too). The box is empty at
+// once; a voice note's words go into the comment once they are in. Not saved: all of it comes back into the box.
 async function sendDocComment(t) {
-  const text = $('text').value.trim();
-  if (!text) return;
-  if (U.files.length) toast('Comments are text only: the files stay in the box');
-  markSent(U.draftKey); $('text').value = ''; saveDraft(); grow();
-  try { await save({op: 'dc', d: t.d.d, key: t.key, text, ...(t.reply ? {} : {quote: t.quote})}, () => { const t2 = docTarget(); if (t2 && $('text').value.trim()) sendDocComment(t2); }); }
-  catch (_) { $('text').value = text; saveDraft(); grow(); return; }
+  const typed = $('text').value.trim(), drafts = [...U.files];
+  if (!typed && !drafts.length) return;
+  markSent(U.draftKey); $('text').value = ''; U.files = []; saveDraft(); grow(); renderComposer();
+  const back = () => { $('text').value = [typed, $('text').value.trim()].filter(Boolean).join('\n'); U.files = [...drafts, ...U.files]; saveDraft(); grow(); renderComposer(); };
+  let files;
+  try {
+    await Promise.all(drafts.map(f => f.done));
+    if (drafts.some(f => f.transcribing)) toast('Posting as soon as the words of the voice note are in…');
+    for (let i = 0; drafts.some(f => f.transcribing) && i < 240; i++) await sleep(500);
+    files = drafts.filter(f => f.f && !f.failed);
+    let text = typed;
+    for (const f of files) if (f.tr && !text.includes(f.tr)) text = (text ? text + '\n' : '') + f.tr;
+    if (!text && !files.length) return back();
+    await save({op: 'dc', d: t.d.d, key: t.key, text, files: files.map(({f, name, mime, size, tr}) => ({f, name, mime, size, ...(tr ? {tr} : {})})), ...(t.reply ? {} : {quote: t.quote})},
+      () => { const t2 = docTarget() || (docOpen() && {d: docOpen(), key: 'doc', whole: true}); if (t2) sendDocComment(t2); });
+  } catch (_) { return back(); }
+  for (const f of files) { f.sent = true; dropRec(f); }
   U.docThreads.add(t.key); U.docSel = new Set(); U.docQuote = null; U.docReply = t.whole ? null : t.key;  // B2: what you write next goes on in that thread (the whole document's: on the document)
   if (U.lastSent) { U.lastSent = null; renderFeedback(); }  // T113 A19: the toast says it; an older "Sent." line doesn't stay beside it
   getSelection()?.removeAllRanges(); renderDoc(); renderComposer(); toast(t.reply ? 'Reply added' : 'Comment added');
   if (desk()) $('text').focus({preventScroll: true});
 }
 function renderDocBar() { renderComposer(); }  // the comment target shows on the input box
-const docSig = d => d ? `${d.title}|${d.md}|${d.blocks.reduce((k, b) => k + b.comments.length, 0)}|${d.detached.length}|${d.whole?.length || 0}` : '';
+const docSig = d => d ? `${d.title}|${d.md}|${[...d.whole || [], ...d.blocks.flatMap(b => b.comments), ...d.detached.flatMap(t => t.comments)].map(c => c.id + (c.edited || '')).join()}` : '';  // B258: an edit or a delete draws it again
 // On the desktop a document opens in the item pane, like the item it belongs to (T110): its header has Circle,
 // Edit and the way back to the item; the one input box below takes the comments (I087). It is drawn again only
 // when the document or what you picked in it changes, so a refresh never swallows a click.
@@ -5220,7 +5282,7 @@ function needsBand(needs, going) {
   const rest = needs.length - NEEDS_SHOWN, toggle = (act, label, icon) => `<button data-act="${act}" class="flex h-10 w-full items-center gap-1.5 border-b border-zinc-100 pl-4 text-[13px] font-semibold text-amber-800 hover:bg-amber-50 dark:border-zinc-800/70 dark:text-amber-300 dark:hover:bg-amber-400/10">${ico(icon, 'size-4', '2.25')}${label}</button>`;
   return zone('needs', 'Needs you', needs.filter(needsYou).length, going ? `<span class="text-xs font-medium text-amber-700 dark:text-amber-400">· Going through</span><button data-act="go-end" class="-my-1 ml-auto flex h-11 items-center gap-1 rounded-full pr-2 pl-3 text-[13px] font-semibold text-amber-800 hover:bg-amber-100 dark:text-amber-300 dark:hover:bg-amber-400/15">End${KBD('Esc')}</button>` : goThroughBtn())
     + (cut ? needs.slice(0, NEEDS_SHOWN) : needs).map(it => going && going.done.has(it.n) ? settledRow(it) : needsRow(it)).join('')
-    + (cut ? toggle('needs-all', `Show ${rest} more`, 'down') : long && U.needsAll ? toggle('needs-all', 'Show fewer', 'chevup') : '');
+    + (cut ? toggle('needs-more', `Show ${rest} more`, 'down') : long && U.needsAll ? toggle('needs-more', 'Show fewer', 'chevup') : '');
 }
 function renderItems() {
   const list = $('list'), top = U.open && !desk() ? U.listTop?.[0] : list.scrollTop;  // under the phone's item page the list is hidden and reads 0
@@ -5445,6 +5507,14 @@ function cancelAmend() {
 }
 async function sendAmend() {
   const a = U.amend, text = $('text').value.trim(), drafts = [...U.files];
+  if (a.mode === 'dc') {  // B258
+    if (!text && !dcFind(a.d, a.id)?.files?.length) return toast('Write something, or delete the comment instead');
+    try { await save({op: 'dcedit', d: a.d, id: a.id, text}); } catch (_) { return; }
+    $('text').value = ''; saveDraft(); grow(); U.amend = null;
+    renderDoc(); renderComposer(); toast('Comment updated');
+    if (desk()) $('text').focus({preventScroll: true});
+    return;
+  }
   if (!text && !drafts.length) return $('text').focus();
   await Promise.all(drafts.map(f => f.done));  // a voice note or screenshot goes along once uploaded (B168)
   const files = drafts.filter(f => f.f && !f.failed).map(f => ({f: f.f, name: f.name, mime: f.mime, size: f.size, tr: f.tr}));
@@ -5588,6 +5658,9 @@ function renderComposer() {
     const right = t.value.replace(/\s+/g, ' ').trim();  // A3: before → after, as you type
     line = scopeLine('pencil', `Correct “${esc(U.correct.wrong)}”${right ? ` → “${esc(right.slice(0, 60))}”` : ''}`, `in ${U.correct.id} · remembered for every project`, scopeX('correct-cancel', 'Stop correcting'));
     ph = `The right words for “${U.correct.wrong}”…`; send = 'Save';
+  } else if (U.amend?.mode === 'dc') {  // B258: editing a comment of yours on a document
+    line = scopeLine('pencil', `Edit your comment on D${U.amend.d}`, oneLine(U.amend.was) ? `“${esc(oneLine(U.amend.was).slice(0, 120))}”` : '', scopeX('amend-cancel', 'Stop editing'));
+    ph = 'Edit your comment…'; send = 'Save';
   } else if (U.amend && byR.has(U.amend.id)) {  // B136: editing or adding to an input you sent
     const r = byR.get(U.amend.id), edit = U.amend.mode === 'edit';
     line = scopeLine(edit ? 'pencil' : 'listplus', `${edit ? 'Edit' : 'Add details to'} ${r.id}`, oneLine(r.text) ? `“${esc(oneLine(r.text).slice(0, 120))}”` : `· ${isVoice(r) ? 'a voice note' : plural(r.files.length, 'file')}`, scopeX('amend-cancel', edit ? 'Stop editing' : 'Stop adding details'));
@@ -6370,7 +6443,7 @@ async function sendVoiceComments() {
   } catch (_) {} finally { U.vcSending = false; }
 }
 // The name of a draft's target, for what the box says about it (B1, B185).
-const draftName = key => key === 'new' ? 'a new input' : key === 'rule' ? 'a new rule' : /^[A-Z]\d+$/.test(key) ? key : key.replace(/^(\w+) /, (_, m) => ({edit: 'the edit of ', append: 'the details for ', correct: 'the correction in '}[m] || ''));
+const draftName = key => key === 'new' ? 'a new input' : key === 'rule' ? 'a new rule' : /^[A-Z]\d+$/.test(key) ? key : key.replace(/^(\w+) /, (_, m) => ({edit: 'the edit of ', append: 'the details for ', correct: 'the correction in ', dc: 'the edit of comment '}[m] || ''));
 function goDraft(key) {  // to the box a draft belongs to
   if (key === 'new' || key === 'rule') { if (key === 'rule' && U.tab !== 'rules') setTab('rules'); U.asRule = key === 'rule' ? null : U.tab === 'rules' ? false : null; return ACT['new-input'](); }
   const n = /^[A-Z]\d+$/.test(key) && parseRef(key);
@@ -7129,7 +7202,7 @@ const ACT = {
   'doc-edit': () => { const was = kept('docs')[`D${U.doc}`]; U.docEdit = true; U.docText = was ?? null; renderDoc(); if (was) toast('Your draft is back'); $('docMd').focus(); },
   'doc-done': async () => { if (!await docVoiceSettled()) return; const d = await saveDoc(); if (d) openDoc(d.d); else if (!U.docEdit) closeDialog(); },  // Create or Save; F208: the words you spoke go in first
   'doc-mic': () => DV.rec ? docRecStop() : docRecStart(),
-  'needs-all': () => { U.needsAll = !U.needsAll; renderItems(); },  // F209
+  'needs-more': () => { U.needsAll = !U.needsAll; renderItems(); },  // F209 (B250: its own name; it once took the sidebar's "Needs you" over)
   'doc-discard': () => {  // the draft goes; the document stays as it is
     const d = U.doc, key = docKey();
     docRecStop(false); DV.notes.forEach(v => { if (v.key === key) v.key = null; });  // F208: words still coming have nowhere to go
@@ -7160,6 +7233,8 @@ const ACT = {
   },  // B2: the words stay, now a reply to the item
   'doc-reply': b => { U.docReply = b.dataset.key; U.docSel = new Set(); U.docQuote = null; renderDoc(); $('text').focus(); },
   'doc-circle': () => { U.docCircle = !U.docCircle; renderDoc(); },
+  'dc-edit': b => editComment(b.dataset.d, b.dataset.id),
+  'dc-delete': b => deleteComment(b.dataset.d, b.dataset.id),
   'doc-thread': b => { const k = b.dataset.key; if (U.docThreads.has(k)) U.docThreads.delete(k); else U.docThreads.add(k); renderDoc(); },
   swipe: b => {
     const n = Number(b.dataset.n), f = b.dataset.f;
