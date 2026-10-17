@@ -4343,7 +4343,9 @@ function audioUi() {
 
 const SOFT = t => `<span class="rounded bg-zinc-100 px-1.5 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">${t}</span>`;
 const cnt = (icon, n, label) => `<span class="flex items-center gap-1" title="${label}">${ico(icon, 'size-3.5')}${n}</span>`;
-const needLabel = it => it.wait ? (it.wait.kind === 'block' ? 'Blocked' : 'Needs reply') : it.status === 'proposed' ? 'Proposed' : it.status === 'review' ? 'In review' : '';
+// What waits on you, in the word its button says (Answer, Reply, Approve, Accept). A row or card with that button shows
+// no label beside it: the button says it, the band says it waits; where no button shows, this word does (T225 #9).
+const needWord = it => needsYou(it) ? rowAction(it)[1] : '';
 // Your words on an item: what you wrote there, or what the organizer filed there from one of your inputs (as your
 // words, your decision or your idea). Any of them answers a question, picked choices or not (B163); the server's
 // user_word is the same rule.
@@ -4433,7 +4435,7 @@ function itemRow(it, depth = 0, group = [], band = '') {  // band: the band it i
   const isImg = f => (f.mime || '').startsWith('image/'), imgs = files.filter(isImg).length, other = files.filter(f => !isImg(f) && !(f.mime || '').startsWith('audio/')).length;
   const meta = [
     it.type === 'rule' ? '' : `<span class="${PRI_TEXT[it.pri]}">${it.pri}</span>`,
-    needsYou(it) ? `<span class="font-semibold text-amber-700 dark:text-amber-400">${needLabel(it)}</span>` : it.reply && !closed ? '<span class="text-emerald-700 dark:text-emerald-400">Replied</span>' : '',
+    needsYou(it) ? `<span class="font-semibold text-amber-700 dark:text-amber-400">${needWord(it)}</span>` : it.reply && !closed ? '<span class="text-emerald-700 dark:text-emerald-400">Replied</span>' : '',
     hasDraft(c) ? DRAFT_MARK() : '',  // T113 B24: a reply you have not sent yet
     it.status === 'doing' ? '<span class="text-blue-600 dark:text-blue-400">In progress</span>' : closed ? `<span>${statusName(it)}</span>` : '',
     it.archived && U.tab !== 'archive' ? SOFT('Archived') : '',
@@ -4483,7 +4485,7 @@ function needsRow(it) {
       <div class="min-w-0 flex-1">
         <p class="line-clamp-2 text-[15px] leading-snug font-medium lg:line-clamp-1"><span class="mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[it.type]}">${code(it.n)}</span>${esc(it.title)}</p>
         <div class="mt-1 flex min-w-0 items-center gap-2 text-xs font-medium">
-          ${it.type === 'rule' ? '' : `<span class="shrink-0 ${PRI_TEXT[it.pri]}">${it.pri}</span>`}<span class="shrink-0 font-semibold ${NEED[v].text}">${needLabel(it)}</span>${hasDraft(code(it.n)) ? DRAFT_MARK() : ''}${it.when === 'later' ? `<span class="shrink-0">${SOFT('Later')}</span>` : ''}${it.parent ? `<span class="shrink-0 text-zinc-500 dark:text-zinc-400">↳ ${code(it.parent)}</span>` : ''}
+          ${it.type === 'rule' ? '' : `<span class="shrink-0 ${PRI_TEXT[it.pri]}">${it.pri}</span>`}${hasDraft(code(it.n)) ? DRAFT_MARK() : ''}${it.when === 'later' ? `<span class="shrink-0">${SOFT('Later')}</span>` : ''}${it.parent ? `<span class="shrink-0 text-zinc-500 dark:text-zinc-400">↳ ${code(it.parent)}</span>` : ''}
           <span class="min-w-0 truncate font-normal text-zinc-500 dark:text-zinc-400">${esc(excerpt(it))}</span>
         </div>
       </div>
@@ -4972,7 +4974,7 @@ function peek(n, {focus = true} = {}) {
   if (!it) return;
   const moved = U.peek !== n;
   U.peek = n;
-  const g = U.go && U.go.list.includes(n) ? U.go : null, files = filesOf(it), need = needLabel(it), i = g ? g.list.indexOf(n) : -1;
+  const g = U.go && U.go.list.includes(n) ? U.go : null, files = filesOf(it), need = '', i = g ? g.list.indexOf(n) : -1;  // its button says what it needs (T225 #9)
   const recent = it.thread.filter(x => x.id !== it.wait?.id).slice(-3), talk = it.thread.length;  // the question itself is pinned above (B145)
   const btn = (attrs, icon, label, tone) => `<button ${attrs} class="flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl text-[11px] font-semibold hover:bg-zinc-100 dark:hover:bg-zinc-800 ${tone}">${ico(icon, 'size-5')}<span class="max-w-full truncate">${label}</span></button>`;
   const slot = (a, k) => !a ? '<span class="h-14 min-w-0 flex-1"></span>'
@@ -5111,7 +5113,7 @@ function renderDetail() {
   }
   $('itemMenuBtn').hidden = false;
   const top = body.scrollTop, keep = keepEdit();
-  $('dHead').innerHTML = `<span class="hidden lg:inline">${stateIcon(it.status, statusName(it), 'size-[18px]')}</span><span class="font-mono text-sm font-bold ${TYPE_TEXT[it.type]}">${code(it.n)}</span><span class="text-[11px] font-semibold tracking-wider uppercase"><span class="${statusTone(it)}">${statusName(it)}</span>${it.wait ? `<span class="text-zinc-300 dark:text-zinc-600"> · </span><span class="text-amber-600 dark:text-amber-400">${needLabel(it)}</span>` : ''}</span>`;
+  $('dHead').innerHTML = `<span class="hidden lg:inline">${stateIcon(it.status, statusName(it), 'size-[18px]')}</span><span class="font-mono text-sm font-bold ${TYPE_TEXT[it.type]}">${code(it.n)}</span><span class="text-[11px] font-semibold tracking-wider uppercase"><span class="${statusTone(it)}">${statusName(it)}</span>${it.wait ? `<span class="text-zinc-300 dark:text-zinc-600"> · </span><span class="text-amber-600 dark:text-amber-400">${needWord(it)}</span>` : ''}</span>`;
   if (desk()) renderDetailBar(it);
   body.innerHTML = detailHtml(it);
   body.scrollTop = top;
