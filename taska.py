@@ -5555,7 +5555,8 @@ function renderComposer() {
     ph = `${dt.reply ? 'Reply' : 'Comment'} on D${dt.d.d}…`; send = dt.reply ? 'Reply' : 'Comment';
   } else if (dOpen) {  // B2: a document is open and nothing is picked: the box waits for a pick, it does not reply to the item
     const host = liveN(dOpen.n);
-    line = scopeLine('comment', `Comment on D${dOpen.d}`, `· ${desk() ? 'click' : 'tap'} a paragraph or select text first`, byN.has(host) ? scopeLink('doc-to-item', `Reply to ${code(host)} instead`) : '');
+    line = desk() ? scopeLine('comment', `Comment on D${dOpen.d}`, '· click a paragraph or select text first', byN.has(host) ? scopeLink('doc-to-item', `Reply to ${code(host)} instead`) : '')
+      : scopeLine('comment', 'Tap a paragraph to comment', '', byN.has(host) ? scopeLink('doc-to-item', `Reply to ${code(host)}`, '', `Reply to ${code(host)} instead`) : '');  // T225 #14: fits a phone
     ph = desk() ? `Click a paragraph of D${dOpen.d}, then comment…` : `Comment on D${dOpen.d}…`; send = 'Comment';
   } else if (n) {  // B83: a reply says so; the choices you ticked go with it (B145)
     line = scopeLine(desk() ? 'reply' : 'scope', `Reply to ${code(n)}`, ticks.length ? ticks.map(l => '✓ ' + esc(oneLine(l))).join(' · ') : esc(it.title),  // one name for it, as on the desktop (B157)
