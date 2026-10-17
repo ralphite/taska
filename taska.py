@@ -4516,8 +4516,8 @@ function markHits(root) {
   }
 }
 // The words found only in an item's text or thread: the line they are in, under the title, so you see why it matched
-function hitLine(it) {
-  const words = searchWords(), title = (code(it.n) + ' ' + LETTER[it.type] + it.n + ' ' + it.title).toLowerCase();
+function hitLine(it, shown = '') {  // shown: a line the row has already (a needs row's excerpt)
+  const words = searchWords(), title = (code(it.n) + ' ' + LETTER[it.type] + it.n + ' ' + it.title + ' ' + shown).toLowerCase();
   const w = words.find(w => !title.includes(w));
   if (!w) return '';
   const text = [it.body, it.next, ...it.thread.map(x => x.text)].find(t => (t || '').toLowerCase().includes(w)) || '';
@@ -4681,7 +4681,7 @@ const excerpt = it => oneLine(it.wait ? it.wait.text : it.status === 'review' ? 
 // Desktop: the selected row (aria-current) is tinted, others on hover; hovering shows the phone's swipe actions as
 // buttons. A row answers a press too (B159, T160); the short delay, for fingers only, keeps rows from flashing while
 // a finger scrolls the list.
-const rowTint = () => 'data-sel:bg-blue-100 dark:data-sel:bg-blue-400/20 lg:hover:bg-zinc-50 dark:lg:hover:bg-zinc-900/70 lg:aria-[current=true]:bg-blue-50 dark:lg:aria-[current=true]:bg-blue-400/10 pointer-coarse:transition-colors pointer-coarse:delay-75 data-pressed:bg-zinc-100 lg:data-pressed:bg-zinc-100 dark:data-pressed:bg-zinc-900 dark:lg:data-pressed:bg-zinc-900';
+const rowTint = () => 'data-sel:bg-blue-100 dark:data-sel:bg-blue-400/20 lg:data-sel:hover:bg-blue-100 dark:lg:data-sel:hover:bg-blue-400/20 lg:hover:bg-zinc-50 dark:lg:hover:bg-zinc-900/70 lg:aria-[current=true]:bg-blue-50 dark:lg:aria-[current=true]:bg-blue-400/10 pointer-coarse:transition-colors pointer-coarse:delay-75 data-pressed:bg-zinc-100 lg:data-pressed:bg-zinc-100 dark:data-pressed:bg-zinc-900 dark:lg:data-pressed:bg-zinc-900';
 const rowCur = it => (U.open === it.n ? 'aria-current="true" ' : '') + (U.sel.has(it.n) ? 'data-sel' : '');  // data-sel: picked with ⌘ or ⇧ (T274 #34)
 const ACT_KEY = {Done: 'D', Accept: 'A', Approve: 'A', Archive: 'E', Unarchive: 'E', Later: 'L', 'Back to now': 'L', "Won't do": 'W', 'Not yet': 'N',
   Start: 'S then 3', Pause: 'S then 2', 'Back to queue': 'S then 2', Reopen: 'S then 2', Retire: 'W', Reactivate: 'D'};  // S then a digit: the ⋯ menu's status (T113 B30, A16)
@@ -4703,7 +4703,7 @@ function deskSlots(it, needs) {
 function rowActs(it, needs = false) {
   const acts = deskSlots(it, needs);
   // T274 #13: named buttons, floating over the row's second line, so the title stays in sight
-  return `<div class="absolute right-2 bottom-1 z-10 hidden items-center gap-0.5 rounded-lg bg-white p-0.5 shadow-sm ring-1 ring-zinc-900/10 lg:group-hover:flex dark:bg-zinc-900 dark:ring-white/10">${acts.filter(Boolean).map(a => a[0] === 'reopen'
+  return `<div class="absolute ${needs ? 'right-28' : 'right-2'} bottom-1 z-10 hidden items-center gap-0.5 rounded-lg bg-white p-0.5 shadow-sm ring-1 ring-zinc-900/10 lg:group-hover:flex dark:bg-zinc-900 dark:ring-white/10">${acts.filter(Boolean).map(a => a[0] === 'reopen'
     ? `<button data-act="reopen" data-n="${it.n}" title="Not yet · N" class="flex h-7 items-center gap-1 rounded-md px-2 text-[13px] font-medium whitespace-nowrap text-zinc-600 hover:bg-zinc-200/70 dark:text-zinc-300 dark:hover:bg-zinc-800">${ico('reopen', 'size-4')}Not yet</button>`
     : (([f, v, label]) => `<button data-act="swipe" data-n="${it.n}" data-f="${f}" data-v="${v}" title="${label}${ACT_KEY[label] ? ' · ' + ACT_KEY[label] : ''}" class="flex h-7 items-center gap-1 rounded-md px-2 text-[13px] font-medium whitespace-nowrap hover:bg-zinc-200/70 dark:hover:bg-zinc-800 ${ACT_TONE[label] || 'text-zinc-600 dark:text-zinc-300'}">${ico(ACT_ICON[label], 'size-4')}${label}</button>`)(a)).join('')}</div>`;
 }
@@ -4801,10 +4801,10 @@ function needsRow(it) {
       <span class="self-start">${stateIcon(it.status, statusName(it))}</span>
       <div class="min-w-0 flex-1">
         <p data-hit class="line-clamp-2 text-[15px] leading-snug font-medium lg:line-clamp-1"><span class="mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[it.type]}">${code(it.n)}</span>${esc(it.title)}</p>
-        ${U.q.trim() ? hitLine(it) : ''}
+        ${U.q.trim() ? hitLine(it, excerpt(it)) : ''}
         <div class="mt-1 flex min-w-0 items-center gap-2 text-xs font-medium">
           ${it.type === 'rule' ? '' : `<span class="shrink-0 ${PRI_TEXT[it.pri]}">${it.pri}</span>`}${hasDraft(code(it.n)) ? DRAFT_MARK() : ''}${it.when === 'later' ? `<span class="shrink-0">${SOFT('Later')}</span>` : ''}${it.parent ? `<span class="shrink-0 text-zinc-500 dark:text-zinc-400">↳ ${code(it.parent)}</span>` : ''}
-          <span class="min-w-0 truncate font-normal text-zinc-500 dark:text-zinc-400">${esc(excerpt(it))}</span>
+          <span data-hit class="min-w-0 truncate font-normal text-zinc-500 dark:text-zinc-400">${esc(excerpt(it))}</span>
         </div>
       </div>
       ${it.type === 'rule' ? '' : rowActs(it, true)}
@@ -5790,7 +5790,7 @@ async function sendCorrect() {
     if (!d.ok) return toast((d.res || []).find(x => x.startsWith('err')) || d.error || 'Not saved');
     $('text').value = ''; saveDraft(); grow(); U.correct = null; getSelection()?.removeAllRanges();
     await load();
-    const run = pushUndo(`Fix “${c.wrong}” → “${right}” in ${c.id}`, async () => {  // A3: Z puts back the words and the spelling
+    const run = pushUndo(`Fix “${c.wrong}” → “${right}” in ${rcode(c.id)}`, async () => {  // A3: Z puts back the words and the spelling
       const r = byR.get(c.id);
       if (r && before != null && r.text !== before) await op({op: 'amend', id: c.id, mode: 'edit', v: r.v || 0, text: before});
       await setFix(had ? {wrong: c.wrong, right: had.right} : {wrong: c.wrong});
@@ -7459,9 +7459,9 @@ const ACT = {
     try { await save({op: 'delete', id}, () => ACT['input-delete'](b)); } catch (_) { return; }
     const x = (S.deleted || []).find(x => x.id === id);
     let run;
-    run = pushUndo(`${id} deleted`, async () => {
+    run = pushUndo(`${rcode(id)} deleted`, async () => {
       try { await save({op: 'restore', id}, run); } catch (_) { return false; }
-      toast(`${id} is back${x?.items.length ? ` with ${x.items.map(i => i.code).join(', ')}` : ''}`);
+      toast(`${rcode(id)} is back${x?.items.length ? ` with ${x.items.map(i => i.code).join(', ')}` : ''}`);
     });
     toast(deletedSaid(x, id), run);
   },
@@ -7469,11 +7469,11 @@ const ACT = {
     const id = b.dataset.id, x = (S.deleted || []).find(x => x.id === id);
     try { await save({op: 'restore', id}, () => ACT['input-restore'](b)); } catch (_) { return; }
     let run;
-    run = pushUndo(`${id} restored`, async () => {
+    run = pushUndo(`${rcode(id)} restored`, async () => {
       try { await save({op: 'delete', id}, run); } catch (_) { return false; }
       toast(deletedSaid((S.deleted || []).find(x => x.id === id), id));
     });
-    toast(`${id} is back${x?.items.length ? ` with ${x.items.map(i => i.code).join(', ')}` : ''}`, run);
+    toast(`${rcode(id)} is back${x?.items.length ? ` with ${x.items.map(i => i.code).join(', ')}` : ''}`, run);
   },
   tab: b => setTab(b.dataset.tab),
   filters: () => showFilters(),
@@ -7733,12 +7733,12 @@ const ACT = {
     if (U.lastSent === id) U.lastSent = null;  // T113 A19: the toast says it; the line under the box doesn't say it again
     try { await load(); } catch (_) {}
     let run;
-    run = pushUndo(`Filing of ${id} undone`, async () => {
+    run = pushUndo(`Filing of ${rcode(id)} undone`, async () => {
       let r;
       try { r = await net(P + 'api/redo', JSON_POST({id}), NET.op); } catch (ex) { notSaved(ex, run); return false; }
       if (!r.ok) { toast(r.error || 'Could not put it back', null, {error: true}); return false; }
       try { await load(); } catch (_) {}
-      toast(`The filing of ${id} is back`);
+      toast(`The filing of ${rcode(id)} is back`);
     });
     toast(`Undid the filing of ${id}${what ? `: ${what}` : ''}`, run);
   },
