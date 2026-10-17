@@ -5476,8 +5476,17 @@ function renderInputs() {
   $('inputsView').innerHTML = rows.length ? rows.map(r => {
     const [label, tone, icon] = inputState(r), scope = r.scope ? byN.get(r.scope) : null, d = dayOf(r.t);
     const head = d !== day ? `<div class="px-4 pt-2.5 pb-0.5 text-xs font-semibold text-zinc-500 lg:px-0 lg:pt-5 lg:pb-1 dark:text-zinc-400">${(day = d)}</div>` : '';
-    const note = !r.moved && r.org && !(r.acked && r.org.keep) ? `<div class="mt-1.5 flex min-h-5 items-center gap-1 text-xs ${r.org.ok ? 'text-zinc-500 dark:text-zinc-400' : 'text-red-600 dark:text-red-400'}">${ico('sparkle', 'size-3.5')}<span class="min-w-0">${esc(r.org.msg)}</span></div>` : '';
-    const chips = r.moved ? '' : r.touched.filter(n => byN.has(n) && n !== r.scope).map(n => `<button data-act="goto" data-n="${n}" class="${HIT} flex h-8 max-w-full min-w-0 items-center gap-1.5 rounded-lg bg-zinc-100 px-2 text-[13px] hover:bg-zinc-200/70 dark:bg-zinc-800 dark:hover:bg-zinc-700"><span class="font-mono text-xs font-bold ${TYPE_TEXT[byN.get(n).type]}">${code(n)}</span><span class="truncate">${esc(byN.get(n).title)}</span></button>`).join('');
+    // The organizer's "Created B224" over a B224 chip named the item twice (T225 #18 follow-up): the chip says what was
+    // done with its item ("Created B224 …"), and the line above keeps only what no chip says.
+    const shown = r.moved ? [] : r.touched.filter(n => byN.has(n) && n !== r.scope), did = {}, rest = [];
+    for (const part of (r.org?.msg || '').split(' · ').map(p => p.trim()).filter(Boolean)) {
+      const m = /^(.+?) ([A-Z]\d+)$/.exec(part), n = m && parseRef(m[2]);
+      if (n && shown.includes(n)) did[n] ||= m[1]; else rest.push(part);  // the same item said again ("Updated R141 · Updated R141"): once
+    }
+    const org = !r.moved && r.org && !(r.acked && r.org.keep);
+    const note = org && rest.length ? `<div class="mt-1.5 flex min-h-5 items-center gap-1 text-xs ${r.org.ok ? 'text-zinc-500 dark:text-zinc-400' : 'text-red-600 dark:text-red-400'}">${ico('sparkle', 'size-3.5')}<span class="min-w-0">${esc(rest.join(' · '))}</span></div>` : '';
+    const chips = (org && !note && shown.some(n => did[n]) ? `<span class="text-zinc-400 dark:text-zinc-500">${ico('sparkle', 'size-3.5')}</span>` : '')
+      + shown.map(n => `<button data-act="goto" data-n="${n}" class="${HIT} flex h-8 max-w-full min-w-0 items-center gap-1.5 rounded-lg bg-zinc-100 px-2 text-[13px] hover:bg-zinc-200/70 dark:bg-zinc-800 dark:hover:bg-zinc-700">${did[n] ? `<span class="shrink-0 text-zinc-500 dark:text-zinc-400">${esc(did[n])}</span>` : ''}<span class="font-mono text-xs font-bold ${TYPE_TEXT[byN.get(n).type]}">${code(n)}</span><span class="truncate">${esc(byN.get(n).title)}</span></button>`).join('');
     const acts = inputActs(r).filter(Boolean).map(a => `<div class="mt-1 flex flex-wrap items-center gap-x-1 gap-y-1.5">${a}</div>`).join('');
     // On the desktop each input is a ledger line: what you said on the left, what became of it on the right.
     return `${head}<article data-r="${r.id}" class="border-b border-zinc-100 px-4 py-2 transition-colors duration-700 lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-10 lg:px-0 lg:py-4 dark:border-zinc-800/70"><div class="min-w-0">
