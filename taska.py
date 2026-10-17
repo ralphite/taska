@@ -5271,8 +5271,17 @@ function docPane(d) {
   markQuotes(body, d); seeThreads(d);  // T274 #2
   if (U.docCircle) wireLasso();
 }
+function docEditPane(d) {  // T274 #11: the editor in the item pane, not over it
+  const body = $('detailBody');
+  $('itemMenuBtn').hidden = true; $('dActs').innerHTML = '';
+  $('dHead').innerHTML = `<span class="flex min-w-0 items-center gap-2 text-sm">${ico('pencil', 'size-[18px] text-zinc-500 dark:text-zinc-400')}<span class="font-semibold">Editing</span><span class="font-mono font-bold text-zinc-700 dark:text-zinc-200">D${d.d}</span><span class="truncate">${esc(d.title)}</span></span>`;
+  $('dNav').innerHTML = '';
+  if ($('docMd') && body.contains($('docMd'))) return;  // typing: the text stays as it is
+  parkBox(); body.innerHTML = `<div class="mx-auto flex min-h-full w-full max-w-[46rem] flex-col px-8 pt-4 pb-12">${docEditHtml(d, U.docText ?? noteText(d))}</div>`;
+}
 function closeDoc() {  // the desktop's way back from a document to its item
   if (!U.doc) return;
+  if (U.docEdit) { keepDoc(); U.docEdit = false; U.docText = null; return openDoc(U.doc); }  // Esc in the editor: back to reading, the edit kept as a draft
   const d = U.doc;
   U.docScroll[d] = $('detailBody').scrollTop;
   Object.assign(U, {doc: null, docReply: null, docSel: new Set(), docQuote: null, docCircle: false});
@@ -5311,13 +5320,15 @@ function docViewHtml(d) {
     <p class="mt-6 text-center text-xs text-zinc-400">${desk() ? 'Select words, or Comment beside a paragraph, to comment on them; or write in the box below about the whole document' : 'Tap paragraphs, select text or circle an area to comment on them, or write in the box below about the whole document'}</p>
     </div>`;
 }
+const docEditHtml = (d, md) => `<div class="flex min-h-full flex-col">
+      <div class="sticky -top-2 z-10 -mx-4 -mt-2 mb-2 flex items-center gap-2 bg-white px-4 py-2 text-xs text-zinc-500 dark:bg-zinc-900"><span id="docHint" class="min-w-0 flex-1">The first line is the title. Esc keeps it as a draft.</span><button id="docMic" data-act="doc-mic" class="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold text-zinc-600 tabular-nums hover:bg-zinc-100 data-on:bg-red-600 data-on:text-white data-on:hover:bg-red-700 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:data-on:bg-red-600 dark:data-on:text-white">${ico('mic')}<span>Speak</span></button><button data-act="doc-discard" class="h-11 shrink-0 rounded-xl px-3 text-sm font-semibold text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800">Discard</button><button data-act="doc-done" class="${PRIMARY}">${d ? 'Save' : 'Create'}</button></div>
+      <textarea id="docMd" placeholder="Title on the first line&#10;&#10;Then anything: a plan, a design, notes. Markdown works." class="min-h-[40dvh] w-full flex-1 resize-none bg-transparent text-base leading-relaxed outline-none placeholder:text-zinc-400">${esc(md)}</textarea></div>`;
 function renderDoc({focus = false} = {}) {
   if (U.docEdit) {
     const d = docById(U.doc);
     const md = U.docText ?? (d ? noteText(d) : '');
-    dialog(d ? `D${d.d}` : `New doc on ${code(U.docNew)}`, `<div class="flex min-h-full flex-col">
-      <div class="sticky -top-2 z-10 -mx-4 -mt-2 mb-2 flex items-center gap-2 bg-white px-4 py-2 text-xs text-zinc-500 dark:bg-zinc-900"><span id="docHint" class="min-w-0 flex-1">The first line is the title. Esc keeps it as a draft.</span><button id="docMic" data-act="doc-mic" class="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold text-zinc-600 tabular-nums hover:bg-zinc-100 data-on:bg-red-600 data-on:text-white data-on:hover:bg-red-700 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:data-on:bg-red-600 dark:data-on:text-white">${ico('mic')}<span>Speak</span></button><button data-act="doc-discard" class="h-11 shrink-0 rounded-xl px-3 text-sm font-semibold text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800">Discard</button><button data-act="doc-done" class="${PRIMARY}">${d ? 'Save' : 'Create'}</button></div>
-      <textarea id="docMd" placeholder="Title on the first line&#10;&#10;Then anything: a plan, a design, notes. Markdown works." class="min-h-[40dvh] w-full flex-1 resize-none bg-transparent text-base leading-relaxed outline-none placeholder:text-zinc-400">${esc(md)}</textarea></div>`, {focus: false, tall: true});
+    if (desk() && d) { D.docKey = null; renderDetail(); docMicShow(); return; }  // T274 #11: an existing document is edited where it is read
+    dialog(d ? `D${d.d}` : `New doc on ${code(U.docNew)}`, docEditHtml(d, md), {focus: false, tall: true});
     docMicShow();
     return;
   }
@@ -5563,7 +5574,9 @@ function renderDetail() {
   const it = U.open && byN.get(U.open), body = $('detailBody');
   if (it && S.project) markSeen(it);  // T274 #5
   if (desk()) renderGoStrip();
+  if (desk()) $('foot').hidden = (!!D.page && !U.prefsEdit) || !!(U.doc && U.docEdit);  // editing a document in its pane: the box steps aside
   if (desk() && U.doc && !U.docEdit && docById(U.doc)) return docPane(docById(U.doc));
+  if (desk() && U.doc && U.docEdit && docById(U.doc)) return docEditPane(docById(U.doc));
   if (desk() && U.tab === 'inputs' && !D.page) return inputPane();
   if (!it) {  // the desktop's detail pane with nothing selected
     if (desk()) {
