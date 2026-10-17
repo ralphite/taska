@@ -3787,6 +3787,7 @@ const ICON = {
   scope: '<path d="m15 10 5 5-5 5"/><path d="M4 4v7a4 4 0 0 0 4 4h12"/>',
   image: '<rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.1-3.1a2 2 0 0 0-2.8 0L6 21"/>',
   file: '<path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/>',
+  clip: '<path d="m16 6-8.414 8.586a2 2 0 0 0 2.829 2.829l8.414-8.586a4 4 0 1 0-5.657-5.657l-8.379 8.551a6 6 0 1 0 8.485 8.485l8.379-8.551"/>',
   doc: '<path d="M6 22a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h8a2.4 2.4 0 0 1 1.704.706l3.588 3.588A2.4 2.4 0 0 1 20 8v12a2 2 0 0 1-2 2z"/><path d="M14 2v5a1 1 0 0 0 1 1h5"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>',
   check: '<path d="M20 6 9 17l-5-5"/>',
   comment: '<path d="M22 17a2 2 0 0 1-2 2H6.828a2 2 0 0 0-1.414.586l-2.202 2.202A.71.71 0 0 1 2 21.286V5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2z"/>',
@@ -4129,8 +4130,8 @@ function workerMark(it) {  // F194: the agent working on an item in progress; am
   const a = it.agent;
   if (!a) return '';
   const name = esc(AGENT_NAME[a.by] || a.by), quiet = Date.now() - new Date(a.t).getTime();
-  return quiet > QUIET_MS ? `<span class="text-amber-700 dark:text-amber-400" title="${name} last wrote ${when(a.t)}; another agent may take it">${name} · quiet ${agoShort(new Date(a.t).getTime())}</span>`
-    : `<span title="${name} is on it">${name}</span>`;
+  return quiet > QUIET_MS ? `<span class="min-w-0 truncate text-amber-700 dark:text-amber-400" title="${name} last wrote ${when(a.t)}; another agent may take it">${name} · quiet ${agoShort(new Date(a.t).getTime())}</span>`
+    : `<span class="min-w-0 truncate" title="${name} is on it">${name}</span>`;  // on a full line it gives way first, the counts stay (T225 #8)
 }
 const agoShort = t => { const m = Math.max(0, Math.round((Date.now() - t) / 60000)); return m < 1 ? 'now' : m < 60 ? m + 'm' : m < 1440 ? Math.round(m / 60) + 'h' : Math.round(m / 1440) + 'd'; };
 const agoLong = t => { const m = Math.max(0, Math.round((Date.now() - t) / 60000)); return m < 1 ? 'just now' : m < 60 ? `${m} min ago` : m < 1440 ? `${Math.round(m / 60)} h ago` : `${plural(Math.round(m / 1440), 'day')} ago`; };
@@ -4428,16 +4429,16 @@ function itemRow(it, depth = 0, group = [], band = '') {  // band: the band it i
     needsYou(it) ? `<span class="font-semibold text-amber-700 dark:text-amber-400">${needLabel(it)}</span>` : it.reply && !closed ? '<span class="text-emerald-700 dark:text-emerald-400">Replied</span>' : '',
     hasDraft(c) ? DRAFT_MARK() : '',  // T113 B24: a reply you have not sent yet
     it.status === 'doing' ? '<span class="text-blue-600 dark:text-blue-400">In progress</span>' : closed ? `<span>${statusName(it)}</span>` : '',
-    it.status === 'doing' ? workerMark(it) : '',  // F194: which agent is on it, and whether it went quiet
     it.archived && U.tab !== 'archive' ? SOFT('Archived') : '',
     it.when === 'later' && !closed && band !== 'later' ? SOFT('Later') : '',
     it.rank != null && inQueue(it) && it.when === 'now' ? '<span class="font-semibold text-blue-600 dark:text-blue-400" title="You put it first of its priority: agents take it next">Next</span>' : '',  // F197
     it.parent && !depth ? `<span>↳ ${code(it.parent)}</span>` : '',  // nested rows already hang under it
     children.length ? cnt('subitems', `${children.filter(k => CLOSED(k.status)).length}/${children.length}`, 'Subitems finished') : '',
     talk ? cnt('comment', talk, plural(talk, 'comment')) : '',
-    docs ? cnt('file', docs, plural(docs, 'doc')) : '',
+    docs ? cnt('doc', docs, plural(docs, 'doc')) : '',  // a document and a file each have their own icon (T225 #8)
     imgs ? cnt('image', imgs, plural(imgs, 'image')) : '',
-    other ? cnt('file', other, plural(other, 'file')) : '',
+    other ? cnt('clip', other, plural(other, 'file')) : '',
+    it.status === 'doing' ? workerMark(it) : '',  // F194: which agent is on it, and whether it went quiet; last, so on a full line it is what shortens (T225 #8)
   ].join('');
   const img = files.find(f => (f.mime || '').startsWith('image/'));
   const foldable = group.some(k => k.parent === it.n);  // its subitems are in this list
@@ -4446,7 +4447,7 @@ function itemRow(it, depth = 0, group = [], band = '') {  // band: the band it i
       ${stateIcon(it.status, statusName(it))}
       <div class="min-w-0 flex-1">
         <p class="line-clamp-2 text-[15px] leading-snug font-medium lg:line-clamp-1 ${closed ? 'line-through decoration-zinc-400' : ''}"><span class="mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[it.type]}">${c}</span>${esc(it.title)}</p>
-        ${meta ? `<div class="mt-1 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-xs font-medium text-zinc-500 dark:text-zinc-400">${meta}</div>` : ''}
+        ${meta ? `<div class="mt-1 flex items-center gap-x-2.5 overflow-hidden text-xs font-medium whitespace-nowrap text-zinc-500 dark:text-zinc-400">${meta}</div>` : ''}
       </div>
       ${it.type === 'rule' ? '' : rowActs(it)}
       ${img ? `<button data-act="view" data-g="row${it.n}" data-f="${esc(img.f)}" aria-label="View image" class="-my-0.5 grid size-11 shrink-0 place-items-center rounded-lg hover:brightness-95 dark:hover:brightness-110">${(groups.set('row' + it.n, [img.f]), '')}<img src="${P}f/${encodeURIComponent(img.f)}" alt="" loading="lazy" class="size-10 rounded-lg border border-zinc-200 bg-zinc-50 object-cover dark:border-zinc-700 dark:bg-zinc-900"></button>` : ''}
