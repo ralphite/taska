@@ -7407,18 +7407,12 @@ const ACT = {
   'np-cancel': () => { $('npRow')?.remove(); $('drawerNew').hidden = false; },
   // The project's menu on the bar, and Settings › Projects (F173)
   'proj-menu': () => projectMenu(),
+  'proj-manage': () => { closeDialog(); openProject('projects'); },
   'proj-up': b => { closeDialog(); projMove(b.dataset.slug, -1); },  // F253: when dragging is awkward
   'proj-down': b => { closeDialog(); projMove(b.dataset.slug, 1); },
   'proj-open': b => { closeDialog(); location.assign(`/p/${encodeURIComponent(b.dataset.slug)}/`); },
   'proj-settings': b => { closeDialog(); location.assign(`/p/${encodeURIComponent(b.dataset.slug)}/settings`); },
-  'proj-rename': async b => {  // this project: its name on the bar becomes the field; another one: its row in Settings › Projects
-    const slug = b.dataset.slug || S.project;
-    closeDialog();
-    if (slug !== S.project) { openProject('projects'); if (!P_CACHE.projects) await loadProjects(); return ACT['p-rename']({dataset: {slug}}); }
-    U.renaming = slug; render(); const f = $('pRename'); if (f) { f.focus(); f.select(); }
-  },
   'proj-new': () => { closeDialog(); ACT['new-project'](); },
-  'proj-delete': async b => { closeDialog(); try { await deleteProject(b.dataset.slug || S.project); } catch (ex) { toast(ex.message); } },
   'p-new': () => { U.pNew = true; U.pErr = ''; U.renaming = null; U.pMenu = null; renderProject(); $('pNewName')?.focus(); },
   'p-new-cancel': () => { U.pNew = false; U.pNewText = ''; U.pErr = ''; renderProject(); },
   'p-create': async () => {
@@ -7942,9 +7936,8 @@ function projectMenu(slug = S.project, at = null) {
   const r = !at && $('projMenuBtn')?.getBoundingClientRect(), on = `data-slug="${esc(slug)}"`;
   const row = (act, icon, label, key = '', tone = '') => `<button data-act="${act}" ${on} class="flex h-9 w-full items-center gap-3 rounded-lg px-2.5 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800 ${tone}">${ico(icon, `size-[18px] ${tone || 'text-zinc-500 dark:text-zinc-400'}`)}<span class="min-w-0 flex-1 truncate">${label}</span>${key ? `<kbd class="grid h-5 min-w-5 place-items-center rounded-md px-1 font-sans text-[11px] font-semibold text-zinc-400 ring-1 ring-zinc-300 dark:ring-zinc-600">${key}</kbd>` : ''}</button>`;
   U.sheet = 'projmenu';
-  dialog('', `<div class="-mx-1 flex flex-col">${here ? '' : row('proj-open', 'arrow', 'Open')}${row(here ? 'project' : 'proj-settings', 'gear', 'Project settings', here ? 'G S' : '')}${row('proj-rename', 'pencil', 'Rename')}${here ? row('switch', 'updown', 'Switch project', 'G P') : ''}${(DR.list || []).length > 1 ? row('proj-up', 'chevup', 'Move up') + row('proj-down', 'down', 'Move down') : ''}${row('proj-new', 'plus', 'New project')}
-    <div class="my-1.5 border-t border-zinc-100 dark:border-zinc-800"></div>${row('proj-delete', 'trash', 'Delete project', '', 'text-red-600 dark:text-red-400')}
-    <p class="px-2.5 pt-0.5 pb-1 text-xs leading-snug text-zinc-500 dark:text-zinc-400">Goes to Settings › Projects › Deleted. Restore it any time.</p></div>`,
+  dialog('', `<div class="-mx-1 flex flex-col">${here ? '' : row('proj-open', 'arrow', 'Open')}${row(here ? 'project' : 'proj-settings', 'gear', 'Project settings', here ? 'G S' : '')}${here ? row('switch', 'updown', 'Switch project', 'G P') : ''}${(DR.list || []).length > 1 ? row('proj-up', 'chevup', 'Move up') + row('proj-down', 'down', 'Move down') : ''}${row('proj-new', 'plus', 'New project')}
+    <div class="my-1.5 border-t border-zinc-100 dark:border-zinc-800"></div>${row('proj-manage', 'pencil', 'Rename or delete…')}</div>`,  // T274 #19: renaming and deleting live in one place, Settings › Projects
     {pop: true, focus: false, head: `<span class="flex items-center gap-2.5">${projTile(slug, 'size-8 rounded-lg text-sm')}<span class="min-w-0"><span class="block truncate text-sm font-semibold">${esc(titleOf(p))}</span><span class="block truncate font-mono text-xs font-normal text-zinc-500 dark:text-zinc-400">/p/${esc(slug)} · ${p.open} open</span></span></span>`});
   if (at) popAt(...at); else if (r) popAt(r.left, r.bottom + 6);
 }
