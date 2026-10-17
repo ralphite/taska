@@ -5867,6 +5867,7 @@ function paint(el, html) { if (el.dataset.html !== html || el.innerHTML === '' &
 // the transcription preferences in their section; replies to an item and new inputs stay at the bottom. The same
 // element moves, so voice, files and drafts work alike everywhere. Before a pane is drawn again it comes home.
 const BOX = document.getElementById('composer');
+const footRoom = () => BOX.parentNode === $('foot') ? $('foot').offsetHeight : 0;  // a sheet leaves room for the box only while the box is at the bottom
 function boxAnchor() {
   if (U.prefsEdit) return document.querySelector('#projectBody [data-prefs-slot]');
   if (U.amend) return U.amend.mode === 'dc' ? document.querySelector(`[data-dc="${U.amend.id}"]`)
@@ -5886,6 +5887,7 @@ function placeBox() {
   if (a && a.nextElementSibling !== BOX) { a.after(BOX); BOX.classList.add('my-3'); if (had) $('text').focus({preventScroll: true}); BOX.scrollIntoView({block: 'nearest'}); }
   else if (!a) parkBox();
   $('boxHint').hidden = !!a;
+  if ($('overlay').dataset.above && !$('overlay').hidden) $('overlay').style.bottom = footRoom() + 'px';
 }
 function renderComposer() {
   if (S.project && draftKey() !== U.draftKey) swapDraft(draftKey());
@@ -5977,7 +5979,7 @@ function renderComposer() {
     : dOpen ? boxKeys([['⇧↵', 'comment on the whole document'], ['Esc', `back to ${code(liveN(dOpen.n))}`]], 'or click a paragraph first')
     : U.files.some(f => f.transcribing) ? boxKeys([['⇧↵', 'send now']], 'the words follow by themselves')
     : boxKeys([['⇧↵', ticks.length ? 'send the answer' : 'send'], ['↵', 'new line'], ['⌥V', 'voice']], 'paste or drop screenshots');
-  if ($('overlay').dataset.above && !$('overlay').hidden) $('overlay').style.bottom = $('foot').offsetHeight + 'px';  // a sheet over the page stays above the box: its line too
+  if ($('overlay').dataset.above && !$('overlay').hidden) $('overlay').style.bottom = footRoom() + 'px';  // a sheet over the page stays above the box: its line too
   vcPlace(); renderDraft();
   placeBox();
 }
@@ -6855,7 +6857,7 @@ function dialog(title, html, {aboveComposer = false, focus = true, tall = false,
   $('overlay').classList.toggle('px-2', card); $('overlay').classList.toggle('pb-2', card && !flush);
   for (const c of ['lg:items-start', 'lg:justify-end', 'lg:bg-transparent', 'dark:lg:bg-transparent', 'lg:pt-[3.75rem]', 'lg:pr-3']) $('overlay').classList.toggle(c, pop && desk());
   for (const c of ['lg:w-[24rem]', 'lg:max-h-[80dvh]', 'lg:rounded-2xl', 'lg:ring-1', 'lg:ring-zinc-900/10', 'dark:lg:ring-white/10']) $('dlg').classList.toggle(c, pop && desk());
-  $('overlay').style.bottom = aboveComposer ? $('foot').offsetHeight + 'px' : '';  // keep the input box usable
+  $('overlay').style.bottom = aboveComposer ? footRoom() + 'px' : '';  // keep the input box usable
   $('overlay').dataset.above = aboveComposer ? '1' : '';  // and follow it when its line or files come and go
   $('overlay').style.paddingLeft = $('overlay').style.paddingTop = ''; $('overlay').classList.remove('lg:justify-start');  // set again by popAt
   if (!desk() && !$('toast').hidden) placeToast();  // once the sheet or card has its place
@@ -7032,7 +7034,7 @@ function showView() {
   $('inputsView').hidden = !under || U.tab !== 'inputs';
   v.hidden = !d;
   for (const c of ['absolute', 'inset-x-0', 'top-[env(safe-area-inset-top)]', 'z-20', 'bg-white', 'dark:bg-zinc-950', 'shadow-2xl']) v.classList.toggle(c, lift);
-  v.style.bottom = lift ? $('foot').offsetHeight + 'px' : '';
+  v.style.bottom = lift ? footRoom() + 'px' : '';
   if (!lift) { v.style.transform = ''; v.style.transition = ''; }
 }
 
@@ -9338,7 +9340,7 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) come
 window.addEventListener('focus', comeBack);
 window.addEventListener('online', () => { refresh(); resendOutbox(); });
 // The sheet sits above the input box; follow the box whenever it changes size (styles loading, keyboard, scope line).
-new ResizeObserver(() => { if ($('overlay').dataset.above && !$('overlay').hidden) $('overlay').style.bottom = $('foot').offsetHeight + 'px'; })
+new ResizeObserver(() => { if ($('overlay').dataset.above && !$('overlay').hidden) $('overlay').style.bottom = footRoom() + 'px'; })
   .observe($('foot'));
 window.addEventListener('pageshow', e => { if (e.persisted) refresh(); });
 addEventListener('pagehide', () => {  // where you were in the list, for the reload (B152)
