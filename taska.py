@@ -4974,9 +4974,9 @@ function wireLasso() {
 // A row's Answer or Reply, or "Go through" on Needs you (T65): the item in a card above the input
 // box, with what it needs and its actions. A row opens the card of that item only; Go through steps through what
 // waits on you, one card after another, and ends after the last (B153). While you go through, the card keeps its
-// height and place, Previous and Next sit at the bottom under your thumb, and every action keeps one slot in every
-// state, as on the desktop (B128): forward · progress · Won't do · Later · Copy. Opening the item or copying it
-// leaves the walk where it was. A swipe on the card means what it means on a row: right is its step forward.
+// height and place, Previous and Next sit at the bottom under your thumb, and the actions keep their order, as on the
+// desktop (B128): forward · progress · Won't do · Later · Copy; one a state has not leaves no gap (T225 #5).
+// Opening the item or copying it leaves the walk where it was. A swipe on the card means what it means on a row: right is its step forward.
 const laterLast = (a, b) => (a.when === 'later') - (b.when === 'later');  // Later moves an item that needs you down, out of the way (B153)
 const walkTab = () => U.tab === 'rules' && !D.page && !D.compose && visible('rules').some(needsYou) ? 'rules' : 'items';  // on Rules, the rules waiting on you (T113 B29); none: Items'
 const needsList = (t = walkTab()) => visible(t).filter(needsYou).sort(laterLast).map(it => it.n);
@@ -4996,8 +4996,7 @@ function peek(n, {focus = true} = {}) {
   const g = U.go && U.go.list.includes(n) ? U.go : null, files = filesOf(it), need = '', i = g ? g.list.indexOf(n) : -1;  // its button says what it needs (T225 #9)
   const recent = it.thread.filter(x => x.id !== it.wait?.id).slice(-3), talk = it.thread.length;  // the question itself is pinned above (B145)
   const btn = (attrs, icon, label, tone) => `<button ${attrs} class="flex h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 rounded-xl text-[11px] font-semibold hover:bg-zinc-100 dark:hover:bg-zinc-800 ${tone}">${ico(icon, 'size-5')}<span class="max-w-full truncate">${label}</span></button>`;
-  const slot = (a, k) => !a ? '<span class="h-14 min-w-0 flex-1"></span>'
-    : btn(`${k ? '' : 'data-slot="fwd" '}data-n="${n}" ${a[0] === 'need' ? 'data-act="card-answer"' : a[0] === 'reopen' ? 'data-act="reopen"' : `data-act="peek-set" data-f="${a[0]}" data-v="${a[1]}"`}`,
+  const slot = (a, k) => btn(`${k ? '' : 'data-slot="fwd" '}data-n="${n}" ${a[0] === 'need' ? 'data-act="card-answer"' : a[0] === 'reopen' ? 'data-act="reopen"' : `data-act="peek-set" data-f="${a[0]}" data-v="${a[1]}"`}`,
       ACT_ICON[a[2]], a[2], FWD_NEED[a[2]] ? NEED[FWD_NEED[a[2]]].text : FOCUS_TONE[a[2]] || 'text-zinc-700 dark:text-zinc-200');
   const last = g && !g.list.slice(i + 1).some(k => !g.done.has(k) && byN.get(k) && needsYou(byN.get(k)));  // nothing after this one: Next ends the walk
   const nav = g ? `<div class="flex items-center gap-1 px-2 pt-1">
@@ -5021,7 +5020,7 @@ function peek(n, {focus = true} = {}) {
   </div>`, {
     aboveComposer: true, focus, card: true, head, walk: !!g,
     sub: g ? `<div class="flex gap-1 px-4 pb-1" aria-hidden="true">${g.list.map(k => `<span class="h-1 flex-1 rounded-full ${k === n ? 'bg-amber-500 dark:bg-amber-400' : g.done.has(k) ? 'bg-emerald-500 dark:bg-emerald-400' : 'bg-zinc-200 dark:bg-zinc-700'}"></span>`).join('')}</div>` : '',
-    foot: `<div class="border-t border-zinc-100 dark:border-zinc-800">${nav}<div class="flex gap-1 px-2 py-1">${cardSlots(it).map(slot).join('')}
+    foot: `<div class="border-t border-zinc-100 dark:border-zinc-800">${nav}<div class="flex gap-1 px-2 py-1">${cardSlots(it).map((a, k) => a && slot(a, k)).filter(Boolean).join('')}
       ${btn(`data-act="card-copy" data-n="${n}"`, 'copy', 'Copy', 'text-zinc-700 dark:text-zinc-200')}</div></div>`,
   });
   if (moved) $('dlgBody').scrollTop = 0;
