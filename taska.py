@@ -3831,19 +3831,10 @@ function when(t) {
   if (new Date(now - 864e5).toDateString() === d.toDateString()) return 'Yesterday ' + hm;
   return d.toLocaleDateString('en-US', {month: 'short', day: 'numeric'});
 }
-function agentLine(p) {  // the latest agent, or a red "No agent" when work waits for one
-  const a = [...(p.agents || [])].sort((x, y) => y.t - x.t).find(x => x.waiting) || [...(p.agents || [])].sort((x, y) => y.t - x.t)[0];
-  const name = a ? ({'claude-code': 'Claude Code', codex: 'Codex', antigravity: 'Antigravity', agent: 'Agent'}[a.name] || esc(a.name)) : '';
-  const m = a ? Math.round((Date.now() - a.t) / 60000) : 0, ago = m < 1 ? 'now' : m < 60 ? m + 'm' : m < 1440 ? Math.round(m / 60) + 'h' : Math.round(m / 1440) + 'd';
-  const dot = c => `<span class="size-1.5 shrink-0 rounded-full ${c}"></span>`;
-  if (a && (a.waiting || m < 10)) return `${dot('bg-emerald-500')}<span class="shrink-0 whitespace-nowrap text-emerald-700 dark:text-emerald-400">${name} ${a.waiting ? 'ready' : '· ' + ago}</span>`;
-  if (p.work) return `${dot('bg-red-500')}<span class="shrink-0 whitespace-nowrap text-red-600 dark:text-red-400">No agent${a ? ' · ' + ago : ''}</span>`;
-  return `${dot('bg-zinc-300 dark:bg-zinc-600')}<span class="shrink-0 whitespace-nowrap">${a ? `${name} · ${ago}` : 'No agent yet'}</span>`;
-}
 async function load() {
   const list = (await (await fetch('/api/projects', {cache: 'no-store'})).json()).sort((a, b) => b.t - a.t);
   document.getElementById('list').innerHTML = list.map(p => `<li><a href="/p/${encodeURIComponent(p.name)}/" class="flex min-h-14 items-center gap-3 rounded-2xl bg-white px-3 py-2.5 shadow-sm ring-1 ring-zinc-900/5 active:bg-zinc-50 dark:bg-zinc-800 dark:ring-white/5 dark:active:bg-zinc-700">
-    <span class="min-w-0 flex-1"><span class="block truncate text-[17px] font-medium">${esc(p.title || p.name)}</span><span class="mt-0.5 flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400">${agentLine(p)}<span class="min-w-0 truncate">· ${p.open} open · ${when(p.t)}${p.auto ? '' : ' · keep-going off'}</span></span></span>
+    <span class="min-w-0 flex-1"><span class="block truncate text-[17px] font-medium">${esc(p.title || p.name)}</span><span class="mt-0.5 block truncate text-xs text-zinc-500 dark:text-zinc-400">${p.open} open</span></span>
     ${p.needs ? `<span class="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900 dark:bg-amber-400/15 dark:text-amber-200">${p.needs} need you</span>` : ''}
     <svg class="size-4 shrink-0 text-zinc-300 dark:text-zinc-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg></a></li>`).join('');
 }
@@ -4966,7 +4957,7 @@ const KIND_TAG = x => KIND[x.kind] ? `<span class="rounded px-1.5 py-0.5 text-[1
 // A long agent message shows its first line, the conclusion, until you ask for more (T58 #5). On the desktop it
 // shows whole, in a box of limited height that scrolls; a fade at the bottom says there is more (F93).
 function msgText(x, gid, form = 0, done = null) {
-  const long = x.by !== 'you' && x.kind !== 'ask' && (x.text.length > 240 || x.text.trim().split('\n').length > 3);
+  const long = (x.by !== 'you' || desk()) && x.kind !== 'ask' && (x.text.length > 240 || x.text.trim().split('\n').length > 3);  // T274 #15: yours too, on the desktop
   const open = U.moreMsgs.has(x.id), more = `data-act="more-msg" data-expand data-id="${x.id}"`;  // F106: a click on the words opens them
   if (long && desk() && !open) return `<div data-clip ${more} class="max-h-48 cursor-pointer overflow-hidden mask-b-from-60%">${rich(x.text, gid + 'md' + x.id, '', form, done)}</div><button data-act="more-msg" data-id="${x.id}" class="-mb-2 flex h-9 items-center text-sm font-medium text-blue-600 dark:text-blue-400">Show all</button>`;  // T274 #15: no box scrolling inside the pane
   const folded = long && !desk() && !open;
@@ -5021,7 +5012,7 @@ function msgHtml(x, gid, form = 0, done = null, ver = null, m = {}) {
   const strip = (files, g, size) => files?.length ? fileRows(files, g, size, you ? 'items-end max-w-full [&>div]:max-w-full' : 'mt-3') : '';  // T230: pictures and voice notes in their own rows
   if (you && y.text && y.text.trim().split('\n').every(l => /^\s*✓/.test(l)) && !src?.files?.length) return '';  // T274 #27: the picks show on the question
   if (you) return `<div ${x.src ? `data-src="${x.src}"` : ''} class="group flex scroll-mb-4 flex-col items-end gap-1 rounded-2xl transition-colors duration-700 ${ver?.old ? 'opacity-60' : ''}">
-      ${y.text ? `<div ${voiceAttr(src)} class="max-w-[85%] rounded-2xl rounded-tr-md bg-blue-600 px-4 py-2.5 text-[15px] leading-relaxed text-white dark:bg-blue-500 [&_a]:text-white [&_a]:decoration-white/60 [&_blockquote]:border-white/50 [&_blockquote]:text-white/85 [&_code]:bg-white/15 [&_code]:text-white [&_pre]:bg-white/15 [&_pre]:text-white [&_mark]:text-zinc-900">${ver?.old ? `<div class="line-clamp-2">${msgText(y, gid)}</div>` : msgText(y, gid)}</div>` : ''}
+      ${y.text ? `<div ${voiceAttr(src)} class="max-w-[85%] rounded-2xl rounded-tr-md bg-blue-600 px-4 py-2.5 text-[15px] leading-relaxed text-white dark:bg-blue-500 [&_a]:text-white [&_a]:decoration-white/60 [&_blockquote]:border-white/50 [&_blockquote]:text-white/85 [&_code]:bg-white/15 [&_code]:text-white [&_pre]:bg-white/15 [&_pre]:text-white [&_mark]:text-zinc-900 [&_button[data-act=more-msg]]:text-white">${ver?.old ? `<div class="line-clamp-2">${msgText(y, gid)}</div>` : msgText(y, gid)}</div>` : ''}
       ${ver?.old ? '' : strip(src?.files?.filter(f => !(f.mime || '').startsWith('audio/')), gid + 't' + x.id) + voiceLine(src?.files)}
       <span class="px-1 text-[11px] text-zinc-400 dark:text-zinc-500">You · ${ver?.old ? 'earlier version · ' : ver?.label ? ver.label + ' · ' : ''}${when(x.t)}${x.edited && !ver?.old ? ` · ${src?.history?.length ? `<button data-act="input-history" data-id="${src.id}" title="See what changed" class="relative underline decoration-dotted underline-offset-2 after:absolute after:-inset-3 hover:text-zinc-700 dark:hover:text-zinc-300">edited ${when(x.edited)}</button>` : `edited ${when(x.edited)}`}` : ''}${src?.tr_wait ? ' · <span class="animate-pulse text-blue-600 dark:text-blue-400">transcribing the voice note…</span>' : ''}${m.read ? ` · <span title="${esc(m.read.names.join(', '))} read it ${when(new Date(m.read.t).toISOString())}" class="inline-flex items-center gap-0.5 font-medium text-zinc-500 dark:text-zinc-400">${ico('check', 'size-3', '2.5')}Read by ${esc(m.read.names.join(', '))}</span>` : ''}</span>${src && !ver?.old && !src.moved && !src.deleted ? `<div class="flex gap-0.5 lg:opacity-0 lg:group-hover:opacity-100 lg:focus-within:opacity-100"><button data-act="input-edit" data-id="${src.id}" class="${DC_BTN}">${ico('pencil', 'size-3.5')}Edit</button><button data-act="input-append" data-id="${src.id}" class="${DC_BTN}">${ico('plus', 'size-3.5')}Add more</button></div>` : ''}</div>`;  // B265: edit it right here
   if (x.kind === 'withdraw') return `<div class="flex items-start gap-2 px-1 text-[13px] leading-snug text-zinc-500 dark:text-zinc-400">${ico('undo', 'mt-0.5 size-3.5 shrink-0')}
@@ -5128,7 +5119,7 @@ async function deleteComment(dn, id) {
 }
 function threadHtml(d, key, comments, blockText) {
   return `<div data-thread="${key}" class="mt-2 space-y-2 border-l-2 border-amber-300 pl-3 dark:border-amber-600">
-    ${comments.map(c => `<div data-dc="${c.id}" class="group text-sm ${MSG(c.by).replace(/\b(ml|mr)-8\b/, '')}">${blockText !== undefined && !sameText(c.quote, blockText) ? `<div class="mb-0.5 line-clamp-2 text-xs text-zinc-500 dark:text-zinc-300">“${esc(plainQuote(c.quote))}”</div>` : ''}<div class="flex min-h-6 items-center gap-1"><span class="${WHO(c.by)}">${esc(whoName(c.by))}</span> <span class="text-xs text-zinc-400">${when(c.t)}${c.edited ? ` · edited ${when(c.edited)}` : ''}</span>${dcActs(d, c)}</div>${rich(c.text, 'dc' + c.t)}${c.files?.length ? `<div class="mt-1.5 flex gap-2 overflow-x-auto">${thumbs(c.files, 'dcf' + c.id, 'size-11')}</div>` : ''}</div>`).join('')}
+    ${comments.map(c => `<div data-dc="${c.id}" class="group text-sm ${MSG(c.by).replace(/\b(ml|mr)-8\b/, '')}">${blockText !== undefined && !sameText(c.quote, blockText) ? `<div class="mb-0.5 line-clamp-2 text-xs text-zinc-500 dark:text-zinc-300">“${esc(plainQuote(c.quote))}”</div>` : ''}<div class="flex min-h-6 items-center gap-1"><span class="${WHO(c.by)}">${esc(whoName(c.by))}</span> <span class="text-xs text-zinc-400">${when(c.t)}${c.edited ? ` · edited ${when(c.edited)}` : ''}</span>${dcActs(d, c)}</div>${rich(c.text, 'dc' + c.t)}${c.files?.some(f => !(f.mime || '').startsWith('audio/')) ? `<div class="mt-1.5 flex gap-2 overflow-x-auto">${thumbs(c.files.filter(f => !(f.mime || '').startsWith('audio/')), 'dcf' + c.id, 'size-11')}</div>` : ''}${voiceLine(c.files)}</div>`).join('')}
     ${U.docReply === key ? '' : `<button data-act="doc-reply" data-key="${key}" class="${HIT} flex h-8 items-center gap-1 rounded-lg px-1.5 -mx-1.5 text-xs font-semibold text-blue-600 hover:bg-blue-50 aria-pressed:underline dark:text-blue-400 dark:hover:bg-blue-400/10">${ico('reply', 'size-3.5')}Reply</button>`}
   </div>`;
 }
@@ -5739,9 +5730,9 @@ function shortTitle(s) {
 const codes = ns => ns.map(code).join(', ');
 const deleteTip = r => `Delete ${rcode(r.id)}` + (r.drop?.go.length ? ` and ${codes(r.drop.go)}` : '') + (r.drop?.keep.length ? `; ${codes(r.drop.keep.map(k => k[0]))} ${r.drop.keep.length === 1 ? 'stays' : 'stay'}` : '');
 function deletedSaid(x, id) {  // "Deleted r5 and T12, T13 · T14 kept: it has other inputs"
-  if (!x) return `Deleted ${id}`;
+  if (!x) return `Deleted ${rcode(id)}`;
   const k = x.kept;
-  return `Deleted ${id}${x.items.length ? ` and ${x.items.map(i => i.code).join(', ')}` : ''}${k.length ? ` · ${k[0].code} kept: ${k[0].why}${k.length > 1 ? ` · ${k.length - 1} more kept` : ''}` : ''}`;
+  return `Deleted ${rcode(id)}${x.items.length ? ` and ${x.items.map(i => i.code).join(', ')}` : ''}${k.length ? ` · ${k[0].code} kept: ${k[0].why}${k.length > 1 ? ` · ${k.length - 1} more kept` : ''}` : ''}`;
 }
 
 // Edit or add details to an input you sent (B136): the one input box does it, like a reply or a comment (I087).
@@ -5800,7 +5791,7 @@ async function sendAmend() {
     if (!d.ok) return toast((d.res || []).find(x => x.startsWith('err')) || d.error || 'Not saved');
     for (const f of drafts) { f.sent = true; dropRec(f); }  // words still to come go onto the input, on the server (B165); this browser lets the recording go (T101)
     $('text').value = ''; U.files = []; saveDraft(); grow(); U.amend = null;
-    await load(); toast(a.mode === 'edit' ? `${a.id} updated` : `Added to ${a.id}`);
+    await load(); toast(a.mode === 'edit' ? `${rcode(a.id)} updated` : `Added to ${rcode(a.id)}`);
     if (desk() && D.compose) renderDetail();
     if (desk()) $('text').focus({preventScroll: true});
   } catch (_) { toast('Connection lost. Your words are still in the box; try again.'); }
@@ -5810,7 +5801,7 @@ function inputHistory(id) {
   const r = byR.get(id);
   if (!r) return;
   const versions = [{text: r.text, t: r.updated || r.t, label: 'Current'}, ...(r.history || []).map((h, i) => ({...h, t: i ? r.history[i - 1].t : r.t, label: i ? `Version ${i + 1}` : 'Original'})).reverse()];
-  dialog(`${id} history`, versions.map(h => `<section class="mb-5"><h3 class="mb-2 text-sm font-semibold">${h.label}<span class="ml-2 font-normal text-zinc-400">${when(h.t)}</span></h3><p class="whitespace-pre-wrap break-words text-[15px]">${esc(h.text)}</p></section>`).join(''));
+  dialog(`${rcode(id)} history`, versions.map(h => `<section class="mb-5"><h3 class="mb-2 text-sm font-semibold">${h.label}<span class="ml-2 font-normal text-zinc-400">${when(h.t)}</span></h3><p class="whitespace-pre-wrap break-words text-[15px]">${esc(h.text)}</p></section>`).join(''));
 }
 
 function inputState(r) {  // -> [label, tone, icon]
@@ -6055,7 +6046,7 @@ async function moveInput(rid) {
   const others = otherProjects(), made = r.touched.filter(n => n !== r.scope && byN.has(n) && !byN.get(n).archived);
   const byOrg = r.org && r.org.ok && !r.org.undone && !r.org.keep;
   const list = made.map(n => `${code(n)} ${esc(byN.get(n).title)}`).join(', ');
-  dialog(`Move ${rid} to another project`, `<div class="flex flex-col gap-3">
+  dialog(`Move ${rcode(rid)} to another project`, `<div class="flex flex-col gap-3">
     <p class="line-clamp-3 rounded-xl bg-blue-50 px-3 py-2 text-[15px] leading-snug break-words text-zinc-900 dark:bg-blue-400/10 dark:text-zinc-100">${esc(r.text) || `${r.files.length} file${r.files.length === 1 ? '' : 's'}`}</p>
     <div class="-mx-1 flex flex-col gap-0.5">${others.map(p => `<button data-act="move-input-to" data-id="${rid}" data-to="${esc(p.name)}" class="flex h-12 items-center gap-3 rounded-xl px-3 text-left hover:bg-zinc-100 data-pressed:bg-zinc-100 dark:hover:bg-zinc-800 dark:data-pressed:bg-zinc-800">${projTile(p.name, 'size-7 rounded-lg text-xs')}<span class="min-w-0 flex-1 truncate font-medium">${esc(titleOf(p))}</span><span class="text-xs text-zinc-400">${p.open} open</span></button>`).join('') || '<p class="px-3 text-sm text-zinc-500">There is no other project.</p>'}</div>
     <p class="text-[13px] leading-snug text-zinc-500 dark:text-zinc-400">It goes there with its files and is organized again.${made.length ? byOrg ? ` What the organizer made of it here is undone: ${list}.` : ` Items made from it here stay: ${list}.` : ''}${r.scope && byN.has(r.scope) ? ` It also leaves the conversation of ${code(r.scope)}.` : ''}</p></div>`);
