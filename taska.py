@@ -8364,6 +8364,7 @@ const DRAWN = new WeakMap();
 function draw(el, html) { if (DRAWN.get(el) === html && el.firstChild) return; DRAWN.set(el, html); el.innerHTML = html; }
 function setHtml(el, key, html) {
   if (el.contains(BOX)) parkBox();  // B265: the box comes home before the page holding it is drawn again
+  requestAnimationFrame(placeBox);  // and goes back to its section once the page is there (coming back to it too)
   if (P_CACHE[key] === html) return;
   const sig = x => [x.dataset.act, x.dataset.sec, x.dataset.text, x.dataset.wrong, x.dataset.seq, x.dataset.slug].join('|');
   const had = el.contains(document.activeElement) && sig(document.activeElement);
