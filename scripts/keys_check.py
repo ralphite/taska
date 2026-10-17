@@ -156,7 +156,7 @@ def group_answer(a):
     a.go('F04'); a.key('a', wait=0.8); check('A on a question goes to its first choice', (a.js('document.activeElement.dataset.act'), a.js('document.activeElement.dataset.i')), ('choice', '0'))
     a.key(' ', wait=0.5); check('Space picks the focused choice', a.js('U.choice && [...U.choice.picked]'), [0])
     a.js('document.activeElement.blur()'); a.key('2', wait=0.5); check('A digit picks that choice', a.js('U.choice && [...U.choice.picked]'), lambda v: v and 1 in v)
-    a.go('B03'); a.key('n', wait=1.2); check('N on review reopens it and asks what is missing', (status(a, 3), a.js('document.activeElement.id')), ('doing', 'text'))
+    a.go('B03'); a.key('n', wait=1.2); check('N on review asks what is missing first (T274 #14)', (status(a, 3), a.js('document.activeElement.id')), ('review', 'text'))
     a.key('Escape'); a.js('document.activeElement.blur()')
     a.go(''); a.key('E', wait=1.2); check('Shift+E archives every finished item', a.js('S.items.filter(i => i.archived).length'), 3)
     time.sleep(3.2); a.key('z', wait=1.5); check('Z puts the whole batch back', a.js('S.items.filter(i => i.archived).length'), 0)

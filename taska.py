@@ -5429,7 +5429,7 @@ function needsCard(it, onCard = false) {  // onCard: in a Go through card, whose
     m ? 'Nobody works on it until you approve' : '');  // T242 #2: said once (the card's text says it when there is no message)
   if (it.status === 'review') return card('done', `${esc(name)} finished this`, m ? msgText(m, 'card' + n) : '<p class="text-sm text-amber-900/80 dark:text-amber-200/80">Check its work, then accept or reopen.</p>',
     `<button data-act="reopen" data-n="${n}" class="${SECOND} flex-1 lg:flex-none">${ico('reopen', 'size-4')}Not yet${KBD('N')}</button><button data-act="status" data-n="${n}" data-v="done" class="${PRIMARY_BASE} ${NEED.accept.btn} flex-[1.4] lg:flex-none">${ico('check', 'size-4.5', '2.25')}Accept${KBD('A')}</button>`,
-    'Not yet reopens it and asks what is missing');
+    'Not yet: say what is missing, then it goes back');
   return it.reply ? `<div class="flex items-center gap-2 text-sm font-medium text-emerald-700 dark:text-emerald-400">${ico('check', 'size-4', '2.25')}You replied. Waiting for your agent.</div>` : '';
 }
 
@@ -5990,7 +5990,7 @@ function renderComposer() {
     const instead = desk() ? scopeLink('new-input-instead', 'New input instead', '', 'What you wrote becomes a new input to the whole project') : scopeLink('unscope', 'New input instead', '', 'Send to the whole project instead');  // a word, not a bare ×
     line = ticks.length ? scopeLine(desk() ? 'reply' : 'scope', `Reply to ${code(n)}`, ticks.map(l => '✓ ' + esc(oneLine(l))).join(' · '), instead) : `<span class="min-w-0 flex-1"></span>${instead}`;
     ph = `Reply to ${code(n)}…`;
-    if (U.ask === n) ph = `What is missing in ${code(n)}?`;  // after Not yet (B153)
+    if (U.ask === n) { ph = `What is missing in ${code(n)}?`; send = 'Send back'; }  // after Not yet (B153, T274 #14)
     if (ticks.length) send = 'Send answer';
   } else if (ruleMode()) {
     line = scopeLine('scope', 'New rule for this project', '', ruleFlip());  // the phone has the switch too (B156)
@@ -6140,7 +6140,7 @@ async function send() {
   unsendable(job);
   if (desk() && D.compose) toast(job.from ? 'Sent as a new rule' : 'Sent', job.undo);  // the New input page has no line under the box: the toast's Undo (A27)
   $('text').value = ''; U.files = []; saveDraft(); grow();
-  if (U.ask === n) U.ask = null;
+  if (U.ask === n) { U.ask = null; if (byN.get(n)?.status === 'review') change(n, 'status', 'doing', {said: 'is back in progress'}); }  // Not yet, with its reason (T274 #14)
   // Going through what needs you, your reply settles this one (B118), but the box stays on it (A2, B146): what you write
   // next still goes here. Next (⇧J, or Next on the card) is yours to press. A card of one item closes (B153).
   const going = U.go && n && U.go.list.includes(n) && (n === U.peek || (desk() && n === U.open));
@@ -7360,7 +7360,9 @@ const ACT = {
     if (desk() && U.open !== n) openItem(n);
     if (!desk() && U.open !== n && U.peek !== n) { closeSwipe(); peek(n, {focus: false}); }
     const typed = scopeN() === n && !!($('text').value.trim() || U.files.length);  // B4: what you wrote already is what is missing: it goes with it
-    change(n, 'status', 'doing', {said: 'is back in progress', note: 'Say what is missing'}); if (!typed) U.ask = n; U.scopeOff = false; renderComposer(); $('text').focus();
+    // T274 #14: the reason first. With nothing written, the box asks what is missing and sending it sends the item back
+    if (typed) change(n, 'status', 'doing', {said: 'is back in progress'}); else { U.ask = n; toast(`Say what is missing: ${code(n)} goes back when you send it`); }
+    U.scopeOff = false; renderComposer(); $('text').focus();
   },
   'card-copy': b => copyItem(Number(b.dataset.n)),  // the card stays: copying is no reason to lose your place (B153)
   projects: () => openDrawer(),
@@ -8669,7 +8671,7 @@ function movePicker(n) {
 
 const KEYS = [
   ['Move', [['J / K', 'Next or previous item'], ['⇧J / ⇧K', 'Next or previous item that needs you (Go through)'], ['O or ↵', 'Full width; Esc goes back'], ['Space', 'Scroll the item'], ['G then I N A R', 'Items, Inputs, Archive, Rules'], ['G then P', 'Switch project (type to find it)'], ['G then S', 'Settings'], ['[', 'Show or hide the sidebar']]],
-  ['Act on the selected item', [['A', "The item's next step: Accept, Approve, Answer or Reply"], ['R', 'Reply or add to it'], ['N', 'Not yet: reopen and say what is missing'], ['1–9, ⌘↵', 'Pick a choice, send the answer'], ['D · W · L', "Done · Won't do · Later / Now"], ['E / ⇧E', 'Archive or unarchive / archive every finished item'], ['S · P · T', 'Status, priority, type: then the digit or letter the ⋯ menu shows'], ['M · ⇧C', 'Put under… · Copy for agent'], ['I · ⇧D · ⇧A', 'Edit · New doc · Add subitem'], ['.', 'All actions'], ['Z', 'Undo your last action here, again for the one before; older changes: Change log']]],
+  ['Act on the selected item', [['A', "The item's next step: Accept, Approve, Answer or Reply"], ['R', 'Reply or add to it'], ['N', 'Not yet: say what is missing, then it goes back'], ['1–9, ⌘↵', 'Pick a choice, send the answer'], ['D · W · L', "Done · Won't do · Later / Now"], ['E / ⇧E', 'Archive or unarchive / archive every finished item'], ['S · P · T', 'Status, priority, type: then the digit or letter the ⋯ menu shows'], ['M · ⇧C', 'Put under… · Copy for agent'], ['I · ⇧D · ⇧A', 'Edit · New doc · Add subitem'], ['.', 'All actions'], ['Z', 'Undo your last action here, again for the one before; older changes: Change log']]],
   ['Mouse', [['Hover a row', 'Its quick actions, always in the same places'], ['Right-click a row', 'Its menu, at the pointer'], ['Click cut-off words', 'Show them all'], ['Drag a pane edge', 'Resize; double-click for the default']]],
   ['Write and find', [['C', 'New input to the project (on Rules, a new rule)'], ['V', 'Voice note for the selected item; V again stops'], ['⇧V', 'New input by voice; ⇧V again stops and sends'], ['⌥V', 'Voice note while typing in the box'], ['↵', 'While recording: stop, into the box'], ['⇧↵ or ⌘↵', 'Send; while recording: stop and send'], ['/', 'Search'], ['F', 'Filters'], ['?', 'This sheet'], ['Esc', 'Step back one level']]],
 ];
