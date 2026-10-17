@@ -4089,7 +4089,7 @@ const LETTER = {feature: 'F', bug: 'B', idea: 'I', task: 'T', rule: 'R'};
 const TYPES = ['feature', 'bug', 'idea', 'task'];
 const TYPE_TEXT = {feature: 'text-blue-700 dark:text-blue-300', bug: 'text-red-700 dark:text-red-300', idea: 'text-violet-700 dark:text-violet-300', task: 'text-teal-700 dark:text-teal-300', rule: 'text-zinc-700 dark:text-zinc-300'};
 const RULE_STATUS = {proposed: 'Proposed', open: 'Active', dropped: 'Retired'};
-const statusName = it => (it.type === 'rule' ? RULE_STATUS : STATUS)[it.status] || STATUS[it.status];
+const statusName = it => stuck(it) ? 'Stuck' : (it.type === 'rule' ? RULE_STATUS : STATUS)[it.status] || STATUS[it.status];
 // Colors carry one meaning each: amber = needs you, blue = in progress, red = P0 / errors, green = done, faded = closed.
 const PRI_TEXT = {P0: 'font-semibold text-red-600 dark:text-red-400', P1: 'font-semibold text-zinc-700 dark:text-zinc-200', P2: 'text-zinc-500 dark:text-zinc-400', P3: 'text-zinc-400 dark:text-zinc-500'};
 const STATUS = {proposed: 'Proposed', open: 'Open', doing: 'In progress', review: 'In review', done: 'Done', dropped: "Won't do"};
@@ -4369,6 +4369,8 @@ function renderLive() { renderAgent(); }
 // waits and nobody has come for a while.
 const AGENT_NAME = {'claude-code': 'Claude Code', codex: 'Codex', antigravity: 'Antigravity', agent: 'Agent'};
 const QUIET_MS = 30 * 60 * 1000;  // the server's CLAIM_TTL: quiet longer than this, another agent may take the item (F194)
+// T274 #7: in progress means an agent is on it. Nobody on it, or quiet too long: it is stuck, and can go back to the queue
+const stuck = it => it.status === 'doing' && !(it.agent && Date.now() - new Date(it.agent.t).getTime() <= QUIET_MS);
 function workerMark(it) {  // F194: the agent working on an item in progress; amber once it has gone quiet
   const a = it.agent;
   if (!a) return '';
@@ -4666,7 +4668,7 @@ const excerpt = it => oneLine(it.wait ? it.wait.text : it.status === 'review' ? 
 const rowTint = () => 'data-sel:bg-blue-100 dark:data-sel:bg-blue-400/20 lg:hover:bg-zinc-50 dark:lg:hover:bg-zinc-900/70 lg:aria-[current=true]:bg-blue-50 dark:lg:aria-[current=true]:bg-blue-400/10 pointer-coarse:transition-colors pointer-coarse:delay-75 data-pressed:bg-zinc-100 lg:data-pressed:bg-zinc-100 dark:data-pressed:bg-zinc-900 dark:lg:data-pressed:bg-zinc-900';
 const rowCur = it => (U.open === it.n ? 'aria-current="true" ' : '') + (U.sel.has(it.n) ? 'data-sel' : '');  // data-sel: picked with ⌘ or ⇧ (T274 #34)
 const ACT_KEY = {Done: 'D', Accept: 'A', Approve: 'A', Archive: 'E', Unarchive: 'E', Later: 'L', 'Back to now': 'L', "Won't do": 'W', 'Not yet': 'N',
-  Start: 'S then 3', Pause: 'S then 2', Reopen: 'S then 2', Retire: 'W', Reactivate: 'D'};  // S then a digit: the ⋯ menu's status (T113 B30, A16)
+  Start: 'S then 3', Pause: 'S then 2', 'Back to queue': 'S then 2', Reopen: 'S then 2', Retire: 'W', Reactivate: 'D'};  // S then a digit: the ⋯ menu's status (T113 B30, A16)
 const ACT_TONE = {Done: 'text-emerald-600 dark:text-emerald-400', Accept: 'text-emerald-600 dark:text-emerald-400', Approve: 'text-blue-600 dark:text-blue-400', Archive: 'text-emerald-600 dark:text-emerald-400', Start: 'text-blue-600 dark:text-blue-400', "Won't do": 'text-red-600 dark:text-red-400',
   Retire: 'text-red-600 dark:text-red-400', Reactivate: 'text-blue-600 dark:text-blue-400'};
 // On the desktop the actions keep one order on every row (B128): forward · progress · Won't do · Later; the ones that
@@ -4679,7 +4681,7 @@ function deskSlots(it, needs) {
   if (it.type === 'rule') return it.status === 'proposed' ? [needs ? null : ['status', 'open', 'Approve'], null, drop, null]  // a rule's own words (T113 B21)
     : it.status === 'open' ? [null, null, ['status', 'dropped', 'Retire'], null] : [['archived', 'true', 'Archive'], ['status', 'open', 'Reactivate'], null, null];
   const fwd = needs ? null : swipeRight(it);
-  const prog = it.status === 'open' ? ['status', 'doing', 'Start'] : it.status === 'doing' ? ['status', 'open', 'Pause'] : it.status === 'review' ? ['reopen', '', 'Not yet'] : CLOSED(it.status) ? ['status', 'open', 'Reopen'] : null;
+  const prog = it.status === 'open' ? null : it.status === 'doing' ? (stuck(it) ? ['status', 'open', 'Back to queue'] : null) : it.status === 'review' ? ['reopen', '', 'Not yet'] : CLOSED(it.status) ? ['status', 'open', 'Reopen'] : null;
   return [fwd, prog, ['open', 'doing', 'proposed'].includes(it.status) ? drop : null, CLOSED(it.status) ? null : later];
 }
 function rowActs(it, needs = false) {
@@ -4741,7 +4743,7 @@ function itemRow(it, depth = 0, group = [], band = '') {  // band: the band it i
   const meta = [
     it.type === 'rule' ? '' : `<span class="${PRI_TEXT[it.pri]}">${it.pri}</span>`,
     needsYou(it) ? `<span class="font-semibold text-amber-700 dark:text-amber-400">${needWord(it)}</span>` : hasDraft(c) ? DRAFT_MARK()
-      : it.status === 'doing' ? '<span>In progress</span>' : closed && band !== 'retired' ? `<span>${statusName(it)}</span>` : it.reply && !closed ? '<span>Replied</span>' : '',
+      : stuck(it) ? '<span class="font-semibold text-amber-700 dark:text-amber-400" title="No agent has written for a while: put it back in the queue">Stuck</span>' : it.status === 'doing' ? '<span>In progress</span>' : closed && band !== 'retired' ? `<span>${statusName(it)}</span>` : it.reply && !closed ? '<span>Replied</span>' : '',
     it.when === 'later' && !closed && band !== 'later' ? SOFT('Later') : it.n === queueHead() ? '<span class="font-semibold text-zinc-700 dark:text-zinc-200" title="Agents take this one next">Next</span>' : '',  // T274 #12
     it.parent && !depth ? `<span>↳ ${code(it.parent)}</span>` : '',  // nested rows already hang under it
     children.length ? cnt('subitems', `${children.filter(k => CLOSED(k.status)).length}/${children.length}`, 'Subitems finished') : talk ? cnt('comment', talk, plural(talk, 'comment')) : '',
@@ -4833,11 +4835,11 @@ function swipeLeft(it) {
     : it.status === 'proposed' ? [later, drop]
     : it.status === 'review' ? [later, ['status', 'doing', 'Not yet']]
     : CLOSED(it.status) ? [['status', 'open', 'Reopen']]
-    : it.status === 'doing' ? [drop, later, ['status', 'open', 'Pause'], ...done]
-    : [['status', 'doing', 'Start'], drop, later, ...done];
+    : it.status === 'doing' ? [drop, later, ...(stuck(it) ? [['status', 'open', 'Back to queue']] : []), ...done]
+    : [drop, later, ...done];  // T274 #7: agents start work, not you
 }
 const openKids = n => (kids.get(n) || []).filter(k => !CLOSED(k.status)).length;  // a parent done before its subitems says so (B147)
-const ACT_ICON = {Approve: 'thumb', Accept: 'check', Done: 'done', Archive: 'archive', Later: 'clock', 'Back to now': 'clock', "Won't do": 'ban', 'Not yet': 'reopen', Pause: 'pause', Start: 'start', Reopen: 'reopen', Unarchive: 'archive', Answer: 'ask', Reply: 'reply', Retire: 'ban', Reactivate: 'reopen'};
+const ACT_ICON = {Approve: 'thumb', Accept: 'check', Done: 'done', Archive: 'archive', Later: 'clock', 'Back to now': 'clock', "Won't do": 'ban', 'Not yet': 'reopen', Pause: 'pause', Start: 'start', 'Back to queue': 'reopen', Reopen: 'reopen', Unarchive: 'archive', Answer: 'ask', Reply: 'reply', Retire: 'ban', Reactivate: 'reopen'};
 const ACT_BG = {Start: 'bg-blue-600 dark:bg-blue-500', "Won't do": 'bg-red-600 dark:bg-red-500', Done: 'bg-emerald-600 dark:bg-emerald-500'};
 function swipeRow(it, inner) {
   const fwd = swipeRight(it), back = swipeLeft(it), left = fwd?.[1] === 'done' ? openKids(it.n) : 0;
