@@ -5051,12 +5051,14 @@ function blockHtml(b, isTitle, gid = '') {
     const level = b.text.match(/^#+/)[0].length;
     return `<div class="${level <= 2 ? 'mt-2 text-xl' : 'mt-1 text-[17px]'} leading-snug font-semibold">${inlineMd(b.text.replace(/^#+\s*/, ''), gid)}</div>`;
   }
-  if (b.kind === 'code') return `<pre class="overflow-x-auto lg:scrollbar-thin rounded-lg bg-zinc-100 p-3 font-mono text-[13px] leading-relaxed dark:bg-zinc-800"><code>${esc(b.text.replace(/^\s*```[^\n]*\n?/, '').replace(/\n?\s*```\s*$/, ''))}</code></pre>`;
+  if (b.kind === 'code') return `<pre class="overflow-x-auto whitespace-pre-wrap wrap-anywhere sm:whitespace-pre sm:[overflow-wrap:normal] lg:scrollbar-thin rounded-lg bg-zinc-100 p-3 font-mono text-[13px] leading-relaxed dark:bg-zinc-800"><code>${esc(b.text.replace(/^\s*```[^\n]*\n?/, '').replace(/\n?\s*```\s*$/, ''))}</code></pre>`;
   if (b.kind === 'quote') return `<blockquote class="border-l-[3px] border-zinc-300 pl-3 text-zinc-600 dark:border-zinc-600 dark:text-zinc-300">${inlineMd(b.text.replace(/^\s*>\s?/gm, ''), gid).replace(/\n/g, '<br>')}</blockquote>`;
   if (b.kind === 'list') {
     const ordered = /^\s*\d/.test(b.text);
-    const items = b.text.split('\n').reduce((acc, l) => { if (/^\s*([-*+]|\d+[.)])\s/.test(l)) acc.push(l.replace(/^\s*([-*+]|\d+[.)])\s+/, '')); else if (acc.length) acc[acc.length - 1] += ' ' + l.trim(); return acc; }, []);
-    return `<${ordered ? 'ol' : 'ul'} class="${ordered ? 'list-decimal' : 'list-disc'} space-y-1.5 pl-5 marker:text-zinc-400">${items.map(x => `<li>${inlineMd(x, gid)}</li>`).join('')}</${ordered ? 'ol' : 'ul'}>`;
+    // T227 #3: an indented item is a level deeper, as written
+    const items = b.text.split('\n').reduce((acc, l) => { const m = /^(\s*)([-*+]|\d+[.)])\s+/.exec(l); if (m) acc.push({lv: Math.floor(m[1].replace(/\t/g, '  ').length / 2), ol: /\d/.test(m[2]), t: l.slice(m[0].length)}); else if (acc.length) acc[acc.length - 1].t += ' ' + l.trim(); return acc; }, []);
+    const nest = (from, lv) => { let html = '', i = from; const ol = items[from]?.ol; while (i < items.length && items[i].lv >= lv) { if (items[i].lv > lv) { const [h, j] = nest(i, items[i].lv); html = html.replace(/<\/li>$/, h + '</li>'); i = j; continue; } html += `<li>${inlineMd(items[i].t, gid)}</li>`; i++; } return [`<${ol ? 'ol' : 'ul'} class="${ol ? 'list-decimal' : 'list-disc'} space-y-1.5 pl-5 marker:text-zinc-400 [&_ol]:mt-1.5 [&_ul]:mt-1.5">${html}</${ol ? 'ol' : 'ul'}>`, i]; };
+    return items.length ? nest(0, items[0].lv)[0] : '';
   }
   return `<p class="leading-[1.75] whitespace-pre-wrap">${inlineMd(b.text, gid)}</p>`;
 }
@@ -5084,7 +5086,7 @@ async function deleteComment(dn, id) {
 }
 function threadHtml(d, key, comments, blockText) {
   return `<div class="mt-2 space-y-2 border-l-2 border-amber-300 pl-3 dark:border-amber-600">
-    ${comments.map(c => `<div class="group text-sm ${MSG(c.by)}">${blockText !== undefined && !sameText(c.quote, blockText) ? `<div class="mb-0.5 line-clamp-2 text-xs text-zinc-500">“${esc(plainQuote(c.quote))}”</div>` : ''}<div class="flex min-h-6 items-center gap-1"><span class="${WHO(c.by)}">${esc(whoName(c.by))}</span> <span class="text-xs text-zinc-400">${when(c.t)}${c.edited ? ` · edited ${when(c.edited)}` : ''}</span>${dcActs(d, c)}</div>${rich(c.text, 'dc' + c.t)}${c.files?.length ? `<div class="mt-1.5 flex gap-2 overflow-x-auto">${thumbs(c.files, 'dcf' + c.id, 'size-11')}</div>` : ''}</div>`).join('')}
+    ${comments.map(c => `<div class="group text-sm ${MSG(c.by).replace(/\b(ml|mr)-8\b/, '')}">${blockText !== undefined && !sameText(c.quote, blockText) ? `<div class="mb-0.5 line-clamp-2 text-xs text-zinc-500">“${esc(plainQuote(c.quote))}”</div>` : ''}<div class="flex min-h-6 items-center gap-1"><span class="${WHO(c.by)}">${esc(whoName(c.by))}</span> <span class="text-xs text-zinc-400">${when(c.t)}${c.edited ? ` · edited ${when(c.edited)}` : ''}</span>${dcActs(d, c)}</div>${rich(c.text, 'dc' + c.t)}${c.files?.length ? `<div class="mt-1.5 flex gap-2 overflow-x-auto">${thumbs(c.files, 'dcf' + c.id, 'size-11')}</div>` : ''}</div>`).join('')}
     ${U.docReply === key ? '' : `<button data-act="doc-reply" data-key="${key}" class="${HIT} flex h-8 items-center gap-1 rounded-lg px-1.5 -mx-1.5 text-xs font-semibold text-blue-600 hover:bg-blue-50 aria-pressed:underline dark:text-blue-400 dark:hover:bg-blue-400/10">${ico('reply', 'size-3.5')}Reply</button>`}
   </div>`;
 }
@@ -5161,13 +5163,15 @@ function closeDoc() {  // the desktop's way back from a document to its item
 // A document's text with its comment threads: in a sheet on the phone, in the item pane on the desktop (T110).
 function docViewHtml(d) {
   const titled = !!d.blocks[0] && sameText(d.blocks[0].text.replace(/^#+\s*/, ''), d.title);
+  const [line0, ...rest0] = (d.blocks[0]?.text || '').split('\n'), titleLine = !titled && d.blocks[0]?.kind === 'para' && rest0.length && sameText(line0.replace(/^#+\s*/, ''), d.title);  // T227 #4
+  const shown = (b, i) => i === 0 && titleLine ? {...b, text: rest0.join('\n')} : b;
   groups.delete('doc' + d.d);  // its images, refilled as the blocks render
   return `<div class="flex min-h-full flex-col"><div class="flex items-center gap-1 text-xs text-zinc-500"><span class="min-w-0 flex-1 truncate">on <button data-act="goto" data-n="${d.n}" class="text-blue-600 hover:underline dark:text-blue-400">${code(d.n)}</button> · ${esc(whoName(d.by))} · ${when(d.t1)}</span>
       <button data-act="doc-circle" aria-pressed="${!!U.docCircle}" class="${HIT} ${BTN} text-sm lg:hidden aria-pressed:bg-amber-100 aria-pressed:text-amber-900 dark:aria-pressed:bg-amber-900/60 dark:aria-pressed:text-amber-100">${U.docCircle ? 'Draw a circle…' : 'Circle'}</button><button data-act="doc-edit" class="${HIT} ${BTN} text-sm lg:hidden">Edit</button></div>
     ${titled ? '' : `<div class="mt-3 text-2xl leading-tight font-bold tracking-tight">${esc(d.title)}</div>`}
     <div id="docBlocks" class="relative mt-3 space-y-3 text-[15px] ${U.docCircle ? 'select-none' : ''}">
       ${d.blocks.map((b, i) => `<section data-act="doc-pick" data-key="${b.key}" ${U.docSel.has(b.key) ? 'data-picked' : ''} class="-mx-2 rounded-lg px-2 py-1 transition-colors hover:bg-zinc-50 data-picked:bg-amber-50 data-picked:ring-2 data-picked:ring-amber-300 data-pressed:opacity-70 dark:hover:bg-zinc-800/50 dark:data-picked:bg-amber-950/40 dark:data-picked:ring-amber-600">
-        <div class="relative flex flex-col gap-1 lg:flex-row lg:items-start lg:gap-2"><div class="min-w-0 flex-1 break-words ${b.kind === 'heading' ? 'pr-14 lg:pr-0' : ''}">${blockHtml(b, i === 0 && titled, 'doc' + d.d)}</div>
+        <div class="relative flex flex-col gap-1 lg:flex-row lg:items-start lg:gap-2"><div class="min-w-0 flex-1 break-words ${b.kind === 'heading' ? 'pr-14 lg:pr-0' : ''}">${blockHtml(shown(b, i), i === 0 && titled, 'doc' + d.d)}</div>
         ${b.comments.length ? `<button data-act="doc-thread" data-key="${b.key}" aria-label="${plural(b.comments.length, 'comment')}" class="${b.kind === 'heading' ? `absolute right-0 lg:relative lg:top-0 ${i === 0 && titled ? 'top-0.5' : (b.text.match(/^#+/) || ['#'])[0].length <= 2 ? 'top-2.5' : 'top-1'}` : 'relative self-end'} flex h-6 shrink-0 lg:mt-0.5 lg:self-start items-center gap-1 rounded-md bg-amber-100 px-1.5 text-xs font-medium text-amber-900 after:absolute after:-inset-2.5 hover:bg-amber-200 dark:bg-amber-900/60 dark:text-amber-100 dark:hover:bg-amber-900">${ico('comment', 'size-3.5')}${b.comments.length}</button>` : ''}</div>
         ${U.docThreads.has(b.key) ? threadHtml(d, b.key, b.comments, b.text) : ''}</section>`).join('')}
       ${U.docCircle ? `<svg id="lasso" class="absolute inset-0 z-10 h-full w-full touch-none" aria-label="Draw around the part you want to comment on"><path id="lassoPath" d="" fill="rgba(251,191,36,.15)" stroke="rgb(245,158,11)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/></svg>` : ''}
@@ -6419,7 +6423,7 @@ function docMicShow() {
   b.dataset.tip = desk() ? (DV.rec ? 'Stop · ⌥V' : 'Speak at the caret · ⌥V') : '';
   if (h) h.textContent = DV.rec ? 'Listening. Your words go where the mark is; you can go on typing.'
     : waiting ? `Working out the words of ${waiting > 1 ? waiting + ' voice notes' : 'the voice note'}…`
-    : 'The first line is the title. Esc keeps it as a draft.';
+    : desk() ? 'The first line is the title. Esc keeps it as a draft.' : 'The first line is the title.';  // T227 #5
 }
 async function docRecStart() {
   if (DV.rec || !$('docMd')) return;
@@ -6824,7 +6828,7 @@ function dialog(title, html, {aboveComposer = false, focus = true, tall = false,
   $('overlay').dataset.above = aboveComposer ? '1' : '';  // and follow it when its line or files come and go
   $('overlay').style.paddingLeft = $('overlay').style.paddingTop = ''; $('overlay').classList.remove('lg:justify-start');  // set again by popAt
   if (!desk() && !$('toast').hidden) placeToast();  // once the sheet or card has its place
-  if (focus) $('dlgClose').focus({preventScroll: true});
+  if (focus && desk()) $('dlgClose').focus({preventScroll: true, focusVisible: false});  // T227 #1: no ring on opening
 }
 // A second click within 3 s confirms (B127, B131): the page asks in place, never in a browser dialog.
 function confirmClick(b, ask) {
