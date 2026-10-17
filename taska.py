@@ -4349,7 +4349,18 @@ function ingest(d) {  // Taska's state on screen, with your changes that are sti
   if (U.open && !byN.has(U.open) && (S.deleted || []).some(x => x.items.some(i => i.n === U.open))) {  // deleted with its input (F177)
     if (desk()) { U.open = null; writeURL(false); } else closeItem();
   }
-  render(); fixURL();
+  render(); fixURL(); autoArchive();
+}
+// T274 #6: what was finished before today goes to Archive by itself, once a visit, with Undo
+const AA = {done: ''};
+function autoArchive() {
+  if (!S.project || AA.done === S.project) return;
+  AA.done = S.project;
+  const day = new Date().setHours(0, 0, 0, 0), ids = S.items.filter(it => !it.merged_into && !it.archived && it.type !== 'rule' && CLOSED(it.status) && Date.parse(it.t1 || it.t0) < day).map(it => it.n);
+  if (!ids.length) return;
+  const set = on => optimistic(ids.map(n => ({n, f: {archived: on}})), () => op({op: 'archive', refs: ids.map(code), on}));
+  set(true);
+  toast(`Archived ${plural(ids.length, 'item')} finished before today`, pushUndo(`${plural(ids.length, 'finished item')} archived`, () => { toast(`Put back ${plural(ids.length, 'item')}`); return set(false); }));
 }
 // An item's code follows its type: T13 becomes B13 (T113 S2). What you wrote to it goes along, and the address too.
 function followCodes() {
@@ -4597,7 +4608,8 @@ function visible(tab = U.tab) {
   const okTab = it => tab === 'rules' ? it.type === 'rule' && !it.archived : tab === 'archive' || it.type !== 'rule' || (it.status === 'proposed' && !it.archived);
   const okStatus = it => tab === 'rules' ? U.status === 'all' || it.status === U.status : tab === 'archive' ? it.archived && (U.status === 'all' || U.status === 'archived' || it.status === U.status)
     : U.status === 'archived' ? it.archived
-    : !it.archived && (U.status === 'all' || (U.status === 'active' ? !CLOSED(it.status) : U.status === 'closed' ? CLOSED(it.status) : U.status === 'wait' ? needsYou(it) : it.status === U.status));
+    : !it.archived && (U.status === 'all' || (U.status === 'active' ? !CLOSED(it.status) : U.status === 'closed' ? CLOSED(it.status) : U.status === 'wait' ? needsYou(it)
+      : U.status === 'queued' ? inQueue(it) && it.status !== 'doing' && it.when === 'now' : U.status === 'later' ? it.when === 'later' && !CLOSED(it.status) : it.status === U.status));
   return S.items.filter(it => !it.merged_into && okTab(it)
     && (U.type === 'all' || tab === 'rules' || it.type === U.type) && (U.when === 'all' || it.when === U.when) && (U.pri === 'all' || it.pri === U.pri) && okStatus(it) && words.every(w => hay(it).includes(w)))
     .sort(U.sort === 'new' ? (a, b) => b.n - a.n : U.sort === 'upd' ? (a, b) => (b.t1 || '').localeCompare(a.t1 || '') || b.n - a.n
@@ -5608,7 +5620,8 @@ function itemMenu(n) {
   </div>`, {head: `<span class="block truncate text-[15px] font-semibold"><span class="mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[it.type]}">${code(n)}</span>${esc(it.title)}</span>`, focus: false});
 }
 
-const STATUS_FILTER = {active: 'Not finished', wait: 'Needs you', proposed: 'Proposed', doing: 'In progress', review: 'In review', closed: 'Finished'};  // archived things live in the Archive tab (B130)
+// T274 #6: five places an item can be: it needs you, an agent is on it, it waits in the queue, later, finished
+const STATUS_FILTER = {wait: 'Needs you', doing: 'In progress', queued: 'Queued', later: 'Later', closed: 'Finished'};  // archived things live in the Archive tab (B130)
 const SORTS = [['all', 'Priority'], ['new', 'Newest'], ['upd', 'Last updated']];  // T274 #36
 const ARCH_FILTER = {done: 'Done', dropped: "Won't do"};  // T274 #36: in Archive, what became of them; in Items one Finished, as its band
 // Rows hang under their parent when both are in the same group (I59); one whose parent is elsewhere stands alone.
@@ -5727,7 +5740,7 @@ function filterControls(small = false) {
   const pill = (v, t) => `<button data-act="set-filter" data-k="status" data-v="${v}" aria-pressed="${U.status === v}" class="relative ${small ? 'h-7 px-2.5' : 'h-9 px-3.5'} rounded-full bg-zinc-100 text-[13px] font-medium text-zinc-700 after:absolute after:inset-x-0 after:-inset-y-1 hover:bg-zinc-200 aria-pressed:bg-zinc-900 aria-pressed:text-white dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700 dark:aria-pressed:bg-zinc-100 dark:aria-pressed:text-zinc-900">${t}</button>`;
   const statuses = [['all', 'All'], ...Object.entries(U.tab === 'rules' ? RULE_STATUS : U.tab === 'archive' ? ARCH_FILTER : STATUS_FILTER)];
   return `${U.tab === 'rules' ? '' : `<div>${lab('Type')}${segctl('set-filter', 'type', [['all', 'All'], ...TYPES.map(t => [t, letterOf(t) + `<span class="truncate">${t[0].toUpperCase() + t.slice(1)}</span>`])], U.type, small)}</div>`}
-    <div>${lab('When')}${segctl('set-filter', 'when', [['all', 'Any time'], ['now', 'Now'], ['later', 'Later']], U.when, small)}</div>
+    ${U.tab === 'archive' ? `<div>${lab('When')}${segctl('set-filter', 'when', [['all', 'Any time'], ['now', 'Now'], ['later', 'Later']], U.when, small)}</div>` : ''}
     <div>${lab('Status')}<div class="flex flex-wrap gap-1.5">${statuses.map(([v, t]) => pill(v, t)).join('')}</div></div>
     ${U.tab === 'rules' ? '' : `<div>${lab('Priority')}${segctl('set-filter', 'pri', [['all', 'Any'], ['P0', '<span class="font-semibold text-red-600 dark:text-red-400">P0</span>'], ['P1', 'P1'], ['P2', 'P2'], ['P3', 'P3']], U.pri, small)}</div>`}
     <div>${lab('Sort')}${segctl('set-filter', 'sort', SORTS, U.sort, small)}</div>`;
