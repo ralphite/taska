@@ -20,6 +20,7 @@ import hmac
 import http.client
 import ipaddress
 import json
+import io
 import math
 import mimetypes
 import os
@@ -33,6 +34,7 @@ import tempfile
 import textwrap
 import queue
 import threading
+import wave
 import unicodedata
 import time
 import urllib.error
@@ -2485,6 +2487,69 @@ def tidy(text):
     return text
 
 
+def voice_pieces(path, most=12):
+    """B277: a recording cut at its pauses into pieces of up to about 8 s, as 16 kHz mono WAV bytes -> (pieces, seconds).
+    Needs ffmpeg; ([], 0) without it. On some iPhone notes the models keep only the first phrase of the whole note,
+    yet hear each quiet later phrase when it comes alone."""
+    tool = shutil.which("ffmpeg")
+    if not tool or not path:
+        return [], 0.0
+    try:
+        raw = subprocess.run([tool, "-v", "quiet", "-i", path, "-f", "s16le", "-ac", "1", "-ar", "16000", "-"], capture_output=True, timeout=60).stdout
+    except (OSError, subprocess.SubprocessError):
+        return [], 0.0
+    a = array.array("h", raw[:len(raw) // 2 * 2])
+    if sys.byteorder == "big":
+        a.byteswap()
+    n, secs = 800, len(a) / 16000  # 50 ms frames
+    db = [20 * math.log10(max(1.0, math.sqrt(sum(v * v for v in a[i:i + n]) / n)) / 32768) for i in range(0, len(a) - n + 1, n)]
+    if not db:
+        return [], secs
+    floor = sorted(db)[len(db) // 5]  # the room's own level
+    loud = [d > max(floor + 12, -52) for d in db]
+    spans, start, quiet = [], None, 0
+    for i, on in enumerate(loud + [False] * 8):
+        if on:
+            start = i if start is None else start
+            quiet = 0
+        elif start is not None:
+            quiet += 1
+            if quiet >= 7 or i >= len(loud):  # a pause of 350 ms ends a phrase
+                spans.append((start, i - quiet + 1))
+                start, quiet = None, 0
+    pieces = []
+    for s0, s1 in spans:  # phrases joined into pieces of up to 8 s, each with a little room around it
+        if pieces and s1 - pieces[-1][0] <= 160:
+            pieces[-1][1] = s1
+        else:
+            pieces.append([s0, s1])
+    out = []
+    for s0, s1 in pieces[:most]:
+        if s1 - s0 < 4:  # under 200 ms: a click
+            continue
+        b0, b1 = max(0, (s0 - 4) * n), min(len(a), (s1 + 4) * n)
+        buf = io.BytesIO()
+        with wave.open(buf, "wb") as w:
+            w.setnchannels(1); w.setsampwidth(2); w.setframerate(16000); w.writeframes(a[b0:b1].tobytes())
+        out.append(buf.getvalue())
+    return out, secs
+
+
+def voice_by_pieces(path, prompt, vocab):
+    """B277: the note heard piece by piece (voice_pieces), both models on each at once. A piece counts only when the
+    speech model heard words in it (it never makes words up from noise); the main model's words win there."""
+    pieces, secs = voice_pieces(path)
+    if len(pieces) < 2:
+        return ""
+    def one(wav):
+        aud = {"inline_data": {"mime_type": "audio/wav", "data": base64.b64encode(wav).decode()}}
+        (m, _), (a, _) = together(lambda: capped(lambda: voice_main(aud, prompt), 30, "the main model"), lambda: capped(lambda: voice_asr(aud, vocab), 30, "the speech model"))
+        return (m or a or "").strip() if (a or "").strip() else ""
+    got = together(*[(lambda w=w: one(w)) for w in pieces])
+    parts = [t for t, e in got if t]
+    return "".join(p if re.search(r"[\u3002\uff0c\uff1f\uff01.,?!]$", p) else p + "\uff0c" for p in parts).rstrip("\uff0c") + ("\u3002" if parts and not re.search(r"[\u3002\uff1f\uff01.?!]$", parts[-1]) else "")
+
+
 def transcribe(store, data, mime, scope, path=None, later=None):
     """Voice note -> {"tr": its words ("" when nobody spoke), "tr_by": "main", "asr" or "pro", "alt": the other model's
     words, "doubts": what may be misheard}, biased toward the project's own vocabulary. path: the note on disk, to tell
@@ -2544,6 +2609,20 @@ def transcribe(store, data, mime, scope, path=None, later=None):
         raise Err(f"{err}; the speech model: {alt_err}")
     if not tr:
         return out
+    try:  # B277: few words for a long note: heard again piece by piece, and those words win when clearly more
+        dur = float(subprocess.run([shutil.which("ffprobe") or "ffprobe", "-v", "quiet", "-show_entries", "format=duration", "-of", "csv=p=0", path], capture_output=True, timeout=20).stdout or 0) if path else 0
+    except (OSError, ValueError, subprocess.SubprocessError):
+        dur = 0
+    if dur >= 6 and len(voice_tokens(tr)) < 2.0 * dur and len(tr) < 2.0 * dur:
+        t1 = time.time()
+        try:
+            pieced = voice_by_pieces(path, prompt, vocab)
+        except Exception:
+            pieced = ""
+        times["pieces"] = round(time.time() - t1, 1)
+        if pieced and len(pieced) >= 1.3 * len(tr) and not echoed(pieced, titles):
+            out["tr_by"], alt, tr = "pieces", tr, pieced
+        times["total"] = round(time.time() - t0, 1)
     cap = max(5.0, VOICE_BUDGET + 5 - (time.time() - t0))  # Traditional characters made Simplified, in what time is left
     (tr2, _), (alt2, _) = together(lambda: capped(lambda: simplified(tr), cap, "simplifying"), lambda: capped(lambda: simplified(alt or ""), cap, "simplifying"))
     tr, alt = tr2 if tr2 is not None else tr, alt2 if alt2 is not None else (alt or "")
