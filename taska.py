@@ -4419,7 +4419,7 @@ $('list').addEventListener('pointerleave', () => {
 
 // A row in a list: state icon, coloured code and title, one meta line. Tapping anywhere opens the item (B62);
 // the image and the fold arrow keep their own taps. Nested subitems hang off an elbow line.
-function itemRow(it, depth = 0, group = []) {
+function itemRow(it, depth = 0, group = [], band = '') {  // band: the band it is in ('later': no Later chip there, T225 #11)
   const c = code(it.n), files = filesOf(it), children = kids.get(it.n) || [], closed = CLOSED(it.status), talk = it.thread.length, docs = docsOf(it.n).length;
   // Images count as images, other files as files; a voice note is not counted: its words are in the item (B223).
   const isImg = f => (f.mime || '').startsWith('image/'), imgs = files.filter(isImg).length, other = files.filter(f => !isImg(f) && !(f.mime || '').startsWith('audio/')).length;
@@ -4430,7 +4430,7 @@ function itemRow(it, depth = 0, group = []) {
     it.status === 'doing' ? '<span class="text-blue-600 dark:text-blue-400">In progress</span>' : closed ? `<span>${statusName(it)}</span>` : '',
     it.status === 'doing' ? workerMark(it) : '',  // F194: which agent is on it, and whether it went quiet
     it.archived && U.tab !== 'archive' ? SOFT('Archived') : '',
-    it.when === 'later' && !closed ? SOFT('Later') : '',
+    it.when === 'later' && !closed && band !== 'later' ? SOFT('Later') : '',
     it.rank != null && inQueue(it) && it.when === 'now' ? '<span class="font-semibold text-blue-600 dark:text-blue-400" title="You put it first of its priority: agents take it next">Next</span>' : '',  // F197
     it.parent && !depth ? `<span>↳ ${code(it.parent)}</span>` : '',  // nested rows already hang under it
     children.length ? cnt('subitems', `${children.filter(k => CLOSED(k.status)).length}/${children.length}`, 'Subitems finished') : '',
@@ -5142,9 +5142,9 @@ function itemMenu(n) {
 
 const STATUS_FILTER = {active: 'Not finished', wait: 'Needs you', proposed: 'Proposed', doing: 'In progress', review: 'In review', done: 'Done', dropped: "Won't do"};  // archived things live in the Archive tab (B130)
 // Rows hang under their parent when both are in the same group (I59); one whose parent is elsewhere stands alone.
-function tree(group) {
+function tree(group, band = '') {
   const inG = new Set(group.map(it => it.n)), out = [];
-  const add = (it, d) => { out.push(itemRow(it, d, group)); if (!U.folded.has(it.n) && d < 8) for (const k of group) if (k.parent === it.n) add(k, d + 1); };
+  const add = (it, d) => { out.push(itemRow(it, d, group, band)); if (!U.folded.has(it.n) && d < 8) for (const k of group) if (k.parent === it.n) add(k, d + 1); };
   for (const it of group) if (!(it.parent && inG.has(it.parent))) add(it, 0);
   return out.join('');
 }
@@ -5201,7 +5201,7 @@ function renderItems() {
     const done = rows.filter(it => CLOSED(it.status) && !it.archived && !settled(it)), arch = rows.filter(it => it.archived);
     html = needsBand(needs, going)
       + (queue.length ? zone('queue', 'Agent queue', queue.length, desk() ? keepGoingSwitch() : keepGoingNote()) + tree(queue) : '')  // what agents take
-      + (later.length ? zone('later', 'Later', later.length, `<span class="hidden text-xs font-medium text-zinc-500 lg:inline dark:text-zinc-400">· agents wait until it is back to now</span>`) + tree(later) : '')
+      + (later.length ? zone('later', 'Later', later.length, `<span class="hidden text-xs font-medium text-zinc-500 lg:inline dark:text-zinc-400">· agents wait until it is back to now</span>`) + tree(later, 'later') : '')
       + (U.undoArch ? `<div ${hold}><div class="flex items-center gap-3 border-b border-blue-100 bg-blue-50 py-2 pr-2 pl-4 dark:border-blue-400/15 dark:bg-blue-400/10">
           ${ico('archive', 'size-5 text-blue-600 dark:text-blue-400')}
           <p class="min-w-0 flex-1 text-sm text-blue-950 dark:text-blue-100"><span class="font-semibold">Archived ${plural(U.undoArch.ids.length, 'finished item')}.</span> They are under Archive.</p>
