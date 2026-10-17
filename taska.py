@@ -259,13 +259,18 @@ class Store:
         elif k == "add":
             n = e["n"]
             self.maxn = max(self.maxn, n)
+            e["title"], named = clean_title(e["title"])  # "[src=r246] …" from an agent (B222); the log stays as it was
             self.items[n] = {"n": n, "type": e["type"], "title": e["title"], "body": e.get("body", ""),
                              "pri": e["pri"], "when": e["when"], "status": e["status"], "parent": e.get("parent"),
                              "next": e.get("next", ""), "thread": [], "srcs": [], "merged_into": None, "archived": False,
                              "t0": e["t"], "t1": e["t"], "by": e.get("by")}  # by: who made it, so the page names the same agent the same way (B157)
             self.touch(n, e.get("src"), ack=not e.get("keep"))
+            if named and not e.get("src") and named in self.inputs:
+                self.touch(n, named, ack=False)  # the input it named is its source; whether it was handled stays as it was
         elif k == "set":
             it = self.items[e["n"]]
+            if "title" in e["f"]:
+                e["f"]["title"] = clean_title(e["f"]["title"])[0]
             it.update(e["f"])
             it["t1"] = e["t"]
             if e.get("undo_of"):
@@ -1511,7 +1516,9 @@ class Store:
 
 GRAMMAR = """\
 WRITE (plain text, one command per line; indented lines continue the previous command's text):
-  new [feature|bug|idea|task|rule] [P0-P3] [now|later] [parent=B03] [src=r12] <title>
+  new bug P1 now parent=B03 src=r12 Export ignores the active filter
+                            type (feature|bug|idea|task|rule), priority (P0-P3), now|later, parent= and src= are
+                            each optional and go before the title as plain words, no brackets
     <optional body, indented>
   B03 P1 later doing        set priority / when / status / type, any mix (status: open|doing|done|drop; drop = won't do)
   B03 title|body|next <text>      replace that field (body may continue on indented lines)
@@ -1639,8 +1646,28 @@ def install_skill():
         print(f"  {agent}: {path}")
 
 
-ATTR = re.compile(r"(?i)(?:(?P<kv>(?:src|parent|pri|when|status|type|files)=\S+)|(?P<pri>P[0-3])|(?P<when>now|later)"
-                  r"|(?P<st>open|doing|review|done|drop|dropped)|(?P<type>feature|bug|idea|task|rule)|(?P<arch>archive|unarchive))(?=\s|$)")
+ATTR = re.compile(r"(?i)(?P<open>\[)?(?:(?P<kv>(?:src|parent|pri|when|status|type|files)=[^\s\]]+)|(?P<pri>P[0-3])|(?P<when>now|later)"
+                  r"|(?P<st>open|doing|review|done|drop|dropped)|(?P<type>feature|bug|idea|task|rule)|(?P<arch>archive|unarchive))(?(open)\])(?=\s|$)")  # [P1] as P1 (B222)
+END_KV = re.compile(r"(?i)\s+\[?(src|parent)=([^\s\]]+)\]?\s*$")  # an option at the end of a title
+
+
+def clean_title(t):
+    """A title with the guide's options left in it, as agents wrote them when the guide showed them in brackets
+    ("[src=r246] Fix the export", B222): the options go; -> (title, src it named or None). Bare words stay: "Open
+    the settings" keeps its Open."""
+    if "src=" not in t and "parent=" not in t and "[" not in t:
+        return t, None
+    found = []
+    def drop(m):  # only real refs: "[src=...]" written about the tags stays in the title
+        if m[1] or m[2]:
+            found.append((m[1] or m[2]).lower())
+        return " "
+    out = re.sub(r"(?i)\[src=(r\d+)\]|\[parent=[A-Za-z]?\d+\]|\bsrc=(r\d+)\b", drop, t)
+    lead = re.match(r"(?i)(?:\s*\[(?:P[0-3]|now|later|open|doing|review|done|drop|dropped|feature|bug|idea|task|rule)\])+", out)
+    if lead:
+        out = out[lead.end():]
+    out = " ".join(out.split())
+    return (out, found[0] if found else None) if out else (t, None)
 
 
 def attrs(s):
@@ -1707,6 +1734,11 @@ def parse_cmd(head, cont):
         return {"op": "ack", "ids": ids}
     if low == "new":
         a, title = attrs(rest)
+        m = END_KV.search(title)
+        while m:  # "new task Write the docs [src=r12]": the option at the end counts too (B222)
+            a.setdefault(m[1].lower(), m[2])
+            title = title[:m.start()]
+            m = END_KV.search(title)
         if not title:
             raise Err("new needs a title")
         op = {"op": "new", "title": title, "body": cont}
@@ -1831,7 +1863,8 @@ Work like this:
   mentions. A reply to an agent's ask/block is for that agent: change nothing and reply `ack <input id>`.
 - A question or request addressed to the coding agent (how something works, "explain", "can you..."):
   reply `pass` so the input stays in the inbox for the agent. Still create items for anything else it says.
-- If it is new, `new <type> [P0-P3] [now|later] <short title>` with the user's own wording as the body.
+- If it is new, `new <type> <P0-P3> <now|later> <short title>` with the user's own wording as the body, for
+  example `new bug P2 now Export ignores the active filter`: plain words, no brackets.
   One input may contain several separate things: create one item each. Use parent=<code> to split a big
   item into subtasks.
 - Write titles, bodies and notes in the language of THIS input (English input -> English, Chinese input ->
