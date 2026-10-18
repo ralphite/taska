@@ -7913,7 +7913,7 @@ const ACT = {
     if (U.docCircle || (e.target.closest('textarea, button, a') && !e.target.closest('[data-pick-btn]')) || getSelection()?.toString().trim()) return;
     if (desk() && !b.hasAttribute('data-pick-btn') && !U.docSel.size) return;  // T274 #1: reading and copying never pick; Comment does
     const k = b.dataset.key;
-    if (U.docSel.has(k)) U.docSel.delete(k); else U.docSel.add(k);
+    if (U.docSel.has(k)) U.docSel.delete(k); else if (!desk() && !U.docType) U.docSel = new Set([k]); else U.docSel.add(k);  // I285: the microphone is for one paragraph: another tap moves it there
     U.docQuote = null; U.docReply = null;
     renderDoc();
     if (desk() && docTarget()) $('text').focus({preventScroll: true});  // A1: you picked what to comment on: now write
