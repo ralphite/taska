@@ -5669,7 +5669,7 @@ function peek(n, {focus = true} = {}) {
   const nav = g ? `<div class="flex items-center gap-1 px-2 pt-1">
       <button data-act="go-prev" ${i > 0 ? '' : 'disabled'} class="flex h-11 items-center gap-0.5 rounded-full pr-3 pl-1.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800">${ico('left', 'size-4', '2.25')}Previous</button>
       <span class="min-w-0 flex-1"></span>
-      <button data-act="go-next" class="flex h-11 items-center gap-0.5 rounded-full pr-1.5 pl-3 text-sm font-semibold text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800">${last ? 'End' : `Next${ico('right', 'size-4', '2.25')}`}</button></div>` : '';
+      <button data-act="go-next" class="flex h-11 items-center gap-0.5 rounded-full pr-1.5 pl-3 text-sm font-semibold text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800">${last ? (goAllAhead() ? `Next project${ico('right', 'size-4', '2.25')}` : 'End') : `Next${ico('right', 'size-4', '2.25')}`}</button></div>` : '';
   // The item's code and Open sit in the card's header row beside ×, where a walk's "Needs you · 2 of 5" goes: no empty row on top (B158).
   // That "2 of 5" is the walk's one count: Previous and Next at the bottom don't repeat it (T225 #4).
   const idRow = `<div class="flex items-center gap-2">${stateIcon(it.status, statusName(it), 'size-5')}<span class="font-mono text-sm font-bold ${TYPE_TEXT[it.type]}">${code(n)}</span>${need ? `<span class="text-xs font-semibold text-amber-700 dark:text-amber-400">${need}</span>` : ''}
@@ -5706,7 +5706,7 @@ function endWalk(said = '') {
   const g = U.go, left = g ? g.list.filter(k => !g.done.has(k) && byN.get(k) && needsYou(byN.get(k))).length : 0;
   closeDialog();
   if (goAll() && goAllNext()) return;  // F251
-  goAllOff();
+  if (goAll()) { const all = goRoundSaid(g?.done.size || 0, left); goAllOff(); return toast(`${said ? said + ' · ' : ''}Went through every project · ${all}`); }
   const end = left ? `that was the last one, ${left} still need${left === 1 ? 's' : ''} you` : 'nothing else needs you';
   toast(said ? `${said} · ${end}` : end[0].toUpperCase() + end.slice(1));
 }
@@ -8358,14 +8358,19 @@ function startGoFromAnotherProject() {
 }
 // F251: Go through from the home page goes on from project to project by itself, until nothing needs you
 const goAll = () => { try { return sessionStorage.getItem('taska.go.all') === '1'; } catch (_) { return false; } };
-const goAllOff = () => { try { sessionStorage.removeItem('taska.go.all'); sessionStorage.removeItem('taska.go.seen'); } catch (_) {} };
-function goAllNext() {  // the next project not walked yet in this round; skipped items don't bring you back to one
-  let seen = [];
-  try { seen = JSON.parse(sessionStorage.getItem('taska.go.seen') || '[]'); } catch (_) {}
-  seen = [...new Set([...seen, S.project])];
-  const next = othersNeeding().find(p => !seen.includes(p.name));
+const goAllOff = () => { try { for (const k of ['all', 'seen', 'tally']) sessionStorage.removeItem('taska.go.' + k); } catch (_) {} };
+const goSeen = () => { try { return JSON.parse(sessionStorage.getItem('taska.go.seen') || '[]'); } catch (_) { return []; } };
+const goAllAhead = () => goAll() && othersNeeding().find(p => !goSeen().includes(p.name) && p.name !== S.project);  // the next project not walked yet in this round
+const goTally = () => { try { return Number(sessionStorage.getItem('taska.go.tally') || 0); } catch (_) { return 0; } };
+function goRoundSaid(settled, left) {  // the whole round's count, not this project's (F251)
+  const others = othersNeeding().reduce((k, p) => k + (p.needs || 0), 0), all = goTally() + settled, still = left + others;
+  return `${all} settled${still ? ` · ${still} still need${still === 1 ? 's' : ''} you` : ''}`;
+}
+function goAllNext() {  // on to the next project not walked yet; skipped items don't bring you back to one
+  const next = goAllAhead();
   if (!next) return false;
-  try { sessionStorage.setItem('taska.go.seen', JSON.stringify(seen)); sessionStorage.setItem('taska.go.start', next.name); } catch (_) {}
+  const seen = [...new Set([...goSeen(), S.project])];
+  try { sessionStorage.setItem('taska.go.seen', JSON.stringify(seen)); sessionStorage.setItem('taska.go.tally', String(goTally() + (U.go?.done.size || 0))); sessionStorage.setItem('taska.go.start', next.name); } catch (_) {}
   location.assign(`/p/${encodeURIComponent(next.name)}/`);
   return true;
 }
@@ -8665,8 +8670,9 @@ function endGoDesk(how) {  // 'end': you ended it; 'last': after the last one
   if (!g) return;
   const settled = g.done.size, left = g.list.filter(k => !g.done.has(k) && byN.get(k) && needsYou(byN.get(k))).length;
   const tally = `${settled} settled${left ? ` · ${left} still need${left === 1 ? 's' : ''} you` : ''}`;
+  if (how !== 'end' && goAll() && goAllNext()) return;  // F251: from home, on to the next project, skipped ones or not (its count goes along)
   U.go = null; render();
-  if (how !== 'end' && goAll() && goAllNext()) return;  // F251: from home, on to the next project, skipped ones or not
+  if (goAll()) { const said = goRoundSaid(settled, left); goAllOff(); return toast(`${how === 'end' ? 'Stopped going through' : 'Went through every project'} · ${said}`); }
   const next = how !== 'end' && !left && nextNeeding();  // F193: another project has something for you, the one Go on opens
   goAllOff();
   if (next) return toast(`Nothing else needs you here · ${tally} · ${titleOf(next)} has ${next.needs}`, () => goNextProject(), {label: 'Go on ⇧J'});
