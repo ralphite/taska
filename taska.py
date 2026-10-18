@@ -5370,6 +5370,7 @@ const plainQuote = s => String(s || '').split('\n').filter(l => !TABLE_SEP.test(
 // an agent's can be deleted, not edited (F262).
 const DC_BTN = `${HIT} flex h-6 items-center gap-1 rounded-lg px-1.5 text-xs font-semibold text-zinc-500 hover:bg-blue-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-blue-400/10 dark:hover:text-zinc-200`;
 const dcActs = (d, c) => `<div class="-mr-1.5 ml-auto flex gap-0.5 lg:opacity-0 lg:group-hover:opacity-100 lg:focus-within:opacity-100">${c.by === 'you' ? `<button data-act="dc-edit" data-d="${d.d}" data-id="${c.id}" class="${DC_BTN}">${ico('pencil', 'size-3.5')}Edit</button>` : ''}<button data-act="dc-move" data-d="${d.d}" data-id="${c.id}" class="${DC_BTN}">${ico('arrow', 'size-3.5')}Move</button>${c.by === 'you' ? (c.files || []).map(f => `<button data-act="sent-unfile" data-d="${d.d}" data-id="${c.id}" data-f="${esc(f.f)}" title="Take off ${esc(f.name || 'the file')}" class="${DC_BTN}">${ico('x', 'size-3.5')}File</button>`).join('') : ''}<button data-act="dc-delete" data-d="${d.d}" data-id="${c.id}" class="${DC_BTN}">${ico('trash', 'size-3.5')}Delete</button></div>`;
+const dcAll = dn => { const d = docById(+dn); return d ? [...d.whole || [], ...d.blocks.flatMap(b => b.comments), ...d.detached.flatMap(t => t.comments)] : []; };
 const dcFind = (dn, id) => { const d = docById(+dn); return d && [...d.whole || [], ...d.blocks.flatMap(b => b.comments), ...d.detached.flatMap(t => t.comments)].find(c => c.id === +id); };
 function editComment(dn, id) {
   const c = dcFind(dn, id);
@@ -5524,6 +5525,7 @@ function docViewHtml(d) {
       ${d.blocks.map((b, i) => `<section data-act="doc-pick" data-key="${b.key}" ${U.docSel.has(b.key) ? 'data-picked' : ''} class="group/blk -mx-2 rounded-lg px-2 py-1 transition-colors lg:grid lg:grid-cols-[minmax(0,1fr)_15rem] lg:gap-x-5 lg:cursor-text hover:bg-zinc-50 data-picked:bg-amber-50 data-picked:ring-2 data-picked:ring-amber-300 data-pressed:opacity-70 dark:hover:bg-zinc-800/50 dark:data-picked:bg-amber-950/40 dark:data-picked:ring-amber-600">
         <div class="relative flex flex-col gap-1 lg:flex-row lg:items-start lg:gap-2"><div class="min-w-0 flex-1 break-words ${b.kind === 'heading' ? 'pr-14 lg:pr-0' : ''}">${blockHtml(shown(b, i), i === 0 && titled, 'doc' + d.d)}</div>
         ${b.comments.length ? `<button data-act="doc-thread" data-key="${b.key}" aria-label="${plural(b.comments.length, 'comment')}" class="${b.kind === 'heading' ? `absolute right-0 lg:relative lg:top-0 ${i === 0 && titled ? 'top-0.5' : (b.text.match(/^#+/) || ['#'])[0].length <= 2 ? 'top-2.5' : 'top-1'}` : 'relative self-end'} flex h-6 shrink-0 lg:mt-0.5 lg:self-start items-center gap-1 rounded-md bg-amber-100 px-1.5 text-xs font-medium text-amber-900 after:absolute after:-inset-2.5 hover:bg-amber-200 lg:hidden dark:bg-amber-900/60 dark:text-amber-100 dark:hover:bg-amber-900">${ico('comment', 'size-3.5')}${b.comments.length}${threadNew(d, b.key, b.comments) ? NEW_DOT : ''}</button>` : `<button data-act="doc-pick" data-key="${b.key}" data-pick-btn title="Comment on this paragraph" class="hidden h-6 shrink-0 items-center gap-1 self-start rounded-md px-1.5 text-xs font-medium text-zinc-500 hover:bg-zinc-200/70 hover:text-zinc-800 lg:group-hover/blk:flex dark:text-zinc-400 dark:hover:bg-zinc-700">${ico('comment', 'size-3.5')}Comment</button>`}</div>
+        ${!desk() && U.docSel.has(b.key) && !U.docType && !R.rec ? `<div class="mt-2 flex items-center gap-2"><button data-act="doc-say" data-key="${b.key}" aria-label="Speak a comment on this paragraph" class="grid size-12 shrink-0 place-items-center rounded-full bg-zinc-900 text-white shadow-lg dark:bg-zinc-100 dark:text-zinc-900">${ico('mic', 'size-5')}</button><span class="text-[13px] text-zinc-500 dark:text-zinc-400">Tap to speak, tap again to post</span><button data-act="doc-type" class="ml-auto h-10 rounded-full px-3 text-sm font-semibold text-zinc-600 ring-1 ring-zinc-300 dark:text-zinc-300 dark:ring-zinc-600" aria-label="Type instead">Aa</button></div>` : ''}
         ${b.comments.length && (desk() ? !docResolved(d, b.key) || U.docThreads.has(b.key) : U.docThreads.has(b.key)) ? threadHtml(d, b.key, b.comments, b.text, true)
           : b.comments.length && desk() ? `<button data-act="doc-thread" data-key="${b.key}" class="hidden h-7 items-center gap-1 self-start justify-self-start rounded-md px-1.5 text-xs text-zinc-500 hover:bg-zinc-100 lg:col-start-2 lg:row-start-1 lg:flex dark:text-zinc-400 dark:hover:bg-zinc-800">${ico('check', 'size-3.5')}Resolved · ${plural(b.comments.length, 'comment')}</button>` : ''}</section>`).join('')}
       ${U.docCircle ? `<svg id="lasso" class="absolute inset-0 z-10 h-full w-full touch-none" aria-label="Draw around the part you want to comment on"><path id="lassoPath" d="" fill="rgba(251,191,36,.15)" stroke="rgb(245,158,11)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/></svg>` : ''}
@@ -5551,7 +5553,8 @@ function renderDoc({focus = false} = {}) {
   if (!d) return closeDialog();
   const a = document.activeElement, keep = a?.dataset?.docDraft ? [a.dataset.docDraft, a.value, a.selectionStart] : null;
   const top = $('dlgBody').scrollTop;
-  dialog(`D${d.d}`, docViewHtml(d), {focus, tall: true, aboveComposer: true});
+  dialog(`D${d.d}`, docViewHtml(d), {focus, tall: true, aboveComposer: !!U.docType});  // I285: no box below unless you chose to type
+  $('foot').hidden = !U.docType;
   U.docSig = docSig(d);
   renderComposer();
   if (!focus) $('dlgBody').scrollTop = top;
@@ -6275,7 +6278,7 @@ function boxAnchor() {
   if (U.amend) return U.amend.mode === 'dc' ? document.querySelector(`[data-dc="${U.amend.id}"]`)
     : document.querySelector(`#detailBody [data-src="${U.amend.id}"], #inputsView [data-r="${U.amend.id}"], #detailBody [data-r="${U.amend.id}"], #foot [data-src="${U.amend.id}"]`);
   const d = docOpen();
-  if (!d) return null;
+  if (!d || (!desk() && !U.docType && !U.amend)) return null;  // I285: on the phone the box comes into the document only after Aa
   const root = desk() ? $('detailBody') : $('dlgBody'), t = docTarget();
   if (t?.reply) return root.querySelector(`[data-thread="${t.reply ? t.key : ''}"]`);
   if (t) return [...root.querySelectorAll('#docBlocks section[data-key]')].filter(sec => sec.dataset.key === t.key || U.docSel.has(sec.dataset.key)).at(-1) || null;
@@ -7072,7 +7075,7 @@ function vcPlace() {  // the button by the selection, or by the passage you are 
   bar.style.left = `${Math.max(8, Math.min(innerWidth - bar.offsetWidth - 8, r.left + r.width / 2 - bar.offsetWidth / 2))}px`;
 }
 async function vcToggle() {
-  if (R.vc) return R.rec ? finishRec(false) : undefined;  // starting: the microphone is on its way
+  if (R.vc) return R.rec ? finishRec(!desk() && !U.docType) : undefined;  // starting: the microphone is on its way; I285: on the phone, stop posts it
   if (R.rec) return;
   const s = vcSelection();
   if (!s) return;
@@ -7109,12 +7112,15 @@ async function sendVoiceComments() {
     ops.at(-1).files.push(...ups(files.filter(f => !segs.some(s => s.label === f.vc))));  // other files go with the last
     const send = ops.filter(o => o.text || o.files.length);
     if (!send.length) return toast('Nothing to post yet: say or write something under a quote');
+    const before = new Set(dcAll(d.d).map(c => c.id));  // I285: what this sends, for Undo
     await save(send, () => sendVoiceComments());
     for (const f of files) { f.sent = true; dropRec(f); }
     $('text').value = ''; U.files = []; U.vcMarks = U.vcMarks.filter(m => m.d !== d.d); saveDraft(); grow();
     for (const s of segs) U.docThreads.add(s.key);
     Object.assign(U, {docQuote: null, docSel: new Set(), docReply: null});
-    renderDoc(); renderComposer(); toast(`Posted ${plural(send.length, 'comment')} on D${d.d}`);
+    renderDoc(); renderComposer();
+    const made = dcAll(d.d).filter(c => !before.has(c.id) && c.by === 'you').map(c => c.id);
+    toast(`Posted ${plural(send.length, 'comment')} on D${d.d}${made.length && !desk() ? ' · Edit is under it' : ''}`, made.length ? pushUndo(`Post ${plural(made.length, 'comment')}`, async () => { for (const id of made) await save({op: 'dcdel', d: d.d, id}); renderDoc(); toast('Taken back'); }) : null);
   } catch (_) {} finally { U.vcSending = false; }
 }
 // The name of a draft's target, for what the box says about it (B1, B185).
@@ -7299,6 +7305,7 @@ const closeDialog = () => {
   }
   if (U.doc) U.docScroll[U.doc] = $('dlgBody').scrollTop;
   const hadDoc = U.doc, sheet = !$('overlay').hidden && !hadDoc;
+  if (hadDoc) { U.docType = false; $('foot').hidden = false; }  // I285: the box is back once the document closes
   U.doc = null; U.docNew = null; U.docEdit = false; U.sheet = null; U.go = null; U.docReply = null;
   $('overlay').hidden = true; $('overlay').style.bottom = '';
   if (!$('toast').hidden) placeToast();
@@ -7911,7 +7918,7 @@ const ACT = {
     renderDoc();
     if (desk() && docTarget()) $('text').focus({preventScroll: true});  // A1: you picked what to comment on: now write
   },
-  'doc-unpick': () => { U.docSel = new Set(); U.docQuote = null; U.docReply = null; U.docDrafts.note = ''; getSelection()?.removeAllRanges(); renderDoc(); },
+  'doc-unpick': () => { U.docType = false; U.docSel = new Set(); U.docQuote = null; U.docReply = null; U.docDrafts.note = ''; getSelection()?.removeAllRanges(); renderDoc(); },
   'doc-close': () => closeDoc(),
   'doc-resolve': async b => {  // T274 #2
     const d = U.doc, key = b.dataset.key, on = b.dataset.on === '1';
@@ -7920,6 +7927,15 @@ const ACT = {
     D.docKey = null; renderDetail(); if (!desk()) renderDoc();
     toast(on ? 'Resolved' : 'Open again', pushUndo(on ? 'Resolve a thread' : 'Reopen a thread', async () => { await save({op: 'dcres', d, key, on: !on}); D.docKey = null; renderDetail(); }));
   },
+  'doc-say': async b => {  // I285: speak about the paragraph you tapped; stop posts it
+    const sec = b.closest('section[data-key]'), d = docById(U.doc), blk = d?.blocks.find(x => x.key === b.dataset.key);
+    if (!sec || !blk || R.rec) return;
+    R.vc = {d: U.doc, key: blk.key, quote: blk.text.slice(0, 500), range: null, rect: sec.getBoundingClientRect(), top: vcScroller().scrollTop};
+    await startRec();
+    if (!R.rec) R.vc = null;
+    renderDoc(); vcPlace();
+  },
+  'doc-type': () => { U.docType = true; renderDoc(); $('text').focus(); },  // I285: type instead, in the box
   'doc-comment-sel': () => { $('text').focus({preventScroll: true}); },  // T274 #1: the selected words are what the box comments on
   vc: () => vcToggle(),  // F184
   'vc-fix': () => {  // F204: the words you selected in a voice note get corrected in the box, and remembered
