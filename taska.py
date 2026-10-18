@@ -5705,7 +5705,7 @@ function advance(from, said = '') {  // said: what you just sent, for the toast,
 function endWalk(said = '') {
   const g = U.go, left = g ? g.list.filter(k => !g.done.has(k) && byN.get(k) && needsYou(byN.get(k))).length : 0;
   closeDialog();
-  if (goAll() && goAllNext()) return;  // F251
+  if (goAll() && goAllNext(g?.done.size || 0)) return;  // F251: closing the card above let go of the walk; its count is from g
   if (goAll()) { const all = goRoundSaid(g?.done.size || 0, left); goAllOff(); return toast(`${said ? said + ' · ' : ''}Went through every project · ${all}`); }
   const end = left ? `that was the last one, ${left} still need${left === 1 ? 's' : ''} you` : 'nothing else needs you';
   toast(said ? `${said} · ${end}` : end[0].toUpperCase() + end.slice(1));
@@ -8366,11 +8366,11 @@ function goRoundSaid(settled, left) {  // the whole round's count, not this proj
   const others = othersNeeding().reduce((k, p) => k + (p.needs || 0), 0), all = goTally() + settled, still = left + others;
   return `${all} settled${still ? ` · ${still} still need${still === 1 ? 's' : ''} you` : ''}`;
 }
-function goAllNext() {  // on to the next project not walked yet; skipped items don't bring you back to one
+function goAllNext(settled = U.go?.done.size || 0) {  // on to the next project not walked yet; skipped items don't bring you back to one
   const next = goAllAhead();
   if (!next) return false;
   const seen = [...new Set([...goSeen(), S.project])];
-  try { sessionStorage.setItem('taska.go.seen', JSON.stringify(seen)); sessionStorage.setItem('taska.go.tally', String(goTally() + (U.go?.done.size || 0))); sessionStorage.setItem('taska.go.start', next.name); } catch (_) {}
+  try { sessionStorage.setItem('taska.go.seen', JSON.stringify(seen)); sessionStorage.setItem('taska.go.tally', String(goTally() + settled)); sessionStorage.setItem('taska.go.start', next.name); } catch (_) {}
   location.assign(`/p/${encodeURIComponent(next.name)}/`);
   return true;
 }
