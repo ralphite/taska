@@ -3519,6 +3519,9 @@ class Handler(BaseHTTPRequestHandler):
                 return self.json(dict(HUB.voice_prefs(), tidy=HUB.tidy_on()))
             if p == "/api/push":  # F195: the key a phone subscribes with, and whether this subscription is on
                 return self.json({"key": HUB.push.public, "on": HUB.push.has((q.get("endpoint") or [""])[0])})
+            gone = re.fullmatch(r"/p/([a-z0-9][a-z0-9-]*)(/.*)?", p)
+            if gone and gone.group(1) not in HUB.projects and "text/html" in (self.headers.get("Accept") or ""):  # B287: a person opening a project that is gone lands on the home page, which says so
+                return self.redirect("/?gone=" + gone.group(1) if os.path.isdir(os.path.join(HUB.trash, gone.group(1))) else "/")
             s, sub, base = self.project(p)
             if sub == "":
                 return self.redirect(p + "/")
@@ -3994,6 +3997,7 @@ __APP_HEAD__
     <label class="order-last flex h-10 w-full items-center gap-2 rounded-xl bg-white px-3 text-sm text-zinc-400 ring-1 ring-zinc-900/10 focus-within:ring-2 focus-within:ring-blue-500/40 sm:order-none sm:w-72 dark:bg-zinc-800 dark:ring-white/10"><svg class="size-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="q" type="search" autocomplete="off" placeholder="Search every project" aria-label="Search every project" class="min-w-0 flex-1 bg-transparent text-base text-zinc-900 outline-none placeholder:text-zinc-400 sm:text-sm dark:text-zinc-100"><kbd class="hidden h-5 min-w-5 place-items-center rounded-md px-1 font-sans text-[11px] font-semibold ring-1 ring-zinc-300 lg:grid dark:ring-zinc-600">⌘K</kbd></label>
     <button id="goAll" hidden class="h-10 shrink-0 rounded-xl bg-amber-500 px-3.5 text-sm font-semibold text-amber-950 hover:brightness-95 dark:bg-amber-400"></button>
   </header>
+  <div id="gone" hidden class="mb-3 flex items-center gap-3 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-950 ring-1 ring-amber-200 dark:bg-amber-400/10 dark:text-amber-100 dark:ring-amber-400/25"><span id="goneText" class="min-w-0 flex-1"></span><button id="goneRestore" class="h-9 shrink-0 rounded-lg bg-white px-3 font-semibold text-amber-900 ring-1 ring-amber-300 hover:bg-amber-100 dark:bg-zinc-800 dark:text-amber-100 dark:ring-amber-400/30">Restore</button><button id="goneClose" aria-label="Close" class="grid size-9 shrink-0 place-items-center rounded-lg text-amber-800 hover:bg-amber-100 dark:text-amber-200 dark:hover:bg-amber-400/15">✕</button></div>
   <div id="hits" hidden class="mb-3 overflow-hidden rounded-xl bg-white ring-1 ring-zinc-900/10 dark:bg-zinc-800 dark:ring-white/10"></div>
   <div class="overflow-hidden rounded-xl bg-white ring-1 ring-zinc-900/10 dark:bg-zinc-800 dark:ring-white/10">
     <div class="hidden grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_4.5rem_5.5rem_minmax(0,2.4fr)] gap-3 border-b border-zinc-200 bg-zinc-50 px-4 py-2 text-xs font-semibold text-zinc-500 lg:grid dark:border-zinc-700 dark:bg-zinc-800/60 dark:text-zinc-400"><span>Project</span><span>Agent</span><span>Open</span><span>Needs you</span><span>Next for you</span></div>
@@ -4040,6 +4044,18 @@ async function load() {
       <span class="ml-auto shrink-0 lg:ml-0">${p.needs ? `<span class="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900 dark:bg-amber-400/15 dark:text-amber-200">${p.needs}</span>` : '<span class="hidden text-zinc-300 lg:inline dark:text-zinc-600">—</span>'}</span>
       <span class="hidden min-w-0 truncate text-zinc-600 lg:block dark:text-zinc-300">${next}${x ? ` <span class="ml-1 text-[11px] font-semibold text-amber-700 dark:text-amber-400">${VERB[x.kind] || ''}</span>` : ''}</span></a></li>`;
   }).join('') || '<li class="px-4 py-3 text-sm text-zinc-500">No projects yet.</li>';
+}
+// B287: a project that was deleted, opened from an old link or tab: say so here, with Restore
+const goneName = new URLSearchParams(location.search).get('gone');
+if (goneName) {
+  $('goneText').textContent = `The project “${goneName}” was deleted. Restore it, or pick another project below.`;
+  $('gone').hidden = false;
+  history.replaceState(null, '', '/');
+  $('goneClose').addEventListener('click', () => { $('gone').hidden = true; });
+  $('goneRestore').addEventListener('click', async () => {
+    try { const d = await (await fetch('/api/projects/restore', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({name: goneName})})).json(); if (d.ok) location.href = `/p/${encodeURIComponent(goneName)}/`; else $('goneText').textContent = d.error || 'Not restored'; }
+    catch (_) { $('goneText').textContent = 'Connection lost; try again'; }
+  });
 }
 // Go through everything that needs you: it starts in the project of the first one and goes on project by project
 $('goAll').addEventListener('click', () => {
@@ -4540,7 +4556,7 @@ async function copy(text, done = 'Copied') {
 
 async function load() {
   const text = await net(P + 'api/state', {}, NET.state, 'text');
-  if (/^project \S+ was deleted/.test(text)) { if (!U.leaving) location.replace('/'); return; }  // deleted on another device or tab (F173); this one moves on by itself
+  if (/^project \S+ was deleted/.test(text)) { if (!U.leaving) location.replace('/?gone=' + encodeURIComponent(HERE)); return; }  // deleted on another device or tab (F173); this one moves on by itself
   SAVE.last = text; ingest(JSON.parse(text));
 }
 function ingest(d) {  // Taska's state on screen, with your changes that are still on their way (T160)
