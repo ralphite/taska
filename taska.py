@@ -976,8 +976,8 @@ class Store:
         live = self.sorted(i for i in self.active() if i["status"] not in CLOSED and not i["archived"])  # F281: an archived item rests, whatever its state
         talking = {n for r in self.inputs.values() if self.held(r) for n in [r["scope"], *r["touched"]] if n}  # B165
         for label, rows in (("waiting on the user (skip)", [i for i in live if self.waiting(i)]),
-                            ("proposed, the user has not approved yet (skip)", [i for i in live if i["status"] == "proposed"]),
-                            ("in review, the user accepts them (skip)", [i for i in live if i["status"] == "review"]),
+                            ("proposed, the user has not approved yet (skip)", [i for i in live if i["status"] == "proposed" and not self.replied(i)]),
+                            ("in review, the user accepts them (skip)", [i for i in live if i["status"] == "review" and not self.replied(i)]),  # B286: replied ones come back below
                             ("the user's voice note on it is being transcribed (skip, it comes next)", [i for i in live if i["n"] in talking])):
             if rows:
                 out.append(f"{label}: " + " ".join(self.code(i["n"]) for i in rows))
@@ -3280,7 +3280,7 @@ class Hub:
                 # "open" as the project's own page counts it (A18): what Items holds that isn't finished, rules an agent
                 # proposed included, since they wait in Items too
                 out.append({"name": name, "title": s.title, "open": sum(1 for i in live if not i["archived"] and (i["type"] != "rule" or i["status"] == "proposed")), "auto": s.cfg["auto"],
-                            "needs": sum(1 for i in live if not i["archived"] and (s.waiting(i) or i["status"] in ("proposed", "review"))), **s.presence(),  # archived: not on the page's list either
+                            "needs": sum(1 for i in live if not i["archived"] and (s.waiting(i) or (i["status"] in ("proposed", "review") and not s.replied(i)))), **s.presence(),  # archived: not on the page's list either
                             "t": int(os.path.getmtime(s.path) * 1000), **({"pos": self.order.index(name)} if name in self.order else {})})
         return out
 
@@ -3328,7 +3328,7 @@ class Hub:
                     if i["status"] in CLOSED or i.get("merged_into") or i["archived"]:  # as the project's own page counts them
                         continue
                     w = s.waiting(i)
-                    kind = w["kind"] if w else i["status"] if i["status"] in ("proposed", "review") else None
+                    kind = w["kind"] if w else i["status"] if i["status"] in ("proposed", "review") and not s.replied(i) else None  # B286: replied, it is the agent's turn
                     if kind:
                         out.append({"project": name, "ptitle": s.title, "n": i["n"], "code": s.code(i["n"]), "title": i["title"],
                                     "kind": kind, "pri": i["pri"], "t": i.get("t1") or i.get("t") or ""})
@@ -4384,7 +4384,7 @@ const KBD = k => `<kbd class="ml-1 hidden h-5 min-w-5 place-items-center rounded
 const code = n => { const it = byN.get(n); return (it ? LETTER[it.type] : '?') + String(n).padStart(S.width, '0'); };
 const parseRef = s => { const m = /^[A-Za-z]?0*(\d+)$/.exec(String(s).trim()); return m ? Number(m[1]) : null; };
 // The user's move: an agent asked or is blocked, proposed an item, or wants a finished item accepted.
-const needsYou = it => !it.merged_into && !CLOSED(it.status) && (!!it.wait || it.status === 'proposed' || it.status === 'review');
+const needsYou = it => !it.merged_into && !CLOSED(it.status) && (!!it.wait || ((it.status === 'proposed' || it.status === 'review') && !it.reply));  // B286: your reply is your answer: it goes back to the agent
 
 // Pushes to the phone (F195): Taska on the Home Screen subscribes with the browser's push service; Taska then pushes
 // when something newly needs you in any project, and the phone shows what it is.
@@ -5735,6 +5735,7 @@ function needsCard(it, onCard = false) {  // onCard: in a Go through card, whose
       choices ? sendAnswerBtn(n, onCard ? 'flex-1' : 'flex-[1.4] lg:flex-none', true) : '',  // T274 #29: no Reply that only moves the caret: the box is right there
       choices ? 'Pick with 1–9, send with ⌘↵' : '↓ Answer in the box below');
   }
+  if (it.reply && (it.status === 'proposed' || it.status === 'review')) return `<div class="flex items-center gap-2 text-sm font-medium text-emerald-700 dark:text-emerald-400">${ico('check', 'size-4', '2.25')}You replied. Waiting for your agent.</div>`;  // B286: your reply answered it; Accept stays in the status chip
   if (it.status === 'proposed') return card('propose', `${esc(name)} proposed this`, m ? msgText(m, 'card' + n) : '<p class="text-sm text-amber-900/80 dark:text-amber-200/80">Nobody works on it until you approve.</p>',
     `<button data-act="status" data-n="${n}" data-v="dropped" class="${SECOND} flex-1 lg:flex-none">${ico('ban', 'size-4')}Won't do${KBD('W')}</button><button data-act="status" data-n="${n}" data-v="open" class="${PRIMARY_BASE} ${NEED.approve.btn} flex-[1.4] lg:flex-none">${ico('thumb', 'size-4.5')}Approve${KBD('A')}</button>`,
     m ? 'Nobody works on it until you approve' : '');  // T242 #2: said once (the card's text says it when there is no message)

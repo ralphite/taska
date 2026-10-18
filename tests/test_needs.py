@@ -43,6 +43,18 @@ class NeedsTests(unittest.TestCase):
         self.assertNotIn(code, self.kinds('other'))
         self.assertIn(code, self.kinds('my-app'))
 
+    def test_your_reply_answers_a_review_or_a_proposal(self):  # B286: what you wrote is your answer: the agent picks it up
+        s = self.hub.projects['other']
+        for kind in ('review', 'proposed'):
+            code = next(c for c, k in self.kinds('other').items() if k == kind)
+            with s.cond:
+                lines, _ = s.run_all([(0, {'op': 'input', 'text': 'Not quite: one more thing', 'scope': code})], 'you')
+            self.assertTrue(lines[0].startswith('ok'), lines)
+            self.assertNotIn(code, self.kinds('other'))
+            self.assertIn(code, s.next_text()[0].split('in review, the user accepts them (skip)')[-1])  # not skipped: it comes back to the agent
+        counts = {p['name']: p['needs'] for p in self.hub.summary()}
+        self.assertEqual(len(self.kinds('other')), counts['other'])
+
 
 if __name__ == '__main__':
     unittest.main()
