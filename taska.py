@@ -7918,7 +7918,8 @@ const ACT = {
     renderDoc();
     if (desk() && docTarget()) $('text').focus({preventScroll: true});  // A1: you picked what to comment on: now write
   },
-  'doc-unpick': () => { U.docType = false; U.docSel = new Set(); U.docQuote = null; U.docReply = null; U.docDrafts.note = ''; getSelection()?.removeAllRanges(); renderDoc(); },
+  'doc-unpick': () => { if (!desk() && U.docType) { U.docType = false; renderDoc(); return renderComposer(); }  // I285: × leaves typing, the paragraph stays picked with its microphone
+    U.docSel = new Set(); U.docQuote = null; U.docReply = null; U.docDrafts.note = ''; getSelection()?.removeAllRanges(); renderDoc(); },
   'doc-close': () => closeDoc(),
   'doc-resolve': async b => {  // T274 #2
     const d = U.doc, key = b.dataset.key, on = b.dataset.on === '1';
