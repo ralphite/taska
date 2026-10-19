@@ -1464,7 +1464,7 @@ class Store:
             note = ""
             if by not in PEOPLE and "status" in f:
                 if it["status"] == "proposed" and f["status"] != "dropped":
-                    raise Err(f"{code} is proposed: only the user can approve it")
+                    raise Err(f"{code} is proposed: only the user can approve it. To move it on, answer them: `{code} say ...` or `{code} ask ...` puts it back in front of them to approve (B299)")
                 if it["status"] == "dropped" and was_by(self, it) in PEOPLE:  # the user said no: an agent doesn't reopen it (F197)
                     raise Err(f"{code}: the user marked it won't do. Don't reopen or work on it; to ask, post `{code} ask <why it is worth doing>`")
                 if f["status"] == "done":
@@ -1476,6 +1476,9 @@ class Store:
             if it.get("archived") and "status" in f and status not in CLOSED and "archived" not in f:
                 f["archived"], was["archived"] = False, True  # reopening brings it back
             if not f:
+                if by not in PEOPLE and op["f"].get("status") == "done" and it["status"] == "review" and self.replied(it):  # B299: done again after the user's reply: theirs to accept again
+                    self.emit({"k": "say", "n": it["n"], "by": by, "kind": "progress", "text": "Ready for your review again.", "src": src, **keep})
+                    return f"ok {code} back with the user for review (to say what changed, post `{code} progress ...`)", "Updated " + code
                 return f"ok {code} no change{note}", ""
             if by not in PEOPLE and f.get("status") in ("review", "done"):
                 left = self.open_kids(it)
@@ -4647,7 +4650,7 @@ function renderLive() { renderAgent(); }
 const AGENT_NAME = {'claude-code': 'Claude Code', codex: 'Codex', antigravity: 'Antigravity', agent: 'Agent'};
 const QUIET_MS = 30 * 60 * 1000;  // the server's CLAIM_TTL: quiet longer than this, another agent may take the item (F194)
 // T274 #7: in progress means an agent is on it. Nobody on it, or quiet too long: it is stuck, and can go back to the queue
-const stuck = it => it.status === 'doing' && !(it.agent && Date.now() - new Date(it.agent.t).getTime() <= QUIET_MS);
+const stuck = it => it.status === 'doing' && !it.wait && !(it.agent && Date.now() - new Date(it.agent.t).getTime() <= QUIET_MS);
 function workerMark(it) {  // F194: the agent working on an item in progress; amber once it has gone quiet
   const a = it.agent;
   if (!a) return '';
@@ -5066,6 +5069,9 @@ function itemRow(it, depth = 0, group = [], band = '') {  // band: the band it i
 // action right there on the thumb side.
 // Each kind of "needs you" has its own color and icon (B96), on the row's pill, its label and the card's main
 // button: Accept green (it becomes done), Approve blue (work can start), Answer amber (a question), Reply red (stuck).
+// B299: approving or accepting stays one tap away while the agent has the item back or a question is open
+const keepBtn = it => it.status === 'proposed' ? `<button data-act="status" data-n="${it.n}" data-v="open" class="${SECOND}">${ico('thumb', 'size-4')}Approve</button>`
+  : it.status === 'review' ? `<button data-act="status" data-n="${it.n}" data-v="done" class="${SECOND}">${ico('check', 'size-4', '2.25')}Accept</button>` : '';
 const NEED = {
   accept: {icon: 'check', pill: 'bg-emerald-100 text-emerald-900 ring-emerald-300/80 dark:bg-emerald-400/15 dark:text-emerald-100 dark:ring-emerald-400/30', text: 'text-emerald-700 dark:text-emerald-400', btn: 'bg-emerald-600 text-white hover:brightness-95 dark:bg-emerald-500 dark:text-emerald-950 dark:hover:brightness-110'},
   approve: {icon: 'thumb', pill: 'bg-blue-100 text-blue-900 ring-blue-300/80 dark:bg-blue-400/15 dark:text-blue-100 dark:ring-blue-400/30', text: 'text-blue-700 dark:text-blue-400', btn: 'bg-blue-600 text-white hover:brightness-95 dark:bg-blue-500 dark:text-blue-950 dark:hover:brightness-110'},
@@ -5787,7 +5793,7 @@ function endWalk(said = '') {
 // "⋯". Reading order: title → what it needs from you → description → files → docs → subitems → conversation.
 
 // The message the needs card shows: the question, or the agent's report or proposal (then not repeated below).
-const cardMsg = it => it.wait ? it.thread.find(x => x.id === it.wait.id) || it.wait : (it.status === 'review' || it.status === 'proposed') ? lastAgentMsg(it) : null;
+const cardMsg = it => it.wait ? it.thread.find(x => x.id === it.wait.id) || it.wait : (it.status === 'review' || it.status === 'proposed') && !it.reply ? lastAgentMsg(it) : null;  // B299: once you replied there is no card: it stays in the thread
 function needsCard(it, onCard = false) {  // onCard: in a Go through card, whose bottom bar has the Reply (T236 #1)
   const n = it.n, m = cardMsg(it), name = whoName(m?.by || it.wait?.by || (it.by && it.by !== 'you' ? it.by : 'agent'));  // one agent, one name (B157)
   // On the desktop the buttons sit on the right with their keys, and a hint says what the second one does.
@@ -5800,10 +5806,10 @@ function needsCard(it, onCard = false) {  // onCard: in a Go through card, whose
     const body = rich(w.text, 'ask' + n, 'text-zinc-900 dark:text-zinc-100', w.kind === 'ask' ? n : 0)
       + (w.files?.length ? `<div class="flex gap-2 overflow-x-auto lg:scrollbar-thin">${thumbs(w.files, 'w' + n, 'h-48 w-24')}</div>` : '');
     return card(w.kind === 'block' ? 'alert' : 'ask', `${esc(whoName(w.by))} ${w.kind === 'block' ? 'is blocked and needs you' : 'asks you'}`, body,
-      choices ? sendAnswerBtn(n, onCard ? 'flex-1' : 'flex-[1.4] lg:flex-none', true) : '',  // T274 #29: no Reply that only moves the caret: the box is right there
+      keepBtn(it) + (choices ? sendAnswerBtn(n, onCard ? 'flex-1' : 'flex-[1.4] lg:flex-none', true) : ''),  // T274 #29: no Reply that only moves the caret: the box is right there; B299: Approve stays
       choices ? 'Pick with 1–9, send with ⌘↵' : '↓ Answer in the box below');
   }
-  if (it.reply && (it.status === 'proposed' || it.status === 'review')) return `<div class="flex items-center gap-2 text-sm font-medium text-emerald-700 dark:text-emerald-400">${ico('check', 'size-4', '2.25')}You replied. Waiting for your agent.</div>`;  // B286: your reply answered it; Accept stays in the status chip
+  if (it.reply && (it.status === 'proposed' || it.status === 'review')) return `<div class="flex flex-wrap items-center gap-2 text-sm font-medium text-emerald-700 dark:text-emerald-400">${ico('check', 'size-4', '2.25')}<span class="mr-auto">You replied. Waiting for your agent.</span>${keepBtn(it)}</div>`;  // B286: your reply answered it; B299: you can still approve or accept
   if (it.status === 'proposed') return card('propose', `${esc(name)} proposed this`, m ? msgText(m, 'card' + n) : '<p class="text-sm text-amber-900/80 dark:text-amber-200/80">Nobody works on it until you approve.</p>',
     `<button data-act="status" data-n="${n}" data-v="dropped" class="${SECOND} flex-1 lg:flex-none">${ico('ban', 'size-4')}Won't do${KBD('W')}</button><button data-act="status" data-n="${n}" data-v="open" class="${PRIMARY_BASE} ${NEED.approve.btn} flex-[1.4] lg:flex-none">${ico('thumb', 'size-4.5')}Approve${KBD('A')}</button>`,
     m ? 'Nobody works on it until you approve' : '');  // T242 #2: said once (the card's text says it when there is no message)
@@ -6417,6 +6423,8 @@ function renderComposer() {
     if (S.project) ph = `New rule for ${projTitle()}…`;
   } else if (desk()) line = scopeLine('inbox', 'New input', `· ${S.org?.on ? 'the organizer files it' : 'your agent files it'}`,
     ruleFlip() + (U.open && detailShown() ? scopeLink('reply-instead', `Add to ${code(U.open)} instead`, 'R') : ''));
+  else if (U.open && detailShown() && byN.has(U.open)) line = scopeLine('inbox', 'New input', `· ${S.org?.on ? 'the organizer files it' : 'your agent files it'}`,
+    ruleFlip() + scopeLink('reply-instead', `Add to ${code(U.open)} instead`));  // B298: after New input instead the box still says where it goes, and the way back (as on the desktop)
   else if (U.tab === 'rules') line = scopeLine('inbox', 'New input', '· not a rule', ruleFlip());
   if (R.rec && R.key && R.key !== U.draftKey) line = scopeLine('mic', `Recording for ${esc(draftName(R.key))}`, '· it goes there when you stop');  // B1
   $('scope').hidden = !line; paint($('scope'), line); t.placeholder = ph;
@@ -7061,8 +7069,8 @@ async function restoreVoice() {
     if (navigator.locks && !await navigator.locks.request('taska-voice-' + r.id, {ifAvailable: true}, l => !!l)) continue;  // another tab has it
     // B185: back into the box it was recorded in, never the one open now: the item's (or the one it was merged into), a
     // new input or rule, an edit; a new input when that item or input is gone
-    const n = /^[A-Z]\d+$/.test(r.key || '') ? parseRef(r.key) : 0, inp = /^(edit|append|correct) (r\d+)$/.exec(r.key || '');
-    const key = n ? (byN.has(n) ? code(liveN(n)) : 'new') : r.key === 'rule' || (inp && byR.has(inp[2])) ? r.key : 'new';
+    const n = /^[A-Z]\d+$/.test(r.key || '') ? parseRef(r.key) : 0, inp = /^(edit|append|correct) (r\d+)$/.exec(r.key || ''), dm = /^doc (\d+)$/.exec(r.key || '');
+    const key = n ? (byN.has(n) ? code(liveN(n)) : 'new') : r.key === 'rule' || (inp && byR.has(inp[2])) || (dm && docById(Number(dm[1]))) ? r.key : 'new';  // B298: a document's note, to that document
     const f = voiceFile({rid: r.id, name: r.name, mime: r.mime, ms: r.ms, t: r.t, data: r.data, blob: new Blob([r.data], {type: r.mime}), key, scope: /^[A-Z]\d+$/.test(key) ? key : null,
                          f: r.f || null, transcribing: r.tr == null && !r.tr_error, tr: r.tr || '', tr_error: r.tr_error || '', doubts: r.doubts || [], trAdded: r.added || undefined, ...(r.vc ? {vc: r.vc} : {})});
     if (key === U.draftKey) U.files.push(f); else (U.parked[key] ||= []).push(f);
@@ -7194,9 +7202,11 @@ async function sendVoiceComments() {
   } catch (_) {} finally { U.vcSending = false; }
 }
 // The name of a draft's target, for what the box says about it (B1, B185).
-const draftName = key => key === 'new' ? 'a new input' : key === 'rule' ? 'a new rule' : /^[A-Z]\d+$/.test(key) ? key : key.replace(/^(\w+) /, (_, m) => ({edit: 'the edit of ', append: 'the details for ', correct: 'the correction in ', dc: 'the edit of comment '}[m] || ''));
+const draftName = key => key === 'new' ? 'a new input' : key === 'rule' ? 'a new rule' : /^[A-Z]\d+$/.test(key) ? key : key.replace(/^(\w+) /, (_, m) => ({edit: 'the edit of ', append: 'the details for ', correct: 'the correction in ', dc: 'the edit of comment ', doc: 'the comment on D'}[m] || ''));
 function goDraft(key) {  // to the box a draft belongs to
   if (key === 'new' || key === 'rule') { if (key === 'rule' && U.tab !== 'rules') setTab('rules'); U.asRule = key === 'rule' ? null : U.tab === 'rules' ? false : null; return ACT['new-input'](); }
+  const dm = /^doc (\d+)$/.exec(key), doc = dm && docById(Number(dm[1]));
+  if (doc) { const h = liveN(doc.n), it = byN.get(h); if (it) { if (!inTab(it, U.tab)) setTab(tabOf(it)); if (U.open !== h) openItem(h); } openDoc(doc.d); return; }  // B298
   const n = /^[A-Z]\d+$/.test(key) && parseRef(key);
   if (n && byN.has(n)) { if (desk() && !inTab(byN.get(n), U.tab)) setTab(tabOf(byN.get(n))); openItem(n); $('text').focus({preventScroll: true}); }
 }
@@ -7209,10 +7219,10 @@ function sendParked(key) {
   render(); flushOutbox();
 }
 
-// A draft belongs to what it is written to (B118): an item (a reply, or a comment on one of its documents), or a new
-// input (a new rule too). Each project keeps them by target in this browser; when the box changes target, the words and
+// A draft belongs to what it is written to (B118): an item (a reply), one of its documents (a comment: its own draft,
+// B298), or a new input (a new rule too). Each project keeps them by target in this browser; when the box changes target, the words and
 // files stay with the old target and the new target's own draft comes back. So unsent words never go elsewhere.
-const draftKey = () => { if (U.prefsEdit) return 'prefs'; if (U.correct) return `correct ${U.correct.id}`; if (U.amend) return `${U.amend.mode} ${U.amend.id}`; const od = docOpen(), n = scopeN(); return od ? code(liveN(od.n)) : n ? code(n) : ruleMode() ? 'rule' : 'new'; };  // B10: a new rule has its own draft  // a document's box shares its item's draft
+const draftKey = () => { if (U.prefsEdit) return 'prefs'; if (U.correct) return `correct ${U.correct.id}`; if (U.amend) return `${U.amend.mode} ${U.amend.id}`; const od = docOpen(), n = scopeN(); return od ? `doc ${od.d}` : n ? code(n) : ruleMode() ? 'rule' : 'new'; };  // B10: a new rule has its own draft; B298: so does a document, never its item's reply
 function draftStore(change) {
   const key = 'taska.drafts.' + S.project;
   try {
@@ -7234,7 +7244,10 @@ function draftsOf(slug) {  // -> {key: text} of any project, read again only whe
 }
 function draftCodes() {  // -> the items of this project with an unsent draft (words in any tab, or files in this one)
   const d = draftsOf(S.project), out = new Set();
-  for (const k of [...Object.keys(d), ...Object.keys(U.parked), U.draftKey]) if (/^[A-Z]\d+$/.test(k || '') && hasDraft(k, d)) out.add(k);
+  for (const k of [...Object.keys(d), ...Object.keys(U.parked), U.draftKey]) {
+    const dm = /^doc (\d+)$/.exec(k || ''), doc = dm && docById(Number(dm[1]));
+    if ((doc || /^[A-Z]\d+$/.test(k || '')) && hasDraft(k, d)) out.add(doc ? code(liveN(doc.n)) : k);  // B298: a comment not sent yet shows on its item
+  }
   return out;
 }
 const hasDraft = (c, d = draftsOf(S.project)) => c === U.draftKey ? !!($('text').value.trim() || U.files.length) : !!(String(d[c] || '').trim() || U.parked[c]?.length);

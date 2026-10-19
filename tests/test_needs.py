@@ -56,5 +56,21 @@ class NeedsTests(unittest.TestCase):
         self.assertEqual(len(self.kinds('other')), counts['other'])
 
 
+    def test_after_your_reply_the_agent_hands_it_back(self):  # B299: no deadlock once you replied
+        s = self.hub.projects['other']
+        code = next(c for c, k in self.kinds('other').items() if k == 'review')
+        with s.cond:
+            s.run_all([(0, {'op': 'input', 'text': 'Not quite', 'scope': code})], 'you')
+            lines, _ = s.run_all(taska.parse_dsl(f'{code} done'), 'claude-code')  # done again, with no words
+        self.assertIn('back with the user', lines[0])
+        self.assertEqual(self.kinds('other').get(code), 'review')
+        code = next(c for c, k in self.kinds('other').items() if k == 'proposed')
+        with s.cond:
+            s.run_all([(0, {'op': 'input', 'text': 'Why?', 'scope': code})], 'you')
+            lines, _ = s.run_all(taska.parse_dsl(f'{code} doing'), 'claude-code')
+            self.assertIn('say', lines[0])  # it is told how to move it on
+            s.run_all(taska.parse_dsl(f'{code} say Because it saves a step'), 'claude-code')
+        self.assertEqual(self.kinds('other').get(code), 'proposed')
+
 if __name__ == '__main__':
     unittest.main()
