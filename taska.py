@@ -3749,6 +3749,11 @@ class Handler(BaseHTTPRequestHandler):
                     raise Err(why)
                 s.emit({"k": "redo", "src": rid, "by": "you"})
             self.json({"ok": True})
+        elif p == "/api/miclog":  # B288: why the microphone did not start on a device, for the agent to read in the log
+            data = json.loads(self.body(4_000) or b"{}")
+            via = "tunnel" if self.headers.get("X-Forwarded-Host") else "local"
+            print(f"[miclog] {time.strftime('%Y-%m-%d %H:%M:%S')} {s.name} via {via}: " + json.dumps({k: str(data.get(k, ""))[:300] for k in ("name", "message", "where", "standalone", "secure", "ua")}, ensure_ascii=False), file=sys.stderr, flush=True)
+            self.json({"ok": True})
         elif p == "/api/revert":  # put back one of your changes (F80)
             seq = int((json.loads(self.body(10_000) or b"{}")).get("seq") or 0)
             with s.cond:
@@ -6726,7 +6731,7 @@ async function finishRec(andSend, kept) {
   const vc = kept ? kept.vc : R.vc; R.vc = null;
   const ms = kept?.ms ?? Date.now() - R.t0, blob = kept?.blob ?? await stopRec();
   if (!blob) return;
-  if (ms < 800 || !blob.size) return toast('Too short, discarded');
+  if (ms < 800 || !blob.size) { try { fetch(P + 'api/miclog', JSON_POST({name: blob.size ? 'short' : 'empty', message: `${ms} ms, ${blob.size} bytes, ${blob.type}`, where: 'stop', standalone: String(standalone()), secure: String(window.isSecureContext), ua: navigator.userAgent})); } catch (_) {} return toast(blob.size ? 'Too short, discarded' : 'Nothing was recorded: the microphone gave no sound. Try again, or check Settings › Apps › Safari › Microphone'); }  // B288
   const label = vc && vcQuote(vc, key);  // F184: the quote first, then its words
   if (vc && U.doc === vc.d && vc.key) { U.docQuote = {key: vc.key, text: vc.quote}; U.docSel = new Set(); U.docReply = null; }  // T274 #3: the box stays by the words you spoke about
   const ext = blob.type.includes('mp4') ? 'm4a' : blob.type.includes('ogg') ? 'ogg' : 'webm';
@@ -6769,6 +6774,7 @@ const VDB = {
 // T256 (from Nota, B731): why the microphone did not start, and what to do, instead of one line for every reason
 function micError(e) {
   const name = e?.name || '';
+  try { fetch(P + 'api/miclog', JSON_POST({name, message: String(e?.message || e || ''), where: 'start', standalone: String(standalone()), secure: String(window.isSecureContext), ua: navigator.userAgent})); } catch (_) {}  // B288: the reason, in Taska's log
   if (!window.isSecureContext) return 'The microphone only works on a secure address: open Taska from its https link.';
   if (name === 'NotAllowedError' || name === 'SecurityError') return standalone()
     ? 'Taska may not use the microphone. On iPhone: Settings › Apps › Safari › Microphone › Allow, then open Taska again.'
