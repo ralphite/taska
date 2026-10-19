@@ -2,8 +2,8 @@
 // organizer's notes, documents' comments in time (T274 #4), files and voice notes. The same on the item page and the card.
 import type { ReactNode } from 'react'
 import { DC_BTN, HIT, KIND, NEED, PRIMARY_BASE } from '../lib/constants'
-import { U, byR, ctx, desk, docsOf, oneLine, rcode, userWord, when, whoName } from '../lib/state'
-import type { FileRef, Input, Item, Msg } from '../lib/types'
+import { U, byR, ctx, desk, docsOf, oneLine, plural, rcode, userWord, when, whoName } from '../lib/state'
+import type { Doc, FileRef, Input, Item, Msg } from '../lib/types'
 import { CHOICE, clean, groups, hasChoices, mdHtml } from '../lib/markdown'
 import { audioOf } from '../lib/audio'
 import { P_CACHE } from '../lib/settings'
@@ -594,6 +594,38 @@ export function docNotes(n: number, from = ''): Note[] {
       }
     })
 }
+/** A document as a card: its title, code, comments and time; it opens in Taska (I289). */
+export const DocCard = ({ d, cls = '' }: { d: Doc; cls?: string }) => (
+  <button
+    data-act="doc-open"
+    data-d={d.d}
+    className={`flex w-full items-center gap-3 rounded-xl border border-zinc-200 px-3 py-2.5 text-left hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-900 ${cls}`}
+  >
+    <Icon n="doc" c="size-5 text-zinc-500 dark:text-zinc-400" />
+    <span className="min-w-0 flex-1">
+      <span className="block truncate text-[15px] font-medium">{d.title}</span>
+      <span className="block text-xs text-zinc-500 dark:text-zinc-400">
+        D{d.d} · {plural(d.comments.length, 'comment')} · {when(d.t1)}
+      </span>
+    </span>
+    <Icon n="right" c="size-4 text-zinc-300 dark:text-zinc-600" />
+  </button>
+)
+/** I289: each document under the agent's message that made it: the first one after it was made that names it, else
+ * the first one after it was made. -> message id -> its documents */
+export function docsByMsg(it: Item): Map<number, Doc[]> {
+  const out = new Map<number, Doc[]>(),
+    agentMsgs = it.thread.filter((x) => !userWord(x) && x.by !== 'org')
+  for (const d of docsOf(it.n)) {
+    const named = new RegExp(`(^|[^\\w])D0*${d.d}(?!\\d)`)
+    const after = agentMsgs.filter((x) => Date.parse(x.t) >= Date.parse(d.t0) - 60_000)
+    const m = after.find((x) => named.test(x.text)) || after[0] || agentMsgs.find((x) => named.test(x.text))
+    if (!m) continue
+    if (!out.has(m.id)) out.set(m.id, [])
+    out.get(m.id)?.push(d)
+  }
+  return out
+}
 export function Talk({ it, list, gid = '', notes = [] }: { it: Item; list: Msg[]; gid?: string; notes?: Note[] }) {
   const th = it.thread,
     vers = versions(th),
@@ -618,6 +650,7 @@ export function Talk({ it, list, gid = '', notes = [] }: { it: Item; list: Msg[]
           .sort((a, b) => b[1] - a[1])
       : [] // no answer yet, but read after your words
   const read = readers.length ? { id: th[mine].id, names: readers.map(([n]) => whoName(n)), t: readers[0][1] } : null
+  const made = docsByMsg(it)
   let k = 0
   const out: ReactNode[] = []
   const before = (t: string) => {
@@ -636,6 +669,7 @@ export function Talk({ it, list, gid = '', notes = [] }: { it: Item; list: Msg[]
         read={read?.id === x.id ? read : null}
       />,
     )
+    for (const d of made.get(x.id) || []) out.push(<DocCard key={`d${d.d}-${x.id}`} d={d} cls="-mt-3" />)
   }
   before('')
   return <>{out}</>

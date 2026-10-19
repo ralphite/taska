@@ -675,6 +675,12 @@ export const ACT: Record<string, Handler> = {
     }
     writeURL(true, D.full ? { n: U.open, full: true, link: true } : undefined)
   },
+  'docs-all': (d) => {
+    const n = N(d)
+    if (U.docsAll.has(n)) U.docsAll.delete(n)
+    else U.docsAll.add(n)
+    bump('detail')
+  },
   more: (d) => {
     U.more.add(N(d))
     bump('detail')

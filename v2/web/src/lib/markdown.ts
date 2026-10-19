@@ -137,6 +137,24 @@ export function inlineMd(s: string, gid = '', refs = true) {
           `<button data-act="view" data-g="${gid}" data-f="${src}" class="my-1 block max-w-full"><img src="${ctx.P}f/${encodeURIComponent(src)}" alt="${alt}" loading="lazy" class="max-h-96 max-w-full rounded-lg border border-zinc-200 dark:border-zinc-700"></button>`,
         )
       })
+      // I289: a link to an item or a document (its code, or Taska's own address for it) is the code's chip, opened in
+      // Taska; one to another project opens that project here, not as a jump to an absolute address
+      .replace(/\[([^\]]+)\]\(([FBITRD]\d{1,5}|r\d{1,6})\)/g, (m, _t: string, c: string) => {
+        const l = refs && refLink(c)
+        return l ? keep(l) : m
+      })
+      .replace(
+        /(\[([^\]]+)\]\()?https?:\/\/[^/\s)]+\/p\/([^/\s)]+)\/([FBITRD]\d{1,5}|r\d{1,6})\/?(\))?/g,
+        (m, open: string, t: string, proj: string, c: string, close: string) => {
+          if (!!open !== !!close) return m
+          const here = decodeURIComponent(proj) === ctx.HERE
+          const l = here && refs ? refLink(c) : null
+          if (l) return keep(l)
+          return keep(
+            `<a href="/p/${proj}/${c}" class="text-blue-600 underline underline-offset-2 dark:text-blue-400">${t ? emph(t) : c}</a>`,
+          )
+        },
+      )
       .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, (_, t: string, url: string) =>
         keep(
           `<a href="${url}" target="_blank" rel="noopener" class="text-blue-600 underline underline-offset-2 dark:text-blue-400">${emph(t)}</a>`,

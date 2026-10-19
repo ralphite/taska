@@ -236,6 +236,7 @@ export const U = {
   files: [] as DraftFile[],
   lastSent: null as string | null,
   more: new Set<number>(),
+  docsAll: new Set<number>(), // I289: items whose documents all show, not the latest 3
   tabOpen: {} as Record<string, number | null>,
   settle: new Map<number, { said: string; undo: () => unknown }>(),
   tabTop: {} as Record<string, number>,

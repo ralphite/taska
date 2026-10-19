@@ -19,7 +19,6 @@ import {
   markSeen,
   model,
   needsYou,
-  plural,
   ruleMode,
   statusName,
   stuck,
@@ -35,7 +34,7 @@ import { keepGo } from '../lib/go'
 import { noteText } from '../lib/docs'
 import { kept } from '../lib/drafts'
 import { Icon, Kbd, SectionHead, StateIcon } from './ui'
-import { FileRows, MsgText, Rich, SendAnswerBtn, Talk, Thumbs, docNotes } from './Talk'
+import { DocCard, FileRows, MsgText, Rich, SendAnswerBtn, Talk, Thumbs, docNotes } from './Talk'
 import { DocEdit, DocPaneActs, DocPaneHead, DocPaneNav, DocView } from './Doc'
 import { InputPane, InputPaneHead } from './Inputs'
 
@@ -349,7 +348,7 @@ export function ItemPage({ it }: { it: Item }) {
         ) : null}
       </div>
     ) : null
-  const docs = docsOf(n)
+  const docs = [...docsOf(n)].sort((a, b) => String(b.t1).localeCompare(String(a.t1)) || b.d - a.d) // I289: the latest first
   const notes = docNotes(n, hidden ? thread[hidden]?.t : '') // T274 #4
   // B279: on the desktop the item itself stays at the top of the pane; the rest scrolls under it
   return (
@@ -362,23 +361,19 @@ export function ItemPage({ it }: { it: Item }) {
       {docs.length ? (
         <section className="flex flex-col gap-2">
           <SectionHead text="Documents" />
-          {docs.map((d) => (
-            <button
-              key={d.d}
-              data-act="doc-open"
-              data-d={d.d}
-              className="flex w-full items-center gap-3 rounded-xl border border-zinc-200 px-3 py-2.5 text-left hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-900"
-            >
-              <Icon n="doc" c="size-5 text-zinc-500 dark:text-zinc-400" />
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-[15px] font-medium">{d.title}</span>
-                <span className="block text-xs text-zinc-500 dark:text-zinc-400">
-                  D{d.d} · {plural(d.comments.length, 'comment')} · {when(d.t1)}
-                </span>
-              </span>
-              <Icon n="right" c="size-4 text-zinc-300 dark:text-zinc-600" />
-            </button>
+          {(U.docsAll.has(n) ? docs : docs.slice(0, 3)).map((d) => (
+            <DocCard key={d.d} d={d} />
           ))}
+          {docs.length > 3 ? (
+            <button
+              data-act="docs-all"
+              data-n={n}
+              className="-my-1 flex h-11 items-center gap-1 self-start rounded-lg px-2 text-sm font-medium text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10"
+            >
+              <Icon n={U.docsAll.has(n) ? 'chevup' : 'down'} c="size-4" sw="2" />
+              {U.docsAll.has(n) ? 'Show fewer' : `Show ${docs.length - 3} more`}
+            </button>
+          ) : null}
         </section>
       ) : null}
       {children.length || U.subFor === n ? (
