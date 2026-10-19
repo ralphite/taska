@@ -1818,6 +1818,9 @@ TELL  The user reads Taska only, often on a phone: never your terminal or chat. 
       (what you did, how you checked it, screenshots, plans, questions) goes into the item's messages.
       First line = the conclusion in one sentence; the page folds long messages to it. Then details, short,
       in Markdown, images inline (see `say` above). Don't post "starting now": the status already says doing.
+      Name items, documents and inputs by their code (B03, D2, r12): the page links each code and shows a card
+      about it on hover. A code alone means little to the user: the first time a message names one, add a few
+      words on what it is, e.g. "D2 (the release plan)".
 RULES Reuse existing items (/items?q=) instead of duplicating. Keep the user's wording. Never turn a
       suggestion into a decision: use propose/ask/block and wait. Commands with src=rN (or ack rN) mark that
       input handled; if an input is a question for you, answer it in the related item (or tell the user) and ack it.
@@ -1858,6 +1861,8 @@ Taska runs on this machine. You read and update it with curl; every reply is sho
    conclusion in one sentence**: the page folds long messages to it. Messages are Markdown:
    short paragraphs and lists, images inline with `![what it shows](f12-a.png)` after uploading
    (`curl -s BASE/api/file?name=a.png -H 'Content-Type: image/png' --data-binary @a.png`).
+   Name items, documents and inputs by code (B03, D2, r12), and the first time add a few words on what each is,
+   e.g. "D2 (the release plan)": the page turns codes into links with a card on hover, but a bare code means little.
 7. Items you create start as proposed until the user approves them. Never treat a suggestion as decided.
 """
 
@@ -4262,7 +4267,7 @@ __APP_HEAD__
   </footer>
 </div>
 
-<div id="tip" role="tooltip" hidden class="pointer-events-auto fixed top-0 left-0 z-[80] max-w-[260px] rounded-lg bg-zinc-900 px-2 py-1.5 text-[13px] leading-snug text-white opacity-0 shadow-lg shadow-black/20 transition-[opacity,translate] duration-[120ms] data-[on]:opacity-100 motion-reduce:transition-none dark:bg-zinc-100 dark:text-zinc-900"><span id="tipText"></span><span id="tipArrow" class="absolute size-2 rotate-45 bg-inherit"></span></div>
+<div id="tip" role="tooltip" hidden class="pointer-events-auto fixed top-0 left-0 z-[80] max-w-[260px] data-[card]:w-80 data-[card]:max-w-80 data-[card]:px-3 data-[card]:py-2.5 rounded-lg bg-zinc-900 px-2 py-1.5 text-[13px] leading-snug text-white opacity-0 shadow-lg shadow-black/20 transition-[opacity,translate] duration-[120ms] data-[on]:opacity-100 motion-reduce:transition-none dark:bg-zinc-100 dark:text-zinc-900"><span id="tipText"></span><span id="tipArrow" class="absolute size-2 rotate-45 bg-inherit"></span></div>
 <div id="vcBar" hidden role="toolbar" aria-label="On the selected text" class="fixed z-[65] flex rounded-full bg-zinc-900 p-1 shadow-lg ring-1 ring-black/10 dark:bg-zinc-100 dark:ring-white/10"><button id="cmtBtn" data-act="doc-comment-sel" hidden class="flex h-9 items-center gap-1.5 rounded-full pr-3.5 pl-2.5 text-sm font-semibold whitespace-nowrap text-white hover:bg-white/15 dark:text-zinc-900 dark:hover:bg-zinc-900/10"></button><button id="vcBtn" data-act="vc" class="flex h-9 items-center gap-1.5 rounded-full pr-3.5 pl-2.5 text-sm font-semibold whitespace-nowrap text-white hover:bg-white/15 data-on:bg-red-600 data-on:text-white dark:text-zinc-900 dark:hover:bg-zinc-900/10 dark:data-on:bg-red-600 dark:data-on:text-white"></button><button id="fixBtn" data-act="vc-fix" hidden aria-label="Correct: write the right words for the selected ones" class="flex h-9 items-center gap-1.5 rounded-full pr-3.5 pl-2.5 text-sm font-semibold whitespace-nowrap text-white hover:bg-white/15 dark:text-zinc-900 dark:hover:bg-zinc-900/10"></button></div>
 <div id="toast" hidden role="status" class="fixed inset-x-0 bottom-28 z-[60] mx-auto flex w-fit max-w-[92vw] lg:right-auto lg:bottom-5 lg:left-5 lg:mx-0 lg:max-w-md items-center gap-3 rounded-full bg-zinc-900 py-2 pr-4 pl-4 text-sm text-white shadow-lg has-[button]:py-1.5 has-[button]:pr-1.5 data-error:bg-red-600 data-error:text-white dark:bg-zinc-100 dark:text-zinc-900 dark:data-error:bg-red-600 dark:data-error:text-white"></div>
 
@@ -5207,7 +5212,34 @@ async function swipeEnd() {
 
 const docsOf = n => (S.docs || []).filter(d => d.n === n);
 const docById = d => (S.docs || []).find(x => x.d === d);
-function inlineMd(s, gid = '') {
+// F297: a code in the text (T12, D17, r360 or #360) is a link to what it names, with a card about it on hover.
+// A span, not a button: the text can sit inside a tappable card or row.
+const REF_CLS = 'cursor-pointer font-medium text-blue-600 hover:underline dark:text-blue-400';
+function refLink(c) {
+  if (/^[rR#]\d+$/.test(c)) { const r = 'r' + c.slice(1); return byR.has(r) ? `<span role="link" tabindex="0" data-act="go-input" data-id="${r}" data-ref="${r}" class="${REF_CLS}">${c}</span>` : null; }
+  const n = Number(c.slice(1));
+  if (c[0] === 'D') return docById(n) ? `<span role="link" tabindex="0" data-act="docs-go" data-d="${n}" data-ref="${c}" class="${REF_CLS}">${c}</span>` : null;
+  const it = byN.get(n);
+  return it && LETTER[it.type] === c[0] ? `<span role="link" tabindex="0" data-act="goto" data-n="${n}" data-ref="${c}" class="${REF_CLS}">${c}</span>` : null;
+}
+const clip = (t, k) => { t = String(t || '').replace(/[#>*`_\[\]()!|-]+/g, ' ').replace(/\s+/g, ' ').trim(); return t.length > k ? t.slice(0, k) + '…' : t; };
+function refCard(ref) {  // what the hover card says: kind, state and time on top, the name, then the start of it
+  const top = parts => `<div class="text-[11px] font-medium opacity-70">${parts.filter(Boolean).map(esc).join(' · ')}</div>`;
+  const name = t => `<div class="mt-0.5 font-semibold">${esc(t)}</div>`, gist = t => t ? `<div class="mt-1 line-clamp-4 opacity-80">${esc(t)}</div>` : '';
+  if (/^r\d+$/.test(ref)) {
+    const r = byR.get(ref); if (!r) return '';
+    const on = r.scope && byN.get(r.scope);
+    return top([`Input ${rcode(r.id)}`, r.by === 'you' ? 'You' : whoName(r.by), when(r.t), on && `on ${code(r.scope)}`]) + gist(clip(r.text || plural(r.files.length, 'file'), 220));
+  }
+  if (ref[0] === 'D') {
+    const d = docById(Number(ref.slice(1))); if (!d) return '';
+    const on = byN.get(liveN(d.n));
+    return top([`Document ${ref}`, on && `on ${code(on.n)}`, `updated ${when(d.t1 || d.t0)}`]) + name(d.title || 'Untitled') + gist(clip(String(d.md || '').split('\n').slice(1).filter(l => !/^\s*#/.test(l)).join(' '), 200));
+  }
+  const it = byN.get(Number(ref.slice(1))); if (!it) return '';
+  return top([`${it.type[0].toUpperCase() + it.type.slice(1)} ${code(it.n)}`, it.pri, statusName(it), it.archived && 'Archived', needsYou(it) && 'Needs you']) + name(it.title) + gist(clip(it.body, 200));
+}
+function inlineMd(s, gid = '', refs = true) {
   const codes = [], links = [];  // `code` and finished links are set aside until the rest is done
   const keep = html => `\u0001${links.push(html) - 1}\u0001`;
   const emph = t => t.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>').replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<em>$2</em>');
@@ -5218,7 +5250,8 @@ function inlineMd(s, gid = '') {
       if (gid) { if (!groups.has(gid)) groups.set(gid, []); groups.get(gid).push(src); }
       return keep(`<button data-act="view" data-g="${gid}" data-f="${src}" class="my-1 block max-w-full"><img src="${P}f/${encodeURIComponent(src)}" alt="${alt}" loading="lazy" class="max-h-96 max-w-full rounded-lg border border-zinc-200 dark:border-zinc-700"></button>`);
     })
-    .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, (_, t, url) => keep(`<a href="${url}" target="_blank" rel="noopener" class="text-blue-600 underline underline-offset-2 dark:text-blue-400">${emph(t)}</a>`)))
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, (_, t, url) => keep(`<a href="${url}" target="_blank" rel="noopener" class="text-blue-600 underline underline-offset-2 dark:text-blue-400">${emph(t)}</a>`))
+    .replace(/(^|[^\w\/=&?.#-])([FBITRD]\d{1,5}|r\d{1,6}|#\d{1,6})(?!\w)/g, (m, pre, c) => { const l = refs && refLink(c); return l ? pre + keep(l) : m; }))  // not inside a web address
     // A bare web address becomes a link wherever it stands, also right after Chinese text or punctuation (F76). It
     // ends at a space, a bracket or any character a URL can't hold; final punctuation stays outside the link.
     .replace(/https?:\/\/(?:&amp;|[A-Za-z0-9\-._~:/?#@!$+,;=%])+/g, m => {  // the text is escaped: & only as &amp;
@@ -5241,7 +5274,7 @@ function choiceHtml(labels, multi, n, base, done = null) {  // done: the labels 
     const i = base + k, on = done ? done.includes(l.trim()) : picked.has(i);
     return `<button ${n ? `data-act="choice" data-n="${n}" data-i="${i}" data-multi="${multi ? 1 : ''}"` : 'disabled'} aria-pressed="${on}" class="group flex min-h-11 w-full items-center gap-3 rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-left text-[15px] leading-snug aria-pressed:border-blue-500 aria-pressed:bg-blue-50 dark:border-zinc-700 dark:bg-zinc-900 dark:aria-pressed:border-blue-400 dark:aria-pressed:bg-blue-400/10 ${n ? 'hover:border-zinc-300 hover:bg-zinc-50 dark:hover:border-zinc-600 dark:hover:bg-zinc-800/70' : ''} ${done && !on ? 'opacity-50' : ''}">
       <span class="grid size-5 shrink-0 place-items-center border-2 ${multi ? 'rounded-md' : 'rounded-full'} border-zinc-300 group-aria-pressed:border-blue-600 group-aria-pressed:bg-blue-600 group-aria-pressed:text-white dark:border-zinc-600 dark:group-aria-pressed:border-blue-400 dark:group-aria-pressed:bg-blue-400 dark:group-aria-pressed:text-zinc-900">${ico('check', 'size-3.5 invisible group-aria-pressed:visible', '3')}</span>
-      <span class="min-w-0 flex-1">${inlineMd(l)}</span>${n && i < 9 ? KBD(i + 1) : ''}</button>`;
+      <span class="min-w-0 flex-1">${inlineMd(l, '', false)}</span>${n && i < 9 ? KBD(i + 1) : ''}</button>`;
   }).join('')}</div>`;
 }
 const hasChoices = text => String(text || '').split('\n').some(l => CHOICE.test(l));
@@ -5314,7 +5347,7 @@ function msgHtml(x, gid, form = 0, done = null, ver = null, m = {}) {
   const strip = (files, g, size) => files?.length ? fileRows(files, g, size, you ? 'items-end max-w-full [&>div]:max-w-full' : 'mt-3') : '';  // T230: pictures and voice notes in their own rows
   if (you && y.text && y.text.trim().split('\n').every(l => /^\s*✓/.test(l)) && !src?.files?.length) return '';  // T274 #27: the picks show on the question
   if (you) return `<div ${x.src ? `data-src="${x.src}"` : ''} class="group flex scroll-mb-4 flex-col items-end gap-1 rounded-2xl transition-colors duration-700 ${ver?.old ? 'opacity-60' : ''}">
-      ${y.text ? `<div ${voiceAttr(src)} class="max-w-[85%] rounded-2xl rounded-tr-md bg-blue-600 px-4 py-2.5 text-[15px] leading-relaxed text-white dark:bg-blue-500 [&_a]:text-white [&_a]:decoration-white/60 [&_blockquote]:border-white/50 [&_blockquote]:text-white/85 [&_code]:bg-white/15 [&_code]:text-white [&_pre]:bg-white/15 [&_pre]:text-white [&_mark]:text-zinc-900 [&_button[data-act=more-msg]]:text-white">${ver?.old ? `<div class="line-clamp-2">${msgText(y, gid)}</div>` : msgText(y, gid)}</div>` : ''}
+      ${y.text ? `<div ${voiceAttr(src)} class="max-w-[85%] rounded-2xl rounded-tr-md bg-blue-600 px-4 py-2.5 text-[15px] leading-relaxed text-white dark:bg-blue-500 [&_a]:text-white [&_a]:decoration-white/60 [&_[data-ref]]:text-white [&_[data-ref]]:underline [&_[data-ref]]:decoration-white/60 [&_[data-ref]]:underline-offset-2 [&_blockquote]:border-white/50 [&_blockquote]:text-white/85 [&_code]:bg-white/15 [&_code]:text-white [&_pre]:bg-white/15 [&_pre]:text-white [&_mark]:text-zinc-900 [&_button[data-act=more-msg]]:text-white">${ver?.old ? `<div class="line-clamp-2">${msgText(y, gid)}</div>` : msgText(y, gid)}</div>` : ''}
       ${ver?.old ? '' : strip(src?.files?.filter(f => !(f.mime || '').startsWith('audio/')), gid + 't' + x.id) + voiceLine(src?.files)}
       <span class="px-1 text-[11px] text-zinc-400 dark:text-zinc-500">You · ${ver?.old ? 'earlier version · ' : ver?.label ? ver.label + ' · ' : ''}${when(x.t)}${x.edited && !ver?.old ? ` · ${src?.history?.length ? `<button data-act="input-history" data-id="${src.id}" title="See what changed" class="relative underline decoration-dotted underline-offset-2 after:absolute after:-inset-3 hover:text-zinc-700 dark:hover:text-zinc-300">edited ${when(x.edited)}</button>` : `edited ${when(x.edited)}`}` : ''}${src?.tr_wait ? ' · <span class="animate-pulse text-blue-600 dark:text-blue-400">transcribing the voice note…</span>' : ''}${m.read ? ` · <span title="${esc(m.read.names.join(', '))} read it ${when(new Date(m.read.t).toISOString())}" class="inline-flex items-center gap-0.5 font-medium text-zinc-500 dark:text-zinc-400">${ico('check', 'size-3', '2.5')}Read by ${esc(m.read.names.join(', '))}</span>` : ''}</span>${src && !ver?.old && !src.moved && !src.deleted ? `<div class="flex gap-0.5 lg:opacity-0 lg:group-hover:opacity-100 lg:focus-within:opacity-100"><button data-act="input-edit" data-id="${src.id}" class="${DC_BTN}">${ico('pencil', 'size-3.5')}Edit</button><button data-act="input-append" data-id="${src.id}" class="${DC_BTN}">${ico('plus', 'size-3.5')}Add more</button><button data-act="input-more" data-id="${src.id}" aria-label="More for ${rcode(src.id)}" class="${DC_BTN}">${ico('more', 'size-3.5')}</button></div>` : ''}</div>`;  // B265: edit it right here
   if (x.kind === 'withdraw') return `<div class="flex items-start gap-2 px-1 text-[13px] leading-snug text-zinc-500 dark:text-zinc-400">${ico('undo', 'mt-0.5 size-3.5 shrink-0')}
@@ -9833,10 +9866,11 @@ function tipText(el) {
   return el.dataset.tip || (!el.textContent.trim() && el.getAttribute('aria-label')) || '';
 }
 function tipShow(el, quick) {
-  const text = tipText(el);
+  const card = el.dataset.ref ? refCard(el.dataset.ref) : '', text = card || tipText(el);  // F297: a code's card
   if (!text || !el.isConnected) return;
   const tip = $('tip'), parts = text.split(' · '), key = parts.length > 1 && /^(\S{1,4}|G [A-Z]|Esc)$/.test(parts.at(-1)) ? parts.pop() : '';
-  $('tipText').innerHTML = esc(parts.join(' · ')) + (key ? `<kbd class="ml-1.5 inline-grid h-[18px] min-w-[18px] place-items-center rounded px-1 font-sans text-[11px] font-semibold ring-1 ring-current/30">${esc(key)}</kbd>` : '');
+  tip.toggleAttribute('data-card', !!card);
+  $('tipText').innerHTML = card || esc(parts.join(' · ')) + (key ? `<kbd class="ml-1.5 inline-grid h-[18px] min-w-[18px] place-items-center rounded px-1 font-sans text-[11px] font-semibold ring-1 ring-current/30">${esc(key)}</kbd>` : '');
   TIP.el = el; tip.hidden = false; tip.removeAttribute('data-on'); tip.style.transition = quick ? 'none' : '';
   const r = el.getBoundingClientRect(), w = tip.offsetWidth, h = tip.offsetHeight, gap = 8, pad = 8;
   let side = el.dataset.tipSide || (el.closest('#drawer, #rail') ? 'right' : el.closest('header, #goStrip') ? 'bottom' : 'top');
@@ -9859,7 +9893,7 @@ function tipHide() {
   TIP.el.removeAttribute('aria-describedby'); TIP.el = null; TIP.closedAt = Date.now();
   $('tip').hidden = true; $('tip').removeAttribute('data-on');
 }
-const tipTarget = t => t?.closest?.('[data-tip], [title], button[aria-label], a[aria-label]');
+const tipTarget = t => t?.closest?.('[data-ref], [data-tip], [title], button[aria-label], a[aria-label]');
 // T229 #1: on a touch screen, holding a mark with a tip (a row's agent) says it in a toast
 document.addEventListener('pointerdown', e => {
   const el = e.pointerType !== 'mouse' && e.target.closest?.('#list [data-tip]');
