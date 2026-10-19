@@ -5652,6 +5652,7 @@ function openDoc(d) {
     return;
   }
   Object.assign(U, {peek: null, doc: d, docReply: null, docNew: null, docEdit: false, docText: null, docSel: new Set(), docQuote: null, docCircle: false});
+  U.docType = !!(String(draftStore()[`doc ${d}`] || '').trim() || U.parked[`doc ${d}`]?.length);  // B298: what you wrote or said here and did not send shows in the box at once
   pickBack(d);
   U.docDrafts.note = '';
   renderDoc({focus: true});
