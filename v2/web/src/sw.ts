@@ -40,9 +40,7 @@ self.addEventListener('fetch', (e) => {
   }
   if (req.mode === 'navigate') {
     // the page: from the network; while the server is away, the kept copy, which waits and sends later
-    e.respondWith(
-      fetch(req).catch(async () => (await caches.match('/index.html')) || Response.error()),
-    )
+    e.respondWith(fetch(req).catch(async () => (await caches.match('/index.html')) || Response.error()))
   }
 })
 
@@ -63,7 +61,7 @@ const WORDS: Record<string, string> = {
 self.addEventListener('push', (e) => {
   e.waitUntil(
     (async () => {
-      let list: Need[] = []
+      let list: Need[]
       try {
         list = (await (await fetch('/api/needs', { credentials: 'include', cache: 'no-store' })).json()) as Need[]
       } catch {
@@ -73,7 +71,11 @@ self.addEventListener('push', (e) => {
       const say = (x: Need) => `${x.code} ${WORDS[x.kind] || 'needs you'} · ${x.ptitle || x.project}`
       const first = list[0]
       await self.registration.showNotification(
-        one ? `${one.code} ${WORDS[one.kind] || 'needs you'}` : list.length ? `${list.length} things need you` : 'Taska',
+        one
+          ? `${one.code} ${WORDS[one.kind] || 'needs you'}`
+          : list.length
+            ? `${list.length} things need you`
+            : 'Taska',
         {
           body: one
             ? `${one.title} · ${one.ptitle || one.project}`

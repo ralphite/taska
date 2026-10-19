@@ -14,6 +14,13 @@ export default tseslint.config(
     rules: {
       ...reactHooks.configs.recommended.rules,
       'react-refresh/only-export-components': 'off',
+      // The page's model is plain objects outside React (lib/state.ts), read while drawing and changed by actions;
+      // the React Compiler's purity rules assume the opposite, and no compiler runs here.
+      'react-hooks/purity': 'off',
+      'react-hooks/globals': 'off',
+      'react-hooks/immutability': 'off',
+      'react-hooks/refs': 'off',
+      'no-control-regex': 'off', // the Markdown renderer marks spans with control characters
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
     },
   },
