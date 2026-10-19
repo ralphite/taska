@@ -91,7 +91,7 @@ flowchart LR
 
 - **Needs you, first.** The list opens on what's waiting on you. The action sits right on the row: Accept,
   Approve, Answer or Reply. **Go through** takes you through all of them, one card at a time.
-- **Built for the phone.** Swipe right to move an item forward and left for the rest. Long press for a preview.
+- **Built for the phone.** Swipe right to move an item forward and left for the rest. Tap a row to open it.
   Every quick action can be undone.
 - **A desk on the desktop.** On a wide screen, Taska opens in three panes: your projects, the list, and the item
   you are reading. Hover a row for its actions, and triage from the keyboard: `J`/`K` to move, `A` to accept or
