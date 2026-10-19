@@ -53,8 +53,7 @@ import { VW, viewerAct } from '../lib/viewer'
 import { searchMode, openItem, closeDrawer } from '../lib/nav'
 import { writeURL } from '../lib/url'
 import { addFiles } from '../lib/outbox'
-import { projDraft } from '../lib/drafts'
-import { Icon, Kbd, ProjTile, DraftMark } from './ui'
+import { Icon, Kbd, ProjTile } from './ui'
 import { List } from './List'
 import { InputsView } from './Inputs'
 import { DetailView } from './Detail'
@@ -154,7 +153,6 @@ function SideList() {
                   <span className="min-w-0 flex-1 truncate text-[17px] font-medium group-aria-[current=page]:font-semibold">
                     {titleOf(p)}
                   </span>
-                  {projDraft(p.name) ? <DraftMark small /> : null}
                   {p.needs ? (
                     <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900 dark:bg-amber-400/15 dark:text-amber-200">
                       {p.needs} need you
@@ -187,7 +185,6 @@ function SideList() {
                 <span className={`min-w-0 flex-1 truncate text-sm ${cur ? 'font-semibold' : 'font-medium'}`}>
                   {titleOf(p)}
                 </span>
-                {projDraft(p.name) ? <DraftMark small /> : null}
                 {p.needs ? (
                   <span
                     title={`${plural(p.needs, 'item')} need you`}
