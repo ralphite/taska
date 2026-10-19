@@ -36,6 +36,7 @@ import {
   projTitle,
   reduceMotion,
   searchCount,
+  statusIsView,
   searchWords,
   sideProjects,
   tabCount,
@@ -576,7 +577,7 @@ const filtersSet = (): [string, ReactNode][] =>
           ]
         : null,
       U.when !== 'all' ? ['when', WHEN[U.when as 'now']] : null,
-      U.status !== 'all'
+      U.status !== 'all' && !statusIsView()
         ? [
             'status',
             U.tab === 'rules'

@@ -2,10 +2,29 @@ import { describe, expect, it } from 'vitest'
 import { render, screen, within } from '@testing-library/react'
 import { List } from './List'
 import { ask, item, load } from '../test/fixture'
+import { BEHAVIOUR } from '../lib/behaviour'
+import { U } from '../lib/state'
 import type { Wait } from '../lib/types'
 
 describe('the list', () => {
-  it('shows what needs you first, with its one action, then the agent queue and Later', () => {
+  it('F291: one tree with preset views; a subitem hangs under its item', () => {
+    load([
+      item(1, { title: 'Parent work' }),
+      item(2, { title: 'Child work', parent: 1 }),
+      item(3, { title: 'Ship it', status: 'review' }),
+      item(4, { title: 'Done already', status: 'done', t1: new Date().toISOString() }),
+    ])
+    const { container } = render(<List />)
+    const views = [...container.querySelectorAll('[data-views] [data-v]')].map((b) => b.getAttribute('data-v'))
+    expect(views).toEqual(['all', 'wait', 'queued', 'later', 'closed'])
+    const rows = [...container.querySelectorAll('article[data-n]')].map((a) => a.getAttribute('data-n'))
+    expect(rows).not.toContain('4') // finished work is in the Finished view
+    expect(rows.indexOf('2')).toBe(rows.indexOf('1') + 1)
+    expect(screen.getByRole('button', { name: /Accept/ })).toHaveAttribute('data-v', 'accept')
+  })
+  it('with the bands: what needs you first, with its one action, then the agent queue and Later', () => {
+    BEHAVIOUR.treeList = false
+    U.status = 'all'
     load([
       item(1, { title: 'Pick a colour', wait: ask(1, 'Which?\n- ( ) Red\n- ( ) Blue') as unknown as Wait }),
       item(2, { title: 'Ship it', status: 'review' }),
@@ -20,6 +39,7 @@ describe('the list', () => {
     expect(screen.getByRole('button', { name: /Answer/ })).toHaveAttribute('data-act', 'row-act')
     expect(screen.getByRole('button', { name: /Accept/ })).toHaveAttribute('data-v', 'accept')
     expect(screen.getByText('Write the docs')).toBeInTheDocument()
+    BEHAVIOUR.treeList = true
   })
   it('says how to start when a project has nothing yet', () => {
     load([])

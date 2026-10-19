@@ -55,6 +55,7 @@ import {
 } from '../lib/state'
 import type { Item } from '../lib/types'
 import { LIST, holding, listEnter, listLeave, listSig } from '../lib/listhold'
+import { BEHAVIOUR } from '../lib/behaviour'
 import { hasDraft } from '../lib/drafts'
 import { groups } from '../lib/markdown'
 import { net, op, optimistic, notSaved, pushUndo, change } from '../lib/data'
@@ -376,7 +377,7 @@ export function ItemRow({
 const PAD = ['pl-4', 'pl-10', 'pl-16', 'pl-22', 'pl-28', 'pl-34', 'pl-40', 'pl-46', 'pl-52']
 
 // A row that waits on you: an amber bar, what the agent said in one line, and the one action on the thumb side.
-export function NeedsRow({ it }: { it: Item }) {
+export function NeedsRow({ it, depth = 0 }: { it: Item; depth?: number }) {
   useArea('list') // drawn again while the list holds still, to show the line of the one you acted on (B124)
   const held = U.settle.get(it.n)
   if (held) return <HeldRow it={byN.get(it.n) || it} said={held.said} />
@@ -387,7 +388,7 @@ export function NeedsRow({ it }: { it: Item }) {
       data-act="open"
       data-n={it.n}
       {...rowCur(it)}
-      className={`group relative flex cursor-pointer items-center gap-2.5 py-2.5 pr-3 pl-4 ${ROW_TINT}`}
+      className={`group relative flex cursor-pointer items-center gap-2.5 py-2.5 pr-3 ${PAD[Math.min(depth, 8)]} ${ROW_TINT}`}
     >
       <span className="absolute inset-y-0 left-0 w-1 bg-amber-500 dark:bg-amber-400" />
       <span className="self-start">
@@ -409,7 +410,9 @@ export function NeedsRow({ it }: { it: Item }) {
               <Soft>Later</Soft>
             </span>
           ) : null}
-          {it.parent ? <span className="shrink-0 text-zinc-500 dark:text-zinc-400">↳ {code(it.parent)}</span> : null}
+          {it.parent && !depth ? (
+            <span className="shrink-0 text-zinc-500 dark:text-zinc-400">↳ {code(it.parent)}</span>
+          ) : null}
           <span className="min-w-0 truncate font-normal text-zinc-500 dark:text-zinc-400">
             <Hit text={ex} />
           </span>
@@ -577,15 +580,111 @@ function NeedsBand({ needs, going }: { needs: Item[]; going: Go | null }) {
     </>
   )
 }
-function Tree({ group, band = '' }: { group: Item[]; band?: string }) {
+function Tree({ group, band = '', needs = false }: { group: Item[]; band?: string; needs?: boolean }) {
   const inG = new Set(group.map((it) => it.n)),
     out: ReactNode[] = []
   const add = (it: Item, d: number) => {
-    out.push(<ItemRow key={it.n} it={it} depth={d} group={group} band={band} />)
+    out.push(
+      needs && needsYou(it) ? (
+        <NeedsRow key={it.n} it={it} depth={d} />
+      ) : (
+        <ItemRow key={it.n} it={it} depth={d} group={group} band={band} />
+      ),
+    )
     if (!U.folded.has(it.n) && d < 8) for (const k of group) if (k.parent === it.n) add(k, d + 1)
   }
   for (const it of group) if (!(it.parent && inG.has(it.parent))) add(it, 0)
   return <>{out}</>
+}
+
+// ---------------------------------------------------------------- F291: one tree, and preset views on top
+const VIEWS: [string, string][] = [
+  ['all', 'All'],
+  ['wait', 'Needs you'],
+  ['queued', 'Queue'],
+  ['later', 'Later'],
+  ['closed', 'Finished'],
+]
+const unfinished = (rows: Item[]) => (U.status === 'all' ? rows.filter((it) => !CLOSED(it.status)) : rows)
+function viewCount(v: string) {
+  const was = U.status
+  U.status = v
+  try {
+    return unfinished(visible('items')).length
+  } finally {
+    U.status = was
+  }
+}
+function ViewBar() {
+  return (
+    <div
+      data-views
+      className="flex h-12 [scrollbar-width:none] items-center gap-1 overflow-x-auto border-b border-zinc-200 px-2.5 dark:border-zinc-800"
+    >
+      {VIEWS.map(([v, label]) => {
+        const n = viewCount(v)
+        return (
+          <button
+            key={v}
+            data-act="set-filter"
+            data-k="status"
+            data-v={v}
+            aria-pressed={U.status === v}
+            className="flex h-8 shrink-0 items-center gap-1.5 rounded-full bg-zinc-100 px-2.5 text-[13px] font-medium text-zinc-700 hover:bg-zinc-200 aria-pressed:bg-zinc-900 aria-pressed:text-white dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700 dark:aria-pressed:bg-zinc-100 dark:aria-pressed:text-zinc-900"
+          >
+            {v === 'wait' && n ? <span className="size-2 rounded-full bg-amber-500 dark:bg-amber-400" /> : null}
+            {label}
+            <span className="font-mono text-[11px] tabular-nums opacity-60">{n}</span>
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+function treeBody(all: Item[]): { body: ReactNode; shown: number } {
+  // the order agents take the work: in progress first, now before later, priority, your order, the oldest first;
+  // finished work the latest first
+  const rows =
+    U.status === 'closed'
+      ? [...all].sort((a, b) => String(b.t1).localeCompare(String(a.t1)) || b.n - a.n)
+      : U.status === 'wait'
+        ? [...all].sort(needsOrder) // what needs you, the newest first (B238)
+        : unfinished(all).sort(queueOrder)
+  return {
+    body: (
+      <>
+        <ViewBar />
+        {U.status === 'wait' && rows.length ? (
+          <div className="flex h-11 items-center border-b border-zinc-100 pr-1 pl-4 text-[13px] text-zinc-500 dark:border-zinc-800/70 dark:text-zinc-400">
+            One at a time, in a card
+            <GoThroughBtn />
+          </div>
+        ) : null}
+        {rows.length ? (
+          <Tree group={rows} needs />
+        ) : searchWords().length || U.type !== 'all' || U.pri !== 'all' ? (
+          <Empty>
+            No matching items
+            <span className="mt-3 flex flex-col">
+              <SearchHints shown={0} />
+            </span>
+            <button data-act="reset" className="mt-3 h-11 text-blue-600 hover:underline dark:text-blue-400">
+              Clear search and filters
+            </button>
+          </Empty>
+        ) : (
+          <Empty>
+            {U.status === 'wait'
+              ? 'Nothing needs you.'
+              : U.status === 'closed'
+                ? 'Nothing finished yet.'
+                : 'Nothing here.'}
+          </Empty>
+        )}
+      </>
+    ),
+    shown: rows.length,
+  }
 }
 
 // ---------------------------------------------------------------- search hints (A9, B15, F196)
@@ -776,6 +875,7 @@ function listBody(): { body: ReactNode; shown: number } {
       ),
       shown: 0,
     }
+  if (BEHAVIOUR.treeList && U.tab === 'items' && U.sort === 'all') return treeBody(rows)
   if (!rows.length && filtered())
     return {
       body: (

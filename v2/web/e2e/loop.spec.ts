@@ -1,14 +1,21 @@
 // The loop between you and your agents, as the page shows it (D20 sections 3 and 4).
 import { expect, test } from '@playwright/test'
-import { LOOP, isDesk, open, project } from './seed'
+import { LOOP, isDesk, open, project, treeList } from './seed'
 
 test('what needs you comes first, each with its one action', async ({ page, request }) => {
   const p = await project(request, LOOP)
   await open(page, p)
-  const zones = await page
-    .locator('#list [data-zone]')
-    .evaluateAll((els) => els.map((e) => e.getAttribute('data-zone')))
-  expect(zones.slice(0, 3)).toEqual(['needs', 'queue', 'later'])
+  if (await treeList(page)) {
+    const views = await page
+      .locator('#list [data-views] [data-v]')
+      .evaluateAll((els) => els.map((e) => e.getAttribute('data-v')))
+    expect(views).toEqual(['all', 'wait', 'queued', 'later', 'closed'])
+  } else {
+    const zones = await page
+      .locator('#list [data-zone]')
+      .evaluateAll((els) => els.map((e) => e.getAttribute('data-zone')))
+    expect(zones.slice(0, 3)).toEqual(['needs', 'queue', 'later'])
+  }
   const needs = page.locator('#list [data-act="row-act"]')
   await expect(needs).toHaveCount(3)
   const kinds = await needs.evaluateAll((els) => els.map((e) => e.getAttribute('data-v')).sort())

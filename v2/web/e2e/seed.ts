@@ -68,3 +68,11 @@ export async function open(page: Page, p: Project, path = '') {
     .first()
     .waitFor()
 }
+/** F291 (v2): Items is one tree with preset views on top; the old app shows bands. -> whether this page has the views */
+export async function treeList(page: Page) {
+  return (await page.locator('#list [data-views]').count()) > 0
+}
+/** Show what needs you: the Needs you view (v2) or the band at the top (the old app). */
+export async function needsView(page: Page) {
+  if (await treeList(page)) await page.locator('#list [data-views] [data-v="wait"]').click()
+}

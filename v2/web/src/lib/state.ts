@@ -477,8 +477,10 @@ export function hay(it: Item) {
   return h
 }
 export const searchWords = () => U.q.trim().toLowerCase().split(/\s+/).filter(Boolean)
+/** F291: on Items the status is the preset view the list shows, not a filter laid over it. */
+export const statusIsView = () => BEHAVIOUR.treeList && U.tab === 'items' && U.sort === 'all'
 export const filtered = () =>
-  !!(U.q.trim() || U.type !== 'all' || U.when !== 'all' || U.status !== 'all' || U.pri !== 'all')
+  !!(U.q.trim() || U.type !== 'all' || U.when !== 'all' || (U.status !== 'all' && !statusIsView()) || U.pri !== 'all')
 export const inputMatch = (r: Input, words: string[]) =>
   words.every((w) => (r.id + ' ' + r.text).toLowerCase().includes(w))
 
