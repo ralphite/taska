@@ -5394,6 +5394,7 @@ function mdHtml(text, gid = '', form = 0, done = null) {
         if (!r.c) return blockHtml({kind: 'list', text: r.ls.join('\n')}, false, gid);
         const multi = r.ls[0].match(CHOICE)[1] === '[', base = labels.length;
         labels.push(...r.ls.map(l => l.replace(CHOICE, '')));
+        if (form && !done && U.choice?.n !== form) { const kept = choiceKept(form), on = labels.flatMap((l, i) => kept.includes(l) ? [i] : []); if (on.length) U.choice = {n: form, picked: new Set(on)}; }  // B301: ticked before a reload
         return choiceHtml(labels.slice(base), multi, form, base, done);
       }).join('');
     }
@@ -6258,8 +6259,9 @@ function inputCard(r, pane = false) {
   const spark = org && !note && shown.some(n => did[n]) ? `<span class="grid h-8 shrink-0 place-items-center text-zinc-400 dark:text-zinc-500">${ico('sparkle', 'size-3.5')}</span>` : '';  // the organizer's mark, on the chips' first line
   const chips = shown.map(n => `<button data-act="goto" data-n="${n}" class="${HIT} flex h-8 max-w-full min-w-0 items-center gap-1.5 rounded-lg bg-zinc-100 px-2 text-[13px] hover:bg-zinc-200/70 dark:bg-zinc-800 dark:hover:bg-zinc-700">${did[n] ? `<span class="shrink-0 text-zinc-500 dark:text-zinc-400">${esc(did[n])}</span>` : ''}<span class="font-mono text-xs font-bold ${TYPE_TEXT[byN.get(n).type]}">${code(n)}</span><span class="truncate">${esc(byN.get(n).title)}</span></button>`).join('');
   const [now, more] = inputActs(r), parts = [now, more].filter(Boolean);  // T274 #16: on the line with what became of it, at its right
+  const dk = ['edit', 'append'].find(m => !(U.amend?.id === r.id && U.amend.mode === m) && String(draftsOf(S.project)[`${m} ${r.id}`] || '').trim());  // B301: an edit you did not save says so, and goes on from here
   return `<article data-r="${r.id}" class="${pane ? 'rounded-xl transition-colors duration-700' : 'border-b border-zinc-100 px-4 py-2 transition-colors duration-700 dark:border-zinc-800/70'}"><div class="min-w-0">
-    <div class="flex min-h-5 items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">${pane ? '' : `<span class="shrink-0 font-mono">${rcode(r.id)}</span><span class="shrink-0 whitespace-nowrap">${when(r.t)}</span>`}${r.from === 'rules' ? '<span class="font-medium">as a rule</span>' : ''}
+    <div class="flex min-h-5 items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">${pane ? '' : `<span class="shrink-0 font-mono">${rcode(r.id)}</span><span class="shrink-0 whitespace-nowrap">${when(r.t)}</span>`}${r.from === 'rules' ? '<span class="font-medium">as a rule</span>' : ''}${dk ? `<button data-act="input-${dk}" data-id="${r.id}" title="Not saved yet: go on with it" class="${HIT} shrink-0">${DRAFT_MARK(true)}</button>` : ''}
       ${scope ? `<button data-act="goto" data-n="${scope.n}" class="relative min-w-0 truncate text-blue-600 after:absolute after:inset-x-0 after:-inset-y-3.5 hover:underline dark:text-blue-400">↳ ${code(scope.n)} ${esc(scope.title)}</button>` : ''}
       <span class="ml-auto flex shrink-0 items-center gap-1 font-medium lg:hidden ${tone}">${icon}${label}</span>${more ? `<span class="-my-2 -mr-2 flex shrink-0 items-center lg:hidden">${more}</span>` : ''}</div>
     <div data-hit ${fold ? `data-act="more-input" data-expand data-id="${r.id}"` : ''} ${voiceAttr(r)} class="mt-1.5 rounded-2xl rounded-tr-md bg-blue-50 px-3.5 py-2 text-[15px] leading-relaxed text-zinc-900 dark:bg-blue-400/10 dark:text-zinc-100 ${fold ? 'cursor-pointer' : ''}">
@@ -6566,7 +6568,7 @@ async function send() {
     ? [...U.choice.picked].sort((a, c) => a - c).map(i => '✓ ' + (U.choiceLabels[n] || [])[i]).join('\n') : '';
   const text = [ch, $('text').value.trim()].filter(Boolean).join('\n\n');
   if (!text && !U.files.length) return;
-  if (ch) U.choice = null;
+  if (ch) { U.choice = null; keepChoice(); }
   U.note = null;
   const job = outboxPush({text, files: U.files, scope: n ? code(n) : null, from: !n && ruleMode() ? 'rules' : null});
   unsendable(job);
@@ -7236,6 +7238,12 @@ function draftStore(change) {
     if (change) { change(all); localStorage.setItem(key, JSON.stringify(all)); }
     return all;
   } catch (_) { return {}; }
+}
+// B301: the choices you ticked and did not send yet come back after a reload, by their words (a changed question drops them)
+const choiceKept = n => { try { const x = JSON.parse(localStorage.getItem('taska.choice.' + S.project) || 'null'); return x?.n === n ? x.picked || [] : []; } catch (_) { return []; } };
+function keepChoice() {
+  const c = U.choice, labels = c && U.choiceLabels[c.n] || [];
+  try { if (c?.picked.size) localStorage.setItem('taska.choice.' + S.project, JSON.stringify({n: c.n, picked: [...c.picked].map(i => labels[i]).filter(Boolean)})); else localStorage.removeItem('taska.choice.' + S.project); } catch (_) {}
 }
 function saveDraft() { const k = U.draftKey, v = $('text').value; if (k) draftStore(all => { if (v.trim()) all[k] = v; else delete all[k]; }); draftMarks(); }
 // T113 A10, B11, B24: every tab of this browser shows the same drafts. What you write in one tab shows in the others as
@@ -8061,6 +8069,7 @@ const ACT = {
     if (U.choice?.n !== n) U.choice = {n, picked: new Set()};
     const p = U.choice.picked;
     if (b.dataset.multi) p.has(i) ? p.delete(i) : p.add(i); else { p.clear(); p.add(i); }
+    keepChoice();
     if (U.peek === n && !$('overlay').hidden) { const top = $('dlgBody').scrollTop; peek(n, {focus: false}); $('dlgBody').scrollTop = top; }
     else { renderDetail(); renderComposer(); }  // the box says what goes with your words, and can send it (B164)
   },
@@ -8077,7 +8086,7 @@ const ACT = {
         $('text').value = ''; U.files = []; saveDraft(); grow(); flushOutbox();
       } else rid = (await save({op: 'input', text: picks, scope: code(n)}, () => ACT['choice-send'](b))).res[0].split(' ')[1];
       const said = `Answer sent to ${code(n)}${note || files.length ? ' with your note' : ''}`;  // where it went (B155)
-      U.choice = null; if (U.peek === n) advance(n, said); else { toast(said); showSent(rid, code(n)); } if (desk() && U.go && U.open === n && U.go.list.includes(n)) advanceDesk(n, 'Answered');  // only an item of the walk moves it on (T113 A13)
+      U.choice = null; keepChoice(); if (U.peek === n) advance(n, said); else { toast(said); showSent(rid, code(n)); } if (desk() && U.go && U.open === n && U.go.list.includes(n)) advanceDesk(n, 'Answered');  // only an item of the walk moves it on (T113 A13)
     } catch (_) {}
   },
   'more-msg': b => {
@@ -10096,6 +10105,7 @@ new ResizeObserver(() => { if ($('overlay').dataset.above && !$('overlay').hidde
   .observe($('foot'));
 window.addEventListener('pageshow', e => { if (e.persisted) refresh(); });
 addEventListener('pagehide', () => {  // where you were in the list, for the reload (B152)
+  try { if (S.project) sessionStorage.setItem('taska.tab.' + S.project, U.tab); } catch (_) {}  // B301: and the tab, for coming back from another project
   if (desk() || !S.project) return;
   const top = U.open ? (U.listTop || [])[U.tab === 'inputs' ? 1 : 0] : tabScroll(U.tab).scrollTop;
   if (typeof top === 'number') U.tabTop[U.tab] = top;
@@ -10147,7 +10157,7 @@ function layerShut(kind) {  // closed by its own button: its step goes too
   if (desk() || LAY.popping) return;
   hist(() => {
     const l = layersNow();
-    if (l.at(-1) === kind) histBack();
+    if (l.at(-1) === kind) { histBack(); hist(() => writeURL(false)); }  // B301: the step under it has the address from before: what you picked meanwhile (filters) goes into it
     else if (l.includes(kind)) history.replaceState({...history.state, layers: l.filter(k => k !== kind)}, '');
   });
 }
@@ -10239,7 +10249,7 @@ function showURL() {
 window.addEventListener('popstate', () => {
   if (LAY.back) { if (--LAY.back === 0) histDone(); return; }  // a step the page took back itself (B150)
   if (URLS.selfBack) { URLS.selfBack = false; return writeURL(false, history.state?.full ? history.state : null); }  // our own step back
-  if (!desk() && closeLayers() && here() === LAY.at) return writeURL(false);  // Back closed what was on top, and only that (B150); a closed search leaves the address too (B152)
+  if (!desk() && closeLayers() && location.pathname === LAY.at.split('?')[0]) return writeURL(false);  // Back closed what was on top, and only that (B150); a closed search leaves the address too (B152); filters picked in it stay (B301)
   applyURL(); LAY.at = here();
 });
 
@@ -10295,6 +10305,10 @@ load().then(() => {
   if (n && byN.has(n) && !desk() && !history.state?.n) {  // a link to an item on the phone: put the list under it, so Back lands there
     history.replaceState(null, '', P + viewQuery()); history.pushState({n}, '', P + code(n) + viewQuery());
   }
+  try {  // B301: back from another project to its plain address: the tab you were in there, at its place (the list keeps it, B152)
+    const t = sessionStorage.getItem('taska.tab.' + S.project), {seg: s0, qs: q0} = readURL();
+    if (!s0 && ![...q0.keys()].length && ['inputs', 'archive', 'rules'].includes(t)) history.replaceState(history.state, '', P + t);
+  } catch (_) {}
   restoreGo();  // a walk you were on goes on after a reload (T113 B17)
   startGoFromAnotherProject();  // or one that came over from another project (F193)
   applyURL();
