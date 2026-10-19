@@ -1385,15 +1385,28 @@ export function Dialog() {
       o.style.paddingLeft = o.style.paddingTop = ''
     }
     // B302: new words do not lift the card under your thumb; they are below, a scroll away
+    // (only once the card has settled: while it first opens it takes the height its words need)
     if (spec.kind === 'peek' && !desk()) {
-      const top = d.getBoundingClientRect().top
-      if (OV.maxH && top < (Number(d.dataset.top) || top) - 1) b.style.maxHeight = OV.maxH + 'px'
+      const n = String(spec.props.n)
+      if (d.dataset.card !== n) {
+        d.dataset.card = n
+        d.dataset.since = String(Date.now())
+        b.style.maxHeight = ''
+      }
+      const top = d.getBoundingClientRect().top,
+        settled = Date.now() - Number(d.dataset.since) > 800
+      if (settled && OV.maxH && top < (Number(d.dataset.top) || top) - 1) b.style.maxHeight = OV.maxH + 'px'
       d.dataset.top = String(top)
       OV.maxH = b.clientHeight
-    } else b.style.maxHeight = ''
+    } else {
+      b.style.maxHeight = ''
+      delete d.dataset.card
+    }
   })
   useLayoutEffect(() => {
-    if (spec?.focus && desk()) document.getElementById('dlgClose')?.focus({ preventScroll: true })
+    // T227 #1: no ring on opening
+    if (spec?.focus && desk())
+      document.getElementById('dlgClose')?.focus({ preventScroll: true, focusVisible: false } as FocusOptions)
     if (spec) parkBox()
     els.dlgBody = body.current
   }, [spec])
@@ -1415,7 +1428,7 @@ export function Dialog() {
       : '',
   ].join(' ')
   const dCls = [
-    'flex w-full max-w-2xl flex-col bg-white shadow-xl transition-transform duration-150 sm:rounded-3xl dark:bg-zinc-900 dark:ring-1 dark:ring-white/10',
+    'flex max-h-[min(88dvh,100%)] w-full max-w-2xl flex-col bg-white shadow-xl transition-transform duration-150 sm:rounded-3xl dark:bg-zinc-900 dark:ring-1 dark:ring-white/10',
     spec.walk ? 'h-[92%]' : '',
     spec.tall ? 'h-[88dvh] sm:h-[85dvh]' : '',
     card ? 'shadow-2xl overflow-hidden max-h-[92%]' : 'max-h-[88dvh]',

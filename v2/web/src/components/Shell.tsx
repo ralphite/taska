@@ -502,7 +502,7 @@ function ProjBar({ hidden }: { hidden: boolean }) {
       aria-label="This project"
       className="h-12 min-w-0 items-stretch gap-1 border-b border-zinc-200 pr-3 pl-2 lg:col-span-2 lg:col-start-1 lg:row-start-1 lg:flex dark:border-zinc-800"
     >
-      {U.renaming && U.renaming === S.project ? (
+      {U.renaming && U.renaming === S.project && !D.page ? (
         <div className="flex min-w-0 items-center gap-2 px-1">
           <ProjTile name={S.project} cls="size-6 rounded-md text-xs" />
           <input

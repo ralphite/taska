@@ -62,5 +62,9 @@ B2 done Fixed: the export now uses the active filter
 export const isDesk = (page: Page) => (page.viewportSize()?.width || 0) >= 1024
 export async function open(page: Page, p: Project, path = '') {
   await page.goto(p.url + path)
-  await page.locator('#list [data-zone], #list [data-act="open"], #detailBody, #projectView').first().waitFor()
+  await page
+    .locator('#list [data-zone], #list [data-act="open"], #inputsView, #detailBody, #projectView')
+    .filter({ visible: true })
+    .first()
+    .waitFor()
 }

@@ -690,6 +690,11 @@ export function DetailView({ hidden }: { hidden: boolean }) {
   const g = U.go
   if (g && U.open != null && g.list.includes(U.open)) g.at = U.open
   const strip = !!(g && desk() && !D.compose)
+  const shownDoc = desk() && U.doc && !U.docEdit ? U.doc : null
+  useLayoutEffect(() => {
+    // a document opens where you left it, or at its top (not where its item was scrolled)
+    if (shownDoc && body.current) body.current.scrollTop = U.docScroll[shownDoc] || 0
+  }, [shownDoc])
   useLayoutEffect(() => {
     els.detailBody = body.current
     if (desk()) keepGo()
