@@ -4106,7 +4106,7 @@ async function search() {
   try { r = await (await fetch(`/api/search?q=${encodeURIComponent(q)}`, {cache: 'no-store'})).json(); } catch (_) {}
   if ($('q').value.trim() !== q) return;
   box.hidden = false;
-  box.innerHTML = r.length ? r.slice(0, 12).map(x => `<a href="/p/${encodeURIComponent(x.project)}/${x.kind === 'input' ? 'inputs?q=' + encodeURIComponent(q) : encodeURIComponent(x.code)}" class="flex items-center gap-2.5 border-b border-zinc-100 px-4 py-2.5 text-sm last:border-b-0 hover:bg-zinc-50 dark:border-zinc-700/60 dark:hover:bg-zinc-700/40"><span class="font-mono text-xs font-bold text-zinc-500 dark:text-zinc-400">${esc(String(x.code).replace(/^r(\d+)$/, '#$1'))}</span><span class="min-w-0 flex-1 truncate">${esc(x.title)}</span><span class="shrink-0 text-xs text-zinc-500 dark:text-zinc-400">${esc(x.ptitle || x.project)}</span></a>`).join('') : '<p class="px-4 py-3 text-sm text-zinc-500">Nothing found</p>';
+  box.innerHTML = r.length ? r.slice(0, 12).map(x => `<a href="/p/${encodeURIComponent(x.project)}/${x.kind === 'input' ? 'inputs?q=' + encodeURIComponent(q) : encodeURIComponent(x.code)}" class="flex items-center gap-2.5 border-b border-zinc-100 px-4 py-2.5 text-sm last:border-b-0 hover:bg-zinc-50 dark:border-zinc-700/60 dark:hover:bg-zinc-700/40"><span class="font-mono text-xs font-bold text-zinc-500 dark:text-zinc-400">${esc(String(x.code).replace(/^r(\d+)$/, '#$1'))}</span><span class="min-w-0 flex-1 truncate">${esc(x.title)}</span><span class="shrink-0 text-xs text-zinc-500 dark:text-zinc-400">${esc(x.ptitle || x.project)}${x.kind === 'input' ? ' · what you said' : x.archived ? ' · archived' : x.status === 'done' ? ' · done' : x.status === 'dropped' ? " · won't do" : ''}</span></a>`).join('') : '<p class="px-4 py-3 text-sm text-zinc-500">Nothing found</p>';  // B304: as the project's own search says it
 }
 addEventListener('keydown', e => {
   if (((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') || (e.key === '/' && !/INPUT|TEXTAREA/.test(document.activeElement?.tagName))) { e.preventDefault(); $('q').focus(); }
@@ -4863,7 +4863,7 @@ function visible(tab = U.tab) {
   const words = U.q.trim().toLowerCase().split(/\s+/).filter(Boolean);
   // Items shows the work, plus rules an agent proposed: they wait on you too (T65).
   const okTab = it => tab === 'rules' ? it.type === 'rule' && !it.archived : tab === 'archive' || it.type !== 'rule' || (it.status === 'proposed' && !it.archived);
-  const okStatus = it => tab === 'rules' ? U.status === 'all' || it.status === U.status : tab === 'archive' ? it.archived && (U.status === 'all' || U.status === 'archived' || it.status === U.status)
+  const okStatus = it => tab === 'rules' ? U.status === 'all' || it.status === U.status : tab === 'archive' ? it.archived && (U.status === 'all' || U.status === 'archived' || (U.status === 'active' ? !CLOSED(it.status) : it.status === U.status))
     : U.status === 'archived' ? it.archived
     : !it.archived && (U.status === 'all' || (U.status === 'active' ? !CLOSED(it.status) : U.status === 'closed' ? CLOSED(it.status) : U.status === 'wait' ? needsYou(it)
       : U.status === 'queued' ? inQueue(it) && it.status !== 'doing' && it.when === 'now' : U.status === 'later' ? it.when === 'later' && !CLOSED(it.status) : it.status === U.status));
@@ -5055,10 +5055,10 @@ function itemRow(it, depth = 0, group = [], band = '') {  // band: the band it i
   const img = files.find(f => (f.mime || '').startsWith('image/'));
   const foldable = group.some(k => k.parent === it.n);  // its subitems are in this list
   // B254: a subitem is set in 24 px a level, with no line beside it
-  const top = `<div data-act="open" data-n="${it.n}" ${rowCur(it)} class="group relative flex cursor-pointer items-start gap-3 py-2.5 pr-3 pl-${4 + 6 * depth} ${closed ? 'opacity-55' : ''} ${rowTint(it)}">
+  const top = `<div data-act="open" data-n="${it.n}" ${rowCur(it)} class="group relative flex cursor-pointer items-start gap-3 py-2.5 pr-3 pl-${4 + 6 * depth} ${closed && !it.archived ? 'opacity-55' : ''} ${rowTint(it)}">
       ${unread(it) ? '<span class="absolute top-4.5 left-1 size-2 rounded-full bg-blue-600 dark:bg-blue-400" title="New from an agent"></span>' : ''}${stateIcon(it.status, statusName(it))}
       <div class="min-w-0 flex-1">
-        <p data-hit class="line-clamp-2 text-[15px] leading-snug font-medium lg:line-clamp-1 ${closed ? 'line-through decoration-zinc-400' : ''}"><span class="mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[it.type]}">${c}</span>${esc(it.title)}</p>
+        <p data-hit class="line-clamp-2 text-[15px] leading-snug font-medium lg:line-clamp-1 ${closed && !it.archived ? 'line-through decoration-zinc-400' : ''}"><span class="mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[it.type]}">${c}</span>${esc(it.title)}</p>
         ${U.q.trim() ? hitLine(it) : ''}
         ${meta ? `<div class="mt-1 flex items-center gap-x-2.5 overflow-hidden text-xs font-medium whitespace-nowrap text-zinc-500 dark:text-zinc-400">${meta}</div>` : ''}
       </div>
@@ -5945,7 +5945,7 @@ function itemMenu(n, arm = '') {
 // T274 #6: five places an item can be: it needs you, an agent is on it, it waits in the queue, later, finished
 const STATUS_FILTER = {wait: 'Needs you', doing: 'In progress', queued: 'Queued', later: 'Later', closed: 'Finished'};  // archived things live in the Archive tab (B130)
 const SORTS = [['all', 'Priority'], ['new', 'Newest'], ['upd', 'Last updated']];  // T274 #36
-const ARCH_FILTER = {done: 'Done', dropped: "Won't do"};  // T274 #36: in Archive, what became of them; in Items one Finished, as its band
+const ARCH_FILTER = {done: 'Done', dropped: "Won't do", active: 'Not finished'};  // B304: anything can be archived (F281), so anything can be found there  // T274 #36: in Archive, what became of them; in Items one Finished, as its band
 // Rows hang under their parent when both are in the same group (I59); one whose parent is elsewhere stands alone.
 function tree(group, band = '') {
   const inG = new Set(group.map(it => it.n)), out = [];
@@ -5977,7 +5977,7 @@ function renderItems() {
   if (holding()) { patchList(); return syncNeeds(); }  // B124: rows hold still under the pointer after you act on one
   let html = '';
   if (!S.items.length && U.tab === 'rules') html = EMPTY('No rules yet.<br>A rule is a standing instruction for the agents here: write one in the box below.');  // T233 #2
-  else if (!S.items.length && U.tab === 'archive') html = EMPTY('Nothing archived yet.<br>Finished items you archive show here.');
+  else if (!S.items.length && U.tab === 'archive') html = EMPTY('Nothing archived yet.<br>Items you archive show here, finished or not.');
   else if (!S.items.length) {
     html = EMPTY(`No items yet.<br>Write your first thought below${S.org.on ? ' and the organizer turns it into items' : ' and your coding agent turns it into items'}.`, `<br><button data-act="guide" class="mt-3 h-11 text-blue-600 hover:underline dark:text-blue-400">Connect a coding agent</button>`);
   } else if (!rows.length && filtered()) {
@@ -5993,7 +5993,7 @@ function renderItems() {
       + (on.length ? zone('rules', 'Active', on.length) + on.map(it => itemRow(it)).join('') : '')
       + (off.length ? zone('retired', 'Retired', off.length) + off.map(it => itemRow(it, 0, [], 'retired')).join('') : '');
   } else if (U.tab === 'archive' || U.sort !== 'all') {  // T274 #36: sorted another way, the list is in that order
-    html = rows.length ? rows.map(it => itemRow(it)).join('') : EMPTY(U.tab === 'archive' ? 'Nothing archived yet.<br>Archive finished items from the end of the Items list, or from an item\'s ⋯.' : 'No items');
+    html = rows.length ? rows.map(it => itemRow(it)).join('') : EMPTY(U.tab === 'archive' ? 'Nothing archived yet.<br>Archive items from the end of the Items list, or from an item\'s ⋯.' : 'No items');
   } else {
     // Items, in the order of your loop (T65 "Needs you first"): what waits on you, the agent's queue, finished work.
     const going = desk() && U.go, needs = rows.filter(it => needsYou(it) || (going && going.done.has(it.n) && going.list.includes(it.n))).sort(going ? walkOrder(going) : needsOrder);  // newest first (B238); Later below the rest (B153)
