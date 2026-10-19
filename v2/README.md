@@ -1,0 +1,37 @@
+# Taska v2
+
+The rewrite of Taska: a typed Python backend on SQLite and a React frontend, with the same agent interface and the
+same features as the one-file `taska.py`. See [spec/product-spec.md](spec/product-spec.md) for what it does and
+[spec/architecture.md](spec/architecture.md) for how it is built.
+
+## Run it
+
+```sh
+# once: a copy of your data (the old data is only read)
+PYTHONPATH=v2/server python3 -m taska import --from ~/.taska --to ~/taska-v2-data
+
+# the page (once, and after frontend changes)
+npm --prefix v2/web install
+npm --prefix v2/web run build
+
+# the server, next to the old one
+PYTHONPATH=v2/server python3 -m taska --port 7341 --root ~/taska-v2-data
+```
+
+Or the single file from a release: `python3 taska.pyz --port 7341 --root ~/taska-v2-data`.
+
+## Develop
+
+| What | Command |
+|---|---|
+| Frontend with hot reload (API on 7341) | `npm --prefix v2/web run dev` (http://127.0.0.1:5341) |
+| Components | `npm --prefix v2/web run storybook` (http://127.0.0.1:6007) |
+| Type checks | `npm --prefix v2/web run typecheck` and `npm --prefix v2/web run typecheck:server` |
+| Lint | `npm --prefix v2/web run lint` |
+| Frontend unit tests | `npm --prefix v2/web test` |
+| Agent API compatibility | `python3 v2/tests/test_compat.py` |
+| Old data imports the same | `python3 v2/tests/check_import.py <old taska.py> <copy of ~/.taska>` |
+| End-to-end (a running server) | `TASKA_URL=http://127.0.0.1:7341 npm --prefix v2/web run e2e` |
+| The single file | `python3 v2/tools/build_pyz.py` (after the frontend build) |
+
+Never point a development server at `~/.taska`: use a copy.

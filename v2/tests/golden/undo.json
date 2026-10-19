@@ -1,0 +1,298 @@
+[
+ {
+  "name": "do new feature One",
+  "status": 200,
+  "text": "ok F1 new (proposed: the user approves it before anyone works on it)\nok B2 new (proposed: the user approves it before anyone works on it)\nrev <rev> \u00b7 keep-going ON: GET /next to continue\n"
+ },
+ {
+  "name": "op batch",
+  "status": 200,
+  "json": {
+   "ok": true,
+   "res": [
+    "ok F1 status=open",
+    "ok B2 status=open"
+   ],
+   "rev": "<rev>"
+  }
+ },
+ {
+  "name": "op set",
+  "status": 200,
+  "json": {
+   "ok": true,
+   "res": [
+    "ok F1 pri=P0"
+   ],
+   "rev": "<rev>"
+  }
+ },
+ {
+  "name": "op set",
+  "status": 200,
+  "json": {
+   "ok": true,
+   "res": [
+    "ok F1 when=later"
+   ],
+   "rev": "<rev>"
+  }
+ },
+ {
+  "name": "op set",
+  "status": 200,
+  "json": {
+   "ok": true,
+   "res": [
+    "ok B2 status=doing"
+   ],
+   "rev": "<rev>"
+  }
+ },
+ {
+  "name": "state undo list",
+  "status": 200,
+  "json": [
+   {
+    "seq": 7,
+    "n": 2,
+    "f": {
+     "status": "doing"
+    },
+    "was": {
+     "status": "open"
+    },
+    "t": "<iso>"
+   },
+   {
+    "seq": 6,
+    "n": 1,
+    "f": {
+     "when": "later"
+    },
+    "was": {
+     "when": "now"
+    },
+    "t": "<iso>"
+   },
+   {
+    "seq": 5,
+    "n": 1,
+    "f": {
+     "pri": "P0"
+    },
+    "was": {
+     "pri": "P2"
+    },
+    "t": "<iso>"
+   },
+   {
+    "seq": 3,
+    "n": 1,
+    "f": {
+     "status": "open"
+    },
+    "was": {
+     "status": "proposed"
+    },
+    "t": "<iso>"
+   }
+  ]
+ },
+ {
+  "name": "revert pri",
+  "status": 200,
+  "json": {
+   "ok": true,
+   "res": [
+    "ok F1 pri=P2"
+   ]
+  }
+ },
+ {
+  "name": "revert again",
+  "status": 400,
+  "json": {
+   "ok": false,
+   "error": "that change can't be undone any more: it was undone already, or changed again since"
+  }
+ },
+ {
+  "name": "state",
+  "status": 200,
+  "json": {
+   "rev": "<rev>",
+   "boot": "<boot>",
+   "pv": "<pv>",
+   "agents": [
+    {
+     "name": "claude-code",
+     "t": "<ms>",
+     "waiting": false
+    }
+   ],
+   "work": true,
+   "width": 1,
+   "file": "<store>",
+   "cfg": {
+    "auto": true
+   },
+   "undo": [
+    {
+     "seq": 7,
+     "n": 2,
+     "f": {
+      "status": "doing"
+     },
+     "was": {
+      "status": "open"
+     },
+     "t": "<iso>"
+    },
+    {
+     "seq": 6,
+     "n": 1,
+     "f": {
+      "when": "later"
+     },
+     "was": {
+      "when": "now"
+     },
+     "t": "<iso>"
+    },
+    {
+     "seq": 3,
+     "n": 1,
+     "f": {
+      "status": "open"
+     },
+     "was": {
+      "status": "proposed"
+     },
+     "t": "<iso>"
+    }
+   ],
+   "org": {
+    "on": false,
+    "model": "gemini-flash-latest",
+    "busy": null
+   },
+   "items": [
+    {
+     "n": 1,
+     "type": "feature",
+     "title": "One",
+     "body": "",
+     "pri": "P2",
+     "when": "later",
+     "status": "open",
+     "parent": null,
+     "next": "",
+     "thread": [],
+     "srcs": [],
+     "merged_into": null,
+     "archived": false,
+     "t0": "<iso>",
+     "t1": "<iso>",
+     "by": "claude-code",
+     "agent": {
+      "by": "claude-code",
+      "t": "<iso>"
+     },
+     "code": "F1",
+     "wait": null,
+     "reply": false
+    },
+    {
+     "n": 2,
+     "type": "bug",
+     "title": "Two",
+     "body": "",
+     "pri": "P2",
+     "when": "now",
+     "status": "doing",
+     "parent": null,
+     "next": "",
+     "thread": [],
+     "srcs": [],
+     "merged_into": null,
+     "archived": false,
+     "t0": "<iso>",
+     "t1": "<iso>",
+     "by": "claude-code",
+     "agent": {
+      "by": "claude-code",
+      "t": "<iso>"
+     },
+     "code": "B2",
+     "wait": null,
+     "reply": false
+    }
+   ],
+   "inputs": [],
+   "deleted": [],
+   "docs": [],
+   "gone": [],
+   "project": "default",
+   "title": "default",
+   "base": "http://<host>/p/default",
+   "key": "<key>",
+   "remote": ""
+  }
+ },
+ {
+  "name": "undo filing of a missing input",
+  "status": 400,
+  "json": {
+   "ok": false,
+   "error": "nothing to undo for r1"
+  }
+ },
+ {
+  "name": "op input",
+  "status": 200,
+  "json": {
+   "ok": true,
+   "res": [
+    "ok r1"
+   ],
+   "rev": "<rev>"
+  }
+ },
+ {
+  "name": "undo filing not organized",
+  "status": 400,
+  "json": {
+   "ok": false,
+   "error": "nothing to undo for r1"
+  }
+ },
+ {
+  "name": "redo nothing",
+  "status": 400,
+  "json": {
+   "ok": false,
+   "error": "there is no undone filing of r1 to put back"
+  }
+ },
+ {
+  "name": "organize again",
+  "status": 200,
+  "json": {
+   "ok": true
+  }
+ },
+ {
+  "name": "organize unknown",
+  "status": 400,
+  "json": {
+   "ok": false,
+   "error": "unknown input r9"
+  }
+ },
+ {
+  "name": "log",
+  "status": 200,
+  "text": "#1 <hm> claude-code new F1 feature P2 now 'One'\n#2 <hm> claude-code new B2 bug P2 now 'Two'\n#3 <hm> you F1 status proposed\u2192open\n#4 <hm> you B2 status proposed\u2192open\n#5 <hm> you F1 pri P2\u2192P0\n#6 <hm> you F1 when now\u2192later\n#7 <hm> you B2 status open\u2192doing\n#8 <hm> you F1 pri P0\u2192P2 (undo #5)\n#9 <hm> you in r1 'note'\n#10 <hm> you organizer r1 retry\n"
+ }
+]
