@@ -15,6 +15,7 @@ import array
 import base64
 import contextlib
 import difflib
+import gzip
 import hashlib
 import hmac
 import http.client
@@ -3345,11 +3346,25 @@ class Handler(BaseHTTPRequestHandler):
     def send(self, code, body, ctype="text/plain; charset=utf-8", extra=None):
         if isinstance(body, str):
             body = body.encode("utf-8")
+        cache, tag = "no-store", None
+        if code == 200 and ctype.startswith("text/html") and self.command == "GET":  # B292: the page is the same for every project: asked again, it is not sent again
+            tag = '"' + hashlib.md5(body).hexdigest() + '"'
+            cache = "no-cache"
+            if self.headers.get("If-None-Match") == tag:
+                code, body = 304, b""
+        zipped = len(body) > 2048 and "gzip" in (self.headers.get("Accept-Encoding") or "") and ctype.split(";")[0] in ("text/html", "application/json", "text/plain", "text/javascript")
+        if zipped:  # B292: a project's state is 1-2 MB of text: a third of it over the tunnel
+            body = gzip.compress(body, compresslevel=5)
         try:
             self.send_response(code)
             self.send_header("Content-Type", ctype)
             self.send_header("Content-Length", str(len(body)))
-            self.send_header("Cache-Control", "no-store")
+            self.send_header("Cache-Control", cache)
+            if tag:
+                self.send_header("ETag", tag)
+            if zipped:
+                self.send_header("Content-Encoding", "gzip")
+                self.send_header("Vary", "Accept-Encoding")
             self.send_header("X-Content-Type-Options", "nosniff")
             for k, v in (extra or {}).items():
                 self.send_header(k, v)
