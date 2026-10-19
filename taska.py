@@ -4961,12 +4961,11 @@ function deskSlots(it, needs) {
   const prog = it.status === 'open' ? null : it.status === 'doing' ? (stuck(it) ? ['status', 'open', 'Back to queue'] : null) : it.status === 'review' ? ['reopen', '', 'Not yet'] : CLOSED(it.status) ? ['status', 'open', 'Reopen'] : null;
   return [fwd, prog, ['open', 'doing', 'proposed'].includes(it.status) ? drop : null, CLOSED(it.status) ? null : later];
 }
-function rowActs(it, needs = false) {
+function rowActs(it, needs = false) {  // B290: icons only, in the row, as before T274 #13 (the named bar covered the row)
   const acts = deskSlots(it, needs);
-  // T274 #13: named buttons, floating over the row's second line, so the title stays in sight
-  return `<div class="absolute ${needs ? 'right-28' : 'right-2'} bottom-1 z-10 hidden items-center gap-0.5 rounded-lg bg-white p-0.5 shadow-sm ring-1 ring-zinc-900/10 lg:group-hover:flex dark:bg-zinc-900 dark:ring-white/10">${acts.filter(Boolean).map(a => a[0] === 'reopen'
-    ? `<button data-act="reopen" data-n="${it.n}" title="Not yet · N" class="flex h-7 items-center gap-1 rounded-md px-2 text-[13px] font-medium whitespace-nowrap text-zinc-600 hover:bg-zinc-200/70 dark:text-zinc-300 dark:hover:bg-zinc-800">${ico('reopen', 'size-4')}Not yet</button>`
-    : (([f, v, label]) => `<button data-act="swipe" data-n="${it.n}" data-f="${f}" data-v="${v}" title="${label}${ACT_KEY[label] ? ' · ' + ACT_KEY[label] : ''}" class="flex h-7 items-center gap-1 rounded-md px-2 text-[13px] font-medium whitespace-nowrap hover:bg-zinc-200/70 dark:hover:bg-zinc-800 ${ACT_TONE[label] || 'text-zinc-600 dark:text-zinc-300'}">${ico(ACT_ICON[label], 'size-4')}${label}</button>`)(a)).join('')}</div>`;
+  return `<div class="hidden shrink-0 items-center gap-0.5 self-center lg:group-hover:flex">${acts.filter(Boolean).map(a => a[0] === 'reopen'
+    ? `<button data-act="reopen" data-n="${it.n}" title="Not yet · N" aria-label="Not yet" class="grid size-8 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-200/70 dark:text-zinc-400 dark:hover:bg-zinc-800">${ico('reopen', 'size-[18px]')}</button>`
+    : (([f, v, label]) => `<button data-act="swipe" data-n="${it.n}" data-f="${f}" data-v="${v}" title="${label}${ACT_KEY[label] ? ' · ' + ACT_KEY[label] : ''}" aria-label="${label}" class="grid size-8 place-items-center rounded-lg hover:bg-zinc-200/70 dark:hover:bg-zinc-800 ${ACT_TONE[label] || 'text-zinc-500 dark:text-zinc-400'}">${ico(ACT_ICON[label], 'size-[18px]')}</button>`)(a)).join('')}</div>`;
 }
 
 // A row you just acted on stays where it was, as one quiet line with Undo, while the pointer is over the list (or
