@@ -196,7 +196,7 @@ class Store:
         self.org_on, self.org_busy = False, None
         self.trs = {}  # voice notes being transcribed in the background, by file (B165): t0, done, tr, err
         self.claims = {}  # n -> (agent, time): what /next gave an agent, so another one asking now gets something else (F194)
-        self.sv, self.svn = {}, 0  # T293: (kind, id) -> [hash as last served, change number]; pages ask only for what changed
+        self.sv, self.svn, self.sv_memo = {}, 0, None  # T293: (kind, id) -> [hash as last served, change number]; pages ask only for what changed
         self.fwd = {}  # file -> [(project, file)]: copies of notes whose input moved before their words came (F79, T101)
         if os.path.exists(self.path):
             with open(self.path, encoding="utf-8") as f:
@@ -1578,6 +1578,22 @@ class Store:
         """T293: the state, or only the items, inputs and documents that changed since the page's copy (its change
         number `sv`), with what went away. Every change is found by comparing what would be sent with what was."""
         with self.lock:
+            if self.sv_memo and self.sv_memo[0] == (self.rev, self.pv):  # several pages asking after one change: worked out once
+                st = dict(self.sv_memo[1])
+            else:
+                st = self.state_scan()
+                self.sv_memo = ((self.rev, self.pv), dict(st))
+            if since <= 0 or boot != self.boot or since > self.svn:
+                return st
+            for kind, idk in self.SV_KEYS:
+                st[kind] = [x for x in st[kind] if self.sv[(kind, x[idk])][1] > since]
+            st["delta"] = since
+            st["drop"] = {kind: [k[1] for k, v in self.sv.items() if k[0] == kind and v[0] is None and v[1] > since] for kind, _ in self.SV_KEYS}
+            return st
+
+    def state_scan(self):
+        """The whole state, after noting which items, inputs and documents changed since it was last worked out."""
+        with self.lock:
             st = self.state()
             now = set()
             for kind, idk in self.SV_KEYS:
@@ -1594,12 +1610,6 @@ class Store:
                     self.svn += 1
                     v[0], v[1] = None, self.svn
             st["sv"] = self.svn
-            if since <= 0 or boot != self.boot or since > self.svn:
-                return st
-            for kind, idk in self.SV_KEYS:
-                st[kind] = [x for x in st[kind] if self.sv[(kind, x[idk])][1] > since]
-            st["delta"] = since
-            st["drop"] = {kind: [k[1] for k, v in self.sv.items() if k[0] == kind and v[0] is None and v[1] > since] for kind, _ in self.SV_KEYS}
             return st
 
     def gone_list(self):
