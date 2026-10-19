@@ -4,6 +4,7 @@
 // viewer, a wide table reads as cards on a phone (T252). Everything is escaped first; DOMPurify checks the result.
 // The output is HTML; the buttons in it carry data-act, which actions.ts handles (one listener for the page).
 import DOMPurify from 'dompurify'
+import { BEHAVIOUR } from './behaviour'
 import { ICON, type IconName } from './icons'
 import { LETTER as LETTERS, REF_CLS } from './constants'
 import {
@@ -140,13 +141,13 @@ export function inlineMd(s: string, gid = '', refs = true) {
       // I289: a link to an item or a document (its code, or Taska's own address for it) is the code's chip, opened in
       // Taska; one to another project opens that project here, not as a jump to an absolute address
       .replace(/\[([^\]]+)\]\(([FBITRD]\d{1,5}|r\d{1,6})\)/g, (m, _t: string, c: string) => {
-        const l = refs && refLink(c)
+        const l = BEHAVIOUR.docCards && refs && refLink(c)
         return l ? keep(l) : m
       })
       .replace(
         /(\[([^\]]+)\]\()?https?:\/\/[^/\s)]+\/p\/([^/\s)]+)\/([FBITRD]\d{1,5}|r\d{1,6})\/?(\))?/g,
         (m, open: string, t: string, proj: string, c: string, close: string) => {
-          if (!!open !== !!close) return m
+          if (!BEHAVIOUR.docCards || !!open !== !!close) return m
           const here = decodeURIComponent(proj) === ctx.HERE
           const l = here && refs ? refLink(c) : null
           if (l) return keep(l)

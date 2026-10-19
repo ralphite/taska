@@ -7,7 +7,9 @@ import { U } from '../lib/state'
 import type { Wait } from '../lib/types'
 
 describe('the list', () => {
-  it('F291: one tree with preset views; a subitem hangs under its item', () => {
+  it('F291 (behind its switch): one tree with preset views; a subitem hangs under its item', () => {
+    BEHAVIOUR.treeList = true
+    U.status = 'all'
     load([
       item(1, { title: 'Parent work' }),
       item(2, { title: 'Child work', parent: 1 }),
@@ -21,8 +23,9 @@ describe('the list', () => {
     expect(rows).not.toContain('4') // finished work is in the Finished view
     expect(rows.indexOf('2')).toBe(rows.indexOf('1') + 1)
     expect(screen.getByRole('button', { name: /Accept/ })).toHaveAttribute('data-v', 'accept')
+    BEHAVIOUR.treeList = false
   })
-  it('with the bands: what needs you first, with its one action, then the agent queue and Later', () => {
+  it('as the one-file Taska: what needs you first, with its one action, then the agent queue and Later', () => {
     BEHAVIOUR.treeList = false
     U.status = 'all'
     load([
@@ -39,7 +42,6 @@ describe('the list', () => {
     expect(screen.getByRole('button', { name: /Answer/ })).toHaveAttribute('data-act', 'row-act')
     expect(screen.getByRole('button', { name: /Accept/ })).toHaveAttribute('data-v', 'accept')
     expect(screen.getByText('Write the docs')).toBeInTheDocument()
-    BEHAVIOUR.treeList = true
   })
   it('says how to start when a project has nothing yet', () => {
     load([])

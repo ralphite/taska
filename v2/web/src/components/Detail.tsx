@@ -31,6 +31,7 @@ import {
 import type { Item, Msg } from '../lib/types'
 import { hasChoices, inlineMd, clean } from '../lib/markdown'
 import { keepGo } from '../lib/go'
+import { BEHAVIOUR } from '../lib/behaviour'
 import { noteText } from '../lib/docs'
 import { kept } from '../lib/drafts'
 import { Icon, Kbd, SectionHead, StateIcon } from './ui'
@@ -348,7 +349,9 @@ export function ItemPage({ it }: { it: Item }) {
         ) : null}
       </div>
     ) : null
-  const docs = [...docsOf(n)].sort((a, b) => String(b.t1).localeCompare(String(a.t1)) || b.d - a.d) // I289: the latest first
+  const docs = BEHAVIOUR.docCards
+    ? [...docsOf(n)].sort((a, b) => String(b.t1).localeCompare(String(a.t1)) || b.d - a.d)
+    : docsOf(n) // I289: the latest first
   const notes = docNotes(n, hidden ? thread[hidden]?.t : '') // T274 #4
   // B279: on the desktop the item itself stays at the top of the pane; the rest scrolls under it
   return (
@@ -361,10 +364,10 @@ export function ItemPage({ it }: { it: Item }) {
       {docs.length ? (
         <section className="flex flex-col gap-2">
           <SectionHead text="Documents" />
-          {(U.docsAll.has(n) ? docs : docs.slice(0, 3)).map((d) => (
+          {(U.docsAll.has(n) || !BEHAVIOUR.docCards ? docs : docs.slice(0, 3)).map((d) => (
             <DocCard key={d.d} d={d} />
           ))}
-          {docs.length > 3 ? (
+          {BEHAVIOUR.docCards && docs.length > 3 ? (
             <button
               data-act="docs-all"
               data-n={n}

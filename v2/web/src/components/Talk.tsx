@@ -6,6 +6,7 @@ import { U, byR, ctx, desk, docsOf, oneLine, plural, rcode, userWord, when, whoN
 import type { Doc, FileRef, Input, Item, Msg } from '../lib/types'
 import { CHOICE, clean, groups, hasChoices, mdHtml } from '../lib/markdown'
 import { audioOf } from '../lib/audio'
+import { BEHAVIOUR } from '../lib/behaviour'
 import { P_CACHE } from '../lib/settings'
 import { Avatar, Icon, Kbd } from './ui'
 import { clock } from '../lib/state'
@@ -650,7 +651,7 @@ export function Talk({ it, list, gid = '', notes = [] }: { it: Item; list: Msg[]
           .sort((a, b) => b[1] - a[1])
       : [] // no answer yet, but read after your words
   const read = readers.length ? { id: th[mine].id, names: readers.map(([n]) => whoName(n)), t: readers[0][1] } : null
-  const made = docsByMsg(it)
+  const made = BEHAVIOUR.docCards ? docsByMsg(it) : new Map<number, Doc[]>()
   let k = 0
   const out: ReactNode[] = []
   const before = (t: string) => {
