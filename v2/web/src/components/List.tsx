@@ -247,8 +247,9 @@ export function ItemRow({
   group?: Item[]
   band?: string
 }) {
+  useArea('list') // drawn again while the list holds still, to show the line of the one you acted on (B124)
   const held = U.settle.get(it.n)
-  if (held) return <HeldRow it={it} said={held.said} />
+  if (held) return <HeldRow it={byN.get(it.n) || it} said={held.said} />
   LIST_SETTLED.delete(it.n)
   const c = code(it.n),
     files = filesOf(it),
@@ -376,8 +377,9 @@ const PAD = ['pl-4', 'pl-10', 'pl-16', 'pl-22', 'pl-28', 'pl-34', 'pl-40', 'pl-4
 
 // A row that waits on you: an amber bar, what the agent said in one line, and the one action on the thumb side.
 export function NeedsRow({ it }: { it: Item }) {
+  useArea('list') // drawn again while the list holds still, to show the line of the one you acted on (B124)
   const held = U.settle.get(it.n)
-  if (held) return <HeldRow it={it} said={held.said} />
+  if (held) return <HeldRow it={byN.get(it.n) || it} said={held.said} />
   const [v, label] = rowAction(it)
   const ex = excerpt(it)
   const top = (

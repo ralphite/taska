@@ -744,7 +744,10 @@ function Switcher() {
           rows.findIndex((p) => p.name !== S.project),
         )
       : i
-  useLayoutEffect(() => list.current?.querySelector('[aria-selected=true]')?.scrollIntoView({ block: 'nearest' }))
+  useLayoutEffect(() => {
+    // braces: scrollIntoView may return a promise, and an effect may return only a clean-up
+    list.current?.querySelector('[aria-selected=true]')?.scrollIntoView({ block: 'nearest' })
+  })
   return (
     <>
       <input
@@ -818,7 +821,10 @@ function Palette() {
     ...items.map((it) => ({ t: it.title, n: it.n })),
   ]
   const at = Math.min(i, Math.max(0, rows.length - 1))
-  useLayoutEffect(() => list.current?.querySelector('[aria-selected=true]')?.scrollIntoView({ block: 'nearest' }))
+  useLayoutEffect(() => {
+    // braces: scrollIntoView may return a promise, and an effect may return only a clean-up
+    list.current?.querySelector('[aria-selected=true]')?.scrollIntoView({ block: 'nearest' })
+  })
   const run = (r: (typeof rows)[number] | undefined) => {
     if (!r) return
     if (r.n) {

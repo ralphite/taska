@@ -816,6 +816,22 @@ function BoxInner() {
   useLayoutEffect(() => {
     if (t && t.placeholder !== ph) t.placeholder = ph
     t?.classList.toggle('invisible', rec || view)
+    if (t) {
+      // empty = one line from the classes; T231: past one line the words take the box's whole width, the buttons a row under them
+      t.style.height = ''
+      if (t.value) {
+        t.style.height = 'auto'
+        t.style.height = Math.min(t.scrollHeight, desk() && D.compose ? 320 : 192) + 'px'
+      }
+      const multi = !!t.value && (t.value.includes('\n') || t.scrollHeight > 52)
+      if (multi !== BOX.hasAttribute('data-multi')) {
+        BOX.toggleAttribute('data-multi', multi)
+        if (multi) {
+          t.style.height = 'auto'
+          t.style.height = Math.min(t.scrollHeight, 192) + 'px'
+        }
+      }
+    }
     keepDraftFiles()
     placeBox()
     if (U.fbFor !== (scopeN() || null)) {
