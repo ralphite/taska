@@ -72,5 +72,17 @@ class NeedsTests(unittest.TestCase):
             s.run_all(taska.parse_dsl(f'{code} say Because it saves a step'), 'claude-code')
         self.assertEqual(self.kinds('other').get(code), 'proposed')
 
+    def test_done_with_words_says_them(self):  # T307: "B03 done <what changed>" was refused before
+        s = self.hub.projects['other']
+        code = next(c for c, k in self.kinds('other').items() if k == 'proposed')
+        with s.cond:
+            s.run_all(taska.parse_dsl(f'{code} open'), 'you')
+            lines, _ = s.run_all(taska.parse_dsl(f'{code} done Shipped it: the export keeps the filter\n  How to check: export twice'), 'claude-code')
+        self.assertTrue(all(x.startswith('ok') for x in lines), lines)
+        it = s.items[int(code[1:])]
+        self.assertEqual(it['status'], 'review')
+        self.assertIn('How to check', it['thread'][-1]['text'])
+        self.assertEqual(it['thread'][-1]['kind'], 'progress')
+
 if __name__ == '__main__':
     unittest.main()

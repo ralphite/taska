@@ -1754,6 +1754,7 @@ WRITE (plain text, one command per line; indented lines continue the previous co
                             each optional and go before the title as plain words, no brackets
     <optional body, indented>
   B03 P1 later doing        set priority / when / status / type, any mix (status: open|doing|done|drop; drop = won't do)
+  B03 done <text>           words after the fields (and indented lines) are posted as progress, e.g. the done report
   B03 title|body|next <text>      replace that field (body may continue on indented lines)
   B03 say|ask|block|propose|decide|progress <text>     add to the thread: ask = question for the user,
                                   block = you are stuck and need the user (say what you need),
@@ -1957,7 +1958,8 @@ def parse_dsl(text):
     for no, head, cont in cmds:
         cont = textwrap.dedent("\n".join(cont)).strip("\n")
         try:
-            ops.append((no, parse_cmd(head, cont)))
+            op = parse_cmd(head, cont)
+            ops.extend((no, o) for o in op) if isinstance(op, list) else ops.append((no, op))
         except Err as ex:
             ops.append((no, ex))
     return ops
@@ -2012,10 +2014,12 @@ def parse_cmd(head, cont):
     if sub_l == "merge":
         return {"op": "merge", "ref": word, "into": rest2.strip().split()[0] if rest2.strip() else ""}
     a, left = attrs(rest)
-    if left or not a:
+    if not a:
         raise Err(f"cannot read '{rest or '(nothing)'}' after {word}")
     src = a.pop("src", None)
-    return {"op": "set", "ref": word, "f": a, "src": src}
+    op = {"op": "set", "ref": word, "f": a, "src": src}
+    text = (left + ("\n" + cont if cont else "")).strip()
+    return [op, {"op": "say", "ref": word, "kind": "progress", "text": text}] if text else op  # T307: "B03 done <what changed>" says it too
 
 
 # --------------------------------------------------------------------------- Gemini
