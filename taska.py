@@ -3552,7 +3552,7 @@ class Handler(BaseHTTPRequestHandler):
         q, p = parse_qs(u.query), unquote(u.path)
         try:
             if p == "/":  # the front door (Local Hub links here): every project
-                return self.send(200, INDEX, "text/html; charset=utf-8")
+                return self.send(200, INDEX, "text/html; charset=utf-8", extra={"X-Taska-Page": "1"})
             if p in APP_PATHS:  # F192: Taska on the Home Screen
                 if p == "/sw.js":
                     return self.send(200, SW, "text/javascript; charset=utf-8")
@@ -3596,11 +3596,11 @@ class Handler(BaseHTTPRequestHandler):
     def get(self, s, p, q, base):
         ref = self.fileref(s)
         if p != "/" and VIEW_PATH.fullmatch(p) and self.wants_page():  # a view of the page: the page opens there
-            return self.send(200, PAGE.replace("__TASKA_VERSION__", VERSION), "text/html; charset=utf-8")
+            return self.send(200, PAGE.replace("__TASKA_VERSION__", VERSION), "text/html; charset=utf-8", extra={"X-Taska-Page": "1"})
         if (p in ("/agent", "/next", "/rules", "/inbox", "/items", "/log") or ITEM_PATH.fullmatch(p)) and "ui" not in q:  # ui=1: the page itself, not an agent
             s.saw((q.get("by") or ["agent"])[0], 1 if p == "/next" and q.get("wait") else 0)
         if p == "/":
-            self.send(200, PAGE.replace("__TASKA_VERSION__", VERSION), "text/html; charset=utf-8")
+            self.send(200, PAGE.replace("__TASKA_VERSION__", VERSION), "text/html; charset=utf-8", extra={"X-Taska-Page": "1"})
         elif p == "/agent":
             with s.lock:
                 n = len(s.rules())
@@ -3987,7 +3987,25 @@ MANIFEST = json.dumps({"name": "Taska", "short_name": "Taska", "start_url": "/",
                        "background_color": "#ffffff", "theme_color": "#ffffff",
                        "icons": [{"src": f"/icon-{n}.png", "sizes": f"{n}x{n}", "type": "image/png", "purpose": "any"} for n in (192, 512)]})
 SW = """// Taska's service worker (F192): it makes Taska installable and is where phone notifications will arrive (F195).
-// It caches nothing: everything in Taska is live, so every request goes to the network as usual.
+// It caches nothing else: everything in Taska is live, so those requests go to the network as usual.
+// T293: except the page itself (one for the home page, one for every project): it opens from here at once, and is
+// fetched again behind it for next time. Over a tunnel each request takes a second or more.
+const PAGES = 'taska-pages-1', pageKey = path => path === '/' ? '/' : /^\\/p\\/[^/]+\\/(inputs|archive|rules|new-rule|new|settings|agents|connect|phone|notifications|spellings|log|deleted|docs|about|projects|organizer|[A-Za-z]\\d+)?$/.test(path) ? '/p/' : null;
+self.addEventListener('fetch', e => {
+  const r = e.request, key = r.method === 'GET' && r.mode === 'navigate' && pageKey(new URL(r.url).pathname);
+  if (!key) return;
+  e.respondWith((async () => {
+    const box = await caches.open(PAGES), kept = await box.match(key);
+    const fresh = fetch(r).then(async res => {
+      if (res.ok && res.headers.get('X-Taska-Page')) await box.put(key, res.clone());
+      else if (res.status === 401 || res.status === 403) await box.delete(key);  // the key changed: the sign-in shows next time
+      return res;
+    });
+    if (!kept) return fresh;
+    e.waitUntil(fresh.catch(() => {}));
+    return kept;
+  })());
+});
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', e => e.waitUntil(self.clients.claim()));
 // A push carries nothing (F195): what needs you is asked of Taska itself, so the push service never sees it.
@@ -4090,8 +4108,13 @@ function agentCell(p) {  // the agent last heard of: green while it is around, g
 }
 const VERB = {ask: 'Answer', block: 'Answer', proposed: 'Approve', review: 'Accept'};
 let NEEDS = [];
-async function load() {
+async function load() {  // T293: the last copy at once, then what Taska says now
+  try { const kept = JSON.parse(localStorage.getItem('taska.home') || 'null'); if (kept && !NEEDS.drawn) draw(kept.list, kept.needs); } catch (_) {}
   const [list, needs] = await Promise.all([fetch('/api/projects', {cache: 'no-store'}).then(r => r.json()), fetch('/api/needs', {cache: 'no-store'}).then(r => r.json()).catch(() => [])]);
+  try { localStorage.setItem('taska.home', JSON.stringify({list, needs})); } catch (_) {}
+  draw(list, needs); NEEDS.drawn = true;
+}
+function draw(list, needs) {
   NEEDS = needs;
   list.sort((a, b) => (a.pos ?? 1e9) - (b.pos ?? 1e9) || b.t - a.t);  // your order (F253), else the latest first
   const tone = tones(list.map(p => p.name)), top = name => needs.find(x => x.project === name);
@@ -4757,7 +4780,13 @@ setInterval(() => { if (S.agents) renderAgent(); }, 30000);  // "2m" keeps count
 function freshen() {
   const busy = R.rec || U.outbox.length || U.files.length || SAVE.pend.length || SAVE.failed.length || U.editing || (U.open && !desk()) || D.full || U.doc || U.undoArch || (document.activeElement === $('text') && $('text').value.trim())
     || !$('overlay').hidden || !$('viewer').hidden || DR.open || U.searching || U.renaming || U.pNew;
-  if (!busy) location.reload();
+  if (!busy) renewPage().then(() => location.reload());
+}
+async function renewPage() {  // T293: the phone keeps the page; put the new one there first
+  try {
+    const res = await fetch(location.pathname, {cache: 'no-store', headers: {Accept: 'text/html'}});
+    if (res.ok && res.headers.get('X-Taska-Page') && window.caches) await (await caches.open('taska-pages-1')).put('/p/', res);
+  } catch (_) {}
 }
 
 async function refresh() { try { await load(); if (offline) { offline = 0; renderLive(); } } catch (_) {} }

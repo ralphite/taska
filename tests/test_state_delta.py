@@ -61,5 +61,10 @@ class DeltaTests(unittest.TestCase):
         self.assertNotIn('delta', self.s.state_since(full['sv'], 'old-boot'))
 
 
+    def test_the_phone_keeps_only_the_page_views(self):  # the service worker's list is the server's list of views
+        import re
+        views = re.search(r'\(([^)]*)\)', taska.VIEW_PATH.pattern)[1]
+        self.assertIn(views, taska.SW)
+
 if __name__ == '__main__':
     unittest.main()
