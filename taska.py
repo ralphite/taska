@@ -196,6 +196,7 @@ class Store:
         self.org_on, self.org_busy = False, None
         self.trs = {}  # voice notes being transcribed in the background, by file (B165): t0, done, tr, err
         self.claims = {}  # n -> (agent, time): what /next gave an agent, so another one asking now gets something else (F194)
+        self.sv, self.svn = {}, 0  # T293: (kind, id) -> [hash as last served, change number]; pages ask only for what changed
         self.fwd = {}  # file -> [(project, file)]: copies of notes whose input moved before their words came (F79, T101)
         if os.path.exists(self.path):
             with open(self.path, encoding="utf-8") as f:
@@ -1570,6 +1571,36 @@ class Store:
                     "docs": [dict({k: v for k, v in d.items() if k != "gone"}, blocks=self.doc_view(d)[0], detached=self.doc_view(d)[1], whole=self.doc_whole(d), open=self.doc_open(d)) for d in self.docs.values()
                              if not self.items.get(d["n"], {}).get("deleted") and not d.get("deleted")],
                     "gone": self.gone_list()}
+
+    SV_KEYS = (("items", "n"), ("inputs", "id"), ("docs", "d"))
+
+    def state_since(self, since=0, boot=""):
+        """T293: the state, or only the items, inputs and documents that changed since the page's copy (its change
+        number `sv`), with what went away. Every change is found by comparing what would be sent with what was."""
+        with self.lock:
+            st = self.state()
+            now = set()
+            for kind, idk in self.SV_KEYS:
+                for x in st[kind]:
+                    key = (kind, x[idk])
+                    now.add(key)
+                    h = hashlib.md5(json.dumps(x, sort_keys=True, ensure_ascii=False, default=str).encode()).digest()
+                    old = self.sv.get(key)
+                    if not old or old[0] != h:
+                        self.svn += 1
+                        self.sv[key] = [h, self.svn]
+            for key, v in self.sv.items():
+                if key not in now and v[0] is not None:
+                    self.svn += 1
+                    v[0], v[1] = None, self.svn
+            st["sv"] = self.svn
+            if since <= 0 or boot != self.boot or since > self.svn:
+                return st
+            for kind, idk in self.SV_KEYS:
+                st[kind] = [x for x in st[kind] if self.sv[(kind, x[idk])][1] > since]
+            st["delta"] = since
+            st["drop"] = {kind: [k[1] for k, v in self.sv.items() if k[0] == kind and v[0] is None and v[1] > since] for kind, _ in self.SV_KEYS}
+            return st
 
     def gone_list(self):
         """T257 #5, #8: items and documents deleted by themselves, newest first, for Deleted."""
@@ -3613,7 +3644,8 @@ class Handler(BaseHTTPRequestHandler):
             with s.lock:
                 self.send(200, s.log(int((q.get("n") or ["30"])[0])))
         elif p == "/api/state":
-            self.json(dict(s.state(), project=s.name, title=s.title, base=base, key=HUB.key,
+            since, sboot = int((q.get("since") or ["0"])[0] or 0), (q.get("boot") or [""])[0]
+            self.json(dict(s.state_since(since, sboot), project=s.name, title=s.title, base=base, key=HUB.key,
                            remote=f"{HUB.public}/k/{HUB.key}/p/{s.name}" if HUB.public else ""))
         elif p == "/api/poll":
             rev, boot, pv = int((q.get("rev") or ["0"])[0]), (q.get("boot") or [""])[0], int((q.get("pv") or ["-1"])[0])
@@ -4587,9 +4619,36 @@ async function copy(text, done = 'Copied') {
 // ---------------------------------------------------------------- data
 
 async function load() {
-  const text = await net(P + 'api/state', {}, NET.state, 'text');
+  const since = SAVE.last && S.sv ? `?since=${S.sv}&boot=${S.boot}` : '';  // T293: with a copy here, only what changed comes
+  let text = await net(P + 'api/state' + since, {}, NET.state, 'text');
   if (/^project \S+ was deleted/.test(text)) { if (!U.leaving) location.replace('/?gone=' + encodeURIComponent(HERE)); return; }  // deleted on another device or tab (F173); this one moves on by itself
-  SAVE.last = text; ingest(JSON.parse(text));
+  let d = JSON.parse(text);
+  if (d.delta) { d = mergeState(JSON.parse(SAVE.last), d); text = JSON.stringify(d); }
+  SAVE.last = text; ingest(d); cachePut(text);
+}
+// T293: the project's last state is kept in this browser, so opening it again draws at once from there; then only
+// what changed since comes over the network (everything, when Taska restarted meanwhile).
+const SC = {db: null, t: 0};
+const stateDB = () => SC.db ||= new Promise((ok, no) => { const r = indexedDB.open('taska-state', 1); r.onupgradeneeded = () => r.result.createObjectStore('s'); r.onsuccess = () => ok(r.result); r.onerror = () => no(r.error); });
+async function cacheGet() {
+  const read = (async () => { const db = await stateDB(); return await new Promise(ok => { const q = db.transaction('s').objectStore('s').get(HERE); q.onsuccess = () => ok(q.result || ''); q.onerror = () => ok(''); }); })();
+  try { return await Promise.race([read, new Promise(ok => setTimeout(() => ok(''), 300))]); } catch (_) { return ''; }  // a slow store never holds the page up
+}
+function cachePut(text) { clearTimeout(SC.t); SC.t = setTimeout(async () => { try { (await stateDB()).transaction('s', 'readwrite').objectStore('s').put(text, HERE); } catch (_) {} }, 1500); }
+async function loadKept() {  // draw from the kept copy first, then bring it up to date
+  const kept = await cacheGet();
+  if (kept && !SAVE.last) try { SAVE.last = kept; ingest(JSON.parse(kept)); } catch (_) { SAVE.last = ''; }
+  return load();
+}
+function mergeState(was, d) {  // T293: the changed items, inputs and documents into the copy this page has
+  for (const [kind, id] of [['items', 'n'], ['inputs', 'id'], ['docs', 'd']]) {
+    const drop = new Set(d.drop?.[kind] || []), fresh = new Map(d[kind].map(x => [x[id], x]));
+    const out = was[kind].filter(x => !drop.has(x[id])).map(x => fresh.get(x[id]) ?? x), have = new Set(out.map(x => x[id]));
+    for (const x of d[kind]) if (!have.has(x[id])) out.push(x);
+    was[kind] = out;
+  }
+  const {items, inputs, docs, delta, drop, ...rest} = d;
+  return Object.assign(was, rest);
 }
 function ingest(d) {  // Taska's state on screen, with your changes that are still on their way (T160)
   noticeItems(d);
@@ -10329,7 +10388,7 @@ shell();
 window.addEventListener('load', grow);  // a restored draft is measured again once styles are in
 if ('serviceWorker' in navigator && isSecureContext) navigator.serviceWorker.register('/sw.js').catch(() => {});  // Taska can go on the Home Screen (F192)
 
-load().then(() => {
+loadKept().then(() => {
   checkOthers();  // the other projects: the sidebar, and Move… on your inputs (A12)
   const {seg} = readURL(), n = /^[Dd]\d+$/.test(seg) ? 0 : parseRef(seg);  // D1 is a document, not item 1
   if (history.state?.layers) history.replaceState({...history.state, layers: undefined}, '');  // a sheet open before a reload is not open now (B150)
