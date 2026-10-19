@@ -5134,7 +5134,7 @@ function swipeLeft(it) {
   const done = it.wait ? [['status', 'done', 'Done']] : [];
   if (it.type === 'rule' && !it.archived) return it.status === 'proposed' ? [drop] : it.status === 'open' ? [['status', 'dropped', 'Retire']] : [['status', 'open', 'Reactivate']];  // a rule: no Later, no Start (B158)
   return it.archived ? [['archived', 'false', 'Unarchive']]
-    : it.status === 'proposed' ? [later, drop]
+    : it.status === 'proposed' ? [drop, later]  // B302: in the same places as on every other row
     : it.status === 'review' ? [later, ['status', 'doing', 'Not yet']]
     : CLOSED(it.status) ? [['status', 'open', 'Reopen']]
     : it.status === 'doing' ? [drop, later, ...(stuck(it) ? [['status', 'open', 'Back to queue']] : []), ...done]
@@ -5909,7 +5909,7 @@ const STATE_ON = {proposed: 'text-amber-400 dark:text-amber-600', review: 'text-
 // A status button in the ⋯ menu: the one the item has is aria-pressed, and its fill and icon follow that (T160).
 const STAT_BTN = 'group flex min-w-0 items-center gap-1.5 bg-zinc-100 text-[13px] font-medium whitespace-nowrap text-zinc-700 hover:bg-zinc-200 aria-pressed:bg-zinc-900 aria-pressed:text-white dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700 dark:aria-pressed:bg-zinc-100 dark:aria-pressed:text-zinc-900';
 const statIcon = (s, t, size) => stateIcon(s, t, size, STATE_ICON[s][1] + ' ' + STATE_ON[s].split(' ').map(c => c.replace(/^(dark:)?/, '$1group-aria-pressed:')).join(' '));
-function itemMenu(n) {
+function itemMenu(n, arm = '') {
   if (desk()) return itemMenuDesk(n);
   const it = byN.get(n);
   if (!it) return;
@@ -5923,13 +5923,19 @@ function itemMenu(n) {
   const stat = ([s, t]) => { const on = it.status === s;
     return `<button data-act="set-field" data-n="${n}" data-f="status" data-v="${s}" aria-pressed="${on}" class="${STAT_BTN} h-11 rounded-xl px-2.5">${statIcon(s, t, 'size-4.5')}<span class="truncate">${t}</span></button>`; };
   const statuses = it.type === 'rule' ? Object.entries(RULE_STATUS).filter(([v]) => v !== 'proposed' || it.status === 'proposed') : Object.entries(STATUS);
+  const type = `<div>${lab('Type')}${segctl('set-field', 'type', [...TYPES, 'rule'].map(t => [t, letterOf(t) + `<span class="truncate">${t[0].toUpperCase() + t.slice(1)}</span>`]), it.type).replaceAll('data-k="type"', `data-f="type" data-n="${n}"`)}</div>`;
+  const pri = it.type === 'rule' ? '' : `<div>${lab('Priority')}${segctl('set-field', 'pri', ['P0', 'P1', 'P2', 'P3'].map(p => [p, p === 'P0' ? '<span class="font-semibold text-red-600 dark:text-red-400">P0</span>' : p]), it.pri).replaceAll('data-k="pri"', `data-f="pri" data-n="${n}"`)}</div>`;
+  const status = `<div>${lab('Status')}<div class="grid grid-cols-3 gap-1.5">${statuses.map(stat).join('')}</div></div>`;
+  const head = `<span class="block truncate text-[15px] font-semibold"><span class="mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[it.type]}">${code(n)}</span>${esc(it.title)}</span>`;
+  const only = {s: status, p: pri, t: type}[arm];
+  if (only) { U.sheet = 'pick'; return dialog('', only, {head, focus: false}); }  // B302: a property's chip picks that property, as on the desktop; picked, it closes
   dialog('', `<div class="flex flex-col gap-5">
     <div class="grid grid-cols-3 gap-2">${tile('edit', 'pencil', 'Edit')}${tile('copy', 'copy', 'Copy for agent')}${tile('doc-new', 'docplus', 'New doc')}
       ${tile('sub-new', 'listplus', 'Add subitem')}${tile('reparent', 'indent', 'Put under…', it.parent ? `now under ${code(it.parent)}` : '')}${state}${next}${tile('item-move-proj', 'arrow', 'Move to project…')}${tile('item-delete', 'trash', 'Delete')}</div>
-    <div>${lab('Type')}${segctl('set-field', 'type', [...TYPES, 'rule'].map(t => [t, letterOf(t) + `<span class="truncate">${t[0].toUpperCase() + t.slice(1)}</span>`]), it.type).replaceAll('data-k="type"', `data-f="type" data-n="${n}"`)}</div>
-    ${it.type === 'rule' ? '' : `<div>${lab('Priority')}${segctl('set-field', 'pri', ['P0', 'P1', 'P2', 'P3'].map(p => [p, p === 'P0' ? '<span class="font-semibold text-red-600 dark:text-red-400">P0</span>' : p]), it.pri).replaceAll('data-k="pri"', `data-f="pri" data-n="${n}"`)}</div>`}
-    <div>${lab('Status')}<div class="grid grid-cols-3 gap-1.5">${statuses.map(stat).join('')}</div></div>
-  </div>`, {head: `<span class="block truncate text-[15px] font-semibold"><span class="mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[it.type]}">${code(n)}</span>${esc(it.title)}</span>`, focus: false});
+    ${type}
+    ${pri}
+    ${status}
+  </div>`, {head, focus: false});
 }
 
 // T274 #6: five places an item can be: it needs you, an agent is on it, it waits in the queue, later, finished
@@ -7391,6 +7397,7 @@ function popAt(x, y, again = 2) {  // B129: a menu opened by right-click sits at
 }
 const closeDialog = () => {
   const edit = U.docEdit;
+  $('dlgBody').style.maxHeight = '';  // B302: the next card takes its own height
   if (edit) keepDoc();  // closing the editor keeps what you wrote, as a draft: only Create or Save publish it (T113 B6)
   if (desk()) {  // a document lives in the item pane (T110): closing a sheet or the editor leaves it open there
     U.docNew = null; U.docEdit = false; U.sheet = null; U.menuArm = null;  // Go through goes on after a menu or a sheet (T113 B17)
@@ -7500,6 +7507,20 @@ $('vStage').addEventListener('touchstart', e => {
   VS.on = e.touches.length === 1 && $('vImg').classList.contains('max-w-full');
   if (VS.on) { VS.x = e.touches[0].clientX; VS.y = e.touches[0].clientY; }
 }, {passive: true});
+// B302: two fingers zoom the picture, never the page under it: spread for 100%, pinch for the whole picture
+const vDist = t => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+$('viewer').addEventListener('touchmove', e => {
+  if (e.touches.length < 2) return;
+  e.preventDefault();
+  VS.d0 ||= vDist(e.touches); VS.d1 = vDist(e.touches);
+}, {passive: false});
+$('viewer').addEventListener('gesturestart', e => e.preventDefault());  // Safari's own pinch
+$('viewer').addEventListener('touchend', e => {
+  if (!VS.d0 || e.touches.length) return;
+  const r = VS.d1 / VS.d0, fit = $('vImg').classList.contains('max-w-full');
+  VS.d0 = VS.d1 = 0;
+  if (fit ? r > 1.2 : r < 0.83) ACT['v-zoom']($('vZoom'));
+});
 $('vStage').addEventListener('touchend', e => {
   if (!VS.on) return;
   VS.on = false;
@@ -7516,7 +7537,11 @@ function render() {
   showView(); renderItems(); renderDetail(); renderComposer(); renderFeedback(); renderAgent();
   if (desk()) { renderProjBar(); renderDeskHead(); renderSidebar(); renderRail(); renderFilters(); }
   if (D.page) renderProject();
-  if (U.peek && !$('overlay').hidden) { const top = $('dlgBody').scrollTop; peek(U.peek, {focus: false}); $('dlgBody').scrollTop = top; }
+  if (U.peek && !$('overlay').hidden) {
+    const body = $('dlgBody'), top = body.scrollTop, h = body.clientHeight, was = $('dlg').getBoundingClientRect().top;
+    peek(U.peek, {focus: false}); body.scrollTop = top;
+    if (!desk() && $('dlg').getBoundingClientRect().top < was - 1) body.style.maxHeight = h + 'px';  // B302: new words do not lift the card under your thumb; they are below, a scroll away
+  }
   if (U.doc && !U.docEdit && !U.docQuote && !$('overlay').hidden && docSig(docById(U.doc)) !== U.docSig) renderDoc();  // only when it changed: a redraw under a tap loses the tap
   if (U.tab === 'inputs') renderInputs();
   phoneCounts();
@@ -7928,7 +7953,7 @@ const ACT = {
   'sel-clear': () => { U.sel.clear(); renderItems(); },
   back: () => desk() ? fullWidth(false) : hist(() => history.state?.n ? history.back() : closeItem()),
   'cp-run': b => paletteRun(b),
-  'item-menu': b => b?.dataset.arm && desk() ? itemMenuDesk(U.open, b.dataset.arm) : itemMenu(U.open),  // a property's chip opens the menu at that part (T274 #10)
+  'item-menu': b => b?.dataset.arm && desk() ? itemMenuDesk(U.open, b.dataset.arm) : itemMenu(U.open, b?.dataset.arm),  // a property's chip opens the menu at that part (T274 #10)
   'do-next': b => {  // F197: first of its priority in the agent's queue, or back where it was; with Undo and Z
     const n = Number(b.dataset.n), it = byN.get(n);
     if (!it) return;
@@ -7937,6 +7962,7 @@ const ACT = {
   },
   'set-field': b => {  // type, priority and status from the ⋯ menu: with Undo and Z (T113 A7)
     const n = Number(b.dataset.n), menu = () => { if (U.sheet === 'menu' && !$('overlay').hidden) itemMenu(n); };
+    if (U.sheet === 'pick') closeDialog();  // B302
     change(n, b.dataset.f, b.dataset.v).then(ok => { if (!ok) menu(); });
     menu();
   },
