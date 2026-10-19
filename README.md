@@ -4,8 +4,9 @@
 
 **One task list for you and your coding agents.**
 
-Say what you want, by voice, text or screenshot. Your agents pick it up, do the work, and come back to you only when
-they need you.
+Work with your agents at the level of tasks, not chat transcripts. Say what you want, by voice, text or screenshot.
+Your agents pick it up, do the work, and come back to you only when they need you. You get far more done, from your
+desk or your phone.
 
 ![Python 3.9+](https://img.shields.io/badge/python-3.9%2B-blue)
 ![No dependencies](https://img.shields.io/badge/dependencies-none-brightgreen)
@@ -50,6 +51,19 @@ Coding agents work fast. Keeping up with them is the hard part:
 Taska gives you and your agents one shared place for the work. You drop things in whenever they come up. Agents
 read the queue over a plain-text API, work through it, and write back what they did. You see only what's
 waiting on you: a question to answer, a plan to approve, finished work to accept.
+
+### What Taska is for
+
+Taska is a productivity tool for people who build with coding agents. It is where you and your agents talk about
+the work itself: what to do, what was done, what is blocked, and what needs a decision. You manage the work; the
+agents do it.
+
+Every change to Taska is measured against one goal: **you get more done with less effort.** That means:
+
+- **Capturing a thought takes seconds**, wherever you are, and nothing you say gets lost.
+- **Agents keep working without you** and stop only for what really needs you.
+- **What needs you is obvious and quick to handle**: one tap to answer, approve or accept.
+- **You always know where things stand**, without reading a transcript.
 
 ## How it works
 
