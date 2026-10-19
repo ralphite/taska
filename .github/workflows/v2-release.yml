@@ -1,0 +1,59 @@
+# Taska v2: check every change to v2/, and on a tag v2-* publish the one-file release, taska.pyz.
+name: v2
+
+on:
+  push:
+    paths: ['v2/**', '.github/workflows/v2-release.yml']
+    tags: ['v2-*']
+  pull_request:
+    paths: ['v2/**']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: v2/web
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '26'
+          cache: npm
+          cache-dependency-path: v2/web/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+      - run: npm ci
+      - name: Types (page and server)
+        run: npm run typecheck && npm run typecheck:server
+      - run: npm run lint
+      - run: npm test
+      - name: The agent interface answers as the old app did
+        working-directory: v2
+        run: python3 tests/test_compat.py
+      - run: npm run build
+      - name: One file, taska.pyz
+        working-directory: .
+        run: python3 v2/tools/build_pyz.py --skip-web --out dist/taska.pyz
+      - name: The release starts and serves the page
+        working-directory: .
+        run: |
+          python3 dist/taska.pyz --port 7399 --root "$RUNNER_TEMP/taska-data" --organizer off &
+          for i in $(seq 30); do curl -sf http://127.0.0.1:7399/health && break; sleep 1; done
+          curl -sf http://127.0.0.1:7399/ | grep -q '<div id="root"'
+          kill %1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: taska.pyz
+          path: dist/taska.pyz
+      - name: Publish the release
+        if: startsWith(github.ref, 'refs/tags/v2-')
+        working-directory: .
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/taska.pyz --title "Taska $GITHUB_REF_NAME" --notes "Run it with: python3 taska.pyz"

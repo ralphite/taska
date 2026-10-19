@@ -32,6 +32,6 @@ Or the single file from a release: `python3 taska.pyz --port 7341 --root ~/taska
 | Agent API compatibility | `python3 v2/tests/test_compat.py` |
 | Old data imports the same | `python3 v2/tests/check_import.py <old taska.py> <copy of ~/.taska>` |
 | End-to-end (a running server) | `TASKA_URL=http://127.0.0.1:7341 npm --prefix v2/web run e2e` |
-| The single file | `python3 v2/tools/build_pyz.py` (after the frontend build) |
+| The single file | `python3 v2/tools/build_pyz.py` (builds the page, then `v2/dist/taska.pyz`; `--skip-web` uses the page already built) |
 
 Never point a development server at `~/.taska`: use a copy.
