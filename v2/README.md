@@ -31,7 +31,13 @@ Or the single file from a release: `python3 taska.pyz --port 7341 --root ~/taska
 | Frontend unit tests | `npm --prefix v2/web test` |
 | Agent API compatibility | `python3 v2/tests/test_compat.py` |
 | Old data imports the same | `python3 v2/tests/check_import.py <old taska.py> <copy of ~/.taska>` |
-| End-to-end (a running server) | `TASKA_URL=http://127.0.0.1:7341 npm --prefix v2/web run e2e` |
+| Behaviour tests, v2 (a fresh data folder each run) | `python3 v2/tests/run_e2e.py` |
+| The same tests on the old app | `python3 v2/tests/run_e2e.py --old taska.py` |
 | The single file | `python3 v2/tools/build_pyz.py` (builds the page, then `v2/dist/taska.pyz`; `--skip-web` uses the page already built) |
 
 Never point a development server at `~/.taska`: use a copy.
+
+## Behaviour still being decided
+
+`v2/web/src/lib/behaviour.ts` holds the behaviours that wait on a decision (D21 on T318, F291, I289). Each is one
+switch; the defaults are the one-file Taska's behaviour, so v2 does what the old app does until a decision changes one.
