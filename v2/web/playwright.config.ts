@@ -11,7 +11,11 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   reporter: [['list']],
-  use: { baseURL: url, trace: 'retain-on-failure' },
+  use: {
+    baseURL: url,
+    trace: 'retain-on-failure',
+    launchOptions: process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {},
+  },
   projects: [
     {
       name: 'phone',

@@ -37,6 +37,8 @@ jobs:
         working-directory: v2
         run: python3 tests/test_compat.py
       - run: npm run build
+      - name: The page behaves as the old app did (393 and 1440 wide)
+        run: npx playwright install --with-deps chromium && python3 ../tests/run_e2e.py
       - name: One file, taska.pyz
         working-directory: .
         run: python3 v2/tools/build_pyz.py --skip-web --out dist/taska.pyz
