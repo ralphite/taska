@@ -4,7 +4,7 @@ import type { ReactNode } from 'react'
 import { DC_BTN, HIT, KIND, NEED, PRIMARY_BASE } from '../lib/constants'
 import { U, byR, ctx, desk, docsOf, oneLine, plural, rcode, userWord, when, whoName } from '../lib/state'
 import type { Doc, FileRef, Input, Item, Msg } from '../lib/types'
-import { CHOICE, clean, groups, hasChoices, mdHtml } from '../lib/markdown'
+import { clean, groups, hasChoices, mdHtml } from '../lib/markdown'
 import { audioOf } from '../lib/audio'
 import { BEHAVIOUR } from '../lib/behaviour'
 import { P_CACHE } from '../lib/settings'
@@ -279,17 +279,15 @@ export function MsgText({
     </>
   )
 }
-// T274 #27: an answered question folds to its question and what you chose
+// F327 (as Yadong first had it): an answered question keeps its form, greyed and no longer clickable, with what you
+// picked ticked and said once below
 function Answered({ x, gid, done }: { x: Msg; gid: string; done: string[] }) {
-  const q = x.text
-    .split('\n')
-    .filter((l) => !CHOICE.test(l))
-    .join('\n')
-    .trim()
   return (
     <>
-      {q ? <Rich text={q} gid={gid + 'q' + x.id} /> : null}
-      <div className="mt-1.5 font-semibold text-emerald-700 dark:text-emerald-400">✓ You chose: {done.join(' · ')}</div>
+      <div className="opacity-60 grayscale">
+        <Rich text={x.text} gid={gid + 'q' + x.id} done={done} />
+      </div>
+      <div className="mt-2 text-sm font-medium text-zinc-600 dark:text-zinc-300">Submitted: {done.join(' · ')}</div>
     </>
   )
 }
@@ -510,9 +508,9 @@ export function MsgView({
         <Avatar by={x.by} />
         <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">{whoName(x.by)}</span>
         {done && !form ? (
-          <span className="flex items-center gap-0.5 rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-emerald-800 uppercase dark:bg-emerald-400/15 dark:text-emerald-300">
+          <span className="flex items-center gap-0.5 rounded bg-zinc-100 px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-zinc-600 uppercase dark:bg-zinc-800 dark:text-zinc-300">
             <Icon n="check" c="size-3" sw="3" />
-            Answered
+            Submitted
           </span>
         ) : (
           <KindTag x={x} />
