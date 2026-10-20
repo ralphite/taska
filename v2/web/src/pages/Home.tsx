@@ -302,10 +302,11 @@ export function Home() {
               ) : (
                 <span className="text-zinc-300 dark:text-zinc-600">—</span>
               )
+              // B324: a project opens on its New input page, not on one of its items
               return (
                 <li key={p.name} className="border-b border-zinc-100 last:border-b-0 dark:border-zinc-700/60">
                   <a
-                    href={`/p/${encodeURIComponent(p.name)}/${x ? encodeURIComponent(x.code) : ''}`}
+                    href={`/p/${encodeURIComponent(p.name)}/`}
                     className="flex items-center gap-3 px-3 py-2.5 hover:bg-zinc-50 active:bg-zinc-100 lg:grid lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_4.5rem_5.5rem_minmax(0,2.4fr)] lg:px-4 lg:py-3 lg:text-[13px] dark:hover:bg-zinc-700/40"
                   >
                     <span className="flex min-w-0 items-center gap-2.5">
