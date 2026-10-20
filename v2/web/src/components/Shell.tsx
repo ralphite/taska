@@ -49,7 +49,7 @@ import {
   wide,
 } from '../lib/state'
 import { PSEC } from '../lib/settings-data'
-import { TOAST } from '../lib/toast'
+import { TOAST, hideToast } from '../lib/toast'
 import { VW, viewerAct } from '../lib/viewer'
 import { searchMode, openItem, closeDrawer } from '../lib/nav'
 import { writeURL } from '../lib/url'
@@ -981,7 +981,7 @@ function Toast() {
       hidden={!t.shown}
       role={t.error ? 'alert' : 'status'}
       {...(t.error ? { 'data-error': '' } : {})}
-      className={`fixed inset-x-0 bottom-28 z-[60] mx-auto flex w-fit max-w-[92vw] items-center gap-3 rounded-full bg-zinc-900 py-2 pr-4 pl-4 text-sm text-white shadow-lg has-[button]:py-1.5 has-[button]:pr-1.5 data-error:bg-red-600 data-error:text-white lg:right-auto lg:bottom-5 lg:left-5 lg:mx-0 lg:max-w-md dark:bg-zinc-100 dark:text-zinc-900 dark:data-error:bg-red-600 dark:data-error:text-white ${t.act ? '' : 'pointer-events-none'}`}
+      className={`fixed inset-x-0 bottom-28 z-[60] mx-auto flex w-fit max-w-[92vw] items-center gap-3 rounded-full bg-zinc-900 py-2 pr-4 pl-4 text-sm text-white shadow-lg has-[button]:py-1.5 has-[button]:pr-1.5 data-error:bg-red-600 data-error:text-white lg:right-auto lg:bottom-5 lg:left-5 lg:mx-0 lg:max-w-md dark:bg-zinc-100 dark:text-zinc-900 dark:data-error:bg-red-600 dark:data-error:text-white ${t.act || t.sticky ? '' : 'pointer-events-none'}`}
     >
       {t.error ? <Icon n="alert" c="size-4" sw="2" /> : null}
       <span className="line-clamp-2 min-w-0 leading-snug">{t.text}</span>
@@ -998,6 +998,19 @@ function Toast() {
           className={`relative h-8 shrink-0 rounded-full px-3 text-sm font-semibold after:absolute after:-inset-1.5 ${t.error ? 'bg-white/20 text-white hover:bg-white/30' : 'bg-white/15 text-white hover:bg-white/25 dark:bg-zinc-900/10 dark:text-zinc-900 dark:hover:bg-zinc-900/20'}`}
         >
           {t.label}
+        </button>
+      ) : null}
+      {t.sticky ? (
+        <button
+          data-toast
+          aria-label="Close"
+          onClick={(e) => {
+            e.stopPropagation()
+            hideToast()
+          }}
+          className="relative grid size-8 shrink-0 place-items-center rounded-full text-white/80 after:absolute after:-inset-1.5 hover:bg-white/20 hover:text-white"
+        >
+          <Icon n="x" c="size-4" />
         </button>
       ) : null}
     </div>

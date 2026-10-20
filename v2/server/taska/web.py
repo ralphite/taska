@@ -452,9 +452,19 @@ class Handler(BaseHTTPRequestHandler):
         elif p == "/api/op":
             data = json.loads(self.body(1_000_000) or b"{}")
             ops = [(0, x) for x in (data if isinstance(data, list) else [data])]  # pyright: ignore[reportUnknownVariableType]
-            lines, _ = s.run_all(ops, "you")
-            code = 400 if any(x.startswith("err") for x in lines) else 200
-            self.json({"ok": code == 200, "res": lines, "rev": s.rev}, code)
+            cid = (q.get("cid") or [""])[0][:64]  # B326: the page's id for this save; sent again after a lost answer, it is done once
+            with s.lock:
+                if cid and cid in s.op_done:
+                    answer, code = s.op_done[cid]
+                else:
+                    lines, _ = s.run_all(ops, "you")
+                    code = 400 if any(x.startswith("err") for x in lines) else 200
+                    answer = {"ok": code == 200, "res": lines, "rev": s.rev}
+                    if cid:
+                        s.op_done[cid] = (answer, code)
+                        while len(s.op_done) > 500:
+                            s.op_done.pop(next(iter(s.op_done)))
+            self.json(dict(answer, rev=s.rev), code)
         elif p == "/api/file":
             data = self.body(MAX_FILE)
             mime = (self.headers.get("Content-Type") or "application/octet-stream").split(";")[0]

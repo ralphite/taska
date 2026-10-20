@@ -55,7 +55,14 @@ export async function net<T = unknown>(
     return out
   } catch {
     const why = ctl.signal.aborted ? 'timeout' : status ? 'bad answer' : 'unreachable'
-    if (opts.method === 'POST') NETLOG.list.push({ t: new Date().toISOString(), why, url: url.replace(/^.*\/p\//, '/p/'), ms: Date.now() - t0, status })
+    if (opts.method === 'POST')
+      NETLOG.list.push({
+        t: new Date().toISOString(),
+        why,
+        url: url.replace(/^.*\/p\//, '/p/'),
+        ms: Date.now() - t0,
+        status,
+      })
     throw new NetError(ctl.signal.aborted ? 'No answer from Taska' : 'Taska is out of reach')
   } finally {
     clearTimeout(t)
@@ -78,8 +85,22 @@ export interface OpAnswer {
   rev?: number
   error?: string
 }
+// B326: a save that can't reach Taska (it restarts, the tunnel drops, no answer in time) is sent again by itself,
+// for about a minute, under one id, so Taska does it once however often it arrives
+const RETRY_MS = [1000, 2000, 4000, 8000, 15000, 30000]
+let lastSaid = '' // what the latest save was, for a Not saved that was not told (B326)
 export async function op(o: unknown): Promise<OpAnswer> {
-  const d = await net<OpAnswer>(ctx.P + 'api/op', JSON_POST(o), NET.op)
+  lastSaid = saidOp(o)
+  const cid = Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
+  let d: OpAnswer | null = null
+  for (let i = 0; !d; i++) {
+    try {
+      d = await net<OpAnswer>(ctx.P + 'api/op?cid=' + cid, JSON_POST(o), NET.op)
+    } catch (ex) {
+      if (!(ex as { net?: boolean }).net || i >= RETRY_MS.length) throw ex
+      await new Promise((ok) => setTimeout(ok, RETRY_MS[i]))
+    }
+  }
   if (!d.ok) {
     toast((d.res || []).find((x) => x.startsWith('err')) || d.error || 'Not saved', null, { error: true })
     throw new Error('op failed')
@@ -91,20 +112,53 @@ export async function op(o: unknown): Promise<OpAnswer> {
   }
   return d
 }
-// A save that didn't reach Taska. Several in a row are retried together, in order.
-export function notSaved(ex: unknown, retry?: () => unknown) {
+// A save that didn't reach Taska after a minute of trying. Several in a row are retried together, in order. The toast
+// stays until you act on it and says which changes they were (B326).
+const failedWhat: string[] = []
+export function notSaved(ex: unknown, retry?: () => unknown, what = lastSaid || 'a change') {
   if (!(ex as { net?: boolean })?.net) return
   if (retry) failedRetry.push(retry)
-  const k = failedRetry.length
+  if (!failedRetry.length) failedWhat.length = 0
+  failedWhat.push(what)
+  const k = failedWhat.length
   toast(
-    k > 1 ? `${k} changes not saved` : 'Not saved',
-    k
+    `Not saved: ${failedWhat.slice(-3).join('; ')}${k > 3 ? ` and ${k - 3} more` : ''}`,
+    failedRetry.length
       ? () => {
+          failedWhat.length = 0
           for (const r of failedRetry.splice(0)) r()
         }
       : null,
-    { error: true, label: 'Retry' },
+    { error: true, label: 'Retry', sticky: true },
   )
+}
+// What a save was, in a few words, for the toast that says it did not go through
+export function saidOp(o: unknown): string {
+  const x = (Array.isArray(o) ? o[0] : o) as Record<string, unknown> | undefined
+  if (!x) return 'a change'
+  const f = x.f as Record<string, unknown> | undefined
+  const word = (k: string, v: unknown) =>
+    k === 'when'
+      ? v === 'later'
+        ? 'to Later'
+        : 'back to now'
+      : k === 'archived'
+        ? v
+          ? 'archived'
+          : 'out of Archive'
+        : k === 'status'
+          ? `marked ${String(v)}`
+          : k === 'pri'
+            ? `set to ${String(v)}`
+            : k === 'rank'
+              ? 'moved in the list'
+              : `${k} changed`
+  if (x.op === 'set' && f)
+    return `${String(x.ref)} ${Object.entries(f)
+      .map(([k, v]) => word(k, v))
+      .join(', ')}`
+  if (x.op === 'input') return x.scope ? `your words to ${String(x.scope)}` : 'your new input'
+  return `${String(x.op)}${x.ref ? ' ' + String(x.ref) : ''}`
 }
 export const notLoaded = (what: string, retry: () => unknown) =>
   toast(`Couldn't load ${what}`, retry, { error: true, label: 'Retry' })
@@ -113,7 +167,7 @@ export async function save(o: unknown, retry?: () => unknown) {
   try {
     return await op(o)
   } catch (ex) {
-    notSaved(ex, retry)
+    notSaved(ex, retry, saidOp(o))
     throw ex
   }
 }
@@ -409,7 +463,7 @@ const restore = () => {
 export function optimistic(
   patches: Patch[],
   send: () => Promise<unknown>,
-  fail: (ex: unknown) => void = (ex) => notSaved(ex),
+  fail: (ex: unknown) => void = (ex) => notSaved(ex, undefined, patchesSaid(patches)),
   needed: () => boolean = () => true,
 ): Promise<boolean> {
   const drop = () => {
@@ -448,9 +502,13 @@ export const setNow = (n: number, f: Record<string, unknown>, retry?: () => unkn
   return optimistic(
     [{ n, f }],
     () => op({ op: 'set', ref, f }),
-    (ex) => notSaved(ex, retry),
+    (ex) => notSaved(ex, retry, saidOp({ op: 'set', ref, f })),
   )
 }
+const patchesSaid = (patches: Patch[]) =>
+  patches.length === 1
+    ? saidOp({ op: 'set', ref: code(patches[0].n), f: patches[0].f })
+    : `${patches.length} items changed`
 
 // ---------------------------------------------------------------- changes with Undo
 

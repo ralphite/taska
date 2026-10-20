@@ -491,14 +491,15 @@ export async function sendChoice(n: number) {
     note = withBox ? (els.text?.value ?? '').trim() : '',
     files = withBox ? U.files : []
   try {
-    let rid: string | null = null
+    const rid: string | null = null
+    // B326: an answer goes out like anything you write: at once on the screen, kept and sent again until Taska has it
+    outboxPush({ text: picks + (note ? '\n\n' + note : ''), files, scope: code(n), from: null, quiet: true })
     if (note || files.length) {
-      outboxPush({ text: picks + (note ? '\n\n' + note : ''), files, scope: code(n), from: null, quiet: true })
       if (els.text) els.text.value = ''
       U.files = []
       saveDraft()
-      flushOutbox()
-    } else rid = (await save({ op: 'input', text: picks, scope: code(n) }, () => sendChoice(n))).res[0].split(' ')[1]
+    }
+    flushOutbox()
     const said = `Answer sent to ${code(n)}${note || files.length ? ' with your note' : ''}` // B155
     U.choice = null
     keepChoice()
