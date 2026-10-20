@@ -2925,6 +2925,7 @@ def voice_keep(store, fid, res):
 # --------------------------------------------------------------------------- http
 
 HUB = None
+READ_ONLY = False  # --read-only: the old app beside the new one
 ITEM_PATH = re.compile(r"/([A-Za-z]?\d+)")
 VIEW_PATH = re.compile(r"/(inputs|archive|rules|new-rule|new|settings|agents|connect|phone|notifications|spellings|log|deleted|docs|about|projects|organizer|[A-Za-z]\d+)")  # the page's views (T102, B162)
 NAME = re.compile(r"[a-z0-9][a-z0-9-]{0,39}")  # a project's address and folder: made from its name once, never changed (F173)
@@ -3660,7 +3661,7 @@ class Handler(BaseHTTPRequestHandler):
                 self.send(200, s.log(int((q.get("n") or ["30"])[0])))
         elif p == "/api/state":
             since, sboot = int((q.get("since") or ["0"])[0] or 0), (q.get("boot") or [""])[0]
-            self.json(dict(s.state_since(since, sboot), project=s.name, title=s.title, base=base, key=HUB.key,
+            self.json(dict(s.state_since(since, sboot), project=s.name, title=s.title, base=base, key=HUB.key, read_only=READ_ONLY,
                            remote=f"{HUB.public}/k/{HUB.key}/p/{s.name}" if HUB.public else ""))
         elif p == "/api/poll":
             rev, boot, pv = int((q.get("rev") or ["0"])[0]), (q.get("boot") or [""])[0], int((q.get("pv") or ["-1"])[0])
@@ -3712,6 +3713,8 @@ class Handler(BaseHTTPRequestHandler):
     def handle_post(self):
         if not self.guard():
             return
+        if READ_ONLY:  # the old app kept beside the new one, to look things up: nothing can be changed here
+            return self.send(403, "This Taska is read-only: it is the old app, kept to compare. Write in Taska on port 7340.\n")
         u = self.url()
         q, p = parse_qs(u.query), unquote(u.path)
         try:
@@ -3959,12 +3962,15 @@ def main():
     ap.add_argument("--root", default="~/.taska", help="data folder, one subfolder per project (default ~/.taska)")
     ap.add_argument("--organizer", choices=("auto", "off"), default="auto", help="auto = use Gemini when a key is set")
     ap.add_argument("--public", default="", help="the tunnel's public address, e.g. https://xxxx-7340.usw2.devtunnels.ms")
+    ap.add_argument("--read-only", action="store_true", help="look only: every change is refused, no organizer, no pushes")
     args = ap.parse_args()
     if args.command == "install-skill":
         print("Installed the Taska skill:")
         install_skill()
         return
-    HUB = Hub(args.root, args.organizer == "auto" and bool(api_key()), args.public)
+    global READ_ONLY
+    READ_ONLY = args.read_only
+    HUB = Hub(args.root, args.organizer == "auto" and bool(api_key()) and not READ_ONLY, args.public)
     try:
         srv = Server((args.host, args.port), Handler)
     except OSError as ex:
@@ -3982,7 +3988,8 @@ def main():
                     HUB.push.seen = None
             except Exception as ex:  # a push must never stop Taska
                 print(f"taska: push: {ex}", file=sys.stderr)
-    threading.Thread(target=pushes, daemon=True).start()
+    if not READ_ONLY:
+        threading.Thread(target=pushes, daemon=True).start()
     # SIGTERM (a restart, a deploy): stop taking requests and finish the ones at work first (T101)
     signal.signal(signal.SIGTERM, lambda *_: threading.Thread(target=srv.shutdown, daemon=True).start())
     try:
@@ -4692,6 +4699,7 @@ function mergeState(was, d) {  // T293: the changed items, inputs and documents 
 function ingest(d) {  // Taska's state on screen, with your changes that are still on their way (T160)
   noticeItems(d);
   S = d; BASE = d.base || BASE; byN.clear(); byR.clear();
+  if (S.read_only) S.title = `${S.title || S.project} · Taska-old, read-only`;  // the old app kept to compare: said wherever its name shows
   for (const it of S.items) { if (CLOSED(it.status)) it.wait = null; byN.set(it.n, it); }  // closed: its question is history, not a pending ask (B128)
   for (const r of S.inputs) byR.set(r.id, r);
   for (const p of SAVE.pend) patch(p);
@@ -4704,7 +4712,8 @@ function ingest(d) {  // Taska's state on screen, with your changes that are sti
   if (U.open && !byN.has(U.open) && (S.deleted || []).some(x => x.items.some(i => i.n === U.open))) {  // deleted with its input (F177)
     if (desk()) { U.open = null; writeURL(false); } else closeItem();
   }
-  render(); fixURL(); autoArchive();
+  render(); fixURL(); if (!S.read_only) autoArchive();
+  if (S.read_only && !ingest.told) { ingest.told = true; toast('This is Taska-old: look only. Write in Taska on port 7340', () => location.assign(location.href.replace(/:\d+\//, ':7340/')), {label: 'Open Taska'}); }
 }
 // T274 #6: what was finished before today goes to Archive by itself, once a visit, with Undo
 const AA = {done: ''};
