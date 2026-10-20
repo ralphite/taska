@@ -490,6 +490,7 @@ export async function sendChoice(n: number) {
   const withBox = scopeN() === n && !U.amend && !U.correct && !docOpen(),
     note = withBox ? (els.text?.value ?? '').trim() : '',
     files = withBox ? U.files : []
+  if (withBox && R_STATE.rec) return finishRec(true) // B331: a voice note still recording goes with the answer: stop it, then send both (send takes the ticked choices)
   try {
     const rid: string | null = null
     // B326: an answer goes out like anything you write: at once on the screen, kept and sent again until Taska has it
