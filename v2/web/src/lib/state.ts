@@ -344,6 +344,8 @@ const REDUCE = typeof matchMedia === 'function' ? matchMedia('(prefers-reduced-m
 export const desk = () => !!DESK?.matches
 export const wide = () => !!WIDE?.matches
 export const reduceMotion = () => !!REDUCE?.matches
+// B333: the phone's back swipe shows the list under the item page by hand while the finger moves
+export const SWIPE = { back: false }
 export const onLayout = (fn: () => void) => {
   DESK?.addEventListener('change', fn)
   WIDE?.addEventListener('change', fn)

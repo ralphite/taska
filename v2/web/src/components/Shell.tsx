@@ -36,6 +36,7 @@ import {
   projTitle,
   reduceMotion,
   searchCount,
+  SWIPE,
   statusIsView,
   searchWords,
   sideProjects,
@@ -1197,8 +1198,20 @@ export function ProjectPage() {
     const waiting = S.items.filter(needsYou).length,
       sec = D.page ? (D.section ? PSEC[D.section][2] : 'Settings') + ' · ' : ''
     document.title = (waiting ? `(${waiting}) ` : '') + sec + (S.project ? `${projTitle()} · Taska` : 'Taska')
-    if (!isDesk) setDrawer(DR.open ? drawerW() : 0)
-    else {
+    if (!isDesk) {
+      setDrawer(DR.open ? drawerW() : 0)
+      // B333: a back swipe shows these by hand; when it lands on another item React sees nothing to change, so put
+      // them back as this page has them
+      if (!SWIPE.back)
+        for (const [id, h] of [
+          ['itemsView', v.items],
+          ['mainHead', v.mainHead],
+          ['tabs', v.tabs],
+        ] as const) {
+          const el = document.getElementById(id)
+          if (el && el.hidden !== h) el.hidden = h
+        }
+    } else {
       const app = document.getElementById('app')
       if (app) {
         app.style.transform = ''

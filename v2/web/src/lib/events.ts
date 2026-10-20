@@ -21,7 +21,7 @@ import { closeViewer, VW } from './viewer'
 import { hint } from './toast'
 import { draftFix, footRoom } from '../components/Composer'
 import { LAST, drawerW, setDrawer } from '../components/Shell'
-import { esc } from './state'
+import { SWIPE, esc } from './state'
 import { PDRAG } from './projdrag'
 
 // ---------------------------------------------------------------- press feedback (T160)
@@ -795,7 +795,7 @@ function wireBackSwipe() {
     v.style.transition = reduceMotion() ? 'none' : 'transform 180ms ease-out'
     v.style.transform = go ? `translateX(${w}px)` : ''
     setTimeout(() => {
-      BK.pull = false
+      BK.pull = SWIPE.back = false
       for (const c of [
         'absolute',
         'inset-x-0',
@@ -845,7 +845,7 @@ function wireBackSwipe() {
           BK.on = false
           return
         } // scrolling, or a swipe the other way
-        BK.pull = true
+        BK.pull = SWIPE.back = true
         // the list shows underneath while the page floats above it
         const list = document.getElementById('itemsView'),
           head = document.getElementById('mainHead'),
