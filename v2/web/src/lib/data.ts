@@ -44,15 +44,28 @@ export async function net<T = unknown>(
   as: 'json' | 'text' = 'json',
 ): Promise<T> {
   const ctl = new AbortController(),
-    t = setTimeout(() => ctl.abort(), ms)
+    t = setTimeout(() => ctl.abort(), ms),
+    t0 = Date.now()
+  let status = 0
   try {
     const r = await fetch(url, { cache: 'no-store', ...opts, signal: ctl.signal })
-    return (as === 'text' ? await r.text() : await r.json()) as T
+    status = r.status
+    const out = (as === 'text' ? await r.text() : await r.json()) as T
+    if (opts.method === 'POST' && NETLOG.list.length) sendNetlog() // what failed before goes now that Taska answers
+    return out
   } catch {
+    const why = ctl.signal.aborted ? 'timeout' : status ? 'bad answer' : 'unreachable'
+    if (opts.method === 'POST') NETLOG.list.push({ t: new Date().toISOString(), why, url: url.replace(/^.*\/p\//, '/p/'), ms: Date.now() - t0, status })
     throw new NetError(ctl.signal.aborted ? 'No answer from Taska' : 'Taska is out of reach')
   } finally {
     clearTimeout(t)
   }
+}
+// B326: every save that did not go through is told to Taska once it answers again, so the log can count them
+const NETLOG = { list: [] as Record<string, unknown>[] }
+function sendNetlog() {
+  const list = NETLOG.list.splice(0, 30)
+  void fetch(ctx.P + 'api/netlog', JSON_POST({ list })).catch(() => NETLOG.list.unshift(...list))
 }
 export const JSON_POST = (body: unknown): RequestInit => ({
   method: 'POST',

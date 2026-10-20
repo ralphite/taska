@@ -72,7 +72,7 @@ def main(argv: Optional[List[str]] = None) -> None:
         srv = Server((args.host, args.port), hub)
     except OSError as ex:
         sys.exit(f"taska: cannot listen on {args.host}:{args.port}: {ex}")
-    print(f"Taska  http://{args.host}:{args.port}/\n  data       {hub.root}  ({', '.join(sorted(hub.projects))})\n  organizer  "
+    print(f"Taska  http://{args.host}:{args.port}/  started {time.strftime('%Y-%m-%d %H:%M:%S')}\n  data       {hub.root}  ({', '.join(sorted(hub.projects))})\n  organizer  "
           + (f"Gemini {MODEL}" if hub.organizer else "off (set GEMINI_API_KEY to turn it on)")
           + "\n  key        in " + os.path.join(hub.root, "key") + "  (needed from outside this machine and its network)", flush=True)
 

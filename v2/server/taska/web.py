@@ -508,6 +508,12 @@ class Handler(BaseHTTPRequestHandler):
             via = "tunnel" if self.headers.get("X-Forwarded-Host") else "local"
             print(f"[miclog] {time.strftime('%Y-%m-%d %H:%M:%S')} {s.name} via {via}: " + json.dumps({k: str(data.get(k, ""))[:300] for k in ("name", "message", "where", "standalone", "secure", "ua")}, ensure_ascii=False), file=sys.stderr, flush=True)
             self.json({"ok": True})
+        elif p == "/api/netlog":  # B326: a save that did not go through, as the page saw it, for the agent to count in the log
+            data = json.loads(self.body(20_000) or b"{}")
+            via = "tunnel" if self.headers.get("X-Forwarded-Host") else "local"
+            for e in (data.get("list") or [])[:30]:
+                print(f"[netlog] {str(e.get('t', ''))[:19]} {s.name} via {via}: " + json.dumps({k: str(e.get(k, ""))[:200] for k in ("why", "url", "ms", "status")}, ensure_ascii=False), file=sys.stderr, flush=True)
+            self.json({"ok": True})
         elif p == "/api/move":  # an input sent to the wrong project goes to another one (F79)
             data = json.loads(self.body(10_000) or b"{}")
             rid, t = data.get("id"), hub.projects.get(str(data.get("to") or ""))
