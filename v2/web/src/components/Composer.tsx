@@ -284,29 +284,8 @@ function boxRole(): { line: ReactNode; ph: string; send: string } {
     ph = `Comment on D${dOpen.d}…`
     send = 'Comment'
   } else if (n) {
-    // B83, B266: the box itself says "Reply to F06…"; the line keeps the choices you ticked and the way out
-    const instead = desk() ? (
-      <ScopeLink
-        act="new-input-instead"
-        text="New input instead"
-        title="What you wrote becomes a new input to the whole project"
-      />
-    ) : (
-      <ScopeLink act="unscope" text="New input instead" title="Send to the whole project instead" />
-    )
-    line = ticks.length ? (
-      <ScopeLine
-        icon={desk() ? 'reply' : 'scope'}
-        label={`Reply to ${code(n)}`}
-        detail={ticks.map((l) => '✓ ' + oneLine(l)).join(' · ')}
-        right={instead}
-      />
-    ) : (
-      <>
-        <span className="min-w-0 flex-1" />
-        {instead}
-      </>
-    )
+    // T322 (D22): writing in an item is a reply to it, nothing more: the box says "Reply to F06…"; no line above it,
+    // no "New input instead" (New input has its own button)
     ph = `Reply to ${code(n)}…`
     if (U.ask === n) {
       ph = `What is missing in ${code(n)}?`
