@@ -277,6 +277,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self.json(hub.deleted())
             if p == "/api/corrections":
                 return self.json(hub.corrections())
+            if p == "/api/views":  # F320
+                return self.json(hub.get_views())
             if p == "/api/voiceprefs":  # F183
                 return self.json(dict(hub.voice_prefs(), tidy=hub.tidy_on()))
             if p == "/api/push":  # F195: the key a phone subscribes with, and whether this subscription is on
@@ -438,6 +440,9 @@ class Handler(BaseHTTPRequestHandler):
                     hub.set_order(d.get("names"))
                     return self.json({"ok": True})
                 return self.send(404, "not found\n")
+            if p == "/api/views":  # F320: {views: [...]} the whole list, as you left it
+                d = json.loads(self.body(20_000) or b"{}")
+                return self.json({"ok": True, "views": hub.set_views(d.get("views"))})
             if p == "/api/corrections":  # {wrong, right} remembers a spelling fix for every project; {wrong} forgets it
                 d = json.loads(self.body(10_000) or b"{}")
                 if "wrong" not in d:  # T256: {right} adds a word to hear right, {right, forget: true} forgets it

@@ -21,6 +21,7 @@ import {
 import {
   CLOSED,
   U,
+  bump,
   agoShort,
   byN,
   code,
@@ -56,6 +57,8 @@ import {
 import type { Item } from '../lib/types'
 import { LIST, holding, listEnter, listLeave, listSig } from '../lib/listhold'
 import { BEHAVIOUR } from '../lib/behaviour'
+import { VW_STATE, isView, renameView, setFilters, type View } from '../lib/views'
+import { openDialog, popAt } from '../lib/dialog'
 import { hasDraft } from '../lib/drafts'
 import { groups } from '../lib/markdown'
 import { net, op, optimistic, notSaved, pushUndo, change } from '../lib/data'
@@ -609,14 +612,65 @@ const VIEWS: [string, string][] = [
   ['closed', 'Finished'],
 ] // in Yadong's order (r399)
 const unfinished = (rows: Item[]) => rows.filter((it) => !CLOSED(it.status))
-function viewCount(v: string) {
-  const was = U.status
-  U.status = v
+function viewCount(v: string | View) {
+  const was = { type: U.type, when: U.when, status: U.status, pri: U.pri, sort: U.sort }
+  if (typeof v === 'string') U.status = v
+  else setFilters(v)
   try {
     return visible('items').length
   } finally {
-    U.status = was
+    setFilters(was)
   }
+}
+const CHIP =
+  'flex h-8 shrink-0 items-center gap-1 rounded-full bg-zinc-100 px-2 text-[13px] font-medium text-zinc-700 hover:bg-zinc-200 aria-pressed:bg-zinc-900 aria-pressed:text-white dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700 dark:aria-pressed:bg-zinc-100 dark:aria-pressed:text-zinc-900'
+// F320: one of your views: a click shows it; right-click (or hold on the phone) renames, updates or deletes it
+function OwnView({ v, i, on }: { v: View; i: number; on: boolean }) {
+  const hold = useRef(0)
+  if (VW_STATE.edit === i)
+    return (
+      <input
+        autoFocus
+        defaultValue={v.name}
+        aria-label="View name"
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') renameView(i, e.currentTarget.value)
+          if (e.key === 'Escape') {
+            VW_STATE.edit = -1
+            bump('list')
+          }
+        }}
+        onBlur={(e) => renameView(i, e.currentTarget.value)}
+        className="h-8 w-32 shrink-0 rounded-full bg-white px-3 text-[13px] ring-2 ring-blue-500 outline-none dark:bg-zinc-900"
+      />
+    )
+  const menu = (x: number, y: number) => {
+    openDialog('view-menu', { i }, { pop: true, focus: false })
+    popAt(x, y)
+  }
+  return (
+    <button
+      data-act="view-use"
+      data-i={i}
+      aria-pressed={on}
+      title="Your view · right-click to rename, update or delete"
+      onContextMenu={(e) => {
+        e.preventDefault()
+        menu(e.clientX, e.clientY)
+      }}
+      onPointerDown={(e) => {
+        if (e.pointerType === 'mouse') return
+        const { clientX: x, clientY: y } = e
+        hold.current = window.setTimeout(() => menu(x, y + 8), 500)
+      }}
+      onPointerUp={() => clearTimeout(hold.current)}
+      onPointerLeave={() => clearTimeout(hold.current)}
+      className={CHIP}
+    >
+      {v.name}
+      <span className="font-mono text-[11px] tabular-nums opacity-60">{viewCount(v)}</span>
+    </button>
+  )
 }
 // T322 #2: the row scrolls sideways; an arrow on a fading edge says more is there, and a click brings it in
 function ViewBar() {
@@ -634,6 +688,7 @@ function ViewBar() {
     addEventListener('resize', measure)
     return () => removeEventListener('resize', measure)
   }, [])
+  const own = VW_STATE.list.findIndex(isView) // F320: one of your views is what shows
   const go = (dir: number) => row.current?.scrollBy({ left: dir * row.current.clientWidth * 0.7, behavior: 'smooth' })
   const arrow = (dir: number) => (
     <button
@@ -662,8 +717,8 @@ function ViewBar() {
               data-act="set-filter"
               data-k="status"
               data-v={v}
-              aria-pressed={U.status === v}
-              className="flex h-8 shrink-0 items-center gap-1 rounded-full bg-zinc-100 px-2 text-[13px] font-medium text-zinc-700 hover:bg-zinc-200 aria-pressed:bg-zinc-900 aria-pressed:text-white dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700 dark:aria-pressed:bg-zinc-100 dark:aria-pressed:text-zinc-900"
+              aria-pressed={U.status === v && own < 0}
+              className={CHIP}
             >
               {v === 'wait' && n ? <span className="size-2 rounded-full bg-amber-500 dark:bg-amber-400" /> : null}
               {label}
@@ -671,6 +726,9 @@ function ViewBar() {
             </button>
           )
         })}
+        {VW_STATE.list.map((v, i) => (
+          <OwnView key={v.name} v={v} i={i} on={i === own} />
+        ))}
       </div>
       {edge.l ? arrow(-1) : null}
       {edge.r ? arrow(1) : null}

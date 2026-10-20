@@ -107,6 +107,7 @@ import { paletteRun } from './keys'
 import { pushOff, pushOn, turnOnNotices, noticeRead, noticeWrite, PUSH } from './notices'
 import { stashEdit } from './edit'
 import { copy, copyItem } from './copy'
+import { VW_STATE, deleteView, saveView, updateView, showView } from './views'
 import { openViewer, viewerAct } from './viewer'
 
 export type Data = Record<string, string | undefined>
@@ -1433,6 +1434,26 @@ export const ACT: Record<string, Handler> = {
     D.docKey = null
     render()
     toast('File taken off')
+  },
+  // F320: your own views of the list
+  'view-use': (d) => showView(Number(d.i)),
+  'view-save': () => {
+    const el = document.getElementById('viewName') as HTMLInputElement | null
+    saveView(el?.value || '')
+    if (el) el.value = ''
+  },
+  'view-rename': (d) => {
+    closeDialog()
+    VW_STATE.edit = Number(d.i)
+    bump('list')
+  },
+  'view-update': (d) => {
+    closeDialog()
+    updateView(Number(d.i))
+  },
+  'view-delete': (d) => {
+    closeDialog()
+    deleteView(Number(d.i))
   },
   'msg-menu': (d) => openDialog('msg-menu', { n: N(d), id: Number(d.id) }, { pop: true, focus: false }), // B321: Hide is in ⋯
   'msg-hide': async (d) => {

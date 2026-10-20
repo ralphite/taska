@@ -71,6 +71,7 @@ import { CP_ITEM, CP_PAGE, KEYS, paletteRun } from '../lib/keys'
 import { noteText } from '../lib/docs'
 import { kept } from '../lib/drafts'
 import { Armed, Cnt, Icon, ProjTile, StateIcon } from './ui'
+import { VW_STATE } from '../lib/views'
 import { FileRows, Rich, Talk, Thumbs } from './Talk'
 import { NeedsCard, cardMsg, LetterOf } from './Detail'
 import { DocEdit, DocView } from './Doc'
@@ -664,6 +665,30 @@ export function FilterControls({ small = false }: { small?: boolean }) {
         {lab('Sort')}
         <SegCtl act="set-filter" k="sort" opts={SORTS} on={U.sort} small={small} />
       </div>
+      {U.tab === 'items' ? (
+        // F320: these filters, kept as one of your views (in the view row, in every project)
+        <div>
+          {lab('Save as a view')}
+          <div className="flex items-center gap-1.5">
+            <input
+              id="viewName"
+              placeholder="Name"
+              aria-label="Name of the view"
+              autoComplete="off"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') (e.currentTarget.nextElementSibling as HTMLElement | null)?.click()
+              }}
+              className={`${FIELD} h-9 min-w-0 flex-1 py-1.5 text-sm`}
+            />
+            <button
+              data-act="view-save"
+              className="h-9 shrink-0 rounded-xl bg-zinc-900 px-3 text-sm font-semibold text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+            >
+              Save
+            </button>
+          </div>
+        </div>
+      ) : null}
     </>
   )
 }
@@ -1354,6 +1379,38 @@ const KINDS: Record<string, (p: Props) => Parts | null> = {
   pick: pickParts,
   'proj-menu': projMenuParts,
   'input-menu': inputMenuParts,
+  'view-menu': ({ i }) => ({
+    // F320: one of your views
+    title: VW_STATE.list[i as number]?.name || 'View',
+    body: (
+      <div className="-mx-1 flex flex-col gap-0.5">
+        <button
+          data-act="view-rename"
+          data-i={i as number}
+          className="flex h-10 w-full items-center gap-2.5 rounded-lg px-3 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"
+        >
+          <Icon n="pencil" c="size-4 text-zinc-500 dark:text-zinc-400" />
+          Rename
+        </button>
+        <button
+          data-act="view-update"
+          data-i={i as number}
+          className="flex h-10 w-full items-center gap-2.5 rounded-lg px-3 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"
+        >
+          <Icon n="loop" c="size-4 text-zinc-500 dark:text-zinc-400" />
+          Show the filters set now
+        </button>
+        <button
+          data-act="view-delete"
+          data-i={i as number}
+          className="flex h-10 w-full items-center gap-2.5 rounded-lg px-3 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"
+        >
+          <Icon n="trash" c="size-4 text-zinc-500 dark:text-zinc-400" />
+          Delete
+        </button>
+      </div>
+    ),
+  }),
   'msg-menu': ({ n, id }) => ({
     title: 'Message',
     body: (

@@ -54,6 +54,12 @@ class Hub:
                 self.fixes = [c for c in json.load(f) if isinstance(c, dict) and c.get("right")]  # T256: a right word alone is one to hear right
         except (FileNotFoundError, ValueError):
             self.fixes = []
+        self.views: List[Dict[str, str]] = []  # F320: your own views of the item list, the same in every project
+        try:
+            with open(os.path.join(self.root, "views.json"), encoding="utf-8") as f:
+                self.views = self._clean_views(json.load(f))
+        except (FileNotFoundError, ValueError, Err):
+            self.views = []
         self.prefs: Optional[str] = None
         try:
             with open(os.path.join(self.root, "voice-prefs.txt"), encoding="utf-8") as f:
@@ -77,6 +83,37 @@ class Hub:
     def corrections(self) -> List[Dict[str, Any]]:
         with self.lock:
             return [dict(c) for c in self.fixes]
+
+    VIEW_KEYS = ("type", "when", "status", "pri", "sort")
+
+    @classmethod
+    def _clean_views(cls, views: Any) -> List[Dict[str, str]]:
+        """F320: a list of {name, type, when, status, pri, sort}; names short and different."""
+        if not isinstance(views, list):
+            raise Err("give the views as a list")
+        out: List[Dict[str, str]] = []
+        for v in views[:30]:  # pyright: ignore[reportUnknownVariableType]
+            if not isinstance(v, dict):
+                raise Err("each view is {name, type, when, status, pri, sort}")
+            name = " ".join(str(v.get("name") or "").split())[:40]  # pyright: ignore[reportUnknownMemberType, reportUnknownArgumentType]
+            if not name or any(o["name"].lower() == name.lower() for o in out):
+                raise Err("each view needs a name of its own")
+            out.append(dict({"name": name}, **{k: str(v.get(k) or "all")[:20] for k in cls.VIEW_KEYS}))  # pyright: ignore[reportUnknownMemberType, reportUnknownArgumentType]
+        return out
+
+    def get_views(self) -> List[Dict[str, str]]:
+        with self.lock:
+            return [dict(v) for v in self.views]
+
+    def set_views(self, views: Any) -> List[Dict[str, str]]:
+        clean = self._clean_views(views)
+        with self.lock:
+            self.views = clean
+            path = os.path.join(self.root, "views.json")
+            with open(path + ".tmp", "w", encoding="utf-8") as f:
+                json.dump(clean, f, ensure_ascii=False)
+            os.replace(path + ".tmp", path)
+            return [dict(v) for v in clean]
 
     def voice_prefs(self) -> Dict[str, Any]:
         """F183: {"text": how voice notes are written down, "default": True while the user never changed it}."""
