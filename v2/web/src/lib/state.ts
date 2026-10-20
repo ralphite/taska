@@ -282,7 +282,6 @@ export const U = {
   fbFor: null as number | null,
   listTop: null as null | [number, number],
   inSel: null as string | null,
-  inputsEnd: false,
   needsAll: false,
   menuArm: null as string | null,
   menuFor: null as number | null,

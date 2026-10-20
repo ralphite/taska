@@ -466,7 +466,6 @@ export async function poll(g: number) {
       } // Taska is back: what you sent meanwhile goes now (B151)
       const news = d.rev !== model.S.rev || d.boot !== model.S.boot || d.pv !== model.S.pv
       if (news) await load()
-      if (d.ver && d.ver !== VERSION.page) VERSION.server = d.ver // R284: no reload by itself; the next reload brings it
       if (d.update && !UPD.told) offerRestart() // R328: new code waits for a restart, and you are using Taska: your call
       checkOthers()
       if (idle && !news) await napIdle(document.hidden ? 20000 : 5000)
@@ -482,7 +481,6 @@ export async function poll(g: number) {
     }
   }
 }
-export const VERSION = { page: '', server: '' }
 /** A wait that ends early when the tab shows again or you come back to its window. */
 const napIdle = (ms: number) =>
   new Promise<void>((ok) => {

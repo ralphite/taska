@@ -165,7 +165,6 @@ export function setTab(t: Tab) {
   U.correct = null
   U.prefsEdit = null
   U.goBack = null
-  if (t === 'inputs' && was !== 'inputs') U.inputsEnd = true
   const scrollOf = (k: string) => (k === 'inputs' ? els.inputsView : els.list)
   if (!desk() && t !== was && !U.open) U.tabTop[was] = scrollOf(was)?.scrollTop || 0 // B152
   U.tab = t
@@ -276,7 +275,6 @@ export function leaveCompose() {
   if (tab) {
     U.tab = tab
     U.open = p && byN.has(p) ? p : null
-    U.inputsEnd = true
   }
   const back = leaveView(/^new(-rule)?$/.test(history.state?.v) ? history.state.v : 'new')
   if (p && byN.has(p) && !tab) openItem(p)
@@ -421,7 +419,6 @@ function showURL() {
   if (!desk()) U.tabTop[was] = scrollOf(was)?.scrollTop || 0 // Back or Forward to another tab: each keeps its place (B152)
   U.tab = t.tab
   U.asRule = null
-  U.inputsEnd = seg === 'inputs' && typeof history.state?.top !== 'number'
   render()
   const el = scrollOf(U.tab)
   if (!desk() && U.tab !== was && el) el.scrollTop = U.tabTop[U.tab] || 0

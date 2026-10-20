@@ -4,7 +4,7 @@
 import { D, U, beforeRender, byN, code, ctx, desk, els, model, parseRef, setProject } from './state'
 import { PSEC_AT, readURL, viewQuery, writeURL } from './url'
 import { loadViews } from './views'
-import { checkOthers, errorLog, generation, loadKept, nextGeneration, poll, slowLog, VERSION } from './data'
+import { checkOthers, errorLog, generation, loadKept, nextGeneration, poll, slowLog } from './data'
 import { restoreDraftFiles, syncDraft } from './drafts'
 import { restoreGo, startGoFromAnotherProject } from './go'
 import { applyURL, settleOpen } from './nav'
@@ -29,7 +29,6 @@ export function bootProject(name: string) {
     /* no storage */
   }
   readStart()
-  VERSION.page = document.querySelector<HTMLMetaElement>('meta[name="taska-version"]')?.content || ''
   if ('serviceWorker' in navigator && isSecureContext) navigator.serviceWorker.register('/sw.js').catch(() => {}) // F192
 }
 /** What the address says, before the data: the frame shows where it will be (B190). Also when switching project. */

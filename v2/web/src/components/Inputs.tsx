@@ -430,7 +430,6 @@ export function InputsView({ hidden }: { hidden: boolean }) {
   useMarkHits(ref)
   useLayoutEffect(() => {
     els.inputsView = ref.current
-    U.inputsEnd = false
   })
   const S = model.S,
     words = searchWords()
