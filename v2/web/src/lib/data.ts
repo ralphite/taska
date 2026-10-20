@@ -79,6 +79,15 @@ export function slowLog(url: string, ms: number, status = '') {
   clearTimeout(NETLOG.t)
   NETLOG.t = window.setTimeout(sendNetlog, 3000)
 }
+// T335: what went wrong on the page (a script error, a red message) goes to the log too, with where you were
+export function errorLog(msg: string, where: string) {
+  if (!ctx.P) return
+  const last = NETLOG.list[NETLOG.list.length - 1]
+  if (last && last.msg === msg) return // the same error again at once: once is enough
+  NETLOG.list.push({ t: new Date().toISOString(), why: 'error', url: location.pathname, msg: msg.slice(0, 300), where })
+  clearTimeout(NETLOG.t)
+  NETLOG.t = window.setTimeout(sendNetlog, 3000)
+}
 function sendNetlog() {
   const list = NETLOG.list.splice(0, 30)
   void fetch(ctx.P + 'api/netlog', JSON_POST({ list })).catch(() => NETLOG.list.unshift(...list))

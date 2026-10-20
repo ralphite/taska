@@ -562,7 +562,7 @@ class Handler(BaseHTTPRequestHandler):
             data = json.loads(self.body(20_000) or b"{}")
             via = "tunnel" if self.headers.get("X-Forwarded-Host") else "local"
             for e in (data.get("list") or [])[:30]:
-                print(f"[netlog] {str(e.get('t', ''))[:19]} {s.name} via {via}: " + json.dumps({k: str(e.get(k, ""))[:200] for k in ("why", "url", "ms", "status") if k in e}, ensure_ascii=False), file=sys.stderr, flush=True)
+                print(f"[netlog] {str(e.get('t', ''))[:19]} {s.name} via {via}: " + json.dumps({k: str(e.get(k, ""))[:200] for k in ("why", "url", "ms", "status", "msg", "where") if k in e}, ensure_ascii=False), file=sys.stderr, flush=True)
             self.json({"ok": True})
         elif p == "/api/move":  # an input sent to the wrong project goes to another one (F79)
             data = json.loads(self.body(10_000) or b"{}")
@@ -683,6 +683,15 @@ class Handler(BaseHTTPRequestHandler):
 class Server(ThreadingHTTPServer):
     daemon_threads = True
     allow_reuse_address = True
+
+    def handle_error(self, request: Any, client_address: Any) -> None:
+        """T335: a browser that went away first (a closed tab, a dropped connection) is not an error; anything else is,
+        with its traceback, so the log keeps only what is worth looking at."""
+        ex = sys.exc_info()[1]
+        if isinstance(ex, (ConnectionResetError, BrokenPipeError, ConnectionAbortedError, TimeoutError)):
+            return
+        print(f"[error] {time.strftime('%Y-%m-%d %H:%M:%S')} request from {client_address[0]}", file=sys.stderr, flush=True)
+        super().handle_error(request, client_address)
 
     def __init__(self, addr: Tuple[str, int], hub: "Hub"):
         super().__init__(addr, Handler)

@@ -4,7 +4,7 @@
 import { D, U, beforeRender, byN, code, ctx, desk, els, model, parseRef, setProject } from './state'
 import { PSEC_AT, readURL, viewQuery, writeURL } from './url'
 import { loadViews } from './views'
-import { checkOthers, loadKept, nextGeneration, poll, slowLog, VERSION } from './data'
+import { checkOthers, errorLog, loadKept, nextGeneration, poll, slowLog, VERSION } from './data'
 import { restoreDraftFiles, syncDraft } from './drafts'
 import { restoreGo, startGoFromAnotherProject } from './go'
 import { applyURL, settleOpen } from './nav'
@@ -58,6 +58,13 @@ export async function startProject() {
   const up = Math.round(performance.now()) // F334: from the click that opened this page to its items being in
   if (up > 1000)
     slowLog(location.pathname, up, navigator.serviceWorker?.controller ? 'page load, kept page' : 'page load')
+  // T335: a script error or a failed promise nobody caught goes to the log
+  addEventListener('error', (e) =>
+    errorLog(`${e.message} (${(e.filename || '').split('/').pop()}:${e.lineno})`, 'script error'),
+  )
+  addEventListener('unhandledrejection', (e) =>
+    errorLog(String((e.reason as Error)?.stack || e.reason).slice(0, 300), 'promise'),
+  )
   void loadViews() // F320: your own views, the same in every project
   void checkOthers() // the other projects: the sidebar, and Move… on your inputs (A12)
   const S = model.S

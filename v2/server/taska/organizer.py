@@ -10,6 +10,7 @@ import base64
 import os
 import re
 import threading
+import sys
 import time
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
@@ -132,6 +133,7 @@ class Organizer(threading.Thread):
                 s.bump()  # a stale plan must not overwrite or acknowledge a newer input
                 return
             if err:
+                print(f"[organizer] {time.strftime('%Y-%m-%d %H:%M:%S')} {s.name} {inp['id']} failed: {err[:300]}", file=sys.stderr, flush=True)  # T335
                 s.emit({"k": "org", "src": inp["id"], "ok": False, "msg": err, "by": "org"})
                 return
             keep = bool(inp.get("history")) or bool(re.search(r"(?im)^\s*pass\s*$", plan))

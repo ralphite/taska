@@ -1,7 +1,7 @@
 // What just happened, in one line (T160). With `act` it carries a button for a few seconds: Undo, or `label`. An
 // error is red, is read out at once (role=alert) and stays longer.
 import { bump } from './state'
-import { pushUndo } from './data'
+import { errorLog, pushUndo } from './data'
 
 export interface ToastState {
   text: string
@@ -24,6 +24,7 @@ export function toast(text: string, act?: Run | null, { error = false, label = '
   if (act && label === 'Undo' && !act.entry) act = pushUndo(text, act as () => Promise<unknown>) // every Undo is also Z's, and runs once (T113 A7)
   if (TOAST.shown && TOAST.sticky && !sticky) kept = { ...TOAST } // it comes back after this one
   if (sticky) kept = null
+  if (error || sticky) errorLog(text, 'red message') // T335
   Object.assign(TOAST, { text, act: act || null, label, error, shown: true, n: TOAST.n + 1, sticky })
   clearTimeout(timer)
   if (!sticky)
