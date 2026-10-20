@@ -1,6 +1,6 @@
 // What you said (inputs), and what became of each: the Inputs tab (a list; on the desktop a list and a pane, T274 #9),
 // "You said lately" on the New input page, and what is still on its way (F85).
-import { useLayoutEffect, useRef, type ReactNode, type RefObject } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { HIT, LINK_BTN, SMALL_BTN, TYPE_TEXT } from '../lib/constants'
 import {
   U,
@@ -421,6 +421,8 @@ export function OutboxRows({ oldestFirst = false }: { oldestFirst?: boolean }) {
     </>
   )
 }
+const FIRST_ROWS = 40,
+  MORE_ROWS = 120
 export function InputsView({ hidden }: { hidden: boolean }) {
   useArea('inputs')
   useArea('list')
@@ -434,9 +436,20 @@ export function InputsView({ hidden }: { hidden: boolean }) {
     words = searchWords()
   const rows = hidden ? [] : [...S.inputs].reverse().filter((r) => inputMatch(r, words))
   if (desk() && !rows.some((r) => r.id === U.inSel)) U.inSel = rows[0]?.id || null
+  // T339: the tab shows at once with its first screenful; the rest follows a few frames later, not all 400 in one go
+  const [upTo, setUpTo] = useState(FIRST_ROWS)
+  useEffect(() => {
+    const next = hidden ? FIRST_ROWS : upTo < rows.length ? upTo + MORE_ROWS : upTo
+    if (next === upTo) return
+    const t = requestAnimationFrame(() => setUpTo(next))
+    return () => cancelAnimationFrame(t)
+  }, [hidden, upTo, rows.length])
   let day = ''
   const out: ReactNode[] = []
-  for (const r of rows) {
+  for (const r of rows.slice(
+    0,
+    Math.max(upTo, rows.findIndex((x) => x.id === U.inSel) + 1, Math.ceil((U.tabTop.inputs || 0) / 50) + FIRST_ROWS), // enough to come back to where you were
+  )) {
     const d = dayOf(r.t)
     if (d !== day)
       out.push(
