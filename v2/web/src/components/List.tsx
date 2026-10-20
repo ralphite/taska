@@ -1,6 +1,6 @@
 // The list of items (Items, Archive, Rules), in the order of your loop (T65 "Needs you first"): what waits on you,
 // the agent's queue, Later, finished work, archived. Rows are swiped on the phone and dragged on the desktop.
-import { useEffect, useLayoutEffect, useRef, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import {
   ACT_BG,
   ACT_ICON,
@@ -618,29 +618,62 @@ function viewCount(v: string) {
     U.status = was
   }
 }
+// T322 #2: the row scrolls sideways; an arrow on a fading edge says more is there, and a click brings it in
 function ViewBar() {
-  return (
-    <div
-      data-views
-      className="flex h-12 [scrollbar-width:none] items-center gap-1 overflow-x-auto border-b border-zinc-200 mask-r-from-[calc(100%-1.5rem)] px-2 pr-6 dark:border-zinc-800"
+  const row = useRef<HTMLDivElement>(null)
+  const [edge, setEdge] = useState({ l: false, r: false })
+  const measure = () => {
+    const el = row.current
+    if (!el) return
+    const l = el.scrollLeft > 1,
+      r = el.scrollLeft + el.clientWidth < el.scrollWidth - 1
+    setEdge((e) => (e.l === l && e.r === r ? e : { l, r }))
+  }
+  useLayoutEffect(measure)
+  useEffect(() => {
+    addEventListener('resize', measure)
+    return () => removeEventListener('resize', measure)
+  }, [])
+  const go = (dir: number) => row.current?.scrollBy({ left: dir * row.current.clientWidth * 0.7, behavior: 'smooth' })
+  const arrow = (dir: number) => (
+    <button
+      aria-label={dir < 0 ? 'Earlier views' : 'More views'}
+      onClick={() => go(dir)}
+      className={`absolute inset-y-0 z-10 flex w-12 items-center from-white from-50% to-transparent dark:from-zinc-950 ${dir < 0 ? 'left-0 justify-start bg-linear-to-r pl-1' : 'right-0 justify-end bg-linear-to-l pr-1'}`}
     >
-      {VIEWS.map(([v, label]) => {
-        const n = viewCount(v)
-        return (
-          <button
-            key={v}
-            data-act="set-filter"
-            data-k="status"
-            data-v={v}
-            aria-pressed={U.status === v}
-            className="flex h-8 shrink-0 items-center gap-1 rounded-full bg-zinc-100 px-2 text-[13px] font-medium text-zinc-700 hover:bg-zinc-200 aria-pressed:bg-zinc-900 aria-pressed:text-white dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700 dark:aria-pressed:bg-zinc-100 dark:aria-pressed:text-zinc-900"
-          >
-            {v === 'wait' && n ? <span className="size-2 rounded-full bg-amber-500 dark:bg-amber-400" /> : null}
-            {label}
-            <span className="font-mono text-[11px] tabular-nums opacity-60">{n}</span>
-          </button>
-        )
-      })}
+      <span className="grid size-7 place-items-center rounded-full bg-white text-zinc-600 shadow-sm ring-1 ring-zinc-900/10 hover:bg-zinc-50 dark:bg-zinc-800 dark:text-zinc-300 dark:ring-white/10 dark:hover:bg-zinc-700">
+        <Icon n={dir < 0 ? 'left' : 'right'} c="size-4" sw="2.25" />
+      </span>
+    </button>
+  )
+  return (
+    <div className="relative border-b border-zinc-200 dark:border-zinc-800">
+      <div
+        ref={row}
+        data-views
+        onScroll={measure}
+        className="flex h-12 [scrollbar-width:none] items-center gap-1 overflow-x-auto px-2"
+      >
+        {VIEWS.map(([v, label]) => {
+          const n = viewCount(v)
+          return (
+            <button
+              key={v}
+              data-act="set-filter"
+              data-k="status"
+              data-v={v}
+              aria-pressed={U.status === v}
+              className="flex h-8 shrink-0 items-center gap-1 rounded-full bg-zinc-100 px-2 text-[13px] font-medium text-zinc-700 hover:bg-zinc-200 aria-pressed:bg-zinc-900 aria-pressed:text-white dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700 dark:aria-pressed:bg-zinc-100 dark:aria-pressed:text-zinc-900"
+            >
+              {v === 'wait' && n ? <span className="size-2 rounded-full bg-amber-500 dark:bg-amber-400" /> : null}
+              {label}
+              <span className="font-mono text-[11px] tabular-nums opacity-60">{n}</span>
+            </button>
+          )
+        })}
+      </div>
+      {edge.l ? arrow(-1) : null}
+      {edge.r ? arrow(1) : null}
     </div>
   )
 }

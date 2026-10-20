@@ -5,7 +5,6 @@ import { AGENT_NAME, PROJ_TONES } from '../lib/constants'
 import { projHash } from '../lib/state'
 import type { Need, ProjectRow } from '../lib/types'
 
-const VERB: Record<string, string> = { ask: 'Answer', block: 'Answer', proposed: 'Approve', review: 'Accept' }
 // The same colour per project as inside it (B78): from the name, the next free one when two would share
 function tones(names: string[]) {
   const taken = new Set<number>(),
@@ -338,14 +337,7 @@ export function Home() {
                         <span className="hidden text-zinc-300 lg:inline dark:text-zinc-600">—</span>
                       )}
                     </span>
-                    <span className="hidden min-w-0 truncate text-zinc-600 lg:block dark:text-zinc-300">
-                      {next}
-                      {x ? (
-                        <span className="ml-1 text-[11px] font-semibold text-amber-700 dark:text-amber-400">
-                          {VERB[x.kind] || ''}
-                        </span>
-                      ) : null}
-                    </span>
+                    <span className="hidden min-w-0 truncate text-zinc-600 lg:block dark:text-zinc-300">{next}</span>
                   </a>
                 </li>
               )
