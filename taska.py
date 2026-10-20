@@ -1502,6 +1502,11 @@ class Store:
                         continue
                     raise Err(f"unknown file {fid}: upload it first with POST /api/file?name=<name>")
                 files.append({"f": fid, "name": fid.split("-", 1)[-1], "mime": mimetypes.guess_type(fid)[0] or "application/octet-stream"})
+            if by == "org" and src in self.inputs:  # R319: what the organizer files from your input keeps its pictures, voice notes and links
+                files += [{k: f[k] for k in ("f", "name", "mime") if k in f} for f in self.inputs[src].get("files", []) if f.get("f") not in {x["f"] for x in files}]
+                links = [u for u in re.findall(r"https?://\S+", self.inputs[src].get("text") or "") if u not in text]
+                if links:
+                    text += "\n\n" + "\n".join(links)
             self.emit({"k": "say", "n": it["n"], "by": by, "kind": kind, "text": text, "src": src, **({"files": files} if files else {}), **keep})
             return f"ok {code} {kind}" + self.gone_note(it, by), {"ask": "Asked on ", "block": "Blocked on ", "decide": "Decided on "}.get(kind, "Noted on ") + code
         if name == "merge":

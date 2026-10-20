@@ -66,5 +66,19 @@ class DeltaTests(unittest.TestCase):
         views = re.search(r'\(([^)]*)\)', taska.VIEW_PATH.pattern)[1]
         self.assertIn(views, taska.SW)
 
+    def test_the_organizer_keeps_your_pictures_and_links(self):  # R319
+        import os
+        s = self.s
+        os.makedirs(s.fdir, exist_ok=True)
+        open(os.path.join(s.fdir, 'f900-shot.png'), 'wb').write(b'png')
+        with s.cond:
+            s.run_all([(0, {'op': 'input', 'text': 'Slow, see https://example.com/trace', 'files': [{'f': 'f900-shot.png', 'name': 'shot.png', 'mime': 'image/png'}]})], 'you')
+            rid = max(s.inputs, key=lambda r: int(r[1:]))
+            code = s.code(next(iter(s.items)))
+            s.run_all(taska.parse_dsl(f'{code} say The page is slow'), 'org', src=rid)
+        said = s.items[int(code[1:])]['thread'][-1]
+        self.assertEqual([f['f'] for f in said.get('files', [])], ['f900-shot.png'])
+        self.assertIn('https://example.com/trace', said['text'])
+
 if __name__ == '__main__':
     unittest.main()
