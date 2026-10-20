@@ -3659,8 +3659,9 @@ class Handler(BaseHTTPRequestHandler):
                            remote=f"{HUB.public}/k/{HUB.key}/p/{s.name}" if HUB.public else ""))
         elif p == "/api/poll":
             rev, boot, pv = int((q.get("rev") or ["0"])[0]), (q.get("boot") or [""])[0], int((q.get("pv") or ["-1"])[0])
+            wait = max(0, min(25, int((q.get("wait") or ["25"])[0] or 25)))  # T293: a tab in the background asks and lets go
             with s.cond:
-                s.cond.wait_for(lambda: s.rev != rev or (boot and boot != s.boot) or (pv >= 0 and pv != s.pv), timeout=25)
+                s.cond.wait_for(lambda: s.rev != rev or (boot and boot != s.boot) or (pv >= 0 and pv != s.pv), timeout=wait)
                 self.json({"rev": s.rev, "boot": s.boot, "pv": s.pv, "ver": VERSION})
         elif p.startswith("/f/"):
             self.serve_file(s, os.path.basename(p[3:]))
@@ -4727,11 +4728,17 @@ async function poll() {
   for (;;) {
     const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 35000);  // a dead connection never answers
     try {
-      const d = await (await fetch(`${P}api/poll?rev=${S.rev}&boot=${S.boot}&pv=${S.pv ?? -1}`, {cache: 'no-store', signal: ctl.signal})).json();
+      // T293: a browser keeps at most 6 connections to Taska, and every waiting tab held one, so with a few tabs open
+      // the next page waited its turn for many seconds. Only the tab you look at waits for news; one behind asks
+      // every 20s and lets go at once, and catches up as soon as it shows.
+      const hidden = document.hidden;
+      const d = await (await fetch(`${P}api/poll?rev=${S.rev}&boot=${S.boot}&pv=${S.pv ?? -1}${hidden ? '&wait=0' : ''}`, {cache: 'no-store', signal: ctl.signal})).json();
       if (offline) { offline = 0; renderLive(); resendOutbox(); }  // Taska is back: what you sent meanwhile goes now (B151)
-      if (d.rev !== S.rev || d.boot !== S.boot || d.pv !== S.pv) await load();
+      const news = d.rev !== S.rev || d.boot !== S.boot || d.pv !== S.pv;
+      if (news) await load();
       if (d.ver && d.ver !== VER) freshen();
       checkOthers();
+      if (hidden && !news) await napHidden(20000);
     } catch (_) {
       offline += ctl.signal.aborted ? 2 : 1; renderLive();  // a timeout means a dead link: say so at once
       await sleep(offline > 1 ? Math.min(30000, 1500 * 2 ** Math.min(offline, 5)) : 500);  // back off while the server is away
@@ -4739,6 +4746,10 @@ async function poll() {
   }
 }
 
+const napHidden = ms => new Promise(ok => {  // a wait that ends early when the tab shows again
+  const done = () => { clearTimeout(t); removeEventListener('visibilitychange', done); ok(); }, t = setTimeout(done, ms);
+  addEventListener('visibilitychange', done);
+});
 function renderLive() { renderAgent(); }
 
 // Is anyone working? (T58 #1) The latest agent, whether it waits for work right now, and a red flag when work
