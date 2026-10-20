@@ -110,10 +110,12 @@ let lastSaid = '' // what the latest save was, for a Not saved that was not told
 export async function op(o: unknown): Promise<OpAnswer> {
   lastSaid = saidOp(o)
   const cid = Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
-  let d: OpAnswer | null = null
+  let d: (OpAnswer & { state?: State & { delta?: number } }) | null = null
+  const g = gen,
+    since = sinceQuery() // T339: what changed comes back with the answer, so the page changes after one trip
   for (let i = 0; !d; i++) {
     try {
-      d = await net<OpAnswer>(ctx.P + 'api/op?cid=' + cid, JSON_POST(o), NET.op)
+      d = await net<OpAnswer>(ctx.P + 'api/op?cid=' + cid + (since ? '&' + since : ''), JSON_POST(o), NET.op)
     } catch (ex) {
       if (!(ex as { net?: boolean }).net || i >= RETRY_MS.length) throw ex
       await new Promise((ok) => setTimeout(ok, RETRY_MS[i]))
@@ -124,7 +126,8 @@ export async function op(o: unknown): Promise<OpAnswer> {
     throw new Error('op failed')
   }
   try {
-    await load()
+    if (d.state && g === gen) applyState(d.state)
+    else await load() // an answer kept from before (sent again) has no state with it
   } catch {
     /* it is saved; the next refresh brings the rest */
   }
@@ -210,22 +213,26 @@ export function nextGeneration() {
   return ++gen
 }
 
-export async function load() {
-  const g = gen
-  // T293: with a copy here, only what changed since comes over (everything, when Taska restarted meanwhile)
+// T293: with a copy here, only what changed since comes over (everything, when Taska restarted meanwhile)
+const sinceQuery = () => {
   const S = model.S as State & { sv?: number }
-  const since = SAVE.last && S.sv ? `?since=${S.sv}&boot=${encodeURIComponent(S.boot)}` : ''
-  let text = await net<string>(ctx.P + 'api/state' + since, {}, NET.state, 'text')
+  return SAVE.last && S.sv ? `since=${S.sv}&boot=${encodeURIComponent(S.boot)}` : ''
+}
+export async function load() {
+  const g = gen,
+    since = sinceQuery()
+  const text = await net<string>(ctx.P + 'api/state' + (since ? '?' + since : ''), {}, NET.state, 'text')
   if (g !== gen) return
   if (/^project \S+ was deleted/.test(text) || /^no project /.test(text)) {
     if (!U.leaving) location.replace('/?gone=' + encodeURIComponent(ctx.HERE))
     return
   }
-  let d = JSON.parse(text) as State & { delta?: number }
-  if (d.delta && SAVE.last) {
-    d = mergeState(JSON.parse(SAVE.last) as State, d)
-    text = JSON.stringify(d)
-  }
+  applyState(JSON.parse(text) as State & { delta?: number })
+}
+/** A state from Taska (all of it, or what changed since this page's copy) into the page. */
+function applyState(d: State & { delta?: number }) {
+  if (d.delta && SAVE.last) d = mergeState(JSON.parse(SAVE.last) as State, d)
+  const text = JSON.stringify(d)
   SAVE.last = text
   CACHE.set(ctx.HERE, text)
   ingest(d)

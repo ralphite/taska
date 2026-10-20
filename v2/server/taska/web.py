@@ -248,6 +248,13 @@ class Handler(BaseHTTPRequestHandler):
                 lock = f", {self.lock_ms} ms of it waiting for the project" if self.lock_ms > 100 else ""
                 print(f"[slow] {time.strftime('%Y-%m-%d %H:%M:%S')} {self.command} {path[:160]} {ms} ms{lock}", file=sys.stderr, flush=True)
 
+    def state_of(self, s: "Store", since: int, boot: str) -> Dict[str, Any]:
+        """The project's state for the page (only what changed since its copy), with the project's own fields."""
+        hub = self.hub
+        base = f"{self.host()}{self.prefix}/p/{s.name}"
+        return dict(s.state_since(since, boot), project=s.name, title=s.title, base=base, key=hub.key,
+                    remote=f"{hub.public}/k/{hub.key}/p/{s.name}" if hub.public else "")
+
     def _get(self) -> None:
         if not self.guard():
             return
@@ -301,7 +308,6 @@ class Handler(BaseHTTPRequestHandler):
 
     def get(self, s: "Store", p: str, q: Query, base: str) -> None:
         ref = self.fileref(s)
-        hub = self.hub
         if p != "/" and VIEW_PATH.fullmatch(p) and self.wants_page():  # a view of the page: the page opens there
             return self.page()
         by = (q.get("by") or ["agent"])[0]
@@ -353,8 +359,7 @@ class Handler(BaseHTTPRequestHandler):
                 self.send(200, views.log(s, int((q.get("n") or ["30"])[0])))
         elif p == "/api/state":
             since, sboot = int((q.get("since") or ["0"])[0] or 0), (q.get("boot") or [""])[0]
-            self.json(dict(s.state_since(since, sboot), project=s.name, title=s.title, base=base, key=hub.key,
-                           remote=f"{hub.public}/k/{hub.key}/p/{s.name}" if hub.public else ""))
+            self.json(self.state_of(s, since, sboot))
         elif p == "/api/poll":
             rev, boot, pv = int((q.get("rev") or ["0"])[0]), (q.get("boot") or [""])[0], int((q.get("pv") or ["-1"])[0])
             wait = max(0, min(25, int((q.get("wait") or ["25"])[0] or 25)))  # T293: a tab in the background asks and lets go
@@ -504,7 +509,11 @@ class Handler(BaseHTTPRequestHandler):
                         s.op_done[cid] = (answer, code)
                         while len(s.op_done) > 500:
                             s.op_done.pop(next(iter(s.op_done)))
-            self.json(dict(answer, rev=s.rev), code)
+            out: Dict[str, Any] = dict(answer, rev=s.rev)
+            if code == 200 and "since" in q:  # T339: what changed since the page's copy comes with the answer: one trip, not two
+                with contextlib.suppress(ValueError):
+                    out["state"] = self.state_of(s, int(q["since"][0]), (q.get("boot") or [""])[0])
+            self.json(out, code)
         elif p == "/api/file":
             data = self.body(MAX_FILE)
             mime = (self.headers.get("Content-Type") or "application/octet-stream").split(";")[0]
