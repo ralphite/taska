@@ -15,6 +15,7 @@ import ipaddress
 import json
 import mimetypes
 import os
+import signal
 import re
 import sys
 import threading
@@ -241,6 +242,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send(200, data, ctype, cache=cache)
             if p == "/health":
                 return self.json({"status": "ok", "app": "taska", "projects": len(hub.projects)})
+            if p == "/api/idle":  # R328: how long since you last did something here, for a deploy to wait for
+                return self.json({"idle": int(time.time() - self.srv.last_user), "update": self.srv.update_ready()})
             if p == "/skill":
                 return self.send(200, SKILL, "text/markdown; charset=utf-8")
             if p == "/api/projects":
@@ -334,7 +337,7 @@ class Handler(BaseHTTPRequestHandler):
             wait = max(0, min(25, int((q.get("wait") or ["25"])[0] or 25)))  # T293: a tab in the background asks and lets go
             with s.cond:
                 s.cond.wait_for(lambda: s.rev != rev or bool(boot and boot != s.boot) or (pv >= 0 and pv != s.pv), timeout=wait)
-                self.json({"rev": s.rev, "boot": s.boot, "pv": s.pv, "ver": assets.version()})
+                self.json({"rev": s.rev, "boot": s.boot, "pv": s.pv, "ver": assets.version(), "update": self.srv.update_ready()})
         elif p.startswith("/f/"):
             self.serve_file(s, os.path.basename(p[3:]))
         elif p == "/api/transcript":  # a voice note's words again, by file id, without waiting: POST waits for them (T101)
@@ -374,6 +377,15 @@ class Handler(BaseHTTPRequestHandler):
         self.send(200, data, mime, {"Content-Security-Policy": "sandbox", "Content-Disposition": f"inline; filename*=UTF-8''{quote(name)}"})
 
     def do_POST(self) -> None:
+        path = self.path.split("?")[0]
+        if "/api/" in path and not path.endswith(("/api/netlog", "/api/miclog", "/api/restart", "/api/poll")):
+            self.srv.saw_user()  # R328: the page did something for you (agents write with /do)
+        if path == "/api/restart":  # R328: you said to restart now: answer, then stop the way a deploy does
+            if not self.guard():
+                return
+            self.json({"ok": True})
+            threading.Timer(0.3, lambda: os.kill(os.getpid(), signal.SIGTERM)).start()
+            return
         with self.srv.working():  # a stop waits for it (T101)
             self.handle_post()
 
@@ -613,6 +625,27 @@ class Server(ThreadingHTTPServer):
         self.hub = hub
         self.busy = 0
         self.idle = threading.Condition()
+        self.started = time.time()
+        self.seen_file = os.path.join(hub.root, ".last-user")
+        try:  # R328: the last time the page changed something for you; kept over a restart
+            self.last_user = os.path.getmtime(self.seen_file)
+        except OSError:
+            self.last_user = 0.0
+
+    def saw_user(self) -> None:
+        self.last_user = time.time()
+        try:
+            with open(self.seen_file, "a"):
+                os.utime(self.seen_file, None)
+        except OSError:
+            pass
+
+    def update_ready(self) -> bool:
+        """R328: new code is waiting for a restart: a deploy wrote <root>/.update-ready after this server started."""
+        try:
+            return os.path.getmtime(os.path.join(self.hub.root, ".update-ready")) > self.started
+        except OSError:
+            return False
 
     @contextlib.contextmanager
     def working(self) -> Generator[None, None, None]:

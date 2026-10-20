@@ -374,6 +374,35 @@ function followCodes() {
   if (now(U.draftKey)) U.draftKey = now(U.draftKey)
 }
 
+// R328: when an agent has new code for Taska while you are using it, Taska is not restarted under your hands: a toast
+// offers it, and Restart restarts Taska and then this page. (Left alone for a minute, the deploy restarts it.)
+const UPD = { told: false }
+function offerRestart() {
+  UPD.told = true
+  toast(
+    'Taska has an update',
+    async () => {
+      toast('Restarting Taska…')
+      try {
+        await fetch(ctx.P.replace(/\/p\/[^/]+\/$/, '/') + 'api/restart', { method: 'POST' })
+      } catch {
+        /* it may go before it answers */
+      }
+      const boot = model.S.boot
+      for (let i = 0; i < 60; i++) {
+        await new Promise((ok) => setTimeout(ok, 1000))
+        try {
+          const d = await (await fetch(`${ctx.P}api/poll?rev=0&boot=${boot}&wait=0`, { cache: 'no-store' })).json()
+          if (d.boot && d.boot !== boot) return location.reload()
+        } catch {
+          /* still starting */
+        }
+      }
+      location.reload()
+    },
+    { label: 'Restart', sticky: true },
+  )
+}
 export async function poll(g: number) {
   while (g === gen) {
     const ctl = new AbortController(),
@@ -399,6 +428,7 @@ export async function poll(g: number) {
       const news = d.rev !== model.S.rev || d.boot !== model.S.boot || d.pv !== model.S.pv
       if (news) await load()
       if (d.ver && d.ver !== VERSION.page) VERSION.server = d.ver // R284: no reload by itself; the next reload brings it
+      if (d.update && !UPD.told) offerRestart() // R328: new code waits for a restart, and you are using Taska: your call
       checkOthers()
       if (hidden && !news) await napHidden(20000)
     } catch {
