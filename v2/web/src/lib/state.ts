@@ -109,6 +109,8 @@ function idleCompose() {
 
 // ---------------------------------------------------------------- where we are
 
+/** What scrolls an item's talk: on the desktop the talk under the item; otherwise (the phone, a document) the body. */
+export const talkScroller = () => (desk() && !U.doc && els.talk?.isConnected ? els.talk : els.detailBody)
 export const ctx = {
   P: '/', // /p/<project>/
   HERE: '', // this project's address, known before its data arrives (B190)
@@ -300,6 +302,7 @@ export const U = {
   leaving: false,
   boxGone: null as null | { k: string; t: number },
   undoArchTick: 0,
+  topAll: null as number | null, // T322: the item whose whole text shows above its talk
 }
 export type UI = typeof U
 
@@ -784,6 +787,7 @@ export const els = {
   text: null as HTMLTextAreaElement | null,
   list: null as HTMLElement | null,
   detailBody: null as HTMLElement | null,
+  talk: null as HTMLElement | null, // T322: on the desktop an item's talk scrolls on its own, under it
   dlgBody: null as HTMLElement | null,
   inputsView: null as HTMLElement | null,
   projectBody: null as HTMLElement | null,

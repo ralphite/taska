@@ -2,6 +2,7 @@
 // thought, and the outbox sends in order as soon as each input's uploads and transcripts are in. An input that has not
 // reached Taska yet is kept in this browser too (B151): a reload or a closed page never loses it.
 import {
+  talkScroller,
   D,
   R_STATE,
   U,
@@ -118,7 +119,8 @@ export async function send() {
   if (desk() && D.compose && els.foot) els.foot.scrollTop = 0
   else if (desk() && n && n === U.open && !U.go)
     requestAnimationFrame(() => {
-      if (els.detailBody) els.detailBody.scrollTop = els.detailBody.scrollHeight
+      const talk = talkScroller()
+      if (talk) talk.scrollTop = talk.scrollHeight
     }) // B124
 }
 export function outboxPush(job: Omit<Job, 'id' | 'q' | 't'> & Partial<Job>): Job {

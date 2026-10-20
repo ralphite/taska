@@ -1436,6 +1436,11 @@ export const ACT: Record<string, Handler> = {
     render()
     toast('File taken off')
   },
+  'top-all': (d) => {
+    // T322: the whole item above its talk, or its share again
+    U.topAll = U.topAll === N(d) ? null : N(d)
+    bump('detail')
+  },
   // F320: your own views of the list
   'view-use': (d) => showView(Number(d.i)),
   'view-save': () => {

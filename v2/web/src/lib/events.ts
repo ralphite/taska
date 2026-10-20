@@ -173,10 +173,11 @@ function closeLayers() {
 const GRIP: Record<string, [string, string, number, number]> = {
   side: ['drawer', '--side-w', 200, 360],
   list: ['app', '--list-w', 280, 720],
+  top: ['', '--top-h', 96, 4000], // T322: the item above its talk; dragged up and down
 }
 function setGrip(kind: string, px: number) {
   const [id, v] = GRIP[kind],
-    el = document.getElementById(id)
+    el = id ? document.getElementById(id) : document.documentElement
   if (!el) return
   if (px) el.style.setProperty(v, px + 'px')
   else el.style.removeProperty(v)
@@ -634,20 +635,33 @@ function wireAll() {
     if (!g || e.button) return
     const kind = g.dataset.grip as string,
       [id, , min, max] = GRIP[kind],
-      left = document.getElementById(id)?.getBoundingClientRect().left || 0
-    const most = kind === 'list' ? Math.min(max, innerWidth - left - 480) : max // the item keeps room to read
+      down = kind === 'top', // T322: the line between the item and its talk moves up and down
+      box = (
+        down ? document.getElementById('itemTop') : id ? document.getElementById(id) : null
+      )?.getBoundingClientRect(),
+      from = (down ? box?.top : box?.left) || 0
+    const most = down
+      ? Math.min(max, (document.getElementById('detailBody')?.clientHeight || 600) - 160) // the talk keeps room
+      : kind === 'list'
+        ? Math.min(max, innerWidth - from - 480) // the item keeps room to read
+        : max
     let w = 0
     e.preventDefault()
     g.setPointerCapture(e.pointerId)
-    document.body.classList.add('select-none', 'cursor-col-resize')
+    const cursor = down ? 'cursor-row-resize' : 'cursor-col-resize'
+    document.body.classList.add('select-none', cursor)
     const move = (ev: PointerEvent) => {
-      w = Math.round(Math.min(most, Math.max(min, ev.clientX - left)))
+      w = Math.round(Math.min(most, Math.max(min, (down ? ev.clientY : ev.clientX) - from)))
       setGrip(kind, w)
+      if (down && U.topAll) {
+        U.topAll = null
+        bump('detail')
+      }
     }
     const up = () => {
       g.removeEventListener('pointermove', move)
       g.removeEventListener('pointerup', up)
-      document.body.classList.remove('select-none', 'cursor-col-resize')
+      document.body.classList.remove('select-none', cursor)
       if (w)
         try {
           localStorage.setItem('taska.w.' + kind, String(w))

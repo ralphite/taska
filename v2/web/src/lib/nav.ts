@@ -1,6 +1,7 @@
 // Where you are on the page: the open item, the tab, Settings, full width, search; and the address that follows.
 import { VIEW_KEYS, type Tab } from './constants'
 import {
+  talkScroller,
   D,
   DR,
   OV,
@@ -98,12 +99,13 @@ export function openItem(n: number | null | undefined, push = true) {
         history.pushState({ n, ...searchStep() }, '', ctx.P + code(n) + viewQuery())
     })
   render()
-  const body = els.detailBody
+  const body = talkScroller()
   if (fresh && body) body.scrollTop = desk() ? body.scrollHeight : 0
   if (fresh && desk())
     for (const ms of [120, 400, 1000])
       setTimeout(() => {
-        if (U.open === n && !U.doc && els.detailBody) els.detailBody.scrollTop = els.detailBody.scrollHeight
+        const talk = talkScroller()
+        if (U.open === n && !U.doc && talk) talk.scrollTop = talk.scrollHeight
       }, ms) // B279: the desktop opens an item at its latest message
   if (desk()) document.querySelector(`#list [data-act="open"][data-n="${n}"]`)?.scrollIntoView({ block: 'nearest' })
 }

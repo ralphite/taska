@@ -1,6 +1,7 @@
 // One table drives the keys (desktop). Single keys act only while you are not typing; Esc steps back one level.
 import { RULE_STATUS, STATUS, TYPE_OF_LETTER } from './constants'
 import {
+  talkScroller,
   CLOSED,
   D,
   DR,
@@ -303,10 +304,11 @@ export function deskKey(e: KeyboardEvent) {
       } else if (k === 'o') hint('First pick an item: J or a click')
       return
     case ' ':
-      if (it && els.detailBody) {
+      if (it && talkScroller()) {
+        const talk = talkScroller()!
         e.preventDefault()
-        els.detailBody.scrollBy({
-          top: (e.shiftKey ? -0.8 : 0.8) * els.detailBody.clientHeight,
+        talk.scrollBy({
+          top: (e.shiftKey ? -0.8 : 0.8) * talk.clientHeight,
           behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth',
         })
       }
