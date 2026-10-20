@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { AGENT_NAME, PROJ_TONES } from '../lib/constants'
 import { projHash } from '../lib/state'
 import type { Need, ProjectRow } from '../lib/types'
+import { navigate } from '../lib/switch'
 
 // The same colour per project as inside it (B78): from the name, the next free one when two would share
 function tones(names: string[]) {
@@ -133,7 +134,7 @@ export function Home() {
     if (!title) return npRef.current?.focus()
     try {
       const d = await json<{ ok: boolean; name: string; error?: string }>('/api/projects', POST({ title }))
-      if (d.ok) location.href = `/p/${d.name}/`
+      if (d.ok) navigate(`/p/${d.name}/`)
       else setNpErr(d.error || 'Not created')
     } catch {
       setNpErr('Connection lost; try again')
@@ -202,7 +203,7 @@ export function Home() {
             } catch {
               /* no storage */
             }
-            location.href = `/p/${encodeURIComponent(x.project)}/`
+            navigate(`/p/${encodeURIComponent(x.project)}/`)
           }}
           className="h-10 shrink-0 rounded-xl bg-amber-500 px-3.5 text-sm font-semibold text-amber-950 hover:brightness-95 dark:bg-amber-400"
         >
@@ -222,7 +223,7 @@ export function Home() {
             onClick={async () => {
               try {
                 const d = await json<{ ok: boolean; error?: string }>('/api/projects/restore', POST({ name: gone }))
-                if (d.ok) location.href = `/p/${encodeURIComponent(gone)}/`
+                if (d.ok) navigate(`/p/${encodeURIComponent(gone)}/`)
                 else setGoneText(d.error || 'Not restored')
               } catch {
                 setGoneText('Connection lost; try again')

@@ -224,7 +224,8 @@ export async function load() {
   const text = await net<string>(ctx.P + 'api/state' + (since ? '?' + since : ''), {}, NET.state, 'text')
   if (g !== gen) return
   if (/^project \S+ was deleted/.test(text) || /^no project /.test(text)) {
-    if (!U.leaving) location.replace('/?gone=' + encodeURIComponent(ctx.HERE))
+    if (!U.leaving)
+      void import('./switch').then(({ navigate }) => navigate('/?gone=' + encodeURIComponent(ctx.HERE), true))
     return
   }
   applyState(JSON.parse(text) as State & { delta?: number })

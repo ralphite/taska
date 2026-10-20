@@ -22,7 +22,7 @@ import { hint } from './toast'
 import { draftFix, footRoom } from '../components/Composer'
 import { LAST, drawerW, setDrawer } from '../components/Shell'
 import { SWIPE, ctx, esc } from './state'
-import { goTo } from './switch'
+import { PAGE, goTo } from './switch'
 import { PDRAG } from './projdrag'
 
 // ---------------------------------------------------------------- press feedback (T160)
@@ -197,23 +197,26 @@ let wired = false
 export function wire() {
   if (wired) return
   wired = true
-  // T339: a link to a place in Taska (another project, or this one) goes there in the page, without loading it again;
-  // a click with a modifier, or a link meant for another tab, keeps the browser's own way
-  document.addEventListener(
-    'click',
-    (e) => {
-      const a = (e.target as Element).closest<HTMLAnchorElement>('a[href]')
-      if (!a || a.target || a.hasAttribute('download') || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey)
-        return
-      if (a.hasAttribute('data-act')) return // its action decides
-      const inDrawer = !desk() && !!a.closest('#drawerList') && layersNow().includes('drawer')
-      if (!goTo(a.href, inDrawer ? 'replace' : 'push')) return
-      e.preventDefault()
-      e.stopImmediatePropagation()
-      if (inDrawer) closeDrawer()
-    },
-    true,
-  )
+  // T339: the home page shows in this same page now; while it does, none of the project page's listeners act
+  const own = [document, window] as const,
+    plain = own.map((t) => t.addEventListener)
+  for (const t of own)
+    t.addEventListener = function (type: string, fn: EventListenerOrEventListenerObject | null, o?: unknown) {
+      const run = typeof fn === 'function' ? fn : fn ? (e: Event) => fn.handleEvent(e) : null
+      return EventTarget.prototype.addEventListener.call(
+        this,
+        type,
+        run && ((e: Event) => void (PAGE.home || run.call(this, e))),
+        o as AddEventListenerOptions,
+      )
+    }
+  try {
+    wireAll()
+  } finally {
+    own.forEach((t, i) => (t.addEventListener = plain[i]))
+  }
+}
+function wireAll() {
   // the pane you last acted in, for where feedback shows (B129)
   document.addEventListener(
     'pointerdown',
