@@ -665,7 +665,8 @@ class Handler(BaseHTTPRequestHandler):
             for n, _, ref, _, _, _ in plan:
                 s.run_all([(0, {"op": "say", "ref": ref, "kind": "progress", "text": f"Moved to {t.cfg.get('name') or t.name} as {new_as[n]}"}),
                            (1, {"op": "set", "ref": ref, "f": {"status": "dropped", "archived": True}})], "you")  # run_all takes the lock itself
-            self.json({"ok": True, "as": new_as[plan[0][0]], "with": len(plan) - 1, "docs": len(docs)})
+            extra = {k: v for k, v in (("with", len(plan) - 1), ("docs", len(docs))) if v}  # as before when nothing went along
+            self.json({"ok": True, "as": new_as[plan[0][0]], **extra})
         elif p == "/api/organize":
             rid = (json.loads(self.body(10_000) or b"{}")).get("id")
             with s.cond:
