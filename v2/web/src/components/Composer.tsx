@@ -301,30 +301,11 @@ function boxRole(): { line: ReactNode; ph: string; send: string } {
         icon="inbox"
         label="New input"
         detail={`· ${filesWord}`}
-        right={
-          <>
-            <RuleFlip />
-            {U.open && detailShown() ? (
-              <ScopeLink act="reply-instead" text={`Add to ${code(U.open)} instead`} k="R" />
-            ) : null}
-          </>
-        }
+        right={<RuleFlip />} // T322 (D22): no "Add to T38 instead": New input and a reply each have their own place
       />
     )
   else if (U.open && detailShown() && byN.has(U.open))
-    line = (
-      <ScopeLine
-        icon="inbox"
-        label="New input"
-        detail={`· ${filesWord}`}
-        right={
-          <>
-            <RuleFlip />
-            <ScopeLink act="reply-instead" text={`Add to ${code(U.open)} instead`} />
-          </>
-        }
-      />
-    ) // B298
+    line = <ScopeLine icon="inbox" label="New input" detail={`· ${filesWord}`} right={<RuleFlip />} /> // B298
   else if (U.tab === 'rules')
     line = <ScopeLine icon="inbox" label="New input" detail="· not a rule" right={<RuleFlip />} />
   if (R.rec && R.key && R.key !== U.draftKey)
