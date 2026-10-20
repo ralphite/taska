@@ -170,6 +170,15 @@ export const inputMenuRows = (r: Input) => {
 
 const long = (r: Input) => r.text.length > 160 || r.text.split('\n').length > 4
 // One input with what became of it and what you can do with it: a row of Inputs on the phone, the pane on the desktop
+// B329: a dot on the inputs the Inputs tab's number counts: those not handled yet
+function NotHandled({ r }: { r: Input }) {
+  return r.acked ? null : (
+    <span
+      title="Not handled yet: counted in the Inputs number"
+      className="size-2 shrink-0 rounded-full bg-blue-500 dark:bg-blue-400"
+    />
+  )
+}
 export function InputCard({ r, pane = false }: { r: Input; pane?: boolean }) {
   const [label, tone, icon] = inputState(r),
     scope = r.scope ? byN.get(r.scope) : null,
@@ -243,6 +252,7 @@ export function InputCard({ r, pane = false }: { r: Input; pane?: boolean }) {
         <div className="flex min-h-5 items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
           {pane ? null : (
             <>
+              <NotHandled r={r} />
               <span className="shrink-0 font-mono">
                 <Hit text={rcode(r.id)} />
               </span>
@@ -356,6 +366,7 @@ function InputRow({ r }: { r: Input }) {
         className={`cursor-pointer px-4 py-2.5 ${ROW_TINT}`}
       >
         <div className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
+          <NotHandled r={r} />
           <span className="font-mono">{rcode(r.id)}</span>
           <span>{when(r.t)}</span>
           <span className={`ml-auto font-medium ${tone}`}>{label}</span>
