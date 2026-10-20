@@ -23,7 +23,7 @@ describe('what needs you, and the queue', () => {
       item(3, { pri: 'P1' }),
       item(4, { pri: 'P1' }),
     ])
-    expect(visible('items').filter(inQueue).length).toBe(4)
+    expect(visible('items').filter(inQueue).length).toBe(3) // Active (the default view) leaves later out (F291, r397)
     expect(queueHead()).toBe(3)
   })
   it('codes are padded to the widest number and read back in any form', () => {

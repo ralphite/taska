@@ -41,7 +41,7 @@ import {
   needsYou,
   plural,
   queueHead,
-  queueOrder,
+  sortQueue,
   render,
   searchWords,
   statusName,
@@ -598,19 +598,22 @@ function Tree({ group, band = '', needs = false }: { group: Item[]; band?: strin
 }
 
 // ---------------------------------------------------------------- F291: one tree, and preset views on top
+// F291 (r397): Active first and by default: what agents are on or will take (not finished, archived or later).
+// 'all' stays the default value, so addresses and the other tabs are as before; All itself is 'every'.
 const VIEWS: [string, string][] = [
-  ['all', 'All'],
+  ['all', 'Active'],
   ['wait', 'Needs you'],
   ['queued', 'Queue'],
   ['later', 'Later'],
   ['closed', 'Finished'],
+  ['every', 'All'],
 ]
-const unfinished = (rows: Item[]) => (U.status === 'all' ? rows.filter((it) => !CLOSED(it.status)) : rows)
+const unfinished = (rows: Item[]) => rows.filter((it) => !CLOSED(it.status))
 function viewCount(v: string) {
   const was = U.status
   U.status = v
   try {
-    return unfinished(visible('items')).length
+    return visible('items').length
   } finally {
     U.status = was
   }
@@ -619,7 +622,7 @@ function ViewBar() {
   return (
     <div
       data-views
-      className="flex h-12 [scrollbar-width:none] items-center gap-1 overflow-x-auto border-b border-zinc-200 px-2.5 dark:border-zinc-800"
+      className="flex h-12 [scrollbar-width:none] items-center gap-1 overflow-x-auto mask-r-from-[calc(100%-1.5rem)] border-b border-zinc-200 px-2 pr-6 dark:border-zinc-800"
     >
       {VIEWS.map(([v, label]) => {
         const n = viewCount(v)
@@ -630,7 +633,7 @@ function ViewBar() {
             data-k="status"
             data-v={v}
             aria-pressed={U.status === v}
-            className="flex h-8 shrink-0 items-center gap-1.5 rounded-full bg-zinc-100 px-2.5 text-[13px] font-medium text-zinc-700 hover:bg-zinc-200 aria-pressed:bg-zinc-900 aria-pressed:text-white dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700 dark:aria-pressed:bg-zinc-100 dark:aria-pressed:text-zinc-900"
+            className="flex h-8 shrink-0 items-center gap-1 rounded-full bg-zinc-100 px-2 text-[13px] font-medium text-zinc-700 hover:bg-zinc-200 aria-pressed:bg-zinc-900 aria-pressed:text-white dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700 dark:aria-pressed:bg-zinc-100 dark:aria-pressed:text-zinc-900"
           >
             {v === 'wait' && n ? <span className="size-2 rounded-full bg-amber-500 dark:bg-amber-400" /> : null}
             {label}
@@ -649,7 +652,10 @@ function treeBody(all: Item[]): { body: ReactNode; shown: number } {
       ? [...all].sort((a, b) => String(b.t1).localeCompare(String(a.t1)) || b.n - a.n)
       : U.status === 'wait'
         ? [...all].sort(needsOrder) // what needs you, the newest first (B238)
-        : unfinished(all).sort(queueOrder)
+        : [
+            ...sortQueue(unfinished(all)),
+            ...all.filter((it) => CLOSED(it.status)).sort((a, b) => String(b.t1).localeCompare(String(a.t1)) || b.n - a.n),
+          ] // All: finished work after the rest, the latest first
   return {
     body: (
       <>
@@ -957,7 +963,7 @@ function listBody(): { body: ReactNode; shown: number } {
     }
   const needs = rows.filter((it) => needsYou(it) || settled(it)).sort(going ? walkOrder(going) : needsOrder) // newest first (B238)
   if (U.archHold?.sig !== listSig()) U.archHold = null
-  const queued = rows.filter((it) => inQueue(it) && !settled(it)).sort(queueOrder)
+  const queued = sortQueue(rows.filter((it) => inQueue(it) && !settled(it)))
   const queue = queued.filter((it) => it.when !== 'later'),
     later = queued.filter((it) => it.when === 'later') // F212
   const done = rows.filter((it) => CLOSED(it.status) && !it.archived && !settled(it)),
@@ -1065,14 +1071,12 @@ function dragMove(n: number, at: { n?: number; how: string }): unknown {
   if (at.how === 'out') return change(n, 'parent', null)
   const t = byN.get(at.n as number)
   if (!t) return
-  const group = model.S.items.filter((x) => queuedNow(x) && x.pri === t.pri && x.n !== n).sort(queueOrder)
+  // F291: anywhere in the queue, whatever the priorities: your order comes first, and the priority stays as it was
+  const group = sortQueue(model.S.items.filter((x) => queuedNow(x) && x.n !== n))
   group.splice(group.indexOf(t) + (at.how === 'after' ? 1 : 0), 0, it)
   const patches = group
-    .map((x, i) => ({
-      n: x.n,
-      f: { rank: i, ...(x.n === n && it.pri !== t.pri ? { pri: t.pri } : {}) } as Record<string, unknown>,
-    }))
-    .filter((p) => byN.get(p.n)?.rank !== p.f.rank || p.f.pri)
+    .map((x, i) => ({ n: x.n, f: { rank: i } as Record<string, unknown> }))
+    .filter((p) => byN.get(p.n)?.rank !== p.f.rank)
   const before = patches.map((p) => ({
     n: p.n,
     f: Object.fromEntries(

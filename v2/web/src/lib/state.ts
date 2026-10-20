@@ -440,15 +440,27 @@ export const tabOf = (it: Item): Tab => (it.archived ? 'archive' : it.type === '
 export const inQueue = (it: Item) =>
   !it.merged_into && !it.archived && it.type !== 'rule' && !needsYou(it) && !CLOSED(it.status)
 export const laterOf = (q: Item[]) => q.filter((it) => it.when === 'later').length
-export const queueOrder = (a: Item, b: Item) =>
-  +(a.when !== 'now') - +(b.when !== 'now') ||
-  +(a.status !== 'doing') - +(b.status !== 'doing') ||
-  a.pri.localeCompare(b.pri) ||
-  +(a.rank == null) - +(b.rank == null) ||
-  (a.rank || 0) - (b.rank || 0) ||
-  a.n - b.n // same priority: what you put next first (F197), then oldest
+// F291: the order agents take the work. Now before later, in progress first; then your order comes before
+// priority: what you dragged or put next keeps its place (rank), and what you never placed goes in by priority, each
+// just before the first item of your order that has a lower priority (the same as the server's /next).
+export function sortQueue(items: Item[]): Item[] {
+  const bucket = (it: Item) => (it.when !== 'now' ? 2 : 0) + (it.status !== 'doing' ? 1 : 0)
+  const out: Item[] = []
+  for (const b of [0, 1, 2, 3]) {
+    const mine = items.filter((it) => bucket(it) === b)
+    const ranked = mine.filter((it) => it.rank != null).sort((x, y) => (x.rank as number) - (y.rank as number) || x.n - y.n)
+    const rest = mine.filter((it) => it.rank == null).sort((x, y) => x.pri.localeCompare(y.pri) || x.n - y.n)
+    let i = 0
+    for (const r of ranked) {
+      while (i < rest.length && rest[i].pri.localeCompare(r.pri) < 0) out.push(rest[i++])
+      out.push(r)
+    }
+    out.push(...rest.slice(i))
+  }
+  return out
+}
 export const queueHead = () =>
-  model.S.items.filter((it) => inQueue(it) && it.when === 'now' && it.status !== 'doing').sort(queueOrder)[0]?.n
+  sortQueue(model.S.items.filter((it) => inQueue(it) && it.when === 'now' && it.status !== 'doing'))[0]?.n
 export const openKids = (n: number) => (kids.get(n) || []).filter((k) => !CLOSED(k.status)).length
 export const openCount = () =>
   model.S.items.filter((it) => !it.merged_into && inTab(it, 'items') && !CLOSED(it.status)).length // B130
@@ -502,7 +514,8 @@ export function visible(tab: string = U.tab) {
         : U.status === 'archived'
           ? it.archived
           : !it.archived &&
-            (U.status === 'all' ||
+            (U.status === 'every' ||
+              (U.status === 'all' && statusIsView() ? !CLOSED(it.status) && it.when === 'now' : U.status === 'all') ||
               (U.status === 'active'
                 ? !CLOSED(it.status)
                 : U.status === 'closed'

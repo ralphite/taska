@@ -17,6 +17,25 @@ if TYPE_CHECKING:
 Ref = Optional[Callable[[str], str]]
 
 
+def sort_queue(items: List[Item]) -> List[Item]:
+    """F291: the order agents take the work. In progress first; then the user's order comes before priority: what
+    they dragged or put next keeps its place (rank), and what they never placed goes in by priority, each just before
+    the first item of their order that has a lower priority (the page's sortQueue does the same)."""
+    out: List[Item] = []
+    for doing in (True, False):
+        mine = [i for i in items if (i["status"] == "doing") == doing]
+        ranked = sorted((i for i in mine if i.get("rank") is not None), key=lambda i: (i["rank"], i["n"]))
+        rest = sorted((i for i in mine if i.get("rank") is None), key=lambda i: (i["pri"], i["n"]))
+        k = 0
+        for r in ranked:
+            while k < len(rest) and rest[k]["pri"] < r["pri"]:
+                out.append(rest[k])
+                k += 1
+            out.append(r)
+        out += rest[k:]
+    return out
+
+
 def state(s: "Store") -> Dict[str, Any]:
     """Everything the page shows about a project, in one JSON object."""
     with s.lock:
@@ -232,9 +251,8 @@ def next_text(s: "Store", ref: Ref = None, who: Optional[str] = None, given: Opt
         if given is not None:
             given.append(back[0]["n"])
         return "\n".join(out) + f"\nresume {s.code(back[0]['n'])}: the user replied\n" + card(s, back[0], ref), True
-    queue = sorted((i for i in live if i["when"] == "now" and i["type"] in WORK_TYPES and i["status"] in ("open", "doing") and not s.waiting(i)
-                    and not s.open_kids(i)),  # subitems first: the parent comes when they are finished
-                   key=lambda i: (i["status"] != "doing", i["pri"], i.get("rank") is None, i.get("rank") or 0, i["n"]))  # same priority: what you put next, then oldest first (F197)
+    queue = sort_queue([i for i in live if i["when"] == "now" and i["type"] in WORK_TYPES and i["status"] in ("open", "doing") and not s.waiting(i)
+                        and not s.open_kids(i)])  # subitems first: the parent comes when they are finished
     if who:  # F194: what another agent is on is theirs; each agent gets its own next item
         theirs = [(i, c[0]) for i in queue for c in [s.claimer(i)] if c and c[0] != who]
         if theirs:

@@ -17,10 +17,10 @@ export const BEHAVIOUR = {
   // D21 #5: a document comment is written in place: the one input box moves under the passage it is about (B265
   // option B). Off: the box stays at the bottom of the pane and its line says what it comments on.
   docCommentInPlace: true,
-  // F291 (not decided yet: Yadong's question on F291 is open): Items is one tree (subitems under their items) in the order agents take the work; what needs you stays in
+  // F291 (approved on 10-19, with free drag ordering: your order comes before priority): Items is one tree (subitems under their items) in the order agents take the work; what needs you stays in
   // its place with its button. A row of preset views on top (All, Needs you, Queue, Later, Finished) is the status
   // filter, one tap away. Off: the bands of the one-file Taska (Needs you, Agent queue, Later, Finished).
-  treeList: false,
+  treeList: true,
   // I289 (not approved: Yadong turned down the prototype, r354): links to items and documents become chips that open
   // in Taska, each document shows as a card under the message that made it, Documents lists the latest three first.
   // Off: links and the document list as the one-file Taska shows them.

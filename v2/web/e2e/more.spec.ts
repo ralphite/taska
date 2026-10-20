@@ -75,6 +75,8 @@ test('the desktop: picked rows change together', async ({ page, request }) => {
   const p = await project(request, LOOP)
   await open(page, p)
   const row = (t: string) => page.locator('#list [data-act="open"]').filter({ hasText: t })
+  const all = page.locator('#list [data-views] [data-v="every"]')
+  if (await all.count()) await all.click() // the tree's Active view leaves later work out (F291)
   await row('Write the user docs').click({ modifiers: ['Meta'] })
   await row('Clean up old branches').click({ modifiers: ['Meta'] })
   await expect(page.locator('#list')).toContainText('2 selected')

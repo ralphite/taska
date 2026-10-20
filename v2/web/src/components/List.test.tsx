@@ -18,7 +18,7 @@ describe('the list', () => {
     ])
     const { container } = render(<List />)
     const views = [...container.querySelectorAll('[data-views] [data-v]')].map((b) => b.getAttribute('data-v'))
-    expect(views).toEqual(['all', 'wait', 'queued', 'later', 'closed'])
+    expect(views).toEqual(['all', 'wait', 'queued', 'later', 'closed', 'every'])
     const rows = [...container.querySelectorAll('article[data-n]')].map((a) => a.getAttribute('data-n'))
     expect(rows).not.toContain('4') // finished work is in the Finished view
     expect(rows.indexOf('2')).toBe(rows.indexOf('1') + 1)
