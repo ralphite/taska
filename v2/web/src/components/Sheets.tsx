@@ -40,6 +40,7 @@ import {
   filtered,
   hay,
   inQueue,
+  isAudio,
   kids,
   model,
   needsYou,
@@ -59,6 +60,7 @@ import {
   openCount,
 } from '../lib/state'
 import { openItem } from '../lib/nav'
+import { P_CACHE } from '../lib/settings'
 import type { Item } from '../lib/types'
 import { closeDialog } from '../lib/dialog'
 import { goAllAhead } from '../lib/go'
@@ -1098,6 +1100,19 @@ function inputMenuParts({ id }: Props): Parts | null {
       <div className="-mx-1 flex flex-col gap-0.5">
         {row('input-edit', 'pencil', 'Edit')}
         {row('input-append', 'plus', 'Add more')}
+        {P_CACHE.prefs?.tidy !== false
+          ? r.files.filter(isAudio).map((f) => (
+              <button
+                key={'said' + f.f}
+                data-act="as-said"
+                data-f={f.f}
+                className="flex h-10 w-full items-center gap-2.5 rounded-lg px-3 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"
+              >
+                <Icon n="mic" c="size-4 text-zinc-500 dark:text-zinc-400" />
+                Original words
+              </button>
+            ))
+          : null}
         {canUndoInput(r) && ok.undo ? row('undo', 'undo', 'Undo organizing', filingTip(r)) : null}
         {ok.move ? row('move-input', 'arrow', 'Move to…', 'Sent to the wrong project? Move it') : null}
         {ok.history ? row('input-history', 'clock', 'History') : null}
@@ -1339,6 +1354,23 @@ const KINDS: Record<string, (p: Props) => Parts | null> = {
   pick: pickParts,
   'proj-menu': projMenuParts,
   'input-menu': inputMenuParts,
+  'msg-menu': ({ n, id }) => ({
+    title: 'Message',
+    body: (
+      <div className="-mx-1 flex flex-col gap-0.5">
+        <button
+          data-act="msg-hide"
+          data-n={n as number}
+          data-id={id as number}
+          data-on={1}
+          className="flex h-10 w-full items-center gap-2.5 rounded-lg px-3 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"
+        >
+          <Icon n="shrink" c="size-4 text-zinc-500 dark:text-zinc-400" />
+          Hide (folds to one line)
+        </button>
+      </div>
+    ),
+  }),
   history: historyParts,
   sources: sourcesParts,
   'move-input': ({ id }) => {

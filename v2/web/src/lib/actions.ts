@@ -1434,8 +1434,10 @@ export const ACT: Record<string, Handler> = {
     render()
     toast('File taken off')
   },
+  'msg-menu': (d) => openDialog('msg-menu', { n: N(d), id: Number(d.id) }, { pop: true, focus: false }), // B321: Hide is in ⋯
   'msg-hide': async (d) => {
     // T257 #12
+    closeDialog()
     const on = d.on === '1',
       ref = code(N(d)),
       id = Number(d.id)

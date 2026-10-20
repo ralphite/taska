@@ -152,9 +152,9 @@ export function FileRows({
   )
 }
 // T274 #40: your voice note under your words is one small line: play, its length, the original words
-export function VoiceLine({ files }: { files?: FileRef[] }) {
+export function VoiceLine({ files, bare = false }: { files?: FileRef[]; bare?: boolean }) {
   const audio = (files || []).filter(isAudio)
-  const tidy = P_CACHE.prefs?.tidy !== false
+  const tidy = !bare && P_CACHE.prefs?.tidy !== false // bare: Original words is in the message's ⋯ (B321)
   return (
     <>
       {audio.map((f) => {
@@ -405,68 +405,61 @@ export function MsgView({
               src?.files?.filter((f) => !isAudio(f)),
               gid + 't' + x.id,
             )}
-            <VoiceLine files={src?.files} />
           </>
         )}
-        <span className="px-1 text-[11px] text-zinc-400 dark:text-zinc-500">
-          You · {ver?.old ? 'earlier version · ' : ver?.label ? ver.label + ' · ' : ''}
-          {when(x.t)}
-          {x.edited && !ver?.old ? (
-            <>
-              {' · '}
-              {src?.history?.length ? (
-                <button
-                  data-act="input-history"
-                  data-id={src.id}
-                  title="See what changed"
-                  className="relative underline decoration-dotted underline-offset-2 after:absolute after:-inset-3 hover:text-zinc-700 dark:hover:text-zinc-300"
+        {/* B321: one line under what you wrote: the voice note, who and when, and ⋯ with Edit, Add more and the rest */}
+        <div className="flex flex-wrap items-center justify-end gap-x-1">
+          {ver?.old ? null : <VoiceLine files={src?.files} bare={!!src && !src.moved && !src.deleted} />}
+          <span className="px-1 text-[11px] text-zinc-400 dark:text-zinc-500">
+            You · {ver?.old ? 'earlier version · ' : ver?.label ? ver.label + ' · ' : ''}
+            {when(x.t)}
+            {x.edited && !ver?.old ? (
+              <>
+                {' · '}
+                {src?.history?.length ? (
+                  <button
+                    data-act="input-history"
+                    data-id={src.id}
+                    title="See what changed"
+                    className="relative underline decoration-dotted underline-offset-2 after:absolute after:-inset-3 hover:text-zinc-700 dark:hover:text-zinc-300"
+                  >
+                    edited {when(x.edited)}
+                  </button>
+                ) : (
+                  `edited ${when(x.edited)}`
+                )}
+              </>
+            ) : null}
+            {src?.tr_wait ? (
+              <>
+                {' · '}
+                <span className="animate-pulse text-blue-600 dark:text-blue-400">transcribing the voice note…</span>
+              </>
+            ) : null}
+            {read ? (
+              <>
+                {' · '}
+                <span
+                  title={`${read.names.join(', ')} read it ${when(new Date(read.t).toISOString())}`}
+                  className="inline-flex items-center gap-0.5 font-medium text-zinc-500 dark:text-zinc-400"
                 >
-                  edited {when(x.edited)}
-                </button>
-              ) : (
-                `edited ${when(x.edited)}`
-              )}
-            </>
-          ) : null}
-          {src?.tr_wait ? (
-            <>
-              {' · '}
-              <span className="animate-pulse text-blue-600 dark:text-blue-400">transcribing the voice note…</span>
-            </>
-          ) : null}
-          {read ? (
-            <>
-              {' · '}
-              <span
-                title={`${read.names.join(', ')} read it ${when(new Date(read.t).toISOString())}`}
-                className="inline-flex items-center gap-0.5 font-medium text-zinc-500 dark:text-zinc-400"
-              >
-                <Icon n="check" c="size-3" sw="2.5" />
-                Read by {read.names.join(', ')}
-              </span>
-            </>
-          ) : null}
-        </span>
-        {src && !ver?.old && !src.moved && !src.deleted ? (
-          <div className="flex gap-0.5 lg:opacity-0 lg:group-hover:opacity-100 lg:focus-within:opacity-100">
-            <button data-act="input-edit" data-id={src.id} className={DC_BTN}>
-              <Icon n="pencil" c="size-3.5" />
-              Edit
-            </button>
-            <button data-act="input-append" data-id={src.id} className={DC_BTN}>
-              <Icon n="plus" c="size-3.5" />
-              Add more
-            </button>
+                  <Icon n="check" c="size-3" sw="2.5" />
+                  Read by {read.names.join(', ')}
+                </span>
+              </>
+            ) : null}
+          </span>
+          {src && !ver?.old && !src.moved && !src.deleted ? (
             <button
               data-act="input-more"
               data-id={src.id}
-              aria-label={`More for ${rcode(src.id)}`}
+              aria-label={`Edit, add more, more for ${rcode(src.id)}`}
               className={`${DC_BTN} min-w-11 justify-center`}
             >
               <Icon n="more" c="size-3.5" />
             </button>
-          </div>
-        ) : null}
+          ) : null}
+        </div>
       </div>
     )
   if (x.kind === 'withdraw')
@@ -525,15 +518,19 @@ export function MsgView({
           <KindTag x={x} />
         )}
         <span>{when(x.t)}</span>
-        {form || !U.open ? null : (
+        {form || !U.open ? null : x.hidden ? (
+          <button data-act="msg-hide" data-n={U.open} data-id={x.id} data-on={0} className={DC_BTN}>
+            Keep shown
+          </button>
+        ) : (
           <button
-            data-act="msg-hide"
+            data-act="msg-menu"
             data-n={U.open}
             data-id={x.id}
-            data-on={x.hidden ? 0 : 1}
-            className={`${DC_BTN} lg:opacity-0 lg:group-hover/msg:opacity-100`}
+            aria-label="More for this message"
+            className={`${DC_BTN} min-w-9 justify-center lg:opacity-0 lg:group-hover/msg:opacity-100 lg:focus-visible:opacity-100`}
           >
-            {x.hidden ? 'Keep shown' : 'Hide'}
+            <Icon n="more" c="size-3.5" />
           </button>
         )}
       </div>

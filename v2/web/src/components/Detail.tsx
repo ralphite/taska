@@ -183,12 +183,7 @@ export function NeedsCard({ it, onCard = false }: { it: Item; onCard?: boolean }
       </>,
       'Not yet: say what is missing, then it goes back',
     )
-  return it.reply ? (
-    <div className="flex items-center gap-2 text-sm font-medium text-emerald-700 dark:text-emerald-400">
-      <Icon n="check" c="size-4" sw="2.25" />
-      You replied. Waiting for your agent.
-    </div>
-  ) : null
+  return null // B321: that you replied is said once, at the top ("Your agent's turn")
 }
 export const statusTone = (it: Item) =>
   it.status === 'doing'
@@ -464,6 +459,8 @@ const ItemHead = ({ it }: { it: Item }) => (
     <span className="text-[11px] font-semibold tracking-wider uppercase">
       {it.wait ? (
         <span className="text-amber-600 dark:text-amber-400">{it.wait.kind === 'block' ? 'Blocked' : 'Asks you'}</span>
+      ) : it.reply && !CLOSED(it.status) ? (
+        <span className="text-blue-600 dark:text-blue-400">Your agent&apos;s turn</span> // B321: you replied
       ) : (
         <span className={statusTone(it)}>{statusName(it)}</span>
       )}

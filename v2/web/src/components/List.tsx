@@ -622,7 +622,7 @@ function ViewBar() {
   return (
     <div
       data-views
-      className="flex h-12 [scrollbar-width:none] items-center gap-1 overflow-x-auto mask-r-from-[calc(100%-1.5rem)] border-b border-zinc-200 px-2 pr-6 dark:border-zinc-800"
+      className="flex h-12 [scrollbar-width:none] items-center gap-1 overflow-x-auto border-b border-zinc-200 mask-r-from-[calc(100%-1.5rem)] px-2 pr-6 dark:border-zinc-800"
     >
       {VIEWS.map(([v, label]) => {
         const n = viewCount(v)
@@ -654,7 +654,9 @@ function treeBody(all: Item[]): { body: ReactNode; shown: number } {
         ? [...all].sort(needsOrder) // what needs you, the newest first (B238)
         : [
             ...sortQueue(unfinished(all)),
-            ...all.filter((it) => CLOSED(it.status)).sort((a, b) => String(b.t1).localeCompare(String(a.t1)) || b.n - a.n),
+            ...all
+              .filter((it) => CLOSED(it.status))
+              .sort((a, b) => String(b.t1).localeCompare(String(a.t1)) || b.n - a.n),
           ] // All: finished work after the rest, the latest first
   return {
     body: (

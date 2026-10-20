@@ -88,7 +88,24 @@ export function bump(...areas: Area[]) {
   }
 }
 /** Redraw everything. */
-export const render = () => bump()
+export const render = () => {
+  idleCompose()
+  bump()
+}
+// T318 (B269, r309): on the desktop, Items with nothing open is the New input page, as clicking New input shows it
+function idleCompose() {
+  if (
+    BEHAVIOUR.newInputPage &&
+    desk() &&
+    U.tab === 'items' &&
+    !U.open &&
+    !U.doc &&
+    !D.page &&
+    !D.compose &&
+    U.editing == null
+  )
+    D.compose = true
+}
 
 // ---------------------------------------------------------------- where we are
 
@@ -448,7 +465,9 @@ export function sortQueue(items: Item[]): Item[] {
   const out: Item[] = []
   for (const b of [0, 1, 2, 3]) {
     const mine = items.filter((it) => bucket(it) === b)
-    const ranked = mine.filter((it) => it.rank != null).sort((x, y) => (x.rank as number) - (y.rank as number) || x.n - y.n)
+    const ranked = mine
+      .filter((it) => it.rank != null)
+      .sort((x, y) => (x.rank as number) - (y.rank as number) || x.n - y.n)
     const rest = mine.filter((it) => it.rank == null).sort((x, y) => x.pri.localeCompare(y.pri) || x.n - y.n)
     let i = 0
     for (const r of ranked) {
