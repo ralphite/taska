@@ -616,21 +616,56 @@ class Handler(BaseHTTPRequestHandler):
             t = hub.projects.get(str(data.get("to") or ""))
             if not t or t is s:
                 raise Err("choose another project")
+            here = s.cfg.get("name") or s.name
             with s.cond:
-                it = s.item(data.get("ref"), follow=False)
-                if it.get("deleted") or it["merged_into"]:
-                    raise Err(f"{s.code(it['n'])} cannot be moved")
-                ref = s.code(it["n"])
-                talk = "\n\n".join(f"{x['by']} ({x['t'][:16].replace('T', ' ')}): {x['text']}" for x in it["thread"] if x.get("text") and not x.get("hidden"))
-                body = it["body"] + (f"\n\n---\nTalk in {s.cfg.get('name') or s.name} {ref}:\n\n{talk}" if talk else "")
-                fields = {"title": it["title"], "body": body[:MAX_TEXT], "type": it["type"], "pri": it["pri"], "when": it["when"], "next": it["next"]}
-            lines, _ = t.run_all([(0, {"op": "new", **fields})], "you")
-            if not lines[0].startswith("ok"):
-                raise Err(lines[0])
-            new = lines[0].split()[1]
-            s.run_all([(0, {"op": "say", "ref": ref, "kind": "progress", "text": f"Moved to {t.cfg.get('name') or t.name} as {new}"}),
-                       (1, {"op": "set", "ref": ref, "f": {"status": "dropped", "archived": True}})], "you")  # run_all takes the lock itself
-            self.json({"ok": True, "as": new})
+                root = s.item(data.get("ref"), follow=False)
+                if root.get("deleted") or root["merged_into"]:
+                    raise Err(f"{s.code(root['n'])} cannot be moved")
+                # B336: its subitems go along, all of them, under it as they were (parents before their children)
+                tree: List[Tuple[Dict[str, Any], Optional[int]]] = []
+                todo: List[Tuple[Dict[str, Any], Optional[int]]] = [(root, None)]
+                while todo:
+                    it, par = todo.pop(0)
+                    tree.append((it, par))
+                    todo += [(k, it["n"]) for k in sorted(s.items.values(), key=lambda k: k["n"])
+                             if k.get("parent") == it["n"] and not k.get("deleted") and not k["merged_into"]]
+                plan = []
+                docs: List[Tuple[int, int, str, str]] = []
+                for it, par in tree:
+                    ref = s.code(it["n"])
+                    talk = "\n\n".join(f"{x['by']} ({x['t'][:16].replace('T', ' ')}): {x['text']}" for x in it["thread"] if x.get("text") and not x.get("hidden"))
+                    body = it["body"] + (f"\n\n---\nTalk in {here} {ref}:\n\n{talk}" if talk else "")
+                    plan.append((it["n"], par, ref, it["status"], bool(it["archived"]), {
+                        "title": it["title"], "body": body[:MAX_TEXT], "type": it["type"], "pri": it["pri"], "when": it["when"], "next": it["next"]}))
+                    # T338: its documents go along too; their comments are written under them, as its talk is
+                    for d in sorted((d for d in s.docs.values() if d["n"] == it["n"] and not d.get("deleted")), key=lambda d: d["d"]):
+                        notes = "\n\n".join(f"- {c['by']} ({c['t'][:16].replace('T', ' ')})" + (f" on \u201c{c['quote'][:200]}\u201d" if c.get("quote") else "") + f": {c['text']}"
+                                             for c in d["comments"] if c.get("text") and not c.get("deleted"))
+                        md = d["md"] + (f"\n\n---\nComments in {here} D{d['d']}:\n\n{notes}" if notes else "")
+                        docs.append((it["n"], d["d"], d.get("title") or "", md[:MAX_TEXT]))
+            under = None
+            if data.get("under"):  # T338: put it under an item there
+                with t.cond:
+                    under = t.code(t.item(data.get("under"), follow=False)["n"])
+            new_as: Dict[int, str] = {}
+            for n, par, ref, status, archived, fields in plan:
+                op: Dict[str, Any] = {"op": "new", **fields, "status": status}
+                if par is not None:
+                    op["parent"] = new_as[par]
+                elif under:
+                    op["parent"] = under
+                lines, _ = t.run_all([(0, op)], "you")
+                if not lines[0].startswith("ok"):
+                    raise Err(f"{ref}: {lines[0]}")
+                new_as[n] = lines[0].split()[1]
+                if archived:
+                    t.run_all([(0, {"op": "set", "ref": new_as[n], "f": {"archived": True}})], "you")
+            for n, d, title, md in docs:
+                t.run_all([(0, {"op": "doc", "ref": new_as[n], "title": title, "md": md})], "you")
+            for n, _, ref, _, _, _ in plan:
+                s.run_all([(0, {"op": "say", "ref": ref, "kind": "progress", "text": f"Moved to {t.cfg.get('name') or t.name} as {new_as[n]}"}),
+                           (1, {"op": "set", "ref": ref, "f": {"status": "dropped", "archived": True}})], "you")  # run_all takes the lock itself
+            self.json({"ok": True, "as": new_as[plan[0][0]], "with": len(plan) - 1, "docs": len(docs)})
         elif p == "/api/organize":
             rid = (json.loads(self.body(10_000) or b"{}")).get("id")
             with s.cond:

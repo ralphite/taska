@@ -1301,8 +1301,8 @@ function itemMoveProjParts({ n }: Props): Parts | null {
           ))}
         </div>
         <p className="mt-3 text-[13px] leading-snug text-zinc-500 dark:text-zinc-400">
-          It is made there with its text and its talk; here it is marked won&apos;t do and archived, with a note where
-          it went.
+          It is made there with its text and its talk, and its subitems go along under it; here they are marked
+          won&apos;t do and archived, with a note where each went.
         </p>
       </>
     ),

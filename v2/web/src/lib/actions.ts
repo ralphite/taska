@@ -1307,7 +1307,7 @@ export const ACT: Record<string, Handler> = {
       ref = code(n),
       to = d.to as string
     try {
-      const r = await net<{ ok: boolean; as: string; error?: string }>(
+      const r = await net<{ ok: boolean; as: string; with?: number; error?: string }>(
         ctx.P + 'api/move-item',
         JSON_POST({ ref, to }),
         NET.op,
@@ -1316,7 +1316,7 @@ export const ACT: Record<string, Handler> = {
       closeDialog()
       await load()
       toast(
-        `Moved ${ref} to ${projName(to)} as ${r.as}`,
+        `Moved ${ref} to ${projName(to)} as ${r.as}` + (r.with ? ` with its ${plural(r.with, 'subitem')}` : ''), // B336
         () => location.assign(`/p/${encodeURIComponent(to)}/${r.as}`),
         { label: 'Open' },
       )
