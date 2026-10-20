@@ -109,6 +109,7 @@ import { stashEdit } from './edit'
 import { copy, copyItem } from './copy'
 import { VW_STATE, deleteView, saveView, updateView, showView } from './views'
 import { openViewer, viewerAct } from './viewer'
+import { navigate } from './switch'
 
 export type Data = Record<string, string | undefined>
 export type KeyLike = { metaKey?: boolean; ctrlKey?: boolean; shiftKey?: boolean; target?: EventTarget | null }
@@ -414,11 +415,11 @@ export const ACT: Record<string, Handler> = {
   },
   'proj-open': (d) => {
     closeDialog()
-    location.assign(`/p/${encodeURIComponent(d.slug as string)}/`)
+    navigate(`/p/${encodeURIComponent(d.slug as string)}/`)
   },
   'proj-settings': (d) => {
     closeDialog()
-    location.assign(`/p/${encodeURIComponent(d.slug as string)}/settings`)
+    navigate(`/p/${encodeURIComponent(d.slug as string)}/settings`)
   },
   'proj-new': () => {
     closeDialog()
@@ -437,7 +438,7 @@ export const ACT: Record<string, Handler> = {
     if (!title) return document.getElementById('npName')?.focus()
     try {
       const r = await net<{ ok: boolean; name: string; error?: string }>('/api/projects', JSON_POST({ title }), NET.op)
-      if (r.ok) location.href = `/p/${r.name}/`
+      if (r.ok) navigate(`/p/${r.name}/`)
       else {
         U.npErr = r.error || 'Not created'
         bump('side')
@@ -471,7 +472,7 @@ export const ACT: Record<string, Handler> = {
     if (!title) return document.getElementById('pNewName')?.focus()
     try {
       const r = await projectCall('', { title })
-      location.assign(`/p/${encodeURIComponent(r.name)}/`)
+      navigate(`/p/${encodeURIComponent(r.name)}/`)
     } catch (ex) {
       U.pErr = (ex as Error).message
       U.pNewText = title
@@ -1317,7 +1318,7 @@ export const ACT: Record<string, Handler> = {
       await load()
       toast(
         `Moved ${ref} to ${projName(to)} as ${r.as}` + (r.with ? ` with its ${plural(r.with, 'subitem')}` : ''), // B336
-        () => location.assign(`/p/${encodeURIComponent(to)}/${r.as}`),
+        () => navigate(`/p/${encodeURIComponent(to)}/${r.as}`),
         { label: 'Open' },
       )
     } catch (ex) {
@@ -1613,7 +1614,7 @@ export const ACT: Record<string, Handler> = {
       }
       toast(
         `Moved ${rcode(id)} to ${projName(to)} as ${rcode(r.as)}`,
-        () => location.assign(`/p/${encodeURIComponent(to)}/`),
+        () => navigate(`/p/${encodeURIComponent(to)}/`),
         { label: 'Open' },
       )
     } catch (ex) {

@@ -21,7 +21,8 @@ import { closeViewer, VW } from './viewer'
 import { hint } from './toast'
 import { draftFix, footRoom } from '../components/Composer'
 import { LAST, drawerW, setDrawer } from '../components/Shell'
-import { SWIPE, esc } from './state'
+import { SWIPE, ctx, esc } from './state'
+import { goTo } from './switch'
 import { PDRAG } from './projdrag'
 
 // ---------------------------------------------------------------- press feedback (T160)
@@ -196,6 +197,23 @@ let wired = false
 export function wire() {
   if (wired) return
   wired = true
+  // T339: a link to a place in Taska (another project, or this one) goes there in the page, without loading it again;
+  // a click with a modifier, or a link meant for another tab, keeps the browser's own way
+  document.addEventListener(
+    'click',
+    (e) => {
+      const a = (e.target as Element).closest<HTMLAnchorElement>('a[href]')
+      if (!a || a.target || a.hasAttribute('download') || e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey)
+        return
+      if (a.hasAttribute('data-act')) return // its action decides
+      const inDrawer = !desk() && !!a.closest('#drawerList') && layersNow().includes('drawer')
+      if (!goTo(a.href, inDrawer ? 'replace' : 'push')) return
+      e.preventDefault()
+      e.stopImmediatePropagation()
+      if (inDrawer) closeDrawer()
+    },
+    true,
+  )
   // the pane you last acted in, for where feedback shows (B129)
   document.addEventListener(
     'pointerdown',
@@ -766,6 +784,10 @@ export function wire() {
   // Back and Forward
   addEventListener('popstate', () => {
     if (ownPop()) return // a step the page took back itself (B150)
+    if (!location.pathname.startsWith(ctx.P)) {
+      goTo(location.href, 'pop') // Back or Forward to another project: switched in the page (T339)
+      return
+    }
     if (URLS.selfBack) {
       URLS.selfBack = false
       return writeURL(false, history.state?.full ? history.state : null)

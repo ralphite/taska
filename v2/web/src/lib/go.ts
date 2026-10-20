@@ -23,6 +23,7 @@ import {
 import { toast } from './toast'
 import { closeDialog, openDialog } from './dialog'
 import { openItem, setTab } from './nav'
+import { navigate } from './switch'
 
 // ---------------------------------------------------------------- the phone's card
 
@@ -204,7 +205,7 @@ export function goNextProject() {
   } catch {
     /* no storage */
   }
-  location.assign(`/p/${encodeURIComponent(after.name)}/`)
+  navigate(`/p/${encodeURIComponent(after.name)}/`)
   return true
 }
 export function startGoFromAnotherProject(start: () => void) {
@@ -263,6 +264,6 @@ function goAllNext(settled = U.go?.done.size || 0) {
   } catch {
     /* no storage */
   }
-  location.assign(`/p/${encodeURIComponent(next.name)}/`)
+  navigate(`/p/${encodeURIComponent(next.name)}/`)
   return true
 }

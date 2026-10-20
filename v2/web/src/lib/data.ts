@@ -428,6 +428,12 @@ function offerRestart() {
     { label: 'Restart', sticky: true },
   )
 }
+const POLL = { stop: () => {} }
+/** T339: another project is shown now: this one's poll ends, its wait let go of. */
+export function stopPoll() {
+  nextGeneration()
+  POLL.stop()
+}
 export async function poll(g: number) {
   while (g === gen) {
     const ctl = new AbortController(),
@@ -442,6 +448,7 @@ export async function poll(g: number) {
       ctl.abort()
     }
     if (!idle) addEventListener('blur', leave)
+    POLL.stop = leave // T339: switching project lets go of this project's wait at once
     try {
       const S = model.S
       const d = await (

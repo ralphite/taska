@@ -6,6 +6,7 @@ import { JSON_POST, NET, keepProjects, load, net, notLoaded, notSaved, pushUndo 
 import { toast } from './toast'
 import { saveDraft } from './drafts'
 import { LOG_N } from './constants'
+import { navigate } from './switch'
 
 export const P_CACHE = {
   guide: null as string | null,
@@ -189,7 +190,7 @@ export async function deleteProject(slug: string) {
     } catch {
       /* no storage */
     }
-    location.assign(next ? `/p/${encodeURIComponent(next.name)}/projects` : '/')
+    navigate(next ? `/p/${encodeURIComponent(next.name)}/projects` : '/')
     return
   }
   await loadProjects()

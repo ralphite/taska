@@ -4,7 +4,7 @@
 import { D, U, beforeRender, byN, code, ctx, desk, els, model, parseRef, setProject } from './state'
 import { PSEC_AT, readURL, viewQuery, writeURL } from './url'
 import { loadViews } from './views'
-import { checkOthers, errorLog, loadKept, nextGeneration, poll, slowLog, VERSION } from './data'
+import { checkOthers, errorLog, generation, loadKept, nextGeneration, poll, slowLog, VERSION } from './data'
 import { restoreDraftFiles, syncDraft } from './drafts'
 import { restoreGo, startGoFromAnotherProject } from './go'
 import { applyURL, settleOpen } from './nav'
@@ -16,22 +16,28 @@ import { wire } from './events'
 import { ACT } from './actions'
 import { grow } from './outbox'
 import type { Tab } from './constants'
+import { navigate } from './switch'
 
 export function bootProject(name: string) {
   setProject(name)
   beforeRender(settleOpen) // B5: never a merged item, whichever way it came back
   beforeRender(syncDraft) // the box follows what it writes to: its draft comes along (B185)
-  U.draftKey = null
-  U.parked = {}
-  U.vcMarks = []
-  restoreDraftFiles() // T257 #4
   try {
     U.oldDraft = localStorage.getItem('taska.draft') || ''
     localStorage.removeItem('taska.draft')
   } catch {
     /* no storage */
   }
-  // B190: before the data the frame shows where it will be; a tab or filters in the address are read now too
+  readStart()
+  VERSION.page = document.querySelector<HTMLMetaElement>('meta[name="taska-version"]')?.content || ''
+  if ('serviceWorker' in navigator && isSecureContext) navigator.serviceWorker.register('/sw.js').catch(() => {}) // F192
+}
+/** What the address says, before the data: the frame shows where it will be (B190). Also when switching project. */
+export function readStart() {
+  U.draftKey = null
+  U.parked = {}
+  U.vcMarks = []
+  restoreDraftFiles() // T257 #4
   const { seg, qs } = readURL()
   if (Object.hasOwn(PSEC_AT, seg)) {
     const sec = PSEC_AT[seg]
@@ -42,22 +48,11 @@ export function bootProject(name: string) {
     for (const k of ['type', 'when', 'status', 'pri', 'sort'] as const) U[k] = qs.get(k) || 'all'
     if (/^(inputs|archive|rules)$/.test(seg)) U.tab = seg as Tab
   }
-  VERSION.page = document.querySelector<HTMLMetaElement>('meta[name="taska-version"]')?.content || ''
-  if ('serviceWorker' in navigator && isSecureContext) navigator.serviceWorker.register('/sw.js').catch(() => {}) // F192
 }
 /** Once the page is drawn: listeners, the data, and everything that waits for it. */
 export async function startProject() {
   wire()
   grow()
-  const g = nextGeneration()
-  try {
-    await loadKept() // T293: the kept copy at once, then what changed since
-  } catch {
-    /* the poll tries again */
-  }
-  const up = Math.round(performance.now()) // F334: from the click that opened this page to its items being in
-  if (up > 1000)
-    slowLog(location.pathname, up, navigator.serviceWorker?.controller ? 'page load, kept page' : 'page load')
   // T335: a script error or a failed promise nobody caught goes to the log
   addEventListener('error', (e) =>
     errorLog(`${e.message} (${(e.filename || '').split('/').pop()}:${e.lineno})`, 'script error'),
@@ -66,6 +61,25 @@ export async function startProject() {
     errorLog(String((e.reason as Error)?.stack || e.reason).slice(0, 300), 'promise'),
   )
   void loadViews() // F320: your own views, the same in every project
+  await enterProject(true)
+}
+/** A project's data and everything that waits for it: on a fresh page, and each time the page switches to one (T339). */
+export async function enterProject(first = false) {
+  const g = nextGeneration(),
+    t0 = performance.now()
+  try {
+    await loadKept() // T293: the kept copy at once, then what changed since
+  } catch {
+    /* the poll tries again */
+  }
+  if (g !== generation()) return // switched again meanwhile
+  const up = Math.round(first ? performance.now() : performance.now() - t0) // F334: from the click to the items being in
+  if (up > 1000)
+    slowLog(
+      location.pathname,
+      up,
+      !first ? 'switch project' : navigator.serviceWorker?.controller ? 'page load, kept page' : 'page load',
+    )
   void checkOthers() // the other projects: the sidebar, and Move… on your inputs (A12)
   const S = model.S
   const { seg } = readURL(),
@@ -111,7 +125,7 @@ export async function startProject() {
       sessionStorage.removeItem('taska.deleted')
       toast(`Deleted ${gone.title}`, () =>
         projectCall('restore', { name: gone.name }).then(
-          () => location.assign(`/p/${encodeURIComponent(gone.name)}/`),
+          () => navigate(`/p/${encodeURIComponent(gone.name)}/`),
           (ex) => toast((ex as Error).message),
         ),
       )

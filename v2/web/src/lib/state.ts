@@ -324,6 +324,17 @@ export const D = {
   prevDoc: null as number | null,
   docKey: null as string | null,
 }
+// T339: a project is switched in the page, not by loading another one: what the page shows for a project starts
+// again as it does on a fresh page; how you set up the page (the sidebar hidden) stays
+const U0 = structuredClone(U),
+  D0 = structuredClone(D)
+const D_KEEP = new Set(['sideHidden', 'g'])
+export function resetPageState() {
+  const u = U as Record<string, unknown>,
+    d = D as Record<string, unknown>
+  for (const [k, v] of Object.entries(U0)) u[k] = structuredClone(v)
+  for (const [k, v] of Object.entries(D0)) if (!D_KEEP.has(k)) d[k] = structuredClone(v)
+}
 
 export const DR = {
   open: false,

@@ -1,5 +1,5 @@
-// Two pages: the home page (every project) at /, and a project at /p/<name>/... Switching project loads that
-// project's page (its address is the project's own, so agents' and phone links keep working).
+// Two pages: the home page (every project) at /, and a project at /p/<name>/... Switching from one project to another
+// happens in the page (lib/switch.ts, T339); the address is always the project's own, so agents' and phone links work.
 import { useLayoutEffect } from 'react'
 import { Home } from './pages/Home'
 import { ProjectPage } from './components/Shell'

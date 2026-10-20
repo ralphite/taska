@@ -5,6 +5,7 @@ import { bump, ctx, desk, needsYou, plural, titleOf } from './state'
 import { JSON_POST, NET, net } from './data'
 import { toast } from './toast'
 import type { ProjectRow, State } from './types'
+import { navigate } from './switch'
 
 const NOTICE = {
   items: false,
@@ -82,13 +83,17 @@ function sendNotice() {
     notification.onclick = () => {
       notification.close()
       window.focus()
-      location.assign(
+      navigate(
         `/p/${encodeURIComponent(first.project)}/${count === 1 && first.code ? encodeURIComponent(first.code) : ''}`,
       )
     }
   } catch {
     /* a permission change must not interrupt polling */
   }
+}
+/** T339: a project shown in the page for the first time tells nothing about what was already waiting, as a fresh page. */
+export function noticeFresh() {
+  NOTICE.items = false
 }
 export function noticeItems(d: State) {
   if (!desk()) return
