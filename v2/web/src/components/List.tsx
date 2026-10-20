@@ -602,12 +602,12 @@ function Tree({ group, band = '', needs = false }: { group: Item[]; band?: strin
 // 'all' stays the default value, so addresses and the other tabs are as before; All itself is 'every'.
 const VIEWS: [string, string][] = [
   ['all', 'Active'],
+  ['every', 'All'],
   ['wait', 'Needs you'],
   ['queued', 'Queue'],
   ['later', 'Later'],
   ['closed', 'Finished'],
-  ['every', 'All'],
-]
+] // in Yadong's order (r399)
 const unfinished = (rows: Item[]) => rows.filter((it) => !CLOSED(it.status))
 function viewCount(v: string) {
   const was = U.status

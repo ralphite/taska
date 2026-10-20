@@ -9,7 +9,7 @@ test('what needs you comes first, each with its one action', async ({ page, requ
     const views = await page
       .locator('#list [data-views] [data-v]')
       .evaluateAll((els) => els.map((e) => e.getAttribute('data-v')))
-    expect(views).toEqual(['all', 'wait', 'queued', 'later', 'closed', 'every'])
+    expect(views).toEqual(['all', 'every', 'wait', 'queued', 'later', 'closed'])
   } else {
     const zones = await page
       .locator('#list [data-zone]')
