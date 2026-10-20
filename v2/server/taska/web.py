@@ -227,7 +227,28 @@ class Handler(BaseHTTPRequestHandler):
     def do_HEAD(self) -> None:
         self.do_GET()
 
+    # F334: a request that takes more than a second is told in the log (what waits on purpose is left out: the long
+    # polls, an agent's /next?wait, a voice note's words), with how long it waited for the project's lock, if it did
+    WAITS = re.compile(r"/api/(poll|transcript)|[?&]wait=")
+
     def do_GET(self) -> None:
+        self.timed(self._get)
+
+    def do_POST(self) -> None:
+        self.timed(self._post)
+
+    def timed(self, fn: Callable[[], None]) -> None:
+        t0, self.lock_ms = time.monotonic(), 0
+        try:
+            fn()
+        finally:
+            ms = int((time.monotonic() - t0) * 1000)
+            path = re.sub(r"/k/[^/?]+", "/k/…", re.sub(r"([?&]key=)[^&]*", r"\1…", self.path))
+            if ms > 1000 and not self.WAITS.search(path):
+                lock = f", {self.lock_ms} ms of it waiting for the project" if self.lock_ms > 100 else ""
+                print(f"[slow] {time.strftime('%Y-%m-%d %H:%M:%S')} {self.command} {path[:160]} {ms} ms{lock}", file=sys.stderr, flush=True)
+
+    def _get(self) -> None:
         if not self.guard():
             return
         u = self.url()
@@ -376,7 +397,7 @@ class Handler(BaseHTTPRequestHandler):
             data = f.read()
         self.send(200, data, mime, {"Content-Security-Policy": "sandbox", "Content-Disposition": f"inline; filename*=UTF-8''{quote(name)}"})
 
-    def do_POST(self) -> None:
+    def _post(self) -> None:
         path = self.path.split("?")[0]
         if "/api/" in path and not path.endswith(("/api/netlog", "/api/miclog", "/api/restart", "/api/poll")):
             self.srv.saw_user()  # R328: the page did something for you (agents write with /do)
@@ -465,7 +486,9 @@ class Handler(BaseHTTPRequestHandler):
             data = json.loads(self.body(1_000_000) or b"{}")
             ops = [(0, x) for x in (data if isinstance(data, list) else [data])]  # pyright: ignore[reportUnknownVariableType]
             cid = (q.get("cid") or [""])[0][:64]  # B326: the page's id for this save; sent again after a lost answer, it is done once
+            t_lock = time.monotonic()
             with s.lock:
+                self.lock_ms = int((time.monotonic() - t_lock) * 1000)  # F334
                 if cid and cid in s.op_done:
                     answer, code = s.op_done[cid]
                 else:
@@ -534,7 +557,7 @@ class Handler(BaseHTTPRequestHandler):
             data = json.loads(self.body(20_000) or b"{}")
             via = "tunnel" if self.headers.get("X-Forwarded-Host") else "local"
             for e in (data.get("list") or [])[:30]:
-                print(f"[netlog] {str(e.get('t', ''))[:19]} {s.name} via {via}: " + json.dumps({k: str(e.get(k, ""))[:200] for k in ("why", "url", "ms", "status")}, ensure_ascii=False), file=sys.stderr, flush=True)
+                print(f"[netlog] {str(e.get('t', ''))[:19]} {s.name} via {via}: " + json.dumps({k: str(e.get(k, ""))[:200] for k in ("why", "url", "ms", "status") if k in e}, ensure_ascii=False), file=sys.stderr, flush=True)
             self.json({"ok": True})
         elif p == "/api/move":  # an input sent to the wrong project goes to another one (F79)
             data = json.loads(self.body(10_000) or b"{}")

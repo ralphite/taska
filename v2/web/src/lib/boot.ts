@@ -3,7 +3,7 @@
 // the page listens for changes (no reload by itself when Taska is updated: R284).
 import { D, U, beforeRender, byN, code, ctx, desk, els, model, parseRef, setProject } from './state'
 import { PSEC_AT, readURL, viewQuery, writeURL } from './url'
-import { checkOthers, loadKept, nextGeneration, poll, VERSION } from './data'
+import { checkOthers, loadKept, nextGeneration, poll, slowLog, VERSION } from './data'
 import { restoreDraftFiles, syncDraft } from './drafts'
 import { restoreGo, startGoFromAnotherProject } from './go'
 import { applyURL, settleOpen } from './nav'
@@ -54,6 +54,9 @@ export async function startProject() {
   } catch {
     /* the poll tries again */
   }
+  const up = Math.round(performance.now()) // F334: from the click that opened this page to its items being in
+  if (up > 1000)
+    slowLog(location.pathname, up, navigator.serviceWorker?.controller ? 'page load, kept page' : 'page load')
   void checkOthers() // the other projects: the sidebar, and Move… on your inputs (A12)
   const S = model.S
   const { seg } = readURL(),

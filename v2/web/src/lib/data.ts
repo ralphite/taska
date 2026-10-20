@@ -51,6 +51,8 @@ export async function net<T = unknown>(
     const r = await fetch(url, { cache: 'no-store', ...opts, signal: ctl.signal })
     status = r.status
     const out = (as === 'text' ? await r.text() : await r.json()) as T
+    const ms = Date.now() - t0
+    if (ms > 1000 && !/\/api\/(poll|transcript)|[?&]wait=/.test(url)) slowLog(url, ms, String(status)) // F334
     if (opts.method === 'POST' && NETLOG.list.length) sendNetlog() // what failed before goes now that Taska answers
     return out
   } catch {
@@ -69,7 +71,14 @@ export async function net<T = unknown>(
   }
 }
 // B326: every save that did not go through is told to Taska once it answers again, so the log can count them
-const NETLOG = { list: [] as Record<string, unknown>[] }
+const NETLOG = { list: [] as Record<string, unknown>[], t: 0 }
+// F334: whatever took more than a second, for the log: a page that came up slowly, a request that answered late
+export function slowLog(url: string, ms: number, status = '') {
+  if (!ctx.P) return // the log is a project's: the front page has none
+  NETLOG.list.push({ t: new Date().toISOString(), why: 'slow', url: url.replace(/^.*\/p\//, '/p/'), ms, status })
+  clearTimeout(NETLOG.t)
+  NETLOG.t = window.setTimeout(sendNetlog, 3000)
+}
 function sendNetlog() {
   const list = NETLOG.list.splice(0, 30)
   void fetch(ctx.P + 'api/netlog', JSON_POST({ list })).catch(() => NETLOG.list.unshift(...list))
