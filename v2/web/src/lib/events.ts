@@ -22,6 +22,7 @@ import { hint } from './toast'
 import { draftFix, footRoom } from '../components/Composer'
 import { LAST, drawerW, setDrawer } from '../components/Shell'
 import { esc } from './state'
+import { PDRAG } from './projdrag'
 
 // ---------------------------------------------------------------- press feedback (T160)
 const PRESS = { el: null as HTMLElement | null, id: null as number | null, x: 0, y: 0, t: 0, off: 0, mouse: false }
@@ -677,7 +678,7 @@ export function wire() {
     'touchmove',
     (e) => {
       const g = DG.g
-      if (!g) return
+      if (!g || PDRAG.on) return // a project being dragged (B330) does not pull the drawer
       const t = e.touches[0],
         dx = t.clientX - g.x0,
         dy = t.clientY - g.y0

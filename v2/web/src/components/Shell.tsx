@@ -54,6 +54,7 @@ import { VW, viewerAct } from '../lib/viewer'
 import { searchMode, openItem, closeDrawer } from '../lib/nav'
 import { writeURL } from '../lib/url'
 import { addFiles } from '../lib/outbox'
+import { bindProjDrag } from '../lib/projdrag'
 import { Icon, Kbd, ProjTile } from './ui'
 import { List } from './List'
 import { InputsView } from './Inputs'
@@ -306,6 +307,8 @@ function SideFoot() {
 }
 function Drawer({ hidden, over }: { hidden: boolean; over: boolean }) {
   const rule = U.tab === 'rules' && !D.page
+  const list = useRef<HTMLDivElement>(null)
+  useLayoutEffect(() => (list.current ? bindProjDrag(list.current) : undefined), [])
   return (
     <nav
       id="drawer"
@@ -355,7 +358,7 @@ function Drawer({ hidden, over }: { hidden: boolean; over: boolean }) {
         <div className="px-3 pb-1.5 text-xs font-semibold text-zinc-500 lg:text-[11px] lg:tracking-wider lg:uppercase dark:text-zinc-400">
           Projects
         </div>
-        <div id="drawerList" className="flex flex-col gap-0.5">
+        <div id="drawerList" ref={list} className="flex flex-col gap-0.5">
           <SideList />
         </div>
         {U.npOpen ? (
