@@ -6810,8 +6810,8 @@ async function flushOutbox() {
     }
   } finally { flushOutbox.busy = false; render(); if (sent) showSent(...sent); }
 }
-addEventListener('beforeunload', e => {  // unsent words this browser can't keep (B151), a recording, or a voice note still in the box (B149)
-  if (U.outbox.some(j => !keepable(j)) || R.rec || U.files.some(f => (f.mime || '').startsWith('audio/'))) { e.preventDefault(); e.returnValue = ''; }
+addEventListener('beforeunload', e => {  // B317: leaving never asks: drafts, voice notes and edits are kept here; only a recording still going would be lost
+  if (R.rec) { e.preventDefault(); e.returnValue = ''; }
 });
 
 // ---------------------------------------------------------------- voice
@@ -10176,10 +10176,6 @@ document.addEventListener('keydown', e => {  // ⌘↵ (Ctrl+↵) saves the item
   if (/^e(Title|Body|Next)$/.test(e.target.id) && e.key === 'Enter' && (e.metaKey || e.ctrlKey) && !e.isComposing && U.editing) {
     e.preventDefault(); ACT['edit-save']({dataset: {n: String(U.editing)}});
   }
-});
-addEventListener('beforeunload', e => {  // leaving with an edit or a document not saved: the browser asks first (T113 A6)
-  const d = U.docEdit && docById(U.doc), md = ($('docMd')?.value || '').trim();
-  if (editNow()?.changed || (U.docEdit && md && md !== (d ? noteText(d).trim() : ''))) { e.preventDefault(); e.returnValue = ''; }
 });
 // Selecting words in what a voice note became offers to correct them, in the one box (F144). The fix goes into
 // that input and is remembered for every project's transcriptions.
