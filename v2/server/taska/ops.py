@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import mimetypes
 import os
+import re
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from .core import (CLOSED, DOC_KEY, KINDS, LETTER, MAX_OPS, MAX_TEXT, PEOPLE, PRIS, STATUSES, WHENS, Err, Item, Op,
@@ -408,6 +409,12 @@ def run(s: "Store", op: Op, by: str, ctx: Dict[str, Any]) -> Tuple[str, Any]:
                     continue
                 raise Err(f"unknown file {fid}: upload it first with POST /api/file?name=<name>")
             files.append({"f": fid, "name": fid.split("-", 1)[-1], "mime": mimetypes.guess_type(fid)[0] or "application/octet-stream"})
+        if by == "org" and src in s.inputs:  # R319: what the organizer files from your input keeps its pictures, voice notes and links
+            have = {x["f"] for x in files}
+            files += [{k: f_[k] for k in ("f", "name", "mime") if k in f_} for f_ in s.inputs[src].get("files", []) if f_.get("f") not in have]
+            links = [u for u in re.findall(r"https?://\S+", s.inputs[src].get("text") or "") if u not in text]
+            if links:
+                text += "\n\n" + "\n".join(links)
         s.emit({"k": "say", "n": it["n"], "by": by, "kind": kind, "text": text, "src": src, **({"files": files} if files else {}), **keep})
         return f"ok {code} {kind}" + s.gone_note(it, by), {"ask": "Asked on ", "block": "Blocked on ", "decide": "Decided on "}.get(kind, "Noted on ") + code
     if name == "merge":

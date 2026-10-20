@@ -7,6 +7,7 @@ same state and every agent-facing answer stays the same.
 
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import re
@@ -88,6 +89,10 @@ class Store:
         reads = self.db.get("reads")  # F220: item -> agent -> when it last read it (the item's card, or /next giving it)
         self.reads: Dict[int, Dict[str, float]] = {int(n): dict(v) for n, v in reads.items()} if isinstance(reads, dict) else {}
         self.pv, self.saved = 0, 0.0  # pv: bumps when an agent turns up, starts or stops waiting
+        # T293: (kind, id) -> [hash as last served, change number]; pages ask only for what changed
+        self.sv: Dict[Tuple[str, Any], List[Any]] = {}
+        self.svn = 0
+        self.sv_memo: Optional[Tuple[Tuple[int, int], Dict[str, Any]]] = None
         self.written: Dict[str, Dict[Any, str]] = {"items": {}, "inputs": {}, "docs": {}}  # the state rows as last written
         self.flush_at = 0.0
         self.flusher: Optional[threading.Timer] = None
@@ -990,6 +995,47 @@ class Store:
 
     def state(self) -> Dict[str, Any]:
         return views.state(self)
+
+    SV_KEYS = (("items", "n"), ("inputs", "id"), ("docs", "d"))
+
+    def state_since(self, since: int = 0, boot: str = "") -> Dict[str, Any]:
+        """T293: the state, or only the items, inputs and documents that changed since the page's copy (its change
+        number `sv`), with what went away. Every change is found by comparing what would be sent with what was."""
+        with self.lock:
+            if self.sv_memo and self.sv_memo[0] == (self.rev, self.pv):  # several pages asking after one change: worked out once
+                st = dict(self.sv_memo[1])
+            else:
+                st = self.state_scan()
+                self.sv_memo = ((self.rev, self.pv), dict(st))
+            if since <= 0 or boot != self.boot or since > self.svn:
+                return st
+            for kind, idk in self.SV_KEYS:
+                st[kind] = [x for x in st[kind] if self.sv[(kind, x[idk])][1] > since]
+            st["delta"] = since
+            st["drop"] = {kind: [k[1] for k, v in self.sv.items() if k[0] == kind and v[0] is None and v[1] > since]
+                          for kind, _ in self.SV_KEYS}
+            return st
+
+    def state_scan(self) -> Dict[str, Any]:
+        """The whole state, after noting which items, inputs and documents changed since it was last worked out."""
+        with self.lock:
+            st = self.state()
+            now: Set[Tuple[str, Any]] = set()
+            for kind, idk in self.SV_KEYS:
+                for x in st[kind]:
+                    key = (kind, x[idk])
+                    now.add(key)
+                    h = hashlib.md5(json.dumps(x, sort_keys=True, ensure_ascii=False, default=str).encode()).digest()
+                    old = self.sv.get(key)
+                    if not old or old[0] != h:
+                        self.svn += 1
+                        self.sv[key] = [h, self.svn]
+            for key, v in self.sv.items():
+                if key not in now and v[0] is not None:
+                    self.svn += 1
+                    v[0], v[1] = None, self.svn
+            st["sv"] = self.svn
+            return st
 
     def card(self, it: Item, ref: Optional[Callable[[str], str]] = None) -> str:
         return views.card(self, it, ref)

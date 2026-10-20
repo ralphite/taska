@@ -47,9 +47,20 @@ const POST = (body: unknown): RequestInit => ({
   body: JSON.stringify(body),
 })
 
+const order = (l: ProjectRow[]) => l.sort((a, b) => (a.pos ?? 1e9) - (b.pos ?? 1e9) || (b.t || 0) - (a.t || 0)) // your order (F253), else the latest first
+/** T293: the last list this browser saw, drawn at once while Taska is asked. */
+function keptHome(): { list: ProjectRow[]; needs: Need[] } | null {
+  try {
+    const k = JSON.parse(localStorage.getItem('taska.home') || 'null') as { list: ProjectRow[]; needs: Need[] } | null
+    return k && Array.isArray(k.list) ? { list: order(k.list), needs: k.needs || [] } : null
+  } catch {
+    return null
+  }
+}
+
 export function Home() {
-  const [list, setList] = useState<ProjectRow[] | null>(null)
-  const [needs, setNeeds] = useState<Need[]>([])
+  const [list, setList] = useState<ProjectRow[] | null>(() => keptHome()?.list ?? null)
+  const [needs, setNeeds] = useState<Need[]>(() => keptHome()?.needs ?? [])
   const [q, setQ] = useState('')
   const [hits, setHits] = useState<Hit[] | null>(null)
   const [np, setNp] = useState(false)
@@ -61,8 +72,12 @@ export function Home() {
   const load = () =>
     Promise.all([json<ProjectRow[]>('/api/projects'), json<Need[]>('/api/needs').catch(() => [] as Need[])]).then(
       ([l, n]) => {
-        l.sort((a, b) => (a.pos ?? 1e9) - (b.pos ?? 1e9) || (b.t || 0) - (a.t || 0)) // your order (F253), else the latest first
-        setList(l)
+        try {
+          localStorage.setItem('taska.home', JSON.stringify({ list: l, needs: n }))
+        } catch {
+          /* no room */
+        }
+        setList(order(l))
         setNeeds(n)
       },
     )

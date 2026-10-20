@@ -708,6 +708,7 @@
    "deleted": [],
    "docs": [],
    "gone": [],
+   "sv": 9,
    "project": "default",
    "title": "default",
    "base": "http://<host>/p/default",

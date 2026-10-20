@@ -3,7 +3,7 @@
 // the page listens for changes (no reload by itself when Taska is updated: R284).
 import { D, U, beforeRender, byN, code, ctx, desk, els, model, parseRef, setProject } from './state'
 import { PSEC_AT, readURL, viewQuery, writeURL } from './url'
-import { checkOthers, load, nextGeneration, poll, VERSION } from './data'
+import { checkOthers, loadKept, nextGeneration, poll, VERSION } from './data'
 import { restoreDraftFiles, syncDraft } from './drafts'
 import { restoreGo, startGoFromAnotherProject } from './go'
 import { applyURL, settleOpen } from './nav'
@@ -50,7 +50,7 @@ export async function startProject() {
   grow()
   const g = nextGeneration()
   try {
-    await load()
+    await loadKept() // T293: the kept copy at once, then what changed since
   } catch {
     /* the poll tries again */
   }

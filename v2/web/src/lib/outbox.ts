@@ -365,8 +365,8 @@ export async function flushOutbox() {
   }
 }
 export function warnUnload(e: BeforeUnloadEvent) {
-  // unsent words this browser can't keep (B151), a recording, or a voice note still in the box (B149)
-  if (U.outbox.some((j) => !keepable(j)) || R_STATE.rec || U.files.some((f) => (f.mime || '').startsWith('audio/'))) {
+  // B317: leaving never asks: drafts, voice notes and edits are kept here; only a recording still going would be lost
+  if (R_STATE.rec) {
     e.preventDefault()
     e.returnValue = ''
   }

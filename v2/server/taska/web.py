@@ -221,7 +221,7 @@ class Handler(BaseHTTPRequestHandler):
         html = assets.index()
         if html is None:
             return self.send(503, "Taska: the page is not built. Run `npm run build` in v2/web (or use the released taska.pyz).\n")
-        self.send(200, html, "text/html; charset=utf-8")
+        self.send(200, html, "text/html; charset=utf-8", extra={"X-Taska-Page": "1"})  # T293: the service worker may keep it
 
     def do_HEAD(self) -> None:
         self.do_GET()
@@ -326,12 +326,14 @@ class Handler(BaseHTTPRequestHandler):
             with s.lock:
                 self.send(200, views.log(s, int((q.get("n") or ["30"])[0])))
         elif p == "/api/state":
-            self.json(dict(s.state(), project=s.name, title=s.title, base=base, key=hub.key,
+            since, sboot = int((q.get("since") or ["0"])[0] or 0), (q.get("boot") or [""])[0]
+            self.json(dict(s.state_since(since, sboot), project=s.name, title=s.title, base=base, key=hub.key,
                            remote=f"{hub.public}/k/{hub.key}/p/{s.name}" if hub.public else ""))
         elif p == "/api/poll":
             rev, boot, pv = int((q.get("rev") or ["0"])[0]), (q.get("boot") or [""])[0], int((q.get("pv") or ["-1"])[0])
+            wait = max(0, min(25, int((q.get("wait") or ["25"])[0] or 25)))  # T293: a tab in the background asks and lets go
             with s.cond:
-                s.cond.wait_for(lambda: s.rev != rev or bool(boot and boot != s.boot) or (pv >= 0 and pv != s.pv), timeout=25)
+                s.cond.wait_for(lambda: s.rev != rev or bool(boot and boot != s.boot) or (pv >= 0 and pv != s.pv), timeout=wait)
                 self.json({"rev": s.rev, "boot": s.boot, "pv": s.pv, "ver": assets.version()})
         elif p.startswith("/f/"):
             self.serve_file(s, os.path.basename(p[3:]))

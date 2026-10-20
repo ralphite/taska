@@ -11,7 +11,7 @@ import { closeSwipe, SW } from './rows'
 import { checkOthers, refresh } from './data'
 import { resendOutbox, warnUnload } from './outbox'
 import { kept, onStorage, keepChoice } from './drafts'
-import { keepItemEdit, editNow } from './edit'
+import { keepItemEdit } from './edit'
 import { docKey, noteText } from './docs'
 import { micRelease, doubtPick } from './voice'
 import { cancelCorrect } from './keys'
@@ -718,15 +718,7 @@ export function wire() {
   // F63: swipe right on an item page to go back; the page follows the finger, the list shows underneath
   wireBackSwipe()
   // leaving and coming back
-  addEventListener('beforeunload', (e) => {
-    warnUnload(e)
-    const d = U.docEdit && docById(U.doc),
-      md = ((document.getElementById('docMd') as HTMLTextAreaElement | null)?.value || '').trim()
-    if (editNow()?.changed || (U.docEdit && md && md !== (d ? noteText(d).trim() : ''))) {
-      e.preventDefault()
-      e.returnValue = ''
-    } // T113 A6
-  })
+  addEventListener('beforeunload', warnUnload) // B317: only a recording still going asks first
   addEventListener('visibilitychange', () => {
     if (document.visibilityState === 'hidden') micRelease()
   })

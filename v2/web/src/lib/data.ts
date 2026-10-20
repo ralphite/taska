@@ -127,15 +127,91 @@ export function nextGeneration() {
 
 export async function load() {
   const g = gen
-  const text = await net<string>(ctx.P + 'api/state', {}, NET.state, 'text')
+  // T293: with a copy here, only what changed since comes over (everything, when Taska restarted meanwhile)
+  const S = model.S as State & { sv?: number }
+  const since = SAVE.last && S.sv ? `?since=${S.sv}&boot=${encodeURIComponent(S.boot)}` : ''
+  let text = await net<string>(ctx.P + 'api/state' + since, {}, NET.state, 'text')
   if (g !== gen) return
   if (/^project \S+ was deleted/.test(text) || /^no project /.test(text)) {
     if (!U.leaving) location.replace('/?gone=' + encodeURIComponent(ctx.HERE))
     return
   }
+  let d = JSON.parse(text) as State & { delta?: number }
+  if (d.delta && SAVE.last) {
+    d = mergeState(JSON.parse(SAVE.last) as State, d)
+    text = JSON.stringify(d)
+  }
   SAVE.last = text
   CACHE.set(ctx.HERE, text)
-  ingest(JSON.parse(text) as State)
+  ingest(d)
+  cachePut(text)
+}
+type Delta = State & { delta?: number; drop?: Record<string, (number | string)[]> }
+/** T293: the changed items, inputs and documents into the copy this page has. */
+export function mergeState(was: State, d: Delta): State {
+  const w = was as unknown as Record<string, Record<string, unknown>[]>,
+    dd = d as unknown as Record<string, Record<string, unknown>[]>
+  for (const [kind, id] of [
+    ['items', 'n'],
+    ['inputs', 'id'],
+    ['docs', 'd'],
+  ] as const) {
+    const drop = new Set(d.drop?.[kind] || []),
+      fresh = new Map(dd[kind].map((x) => [x[id], x]))
+    const out = w[kind].filter((x) => !drop.has(x[id] as number)).map((x) => fresh.get(x[id]) ?? x),
+      have = new Set(out.map((x) => x[id]))
+    for (const x of dd[kind]) if (!have.has(x[id])) out.push(x)
+    w[kind] = out
+  }
+  const rest: Record<string, unknown> = { ...d }
+  for (const k of ['items', 'inputs', 'docs', 'delta', 'drop']) delete rest[k]
+  return Object.assign(was, rest)
+}
+// T293: the project's last state is kept in this browser (IndexedDB), so opening it again draws at once from there.
+const SC = { db: null as Promise<IDBDatabase> | null, t: 0 }
+const stateDB = () =>
+  (SC.db ||= new Promise((ok, no) => {
+    const r = indexedDB.open('taska-state', 1)
+    r.onupgradeneeded = () => r.result.createObjectStore('s')
+    r.onsuccess = () => ok(r.result)
+    r.onerror = () => no(r.error)
+  }))
+async function cacheGet(): Promise<string> {
+  const read = (async () => {
+    const db = await stateDB()
+    return await new Promise<string>((ok) => {
+      const q = db.transaction('s').objectStore('s').get(ctx.HERE)
+      q.onsuccess = () => ok((q.result as string) || '')
+      q.onerror = () => ok('')
+    })
+  })()
+  try {
+    return await Promise.race([read, new Promise<string>((ok) => setTimeout(() => ok(''), 300))]) // a slow store never holds the page up
+  } catch {
+    return ''
+  }
+}
+function cachePut(text: string) {
+  clearTimeout(SC.t)
+  SC.t = window.setTimeout(async () => {
+    try {
+      ;(await stateDB()).transaction('s', 'readwrite').objectStore('s').put(text, ctx.HERE)
+    } catch {
+      /* no store */
+    }
+  }, 1500)
+}
+/** Draw from the kept copy first, then bring it up to date. */
+export async function loadKept() {
+  const kept = typeof indexedDB === 'undefined' ? '' : await cacheGet()
+  if (kept && !SAVE.last)
+    try {
+      SAVE.last = kept
+      ingest(JSON.parse(kept) as State)
+    } catch {
+      SAVE.last = ''
+    }
+  return load()
 }
 export function ingest(d: State, first = false) {
   noticeItems(d)
@@ -237,8 +313,12 @@ export async function poll(g: number) {
       timer = setTimeout(() => ctl.abort(), 35000) // a dead connection never answers
     try {
       const S = model.S
+      // T293: a browser keeps at most 6 connections to Taska, and every waiting tab held one, so with a few tabs open
+      // the next page waited its turn for many seconds. Only the tab you look at waits for news; one behind asks
+      // every 20 s and lets go at once, and catches up as soon as it shows.
+      const hidden = document.hidden
       const d = await (
-        await fetch(`${ctx.P}api/poll?rev=${S.rev}&boot=${S.boot}&pv=${S.pv ?? -1}`, {
+        await fetch(`${ctx.P}api/poll?rev=${S.rev}&boot=${S.boot}&pv=${S.pv ?? -1}${hidden ? '&wait=0' : ''}`, {
           cache: 'no-store',
           signal: ctl.signal,
         })
@@ -249,9 +329,11 @@ export async function poll(g: number) {
         bump('head', 'side')
         resendOutbox()
       } // Taska is back: what you sent meanwhile goes now (B151)
-      if (d.rev !== model.S.rev || d.boot !== model.S.boot || d.pv !== model.S.pv) await load()
+      const news = d.rev !== model.S.rev || d.boot !== model.S.boot || d.pv !== model.S.pv
+      if (news) await load()
       if (d.ver && d.ver !== VERSION.page) VERSION.server = d.ver // R284: no reload by itself; the next reload brings it
       checkOthers()
+      if (hidden && !news) await napHidden(20000)
     } catch {
       if (g !== gen) return
       model.offline += ctl.signal.aborted ? 2 : 1
@@ -263,6 +345,17 @@ export async function poll(g: number) {
   }
 }
 export const VERSION = { page: '', server: '' }
+/** A wait that ends early when the tab shows again. */
+const napHidden = (ms: number) =>
+  new Promise<void>((ok) => {
+    const done = () => {
+      clearTimeout(t)
+      removeEventListener('visibilitychange', done)
+      ok()
+    }
+    const t = setTimeout(done, ms)
+    addEventListener('visibilitychange', done)
+  })
 export async function refresh() {
   try {
     await load()
