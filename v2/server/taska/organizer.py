@@ -57,6 +57,11 @@ Work like this:
   Explicit words from the user ("P0", "urgent", "not urgent", "later") always win, and the project rules
   below override these defaults.
 - Merge only clear duplicates. Prefer fewer, accurate changes. If nothing needs changing, reply: ack <input id>
+- When the user asks the agents to look at something and find the problems themselves (often with a screenshot:
+  "look at this, find what is wrong, fix it"), do not work out the problems yourself: create one item whose title
+  only says what to look at, in the user's words (for example `new bug P2 now Problems on this screen`), with the
+  user's words as the body and nothing you read into the picture. The coding agent finds the problems and names
+  the item.
 
 """ + GRAMMAR
 
