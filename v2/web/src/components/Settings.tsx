@@ -1,7 +1,19 @@
 // Settings (B162): one page for everything you change now and then; each section has its own address. On the desktop
 // a column of sections and the section beside it; on the phone pages in the grouped style of a phone's own settings.
 import { useLayoutEffect, useRef, type ReactNode } from 'react'
-import { AGENT_NAME, FIELD, LOG_N, PRIMARY, P_BTN, SECOND, STATUS, TAB_NAME, TYPE_TEXT, WHEN } from '../lib/constants'
+import {
+  AGENT_NAME,
+  CHIP,
+  FIELD,
+  LOG_N,
+  PRIMARY,
+  P_BTN,
+  SECOND,
+  STATUS,
+  TAB_NAME,
+  TYPE_TEXT,
+  WHEN,
+} from '../lib/constants'
 import {
   D,
   U,
@@ -367,73 +379,105 @@ const BODY: Record<string, () => ReactNode> = {
       </>
     ),
   agents: () => {
+    // T322 (design X): everything on one screen: who is here and what is queued, who has been here, and how to
+    // connect one more (a command or a message), with one kind of copy button
     const S = model.S
     const cmd = `curl -s ${ctx.BASE}/connect | sh`,
       far = S.remote && S.remote !== ctx.BASE ? `curl -s ${S.remote}/connect | sh` : '',
       ask = agentAsk()
     const seen = [...(S.agents || [])].sort((a, b) => b.t - a.t)
+    const CARD = 'rounded-2xl border border-zinc-200 dark:border-zinc-800'
+    const way = (icon: string, title: string, copy: string, body: ReactNode) => (
+      <section className={`${CARD} flex min-w-0 flex-col`}>
+        <header className="flex h-12 items-center gap-2 border-b border-zinc-200 pr-2 pl-4 dark:border-zinc-800">
+          <Icon n={icon} c="size-4 text-zinc-500 dark:text-zinc-400" />
+          <h3 className="min-w-0 flex-1 text-sm font-semibold">{title}</h3>
+          <button data-act="copy-text" data-text={copy} className={`${CHIP} font-medium`}>
+            <Icon n="copy" c="size-3.5" />
+            Copy
+          </button>
+        </header>
+        <div className="flex flex-col gap-2.5 p-4 text-sm">{body}</div>
+      </section>
+    )
     return (
-      <>
-        <Ruled>
-          <div className="py-6">
-            <AgentCard />
+      <div className="flex flex-col gap-8 border-t border-zinc-200 py-6 dark:border-zinc-800">
+        <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+          <AgentCard />
+          <section className={`${CARD} px-4 py-3`}>
+            <h3 className="text-xs font-semibold tracking-wide text-zinc-500 uppercase dark:text-zinc-400">
+              Seen in this project
+            </h3>
+            {seen.length ? (
+              <ul className="mt-1">
+                {seen.map((a) => (
+                  <li
+                    key={a.name}
+                    className={`flex h-9 items-center gap-2.5 text-sm ${a.name in AGENT_NAME && a.name !== 'agent' ? '' : 'opacity-55'}`}
+                  >
+                    <Avatar by={a.name} />
+                    <span className="min-w-0 flex-1 truncate">{AGENT_NAME[a.name] || a.name}</span>
+                    <span className="text-xs text-zinc-500 tabular-nums dark:text-zinc-400">
+                      {a.waiting ? 'waiting for work' : agoLong(a.t)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">No agent yet. Connect one below.</p>
+            )}
+          </section>
+        </div>
+        <section id="pConnect" className="flex flex-col gap-3">
+          <h2 className="text-[15px] font-semibold">Connect one more agent</h2>
+          <div className="grid gap-4 lg:grid-cols-2">
+            {way(
+              'keyboard',
+              'Run a command',
+              cmd,
+              <>
+                <p className="text-zinc-500 dark:text-zinc-400">
+                  Once on each machine, in the project&apos;s folder. It installs the Taska skill for Claude Code, Codex
+                  and Antigravity.
+                </p>
+                <code className="font-mono text-[13px] leading-relaxed break-words">{cmd}</code>
+                {far ? (
+                  <p className="text-zinc-500 dark:text-zinc-400">
+                    From another network, with the key:{' '}
+                    <button
+                      data-act="copy-text"
+                      data-text={far}
+                      className="font-medium text-blue-600 hover:underline dark:text-blue-400"
+                    >
+                      copy that command
+                    </button>
+                  </p>
+                ) : null}
+              </>,
+            )}
+            {way(
+              'comment',
+              'Or tell the agent',
+              ask,
+              <>
+                <p className="text-zinc-500 dark:text-zinc-400">
+                  Paste this into your coding agent, in the project&apos;s folder.
+                </p>
+                <p className="leading-relaxed break-words">{ask.replace(/`/g, '')}</p>
+              </>,
+            )}
           </div>
-        </Ruled>
-        <Part
-          id="pConnect"
-          title="Connect a machine"
-          about={
-            <>
-              Once on each machine where a coding agent works, in the project&apos;s folder. It saves this
-              project&apos;s address in <code className="font-mono text-[13px]">.taska</code> and installs the Taska
-              skill for Claude Code, Codex and Antigravity.
-            </>
-          }
-        >
-          <Box t={cmd} />
-          <CopyBtn t={cmd} label="Copy command" main />
-        </Part>
-        {far ? (
-          <Part
-            title="From another network"
-            about="On a machine outside this network, run this one instead. It carries the key."
-          >
-            <Box t={far} />
-            <CopyBtn t={far} label="Copy" />
-          </Part>
-        ) : null}
-        <Part
-          title="Or send it to the agent"
-          about="Open your coding agent in the project's folder and send it this. It reads the rest from Taska."
-        >
-          <Box t={ask} mono={false} />
-          <CopyBtn t={ask} label="Copy" />
-        </Part>
-        {seen.length ? (
-          <Part title="Seen in this project">
-            <ul className="mt-2 divide-y divide-zinc-100 dark:divide-zinc-800">
-              {seen.map((a) => (
-                <li key={a.name} className="flex h-11 items-center gap-3">
-                  <Avatar by={a.name} />
-                  <span className="min-w-0 flex-1 text-[15px]">{AGENT_NAME[a.name] || a.name}</span>
-                  <span className="text-sm text-zinc-500 dark:text-zinc-400">
-                    {a.waiting ? 'waiting for work' : agoLong(a.t)}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </Part>
-        ) : null}
-        <details className="group border-t border-zinc-200 py-6 dark:border-zinc-800">
-          <summary className="-my-2.5 flex min-h-11 cursor-pointer items-center gap-1.5 text-[15px] font-semibold hover:text-zinc-600 lg:my-0 lg:min-h-0 dark:hover:text-zinc-300">
+        </section>
+        <details className={`${CARD} group px-4`}>
+          <summary className="flex min-h-12 cursor-pointer items-center gap-1.5 text-sm font-semibold hover:text-zinc-600 dark:hover:text-zinc-300">
             <Icon n="right" c="size-4 text-zinc-400 transition-transform group-open:rotate-90" />
             What the agent reads
           </summary>
-          <pre className="mt-3 overflow-x-auto rounded-xl bg-zinc-50 p-3.5 text-xs leading-relaxed wrap-anywhere whitespace-pre-wrap lg:scrollbar-thin dark:bg-zinc-900">
+          <pre className="mb-4 overflow-x-auto rounded-xl bg-zinc-50 p-3.5 text-xs leading-relaxed wrap-anywhere whitespace-pre-wrap lg:scrollbar-thin dark:bg-zinc-900">
             {P_CACHE.guide || 'Loading…'}
           </pre>
         </details>
-      </>
+      </div>
     )
   },
   log: () =>
