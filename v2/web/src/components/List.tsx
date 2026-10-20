@@ -55,7 +55,7 @@ import {
   type Go,
 } from '../lib/state'
 import type { Item } from '../lib/types'
-import { LIST, holding, listEnter, listLeave, listSig } from '../lib/listhold'
+import { LIST, ROW_H, holding, listEnter, listLeave, listSig } from '../lib/listhold'
 import { BEHAVIOUR } from '../lib/behaviour'
 import { VW_STATE, isView, renameView, setFilters, type View } from '../lib/views'
 import { openDialog, popAt } from '../lib/dialog'
@@ -78,8 +78,9 @@ import { Avatar, Cnt, DraftMark, Empty, Hit, Icon, Kbd, ProjTile, Soft, StateIco
 
 const ROW_TINT =
   'data-sel:bg-blue-100 dark:data-sel:bg-blue-400/20 lg:data-sel:hover:bg-blue-100 dark:lg:data-sel:hover:bg-blue-400/20 lg:hover:bg-zinc-50 dark:lg:hover:bg-zinc-900/70 lg:aria-[current=true]:bg-blue-50 dark:lg:aria-[current=true]:bg-blue-400/10 pointer-coarse:transition-colors pointer-coarse:delay-75 data-pressed:bg-zinc-100 lg:data-pressed:bg-zinc-100 dark:data-pressed:bg-zinc-900 dark:lg:data-pressed:bg-zinc-900'
+// T339: rows out of sight are not laid out until they scroll near (a long list shows at once)
 const ARTICLE =
-  'relative border-b border-zinc-100 data-dragging:opacity-40 data-[drop=before]:shadow-[inset_0_2px_0_0_var(--color-blue-500)] data-[drop=after]:shadow-[inset_0_-2px_0_0_var(--color-blue-500)] data-[drop=into]:bg-blue-50 data-[drop=into]:ring-2 data-[drop=into]:ring-blue-500 data-[drop=into]:ring-inset dark:border-zinc-800/70 dark:data-[drop=into]:bg-blue-400/10'
+  '[contain-intrinsic-size:auto_64px] [content-visibility:auto] relative border-b border-zinc-100 data-dragging:opacity-40 data-[drop=before]:shadow-[inset_0_2px_0_0_var(--color-blue-500)] data-[drop=after]:shadow-[inset_0_-2px_0_0_var(--color-blue-500)] data-[drop=into]:bg-blue-50 data-[drop=into]:ring-2 data-[drop=into]:ring-blue-500 data-[drop=into]:ring-inset dark:border-zinc-800/70 dark:data-[drop=into]:bg-blue-400/10'
 // aria-current: the open one; data-sel: picked with Cmd or Shift (T274 #34)
 const rowCur = (it: Item) => ({
   ...(U.open === it.n ? { 'aria-current': 'true' as const } : {}),
@@ -237,7 +238,6 @@ function HeldRow({ it, said }: { it: Item; said: string }) {
   )
 }
 const LIST_SETTLED = new Map<number, number>() // when each held row started holding (the phone's double tap, B148)
-const ROW_H = new Map<number, number>() // each row's height as last drawn, so a held row keeps it
 
 // A row in a list: state icon, coloured code and title, one meta line. Tapping anywhere opens the item (B62).
 export function ItemRow({
@@ -1202,17 +1202,16 @@ export function List() {
     ;({ body, shown } = listBody())
     frozen = body
   }
-  for (const n of U.sel) if (!visible().some((it) => it.n === n)) U.sel.delete(n) // picked rows that left the list are let go
+  if (U.sel.size) {
+    const there = new Set(visible().map((it) => it.n))
+    for (const n of U.sel) if (!there.has(n)) U.sel.delete(n) // picked rows that left the list are let go
+  }
   SW.open = SW.el = null // rows are drawn closed; a stale reference would swallow the next tap
   useLayoutEffect(() => {
     const list = ref.current
     if (!list) return
     // keep the place: under the phone's item page the list is hidden and reads 0
     if (!(U.open && !desk())) list.scrollTop = top.current
-    for (const a of list.querySelectorAll<HTMLElement>('article[data-n]')) {
-      const n = Number(a.dataset.n)
-      if (!U.settle.has(n)) ROW_H.set(n, a.offsetHeight)
-    }
     if (desk() && U.open) {
       const rows = [...list.querySelectorAll<HTMLElement>('[data-act="open"][data-n]')].map((el) =>
         Number(el.dataset.n),

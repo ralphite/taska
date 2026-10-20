@@ -9,6 +9,7 @@ import { ICON, type IconName } from './icons'
 import { LETTER as LETTERS, REF_CLS } from './constants'
 import {
   U,
+  model,
   byN,
   byR,
   code,
@@ -367,8 +368,25 @@ export function blockHtml(b: { kind: string; text: string }, isTitle: boolean, g
 }
 
 /** The HTML for some Markdown, checked by DOMPurify (data-* attributes and Taska's buttons stay). */
+// T339: the same text drawn again (another tab, a redraw) is not turned into HTML and cleaned again; what it gives
+// depends on the items too (their links), so the kept ones go when the state changes
+const RICH = { rev: -1, pv: -1, map: new Map<string, string>() }
 export function richHtml(text: string, gid = '', cls = '', form = 0, done: string[] | null = null) {
-  return clean(`<div class="space-y-2 break-words [&_p]:leading-relaxed ${cls}">${mdHtml(text, gid, form, done)}</div>`)
+  const S = model.S
+  if (RICH.rev !== S.rev || RICH.pv !== S.pv || RICH.map.size > 4000) {
+    RICH.map.clear()
+    RICH.rev = S.rev
+    RICH.pv = S.pv
+  }
+  const key = [gid, cls, done ? done.join('\u0001') : '-', text].join('\u0002')
+  let html = form ? undefined : RICH.map.get(key) // a question's choices follow what you ticked: drawn each time
+  if (html === undefined) {
+    html = clean(
+      `<div class="space-y-2 break-words [&_p]:leading-relaxed ${cls}">${mdHtml(text, gid, form, done)}</div>`,
+    )
+    if (!form) RICH.map.set(key, html)
+  }
+  return html
 }
 export const clean = (html: string) =>
   DOMPurify.sanitize(html, { ADD_ATTR: ['target', 'data-act', 'aria-pressed', 'role', 'tabindex'], ADD_TAGS: ['kbd'] })

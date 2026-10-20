@@ -20,7 +20,11 @@ export function holding() {
   } // another search, filter or tab: show the list as it is now
   return true
 }
+// each held row's height as it was drawn, so its quiet line keeps it (measured once, when it starts holding: T339)
+export const ROW_H = new Map<number, number>()
 export function holdRow(n: number, said: string, undo: () => unknown) {
+  const row = document.querySelector<HTMLElement>(`#list article[data-n="${n}"]`)
+  if (row && !U.settle.has(n)) ROW_H.set(n, row.offsetHeight)
   U.settle.set(n, { said, undo })
   LIST.sig = listSig()
   LIST.until = Date.now() + (LIST.in ? 800 : 3000)

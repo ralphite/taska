@@ -748,6 +748,7 @@ function onSearch(v: string) {
   if (U.tab !== 'inputs' && els.list) els.list.scrollTop = 0
 }
 // From 360 px the four tabs fit with their counts; narrower, only the open tab keeps its count (T225 #12, B158).
+const COUNTS_KEPT: Record<string, string> = {}
 function Tabs({ hidden }: { hidden: boolean }) {
   const ref = useRef<HTMLDivElement>(null)
   const S = model.S,
@@ -779,9 +780,11 @@ function Tabs({ hidden }: { hidden: boolean }) {
     const spans = [...list.querySelectorAll<HTMLElement>('[data-count]')]
     for (const c of spans) c.hidden = false
     if (list.scrollWidth > list.clientWidth + 1) for (const c of spans) c.hidden = !c.closest('[aria-selected="true"]')
-    if (S.project && !filtered())
+    const keep = JSON.stringify(TABS.map((t) => String(counts[t])))
+    if (S.project && !filtered() && COUNTS_KEPT[S.project] !== keep)
       try {
-        localStorage.setItem('taska.counts.' + S.project, JSON.stringify(TABS.map((t) => String(counts[t])))) // for the next page's first paint (B190)
+        localStorage.setItem('taska.counts.' + S.project, keep) // for the next page's first paint (B190)
+        COUNTS_KEPT[S.project] = keep // T339: written when they change, not on every redraw
       } catch {
         /* no storage */
       }
