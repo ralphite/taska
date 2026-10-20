@@ -416,14 +416,20 @@ export async function poll(g: number) {
   while (g === gen) {
     const ctl = new AbortController(),
       timer = setTimeout(() => ctl.abort(), 35000) // a dead connection never answers
+    // T293, T335: a browser keeps at most 6 connections to Taska, and a waiting poll holds one, so with a few windows
+    // open a save waited its turn for 10 s. Only the window you are in waits for news; one you can see but are not in
+    // asks every 5 s, one behind every 20 s, and each lets go at once. Leaving the window lets go of its wait too.
+    const idle = document.hidden || !document.hasFocus()
+    let left = false
+    const leave = () => {
+      left = true
+      ctl.abort()
+    }
+    if (!idle) addEventListener('blur', leave)
     try {
       const S = model.S
-      // T293: a browser keeps at most 6 connections to Taska, and every waiting tab held one, so with a few tabs open
-      // the next page waited its turn for many seconds. Only the tab you look at waits for news; one behind asks
-      // every 20 s and lets go at once, and catches up as soon as it shows.
-      const hidden = document.hidden
       const d = await (
-        await fetch(`${ctx.P}api/poll?rev=${S.rev}&boot=${S.boot}&pv=${S.pv ?? -1}${hidden ? '&wait=0' : ''}`, {
+        await fetch(`${ctx.P}api/poll?rev=${S.rev}&boot=${S.boot}&pv=${S.pv ?? -1}${idle ? '&wait=0' : ''}`, {
           cache: 'no-store',
           signal: ctl.signal,
         })
@@ -439,28 +445,32 @@ export async function poll(g: number) {
       if (d.ver && d.ver !== VERSION.page) VERSION.server = d.ver // R284: no reload by itself; the next reload brings it
       if (d.update && !UPD.told) offerRestart() // R328: new code waits for a restart, and you are using Taska: your call
       checkOthers()
-      if (hidden && !news) await napHidden(20000)
+      if (idle && !news) await napIdle(document.hidden ? 20000 : 5000)
     } catch {
       if (g !== gen) return
+      if (left) continue // you went to another window: not a lost connection
       model.offline += ctl.signal.aborted ? 2 : 1
       bump('head', 'side')
       await sleep(model.offline > 1 ? Math.min(30000, 1500 * 2 ** Math.min(model.offline, 5)) : 500) // back off while the server is away
     } finally {
       clearTimeout(timer)
+      removeEventListener('blur', leave)
     }
   }
 }
 export const VERSION = { page: '', server: '' }
-/** A wait that ends early when the tab shows again. */
-const napHidden = (ms: number) =>
+/** A wait that ends early when the tab shows again or you come back to its window. */
+const napIdle = (ms: number) =>
   new Promise<void>((ok) => {
     const done = () => {
       clearTimeout(t)
       removeEventListener('visibilitychange', done)
+      removeEventListener('focus', done)
       ok()
     }
     const t = setTimeout(done, ms)
     addEventListener('visibilitychange', done)
+    addEventListener('focus', done)
   })
 export async function refresh() {
   try {
