@@ -39,22 +39,49 @@ export const canRecord = () =>
   )
 
 // A voice note as the microphone hears it (B182): no echo cancelling, noise suppression or automatic gain.
-const MIC = { stream: null as MediaStream | null }
+const MIC = { stream: null as MediaStream | null, kept: 'none' }
+// how the kept stream was when a new one was asked for (B333: for the log)
+const keptState = (s: MediaStream | null) => {
+  const t = s?.getAudioTracks()[0]
+  return !t ? 'none' : t.readyState !== 'live' ? 'ended' : t.muted ? 'muted' : 'live'
+}
+// B333: iPhone mutes the kept stream while Taska is in the background or another app has the microphone; it comes
+// back by itself. Asking for a new one then is refused until Taska is opened again, so wait for it first.
+const unmuted = (s: MediaStream, ms: number) =>
+  new Promise<boolean>((done) => {
+    const t = s.getAudioTracks()[0]
+    if (!t || t.readyState !== 'live') return done(false)
+    if (!t.muted) return done(true)
+    const back = () => {
+      clearTimeout(timer)
+      done(true)
+    }
+    const timer = setTimeout(() => {
+      t.removeEventListener('unmute', back)
+      done(!t.muted)
+    }, ms)
+    t.addEventListener('unmute', back, { once: true })
+  })
 async function micStream() {
-  if (MIC.stream?.getAudioTracks().some((t) => t.readyState === 'live' && !t.muted)) return MIC.stream // B217
-  if (MIC.stream) {
-    MIC.stream.getTracks().forEach((t) => t.stop())
-    MIC.stream = null
-  }
+  MIC.kept = keptState(MIC.stream)
+  if (MIC.stream && MIC.kept === 'live') return MIC.stream // B217
+  if (MIC.stream && MIC.kept === 'muted' && (await unmuted(MIC.stream, 1500))) return MIC.stream
+  const old = MIC.stream
   const md = navigator.mediaDevices
   let s: MediaStream
   try {
-    s = await md.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } })
+    try {
+      s = await md.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } })
+    } catch (e) {
+      if ((e as Error)?.name === 'NotAllowedError' || (e as Error)?.name === 'SecurityError') throw e
+      s = await md.getUserMedia({ audio: true })
+    }
   } catch (e) {
-    if ((e as Error)?.name === 'NotAllowedError' || (e as Error)?.name === 'SecurityError') throw e
-    s = await md.getUserMedia({ audio: true })
+    if (old && keptState(old) !== 'ended') return old // refused, but the kept one still lives: record with it
+    throw e
   }
-  if (standalone()) MIC.stream = s
+  if (old && old !== s) old.getTracks().forEach((t) => t.stop())
+  MIC.stream = standalone() ? s : null
   return s
 }
 const micDone = (s: MediaStream | null) => {
@@ -76,6 +103,7 @@ function micError(e: unknown) {
       message: String((e as Error)?.message || e || ''),
       where: 'start',
       standalone: String(standalone()),
+      kept: MIC.kept,
       secure: String(window.isSecureContext),
       ua: navigator.userAgent,
     }),
@@ -83,7 +111,7 @@ function micError(e: unknown) {
   if (!window.isSecureContext) return 'The microphone only works on a secure address: open Taska from its https link.'
   if (name === 'NotAllowedError' || name === 'SecurityError')
     return standalone()
-      ? 'Taska may not use the microphone. On iPhone: Settings › Apps › Safari › Microphone › Allow, then open Taska again.'
+      ? 'iPhone stopped letting Taska use the microphone. Close Taska completely (swipe it away) and open it again. Still no? Settings › Apps › Safari › Microphone › Allow.'
       : 'Taska may not use the microphone. Allow it for this site (Safari: aA › Website Settings › Microphone), then try again.'
   if (name === 'NotFoundError' || name === 'OverconstrainedError') return 'No microphone was found on this device.'
   if (name === 'NotReadableError' || name === 'AbortError')
