@@ -354,26 +354,27 @@ export function ItemPage({ it }: { it: Item }) {
       <div className="flex flex-col gap-6 lg:sticky lg:top-0 lg:z-10 lg:-mx-8 lg:max-h-[45vh] lg:scrollbar-thin lg:overflow-y-auto lg:border-b lg:border-zinc-200 lg:bg-white lg:px-8 lg:pt-7 lg:pb-5 dark:lg:border-zinc-800 dark:lg:bg-zinc-950">
         {head}
         {desc}
+        {/* F332: the documents are part of the item: they stay in view while the talk scrolls */}
+        {docs.length ? (
+          <section className="flex flex-col gap-2">
+            <SectionHead text="Documents" />
+            {(U.docsAll.has(n) || !BEHAVIOUR.docCards ? docs : docs.slice(0, 3)).map((d) => (
+              <DocCard key={d.d} d={d} />
+            ))}
+            {BEHAVIOUR.docCards && docs.length > 3 ? (
+              <button
+                data-act="docs-all"
+                data-n={n}
+                className="-my-1 flex h-11 items-center gap-1 self-start rounded-lg px-2 text-sm font-medium text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10"
+              >
+                <Icon n={U.docsAll.has(n) ? 'chevup' : 'down'} c="size-4" sw="2" />
+                {U.docsAll.has(n) ? 'Show fewer' : `Show ${docs.length - 3} more`}
+              </button>
+            ) : null}
+          </section>
+        ) : null}
       </div>
       {files.length ? <FileRows files={files} gid={'item' + n} size="h-24 w-16" /> : null}
-      {docs.length ? (
-        <section className="flex flex-col gap-2">
-          <SectionHead text="Documents" />
-          {(U.docsAll.has(n) || !BEHAVIOUR.docCards ? docs : docs.slice(0, 3)).map((d) => (
-            <DocCard key={d.d} d={d} />
-          ))}
-          {BEHAVIOUR.docCards && docs.length > 3 ? (
-            <button
-              data-act="docs-all"
-              data-n={n}
-              className="-my-1 flex h-11 items-center gap-1 self-start rounded-lg px-2 text-sm font-medium text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10"
-            >
-              <Icon n={U.docsAll.has(n) ? 'chevup' : 'down'} c="size-4" sw="2" />
-              {U.docsAll.has(n) ? 'Show fewer' : `Show ${docs.length - 3} more`}
-            </button>
-          ) : null}
-        </section>
-      ) : null}
       {children.length || U.subFor === n ? (
         <section className="flex flex-col gap-2">
           <SectionHead
