@@ -7,7 +7,9 @@ import {
   CLOSED,
   D,
   U,
+  bump,
   byN,
+  liveN,
   code,
   desk,
   docById,
@@ -235,7 +237,10 @@ function Editor({ it }: { it: Item }) {
     </div>
   )
 }
-export function ItemPage({ it }: { it: Item }) {
+// F395: a wide pane (1100px or more) shows the item (or its open document) on the left and its talk on the right
+export const DUO = { on: false, min: 1100 }
+export function ItemPage({ it, left = null }: { it: Item; left?: ReactNode }) {
+  const duo = DUO.on
   const talkRef = useRef<HTMLDivElement>(null)
   useLayoutEffect(() => {
     els.talk = talkRef.current // T322: what scrolls the talk on the desktop
@@ -385,113 +390,138 @@ export function ItemPage({ it }: { it: Item }) {
   // B346, B351: the line stays where you put it, the same for every item, so switching items moves nothing; an item
   // longer than its part scrolls there and fades while more is below; shorter, the rest is empty (no height of its own)
   return (
-    <div id="itemPage" className="group/item flex flex-col gap-6 px-5 pt-5 pb-10 lg:h-full lg:gap-0 lg:p-0">
-      <div id="itemTop" className="flex flex-col lg:h-[var(--top-h,40%)] lg:shrink-0">
+    <div
+      id="itemPage"
+      className={`group/item flex flex-col gap-6 px-5 pt-5 pb-10 lg:h-full lg:gap-0 lg:p-0 ${duo ? 'lg:flex-row' : ''}`}
+    >
+      {duo && left ? (
         <div
-          id="itemClip"
-          data-clip
-          onScroll={(e) => markOver(e.currentTarget)}
-          className="lg:min-h-0 lg:scrollbar-thin lg:overflow-y-auto lg:data-over:mask-b-from-[calc(100%-4rem)]"
+          id="itemTop"
+          className="lg:h-full lg:w-[var(--duo-w,55%)] lg:shrink-0 lg:scrollbar-thin lg:overflow-y-auto lg:px-8 lg:pt-8 lg:pb-12"
         >
-          <div className={`flex flex-col gap-6 lg:mx-auto lg:w-full lg:max-w-[46rem] lg:px-8 lg:pt-7 lg:pb-6`}>
-            {head}
-            {desc}
-            {/* F332: the documents are part of the item: they stay in view while the talk scrolls */}
-            {docs.length ? (
-              <section className="flex flex-col gap-2">
-                <SectionHead text="Documents" />
-                {(U.docsAll.has(n) || !BEHAVIOUR.docCards ? docs : docs.slice(0, 3)).map((d) => (
-                  <DocCard key={d.d} d={d} />
-                ))}
-                {BEHAVIOUR.docCards && docs.length > 3 ? (
-                  <button
-                    data-act="docs-all"
-                    data-n={n}
-                    className="-my-1 flex h-11 items-center gap-1 self-start rounded-lg px-2 text-sm font-medium text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10"
-                  >
-                    <Icon n={U.docsAll.has(n) ? 'chevup' : 'down'} c="size-4" sw="2" />
-                    {U.docsAll.has(n) ? 'Show fewer' : `Show ${docs.length - 3} more`}
-                  </button>
-                ) : null}
-              </section>
-            ) : null}
-            {files.length ? <FileRows files={files} gid={'item' + n} size="h-24 w-16" /> : null}
-            {children.length || U.subFor === n ? (
-              <section className="flex flex-col gap-2">
-                <SectionHead
-                  text={`Subitems${children.length ? ` · ${children.filter((k) => CLOSED(k.status)).length}/${children.length}` : ''}`}
-                  right={
-                    U.subFor === n ? null : (
-                      <button
-                        data-act="sub-new"
-                        data-n={n}
-                        className="-my-2.5 flex h-11 items-center gap-1 rounded-lg px-2 text-sm font-medium text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10"
-                      >
-                        <Icon n="plus" c="size-4" sw="2" />
+          {left}
+        </div>
+      ) : (
+        <div
+          id="itemTop"
+          className={`flex flex-col lg:shrink-0 ${duo ? 'lg:h-full lg:w-[var(--duo-w,55%)]' : 'lg:h-[var(--top-h,40%)]'}`}
+        >
+          <div
+            id="itemClip"
+            data-clip
+            onScroll={(e) => markOver(e.currentTarget)}
+            className="lg:min-h-0 lg:scrollbar-thin lg:overflow-y-auto lg:data-over:mask-b-from-[calc(100%-4rem)]"
+          >
+            <div className={`flex flex-col gap-6 lg:mx-auto lg:w-full lg:max-w-[46rem] lg:px-8 lg:pt-7 lg:pb-6`}>
+              {head}
+              {desc}
+              {/* F332: the documents are part of the item: they stay in view while the talk scrolls */}
+              {docs.length ? (
+                <section className="flex flex-col gap-2">
+                  <SectionHead text="Documents" />
+                  {(U.docsAll.has(n) || !BEHAVIOUR.docCards ? docs : docs.slice(0, 3)).map((d) => (
+                    <DocCard key={d.d} d={d} />
+                  ))}
+                  {BEHAVIOUR.docCards && docs.length > 3 ? (
+                    <button
+                      data-act="docs-all"
+                      data-n={n}
+                      className="-my-1 flex h-11 items-center gap-1 self-start rounded-lg px-2 text-sm font-medium text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10"
+                    >
+                      <Icon n={U.docsAll.has(n) ? 'chevup' : 'down'} c="size-4" sw="2" />
+                      {U.docsAll.has(n) ? 'Show fewer' : `Show ${docs.length - 3} more`}
+                    </button>
+                  ) : null}
+                </section>
+              ) : null}
+              {files.length ? <FileRows files={files} gid={'item' + n} size="h-24 w-16" /> : null}
+              {children.length || U.subFor === n ? (
+                <section className="flex flex-col gap-2">
+                  <SectionHead
+                    text={`Subitems${children.length ? ` · ${children.filter((k) => CLOSED(k.status)).length}/${children.length}` : ''}`}
+                    right={
+                      U.subFor === n ? null : (
+                        <button
+                          data-act="sub-new"
+                          data-n={n}
+                          className="-my-2.5 flex h-11 items-center gap-1 rounded-lg px-2 text-sm font-medium text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10"
+                        >
+                          <Icon n="plus" c="size-4" sw="2" />
+                          Add
+                        </button>
+                      )
+                    }
+                  />
+                  {children.length ? (
+                    <div className="divide-y divide-zinc-100 rounded-xl border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
+                      {children.map((k) => (
+                        <button
+                          key={k.n}
+                          data-act="goto"
+                          data-n={k.n}
+                          className={`flex w-full items-start gap-3 px-3 py-3 text-left first:rounded-t-xl last:rounded-b-xl hover:bg-zinc-50 data-pressed:bg-zinc-100 dark:hover:bg-zinc-900 dark:data-pressed:bg-zinc-800 ${CLOSED(k.status) ? 'opacity-55' : ''}`}
+                        >
+                          <StateIcon s={k.status} label={statusName(k)} />
+                          <span
+                            className={`min-w-0 flex-1 text-[15px] leading-snug ${CLOSED(k.status) ? 'line-through' : ''}`}
+                          >
+                            <span className={`mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[k.type]}`}>
+                              {code(k.n)}
+                            </span>
+                            {k.title}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  ) : null}
+                  {U.subFor === n ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        id="subTitle"
+                        className={`${FIELD} min-w-0 flex-1`}
+                        placeholder={`Subitem of ${code(n)}`}
+                        aria-label="Subitem title"
+                      />
+                      <button data-act="sub-add" data-n={n} className={PRIMARY}>
                         Add
                       </button>
-                    )
-                  }
-                />
-                {children.length ? (
-                  <div className="divide-y divide-zinc-100 rounded-xl border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
-                    {children.map((k) => (
                       <button
-                        key={k.n}
-                        data-act="goto"
-                        data-n={k.n}
-                        className={`flex w-full items-start gap-3 px-3 py-3 text-left first:rounded-t-xl last:rounded-b-xl hover:bg-zinc-50 data-pressed:bg-zinc-100 dark:hover:bg-zinc-900 dark:data-pressed:bg-zinc-800 ${CLOSED(k.status) ? 'opacity-55' : ''}`}
+                        data-act="sub-cancel"
+                        aria-label="Cancel"
+                        className="grid size-11 shrink-0 place-items-center rounded-full text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                       >
-                        <StateIcon s={k.status} label={statusName(k)} />
-                        <span
-                          className={`min-w-0 flex-1 text-[15px] leading-snug ${CLOSED(k.status) ? 'line-through' : ''}`}
-                        >
-                          <span className={`mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[k.type]}`}>
-                            {code(k.n)}
-                          </span>
-                          {k.title}
-                        </span>
+                        <Icon n="x" c="size-5" />
                       </button>
-                    ))}
-                  </div>
-                ) : null}
-                {U.subFor === n ? (
-                  <div className="flex items-center gap-2">
-                    <input
-                      id="subTitle"
-                      className={`${FIELD} min-w-0 flex-1`}
-                      placeholder={`Subitem of ${code(n)}`}
-                      aria-label="Subitem title"
-                    />
-                    <button data-act="sub-add" data-n={n} className={PRIMARY}>
-                      Add
-                    </button>
-                    <button
-                      data-act="sub-cancel"
-                      aria-label="Cancel"
-                      className="grid size-11 shrink-0 place-items-center rounded-full text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                    >
-                      <Icon n="x" c="size-5" />
-                    </button>
-                  </div>
-                ) : null}
-              </section>
-            ) : null}
+                    </div>
+                  ) : null}
+                </section>
+              ) : null}
+            </div>
           </div>
         </div>
-      </div>
-      <div
-        data-grip="top"
-        className="group/line relative z-10 hidden h-px shrink-0 cursor-row-resize bg-zinc-200 after:absolute after:inset-x-0 after:-inset-y-2 lg:block dark:bg-zinc-800"
-      >
-        {/* B357: every line you can drag looks the same: pointed at or dragged, the line itself turns blue */}
-        <span className="pointer-events-none absolute inset-x-0 top-1/2 h-0.5 -translate-y-1/2 bg-blue-500 opacity-0 transition-opacity group-hover/line:opacity-100 group-hover/line:delay-150 group-data-drag/line:opacity-100" />
-      </div>
+      )}
+      {duo ? (
+        // F395: the line between the two columns, dragged sideways like the other lines
+        <div
+          data-grip="duo"
+          className="group/line relative z-10 hidden w-px shrink-0 cursor-col-resize bg-zinc-200 after:absolute after:-inset-x-1.5 after:inset-y-0 lg:block dark:bg-zinc-800"
+        >
+          <span className="pointer-events-none absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 bg-blue-500 opacity-0 transition-opacity group-hover/line:opacity-100 group-hover/line:delay-150 group-data-drag/line:opacity-100" />
+        </div>
+      ) : (
+        <div
+          data-grip="top"
+          className="group/line relative z-10 hidden h-px shrink-0 cursor-row-resize bg-zinc-200 after:absolute after:inset-x-0 after:-inset-y-2 lg:block dark:bg-zinc-800"
+        >
+          {/* B357: every line you can drag looks the same: pointed at or dragged, the line itself turns blue */}
+          <span className="pointer-events-none absolute inset-x-0 top-1/2 h-0.5 -translate-y-1/2 bg-blue-500 opacity-0 transition-opacity group-hover/line:opacity-100 group-hover/line:delay-150 group-data-drag/line:opacity-100" />
+        </div>
+      )}
       <div
         id="itemTalk"
         ref={talkRef}
         onScroll={(e) => moreBelow(e.currentTarget)}
-        className="lg:min-h-0 lg:flex-1 lg:scrollbar-thin lg:overflow-y-auto lg:data-up:mask-t-from-[calc(100%-2rem)]"
+        className={`lg:min-h-0 lg:flex-1 lg:scrollbar-thin lg:overflow-y-auto lg:data-up:mask-t-from-[calc(100%-2rem)] ${duo ? 'lg:h-full lg:min-w-0' : ''}`}
       >
         <div className="flex flex-col gap-6 lg:mx-auto lg:w-full lg:max-w-[46rem] lg:px-8 lg:py-6">
           {thread.length || notes.length ? (
@@ -692,6 +722,16 @@ function paneParts(): { head: ReactNode; acts: ReactNode; nav: ReactNode; menu: 
   const it = U.open ? byN.get(U.open) : undefined
   if (desk()) {
     const d = U.doc ? docById(U.doc) : undefined
+    const dIt = d ? byN.get(liveN(d.n)) : undefined
+    if (d && !U.docEdit && DUO.on && dIt)
+      // F395: wide: the document on the left, its item's talk on the right
+      return {
+        head: <DocPaneHead d={d} editing={false} />,
+        acts: <DocPaneActs d={d} />,
+        nav: <DocPaneNav d={d} />,
+        menu: false,
+        body: <ItemPage it={dIt} left={<DocView d={d} />} />,
+      }
     if (d && !U.docEdit)
       return {
         head: <DocPaneHead d={d} editing={false} />,
@@ -766,6 +806,23 @@ export function DetailView({ hidden }: { hidden: boolean }) {
     if (shownDoc && body.current) body.current.scrollTop = U.docScroll[shownDoc] || 0
   }, [shownDoc])
   useLayoutEffect(() => {
+    // F395: two columns while the pane is wide and shows an item (or its document)
+    const el = body.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    const check = () => {
+      const on = desk() && !!U.open && !D.compose && !D.page && U.tab !== 'inputs' && el.clientWidth >= DUO.min
+      document.getElementById('app')?.toggleAttribute('data-duo', on)
+      if (on !== DUO.on) {
+        DUO.on = on
+        bump('detail')
+      }
+    }
+    check()
+    const ro = new ResizeObserver(check)
+    ro.observe(el)
+    return () => ro.disconnect()
+  })
+  useLayoutEffect(() => {
     els.detailBody = body.current
     if (desk()) keepGo()
     if (it && model.S.project && (!desk() || detailShown())) markSeen(it) // T274 #5: seen once it shows
@@ -819,7 +876,7 @@ export function DetailView({ hidden }: { hidden: boolean }) {
       <div
         id="detailBody"
         ref={body}
-        {...(it && !U.doc && !U.docEdit ? { 'data-split': '' } : {})}
+        {...(it && (!U.doc || DUO.on) && !U.docEdit ? { 'data-split': '' } : {})}
         className="min-h-0 flex-1 overflow-y-auto overscroll-contain lg:scrollbar-gutter-both lg:mask-b-from-[calc(100%-2rem)] lg:group-data-[compose]/app:hidden lg:hover:scrollbar-thumb-zinc-500/80 lg:data-split:mask-none dark:lg:hover:scrollbar-thumb-zinc-400/70"
       >
         {parts.body}

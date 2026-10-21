@@ -174,6 +174,7 @@ const GRIP: Record<string, [string, string, number, number]> = {
   side: ['drawer', '--side-w', 1, 100000], // T322: as wide or narrow as you drag it
   list: ['app', '--list-w', 1, 100000],
   top: ['', '--top-h', 1, 100000], // T322: the item above its talk; dragged up and down, anywhere you like
+  duo: ['', '--duo-w', 1, 100000], // F395: in a wide pane, the item (left) beside its talk (right)
 }
 function setGrip(kind: string, px: number) {
   const [id, v] = GRIP[kind],
@@ -637,12 +638,12 @@ function wireAll() {
       [id, , min, max] = GRIP[kind],
       down = kind === 'top', // T322: the line between the item and its talk moves up and down
       box = (
-        down ? document.getElementById('itemTop') : id ? document.getElementById(id) : null
+        down || kind === 'duo' ? document.getElementById('itemTop') : id ? document.getElementById(id) : null
       )?.getBoundingClientRect(),
       from = (down ? box?.top : box?.left) || 0
     const most = down
       ? Math.min(max, document.getElementById('detailBody')?.clientHeight || max) // as far as you drag it
-      : kind === 'list'
+      : kind === 'list' || kind === 'duo'
         ? Math.min(max, innerWidth - from) // as far as you drag it (T322)
         : Math.min(max, innerWidth)
     let w = 0
