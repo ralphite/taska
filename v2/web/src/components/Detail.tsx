@@ -699,7 +699,7 @@ function paneParts(): { head: ReactNode; acts: ReactNode; nav: ReactNode; menu: 
         nav: <DocPaneNav d={d} />,
         menu: false,
         body: (
-          <div className="mx-auto w-full max-w-[64rem] px-8 pt-8 pb-12">
+          <div className="w-full px-8 pt-8 pb-12">
             <DocView d={d} />
           </div>
         ),

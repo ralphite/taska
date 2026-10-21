@@ -474,12 +474,16 @@ export function DocView({ d }: { d: Doc }) {
   const phoneBtn = `${HIT} ${BTN} text-sm lg:hidden`
   const side = desk() // B340: on the desktop the comments live in a column beside the text; the text never moves
   // B349: the column only when there are comments, and only when the pane is wide enough for it beside the text;
-  // narrower, each commented paragraph shows a count beside it that opens its comments floating over the text
+  // narrower, each commented paragraph shows a count beside it that opens its comments floating over the text.
+  // B354: the text is always in the middle of the pane, as the box below it; the column goes in the room on its right
+  // (it shows when that room holds it: the pane 86rem wide, the text 46rem and 20rem on each side)
   const [wide, setWide] = useState(true)
   useLayoutEffect(() => {
     const el = ref.current
     if (!el || !side || typeof ResizeObserver === 'undefined') return
-    const ro = new ResizeObserver(() => setWide(el.clientWidth >= 880))
+    const ro = new ResizeObserver(() =>
+      setWide(el.clientWidth >= 86 * (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16)),
+    )
     ro.observe(el)
     return () => ro.disconnect()
   }, [side])
@@ -491,11 +495,8 @@ export function DocView({ d }: { d: Doc }) {
   const rail = side && wide && talked,
     float = side && !rail
   return (
-    <div
-      ref={ref}
-      className={`flex min-h-full flex-col ${rail ? 'lg:grid lg:grid-cols-[minmax(0,1fr)_17rem] lg:items-start lg:gap-x-12' : 'lg:pr-10'}`}
-    >
-      <div className="flex min-w-0 flex-col">
+    <div ref={ref} className="flex min-h-full flex-col">
+      <div className="relative flex min-w-0 flex-col lg:mx-auto lg:w-full lg:max-w-[min(46rem,calc(100%-5rem))]">
         <div className="relative flex items-center gap-1 text-xs text-zinc-500">
           {float && d.whole?.length ? (
             <>
@@ -667,8 +668,12 @@ export function DocView({ d }: { d: Doc }) {
             )}
           </>
         )}
+        {rail ? (
+          <div className="absolute top-0 left-[calc(100%+3rem)] w-[17rem]">
+            <DocRail d={d} />
+          </div>
+        ) : null}
       </div>
-      {rail ? <DocRail d={d} /> : null}
     </div>
   )
 }
