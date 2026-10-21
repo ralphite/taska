@@ -8,6 +8,7 @@ import {
   U,
   bump,
   byN,
+  byR,
   code,
   ctx,
   desk,
@@ -301,7 +302,8 @@ export const draftName = (key: string) =>
       ? 'a new rule'
       : /^[A-Z]\d+$/.test(key)
         ? key
-        : key.replace(
+        : key.replace(/ r(\d+)$/, ' #$1').replace(
+            // an input's number reads #461 here too, as everywhere
             /^(\w+) /,
             (_, m: string) =>
               ({
@@ -331,13 +333,22 @@ export function goDraft(key: string) {
     openDoc(doc.d)
     return
   } // B298
+  // B362: the box for adding to, or editing, one of your inputs: New input, with the box on that input
+  const am = /^(edit|append) (\S+)$/.exec(key)
+  if (am) {
+    if (!byR.has(am[2])) return toast('That input is not here any more', null, { error: true })
+    ACT['new-input']({})
+    return ACT[am[1] === 'edit' ? 'input-edit' : 'input-append']({ id: am[2] })
+  }
   const n = /^[A-Z]\d+$/.test(key) && parseRef(key)
   if (n && byN.has(n)) {
     const it = byN.get(n)
     if (desk() && it && !inTab(it, U.tab)) setTab(tabOf(it))
     openItem(n)
     els.text?.focus({ preventScroll: true })
+    return
   }
+  toast('Could not open that box', null, { error: true }) // never a Go there that does nothing
 }
 
 // Half-written text has one rule (T113 B6): leaving it any way but Cancel or Discard keeps it as a draft, until you
