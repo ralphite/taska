@@ -57,7 +57,7 @@ import {
   refresh,
   signIn,
 } from './data'
-import { carry, kept, keepChoice, saveDraft } from './drafts'
+import { carry, carryDraft, kept, keepChoice, saveDraft } from './drafts'
 import { closeDialog, confirmClick, openDialog, popAt } from './dialog'
 import {
   closeDrawer,
@@ -1301,6 +1301,7 @@ export const ACT: Record<string, Handler> = {
         })
         if (!r.ok) throw new Error(r.error)
         Object.assign(got, { as: r.as, with: r.with || 0 })
+        carryDraft(ref, to, r.as) // B408: what you wrote in its box goes along
         await load()
       },
       (ex) =>

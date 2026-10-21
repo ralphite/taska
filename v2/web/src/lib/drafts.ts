@@ -26,7 +26,7 @@ import {
   type DraftFile,
 } from './state'
 import { toast } from './toast'
-import { keepRec } from './voice'
+import { keepRec, moveRecs } from './voice'
 import { ACT } from './actions'
 import { openItem, openProject, setTab } from './nav'
 import { editComment, openDoc } from './docs'
@@ -75,6 +75,25 @@ export function keepChoice() {
   } catch {
     /* no storage */
   }
+}
+/** B408: what you wrote in an item's box goes with it to another project, into the box of what it is there (as). */
+export function carryDraft(from: string, project: string, as: string) {
+  if (U.draftKey === from) saveDraft()
+  const text = String(draftStore()[from] || '')
+  if (text.trim())
+    try {
+      const k = 'taska.drafts.' + project,
+        all = JSON.parse(localStorage.getItem(k) || '{}') as Record<string, string>
+      all[as] = [all[as], text].filter((x) => x?.trim()).join('\n\n')
+      localStorage.setItem(k, JSON.stringify(all))
+    } catch {
+      return // no storage: it stays here
+    }
+  draftStore((all) => {
+    delete all[from]
+  })
+  if (U.draftKey === from && els.text) els.text.value = ''
+  void moveRecs(from, project, as)
 }
 export function saveDraft() {
   const k = U.draftKey,

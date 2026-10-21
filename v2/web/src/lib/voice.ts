@@ -361,6 +361,20 @@ function voiceFile(o: Partial<DraftFile> & { name: string; mime: string }): Draf
   holdRec(f)
   return f
 }
+/** B408: the voice notes in one box go to an item in another project (it was moved there): kept for that box, they
+ * come back into it when you open it there. */
+export async function moveRecs(key: string, project: string, as: string) {
+  for (const list of [U.parked[key], U.draftKey === key ? U.files : null])
+    for (const f of list || [])
+      if (f.rid) {
+        f.gone = true // this page lets go of it (its upload here stops); the kept copy goes over
+        f.release?.()
+      }
+  if (U.parked[key]) delete U.parked[key]
+  if (U.draftKey === key) U.files = U.files.filter((f) => !f.rid)
+  for (const r of await VDB.all())
+    if (r.project === ctx.HERE && r.key === key && !r.job) await VDB.put({ ...r, project, key: as, scope: as, f: null }) // up again to that project when it is sent there
+}
 export async function keepRec(f: DraftFile) {
   // what is known about a voice note, kept with its audio
   if (!f.rid || f.gone || f.sent || !f.blob) return
@@ -661,7 +675,8 @@ export async function restoreVoice() {
     })
     if (key === U.draftKey) U.files.push(f)
     else (U.parked[key] ||= []).push(f)
-    if (f.transcribing) hear(f)
+    if (f.transcribing || !f.f)
+      void hear(f) // not up yet (B408: it came from another project): up first, so sending takes it along
     else {
       f.settle?.()
       placeWords(f)

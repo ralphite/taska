@@ -370,6 +370,8 @@ export async function flushOutbox() {
       await Promise.all(job.files.map((f) => f.done))
       if (job.files.length) keepJob(job) // its files are up now: kept with them (B151)
       const files = job.files.filter((f) => f.f && !f.failed)
+      if (files.length < job.files.length)
+        sendLog('file left out', `${job.q} (${projectOf(job.p)}): ${job.files.length - files.length} file(s) never got up`)
       let text = job.text
       for (const f of files) if (f.tr && !f.trAdded && !text.includes(f.tr)) text = (text ? text + '\n' : '') + f.tr // a transcript that came after you sent
       if (!text && !files.length) {
