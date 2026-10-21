@@ -217,22 +217,22 @@ function tickHtml(ls: string[], t: { d: number; key: string }) {
     })
     .join('')}</div>`
 }
-/** F393: the document's text with the i-th choice of one paragraph ticked or unticked (one of "( )" choices at a time). */
-export function tickedMd(md: string, block: string, i: number): string | null {
+/** F393: one paragraph of choices with its i-th choice ticked or unticked (one of "( )" choices at a time). */
+export function tickedBlock(block: string, i: number): string | null {
   const ls = block.split('\n'),
     rows = ls.flatMap((l, k) => (CHOICE.test(l) ? [k] : []))
   const k = rows[i]
-  if (k == null || !md.includes(block)) return null
+  if (k == null) return null
   const multi = ls[k].match(CHOICE)?.[1] === '['
   const mark = (l: string, on: boolean) =>
     l.replace(
       /^(\s*[-*+]\s+)[([][ xX]?[)\]]/,
       (_, p: string) => p + (multi ? (on ? '[x]' : '[ ]') : on ? '(x)' : '( )'),
     )
-  const isOn = (l: string) => /^\s*[-*+]\s+[([][xX][)\]]/.test(l)
-  const next = ls.map((l, j) => (j === k ? mark(l, !isOn(l)) : !multi && rows.includes(j) ? mark(l, false) : l))
-  return md.replace(block, next.join('\n'))
+  const next = ls.map((l, j) => (j === k ? mark(l, !isTicked(l)) : !multi && rows.includes(j) ? mark(l, false) : l))
+  return next.join('\n')
 }
+export const isTicked = (l: string) => /^\s*[-*+]\s+[([][xX][)\]]/.test(l)
 // B301: the choices you ticked and did not send yet come back after a reload, by their words
 export const choiceKept = (n: number): string[] => {
   try {

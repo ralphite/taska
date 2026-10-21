@@ -35,6 +35,7 @@ import {
 import type { DraftFile, Job } from '../lib/state'
 import { draftName, keepDraftFiles, saveDraft } from '../lib/drafts'
 import { docTarget } from '../lib/docs'
+import { ticksOf, tickWords } from '../lib/doctick'
 import { plainQuote, ico } from '../lib/markdown'
 import { draftSpots, unmarked, vcCount, vcSelection, vcScroller } from '../lib/voice'
 import { addFiles, grow, send } from '../lib/outbox'
@@ -114,11 +115,11 @@ const ScopeLink = ({ act, text, k = '', title = '' }: { act: string; text: strin
     {k ? <Kbd k={k} /> : null}
   </button>
 )
-const ScopeX = ({ act, label }: { act: string; label: string }) => (
+const ScopeX = ({ act, label, esc = true }: { act: string; label: string; esc?: boolean }) => (
   <button
     data-act={act}
     aria-label={label}
-    title={`${label} · Esc`}
+    title={esc ? `${label} · Esc` : label}
     className="-my-1.5 grid size-11 shrink-0 place-items-center rounded-full text-zinc-400 hover:text-zinc-800 lg:size-8 lg:hover:bg-zinc-100 dark:text-zinc-500 dark:hover:text-zinc-200 dark:lg:hover:bg-zinc-800"
   >
     <Icon n="x" c="size-4" />
@@ -164,7 +165,7 @@ const ticked = (n: number | null) =>
         .filter(Boolean)
     : []
 // What the box writes to now: the line on top, the placeholder and what Send says.
-function boxRole(): { line: ReactNode; ph: string; send: string } {
+function boxRole(): { line: ReactNode; ph: string; send: string; ready?: boolean } {
   const S = model.S,
     n = scopeN(),
     dt = docTarget(),
@@ -175,7 +176,8 @@ function boxRole(): { line: ReactNode; ph: string; send: string } {
     vcN = vcd ? vcCount(t?.value || '') : 0 // F184
   let line: ReactNode = null,
     ph = S.project ? `Write to ${projTitle()}…` : 'Write anything…',
-    send = 'Send'
+    send = 'Send',
+    ready = false
   const filesWord = desk()
     ? S.org?.on
       ? 'the organizer files it'
@@ -258,6 +260,20 @@ function boxRole(): { line: ReactNode; ph: string; send: string } {
     )
     ph = `${dt.reply ? 'Reply in' : 'Comment on'} D${dt.d.d}…`
     send = dt.reply ? 'Reply' : 'Comment' // T225 #16
+  } else if (dOpen && ticksOf(dOpen).length) {
+    // B412: choices ticked in the document wait for Send, with a note if you like
+    const k = tickWords(dOpen).length
+    line = (
+      <ScopeLine
+        icon="check"
+        label={`${plural(k, 'choice')} not sent`}
+        detail={`· D${dOpen.d}`}
+        right={<ScopeX act="doc-ticks-clear" label="Clear the ticks" esc={false} />}
+      />
+    )
+    ph = 'Add a note (optional)…'
+    send = 'Send choices'
+    ready = true // Send shows with nothing written: the choices are enough
   } else if (dOpen) {
     // B247: a document open and nothing picked: a comment on the whole document (never a reply to the item, B2)
     const host = liveN(dOpen.n)
@@ -296,7 +312,7 @@ function boxRole(): { line: ReactNode; ph: string; send: string } {
     line = <ScopeLine icon="inbox" label="New input" detail={`· ${filesWord}`} /> // B298
   if (R.rec && R.key && R.key !== U.draftKey)
     line = <ScopeLine icon="mic" label={`Recording for ${draftName(R.key)}`} detail="· it goes there when you stop" /> // B1
-  return { line, ph, send }
+  return { line, ph, send, ready }
 }
 
 // ---------------------------------------------------------------- the draft's words, with the toggles (F186)
@@ -725,9 +741,9 @@ function BoxInner() {
   useArea('composer')
   const t = els.text,
     words = t?.value || ''
-  const { line, ph, send: sendWord } = boxRole()
+  const { line, ph, send: sendWord, ready } = boxRole()
   const rec = !!R.rec,
-    has = !!(words.trim() || U.files.length)
+    has = !!(words.trim() || U.files.length || ready)
   const view = !desk() && draftSpots(words).some((p) => p.x.alt) && U.boxView && !rec
   const micTip = !window.isSecureContext
     ? 'Voice needs an https link here: press for it'

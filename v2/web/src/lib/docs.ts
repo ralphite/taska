@@ -28,6 +28,7 @@ import { closeDialog, openDialog } from './dialog'
 import { layersNow, leaveView, writeURL } from './url'
 import { docRecStop, dropRec } from './voice'
 import { sleep } from './state'
+import { ticksOf } from './doctick'
 
 export const noteText = (d: Doc) =>
   sameText(d.md.split('\n')[0].replace(/^#+\s*/, ''), d.title) ? d.md : `# ${d.title}\n\n${d.md}`
@@ -119,7 +120,11 @@ export function openDoc(d: number) {
     docQuote: null,
     docCircle: false,
   })
-  U.docType = !!(String(draftStore()[`doc ${d}`] || '').trim() || U.parked[`doc ${d}`]?.length) // B298
+  U.docType = !!(
+    String(draftStore()[`doc ${d}`] || '').trim() ||
+    U.parked[`doc ${d}`]?.length ||
+    ticksOf(docById(d)).length // B412: choices waiting to be sent: the box with Send is there
+  ) // B298
   pickBack(d)
   U.docDrafts.note = ''
   renderDoc({ focus: true })

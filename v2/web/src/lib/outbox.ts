@@ -15,6 +15,7 @@ import {
   desk,
   docOpen,
   els,
+  liveN,
   model,
   render,
   rcode,
@@ -23,7 +24,9 @@ import {
   type Job,
 } from './state'
 import { toast } from './toast'
-import { JSON_POST, load, op, pushUndo, forget, save, change, type OpAnswer } from './data'
+import { JSON_POST, load, notSaved, op, pushUndo, forget, save, change, type OpAnswer } from './data'
+import { tickedDoc, ticksDone, ticksGoing, ticksOf, tickWords } from './doctick'
+import type { Doc } from './types'
 import { setFix } from './settings'
 import { draftName, draftStore, goDraft, keepChoice, markSent, saveDraft, setDraft, draftMarks } from './drafts'
 import { docTarget, sendDocComment, renderDoc } from './docs'
@@ -74,6 +77,8 @@ export async function send() {
   const box = els.text
   if (!box) return
   if (docOpen() && vcCount(box.value)) return sendVoiceComments() // F184
+  const td = docOpen()
+  if (td && !docTarget() && ticksOf(td).length) return sendTicks(td)
   const dt = docTarget()
   if (dt) return sendDocComment(dt) // a document comment (I087)
   const od = docOpen()
@@ -122,6 +127,44 @@ export async function send() {
       const talk = talkScroller()
       if (talk) talk.scrollTop = talk.scrollHeight
     }) // B124
+}
+// B412: the choices ticked in a document go in at once: into its text, and to its item as one reply (with your note)
+async function sendTicks(doc: Doc) {
+  const box = els.text,
+    note = box?.value.trim() || '',
+    n = liveN(doc.n),
+    sent = Object.fromEntries(ticksOf(doc).map(({ b, now }) => [b.key, now])),
+    md = tickedDoc(doc),
+    words = tickWords(doc)
+  if (byN.has(n)) {
+    outboxPush({
+      text:
+        [`Answered in D${doc.d}:`, ...(words.length ? words : ['nothing ticked'])].join('\n') +
+        (note ? '\n\n' + note : ''),
+      files: U.files,
+      scope: code(n),
+    })
+    if (box) box.value = ''
+    U.files = []
+    saveDraft()
+    flushOutbox()
+    if (!desk()) toast(`Choices sent to ${code(n)}`) // the desktop's box says Sent already
+  }
+  if (!desk()) U.docType = false // the phone: the box leaves the document again, as before you ticked
+  void saveTicks(doc.d, sent, md)
+}
+async function saveTicks(d: number, sent: Record<string, string>, md: string) {
+  ticksGoing(d, sent) // still shown ticked; the box no longer says they wait
+  render()
+  try {
+    await op({ op: 'doc', d, md })
+    ticksDone(d, sent, true)
+  } catch (ex) {
+    ticksDone(d, sent, false) // they wait again, as you ticked them
+    notSaved(ex, () => saveTicks(d, sent, md), `your choices in D${d}`)
+  }
+  renderDoc()
+  bump('composer')
 }
 export function outboxPush(job: Omit<Job, 'id' | 'q' | 't' | 'p'> & Partial<Job>): Job {
   const j = job as Job

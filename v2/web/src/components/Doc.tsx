@@ -20,6 +20,7 @@ import {
 import type { Comment, Doc } from '../lib/types'
 import { blockHtml, clean, groups, plainQuote } from '../lib/markdown'
 import { seeThreads, threadNew, renderDoc } from '../lib/docs'
+import { tickText } from '../lib/doctick'
 import { toast } from '../lib/toast'
 import { Armed, Icon, Kbd } from './ui'
 import { Rich, Thumbs, VoiceLine } from './Talk'
@@ -595,7 +596,9 @@ export function DocView({ d }: { d: Doc }) {
         <Outline d={d} />
         <div id="docBlocks" className={`relative mt-3 space-y-3 text-[15px] ${U.docCircle ? 'select-none' : ''}`}>
           {d.blocks.map((b0, i) => {
-            const b = i === 0 && titleLine ? { ...b0, text: rest0.join('\n') } : b0
+            const now = tickText(d.d, b0.key, b0.text) // B412: ticked here and not sent yet
+            const b =
+              i === 0 && titleLine ? { ...b0, text: rest0.join('\n') } : now === b0.text ? b0 : { ...b0, text: now }
             const lv = (b0.text.match(/^#+/) || ['#'])[0].length
             const here =
               !desk() &&
