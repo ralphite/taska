@@ -31,7 +31,7 @@ Types: feature = something to add or improve; bug = something broken to find and
 think through, maybe vague; task = a concrete piece of work that is not a feature or bug (write a doc, answer a
 question, prepare a demo, look into something); rule = a standing
 instruction for this project that agents must follow when it applies (commit format, who reviews, naming, how
-to organize). Make a rule only when the user plainly says it is one ("rule", "规则", "from now on always…", "以后都要…");
+to organize). Make a rule only when the user plainly says it is one ("rule", "from now on always…", or the same words in the user's language);
 then create it (`new rule <when it applies>` + how, as the body) or update the existing rule. Anything the user wants
 the product or the agents to do or to have (a feature, a behaviour, logging, a fix) is a feature, bug or task, never
 a rule, even when it is worded as "must" or "always". Follow the project rules below that are about organizing.
