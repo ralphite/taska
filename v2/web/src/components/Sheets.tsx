@@ -1071,7 +1071,8 @@ function projMenuParts({ slug }: Props): Parts | null {
     </button>
   )
   return {
-    head: (
+    // B356: opened from the project's own name above it, the menu does not say that name again
+    head: here ? undefined : (
       <span className="flex items-center gap-2.5">
         <ProjTile name={s} cls="size-8 rounded-lg text-sm" />
         <span className="min-w-0">
@@ -1627,7 +1628,9 @@ export function Dialog() {
         <div data-handle className="flex shrink-0 touch-none justify-center pt-2 sm:hidden">
           <span className="h-1 w-10 rounded-full bg-zinc-300 dark:bg-zinc-600" />
         </div>
-        <header className="flex shrink-0 touch-none items-center gap-2 py-1 pr-2 pl-5">
+        <header
+          className={`flex shrink-0 touch-none items-center gap-2 py-1 pr-2 pl-5 ${parts.head || parts.title ? '' : 'lg:hidden'}`}
+        >
           <h2 id="dlgTitle" className="min-w-0 flex-1 truncate text-[17px] font-semibold">
             {parts.head ?? parts.title ?? ''}
           </h2>
