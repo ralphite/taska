@@ -237,7 +237,8 @@ function Editor({ it }: { it: Item }) {
     </div>
   )
 }
-// F395: a wide pane (1100px or more) shows the item (or its open document) on the left and its talk on the right
+// F395: a pane wide but short (1100px or more, and 1.4 times as wide as tall) shows the item (or its open document)
+// on the left and its talk on the right
 export const DUO = { on: false, min: 1100 }
 export function ItemPage({ it, left = null }: { it: Item; left?: ReactNode }) {
   const duo = DUO.on
@@ -810,7 +811,15 @@ export function DetailView({ hidden }: { hidden: boolean }) {
     const el = body.current
     if (!el || typeof ResizeObserver === 'undefined') return
     const check = () => {
-      const on = desk() && !!U.open && !D.compose && !D.page && U.tab !== 'inputs' && el.clientWidth >= DUO.min
+      // only when height is short for both parts and width is plenty: wide, and at least 1.4 times as wide as tall
+      const on =
+        desk() &&
+        !!U.open &&
+        !D.compose &&
+        !D.page &&
+        U.tab !== 'inputs' &&
+        el.clientWidth >= DUO.min &&
+        el.clientWidth >= el.clientHeight * 1.4
       document.getElementById('app')?.toggleAttribute('data-duo', on)
       if (on !== DUO.on) {
         DUO.on = on
