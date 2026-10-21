@@ -805,9 +805,7 @@ export function SaidLately({ draft }: { draft: ReactNode }) {
         </ol>
       ) : (
         <p id="saidNone" className="mt-3 text-sm text-zinc-400 dark:text-zinc-500">
-          {words.length
-            ? `Nothing you said matches “${q.trim()}”.`
-            : 'What you say shows up here, with the items it turns into.'}
+          {words.length ? `Nothing you said matches “${q.trim()}”.` : null}
         </p>
       )}
     </div>

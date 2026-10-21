@@ -381,9 +381,7 @@ export function DraftCard() {
   const fixable = U.files.some((f) => f.trAdded && text.includes(f.trAdded))
   const hint = open ? (
     <>
-      <b className="font-semibold text-zinc-700 dark:text-zinc-200">{plural(open, 'word')} to check.</b> Left: the main
-      model, in the text now. Right: the other model. A click picks it in every place; click again to switch back, any
-      time before you send.
+      <b className="font-semibold text-zinc-700 dark:text-zinc-200">{plural(open, 'word')} to check</b>
     </>
   ) : picked ? (
     'Picked. Click the other side to switch back, any time before you send.'
@@ -634,8 +632,7 @@ function Doubts({ words }: { words: string }) {
         <span className="min-w-0">
           {toCheck ? (
             <>
-              <b className="font-semibold text-zinc-800 dark:text-zinc-100">{plural(toCheck, 'word')} to check.</b>{' '}
-              Left: main model, right: the other. A tap changes every place.
+              <b className="font-semibold text-zinc-800 dark:text-zinc-100">{plural(toCheck, 'word')} to check</b>
             </>
           ) : (
             'Picked. Tap the other side to switch back before you send.'
@@ -938,29 +935,6 @@ export function BoxHomeSlot() {
   }, [])
   return <span id="boxHome" ref={ref} hidden />
 }
-export function BoxHint() {
-  useArea('composer')
-  return (
-    <p
-      id="boxHint"
-      className="mt-1.5 hidden h-5 items-center justify-center gap-1 text-xs text-zinc-400 lg:mx-auto lg:flex lg:max-w-[42rem] dark:text-zinc-500"
-    >
-      {desk() && R.rec ? (
-        <>
-          <Kbd k="↵" />
-          <span>words into the box</span>
-          <span className="px-0.5">·</span>
-          <Kbd k="⇧↵" />
-          <span>stop and send</span>
-          <span className="px-0.5">·</span>
-          <Kbd k="Esc" />
-          <span>discard</span>
-        </>
-      ) : null}
-    </p>
-  )
-}
-
 // ---------------------------------------------------------------- the line above the box: what happened to what you sent
 let fbTimer = 0
 const unsendBtn = (job: Job | undefined) =>
@@ -1167,27 +1141,6 @@ export function Feedback() {
     >
       {fb?.node}
     </div>
-  )
-}
-
-// ---------------------------------------------------------------- the New input page's head (B73)
-export function ComposeHeadDefault() {
-  const S = model.S
-  return (
-    <>
-      <div className="flex items-center gap-3">
-        <ProjTile name={S.project} cls="size-9 rounded-xl text-lg" />
-        <h1 className="text-2xl leading-none font-semibold tracking-tight">{projTitle()}</h1>
-      </div>
-      <p className="mt-2.5 flex items-center justify-center gap-0 text-[15px] text-zinc-500 dark:text-zinc-400">
-        New input to the whole project
-        <span className="px-1.5 text-zinc-300 dark:text-zinc-600">·</span>
-        <span className="inline-flex items-center gap-1 font-medium text-zinc-700 dark:text-zinc-200">
-          <Icon n="sparkle" c="size-4 text-blue-600 dark:text-blue-400" />
-          {S.org?.on ? 'the organizer files it' : 'your agent files it'}
-        </span>
-      </p>
-    </>
   )
 }
 

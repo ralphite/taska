@@ -115,26 +115,20 @@ export function NeedsCard({ it, onCard = false }: { it: Item; onCard?: boolean }
           {choices ? <SendAnswerBtn n={n} cls={onCard ? 'flex-1' : 'flex-[1.4] lg:flex-none'} keyHint /> : null}
         </>
       ) : null, // T274 #29, B299
-      choices ? 'Pick with 1–9, send with ⌘↵' : '↓ Answer in the box below',
+      choices ? '' : '↓ Answer in the box below', // T365 #3: the keys are on the choices and the button
     )
   }
   if (it.reply && (it.status === 'proposed' || it.status === 'review'))
     return (
-      <div className="flex flex-wrap items-center gap-2 text-sm font-medium text-emerald-700 dark:text-emerald-400">
-        <Icon n="check" c="size-4" sw="2.25" />
-        <span className="mr-auto">You replied. Waiting for your agent.</span>
+      <div className="flex justify-end">
         <KeepBtn it={it} />
       </div>
-    ) // B286, B299
+    ) // B286, B299; T365 #12: that you replied shows at the top already
   if (it.status === 'proposed')
     return card(
       'propose',
       `${name} proposed this`,
-      m ? (
-        <MsgText x={m} gid={'card' + n} whole />
-      ) : (
-        <p className="text-sm text-amber-900/80 dark:text-amber-200/80">Nobody works on it until you approve.</p>
-      ),
+      m ? <MsgText x={m} gid={'card' + n} whole /> : null, // T365 #12
       <>
         <button data-act="status" data-n={n} data-v="dropped" className={`${SECOND} flex-1 lg:flex-none`}>
           <Icon n="ban" c="size-4" />
@@ -152,17 +146,13 @@ export function NeedsCard({ it, onCard = false }: { it: Item; onCard?: boolean }
           <Kbd k="A" />
         </button>
       </>,
-      m ? 'Nobody works on it until you approve' : '', // T242 #2
+      '', // T365 #12
     )
   if (it.status === 'review')
     return card(
       'done',
       `${name} finished this`,
-      m ? (
-        <MsgText x={m} gid={'card' + n} whole />
-      ) : (
-        <p className="text-sm text-amber-900/80 dark:text-amber-200/80">Check its work, then accept or reopen.</p>
-      ),
+      m ? <MsgText x={m} gid={'card' + n} whole /> : null, // T365 #12
       <>
         <button data-act="reopen" data-n={n} className={`${SECOND} flex-1 lg:flex-none`}>
           <Icon n="reopen" c="size-4" />
@@ -180,7 +170,7 @@ export function NeedsCard({ it, onCard = false }: { it: Item; onCard?: boolean }
           <Kbd k="A" />
         </button>
       </>,
-      'Not yet: say what is missing, then it goes back',
+      '', // T365 #2: the two buttons say it
     )
   return null // B321: that you replied is said once, at the top ("Your agent's turn")
 }

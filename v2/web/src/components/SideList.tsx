@@ -91,8 +91,7 @@ function Deleted() {
   const S = model.S,
     gone = S.gone || [],
     inputs = S.deleted || []
-  if (!gone.length && !inputs.length)
-    return <Empty>Nothing deleted. An input, an item or a document you delete comes here.</Empty>
+  if (!gone.length && !inputs.length) return <Empty>Nothing deleted</Empty>
   return (
     <>
       {gone.map((x) => {

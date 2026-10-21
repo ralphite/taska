@@ -66,7 +66,7 @@ import { ITEM_DRAG, List } from './List'
 import { InputsView } from './Inputs'
 import { DetailView } from './Detail'
 import { ProjectView } from './Settings'
-import { BoxHint, BoxHomeSlot, Composer, ComposeHeadDefault, DraftCard, Feedback, VcBar } from './Composer'
+import { BoxHomeSlot, Composer, DraftCard, Feedback, VcBar } from './Composer'
 import { ComposeHead, SaidLately } from './Inputs'
 import { Dialog, FilterControls } from './Sheets'
 
@@ -960,15 +960,16 @@ function Foot({ hidden, wideCls }: { hidden: boolean; wideCls: string }) {
       }}
       className={`relative z-20 shrink-0 px-3 pt-1 pb-[max(1.25rem,env(safe-area-inset-bottom))] lg:row-start-5 lg:scrollbar-gutter-both lg:px-8 lg:pb-5 lg:group-data-duo/app:pl-[calc(var(--duo-w,55%)+2rem)] lg:group-data-[compose]/app:row-span-3 lg:group-data-[compose]/app:row-start-3 lg:group-data-[compose]/app:overflow-y-auto lg:group-data-[compose]/app:overscroll-contain lg:group-data-[compose]/app:pt-[5vh] lg:group-data-[compose]/app:pb-16 lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70 ${wideCls}`}
     >
-      <div
-        id="composeHead"
-        className="hidden lg:group-data-[compose]/app:mx-auto lg:group-data-[compose]/app:mb-6 lg:group-data-[compose]/app:flex lg:group-data-[compose]/app:max-w-[42rem] lg:group-data-[compose]/app:flex-col lg:group-data-[compose]/app:items-center lg:group-data-[compose]/app:text-center"
-      >
-        {compose ? <ComposeHeadOrDefault /> : null}
-      </div>
+      {compose && ComposeHead() ? (
+        <div
+          id="composeHead"
+          className="hidden lg:group-data-[compose]/app:mx-auto lg:group-data-[compose]/app:mb-6 lg:group-data-[compose]/app:flex lg:group-data-[compose]/app:max-w-[42rem] lg:group-data-[compose]/app:flex-col lg:group-data-[compose]/app:items-center lg:group-data-[compose]/app:text-center"
+        >
+          {ComposeHead()}
+        </div>
+      ) : null}
       <Feedback />
       <BoxHomeSlot />
-      <BoxHint />
       <section
         id="composeList"
         aria-label="You said lately"
@@ -978,10 +979,6 @@ function Foot({ hidden, wideCls }: { hidden: boolean; wideCls: string }) {
       </section>
     </footer>
   )
-}
-const ComposeHeadOrDefault = () => {
-  const h = ComposeHead()
-  return h ?? <ComposeHeadDefault />
 }
 
 // ---------------------------------------------------------------- what floats over the page

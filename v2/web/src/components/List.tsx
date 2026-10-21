@@ -962,23 +962,12 @@ function listBody(): { body: ReactNode; shown: number } {
     rows = visible()
   if (!S.items.length && U.tab === 'rules')
     return {
-      body: (
-        <Empty>
-          No rules yet.
-          <br />A rule is a standing instruction for the agents here: write one in the box below.
-        </Empty>
-      ),
+      body: <Empty>No rules</Empty>,
       shown: 0,
     }
   if (!S.items.length && U.tab === 'archive')
     return {
-      body: (
-        <Empty>
-          Nothing archived yet.
-          <br />
-          Items you archive show here, finished or not.
-        </Empty>
-      ),
+      body: <Empty>Nothing archived</Empty>,
       shown: 0,
     }
   if (!S.items.length)
@@ -1024,15 +1013,7 @@ function listBody(): { body: ReactNode; shown: number } {
       off = rows.filter((it) => it.status === 'dropped' && !settled(it))
     return {
       body: !rows.length ? (
-        <Empty>
-          No rules yet.
-          <br />
-          Rules are standing instructions for agents in this project,
-          <br />
-          for example how to write commit messages or who reviews.
-          <br />
-          Say in the box below that it is a rule (“Rule: …”) and it is filed here.
-        </Empty>
+        <Empty>No rules</Empty>
       ) : (
         <>
           <NeedsBand needs={wait} going={going} />
@@ -1065,17 +1046,7 @@ function listBody(): { body: ReactNode; shown: number } {
         {rows.length ? (
           rows.map((it) => <ItemRow key={it.n} it={it} />)
         ) : (
-          <Empty>
-            {U.tab === 'archive' ? (
-              <>
-                Nothing archived yet.
-                <br />
-                Archive an item from its ⋯ or with E, or all finished ones at once in the Finished view.
-              </>
-            ) : (
-              'No items'
-            )}
-          </Empty>
+          <Empty>{U.tab === 'archive' ? 'Nothing archived' : 'No items'}</Empty>
         )}
       </>
     ),

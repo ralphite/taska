@@ -547,10 +547,6 @@ const BODY: Record<string, () => ReactNode> = {
           <Icon n="plus" c="size-4" sw="2" />
           New project
         </button>
-        <p className="min-w-0 text-[13px] leading-snug text-zinc-500 dark:text-zinc-400">
-          Any name: spaces, {'\u4e2d\u6587'}, emoji. Its address is made from the name once, e.g.{' '}
-          <code className="font-mono">/p/home-budget</code>.
-        </p>
       </>
     )
     return (
@@ -915,7 +911,7 @@ const BODY: Record<string, () => ReactNode> = {
           </ul>
         ) : (S.gone || []).length ? null : (
           <Ruled>
-            <Empty>Nothing deleted. An input, an item or a document you delete comes here.</Empty>
+            <Empty>Nothing deleted</Empty>
           </Ruled>
         )}
       </>
@@ -929,10 +925,7 @@ const BODY: Record<string, () => ReactNode> = {
         about={`Gemini (${S.org.model}) reads each input you send and turns it into items, or updates the ones that exist, in every project. What it does with an input shows under it in Inputs, with Undo.`}
       />
     ) : (
-      <Part
-        title="Off"
-        about="Your coding agent files what you send: it reads new inputs first when it asks for work. To have them filed as soon as you send them, set GEMINI_API_KEY where Taska runs and restart it."
-      />
+      <Part title="Off" about="Set GEMINI_API_KEY to turn it on" />
     )
   },
 }
@@ -1150,7 +1143,7 @@ function PhoneProjects() {
             <p
               className={`mt-2 text-xs leading-snug ${U.pErr ? 'text-red-600 dark:text-red-400' : 'text-zinc-500 dark:text-zinc-400'}`}
             >
-              {U.pErr || 'Any name: spaces, \u4e2d\u6587, emoji. Its address is made from the name once.'}
+              {U.pErr || ''}
             </p>
           </div>
         ) : (

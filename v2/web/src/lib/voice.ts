@@ -696,7 +696,7 @@ export async function restoreVoice() {
   if (!back.length) return
   bump('composer')
   const away = back.find((k) => k !== U.draftKey)
-  const say = `${back.length === 1 ? 'A voice note that did not go out is' : back.length + ' voice notes that did not go out are'} back in the box${away ? ` for ${draftName(away)}` : ''}`
+  const say = `${back.length === 1 ? 'Voice note' : back.length + ' voice notes'} kept${away ? ` for ${draftName(away)}` : ''}` // T365 #13
   if (away) toast(say, () => goDraft(away), { label: 'Go there' })
   else toast(say)
 }
