@@ -541,8 +541,8 @@ export function SaidStep({
       <div className="flex min-h-7 min-w-0 items-center gap-1.5 text-[13px] text-zinc-500 dark:text-zinc-400">
         {head}
         {acts ? (
-          // quiet until you point at the input, but always there
-          <span className="-my-1 flex shrink-0 items-center opacity-60 transition-opacity group-hover/row:opacity-100 focus-within:opacity-100">
+          // T359: only on the input you point at (always on the phone, which has no pointing)
+          <span className="-my-1 flex shrink-0 items-center group-hover/row:opacity-100 focus-within:opacity-100 lg:opacity-0">
             {acts}
           </span>
         ) : null}
