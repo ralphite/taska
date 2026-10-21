@@ -94,9 +94,9 @@ export async function send() {
     keepChoice()
   }
   U.note = null
-  const job = outboxPush({ text, files: U.files, scope: n ? code(n) : null, from: null })
+  const job = outboxPush({ text, files: U.files, scope: n ? code(n) : null })
   unsendable(job)
-  if (desk() && D.compose) toast(job.from ? 'Sent as a new rule' : 'Sent', job.undo) // the New input page has no line under the box
+  if (desk() && D.compose) toast('Sent', job.undo) // the New input page has no line under the box
   box.value = ''
   U.files = []
   saveDraft()
@@ -123,12 +123,13 @@ export async function send() {
       if (talk) talk.scrollTop = talk.scrollHeight
     }) // B124
 }
-export function outboxPush(job: Omit<Job, 'id' | 'q' | 't'> & Partial<Job>): Job {
+export function outboxPush(job: Omit<Job, 'id' | 'q' | 't' | 'p'> & Partial<Job>): Job {
   const j = job as Job
   Object.assign(j, {
     id: 'q' + ++U.qn,
     q: Date.now().toString(36) + Math.random().toString(36).slice(2, 10),
     t: Date.now(),
+    p: j.p || ctx.P,
   })
   for (const f of j.files)
     if (f.rid) {
@@ -193,8 +194,11 @@ async function unsend(job: Job, run: () => unknown) {
     { label: 'Open' },
   )
 }
-function outboxStore(change?: (all: Record<string, unknown>) => void) {
-  const key = 'taska.outbox.' + model.S.project
+// B414: what you sent and is not in yet, kept in this browser by project ('taska.outbox.<project>')
+const OUTBOX = 'taska.outbox.'
+const projectOf = (p: string) => decodeURIComponent(p.replace(/^\/p\//, '').replace(/\/$/, ''))
+function outboxStore(change?: (all: Record<string, unknown>) => void, project = model.S.project) {
+  const key = OUTBOX + project
   try {
     const all = JSON.parse(localStorage.getItem(key) || '{}') as Record<string, unknown>
     if (change) {
@@ -209,40 +213,44 @@ function outboxStore(change?: (all: Record<string, unknown>) => void) {
 }
 export const keepable = (job: Job) => job.files.every((f) => f.f && !f.rid)
 function keepJob(job: Job) {
-  if (model.S.project && keepable(job))
+  if (keepable(job))
     outboxStore((all) => {
       all[job.q] = {
         text: job.text,
         scope: job.scope,
-        from: job.from,
         t: job.t,
         files: job.files.map(({ f, name, mime, size }) => ({ f, name, mime, size })),
       }
-    })
+    }, projectOf(job.p))
 }
 const dropJob = (job: Job) =>
   outboxStore((all) => {
     delete all[job.q]
-  })
+  }, projectOf(job.p))
+type KeptJob = { text?: string; scope?: string; t?: number; files?: DraftFile[] }
 export function restoreOutbox() {
-  // what did not go out last time goes now, in the order you sent it
-  const mine = new Set(U.outbox.map((j) => j.q))
-  const back = (
-    Object.entries(outboxStore()) as [
-      string,
-      { text?: string; scope?: string; from?: string; t?: number; files?: DraftFile[] },
-    ][]
-  )
-    .filter(([q]) => !mine.has(q))
-    .sort((a, b) => (a[1].t || 0) - (b[1].t || 0))
-  for (const [q, j] of back)
+  // what did not go out last time goes now, in the order you sent it, whichever project it was written in (B414)
+  const mine = new Set(U.outbox.map((j) => j.q)),
+    back: [string, string, KeptJob][] = []
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i)
+      if (k?.startsWith(OUTBOX))
+        for (const [q, j] of Object.entries(outboxStore(undefined, k.slice(OUTBOX.length))) as [string, KeptJob][])
+          if (!mine.has(q)) back.push([k.slice(OUTBOX.length), q, j])
+    }
+  } catch {
+    /* no storage */
+  }
+  back.sort((a, b) => (a[2].t || 0) - (b[2].t || 0))
+  for (const [project, q, j] of back)
     U.outbox.push({
       id: 'q' + ++U.qn,
       q,
       t: j.t || Date.now(),
       text: j.text || '',
       scope: j.scope || null,
-      from: j.from || null,
+      p: '/p/' + encodeURIComponent(project) + '/',
       files: (j.files || []).map((f) => ({ ...f, done: Promise.resolve() })),
     })
   if (back.length) {
@@ -266,11 +274,11 @@ export function resendOutbox() {
 class Again extends Error {
   again = true
 }
-async function sendInput(o: unknown): Promise<OpAnswer> {
+async function sendInput(o: unknown, p: string): Promise<OpAnswer> {
   let d: OpAnswer
   try {
     d = await (
-      await fetch(ctx.P + 'api/op', {
+      await fetch(p + 'api/op', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(o),
@@ -283,6 +291,7 @@ async function sendInput(o: unknown): Promise<OpAnswer> {
     toast((d.res || []).find((x) => x.startsWith('err')) || d.error || 'Not saved')
     throw new Error('op failed')
   }
+  if (p !== ctx.P) return d // B414: written in another project: the page here has nothing new to show
   try {
     await load()
   } catch {
@@ -326,19 +335,22 @@ export async function flushOutbox() {
       job.sending = true
       bump('feedback')
       try {
-        const d = await sendInput({
-          op: 'input',
-          text,
-          scope: job.scope,
-          q: job.q,
-          ...(job.from ? { from: job.from } : {}),
-          files: files.map(({ f, name, mime, size, tr }) => ({ f, name, mime, size, ...(tr ? { tr } : {}) })),
-        })
+        const d = await sendInput(
+          {
+            op: 'input',
+            text,
+            scope: job.scope,
+            q: job.q,
+            files: files.map(({ f, name, mime, size, tr }) => ({ f, name, mime, size, ...(tr ? { tr } : {}) })),
+          },
+          job.p,
+        )
         job.rid = d.res[0].split(' ')[1]
-        U.lastSent = job.quiet ? null : job.rid
+        const here = job.p === ctx.P
+        if (here) U.lastSent = job.quiet ? null : job.rid
         U.outbox.shift()
         dropJob(job)
-        sent = [job.rid, job.scope]
+        if (here) sent = [job.rid, job.scope]
         for (const f of files) {
           f.sent = true
           dropRec(f)
@@ -381,7 +393,7 @@ export function noteWith(n: number) {
     text = (box?.value ?? '').trim(),
     files = U.files
   if (!text && !files.length) return false
-  outboxPush({ text, files, scope: code(n), from: null, quiet: true }) // the decision's toast says "with your note" (T113 A19)
+  outboxPush({ text, files, scope: code(n), quiet: true }) // the decision's toast says "with your note" (T113 A19)
   if (box) box.value = ''
   U.files = []
   saveDraft()
@@ -496,7 +508,7 @@ export async function sendChoice(n: number) {
   try {
     const rid: string | null = null
     // B326: an answer goes out like anything you write: at once on the screen, kept and sent again until Taska has it
-    outboxPush({ text: picks + (note ? '\n\n' + note : ''), files, scope: code(n), from: null, quiet: true })
+    outboxPush({ text: picks + (note ? '\n\n' + note : ''), files, scope: code(n), quiet: true })
     if (note || files.length) {
       if (els.text) els.text.value = ''
       U.files = []

@@ -22,6 +22,7 @@ import {
   scopeN,
   sleep,
   type DraftFile,
+  type Job,
 } from './state'
 import { toast } from './toast'
 import { JSON_POST, net, pushUndo, save } from './data'
@@ -292,7 +293,7 @@ function sendParked(key: string) {
   draftStore((all) => {
     delete all[key]
   })
-  outboxPush({ text, files, scope: /^[A-Z]\d+$/.test(key) ? key : null, from: null }) // B406: never sent as a rule
+  outboxPush({ text, files, scope: /^[A-Z]\d+$/.test(key) ? key : null })
   toast(`Sent to ${draftName(key)}, where you started the voice note`)
   bump()
   flushOutbox()
@@ -351,6 +352,7 @@ function voiceFile(o: Partial<DraftFile> & { name: string; mime: string }): Draf
     t: Date.now(),
     rid: 'v' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
     done: Promise.resolve(),
+    p: ctx.P,
     ...o,
   }
   f.done = new Promise<void>((r) => {
@@ -370,7 +372,7 @@ export async function keepRec(f: DraftFile) {
   if (f.gone || f.sent) return // let go of meanwhile: it must not come back
   await VDB.put({
     id: f.rid,
-    project: ctx.HERE,
+    project: f.p ? decodeURIComponent(f.p.replace(/^\/p\//, '').replace(/\/$/, '')) : ctx.HERE,
     key: f.key,
     scope: f.scope,
     name: f.name,
@@ -420,13 +422,14 @@ interface TrAnswer {
 export async function hear(f: DraftFile) {
   if (f.loop) return
   f.loop = true
-  const scope = f.scope ? '&scope=' + encodeURIComponent(f.scope) : ''
+  const scope = f.scope ? '&scope=' + encodeURIComponent(f.scope) : '',
+    P = f.p || ctx.P // B414: the project it was recorded in, wherever you are now
   let d: TrAnswer | null = null
   if (f.f) f.settle?.() // uploaded before (put back after a reload): sending does not wait for its words
   for (let n = 0, tries = 0, waits = 0; !f.gone; n++) {
     try {
       if (!f.f) {
-        const r = await fetch(`${ctx.P}api/file?name=${encodeURIComponent(f.name)}&transcribe=1${scope}`, {
+        const r = await fetch(`${P}api/file?name=${encodeURIComponent(f.name)}&transcribe=1${scope}`, {
           method: 'POST',
           headers: { 'Content-Type': f.mime },
           body: f.blob,
@@ -443,7 +446,7 @@ export async function hear(f: DraftFile) {
         bump('composer')
       }
       const r = await fetch(
-        `${ctx.P}api/transcript?f=${encodeURIComponent(f.f as string)}${scope}${tries ? '&again=1' : ''}`,
+        `${P}api/transcript?f=${encodeURIComponent(f.f as string)}${scope}${tries ? '&again=1' : ''}`,
         { method: 'POST' },
       )
       if (!r.ok) throw new Error()
@@ -580,17 +583,52 @@ export async function restoreVoice() {
   // B399: what is in the outbox (sent before the reload and going out again now) is not put back in the box too
   const going = new Set(U.outbox.flatMap((q) => q.files.map((x) => x.f)).filter(Boolean)),
     goingQ = new Set(U.outbox.map((q) => q.q))
-  const jobs = new Set<string>(),
-    back: string[] = []
+  const back: string[] = []
+  const resend = new Map<string, Job>() // B403, B414: notes you had sent: they go out again by themselves
   for (const r of (await VDB.all()).sort((a, b) => a.t - b.t)) {
-    if (r.project !== ctx.HERE || here.has(r.id)) continue
+    if ((r.project !== ctx.HERE && !r.job) || here.has(r.id)) continue
     if ((r.f && going.has(r.f)) || (r.job && goingQ.has(r.job.id))) continue
-    if (r.f && sent.has(r.f)) {
+    if (r.project === ctx.HERE && r.f && sent.has(r.f)) {
       void VDB.del(r.id)
       continue
     } // it went out already
     if (navigator.locks && !(await navigator.locks.request('taska-voice-' + r.id, { ifAvailable: true }, (l) => !!l)))
       continue // another tab has it
+    if (r.job) {
+      // sent, but not in yet (the page was left or reloaded meanwhile): it goes on to the project it was sent in, under
+      // the same id, so Taska takes it once
+      const P = '/p/' + encodeURIComponent(r.project) + '/',
+        f = voiceFile({
+          rid: r.id,
+          name: r.name,
+          mime: r.mime,
+          ms: r.ms,
+          t: r.t,
+          data: r.data,
+          blob: new Blob([r.data], { type: r.mime }),
+          key: r.key,
+          scope: r.scope,
+          f: r.f || undefined,
+          p: P,
+          tr: r.tr || '',
+          trAdded: r.added || undefined,
+          job: r.job,
+        })
+      const j = resend.get(r.job.id)
+      if (j) j.files.push(f)
+      else
+        resend.set(r.job.id, {
+          id: 'q' + ++U.qn,
+          q: r.job.id,
+          t: r.t,
+          text: r.job.text,
+          scope: r.scope,
+          p: P,
+          files: [f],
+        })
+      void hear(f) // up to Taska; sending waits only for that
+      continue
+    }
     // B185: back into the box it was recorded in, never the one open now
     const n = /^[A-Z]\d+$/.test(r.key || '') ? parseRef(r.key) : 0,
       inp = /^(edit|append|correct) (r\d+)$/.exec(r.key || ''),
@@ -622,10 +660,6 @@ export async function restoreVoice() {
     })
     if (key === U.draftKey) U.files.push(f)
     else (U.parked[key] ||= []).push(f)
-    if (r.job && !jobs.has(r.job.id)) {
-      jobs.add(r.job.id)
-      if (r.job.text) addWords(key, r.job.text)
-    } // what was sent with it
     if (f.transcribing) hear(f)
     else {
       f.settle?.()
@@ -633,6 +667,11 @@ export async function restoreVoice() {
     }
     void keepRec(f)
     back.push(key)
+  }
+  if (resend.size) {
+    U.outbox.push(...resend.values())
+    bump('feedback')
+    flushOutbox()
   }
   if (!back.length) return
   bump('composer')

@@ -26,7 +26,8 @@ const projectOf = (path: string) => {
   const m = /^\/p\/([^/]+)/.exec(path)
   return m ? decodeURIComponent(m[1]) : null
 }
-const busy = () => !PAGE.home && !!(R_STATE.rec || DV.rec || U.outbox.length || failedRetry.length || U.vcSending)
+// B414: what you sent goes on in the background to the project it was written in, so it does not hold the page here
+const busy = () => !PAGE.home && !!(R_STATE.rec || DV.rec || failedRetry.length || U.vcSending)
 
 /** Go to `url` (an address in Taska) without loading the page again when it can; how: a new step in the history, the
  * step it replaces, or one the browser went back or forward to. Returns false when it is not a Taska address. */

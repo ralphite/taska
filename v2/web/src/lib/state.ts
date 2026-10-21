@@ -191,6 +191,7 @@ export interface DraftFile extends Partial<FileRef> {
   held?: Promise<unknown> | null
   release?: (() => void) | null
   job?: { id: string; text: string } | null
+  p?: string // B414: the project it goes to (its address, /p/name/), wherever you are when it goes
 }
 export interface Job {
   id: string
@@ -199,7 +200,7 @@ export interface Job {
   text: string
   files: DraftFile[]
   scope: string | null
-  from: string | null
+  p: string // B414: the project it was written in: it goes there even after you moved to another one
   quiet?: boolean
   failed?: boolean
   sending?: boolean
