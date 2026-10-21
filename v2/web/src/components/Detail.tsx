@@ -485,7 +485,8 @@ export function ItemPage({ it }: { it: Item }) {
         title="Drag to show more or less of the item · double-click for the default"
         className="group/line relative z-10 hidden h-px shrink-0 cursor-row-resize bg-zinc-200 after:absolute after:inset-x-0 after:-inset-y-2 lg:block dark:bg-zinc-800"
       >
-        <span className="absolute top-1/2 left-1/2 h-1 w-10 -translate-1/2 rounded-full bg-zinc-400 opacity-0 group-hover/line:opacity-100 in-[body.cursor-row-resize]:opacity-100 dark:bg-zinc-600" />
+        {/* B357: every line you can drag looks the same: pointed at or dragged, the line itself turns blue */}
+        <span className="pointer-events-none absolute inset-x-0 top-1/2 h-0.5 -translate-y-1/2 bg-blue-500 opacity-0 transition-opacity group-hover/line:opacity-100 group-hover/line:delay-150 in-[body.cursor-row-resize]:opacity-100" />
       </div>
       <div
         id="itemTalk"
