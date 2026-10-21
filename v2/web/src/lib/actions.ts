@@ -299,6 +299,12 @@ export const ACT: Record<string, Handler> = {
       render()
       writeURL(false)
     }),
+  'new-voice': () => {
+    // F396: New input, recording at once (as ⇧V)
+    if (R.rec) return void finishRec(true)
+    ACT['new-input']({})
+    return void startRec()
+  },
   'new-input': () => {
     U.amend = null
     U.correct = null

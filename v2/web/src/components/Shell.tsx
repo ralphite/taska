@@ -349,17 +349,30 @@ function Drawer({ hidden, over }: { hidden: boolean; over: boolean }) {
           <Icon n="panel" c="size-[18px]" />
         </button>
       </div>
-      <button
-        data-act="new-input"
-        id="newInputBtn"
-        title={rule ? 'New rule for the project · C' : 'New input to the project · C · by voice ⇧V'}
-        aria-pressed={D.compose && !D.page}
-        className="mx-2.5 mb-3 hidden h-9 shrink-0 items-center gap-2 rounded-xl bg-white px-3 text-sm font-medium text-zinc-800 shadow-sm ring-1 ring-zinc-900/10 hover:bg-zinc-50 aria-pressed:bg-blue-50 aria-pressed:text-blue-700 aria-pressed:ring-blue-500/40 lg:flex dark:bg-zinc-800 dark:text-zinc-100 dark:ring-white/10 dark:hover:bg-zinc-700 dark:aria-pressed:bg-blue-400/10 dark:aria-pressed:text-blue-300 dark:aria-pressed:ring-blue-400/40"
-      >
-        <Icon n="newinput" c="size-4" />
-        <span className="flex-1 text-left">{rule ? 'New rule' : 'New input'}</span>
-        <Kbd k="C" />
-      </button>
+      {/* F396: pointing at New input shows a mic at its end: a click opens New input recording */}
+      <div className="group/ni relative mx-2.5 mb-3 hidden shrink-0 lg:block">
+        <button
+          data-act="new-input"
+          id="newInputBtn"
+          title={rule ? 'New rule for the project · C' : 'New input to the project · C · by voice ⇧V'}
+          aria-pressed={D.compose && !D.page}
+          className="flex h-9 w-full items-center gap-2 rounded-xl bg-white px-3 text-sm font-medium text-zinc-800 shadow-sm ring-1 ring-zinc-900/10 hover:bg-zinc-50 aria-pressed:bg-blue-50 aria-pressed:text-blue-700 aria-pressed:ring-blue-500/40 dark:bg-zinc-800 dark:text-zinc-100 dark:ring-white/10 dark:hover:bg-zinc-700 dark:aria-pressed:bg-blue-400/10 dark:aria-pressed:text-blue-300 dark:aria-pressed:ring-blue-400/40"
+        >
+          <Icon n="newinput" c="size-4" />
+          <span className="flex-1 text-left">{rule ? 'New rule' : 'New input'}</span>
+          <span className="group-hover/ni:invisible">
+            <Kbd k="C" />
+          </span>
+        </button>
+        <button
+          data-act="new-voice"
+          title="New input by voice · ⇧V"
+          aria-label="New input by voice"
+          className="absolute inset-y-1 right-1 hidden w-9 place-items-center rounded-lg text-zinc-600 group-hover/ni:grid hover:bg-zinc-200/70 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-700 dark:hover:text-white"
+        >
+          <Icon n="mic" c="size-4" />
+        </button>
+      </div>
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 lg:scrollbar-thin lg:pb-3 lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70">
         <div className="px-3 pb-1.5 text-xs font-semibold text-zinc-500 lg:text-[11px] lg:tracking-wider lg:uppercase dark:text-zinc-400">
           Projects
