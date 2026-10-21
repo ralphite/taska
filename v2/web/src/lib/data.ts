@@ -124,20 +124,26 @@ export interface OpAnswer {
 // for about a minute, under one id, so Taska does it once however often it arrives
 const RETRY_MS = [1000, 2000, 4000, 8000, 15000, 30000]
 let lastSaid = '' // what the latest save was, for a Not saved that was not told (B326)
-export async function op(o: unknown): Promise<OpAnswer> {
-  lastSaid = saidOp(o)
-  const cid = Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
-  let d: (OpAnswer & { state?: State & { delta?: number } }) | null = null
-  const g = gen,
-    since = sinceQuery() // T339: what changed comes back with the answer, so the page changes after one trip
-  for (let i = 0; !d; i++) {
+export async function postAgain<T>(url: string, body: unknown): Promise<T> {
+  const cid = Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
+    at = url + (url.includes('?') ? '&' : '?') + 'cid=' + cid
+  for (let i = 0; ; i++) {
     try {
-      d = await net<OpAnswer>(ctx.P + 'api/op?cid=' + cid + (since ? '&' + since : ''), JSON_POST(o), NET.op)
+      return await net<T>(at, JSON_POST(body), NET.op)
     } catch (ex) {
       if (!(ex as { net?: boolean }).net || i >= RETRY_MS.length) throw ex
       await new Promise((ok) => setTimeout(ok, RETRY_MS[i]))
     }
   }
+}
+export async function op(o: unknown): Promise<OpAnswer> {
+  lastSaid = saidOp(o)
+  const g = gen,
+    since = sinceQuery() // T339: what changed comes back with the answer, so the page changes after one trip
+  const d = await postAgain<OpAnswer & { state?: State & { delta?: number } }>(
+    ctx.P + 'api/op' + (since ? '?' + since : ''),
+    o,
+  )
   if (!d.ok) {
     toast((d.res || []).find((x) => x.startsWith('err')) || d.error || 'Not saved', null, { error: true })
     throw new Error('op failed')

@@ -20,6 +20,7 @@ import {
   docById,
   els,
   inTab,
+  kids,
   liveN,
   model,
   otherProjects,
@@ -47,6 +48,7 @@ import {
   notSaved,
   op,
   optimistic,
+  postAgain,
   pushUndo,
   revertNow,
   save,
@@ -1325,27 +1327,47 @@ export const ACT: Record<string, Handler> = {
     if (!otherProjects().length) return toast('There is no other project to move it to')
     openDialog('item-move-proj', { n }, { focus: false })
   },
-  'item-move-to': async (d) => {
+  'item-move-to': (d) => {
+    // F397: it leaves this project at once (with its subitems) and Taska is told behind you, sent again while it
+    // can't be reached; it comes back, with why, only when the move finally can't be done
     const n = N(d),
       ref = code(n),
-      to = d.to as string
-    try {
-      const r = await net<{ ok: boolean; as: string; with?: number; error?: string }>(
-        ctx.P + 'api/move-item',
-        JSON_POST({ ref, to }),
-        NET.op,
-      )
-      if (!r.ok) throw new Error(r.error)
-      closeDialog()
-      await load()
-      toast(
-        `Moved ${ref} to ${projName(to)} as ${r.as}` + (r.with ? ` with its ${plural(r.with, 'subitem')}` : ''), // B336
-        () => navigate(`/p/${encodeURIComponent(to)}/${r.as}`),
-        { label: 'Open' },
-      )
-    } catch (ex) {
-      toast((ex as Error).message || 'Not moved', null, { error: true })
-    }
+      to = d.to as string,
+      tree: number[] = []
+    for (let k = [n]; k.length; k = k.flatMap((x) => (kids.get(x) || []).map((it) => it.n))) tree.push(...k)
+    closeDialog()
+    const got = { as: '', with: 0 }
+    const done = optimistic(
+      tree.map((k) => ({ n: k, f: { status: 'dropped', archived: true } })),
+      async () => {
+        const r = await postAgain<{ ok: boolean; as: string; with?: number; error?: string }>(ctx.P + 'api/move-item', {
+          ref,
+          to,
+        })
+        if (!r.ok) throw new Error(r.error)
+        Object.assign(got, { as: r.as, with: r.with || 0 })
+        await load()
+      },
+      (ex) =>
+        toast(
+          (ex as { net?: boolean }).net
+            ? `Not moved to ${projName(to)}: ${ref} is back here` // the corner says Taska is out of reach
+            : `Not moved: ${(ex as Error).message || 'Taska said no'}`,
+          () => ACT['item-move-to'](d),
+          {
+            error: true,
+            label: 'Try again',
+            sticky: true,
+          },
+        ),
+    )
+    toast(
+      `Moved ${ref} to ${projName(to)}` + (tree.length > 1 ? ` with its ${plural(tree.length - 1, 'subitem')}` : ''), // B336
+      async () => {
+        if (await done) navigate(`/p/${encodeURIComponent(to)}/${got.as}`)
+      },
+      { label: 'Open' },
+    )
   },
   'rescope-pick': (d) => {
     closeDialog()

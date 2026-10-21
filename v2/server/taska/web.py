@@ -645,82 +645,14 @@ class Handler(BaseHTTPRequestHandler):
                 inp.pop("moving", None)
             self.json({"ok": True, "to": t.name, "as": new})
         elif p == "/api/move-item":  # T257 #6: an item goes to another project: made there with its words and talk, done here
-            data = json.loads(self.body(10_000) or b"{}")
-            t = hub.projects.get(str(data.get("to") or ""))
-            if not t or t is s:
-                raise Err("choose another project")
-            here = s.cfg.get("name") or s.name
-            with s.cond:
-                root = s.item(data.get("ref"), follow=False)
-                if root.get("deleted") or root["merged_into"]:
-                    raise Err(f"{s.code(root['n'])} cannot be moved")
-                # B336: its subitems go along, all of them, under it as they were (parents before their children)
-                tree: List[Tuple[Dict[str, Any], Optional[int]]] = []
-                todo: List[Tuple[Dict[str, Any], Optional[int]]] = [(root, None)]
-                while todo:
-                    it, par = todo.pop(0)
-                    tree.append((it, par))
-                    todo += [(k, it["n"]) for k in sorted(s.items.values(), key=lambda k: k["n"])
-                             if k.get("parent") == it["n"] and not k.get("deleted") and not k["merged_into"]]
-                plan = []
-                docs: List[Tuple[int, int, str, str]] = []
-                said: List[Tuple[int, str, str, List[Tuple[str, str, bytes, str]]]] = []
-                for it, par in tree:
-                    ref = s.code(it["n"])
-                    talk = "\n\n".join(f"{x['by']} ({x['t'][:16].replace('T', ' ')}): {x['text']}" for x in it["thread"] if x.get("text") and not x.get("hidden"))
-                    body = it["body"] + (f"\n\n---\nTalk in {here} {ref}:\n\n{talk}" if talk else "")
-                    plan.append((it["n"], par, ref, it["status"], bool(it["archived"]), {
-                        "title": it["title"], "body": body[:MAX_TEXT], "type": it["type"], "pri": it["pri"], "when": it["when"], "next": it["next"]}))
-                    # T338: its documents go along too; their comments are written under them, as its talk is
-                    # B336: what it was made from (your words, voice notes, pictures) goes along too, as one message there
-                    replies = {x.get("src") for x in it["thread"] if x.get("by") == "you" and x.get("src")}
-                    for rid in it.get("srcs") or []:
-                        inp = s.inputs.get(rid)
-                        if rid in replies or not inp:
-                            continue
-                        got = []
-                        for f_ in inp.get("files") or []:
-                            try:
-                                with open(os.path.join(s.fdir, f_["f"]), "rb") as fh:
-                                    got.append((f_.get("name") or f_["f"], f_.get("mime") or "", fh.read(), f_.get("tr") or ""))
-                            except OSError:
-                                pass
-                        if got or (inp.get("text") or "").strip():
-                            said.append((it["n"], rid, inp.get("text") or "", got))
-                    for d in sorted((d for d in s.docs.values() if d["n"] == it["n"] and not d.get("deleted")), key=lambda d: d["d"]):
-                        notes = "\n\n".join(f"- {c['by']} ({c['t'][:16].replace('T', ' ')})" + (f" on \u201c{c['quote'][:200]}\u201d" if c.get("quote") else "") + f": {c['text']}"
-                                             for c in d["comments"] if c.get("text") and not c.get("deleted"))
-                        md = d["md"] + (f"\n\n---\nComments in {here} D{d['d']}:\n\n{notes}" if notes else "")
-                        docs.append((it["n"], d["d"], d.get("title") or "", md[:MAX_TEXT]))
-            under = None
-            if data.get("under"):  # T338: put it under an item there
-                with t.cond:
-                    under = t.code(t.item(data.get("under"), follow=False)["n"])
-            new_as: Dict[int, str] = {}
-            for n, par, ref, status, archived, fields in plan:
-                op: Dict[str, Any] = {"op": "new", **fields, "status": status}
-                if par is not None:
-                    op["parent"] = new_as[par]
-                elif under:
-                    op["parent"] = under
-                lines, _ = t.run_all([(0, op)], "you")
-                if not lines[0].startswith("ok"):
-                    raise Err(f"{ref}: {lines[0]}")
-                new_as[n] = lines[0].split()[1]
-                if archived:
-                    t.run_all([(0, {"op": "set", "ref": new_as[n], "f": {"archived": True}})], "you")
-            for n, rid, text, got in said:
-                files = [t.save_file(name, mime, data) for name, mime, data, _ in got]
-                words = "\n".join(f"> {tr}" for (_, _, _, tr) in got if tr)
-                msg = f"What you said in {here} ({rid}):" + (f"\n\n{text}" if text.strip() else "") + (f"\n\n{words}" if words and not text.strip() else "")
-                t.run_all([(0, {"op": "say", "ref": new_as[n], "kind": "say", "text": msg[:MAX_TEXT], "files": [x["f"] for x in files]})], "you")
-            for n, d, title, md in docs:
-                t.run_all([(0, {"op": "doc", "ref": new_as[n], "title": title, "md": md})], "you")
-            for n, _, ref, _, _, _ in plan:
-                s.run_all([(0, {"op": "say", "ref": ref, "kind": "progress", "text": f"Moved to {t.cfg.get('name') or t.name} as {new_as[n]}"}),
-                           (1, {"op": "set", "ref": ref, "f": {"status": "dropped", "archived": True}})], "you")  # run_all takes the lock itself
-            extra = {k: v for k, v in (("with", len(plan) - 1), ("docs", len(docs))) if v}  # as before when nothing went along
-            self.json({"ok": True, "as": new_as[plan[0][0]], **extra})
+            cid = (q.get("cid") or [""])[0][:64]  # F397: a move the page sends again after a lost answer is done once
+            with s.move_lock:
+                done = s.op_done.get(cid) if cid else None
+                if done is None:
+                    done = (self.move_item(s, json.loads(self.body(10_000) or b"{}")), 200)
+                    if cid:
+                        s.op_done[cid] = done
+            self.json(done[0], done[1])
         elif p == "/api/organize":
             rid = (json.loads(self.body(10_000) or b"{}")).get("id")
             with s.cond:
@@ -732,6 +664,85 @@ class Handler(BaseHTTPRequestHandler):
             self.json({"ok": True})
         else:
             self.send(404, "not found\n")
+
+    def move_item(self, s: "Store", data: Dict[str, Any]) -> Dict[str, Any]:
+        """T257 #6: an item goes to another project: made there with its words and talk, done here."""
+        hub = self.hub
+        t = hub.projects.get(str(data.get("to") or ""))
+        if not t or t is s:
+            raise Err("choose another project")
+        here = s.cfg.get("name") or s.name
+        with s.cond:
+            root = s.item(data.get("ref"), follow=False)
+            if root.get("deleted") or root["merged_into"]:
+                raise Err(f"{s.code(root['n'])} cannot be moved")
+            # B336: its subitems go along, all of them, under it as they were (parents before their children)
+            tree: List[Tuple[Dict[str, Any], Optional[int]]] = []
+            todo: List[Tuple[Dict[str, Any], Optional[int]]] = [(root, None)]
+            while todo:
+                it, par = todo.pop(0)
+                tree.append((it, par))
+                todo += [(k, it["n"]) for k in sorted(s.items.values(), key=lambda k: k["n"])
+                         if k.get("parent") == it["n"] and not k.get("deleted") and not k["merged_into"]]
+            plan = []
+            docs: List[Tuple[int, int, str, str]] = []
+            said: List[Tuple[int, str, str, List[Tuple[str, str, bytes, str]]]] = []
+            for it, par in tree:
+                ref = s.code(it["n"])
+                talk = "\n\n".join(f"{x['by']} ({x['t'][:16].replace('T', ' ')}): {x['text']}" for x in it["thread"] if x.get("text") and not x.get("hidden"))
+                body = it["body"] + (f"\n\n---\nTalk in {here} {ref}:\n\n{talk}" if talk else "")
+                plan.append((it["n"], par, ref, it["status"], bool(it["archived"]), {
+                    "title": it["title"], "body": body[:MAX_TEXT], "type": it["type"], "pri": it["pri"], "when": it["when"], "next": it["next"]}))
+                # T338: its documents go along too; their comments are written under them, as its talk is
+                # B336: what it was made from (your words, voice notes, pictures) goes along too, as one message there
+                replies = {x.get("src") for x in it["thread"] if x.get("by") == "you" and x.get("src")}
+                for rid in it.get("srcs") or []:
+                    inp = s.inputs.get(rid)
+                    if rid in replies or not inp:
+                        continue
+                    got = []
+                    for f_ in inp.get("files") or []:
+                        try:
+                            with open(os.path.join(s.fdir, f_["f"]), "rb") as fh:
+                                got.append((f_.get("name") or f_["f"], f_.get("mime") or "", fh.read(), f_.get("tr") or ""))
+                        except OSError:
+                            pass
+                    if got or (inp.get("text") or "").strip():
+                        said.append((it["n"], rid, inp.get("text") or "", got))
+                for d in sorted((d for d in s.docs.values() if d["n"] == it["n"] and not d.get("deleted")), key=lambda d: d["d"]):
+                    notes = "\n\n".join(f"- {c['by']} ({c['t'][:16].replace('T', ' ')})" + (f" on \u201c{c['quote'][:200]}\u201d" if c.get("quote") else "") + f": {c['text']}"
+                                         for c in d["comments"] if c.get("text") and not c.get("deleted"))
+                    md = d["md"] + (f"\n\n---\nComments in {here} D{d['d']}:\n\n{notes}" if notes else "")
+                    docs.append((it["n"], d["d"], d.get("title") or "", md[:MAX_TEXT]))
+        under = None
+        if data.get("under"):  # T338: put it under an item there
+            with t.cond:
+                under = t.code(t.item(data.get("under"), follow=False)["n"])
+        new_as: Dict[int, str] = {}
+        for n, par, ref, status, archived, fields in plan:
+            op: Dict[str, Any] = {"op": "new", **fields, "status": status}
+            if par is not None:
+                op["parent"] = new_as[par]
+            elif under:
+                op["parent"] = under
+            lines, _ = t.run_all([(0, op)], "you")
+            if not lines[0].startswith("ok"):
+                raise Err(f"{ref}: {lines[0]}")
+            new_as[n] = lines[0].split()[1]
+            if archived:
+                t.run_all([(0, {"op": "set", "ref": new_as[n], "f": {"archived": True}})], "you")
+        for n, rid, text, got in said:
+            files = [t.save_file(name, mime, data) for name, mime, data, _ in got]
+            words = "\n".join(f"> {tr}" for (_, _, _, tr) in got if tr)
+            msg = f"What you said in {here} ({rid}):" + (f"\n\n{text}" if text.strip() else "") + (f"\n\n{words}" if words and not text.strip() else "")
+            t.run_all([(0, {"op": "say", "ref": new_as[n], "kind": "say", "text": msg[:MAX_TEXT], "files": [x["f"] for x in files]})], "you")
+        for n, d, title, md in docs:
+            t.run_all([(0, {"op": "doc", "ref": new_as[n], "title": title, "md": md})], "you")
+        for n, _, ref, _, _, _ in plan:
+            s.run_all([(0, {"op": "say", "ref": ref, "kind": "progress", "text": f"Moved to {t.cfg.get('name') or t.name} as {new_as[n]}"}),
+                       (1, {"op": "set", "ref": ref, "f": {"status": "dropped", "archived": True}})], "you")  # run_all takes the lock itself
+        extra = {k: v for k, v in (("with", len(plan) - 1), ("docs", len(docs))) if v}  # as before when nothing went along
+        return {"ok": True, "as": new_as[plan[0][0]], **extra}
 
 
 class Server(ThreadingHTTPServer):

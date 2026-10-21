@@ -42,6 +42,7 @@ class Store:
         self.inputs: Dict[str, Input] = {}
         self.events: List[Event] = []
         self.op_done: Dict[str, Tuple[Dict[str, Any], int]] = {}  # B326: the page's save id -> its answer, so a save sent again is done once
+        self.move_lock = threading.Lock()  # F397: one move of an item to another project at a time, so one sent again waits and is not done twice
         self.qids: Dict[str, str] = {}  # the page's id for an input it sent -> the input: sent again after a lost answer, it goes in once (T101)
         self.undone: Set[int] = set()  # seqs of your changes that were put back (F80)
         self.org_off: Set[int] = set()  # organizer changes taken back by an undo (T113 A4)
