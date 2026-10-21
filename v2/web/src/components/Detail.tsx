@@ -391,7 +391,7 @@ export function ItemPage({ it }: { it: Item }) {
           id="itemClip"
           data-clip
           onScroll={(e) => markOver(e.currentTarget)}
-          className="lg:min-h-0 lg:scrollbar-thin lg:overflow-y-auto lg:data-over:mask-b-from-[calc(100%-3rem)]"
+          className="lg:min-h-0 lg:scrollbar-thin lg:overflow-y-auto lg:data-over:mask-b-from-[calc(100%-4rem)]"
         >
           <div className={`flex flex-col gap-6 lg:mx-auto lg:w-full lg:max-w-[46rem] lg:px-8 lg:pt-7 lg:pb-6`}>
             {head}
@@ -491,7 +491,7 @@ export function ItemPage({ it }: { it: Item }) {
         id="itemTalk"
         ref={talkRef}
         onScroll={(e) => moreBelow(e.currentTarget)}
-        className="lg:min-h-0 lg:flex-1 lg:scrollbar-thin lg:overflow-y-auto"
+        className="lg:min-h-0 lg:flex-1 lg:scrollbar-thin lg:overflow-y-auto lg:data-up:mask-t-from-[calc(100%-2rem)]"
       >
         <div className="flex flex-col gap-6 lg:mx-auto lg:w-full lg:max-w-[46rem] lg:px-8 lg:py-6">
           {thread.length || notes.length ? (

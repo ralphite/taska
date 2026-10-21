@@ -36,8 +36,7 @@ export const KIND: Record<string, string> = {
   withdraw: 'Withdrawn',
   propose: 'Proposal',
   decide: 'Decision',
-  progress: 'Progress',
-}
+} // T359: no tag on progress, which most messages are: a tag says something only where it differs
 export const AGENT_NAME: Record<string, string> = {
   'claude-code': 'Claude Code',
   codex: 'Codex',
