@@ -636,7 +636,7 @@ function Doubts({ words }: { words: string }) {
             <>
               {' '}
               <button data-act="box-view" className={`${LINK_BTN} -my-2 inline-flex`}>
-                Show them
+                Show the words
               </button>
             </>
           )}
@@ -658,7 +658,7 @@ function Doubts({ words }: { words: string }) {
             </span>
             {x.alt ? (
               <button data-act="doubt-use" data-i={i} data-k={k} className={`${LINK_BTN} -my-1 -ml-1.5 shrink-0`}>
-                Use it
+                Use instead
               </button>
             ) : null}
           </p>

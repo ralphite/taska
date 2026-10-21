@@ -138,12 +138,13 @@ export function inputActs(r: Input, cls = LINK_BTN): [ReactNode, ReactNode] {
         key="make"
         data-act="make-item"
         data-id={r.id}
+        title="Make an item from this input yourself, without waiting for the agent"
         className={cls
           .replace(/text-zinc-500|hover:text-zinc-800/g, 'text-blue-600')
           .replace(/dark:text-zinc-400|dark:hover:text-zinc-200/g, 'dark:text-blue-400')}
       >
         <Icon n="plus" c="size-3.5" sw="2" />
-        Turn into item
+        Create item
       </button>
     ) : null
   const now = retry || make ? [retry, make] : null

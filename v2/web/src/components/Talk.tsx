@@ -560,7 +560,7 @@ export function MsgView({
         <span>{when(x.t)}</span>
         {form || !U.open ? null : x.hidden ? (
           <button data-act="msg-hide" data-n={U.open} data-id={x.id} data-on={0} className={DC_BTN}>
-            Keep shown
+            Show again
           </button>
         ) : (
           <button

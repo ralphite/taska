@@ -1025,7 +1025,7 @@ function moveParts({ n }: Props): Parts | null {
             className="mt-1 flex h-12 w-full items-center gap-2.5 rounded-lg border-t border-zinc-100 px-2.5 text-left text-[15px] hover:bg-zinc-100 lg:h-9 lg:text-sm dark:border-zinc-800 dark:hover:bg-zinc-800"
           >
             <Icon n={it.parent ? 'x' : 'check'} c="size-4 text-zinc-500" />
-            Stands on its own
+            No parent
           </button>
         }
       />
@@ -1392,7 +1392,7 @@ const KINDS: Record<string, (p: Props) => Parts | null> = {
           className="flex h-10 w-full items-center gap-2.5 rounded-lg px-3 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"
         >
           <Icon n="loop" c="size-4 text-zinc-500 dark:text-zinc-400" />
-          Show the filters set now
+          Save current filters to this view
         </button>
         <button
           data-act="view-delete"
