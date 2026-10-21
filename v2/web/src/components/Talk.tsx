@@ -69,13 +69,17 @@ export function Thumbs({ files, gid, size = 'size-20' }: { files: FileRef[]; gid
         if (isAudio(f)) {
           const src = fileUrl(f.f)
           return (
-            // F364: Original words shows when you point at the note (always on the phone)
-            <span key={f.f} className="group/voice flex items-end gap-2">
+            // F364: one chip: play and the length, and at its end the original words, an icon that shows when you
+            // point at the note (always on the phone); it takes no room it does not use
+            <span
+              key={f.f}
+              className="group/voice flex h-9 shrink-0 items-center self-end rounded-full border border-zinc-200 pl-1 text-[13px] text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"
+            >
               <button
                 data-act="play"
                 data-src={src}
                 aria-label={`Play the voice note${voiceLen(f) ? `, ${clock(voiceLen(f) as number)}` : ''}`}
-                className={`${HIT} flex h-9 shrink-0 items-center gap-2 self-end rounded-full border border-zinc-200 pr-3 pl-1 text-[13px] text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800`}
+                className={`${HIT} flex h-full items-center gap-2 rounded-full pr-3 hover:text-zinc-900 dark:hover:text-white ${tidy ? 'lg:group-hover/voice:pr-1.5' : ''}`}
               >
                 <span
                   data-icon
@@ -91,9 +95,11 @@ export function Thumbs({ files, gid, size = 'size-20' }: { files: FileRef[]; gid
                 <button
                   data-act="as-said"
                   data-f={f.f}
-                  className={`${HIT} h-8 shrink-0 self-end rounded-lg px-1.5 text-xs font-semibold text-zinc-500 group-hover/voice:opacity-100 hover:bg-zinc-100 hover:text-zinc-800 focus-visible:opacity-100 lg:opacity-0 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200`}
+                  title="Original words"
+                  aria-label="Original words"
+                  className="mr-1 grid size-7 place-items-center rounded-full text-zinc-400 hover:bg-zinc-100 hover:text-zinc-800 lg:hidden lg:group-hover/voice:grid lg:focus-visible:grid dark:text-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
                 >
-                  Original words
+                  <Icon n="doc" c="size-4" />
                 </button>
               ) : null}
             </span>
