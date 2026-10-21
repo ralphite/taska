@@ -18,6 +18,54 @@ if TYPE_CHECKING:
     from .store import Store
 
 
+
+# B336 (R337): what you do to an item is done to the items under it, the way you would expect: put Later, they go
+# Later; marked won't do, the unfinished ones too; archived, the finished ones too; merged, they move under what it
+# was merged into. Each such change says which item it followed (cascade), so putting that item back (Now again,
+# reopened, unarchived) puts back only the ones that followed it, not ones you changed yourself.
+def descendants(s: "Store", n: int) -> List[Item]:
+    out: List[Item] = []
+    todo = [n]
+    while todo:
+        m = todo.pop()
+        for k in s.items.values():
+            if k.get("parent") == m and not k.get("deleted") and not k["merged_into"]:
+                out.append(k)
+                todo.append(k["n"])
+    return out
+
+
+def followed(s: "Store", k: Item, field_: str) -> Tuple[Optional[int], Any]:
+    """The item k's last change of `field_` followed (or None), and what the field was before it."""
+    for e in reversed(s.events):
+        if e.get("k") == "set" and e.get("n") == k["n"] and field_ in e.get("f", {}):
+            return e.get("cascade"), e.get("was", {}).get(field_)
+    return None, None
+
+
+def cascade(s: "Store", it: Item, f: Dict[str, Any], was: Dict[str, Any], by: str, src: Optional[str], keep: Dict[str, Any]) -> None:
+    for k in descendants(s, it["n"]):
+        g: Dict[str, Any] = {}
+        if "when" in f:
+            if f["when"] == "later" and k["status"] not in CLOSED and k["when"] != "later":
+                g["when"] = "later"
+            elif f["when"] != "later" and k["when"] == "later" and followed(s, k, "when")[0] == it["n"]:
+                g["when"] = f["when"]
+        if "status" in f:
+            if f["status"] == "dropped" and k["status"] not in CLOSED:
+                g["status"] = "dropped"
+            elif was.get("status") == "dropped" and f["status"] not in CLOSED and k["status"] == "dropped":
+                by_it, before = followed(s, k, "status")
+                if by_it == it["n"] and before:
+                    g["status"] = before
+        if "archived" in f:
+            if f["archived"] and k["status"] in CLOSED and not k.get("archived"):
+                g["archived"] = True
+            elif not f["archived"] and k.get("archived") and followed(s, k, "archived")[0] == it["n"]:
+                g["archived"] = False
+        if g:
+            s.emit({"k": "set", "n": k["n"], "by": by, "f": g, "was": {x: k.get(x) for x in g}, "src": src, "cascade": it["n"], **keep})
+
 def was_by(s: "Store", it: Item) -> Optional[str]:
     """Who last set an item's status (F197): an agent may not reopen what the user dropped."""
     for e in reversed(s.events):
@@ -327,9 +375,22 @@ def run(s: "Store", op: Op, by: str, ctx: Dict[str, Any]) -> Tuple[str, Any]:
                 continue
             ns.append(it["n"])
         word = "archived" if on else "unarchived"
+        asked = len(ns)
+        follow: Dict[str, int] = {}  # B336: the subitems that go along, and which item each followed
+        for n in list(ns) if by in PEOPLE else []:
+            if on:
+                kids = [k for k in descendants(s, n) if k["status"] in CLOSED and not k.get("archived")]
+            else:
+                last = next((e for e in reversed(s.events) if e.get("k") == "arch" and e.get("on") and n in e.get("ns", [])), None)
+                kids = [s.items[int(k)] for k, p in ((last or {}).get("follow") or {}).items()
+                        if p == n and int(k) in s.items and s.items[int(k)].get("archived")]
+            for k in kids:
+                if k["n"] not in ns:
+                    ns.append(k["n"])
+                    follow[str(k["n"])] = n
         if ns:
-            s.emit({"k": "arch", "ns": ns, "on": on, "by": by})
-        return f"ok {word} {len(ns)}" + (f"; not finished, so not archived: {' '.join(skip)}" if skip else ""), f"{word.capitalize()} {len(ns)}"
+            s.emit({"k": "arch", "ns": ns, "on": on, "by": by, **({"follow": follow} if follow else {})})
+        return f"ok {word} {asked}" + (f"; not finished, so not archived: {' '.join(skip)}" if skip else ""), f"{word.capitalize()} {asked}"
     if name in ("delete", "restore"):  # F177: an input to Deleted with the items only it made, and back
         rid = str(op.get("id") or "")
         inp = s.inputs.get(rid)
@@ -393,6 +454,8 @@ def run(s: "Store", op: Op, by: str, ctx: Dict[str, Any]) -> Tuple[str, Any]:
             if left:
                 note += f" (note: its subitems {' '.join(s.code(k['n']) for k in left)} are not finished yet)"
         s.emit({"k": "set", "n": it["n"], "by": by, "f": f, "was": was, "src": src, **keep, **({"undo_of": op["undo_of"]} if op.get("undo_of") else {})})
+        if by in PEOPLE:  # B336: what you do from the page; an agent's changes stay as they were
+            cascade(s, it, f, was, by, src, keep)
         return f"ok {code} " + " ".join(f"{k}={v}" if k in ("pri", "when", "status", "type", "parent", "archived") else k for k, v in f.items()) + note + s.gone_note(it, by), "Updated " + code
     if name == "say":
         kind = op.get("kind", "say")
@@ -421,7 +484,11 @@ def run(s: "Store", op: Op, by: str, ctx: Dict[str, Any]) -> Tuple[str, Any]:
         into = s.item(op.get("into", ""), ctx)
         if into["n"] == it["n"]:
             raise Err("cannot merge into itself")
+        kids = [k for k in s.items.values() if k.get("parent") == it["n"] and not k.get("deleted") and not k["merged_into"]]
         s.emit({"k": "merge", "n": it["n"], "into": into["n"], "by": by, "src": src, **keep})
+        for k in kids if by in PEOPLE else []:  # B336: its subitems go under what it was merged into (your merges)
+            if k["n"] != into["n"]:
+                s.emit({"k": "set", "n": k["n"], "by": by, "f": {"parent": into["n"]}, "was": {"parent": it["n"]}, "src": src, "cascade": it["n"], **keep})
         return f"ok {code} merged into {s.code(into['n'])}" + s.gone_note(it, by), f"Merged {code}"
     raise Err(f"unknown op '{name}'")
 
