@@ -1156,6 +1156,8 @@ function listBody(): { body: ReactNode; shown: number } {
 
 // ---------------------------------------------------------------- dragging a row (desktop, mouse only)
 const DRAG = { n: 0, at: null as null | { el?: HTMLElement; n?: number; how: string } }
+/** F397: the item being dragged, for the sidebar: dropped on another project, it moves there */
+export const ITEM_DRAG = DRAG
 const queuedNow = (it: Item) => inQueue(it) && it.when === 'now'
 function dropAt(e: DragEvent) {
   const it = byN.get(DRAG.n),

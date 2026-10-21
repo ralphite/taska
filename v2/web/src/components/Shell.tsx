@@ -5,7 +5,7 @@ const SHOWN_TABS = TABS.filter((t) => t !== 'archive')
 const DESK_TABS = SHOWN_TABS.filter((t) => t !== 'inputs')
 // list's head, the list, the item pane, Settings, the one input box at the foot, and what floats over them: the sheet,
 // the picture viewer, the tooltip, the bar on selected text, the toast. Below 1024px it is the phone's page.
-import { useLayoutEffect, useRef, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useRef, type ReactNode } from 'react'
 import {
   FIELD,
   HIT,
@@ -60,8 +60,9 @@ import { searchMode, openItem, closeDrawer } from '../lib/nav'
 import { writeURL } from '../lib/url'
 import { addFiles } from '../lib/outbox'
 import { bindProjDrag } from '../lib/projdrag'
+import { ACT } from '../lib/actions'
 import { Icon, Kbd, ProjTile } from './ui'
-import { List } from './List'
+import { ITEM_DRAG, List } from './List'
 import { InputsView } from './Inputs'
 import { DetailView } from './Detail'
 import { ProjectView } from './Settings'
@@ -152,7 +153,7 @@ function SideList() {
               href={`/p/${encodeURIComponent(p.name)}/`}
               data-slug={p.name}
               {...(cur ? { 'aria-current': 'page' as const } : {})}
-              className="group flex min-h-14 items-center gap-3 rounded-2xl px-3 py-2.5 select-none [-webkit-touch-callout:none] hover:bg-zinc-200/50 aria-[current=page]:bg-blue-100 aria-[current=page]:ring-1 aria-[current=page]:ring-blue-200 data-dragging:bg-zinc-200/70 data-dragging:ring-0 data-pressed:bg-zinc-200/70 dark:hover:bg-zinc-800/60 dark:aria-[current=page]:bg-blue-400/15 dark:aria-[current=page]:ring-blue-400/30 dark:data-dragging:bg-zinc-800/70 dark:data-pressed:bg-zinc-800 data-dragging:[&>*]:invisible"
+              className="group flex min-h-14 items-center gap-3 rounded-2xl px-3 py-2.5 select-none [-webkit-touch-callout:none] hover:bg-zinc-200/50 aria-[current=page]:bg-blue-100 aria-[current=page]:ring-1 aria-[current=page]:ring-blue-200 data-dragging:bg-zinc-200/70 data-dragging:ring-0 data-drop:bg-blue-100 data-drop:ring-2 data-drop:ring-blue-500 data-pressed:bg-zinc-200/70 dark:hover:bg-zinc-800/60 dark:aria-[current=page]:bg-blue-400/15 dark:aria-[current=page]:ring-blue-400/30 dark:data-dragging:bg-zinc-800/70 dark:data-drop:bg-blue-400/15 dark:data-drop:ring-blue-400 dark:data-pressed:bg-zinc-800 data-dragging:[&>*]:invisible"
             >
               <ProjTile name={p.name} cls="size-8 rounded-lg text-sm" />
               <span className="min-w-0 flex-1">
@@ -184,7 +185,7 @@ function SideList() {
             href={`/p/${encodeURIComponent(p.name)}/`}
             data-slug={p.name}
             {...(cur ? { 'aria-current': 'page' as const, 'data-act': 'new-input' } : {})}
-            className="flex items-center gap-2.5 rounded-xl px-2.5 py-2 select-none [-webkit-touch-callout:none] hover:bg-zinc-200/60 aria-[current=page]:bg-blue-100 aria-[current=page]:ring-1 aria-[current=page]:ring-blue-200 aria-[current=page]:hover:bg-blue-100 data-dragging:bg-zinc-200/70 data-dragging:ring-0 data-pressed:bg-zinc-200/80 dark:hover:bg-zinc-800 dark:aria-[current=page]:bg-blue-400/15 dark:aria-[current=page]:ring-blue-400/30 dark:aria-[current=page]:hover:bg-blue-400/20 dark:data-dragging:bg-zinc-800/70 data-dragging:[&>*]:invisible"
+            className="flex items-center gap-2.5 rounded-xl px-2.5 py-2 select-none [-webkit-touch-callout:none] hover:bg-zinc-200/60 aria-[current=page]:bg-blue-100 aria-[current=page]:ring-1 aria-[current=page]:ring-blue-200 aria-[current=page]:hover:bg-blue-100 data-dragging:bg-zinc-200/70 data-dragging:ring-0 data-drop:bg-blue-100 data-drop:ring-2 data-drop:ring-blue-500 data-pressed:bg-zinc-200/80 dark:hover:bg-zinc-800 dark:aria-[current=page]:bg-blue-400/15 dark:aria-[current=page]:ring-blue-400/30 dark:aria-[current=page]:hover:bg-blue-400/20 dark:data-dragging:bg-zinc-800/70 dark:data-drop:bg-blue-400/15 dark:data-drop:ring-blue-400 data-dragging:[&>*]:invisible"
           >
             <ProjTile name={p.name} cls="size-6 rounded-md text-xs" />
             <span className="min-w-0 flex-1">
@@ -314,6 +315,46 @@ function Drawer({ hidden, over }: { hidden: boolean; over: boolean }) {
   const rule = U.tab === 'rules' && !D.page
   const list = useRef<HTMLDivElement>(null)
   useLayoutEffect(() => (list.current ? bindProjDrag(list.current) : undefined), [])
+  useEffect(() => {
+    // F397: an item dragged from the list onto another project moves there
+    const box = list.current
+    if (!box) return
+    const target = (e: DragEvent) => {
+      const a = (e.target as Element).closest?.<HTMLElement>('a[data-slug]')
+      return a && ITEM_DRAG.n && a.dataset.slug !== model.S.project ? a : null
+    }
+    const mark = (a: HTMLElement | null) =>
+      box.querySelectorAll<HTMLElement>('[data-drop]').forEach((x) => x !== a && x.removeAttribute('data-drop'))
+    const over = (e: DragEvent) => {
+      const a = target(e)
+      mark(a)
+      if (!a) return
+      e.preventDefault()
+      a.setAttribute('data-drop', '')
+      if (e.dataTransfer) e.dataTransfer.dropEffect = 'move'
+    }
+    const leave = (e: DragEvent) => {
+      if (!box.contains(e.relatedTarget as Node)) mark(null)
+    }
+    const drop = (e: DragEvent) => {
+      const a = target(e)
+      mark(null)
+      if (!a) return
+      e.preventDefault()
+      void ACT['item-move-to']({ n: String(ITEM_DRAG.n), to: a.dataset.slug as string })
+    }
+    const end = () => mark(null)
+    box.addEventListener('dragover', over)
+    box.addEventListener('dragleave', leave)
+    box.addEventListener('drop', drop)
+    document.addEventListener('dragend', end)
+    return () => {
+      box.removeEventListener('dragover', over)
+      box.removeEventListener('dragleave', leave)
+      box.removeEventListener('drop', drop)
+      document.removeEventListener('dragend', end)
+    }
+  }, [])
   return (
     <nav
       id="drawer"
