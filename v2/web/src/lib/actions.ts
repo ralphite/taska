@@ -1543,13 +1543,18 @@ export const ACT: Record<string, Handler> = {
       notSaved(ex)
     }
   },
-  'as-said': async (d) => {
+  'as-said': async (d, e) => {
+    const at = ((e as Event | undefined)?.target as Element | undefined)?.closest('[data-act]')?.getBoundingClientRect()
+    const url = `${ctx.P}api/transcript?f=${encodeURIComponent(d.f as string)}`
     try {
-      const r = await net<{ heard?: string; tr?: string }>(
-        `${ctx.P}api/transcript?f=${encodeURIComponent(d.f as string)}`,
-        { method: 'POST' },
+      // B363: the words kept with the note come at once; only a note never written down waits for its words (a POST
+      // after a restart wrote it down again, which took seconds)
+      const r = await net<{ heard?: string; tr?: string }>(url).catch(() =>
+        net<{ heard?: string; tr?: string }>(url, { method: 'POST' }),
       )
-      openDialog('as-said', { heard: r.heard || '', tr: r.tr || '' })
+      // F364: on the desktop the words as said float beside the note, not a sheet over the page
+      openDialog('as-said', { heard: r.heard || '', tr: r.tr || '' }, desk() ? { pop: true, focus: false } : undefined)
+      if (at && desk()) popAt(at.left, at.bottom + 6)
     } catch {
       notLoaded('the words as said', () => ACT['as-said'](d))
     }

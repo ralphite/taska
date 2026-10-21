@@ -69,7 +69,8 @@ export function Thumbs({ files, gid, size = 'size-20' }: { files: FileRef[]; gid
         if (isAudio(f)) {
           const src = fileUrl(f.f)
           return (
-            <span key={f.f} className="contents">
+            // F364: Original words shows when you point at the note (always on the phone)
+            <span key={f.f} className="group/voice flex items-end gap-2">
               <button
                 data-act="play"
                 data-src={src}
@@ -90,7 +91,7 @@ export function Thumbs({ files, gid, size = 'size-20' }: { files: FileRef[]; gid
                 <button
                   data-act="as-said"
                   data-f={f.f}
-                  className={`${HIT} h-8 shrink-0 self-end rounded-lg px-1.5 text-xs font-semibold text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200`}
+                  className={`${HIT} h-8 shrink-0 self-end rounded-lg px-1.5 text-xs font-semibold text-zinc-500 group-hover/voice:opacity-100 hover:bg-zinc-100 hover:text-zinc-800 focus-visible:opacity-100 lg:opacity-0 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200`}
                 >
                   Original words
                 </button>
