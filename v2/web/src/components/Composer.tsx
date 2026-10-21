@@ -1183,15 +1183,6 @@ export function VcBar() {
       className="fixed z-[65] flex rounded-full bg-zinc-900 p-1 shadow-lg ring-1 ring-black/10 dark:bg-zinc-100 dark:ring-white/10"
     >
       <button
-        id="cmtBtn"
-        data-act="doc-comment-sel"
-        hidden={!cmt}
-        className="flex h-9 items-center gap-1.5 rounded-full pr-3.5 pl-2.5 text-sm font-semibold whitespace-nowrap text-white hover:bg-white/15 dark:text-zinc-900 dark:hover:bg-zinc-900/10"
-      >
-        <Icon n="comment" c="size-4" />
-        Comment
-      </button>
-      <button
         id="vcBtn"
         data-act="vc"
         {...(on ? { 'data-on': '' } : {})}
@@ -1200,19 +1191,20 @@ export function VcBar() {
             ? 'Stop: the quote and the voice note go into the box'
             : 'Voice comment: record a comment on the selected text'
         }
-        className="flex h-9 items-center gap-1.5 rounded-full pr-3.5 pl-2.5 text-sm font-semibold whitespace-nowrap text-white hover:bg-white/15 data-on:bg-red-600 data-on:text-white dark:text-zinc-900 dark:hover:bg-zinc-900/10 dark:data-on:bg-red-600 dark:data-on:text-white"
+        title={on ? 'Stop' : 'Voice comment'}
+        className="grid size-11 place-items-center rounded-full text-white hover:bg-white/15 data-on:bg-red-600 data-on:text-white dark:text-zinc-900 dark:hover:bg-zinc-900/10 dark:data-on:bg-red-600 dark:data-on:text-white"
       >
-        {on ? (
-          <>
-            <span className="size-2 animate-pulse rounded-full bg-white" />
-            Stop
-          </>
-        ) : (
-          <>
-            <Icon n="mic" c="size-4" />
-            Voice comment
-          </>
-        )}
+        {on ? <span className="size-2.5 animate-pulse rounded-full bg-white" /> : <Icon n="mic" c="size-5" />}
+      </button>
+      <button
+        id="cmtBtn"
+        data-act="doc-comment-sel"
+        hidden={!cmt}
+        aria-label="Comment: write a comment on the selected text"
+        title="Comment"
+        className="grid size-9 place-items-center self-center rounded-full text-white hover:bg-white/15 dark:text-zinc-900 dark:hover:bg-zinc-900/10"
+      >
+        <Icon n="comment" c="size-4" />
       </button>
       <button
         id="fixBtn"

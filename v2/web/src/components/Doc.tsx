@@ -21,6 +21,8 @@ import type { Comment, Doc } from '../lib/types'
 import { blockHtml, clean, groups, plainQuote } from '../lib/markdown'
 import { seeThreads, threadNew, renderDoc } from '../lib/docs'
 import { tickKeys, tickText } from '../lib/doctick'
+
+const TICKED_LINE = /^\s*[-*+]\s+[([][xX][)\]]/m // T415: a list with a choice sent in it
 import { toast } from '../lib/toast'
 import { Armed, Icon, Kbd } from './ui'
 import { Rich, Thumbs, VoiceLine } from './Talk'
@@ -619,7 +621,13 @@ export function DocView({ d }: { d: Doc }) {
                     data-block
                     className={`min-w-0 flex-1 break-words ${b0.kind === 'heading' ? 'pr-14 lg:pr-0' : ''}`}
                     dangerouslySetInnerHTML={{
-                      __html: clean(blockHtml(b, i === 0 && titled, 'doc' + d.d, { d: d.d, key: tk })),
+                      __html: clean(
+                        blockHtml(b, i === 0 && titled, 'doc' + d.d, {
+                          d: d.d,
+                          key: tk,
+                          sent: now === b0.text && TICKED_LINE.test(b0.text),
+                        }),
+                      ),
                     }}
                   />
                   {b0.comments.length ? (
