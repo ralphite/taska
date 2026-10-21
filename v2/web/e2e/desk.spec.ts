@@ -52,6 +52,8 @@ test('a comment on a paragraph of a document is written in the one box, which st
   await expect.poll(async () => p.read('D1')).toContain('Say who reviews it')
   // beside the text: in the comment column when the pane is wide, else behind the count beside its paragraph (B349)
   const rail = page.locator('aside[aria-label="Comments"]')
+  // the first comment brings the column (or the count) with the answer: wait for one of them before choosing
+  await expect(rail.or(para.locator('[data-act="doc-thread"]:visible')).first()).toBeVisible()
   if (await rail.count()) await expect(rail).toContainText('Say who reviews it')
   else {
     // a comment you just posted opens beside its paragraph; otherwise its count opens it

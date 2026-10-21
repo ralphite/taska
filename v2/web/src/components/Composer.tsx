@@ -684,10 +684,7 @@ function RecBar() {
       <span id="recTime" className="shrink-0 font-mono text-[15px] text-zinc-800 tabular-nums dark:text-zinc-100">
         {R.rec ? clock(Date.now() - R.t0) : '0:00'}
       </span>
-      <span
-        id="recBars"
-        className="flex h-8 min-w-0 flex-1 items-center justify-end gap-[3px] overflow-hidden lg:group-data-[compose]/app:h-14"
-      >
+      <span id="recBars" className="flex h-8 min-w-0 flex-1 items-center justify-end gap-[3px] overflow-hidden">
         {R.rec
           ? R.levels.map((l, i) => (
               <span
@@ -843,7 +840,7 @@ function BoxInner() {
             hidden={!rec}
             role="status"
             aria-label="Recording"
-            className="col-start-1 row-start-1 flex min-w-0 items-center gap-2.5 px-1 lg:group-data-[compose]/app:px-3"
+            className="col-start-1 row-start-1 flex min-w-0 items-center gap-2.5 px-1" /* B352: the same box while recording, wherever it is */
           >
             <RecBar />
           </div>
