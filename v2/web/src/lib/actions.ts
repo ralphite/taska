@@ -1345,43 +1345,45 @@ export const ACT: Record<string, Handler> = {
     const r = byR.get(d.id as string)
     itemPicker(`Put ${rcode(d.id)} with…`, 'rescope-to', { id: d.id }, r?.scope ? [r.scope] : [])
   },
-  'rescope-to': async (d) => {
+  'rescope-to': (d) => {
+    // R409: at once
     const id = d.id as string,
       was = byR.get(id)?.scope,
       to = d.to as string
     closeDialog()
-    try {
-      await save({ op: 'rescope', id, to })
-    } catch {
-      return
-    }
+    const put = (ref: string) =>
+      instant({ op: 'rescope', id, to: ref }, () => {
+        const r = byR.get(id)
+        if (r) r.scope = parseRef(ref)
+      })
+    void put(to)
     toast(
       `${rcode(id)} now goes with ${to}`,
       was
         ? pushUndo(`${rcode(id)} moved`, async () => {
-            await save({ op: 'rescope', id, to: code(was) })
-            toast(`${rcode(id)} is back with ${code(was)}`)
+            if (await put(code(was))) toast(`${rcode(id)} is back with ${code(was)}`)
           })
         : null,
     )
   },
-  'doc-delete': async () => {
+  'doc-delete': () => {
+    // R409: gone at once
     const dn = U.doc
     if (!dn || !confirmClick('doc-delete ' + dn)) return
     const doc = docById(dn),
       host = doc ? liveN(doc.n) : null
-    try {
-      await save({ op: 'ddel', d: dn })
-    } catch {
-      return
-    }
+    void instant({ op: 'ddel', d: dn }, () => {
+      model.S.docs = (model.S.docs || []).filter((x) => x.d !== dn)
+    })
     closeDoc()
     if (!desk()) closeDialog()
     toast(
       `Deleted D${dn}`,
       pushUndo(`D${dn} deleted`, async () => {
-        await save({ op: 'ddel', d: dn, on: false })
-        toast(`D${dn} is back`)
+        const ok = await instant({ op: 'ddel', d: dn, on: false }, () => {
+          if (doc && !docById(dn)) model.S.docs = [...(model.S.docs || []), doc]
+        })
+        if (ok) toast(`D${dn} is back`)
       }),
     )
     if (host && byN.has(host) && desk()) openItem(host)
@@ -1390,22 +1392,24 @@ export const ACT: Record<string, Handler> = {
     const doc = docById(U.doc)
     if (doc) itemPicker(`Put D${doc.d} on…`, 'doc-move-to', { d: String(doc.d) }, [liveN(doc.n)])
   },
-  'doc-move-to': async (d) => {
+  'doc-move-to': (d) => {
+    // R409: at once
     const dn = Number(d.d),
       was = docById(dn)?.n,
       to = d.to as string
     closeDialog()
-    try {
-      await save({ op: 'dmove', d: dn, to })
-    } catch {
-      return
-    }
+    const put = (ref: string) =>
+      instant({ op: 'dmove', d: dn, to: ref }, () => {
+        const doc = docById(dn),
+          n = parseRef(ref)
+        if (doc && n) doc.n = n
+      })
+    void put(to)
     openDoc(dn)
     toast(
       `D${dn} is now on ${to}`,
       pushUndo(`D${dn} moved`, async () => {
-        await save({ op: 'dmove', d: dn, to: code(was) })
-        toast(`D${dn} is back on ${code(was)}`)
+        if (await put(code(was))) toast(`D${dn} is back on ${code(was)}`)
       }),
     )
   },
@@ -1438,15 +1442,18 @@ export const ACT: Record<string, Handler> = {
       }),
     )
   },
-  'sent-unfile': async (d) => {
-    // T257 #11: one file taken off what you sent
+  'sent-unfile': (d) => {
+    // T257 #11: one file taken off what you sent. R409: at once
     if (!confirmClick(`unfile ${d.d || ''} ${d.id} ${d.f}`)) return
     closeDialog()
-    try {
-      await save(d.d ? { op: 'unfile', d: Number(d.d), id: Number(d.id), f: d.f } : { op: 'unfile', id: d.id, f: d.f })
-    } catch {
-      return
-    }
+    void instant(
+      d.d ? { op: 'unfile', d: Number(d.d), id: Number(d.id), f: d.f } : { op: 'unfile', id: d.id, f: d.f },
+      () => {
+        const c = d.d ? dcFind(Number(d.d), Number(d.id)) : byR.get(d.id as string)
+        if (c?.files) c.files = c.files.filter((x) => x.f !== d.f)
+      },
+      'taking a file off',
+    )
     D.docKey = null
     render()
     toast('File taken off')
