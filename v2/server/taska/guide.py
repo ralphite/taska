@@ -49,6 +49,8 @@ READ  (plain text)
   curl -s BASE/rules        project rules: standing instructions; follow those that apply to what you do
   curl -s BASE/D1           a document: numbered paragraphs (¶) with the user's comments under each
   curl -s BASE/log?n=30     recent changes
+  optional on any call: &session=<your session's name · machine · folder> (or the header X-Taska-Session), so the
+                            user can tell your sessions apart
 
 {grammar}
   curl -s BASE/do --data-binary @- <<'EOF'

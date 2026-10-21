@@ -133,6 +133,7 @@ export interface Agent {
   name: string
   t: number
   waiting: boolean
+  session?: string // F411: what the agent says about itself: its session's name, the machine, the folder
 }
 
 export interface UndoEntry {

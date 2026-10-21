@@ -795,11 +795,14 @@ class Store:
     def agent_name(name: Any) -> str:
         return re.sub(r"[^\w .-]", "", str(name or "agent"))[:40] or "agent"
 
-    def saw(self, name: Any, waiting: int = 0) -> None:
-        """An agent called the API (waiting: +1 when it starts holding /next?wait, -1 when that returns)."""
+    def saw(self, name: Any, waiting: int = 0, session: str = "") -> None:
+        """An agent called the API (waiting: +1 when it starts holding /next?wait, -1 when that returns). F411: session
+        is what it says about itself (its session's name, the machine, the folder), shown to the user on hover."""
         name = self.agent_name(name)
         with self.cond:
             a = self.agents.setdefault(name, {"t": 0, "waiting": 0})
+            if session:
+                a["session"] = " ".join(session.split())[:160]
             t_now = time.time()
             before = (a["waiting"] > 0, t_now - a["t"] < 600)
             a["t"], a["waiting"] = t_now, max(0, a["waiting"] + waiting)
@@ -839,7 +842,8 @@ class Store:
 
     def presence(self) -> Dict[str, Any]:
         """What the page shows about agents: who came when, who waits now, and whether work is waiting for them."""
-        return {"agents": [{"name": k, "t": int(v["t"] * 1000), "waiting": v["waiting"] > 0} for k, v in self.agents.items()],
+        return {"agents": [{"name": k, "t": int(v["t"] * 1000), "waiting": v["waiting"] > 0, **({"session": v["session"]} if v.get("session") else {})}
+                           for k, v in self.agents.items()],
                 "work": bool(self.cfg["auto"] and views.next_text(self)[1])}
 
     # -- voice notes (B165): you can send before the words are in. The message goes at once with its recording; the

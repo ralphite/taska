@@ -329,7 +329,7 @@ class Handler(BaseHTTPRequestHandler):
             return self.page()
         by = (q.get("by") or ["agent"])[0]
         if (p in ("/agent", "/next", "/rules", "/inbox", "/items", "/log") or ITEM_PATH.fullmatch(p)) and "ui" not in q:  # ui=1: the page itself, not an agent
-            s.saw(by, 1 if p == "/next" and q.get("wait") else 0)
+            s.saw(by, 1 if p == "/next" and q.get("wait") else 0, self.session_of(q))
         if p == "/":
             self.page()
         elif p == "/agent":
@@ -508,7 +508,7 @@ class Handler(BaseHTTPRequestHandler):
             text = self.body(1_000_000).decode("utf-8", "replace")
             by = (q.get("by") or ["agent"])[0][:20]
             if by not in PEOPLE:
-                s.saw(by)
+                s.saw(by, 0, self.session_of(q))
             lines, _ = s.run_all(parse_dsl(text), by)
             tail = "GET /next to continue" if s.cfg["auto"] else "stop after the current item"
             with s.lock:
@@ -672,6 +672,10 @@ class Handler(BaseHTTPRequestHandler):
             self.json({"ok": True})
         else:
             self.send(404, "not found\n")
+
+    def session_of(self, q: Query) -> str:
+        """F411: the optional session an agent names (session=..., or the X-Taska-Session header)."""
+        return (q.get("session") or [""])[0] or self.headers.get("X-Taska-Session") or ""
 
     def move_item(self, s: "Store", data: Dict[str, Any]) -> Dict[str, Any]:
         """T257 #6: an item goes to another project: made there with its words and talk, done here."""

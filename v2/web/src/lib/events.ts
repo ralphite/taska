@@ -73,12 +73,13 @@ function tipShow(el: HTMLElement, quick: boolean) {
     tt = document.getElementById('tipText'),
     a = document.getElementById('tipArrow')
   if (!text || !el.isConnected || !tip || !tt || !a) return
-  const parts = text.split(' · '),
-    key = parts.length > 1 && /^(\S{1,4}|G [A-Z]|Esc)$/.test(parts.at(-1) || '') ? parts.pop() : ''
+  const lines = text.includes('\n'), // F411: a tip of several lines keeps them, and has no key
+    parts = text.split(' · '),
+    key = !lines && parts.length > 1 && /^(\S{1,4}|G [A-Z]|Esc)$/.test(parts.at(-1) || '') ? parts.pop() : ''
   tip.toggleAttribute('data-card', !!card)
   tt.innerHTML =
     card ||
-    esc(parts.join(' · ')) +
+    esc(parts.join(' · ')).replace(/\n/g, '<br>') +
       (key
         ? `<kbd class="ml-1.5 inline-grid h-[18px] min-w-[18px] place-items-center rounded px-1 font-sans text-[11px] font-semibold ring-1 ring-current/30">${esc(key)}</kbd>`
         : '')

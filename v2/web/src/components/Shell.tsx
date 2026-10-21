@@ -20,6 +20,7 @@ import {
   TYPE_TEXT,
   WHEN,
   type Tab,
+  AGENT_NAME,
 } from '../lib/constants'
 import {
   D,
@@ -52,6 +53,7 @@ import {
   useTick,
   visible,
   wide,
+  agoShort,
 } from '../lib/state'
 import { PSEC } from '../lib/settings-data'
 import { TOAST, hideToast } from '../lib/toast'
@@ -115,7 +117,17 @@ export function agentLine() {
   const ready = tone === 'ok' && (S.agents || []).some((a) => a.waiting),
     kind = tone === 'ok' ? (ready ? 'ready' : 'recent') : tone
   const off = model.offline >= 2
-  return { kind, label, title: off ? 'Taska is out of reach. It reconnects by itself.' : line, off }
+  // F411: each agent session that named itself, so you can tell them apart (the latest first)
+  const sessions = [...(S.agents || [])]
+    .filter((a) => a.session)
+    .sort((a, b) => b.t - a.t)
+    .map((a) => `${AGENT_NAME[a.name] || a.name}: ${a.session} · ${agoShort(a.t)}`)
+  return {
+    kind,
+    label,
+    title: off ? 'Taska is out of reach. It reconnects by itself.' : [line, ...sessions].join('\n'),
+    off,
+  }
 }
 function Pill() {
   const { kind, label, off } = agentLine()
