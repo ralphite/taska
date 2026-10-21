@@ -407,6 +407,7 @@ export const isImage = (f: { mime?: string }) => (f.mime || '').startsWith('imag
 export const CLOSED = (s: Status | string) => s === 'done' || s === 'dropped'
 export const code = (n: number | null | undefined) => {
   if (n == null) return ''
+  if (n < 0) return '…' // T424: being made: Taska gives it its number
   const it = byN.get(n)
   return (it ? LETTER[it.type] : '?') + String(n).padStart(model.S.width, '0')
 }

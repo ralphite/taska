@@ -245,6 +245,7 @@ export interface Patch {
   f?: Record<string, unknown>
   cfg?: Record<string, unknown>
   fn?: () => void // R409: any change to the page's copy, done again after each load until Taska has it
+  temp?: boolean // T424: it adds something Taska has not made yet: once Taska has it, the page shows Taska's
 }
 export const CACHE = new Map<string, string>() // each project's state as last loaded: switching back draws it at once (B292)
 let gen = 0 // the project this page shows; a load or poll for another one is dropped
@@ -627,6 +628,10 @@ export function optimistic(
       if (!needed()) return true
       if (SAVE.down > made) throw new NetError('Taska is out of reach') // it waited behind a save that couldn't reach Taska
       await go()
+      if (patches.some((x) => x.temp)) {
+        drop()
+        restore() // the stand-in goes; what Taska made is there
+      }
       return true
     } catch (ex) {
       if ((ex as { net?: boolean }).net) SAVE.down = Date.now()

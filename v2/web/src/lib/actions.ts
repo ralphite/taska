@@ -38,6 +38,7 @@ import { groups, hasChoices } from './markdown'
 import { clearTicks, tickDoc, tickModify } from './doctick'
 import { playAudio } from './audio'
 import { toast } from './toast'
+import type { Item } from './types'
 import { actLog } from './actlog'
 import {
   JSON_POST,
@@ -1036,30 +1037,63 @@ export const ACT: Record<string, Handler> = {
     U.subFor = null
     bump('detail')
   },
-  'sub-add': async (d) => {
-    // same kind, priority and now/later as the parent; change them after if needed
+  'sub-add': (d) => {
+    // same kind, priority and now/later as the parent; change them after if needed. T424: it shows under its parent at
+    // once (its code "…" until Taska gives it a number) and the field is ready for the next one
     const n = N(d),
       p = byN.get(n),
       f = document.getElementById('subTitle') as HTMLInputElement | null,
       title = (f?.value || '').trim()
     if (!title || !p) return f?.focus()
-    try {
-      await save(
-        { op: 'new', title, parent: code(n), type: p.type === 'rule' ? 'task' : p.type, pri: p.pri, when: p.when },
-        () => ACT['sub-add'](d),
-      )
-      kept('subs', (all) => delete all[n])
-      U.folded.delete(n)
-      render()
-      toast(`Added under ${code(n)}`)
-      const g = document.getElementById('subTitle') as HTMLInputElement | null
-      if (g) {
-        g.value = ''
-        g.focus()
-      } // the field stays for the next one (B123)
-    } catch {
-      /* save said why */
-    }
+    const tmp = -Date.now(),
+      type = p.type === 'rule' ? 'task' : p.type
+    const stand = {
+      ...p,
+      n: tmp,
+      code: '…',
+      type,
+      title,
+      body: '',
+      status: 'open',
+      parent: n,
+      next: '',
+      thread: [],
+      srcs: [],
+      wait: null,
+      reply: false,
+      archived: false,
+      rank: null,
+      t0: new Date().toISOString(),
+      t1: new Date().toISOString(),
+      agent: undefined,
+      read: undefined,
+      by: 'you',
+    } as Item
+    void optimistic(
+      [
+        {
+          temp: true,
+          fn: () => {
+            if (byN.has(tmp)) return
+            model.S.items = [...model.S.items, stand]
+            byN.set(tmp, stand)
+          },
+        },
+      ],
+      { op: 'new', title, parent: code(n), type, pri: p.pri, when: p.when },
+      (ex) => {
+        notSaved(ex, () => ACT['sub-add'](d), `adding “${title}” under ${code(n)}`)
+        const g = document.getElementById('subTitle') as HTMLInputElement | null
+        if (g && !g.value.trim()) g.value = title // what you wrote is not lost
+      },
+    )
+    kept('subs', (all) => delete all[n])
+    U.folded.delete(n)
+    render()
+    if (f) {
+      f.value = ''
+      f.focus()
+    } // the field stays for the next one (B123)
   },
   'move-to': (d) => {
     const n = N(d),
