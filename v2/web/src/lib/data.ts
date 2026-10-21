@@ -136,9 +136,9 @@ export interface OpAnswer {
 // for about a minute, under one id, so Taska does it once however often it arrives
 const RETRY_MS = [1000, 2000, 4000, 8000, 15000, 30000]
 let lastSaid = '' // what the latest save was, for a Not saved that was not told (B326)
-export async function postAgain<T>(url: string, body: unknown): Promise<T> {
-  const cid = Date.now().toString(36) + Math.random().toString(36).slice(2, 8),
-    at = url + (url.includes('?') ? '&' : '?') + 'cid=' + cid
+export const newCid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
+export async function postAgain<T>(url: string, body: unknown, cid = newCid()): Promise<T> {
+  const at = url + (url.includes('?') ? '&' : '?') + 'cid=' + cid
   for (let i = 0; ; i++) {
     try {
       return await net<T>(at, JSON_POST(body), NET.op)
@@ -148,18 +148,21 @@ export async function postAgain<T>(url: string, body: unknown): Promise<T> {
     }
   }
 }
-export async function op(o: unknown): Promise<OpAnswer> {
+export async function op(o: unknown, cid?: string, p = ctx.P): Promise<OpAnswer> {
   lastSaid = saidOp(o)
   const g = gen,
-    since = sinceQuery() // T339: what changed comes back with the answer, so the page changes after one trip
+    here = p === ctx.P,
+    since = here ? sinceQuery() : '' // T339: what changed comes back with the answer, so the page changes after one trip
   const d = await postAgain<OpAnswer & { state?: State & { delta?: number } }>(
-    ctx.P + 'api/op' + (since ? '?' + since : ''),
+    p + 'api/op' + (since ? '?' + since : ''),
     o,
+    cid,
   )
   if (!d.ok) {
     toast((d.res || []).find((x) => x.startsWith('err')) || d.error || 'Not saved', null, { error: true })
     throw new Error('op failed')
   }
+  if (!here) return d // T424: a change kept for another project, sent from here: nothing to show here
   try {
     if (d.state && g === gen) applyState(d.state)
     else await load() // an answer kept from before (sent again) has no state with it
@@ -233,6 +236,7 @@ export async function save(o: unknown, retry?: () => unknown) {
 export const SAVE = {
   q: Promise.resolve(true) as Promise<boolean>,
   pend: [] as Patch[],
+  going: [] as string[], // T424: ids of kept changes on their way now
   last: '',
   down: 0,
 }
@@ -543,15 +547,73 @@ export function linkKids() {
 const restore = () => {
   if (SAVE.last) ingest(JSON.parse(SAVE.last) as State)
 }
-// Show a change at once and save it behind you. -> a promise: true once saved, false if it couldn't be.
+// T424 (D32): the changes not saved yet are kept in this browser too, with their id, so after a reload or a closed tab
+// they show again and go out again (Taska takes a change once, by its id)
+type Kept = {
+  id: string
+  o: Record<string, unknown> | Record<string, unknown>[]
+  patches: Patch[]
+  t: number
+  p: string
+}
+const keptKey = (p: string) => 'taska.pending.' + decodeURIComponent(p.replace(/^\/p\//, '').replace(/\/$/, ''))
+function keptStore(p: string, change?: (all: Kept[]) => Kept[]): Kept[] {
+  try {
+    let all = JSON.parse(localStorage.getItem(keptKey(p)) || '[]') as Kept[]
+    if (change) {
+      all = change(all)
+      if (all.length) localStorage.setItem(keptKey(p), JSON.stringify(all))
+      else localStorage.removeItem(keptKey(p))
+    }
+    return all
+  } catch {
+    return [] // no storage: it is saved as before, only not kept over a reload
+  }
+}
+/** What did not go out before a reload or a closed tab, in any project: shown again here (this project's) and sent. */
+export function restorePending() {
+  const mine = new Set(SAVE.going)
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i)
+      if (!k?.startsWith('taska.pending.')) continue
+      const p = '/p/' + encodeURIComponent(k.slice('taska.pending.'.length)) + '/'
+      for (const e of keptStore(p).sort((a, b) => a.t - b.t))
+        if (!mine.has(e.id)) {
+          sendLog('resend', `${e.id} (${saidOp(e.o)}) kept from before, going out again`)
+          void optimistic(p === ctx.P ? e.patches : [], e.o as Record<string, unknown>, undefined, undefined, {
+            id: e.id,
+            p,
+          })
+        }
+    }
+  } catch {
+    /* no storage */
+  }
+}
+// Show a change at once and save it behind you. -> a promise: true once saved, false if it couldn't be. `send` is
+// the op itself (kept in this browser until Taska has it, T424) or, for what is more than one op, how to send it.
 export function optimistic(
   patches: Patch[],
-  send: () => Promise<unknown>,
+  send: (() => Promise<unknown>) | Record<string, unknown> | Record<string, unknown>[],
   fail: (ex: unknown) => void = (ex) => notSaved(ex, undefined, patchesSaid(patches)),
   needed: () => boolean = () => true,
+  again?: { id: string; p: string },
 ): Promise<boolean> {
+  const id = again?.id || newCid(),
+    p = again?.p || ctx.P,
+    o = typeof send === 'function' ? null : send
+  if (o) {
+    SAVE.going.push(id)
+    if (!again) keptStore(p, (all) => [...all, { id, o, patches: patches.filter((x) => !x.fn), t: Date.now(), p }])
+  }
+  const go = o ? () => op(o, id, p) : (send as () => Promise<unknown>)
   const drop = () => {
-    SAVE.pend = SAVE.pend.filter((p) => !patches.includes(p))
+    SAVE.pend = SAVE.pend.filter((x) => !patches.includes(x))
+    if (o) {
+      SAVE.going = SAVE.going.filter((x) => x !== id)
+      keptStore(p, (all) => all.filter((e) => e.id !== id))
+    }
   }
   SAVE.pend.push(...patches)
   for (const p of patches) patch(p)
@@ -564,7 +626,7 @@ export function optimistic(
     try {
       if (!needed()) return true
       if (SAVE.down > made) throw new NetError('Taska is out of reach') // it waited behind a save that couldn't reach Taska
-      await send()
+      await go()
       return true
     } catch (ex) {
       if ((ex as { net?: boolean }).net) SAVE.down = Date.now()
@@ -583,20 +645,12 @@ export function optimistic(
 }
 export const setNow = (n: number, f: Record<string, unknown>, retry?: () => unknown) => {
   const ref = code(n)
-  return optimistic(
-    [{ n, f }],
-    () => op({ op: 'set', ref, f }),
-    (ex) => notSaved(ex, retry, saidOp({ op: 'set', ref, f })),
-  )
+  return optimistic([{ n, f }], { op: 'set', ref, f }, (ex) => notSaved(ex, retry, saidOp({ op: 'set', ref, f })))
 }
 /** R409: show a change at once (fn changes the page's copy; it must be safe to do twice), save it behind you, sent
  * again while Taska can't be reached; only when it finally can't be saved does the page go back, and says what. */
 export const instant = (o: unknown, fn: () => void, what = saidOp(o), retry?: () => unknown) =>
-  optimistic(
-    [{ fn }],
-    () => op(o),
-    (ex) => notSaved(ex, retry, what),
-  )
+  optimistic([{ fn }], o as Record<string, unknown>, (ex) => notSaved(ex, retry, what))
 const patchesSaid = (patches: Patch[]) =>
   patches.length === 1
     ? saidOp({ op: 'set', ref: code(patches[0].n), f: patches[0].f })
@@ -690,22 +744,18 @@ export function change(
     `${ref} ${words}${noted ? ', with your note' : ''}${left ? ` · ${plural(left, 'subitem')} still open` : ''}${note && !noted ? `. ${note}.` : ''}`,
     inPlace ? null : run,
   )
-  const saved = optimistic(
-    [{ n, f: { [f]: v } }],
-    () => op({ op: 'set', ref, f: { [f]: wire(f, v) } }),
-    (ex) => {
-      // taken back
-      forget(run)
-      if (U.settle.delete(n)) bump('list')
-      if (U.go?.done.has(n)) {
-        U.go.done.delete(n)
-        delete U.go.how?.[n]
-        delete U.go.undo?.[n]
-        render()
-      }
-      if (!job.undone) notSaved(ex, () => change(n, f, v, { said: words, note }))
-    },
-  )
+  const saved = optimistic([{ n, f: { [f]: v } }], { op: 'set', ref, f: { [f]: wire(f, v) } }, (ex) => {
+    // taken back
+    forget(run)
+    if (U.settle.delete(n)) bump('list')
+    if (U.go?.done.has(n)) {
+      U.go.done.delete(n)
+      delete U.go.how?.[n]
+      delete U.go.undo?.[n]
+      render()
+    }
+    if (!job.undone) notSaved(ex, () => change(n, f, v, { said: words, note }))
+  })
   saved.then((ok) => {
     job.saved = ok
   })
