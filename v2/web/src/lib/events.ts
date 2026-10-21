@@ -171,8 +171,8 @@ function closeLayers() {
 
 // ---------------------------------------------------------------- pane edges (F89)
 const GRIP: Record<string, [string, string, number, number]> = {
-  side: ['drawer', '--side-w', 200, 360],
-  list: ['app', '--list-w', 280, 720],
+  side: ['drawer', '--side-w', 1, 100000], // T322: as wide or narrow as you drag it
+  list: ['app', '--list-w', 1, 100000],
   top: ['', '--top-h', 1, 100000], // T322: the item above its talk; dragged up and down, anywhere you like
 }
 function setGrip(kind: string, px: number) {
@@ -643,8 +643,8 @@ function wireAll() {
     const most = down
       ? Math.min(max, document.getElementById('detailBody')?.clientHeight || max) // as far as you drag it
       : kind === 'list'
-        ? Math.min(max, innerWidth - from - 480) // the item keeps room to read
-        : max
+        ? Math.min(max, innerWidth - from) // as far as you drag it (T322)
+        : Math.min(max, innerWidth)
     let w = 0
     e.preventDefault()
     g.setPointerCapture(e.pointerId)
