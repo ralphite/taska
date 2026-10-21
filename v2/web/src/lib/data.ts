@@ -419,7 +419,13 @@ function followCodes() {
 
 // R328: when an agent has new code for Taska while you are using it, Taska is not restarted under your hands: a toast
 // offers it, and Restart restarts Taska and then this page. (Left alone for a minute, the deploy restarts it.)
-const UPD = { told: false }
+const UPD = { told: false, ver: '', stale: false }
+// B344: Taska restarted with new code while this page was open (left alone, the deploy restarts it by itself): the page
+// still runs the old code, so it says so and offers a reload; it never reloads by itself (R284)
+function offerReload() {
+  UPD.stale = true
+  toast('Taska has an update', () => location.reload(), { label: 'Reload', sticky: true })
+}
 function offerRestart() {
   UPD.told = true
   toast(
@@ -484,6 +490,8 @@ export async function poll(g: number) {
       const news = d.rev !== model.S.rev || d.boot !== model.S.boot || d.pv !== model.S.pv
       if (news) await load()
       if (d.update && !UPD.told) offerRestart() // R328: new code waits for a restart, and you are using Taska: your call
+      if (d.ver && !UPD.ver) UPD.ver = d.ver
+      else if (d.ver && d.ver !== UPD.ver && !UPD.stale) offerReload()
       checkOthers()
       if (idle && !news) await napIdle(document.hidden ? 20000 : 5000)
     } catch {
