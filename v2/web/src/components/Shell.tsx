@@ -900,6 +900,8 @@ function DeskFilters({ hidden }: { hidden: boolean }) {
 // ---------------------------------------------------------------- the foot: the box, and the New input page (B73)
 function Foot({ hidden, wideCls }: { hidden: boolean; wideCls: string }) {
   const compose = desk() && D.compose && !D.page && U.tab !== 'inputs'
+  // B345: under an item's talk the box sits on the same grey, one piece with it
+  const talk = desk() && !!U.open && !U.doc && !U.docEdit && !D.compose && !D.page && U.tab !== 'inputs'
   return (
     <footer
       id="foot"
@@ -909,7 +911,7 @@ function Foot({ hidden, wideCls }: { hidden: boolean; wideCls: string }) {
         e.preventDefault()
         if (e.dataTransfer.files.length) void addFiles([...e.dataTransfer.files])
       }}
-      className={`relative z-20 shrink-0 px-3 pt-1 pb-[max(1.25rem,env(safe-area-inset-bottom))] lg:row-start-5 lg:scrollbar-gutter-both lg:px-8 lg:pb-5 lg:group-data-[compose]/app:row-span-3 lg:group-data-[compose]/app:row-start-3 lg:group-data-[compose]/app:overflow-y-auto lg:group-data-[compose]/app:overscroll-contain lg:group-data-[compose]/app:pt-[9vh] lg:group-data-[compose]/app:pb-16 lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70 ${wideCls}`}
+      className={`relative z-20 shrink-0 px-3 pt-1 pb-[max(1.25rem,env(safe-area-inset-bottom))] lg:row-start-5 lg:scrollbar-gutter-both lg:px-8 lg:pb-5 lg:group-data-[compose]/app:row-span-3 lg:group-data-[compose]/app:row-start-3 lg:group-data-[compose]/app:overflow-y-auto lg:group-data-[compose]/app:overscroll-contain lg:group-data-[compose]/app:pt-[9vh] lg:group-data-[compose]/app:pb-16 lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70 ${talk ? 'lg:bg-zinc-100/70 dark:lg:bg-zinc-900' : ''} ${wideCls}`}
     >
       <div
         id="composeHead"

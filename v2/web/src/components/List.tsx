@@ -685,8 +685,12 @@ function ViewBar() {
   }
   useLayoutEffect(measure)
   useEffect(() => {
-    addEventListener('resize', measure)
-    return () => removeEventListener('resize', measure)
+    // B343: its own width changes too when the list is dragged wider or narrower, not only the window
+    const el = row.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    return () => ro.disconnect()
   }, [])
   const own = VW_STATE.list.findIndex(isView) // F320: one of your views is what shows
   const go = (dir: number) => row.current?.scrollBy({ left: dir * row.current.clientWidth * 0.7, behavior: 'smooth' })

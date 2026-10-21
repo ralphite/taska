@@ -250,6 +250,7 @@ export function ItemPage({ it }: { it: Item }) {
     const seen = () => (atEnd = talk.scrollTop + talk.clientHeight >= talk.scrollHeight - 4)
     const ro = new ResizeObserver(() => {
       if (atEnd) talk.scrollTop = talk.scrollHeight
+      moreBelow(talk)
     })
     talk.addEventListener('scroll', seen, { passive: true })
     ro.observe(talk)
@@ -471,9 +472,9 @@ export function ItemPage({ it }: { it: Item }) {
       <div
         data-grip="top"
         title="Drag to show more or less of the item · double-click for the default"
-        className="group/line relative hidden h-3 shrink-0 cursor-row-resize items-center justify-center border-t border-zinc-200 bg-white lg:flex dark:border-zinc-800 dark:bg-zinc-950"
+        className="group/line relative z-10 hidden h-px shrink-0 cursor-row-resize bg-zinc-200 after:absolute after:inset-x-0 after:-inset-y-2 lg:block dark:bg-zinc-800"
       >
-        <span className="h-1 w-10 rounded-full bg-zinc-400 opacity-0 group-hover/line:opacity-100 in-[body.cursor-row-resize]:opacity-100 dark:bg-zinc-600" />
+        <span className="absolute top-1/2 left-1/2 h-1 w-10 -translate-1/2 rounded-full bg-zinc-400 opacity-0 group-hover/line:opacity-100 in-[body.cursor-row-resize]:opacity-100 dark:bg-zinc-600" />
         <button
           data-act="top-all"
           data-n={n}
@@ -486,7 +487,8 @@ export function ItemPage({ it }: { it: Item }) {
       <div
         id="itemTalk"
         ref={talkRef}
-        className="lg:min-h-0 lg:flex-1 lg:scrollbar-thin lg:overflow-y-auto lg:bg-zinc-100/70 dark:lg:bg-zinc-900"
+        onScroll={(e) => moreBelow(e.currentTarget)}
+        className="lg:min-h-0 lg:flex-1 lg:scrollbar-thin lg:overflow-y-auto lg:bg-zinc-100/70 lg:data-more:mask-b-from-[calc(100%-2rem)] dark:lg:bg-zinc-900"
       >
         <div className="flex flex-col gap-6 lg:mx-auto lg:w-full lg:max-w-[46rem] lg:px-8 lg:py-6">
           {thread.length || notes.length ? (
@@ -509,6 +511,8 @@ export function ItemPage({ it }: { it: Item }) {
     </div>
   )
 }
+// B345: the talk fades at its bottom only while more of it is below, out of sight
+const moreBelow = (el: HTMLElement) => el.toggleAttribute('data-more', overflows(el))
 // T322: the item part is taller than its share: it fades at the line, and Show all appears
 const overflows = (el: HTMLElement) => el.scrollTop + el.clientHeight < el.scrollHeight - 2
 function markOver(top: HTMLElement) {
@@ -811,7 +815,8 @@ export function DetailView({ hidden }: { hidden: boolean }) {
       <div
         id="detailBody"
         ref={body}
-        className="min-h-0 flex-1 overflow-y-auto overscroll-contain lg:scrollbar-gutter-both lg:mask-b-from-[calc(100%-2rem)] lg:group-data-[compose]/app:hidden lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70"
+        {...(it && !U.doc && !U.docEdit ? { 'data-split': '' } : {})}
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain lg:scrollbar-gutter-both lg:mask-b-from-[calc(100%-2rem)] lg:group-data-[compose]/app:hidden lg:hover:scrollbar-thumb-zinc-500/80 lg:data-split:mask-none dark:lg:hover:scrollbar-thumb-zinc-400/70"
       >
         {parts.body}
       </div>
