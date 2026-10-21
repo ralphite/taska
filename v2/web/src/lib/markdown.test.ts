@@ -43,3 +43,10 @@ describe('choices in a document (F393, B412, B420)', () => {
     expect(tickedBlock(all, 0)).toBe('- [ ] 全部\n- [ ] Red\n- [ ] Blue')
   })
 })
+
+describe('two lists of choices in one paragraph (D32)', () => {
+  it('a "( )" choice clears only its own list', () => {
+    const b = '- (x) Ours\n- ( ) Library\nConflicts:\n- ( ) Agree\n- ( ) Disagree'
+    expect(tickedBlock(b, 2)).toBe('- (x) Ours\n- ( ) Library\nConflicts:\n- (x) Agree\n- ( ) Disagree')
+  })
+})

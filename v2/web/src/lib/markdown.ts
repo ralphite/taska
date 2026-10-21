@@ -187,7 +187,7 @@ function choiceHtml(labels: string[], multi: boolean, n: number, base: number, d
 }
 
 // F393: the choices of a document, each one ticked or not as the document says ([x], (x))
-function tickHtml(ls: string[], t: { d: number; key: string; sent?: boolean }) {
+function tickHtml(ls: string[], t: { d: number; key: string; sent?: boolean }, from = 0, foot = true) {
   const multi = ls[0].match(CHOICE)?.[1] === '['
   // F428: sent and not changed since, the form keeps its look, only quieter and not clickable; Submitted under it, and
   // Modify (on hover on the desktop) makes it a form again, to change and send again
@@ -199,11 +199,11 @@ function tickHtml(ls: string[], t: { d: number; key: string; sent?: boolean }) {
       return t.sent
         ? `<div aria-pressed="${on}" class="group flex min-h-10 w-full items-center gap-3 rounded-xl border border-zinc-200 px-3 py-2 text-[15px] leading-snug text-zinc-500 aria-pressed:border-zinc-400 aria-pressed:text-zinc-800 dark:border-zinc-800 dark:text-zinc-500 dark:aria-pressed:border-zinc-600 dark:aria-pressed:text-zinc-200">
       <span class="${box} border-zinc-300 group-aria-pressed:border-zinc-500 group-aria-pressed:bg-zinc-500 group-aria-pressed:text-white dark:border-zinc-700 dark:group-aria-pressed:border-zinc-500 dark:group-aria-pressed:bg-zinc-500 dark:group-aria-pressed:text-zinc-900">${ico('check', 'size-3.5 invisible group-aria-pressed:visible', '3')}</span>${words}</div>`
-        : `<button data-act="doc-tick" data-d="${t.d}" data-key="${t.key}" data-i="${i}" aria-pressed="${on}" class="group flex min-h-10 w-full items-center gap-3 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-left text-[15px] leading-snug hover:border-zinc-300 hover:bg-zinc-50 aria-pressed:border-blue-500 aria-pressed:bg-blue-50 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:border-zinc-600 dark:hover:bg-zinc-800/70 dark:aria-pressed:border-blue-400 dark:aria-pressed:bg-blue-400/10">
+        : `<button data-act="doc-tick" data-d="${t.d}" data-key="${t.key}" data-i="${from + i}" aria-pressed="${on}" class="group flex min-h-10 w-full items-center gap-3 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-left text-[15px] leading-snug hover:border-zinc-300 hover:bg-zinc-50 aria-pressed:border-blue-500 aria-pressed:bg-blue-50 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:border-zinc-600 dark:hover:bg-zinc-800/70 dark:aria-pressed:border-blue-400 dark:aria-pressed:bg-blue-400/10">
       <span class="${box} border-zinc-300 group-aria-pressed:border-blue-600 group-aria-pressed:bg-blue-600 group-aria-pressed:text-white dark:border-zinc-600 dark:group-aria-pressed:border-blue-400 dark:group-aria-pressed:bg-blue-400 dark:group-aria-pressed:text-zinc-900">${ico('check', 'size-3.5 invisible group-aria-pressed:visible', '3')}</span>${words}</button>`
     })
     .join('')}${
-    t.sent
+    t.sent && foot
       ? `<p class="flex h-7 items-center gap-2 text-xs font-medium text-zinc-500 dark:text-zinc-400">Submitted<button data-act="doc-tick-edit" data-d="${t.d}" data-key="${t.key}" class="rounded-md px-1.5 py-0.5 font-semibold text-blue-600 hover:bg-blue-50 lg:opacity-0 lg:group-hover/form:opacity-100 lg:focus-visible:opacity-100 dark:text-blue-400 dark:hover:bg-blue-400/10">Modify</button></p>`
       : ''
   }</div>`
@@ -220,11 +220,15 @@ export function tickedBlock(block: string, i: number): string | null {
       /^(\s*[-*+]\s+)[([][ xX]?[)\]]/,
       (_, p: string) => p + (multi ? (on ? '[x]' : '[ ]') : on ? '(x)' : '( )'),
     )
+  // the list it is in: the choice lines next to it (some words above another list make two lists in one paragraph)
+  let a = k,
+    z = k
+  while (a > 0 && CHOICE.test(ls[a - 1])) a--
+  while (z < ls.length - 1 && CHOICE.test(ls[z + 1])) z++
+  const mine = (j: number) => j >= a && j <= z
   const on = !isTicked(ls[k]),
     all = multi && /^(全部|All\b)/i.test(ls[k].replace(CHOICE, '').trim()) // R272: "All" ticks or unticks the whole list
-  const next = ls.map((l, j) =>
-    j === k || (all && rows.includes(j)) ? mark(l, on) : !multi && rows.includes(j) ? mark(l, false) : l,
-  )
+  const next = ls.map((l, j) => (j === k || (all && mine(j)) ? mark(l, on) : !multi && mine(j) ? mark(l, false) : l))
   return next.join('\n')
 }
 export const isTicked = (l: string) => /^\s*[-*+]\s+[([][xX][)\]]/.test(l)
@@ -361,9 +365,28 @@ export function blockHtml(
 ): string {
   if (b.kind === 'table') return tableHtml(b.text, gid)
   // F393: in a document, a list of choices is a form you fill in place: a tap ticks it and saves it in the document
-  if (tick && b.kind === 'list') {
+  if (tick && (b.kind === 'list' || b.kind === 'para')) {
     const ls = b.text.split('\n').filter((l) => l.trim())
     if (ls.length && ls.every((l) => CHOICE.test(l))) return tickHtml(ls, tick)
+    if (ls.some((l) => CHOICE.test(l))) {
+      // D32: choices right under some words (no empty line between them): the words as they are, the choices a form
+      const last = ls.map((l) => CHOICE.test(l)).lastIndexOf(true)
+      let out = '',
+        at = 0
+      for (let i = 0; i < ls.length;) {
+        const choice = CHOICE.test(ls[i]),
+          run: string[] = []
+        while (i < ls.length && CHOICE.test(ls[i]) === choice) run.push(ls[i++])
+        if (choice) {
+          out += tickHtml(run, tick, at, i > last) // Submitted once, under the last list
+          at += run.length
+        } else {
+          const words = run.join('\n')
+          out += blockHtml({ kind: /^\s*([-*+]|\d+\.)\s/.test(run[0]) ? 'list' : 'para', text: words }, false, gid)
+        }
+      }
+      return `<div class="space-y-2">${out}</div>`
+    }
   }
   if (isTitle)
     return `<div class="text-2xl leading-tight font-bold tracking-tight">${inlineMd(b.text.replace(/^#+\s*/, ''), gid)}</div>`
