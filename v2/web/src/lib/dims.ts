@@ -4,6 +4,18 @@ import { net } from './data'
 import { ctx, render } from './state'
 
 export const DIMS = new Map<string, [number, number]>()
+// F353: a picture in a text says when it has loaded, or could not, so its place shows a spinner or says so
+if (typeof document !== 'undefined')
+  for (const ev of ['load', 'error'])
+    document.addEventListener(
+      ev,
+      (e) => {
+        const t = e.target as HTMLElement
+        if (t instanceof HTMLImageElement && t.hasAttribute('data-pic'))
+          t.setAttribute(ev === 'load' ? 'data-loaded' : 'data-failed', '')
+      },
+      true,
+    )
 const ASK = { at: 0, timer: 0, gen: 0 }
 
 export async function loadDims() {
