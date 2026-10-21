@@ -239,9 +239,18 @@ export function ItemPage({ it }: { it: Item }) {
   const talkRef = useRef<HTMLDivElement>(null)
   useLayoutEffect(() => {
     els.talk = talkRef.current // T322: what scrolls the talk on the desktop
-    const top = document.getElementById('itemTop')
+    const top = document.getElementById('itemClip')
     if (top) markOver(top)
   })
+  useLayoutEffect(() => {
+    // B346: dragging the line changes how much of the item fits; Show all follows at once
+    const top = document.getElementById('itemClip')
+    if (!top || typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(() => markOver(top))
+    ro.observe(top)
+    if (top.firstElementChild) ro.observe(top.firstElementChild)
+    return () => ro.disconnect()
+  }, [])
   useLayoutEffect(() => {
     // the talk at its latest message stays there when the item part above grows or shrinks
     const talk = talkRef.current
@@ -376,97 +385,118 @@ export function ItemPage({ it }: { it: Item }) {
   // that it fades at the line. The talk opens at its latest message. The phone keeps one page that scrolls.
   const all = U.topAll === n
   return (
-    <div className="group/item flex flex-col gap-6 px-5 pt-5 pb-10 lg:h-full lg:gap-0 lg:p-0">
+    <div id="itemPage" className="group/item flex flex-col gap-6 px-5 pt-5 pb-10 lg:h-full lg:gap-0 lg:p-0">
       <div
         id="itemTop"
-        data-clip
-        onScroll={(e) => markOver(e.currentTarget)}
-        className={`flex flex-col gap-6 lg:shrink-0 lg:scrollbar-thin lg:overflow-y-auto lg:data-over:mask-b-from-[calc(100%-4.5rem)] lg:data-over:mask-b-to-[calc(100%-2.25rem)] ${all ? 'lg:max-h-none' : 'lg:max-h-[var(--top-h,40%)]'}`}
+        className={`flex flex-col lg:shrink-0 ${all ? 'lg:max-h-[calc(100%-8rem)]' : 'lg:max-h-[var(--top-h,40%)]'}`}
       >
-        <div className="flex flex-col gap-6 lg:mx-auto lg:w-full lg:max-w-[46rem] lg:px-8 lg:pt-7 lg:pb-6">
-          {head}
-          {desc}
-          {/* F332: the documents are part of the item: they stay in view while the talk scrolls */}
-          {docs.length ? (
-            <section className="flex flex-col gap-2">
-              <SectionHead text="Documents" />
-              {(U.docsAll.has(n) || !BEHAVIOUR.docCards ? docs : docs.slice(0, 3)).map((d) => (
-                <DocCard key={d.d} d={d} />
-              ))}
-              {BEHAVIOUR.docCards && docs.length > 3 ? (
-                <button
-                  data-act="docs-all"
-                  data-n={n}
-                  className="-my-1 flex h-11 items-center gap-1 self-start rounded-lg px-2 text-sm font-medium text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10"
-                >
-                  <Icon n={U.docsAll.has(n) ? 'chevup' : 'down'} c="size-4" sw="2" />
-                  {U.docsAll.has(n) ? 'Show fewer' : `Show ${docs.length - 3} more`}
-                </button>
-              ) : null}
-            </section>
-          ) : null}
-          {files.length ? <FileRows files={files} gid={'item' + n} size="h-24 w-16" /> : null}
-          {children.length || U.subFor === n ? (
-            <section className="flex flex-col gap-2">
-              <SectionHead
-                text={`Subitems${children.length ? ` · ${children.filter((k) => CLOSED(k.status)).length}/${children.length}` : ''}`}
-                right={
-                  U.subFor === n ? null : (
-                    <button
-                      data-act="sub-new"
-                      data-n={n}
-                      className="-my-2.5 flex h-11 items-center gap-1 rounded-lg px-2 text-sm font-medium text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10"
-                    >
-                      <Icon n="plus" c="size-4" sw="2" />
+        <div
+          id="itemClip"
+          data-clip
+          onScroll={(e) => markOver(e.currentTarget)}
+          className="lg:min-h-0 lg:scrollbar-thin lg:overflow-y-auto lg:data-over:mask-b-from-[calc(100%-3rem)]"
+        >
+          <div
+            className={`flex flex-col gap-6 lg:mx-auto lg:w-full lg:max-w-[46rem] lg:px-8 lg:pt-7 ${all ? 'lg:pb-2' : 'lg:pb-6 lg:group-data-long/item:pb-2'}`}
+          >
+            {head}
+            {desc}
+            {/* F332: the documents are part of the item: they stay in view while the talk scrolls */}
+            {docs.length ? (
+              <section className="flex flex-col gap-2">
+                <SectionHead text="Documents" />
+                {(U.docsAll.has(n) || !BEHAVIOUR.docCards ? docs : docs.slice(0, 3)).map((d) => (
+                  <DocCard key={d.d} d={d} />
+                ))}
+                {BEHAVIOUR.docCards && docs.length > 3 ? (
+                  <button
+                    data-act="docs-all"
+                    data-n={n}
+                    className="-my-1 flex h-11 items-center gap-1 self-start rounded-lg px-2 text-sm font-medium text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10"
+                  >
+                    <Icon n={U.docsAll.has(n) ? 'chevup' : 'down'} c="size-4" sw="2" />
+                    {U.docsAll.has(n) ? 'Show fewer' : `Show ${docs.length - 3} more`}
+                  </button>
+                ) : null}
+              </section>
+            ) : null}
+            {files.length ? <FileRows files={files} gid={'item' + n} size="h-24 w-16" /> : null}
+            {children.length || U.subFor === n ? (
+              <section className="flex flex-col gap-2">
+                <SectionHead
+                  text={`Subitems${children.length ? ` · ${children.filter((k) => CLOSED(k.status)).length}/${children.length}` : ''}`}
+                  right={
+                    U.subFor === n ? null : (
+                      <button
+                        data-act="sub-new"
+                        data-n={n}
+                        className="-my-2.5 flex h-11 items-center gap-1 rounded-lg px-2 text-sm font-medium text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10"
+                      >
+                        <Icon n="plus" c="size-4" sw="2" />
+                        Add
+                      </button>
+                    )
+                  }
+                />
+                {children.length ? (
+                  <div className="divide-y divide-zinc-100 rounded-xl border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
+                    {children.map((k) => (
+                      <button
+                        key={k.n}
+                        data-act="goto"
+                        data-n={k.n}
+                        className={`flex w-full items-start gap-3 px-3 py-3 text-left first:rounded-t-xl last:rounded-b-xl hover:bg-zinc-50 data-pressed:bg-zinc-100 dark:hover:bg-zinc-900 dark:data-pressed:bg-zinc-800 ${CLOSED(k.status) ? 'opacity-55' : ''}`}
+                      >
+                        <StateIcon s={k.status} label={statusName(k)} />
+                        <span
+                          className={`min-w-0 flex-1 text-[15px] leading-snug ${CLOSED(k.status) ? 'line-through' : ''}`}
+                        >
+                          <span className={`mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[k.type]}`}>
+                            {code(k.n)}
+                          </span>
+                          {k.title}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+                {U.subFor === n ? (
+                  <div className="flex items-center gap-2">
+                    <input
+                      id="subTitle"
+                      className={`${FIELD} min-w-0 flex-1`}
+                      placeholder={`Subitem of ${code(n)}`}
+                      aria-label="Subitem title"
+                    />
+                    <button data-act="sub-add" data-n={n} className={PRIMARY}>
                       Add
                     </button>
-                  )
-                }
-              />
-              {children.length ? (
-                <div className="divide-y divide-zinc-100 rounded-xl border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
-                  {children.map((k) => (
                     <button
-                      key={k.n}
-                      data-act="goto"
-                      data-n={k.n}
-                      className={`flex w-full items-start gap-3 px-3 py-3 text-left first:rounded-t-xl last:rounded-b-xl hover:bg-zinc-50 data-pressed:bg-zinc-100 dark:hover:bg-zinc-900 dark:data-pressed:bg-zinc-800 ${CLOSED(k.status) ? 'opacity-55' : ''}`}
+                      data-act="sub-cancel"
+                      aria-label="Cancel"
+                      className="grid size-11 shrink-0 place-items-center rounded-full text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                     >
-                      <StateIcon s={k.status} label={statusName(k)} />
-                      <span
-                        className={`min-w-0 flex-1 text-[15px] leading-snug ${CLOSED(k.status) ? 'line-through' : ''}`}
-                      >
-                        <span className={`mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[k.type]}`}>
-                          {code(k.n)}
-                        </span>
-                        {k.title}
-                      </span>
+                      <Icon n="x" c="size-5" />
                     </button>
-                  ))}
-                </div>
-              ) : null}
-              {U.subFor === n ? (
-                <div className="flex items-center gap-2">
-                  <input
-                    id="subTitle"
-                    className={`${FIELD} min-w-0 flex-1`}
-                    placeholder={`Subitem of ${code(n)}`}
-                    aria-label="Subitem title"
-                  />
-                  <button data-act="sub-add" data-n={n} className={PRIMARY}>
-                    Add
-                  </button>
-                  <button
-                    data-act="sub-cancel"
-                    aria-label="Cancel"
-                    className="grid size-11 shrink-0 place-items-center rounded-full text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-                  >
-                    <Icon n="x" c="size-5" />
-                  </button>
-                </div>
-              ) : null}
-            </section>
-          ) : null}
+                  </div>
+                ) : null}
+              </section>
+            ) : null}
+          </div>
+        </div>
+        {/* B346: where the item is cut off, a row of its own under it, as the "More" row of a list (Notion's
+            sidebar); a click shows the whole item, and Show less puts back its share */}
+        <div
+          className={`hidden shrink-0 lg:mx-auto lg:w-full lg:max-w-[46rem] lg:px-8 lg:pb-2 ${all ? 'lg:block' : 'lg:group-data-long/item:block'}`}
+        >
+          <button
+            data-act="top-all"
+            data-n={n}
+            className="-ml-2 flex h-9 items-center gap-1 rounded-lg px-2 text-sm font-medium text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10"
+          >
+            <Icon n={all ? 'chevup' : 'down'} c="size-4" sw="2" />
+            {all ? 'Show less' : 'Show all'}
+          </button>
         </div>
       </div>
       <div
@@ -475,21 +505,6 @@ export function ItemPage({ it }: { it: Item }) {
         className="group/line relative z-10 hidden h-px shrink-0 cursor-row-resize bg-zinc-200 after:absolute after:inset-x-0 after:-inset-y-2 lg:block dark:bg-zinc-800"
       >
         <span className="absolute top-1/2 left-1/2 h-1 w-10 -translate-1/2 rounded-full bg-zinc-400 opacity-0 group-hover/line:opacity-100 in-[body.cursor-row-resize]:opacity-100 dark:bg-zinc-600" />
-        {/* B346: where the item's text is cut off, as a list's "Show more" (Notion's sidebar); a click opens it all */}
-        <div
-          className={`pointer-events-none absolute inset-x-0 bottom-full mb-1 justify-center ${all ? 'flex' : 'hidden group-data-over/item:flex'}`}
-        >
-          <div className="w-full max-w-[46rem] px-8">
-            <button
-              data-act="top-all"
-              data-n={n}
-              className="pointer-events-auto -ml-1.5 inline-flex h-7 items-center gap-1 rounded-md bg-white/95 px-1.5 text-[13px] font-medium text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 dark:bg-zinc-950/95 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
-            >
-              <Icon n={all ? 'chevup' : 'down'} c="size-3.5" sw="2" />
-              {all ? 'Show less' : 'Show all'}
-            </button>
-          </div>
-        </div>
       </div>
       <div
         id="itemTalk"
@@ -523,12 +538,11 @@ const moreBelow = (el: HTMLElement) => {
   el.toggleAttribute('data-more', overflows(el))
   el.toggleAttribute('data-up', el.scrollTop > 2) // and at its top while some of it is above, so a cut message does not run into the line
 }
-// T322: the item part is taller than its share: it fades at the line, and Show all appears
+// T322: the item part is taller than its share: it fades while more of it is below, and Show all shows under it
 const overflows = (el: HTMLElement) => el.scrollTop + el.clientHeight < el.scrollHeight - 2
-function markOver(top: HTMLElement) {
-  const over = overflows(top)
-  top.toggleAttribute('data-over', over)
-  top.parentElement?.toggleAttribute('data-over', over)
+function markOver(clip: HTMLElement) {
+  clip.toggleAttribute('data-over', overflows(clip))
+  clip.closest('#itemPage')?.toggleAttribute('data-long', clip.scrollHeight > clip.clientHeight + 2)
 }
 // The item's header line: its code and where it stands (T230 #2: a state, the card's and the row's word)
 const ItemHead = ({ it }: { it: Item }) => (
