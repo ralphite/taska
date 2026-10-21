@@ -227,7 +227,8 @@ const SideLink = ({ sec, icon, label, phone }: { sec: string; icon: string; labe
       href={`${ctx.P}${PSEC[sec][0]}`}
       data-act="psec"
       data-sec={sec}
-      className="flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-sm text-zinc-600 hover:bg-zinc-200/60 dark:text-zinc-300 dark:hover:bg-zinc-800"
+      {...(U.side === sec ? { 'aria-current': 'page' as const } : {})}
+      className="flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-sm text-zinc-600 hover:bg-zinc-200/60 aria-[current=page]:bg-zinc-200/80 aria-[current=page]:font-medium aria-[current=page]:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:aria-[current=page]:bg-zinc-800 dark:aria-[current=page]:text-zinc-50"
     >
       <Icon n={icon} c="size-4 shrink-0 text-zinc-500 dark:text-zinc-400" sw="2" />
       <span className="min-w-0 flex-1 truncate">{label}</span>
@@ -592,7 +593,7 @@ function ProjBar({ hidden }: { hidden: boolean }) {
             data-act="tab"
             data-tab={t}
             role="tab"
-            aria-selected={(U.tab === t || (t === 'items' && U.tab === 'archive')) && !D.page}
+            aria-selected={(U.tab === t || (t === 'items' && U.tab === 'archive')) && !D.page && !U.side}
             className="group -mb-px flex shrink-0 items-center gap-1.5 border-b-2 border-transparent px-0.5 text-sm font-medium text-zinc-500 hover:text-zinc-800 aria-selected:border-zinc-900 aria-selected:font-semibold aria-selected:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200 dark:aria-selected:border-zinc-100 dark:aria-selected:text-zinc-50"
           >
             {TAB_NAME[t]}
@@ -1218,16 +1219,17 @@ export function ProjectPage() {
     over = rail && D.sideOpen
   // phone: the item page covers the list and its tabs; the input box stays, now adding to that item
   const d = !!U.open && !page,
-    under = !d && !page
+    under = !d && !page,
+    side = isDesk && !!U.side && !page // T402: Documents, Activity or Deleted in the list column
   const v = isDesk
     ? {
-        mainHead: page || full,
+        mainHead: page || full || side,
         items: page || inputs || full,
         inputs: page || !inputs,
         detail: page,
         project: !page,
-        foot: (page && !U.prefsEdit) || !!(U.doc && U.docEdit && !OV.spec),
-        deskFilters: page || full || inputs || !(D.filters || filtersSet().length),
+        foot: (page && !U.prefsEdit) || !!(U.doc && U.docEdit && !OV.spec) || (side && !U.open && !U.doc),
+        deskFilters: page || full || inputs || side || !(D.filters || filtersSet().length),
         grip: page || full,
         rail: !rail || page,
         projBar: page,

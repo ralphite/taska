@@ -24,9 +24,11 @@ export const viewPath = (): string =>
           ? 'inputs'
           : U.open
             ? code(U.open)
-            : U.tab === 'items'
-              ? ''
-              : U.tab
+            : desk() && U.side
+              ? PSEC[U.side][0]
+              : U.tab === 'items'
+                ? ''
+                : U.tab
 export function viewQuery() {
   const q = new URLSearchParams()
   if (U.q) q.set('q', U.q)
@@ -157,6 +159,7 @@ export interface UrlTarget {
   doc?: number
   item?: number
   section?: string | null
+  side?: 'docs' | 'log' | 'deleted'
   compose?: 'new'
   tab: Tab
 }
@@ -165,6 +168,7 @@ export function parseTarget(seg: string): UrlTarget {
     n = doc ? 0 : parseRef(seg)
   if (doc) return { doc: Number(doc[1]), tab: U.tab }
   if (n && byN.has(n)) return { item: n, tab: tabOf(byN.get(liveN(n)) as NonNullable<ReturnType<typeof byN.get>>) }
+  if (desk() && /^(docs|log|deleted)$/.test(seg)) return { side: seg as 'docs', tab: U.tab } // T402
   if (Object.hasOwn(PSEC_AT, seg)) return { section: seg, tab: U.tab }
   if (seg === 'new') return { compose: 'new', tab: U.tab }
   return { tab: (/^(inputs|archive|rules)$/.test(seg) ? seg : 'items') as Tab }

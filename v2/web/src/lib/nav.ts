@@ -15,6 +15,7 @@ import {
   els,
   inTab,
   liveN,
+  model,
   needsYou,
   render,
   tabOf,
@@ -45,7 +46,7 @@ import { closeDialog } from './dialog'
 import { advance, peek } from './go'
 import { openDoc } from './docs'
 import { ACT } from './actions'
-import { loadFixes, loadProjects, loadGuide } from './settings'
+import { P_CACHE, loadFixes, loadLog, loadProjects, loadGuide } from './settings'
 import { LIST } from './listhold'
 
 // B5: a merged item lives on in the one it went into.
@@ -145,7 +146,20 @@ export function clearSearch() {
   writeURL(false)
   bump('list', 'inputs', 'head')
 }
+/** T402: Documents, Activity or Deleted in the list column (the desktop); the sidebar stays, the item pane shows what
+ * you open from it. */
+export function openSide(side: 'docs' | 'log' | 'deleted', push = true) {
+  keepPlace()
+  Object.assign(U, { side, open: null, doc: null, docEdit: false })
+  D.page = null
+  D.section = null
+  D.compose = false
+  if (side === 'log' && P_CACHE.logRev !== model.S.rev) loadLog()
+  if (push) writeURL(true)
+  render()
+}
 export function setTab(t: Tab) {
+  U.side = null
   if (t === 'inputs' && desk()) return void ACT['new-input']({}) // F347: on the desktop what you said is under New input
   const was = U.tab,
     away = desk() && (t !== was || !!D.page || D.compose) // another tab, or out of Settings or New input: a step Back undoes (B9)
@@ -308,6 +322,7 @@ export function openProject(sec: string | null) {
           : desk()
             ? 'agents'
             : null
+  U.side = null
   const was = !!D.page,
     from = was ? D.section : undefined
   if (from !== sec) keepPlace() // B9
@@ -387,6 +402,7 @@ function showURL() {
   }
   D.page = null
   const t = parseTarget(seg)
+  if (t.side) return openSide(t.side, false) // T402
   if (t.doc == null && U.doc && OV.spec) closeDialog()
   if (t.doc != null) {
     const d = docById(t.doc)

@@ -68,6 +68,7 @@ import {
   leaveCompose,
   openItem,
   openProject,
+  openSide,
   projectBack,
   searchMode,
   setTab,
@@ -302,6 +303,7 @@ export const ACT: Record<string, Handler> = {
     return void startRec()
   },
   'new-input': () => {
+    U.side = null // T402
     U.amend = null
     U.correct = null
     U.prefsEdit = null // New input is always a fresh new input (B168)
@@ -341,6 +343,7 @@ export const ACT: Record<string, Handler> = {
   psec: (d, e) => {
     if (e && (e.metaKey || e.ctrlKey || e.shiftKey)) return window.open(`${ctx.P}${d.path || ''}`, '_blank')
     if (!desk() && DR.open) closeDrawer()
+    if (desk() && /^(docs|log|deleted)$/.test(String(d.sec))) return openSide(d.sec as 'docs') // T402
     openProject(d.sec || null)
   },
   'notifications-on': () => turnOnNotices(),

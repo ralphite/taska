@@ -73,6 +73,7 @@ import {
   SW,
 } from '../lib/rows'
 import { Avatar, Cnt, DraftMark, Empty, Hit, Icon, Kbd, ProjTile, Soft, StateIcon } from './ui'
+import { SideList } from './SideList'
 
 const ROW_TINT =
   'data-sel:bg-blue-100 dark:data-sel:bg-blue-400/20 lg:data-sel:hover:bg-blue-100 dark:lg:data-sel:hover:bg-blue-400/20 lg:hover:bg-zinc-50 dark:lg:hover:bg-zinc-900/70 lg:aria-[current=true]:bg-blue-50 dark:lg:aria-[current=true]:bg-blue-400/10 pointer-coarse:transition-colors pointer-coarse:delay-75 data-pressed:bg-zinc-100 lg:data-pressed:bg-zinc-100 dark:data-pressed:bg-zinc-900 dark:lg:data-pressed:bg-zinc-900'
@@ -1141,6 +1142,10 @@ function dragMove(n: number, at: { n?: number; how: string }): unknown {
 }
 
 export function List() {
+  useArea('list')
+  return desk() && U.side ? <SideList side={U.side} /> : <ItemList /> // T402
+}
+function ItemList() {
   useArea('list')
   const ref = useRef<HTMLDivElement>(null)
   const top = useRef(0)

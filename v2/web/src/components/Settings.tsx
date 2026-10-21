@@ -114,7 +114,7 @@ export const agentAsk = () =>
   `This project tracks work in Taska. Run \`curl -s ${ctx.BASE}/agent\` to learn the interface, then follow \`curl -s ${ctx.BASE}/next\` and write your progress back to the items.`
 
 // One change, as a sentence (B131): who, then what, with item codes and inputs as links; the time in grey.
-export function logLine(l: string) {
+export function logLine(l: string, withTime = true) {
   const m = /^#(\d+) (\S+ \S+) (\S+) (.*)$/s.exec(l)
   if (!m) return esc(l)
   const FLD = 'status|when|pri|type|archived|parent|title|body|next',
@@ -195,7 +195,10 @@ export function logLine(l: string) {
         ? `<button data-act="go-input" data-id="${r}" class="font-mono text-blue-600 hover:underline dark:text-blue-400">${rcode(r)}</button>`
         : rcode(r),
     )
-  return `<span class="font-medium text-zinc-800 dark:text-zinc-100">${esc(whoName(m[3]))}</span> ${what} <span class="font-mono text-[11px] whitespace-nowrap text-zinc-400">${esc(m[2])}</span>`
+  return (
+    `<span class="font-medium text-zinc-800 dark:text-zinc-100">${esc(whoName(m[3]))}</span> ${what}` +
+    (withTime ? ` <span class="font-mono text-[11px] whitespace-nowrap text-zinc-400">${esc(m[2])}</span>` : '')
+  )
 }
 function LogList({ lines }: { lines: string[] }) {
   return (

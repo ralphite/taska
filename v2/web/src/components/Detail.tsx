@@ -683,6 +683,7 @@ function GoStrip({ g }: { g: Go }) {
   )
 }
 function NoSelection() {
+  if (U.side) return null // T402: beside Documents, Activity or Deleted the pane waits for what you open there
   return (
     <div className="grid h-full place-items-center p-8 text-center">
       <div>

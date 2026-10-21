@@ -93,7 +93,8 @@ export const render = () => {
 }
 // T318 (B269, r309): on the desktop, Items with nothing open is the New input page, as clicking New input shows it
 function idleCompose() {
-  if (desk() && U.tab === 'items' && !U.open && !U.doc && !D.page && !D.compose && U.editing == null) D.compose = true
+  if (desk() && U.tab === 'items' && !U.side && !U.open && !U.doc && !D.page && !D.compose && U.editing == null)
+    D.compose = true
 }
 
 // ---------------------------------------------------------------- where we are
@@ -218,6 +219,7 @@ export const U = {
   docScroll: {} as Record<number, number>,
   docReply: null as string | null,
   docType: false,
+  side: null as null | 'docs' | 'log' | 'deleted', // T402: on the desktop, the list column shows Documents, Activity or Deleted
   docPick: {} as Record<number, { sel: string[]; quote: { key: string; text: string } | null; reply: string | null }>,
   docSig: '',
   peek: null as number | null,
