@@ -157,7 +157,7 @@ function BlockActs({ d, k, float = false }: { d: Doc; k: string; float?: boolean
           data-act="doc-thread"
           data-key={k}
           title={open ? 'Hide the comments' : 'Show the comments'}
-          className="absolute top-0.5 left-[calc(100%+0.25rem)] flex h-7 min-w-7 items-center justify-center gap-0.5 rounded-lg bg-amber-100 px-1.5 text-xs font-semibold text-amber-900 group-hover/blk:hidden hover:bg-amber-200 dark:bg-amber-900/60 dark:text-amber-100"
+          className="absolute top-0.5 left-[calc(100%+0.25rem)] flex h-7 min-w-7 items-center justify-center gap-0.5 rounded-lg bg-amber-100 px-1.5 text-xs font-semibold text-amber-900 hover:bg-amber-200 dark:bg-amber-900/60 dark:text-amber-100"
         >
           {n}
         </button>
@@ -171,7 +171,7 @@ function BlockActs({ d, k, float = false }: { d: Doc; k: string; float?: boolean
         </div>
       ) : null}
       <div
-        className={`absolute top-0.5 left-[calc(100%+0.25rem)] flex-col gap-1 ${rec ? 'flex' : 'hidden group-hover/blk:flex'}`}
+        className={`absolute left-[calc(100%+0.25rem)] flex-col gap-1 ${float && n ? 'top-9' : 'top-0.5'} ${rec ? 'flex' : 'hidden group-hover/blk:flex'}`}
       >
         {rec ? null : (
           <button
