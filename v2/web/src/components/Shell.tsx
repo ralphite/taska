@@ -902,13 +902,10 @@ function DeskFilters({ hidden }: { hidden: boolean }) {
 // ---------------------------------------------------------------- the foot: the box, and the New input page (B73)
 function Foot({ hidden, wideCls }: { hidden: boolean; wideCls: string }) {
   const compose = desk() && D.compose && !D.page && U.tab !== 'inputs'
-  // B345: under an item's talk the box sits on the same grey, one piece with it
-  const talk = desk() && !!U.open && !U.doc && !U.docEdit && !D.compose && !D.page && U.tab !== 'inputs'
   return (
     <footer
       id="foot"
       hidden={hidden}
-      data-talk={talk || undefined}
       onDragOver={(e) => e.preventDefault()}
       onDrop={(e) => {
         e.preventDefault()
