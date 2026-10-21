@@ -38,6 +38,7 @@ import { groups, hasChoices } from './markdown'
 import { clearTicks, tickDoc } from './doctick'
 import { playAudio } from './audio'
 import { toast } from './toast'
+import { actLog } from './actlog'
 import {
   JSON_POST,
   NET,
@@ -1721,3 +1722,10 @@ export function batchSet(f: string, v: unknown, said: string) {
   toast(`${plural(ns.length, 'item')} ${said}`, run)
   set(() => v)
 }
+
+// F407: every action is logged, with how it came (a click, a key, a drop, the page)
+for (const [k, fn] of Object.entries(ACT))
+  ACT[k] = (d, e) => {
+    actLog(k, d)
+    return fn(d, e)
+  }

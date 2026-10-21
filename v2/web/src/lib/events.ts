@@ -24,6 +24,7 @@ import { LAST, drawerW, setDrawer } from '../components/Shell'
 import { SWIPE, ctx, esc } from './state'
 import { PAGE, goTo } from './switch'
 import { PDRAG } from './projdrag'
+import { flushActs, sawEvent } from './actlog'
 
 // ---------------------------------------------------------------- press feedback (T160)
 const PRESS = { el: null as HTMLElement | null, id: null as number | null, x: 0, y: 0, t: 0, off: 0, mouse: false }
@@ -445,6 +446,8 @@ function wireAll() {
     },
     true,
   )
+  for (const t of ['click', 'keydown', 'drop', 'submit']) document.addEventListener(t, sawEvent, true) // F407
+  addEventListener('pagehide', flushActs)
   document.addEventListener('keydown', captureKey, true)
   document.addEventListener('keydown', deskKey)
   document.addEventListener('keydown', escapeKey)

@@ -31,6 +31,7 @@ import { docKey, renderDoc } from './docs'
 import { plainQuote } from './markdown'
 import { send, outboxPush, flushOutbox } from './outbox'
 import { standalone } from './notices'
+import { actLog } from './actlog'
 
 export const canRecord = () =>
   !!(
@@ -127,6 +128,7 @@ export function voiceWhy() {
 }
 
 export async function startRec() {
+  actLog('voice start', { into: U.draftKey || '' }) // F407
   if (!canRecord()) return voiceWhy() // B166
   // B1: the note belongs where you started it, whatever is open when it stops
   const key = U.draftKey,
@@ -219,6 +221,7 @@ export async function finishRec(
     scope = keptRec ? keptRec.scope : R.key ? R.scope : scopeN() ? code(scopeN()) : null
   const vc = keptRec ? keptRec.vc : R.vc
   R.vc = null
+  actLog(andSend ? 'voice stop and send' : 'voice stop', { into: key || '' }) // F407
   const ms = keptRec?.ms ?? Date.now() - R.t0,
     blob = keptRec?.blob ?? (await stopRec())
   if (!blob) return

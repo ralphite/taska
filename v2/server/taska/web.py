@@ -430,7 +430,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def _post(self) -> None:
         path = self.path.split("?")[0]
-        if "/api/" in path and not path.endswith(("/api/netlog", "/api/miclog", "/api/restart", "/api/poll")):
+        if "/api/" in path and not path.endswith(("/api/netlog", "/api/actlog", "/api/miclog", "/api/restart", "/api/poll")):
             self.srv.saw_user()  # R328: the page did something for you (agents write with /do)
         if path == "/api/restart":  # R328: you said to restart now: answer, then stop the way a deploy does
             if not self.guard():
@@ -594,8 +594,16 @@ class Handler(BaseHTTPRequestHandler):
         elif p == "/api/netlog":  # B326: a save that did not go through, as the page saw it, for the agent to count in the log
             data = json.loads(self.body(20_000) or b"{}")
             via = "tunnel" if self.headers.get("X-Forwarded-Host") else "local"
+            kept: List[Dict[str, Any]] = []
             for e in (data.get("list") or [])[:30]:
-                print(f"[netlog] {str(e.get('t', ''))[:19]} {s.name} via {via}: " + json.dumps({k: str(e.get(k, ""))[:200] for k in ("why", "url", "ms", "status", "msg", "where") if k in e}, ensure_ascii=False), file=sys.stderr, flush=True)
+                row = {k: str(e.get(k, ""))[:200] for k in ("why", "url", "ms", "status", "msg", "where") if k in e}
+                print(f"[netlog] {str(e.get('t', ''))[:19]} {s.name} via {via}: " + json.dumps(row, ensure_ascii=False), file=sys.stderr, flush=True)
+                kept.append({"t": str(e.get("t", ""))[:30], "what": "net " + row.get("why", ""), "via": via, **row})
+            s.keep_actions(kept)  # F407: with what you did, in one place
+            self.json({"ok": True})
+        elif p == "/api/actlog":  # F407: what you did on the page (clicks, keys, sends), kept with the project to look into later
+            data = json.loads(self.body(300_000) or b"{}")
+            s.keep_actions([{k: e[k] for k in ("t", "what", "via", "where", "d") if k in e} for e in (data.get("list") or [])[:500] if isinstance(e, dict)])
             self.json({"ok": True})
         elif p == "/api/move":  # an input sent to the wrong project goes to another one (F79)
             data = json.loads(self.body(10_000) or b"{}")

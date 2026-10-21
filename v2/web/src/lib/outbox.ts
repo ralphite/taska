@@ -26,6 +26,7 @@ import {
 import { toast } from './toast'
 import { JSON_POST, load, notSaved, op, pushUndo, forget, save, sendLog, change, type OpAnswer } from './data'
 import { tickedDoc, ticksDone, ticksGoing, ticksOf, tickWords } from './doctick'
+import { actLog } from './actlog'
 import type { Doc } from './types'
 import { setFix } from './settings'
 import { draftName, draftStore, goDraft, keepChoice, markSent, saveDraft, setDraft, draftMarks } from './drafts'
@@ -100,6 +101,7 @@ export async function send() {
   }
   U.note = null
   const job = outboxPush({ text, files: U.files, scope: n ? code(n) : null })
+  actLog('send', { to: job.scope || 'new input', q: job.q, chars: text.length, files: job.files.length }) // F407
   unsendable(job)
   if (desk() && D.compose) toast('Sent', job.undo) // the New input page has no line under the box
   box.value = ''
@@ -371,7 +373,10 @@ export async function flushOutbox() {
       if (job.files.length) keepJob(job) // its files are up now: kept with them (B151)
       const files = job.files.filter((f) => f.f && !f.failed)
       if (files.length < job.files.length)
-        sendLog('file left out', `${job.q} (${projectOf(job.p)}): ${job.files.length - files.length} file(s) never got up`)
+        sendLog(
+          'file left out',
+          `${job.q} (${projectOf(job.p)}): ${job.files.length - files.length} file(s) never got up`,
+        )
       let text = job.text
       for (const f of files) if (f.tr && !f.trAdded && !text.includes(f.tr)) text = (text ? text + '\n' : '') + f.tr // a transcript that came after you sent
       if (!text && !files.length) {
