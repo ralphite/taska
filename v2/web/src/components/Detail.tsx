@@ -224,8 +224,8 @@ function Editor({ it }: { it: Item }) {
     </div>
   )
 }
-// F395: a pane wide enough (1100px or more) whose item and talk together are taller than it shows the item (or its
-// open document) on the left and its talk on the right, so nothing has to hide behind a scroll
+// F395, T423: a pane wide enough (1100px or more) where the item does not fit above or its talk does not fit below
+// shows the item (or its open document) on the left and its talk on the right, so nothing has to hide behind a scroll
 export const DUO = { on: false, min: 1100 }
 export function ItemPage({ it, left = null }: { it: Item; left?: ReactNode }) {
   const duo = DUO.on
@@ -787,12 +787,16 @@ export function DetailView({ hidden }: { hidden: boolean }) {
     const el = body.current
     if (!el || typeof ResizeObserver === 'undefined') return
     const check = () => {
-      // r507, #4745: the item's content and the talk's content together do not fit the pane's height, and it is wide
+      // r507, T423: the item does not fit the part above, or its talk does not fit the part below (where you put the
+      // line between them, 40% by default), and the pane is wide
       const top = document.getElementById('itemClip') || document.getElementById('itemTop'),
-        talk = document.getElementById('itemTalk')
+        talk = document.getElementById('itemTalk'),
+        H = el.clientHeight,
+        set = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--top-h')),
+        upper = set > 0 ? Math.min(set, H) : H * 0.4
       const high =
-        ((top?.firstElementChild as HTMLElement | null)?.offsetHeight || 0) +
-        ((talk?.firstElementChild as HTMLElement | null)?.offsetHeight || 0)
+        ((top?.firstElementChild as HTMLElement | null)?.offsetHeight || 0) > upper ||
+        ((talk?.firstElementChild as HTMLElement | null)?.offsetHeight || 0) > H - upper
       const on =
         desk() &&
         !!U.open &&
@@ -800,7 +804,7 @@ export function DetailView({ hidden }: { hidden: boolean }) {
         !D.page &&
         U.tab !== 'inputs' &&
         el.clientWidth >= DUO.min &&
-        high > el.clientHeight
+        high
       document.getElementById('app')?.toggleAttribute('data-duo', on)
       if (on !== DUO.on) {
         DUO.on = on
