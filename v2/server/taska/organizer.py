@@ -99,8 +99,6 @@ class Organizer(threading.Thread):
         if inp["scope"] in s.items:
             out.append("Scope item (the input is about this one):\n" + s.card(s.items[inp["scope"]]))
         scope = f" [scope: {s.code(inp['scope'])}]" if inp["scope"] else " [no scope: whole project]"
-        if inp.get("from") == "rules":
-            scope += " [sent from the Rules view: most likely a rule]"
         if inp.get("history"):
             out.append("This is an update to an existing input, not a new submission. The latest text is authoritative. "
                        "Update its linked items where relevant instead of duplicating them. Preserve unrelated work. "

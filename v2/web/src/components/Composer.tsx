@@ -27,7 +27,6 @@ import {
   plural,
   projTitle,
   rcode,
-  ruleMode,
   scopeN,
   useArea,
   otherProjects,
@@ -125,7 +124,6 @@ const ScopeX = ({ act, label }: { act: string; label: string }) => (
     <Icon n="x" c="size-4" />
   </button>
 )
-export const RuleFlip = () => null // B406: no "as a rule" switch: the box writes inputs only
 function ScopeLine({
   icon,
   label,
@@ -286,22 +284,16 @@ function boxRole(): { line: ReactNode; ph: string; send: string } {
       send = 'Send back'
     } // B153, T274 #14
     if (ticks.length) send = 'Send answer'
-  } else if (ruleMode()) {
-    line = <ScopeLine icon="scope" label="New rule for this project" right={<RuleFlip />} />
-    if (S.project) ph = `New rule for ${projTitle()}…`
   } else if (desk())
     line = (
       <ScopeLine
         icon="inbox"
         label="New input"
-        detail={`· ${filesWord}`}
-        right={<RuleFlip />} // T322 (D22): no "Add to T38 instead": New input and a reply each have their own place
+        detail={`· ${filesWord}`} // T322 (D22): no "Add to T38 instead": New input and a reply each have their own place
       />
     )
   else if (U.open && detailShown() && byN.has(U.open))
-    line = <ScopeLine icon="inbox" label="New input" detail={`· ${filesWord}`} right={<RuleFlip />} /> // B298
-  else if (U.tab === 'rules')
-    line = <ScopeLine icon="inbox" label="New input" detail="· not a rule" right={<RuleFlip />} />
+    line = <ScopeLine icon="inbox" label="New input" detail={`· ${filesWord}`} /> // B298
   if (R.rec && R.key && R.key !== U.draftKey)
     line = <ScopeLine icon="mic" label={`Recording for ${draftName(R.key)}`} detail="· it goes there when you stop" /> // B1
   return { line, ph, send }
@@ -1172,24 +1164,13 @@ export function ComposeHeadDefault() {
         <h1 className="text-2xl leading-none font-semibold tracking-tight">{projTitle()}</h1>
       </div>
       <p className="mt-2.5 flex items-center justify-center gap-0 text-[15px] text-zinc-500 dark:text-zinc-400">
-        {ruleMode() ? (
-          <>
-            <span className="font-medium text-zinc-700 dark:text-zinc-200">New rule</span>&nbsp;for the whole project
-          </>
-        ) : (
-          'New input to the whole project'
-        )}
+        New input to the whole project
         <span className="px-1.5 text-zinc-300 dark:text-zinc-600">·</span>
         <span className="inline-flex items-center gap-1 font-medium text-zinc-700 dark:text-zinc-200">
           <Icon n="sparkle" c="size-4 text-blue-600 dark:text-blue-400" />
           {S.org?.on ? 'the organizer files it' : 'your agent files it'}
         </span>
       </p>
-      {U.tab === 'rules' ? (
-        <div className="mt-2 flex justify-center">
-          <RuleFlip />
-        </div>
-      ) : null}
     </>
   )
 }

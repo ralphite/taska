@@ -28,7 +28,6 @@ import {
   projName,
   rcode,
   render,
-  ruleMode,
   scopeN,
   tabOf,
   visible,
@@ -293,12 +292,6 @@ export const ACT: Record<string, Handler> = {
   side: () => sideToggle(),
   keys: () => openDialog('keys'),
   switch: () => openDialog('switch', {}, { focus: false }),
-  'as-rule': () =>
-    carry(() => {
-      U.asRule = !ruleMode()
-      render()
-      writeURL(false)
-    }),
   'new-voice': () => {
     // F396: New input, recording at once (as ⇧V)
     if (R.rec) return void finishRec(true)
@@ -1087,9 +1080,7 @@ export const ACT: Record<string, Handler> = {
     const title = shortTitle(first) || `Files from ${rcode(r.id)}`,
       body = title !== first ? r.text.trim() : lines.slice(1).join('\n').trim() // T113 A25
     try {
-      const a = await save({ op: 'new', title, body, src: r.id, ...(r.from === 'rules' ? { type: 'rule' } : {}) }, () =>
-        ACT['make-item'](d),
-      )
+      const a = await save({ op: 'new', title, body, src: r.id }, () => ACT['make-item'](d))
       const n = Number((a.res[0].match(/[A-Z](\d+) new/) || [])[1])
       if (!n) return
       const run = pushUndo(`${code(n)} made from ${rcode(r.id)}`, () => {

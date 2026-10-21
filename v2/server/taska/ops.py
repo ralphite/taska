@@ -154,20 +154,10 @@ def run(s: "Store", op: Op, by: str, ctx: Dict[str, Any]) -> Tuple[str, Any]:
         scope = s.item(op["scope"])["n"] if op.get("scope") else None  # a merged item's replies go where it went (B5)
         rid = f"r{s.nin + 1}"
         e: Dict[str, Any] = {"k": "in", "id": rid, "by": by, "text": text, "scope": scope, "files": files}
-        if op.get("from") == "rules":
-            e["from"] = "rules"
         if q:
             e["q"] = q
         s.emit(e)
         return f"ok {rid}", "Received"
-    if name == "plain":  # B406: an input that went out "as a rule" by mistake is a plain input
-        rid = str(op.get("id") or "")
-        if rid not in s.inputs:
-            raise Err(f"unknown input {rid}")
-        if s.inputs[rid].get("from") != "rules":
-            return f"ok {rid} plain already", "Plain input"
-        s.emit({"k": "plain", "id": rid, "by": by})
-        return f"ok {rid} plain", "Plain input"
     if name == "correct":  # F144: the wrong words in an input, fixed there and remembered for every project
         rid = str(op.get("id") or "")
         inp = s.inputs.get(rid)

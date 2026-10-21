@@ -21,7 +21,6 @@ import {
   markSeen,
   model,
   needsYou,
-  ruleMode,
   statusName,
   stuck,
   useArea,
@@ -765,7 +764,7 @@ function paneParts(): { head: ReactNode; acts: ReactNode; nav: ReactNode; menu: 
         head: D.compose ? (
           <span className="flex items-center gap-2 text-sm font-semibold">
             <Icon n="newinput" c="size-[18px] text-blue-600 dark:text-blue-400" />
-            {ruleMode() ? 'New rule' : 'New input'}
+            New input
           </span>
         ) : null,
         acts: null,

@@ -161,7 +161,7 @@ class Store:
         k = e["k"]
         if k == "in":
             inp: Optional[Input] = {"id": e["id"], "t": e["t"], "by": e["by"], "text": e.get("text", ""), "scope": e.get("scope"),
-                                    "files": e.get("files", []), "acked": False, "touched": [], "org": None, "from": e.get("from"), "seq": e["seq"]}
+                                    "files": e.get("files", []), "acked": False, "touched": [], "org": None, "seq": e["seq"]}
             assert inp is not None
             self.inputs[inp["id"]] = inp
             self.nin = max(self.nin, int(inp["id"][1:]))
@@ -171,9 +171,6 @@ class Store:
             if it:
                 self.entry(it, e, "say", inp["text"], inp["id"])
                 self.touch(it["n"], inp["id"], ack=False)
-        elif k == "plain":  # B406: not a rule after all
-            if e["id"] in self.inputs:
-                self.inputs[e["id"]]["from"] = None
         elif k == "add":
             n = e["n"]
             self.maxn = max(self.maxn, n)

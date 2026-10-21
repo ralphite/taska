@@ -82,7 +82,6 @@ export interface Input {
   acked: boolean
   touched: number[]
   org: OrgNote | null
-  from?: string | null
   seq: number
   v?: number
   history?: { text: string; t: string; mode: string }[]

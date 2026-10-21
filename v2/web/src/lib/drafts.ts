@@ -21,7 +21,6 @@ import {
   model,
   parseRef,
   render,
-  ruleMode,
   scopeN,
   tabOf,
   type DraftFile,
@@ -38,7 +37,7 @@ export const draftKey = (): string => {
   if (U.amend) return `${U.amend.mode} ${U.amend.id}`
   const od = docOpen(),
     n = scopeN()
-  return od ? `doc ${od.d}` : n ? code(n) : ruleMode() ? 'rule' : 'new' // B10, B298
+  return od ? `doc ${od.d}` : n ? code(n) : 'new' // B10, B298
 }
 export function draftStore(change?: (all: Record<string, string>) => void): Record<string, string> {
   const key = 'taska.drafts.' + model.S.project
@@ -49,6 +48,11 @@ export function draftStore(change?: (all: Record<string, string>) => void): Reco
       U.oldDraft = ''
       change ||= () => {}
     } // the one draft from before goes to New input
+    if (all.rule) {
+      all.new = [all.new, all.rule].filter((x) => x?.trim()).join('\n\n')
+      delete all.rule
+      change ||= () => {}
+    } // B406: there is no New rule box any more: what was written there is New input's now
     if (change) {
       change(all)
       localStorage.setItem(key, JSON.stringify(all))
@@ -152,7 +156,7 @@ export function onStorage(e: StorageEvent) {
       ((els.text?.value ?? '').trim() || (U.boxGone?.k === x.k && Date.now() - U.boxGone.t < 3000))
     )
       toast(
-        `${/^[A-Z]\d+$/.test(x.k) ? `Your reply to ${x.k}` : x.k === 'rule' ? 'Your new rule' : x.k === 'new' ? 'Your new input' : 'What you wrote'} was sent from another tab`,
+        `${/^[A-Z]\d+$/.test(x.k) ? `Your reply to ${x.k}` : x.k === 'new' ? 'Your new input' : 'What you wrote'} was sent from another tab`,
       )
     return
   }
@@ -273,17 +277,14 @@ export function syncDraft() {
   if (k !== U.draftKey) swapDraft(k)
 }
 function swapDraft(key: string) {
-  const left =
-    (U.draftKey === 'new' || U.draftKey === 'rule') && ((els.text?.value ?? '').trim() || U.files.length)
-      ? U.draftKey
-      : null // B185
+  const left = U.draftKey === 'new' && ((els.text?.value ?? '').trim() || U.files.length) ? U.draftKey : null // B185
   if (U.draftKey) {
     saveDraft()
     U.parked[U.draftKey] = U.files
   }
   if (left && !R_STATE.rec)
     setTimeout(() =>
-      toast(`Your ${left === 'rule' ? 'new rule' : 'new input'} is kept, not sent`, () => goDraft(left), {
+      toast('Your new input is kept, not sent', () => goDraft(left), {
         label: 'Open',
       }),
     )
@@ -318,9 +319,7 @@ export const draftName = (key: string) =>
           )
 export function goDraft(key: string) {
   // to the box a draft belongs to
-  if (key === 'new' || key === 'rule') {
-    if (key === 'rule' && U.tab !== 'rules') setTab('rules')
-    U.asRule = key === 'rule' ? null : U.tab === 'rules' ? false : null
+  if (key === 'new') {
     return ACT['new-input']({})
   }
   const dm = /^doc (\d+)$/.exec(key),

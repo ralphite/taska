@@ -18,7 +18,6 @@ import {
   model,
   render,
   rcode,
-  ruleMode,
   scopeN,
   type DraftFile,
   type Job,
@@ -95,7 +94,7 @@ export async function send() {
     keepChoice()
   }
   U.note = null
-  const job = outboxPush({ text, files: U.files, scope: n ? code(n) : null, from: !n && ruleMode() ? 'rules' : null })
+  const job = outboxPush({ text, files: U.files, scope: n ? code(n) : null, from: null })
   unsendable(job)
   if (desk() && D.compose) toast(job.from ? 'Sent as a new rule' : 'Sent', job.undo) // the New input page has no line under the box
   box.value = ''
@@ -141,7 +140,7 @@ export function outboxPush(job: Omit<Job, 'id' | 'q' | 't'> & Partial<Job>): Job
   markSent(jobKey(j)) // T113 A10: the other tabs drop it from their box
   return j
 }
-export const jobKey = (job: Job) => job.scope || (job.from === 'rules' ? 'rule' : 'new') // the box it was written in
+export const jobKey = (job: Job) => job.scope || 'new' // the box it was written in
 // T113 A27: what you just sent can be taken back for a short while, with Undo or Z.
 const UNSEND_MS = 10000
 function unsendable(job: Job) {

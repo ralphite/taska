@@ -261,7 +261,7 @@ export function InputCard({ r, pane = false }: { r: Input; pane?: boolean }) {
               <span className="shrink-0 whitespace-nowrap">{when(r.t)}</span>
             </>
           )}
-          {r.from === 'rules' ? <span className="font-medium">as a rule</span> : null}
+
           {dk ? (
             <button
               data-act={`input-${dk}`}
@@ -609,7 +609,7 @@ function SaidRow({ r }: { r: Input; last?: boolean }) {
         <>
           <span className="shrink-0 font-mono">{rcode(r.id)}</span>
           <span className="shrink-0 tabular-nums">· {new Date(r.t).toTimeString().slice(0, 5)}</span>
-          {r.from === 'rules' ? <span className="shrink-0">· as a rule</span> : null}
+
           <span title={label} className={`flex shrink-0 items-center gap-1 pr-1 pl-1.5 font-medium ${tone}`}>
             {icon}
             {SHORT[label] || label}

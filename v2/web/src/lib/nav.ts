@@ -163,7 +163,6 @@ export function setTab(t: Tab) {
     }
     if (els.q) els.q.value = U.q
   }
-  U.asRule = null
   U.amend = null
   U.correct = null
   U.prefsEdit = null
@@ -406,11 +405,6 @@ function showURL() {
     } else U.tab = history.state?.tab || 'items'
     return openProject(seg === 'settings' && !desk() ? null : PSEC_AT[seg])
   }
-  if (seg === 'new-rule') {
-    U.tab = 'items' // B406: no New rule: the old address opens New input
-    U.asRule = null
-  } // B10: New rule has its own address
-  else if (seg === 'new' && U.tab === 'rules') U.asRule = false
   if (t.compose) {
     if (desk()) return ACT['new-input']({})
     render()
@@ -422,7 +416,6 @@ function showURL() {
   const scrollOf = (k: string) => (k === 'inputs' ? els.inputsView : els.list)
   if (!desk()) U.tabTop[was] = scrollOf(was)?.scrollTop || 0 // Back or Forward to another tab: each keeps its place (B152)
   U.tab = t.tab
-  U.asRule = null
   render()
   const el = scrollOf(U.tab)
   if (!desk() && U.tab !== was && el) el.scrollTop = U.tabTop[U.tab] || 0

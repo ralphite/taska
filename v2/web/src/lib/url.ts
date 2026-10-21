@@ -7,7 +7,7 @@
 // Back on the phone (B150): every sheet, the Go through card, the image viewer, the projects drawer and search is one
 // step in the history, so Back closes what is on top and only that.
 import { PSEC } from './settings-data'
-import { D, U, byN, code, ctx, desk, docById, els, liveN, parseRef, ruleMode, tabOf, type UI } from './state'
+import { D, U, byN, code, ctx, desk, docById, els, liveN, parseRef, tabOf, type UI } from './state'
 import type { Tab } from './constants'
 
 export const URLS = { applying: false, selfBack: false, hold: false }
@@ -19,9 +19,7 @@ export const viewPath = (): string =>
     : U.doc && !U.docEdit
       ? `D${U.doc}`
       : desk() && D.compose
-        ? ruleMode()
-          ? 'new-rule'
-          : 'new'
+        ? 'new'
         : desk() && U.tab === 'inputs'
           ? 'inputs'
           : U.open
@@ -159,7 +157,7 @@ export interface UrlTarget {
   doc?: number
   item?: number
   section?: string | null
-  compose?: 'new' | 'new-rule'
+  compose?: 'new'
   tab: Tab
 }
 export function parseTarget(seg: string): UrlTarget {
@@ -168,7 +166,7 @@ export function parseTarget(seg: string): UrlTarget {
   if (doc) return { doc: Number(doc[1]), tab: U.tab }
   if (n && byN.has(n)) return { item: n, tab: tabOf(byN.get(liveN(n)) as NonNullable<ReturnType<typeof byN.get>>) }
   if (Object.hasOwn(PSEC_AT, seg)) return { section: seg, tab: U.tab }
-  if (seg === 'new' || seg === 'new-rule') return { compose: 'new', tab: seg === 'new-rule' ? 'items' : U.tab } // B406: /new-rule is New input
+  if (seg === 'new') return { compose: 'new', tab: U.tab }
   return { tab: (/^(inputs|archive|rules)$/.test(seg) ? seg : 'items') as Tab }
 }
 export function readFilters(qs: URLSearchParams, u: UI = U) {

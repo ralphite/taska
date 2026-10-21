@@ -260,7 +260,7 @@ export async function finishRec(
     // B1, B185: you moved on while recording: the note goes into the box where you started it
     ;(U.parked[key] ||= []).push(f)
     bump('composer')
-    if (andSend && (key === 'new' || key === 'rule' || /^[A-Z]\d+$/.test(key))) sendParked(key)
+    if (andSend && (key === 'new' || /^[A-Z]\d+$/.test(key))) sendParked(key)
     else
       toast(`The voice note is in the box for ${draftName(key)}, where you started it`, () => goDraft(key), {
         label: 'Go there',
@@ -599,7 +599,7 @@ export async function restoreVoice() {
       ? byN.has(n)
         ? code(liveN(n))
         : 'new'
-      : r.key === 'rule' || (inp && byR.has(inp[2])) || (dm && docById(Number(dm[1])))
+      : (inp && byR.has(inp[2])) || (dm && docById(Number(dm[1])))
         ? (r.key as string)
         : 'new'
     const f = voiceFile({
