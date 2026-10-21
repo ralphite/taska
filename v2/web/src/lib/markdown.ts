@@ -205,6 +205,34 @@ function choiceHtml(labels: string[], multi: boolean, n: number, base: number, d
     .join('')}</div>`
 }
 
+// F393: the choices of a document, each one ticked or not as the document says ([x], (x))
+function tickHtml(ls: string[], t: { d: number; key: string }) {
+  const multi = ls[0].match(CHOICE)?.[1] === '['
+  return `<div class="space-y-1.5" role="group">${ls
+    .map((l, i) => {
+      const on = /^\s*[-*+]\s+[([][xX][)\]]/.test(l)
+      return `<button data-act="doc-tick" data-d="${t.d}" data-key="${t.key}" data-i="${i}" aria-pressed="${on}" class="group flex min-h-10 w-full items-center gap-3 rounded-xl border border-zinc-200 bg-white px-3 py-2 text-left text-[15px] leading-snug hover:border-zinc-300 hover:bg-zinc-50 aria-pressed:border-blue-500 aria-pressed:bg-blue-50 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:border-zinc-600 dark:hover:bg-zinc-800/70 dark:aria-pressed:border-blue-400 dark:aria-pressed:bg-blue-400/10">
+      <span class="grid size-5 shrink-0 place-items-center border-2 ${multi ? 'rounded-md' : 'rounded-full'} border-zinc-300 group-aria-pressed:border-blue-600 group-aria-pressed:bg-blue-600 group-aria-pressed:text-white dark:border-zinc-600 dark:group-aria-pressed:border-blue-400 dark:group-aria-pressed:bg-blue-400 dark:group-aria-pressed:text-zinc-900">${ico('check', 'size-3.5 invisible group-aria-pressed:visible', '3')}</span>
+      <span class="min-w-0 flex-1">${inlineMd(l.replace(CHOICE, ''), '', false)}</span></button>`
+    })
+    .join('')}</div>`
+}
+/** F393: the document's text with the i-th choice of one paragraph ticked or unticked (one of "( )" choices at a time). */
+export function tickedMd(md: string, block: string, i: number): string | null {
+  const ls = block.split('\n'),
+    rows = ls.flatMap((l, k) => (CHOICE.test(l) ? [k] : []))
+  const k = rows[i]
+  if (k == null || !md.includes(block)) return null
+  const multi = ls[k].match(CHOICE)?.[1] === '['
+  const mark = (l: string, on: boolean) =>
+    l.replace(
+      /^(\s*[-*+]\s+)[([][ xX]?[)\]]/,
+      (_, p: string) => p + (multi ? (on ? '[x]' : '[ ]') : on ? '(x)' : '( )'),
+    )
+  const isOn = (l: string) => /^\s*[-*+]\s+[([][xX][)\]]/.test(l)
+  const next = ls.map((l, j) => (j === k ? mark(l, !isOn(l)) : !multi && rows.includes(j) ? mark(l, false) : l))
+  return md.replace(block, next.join('\n'))
+}
 // B301: the choices you ticked and did not send yet come back after a reload, by their words
 export const choiceKept = (n: number): string[] => {
   try {
@@ -330,8 +358,18 @@ function tableHtml(text: string, gid: string) {
   )
 }
 
-export function blockHtml(b: { kind: string; text: string }, isTitle: boolean, gid = ''): string {
+export function blockHtml(
+  b: { kind: string; text: string },
+  isTitle: boolean,
+  gid = '',
+  tick: { d: number; key: string } | null = null,
+): string {
   if (b.kind === 'table') return tableHtml(b.text, gid)
+  // F393: in a document, a list of choices is a form you fill in place: a tap ticks it and saves it in the document
+  if (tick && b.kind === 'list') {
+    const ls = b.text.split('\n').filter((l) => l.trim())
+    if (ls.length && ls.every((l) => CHOICE.test(l))) return tickHtml(ls, tick)
+  }
   if (isTitle)
     return `<div class="text-2xl leading-tight font-bold tracking-tight">${inlineMd(b.text.replace(/^#+\s*/, ''), gid)}</div>`
   if (b.kind === 'heading') {

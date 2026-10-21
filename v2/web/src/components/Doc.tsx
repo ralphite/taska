@@ -613,7 +613,9 @@ export function DocView({ d }: { d: Doc }) {
                   <div
                     data-block
                     className={`min-w-0 flex-1 break-words ${b0.kind === 'heading' ? 'pr-14 lg:pr-0' : ''}`}
-                    dangerouslySetInnerHTML={{ __html: clean(blockHtml(b, i === 0 && titled, 'doc' + d.d)) }}
+                    dangerouslySetInnerHTML={{
+                      __html: clean(blockHtml(b, i === 0 && titled, 'doc' + d.d, { d: d.d, key: b0.key })),
+                    }}
                   />
                   {b0.comments.length ? (
                     <button

@@ -119,7 +119,12 @@ def md_blocks(md: str) -> List[Tuple[str, str]]:
     return out
 
 
+TICKED = re.compile(r"^(\s*[-*+]\s+)(\[[xX]\]|\([xX]\))", re.M)
+
+
 def block_key(text: str) -> str:
+    # F393: a choice you tick in a document is the same paragraph: its comments stay with it ([x] counts as [ ])
+    text = TICKED.sub(lambda m: m.group(1) + ("[ ]" if m.group(2)[0] == "[" else "( )"), text)
     return hashlib.sha1(" ".join(text.split()).encode("utf-8")).hexdigest()[:10]
 
 

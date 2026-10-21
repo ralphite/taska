@@ -34,7 +34,7 @@ import {
   visible,
   type Go,
 } from './state'
-import { groups, hasChoices } from './markdown'
+import { groups, hasChoices, tickedMd } from './markdown'
 import { playAudio } from './audio'
 import { toast } from './toast'
 import {
@@ -955,6 +955,19 @@ export const ACT: Record<string, Handler> = {
     renderDoc()
   },
   'dc-edit': (d) => editComment(Number(d.d), Number(d.id)),
+  'doc-tick': async (d) => {
+    // F393: a choice in a document: ticked (or not) in the document's own text, saved at once
+    const doc = docById(Number(d.d)),
+      b = doc?.blocks.find((x) => x.key === d.key)
+    const md = doc && b ? tickedMd(doc.md, b.text, Number(d.i)) : null
+    if (!doc || md == null)
+      return toast('Could not tick it: the document changed. Open it again', null, { error: true })
+    try {
+      await save({ op: 'doc', d: doc.d, md })
+    } catch {
+      /* save said why */
+    }
+  },
   'dc-delete': (d) => deleteComment(Number(d.d), Number(d.id)),
   'doc-thread': (d) => {
     const k = d.key as string
