@@ -11,6 +11,7 @@ import {
   byR,
   code,
   ctx,
+  dcFind,
   desk,
   docById,
   docOpen,
@@ -19,6 +20,7 @@ import {
   liveN,
   model,
   parseRef,
+  render,
   ruleMode,
   scopeN,
   tabOf,
@@ -27,8 +29,8 @@ import {
 import { toast } from './toast'
 import { keepRec } from './voice'
 import { ACT } from './actions'
-import { openItem, setTab } from './nav'
-import { openDoc } from './docs'
+import { openItem, openProject, setTab } from './nav'
+import { editComment, openDoc } from './docs'
 
 export const draftKey = (): string => {
   if (U.prefsEdit) return 'prefs'
@@ -348,7 +350,31 @@ export function goDraft(key: string) {
     els.text?.focus({ preventScroll: true })
     return
   }
-  toast('Could not open that box', null, { error: true }) // never a Go there that does nothing
+  // B366: the other boxes a draft can belong to
+  const cm = /^correct (\S+)$/.exec(key)
+  if (cm && byR.has(cm[1])) {
+    ACT['new-input']({})
+    U.correct = { id: cm[1], wrong: '', v: byR.get(cm[1])?.v || 0 }
+    render()
+    return els.text?.focus()
+  }
+  const dc = /^dc (\d+)$/.exec(key)
+  if (dc) {
+    const id = Number(dc[1]),
+      d = (model.S.docs || []).find((x) => dcFind(x.d, id))
+    if (d) {
+      const it = byN.get(liveN(d.n))
+      if (it && U.open !== it.n) openItem(it.n)
+      openDoc(d.d)
+      return editComment(d.d, id)
+    }
+  }
+  if (key === 'prefs') {
+    openProject('fixes')
+    return ACT['prefs-edit']({})
+  }
+  // what the box was for is gone: say which, never a Go there that does nothing
+  toast(`${draftName(key).replace(/^the /, 'The ')} is not here any more`, null, { error: true })
 }
 
 // Half-written text has one rule (T113 B6): leaving it any way but Cancel or Discard keeps it as a draft, until you
