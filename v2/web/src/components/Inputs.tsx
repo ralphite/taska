@@ -22,11 +22,12 @@ import {
   when,
   els,
 } from '../lib/state'
-import type { Input } from '../lib/types'
+import type { FileRef, Input } from '../lib/types'
 import type { Job } from '../lib/state'
+import { clock } from '../lib/state'
 import { draftsOf } from '../lib/drafts'
 import { DraftMark, Empty, Hit, Icon, ProjTile, StateIcon } from './ui'
-import { Rich, Thumbs } from './Talk'
+import { Rich, Thumbs, voiceLen } from './Talk'
 import { SearchHints } from './List'
 
 const isVoice = (r: Input | null | undefined) => !!r?.files?.some((f) => (f.mime || '').startsWith('audio/'))
@@ -349,13 +350,18 @@ export function InputCard({ r, pane = false }: { r: Input; pane?: boolean }) {
 }
 const ROW_TINT =
   'data-sel:bg-blue-100 dark:data-sel:bg-blue-400/20 lg:data-sel:hover:bg-blue-100 dark:lg:data-sel:hover:bg-blue-400/20 lg:hover:bg-zinc-50 dark:lg:hover:bg-zinc-900/70 lg:aria-[current=true]:bg-blue-50 dark:lg:aria-[current=true]:bg-blue-400/10 pointer-coarse:transition-colors pointer-coarse:delay-75 data-pressed:bg-zinc-100 lg:data-pressed:bg-zinc-100 dark:data-pressed:bg-zinc-900 dark:lg:data-pressed:bg-zinc-900'
+// B361: a voice note with no words yet says how long it is
+const voiceSaid = (files: FileRef[]) => {
+  const ms = files.filter((f) => (f.mime || '').startsWith('audio/')).reduce((a, f) => a + (voiceLen(f) || 0), 0)
+  return ms ? `Voice note · ${clock(ms)}` : 'Voice note'
+}
 // the desktop's list of inputs: what you said in two lines, where it stands
 function InputRow({ r }: { r: Input }) {
   const [label, tone] = inputState(r),
     said = r.text
       ? r.text.replace(/\s+/g, ' ').trim()
       : r.files.some((f) => (f.mime || '').startsWith('audio/'))
-        ? 'Voice note'
+        ? voiceSaid(r.files)
         : plural(r.files.length, 'file')
   return (
     <article data-ri={r.id} className="border-b border-zinc-100 dark:border-zinc-800/70">
@@ -605,7 +611,7 @@ function useCut(ref: RefObject<HTMLElement | null>) {
 function SaidRow({ r, last }: { r: Input; last: boolean }) {
   const [label, tone] = inputState(r),
     scope = r.scope ? byN.get(r.scope) : undefined
-  const said = r.text || (r.files.some((f) => (f.mime || '').startsWith('audio/')) ? 'Voice note' : '')
+  const said = r.text // B361: a voice note alone is its player, with its length; no "Voice note" over it
   const bubble = (
     <>
       {scope ? (

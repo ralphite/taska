@@ -37,13 +37,25 @@ export function Rich({
   )
 }
 
-const WAVE = 'h-2 h-3 h-4 h-2 h-5 h-3 h-2 h-4 h-3 h-2 h-1.5 h-3 h-4 h-2'.split(' ')
 function PlayIcon({ src, cls }: { src: string; cls: string }) {
   return <Icon n={audioOf(src).playing ? 'pausefill' : 'play'} c={cls} />
 }
-function PlayTime({ src, fallback }: { src: string; fallback: string }) {
-  const t = audioOf(src).t
-  return <>{t === null ? fallback : clock(t)}</>
+/** B361: a voice note's length, from its name (voice_1-05.webm is 1:05), in ms; null when its name does not say. */
+export const voiceLen = (f: FileRef) => {
+  const m = /(\d+)-(\d+)\.\w+$/.exec(f.name || '')
+  return m ? (60 * +m[1] + +m[2]) * 1000 : null
+}
+// B361: what a voice note shows is what tells you something: how long it is, and while it plays, how far it got
+function VoiceTime({ src, total }: { src: string; total: number | null }) {
+  const { playing, t } = audioOf(src)
+  if (t !== null && (playing || (total !== null && t < total - 500)))
+    return (
+      <>
+        {clock(t)}
+        {total !== null ? <span className="text-zinc-400 dark:text-zinc-500"> / {clock(total)}</span> : null}
+      </>
+    )
+  return <>{total !== null ? clock(total) : t !== null ? clock(t) : 'Play'}</>
 }
 export function Thumbs({ files, gid, size = 'size-20' }: { files: FileRef[]; gid: string; size?: string }) {
   groups.set(
@@ -61,22 +73,17 @@ export function Thumbs({ files, gid, size = 'size-20' }: { files: FileRef[]; gid
               <button
                 data-act="play"
                 data-src={src}
-                aria-label={`Play ${f.name}`}
-                className="flex h-11 shrink-0 items-center gap-2 self-end rounded-full border border-zinc-200 pr-3.5 pl-1.5 text-xs text-zinc-500 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-800"
+                aria-label={`Play the voice note${voiceLen(f) ? `, ${clock(voiceLen(f) as number)}` : ''}`}
+                className={`${HIT} flex h-9 shrink-0 items-center gap-2 self-end rounded-full border border-zinc-200 pr-3 pl-1 text-[13px] text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800`}
               >
                 <span
                   data-icon
-                  className="grid size-8 place-items-center rounded-full bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
+                  className="grid size-7 place-items-center rounded-full bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
                 >
-                  <PlayIcon src={src} cls="size-4" />
-                </span>
-                <span className="flex h-5 items-center gap-[2px]">
-                  {WAVE.map((h, i) => (
-                    <span key={i} className={`w-[2px] rounded-full bg-zinc-300 dark:bg-zinc-600 ${h}`} />
-                  ))}
+                  <PlayIcon src={src} cls="size-3.5" />
                 </span>
                 <span data-time className="font-mono tabular-nums">
-                  <PlayTime src={src} fallback="Voice" />
+                  <VoiceTime src={src} total={voiceLen(f)} />
                 </span>
               </button>
               {tidy ? (
@@ -158,9 +165,7 @@ export function VoiceLine({ files, bare = false }: { files?: FileRef[]; bare?: b
   return (
     <>
       {audio.map((f) => {
-        const m = /(\d+)-(\d+)\.\w+$/.exec(f.name || ''),
-          len = m ? `${+m[1]}:${m[2]}` : 'Voice',
-          src = fileUrl(f.f)
+        const src = fileUrl(f.f)
         return (
           <span key={f.f} className="flex items-center gap-1 px-1 text-[11px] text-zinc-400 dark:text-zinc-500">
             <button
@@ -173,7 +178,7 @@ export function VoiceLine({ files, bare = false }: { files?: FileRef[]; bare?: b
                 <PlayIcon src={src} cls="size-3.5" />
               </span>
               <span data-time className="font-mono tabular-nums">
-                <PlayTime src={src} fallback={len} />
+                <VoiceTime src={src} total={voiceLen(f)} />
               </span>
             </button>
             {tidy ? (
