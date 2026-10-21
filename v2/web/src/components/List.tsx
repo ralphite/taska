@@ -613,12 +613,17 @@ const VIEWS: [string, string][] = [
 ] // in Yadong's order (r399)
 const unfinished = (rows: Item[]) => rows.filter((it) => !CLOSED(it.status))
 function viewCount(v: string | View) {
-  const was = { type: U.type, when: U.when, status: U.status, pri: U.pri, sort: U.sort }
-  if (typeof v === 'string') U.status = v
-  else setFilters(v)
+  const was = { type: U.type, when: U.when, status: U.status, pri: U.pri, sort: U.sort },
+    tab = U.tab
+  U.tab = 'items' // F348: counted as Items shows it, from the Archive view too
+  if (typeof v === 'string') {
+    if (tab !== 'items') setFilters({ type: 'all', when: 'all', status: v, pri: 'all', sort: 'all' })
+    else U.status = v
+  } else setFilters(v)
   try {
     return visible('items').length
   } finally {
+    U.tab = tab
     setFilters(was)
   }
 }
@@ -721,7 +726,8 @@ function ViewBar() {
               data-act="set-filter"
               data-k="status"
               data-v={v}
-              aria-pressed={U.status === v && own < 0}
+              data-views
+              aria-pressed={U.tab === 'items' && U.status === v && own < 0}
               className={CHIP}
             >
               {v === 'wait' && n ? <span className="size-2 rounded-full bg-amber-500 dark:bg-amber-400" /> : null}
@@ -730,8 +736,15 @@ function ViewBar() {
             </button>
           )
         })}
+        {/* F348: the archive is one of the views, after Finished */}
+        <button data-act="tab" data-tab="archive" aria-pressed={U.tab === 'archive'} className={CHIP}>
+          Archive
+          <span className="font-mono text-[11px] tabular-nums opacity-60">
+            {model.S.items.filter((it) => it.archived && !it.merged_into).length}
+          </span>
+        </button>
         {VW_STATE.list.map((v, i) => (
-          <OwnView key={v.name} v={v} i={i} on={i === own} />
+          <OwnView key={v.name} v={v} i={i} on={U.tab === 'items' && i === own} />
         ))}
       </div>
       {edge.l ? arrow(-1) : null}
@@ -1041,20 +1054,25 @@ function listBody(): { body: ReactNode; shown: number } {
   if (U.tab === 'archive' || U.sort !== 'all')
     // T274 #36: sorted another way, the list is in that order
     return {
-      body: rows.length ? (
-        rows.map((it) => <ItemRow key={it.n} it={it} />)
-      ) : (
-        <Empty>
-          {U.tab === 'archive' ? (
-            <>
-              Nothing archived yet.
-              <br />
-              Archive items from the end of the Items list, or from an item&apos;s ⋯.
-            </>
+      body: (
+        <>
+          {U.tab === 'archive' ? <ViewBar /> : null}
+          {rows.length ? (
+            rows.map((it) => <ItemRow key={it.n} it={it} />)
           ) : (
-            'No items'
+            <Empty>
+              {U.tab === 'archive' ? (
+                <>
+                  Nothing archived yet.
+                  <br />
+                  Archive items from the end of the Items list, or from an item&apos;s ⋯.
+                </>
+              ) : (
+                'No items'
+              )}
+            </Empty>
           )}
-        </Empty>
+        </>
       ),
       shown: rows.length,
     }

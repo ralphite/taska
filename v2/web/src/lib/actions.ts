@@ -601,6 +601,7 @@ export const ACT: Record<string, Handler> = {
   tab: (d) => setTab(d.tab as never),
   filters: () => showFilters(),
   'set-filter': (d) => {
+    if (U.tab === 'archive' && d.k === 'status' && d.views !== undefined) setTab('items') // F348: from the Archive view to another view
     ;(U as Record<string, unknown>)[d.k as string] = d.v
     writeURL(false)
     render()
@@ -1456,7 +1457,10 @@ export const ACT: Record<string, Handler> = {
     }
   },
   // F320: your own views of the list
-  'view-use': (d) => showView(Number(d.i)),
+  'view-use': (d) => {
+    if (U.tab === 'archive') setTab('items') // F348: the archive is a view; yours show items
+    showView(Number(d.i))
+  },
   'view-save': () => {
     const el = document.getElementById('viewName') as HTMLInputElement | null
     saveView(el?.value || '')

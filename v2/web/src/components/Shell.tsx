@@ -1,4 +1,6 @@
 // The project page's frame: the sidebar (or the rail, or the phone's drawer), the project's bar with its tabs, the
+// F348: Archive is a view of the item list (in the row of views), not a tab of its own; its address stays
+const SHOWN_TABS = TABS.filter((t) => t !== 'archive')
 // list's head, the list, the item pane, Settings, the one input box at the foot, and what floats over them: the sheet,
 // the picture viewer, the tooltip, the bar on selected text, the toast. Below 1024px it is the phone's page.
 import { useLayoutEffect, useRef, type ReactNode } from 'react'
@@ -538,13 +540,13 @@ function ProjBar({ hidden }: { hidden: boolean }) {
       )}
       <span className="mx-2 my-3.5 w-px shrink-0 bg-zinc-200 dark:bg-zinc-800" />
       <div role="tablist" className="flex min-w-0 items-stretch gap-5">
-        {TABS.map((t) => (
+        {SHOWN_TABS.map((t) => (
           <button
             key={t}
             data-act="tab"
             data-tab={t}
             role="tab"
-            aria-selected={U.tab === t && !D.page}
+            aria-selected={(U.tab === t || (t === 'items' && U.tab === 'archive')) && !D.page}
             className="group -mb-px flex shrink-0 items-center gap-1.5 border-b-2 border-transparent px-0.5 text-sm font-medium text-zinc-500 hover:text-zinc-800 aria-selected:border-zinc-900 aria-selected:font-semibold aria-selected:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200 dark:aria-selected:border-zinc-100 dark:aria-selected:text-zinc-50"
           >
             {TAB_NAME[t]}
@@ -800,13 +802,13 @@ function Tabs({ hidden }: { hidden: boolean }) {
         role="tablist"
         className="flex min-w-0 [scrollbar-width:none] items-stretch gap-2 overflow-x-auto min-[400px]:gap-4"
       >
-        {TABS.map((t) => (
+        {SHOWN_TABS.map((t) => (
           <button
             key={t}
             data-act="tab"
             data-tab={t}
             role="tab"
-            aria-selected={U.tab === t}
+            aria-selected={U.tab === t || (t === 'items' && U.tab === 'archive')}
             className="group -mb-px flex h-11 shrink-0 items-center gap-0.5 border-b-2 border-transparent text-[14px] font-medium text-zinc-500 aria-selected:border-zinc-900 aria-selected:font-semibold aria-selected:text-zinc-900 min-[400px]:gap-1 min-[400px]:text-[15px] dark:text-zinc-400 dark:aria-selected:border-zinc-100 dark:aria-selected:text-zinc-50"
           >
             {TAB_NAME[t]}
