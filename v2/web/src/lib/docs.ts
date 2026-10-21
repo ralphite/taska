@@ -22,7 +22,7 @@ import {
 } from './state'
 import type { Comment, Doc } from './types'
 import { toast } from './toast'
-import { pushUndo, save } from './data'
+import { instant, pushUndo, save } from './data'
 import { draftStore, kept, markSent, saveDraft } from './drafts'
 import { closeDialog, openDialog } from './dialog'
 import { layersNow, leaveView, writeURL } from './url'
@@ -249,19 +249,30 @@ export function editComment(dn: number, id: number) {
   t.focus()
   t.selectionStart = t.selectionEnd = t.value.length
 }
-export async function deleteComment(dn: number, id: number) {
-  try {
-    await save({ op: 'dcdel', d: dn, id }, () => deleteComment(dn, id))
-  } catch {
-    return
+export function deleteComment(dn: number, id: number) {
+  // R409: gone at once, saved behind you; Undo puts it back where it was
+  const c = dcFind(dn, id)
+  const drop = () => {
+    const d = docById(dn)
+    if (!d) return
+    for (const b of d.blocks) b.comments = b.comments.filter((x) => x.id !== id)
+    d.whole = d.whole.filter((x) => x.id !== id)
+    for (const t of d.detached) t.comments = t.comments.filter((x) => x.id !== id)
   }
+  void instant({ op: 'dcdel', d: dn, id }, drop, `deleting a comment on D${dn}`, () => deleteComment(dn, id))
   render()
   toast(
     'Comment deleted',
     pushUndo(`Delete a comment on D${dn}`, async () => {
-      await save({ op: 'dcundel', d: dn, id })
+      const ok = await instant({ op: 'dcundel', d: dn, id }, () => {
+        const d = docById(dn)
+        if (!d || !c || dcFind(dn, id)) return
+        const b = d.blocks.find((x) => x.key === c.key)
+        if (b) b.comments = [...b.comments, c]
+        else d.whole = [...d.whole, c]
+      })
       render()
-      toast('Comment back')
+      if (ok) toast('Comment back')
     }),
   )
 }
