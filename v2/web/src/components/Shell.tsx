@@ -906,6 +906,7 @@ function Foot({ hidden, wideCls }: { hidden: boolean; wideCls: string }) {
     <footer
       id="foot"
       hidden={hidden}
+      data-talk={talk || undefined}
       onDragOver={(e) => e.preventDefault()}
       onDrop={(e) => {
         e.preventDefault()

@@ -45,11 +45,12 @@ import { Icon, Kbd, ProjTile } from './ui'
 import { outboxLine } from './Inputs'
 
 // ---------------------------------------------------------------- where the box is
+// B345: under an item's talk the box lies on the talk's grey with no shadow: nothing passes under it there
 export const BOX: HTMLDivElement = (() => {
   const b = document.createElement('div')
   b.id = 'composer'
   b.className =
-    'group/box rounded-4xl border border-zinc-200 bg-white shadow-lg shadow-black/5 focus-within:border-zinc-300 lg:mx-auto lg:max-w-[42rem] dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-black/40 dark:focus-within:border-zinc-700'
+    'group/box rounded-4xl border border-zinc-200 bg-white shadow-lg shadow-black/5 focus-within:border-zinc-300 lg:in-data-talk:shadow-none lg:mx-auto lg:max-w-[42rem] dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-black/40 dark:focus-within:border-zinc-700'
   return b
 })()
 const home = () => document.getElementById('boxHome')
