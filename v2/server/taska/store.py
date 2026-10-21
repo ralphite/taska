@@ -699,15 +699,17 @@ class Store:
             last[c["key"]] = c["by"]
         return sum(1 for k, by in last.items() if by == "you" and k not in d.get("resolved", {}))
 
-    @staticmethod
-    def waiting(it: Item) -> Optional[Msg]:
+    def waiting(self, it: Item) -> Optional[Msg]:
         """The open ask/block an agent posted that the user has not answered yet. Whatever the user says after it
-        answers it, a picked choice or not (B163): the list, the item, Go through and /next all read it here."""
+        answers it, a picked choice or not (B163), and so does a comment of theirs on one of its documents (B425): the
+        list, the item, Go through and /next all read it here."""
         for x in reversed(it["thread"]):
             if user_word(x) or x["kind"] == "withdraw":
                 return None
             if x["kind"] in ("ask", "block"):
-                return x
+                said = (c["t"] for d in self.docs.values() if d["n"] == it["n"] and not d.get("deleted")
+                        for c in d["comments"] if c["by"] == "you")
+                return None if any(t > x["t"] for t in said) else x
         return None
 
     @staticmethod
