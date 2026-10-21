@@ -10,12 +10,22 @@ export function openDialog(kind: string, props: Record<string, unknown> = {}, op
   const was = OV.spec
   OV.spec = { focus: true, ...opts, kind, props }
   if (!was || !opts.pop || was.kind !== kind) OV.popXY = null
+  OV.popRight = false
+  const a = OV.anchor
+  if (opts.pop && !OV.popXY && a && Date.now() - a.t < 500) {
+    // B358: opened from a button: under it, its right edge on the button's
+    OV.popXY = [a.r[2], a.r[3] + 4]
+    OV.popRight = true
+    OV.popTop = a.r[1]
+    OV.popLeft = a.r[0]
+  }
   OV.maxH = 0
   bump('dialog', 'composer', 'toast')
 }
 /** A menu opened by right-click sits at the pointer, kept on screen (B129). */
 export function popAt(x: number, y: number) {
   OV.popXY = [x, y]
+  OV.popRight = false
   bump('dialog')
 }
 export function closeDialog() {

@@ -168,12 +168,13 @@ export function itemMenu(n: number | null, arm: string | null = '') {
 // The ... menu on the desktop: a popover with the actions as rows, each with its key, then type, priority, status.
 export function itemMenuDesk(n: number | null, arm: string | null = U.menuArm) {
   if (n == null || !byN.get(n)) return
-  const again = U.sheet === 'menu' && !!OV.spec && U.menuFor === n
-  U.sheet = 'menu'
+  const field = !!arm && ['s', 'p', 't'].includes(arm)
+  const again = (U.sheet === 'menu' || U.sheet === 'pick') && !!OV.spec && U.menuFor === n
+  U.sheet = field ? 'pick' : 'menu' // B358: a field's list closes when you pick
   U.menuFor = n
   U.menuArm = arm
   const xy = again ? OV.popXY : null
-  openDialog('menu-desk', { n }, { pop: true, focus: false })
+  openDialog('menu-desk', { n }, { pop: true, focus: false, narrow: field })
   if (xy) OV.popXY = xy
   bump('dialog')
 }

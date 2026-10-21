@@ -756,13 +756,23 @@ export interface DialogOpts {
   card?: boolean
   pop?: boolean
   walk?: boolean
+  narrow?: boolean // B358: a short list (one field's choices), not a whole menu
 }
 // Which sheet is open: its kind (components/sheets.tsx draws each kind) and what it is about.
 export interface DialogSpec extends DialogOpts {
   kind: string
   props: Record<string, unknown>
 }
-export const OV = { spec: null as DialogSpec | null, popXY: null as null | [number, number], maxH: 0 }
+export const OV = {
+  spec: null as DialogSpec | null,
+  popXY: null as null | [number, number],
+  maxH: 0,
+  // B358: the button a menu was opened from (left, top, right, bottom) and when: the menu opens under it
+  anchor: null as null | { r: [number, number, number, number]; t: number },
+  popRight: false, // popXY is the menu's top right corner (under a button), not its top left (at the pointer)
+  popTop: 0, // the button's top: the menu goes above it when there is no room below
+  popLeft: 0, // the button's left: the menu starts there when it fits
+}
 export const els = {
   text: null as HTMLTextAreaElement | null,
   list: null as HTMLElement | null,

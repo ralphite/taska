@@ -53,12 +53,12 @@ test('a new input goes to the inbox, and a reply goes to its item', async ({ pag
   await expect.poll(async () => p.read('T4')).toContain('Start with the install page')
 })
 
-test('the item page shows its state, and its menu changes the priority', async ({ page, request }) => {
+test('the item page shows its state, and its priority button changes the priority', async ({ page, request }) => {
   const p = await project(request, LOOP)
   await open(page, p)
   await page.locator('#list [data-act="open"]').filter({ hasText: 'Write the user docs' }).click()
   await expect(page.locator('#detailBody h1')).toHaveText('Write the user docs')
-  await page.locator('#itemMenuBtn').click()
+  await page.locator('#detailBody [data-arm="p"]').click() // B358: the button opens its own short list
   await page.locator('#dlgBody [data-f="pri"][data-v="P0"]').click()
   await expect.poll(async () => (await p.read('T4')).split('\n')[0]).toContain(' P0 ')
 })

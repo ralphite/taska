@@ -481,15 +481,49 @@ function menuDeskParts({ n }: Props): Parts | null {
       ) : null}
     </button>
   )
-  const lab = (t: string, keys: string, on: boolean) => (
-    <div
-      className={`flex items-center justify-between px-1 pb-1.5 text-xs font-semibold ${on ? 'text-blue-600 dark:text-blue-400' : 'text-zinc-500 dark:text-zinc-400'}`}
-    >
-      {t}
-      <span className={`font-normal ${on ? '' : 'text-zinc-400'}`}>{keys}</span>
-    </div>
-  )
   const statuses = statusesOf(it)
+  if (arm === 't' || arm === 'p' || arm === 's') {
+    // B358: a status, priority or type button opens just its choices, under it; picking one closes the list
+    const f = arm === 't' ? 'type' : arm === 'p' ? 'pri' : 'status',
+      cur = String(it[f as 'type'])
+    const opts: [string, ReactNode, string][] =
+      arm === 't'
+        ? typeOpts(true).map(([v, l]) => [v, l, v[0].toUpperCase()])
+        : arm === 'p'
+          ? priOpts(false).map(([v, l]) => [v, l, v.slice(1)])
+          : statuses.map(([v, t], i) => [
+              v,
+              <span key={v} className="flex items-center gap-2">
+                <StatIcon s={v} t={t} size="size-4" />
+                {t}
+              </span>,
+              String(i + 1),
+            ])
+    return {
+      body: (
+        <div className="-mx-1 -mt-1">
+          {opts.map(([v, l, k]) => (
+            <button
+              key={v}
+              data-act="set-field"
+              data-n={it.n}
+              data-f={f}
+              data-v={v}
+              aria-pressed={cur === v}
+              className="flex h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-sm hover:bg-zinc-100 aria-pressed:font-semibold dark:hover:bg-zinc-800"
+            >
+              <span className="min-w-0 flex-1 truncate">{l}</span>
+              {cur === v ? (
+                <Icon n="check" c="size-4 text-blue-600 dark:text-blue-400" sw="2.5" />
+              ) : (
+                <kbd className="font-sans text-[11px] font-semibold text-zinc-400">{k}</kbd>
+              )}
+            </button>
+          ))}
+        </div>
+      ),
+    }
+  }
   const next =
     inQueue(it) && it.when === 'now'
       ? row(
@@ -515,10 +549,9 @@ function menuDeskParts({ n }: Props): Parts | null {
           row('archive', 'archive', 'Archive', 'E', { 'data-on': '1' }),
         ] // F281
   return {
-    head: <ItemHeadLine it={it} cls="text-sm" />,
     body: (
       <div className="flex flex-col gap-3">
-        <div className="-mx-1">
+        <div className="-mx-1 -mt-1">
           {row('edit', 'pencil', 'Edit', 'I')}
           {row('copy', 'copy', 'Copy for agent', '⇧C')}
           {it.type === 'rule' ? null : (
@@ -546,40 +579,6 @@ function menuDeskParts({ n }: Props): Parts | null {
             </Armed>,
             '',
           )}
-        </div>
-        <div className="border-t border-zinc-100 pt-3 dark:border-zinc-800">
-          {lab('Type', 'T then F B I T R', arm === 't')}
-          <SegCtl act="set-field" k="type" n={it.n} opts={typeOpts(true)} on={it.type} small />
-        </div>
-        {it.type === 'rule' ? null : (
-          <div>
-            {lab('Priority', 'P then 0–3', arm === 'p')}
-            <SegCtl act="set-field" k="pri" n={it.n} opts={priOpts(false)} on={it.pri} small />
-          </div>
-        )}
-        <div>
-          {lab('Status', `S then 1–${statuses.length}`, arm === 's')}
-          <div className="grid grid-cols-3 gap-1">
-            {statuses.map(([v, t], i) => (
-              <button
-                key={v}
-                data-act="set-field"
-                data-n={it.n}
-                data-f="status"
-                data-v={v}
-                aria-pressed={it.status === v}
-                className={`${STAT_BTN} h-8 rounded-lg px-2`}
-              >
-                <StatIcon s={v} t={t} size="size-4" />
-                <span className="truncate">{t}</span>
-                {arm === 's' ? (
-                  <span className="ml-auto pl-1 font-mono text-[11px] text-zinc-400 group-aria-pressed:text-white/70 dark:group-aria-pressed:text-zinc-900/60">
-                    {i + 1}
-                  </span>
-                ) : null}
-              </button>
-            ))}
-          </div>
         </div>
       </div>
     ),
@@ -1467,6 +1466,8 @@ const CloseX = () => (
   </span>
 )
 // the drag down on the phone's handle closes it; a swipe on the card means what it means on a row (B153)
+// B358: menus on the desktop have no title row and no ✕ (a click outside or Esc closes them)
+const MENUS = new Set(['menu-desk', 'input-menu', 'msg-menu', 'proj-menu'])
 const DRAG = { id: 0, y0: 0, dy: 0, on: false }
 const FC = { x: null as number | null, y: 0, dx: 0, on: false }
 export function Dialog() {
@@ -1488,8 +1489,14 @@ export function Dialog() {
     // B129: a menu opened by right-click sits at the pointer, kept on screen
     const xy = OV.popXY
     if (xy && desk()) {
-      o.style.paddingLeft = `${Math.max(8, Math.min(xy[0], innerWidth - d.offsetWidth - 8))}px`
-      o.style.paddingTop = `${Math.max(8, Math.min(xy[1], innerHeight - d.offsetHeight - 8))}px`
+      const x = !OV.popRight
+          ? xy[0]
+          : OV.popLeft + d.offsetWidth <= innerWidth - 8
+            ? OV.popLeft
+            : xy[0] - d.offsetWidth,
+        y = OV.popRight && xy[1] + d.offsetHeight > innerHeight - 8 ? OV.popTop - d.offsetHeight - 4 : xy[1] // B358
+      o.style.paddingLeft = `${Math.max(8, Math.min(x, innerWidth - d.offsetWidth - 8))}px`
+      o.style.paddingTop = `${Math.max(8, Math.min(y, innerHeight - d.offsetHeight - 8))}px`
     } else {
       o.style.paddingLeft = o.style.paddingTop = ''
     }
@@ -1542,7 +1549,9 @@ export function Dialog() {
     spec.tall ? 'h-[88dvh] sm:h-[85dvh]' : '',
     card ? 'shadow-2xl overflow-hidden max-h-[92%]' : 'max-h-[88dvh]',
     card && !flush ? 'rounded-3xl' : 'rounded-t-3xl',
-    pop ? 'lg:w-[24rem] lg:max-h-[80dvh] lg:rounded-2xl lg:ring-1 lg:ring-zinc-900/10 dark:lg:ring-white/10' : '',
+    pop
+      ? `${spec.narrow ? 'lg:w-56' : 'lg:w-[24rem]'} lg:max-h-[80dvh] lg:rounded-2xl lg:ring-1 lg:ring-zinc-900/10 dark:lg:ring-white/10`
+      : '',
   ].join(' ')
   const cardAim = (dx: number) => {
     const f = document.getElementById('dlgFoot'),
@@ -1622,7 +1631,7 @@ export function Dialog() {
           <span className="h-1 w-10 rounded-full bg-zinc-300 dark:bg-zinc-600" />
         </div>
         <header
-          className={`flex shrink-0 touch-none items-center gap-2 py-1 pr-2 pl-5 ${parts.head || parts.title ? '' : 'lg:hidden'}`}
+          className={`flex shrink-0 touch-none items-center gap-2 py-1 pr-2 pl-5 ${(parts.head || parts.title) && !(pop && MENUS.has(spec.kind)) ? '' : 'lg:hidden'}`}
         >
           <h2 id="dlgTitle" className="min-w-0 flex-1 truncate text-[17px] font-semibold">
             {parts.head ?? parts.title ?? ''}
@@ -1633,7 +1642,7 @@ export function Dialog() {
           <button
             data-act="close"
             aria-label="Close"
-            className="group grid size-11 shrink-0 place-items-center rounded-full"
+            className={`group grid size-11 shrink-0 place-items-center rounded-full ${pop ? 'lg:hidden' : ''}`}
             id="dlgClose"
           >
             <CloseX />

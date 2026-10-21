@@ -327,6 +327,8 @@ function wireAll() {
     if (b?.hasAttribute('data-expand') && !getSelection()?.isCollapsed) return // selecting words to copy them
     if (b && ACT[b.dataset.act || '']) {
       e.preventDefault()
+      const box = b.getBoundingClientRect()
+      OV.anchor = { r: [box.left, box.top, box.right, box.bottom], t: Date.now() } // B358: a menu it opens goes under it
       const r = ACT[b.dataset.act as string](dataOf(b), e) as Promise<unknown> | undefined
       if (r && typeof r.finally === 'function' && b.tagName === 'BUTTON') {
         b.setAttribute('aria-busy', 'true')

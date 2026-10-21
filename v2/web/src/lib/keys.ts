@@ -209,8 +209,9 @@ export function deskKey(e: KeyboardEvent) {
     return document.querySelector<HTMLElement>(`[data-act="choice-send"][data-n="${U.open}"]`)?.click()
   }
   if (e.metaKey || e.ctrlKey) return
-  if (U.sheet === 'menu' && !overlayHidden() && menuKey(e)) return
-  if (U.sheet === 'menu' && !overlayHidden() && /^[a-zA-Z]$/.test(e.key)) closeDialog() // the keys the menu shows work from it (B131)
+  const menuOpen = (U.sheet === 'menu' || (desk() && U.sheet === 'pick' && OV.spec?.kind === 'menu-desk')) && !overlayHidden() // B358: a field's list too
+  if (menuOpen && menuKey(e)) return
+  if (menuOpen && /^[a-zA-Z]$/.test(e.key)) closeDialog() // the keys the menu shows work from it (B131)
   if (!overlayHidden()) return // a sheet or menu is open: it has its own keys (Esc closes it)
   const k = e.key,
     one = /^[a-zA-Z0-9./[?]$/.test(k)
