@@ -94,6 +94,7 @@ export function inputState(r: Input): [string, string, ReactNode] {
     return ['Organizing…', 'text-blue-600 dark:text-blue-400', dot('bg-blue-500 dark:bg-blue-400')]
   if (r.org?.undone) return ['Undone', 'text-zinc-500 dark:text-zinc-400', <Icon n="undo" c="size-3.5" sw="2" />]
   const check = <Icon n="check" c="size-3.5" sw="2.25" />
+  if (r.kind === 'answer') return ['Answer', 'text-zinc-500 dark:text-zinc-400', check] // F419: no organizer for it
   if (r.acked)
     return r.org?.keep
       ? ['Handled by your agent', 'text-zinc-400 dark:text-zinc-500', check]

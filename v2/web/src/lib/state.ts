@@ -191,6 +191,7 @@ export interface Job {
   files: DraftFile[]
   scope: string | null
   p: string // B414: the project it was written in: it goes there even after you moved to another one
+  kind?: 'answer' // F419: a form you sent (choices, with or without words): no organizer, straight to its item
   back?: boolean // sent before a reload or a closed tab, and going out again now (r521: logged)
   quiet?: boolean
   failed?: boolean

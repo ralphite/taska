@@ -165,6 +165,8 @@ class Store:
             inp: Optional[Input] = {"id": e["id"], "t": e["t"], "by": e["by"], "text": e.get("text", ""), "scope": e.get("scope"),
                                     "files": e.get("files", []), "acked": False, "touched": [], "org": None, "seq": e["seq"]}
             assert inp is not None
+            if e.get("kind") == "answer":  # F419: no organizer for it: it is an answer, in its item's thread; nothing more to do
+                inp["kind"], inp["acked"] = "answer", True
             self.inputs[inp["id"]] = inp
             self.nin = max(self.nin, int(inp["id"][1:]))
             if e.get("q"):

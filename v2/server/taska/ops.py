@@ -156,6 +156,8 @@ def run(s: "Store", op: Op, by: str, ctx: Dict[str, Any]) -> Tuple[str, Any]:
         e: Dict[str, Any] = {"k": "in", "id": rid, "by": by, "text": text, "scope": scope, "files": files}
         if q:
             e["q"] = q
+        if op.get("kind") == "answer" and scope is not None:
+            e["kind"] = "answer"  # F419: a form you sent (an answer to a question, a document's choices): it goes to its item as it is
         s.emit(e)
         return f"ok {rid}", "Received"
     if name == "correct":  # F144: the wrong words in an input, fixed there and remembered for every project

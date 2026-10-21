@@ -100,7 +100,12 @@ export async function send() {
     keepChoice()
   }
   U.note = null
-  const job = outboxPush({ text, files: U.files, scope: n ? code(n) : null })
+  const job = outboxPush({
+    text,
+    files: U.files,
+    scope: n ? code(n) : null,
+    ...(ch ? { kind: 'answer' as const } : {}),
+  }) // F419: ticked choices
   actLog('send', { to: job.scope || 'new input', q: job.q, chars: text.length, files: job.files.length }) // F407
   unsendable(job)
   if (desk() && D.compose) toast('Sent', job.undo) // the New input page has no line under the box
@@ -145,6 +150,7 @@ async function sendTicks(doc: Doc) {
         (note ? '\n\n' + note : ''),
       files: U.files,
       scope: code(n),
+      kind: 'answer', // F419
     })
     if (box) box.value = ''
     U.files = []
@@ -264,6 +270,7 @@ function keepJob(job: Job) {
         text: job.text,
         scope: job.scope,
         t: job.t,
+        ...(job.kind ? { kind: job.kind } : {}),
         files: job.files.map(({ f, name, mime, size }) => ({ f, name, mime, size })),
       }
     }, projectOf(job.p))
@@ -272,7 +279,7 @@ const dropJob = (job: Job) =>
   outboxStore((all) => {
     delete all[job.q]
   }, projectOf(job.p))
-type KeptJob = { text?: string; scope?: string; t?: number; files?: DraftFile[] }
+type KeptJob = { text?: string; scope?: string; t?: number; kind?: 'answer'; files?: DraftFile[] }
 export function restoreOutbox() {
   // what did not go out last time goes now, in the order you sent it, whichever project it was written in (B414)
   const mine = new Set(U.outbox.map((j) => j.q)),
@@ -297,6 +304,7 @@ export function restoreOutbox() {
       scope: j.scope || null,
       p: '/p/' + encodeURIComponent(project) + '/',
       back: true,
+      ...(j.kind ? { kind: j.kind } : {}),
       files: (j.files || []).map((f) => ({ ...f, done: Promise.resolve() })),
     })
   if (back.length) {
@@ -393,6 +401,7 @@ export async function flushOutbox() {
             text,
             scope: job.scope,
             q: job.q,
+            ...(job.kind ? { kind: job.kind } : {}),
             files: files.map(({ f, name, mime, size, tr }) => ({ f, name, mime, size, ...(tr ? { tr } : {}) })),
           },
           job.p,
@@ -569,7 +578,7 @@ export async function sendChoice(n: number) {
   try {
     const rid: string | null = null
     // B326: an answer goes out like anything you write: at once on the screen, kept and sent again until Taska has it
-    outboxPush({ text: picks + (note ? '\n\n' + note : ''), files, scope: code(n), quiet: true })
+    outboxPush({ text: picks + (note ? '\n\n' + note : ''), files, scope: code(n), quiet: true, kind: 'answer' })
     if (note || files.length) {
       if (els.text) els.text.value = ''
       U.files = []

@@ -74,6 +74,7 @@ export interface OrgNote {
 
 export interface Input {
   id: string
+  kind?: 'answer' // F419: a form you sent: straight to its item, no organizer
   t: string
   by: string
   text: string
