@@ -333,6 +333,8 @@ def log_entries(s: "Store", n: int) -> List[Dict[str, Any]]:
             t = f"{e['src']} voice note words: {first_line(e['tr'])!r}"
         elif k in LOG_WORDS:
             t = LOG_WORDS[k](s, e)
+        elif k != "org" and "src" not in e:  # a kind this log has no words for (like B406's "plain"): said as it is
+            t = f"{k} {e.get('id', '')}".rstrip()
         elif e.get("retry"):
             t = f"organizer {e['src']} retry"
         else:
