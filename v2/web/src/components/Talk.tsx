@@ -57,6 +57,23 @@ function VoiceTime({ src, total }: { src: string; total: number | null }) {
     )
   return <>{total !== null ? clock(total) : t !== null ? clock(t) : 'Play'}</>
 }
+// F364: pointing at a voice note floats this bar above it, as a selection does; its padding below bridges to the note
+function WordsBar({ f }: { f: string }) {
+  return (
+    <span className="absolute bottom-full left-0 z-20 hidden pb-1.5 lg:group-focus-within/voice:block lg:group-hover/voice:block">
+      <span className="flex rounded-full bg-zinc-900 p-1 shadow-lg ring-1 ring-black/10 dark:bg-zinc-100 dark:ring-white/10">
+        <button
+          data-act="as-said"
+          data-f={f}
+          className="flex h-8 items-center gap-1.5 rounded-full pr-3 pl-2.5 text-[13px] font-semibold whitespace-nowrap text-white hover:bg-white/15 dark:text-zinc-900 dark:hover:bg-zinc-900/10"
+        >
+          <Icon n="doc" c="size-4" />
+          Original words
+        </button>
+      </span>
+    </span>
+  )
+}
 export function Thumbs({ files, gid, size = 'size-20' }: { files: FileRef[]; gid: string; size?: string }) {
   groups.set(
     gid,
@@ -69,17 +86,17 @@ export function Thumbs({ files, gid, size = 'size-20' }: { files: FileRef[]; gid
         if (isAudio(f)) {
           const src = fileUrl(f.f)
           return (
-            // F364: one chip: play and the length, and at its end the original words, an icon that shows when you
-            // point at the note (always on the phone); it takes no room it does not use
+            // F364: one chip: play and the length. Pointing at it floats a small bar above it, as a selection does,
+            // with the original words; the phone, with no pointing, has them as an icon at the chip's end
             <span
               key={f.f}
-              className="group/voice flex h-9 shrink-0 items-center self-end rounded-full border border-zinc-200 pl-1 text-[13px] text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"
+              className="group/voice relative flex h-9 shrink-0 items-center self-end rounded-full border border-zinc-200 pl-1 text-[13px] text-zinc-600 dark:border-zinc-700 dark:text-zinc-300"
             >
               <button
                 data-act="play"
                 data-src={src}
                 aria-label={`Play the voice note${voiceLen(f) ? `, ${clock(voiceLen(f) as number)}` : ''}`}
-                className={`${HIT} flex h-full items-center gap-2 rounded-full pr-3 hover:text-zinc-900 dark:hover:text-white ${tidy ? 'lg:group-hover/voice:pr-1.5' : ''}`}
+                className={`${HIT} flex h-full items-center gap-2 rounded-full pr-3 hover:text-zinc-900 dark:hover:text-white`}
               >
                 <span
                   data-icon
@@ -92,15 +109,17 @@ export function Thumbs({ files, gid, size = 'size-20' }: { files: FileRef[]; gid
                 </span>
               </button>
               {tidy ? (
-                <button
-                  data-act="as-said"
-                  data-f={f.f}
-                  title="Original words"
-                  aria-label="Original words"
-                  className="mr-1 grid size-7 place-items-center rounded-full text-zinc-400 hover:bg-zinc-100 hover:text-zinc-800 lg:hidden lg:group-hover/voice:grid lg:focus-visible:grid dark:text-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
-                >
-                  <Icon n="doc" c="size-4" />
-                </button>
+                <>
+                  <button
+                    data-act="as-said"
+                    data-f={f.f}
+                    aria-label="Original words"
+                    className="mr-1 -ml-1.5 grid size-7 place-items-center rounded-full text-zinc-400 hover:bg-zinc-100 lg:hidden dark:text-zinc-500 dark:hover:bg-zinc-800"
+                  >
+                    <Icon n="doc" c="size-4" />
+                  </button>
+                  <WordsBar f={f.f} />
+                </>
               ) : null}
             </span>
           )
@@ -174,7 +193,10 @@ export function VoiceLine({ files, bare = false }: { files?: FileRef[]; bare?: b
       {audio.map((f) => {
         const src = fileUrl(f.f)
         return (
-          <span key={f.f} className="flex items-center gap-1 px-1 text-[11px] text-zinc-400 dark:text-zinc-500">
+          <span
+            key={f.f}
+            className="group/voice relative flex items-center gap-1 px-1 text-[11px] text-zinc-400 dark:text-zinc-500"
+          >
             <button
               data-act="play"
               data-src={src}
@@ -190,14 +212,15 @@ export function VoiceLine({ files, bare = false }: { files?: FileRef[]; bare?: b
             </button>
             {tidy ? (
               <>
-                ·
+                <span className="lg:hidden">·</span>
                 <button
                   data-act="as-said"
                   data-f={f.f}
-                  className={`${HIT} h-7 rounded-lg px-1 font-medium hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200`}
+                  className={`${HIT} h-7 rounded-lg px-1 font-medium hover:bg-zinc-100 hover:text-zinc-700 lg:hidden dark:hover:bg-zinc-800 dark:hover:text-zinc-200`}
                 >
                   Original words
                 </button>
+                <WordsBar f={f.f} />
               </>
             ) : null}
           </span>
