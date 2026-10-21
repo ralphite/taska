@@ -381,7 +381,7 @@ export function ItemPage({ it }: { it: Item }) {
         id="itemTop"
         data-clip
         onScroll={(e) => markOver(e.currentTarget)}
-        className={`flex flex-col gap-6 lg:shrink-0 lg:scrollbar-thin lg:overflow-y-auto lg:data-over:mask-b-from-[calc(100%-2.5rem)] ${all ? 'lg:max-h-none' : 'lg:max-h-[var(--top-h,40%)]'}`}
+        className={`flex flex-col gap-6 lg:shrink-0 lg:scrollbar-thin lg:overflow-y-auto lg:data-over:mask-b-from-[calc(100%-4.5rem)] lg:data-over:mask-b-to-[calc(100%-2.25rem)] ${all ? 'lg:max-h-none' : 'lg:max-h-[var(--top-h,40%)]'}`}
       >
         <div className="flex flex-col gap-6 lg:mx-auto lg:w-full lg:max-w-[46rem] lg:px-8 lg:pt-7 lg:pb-6">
           {head}
@@ -475,20 +475,27 @@ export function ItemPage({ it }: { it: Item }) {
         className="group/line relative z-10 hidden h-px shrink-0 cursor-row-resize bg-zinc-200 after:absolute after:inset-x-0 after:-inset-y-2 lg:block dark:bg-zinc-800"
       >
         <span className="absolute top-1/2 left-1/2 h-1 w-10 -translate-1/2 rounded-full bg-zinc-400 opacity-0 group-hover/line:opacity-100 in-[body.cursor-row-resize]:opacity-100 dark:bg-zinc-600" />
-        <button
-          data-act="top-all"
-          data-n={n}
-          className={`absolute top-1/2 right-4 h-7 -translate-y-1/2 items-center gap-1 rounded-full bg-white px-2.5 text-xs font-medium text-zinc-600 shadow-sm ring-1 ring-zinc-900/10 hover:bg-zinc-50 dark:bg-zinc-800 dark:text-zinc-300 dark:ring-white/10 dark:hover:bg-zinc-700 ${all ? 'flex' : 'hidden group-data-over/item:flex'}`}
+        {/* B346: where the item's text is cut off, as a list's "Show more" (Notion's sidebar); a click opens it all */}
+        <div
+          className={`pointer-events-none absolute inset-x-0 bottom-full mb-1 justify-center ${all ? 'flex' : 'hidden group-data-over/item:flex'}`}
         >
-          <Icon n={all ? 'chevup' : 'down'} c="size-3.5" sw="2" />
-          {all ? 'Show less' : 'Show all'}
-        </button>
+          <div className="w-full max-w-[46rem] px-8">
+            <button
+              data-act="top-all"
+              data-n={n}
+              className="pointer-events-auto -ml-1.5 inline-flex h-7 items-center gap-1 rounded-md bg-white/95 px-1.5 text-[13px] font-medium text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 dark:bg-zinc-950/95 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+            >
+              <Icon n={all ? 'chevup' : 'down'} c="size-3.5" sw="2" />
+              {all ? 'Show less' : 'Show all'}
+            </button>
+          </div>
+        </div>
       </div>
       <div
         id="itemTalk"
         ref={talkRef}
         onScroll={(e) => moreBelow(e.currentTarget)}
-        className="lg:min-h-0 lg:flex-1 lg:scrollbar-thin lg:overflow-y-auto lg:bg-zinc-100/70 lg:data-more:mask-b-from-[calc(100%-2rem)] dark:lg:bg-zinc-900"
+        className="lg:min-h-0 lg:flex-1 lg:scrollbar-thin lg:overflow-y-auto lg:bg-zinc-100/70 lg:data-more:mask-b-from-[calc(100%-2rem)] lg:data-up:mask-t-from-[calc(100%-2.5rem)] dark:lg:bg-zinc-900"
       >
         <div className="flex flex-col gap-6 lg:mx-auto lg:w-full lg:max-w-[46rem] lg:px-8 lg:py-6">
           {thread.length || notes.length ? (
@@ -512,7 +519,10 @@ export function ItemPage({ it }: { it: Item }) {
   )
 }
 // B345: the talk fades at its bottom only while more of it is below, out of sight
-const moreBelow = (el: HTMLElement) => el.toggleAttribute('data-more', overflows(el))
+const moreBelow = (el: HTMLElement) => {
+  el.toggleAttribute('data-more', overflows(el))
+  el.toggleAttribute('data-up', el.scrollTop > 2) // and at its top while some of it is above, so a cut message does not run into the line
+}
 // T322: the item part is taller than its share: it fades at the line, and Show all appears
 const overflows = (el: HTMLElement) => el.scrollTop + el.clientHeight < el.scrollHeight - 2
 function markOver(top: HTMLElement) {

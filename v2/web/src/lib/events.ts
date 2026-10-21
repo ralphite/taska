@@ -632,7 +632,7 @@ function wireAll() {
   restoreGrips()
   document.addEventListener('pointerdown', (e) => {
     const g = desk() && (e.target as Element).closest<HTMLElement>('[data-grip]')
-    if (!g || e.button) return
+    if (!g || e.button || (e.target as Element).closest('button')) return // B346: a button on a line is a button
     const kind = g.dataset.grip as string,
       [id, , min, max] = GRIP[kind],
       down = kind === 'top', // T322: the line between the item and its talk moves up and down
@@ -674,7 +674,7 @@ function wireAll() {
   })
   document.addEventListener('dblclick', (e) => {
     const g = desk() && (e.target as Element).closest<HTMLElement>('[data-grip]')
-    if (g) {
+    if (g && !(e.target as Element).closest('button')) {
       setGrip(g.dataset.grip as string, 0)
       try {
         localStorage.removeItem('taska.w.' + g.dataset.grip)
