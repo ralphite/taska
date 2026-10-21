@@ -46,8 +46,4 @@ export function listLeave() {
     clearTimeout(LIST.t)
     LIST.t = window.setTimeout(releaseList, Math.max(0, LIST.until - Date.now()))
   }
-  if (U.archHold && !U.undoArch) {
-    U.archHold = null
-    bump('list')
-  } // the place Archive N kept (B3)
 }

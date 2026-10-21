@@ -22,7 +22,6 @@ import {
   model,
   needsYou,
   statusName,
-  stuck,
   useArea,
   when,
   whoName,
@@ -32,7 +31,6 @@ import {
 import type { Item, Msg } from '../lib/types'
 import { hasChoices, inlineMd, clean } from '../lib/markdown'
 import { keepGo } from '../lib/go'
-import { BEHAVIOUR } from '../lib/behaviour'
 import { noteText } from '../lib/docs'
 import { kept } from '../lib/drafts'
 import { Icon, Kbd, SectionHead, StateIcon } from './ui'
@@ -288,7 +286,7 @@ export function ItemPage({ it, left = null }: { it: Item; left?: ReactNode }) {
         data-act="item-menu"
         data-arm="s"
         title="Status · S"
-        className={`${CHIP} shrink-0 ${stuck(it) ? 'font-semibold text-amber-700 dark:text-amber-400' : 'text-zinc-700 dark:text-zinc-200'}`}
+        className={`${CHIP} shrink-0 text-zinc-700 dark:text-zinc-200`}
       >
         <StateIcon s={it.status} label={statusName(it)} cls="size-3.5" />
         {statusName(it)}
@@ -381,9 +379,7 @@ export function ItemPage({ it, left = null }: { it: Item; left?: ReactNode }) {
         ) : null}
       </div>
     ) : null
-  const docs = BEHAVIOUR.docCards
-    ? [...docsOf(n)].sort((a, b) => String(b.t1).localeCompare(String(a.t1)) || b.d - a.d)
-    : docsOf(n) // I289: the latest first
+  const docs = docsOf(n)
   const notes = docNotes(n, hidden ? thread[hidden]?.t : '') // T274 #4
   // T322 (design A, with B's handle): on the desktop the item and its talk are two parts, each scrolling on its own,
   // with a clear line between them. The talk opens at its latest message. The phone keeps one page that scrolls.
@@ -419,19 +415,9 @@ export function ItemPage({ it, left = null }: { it: Item; left?: ReactNode }) {
               {docs.length ? (
                 <section className="flex flex-col gap-2">
                   <SectionHead text="Documents" />
-                  {(U.docsAll.has(n) || !BEHAVIOUR.docCards ? docs : docs.slice(0, 3)).map((d) => (
+                  {docs.map((d) => (
                     <DocCard key={d.d} d={d} />
                   ))}
-                  {BEHAVIOUR.docCards && docs.length > 3 ? (
-                    <button
-                      data-act="docs-all"
-                      data-n={n}
-                      className="-my-1 flex h-11 items-center gap-1 self-start rounded-lg px-2 text-sm font-medium text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10"
-                    >
-                      <Icon n={U.docsAll.has(n) ? 'chevup' : 'down'} c="size-4" sw="2" />
-                      {U.docsAll.has(n) ? 'Show fewer' : `Show ${docs.length - 3} more`}
-                    </button>
-                  ) : null}
                 </section>
               ) : null}
               {files.length ? <FileRows files={files} gid={'item' + n} size="h-24 w-16" /> : null}

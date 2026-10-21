@@ -4,8 +4,7 @@
 // part of the page is a React component.
 import { create } from 'zustand'
 import { flushSync } from 'react-dom'
-import { BEHAVIOUR } from './behaviour'
-import { AGENT_NAME, LETTER, PROJ_TONES, QUIET_MS, RULE_STATUS, STATUS, VIEW_KEYS, type Tab } from './constants'
+import { AGENT_NAME, LETTER, PROJ_TONES, RULE_STATUS, STATUS, VIEW_KEYS, type Tab } from './constants'
 import type { Doc, FileRef, Input, Item, Msg, ProjectRow, State, Status } from './types'
 
 // ---------------------------------------------------------------- redraw
@@ -94,17 +93,7 @@ export const render = () => {
 }
 // T318 (B269, r309): on the desktop, Items with nothing open is the New input page, as clicking New input shows it
 function idleCompose() {
-  if (
-    BEHAVIOUR.newInputPage &&
-    desk() &&
-    U.tab === 'items' &&
-    !U.open &&
-    !U.doc &&
-    !D.page &&
-    !D.compose &&
-    U.editing == null
-  )
-    D.compose = true
+  if (desk() && U.tab === 'items' && !U.open && !U.doc && !D.page && !D.compose && U.editing == null) D.compose = true
 }
 
 // ---------------------------------------------------------------- where we are
@@ -240,8 +229,6 @@ export const U = {
   status: 'all',
   pri: 'all',
   sort: 'all',
-  undoArch: null as null | { ids: number[]; left: number; timer?: number; run?: () => Promise<unknown> },
-  archHold: null as null | { h: number; sig: string },
   folded: new Set<number>(),
   moreMsgs: new Set<number>(),
   subFor: null as number | null,
@@ -257,7 +244,6 @@ export const U = {
   files: [] as DraftFile[],
   lastSent: null as string | null,
   more: new Set<number>(),
-  docsAll: new Set<number>(), // I289: items whose documents all show, not the latest 3
   tabOpen: {} as Record<string, number | null>,
   settle: new Map<number, { said: string; undo: () => unknown }>(),
   tabTop: {} as Record<string, number>,
@@ -302,7 +288,6 @@ export const U = {
   vcSending: false,
   leaving: false,
   boxGone: null as null | { k: string; t: number },
-  undoArchTick: 0,
 }
 export type UI = typeof U
 
@@ -436,14 +421,8 @@ export const needsYou = (it: Item) =>
   !it.merged_into &&
   !CLOSED(it.status) &&
   (!!it.wait || ((it.status === 'proposed' || it.status === 'review') && !it.reply)) // B286
-// T274 #7: in progress means an agent is on it. Nobody on it, or quiet too long: it is stuck (a switch: D21 #4)
-export const stuck = (it: Item) =>
-  BEHAVIOUR.stuckLabel &&
-  it.status === 'doing' &&
-  !it.wait &&
-  !(it.agent && Date.now() - new Date(it.agent.t).getTime() <= QUIET_MS)
 export const statusName = (it: Item) =>
-  stuck(it) ? 'Stuck' : (it.type === 'rule' ? RULE_STATUS[it.status] : STATUS[it.status]) || STATUS[it.status]
+  (it.type === 'rule' ? RULE_STATUS[it.status] : STATUS[it.status]) || STATUS[it.status]
 export const userWord = (x: Msg) =>
   x.by === 'you' || (x.by === 'org' && ['say', 'decide', 'propose'].includes(x.kind) && !!x.src)
 export const lastAgentMsg = (it: Item) => [...it.thread].reverse().find((x) => !userWord(x))
@@ -524,7 +503,7 @@ export function hay(it: Item) {
 }
 export const searchWords = () => U.q.trim().toLowerCase().split(/\s+/).filter(Boolean)
 /** F291: on Items the status is the preset view the list shows, not a filter laid over it. */
-export const statusIsView = () => BEHAVIOUR.treeList && U.tab === 'items' && U.sort === 'all'
+export const statusIsView = () => U.tab === 'items' && U.sort === 'all'
 export const filtered = () =>
   !!(U.q.trim() || U.type !== 'all' || U.when !== 'all' || (U.status !== 'all' && !statusIsView()) || U.pri !== 'all')
 export const inputMatch = (r: Input, words: string[]) =>

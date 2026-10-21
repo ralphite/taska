@@ -5,7 +5,6 @@
 // The output is HTML; the buttons in it carry data-act, which actions.ts handles (one listener for the page).
 import DOMPurify from 'dompurify'
 import { DIMS, wantDims } from './dims'
-import { BEHAVIOUR } from './behaviour'
 import { ICON, type IconName } from './icons'
 import { LETTER as LETTERS, REF_CLS } from './constants'
 import {
@@ -147,24 +146,6 @@ export function inlineMd(s: string, gid = '', refs = true) {
           `<button data-act="view" data-g="${gid}" data-f="${src}" class="group/img relative my-1 block max-w-full"><img data-pic src="${ctx.P}f/${encodeURIComponent(src)}" alt="${alt}" loading="lazy"${box} class="h-auto max-h-96 max-w-full rounded-lg border border-zinc-200 bg-zinc-100 object-contain data-loaded:bg-transparent dark:border-zinc-700 dark:bg-zinc-800 dark:data-loaded:bg-transparent"><span class="pointer-events-none absolute inset-0 grid place-items-center group-has-[img[data-loaded]]/img:hidden group-has-[img[data-failed]]/img:hidden"><span class="size-6 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-600 dark:border-zinc-600 dark:border-t-zinc-300"></span></span><span class="pointer-events-none absolute inset-0 hidden flex-col items-center justify-center gap-1 p-3 text-center text-[13px] text-zinc-500 group-has-[img[data-failed]]/img:flex dark:text-zinc-400"><span class="font-medium">Could not load the picture</span><span class="max-w-full truncate font-mono text-xs">${src}</span></span></button>`,
         )
       })
-      // I289: a link to an item or a document (its code, or Taska's own address for it) is the code's chip, opened in
-      // Taska; one to another project opens that project here, not as a jump to an absolute address
-      .replace(/\[([^\]]+)\]\(([FBITRD]\d{1,5}|r\d{1,6})\)/g, (m, _t: string, c: string) => {
-        const l = BEHAVIOUR.docCards && refs && refLink(c)
-        return l ? keep(l) : m
-      })
-      .replace(
-        /(\[([^\]]+)\]\()?https?:\/\/[^/\s)]+\/p\/([^/\s)]+)\/([FBITRD]\d{1,5}|r\d{1,6})\/?(\))?/g,
-        (m, open: string, t: string, proj: string, c: string, close: string) => {
-          if (!BEHAVIOUR.docCards || !!open !== !!close) return m
-          const here = decodeURIComponent(proj) === ctx.HERE
-          const l = here && refs ? refLink(c) : null
-          if (l) return keep(l)
-          return keep(
-            `<a href="/p/${proj}/${c}" class="text-blue-600 underline underline-offset-2 dark:text-blue-400">${t ? emph(t) : c}</a>`,
-          )
-        },
-      )
       .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, (_, t: string, url: string) =>
         keep(
           `<a href="${url}" target="_blank" rel="noopener" class="text-blue-600 underline underline-offset-2 dark:text-blue-400">${emph(t)}</a>`,

@@ -2,7 +2,6 @@
 // instead of hanging, and the screen says so. One-tap changes show at once and are saved behind you, one at a time and
 // in order; until Taska has a change it is kept as a patch over Taska's last state, so a refresh meanwhile doesn't
 // take it off the screen. A save that fails takes its patch back, and a red toast says so, with Retry.
-import { BEHAVIOUR } from './behaviour'
 import { LETTER, SAID } from './constants'
 import { failedRetry, toast } from './toast'
 import {
@@ -382,38 +381,6 @@ export function ingest(d: State, first = false) {
   }
   render()
   if (!first) fixURL()
-  autoArchive()
-}
-// T274 #6: what was finished before today goes to Archive by itself, once a visit, with Undo (a switch: D21 #2)
-const AA = { done: '' }
-function autoArchive() {
-  if (!BEHAVIOUR.autoArchive || !model.S.project || AA.done === model.S.project) return
-  AA.done = model.S.project
-  const day = new Date().setHours(0, 0, 0, 0),
-    ids = model.S.items
-      .filter(
-        (it) =>
-          !it.merged_into &&
-          !it.archived &&
-          it.type !== 'rule' &&
-          CLOSED(it.status) &&
-          Date.parse(it.t1 || it.t0) < day,
-      )
-      .map((it) => it.n)
-  if (!ids.length) return
-  const set = (on: boolean) =>
-    optimistic(
-      ids.map((n) => ({ n, f: { archived: on } })),
-      () => op({ op: 'archive', refs: ids.map(code), on }),
-    )
-  set(true)
-  toast(
-    `Archived ${plural(ids.length, 'item')} finished before today`,
-    pushUndo(`${plural(ids.length, 'finished item')} archived`, () => {
-      toast(`Put back ${plural(ids.length, 'item')}`)
-      return set(false)
-    }),
-  )
 }
 // An item's code follows its type: T13 becomes B13 (T113 S2). What you wrote to it goes along.
 function followCodes() {

@@ -46,7 +46,6 @@ import {
   render,
   searchWords,
   statusName,
-  stuck,
   unread,
   useArea,
   visible,
@@ -55,8 +54,7 @@ import {
   type Go,
 } from '../lib/state'
 import type { Item } from '../lib/types'
-import { LIST, ROW_H, holding, listEnter, listLeave, listSig } from '../lib/listhold'
-import { BEHAVIOUR } from '../lib/behaviour'
+import { LIST, ROW_H, holding, listEnter, listLeave } from '../lib/listhold'
 import { VW_STATE, isView, renameView, setFilters, type View } from '../lib/views'
 import { openDialog, popAt } from '../lib/dialog'
 import { hasDraft } from '../lib/drafts'
@@ -275,14 +273,6 @@ export function ItemRow({
       </span>
     ) : hasDraft(c) ? (
       <DraftMark key="s" />
-    ) : stuck(it) ? (
-      <span
-        key="s"
-        className="font-semibold text-amber-700 dark:text-amber-400"
-        title="No agent has written for a while: put it back in the queue"
-      >
-        Stuck
-      </span>
     ) : it.status === 'doing' ? (
       <span key="s">In progress</span>
     ) : closed && band !== 'retired' ? (
@@ -698,6 +688,17 @@ function ViewBar() {
     return () => ro.disconnect()
   }, [])
   const own = VW_STATE.list.findIndex(isView) // F320: one of your views is what shows
+  const on = U.tab === 'archive' ? 'archive' : own >= 0 ? `own${own}` : U.status
+  useEffect(() => {
+    // the view that shows is never hidden past the edge or under an arrow (48px wide)
+    const el = row.current,
+      b = el?.querySelector<HTMLElement>('[aria-pressed="true"]')
+    if (!el || !b) return
+    const l = b.offsetLeft - 48,
+      r = b.offsetLeft + b.offsetWidth + 48 - el.clientWidth
+    if (el.scrollLeft > l) el.scrollTo({ left: Math.max(0, l) })
+    else if (el.scrollLeft < r) el.scrollTo({ left: r })
+  }, [on])
   const go = (dir: number) => row.current?.scrollBy({ left: dir * row.current.clientWidth * 0.7, behavior: 'smooth' })
   const arrow = (dir: number) => (
     <button
@@ -771,9 +772,13 @@ function treeBody(all: Item[]): { body: ReactNode; shown: number } {
       <>
         <ViewBar />
         {U.status === 'wait' && rows.length ? (
-          <div className="flex h-11 items-center border-b border-zinc-100 pr-1 pl-4 text-[13px] text-zinc-500 dark:border-zinc-800/70 dark:text-zinc-400">
-            One at a time, in a card
+          <div className="flex h-11 items-center border-b border-zinc-100 pr-1 pl-4 dark:border-zinc-800/70">
             <GoThroughBtn />
+          </div>
+        ) : null}
+        {U.status === 'closed' && rows.some((it) => !it.archived && CLOSED(it.status)) ? (
+          <div className="flex h-11 items-center border-b border-zinc-100 pr-1 pl-4 dark:border-zinc-800/70">
+            <ArchiveAllBtn n={rows.filter((it) => !it.archived && CLOSED(it.status)).length} />
           </div>
         ) : null}
         {rows.length ? (
@@ -991,7 +996,7 @@ function listBody(): { body: ReactNode; shown: number } {
       ),
       shown: 0,
     }
-  if (BEHAVIOUR.treeList && U.tab === 'items' && U.sort === 'all') return treeBody(rows)
+  if (U.tab === 'items' && U.sort === 'all') return treeBody(rows)
   if (!rows.length && filtered())
     return {
       body: (
@@ -1025,7 +1030,7 @@ function listBody(): { body: ReactNode; shown: number } {
           <br />
           for example how to write commit messages or who reviews.
           <br />
-          Say one in the box below and it is filed here.
+          Say in the box below that it is a rule (“Rule: …”) and it is filed here.
         </Empty>
       ) : (
         <>
@@ -1051,103 +1056,26 @@ function listBody(): { body: ReactNode; shown: number } {
       shown: rows.length,
     }
   }
-  if (U.tab === 'archive' || U.sort !== 'all')
-    // T274 #36: sorted another way, the list is in that order
-    return {
-      body: (
-        <>
-          {U.tab === 'archive' ? <ViewBar /> : null}
-          {rows.length ? (
-            rows.map((it) => <ItemRow key={it.n} it={it} />)
-          ) : (
-            <Empty>
-              {U.tab === 'archive' ? (
-                <>
-                  Nothing archived yet.
-                  <br />
-                  Archive items from the end of the Items list, or from an item&apos;s ⋯.
-                </>
-              ) : (
-                'No items'
-              )}
-            </Empty>
-          )}
-        </>
-      ),
-      shown: rows.length,
-    }
-  const needs = rows.filter((it) => needsYou(it) || settled(it)).sort(going ? walkOrder(going) : needsOrder) // newest first (B238)
-  if (U.archHold?.sig !== listSig()) U.archHold = null
-  const queued = sortQueue(rows.filter((it) => inQueue(it) && !settled(it)))
-  const queue = queued.filter((it) => it.when !== 'later'),
-    later = queued.filter((it) => it.when === 'later') // F212
-  const done = rows.filter((it) => CLOSED(it.status) && !it.archived && !settled(it)),
-    arch = rows.filter((it) => it.archived)
-  const holdStyle = U.archHold ? { minHeight: U.archHold.h } : undefined // B3: the finished band keeps its height after Archive N
+  // Archive, or Items sorted another way (T274 #36): the list in that order
   return {
     body: (
       <>
-        <NeedsBand needs={needs} going={going} />
-        {queue.length ? (
-          <>
-            <Zone kind="queue" label="Agent queue" n={queue.length} />
-            <Tree group={queue} />
-          </>
-        ) : null}
-        {later.length ? (
-          <>
-            <Zone
-              kind="later"
-              label="Later"
-              n={later.length}
-              right={
-                <span className="hidden text-xs font-medium text-zinc-500 lg:inline dark:text-zinc-400">
-                  · agents wait until it is back to now
-                </span>
-              }
-            />
-            <Tree group={later} band="later" />
-          </>
-        ) : null}
-        {U.undoArch ? (
-          <div data-hold={U.archHold ? '' : undefined} style={holdStyle}>
-            <div className="flex items-center gap-3 border-b border-blue-100 bg-blue-50 py-2 pr-2 pl-4 dark:border-blue-400/15 dark:bg-blue-400/10">
-              <Icon n="archive" c="size-5 text-blue-600 dark:text-blue-400" />
-              <p className="min-w-0 flex-1 text-sm text-blue-950 dark:text-blue-100">
-                <span className="font-semibold">Archived {plural(U.undoArch.ids.length, 'finished item')}.</span> They
-                are under Archive.
-              </p>
-              <button
-                data-act="archive-undo"
-                className="flex h-11 shrink-0 items-center gap-2 rounded-full bg-blue-600 pr-1.5 pl-4 text-[15px] font-semibold text-white shadow-sm shadow-blue-600/30 dark:bg-blue-500"
-              >
-                <Icon n="undo" c="size-4.5" sw="2.25" />
-                Undo
-                <span
-                  id="undoLeft"
-                  className="grid size-8 place-items-center rounded-full bg-white/20 text-sm font-bold tabular-nums ring-2 ring-white/60"
-                >
-                  {U.undoArch.left}
-                </span>
-              </button>
-            </div>
-          </div>
-        ) : done.length ? (
-          <>
-            <Zone kind="done" label="Finished" n={done.length} right={<ArchiveAllBtn n={done.length} />} />
-            <Tree group={done} />
-          </>
-        ) : U.archHold ? (
-          <div aria-hidden="true" data-hold="" style={holdStyle} />
-        ) : null}
-        {arch.length ? (
-          <>
-            <Zone kind="archived" label="Archived" n={arch.length} />
-            {arch.map((it) => (
-              <ItemRow key={it.n} it={it} />
-            ))}
-          </>
-        ) : null}
+        {U.tab === 'archive' ? <ViewBar /> : null}
+        {rows.length ? (
+          rows.map((it) => <ItemRow key={it.n} it={it} />)
+        ) : (
+          <Empty>
+            {U.tab === 'archive' ? (
+              <>
+                Nothing archived yet.
+                <br />
+                Archive an item from its ⋯ or with E, or all finished ones at once in the Finished view.
+              </>
+            ) : (
+              'No items'
+            )}
+          </Empty>
+        )}
       </>
     ),
     shown: rows.length,

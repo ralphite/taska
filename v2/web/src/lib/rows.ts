@@ -1,5 +1,5 @@
 // What a row offers: the desktop's quick actions on hover (B128) and the phone's swipes (F51, B147, B237).
-import { CLOSED, DR, byN, kids, reduceMotion, rowAction, stuck } from './state'
+import { CLOSED, DR, byN, kids, reduceMotion, rowAction } from './state'
 import type { Item } from './types'
 import { change } from './data'
 import { ACT } from './actions'
@@ -24,9 +24,7 @@ export function deskSlots(it: Item, needs: boolean): (Slot | null)[] {
     it.status === 'open'
       ? null
       : it.status === 'doing'
-        ? stuck(it)
-          ? ['status', 'open', 'Back to queue']
-          : null
+        ? null
         : it.status === 'review'
           ? ['reopen', '', 'Not yet']
           : CLOSED(it.status)
@@ -72,7 +70,7 @@ export function swipeLeft(it: Item): Slot[] {
         : CLOSED(it.status)
           ? [['status', 'open', 'Reopen']]
           : it.status === 'doing'
-            ? [drop, later, ...(stuck(it) ? [['status', 'open', 'Back to queue'] as Slot] : []), ...done]
+            ? [drop, later, ...done]
             : [drop, later, ...done] // T274 #7: agents start work, not you
 }
 export const openKidsOf = (n: number) => (kids.get(n) || []).filter((k) => !CLOSED(k.status)).length

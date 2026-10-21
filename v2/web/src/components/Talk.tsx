@@ -6,7 +6,6 @@ import { U, byN, byR, ctx, desk, docsOf, oneLine, plural, rcode, userWord, when,
 import type { Doc, FileRef, Input, Item, Msg } from '../lib/types'
 import { clean, groups, hasChoices, mdHtml } from '../lib/markdown'
 import { audioOf } from '../lib/audio'
-import { BEHAVIOUR } from '../lib/behaviour'
 import { P_CACHE } from '../lib/settings'
 import { Avatar, Icon, Kbd } from './ui'
 import { clock } from '../lib/state'
@@ -649,21 +648,6 @@ export const DocCard = ({ d, cls = '' }: { d: Doc; cls?: string }) => (
     <Icon n="right" c="size-4 text-zinc-300 dark:text-zinc-600" />
   </button>
 )
-/** I289: each document under the agent's message that made it: the first one after it was made that names it, else
- * the first one after it was made. -> message id -> its documents */
-export function docsByMsg(it: Item): Map<number, Doc[]> {
-  const out = new Map<number, Doc[]>(),
-    agentMsgs = it.thread.filter((x) => !userWord(x) && x.by !== 'org')
-  for (const d of docsOf(it.n)) {
-    const named = new RegExp(`(^|[^\\w])D0*${d.d}(?!\\d)`)
-    const after = agentMsgs.filter((x) => Date.parse(x.t) >= Date.parse(d.t0) - 60_000)
-    const m = after.find((x) => named.test(x.text)) || after[0] || agentMsgs.find((x) => named.test(x.text))
-    if (!m) continue
-    if (!out.has(m.id)) out.set(m.id, [])
-    out.get(m.id)?.push(d)
-  }
-  return out
-}
 export function Talk({ it, list, gid = '', notes = [] }: { it: Item; list: Msg[]; gid?: string; notes?: Note[] }) {
   const th = it.thread,
     vers = versions(th),
@@ -688,7 +672,6 @@ export function Talk({ it, list, gid = '', notes = [] }: { it: Item; list: Msg[]
           .sort((a, b) => b[1] - a[1])
       : [] // no answer yet, but read after your words
   const read = readers.length ? { id: th[mine].id, names: readers.map(([n]) => whoName(n)), t: readers[0][1] } : null
-  const made = BEHAVIOUR.docCards ? docsByMsg(it) : new Map<number, Doc[]>()
   let k = 0
   const out: ReactNode[] = []
   const before = (t: string) => {
@@ -707,7 +690,6 @@ export function Talk({ it, list, gid = '', notes = [] }: { it: Item; list: Msg[]
         read={read?.id === x.id ? read : null}
       />,
     )
-    for (const d of made.get(x.id) || []) out.push(<DocCard key={`d${d.d}-${x.id}`} d={d} cls="-mt-3" />)
   }
   before('')
   return <>{out}</>

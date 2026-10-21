@@ -1,7 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { List } from './List'
 import { ask, item, load } from '../test/fixture'
-import { BEHAVIOUR } from '../lib/behaviour'
 import { U } from '../lib/state'
 import type { Item, Wait } from '../lib/types'
 
@@ -36,7 +35,6 @@ type Story = StoryObj<typeof List>
 export const Tree: Story = {
   loaders: [
     () => {
-      BEHAVIOUR.treeList = true
       U.status = 'all'
       load(LOOP)
       return {}
@@ -47,19 +45,7 @@ export const Tree: Story = {
 export const NeedsYou: Story = {
   loaders: [
     () => {
-      BEHAVIOUR.treeList = true
       U.status = 'wait'
-      load(LOOP)
-      return {}
-    },
-  ],
-}
-/** The one-file Taska's bands (the switch in behaviour.ts). */
-export const Bands: Story = {
-  loaders: [
-    () => {
-      BEHAVIOUR.treeList = false
-      U.status = 'all'
       load(LOOP)
       return {}
     },

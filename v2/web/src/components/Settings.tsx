@@ -774,7 +774,7 @@ const BODY: Record<string, () => ReactNode> = {
                   id="fixWord"
                   className={`${FIELD} h-10 py-1.5 text-sm`}
                   placeholder="A name or term to hear right, e.g. Needs you"
-                  aria-label="A word to hear right"
+                  aria-label="A word or name"
                   autoComplete="off"
                   spellCheck={false}
                 />

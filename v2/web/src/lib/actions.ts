@@ -1,6 +1,5 @@
 // Every action on the page, by name. A button calls act(name, data); the Markdown in messages carries data-act
 // attributes, which one listener sends here too. A handler that returns a promise keeps its button busy (B159).
-import { BEHAVIOUR } from './behaviour'
 import {
   CLOSED,
   D,
@@ -43,7 +42,6 @@ import {
   JSON_POST,
   NET,
   change,
-  forget,
   load,
   net,
   notLoaded,
@@ -95,7 +93,6 @@ import {
   DV,
 } from './voice'
 import { keepPlace, layerOpen, writeURL, URLS } from './url'
-import { listSig } from './listhold'
 import {
   P_CACHE,
   cancelPrefs,
@@ -308,13 +305,6 @@ export const ACT: Record<string, Handler> = {
     U.prefsEdit = null // New input is always a fresh new input (B168)
     D.sideOpen = false
     if (D.page) D.page = null
-    if (desk() && !U.doc && !BEHAVIOUR.newInputPage) {
-      // T274 #8: where you are: the box below turns to a new input, the item you read stays (a switch: D21 #1)
-      D.compose = false
-      U.scopeOff = true
-      render()
-      return els.text?.focus()
-    }
     if (desk()) {
       // the New input page; from a document, Back goes to the document (B14)
       if (U.tab === 'inputs') {
@@ -682,16 +672,6 @@ export const ACT: Record<string, Handler> = {
       URLS.hold = false
     }
     writeURL(true, D.full ? { n: U.open, full: true, link: true } : undefined)
-  },
-  'docs-all': (d) => {
-    const n = N(d)
-    if (U.docsAll.has(n)) U.docsAll.delete(n)
-    else U.docsAll.add(n)
-    bump('detail')
-  },
-  more: (d) => {
-    U.more.add(N(d))
-    bump('detail')
   },
   'more-input': (d) => {
     const id = d.id as string
@@ -1111,61 +1091,33 @@ export const ACT: Record<string, Handler> = {
     }
   },
   'archive-all': () => {
-    // it happens at once; Undo stays 10 seconds in the same spot and in the toast (B154), then Z
+    // r6: every finished item in this view goes to Archive at once; Undo in the toast for 10 seconds, then Z (B154)
     const ids = visible()
       .filter((it) => !it.archived && CLOSED(it.status))
       .map((it) => it.n)
     if (!ids.length) return
-    const all = (on: boolean) => ({ op: 'archive', refs: ids.map(code), on }) // one change, however many (T113 A5)
-    clearInterval(U.undoArch?.timer)
-    const z = document.querySelector('#list [data-zone="done"]') as HTMLElement | null
-    let h = 0
-    for (let x: Element | null = z; x && (x === z || !(x as HTMLElement).dataset.zone); x = x.nextElementSibling)
-      h += (x as HTMLElement).offsetHeight
-    U.archHold = h ? { h, sig: listSig() } : null // B3
-    const u: NonNullable<typeof U.undoArch> = { ids, left: 10 }
-    U.undoArch = u
-    const gone = () => {
-      clearInterval(u.timer)
-      if (U.undoArch === u) U.undoArch = null
-      U.archHold = null
-    }
-    u.run = pushUndo(`${plural(ids.length, 'item')} archived`, () => {
-      gone()
-      toast(`Put back ${plural(ids.length, 'item')}`)
-      return optimistic(
-        ids.map((n) => ({ n, f: { archived: false } })),
-        () => op(all(false)),
-        (ex) => notSaved(ex, u.run),
+    const put = (on: boolean) =>
+      optimistic(
+        ids.map((n) => ({ n, f: { archived: on } })),
+        async () => {
+          const left = ((await op({ op: 'archive', refs: ids.map(code), on })).res[0].match(/not archived: (.+)$/) ||
+            [])[1] // one change, however many (T113 A5)
+          if (left)
+            toast(
+              `${left.split(' ').length === 1 ? `${left} isn't` : `${left.split(' ').join(', ')} aren't`} finished any more, so ${left.split(' ').length === 1 ? 'it stays' : 'they stay'}`,
+            )
+        },
       )
-    })
-    u.timer = window.setInterval(() => {
-      if (--u.left > 0) return bump('list')
-      clearInterval(u.timer)
-      if (U.undoArch === u) {
-        U.undoArch = null
-        bump('list')
-      }
-    }, 1000)
-    optimistic(
-      ids.map((n) => ({ n, f: { archived: true } })),
-      async () => {
-        const left = ((await op(all(true))).res[0].match(/not archived: (.+)$/) || [])[1]
-        if (left)
-          toast(
-            `${left.split(' ').length === 1 ? `${left} isn't` : `${left.split(' ').join(', ')} aren't`} finished any more, so ${left.split(' ').length === 1 ? 'it stays' : 'they stay'}`,
-          )
+    void put(true)
+    toast(
+      `Archived ${plural(ids.length, 'item')}`,
+      () => {
+        toast(`Put back ${plural(ids.length, 'item')}`)
+        return put(false)
       },
-      (ex) => {
-        gone()
-        forget(u.run as Parameters<typeof forget>[0])
-        bump('list')
-        notSaved(ex, () => ACT['archive-all']({}))
-      },
+      { ms: 10000 },
     )
-    toast(`Archived ${plural(ids.length, 'item')}`, u.run, { ms: 10000 })
   },
-  'archive-undo': () => U.undoArch?.run?.(),
   'search-in': (d) => {
     U.tabView[d.tab as string] = { q: U.q }
     setTab(d.tab as never)
