@@ -670,7 +670,8 @@ function wireAll() {
   })
   document.addEventListener('dblclick', (e) => {
     const g = desk() && (e.target as Element).closest<HTMLElement>('[data-grip]')
-    if (g && !(e.target as Element).closest('button')) {
+    // B357: the line between an item and its talk stays where you put it; a double-click does nothing there
+    if (g && g.dataset.grip !== 'top' && !(e.target as Element).closest('button')) {
       setGrip(g.dataset.grip as string, 0)
       try {
         localStorage.removeItem('taska.w.' + g.dataset.grip)

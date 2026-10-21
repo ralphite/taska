@@ -323,7 +323,6 @@ function Drawer({ hidden, over }: { hidden: boolean; over: boolean }) {
     >
       <div
         data-grip="side"
-        title="Drag to resize · double-click for the default"
         className="group/line absolute inset-y-0 right-0 z-10 hidden w-3 translate-x-1/2 cursor-col-resize lg:block"
       >
         <span className="pointer-events-none absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 bg-blue-500 opacity-0 transition-opacity group-hover/line:opacity-100 group-hover/line:delay-150 in-[body.cursor-col-resize]:opacity-100" />
@@ -1270,7 +1269,6 @@ export function ProjectPage() {
           id="listGrip"
           data-grip="list"
           hidden={v.grip}
-          title="Drag to resize · double-click for the default"
           className="group/line relative z-30 cursor-col-resize lg:col-start-1 lg:row-span-4 lg:row-start-2 lg:block lg:w-3 lg:translate-x-1/2 lg:justify-self-end"
         >
           <span className="pointer-events-none absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 bg-blue-500 opacity-0 transition-opacity group-hover/line:opacity-100 group-hover/line:delay-150 in-[body.cursor-col-resize]:opacity-100" />

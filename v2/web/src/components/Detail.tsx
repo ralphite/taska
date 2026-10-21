@@ -482,7 +482,6 @@ export function ItemPage({ it }: { it: Item }) {
       </div>
       <div
         data-grip="top"
-        title="Drag to show more or less of the item · double-click for the default"
         className="group/line relative z-10 hidden h-px shrink-0 cursor-row-resize bg-zinc-200 after:absolute after:inset-x-0 after:-inset-y-2 lg:block dark:bg-zinc-800"
       >
         {/* B357: every line you can drag looks the same: pointed at or dragged, the line itself turns blue */}
