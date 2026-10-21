@@ -78,7 +78,8 @@ export async function send() {
   const dt = docTarget()
   if (dt) return sendDocComment(dt) // a document comment (I087)
   const od = docOpen()
-  if (od) return sendDocComment({ d: od, key: 'doc', quote: '', whole: true }) // B247: nothing picked: on the whole document
+  if (od && !desk()) return sendDocComment({ d: od, key: 'doc', quote: '', whole: true }) // B247: the phone: on the whole document
+  // B340 (D24 #6): on the desktop, nothing picked is a reply to the item the document is on
   const n = scopeN(),
     ch =
       n && U.choice?.n === n && U.choice.picked.size // B145: ticked choices go with what you wrote

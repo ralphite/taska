@@ -3,7 +3,20 @@
 // plain textarea; the first line is the title.
 import { useLayoutEffect, useRef, type ReactNode, type RefObject } from 'react'
 import { BTN, DC_BTN, HIT, MSG, PRIMARY, WHO } from '../lib/constants'
-import { R_STATE as R, U, code, desk, docResolved, liveN, plural, sameText, useArea, when, whoName } from '../lib/state'
+import {
+  R_STATE as R,
+  U,
+  code,
+  desk,
+  docResolved,
+  els,
+  liveN,
+  plural,
+  sameText,
+  useArea,
+  when,
+  whoName,
+} from '../lib/state'
 import type { Comment, Doc } from '../lib/types'
 import { blockHtml, clean, groups, plainQuote } from '../lib/markdown'
 import { seeThreads, threadNew, renderDoc } from '../lib/docs'
@@ -11,7 +24,7 @@ import { toast } from '../lib/toast'
 import { Armed, Icon, Kbd } from './ui'
 import { Rich, Thumbs, VoiceLine } from './Talk'
 import { RecTime } from './Composer'
-import { docMicLabel } from '../lib/voice'
+import { VC_MARK, docMicLabel } from '../lib/voice'
 
 const NewDot = () => (
   <span className="ml-0.5 size-1.5 rounded-full bg-blue-600 dark:bg-blue-400" title="New from an agent" />
@@ -72,7 +85,11 @@ function Thread({
   return (
     <div
       data-thread={k}
-      className={`mt-2 space-y-2 border-l-2 border-amber-300 pl-3 dark:border-amber-600 ${rail ? 'lg:col-start-2 lg:row-start-1 lg:mt-0' : ''}`}
+      className={
+        rail
+          ? 'space-y-2 rounded-xl border border-zinc-200 bg-white p-3 shadow-sm dark:border-zinc-800 dark:bg-zinc-900'
+          : 'mt-2 space-y-2 border-l-2 border-amber-300 pl-3 dark:border-amber-600'
+      }
     >
       {threadNew(d, k, comments) ? (
         <div className="flex items-center gap-1 text-[11px] font-semibold text-blue-600 dark:text-blue-400">
@@ -122,6 +139,163 @@ function Thread({
         </button>
       )}
     </div>
+  )
+}
+// B340: beside a paragraph, on the desktop: comment (in the box below) or speak (the icon itself records, and stops)
+function BlockActs({ d, k }: { d: Doc; k: string }) {
+  const rec = !!(R.rec && R.vc?.d === d.d && R.vc.key === k)
+  return (
+    <div
+      className={`absolute top-0.5 left-[calc(100%+0.25rem)] flex-col gap-1 ${rec ? 'flex' : 'hidden group-hover/blk:flex'}`}
+    >
+      {rec ? null : (
+        <button
+          data-act="doc-pick"
+          data-key={k}
+          data-pick-btn
+          title="Comment on this paragraph (write in the box below)"
+          className="grid size-7 place-items-center rounded-lg bg-white text-zinc-500 shadow-sm ring-1 ring-zinc-900/10 hover:text-zinc-900 dark:bg-zinc-800 dark:text-zinc-300 dark:ring-white/10 dark:hover:text-white"
+        >
+          <Icon n="comment" c="size-4" />
+        </button>
+      )}
+      <button
+        data-act="doc-say"
+        data-key={k}
+        title={rec ? 'Stop: the comment waits beside it, not sent' : 'Speak a comment on this paragraph'}
+        className={`grid size-7 place-items-center rounded-lg shadow-sm ring-1 ${rec ? 'bg-red-600 text-white ring-red-700' : 'bg-white text-zinc-500 ring-zinc-900/10 hover:text-zinc-900 dark:bg-zinc-800 dark:text-zinc-300 dark:ring-white/10 dark:hover:text-white'}`}
+      >
+        <Icon n={rec ? 'stop' : 'mic'} c="size-4" />
+      </button>
+    </div>
+  )
+}
+// B340: a comment not sent yet, where it will go: its words under its quote in the box, and its voice notes
+function DraftCard({ label }: { label: string }) {
+  useArea('composer')
+  useArea('vc')
+  const lines = (els.text?.value || '').split('\n')
+  const at = lines.findIndex((l) => VC_MARK.exec(l)?.[1] === label)
+  const words: string[] = []
+  for (const l of at < 0 ? [] : lines.slice(at + 1)) {
+    if (VC_MARK.test(l)) break
+    words.push(l)
+  }
+  const said = words.join('\n').trim()
+  const voice = U.files.filter((f) => f.vc === label)
+  return (
+    <div className="space-y-1 rounded-xl border border-dashed border-amber-400 bg-amber-50/70 p-3 text-sm dark:border-amber-500/60 dark:bg-amber-400/10">
+      <div className="text-[11px] font-semibold tracking-wide text-amber-800 uppercase dark:text-amber-300">
+        Not sent
+      </div>
+      {said ? <div className="whitespace-pre-wrap">{said}</div> : null}
+      {voice.length ? (
+        <div className="text-xs text-zinc-500 dark:text-zinc-400">
+          {voice.some((f) => f.transcribing)
+            ? 'Voice note · writing down its words…'
+            : plural(voice.length, 'voice note')}
+        </div>
+      ) : null}
+    </div>
+  )
+}
+// B340: the comments, beside the text. Each sits level with its paragraph; when they would overlap they move down in
+// this column only, never the text. Pointing at one marks its paragraph.
+function DocRail({ d }: { d: Doc }) {
+  useArea('vc')
+  useArea('composer')
+  const ref = useRef<HTMLElement>(null)
+  const marks = U.vcMarks.filter((m) => m.d === d.d)
+  const entries: { k: string; node: ReactNode }[] = []
+  if (d.whole?.length)
+    entries.push({
+      k: 'doc',
+      node: (
+        <div>
+          <div className="mb-1 text-[11px] font-medium text-zinc-500">On the whole document</div>
+          <Thread d={d} k="doc" comments={d.whole} rail />
+        </div>
+      ),
+    })
+  for (const b of d.blocks) {
+    if (b.comments.length)
+      entries.push({
+        k: b.key,
+        node:
+          !docResolved(d, b.key) || U.docThreads.has(b.key) ? (
+            <Thread d={d} k={b.key} comments={b.comments} blockText={b.text} rail />
+          ) : (
+            <button
+              data-act="doc-thread"
+              data-key={b.key}
+              className="flex h-7 items-center gap-1 rounded-md px-1.5 text-xs text-zinc-500 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
+            >
+              <Icon n="check" c="size-3.5" />
+              Resolved · {plural(b.comments.length, 'comment')}
+            </button>
+          ),
+      })
+    for (const m of marks.filter((x) => x.key === b.key))
+      entries.push({ k: b.key, node: <DraftCard label={m.label} /> })
+  }
+  if (d.detached.length)
+    entries.push({
+      k: 'end',
+      node: (
+        <div className="space-y-3">
+          <div className="text-[11px] font-medium text-zinc-500">Original text changed</div>
+          {d.detached.map((t) => (
+            <section key={t.key}>
+              <div className="text-sm text-zinc-400 line-through">{t.quote}</div>
+              <Thread d={d} k={t.key} comments={t.comments} rail />
+            </section>
+          ))}
+        </div>
+      ),
+    })
+  useLayoutEffect(() => {
+    const rail = ref.current
+    if (!rail) return
+    const place = () => {
+      const base = rail.getBoundingClientRect().top
+      let y = 0
+      for (const el of rail.children as HTMLCollectionOf<HTMLElement>) {
+        const k = el.dataset.for || ''
+        const sec =
+          k && k !== 'doc' && k !== 'end'
+            ? document.querySelector<HTMLElement>(`#docBlocks > section[data-key="${CSS.escape(k)}"]`)
+            : null
+        const want = sec ? sec.getBoundingClientRect().top - base : k === 'doc' ? 0 : y
+        const top = Math.max(want, y)
+        el.style.top = top + 'px'
+        y = top + el.offsetHeight + 12
+      }
+      rail.style.minHeight = y + 'px'
+    }
+    place()
+    const ro = new ResizeObserver(place)
+    ro.observe(rail)
+    const blocks = document.getElementById('docBlocks')
+    if (blocks) ro.observe(blocks)
+    for (const el of rail.children) ro.observe(el)
+    return () => ro.disconnect()
+  })
+  const mark = (k: string, on: boolean) =>
+    document.querySelector(`#docBlocks > section[data-key="${CSS.escape(k)}"]`)?.toggleAttribute('data-hl', on)
+  return (
+    <aside ref={ref} aria-label="Comments" className="relative">
+      {entries.map((e, i) => (
+        <div
+          key={e.k + i}
+          data-for={e.k}
+          onMouseEnter={() => mark(e.k, true)}
+          onMouseLeave={() => mark(e.k, false)}
+          className="absolute inset-x-0"
+        >
+          {e.node}
+        </div>
+      ))}
+    </aside>
   )
 }
 // T274 #18: a long document (three headings or more) starts with its contents
@@ -272,187 +446,169 @@ export function DocView({ d }: { d: Doc }) {
       !titled && d.blocks[0]?.kind === 'para' && rest0.length > 0 && sameText(line0.replace(/^#+\s*/, ''), d.title) // T227 #4
   groups.delete('doc' + d.d) // its images, refilled as the blocks render
   const phoneBtn = `${HIT} ${BTN} text-sm lg:hidden`
+  const side = desk() // B340: on the desktop the comments live in a column beside the text; the text never moves
   return (
-    <div ref={ref} className="flex min-h-full flex-col">
-      <div className="flex items-center gap-1 text-xs text-zinc-500">
-        <span className="min-w-0 flex-1 truncate">
-          on{' '}
-          <button data-act="goto" data-n={d.n} className="text-blue-600 hover:underline dark:text-blue-400">
-            {code(d.n)}
-          </button>{' '}
-          · {whoName(d.by)} · {when(d.t1)}
-        </span>
-        <button data-act="doc-move" className={phoneBtn}>
-          Move
-        </button>
-        <button data-act="doc-delete" className={phoneBtn}>
-          <Armed k={'doc-delete ' + d.d} ask={`Delete D${d.d}?`}>
-            Delete
-          </Armed>
-        </button>
-        <button
-          data-act="doc-circle"
-          aria-pressed={!!U.docCircle}
-          className={`${phoneBtn} aria-pressed:bg-amber-100 aria-pressed:text-amber-900 dark:aria-pressed:bg-amber-900/60 dark:aria-pressed:text-amber-100`}
-        >
-          {U.docCircle ? 'Draw around it…' : 'Mark an area'}
-        </button>
-        <button data-act="doc-edit" className={phoneBtn}>
-          Edit
-        </button>
-      </div>
-      {titled ? null : <div className="mt-3 text-2xl leading-tight font-bold tracking-tight">{d.title}</div>}
-      <Outline d={d} />
-      <div id="docBlocks" className={`relative mt-3 space-y-3 text-[15px] ${U.docCircle ? 'select-none' : ''}`}>
-        {d.blocks.map((b0, i) => {
-          const b = i === 0 && titleLine ? { ...b0, text: rest0.join('\n') } : b0
-          const lv = (b0.text.match(/^#+/) || ['#'])[0].length
-          const here =
-            !desk() &&
-            !U.docType &&
-            (R.rec ? R.vc?.d === d.d && R.vc.key === b0.key && !R.vc.range : U.docSel.has(b0.key))
-          return (
-            <section
-              key={b0.key}
-              data-act="doc-pick"
-              data-key={b0.key}
-              {...(U.docSel.has(b0.key) ? { 'data-picked': '' } : {})}
-              className={`group/blk -mx-2 rounded-lg px-2 py-1 transition-colors ${b0.comments.length ? 'lg:grid lg:grid-cols-[minmax(0,1fr)_15rem] lg:gap-x-5' : 'lg:flex lg:items-start lg:gap-2'} hover:bg-zinc-50 data-picked:bg-amber-50 data-picked:ring-2 data-picked:ring-amber-300 data-pressed:opacity-70 lg:cursor-text dark:hover:bg-zinc-800/50 dark:data-picked:bg-amber-950/40 dark:data-picked:ring-amber-600`}
-            >
-              <div className="relative flex flex-col gap-1 lg:flex-row lg:items-start lg:gap-2">
-                <div
-                  data-block
-                  className={`min-w-0 flex-1 break-words ${b0.kind === 'heading' ? 'pr-14 lg:pr-0' : ''}`}
-                  dangerouslySetInnerHTML={{ __html: clean(blockHtml(b, i === 0 && titled, 'doc' + d.d)) }}
-                />
-                {b0.comments.length ? (
-                  <button
-                    data-act="doc-thread"
-                    data-key={b0.key}
-                    aria-label={plural(b0.comments.length, 'comment')}
-                    className={`${b0.kind === 'heading' ? `absolute right-0 lg:relative lg:top-0 ${i === 0 && titled ? 'top-0.5' : lv <= 2 ? 'top-2.5' : 'top-1'}` : 'relative self-end'} flex h-6 shrink-0 items-center gap-1 rounded-md bg-amber-100 px-1.5 text-xs font-medium text-amber-900 after:absolute after:-inset-2.5 hover:bg-amber-200 lg:mt-0.5 lg:hidden lg:self-start dark:bg-amber-900/60 dark:text-amber-100 dark:hover:bg-amber-900`}
-                  >
-                    <Icon n="comment" c="size-3.5" />
-                    {b0.comments.length}
-                    {threadNew(d, b0.key, b0.comments) ? <NewDot /> : null}
-                  </button>
-                ) : (
-                  <button
-                    data-act="doc-pick"
-                    data-key={b0.key}
-                    data-pick-btn
-                    title="Comment on this paragraph"
-                    className="hidden h-6 shrink-0 items-center gap-1 self-start rounded-md px-1.5 text-xs font-medium text-zinc-500 hover:bg-zinc-200/70 hover:text-zinc-800 lg:group-hover/blk:flex dark:text-zinc-400 dark:hover:bg-zinc-700"
-                  >
-                    <Icon n="comment" c="size-3.5" />
-                    Comment
-                  </button>
-                )}
-              </div>
-              {here ? (
-                R.rec ? (
-                  // B300: recording, the same button stops and posts, where it was
-                  <div className="mt-2 flex items-center gap-2">
-                    <button
-                      data-act="doc-say"
-                      data-key={b0.key}
-                      aria-label="Stop and post the comment"
-                      className="grid size-12 shrink-0 place-items-center rounded-full bg-red-600 text-white shadow-lg"
-                    >
-                      <Icon n="stop" c="size-5" />
-                    </button>
-                    <span className="text-[13px] text-zinc-500 dark:text-zinc-400">
-                      <span data-rec-time className="font-mono text-red-600 tabular-nums dark:text-red-400">
-                        <RecTime />
-                      </span>{' '}
-                      · tap to post
-                    </span>
-                    <button
-                      data-act="doc-say-cancel"
-                      className="ml-auto h-10 rounded-full px-3 text-sm font-semibold text-zinc-600 ring-1 ring-zinc-300 dark:text-zinc-300 dark:ring-zinc-600"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                ) : (
-                  <div className="mt-2 flex items-center gap-2">
-                    <button
-                      data-act="doc-say"
-                      data-key={b0.key}
-                      aria-label="Speak a comment on this paragraph"
-                      className="grid size-12 shrink-0 place-items-center rounded-full bg-zinc-900 text-white shadow-lg dark:bg-zinc-100 dark:text-zinc-900"
-                    >
-                      <Icon n="mic" c="size-5" />
-                    </button>
-                    <span className="text-[13px] text-zinc-500 dark:text-zinc-400">
-                      Tap to speak, tap again to post
-                    </span>
-                    <button
-                      data-act="doc-type"
-                      className="ml-auto h-10 rounded-full px-3 text-sm font-semibold text-zinc-600 ring-1 ring-zinc-300 dark:text-zinc-300 dark:ring-zinc-600"
-                      aria-label="Type instead"
-                    >
-                      Aa
-                    </button>
-                  </div>
-                )
-              ) : null}
-              {b0.comments.length &&
-              (desk() ? !docResolved(d, b0.key) || U.docThreads.has(b0.key) : U.docThreads.has(b0.key)) ? (
-                <Thread d={d} k={b0.key} comments={b0.comments} blockText={b0.text} rail />
-              ) : b0.comments.length && desk() ? (
-                <button
-                  data-act="doc-thread"
-                  data-key={b0.key}
-                  className="hidden h-7 items-center gap-1 self-start justify-self-start rounded-md px-1.5 text-xs text-zinc-500 hover:bg-zinc-100 lg:col-start-2 lg:row-start-1 lg:flex dark:text-zinc-400 dark:hover:bg-zinc-800"
-                >
-                  <Icon n="check" c="size-3.5" />
-                  Resolved · {plural(b0.comments.length, 'comment')}
-                </button>
-              ) : null}
-            </section>
-          )
-        })}
-        {U.docCircle ? <Lasso /> : null}
-      </div>
-      {d.whole?.length ? (
-        <section className="mt-6 border-t border-zinc-200 pt-4 dark:border-zinc-800">
-          <div className="text-xs font-medium text-zinc-500">On the whole document</div>
-          <Thread d={d} k="doc" comments={d.whole} />
-        </section>
-      ) : null}
-      {d.detached.length ? (
-        <div className="mt-6 space-y-4 border-t border-zinc-200 pt-4 dark:border-zinc-800">
-          <div className="text-xs font-medium text-zinc-500">Original text changed</div>
-          {d.detached.map((t) => (
-            <section key={t.key}>
-              <div className="text-sm text-zinc-400 line-through">{t.quote}</div>
-              <Thread d={d} k={t.key} comments={t.comments} />
-            </section>
-          ))}
+    <div
+      ref={ref}
+      className="flex min-h-full flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_17rem] lg:items-start lg:gap-x-12"
+    >
+      <div className="flex min-w-0 flex-col">
+        <div className="flex items-center gap-1 text-xs text-zinc-500">
+          <span className="min-w-0 flex-1 truncate">
+            on{' '}
+            <button data-act="goto" data-n={d.n} className="text-blue-600 hover:underline dark:text-blue-400">
+              {code(d.n)}
+            </button>{' '}
+            · {whoName(d.by)} · {when(d.t1)}
+          </span>
+          <button data-act="doc-move" className={phoneBtn}>
+            Move
+          </button>
+          <button data-act="doc-delete" className={phoneBtn}>
+            <Armed k={'doc-delete ' + d.d} ask={`Delete D${d.d}?`}>
+              Delete
+            </Armed>
+          </button>
+          <button
+            data-act="doc-circle"
+            aria-pressed={!!U.docCircle}
+            className={`${phoneBtn} aria-pressed:bg-amber-100 aria-pressed:text-amber-900 dark:aria-pressed:bg-amber-900/60 dark:aria-pressed:text-amber-100`}
+          >
+            {U.docCircle ? 'Draw around it…' : 'Mark an area'}
+          </button>
+          <button data-act="doc-edit" className={phoneBtn}>
+            Edit
+          </button>
         </div>
-      ) : null}
-      {desk() ? (
-        <p className="mt-6 text-center text-xs text-zinc-400">
-          Select words, or Comment beside a paragraph, to comment on them; or write in the box below about the whole
-          document
-        </p>
-      ) : (
-        <>
-          <p className="mt-6 text-center text-xs text-zinc-400">
-            Tap a paragraph, select text or circle an area to comment on it
-          </p>
-          {U.docType && !U.docSel.size && !U.docQuote && !U.docReply ? null : (
-            <button
-              data-act="doc-whole"
-              className="mx-auto mt-1 flex h-11 items-center gap-1.5 px-3 text-sm font-semibold text-blue-600 dark:text-blue-400"
-            >
-              <Icon n="comment" c="size-4" />
-              Comment on the whole document
-            </button>
-          )}
-        </>
-      )}
+        {titled ? null : <div className="mt-3 text-2xl leading-tight font-bold tracking-tight">{d.title}</div>}
+        <Outline d={d} />
+        <div id="docBlocks" className={`relative mt-3 space-y-3 text-[15px] ${U.docCircle ? 'select-none' : ''}`}>
+          {d.blocks.map((b0, i) => {
+            const b = i === 0 && titleLine ? { ...b0, text: rest0.join('\n') } : b0
+            const lv = (b0.text.match(/^#+/) || ['#'])[0].length
+            const here =
+              !desk() &&
+              !U.docType &&
+              (R.rec ? R.vc?.d === d.d && R.vc.key === b0.key && !R.vc.range : U.docSel.has(b0.key))
+            return (
+              <section
+                key={b0.key}
+                data-act="doc-pick"
+                data-key={b0.key}
+                {...(U.docSel.has(b0.key) ? { 'data-picked': '' } : {})}
+                className={`group/blk relative -mx-2 rounded-lg px-2 py-1 transition-colors hover:bg-zinc-50 data-hl:bg-amber-50 data-picked:bg-amber-50 data-picked:ring-2 data-picked:ring-amber-300 data-pressed:opacity-70 lg:cursor-text dark:hover:bg-zinc-800/50 dark:data-hl:bg-amber-950/30 dark:data-picked:bg-amber-950/40 dark:data-picked:ring-amber-600`}
+              >
+                <div className="relative flex flex-col gap-1 lg:flex-row lg:items-start lg:gap-2">
+                  <div
+                    data-block
+                    className={`min-w-0 flex-1 break-words ${b0.kind === 'heading' ? 'pr-14 lg:pr-0' : ''}`}
+                    dangerouslySetInnerHTML={{ __html: clean(blockHtml(b, i === 0 && titled, 'doc' + d.d)) }}
+                  />
+                  {b0.comments.length ? (
+                    <button
+                      data-act="doc-thread"
+                      data-key={b0.key}
+                      aria-label={plural(b0.comments.length, 'comment')}
+                      className={`${b0.kind === 'heading' ? `absolute right-0 lg:relative lg:top-0 ${i === 0 && titled ? 'top-0.5' : lv <= 2 ? 'top-2.5' : 'top-1'}` : 'relative self-end'} flex h-6 shrink-0 items-center gap-1 rounded-md bg-amber-100 px-1.5 text-xs font-medium text-amber-900 after:absolute after:-inset-2.5 hover:bg-amber-200 lg:mt-0.5 lg:hidden lg:self-start dark:bg-amber-900/60 dark:text-amber-100 dark:hover:bg-amber-900`}
+                    >
+                      <Icon n="comment" c="size-3.5" />
+                      {b0.comments.length}
+                      {threadNew(d, b0.key, b0.comments) ? <NewDot /> : null}
+                    </button>
+                  ) : null}
+                </div>
+                {here ? (
+                  R.rec ? (
+                    // B300: recording, the same button stops and posts, where it was
+                    <div className="mt-2 flex items-center gap-2">
+                      <button
+                        data-act="doc-say"
+                        data-key={b0.key}
+                        aria-label="Stop and post the comment"
+                        className="grid size-12 shrink-0 place-items-center rounded-full bg-red-600 text-white shadow-lg"
+                      >
+                        <Icon n="stop" c="size-5" />
+                      </button>
+                      <span className="text-[13px] text-zinc-500 dark:text-zinc-400">
+                        <span data-rec-time className="font-mono text-red-600 tabular-nums dark:text-red-400">
+                          <RecTime />
+                        </span>{' '}
+                        · tap to post
+                      </span>
+                      <button
+                        data-act="doc-say-cancel"
+                        className="ml-auto h-10 rounded-full px-3 text-sm font-semibold text-zinc-600 ring-1 ring-zinc-300 dark:text-zinc-300 dark:ring-zinc-600"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="mt-2 flex items-center gap-2">
+                      <button
+                        data-act="doc-say"
+                        data-key={b0.key}
+                        aria-label="Speak a comment on this paragraph"
+                        className="grid size-12 shrink-0 place-items-center rounded-full bg-zinc-900 text-white shadow-lg dark:bg-zinc-100 dark:text-zinc-900"
+                      >
+                        <Icon n="mic" c="size-5" />
+                      </button>
+                      <span className="text-[13px] text-zinc-500 dark:text-zinc-400">
+                        Tap to speak, tap again to post
+                      </span>
+                      <button
+                        data-act="doc-type"
+                        className="ml-auto h-10 rounded-full px-3 text-sm font-semibold text-zinc-600 ring-1 ring-zinc-300 dark:text-zinc-300 dark:ring-zinc-600"
+                        aria-label="Type instead"
+                      >
+                        Aa
+                      </button>
+                    </div>
+                  )
+                ) : null}
+                {!side && b0.comments.length && U.docThreads.has(b0.key) ? (
+                  <Thread d={d} k={b0.key} comments={b0.comments} blockText={b0.text} />
+                ) : null}
+                {side ? <BlockActs d={d} k={b0.key} /> : null}
+              </section>
+            )
+          })}
+          {U.docCircle ? <Lasso /> : null}
+        </div>
+        {!side && d.whole?.length ? (
+          <section className="mt-6 border-t border-zinc-200 pt-4 dark:border-zinc-800">
+            <div className="text-xs font-medium text-zinc-500">On the whole document</div>
+            <Thread d={d} k="doc" comments={d.whole} />
+          </section>
+        ) : null}
+        {!side && d.detached.length ? (
+          <div className="mt-6 space-y-4 border-t border-zinc-200 pt-4 dark:border-zinc-800">
+            <div className="text-xs font-medium text-zinc-500">Original text changed</div>
+            {d.detached.map((t) => (
+              <section key={t.key}>
+                <div className="text-sm text-zinc-400 line-through">{t.quote}</div>
+                <Thread d={d} k={t.key} comments={t.comments} />
+              </section>
+            ))}
+          </div>
+        ) : null}
+        {side ? null : (
+          <>
+            <p className="mt-6 text-center text-xs text-zinc-400">
+              Tap a paragraph, select text or circle an area to comment on it
+            </p>
+            {U.docType && !U.docSel.size && !U.docQuote && !U.docReply ? null : (
+              <button
+                data-act="doc-whole"
+                className="mx-auto mt-1 flex h-11 items-center gap-1.5 px-3 text-sm font-semibold text-blue-600 dark:text-blue-400"
+              >
+                <Icon n="comment" c="size-4" />
+                Comment on the whole document
+              </button>
+            )}
+          </>
+        )}
+      </div>
+      {side ? <DocRail d={d} /> : null}
     </div>
   )
 }
@@ -544,10 +700,15 @@ export const DocPaneActs = ({ d }: { d: Doc }) => (
     </PaneBtn>
   </>
 )
+// B340 (D24 #1): the way back, first in the header and plain to see
 export const DocPaneNav = ({ d }: { d: Doc }) => (
-  <PaneBtn act="doc-close" title={`Back to ${code(liveN(d.n))} · Esc`}>
-    <Icon n="left" c="size-4" />
+  <button
+    data-act="doc-close"
+    title={`Back to ${code(liveN(d.n))} · Esc`}
+    className="flex h-9 items-center gap-1.5 rounded-lg bg-zinc-100 px-2.5 text-sm font-semibold text-zinc-800 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700"
+  >
+    <Icon n="left" c="size-4" sw="2.25" />
     Back to {code(liveN(d.n))}
     <Kbd k="Esc" />
-  </PaneBtn>
+  </button>
 )

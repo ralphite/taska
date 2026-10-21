@@ -56,6 +56,7 @@ const home = () => document.getElementById('boxHome')
 function boxAnchor(): Element | null {
   if (U.prefsEdit) return document.querySelector('#projectBody [data-prefs-slot]')
   const a = U.amend
+  if (a && a.mode === 'dc' && desk() && docOpen()) return null // B340: on the desktop the box stays at the bottom
   if (a)
     return a.mode === 'dc'
       ? document.querySelector(`[data-dc="${a.id}"]`)
@@ -63,7 +64,7 @@ function boxAnchor(): Element | null {
           `#detailBody [data-src="${a.id}"], #inputsView [data-r="${a.id}"], #detailBody [data-r="${a.id}"], #foot [data-src="${a.id}"]`,
         )
   const d = docOpen()
-  if (!d || (!desk() && !U.docType)) return null // I285: on the phone the box comes into the document only after Aa
+  if (!d || desk() || !U.docType) return null // I285: on the phone the box comes into the document only after Aa; B340: never on the desktop (the text never moves)
   const root = desk() ? els.detailBody : document.getElementById('dlgBody'),
     t = docTarget()
   if (!root) return null
@@ -240,8 +241,8 @@ function boxRole(): { line: ReactNode; ph: string; send: string } {
     line = (
       <ScopeLine
         icon="comment"
-        label={`${plural(vcN, 'comment')} on D${vcd.d}`}
-        detail="· one send posts each on its passage"
+        label={`${plural(vcN, 'comment')} on D${vcd.d} not sent`}
+        detail="· Send posts each beside its paragraph"
       />
     )
     ph = 'Words for the comments…'
@@ -262,14 +263,7 @@ function boxRole(): { line: ReactNode; ph: string; send: string } {
   } else if (dOpen) {
     // B247: a document open and nothing picked: a comment on the whole document (never a reply to the item, B2)
     const host = liveN(dOpen.n)
-    line = desk() ? (
-      <ScopeLine
-        icon="comment"
-        label={`Comment on D${dOpen.d}`}
-        detail="· the whole document, or select words in it"
-        right={byN.has(host) ? <ScopeLink act="doc-to-item" text={`Reply to ${code(host)} instead`} /> : null}
-      />
-    ) : (
+    line = desk() ? null : ( // B340 (D24 #6): on the desktop nothing picked is a reply to the item the document is on: no line, no switch
       <ScopeLine
         icon="comment"
         label={`Comment on D${dOpen.d}`}
@@ -281,8 +275,8 @@ function boxRole(): { line: ReactNode; ph: string; send: string } {
         }
       />
     ) // T225 #14
-    ph = `Comment on D${dOpen.d}…`
-    send = 'Comment'
+    ph = desk() ? `Reply to ${code(host)}…` : `Comment on D${dOpen.d}…`
+    send = desk() ? 'Send' : 'Comment'
   } else if (n) {
     // T322 (D22): writing in an item is a reply to it, nothing more: the box says "Reply to F06…"; no line above it,
     // no "New input instead" (New input has its own button)

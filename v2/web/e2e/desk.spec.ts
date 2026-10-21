@@ -29,7 +29,7 @@ test('E archives the open item and Z puts it back', async ({ page, request }) =>
   await expect.poll(async () => p.read('items?archived=1')).not.toContain('Write the user docs')
 })
 
-test('a comment on a paragraph of a document is written in the one box, under that paragraph', async ({
+test('a comment on a paragraph of a document is written in the one box, which stays at the bottom (B340)', async ({
   page,
   request,
 }) => {
@@ -45,8 +45,10 @@ test('a comment on a paragraph of a document is written in the one box, under th
   const para = page.locator('#docBlocks section[data-key]').filter({ hasText: 'Second part' })
   await para.hover()
   await para.locator('[data-pick-btn]').click()
-  await expect(page.locator('#docBlocks #composer')).toBeVisible()
+  await expect(page.locator('#docBlocks #composer')).toHaveCount(0) // the text never moves: the box stays where it is
+  await expect(page.locator('#foot #composer')).toBeVisible()
   await page.keyboard.type('Say who reviews it')
   await page.keyboard.press('Shift+Enter')
   await expect.poll(async () => p.read('D1')).toContain('Say who reviews it')
+  await expect(page.locator('aside[aria-label="Comments"]')).toContainText('Say who reviews it') // beside the text
 })

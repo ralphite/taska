@@ -781,6 +781,7 @@ export function DetailView({ hidden }: { hidden: boolean }) {
         >
           <Icon n="left" c="size-6" sw="2" />
         </button>
+        {shownDoc ? <div className="hidden shrink-0 lg:flex">{parts.nav}</div> : null}
         <div
           id="dHead"
           className="flex min-w-0 flex-1 flex-col items-center leading-tight lg:flex-row lg:items-center lg:gap-2 lg:pl-2"
@@ -802,9 +803,9 @@ export function DetailView({ hidden }: { hidden: boolean }) {
         </button>
         <div
           id="dNav"
-          className="hidden items-center gap-0.5 border-l border-zinc-200 pl-2 lg:ml-1.5 lg:flex dark:border-zinc-800"
+          className={`hidden items-center gap-0.5 border-l border-zinc-200 pl-2 lg:ml-1.5 dark:border-zinc-800 ${shownDoc ? '' : 'lg:flex'}`}
         >
-          {parts.nav}
+          {shownDoc ? null : parts.nav}
         </div>
       </header>
       <div
