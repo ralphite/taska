@@ -105,6 +105,19 @@ export function errorLog(msg: string, where: string) {
   clearTimeout(NETLOG.t)
   NETLOG.t = window.setTimeout(sendNetlog, 3000)
 }
+// r512, r521: every input that did not go in at once (failed, sent again after a reload, in late), to count and cut down
+export function sendLog(why: string, msg: string) {
+  if (!ctx.P) return
+  NETLOG.list.push({
+    t: new Date().toISOString(),
+    why,
+    url: location.pathname,
+    msg: msg.slice(0, 300),
+    where: 'outbox',
+  })
+  clearTimeout(NETLOG.t)
+  NETLOG.t = window.setTimeout(sendNetlog, 3000)
+}
 function sendNetlog() {
   const list = NETLOG.list.splice(0, 30)
   void fetch(ctx.P + 'api/netlog', JSON_POST({ list })).catch(() => NETLOG.list.unshift(...list))

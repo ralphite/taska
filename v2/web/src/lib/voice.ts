@@ -25,7 +25,7 @@ import {
   type Job,
 } from './state'
 import { toast } from './toast'
-import { JSON_POST, net, pushUndo, save } from './data'
+import { JSON_POST, net, pushUndo, save, sendLog } from './data'
 import { draftName, draftStore, goDraft, kept, saveDraft } from './drafts'
 import { docKey, renderDoc } from './docs'
 import { plainQuote } from './markdown'
@@ -624,6 +624,7 @@ export async function restoreVoice() {
           text: r.job.text,
           scope: r.scope,
           p: P,
+          back: true,
           files: [f],
         })
       void hear(f) // up to Taska; sending waits only for that
@@ -669,6 +670,7 @@ export async function restoreVoice() {
     back.push(key)
   }
   if (resend.size) {
+    sendLog('resend', `${resend.size} voice input(s) sent before a reload or a closed tab, going out again now`)
     U.outbox.push(...resend.values())
     bump('feedback')
     flushOutbox()

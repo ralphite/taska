@@ -24,7 +24,7 @@ import {
   type Job,
 } from './state'
 import { toast } from './toast'
-import { JSON_POST, load, notSaved, op, pushUndo, forget, save, change, type OpAnswer } from './data'
+import { JSON_POST, load, notSaved, op, pushUndo, forget, save, sendLog, change, type OpAnswer } from './data'
 import { tickedDoc, ticksDone, ticksGoing, ticksOf, tickWords } from './doctick'
 import type { Doc } from './types'
 import { setFix } from './settings'
@@ -294,9 +294,11 @@ export function restoreOutbox() {
       text: j.text || '',
       scope: j.scope || null,
       p: '/p/' + encodeURIComponent(project) + '/',
+      back: true,
       files: (j.files || []).map((f) => ({ ...f, done: Promise.resolve() })),
     })
   if (back.length) {
+    sendLog('resend', `${back.length} input(s) sent before a reload or a closed tab, going out again now`)
     bump('feedback')
     flushOutbox()
   }
@@ -389,6 +391,11 @@ export async function flushOutbox() {
           job.p,
         )
         job.rid = d.res[0].split(' ')[1]
+        if (job.tries || job.back)
+          sendLog(
+            'sent late',
+            `${job.q} (${projectOf(job.p)}) in after ${Math.round((Date.now() - job.t) / 1000)} s, ${job.tries || 0} failed tries${job.back ? ', after a reload' : ''}${job.files.some((f) => f.rid) ? ', voice' : ''}`,
+          )
         const here = job.p === ctx.P
         if (here) U.lastSent = job.quiet ? null : job.rid
         U.outbox.shift()
@@ -402,6 +409,10 @@ export async function flushOutbox() {
         job.failed = true
         job.sending = false
         job.net = !!(e as { again?: boolean }).again
+        sendLog(
+          'unsent',
+          `${job.q} (${projectOf(job.p)}) ${job.net ? 'no answer from Taska' : 'refused: ' + ((e as Error).message || '')}, try ${(job.tries || 0) + 1}${job.files.some((f) => f.rid) ? ', voice' : ''}`,
+        )
         if (job.net)
           setTimeout(
             () => {
