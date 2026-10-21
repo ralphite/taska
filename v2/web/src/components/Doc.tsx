@@ -20,7 +20,7 @@ import {
 import type { Comment, Doc } from '../lib/types'
 import { blockHtml, clean, groups, plainQuote } from '../lib/markdown'
 import { seeThreads, threadNew, renderDoc } from '../lib/docs'
-import { tickKeys, tickText } from '../lib/doctick'
+import { tickKeys, tickOpen, tickText } from '../lib/doctick'
 
 const TICKED_LINE = /^\s*[-*+]\s+[([][xX][)\]]/m // T415: a list with a choice sent in it
 import { toast } from '../lib/toast'
@@ -625,7 +625,7 @@ export function DocView({ d }: { d: Doc }) {
                         blockHtml(b, i === 0 && titled, 'doc' + d.d, {
                           d: d.d,
                           key: tk,
-                          sent: now === b0.text && TICKED_LINE.test(b0.text),
+                          sent: now === b0.text && TICKED_LINE.test(b0.text) && !tickOpen(d.d, tk),
                         }),
                       ),
                     }}

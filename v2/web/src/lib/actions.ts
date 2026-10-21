@@ -35,7 +35,7 @@ import {
   type Go,
 } from './state'
 import { groups, hasChoices } from './markdown'
-import { clearTicks, tickDoc } from './doctick'
+import { clearTicks, tickDoc, tickModify } from './doctick'
 import { playAudio } from './audio'
 import { toast } from './toast'
 import { actLog } from './actlog'
@@ -955,6 +955,11 @@ export const ACT: Record<string, Handler> = {
     if (!desk()) U.docType = true // the phone: the box comes under the document, with Send
     renderDoc()
     bump('composer')
+  },
+  'doc-tick-edit': (d) => {
+    // F428: Modify on a sent form: it is a form again, to change and send again
+    tickModify(Number(d.d), d.key as string)
+    renderDoc()
   },
   'doc-ticks-clear': () => {
     const doc = docOpen()

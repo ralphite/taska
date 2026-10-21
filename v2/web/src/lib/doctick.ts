@@ -5,6 +5,7 @@ import { CHOICE, isTicked, tickedBlock } from './markdown'
 import type { Doc } from './types'
 
 const DT = {
+  open: new Set<string>(), // F428: sent forms you chose to change again ("d k")
   at: '',
   all: {} as Record<string, Record<string, string>>, // document -> paragraph key -> its text as you ticked it
   going: {} as Record<string, Record<string, string>>, // the same, sent and not in the document yet: still shown
@@ -87,6 +88,11 @@ export const tickWords = (doc: Doc) =>
   ticksOf(doc).flatMap(({ now, head }) =>
     now.split('\n').flatMap((l) => (isTicked(l) ? ['✓ ' + l.replace(CHOICE, '') + (head ? ` (${head})` : '')] : [])),
   )
+/** F428: a sent form is shown as sent until you choose to change it. */
+export const tickOpen = (d: number, k: string) => DT.open.has(`${d} ${k}`)
+export function tickModify(d: number, k: string) {
+  DT.open.add(`${d} ${k}`)
+}
 /** Sent: they stay shown while they are on their way. */
 export function ticksGoing(d: number, sent: Record<string, string>) {
   DT.going[d] = { ...DT.going[d], ...sent }
@@ -95,7 +101,10 @@ export function ticksGoing(d: number, sent: Record<string, string>) {
 /** In the document (ok), or not: then they wait again to be sent. */
 export function ticksDone(d: number, sent: Record<string, string>, ok: boolean) {
   if (!ok) for (const [k, v] of Object.entries(sent)) (all()[d] ||= {})[k] ??= v
-  for (const k of Object.keys(sent)) delete DT.going[d]?.[k]
+  for (const k of Object.keys(sent)) {
+    delete DT.going[d]?.[k]
+    if (ok) DT.open.delete(`${d} ${k}`) // sent again: shown as sent
+  }
   keep()
 }
 export function clearTicks(d: number, only?: Record<string, string>) {
