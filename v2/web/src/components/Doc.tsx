@@ -1,7 +1,7 @@
 // A document (D1, D2 ...): its text in blocks, each with its comment threads (T274 #2), read in the item pane on the
 // desktop (T110) and in a sheet on the phone. Comments are written in the one input box (I087). The editor is a
 // plain textarea; the first line is the title.
-import { useLayoutEffect, useRef, type ReactNode, type RefObject } from 'react'
+import { useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { BTN, DC_BTN, HIT, MSG, PRIMARY, WHO } from '../lib/constants'
 import {
   R_STATE as R,
@@ -142,32 +142,58 @@ function Thread({
   )
 }
 // B340: beside a paragraph, on the desktop: comment (in the box below) or speak (the icon itself records, and stops)
-function BlockActs({ d, k }: { d: Doc; k: string }) {
+function BlockActs({ d, k, float = false }: { d: Doc; k: string; float?: boolean }) {
+  useArea('vc')
   const rec = !!(R.rec && R.vc?.d === d.d && R.vc.key === k)
+  const b = d.blocks.find((x) => x.key === k),
+    drafts = U.vcMarks.filter((m) => m.d === d.d && m.key === k),
+    n = (b?.comments.length || 0) + drafts.length,
+    open = float && n > 0 && U.docThreads.has(k)
   return (
-    <div
-      className={`absolute top-0.5 left-[calc(100%+0.25rem)] flex-col gap-1 ${rec ? 'flex' : 'hidden group-hover/blk:flex'}`}
-    >
-      {rec ? null : (
+    <>
+      {float && n ? (
+        // B349: no room for the column: the count stays beside the paragraph, and opens its comments over the text
         <button
-          data-act="doc-pick"
+          data-act="doc-thread"
           data-key={k}
-          data-pick-btn
-          title="Comment on this paragraph (write in the box below)"
-          className="grid size-7 place-items-center rounded-lg bg-white text-zinc-500 shadow-sm ring-1 ring-zinc-900/10 hover:text-zinc-900 dark:bg-zinc-800 dark:text-zinc-300 dark:ring-white/10 dark:hover:text-white"
+          title={open ? 'Hide the comments' : 'Show the comments'}
+          className="absolute top-0.5 left-[calc(100%+0.25rem)] flex h-7 min-w-7 items-center justify-center gap-0.5 rounded-lg bg-amber-100 px-1.5 text-xs font-semibold text-amber-900 group-hover/blk:hidden hover:bg-amber-200 dark:bg-amber-900/60 dark:text-amber-100"
         >
-          <Icon n="comment" c="size-4" />
+          {n}
         </button>
-      )}
-      <button
-        data-act="doc-say"
-        data-key={k}
-        title={rec ? 'Stop: the comment waits beside it, not sent' : 'Speak a comment on this paragraph'}
-        className={`grid size-7 place-items-center rounded-lg shadow-sm ring-1 ${rec ? 'bg-red-600 text-white ring-red-700' : 'bg-white text-zinc-500 ring-zinc-900/10 hover:text-zinc-900 dark:bg-zinc-800 dark:text-zinc-300 dark:ring-white/10 dark:hover:text-white'}`}
+      ) : null}
+      {open && b ? (
+        <div className="absolute top-9 -right-10 z-20 flex w-80 max-w-full flex-col gap-2 text-sm shadow-xl">
+          {b.comments.length ? <Thread d={d} k={k} comments={b.comments} blockText={b.text} rail /> : null}
+          {drafts.map((m) => (
+            <DraftCard key={m.label} label={m.label} />
+          ))}
+        </div>
+      ) : null}
+      <div
+        className={`absolute top-0.5 left-[calc(100%+0.25rem)] flex-col gap-1 ${rec ? 'flex' : 'hidden group-hover/blk:flex'}`}
       >
-        <Icon n={rec ? 'stop' : 'mic'} c="size-4" />
-      </button>
-    </div>
+        {rec ? null : (
+          <button
+            data-act="doc-pick"
+            data-key={k}
+            data-pick-btn
+            title="Comment on this paragraph (write in the box below)"
+            className="grid size-7 place-items-center rounded-lg bg-white text-zinc-500 shadow-sm ring-1 ring-zinc-900/10 hover:text-zinc-900 dark:bg-zinc-800 dark:text-zinc-300 dark:ring-white/10 dark:hover:text-white"
+          >
+            <Icon n="comment" c="size-4" />
+          </button>
+        )}
+        <button
+          data-act="doc-say"
+          data-key={k}
+          title={rec ? 'Stop: the comment waits beside it, not sent' : 'Speak a comment on this paragraph'}
+          className={`grid size-7 place-items-center rounded-lg shadow-sm ring-1 ${rec ? 'bg-red-600 text-white ring-red-700' : 'bg-white text-zinc-500 ring-zinc-900/10 hover:text-zinc-900 dark:bg-zinc-800 dark:text-zinc-300 dark:ring-white/10 dark:hover:text-white'}`}
+        >
+          <Icon n={rec ? 'stop' : 'mic'} c="size-4" />
+        </button>
+      </div>
+    </>
   )
 }
 // B340: a comment not sent yet, where it will go: its words under its quote in the box, and its voice notes
@@ -447,13 +473,47 @@ export function DocView({ d }: { d: Doc }) {
   groups.delete('doc' + d.d) // its images, refilled as the blocks render
   const phoneBtn = `${HIT} ${BTN} text-sm lg:hidden`
   const side = desk() // B340: on the desktop the comments live in a column beside the text; the text never moves
+  // B349: the column only when there are comments, and only when the pane is wide enough for it beside the text;
+  // narrower, each commented paragraph shows a count beside it that opens its comments floating over the text
+  const [wide, setWide] = useState(true)
+  useLayoutEffect(() => {
+    const el = ref.current
+    if (!el || !side || typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(() => setWide(el.clientWidth >= 880))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [side])
+  const talked =
+    !!d.whole?.length ||
+    d.detached.length > 0 ||
+    d.blocks.some((b) => b.comments.length) ||
+    U.vcMarks.some((m) => m.d === d.d)
+  const rail = side && wide && talked,
+    float = side && !rail
   return (
     <div
       ref={ref}
-      className="flex min-h-full flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_17rem] lg:items-start lg:gap-x-12"
+      className={`flex min-h-full flex-col ${rail ? 'lg:grid lg:grid-cols-[minmax(0,1fr)_17rem] lg:items-start lg:gap-x-12' : 'lg:pr-10'}`}
     >
       <div className="flex min-w-0 flex-col">
-        <div className="flex items-center gap-1 text-xs text-zinc-500">
+        <div className="relative flex items-center gap-1 text-xs text-zinc-500">
+          {float && d.whole?.length ? (
+            <>
+              <button
+                data-act="doc-thread"
+                data-key="doc"
+                className="order-last flex h-7 items-center gap-1 rounded-md bg-amber-100 px-2 font-medium text-amber-900 hover:bg-amber-200 dark:bg-amber-900/60 dark:text-amber-100"
+              >
+                <Icon n="comment" c="size-3.5" />
+                {plural(d.whole.length, 'comment')} on the document
+              </button>
+              {U.docThreads.has('doc') ? (
+                <div className="absolute top-full right-0 z-20 mt-1 w-80 text-sm">
+                  <Thread d={d} k="doc" comments={d.whole} rail />
+                </div>
+              ) : null}
+            </>
+          ) : null}
           <span className="min-w-0 flex-1 truncate">
             on{' '}
             <button data-act="goto" data-n={d.n} className="text-blue-600 hover:underline dark:text-blue-400">
@@ -568,7 +628,7 @@ export function DocView({ d }: { d: Doc }) {
                 {!side && b0.comments.length && U.docThreads.has(b0.key) ? (
                   <Thread d={d} k={b0.key} comments={b0.comments} blockText={b0.text} />
                 ) : null}
-                {side ? <BlockActs d={d} k={b0.key} /> : null}
+                {side ? <BlockActs d={d} k={b0.key} float={float} /> : null}
               </section>
             )
           })}
@@ -608,7 +668,7 @@ export function DocView({ d }: { d: Doc }) {
           </>
         )}
       </div>
-      {side ? <DocRail d={d} /> : null}
+      {rail ? <DocRail d={d} /> : null}
     </div>
   )
 }
