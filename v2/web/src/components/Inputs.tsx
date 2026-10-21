@@ -1,6 +1,6 @@
 // What you said (inputs), and what became of each: the Inputs tab (a list; on the desktop a list and a pane, T274 #9),
 // "You said lately" on the New input page, and what is still on its way (F85).
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
+import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { HIT, LINK_BTN, SMALL_BTN, TYPE_TEXT } from '../lib/constants'
 import {
   U,
@@ -520,77 +520,37 @@ export function InputPaneHead() {
 }
 
 // ---------------------------------------------------------------- You said lately (the New input page)
-const DOT: Record<string, ReactNode> = {
-  pulse: (
-    <span className="relative flex size-2.5">
-      <span className="absolute inline-flex size-full animate-ping rounded-full bg-blue-400 opacity-75" />
-      <span className="relative inline-flex size-2.5 rounded-full bg-blue-500 dark:bg-blue-400" />
-    </span>
-  ),
-  ok: (
-    <span className="size-2.5 rounded-full bg-emerald-500 ring-4 ring-emerald-500/15 dark:bg-emerald-400 dark:ring-emerald-400/15" />
-  ),
-  bad: (
-    <span className="size-2.5 rounded-full bg-red-500 ring-4 ring-red-500/15 dark:bg-red-400 dark:ring-red-400/15" />
-  ),
-  idle: <span className="size-2.5 rounded-full bg-zinc-300 dark:bg-zinc-600" />,
-  wait: <span className="size-2.5 rounded-full border-2 border-zinc-300 dark:border-zinc-600" />,
-}
-const dotOf = (r: Input) => {
-  const S = model.S
-  return r.moved
-    ? 'wait'
-    : S.org?.busy === r.id || r.tr_wait
-      ? 'pulse'
-      : r.org && !r.org.ok
-        ? 'bad'
-        : r.org?.undone
-          ? 'idle'
-          : r.acked
-            ? 'ok'
-            : !r.org && S.org?.on
-              ? 'idle'
-              : 'wait'
-}
-// One step of the timeline: a dot, your words in a bubble, and the line saying what became of them.
+// T359: one input in the list under New input: a line saying which it is, when, what it answers and where it
+// stands, with what you can do; under it your words and voice notes; under them what became of it. No timeline
+// dots (they only said the state again) and no chat bubbles (this is what you said, not a talk).
 export function SaidStep({
-  dot,
-  bubble,
-  meta,
-  result,
-  last,
+  head,
+  acts,
+  body,
+  foot,
   attrs = {},
 }: {
-  dot: ReactNode
-  bubble: ReactNode
-  meta: ReactNode
-  result: ReactNode
-  last: boolean
+  head: ReactNode
+  acts?: ReactNode
+  body: ReactNode
+  foot?: ReactNode
   attrs?: Record<string, unknown>
 }) {
   return (
-    <li className="group/row relative flex gap-3 pb-5">
-      {last ? null : (
-        <span
-          aria-hidden="true"
-          className="absolute top-7.5 -bottom-1.5 left-[11.5px] w-px bg-zinc-200 dark:bg-zinc-800"
-        />
-      )}
-      <span className="relative mt-1.5 grid size-6 shrink-0 place-items-center">{dot}</span>
-      <div className="min-w-0 flex-1">
-        <div className="flex items-start gap-3">
-          <div
-            {...attrs}
-            className="w-fit max-w-full min-w-0 rounded-2xl rounded-tl-md bg-blue-50 px-3.5 py-1.5 text-[15px] leading-6 text-zinc-900 dark:bg-blue-400/10 dark:text-zinc-100"
-          >
-            {bubble}
-          </div>
-          <span className="ml-auto shrink-0 pt-1.5 text-xs whitespace-nowrap text-zinc-400 tabular-nums dark:text-zinc-500">
-            {meta}
+    <li className="group/row -mx-3 rounded-lg border-b border-zinc-100 px-3 py-3 last:border-b-0 hover:bg-zinc-50 dark:border-zinc-800/70 dark:hover:bg-zinc-900/60">
+      <div className="flex min-h-7 min-w-0 items-center gap-1.5 text-[13px] text-zinc-500 dark:text-zinc-400">
+        {head}
+        {acts ? (
+          // quiet until you point at the input, but always there
+          <span className="-my-1 flex shrink-0 items-center opacity-60 transition-opacity group-hover/row:opacity-100 focus-within:opacity-100">
+            {acts}
           </span>
-        </div>
-        <div className="mt-1.5 flex min-w-0 flex-wrap items-center gap-1.5">{result}</div>
+        ) : null}
       </div>
+      <div {...attrs} className="mt-0.5 min-w-0 text-[15px] leading-6 text-zinc-900 dark:text-zinc-100">
+        {body}
+      </div>
+      {foot ? <div className="mt-2 flex min-w-0 flex-wrap items-center gap-1.5 empty:hidden">{foot}</div> : null}
     </li>
   )
 }
@@ -608,36 +568,17 @@ function useCut(ref: RefObject<HTMLElement | null>) {
     }
   })
 }
-function SaidRow({ r, last }: { r: Input; last: boolean }) {
-  const [label, tone] = inputState(r),
+// T359: where an input stands, in a word (the whole sentence when you point at it)
+const SHORT: Record<string, string> = {
+  'Waiting for your agent': 'Waiting',
+  'Handled by your agent': 'Handled',
+  'Seen by your agent': 'Seen',
+  'Left for your agent': 'Left for agent',
+}
+function SaidRow({ r }: { r: Input; last?: boolean }) {
+  const [label, tone, icon] = inputState(r),
     scope = r.scope ? byN.get(r.scope) : undefined
   const said = r.text // B361: a voice note alone is its player, with its length; no "Voice note" over it
-  const bubble = (
-    <>
-      {scope ? (
-        <button
-          data-act="goto"
-          data-n={scope.n}
-          className="mb-0.5 flex max-w-full items-center gap-1 text-xs font-medium text-blue-700 hover:underline dark:text-blue-300"
-        >
-          <Icon n="reply" c="size-3.5" />
-          <span className="truncate">
-            Reply to {code(scope.n)} · {scope.title}
-          </span>
-        </button>
-      ) : null}
-      {said ? (
-        <p data-cut className={`${U.moreInputs.has(r.id) ? 'whitespace-pre-line' : 'line-clamp-2'} break-words`}>
-          {said}
-        </p>
-      ) : null}
-      {r.files.length ? (
-        <div className="mt-2 flex items-end gap-2">
-          <Thumbs files={r.files} gid={'cl' + r.id} size="size-12" />
-        </div>
-      ) : null}
-    </>
-  )
   const chips = r.moved
     ? null
     : r.touched
@@ -651,7 +592,7 @@ function SaidRow({ r, last }: { r: Input; last: boolean }) {
               data-act="goto"
               data-n={n}
               title={`Open ${code(n)}`}
-              className="flex h-7 max-w-60 min-w-0 items-center gap-1.5 rounded-lg bg-zinc-100 pr-2.5 pl-1.5 text-[13px] text-zinc-800 hover:bg-zinc-200/80 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
+              className="flex h-7 max-w-80 min-w-0 items-center gap-1.5 rounded-lg bg-zinc-100 pr-2.5 pl-1.5 text-[13px] text-zinc-800 hover:bg-zinc-200/80 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
             >
               <StateIcon s={it.status} label={statusName(it)} cls="size-4" />
               <span className={`font-mono text-xs font-bold ${TYPE_TEXT[it.type]}`}>{code(n)}</span>
@@ -663,50 +604,109 @@ function SaidRow({ r, last }: { r: Input; last: boolean }) {
   const [now, more] = inputActs(r, SMALL_BTN)
   return (
     <SaidStep
-      dot={DOT[dotOf(r)]}
-      bubble={bubble}
-      meta={
+      head={
         <>
-          <span className="font-mono">{rcode(r.id)}</span> · {when(r.t)}
-          {r.from === 'rules' ? ' · as a rule' : ''}
+          <span className="shrink-0 font-mono">{rcode(r.id)}</span>
+          <span className="shrink-0 tabular-nums">· {new Date(r.t).toTimeString().slice(0, 5)}</span>
+          {r.from === 'rules' ? <span className="shrink-0">· as a rule</span> : null}
+          <span title={label} className={`flex shrink-0 items-center gap-1 pr-1 pl-1.5 font-medium ${tone}`}>
+            {icon}
+            {SHORT[label] || label}
+          </span>
+          {scope ? (
+            <button
+              data-act="goto"
+              data-n={scope.n}
+              title={`Your reply to ${code(scope.n)}`}
+              className="flex min-w-0 items-center gap-1 rounded-md px-1 hover:bg-zinc-100 hover:text-zinc-800 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+            >
+              <Icon n="reply" c="size-3.5 shrink-0" />
+              <span className={`shrink-0 font-mono text-xs font-bold ${TYPE_TEXT[scope.type]}`}>{code(scope.n)}</span>
+              <span className="truncate">{scope.title}</span>
+            </button>
+          ) : null}
+          <span className="ml-auto" />
         </>
       }
-      result={
+      acts={
         <>
-          <span className={`mr-1 text-[13px] font-semibold ${tone}`}>{label}</span>
           {/* F347: adding to what you said is the most common thing to do here: in sight on every input, not in ⋯ */}
           {r.moved ? null : (
-            <button data-act="input-append" data-id={r.id} className={`-my-1 ml-auto ${SMALL_BTN}`}>
+            <button data-act="input-append" data-id={r.id} className={SMALL_BTN}>
               <Icon n="plus" c="size-3.5" sw="2" />
               Add more
             </button>
           )}
-          {more ? <span className={`-my-1 ${r.moved ? 'ml-auto' : ''}`}>{more}</span> : null}
-          <div className="flex basis-full flex-wrap items-center gap-1.5 empty:hidden">
-            {chips}
-            {busy ? <span className="h-7 w-44 animate-pulse rounded-lg bg-zinc-100 dark:bg-zinc-800" /> : null}
-            {r.org && !r.org.ok ? (
-              <span className="min-w-0 basis-full truncate text-[13px] text-red-600/80 dark:text-red-400/80">
-                {r.org.msg}
-              </span>
-            ) : null}
-            {now}
-          </div>
+          {more}
         </>
       }
-      last={last}
+      body={
+        <>
+          {said ? (
+            <p data-cut className={`${U.moreInputs.has(r.id) ? 'whitespace-pre-line' : 'line-clamp-3'} break-words`}>
+              {said}
+            </p>
+          ) : null}
+          {r.files.length ? (
+            <div className={`flex flex-wrap items-end gap-2 ${said ? 'mt-2' : ''}`}>
+              <Thumbs files={r.files} gid={'cl' + r.id} size="size-12" />
+            </div>
+          ) : null}
+        </>
+      }
+      foot={
+        <>
+          {chips}
+          {busy ? <span className="h-7 w-44 animate-pulse rounded-lg bg-zinc-100 dark:bg-zinc-800" /> : null}
+          {r.org && !r.org.ok ? (
+            <span className="min-w-0 basis-full truncate text-[13px] text-red-600/80 dark:text-red-400/80">
+              {r.org.msg}
+            </span>
+          ) : null}
+          {now ? (
+            // the first thing on the line starts where the words above it start
+            <span className={`flex items-center gap-1.5 ${chips?.length || busy ? '' : '-ml-2'}`}>{now}</span>
+          ) : null}
+        </>
+      }
       attrs={{ 'data-expand': '', 'data-id': r.id, ...voiceAttr(r) }}
     />
   )
 }
-function OutboxStep({ q, last }: { q: Job; last: boolean }) {
+function OutboxStep({ q }: { q: Job; last?: boolean }) {
   const state = q.failed ? 'Not sent' : q.files.some((f) => !f.f && !f.failed) ? 'Uploading…' : 'Sending…'
   return (
     <SaidStep
-      dot={q.failed ? DOT.bad : DOT.pulse}
-      bubble={
+      head={
         <>
-          {q.text ? <p className="line-clamp-2 break-words">{q.text}</p> : <p>{outboxLine(q)}</p>}
+          <span>Just now</span>
+          <span
+            className={`ml-auto flex shrink-0 items-center gap-1.5 font-medium ${q.failed ? 'text-red-600 dark:text-red-400' : 'text-blue-600 dark:text-blue-400'}`}
+          >
+            {q.failed ? (
+              <Icon n="alert" c="size-3.5" sw="2" />
+            ) : (
+              <span className="size-1.5 animate-pulse rounded-full bg-current" />
+            )}
+            {state}
+          </span>
+        </>
+      }
+      acts={
+        q.failed ? (
+          <>
+            <button data-act="outbox-retry" className={`${SMALL_BTN} text-blue-600 dark:text-blue-400`}>
+              Retry
+            </button>
+            <button data-act="outbox-edit" className={SMALL_BTN}>
+              Edit
+            </button>
+          </>
+        ) : null
+      }
+      body={
+        <>
+          {q.text ? <p className="line-clamp-3 break-words">{q.text}</p> : <p>{outboxLine(q)}</p>}
           {q.files.some((f) => f.preview) ? (
             <div className="mt-2 flex gap-2">
               {q.files
@@ -723,27 +723,6 @@ function OutboxStep({ q, last }: { q: Job; last: boolean }) {
           ) : null}
         </>
       }
-      meta="Just now"
-      result={
-        <>
-          <span
-            className={`mr-1 text-[13px] font-semibold ${q.failed ? 'text-red-600 dark:text-red-400' : 'text-blue-600 dark:text-blue-400'}`}
-          >
-            {state}
-          </span>
-          {q.failed ? (
-            <>
-              <button data-act="outbox-retry" className={`${SMALL_BTN} text-blue-600 dark:text-blue-400`}>
-                Retry
-              </button>
-              <button data-act="outbox-edit" className={SMALL_BTN}>
-                Edit
-              </button>
-            </>
-          ) : null}
-        </>
-      }
-      last={last}
     />
   )
 }
@@ -804,9 +783,19 @@ export function SaidLately({ draft }: { draft: ReactNode }) {
           {queued.map((q, k) => (
             <OutboxStep key={q.q} q={q} last={k === n - 1} />
           ))}
-          {recent.map((r, k) => (
-            <SaidRow key={r.id} r={r} last={!rest && queued.length + k === n - 1} />
-          ))}
+          {recent.map((r, k) => {
+            // T359: the inputs of a day under its name; each says only its time
+            const day = dayOf(r.t),
+              head = k === 0 || dayOf(recent[k - 1].t) !== day
+            return (
+              <Fragment key={r.id}>
+                {head ? (
+                  <li className="pt-5 pb-1 text-xs font-semibold text-zinc-500 first:pt-1 dark:text-zinc-400">{day}</li>
+                ) : null}
+                <SaidRow r={r} last={!rest && queued.length + k === n - 1} />
+              </Fragment>
+            )
+          })}
           {rest ? (
             <li ref={end} className="flex h-16 items-center pl-9 text-sm text-zinc-400 dark:text-zinc-500">
               Loading more…
@@ -815,7 +804,9 @@ export function SaidLately({ draft }: { draft: ReactNode }) {
         </ol>
       ) : (
         <p id="saidNone" className="mt-3 text-sm text-zinc-400 dark:text-zinc-500">
-          What you say shows up here, with the items it turns into.
+          {words.length
+            ? `Nothing you said matches “${q.trim()}”.`
+            : 'What you say shows up here, with the items it turns into.'}
         </p>
       )}
     </div>

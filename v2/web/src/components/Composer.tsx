@@ -1171,10 +1171,10 @@ export function ComposeHeadDefault() {
   return (
     <>
       <div className="flex items-center gap-3">
-        <ProjTile name={S.project} cls="size-11 rounded-xl text-xl shadow-sm" />
-        <h1 className="text-[28px] leading-none font-semibold tracking-tight">{projTitle()}</h1>
+        <ProjTile name={S.project} cls="size-9 rounded-xl text-lg" />
+        <h1 className="text-2xl leading-none font-semibold tracking-tight">{projTitle()}</h1>
       </div>
-      <p className="mt-3.5 flex items-center justify-center gap-0 text-[15px] text-zinc-500 dark:text-zinc-400">
+      <p className="mt-2.5 flex items-center justify-center gap-0 text-[15px] text-zinc-500 dark:text-zinc-400">
         {ruleMode() ? (
           <>
             <span className="font-medium text-zinc-700 dark:text-zinc-200">New rule</span>&nbsp;for the whole project

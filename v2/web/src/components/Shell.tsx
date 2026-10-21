@@ -908,7 +908,7 @@ function Foot({ hidden, wideCls }: { hidden: boolean; wideCls: string }) {
         e.preventDefault()
         if (e.dataTransfer.files.length) void addFiles([...e.dataTransfer.files])
       }}
-      className={`relative z-20 shrink-0 px-3 pt-1 pb-[max(1.25rem,env(safe-area-inset-bottom))] lg:row-start-5 lg:scrollbar-gutter-both lg:px-8 lg:pb-5 lg:group-data-[compose]/app:row-span-3 lg:group-data-[compose]/app:row-start-3 lg:group-data-[compose]/app:overflow-y-auto lg:group-data-[compose]/app:overscroll-contain lg:group-data-[compose]/app:pt-[9vh] lg:group-data-[compose]/app:pb-16 lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70 ${wideCls}`}
+      className={`relative z-20 shrink-0 px-3 pt-1 pb-[max(1.25rem,env(safe-area-inset-bottom))] lg:row-start-5 lg:scrollbar-gutter-both lg:px-8 lg:pb-5 lg:group-data-[compose]/app:row-span-3 lg:group-data-[compose]/app:row-start-3 lg:group-data-[compose]/app:overflow-y-auto lg:group-data-[compose]/app:overscroll-contain lg:group-data-[compose]/app:pt-[5vh] lg:group-data-[compose]/app:pb-16 lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70 ${wideCls}`}
     >
       <div
         id="composeHead"
@@ -922,7 +922,7 @@ function Foot({ hidden, wideCls }: { hidden: boolean; wideCls: string }) {
       <section
         id="composeList"
         aria-label="You said lately"
-        className="hidden lg:group-data-[compose]/app:mx-auto lg:group-data-[compose]/app:mt-10 lg:group-data-[compose]/app:block lg:group-data-[compose]/app:max-w-[42rem]"
+        className="hidden lg:group-data-[compose]/app:mx-auto lg:group-data-[compose]/app:mt-8 lg:group-data-[compose]/app:block lg:group-data-[compose]/app:max-w-[42rem]"
       >
         {compose ? <SaidLately draft={<DraftCard />} /> : null}
       </section>
