@@ -383,12 +383,13 @@ export function ItemPage({ it }: { it: Item }) {
   // T322 (design A, with B's handle): on the desktop the item and its talk are two parts, each scrolling on its own,
   // with a clear line between them. The item part takes up to a share of the pane (drag the line, or Show all); past
   // that it fades at the line. The talk opens at its latest message. The phone keeps one page that scrolls.
+  // B343: once you drag the line it stays exactly where you left it, past the item's end too (no limit)
   const all = U.topAll === n
   return (
     <div id="itemPage" className="group/item flex flex-col gap-6 px-5 pt-5 pb-10 lg:h-full lg:gap-0 lg:p-0">
       <div
         id="itemTop"
-        className={`flex flex-col lg:shrink-0 ${all ? 'lg:max-h-[calc(100%-8rem)]' : 'lg:max-h-[var(--top-h,40%)]'}`}
+        className={`flex flex-col lg:shrink-0 ${all ? 'lg:max-h-[calc(100%-8rem)]' : 'lg:h-[var(--top-h,auto)] lg:max-h-[var(--top-h,40%)]'}`}
       >
         <div
           id="itemClip"
