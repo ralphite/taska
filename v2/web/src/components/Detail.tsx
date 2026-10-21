@@ -132,7 +132,7 @@ export function NeedsCard({ it, onCard = false }: { it: Item; onCard?: boolean }
       'propose',
       `${name} proposed this`,
       m ? (
-        <MsgText x={m} gid={'card' + n} />
+        <MsgText x={m} gid={'card' + n} whole />
       ) : (
         <p className="text-sm text-amber-900/80 dark:text-amber-200/80">Nobody works on it until you approve.</p>
       ),
@@ -160,7 +160,7 @@ export function NeedsCard({ it, onCard = false }: { it: Item; onCard?: boolean }
       'done',
       `${name} finished this`,
       m ? (
-        <MsgText x={m} gid={'card' + n} />
+        <MsgText x={m} gid={'card' + n} whole />
       ) : (
         <p className="text-sm text-amber-900/80 dark:text-amber-200/80">Check its work, then accept or reopen.</p>
       ),

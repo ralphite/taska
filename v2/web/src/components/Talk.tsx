@@ -2,7 +2,7 @@
 // organizer's notes, documents' comments in time (T274 #4), files and voice notes. The same on the item page and the card.
 import type { ReactNode } from 'react'
 import { DC_BTN, HIT, KIND, NEED, PRIMARY_BASE } from '../lib/constants'
-import { U, byR, ctx, desk, docsOf, oneLine, plural, rcode, userWord, when, whoName } from '../lib/state'
+import { U, byN, byR, ctx, desk, docsOf, oneLine, plural, rcode, userWord, when, whoName } from '../lib/state'
 import type { Doc, FileRef, Input, Item, Msg } from '../lib/types'
 import { clean, groups, hasChoices, mdHtml } from '../lib/markdown'
 import { audioOf } from '../lib/audio'
@@ -229,14 +229,21 @@ export function MsgText({
   gid,
   form = 0,
   done = null,
+  whole = false,
 }: {
   x: Msg
   gid: string
   form?: number
   done?: string[] | null
+  whole?: boolean
 }) {
+  // B360: the latest message of the item you opened (and the card that shows it) is open: it is what you came to read;
+  // only past 50 lines is it cut
+  const it = U.open ? byN.get(U.open) : undefined,
+    latest = whole || it?.thread.filter((m) => m.by !== 'org').at(-1)?.id === x.id
+  const lines = x.text.trim().split('\n').length
   const long =
-    (x.by !== 'you' || desk()) && x.kind !== 'ask' && (x.text.length > 240 || x.text.trim().split('\n').length > 3)
+    (x.by !== 'you' || desk()) && x.kind !== 'ask' && (latest ? lines > 50 : x.text.length > 240 || lines > 3)
   const open = U.moreMsgs.has(x.id)
   if (long && desk() && !open)
     return (
