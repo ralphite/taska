@@ -387,11 +387,9 @@ export function DraftCard() {
   const html = U.fixEd ? draftLast : text.trim() ? draftHtml(text, true) : ''
   draftLast = html
   return (
-    <li className="group/row relative mt-4 flex gap-3 pb-6">
-      <span className="relative mt-1.5 grid size-6 shrink-0 place-items-center">
-        <span className="size-3 rounded-full border-2 border-dashed border-blue-400 dark:border-blue-400/80" />
-      </span>
-      <div className="min-w-0 flex-1">
+    // T359: lined up with the inputs under it: a line saying what it is, the words under it
+    <li className="group/row relative border-b border-zinc-100 py-3 dark:border-zinc-800/70">
+      <div className="min-w-0">
         <div className="flex h-7 items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
           <span className="font-semibold tracking-wider text-blue-700 uppercase dark:text-blue-300">Draft</span>
           <span>· not sent</span>
