@@ -851,6 +851,15 @@ export const ACT: Record<string, Handler> = {
       return
     if (desk() && !d.pickBtn && !U.docSel.size) return // T274 #1: reading and copying never pick; Comment does
     const k = d.key as string
+    if (d.quote) {
+      // B355: one item of a list: the comment quotes it
+      U.docSel = new Set()
+      U.docQuote = { key: k, text: d.quote as string }
+      U.docReply = null
+      renderDoc()
+      if (desk()) els.text?.focus({ preventScroll: true })
+      return
+    }
     if (U.docSel.has(k)) U.docSel.delete(k)
     else if (!desk() && !U.docType) U.docSel = new Set([k])
     else U.docSel.add(k)
@@ -894,7 +903,7 @@ export const ACT: Record<string, Handler> = {
       }),
     )
   },
-  'doc-say': (d) => docSay(d.key as string),
+  'doc-say': (d) => docSay(d.key as string, d.quote as string | undefined),
   'doc-type': () => {
     U.docType = true
     renderDoc()

@@ -772,7 +772,7 @@ export async function vcToggle() {
   if (!R.rec) R.vc = null
   bump('vc')
 }
-export async function docSay(key: string) {
+export async function docSay(key: string, quote?: string) {
   // I285: speak about the paragraph you tapped; stop posts it
   if (R.rec) {
     if (R.vc) await vcToggle()
@@ -785,7 +785,7 @@ export async function docSay(key: string) {
   R.vc = {
     d: U.doc,
     key: blk.key,
-    quote: blk.text.slice(0, 500),
+    quote: (quote || blk.text).slice(0, 500), // B355: one item of a list, or the whole paragraph
     range: null,
     rect: sec.getBoundingClientRect(),
     top: vcScroller()?.scrollTop || 0,

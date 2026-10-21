@@ -1,7 +1,7 @@
 // A document (D1, D2 ...): its text in blocks, each with its comment threads (T274 #2), read in the item pane on the
 // desktop (T110) and in a sheet on the phone. Comments are written in the one input box (I087). The editor is a
 // plain textarea; the first line is the title.
-import { useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { BTN, DC_BTN, HIT, MSG, PRIMARY, WHO } from '../lib/constants'
 import {
   R_STATE as R,
@@ -145,6 +145,39 @@ function Thread({
 function BlockActs({ d, k, float = false }: { d: Doc; k: string; float?: boolean }) {
   useArea('vc')
   const rec = !!(R.rec && R.vc?.d === d.d && R.vc.key === k)
+  // B355: in a list each item is its own place to comment on: pointing at one puts the buttons beside it, and what
+  // you say about it quotes it (the paragraph stays the same one for agents)
+  const box = useRef<HTMLDivElement>(null)
+  const [at, setAt] = useState<{ top: number; quote: string } | null>(null)
+  useEffect(() => {
+    const sec = box.current?.closest('section')
+    if (!sec) return
+    let lit: HTMLElement | null = null
+    const light = (li: HTMLElement | null) => {
+      if (lit === li) return
+      lit?.removeAttribute('data-hov')
+      li?.setAttribute('data-hov', '')
+      lit = li
+    }
+    const move = (e: MouseEvent) => {
+      const li = (e.target as Element).closest<HTMLElement>('li')
+      if (!li || !sec.contains(li) || box.current?.contains(li)) return // between items or on the buttons: it stays
+      light(li)
+      const top = Math.round(li.getBoundingClientRect().top - sec.getBoundingClientRect().top)
+      setAt((a) => (a && a.top === top ? a : { top, quote: li.innerText.trim().slice(0, 500) }))
+    }
+    const leave = () => {
+      light(null)
+      setAt(null)
+    }
+    sec.addEventListener('mousemove', move)
+    sec.addEventListener('mouseleave', leave)
+    return () => {
+      sec.removeEventListener('mousemove', move)
+      sec.removeEventListener('mouseleave', leave)
+      light(null)
+    }
+  }, [])
   const b = d.blocks.find((x) => x.key === k),
     drafts = U.vcMarks.filter((m) => m.d === d.d && m.key === k),
     n = (b?.comments.length || 0) + drafts.length,
@@ -170,28 +203,43 @@ function BlockActs({ d, k, float = false }: { d: Doc; k: string; float?: boolean
           ))}
         </div>
       ) : null}
+      {/* B355: side by side, the voice first; from the edge of the paragraph, so the pointer gets there without a gap */}
       <div
-        className={`absolute left-[calc(100%+0.25rem)] flex-col gap-1 ${float && n ? 'top-9' : 'top-0.5'} ${rec ? 'flex' : 'hidden group-hover/blk:flex'}`}
+        ref={box}
+        style={{ top: Math.max(at?.top ?? 0, float && n ? 36 : 0) + 2 }}
+        className={`absolute left-full flex-row gap-1 pl-1 ${rec ? 'flex' : 'hidden group-hover/blk:flex'}`}
       >
+        <button
+          data-act="doc-say"
+          data-key={k}
+          {...(at ? { 'data-quote': at.quote } : {})}
+          title={
+            rec
+              ? 'Stop: the comment waits beside it, not sent'
+              : at
+                ? 'Speak a comment on this item'
+                : 'Speak a comment on this paragraph'
+          }
+          className={`grid size-7 place-items-center rounded-lg shadow-sm ring-1 ${rec ? 'bg-red-600 text-white ring-red-700' : 'bg-white text-zinc-500 ring-zinc-900/10 hover:text-zinc-900 dark:bg-zinc-800 dark:text-zinc-300 dark:ring-white/10 dark:hover:text-white'}`}
+        >
+          <Icon n={rec ? 'stop' : 'mic'} c="size-4" />
+        </button>
         {rec ? null : (
           <button
             data-act="doc-pick"
             data-key={k}
             data-pick-btn
-            title="Comment on this paragraph (write in the box below)"
+            {...(at ? { 'data-quote': at.quote } : {})}
+            title={
+              at
+                ? 'Comment on this item (write in the box below)'
+                : 'Comment on this paragraph (write in the box below)'
+            }
             className="grid size-7 place-items-center rounded-lg bg-white text-zinc-500 shadow-sm ring-1 ring-zinc-900/10 hover:text-zinc-900 dark:bg-zinc-800 dark:text-zinc-300 dark:ring-white/10 dark:hover:text-white"
           >
             <Icon n="comment" c="size-4" />
           </button>
         )}
-        <button
-          data-act="doc-say"
-          data-key={k}
-          title={rec ? 'Stop: the comment waits beside it, not sent' : 'Speak a comment on this paragraph'}
-          className={`grid size-7 place-items-center rounded-lg shadow-sm ring-1 ${rec ? 'bg-red-600 text-white ring-red-700' : 'bg-white text-zinc-500 ring-zinc-900/10 hover:text-zinc-900 dark:bg-zinc-800 dark:text-zinc-300 dark:ring-white/10 dark:hover:text-white'}`}
-        >
-          <Icon n={rec ? 'stop' : 'mic'} c="size-4" />
-        </button>
       </div>
     </>
   )
@@ -476,13 +524,13 @@ export function DocView({ d }: { d: Doc }) {
   // B349: the column only when there are comments, and only when the pane is wide enough for it beside the text;
   // narrower, each commented paragraph shows a count beside it that opens its comments floating over the text.
   // B354: the text is always in the middle of the pane, as the box below it; the column goes in the room on its right
-  // (it shows when that room holds it: the pane 86rem wide, the text 46rem and 20rem on each side)
+  // (it shows when that room holds it: the pane 90rem wide, the text 46rem and 22rem on each side, past the buttons)
   const [wide, setWide] = useState(true)
   useLayoutEffect(() => {
     const el = ref.current
     if (!el || !side || typeof ResizeObserver === 'undefined') return
     const ro = new ResizeObserver(() =>
-      setWide(el.clientWidth >= 86 * (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16)),
+      setWide(el.clientWidth >= 90 * (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16)),
     )
     ro.observe(el)
     return () => ro.disconnect()
@@ -557,7 +605,7 @@ export function DocView({ d }: { d: Doc }) {
                 data-act="doc-pick"
                 data-key={b0.key}
                 {...(U.docSel.has(b0.key) ? { 'data-picked': '' } : {})}
-                className={`group/blk relative -mx-2 rounded-lg px-2 py-1 transition-colors hover:bg-zinc-50 data-hl:bg-amber-50 data-picked:bg-amber-50 data-picked:ring-2 data-picked:ring-amber-300 data-pressed:opacity-70 lg:cursor-text dark:hover:bg-zinc-800/50 dark:data-hl:bg-amber-950/30 dark:data-picked:bg-amber-950/40 dark:data-picked:ring-amber-600`}
+                className={`group/blk relative -mx-2 rounded-lg px-2 py-1 transition-colors hover:bg-zinc-50 has-[li[data-hov]]:bg-transparent data-hl:bg-amber-50 data-picked:bg-amber-50 data-picked:ring-2 data-picked:ring-amber-300 data-pressed:opacity-70 lg:cursor-text dark:hover:bg-zinc-800/50 dark:data-hl:bg-amber-950/30 dark:data-picked:bg-amber-950/40 dark:data-picked:ring-amber-600 lg:[&_li[data-hov]]:rounded-md lg:[&_li[data-hov]]:bg-zinc-100 dark:lg:[&_li[data-hov]]:bg-zinc-800/70`}
               >
                 <div className="relative flex flex-col gap-1 lg:flex-row lg:items-start lg:gap-2">
                   <div
@@ -669,7 +717,7 @@ export function DocView({ d }: { d: Doc }) {
           </>
         )}
         {rail ? (
-          <div className="absolute top-0 left-[calc(100%+3rem)] w-[17rem]">
+          <div className="absolute top-0 left-[calc(100%+5rem)] w-[17rem]">
             <DocRail d={d} />
           </div>
         ) : null}
