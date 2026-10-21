@@ -50,6 +50,10 @@ export async function net<T = unknown>(
   try {
     const r = await fetch(url, { cache: 'no-store', ...opts, signal: ctl.signal })
     status = r.status
+    if (status === 401) {
+      askKey() // T339 #16: the key stopped working (or this device never had it): ask for it here, keep the page
+      throw new Error('key')
+    }
     const out = (as === 'text' ? await r.text() : await r.json()) as T
     const ms = Date.now() - t0
     if (ms > 1000 && !/\/api\/(poll|transcript)|[?&]wait=/.test(url)) slowLog(url, ms, String(status)) // F334
@@ -69,6 +73,19 @@ export async function net<T = unknown>(
   } finally {
     clearTimeout(t)
   }
+}
+// T339 #16: Taska wants its key: one sign-in in the page, not a page of its own; the page stays where it was
+const KEY = { asking: false }
+export function askKey() {
+  if (KEY.asking) return
+  KEY.asking = true
+  void import('./dialog').then(({ openDialog }) => openDialog('sign-in', {}, { focus: true }))
+}
+export async function signIn(key: string) {
+  const r = await fetch('/api/login', JSON_POST({ key }))
+  const d = (await r.json().catch(() => ({}))) as { ok?: boolean; error?: string }
+  if (!d.ok) throw new Error(d.error || 'That key is not right.')
+  KEY.asking = false
 }
 // B326: every save that did not go through is told to Taska once it answers again, so the log can count them
 const NETLOG = { list: [] as Record<string, unknown>[], t: 0 }

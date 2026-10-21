@@ -120,6 +120,11 @@ class Handler(BaseHTTPRequestHandler):
         if not hmac.compare_digest(plain_key(given), plain_key(self.hub.key)):
             if self.command == "POST" and self.path == "/login":
                 return self.login()
+            if self.command == "POST" and self.path == "/api/login":  # T339 #16: the page asks for the key itself
+                return self.api_login()
+            if "/api/" in self.path.split("?")[0]:  # the page's own requests: it shows its sign-in, it does not lose its place
+                self.send(401, json.dumps({"error": "key", "login": True}) + "\n", "application/json")
+                return False
             if "navigate" == self.headers.get("Sec-Fetch-Mode") or "text/html" in (self.headers.get("Accept") or ""):
                 self.send(401, assets.login(quote(self.path, safe="/?=&-_."), ""), "text/html; charset=utf-8", cache="no-store")
             else:
@@ -152,6 +157,18 @@ class Handler(BaseHTTPRequestHandler):
         else:
             time.sleep(1)  # slows guessing; the key has ~79 bits anyway
             self.send(401, assets.login(quote(nxt, safe="/?=&-_."), "That key is not right. "), "text/html; charset=utf-8", cache="no-store")
+        return False
+
+    def api_login(self) -> bool:
+        try:
+            key = str(json.loads(self.body(10_000) or b"{}").get("key") or "")
+        except ValueError:
+            key = ""
+        if hmac.compare_digest(plain_key(key), plain_key(self.hub.key)):
+            self.send(200, json.dumps({"ok": True}) + "\n", "application/json", extra=self.cookie())
+        else:
+            time.sleep(1)  # slows guessing, as /login does
+            self.send(401, json.dumps({"ok": False, "error": "That key is not right."}) + "\n", "application/json")
         return False
 
     def body(self, limit: int) -> bytes:

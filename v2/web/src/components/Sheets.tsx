@@ -1411,6 +1411,32 @@ const KINDS: Record<string, (p: Props) => Parts | null> = {
       </div>
     ),
   }),
+  'sign-in': () => ({
+    // T339 #16: the key, asked for in the page
+    title: 'Taska needs its key',
+    body: (
+      <div className="flex flex-col gap-3">
+        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+          From outside this computer&apos;s network, Taska asks for its key once on each device. It is in the link
+          Settings › Use on your phone gives.
+        </p>
+        <input
+          id="signKey"
+          type="password"
+          autoComplete="current-password"
+          placeholder="Key"
+          aria-label="Taska's key"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') (e.currentTarget.nextElementSibling as HTMLElement | null)?.click()
+          }}
+          className={FIELD}
+        />
+        <button data-act="sign-in" className={PRIMARY}>
+          Sign in
+        </button>
+      </div>
+    ),
+  }),
   'msg-menu': ({ n, id }) => ({
     title: 'Message',
     body: (

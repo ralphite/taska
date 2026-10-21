@@ -53,6 +53,8 @@ import {
   save,
   undoMine,
   fillDrawer,
+  refresh,
+  signIn,
 } from './data'
 import { carry, kept, keepChoice, saveDraft } from './drafts'
 import { closeDialog, confirmClick, openDialog, popAt } from './dialog'
@@ -1440,6 +1442,18 @@ export const ACT: Record<string, Handler> = {
     // T322: the whole item above its talk, or its share again
     U.topAll = U.topAll === N(d) ? null : N(d)
     bump('detail')
+  },
+  'sign-in': async () => {
+    const el = document.getElementById('signKey') as HTMLInputElement | null
+    try {
+      await signIn(el?.value || '')
+      closeDialog()
+      toast('Signed in')
+      void refresh()
+    } catch (ex) {
+      toast((ex as Error).message, null, { error: true })
+      el?.select()
+    }
   },
   // F320: your own views of the list
   'view-use': (d) => showView(Number(d.i)),
