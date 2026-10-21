@@ -380,7 +380,7 @@ export function ItemPage({ it }: { it: Item }) {
         id="itemTop"
         data-clip
         onScroll={(e) => markOver(e.currentTarget)}
-        className={`flex flex-col gap-6 lg:shrink-0 lg:scrollbar-thin lg:overflow-y-auto lg:data-over:mask-b-from-[calc(100%-2.5rem)] ${all ? 'lg:max-h-[calc(100%-10rem)]' : 'lg:max-h-[min(var(--top-h,40%),calc(100%-10rem))]'}`}
+        className={`flex flex-col gap-6 lg:shrink-0 lg:scrollbar-thin lg:overflow-y-auto lg:data-over:mask-b-from-[calc(100%-2.5rem)] ${all ? 'lg:max-h-none' : 'lg:max-h-[var(--top-h,40%)]'}`}
       >
         <div className="flex flex-col gap-6 lg:mx-auto lg:w-full lg:max-w-[46rem] lg:px-8 lg:pt-7 lg:pb-6">
           {head}
@@ -473,7 +473,7 @@ export function ItemPage({ it }: { it: Item }) {
         title="Drag to show more or less of the item · double-click for the default"
         className="group/line relative hidden h-3 shrink-0 cursor-row-resize items-center justify-center border-t border-zinc-200 bg-white lg:flex dark:border-zinc-800 dark:bg-zinc-950"
       >
-        <span className="h-1 w-10 rounded-full bg-zinc-300 group-hover/line:bg-zinc-400 dark:bg-zinc-700 dark:group-hover/line:bg-zinc-600" />
+        <span className="h-1 w-10 rounded-full bg-zinc-400 opacity-0 group-hover/line:opacity-100 in-[body.cursor-row-resize]:opacity-100 dark:bg-zinc-600" />
         <button
           data-act="top-all"
           data-n={n}

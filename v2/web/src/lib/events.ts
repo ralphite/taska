@@ -173,7 +173,7 @@ function closeLayers() {
 const GRIP: Record<string, [string, string, number, number]> = {
   side: ['drawer', '--side-w', 200, 360],
   list: ['app', '--list-w', 280, 720],
-  top: ['', '--top-h', 96, 4000], // T322: the item above its talk; dragged up and down
+  top: ['', '--top-h', 1, 100000], // T322: the item above its talk; dragged up and down, anywhere you like
 }
 function setGrip(kind: string, px: number) {
   const [id, v] = GRIP[kind],
@@ -641,7 +641,7 @@ function wireAll() {
       )?.getBoundingClientRect(),
       from = (down ? box?.top : box?.left) || 0
     const most = down
-      ? Math.min(max, (document.getElementById('detailBody')?.clientHeight || 600) - 160) // the talk keeps room
+      ? Math.min(max, document.getElementById('detailBody')?.clientHeight || max) // as far as you drag it
       : kind === 'list'
         ? Math.min(max, innerWidth - from - 480) // the item keeps room to read
         : max
