@@ -1087,14 +1087,7 @@ function projMenuParts({ slug }: Props): Parts | null {
       <div className="-mx-1 flex flex-col">
         {here ? null : row('proj-open', 'arrow', 'Open')}
         {row(here ? 'project' : 'proj-settings', 'gear', 'Project settings', here ? 'G S' : '')}
-        {here ? row('switch', 'updown', 'Switch project', 'G P') : null}
-        {(DR.list || []).length > 1 ? (
-          <>
-            {row('proj-up', 'chevup', 'Move up')}
-            {row('proj-down', 'down', 'Move down')}
-          </>
-        ) : null}
-        {row('proj-new', 'plus', 'New project')}
+        {/* B356: no Switch, Move up or down, or New project here: the sidebar does those (a click, a drag, its button) */}
         <div className="my-1.5 border-t border-zinc-100 dark:border-zinc-800" />
         {row('proj-manage', 'pencil', 'Rename or delete…')}
       </div>

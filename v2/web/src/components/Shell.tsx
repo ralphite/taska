@@ -529,17 +529,11 @@ function ProjBar({ hidden }: { hidden: boolean }) {
           </span>
         </div>
       ) : (
-        <button
-          data-act="proj-menu"
-          id="projMenuBtn"
-          aria-haspopup="menu"
-          title={`${name}: settings, rename, switch, delete`}
-          className="my-1.5 flex max-w-72 min-w-0 items-center gap-2 rounded-lg px-2 hover:bg-zinc-100 data-pressed:bg-zinc-200/70 dark:hover:bg-zinc-800"
-        >
+        // B356: the project's name, nothing to open: its settings, switching and the rest are in the sidebar and keys
+        <div className="my-1.5 flex max-w-72 min-w-0 items-center gap-2 px-2">
           <ProjTile name={S.project || ctx.HERE} cls="size-6 rounded-md text-xs" />
           <span className="truncate text-[15px] font-semibold">{name}</span>
-          <Icon n="down" c="size-4 shrink-0 text-zinc-400" sw="2" />
-        </button>
+        </div>
       )}
       <span className="mx-2 my-3.5 w-px shrink-0 bg-zinc-200 dark:bg-zinc-800" />
       <div role="tablist" className="flex min-w-0 items-stretch gap-5">
