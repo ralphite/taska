@@ -648,6 +648,7 @@ function wireAll() {
     let w = 0
     e.preventDefault()
     g.setPointerCapture(e.pointerId)
+    g.setAttribute('data-drag', '') // B367: only the line you drag lights up
     const cursor = down ? 'cursor-row-resize' : 'cursor-col-resize'
     document.body.classList.add('select-none', cursor)
     const move = (ev: PointerEvent) => {
@@ -658,6 +659,7 @@ function wireAll() {
       g.removeEventListener('pointermove', move)
       g.removeEventListener('pointerup', up)
       document.body.classList.remove('select-none', cursor)
+      g.removeAttribute('data-drag')
       if (w)
         try {
           localStorage.setItem('taska.w.' + kind, String(w))

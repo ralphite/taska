@@ -325,7 +325,7 @@ function Drawer({ hidden, over }: { hidden: boolean; over: boolean }) {
         data-grip="side"
         className="group/line absolute inset-y-0 right-0 z-10 hidden w-3 translate-x-1/2 cursor-col-resize lg:block"
       >
-        <span className="pointer-events-none absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 bg-blue-500 opacity-0 transition-opacity group-hover/line:opacity-100 group-hover/line:delay-150 in-[body.cursor-col-resize]:opacity-100" />
+        <span className="pointer-events-none absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 bg-blue-500 opacity-0 transition-opacity group-hover/line:opacity-100 group-hover/line:delay-150 group-data-drag/line:opacity-100" />
       </div>
       <div className="flex h-14 shrink-0 items-center gap-2 px-5 lg:pr-2 lg:pl-4">
         <a
@@ -1265,7 +1265,7 @@ export function ProjectPage() {
           hidden={v.grip}
           className="group/line relative z-30 cursor-col-resize lg:col-start-1 lg:row-span-4 lg:row-start-2 lg:block lg:w-3 lg:translate-x-1/2 lg:justify-self-end"
         >
-          <span className="pointer-events-none absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 bg-blue-500 opacity-0 transition-opacity group-hover/line:opacity-100 group-hover/line:delay-150 in-[body.cursor-col-resize]:opacity-100" />
+          <span className="pointer-events-none absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 bg-blue-500 opacity-0 transition-opacity group-hover/line:opacity-100 group-hover/line:delay-150 group-data-drag/line:opacity-100" />
         </div>
         <Foot hidden={v.foot} wideCls={wideCls} />
       </div>
