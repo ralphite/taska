@@ -4,6 +4,7 @@
 // viewer, a wide table reads as cards on a phone (T252). Everything is escaped first; DOMPurify checks the result.
 // The output is HTML; the buttons in it carry data-act, which actions.ts handles (one listener for the page).
 import DOMPurify from 'dompurify'
+import { DIMS, wantDims } from './dims'
 import { BEHAVIOUR } from './behaviour'
 import { ICON, type IconName } from './icons'
 import { LETTER as LETTERS, REF_CLS } from './constants'
@@ -135,8 +136,14 @@ export function inlineMd(s: string, gid = '', refs = true) {
           if (!groups.has(gid)) groups.set(gid, [])
           groups.get(gid)?.push(src)
         }
+        // F353: its size known, the picture's place is kept before it loads (as tall as 24rem at most, as now)
+        const wh = DIMS.get(src)
+        if (!wh) wantDims()
+        const box = wh
+          ? ` width="${wh[0]}" height="${wh[1]}" style="aspect-ratio:${wh[0]}/${wh[1]};width:${Math.round(Math.min(wh[0], (384 * wh[0]) / wh[1]))}px"`
+          : ''
         return keep(
-          `<button data-act="view" data-g="${gid}" data-f="${src}" class="my-1 block max-w-full"><img src="${ctx.P}f/${encodeURIComponent(src)}" alt="${alt}" loading="lazy" class="max-h-96 max-w-full rounded-lg border border-zinc-200 dark:border-zinc-700"></button>`,
+          `<button data-act="view" data-g="${gid}" data-f="${src}" class="my-1 block max-w-full"><img src="${ctx.P}f/${encodeURIComponent(src)}" alt="${alt}" loading="lazy"${box} class="h-auto max-h-96 max-w-full rounded-lg border border-zinc-200 bg-zinc-100 object-contain dark:border-zinc-700 dark:bg-zinc-800"></button>`,
         )
       })
       // I289: a link to an item or a document (its code, or Taska's own address for it) is the code's chip, opened in
@@ -370,13 +377,14 @@ export function blockHtml(b: { kind: string; text: string }, isTitle: boolean, g
 /** The HTML for some Markdown, checked by DOMPurify (data-* attributes and Taska's buttons stay). */
 // T339: the same text drawn again (another tab, a redraw) is not turned into HTML and cleaned again; what it gives
 // depends on the items too (their links), so the kept ones go when the state changes
-const RICH = { rev: -1, pv: -1, map: new Map<string, string>() }
+const RICH = { rev: -1, pv: -1, dims: 0, map: new Map<string, string>() }
 export function richHtml(text: string, gid = '', cls = '', form = 0, done: string[] | null = null) {
   const S = model.S
-  if (RICH.rev !== S.rev || RICH.pv !== S.pv || RICH.map.size > 4000) {
+  if (RICH.rev !== S.rev || RICH.pv !== S.pv || RICH.dims !== DIMS.size || RICH.map.size > 4000) {
     RICH.map.clear()
     RICH.rev = S.rev
     RICH.pv = S.pv
+    RICH.dims = DIMS.size // F353: pictures' sizes came: drawn again with their places kept
   }
   const key = [gid, cls, done ? done.join('\u0001') : '-', text].join('\u0002')
   let html = form ? undefined : RICH.map.get(key) // a question's choices follow what you ticked: drawn each time

@@ -1,6 +1,7 @@
 // A project's page starts here: what this browser kept is put back first (B190: the frame shows before the data),
 // then the state loads, and the page follows the address, a walk goes on, unsent inputs and voice notes go out, and
 // the page listens for changes (no reload by itself when Taska is updated: R284).
+import { loadDims } from './dims'
 import { D, U, beforeRender, byN, code, ctx, desk, els, model, parseRef, setProject } from './state'
 import { PSEC_AT, readURL, viewQuery, writeURL } from './url'
 import { loadViews } from './views'
@@ -66,6 +67,7 @@ export async function startProject() {
 export async function enterProject(first = false) {
   const g = nextGeneration(),
     t0 = performance.now()
+  void loadDims() // F353: the pictures' sizes, alongside
   try {
     await loadKept() // T293: the kept copy at once, then what changed since
   } catch {

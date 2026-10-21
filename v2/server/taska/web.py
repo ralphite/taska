@@ -24,7 +24,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import TYPE_CHECKING, Any, Callable, Dict, Generator, List, Optional, Tuple
 from urllib.parse import SplitResult, parse_qs, quote, unquote, urlsplit
 
-from . import assets, views
+from . import assets, imgsize, views
 from .core import MAX_FILE, MAX_TEXT, PEOPLE, Err, plain_key
 from .dsl import parse_dsl
 from .guide import AGENT, CONNECT, GRAMMAR, SKILL
@@ -376,6 +376,8 @@ class Handler(BaseHTTPRequestHandler):
                 self.send(200, views.log(s, int((q.get("n") or ["30"])[0])))
         elif p == "/api/log":  # T339: the change log for the page, as data (newest first)
             self.json(views.log_entries(s, min(int((q.get("n") or ["300"])[0] or 300), 2000))[::-1])
+        elif p == "/api/dims":  # F353: each picture's width and height, so the page keeps its place before it loads
+            self.json({name: list(wh) for name, wh in imgsize.sizes(s.fdir).items()})
         elif p == "/api/state":
             since, sboot = int((q.get("since") or ["0"])[0] or 0), (q.get("boot") or [""])[0]
             self.json(self.state_of(s, since, sboot))
