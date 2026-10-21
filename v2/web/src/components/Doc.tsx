@@ -20,7 +20,7 @@ import {
 import type { Comment, Doc } from '../lib/types'
 import { blockHtml, clean, groups, plainQuote } from '../lib/markdown'
 import { seeThreads, threadNew, renderDoc } from '../lib/docs'
-import { tickText } from '../lib/doctick'
+import { tickKeys, tickText } from '../lib/doctick'
 import { toast } from '../lib/toast'
 import { Armed, Icon, Kbd } from './ui'
 import { Rich, Thumbs, VoiceLine } from './Talk'
@@ -518,6 +518,7 @@ export function DocView({ d }: { d: Doc }) {
   const ref = useRef<HTMLDivElement>(null)
   useMarkQuotes(ref, d)
   const titled = !!d.blocks[0] && sameText(d.blocks[0].text.replace(/^#+\s*/, ''), d.title)
+  const tks = tickKeys(d).map((x) => x.k)
   const [line0, ...rest0] = (d.blocks[0]?.text || '').split('\n'),
     titleLine =
       !titled && d.blocks[0]?.kind === 'para' && rest0.length > 0 && sameText(line0.replace(/^#+\s*/, ''), d.title) // T227 #4
@@ -596,7 +597,8 @@ export function DocView({ d }: { d: Doc }) {
         <Outline d={d} />
         <div id="docBlocks" className={`relative mt-3 space-y-3 text-[15px] ${U.docCircle ? 'select-none' : ''}`}>
           {d.blocks.map((b0, i) => {
-            const now = tickText(d.d, b0.key, b0.text) // B412: ticked here and not sent yet
+            const tk = tks[i] // B420: which of the paragraphs with these words it is
+            const now = tickText(d.d, tk, b0.text) // B412: ticked here and not sent yet
             const b =
               i === 0 && titleLine ? { ...b0, text: rest0.join('\n') } : now === b0.text ? b0 : { ...b0, text: now }
             const lv = (b0.text.match(/^#+/) || ['#'])[0].length
@@ -606,7 +608,7 @@ export function DocView({ d }: { d: Doc }) {
               (R.rec ? R.vc?.d === d.d && R.vc.key === b0.key && !R.vc.range : U.docSel.has(b0.key))
             return (
               <section
-                key={b0.key}
+                key={tk}
                 data-act="doc-pick"
                 data-key={b0.key}
                 {...(U.docSel.has(b0.key) ? { 'data-picked': '' } : {})}
@@ -617,7 +619,7 @@ export function DocView({ d }: { d: Doc }) {
                     data-block
                     className={`min-w-0 flex-1 break-words ${b0.kind === 'heading' ? 'pr-14 lg:pr-0' : ''}`}
                     dangerouslySetInnerHTML={{
-                      __html: clean(blockHtml(b, i === 0 && titled, 'doc' + d.d, { d: d.d, key: b0.key })),
+                      __html: clean(blockHtml(b, i === 0 && titled, 'doc' + d.d, { d: d.d, key: tk })),
                     }}
                   />
                   {b0.comments.length ? (

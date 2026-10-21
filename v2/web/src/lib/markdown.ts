@@ -210,7 +210,11 @@ export function tickedBlock(block: string, i: number): string | null {
       /^(\s*[-*+]\s+)[([][ xX]?[)\]]/,
       (_, p: string) => p + (multi ? (on ? '[x]' : '[ ]') : on ? '(x)' : '( )'),
     )
-  const next = ls.map((l, j) => (j === k ? mark(l, !isTicked(l)) : !multi && rows.includes(j) ? mark(l, false) : l))
+  const on = !isTicked(ls[k]),
+    all = multi && /^(全部|All\b)/i.test(ls[k].replace(CHOICE, '').trim()) // R272: "All" ticks or unticks the whole list
+  const next = ls.map((l, j) =>
+    j === k || (all && rows.includes(j)) ? mark(l, on) : !multi && rows.includes(j) ? mark(l, false) : l,
+  )
   return next.join('\n')
 }
 export const isTicked = (l: string) => /^\s*[-*+]\s+[([][xX][)\]]/.test(l)

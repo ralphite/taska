@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { hasChoices, richHtml } from './markdown'
+import { hasChoices, richHtml, tickedBlock } from './markdown'
 import { item, load } from '../test/fixture'
 
 describe('text the same way everywhere', () => {
@@ -31,5 +31,15 @@ describe('text the same way everywhere', () => {
     const refs = div.querySelectorAll('[data-act="goto"]')
     expect(refs.length).toBe(1)
     expect(refs[0].getAttribute('data-ref')).toBe('B3')
+  })
+})
+
+describe('choices in a document (F393, B412, B420)', () => {
+  it('ticks one choice; one of "( )" at a time; "All" ticks and unticks the whole list', () => {
+    expect(tickedBlock('- [ ] Red\n- [ ] Blue', 1)).toBe('- [ ] Red\n- [x] Blue')
+    expect(tickedBlock('- (x) Send\n- ( ) OK', 1)).toBe('- ( ) Send\n- (x) OK')
+    const all = tickedBlock('- [ ] 全部\n- [ ] Red\n- [ ] Blue', 0) as string
+    expect(all).toBe('- [x] 全部\n- [x] Red\n- [x] Blue')
+    expect(tickedBlock(all, 0)).toBe('- [ ] 全部\n- [ ] Red\n- [ ] Blue')
   })
 })

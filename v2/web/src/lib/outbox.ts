@@ -135,7 +135,7 @@ async function sendTicks(doc: Doc) {
   const box = els.text,
     note = box?.value.trim() || '',
     n = liveN(doc.n),
-    sent = Object.fromEntries(ticksOf(doc).map(({ b, now }) => [b.key, now])),
+    sent = Object.fromEntries(ticksOf(doc).map(({ k, now }) => [k, now])),
     md = tickedDoc(doc),
     words = tickWords(doc)
   if (byN.has(n)) {

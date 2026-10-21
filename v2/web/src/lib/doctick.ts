@@ -14,6 +14,12 @@ function all() {
   if (DT.at !== ctx.HERE) {
     try {
       DT.all = JSON.parse(localStorage.getItem(storeKey()) || '{}') as typeof DT.all
+      for (const m of Object.values(DT.all))
+        for (const k of Object.keys(m))
+          if (!k.includes('~')) {
+            m[k + '~0'] ??= m[k] // B420: ticks kept before paragraphs were told apart belong to the first one
+            delete m[k]
+          }
     } catch {
       DT.all = {}
     }
@@ -30,30 +36,57 @@ function keep() {
     /* no storage: they stay for this page */
   }
 }
+/** B420: paragraphs with the same text share a key, so each is told apart by which one it is: key~0, key~1, ... */
+export function tickKeys(doc: Doc) {
+  const seen: Record<string, number> = {}
+  return doc.blocks.map((b) => ({ b, k: `${b.key}~${(seen[b.key] = (seen[b.key] ?? -1) + 1)}` }))
+}
 /** A paragraph's text as you ticked it (its own text when nothing is waiting). */
-export const tickText = (d: number, key: string, text: string) => all()[d]?.[key] ?? DT.going[d]?.[key] ?? text
+export const tickText = (d: number, k: string, text: string) => all()[d]?.[k] ?? DT.going[d]?.[k] ?? text
 /** Tick or untick the i-th choice of a paragraph, on the page only. -> false when the paragraph is gone. */
-export function tickDoc(d: number, key: string, i: number): boolean {
-  const b = docById(d)?.blocks.find((x) => x.key === key)
-  const next = b && tickedBlock(tickText(d, key, b.text), i)
+export function tickDoc(d: number, k: string, i: number): boolean {
+  const doc = docById(d),
+    b = doc && tickKeys(doc).find((x) => x.k === k)?.b
+  const next = b && tickedBlock(tickText(d, k, b.text), i)
   if (!b || next == null) return false
   const mine = (all()[d] ||= {})
-  if (next === b.text) delete mine[key]
-  else mine[key] = next
+  if (next === b.text) delete mine[k]
+  else mine[k] = next
   keep()
   return true
 }
-/** The paragraphs of a document whose ticks wait to be sent (and are still in it). */
+/** The paragraphs of a document whose ticks wait to be sent (and are still in it), with the heading they are under. */
 export function ticksOf(doc: Doc | undefined) {
   if (!doc) return []
   const mine = all()[doc.d] || {}
-  return doc.blocks.flatMap((b) => (mine[b.key] != null && mine[b.key] !== b.text ? [{ b, now: mine[b.key] }] : []))
+  let head = ''
+  return tickKeys(doc).flatMap(({ b, k }, i) => {
+    if (b.kind === 'heading' && i > 0) head = b.text.replace(/^#+\s*/, '')
+    return mine[k] != null && mine[k] !== b.text ? [{ b, k, i, now: mine[k], head }] : []
+  })
 }
-/** The document's text with what waits ticked in it. */
-export const tickedDoc = (doc: Doc) => ticksOf(doc).reduce((md, { b, now }) => md.replace(b.text, now), doc.md)
-/** What you chose, one line each: what is ticked in the paragraphs you changed. */
+/** The document's text with what waits ticked in it: each paragraph changed where it stands, not where the same
+ * words first come (B420). */
+export function tickedDoc(doc: Doc) {
+  const want = new Map(ticksOf(doc).map((x) => [x.i, x.now]))
+  let md = doc.md,
+    at = 0
+  const spans: [number, number, string][] = []
+  doc.blocks.forEach((b, i) => {
+    const p = md.indexOf(b.text, at)
+    if (p < 0) return
+    at = p + b.text.length
+    const now = want.get(i)
+    if (now != null) spans.push([p, at, now])
+  })
+  for (const [p, e, now] of spans.reverse()) md = md.slice(0, p) + now + md.slice(e)
+  return md
+}
+/** What you chose, one line each, with the part of the document it is in: what is ticked in the paragraphs you changed. */
 export const tickWords = (doc: Doc) =>
-  ticksOf(doc).flatMap(({ now }) => now.split('\n').flatMap((l) => (isTicked(l) ? ['✓ ' + l.replace(CHOICE, '')] : [])))
+  ticksOf(doc).flatMap(({ now, head }) =>
+    now.split('\n').flatMap((l) => (isTicked(l) ? ['✓ ' + l.replace(CHOICE, '') + (head ? ` (${head})` : '')] : [])),
+  )
 /** Sent: they stay shown while they are on their way. */
 export function ticksGoing(d: number, sent: Record<string, string>) {
   DT.going[d] = { ...DT.going[d], ...sent }
