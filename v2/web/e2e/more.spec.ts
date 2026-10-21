@@ -59,7 +59,7 @@ test('an input can be deleted and restored', async ({ page, request }) => {
   await open(page, p, 'inputs')
   await page
     .locator(
-      isDesk(page) ? '#detailBody [data-act="input-more"]:visible' : '#inputsView [data-act="input-more"]:visible',
+      isDesk(page) ? '#foot [data-act="input-more"]:visible' : '#inputsView [data-act="input-more"]:visible', // F347: under New input
     )
     .first()
     .click()
@@ -102,7 +102,9 @@ test('the desktop: G then N shows the inputs, Settings opens on G S and Esc goes
   await open(page, p)
   await page.keyboard.press('g')
   await page.keyboard.press('n')
-  await expect(page).toHaveURL(/\/inputs$/)
+  await expect(page).toHaveURL(/\/new$/) // F347: what you said is under New input
+  await expect(page.getByRole('heading', { name: 'You said' })).toBeVisible()
+  await page.locator('#text').blur() // New input puts you in its box: keys there are words
   await page.keyboard.press('g')
   await page.keyboard.press('s')
   await expect(page.locator('#projectView')).toBeVisible()

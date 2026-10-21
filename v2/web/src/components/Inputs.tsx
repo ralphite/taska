@@ -668,7 +668,14 @@ function SaidRow({ r, last }: { r: Input; last: boolean }) {
       result={
         <>
           <span className={`mr-1 text-[13px] font-semibold ${tone}`}>{label}</span>
-          {more ? <span className="-my-1 ml-auto">{more}</span> : null}
+          {/* F347: adding to what you said is the most common thing to do here: in sight on every input, not in ⋯ */}
+          {r.moved ? null : (
+            <button data-act="input-append" data-id={r.id} className={`-my-1 ml-auto ${SMALL_BTN}`}>
+              <Icon n="plus" c="size-3.5" sw="2" />
+              Add more
+            </button>
+          )}
+          {more ? <span className={`-my-1 ${r.moved ? 'ml-auto' : ''}`}>{more}</span> : null}
           <div className="flex basis-full flex-wrap items-center gap-1.5 empty:hidden">
             {chips}
             {busy ? <span className="h-7 w-44 animate-pulse rounded-lg bg-zinc-100 dark:bg-zinc-800" /> : null}
@@ -734,31 +741,55 @@ function OutboxStep({ q, last }: { q: Job; last: boolean }) {
     />
   )
 }
+// F347: under New input, everything you said, the latest first: more comes as you scroll down; a search on top
+const SAID_STEP = 30
 export function SaidLately({ draft }: { draft: ReactNode }) {
   const S = model.S
-  const ref = useRef<HTMLDivElement>(null)
+  const ref = useRef<HTMLDivElement>(null),
+    end = useRef<HTMLLIElement>(null)
+  const [q, setQ] = useState('')
+  const [upTo, setUpTo] = useState(SAID_STEP)
   useCut(ref)
-  const recent = [...S.inputs].reverse().slice(0, 5),
-    queued = [...U.outbox].reverse(),
-    n = queued.length + recent.length
+  useMarkHits(ref)
+  const words = q.trim().toLowerCase().split(/\s+/).filter(Boolean)
+  const all = [...S.inputs].reverse().filter((r) => inputMatch(r, words)),
+    recent = all.slice(0, upTo),
+    queued = words.length ? [] : [...U.outbox].reverse(),
+    n = queued.length + recent.length,
+    rest = all.length > recent.length
+  useEffect(() => {
+    const el = end.current
+    if (!el || typeof IntersectionObserver === 'undefined') return
+    const io = new IntersectionObserver(
+      (seen) => {
+        if (seen.some((e) => e.isIntersecting)) setUpTo((u) => u + SAID_STEP)
+      },
+      { rootMargin: '600px 0px' },
+    )
+    io.observe(el)
+    return () => io.disconnect()
+  }, [rest, upTo])
   return (
     <div ref={ref}>
-      <div className="flex h-8 items-center justify-between">
-        <h2 className="text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
-          You said lately
-        </h2>
+      <div className="flex h-9 items-center gap-3">
+        <h2 className="text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">You said</h2>
+        <span className="font-mono text-xs text-zinc-400 tabular-nums dark:text-zinc-500">{S.inputs.length || ''}</span>
         {S.inputs.length ? (
-          <button
-            data-act="tab"
-            data-tab="inputs"
-            title="All inputs · G N"
-            className="flex h-8 items-center gap-1 rounded-lg pr-1.5 pl-2 text-[13px] font-medium text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10"
-          >
-            All {S.inputs.length} input{S.inputs.length === 1 ? '' : 's'}
-            <kbd className="ml-1 hidden h-5 min-w-5 place-items-center rounded-md px-1 font-sans text-[11px] font-semibold opacity-70 ring-1 ring-current/30 lg:inline-grid">
-              G N
-            </kbd>
-          </button>
+          <label className="ml-auto flex h-9 w-64 min-w-0 items-center gap-2 rounded-xl bg-zinc-100 pl-3 text-zinc-400 ring-blue-500/40 focus-within:bg-white focus-within:ring-2 dark:bg-zinc-800 dark:text-zinc-500 dark:focus-within:bg-zinc-900">
+            <Icon n="search" c="size-4" />
+            <input
+              id="saidQ"
+              type="search"
+              autoComplete="off"
+              placeholder="Search what you said"
+              value={q}
+              onChange={(e) => {
+                setQ(e.target.value)
+                setUpTo(SAID_STEP)
+              }}
+              className="min-w-0 flex-1 bg-transparent text-sm text-zinc-900 outline-none placeholder:text-zinc-400 dark:text-zinc-100 [&::-webkit-search-cancel-button]:hidden"
+            />
+          </label>
         ) : null}
       </div>
       <ol id="draftSlot">{draft}</ol>
@@ -768,8 +799,13 @@ export function SaidLately({ draft }: { draft: ReactNode }) {
             <OutboxStep key={q.q} q={q} last={k === n - 1} />
           ))}
           {recent.map((r, k) => (
-            <SaidRow key={r.id} r={r} last={queued.length + k === n - 1} />
+            <SaidRow key={r.id} r={r} last={!rest && queued.length + k === n - 1} />
           ))}
+          {rest ? (
+            <li ref={end} className="flex h-16 items-center pl-9 text-sm text-zinc-400 dark:text-zinc-500">
+              Loading more…
+            </li>
+          ) : null}
         </ol>
       ) : (
         <p id="saidNone" className="mt-3 text-sm text-zinc-400 dark:text-zinc-500">
@@ -815,7 +851,7 @@ export function ComposeHead() {
         <div className="flex items-center gap-3">
           {tile}
           <h1 className="text-[28px] leading-none font-semibold tracking-tight">
-            {am.mode === 'edit' ? 'Edit' : 'Add details to'} {a.id}
+            {am.mode === 'edit' ? 'Edit' : 'Add details to'} {rcode(a.id)}
           </h1>
         </div>
         <p className="mt-3.5 line-clamp-2 max-w-full text-[15px] text-zinc-500 dark:text-zinc-400">

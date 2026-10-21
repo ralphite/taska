@@ -146,6 +146,7 @@ export function clearSearch() {
   bump('list', 'inputs', 'head')
 }
 export function setTab(t: Tab) {
+  if (t === 'inputs' && desk()) return void ACT['new-input']({}) // F347: on the desktop what you said is under New input
   const was = U.tab,
     away = desk() && (t !== was || !!D.page || D.compose) // another tab, or out of Settings or New input: a step Back undoes (B9)
   if (away) keepPlace()
@@ -416,6 +417,7 @@ function showURL() {
     els.text?.focus()
     return
   }
+  if (t.tab === 'inputs' && desk()) return ACT['new-input']({}) // F347: an old /inputs address
   const was = U.tab
   const scrollOf = (k: string) => (k === 'inputs' ? els.inputsView : els.list)
   if (!desk()) U.tabTop[was] = scrollOf(was)?.scrollTop || 0 // Back or Forward to another tab: each keeps its place (B152)

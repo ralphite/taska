@@ -1,6 +1,8 @@
 // The project page's frame: the sidebar (or the rail, or the phone's drawer), the project's bar with its tabs, the
 // F348: Archive is a view of the item list (in the row of views), not a tab of its own; its address stays
 const SHOWN_TABS = TABS.filter((t) => t !== 'archive')
+// F347: on the desktop what you said is the list under New input, not a tab (the phone keeps its Inputs tab)
+const DESK_TABS = SHOWN_TABS.filter((t) => t !== 'inputs')
 // list's head, the list, the item pane, Settings, the one input box at the foot, and what floats over them: the sheet,
 // the picture viewer, the tooltip, the bar on selected text, the toast. Below 1024px it is the phone's page.
 import { useLayoutEffect, useRef, type ReactNode } from 'react'
@@ -540,7 +542,7 @@ function ProjBar({ hidden }: { hidden: boolean }) {
       )}
       <span className="mx-2 my-3.5 w-px shrink-0 bg-zinc-200 dark:bg-zinc-800" />
       <div role="tablist" className="flex min-w-0 items-stretch gap-5">
-        {SHOWN_TABS.map((t) => (
+        {DESK_TABS.map((t) => (
           <button
             key={t}
             data-act="tab"
