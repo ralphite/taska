@@ -423,7 +423,10 @@ class Handler(BaseHTTPRequestHandler):
             mime += "; charset=utf-8"  # T244: Chinese in a .txt reads right
         with open(path, "rb") as f:
             data = f.read()
-        self.send(200, data, mime, {"Content-Security-Policy": "sandbox", "Content-Disposition": f"inline; filename*=UTF-8''{quote(name)}"})
+        # B394: a file never changes under its name (fNNN-…): the browser keeps it, instead of fetching every picture
+        # again each time a text is drawn, behind the page's other requests
+        self.send(200, data, mime, {"Content-Security-Policy": "sandbox", "Content-Disposition": f"inline; filename*=UTF-8''{quote(name)}"},
+                  cache="private, max-age=31536000, immutable")
 
     def _post(self) -> None:
         path = self.path.split("?")[0]
