@@ -284,7 +284,12 @@ LOG_WORDS = {
 
 
 def log(s: "Store", n: int) -> str:
-    out: List[str] = []
+    return "".join(f"#{x['seq']} {hm(x['t'])} {x['who']} {x['what']}\n" for x in log_entries(s, n)) or "\n"
+
+
+def log_entries(s: "Store", n: int) -> List[Dict[str, Any]]:
+    """The last n changes, one each: {seq, t, who, what} (T339: the page reads these; agents read log() above)."""
+    out: List[Dict[str, Any]] = []
     for e in s.events[-n:]:
         k, who = e["k"], e.get("by", "")
         if k == "in":
@@ -333,5 +338,5 @@ def log(s: "Store", n: int) -> str:
         else:
             t = f"organizer {e['src']} {'ok' if e.get('ok') else 'FAILED'}: {first_line(e.get('msg', ''), 90)}"
             who = "org"
-        out.append(f"#{e['seq']} {hm(e['t'])} {who} {t}")
-    return "\n".join(out) + "\n"
+        out.append({"seq": e["seq"], "t": e["t"], "who": who, "what": t})
+    return out

@@ -357,6 +357,8 @@ class Handler(BaseHTTPRequestHandler):
         elif p == "/log":
             with s.lock:
                 self.send(200, views.log(s, int((q.get("n") or ["30"])[0])))
+        elif p == "/api/log":  # T339: the change log for the page, as data (newest first)
+            self.json(views.log_entries(s, min(int((q.get("n") or ["300"])[0] or 300), 2000))[::-1])
         elif p == "/api/state":
             since, sboot = int((q.get("since") or ["0"])[0] or 0), (q.get("boot") or [""])[0]
             self.json(self.state_of(s, since, sboot))

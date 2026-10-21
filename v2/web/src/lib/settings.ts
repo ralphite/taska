@@ -41,9 +41,10 @@ export async function loadFixes(once = false) {
 export function loadLog() {
   // the log as it is now: when it opens, and after each change to the project
   P_CACHE.logRev = model.S.rev
-  net<string>(ctx.P + `log?n=${LOG_N}&ui=1`, {}, NET.get, 'text').then(
+  net<{ seq: number; t: string; who: string; what: string }[]>(ctx.P + `api/log?n=${LOG_N}`, {}, NET.get).then(
     (l) => {
-      P_CACHE.log = l.trim().split('\n').filter(Boolean).reverse()
+      // T339: the log as data from Taska, not the agents' text taken apart (newest first)
+      P_CACHE.log = l.map((e) => `#${e.seq} ${e.t.slice(5, 10)} ${e.t.slice(11, 16)} ${e.who} ${e.what}`)
       bump('project')
     },
     () => {

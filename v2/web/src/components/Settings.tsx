@@ -1,6 +1,6 @@
 // Settings (B162): one page for everything you change now and then; each section has its own address. On the desktop
 // a column of sections and the section beside it; on the phone pages in the grouped style of a phone's own settings.
-import { useLayoutEffect, useRef, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useRef, type ReactNode } from 'react'
 import {
   AGENT_NAME,
   CHIP,
@@ -1296,7 +1296,10 @@ export function ProjectView({ hidden }: { hidden: boolean }) {
     body = useRef<HTMLDivElement>(null)
   const sec = D.section,
     S = model.S
-  if (D.page && sec === 'log' && S.project && P_CACHE.logRev !== S.rev) loadLog() // the project changed, so did its log
+  const wantLog = !!(D.page && sec === 'log' && S.project && P_CACHE.logRev !== S.rev)
+  useEffect(() => {
+    if (wantLog) loadLog() // the project changed, so did its log (T339: asked after drawing, not while drawing)
+  })
   if (
     D.page &&
     U.renaming &&
