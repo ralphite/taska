@@ -302,7 +302,6 @@ export const U = {
   leaving: false,
   boxGone: null as null | { k: string; t: number },
   undoArchTick: 0,
-  topAll: null as number | null, // T322: the item whose whole text shows above its talk
 }
 export type UI = typeof U
 

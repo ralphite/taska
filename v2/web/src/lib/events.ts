@@ -653,10 +653,6 @@ function wireAll() {
     const move = (ev: PointerEvent) => {
       w = Math.round(Math.min(most, Math.max(min, (down ? ev.clientY : ev.clientX) - from)))
       setGrip(kind, w)
-      if (down && U.topAll) {
-        U.topAll = null
-        bump('detail')
-      }
     }
     const up = () => {
       g.removeEventListener('pointermove', move)

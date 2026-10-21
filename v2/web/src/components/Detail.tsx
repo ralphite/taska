@@ -243,7 +243,7 @@ export function ItemPage({ it }: { it: Item }) {
     if (top) markOver(top)
   })
   useLayoutEffect(() => {
-    // B346: dragging the line changes how much of the item fits; Show all follows at once
+    // dragging the line changes how much of the item fits; the fade follows at once
     const top = document.getElementById('itemClip')
     if (!top || typeof ResizeObserver === 'undefined') return
     const ro = new ResizeObserver(() => markOver(top))
@@ -381,25 +381,19 @@ export function ItemPage({ it }: { it: Item }) {
     : docsOf(n) // I289: the latest first
   const notes = docNotes(n, hidden ? thread[hidden]?.t : '') // T274 #4
   // T322 (design A, with B's handle): on the desktop the item and its talk are two parts, each scrolling on its own,
-  // with a clear line between them. The item part takes up to a share of the pane (drag the line, or Show all); past
-  // that it fades at the line. The talk opens at its latest message. The phone keeps one page that scrolls.
-  // B343: once you drag the line it stays exactly where you left it, past the item's end too (no limit)
-  const all = U.topAll === n
+  // with a clear line between them. The talk opens at its latest message. The phone keeps one page that scrolls.
+  // B346, B351: the line stays where you put it, the same for every item, so switching items moves nothing; an item
+  // longer than its part scrolls there and fades while more is below; shorter, the rest is empty (no height of its own)
   return (
     <div id="itemPage" className="group/item flex flex-col gap-6 px-5 pt-5 pb-10 lg:h-full lg:gap-0 lg:p-0">
-      <div
-        id="itemTop"
-        className={`flex flex-col lg:shrink-0 ${all ? 'lg:max-h-[calc(100%-8rem)]' : 'lg:h-[var(--top-h,auto)] lg:max-h-[var(--top-h,40%)]'}`}
-      >
+      <div id="itemTop" className="flex flex-col lg:h-[var(--top-h,40%)] lg:shrink-0">
         <div
           id="itemClip"
           data-clip
           onScroll={(e) => markOver(e.currentTarget)}
           className="lg:min-h-0 lg:scrollbar-thin lg:overflow-y-auto lg:data-over:mask-b-from-[calc(100%-3rem)]"
         >
-          <div
-            className={`flex flex-col gap-6 lg:mx-auto lg:w-full lg:max-w-[46rem] lg:px-8 lg:pt-7 ${all ? 'lg:pb-2' : 'lg:pb-6 lg:group-data-long/item:pb-2'}`}
-          >
+          <div className={`flex flex-col gap-6 lg:mx-auto lg:w-full lg:max-w-[46rem] lg:px-8 lg:pt-7 lg:pb-6`}>
             {head}
             {desc}
             {/* F332: the documents are part of the item: they stay in view while the talk scrolls */}
@@ -485,20 +479,6 @@ export function ItemPage({ it }: { it: Item }) {
             ) : null}
           </div>
         </div>
-        {/* B346: where the item is cut off, a row of its own under it, as the "More" row of a list (Notion's
-            sidebar); a click shows the whole item, and Show less puts back its share */}
-        <div
-          className={`hidden shrink-0 lg:mx-auto lg:w-full lg:max-w-[46rem] lg:px-8 lg:pb-2 ${all ? 'lg:block' : 'lg:group-data-long/item:block'}`}
-        >
-          <button
-            data-act="top-all"
-            data-n={n}
-            className="-ml-2 flex h-9 items-center gap-1 rounded-lg px-2 text-sm font-medium text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10"
-          >
-            <Icon n={all ? 'chevup' : 'down'} c="size-4" sw="2" />
-            {all ? 'Show less' : 'Show all'}
-          </button>
-        </div>
       </div>
       <div
         data-grip="top"
@@ -511,7 +491,7 @@ export function ItemPage({ it }: { it: Item }) {
         id="itemTalk"
         ref={talkRef}
         onScroll={(e) => moreBelow(e.currentTarget)}
-        className="lg:min-h-0 lg:flex-1 lg:scrollbar-thin lg:overflow-y-auto lg:bg-zinc-100/70 lg:data-more:mask-b-from-[calc(100%-2rem)] lg:data-up:mask-t-from-[calc(100%-2.5rem)] dark:lg:bg-zinc-900"
+        className="lg:min-h-0 lg:flex-1 lg:scrollbar-thin lg:overflow-y-auto"
       >
         <div className="flex flex-col gap-6 lg:mx-auto lg:w-full lg:max-w-[46rem] lg:px-8 lg:py-6">
           {thread.length || notes.length ? (
@@ -539,11 +519,10 @@ const moreBelow = (el: HTMLElement) => {
   el.toggleAttribute('data-more', overflows(el))
   el.toggleAttribute('data-up', el.scrollTop > 2) // and at its top while some of it is above, so a cut message does not run into the line
 }
-// T322: the item part is taller than its share: it fades while more of it is below, and Show all shows under it
+// T322: the item part is taller than its share: it fades while more of it is below
 const overflows = (el: HTMLElement) => el.scrollTop + el.clientHeight < el.scrollHeight - 2
 function markOver(clip: HTMLElement) {
   clip.toggleAttribute('data-over', overflows(clip))
-  clip.closest('#itemPage')?.toggleAttribute('data-long', clip.scrollHeight > clip.clientHeight + 2)
 }
 // The item's header line: its code and where it stands (T230 #2: a state, the card's and the row's word)
 const ItemHead = ({ it }: { it: Item }) => (

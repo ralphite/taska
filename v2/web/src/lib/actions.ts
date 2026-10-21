@@ -1439,11 +1439,6 @@ export const ACT: Record<string, Handler> = {
     render()
     toast('File taken off')
   },
-  'top-all': (d) => {
-    // T322: the whole item above its talk, or its share again
-    U.topAll = U.topAll === N(d) ? null : N(d)
-    bump('detail')
-  },
   'sign-in': async () => {
     const el = document.getElementById('signKey') as HTMLInputElement | null
     try {
