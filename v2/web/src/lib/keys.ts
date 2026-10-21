@@ -36,7 +36,7 @@ import {
   toList,
 } from './nav'
 import { startGoDesk } from './go'
-import { closeDoc, docTarget, renderDoc } from './docs'
+import { closeDoc, renderDoc } from './docs'
 import { cancelRec, docRecStart, docRecStop, finishRec, startRec, DV } from './voice'
 import { cancelPrefs } from './settings'
 import { stashEdit } from './edit'
@@ -182,16 +182,6 @@ export function deskKey(e: KeyboardEvent) {
     return R.rec ? finishRec(false) : startRec()
   }
   if (typing || e.altKey || VW.open) return
-  // A1: while the box waits for words (a correction, an edit, a comment on what you picked) a letter is a word
-  if (
-    !R.rec &&
-    overlayHidden() &&
-    e.key.length === 1 &&
-    !e.metaKey &&
-    !e.ctrlKey &&
-    (U.correct || U.amend || U.prefsEdit || docTarget())
-  )
-    return els.text?.focus({ preventScroll: true })
   // While recording, the keys of the box (F095): Enter stops into the box, Shift/Cmd-Enter stops and sends.
   if (R.rec && e.key === 'Enter' && !e.isComposing && (e.shiftKey || e.metaKey || e.ctrlKey)) {
     e.preventDefault()
