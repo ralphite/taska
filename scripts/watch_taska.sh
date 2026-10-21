@@ -9,11 +9,13 @@ WHO=$1 DIR=$2; shift 2
 TOLD=$DIR/told.txt
 mkdir -p $DIR; touch $TOLD
 H=${TASKA_URL:-http://127.0.0.1:7340}
+NAMED=()  # F411: TASKA_SESSION (your session's name, machine, folder) shows on the agent pill in Taska
+[[ -n $TASKA_SESSION ]] && NAMED=(--data-urlencode "session=$TASKA_SESSION")
 while true; do
   for p in "$@"; do
     B=$H/p/$p SEEN=$DIR/seen-$p.txt
     touch $SEEN
-    o=$(curl -s --max-time 20 "$B/next?by=$WHO" || true)
+    o=$(curl -s --max-time 20 -G "$B/next" --data-urlencode "by=$WHO" $NAMED || true)
     last=$(echo "$o" | grep -oE '^#[0-9]+ [0-9-]+ [0-9:]+ you' | tail -1)  # a later reply on the same item is new again
     for line in ${(f)"$(echo "$o" | grep -E '^r[0-9]+ |^resume [A-Z][0-9]+: the user replied')"}; do
       h="$p $(echo "$line $last" | cut -c1-160 | md5 -q)"
