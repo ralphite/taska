@@ -234,8 +234,8 @@ function Editor({ it }: { it: Item }) {
     </div>
   )
 }
-// F395: a pane wide but short (1100px or more, and 1.4 times as wide as tall) shows the item (or its open document)
-// on the left and its talk on the right
+// F395: a pane wide enough (1100px or more) whose item and talk together are taller than it shows the item (or its
+// open document) on the left and its talk on the right, so nothing has to hide behind a scroll
 export const DUO = { on: false, min: 1100 }
 export function ItemPage({ it, left = null }: { it: Item; left?: ReactNode }) {
   const duo = DUO.on
@@ -796,7 +796,12 @@ export function DetailView({ hidden }: { hidden: boolean }) {
     const el = body.current
     if (!el || typeof ResizeObserver === 'undefined') return
     const check = () => {
-      // only when height is short for both parts and width is plenty: wide, and at least 1.4 times as wide as tall
+      // r507, #4745: the item's content and the talk's content together do not fit the pane's height, and it is wide
+      const top = document.getElementById('itemClip') || document.getElementById('itemTop'),
+        talk = document.getElementById('itemTalk')
+      const high =
+        ((top?.firstElementChild as HTMLElement | null)?.offsetHeight || 0) +
+        ((talk?.firstElementChild as HTMLElement | null)?.offsetHeight || 0)
       const on =
         desk() &&
         !!U.open &&
@@ -804,7 +809,7 @@ export function DetailView({ hidden }: { hidden: boolean }) {
         !D.page &&
         U.tab !== 'inputs' &&
         el.clientWidth >= DUO.min &&
-        el.clientWidth >= el.clientHeight * 1.4
+        high > el.clientHeight
       document.getElementById('app')?.toggleAttribute('data-duo', on)
       if (on !== DUO.on) {
         DUO.on = on
@@ -814,6 +819,11 @@ export function DetailView({ hidden }: { hidden: boolean }) {
     check()
     const ro = new ResizeObserver(check)
     ro.observe(el)
+    // what is in either part grows or shrinks too (a message comes, a picture loads)
+    for (const id of ['itemClip', 'itemTop', 'itemTalk']) {
+      const c = document.getElementById(id)?.firstElementChild
+      if (c) ro.observe(c)
+    }
     return () => ro.disconnect()
   })
   useLayoutEffect(() => {
