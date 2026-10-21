@@ -190,7 +190,7 @@ function BlockActs({ d, k, float = false }: { d: Doc; k: string; float?: boolean
           data-act="doc-thread"
           data-key={k}
           title={open ? 'Hide the comments' : 'Show the comments'}
-          className="absolute top-0.5 left-[calc(100%+0.25rem)] flex h-7 min-w-7 items-center justify-center gap-0.5 rounded-lg bg-amber-100 px-1.5 text-xs font-semibold text-amber-900 hover:bg-amber-200 dark:bg-amber-900/60 dark:text-amber-100"
+          className="absolute top-0.5 left-[calc(100%+0.25rem)] z-10 flex h-7 min-w-7 items-center justify-center gap-0.5 rounded-lg bg-amber-100 px-1.5 text-xs font-semibold text-amber-900 hover:bg-amber-200 dark:bg-amber-900/60 dark:text-amber-100"
         >
           {n}
         </button>
@@ -203,11 +203,13 @@ function BlockActs({ d, k, float = false }: { d: Doc; k: string; float?: boolean
           ))}
         </div>
       ) : null}
-      {/* B355: side by side, the voice first; from the edge of the paragraph, so the pointer gets there without a gap */}
+      {/* B355: side by side, the voice first; from the edge of the paragraph, so the pointer gets there without a gap.
+          B392: the paragraph's pointing area reaches over this column top to bottom (its after:), so the pointer can
+          leave the text anywhere along it and go up or down to the buttons */}
       <div
         ref={box}
         style={{ top: Math.max(at?.top ?? 0, float && n ? 36 : 0) + 2 }}
-        className={`absolute left-full flex-row gap-1 pl-1 ${rec ? 'flex' : 'hidden group-hover/blk:flex'}`}
+        className={`absolute left-full z-10 flex-row gap-1 pl-1 ${rec ? 'flex' : 'hidden group-hover/blk:flex'}`}
       >
         <button
           data-act="doc-say"
@@ -605,7 +607,7 @@ export function DocView({ d }: { d: Doc }) {
                 data-act="doc-pick"
                 data-key={b0.key}
                 {...(U.docSel.has(b0.key) ? { 'data-picked': '' } : {})}
-                className={`group/blk relative -mx-2 rounded-lg px-2 py-1 transition-colors hover:bg-zinc-50 has-[li[data-hov]]:bg-transparent data-hl:bg-amber-50 data-picked:bg-amber-50 data-picked:ring-2 data-picked:ring-amber-300 data-pressed:opacity-70 lg:cursor-text dark:hover:bg-zinc-800/50 dark:data-hl:bg-amber-950/30 dark:data-picked:bg-amber-950/40 dark:data-picked:ring-amber-600 lg:[&_li[data-hov]]:rounded-md lg:[&_li[data-hov]]:bg-zinc-100 dark:lg:[&_li[data-hov]]:bg-zinc-800/70`}
+                className={`group/blk relative -mx-2 rounded-lg px-2 py-1 transition-colors hover:bg-zinc-50 has-[li[data-hov]]:bg-transparent data-hl:bg-amber-50 data-picked:bg-amber-50 data-picked:ring-2 data-picked:ring-amber-300 data-pressed:opacity-70 lg:cursor-text lg:after:absolute lg:after:inset-y-0 lg:after:left-full lg:after:w-18 dark:hover:bg-zinc-800/50 dark:data-hl:bg-amber-950/30 dark:data-picked:bg-amber-950/40 dark:data-picked:ring-amber-600 lg:[&_li[data-hov]]:rounded-md lg:[&_li[data-hov]]:bg-zinc-100 dark:lg:[&_li[data-hov]]:bg-zinc-800/70`}
               >
                 <div className="relative flex flex-col gap-1 lg:flex-row lg:items-start lg:gap-2">
                   <div
