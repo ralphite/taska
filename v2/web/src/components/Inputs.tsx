@@ -529,29 +529,44 @@ export function SaidStep({
   acts,
   body,
   foot,
+  time,
   attrs = {},
 }: {
   head: ReactNode
   acts?: ReactNode
   body: ReactNode
   foot?: ReactNode
+  time?: string
   attrs?: Record<string, unknown>
 }) {
+  // T359 (D27, design B): what you said first; the time on the right, where Add more and ⋯ take its place while you
+  // point at it (nothing moves); the number, state and the item it went to in a small line under it
   return (
     <li className="group/row -mx-3 rounded-lg border-b border-zinc-100 px-3 py-3 last:border-b-0 hover:bg-zinc-50 dark:border-zinc-800/70 dark:hover:bg-zinc-900/60">
-      <div className="flex min-h-7 min-w-0 items-center gap-1.5 text-[13px] text-zinc-500 dark:text-zinc-400">
-        {head}
-        {acts ? (
-          // T359: only on the input you point at (always on the phone, which has no pointing)
-          <span className="-my-1 flex shrink-0 items-center group-hover/row:opacity-100 focus-within:opacity-100 lg:opacity-0">
-            {acts}
-          </span>
+      <div className="flex min-w-0 items-start gap-3">
+        <div {...attrs} className="min-w-0 flex-1 text-[15px] leading-6 text-zinc-900 dark:text-zinc-100">
+          {body}
+        </div>
+        {time || acts ? (
+          <div className="grid shrink-0 justify-items-end">
+            {time ? (
+              <span className="col-start-1 row-start-1 hidden pt-0.5 font-mono text-xs text-zinc-400 tabular-nums lg:block lg:group-focus-within/row:invisible lg:group-hover/row:invisible dark:text-zinc-500">
+                {time}
+              </span>
+            ) : null}
+            {acts ? (
+              <span className="col-start-1 row-start-1 -my-0.5 flex items-center lg:invisible lg:group-focus-within/row:visible lg:group-hover/row:visible">
+                {acts}
+              </span>
+            ) : null}
+          </div>
         ) : null}
       </div>
-      <div {...attrs} className="mt-0.5 min-w-0 text-[15px] leading-6 text-zinc-900 dark:text-zinc-100">
-        {body}
-      </div>
       {foot ? <div className="mt-2 flex min-w-0 flex-wrap items-center gap-1.5 empty:hidden">{foot}</div> : null}
+      <div className="mt-1.5 flex min-h-5 min-w-0 items-center gap-1.5 text-[13px] text-zinc-500 dark:text-zinc-400">
+        {head}
+        {time ? <span className="shrink-0 tabular-nums lg:hidden">· {time}</span> : null}
+      </div>
     </li>
   )
 }
@@ -605,10 +620,10 @@ function SaidRow({ r }: { r: Input; last?: boolean }) {
   const [now, more] = inputActs(r, SMALL_BTN)
   return (
     <SaidStep
+      time={new Date(r.t).toTimeString().slice(0, 5)}
       head={
         <>
           <span className="shrink-0 font-mono">{rcode(r.id)}</span>
-          <span className="shrink-0 tabular-nums">· {new Date(r.t).toTimeString().slice(0, 5)}</span>
 
           <span title={label} className={`flex shrink-0 items-center gap-1 pr-1 pl-1.5 font-medium ${tone}`}>
             {icon}

@@ -57,6 +57,7 @@ test('an input can be deleted and restored', async ({ page, request }) => {
   await page.keyboard.press('Shift+Enter')
   await expect.poll(async () => p.read('inbox')).toContain('A thought to throw away')
   await open(page, p, 'inputs')
+  if (isDesk(page)) await page.locator('#foot li:has([data-act="input-more"])').first().hover() // T359: its ⋯ shows where you point
   await page
     .locator(
       isDesk(page) ? '#foot [data-act="input-more"]:visible' : '#inputsView [data-act="input-more"]:visible', // F347: under New input
