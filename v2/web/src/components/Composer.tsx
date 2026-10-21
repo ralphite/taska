@@ -125,8 +125,7 @@ const ScopeX = ({ act, label }: { act: string; label: string }) => (
     <Icon n="x" c="size-4" />
   </button>
 )
-export const RuleFlip = () =>
-  U.tab === 'rules' ? <ScopeLink act="as-rule" text={ruleMode() ? 'Plain input instead' : 'As a rule instead'} /> : null
+export const RuleFlip = () => null // B406: no "as a rule" switch: the box writes inputs only
 function ScopeLine({
   icon,
   label,

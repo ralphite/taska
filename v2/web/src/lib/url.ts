@@ -168,7 +168,7 @@ export function parseTarget(seg: string): UrlTarget {
   if (doc) return { doc: Number(doc[1]), tab: U.tab }
   if (n && byN.has(n)) return { item: n, tab: tabOf(byN.get(liveN(n)) as NonNullable<ReturnType<typeof byN.get>>) }
   if (Object.hasOwn(PSEC_AT, seg)) return { section: seg, tab: U.tab }
-  if (seg === 'new' || seg === 'new-rule') return { compose: seg, tab: seg === 'new-rule' ? 'rules' : U.tab }
+  if (seg === 'new' || seg === 'new-rule') return { compose: 'new', tab: seg === 'new-rule' ? 'items' : U.tab } // B406: /new-rule is New input
   return { tab: (/^(inputs|archive|rules)$/.test(seg) ? seg : 'items') as Tab }
 }
 export function readFilters(qs: URLSearchParams, u: UI = U) {

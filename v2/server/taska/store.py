@@ -171,6 +171,9 @@ class Store:
             if it:
                 self.entry(it, e, "say", inp["text"], inp["id"])
                 self.touch(it["n"], inp["id"], ack=False)
+        elif k == "plain":  # B406: not a rule after all
+            if e["id"] in self.inputs:
+                self.inputs[e["id"]]["from"] = None
         elif k == "add":
             n = e["n"]
             self.maxn = max(self.maxn, n)

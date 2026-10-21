@@ -292,7 +292,7 @@ function sendParked(key: string) {
   draftStore((all) => {
     delete all[key]
   })
-  outboxPush({ text, files, scope: /^[A-Z]\d+$/.test(key) ? key : null, from: key === 'rule' ? 'rules' : null })
+  outboxPush({ text, files, scope: /^[A-Z]\d+$/.test(key) ? key : null, from: null }) // B406: never sent as a rule
   toast(`Sent to ${draftName(key)}, where you started the voice note`)
   bump()
   flushOutbox()
@@ -577,10 +577,14 @@ export async function restoreVoice() {
   const here = new Set(
     [...U.files, ...Object.values(U.parked).flat(), ...U.outbox.flatMap((q) => q.files)].map((f) => f.rid),
   )
+  // B399: what is in the outbox (sent before the reload and going out again now) is not put back in the box too
+  const going = new Set(U.outbox.flatMap((q) => q.files.map((x) => x.f)).filter(Boolean)),
+    goingQ = new Set(U.outbox.map((q) => q.q))
   const jobs = new Set<string>(),
     back: string[] = []
   for (const r of (await VDB.all()).sort((a, b) => a.t - b.t)) {
     if (r.project !== ctx.HERE || here.has(r.id)) continue
+    if ((r.f && going.has(r.f)) || (r.job && goingQ.has(r.job.id))) continue
     if (r.f && sent.has(r.f)) {
       void VDB.del(r.id)
       continue

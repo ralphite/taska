@@ -761,7 +761,8 @@ export function agentState(
 // ---------------------------------------------------------------- the input box's target
 
 export const detailShown = () => !desk() || (U.tab !== 'inputs' && !D.page)
-export const ruleMode = () => U.asRule ?? U.tab === 'rules'
+// B406: the box has no rule mode: what you write is an input, on the Rules tab too (rules come from items)
+export const ruleMode = () => false
 export const scopeN = () =>
   U.peek && byN.has(U.peek) ? U.peek : U.open && !U.scopeOff && byN.has(U.open) && detailShown() ? U.open : null
 export const docOpen = () => (U.doc && !U.docEdit && (desk() || !!OV.spec) ? docById(U.doc) : undefined)

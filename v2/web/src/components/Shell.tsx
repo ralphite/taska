@@ -312,7 +312,7 @@ function SideFoot() {
   )
 }
 function Drawer({ hidden, over }: { hidden: boolean; over: boolean }) {
-  const rule = U.tab === 'rules' && !D.page
+  const rule = false // B406: New input is New input on every tab
   const list = useRef<HTMLDivElement>(null)
   useLayoutEffect(() => (list.current ? bindProjDrag(list.current) : undefined), [])
   useEffect(() => {
@@ -493,12 +493,7 @@ function Rail({ hidden }: { hidden: boolean }) {
         </span>,
         'Show the sidebar · [',
       )}
-      {b(
-        'new-input',
-        <Icon n="newinput" c="size-5" />,
-        U.tab === 'rules' && !D.page ? 'New rule · C' : 'New input · C',
-        { 'aria-pressed': D.compose && !D.page },
-      )}
+      {b('new-input', <Icon n="newinput" c="size-5" />, 'New input · C', { 'aria-pressed': D.compose && !D.page })}
       <div className="my-1 h-px w-8 bg-zinc-200 dark:bg-zinc-800" />
       <div className="-my-1 flex min-h-0 [scrollbar-width:none] flex-col items-center gap-1 overflow-y-auto p-1">
         {sideProjects().map((p) => {

@@ -407,7 +407,7 @@ function showURL() {
     return openProject(seg === 'settings' && !desk() ? null : PSEC_AT[seg])
   }
   if (seg === 'new-rule') {
-    U.tab = 'rules'
+    U.tab = 'items' // B406: no New rule: the old address opens New input
     U.asRule = null
   } // B10: New rule has its own address
   else if (seg === 'new' && U.tab === 'rules') U.asRule = false

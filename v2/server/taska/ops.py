@@ -160,6 +160,14 @@ def run(s: "Store", op: Op, by: str, ctx: Dict[str, Any]) -> Tuple[str, Any]:
             e["q"] = q
         s.emit(e)
         return f"ok {rid}", "Received"
+    if name == "plain":  # B406: an input that went out "as a rule" by mistake is a plain input
+        rid = str(op.get("id") or "")
+        if rid not in s.inputs:
+            raise Err(f"unknown input {rid}")
+        if s.inputs[rid].get("from") != "rules":
+            return f"ok {rid} plain already", "Plain input"
+        s.emit({"k": "plain", "id": rid, "by": by})
+        return f"ok {rid} plain", "Plain input"
     if name == "correct":  # F144: the wrong words in an input, fixed there and remembered for every project
         rid = str(op.get("id") or "")
         inp = s.inputs.get(rid)

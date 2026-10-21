@@ -95,7 +95,8 @@ export async function enterProject(first = false) {
     // B301: back from another project to its plain address: the tab you were in there
     const t = sessionStorage.getItem('taska.tab.' + S.project),
       { seg: s0, qs: q0 } = readURL()
-    if (!s0 && ![...q0.keys()].length && t && ['inputs', 'archive', 'rules'].includes(t))
+    if (!s0 && ![...q0.keys()].length && t && ['inputs', 'archive'].includes(t))
+      // B406: a project opens on Items, not Rules
       history.replaceState(history.state, '', ctx.P + t)
   } catch {
     /* no storage */
