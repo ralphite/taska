@@ -240,6 +240,7 @@ export interface Patch {
   n?: number
   f?: Record<string, unknown>
   cfg?: Record<string, unknown>
+  fn?: () => void // R409: any change to the page's copy, done again after each load until Taska has it
 }
 export const CACHE = new Map<string, string>() // each project's state as last loaded: switching back draws it at once (B292)
 let gen = 0 // the project this page shows; a load or poll for another one is dropped
@@ -518,7 +519,8 @@ export async function refresh() {
 }
 
 export function patch(p: Patch) {
-  // one change on screen: {n, f} for an item, {cfg} for the project
+  // one change on screen: {n, f} for an item, {cfg} for the project, {fn} for anything else
+  if (p.fn) return p.fn()
   if (p.cfg) {
     model.S.cfg = { ...model.S.cfg, ...p.cfg }
     return
@@ -587,6 +589,14 @@ export const setNow = (n: number, f: Record<string, unknown>, retry?: () => unkn
     (ex) => notSaved(ex, retry, saidOp({ op: 'set', ref, f })),
   )
 }
+/** R409: show a change at once (fn changes the page's copy; it must be safe to do twice), save it behind you, sent
+ * again while Taska can't be reached; only when it finally can't be saved does the page go back, and says what. */
+export const instant = (o: unknown, fn: () => void, what = saidOp(o), retry?: () => unknown) =>
+  optimistic(
+    [{ fn }],
+    () => op(o),
+    (ex) => notSaved(ex, retry, what),
+  )
 const patchesSaid = (patches: Patch[]) =>
   patches.length === 1
     ? saidOp({ op: 'set', ref: code(patches[0].n), f: patches[0].f })

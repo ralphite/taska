@@ -49,6 +49,7 @@ import {
   notSaved,
   op,
   optimistic,
+  instant,
   postAgain,
   pushUndo,
   revertNow,
@@ -550,24 +551,27 @@ export const ACT: Record<string, Handler> = {
   },
   log: () => openProject('log'),
   deleted: () => openProject('deleted'),
-  'input-delete': async (d) => {
-    // F177: to Deleted, with the items only it made; Undo and Z put it back
-    const id = d.id as string
-    try {
-      await save({ op: 'delete', id }, () => ACT['input-delete'](d))
-    } catch {
-      return
+  'input-delete': (d) => {
+    // F177: to Deleted, with the items only it made; Undo and Z put it back. R409: gone at once
+    const id = d.id as string,
+      snap = byR.get(id)
+    const gone = () => {
+      model.S.inputs = model.S.inputs.filter((r) => r.id !== id)
+      byR.delete(id)
     }
-    const x = (model.S.deleted || []).find((x) => x.id === id)
+    void instant({ op: 'delete', id }, gone, `deleting ${rcode(id)}`, () => ACT['input-delete'](d))
     const run = pushUndo(`${rcode(id)} deleted`, async () => {
-      try {
-        await save({ op: 'restore', id }, run)
-      } catch {
-        return false
-      }
+      const ok = await instant({ op: 'restore', id }, () => {
+        if (snap && !byR.has(id)) {
+          model.S.inputs.push(snap)
+          byR.set(id, snap)
+        }
+      })
+      if (!ok) return false
+      const x = (model.S.deleted || []).find((x) => x.id === id)
       toast(`${rcode(id)} is back${x?.items.length ? ` with ${x.items.map((i) => i.code).join(', ')}` : ''}`)
     })
-    toast(deletedSaid(x, id), run)
+    toast(`Deleted ${rcode(id)}`, run)
   },
   'input-restore': async (d) => {
     const id = d.id as string,
@@ -870,21 +874,22 @@ export const ACT: Record<string, Handler> = {
     const dn = U.doc,
       key = d.key as string,
       on = d.on === '1'
-    try {
-      await save({ op: 'dcres', d: dn, key, on })
-    } catch {
-      return
-    }
+    const put = (v: boolean) =>
+      instant({ op: 'dcres', d: dn, key, on: v }, () => {
+        const doc = docById(dn)
+        if (!doc) return
+        doc.resolved ||= {}
+        if (v) doc.resolved[key] ||= new Date().toISOString()
+        else delete doc.resolved[key]
+      }) // R409: at once
+    void put(on)
     if (!on) U.docThreads.add(key)
     else U.docThreads.delete(key)
     D.docKey = null
     render()
     toast(
       on ? 'Resolved' : 'Open again',
-      pushUndo(on ? 'Resolve a thread' : 'Reopen a thread', async () => {
-        await save({ op: 'dcres', d: dn, key, on: !on })
-        render()
-      }),
+      pushUndo(on ? 'Resolve a thread' : 'Reopen a thread', () => put(!on)),
     )
   },
   'doc-say': (d) => docSay(d.key as string, d.quote as string | undefined),
@@ -1253,17 +1258,20 @@ export const ACT: Record<string, Handler> = {
   },
   'move-input': (d) => openDialog('move-input', { id: d.id }),
   'input-more': (d) => inputMenu(d.id as string),
-  'item-delete': async (d) => {
-    // T257 #5: with its subitems, to Deleted; Undo or Restore brings them back
+  'item-delete': (d) => {
+    // T257 #5: with its subitems, to Deleted; Undo or Restore brings them back. R409: gone at once
     const n = N(d),
       ref = code(n)
     if (!confirmClick('item-delete ' + n)) return
     closeDialog()
-    try {
-      await save({ op: 'idel', ref })
-    } catch {
-      return
-    }
+    const ids = new Set<number>()
+    for (let k = [n]; k.length; k = k.flatMap((x) => (kids.get(x) || []).map((it) => it.n)))
+      k.forEach((x) => ids.add(x))
+    const snap = model.S.items.filter((it) => ids.has(it.n))
+    void instant({ op: 'idel', ref }, () => {
+      model.S.items = model.S.items.filter((it) => !ids.has(it.n))
+      for (const x of ids) byN.delete(x)
+    })
     if (U.open === n) {
       if (desk()) {
         U.open = null
@@ -1273,8 +1281,14 @@ export const ACT: Record<string, Handler> = {
     toast(
       `Deleted ${ref}`,
       pushUndo(`${ref} deleted`, async () => {
-        await save({ op: 'iundel', ref })
-        toast(`${ref} is back`)
+        const ok = await instant({ op: 'iundel', ref }, () => {
+          for (const it of snap)
+            if (!byN.has(it.n)) {
+              model.S.items.push(it)
+              byN.set(it.n, it)
+            }
+        })
+        if (ok) toast(`${ref} is back`)
       }),
     )
   },
@@ -1473,21 +1487,23 @@ export const ACT: Record<string, Handler> = {
     deleteView(Number(d.i))
   },
   'msg-menu': (d) => openDialog('msg-menu', { n: N(d), id: Number(d.id) }, { pop: true, focus: false }), // B321: Hide is in ⋯
-  'msg-hide': async (d) => {
-    // T257 #12
+  'msg-hide': (d) => {
+    // T257 #12; R409: at once
     closeDialog()
     const on = d.on === '1',
-      ref = code(N(d)),
+      n = N(d),
+      ref = code(n),
       id = Number(d.id)
-    try {
-      await save({ op: 'hide', ref, id, on })
-    } catch {
-      return
-    }
+    const put = (v: boolean) =>
+      instant({ op: 'hide', ref, id, on: v }, () => {
+        const x = byN.get(n)?.thread.find((m) => m.id === id)
+        if (x) x.hidden = v
+      })
+    void put(on)
     U.showHidden.delete(id)
     toast(
       on ? 'Message hidden' : 'Message shown',
-      pushUndo(on ? 'Hide a message' : 'Show a message', () => save({ op: 'hide', ref, id, on: !on })),
+      pushUndo(on ? 'Hide a message' : 'Show a message', () => put(!on)),
     )
   },
   'msg-peek': (d) => {
