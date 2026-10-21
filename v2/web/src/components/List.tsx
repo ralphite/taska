@@ -696,8 +696,8 @@ function ViewBar() {
     if (!el || !b) return
     const l = b.offsetLeft - 48,
       r = b.offsetLeft + b.offsetWidth + 48 - el.clientWidth
-    if (el.scrollLeft > l) el.scrollTo({ left: Math.max(0, l) })
-    else if (el.scrollLeft < r) el.scrollTo({ left: r })
+    if (el.scrollLeft > l) el.scrollLeft = Math.max(0, l)
+    else if (el.scrollLeft < r) el.scrollLeft = r
   }, [on])
   const go = (dir: number) => row.current?.scrollBy({ left: dir * row.current.clientWidth * 0.7, behavior: 'smooth' })
   const arrow = (dir: number) => (
