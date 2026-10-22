@@ -130,7 +130,8 @@ export function agentLine() {
   return {
     kind,
     label,
-    title: off ? undefined : lines.map((l) => l.text).join('\n') || undefined,
+    // R369 (B429): not the line the pill shows already
+    title: off ? undefined : lines.map((l) => l.text).filter((l) => l !== label).join('\n') || undefined,
     off,
   }
 }
