@@ -17,7 +17,7 @@ import {
   els,
   esc,
   inQueue,
-  laterOf,
+  CLOSED,
   liveN,
   model,
   parseRef,
@@ -236,8 +236,10 @@ function LogList({ lines }: { lines: string[] }) {
 function AgentCard() {
   const S = model.S
   const [tone, , line] = agentState(S.agents, S.work)
-  const queue = S.items.filter(inQueue),
-    later = laterOf(queue) // S3
+  // C9 (T422): counted as the views Queue and Later count them, so the numbers agree
+  const live = S.items.filter((it) => !it.merged_into && !it.archived && it.type !== 'rule'),
+    queue = live.filter((it) => inQueue(it) && it.status !== 'doing' && it.when === 'now'),
+    later = live.filter((it) => it.when === 'later' && !CLOSED(it.status)).length // S3
   const look = {
     bad: [
       'bg-red-50 dark:bg-red-400/10',

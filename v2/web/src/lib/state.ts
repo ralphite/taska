@@ -455,7 +455,6 @@ export const inTab = (it: Item, t: string) =>
 export const tabOf = (it: Item): Tab => (it.archived ? 'archive' : it.type === 'rule' ? 'rules' : 'items')
 export const inQueue = (it: Item) =>
   !it.merged_into && !it.archived && it.type !== 'rule' && !needsYou(it) && !CLOSED(it.status)
-export const laterOf = (q: Item[]) => q.filter((it) => it.when === 'later').length
 // F291: the order agents take the work. Now before later, in progress first; then your order comes before
 // priority: what you dragged or put next keeps its place (rank), and what you never placed goes in by priority, each
 // just before the first item of your order that has a lower priority (the same as the server's /next).
