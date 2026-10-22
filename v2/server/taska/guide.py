@@ -84,6 +84,8 @@ TELL  The user reads Taska only, often on a phone: never your terminal or chat. 
       (what you did, how you checked it, screenshots, plans, questions) goes into the item's messages.
       First line = the conclusion in one sentence; the page folds long messages to it. Then details, short,
       in Markdown, images inline (see `say` above). Don't post "starting now": the status already says doing.
+      More than 10 lines (a plan, research, a checklist, a long report): write it as a document (`B03 doc`),
+      choices to tick included, and post one line that names it, e.g. "The plan is in D2; tick at the end".
       Name items, documents and inputs by their code (B03, D2, r12): the page links each code and shows a card
       about it on hover. A code alone means little to the user: the first time a message names one, add a few
       words on what it is, e.g. "D2 (the release plan)".
