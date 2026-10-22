@@ -33,7 +33,6 @@ import {
   pushUndo,
   forget,
   sendLog,
-  change,
   notSaved,
   saidOp,
   type OpAnswer,
@@ -108,10 +107,6 @@ export async function send() {
   box.value = ''
   U.files = []
   saveDraft()
-  if (n && U.ask === n) {
-    U.ask = null
-    if (byN.get(n)?.status === 'review') change(n, 'status', 'doing', { said: 'is back in progress' })
-  } // Not yet, with its reason (T274 #14)
   // Going through what needs you, your reply settles this one (B118), but the box stays on it (A2, B146).
   const going = U.go && n && U.go.list.includes(n) && (n === U.peek || (desk() && n === U.open))
   if (going && U.go && n) {

@@ -30,7 +30,6 @@ import {
   projName,
   rcode,
   render,
-  scopeN,
   standN,
   tabOf,
   visible,
@@ -380,21 +379,8 @@ export const ACT: Record<string, Handler> = {
   },
   'push-on': () => pushOn(),
   'push-off': () => pushOff(),
-  // Not yet reopens and asks what is missing, wherever you tap it (B153)
-  reopen: (d) => {
-    const n = N(d)
-    if (desk() && U.open !== n) openItem(n)
-    if (!desk() && U.open !== n && U.peek !== n) peek(n, { focus: false })
-    const typed = scopeN() === n && !!((els.text?.value ?? '').trim() || U.files.length) // B4
-    if (typed) change(n, 'status', 'doing', { said: 'is back in progress' })
-    else {
-      U.ask = n
-      toast(`Say what is missing: ${code(n)} goes back when you send it`)
-    }
-    U.scopeOff = false
-    bump('composer')
-    els.text?.focus()
-  },
+  // B443: Not yet goes back to in progress at once, wherever you tap it; what you wrote in the box for it goes along
+  reopen: (d) => change(N(d), 'status', 'doing', { said: 'is back in progress' }),
   'card-copy': (d) => copyItem(N(d)),
   projects: () => openDrawer(),
   'go-input': (d) => {

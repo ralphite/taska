@@ -275,7 +275,6 @@ export const U = {
   fixCand: null as null | { id: string; wrong: string; v: number },
   fixEd: null as null | { s: number; e: number; wrong: string },
   prefsEdit: null as null | { was: string },
-  ask: null as number | null,
   note: null as string | null,
   fbFor: null as number | null,
   listTop: null as null | [number, number],

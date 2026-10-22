@@ -63,7 +63,7 @@ export const KEYS: [string, [string, string][]][] = [
     [
       ['A', "The item's next step: Accept, Approve, Answer or Reply"],
       ['R', 'Reply or add to it'],
-      ['N', 'Not yet: say what is missing, then it goes back'],
+      ['N', 'Not yet: back to in progress at once'],
       ['1–9, ⌘↵', 'Pick a choice, send the answer'],
       ['D · W · L', "Done · Won't do · Later / Now"],
       ['E / ⇧E', 'Archive or unarchive / archive every finished item'],

@@ -291,10 +291,6 @@ function boxRole(): { line: ReactNode; ph: string; send: string; ready?: boolean
     // T322 (D22): writing in an item is a reply to it, nothing more: the box says "Reply to F06…"; no line above it,
     // no "New input instead" (New input has its own button)
     ph = `Reply to ${code(n)}…`
-    if (U.ask === n) {
-      ph = `What is missing in ${code(n)}?`
-      send = 'Send back'
-    } // B153, T274 #14
     if (ticks.length) send = 'Send answer'
   } else if (desk())
     line = (
