@@ -1007,6 +1007,17 @@ function DeskFilters({ hidden }: { hidden: boolean }) {
 // ---------------------------------------------------------------- the foot: the box, and the New input page (B73)
 function Foot({ hidden, wideCls }: { hidden: boolean; wideCls: string }) {
   const compose = desk() && D.compose && !D.page && U.tab !== 'inputs'
+  // F478: what scrolls above the box runs on under it, around its rounded corners; the room it needs is the foot's
+  useLayoutEffect(() => {
+    const foot = document.getElementById('foot')
+    if (!foot || typeof ResizeObserver === 'undefined') return
+    const set = () =>
+      document.documentElement.style.setProperty('--foot-h', (foot.hidden ? 0 : foot.offsetHeight) + 'px')
+    const ro = new ResizeObserver(set)
+    ro.observe(foot)
+    set()
+    return () => ro.disconnect()
+  }, [hidden, compose])
   return (
     <footer
       id="foot"

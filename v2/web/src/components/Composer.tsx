@@ -1125,7 +1125,7 @@ export function Feedback() {
       id="feedback"
       hidden={!fb}
       role="status"
-      className="mb-1.5 flex min-h-7 items-center gap-2 pr-1 pl-2.5 text-[13px] text-zinc-600 lg:mx-auto lg:max-w-[42rem] dark:text-zinc-300"
+      className="mb-1.5 flex min-h-7 items-center gap-2 rounded-full bg-white/95 pr-1 pl-2.5 text-[13px] text-zinc-600 lg:mx-auto lg:max-w-[42rem] dark:bg-zinc-950/95 dark:text-zinc-300"
     >
       {fb?.node}
     </div>
