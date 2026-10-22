@@ -11,6 +11,8 @@ import {
   docResolved,
   threadOpen,
   threadsOf,
+  byN,
+  userWord,
   els,
   liveN,
   plural,
@@ -25,6 +27,14 @@ import { seeThreads, threadNew, renderDoc } from '../lib/docs'
 import { tickKeys, tickOpen, tickText } from '../lib/doctick'
 
 const TICKED_LINE = /^\s*[-*+]\s+[([][xX][)\]]/m // T415: a list with a choice sent in it
+const CHOICE_LINE = /^\s*[-*+]\s+(\(|\[)[ xX]?(\)|\])\s+/m
+/** T472 (D49): the item's latest question points at this document, and you replied on the item instead of picking */
+function docSkipped(d: Doc) {
+  const it = byN.get(d.n),
+    asks = (it?.thread || []).filter((x) => x.kind === 'ask' && new RegExp(`\\bD${d.d}\\b`).test(x.text)),
+    x = asks.at(-1)
+  return !!(it && x && it.thread.slice(it.thread.indexOf(x) + 1).some(userWord))
+}
 import { toast } from '../lib/toast'
 import { Armed, Icon, Kbd } from './ui'
 import { Rich, Thumbs, VoiceLine } from './Talk'
@@ -584,6 +594,7 @@ function Lasso() {
 // A document's text with its comment threads: in a sheet on the phone, in the item pane on the desktop (T110).
 export function DocView({ d }: { d: Doc }) {
   useArea('rec')
+  const skipped = docSkipped(d)
   const ref = useRef<HTMLDivElement>(null)
   useMarkQuotes(ref, d)
   useLayoutEffect(() => {
@@ -724,6 +735,13 @@ export function DocView({ d }: { d: Doc }) {
                     </button>
                   ) : null}
                 </div>
+                {skipped && CHOICE_LINE.test(b0.text) && !TICKED_LINE.test(b0.text) ? (
+                  // T472 (D49): the item asked you to pick here, you replied on the item instead
+                  <div className="mt-1.5 flex items-center gap-1 text-[13px] font-medium text-zinc-500 dark:text-zinc-400">
+                    <Icon n="reply" c="size-3.5" />
+                    Skipped · you replied on {code(d.n)}
+                  </div>
+                ) : null}
                 {here ? (
                   R.rec ? (
                     // B300: recording, the same button stops and posts, where it was

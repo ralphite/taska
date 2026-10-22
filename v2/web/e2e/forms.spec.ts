@@ -22,3 +22,25 @@ T3 done Finished: it works.
     await expect(page.getByText('Skipped · you replied').filter({ visible: true })).toBeVisible()
   }
 })
+
+test('choices in a document you were sent to, answered by a reply on the item, show Skipped (T472)', async ({
+  page,
+  request,
+}) => {
+  const p = await project(request, {
+    agent: 'new task P2 now Pick a colour\n',
+    approve: ['T1'],
+    then: `T1 doc Colour plan
+  Colour plan
+
+  - ( ) Red
+  - ( ) Blue
+T1 ask Pick one in D1 (the colour plan).
+`,
+  })
+  await request.post(`${p.url}api/op`, { data: { op: 'input', text: 'Let us talk first', scope: 1 } })
+  await open(page, p, 'D1')
+  await expect(page.getByText('Skipped · you replied on T1').filter({ visible: true })).toBeVisible()
+  await open(page, p, 'T1')
+  await expect(page.getByText('Skipped', { exact: true }).filter({ visible: true })).toBeVisible()
+})

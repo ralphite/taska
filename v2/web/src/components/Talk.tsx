@@ -21,6 +21,7 @@ import {
   byR,
   ctx,
   desk,
+  docById,
   docsOf,
   oneLine,
   plural,
@@ -458,6 +459,13 @@ export function MsgText({
     </>
   )
 }
+// T472 (D49): a question that sends you to a document's choices, answered by a reply with nothing picked there
+const pickInDoc = (x: Msg) =>
+  x.kind === 'ask' &&
+  [...x.text.matchAll(/\bD(\d+)\b/g)].some(([, n]) => {
+    const md = docById(Number(n))?.md || ''
+    return /^\s*[-*+]\s+[([][ ]?[)\]]\s+/m.test(md) && !/^\s*[-*+]\s+[([][xX][)\]]/m.test(md)
+  })
 // B452: what the organizer wrote from something you said says where it comes from; your whole words open from there
 function FromInput({ rid }: { rid: string }) {
   const r = byR.get(rid),
@@ -790,8 +798,8 @@ export function MsgView({
         {x.by === 'org' && x.src ? <FromInput rid={x.src} /> : null}
         {done && !form ? (
           <span className="flex items-center gap-0.5 rounded bg-zinc-100 px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-zinc-600 uppercase dark:bg-zinc-800 dark:text-zinc-300">
-            <Icon n="check" c="size-3" sw="3" />
-            Submitted
+            <Icon n={pickInDoc(x) ? 'reply' : 'check'} c="size-3" sw="3" />
+            {pickInDoc(x) ? 'Skipped' : 'Submitted'}
           </span>
         ) : (
           <KindTag x={x} />
