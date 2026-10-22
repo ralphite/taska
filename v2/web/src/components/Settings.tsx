@@ -1,19 +1,7 @@
 // Settings (B162): one page for everything you change now and then; each section has its own address. On the desktop
 // a column of sections and the section beside it; on the phone pages in the grouped style of a phone's own settings.
 import { useEffect, useLayoutEffect, useRef, type ReactNode } from 'react'
-import {
-  AGENT_NAME,
-  CHIP,
-  FIELD,
-  LOG_N,
-  PRIMARY,
-  P_BTN,
-  SECOND,
-  STATUS,
-  TAB_NAME,
-  TYPE_TEXT,
-  WHEN,
-} from '../lib/constants'
+import { AGENT_NAME, CHIP, FIELD, PRIMARY, P_BTN, SECOND, STATUS, TAB_NAME, TYPE_TEXT, WHEN } from '../lib/constants'
 import {
   D,
   U,
@@ -43,7 +31,7 @@ import {
   whoName,
 } from '../lib/state'
 import { PSEC, PSEC_SIDE, PSEC_THIS } from '../lib/settings-data'
-import { P_CACHE, loadLog } from '../lib/settings'
+import { P_CACHE, loadLog, loadMoreLog } from '../lib/settings'
 import { PUSH, noticeOn, noticeRead, noticeState, pushState, pushable, standalone } from '../lib/notices'
 import { clean } from '../lib/markdown'
 import { Armed, Avatar, Empty, Icon, Kbd, ProjTile, again } from './ui'
@@ -200,13 +188,32 @@ export function logLine(l: string, withTime = true) {
     (withTime ? ` <span class="font-mono text-[11px] whitespace-nowrap text-zinc-400">${esc(m[2])}</span>` : '')
   )
 }
+// T427: the end of the log: when it comes near, the changes before load
+export function LogMore({ cls }: { cls: string }) {
+  const ref = useRef<HTMLParagraphElement>(null)
+  useEffect(() => {
+    const el = ref.current
+    if (!el || P_CACHE.logEnd) return
+    const io = new IntersectionObserver((es) => es.some((e) => e.isIntersecting) && loadMoreLog(), {
+      root: el.closest('#sideList, #projectBody'),
+      rootMargin: '0px 0px 600px 0px',
+    })
+    io.observe(el)
+    return () => io.disconnect()
+  })
+  return (
+    <p ref={ref} className={`text-[13px] text-zinc-400 dark:text-zinc-500 ${cls}`}>
+      {P_CACHE.logEnd ? 'No earlier changes' : 'Loading…'}
+    </p>
+  )
+}
 function LogList({ lines }: { lines: string[] }) {
   return (
     <ol className="divide-y divide-zinc-100 text-[13px] leading-relaxed text-zinc-600 dark:divide-zinc-800 dark:text-zinc-300">
-      {lines.map((l, i) => {
+      {lines.map((l) => {
         const u = (model.S.undo || []).find((u) => l.startsWith(`#${u.seq} `)) // one of your changes that can still be put back (F80)
         return (
-          <li key={i} className="flex items-start gap-2 py-1.5">
+          <li key={l.slice(0, l.indexOf(' '))} className="flex items-start gap-2 py-1.5">
             <span className="min-w-0 flex-1 break-words" dangerouslySetInnerHTML={{ __html: clean(logLine(l)) }} />
             {u ? (
               <button
@@ -497,9 +504,7 @@ const BODY: Record<string, () => ReactNode> = {
             <LogList lines={P_CACHE.log} />
           </div>
         </Ruled>
-        {P_CACHE.log.length >= LOG_N ? (
-          <p className="pt-4 text-[13px] text-zinc-400 dark:text-zinc-500">The latest {LOG_N} changes</p>
-        ) : null}
+        <LogMore cls="pt-4" />
       </>
     ),
   projects: () => {

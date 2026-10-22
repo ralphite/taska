@@ -215,7 +215,6 @@ export const TABS = ['items', 'inputs', 'archive', 'rules'] as const
 export type Tab = (typeof TABS)[number]
 export const VIEW_KEYS = ['q', 'type', 'when', 'status', 'pri', 'sort'] as const
 export const NEEDS_SHOWN = 5
-export const LOG_N = 300
 export const SAID: Record<string, string> = {
   open: 'is open',
   doing: 'is in progress',

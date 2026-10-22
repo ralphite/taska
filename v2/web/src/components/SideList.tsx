@@ -1,11 +1,10 @@
 // T402 (D30, design A): Documents, Activity and Deleted are lists in the list column, like the item list: the sidebar
 // stays, the item pane shows what you open. Actions repeated on every row show on hover only.
-import { LOG_N } from '../lib/constants'
 import { U, byN, code, liveN, model, plural, rcode, useArea, when } from '../lib/state'
 import { useEffect } from 'react'
 import { P_CACHE, loadLog } from '../lib/settings'
 import { clean } from '../lib/markdown'
-import { logLine } from './Settings'
+import { LogMore, logLine } from './Settings'
 import { Empty, Icon } from './ui'
 
 export type Side = 'docs' | 'log' | 'deleted'
@@ -61,10 +60,13 @@ function Log() {
   if (!lines.length) return <Empty>Nothing has changed yet.</Empty>
   return (
     <>
-      {lines.map((l, i) => {
+      {lines.map((l) => {
         const u = (model.S.undo || []).find((x) => l.startsWith(`#${x.seq} `)) // one of your changes that can be put back (F80)
         return (
-          <div key={i} className={`${ROW} text-[13px] leading-relaxed text-zinc-600 dark:text-zinc-300`}>
+          <div
+            key={l.slice(0, l.indexOf(' '))}
+            className={`${ROW} text-[13px] leading-relaxed text-zinc-600 dark:text-zinc-300`}
+          >
             <span
               className="min-w-0 flex-1 break-words"
               dangerouslySetInnerHTML={{ __html: clean(logLine(l, false)) }}
@@ -80,9 +82,7 @@ function Log() {
           </div>
         )
       })}
-      {lines.length >= LOG_N ? (
-        <p className="px-4 py-3 text-[13px] text-zinc-400 dark:text-zinc-500">The latest {LOG_N} changes</p>
-      ) : null}
+      <LogMore cls="px-4 py-3" />
     </>
   )
 }
@@ -153,7 +153,7 @@ export function SideList({ side }: { side: Side }) {
       ? (model.S.docs || []).length
       : side === 'deleted'
         ? (model.S.gone || []).length + (model.S.deleted || []).length
-        : P_CACHE.log?.length || 0
+        : 0 // the log loads as you scroll: how many are loaded says nothing (T427)
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex h-12 shrink-0 items-center gap-2 border-b border-zinc-200 px-4 dark:border-zinc-800">

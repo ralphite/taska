@@ -5,13 +5,14 @@ import type { ProjectRow } from './types'
 import { JSON_POST, NET, keepProjects, load, net, notLoaded, notSaved, pushUndo } from './data'
 import { toast } from './toast'
 import { saveDraft } from './drafts'
-import { LOG_N } from './constants'
 import { navigate } from './switch'
 
 export const P_CACHE = {
   guide: null as string | null,
   log: null as string[] | null,
   logRev: -1,
+  logEnd: false, // T427: the first change is loaded: nothing earlier to ask for
+  logMore: false, // earlier changes on their way
   fixes: null as null | { wrong?: string; right: string; t?: string }[],
   prefs: null as null | { text: string; default: boolean; tidy?: boolean },
   projects: null as ProjectRow[] | null,
@@ -38,17 +39,55 @@ export async function loadFixes(once = false) {
   }
   bump('project', 'detail', 'inputs')
 }
+// T427: the log loads what fits a screen or two; scrolling to its end loads the changes before (LogMore)
+const LOG_FIRST = 60,
+  LOG_MORE = 100
+type LogRow = { seq: number; t: string; who: string; what: string }
+const logText = (e: LogRow) => `#${e.seq} ${e.t.slice(5, 10)} ${e.t.slice(11, 16)} ${e.who} ${e.what}`
+const seqOf = (l: string) => Number(/^#(\d+)/.exec(l)?.[1] || 0)
 export function loadLog() {
-  // the log as it is now: when it opens, and after each change to the project
+  // the log as it is now: when it opens, and after each change to the project. What is new goes on top; what was
+  // loaded below it stays.
   P_CACHE.logRev = model.S.rev
-  net<{ seq: number; t: string; who: string; what: string }[]>(ctx.P + `api/log?n=${LOG_N}`, {}, NET.get).then(
+  const p = ctx.P
+  net<LogRow[]>(p + `api/log?n=${LOG_FIRST}`, {}, NET.get).then(
     (l) => {
-      // T339: the log as data from Taska, not the agents' text taken apart (newest first)
-      P_CACHE.log = l.map((e) => `#${e.seq} ${e.t.slice(5, 10)} ${e.t.slice(11, 16)} ${e.who} ${e.what}`)
+      if (p !== ctx.P) return
+      const lines = l.map(logText),
+        had = P_CACHE.log,
+        top = had?.length ? seqOf(had[0]) : 0,
+        fresh = lines.filter((x) => seqOf(x) > top)
+      if (had?.length && fresh.length < lines.length) P_CACHE.log = [...fresh, ...had]
+      else {
+        P_CACHE.log = lines // the first time, or more came than this holds: from the top again
+        P_CACHE.logEnd = l.length < LOG_FIRST
+      }
       bump('project')
     },
     () => {
       if (D.page) notLoaded('the change log', loadLog)
+    },
+  )
+}
+export function loadMoreLog() {
+  const had = P_CACHE.log
+  if (P_CACHE.logMore || P_CACHE.logEnd || !had?.length) return
+  P_CACHE.logMore = true
+  const p = ctx.P
+  net<LogRow[]>(p + `api/log?n=${LOG_MORE}&before=${seqOf(had[had.length - 1])}`, {}, NET.get).then(
+    (l) => {
+      P_CACHE.logMore = false
+      const cur = P_CACHE.log
+      if (p !== ctx.P || !cur?.length || seqOf(cur[cur.length - 1]) !== seqOf(had[had.length - 1]))
+        return bump('project') // it started again meanwhile: the end asks again
+      P_CACHE.log = [...cur, ...l.map(logText)]
+      P_CACHE.logEnd = l.length < LOG_MORE
+      bump('project')
+    },
+    () => {
+      P_CACHE.logMore = false
+      notLoaded('earlier changes', loadMoreLog)
+      bump('project')
     },
   )
 }

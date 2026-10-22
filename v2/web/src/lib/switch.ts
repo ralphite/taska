@@ -75,6 +75,7 @@ export function goTo(url: string, how: 'push' | 'replace' | 'pop' = 'push'): boo
   P_CACHE.guide = null
   P_CACHE.log = null
   P_CACHE.logRev = -1
+  P_CACHE.logEnd = false
   noticeFresh()
   setProject(name!)
   const seen = CACHE.get(name!) // shown before in this page: drawn at once from that (B292)

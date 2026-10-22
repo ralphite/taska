@@ -287,10 +287,21 @@ def log(s: "Store", n: int) -> str:
     return "".join(f"#{x['seq']} {hm(x['t'])} {x['who']} {x['what']}\n" for x in log_entries(s, n)) or "\n"
 
 
-def log_entries(s: "Store", n: int) -> List[Dict[str, Any]]:
-    """The last n changes, one each: {seq, t, who, what} (T339: the page reads these; agents read log() above)."""
+def log_entries(s: "Store", n: int, before: int = 0) -> List[Dict[str, Any]]:
+    """The last n changes, one each: {seq, t, who, what} (T339: the page reads these; agents read log() above).
+    With `before`, the n changes before that one (T427: the page loads more as you scroll down)."""
     out: List[Dict[str, Any]] = []
-    for e in s.events[-n:]:
+    evs = s.events
+    if before:
+        lo, hi = 0, len(evs)
+        while lo < hi:  # events are in seq order: the first at or after `before`
+            mid = (lo + hi) // 2
+            if evs[mid]["seq"] < before:
+                lo = mid + 1
+            else:
+                hi = mid
+        evs = evs[:lo]
+    for e in evs[-n:]:
         k, who = e["k"], e.get("by", "")
         if k == "in":
             t = f"in {e['id']}" + (f" →{s.code(e['scope'])}" if e.get("scope") else "") + f" {first_line(e.get('text', ''))!r}"
