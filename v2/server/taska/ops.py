@@ -213,6 +213,32 @@ def run(s: "Store", op: Op, by: str, ctx: Dict[str, Any]) -> Tuple[str, Any]:
         dn = s.maxd + 1
         s.emit({"k": "doc", "d": dn, "n": it["n"], "title": title, "md": md, "by": by})
         return f"ok D{dn} new on {s.code(it['n'])}" + s.gone_note(it, by), f"Wrote D{dn}"
+    if name == "dticks":  # B1, B2 (T422): choices ticked on the page go into the document as it is now
+        d = s.doc(op.get("d"))
+        md, at = str(d["md"]), 0
+        spans: List[Tuple[int, int, str]] = []
+        seen: Dict[str, int] = {}
+        want = {f"{t.get('key')}~{int(t.get('occ') or 0)}": str(t.get("text", "")) for t in op.get("ticks") or []}
+        for _, text_ in md_blocks(md):
+            pos = md.find(text_, at)
+            if pos < 0:
+                continue
+            at = pos + len(text_)
+            k = block_key(text_)
+            seen[k] = seen.get(k, -1) + 1
+            now_ = want.pop(f"{k}~{seen[k]}", None)
+            if now_ is not None:
+                if block_key(now_) != k:  # only ticks may change: anything else is not a choice
+                    raise Err("only the choices of a list can change this way")
+                spans.append((pos, at, now_))
+        if want:
+            raise Err(f"the form changed in D{d['d']}: open it again and tick again")
+        for start, end, now_ in reversed(spans):
+            md = md[:start] + now_ + md[end:]
+        if md == d["md"]:
+            return f"ok D{d['d']} unchanged", "Unchanged"
+        s.emit({"k": "doc", "d": d["d"], "n": d["n"], "title": d["title"], "md": md, "by": by})
+        return f"ok D{d['d']} updated", f"Ticked in D{d['d']}"
     if name == "dc":  # a comment on one paragraph of a document, or on all of it (key "doc", para 0: B247)
         d = s.doc(op.get("d"))
         blocks = md_blocks(d["md"])

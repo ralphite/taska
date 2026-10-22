@@ -14,6 +14,11 @@ const storeKey = () => 'taska.docticks.' + ctx.HERE
 function all() {
   if (DT.at !== ctx.HERE) {
     try {
+      DT.going = JSON.parse(localStorage.getItem(storeKey() + '.going') || '{}') as typeof DT.going // B1 (T422)
+    } catch {
+      DT.going = {}
+    }
+    try {
       DT.all = JSON.parse(localStorage.getItem(storeKey()) || '{}') as typeof DT.all
       for (const m of Object.values(DT.all))
         for (const k of Object.keys(m))
@@ -30,6 +35,9 @@ function all() {
 }
 function keep() {
   try {
+    const going = Object.fromEntries(Object.entries(DT.going).filter(([, v]) => Object.keys(v).length))
+    if (Object.keys(going).length) localStorage.setItem(storeKey() + '.going', JSON.stringify(going))
+    else localStorage.removeItem(storeKey() + '.going')
     const live = Object.fromEntries(Object.entries(DT.all).filter(([, v]) => Object.keys(v).length))
     if (Object.keys(live).length) localStorage.setItem(storeKey(), JSON.stringify(live))
     else localStorage.removeItem(storeKey())
@@ -43,7 +51,16 @@ export function tickKeys(doc: Doc) {
   return doc.blocks.map((b) => ({ b, k: `${b.key}~${(seen[b.key] = (seen[b.key] ?? -1) + 1)}` }))
 }
 /** A paragraph's text as you ticked it (its own text when nothing is waiting). */
-export const tickText = (d: number, k: string, text: string) => all()[d]?.[k] ?? DT.going[d]?.[k] ?? text
+export function tickText(d: number, k: string, text: string) {
+  const mine = all()[d]?.[k]
+  if (mine != null) return mine
+  const going = DT.going[d]?.[k]
+  if (going === text) {
+    delete DT.going[d][k] // B1 (T422): it is in the document now (sent before a reload): nothing waits any more
+    keep()
+  }
+  return going ?? text
+}
 /** Tick or untick the i-th choice of a paragraph, on the page only. -> false when the paragraph is gone. */
 export function tickDoc(d: number, k: string, i: number): boolean {
   const doc = docById(d),
@@ -65,23 +82,6 @@ export function ticksOf(doc: Doc | undefined) {
     if (b.kind === 'heading' && i > 0) head = b.text.replace(/^#+\s*/, '')
     return mine[k] != null && mine[k] !== b.text ? [{ b, k, i, now: mine[k], head }] : []
   })
-}
-/** The document's text with what waits ticked in it: each paragraph changed where it stands, not where the same
- * words first come (B420). */
-export function tickedDoc(doc: Doc) {
-  const want = new Map(ticksOf(doc).map((x) => [x.i, x.now]))
-  let md = doc.md,
-    at = 0
-  const spans: [number, number, string][] = []
-  doc.blocks.forEach((b, i) => {
-    const p = md.indexOf(b.text, at)
-    if (p < 0) return
-    at = p + b.text.length
-    const now = want.get(i)
-    if (now != null) spans.push([p, at, now])
-  })
-  for (const [p, e, now] of spans.reverse()) md = md.slice(0, p) + now + md.slice(e)
-  return md
 }
 /** What you chose, one line each, with the part of the document it is in: what is ticked in the paragraphs you changed. */
 export const tickWords = (doc: Doc) =>

@@ -24,8 +24,19 @@ import {
   type Job,
 } from './state'
 import { toast } from './toast'
-import { JSON_POST, load, notSaved, op, pushUndo, forget, save, sendLog, change, type OpAnswer } from './data'
-import { tickedDoc, ticksDone, ticksGoing, ticksOf, tickWords } from './doctick'
+import {
+  JSON_POST,
+  load,
+  op,
+  optimistic,
+  pushUndo,
+  forget,
+  save,
+  sendLog,
+  change,
+  type OpAnswer,
+} from './data'
+import { ticksDone, ticksGoing, ticksOf, tickWords } from './doctick'
 import { actLog } from './actlog'
 import type { Doc } from './types'
 import { setFix } from './settings'
@@ -114,7 +125,6 @@ async function sendTicks(doc: Doc) {
     note = box?.value.trim() || '',
     n = liveN(doc.n),
     sent = Object.fromEntries(ticksOf(doc).map(({ k, now }) => [k, now])),
-    md = tickedDoc(doc),
     words = tickWords(doc)
   if (byN.has(n)) {
     outboxPush({
@@ -132,20 +142,23 @@ async function sendTicks(doc: Doc) {
     if (!desk()) toast(`Choices sent to ${code(n)}`) // the desktop's box says Sent already
   }
   if (!desk()) U.docType = false // the phone: the box leaves the document again, as before you ticked
-  void saveTicks(doc.d, sent, md)
+  saveTicks(doc.d, sent)
 }
-async function saveTicks(d: number, sent: Record<string, string>, md: string) {
+// B1, B2 (T422): only the choices go, into the document as it is when they get there (an agent may have changed the
+// rest meanwhile), as a change kept in this browser until Taska has it, so a reload or a closed tab loses nothing
+function saveTicks(d: number, sent: Record<string, string>) {
   ticksGoing(d, sent) // still shown ticked; the box no longer says they wait
   render()
-  try {
-    await op({ op: 'doc', d, md })
-    ticksDone(d, sent, true)
-  } catch (ex) {
-    ticksDone(d, sent, false) // they wait again, as you ticked them
-    notSaved(ex, () => saveTicks(d, sent, md), `your choices in D${d}`)
+  const ticks = Object.entries(sent).map(([k, text]) => {
+    const [key, occ] = k.split('~')
+    return { key, occ: Number(occ) || 0, text }
+  })
+  const after = (ok: boolean) => {
+    ticksDone(d, sent, ok) // not taken: they wait again, as you ticked them
+    renderDoc()
+    bump('composer')
   }
-  renderDoc()
-  bump('composer')
+  void optimistic([], { op: 'dticks', d, ticks }, () => after(false)).then((ok) => ok && after(true))
 }
 export function outboxPush(job: Omit<Job, 'id' | 'q' | 't' | 'p'> & Partial<Job>): Job {
   const j = job as Job
