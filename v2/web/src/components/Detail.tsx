@@ -2,7 +2,7 @@
 // title, what it needs from you, description, files, documents, subitems, conversation. On the desktop it is the pane
 // beside the list (I70), which also shows a document (T110), an input (T274 #9) or the New input page (B73).
 import { useLayoutEffect, useRef, type ReactNode } from 'react'
-import { CHIP, FIELD, LETTER, NEED, PRIMARY, PRIMARY_BASE, SECOND, TYPE_TEXT } from '../lib/constants'
+import { CHIP, FIELD, NEED, PRIMARY, PRIMARY_BASE, SECOND, TYPE_TEXT } from '../lib/constants'
 import {
   CLOSED,
   D,
@@ -189,9 +189,6 @@ export const statusTone = (it: Item) =>
       : it.status === 'done'
         ? 'text-emerald-600 dark:text-emerald-400'
         : 'text-zinc-500 dark:text-zinc-400'
-export const LetterOf = ({ t }: { t: string }) => (
-  <span className={`font-mono text-xs font-bold ${TYPE_TEXT[t as 'task']}`}>{LETTER[t as 'task']}</span>
-)
 const Inline = ({ text }: { text: string }) => (
   <span
     className="min-w-0 break-words text-zinc-700 dark:text-zinc-300"
@@ -318,7 +315,6 @@ export function ItemPage({ it, left = null }: { it: Item; left?: ReactNode }) {
           title="Type · T"
           className={`${CHIP} shrink-0 text-zinc-700 dark:text-zinc-200`}
         >
-          <LetterOf t={it.type} />
           {it.type[0].toUpperCase() + it.type.slice(1)}
           {caret}
         </button>

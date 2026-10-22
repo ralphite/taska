@@ -9,7 +9,6 @@ import { useEffect, useLayoutEffect, useRef, type ReactNode } from 'react'
 import {
   FIELD,
   HIT,
-  LETTER,
   RULE_STATUS,
   STATUS,
   STATUS_FILTER,
@@ -17,7 +16,6 @@ import {
   SORTS,
   TAB_NAME,
   TABS,
-  TYPE_TEXT,
   WHEN,
   type Tab,
   AGENT_NAME,
@@ -647,12 +645,7 @@ const filtersSet = (): [string, ReactNode][] =>
       U.type !== 'all' && U.tab !== 'rules'
         ? [
             'type',
-            <>
-              <span className={`font-mono text-xs font-bold ${TYPE_TEXT[U.type as 'task']}`}>
-                {LETTER[U.type as 'task']}
-              </span>
-              {U.type[0].toUpperCase() + U.type.slice(1)}
-            </>,
+            U.type[0].toUpperCase() + U.type.slice(1), // B358: the word alone
           ]
         : null,
       U.when !== 'all' ? ['when', WHEN[U.when as 'now']] : null,

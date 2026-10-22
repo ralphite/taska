@@ -74,7 +74,7 @@ import { Armed, Cnt, Icon, ProjTile, StateIcon } from './ui'
 import { VW_STATE } from '../lib/views'
 import { FAILED } from '../lib/toast'
 import { FileRows, Rich, Talk, Thumbs } from './Talk'
-import { NeedsCard, cardMsg, LetterOf } from './Detail'
+import { NeedsCard, cardMsg } from './Detail'
 import { DocEdit, DocView } from './Doc'
 import { canUndoInput, deleteTip, filingTip, inputMenuRows } from './Inputs'
 import { footRoom, parkBox } from './Composer'
@@ -126,10 +126,7 @@ const typeOpts = (withRule: boolean): [string, ReactNode][] => [
     (t) =>
       [
         t,
-        <>
-          <LetterOf t={t} />
-          <span className="truncate">{t[0].toUpperCase() + t.slice(1)}</span>
-        </>,
+        <span className="truncate">{t[0].toUpperCase() + t.slice(1)}</span>, // B358: the word alone, no coloured letter
       ] as [string, ReactNode],
   ),
 ]
