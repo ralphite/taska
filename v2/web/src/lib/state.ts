@@ -445,8 +445,11 @@ export const liveN = (n: number) => {
   return it ? it.n : n
 }
 // The user's move: an agent asked or is blocked, proposed an item, or wants a finished item accepted.
+// B482: one test for every count of what needs you (the sidebar, the tab's title, the Needs you view, the server's):
+// an archived item is off the list, so it is off the counts too
 export const needsYou = (it: Item) =>
   !it.merged_into &&
+  !it.archived &&
   !CLOSED(it.status) &&
   (!!it.wait || ((it.status === 'proposed' || it.status === 'review') && !it.reply)) // B286
 export const statusName = (it: Item) =>
@@ -478,7 +481,7 @@ export const inTab = (it: Item, t: string) =>
     ? it.type === 'rule' && !it.archived
     : t === 'archive'
       ? it.archived
-      : !it.archived && (it.type !== 'rule' || it.status === 'proposed')
+      : !it.archived && (it.type !== 'rule' || it.status === 'proposed' || needsYou(it)) // B482: a rule that waits on you too
 export const tabOf = (it: Item): Tab => (it.archived ? 'archive' : it.type === 'rule' ? 'rules' : 'items')
 export const inQueue = (it: Item) =>
   !it.merged_into && !it.archived && it.type !== 'rule' && !needsYou(it) && !CLOSED(it.status)
@@ -567,7 +570,7 @@ export function visible(tab: string = U.tab) {
   const okTab = (it: Item) =>
     tab === 'rules'
       ? it.type === 'rule' && !it.archived
-      : tab === 'archive' || it.type !== 'rule' || (it.status === 'proposed' && !it.archived)
+      : tab === 'archive' || it.type !== 'rule' || (it.status === 'proposed' && !it.archived) || needsYou(it)
   const okStatus = (it: Item) =>
     tab === 'rules'
       ? U.status === 'all' || it.status === U.status

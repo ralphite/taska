@@ -298,10 +298,12 @@ class Hub:
         for name, s in sorted(self.projects.items()):
             with s.lock:
                 live = [i for i in s.active() if i["status"] not in CLOSED]
+                # B482: what needs you, as the page counts it everywhere: archived is not on the page's list, so not here
+                needs = {i["n"] for i in live if not i["archived"] and (s.waiting(i) or (i["status"] in ("proposed", "review") and not s.talked(i)))}
                 # "open" as the project's own page counts it (A18): what Items holds that isn't finished, rules an agent
-                # proposed included, since they wait in Items too
-                out.append({"name": name, "title": s.title, "open": sum(1 for i in live if not i["archived"] and (i["type"] != "rule" or i["status"] == "proposed")), "auto": s.cfg["auto"],
-                            "needs": sum(1 for i in live if not i["archived"] and (s.waiting(i) or (i["status"] in ("proposed", "review") and not s.talked(i)))), **s.presence(),  # archived: not on the page's list either
+                # proposed or that wait on you included, since they are in Items too
+                out.append({"name": name, "title": s.title, "open": sum(1 for i in live if not i["archived"] and (i["type"] != "rule" or i["status"] == "proposed" or i["n"] in needs)), "auto": s.cfg["auto"],
+                            "needs": len(needs), **s.presence(),
                             "t": int(s.mtime() * 1000), **({"pos": self.order.index(name)} if name in self.order else {})})
         return out
 

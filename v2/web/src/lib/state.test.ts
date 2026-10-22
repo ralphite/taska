@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { U, byN, code, inQueue, needsYou, parseRef, queueHead, visible } from './state'
+import { U, byN, code, inQueue, needsYou, parseRef, queueHead, sideProjects, visible } from './state'
 import { ask, item, load } from '../test/fixture'
 import type { Wait } from './types'
 
@@ -15,6 +15,27 @@ describe('what needs you, and the queue', () => {
     ])
     const by = (n: number) => byN.get(n)!
     expect([1, 2, 3, 4, 5, 6].filter((n) => needsYou(by(n)))).toEqual([1, 2, 3])
+  })
+  it('every count of what needs you is the same number: the sidebar, the Needs you view, the list (B482)', () => {
+    load([
+      item(1, { wait: ask(1, 'Which one?') as unknown as Wait }),
+      item(2, { status: 'proposed' }),
+      item(3, { status: 'review' }),
+      item(4, { wait: ask(4, 'Archived while it asks') as unknown as Wait, archived: true }), // off the list: off the counts
+      item(5, { type: 'rule', wait: ask(5, 'A rule asks') as unknown as Wait }), // waits on you: in Items too
+      item(6, { type: 'rule', status: 'proposed' }),
+      item(7, { status: 'review', reply: true }),
+      item(8, { status: 'done', wait: ask(8, 'old') as unknown as Wait }),
+      item(9, { when: 'later', status: 'proposed' }),
+    ])
+    const was = U.status
+    U.status = 'wait'
+    const view = visible('items').map((it) => it.n)
+    U.status = was
+    expect(view).toEqual(expect.arrayContaining([1, 2, 3, 5, 6, 9]))
+    expect(view.length).toBe(6)
+    expect(sideProjects().find((p) => p.name === 'demo')?.needs).toBe(view.length)
+    expect([...byN.values()].filter(needsYou).length).toBe(view.length)
   })
   it('the queue takes now before later, then priority, then age', () => {
     load([
