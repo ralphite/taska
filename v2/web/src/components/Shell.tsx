@@ -26,6 +26,7 @@ import {
   OV,
   U,
   agentState,
+  agoShort,
   bump,
   ctx,
   desk,
@@ -114,23 +115,22 @@ export function agentLine() {
   const ready = tone === 'ok' && (S.agents || []).some((a) => a.waiting),
     kind = tone === 'ok' ? (ready ? 'ready' : 'recent') : tone
   const off = model.offline >= 2
-  // F411, B429: pointing at it names the agent sessions, by the titles their apps show, the latest first; the pill
-  // itself says who and when
-  const named = (S.agents || [])
-      .flatMap((a) =>
-        (a.sessions?.length ? a.sessions : a.session ? [{ name: a.session, t: a.t }] : []).map((x) => ({
-          ...x,
-          by: a.name,
-        })),
-      )
-      .sort((a, b) => b.t - a.t),
-    many = new Set(named.map((a) => a.by)).size > 1
+  // F411, B429: pointing at it says, one line each and the latest first, which agent, which session (the title its
+  // app shows) and when it was last here, and which one waits for work now
+  const lines = (S.agents || [])
+    .flatMap((a) =>
+      (a.sessions?.length ? a.sessions : [{ name: a.session || '', t: a.t }]).map((x, i) => ({
+        t: x.t,
+        text: [AGENT_NAME[a.name] || a.name, x.name, agoShort(x.t), a.waiting && i === 0 ? 'waiting for work' : '']
+          .filter(Boolean)
+          .join(' · '),
+      })),
+    )
+    .sort((a, b) => b.t - a.t)
   return {
     kind,
     label,
-    title: off
-      ? undefined
-      : named.map((a) => (many ? `${AGENT_NAME[a.by] || a.by}: ` : '') + a.name).join('\n') || undefined,
+    title: off ? undefined : lines.map((l) => l.text).join('\n') || undefined,
     off,
   }
 }
