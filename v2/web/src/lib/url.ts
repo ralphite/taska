@@ -104,18 +104,7 @@ export function writeURL(push = false, state?: unknown) {
     if (push && url !== now) history.pushState(state ?? { v: viewPath(), ...searchStep() }, '', url)
     else if (url !== now || state !== undefined)
       history.replaceState(state === undefined ? history.state : state, '', url)
-    lastPlace(ctx.P, url)
   })
-}
-// T438 #8 (B20): where you were in each project, so coming back to it from the sidebar goes there again
-export function lastPlace(p: string, set?: string): string | null {
-  try {
-    if (set === undefined) return sessionStorage.getItem('taska.last.' + p)
-    sessionStorage.setItem('taska.last.' + p, set)
-  } catch {
-    /* no storage */
-  }
-  return null
 }
 // A view you leave by Esc or x: if it was a step in the history, step back; otherwise just rewrite the address.
 export function leaveView(v: string) {

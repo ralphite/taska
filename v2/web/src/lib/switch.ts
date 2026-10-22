@@ -9,7 +9,7 @@ import { EMPTY_STATE, R_STATE, U, byN, byR, kids, model, render, resetPageState,
 import { DV } from './voice'
 import { P_CACHE } from './settings'
 import { noticeFresh } from './notices'
-import { keepPlace, lastPlace, restorePlace } from './url'
+import { keepPlace, restorePlace } from './url'
 
 /** Which page shows: the home page or a project; `booted` once a project's page has started in this page. */
 export const PAGE = { home: !/^\/p\/[^/]+/.test(location.pathname), booted: false }
@@ -45,13 +45,8 @@ export function goTo(url: string, how: 'push' | 'replace' | 'pop' = 'push'): boo
     return true
   }
   const popTop: unknown = how === 'pop' ? history.state?.top : undefined // T438 #8 (A14): where the list was
-  let to = u.pathname + u.search + u.hash
+  const to = u.pathname + u.search + u.hash
   if (name && name !== ctx.HERE && !PAGE.home) keepPlace() // T438 #8 (A14): Back finds the list where it was
-  // T438 #8 (B20): to a project from the sidebar (its plain address): where you were in it last
-  if (name && how === 'push' && u.pathname === '/p/' + encodeURIComponent(name) + '/' && !u.search) {
-    const last = lastPlace('/p/' + encodeURIComponent(name) + '/')
-    if (last) to = last
-  }
   if (how === 'push') history.pushState(null, '', to)
   else if (how === 'replace') history.replaceState(null, '', to)
   if (home) {
