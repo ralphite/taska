@@ -281,7 +281,7 @@
      },
      "code": "B1",
      "wait": null,
-     "reply": false,
+     "reply": true,
      "read": {
       "agent": "<ms>"
      }

@@ -765,6 +765,8 @@ class Store:
         """For the page (T438 #13): replied, counting a comment on one of its documents as talking on the item too, the
         user's or an agent's, in time with its messages (agents keep their own answers: replied above)."""
         said: List[Tuple[str, int, bool]] = []  # (when, order, the user's)
+        if it.get("by") not in (None, "you") and it.get("t0"):  # B471: an agent making the item is its first word
+            said.append((it["t0"], -1, False))
         for i, x in enumerate(it["thread"]):
             if user_word(x) or x["by"] != "org":  # the organizer's own notes are neither side's word
                 said.append((x["t"], i, user_word(x)))

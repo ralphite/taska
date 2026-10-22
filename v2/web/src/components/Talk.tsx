@@ -1,7 +1,18 @@
 // A conversation on an item: your words on the right in blue, an agent's on the left in a card under its name, the
 // organizer's notes, documents' comments in time (T274 #4), files and voice notes. The same on the item page and the card.
 import type { ReactNode } from 'react'
-import { DC_BTN, DONE_PICK, HIT, KIND, MODIFY_LINK, NEED, NEEDS_CARD, PRIMARY_BASE, SECOND } from '../lib/constants'
+import {
+  DC_BTN,
+  DONE_OTHER,
+  DONE_PICK,
+  HIT,
+  KIND,
+  MODIFY_LINK,
+  NEED,
+  NEEDS_CARD,
+  PRIMARY_BASE,
+  SECOND,
+} from '../lib/constants'
 import {
   U,
   answerOf,
@@ -481,7 +492,7 @@ function Answered({ x, gid, done }: { x: Msg; gid: string; done: string[] }) {
       done
       act={
         <button data-act="ask-modify" data-id={x.id} data-n={n} className={MODIFY_LINK}>
-          Modify
+          {done.length ? 'Modify' : 'Answer'}
         </button>
       }
       body={<Rich text={x.text} gid={gid + 'q' + x.id} cls="text-zinc-600 dark:text-zinc-300" done={done} />}
@@ -489,9 +500,9 @@ function Answered({ x, gid, done }: { x: Msg; gid: string; done: string[] }) {
         <>
           {/* F428, R369 review: the buttons stay where they were; Send answer is now the grey Submitted */}
           {it && answeredLast(it) && lastAgentMsg(it)?.id === x.id ? <KeepBtn it={it} /> : null}
-          <span className={`${DONE_PICK} flex-[1.4] font-semibold lg:flex-none`}>
-            <Icon n="check" c="size-4" sw="2.25" />
-            Submitted
+          <span className={`${done.length ? DONE_PICK : DONE_OTHER} flex-[1.4] font-semibold lg:flex-none`}>
+            <Icon n={done.length ? 'check' : 'reply'} c="size-4" sw="2.25" />
+            {done.length ? 'Submitted' : 'Skipped · you replied'}
             <span className="invisible">
               <Kbd k="⌘↵" />
             </span>
@@ -751,7 +762,8 @@ export function MsgView({
       </button>
     ) // T257 #12
   // F428 (P0): an answered question is its own card, the one it was asked in, not a message under a header
-  if (!form && done?.length && hasChoices(x.text) && x.kind === 'ask') return <Answered x={x} gid={gid} done={done} />
+  // B471: answered by writing, nothing picked: the same card, Skipped
+  if (!form && done && hasChoices(x.text) && x.kind === 'ask') return <Answered x={x} gid={gid} done={done} />
   const card = form
     ? 'space-y-2.5 border-amber-200 bg-amber-50 p-3 text-zinc-900 dark:border-amber-400/25 dark:bg-amber-400/7 dark:text-zinc-100'
     : 'border-zinc-200 bg-zinc-50 px-4 py-3 text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200'

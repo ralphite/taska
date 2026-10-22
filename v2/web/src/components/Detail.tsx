@@ -37,6 +37,7 @@ import {
   statusName,
   useArea,
   msgName,
+  userWord,
   detailShown,
   type Go,
 } from '../lib/state'
@@ -209,12 +210,21 @@ export function NeedsCard({ it, onCard = false }: { it: Item; onCard?: boolean }
     )
   }
   if (answeredLast(it)) return null // F428: the answered question's card holds Approve / Accept, where it was
-  if (it.reply && (it.status === 'proposed' || it.status === 'review'))
-    return (
-      <div className="flex justify-end">
+  // B471: you wrote instead of deciding: the card stays, Skipped, and Approve or Accept is still one tap (B299)
+  const said = it.thread.at(-1)
+  if ((it.status === 'proposed' || it.status === 'review') && (it.reply || (said && userWord(said))))
+    return card(
+      it.status === 'proposed' ? 'propose' : 'done',
+      `${name} ${it.status === 'proposed' ? 'proposed this' : 'finished this'}`,
+      m && !it.reply ? <MsgText x={m} gid={'card' + n} whole /> : null,
+      <>
+        <span className={`${DONE_OTHER} flex-1 font-semibold lg:flex-none`}>
+          <Icon n="reply" c="size-4" sw="2.25" />
+          Skipped · you replied
+        </span>
         <KeepBtn it={it} />
-      </div>
-    ) // B286, B299; T365 #12: that you replied shows at the top already
+      </>,
+    )
   if (it.status === 'proposed')
     return card(
       'propose',
