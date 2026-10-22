@@ -33,7 +33,10 @@ while true; do
     if [ -s $DIR/.started-$p ]; then
       for row in ${(f)now}; do
         c=${row%% *} was=$(grep "^$c " $STATE)
-        [ "${row##* }" = "<" ] && [ "${was##* }" != "<" ] && echo "[$p] REPLIED $c: $(echo "$items" | grep -w "^$c" | cut -c1-140)"
+        if [ "${row##* }" = "<" ] && [ "${was##* }" != "<" ]; then  # told once per reply: a row that leaves and comes back is not news
+          h="$p REPLIED $c $(curl -s --max-time 20 "$B/$c" | grep -oE '^#[0-9]+ [0-9-]+ [0-9:]+ you' | tail -1 | cut -d' ' -f1)"
+          grep -qxF "$h" $TOLD || { echo "$h" >> $TOLD; echo "[$p] REPLIED $c: $(echo "$items" | grep -w "^$c" | cut -c1-140)"; }
+        fi
         echo "$was" | grep -q " proposed " && ! echo "$row" | grep -q " proposed " && echo "[$p] APPROVED $c: $(echo "$items" | grep -w "^$c" | cut -c1-140)"
       done
     fi
