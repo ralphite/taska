@@ -129,38 +129,43 @@ function HitLine({ it, shown = '' }: { it: Item; shown?: string }) {
     </p>
   ) : null
 }
-// B290: icons only, in the row
+// B290: icons only, in the row. T438 #3: over the end of the title (in the row's own colour), so the title does not
+// shrink under the pointer, and each in its own place, the same on every row (an empty place stays empty)
 function RowActs({ it, needs = false }: { it: Item; needs?: boolean }) {
-  const acts = deskSlots(it, needs).filter(Boolean) as [string, string, string][]
+  const acts = deskSlots(it, needs)
   return (
-    <div className="hidden shrink-0 items-center gap-0.5 self-center lg:group-hover:flex">
-      {acts.map(([f, v, label]) =>
-        f === 'reopen' ? (
-          <button
-            key={label}
-            data-act="reopen"
-            data-n={it.n}
-            title="Not yet · N"
-            aria-label="Not yet"
-            className="grid size-8 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-200/70 dark:text-zinc-400 dark:hover:bg-zinc-800"
-          >
-            <Icon n="reopen" c="size-[18px]" />
-          </button>
-        ) : (
-          <button
-            key={label}
-            data-act="swipe"
-            data-n={it.n}
-            data-f={f}
-            data-v={v}
-            title={`${label}${ACT_KEY[label] ? ' · ' + ACT_KEY[label] : ''}`}
-            aria-label={label}
-            className={`grid size-8 place-items-center rounded-lg hover:bg-zinc-200/70 dark:hover:bg-zinc-800 ${ACT_TONE[label] || 'text-zinc-500 dark:text-zinc-400'}`}
-          >
-            <Icon n={ACT_ICON[label]} c="size-[18px]" />
-          </button>
-        ),
-      )}
+    <div className="relative hidden shrink-0 self-stretch bg-inherit lg:block">
+      <div className="absolute inset-y-0 right-0 hidden items-center gap-0.5 bg-inherit pl-2 group-hover:flex">
+        {acts.map((a, i) =>
+          !a ? (
+            <span key={'gap' + i} className="size-8" />
+          ) : a[0] === 'reopen' ? (
+            <button
+              key={a[2]}
+              data-act="reopen"
+              data-n={it.n}
+              title="Not yet · N"
+              aria-label="Not yet"
+              className="grid size-8 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-200/70 dark:text-zinc-400 dark:hover:bg-zinc-800"
+            >
+              <Icon n="reopen" c="size-[18px]" />
+            </button>
+          ) : (
+            <button
+              key={a[2]}
+              data-act="swipe"
+              data-n={it.n}
+              data-f={a[0]}
+              data-v={a[1]}
+              title={`${a[2]}${ACT_KEY[a[2]] ? ' · ' + ACT_KEY[a[2]] : ''}`}
+              aria-label={a[2]}
+              className={`grid size-8 place-items-center rounded-lg hover:bg-zinc-200/70 dark:hover:bg-zinc-800 ${ACT_TONE[a[2]] || 'text-zinc-500 dark:text-zinc-400'}`}
+            >
+              <Icon n={ACT_ICON[a[2]]} c="size-[18px]" />
+            </button>
+          ),
+        )}
+      </div>
     </div>
   )
 }
@@ -226,15 +231,6 @@ function HeldRow({ it, said }: { it: Item; said: string }) {
           <span className={`mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[it.type]}`}>{code(it.n)}</span>
           {said}
         </span>
-        {desk() ? (
-          <button
-            data-act="settle-undo"
-            data-n={it.n}
-            className="h-8 shrink-0 rounded-lg px-2.5 text-[13px] font-semibold text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10"
-          >
-            Undo
-          </button>
-        ) : null}
       </div>
     </article>
   )
@@ -254,8 +250,11 @@ export function ItemRow({
   band?: string
 }) {
   useArea('list') // drawn again while the list holds still, to show the line of the one you acted on (B124)
+  it = byN.get(it.n) || it // T438 #3: while the list holds still, its rows show the items as they are now
   const held = U.settle.get(it.n)
-  if (held) return <HeldRow it={byN.get(it.n) || it} said={held.said} />
+  // T438 #3 (B8): a row you acted on that still belongs here is drawn as it is now, where it was; only one that left
+  // the list stays as a quiet line saying what you did
+  if (held && !visible().some((x) => x.n === it.n)) return <HeldRow it={byN.get(it.n) || it} said={held.said} />
   LIST_SETTLED.delete(it.n)
   const c = code(it.n),
     files = filesOf(it),
@@ -376,8 +375,12 @@ const PAD = ['pl-4', 'pl-10', 'pl-16', 'pl-22', 'pl-28', 'pl-34', 'pl-40', 'pl-4
 // A row that waits on you: an amber bar, what the agent said in one line, and the one action on the thumb side.
 export function NeedsRow({ it, depth = 0 }: { it: Item; depth?: number }) {
   useArea('list') // drawn again while the list holds still, to show the line of the one you acted on (B124)
+  it = byN.get(it.n) || it // T438 #3: while the list holds still, its rows show the items as they are now
   const held = U.settle.get(it.n)
-  if (held) return <HeldRow it={byN.get(it.n) || it} said={held.said} />
+  // T438 #3 (B8): a row you acted on that still belongs here is drawn as it is now, where it was; only one that left
+  // the list stays as a quiet line saying what you did
+  if (held && !visible().some((x) => x.n === it.n)) return <HeldRow it={byN.get(it.n) || it} said={held.said} />
+  if (!needsYou(it)) return <ItemRow it={it} depth={depth} /> // T438 #3: no longer waiting on you: an ordinary row, where it was
   const [v, label] = rowAction(it)
   const ex = excerpt(it)
   const top = (

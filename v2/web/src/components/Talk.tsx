@@ -261,10 +261,12 @@ export function NeedFrame({
   foot,
   hint = '',
   going = '',
+  act = null,
 }: {
   icon: string
   title: string
   going?: string
+  act?: ReactNode
   t?: string
   done?: boolean
   body: ReactNode
@@ -285,12 +287,15 @@ export function NeedFrame({
         >
           {title}
         </p>
+        {
+          act /* T438 #3: Modify sits up here, so the two buttons below keep their place (on the phone, where the time was) */
+        }
         {going ? (
           // T438 #1: an answer on its way says so where the time goes, until Taska has it
           <span className="animate-pulse text-xs text-blue-600 dark:text-blue-400">{going}</span>
         ) : t ? (
           <span
-            className={`text-xs ${done ? 'text-zinc-400 dark:text-zinc-500' : 'text-amber-700/80 dark:text-amber-300/70'}`}
+            className={`text-xs ${act ? 'hidden lg:inline' : ''} ${done ? 'text-zinc-400 dark:text-zinc-500' : 'text-amber-700/80 dark:text-amber-300/70'}`}
           >
             {when(t)}
           </span>
@@ -458,17 +463,22 @@ function Answered({ x, gid, done }: { x: Msg; gid: string; done: string[] }) {
       t={x.t}
       going={g ? outboxState(g) : ''}
       done
+      act={
+        <button data-act="ask-modify" data-id={x.id} data-n={n} className={MODIFY_LINK}>
+          Modify
+        </button>
+      }
       body={<Rich text={x.text} gid={gid + 'q' + x.id} cls="text-zinc-600 dark:text-zinc-300" done={done} />}
       foot={
         <>
           {/* F428, R369 review: the buttons stay where they were; Send answer is now the grey Submitted */}
-          <button data-act="ask-modify" data-id={x.id} data-n={n} className={MODIFY_LINK}>
-            Modify
-          </button>
           {it && answeredLast(it) && lastAgentMsg(it)?.id === x.id ? <KeepBtn it={it} /> : null}
-          <span className={`${DONE_PICK} flex-[1.4] lg:flex-none`}>
+          <span className={`${DONE_PICK} flex-[1.4] font-semibold lg:flex-none`}>
             <Icon n="check" c="size-4" sw="2.25" />
             Submitted
+            <span className="invisible">
+              <Kbd k="⌘↵" />
+            </span>
           </span>
         </>
       }

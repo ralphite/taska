@@ -52,18 +52,20 @@ export const BTN =
   'rounded-lg px-2.5 py-2.5 sm:py-1.5 text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800'
 export const LINK_BTN = `${HIT} flex h-8 items-center gap-1 rounded-lg px-2 text-[13px] font-semibold text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10`
 export const PRIMARY_BASE =
-  'inline-flex h-11 items-center justify-center gap-1.5 rounded-xl px-4 text-[15px] font-semibold'
+  'inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-transparent px-4 text-[15px] font-semibold' // T438 #3: the same box as SECOND, so a decided card's buttons keep their size
 export const PRIMARY =
   PRIMARY_BASE + ' bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200'
 export const SECOND =
   'inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-4 text-[15px] font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700'
-// F428: a button of a card you already answered, kept where it was: the one you chose ticked, the other quieter
+// F428: a button of a card you already answered, kept where it was: the one you chose ticked, the other quieter.
+// T438 #3: no weight of its own: it keeps the weight of the button it was (font-medium or font-semibold), so its size too
+const DONE_BASE =
+  'pointer-events-none inline-flex h-11 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border px-4 text-[15px]'
 export const DONE_PICK =
-  PRIMARY_BASE + ' pointer-events-none whitespace-nowrap bg-zinc-200 text-zinc-700 dark:bg-zinc-700/70 dark:text-zinc-200'
-export const DONE_OTHER =
-  'inline-flex h-11 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-zinc-200 px-4 text-[15px] font-medium text-zinc-400 pointer-events-none dark:border-zinc-800 dark:text-zinc-500'
+  DONE_BASE + ' border-transparent bg-zinc-200 text-zinc-700 dark:bg-zinc-700/70 dark:text-zinc-200'
+export const DONE_OTHER = DONE_BASE + ' border-zinc-200 text-zinc-400 dark:border-zinc-800 dark:text-zinc-500'
 export const MODIFY_LINK =
-  'mr-auto h-9 rounded-lg lg:mr-0 px-2.5 text-sm font-semibold text-blue-600 hover:bg-blue-50 lg:opacity-0 lg:group-hover/form:opacity-100 lg:focus-visible:opacity-100 dark:text-blue-400 dark:hover:bg-blue-400/10'
+  '-my-2 h-9 shrink-0 rounded-lg px-2.5 text-sm font-semibold text-blue-600 hover:bg-blue-50 lg:opacity-0 lg:group-hover/form:opacity-100 lg:focus-visible:opacity-100 dark:text-blue-400 dark:hover:bg-blue-400/10'
 export const CHIP = `${HIT} flex h-8 items-center gap-1.5 rounded-lg bg-zinc-100 px-2.5 text-[13px] hover:bg-zinc-200/70 dark:bg-zinc-800/80 dark:hover:bg-zinc-700/80`
 export const NEEDS_CARD = 'rounded-2xl border border-amber-200 bg-amber-50 dark:border-amber-400/25 dark:bg-amber-400/7'
 export const FIELD =
@@ -124,7 +126,7 @@ export const NEED = {
 } as const
 export type NeedKind = keyof typeof NEED
 export const ACTION_PILL = (v: NeedKind) =>
-  `inline-flex h-8 min-w-18 items-center justify-center gap-1 rounded-full pr-3 pl-2.5 text-[13px] font-semibold ring-1 ring-inset ${NEED[v].pill}`
+  `inline-flex h-8 w-24 items-center justify-center gap-1 rounded-full pr-3 pl-2.5 text-[13px] font-semibold ring-1 ring-inset ${NEED[v].pill}` // T438 #3: one width, so the row's other buttons sit at the same place on every row
 
 export const ACT_KEY: Record<string, string> = {
   Done: 'D',

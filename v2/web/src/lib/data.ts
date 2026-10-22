@@ -30,7 +30,7 @@ import type { Item, ProjectRow, State } from './types'
 import { mergeDrafts, draftStore, goDraft } from './drafts'
 import { fixURL, writeURL } from './url'
 import { noticeItems, noticeProjects } from './notices'
-import { holdRow } from './listhold'
+import { holdRow, settleMoved } from './listhold'
 import { noteWith, resendOutbox } from './outbox'
 import { advanceDesk } from './go'
 import { closeItem } from './nav'
@@ -407,6 +407,7 @@ export function ingest(d: State, first = false) {
   for (const r of d.inputs) byR.set(r.id, r)
   for (const p of SAVE.pend) patch(p)
   answersGoing()
+  settleMoved((n) => byN.get(n) as Record<string, unknown> | undefined)
   linkKids()
   followCodes()
   const was = U.open && byN.get(U.open)?.merged_into ? U.open : null
@@ -795,6 +796,12 @@ export function change(
   // eslint-disable-next-line prefer-const -- the Undo below refers to it before it is made
   let run: (() => Promise<unknown>) & { entry?: UndoEntry }
   const undo = () => {
+    // T438 #3 (A1): someone moved it on since (an agent took it further): Undo does not take their work back
+    const now = byN.get(n)
+    if (job.saved && now && JSON.stringify(now[f as keyof Item]) !== JSON.stringify(v)) {
+      toast(`${ref} changed since: nothing put back`)
+      return Promise.resolve(false)
+    }
     job.undone = true
     U.settle.delete(n) // T241: the row shows the item again, not the line saying what was done
     if (U.go) {
@@ -826,13 +833,13 @@ export function change(
     U.go.how[n] = words.replace(/^is (marked )?/, '').replace(/^./, (c) => c.toUpperCase())
     U.go.undo[n] = run
   }
-  if (!settles && (n !== U.open || desk())) holdRow(n, `${words.replace(/^./, (c) => c.toUpperCase())}`, run) // the row you acted on holds still (B148)
+  if (!settles && (n !== U.open || desk())) holdRow(n, `${words.replace(/^./, (c) => c.toUpperCase())}`, run, f, v) // the row you acted on holds still (B148)
   const left = f === 'status' && v === 'done' ? openKids(n) : 0 // done before its subitems: say so (B147)
   const noted = f === 'status' && noteWith(n) // B4: what you wrote for it goes with your decision
-  const inPlace = desk() && !!document.querySelector(`#list article[data-n="${n}"]`)
+  // T438 #3: Undo is in the toast, always: never on the row, where a second click would undo what the first did
   toast(
     `${ref} ${words}${noted ? ', with your note' : ''}${left ? ` · ${plural(left, 'subitem')} still open` : ''}${note && !noted ? `. ${note}.` : ''}`,
-    inPlace ? null : run,
+    run,
   )
   const saved = optimistic([{ n, f: { [f]: v } }], { op: 'set', ref, f: { [f]: wire(f, v) } }, (ex) => {
     // taken back

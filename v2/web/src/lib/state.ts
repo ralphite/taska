@@ -94,7 +94,16 @@ export const render = () => {
 // T318 (B269, r309): on the desktop, Items with nothing open is the New input page, as clicking New input shows it;
 // T438 #2 (B19): Archive and Rules too, so a new input is always written in the same box at the same place
 function idleCompose() {
-  if (desk() && ['items', 'archive', 'rules'].includes(U.tab) && !U.side && !U.open && !U.doc && !D.page && !D.compose && U.editing == null)
+  if (
+    desk() &&
+    ['items', 'archive', 'rules'].includes(U.tab) &&
+    !U.side &&
+    !U.open &&
+    !U.doc &&
+    !D.page &&
+    !D.compose &&
+    U.editing == null
+  )
     D.compose = true
 }
 
@@ -253,7 +262,7 @@ export const U = {
   lastSent: null as string | null,
   more: new Set<number>(),
   tabOpen: {} as Record<string, number | null>,
-  settle: new Map<number, { said: string; undo: () => unknown }>(),
+  settle: new Map<number, { said: string; undo: () => unknown; f?: string; v?: unknown }>(),
   tabTop: {} as Record<string, number>,
   stepFrom: null as null | { n: number; rows: number[] },
   mine: [] as UndoEntry[],

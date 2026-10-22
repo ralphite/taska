@@ -116,29 +116,35 @@ export function NeedsCard({ it, onCard = false }: { it: Item; onCard?: boolean }
         title={`${whoName(x?.by || 'agent')} ${dec.from === 'proposed' ? 'proposed this' : 'finished this'}`}
         t={x?.t}
         done
+        act={
+          <button data-act="decided-modify" data-n={n} className={MODIFY_LINK}>
+            Modify
+          </button>
+        }
         body={x ? <MsgText x={x} gid={'dec' + n} whole /> : null}
         foot={
-          // F428, R369 review: the two buttons stay where they were, yours ticked and the other quieter
+          // F428, R369 review: the two buttons stay where they were, yours ticked and the other quieter; T438 #3: the
+          // same size too (the key's room is kept), and nothing takes their place
           <>
-            <button data-act="decided-modify" data-n={n} className={MODIFY_LINK}>
-              Modify
-            </button>
             {(dec.from === 'proposed'
               ? [
-                  ['dropped', 'ban', "Won't do"],
-                  ['open', 'thumb', 'Approve'],
+                  ['dropped', 'ban', "Won't do", 'W'],
+                  ['open', 'thumb', 'Approve', 'A'],
                 ]
               : [
-                  ['doing', 'reopen', 'Not yet'],
-                  ['done', 'check', 'Accept'],
+                  ['doing', 'reopen', 'Not yet', 'N'],
+                  ['done', 'check', 'Accept', 'A'],
                 ]
-            ).map(([v, icon, label], i) => (
+            ).map(([v, icon, label, k], i) => (
               <span
                 key={v}
-                className={`${dec.to === v || (v === 'open' && dec.to === 'doing' && dec.from === 'proposed') ? DONE_PICK : DONE_OTHER} ${i ? 'flex-[1.4]' : 'flex-1'} lg:flex-none`}
+                className={`${dec.to === v || (v === 'open' && dec.to === 'doing' && dec.from === 'proposed') ? DONE_PICK : DONE_OTHER} ${i ? 'flex-[1.4] font-semibold' : 'flex-1 font-medium'} lg:flex-none`}
               >
-                <Icon n={dec.to === v ? 'check' : icon} c="size-4" sw="2.25" />
+                <Icon n={dec.to === v ? 'check' : icon} c={i ? 'size-4.5' : 'size-4'} sw="2.25" />
                 {label}
+                <span className="invisible">
+                  <Kbd k={k} />
+                </span>
               </span>
             ))}
           </>

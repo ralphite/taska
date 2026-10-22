@@ -253,12 +253,6 @@ export const ACT: Record<string, Handler> = {
     change(n, 'status', d.v)
     if (U.peek === n) advance(n) // the next card, or the card of one item closes (B153)
   },
-  'settle-undo': (d) => {
-    const s = U.settle.get(N(d))
-    U.settle.clear()
-    void s?.undo()
-    bump('list')
-  },
   'row-act': (d) => {
     // Accept and Approve happen at once (with Undo); Answer and Reply open the item (desktop) or its card (phone)
     const n = N(d),
@@ -828,7 +822,8 @@ export const ACT: Record<string, Handler> = {
       t = it?.archived ? 'archive' : it?.type === 'rule' ? 'rules' : 'items'
     if (desk()) {
       D.page = null
-      if (U.tab !== t && !U.side) setTab(t) // B435: from the Documents list, the list stays; the pane shows it
+      if (U.tab !== t && !U.side)
+        setTab(t) // B435: from the Documents list, the list stays; the pane shows it
       else render()
     }
     openDoc(dn)
