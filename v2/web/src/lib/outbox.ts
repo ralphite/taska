@@ -24,7 +24,7 @@ import {
   type Job,
   answerOf,
 } from './state'
-import { toast } from './toast'
+import { FAILED, dropFailed, toast } from './toast'
 import {
   load,
   instant,
@@ -544,17 +544,56 @@ export async function sendAmend() {
   const files = drafts
     .filter((f) => f.f && !f.failed)
     .map((f) => ({ f: f.f, name: f.name, mime: f.mime, size: f.size, tr: f.tr }))
+  const said = saidOp({ op: 'amend', id: a.id, mode: a.mode })
+  let refused = false
   const ok = await optimistic([], { op: 'amend', id: a.id, mode: a.mode, v: a.v, text, files }, (ex) => {
-    putBack(() => (U.amend = a), text, drafts)
-    notSaved(ex, undefined, saidOp({ op: 'amend', id: a.id, mode: a.mode }))
+    if (!(ex as { net?: boolean })?.net) refused = true
+    else {
+      putBack(() => (U.amend = a), text, drafts)
+      notSaved(ex, undefined, said)
+    }
   })
   gone()
-  if (ok)
+  if (refused && (await editedElsewhere(a, text, files, said, drafts))) return render()
+  if (ok) {
     for (const f of drafts) {
       f.sent = true
       dropRec(f)
     }
+    for (const f of FAILED.filter((x) => x.what === said)) dropFailed(f.id) // T438 #7: saved now: the red line about it goes
+  }
   render()
+}
+// T438 #7 (B4): your edit was refused because the input changed in another window (another tab added to it, its voice
+// note's words came): when that change only added words after the ones you began from, they go on after yours and it
+// is saved; otherwise your words come back in the box with what it says now, and Save puts yours in its place
+async function editedElsewhere(
+  a: { id: string; mode: 'edit' | 'append'; v: number; base?: string },
+  text: string,
+  files: { f?: string; name: string; mime: string; size?: number; tr?: string }[],
+  said: string,
+  drafts: DraftFile[],
+) {
+  await load()
+  const r = byR.get(a.id)
+  if (!r) return false
+  const wrong = FAILED.filter((x) => x.what === said).at(-1)
+  if (a.mode === 'edit' && a.base != null && r.text !== a.base && r.text.startsWith(a.base)) {
+    if (wrong) dropFailed(wrong.id)
+    const merged = text + r.text.slice(a.base.length)
+    const ok = await optimistic([], { op: 'amend', id: a.id, mode: 'edit', v: r.v || 0, text: merged, files }, () => {
+      putBack(() => (U.amend = { ...a, v: r.v || 0, base: r.text }), text, drafts)
+    })
+    if (ok) toast(`${rcode(a.id)} updated, with what was added to it in another window`)
+    return true
+  }
+  if (wrong) dropFailed(wrong.id)
+  putBack(() => (U.amend = { ...a, v: r.v || 0, base: r.text }), text, drafts)
+  toast(`${rcode(a.id)} changed in another window. Your words are in the box: Save puts them in its place`, null, {
+    error: true,
+    sticky: true,
+  }) // the box's line shows what it says now
+  return true
 }
 export async function sendCorrect() {
   const c = U.correct,

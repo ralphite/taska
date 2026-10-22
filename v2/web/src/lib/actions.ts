@@ -131,18 +131,50 @@ export const reply = () => {
   els.text?.focus()
 }
 // Edit or add details to an input you sent (B136): the one input box does it.
+// T438 #7: the words an input had when you began an edit of it (kept with the draft, in this browser)
+function editBase(key: string, set?: string): string | null {
+  try {
+    const k = 'taska.editbase.' + model.S.project,
+      all = JSON.parse(localStorage.getItem(k) || '{}') as Record<string, string>
+    if (set === undefined) return all[key] ?? null
+    all[key] = set
+    localStorage.setItem(k, JSON.stringify(all))
+  } catch {
+    /* no storage */
+  }
+  return null
+}
 export function editInput(id: string, mode: 'edit' | 'append') {
   const r = byR.get(id)
   if (!r || r.moved) return
-  U.amend = { id, mode, v: r.v || 0 }
+  U.amend = { id, mode, v: r.v || 0, base: r.text }
   render()
   const t = els.text
   if (!t) return
+  const key = `${mode} ${id}`,
+    base = editBase(key)
   if (mode === 'edit' && !t.value.trim()) {
     t.value = r.text
     saveDraft()
     bump('composer')
+  } else if (mode === 'edit' && base != null && base !== r.text) {
+    // T438 #7: your unsaved edit began before it changed elsewhere: what was added since goes on after your words
+    if (r.text.startsWith(base)) {
+      t.value += r.text.slice(base.length)
+      saveDraft()
+      bump('composer')
+      toast(`What was added to ${rcode(id)} in another window is added to your edit`)
+    } else
+      toast(
+        `${rcode(id)} changed in another window since you began`, // the box's line shows what it says now
+        null,
+        {
+          error: true,
+          sticky: true,
+        },
+      )
   }
+  editBase(key, r.text)
   t.focus()
   t.selectionStart = t.selectionEnd = t.value.length
 }
