@@ -1016,25 +1016,35 @@ function feedbackBody(): { node: ReactNode; final?: string } | null {
   if (q) {
     const more = U.outbox.length > 1 ? ` (+${U.outbox.length - 1})` : ''
     return {
-      node: q.failed ? (
-        <>
-          <Icon n="alert" c="size-4 text-red-600 dark:text-red-400" sw="2" />
-          <span className="min-w-0 flex-1 truncate text-red-600 dark:text-red-400">
-            Not sent{more}: {outboxLine(q)}
-          </span>
-          <Link act="outbox-retry" label="Retry" />
-          <Link act="outbox-edit" label="Edit" />
-        </>
-      ) : (
-        <>
-          {pulse}
-          <span className="min-w-0 flex-1 truncate">
-            {q.files.some((f) => !f.f && !f.failed) ? 'Uploading, then sending' : 'Sending'}
-            {more}: {outboxLine(q)}
-          </span>
-          {unsendBtn(q)}
-        </>
-      ),
+      node:
+        q.failed && q.net ? (
+          // C4 (T422): Taska can't be reached: it is not failed, it goes by itself the moment Taska answers
+          <>
+            {pulse}
+            <span className="min-w-0 flex-1 truncate">
+              Waiting for Taska{more}: {outboxLine(q)}
+            </span>
+            <Link act="outbox-edit" label="Edit" />
+          </>
+        ) : q.failed ? (
+          <>
+            <Icon n="alert" c="size-4 text-red-600 dark:text-red-400" sw="2" />
+            <span className="min-w-0 flex-1 truncate text-red-600 dark:text-red-400">
+              Not sent{more}: {outboxLine(q)}
+            </span>
+            <Link act="outbox-retry" label="Retry" />
+            <Link act="outbox-edit" label="Edit" />
+          </>
+        ) : (
+          <>
+            {pulse}
+            <span className="min-w-0 flex-1 truncate">
+              {q.files.some((f) => !f.f && !f.failed) ? 'Uploading, then sending' : 'Sending'}
+              {more}: {outboxLine(q)}
+            </span>
+            {unsendBtn(q)}
+          </>
+        ),
     }
   }
   if (!r) return null

@@ -84,9 +84,12 @@ def index() -> Optional[bytes]:
 
 
 def version() -> str:
-    """What open pages compare, to tell that Taska was updated (they offer a reload; they never reload by themselves)."""
+    """What open pages compare, to tell that Taska was updated (they offer a reload; they never reload by themselves):
+    the name of the page's main script, which the page knows of itself too, so a page kept from before (the service
+    worker's copy) can tell it is old (T427)."""
     html = index() or b""
-    return hashlib.sha1(html).hexdigest()[:10]
+    m = re.search(rb"/assets/(index-[\w-]+\.js)", html)
+    return m.group(1).decode() if m else hashlib.sha1(html).hexdigest()[:10]
 
 
 def public(path: str) -> bool:

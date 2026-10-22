@@ -3,7 +3,7 @@
 // in order; until Taska has a change it is kept as a patch over Taska's last state, so a refresh meanwhile doesn't
 // take it off the screen. A save that fails takes its patch back, and a red toast says so, with Retry.
 import { LETTER, SAID } from './constants'
-import { addFailed, toast } from './toast'
+import { FAILED, addFailed, failedStore, nextFailedId, retryFailed, toast } from './toast'
 import {
   CLOSED,
   DR,
@@ -19,6 +19,7 @@ import {
   model,
   openKids,
   plural,
+  projName,
   rcode,
   render,
   sleep,
@@ -133,19 +134,36 @@ export interface OpAnswer {
   rev?: number
   error?: string
 }
-// B326: a save that can't reach Taska (it restarts, the tunnel drops, no answer in time) is sent again by itself,
-// for about a minute, under one id, so Taska does it once however often it arrives
-const RETRY_MS = [1000, 2000, 4000, 8000, 15000, 30000]
+// B326, T424 (#4910): a save that can't reach Taska (it restarts, the tunnel drops, no answer in time) is sent again by
+// itself, under one id so Taska does it once, and it never gives up: the pauses grow to 30 s, and the moment Taska
+// answers again it goes at once. Only Taska saying no ends it.
+const RETRY_MS = [1000, 2000, 4000, 8000, 15000]
 let lastSaid = '' // what the latest save was, for a Not saved that was not told (B326)
 export const newCid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
+const BACK = new Set<() => void>() // what waits for Taska to answer again
+const waitBack = (ms: number) =>
+  new Promise<void>((ok) => {
+    const go = () => {
+      clearTimeout(t)
+      BACK.delete(go)
+      ok()
+    }
+    const t = setTimeout(go, ms)
+    BACK.add(go)
+  })
+/** Taska answers again: every save waiting for it goes now, and what was not saved is sent again by itself. */
+export function backOnline() {
+  for (const go of [...BACK]) go()
+  retryFailed()
+}
 export async function postAgain<T>(url: string, body: unknown, cid = newCid()): Promise<T> {
   const at = url + (url.includes('?') ? '&' : '?') + 'cid=' + cid
   for (let i = 0; ; i++) {
     try {
       return await net<T>(at, JSON_POST(body), NET.op)
     } catch (ex) {
-      if (!(ex as { net?: boolean }).net || i >= RETRY_MS.length) throw ex
-      await new Promise((ok) => setTimeout(ok, RETRY_MS[i]))
+      if (!(ex as { net?: boolean }).net) throw ex
+      await waitBack(RETRY_MS[i] ?? 30000)
     }
   }
 }
@@ -161,7 +179,7 @@ export async function op(o: unknown, cid?: string, p = ctx.P): Promise<OpAnswer>
   )
   if (!d.ok) {
     const why = ((d.res || []).find((x) => x.startsWith('err')) || d.error || 'Taska said no').replace(/^err:?\s*/, '')
-    addFailed(saidOp(o), why) // T424: Taska said no; sending it again would not help
+    addFailed(saidOp(o), why, null, p) // T424: Taska said no; sending it again would not help
     throw new Error('op failed')
   }
   if (!here) return d // T424: a change kept for another project, sent from here: nothing to show here
@@ -175,9 +193,11 @@ export async function op(o: unknown, cid?: string, p = ctx.P): Promise<OpAnswer>
 }
 // A save that didn't reach Taska after a minute of trying: it goes to the list of what is not saved, with a way to
 // send it again (B326, T424)
-export function notSaved(ex: unknown, retry?: () => unknown, what = lastSaid || 'a change') {
+export function notSaved(ex: unknown, retry?: (() => unknown) & { entry?: UndoEntry }, what?: string) {
   if (!(ex as { net?: boolean })?.net) return
-  addFailed(what, 'Taska was out of reach', retry || null)
+  // A7 (T422): it says what it was: given, or the Undo it was, or the last save sent
+  what ||= retry?.entry ? `undoing “${retry.entry.label}”` : lastSaid || 'a change'
+  addFailed(what, 'Taska was out of reach: it goes by itself when Taska answers', retry || null)
 }
 // What a save was, in a few words, for the toast that says it did not go through
 export function saidOp(o: unknown): string {
@@ -218,6 +238,9 @@ export function saidOp(o: unknown): string {
     dcdel: `deleting a comment on D${String(x.d)}`,
     dcundel: `restoring a comment on D${String(x.d)}`,
     rescope: `filing input ${rcode(String(x.id))} under ${String(x.to)}`,
+    dc: `your comment on D${String(x.d)}`,
+    dcedit: `editing your comment on D${String(x.d)}`,
+    dticks: `your choices in D${String(x.d)}`,
   }
   if (said[String(x.op)]) return said[String(x.op)]
   return `${String(x.op)}${x.ref ? ' ' + String(x.ref) : ''}`
@@ -241,7 +264,6 @@ export const SAVE = {
   pend: [] as Patch[],
   going: [] as string[], // T424: ids of kept changes on their way now
   last: '',
-  down: 0,
 }
 export interface Patch {
   n?: number
@@ -415,6 +437,10 @@ function followCodes() {
 // R328: when an agent has new code for Taska while you are using it, Taska is not restarted under your hands: a toast
 // offers it, and Restart restarts Taska and then this page. (Left alone for a minute, the deploy restarts it.)
 const UPD = { told: false, ver: '', stale: false }
+// the name of this page's main script, as Taska says its own (T427: the service worker may give a page from before)
+const MY_VER = (/\/assets\/(index-[\w-]+\.js)/.exec(
+  document.querySelector<HTMLScriptElement>('script[type=module][src*="/assets/index-"]')?.src || '',
+) || [])[1]
 // B344: Taska restarted with new code while this page was open (left alone, the deploy restarts it by itself): the page
 // still runs the old code, so it says so and offers a reload; it never reloads by itself (R284)
 function offerReload() {
@@ -481,12 +507,13 @@ export async function poll(g: number) {
         model.offline = 0
         bump('head', 'side')
         resendOutbox()
-      } // Taska is back: what you sent meanwhile goes now (B151)
+        backOnline()
+      } // Taska is back: what you sent and changed meanwhile goes now (B151, T424)
       const news = d.rev !== model.S.rev || d.boot !== model.S.boot || d.pv !== model.S.pv
       if (news) await load()
       if (d.update && !UPD.told) offerRestart() // R328: new code waits for a restart, and you are using Taska: your call
-      if (d.ver && !UPD.ver) UPD.ver = d.ver
-      else if (d.ver && d.ver !== UPD.ver && !UPD.stale) offerReload()
+      if (d.ver && !UPD.ver) UPD.ver = MY_VER || d.ver // T427: a page kept from before knows it is old at once
+      if (d.ver && d.ver !== UPD.ver && !UPD.stale) offerReload()
       checkOthers()
       if (idle && !news) await napIdle(document.hidden ? 20000 : 5000)
     } catch {
@@ -520,6 +547,7 @@ export async function refresh() {
     if (model.offline) {
       model.offline = 0
       bump('head', 'side')
+      backOnline()
     }
   } catch {
     /* the next poll tries again */
@@ -575,6 +603,24 @@ function keptStore(p: string, change?: (all: Kept[]) => Kept[]): Kept[] {
   }
 }
 /** What did not go out before a reload or a closed tab, in any project: shown again here (this project's) and sent. */
+/** A2 (T422): what was not saved before a reload is listed again, to say so (what can be sent again is a change kept
+ * with its op, and those are sent again by restorePending). */
+export function restoreFailed() {
+  for (const e of failedStore())
+    FAILED.push({
+      id: nextFailedId(),
+      sid: e.sid,
+      what:
+        e.p === ctx.P
+          ? e.what
+          : `${e.what} (in ${projName(decodeURIComponent(e.p.replace(/^\/p\//, '').replace(/\/$/, '')))})`,
+      why: e.why,
+      at: e.at,
+      retry: null,
+      p: e.p,
+    })
+  bump('head')
+}
 export function restorePending() {
   const mine = new Set(SAVE.going)
   try {
@@ -625,11 +671,9 @@ export function optimistic(
   followCodes()
   render()
   fixURL()
-  const made = Date.now()
   return (SAVE.q = SAVE.q.then(async () => {
     try {
       if (!needed()) return true
-      if (SAVE.down > made) throw new NetError('Taska is out of reach') // it waited behind a save that couldn't reach Taska
       await go()
       if (patches.some((x) => x.temp)) {
         drop()
@@ -637,7 +681,6 @@ export function optimistic(
       }
       return true
     } catch (ex) {
-      if ((ex as { net?: boolean }).net) SAVE.down = Date.now()
       drop()
       try {
         restore()
@@ -728,7 +771,7 @@ export function change(
         const u = (model.S.undo || []).find((u) => u.n === n && f in u.f) // the recorded change, so the change log knows it was undone (F80)
         return u ? revert(u.seq) : op({ op: 'set', ref, f: { [f]: wire(f, before) } })
       },
-      (ex) => notSaved(ex, run),
+      (ex) => notSaved(ex, run, `putting ${ref} back`),
       () => job.saved,
     ) // a change that never reached Taska has nothing to put back there
   }
@@ -764,7 +807,7 @@ export function change(
       delete U.go.undo?.[n]
       render()
     }
-    if (!job.undone) notSaved(ex, () => change(n, f, v, { said: words, note }))
+    if (!job.undone) notSaved(ex, () => change(n, f, v, { said: words, note }), `${ref} ${words}`) // A7 (T422)
   })
   saved.then((ok) => {
     job.saved = ok

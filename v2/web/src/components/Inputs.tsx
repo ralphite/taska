@@ -399,12 +399,10 @@ export function OutboxRows({ oldestFirst = false }: { oldestFirst?: boolean }) {
       {list.map((q) => (
         <article key={q.q} className="border-b border-zinc-100 px-4 py-2 lg:px-0 lg:py-4 dark:border-zinc-800/70">
           <div
-            className={`flex min-h-5 items-center gap-2 text-xs ${q.failed ? 'text-red-600 dark:text-red-400' : 'text-blue-600 dark:text-blue-400'}`}
+            className={`flex min-h-5 items-center gap-2 text-xs ${q.failed && !q.net ? 'text-red-600 dark:text-red-400' : 'text-blue-600 dark:text-blue-400'}`}
           >
-            {q.failed ? <Icon n="alert" c="size-3.5" sw="2" /> : dot('bg-blue-500 dark:bg-blue-400')}
-            <span className="font-medium">
-              {q.failed ? 'Not sent' : q.files.some((f) => !f.f && !f.failed) ? 'Uploading…' : 'Sending…'}
-            </span>
+            {q.failed && !q.net ? <Icon n="alert" c="size-3.5" sw="2" /> : dot('bg-blue-500 dark:bg-blue-400')}
+            <span className="font-medium">{outboxState(q)}</span>
             {q.scope ? <span className="min-w-0 truncate text-zinc-500 dark:text-zinc-400">↳ {q.scope}</span> : null}
           </div>
           <div className="mt-1.5 rounded-2xl rounded-tr-md bg-blue-50 px-3.5 py-2 text-[15px] leading-relaxed whitespace-pre-wrap text-zinc-900 opacity-70 lg:max-w-[calc(100%-22.5rem)] dark:bg-blue-400/10 dark:text-zinc-100">
@@ -690,17 +688,26 @@ function SaidRow({ r }: { r: Input; last?: boolean }) {
     />
   )
 }
+// C4 (T422): out of reach is waiting, not failed: it goes by itself the moment Taska answers
+const outboxState = (q: Job) =>
+  q.failed
+    ? q.net
+      ? 'Waiting for Taska…'
+      : 'Not sent'
+    : q.files.some((f) => !f.f && !f.failed)
+      ? 'Uploading…'
+      : 'Sending…'
 function OutboxStep({ q }: { q: Job; last?: boolean }) {
-  const state = q.failed ? 'Not sent' : q.files.some((f) => !f.f && !f.failed) ? 'Uploading…' : 'Sending…'
+  const state = outboxState(q)
   return (
     <SaidStep
       head={
         <>
           <span>Just now</span>
           <span
-            className={`ml-auto flex shrink-0 items-center gap-1.5 font-medium ${q.failed ? 'text-red-600 dark:text-red-400' : 'text-blue-600 dark:text-blue-400'}`}
+            className={`ml-auto flex shrink-0 items-center gap-1.5 font-medium ${q.failed && !q.net ? 'text-red-600 dark:text-red-400' : 'text-blue-600 dark:text-blue-400'}`}
           >
-            {q.failed ? (
+            {q.failed && !q.net ? (
               <Icon n="alert" c="size-3.5" sw="2" />
             ) : (
               <span className="size-1.5 animate-pulse rounded-full bg-current" />
@@ -712,9 +719,11 @@ function OutboxStep({ q }: { q: Job; last?: boolean }) {
       acts={
         q.failed ? (
           <>
-            <button data-act="outbox-retry" className={`${SMALL_BTN} text-blue-600 dark:text-blue-400`}>
-              Retry
-            </button>
+            {q.net ? null : (
+              <button data-act="outbox-retry" className={`${SMALL_BTN} text-blue-600 dark:text-blue-400`}>
+                Retry
+              </button>
+            )}
             <button data-act="outbox-edit" className={SMALL_BTN}>
               Edit
             </button>

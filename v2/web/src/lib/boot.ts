@@ -5,7 +5,17 @@ import { loadDims } from './dims'
 import { D, U, beforeRender, byN, code, ctx, desk, els, model, parseRef, setProject } from './state'
 import { PSEC_AT, readURL, viewQuery, writeURL } from './url'
 import { loadViews } from './views'
-import { checkOthers, errorLog, generation, loadKept, nextGeneration, poll, restorePending, slowLog } from './data'
+import {
+  checkOthers,
+  errorLog,
+  generation,
+  loadKept,
+  nextGeneration,
+  poll,
+  restoreFailed,
+  restorePending,
+  slowLog,
+} from './data'
 import { restoreDraftFiles, syncDraft } from './drafts'
 import { restoreGo, startGoFromAnotherProject } from './go'
 import { applyURL, settleOpen } from './nav'
@@ -121,6 +131,7 @@ export async function enterProject(first = false) {
   writeURL(false) // tidy the address: #B03 becomes /B03
   restoreOutbox() // inputs that did not go out last time (B151)
   restorePending() // T424: changes that did not go out last time, shown again and sent
+  restoreFailed() // A2 (T422): and what was not saved, listed again
   try {
     // you deleted the project you were in: this is where you landed, and Undo brings it back (F173)
     const gone = JSON.parse(sessionStorage.getItem('taska.deleted') || 'null') as null | { name: string; title: string }
