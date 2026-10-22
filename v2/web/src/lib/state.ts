@@ -835,3 +835,29 @@ export const R_STATE = {
     top: number
   },
 }
+
+// ---------------------------------------------------------------- what you sent, on its way (F85)
+export const outboxLine = (q: Job) =>
+  q.text.split('\n')[0] ||
+  (q.files.some((f) => (f.mime || '').startsWith('audio/'))
+    ? 'Voice note'
+    : `${q.files.length} file${q.files.length === 1 ? '' : 's'}`)
+// C3 (T422): an input already in the list (it came with a refresh while its own answer is still on its way) shows once
+export const arrived = (q: Job) =>
+  !!q.sending &&
+  model.S.inputs.some(
+    (r) =>
+      r.by === 'you' &&
+      Date.parse(r.t) >= q.t - 120000 &&
+      (r.scope ? code(r.scope) : null) === q.scope &&
+      r.text.trim() === q.text.trim(),
+  )
+// C4 (T422): out of reach is waiting, not failed: it goes by itself the moment Taska answers
+export const outboxState = (q: Job) =>
+  q.failed
+    ? q.net
+      ? 'Waiting for Taska…'
+      : 'Not sent'
+    : q.files.some((f) => !f.f && !f.failed)
+      ? 'Uploading…'
+      : 'Sending…'

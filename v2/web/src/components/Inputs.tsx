@@ -24,7 +24,7 @@ import {
 } from '../lib/state'
 import type { FileRef, Input } from '../lib/types'
 import type { Job } from '../lib/state'
-import { clock } from '../lib/state'
+import { arrived, clock, outboxLine, outboxState } from '../lib/state'
 import { draftsOf } from '../lib/drafts'
 import { DraftMark, Empty, Hit, Icon, ProjTile, StateIcon } from './ui'
 import { Rich, Thumbs, voiceLen } from './Talk'
@@ -377,11 +377,6 @@ function InputRow({ r }: { r: Input }) {
     </article>
   )
 }
-export const outboxLine = (q: Job) =>
-  q.text.split('\n')[0] ||
-  (q.files.some((f) => (f.mime || '').startsWith('audio/'))
-    ? 'Voice note'
-    : `${q.files.length} file${q.files.length === 1 ? '' : 's'}`)
 // What is still on its way, shown first where your inputs are listed (F85).
 export function OutboxRows({ oldestFirst = false }: { oldestFirst?: boolean }) {
   const mine = U.outbox.filter((q) => !arrived(q) && !q.unsent),
@@ -645,6 +640,7 @@ function SaidRow({ r, words = [] }: { r: Input; last?: boolean; words?: string[]
       }
       acts={
         <>
+          <TakeBack job={U.sentJobs.find((j) => j.rid === r.id)} />
           {/* F347: adding to what you said is the most common thing to do here: in sight on every input, not in ⋯ */}
           {r.moved ? null : (
             <button data-act="input-append" data-id={r.id} className={SMALL_BTN}>
@@ -688,15 +684,14 @@ function SaidRow({ r, words = [] }: { r: Input; last?: boolean; words?: string[]
     />
   )
 }
-// C4 (T422): out of reach is waiting, not failed: it goes by itself the moment Taska answers
-const outboxState = (q: Job) =>
-  q.failed
-    ? q.net
-      ? 'Waiting for Taska…'
-      : 'Not sent'
-    : q.files.some((f) => !f.f && !f.failed)
-      ? 'Uploading…'
-      : 'Sending…'
+// B440: taking back what you just sent is on its line in the list (it was on the line over the box)
+const TakeBack = ({ job }: { job: Job | undefined }) =>
+  job?.undo && !job.undo.entry?.done ? (
+    <button data-act="unsend" data-q={job.q} className={SMALL_BTN}>
+      <Icon n="undo" c="size-3.5" sw="2" />
+      Undo
+    </button>
+  ) : null
 function OutboxStep({ q }: { q: Job; last?: boolean }) {
   const state = outboxState(q)
   return (
@@ -719,6 +714,7 @@ function OutboxStep({ q }: { q: Job; last?: boolean }) {
       acts={
         q.failed ? (
           <>
+            <TakeBack job={q} />
             {q.net ? null : (
               <button data-act="outbox-retry" className={`${SMALL_BTN} text-blue-600 dark:text-blue-400`}>
                 Retry
@@ -728,7 +724,9 @@ function OutboxStep({ q }: { q: Job; last?: boolean }) {
               Edit
             </button>
           </>
-        ) : null
+        ) : (
+          <TakeBack job={q} />
+        )
       }
       body={
         <>
@@ -758,16 +756,6 @@ const SAID_STEP = 30
 const num = (id: string) => Number(id.replace(/\D/g, '')) || 0
 const newestFirst = (list: Input[]) =>
   [...list].sort((a, b) => Date.parse(b.t) - Date.parse(a.t) || num(b.id) - num(a.id))
-// C3 (T422): an input already in the list (it came with a refresh while its own answer is still on its way) shows once
-const arrived = (q: Job) =>
-  !!q.sending &&
-  model.S.inputs.some(
-    (r) =>
-      r.by === 'you' &&
-      Date.parse(r.t) >= q.t - 120000 &&
-      (r.scope ? code(r.scope) : null) === q.scope &&
-      r.text.trim() === q.text.trim(),
-  )
 export function SaidLately({ draft }: { draft: ReactNode }) {
   const S = model.S
   const ref = useRef<HTMLDivElement>(null),

@@ -103,7 +103,6 @@ export async function send() {
   }) // F419: ticked choices
   actLog('send', { to: job.scope || 'new input', q: job.q, chars: text.length, files: job.files.length }) // F407
   unsendable(job)
-  if (desk() && D.compose) toast('Sent', job.undo) // the New input page has no line under the box
   box.value = ''
   U.files = []
   saveDraft()

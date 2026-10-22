@@ -17,6 +17,12 @@ import {
   userWord,
   when,
   whoName,
+  arrived,
+  code,
+  outboxLine,
+  outboxState,
+  useArea,
+  type Job,
 } from '../lib/state'
 import type { Doc, FileRef, Input, Item, Msg } from '../lib/types'
 import { clean, groups, hasChoices, mdHtml } from '../lib/markdown'
@@ -502,6 +508,59 @@ interface ReadBy {
   names: string[]
   t: number
 }
+const YOU_BUBBLE =
+  'max-w-[85%] rounded-2xl rounded-tr-md bg-blue-600 px-4 py-2.5 text-[15px] leading-relaxed text-white dark:bg-blue-500 [&_[data-ref]]:text-white [&_[data-ref]]:underline [&_[data-ref]]:decoration-white/60 [&_[data-ref]]:underline-offset-2 [&_a]:text-white [&_a]:decoration-white/60 [&_blockquote]:border-white/50 [&_blockquote]:text-white/85 [&_button[data-act=more-msg]]:text-white [&_code]:bg-white/15 [&_code]:text-white [&_mark]:text-zinc-900 [&_pre]:bg-white/15 [&_pre]:text-white'
+// B440: taking back what you just sent sits on its own line (it was on a line over the box)
+const TakeBack = ({ job }: { job: Job | undefined }) =>
+  job?.undo && !job.undo.entry?.done ? (
+    <button data-act="unsend" data-q={job.q} className={DC_BTN}>
+      Undo
+    </button>
+  ) : null
+// B440: what you sent to this item is in the thread at once, saying where it is, until Taska has it
+function Pending({ n }: { n: number }) {
+  useArea('feedback')
+  useArea('composer')
+  const jobs = U.outbox.filter(
+    (q) => !q.unsent && !arrived(q) && q.scope === code(n) && !(q.kind === 'answer' && !q.files.length), // a form's ticks show on its card (T274 #27)
+  )
+  return (
+    <>
+      {jobs.map((q) => {
+        const bad = q.failed && !q.net
+        return (
+          <div key={q.q} data-q={q.q} className="flex flex-col items-end gap-1">
+            <div className={`${YOU_BUBBLE} break-words whitespace-pre-wrap ${bad ? 'opacity-70' : ''}`}>
+              {q.text || outboxLine(q)}
+            </div>
+            <div className="flex flex-wrap items-center justify-end gap-x-1">
+              <span className="px-1 text-[11px] text-zinc-400 dark:text-zinc-500">
+                You ·{' '}
+                <span
+                  className={bad ? 'text-red-600 dark:text-red-400' : 'animate-pulse text-blue-600 dark:text-blue-400'}
+                >
+                  {outboxState(q)}
+                </span>
+              </span>
+              {bad ? (
+                <>
+                  <button data-act="outbox-retry" className={DC_BTN}>
+                    Retry
+                  </button>
+                  <button data-act="outbox-edit" className={DC_BTN}>
+                    Edit
+                  </button>
+                </>
+              ) : (
+                <TakeBack job={q} />
+              )}
+            </div>
+          </div>
+        )
+      })}
+    </>
+  )
+}
 export function MsgView({
   x,
   gid,
@@ -543,10 +602,7 @@ export function MsgView({
         className={`group flex scroll-mb-4 flex-col items-end gap-1 rounded-2xl transition-colors duration-700 ${ver?.old ? 'opacity-60' : ''}`}
       >
         {y.text ? (
-          <div
-            {...voiceAttr(src)}
-            className="max-w-[85%] rounded-2xl rounded-tr-md bg-blue-600 px-4 py-2.5 text-[15px] leading-relaxed text-white dark:bg-blue-500 [&_[data-ref]]:text-white [&_[data-ref]]:underline [&_[data-ref]]:decoration-white/60 [&_[data-ref]]:underline-offset-2 [&_a]:text-white [&_a]:decoration-white/60 [&_blockquote]:border-white/50 [&_blockquote]:text-white/85 [&_button[data-act=more-msg]]:text-white [&_code]:bg-white/15 [&_code]:text-white [&_mark]:text-zinc-900 [&_pre]:bg-white/15 [&_pre]:text-white"
-          >
+          <div {...voiceAttr(src)} className={YOU_BUBBLE}>
             {ver?.old ? (
               <div className="line-clamp-2">
                 <MsgText x={y} gid={gid} />
@@ -605,6 +661,7 @@ export function MsgView({
               </>
             ) : null}
           </span>
+          {src && !ver?.old ? <TakeBack job={U.sentJobs.find((j) => j.rid === src.id)} /> : null}
           {src && !ver?.old && !src.moved && !src.deleted ? (
             <button
               data-act="input-more"
@@ -811,5 +868,6 @@ export function Talk({ it, list, gid = '', notes = [] }: { it: Item; list: Msg[]
     )
   }
   before('')
+  out.push(<Pending key="pending" n={it.n} />)
   return <>{out}</>
 }

@@ -31,6 +31,7 @@ import {
   useArea,
   otherProjects,
   projName,
+  outboxLine,
 } from '../lib/state'
 import type { DraftFile, Job } from '../lib/state'
 import { draftName, keepDraftFiles, saveDraft } from '../lib/drafts'
@@ -42,7 +43,6 @@ import { addFiles, grow, send } from '../lib/outbox'
 import { setFix } from '../lib/settings'
 import { toast } from '../lib/toast'
 import { Icon, Kbd, ProjTile } from './ui'
-import { outboxLine } from './Inputs'
 
 // ---------------------------------------------------------------- where the box is
 // B352: the same box everywhere: a border, no shadow (B345: a shadow read as a dark halo where nothing passes under it)
@@ -1001,6 +1001,9 @@ function feedbackBody(): { node: ReactNode; final?: string } | null {
         </>
       ),
     }
+  // B440: on the New input page each input you send is in the list under the box, with its state and what you can do
+  // about it: no second line about it over the box (it made the box jump)
+  if ((desk() && D.compose) || scopeN()) return null // in an item, it is in the thread with its state
   const q0 = U.outbox.find((j) => !j.unsent), // C5 (T422): one taken back is not shown
     q = q0?.quiet && !q0.failed ? null : q0 // T113 A19
   let r = U.lastSent ? byR.get(U.lastSent) : undefined
