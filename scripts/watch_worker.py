@@ -94,6 +94,7 @@ def main():
                 print(f'WORKER {e}', flush=True)
                 if not e.startswith('ITEM'):
                     tell_item(assigned, code, e, d)
+        time.sleep(30)  # checks are cheap code, every 30 s; never a tight loop on Taska (B464: 80 asks a second)
 
 
 def tell_item(assigned, code, event, d):
@@ -116,7 +117,6 @@ def tell_item(assigned, code, event, d):
         urllib.request.urlopen(req, timeout=20).read()
     except (OSError, IndexError):
         pass
-        time.sleep(30)
 
 
 if __name__ == '__main__':
