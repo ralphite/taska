@@ -812,7 +812,8 @@ export function SaidLately({ draft }: { draft: ReactNode }) {
   }, [rest, upTo])
   return (
     <div ref={ref}>
-      <div className="flex h-9 items-center gap-3">
+      {/* C17 (T422): a new project has said nothing yet: no heading over nothing */}
+      <div hidden={!S.inputs.length && !queued.length} className="flex h-9 items-center gap-3">
         <h2 className="text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">You said</h2>
         <span className="font-mono text-xs text-zinc-400 tabular-nums dark:text-zinc-500">
           {(words.length ? all.length : S.inputs.length) || ''}
