@@ -200,7 +200,7 @@ def run(s: "Store", op: Op, by: str, ctx: Dict[str, Any]) -> Tuple[str, Any]:
         return f"ok {rid} updated", "Updated"
     if name == "doc":  # new document on an item, or new text for an existing one
         html = op.get("fmt") == "html"  # F432: a web page, shown as it is
-        md = str(op.get("md") or "").strip()[:MAX_TEXT if not html else 400000]
+        md = str(op.get("md") or "").strip()  # F432 (D34 ¶5): a document is kept whole, however long
         if not md:
             raise Err("a document needs its text (indented lines under the command)")
         first = " ".join(md.split("\n", 1)[0].lstrip("#").split())  # a document is a note: its first line is the title

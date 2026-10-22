@@ -506,7 +506,7 @@ class Handler(BaseHTTPRequestHandler):
     def post(self, s: "Store", p: str, q: Query) -> None:
         hub = self.hub
         if p == "/do":
-            text = self.body(1_000_000).decode("utf-8", "replace")
+            text = self.body(MAX_FILE).decode("utf-8", "replace")
             by = (q.get("by") or ["agent"])[0][:20]
             if by not in PEOPLE:
                 s.saw(by, 0, self.session_of(q))
@@ -518,7 +518,7 @@ class Handler(BaseHTTPRequestHandler):
                     " Finish the step you are on, then GET /next.") if news else ""
             self.send(200, "\n".join(lines) + f"\nrev {s.rev} · {s.mode()}: {tail}{note}\n")
         elif p == "/api/op":
-            data = json.loads(self.body(1_000_000) or b"{}")
+            data = json.loads(self.body(MAX_FILE) or b"{}")
             ops = [(0, x) for x in (data if isinstance(data, list) else [data])]  # pyright: ignore[reportUnknownVariableType]
             cid = (q.get("cid") or [""])[0][:64]  # B326: the page's id for this save; sent again after a lost answer, it is done once
             t_lock = time.monotonic()
@@ -726,7 +726,7 @@ class Handler(BaseHTTPRequestHandler):
                     notes = "\n\n".join(f"- {c['by']} ({c['t'][:16].replace('T', ' ')})" + (f" on \u201c{c['quote'][:200]}\u201d" if c.get("quote") else "") + f": {c['text']}"
                                          for c in d["comments"] if c.get("text") and not c.get("deleted"))
                     md = d["md"] + (f"\n\n---\nComments in {here} D{d['d']}:\n\n{notes}" if notes else "")
-                    docs.append((it["n"], d["d"], d.get("title") or "", md[:MAX_TEXT]))
+                    docs.append((it["n"], d["d"], d.get("title") or "", md))
         under = None
         if data.get("under"):  # T338: put it under an item there
             with t.cond:
