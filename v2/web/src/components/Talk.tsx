@@ -765,7 +765,7 @@ export function MsgView({
     </div>
   )
 }
-// T274 #4: a comment on one of the item's documents shows among its messages, in time, as one line
+// T274 #4: a comment on one of the item's documents shows among its messages, in time
 export interface Note {
   t: string
   node: ReactNode
@@ -780,29 +780,57 @@ export function docNotes(n: number, from = ''): Note[] {
     .filter(({ c }) => c.t && (!from || c.t >= from))
     .sort((a, b) => a.c.t.localeCompare(b.c.t))
     .map(({ c, d, key }) => {
-      const q = c.quote ? oneLine(c.quote) : ''
-      return {
-        t: c.t,
-        node: (
+      const q = c.quote ? oneLine(c.quote) : '',
+        you = c.by === 'you',
+        where = (
           <button
-            key={`dn${d.d}-${c.id}`}
             data-act="doc-at"
             data-d={d.d}
             data-key={key}
-            className="flex items-start gap-2 self-stretch rounded-lg px-1 py-0.5 text-left text-[13px] leading-snug text-zinc-500 hover:bg-zinc-50 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:hover:text-zinc-200"
+            className="min-w-0 truncate rounded px-1 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
           >
-            <Icon n="comment" c="mt-0.5 size-3.5 shrink-0" />
-            <span className="min-w-0 flex-1">
-              <span className="font-medium text-zinc-700 dark:text-zinc-300">
-                {c.by === 'you' ? 'You' : whoName(c.by)}
-              </span>{' '}
-              on <span className="font-mono">D{d.d}</span>
-              {c.quote ? ` · “${q.slice(0, 40)}${q.length > 40 ? '…' : ''}”` : ''}:{' '}
-              {oneLine(c.text).slice(0, 160) || // B15 (T422): a voice note with no words yet still says what it is
-                (c.files?.some(isAudio) ? 'a voice note' : c.files?.length ? plural(c.files.length, 'file') : '')}
-            </span>
-            <span className="shrink-0 text-[11px] text-zinc-400 dark:text-zinc-500">{when(c.t)}</span>
+            on <span className="font-mono">D{d.d}</span>
+            {c.quote ? ` · “${q.slice(0, 40)}${q.length > 40 ? '…' : ''}”` : ''}
           </button>
+        ),
+        words = c.text.trim() ? (
+          <Rich text={c.text} gid={`dn${d.d}-${c.id}`} />
+        ) : // B15 (T422): a voice note with no words yet still says what it is
+        c.files?.some(isAudio) ? (
+          'Voice note'
+        ) : (
+          plural(c.files?.length || 0, 'file')
+        )
+      // B436: a comment on a document is what you (or an agent) said, so it looks like what you said: your words in
+      // your bubble, theirs as their message; the line under it says where in the document it is
+      return {
+        t: c.t,
+        node: you ? (
+          <div key={`dn${d.d}-${c.id}`} className="flex flex-col items-end gap-1">
+            <div className={YOU_BUBBLE}>{words}</div>
+            <div className="flex max-w-full flex-wrap items-center justify-end gap-x-1 text-[11px] text-zinc-400 dark:text-zinc-500">
+              <VoiceLine files={c.files} bare />
+              <span className="flex max-w-full min-w-0 items-center gap-0.5 px-1">
+                <Icon n="comment" c="size-3 shrink-0" />
+                <span className="shrink-0">You ·</span>
+                {where}
+                <span className="shrink-0">· {when(c.t)}</span>
+              </span>
+            </div>
+          </div>
+        ) : (
+          <div key={`dn${d.d}-${c.id}`} className="flex flex-col items-start gap-1.5">
+            <div className="flex max-w-full min-w-0 items-center gap-2 px-1 text-[11px] text-zinc-400 dark:text-zinc-500">
+              <Avatar by={c.by} />
+              <span className="shrink-0 text-xs font-semibold text-zinc-700 dark:text-zinc-300">{whoName(c.by)}</span>
+              <Icon n="comment" c="size-3 shrink-0" />
+              {where}
+              <span className="shrink-0">{when(c.t)}</span>
+            </div>
+            <div className="w-full rounded-2xl rounded-tl-md border border-zinc-200 bg-zinc-50 px-4 py-3 text-[15px] leading-relaxed text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200">
+              {words}
+            </div>
+          </div>
         ),
       }
     })
