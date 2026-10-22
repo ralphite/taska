@@ -132,14 +132,12 @@ function HitLine({ it, shown = '' }: { it: Item; shown?: string }) {
 // B290: icons only, in the row. T438 #3: over the end of the title (in the row's own colour), so the title does not
 // shrink under the pointer, and each in its own place, the same on every row (an empty place stays empty)
 function RowActs({ it, needs = false }: { it: Item; needs?: boolean }) {
-  const acts = deskSlots(it, needs)
+  const acts = deskSlots(it, needs).filter((a) => a !== null) // T475: side by side, no holes where one does not apply
   return (
     <div className="relative hidden shrink-0 self-stretch bg-inherit lg:block">
       <div className="absolute inset-y-0 right-0 hidden items-center gap-0.5 bg-inherit pl-2 group-hover:flex">
-        {acts.map((a, i) =>
-          !a ? (
-            <span key={'gap' + i} className="size-8" />
-          ) : a[0] === 'reopen' ? (
+        {acts.map((a) =>
+          a[0] === 'reopen' ? (
             <button
               key={a[2]}
               data-act="reopen"

@@ -693,14 +693,12 @@ const BarText = ({
 function ItemActs({ it }: { it: Item }) {
   return (
     <>
-      {/* T438 #14 (C17): each in its own place: one that does not apply now keeps its room, so the others stay put */}
-      {it.type === 'rule' ? null : (
-        <span className={canDone(it) ? 'contents' : 'invisible'}>
-          <BarText act="status" icon="check" label="Done" title="Done · D" data={{ n: it.n, v: 'done' }} />
-        </span>
+      {/* T475: only what applies, side by side (no empty room where one does not) */}
+      {it.type === 'rule' || !canDone(it) ? null : (
+        <BarText act="status" icon="check" label="Done" title="Done · D" data={{ n: it.n, v: 'done' }} />
       )}
-      {it.type === 'rule' ? null : (
-        <span className={it.archived || CLOSED(it.status) ? 'invisible' : 'contents'}>
+      {it.type === 'rule' || it.archived || CLOSED(it.status) ? null : (
+        <>
           <BarText
             act="swipe"
             icon="pause"
@@ -708,7 +706,7 @@ function ItemActs({ it }: { it: Item }) {
             title={it.when === 'now' ? 'Later · L' : 'Back to now · L'}
             data={{ n: it.n, f: 'when', v: it.when === 'now' ? 'later' : 'now' }}
           />
-        </span>
+        </>
       )}
       {it.archived ? (
         <BarText act="archive" icon="archive" label="Unarchive" title="Unarchive · E" data={{ n: it.n, on: '0' }} />

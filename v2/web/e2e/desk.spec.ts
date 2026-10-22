@@ -89,3 +89,19 @@ test('two places picked in one paragraph keep two threads; an answer goes to the
   await expect(thread).toContainText('The apples answer')
   await expect(thread).not.toContainText('About pears')
 })
+
+test("a row's buttons sit side by side, with no empty room where one does not apply (T475)", async ({
+  page,
+  request,
+}) => {
+  const p = await project(request, LOOP)
+  await open(page, p, '?status=all')
+  for (const row of await page.locator('#list [data-act="open"]').filter({ visible: true }).all()) {
+    await row.hover()
+    const xs = await page
+      .locator('#list [data-act="swipe"], #list [data-act="reopen"]')
+      .filter({ visible: true })
+      .evaluateAll((bs) => bs.map((b) => [b.getBoundingClientRect().left, b.getBoundingClientRect().right]))
+    for (let i = 1; i < xs.length; i++) expect(xs[i][0] - xs[i - 1][1]).toBeLessThan(8)
+  }
+})
