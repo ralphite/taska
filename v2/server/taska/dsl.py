@@ -24,14 +24,21 @@ END_KV = re.compile(r"(?i)\s+\[?(src|parent)=([^\s\]]+)\]?\s*$")  # an option at
 Parsed = List[Tuple[int, Union[Op, Err]]]
 
 
-def attrs(s: str) -> Tuple[Dict[str, Any], str]:
-    """Consume leading attribute tokens. Returns (dict, rest of the line)."""
+def attrs(s: str, title: bool = False) -> Tuple[Dict[str, Any], str]:
+    """Consume leading attribute tokens. Returns (dict, rest of the line). Before a title (B442), a lone status word,
+    a capitalized word or a second word of a kind already given starts the title: "new task P1 now Review the pages"
+    is titled "Review the pages" (status= still counts)."""
     out: Dict[str, Any] = {}
     pos = 0
     while True:
         m = ATTR.match(s, pos)
         if not m:
             break
+        if title and not m["kv"] and not m["pri"]:
+            w = m.group(0).strip("[]")
+            kind = "status" if m["st"] else "when" if m["when"] else "archived" if m["arch"] else "type"
+            if m["st"] or w != w.lower() or kind in out:
+                break
         if m["kv"]:
             k, v = m["kv"].split("=", 1)
             out[k.lower()] = v
@@ -92,7 +99,7 @@ def parse_cmd(head: str, cont: str) -> Union[Op, List[Op]]:
             raise Err("ack needs input ids like r12")
         return {"op": "ack", "ids": ids}
     if low == "new":
-        a, title = attrs(rest)
+        a, title = attrs(rest, title=True)
         m = END_KV.search(title)
         while m:  # "new task Write the docs [src=r12]": the option at the end counts too (B222)
             a.setdefault(m[1].lower(), m[2])

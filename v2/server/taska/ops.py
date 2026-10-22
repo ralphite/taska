@@ -400,6 +400,8 @@ def run(s: "Store", op: Op, by: str, ctx: Dict[str, Any]) -> Tuple[str, Any]:
              "status": "proposed" if by not in PEOPLE else field(s, "status", op.get("status") or "open"),
              "body": field(s, "body", op.get("body") or ""), "next": field(s, "next", op.get("next") or "")}
         e["parent"] = field(s, "parent", op["parent"], ctx) if op.get("parent") else None
+        if by == "org" and e["status"] == "review":  # B442: only an agent finishing its work puts an item in review
+            e["status"] = "open"
         s.emit({**e, **keep})
         ctx["last"] = e["n"]
         return f"ok {s.code(e['n'])} new" + (" (proposed: the user approves it before anyone works on it)" if e["status"] == "proposed" else ""), "Created " + s.code(e["n"])
@@ -472,6 +474,8 @@ def run(s: "Store", op: Op, by: str, ctx: Dict[str, Any]) -> Tuple[str, Any]:
             if v != it.get(k):
                 f[k], was[k] = v, it.get(k)
         note = ""
+        if by == "org" and f.get("status") == "review":  # B442: the organizer writes down what you said; it finishes no work
+            raise Err(f"{code}: only an agent that did the work puts it in review; to close it, set it done")
         if by not in PEOPLE and "status" in f:
             if it["status"] == "proposed" and f["status"] != "dropped":
                 raise Err(f"{code} is proposed: only the user can approve it. To move it on, answer them: `{code} say ...` or `{code} ask ...` puts it back in front of them to approve (B299)")
