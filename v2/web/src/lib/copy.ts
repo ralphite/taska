@@ -24,5 +24,5 @@ export function copyItem(n: number) {
     it.type === 'task'
       ? `${it.title}\n\n${it.body}\n\nCarry this out in the current project. Write the result and how you checked it back to Taska item ${c} (usage: curl -s ${base}/agent).`
       : `Work on Taska item ${c}: ${it.title}\nDetails: curl -s ${base}/${c}\nUsage: curl -s ${base}/agent`
-  return copy(text, 'Copied. Paste it to your agent.')
+  return copy(text, 'Copied')
 }

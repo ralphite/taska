@@ -276,7 +276,7 @@ export function stepItem(dir: number) {
   const i = rows.indexOf(U.open || -1),
     n = rows[i < 0 ? (dir > 0 ? 0 : rows.length - 1) : Math.max(0, Math.min(rows.length - 1, i + dir))]
   if (n !== U.open) openItem(n)
-  else hint(dir < 0 ? 'This is the first item' : 'This is the last item')
+  else hint(dir < 0 ? 'Already first item' : 'Already last item')
 }
 export function toList() {
   // T268: Settings, full width or Inputs give way to the list

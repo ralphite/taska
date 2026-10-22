@@ -795,13 +795,9 @@ export function agentState(
   if (a?.waiting) return ['ok', `${name} ready`, `${name} is connected and picks up new work right away.`] as const
   if (a && Date.now() - a.t < 10 * 60e3)
     return ['ok', `${name} · ${agoShort(a.t)}`, `${name} was here ${agoLong(a.t)}.`] as const
-  const last = a ? `The last agent (${name}) was here ${agoLong(a.t)}.` : 'No agent has connected to this project yet.'
+  const last = a ? `The last agent (${name}) was here ${agoLong(a.t)}.` : 'No agent connected yet.'
   return work
-    ? ([
-        'bad',
-        a ? `No agent · ${agoShort(a.t)}` : 'No agent',
-        `Work is waiting, but no agent is here to take it. ${last}`,
-      ] as const)
+    ? (['bad', a ? `No agent · ${agoShort(a.t)}` : 'No agent', `Work is waiting. ${last}`] as const)
     : (['idle', a ? `${name} · ${agoShort(a.t)}` : 'No agent', `Nothing is waiting for an agent. ${last}`] as const)
 }
 

@@ -38,7 +38,7 @@ export const canUndoInput = (r: Input) =>
   !!r.touched.length &&
   (!r.org.keep || (!!r.history?.length && !!r.org.changed)) &&
   !!r.filing?.can // T113 A4
-export const filingTip = (r: Input) => `Undo what the organizer did with ${rcode(r.id)}: ${r.filing?.what || ''}`
+export const filingTip = (r: Input) => `${rcode(r.id)}: ${r.filing?.what || ''}`
 const codes = (ns: number[]) => ns.map(code).join(', ')
 export const deleteTip = (r: Input) =>
   `Delete ${rcode(r.id)}` +
@@ -834,7 +834,7 @@ export function SaidLately({ draft }: { draft: ReactNode }) {
         </ol>
       ) : (
         <p id="saidNone" className="mt-3 text-sm text-zinc-400 dark:text-zinc-500">
-          {words.length ? `Nothing you said matches “${q.trim()}”.` : null}
+          {words.length ? `No matches for “${q.trim()}”.` : null}
         </p>
       )}
     </div>

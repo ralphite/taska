@@ -217,7 +217,7 @@ async function unsend(job: Job) {
       if (r && (r.acked || model.S.org.busy === r.id || r.org)) {
         job.unsent = false
         return toast(
-          `${rcode(job.rid)} had reached ${r.org ? 'the organizer' : 'your agent'} already: delete it from Inputs`,
+          `${rcode(job.rid)} already reached ${r.org ? 'the organizer' : 'your agent'}; delete it from Inputs`,
         )
       }
       void instant({ op: 'delete', id: job.rid }, () => {
@@ -235,9 +235,7 @@ async function unsend(job: Job) {
   render()
   if (key === U.draftKey) els.text?.focus({ preventScroll: true })
   toast(
-    key === U.draftKey
-      ? 'Not sent: your words are back in the box'
-      : `Not sent: your words are back in the box of ${draftName(key)}`,
+    key === U.draftKey ? 'Not sent. Text restored' : `Not sent. Text restored to ${draftName(key)}`,
     key === U.draftKey ? null : () => goDraft(key),
     { label: 'Open' },
   )
@@ -305,7 +303,7 @@ export function restoreOutbox() {
       files: (j.files || []).map((f) => ({ ...f, done: Promise.resolve() })),
     })
   if (back.length) {
-    sendLog('resend', `${back.length} input(s) sent before a reload or a closed tab, going out again now`)
+    sendLog('resend', `Retrying ${back.length} pending ${back.length === 1 ? 'input' : 'inputs'}`)
     if (back.some(([, , j]) => j.kind === 'answer')) {
       answersGoing() // T438 #1: an answer kept from before the reload shows as answered, as before it
       render()
@@ -584,12 +582,12 @@ async function editedElsewhere(
     const ok = await optimistic([], { op: 'amend', id: a.id, mode: 'edit', v: r.v || 0, text: merged, files }, () => {
       putBack(() => (U.amend = { ...a, v: r.v || 0, base: r.text }), text, drafts)
     })
-    if (ok) toast(`${rcode(a.id)} updated, with what was added to it in another window`)
+    if (ok) toast(`${rcode(a.id)} updated with changes from another window`)
     return true
   }
   if (wrong) dropFailed(wrong.id)
   putBack(() => (U.amend = { ...a, v: r.v || 0, base: r.text }), text, drafts)
-  toast(`${rcode(a.id)} changed in another window. Your words are in the box: Save puts them in its place`, null, {
+  toast(`${rcode(a.id)} changed elsewhere. Text restored; save to apply`, null, {
     error: true,
     sticky: true,
   }) // the box's line shows what it says now
@@ -632,7 +630,7 @@ export async function sendCorrect() {
     await setFix(had ? { wrong: c.wrong, right: had.right } : { wrong: c.wrong })
     toast(`Put back “${c.wrong}” in ${c.id}${had ? '' : ', and forgot the spelling'}`)
   })
-  toast(`Fixed ${c.id}. Voice notes will write “${right}” from now on`, run)
+  toast(`Fixed ${c.id}. Voice notes will use “${right}”`, run)
   render()
 }
 // The answer is an ordinary reply on the item: one line per pick. What you wrote in the box for this item goes with it.

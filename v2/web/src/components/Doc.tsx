@@ -334,9 +334,7 @@ function DraftCard({ label }: { label: string }) {
       {said ? <div className="whitespace-pre-wrap">{said}</div> : null}
       {voice.length ? (
         <div className="text-xs text-zinc-500 dark:text-zinc-400">
-          {voice.some((f) => f.transcribing)
-            ? 'Voice note · writing down its words…'
-            : plural(voice.length, 'voice note')}
+          {voice.some((f) => f.transcribing) ? 'Transcribing…' : plural(voice.length, 'voice note')}
         </div>
       ) : null}
     </div>
@@ -568,7 +566,7 @@ function Lasso() {
       ref={ref}
       id="lasso"
       className="absolute inset-0 z-10 h-full w-full touch-none"
-      aria-label="Draw around the part you want to comment on"
+      aria-label="Draw around the part to comment on"
     >
       <path
         ref={pathRef}
@@ -757,7 +755,7 @@ export function DocView({ d }: { d: Doc }) {
                         data-act="doc-say"
                         data-key={b0.key}
                         {...(U.docQuote?.key === b0.key ? { 'data-quote': U.docQuote.text } : {})}
-                        aria-label="Speak a comment on this paragraph"
+                        aria-label="Dictate comment"
                         className="grid size-12 shrink-0 place-items-center rounded-full bg-zinc-900 text-white shadow-lg dark:bg-zinc-100 dark:text-zinc-900"
                       >
                         <Icon n="mic" c="size-5" />
@@ -853,7 +851,7 @@ export function DocEdit({ d, md }: { d: Doc | undefined; md: string }) {
       <textarea
         id="docMd"
         defaultValue={md}
-        placeholder={'Title on the first line\n\nThen anything: a plan, a design, notes. Markdown works.'}
+        placeholder={'Title on the first line\n\nNotes, plans, or designs (Markdown supported)'}
         className="min-h-[40dvh] w-full flex-1 resize-none bg-transparent text-base leading-relaxed outline-none placeholder:text-zinc-400"
       />
     </div>

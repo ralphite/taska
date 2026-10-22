@@ -278,7 +278,7 @@ export function carry(go: () => void) {
   }
   setDraft(to, was.trim() ? was.trimEnd() + '\n\n' + text : text, [...wasFiles, ...files])
   bump('composer')
-  toast(`What you wrote moved to ${draftName(to)}`, () => {
+  toast(`Draft moved to ${draftName(to)}`, () => {
     for (const f of files) {
       f.key = from
       f.scope = /^[A-Z]\d+$/.test(from) ? from : null
@@ -358,7 +358,7 @@ export function goDraft(key: string) {
   // B362: the box for adding to, or editing, one of your inputs: New input, with the box on that input
   const am = /^(edit|append) (\S+)$/.exec(key)
   if (am) {
-    if (!byR.has(am[2])) return toast('That input is not here any more', null, { error: true })
+    if (!byR.has(am[2])) return toast('Input no longer exists', null, { error: true })
     ACT['new-input']({})
     return ACT[am[1] === 'edit' ? 'input-edit' : 'input-append']({ id: am[2] })
   }
@@ -394,7 +394,7 @@ export function goDraft(key: string) {
     return ACT['prefs-edit']({})
   }
   // what the box was for is gone: say which, never a Go there that does nothing
-  toast(`${draftName(key).replace(/^the /, 'The ')} is not here any more`, null, { error: true })
+  toast(`${draftName(key).replace(/^the /, 'The ')} is gone`, null, { error: true })
 }
 
 // Half-written text has one rule (T113 B6): leaving it any way but Cancel or Discard keeps it as a draft, until you

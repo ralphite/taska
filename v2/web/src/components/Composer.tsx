@@ -169,7 +169,7 @@ function boxRole(): { line: ReactNode; ph: string; send: string; ready?: boolean
         right={<ScopeX act="prefs-cancel" label="Stop editing" />}
       />
     )
-    ph = 'How voice notes should be written down…'
+    ph = 'How should voice notes be transcribed?'
     send = 'Save'
   } else if (U.correct && byR.has(U.correct.id)) {
     const right = (t?.value || '').replace(/\s+/g, ' ').trim() // A3: before -> after, as you type
@@ -219,7 +219,7 @@ function boxRole(): { line: ReactNode; ph: string; send: string; ready?: boolean
         detail="· Send posts each beside its paragraph"
       />
     )
-    ph = 'Words for the comments…'
+    ph = 'Add to the comments…'
     send = vcN > 1 ? `Post ${vcN} comments` : 'Post the comment'
   } else if (dt) {
     line = (
@@ -354,9 +354,9 @@ export function DraftCard() {
       <b className="font-semibold text-zinc-700 dark:text-zinc-200">{plural(open, 'word')} to check</b>
     </>
   ) : picked ? (
-    'Picked. Click the other side to switch back, any time before you send.'
+    'Click the other version to switch before sending.'
   ) : fixable ? (
-    'Select words of the voice note to correct them here: Taska remembers the spelling.'
+    'Select words to correct spelling. Taska remembers.'
   ) : null
   // not drawn again while you correct a word in it (the field is in its text)
   const html = U.fixEd ? draftLast : text.trim() ? draftHtml(text, true) : ''
@@ -392,7 +392,7 @@ export function DraftCard() {
             className="mt-1 w-full rounded-2xl rounded-tl-md border border-dashed border-blue-300 bg-blue-50/60 px-4 py-2.5 text-[15px] leading-8 break-words whitespace-pre-wrap text-zinc-900 dark:border-blue-400/40 dark:bg-blue-400/5 dark:text-zinc-100"
           >
             <span className="text-zinc-400 dark:text-zinc-500">
-              {U.files.some((f) => f.transcribing) ? 'The words of the voice note are on their way…' : 'No words yet'}
+              {U.files.some((f) => f.transcribing) ? 'Transcribing…' : 'No words yet'}
             </span>
           </div>
         )}
@@ -605,7 +605,7 @@ function Doubts({ words }: { words: string }) {
               <b className="font-semibold text-zinc-800 dark:text-zinc-100">{plural(toCheck, 'word')} to check</b>
             </>
           ) : (
-            'Picked. Tap the other side to switch back before you send.'
+            'Tap the other version to switch before sending.'
           )}
           {view ? null : (
             <>
@@ -629,7 +629,7 @@ function Doubts({ words }: { words: string }) {
               Maybe misheard: “{unmarked(said)}”
               {x.alt
                 ? ` — the other model heard “${heard}”${x.also?.length ? ` (${x.also.length + 1} places)` : ''} ·`
-                : ' — the model was not sure'}
+                : ' — unsure'}
             </span>
             {x.alt ? (
               <button data-act="doubt-use" data-i={i} data-k={k} className={`${LINK_BTN} -my-1 -ml-1.5 shrink-0`}>
@@ -713,7 +713,7 @@ function BoxInner() {
     has = !!(words.trim() || U.files.length || ready)
   const view = !desk() && draftSpots(words).some((p) => p.x.alt) && U.boxView && !rec
   const micTip = !window.isSecureContext
-    ? 'Voice needs an https link here: press for it'
+    ? 'Voice needs https: tap for the link'
     : D.compose
       ? 'Voice note · ⌥V'
       : 'Voice note · V'
@@ -721,7 +721,7 @@ function BoxInner() {
     ? btn('rec-cancel', 'x', 'Discard the recording', 'Discard · Esc')
     : btn('attach', 'plus', 'Add images or files', 'Add images or files')
   const recSend = btn('rec-send', 'up', 'Stop and send', 'Stop and send · ⇧↵', 'size-5', '2'),
-    recStop = btn('rec-stop', 'check', 'Stop recording, words into the box', 'Words into the box · ↵', 'size-5', '2.5')
+    recStop = btn('rec-stop', 'check', 'Stop and put words in the box', 'Words into the box · ↵', 'size-5', '2.5')
   // F221, B248: a second tap where you started recording sends it; the other button stops it into the box
   const started = R.from === 'aux' ? 'aux' : 'main'
   const main = rec
@@ -950,7 +950,7 @@ function feedbackBody(): { node: ReactNode; final?: string } | null {
           <Icon n="mic" c="size-4 shrink-0 text-zinc-500 dark:text-zinc-400" />
           <span className="min-w-0 flex-1 py-1 leading-snug">
             {link ? (
-              'Voice needs a secure link, and this address is plain http. Open Taska’s https link to record:'
+              'Recording requires HTTPS. Open Taska’s secure link:'
             ) : (
               <>
                 Voice needs a secure link: https, or localhost on this computer. This address is plain http, and Taska
@@ -1048,7 +1048,7 @@ function feedbackBody(): { node: ReactNode; final?: string } | null {
     node = (
       <>
         {pulse}
-        <span className="min-w-0 flex-1 truncate">Sent. Its voice note&apos;s words come next…</span>
+        <span className="min-w-0 flex-1 truncate">Sent. Transcribing…</span>
       </>
     ) // B165
   else if (S.org?.busy === r.id || (!r.acked && S.org?.on && !r.org))
@@ -1174,11 +1174,7 @@ export function VcBar() {
         id="vcBtn"
         data-act="vc"
         {...(on ? { 'data-on': '' } : {})}
-        aria-label={
-          on
-            ? 'Stop: the quote and the voice note go into the box'
-            : 'Voice comment: record a comment on the selected text'
-        }
+        aria-label={on ? 'Stop: the quote and the voice note go into the box' : 'Record comment on selection'}
         title={on ? 'Stop' : 'Voice comment'}
         className="grid size-11 place-items-center rounded-full text-white hover:bg-white/15 data-on:bg-red-600 data-on:text-white dark:text-zinc-900 dark:hover:bg-zinc-900/10 dark:data-on:bg-red-600 dark:data-on:text-white"
       >

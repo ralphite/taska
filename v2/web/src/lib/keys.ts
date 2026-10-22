@@ -50,13 +50,13 @@ export const KEYS: [string, [string, string][]][] = [
     'Move',
     [
       ['J / K', 'Next or previous item'],
-      ['⇧J / ⇧K', 'Next or previous item that needs you (Go through)'],
+      ['⇧J / ⇧K', 'Next or previous item needing you (Go through)'],
       ['O or ↵', 'Full width; Esc goes back'],
       ['Space', 'Scroll the item'],
-      ['G then I N A R', 'Items, New input (what you said), Archive, Rules'], // T438 #14 (B16): as they are
-      ['G then P', 'Switch project (type to find it)'],
+      ['G then I N A R', 'Items, Inputs, Archive, Rules'], // T438 #14 (B16): as they are
+      ['G then P', 'Switch project'],
       ['G then S', 'Settings'],
-      ['[', 'Show or hide the sidebar'],
+      ['[', 'Toggle sidebar'],
     ],
   ],
   [
@@ -68,18 +68,18 @@ export const KEYS: [string, [string, string][]][] = [
       ['1–9, ⌘↵', 'Pick a choice, send the answer'],
       ['D · W · L', "Done · Won't do · Later / Now"],
       ['E / ⇧E', 'Archive or unarchive / archive every finished item'],
-      ['S · P · T', 'Status, priority, type: then the digit its menu shows'],
+      ['S · P · T', "Status, priority, type (then the menu's digit)"],
       ['M · ⇧C', 'Put under… · Copy for agent'],
       ['I · ⇧D · ⇧A', 'Edit · New doc · Add subitem'],
       ['.', 'All actions'],
-      ['Z', 'Undo your last action here, again for the one before; older changes: Change log'],
+      ['Z', 'Undo last action; older changes in Change log'],
     ],
   ],
   [
     'Mouse',
     [
-      ['Hover a row', 'Its quick actions, always in the same places'],
-      ['Right-click a row', 'Its menu, at the pointer'],
+      ['Hover a row', 'Quick actions'],
+      ['Right-click a row', 'Item menu'],
       ['Click cut-off words', 'Show them all'],
       ['Drag a pane edge', 'Resize; double-click for the default'],
     ],
@@ -88,11 +88,11 @@ export const KEYS: [string, [string, string][]][] = [
     'Write and find',
     [
       ['⌘K', 'Go to an item or do anything here'],
-      ['⌘ / ⇧ click', 'Pick several rows, then act on them at once'],
-      ['C', 'New input to the project'],
+      ['⌘ / ⇧ click', 'Select multiple rows to act on together'],
+      ['C', 'New input'],
       ['V', 'Voice note for the selected item; V again stops'],
       ['⇧V', 'New input by voice; ⇧V again stops and sends'],
-      ['⌥V', 'Voice note while typing in the box'],
+      ['⌥V', 'Voice note while typing'],
       ['↵', 'While recording: stop, into the box'],
       ['⇧↵ or ⌘↵', 'Send; while recording: stop and send'],
       ['/', 'Search'],
@@ -218,7 +218,7 @@ export function deskKey(e: KeyboardEvent) {
   const k = e.key,
     one = /^[a-zA-Z0-9./[?]$/.test(k)
   if (D.sideOpen && k !== '[') {
-    if (one) hint('The sidebar is over the page: [ closes it')
+    if (one) hint('Press [ to close the sidebar')
     return
   } // B120
   const n = detailShown() && !D.compose ? U.open : null,
@@ -279,8 +279,7 @@ export function deskKey(e: KeyboardEvent) {
         e.preventDefault()
         return stepItem(dir)
       }
-      if (letter)
-        hint(D.page ? 'J and K move in a list: Esc goes back to it' : 'J and K move in Items, Archive and Rules')
+      if (letter) hint(D.page ? 'Press Esc to return to the list' : 'J and K move in Items, Archive and Rules')
       return
     }
     case 'J':
@@ -346,7 +345,7 @@ export function deskKey(e: KeyboardEvent) {
     if (ITEM_KEYS.has(k))
       hint(
         U.tab === 'inputs' || D.page || D.compose
-          ? 'Item keys work on an item: open one in Items, Archive or Rules'
+          ? 'Open an item in Items, Archive or Rules to use these keys'
           : 'First pick an item: J or a click',
       )
     return
@@ -390,11 +389,7 @@ export function deskKey(e: KeyboardEvent) {
         : CLOSED(it.status)
           ? hint(`${code(n)} is ${it.status === 'done' ? 'done' : "marked won't do"} already`)
           : !canDone(it) // T438 #14 (B11): D does what the bar's Done does
-            ? hint(
-                it.status === 'proposed'
-                  ? `${code(n)} is proposed: approve it first (A)`
-                  : `${code(n)} waits for you to accept it (A)`,
-              )
+            ? hint(it.status === 'proposed' ? `Approve ${code(n)} first (A)` : `Accept ${code(n)} first (A)`)
             : status('done')
     case 'w':
       return it.type === 'rule'
@@ -544,14 +539,14 @@ export const CP_PAGE: [string, string][] = [
   ['Search', '/'],
   ['Filter', 'f'],
   ['Go through what needs you', 'J'],
-  ['Record a voice input', 'V'],
+  ['Record voice input', 'V'],
   ['Items', 'g i'],
   ['Inputs', 'g n'],
   ['Archive', 'g a'],
   ['Rules', 'g r'],
   ['Switch project', 'g p'],
   ['Settings', 'g s'],
-  ['Show or hide the sidebar', '['],
+  ['Toggle sidebar', '['],
   ['Undo', 'z'],
   ['Keyboard shortcuts', '?'],
 ]

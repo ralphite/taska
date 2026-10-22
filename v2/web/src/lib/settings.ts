@@ -147,7 +147,7 @@ export async function sendPrefs() {
   if (!t) return
   const text = t.value.trim(),
     was = U.prefsEdit?.was ?? ''
-  if (!text) return toast('Write how voice notes should be written down, or Esc to stop')
+  if (!text) return toast('Enter transcription rules, or press Esc to cancel')
   try {
     const d = await net<{ ok: boolean; error?: string; text: string; default: boolean; tidy?: boolean }>(
       '/api/voiceprefs',
@@ -161,7 +161,7 @@ export async function sendPrefs() {
     U.files = []
     saveDraft()
     render()
-    toast("Saved: every project's voice notes follow these from now on", async () => {
+    toast('Saved: applies to all projects', async () => {
       const b = await net<{ ok: boolean; text: string; default: boolean; tidy?: boolean }>(
         '/api/voiceprefs',
         JSON_POST({ text: was }),
@@ -306,7 +306,7 @@ export function projMove(slug: string, dir: number) {
   const names = [...(DR.list || [])].sort(projOrder).map((p) => p.name),
     i = names.indexOf(slug),
     j = i + dir
-  if (i < 0 || j < 0 || j >= names.length) return toast(dir < 0 ? 'It is the first project' : 'It is the last project')
+  if (i < 0 || j < 0 || j >= names.length) return toast(dir < 0 ? 'Already at top' : 'Already last project')
   names.splice(j, 0, names.splice(i, 1)[0])
   const p = (DR.list || []).find((p) => p.name === slug)
   saveProjOrder(names, `${p ? titleOf(p) : slug} moved ${dir < 0 ? 'up' : 'down'}`)

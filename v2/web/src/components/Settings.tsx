@@ -317,11 +317,11 @@ function PhonePush() {
   if (!pushable() || !standalone())
     return (
       <Part
-        title={standalone() ? "This phone can't get notifications" : 'Add Taska to the Home Screen first'}
+        title={standalone() ? 'Notifications not supported' : 'Add Taska to the Home Screen first'}
         about={
           standalone()
             ? 'Its browser has no push service.'
-            : 'Add Taska to the Home Screen (how: Use on your phone), open it from there, and turn notifications on here.'
+            : 'See Use on your phone, then open Taska from the Home Screen and turn notifications on.'
         }
       >
         {standalone() ? null : (
@@ -341,7 +341,7 @@ function PhonePush() {
     <>
       <Setting
         title={blocked ? 'Blocked by the phone' : PUSH.sub ? 'On' : 'Off'}
-        about="A notification when something needs you in any project, even with Taska closed."
+        about="Alerts when something needs you, even with Taska closed."
         control={
           PUSH.sub ? (
             <button data-act="push-off" className={SECOND}>
@@ -357,7 +357,7 @@ function PhonePush() {
       {PUSH.sub ? (
         <Setting
           title="Quiet 22:00–08:00"
-          about="Taska keeps them till the morning."
+          about="Alerts held until morning."
           control={<Toggle act="notifications-quiet" on={noticeRead('quiet', true)} label="Quiet 22:00–08:00" />}
         />
       ) : null}
@@ -676,10 +676,7 @@ const BODY: Record<string, () => ReactNode> = {
     return (
       <>
         {link ? (
-          <Part
-            title="Link"
-            about="Send this link to your phone and open it once. From then on Taska opens there just like here, from anywhere."
-          >
+          <Part title="Link" about="Open this on your phone to use Taska anywhere.">
             <Box t={link} />
             <CopyBtn t={link} label="Copy link" main />
           </Part>
@@ -697,12 +694,9 @@ const BODY: Record<string, () => ReactNode> = {
         )}
         <Part
           title="On the Home Screen"
-          about="Open the link, then on iPhone tap Share and Add to Home Screen; on Android, the menu and Install app. Taska then opens full screen, like an app, and can record voice notes."
+          about="iPhone: Share › Add to Home Screen. Android: Menu › Install app. Taska then runs full screen and can record voice notes."
         />
-        <Part
-          title="Key"
-          about={`${link ? 'Or type' : 'Type'} the key once on the device. Taska on the Home Screen needs it.`}
-        >
+        <Part title="Key" about={`${link ? 'Or enter' : 'Enter'} this key once on the device.`}>
           <div className="mt-3 flex items-center gap-4">
             <span className="font-mono text-2xl tracking-wider select-all">{S.key}</span>
             <button data-act="copy-text" data-text={S.key} className={SECOND}>
@@ -713,7 +707,7 @@ const BODY: Record<string, () => ReactNode> = {
         </Part>
         <Setting
           title="New key"
-          about="This computer and your local network never need the key. A new key signs out every other device."
+          about="This computer and devices on its network need no key. A new key signs out all other devices."
           control={
             <button
               data-act="new-key"
@@ -742,7 +736,7 @@ const BODY: Record<string, () => ReactNode> = {
                   {pr.default ? <span className="ml-2 text-[13px] font-normal text-zinc-400">default</span> : null}
                 </>
               }
-              about="How every project's voice notes are written down, in your own words. Transcription follows them after its own rules."
+              about="How voice notes are transcribed across all projects."
             >
               {U.prefsEdit ? (
                 <div data-prefs-slot className="mt-3" />
@@ -762,8 +756,8 @@ const BODY: Record<string, () => ReactNode> = {
               title="Tidy voice notes"
               about={
                 pr.tidy
-                  ? 'On: fillers and repeats out, sentences joined, every detail kept. The words as said stay one tap away (Original words, on the voice note).'
-                  : 'Off: voice notes are written down word for word.'
+                  ? 'Removes fillers and repeats, joins sentences, and keeps details. Original words remain available.'
+                  : 'Written word for word.'
               }
               control={
                 <button data-act="tidy-toggle" role="switch" aria-checked={!!pr.tidy} className={SECOND}>
@@ -775,15 +769,15 @@ const BODY: Record<string, () => ReactNode> = {
               title="Spellings"
               about={
                 P_CACHE.fixes.length
-                  ? 'Words voice notes hear your way: ones you corrected, and ones you added here.'
-                  : 'None yet. Add a word below, or select wrong words in a voice note and write the right ones.'
+                  ? 'Custom words and corrections for transcription.'
+                  : 'None. Add words below or correct them directly in a voice note.'
               }
             >
               <div className="mt-3 flex items-center gap-1.5">
                 <input
                   id="fixWord"
                   className={`${FIELD} h-10 py-1.5 text-sm`}
-                  placeholder="A name or term to hear right, e.g. Needs you"
+                  placeholder="Name or term (e.g. Needs you)"
                   aria-label="A word or name"
                   autoComplete="off"
                   spellCheck={false}
@@ -933,7 +927,7 @@ const BODY: Record<string, () => ReactNode> = {
     return S.org?.on ? (
       <Part
         title="On"
-        about={`Gemini (${S.org.model}) reads each input you send and turns it into items, or updates the ones that exist, in every project. What it does with an input shows under it in Inputs, with Undo.`}
+        about={`Gemini (${S.org.model}) creates or updates items from inputs across all projects. See and undo its actions in Inputs.`}
       />
     ) : (
       <Part title="Off" about="Set GEMINI_API_KEY to turn it on" />
@@ -1090,14 +1084,14 @@ function PhoneIndex() {
         <span className="truncate font-semibold text-zinc-700 dark:text-zinc-200">{projTitle()}</span>
       </PhLabel>
       <div className={PH_GROUP}>{PSEC_THIS.map(row)}</div>
-      <PhNote>Connecting an agent is in Agents. The agent pill on the list opens it too.</PhNote>
+      <PhNote>Connect agents in Agents or from an agent pill.</PhNote>
       <PhLabel>All projects</PhLabel>
       <div className={PH_GROUP}>
         {Object.keys(PSEC)
           .filter((k) => !PSEC_THIS.includes(k) && !PSEC_SIDE.includes(k))
           .map(row)}
       </div>
-      <PhNote>Projects: new, rename, delete and restore.</PhNote>
+      <PhNote>Create, rename, delete, or restore.</PhNote>
     </>
   )
 }
@@ -1274,7 +1268,7 @@ function PhoneProjects() {
               </div>
             ))}
           </div>
-          <PhNote>Nothing in a deleted project is lost. Delete forever is in its ⋯ and needs a second tap.</PhNote>
+          <PhNote>Deleted projects keep their data. To delete forever, tap ⋯ and confirm.</PhNote>
         </>
       ) : null}
     </>

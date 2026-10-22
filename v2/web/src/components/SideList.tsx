@@ -69,7 +69,7 @@ function logTarget(l: string): Record<string, string> | null {
 function Log() {
   const lines = P_CACHE.log
   if (!lines) return <Empty>Loading…</Empty>
-  if (!lines.length) return <Empty>Nothing has changed yet.</Empty>
+  if (!lines.length) return <Empty>No changes yet</Empty>
   return (
     <>
       {lines.map((l) => {

@@ -51,7 +51,7 @@ export function addFailed(what: string, why: string, retry: (() => unknown) | nu
   const f: Failed = { id: ++fid, sid: Date.now().toString(36) + fid, what, why, at: Date.now(), retry, p }
   FAILED.unshift(f)
   failedStore((all) => [...all, { sid: f.sid, what, why, at: f.at, p }])
-  toast(retry ? `Not saved yet: ${what}. It goes when Taska answers` : `Not saved: ${what}: ${why}`, null, {
+  toast(retry ? `Not saved yet: ${what}. Saves when Taska is back` : `Not saved: ${what}: ${why}`, null, {
     error: !retry,
   })
   bump('head', 'dialog')

@@ -923,7 +923,7 @@ function Tabs({ hidden }: { hidden: boolean }) {
             {TAB_NAME[t]}
             <span
               data-count
-              title={t === 'inputs' && !words && pending ? `${pending} not handled yet` : undefined}
+              title={t === 'inputs' && !words && pending ? `${pending} pending` : undefined}
               className="rounded-full px-1.5 py-px font-mono text-[11px] font-medium text-zinc-400 tabular-nums group-aria-selected:bg-zinc-900/7 group-aria-selected:text-zinc-600 group-aria-[selected=false]:px-0.5 empty:hidden min-[400px]:group-aria-[selected=false]:px-1 dark:text-zinc-500 dark:group-aria-selected:bg-white/10 dark:group-aria-selected:text-zinc-300"
             >
               {counts[t]}

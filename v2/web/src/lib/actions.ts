@@ -163,7 +163,7 @@ export function editInput(id: string, mode: 'edit' | 'append') {
       t.value += r.text.slice(base.length)
       saveDraft()
       bump('composer')
-      toast(`What was added to ${rcode(id)} in another window is added to your edit`)
+      toast(`${rcode(id)}: merged new text from another window`)
     } else
       toast(
         `${rcode(id)} changed in another window since you began`, // the box's line shows what it says now
@@ -762,7 +762,7 @@ export const ACT: Record<string, Handler> = {
       t.value = k.title
       body.value = k.body
       nx.value = k.next
-      toast('Your unsaved changes are back')
+      toast('Draft restored')
     }
     if (body) {
       body.focus()
@@ -876,7 +876,7 @@ export const ACT: Record<string, Handler> = {
     U.docEdit = true
     U.docText = was ?? null
     renderDoc()
-    if (was) toast('Your draft is back')
+    if (was) toast('Draft restored')
     requestAnimationFrame(() => document.getElementById('docMd')?.focus())
   },
   'doc-done': async () => {
@@ -1034,7 +1034,7 @@ export const ACT: Record<string, Handler> = {
   'doc-tick': (d) => {
     // F393, B412: a choice in a document is ticked on the page at once and waits; the box below sends them all
     if (!tickDoc(Number(d.d), d.key as string, Number(d.i)))
-      return toast('Could not tick it: the document changed. Open it again', null, { error: true })
+      return toast('Document changed; open it again', null, { error: true })
     if (!desk()) U.docType = true // the phone: the box comes under the document, with Send
     renderDoc()
     bump('composer')
@@ -1135,7 +1135,7 @@ export const ACT: Record<string, Handler> = {
       was = kept('subs')[n] as string | undefined
     if (f && was) {
       f.value = was
-      toast('Your subitem title is back')
+      toast('Draft restored')
     }
     f?.focus()
     if (f) fieldInSight(f)
@@ -1399,7 +1399,7 @@ export const ACT: Record<string, Handler> = {
         return false
       }
       if (!q.ok) {
-        toast(q.error || 'Could not put it back', null, { error: true })
+        toast(q.error || 'Could not restore', null, { error: true })
         return false
       }
       try {
@@ -1407,7 +1407,7 @@ export const ACT: Record<string, Handler> = {
       } catch {
         /* the next poll */
       }
-      toast(`The filing of ${rcode(id)} is back`)
+      toast(`Restored ${rcode(id)}’s filing`)
     })
     toast(`Undid the filing of ${rcode(id)}${what ? `: ${what}` : ''}`, run)
   },
@@ -1449,7 +1449,7 @@ export const ACT: Record<string, Handler> = {
   },
   'item-move-proj': (d) => {
     const n = N(d)
-    if (!otherProjects().length) return toast('There is no other project to move it to')
+    if (!otherProjects().length) return toast('No other project to move to')
     openDialog('item-move-proj', { n }, { focus: false })
   },
   'item-move-to': (d) => {
@@ -1477,7 +1477,7 @@ export const ACT: Record<string, Handler> = {
       (ex) =>
         addFailed(
           `moving ${ref} to ${projName(to)} (it is back here)`,
-          (ex as { net?: boolean }).net ? 'Taska was out of reach' : (ex as Error).message || 'Taska said no',
+          (ex as { net?: boolean }).net ? 'Taska unreachable' : (ex as Error).message || 'Taska said no',
           () => ACT['item-move-to'](d),
         ),
     )
@@ -1777,7 +1777,7 @@ export const ACT: Record<string, Handler> = {
     const q = U.outbox[0],
       t = els.text
     if (!q || !t) return
-    if (t.value.trim() || U.files.length) return toast('Send or clear what is in the box first')
+    if (t.value.trim() || U.files.length) return toast('Send or clear the box first')
     U.outbox.shift()
     try {
       const key = 'taska.outbox.' + model.S.project,

@@ -74,7 +74,7 @@ export function endWalk(said = '') {
 }
 export function goThroughPhone() {
   const list = needsList()
-  if (!list.length) return toast('Nothing needs you right now')
+  if (!list.length) return toast('Nothing needs you')
   U.go = { list, done: new Set(), how: {}, undo: {}, at: null, hidden: 0, by: 'filter' }
   peek(list[0])
 }
@@ -140,8 +140,7 @@ export function startGoDesk(from?: number | null) {
         : 'search'
       : 'filter'
   if (!list.length && !all && goNextProject()) return // F193: nothing here, so on to the next project with something for you
-  if (!list.length)
-    return toast(all ? `Nothing that needs you is in this ${by} (${all} hidden)` : 'Nothing needs you right now') // B15
+  if (!list.length) return toast(all ? `Nothing that needs you is in this ${by} (${all} hidden)` : 'Nothing needs you') // B15
   U.go = { list, done: new Set(), how: {}, undo: {}, at: null, hidden: all - list.length, by, tab: U.tab }
   if (U.go.hidden)
     toast(
@@ -187,7 +186,7 @@ export function endGoDesk(how: 'end' | 'last') {
     how === 'end'
       ? `Stopped going through · ${tally}`
       : left
-        ? `That was the last one · ${tally}`
+        ? `Last one · ${tally}`
         : `Nothing else needs you · ${tally}`,
   )
 }

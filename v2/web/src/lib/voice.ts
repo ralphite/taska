@@ -111,14 +111,14 @@ function micError(e: unknown) {
       ua: navigator.userAgent,
     }),
   ).catch(() => {}) // B288
-  if (!window.isSecureContext) return 'The microphone only works on a secure address: open Taska from its https link.'
+  if (!window.isSecureContext) return 'Microphone requires HTTPS: open Taska using its https link.'
   if (name === 'NotAllowedError' || name === 'SecurityError')
     return standalone()
-      ? 'iPhone stopped letting Taska use the microphone. Close Taska completely (swipe it away) and open it again. Still no? Settings › Apps › Safari › Microphone › Allow.'
-      : 'Taska may not use the microphone. Allow it for this site (Safari: aA › Website Settings › Microphone), then try again.'
-  if (name === 'NotFoundError' || name === 'OverconstrainedError') return 'No microphone was found on this device.'
+      ? 'iPhone blocked the microphone. Swipe Taska closed and reopen it. If still blocked: Settings › Apps › Safari › Microphone › Allow.'
+      : 'Microphone access denied. Allow it for this site (Safari: aA › Website Settings › Microphone), then try again.'
+  if (name === 'NotFoundError' || name === 'OverconstrainedError') return 'No microphone found'
   if (name === 'NotReadableError' || name === 'AbortError')
-    return 'The microphone is busy (a call, another app or tab). Stop that, then try again.'
+    return 'Microphone busy (call, app, or tab). Stop the other use and try again'
   return `The microphone did not start (${name || 'unknown error'}). Try again.`
 }
 // B166: why the mic can't record here, in the line above the box (no popup)
@@ -197,7 +197,7 @@ function stopRec(): Promise<Blob | null> {
         MIC.stream.getTracks().forEach((t) => t.stop())
         MIC.stream = null
       }
-      toast('The phone muted the microphone during this note: what you said after that was not recorded', null, {
+      toast("Phone muted the microphone; later speech wasn't recorded", null, {
         error: true,
       })
     }
@@ -267,7 +267,7 @@ export async function finishRec(
     bump('composer')
     if (andSend && (key === 'new' || /^[A-Z]\d+$/.test(key))) sendParked(key)
     else
-      toast(`The voice note is in the box for ${draftName(key)}, where you started it`, () => goDraft(key), {
+      toast(`Voice note is in the box for ${draftName(key)}`, () => goDraft(key), {
         label: 'Go there',
       })
   } else {
@@ -298,7 +298,7 @@ function sendParked(key: string) {
     delete all[key]
   })
   outboxPush({ text, files, scope: /^[A-Z]\d+$/.test(key) ? key : null })
-  toast(`Sent to ${draftName(key)}, where you started the voice note`)
+  toast(`Sent to ${draftName(key)}`)
   bump()
   flushOutbox()
 }
@@ -517,7 +517,7 @@ export async function hear(f: DraftFile) {
     }
     dropRec(f, false)
     bump('composer')
-    return toast(f.plain ? `Taska did not take ${f.name}` : 'Could not upload the recording')
+    return toast(f.plain ? `Failed to upload ${f.name}` : 'Recording upload failed')
   }
   if (f.plain) return bump('composer')
   Object.assign(f, {
@@ -570,7 +570,7 @@ function fullerWords(f: DraftFile, words: string) {
       all[key] = put(all[key] || '')
     })
   Object.assign(f, { tr: words, trAdded: words, doubts: [] })
-  toast('The fuller words of the voice note are in')
+  toast('More complete transcription added')
 }
 function addWords(key: string, words: string) {
   // into the box, or into the draft of the target it waits for
@@ -607,13 +607,9 @@ export function placeWords(f: DraftFile) {
     } else addWords(key, f.tr) // its box shows another target now
     f.trAdded = f.tr
   } else if (key && !f.tr)
-    toast(
-      f.tr_error
-        ? 'Transcription failed. The audio is kept and can be sent as is.'
-        : 'No words heard. The audio is kept and can be sent as is.',
-    )
+    toast(f.tr_error ? 'Transcription failed. Audio is ready to send' : 'No words heard. Audio is ready to send')
   else if (!key && f.sent && !f.tr)
-    toast(f.tr_error ? 'Transcription failed. The audio was sent as is.' : 'No words heard. The audio was sent as is.')
+    toast(f.tr_error ? 'Transcription failed. Audio sent as is' : 'No words heard. Audio sent as is')
 }
 export const unmarked = (s: string) => s.replace(/\s*[(（][?？][)）]/g, '') // without the model's "(?)"
 // Voice notes this browser kept that never went out come back into the box they were recorded in.
@@ -725,7 +721,7 @@ export async function restoreVoice() {
     backFiles.push(f)
   }
   if (resend.size) {
-    sendLog('resend', `${resend.size} voice input(s) sent before a reload or a closed tab, going out again now`)
+    sendLog('resend', `Resending ${resend.size} pending voice ${resend.size === 1 ? 'input' : 'inputs'}`)
     U.outbox.push(...resend.values())
     bump('feedback')
     flushOutbox()
@@ -927,8 +923,7 @@ function vcSegments(text: string, d: NonNullable<ReturnType<typeof docById>>) {
   for (const s of segs) {
     const m = U.vcMarks.find((x) => x.label === s.label && x.d === d.d),
       b = !m && d.blocks.find((b) => plainQuote(b.text).replace(/\s+/g, ' ').includes(s.label.replace(/…$/, '')))
-    if (!m && !b)
-      return { err: `“${s.label.slice(0, 60)}” is not in D${d.d} any more: change or remove that quote line` }
+    if (!m && !b) return { err: `“${s.label.slice(0, 60)}” is no longer in D${d.d}: change or remove the quote line` }
     Object.assign(s, {
       key: m ? m.key : (b as { key: string }).key,
       quote: m ? m.quote : s.label,
@@ -944,7 +939,7 @@ export async function sendVoiceComments() {
   try {
     const files = [...U.files]
     await Promise.all(files.map((f) => f.done))
-    if (files.some((f) => f.transcribing)) toast('Posting as soon as the words of the voice notes are in…')
+    if (files.some((f) => f.transcribing)) toast('Posting when words are ready…')
     for (let i = 0; files.some((f) => f.transcribing) && i < 240; i++) await sleep(500)
     const { segs, err } = vcSegments(els.text.value, d)
     if (err || !segs) return toast(err || 'Nothing to post', null, { error: true })
@@ -1033,7 +1028,7 @@ const docScope = () => {
 export async function docRecStart() {
   const t = document.getElementById('docMd') as HTMLTextAreaElement | null
   if (DV.rec || !t) return
-  if (R.rec) return toast('A voice note is recording for the box: stop it first')
+  if (R.rec) return toast('Stop the current recording first')
   if (!canRecord()) return toast('This browser cannot record here')
   let stream: MediaStream
   try {
@@ -1084,7 +1079,7 @@ export function docRecStop(keep = true) {
     DV.notes.push(note)
     note.done = dvHear(note).then((words) => {
       DV.notes.splice(DV.notes.indexOf(note), 1)
-      if (words == null) toast('Could not work out the words of the voice note')
+      if (words == null) toast('Transcription failed')
       dvPut(note, words || '')
       bump('dialog', 'detail')
     })
@@ -1137,7 +1132,7 @@ function dvPut(note: (typeof DV.notes)[number], words: string) {
     if (at < 0) {
       if (words) {
         t.value = t.value.trimEnd() + '\n\n' + words
-        toast('The mark was gone: the words are at the end')
+        toast('Mark was gone: words added at the end')
       }
       U.docText = t.value
       return
@@ -1158,7 +1153,7 @@ function dvPut(note: (typeof DV.notes)[number], words: string) {
         ? v.trimEnd() + '\n\n' + words
         : v
   })
-  if (words) toast('The words of your voice note are in the draft')
+  if (words) toast('Words added to draft')
 }
 export async function docVoiceSettled() {
   // before Save: stop the microphone, wait for the words still coming
@@ -1167,7 +1162,7 @@ export async function docVoiceSettled() {
     mine = () => DV.notes.filter((v) => v.key === key)
   if (DV.stopping) await DV.stopping
   if (mine().length) {
-    toast('Saving once the words of your voice note are in…')
+    toast('Saving when words are ready…')
     await Promise.all(mine().map((v) => v.done))
   }
   return U.docEdit && !!document.getElementById('docMd') && docKey() === key
@@ -1179,11 +1174,11 @@ export const docMicLabel = () => {
     on: !!DV.rec,
     text: DV.rec ? `Stop ${clock(Date.now() - DV.rec.t0)}` : 'Speak',
     hint: DV.rec
-      ? 'Listening. Your words go where the mark is; you can go on typing.'
+      ? 'Listening. Words go at the mark; you can keep typing.'
       : waiting
         ? `Working out the words of ${waiting > 1 ? waiting + ' voice notes' : 'the voice note'}…`
         : desk()
-          ? 'The first line is the title. Esc keeps it as a draft.'
+          ? 'First line is the title. Esc keeps it as a draft.'
           : 'The first line is the title.',
   }
 }

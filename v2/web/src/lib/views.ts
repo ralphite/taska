@@ -61,7 +61,7 @@ export function saveView(name: string) {
   name = name.split(/\s+/).join(' ').trim()
   if (!name) return toast('Name the view first', null, { error: true })
   if (VW_STATE.list.some((v) => v.name.toLowerCase() === name.toLowerCase()))
-    return toast(`There is a view called ${name} already`, null, { error: true })
+    return toast(`View “${name}” already exists`, null, { error: true })
   void save([...VW_STATE.list, { name, ...now() }], `Saved the view ${name}`)
 }
 export function renameView(i: number, name: string) {
@@ -70,7 +70,7 @@ export function renameView(i: number, name: string) {
   name = name.split(/\s+/).join(' ').trim()
   if (!v || !name || name === v.name) return bump('list')
   if (VW_STATE.list.some((o, j) => j !== i && o.name.toLowerCase() === name.toLowerCase()))
-    return toast(`There is a view called ${name} already`, null, { error: true })
+    return toast(`View “${name}” already exists`, null, { error: true })
   void save(
     VW_STATE.list.map((o, j) => (j === i ? { ...o, name } : o)),
     `Renamed to ${name}`,

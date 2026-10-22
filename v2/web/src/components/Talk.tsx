@@ -701,7 +701,7 @@ export function MsgView({
             <button
               data-act="input-more"
               data-id={src.id}
-              aria-label={`Edit, add more, more for ${rcode(src.id)}`}
+              aria-label={`More for ${rcode(src.id)}`}
               className={`${DC_BTN} min-w-11 justify-center`}
             >
               <Icon n="more" c="size-3.5" />

@@ -75,7 +75,7 @@ export async function net<T = unknown>(
         ms: Date.now() - t0,
         status,
       })
-    throw new NetError(ctl.signal.aborted ? 'No answer from Taska' : 'Taska is out of reach')
+    throw new NetError(ctl.signal.aborted ? 'No answer from Taska' : 'Taska is unreachable')
   } finally {
     clearTimeout(t)
   }
@@ -90,7 +90,7 @@ export function askKey() {
 export async function signIn(key: string) {
   const r = await fetch('/api/login', JSON_POST({ key }))
   const d = (await r.json().catch(() => ({}))) as { ok?: boolean; error?: string }
-  if (!d.ok) throw new Error(d.error || 'That key is not right.')
+  if (!d.ok) throw new Error(d.error || 'Invalid key')
   KEY.asking = false
 }
 // B326: every save that did not go through is told to Taska once it answers again, so the log can count them
@@ -205,7 +205,7 @@ export function notSaved(ex: unknown, retry?: (() => unknown) & { entry?: UndoEn
   if (!(ex as { net?: boolean })?.net) return
   // A7 (T422): it says what it was: given, or the Undo it was, or the last save sent
   what ||= retry?.entry ? `undoing “${retry.entry.label}”` : lastSaid || 'a change'
-  addFailed(what, 'Taska was out of reach: it goes by itself when Taska answers', retry || null)
+  addFailed(what, "Taska out of reach. Sends when it's back", retry || null)
 }
 // What a save was, in a few words, for the toast that says it did not go through
 export function saidOp(o: unknown): string {
@@ -259,7 +259,7 @@ export function saidOp(o: unknown): string {
 const RELOAD = new Map<string, () => unknown>()
 export function notLoaded(what: string, retry: () => unknown) {
   RELOAD.set(what, retry)
-  toast(`Couldn't load ${what} yet: it loads when Taska answers`, null, { error: true })
+  toast(`Couldn't load ${what}. Loads when Taska is back`, null, { error: true })
 }
 // Something that waits for Taska before it shows: its button stays busy meanwhile
 export async function save(o: unknown, retry?: () => unknown) {
@@ -685,7 +685,7 @@ export function restorePending() {
       const p = '/p/' + encodeURIComponent(k.slice('taska.pending.'.length)) + '/'
       for (const e of keptStore(p).sort((a, b) => a.t - b.t))
         if (!mine.has(e.id)) {
-          sendLog('resend', `${e.id} (${saidOp(e.o)}) kept from before, going out again`)
+          sendLog('resend', `${e.id} (${saidOp(e.o)}) retrying`)
           void optimistic(p === ctx.P ? e.patches : [], e.o as Record<string, unknown>, undefined, undefined, {
             id: e.id,
             p,
@@ -925,7 +925,7 @@ export function forget(run: { entry?: UndoEntry } | null | undefined) {
 }
 export async function undoMine() {
   const e = U.mine.at(-1)
-  if (!e) return toast('Nothing of yours to undo on this page. Older changes: Change log')
+  if (!e) return toast('Nothing of yours to undo here. Older changes are in Change log')
   try {
     await e.run()
   } catch {

@@ -114,7 +114,7 @@ export function NeedsCard({ it, onCard = false }: { it: Item; onCard?: boolean }
           {choices ? <SendAnswerBtn n={n} cls={onCard ? 'flex-1' : 'flex-[1.4] lg:flex-none'} keyHint /> : null}
         </>
       ) : null, // T274 #29, B299
-      choices ? '' : '↓ Answer in the box below', // T365 #3: the keys are on the choices and the button
+      choices ? '' : '↓ Answer below', // T365 #3: the keys are on the choices and the button
     )
   }
   const dc = decidedCard(it)
@@ -800,13 +800,13 @@ function NoSelection() {
     // T402: beside Documents, Activity or Deleted the pane waits for what you open there; T438 #16: and says so
     return (
       <div className="grid h-full place-items-center p-8 text-center text-[15px] text-zinc-500 dark:text-zinc-400">
-        {U.side === 'docs' ? 'Pick a document to read it here' : 'Pick a line to see what it is about here'}
+        {U.side === 'docs' ? 'Pick a document to read it here' : 'Select a line to view'}
       </div>
     )
   return (
     <div className="grid h-full place-items-center p-8 text-center">
       <div>
-        <p className="text-[15px] text-zinc-500 dark:text-zinc-400">Select an item, or write a new input below</p>
+        <p className="text-[15px] text-zinc-500 dark:text-zinc-400">Select an item or type below</p>
         <p className="mt-2 flex items-center justify-center gap-1 text-[13px] text-zinc-400">
           <Kbd k="J" />
           <Kbd k="K" />

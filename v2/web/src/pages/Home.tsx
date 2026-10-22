@@ -220,7 +220,7 @@ export function Home() {
           className="mb-3 flex items-center gap-3 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-950 ring-1 ring-amber-200 dark:bg-amber-400/10 dark:text-amber-100 dark:ring-amber-400/25"
         >
           <span id="goneText" className="min-w-0 flex-1">
-            {goneText || `The project “${gone}” was deleted. Restore it, or pick another project below.`}
+            {goneText || `Project “${gone}” deleted. Restore it, or pick another below.`}
           </span>
           <button
             id="goneRestore"

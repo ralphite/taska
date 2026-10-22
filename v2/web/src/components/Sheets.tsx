@@ -530,7 +530,7 @@ function menuDeskParts({ n }: Props): Parts | null {
           it.rank == null ? 'Do this next' : 'Back in order',
           '',
           {},
-          it.rank == null ? `first of the ${it.pri}s in the queue` : 'where it was, by age',
+          it.rank == null ? `first ${it.pri} in queue` : 'where it was, by age',
         )
       : null // F197
   const state = it.archived
@@ -673,7 +673,7 @@ export function FilterControls({ small = false }: { small?: boolean }) {
             <input
               id="viewName"
               placeholder="Name"
-              aria-label="Name of the view"
+              aria-label="View name"
               autoComplete="off"
               onKeyDown={(e) => {
                 if (e.key === 'Enter') (e.currentTarget.nextElementSibling as HTMLElement | null)?.click()
@@ -781,7 +781,7 @@ function Switcher() {
         id="projFilter"
         autoFocus
         className={FIELD}
-        placeholder="Type to find a project"
+        placeholder="Find project…"
         aria-label="Find a project"
         autoComplete="off"
         value={q}
@@ -866,7 +866,7 @@ function Palette() {
         id="cpFilter"
         autoFocus
         className={FIELD}
-        placeholder="Type a command, a code or words of an item"
+        placeholder="Command, code, or keywords…"
         aria-label="Command or item"
         autoComplete="off"
         value={q0}
@@ -1133,7 +1133,7 @@ function inputMenuParts({ id }: Props): Parts | null {
             ))
           : null}
         {canUndoInput(r) && ok.undo ? row('undo', 'undo', 'Undo organizing', filingTip(r)) : null}
-        {ok.move ? row('move-input', 'arrow', 'Move to…', 'Sent to the wrong project? Move it') : null}
+        {ok.move ? row('move-input', 'arrow', 'Move to…', 'Sent to the wrong project?') : null}
         {ok.history ? row('input-history', 'clock', 'History') : null}
         {row('rescope-pick', 'reply', r.scope ? `Put with another item (now ${code(r.scope)})…` : 'Put with an item…')}
         {r.files.map((f) => (
@@ -1260,15 +1260,15 @@ function MoveInputBody({ id }: { id: string }) {
             </button>
           ))
         ) : (
-          <p className="px-3 text-sm text-zinc-500">There is no other project.</p>
+          <p className="px-3 text-sm text-zinc-500">No other projects.</p>
         )}
       </div>
       <p className="text-[13px] leading-snug text-zinc-500 dark:text-zinc-400">
         It goes there with its files and is organized again.
         {made.length
           ? byOrg
-            ? ` What the organizer made of it here is undone: ${list}.`
-            : ` Items made from it here stay: ${list}.`
+            ? ` Organizer changes here will be undone: ${list}.`
+            : ` Items made here will stay: ${list}.`
           : ''}
         {r.scope && byN.has(r.scope) ? ` It also leaves the conversation of ${code(r.scope)}.` : ''}
       </p>
@@ -1409,7 +1409,7 @@ const KINDS: Record<string, (p: Props) => Parts | null> = {
   }),
   'sign-in': () => ({
     // T339 #16: the key, asked for in the page
-    title: 'Taska needs its key',
+    title: 'Key required',
     body: (
       <div className="flex flex-col gap-3">
         <p className="text-sm text-zinc-500 dark:text-zinc-400">

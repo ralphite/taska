@@ -163,7 +163,7 @@ export async function pushOn() {
       (await reg.pushManager.getSubscription()) ||
       (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyBytes(key) }))
     await net('/api/push', JSON_POST({ sub: sub.toJSON(), quiet: noticeRead('quiet', true) }), NET.op)
-    if (!PUSH.sub) toast('Notifications are on for this phone')
+    if (!PUSH.sub) toast('Notifications are on')
     PUSH.sub = sub
   } catch (ex) {
     toast(`Couldn't turn notifications on: ${(ex as Error).message || ex}`, null, { error: true })
@@ -182,5 +182,5 @@ export async function pushOff() {
   }
   PUSH.sub = null
   bump('project')
-  toast('Notifications are off for this phone')
+  toast('Notifications off for this phone')
 }

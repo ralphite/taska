@@ -188,7 +188,7 @@ export function newDoc(n: number) {
     docText: (kept('docs')[`new ${n}`] as string) || '',
   })
   renderDoc()
-  if (U.docText) toast('Your draft is back')
+  if (U.docText) toast('Draft restored')
   requestAnimationFrame(() => document.getElementById('docMd')?.focus())
 }
 export const docMdValue = () => (document.getElementById('docMd') as HTMLTextAreaElement | null)?.value
@@ -204,11 +204,7 @@ export function keepDoc() {
     else delete all[key]
   })
   if (md && md !== was)
-    toast(
-      d
-        ? `Your edit of D${d.d} is kept as a draft: Edit brings it back`
-        : `Your new document is kept as a draft: ${desk() ? '⇧D' : 'New doc'} brings it back`,
-    )
+    toast(d ? `Draft saved: Edit brings it back` : `Draft saved: ${desk() ? '⇧D' : 'New doc'} brings it back`)
 }
 export async function saveDoc() {
   // leaving the editor saves; an empty new note is dropped
