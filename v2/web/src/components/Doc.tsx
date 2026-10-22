@@ -185,6 +185,17 @@ function BlockActs({ d, k, float = false }: { d: Doc; k: string; float?: boolean
     drafts = U.vcMarks.filter((m) => m.d === d.d && m.key === k && markLive(m.label)),
     n = (b?.comments.length || 0) + drafts.length,
     open = float && n > 0 && U.docThreads.has(k)
+  // B5 (T422): in a list, the count sits level with the item its comments quote, not with the list's first item
+  const quote = b?.comments[0]?.quote || ''
+  const [countTop, setCountTop] = useState(0)
+  useLayoutEffect(() => {
+    const sec = box.current?.closest('section'),
+      norm = (x: string) => x.replace(/\s+/g, ' ').trim()
+    const li =
+      sec && quote ? [...sec.querySelectorAll<HTMLElement>('li')].find((l) => norm(l.innerText) === norm(quote)) : null
+    const top = li && sec ? Math.round(li.getBoundingClientRect().top - sec.getBoundingClientRect().top) : 0
+    if (top !== countTop) setCountTop(top)
+  }, [quote, n, float, countTop])
   return (
     <>
       {float && n ? (
@@ -193,13 +204,17 @@ function BlockActs({ d, k, float = false }: { d: Doc; k: string; float?: boolean
           data-act="doc-thread"
           data-key={k}
           title={open ? 'Hide the comments' : 'Show the comments'}
-          className="absolute top-0.5 left-[calc(100%+0.25rem)] z-10 flex h-7 min-w-7 items-center justify-center gap-0.5 rounded-lg bg-amber-100 px-1.5 text-xs font-semibold text-amber-900 hover:bg-amber-200 dark:bg-amber-900/60 dark:text-amber-100"
+          style={{ top: countTop + 2 }}
+          className="absolute left-[calc(100%+0.25rem)] z-10 flex h-7 min-w-7 items-center justify-center gap-0.5 rounded-lg bg-amber-100 px-1.5 text-xs font-semibold text-amber-900 hover:bg-amber-200 dark:bg-amber-900/60 dark:text-amber-100"
         >
           {n}
         </button>
       ) : null}
       {open && b ? (
-        <div className="absolute top-9 -right-10 z-20 flex w-80 max-w-full flex-col gap-2 text-sm shadow-xl">
+        <div
+          style={{ top: countTop + 36 }}
+          className="absolute -right-10 z-20 flex w-80 max-w-full flex-col gap-2 text-sm shadow-xl"
+        >
           {b.comments.length ? <Thread d={d} k={k} comments={b.comments} blockText={b.text} rail /> : null}
           {drafts.map((m) => (
             <DraftCard key={m.label} label={m.label} />
@@ -251,8 +266,7 @@ function BlockActs({ d, k, float = false }: { d: Doc; k: string; float?: boolean
 }
 // B7 (T422): a comment not sent yet is there while the box still holds its words or its voice note; emptied, it is gone
 const markLive = (label: string) =>
-  (els.text?.value || '').split('\n').some((l) => VC_MARK.exec(l)?.[1] === label) ||
-  U.files.some((f) => f.vc === label)
+  (els.text?.value || '').split('\n').some((l) => VC_MARK.exec(l)?.[1] === label) || U.files.some((f) => f.vc === label)
 // B340: a comment not sent yet, where it will go: its words under its quote in the box, and its voice notes
 function DraftCard({ label }: { label: string }) {
   useArea('composer')
