@@ -22,7 +22,7 @@ import {
 } from './state'
 import type { Comment, Doc } from './types'
 import { toast } from './toast'
-import { instant, pushUndo, save } from './data'
+import { instant, optimistic, pushUndo, save, standIn } from './data'
 import { draftStore, kept, markSent, saveDraft } from './drafts'
 import { closeDialog, openDialog } from './dialog'
 import { layersNow, leaveView, writeURL } from './url'
@@ -289,52 +289,64 @@ export async function sendDocComment(t: DocTarget) {
   box.value = ''
   U.files = []
   saveDraft()
-  bump('composer')
-  const back = () => {
-    box.value = [typed, box.value.trim()].filter(Boolean).join('\n')
-    U.files = [...drafts, ...U.files]
-    saveDraft()
-    bump('composer')
-  }
-  let files
-  try {
-    await Promise.all(drafts.map((f) => f.done))
-    if (drafts.some((f) => f.transcribing)) toast('Posting as soon as the words of the voice note are in…')
-    for (let i = 0; drafts.some((f) => f.transcribing) && i < 240; i++) await sleep(500)
-    files = drafts.filter((f) => f.f && !f.failed)
-    let text = typed
-    for (const f of files) if (f.tr && !text.includes(f.tr)) text = (text ? text + '\n' : '') + f.tr
-    if (!text && !files.length) return back()
-    await save(
-      {
-        op: 'dc',
-        d: t.d.d,
-        key: t.key,
-        text,
-        files: files.map(({ f, name, mime, size, tr }) => ({ f, name, mime, size, ...(tr ? { tr } : {}) })),
-        ...(t.reply ? {} : { quote: t.quote }),
-      },
-      () => {
-        const t2 = docTarget() || (docOpen() && { d: docOpen() as Doc, key: 'doc', quote: '', whole: true })
-        if (t2) sendDocComment(t2)
-      },
-    )
-  } catch {
-    return back()
-  }
-  for (const f of files) {
-    f.sent = true
-    dropRec(f)
-  }
+  // B3 (T422): the comment is on its paragraph at once; it is saved behind you (its voice note's words first)
+  const dn = t.d.d,
+    stand: Comment = {
+      id: -Date.now(),
+      key: t.key,
+      quote: t.reply ? '' : t.quote,
+      text: typed || '…',
+      by: 'you',
+      t: new Date().toISOString(),
+    }
+  const gone = standIn(() => {
+    const doc = docById(dn),
+      list = doc && (t.key === 'doc' ? doc.whole : doc.blocks.find((b) => b.key === t.key)?.comments)
+    if (list && !list.some((c) => c.id === stand.id)) list.push(stand)
+  })
   U.docThreads.add(t.key)
   U.docSel = new Set()
   U.docQuote = null
   U.docReply = null // T274 #3: sent, the box is the document's again
   if (U.lastSent) U.lastSent = null
   getSelection()?.removeAllRanges()
+  renderDoc()
   render()
-  toast(t.reply ? 'Reply added' : 'Comment added')
   if (desk()) els.text?.focus({ preventScroll: true })
+  const back = () => {
+    gone()
+    if (els.text) els.text.value = [typed, els.text.value.trim()].filter(Boolean).join('\n')
+    U.files = [...drafts, ...U.files]
+    saveDraft()
+    renderDoc()
+    render()
+  }
+  await Promise.all(drafts.map((f) => f.done))
+  for (let i = 0; drafts.some((f) => f.transcribing) && i < 240; i++) await sleep(500) // its words go with it
+  const files = drafts.filter((f) => f.f && !f.failed)
+  let text = typed
+  for (const f of files) if (f.tr && !text.includes(f.tr)) text = (text ? text + '\n' : '') + f.tr
+  if (!text && !files.length) return back()
+  const ok = await optimistic(
+    [],
+    {
+      op: 'dc',
+      d: dn,
+      key: t.key,
+      text,
+      files: files.map(({ f, name, mime, size, tr }) => ({ f, name, mime, size, ...(tr ? { tr } : {}) })),
+      ...(t.reply ? {} : { quote: t.quote }),
+    },
+    back, // Taska said no (it says why); can't reach it: it is sent again until it can
+  )
+  if (!ok) return
+  gone() // what Taska saved shows instead
+  for (const f of files) {
+    f.sent = true
+    dropRec(f)
+  }
+  renderDoc()
+  render()
 }
 export const docSig = (d: Doc | undefined) =>
   d

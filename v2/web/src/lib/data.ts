@@ -586,6 +586,17 @@ export function linkKids() {
 const restore = () => {
   if (SAVE.last) ingest(JSON.parse(SAVE.last) as State)
 }
+/** B3 (T422): something shown at once while what it stands for is still on its way (a comment waiting for its voice
+ * note's words, say): it stays over every refresh of the page's copy until the function returned is called. */
+export function standIn(fn: () => void) {
+  const p: Patch = { fn, temp: true }
+  SAVE.pend.push(p)
+  patch(p)
+  return () => {
+    SAVE.pend = SAVE.pend.filter((x) => x !== p)
+    restore()
+  }
+}
 // T424 (D32): the changes not saved yet are kept in this browser too, with their id, so after a reload or a closed tab
 // they show again and go out again (Taska takes a change once, by its id)
 type Kept = {

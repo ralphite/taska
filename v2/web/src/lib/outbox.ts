@@ -29,6 +29,7 @@ import {
   load,
   op,
   optimistic,
+  standIn,
   pushUndo,
   forget,
   save,
@@ -470,23 +471,33 @@ export async function sendAmend() {
     // B258
     if (!text && !drafts.length && !dcFind(a.d, a.id)?.files?.length)
       return toast('Write something, or delete the comment instead')
-    await Promise.all(drafts.map((f) => f.done)) // T257 #3: what you added goes along once uploaded
-    const files = drafts
-      .filter((f) => f.f && !f.failed)
-      .map((f) => ({ f: f.f, name: f.name, mime: f.mime, size: f.size, tr: f.tr }))
-    try {
-      await save({ op: 'dcedit', d: a.d, id: a.id, text, ...(files.length ? { files } : {}) })
-    } catch {
-      return
-    }
+    // B3, B4 (T422): the comment changes at once and is saved behind you
     box.value = ''
     U.files = []
     saveDraft()
     U.amend = null
+    const was = dcFind(a.d, a.id)?.text
+    const gone = standIn(() => {
+      const c = dcFind(a.d, a.id)
+      if (c && text) c.text = text
+    })
     renderDoc()
     render()
-    toast('Comment updated')
     if (desk()) box.focus({ preventScroll: true })
+    await Promise.all(drafts.map((f) => f.done)) // T257 #3: what you added goes along once uploaded
+    const files = drafts
+      .filter((f) => f.f && !f.failed)
+      .map((f) => ({ f: f.f, name: f.name, mime: f.mime, size: f.size, tr: f.tr }))
+    await optimistic([], { op: 'dcedit', d: a.d, id: a.id, text, ...(files.length ? { files } : {}) }, () => {
+      // Taska said no (it says why): your words come back to edit
+      U.amend = a
+      if (els.text) els.text.value = text || was || ''
+      U.files = drafts
+      saveDraft()
+    })
+    gone()
+    renderDoc()
+    render()
     return
   }
   if (!text && !drafts.length) return box.focus()
