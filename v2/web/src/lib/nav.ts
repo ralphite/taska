@@ -169,8 +169,11 @@ export function setTab(t: Tab) {
     // B130: each tab keeps its own search and filters; words in the search box go along (T225 #13)
     const words = U.q.trim() ? U.q : ''
     U.tabView[was] = Object.fromEntries(VIEW_KEYS.map((k) => [k, U[k]]))
-    const v = U.tabView[t] || {}
-    for (const k of VIEW_KEYS) (U as Record<string, unknown>)[k] = v[k] ?? (k === 'q' ? '' : 'all')
+    const v = U.tabView[t] || {},
+      views = (x: string) => x === 'items' || x === 'archive' // A9 (T422): Archive is a view of Items: same filters
+    for (const k of VIEW_KEYS)
+      if (!(views(t) && views(was) && k !== 'status'))
+        (U as Record<string, unknown>)[k] = v[k] ?? (k === 'q' ? '' : 'all')
     if (words) {
       U.q = words
       carried = true

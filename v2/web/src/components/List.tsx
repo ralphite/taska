@@ -603,6 +603,16 @@ const VIEWS: [string, string][] = [
   ['closed', 'Finished'],
 ] // in Yadong's order (r399)
 const unfinished = (rows: Item[]) => rows.filter((it) => !CLOSED(it.status))
+// A9 (T422): the Archive view counts what it would show with the filters and search set now
+function archiveCount() {
+  const was = U.status
+  if (U.tab !== 'archive') U.status = 'all'
+  try {
+    return visible('archive').length
+  } finally {
+    U.status = was
+  }
+}
 function viewCount(v: string | View) {
   const was = { type: U.type, when: U.when, status: U.status, pri: U.pri, sort: U.sort },
     tab = U.tab
@@ -741,9 +751,7 @@ function ViewBar() {
         {/* F348: the archive is one of the views, after Finished */}
         <button data-act="tab" data-tab="archive" aria-pressed={U.tab === 'archive'} className={CHIP}>
           Archive
-          <span className="font-mono text-[11px] tabular-nums opacity-60">
-            {model.S.items.filter((it) => it.archived && !it.merged_into).length}
-          </span>
+          <span className="font-mono text-[11px] tabular-nums opacity-60">{archiveCount()}</span>
         </button>
         {VW_STATE.list.map((v, i) => (
           <OwnView key={v.name} v={v} i={i} on={U.tab === 'items' && i === own} />
