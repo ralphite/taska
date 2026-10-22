@@ -27,6 +27,7 @@ from typing import Any, Dict, List, Optional, Tuple
 URL = os.environ.get("TASKA_URL", "http://127.0.0.1:7340")
 STATE = os.path.expanduser("~/.taska/.waker.json")
 LOGS = os.path.expanduser("~/.taska/.waker-logs")
+OFF = os.path.expanduser("~/.taska/.waker-off")  # T461: projects never woken for, one name per line
 CODEX = os.environ.get("CODEX_BIN", "/Applications/ChatGPT.app/Contents/Resources/codex-cli/bin/codex")
 CLAUDE = os.environ.get("CLAUDE_BIN", os.path.expanduser("~/.local/bin/claude"))
 NAMED = ("claude-code", "codex", "antigravity")  # unnamed visitors ("agent", "probe") are scripts, not agents
@@ -157,10 +158,21 @@ def wake(project: str, agent: str, sid: str, cwd: str, path: str, what: str, dry
     return f"woke {agent} {sid}"
 
 
+def off() -> set:
+    try:
+        with open(OFF, encoding="utf-8") as f:
+            return {line.strip() for line in f if line.strip()}
+    except OSError:
+        return set()
+
+
 def round_(state: Dict[str, Any], dry: bool) -> None:
     now = time.time()
+    skip = off()
     for p in json.loads(get("/api/projects")):
         name = p["name"]
+        if name in skip:
+            continue
         try:
             what = news(name)
         except OSError:
