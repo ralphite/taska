@@ -558,6 +558,16 @@ function NeedsBand({ needs, going }: { needs: Item[]; going: Go | null }) {
           going ? (
             <>
               <span className="text-xs font-medium text-amber-700 dark:text-amber-400">· Going through</span>
+              {desk() && U.go && !(U.open != null && U.go.list.includes(U.open)) ? (
+                // T438 #9: paused (you opened something else): the way back is here, not a banner over the item
+                <button
+                  data-act="go-resume"
+                  className="-my-1 ml-auto flex h-11 items-center gap-1 rounded-full pr-2 pl-3 text-[13px] font-semibold text-amber-800 hover:bg-amber-100 dark:text-amber-300 dark:hover:bg-amber-400/15"
+                >
+                  Back to it
+                  <Kbd k="⇧J" />
+                </button>
+              ) : null}
               {desk() ? null : (
                 <button
                   data-act="go-end"

@@ -158,6 +158,7 @@ export interface Go {
   at: number | null
   hidden: number
   by: string
+  tab?: string // the tab it started in (T438 #9)
 }
 export interface DraftFile extends Partial<FileRef> {
   name: string

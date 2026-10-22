@@ -205,9 +205,13 @@ export function Home() {
             }
             navigate(`/p/${encodeURIComponent(x.project)}/`)
           }}
-          className="h-10 shrink-0 rounded-xl bg-amber-500 px-3.5 text-sm font-semibold text-amber-950 hover:brightness-95 dark:bg-amber-400"
+          className="flex h-10 shrink-0 items-center gap-0.5 rounded-full pr-2 pl-3 text-[13px] font-semibold text-amber-800 hover:bg-amber-100 dark:text-amber-300 dark:hover:bg-amber-400/15"
         >
+          {/* T438 #9 (B28): the same Go through as in a project's list */}
           Go through {total}
+          <span aria-hidden="true" className="text-base leading-none">
+            ›
+          </span>
         </button>
       </header>
       {gone ? (

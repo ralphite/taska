@@ -91,7 +91,15 @@ export function keepGo() {
     if (g)
       sessionStorage.setItem(
         GO_KEY(),
-        JSON.stringify({ list: g.list, done: [...g.done], how: g.how, at: g.at, hidden: g.hidden, by: g.by }),
+        JSON.stringify({
+          list: g.list,
+          done: [...g.done],
+          how: g.how,
+          at: g.at,
+          hidden: g.hidden,
+          by: g.by,
+          tab: g.tab,
+        }),
       )
     else sessionStorage.removeItem(GO_KEY())
   } catch {
@@ -112,6 +120,7 @@ export function restoreGo() {
         at: x.at,
         hidden: x.hidden || 0,
         by: x.by || 'filter',
+        tab: x.tab || 'items',
       }
   } catch {
     /* nothing kept */
@@ -119,7 +128,11 @@ export function restoreGo() {
 }
 export function startGoDesk(from?: number | null) {
   const t = walkTab(),
-    list = needsList(t),
+    shown = desk()
+      ? [...document.querySelectorAll<HTMLElement>('#list [data-act="open"][data-n]')].map((el) => Number(el.dataset.n))
+      : [],
+    order = (l: number[]) => [...l].sort((a, b) => (shown.indexOf(a) + 1 || 1e9) - (shown.indexOf(b) + 1 || 1e9)),
+    list = order(needsList(t)), // T438 #9 (B7): in the order the list shows them
     all = model.S.items.filter((it) => needsYou(it) && inTab(it, t)).length,
     by = U.q.trim()
       ? filtered() && (U.type !== 'all' || U.when !== 'all' || U.status !== 'all' || U.pri !== 'all')
@@ -129,7 +142,7 @@ export function startGoDesk(from?: number | null) {
   if (!list.length && !all && goNextProject()) return // F193: nothing here, so on to the next project with something for you
   if (!list.length)
     return toast(all ? `Nothing that needs you is in this ${by} (${all} hidden)` : 'Nothing needs you right now') // B15
-  U.go = { list, done: new Set(), how: {}, undo: {}, at: null, hidden: all - list.length, by }
+  U.go = { list, done: new Set(), how: {}, undo: {}, at: null, hidden: all - list.length, by, tab: U.tab }
   if (U.go.hidden)
     toast(
       `Going through the ${list.length} your ${by} shows · ${U.go.hidden} more need${U.go.hidden === 1 ? 's' : ''} you`,
@@ -154,7 +167,8 @@ export function endGoDesk(how: 'end' | 'last') {
     left = g.list.filter(
       (k) => !g.done.has(k) && byN.get(k) && needsYou(byN.get(k) as NonNullable<ReturnType<typeof byN.get>>),
     ).length
-  const tally = `${settled} settled${left ? ` · ${left} still need${left === 1 ? 's' : ''} you` : ''}`
+  const still = left + g.hidden // T438 #9: the ones your filter hid need you too
+  const tally = `${settled} settled${still ? ` · ${still} still need${still === 1 ? 's' : ''} you` : ''}`
   if (how !== 'end' && goAll() && goAllNext()) return // F251
   U.go = null
   render()
@@ -181,8 +195,8 @@ export function goResume() {
   // back to where you left off, in Items (T113 A13)
   const g = U.go
   if (!g) return
-  if (U.tab !== 'items' || D.page || D.compose) {
-    setTab('items')
+  if (U.tab !== (g.tab || 'items') || D.page || D.compose) {
+    setTab((g.tab || 'items') as Parameters<typeof setTab>[0])
   }
   const waits = (k: number) =>
       byN.get(k) && needsYou(byN.get(k) as NonNullable<ReturnType<typeof byN.get>>) && !g.done.has(k),
@@ -266,4 +280,12 @@ function goAllNext(settled = U.go?.done.size || 0) {
   }
   navigate(`/p/${encodeURIComponent(next.name)}/`)
   return true
+}
+
+// T438 #9 (B7): going through belongs to the list it started in: another tab, Documents, Activity, Deleted or Settings
+// ends it (a banner no longer follows you everywhere)
+export function goLeft() {
+  const g = U.go
+  if (g && desk() && (U.side || D.page || (U.tab !== g.tab && !(g.tab === 'items' && U.tab === 'archive'))))
+    endGoDesk('end')
 }

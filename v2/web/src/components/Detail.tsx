@@ -703,7 +703,18 @@ function ItemActs({ it }: { it: Item }) {
 }
 const ItemNav = () => (
   <>
-    {U.go ? null : (
+    {U.go ? (
+      U.open != null && U.go.list.includes(U.open) ? null : (
+        // T438 #9: paused (you opened something else while going through): the way back, in the bar, not a banner
+        <button
+          data-act="go-resume"
+          className="flex h-8 shrink-0 items-center gap-1 rounded-full bg-amber-50 pr-2 pl-3 text-[13px] font-semibold text-amber-800 hover:bg-amber-100 dark:bg-amber-400/10 dark:text-amber-300 dark:hover:bg-amber-400/20"
+        >
+          Going through · Back to it
+          <Kbd k="⇧J" />
+        </button>
+      )
+    ) : (
       <>
         <BarIcon act="prev" icon="chevup" title="Previous · K" />
         <BarIcon act="next" icon="down" title="Next · J" />
@@ -736,7 +747,7 @@ function GoStrip({ g }: { g: Go }) {
       className="flex h-11 shrink-0 items-center gap-3 border-b border-amber-200/70 bg-amber-50 px-4 text-[13px] dark:border-amber-400/15 dark:bg-amber-400/10"
     >
       <span className="shrink-0 text-xs font-bold tracking-wide text-amber-700 uppercase dark:text-amber-400">
-        {here ? 'Needs you' : 'Going through'}
+        Going through
       </span>
       <span className="shrink-0 text-xs text-zinc-500 tabular-nums dark:text-zinc-400">
         {here ? `${i + 1} of ${g.list.length}` : `paused at ${at + 1} of ${g.list.length}`}
@@ -873,7 +884,8 @@ export function DetailView({ hidden }: { hidden: boolean }) {
   const it = U.open ? byN.get(U.open) : undefined
   const g = U.go
   if (g && U.open != null && g.list.includes(U.open)) g.at = U.open
-  const strip = !!(g && desk() && !D.compose)
+  // T438 #9 (B7): the strip only while you are on one of its items; paused, the list says so in its header instead
+  const strip = !!(g && desk() && !D.compose && U.open != null && g.list.includes(U.open))
   const shownDoc = desk() && U.doc && !U.docEdit ? U.doc : null
   useLayoutEffect(() => {
     // a document opens where you left it, or at its top (not where its item was scrolled)

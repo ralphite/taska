@@ -43,7 +43,7 @@ import {
 } from './url'
 import { PSEC } from './settings-data'
 import { closeDialog } from './dialog'
-import { advance, peek } from './go'
+import { advance, goLeft, peek } from './go'
 import { openDoc } from './docs'
 import { ACT } from './actions'
 import { P_CACHE, loadFixes, loadLog, loadProjects, loadGuide } from './settings'
@@ -161,6 +161,7 @@ export function openSide(side: 'docs' | 'log' | 'deleted', push = true) {
   if (side === 'log' && P_CACHE.logRev !== model.S.rev) loadLog()
   if (push) writeURL(true)
   render()
+  goLeft() // T438 #9
 }
 export function setTab(t: Tab) {
   U.side = null
@@ -215,6 +216,7 @@ export function setTab(t: Tab) {
   render()
   const el = scrollOf(t)
   if (t !== was && el) el.scrollTop = carried ? 0 : U.tabTop[t] || 0
+  goLeft() // T438 #9
 }
 export function searchMode(on: boolean) {
   if (on !== !!U.searching) {
@@ -358,6 +360,7 @@ export function openProject(sec: string | null) {
   if (sec === 'projects') loadProjects()
   else loadProjects(true)
   if (part) requestAnimationFrame(() => document.getElementById(part)?.scrollIntoView({ block: 'start' }))
+  goLeft() // T438 #9
 }
 // The phone's back on a page of Settings: back where you came from when that was a step here, else one level up.
 export function pageUp() {
