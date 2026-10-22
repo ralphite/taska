@@ -46,7 +46,6 @@ class Store:
         self.inputs: Dict[str, Input] = {}
         self.events: List[Event] = []
         self.op_done: Dict[str, Tuple[Dict[str, Any], int]] = {}  # B326: the page's save id -> its answer, so a save sent again is done once
-        self.act_lock = threading.Lock()  # F407: one write to actions.jsonl at a time
         self.move_lock = threading.Lock()  # F397: one move of an item to another project at a time, so one sent again waits and is not done twice
         self.qids: Dict[str, str] = {}  # the page's id for an input it sent -> the input: sent again after a lost answer, it goes in once (T101)
         self.undone: Set[int] = set()  # seqs of your changes that were put back (F80)
@@ -1032,20 +1031,6 @@ class Store:
         return ops.run_all(self, ops_, by, src, keep, ses)
 
     # -- files ------------------------------------------------------------------
-
-    def keep_actions(self, rows: List[Dict[str, Any]]) -> None:
-        """F407: what was done on the page, one JSON line each, in actions.jsonl next to the data (20 MB, then one older file)."""
-        if not rows:
-            return
-        path = os.path.join(self.folder, "actions.jsonl")
-        with self.act_lock:
-            try:
-                if os.path.getsize(path) > 20_000_000:
-                    os.replace(path, path[:-6] + ".1.jsonl")
-            except OSError:
-                pass
-            with open(path, "a", encoding="utf-8") as f:
-                f.write("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows))
 
     def save_file(self, name: Optional[str], mime: Optional[str], data: bytes) -> Dict[str, Any]:
         import mimetypes

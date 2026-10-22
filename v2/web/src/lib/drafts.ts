@@ -25,6 +25,7 @@ import {
   tabOf,
   type DraftFile,
 } from './state'
+import { draftLog } from './actlog'
 import { toast } from './toast'
 import { keepRec, moveRecs } from './voice'
 import { ACT } from './actions'
@@ -98,6 +99,7 @@ export function carryDraft(from: string, project: string, as: string) {
 export function saveDraft() {
   const k = U.draftKey,
     v = els.text?.value ?? ''
+  if (k) draftLog(k, v)
   if (k)
     draftStore((all) => {
       if (v.trim()) all[k] = v

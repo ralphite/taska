@@ -8,11 +8,13 @@ from __future__ import annotations
 import http.client
 import json
 import os
+import sys
 import time
 import urllib.error
 import urllib.request
 from typing import Any, Dict, List, Optional, Tuple
 
+from . import logs
 from .core import KEY_VARS, MODEL, Err, first_line
 
 Body = Dict[str, Any]
@@ -25,6 +27,27 @@ def api_key() -> Optional[str]:
     return None
 
 
+def keep(model: str, body: Body, t0: float, reply: Optional[Dict[str, Any]] = None, status: Optional[int] = None,
+         error: str = "") -> None:
+    """T453: every Gemini call into the log table: what was sent (audio and images by size only), the reply, how
+    long it took, the tokens, and who asked (the organizer or voice)."""
+    def strip(x: Any) -> Any:
+        if isinstance(x, dict):
+            if "data" in x and ("mime_type" in x or "mimeType" in x):
+                return {"mime_type": x.get("mime_type") or x.get("mimeType"), "bytes": len(str(x["data"])) * 3 // 4}
+            return {k: strip(v) for k, v in x.items()}
+        if isinstance(x, list):
+            return [strip(v) for v in x]
+        return x
+    caller = sys._getframe(2).f_globals.get("__name__", "").rsplit(".", 1)[-1]
+    caller = sys._getframe(3).f_globals.get("__name__", "").rsplit(".", 1)[-1] if caller == "gemini" else caller
+    use = (reply or {}).get("usageMetadata") or {}
+    logs.log("server", "gemini", who={"organizer": "org"}.get(caller, caller), ms=int((time.monotonic() - t0) * 1000),
+             status=status or (200 if reply is not None else None), level="error" if error else "info", model=model,
+             sent=strip(body), reply=reply, error=error or None, tokens_in=use.get("promptTokenCount"),
+             tokens_out=use.get("candidatesTokenCount"), tokens_think=use.get("thoughtsTokenCount"))
+
+
 def gemini_call(model: str, body: Body, timeout: float = 120) -> Dict[str, Any]:
     """One generateContent request -> the parsed reply. Busy and network errors are tried again; a model without a
     thinking switch is asked again without thinkingConfig."""
@@ -32,12 +55,15 @@ def gemini_call(model: str, body: Body, timeout: float = 120) -> Dict[str, Any]:
         req = urllib.request.Request(
             f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
             data=json.dumps(body).encode(), headers={"x-goog-api-key": api_key() or "", "Content-Type": "application/json"})
+        t0 = time.monotonic()
         try:
             with urllib.request.urlopen(req, timeout=timeout) as r:
                 out: Dict[str, Any] = json.load(r)
+                keep(model, body, t0, reply=out)
                 return out
         except urllib.error.HTTPError as ex:
             detail = ex.read().decode("utf-8", "replace")
+            keep(model, body, t0, status=ex.code, error=detail[:4000])
             gen = body.get("generationConfig") or {}
             if ex.code == 400 and "hinking" in detail and "thinkingConfig" in gen:
                 del gen["thinkingConfig"]  # model without a thinking switch
@@ -47,6 +73,7 @@ def gemini_call(model: str, body: Body, timeout: float = 120) -> Dict[str, Any]:
                 continue
             raise Err(f"Gemini HTTP {ex.code}: {first_line(detail, 160)}")
         except (OSError, http.client.HTTPException) as ex:  # unreachable, timed out, connection dropped
+            keep(model, body, t0, error=repr(ex))
             if attempt < 2:
                 time.sleep(2)
                 continue

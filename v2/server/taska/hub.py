@@ -22,7 +22,7 @@ import threading
 from datetime import datetime
 from typing import Any, Dict, List, Optional, Tuple
 
-from . import storage
+from . import logs, storage
 from .core import CLOSED, KEY_CHARS, NAME, Err, now, short_slug, slug_of, title_of
 from .organizer import Organizer
 from .push import Push
@@ -41,6 +41,8 @@ class Hub:
         self.projects: Dict[str, Store] = {}
         self.trash = os.path.join(self.root, ".deleted")  # deleted projects, as they were: Restore brings one back (F173)
         os.makedirs(self.root, exist_ok=True)
+        logs.start(self.root)  # T453: the log table
+        threading.Thread(target=logs.migrate_actions, args=(self.root,), daemon=True).start()
         self.push = Push(self.root)  # phones that want a push when something needs you (F195)
         self.key = ""
         try:

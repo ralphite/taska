@@ -36,9 +36,15 @@ def old_projects(root: str) -> List[str]:
 
 
 def main(argv: Optional[List[str]] = None) -> None:
+    argv = sys.argv[1:] if argv is None else argv
+    if argv[:1] == ["logs"]:  # T453: read the log table
+        from . import logs
+        logs.main(argv[1:])
+        return
     ap = argparse.ArgumentParser(prog="taska", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("command", nargs="?", default="serve", choices=("serve", "install-skill", "import"),
-                    help="install-skill: teach Claude Code, Codex and Antigravity how to use Taska; import: bring in the old data")
+    ap.add_argument("command", nargs="?", default="serve", choices=("serve", "install-skill", "import", "logs"),
+                    help="install-skill: teach Claude Code, Codex and Antigravity how to use Taska; import: bring in the old data;"
+                         " logs: read the log table (taska logs -h)")
     ap.add_argument("--port", type=int, default=7340)
     ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--root", default="~/.taska", help="data folder, one subfolder per project (default ~/.taska)")
