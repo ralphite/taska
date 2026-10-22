@@ -144,6 +144,16 @@ def card(s: "Store", it: Item, ref: Ref = None) -> str:
         out.append(" · ".join(meta))
     if it["next"]:
         out.append("next: " + it["next"])
+    par = s.items.get(it["parent"]) if it["parent"] else None
+    if par:  # F480: what the item is part of, short: its title, how it starts, what was decided there, its documents
+        out.append(f"part of {s.code(par['n'])} ({par['status']}): {par['title']}")
+        lines = [ln for ln in (par["body"] or "").splitlines() if ln.strip()][:4]
+        out.extend("  " + first_line(ln, 200) for ln in lines)
+        decided = [x for x in par["thread"] if x["kind"] == "decide"][-2:]
+        out.extend(f"  decided: {first_line(x['text'], 200)}" for x in decided)
+        pdocs = [d for d in s.docs.values() if d["n"] == par["n"] and not d.get("deleted")]
+        if pdocs:
+            out.append("  docs: " + "; ".join(f"D{d['d']} {d['title']}" for d in pdocs))
     w = s.waiting(it)
     if w:
         out.append(f"{'! blocked' if w['kind'] == 'block' else '? asked'}, waiting on the user: " + w["text"])
@@ -157,7 +167,8 @@ def card(s: "Store", it: Item, ref: Ref = None) -> str:
     # B452: the user's own words this item came from, whole, so one read has them (the organizer may have summed up);
     # what is already in the thread as the user's message is not repeated
     shown = {x.get("src") for x in it["thread"] if x["by"] == "you"}
-    said = [s.inputs[r] for r in it["srcs"] if r in s.inputs and r not in shown and not s.inputs[r].get("deleted")]
+    said = [s.inputs[r] for r in it["srcs"] if r in s.inputs and r not in shown and not s.inputs[r].get("deleted")
+            and " ".join((s.inputs[r]["text"] or "").split()) not in " ".join((it["body"] or "").split())]  # already the body
     if said:
         out.append("the user's own words (the inputs it came from):")
         for inp in said:

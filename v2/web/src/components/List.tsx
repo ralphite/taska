@@ -288,7 +288,11 @@ export function ItemRow({
         Next
       </span>
     ) : null,
-    it.parent && !depth ? <span key="u">↳ {code(it.parent)}</span> : null,
+    it.parent && !depth ? ( // F480: it opens what this belongs to
+      <button key="u" data-act="goto" data-n={it.parent} title="Part of" className="hover:underline">
+        ↳ {code(it.parent)}
+      </button>
+    ) : null,
     children.length ? (
       <Cnt
         key="c"
@@ -409,7 +413,14 @@ export function NeedsRow({ it, depth = 0 }: { it: Item; depth?: number }) {
             </span>
           ) : null}
           {it.parent && !depth ? (
-            <span className="shrink-0 text-zinc-500 dark:text-zinc-400">↳ {code(it.parent)}</span>
+            <button
+              data-act="goto"
+              data-n={it.parent}
+              title="Part of"
+              className="shrink-0 text-zinc-500 hover:underline dark:text-zinc-400"
+            >
+              ↳ {code(it.parent)}
+            </button>
           ) : null}
           <span className="min-w-0 truncate font-normal text-zinc-500 dark:text-zinc-400">
             <Hit text={ex} />

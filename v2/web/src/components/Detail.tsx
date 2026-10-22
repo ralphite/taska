@@ -448,6 +448,8 @@ export function ItemPage({ it, left = null }: { it: Item; left?: ReactNode }) {
         >
           <Icon n="link" c="size-3.5 opacity-60" />
           <span className="truncate">
+            {/* F480: what it belongs to, and a way there */}
+            <span className="mr-1 text-zinc-500 dark:text-zinc-400">Part of</span>
             <span className={`mr-1 font-mono font-bold ${TYPE_TEXT[parent.type]}`}>{code(parent.n)}</span>
             {parent.title}
           </span>
