@@ -47,7 +47,8 @@ def state(s: "Store") -> Dict[str, Any]:
             d = dict(it)
             d["code"] = s.code(it["n"])
             w = s.waiting(it)
-            d["wait"] = {"id": w["id"], "kind": w["kind"], "text": w["text"], "by": w["by"], "files": w.get("files", [])} if w else None
+            d["wait"] = {"id": w["id"], "kind": w["kind"], "text": w["text"], "by": w["by"], "files": w.get("files", []),
+                         **({"ses": w["ses"]} if w.get("ses") else {})} if w else None
             d["reply"] = s.talked(it)  # T438 #13: a comment on its document counts on the page
             if s.reads.get(it["n"]):
                 d["read"] = {k: int(v * 1000) for k, v in s.reads[it["n"]].items()}
@@ -159,7 +160,7 @@ def card(s: "Store", it: Item, ref: Ref = None) -> str:
     if it["thread"]:
         out.append("thread:")
         for x in it["thread"][-30:]:
-            tag = x["by"] + ("" if x["kind"] == "say" else " " + x["kind"])
+            tag = x["by"] + (f" · {x['ses']}" if x.get("ses") else "") + ("" if x["kind"] == "say" else " " + x["kind"])
             out.append(f"#{x['id']} {hm(x['t'])} {tag}" + (f" (edited {hm(x['edited'])})" if x.get("edited") else "") + f": {x['text']}"
                        + "".join(f" [{(ref or s.local)(f['f'])}]" for f in x.get("files", [])))
     return "\n".join(out) + "\n"
@@ -284,7 +285,8 @@ LOG_WORDS = {
 
 
 def log(s: "Store", n: int) -> str:
-    return "".join(f"#{x['seq']} {hm(x['t'])} {x['who']} {x['what']}\n" for x in log_entries(s, n)) or "\n"
+    return "".join(f"#{x['seq']} {hm(x['t'])} {x['who']}{' · ' + x['ses'] if x.get('ses') else ''} {x['what']}\n"
+                   for x in log_entries(s, n)) or "\n"
 
 
 def log_entries(s: "Store", n: int, before: int = 0) -> List[Dict[str, Any]]:
@@ -351,5 +353,5 @@ def log_entries(s: "Store", n: int, before: int = 0) -> List[Dict[str, Any]]:
         else:
             t = f"organizer {e['src']} {'ok' if e.get('ok') else 'FAILED'}: {first_line(e.get('msg', ''), 90)}"
             who = "org"
-        out.append({"seq": e["seq"], "t": e["t"], "who": who, "what": t})
+        out.append({"seq": e["seq"], "t": e["t"], "who": who, "what": t, **({"ses": e["ses"]} if e.get("ses") else {})})
     return out

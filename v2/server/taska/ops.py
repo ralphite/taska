@@ -524,22 +524,27 @@ def run(s: "Store", op: Op, by: str, ctx: Dict[str, Any]) -> Tuple[str, Any]:
     raise Err(f"unknown op '{name}'")
 
 
-def run_all(s: "Store", ops: List[Tuple[int, Any]], by: str, src: Optional[str] = None, keep: bool = False) -> Tuple[List[str], List[Any]]:
+def run_all(s: "Store", ops: List[Tuple[int, Any]], by: str, src: Optional[str] = None, keep: bool = False,
+            ses: str = "") -> Tuple[List[str], List[Any]]:
     """ops: list of (lineno, op dict | Err). keep = link changes to src without marking it handled."""
     lines: List[str] = []
     labels: List[Any] = []
     ctx: Dict[str, Any] = {"src": src, "keep": keep}
     with s.lock:
-        for no, op in ops[:MAX_OPS]:
-            try:
-                if isinstance(op, Err):
-                    raise op
-                msg, label = run(s, op, by, ctx)
-                lines.append(msg)
-                if label:
-                    labels.append(label)
-            except Err as ex:
-                lines.append(f"err{f' L{no}' if no else ''}: {ex}")
+        s.ses = ses
+        try:
+            for no, op in ops[:MAX_OPS]:
+                try:
+                    if isinstance(op, Err):
+                        raise op
+                    msg, label = run(s, op, by, ctx)
+                    lines.append(msg)
+                    if label:
+                        labels.append(label)
+                except Err as ex:
+                    lines.append(f"err{f' L{no}' if no else ''}: {ex}")
+        finally:
+            s.ses = ""
         if len(ops) > MAX_OPS:
             lines.append(f"err: only the first {MAX_OPS} commands were run")
     return lines, labels

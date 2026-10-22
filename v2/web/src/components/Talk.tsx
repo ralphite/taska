@@ -17,6 +17,7 @@ import {
   userWord,
   when,
   whoName,
+  msgName,
   arrived,
   code,
   outboxLine,
@@ -456,7 +457,7 @@ function Answered({ x, gid, done }: { x: Msg; gid: string; done: string[] }) {
     return (
       <NeedFrame
         icon="ask"
-        title={`${whoName(x.by)} asks you`}
+        title={`${msgName(x)} asks you`}
         t={x.t}
         body={<Rich text={x.text} gid={gid + 'rq' + x.id} cls="text-zinc-900 dark:text-zinc-100" form={n} />}
         foot={
@@ -474,7 +475,7 @@ function Answered({ x, gid, done }: { x: Msg; gid: string; done: string[] }) {
   return (
     <NeedFrame
       icon="ask"
-      title={`${whoName(x.by)} asks you`}
+      title={`${msgName(x)} asks you`}
       t={x.t}
       going={g ? outboxState(g) : ''}
       done
@@ -726,6 +727,7 @@ export function MsgView({
         <div className="flex items-center gap-2 px-1 text-[11px] text-zinc-400 dark:text-zinc-500">
           <Avatar by={x.by} />
           <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">{whoName(x.by)}</span>
+          {x.ses ? <span className="-ml-1 text-xs text-zinc-500 dark:text-zinc-400">· {x.ses}</span> : null}
           <span className="rounded bg-zinc-100 px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-zinc-500 uppercase dark:bg-zinc-800 dark:text-zinc-400">
             Withdrawn
           </span>
@@ -758,6 +760,7 @@ export function MsgView({
       <div className="flex items-center gap-2 px-1 text-[11px] text-zinc-400 dark:text-zinc-500">
         <Avatar by={x.by} />
         <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">{whoName(x.by)}</span>
+        {x.ses ? <span className="-ml-1 text-xs text-zinc-500 dark:text-zinc-400">· {x.ses}</span> : null}
         {done && !form ? (
           <span className="flex items-center gap-0.5 rounded bg-zinc-100 px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-zinc-600 uppercase dark:bg-zinc-800 dark:text-zinc-300">
             <Icon n="check" c="size-3" sw="3" />

@@ -25,6 +25,7 @@ export interface Msg {
   src: string | null
   files: FileRef[]
   edited?: string
+  ses?: string // T458: the agent's session that wrote it
   change?: boolean
   hidden?: boolean
 }
@@ -34,6 +35,7 @@ export interface Wait {
   kind: 'ask' | 'block'
   text: string
   by: string
+  ses?: string
   files: FileRef[]
 }
 

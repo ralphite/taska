@@ -184,7 +184,11 @@ export function logLine(l: string, withTime = true) {
         : rcode(r),
     )
   return (
-    `<span class="font-medium text-zinc-800 dark:text-zinc-100">${esc(whoName(m[3]))}</span> ${what}` +
+    `<span class="font-medium text-zinc-800 dark:text-zinc-100">${esc(whoName(m[3].split('|')[0]))}</span>` +
+    (m[3].includes('|')
+      ? ` <span class="text-zinc-500 dark:text-zinc-400">· ${esc(m[3].split('|')[1].replace(/_/g, ' '))}</span>`
+      : '') +
+    ` ${what}` +
     (withTime ? ` <span class="font-mono text-[11px] whitespace-nowrap text-zinc-400">${esc(m[2])}</span>` : '')
   )
 }

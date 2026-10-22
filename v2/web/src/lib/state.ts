@@ -415,6 +415,8 @@ export const dayShort = (t: string) =>
   t ? new Date(t).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''
 export const who = (b: string) => (b === 'you' ? 'You' : b === 'org' ? 'Organizer' : b === 'agent' ? 'Agent' : b)
 export const whoName = (b: string) => AGENT_NAME[b] || who(b)
+/** T458: an agent's name with the session that wrote the message, e.g. "Claude Code · worker" */
+export const msgName = (x: { by: string; ses?: string }) => whoName(x.by) + (x.ses ? ` · ${x.ses}` : '')
 export const rcode = (id: string | null | undefined) => String(id || '').replace(/^r(\d+)$/, '#$1') // T274 #22: an input reads #315
 export const isAudio = (f: { mime?: string }) => (f.mime || '').startsWith('audio/')
 export const isImage = (f: { mime?: string }) => (f.mime || '').startsWith('image/')

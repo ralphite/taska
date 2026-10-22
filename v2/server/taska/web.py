@@ -508,9 +508,10 @@ class Handler(BaseHTTPRequestHandler):
         if p == "/do":
             text = self.body(MAX_FILE).decode("utf-8", "replace")
             by = (q.get("by") or ["agent"])[0][:20]
+            ses = self.session_of(q) if by not in PEOPLE else ""
             if by not in PEOPLE:
-                s.saw(by, 0, self.session_of(q))
-            lines, _ = s.run_all(parse_dsl(text), by)
+                s.saw(by, 0, ses)
+            lines, _ = s.run_all(parse_dsl(text), by, ses=" ".join(ses.split())[:60])
             tail = "GET /next to continue" if s.cfg["auto"] else "stop after the current item"
             with s.lock:
                 news = s.news_for(by) if by not in PEOPLE else []

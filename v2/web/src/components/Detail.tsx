@@ -36,7 +36,7 @@ import {
   canDone,
   statusName,
   useArea,
-  whoName,
+  msgName,
   detailShown,
   type Go,
 } from '../lib/state'
@@ -85,7 +85,7 @@ function decidedCard(it: Item): { dec: NonNullable<Item['decided']>; x: Msg | un
 export function NeedsCard({ it, onCard = false }: { it: Item; onCard?: boolean }) {
   const n = it.n,
     m = cardMsg(it),
-    name = whoName(m?.by || it.wait?.by || (it.by && it.by !== 'you' ? it.by : 'agent'))
+    name = msgName(m || it.wait || { by: it.by && it.by !== 'you' ? it.by : 'agent' })
   // F428 (P0): the same frame as the card it becomes once answered (NeedFrame), so nothing moves
   const card = (icon: string, title: string, body: ReactNode, buttons: ReactNode, hint = '') => (
     <NeedFrame icon={icon} title={title} t={m?.t} body={body} foot={buttons} hint={hint} />
@@ -106,7 +106,7 @@ export function NeedsCard({ it, onCard = false }: { it: Item; onCard?: boolean }
     const keep = it.status === 'proposed' || it.status === 'review'
     return card(
       w.kind === 'block' ? 'alert' : 'ask',
-      `${whoName(w.by)} ${w.kind === 'block' ? 'is blocked and needs you' : 'asks you'}`,
+      `${msgName(w)} ${w.kind === 'block' ? 'is blocked and needs you' : 'asks you'}`,
       body,
       keep || choices ? (
         <>
@@ -127,7 +127,7 @@ export function NeedsCard({ it, onCard = false }: { it: Item; onCard?: boolean }
       return (
         <NeedFrame
           icon={dec.from === 'proposed' ? 'propose' : 'done'}
-          title={`${whoName(x?.by || (it.by && it.by !== 'you' ? it.by : 'agent'))} ${dec.from === 'proposed' ? 'proposed this' : 'finished this'}`}
+          title={`${msgName(x || { by: it.by && it.by !== 'you' ? it.by : 'agent' })} ${dec.from === 'proposed' ? 'proposed this' : 'finished this'}`}
           t={x?.t}
           act={
             <button
@@ -169,7 +169,7 @@ export function NeedsCard({ it, onCard = false }: { it: Item; onCard?: boolean }
     return (
       <NeedFrame
         icon={dec.from === 'proposed' ? 'propose' : 'done'}
-        title={`${whoName(x?.by || (it.by && it.by !== 'you' ? it.by : 'agent'))} ${dec.from === 'proposed' ? 'proposed this' : 'finished this'}`} // T438 #5 (C7): the same name as before you decided
+        title={`${msgName(x || { by: it.by && it.by !== 'you' ? it.by : 'agent' })} ${dec.from === 'proposed' ? 'proposed this' : 'finished this'}`} // T438 #5 (C7): the same name as before you decided
         t={x?.t}
         done
         act={

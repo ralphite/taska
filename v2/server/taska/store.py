@@ -41,6 +41,7 @@ class Store:
         self.hub = hub
         self.lock = threading.RLock()
         self.cond = threading.Condition(self.lock)
+        self.ses = ""  # T458: the session of the agent whose commands are running (set by run_all, under the lock)
         self.items: Dict[int, Item] = {}
         self.inputs: Dict[str, Input] = {}
         self.events: List[Event] = []
@@ -156,7 +157,8 @@ class Store:
                 inp["acked"] = True
 
     def entry(self, it: Item, e: Event, kind: str, text: str, src: Optional[str] = None, files: Optional[List[Any]] = None) -> None:
-        it["thread"].append({"id": e["seq"], "by": e["by"], "kind": kind, "text": text, "t": e["t"], "src": src, "files": files or []})
+        it["thread"].append({"id": e["seq"], "by": e["by"], "kind": kind, "text": text, "t": e["t"], "src": src, "files": files or [],
+                             **({"ses": e["ses"]} if e.get("ses") else {})})
         it["t1"] = e["t"]
 
     def apply(self, e: Event) -> None:
@@ -559,7 +561,8 @@ class Store:
                         it[f] = v
             elif x["k"] == "say":
                 if all(t["id"] != seq for t in it["thread"]):
-                    it["thread"].append({"id": seq, "by": x["by"], "kind": x["kind"], "text": x["text"], "t": x["t"], "src": x.get("src"), "files": x.get("files") or []})
+                    it["thread"].append({"id": seq, "by": x["by"], "kind": x["kind"], "text": x["text"], "t": x["t"], "src": x.get("src"), "files": x.get("files") or [],
+                                         **({"ses": x["ses"]} if x.get("ses") else {})})
                     it["thread"].sort(key=lambda t: t["id"])
             elif x["k"] == "merge":
                 it["merged_into"] = x["into"]
@@ -647,6 +650,8 @@ class Store:
         if self.gone:
             raise Err(f"project {self.name} was deleted")
         e["t"] = now()
+        if self.ses and "ses" not in e:
+            e["ses"] = self.ses
         self.db.append(len(self.events) + 1, e)  # the log first: a change that is in the log is never lost
         self.apply(e)
         self.cond.notify_all()
@@ -1020,9 +1025,11 @@ class Store:
     def run(self, op: Op, by: str, ctx: Dict[str, Any]) -> Tuple[str, Any]:
         return ops.run(self, op, by, ctx)
 
-    def run_all(self, ops_: List[Tuple[int, Any]], by: str, src: Optional[str] = None, keep: bool = False) -> Tuple[List[str], List[Any]]:
-        """ops: list of (lineno, op dict | Err). keep = link changes to src without marking it handled."""
-        return ops.run_all(self, ops_, by, src, keep)
+    def run_all(self, ops_: List[Tuple[int, Any]], by: str, src: Optional[str] = None, keep: bool = False,
+                ses: str = "") -> Tuple[List[str], List[Any]]:
+        """ops: list of (lineno, op dict | Err). keep = link changes to src without marking it handled.
+        ses: the agent's session (T458), kept on every change these commands make."""
+        return ops.run_all(self, ops_, by, src, keep, ses)
 
     # -- files ------------------------------------------------------------------
 

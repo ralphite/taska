@@ -42,8 +42,10 @@ export async function loadFixes(once = false) {
 // T427: the log loads what fits a screen or two; scrolling to its end loads the changes before (LogMore)
 const LOG_FIRST = 60,
   LOG_MORE = 100
-type LogRow = { seq: number; t: string; who: string; what: string }
-const logText = (e: LogRow) => `#${e.seq} ${e.t.slice(5, 10)} ${e.t.slice(11, 16)} ${e.who} ${e.what}`
+type LogRow = { seq: number; t: string; who: string; what: string; ses?: string }
+// T458: the agent's session rides on its name as who|session (spaces as _), one word for the line's pattern
+const logText = (e: LogRow) =>
+  `#${e.seq} ${e.t.slice(5, 10)} ${e.t.slice(11, 16)} ${e.who}${e.ses ? '|' + e.ses.replace(/\s/g, '_') : ''} ${e.what}`
 const seqOf = (l: string) => Number(/^#(\d+)/.exec(l)?.[1] || 0)
 export function loadLog() {
   // the log as it is now: when it opens, and after each change to the project. What is new goes on top; what was
