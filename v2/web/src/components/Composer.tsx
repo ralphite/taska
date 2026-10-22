@@ -741,7 +741,10 @@ function BoxInner() {
     if (t && t.placeholder !== ph) t.placeholder = ph
     t?.classList.toggle('invisible', rec || view)
     if (t) {
-      // empty = one line from the classes; T231: past one line the words take the box's whole width, the buttons a row under them
+      // empty = one line from the classes; T231: past one line the words take the box's whole width, the buttons a row under them.
+      // B481: "past one line" is measured beside the buttons every time. Measured at the whole width, words that fit
+      // there but not beside the buttons (a pasted link) switched the layout back and forth at every redraw.
+      BOX.removeAttribute('data-multi')
       t.style.height = ''
       if (t.value) {
         t.style.height = 'auto'
@@ -749,12 +752,10 @@ function BoxInner() {
       }
       // T438 #2 (A3): on the phone the box keeps one layout and grows a line at a time; the buttons stay where they are
       const multi = desk() && !!t.value && (t.value.includes('\n') || t.scrollHeight > 52)
-      if (multi !== BOX.hasAttribute('data-multi')) {
-        BOX.toggleAttribute('data-multi', multi)
-        if (multi) {
-          t.style.height = 'auto'
-          t.style.height = Math.min(t.scrollHeight, 192) + 'px'
-        }
+      if (multi) {
+        BOX.setAttribute('data-multi', '')
+        t.style.height = 'auto'
+        t.style.height = Math.min(t.scrollHeight, 192) + 'px'
       }
     }
     keepDraftFiles()
