@@ -886,7 +886,19 @@ export const DocCard = ({ d, cls = '' }: { d: Doc; cls?: string }) => (
     <Icon n="right" c="size-4 text-zinc-300 dark:text-zinc-600" />
   </button>
 )
-export function Talk({ it, list, gid = '', notes = [] }: { it: Item; list: Msg[]; gid?: string; notes?: Note[] }) {
+export function Talk({
+  it,
+  list,
+  gid = '',
+  notes = [],
+  card,
+}: {
+  it: Item
+  list: Msg[]
+  gid?: string
+  notes?: Note[]
+  card?: { id: number; node: ReactNode } // T438 #12: the card of what waits on you, drawn where its message is
+}) {
   const th = it.thread,
     vers = versions(th),
     gone = new Set<number>()
@@ -917,6 +929,10 @@ export function Talk({ it, list, gid = '', notes = [] }: { it: Item; list: Msg[]
   }
   for (const x of list) {
     before(x.t)
+    if (card && x.id === card.id) {
+      out.push(<div key={'card' + x.id}>{card.node}</div>)
+      continue
+    }
     out.push(
       <MsgView
         key={x.id}

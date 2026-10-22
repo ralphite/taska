@@ -363,8 +363,12 @@ export function ItemPage({ it, left = null }: { it: Item; left?: ReactNode }) {
     shown = cardMsg(it),
     srcs = it.srcs.filter((id) => byR.get(id)?.kind !== 'answer'), // F428: an answer to its question is not where it came from
     decided = decidedCard(it)?.dec.msg ?? null // F428: its message is in the decided card, once
-  const thread = it.thread.filter((x) => x.id !== it.wait?.id && x.id !== shown?.id && x.id !== decided),
-    hidden = U.more.has(n) ? 0 : Math.max(0, thread.length - 8)
+  // T438 #12 (A8): the card that waits on you (or that you decided) sits where its message is in time, so what came
+  // after it (your note, a comment on a document) reads after it
+  const cardId = it.wait?.id ?? (answeredLast(it) ? null : shown?.id) ?? decided ?? null, // an answered question is drawn by the talk
+    thread = it.thread.filter((x) => x.id !== it.wait?.id || x.id === cardId),
+    hidden = U.more.has(n) ? 0 : Math.max(0, thread.length - 8),
+    inline = cardId != null && thread.slice(hidden).some((x) => x.id === cardId)
   const caret = <Icon n="down" c="size-3 opacity-50" sw="2.25" />
   // T274 #10: the properties in one row, each one a tap away: status, priority, type, now or later
   const chips = (
@@ -607,10 +611,15 @@ export function ItemPage({ it, left = null }: { it: Item; left?: ReactNode }) {
                   Show {hidden} earlier
                 </button>
               ) : null}
-              <Talk it={it} list={thread.slice(hidden)} notes={notes} />
+              <Talk
+                it={it}
+                list={thread.slice(hidden)}
+                notes={notes}
+                card={inline && cardId != null ? { id: cardId, node: <NeedsCard it={it} /> } : undefined}
+              />
             </div>
           ) : null}
-          <NeedsCard it={it} />
+          {inline ? null : <NeedsCard it={it} />}
         </div>
       </div>
     </div>
