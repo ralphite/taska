@@ -87,14 +87,40 @@ function Log() {
   )
 }
 
+type DeletedIn = NonNullable<typeof model.S.deleted>[number]
+function DeletedInput({ x }: { x: DeletedIn }) {
+  return (
+    <div className={ROW}>
+      <div className="min-w-0 flex-1">
+        <p className="line-clamp-2 text-[15px] leading-snug break-words">
+          {x.text || (x.files ? plural(x.files, 'file') : '')}
+        </p>
+        <p className="mt-1 truncate text-xs font-medium text-zinc-500 dark:text-zinc-400">
+          <span className="font-mono">{rcode(x.id)}</span> · deleted {when(x.at)}
+          {x.items.length ? ` · with ${x.items.map((i) => i.code).join(', ')}` : ''}
+        </p>
+      </div>
+      <button data-act="input-restore" data-id={x.id} className={HOVER_BTN}>
+        Restore
+      </button>
+    </div>
+  )
+}
+
 function Deleted() {
   const S = model.S,
     gone = S.gone || [],
     inputs = S.deleted || []
   if (!gone.length && !inputs.length) return <Empty>Nothing deleted</Empty>
+  // C15 (T422): one list, the latest deleted first, whatever it was
+  const rows = [
+    ...gone.map((x) => ({ at: x.at, gone: x, input: null })),
+    ...inputs.map((x) => ({ at: x.at, gone: null, input: x })),
+  ].sort((a, b) => Date.parse(b.at) - Date.parse(a.at))
   return (
     <>
-      {gone.map((x) => {
+      {rows.map(({ gone: x, input }) => {
+        if (!x) return input ? <DeletedInput key={input.id} x={input} /> : null
         const label = x.kind === 'item' ? x.code : `D${x.d}`
         return (
           <div key={label} className={ROW}>
@@ -123,22 +149,6 @@ function Deleted() {
           </div>
         )
       })}
-      {inputs.map((x) => (
-        <div key={x.id} className={ROW}>
-          <div className="min-w-0 flex-1">
-            <p className="line-clamp-2 text-[15px] leading-snug break-words">
-              {x.text || (x.files ? plural(x.files, 'file') : '')}
-            </p>
-            <p className="mt-1 truncate text-xs font-medium text-zinc-500 dark:text-zinc-400">
-              <span className="font-mono">{rcode(x.id)}</span> · deleted {when(x.at)}
-              {x.items.length ? ` · with ${x.items.map((i) => i.code).join(', ')}` : ''}
-            </p>
-          </div>
-          <button data-act="input-restore" data-id={x.id} className={HOVER_BTN}>
-            Restore
-          </button>
-        </div>
-      ))}
     </>
   )
 }
