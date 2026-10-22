@@ -38,7 +38,7 @@ import {
   type Job,
 } from '../lib/state'
 import type { Doc, FileRef, Input, Item, Msg } from '../lib/types'
-import { clean, groups, hasChoices, mdHtml } from '../lib/markdown'
+import { clean, groups, hasChoices, mdHtml, plainQuote } from '../lib/markdown'
 import { audioOf } from '../lib/audio'
 import { P_CACHE } from '../lib/settings'
 import { Avatar, Icon, Kbd } from './ui'
@@ -829,8 +829,7 @@ export function docNotes(n: number, from = ''): Note[] {
     .filter(({ c }) => c.t && (!from || c.t >= from))
     .sort((a, b) => a.c.t.localeCompare(b.c.t))
     .map(({ c, d, key }) => {
-      const q = c.quote ? oneLine(c.quote) : '',
-        you = c.by === 'you',
+      const you = c.by === 'you',
         where = (
           <button
             data-act="doc-at"
@@ -839,9 +838,23 @@ export function docNotes(n: number, from = ''): Note[] {
             className="min-w-0 truncate rounded px-1 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
           >
             on <span className="font-mono">D{d.d}</span>
-            {c.quote ? ` · “${q.slice(0, 40)}${q.length > 40 ? '…' : ''}”` : ''}
           </button>
         ),
+        // B477: what the comment is about is part of the message, at its top, as a quote (it opens that place)
+        quote = c.quote ? (
+          <button
+            data-act="doc-at"
+            data-d={d.d}
+            data-key={key}
+            className={`mb-1.5 line-clamp-3 block w-full border-l-2 pl-2 text-left text-[13px] leading-snug ${
+              you
+                ? 'border-white/50 text-white/85'
+                : 'border-zinc-300 text-zinc-500 dark:border-zinc-600 dark:text-zinc-400'
+            }`}
+          >
+            “{plainQuote(c.quote)}”
+          </button>
+        ) : null,
         words = c.text.trim() ? (
           <Rich text={c.text} gid={`dn${d.d}-${c.id}`} />
         ) : // B15 (T422): a voice note with no words yet still says what it is
@@ -856,7 +869,10 @@ export function docNotes(n: number, from = ''): Note[] {
         t: c.t,
         node: you ? (
           <div key={`dn${d.d}-${c.id}`} className="flex flex-col items-end gap-1">
-            <div className={YOU_BUBBLE}>{words}</div>
+            <div className={YOU_BUBBLE}>
+              {quote}
+              {words}
+            </div>
             <div className="flex max-w-full flex-wrap items-center justify-end gap-x-1 text-[11px] text-zinc-400 dark:text-zinc-500">
               <VoiceLine files={c.files} bare />
               <span className="flex max-w-full min-w-0 items-center gap-0.5 px-1">
@@ -877,6 +893,7 @@ export function docNotes(n: number, from = ''): Note[] {
               <span className="shrink-0">{when(c.t)}</span>
             </div>
             <div className="w-full rounded-2xl rounded-tl-md border border-zinc-200 bg-zinc-50 px-4 py-3 text-[15px] leading-relaxed text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200">
+              {quote}
               {words}
             </div>
           </div>
