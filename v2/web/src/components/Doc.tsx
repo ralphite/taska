@@ -6,6 +6,7 @@ import { BTN, DC_BTN, HIT, MSG, PRIMARY, WHO } from '../lib/constants'
 import {
   R_STATE as R,
   U,
+  bump,
   code,
   desk,
   docResolved,
@@ -307,6 +308,35 @@ function DraftCard({ label }: { label: string }) {
     </div>
   )
 }
+// F432 (D34 #4): a web page's commented parts that are not on the page any more as they were (the page was replaced,
+// or its scripts changed it): their place is gone, or the words quoted are not in it. They show under "Original text
+// changed", as a paragraph of a document that changed does.
+const PAGE_GONE = new Map<number, Set<string>>()
+const here = (d: Doc) => d.blocks.filter((b) => !PAGE_GONE.get(d.d)?.has(b.key))
+const changed = (d: Doc) => [
+  ...d.detached,
+  ...d.blocks
+    .filter((b) => PAGE_GONE.get(d.d)?.has(b.key))
+    .map((b) => ({ key: b.key, quote: b.text, comments: b.comments })),
+]
+const words = (s: string) => s.replace(/\s+/g, ' ').trim()
+// A commented part: a paragraph of the text, or (F432) a part of a web page, which is inside its frame
+function blockEl(k: string): Element | null {
+  if (!k.startsWith('h:')) return document.querySelector(`#docBlocks > section[data-key="${CSS.escape(k)}"]`)
+  try {
+    return (
+      (document.getElementById('docPage') as HTMLIFrameElement | null)?.contentDocument?.querySelector(k.slice(2)) ??
+      null
+    )
+  } catch {
+    return null
+  }
+}
+// the top of a part, in the page's coordinates (a web page's parts are measured inside its frame)
+function blockTop(k: string, el: Element) {
+  const frame = k.startsWith('h:') ? document.getElementById('docPage')?.getBoundingClientRect().top || 0 : 0
+  return el.getBoundingClientRect().top + frame
+}
 // B340: the comments, beside the text. Each sits level with its paragraph; when they would overlap they move down in
 // this column only, never the text. Pointing at one marks its paragraph.
 function DocRail({ d }: { d: Doc }) {
@@ -325,7 +355,7 @@ function DocRail({ d }: { d: Doc }) {
         </div>
       ),
     })
-  for (const b of d.blocks) {
+  for (const b of here(d)) {
     if (b.comments.length)
       entries.push({
         k: b.key,
@@ -346,13 +376,13 @@ function DocRail({ d }: { d: Doc }) {
     for (const m of marks.filter((x) => x.key === b.key))
       entries.push({ k: b.key, node: <DraftCard label={m.label} /> })
   }
-  if (d.detached.length)
+  if (changed(d).length)
     entries.push({
       k: 'end',
       node: (
         <div className="space-y-3">
           <div className="text-[11px] font-medium text-zinc-500">Original text changed</div>
-          {d.detached.map((t) => (
+          {changed(d).map((t) => (
             <section key={t.key}>
               <div className="text-sm text-zinc-400 line-through">{t.quote}</div>
               <Thread d={d} k={t.key} comments={t.comments} rail />
@@ -369,11 +399,8 @@ function DocRail({ d }: { d: Doc }) {
       let y = 0
       for (const el of rail.children as HTMLCollectionOf<HTMLElement>) {
         const k = el.dataset.for || ''
-        const sec =
-          k && k !== 'doc' && k !== 'end'
-            ? document.querySelector<HTMLElement>(`#docBlocks > section[data-key="${CSS.escape(k)}"]`)
-            : null
-        const want = sec ? sec.getBoundingClientRect().top - base : k === 'doc' ? 0 : y
+        const sec = k && k !== 'doc' && k !== 'end' ? blockEl(k) : null
+        const want = sec ? blockTop(k, sec) - base : k === 'doc' ? 0 : y
         const top = Math.max(want, y)
         el.style.top = top + 'px'
         y = top + el.offsetHeight + 12
@@ -383,13 +410,15 @@ function DocRail({ d }: { d: Doc }) {
     place()
     const ro = new ResizeObserver(place)
     ro.observe(rail)
-    const blocks = document.getElementById('docBlocks')
-    if (blocks) ro.observe(blocks)
+    for (const id of ['docBlocks', 'docPage']) {
+      const el = document.getElementById(id) // F432 (D34 #2): a web page's parts move as the page grows
+      if (el) ro.observe(el)
+    }
     for (const el of rail.children) ro.observe(el)
     return () => ro.disconnect()
   })
   const mark = (k: string, on: boolean) =>
-    document.querySelector(`#docBlocks > section[data-key="${CSS.escape(k)}"]`)?.toggleAttribute('data-hl', on)
+    k.startsWith('h:') ? blockEl(k)?.classList.toggle('taska-hl', on) : blockEl(k)?.toggleAttribute('data-hl', on)
   return (
     <aside ref={ref} aria-label="Comments" className="relative">
       {entries.map((e, i) => (
@@ -559,7 +588,7 @@ const placeOf = (el: Element) => {
   }
   return 'h:body > ' + parts.join(' > ')
 }
-function HtmlPage({ d }: { d: Doc }) {
+function HtmlPage({ d, list }: { d: Doc; list: boolean }) {
   useArea('vc')
   useArea('rec')
   const ref = useRef<HTMLIFrameElement>(null)
@@ -636,7 +665,23 @@ function HtmlPage({ d }: { d: Doc }) {
       const doc = f.contentDocument
       if (!doc?.body) return
       for (const el of doc.querySelectorAll('.taska-c, .taska-pick')) el.classList.remove('taska-c', 'taska-pick')
-      for (const b of d.blocks) doc.querySelector(b.key.slice(2))?.classList.add('taska-c')
+      const gone = new Set<string>()
+      for (const b of d.blocks) {
+        let el: Element | null = null
+        try {
+          el = doc.querySelector(b.key.slice(2))
+        } catch {
+          /* not a place on this page */
+        }
+        if (el && words((el as HTMLElement).innerText || el.textContent || '').includes(words(b.text)))
+          el.classList.add('taska-c')
+        else gone.add(b.key)
+      }
+      const was = PAGE_GONE.get(d.d)
+      if (!was || was.size !== gone.size || [...gone].some((k) => !was.has(k))) {
+        PAGE_GONE.set(d.d, gone)
+        bump('vc')
+      }
       if (U.docQuote?.key.startsWith('h:')) doc.querySelector(U.docQuote.key.slice(2))?.classList.add('taska-pick')
     }
     f.addEventListener('load', load)
@@ -645,7 +690,7 @@ function HtmlPage({ d }: { d: Doc }) {
       f.removeEventListener('load', load)
       ro?.disconnect()
     }
-  }, [d.md, d.blocks])
+  }, [d.d, d.md, d.blocks])
   const inspect = !!U.docInspect
   useEffect(() => {
     if (!inspect) {
@@ -702,10 +747,11 @@ function HtmlPage({ d }: { d: Doc }) {
           )}
         </div>
       ) : null}
-      {d.blocks.length ? (
+      {list && d.blocks.length ? (
+        // F432 (D34 #2): under the page when there is no room for the column beside it
         <div className="mt-6 space-y-4 border-t border-zinc-200 pt-4 dark:border-zinc-800">
           <div className="text-xs font-medium text-zinc-500">Comments on parts of the page</div>
-          {d.blocks.map((b) => (
+          {here(d).map((b) => (
             <section key={b.key}>
               <div className="line-clamp-2 text-sm text-zinc-500 dark:text-zinc-400">“{b.text}”</div>
               <Thread d={d} k={b.key} comments={b.comments} />
@@ -718,6 +764,7 @@ function HtmlPage({ d }: { d: Doc }) {
 }
 export function DocView({ d }: { d: Doc }) {
   useArea('rec')
+  useArea('vc') // F432: which parts of a web page are not on it any more
   const ref = useRef<HTMLDivElement>(null)
   useMarkQuotes(ref, d)
   useLayoutEffect(() => {
@@ -806,13 +853,15 @@ export function DocView({ d }: { d: Doc }) {
               Comment mode
             </button>
           ) : null}
-          <button
-            data-act="doc-circle"
-            aria-pressed={!!U.docCircle}
-            className={`${phoneBtn} aria-pressed:bg-amber-100 aria-pressed:text-amber-900 dark:aria-pressed:bg-amber-900/60 dark:aria-pressed:text-amber-100`}
-          >
-            {U.docCircle ? 'Draw around it…' : 'Mark an area'}
-          </button>
+          {d.fmt === 'html' ? null : ( // F432: a web page's parts are picked in Comment mode
+            <button
+              data-act="doc-circle"
+              aria-pressed={!!U.docCircle}
+              className={`${phoneBtn} aria-pressed:bg-amber-100 aria-pressed:text-amber-900 dark:aria-pressed:bg-amber-900/60 dark:aria-pressed:text-amber-100`}
+            >
+              {U.docCircle ? 'Draw around it…' : 'Mark an area'}
+            </button>
+          )}
           <button data-act="doc-edit" className={phoneBtn}>
             Edit
           </button>
@@ -820,7 +869,7 @@ export function DocView({ d }: { d: Doc }) {
         {titled || d.fmt === 'html' ? null : (
           <div className="mt-3 text-2xl leading-tight font-bold tracking-tight">{d.title}</div>
         )}
-        {d.fmt === 'html' ? <HtmlPage d={d} /> : <Outline d={d} />}
+        {d.fmt === 'html' ? <HtmlPage d={d} list={!rail} /> : <Outline d={d} />}
         <div id="docBlocks" className={`relative mt-3 space-y-3 text-[15px] ${U.docCircle ? 'select-none' : ''}`}>
           {(d.fmt === 'html' ? [] : d.blocks).map((b0, i) => {
             const tk = tks[i] // B420: which of the paragraphs with these words it is
@@ -933,10 +982,10 @@ export function DocView({ d }: { d: Doc }) {
             <Thread d={d} k="doc" comments={d.whole} />
           </section>
         ) : null}
-        {!side && d.detached.length ? (
+        {(d.fmt === 'html' ? !rail : !side) && changed(d).length ? (
           <div className="mt-6 space-y-4 border-t border-zinc-200 pt-4 dark:border-zinc-800">
             <div className="text-xs font-medium text-zinc-500">Original text changed</div>
-            {d.detached.map((t) => (
+            {changed(d).map((t) => (
               <section key={t.key}>
                 <div className="text-sm text-zinc-400 line-through">{t.quote}</div>
                 <Thread d={d} k={t.key} comments={t.comments} />
@@ -947,7 +996,9 @@ export function DocView({ d }: { d: Doc }) {
         {side ? null : (
           <>
             <p className="mt-6 text-center text-xs text-zinc-400">
-              Tap a paragraph, select text or circle an area to comment on it
+              {d.fmt === 'html'
+                ? 'Select text, or turn on Comment mode and tap a part, to comment on it'
+                : 'Tap a paragraph, select text or circle an area to comment on it'}
             </p>
             {U.docType && !U.docSel.size && !U.docQuote && !U.docReply ? null : (
               <button
