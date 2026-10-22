@@ -17,6 +17,7 @@ import {
   els,
   render,
   walkTab,
+  canDone,
 } from './state'
 import { hasChoices } from './markdown'
 import { hint, toast } from './toast'
@@ -52,7 +53,7 @@ export const KEYS: [string, [string, string][]][] = [
       ['⇧J / ⇧K', 'Next or previous item that needs you (Go through)'],
       ['O or ↵', 'Full width; Esc goes back'],
       ['Space', 'Scroll the item'],
-      ['G then I N A R', 'Items, Inputs, Archive, Rules'],
+      ['G then I N A R', 'Items, New input (what you said), Archive, Rules'], // T438 #14 (B16): as they are
       ['G then P', 'Switch project (type to find it)'],
       ['G then S', 'Settings'],
       ['[', 'Show or hide the sidebar'],
@@ -67,7 +68,7 @@ export const KEYS: [string, [string, string][]][] = [
       ['1–9, ⌘↵', 'Pick a choice, send the answer'],
       ['D · W · L', "Done · Won't do · Later / Now"],
       ['E / ⇧E', 'Archive or unarchive / archive every finished item'],
-      ['S · P · T', 'Status, priority, type: then the digit or letter the ⋯ menu shows'],
+      ['S · P · T', 'Status, priority, type: then the digit its menu shows'],
       ['M · ⇧C', 'Put under… · Copy for agent'],
       ['I · ⇧D · ⇧A', 'Edit · New doc · Add subitem'],
       ['.', 'All actions'],
@@ -88,7 +89,7 @@ export const KEYS: [string, [string, string][]][] = [
     [
       ['⌘K', 'Go to an item or do anything here'],
       ['⌘ / ⇧ click', 'Pick several rows, then act on them at once'],
-      ['C', 'New input to the project (on Rules, a new rule)'],
+      ['C', 'New input to the project'],
       ['V', 'Voice note for the selected item; V again stops'],
       ['⇧V', 'New input by voice; ⇧V again stops and sends'],
       ['⌥V', 'Voice note while typing in the box'],
@@ -209,7 +210,8 @@ export function deskKey(e: KeyboardEvent) {
     return document.querySelector<HTMLElement>(`[data-act="choice-send"][data-n="${U.open}"]`)?.click()
   }
   if (e.metaKey || e.ctrlKey) return
-  const menuOpen = (U.sheet === 'menu' || (desk() && U.sheet === 'pick' && OV.spec?.kind === 'menu-desk')) && !overlayHidden() // B358: a field's list too
+  const menuOpen =
+    (U.sheet === 'menu' || (desk() && U.sheet === 'pick' && OV.spec?.kind === 'menu-desk')) && !overlayHidden() // B358: a field's list too
   if (menuOpen && menuKey(e)) return
   if (menuOpen && /^[a-zA-Z]$/.test(e.key)) closeDialog() // the keys the menu shows work from it (B131)
   if (!overlayHidden()) return // a sheet or menu is open: it has its own keys (Esc closes it)
@@ -387,7 +389,13 @@ export function deskKey(e: KeyboardEvent) {
         ? ruleTo('open')
         : CLOSED(it.status)
           ? hint(`${code(n)} is ${it.status === 'done' ? 'done' : "marked won't do"} already`)
-          : status('done')
+          : !canDone(it) // T438 #14 (B11): D does what the bar's Done does
+            ? hint(
+                it.status === 'proposed'
+                  ? `${code(n)} is proposed: approve it first (A)`
+                  : `${code(n)} waits for you to accept it (A)`,
+              )
+            : status('done')
     case 'w':
       return it.type === 'rule'
         ? ruleTo('dropped')

@@ -1,5 +1,5 @@
 // What a row offers: the desktop's quick actions on hover (B128) and the phone's swipes (F51, B147, B237).
-import { CLOSED, DR, byN, kids, reduceMotion, rowAction } from './state'
+import { CLOSED, DR, byN, canDone, kids, reduceMotion, rowAction } from './state'
 import type { Item } from './types'
 import { change } from './data'
 import { ACT } from './actions'
@@ -11,7 +11,13 @@ export function deskSlots(it: Item, needs: boolean): (Slot | null)[] {
   const later: Slot = it.when === 'now' ? ['when', 'later', 'Later'] : ['when', 'now', 'Back to now'],
     drop: Slot = ['status', 'dropped', "Won't do"]
   if (it.archived) return [['archived', 'false', 'Unarchive'], null, null, null]
-  if (it.wait) return [null, ['status', 'done', 'Done'], drop, later] // T268
+  if (it.wait)
+    return [
+      null,
+      canDone(it) ? ['status', 'done', 'Done'] : null,
+      it.status === 'proposed' || ['open', 'doing'].includes(it.status) ? drop : null,
+      later,
+    ] // T268; T438 #14: Done as everywhere
   if (it.type === 'rule')
     return it.status === 'proposed'
       ? [needs ? null : ['status', 'open', 'Approve'], null, drop, null] // a rule's own words (T113 B21)

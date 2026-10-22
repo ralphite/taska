@@ -635,23 +635,26 @@ export function FilterControls({ small = false }: { small?: boolean }) {
           />
         </div>
       ) : null}
-      <div>
-        {lab('Status')}
-        <div className="flex flex-wrap gap-1.5">
-          {statuses.map(([v, t]) => (
-            <button
-              key={v}
-              data-act="set-filter"
-              data-k="status"
-              data-v={v}
-              aria-pressed={U.status === v}
-              className={`relative ${small ? 'h-7 px-2.5' : 'h-9 px-3.5'} rounded-full bg-zinc-100 text-[13px] font-medium text-zinc-700 after:absolute after:inset-x-0 after:-inset-y-1 hover:bg-zinc-200 aria-pressed:bg-zinc-900 aria-pressed:text-white dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700 dark:aria-pressed:bg-zinc-100 dark:aria-pressed:text-zinc-900`}
-            >
-              {t}
-            </button>
-          ))}
+      {/* T438 #14 (B17): in Items the views over the list are the status: not a second, disagreeing control here */}
+      {U.tab === 'items' ? null : (
+        <div>
+          {lab('Status')}
+          <div className="flex flex-wrap gap-1.5">
+            {statuses.map(([v, t]) => (
+              <button
+                key={v}
+                data-act="set-filter"
+                data-k="status"
+                data-v={v}
+                aria-pressed={U.status === v}
+                className={`relative ${small ? 'h-7 px-2.5' : 'h-9 px-3.5'} rounded-full bg-zinc-100 text-[13px] font-medium text-zinc-700 after:absolute after:inset-x-0 after:-inset-y-1 hover:bg-zinc-200 aria-pressed:bg-zinc-900 aria-pressed:text-white dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700 dark:aria-pressed:bg-zinc-100 dark:aria-pressed:text-zinc-900`}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
       {U.tab === 'rules' ? null : (
         <div>
           {lab('Priority')}

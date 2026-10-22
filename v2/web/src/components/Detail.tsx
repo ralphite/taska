@@ -33,6 +33,7 @@ import {
   markSeen,
   model,
   needsYou,
+  canDone,
   statusName,
   useArea,
   whoName,
@@ -377,7 +378,7 @@ export function ItemPage({ it, left = null }: { it: Item; left?: ReactNode }) {
         data-act="item-menu"
         data-arm="s"
         title="Status · S"
-        className={`${CHIP} shrink-0 text-zinc-700 dark:text-zinc-200`}
+        className={`${CHIP} min-w-32 shrink-0 text-zinc-700 dark:text-zinc-200`} // T438 #14 (C8): one width, so the chips after it stay put
       >
         <StateIcon s={it.status} label={statusName(it)} cls="size-3.5" />
         {statusName(it)}
@@ -692,17 +693,22 @@ const BarText = ({
 function ItemActs({ it }: { it: Item }) {
   return (
     <>
-      {it.type === 'rule' || CLOSED(it.status) || needsYou(it) ? null : (
-        <BarText act="status" icon="check" label="Done" title="Done · D" data={{ n: it.n, v: 'done' }} />
+      {/* T438 #14 (C17): each in its own place: one that does not apply now keeps its room, so the others stay put */}
+      {it.type === 'rule' ? null : (
+        <span className={canDone(it) ? 'contents' : 'invisible'}>
+          <BarText act="status" icon="check" label="Done" title="Done · D" data={{ n: it.n, v: 'done' }} />
+        </span>
       )}
-      {it.type === 'rule' || it.archived || CLOSED(it.status) ? null : (
-        <BarText
-          act="swipe"
-          icon="pause"
-          label={it.when === 'now' ? 'Later' : 'Back to now'}
-          title={it.when === 'now' ? 'Later · L' : 'Back to now · L'}
-          data={{ n: it.n, f: 'when', v: it.when === 'now' ? 'later' : 'now' }}
-        />
+      {it.type === 'rule' ? null : (
+        <span className={it.archived || CLOSED(it.status) ? 'invisible' : 'contents'}>
+          <BarText
+            act="swipe"
+            icon="pause"
+            label={it.when === 'now' ? 'Later' : 'Back to now'}
+            title={it.when === 'now' ? 'Later · L' : 'Back to now · L'}
+            data={{ n: it.n, f: 'when', v: it.when === 'now' ? 'later' : 'now' }}
+          />
+        </span>
       )}
       {it.archived ? (
         <BarText act="archive" icon="archive" label="Unarchive" title="Unarchive · E" data={{ n: it.n, on: '0' }} />
