@@ -175,13 +175,18 @@ export function inlineMd(s: string, gid = '', refs = true) {
 // `form` they can be tapped and sent as the user's answer; elsewhere they just show.
 function choiceHtml(labels: string[], multi: boolean, n: number, base: number, done: string[] | null = null) {
   const picked = n && U.choice?.n === n ? U.choice.picked : new Set<number>()
+  const box = `grid size-5 shrink-0 place-items-center border-2 ${multi ? 'rounded-md' : 'rounded-full'}`
   return `<div class="space-y-1.5" role="group">${labels
     .map((l, k) => {
       const i = base + k,
-        on = done ? done.includes(l.trim()) : picked.has(i)
-      return `<button ${n ? `data-act="choice" data-n="${n}" data-i="${i}" data-multi="${multi ? 1 : ''}"` : 'disabled'} aria-pressed="${on}" class="group flex min-h-11 w-full items-center gap-3 rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-left text-[15px] leading-snug aria-pressed:border-blue-500 aria-pressed:bg-blue-50 dark:border-zinc-700 dark:bg-zinc-900 dark:aria-pressed:border-blue-400 dark:aria-pressed:bg-blue-400/10 ${n ? 'hover:border-zinc-300 hover:bg-zinc-50 dark:hover:border-zinc-600 dark:hover:bg-zinc-800/70' : ''} ${done && !on ? 'opacity-50' : ''}">
-      <span class="grid size-5 shrink-0 place-items-center border-2 ${multi ? 'rounded-md' : 'rounded-full'} border-zinc-300 group-aria-pressed:border-blue-600 group-aria-pressed:bg-blue-600 group-aria-pressed:text-white dark:border-zinc-600 dark:group-aria-pressed:border-blue-400 dark:group-aria-pressed:bg-blue-400 dark:group-aria-pressed:text-zinc-900">${ico('check', 'size-3.5 invisible group-aria-pressed:visible', '3')}</span>
-      <span class="min-w-0 flex-1">${inlineMd(l, '', false)}</span>${n && i < 9 ? KBD(String(i + 1)) : ''}</button>`
+        on = done ? done.includes(l.trim()) : picked.has(i),
+        words = `<span class="min-w-0 flex-1">${inlineMd(l, '', false)}</span>`
+      // F428 (P0): answered, the choices keep their place and shape, as a sent form in a document does: quieter, yours ticked
+      if (done && !n)
+        return `<div aria-pressed="${on}" class="group flex min-h-11 w-full items-center gap-3 rounded-xl border border-zinc-200 px-3 py-2.5 text-[15px] leading-snug text-zinc-500 aria-pressed:border-zinc-400 aria-pressed:text-zinc-800 dark:border-zinc-800 dark:text-zinc-500 dark:aria-pressed:border-zinc-600 dark:aria-pressed:text-zinc-200">
+      <span class="${box} border-zinc-300 group-aria-pressed:border-zinc-500 group-aria-pressed:bg-zinc-500 group-aria-pressed:text-white dark:border-zinc-700 dark:group-aria-pressed:border-zinc-500 dark:group-aria-pressed:bg-zinc-500 dark:group-aria-pressed:text-zinc-900">${ico('check', 'size-3.5 invisible group-aria-pressed:visible', '3')}</span>${words}</div>`
+      return `<button ${n ? `data-act="choice" data-n="${n}" data-i="${i}" data-multi="${multi ? 1 : ''}"` : 'disabled'} aria-pressed="${on}" class="group flex min-h-11 w-full items-center gap-3 rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-left text-[15px] leading-snug aria-pressed:border-blue-500 aria-pressed:bg-blue-50 dark:border-zinc-700 dark:bg-zinc-900 dark:aria-pressed:border-blue-400 dark:aria-pressed:bg-blue-400/10 ${n ? 'hover:border-zinc-300 hover:bg-zinc-50 dark:hover:border-zinc-600 dark:hover:bg-zinc-800/70' : ''}">
+      <span class="${box} border-zinc-300 group-aria-pressed:border-blue-600 group-aria-pressed:bg-blue-600 group-aria-pressed:text-white dark:border-zinc-600 dark:group-aria-pressed:border-blue-400 dark:group-aria-pressed:bg-blue-400 dark:group-aria-pressed:text-zinc-900">${ico('check', 'size-3.5 invisible group-aria-pressed:visible', '3')}</span>${words}${n && i < 9 ? KBD(String(i + 1)) : ''}</button>`
     })
     .join('')}</div>`
 }

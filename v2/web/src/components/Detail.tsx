@@ -2,13 +2,14 @@
 // title, what it needs from you, description, files, documents, subitems, conversation. On the desktop it is the pane
 // beside the list (I70), which also shows a document (T110), an input (T274 #9) or the New input page (B73).
 import { useLayoutEffect, useRef, type ReactNode } from 'react'
-import { CHIP, FIELD, LETTER, NEED, NEEDS_CARD, PRIMARY, PRIMARY_BASE, SECOND, TYPE_TEXT } from '../lib/constants'
+import { CHIP, FIELD, LETTER, NEED, PRIMARY, PRIMARY_BASE, SECOND, TYPE_TEXT } from '../lib/constants'
 import {
   CLOSED,
   D,
   U,
   bump,
   byN,
+  byR,
   liveN,
   code,
   desk,
@@ -23,7 +24,6 @@ import {
   needsYou,
   statusName,
   useArea,
-  when,
   whoName,
   detailShown,
   type Go,
@@ -34,7 +34,19 @@ import { keepGo } from '../lib/go'
 import { noteText } from '../lib/docs'
 import { kept } from '../lib/drafts'
 import { Icon, Kbd, SectionHead, StateIcon } from './ui'
-import { DocCard, FileRows, MsgText, Rich, SendAnswerBtn, Talk, Thumbs, docNotes } from './Talk'
+import {
+  DocCard,
+  FileRows,
+  KeepBtn,
+  MsgText,
+  NeedFrame,
+  Rich,
+  SendAnswerBtn,
+  Talk,
+  Thumbs,
+  answeredLast,
+  docNotes,
+} from './Talk'
 import { DocEdit, DocPaneActs, DocPaneHead, DocPaneNav, DocView } from './Doc'
 import { InputPane, InputPaneHead } from './Inputs'
 
@@ -46,50 +58,14 @@ export const cardMsg = (it: Item): Msg | null =>
       ? lastAgentMsg(it) || null
       : null // B299
 // B299: approving or accepting stays one tap away while the agent has the item back or a question is open
-export const KeepBtn = ({ it }: { it: Item }) =>
-  it.status === 'proposed' ? (
-    <button data-act="status" data-n={it.n} data-v="open" className={SECOND}>
-      <Icon n="thumb" c="size-4" />
-      Approve
-    </button>
-  ) : it.status === 'review' ? (
-    <button data-act="status" data-n={it.n} data-v="done" className={SECOND}>
-      <Icon n="check" c="size-4" sw="2.25" />
-      Accept
-    </button>
-  ) : null
 // What waits on you, as a card (T65): the question with its choices, the proposal, the finished work.
 export function NeedsCard({ it, onCard = false }: { it: Item; onCard?: boolean }) {
   const n = it.n,
     m = cardMsg(it),
     name = whoName(m?.by || it.wait?.by || (it.by && it.by !== 'you' ? it.by : 'agent'))
+  // F428 (P0): the same frame as the card it becomes once answered (NeedFrame), so nothing moves
   const card = (icon: string, title: string, body: ReactNode, buttons: ReactNode, hint = '') => (
-    <section className={NEEDS_CARD}>
-      <div className="flex items-center gap-2.5 px-4 pt-3.5 lg:px-5 lg:pt-4">
-        <Icon n={icon} c="size-5 text-amber-600 dark:text-amber-400" />
-        <p className="min-w-0 flex-1 text-sm font-semibold text-amber-900 lg:text-[15px] dark:text-amber-200">
-          {title}
-        </p>
-        {m?.t ? <span className="text-xs text-amber-700/80 dark:text-amber-300/70">{when(m.t)}</span> : null}
-      </div>
-      {body ? (
-        <div className="space-y-2 px-4 pt-2 text-[15px] leading-relaxed text-zinc-800 lg:px-5 lg:pl-12 dark:text-zinc-200">
-          {body}
-        </div>
-      ) : null}
-      {buttons ? (
-        <div className="flex gap-2.5 p-3 pt-3.5 lg:items-center lg:justify-end lg:px-5 lg:pb-4">
-          {hint ? (
-            <p className="mr-auto hidden text-xs text-amber-700/80 xl:block dark:text-amber-300/70">{hint}</p>
-          ) : null}
-          {buttons}
-        </div>
-      ) : hint ? (
-        <p className="px-4 pt-2 pb-3.5 text-xs text-amber-700/80 lg:px-5 lg:pl-12 dark:text-amber-300/70">{hint}</p>
-      ) : (
-        <div className="h-3.5" />
-      )}
-    </section>
+    <NeedFrame icon={icon} title={title} t={m?.t} body={body} foot={buttons} hint={hint} />
   )
   if (it.wait) {
     const w = it.wait,
@@ -118,6 +94,37 @@ export function NeedsCard({ it, onCard = false }: { it: Item; onCard?: boolean }
       choices ? '' : '↓ Answer in the box below', // T365 #3: the keys are on the choices and the button
     )
   }
+  const dec = U.decided.get(n)
+  if (dec && it.status !== dec.from && !it.wait) {
+    // F428 (P0): what you decided stays in its card, where it was: grey, what you chose, and Modify to choose again
+    const x = it.thread.find((y) => y.id === dec.msg),
+      said = { open: 'Approved', doing: 'Back in progress', done: 'Accepted', dropped: "Won't do" }[dec.to] || dec.to
+    return (
+      <NeedFrame
+        icon={dec.from === 'proposed' ? 'propose' : 'done'}
+        title={`${whoName(x?.by || 'agent')} ${dec.from === 'proposed' ? 'proposed this' : 'finished this'}`}
+        t={x?.t}
+        done
+        body={x ? <MsgText x={x} gid={'dec' + n} whole /> : null}
+        foot={
+          <>
+            <span className="mr-auto flex items-center gap-1 text-sm font-medium text-zinc-500 dark:text-zinc-400">
+              <Icon n="check" c="size-4" sw="2.25" />
+              {said}
+            </span>
+            <button
+              data-act="decided-modify"
+              data-n={n}
+              className="h-9 rounded-lg px-2.5 text-sm font-semibold text-blue-600 hover:bg-blue-50 lg:opacity-0 lg:group-hover/form:opacity-100 lg:focus-visible:opacity-100 dark:text-blue-400 dark:hover:bg-blue-400/10"
+            >
+              Modify
+            </button>
+          </>
+        }
+      />
+    )
+  }
+  if (answeredLast(it)) return null // F428: the answered question's card holds Approve / Accept, where it was
   if (it.reply && (it.status === 'proposed' || it.status === 'review'))
     return (
       <div className="flex justify-end">
@@ -273,8 +280,11 @@ export function ItemPage({ it, left = null }: { it: Item; left?: ReactNode }) {
     files = filesOf(it),
     children = kids.get(n) || [],
     parent = it.parent ? byN.get(it.parent) : undefined,
-    shown = cardMsg(it)
-  const thread = it.thread.filter((x) => x.id !== it.wait?.id && x.id !== shown?.id),
+    shown = cardMsg(it),
+    srcs = it.srcs.filter((id) => byR.get(id)?.kind !== 'answer'), // F428: an answer to its question is not where it came from
+    dec = U.decided.get(n),
+    decided = dec && it.status !== dec.from ? dec.msg : null // F428: its message is in the decided card, once
+  const thread = it.thread.filter((x) => x.id !== it.wait?.id && x.id !== shown?.id && x.id !== decided),
     hidden = U.more.has(n) ? 0 : Math.max(0, thread.length - 8)
   const caret = <Icon n="down" c="size-3 opacity-50" sw="2.25" />
   // T274 #10: the properties in one row, each one a tap away: status, priority, type, now or later
@@ -332,9 +342,9 @@ export function ItemPage({ it, left = null }: { it: Item; left?: ReactNode }) {
           Archived
         </span>
       ) : null}
-      {it.srcs.length ? (
+      {srcs.length ? (
         <button data-act="sources" data-n={n} className={`${CHIP} shrink-0 text-zinc-600 dark:text-zinc-300`}>
-          {it.srcs.length === 1 ? 'From 1 input' : `From ${it.srcs.length} inputs`}
+          {srcs.length === 1 ? 'From 1 input' : `From ${srcs.length} inputs`}
         </button>
       ) : null}
       {parent ? (

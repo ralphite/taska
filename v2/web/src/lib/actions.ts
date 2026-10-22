@@ -8,6 +8,7 @@ import {
   R_STATE as R,
   U,
   bump,
+  answerOf,
   byN,
   byR,
   code,
@@ -35,7 +36,7 @@ import {
   visible,
   type Go,
 } from './state'
-import { groups, hasChoices } from './markdown'
+import { CHOICE, groups, hasChoices } from './markdown'
 import { clearTicks, tickDoc, tickModify } from './doctick'
 import { playAudio } from './audio'
 import { FAILED, addFailed, dropFailed, retryFailed, toast } from './toast'
@@ -1050,6 +1051,31 @@ export const ACT: Record<string, Handler> = {
     bump('detail', 'dialog', 'composer')
   },
   'choice-send': (d) => sendChoice(N(d)),
+  // F428 (P0): an answered question becomes a form again, your last picks ticked, to change and send again
+  'ask-modify': (d) => {
+    const n = N(d),
+      x = byN.get(n)?.thread.find((m) => m.id === Number(d.id)),
+      th = byN.get(n)?.thread || []
+    if (!x) return
+    const done = answerOf(th, x) || [],
+      labels = x.text.split('\n').flatMap((l) => (CHOICE.test(l) ? [l.replace(CHOICE, '').trim()] : []))
+    U.reask = x.id
+    U.choice = { n, picked: new Set(labels.flatMap((l, i) => (done.includes(l) ? [i] : []))) }
+    render()
+  },
+  // F428 (P0): a decided proposal or finished work goes back to its choice, to choose again
+  'decided-modify': (d) => {
+    const n = N(d),
+      dec = U.decided.get(n)
+    if (!dec) return
+    U.decided.delete(n)
+    change(n, 'status', dec.from, { said: 'is back for you to decide' })
+  },
+  'ask-modify-cancel': () => {
+    U.reask = null
+    U.choice = null
+    render()
+  },
   'more-msg': (d) => {
     const id = Number(d.id)
     if (U.moreMsgs.has(id)) U.moreMsgs.delete(id)

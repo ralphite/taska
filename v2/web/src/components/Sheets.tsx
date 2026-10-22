@@ -1185,7 +1185,9 @@ function historyParts({ id }: Props): Parts | null {
 function sourcesParts({ n }: Props): Parts | null {
   const it = byN.get(n as number)
   if (!it) return null
-  const rs = it.srcs.map((id) => byR.get(id)).filter(Boolean) as NonNullable<ReturnType<typeof byR.get>>[]
+  const rs = it.srcs.map((id) => byR.get(id)).filter((r) => r && r.kind !== 'answer') as NonNullable<
+    ReturnType<typeof byR.get>
+  >[]
   return {
     title: `What ${code(it.n)} came from`,
     body: (

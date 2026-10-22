@@ -263,6 +263,8 @@ export const U = {
   draftKey: null as string | null,
   parked: {} as Record<string, DraftFile[]>,
   vcMarks: [] as { label: string; d: number; key: string; quote: string }[],
+  reask: null as number | null, // F428: the answered question you chose to answer again (its message id)
+  decided: new Map<number, { from: string; to: string; msg: number | null }>(), // F428: Approve, Accept, Won't do you chose here
   oldDraft: '',
   amend: null as
     null | { id: string; mode: 'edit' | 'append'; v: number } | { mode: 'dc'; d: number; id: number; was: string },
@@ -486,6 +488,18 @@ export const queueHead = () =>
 export const openKids = (n: number) => (kids.get(n) || []).filter((k) => !CLOSED(k.status)).length
 export const openCount = () =>
   model.S.items.filter((it) => !it.merged_into && inTab(it, 'items') && !CLOSED(it.status)).length // B130
+/** What you answered an agent's question with: the choices of your latest answer after it (F327, F428). */
+export function answerOf(thread: Msg[], x: Msg) {
+  if (x.kind !== 'ask') return null
+  const after = thread.slice(thread.indexOf(x) + 1).filter(userWord),
+    a = after.filter((m) => /^\s*✓/m.test(m.text)).at(-1) || after[0] // F428: answered again, the latest answer counts
+  return a
+    ? (a.text
+        .split('\n')
+        .map((l) => l.match(/^\s*✓\s*(.+)$/)?.[1]?.trim())
+        .filter(Boolean) as string[])
+    : null
+}
 
 const HAY = new WeakMap<Item, string>() // an item's words, worked out once per load
 export function hay(it: Item) {

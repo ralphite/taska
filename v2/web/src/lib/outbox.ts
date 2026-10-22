@@ -587,6 +587,7 @@ export async function sendChoice(n: number) {
     flushOutbox()
     const said = `Answer sent to ${code(n)}${note || files.length ? ' with your note' : ''}` // B155
     U.choice = null
+    U.reask = null // F428: answered again: the card shows the new answer
     keepChoice()
     if (U.peek === n) advance(n, said)
     else {

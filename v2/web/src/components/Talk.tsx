@@ -1,8 +1,23 @@
 // A conversation on an item: your words on the right in blue, an agent's on the left in a card under its name, the
 // organizer's notes, documents' comments in time (T274 #4), files and voice notes. The same on the item page and the card.
 import type { ReactNode } from 'react'
-import { DC_BTN, HIT, KIND, NEED, PRIMARY_BASE } from '../lib/constants'
-import { U, byN, byR, ctx, desk, docsOf, oneLine, plural, rcode, userWord, when, whoName } from '../lib/state'
+import { DC_BTN, HIT, KIND, NEED, NEEDS_CARD, PRIMARY_BASE, SECOND } from '../lib/constants'
+import {
+  U,
+  answerOf,
+  lastAgentMsg,
+  byN,
+  byR,
+  ctx,
+  desk,
+  docsOf,
+  oneLine,
+  plural,
+  rcode,
+  userWord,
+  when,
+  whoName,
+} from '../lib/state'
 import type { Doc, FileRef, Input, Item, Msg } from '../lib/types'
 import { clean, groups, hasChoices, mdHtml } from '../lib/markdown'
 import { audioOf } from '../lib/audio'
@@ -228,6 +243,85 @@ export function VoiceLine({ files, bare = false }: { files?: FileRef[]; bare?: b
     </>
   )
 }
+/** F428 (P0): a card that asks you, the same frame before and after you answer: amber while it waits for you, grey
+ * once answered, with nothing moving. */
+export function NeedFrame({
+  icon,
+  title,
+  t,
+  done = false,
+  body,
+  foot,
+  hint = '',
+}: {
+  icon: string
+  title: string
+  t?: string
+  done?: boolean
+  body: ReactNode
+  foot: ReactNode
+  hint?: string
+}) {
+  return (
+    <section
+      className={`w-full rounded-2xl border ${done ? 'group/form border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900' : NEEDS_CARD}`}
+    >
+      <div className="flex items-center gap-2.5 px-4 pt-3.5 lg:px-5 lg:pt-4">
+        <Icon
+          n={icon}
+          c={`size-5 ${done ? 'text-zinc-400 dark:text-zinc-500' : 'text-amber-600 dark:text-amber-400'}`}
+        />
+        <p
+          className={`min-w-0 flex-1 text-sm font-semibold lg:text-[15px] ${done ? 'text-zinc-600 dark:text-zinc-300' : 'text-amber-900 dark:text-amber-200'}`}
+        >
+          {title}
+        </p>
+        {t ? (
+          <span
+            className={`text-xs ${done ? 'text-zinc-400 dark:text-zinc-500' : 'text-amber-700/80 dark:text-amber-300/70'}`}
+          >
+            {when(t)}
+          </span>
+        ) : null}
+      </div>
+      {body ? (
+        <div className="space-y-2 px-4 pt-2 text-[15px] leading-relaxed text-zinc-800 lg:px-5 lg:pl-12 dark:text-zinc-200">
+          {body}
+        </div>
+      ) : null}
+      {foot ? (
+        <div className="flex min-h-[4.25rem] items-center gap-2.5 p-3 pt-3.5 lg:justify-end lg:px-5 lg:pb-4">
+          {hint ? (
+            <p className="mr-auto hidden text-xs text-amber-700/80 xl:block dark:text-amber-300/70">{hint}</p>
+          ) : null}
+          {foot}
+        </div>
+      ) : hint ? (
+        <p className="px-4 pt-2 pb-3.5 text-xs text-amber-700/80 lg:px-5 lg:pl-12 dark:text-amber-300/70">{hint}</p>
+      ) : (
+        <div className="h-3.5" />
+      )}
+    </section>
+  )
+}
+// F427, F428: Approve or Accept as well as answering; inside the question's card, answered or not
+export const KeepBtn = ({ it }: { it: Item }) =>
+  it.status === 'proposed' ? (
+    <button data-act="status" data-n={it.n} data-v="open" className={SECOND}>
+      <Icon n="thumb" c="size-4" />
+      Approve
+    </button>
+  ) : it.status === 'review' ? (
+    <button data-act="status" data-n={it.n} data-v="done" className={SECOND}>
+      <Icon n="check" c="size-4" sw="2.25" />
+      Accept
+    </button>
+  ) : null
+/** F428: the item's latest word from an agent is a question you answered: its card holds the item's Approve/Accept. */
+export const answeredLast = (it: Item) => {
+  const x = lastAgentMsg(it)
+  return !!x && x.kind === 'ask' && hasChoices(x.text) && !!answerOf(it.thread, x)?.length
+}
 export const SendAnswerBtn = ({
   n,
   cls = 'w-full',
@@ -320,27 +414,54 @@ export function MsgText({
     </>
   )
 }
-// F327 (as Yadong first had it): an answered question keeps its form, greyed and no longer clickable, with what you
-// picked ticked and said once below
+// F327, F428 (P0): an answered question stays where it was, in the same card: grey now, your picks ticked, the others
+// quieter, Submitted where its buttons were, and Modify (on hover on the desktop) to pick again
 function Answered({ x, gid, done }: { x: Msg; gid: string; done: string[] }) {
+  const n = U.open || 0,
+    it = byN.get(n)
+  if (U.reask === x.id && n)
+    return (
+      <NeedFrame
+        icon="ask"
+        title={`${whoName(x.by)} asks you`}
+        t={x.t}
+        body={<Rich text={x.text} gid={gid + 'rq' + x.id} cls="text-zinc-900 dark:text-zinc-100" form={n} />}
+        foot={
+          <>
+            <button data-act="ask-modify-cancel" className={`${SECOND} flex-1 lg:flex-none`}>
+              Cancel
+            </button>
+            <SendAnswerBtn n={n} cls="flex-[1.4] lg:flex-none" />
+          </>
+        }
+      />
+    )
   return (
-    <>
-      <div className="opacity-60 grayscale">
-        <Rich text={x.text} gid={gid + 'q' + x.id} done={done} />
-      </div>
-      <div className="mt-2 text-sm font-medium text-zinc-600 dark:text-zinc-300">Submitted: {done.join(' · ')}</div>
-    </>
+    <NeedFrame
+      icon="ask"
+      title={`${whoName(x.by)} asks you`}
+      t={x.t}
+      done
+      body={<Rich text={x.text} gid={gid + 'q' + x.id} cls="text-zinc-600 dark:text-zinc-300" done={done} />}
+      foot={
+        <>
+          <span className="mr-auto flex items-center gap-1 text-sm font-medium text-zinc-500 dark:text-zinc-400">
+            <Icon n="check" c="size-4" sw="2.25" />
+            Submitted
+          </span>
+          {it && answeredLast(it) && lastAgentMsg(it)?.id === x.id ? <KeepBtn it={it} /> : null}
+          <button
+            data-act="ask-modify"
+            data-id={x.id}
+            data-n={n}
+            className="h-9 rounded-lg px-2.5 text-sm font-semibold text-blue-600 hover:bg-blue-50 lg:opacity-0 lg:group-hover/form:opacity-100 lg:focus-visible:opacity-100 dark:text-blue-400 dark:hover:bg-blue-400/10"
+          >
+            Modify
+          </button>
+        </>
+      }
+    />
   )
-}
-export function answerOf(thread: Msg[], x: Msg) {
-  if (x.kind !== 'ask') return null
-  const a = thread.slice(thread.indexOf(x) + 1).find(userWord)
-  return a
-    ? (a.text
-        .split('\n')
-        .map((l) => l.match(/^\s*✓\s*(.+)$/)?.[1]?.trim())
-        .filter(Boolean) as string[])
-    : null
 }
 interface Version {
   old: boolean
@@ -539,6 +660,8 @@ export function MsgView({
         {whoName(x.by)} · hidden message · {when(x.t)} · Show
       </button>
     ) // T257 #12
+  // F428 (P0): an answered question is its own card, the one it was asked in, not a message under a header
+  if (!form && done?.length && hasChoices(x.text) && x.kind === 'ask') return <Answered x={x} gid={gid} done={done} />
   const card = form
     ? 'space-y-2.5 border-amber-200 bg-amber-50 p-3 text-zinc-900 dark:border-amber-400/25 dark:bg-amber-400/7 dark:text-zinc-100'
     : 'border-zinc-200 bg-zinc-50 px-4 py-3 text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200'
@@ -580,8 +703,6 @@ export function MsgView({
             </div>
             {hasChoices(x.text) ? <SendAnswerBtn n={form} /> : null}
           </>
-        ) : done?.length && hasChoices(x.text) ? (
-          <Answered x={x} gid={gid} done={done} />
         ) : (
           <MsgText x={x} gid={gid} done={done} />
         )}

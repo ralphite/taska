@@ -15,6 +15,7 @@ import {
   ctx,
   desk,
   kids,
+  lastAgentMsg,
   liveN,
   model,
   openKids,
@@ -766,6 +767,9 @@ export function change(
   const before = it[f],
     ref = code(n),
     job = { saved: false, undone: false }
+  // F428 (P0): deciding on a proposal or finished work leaves its card where it was, grey, saying what you chose
+  if (f === 'status' && (before === 'proposed' || before === 'review') && !it.wait)
+    U.decided.set(n, { from: String(before), to: String(v), msg: lastAgentMsg(it)?.id ?? null })
   said ||=
     (it.type === 'rule' &&
       f === 'status' &&
