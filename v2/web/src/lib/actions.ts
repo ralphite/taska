@@ -1081,9 +1081,8 @@ export const ACT: Record<string, Handler> = {
   // F428 (P0): a decided proposal or finished work goes back to its choice, to choose again
   'decided-modify': (d) => {
     const n = N(d),
-      dec = U.decided.get(n)
+      dec = byN.get(n)?.decided
     if (!dec) return
-    U.decided.delete(n)
     change(n, 'status', dec.from, { said: 'is back for you to decide' })
   },
   'ask-modify-cancel': () => {

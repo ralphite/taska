@@ -783,9 +783,15 @@ export function change(
   const before = it[f],
     ref = code(n),
     job = { saved: false, undone: false }
-  // F428 (P0): deciding on a proposal or finished work leaves its card where it was, grey, saying what you chose
-  if (f === 'status' && (before === 'proposed' || before === 'review') && !it.wait)
-    U.decided.set(n, { from: String(before), to: String(v), msg: lastAgentMsg(it)?.id ?? null })
+  // F428 (P0): deciding on a proposal or finished work leaves its card where it was, grey, saying what you chose;
+  // T438 #5: kept on the item as Taska keeps it, and gone when it goes back to where it was
+  const decWas = it.decided ?? null,
+    dec =
+      f === 'status' && (before === 'proposed' || before === 'review')
+        ? { decided: { from: String(before), to: String(v), msg: lastAgentMsg(it)?.id ?? null } }
+        : f === 'status' && decWas?.from === v
+          ? { decided: null }
+          : {}
   said ||=
     (it.type === 'rule' &&
       f === 'status' &&
@@ -810,7 +816,7 @@ export function change(
     }
     toast(`${ref} put back`)
     return optimistic(
-      [{ n, f: { [f]: before } }],
+      [{ n, f: { [f]: before, ...('decided' in dec ? { decided: decWas } : {}) } }],
       () => {
         const u = (model.S.undo || []).find((u) => u.n === n && f in u.f) // the recorded change, so the change log knows it was undone (F80)
         return u ? revert(u.seq) : op({ op: 'set', ref, f: { [f]: wire(f, before) } })
@@ -841,7 +847,7 @@ export function change(
     `${ref} ${words}${noted ? ', with your note' : ''}${left ? ` · ${plural(left, 'subitem')} still open` : ''}${note && !noted ? `. ${note}.` : ''}`,
     run,
   )
-  const saved = optimistic([{ n, f: { [f]: v } }], { op: 'set', ref, f: { [f]: wire(f, v) } }, (ex) => {
+  const saved = optimistic([{ n, f: { [f]: v, ...dec } }], { op: 'set', ref, f: { [f]: wire(f, v) } }, (ex) => {
     // taken back
     forget(run)
     if (U.settle.delete(n)) bump('list')

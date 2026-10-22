@@ -190,6 +190,13 @@ class Store:
             it = self.items[e["n"]]
             if "title" in e["f"]:
                 e["f"]["title"] = clean_title(e["f"]["title"])[0]
+            if "status" in e["f"] and e.get("by") == "you":  # T438 #5: what you decided on a proposal or finished work, kept
+                was = (e.get("was") or {}).get("status", it["status"])
+                if was in ("proposed", "review") and e["f"]["status"] != was:
+                    last = next((x for x in reversed(it["thread"]) if x["by"] not in PEOPLE), None)
+                    it["decided"] = {"from": was, "to": e["f"]["status"], "msg": last["id"] if last else None, "t": e["t"]}
+                elif (it.get("decided") or {}).get("from") == e["f"]["status"]:
+                    it.pop("decided", None)  # taken back: the question is open again
             it.update(e["f"])
             it["t1"] = e["t"]
             if e.get("undo_of"):

@@ -273,6 +273,12 @@
       "by": "claude-code",
       "t": "<iso>"
      },
+     "decided": {
+      "from": "proposed",
+      "to": "open",
+      "msg": null,
+      "t": "<iso>"
+     },
      "code": "B1",
      "wait": null,
      "reply": false,
@@ -676,6 +682,12 @@
       "by": "claude-code",
       "t": "<iso>"
      },
+     "decided": {
+      "from": "proposed",
+      "to": "open",
+      "msg": null,
+      "t": "<iso>"
+     },
      "code": "B1",
      "wait": null,
      "reply": false,
@@ -1021,6 +1033,12 @@
      "by": "claude-code",
      "agent": {
       "by": "claude-code",
+      "t": "<iso>"
+     },
+     "decided": {
+      "from": "proposed",
+      "to": "open",
+      "msg": null,
       "t": "<iso>"
      },
      "code": "B1",
@@ -1377,6 +1395,12 @@
      "by": "claude-code",
      "agent": {
       "by": "claude-code",
+      "t": "<iso>"
+     },
+     "decided": {
+      "from": "proposed",
+      "to": "open",
+      "msg": null,
       "t": "<iso>"
      },
      "code": "B1",

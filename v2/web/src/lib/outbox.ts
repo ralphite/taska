@@ -22,6 +22,7 @@ import {
   scopeN,
   type DraftFile,
   type Job,
+  answerOf,
 } from './state'
 import { toast } from './toast'
 import {
@@ -600,7 +601,12 @@ export async function sendChoice(n: number) {
   const labels = U.choiceLabels[n] || [],
     picked = U.choice?.n === n ? [...U.choice.picked].sort((a, c) => a - c) : []
   if (!picked.length) return
-  const picks = picked.map((i) => '✓ ' + labels[i]).join('\n')
+  // T438 #5 (A17, C11): answered again: the agent is told which answer this replaces
+  const x = U.reask ? byN.get(n)?.thread.find((m) => m.id === U.reask) : undefined,
+    was = x ? answerOf(byN.get(n)?.thread || [], x, n) || [] : []
+  const picks =
+    picked.map((i) => '✓ ' + labels[i]).join('\n') +
+    (was.length ? `\n\nChanged my answer (it was: ${was.join(', ')})` : '')
   const withBox = scopeN() === n && !U.amend && !U.correct && !docOpen(),
     note = withBox ? (els.text?.value ?? '').trim() : '',
     files = withBox ? U.files : []

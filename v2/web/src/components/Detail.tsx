@@ -70,6 +70,15 @@ export const cardMsg = (it: Item): Msg | null =>
       ? lastAgentMsg(it) || null
       : null // B299
 // B299: approving or accepting stays one tap away while the agent has the item back or a question is open
+// T438 #5: the card of what you decided on a proposal or finished work, from the item itself (so after a reload, in
+// another tab, archived, the same); a question you answered keeps its own card instead, its button showing your choice
+function decidedCard(it: Item): { dec: NonNullable<Item['decided']>; x: Msg | undefined } | null {
+  const dec = it.decided
+  if (!dec || it.status === dec.from || it.wait) return null
+  const x = it.thread.find((y) => y.id === dec.msg)
+  if (x && x.kind === 'ask' && hasChoices(x.text)) return null
+  return { dec, x }
+}
 // What waits on you, as a card (T65): the question with its choices, the proposal, the finished work.
 export function NeedsCard({ it, onCard = false }: { it: Item; onCard?: boolean }) {
   const n = it.n,
@@ -106,14 +115,14 @@ export function NeedsCard({ it, onCard = false }: { it: Item; onCard?: boolean }
       choices ? '' : '↓ Answer in the box below', // T365 #3: the keys are on the choices and the button
     )
   }
-  const dec = U.decided.get(n)
-  if (dec && it.status !== dec.from && !it.wait) {
+  const dc = decidedCard(it)
+  if (dc) {
     // F428 (P0): what you decided stays in its card, where it was: grey, what you chose, and Modify to choose again
-    const x = it.thread.find((y) => y.id === dec.msg)
+    const { dec, x } = dc
     return (
       <NeedFrame
         icon={dec.from === 'proposed' ? 'propose' : 'done'}
-        title={`${whoName(x?.by || 'agent')} ${dec.from === 'proposed' ? 'proposed this' : 'finished this'}`}
+        title={`${whoName(x?.by || (it.by && it.by !== 'you' ? it.by : 'agent'))} ${dec.from === 'proposed' ? 'proposed this' : 'finished this'}`} // T438 #5 (C7): the same name as before you decided
         t={x?.t}
         done
         act={
@@ -307,8 +316,7 @@ export function ItemPage({ it, left = null }: { it: Item; left?: ReactNode }) {
     parent = it.parent ? byN.get(it.parent) : undefined,
     shown = cardMsg(it),
     srcs = it.srcs.filter((id) => byR.get(id)?.kind !== 'answer'), // F428: an answer to its question is not where it came from
-    dec = U.decided.get(n),
-    decided = dec && it.status !== dec.from ? dec.msg : null // F428: its message is in the decided card, once
+    decided = decidedCard(it)?.dec.msg ?? null // F428: its message is in the decided card, once
   const thread = it.thread.filter((x) => x.id !== it.wait?.id && x.id !== shown?.id && x.id !== decided),
     hidden = U.more.has(n) ? 0 : Math.max(0, thread.length - 8)
   const caret = <Icon n="down" c="size-3 opacity-50" sw="2.25" />

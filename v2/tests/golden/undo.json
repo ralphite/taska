@@ -199,6 +199,12 @@
       "by": "claude-code",
       "t": "<iso>"
      },
+     "decided": {
+      "from": "proposed",
+      "to": "open",
+      "msg": null,
+      "t": "<iso>"
+     },
      "code": "F1",
      "wait": null,
      "reply": false
@@ -222,6 +228,12 @@
      "by": "claude-code",
      "agent": {
       "by": "claude-code",
+      "t": "<iso>"
+     },
+     "decided": {
+      "from": "proposed",
+      "to": "open",
+      "msg": null,
       "t": "<iso>"
      },
      "code": "B2",

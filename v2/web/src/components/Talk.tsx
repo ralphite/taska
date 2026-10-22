@@ -323,7 +323,19 @@ export function NeedFrame({
 }
 // F427, F428: Approve or Accept as well as answering; inside the question's card, answered or not
 export const KeepBtn = ({ it }: { it: Item }) =>
-  it.status === 'proposed' ? (
+  it.decided && it.status !== it.decided.from && (it.decided.from === 'proposed' || it.decided.from === 'review') ? (
+    // T438 #5: decided: the button stays where it was, saying what you chose
+    <span className={`${DONE_PICK} font-medium`}>
+      <Icon n="check" c="size-4" sw="2.25" />
+      {it.decided.from === 'proposed'
+        ? it.decided.to === 'dropped'
+          ? "Won't do"
+          : 'Approve'
+        : it.decided.to === 'done'
+          ? 'Accept'
+          : 'Not yet'}
+    </span>
+  ) : it.status === 'proposed' ? (
     <button data-act="status" data-n={it.n} data-v="open" className={SECOND}>
       <Icon n="thumb" c="size-4" />
       Approve

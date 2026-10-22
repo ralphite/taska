@@ -59,6 +59,7 @@ export interface Item {
   rank?: number | null
   wait: Wait | null
   reply: boolean
+  decided?: { from: string; to: string; msg: number | null; t?: string } | null // T438 #5: what you decided on its proposal or finished work
   read?: Record<string, number>
   deleted?: string | null
 }

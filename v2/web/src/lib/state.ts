@@ -276,7 +276,6 @@ export const U = {
   parked: {} as Record<string, DraftFile[]>,
   vcMarks: [] as { label: string; d: number; key: string; quote: string }[],
   reask: null as number | null, // F428: the answered question you chose to answer again (its message id)
-  decided: new Map<number, { from: string; to: string; msg: number | null }>(), // F428: Approve, Accept, Won't do you chose here
   oldDraft: '',
   amend: null as
     null | { id: string; mode: 'edit' | 'append'; v: number } | { mode: 'dc'; d: number; id: number; was: string },
@@ -513,7 +512,10 @@ export function answerOf(thread: Msg[], x: Msg, n?: number) {
   // T438 #1: what you answered shows at once, before Taska has it (it answers the item's latest question)
   const going = n == null ? undefined : answerGoing(n)
   if (going && thread.filter((m) => m.kind === 'ask').at(-1)?.id === x.id) return ticks(going.text)
-  const after = thread.slice(thread.indexOf(x) + 1).filter(userWord),
+  // T438 #5 (B6): its answers are yours after it and before the next question (a later one has its own)
+  const rest = thread.slice(thread.indexOf(x) + 1),
+    end = rest.findIndex((m) => m.kind === 'ask'),
+    after = (end < 0 ? rest : rest.slice(0, end)).filter(userWord),
     a = after.filter((m) => /^\s*✓/m.test(m.text)).at(-1) || after[0] // F428: answered again, the latest answer counts
   return a ? ticks(a.text) : null
 }
