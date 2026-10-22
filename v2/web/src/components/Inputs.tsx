@@ -393,7 +393,8 @@ export const outboxLine = (q: Job) =>
     : `${q.files.length} file${q.files.length === 1 ? '' : 's'}`)
 // What is still on its way, shown first where your inputs are listed (F85).
 export function OutboxRows({ oldestFirst = false }: { oldestFirst?: boolean }) {
-  const list = oldestFirst ? [...U.outbox] : [...U.outbox].reverse()
+  const mine = U.outbox.filter((q) => !arrived(q)),
+    list = oldestFirst ? mine : [...mine].reverse()
   return (
     <>
       {list.map((q) => (
@@ -439,7 +440,7 @@ export function InputsView({ hidden }: { hidden: boolean }) {
   })
   const S = model.S,
     words = searchWords()
-  const rows = hidden ? [] : [...S.inputs].reverse().filter((r) => inputMatch(r, words))
+  const rows = hidden ? [] : newestFirst(S.inputs).filter((r) => inputMatch(r, words))
   if (desk() && !rows.some((r) => r.id === U.inSel)) U.inSel = rows[0]?.id || null
   // T339: the tab shows at once with its first screenful; the rest follows a few frames later, not all 400 in one go
   const [upTo, setUpTo] = useState(FIRST_ROWS)
@@ -617,6 +618,11 @@ function SaidRow({ r }: { r: Input; last?: boolean }) {
         })
   const busy = busyOf(r)
   const [now, more] = inputActs(r, SMALL_BTN)
+  const dk = (['edit', 'append'] as const).find(
+    (m) =>
+      !(U.amend && 'id' in U.amend && U.amend.id === r.id && U.amend.mode === m) &&
+      String(draftsOf(model.S.project)[`${m} ${r.id}`] || '').trim(),
+  ) // C8 (T422): what you began to add or change and did not send shows here, as on the phone (B301)
   return (
     <SaidStep
       time={new Date(r.t).toTimeString().slice(0, 5)}
@@ -640,6 +646,16 @@ function SaidRow({ r }: { r: Input; last?: boolean }) {
               <span className="truncate">{scope.title}</span>
             </button>
           ) : null}
+          {dk ? (
+            <button
+              data-act={`input-${dk}`}
+              data-id={r.id}
+              title="Not saved yet: go on with it"
+              className={`${HIT} shrink-0`}
+            >
+              <DraftMark small />
+            </button>
+          ) : null}
           <span className="ml-auto" />
         </>
       }
@@ -658,7 +674,7 @@ function SaidRow({ r }: { r: Input; last?: boolean }) {
       body={
         <>
           {said ? (
-            <p data-cut className={`${U.moreInputs.has(r.id) ? 'whitespace-pre-line' : 'line-clamp-3'} break-words`}>
+            <p data-cut className={`whitespace-pre-line ${U.moreInputs.has(r.id) ? '' : 'line-clamp-3'} break-words`}>
               {said}
             </p>
           ) : null}
@@ -754,6 +770,20 @@ function OutboxStep({ q }: { q: Job; last?: boolean }) {
 }
 // F347: under New input, everything you said, the latest first: more comes as you scroll down; a search on top
 const SAID_STEP = 30
+// C2 (T422): newest first by when it was said, so one restored or moved back keeps its place
+const num = (id: string) => Number(id.replace(/\D/g, '')) || 0
+const newestFirst = (list: Input[]) =>
+  [...list].sort((a, b) => Date.parse(b.t) - Date.parse(a.t) || num(b.id) - num(a.id))
+// C3 (T422): an input already in the list (it came with a refresh while its own answer is still on its way) shows once
+const arrived = (q: Job) =>
+  !!q.sending &&
+  model.S.inputs.some(
+    (r) =>
+      r.by === 'you' &&
+      Date.parse(r.t) >= q.t - 120000 &&
+      (r.scope ? code(r.scope) : null) === q.scope &&
+      r.text.trim() === q.text.trim(),
+  )
 export function SaidLately({ draft }: { draft: ReactNode }) {
   const S = model.S
   const ref = useRef<HTMLDivElement>(null),
@@ -763,9 +793,9 @@ export function SaidLately({ draft }: { draft: ReactNode }) {
   useCut(ref)
   useMarkHits(ref)
   const words = q.trim().toLowerCase().split(/\s+/).filter(Boolean)
-  const all = [...S.inputs].reverse().filter((r) => inputMatch(r, words)),
+  const all = newestFirst(S.inputs).filter((r) => inputMatch(r, words)),
     recent = all.slice(0, upTo),
-    queued = words.length ? [] : [...U.outbox].reverse(),
+    queued = words.length ? [] : [...U.outbox].reverse().filter((q) => !arrived(q)),
     n = queued.length + recent.length,
     rest = all.length > recent.length
   useEffect(() => {
