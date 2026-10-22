@@ -1,7 +1,7 @@
 // A conversation on an item: your words on the right in blue, an agent's on the left in a card under its name, the
 // organizer's notes, documents' comments in time (T274 #4), files and voice notes. The same on the item page and the card.
 import type { ReactNode } from 'react'
-import { DC_BTN, HIT, KIND, NEED, NEEDS_CARD, PRIMARY_BASE, SECOND } from '../lib/constants'
+import { DC_BTN, DONE_PICK, HIT, KIND, MODIFY_LINK, NEED, NEEDS_CARD, PRIMARY_BASE, SECOND } from '../lib/constants'
 import {
   U,
   answerOf,
@@ -431,6 +431,7 @@ function Answered({ x, gid, done }: { x: Msg; gid: string; done: string[] }) {
             <button data-act="ask-modify-cancel" className={`${SECOND} flex-1 lg:flex-none`}>
               Cancel
             </button>
+            {it && answeredLast(it) && lastAgentMsg(it)?.id === x.id ? <KeepBtn it={it} /> : null}
             <SendAnswerBtn n={n} cls="flex-[1.4] lg:flex-none" />
           </>
         }
@@ -445,19 +446,15 @@ function Answered({ x, gid, done }: { x: Msg; gid: string; done: string[] }) {
       body={<Rich text={x.text} gid={gid + 'q' + x.id} cls="text-zinc-600 dark:text-zinc-300" done={done} />}
       foot={
         <>
-          <span className="mr-auto flex items-center gap-1 text-sm font-medium text-zinc-500 dark:text-zinc-400">
+          {/* F428, R369 review: the buttons stay where they were; Send answer is now the grey Submitted */}
+          <button data-act="ask-modify" data-id={x.id} data-n={n} className={MODIFY_LINK}>
+            Modify
+          </button>
+          {it && answeredLast(it) && lastAgentMsg(it)?.id === x.id ? <KeepBtn it={it} /> : null}
+          <span className={`${DONE_PICK} flex-[1.4] lg:flex-none`}>
             <Icon n="check" c="size-4" sw="2.25" />
             Submitted
           </span>
-          {it && answeredLast(it) && lastAgentMsg(it)?.id === x.id ? <KeepBtn it={it} /> : null}
-          <button
-            data-act="ask-modify"
-            data-id={x.id}
-            data-n={n}
-            className="h-9 rounded-lg px-2.5 text-sm font-semibold text-blue-600 hover:bg-blue-50 lg:opacity-0 lg:group-hover/form:opacity-100 lg:focus-visible:opacity-100 dark:text-blue-400 dark:hover:bg-blue-400/10"
-          >
-            Modify
-          </button>
         </>
       }
     />

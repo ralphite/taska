@@ -2,7 +2,18 @@
 // title, what it needs from you, description, files, documents, subitems, conversation. On the desktop it is the pane
 // beside the list (I70), which also shows a document (T110), an input (T274 #9) or the New input page (B73).
 import { useLayoutEffect, useRef, type ReactNode } from 'react'
-import { CHIP, FIELD, NEED, PRIMARY, PRIMARY_BASE, SECOND, TYPE_TEXT } from '../lib/constants'
+import {
+  CHIP,
+  DONE_OTHER,
+  DONE_PICK,
+  FIELD,
+  MODIFY_LINK,
+  NEED,
+  PRIMARY,
+  PRIMARY_BASE,
+  SECOND,
+  TYPE_TEXT,
+} from '../lib/constants'
 import {
   CLOSED,
   D,
@@ -98,8 +109,7 @@ export function NeedsCard({ it, onCard = false }: { it: Item; onCard?: boolean }
   const dec = U.decided.get(n)
   if (dec && it.status !== dec.from && !it.wait) {
     // F428 (P0): what you decided stays in its card, where it was: grey, what you chose, and Modify to choose again
-    const x = it.thread.find((y) => y.id === dec.msg),
-      said = { open: 'Approved', doing: 'Back in progress', done: 'Accepted', dropped: "Won't do" }[dec.to] || dec.to
+    const x = it.thread.find((y) => y.id === dec.msg)
     return (
       <NeedFrame
         icon={dec.from === 'proposed' ? 'propose' : 'done'}
@@ -108,18 +118,29 @@ export function NeedsCard({ it, onCard = false }: { it: Item; onCard?: boolean }
         done
         body={x ? <MsgText x={x} gid={'dec' + n} whole /> : null}
         foot={
+          // F428, R369 review: the two buttons stay where they were, yours ticked and the other quieter
           <>
-            <span className="mr-auto flex items-center gap-1 text-sm font-medium text-zinc-500 dark:text-zinc-400">
-              <Icon n="check" c="size-4" sw="2.25" />
-              {said}
-            </span>
-            <button
-              data-act="decided-modify"
-              data-n={n}
-              className="h-9 rounded-lg px-2.5 text-sm font-semibold text-blue-600 hover:bg-blue-50 lg:opacity-0 lg:group-hover/form:opacity-100 lg:focus-visible:opacity-100 dark:text-blue-400 dark:hover:bg-blue-400/10"
-            >
+            <button data-act="decided-modify" data-n={n} className={MODIFY_LINK}>
               Modify
             </button>
+            {(dec.from === 'proposed'
+              ? [
+                  ['dropped', 'ban', "Won't do"],
+                  ['open', 'thumb', 'Approve'],
+                ]
+              : [
+                  ['doing', 'reopen', 'Not yet'],
+                  ['done', 'check', 'Accept'],
+                ]
+            ).map(([v, icon, label], i) => (
+              <span
+                key={v}
+                className={`${dec.to === v || (v === 'open' && dec.to === 'doing' && dec.from === 'proposed') ? DONE_PICK : DONE_OTHER} ${i ? 'flex-[1.4]' : 'flex-1'} lg:flex-none`}
+              >
+                <Icon n={dec.to === v ? 'check' : icon} c="size-4" sw="2.25" />
+                {label}
+              </span>
+            ))}
           </>
         }
       />
