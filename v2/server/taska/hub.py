@@ -301,7 +301,7 @@ class Hub:
                 # "open" as the project's own page counts it (A18): what Items holds that isn't finished, rules an agent
                 # proposed included, since they wait in Items too
                 out.append({"name": name, "title": s.title, "open": sum(1 for i in live if not i["archived"] and (i["type"] != "rule" or i["status"] == "proposed")), "auto": s.cfg["auto"],
-                            "needs": sum(1 for i in live if not i["archived"] and (s.waiting(i) or (i["status"] in ("proposed", "review") and not s.replied(i)))), **s.presence(),  # archived: not on the page's list either
+                            "needs": sum(1 for i in live if not i["archived"] and (s.waiting(i) or (i["status"] in ("proposed", "review") and not s.talked(i)))), **s.presence(),  # archived: not on the page's list either
                             "t": int(s.mtime() * 1000), **({"pos": self.order.index(name)} if name in self.order else {})})
         return out
 
@@ -349,7 +349,7 @@ class Hub:
                     if i["status"] in CLOSED or i.get("merged_into") or i["archived"]:  # as the project's own page counts them
                         continue
                     w = s.waiting(i)
-                    kind = w["kind"] if w else i["status"] if i["status"] in ("proposed", "review") and not s.replied(i) else None  # B286: replied, it is the agent's turn
+                    kind = w["kind"] if w else i["status"] if i["status"] in ("proposed", "review") and not s.talked(i) else None  # B286: replied, it is the agent's turn
                     if kind:
                         out.append({"project": name, "ptitle": s.title, "n": i["n"], "code": s.code(i["n"]), "title": i["title"],
                                     "kind": kind, "pri": i["pri"], "t": i.get("t1") or i.get("t") or ""})

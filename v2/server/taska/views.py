@@ -48,7 +48,7 @@ def state(s: "Store") -> Dict[str, Any]:
             d["code"] = s.code(it["n"])
             w = s.waiting(it)
             d["wait"] = {"id": w["id"], "kind": w["kind"], "text": w["text"], "by": w["by"], "files": w.get("files", [])} if w else None
-            d["reply"] = s.replied(it)
+            d["reply"] = s.talked(it)  # T438 #13: a comment on its document counts on the page
             if s.reads.get(it["n"]):
                 d["read"] = {k: int(v * 1000) for k, v in s.reads[it["n"]].items()}
             items.append(d)

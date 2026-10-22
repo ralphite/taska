@@ -166,7 +166,7 @@
      },
      "code": "F1",
      "wait": null,
-     "reply": false,
+     "reply": true,
      "read": {
       "agent": "<ms>"
      }
@@ -460,7 +460,7 @@
      },
      "code": "F1",
      "wait": null,
-     "reply": false,
+     "reply": true,
      "read": {
       "agent": "<ms>"
      }

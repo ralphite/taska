@@ -748,6 +748,26 @@ class Store:
                 return user
         return False
 
+    def talked(self, it: Item) -> bool:
+        """For the page (T438 #13): replied, counting a comment on one of its documents as talking on the item too, the
+        user's or an agent's, in time with its messages (agents keep their own answers: replied above)."""
+        said: List[Tuple[str, int, bool]] = []  # (when, order, the user's)
+        for i, x in enumerate(it["thread"]):
+            if user_word(x) or x["by"] != "org":  # the organizer's own notes are neither side's word
+                said.append((x["t"], i, user_word(x)))
+        for d in self.docs.values():
+            if d["n"] == it["n"] and not d.get("deleted"):
+                for c in d["comments"]:
+                    if not c.get("deleted") and c.get("t") and c.get("by") != "org":
+                        said.append((c["t"], len(it["thread"]), c["by"] == "you"))
+        user = False
+        for _, _, mine in sorted(said, reverse=True):
+            if mine:
+                user = True
+            else:
+                return user
+        return False
+
     def for_agent(self) -> List[Input]:
         """Inputs a coding agent should handle (the organizer, when on, sees them first)."""
         return [i for i in self.pending() if (not self.org_on or i["org"]) and not (i["org"] or {}).get("undone")  # undone: parked until the user asks again
