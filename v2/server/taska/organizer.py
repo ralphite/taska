@@ -40,6 +40,9 @@ Work like this:
 - An input with a scope item is already shown in that item's thread: never repeat it with say. Only apply
   field changes it asks for ("set high priority" = P1, "urgent" = P0, "later", "done", ...) or new items it
   mentions. A reply to an agent's ask/block is for that agent: change nothing and reply `ack <input id>`.
+- An input that also speaks about other existing items: on each of them write the part about that item, summed up
+  in a sentence or two, with `<code> say <the part>` (it links back to the input by itself). Never paste the whole
+  input there: the user's own words stay where they said them, and agents read them with the item (B452).
 - A question or request addressed to the coding agent (how something works, "explain", "can you..."):
   reply `pass` so the input stays in the inbox for the agent. Still create items for anything else it says.
 - If it is new, `new <type> <P0-P3> <now|later> <short title>` with the user's own wording as the body, for

@@ -128,7 +128,7 @@
  {
   "name": "next: subitem first",
   "status": 200,
-  "text": "keep-going ON: keep working without stopping. After each item, write back, then GET /next again.\n1 project rule: read GET /rules once per session and follow those that apply.\nnext B2 (2 in queue: doing first, then P0\u2192P3, oldest first)\nB2 bug P0 now open  The PDF export too\nparent F1 \u00b7 src r1\n"
+  "text": "keep-going ON: keep working without stopping. After each item, write back, then GET /next again.\n1 project rule: read GET /rules once per session and follow those that apply.\nnext B2 (2 in queue: doing first, then P0\u2192P3, oldest first)\nB2 bug P0 now open  The PDF export too\nparent F1 \u00b7 src r1\nthe user's own words (the inputs it came from):\nr1 <hm>:\n  The PDF export is broken too\n"
  },
  {
   "name": "do B2 doing",
@@ -138,7 +138,7 @@
  {
   "name": "card B2 with ask",
   "status": 200,
-  "text": "B2 bug P0 now doing  The PDF export too\nparent F1 \u00b7 src r1\n? asked, waiting on the user: Keep the old export as an option?\n- ( ) Yes, behind a setting\n- ( ) No, replace it\nthread:\n#14 <hm> claude-code progress: Reproduced it: the export ignores the filter\n#15 <hm> claude-code ask: Keep the old export as an option?\n- ( ) Yes, behind a setting\n- ( ) No, replace it\n"
+  "text": "B2 bug P0 now doing  The PDF export too\nparent F1 \u00b7 src r1\n? asked, waiting on the user: Keep the old export as an option?\n- ( ) Yes, behind a setting\n- ( ) No, replace it\nthe user's own words (the inputs it came from):\nr1 <hm>:\n  The PDF export is broken too\nthread:\n#14 <hm> claude-code progress: Reproduced it: the export ignores the filter\n#15 <hm> claude-code ask: Keep the old export as an option?\n- ( ) Yes, behind a setting\n- ( ) No, replace it\n"
  },
  {
   "name": "next while B2 waits",
@@ -190,7 +190,7 @@
  {
   "name": "next: resume B2",
   "status": 200,
-  "text": "keep-going ON: keep working without stopping. After each item, write back, then GET /next again.\n1 project rule: read GET /rules once per session and follow those that apply.\nresume B2: the user replied\nB2 bug P0 now doing  The PDF export too\nparent F1 \u00b7 src r1 r3\n< the user replied after the agent's last message (see thread)\nthread:\n#14 <hm> claude-code progress: Reproduced it: the export ignores the filter\n#15 <hm> claude-code ask: Keep the old export as an option?\n- ( ) Yes, behind a setting\n- ( ) No, replace it\n#16 <hm> you: \u2713 No, replace it\n"
+  "text": "keep-going ON: keep working without stopping. After each item, write back, then GET /next again.\n1 project rule: read GET /rules once per session and follow those that apply.\nresume B2: the user replied\nB2 bug P0 now doing  The PDF export too\nparent F1 \u00b7 src r1 r3\n< the user replied after the agent's last message (see thread)\nthe user's own words (the inputs it came from):\nr1 <hm>:\n  The PDF export is broken too\nthread:\n#14 <hm> claude-code progress: Reproduced it: the export ignores the filter\n#15 <hm> claude-code ask: Keep the old export as an option?\n- ( ) Yes, behind a setting\n- ( ) No, replace it\n#16 <hm> you: \u2713 No, replace it\n"
  },
  {
   "name": "do B2 done Fixed: the export now applies the filters.",
@@ -200,7 +200,7 @@
  {
   "name": "card B2 in review",
   "status": 200,
-  "text": "B2 bug P0 now review  The PDF export too\nparent F1 \u00b7 src r1 r3\nthread:\n#14 <hm> claude-code progress: Reproduced it: the export ignores the filter\n#15 <hm> claude-code ask: Keep the old export as an option?\n- ( ) Yes, behind a setting\n- ( ) No, replace it\n#16 <hm> you: \u2713 No, replace it\n#19 <hm> claude-code progress: Fixed: the export now applies the filters.\n- What changed: one query\n- How to check: export with a filter\n"
+  "text": "B2 bug P0 now review  The PDF export too\nparent F1 \u00b7 src r1 r3\nthe user's own words (the inputs it came from):\nr1 <hm>:\n  The PDF export is broken too\nthread:\n#14 <hm> claude-code progress: Reproduced it: the export ignores the filter\n#15 <hm> claude-code ask: Keep the old export as an option?\n- ( ) Yes, behind a setting\n- ( ) No, replace it\n#16 <hm> you: \u2713 No, replace it\n#19 <hm> claude-code progress: Fixed: the export now applies the filters.\n- What changed: one query\n- How to check: export with a filter\n"
  },
  {
   "name": "do F1 done",
@@ -296,7 +296,7 @@
  {
   "name": "card T3",
   "status": 200,
-  "text": "T3 task P2 later doing  Write the docs\nsrc r2\nthread:\n#25 <hm> claude-code propose: Use the new API\n#26 <hm> claude-code decide: We use the new API\n#27 <hm> claude-code block: Need the token\n#28 <hm> claude-code withdraw: Found it\n#30 <hm> claude-code progress: Merged in I4: Maybe a dark theme\n"
+  "text": "T3 task P2 later doing  Write the docs\nsrc r2\nthe user's own words (the inputs it came from):\nr2 <hm>:\n  We need docs, later\nthread:\n#25 <hm> claude-code propose: Use the new API\n#26 <hm> claude-code decide: We use the new API\n#27 <hm> claude-code block: Need the token\n#28 <hm> claude-code withdraw: Found it\n#30 <hm> claude-code progress: Merged in I4: Maybe a dark theme\n"
  },
  {
   "name": "card I4 merged",
@@ -311,12 +311,12 @@
  {
   "name": "padded code",
   "status": 200,
-  "text": "B2 bug P0 now open  The PDF export too\nparent F1 \u00b7 src r1 r3\nthread:\n#14 <hm> claude-code progress: Reproduced it: the export ignores the filter\n#15 <hm> claude-code ask: Keep the old export as an option?\n- ( ) Yes, behind a setting\n- ( ) No, replace it\n#16 <hm> you: \u2713 No, replace it\n#19 <hm> claude-code progress: Fixed: the export now applies the filters.\n- What changed: one query\n- How to check: export with a filter\n"
+  "text": "B2 bug P0 now open  The PDF export too\nparent F1 \u00b7 src r1 r3\nthe user's own words (the inputs it came from):\nr1 <hm>:\n  The PDF export is broken too\nthread:\n#14 <hm> claude-code progress: Reproduced it: the export ignores the filter\n#15 <hm> claude-code ask: Keep the old export as an option?\n- ( ) Yes, behind a setting\n- ( ) No, replace it\n#16 <hm> you: \u2713 No, replace it\n#19 <hm> claude-code progress: Fixed: the export now applies the filters.\n- What changed: one query\n- How to check: export with a filter\n"
  },
  {
   "name": "bare number",
   "status": 200,
-  "text": "B2 bug P0 now open  The PDF export too\nparent F1 \u00b7 src r1 r3\nthread:\n#14 <hm> claude-code progress: Reproduced it: the export ignores the filter\n#15 <hm> claude-code ask: Keep the old export as an option?\n- ( ) Yes, behind a setting\n- ( ) No, replace it\n#16 <hm> you: \u2713 No, replace it\n#19 <hm> claude-code progress: Fixed: the export now applies the filters.\n- What changed: one query\n- How to check: export with a filter\n"
+  "text": "B2 bug P0 now open  The PDF export too\nparent F1 \u00b7 src r1 r3\nthe user's own words (the inputs it came from):\nr1 <hm>:\n  The PDF export is broken too\nthread:\n#14 <hm> claude-code progress: Reproduced it: the export ignores the filter\n#15 <hm> claude-code ask: Keep the old export as an option?\n- ( ) Yes, behind a setting\n- ( ) No, replace it\n#16 <hm> you: \u2713 No, replace it\n#19 <hm> claude-code progress: Fixed: the export now applies the filters.\n- What changed: one query\n- How to check: export with a filter\n"
  },
  {
   "name": "bad ref",
@@ -341,7 +341,7 @@
  {
   "name": "next wait 1s",
   "status": 200,
-  "text": "keep-going ON: keep working without stopping. After each item, write back, then GET /next again.\n1 project rule: read GET /rules once per session and follow those that apply.\nproposed, the user has not approved yet (skip): T6\nin review, the user accepts them (skip): F1\nnext B2 (1 in queue: doing first, then P0\u2192P3, oldest first)\nB2 bug P0 now open  The PDF export too\nparent F1 \u00b7 src r1 r3\nthread:\n#14 <hm> claude-code progress: Reproduced it: the export ignores the filter\n#15 <hm> claude-code ask: Keep the old export as an option?\n- ( ) Yes, behind a setting\n- ( ) No, replace it\n#16 <hm> you: \u2713 No, replace it\n#19 <hm> claude-code progress: Fixed: the export now applies the filters.\n- What changed: one query\n- How to check: export with a filter\n"
+  "text": "keep-going ON: keep working without stopping. After each item, write back, then GET /next again.\n1 project rule: read GET /rules once per session and follow those that apply.\nproposed, the user has not approved yet (skip): T6\nin review, the user accepts them (skip): F1\nnext B2 (1 in queue: doing first, then P0\u2192P3, oldest first)\nB2 bug P0 now open  The PDF export too\nparent F1 \u00b7 src r1 r3\nthe user's own words (the inputs it came from):\nr1 <hm>:\n  The PDF export is broken too\nthread:\n#14 <hm> claude-code progress: Reproduced it: the export ignores the filter\n#15 <hm> claude-code ask: Keep the old export as an option?\n- ( ) Yes, behind a setting\n- ( ) No, replace it\n#16 <hm> you: \u2713 No, replace it\n#19 <hm> claude-code progress: Fixed: the export now applies the filters.\n- What changed: one query\n- How to check: export with a filter\n"
  },
  {
   "name": "state",

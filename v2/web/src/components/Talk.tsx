@@ -458,6 +458,20 @@ export function MsgText({
     </>
   )
 }
+// B452: what the organizer wrote from something you said says where it comes from; your whole words open from there
+function FromInput({ rid }: { rid: string }) {
+  const r = byR.get(rid),
+    on = r?.scope && r.scope !== U.open ? code(r.scope) : ''
+  return (
+    <span className="-ml-1 text-xs text-zinc-500 dark:text-zinc-400">
+      · from{' '}
+      <button data-act="go-input" data-id={rid} className="font-mono text-blue-600 hover:underline dark:text-blue-400">
+        {rcode(rid)}
+      </button>
+      {on ? ` on ${on}` : ''}
+    </span>
+  )
+}
 // F327, F428 (P0): an answered question stays where it was, in the same card: grey now, your picks ticked, the others
 // quieter, Submitted where its buttons were, and Modify (on hover on the desktop) to pick again
 function Answered({ x, gid, done }: { x: Msg; gid: string; done: string[] }) {
@@ -773,6 +787,7 @@ export function MsgView({
         <Avatar by={x.by} />
         <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">{whoName(x.by)}</span>
         {x.ses ? <span className="-ml-1 text-xs text-zinc-500 dark:text-zinc-400">· {x.ses}</span> : null}
+        {x.by === 'org' && x.src ? <FromInput rid={x.src} /> : null}
         {done && !form ? (
           <span className="flex items-center gap-0.5 rounded bg-zinc-100 px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-zinc-600 uppercase dark:bg-zinc-800 dark:text-zinc-300">
             <Icon n="check" c="size-3" sw="3" />

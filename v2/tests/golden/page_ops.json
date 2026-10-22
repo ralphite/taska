@@ -867,7 +867,7 @@
  {
   "name": "card of a deleted item",
   "status": 200,
-  "text": "F3 feature P2 now open  Another\ndeleted by the user together with input #item: stop working on it\nsrc r2\n"
+  "text": "F3 feature P2 now open  Another\ndeleted by the user together with input #item: stop working on it\nsrc r2\nthe user's own words (the inputs it came from):\nr2 <hm> on B1:\n  A reply on the bug\n"
  },
  {
   "name": "do F3 say still here?",

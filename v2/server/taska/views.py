@@ -154,6 +154,19 @@ def card(s: "Store", it: Item, ref: Ref = None) -> str:
     files = files_of(s, it, ref)
     if files:
         out.append("files: " + " ".join(files))
+    # B452: the user's own words this item came from, whole, so one read has them (the organizer may have summed up);
+    # what is already in the thread as the user's message is not repeated
+    shown = {x.get("src") for x in it["thread"] if x["by"] == "you"}
+    said = [s.inputs[r] for r in it["srcs"] if r in s.inputs and r not in shown and not s.inputs[r].get("deleted")]
+    if said:
+        out.append("the user's own words (the inputs it came from):")
+        for inp in said:
+            where = f" on {s.code(inp['scope'])}" if inp["scope"] and inp["scope"] != it["n"] else ""
+            out.append(f"{inp['id']} {hm(inp['t'])}{where}:")
+            out.extend("  " + line for line in (inp["text"] or "(no words)").splitlines())
+            fs = [(ref or s.local)(f["f"]) for f in inp.get("files", [])]
+            if fs:
+                out.append("  files: " + " ".join(fs))
     docs = [d for d in s.docs.values() if d["n"] == it["n"] and not d.get("deleted")]
     if docs:
         out.append("docs: " + "; ".join(f"D{d['d']} {d['title']} ({len(d['comments'])} comments" + (f", {s.doc_open(d)} unanswered" if s.doc_open(d) else "") + ")" for d in docs))
