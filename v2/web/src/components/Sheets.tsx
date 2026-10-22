@@ -1545,6 +1545,9 @@ export function Dialog() {
     if (!o || !d || !b) return
     if (!spec) return
     o.style.bottom = spec.aboveComposer ? footRoom() + 'px' : ''
+    // B8 (T422): a tall sheet that makes room for the box below it gets shorter at its bottom; its top, and what you
+    // are about to tap, stay where they were
+    d.style.height = spec.tall && spec.aboveComposer && !desk() ? `calc(88dvh - ${footRoom()}px)` : ''
     // B129: a menu opened by right-click sits at the pointer, kept on screen
     const xy = OV.popXY
     if (xy && desk()) {
