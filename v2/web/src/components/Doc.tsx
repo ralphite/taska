@@ -182,7 +182,7 @@ function BlockActs({ d, k, float = false }: { d: Doc; k: string; float?: boolean
     }
   }, [])
   const b = d.blocks.find((x) => x.key === k),
-    drafts = U.vcMarks.filter((m) => m.d === d.d && m.key === k),
+    drafts = U.vcMarks.filter((m) => m.d === d.d && m.key === k && markLive(m.label)),
     n = (b?.comments.length || 0) + drafts.length,
     open = float && n > 0 && U.docThreads.has(k)
   return (
@@ -249,6 +249,10 @@ function BlockActs({ d, k, float = false }: { d: Doc; k: string; float?: boolean
     </>
   )
 }
+// B7 (T422): a comment not sent yet is there while the box still holds its words or its voice note; emptied, it is gone
+const markLive = (label: string) =>
+  (els.text?.value || '').split('\n').some((l) => VC_MARK.exec(l)?.[1] === label) ||
+  U.files.some((f) => f.vc === label)
 // B340: a comment not sent yet, where it will go: its words under its quote in the box, and its voice notes
 function DraftCard({ label }: { label: string }) {
   useArea('composer')
@@ -284,7 +288,7 @@ function DocRail({ d }: { d: Doc }) {
   useArea('vc')
   useArea('composer')
   const ref = useRef<HTMLElement>(null)
-  const marks = U.vcMarks.filter((m) => m.d === d.d)
+  const marks = U.vcMarks.filter((m) => m.d === d.d && markLive(m.label))
   const entries: { k: string; node: ReactNode }[] = []
   if (d.whole?.length)
     entries.push({
@@ -545,7 +549,7 @@ export function DocView({ d }: { d: Doc }) {
     !!d.whole?.length ||
     d.detached.length > 0 ||
     d.blocks.some((b) => b.comments.length) ||
-    U.vcMarks.some((m) => m.d === d.d)
+    U.vcMarks.some((m) => m.d === d.d && markLive(m.label))
   const rail = side && wide && talked,
     float = side && !rail
   return (
