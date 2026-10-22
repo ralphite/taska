@@ -31,7 +31,7 @@ import { sleep } from './state'
 import { ticksOf } from './doctick'
 
 export const noteText = (d: Doc) =>
-  sameText(d.md.split('\n')[0].replace(/^#+\s*/, ''), d.title) ? d.md : `# ${d.title}\n\n${d.md}`
+  d.fmt === 'html' || sameText(d.md.split('\n')[0].replace(/^#+\s*/, ''), d.title) ? d.md : `# ${d.title}\n\n${d.md}` // F432: a page is its HTML
 export const docKey = () => (U.doc ? `D${U.doc}` : `new ${U.docNew}`) // where a document's draft is kept
 
 export interface DocTarget {
@@ -218,7 +218,7 @@ export async function saveDoc() {
 async function saveDocText(d: Doc | undefined, n: number | null, md: string) {
   try {
     if (d) {
-      await save({ op: 'doc', d: d.d, md })
+      await save({ op: 'doc', d: d.d, md, ...(d.fmt === 'html' ? { fmt: 'html' } : {}) }) // F432: a page stays a page
       toast('Saved')
       return docById(d.d)
     }

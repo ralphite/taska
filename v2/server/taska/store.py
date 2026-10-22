@@ -316,6 +316,8 @@ class Store:
                 self.maxd = max(self.maxd, e["d"])
                 d = self.docs[e["d"]] = {"d": e["d"], "n": e["n"], "comments": [], "t0": e["t"], "versions": 0}
             d.update(title=e.get("title") or d.get("title", ""), md=e["md"], t1=e["t"], by=e["by"])
+            if e.get("fmt") or d.get("fmt"):
+                d["fmt"] = e.get("fmt") or "md"  # F432: each write says which; none is Markdown
             d["versions"] += 1
             it = self.items.get(d["n"])
             if it:
@@ -677,6 +679,15 @@ class Store:
         """Blocks with their comment threads; threads whose paragraph changed come back as `detached`."""
         blocks: List[Dict[str, Any]] = []
         keys: Set[str] = set()
+        if d.get("fmt") == "html":  # F432: a web page has no paragraphs: each part commented on is a thread of its own
+            for c in d["comments"]:
+                if c["key"] == DOC_KEY:
+                    continue
+                if c["key"] not in keys:
+                    keys.add(c["key"])
+                    blocks.append({"key": c["key"], "kind": "html", "text": c["quote"], "comments": []})
+                next(b for b in blocks if b["key"] == c["key"])["comments"].append(c)
+            return blocks, []
         for kind, text in md_blocks(d["md"]):
             key = block_key(text)
             first = key not in keys

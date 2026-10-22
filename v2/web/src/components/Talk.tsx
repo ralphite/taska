@@ -760,7 +760,7 @@ export const DocCard = ({ d, cls = '' }: { d: Doc; cls?: string }) => (
     data-d={d.d}
     className={`flex w-full items-center gap-3 rounded-xl border border-zinc-200 px-3 py-2.5 text-left hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-900 ${cls}`}
   >
-    <Icon n="doc" c="size-5 text-zinc-500 dark:text-zinc-400" />
+    <Icon n={d.fmt === 'html' ? 'web' : 'doc'} c="size-5 text-zinc-500 dark:text-zinc-400" />
     <span className="min-w-0 flex-1">
       <span className="block truncate text-[15px] font-medium">{d.title}</span>
       <span className="block text-xs text-zinc-500 dark:text-zinc-400">

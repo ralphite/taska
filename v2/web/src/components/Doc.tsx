@@ -543,6 +543,41 @@ function Lasso() {
   )
 }
 // A document's text with its comment threads: in a sheet on the phone, in the item pane on the desktop (T110).
+// F432: a web page document, shown as it is (its scripts run), as tall as its content
+function HtmlPage({ d }: { d: Doc }) {
+  const ref = useRef<HTMLIFrameElement>(null)
+  useEffect(() => {
+    const f = ref.current
+    if (!f) return
+    let ro: ResizeObserver | null = null
+    const fit = () => {
+      const h = f.contentDocument?.documentElement?.scrollHeight
+      if (h) f.style.height = h + 'px'
+    }
+    const load = () => {
+      fit()
+      const b = f.contentDocument?.body
+      if (b && typeof ResizeObserver !== 'undefined') {
+        ro = new ResizeObserver(fit)
+        ro.observe(b)
+      }
+    }
+    f.addEventListener('load', load)
+    return () => {
+      f.removeEventListener('load', load)
+      ro?.disconnect()
+    }
+  }, [d.md])
+  return (
+    <iframe
+      id="docPage"
+      ref={ref}
+      srcDoc={d.md}
+      title={d.title}
+      className="mt-3 block min-h-40 w-full rounded-xl border border-zinc-200 bg-white dark:border-zinc-800"
+    />
+  )
+}
 export function DocView({ d }: { d: Doc }) {
   useArea('rec')
   const ref = useRef<HTMLDivElement>(null)
@@ -635,10 +670,10 @@ export function DocView({ d }: { d: Doc }) {
             Edit
           </button>
         </div>
-        {titled ? null : <div className="mt-3 text-2xl leading-tight font-bold tracking-tight">{d.title}</div>}
-        <Outline d={d} />
+        {titled || d.fmt === "html" ? null : <div className="mt-3 text-2xl leading-tight font-bold tracking-tight">{d.title}</div>}
+        {d.fmt === 'html' ? <HtmlPage d={d} /> : <Outline d={d} />}
         <div id="docBlocks" className={`relative mt-3 space-y-3 text-[15px] ${U.docCircle ? 'select-none' : ''}`}>
-          {d.blocks.map((b0, i) => {
+          {(d.fmt === 'html' ? [] : d.blocks).map((b0, i) => {
             const tk = tks[i] // B420: which of the paragraphs with these words it is
             const now = tickText(d.d, tk, b0.text) // B412: ticked here and not sent yet
             const b =
@@ -848,7 +883,7 @@ const PaneBtn = ({ act, children }: { act: string; children: ReactNode }) => (
 )
 export const DocPaneHead = ({ d, editing }: { d: Doc; editing: boolean }) => (
   <span className="flex min-w-0 items-center gap-2 text-sm">
-    <Icon n={editing ? 'pencil' : 'file'} c="size-[18px] text-zinc-500 dark:text-zinc-400" />
+    <Icon n={editing ? 'pencil' : d.fmt === 'html' ? 'web' : 'file'} c="size-[18px] text-zinc-500 dark:text-zinc-400" />
     {editing ? <span className="font-semibold">Editing</span> : null}
     <span className="font-mono font-bold text-zinc-700 dark:text-zinc-200">D{d.d}</span>
     <span className={`truncate ${editing ? '' : 'font-semibold'}`}>{d.title}</span>

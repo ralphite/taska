@@ -198,20 +198,24 @@ def run(s: "Store", op: Op, by: str, ctx: Dict[str, Any]) -> Tuple[str, Any]:
         s.emit({"k": "amend", "src": rid, "mode": mode, "text": text, "by": by, **({"files": files} if files else {})})
         return f"ok {rid} updated", "Updated"
     if name == "doc":  # new document on an item, or new text for an existing one
-        md = str(op.get("md") or "").strip()[:MAX_TEXT]
+        html = op.get("fmt") == "html"  # F432: a web page, shown as it is
+        md = str(op.get("md") or "").strip()[:MAX_TEXT if not html else 400000]
         if not md:
-            raise Err("a document needs Markdown text (indented lines under the command)")
+            raise Err("a document needs its text (indented lines under the command)")
         first = " ".join(md.split("\n", 1)[0].lstrip("#").split())  # a document is a note: its first line is the title
+        if html:
+            t_ = re.search(r"<title>(.*?)</title>|<h1[^>]*>(.*?)</h1>", md, re.S | re.I)
+            first = " ".join(re.sub(r"<[^>]+>", "", (t_.group(1) or t_.group(2)) if t_ else "").split())
         title = " ".join(str(op.get("title") or first or "Untitled").split())[:200]
-        if op.get("title") and title != first[:200]:
+        if op.get("title") and title != first[:200] and not html:
             md = f"# {title}\n\n{md}"
         if op.get("d"):
             d = s.doc(op["d"])
-            s.emit({"k": "doc", "d": d["d"], "n": d["n"], "title": title, "md": md, "by": by})
+            s.emit({"k": "doc", "d": d["d"], "n": d["n"], "title": title, "md": md, "by": by, **({"fmt": "html"} if html else {})})
             return f"ok D{d['d']} updated" + s.gone_note(s.items.get(d["n"], {}), by), f"Updated D{d['d']}"
         it = s.item(op.get("ref", ""), ctx)
         dn = s.maxd + 1
-        s.emit({"k": "doc", "d": dn, "n": it["n"], "title": title, "md": md, "by": by})
+        s.emit({"k": "doc", "d": dn, "n": it["n"], "title": title, "md": md, "by": by, **({"fmt": "html"} if html else {})})
         return f"ok D{dn} new on {s.code(it['n'])}" + s.gone_note(it, by), f"Wrote D{dn}"
     if name == "dticks":  # B1, B2 (T422): choices ticked on the page go into the document as it is now
         d = s.doc(op.get("d"))
@@ -242,6 +246,16 @@ def run(s: "Store", op: Op, by: str, ctx: Dict[str, Any]) -> Tuple[str, Any]:
     if name == "dc":  # a comment on one paragraph of a document, or on all of it (key "doc", para 0: B247)
         d = s.doc(op.get("d"))
         blocks = md_blocks(d["md"])
+        if d.get("fmt") == "html":  # F432: a part of the page, by its place in the page (key "h:..."); ¶N is a thread
+            threads = s.doc_view(d)[0]
+            if op.get("para") and str(op.get("para")) != "0":
+                k_ = int(op["para"])
+                if not 1 <= k_ <= len(threads):
+                    raise Err(f"D{d['d']} has threads 1-{len(threads)}")
+                op = dict(op, key=threads[k_ - 1]["key"], quote=threads[k_ - 1]["text"], para="")
+            elif op.get("key") != DOC_KEY and not str(op.get("key", "")).startswith("h:"):
+                raise Err("a part of a web page is named h:<its place>")
+            blocks = [("html", str(op.get("quote") or ""))] if op.get("key") != DOC_KEY else []
         if str(op.get("para", "")) == "0" or op.get("key") == DOC_KEY:
             key, text_ = DOC_KEY, ""
         elif op.get("para"):
@@ -252,7 +266,7 @@ def run(s: "Store", op: Op, by: str, ctx: Dict[str, Any]) -> Tuple[str, Any]:
             key = block_key(text_)
         else:
             key = str(op.get("key", ""))
-            found = next((t for _, t in blocks if block_key(t) == key), None)
+            found = next((t for _, t in blocks if block_key(t) == key or (d.get("fmt") == "html" and key.startswith("h:"))), None)
             old = next((c for c in d["comments"] if c["key"] == key), None)
             if found is None and not old:
                 raise Err("that paragraph is not in the document")
