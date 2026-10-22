@@ -17,7 +17,38 @@ export const TOAST: ToastState = { text: '', act: null, label: 'Undo', error: fa
 // gives it back when it goes
 let kept: ToastState | null = null
 let timer = 0
-export const failedRetry: (() => unknown)[] = []
+// T424 step 3: every change that did not go in stays in one place, the red "N not saved" at the top of the page,
+// until you retry it or let it go: what it was, why, and when. A toast says so once as well.
+export interface Failed {
+  id: number
+  what: string
+  why: string
+  at: number
+  retry: (() => unknown) | null
+}
+export const FAILED: Failed[] = []
+let fid = 0
+export function addFailed(what: string, why: string, retry: (() => unknown) | null = null) {
+  const f = { id: ++fid, what, why, at: Date.now(), retry }
+  FAILED.unshift(f)
+  toast(`Not saved: ${what}${retry ? '' : `: ${why}`}`, retry ? () => retryFailed(f.id) : null, {
+    error: true,
+    label: 'Retry',
+  })
+  bump('head', 'dialog')
+  return f
+}
+/** Send it again (it leaves the list; if it fails again it comes back). Without an id: all of them, oldest first. */
+export function retryFailed(id?: number) {
+  const go = FAILED.filter((f) => f.retry && (id === undefined || f.id === id)).reverse()
+  dropFailed(id)
+  for (const f of go) void f.retry?.()
+}
+export function dropFailed(id?: number) {
+  for (let i = FAILED.length - 1; i >= 0; i--) if (id === undefined || FAILED[i].id === id) FAILED.splice(i, 1)
+  bump('head', 'dialog')
+}
+export const failedWaiting = () => FAILED.some((f) => f.retry)
 
 type Run = (() => unknown) & { entry?: unknown }
 export function toast(text: string, act?: Run | null, { error = false, label = 'Undo', ms = 0, sticky = false } = {}) {
@@ -43,7 +74,6 @@ export function toast(text: string, act?: Run | null, { error = false, label = '
 }
 export function hideToast() {
   TOAST.shown = false
-  if (TOAST.sticky) failedRetry.length = 0 // closed: those changes are given up
   TOAST.sticky = false
   kept = null
   bump('toast')

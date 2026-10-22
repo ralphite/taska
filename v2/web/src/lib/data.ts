@@ -3,7 +3,7 @@
 // in order; until Taska has a change it is kept as a patch over Taska's last state, so a refresh meanwhile doesn't
 // take it off the screen. A save that fails takes its patch back, and a red toast says so, with Retry.
 import { LETTER, SAID } from './constants'
-import { failedRetry, toast } from './toast'
+import { addFailed, toast } from './toast'
 import {
   CLOSED,
   DR,
@@ -19,6 +19,7 @@ import {
   model,
   openKids,
   plural,
+  rcode,
   render,
   sleep,
   type UndoEntry,
@@ -159,7 +160,8 @@ export async function op(o: unknown, cid?: string, p = ctx.P): Promise<OpAnswer>
     cid,
   )
   if (!d.ok) {
-    toast((d.res || []).find((x) => x.startsWith('err')) || d.error || 'Not saved', null, { error: true })
+    const why = ((d.res || []).find((x) => x.startsWith('err')) || d.error || 'Taska said no').replace(/^err:?\s*/, '')
+    addFailed(saidOp(o), why) // T424: Taska said no; sending it again would not help
     throw new Error('op failed')
   }
   if (!here) return d // T424: a change kept for another project, sent from here: nothing to show here
@@ -171,25 +173,11 @@ export async function op(o: unknown, cid?: string, p = ctx.P): Promise<OpAnswer>
   }
   return d
 }
-// A save that didn't reach Taska after a minute of trying. Several in a row are retried together, in order. The toast
-// stays until you act on it and says which changes they were (B326).
-const failedWhat: string[] = []
+// A save that didn't reach Taska after a minute of trying: it goes to the list of what is not saved, with a way to
+// send it again (B326, T424)
 export function notSaved(ex: unknown, retry?: () => unknown, what = lastSaid || 'a change') {
   if (!(ex as { net?: boolean })?.net) return
-  if (retry) failedRetry.push(retry)
-  if (!failedRetry.length) failedWhat.length = 0
-  failedWhat.push(what)
-  const k = failedWhat.length
-  toast(
-    `Not saved: ${failedWhat.slice(-3).join('; ')}${k > 3 ? ` and ${k - 3} more` : ''}`,
-    failedRetry.length
-      ? () => {
-          failedWhat.length = 0
-          for (const r of failedRetry.splice(0)) r()
-        }
-      : null,
-    { error: true, label: 'Retry', sticky: true },
-  )
+  addFailed(what, 'Taska was out of reach', retry || null)
 }
 // What a save was, in a few words, for the toast that says it did not go through
 export function saidOp(o: unknown): string {
@@ -217,6 +205,21 @@ export function saidOp(o: unknown): string {
       .map(([k, v]) => word(k, v))
       .join(', ')}`
   if (x.op === 'input') return x.scope ? `your words to ${String(x.scope)}` : 'your new input'
+  const on = x.on === false // the same op taking it back
+  const said: Record<string, string> = {
+    hide: `${on ? 'showing' : 'hiding'} a message on ${String(x.ref)}`,
+    idel: `deleting ${String(x.ref)}`,
+    iundel: `restoring ${String(x.ref)}`,
+    delete: `deleting input ${rcode(String(x.id))}`,
+    restore: `restoring input ${rcode(String(x.id))}`,
+    ddel: `${on ? 'restoring' : 'deleting'} D${String(x.d)}`,
+    dmove: `moving D${String(x.d)} to ${String(x.to)}`,
+    dcres: `${on ? 'reopening' : 'resolving'} a comment on D${String(x.d)}`,
+    dcdel: `deleting a comment on D${String(x.d)}`,
+    dcundel: `restoring a comment on D${String(x.d)}`,
+    rescope: `filing input ${rcode(String(x.id))} under ${String(x.to)}`,
+  }
+  if (said[String(x.op)]) return said[String(x.op)]
   return `${String(x.op)}${x.ref ? ' ' + String(x.ref) : ''}`
 }
 export const notLoaded = (what: string, retry: () => unknown) =>
@@ -597,7 +600,7 @@ export function restorePending() {
 export function optimistic(
   patches: Patch[],
   send: (() => Promise<unknown>) | Record<string, unknown> | Record<string, unknown>[],
-  fail: (ex: unknown) => void = (ex) => notSaved(ex, undefined, patchesSaid(patches)),
+  fail: (ex: unknown) => void = (ex) => notSaved(ex, () => optimistic(patches, send), patchesSaid(patches)),
   needed: () => boolean = () => true,
   again?: { id: string; p: string },
 ): Promise<boolean> {
@@ -650,12 +653,14 @@ export function optimistic(
 }
 export const setNow = (n: number, f: Record<string, unknown>, retry?: () => unknown) => {
   const ref = code(n)
-  return optimistic([{ n, f }], { op: 'set', ref, f }, (ex) => notSaved(ex, retry, saidOp({ op: 'set', ref, f })))
+  return optimistic([{ n, f }], { op: 'set', ref, f }, (ex) =>
+    notSaved(ex, retry || (() => setNow(n, f)), saidOp({ op: 'set', ref, f })),
+  )
 }
 /** R409: show a change at once (fn changes the page's copy; it must be safe to do twice), save it behind you, sent
  * again while Taska can't be reached; only when it finally can't be saved does the page go back, and says what. */
-export const instant = (o: unknown, fn: () => void, what = saidOp(o), retry?: () => unknown) =>
-  optimistic([{ fn }], o as Record<string, unknown>, (ex) => notSaved(ex, retry, what))
+export const instant = (o: unknown, fn: () => void, what = saidOp(o), retry?: () => unknown): Promise<boolean> =>
+  optimistic([{ fn }], o as Record<string, unknown>, (ex) => notSaved(ex, retry || (() => instant(o, fn, what)), what)) // T424: anything can be sent again from the list of what is not saved
 const patchesSaid = (patches: Patch[]) =>
   patches.length === 1
     ? saidOp({ op: 'set', ref: code(patches[0].n), f: patches[0].f })

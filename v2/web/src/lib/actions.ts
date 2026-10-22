@@ -37,7 +37,7 @@ import {
 import { groups, hasChoices } from './markdown'
 import { clearTicks, tickDoc, tickModify } from './doctick'
 import { playAudio } from './audio'
-import { toast } from './toast'
+import { FAILED, addFailed, dropFailed, retryFailed, toast } from './toast'
 import type { Item } from './types'
 import { actLog } from './actlog'
 import {
@@ -548,6 +548,16 @@ export const ACT: Record<string, Handler> = {
   },
   guide: () => openProject('connect'),
   'agent-info': () => openProject('agents'),
+  // T424 step 3: the list of changes that did not go in
+  'failed-open': () => (FAILED.length ? openDialog('failed', {}, { pop: true, focus: false }) : undefined),
+  'failed-retry': (d) => {
+    retryFailed(d.id ? Number(d.id) : undefined)
+    if (!FAILED.length) closeDialog()
+  },
+  'failed-drop': (d) => {
+    dropFailed(d.id ? Number(d.id) : undefined)
+    if (!FAILED.length) closeDialog()
+  },
   about: () => openProject('about'),
   phone: () => openProject('phone'),
   'new-key': async () => {
@@ -1363,16 +1373,10 @@ export const ACT: Record<string, Handler> = {
         await load()
       },
       (ex) =>
-        toast(
-          (ex as { net?: boolean }).net
-            ? `Not moved to ${projName(to)}: ${ref} is back here` // the corner says Taska is out of reach
-            : `Not moved: ${(ex as Error).message || 'Taska said no'}`,
+        addFailed(
+          `moving ${ref} to ${projName(to)} (it is back here)`,
+          (ex as { net?: boolean }).net ? 'Taska was out of reach' : (ex as Error).message || 'Taska said no',
           () => ACT['item-move-to'](d),
-          {
-            error: true,
-            label: 'Try again',
-            sticky: true,
-          },
         ),
     )
     toast(

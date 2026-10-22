@@ -56,7 +56,7 @@ import {
   agoShort,
 } from '../lib/state'
 import { PSEC } from '../lib/settings-data'
-import { TOAST, hideToast } from '../lib/toast'
+import { FAILED, TOAST, hideToast } from '../lib/toast'
 import { VW, viewerAct } from '../lib/viewer'
 import { searchMode, openItem, closeDrawer } from '../lib/nav'
 import { writeURL } from '../lib/url'
@@ -146,6 +146,24 @@ function Pill() {
       <span className={`size-2 shrink-0 rounded-full ${PILL[kind][1]}`} />
       <span className="truncate">{label}</span>
     </span>
+  )
+}
+
+// T424 step 3: the one place that shows changes that did not go in, until each is retried or let go
+function FailedPill() {
+  const n = FAILED.length
+  if (!n) return null
+  return (
+    <button
+      data-act="failed-open"
+      aria-label={`${n} not saved`}
+      title="Changes Taska does not have: open to retry them"
+      className="flex h-8 shrink-0 items-center gap-1.5 rounded-full bg-red-50 px-2.5 text-[13px] font-semibold text-red-700 ring-1 ring-red-600/20 ring-inset hover:bg-red-100 lg:px-3 dark:bg-red-400/10 dark:text-red-300 dark:ring-red-400/25 dark:hover:bg-red-400/20"
+    >
+      <Icon n="alert" c="size-3.5" sw="2.25" />
+      {n}
+      <span className="hidden lg:inline">not saved</span>
+    </button>
   )
 }
 
@@ -613,7 +631,8 @@ function ProjBar({ hidden }: { hidden: boolean }) {
           </button>
         ))}
       </div>
-      <div id="deskAgent" className="ml-auto flex shrink-0 items-center pl-3">
+      <div id="deskAgent" className="ml-auto flex shrink-0 items-center gap-2 pl-3">
+        <FailedPill />
         {S.project ? (
           <button
             data-act="agent-info"
@@ -711,6 +730,7 @@ function MainHead({ hidden }: { hidden: boolean }) {
             {S.project ? projTitle() : decodeURIComponent(ctx.HERE || 'Taska')}
           </span>
         </button>
+        <FailedPill />
         <button
           id="agentBtn"
           data-act="agent-info"

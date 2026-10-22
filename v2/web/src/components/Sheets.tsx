@@ -72,6 +72,7 @@ import { noteText } from '../lib/docs'
 import { kept } from '../lib/drafts'
 import { Armed, Cnt, Icon, ProjTile, StateIcon } from './ui'
 import { VW_STATE } from '../lib/views'
+import { FAILED } from '../lib/toast'
 import { FileRows, Rich, Talk, Thumbs } from './Talk'
 import { NeedsCard, cardMsg, LetterOf } from './Detail'
 import { DocEdit, DocView } from './Doc'
@@ -1430,6 +1431,64 @@ const KINDS: Record<string, (p: Props) => Parts | null> = {
       </div>
     ),
   }),
+  failed: () =>
+    FAILED.length
+      ? {
+          // T424 step 3: what did not go in, the newest first; each can be sent again or let go
+          title: `Not saved (${FAILED.length})`,
+          body: (
+            <div className="-mx-1 flex max-w-sm flex-col">
+              {FAILED.map((f) => (
+                <div key={f.id} className="flex items-start gap-2 rounded-lg px-3 py-2">
+                  <Icon n="alert" c="mt-0.5 size-4 shrink-0 text-red-600 dark:text-red-400" sw="2" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm leading-snug font-medium break-words">{f.what}</p>
+                    <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+                      {f.why} · {when(f.at)}
+                    </p>
+                  </div>
+                  {f.retry ? (
+                    <button
+                      data-act="failed-retry"
+                      data-id={f.id}
+                      className="-my-1 shrink-0 rounded-lg px-2.5 py-1 text-[13px] font-semibold text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10"
+                    >
+                      Retry
+                    </button>
+                  ) : null}
+                  <button
+                    data-act="failed-drop"
+                    data-id={f.id}
+                    aria-label={f.retry ? 'Let it go' : 'OK'}
+                    title={f.retry ? 'Let it go (it is not saved)' : 'OK'}
+                    className="-my-1 grid size-7 shrink-0 place-items-center rounded-lg text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 dark:text-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+                  >
+                    <Icon n="x" c="size-4" />
+                  </button>
+                </div>
+              ))}
+              {FAILED.length > 1 ? (
+                <div className="mt-1 flex justify-end gap-1 border-t border-zinc-100 px-2 pt-2 dark:border-zinc-800">
+                  <button
+                    data-act="failed-drop"
+                    className="rounded-lg px-2.5 py-1 text-[13px] font-semibold text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                  >
+                    Clear all
+                  </button>
+                  {FAILED.filter((f) => f.retry).length > 1 ? (
+                    <button
+                      data-act="failed-retry"
+                      className="rounded-lg px-2.5 py-1 text-[13px] font-semibold text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10"
+                    >
+                      Retry all
+                    </button>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+          ),
+        }
+      : null,
   'msg-menu': ({ n, id }) => ({
     title: 'Message',
     body: (
