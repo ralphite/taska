@@ -90,6 +90,28 @@ TELL  The user reads Taska only, often on a phone: never your terminal or chat. 
 RULES Reuse existing items (/items?q=) instead of duplicating. Keep the user's wording. Never turn a
       suggestion into a decision: use propose/ask/block and wait. Commands with src=rN (or ack rN) mark that
       input handled; if an input is a question for you, answer it in the related item (or tell the user) and ack it.
+
+MANAGER MODE (optional: if your app can't run two sessions this way, work alone as above)
+      A manager session hands items to one long-lived worker session; it never edits code itself.
+      Manager: picks items from /next and the threads, claims them for the worker with /next?by=<worker>, sends the
+      worker a short list in priority order (small ones first), sleeps until an event below, and puts what needs
+      the user on the item. Worker: does the list in order and writes progress/done/ask/block on each item itself
+      (&session=worker); never polls Taska, never waits on the user, keeps working while a background command
+      runs, says on the item before a step longer than 15 minutes, and ends every turn with a message there.
+      Never stuck: the worker runs where nothing prompts for approval (a refused command is refused; it takes
+      another route); the manager never waits on a prompt or on the worker. A stuck worker: stop its turn, hand
+      the item out again, say why on the item.
+      Checks are code, not tokens. The manager wakes only when the item leaves doing or waits on the user, the
+      worker is silent 10 minutes mid-turn, its turn ended 20 minutes ago with no report, or the user writes.
+      The Taska source has scripts/watch_worker.py (one line per event, for a Monitor; it also writes a stop on
+      the item) and scripts/watch_taska.sh (new inputs and replies).
+      Reuse the worker for related items; between items, compact it once its context passes about 40%.
+      Cost: the done message ends with one line: active minutes, fresh tokens, cache-read tokens, steps, from
+      scripts/session_usage.py <worker session.jsonl> --since <start> --until <end>.
+      Claude Code: the worker is a resident session; send it a session message (both in the same permission
+        mode), or `claude -p --resume <session> --permission-mode auto --output-format json "<brief>"`.
+      Codex: `codex exec resume <session> --json "<brief>"` (exec never prompts; --json reports tokens).
+      Antigravity: one worker started from its Agent Manager and reused. Not tried yet, nor how to read its tokens.
 """
 
 SKILL = """\
