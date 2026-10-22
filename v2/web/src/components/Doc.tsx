@@ -184,6 +184,7 @@ function BlockActs({ d, k, float = false }: { d: Doc; k: string; float?: boolean
   const b = d.blocks.find((x) => x.key === k),
     drafts = U.vcMarks.filter((m) => m.d === d.d && m.key === k && markLive(m.label)),
     n = (b?.comments.length || 0) + drafts.length,
+    done = !drafts.length && docResolved(d, k), // B12 (T422): a resolved thread looks done, not waiting
     open = float && n > 0 && U.docThreads.has(k)
   // B5 (T422): in a list, the count sits level with the item its comments quote, not with the list's first item
   const quote = b?.comments[0]?.quote || ''
@@ -218,8 +219,13 @@ function BlockActs({ d, k, float = false }: { d: Doc; k: string; float?: boolean
           data-key={k}
           title={open ? 'Hide the comments' : 'Show the comments'}
           style={{ top: countTop + 2 }}
-          className="absolute left-[calc(100%+0.25rem)] z-10 flex h-7 min-w-7 items-center justify-center gap-0.5 rounded-lg bg-amber-100 px-1.5 text-xs font-semibold text-amber-900 hover:bg-amber-200 dark:bg-amber-900/60 dark:text-amber-100"
+          className={`absolute left-[calc(100%+0.25rem)] z-10 flex h-7 min-w-7 items-center justify-center gap-0.5 rounded-lg px-1.5 text-xs font-semibold ${
+            done
+              ? 'bg-zinc-100 text-zinc-500 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700'
+              : 'bg-amber-100 text-amber-900 hover:bg-amber-200 dark:bg-amber-900/60 dark:text-amber-100 dark:hover:bg-amber-800/70'
+          }`}
         >
+          {done ? <Icon n="check" c="size-3.5" /> : null}
           {n}
         </button>
       ) : null}
@@ -601,7 +607,7 @@ export function DocView({ d }: { d: Doc }) {
               <button
                 data-act="doc-thread"
                 data-key="doc"
-                className="order-last flex h-7 items-center gap-1 rounded-md bg-amber-100 px-2 font-medium text-amber-900 hover:bg-amber-200 dark:bg-amber-900/60 dark:text-amber-100"
+                className="order-last flex h-7 items-center gap-1 rounded-md bg-amber-100 px-2 font-medium text-amber-900 hover:bg-amber-200 dark:bg-amber-900/60 dark:text-amber-100 dark:hover:bg-amber-800/70"
               >
                 <Icon n="comment" c="size-3.5" />
                 {plural(d.whole.length, 'comment')} on the document
