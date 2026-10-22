@@ -245,6 +245,8 @@ export function saidOp(o: unknown): string {
     dc: `your comment on D${String(x.d)}`,
     dcedit: `editing your comment on D${String(x.d)}`,
     dticks: `your choices in D${String(x.d)}`,
+    correct: `fixing “${String(x.wrong)}” in ${rcode(String(x.id))}`,
+    amend: `${x.mode === 'edit' ? 'your edit of' : 'what you added to'} ${rcode(String(x.id))}`,
   }
   if (said[String(x.op)]) return said[String(x.op)]
   return `${String(x.op)}${x.ref ? ' ' + String(x.ref) : ''}`

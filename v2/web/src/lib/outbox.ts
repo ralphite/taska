@@ -25,7 +25,6 @@ import {
 } from './state'
 import { toast } from './toast'
 import {
-  JSON_POST,
   load,
   instant,
   op,
@@ -35,13 +34,25 @@ import {
   forget,
   sendLog,
   change,
+  notSaved,
+  saidOp,
   type OpAnswer,
 } from './data'
 import { ticksDone, ticksGoing, ticksOf, tickWords } from './doctick'
 import { actLog } from './actlog'
 import type { Doc } from './types'
 import { setFix } from './settings'
-import { draftName, draftStore, goDraft, keepChoice, markSent, saveDraft, setDraft, draftMarks } from './drafts'
+import {
+  draftName,
+  draftStore,
+  goDraft,
+  keepChoice,
+  markSent,
+  saveDraft,
+  setDraft,
+  draftMarks,
+  syncDraft,
+} from './drafts'
 import { docTarget, sendDocComment, renderDoc } from './docs'
 import { advance, advanceDesk, peek } from './go'
 import { finishRec, dropRec, keepRec, plainFile, sendVoiceComments, vcCount } from './voice'
@@ -464,6 +475,17 @@ export function noteWith(n: number) {
 
 // ---------------------------------------------------------------- the box's other jobs
 
+// Taska said no to an edit, a fix or a comment change: your words come back in the box, on what they were for (unless
+// you are writing something else by then; the list of what is not saved still says what it was)
+function putBack(set: () => void, text: string, files: DraftFile[] = []) {
+  if (els.text?.value.trim() || U.amend || U.correct) return
+  set()
+  syncDraft()
+  if (els.text) els.text.value = text
+  U.files = files
+  saveDraft()
+  render()
+}
 export async function sendAmend() {
   const a = U.amend,
     box = els.text
@@ -493,10 +515,7 @@ export async function sendAmend() {
       .map((f) => ({ f: f.f, name: f.name, mime: f.mime, size: f.size, tr: f.tr }))
     await optimistic([], { op: 'dcedit', d: a.d, id: a.id, text, ...(files.length ? { files } : {}) }, () => {
       // Taska said no (it says why): your words come back to edit
-      U.amend = a
-      if (els.text) els.text.value = text || was || ''
-      U.files = drafts
-      saveDraft()
+      putBack(() => (U.amend = a), text || was || '', drafts)
     })
     gone()
     renderDoc()
@@ -504,30 +523,38 @@ export async function sendAmend() {
     return
   }
   if (!text && !drafts.length) return box.focus()
+  // B437, T441: the box is empty at once and the input shows your words; it is saved behind you and sent again until
+  // Taska has it. Only a refusal puts your words back in the box (and in the list of what is not saved).
+  box.value = ''
+  U.files = []
+  saveDraft()
+  U.amend = null
+  const add = (r: { text: string }) =>
+    a.mode === 'edit' ? text : r.text.endsWith(text) ? r.text : [r.text, text].filter(Boolean).join('\n\n')
+  const gone = text
+    ? standIn(() => {
+        const r = byR.get(a.id)
+        if (r) r.text = add(r)
+      })
+    : () => {}
+  toast(a.mode === 'edit' ? `${rcode(a.id)} updated` : `Added to ${rcode(a.id)}`)
+  render()
+  if (desk()) box.focus({ preventScroll: true })
   await Promise.all(drafts.map((f) => f.done)) // a voice note or screenshot goes along once uploaded (B168)
   const files = drafts
     .filter((f) => f.f && !f.failed)
     .map((f) => ({ f: f.f, name: f.name, mime: f.mime, size: f.size, tr: f.tr }))
-  try {
-    const d = await (
-      await fetch(ctx.P + 'api/op', JSON_POST({ op: 'amend', id: a.id, mode: a.mode, v: a.v, text, files }))
-    ).json()
-    if (!d.ok) return toast((d.res || []).find((x: string) => x.startsWith('err')) || d.error || 'Not saved')
+  const ok = await optimistic([], { op: 'amend', id: a.id, mode: a.mode, v: a.v, text, files }, (ex) => {
+    putBack(() => (U.amend = a), text, drafts)
+    notSaved(ex, undefined, saidOp({ op: 'amend', id: a.id, mode: a.mode }))
+  })
+  gone()
+  if (ok)
     for (const f of drafts) {
       f.sent = true
       dropRec(f)
     }
-    box.value = ''
-    U.files = []
-    saveDraft()
-    U.amend = null
-    await load()
-    toast(a.mode === 'edit' ? `${rcode(a.id)} updated` : `Added to ${rcode(a.id)}`)
-    render()
-    if (desk()) box.focus({ preventScroll: true })
-  } catch {
-    toast('Connection lost. Your words are still in the box; try again.')
-  }
+  render()
 }
 export async function sendCorrect() {
   const c = U.correct,
@@ -535,35 +562,39 @@ export async function sendCorrect() {
   if (!c || !box) return
   const right = box.value.replace(/\s+/g, ' ').trim()
   if (!right) return box.focus()
-  try {
-    const before = byR.get(c.id)?.text,
-      had = (
-        (await (await fetch('/api/corrections', { cache: 'no-store' })).json()) as { wrong?: string; right: string }[]
-      ).find((x) => x.wrong === c.wrong) // A3
-    const d = await (
-      await fetch(ctx.P + 'api/op', JSON_POST({ op: 'correct', id: c.id, wrong: c.wrong, right, v: c.v }))
-    ).json()
-    if (!d.ok) return toast((d.res || []).find((x: string) => x.startsWith('err')) || d.error || 'Not saved')
-    box.value = ''
-    saveDraft()
-    U.correct = null
-    getSelection()?.removeAllRanges()
-    await load()
-    const run = pushUndo(`Fix “${c.wrong}” → “${right}” in ${rcode(c.id)}`, async () => {
-      // A3: Z puts back the words and the spelling
-      const r = byR.get(c.id)
-      if (r && before != null && r.text !== before) {
-        await op({ op: 'amend', id: c.id, mode: 'edit', v: r.v || 0, text: before })
-      }
-      await setFix(had ? { wrong: c.wrong, right: had.right } : { wrong: c.wrong })
-      toast(`Put back “${c.wrong}” in ${c.id}${had ? '' : ', and forgot the spelling'}`)
-    })
-    toast(`Fixed ${c.id}. Voice notes will write “${right}” from now on`, run)
-    render()
-    if (desk()) box.focus({ preventScroll: true })
-  } catch {
-    toast('Connection lost. Your words are still in the box; try again.')
-  }
+  // B437: the box is empty at once and the input shows the fix; it is saved behind you
+  const before = byR.get(c.id)?.text
+  box.value = ''
+  saveDraft()
+  U.correct = null
+  getSelection()?.removeAllRanges()
+  const gone = standIn(() => {
+    const r = byR.get(c.id)
+    if (r) r.text = r.text.split(c.wrong).join(right)
+  })
+  render()
+  if (desk()) box.focus({ preventScroll: true })
+  const had = await fetch('/api/corrections', { cache: 'no-store' })
+    .then((r) => r.json() as Promise<{ wrong?: string; right: string }[]>)
+    .then((l) => l.find((x) => x.wrong === c.wrong)) // A3
+    .catch(() => undefined)
+  const ok = await optimistic([], { op: 'correct', id: c.id, wrong: c.wrong, right, v: c.v }, (ex) => {
+    putBack(() => (U.correct = c), right)
+    notSaved(ex, undefined, saidOp({ op: 'correct', id: c.id, wrong: c.wrong }))
+  })
+  gone()
+  if (!ok) return render()
+  const run = pushUndo(`Fix “${c.wrong}” → “${right}” in ${rcode(c.id)}`, async () => {
+    // A3: Z puts back the words and the spelling
+    const r = byR.get(c.id)
+    if (r && before != null && r.text !== before) {
+      await op({ op: 'amend', id: c.id, mode: 'edit', v: r.v || 0, text: before })
+    }
+    await setFix(had ? { wrong: c.wrong, right: had.right } : { wrong: c.wrong })
+    toast(`Put back “${c.wrong}” in ${c.id}${had ? '' : ', and forgot the spelling'}`)
+  })
+  toast(`Fixed ${c.id}. Voice notes will write “${right}” from now on`, run)
+  render()
 }
 // The answer is an ordinary reply on the item: one line per pick. What you wrote in the box for this item goes with it.
 export async function sendChoice(n: number) {

@@ -180,11 +180,12 @@ def run(s: "Store", op: Op, by: str, ctx: Dict[str, Any]) -> Tuple[str, Any]:
             raise Err("this input has moved; edit it in the destination project")
         if inp.get("deleted"):
             raise Err(f"{rid} is deleted; restore it first (Settings, Deleted)")
-        if op.get("v") != inp.get("v", 0):
-            raise Err("this input changed in another window; reopen it before saving")
         mode = op.get("mode")
         if mode not in ("edit", "append"):
             raise Err("choose edit or append")
+        # an append goes after whatever is there by then (T441: words transcribed meanwhile are no reason to refuse it)
+        if mode == "edit" and op.get("v") != inp.get("v", 0):
+            raise Err("this input changed in another window; reopen it before saving")
         files = op_files(s, op)
         text = s.with_words(str(op.get("text") or "").strip(), files)
         if not text and not files:
