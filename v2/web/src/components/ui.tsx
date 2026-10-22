@@ -111,11 +111,7 @@ export const Cnt = ({ icon, n, label }: { icon: IconName; n: ReactNode; label: s
   </span>
 )
 export const DraftMark = ({ small = false }: { small?: boolean }) => (
-  <span
-    data-draft
-    title="Not sent yet: kept in this browser"
-    className="inline-flex shrink-0 items-center gap-1 font-semibold text-blue-600 dark:text-blue-400"
-  >
+  <span data-draft className="inline-flex shrink-0 items-center gap-1 font-semibold text-blue-600 dark:text-blue-400">
     <Icon n="pencil" c={small ? 'size-2.5' : 'size-3'} sw="2.25" />
     Draft
   </span>

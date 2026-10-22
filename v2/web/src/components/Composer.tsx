@@ -282,11 +282,7 @@ function boxRole(): { line: ReactNode; ph: string; send: string; ready?: boolean
         icon="comment"
         label={`Comment on D${dOpen.d}`}
         detail="· or tap a part"
-        right={
-          byN.has(host) ? (
-            <ScopeLink act="doc-to-item" text={`Reply to ${code(host)}`} title={`Reply to ${code(host)} instead`} />
-          ) : null
-        }
+        right={byN.has(host) ? <ScopeLink act="doc-to-item" text={`Reply to ${code(host)}`} /> : null}
       />
     ) // T225 #14
     ph = desk() ? `Reply to ${code(host)}…` : `Comment on D${dOpen.d}…`

@@ -156,7 +156,6 @@ function FailedPill() {
     <button
       data-act="failed-open"
       aria-label={`${n} not saved`}
-      title="Not saved"
       className="flex h-8 shrink-0 items-center gap-1.5 rounded-full bg-red-50 px-2.5 text-[13px] font-semibold text-red-700 ring-1 ring-red-600/20 ring-inset hover:bg-red-100 lg:px-3 dark:bg-red-400/10 dark:text-red-300 dark:ring-red-400/25 dark:hover:bg-red-400/20"
     >
       <Icon n="alert" c="size-3.5" sw="2.25" />
@@ -322,7 +321,6 @@ function SideFoot() {
       <div className="flex items-center gap-0.5">
         <button
           data-act="project"
-          title="Settings · G S"
           className="flex h-9 min-w-0 flex-1 items-center gap-2.5 rounded-lg px-2.5 text-left text-sm text-zinc-600 hover:bg-zinc-200/60 dark:text-zinc-300 dark:hover:bg-zinc-800"
         >
           <Icon n="gear" c="size-4 shrink-0 text-zinc-500 dark:text-zinc-400" sw="2" />
@@ -424,7 +422,6 @@ function Drawer({ hidden, over }: { hidden: boolean; over: boolean }) {
         <button
           data-act="new-input"
           id="newInputBtn"
-          title="New input · C"
           aria-pressed={D.compose && !D.page}
           className="flex h-9 w-full items-center gap-2 rounded-xl bg-white px-3 text-sm font-medium text-zinc-800 shadow-sm ring-1 ring-zinc-900/10 hover:bg-zinc-50 aria-pressed:bg-blue-50 aria-pressed:text-blue-700 aria-pressed:ring-blue-500/40 dark:bg-zinc-800 dark:text-zinc-100 dark:ring-white/10 dark:hover:bg-zinc-700 dark:aria-pressed:bg-blue-400/10 dark:aria-pressed:text-blue-300 dark:aria-pressed:ring-blue-400/40"
         >
@@ -533,7 +530,7 @@ function Rail({ hidden }: { hidden: boolean }) {
               href={`/p/${encodeURIComponent(p.name)}/`}
               data-slug={p.name}
               {...(cur ? { 'aria-current': 'page' as const, 'data-act': 'new-input' } : {})}
-              title={`${titleOf(p)}${p.needs ? ` · ${plural(p.needs, 'item')} need you` : ''}`}
+              title={titleOf(p)}
               aria-label={titleOf(p)}
               className="relative grid size-10 place-items-center rounded-xl hover:bg-zinc-200/60 aria-[current=page]:bg-blue-100 aria-[current=page]:ring-1 aria-[current=page]:ring-blue-300 dark:hover:bg-zinc-800 dark:aria-[current=page]:bg-blue-400/20 dark:aria-[current=page]:ring-blue-400/40"
             >

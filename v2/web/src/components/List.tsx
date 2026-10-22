@@ -280,7 +280,7 @@ export function ItemRow({
     it.when === 'later' && !closed && band !== 'later' ? (
       <Soft key="l">Later</Soft>
     ) : it.n === queueHead() ? (
-      <span key="l" className="font-semibold text-zinc-700 dark:text-zinc-200" title="Agents take this one next">
+      <span key="l" className="font-semibold text-zinc-700 dark:text-zinc-200">
         Next
       </span>
     ) : null,
@@ -655,7 +655,6 @@ function OwnView({ v, i, on }: { v: View; i: number; on: boolean }) {
       data-act="view-use"
       data-i={i}
       aria-pressed={on}
-      title="Your view"
       onContextMenu={(e) => {
         e.preventDefault()
         menu(e.clientX, e.clientY)
@@ -859,7 +858,6 @@ function CrossHits() {
         <a
           key={x.project + x.code}
           href={`/p/${encodeURIComponent(x.project)}/${x.kind === 'input' ? 'inputs?q=' + encodeURIComponent(XS.q) : encodeURIComponent(x.code)}`}
-          title={`${x.ptitle || x.project} · ${x.code}`}
           className="flex items-center gap-2.5 rounded-lg px-3 py-2 text-left hover:bg-zinc-100 dark:hover:bg-zinc-900"
         >
           <ProjTile name={x.project} cls="size-5 rounded text-[10px]" />

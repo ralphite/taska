@@ -459,7 +459,6 @@ export function MsgView({
                   <button
                     data-act="input-history"
                     data-id={src.id}
-                    title="See what changed"
                     className="relative underline decoration-dotted underline-offset-2 after:absolute after:-inset-3 hover:text-zinc-700 dark:hover:text-zinc-300"
                   >
                     edited {when(x.edited)}

@@ -218,7 +218,6 @@ function BlockActs({ d, k, float = false }: { d: Doc; k: string; float?: boolean
         <button
           data-act="doc-thread"
           data-key={k}
-          title={open ? 'Hide the comments' : 'Show the comments'}
           style={{ top: countTop + 2 }}
           className={`absolute left-[calc(100%+0.25rem)] z-10 flex h-7 min-w-7 items-center justify-center gap-0.5 rounded-lg px-1.5 text-xs font-semibold ${
             done
@@ -839,10 +838,9 @@ function DocMic() {
   )
 }
 // The desktop's pane header for a document, and its way back (T110)
-const PaneBtn = ({ act, title, children }: { act: string; title: string; children: ReactNode }) => (
+const PaneBtn = ({ act, children }: { act: string; children: ReactNode }) => (
   <button
     data-act={act}
-    title={title}
     className="flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm text-zinc-600 hover:bg-zinc-100 aria-pressed:bg-amber-100 aria-pressed:text-amber-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:aria-pressed:bg-amber-900/60 dark:aria-pressed:text-amber-100"
   >
     {children}
@@ -858,15 +856,15 @@ export const DocPaneHead = ({ d, editing }: { d: Doc; editing: boolean }) => (
 )
 export const DocPaneActs = ({ d }: { d: Doc }) => (
   <>
-    <PaneBtn act="doc-edit" title="Edit the text">
+    <PaneBtn act="doc-edit">
       <Icon n="pencil" c="size-4" />
       Edit
     </PaneBtn>
-    <PaneBtn act="doc-move" title="Put it on another item">
+    <PaneBtn act="doc-move">
       <Icon n="arrow" c="size-4" />
       Move
     </PaneBtn>
-    <PaneBtn act="doc-delete" title="Delete">
+    <PaneBtn act="doc-delete">
       <Icon n="trash" c="size-4" />
       <Armed k={'doc-delete ' + d.d} ask={`Delete D${d.d}?`}>
         Delete
@@ -878,7 +876,6 @@ export const DocPaneActs = ({ d }: { d: Doc }) => (
 export const DocPaneNav = ({ d }: { d: Doc }) => (
   <button
     data-act="doc-close"
-    title={`Back to ${code(liveN(d.n))} · Esc`}
     className="flex h-9 items-center gap-1.5 rounded-lg bg-zinc-100 px-2.5 text-sm font-semibold text-zinc-800 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700"
   >
     <Icon n="left" c="size-4" sw="2.25" />
