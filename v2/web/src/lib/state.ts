@@ -407,9 +407,13 @@ export const isImage = (f: { mime?: string }) => (f.mime || '').startsWith('imag
 // ---------------------------------------------------------------- items
 
 export const CLOSED = (s: Status | string) => s === 'done' || s === 'dropped'
+// T424, A8 (T422): an item being made has a number above any real one, growing with time, so it sorts after its
+// older siblings and in the order you made them, until Taska gives it its own
+export const STAND = 1e12
+export const standN = () => STAND + (Date.now() % 1e11)
 export const code = (n: number | null | undefined) => {
   if (n == null) return ''
-  if (n < 0) return '…' // T424: being made: Taska gives it its number
+  if (n >= STAND) return '…' // T424: being made: Taska gives it its number
   const it = byN.get(n)
   return (it ? LETTER[it.type] : '?') + String(n).padStart(model.S.width, '0')
 }

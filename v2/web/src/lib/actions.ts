@@ -30,6 +30,7 @@ import {
   rcode,
   render,
   scopeN,
+  standN,
   tabOf,
   visible,
   type Go,
@@ -1090,7 +1091,7 @@ export const ACT: Record<string, Handler> = {
       f = document.getElementById('subTitle') as HTMLInputElement | null,
       title = (f?.value || '').trim()
     if (!title || !p) return f?.focus()
-    const tmp = -Date.now(),
+    const tmp = standN(),
       type = p.type === 'rule' ? 'task' : p.type
     const stand = {
       ...p,
