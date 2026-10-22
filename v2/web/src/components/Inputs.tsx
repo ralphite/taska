@@ -24,7 +24,7 @@ import {
 } from '../lib/state'
 import type { FileRef, Input } from '../lib/types'
 import type { Job } from '../lib/state'
-import { arrived, clock, outboxLine, outboxState } from '../lib/state'
+import { arrived, clock, outboxLine, outboxState, projTitle } from '../lib/state'
 import { draftsOf } from '../lib/drafts'
 import { DraftMark, Empty, Hit, Icon, ProjTile, StateIcon } from './ui'
 import { Rich, Thumbs, voiceLen } from './Talk'
@@ -886,5 +886,11 @@ export function ComposeHead() {
         {back('amend-cancel')}
       </>
     )
-  return null
+  // B440 (over D25 #1): the project's name over the box, as Yadong asked; the line under it stays out
+  return (
+    <div className="flex items-center gap-3">
+      {tile}
+      <h1 className="text-[28px] leading-none font-semibold tracking-tight">{projTitle()}</h1>
+    </div>
+  )
 }
