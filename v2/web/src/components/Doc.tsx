@@ -196,6 +196,19 @@ function BlockActs({ d, k, float = false }: { d: Doc; k: string; float?: boolean
     const top = li && sec ? Math.round(li.getBoundingClientRect().top - sec.getBoundingClientRect().top) : 0
     if (top !== countTop) setCountTop(top)
   }, [quote, n, float, countTop])
+  // B6 (T422): an open comment popup closes on a click anywhere else, so it never sits over the paragraphs below
+  const pop = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!open) return
+    const away = (e: MouseEvent) => {
+      const t = e.target as Element
+      if (pop.current?.contains(t) || t.closest(`[data-act="doc-thread"][data-key="${k}"]`)) return
+      U.docThreads.delete(k)
+      renderDoc()
+    }
+    document.addEventListener('mousedown', away, true)
+    return () => document.removeEventListener('mousedown', away, true)
+  }, [open, k])
   return (
     <>
       {float && n ? (
@@ -212,6 +225,7 @@ function BlockActs({ d, k, float = false }: { d: Doc; k: string; float?: boolean
       ) : null}
       {open && b ? (
         <div
+          ref={pop}
           style={{ top: countTop + 36 }}
           className="absolute -right-10 z-20 flex w-80 max-w-full flex-col gap-2 text-sm shadow-xl"
         >
