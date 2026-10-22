@@ -226,9 +226,17 @@ export function tickedBlock(block: string, i: number): string | null {
   while (a > 0 && CHOICE.test(ls[a - 1])) a--
   while (z < ls.length - 1 && CHOICE.test(ls[z + 1])) z++
   const mine = (j: number) => j >= a && j <= z
+  const isAll = (l: string) => multi && /^(\u5168\u90e8|All\b)/i.test(l.replace(CHOICE, '').trim())
   const on = !isTicked(ls[k]),
-    all = multi && /^(\u5168\u90e8|All\b)/i.test(ls[k].replace(CHOICE, '').trim()) // R272: "All" ticks or unticks the whole list
+    all = isAll(ls[k]) // R272: "All" ticks or unticks the whole list
   const next = ls.map((l, j) => (j === k || (all && mine(j)) ? mark(l, on) : !multi && mine(j) ? mark(l, false) : l))
+  // B13 (T422): "All" is ticked exactly when every other choice of its list is
+  const allAt = multi && !all ? next.findIndex((l, j) => mine(j) && CHOICE.test(l) && isAll(l)) : -1
+  if (allAt >= 0)
+    next[allAt] = mark(
+      next[allAt],
+      next.every((l, j) => j === allAt || !mine(j) || !CHOICE.test(l) || isTicked(l)),
+    )
   return next.join('\n')
 }
 export const isTicked = (l: string) => /^\s*[-*+]\s+[([][xX][)\]]/.test(l)

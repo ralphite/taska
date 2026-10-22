@@ -42,6 +42,12 @@ describe('choices in a document (F393, B412, B420)', () => {
     expect(all).toBe('- [x] \u5168\u90e8\n- [x] Red\n- [x] Blue')
     expect(tickedBlock(all, 0)).toBe('- [ ] \u5168\u90e8\n- [ ] Red\n- [ ] Blue')
   })
+  it('keeps "All" ticked exactly when every other choice of its list is (B13)', () => {
+    const all = '- [x] All\n- [x] Red\n- [x] Blue'
+    expect(tickedBlock(all, 1)).toBe('- [ ] All\n- [ ] Red\n- [x] Blue')
+    expect(tickedBlock('- [ ] All\n- [ ] Red\n- [x] Blue', 1)).toBe(all)
+    expect(tickedBlock('Pick:\n- [ ] All\n- [ ] Red\n\n- [ ] Other', 1)).toBe('Pick:\n- [x] All\n- [x] Red\n\n- [ ] Other')
+  })
 })
 
 describe('two lists of choices in one paragraph (D32)', () => {
