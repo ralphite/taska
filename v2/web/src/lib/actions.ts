@@ -209,6 +209,18 @@ export function inputMenu(id: string, at?: DOMRect) {
   if (at && desk()) popAt(at.left, at.bottom + 4)
 }
 
+/** A1 (T422): a field you type in is fully in sight in its scrolling part, above the fade at that part's bottom. */
+function fieldInSight(f: HTMLElement) {
+  let sc = f.parentElement
+  while (sc && !(sc.scrollHeight > sc.clientHeight && /auto|scroll/.test(getComputedStyle(sc).overflowY)))
+    sc = sc.parentElement
+  if (!sc) return
+  const r = f.getBoundingClientRect(),
+    c = sc.getBoundingClientRect(),
+    fade = sc.hasAttribute('data-over') ? 72 : 8 // the part fades over its last 4rem
+  if (r.bottom > c.bottom - fade) sc.scrollTop += r.bottom - (c.bottom - fade)
+  else if (r.top < c.top) sc.scrollTop -= c.top - r.top + 8
+}
 export const ACT: Record<string, Handler> = {
   search: () => searchMode(!U.searching),
   'search-cancel': () => searchMode(false),
@@ -1038,6 +1050,7 @@ export const ACT: Record<string, Handler> = {
       toast('Your subitem title is back')
     }
     f?.focus()
+    if (f) fieldInSight(f)
   },
   'sub-cancel': () => {
     const n = U.subFor
@@ -1103,6 +1116,7 @@ export const ACT: Record<string, Handler> = {
     if (f) {
       f.value = ''
       f.focus()
+      fieldInSight(f)
     } // the field stays for the next one (B123)
   },
   'move-to': (d) => {
