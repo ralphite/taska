@@ -29,8 +29,6 @@ WRITE (plain text, one command per line; indented lines continue the previous co
                             "- [ ] option" lines = pick any. The reply lists the picks as "✓ option".
   B03 doc [title]           new document on B03 (plans, designs); its Markdown is the indented lines, first line = title
   D1 doc [new title]        replace D1's Markdown with the indented lines; comments stay with unchanged paragraphs
-  B03 html [title]          new web page document on B03: the indented lines are HTML (scripts allowed), shown as a page
-  D1 html [new title]       replace D1 with the indented HTML
   D1 reply ¶3 <text>        answer the comments on paragraph 3 of D1
   B03 archive|unarchive     hide a done/dropped item from the default lists (reopening unarchives)
   ack r12 r13               mark inputs handled without changing items

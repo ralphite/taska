@@ -31,7 +31,7 @@ import { sleep } from './state'
 import { ticksOf } from './doctick'
 
 export const noteText = (d: Doc) =>
-  d.fmt === 'html' || sameText(d.md.split('\n')[0].replace(/^#+\s*/, ''), d.title) ? d.md : `# ${d.title}\n\n${d.md}` // F432: a page is its HTML
+  sameText(d.md.split('\n')[0].replace(/^#+\s*/, ''), d.title) ? d.md : `# ${d.title}\n\n${d.md}`
 export const docKey = () => (U.doc ? `D${U.doc}` : `new ${U.docNew}`) // where a document's draft is kept
 
 export interface DocTarget {
@@ -219,7 +219,7 @@ export async function saveDoc() {
 async function saveDocText(d: Doc | undefined, n: number | null, md: string) {
   try {
     if (d) {
-      await save({ op: 'doc', d: d.d, md, ...(d.fmt === 'html' ? { fmt: 'html' } : {}) }) // F432: a page stays a page
+      await save({ op: 'doc', d: d.d, md })
       toast('Saved')
       return docById(d.d)
     }
@@ -304,8 +304,6 @@ export async function sendDocComment(t: DocTarget) {
     const doc = docById(dn),
       list = doc && (t.key === 'doc' ? doc.whole : doc.blocks.find((b) => b.key === t.key)?.comments)
     if (list && !list.some((c) => c.id === stand.id)) list.push(stand)
-    else if (!list && doc?.fmt === 'html' && !doc.blocks.some((b) => b.key === t.key))
-      doc.blocks.push({ key: t.key, kind: 'para', text: t.quote, comments: [stand] }) // F432: a new part of a page
   })
   U.docThreads.add(t.key)
   U.docSel = new Set()

@@ -116,8 +116,6 @@ def parse_cmd(head: str, cont: str) -> Union[Op, List[Op]]:
         sub, _, rest2 = rest.partition(" ")
         if sub.lower() == "doc":
             return {"op": "doc", "d": word[1:], "title": rest2.strip(), "md": cont}
-        if sub.lower() == "html":  # F432: the document as a web page (HTML, scripts too)
-            return {"op": "doc", "d": word[1:], "title": rest2.strip(), "md": cont, "fmt": "html"}
         if sub.lower() == "reply":
             m = re.match(r"¶?(\d+)\s+(.*)", rest2.strip(), re.S)
             if not m:
@@ -130,8 +128,6 @@ def parse_cmd(head: str, cont: str) -> Union[Op, List[Op]]:
     sub_l = sub.lower()
     if sub_l == "doc":
         return {"op": "doc", "ref": word, "title": rest2.strip(), "md": cont}
-    if sub_l == "html":  # F432
-        return {"op": "doc", "ref": word, "title": rest2.strip(), "md": cont, "fmt": "html"}
     if sub_l in TEXT_VERBS:
         a, text = attrs(rest2.strip()) if re.match(r"(?i)(src|files)=", rest2.strip()) else ({}, rest2.strip())
         text = (text + ("\n" + cont if cont else "")).strip()

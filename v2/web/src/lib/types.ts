@@ -129,7 +129,6 @@ export interface Doc {
   whole: Comment[]
   open: number
   resolved?: Record<string, string>
-  fmt?: 'md' | 'html' // F432: a web page (HTML, shown as it is) or Markdown (the default)
 }
 
 export interface Agent {

@@ -201,10 +201,6 @@ def doc_text(s: "Store", d: Doc) -> str:
     blocks, detached = s.doc_view(d)
     titled = blocks and " ".join(blocks[0]["text"].lstrip("#").split()) == d["title"]
     out = [f"D{d['d']} on {s.code(d['n'])}{'' if titled else ': ' + d['title']}  (updated {hm(d['t1'])} by {d['by']}; reply with: D{d['d']} reply ¶N <text>, ¶0 for the whole document)"]
-    if d.get("fmt") == "html":  # F432: a web page: its HTML, then each part commented on, as ¶N
-        out[0] = f"D{d['d']} on {s.code(d['n'])}: {d['title']}  (a web page; updated {hm(d['t1'])} by {d['by']}; replace it with: D{d['d']} html; reply with: D{d['d']} reply ¶N <text>, ¶0 for the whole page)"
-        out.append(textwrap.indent(d["md"], "  "))
-        blocks = [dict(b, text="part of the page: " + first_line(b["text"], 200)) for b in blocks]
     whole = s.doc_whole(d)
     if whole:  # B247
         out.append("¶0 comments on the whole document:")

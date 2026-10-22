@@ -6,7 +6,6 @@ import { BTN, DC_BTN, HIT, MSG, PRIMARY, WHO } from '../lib/constants'
 import {
   R_STATE as R,
   U,
-  bump,
   code,
   desk,
   docResolved,
@@ -29,7 +28,6 @@ import { Armed, Icon, Kbd } from './ui'
 import { Rich, Thumbs, VoiceLine } from './Talk'
 import { RecTime } from './Composer'
 import { VC_MARK, docMicLabel } from '../lib/voice'
-import { ACT } from '../lib/actions'
 
 const NewDot = () => (
   <span className="ml-0.5 size-1.5 rounded-full bg-blue-600 dark:bg-blue-400" title="New from an agent" />
@@ -308,35 +306,6 @@ function DraftCard({ label }: { label: string }) {
     </div>
   )
 }
-// F432 (D34 #4): a web page's commented parts that are not on the page any more as they were (the page was replaced,
-// or its scripts changed it): their place is gone, or the words quoted are not in it. They show under "Original text
-// changed", as a paragraph of a document that changed does.
-const PAGE_GONE = new Map<number, Set<string>>()
-const here = (d: Doc) => d.blocks.filter((b) => !PAGE_GONE.get(d.d)?.has(b.key))
-const changed = (d: Doc) => [
-  ...d.detached,
-  ...d.blocks
-    .filter((b) => PAGE_GONE.get(d.d)?.has(b.key))
-    .map((b) => ({ key: b.key, quote: b.text, comments: b.comments })),
-]
-const words = (s: string) => s.replace(/\s+/g, ' ').trim()
-// A commented part: a paragraph of the text, or (F432) a part of a web page, which is inside its frame
-function blockEl(k: string): Element | null {
-  if (!k.startsWith('h:')) return document.querySelector(`#docBlocks > section[data-key="${CSS.escape(k)}"]`)
-  try {
-    return (
-      (document.getElementById('docPage') as HTMLIFrameElement | null)?.contentDocument?.querySelector(k.slice(2)) ??
-      null
-    )
-  } catch {
-    return null
-  }
-}
-// the top of a part, in the page's coordinates (a web page's parts are measured inside its frame)
-function blockTop(k: string, el: Element) {
-  const frame = k.startsWith('h:') ? document.getElementById('docPage')?.getBoundingClientRect().top || 0 : 0
-  return el.getBoundingClientRect().top + frame
-}
 // B340: the comments, beside the text. Each sits level with its paragraph; when they would overlap they move down in
 // this column only, never the text. Pointing at one marks its paragraph.
 function DocRail({ d }: { d: Doc }) {
@@ -355,7 +324,7 @@ function DocRail({ d }: { d: Doc }) {
         </div>
       ),
     })
-  for (const b of here(d)) {
+  for (const b of d.blocks) {
     if (b.comments.length)
       entries.push({
         k: b.key,
@@ -376,13 +345,13 @@ function DocRail({ d }: { d: Doc }) {
     for (const m of marks.filter((x) => x.key === b.key))
       entries.push({ k: b.key, node: <DraftCard label={m.label} /> })
   }
-  if (changed(d).length)
+  if (d.detached.length)
     entries.push({
       k: 'end',
       node: (
         <div className="space-y-3">
           <div className="text-[11px] font-medium text-zinc-500">Original text changed</div>
-          {changed(d).map((t) => (
+          {d.detached.map((t) => (
             <section key={t.key}>
               <div className="text-sm text-zinc-400 line-through">{t.quote}</div>
               <Thread d={d} k={t.key} comments={t.comments} rail />
@@ -399,8 +368,11 @@ function DocRail({ d }: { d: Doc }) {
       let y = 0
       for (const el of rail.children as HTMLCollectionOf<HTMLElement>) {
         const k = el.dataset.for || ''
-        const sec = k && k !== 'doc' && k !== 'end' ? blockEl(k) : null
-        const want = sec ? blockTop(k, sec) - base : k === 'doc' ? 0 : y
+        const sec =
+          k && k !== 'doc' && k !== 'end'
+            ? document.querySelector<HTMLElement>(`#docBlocks > section[data-key="${CSS.escape(k)}"]`)
+            : null
+        const want = sec ? sec.getBoundingClientRect().top - base : k === 'doc' ? 0 : y
         const top = Math.max(want, y)
         el.style.top = top + 'px'
         y = top + el.offsetHeight + 12
@@ -410,15 +382,13 @@ function DocRail({ d }: { d: Doc }) {
     place()
     const ro = new ResizeObserver(place)
     ro.observe(rail)
-    for (const id of ['docBlocks', 'docPage']) {
-      const el = document.getElementById(id) // F432 (D34 #2): a web page's parts move as the page grows
-      if (el) ro.observe(el)
-    }
+    const blocks = document.getElementById('docBlocks')
+    if (blocks) ro.observe(blocks)
     for (const el of rail.children) ro.observe(el)
     return () => ro.disconnect()
   })
   const mark = (k: string, on: boolean) =>
-    k.startsWith('h:') ? blockEl(k)?.classList.toggle('taska-hl', on) : blockEl(k)?.toggleAttribute('data-hl', on)
+    document.querySelector(`#docBlocks > section[data-key="${CSS.escape(k)}"]`)?.toggleAttribute('data-hl', on)
   return (
     <aside ref={ref} aria-label="Comments" className="relative">
       {entries.map((e, i) => (
@@ -573,198 +543,8 @@ function Lasso() {
   )
 }
 // A document's text with its comment threads: in a sheet on the phone, in the item pane on the desktop (T110).
-// F432: a web page document, shown as it is (its scripts run), as tall as its content. Words selected in it are
-// commented on like a document's; in comment mode (the Comment mode button, Esc leaves) pointing lights a part of it
-// and offers the mic and Comment beside it, as a paragraph of a document does; parts with comments are outlined.
-const PAGE_CSS =
-  '.taska-hl{outline:2px solid #3b82f6!important;outline-offset:2px;cursor:pointer}' +
-  '.taska-c{outline:2px dashed #f59e0b;outline-offset:2px}.taska-pick{outline:2px solid #f59e0b!important;outline-offset:2px}'
-const placeOf = (el: Element) => {
-  const parts: string[] = []
-  for (let e: Element | null = el; e && e.tagName !== 'BODY' && e.tagName !== 'HTML'; e = e.parentElement) {
-    const tag = e.tagName.toLowerCase(),
-      same = [...(e.parentElement?.children || [])].filter((x) => x.tagName === e?.tagName)
-    parts.unshift(same.length > 1 ? `${tag}:nth-of-type(${same.indexOf(e) + 1})` : tag)
-  }
-  return 'h:body > ' + parts.join(' > ')
-}
-function HtmlPage({ d, list }: { d: Doc; list: boolean }) {
-  useArea('vc')
-  useArea('rec')
-  const ref = useRef<HTMLIFrameElement>(null)
-  const [at, setAt] = useState<{ key: string; quote: string; top: number; left: number } | null>(null)
-  useEffect(() => {
-    const f = ref.current
-    if (!f) return
-    let ro: ResizeObserver | null = null,
-      lit: Element | null = null
-    const fit = () => {
-      const h = f.contentDocument?.documentElement?.scrollHeight
-      if (h) f.style.height = h + 'px'
-    }
-    const light = (el: Element | null) => {
-      lit?.classList.remove('taska-hl')
-      lit = el
-      el?.classList.add('taska-hl')
-    }
-    const offer = (el: Element) => {
-      const r = el.getBoundingClientRect()
-      setAt({
-        key: placeOf(el),
-        quote: ((el as HTMLElement).innerText || '').trim().slice(0, 500),
-        top: r.top,
-        left: r.right,
-      })
-    }
-    const load = () => {
-      const doc = f.contentDocument
-      if (!doc) return
-      const st = doc.createElement('style')
-      st.textContent = PAGE_CSS
-      doc.head?.append(st)
-      fit()
-      if (doc.body && typeof ResizeObserver !== 'undefined') {
-        ro = new ResizeObserver(fit)
-        ro.observe(doc.body)
-      }
-      doc.addEventListener('mouseover', (e) => {
-        const el = e.target as Element
-        if (!U.docInspect || !el || el === doc.body || el === doc.documentElement) return
-        light(el)
-        offer(el)
-      })
-      doc.addEventListener(
-        'click',
-        (e) => {
-          if (!U.docInspect) return
-          e.preventDefault()
-          e.stopPropagation()
-          const el = e.target as Element
-          if (el === doc.body || el === doc.documentElement) return
-          light(el)
-          offer(el)
-          ACT['page-pick']({ key: placeOf(el), quote: ((el as HTMLElement).innerText || '').trim().slice(0, 500) })
-        },
-        true,
-      )
-      doc.addEventListener('mouseup', () => {
-        if (U.docInspect) return
-        const sel = f.contentWindow?.getSelection(),
-          text = sel?.toString().trim()
-        const el =
-          sel?.anchorNode &&
-          (sel.anchorNode.nodeType === 1 ? (sel.anchorNode as Element) : sel.anchorNode.parentElement)
-        if (text && el) ACT['page-pick']({ key: placeOf(el), quote: text.slice(0, 500) })
-      })
-      doc.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && U.docInspect) ACT['doc-inspect']({})
-      })
-      mark()
-    }
-    const mark = () => {
-      const doc = f.contentDocument
-      if (!doc?.body) return
-      for (const el of doc.querySelectorAll('.taska-c, .taska-pick')) el.classList.remove('taska-c', 'taska-pick')
-      const gone = new Set<string>()
-      for (const b of d.blocks) {
-        let el: Element | null = null
-        try {
-          el = doc.querySelector(b.key.slice(2))
-        } catch {
-          /* not a place on this page */
-        }
-        if (el && words((el as HTMLElement).innerText || el.textContent || '').includes(words(b.text)))
-          el.classList.add('taska-c')
-        else gone.add(b.key)
-      }
-      const was = PAGE_GONE.get(d.d)
-      if (!was || was.size !== gone.size || [...gone].some((k) => !was.has(k))) {
-        PAGE_GONE.set(d.d, gone)
-        bump('vc')
-      }
-      if (U.docQuote?.key.startsWith('h:')) doc.querySelector(U.docQuote.key.slice(2))?.classList.add('taska-pick')
-    }
-    f.addEventListener('load', load)
-    if (f.contentDocument?.readyState === 'complete' && f.contentDocument.body?.childNodes.length) mark()
-    return () => {
-      f.removeEventListener('load', load)
-      ro?.disconnect()
-    }
-  }, [d.d, d.md, d.blocks])
-  const inspect = !!U.docInspect
-  useEffect(() => {
-    if (!inspect) {
-      ref.current?.contentDocument?.querySelector('.taska-hl')?.classList.remove('taska-hl')
-      return
-    }
-    const esc = (e: KeyboardEvent) => {
-      if (e.key !== 'Escape') return
-      e.stopPropagation()
-      ACT['doc-inspect']({})
-    }
-    addEventListener('keydown', esc, true)
-    return () => removeEventListener('keydown', esc, true)
-  }, [inspect])
-  const rec = !!(R.rec && R.vc?.d === d.d && at && R.vc.key === at.key)
-  const box = ref.current?.getBoundingClientRect(),
-    host = ref.current?.parentElement?.getBoundingClientRect()
-  return (
-    <div className="relative">
-      <iframe
-        id="docPage"
-        ref={ref}
-        srcDoc={d.md}
-        title={d.title}
-        className={`mt-3 block min-h-40 w-full rounded-xl border bg-white ${U.docInspect ? 'border-blue-500 ring-2 ring-blue-500/30' : 'border-zinc-200 dark:border-zinc-800'}`}
-      />
-      {U.docInspect && at && box && host ? (
-        <div
-          style={{
-            top: box.top - host.top + at.top,
-            left: Math.min(box.left - host.left + at.left + 6, host.width - 64),
-          }}
-          className="absolute z-10 flex gap-1"
-        >
-          <button
-            data-act="page-say"
-            data-key={at.key}
-            data-quote={at.quote}
-            title={rec ? 'Stop' : 'Speak a comment'}
-            className={`grid size-7 place-items-center rounded-lg shadow-sm ring-1 ${rec ? 'bg-red-600 text-white ring-red-700' : 'bg-white text-zinc-500 ring-zinc-900/10 hover:text-zinc-900 dark:bg-zinc-800 dark:text-zinc-300 dark:ring-white/10 dark:hover:text-white'}`}
-          >
-            <Icon n={rec ? 'stop' : 'mic'} c="size-4" />
-          </button>
-          {rec ? null : (
-            <button
-              data-act="page-pick"
-              data-key={at.key}
-              data-quote={at.quote}
-              title="Comment"
-              className="grid size-7 place-items-center rounded-lg bg-white text-zinc-500 shadow-sm ring-1 ring-zinc-900/10 hover:text-zinc-900 dark:bg-zinc-800 dark:text-zinc-300 dark:ring-white/10 dark:hover:text-white"
-            >
-              <Icon n="comment" c="size-4" />
-            </button>
-          )}
-        </div>
-      ) : null}
-      {list && d.blocks.length ? (
-        // F432 (D34 #2): under the page when there is no room for the column beside it
-        <div className="mt-6 space-y-4 border-t border-zinc-200 pt-4 dark:border-zinc-800">
-          <div className="text-xs font-medium text-zinc-500">Comments on parts of the page</div>
-          {here(d).map((b) => (
-            <section key={b.key}>
-              <div className="line-clamp-2 text-sm text-zinc-500 dark:text-zinc-400">“{b.text}”</div>
-              <Thread d={d} k={b.key} comments={b.comments} />
-            </section>
-          ))}
-        </div>
-      ) : null}
-    </div>
-  )
-}
 export function DocView({ d }: { d: Doc }) {
   useArea('rec')
-  useArea('vc') // F432: which parts of a web page are not on it any more
   const ref = useRef<HTMLDivElement>(null)
   useMarkQuotes(ref, d)
   useLayoutEffect(() => {
@@ -844,34 +624,21 @@ export function DocView({ d }: { d: Doc }) {
               Delete
             </Armed>
           </button>
-          {d.fmt === 'html' ? (
-            <button
-              data-act="doc-inspect"
-              aria-pressed={!!U.docInspect}
-              className={`${phoneBtn} aria-pressed:bg-blue-100 aria-pressed:text-blue-900 dark:aria-pressed:bg-blue-900/60 dark:aria-pressed:text-blue-100`}
-            >
-              Comment mode
-            </button>
-          ) : null}
-          {d.fmt === 'html' ? null : ( // F432: a web page's parts are picked in Comment mode
-            <button
-              data-act="doc-circle"
-              aria-pressed={!!U.docCircle}
-              className={`${phoneBtn} aria-pressed:bg-amber-100 aria-pressed:text-amber-900 dark:aria-pressed:bg-amber-900/60 dark:aria-pressed:text-amber-100`}
-            >
-              {U.docCircle ? 'Draw around it…' : 'Mark an area'}
-            </button>
-          )}
+          <button
+            data-act="doc-circle"
+            aria-pressed={!!U.docCircle}
+            className={`${phoneBtn} aria-pressed:bg-amber-100 aria-pressed:text-amber-900 dark:aria-pressed:bg-amber-900/60 dark:aria-pressed:text-amber-100`}
+          >
+            {U.docCircle ? 'Draw around it…' : 'Mark an area'}
+          </button>
           <button data-act="doc-edit" className={phoneBtn}>
             Edit
           </button>
         </div>
-        {titled || d.fmt === 'html' ? null : (
-          <div className="mt-3 text-2xl leading-tight font-bold tracking-tight">{d.title}</div>
-        )}
-        {d.fmt === 'html' ? <HtmlPage d={d} list={!rail} /> : <Outline d={d} />}
+        {titled ? null : <div className="mt-3 text-2xl leading-tight font-bold tracking-tight">{d.title}</div>}
+        <Outline d={d} />
         <div id="docBlocks" className={`relative mt-3 space-y-3 text-[15px] ${U.docCircle ? 'select-none' : ''}`}>
-          {(d.fmt === 'html' ? [] : d.blocks).map((b0, i) => {
+          {d.blocks.map((b0, i) => {
             const tk = tks[i] // B420: which of the paragraphs with these words it is
             const now = tickText(d.d, tk, b0.text) // B412: ticked here and not sent yet
             const b =
@@ -982,10 +749,10 @@ export function DocView({ d }: { d: Doc }) {
             <Thread d={d} k="doc" comments={d.whole} />
           </section>
         ) : null}
-        {(d.fmt === 'html' ? !rail : !side) && changed(d).length ? (
+        {!side && d.detached.length ? (
           <div className="mt-6 space-y-4 border-t border-zinc-200 pt-4 dark:border-zinc-800">
             <div className="text-xs font-medium text-zinc-500">Original text changed</div>
-            {changed(d).map((t) => (
+            {d.detached.map((t) => (
               <section key={t.key}>
                 <div className="text-sm text-zinc-400 line-through">{t.quote}</div>
                 <Thread d={d} k={t.key} comments={t.comments} />
@@ -996,9 +763,7 @@ export function DocView({ d }: { d: Doc }) {
         {side ? null : (
           <>
             <p className="mt-6 text-center text-xs text-zinc-400">
-              {d.fmt === 'html'
-                ? 'Select text, or turn on Comment mode and tap a part, to comment on it'
-                : 'Tap a paragraph, select text or circle an area to comment on it'}
+              Tap a paragraph, select text or circle an area to comment on it
             </p>
             {U.docType && !U.docSel.size && !U.docQuote && !U.docReply ? null : (
               <button
@@ -1073,10 +838,9 @@ function DocMic() {
   )
 }
 // The desktop's pane header for a document, and its way back (T110)
-const PaneBtn = ({ act, children, pressed }: { act: string; children: ReactNode; pressed?: boolean }) => (
+const PaneBtn = ({ act, children }: { act: string; children: ReactNode }) => (
   <button
     data-act={act}
-    {...(pressed !== undefined ? { 'aria-pressed': pressed } : {})}
     className="flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm text-zinc-600 hover:bg-zinc-100 aria-pressed:bg-amber-100 aria-pressed:text-amber-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:aria-pressed:bg-amber-900/60 dark:aria-pressed:text-amber-100"
   >
     {children}
@@ -1084,7 +848,7 @@ const PaneBtn = ({ act, children, pressed }: { act: string; children: ReactNode;
 )
 export const DocPaneHead = ({ d, editing }: { d: Doc; editing: boolean }) => (
   <span className="flex min-w-0 items-center gap-2 text-sm">
-    <Icon n={editing ? 'pencil' : d.fmt === 'html' ? 'web' : 'file'} c="size-[18px] text-zinc-500 dark:text-zinc-400" />
+    <Icon n={editing ? 'pencil' : 'file'} c="size-[18px] text-zinc-500 dark:text-zinc-400" />
     {editing ? <span className="font-semibold">Editing</span> : null}
     <span className="font-mono font-bold text-zinc-700 dark:text-zinc-200">D{d.d}</span>
     <span className={`truncate ${editing ? '' : 'font-semibold'}`}>{d.title}</span>
@@ -1092,12 +856,6 @@ export const DocPaneHead = ({ d, editing }: { d: Doc; editing: boolean }) => (
 )
 export const DocPaneActs = ({ d }: { d: Doc }) => (
   <>
-    {d.fmt === 'html' ? (
-      <PaneBtn act="doc-inspect" pressed={!!U.docInspect}>
-        <Icon n="comment" c="size-4" />
-        {U.docInspect ? 'Comment mode · Esc' : 'Comment mode'}
-      </PaneBtn>
-    ) : null}
     <PaneBtn act="doc-edit">
       <Icon n="pencil" c="size-4" />
       Edit
