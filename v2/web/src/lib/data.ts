@@ -21,6 +21,7 @@ import {
   openKids,
   plural,
   projName,
+  R_STATE,
   rcode,
   render,
   sleep,
@@ -487,10 +488,62 @@ const MY_VER = (/\/assets\/(index-[\w-]+\.js)/.exec(
   document.querySelector<HTMLScriptElement>('script[type=module][src*="/assets/index-"]')?.src || '',
 ) || [])[1]
 // B344: Taska restarted with new code while this page was open (left alone, the deploy restarts it by itself): the page
-// still runs the old code, so it says so and offers a reload; it never reloads by itself (R284)
-function offerReload() {
+// still runs the old code, so it says so and offers a reload. F449 (r598, R284): once nobody has touched this page for
+// 5 minutes it reloads by itself, unless a voice note is being recorded or something is still uploading or being sent
+const USED = { at: Date.now() }
+/** You did something on this page (or in a web page document in it) */
+export const markUsed = () => {
+  USED.at = Date.now()
+}
+for (const e of ['pointerdown', 'keydown', 'wheel', 'touchstart', 'input'])
+  addEventListener(e, markUsed, { capture: true, passive: true })
+let pointer = '' // a pointer that moved, not the page moving under one at rest
+addEventListener(
+  'pointermove',
+  (e) => {
+    if (`${e.screenX},${e.screenY}` === pointer) return
+    pointer = `${e.screenX},${e.screenY}`
+    markUsed()
+  },
+  { capture: true, passive: true },
+)
+const IDLE_RELOAD = 5 * 60000
+const busy = () =>
+  !!R_STATE.rec ||
+  U.files.some((f) => (!f.f && !f.failed) || f.transcribing) ||
+  U.outbox.some((q) => q.sending && !q.failed)
+// The service worker answers a reload with the page it kept, and fetches the new one meanwhile: a reload that comes back
+// on the old code goes again at once, 3 times at most (counted in this tab), so one reload brings the new code
+const AGAIN = 'taska.reload'
+function reloads(ver: string) {
+  try {
+    const a = JSON.parse(sessionStorage.getItem(AGAIN) || 'null') as { ver: string; n: number; t: number } | null
+    return a && a.ver === ver ? a : null
+  } catch {
+    return null
+  }
+}
+function reloadFor(ver: string) {
+  try {
+    sessionStorage.setItem(AGAIN, JSON.stringify({ ver, n: (reloads(ver)?.n || 0) + 1, t: Date.now() }))
+  } catch {
+    /* no storage: one reload */
+  }
+  location.reload()
+}
+function offerReload(ver: string) {
   UPD.stale = true
-  toast('Taska has an update', () => location.reload(), { label: 'Reload', sticky: true })
+  const was = reloads(ver)
+  if (was && was.n < 3 && Date.now() - was.t < 60000 && !busy()) return void window.setTimeout(() => reloadFor(ver), 1000)
+  toast('Taska has an update', () => reloadFor(ver), { label: 'Reload', sticky: true })
+  if (was && was.n >= 3) return // the new code does not come: Reload is yours
+  const check = () => {
+    if (Date.now() - USED.at < IDLE_RELOAD || busy()) return
+    clearInterval(t)
+    reloadFor(ver)
+  }
+  const t = window.setInterval(check, 15000)
+  check()
 }
 function offerRestart() {
   UPD.told = true
@@ -560,7 +613,13 @@ export async function poll(g: number) {
       if (news) await load()
       if (d.update && !UPD.told) offerRestart() // R328: new code waits for a restart, and you are using Taska: your call
       if (d.ver && !UPD.ver) UPD.ver = MY_VER || d.ver // T427: a page kept from before knows it is old at once
-      if (d.ver && d.ver !== UPD.ver && !UPD.stale) offerReload()
+      if (d.ver && d.ver !== UPD.ver && !UPD.stale) offerReload(d.ver)
+      else if (d.ver && d.ver === UPD.ver && reloads(d.ver))
+        try {
+          sessionStorage.removeItem(AGAIN) // the new code is here
+        } catch {
+          /* no storage */
+        }
       checkOthers()
       if (idle && !news) await napIdle(document.hidden ? 20000 : 5000)
     } catch {

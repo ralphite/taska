@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from 'react'
 import { U, desk, els, render, threadOpen, threadsOf, useArea } from '../lib/state'
 import { renderDoc } from '../lib/docs'
 import { act } from '../lib/actions'
+import { markUsed } from '../lib/data'
 import type { Doc } from '../lib/types'
 import { Icon } from './ui'
 import { Thread } from './Doc'
@@ -79,6 +80,13 @@ const HELPER = `<script>(() => {
     }, 400)
   })
   addEventListener('keydown', (e) => { if (e.key === 'Escape') send({ esc: 1 }) })
+  let usedAt = 0 // F449: Taska does not reload under you while you use the page
+  let pointer = ''
+  const used = (e) => {
+    if (e.type === 'pointermove') { if (e.screenX + ',' + e.screenY === pointer) return; pointer = e.screenX + ',' + e.screenY }
+    const n = Date.now(); if (n - usedAt > 10000) { usedAt = n; send({ used: 1 }) }
+  }
+  for (const t of ['pointerdown', 'pointermove', 'keydown', 'wheel', 'touchstart', 'input']) addEventListener(t, used, true)
   new ResizeObserver(() => { size(); measure() }).observe(document.documentElement)
   addEventListener('load', () => { size(); measure() })
   size()
@@ -169,6 +177,7 @@ export function WebPage({ d }: { d: Doc }) {
         pick?: Part
         esc?: number
         ready?: number
+        used?: number
       }
       if (m.ready) frame.current?.contentWindow?.postMessage({ taska: 1, ...(JSON.parse(WANT.now) as object) }, '*')
       if (m.h) setHeight(m.h + 2)
@@ -176,6 +185,7 @@ export function WebPage({ d }: { d: Doc }) {
       if (m.rects) setRects(m.rects)
       if (m.pick) pick(m.pick)
       if (m.esc) escape()
+      if (m.used) markUsed()
     }
     addEventListener('message', on)
     return () => {
