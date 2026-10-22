@@ -1007,12 +1007,17 @@ function DeskFilters({ hidden }: { hidden: boolean }) {
 // ---------------------------------------------------------------- the foot: the box, and the New input page (B73)
 function Foot({ hidden, wideCls }: { hidden: boolean; wideCls: string }) {
   const compose = desk() && D.compose && !D.page && U.tab !== 'inputs'
-  // F478: what scrolls above the box runs on under it, around its rounded corners; the room it needs is the foot's
+  // F478: what scrolls above the box runs on under it, around its rounded corners; the room it needs is the foot's.
+  // Only around its top: from the box's middle down the foot is the page's own white, so nothing shows under the box.
   useLayoutEffect(() => {
     const foot = document.getElementById('foot')
     if (!foot || typeof ResizeObserver === 'undefined') return
-    const set = () =>
+    const set = () => {
+      const f = foot.getBoundingClientRect(),
+        box = foot.querySelector('#composer')?.getBoundingClientRect()
       document.documentElement.style.setProperty('--foot-h', (foot.hidden ? 0 : foot.offsetHeight) + 'px')
+      foot.style.setProperty('--foot-cut', (box ? box.top - f.top + box.height / 2 : f.height) + 'px')
+    }
     const ro = new ResizeObserver(set)
     ro.observe(foot)
     set()
@@ -1027,7 +1032,7 @@ function Foot({ hidden, wideCls }: { hidden: boolean; wideCls: string }) {
         e.preventDefault()
         if (e.dataTransfer.files.length) addFiles([...e.dataTransfer.files])
       }}
-      className={`relative z-20 shrink-0 px-3 pt-1 pb-[max(1.25rem,env(safe-area-inset-bottom))] lg:row-start-5 lg:scrollbar-gutter-both lg:px-8 lg:pb-5 lg:group-data-duo/app:pl-[calc(var(--duo-w,55%)+2rem)] lg:group-data-[compose]/app:row-span-3 lg:group-data-[compose]/app:row-start-3 lg:group-data-[compose]/app:overflow-y-auto lg:group-data-[compose]/app:overscroll-contain lg:group-data-[compose]/app:pt-[5vh] lg:group-data-[compose]/app:pb-16 lg:group-data-duo/app:before:absolute lg:group-data-duo/app:before:inset-y-0 lg:group-data-duo/app:before:left-[var(--duo-w,55%)] lg:group-data-duo/app:before:w-px lg:group-data-duo/app:before:bg-zinc-200 lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:group-data-duo/app:before:bg-zinc-800 dark:lg:hover:scrollbar-thumb-zinc-400/70 ${wideCls}`}
+      className={`relative z-20 shrink-0 px-3 pt-1 pb-[max(1.25rem,env(safe-area-inset-bottom))] after:pointer-events-none after:absolute after:inset-x-0 after:top-(--foot-cut) after:bottom-0 after:-z-10 after:bg-white lg:group-data-[compose]/app:after:hidden dark:after:bg-zinc-950 lg:row-start-5 lg:scrollbar-gutter-both lg:px-8 lg:pb-5 lg:group-data-duo/app:pl-[calc(var(--duo-w,55%)+2rem)] lg:group-data-[compose]/app:row-span-3 lg:group-data-[compose]/app:row-start-3 lg:group-data-[compose]/app:overflow-y-auto lg:group-data-[compose]/app:overscroll-contain lg:group-data-[compose]/app:pt-[5vh] lg:group-data-[compose]/app:pb-16 lg:group-data-duo/app:before:absolute lg:group-data-duo/app:before:inset-y-0 lg:group-data-duo/app:before:left-[var(--duo-w,55%)] lg:group-data-duo/app:before:w-px lg:group-data-duo/app:before:bg-zinc-200 lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:group-data-duo/app:before:bg-zinc-800 dark:lg:hover:scrollbar-thumb-zinc-400/70 ${wideCls}`}
     >
       {compose && ComposeHead() ? (
         <div
