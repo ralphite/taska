@@ -100,15 +100,22 @@ export function micRelease() {
 function micError(e: unknown) {
   const name = (e as Error)?.name || ''
   void fetch(
-    ctx.P + 'api/miclog',
+    ctx.P + 'api/pagelog', // T453: the page's records all go the same way
     JSON_POST({
-      name,
-      message: String((e as Error)?.message || e || ''),
-      where: 'start',
-      standalone: String(standalone()),
-      kept: MIC.kept,
-      secure: String(window.isSecureContext),
-      ua: navigator.userAgent,
+      list: [
+        {
+          kind: 'mic',
+          level: 'warn',
+          msg: String((e as Error)?.message || e || ''),
+          name,
+          message: String((e as Error)?.message || e || ''),
+          where: 'start',
+          standalone: String(standalone()),
+          kept: MIC.kept,
+          secure: String(window.isSecureContext),
+          ua: navigator.userAgent,
+        },
+      ],
     }),
   ).catch(() => {}) // B288
   if (!window.isSecureContext) return 'Microphone requires HTTPS: open Taska using its https link.'
@@ -228,14 +235,21 @@ export async function finishRec(
   if (!blob) return
   if (ms < 800 || !blob.size) {
     void fetch(
-      ctx.P + 'api/miclog',
+      ctx.P + 'api/pagelog',
       JSON_POST({
-        name: blob.size ? 'short' : 'empty',
-        message: `${ms} ms, ${blob.size} bytes, ${blob.type}`,
-        where: 'stop',
-        standalone: String(standalone()),
-        secure: String(window.isSecureContext),
-        ua: navigator.userAgent,
+        list: [
+          {
+            kind: 'mic',
+            level: 'warn',
+            msg: `${ms} ms, ${blob.size} bytes`,
+            name: blob.size ? 'short' : 'empty',
+            message: `${ms} ms, ${blob.size} bytes, ${blob.type}`,
+            where: 'stop',
+            standalone: String(standalone()),
+            secure: String(window.isSecureContext),
+            ua: navigator.userAgent,
+          },
+        ],
       }),
     ).catch(() => {})
     return toast(

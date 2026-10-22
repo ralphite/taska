@@ -14,7 +14,7 @@ import urllib.error
 import urllib.request
 from typing import Any, Dict, List, Optional, Tuple
 
-from . import logs
+from .logs import log
 from .core import KEY_VARS, MODEL, Err, first_line
 
 Body = Dict[str, Any]
@@ -42,10 +42,12 @@ def keep(model: str, body: Body, t0: float, reply: Optional[Dict[str, Any]] = No
     caller = sys._getframe(2).f_globals.get("__name__", "").rsplit(".", 1)[-1]
     caller = sys._getframe(3).f_globals.get("__name__", "").rsplit(".", 1)[-1] if caller == "gemini" else caller
     use = (reply or {}).get("usageMetadata") or {}
-    logs.log("server", "gemini", who={"organizer": "org"}.get(caller, caller), ms=int((time.monotonic() - t0) * 1000),
-             status=status or (200 if reply is not None else None), level="error" if error else "info", model=model,
-             sent=strip(body), reply=reply, error=error or None, tokens_in=use.get("promptTokenCount"),
-             tokens_out=use.get("candidatesTokenCount"), tokens_think=use.get("thoughtsTokenCount"))
+    ms = int((time.monotonic() - t0) * 1000)
+    (log.error if error else log.info)(f"gemini {model} for {caller}: {status or 200} in {ms} ms", extra={"f": {
+        "source": "server", "kind": "gemini", "who": {"organizer": "org"}.get(caller, caller), "ms": ms,
+        "status": status or (200 if reply is not None else None), "model": model, "sent": strip(body), "reply": reply,
+        "error": error or None, "tokens_in": use.get("promptTokenCount"), "tokens_out": use.get("candidatesTokenCount"),
+        "tokens_think": use.get("thoughtsTokenCount")}})
 
 
 def gemini_call(model: str, body: Body, timeout: float = 120) -> Dict[str, Any]:

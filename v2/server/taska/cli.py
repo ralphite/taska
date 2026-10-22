@@ -36,15 +36,9 @@ def old_projects(root: str) -> List[str]:
 
 
 def main(argv: Optional[List[str]] = None) -> None:
-    argv = sys.argv[1:] if argv is None else argv
-    if argv[:1] == ["logs"]:  # T453: read the log table
-        from . import logs
-        logs.main(argv[1:])
-        return
     ap = argparse.ArgumentParser(prog="taska", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("command", nargs="?", default="serve", choices=("serve", "install-skill", "import", "logs"),
-                    help="install-skill: teach Claude Code, Codex and Antigravity how to use Taska; import: bring in the old data;"
-                         " logs: read the log table (taska logs -h)")
+    ap.add_argument("command", nargs="?", default="serve", choices=("serve", "install-skill", "import"),
+                    help="install-skill: teach Claude Code, Codex and Antigravity how to use Taska; import: bring in the old data")
     ap.add_argument("--port", type=int, default=7340)
     ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--root", default="~/.taska", help="data folder, one subfolder per project (default ~/.taska)")
@@ -54,6 +48,8 @@ def main(argv: Optional[List[str]] = None) -> None:
     ap.add_argument("--to", dest="dst", default="", help="import: the new data folder")
     ap.add_argument("--in-place", action="store_true", help="import: write taska.db next to each taska.jsonl (switch day)")
     ap.add_argument("--force", action="store_true", help="import: make databases that exist already again")
+    ap.add_argument("--log-db", default=None, help="the log also goes into this SQLite file (default: logs.db in the data folder; '' for none)")
+    ap.add_argument("--log-level", default="INFO", help="what the terminal shows (DEBUG shows every request)")
     args = ap.parse_args(argv)
     if args.command == "install-skill":
         print("Installed the Taska skill:")
@@ -73,6 +69,8 @@ def main(argv: Optional[List[str]] = None) -> None:
     from .hub import Hub
     from .web import Server
 
+    from . import logs
+    logs.setup(os.path.join(os.path.expanduser(args.root), "logs.db") if args.log_db is None else args.log_db, args.log_level)
     hub = Hub(args.root, args.organizer == "auto" and bool(api_key()), args.public)
     try:
         srv = Server((args.host, args.port), hub)

@@ -126,7 +126,12 @@ export function sendLog(why: string, msg: string) {
 }
 function sendNetlog() {
   const list = NETLOG.list.splice(0, 30)
-  void fetch(ctx.P + 'api/netlog', JSON_POST({ list })).catch(() => NETLOG.list.unshift(...list))
+  const sent = list.map((e) => ({
+    ...e,
+    kind: e.why === 'error' ? 'error' : 'net',
+    level: e.why === 'error' ? 'error' : 'warn',
+  }))
+  void fetch(ctx.P + 'api/pagelog', JSON_POST({ list: sent })).catch(() => NETLOG.list.unshift(...list)) // T453: one log
 }
 export const JSON_POST = (body: unknown): RequestInit => ({
   method: 'POST',

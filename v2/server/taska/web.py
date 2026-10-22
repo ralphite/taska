@@ -13,6 +13,7 @@ import hashlib
 import hmac
 import ipaddress
 import json
+import logging
 import mimetypes
 import os
 import signal
@@ -24,7 +25,8 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import TYPE_CHECKING, Any, Callable, Dict, Generator, List, Optional, Tuple
 from urllib.parse import SplitResult, parse_qs, quote, unquote, urlsplit
 
-from . import assets, imgsize, logs, views
+from . import assets, imgsize, views
+from .logs import log
 from .core import MAX_FILE, MAX_TEXT, PEOPLE, Err, plain_key
 from .dsl import parse_dsl
 from .guide import AGENT, CONNECT, GRAMMAR, SKILL
@@ -270,12 +272,13 @@ class Handler(BaseHTTPRequestHandler):
                 q = parse_qs(urlsplit(path).query)
                 m = re.search(r"/p/([^/?]+)", bare)
                 by = (q.get("by") or [""])[0][:20]
-                logs.log("server", "request", project=m.group(1) if m else None, tab=self.headers.get("X-Taska-Tab"),
-                         who=by or ("you" if self.headers.get("X-Taska-Tab") else None), ses=self.session_of(q),
-                         ms=ms, status=self.status_code or None, level="warn" if self.status_code >= 400 or (
-                             ms > 1000 and not self.WAITS.search(path)) else "info",
-                         method=self.command, path=path[:500], lock_ms=self.lock_ms or None,
-                         via="tunnel" if self.headers.get("X-Forwarded-Host") else "local")
+                slow = ms > 1000 and not self.WAITS.search(path)
+                lock = f", {self.lock_ms} ms of it waiting for the project" if self.lock_ms > 100 else ""
+                log.log(logging.WARNING if self.status_code >= 400 or slow else logging.DEBUG,
+                        f"{self.command} {path[:160]} {self.status_code} {ms} ms{lock}", extra={"f": {
+                            "source": "server", "kind": "request", "project": m.group(1) if m else None,
+                            "tab": self.headers.get("X-Taska-Tab"), "who": by or ("you" if self.headers.get("X-Taska-Tab") else None),
+                            "ses": self.session_of(q), "ms": ms, "status": self.status_code or None, "via": self.via()}})
 
     def state_of(self, s: "Store", since: int, boot: str) -> Dict[str, Any]:
         """The project's state for the page (only what changed since its copy), with the project's own fields."""
@@ -443,7 +446,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def _post(self) -> None:
         path = self.path.split("?")[0]
-        if "/api/" in path and not path.endswith(("/api/netlog", "/api/actlog", "/api/miclog", "/api/restart", "/api/poll")):
+        if "/api/" in path and not path.endswith(("/api/pagelog", "/api/restart", "/api/poll")):
             self.srv.saw_user()  # R328: the page did something for you (agents write with /do)
         if path == "/api/restart":  # R328: you said to restart now: answer, then stop the way a deploy does
             if not self.guard():
@@ -600,28 +603,17 @@ class Handler(BaseHTTPRequestHandler):
                     raise Err("that change can't be undone any more: it was undone already, or changed again since")
                 lines, _ = s.run_all([(0, {"op": "set", "ref": s.code(u["n"]), "f": u["was"], "undo_of": seq})], "you")
             self.json({"ok": lines[0].startswith("ok"), "res": lines})
-        elif p == "/api/miclog":  # B288: why the microphone did not start on a device (T453: into the log table)
-            data = json.loads(self.body(4_000) or b"{}")
-            logs.log("page", "mic", level="warn", project=s.name, tab=self.headers.get("X-Taska-Tab"), who="you",
-                     via=self.via(), **{k: str(data.get(k, ""))[:300] for k in ("name", "message", "where", "standalone", "secure", "ua")})
-            self.json({"ok": True})
-        elif p == "/api/netlog":  # B326, T335: a slow or failed save and a page error, as the page saw it (T453: into the table)
-            data = json.loads(self.body(20_000) or b"{}")
-            for e in (data.get("list") or [])[:30]:
-                why = str(e.get("why", ""))[:40]
-                logs.log("page", "error" if why == "error" else "net", t=str(e.get("t", ""))[:30] or None, project=s.name,
-                         tab=self.headers.get("X-Taska-Tab"), who="you", level="error" if why == "error" else "warn",
-                         ms=int(e["ms"]) if str(e.get("ms", "")).isdigit() else None, status=e.get("status"), via=self.via(),
-                         **{k: str(e.get(k, ""))[:2000] for k in ("why", "url", "msg", "where") if k in e})
-            self.json({"ok": True})
-        elif p == "/api/actlog":  # F407: what you did on the page (clicks, keys, sends, drafts; T453: into the table)
+        elif p == "/api/pagelog":  # T453: the page's own records (what you did, slow or failed saves, errors), into the log
             data = json.loads(self.body(MAX_FILE) or b"{}")
             for e in (data.get("list") or [])[:500]:
-                if isinstance(e, dict):
-                    item = re.search(r"/([A-Z]\d+)\b", str(e.get("where", "")))
-                    logs.log("page", str(e.get("what", "") or "action")[:40], t=str(e.get("t", ""))[:30] or None, project=s.name,
-                             tab=self.headers.get("X-Taska-Tab"), who="you", item=item.group(1) if item else None,
-                             via=self.via(), how=e.get("via"), where=e.get("where"), d=e.get("d"), x=e.get("x"))
+                if not isinstance(e, dict):
+                    continue
+                kind = str(e.pop("kind", "") or "action")[:40]
+                level = {"error": logging.ERROR, "warn": logging.WARNING}.get(str(e.pop("level", "")), logging.INFO)
+                where = re.search(r"/([A-Z]\d+)\b", str(e.get("where", "")))
+                log.log(level, f"page {kind} {str(e.get('msg') or e.get('where') or '')[:160]}", extra={"f": {
+                    **e, "source": "page", "kind": kind, "project": s.name, "tab": self.headers.get("X-Taska-Tab"), "who": "you",
+                    "item": where.group(1) if where else None, "via": self.via()}})
             self.json({"ok": True})
         elif p == "/api/move":  # an input sent to the wrong project goes to another one (F79)
             data = json.loads(self.body(10_000) or b"{}")
@@ -788,10 +780,7 @@ class Server(ThreadingHTTPServer):
         ex = sys.exc_info()[1]
         if isinstance(ex, (ConnectionResetError, BrokenPipeError, ConnectionAbortedError, TimeoutError)):
             return
-        print(f"[error] {time.strftime('%Y-%m-%d %H:%M:%S')} request from {client_address[0]}", file=sys.stderr, flush=True)
-        import traceback
-        logs.log("server", "error", level="error", error=repr(ex), trace=traceback.format_exc()[-8000:])  # T453
-        super().handle_error(request, client_address)
+        log.error(f"request from {client_address[0]} failed", exc_info=True, extra={"f": {"source": "server", "kind": "error"}})
 
     def __init__(self, addr: Tuple[str, int], hub: "Hub"):
         super().__init__(addr, Handler)

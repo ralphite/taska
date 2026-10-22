@@ -57,8 +57,8 @@ export function actLog(what: string, d?: Record<string, unknown>, whole?: Record
   if (!ctx.P) return
   AL.list.push({
     t: new Date().toISOString(),
-    what,
-    via: performance.now() - AL.at < 400 ? AL.via : 'page',
+    kind: what,
+    how: performance.now() - AL.at < 400 ? AL.via : 'page',
     where: location.pathname + location.search,
     ...(d && Object.keys(d).length ? { d: brief(d) } : {}),
     ...(whole ? { x: whole } : {}), // T453: kept whole (a draft's words)
@@ -80,7 +80,7 @@ export function draftLog(key: string, text: string) {
 export function flushActs() {
   if (!AL.list.length || !ctx.P) return
   const list = AL.list.splice(0, 200)
-  void fetch(ctx.P + 'api/actlog', {
+  void fetch(ctx.P + 'api/pagelog', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ list }),
