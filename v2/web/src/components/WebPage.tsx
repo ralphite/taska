@@ -1,11 +1,12 @@
 // F432 (D50): a document that is a web page an agent wrote. The page runs as it is, in a sandbox of its own (its
 // scripts cannot reach Taska); a small helper inside it tells Taska its height, the part you point at, tap or select
 // words in, and where the parts with comments are. Taska draws the rest over it, the same way as on a Markdown
-// document: Comment mode outlines the part under the pointer with the speak and comment buttons beside it, a picked
+// document: Comment mode outlines the part under the pointer with the speak and comment buttons in its corner, a picked
 // part gets the amber ring and the box says what you comment on, each thread has its count beside its part.
 import { useEffect, useRef, useState } from 'react'
 import { U, desk, els, render, threadOpen, threadsOf, useArea } from '../lib/state'
 import { renderDoc } from '../lib/docs'
+import { act } from '../lib/actions'
 import type { Doc } from '../lib/types'
 import { Icon } from './ui'
 import { Thread } from './Doc'
@@ -16,7 +17,7 @@ type Part = { key: string; text: string; rect: Box }
 // Runs inside the page. A part is the nearest block around what you point at; its key is its place in the page.
 const HELPER = `<script>(() => {
   const send = (m) => parent.postMessage(Object.assign({ taskaPage: 1 }, m), '*')
-  let mode = false, keys = []
+  let mode = false, keys = [], picked = ''
   const place = (el) => {
     const p = []
     for (let e = el; e && e !== document.body && e !== document.documentElement; e = e.parentElement) {
@@ -52,9 +53,11 @@ const HELPER = `<script>(() => {
     if (!m.taska) return
     mode = m.mode
     keys = m.keys || []
+    if (picked && !m.picked) getSelection().removeAllRanges() // the pick was dropped: so are the words selected for it
+    picked = m.picked || ''
     measure()
   })
-  addEventListener('mousemove', (e) => { if (mode === true) { const el = part(e.target); send({ hover: el ? info(el) : null }) } })
+  addEventListener('mousemove', (e) => { if (mode === true) { const el = part(e.target); send({ hover: el ? info(el) : null, at: [e.clientX, e.clientY] }) } })
   document.addEventListener('mouseleave', () => { if (mode === true) send({ hover: null }) })
   addEventListener('click', (e) => {
     if (mode !== true && mode !== 'tap') return
@@ -82,7 +85,25 @@ const HELPER = `<script>(() => {
   send({ ready: 1 }) // Taska answers with what it needs from the page
 })()</script>`
 
+/** D56: where the speak and comment buttons go: just above the outline at its right end, hiding none of the part */
+const btnsAt = (r: Box) => ({ x: Math.max(4, r.x + r.w - 64), y: Math.max(0, r.y - 34) })
+type XY = [number, number]
+/** whether p is inside the triangle a b c */
+function inside(p: XY, a: XY, b: XY, c: XY) {
+  const side = (u: XY, v: XY) => (p[0] - v[0]) * (u[1] - v[1]) - (u[0] - v[0]) * (p[1] - v[1])
+  const d1 = side(a, b),
+    d2 = side(b, c),
+    d3 = side(c, a)
+  return !((d1 < 0 || d2 < 0 || d3 < 0) && (d1 > 0 || d2 > 0 || d3 > 0))
+}
 const WANT = { now: '{}' } // what the page was last told, for a page that loads after it was said
+/** B484: Esc steps back one level: the picked part first (the words in the box stay), then Comment mode */
+function escape() {
+  if (U.docQuote?.key.startsWith('h:')) return act('doc-unpick')
+  if (!U.docInspect) return
+  U.docInspect = false
+  renderDoc()
+}
 /** Pick a part of the page (or words in it) to comment on: the box says it, as for a Markdown paragraph */
 function pick(p: Part) {
   U.docSel = new Set()
@@ -100,6 +121,38 @@ export function WebPage({ d }: { d: Doc }) {
   const [height, setHeight] = useState(480)
   const [hover, setHover] = useState<Part | null>(null)
   const [rects, setRects] = useState<Record<string, Box>>({})
+  // D56: the pointer leaves the page to reach the buttons over it: the part stays lit while it is on them. On the way
+  // there (heading for them from where the part was lit) another part under the pointer does not take its place,
+  // unless the pointer rests on it.
+  const onBtns = useRef(false),
+    drop = useRef(0),
+    swap = useRef(0),
+    cur = useRef<{ part: Part; from: XY } | null>(null)
+  const hoverAt = useRef((h: Part | null, at?: XY) => {
+    clearTimeout(drop.current)
+    clearTimeout(swap.current)
+    const take = (part: Part, from: XY) => {
+      cur.current = { part, from }
+      setHover(part)
+    }
+    if (h) {
+      const was = cur.current
+      if (was && at && h.key !== was.part.key) {
+        const b = btnsAt(was.part.rect)
+        if (inside(at, was.from, [b.x - 24, b.y + 52], [b.x + 84, b.y - 24])) {
+          swap.current = window.setTimeout(() => take(h, at), 300)
+          return
+        }
+      }
+      take(h, at || was?.from || [0, 0])
+      return
+    }
+    drop.current = window.setTimeout(() => {
+      if (onBtns.current) return
+      cur.current = null
+      setHover(null)
+    }, 150)
+  }).current
   const side = desk(),
     mode = side ? !!U.docInspect : 'tap',
     picked = U.docQuote?.key.startsWith('h:') ? U.docQuote : null,
@@ -111,6 +164,7 @@ export function WebPage({ d }: { d: Doc }) {
       const m = (e.data || {}) as {
         h?: number
         hover?: Part | null
+        at?: [number, number]
         rects?: Record<string, Box>
         pick?: Part
         esc?: number
@@ -118,19 +172,20 @@ export function WebPage({ d }: { d: Doc }) {
       }
       if (m.ready) frame.current?.contentWindow?.postMessage({ taska: 1, ...(JSON.parse(WANT.now) as object) }, '*')
       if (m.h) setHeight(m.h + 2)
-      if ('hover' in m) setHover(m.hover || null)
+      if ('hover' in m) hoverAt(m.hover || null, m.at)
       if (m.rects) setRects(m.rects)
       if (m.pick) pick(m.pick)
-      if (m.esc && U.docInspect) {
-        U.docInspect = false
-        renderDoc()
-      }
+      if (m.esc) escape()
     }
     addEventListener('message', on)
-    return () => removeEventListener('message', on)
-  }, [])
+    return () => {
+      removeEventListener('message', on)
+      clearTimeout(drop.current)
+      clearTimeout(swap.current)
+    }
+  }, [hoverAt])
   // what the page needs from Taska: whether pointing outlines parts (or a tap picks one), and which parts to find
-  const want = JSON.stringify({ mode, keys })
+  const want = JSON.stringify({ mode, keys, picked: picked?.key || '' })
   WANT.now = want
   useEffect(() => {
     frame.current?.contentWindow?.postMessage({ taska: 1, ...(JSON.parse(want) as object) }, '*')
@@ -140,8 +195,7 @@ export function WebPage({ d }: { d: Doc }) {
     const esc = (e: KeyboardEvent) => {
       if (e.key !== 'Escape') return
       e.stopPropagation()
-      U.docInspect = false
-      renderDoc()
+      escape()
     }
     addEventListener('keydown', esc, true)
     return () => removeEventListener('keydown', esc, true)
@@ -173,7 +227,19 @@ export function WebPage({ d }: { d: Doc }) {
       {hover && mode === true ? ring(hover.rect, 'ring-blue-500') : null}
       {picked && rects[picked.key] ? ring(rects[picked.key], 'ring-amber-300') : null}
       {hover && mode === true ? (
-        <div className="absolute left-full z-10 flex flex-row gap-1 pl-1" style={{ top: hover.rect.y - 2 }}>
+        <div
+          className="absolute z-10 flex flex-row gap-1"
+          style={{ left: btnsAt(hover.rect).x, top: btnsAt(hover.rect).y }}
+          onMouseEnter={() => {
+            onBtns.current = true
+            clearTimeout(drop.current)
+            clearTimeout(swap.current)
+          }}
+          onMouseLeave={() => {
+            onBtns.current = false
+            hoverAt(null)
+          }}
+        >
           <button
             data-act="page-say"
             data-key={hover.key}

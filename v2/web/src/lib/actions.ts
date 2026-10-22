@@ -869,6 +869,8 @@ export const ACT: Record<string, Handler> = {
   // F432: a web page's comment mode, and what it offers beside the part you point at or tap
   'doc-inspect': () => {
     U.docInspect = !U.docInspect
+    // B484: leaving Comment mode drops a picked part you wrote nothing for
+    if (!U.docInspect && U.docQuote?.key.startsWith('h:') && !els.text?.value.trim()) U.docQuote = null
     renderDoc()
   },
   'page-pick': (d) => {

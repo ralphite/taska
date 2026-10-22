@@ -123,3 +123,36 @@ test('a web page document opens as its page; in Comment mode a click on a part m
   await frame.getByText('Ship option A today.').click()
   await expect(page.locator('#scope')).toContainText('Ship option A today.')
 })
+
+test('the buttons of a part of a web page stay while the pointer goes to them; Esc drops the pick, then leaves Comment mode (D56, B484)', async ({
+  page,
+  request,
+}) => {
+  const p = await project(request, {
+    ...LOOP,
+    then: `${LOOP.then}T4 html Plan page
+  <!doctype html><html><body><h1>Export plan</h1><div id="bars" style="padding:8px"><div>Read list 720 ms</div><div>Apply filter 180 ms</div><div>Write CSV 410 ms</div></div><p>Ship option A today.</p></body></html>
+`,
+  })
+  await open(page, p, 'D1')
+  const frame = page.frameLocator('#detailBody iframe'),
+    mode = page.locator('[data-act="doc-inspect"]')
+  await expect(frame.getByText('Write CSV 410 ms')).toBeVisible()
+  await mode.click()
+  const bars = await frame.locator('#bars').boundingBox()
+  if (!bars) throw new Error('no bars')
+  await page.mouse.move(bars.x + bars.width / 3, bars.y + bars.height - 6)
+  const btn = page.locator('[data-act="page-pick"]')
+  await expect(btn).toBeVisible()
+  const b = await btn.boundingBox()
+  if (!b) throw new Error('no button')
+  // across the first row, out of the page, onto the button: it stays, for the whole part
+  await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 25 })
+  await btn.click()
+  await expect(page.locator('#scope')).toContainText('Write CSV')
+  await page.keyboard.press('Escape')
+  await expect(page.locator('#scope')).toBeHidden()
+  await expect(mode).toHaveAttribute('aria-pressed', 'true')
+  await page.keyboard.press('Escape')
+  await expect(mode).toHaveAttribute('aria-pressed', 'false')
+})
