@@ -7,12 +7,13 @@ Plain code polls every 30 seconds and prints a line only when the manager has to
 tokens, only a real event wakes the manager):
   ITEM     the item named in <assigned-file> left "doing", or the worker asked or blocked on it: hand out the next one
   STALE    silent stale_minutes in the middle of a turn: stuck on a prompt or a hung command
-  QUIET    its turn ended quiet_minutes ago and the item is still doing: a background job died, or it never reported
+  QUIET    its turn ended quiet_minutes ago, none of its background commands runs, and the item is still doing
 <assigned-file> holds "<code> <taska base url>", written by the manager when it hands out an item.
 Each event is told once until something changes.
 """
 import json
 import os
+import subprocess
 import sys
 import time
 import urllib.request
@@ -31,6 +32,13 @@ def last_entry(path):
         if d.get('type') in ('assistant', 'user') and isinstance(d.get('message'), dict):
             return d
     return {}
+
+
+def busy(path):
+    """A background command of the worker still runs: its command line names the worker's scratch folder <sid>/."""
+    sid = os.path.basename(path).rsplit('.', 1)[0]
+    r = subprocess.run(['pgrep', '-f', sid + '/'], capture_output=True, text=True)
+    return bool(r.stdout.strip())
 
 
 def item_row(assigned):
@@ -77,7 +85,7 @@ def main():
             events.append(f'ITEM {row[:150]}')
         if not ended and quiet > stale:
             events.append(f'STALE silent {quiet:.0f}m mid-turn (last {d.get("timestamp")})')
-        if ended and doing and not waits and quiet > quiet_limit:
+        if ended and doing and not waits and quiet > quiet_limit and not busy(path):
             events.append(f'QUIET turn ended {quiet:.0f}m ago, {code} still doing')
         for e in events:
             tag = e.split(' ', 1)[0] + (row or '')
