@@ -281,7 +281,7 @@ export function ItemRow({
     ) : closed && band !== 'retired' ? (
       <span key="s">{statusName(it)}</span>
     ) : it.reply && !closed ? (
-      <span key="s">Replied</span>
+      <span key="s">Your agent&apos;s turn</span> // T438 #11: the words the item says at its top
     ) : null,
     it.when === 'later' && !closed && band !== 'later' ? (
       <Soft key="l">Later</Soft>

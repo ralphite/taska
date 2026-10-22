@@ -634,13 +634,15 @@ const ItemHead = ({ it }: { it: Item }) => (
     </span>
     <span className={`font-mono text-sm font-bold ${TYPE_TEXT[it.type]}`}>{code(it.n)}</span>
     <span className="text-[11px] font-semibold tracking-wider uppercase">
-      {it.wait ? (
-        <span className="text-amber-600 dark:text-amber-400">{it.wait.kind === 'block' ? 'Blocked' : 'Asks you'}</span>
-      ) : it.reply && !CLOSED(it.status) ? (
-        <span className="text-blue-600 dark:text-blue-400">Your agent&apos;s turn</span> // B321: you replied
-      ) : (
-        <span className={statusTone(it)}>{statusName(it)}</span>
-      )}
+      {
+        it.wait ? (
+          <span className="text-amber-600 dark:text-amber-400">
+            {it.wait.kind === 'block' ? 'Blocked' : 'Asks you'}
+          </span>
+        ) : it.reply && !CLOSED(it.status) ? (
+          <span className="text-blue-600 dark:text-blue-400">Your agent&apos;s turn</span> // B321: you replied
+        ) : null /* T438 #11: its status is the chip under the title: not said twice */
+      }
     </span>
   </>
 )

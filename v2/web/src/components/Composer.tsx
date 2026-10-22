@@ -346,6 +346,8 @@ export function DraftCard() {
   const spots = draftSpots(text),
     open = new Set(spots.filter((p) => p.x.alt && !p.x.pick).map((p) => p.x)).size,
     picked = spots.some((p) => p.x.pick)
+  // T438 #11 (A7): plain words you type are in the box already: the card is for a voice note's words to check or pick
+  if (!voice.length && !spots.some((p) => p.x.alt)) return null
   const fixable = U.files.some((f) => f.trAdded && text.includes(f.trAdded))
   const hint = open ? (
     <>

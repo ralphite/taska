@@ -666,8 +666,8 @@ export async function sendChoice(n: number) {
     U.reask = null // F428: answered again: the card shows the new answer
     keepChoice()
     if (U.peek === n) advance(n, said)
-    else {
-      toast(said)
+    else if (U.open !== n) {
+      toast(said) // T438 #11: with the card in sight, the card says it
       showSent(rid, code(n))
     }
     if (desk() && U.go && U.open === n && U.go.list.includes(n)) advanceDesk(n, 'Answered')

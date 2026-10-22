@@ -876,10 +876,10 @@ export const arrived = (q: Job) =>
   )
 // C4 (T422): out of reach is waiting, not failed: it goes by itself the moment Taska answers
 export const outboxState = (q: Job) =>
-  q.failed
-    ? q.net
+  q.failed && !q.net
+    ? 'Not sent'
+    : q.failed || model.offline >= 2 // T438 #11 (A13): Taska out of reach: one word for it, wherever it shows
       ? 'Waiting for Taska…'
-      : 'Not sent'
-    : q.files.some((f) => !f.f && !f.failed)
-      ? 'Uploading…'
-      : 'Sending…'
+      : q.files.some((f) => !f.f && !f.failed)
+        ? 'Uploading…'
+        : 'Sending…'

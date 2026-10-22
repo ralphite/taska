@@ -571,7 +571,7 @@ function useCut(ref: RefObject<HTMLElement | null>) {
 }
 // T359: where an input stands, in a word (the whole sentence when you point at it)
 const SHORT: Record<string, string> = {
-  'Waiting for your agent': 'Waiting',
+  'Waiting for your agent': 'For your agent', // T438 #11: not the Waiting of what has not reached Taska yet
   'Handled by your agent': 'Handled',
   'Seen by your agent': 'Seen',
   'Left for your agent': 'Left for agent',
