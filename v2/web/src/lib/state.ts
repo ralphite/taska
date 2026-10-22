@@ -201,6 +201,7 @@ export interface Job {
   tries?: number
   rid?: string
   undo?: (() => Promise<unknown>) & { entry?: UndoEntry }
+  unsent?: boolean // C5 (T422): taken back while on its way: deleted once Taska has it
 }
 export interface UndoEntry {
   label: string

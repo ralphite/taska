@@ -1009,12 +1009,14 @@ function feedbackBody(): { node: ReactNode; final?: string } | null {
         </>
       ),
     }
-  const q = U.outbox[0]?.quiet && !U.outbox[0].failed ? null : U.outbox[0] // T113 A19
+  const q0 = U.outbox.find((j) => !j.unsent), // C5 (T422): one taken back is not shown
+    q = q0?.quiet && !q0.failed ? null : q0 // T113 A19
   let r = U.lastSent ? byR.get(U.lastSent) : undefined
   if (r && (r.scope && byN.has(r.scope) ? code(r.scope) : null) !== (scopeN() ? code(scopeN() as number) : null))
     r = undefined // B129: only where it went
   if (q) {
-    const more = U.outbox.length > 1 ? ` (+${U.outbox.length - 1})` : ''
+    const going = U.outbox.filter((j) => !j.unsent).length,
+      more = going > 1 ? ` (+${going - 1})` : ''
     return {
       node:
         q.failed && q.net ? (

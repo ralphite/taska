@@ -27,12 +27,12 @@ import { toast } from './toast'
 import {
   JSON_POST,
   load,
+  instant,
   op,
   optimistic,
   standIn,
   pushUndo,
   forget,
-  save,
   sendLog,
   change,
   type OpAnswer,
@@ -183,7 +183,7 @@ export const jobKey = (job: Job) => job.scope || 'new' // the box it was written
 // T113 A27: what you just sent can be taken back for a short while, with Undo or Z.
 const UNSEND_MS = 10000
 function unsendable(job: Job) {
-  const run = pushUndo(`Send to ${draftName(jobKey(job))}`, () => unsend(job, run))
+  const run = pushUndo(`Send to ${draftName(jobKey(job))}`, () => unsend(job))
   job.undo = run
   U.sentJobs = [...U.sentJobs, job]
   setTimeout(() => {
@@ -193,29 +193,32 @@ function unsendable(job: Job) {
     bump('feedback')
   }, UNSEND_MS)
 }
-async function unsend(job: Job, run: () => unknown) {
+async function unsend(job: Job) {
   const key = jobKey(job),
     i = U.outbox.indexOf(job)
   if (i >= 0 && !job.sending) {
     U.outbox.splice(i, 1)
     dropJob(job)
   } else {
-    for (let t = 0; t < 100 && U.outbox.includes(job); t++) await new Promise((r) => setTimeout(r, 100)) // on its way: wait for Taska's answer
-    const r = job.rid && byR.get(job.rid)
-    if (!job.rid || U.outbox.includes(job)) {
-      toast('It could not be taken back: try again', null, { error: true })
-      return false
-    }
-    if (r && (r.acked || model.S.org.busy === r.id || r.org)) {
-      toast(`${job.rid} is already with ${r.org ? 'the organizer' : 'your agent'}: delete it from Inputs`)
-      return true
-    }
-    try {
-      await save({ op: 'delete', id: job.rid }, run)
-    } catch {
-      return false
-    }
-    if (U.lastSent === job.rid) U.lastSent = null
+    // C5 (T422): on its way: your words come back at once and it leaves the list; once Taska has it, it is deleted
+    // there behind you (kept and sent again like any change)
+    job.unsent = true
+    void (async () => {
+      while (U.outbox.includes(job)) await new Promise((r) => setTimeout(r, 200))
+      const r = job.rid && byR.get(job.rid)
+      if (!job.rid) return
+      if (r && (r.acked || model.S.org.busy === r.id || r.org)) {
+        job.unsent = false
+        return toast(
+          `${rcode(job.rid)} had reached ${r.org ? 'the organizer' : 'your agent'} already: delete it from Inputs`,
+        )
+      }
+      void instant({ op: 'delete', id: job.rid }, () => {
+        model.S.inputs = model.S.inputs.filter((x) => x.id !== job.rid)
+        byR.delete(job.rid as string)
+      })
+      if (U.lastSent === job.rid) U.lastSent = null
+    })()
   }
   const files = job.files.filter((f) => !f.failed).map((f) => Object.assign(f, { sent: false, job: null }))
   const was = key === U.draftKey ? (els.text?.value ?? '') : String(draftStore()[key] || ''),
@@ -400,10 +403,10 @@ export async function flushOutbox() {
             `${job.q} (${projectOf(job.p)}) in after ${Math.round((Date.now() - job.t) / 1000)} s, ${job.tries || 0} failed tries${job.back ? ', after a reload' : ''}${job.files.some((f) => f.rid) ? ', voice' : ''}`,
           )
         const here = job.p === ctx.P
-        if (here) U.lastSent = job.quiet ? null : job.rid
+        if (here) U.lastSent = job.quiet || job.unsent ? null : job.rid
         U.outbox.shift()
         dropJob(job)
-        if (here) sent = [job.rid, job.scope]
+        if (here && !job.unsent) sent = [job.rid, job.scope]
         for (const f of files) {
           f.sent = true
           dropRec(f)

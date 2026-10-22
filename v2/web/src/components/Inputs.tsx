@@ -393,7 +393,7 @@ export const outboxLine = (q: Job) =>
     : `${q.files.length} file${q.files.length === 1 ? '' : 's'}`)
 // What is still on its way, shown first where your inputs are listed (F85).
 export function OutboxRows({ oldestFirst = false }: { oldestFirst?: boolean }) {
-  const mine = U.outbox.filter((q) => !arrived(q)),
+  const mine = U.outbox.filter((q) => !arrived(q) && !q.unsent),
     list = oldestFirst ? mine : [...mine].reverse()
   return (
     <>
@@ -795,7 +795,7 @@ export function SaidLately({ draft }: { draft: ReactNode }) {
   const words = q.trim().toLowerCase().split(/\s+/).filter(Boolean)
   const all = newestFirst(S.inputs).filter((r) => inputMatch(r, words)),
     recent = all.slice(0, upTo),
-    queued = words.length ? [] : [...U.outbox].reverse().filter((q) => !arrived(q)),
+    queued = words.length ? [] : [...U.outbox].reverse().filter((q) => !arrived(q) && !q.unsent),
     n = queued.length + recent.length,
     rest = all.length > recent.length
   useEffect(() => {
