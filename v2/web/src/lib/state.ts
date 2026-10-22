@@ -275,7 +275,8 @@ export const U = {
   draftKey: null as string | null,
   parked: {} as Record<string, DraftFile[]>,
   vcMarks: [] as { label: string; d: number; key: string; quote: string }[],
-  reask: null as number | null, // F428: the answered question you chose to answer again (its message id)
+  reask: null as number | null,
+  remodify: null as number | null, // T438 #6: a decided proposal or finished work whose two buttons are open again // F428: the answered question you chose to answer again (its message id)
   oldDraft: '',
   amend: null as
     null | { id: string; mode: 'edit' | 'append'; v: number } | { mode: 'dc'; d: number; id: number; was: string },

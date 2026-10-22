@@ -120,6 +120,51 @@ export function NeedsCard({ it, onCard = false }: { it: Item; onCard?: boolean }
   if (dc) {
     // F428 (P0): what you decided stays in its card, where it was: grey, what you chose, and Modify to choose again
     const { dec, x } = dc
+    const re = U.remodify === n, // T438 #6: Modify: the two buttons work again; the one you chose before just closes it
+      chose = (v: string) => dec.to === v || (v === 'open' && dec.from === 'proposed' && dec.to !== 'dropped')
+    if (re)
+      return (
+        <NeedFrame
+          icon={dec.from === 'proposed' ? 'propose' : 'done'}
+          title={`${whoName(x?.by || (it.by && it.by !== 'you' ? it.by : 'agent'))} ${dec.from === 'proposed' ? 'proposed this' : 'finished this'}`}
+          t={x?.t}
+          act={
+            <button
+              data-act="decided-modify-cancel"
+              className={MODIFY_LINK.replace(/lg:opacity-0\S*|lg:group-hover\S*/g, '')}
+            >
+              Cancel
+            </button>
+          }
+          body={x ? <MsgText x={x} gid={'dec' + n} whole /> : null}
+          foot={
+            <>
+              {(dec.from === 'proposed'
+                ? [
+                    ['status', 'dropped', 'ban', "Won't do", 'W'],
+                    ['status', 'open', 'thumb', 'Approve', 'A'],
+                  ]
+                : [
+                    ['reopen', 'doing', 'reopen', 'Not yet', 'N'],
+                    ['status', 'done', 'check', 'Accept', 'A'],
+                  ]
+              ).map(([act, v, icon, label, k], i) => (
+                <button
+                  key={v}
+                  data-act={chose(v) ? 'decided-modify-cancel' : act}
+                  data-n={n}
+                  data-v={v}
+                  className={`${i ? `${PRIMARY_BASE} ${NEED[dec.from === 'proposed' ? 'approve' : 'accept'].btn} flex-[1.4]` : `${SECOND} flex-1`} lg:flex-none`}
+                >
+                  <Icon n={icon} c={i ? 'size-4.5' : 'size-4'} sw="2.25" />
+                  {label}
+                  <Kbd k={k} />
+                </button>
+              ))}
+            </>
+          }
+        />
+      )
     return (
       <NeedFrame
         icon={dec.from === 'proposed' ? 'propose' : 'done'}

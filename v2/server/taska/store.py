@@ -26,6 +26,9 @@ if TYPE_CHECKING:
 Job = Dict[str, Any]
 
 
+CHOICES = {"proposed": ("open", "dropped"), "review": ("done", "doing")}  # the two buttons of a proposal and of finished work
+
+
 class Store:
     """All state of one project. Thread-safe through `lock` (and `cond`, which wakes those waiting for news)."""
 
@@ -197,6 +200,8 @@ class Store:
                     it["decided"] = {"from": was, "to": e["f"]["status"], "msg": last["id"] if last else None, "t": e["t"]}
                 elif (it.get("decided") or {}).get("from") == e["f"]["status"]:
                     it.pop("decided", None)  # taken back: the question is open again
+                elif (it.get("decided") or {}).get("to") == was and e["f"]["status"] in CHOICES[it["decided"]["from"]]:  # decided again (Modify)
+                    it["decided"] = dict(it["decided"], to=e["f"]["status"], t=e["t"])
             it.update(e["f"])
             it["t1"] = e["t"]
             if e.get("undo_of"):

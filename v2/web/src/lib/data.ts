@@ -772,6 +772,7 @@ export const wire = (f: string, v: unknown) => (f === 'parent' ? (v ? String(v) 
 
 // One-tap changes (swipes, row pills, the focus card, keys, the ... menu): they show at once and are saved behind you,
 // say what happened and offer Undo, which puts the old value back; Z does the same (T113 A7).
+const CHOICES: Record<string, string[]> = { proposed: ['open', 'dropped'], review: ['done', 'doing'] } // a card's two buttons
 export function change(
   n: number,
   f: string,
@@ -779,6 +780,10 @@ export function change(
   { said, note }: { said?: string; note?: string } = {},
 ): Promise<boolean> {
   const it = byN.get(n) as (Item & Record<string, unknown>) | undefined
+  if (U.remodify === n && it?.[f] === v) {
+    U.remodify = null // T438 #6: the choice it had already: Modify closes, nothing changes
+    render()
+  }
   if (!it || it[f] === v) return Promise.resolve(!!it)
   const before = it[f],
     ref = code(n),
@@ -791,7 +796,10 @@ export function change(
         ? { decided: { from: String(before), to: String(v), msg: lastAgentMsg(it)?.id ?? null } }
         : f === 'status' && decWas?.from === v
           ? { decided: null }
-          : {}
+          : f === 'status' && decWas && decWas.to === before && CHOICES[decWas.from]?.includes(String(v))
+            ? { decided: { ...decWas, to: String(v) } } // T438 #6: decided again, after Modify
+            : {}
+  if (f === 'status' && U.remodify === n) U.remodify = null
   said ||=
     (it.type === 'rule' &&
       f === 'status' &&

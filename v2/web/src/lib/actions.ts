@@ -38,7 +38,7 @@ import {
 import { CHOICE, groups, hasChoices } from './markdown'
 import { clearTicks, tickDoc, tickModify } from './doctick'
 import { playAudio } from './audio'
-import { FAILED, addFailed, dropFailed, retryFailed, toast } from './toast'
+import { FAILED, TOAST, addFailed, dropFailed, hideToast, retryFailed, toast } from './toast'
 import type { Item } from './types'
 import { actLog } from './actlog'
 import {
@@ -1079,11 +1079,15 @@ export const ACT: Record<string, Handler> = {
     render()
   },
   // F428 (P0): a decided proposal or finished work goes back to its choice, to choose again
+  // T438 #6: Modify opens the two buttons again and changes nothing until you press one; Cancel leaves it as it was
   'decided-modify': (d) => {
-    const n = N(d),
-      dec = byN.get(n)?.decided
-    if (!dec) return
-    change(n, 'status', dec.from, { said: 'is back for you to decide' })
+    U.remodify = N(d)
+    if (!TOAST.sticky) hideToast() // what the toast said is being chosen again
+    render()
+  },
+  'decided-modify-cancel': () => {
+    U.remodify = null
+    render()
   },
   'ask-modify-cancel': () => {
     U.reask = null
