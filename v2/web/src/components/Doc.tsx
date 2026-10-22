@@ -36,7 +36,8 @@ const isAudio = (f: { mime?: string }) => (f.mime || '').startsWith('audio/')
 
 function DcActs({ d, c }: { d: Doc; c: Comment }) {
   return (
-    <div className="-mr-1.5 ml-auto flex gap-0.5 lg:opacity-0 lg:group-hover:opacity-100 lg:focus-within:opacity-100">
+    // B14 (T422): on the desktop they float over the card's top corner while you point at it, taking no line of its own
+    <div className="-mr-1.5 ml-auto flex gap-0.5 lg:invisible lg:absolute lg:-top-1 lg:right-0 lg:z-10 lg:mr-0 lg:rounded-lg lg:bg-white lg:shadow-sm lg:ring-1 lg:ring-zinc-900/10 lg:group-hover:visible lg:focus-within:visible dark:lg:bg-zinc-800 dark:lg:ring-white/10">
       {c.by === 'you' ? (
         <button data-act="dc-edit" data-d={d.d} data-id={c.id} className={DC_BTN}>
           <Icon n="pencil" c="size-3.5" />
@@ -101,7 +102,7 @@ function Thread({
         </div>
       ) : null}
       {comments.map((c) => (
-        <div key={c.id} data-dc={c.id} className={`group text-sm ${MSG(c.by).replace(/\b(ml|mr)-8\b/, '')}`}>
+        <div key={c.id} data-dc={c.id} className={`group relative text-sm ${MSG(c.by).replace(/\b(ml|mr)-8\b/, '')}`}>
           {blockText !== undefined && !sameText(c.quote, blockText) ? (
             <div className="mb-0.5 line-clamp-2 text-xs text-zinc-500 dark:text-zinc-300">“{plainQuote(c.quote)}”</div>
           ) : null}
