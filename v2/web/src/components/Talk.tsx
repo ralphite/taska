@@ -623,7 +623,9 @@ export function docNotes(n: number, from = ''): Note[] {
                 {c.by === 'you' ? 'You' : whoName(c.by)}
               </span>{' '}
               on <span className="font-mono">D{d.d}</span>
-              {c.quote ? ` · “${q.slice(0, 40)}${q.length > 40 ? '…' : ''}”` : ''}: {oneLine(c.text).slice(0, 160)}
+              {c.quote ? ` · “${q.slice(0, 40)}${q.length > 40 ? '…' : ''}”` : ''}:{' '}
+              {oneLine(c.text).slice(0, 160) || // B15 (T422): a voice note with no words yet still says what it is
+                (c.files?.some(isAudio) ? 'a voice note' : c.files?.length ? plural(c.files.length, 'file') : '')}
             </span>
             <span className="shrink-0 text-[11px] text-zinc-400 dark:text-zinc-500">{when(c.t)}</span>
           </button>
