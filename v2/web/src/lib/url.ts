@@ -19,7 +19,9 @@ export const viewPath = (): string =>
     : U.doc && !U.docEdit
       ? `D${U.doc}`
       : desk() && D.compose
-        ? 'new'
+        ? U.tab === 'items'
+          ? 'new'
+          : U.tab // T438 #8: Rules and Archive with nothing open keep their own address
         : desk() && U.tab === 'inputs'
           ? 'inputs'
           : U.open
@@ -96,12 +98,24 @@ export function setPopping(on: boolean) {
 export function writeURL(push = false, state?: unknown) {
   if (URLS.applying || URLS.hold) return
   hist(() => {
-    const url = ctx.P + viewPath() + viewQuery(),
+    // T438 #8 (A16): the list's search and filters ride along only where the list is
+    const url = ctx.P + viewPath() + (D.page || (desk() && U.side) ? '' : viewQuery()),
       now = location.pathname + location.search + location.hash
     if (push && url !== now) history.pushState(state ?? { v: viewPath(), ...searchStep() }, '', url)
     else if (url !== now || state !== undefined)
       history.replaceState(state === undefined ? history.state : state, '', url)
+    lastPlace(ctx.P, url)
   })
+}
+// T438 #8 (B20): where you were in each project, so coming back to it from the sidebar goes there again
+export function lastPlace(p: string, set?: string): string | null {
+  try {
+    if (set === undefined) return sessionStorage.getItem('taska.last.' + p)
+    sessionStorage.setItem('taska.last.' + p, set)
+  } catch {
+    /* no storage */
+  }
+  return null
 }
 // A view you leave by Esc or x: if it was a step in the history, step back; otherwise just rewrite the address.
 export function leaveView(v: string) {
@@ -139,13 +153,17 @@ export function keepPlace() {
   if (desk()) keep()
   else hist(keep) // after a step back that is on its way (B150)
 }
-export function restorePlace() {
-  const top = history.state?.top,
-    el = (desk() || D.page) && typeof top === 'number' && scroller()
-  if (el)
-    requestAnimationFrame(() => {
-      el.scrollTop = top
-    })
+export function restorePlace(top: unknown = history.state?.top) {
+  const el = (desk() || D.page) && typeof top === 'number' && scroller()
+  if (!el) return
+  // T438 #8 (A14): the list may still be filling (back from another project): try again until it is long enough
+  let tries = 0
+  const put = () => {
+    const now = scroller() || el
+    now.scrollTop = top
+    if (now.scrollTop < top - 1 && ++tries < 40) setTimeout(put, 50)
+  }
+  requestAnimationFrame(put)
 }
 export const PSEC_AT: Record<string, string> = {
   ...Object.fromEntries(Object.entries(PSEC).map(([sec, [path]]) => [path, sec])),

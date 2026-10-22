@@ -93,7 +93,11 @@ export function openItem(n: number | null | undefined, push = true) {
   if (desk()) {
     D.page = null
     D.compose = false
-    writeURL(false, history.state?.full ? { ...history.state, n } : null)
+    // T438 #8 (B5): each item you open is a step Back goes back to
+    if (fresh && push && !URLS.applying) {
+      keepPlace()
+      writeURL(true, { v: code(n), ...(history.state?.full ? { full: true } : {}) })
+    } else writeURL(false, history.state?.full ? { ...history.state, n } : null)
   } else if (push && !URLS.applying)
     hist(() => {
       if (location.pathname !== ctx.P + code(n))
