@@ -47,10 +47,13 @@ export async function net<T = unknown>(
 ): Promise<T> {
   const ctl = new AbortController(),
     t = setTimeout(() => ctl.abort(), ms),
-    t0 = Date.now()
+    t0 = Date.now(),
+    left = opts.signal // B464: the page went to another project: this answer is not wanted any more
+  if (left?.aborted) throw new LeftError()
+  left?.addEventListener('abort', () => ctl.abort())
   let status = 0
   try {
-    const r = await fetch(url, { cache: 'no-store', ...opts, signal: ctl.signal })
+    const r = await fetch(url, { ...opts, cache: 'no-store', signal: ctl.signal })
     status = r.status
     if (status === 401) {
       askKey() // T339 #16: the key stopped working (or this device never had it): ask for it here, keep the page
@@ -62,6 +65,7 @@ export async function net<T = unknown>(
     if (opts.method === 'POST' && NETLOG.list.length) sendNetlog() // what failed before goes now that Taska answers
     return out
   } catch {
+    if (left?.aborted) throw new LeftError()
     const why = ctl.signal.aborted ? 'timeout' : status ? 'bad answer' : 'unreachable'
     if (opts.method === 'POST')
       NETLOG.list.push({
@@ -284,10 +288,15 @@ export interface Patch {
 }
 export const CACHE = new Map<string, string>() // each project's state as last loaded: switching back draws it at once (B292)
 let gen = 0 // the project this page shows; a load or poll for another one is dropped
+let left = new AbortController() // B464: going to another project stops the loads still on their way for this one
 export const generation = () => gen
 export function nextGeneration() {
+  left.abort()
+  left = new AbortController()
   return ++gen
 }
+/** A load stopped because the page went to another project: nothing to show, nothing went wrong */
+export class LeftError extends Error {}
 
 // T293: with a copy here, only what changed since comes over (everything, when Taska restarted meanwhile)
 const sinceQuery = () => {
@@ -297,7 +306,12 @@ const sinceQuery = () => {
 export async function load() {
   const g = gen,
     since = sinceQuery()
-  const text = await net<string>(ctx.P + 'api/state' + (since ? '?' + since : ''), {}, NET.state, 'text')
+  const text = await net<string>(
+    ctx.P + 'api/state' + (since ? '?' + since : ''),
+    { signal: left.signal },
+    NET.state,
+    'text',
+  )
   if (g !== gen) return
   if (/^project \S+ was deleted/.test(text) || /^no project /.test(text)) {
     if (!U.leaving)
@@ -372,7 +386,9 @@ function cachePut(text: string) {
 }
 /** Draw from the kept copy first, then bring it up to date. */
 export async function loadKept() {
-  const kept = typeof indexedDB === 'undefined' ? '' : await cacheGet()
+  const g = gen,
+    kept = typeof indexedDB === 'undefined' ? '' : await cacheGet()
+  if (g !== gen) return // B464: switched again meanwhile: this project's copy is not drawn over the next one
   if (kept && !SAVE.last)
     try {
       SAVE.last = kept
@@ -504,6 +520,7 @@ export function stopPoll() {
   POLL.stop()
 }
 export async function poll(g: number) {
+  let tries = 0 // B464: this project's failed tries in a row: a switch starts again from a short wait
   while (g === gen) {
     const ctl = new AbortController(),
       timer = setTimeout(() => ctl.abort(), 35000) // a dead connection never answers
@@ -527,6 +544,7 @@ export async function poll(g: number) {
         })
       ).json()
       if (g !== gen) return
+      tries = 0
       if (model.offline) {
         model.offline = 0
         bump('head', 'side')
@@ -544,8 +562,10 @@ export async function poll(g: number) {
       if (g !== gen) return
       if (left) continue // you went to another window: not a lost connection
       model.offline += ctl.signal.aborted ? 2 : 1
+      tries++
       bump('head', 'side')
-      await sleep(model.offline > 1 ? Math.min(30000, 1500 * 2 ** Math.min(model.offline, 5)) : 500) // back off while the server is away
+      // back off a little while Taska is away (a restart takes seconds): never more than 5 s, so it is back at once
+      await sleep(Math.min(5000, 500 * 2 ** Math.min(tries - 1, 4)))
     } finally {
       clearTimeout(timer)
       removeEventListener('blur', leave)
