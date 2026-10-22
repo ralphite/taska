@@ -1460,7 +1460,7 @@ const KINDS: Record<string, (p: Props) => Parts | null> = {
                     data-act="failed-drop"
                     data-id={f.id}
                     aria-label={f.retry ? 'Let it go' : 'OK'}
-                    title={f.retry ? 'Let it go (it is not saved)' : 'OK'}
+                    title={f.retry ? 'Let go' : 'OK'}
                     className="-my-1 grid size-7 shrink-0 place-items-center rounded-lg text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 dark:text-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
                   >
                     <Icon n="x" c="size-4" />

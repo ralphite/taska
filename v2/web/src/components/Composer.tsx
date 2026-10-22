@@ -344,7 +344,7 @@ export function draftHtml(text: string, fix = false) {
     html += plain(at, p.s)
     at = p.e
     if (!x.alt) {
-      html += `<span data-o="${p.s}"${fix ? ' data-v data-unsure' : ''} title="The model was not sure of these words" class="underline decoration-amber-500 decoration-dotted decoration-2 underline-offset-4 ${fix ? 'cursor-text' : ''}">${esc(cur)}</span>`
+      html += `<span data-o="${p.s}"${fix ? ' data-v data-unsure' : ''} title="Maybe misheard" class="underline decoration-amber-500 decoration-dotted decoration-2 underline-offset-4 ${fix ? 'cursor-text' : ''}">${esc(cur)}</span>`
       continue
     }
     let [c0, c1] = x.show && o.was.includes(x.show[0]) && o.alt.includes(x.show[1]) ? x.show : [o.was, o.alt] // just the words that differ
@@ -356,7 +356,7 @@ export function draftHtml(text: string, fix = false) {
       side = x.pick || 'was'
     const btn = (sd: string, label: string) => {
       const on = side === sd
-      return `<button data-act="doubt-pick" data-i="${i}" data-k="${k}" data-side="${sd}" aria-pressed="${on}" tabindex="${on ? 0 : -1}" title="${sd === 'was' ? 'Main model' : 'Other model'}${on ? ' · in the text now' : ''} · ← → or 1 2 to pick, Esc to the box" class="inline-flex items-center gap-1 rounded-md px-1.5 leading-6 ${on ? 'bg-white text-zinc-900 shadow-sm ring-1 ring-zinc-900/10 dark:bg-zinc-700 dark:text-zinc-50 dark:ring-white/10' : 'text-zinc-500 hover:bg-white/60 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-700/50 dark:hover:text-zinc-100'}">${on && x.pick ? ico('check', 'size-3.5 text-emerald-600 dark:text-emerald-400', '2.5') : ''}${esc(unmarked(label))}</button>`
+      return `<button data-act="doubt-pick" data-i="${i}" data-k="${k}" data-side="${sd}" aria-pressed="${on}" tabindex="${on ? 0 : -1}" title="${sd === 'was' ? 'Main model' : 'Other model'}" class="inline-flex items-center gap-1 rounded-md px-1.5 leading-6 ${on ? 'bg-white text-zinc-900 shadow-sm ring-1 ring-zinc-900/10 dark:bg-zinc-700 dark:text-zinc-50 dark:ring-white/10' : 'text-zinc-500 hover:bg-white/60 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-700/50 dark:hover:text-zinc-100'}">${on && x.pick ? ico('check', 'size-3.5 text-emerald-600 dark:text-emerald-400', '2.5') : ''}${esc(unmarked(label))}</button>`
     }
     html +=
       plain(p.s, p.s + pre.length) +
@@ -465,7 +465,7 @@ export function draftFix() {
   ed.id = 'fixEd'
   ed.contentEditable = 'plaintext-only'
   ed.textContent = wrong
-  ed.title = 'The right words · Enter keeps them, Esc stops'
+  ed.title = 'Right words · ↵ keeps, Esc stops'
   ed.className =
     'rounded-md bg-white px-1 py-0.5 text-zinc-900 outline-none ring-2 ring-amber-400 dark:bg-zinc-800 dark:text-zinc-50'
   r.insertNode(ed)
@@ -745,8 +745,8 @@ function BoxInner() {
   const micTip = !window.isSecureContext
     ? 'Voice needs an https link here: press for it'
     : D.compose
-      ? 'Record a voice note · ⌥V'
-      : 'Record a voice note · V, or ⌥V while typing'
+      ? 'Voice note · ⌥V'
+      : 'Voice note · V'
   const attach = rec
     ? btn('rec-cancel', 'x', 'Discard the recording', 'Discard · Esc')
     : btn('attach', 'plus', 'Add images or files', 'Add images or files')
@@ -1212,7 +1212,7 @@ export function VcBar() {
         id="cmtBtn"
         data-act="doc-comment-sel"
         hidden={!cmt}
-        aria-label="Comment: write a comment on the selected text"
+        aria-label="Comment"
         title="Comment"
         className="grid size-9 place-items-center self-center rounded-full text-white hover:bg-white/15 dark:text-zinc-900 dark:hover:bg-zinc-900/10"
       >
@@ -1222,7 +1222,7 @@ export function VcBar() {
         id="fixBtn"
         data-act="vc-fix"
         hidden={!fix}
-        aria-label="Correct: write the right words for the selected ones"
+        aria-label="Correct the words"
         className="flex h-9 items-center gap-1.5 rounded-full pr-3.5 pl-2.5 text-sm font-semibold whitespace-nowrap text-white hover:bg-white/15 dark:text-zinc-900 dark:hover:bg-zinc-900/10"
       >
         <Icon n="pencil" c="size-4" />

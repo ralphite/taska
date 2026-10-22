@@ -53,7 +53,6 @@ import {
   useTick,
   visible,
   wide,
-  agoShort,
 } from '../lib/state'
 import { PSEC } from '../lib/settings-data'
 import { FAILED, TOAST, hideToast } from '../lib/toast'
@@ -113,19 +112,19 @@ const PILL: Record<string, [string, string]> = {
 }
 export function agentLine() {
   const S = model.S
-  const [tone, label, line] = agentState(S.agents, S.work)
+  const [tone, label] = agentState(S.agents, S.work)
   const ready = tone === 'ok' && (S.agents || []).some((a) => a.waiting),
     kind = tone === 'ok' ? (ready ? 'ready' : 'recent') : tone
   const off = model.offline >= 2
-  // F411: each agent session that named itself, so you can tell them apart (the latest first)
-  const sessions = [...(S.agents || [])]
-    .filter((a) => a.session)
-    .sort((a, b) => b.t - a.t)
-    .map((a) => `${AGENT_NAME[a.name] || a.name}: ${a.session} · ${agoShort(a.t)}`)
+  // F411, B429: pointing at it names the agent sessions, one short line each; the pill itself says who and when
+  const named = [...(S.agents || [])].filter((a) => a.session).sort((a, b) => b.t - a.t),
+    many = new Set(named.map((a) => a.name)).size > 1
   return {
     kind,
     label,
-    title: off ? 'Taska is out of reach. It reconnects by itself.' : [line, ...sessions].join('\n'),
+    title: off
+      ? undefined
+      : named.map((a) => (many ? `${AGENT_NAME[a.name] || a.name}: ` : '') + a.session).join('\n') || undefined,
     off,
   }
 }
@@ -157,7 +156,7 @@ function FailedPill() {
     <button
       data-act="failed-open"
       aria-label={`${n} not saved`}
-      title="Changes Taska does not have: open to retry them"
+      title="Not saved"
       className="flex h-8 shrink-0 items-center gap-1.5 rounded-full bg-red-50 px-2.5 text-[13px] font-semibold text-red-700 ring-1 ring-red-600/20 ring-inset hover:bg-red-100 lg:px-3 dark:bg-red-400/10 dark:text-red-300 dark:ring-red-400/25 dark:hover:bg-red-400/20"
     >
       <Icon n="alert" c="size-3.5" sw="2.25" />
@@ -343,7 +342,6 @@ function SideFoot() {
   )
 }
 function Drawer({ hidden, over }: { hidden: boolean; over: boolean }) {
-  const rule = false // B406: New input is New input on every tab
   const list = useRef<HTMLDivElement>(null)
   useLayoutEffect(() => (list.current ? bindProjDrag(list.current) : undefined), [])
   useEffect(() => {
@@ -426,12 +424,12 @@ function Drawer({ hidden, over }: { hidden: boolean; over: boolean }) {
         <button
           data-act="new-input"
           id="newInputBtn"
-          title={rule ? 'New rule for the project · C' : 'New input to the project · C · by voice ⇧V'}
+          title="New input · C"
           aria-pressed={D.compose && !D.page}
           className="flex h-9 w-full items-center gap-2 rounded-xl bg-white px-3 text-sm font-medium text-zinc-800 shadow-sm ring-1 ring-zinc-900/10 hover:bg-zinc-50 aria-pressed:bg-blue-50 aria-pressed:text-blue-700 aria-pressed:ring-blue-500/40 dark:bg-zinc-800 dark:text-zinc-100 dark:ring-white/10 dark:hover:bg-zinc-700 dark:aria-pressed:bg-blue-400/10 dark:aria-pressed:text-blue-300 dark:aria-pressed:ring-blue-400/40"
         >
           <Icon n="newinput" c="size-4" />
-          <span className="flex-1 text-left">{rule ? 'New rule' : 'New input'}</span>
+          <span className="flex-1 text-left">New input</span>
           <span className="group-hover/ni:invisible">
             <Kbd k="C" />
           </span>
@@ -893,11 +891,7 @@ function Tabs({ hidden }: { hidden: boolean }) {
             {TAB_NAME[t]}
             <span
               data-count
-              title={
-                t === 'inputs' && !words && pending
-                  ? `${pending} not handled yet: being transcribed or organized, or left for your agent (marked with a dot)`
-                  : undefined
-              }
+              title={t === 'inputs' && !words && pending ? `${pending} not handled yet` : undefined}
               className="rounded-full px-1.5 py-px font-mono text-[11px] font-medium text-zinc-400 tabular-nums group-aria-selected:bg-zinc-900/7 group-aria-selected:text-zinc-600 group-aria-[selected=false]:px-0.5 empty:hidden min-[400px]:group-aria-[selected=false]:px-1 dark:text-zinc-500 dark:group-aria-selected:bg-white/10 dark:group-aria-selected:text-zinc-300"
             >
               {counts[t]}

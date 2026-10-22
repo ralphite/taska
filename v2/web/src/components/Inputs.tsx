@@ -139,7 +139,7 @@ export function inputActs(r: Input, cls = LINK_BTN): [ReactNode, ReactNode] {
         key="make"
         data-act="make-item"
         data-id={r.id}
-        title="Make an item from this input yourself, without waiting for the agent"
+        title="Make an item now"
         className={cls
           .replace(/text-zinc-500|hover:text-zinc-800/g, 'text-blue-600')
           .replace(/dark:text-zinc-400|dark:hover:text-zinc-200/g, 'dark:text-blue-400')}
@@ -176,10 +176,7 @@ const long = (r: Input) => r.text.length > 160 || r.text.split('\n').length > 4
 // B329: a dot on the inputs the Inputs tab's number counts: those not handled yet
 function NotHandled({ r }: { r: Input }) {
   return r.acked ? null : (
-    <span
-      title="Not handled yet: counted in the Inputs number"
-      className="size-2 shrink-0 rounded-full bg-blue-500 dark:bg-blue-400"
-    />
+    <span title="Not handled yet" className="size-2 shrink-0 rounded-full bg-blue-500 dark:bg-blue-400" />
   )
 }
 export function InputCard({ r, pane = false }: { r: Input; pane?: boolean }) {

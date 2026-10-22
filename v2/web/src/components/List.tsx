@@ -50,7 +50,6 @@ import {
   useArea,
   visible,
   walkOrder,
-  when,
   type Go,
 } from '../lib/state'
 import type { Item } from '../lib/types'
@@ -92,10 +91,7 @@ export function WorkerMark({ it }: { it: Item }) {
   if (!a) return null
   const name = AGENT_NAME[a.by] || a.by,
     quiet = Date.now() - new Date(a.t).getTime()
-  const tip =
-    quiet > QUIET_MS
-      ? `${name}: quiet ${agoShort(new Date(a.t).getTime())}, last wrote ${when(a.t)}; another agent may take it`
-      : `${name} is on it`
+  const tip = quiet > QUIET_MS ? `${name} · quiet ${agoShort(new Date(a.t).getTime())}` : `${name} is on it`
   return (
     <span
       aria-label={tip}
@@ -659,7 +655,7 @@ function OwnView({ v, i, on }: { v: View; i: number; on: boolean }) {
       data-act="view-use"
       data-i={i}
       aria-pressed={on}
-      title="Your view · right-click to rename, update or delete"
+      title="Your view"
       onContextMenu={(e) => {
         e.preventDefault()
         menu(e.clientX, e.clientY)

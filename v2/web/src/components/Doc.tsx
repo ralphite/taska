@@ -254,13 +254,7 @@ function BlockActs({ d, k, float = false }: { d: Doc; k: string; float?: boolean
           data-act="doc-say"
           data-key={k}
           {...(at ? { 'data-quote': at.quote } : {})}
-          title={
-            rec
-              ? 'Stop: the comment waits beside it, not sent'
-              : at
-                ? 'Speak a comment on this item'
-                : 'Speak a comment on this paragraph'
-          }
+          title={rec ? 'Stop' : 'Speak a comment'}
           className={`grid size-7 place-items-center rounded-lg shadow-sm ring-1 ${rec ? 'bg-red-600 text-white ring-red-700' : 'bg-white text-zinc-500 ring-zinc-900/10 hover:text-zinc-900 dark:bg-zinc-800 dark:text-zinc-300 dark:ring-white/10 dark:hover:text-white'}`}
         >
           <Icon n={rec ? 'stop' : 'mic'} c="size-4" />
@@ -271,11 +265,7 @@ function BlockActs({ d, k, float = false }: { d: Doc; k: string; float?: boolean
             data-key={k}
             data-pick-btn
             {...(at ? { 'data-quote': at.quote } : {})}
-            title={
-              at
-                ? 'Comment on this item (write in the box below)'
-                : 'Comment on this paragraph (write in the box below)'
-            }
+            title="Comment"
             className="grid size-7 place-items-center rounded-lg bg-white text-zinc-500 shadow-sm ring-1 ring-zinc-900/10 hover:text-zinc-900 dark:bg-zinc-800 dark:text-zinc-300 dark:ring-white/10 dark:hover:text-white"
           >
             <Icon n="comment" c="size-4" />
@@ -876,7 +866,7 @@ export const DocPaneActs = ({ d }: { d: Doc }) => (
       <Icon n="arrow" c="size-4" />
       Move
     </PaneBtn>
-    <PaneBtn act="doc-delete" title="Delete the document (Deleted brings it back)">
+    <PaneBtn act="doc-delete" title="Delete">
       <Icon n="trash" c="size-4" />
       <Armed k={'doc-delete ' + d.d} ask={`Delete D${d.d}?`}>
         Delete
