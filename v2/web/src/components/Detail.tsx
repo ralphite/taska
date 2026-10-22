@@ -227,6 +227,7 @@ function Editor({ it }: { it: Item }) {
 // F395, T423: a pane wide enough (1100px or more) where the item does not fit above or its talk does not fit below
 // shows the item (or its open document) on the left and its talk on the right, so nothing has to hide behind a scroll
 export const DUO = { on: false, min: 1100 }
+const NEEDS_SEEN = { n: 0, on: false } // A3 (T422): the item shown, and whether its card asked you
 export function ItemPage({ it, left = null }: { it: Item; left?: ReactNode }) {
   const duo = DUO.on
   const talkRef = useRef<HTMLDivElement>(null)
@@ -235,6 +236,13 @@ export function ItemPage({ it, left = null }: { it: Item; left?: ReactNode }) {
     const top = document.getElementById('itemClip')
     if (top) markOver(top)
   })
+  const asks = needsYou(it)
+  useLayoutEffect(() => {
+    // A3 (T422): the card that asks you comes back (an Undo, a change put back): the talk shows it, at its end
+    const talk = talkRef.current
+    if (asks && NEEDS_SEEN.n === it.n && !NEEDS_SEEN.on && talk) talk.scrollTop = talk.scrollHeight
+    Object.assign(NEEDS_SEEN, { n: it.n, on: asks })
+  }, [asks, it.n])
   useLayoutEffect(() => {
     // dragging the line changes how much of the item fits; the fade follows at once
     const top = document.getElementById('itemClip')
@@ -797,14 +805,7 @@ export function DetailView({ hidden }: { hidden: boolean }) {
       const high =
         ((top?.firstElementChild as HTMLElement | null)?.offsetHeight || 0) > upper ||
         ((talk?.firstElementChild as HTMLElement | null)?.offsetHeight || 0) > H - upper
-      const on =
-        desk() &&
-        !!U.open &&
-        !D.compose &&
-        !D.page &&
-        U.tab !== 'inputs' &&
-        el.clientWidth >= DUO.min &&
-        high
+      const on = desk() && !!U.open && !D.compose && !D.page && U.tab !== 'inputs' && el.clientWidth >= DUO.min && high
       document.getElementById('app')?.toggleAttribute('data-duo', on)
       if (on !== DUO.on) {
         DUO.on = on
