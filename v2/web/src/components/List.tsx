@@ -680,6 +680,7 @@ function OwnView({ v, i, on }: { v: View; i: number; on: boolean }) {
 }
 // T322 #2: the row scrolls sideways; an arrow on a fading edge says more is there, and a click brings it in
 function ViewBar() {
+  useArea('list') // A10 (T422): its counts change at once, also while the rows hold still (B124)
   const row = useRef<HTMLDivElement>(null)
   const [edge, setEdge] = useState({ l: false, r: false })
   const measure = () => {
