@@ -114,15 +114,23 @@ export function agentLine() {
   const ready = tone === 'ok' && (S.agents || []).some((a) => a.waiting),
     kind = tone === 'ok' ? (ready ? 'ready' : 'recent') : tone
   const off = model.offline >= 2
-  // F411, B429: pointing at it names the agent sessions, one short line each; the pill itself says who and when
-  const named = [...(S.agents || [])].filter((a) => a.session).sort((a, b) => b.t - a.t),
-    many = new Set(named.map((a) => a.name)).size > 1
+  // F411, B429: pointing at it names the agent sessions, by the titles their apps show, the latest first; the pill
+  // itself says who and when
+  const named = (S.agents || [])
+      .flatMap((a) =>
+        (a.sessions?.length ? a.sessions : a.session ? [{ name: a.session, t: a.t }] : []).map((x) => ({
+          ...x,
+          by: a.name,
+        })),
+      )
+      .sort((a, b) => b.t - a.t),
+    many = new Set(named.map((a) => a.by)).size > 1
   return {
     kind,
     label,
     title: off
       ? undefined
-      : named.map((a) => (many ? `${AGENT_NAME[a.name] || a.name}: ` : '') + a.session).join('\n') || undefined,
+      : named.map((a) => (many ? `${AGENT_NAME[a.by] || a.by}: ` : '') + a.name).join('\n') || undefined,
     off,
   }
 }

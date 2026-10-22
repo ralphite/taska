@@ -134,7 +134,8 @@ export interface Agent {
   name: string
   t: number
   waiting: boolean
-  session?: string // F411: what the agent says about itself: its session's name, the machine, the folder
+  session?: string // F411: the title its app shows for the session it called from last
+  sessions?: { name: string; t: number }[] // F411: each of its sessions seen in the last day, the latest first
 }
 
 export interface UndoEntry {

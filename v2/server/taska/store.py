@@ -803,9 +803,14 @@ class Store:
         name = self.agent_name(name)
         with self.cond:
             a = self.agents.setdefault(name, {"t": 0, "waiting": 0})
+            t_now = time.time()
             if session:
                 a["session"] = " ".join(session.split())[:160]
-            t_now = time.time()
+                # F411: each session of this agent kind, by the name its app shows, so two of them are told apart
+                ss = a.setdefault("sessions", {})
+                ss[a["session"]] = t_now
+                for old in sorted(ss, key=ss.get)[:-5]:
+                    del ss[old]
             before = (a["waiting"] > 0, t_now - a["t"] < 600)
             a["t"], a["waiting"] = t_now, max(0, a["waiting"] + waiting)
             if (a["waiting"] > 0, True) != before:
@@ -844,7 +849,10 @@ class Store:
 
     def presence(self) -> Dict[str, Any]:
         """What the page shows about agents: who came when, who waits now, and whether work is waiting for them."""
-        return {"agents": [{"name": k, "t": int(v["t"] * 1000), "waiting": v["waiting"] > 0, **({"session": v["session"]} if v.get("session") else {})}
+        day = time.time() - 86400
+        return {"agents": [{"name": k, "t": int(v["t"] * 1000), "waiting": v["waiting"] > 0, **({"session": v["session"]} if v.get("session") else {}),
+                            **({"sessions": [{"name": n, "t": int(t * 1000)} for n, t in sorted(v["sessions"].items(), key=lambda x: -x[1]) if t > day]}
+                               if v.get("sessions") else {})}
                            for k, v in self.agents.items()],
                 "work": bool(self.cfg["auto"] and views.next_text(self)[1])}
 

@@ -85,13 +85,20 @@ const rowCur = (it: Item) => ({
   ...(U.sel.has(it.n) ? { 'data-sel': '' } : {}),
 })
 
+// F411: the one session of this agent seen in the last hour, by the title its app shows (none when there are several)
+const onlySession = (by: string) => {
+  const a = (model.S.agents || []).find((x) => x.name === by),
+    recent = (a?.sessions || []).filter((x) => Date.now() - x.t < 3600e3)
+  return recent.length === 1 ? recent[0].name : ''
+}
 // F194: the agent working on an item in progress; amber once it has gone quiet (T229 #1: the name is in the tip)
 export function WorkerMark({ it }: { it: Item }) {
   const a = it.agent
   if (!a) return null
   const name = AGENT_NAME[a.by] || a.by,
     quiet = Date.now() - new Date(a.t).getTime()
-  const tip = quiet > QUIET_MS ? `${name} · quiet ${agoShort(new Date(a.t).getTime())}` : `${name} is on it`
+  const who = name + (onlySession(a.by) ? ` · ${onlySession(a.by)}` : '') // F411: which session, when it is clear
+  const tip = quiet > QUIET_MS ? `${who} · quiet ${agoShort(new Date(a.t).getTime())}` : `${who} is on it`
   return (
     <span
       aria-label={tip}
