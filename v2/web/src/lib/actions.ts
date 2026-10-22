@@ -221,6 +221,15 @@ function fieldInSight(f: HTMLElement) {
   if (r.bottom > c.bottom - fade) sc.scrollTop += r.bottom - (c.bottom - fade)
   else if (r.top < c.top) sc.scrollTop -= c.top - r.top + 8
 }
+// B15 (T422): a restored row leaves the list and the next one slides under the pointer: a second click right after
+// is not taken as restoring that one too
+let restoredAt = 0
+function restoredJustNow() {
+  const now = Date.now(),
+    was = now - restoredAt < 700
+  restoredAt = now
+  return was
+}
 export const ACT: Record<string, Handler> = {
   search: () => searchMode(!U.searching),
   'search-cancel': () => searchMode(false),
@@ -601,6 +610,7 @@ export const ACT: Record<string, Handler> = {
     toast(`Deleted ${rcode(id)}`, run)
   },
   'input-restore': async (d) => {
+    if (restoredJustNow()) return
     const id = d.id as string,
       x = (model.S.deleted || []).find((x) => x.id === id)
     try {
@@ -1591,6 +1601,7 @@ export const ACT: Record<string, Handler> = {
     bump('detail')
   },
   'gone-restore': async (d) => {
+    if (restoredJustNow()) return
     try {
       await save(d.kind === 'item' ? { op: 'iundel', ref: d.ref } : { op: 'ddel', d: Number(d.d), on: false })
     } catch {
