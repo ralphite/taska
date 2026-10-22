@@ -42,7 +42,7 @@ import { draftSpots, unmarked, vcCount, vcSelection, vcScroller } from '../lib/v
 import { addFiles, grow, send } from '../lib/outbox'
 import { setFix } from '../lib/settings'
 import { toast } from '../lib/toast'
-import { Icon, Kbd, ProjTile } from './ui'
+import { Icon, Kbd } from './ui'
 
 // ---------------------------------------------------------------- where the box is
 // B352: the same box everywhere: a border, no shadow (B345: a shadow read as a dark halo where nothing passes under it)
@@ -50,33 +50,14 @@ export const BOX: HTMLDivElement = (() => {
   const b = document.createElement('div')
   b.id = 'composer'
   b.className =
-    'group/box rounded-4xl border border-zinc-200 bg-white focus-within:border-zinc-300 lg:mx-auto lg:max-w-[42rem] dark:border-zinc-800 dark:bg-zinc-900 dark:focus-within:border-zinc-700'
+    'group/box flex flex-col rounded-4xl border border-zinc-200 bg-white focus-within:border-zinc-300 lg:mx-auto lg:max-w-[42rem] dark:border-zinc-800 dark:bg-zinc-900 dark:focus-within:border-zinc-700'
   return b
 })()
 const home = () => document.getElementById('boxHome')
+// T438 #2: one box, in one place: writing to an input, a comment or a document never moves it there; the line in the
+// box says what it writes to. Only the voice preferences in Settings are edited where they are.
 function boxAnchor(): Element | null {
-  if (U.prefsEdit) return document.querySelector('#projectBody [data-prefs-slot]')
-  const a = U.amend
-  if (a && a.mode === 'dc' && desk() && docOpen()) return null // B340: on the desktop the box stays at the bottom
-  if (a)
-    return a.mode === 'dc'
-      ? document.querySelector(`[data-dc="${a.id}"]`)
-      : document.querySelector(
-          `#detailBody [data-src="${a.id}"], #inputsView [data-r="${a.id}"], #detailBody [data-r="${a.id}"], #foot [data-src="${a.id}"]`,
-        )
-  const d = docOpen()
-  if (!d || desk() || !U.docType) return null // I285: on the phone the box comes into the document only after Aa; B340: never on the desktop (the text never moves)
-  const root = desk() ? els.detailBody : document.getElementById('dlgBody'),
-    t = docTarget()
-  if (!root) return null
-  if (t?.reply) return root.querySelector(`[data-thread="${CSS.escape(t.key)}"]`)
-  if (t)
-    return (
-      [...root.querySelectorAll<HTMLElement>('#docBlocks section[data-key]')]
-        .filter((sec) => sec.dataset.key === t.key || U.docSel.has(sec.dataset.key || ''))
-        .at(-1) || null
-    )
-  return null // B282: nothing picked: a comment on the whole document is written at the bottom
+  return U.prefsEdit ? document.querySelector('#projectBody [data-prefs-slot]') : null
 }
 /** Home, before a pane that may hold it is drawn again; it goes back once the pane is there. */
 export function parkBox() {
@@ -136,16 +117,9 @@ function ScopeLine({
   detail?: ReactNode
   right?: ReactNode
 }) {
-  const S = model.S
+  // T438 #2: no project name in the line: the bar at the top says it already
   return (
     <>
-      {desk() && S.project ? (
-        <span className="mr-0.5 flex shrink-0 items-center gap-1.5 font-semibold text-zinc-800 dark:text-zinc-100">
-          <ProjTile name={S.project} cls="size-[18px] rounded-[5px] text-[10px]" />
-          <span className="max-w-40 truncate">{projTitle()}</span>
-          <span className="font-normal text-zinc-300 dark:text-zinc-600">›</span>
-        </span>
-      ) : null}
       <Icon n={icon} c="size-3.5 text-zinc-400 dark:text-zinc-500" />
       <span className="min-w-0 flex-1 truncate">
         <span className="font-medium text-zinc-800 dark:text-zinc-100">{label}</span>
@@ -304,6 +278,8 @@ function boxRole(): { line: ReactNode; ph: string; send: string; ready?: boolean
     line = <ScopeLine icon="inbox" label="New input" detail={`· ${filesWord}`} /> // B298
   if (R.rec && R.key && R.key !== U.draftKey)
     line = <ScopeLine icon="mic" label={`Recording for ${draftName(R.key)}`} detail="· it goes there when you stop" /> // B1
+  // T438 #2: the line says what the box writes to; the placeholder does not say it again
+  if (U.amend || U.correct || dt) ph = 'Write…'
   return { line, ph, send, ready }
 }
 
@@ -769,7 +745,8 @@ function BoxInner() {
         t.style.height = 'auto'
         t.style.height = Math.min(t.scrollHeight, desk() && D.compose ? 320 : 192) + 'px'
       }
-      const multi = !!t.value && (t.value.includes('\n') || t.scrollHeight > 52)
+      // T438 #2 (A3): on the phone the box keeps one layout and grows a line at a time; the buttons stay where they are
+      const multi = desk() && !!t.value && (t.value.includes('\n') || t.scrollHeight > 52)
       if (multi !== BOX.hasAttribute('data-multi')) {
         BOX.toggleAttribute('data-multi', multi)
         if (multi) {
@@ -791,7 +768,7 @@ function BoxInner() {
       <div
         id="scope"
         hidden={!line}
-        className="flex h-8 items-center gap-1.5 pt-1 pr-1.5 pl-4 text-[13px] text-zinc-500 lg:group-data-[compose]/app:hidden dark:text-zinc-400"
+        className={`flex h-8 items-center gap-1.5 pt-1 pr-1.5 pl-4 text-[13px] text-zinc-500 dark:text-zinc-400 ${U.amend || U.correct ? '' : 'lg:group-data-[compose]/app:hidden'}`}
       >
         {line}
       </div>
@@ -809,7 +786,9 @@ function BoxInner() {
       >
         <Doubts words={words} />
       </div>
-      <div className="flex items-end gap-2 p-1.5 group-data-[multi]/box:flex-wrap lg:gap-0.5">
+      {/* T438 #2: on the New input page the box hangs from the top: the words come first and what joins them goes under
+      them (its line, files, doubts), so the line you type on never moves */}
+      <div className="flex items-end gap-2 p-1.5 group-data-[multi]/box:flex-wrap lg:gap-0.5 lg:group-data-[compose]/app:order-first">
         <BoxBtn
           b={attach}
           id="attachBtn"

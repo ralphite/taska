@@ -10,7 +10,6 @@ import {
   desk,
   inputMatch,
   model,
-  oneLine,
   otherProjects,
   parseRef,
   plural,
@@ -843,53 +842,11 @@ export function SaidLately({ draft }: { draft: ReactNode }) {
 }
 // The New input page's head: the project, and what the box does now (B73)
 export function ComposeHead() {
-  const S = model.S
-  const tile = <ProjTile name={S.project} cls="size-11 rounded-xl text-xl shadow-sm" />
-  const back = (act: string) => (
-    <button
-      data-act={act}
-      className="mt-2 h-8 rounded-full px-3 text-[13px] font-medium text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
-    >
-      Back to a new input
-      <kbd className="ml-1 hidden h-5 min-w-5 place-items-center rounded-md px-1 font-sans text-[11px] font-semibold opacity-70 ring-1 ring-current/30 lg:inline-grid">
-        Esc
-      </kbd>
-    </button>
-  )
-  if (U.correct && S.inputs.some((r) => r.id === U.correct?.id))
-    return (
-      <>
-        <div className="flex items-center gap-3">
-          {tile}
-          <h1 className="text-[28px] leading-none font-semibold tracking-tight">Correct “{U.correct.wrong}”</h1>
-        </div>
-        <p className="mt-3.5 text-[15px] text-zinc-500 dark:text-zinc-400">
-          in {U.correct.id}; voice notes in every project will write it your way from now on
-        </p>
-        {back('correct-cancel')}
-      </>
-    )
-  const am = U.amend && 'id' in U.amend ? U.amend : null,
-    a = am ? S.inputs.find((r) => r.id === am.id) : undefined
-  if (am && a)
-    return (
-      <>
-        <div className="flex items-center gap-3">
-          {tile}
-          <h1 className="text-[28px] leading-none font-semibold tracking-tight">
-            {am.mode === 'edit' ? 'Edit' : 'Add details to'} {rcode(a.id)}
-          </h1>
-        </div>
-        <p className="mt-3.5 line-clamp-2 max-w-full text-[15px] text-zinc-500 dark:text-zinc-400">
-          “{oneLine(a.text)}”
-        </p>
-        {back('amend-cancel')}
-      </>
-    )
-  // B440 (over D25 #1): the project's name over the box, as Yadong asked; the line under it stays out
+  // B440 (over D25 #1): the project's name over the box, as Yadong asked; the line under it stays out. T438 #2: also
+  // while you edit or add to an input (the box's own line says that), so the box never moves
   return (
     <div className="flex items-center gap-3">
-      {tile}
+      <ProjTile name={model.S.project} cls="size-11 rounded-xl text-xl shadow-sm" />
       <h1 className="text-[28px] leading-none font-semibold tracking-tight">{projTitle()}</h1>
     </div>
   )

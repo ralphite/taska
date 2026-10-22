@@ -91,9 +91,10 @@ export const render = () => {
   idleCompose()
   bump()
 }
-// T318 (B269, r309): on the desktop, Items with nothing open is the New input page, as clicking New input shows it
+// T318 (B269, r309): on the desktop, Items with nothing open is the New input page, as clicking New input shows it;
+// T438 #2 (B19): Archive and Rules too, so a new input is always written in the same box at the same place
 function idleCompose() {
-  if (desk() && U.tab === 'items' && !U.side && !U.open && !U.doc && !D.page && !D.compose && U.editing == null)
+  if (desk() && ['items', 'archive', 'rules'].includes(U.tab) && !U.side && !U.open && !U.doc && !D.page && !D.compose && U.editing == null)
     D.compose = true
 }
 
