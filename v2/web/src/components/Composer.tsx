@@ -1177,7 +1177,7 @@ export function VcBar() {
         o = R.vc.rect
       r = { top: o.top - dy, bottom: o.bottom - dy, left: o.left, width: o.width, height: o.height }
     }
-    bar.hidden = !r || (!r.width && !r.height) || (on && !desk() && !R.vc?.range) // B300
+    bar.hidden = !r || (!r.width && !r.height) || (on && !R.vc?.range) // B300; B15 (T422): a paragraph's own mic stops there
     if (bar.hidden || !r) return
     const below = r.bottom + 8 + bar.offsetHeight < innerHeight - 8
     bar.style.top = `${below ? r.bottom + 8 : Math.max(8, r.top - bar.offsetHeight - 8)}px`
