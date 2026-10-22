@@ -227,7 +227,7 @@ export function tickedBlock(block: string, i: number): string | null {
   while (z < ls.length - 1 && CHOICE.test(ls[z + 1])) z++
   const mine = (j: number) => j >= a && j <= z
   const on = !isTicked(ls[k]),
-    all = multi && /^(全部|All\b)/i.test(ls[k].replace(CHOICE, '').trim()) // R272: "All" ticks or unticks the whole list
+    all = multi && /^(\u5168\u90e8|All\b)/i.test(ls[k].replace(CHOICE, '').trim()) // R272: "All" ticks or unticks the whole list
   const next = ls.map((l, j) => (j === k || (all && mine(j)) ? mark(l, on) : !multi && mine(j) ? mark(l, false) : l))
   return next.join('\n')
 }

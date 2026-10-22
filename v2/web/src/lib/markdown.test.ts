@@ -38,9 +38,9 @@ describe('choices in a document (F393, B412, B420)', () => {
   it('ticks one choice; one of "( )" at a time; "All" ticks and unticks the whole list', () => {
     expect(tickedBlock('- [ ] Red\n- [ ] Blue', 1)).toBe('- [ ] Red\n- [x] Blue')
     expect(tickedBlock('- (x) Send\n- ( ) OK', 1)).toBe('- ( ) Send\n- (x) OK')
-    const all = tickedBlock('- [ ] 全部\n- [ ] Red\n- [ ] Blue', 0) as string
-    expect(all).toBe('- [x] 全部\n- [x] Red\n- [x] Blue')
-    expect(tickedBlock(all, 0)).toBe('- [ ] 全部\n- [ ] Red\n- [ ] Blue')
+    const all = tickedBlock('- [ ] \u5168\u90e8\n- [ ] Red\n- [ ] Blue', 0) as string
+    expect(all).toBe('- [x] \u5168\u90e8\n- [x] Red\n- [x] Blue')
+    expect(tickedBlock(all, 0)).toBe('- [ ] \u5168\u90e8\n- [ ] Red\n- [ ] Blue')
   })
 })
 
