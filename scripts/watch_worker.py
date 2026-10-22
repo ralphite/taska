@@ -5,9 +5,9 @@
 
 Plain code polls every 30 seconds and prints a line only when the manager has to act (I447: checks cost no
 tokens, only a real event wakes the manager):
-  ITEM     the item named in <assigned-file> left "doing", or the worker asked or blocked on it: hand out the next one
+  ITEM     the item named in <assigned-file> (the last one handed out) is finished, or the worker asked or blocked on it
   STALE    silent stale_minutes in the middle of a turn: stuck on a prompt or a hung command
-  QUIET    its turn ended quiet_minutes ago, none of its background commands runs, and the item is still doing
+  QUIET    its turn ended quiet_minutes ago and none of its background commands runs: it is out of work or never reported
 <assigned-file> holds "<code> <taska base url>", written by the manager when it hands out an item.
 Each event is told once until something changes.
 """
@@ -81,12 +81,12 @@ def main():
         doing = len(parts) > 3 and parts[3] == 'doing'
         waits = bool(parts) and parts[-1] in ('?', '!')
         events = []
-        if code and row and (not doing or waits):
+        if code and row and (parts[3] in ('review', 'done', 'dropped') or waits):
             events.append(f'ITEM {row[:150]}')
         if not ended and quiet > stale:
             events.append(f'STALE silent {quiet:.0f}m mid-turn (last {d.get("timestamp")})')
-        if ended and doing and not waits and quiet > quiet_limit and not busy(path):
-            events.append(f'QUIET turn ended {quiet:.0f}m ago, {code} still doing')
+        if ended and not waits and quiet > quiet_limit and not busy(path):
+            events.append(f'QUIET turn ended {quiet:.0f}m ago, nothing running')
         for e in events:
             tag = e.split(' ', 1)[0] + (row or '')
             if tag not in told:
