@@ -1650,6 +1650,16 @@ export const ACT: Record<string, Handler> = {
     try {
       await setFix({ right })
       toast(`Voice notes will hear “${right}”`)
+      // C14 (T422): the field is ready for the next word, and the one added is in sight
+      const f = document.getElementById('fixWord') as HTMLInputElement | null
+      if (f && !d.right) f.value = ''
+      setTimeout(
+        () =>
+          [...document.querySelectorAll<HTMLElement>('[data-act="fix-remove"]')]
+            .find((b) => b.dataset.right === right)
+            ?.scrollIntoView({ block: 'center' }),
+        80,
+      ) // after the list is drawn again
     } catch {
       /* setFix said why */
     }
