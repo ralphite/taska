@@ -842,7 +842,7 @@ export const ACT: Record<string, Handler> = {
       t = it?.archived ? 'archive' : it?.type === 'rule' ? 'rules' : 'items'
     if (desk()) {
       D.page = null
-      if (U.tab !== t) setTab(t)
+      if (U.tab !== t && !U.side) setTab(t) // B435: from the Documents list, the list stays; the pane shows it
       else render()
     }
     openDoc(dn)
