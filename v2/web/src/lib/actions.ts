@@ -30,6 +30,7 @@ import {
   projName,
   rcode,
   render,
+  splitThread,
   standN,
   tabOf,
   visible,
@@ -957,19 +958,20 @@ export const ACT: Record<string, Handler> = {
   'doc-close': () => closeDoc(),
   'doc-resolve': async (d) => {
     const dn = U.doc,
-      key = d.key as string,
+      tk = d.key as string, // B469: one thread of the paragraph
+      { key, th } = splitThread(tk),
       on = d.on === '1'
     const put = (v: boolean) =>
-      instant({ op: 'dcres', d: dn, key, on: v }, () => {
+      instant({ op: 'dcres', d: dn, key, on: v, ...(th ? { th } : {}) }, () => {
         const doc = docById(dn)
         if (!doc) return
         doc.resolved ||= {}
-        if (v) doc.resolved[key] ||= new Date().toISOString()
-        else delete doc.resolved[key]
+        if (v) doc.resolved[tk] ||= new Date().toISOString()
+        else delete doc.resolved[tk]
       }) // R409: at once
     void put(on)
-    if (!on) U.docThreads.add(key)
-    else U.docThreads.delete(key)
+    if (!on) U.docThreads.add(tk)
+    else U.docThreads.delete(tk)
     D.docKey = null
     render()
     toast(

@@ -9,6 +9,8 @@ import {
   code,
   desk,
   docResolved,
+  threadOpen,
+  threadsOf,
   els,
   liveN,
   plural,
@@ -145,6 +147,27 @@ function Thread({
     </div>
   )
 }
+// B469: how far down the paragraph the words a thread quotes start (an item of a list, or words inside the text)
+function quoteTop(sec: HTMLElement, quote: string) {
+  const norm = (x: string) => x.replace(/\s+/g, ' ').trim(),
+    q = norm(quote),
+    top = (r: DOMRect) => Math.round(r.top - sec.getBoundingClientRect().top)
+  if (!q) return 0
+  const li = [...sec.querySelectorAll<HTMLElement>('li')].find((l) => norm(l.innerText).includes(q))
+  if (li) return top(li.getBoundingClientRect())
+  const head = q.slice(0, 16)
+  const w = document.createTreeWalker(sec.querySelector('[data-block]') || sec, NodeFilter.SHOW_TEXT)
+  while (w.nextNode()) {
+    const t = w.currentNode as Text,
+      i = t.data.indexOf(head)
+    if (i < 0) continue
+    const r = document.createRange()
+    r.setStart(t, i)
+    r.setEnd(t, Math.min(t.data.length, i + head.length))
+    return top(r.getBoundingClientRect())
+  }
+  return 0
+}
 // B340: beside a paragraph, on the desktop: comment (in the box below) or speak (the icon itself records, and stops)
 function BlockActs({ d, k, float = false }: { d: Doc; k: string; float?: boolean }) {
   useArea('vc')
@@ -184,61 +207,75 @@ function BlockActs({ d, k, float = false }: { d: Doc; k: string; float?: boolean
   }, [])
   const b = d.blocks.find((x) => x.key === k),
     drafts = U.vcMarks.filter((m) => m.d === d.d && m.key === k && markLive(m.label)),
-    n = (b?.comments.length || 0) + drafts.length,
-    done = !drafts.length && docResolved(d, k), // B12 (T422): a resolved thread looks done, not waiting
-    open = float && n > 0 && U.docThreads.has(k)
-  // B5 (T422): in a list, the count sits level with the item its comments quote, not with the list's first item
-  const quote = b?.comments[0]?.quote || ''
-  const [countTop, setCountTop] = useState(0)
-  useLayoutEffect(() => {
-    const sec = box.current?.closest('section'),
-      norm = (x: string) => x.replace(/\s+/g, ' ').trim()
-    const li =
-      sec && quote ? [...sec.querySelectorAll<HTMLElement>('li')].find((l) => norm(l.innerText) === norm(quote)) : null
-    const top = li && sec ? Math.round(li.getBoundingClientRect().top - sec.getBoundingClientRect().top) : 0
-    if (top !== countTop) setCountTop(top)
-  }, [quote, n, float, countTop])
-  // B6 (T422): an open comment popup closes on a click anywhere else, so it never sits over the paragraphs below
+    threads = b ? threadsOf(b.comments) : [], // B469: each place selected in the paragraph has its own thread
+    newKey = `${k}#new`,
+    // the thread opened; a paragraph opened as a whole (just commented on) opens its latest thread
+    openTk = !float
+      ? null
+      : ([...threads.map((t) => t.tk), newKey].find((tk) => U.docThreads.has(tk)) ??
+        (U.docThreads.has(k) ? (threads.at(-1)?.tk ?? (drafts.length ? newKey : null)) : null))
+  // B5 (T422), B469: each thread's count sits level with the words it quotes, never on top of another
   const pop = useRef<HTMLDivElement>(null)
+  useLayoutEffect(() => {
+    const sec = box.current?.closest('section')
+    if (!sec) return
+    let last = -40
+    const place = (tk: string, want: number) => {
+      last = Math.max(want, last + 32)
+      const btn = sec.querySelector<HTMLElement>(`[data-act="doc-thread"][data-key="${CSS.escape(tk)}"]`)
+      if (btn) btn.style.top = last + 2 + 'px'
+      if (tk === openTk && pop.current) pop.current.style.top = last + 36 + 'px'
+    }
+    const taken: number[] = []
+    for (const t of threads) taken.push((place(t.tk, quoteTop(sec, t.quote)), last))
+    if (drafts.length) taken.push((place(newKey, 0), last))
+    // the speak and comment buttons go where you point, never over a count (B469)
+    let y = at?.top ?? 0
+    for (const top of taken) if (Math.abs(top - y) < 30) y = top + 32
+    if (box.current) box.current.style.top = y + 2 + 'px'
+  })
+  // B6 (T422): an open comment popup closes on a click anywhere else, so it never sits over the paragraphs below
   useEffect(() => {
-    if (!open) return
+    if (!openTk) return
     const away = (e: MouseEvent) => {
       const t = e.target as Element
-      if (pop.current?.contains(t) || t.closest(`[data-act="doc-thread"][data-key="${k}"]`)) return
+      if (pop.current?.contains(t) || t.closest(`[data-act="doc-thread"][data-key="${openTk}"]`)) return
+      U.docThreads.delete(openTk)
       U.docThreads.delete(k)
       renderDoc()
     }
     document.addEventListener('mousedown', away, true)
     return () => document.removeEventListener('mousedown', away, true)
-  }, [open, k])
+  }, [openTk, k])
+  const counts = [
+    ...threads.map((t) => ({ tk: t.tk, n: t.comments.length, done: docResolved(d, t.tk) })),
+    ...(drafts.length ? [{ tk: newKey, n: drafts.length, done: false }] : []),
+  ]
+  const opened = threads.find((t) => t.tk === openTk)
   return (
     <>
-      {float && n ? (
-        // B349: no room for the column: the count stays beside the paragraph, and opens its comments over the text
-        <button
-          data-act="doc-thread"
-          data-key={k}
-          style={{ top: countTop + 2 }}
-          className={`absolute left-[calc(100%+0.25rem)] z-10 flex h-7 min-w-7 items-center justify-center gap-0.5 rounded-lg px-1.5 text-xs font-semibold ${
-            done
-              ? 'bg-zinc-100 text-zinc-500 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700'
-              : 'bg-amber-100 text-amber-900 hover:bg-amber-200 dark:bg-amber-900/60 dark:text-amber-100 dark:hover:bg-amber-800/70'
-          }`}
-        >
-          {done ? <Icon n="check" c="size-3.5" /> : null}
-          {n}
-        </button>
-      ) : null}
-      {open && b ? (
-        <div
-          ref={pop}
-          style={{ top: countTop + 36 }}
-          className="absolute -right-10 z-20 flex w-80 max-w-full flex-col gap-2 text-sm shadow-xl"
-        >
-          {b.comments.length ? <Thread d={d} k={k} comments={b.comments} blockText={b.text} rail /> : null}
-          {drafts.map((m) => (
-            <DraftCard key={m.label} label={m.label} />
-          ))}
+      {float
+        ? counts.map((c) => (
+            // B349: no room for the column: the count stays beside the paragraph, and opens its comments over the text
+            <button
+              key={c.tk}
+              data-act="doc-thread"
+              data-key={c.tk}
+              className={`absolute left-[calc(100%+0.25rem)] z-10 flex h-7 min-w-7 items-center justify-center gap-0.5 rounded-lg px-1.5 text-xs font-semibold ${
+                c.done // B12 (T422): a resolved thread looks done, not waiting
+                  ? 'bg-zinc-100 text-zinc-500 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700'
+                  : 'bg-amber-100 text-amber-900 hover:bg-amber-200 dark:bg-amber-900/60 dark:text-amber-100 dark:hover:bg-amber-800/70'
+              }`}
+            >
+              {c.done ? <Icon n="check" c="size-3.5" /> : null}
+              {c.n}
+            </button>
+          ))
+        : null}
+      {openTk && b ? (
+        <div ref={pop} className="absolute -right-10 z-20 flex w-80 max-w-full flex-col gap-2 text-sm shadow-xl">
+          {opened ? <Thread d={d} k={opened.tk} comments={opened.comments} blockText={b.text} rail /> : null}
+          {openTk === newKey ? drafts.map((m) => <DraftCard key={m.label} label={m.label} />) : null}
         </div>
       ) : null}
       {/* B355: side by side, the voice first; from the edge of the paragraph, so the pointer gets there without a gap.
@@ -246,7 +283,6 @@ function BlockActs({ d, k, float = false }: { d: Doc; k: string; float?: boolean
           leave the text anywhere along it and go up or down to the buttons */}
       <div
         ref={box}
-        style={{ top: Math.max(at?.top ?? 0, float && n ? 36 : 0) + 2 }}
         className={`absolute left-full z-10 flex-row gap-1 pl-1 ${rec ? 'flex' : 'hidden group-hover/blk:flex'}`}
       >
         <button
@@ -320,25 +356,27 @@ function DocRail({ d }: { d: Doc }) {
       node: (
         <div>
           <div className="mb-1 text-[11px] font-medium text-zinc-500">On the whole document</div>
-          <Thread d={d} k="doc" comments={d.whole} rail />
+          {threadsOf(d.whole).map((t) => (
+            <Thread key={t.tk} d={d} k={t.tk} comments={t.comments} rail />
+          ))}
         </div>
       ),
     })
   for (const b of d.blocks) {
-    if (b.comments.length)
+    for (const t of threadsOf(b.comments))
       entries.push({
         k: b.key,
         node:
-          !docResolved(d, b.key) || U.docThreads.has(b.key) ? (
-            <Thread d={d} k={b.key} comments={b.comments} blockText={b.text} rail />
+          !docResolved(d, t.tk) || threadOpen(t.tk) ? (
+            <Thread d={d} k={t.tk} comments={t.comments} blockText={b.text} rail />
           ) : (
             <button
               data-act="doc-thread"
-              data-key={b.key}
+              data-key={t.tk}
               className="flex h-7 items-center gap-1 rounded-md px-1.5 text-xs text-zinc-500 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800"
             >
               <Icon n="check" c="size-3.5" />
-              Resolved · {plural(b.comments.length, 'comment')}
+              Resolved · {plural(t.comments.length, 'comment')}
             </button>
           ),
       })
@@ -354,7 +392,9 @@ function DocRail({ d }: { d: Doc }) {
           {d.detached.map((t) => (
             <section key={t.key}>
               <div className="text-sm text-zinc-400 line-through">{t.quote}</div>
-              <Thread d={d} k={t.key} comments={t.comments} rail />
+              {threadsOf(t.comments).map((x) => (
+                <Thread key={x.tk} d={d} k={x.tk} comments={x.comments} rail />
+              ))}
             </section>
           ))}
         </div>
@@ -438,11 +478,12 @@ function useMarkQuotes(ref: RefObject<HTMLElement | null>, d: Doc) {
     const root = ref.current
     if (!root) return
     for (const b of d.blocks)
-      for (const c of b.comments) {
-        const q = plainQuote(c.quote || '').trim(),
+      for (const th of threadsOf(b.comments)) {
+        // B469: every thread's words are marked, each once
+        const q = plainQuote(th.quote || '').trim(),
           sec = root.querySelector(`#docBlocks > section[data-key="${CSS.escape(b.key)}"] [data-block]`)
         if (!q || !sec || sameText(q, plainQuote(b.text)) || q.length > 300) continue
-        if (sec.querySelector('mark[data-quote]')) continue
+        if (sec.querySelector(`mark[data-quote="${CSS.escape(th.tk)}"]`)) continue
         const walk = document.createTreeWalker(sec, NodeFilter.SHOW_TEXT)
         while (walk.nextNode()) {
           const t = walk.currentNode as Text,
@@ -451,8 +492,8 @@ function useMarkQuotes(ref: RefObject<HTMLElement | null>, d: Doc) {
           const m = document.createElement('mark'),
             rest = t.splitText(at)
           rest.splitText(q.length)
-          m.dataset.quote = ''
-          m.className = `rounded-sm ${docResolved(d, b.key) ? 'bg-transparent text-inherit underline decoration-zinc-300 decoration-dotted' : 'bg-amber-100 text-inherit dark:bg-amber-400/25'}`
+          m.dataset.quote = th.tk
+          m.className = `rounded-sm ${docResolved(d, th.tk) ? 'bg-transparent text-inherit underline decoration-zinc-300 decoration-dotted' : 'bg-amber-100 text-inherit dark:bg-amber-400/25'}`
           rest.replaceWith(m)
           m.append(rest)
           break
@@ -734,9 +775,11 @@ export function DocView({ d }: { d: Doc }) {
                     </div>
                   )
                 ) : null}
-                {!side && b0.comments.length && U.docThreads.has(b0.key) ? (
-                  <Thread d={d} k={b0.key} comments={b0.comments} blockText={b0.text} />
-                ) : null}
+                {!side && b0.comments.length
+                  ? threadsOf(b0.comments)
+                      .filter((t) => threadOpen(t.tk))
+                      .map((t) => <Thread key={t.tk} d={d} k={t.tk} comments={t.comments} blockText={b0.text} />)
+                  : null}
                 {side ? <BlockActs d={d} k={b0.key} float={float} /> : null}
               </section>
             )
@@ -746,7 +789,9 @@ export function DocView({ d }: { d: Doc }) {
         {!side && d.whole?.length ? (
           <section className="mt-6 border-t border-zinc-200 pt-4 dark:border-zinc-800">
             <div className="text-xs font-medium text-zinc-500">On the whole document</div>
-            <Thread d={d} k="doc" comments={d.whole} />
+            {threadsOf(d.whole).map((t) => (
+              <Thread key={t.tk} d={d} k={t.tk} comments={t.comments} />
+            ))}
           </section>
         ) : null}
         {!side && d.detached.length ? (
@@ -755,7 +800,9 @@ export function DocView({ d }: { d: Doc }) {
             {d.detached.map((t) => (
               <section key={t.key}>
                 <div className="text-sm text-zinc-400 line-through">{t.quote}</div>
-                <Thread d={d} k={t.key} comments={t.comments} />
+                {threadsOf(t.comments).map((x) => (
+                  <Thread key={x.tk} d={d} k={x.tk} comments={x.comments} />
+                ))}
               </section>
             ))}
           </div>

@@ -27,7 +27,7 @@ import { draftStore, kept, markSent, saveDraft } from './drafts'
 import { closeDialog, openDialog } from './dialog'
 import { layersNow, leaveView, writeURL } from './url'
 import { docRecStop, dropRec } from './voice'
-import { sleep } from './state'
+import { sleep, splitThread, threadKey } from './state'
 import { ticksOf } from './doctick'
 
 export const noteText = (d: Doc) =>
@@ -39,6 +39,7 @@ export interface DocTarget {
   key: string
   quote: string
   reply?: boolean
+  th?: number
   many?: number
   whole?: boolean
 }
@@ -46,9 +47,14 @@ export function docTarget(): DocTarget | null {
   const d = docOpen()
   if (!d) return null
   if (U.docReply) {
-    const b = d.blocks.find((b) => b.key === U.docReply),
-      t = d.detached.find((t) => t.key === U.docReply)
-    return { d, key: U.docReply, reply: true, quote: b?.text || t?.quote || '' }
+    // B469: a reply goes to its own thread of the paragraph
+    const { key, th } = splitThread(U.docReply),
+      b = d.blocks.find((b) => b.key === key),
+      t = d.detached.find((t) => t.key === key),
+      first = [...(b?.comments || []), ...(t?.comments || []), ...(d.whole || [])].find(
+        (c) => threadKey(c) === U.docReply,
+      )
+    return { d, key, th, reply: true, quote: first?.quote || b?.text || t?.quote || '' }
   }
   const blocks = d.blocks.filter((b) => U.docSel.has(b.key))
   if (U.docQuote) return { d, key: U.docQuote.key, quote: U.docQuote.text }
@@ -295,6 +301,7 @@ export async function sendDocComment(t: DocTarget) {
     stand: Comment = {
       id: -Date.now(),
       key: t.key,
+      ...(t.th ? { th: t.th } : {}),
       quote: t.reply ? '' : t.quote,
       text: typed || '…',
       by: 'you',
@@ -305,7 +312,7 @@ export async function sendDocComment(t: DocTarget) {
       list = doc && (t.key === 'doc' ? doc.whole : doc.blocks.find((b) => b.key === t.key)?.comments)
     if (list && !list.some((c) => c.id === stand.id)) list.push(stand)
   })
-  U.docThreads.add(t.key)
+  U.docThreads.add(t.th ? `${t.key}#${t.th}` : t.key)
   U.docSel = new Set()
   U.docQuote = null
   U.docReply = null // T274 #3: sent, the box is the document's again
@@ -337,6 +344,7 @@ export async function sendDocComment(t: DocTarget) {
       text,
       files: files.map(({ f, name, mime, size, tr }) => ({ f, name, mime, size, ...(tr ? { tr } : {}) })),
       ...(t.reply ? {} : { quote: t.quote }),
+      ...(t.th ? { th: t.th } : {}),
     },
     back, // Taska said no (it says why); can't reach it: it is sent again until it can
   )

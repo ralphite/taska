@@ -62,3 +62,30 @@ test('a comment on a paragraph of a document is written in the one box, which st
     await expect(para).toContainText('Say who reviews it')
   }
 })
+
+test('two places picked in one paragraph keep two threads; an answer goes to the one still waiting (B469)', async ({
+  page,
+  request,
+}) => {
+  const p = await project(request, {
+    ...LOOP,
+    then: `${LOOP.then}T4 doc The plan
+  The plan
+
+  - item one is about apples
+  - item two is about pears
+`,
+  })
+  for (const quote of ['apples', 'pears'])
+    await request.post(`${p.url}api/op`, { data: { op: 'dc', d: 1, para: 2, quote, text: `About ${quote}` } })
+  await p.doAs('D1 reply ¶2 The apples answer')
+  await open(page, p, 'D1')
+  const counts = page.locator('[data-act="doc-thread"][data-key*="#"]').filter({ visible: true })
+  await expect(counts).toHaveCount(2)
+  await counts.first().click()
+  const thread = page.locator('[data-thread]').filter({ visible: true })
+  await expect(thread).toHaveCount(1)
+  await expect(thread).toContainText('About apples')
+  await expect(thread).toContainText('The apples answer')
+  await expect(thread).not.toContainText('About pears')
+})

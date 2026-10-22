@@ -5,7 +5,7 @@
 import { create } from 'zustand'
 import { flushSync } from 'react-dom'
 import { AGENT_NAME, LETTER, PROJ_TONES, RULE_STATUS, STATUS, VIEW_KEYS, type Tab } from './constants'
-import type { Doc, FileRef, Input, Item, Msg, ProjectRow, State, Status } from './types'
+import type { Comment, Doc, FileRef, Input, Item, Msg, ProjectRow, State, Status } from './types'
 
 // ---------------------------------------------------------------- redraw
 
@@ -705,7 +705,24 @@ export function markSeen(it: Item) {
 export const docsOf = (n: number) => (model.S.docs || []).filter((d) => d.n === n)
 export const docById = (d: number | null | undefined) =>
   d == null ? undefined : (model.S.docs || []).find((x) => x.d === d)
-export const docResolved = (d: Doc, key: string) => !!d.resolved?.[key]
+export const docResolved = (d: Doc, tk: string) => !!d.resolved?.[tk]
+/** B469: a thread's key: its paragraph's key and its number ("key#12"); one per place you selected */
+export const threadKey = (c: { key: string; th?: number }) => (c.th ? `${c.key}#${c.th}` : c.key)
+export const splitThread = (tk: string) => {
+  const [key, th] = tk.split('#')
+  return { key, th: th ? Number(th) : undefined }
+}
+/** The comments of a paragraph, one list per thread, in the order the threads began */
+export function threadsOf(comments: Comment[]) {
+  const by = new Map<string, Comment[]>()
+  for (const c of comments) {
+    const tk = threadKey(c)
+    by.set(tk, [...(by.get(tk) || []), c])
+  }
+  return [...by].map(([tk, list]) => ({ tk, comments: list, quote: list[0].quote }))
+}
+/** A thread shows when it was opened, or when its whole paragraph was (a count on the phone opens them all) */
+export const threadOpen = (tk: string) => U.docThreads.has(tk) || U.docThreads.has(splitThread(tk).key)
 export const dcAll = (dn: number) => {
   const d = docById(dn)
   return d ? [...(d.whole || []), ...d.blocks.flatMap((b) => b.comments), ...d.detached.flatMap((t) => t.comments)] : []

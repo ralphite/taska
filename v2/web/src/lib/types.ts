@@ -100,6 +100,7 @@ export interface Input {
 export interface Comment {
   id: number
   key: string
+  th?: number // B469: its thread: each place selected in a paragraph has one
   quote: string
   text: string
   by: string

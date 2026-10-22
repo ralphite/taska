@@ -182,6 +182,7 @@
       {
        "id": 4,
        "key": "<key>",
+       "th": 4,
        "quote": "## Steps",
        "text": "Why these steps?",
        "by": "you",
@@ -191,6 +192,7 @@
       {
        "id": 5,
        "key": "<key>",
+       "th": 5,
        "quote": "",
        "text": "Looks good overall",
        "by": "you",
@@ -200,6 +202,7 @@
       {
        "id": 6,
        "key": "<key>",
+       "th": 4,
        "quote": "## Steps",
        "text": "Because we must build first.",
        "by": "claude-code",
@@ -209,6 +212,7 @@
       {
        "id": 7,
        "key": "<key>",
+       "th": 5,
        "quote": "",
        "text": "Thanks",
        "by": "claude-code",
@@ -237,6 +241,7 @@
         {
          "id": 4,
          "key": "<key>",
+         "th": 4,
          "quote": "## Steps",
          "text": "Why these steps?",
          "by": "you",
@@ -246,6 +251,7 @@
         {
          "id": 6,
          "key": "<key>",
+         "th": 4,
          "quote": "## Steps",
          "text": "Because we must build first.",
          "by": "claude-code",
@@ -272,6 +278,7 @@
       {
        "id": 5,
        "key": "<key>",
+       "th": 5,
        "quote": "",
        "text": "Looks good overall",
        "by": "you",
@@ -281,6 +288,7 @@
       {
        "id": 7,
        "key": "<key>",
+       "th": 5,
        "quote": "",
        "text": "Thanks",
        "by": "claude-code",
@@ -501,6 +509,7 @@
       {
        "id": 4,
        "key": "<key>",
+       "th": 4,
        "quote": "## Steps",
        "text": "Why these steps?",
        "by": "you",
@@ -510,6 +519,7 @@
       {
        "id": 5,
        "key": "<key>",
+       "th": 5,
        "quote": "",
        "text": "Looks good overall",
        "by": "you",
@@ -519,6 +529,7 @@
       {
        "id": 6,
        "key": "<key>",
+       "th": 4,
        "quote": "## Steps",
        "text": "Because we must build first.",
        "by": "claude-code",
@@ -528,6 +539,7 @@
       {
        "id": 7,
        "key": "<key>",
+       "th": 5,
        "quote": "",
        "text": "Thanks",
        "by": "claude-code",
@@ -542,7 +554,7 @@
      "t1": "<iso>",
      "by": "claude-code",
      "resolved": {
-      "doc": "<iso>"
+      "doc#5": "<iso>"
      },
      "blocks": [
       {
@@ -559,6 +571,7 @@
         {
          "id": 4,
          "key": "<key>",
+         "th": 4,
          "quote": "## Steps",
          "text": "Why these steps?",
          "by": "you",
@@ -568,6 +581,7 @@
         {
          "id": 6,
          "key": "<key>",
+         "th": 4,
          "quote": "## Steps",
          "text": "Because we must build first.",
          "by": "claude-code",
@@ -594,6 +608,7 @@
       {
        "id": 5,
        "key": "<key>",
+       "th": 5,
        "quote": "",
        "text": "Looks good overall",
        "by": "you",
@@ -603,6 +618,7 @@
       {
        "id": 7,
        "key": "<key>",
+       "th": 5,
        "quote": "",
        "text": "Thanks",
        "by": "claude-code",

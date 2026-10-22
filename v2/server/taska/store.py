@@ -355,7 +355,7 @@ class Store:
         elif k == "dcmove":  # T257 #10: a comment goes on another paragraph
             c = next((c for c in self.docs[e["d"]]["comments"] if c["id"] == e["id"]), None)
             if c:
-                c.update(key=e["key"], quote=e.get("quote", ""))
+                c.update(key=e["key"], quote=e.get("quote", ""), th=c["id"])  # B469: a thread of its own there
         elif k == "unfile":  # T257 #11: a file taken off what you sent (an input, so your reply too), or off a comment
             if e.get("d"):
                 c = next((c for c in self.docs[e["d"]]["comments"] if c["id"] == e["id"]), None)
@@ -387,16 +387,21 @@ class Store:
                     new = self.items.get(e["to"])
                     if new:
                         new["thread"] = sorted(new["thread"] + moved, key=lambda x: x["id"])
-        elif k == "dcres":  # T274 #2: a thread resolved, or open again
-            res = self.docs[e["d"]].setdefault("resolved", {})
-            if e.get("on"):
-                res[e["key"]] = e["t"]
-            else:
-                res.pop(e["key"], None)
+        elif k == "dcres":  # T274 #2: a thread resolved, or open again (B469: one thread, or every thread of the paragraph)
+            d = self.docs[e["d"]]
+            res = d.setdefault("resolved", {})
+            ths = [e["th"]] if e.get("th") else sorted({c["th"] for c in d["comments"] if c["key"] == e["key"]})
+            for th in ths:
+                if e.get("on"):
+                    res[f"{e['key']}#{th}"] = e["t"]
+                else:
+                    res.pop(f"{e['key']}#{th}", None)
         elif k == "dc":
-            self.docs[e["d"]].get("resolved", {}).pop(e["key"], None)  # a new word opens a resolved thread again
-            self.docs[e["d"]]["comments"].append({"id": e["seq"], "key": e["key"], "quote": e["quote"], "text": e["text"], "by": e["by"], "t": e["t"],
-                                                  "files": e.get("files", [])})  # a voice comment keeps its recording (F184)
+            d = self.docs[e["d"]]
+            th = self.comment_thread(d, e)
+            d.get("resolved", {}).pop(f"{e['key']}#{th}", None)  # a new word opens a resolved thread again
+            d["comments"].append({"id": e["seq"], "key": e["key"], "th": th, "quote": e["quote"], "text": e["text"], "by": e["by"],
+                                  "t": e["t"], "files": e.get("files", [])})  # a voice comment keeps its recording (F184)
         elif k in ("dcedit", "dcdel", "dcundel"):  # B258: your comment changed, deleted (kept aside) or back where it was
             d = self.docs[e["d"]]
             if k == "dcundel":
@@ -714,8 +719,23 @@ class Store:
         """Threads whose last word is the user's: the agent should answer them."""
         last: Dict[str, str] = {}
         for c in d["comments"]:
-            last[c["key"]] = c["by"]
+            last[f"{c['key']}#{c['th']}"] = c["by"]
         return sum(1 for k, by in last.items() if by == "you" and k not in d.get("resolved", {}))
+
+    @staticmethod
+    def comment_thread(d: Doc, e: Event) -> int:
+        """B469: each place you select in a paragraph has its own thread (a list is one paragraph, but two items in it
+        are two places): a reply from the page names its thread; your comment on a new selection starts one, and on
+        the same selection joins it; an agent's answer to the paragraph goes to its oldest thread still waiting for
+        an answer (else its latest). Worked out as the log is read, so comments made before this have threads too."""
+        same = [c for c in d["comments"] if c["key"] == e["key"]]
+        ths = list(dict.fromkeys(c["th"] for c in same))
+        if e.get("th") in ths:
+            return int(e["th"])
+        if e["by"] == "you":
+            return next((c["th"] for c in same if c["th"] == c["id"] and c["quote"] == e["quote"]), e["seq"])
+        waiting = [th for th in ths if [c for c in same if c["th"] == th][-1]["by"] == "you"]
+        return waiting[0] if waiting else (ths[-1] if ths else e["seq"])
 
     def waiting(self, it: Item) -> Optional[Msg]:
         """The open ask/block an agent posted that the user has not answered yet. Whatever the user says after it

@@ -265,7 +265,9 @@ def run(s: "Store", op: Op, by: str, ctx: Dict[str, Any]) -> Tuple[str, Any]:
         if not body and not files:
             raise Err("empty comment")
         quote = " ".join(str(op.get("quote") or "").split()) or text_  # what the user selected, else the paragraph
-        s.emit({"k": "dc", "d": d["d"], "key": key, "quote": quote[:500], "text": body, "by": by, **({"files": files} if files else {})})
+        th = int(op["th"]) if str(op.get("th") or "").isdigit() else None  # B469: a reply in one thread of the paragraph
+        s.emit({"k": "dc", "d": d["d"], "key": key, "quote": quote[:500], "text": body, "by": by, **({"files": files} if files else {}),
+                **({"th": th} if th else {})})
         return f"ok D{d['d']} comment" + s.gone_note(s.items.get(d["n"], {}), by), f"Commented on D{d['d']}"
     if name in ("idel", "iundel"):  # T257 #5
         it = s.item(op.get("ref"), ctx, follow=False)
@@ -342,7 +344,8 @@ def run(s: "Store", op: Op, by: str, ctx: Dict[str, Any]) -> Tuple[str, Any]:
         key, on = str(op.get("key") or ""), op.get("on", True) not in (False, "0", "false", 0)
         if not any(c["key"] == key for c in d["comments"]):
             raise Err(f"D{d['d']} has no thread {key!r}")
-        s.emit({"k": "dcres", "d": d["d"], "key": key, "on": on, "by": by})
+        th = int(op["th"]) if str(op.get("th") or "").isdigit() else None  # B469: one thread of the paragraph
+        s.emit({"k": "dcres", "d": d["d"], "key": key, "on": on, "by": by, **({"th": th} if th else {})})
         return f"ok D{d['d']} thread {'resolved' if on else 'open again'}", f"{'Resolved' if on else 'Reopened'} a thread on D{d['d']}"
     if name in ("dcedit", "dcdel", "dcundel"):  # B258: you change or delete a comment of yours, or bring it back
         d = s.doc(op.get("d"))
