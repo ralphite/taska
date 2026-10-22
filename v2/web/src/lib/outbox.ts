@@ -35,6 +35,7 @@ import {
   sendLog,
   notSaved,
   saidOp,
+  answersGoing,
   type OpAnswer,
 } from './data'
 import { ticksDone, ticksGoing, ticksOf, tickWords } from './doctick'
@@ -304,6 +305,10 @@ export function restoreOutbox() {
     })
   if (back.length) {
     sendLog('resend', `${back.length} input(s) sent before a reload or a closed tab, going out again now`)
+    if (back.some(([, , j]) => j.kind === 'answer')) {
+      answersGoing() // T438 #1: an answer kept from before the reload shows as answered, as before it
+      render()
+    }
     bump('feedback')
     flushOutbox()
   }
@@ -604,13 +609,14 @@ export async function sendChoice(n: number) {
     const rid: string | null = null
     // B326: an answer goes out like anything you write: at once on the screen, kept and sent again until Taska has it
     outboxPush({ text: picks + (note ? '\n\n' + note : ''), files, scope: code(n), quiet: true, kind: 'answer' })
+    answersGoing()
     if (note || files.length) {
       if (els.text) els.text.value = ''
       U.files = []
       saveDraft()
     }
     flushOutbox()
-    const said = `Answer sent to ${code(n)}${note || files.length ? ' with your note' : ''}` // B155
+    const said = `Answered ${code(n)}${note || files.length ? ' with your note' : ''}` // B155; T438 #1: the card says when it is in Taska
     U.choice = null
     U.reask = null // F428: answered again: the card shows the new answer
     keepChoice()

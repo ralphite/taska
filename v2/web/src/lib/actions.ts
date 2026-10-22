@@ -1077,7 +1077,7 @@ export const ACT: Record<string, Handler> = {
       x = byN.get(n)?.thread.find((m) => m.id === Number(d.id)),
       th = byN.get(n)?.thread || []
     if (!x) return
-    const done = answerOf(th, x) || [],
+    const done = answerOf(th, x, n) || [],
       labels = x.text.split('\n').flatMap((l) => (CHOICE.test(l) ? [l.replace(CHOICE, '').trim()] : []))
     U.reask = x.id
     U.choice = { n, picked: new Set(labels.flatMap((l, i) => (done.includes(l) ? [i] : []))) }

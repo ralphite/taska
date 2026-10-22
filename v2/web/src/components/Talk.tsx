@@ -21,6 +21,7 @@ import {
   code,
   outboxLine,
   outboxState,
+  answerGoing,
   useArea,
   type Job,
 } from '../lib/state'
@@ -259,9 +260,11 @@ export function NeedFrame({
   body,
   foot,
   hint = '',
+  going = '',
 }: {
   icon: string
   title: string
+  going?: string
   t?: string
   done?: boolean
   body: ReactNode
@@ -282,7 +285,10 @@ export function NeedFrame({
         >
           {title}
         </p>
-        {t ? (
+        {going ? (
+          // T438 #1: an answer on its way says so where the time goes, until Taska has it
+          <span className="animate-pulse text-xs text-blue-600 dark:text-blue-400">{going}</span>
+        ) : t ? (
           <span
             className={`text-xs ${done ? 'text-zinc-400 dark:text-zinc-500' : 'text-amber-700/80 dark:text-amber-300/70'}`}
           >
@@ -326,7 +332,7 @@ export const KeepBtn = ({ it }: { it: Item }) =>
 /** F428: the item's latest word from an agent is a question you answered: its card holds the item's Approve/Accept. */
 export const answeredLast = (it: Item) => {
   const x = lastAgentMsg(it)
-  return !!x && x.kind === 'ask' && hasChoices(x.text) && !!answerOf(it.thread, x)?.length
+  return !!x && x.kind === 'ask' && hasChoices(x.text) && !!answerOf(it.thread, x, it.n)?.length
 }
 export const SendAnswerBtn = ({
   n,
@@ -423,6 +429,7 @@ export function MsgText({
 // F327, F428 (P0): an answered question stays where it was, in the same card: grey now, your picks ticked, the others
 // quieter, Submitted where its buttons were, and Modify (on hover on the desktop) to pick again
 function Answered({ x, gid, done }: { x: Msg; gid: string; done: string[] }) {
+  useArea('feedback') // T438 #1: an answer on its way says where it is
   const n = U.open || 0,
     it = byN.get(n)
   if (U.reask === x.id && n)
@@ -443,11 +450,13 @@ function Answered({ x, gid, done }: { x: Msg; gid: string; done: string[] }) {
         }
       />
     )
+  const g = n && it?.thread.filter((m) => m.kind === 'ask').at(-1)?.id === x.id ? answerGoing(n) : undefined
   return (
     <NeedFrame
       icon="ask"
       title={`${whoName(x.by)} asks you`}
       t={x.t}
+      going={g ? outboxState(g) : ''}
       done
       body={<Rich text={x.text} gid={gid + 'q' + x.id} cls="text-zinc-600 dark:text-zinc-300" done={done} />}
       foot={
@@ -888,7 +897,7 @@ export function Talk({ it, list, gid = '', notes = [] }: { it: Item; list: Msg[]
         key={x.id}
         x={x}
         gid={gid}
-        done={gone.has(x.id) ? null : answerOf(th, x)}
+        done={gone.has(x.id) ? null : answerOf(th, x, it.n)}
         ver={vers.get(x.id)}
         withdrawn={gone.has(x.id)}
         read={read?.id === x.id ? read : null}

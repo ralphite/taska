@@ -490,16 +490,22 @@ export const openKids = (n: number) => (kids.get(n) || []).filter((k) => !CLOSED
 export const openCount = () =>
   model.S.items.filter((it) => !it.merged_into && inTab(it, 'items') && !CLOSED(it.status)).length // B130
 /** What you answered an agent's question with: the choices of your latest answer after it (F327, F428). */
-export function answerOf(thread: Msg[], x: Msg) {
+// T438 #1: an answer still on its way: the newest one for this item in the outbox, not yet in Taska
+export const answerGoing = (n: number) =>
+  U.outbox.filter((q) => q.kind === 'answer' && q.scope === code(n) && !q.unsent && !arrived(q)).at(-1)
+const ticks = (text: string) =>
+  text
+    .split('\n')
+    .map((l) => l.match(/^\s*✓\s*(.+)$/)?.[1]?.trim())
+    .filter(Boolean) as string[]
+export function answerOf(thread: Msg[], x: Msg, n?: number) {
   if (x.kind !== 'ask') return null
+  // T438 #1: what you answered shows at once, before Taska has it (it answers the item's latest question)
+  const going = n == null ? undefined : answerGoing(n)
+  if (going && thread.filter((m) => m.kind === 'ask').at(-1)?.id === x.id) return ticks(going.text)
   const after = thread.slice(thread.indexOf(x) + 1).filter(userWord),
     a = after.filter((m) => /^\s*✓/m.test(m.text)).at(-1) || after[0] // F428: answered again, the latest answer counts
-  return a
-    ? (a.text
-        .split('\n')
-        .map((l) => l.match(/^\s*✓\s*(.+)$/)?.[1]?.trim())
-        .filter(Boolean) as string[])
-    : null
+  return a ? ticks(a.text) : null
 }
 
 const HAY = new WeakMap<Item, string>() // an item's words, worked out once per load

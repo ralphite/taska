@@ -382,6 +382,18 @@ export async function loadKept() {
     }
   return load()
 }
+// T438 #1: an answer still on its way shows its item as answered at once, as it will be once Taska has it: the
+// question is no longer waiting on you and the item is your agent's turn (the card, the row and the counts follow)
+export function answersGoing() {
+  for (const q of U.outbox) {
+    if (q.kind !== 'answer' || q.unsent || (q.p && q.p !== ctx.P)) continue
+    const it = model.S.items.find((i) => code(i.n) === q.scope)
+    if (it?.wait?.kind === 'ask') {
+      it.wait = null
+      it.reply = true
+    }
+  }
+}
 export function ingest(d: State, first = false) {
   noticeItems(d)
   model.S = d
@@ -394,6 +406,7 @@ export function ingest(d: State, first = false) {
   }
   for (const r of d.inputs) byR.set(r.id, r)
   for (const p of SAVE.pend) patch(p)
+  answersGoing()
   linkKids()
   followCodes()
   const was = U.open && byN.get(U.open)?.merged_into ? U.open : null
