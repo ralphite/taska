@@ -104,7 +104,7 @@ test('the desktop: G then N shows the inputs, Settings opens on G S and Esc goes
   await page.keyboard.press('g')
   await page.keyboard.press('n')
   await expect(page).toHaveURL(/\/new$/) // F347: what you said is under New input
-  await expect(page.getByRole('heading', { name: 'You said' })).toBeVisible()
+  await expect(page.locator('#draftSlot')).toBeAttached() // the New input page (its You said heading shows once there is something)
   await page.locator('#text').blur() // New input puts you in its box: keys there are words
   await page.keyboard.press('g')
   await page.keyboard.press('s')
