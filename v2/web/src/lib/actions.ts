@@ -729,6 +729,11 @@ export const ACT: Record<string, Handler> = {
     }
     writeURL(true, D.full ? { n: U.open, full: true, link: true } : undefined)
   },
+  more: (d) => {
+    // B445: "Show N earlier" in an item's thread (lost with B401's clean-up)
+    U.more.add(N(d))
+    bump('detail')
+  },
   'more-input': (d) => {
     const id = d.id as string
     if (U.moreInputs.has(id)) U.moreInputs.delete(id)
