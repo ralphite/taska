@@ -866,6 +866,18 @@ export const ACT: Record<string, Handler> = {
       return
     if (desk() && !d.pickBtn && !U.docSel.size) return // T274 #1: reading and copying never pick; Comment does
     const k = d.key as string
+    const li = !desk() && !d.quote ? target?.closest('li') : null
+    if (li) {
+      // B9 (T422): on the phone a tap on one item of a list picks that item, as pointing at it does on the desktop
+      const q = (li as HTMLElement).innerText.trim().slice(0, 500)
+      if (U.docQuote?.key === k && U.docQuote.text === q) U.docQuote = null
+      else {
+        U.docSel = new Set()
+        U.docQuote = { key: k, text: q }
+      }
+      U.docReply = null
+      return renderDoc()
+    }
     if (d.quote) {
       // B355: one item of a list: the comment quotes it
       U.docSel = new Set()

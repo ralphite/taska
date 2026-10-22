@@ -551,6 +551,18 @@ export function DocView({ d }: { d: Doc }) {
   useArea('rec')
   const ref = useRef<HTMLDivElement>(null)
   useMarkQuotes(ref, d)
+  useLayoutEffect(() => {
+    // B9 (T422): on the phone the one item of a list you picked is marked, not the whole list
+    const root = ref.current
+    if (!root) return
+    for (const li of root.querySelectorAll('li[data-q]')) li.removeAttribute('data-q')
+    const q = !desk() && U.docQuote
+    if (!q) return
+    const li = [...root.querySelectorAll<HTMLElement>(`section[data-key="${q.key}"] li`)].find(
+      (l) => l.innerText.trim() === q.text,
+    )
+    li?.setAttribute('data-q', '')
+  })
   const titled = !!d.blocks[0] && sameText(d.blocks[0].text.replace(/^#+\s*/, ''), d.title)
   const tks = tickKeys(d).map((x) => x.k)
   const [line0, ...rest0] = (d.blocks[0]?.text || '').split('\n'),
@@ -639,14 +651,16 @@ export function DocView({ d }: { d: Doc }) {
             const here =
               !desk() &&
               !U.docType &&
-              (R.rec ? R.vc?.d === d.d && R.vc.key === b0.key && !R.vc.range : U.docSel.has(b0.key))
+              (R.rec
+                ? R.vc?.d === d.d && R.vc.key === b0.key && !R.vc.range
+                : U.docSel.has(b0.key) || U.docQuote?.key === b0.key) // B9 (T422): one item of a list picked
             return (
               <section
                 key={tk}
                 data-act="doc-pick"
                 data-key={b0.key}
                 {...(U.docSel.has(b0.key) ? { 'data-picked': '' } : {})}
-                className={`group/blk relative -mx-2 rounded-lg px-2 py-1 transition-colors hover:bg-zinc-50 has-[li[data-hov]]:bg-transparent data-hl:bg-amber-50 data-picked:bg-amber-50 data-picked:ring-2 data-picked:ring-amber-300 data-pressed:opacity-70 lg:cursor-text lg:after:absolute lg:after:inset-y-0 lg:after:left-full lg:after:w-18 dark:hover:bg-zinc-800/50 dark:data-hl:bg-amber-950/30 dark:data-picked:bg-amber-950/40 dark:data-picked:ring-amber-600 lg:[&_li[data-hov]]:rounded-md lg:[&_li[data-hov]]:bg-zinc-100 dark:lg:[&_li[data-hov]]:bg-zinc-800/70`}
+                className={`group/blk relative -mx-2 rounded-lg px-2 py-1 transition-colors hover:bg-zinc-50 has-[li[data-hov]]:bg-transparent data-hl:bg-amber-50 data-picked:bg-amber-50 data-picked:ring-2 data-picked:ring-amber-300 data-pressed:opacity-70 lg:cursor-text lg:after:absolute lg:after:inset-y-0 lg:after:left-full lg:after:w-18 dark:hover:bg-zinc-800/50 dark:data-hl:bg-amber-950/30 dark:data-picked:bg-amber-950/40 dark:data-picked:ring-amber-600 lg:[&_li[data-hov]]:rounded-md lg:[&_li[data-hov]]:bg-zinc-100 dark:lg:[&_li[data-hov]]:bg-zinc-800/70 [&_li[data-q]]:-mx-1 [&_li[data-q]]:rounded-md [&_li[data-q]]:bg-amber-50 [&_li[data-q]]:px-1 [&_li[data-q]]:ring-2 [&_li[data-q]]:ring-amber-300 dark:[&_li[data-q]]:bg-amber-950/40 dark:[&_li[data-q]]:ring-amber-600`}
               >
                 <div className="relative flex flex-col gap-1 lg:flex-row lg:items-start lg:gap-2">
                   <div
@@ -705,6 +719,7 @@ export function DocView({ d }: { d: Doc }) {
                       <button
                         data-act="doc-say"
                         data-key={b0.key}
+                        {...(U.docQuote?.key === b0.key ? { 'data-quote': U.docQuote.text } : {})}
                         aria-label="Speak a comment on this paragraph"
                         className="grid size-12 shrink-0 place-items-center rounded-full bg-zinc-900 text-white shadow-lg dark:bg-zinc-100 dark:text-zinc-900"
                       >
