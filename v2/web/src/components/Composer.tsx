@@ -865,7 +865,7 @@ function BoxInner() {
         multiple
         hidden
         onChange={(e) => {
-          void addFiles([...(e.target.files || [])])
+          addFiles([...(e.target.files || [])])
           e.target.value = ''
         }}
       />
@@ -901,7 +901,7 @@ function TextArea() {
         const files = [...(e.clipboardData?.files || [])]
         if (files.length) {
           e.preventDefault()
-          void addFiles(files)
+          addFiles(files)
         }
       }}
       onFocus={() => {

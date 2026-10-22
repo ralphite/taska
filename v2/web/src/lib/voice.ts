@@ -19,6 +19,7 @@ import {
   liveN,
   model,
   parseRef,
+  plural,
   scopeN,
   sleep,
   type DraftFile,
@@ -348,6 +349,7 @@ interface VoiceRecord {
   added: string | null
   job: { id: string; text: string } | null
   vc: string | null
+  plain?: boolean // C1 (T422): a picture or another file, kept until it is up; no words to wait for
 }
 function voiceFile(o: Partial<DraftFile> & { name: string; mime: string }): DraftFile {
   const f: DraftFile = {
@@ -362,6 +364,22 @@ function voiceFile(o: Partial<DraftFile> & { name: string; mime: string }): Draf
     f.settle = r
   }) // uploaded: all that sending waits for (B165)
   holdRec(f)
+  return f
+}
+/** C1 (T422): a picture or file you add is kept in this browser until it is up, like a voice note: it is sent again
+ * while Taska can't be reached, comes back after a reload, and goes only when Taska refuses it. */
+export function plainFile(file: File, key = U.draftKey || 'new'): DraftFile {
+  const f = voiceFile({
+    name: file.name || 'paste.png',
+    mime: file.type || 'application/octet-stream',
+    blob: file,
+    key,
+    scope: /^[A-Z]\d+$/.test(key) ? key : null,
+    transcribing: false,
+    plain: true,
+    ...((file.type || '').startsWith('image/') ? { preview: URL.createObjectURL(file) } : {}),
+  })
+  void keepRec(f).then(() => hear(f))
   return f
 }
 /** B408: the voice notes in one box go to an item in another project (it was moved there): kept for that box, they
@@ -404,6 +422,7 @@ export async function keepRec(f: DraftFile) {
     added: f.trAdded || null,
     job: f.job || null,
     vc: f.vc || null,
+    ...(f.plain ? { plain: true } : {}),
   })
 }
 export function dropRec(f: DraftFile, sent = true) {
@@ -446,11 +465,14 @@ export async function hear(f: DraftFile) {
   for (let n = 0, tries = 0, waits = 0; !f.gone; n++) {
     try {
       if (!f.f) {
-        const r = await fetch(`${P}api/file?name=${encodeURIComponent(f.name)}&transcribe=1${scope}`, {
-          method: 'POST',
-          headers: { 'Content-Type': f.mime },
-          body: f.blob,
-        })
+        const r = await fetch(
+          `${P}api/file?name=${encodeURIComponent(f.name)}${f.plain ? '' : '&transcribe=1' + scope}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': f.mime },
+            body: f.blob,
+          },
+        )
         if (r.status === 400 || r.status === 413) {
           f.failed = true
           break
@@ -458,10 +480,12 @@ export async function hear(f: DraftFile) {
         if (!r.ok) throw new Error()
         const u = await r.json()
         Object.assign(f, { f: u.f, size: u.size })
+        f.retrying = false
         void keepRec(f)
         f.settle?.()
         bump('composer')
       }
+      if (f.plain) break // up: nothing more to wait for
       const r = await fetch(
         `${P}api/transcript?f=${encodeURIComponent(f.f as string)}${scope}${tries ? '&again=1' : ''}`,
         { method: 'POST' },
@@ -493,8 +517,9 @@ export async function hear(f: DraftFile) {
     }
     dropRec(f, false)
     bump('composer')
-    return toast('Could not upload the recording')
+    return toast(f.plain ? `Taska did not take ${f.name}` : 'Could not upload the recording')
   }
+  if (f.plain) return bump('composer')
   Object.assign(f, {
     tr: d?.tr || '',
     tr_error: d?.tr_error || (d?.done ? '' : 'no answer'),
@@ -600,7 +625,8 @@ export async function restoreVoice() {
   // B399: what is in the outbox (sent before the reload and going out again now) is not put back in the box too
   const going = new Set(U.outbox.flatMap((q) => q.files.map((x) => x.f)).filter(Boolean)),
     goingQ = new Set(U.outbox.map((q) => q.q))
-  const back: string[] = []
+  const back: string[] = [],
+    backFiles: DraftFile[] = []
   const resend = new Map<string, Job>() // B403, B414: notes you had sent: they go out again by themselves
   for (const r of (await VDB.all()).sort((a, b) => a.t - b.t)) {
     if ((r.project !== ctx.HERE && !r.job) || here.has(r.id)) continue
@@ -630,6 +656,7 @@ export async function restoreVoice() {
           tr: r.tr || '',
           trAdded: r.added || undefined,
           job: r.job,
+          ...(r.plain ? { plain: true, transcribing: false } : {}),
         })
       const j = resend.get(r.job.id)
       if (j) j.files.push(f)
@@ -675,6 +702,15 @@ export async function restoreVoice() {
       doubts: r.doubts || [],
       trAdded: r.added || undefined,
       ...(r.vc ? { vc: r.vc } : {}),
+      ...(r.plain
+        ? {
+            plain: true,
+            transcribing: false,
+            ...(r.mime.startsWith('image/')
+              ? { preview: URL.createObjectURL(new Blob([r.data], { type: r.mime })) }
+              : {}),
+          }
+        : {}),
     })
     if (key === U.draftKey) U.files.push(f)
     else (U.parked[key] ||= []).push(f)
@@ -682,10 +718,11 @@ export async function restoreVoice() {
       void hear(f) // not up yet (B408: it came from another project): up first, so sending takes it along
     else {
       f.settle?.()
-      placeWords(f)
+      if (!f.plain) placeWords(f)
     }
     void keepRec(f)
     back.push(key)
+    backFiles.push(f)
   }
   if (resend.size) {
     sendLog('resend', `${resend.size} voice input(s) sent before a reload or a closed tab, going out again now`)
@@ -695,8 +732,27 @@ export async function restoreVoice() {
   }
   if (!back.length) return
   bump('composer')
-  const away = back.find((k) => k !== U.draftKey)
-  const say = `${back.length === 1 ? 'Voice note' : back.length + ' voice notes'} kept${away ? ` for ${draftName(away)}` : ''}` // T365 #13
+  // C12 (T422): each kept note or file is told about once, not on every page load
+  let told: string[] = []
+  try {
+    told = JSON.parse(localStorage.getItem('taska.toldKept') || '[]') as string[]
+  } catch {
+    /* no storage */
+  }
+  const fresh = backFiles.filter((f) => !told.includes(f.rid || ''))
+  try {
+    localStorage.setItem('taska.toldKept', JSON.stringify([...told, ...fresh.map((f) => f.rid)].slice(-200)))
+  } catch {
+    /* no storage */
+  }
+  if (!fresh.length) return
+  const away = back.find((k) => k !== U.draftKey),
+    voice = fresh.filter((f) => !f.plain).length,
+    files = fresh.length - voice
+  const what = [voice ? (voice === 1 ? 'Voice note' : `${voice} voice notes`) : '', files ? plural(files, 'file') : '']
+    .filter(Boolean)
+    .join(' and ')
+  const say = `${what} kept${away ? ` for ${draftName(away)}` : ''}` // T365 #13
   if (away) toast(say, () => goDraft(away), { label: 'Go there' })
   else toast(say)
 }

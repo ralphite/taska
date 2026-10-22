@@ -32,42 +32,15 @@ import { setFix } from './settings'
 import { draftName, draftStore, goDraft, keepChoice, markSent, saveDraft, setDraft, draftMarks } from './drafts'
 import { docTarget, sendDocComment, renderDoc } from './docs'
 import { advance, advanceDesk, peek } from './go'
-import { finishRec, dropRec, keepRec, sendVoiceComments, vcCount } from './voice'
+import { finishRec, dropRec, keepRec, plainFile, sendVoiceComments, vcCount } from './voice'
 import { sendPrefs } from './settings'
 
 export const grow = () => bump('composer')
 
-export async function addFiles(list: File[]) {
-  for (const file of list) {
-    const f: DraftFile = {
-      name: file.name || 'paste.png',
-      mime: file.type || 'application/octet-stream',
-      done: Promise.resolve(),
-    }
-    let settle = () => {}
-    f.done = new Promise<void>((r) => {
-      settle = r
-    }) // a sent input waits for its files, not the box (F85)
-    if (f.mime.startsWith('image/')) f.preview = URL.createObjectURL(file)
-    U.files.push(f)
-    bump('composer')
-    try {
-      const r = await fetch(ctx.P + 'api/file?name=' + encodeURIComponent(f.name), {
-        method: 'POST',
-        headers: { 'Content-Type': f.mime },
-        body: file,
-      })
-      if (!r.ok) throw new Error()
-      Object.assign(f, await r.json())
-    } catch {
-      const i = U.files.indexOf(f)
-      if (i >= 0) U.files.splice(i, 1)
-      f.failed = true
-      toast('Upload failed: ' + f.name)
-    }
-    settle()
-    bump('composer')
-  }
+export function addFiles(list: File[]) {
+  // C1 (T422): kept in this browser and sent again until Taska has it; a sent input waits for its files (F85)
+  for (const file of list) U.files.push(plainFile(file))
+  bump('composer')
 }
 
 export async function send() {

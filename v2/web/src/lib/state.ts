@@ -182,6 +182,7 @@ export interface DraftFile extends Partial<FileRef> {
   release?: (() => void) | null
   job?: { id: string; text: string } | null
   p?: string // B414: the project it goes to (its address, /p/name/), wherever you are when it goes
+  plain?: boolean // C1 (T422): a picture or file kept like a voice note until it is up
 }
 export interface Job {
   id: string
