@@ -265,20 +265,28 @@ class Handler(BaseHTTPRequestHandler):
         try:
             fn()
         finally:
-            ms = int((time.monotonic() - t0) * 1000)
-            path = re.sub(r"/k/[^/?]+", "/k/…", re.sub(r"([?&]key=)[^&]*", r"\1…", self.path))
-            bare = path.split("?")[0]
-            if not (assets.public(bare) and bare != "/login.html"):  # T453: every request but the page's own files
-                q = parse_qs(urlsplit(path).query)
-                m = re.search(r"/p/([^/?]+)", bare)
-                by = (q.get("by") or [""])[0][:20]
-                slow = ms > 1000 and not self.WAITS.search(path)
-                lock = f", {self.lock_ms} ms of it waiting for the project" if self.lock_ms > 100 else ""
-                log.log(logging.WARNING if self.status_code >= 400 or slow else logging.DEBUG,
-                        f"{self.command} {path[:160]} {self.status_code} {ms} ms{lock}", extra={"f": {
-                            "source": "server", "kind": "request", "project": m.group(1) if m else None,
-                            "tab": self.headers.get("X-Taska-Tab"), "who": by or ("you" if self.headers.get("X-Taska-Tab") else None),
-                            "ses": self.session_of(q), "ms": ms, "status": self.status_code or None, "via": self.via()}})
+            self.note_request(int((time.monotonic() - t0) * 1000))
+
+    def note_request(self, ms: int) -> None:
+        """T453, r647: what is worth reading later: an agent's calls, and whatever failed or was slow. The page's own
+        polls and loads, and a script asking the same thing again and again, are noise and are not logged."""
+        path = re.sub(r"/k/[^/?]+", "/k/…", re.sub(r"([?&]key=)[^&]*", r"\1…", self.path))
+        bare = path.split("?")[0]
+        if assets.public(bare) and bare != "/login.html":
+            return
+        q = parse_qs(urlsplit(path).query)
+        by = (q.get("by") or [""])[0][:20]
+        slow = ms > 1000 and not self.WAITS.search(path)
+        failed = self.status_code >= 400 and not bare.startswith("/.well-known/")
+        if not (by or slow or failed):
+            return
+        m = re.search(r"/p/([^/?]+)", bare)
+        lock = f", {self.lock_ms} ms of it waiting for the project" if self.lock_ms > 100 else ""
+        log.log(logging.WARNING if failed or slow else logging.INFO,
+                f"{self.command} {path[:160]} {self.status_code} {ms} ms{lock}", extra={"f": {
+                    "source": "server", "kind": "request", "project": m.group(1) if m else None,
+                    "tab": self.headers.get("X-Taska-Tab"), "who": by or ("you" if self.headers.get("X-Taska-Tab") else None),
+                    "ses": self.session_of(q), "ms": ms, "status": self.status_code or None, "via": self.via()}})
 
     def state_of(self, s: "Store", since: int, boot: str) -> Dict[str, Any]:
         """The project's state for the page (only what changed since its copy), with the project's own fields."""
