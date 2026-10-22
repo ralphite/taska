@@ -273,6 +273,30 @@ const SideLink = ({ sec, icon, label, phone }: { sec: string; icon: string; labe
       <span className="min-w-0 flex-1 truncate">{label}</span>
     </a>
   )
+// F451: the page's stories in every state, built with the page and served by Taska at /storybook/
+const StoryLink = ({ phone }: { phone?: boolean }) =>
+  phone ? (
+    <a
+      href="/storybook/"
+      target="_blank"
+      rel="noopener"
+      className="flex min-h-12 w-full items-center gap-3 px-3.5 py-2.5 text-left text-[15px]"
+    >
+      <Icon n="book" c="size-5 shrink-0 text-zinc-500 dark:text-zinc-400" />
+      <span className="min-w-0 flex-1">Storybook</span>
+      <Icon n="right" c="size-4 shrink-0 text-zinc-300 dark:text-zinc-600" />
+    </a>
+  ) : (
+    <a
+      href="/storybook/"
+      target="_blank"
+      rel="noopener"
+      className="flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-sm text-zinc-600 hover:bg-zinc-200/60 dark:text-zinc-300 dark:hover:bg-zinc-800"
+    >
+      <Icon n="book" c="size-4 shrink-0 text-zinc-500 dark:text-zinc-400" sw="2" />
+      <span className="min-w-0 flex-1 truncate">Storybook</span>
+    </a>
+  )
 // the phone's drawer ends in a card (B162): Undo while there is one (a phone has no Z), and Settings
 function DrawerSettings() {
   const u = U.mine.at(-1),
@@ -298,6 +322,7 @@ function DrawerSettings() {
           <SideLink sec="deleted" icon="trash" label="Deleted" phone />
         </>
       ) : null}
+      <StoryLink phone />
       <button
         data-act="project"
         className="flex min-h-12 w-full items-center gap-3 px-3.5 py-2.5 text-left text-[15px]"
@@ -324,6 +349,7 @@ function SideFoot() {
           <SideLink sec="deleted" icon="trash" label="Deleted" />
         </>
       ) : null}
+      <StoryLink />
       <div className="flex items-center gap-0.5">
         <button
           data-act="project"
