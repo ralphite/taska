@@ -692,7 +692,6 @@ export const unread = (it: Item) => {
     s = seenMap()
   return !!m && !it.archived && Date.parse(m.t) > Date.parse(s[it.n] || s.since)
 }
-export const unreadCount = () => model.S.items.filter((it) => !it.merged_into && unread(it)).length
 export function markSeen(it: Item) {
   const m = lastAgentMsg(it)
   if (!m || !unread(it)) return

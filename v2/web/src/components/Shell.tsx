@@ -47,7 +47,6 @@ import {
   tabCount,
   tabNum,
   titleOf,
-  unreadCount,
   useArea,
   useTick,
   visible,
@@ -131,7 +130,12 @@ export function agentLine() {
     kind,
     label,
     // R369 (B429): not the line the pill shows already
-    title: off ? undefined : lines.map((l) => l.text).filter((l) => l !== label).join('\n') || undefined,
+    title: off
+      ? undefined
+      : lines
+          .map((l) => l.text)
+          .filter((l) => l !== label)
+          .join('\n') || undefined,
     off,
   }
 }
@@ -267,11 +271,6 @@ const SideLink = ({ sec, icon, label, phone }: { sec: string; icon: string; labe
     >
       <Icon n={icon} c="size-4 shrink-0 text-zinc-500 dark:text-zinc-400" sw="2" />
       <span className="min-w-0 flex-1 truncate">{label}</span>
-      {sec === 'log' && unreadCount() ? (
-        <span className="rounded-full bg-blue-600 px-1.5 text-[11px] font-semibold text-white dark:bg-blue-500">
-          {unreadCount()}
-        </span>
-      ) : null}
     </a>
   )
 // the phone's drawer ends in a card (B162): Undo while there is one (a phone has no Z), and Settings
@@ -758,7 +757,15 @@ function MainHead({ hidden }: { hidden: boolean }) {
             ref={qRef}
             type="search"
             autoComplete="off"
-            placeholder={!desk() ? 'Search title, text or code' : inputs ? 'Search what you said' : 'Search items'}
+            placeholder={
+              !desk()
+                ? 'Search title, text or code'
+                : inputs
+                  ? 'Search what you said'
+                  : U.tab === 'rules'
+                    ? 'Search rules'
+                    : 'Search items'
+            }
             defaultValue={U.q}
             className="min-w-0 flex-1 bg-transparent text-base text-zinc-900 outline-none placeholder:text-zinc-400 lg:text-sm dark:text-zinc-100 [&::-webkit-search-cancel-button]:hidden"
             onInput={(e) => onSearch((e.target as HTMLInputElement).value)}
@@ -983,7 +990,7 @@ function Foot({ hidden, wideCls }: { hidden: boolean; wideCls: string }) {
         e.preventDefault()
         if (e.dataTransfer.files.length) addFiles([...e.dataTransfer.files])
       }}
-      className={`relative z-20 shrink-0 px-3 pt-1 pb-[max(1.25rem,env(safe-area-inset-bottom))] lg:row-start-5 lg:scrollbar-gutter-both lg:px-8 lg:pb-5 lg:group-data-duo/app:pl-[calc(var(--duo-w,55%)+2rem)] lg:group-data-duo/app:before:absolute lg:group-data-duo/app:before:inset-y-0 lg:group-data-duo/app:before:left-[var(--duo-w,55%)] lg:group-data-duo/app:before:w-px lg:group-data-duo/app:before:bg-zinc-200 dark:lg:group-data-duo/app:before:bg-zinc-800 lg:group-data-[compose]/app:row-span-3 lg:group-data-[compose]/app:row-start-3 lg:group-data-[compose]/app:overflow-y-auto lg:group-data-[compose]/app:overscroll-contain lg:group-data-[compose]/app:pt-[5vh] lg:group-data-[compose]/app:pb-16 lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70 ${wideCls}`}
+      className={`relative z-20 shrink-0 px-3 pt-1 pb-[max(1.25rem,env(safe-area-inset-bottom))] lg:row-start-5 lg:scrollbar-gutter-both lg:px-8 lg:pb-5 lg:group-data-duo/app:pl-[calc(var(--duo-w,55%)+2rem)] lg:group-data-[compose]/app:row-span-3 lg:group-data-[compose]/app:row-start-3 lg:group-data-[compose]/app:overflow-y-auto lg:group-data-[compose]/app:overscroll-contain lg:group-data-[compose]/app:pt-[5vh] lg:group-data-[compose]/app:pb-16 lg:group-data-duo/app:before:absolute lg:group-data-duo/app:before:inset-y-0 lg:group-data-duo/app:before:left-[var(--duo-w,55%)] lg:group-data-duo/app:before:w-px lg:group-data-duo/app:before:bg-zinc-200 lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:group-data-duo/app:before:bg-zinc-800 dark:lg:hover:scrollbar-thumb-zinc-400/70 ${wideCls}`}
     >
       {compose && ComposeHead() ? (
         <div

@@ -167,6 +167,7 @@ export function closeDoc() {
   const d = U.doc
   U.docScroll[d] = els.detailBody?.scrollTop || 0
   Object.assign(U, { doc: null, docReply: null, docSel: new Set(), docQuote: null, docCircle: false })
+  if (desk() && U.side) U.open = null // T438 #16: opened from Documents, Activity or Deleted: back to that page
   D.docKey = null
   getSelection()?.removeAllRanges()
   render()

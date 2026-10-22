@@ -1121,7 +1121,8 @@ export const DocPaneNav = ({ d }: { d: Doc }) => (
     className="flex h-9 items-center gap-1.5 rounded-lg bg-zinc-100 px-2.5 text-sm font-semibold text-zinc-800 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-100 dark:hover:bg-zinc-700"
   >
     <Icon n="left" c="size-4" sw="2.25" />
-    Back to {code(liveN(d.n))}
+    {/* T438 #16: back to where you came from: Documents, Activity or Deleted, else its item */}
+    Back to {U.side ? { docs: 'Documents', log: 'Activity', deleted: 'Deleted' }[U.side] : code(liveN(d.n))}
     <Kbd k="Esc" />
   </button>
 )

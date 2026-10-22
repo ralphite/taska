@@ -798,7 +798,13 @@ function GoStrip({ g }: { g: Go }) {
 }
 function NoSelection() {
   if (U.side === 'deleted') return <DeletedView /> // B430: the deleted thing you clicked, with Restore
-  if (U.side) return null // T402: beside Documents, Activity or Deleted the pane waits for what you open there
+  if (U.side)
+    // T402: beside Documents, Activity or Deleted the pane waits for what you open there; T438 #16: and says so
+    return (
+      <div className="grid h-full place-items-center p-8 text-center text-[15px] text-zinc-500 dark:text-zinc-400">
+        {U.side === 'docs' ? 'Pick a document to read it here' : 'Pick a line to see what it is about here'}
+      </div>
+    )
   return (
     <div className="grid h-full place-items-center p-8 text-center">
       <div>
@@ -955,7 +961,9 @@ export function DetailView({ hidden }: { hidden: boolean }) {
       className={`flex min-h-0 flex-1 flex-col lg:row-span-3 lg:row-start-2 lg:group-data-[compose]/app:row-span-1 ${WIDE_CLS()}`}
     >
       {strip && g ? <GoStrip g={g} /> : null}
-      <header className="flex h-14 shrink-0 items-center gap-1 border-b border-zinc-100 px-1 lg:border-zinc-200 lg:px-3 dark:border-zinc-800/70 dark:lg:border-zinc-800">
+      <header
+        className={`flex h-14 shrink-0 items-center gap-1 border-b border-zinc-100 px-1 lg:border-zinc-200 lg:px-3 dark:border-zinc-800/70 dark:lg:border-zinc-800 ${U.side && !U.open && !shownDoc ? 'lg:hidden' : ''}`} // T438 #16: no empty bar over nothing
+      >
         <button
           data-act="back"
           id="backBtn"
