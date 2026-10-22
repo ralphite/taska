@@ -83,8 +83,7 @@ export function Html({
   return <T className={className} {...rest} dangerouslySetInnerHTML={{ __html: clean(html) }} />
 }
 /** T274 #35, F227: the searched words, marked where they show. */
-export function Hit({ text }: { text: string }) {
-  const words = searchWords()
+export function Hit({ text, words = searchWords() }: { text: string; words?: string[] }) {
   if (!words.length || !text) return <>{text}</>
   const re = new RegExp(`(${words.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'i')
   const parts = text.split(re)

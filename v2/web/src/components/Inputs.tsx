@@ -591,7 +591,7 @@ const SHORT: Record<string, string> = {
   'Seen by your agent': 'Seen',
   'Left for your agent': 'Left for agent',
 }
-function SaidRow({ r }: { r: Input; last?: boolean }) {
+function SaidRow({ r, words = [] }: { r: Input; last?: boolean; words?: string[] }) {
   const [label, tone, icon] = inputState(r),
     scope = r.scope ? byN.get(r.scope) : undefined
   const said = r.text // B361: a voice note alone is its player, with its length; no "Voice note" over it
@@ -675,7 +675,7 @@ function SaidRow({ r }: { r: Input; last?: boolean }) {
         <>
           {said ? (
             <p data-cut className={`whitespace-pre-line ${U.moreInputs.has(r.id) ? '' : 'line-clamp-3'} break-words`}>
-              {said}
+              <Hit text={said} words={words} />
             </p>
           ) : null}
           {r.files.length ? (
@@ -814,7 +814,9 @@ export function SaidLately({ draft }: { draft: ReactNode }) {
     <div ref={ref}>
       <div className="flex h-9 items-center gap-3">
         <h2 className="text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">You said</h2>
-        <span className="font-mono text-xs text-zinc-400 tabular-nums dark:text-zinc-500">{S.inputs.length || ''}</span>
+        <span className="font-mono text-xs text-zinc-400 tabular-nums dark:text-zinc-500">
+          {(words.length ? all.length : S.inputs.length) || ''}
+        </span>
         {S.inputs.length ? (
           <label className="ml-auto flex h-9 w-64 min-w-0 items-center gap-2 rounded-xl bg-zinc-100 pl-3 text-zinc-400 ring-blue-500/40 focus-within:bg-white focus-within:ring-2 dark:bg-zinc-800 dark:text-zinc-500 dark:focus-within:bg-zinc-900">
             <Icon n="search" c="size-4" />
@@ -848,7 +850,7 @@ export function SaidLately({ draft }: { draft: ReactNode }) {
                 {head ? (
                   <li className="pt-5 pb-1 text-xs font-semibold text-zinc-500 first:pt-1 dark:text-zinc-400">{day}</li>
                 ) : null}
-                <SaidRow r={r} last={!rest && queued.length + k === n - 1} />
+                <SaidRow r={r} last={!rest && queued.length + k === n - 1} words={words} />
               </Fragment>
             )
           })}
