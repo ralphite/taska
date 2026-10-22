@@ -914,6 +914,18 @@ export async function docSay(key: string, quote?: string) {
   renderDoc()
   bump('vc')
 }
+/** F432: speak about a part of a web page (key "h:<its place>"); the same button stops and posts. */
+export async function pageSay(key: string, quote: string, rect: DOMRect) {
+  if (R.rec) {
+    if (R.vc) await vcToggle()
+    return renderDoc()
+  }
+  R.vc = { d: U.doc, key, quote: quote.slice(0, 500), range: null, rect, top: vcScroller()?.scrollTop || 0 }
+  await startRec()
+  if (!R.rec) R.vc = null
+  renderDoc()
+  bump('vc')
+}
 // The box as comments: each quote line, the words under it (words above the first quote go with the first).
 function vcSegments(text: string, d: NonNullable<ReturnType<typeof docById>>) {
   const segs: { label: string; lines: string[]; key?: string; quote?: string; text?: string }[] = [],

@@ -28,6 +28,7 @@ import { Armed, Icon, Kbd } from './ui'
 import { Rich, Thumbs, VoiceLine } from './Talk'
 import { RecTime } from './Composer'
 import { VC_MARK, docMicLabel } from '../lib/voice'
+import { ACT } from '../lib/actions'
 
 const NewDot = () => (
   <span className="ml-0.5 size-1.5 rounded-full bg-blue-600 dark:bg-blue-400" title="New from an agent" />
@@ -543,39 +544,176 @@ function Lasso() {
   )
 }
 // A document's text with its comment threads: in a sheet on the phone, in the item pane on the desktop (T110).
-// F432: a web page document, shown as it is (its scripts run), as tall as its content
+// F432: a web page document, shown as it is (its scripts run), as tall as its content. Words selected in it are
+// commented on like a document's; in comment mode (the Comment mode button, Esc leaves) pointing lights a part of it
+// and offers the mic and Comment beside it, as a paragraph of a document does; parts with comments are outlined.
+const PAGE_CSS =
+  '.taska-hl{outline:2px solid #3b82f6!important;outline-offset:2px;cursor:pointer}' +
+  '.taska-c{outline:2px dashed #f59e0b;outline-offset:2px}.taska-pick{outline:2px solid #f59e0b!important;outline-offset:2px}'
+const placeOf = (el: Element) => {
+  const parts: string[] = []
+  for (let e: Element | null = el; e && e.tagName !== 'BODY' && e.tagName !== 'HTML'; e = e.parentElement) {
+    const tag = e.tagName.toLowerCase(),
+      same = [...(e.parentElement?.children || [])].filter((x) => x.tagName === e?.tagName)
+    parts.unshift(same.length > 1 ? `${tag}:nth-of-type(${same.indexOf(e) + 1})` : tag)
+  }
+  return 'h:body > ' + parts.join(' > ')
+}
 function HtmlPage({ d }: { d: Doc }) {
+  useArea('vc')
+  useArea('rec')
   const ref = useRef<HTMLIFrameElement>(null)
+  const [at, setAt] = useState<{ key: string; quote: string; top: number; left: number } | null>(null)
   useEffect(() => {
     const f = ref.current
     if (!f) return
-    let ro: ResizeObserver | null = null
+    let ro: ResizeObserver | null = null,
+      lit: Element | null = null
     const fit = () => {
       const h = f.contentDocument?.documentElement?.scrollHeight
       if (h) f.style.height = h + 'px'
     }
+    const light = (el: Element | null) => {
+      lit?.classList.remove('taska-hl')
+      lit = el
+      el?.classList.add('taska-hl')
+    }
+    const offer = (el: Element) => {
+      const r = el.getBoundingClientRect()
+      setAt({
+        key: placeOf(el),
+        quote: ((el as HTMLElement).innerText || '').trim().slice(0, 500),
+        top: r.top,
+        left: r.right,
+      })
+    }
     const load = () => {
+      const doc = f.contentDocument
+      if (!doc) return
+      const st = doc.createElement('style')
+      st.textContent = PAGE_CSS
+      doc.head?.append(st)
       fit()
-      const b = f.contentDocument?.body
-      if (b && typeof ResizeObserver !== 'undefined') {
+      if (doc.body && typeof ResizeObserver !== 'undefined') {
         ro = new ResizeObserver(fit)
-        ro.observe(b)
+        ro.observe(doc.body)
       }
+      doc.addEventListener('mouseover', (e) => {
+        const el = e.target as Element
+        if (!U.docInspect || !el || el === doc.body || el === doc.documentElement) return
+        light(el)
+        offer(el)
+      })
+      doc.addEventListener(
+        'click',
+        (e) => {
+          if (!U.docInspect) return
+          e.preventDefault()
+          e.stopPropagation()
+          const el = e.target as Element
+          if (el === doc.body || el === doc.documentElement) return
+          light(el)
+          offer(el)
+          ACT['page-pick']({ key: placeOf(el), quote: ((el as HTMLElement).innerText || '').trim().slice(0, 500) })
+        },
+        true,
+      )
+      doc.addEventListener('mouseup', () => {
+        if (U.docInspect) return
+        const sel = f.contentWindow?.getSelection(),
+          text = sel?.toString().trim()
+        const el =
+          sel?.anchorNode &&
+          (sel.anchorNode.nodeType === 1 ? (sel.anchorNode as Element) : sel.anchorNode.parentElement)
+        if (text && el) ACT['page-pick']({ key: placeOf(el), quote: text.slice(0, 500) })
+      })
+      doc.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && U.docInspect) ACT['doc-inspect']({})
+      })
+      mark()
+    }
+    const mark = () => {
+      const doc = f.contentDocument
+      if (!doc?.body) return
+      for (const el of doc.querySelectorAll('.taska-c, .taska-pick')) el.classList.remove('taska-c', 'taska-pick')
+      for (const b of d.blocks) doc.querySelector(b.key.slice(2))?.classList.add('taska-c')
+      if (U.docQuote?.key.startsWith('h:')) doc.querySelector(U.docQuote.key.slice(2))?.classList.add('taska-pick')
     }
     f.addEventListener('load', load)
+    if (f.contentDocument?.readyState === 'complete' && f.contentDocument.body?.childNodes.length) mark()
     return () => {
       f.removeEventListener('load', load)
       ro?.disconnect()
     }
-  }, [d.md])
+  }, [d.md, d.blocks])
+  const inspect = !!U.docInspect
+  useEffect(() => {
+    if (!inspect) {
+      ref.current?.contentDocument?.querySelector('.taska-hl')?.classList.remove('taska-hl')
+      return
+    }
+    const esc = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      e.stopPropagation()
+      ACT['doc-inspect']({})
+    }
+    addEventListener('keydown', esc, true)
+    return () => removeEventListener('keydown', esc, true)
+  }, [inspect])
+  const rec = !!(R.rec && R.vc?.d === d.d && at && R.vc.key === at.key)
+  const box = ref.current?.getBoundingClientRect(),
+    host = ref.current?.parentElement?.getBoundingClientRect()
   return (
-    <iframe
-      id="docPage"
-      ref={ref}
-      srcDoc={d.md}
-      title={d.title}
-      className="mt-3 block min-h-40 w-full rounded-xl border border-zinc-200 bg-white dark:border-zinc-800"
-    />
+    <div className="relative">
+      <iframe
+        id="docPage"
+        ref={ref}
+        srcDoc={d.md}
+        title={d.title}
+        className={`mt-3 block min-h-40 w-full rounded-xl border bg-white ${U.docInspect ? 'border-blue-500 ring-2 ring-blue-500/30' : 'border-zinc-200 dark:border-zinc-800'}`}
+      />
+      {U.docInspect && at && box && host ? (
+        <div
+          style={{
+            top: box.top - host.top + at.top,
+            left: Math.min(box.left - host.left + at.left + 6, host.width - 64),
+          }}
+          className="absolute z-10 flex gap-1"
+        >
+          <button
+            data-act="page-say"
+            data-key={at.key}
+            data-quote={at.quote}
+            title={rec ? 'Stop' : 'Speak a comment'}
+            className={`grid size-7 place-items-center rounded-lg shadow-sm ring-1 ${rec ? 'bg-red-600 text-white ring-red-700' : 'bg-white text-zinc-500 ring-zinc-900/10 hover:text-zinc-900 dark:bg-zinc-800 dark:text-zinc-300 dark:ring-white/10 dark:hover:text-white'}`}
+          >
+            <Icon n={rec ? 'stop' : 'mic'} c="size-4" />
+          </button>
+          {rec ? null : (
+            <button
+              data-act="page-pick"
+              data-key={at.key}
+              data-quote={at.quote}
+              title="Comment"
+              className="grid size-7 place-items-center rounded-lg bg-white text-zinc-500 shadow-sm ring-1 ring-zinc-900/10 hover:text-zinc-900 dark:bg-zinc-800 dark:text-zinc-300 dark:ring-white/10 dark:hover:text-white"
+            >
+              <Icon n="comment" c="size-4" />
+            </button>
+          )}
+        </div>
+      ) : null}
+      {d.blocks.length ? (
+        <div className="mt-6 space-y-4 border-t border-zinc-200 pt-4 dark:border-zinc-800">
+          <div className="text-xs font-medium text-zinc-500">Comments on parts of the page</div>
+          {d.blocks.map((b) => (
+            <section key={b.key}>
+              <div className="line-clamp-2 text-sm text-zinc-500 dark:text-zinc-400">“{b.text}”</div>
+              <Thread d={d} k={b.key} comments={b.comments} />
+            </section>
+          ))}
+        </div>
+      ) : null}
+    </div>
   )
 }
 export function DocView({ d }: { d: Doc }) {
@@ -659,6 +797,15 @@ export function DocView({ d }: { d: Doc }) {
               Delete
             </Armed>
           </button>
+          {d.fmt === 'html' ? (
+            <button
+              data-act="doc-inspect"
+              aria-pressed={!!U.docInspect}
+              className={`${phoneBtn} aria-pressed:bg-blue-100 aria-pressed:text-blue-900 dark:aria-pressed:bg-blue-900/60 dark:aria-pressed:text-blue-100`}
+            >
+              Comment mode
+            </button>
+          ) : null}
           <button
             data-act="doc-circle"
             aria-pressed={!!U.docCircle}
@@ -670,7 +817,9 @@ export function DocView({ d }: { d: Doc }) {
             Edit
           </button>
         </div>
-        {titled || d.fmt === "html" ? null : <div className="mt-3 text-2xl leading-tight font-bold tracking-tight">{d.title}</div>}
+        {titled || d.fmt === 'html' ? null : (
+          <div className="mt-3 text-2xl leading-tight font-bold tracking-tight">{d.title}</div>
+        )}
         {d.fmt === 'html' ? <HtmlPage d={d} /> : <Outline d={d} />}
         <div id="docBlocks" className={`relative mt-3 space-y-3 text-[15px] ${U.docCircle ? 'select-none' : ''}`}>
           {(d.fmt === 'html' ? [] : d.blocks).map((b0, i) => {
@@ -873,9 +1022,10 @@ function DocMic() {
   )
 }
 // The desktop's pane header for a document, and its way back (T110)
-const PaneBtn = ({ act, children }: { act: string; children: ReactNode }) => (
+const PaneBtn = ({ act, children, pressed }: { act: string; children: ReactNode; pressed?: boolean }) => (
   <button
     data-act={act}
+    {...(pressed !== undefined ? { 'aria-pressed': pressed } : {})}
     className="flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm text-zinc-600 hover:bg-zinc-100 aria-pressed:bg-amber-100 aria-pressed:text-amber-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:aria-pressed:bg-amber-900/60 dark:aria-pressed:text-amber-100"
   >
     {children}
@@ -891,6 +1041,12 @@ export const DocPaneHead = ({ d, editing }: { d: Doc; editing: boolean }) => (
 )
 export const DocPaneActs = ({ d }: { d: Doc }) => (
   <>
+    {d.fmt === 'html' ? (
+      <PaneBtn act="doc-inspect" pressed={!!U.docInspect}>
+        <Icon n="comment" c="size-4" />
+        {U.docInspect ? 'Comment mode · Esc' : 'Comment mode'}
+      </PaneBtn>
+    ) : null}
     <PaneBtn act="doc-edit">
       <Icon n="pencil" c="size-4" />
       Edit

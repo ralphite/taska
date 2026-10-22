@@ -94,6 +94,7 @@ import {
   hear,
   holdRec,
   keepRec,
+  pageSay,
   startRec,
   vcToggle,
   DV,
@@ -845,6 +846,23 @@ export const ACT: Record<string, Handler> = {
       else render()
     }
     openDoc(dn)
+  },
+  // F432: a web page's comment mode, and what it offers beside the part you point at or tap
+  'doc-inspect': () => {
+    U.docInspect = !U.docInspect
+    renderDoc()
+  },
+  'page-pick': (d) => {
+    U.docSel = new Set()
+    U.docReply = null
+    U.docQuote = { key: d.key as string, text: d.quote as string }
+    if (!desk()) U.docType = true
+    renderDoc()
+    els.text?.focus({ preventScroll: true })
+  },
+  'page-say': (d, e) => {
+    const r = ((e?.target as Element | undefined)?.closest('[data-act]') as HTMLElement | null)?.getBoundingClientRect()
+    if (r) void pageSay(d.key as string, d.quote as string, r)
   },
   'doc-jump': (d) => {
     document

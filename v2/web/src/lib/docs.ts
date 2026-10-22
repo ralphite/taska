@@ -303,6 +303,8 @@ export async function sendDocComment(t: DocTarget) {
     const doc = docById(dn),
       list = doc && (t.key === 'doc' ? doc.whole : doc.blocks.find((b) => b.key === t.key)?.comments)
     if (list && !list.some((c) => c.id === stand.id)) list.push(stand)
+    else if (!list && doc?.fmt === 'html' && !doc.blocks.some((b) => b.key === t.key))
+      doc.blocks.push({ key: t.key, kind: 'para', text: t.quote, comments: [stand] }) // F432: a new part of a page
   })
   U.docThreads.add(t.key)
   U.docSel = new Set()
