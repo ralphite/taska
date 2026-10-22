@@ -223,6 +223,7 @@ export const U = {
   docReply: null as string | null,
   docType: false,
   side: null as null | 'docs' | 'log' | 'deleted', // T402: on the desktop, the list column shows Documents, Activity or Deleted
+  sideSel: null as string | null, // B430: the row of Activity or Deleted shown in the pane beside it
   docPick: {} as Record<number, { sel: string[]; quote: { key: string; text: string } | null; reply: string | null }>,
   docSig: '',
   peek: null as number | null,

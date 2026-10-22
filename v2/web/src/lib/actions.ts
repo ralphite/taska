@@ -817,6 +817,22 @@ export const ACT: Record<string, Handler> = {
         ?.scrollIntoView({ block: 'center' }),
     )
   },
+  // B430: a line of Activity opens what it is about in the pane beside the list, which stays
+  'log-open': (d, e) => {
+    if ((e?.target as Element | undefined)?.closest('button, a')) return // its codes and Undo do their own thing
+    U.sideSel = d.key as string
+    if (d.n) return openItem(N(d))
+    if (d.d) return openDoc(Number(d.d))
+    if (d.id) return ACT['go-input'](d)
+  },
+  // B430: a row of Deleted shows what it was beside the list, with Restore
+  'gone-show': (d, e) => {
+    if ((e?.target as Element | undefined)?.closest('button')) return
+    U.sideSel = d.key as string
+    if (U.open) closeItem()
+    U.doc = null
+    render()
+  },
   'docs-go': (d) => {
     // T274 #18: from the list of documents, in the tab its item is in; Back comes back to the list
     const dn = Number(d.d),

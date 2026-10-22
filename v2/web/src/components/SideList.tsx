@@ -1,11 +1,12 @@
 // T402 (D30, design A): Documents, Activity and Deleted are lists in the list column, like the item list: the sidebar
 // stays, the item pane shows what you open. Actions repeated on every row show on hover only.
-import { U, byN, code, liveN, model, plural, rcode, useArea, when } from '../lib/state'
+import { U, byN, byR, code, docById, liveN, model, parseRef, plural, rcode, useArea, when } from '../lib/state'
 import { useEffect } from 'react'
 import { P_CACHE, loadLog } from '../lib/settings'
 import { clean } from '../lib/markdown'
 import { LogMore, logLine } from './Settings'
 import { Empty, Icon } from './ui'
+import { PRIMARY } from '../lib/constants'
 
 export type Side = 'docs' | 'log' | 'deleted'
 const TITLE: Record<Side, string> = { docs: 'Documents', log: 'Activity', deleted: 'Deleted' }
@@ -54,6 +55,17 @@ function Docs() {
   )
 }
 
+// B430: what a line of Activity is about, opened in the pane beside it: its item, else its document, else its input
+function logTarget(l: string): Record<string, string> | null {
+  const what = l.replace(/^#\d+ \S+ \S+ \S+ /, '')
+  for (const c of what.match(/\b[A-Z]\d{1,5}\b/g) || []) {
+    if (c[0] === 'D' && docById(Number(c.slice(1)))) return { 'data-d': c.slice(1) }
+    const n = parseRef(c)
+    if (n && byN.has(n) && code(n) === c) return { 'data-n': String(n) }
+  }
+  const r = what.match(/\br\d+\b/)?.[0]
+  return r && byR.has(r) ? { 'data-id': r } : null
+}
 function Log() {
   const lines = P_CACHE.log
   if (!lines) return <Empty>Loading…</Empty>
@@ -62,10 +74,14 @@ function Log() {
     <>
       {lines.map((l) => {
         const u = (model.S.undo || []).find((x) => l.startsWith(`#${x.seq} `)) // one of your changes that can be put back (F80)
+        const key = l.slice(0, l.indexOf(' ')),
+          to = logTarget(l)
         return (
           <div
-            key={l.slice(0, l.indexOf(' '))}
-            className={`${ROW} text-[13px] leading-relaxed text-zinc-600 dark:text-zinc-300`}
+            key={key}
+            {...(to ? { 'data-act': 'log-open', 'data-key': key, ...to } : {})}
+            {...(U.sideSel === key ? { 'aria-current': 'true' as const } : {})}
+            className={`${ROW} text-[13px] leading-relaxed text-zinc-600 dark:text-zinc-300 ${to ? 'cursor-pointer' : ''} lg:aria-[current=true]:bg-blue-50 dark:lg:aria-[current=true]:bg-blue-400/10`}
           >
             <span
               className="min-w-0 flex-1 break-words"
@@ -90,7 +106,12 @@ function Log() {
 type DeletedIn = NonNullable<typeof model.S.deleted>[number]
 function DeletedInput({ x }: { x: DeletedIn }) {
   return (
-    <div className={ROW}>
+    <div
+      data-act="gone-show"
+      data-key={x.id}
+      {...(U.sideSel === x.id ? { 'aria-current': 'true' as const } : {})}
+      className={`${ROW} cursor-pointer lg:aria-[current=true]:bg-blue-50 dark:lg:aria-[current=true]:bg-blue-400/10`}
+    >
       <div className="min-w-0 flex-1">
         <p className="line-clamp-2 text-[15px] leading-snug break-words">
           {x.text || (x.files ? plural(x.files, 'file') : '')}
@@ -123,7 +144,13 @@ function Deleted() {
         if (!x) return input ? <DeletedInput key={input.id} x={input} /> : null
         const label = x.kind === 'item' ? x.code : `D${x.d}`
         return (
-          <div key={label} className={ROW}>
+          <div
+            key={label}
+            data-act="gone-show"
+            data-key={label}
+            {...(U.sideSel === label ? { 'aria-current': 'true' as const } : {})}
+            className={`${ROW} cursor-pointer lg:aria-[current=true]:bg-blue-50 dark:lg:aria-[current=true]:bg-blue-400/10`}
+          >
             <div className="min-w-0 flex-1">
               <p className="truncate text-[15px] leading-snug font-medium">
                 <span className="mr-1.5 font-mono text-[13px] font-bold">{label}</span>
@@ -173,6 +200,57 @@ export function SideList({ side }: { side: Side }) {
       <div id="sideList" className="min-h-0 flex-1 overflow-y-auto lg:scrollbar-thin">
         {side === 'docs' ? <Docs /> : side === 'log' ? <Log /> : <Deleted />}
       </div>
+    </div>
+  )
+}
+
+// B430: a deleted thing you clicked, beside the list: what it was, when it went, and Restore
+export function DeletedView() {
+  useArea('project')
+  const k = U.sideSel,
+    g = (model.S.gone || []).find((x) => (x.kind === 'item' ? x.code : `D${x.d}`) === k),
+    r = (model.S.deleted || []).find((x) => x.id === k)
+  if (!g && !r) return null
+  return (
+    <div className="mx-auto w-full max-w-[46rem] px-8 pt-8">
+      <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
+        {g
+          ? g.kind === 'item'
+            ? `Item${g.more ? `, with ${plural(g.more, 'subitem')}` : ''}`
+            : `Document${g.on ? ` on ${g.on}` : ''}`
+          : `Input ${rcode(r?.id)}`}{' '}
+        · deleted {when((g || r)?.at)}
+      </p>
+      {g ? (
+        <h1 className="mt-2 text-2xl leading-tight font-semibold tracking-tight">
+          <span className="mr-2 font-mono text-lg font-bold">{k}</span>
+          {g.title}
+        </h1>
+      ) : null}
+      {r ? (
+        <p className="mt-2 text-[15px] leading-relaxed break-words whitespace-pre-line">
+          {r.text || (r.files ? plural(r.files, 'file') : '')}
+        </p>
+      ) : null}
+      {r?.items.length ? (
+        <p className="mt-3 text-[13px] text-zinc-500 dark:text-zinc-400">
+          With {r.items.map((i) => i.code).join(', ')}
+        </p>
+      ) : null}
+      <button
+        {...(g
+          ? {
+              'data-act': 'gone-restore',
+              'data-kind': g.kind,
+              'data-ref': g.code || '',
+              'data-d': g.d || '',
+              'data-label': k || '',
+            }
+          : { 'data-act': 'input-restore', 'data-id': r?.id })}
+        className={`mt-6 ${PRIMARY}`}
+      >
+        Restore
+      </button>
     </div>
   )
 }

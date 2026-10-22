@@ -49,6 +49,7 @@ import {
 } from './Talk'
 import { DocEdit, DocPaneActs, DocPaneHead, DocPaneNav, DocView } from './Doc'
 import { InputPane, InputPaneHead } from './Inputs'
+import { DeletedView } from './SideList'
 
 // The message the needs card shows: the question, or the agent's report or proposal (then not repeated below).
 export const cardMsg = (it: Item): Msg | null =>
@@ -687,6 +688,7 @@ function GoStrip({ g }: { g: Go }) {
   )
 }
 function NoSelection() {
+  if (U.side === 'deleted') return <DeletedView /> // B430: the deleted thing you clicked, with Restore
   if (U.side) return null // T402: beside Documents, Activity or Deleted the pane waits for what you open there
   return (
     <div className="grid h-full place-items-center p-8 text-center">
