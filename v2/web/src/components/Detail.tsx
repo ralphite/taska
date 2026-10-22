@@ -75,6 +75,7 @@ export const cardMsg = (it: Item): Msg | null =>
 function decidedCard(it: Item): { dec: NonNullable<Item['decided']>; x: Msg | undefined } | null {
   const dec = it.decided
   if (!dec || it.status === dec.from || it.wait) return null
+  if ((lastAgentMsg(it)?.id ?? null) !== dec.msg) return null // the agent spoke since: your decision is history now
   const x = it.thread.find((y) => y.id === dec.msg)
   if (x && x.kind === 'ask' && hasChoices(x.text)) return null
   return { dec, x }
