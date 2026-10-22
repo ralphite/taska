@@ -60,3 +60,35 @@ export const Empty: Story = {
     },
   ],
 }
+
+// T457: every tab, a search, long titles, many agents at work
+const tab =
+  (status: string, list: Item[] = LOOP, q = '') =>
+  () => {
+    U.status = status
+    U.q = q
+    load(list)
+    return {}
+  }
+const LONG: Item[] = [
+  ...LOOP,
+  item(8, {
+    title:
+      'A very long title that runs past the edge of the row to see where it is cut and whether the pills still fit',
+    pri: 'P0',
+  }),
+  item(9, {
+    title: '一个很长的中文标题，看看在手机上是怎么换行或者截断的，还有右边的按钮会不会被挤掉',
+    status: 'doing',
+    agent: { by: 'codex', t: new Date(Date.now() - 40 * 60000).toISOString() },
+  }),
+  item(10, { title: 'Archived long ago', status: 'done', archived: true }),
+  item(11, { title: 'Will not do', status: 'dropped' }),
+  item(12, { title: 'Agent at work', status: 'doing', agent: { by: 'antigravity', t: new Date().toISOString() } }),
+]
+export const Active: Story = { loaders: [tab('active', LONG)] }
+export const Queue: Story = { loaders: [tab('queued', LONG)] }
+export const Finished: Story = { loaders: [tab('closed', LONG)] }
+export const Archive: Story = { loaders: [tab('archived', LONG)] }
+export const Search: Story = { loaders: [tab('all', LONG, 'export')] }
+export const LongTitles: Story = { loaders: [tab('all', LONG)] }
