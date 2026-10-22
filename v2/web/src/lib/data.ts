@@ -155,6 +155,9 @@ const waitBack = (ms: number) =>
 export function backOnline() {
   for (const go of [...BACK]) go()
   retryFailed()
+  const again = [...RELOAD.values()]
+  RELOAD.clear()
+  for (const run of again) void run()
 }
 export async function postAgain<T>(url: string, body: unknown, cid = newCid()): Promise<T> {
   const at = url + (url.includes('?') ? '&' : '?') + 'cid=' + cid
@@ -245,8 +248,12 @@ export function saidOp(o: unknown): string {
   if (said[String(x.op)]) return said[String(x.op)]
   return `${String(x.op)}${x.ref ? ' ' + String(x.ref) : ''}`
 }
-export const notLoaded = (what: string, retry: () => unknown) =>
-  toast(`Couldn't load ${what}`, retry, { error: true, label: 'Retry' })
+// T424 #4910: what could not load loads again by itself when Taska answers again; nothing to click
+const RELOAD = new Map<string, () => unknown>()
+export function notLoaded(what: string, retry: () => unknown) {
+  RELOAD.set(what, retry)
+  toast(`Couldn't load ${what} yet: it loads when Taska answers`, null, { error: true })
+}
 // Something that waits for Taska before it shows: its button stays busy meanwhile
 export async function save(o: unknown, retry?: () => unknown) {
   try {
