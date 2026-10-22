@@ -105,3 +105,21 @@ test("a row's buttons sit side by side, with no empty room where one does not ap
     for (let i = 1; i < xs.length; i++) expect(xs[i][0] - xs[i - 1][1]).toBeLessThan(8)
   }
 })
+
+test('a web page document opens as its page; in Comment mode a click on a part makes it what you comment on (F432)', async ({
+  page,
+  request,
+}) => {
+  const p = await project(request, {
+    ...LOOP,
+    then: `${LOOP.then}T4 html Plan page
+  <!doctype html><html><body><h1>Export plan</h1><p>Ship option A today.</p></body></html>
+`,
+  })
+  await open(page, p, 'D1')
+  const frame = page.frameLocator('#detailBody iframe')
+  await expect(frame.getByText('Ship option A today.')).toBeVisible()
+  await page.locator('[data-act="doc-inspect"]').click()
+  await frame.getByText('Ship option A today.').click()
+  await expect(page.locator('#scope')).toContainText('Ship option A today.')
+})

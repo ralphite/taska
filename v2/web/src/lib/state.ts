@@ -228,6 +228,7 @@ export const U = {
   docSel: new Set<string>(),
   docQuote: null as { key: string; text: string } | null,
   docCircle: false,
+  docInspect: false, // F432: a web page's comment mode: pointing lights a part of it, a click picks it, Esc leaves
   docThreads: new Set<string>(),
   docDrafts: {} as Record<string, string>,
   docScroll: {} as Record<number, number>,

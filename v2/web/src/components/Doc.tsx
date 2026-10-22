@@ -39,6 +39,7 @@ import { toast } from '../lib/toast'
 import { Armed, Icon, Kbd } from './ui'
 import { Rich, Thumbs, VoiceLine } from './Talk'
 import { RecTime } from './Composer'
+import { WebPage } from './WebPage'
 import { VC_MARK, docMicLabel } from '../lib/voice'
 
 const NewDot = () => (
@@ -85,7 +86,7 @@ function DcActs({ d, c }: { d: Doc; c: Comment }) {
     </div>
   )
 }
-function Thread({
+export function Thread({
   d,
   k,
   comments,
@@ -636,7 +637,7 @@ export function DocView({ d }: { d: Doc }) {
     d.detached.length > 0 ||
     d.blocks.some((b) => b.comments.length) ||
     U.vcMarks.some((m) => m.d === d.d && markLive(m.label))
-  const rail = side && wide && talked,
+  const rail = side && wide && talked && d.fmt !== 'html', // F432: a web page shows its counts beside its parts
     float = side && !rail
   return (
     <div ref={ref} className="flex min-h-full flex-col">
@@ -685,9 +686,16 @@ export function DocView({ d }: { d: Doc }) {
             Edit
           </button>
         </div>
-        {titled ? null : <div className="mt-3 text-2xl leading-tight font-bold tracking-tight">{d.title}</div>}
-        <Outline d={d} />
-        <div id="docBlocks" className={`relative mt-3 space-y-3 text-[15px] ${U.docCircle ? 'select-none' : ''}`}>
+        {titled || d.fmt === 'html' ? null : (
+          <div className="mt-3 text-2xl leading-tight font-bold tracking-tight">{d.title}</div>
+        )}
+        {d.fmt === 'html' ? <WebPage d={d} /> : null}
+        {d.fmt === 'html' ? null : <Outline d={d} />}
+        <div
+          hidden={d.fmt === 'html'}
+          id="docBlocks"
+          className={`relative mt-3 space-y-3 text-[15px] ${U.docCircle ? 'select-none' : ''}`}
+        >
           {d.blocks.map((b0, i) => {
             const tk = tks[i] // B420: which of the paragraphs with these words it is
             const now = tickText(d.d, tk, b0.text) // B412: ticked here and not sent yet
@@ -901,9 +909,10 @@ function DocMic() {
   )
 }
 // The desktop's pane header for a document, and its way back (T110)
-const PaneBtn = ({ act, children }: { act: string; children: ReactNode }) => (
+const PaneBtn = ({ act, children, pressed }: { act: string; children: ReactNode; pressed?: boolean }) => (
   <button
     data-act={act}
+    {...(pressed === undefined ? {} : { 'aria-pressed': pressed })}
     className="flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm text-zinc-600 hover:bg-zinc-100 aria-pressed:bg-amber-100 aria-pressed:text-amber-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:aria-pressed:bg-amber-900/60 dark:aria-pressed:text-amber-100"
   >
     {children}
@@ -919,6 +928,14 @@ export const DocPaneHead = ({ d, editing }: { d: Doc; editing: boolean }) => (
 )
 export const DocPaneActs = ({ d }: { d: Doc }) => (
   <>
+    {d.fmt === 'html' ? (
+      // F432 (D50 #2): Comment mode: pointing outlines a part, the buttons beside it comment; Esc leaves
+      <PaneBtn act="doc-inspect" pressed={!!U.docInspect}>
+        <Icon n="comment" c="size-4" />
+        Comment
+        {U.docInspect ? <Kbd k="Esc" /> : null}
+      </PaneBtn>
+    ) : null}
     <PaneBtn act="doc-edit">
       <Icon n="pencil" c="size-4" />
       Edit
