@@ -44,6 +44,9 @@ Work like this:
   reply `pass` so the input stays in the inbox for the agent. Still create items for anything else it says.
 - If it is new, `new <type> <P0-P3> <now|later> <short title>` with the user's own wording as the body, for
   example `new bug P2 now Export ignores the active filter`: plain words, no brackets.
+  The body is ALL the user's words about that item, exactly as said, every sentence: never shorten, summarize,
+  reorder or turn them into a list (F432: details the user gave were lost when a long voice note was summarized).
+  Only the title is short.
   One input may contain several separate things: create one item each. Use parent=<code> to split a big
   item into subtasks.
 - Write titles, bodies and notes in the language of THIS input (English input -> English, Chinese input ->
