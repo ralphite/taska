@@ -179,6 +179,68 @@ function quoteTop(sec: HTMLElement, quote: string) {
   }
   return 0
 }
+/** On the phone, under the paragraph or the part of a web page you tapped: speak (the same button stops and posts), or
+ * type. B498: recording, it is here that the button turns into Stop and the time runs. */
+export function SayRow({
+  act,
+  k,
+  quote,
+  rec,
+  at = 'mt-2',
+}: {
+  act: 'doc-say' | 'page-say'
+  k: string
+  quote?: string
+  rec: boolean
+  at?: string
+}) {
+  return rec ? (
+    // B300: recording, the same button stops and posts, where it was
+    <div className={`${at} flex items-center gap-2`}>
+      <button
+        data-act={act}
+        data-key={k}
+        {...(quote !== undefined ? { 'data-quote': quote } : {})}
+        aria-label="Stop and post the comment"
+        className="grid size-12 shrink-0 place-items-center rounded-full bg-red-600 text-white shadow-lg"
+      >
+        <Icon n="stop" c="size-5" />
+      </button>
+      <span className="text-[13px] text-zinc-500 dark:text-zinc-400">
+        <span data-rec-time className="font-mono text-red-600 tabular-nums dark:text-red-400">
+          <RecTime />
+        </span>{' '}
+        · tap to post
+      </span>
+      <button
+        data-act="doc-say-cancel"
+        className="ml-auto h-10 rounded-full px-3 text-sm font-semibold text-zinc-600 ring-1 ring-zinc-300 dark:text-zinc-300 dark:ring-zinc-600"
+      >
+        Cancel
+      </button>
+    </div>
+  ) : (
+    <div className={`${at} flex items-center gap-2`}>
+      <button
+        data-act={act}
+        data-key={k}
+        {...(quote !== undefined ? { 'data-quote': quote } : {})}
+        aria-label="Dictate comment"
+        className="grid size-12 shrink-0 place-items-center rounded-full bg-zinc-900 text-white shadow-lg dark:bg-zinc-100 dark:text-zinc-900"
+      >
+        <Icon n="mic" c="size-5" />
+      </button>
+      <span className="text-[13px] text-zinc-500 dark:text-zinc-400">Tap to speak, tap again to post</span>
+      <button
+        data-act="doc-type"
+        className="ml-auto h-10 rounded-full px-3 text-sm font-semibold text-zinc-600 ring-1 ring-zinc-300 dark:text-zinc-300 dark:ring-zinc-600"
+        aria-label="Type instead"
+      >
+        Aa
+      </button>
+    </div>
+  )
+}
 // B340: beside a paragraph, on the desktop: comment (in the box below) or speak (the icon itself records, and stops)
 function BlockActs({ d, k, float = false }: { d: Doc; k: string; float?: boolean }) {
   useArea('vc')
@@ -704,7 +766,8 @@ export function DocView({ d }: { d: Doc }) {
           id="docBlocks"
           className={`relative mt-3 space-y-3 text-[15px] ${U.docCircle ? 'select-none' : ''}`}
         >
-          {d.blocks.map((b0, i) => {
+          {/* B503: a web page's parts are drawn by WebPage alone (their hidden copies here closed its open comments) */}
+          {(d.fmt === 'html' ? [] : d.blocks).map((b0, i) => {
             const tk = tks[i] // B420: which of the paragraphs with these words it is
             const now = tickText(d.d, tk, b0.text) // B412: ticked here and not sent yet
             const b =
@@ -759,53 +822,12 @@ export function DocView({ d }: { d: Doc }) {
                   </div>
                 ) : null}
                 {here ? (
-                  R.rec ? (
-                    // B300: recording, the same button stops and posts, where it was
-                    <div className="mt-2 flex items-center gap-2">
-                      <button
-                        data-act="doc-say"
-                        data-key={b0.key}
-                        aria-label="Stop and post the comment"
-                        className="grid size-12 shrink-0 place-items-center rounded-full bg-red-600 text-white shadow-lg"
-                      >
-                        <Icon n="stop" c="size-5" />
-                      </button>
-                      <span className="text-[13px] text-zinc-500 dark:text-zinc-400">
-                        <span data-rec-time className="font-mono text-red-600 tabular-nums dark:text-red-400">
-                          <RecTime />
-                        </span>{' '}
-                        · tap to post
-                      </span>
-                      <button
-                        data-act="doc-say-cancel"
-                        className="ml-auto h-10 rounded-full px-3 text-sm font-semibold text-zinc-600 ring-1 ring-zinc-300 dark:text-zinc-300 dark:ring-zinc-600"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="mt-2 flex items-center gap-2">
-                      <button
-                        data-act="doc-say"
-                        data-key={b0.key}
-                        {...(U.docQuote?.key === b0.key ? { 'data-quote': U.docQuote.text } : {})}
-                        aria-label="Dictate comment"
-                        className="grid size-12 shrink-0 place-items-center rounded-full bg-zinc-900 text-white shadow-lg dark:bg-zinc-100 dark:text-zinc-900"
-                      >
-                        <Icon n="mic" c="size-5" />
-                      </button>
-                      <span className="text-[13px] text-zinc-500 dark:text-zinc-400">
-                        Tap to speak, tap again to post
-                      </span>
-                      <button
-                        data-act="doc-type"
-                        className="ml-auto h-10 rounded-full px-3 text-sm font-semibold text-zinc-600 ring-1 ring-zinc-300 dark:text-zinc-300 dark:ring-zinc-600"
-                        aria-label="Type instead"
-                      >
-                        Aa
-                      </button>
-                    </div>
-                  )
+                  <SayRow
+                    act="doc-say"
+                    k={b0.key}
+                    rec={!!R.rec}
+                    quote={U.docQuote?.key === b0.key ? U.docQuote.text : undefined}
+                  />
                 ) : null}
                 {!side && b0.comments.length
                   ? threadsOf(b0.comments)

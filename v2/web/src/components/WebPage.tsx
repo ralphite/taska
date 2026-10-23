@@ -4,13 +4,13 @@
 // document: Comment mode outlines the part under the pointer with the speak and comment buttons in its corner, a picked
 // part gets the amber ring and the box says what you comment on, each thread has its count beside its part.
 import { useEffect, useRef, useState } from 'react'
-import { U, desk, els, render, threadOpen, threadsOf, useArea } from '../lib/state'
+import { R_STATE as R, U, desk, els, render, threadOpen, threadsOf, useArea } from '../lib/state'
 import { renderDoc } from '../lib/docs'
 import { act } from '../lib/actions'
 import { markUsed } from '../lib/data'
 import type { Doc } from '../lib/types'
 import { Icon } from './ui'
-import { Thread } from './Doc'
+import { SayRow, Thread } from './Doc'
 
 type Box = { x: number; y: number; w: number; h: number }
 type Part = { key: string; text: string; rect: Box }
@@ -18,7 +18,7 @@ type Part = { key: string; text: string; rect: Box }
 // Runs inside the page. A part is the nearest block around what you point at; its key is its place in the page.
 const HELPER = `<script>(() => {
   const send = (m) => parent.postMessage(Object.assign({ taskaPage: 1 }, m), '*')
-  let mode = false, keys = [], picked = ''
+  let mode = false, keys = [], picked = '', shut = false, shutting = false
   const place = (el) => {
     const p = []
     for (let e = el; e && e !== document.body && e !== document.documentElement; e = e.parentElement) {
@@ -55,6 +55,7 @@ const HELPER = `<script>(() => {
     mode = m.mode
     keys = m.keys || []
     picked = m.picked || ''
+    shut = !!m.shut
     measure()
   })
   // B497: once a part is picked, no other one lights or can be picked until Esc lets it go
@@ -65,7 +66,8 @@ const HELPER = `<script>(() => {
   addEventListener('mousedown', (e) => { down = [e.clientX, e.clientY] }, true)
   addEventListener('click', (e) => {
     if (mode !== true && mode !== 'tap') return
-    if (mode === true && picked) { e.preventDefault(); e.stopPropagation(); return }
+    // B497: nothing else is picked while one part is; B503: a click that closes open comments only closes them
+    if ((mode === true && picked) || shutting) { e.preventDefault(); e.stopPropagation(); return }
     if (Math.abs(e.clientX - down[0]) + Math.abs(e.clientY - down[1]) > 4) return
     getSelection().removeAllRanges()
     const el = part(e.target)
@@ -75,7 +77,6 @@ const HELPER = `<script>(() => {
     send({ pick: info(el) })
   }, true)
   addEventListener('keydown', (e) => { if (e.key === 'Escape') send({ esc: 1 }) })
-  addEventListener('pointerdown', () => send({ down: 1 }), true) // B503: a press in the page closes an open comment
   let usedAt = 0 // F449: Taska does not reload under you while you use the page
   let pointer = ''
   const used = (e) => {
@@ -83,6 +84,8 @@ const HELPER = `<script>(() => {
     const n = Date.now(); if (n - usedAt > 10000) { usedAt = n; send({ used: 1 }) }
   }
   for (const t of ['pointerdown', 'pointermove', 'keydown', 'wheel', 'touchstart', 'input']) addEventListener(t, used, true)
+  // B503: a click in the page closes open comments, and does nothing else (whatever Taska says meanwhile)
+  addEventListener('pointerdown', () => { shutting = shut; send({ down: 1 }) }, true)
   new ResizeObserver(() => { size(); measure() }).observe(document.documentElement)
   addEventListener('load', () => { size(); measure() })
   size()
@@ -102,17 +105,8 @@ function inside(p: XY, a: XY, b: XY, c: XY) {
 }
 const WANT = { now: '{}' } // what the page was last told, for a page that loads after it was said
 /** B484: Esc steps back one level: the picked part first (the words in the box stay), then Comment mode */
-/** B503: a press anywhere but on a comment, its count or the box closes the open comments of the page */
-function closeThreads() {
-  let any = false
-  for (const k of [...U.docThreads])
-    if (k.startsWith('h:')) {
-      U.docThreads.delete(k)
-      any = true
-    }
-  if (any) renderDoc()
-}
 function escape() {
+  if (R.rec) return act('doc-say-cancel') // B498: a recording stops first, as everywhere
   if (U.docQuote?.key.startsWith('h:')) return act('doc-unpick')
   if (!U.docInspect) return
   U.docInspect = false
@@ -132,10 +126,12 @@ export function WebPage({ d }: { d: Doc }) {
   useArea('vc')
   useArea('composer')
   const frame = useRef<HTMLIFrameElement>(null)
+  const pop = useRef<HTMLDivElement>(null)
   const [height, setHeight] = useState(480)
   const [hover, setHover] = useState<Part | null>(null)
   const [rects, setRects] = useState<Record<string, Box>>({})
-  const [lit, setLit] = useState<string | null>(null) // B503: the part of the comment count under the pointer
+  const [lit, setLit] = useState<string | null>(null) // B503: the part whose comment count is under the pointer
+  const away = useRef<(() => void) | null>(null) // B503: closes the open comments (a click anywhere else)
   // D56: the pointer leaves the page to reach the buttons over it: the part stays lit while it is on them. On the way
   // there (heading for them from where the part was lit) another part under the pointer does not take its place,
   // unless the pointer rests on it.
@@ -171,8 +167,22 @@ export function WebPage({ d }: { d: Doc }) {
   const side = desk(),
     mode = side ? !!U.docInspect : 'tap',
     picked = U.docQuote?.key.startsWith('h:') ? U.docQuote : null,
+    // B498: the part you speak about: the mic you pressed turns into Stop right there, and no other part lights
+    vc = R.vc,
+    rec =
+      R.rec && vc?.d === d.d && vc.key?.startsWith('h:') && !vc.range ? { key: vc.key, text: vc.quote || '' } : null,
+    held = rec || picked,
     threads = d.blocks.flatMap((b) => threadsOf(b.comments).map((t) => ({ ...t, key: b.key }))),
-    keys = [...new Set([...d.blocks.map((b) => b.key), ...(picked ? [picked.key] : [])])]
+    keys = [...new Set([...d.blocks.map((b) => b.key), ...(held ? [held.key] : [])])]
+  // B492: each thread's count sits in the page, in its part's top right corner, never on top of another one
+  let last = -40
+  const counts = threads.map((t) => {
+    const r = rects[t.key],
+      top = Math.max((r?.y ?? 0) + 4, last + 32)
+    last = top
+    return { ...t, top, left: Math.max(4, (r ? r.x + r.w : 0) - 52) }
+  })
+  const open = counts.find((c) => threadOpen(c.tk))
   useEffect(() => {
     const on = (e: MessageEvent) => {
       if (e.source !== frame.current?.contentWindow) return
@@ -183,17 +193,17 @@ export function WebPage({ d }: { d: Doc }) {
         rects?: Record<string, Box>
         pick?: Part
         esc?: number
-        down?: number
         ready?: number
         used?: number
+        down?: number
       }
       if (m.ready) frame.current?.contentWindow?.postMessage({ taska: 1, ...(JSON.parse(WANT.now) as object) }, '*')
       if (m.h) setHeight(m.h + 2)
       if ('hover' in m) hoverAt(m.hover || null, m.at)
       if (m.rects) setRects(m.rects)
+      if (m.down) away.current?.()
       if (m.pick) pick(m.pick)
       if (m.esc) escape()
-      if (m.down) closeThreads()
       if (m.used) markUsed()
     }
     addEventListener('message', on)
@@ -203,20 +213,13 @@ export function WebPage({ d }: { d: Doc }) {
       clearTimeout(swap.current)
     }
   }, [hoverAt])
-  // what the page needs from Taska: whether pointing outlines parts (or a tap picks one), and which parts to find
-  const want = JSON.stringify({ mode, keys, picked: picked?.key || '' })
+  // what the page needs from Taska: whether pointing outlines parts (or a tap picks one), which parts to find, and
+  // whether a click there only closes the open comments (B503)
+  const want = JSON.stringify({ mode, keys, picked: held?.key || '', shut: !!open })
   WANT.now = want
   useEffect(() => {
     frame.current?.contentWindow?.postMessage({ taska: 1, ...(JSON.parse(want) as object) }, '*')
   }, [want])
-  useEffect(() => {
-    const away = (e: PointerEvent) => {
-      if (!(e.target as Element).closest?.('[data-thread-pop], [data-act="doc-thread"], #foot, #dlg, #overlay, #tip'))
-        closeThreads()
-    }
-    document.addEventListener('pointerdown', away, true)
-    return () => document.removeEventListener('pointerdown', away, true)
-  }, [])
   useEffect(() => {
     if (!U.docInspect) return
     const esc = (e: KeyboardEvent) => {
@@ -227,21 +230,48 @@ export function WebPage({ d }: { d: Doc }) {
     addEventListener('keydown', esc, true)
     return () => removeEventListener('keydown', esc, true)
   }, [mode])
-  const ring = (r: Box, cls: string) => (
+  // B503: open comments close on a click anywhere else, in the page too (the page says so from inside)
+  const openTk = open?.tk,
+    openKey = open?.key
+  useEffect(() => {
+    if (!openTk || !openKey) return
+    const close = () => {
+      U.docThreads.delete(openTk)
+      U.docThreads.delete(openKey)
+      setLit(null)
+      renderDoc()
+    }
+    const down = (e: MouseEvent) => {
+      const t = e.target as Element
+      // the box (a reply is written there), a sheet or a tip over the page keep it open
+      if (
+        pop.current?.contains(t) ||
+        t.closest?.(`[data-act="doc-thread"][data-key="${CSS.escape(openTk)}"], #foot, #dlg, #overlay, #tip`)
+      )
+        return
+      close()
+    }
+    away.current = close
+    document.addEventListener('mousedown', down, true)
+    // under a part low on the screen, the comments come into view (the phone's page is long)
+    requestAnimationFrame(() => pop.current?.scrollIntoView({ block: 'nearest', behavior: 'smooth' }))
+    return () => {
+      away.current = null
+      document.removeEventListener('mousedown', down, true)
+    }
+  }, [openTk, openKey])
+  const ring = (k: string, r: Box, cls: string) => (
     <div
+      key={k}
+      data-ring={k}
       className={`pointer-events-none absolute rounded-lg ring-2 ${cls}`}
       style={{ left: r.x - 4, top: r.y - 4, width: r.w + 8, height: r.h + 8 }}
     />
   )
-  // B492: each thread's count sits in the page, in its part's top right corner, never on top of another one
-  let last = -40
-  const counts = threads.map((t) => {
-    const r = rects[t.key],
-      top = Math.max((r?.y ?? 0) + 4, last + 32)
-    last = top
-    return { ...t, top, left: Math.max(4, (r ? r.x + r.w : 0) - 52) }
-  })
-  const open = counts.find((c) => threadOpen(c.tk))
+  // B503: the part a comment is on is outlined while its count is under the pointer and while it is open
+  const amber = [...new Set([lit, openKey])].filter((k): k is string => !!k && k !== held?.key && !!rects[k])
+  const btn =
+    'grid size-7 place-items-center rounded-lg bg-white text-zinc-500 shadow-sm ring-1 ring-zinc-900/10 hover:text-zinc-900 dark:bg-zinc-800 dark:text-zinc-300 dark:ring-white/10 dark:hover:text-white'
   return (
     // B492: edge to edge: on the phone across the sheet's side margins too
     <div className="relative -mx-4 mt-3 lg:mx-0 lg:mt-0">
@@ -254,9 +284,30 @@ export function WebPage({ d }: { d: Doc }) {
         style={{ height }}
         className="block w-full bg-white"
       />
-      {hover && mode === true && !picked ? ring(hover.rect, 'ring-blue-500') : null}
-      {picked && rects[picked.key] ? ring(rects[picked.key], 'ring-amber-300') : null}
-      {hover && mode === true && !picked ? (
+      {hover && mode === true && !held ? ring('hover', hover.rect, 'ring-blue-500') : null}
+      {held && rects[held.key] ? ring(held.key, rects[held.key], 'ring-amber-300') : null}
+      {amber.map((k) => ring(k, rects[k], 'ring-amber-400'))}
+      {side && held && rects[held.key] ? (
+        // B498: the part picked or spoken about keeps its mic right there: press it to speak, it turns into Stop
+        <div
+          className="absolute z-10 flex flex-row gap-1"
+          style={{ left: btnsAt(rects[held.key]).x, top: btnsAt(rects[held.key]).y }}
+        >
+          <button
+            data-act="page-say"
+            data-key={held.key}
+            data-quote={held.text}
+            title={rec ? 'Stop' : 'Speak a comment'}
+            className={
+              rec
+                ? 'grid size-7 place-items-center rounded-lg bg-red-600 text-white shadow-sm ring-1 ring-red-700'
+                : btn
+            }
+          >
+            <Icon n={rec ? 'stop' : 'mic'} c="size-4" />
+          </button>
+        </div>
+      ) : hover && mode === true && !held ? (
         <div
           className="absolute z-10 flex flex-row gap-1"
           style={{ left: btnsAt(hover.rect).x, top: btnsAt(hover.rect).y }}
@@ -275,81 +326,52 @@ export function WebPage({ d }: { d: Doc }) {
             data-key={hover.key}
             data-quote={hover.text}
             title="Speak a comment"
-            className="grid size-7 place-items-center rounded-lg bg-white text-zinc-500 shadow-sm ring-1 ring-zinc-900/10 hover:text-zinc-900 dark:bg-zinc-800 dark:text-zinc-300 dark:ring-white/10 dark:hover:text-white"
+            className={btn}
           >
             <Icon n="mic" c="size-4" />
           </button>
-          <button
-            data-act="page-pick"
-            data-key={hover.key}
-            data-quote={hover.text}
-            title="Comment"
-            className="grid size-7 place-items-center rounded-lg bg-white text-zinc-500 shadow-sm ring-1 ring-zinc-900/10 hover:text-zinc-900 dark:bg-zinc-800 dark:text-zinc-300 dark:ring-white/10 dark:hover:text-white"
-          >
+          <button data-act="page-pick" data-key={hover.key} data-quote={hover.text} title="Comment" className={btn}>
             <Icon n="comment" c="size-4" />
           </button>
         </div>
       ) : null}
-      {/* B503: the part a comment is about is outlined while its count is pointed at, and while its comment is open */}
-      {open && rects[open.key] ? ring(rects[open.key], 'ring-amber-400') : null}
-      {lit && lit !== open?.key && rects[lit] ? ring(rects[lit], 'ring-amber-400') : null}
       {counts.map((c) => (
         <button
           key={c.tk}
           data-act="doc-thread"
           data-key={c.tk}
+          style={{ top: c.top, left: c.left }}
           onMouseEnter={() => setLit(c.key)}
           onMouseLeave={() => setLit(null)}
-          style={{ top: c.top, left: c.left }}
           className="absolute z-10 flex h-7 min-w-7 items-center justify-center gap-0.5 rounded-lg bg-amber-100 px-1.5 text-xs font-semibold text-amber-900 shadow-sm hover:bg-amber-200 dark:bg-amber-900/80 dark:text-amber-100 dark:hover:bg-amber-800/80"
         >
           <Icon n="comment" c="size-3.5" />
           {c.comments.length}
         </button>
       ))}
-      {side && open ? (
+      {open && rects[open.key] ? (
+        // B503: the comments open right under their part (outlined), its right edges lined up, not at the page's end
         <div
+          ref={pop}
           data-thread-pop
-          className="absolute right-2 z-20 flex w-80 max-w-full flex-col gap-2 text-sm shadow-xl"
-          style={{ top: (rects[open.key]?.y ?? 0) + (rects[open.key]?.h ?? 0) + 8 }}
+          className={`absolute z-20 flex flex-col gap-2 text-sm shadow-xl ${side ? 'w-80 max-w-full' : 'inset-x-0 mx-1'}`}
+          style={{
+            top: rects[open.key].y + rects[open.key].h + 8,
+            ...(side ? { left: Math.max(0, rects[open.key].x + rects[open.key].w - 320) } : {}),
+          }}
         >
           <Thread d={d} k={open.tk} comments={open.comments} rail />
         </div>
       ) : null}
-      {!side && picked && rects[picked.key] ? (
+      {!side && held && rects[held.key] ? (
         // on the phone a tap picks the part; under it, the same speak and type buttons as under a paragraph
         <div
-          className="absolute inset-x-0 z-10 mx-1 flex items-center gap-2 rounded-xl bg-white p-1.5 pr-3 shadow-sm ring-1 ring-zinc-900/10 dark:bg-zinc-900 dark:ring-white/10"
-          style={{ top: rects[picked.key].y + rects[picked.key].h + 10 }}
+          className="absolute inset-x-0 z-10 mx-1 rounded-xl bg-white p-1.5 pr-3 shadow-sm ring-1 ring-zinc-900/10 dark:bg-zinc-900 dark:ring-white/10"
+          style={{ top: rects[held.key].y + rects[held.key].h + 10 }}
         >
-          <button
-            data-act="page-say"
-            data-key={picked.key}
-            data-quote={picked.text}
-            aria-label="Dictate comment"
-            className="grid size-12 shrink-0 place-items-center rounded-full bg-zinc-900 text-white shadow-lg dark:bg-zinc-100 dark:text-zinc-900"
-          >
-            <Icon n="mic" c="size-5" />
-          </button>
-          <span className="text-[13px] text-zinc-500 dark:text-zinc-400">Tap to speak, tap again to post</span>
-          <button
-            data-act="doc-type"
-            aria-label="Type instead"
-            className="ml-auto h-10 rounded-full px-3 text-sm font-semibold text-zinc-600 ring-1 ring-zinc-300 dark:text-zinc-300 dark:ring-zinc-600"
-          >
-            Aa
-          </button>
+          <SayRow act="page-say" k={held.key} quote={held.text} rec={!!rec} at="" />
         </div>
       ) : null}
-      {!side
-        ? threads
-            .filter((t) => threadOpen(t.tk))
-            .map((t) => (
-              <div key={t.tk} data-thread-pop className="mt-3">
-                <Thread d={d} k={t.tk} comments={t.comments} blockText={t.comments[0]?.quote} />
-              </div>
-            ))
-        : null}
     </div>
   )
 }

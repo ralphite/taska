@@ -12,3 +12,6 @@ export const CircleToSelect: StoryObj = { ...Document.CircleToSelect, name: 'Cir
 export const Replying: StoryObj = { ...Document.Replying, name: 'Replying in a thread' }
 export const ResolvedThread: StoryObj = { ...Document.ResolvedThread, name: 'Thread resolved' }
 export const WebPageCommentMode: StoryObj = { ...Document.WebPageCommentMode, name: 'Web page comment mode' }
+export const WebPagePartPicked: StoryObj = { ...Document.WebPagePartPicked, name: 'Web page part picked' }
+export const WebPageRecording: StoryObj = { ...Document.WebPageRecording, name: 'Web page part, speaking' }
+export const WebPageCommentOpen: StoryObj = { ...Document.WebPageCommentOpen, name: 'Web page comment open' }

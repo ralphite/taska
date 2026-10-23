@@ -2,7 +2,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Column } from '../../lib/column'
 import { VcBar } from '../../../components/Composer'
-import { OV, U, bump, desk, model, threadKey } from '../../../lib/state'
+import { OV, R_STATE, U, bump, desk, model, threadKey } from '../../../lib/state'
 import type { Doc } from '../../../lib/types'
 import { type Setup } from '../../lib/demo'
 
@@ -27,6 +27,7 @@ export const area: Meta = {
       'DocPaneNav',
       'DraftCard',
       'WebPage',
+      'SayRow',
       'VcBar',
     ],
   },
@@ -77,6 +78,45 @@ export const Ticked = doc(TICKS, (_, d) => {
 export const WebPage = doc(PAGE)
 /** Comment mode on a web page: pointing lights a part, a click picks it. */
 export const WebPageCommentMode = doc(PAGE, () => (U.docInspect = true))
+// the row of three cards in the demo web page, and what it says
+const ROW = 'h:body>main:nth-child(1)>div:nth-child(2)',
+  ROW_TEXT = 'Revenue $48,210 Orders 1,284 Avg. order $37.55'
+/** A part of a web page picked (B497: no other part lights until Esc); on the phone, speak or type under it. */
+export const WebPagePartPicked = doc(PAGE, () => {
+  U.docInspect = desk()
+  U.docQuote = { key: ROW, text: ROW_TEXT }
+})
+/** B498: speaking about a part: the mic you pressed is Stop, in place, and the time runs on the phone. */
+export const WebPageRecording = doc(PAGE, (_, d) => {
+  U.docInspect = desk()
+  if (!desk()) U.docQuote = { key: ROW, text: ROW_TEXT }
+  Object.assign(R_STATE, {
+    rec: {} as MediaRecorder,
+    t0: Date.now() - 6000,
+    levels: Array.from({ length: 48 }, (_, i) => Math.abs(Math.sin(i / 3)) * 0.9),
+    vc: {
+      d: d.d,
+      key: ROW,
+      quote: ROW_TEXT,
+      range: null,
+      rect: { top: 0, bottom: 0, left: 0, width: 0, height: 0 },
+      top: 0,
+    },
+  })
+})
+/** B503: a part's comments open under its count, the part outlined; a click anywhere else closes them. */
+export const WebPageCommentOpen = doc(PAGE, (_, d) => {
+  const c = {
+    id: 9001,
+    key: ROW,
+    quote: ROW_TEXT,
+    text: '\u5e73\u5747\u5ba2\u5355\u4ef7\u6539\u6210\u6309\u5468\u770b', // show the average order by week
+    by: 'you',
+    t: new Date().toISOString(),
+  }
+  d.blocks = [...d.blocks.filter((b) => b.key !== ROW), { key: ROW, kind: 'para', text: ROW_TEXT, comments: [c] }]
+  U.docThreads.add(threadKey(c))
+})
 /** A paragraph picked to comment on: the box below writes to it. */
 export const ParagraphPicked = doc(PLAN, (_, d) => {
   U.docSel = new Set([d.blocks[1].key])
