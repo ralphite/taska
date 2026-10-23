@@ -178,7 +178,7 @@ function boxRole(): { line: ReactNode; ph: string; send: string; ready?: boolean
       <ScopeLine
         icon="pencil"
         label={`Correct “${U.correct.wrong}”${right ? ` → “${right.slice(0, 60)}”` : ''}`}
-        detail={`in ${U.correct.id} · remembered for every project`}
+        detail={`in ${rcode(U.correct.id)} · remembered for every project`}
         right={<ScopeX act="correct-cancel" label="Stop correcting" />}
       />
     )
@@ -697,10 +697,23 @@ const btn = (
   iconCls = 'size-6 lg:size-5',
   sw = '1.75',
 ): Btn => ({ act, icon, label, tip, iconCls, sw })
-const BoxBtn = ({ b, id, cls, hidden = false }: { b: Btn; id: string; cls: string; hidden?: boolean }) => (
+const BoxBtn = ({
+  b,
+  id,
+  cls,
+  hidden = false,
+  aux = false,
+}: {
+  b: Btn
+  id: string
+  cls: string
+  hidden?: boolean
+  aux?: boolean
+}) => (
   <button
     id={id}
     data-act={b.act}
+    data-aux={aux ? '1' : undefined} // the small mic: a recording started there is sent by a second tap there (F221, B248)
     data-icon={b.icon}
     aria-label={b.label}
     data-tip={desk() ? b.tip : ''}
@@ -830,6 +843,7 @@ function BoxInner() {
         <BoxBtn
           b={aux}
           id="micBtn"
+          aux
           hidden={!quiet}
           cls="mr-4 grid size-11 shrink-0 place-items-center rounded-full lg:mr-0 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 lg:m-1 lg:size-9 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
         />

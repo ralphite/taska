@@ -315,8 +315,6 @@ export const RecordingForAnotherItem: Story = {
 // ---------------------------------------------------------------- Pictures and files
 export const WithPictures = box('\u89c1\u622a\u56fe', () => (U.files = [shot(0), shot(1)]))
 export const PictureUploading = box('', () => (U.files = [going(0)]))
-/** Taska refused the picture (too big): it does not go with the words. */
-export const PictureRefused = box('', () => (U.files = [{ ...going(0), failed: true }]))
 export const AFile = box('', () => {
   U.files = [{ name: 'orders-2026-10.csv', mime: 'text/csv', f: 'orders-2026-10.csv', done, size: 182044 }]
 })

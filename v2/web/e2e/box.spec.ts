@@ -1,4 +1,5 @@
-// The box keeps its height while you record, whatever else the page draws meanwhile (B481).
+// The box keeps its height while you record, whatever else the page draws meanwhile (B481); the line on top names what
+// it writes to as the page does everywhere (T529).
 // guards: src/components/Composer.tsx src/components/Shell.tsx src/components/Detail.tsx src/components/Talk.tsx src/lib/voice.ts src/lib/audio.ts src/lib/outbox.ts src/lib/drafts.ts
 import { expect, test } from '@playwright/test'
 import { LOOP, isDesk, open, project } from './seed'
@@ -34,7 +35,10 @@ test('what scrolls shows only around the top of the box: from its middle down th
   page,
   request,
 }) => {
-  const many = Array.from({ length: 30 }, (_, i) => `new task P2 now Item number ${i + 1} with a title long enough`).join('\n')
+  const many = Array.from(
+    { length: 30 },
+    (_, i) => `new task P2 now Item number ${i + 1} with a title long enough`,
+  ).join('\n')
   const p = await project(request, {
     agent: `${many}\nnew task P1 now A long one\n${Array.from({ length: 60 }, (_, i) => `  Line ${i + 1} of the body.`).join('\n')}\n`,
     approve: Array.from({ length: 31 }, (_, i) => `T${String(i + 1).padStart(2, '0')}`),
@@ -82,7 +86,13 @@ test('in two columns the line between them is one line to the bottom of the scre
       f = (document.getElementById('foot') as HTMLElement).getBoundingClientRect(),
       x = g.left - 200,
       hit = document.elementFromPoint(x, innerHeight - 10)
-    return { lineEnd: g.bottom, lineRight: g.right, footLeft: f.left, height: innerHeight, inFoot: !!hit?.closest('#foot') }
+    return {
+      lineEnd: g.bottom,
+      lineRight: g.right,
+      footLeft: f.left,
+      height: innerHeight,
+      inFoot: !!hit?.closest('#foot'),
+    }
   })
   expect(at.lineEnd).toBeGreaterThanOrEqual(at.height - 1) // one line, top to bottom: no second piece under the box
   expect(at.footLeft).toBeGreaterThanOrEqual(at.lineRight - 1) // the box's row is the talk's column only
@@ -94,4 +104,47 @@ test('in two columns the line between them is one line to the bottom of the scre
     return (document.getElementById('foot') as HTMLElement).getBoundingClientRect().top - end
   })
   expect(gap).toBeGreaterThanOrEqual(20)
+})
+
+test('correcting a word of a voice note names the input as the page does everywhere: #20, not r20 (T529)', async ({
+  page,
+  request,
+}) => {
+  const p = await project(request, LOOP)
+  const up = await request.post(`${p.url}api/file?name=${encodeURIComponent('voice 0-07.webm')}`, {
+    headers: { 'Content-Type': 'audio/webm' },
+    data: Buffer.from('not really sound'),
+  })
+  const f = (await up.json()) as { f: string }
+  const said = await request.post(`${p.url}api/op`, {
+    data: {
+      op: 'input',
+      text: 'About the export format',
+      scope: 'T4',
+      files: [{ f: f.f, name: 'voice 0-07.webm', mime: 'audio/webm' }],
+    },
+  })
+  const id = ((await said.json()) as { res: string[] }).res[0].split(' ')[1]
+  await open(page, p, 'T4') // in the item's thread
+  const note = page.locator(`[data-voice="${id}"]`).filter({ visible: true }).first()
+  await expect(note).toBeVisible()
+  // select "export" in what it said, as with the mouse or a finger
+  await note.evaluate((el) => {
+    const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT)
+    for (let t = w.nextNode(); t; t = w.nextNode()) {
+      const i = (t.textContent || '').indexOf('export')
+      if (i < 0) continue
+      const r = document.createRange()
+      r.setStart(t, i)
+      r.setEnd(t, i + 'export'.length)
+      getSelection()?.removeAllRanges()
+      getSelection()?.addRange(r)
+      return
+    }
+  })
+  await page.locator('#fixBtn').click()
+  const line = page.locator('#scope')
+  await expect(line).toContainText('Correct “export”')
+  await expect(line).toContainText(`in #${id.slice(1)} · remembered for every project`)
+  await expect(line).not.toContainText(`in ${id}`)
 })
