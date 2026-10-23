@@ -415,7 +415,7 @@ function showURL() {
   if (t.doc == null && U.doc && OV.spec) closeDialog()
   if (t.doc != null) {
     const d = docById(t.doc)
-    if (d && !U.open && desk()) openItem(d.n, false)
+    if (d && !U.open) openItem(d.n, false) // r749: a document is over its item, on the phone as on the desktop
     return openDoc(t.doc)
   }
   if (t.item) {

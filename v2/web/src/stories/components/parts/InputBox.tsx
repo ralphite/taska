@@ -6,7 +6,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useEffect, useLayoutEffect } from 'react'
 import { Composer } from '../../../components/Composer'
-import { Foot, Tip, paneLayout } from '../../../components/Shell'
+import { Foot, Tip } from '../../../components/Shell'
+import { deskPanes } from '../../../layouts/DeskLayout'
+import { phonePanes } from '../../../layouts/PhoneLayout'
 import { tipShow } from '../../../lib/events'
 import { plainQuote } from '../../../lib/markdown'
 import {
@@ -63,7 +65,7 @@ function Box({ text = '' }: { text?: string }) {
   }, [text])
   return (
     <Pane w={desk() ? 'item' : 'full'}>
-      <Foot hidden={paneLayout().v.foot} wideCls="" />
+      <Foot hidden={(desk() ? deskPanes() : phonePanes()).v.foot} wideCls="" />
       <Composer />
     </Pane>
   )

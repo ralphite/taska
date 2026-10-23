@@ -117,6 +117,10 @@ export function openDoc(d: number) {
     render()
     return
   }
+  // r749: over its item, as on the desktop, so a width going and coming back finds the same page
+  const doc = docById(d),
+    host = doc && liveN(doc.n)
+  if (doc && host != null && U.open == null && byN.has(host)) U.open = host
   Object.assign(U, {
     peek: null,
     doc: d,

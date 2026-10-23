@@ -4,7 +4,7 @@
 import { useLayoutEffect, useSyncExternalStore } from 'react'
 import { Home } from './pages/Home'
 import { Dashboard } from './pages/Dashboard'
-import { ProjectPage } from './components/Shell'
+import { ProjectPage } from './layouts/ProjectPage'
 import { bootProject, startProject } from './lib/boot'
 import { PAGE, onPage, wireLinks } from './lib/switch'
 

@@ -6,7 +6,9 @@ import { useLayoutEffect } from 'react'
 import { Composer } from '../../components/Composer'
 import { DetailView } from '../../components/Detail'
 import { InputsView } from '../../components/Inputs'
-import { DeskFilters, FilterStrip, Foot, ItemsView, MainHead, Tabs, paneLayout } from '../../components/Shell'
+import { DeskFilters, FilterStrip, Foot, ItemsView, MainHead, Tabs } from '../../components/Shell'
+import { deskPanes } from '../../layouts/DeskLayout'
+import { phonePanes } from '../../layouts/PhoneLayout'
 import { Dialog } from '../../components/Sheets'
 import { D, U, bump, desk, talkScroller, useArea } from '../../lib/state'
 import { Pane } from './demo'
@@ -31,8 +33,9 @@ export function Column({ text = '', wide = false }: { text?: string; wide?: bool
     const timers = [120, 400, 1000].map((ms) => setTimeout(end, ms))
     return () => timers.forEach(clearTimeout)
   }, [text])
-  // which parts show is the page's own rule (paneLayout, the same the page uses), not this story's
-  const { v, isDesk } = paneLayout(),
+  // which parts show is the page's own rule (its layout's, the same the page uses), not this story's
+  const isDesk = desk(),
+    v = isDesk ? deskPanes().v : phonePanes().v,
     compose = isDesk && D.compose
   return (
     <Pane w={isDesk ? (wide ? 'wide' : 'item') : 'full'} h="flex h-screen flex-col lg:h-[calc(100dvh-3rem)]">
@@ -66,13 +69,15 @@ export function ListColumn() {
   useArea('list')
   useArea('view')
   useLayoutEffect(() => bump('composer', 'feedback'), [])
-  // which parts show is the page's own rule (paneLayout); on the phone the list column is the whole screen
-  const { v, isDesk } = paneLayout()
+  // which parts show is the page's own rule (its layout's); on the phone the list column is the whole screen
+  const isDesk = desk(),
+    dv = deskPanes().v,
+    v = isDesk ? dv : phonePanes().v
   return (
     <Pane w="list" h="flex h-screen flex-col lg:h-[calc(100dvh-3rem)]">
       <MainHead hidden={v.mainHead} />
       <Tabs hidden={v.tabs} />
-      {isDesk ? <DeskFilters hidden={v.deskFilters} /> : <FilterStrip />}
+      {isDesk ? <DeskFilters hidden={dv.deskFilters} /> : <FilterStrip />}
       <ItemsView hidden={v.items} />
       <InputsView hidden={v.inputs} />
       {isDesk ? null : (

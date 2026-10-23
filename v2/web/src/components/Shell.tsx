@@ -34,7 +34,6 @@ import {
   els,
   filtered,
   model,
-  needsYou,
   onThisComputer,
   openCount,
   plural,
@@ -42,7 +41,6 @@ import {
   projTitle,
   reduceMotion,
   searchCount,
-  SWIPE,
   statusIsView,
   searchWords,
   sideProjects,
@@ -56,19 +54,16 @@ import {
 import { PSEC } from '../lib/settings-data'
 import { FAILED, TOAST, hideToast } from '../lib/toast'
 import { VW, viewerAct } from '../lib/viewer'
-import { searchMode, openItem, closeDrawer } from '../lib/nav'
+import { searchMode, openItem } from '../lib/nav'
 import { writeURL } from '../lib/url'
 import { addFiles } from '../lib/outbox'
 import { bindProjDrag } from '../lib/projdrag'
 import { ACT } from '../lib/actions'
 import { Icon, Kbd, ProjTile } from './ui'
 import { ITEM_DRAG, List } from './List'
-import { InputsView } from './Inputs'
-import { DetailView } from './Detail'
-import { ProjectView } from './Settings'
-import { BoxHomeSlot, Composer, DraftCard, Feedback, VcBar } from './Composer'
+import { BoxHomeSlot, DraftCard, Feedback } from './Composer'
 import { ComposeHead, SaidLately } from './Inputs'
-import { Dialog, FilterControls } from './Sheets'
+import { FilterControls } from './Sheets'
 
 // ---------------------------------------------------------------- the phone's drawer (F54)
 export const drawerW = () => Math.min(innerWidth * 0.85, 320)
@@ -1315,123 +1310,5 @@ export function AppFrame({ cls = '', children }: { cls?: string; children: React
     <div id="app" {...(compose ? { 'data-compose': '' } : {})} className={`group/app relative ${cls}`}>
       {children}
     </div>
-  )
-}
-/** Which parts of the project page are hidden now (true = hidden), and where the item pane sits: the page's one
- * rule for its layout, which Storybook's stories follow too (B523). */
-export function paneLayout() {
-  const isDesk = desk()
-  const page = !!D.page
-  // desktop (I70, design A "three panes")
-  const inputs = U.tab === 'inputs',
-    full = isDesk && D.full && !!U.open && !inputs && !page
-  const rail = isDesk && D.sideHidden, // B496: only you fold the sidebar, never the window's width
-    over = rail && D.sideOpen
-  // phone: the item page covers the list and its tabs; the input box stays, now adding to that item
-  const d = !!U.open && !page,
-    under = !d && !page,
-    side = isDesk && !!U.side && !page // T402: Documents, Activity or Deleted in the list column
-  const v = isDesk
-    ? {
-        mainHead: page || full || side,
-        items: page || inputs || full,
-        inputs: page || !inputs,
-        detail: page,
-        project: !page,
-        foot: (page && !U.prefsEdit) || !!(U.doc && U.docEdit && !OV.spec) || (side && !U.open && !U.doc),
-        deskFilters: page || full || inputs || side || !(D.filters || filtersSet().length),
-        grip: page || full,
-        rail: !rail || page,
-        projBar: page,
-        drawer: (rail && !over) || page,
-        tabs: true,
-      }
-    : {
-        mainHead: !under,
-        items: !under || inputs,
-        inputs: !under || !inputs,
-        detail: !d,
-        project: !page,
-        foot: (page && !U.prefsEdit) || !!(U.editing && U.editing === U.open),
-        deskFilters: true,
-        grip: true,
-        rail: true,
-        projBar: true,
-        drawer: !DR.open,
-        tabs: !under,
-      }
-  return { v, isDesk, page, inputs, full, rail, over, side, under }
-}
-export function ProjectPage() {
-  useTick((s) => s.view + s.side + s.head + s.list + s.project + s.detail)
-  const S = model.S
-  const { v, isDesk, full, over } = paneLayout()
-  const wideCls = full ? 'lg:col-start-1 lg:col-span-2' : 'lg:col-start-2'
-  useLayoutEffect(() => {
-    const waiting = S.items.filter(needsYou).length,
-      sec = D.page ? (D.section ? PSEC[D.section][2] : 'Settings') + ' · ' : ''
-    document.title = (waiting ? `(${waiting}) ` : '') + sec + (S.project ? `${projTitle()} · Taska` : 'Taska')
-    if (!isDesk) {
-      setDrawer(DR.open ? drawerW() : 0)
-      // B333: a back swipe shows these by hand; when it lands on another item React sees nothing to change, so put
-      // them back as this page has them
-      if (!SWIPE.back)
-        for (const [id, h] of [
-          ['itemsView', v.items],
-          ['mainHead', v.mainHead],
-          ['tabs', v.tabs],
-        ] as const) {
-          const el = document.getElementById(id)
-          if (el && el.hidden !== h) el.hidden = h
-        }
-    } else {
-      const app = document.getElementById('app')
-      if (app) {
-        app.style.transform = ''
-        for (const c of ['rounded-l-3xl', 'overflow-hidden', 'shadow-2xl']) app.classList.remove(c)
-      }
-      const shade = document.getElementById('drawerShade'),
-        drawer = document.getElementById('drawer')
-      if (shade) shade.style.left = over && drawer ? drawer.offsetWidth + 'px' : ''
-    }
-  })
-  return (
-    <>
-      <Drawer hidden={v.drawer} over={over} />
-      <Rail hidden={v.rail} />
-      <div
-        id="drawerShade"
-        hidden={isDesk ? !over : !DR.open}
-        onClick={closeDrawer}
-        className="fixed top-0 right-0 z-30 h-dvh lg:bg-zinc-900/20 dark:lg:bg-black/50"
-        aria-label="Close projects"
-      />
-      <AppFrame cls="z-10 mx-auto flex h-full max-w-3xl flex-col bg-white pt-[env(safe-area-inset-top)] md:border-x md:border-zinc-200 lg:mx-0 lg:grid lg:max-w-none lg:min-w-0 lg:flex-1 lg:grid-cols-[var(--list-w,360px)_minmax(0,1fr)] lg:grid-rows-[auto_auto_auto_minmax(0,1fr)_auto] lg:border-x-0 xl:grid-cols-[var(--list-w,420px)_minmax(0,1fr)] 2xl:grid-cols-[var(--list-w,460px)_minmax(0,1fr)] dark:bg-zinc-950 md:dark:border-zinc-800">
-        <ProjBar hidden={v.projBar} />
-        <MainHead hidden={v.mainHead} />
-        <Tabs hidden={v.tabs} />
-        {isDesk ? null : <FilterStrip />}
-        <DeskFilters hidden={v.deskFilters} />
-        <ItemsView hidden={v.items} />
-        <InputsView hidden={v.inputs} />
-        <DetailView hidden={v.detail} />
-        <ProjectView hidden={v.project} />
-        <div
-          id="listGrip"
-          data-grip="list"
-          hidden={v.grip}
-          className="group/line relative z-30 cursor-col-resize lg:col-start-1 lg:row-span-4 lg:row-start-2 lg:block lg:w-3 lg:translate-x-1/2 lg:justify-self-end"
-        >
-          <span className="pointer-events-none absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 bg-blue-500 opacity-0 transition-opacity group-hover/line:opacity-100 group-hover/line:delay-150 group-data-drag/line:opacity-100" />
-        </div>
-        <Foot hidden={v.foot} wideCls={wideCls} />
-      </AppFrame>
-      <Composer />
-      <Dialog />
-      <Viewer />
-      <Tip />
-      <VcBar />
-      <Toast />
-    </>
   )
 }

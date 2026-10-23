@@ -43,4 +43,4 @@ export const screen = (path: string, on?: Platform): StoryObj => ({
 })
 
 /** What every Pages file shows: the page's own frame (Shell's ProjectPage, and these), at full size. */
-export const pageParams = (...covers: string[]) => ({ layout: 'fullscreen', covers: ['ProjectPage', ...covers] })
+export const pageParams = (...covers: string[]) => ({ layout: 'fullscreen', covers: ['ProjectPage', 'DeskLayout', 'PhoneLayout', ...covers] })

@@ -1,6 +1,6 @@
 // Yadong's requirements on the page's layout (D29; T475, D45): each check is named by the codes of his inputs, so a
 // change that breaks one is stopped before it ships with his own words.
-// guards: src/lib/events.ts src/lib/state.ts src/lib/nav.ts src/lib/docs.ts src/lib/dialog.ts src/components/Shell.tsx src/components/Detail.tsx
+// guards: src/lib/events.ts src/lib/state.ts src/lib/nav.ts src/lib/docs.ts src/lib/dialog.ts src/components/Shell.tsx src/components/Detail.tsx src/layouts/
 import { expect, test, type Page } from '@playwright/test'
 import { LOOP, isDesk, open, project } from '../seed'
 
@@ -87,3 +87,73 @@ test('r743: once an item is in two columns it stays so: another item that would 
   await width(page, 1920)
   await expect(app).toHaveAttribute('data-duo', '')
 })
+
+// r749: what the page is at one width: each part shown or not, and where (to 4px), whether two columns, what floats
+const PARTS = [
+  '#drawer',
+  '#rail',
+  '#projBar',
+  '#mainHead',
+  '#tabs',
+  '#itemsView',
+  '#inputsView',
+  '#detailView',
+  '#itemTop',
+  '#itemTalk',
+  '#docBlocks',
+  '#projectView',
+  '#foot',
+  '#composer',
+  '#overlay',
+]
+const shape = (page: Page) =>
+  page.evaluate((ids) => {
+    const at = (n: number) => Math.round(n / 4) * 4
+    const out: Record<string, string> = { duo: String(document.getElementById('app')?.hasAttribute('data-duo')) }
+    for (const id of ids) {
+      const e = document.querySelector<HTMLElement>(id)
+      const r = e?.getBoundingClientRect()
+      out[id] =
+        !e || !r || !e.offsetParent || r.width === 0 ? 'hidden' : `${at(r.x)},${at(r.y)} ${at(r.width)}x${at(r.height)}`
+    }
+    return out
+  }, PARTS)
+const WALK = [1440, 1300, 1100, 1024, 1023, 800, 393, 800, 1023, 1024, 1100, 1300, 1440]
+for (const [name, path, fold] of [
+  ['an item open', 'T4', false],
+  ['a document open', 'D1', false],
+  ['the sidebar folded, an item open', 'T4', true],
+  ['the list alone', '', false],
+] as const)
+  test(`r749 #6525: at any width the page is the same however the width got there, only the width changing: ${name} (B496)`, async ({
+    page,
+    request,
+  }) => {
+    test.skip(!isDesk(page), 'it walks the widths itself, from the desktop')
+    const p = await project(request, DOC)
+    // each width straight away: what the page is there
+    const want: Record<number, Record<string, string>> = {}
+    for (const w of [...new Set(WALK)]) {
+      await page.setViewportSize({ width: w, height: 900 })
+      await open(page, p, path)
+      await page.evaluate((f) => {
+        try {
+          localStorage.setItem('taska.sideHidden', f ? '1' : '')
+        } catch {
+          /* no storage */
+        }
+      }, fold)
+      await open(page, p, path)
+      await page.waitForTimeout(400)
+      want[w] = await shape(page)
+    }
+    // the same widths walked to, down across the phone's and up again: the same page at each
+    await page.setViewportSize({ width: WALK[0], height: 900 })
+    await open(page, p, path)
+    await page.waitForTimeout(400)
+    for (const w of WALK) {
+      await width(page, w)
+      await page.waitForTimeout(250)
+      expect(await shape(page), `at ${w}px`).toEqual(want[w])
+    }
+  })

@@ -1,5 +1,5 @@
 // T457, R489: Storybook must have every component. Each component of the page (a function or arrow component in
-// src/components and src/pages) has to be in a story: imported by a story file, or named in a story file's
+// src/components, src/pages and src/layouts) has to be in a story: imported by a story file, or named in a story file's
 // `covers: [...]` (the parts a story shows inside a bigger one); the story files and the modules that draw them
 // (src/stories/components/parts) count. A component with no story fails the build.
 //   node .storybook/check.mjs            the check
@@ -18,7 +18,7 @@ const files = (dir, ok) =>
 
 // the components: Capitalized functions, and Capitalized arrow functions (not CONSTANTS)
 const comps = new Map()
-for (const f of files('src', (p) => /^src\/(components|pages)\/[^/]+\.tsx$/.test(p) && !p.includes('.test.'))) {
+for (const f of files('src', (p) => /^src\/(components|pages|layouts)\/[^/]+\.tsx$/.test(p) && !p.includes('.test.'))) {
   const src = readFileSync(join(ROOT, f), 'utf8')
   for (const m of src.matchAll(/^(?:export )?function ([A-Z]\w*)\(/gm)) comps.set(m[1], f)
   for (const m of src.matchAll(/^(?:export )?const ([A-Z]\w*[a-z]\w*) = \(/gm)) comps.set(m[1], f)
@@ -27,7 +27,7 @@ for (const f of files('src', (p) => /^src\/(components|pages)\/[^/]+\.tsx$/.test
 const shown = new Set()
 for (const f of files('src', (p) => p.startsWith('src/stories/') && p.endsWith('.tsx'))) {
   const src = readFileSync(join(ROOT, f), 'utf8')
-  for (const m of src.matchAll(/import \{([^}]*)\} from '[./]+\/(components|pages)\//g))
+  for (const m of src.matchAll(/import \{([^}]*)\} from '[./]+\/(components|pages|layouts)\//g))
     for (const n of m[1].split(',')) shown.add(n.trim().split(/\s+as\s+/)[0])
   for (const m of src.matchAll(/covers: \[([^\]]*)\]/g)) for (const n of m[1].matchAll(/'(\w+)'/g)) shown.add(n[1])
 }
