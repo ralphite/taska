@@ -18,7 +18,7 @@ export const ICON_USES: Record<string, { file: string; in: string }[]> = {
   "up": [{"file":"components/Composer.tsx","in":"BoxInner"}],
   "x": [{"file":"components/Settings.tsx","in":"BODY"},{"file":"components/List.tsx","in":"SelBar"},{"file":"components/Doc.tsx","in":"DcActs"},{"file":"components/Detail.tsx","in":"ItemPage"},{"file":"components/Sheets.tsx","in":"moveParts"},{"file":"components/Sheets.tsx","in":"inputMenuParts"},{"file":"components/Sheets.tsx","in":"KINDS"},{"file":"components/Sheets.tsx","in":"CloseX"},{"file":"components/Shell.tsx","in":"Drawer"},{"file":"components/Shell.tsx","in":"FilterChips"},{"file":"components/Shell.tsx","in":"MainHead"},{"file":"components/Shell.tsx","in":"Toast"},{"file":"components/Shell.tsx","in":"Viewer"},{"file":"components/Composer.tsx","in":"ScopeX"},{"file":"components/Composer.tsx","in":"DraftFiles"},{"file":"components/Composer.tsx","in":"BoxInner"},{"file":"components/Composer.tsx","in":"Dismiss"}],
   "scope": [{"file":"components/Inputs.tsx","in":"SaidRow"},{"file":"components/Sheets.tsx","in":"inputMenuParts"}],
-  "image": [],
+  "image": [{"file":"components/ui.tsx","in":"Pic"}],
   "file": [{"file":"components/Talk.tsx","in":"Thumbs"},{"file":"components/Composer.tsx","in":"DraftFiles"}],
   "clip": [],
   "doc": [{"file":"lib/settings-data.ts","in":"PSEC"},{"file":"components/Settings.tsx","in":"BODY"},{"file":"components/SideList.tsx","in":"Docs"},{"file":"components/Talk.tsx","in":"DocCard"},{"file":"components/Doc.tsx","in":"DocPaneHead"},{"file":"components/Shell.tsx","in":"DrawerSettings"},{"file":"components/Shell.tsx","in":"SideFoot"}],
