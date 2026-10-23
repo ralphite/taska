@@ -129,6 +129,7 @@ test('a web page document is the page alone: no frame or line over it, its colum
   page,
   request,
 }) => {
+  await page.setViewportSize({ width: 1920, height: 900 }) // B557 (r783): beside its conversation only this wide
   const p = await project(request, {
     ...LOOP,
     then: `${LOOP.then}T4 html Plan page

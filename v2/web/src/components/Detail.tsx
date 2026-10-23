@@ -886,14 +886,15 @@ export function DetailView({ hidden, place = '' }: { hidden: boolean; place?: st
       const high =
         ((top?.firstElementChild as HTMLElement | null)?.offsetHeight || 0) > upper ||
         ((talk?.firstElementChild as HTMLElement | null)?.offsetHeight || 0) > H - upper
-      // B505 (#6505): a document on the desktop is always beside its item's conversation, which holds its comments
+      // B505 (#6505): a document on the desktop is beside its item's conversation, which holds its comments, once the
+      // pane is wide enough for two columns, as an item is; narrower, the document alone (B557, r783)
       const docShown = !!U.doc && !U.docEdit
       // B539 (r743, #6525): once two columns, they stay while an item is open: a fold, a reply or another item that would
       // fit in one never takes the page back to one column; a pane too narrow shows one, and the same width again
       // shows two again, however the width went (r749)
       const shows = !!U.open && !D.compose && !D.page
       if (!shows) DUO.stuck = false
-      const on = desk() && shows && (docShown || (el.clientWidth >= DUO.min && (high || DUO.stuck)))
+      const on = desk() && shows && el.clientWidth >= DUO.min && (docShown || high || DUO.stuck)
       if (on && !docShown) DUO.stuck = true
       document.getElementById('app')?.toggleAttribute('data-duo', on)
       if (on !== DUO.on) {

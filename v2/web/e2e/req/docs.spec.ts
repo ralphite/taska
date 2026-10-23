@@ -276,11 +276,12 @@ D1 reply ¶2 An agent note to delete
   }
 })
 
-test("r691 #6505: a document open on the desktop is a column of its own beside its item's conversation, which holds its comments (B505)", async ({
+test("r691 #6505: a document open on the desktop is a column of its own beside its item's conversation, which holds its comments, once the pane is wide enough for two columns (B505, B557)", async ({
   page,
   request,
 }) => {
   test.skip(!isDesk(page), 'the phone shows a document in a sheet')
+  await page.setViewportSize({ width: 1920, height: 900 }) // r783: four columns only where an item would have them too
   const p = await project(request, {
     ...LOOP,
     then: `${LOOP.then}T4 doc The plan
@@ -303,4 +304,28 @@ test("r691 #6505: a document open on the desktop is a column of its own beside i
   expect(c.x).toBeGreaterThanOrEqual(t.x + t.width) // the conversation on the right of the text, never over it
   expect(box.x).toBeGreaterThanOrEqual(c.x - 1) // the box under the conversation
   await expect(page.locator('aside[aria-label="Comments"]')).toHaveCount(0) // no fifth column of comments
+})
+
+test('r783: at 1440 wide a document on the desktop is one column, the document alone: the four columns come only where an item would have two in its pane too (B557)', async ({
+  page,
+  request,
+}) => {
+  test.skip(!isDesk(page), 'the phone shows a document in a sheet')
+  const p = await project(request, {
+    ...LOOP,
+    then: `${LOOP.then}T4 doc The plan
+  First part of the plan, long enough to fill a line of the page with words.
+
+  Second part of the plan.
+`,
+  })
+  await open(page, p, 'D1')
+  await expect(page.locator('#docBlocks')).toContainText('First part')
+  await expect(page.locator('#app')).not.toHaveAttribute('data-duo', '')
+  await expect(page.locator('#itemTalk')).toHaveCount(0)
+  // wide enough, it is beside its conversation; narrow again, alone again
+  await page.setViewportSize({ width: 1920, height: 900 })
+  await expect(page.locator('#app')).toHaveAttribute('data-duo', '')
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await expect(page.locator('#app')).not.toHaveAttribute('data-duo', '')
 })
