@@ -86,7 +86,7 @@ function draw(doc: Document, s: Screen) {
 
 // ---------------------------------------------------------------- the walkthrough (R488)
 const wait = (ms: number) => new Promise((r) => setTimeout(r, ms))
-/** The line above the screen saying what happens now (above it, so it hides none of the page) */
+/** The line under the screen saying what happens now (under it, so it hides none of the page) */
 function say(canvas: HTMLElement, text: string) {
   const el = canvas.querySelector<HTMLElement>('[data-say]')
   if (!el) return
@@ -104,30 +104,46 @@ async function tap(doc: Document, el: Element | null | undefined) {
     `position:fixed;left:${x - 28}px;top:${y - 28}px;width:56px;height:56px;border-radius:50%;z-index:95;pointer-events:none;` +
     'background:rgba(37,99,235,.35);border:3px solid rgba(37,99,235,.95);box-shadow:0 0 0 6px rgba(37,99,235,.15)'
   doc.body.append(dot)
-  dot.animate([{ transform: 'scale(.4)', opacity: 0.4 }, { transform: 'scale(1)', opacity: 1 }], { duration: 220, fill: 'forwards' })
+  dot.animate(
+    [
+      { transform: 'scale(.4)', opacity: 0.4 },
+      { transform: 'scale(1)', opacity: 1 },
+    ],
+    { duration: 220, fill: 'forwards' },
+  )
   await wait(650) // the finger is down long enough to be seen
-  const ring = dot.animate([{ transform: 'scale(1)', opacity: 1 }, { transform: 'scale(1.8)', opacity: 0 }], {
-    duration: 450,
-    fill: 'forwards',
-  })
+  const ring = dot.animate(
+    [
+      { transform: 'scale(1)', opacity: 1 },
+      { transform: 'scale(1.8)', opacity: 0 },
+    ],
+    {
+      duration: 450,
+      fill: 'forwards',
+    },
+  )
   await ring.finished
   dot.remove()
 }
 
+// r679 (T457): the words go under the page with room between, never on it; the page keeps one size while they change
 function App({ s, scheme, caption }: { s: Screen; scheme: string; caption?: boolean }) {
   return (
     <div className="flex h-screen flex-col bg-zinc-900">
-      {caption ? (
-        <div data-say className="shrink-0 px-4 py-2.5 text-[15px] leading-snug font-semibold text-white">
-          Starting…
-        </div>
-      ) : null}
       <iframe
         title="Taska"
         src={`/storybook/app.html#path=${encodeURIComponent(s.path)}&theme=${scheme === 'dark' ? 'dark' : 'light'}`}
         // R488: the prototype appears drawn, not drawn in front of you
-        className="block min-h-0 w-full flex-1 border-0 bg-white opacity-0 transition-opacity duration-300"
+        className={`block w-full shrink-0 border-0 bg-white opacity-0 transition-opacity duration-300 ${caption ? 'h-[calc(100vh-5.5rem)]' : 'h-screen'}`}
       />
+      {caption ? (
+        <div
+          data-say
+          className="mx-3 mt-3 line-clamp-2 h-14 shrink-0 rounded-xl bg-zinc-800 px-4 py-2 text-[15px] leading-snug font-semibold text-white"
+        >
+          Starting…
+        </div>
+      ) : null}
     </div>
   )
 }
@@ -177,7 +193,8 @@ export const Walkthrough: StoryObj = {
     f.classList.remove('opacity-0')
     await wait(2500)
     // an item with subitems and documents, so its detail has something to show
-    const row = doc.querySelector('#list [data-act="open"][data-n="1"]') || doc.querySelector('#list [data-act="open"][data-n]')
+    const row =
+      doc.querySelector('#list [data-act="open"][data-n="1"]') || doc.querySelector('#list [data-act="open"][data-n]')
     say(canvasElement, '2 / 5 · Tap an item')
     await wait(1200)
     await tap(doc, row)
