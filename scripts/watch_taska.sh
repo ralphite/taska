@@ -17,7 +17,7 @@ while true; do
     touch $SEEN
     o=$(curl -s --max-time 20 -G "$B/next" --data-urlencode "by=$WHO" $NAMED || true)
     last=$(echo "$o" | grep -oE '^#[0-9]+ [0-9-]+ [0-9:]+ you' | tail -1)  # a later reply on the same item is new again
-    for line in ${(f)"$(echo "$o" | grep -E '^r[0-9]+ |^resume [A-Z][0-9]+: the user replied')"}; do
+    for line in ${(f)"$(echo "$o" | grep -E '^r[0-9]+ [0-9-]+ [0-9:]+ you|^resume [A-Z][0-9]+: the user replied')"}; do
       h="$p $(echo "$line $last" | cut -c1-160 | md5 -q)"
       grep -qxF "$h" $TOLD || { echo "$h" >> $TOLD; echo "[$p] $line" | cut -c1-200; }
     done
