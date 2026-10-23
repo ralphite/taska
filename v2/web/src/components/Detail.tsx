@@ -4,6 +4,7 @@
 import type { IconName } from '../lib/icons'
 import { useLayoutEffect, useRef, type ReactNode } from 'react'
 import {
+  ACT_ICON,
   CHIP,
   DONE_OTHER,
   DONE_PICK,
@@ -738,7 +739,8 @@ function ItemActs({ it }: { it: Item }) {
     <>
       {/* T475: only what applies, side by side (no empty room where one does not) */}
       {it.type === 'rule' || !canDone(it) ? null : (
-        <BarText act="status" icon="check" label="Done" title="Done · D" data={{ n: it.n, v: 'done' }} />
+        // D81 #20: the same Done as on a row, in a menu, on a card
+        <BarText act="status" icon={ACT_ICON.Done} label="Done" title="Done · D" data={{ n: it.n, v: 'done' }} />
       )}
       {it.type === 'rule' || it.archived || CLOSED(it.status) ? null : (
         <>

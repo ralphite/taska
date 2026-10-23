@@ -342,3 +342,19 @@ test('D80 #14: a comment on words since changed in the document says so in the t
   await expect(talk).toContainText('Original text changed')
   await expect(talk.locator('[data-act="doc-at"].line-through')).toHaveCount(1)
 })
+
+test("D81 #20: Done is one icon wherever it is offered: the item bar's is the same as its row's", async ({
+  page,
+  request,
+}) => {
+  const p = await project(request, { agent: 'new task P2 now Some work\n', approve: ['T1'] })
+  await open(page, p, 'T1')
+  const svg = (l: ReturnType<typeof page.locator>) =>
+    l
+      .locator('svg')
+      .first()
+      .evaluate((s) => s.innerHTML)
+  const bar = await svg(page.locator('#dActs [data-act="status"][data-v="done"]'))
+  const row = await svg(page.locator('#list article[data-n="1"] [data-act="swipe"][data-v="done"]').first())
+  expect(bar).toBe(row)
+})
