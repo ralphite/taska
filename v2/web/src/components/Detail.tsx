@@ -945,7 +945,16 @@ export function DetailView({ hidden }: { hidden: boolean }) {
       const high =
         ((top?.firstElementChild as HTMLElement | null)?.offsetHeight || 0) > upper ||
         ((talk?.firstElementChild as HTMLElement | null)?.offsetHeight || 0) > H - upper
-      const on = desk() && !!U.open && !D.compose && !D.page && U.tab !== 'inputs' && el.clientWidth >= DUO.min && high
+      // B539 (r743): once two columns, they stay while an item is open and the pane is wide: a fold, a reply or another
+      // item that would fit in one never takes the page back to one column
+      const on =
+        desk() &&
+        !!U.open &&
+        !D.compose &&
+        !D.page &&
+        U.tab !== 'inputs' &&
+        el.clientWidth >= DUO.min &&
+        (high || DUO.on)
       const app = document.getElementById('app')
       app?.toggleAttribute('data-duo', on)
       // B505: a document fills the pane with its comments' column on the right: the box goes under its text
@@ -1022,7 +1031,7 @@ export function DetailView({ hidden }: { hidden: boolean }) {
         id="detailBody"
         ref={body}
         {...(it && (!U.doc || DUO.on) && !U.docEdit ? { 'data-split': '' } : {})}
-        className="-mb-(--foot-h) min-h-0 flex-1 overflow-y-auto overscroll-contain pb-[calc(var(--foot-h,0px)+1.5rem)] lg:scrollbar-gutter-both lg:group-data-duo/app:pb-0 lg:mask-b-from-[calc(100%-2rem)] lg:group-data-[compose]/app:hidden lg:hover:scrollbar-thumb-zinc-500/80 lg:data-split:mask-none dark:lg:hover:scrollbar-thumb-zinc-400/70"
+        className="-mb-(--foot-h) min-h-0 flex-1 overflow-y-auto overscroll-contain pb-[calc(var(--foot-h,0px)+1.5rem)] lg:scrollbar-gutter-both lg:mask-b-from-[calc(100%-2rem)] lg:group-data-duo/app:pb-0 lg:group-data-[compose]/app:hidden lg:hover:scrollbar-thumb-zinc-500/80 lg:data-split:mask-none dark:lg:hover:scrollbar-thumb-zinc-400/70"
       >
         {parts.body}
       </div>

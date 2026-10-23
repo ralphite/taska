@@ -62,3 +62,26 @@ test('r683: the sidebar you folded stays folded at every width, and opens only w
   await expect(sidebar(page)).toBeVisible()
   await expect(page.locator('#rail')).toBeHidden()
 })
+
+test('r743: once an item is in two columns it stays so: another item that would fit in one does not take it back (B539)', async ({
+  page,
+  request,
+}) => {
+  test.skip(!isDesk(page), 'the desktop pane')
+  const p = await project(request, {
+    ...LOOP,
+    then: `${LOOP.then}${Array.from({ length: 40 }, (_, i) => `T4 say Progress note ${i + 1}, long enough to take a whole line of the talk here`).join('\n')}\n`,
+  })
+  await page.setViewportSize({ width: 1920, height: 900 })
+  await open(page, p, 'T4')
+  const app = page.locator('#app')
+  await expect(app).toHaveAttribute('data-duo', '')
+  // a short item, which alone would be one column
+  await page.locator('#list [data-act="open"]').filter({ hasText: 'Pick the export format' }).click()
+  await expect(page.locator('#detailBody h1')).toContainText('Pick the export format')
+  await page.waitForTimeout(300)
+  await expect(app).toHaveAttribute('data-duo', '')
+  // only a pane too narrow for two columns makes it one
+  await width(page, 1100)
+  await expect(app).not.toHaveAttribute('data-duo', '')
+})
