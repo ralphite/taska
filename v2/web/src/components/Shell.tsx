@@ -380,7 +380,8 @@ export function SideFoot() {
     </div>
   )
 }
-export function Drawer({ hidden, over }: { hidden: boolean; over: boolean }) {
+/** The projects: the desktop's sidebar or the phone's drawer; the layout says where it sits (place). */
+export function Drawer({ hidden, place }: { hidden: boolean; place: string }) {
   const list = useRef<HTMLDivElement>(null)
   useLayoutEffect(() => (list.current ? bindProjDrag(list.current) : undefined), [])
   useEffect(() => {
@@ -428,7 +429,7 @@ export function Drawer({ hidden, over }: { hidden: boolean; over: boolean }) {
       id="drawer"
       hidden={hidden}
       aria-label="Projects"
-      className={`fixed top-0 left-0 flex h-dvh w-80 max-w-[85vw] flex-col bg-zinc-100 pt-[env(safe-area-inset-top)] pb-[max(1rem,env(safe-area-inset-bottom))] lg:z-40 lg:w-[var(--side-w,15rem)] lg:max-w-none lg:shrink-0 lg:border-r lg:border-zinc-200 lg:bg-zinc-50 lg:pb-0 2xl:w-[var(--side-w,16rem)] dark:bg-zinc-900 dark:lg:border-zinc-800 ${over ? 'lg:fixed lg:shadow-2xl' : 'lg:relative'}`}
+      className={`flex h-dvh flex-col pt-[env(safe-area-inset-top)] dark:bg-zinc-900 ${place}`}
     >
       <div
         data-grip="side"
@@ -617,7 +618,7 @@ function tabNumber(t: Tab): string | number {
         ? visible().filter((it) => !it.archived).length
         : tabCount(t)
 }
-export function ProjBar({ hidden }: { hidden: boolean }) {
+export function ProjBar({ hidden, place = '' }: { hidden: boolean; place?: string }) {
   const S = model.S
   const pre = !S.project && sideProjects()[0]
   const name = pre ? titleOf(pre) : projTitle()
@@ -627,7 +628,7 @@ export function ProjBar({ hidden }: { hidden: boolean }) {
       id="projBar"
       hidden={hidden}
       aria-label="This project"
-      className="h-12 min-w-0 items-stretch gap-1 border-b border-zinc-200 pr-3 pl-2 lg:col-span-2 lg:col-start-1 lg:row-start-1 lg:flex dark:border-zinc-800"
+      className={`h-12 min-w-0 items-stretch gap-1 border-b border-zinc-200 pr-3 pl-2 lg:flex dark:border-zinc-800 ${place}`}
     >
       {U.renaming && U.renaming === S.project && !D.page ? (
         <div className="flex min-w-0 items-center gap-2 px-1">
@@ -724,7 +725,7 @@ export const FilterDot = () =>
   filtersSet().length ? (
     <span className="absolute top-2 right-2 size-2 rounded-full bg-blue-600 ring-2 ring-white dark:bg-blue-400 dark:ring-zinc-950" />
   ) : null
-export function MainHead({ hidden }: { hidden: boolean }) {
+export function MainHead({ hidden, place = '' }: { hidden: boolean; place?: string }) {
   const S = model.S
   const sq = desk() || !!(U.searching || U.q)
   const { title } = agentLine()
@@ -738,7 +739,7 @@ export function MainHead({ hidden }: { hidden: boolean }) {
     <header
       id="mainHead"
       hidden={hidden}
-      className="flex h-14 shrink-0 items-center gap-1 px-2 lg:col-start-1 lg:row-start-2 lg:gap-2 lg:border-r lg:border-b lg:border-zinc-200 lg:px-3 dark:lg:border-zinc-800"
+      className={`flex h-14 shrink-0 items-center gap-1 px-2 lg:gap-2 lg:border-r lg:border-b lg:border-zinc-200 lg:px-3 dark:lg:border-zinc-800 ${place}`}
     >
       <div id="headNormal" hidden={sq} className="contents">
         <button
@@ -973,13 +974,13 @@ export function FilterStrip() {
   )
 }
 // On the desktop the same controls open in place under the list header instead of a sheet.
-export function DeskFilters({ hidden }: { hidden: boolean }) {
+export function DeskFilters({ hidden, place = '' }: { hidden: boolean; place?: string }) {
   const set = filtersSet()
   return (
     <div
       id="deskFilters"
       hidden={hidden}
-      className="border-zinc-200 lg:col-start-1 lg:row-start-3 lg:border-r lg:border-b dark:border-zinc-800"
+      className={`border-zinc-200 lg:border-r lg:border-b dark:border-zinc-800 ${place}`}
     >
       {!desk() || (!set.length && !D.filters) ? null : (
         <>
@@ -1015,7 +1016,7 @@ export function DeskFilters({ hidden }: { hidden: boolean }) {
 }
 
 // ---------------------------------------------------------------- the foot: the box, and the New input page (B73)
-export function Foot({ hidden, wideCls }: { hidden: boolean; wideCls: string }) {
+export function Foot({ hidden, place = '' }: { hidden: boolean; place?: string }) {
   const compose = desk() && D.compose && !D.page && U.tab !== 'inputs'
   // F478: what scrolls above the box runs on under it, around its rounded corners; the room it needs is the foot's.
   // Only around its top: from the box's middle down the foot is the page's own white, so nothing shows under the box.
@@ -1045,7 +1046,7 @@ export function Foot({ hidden, wideCls }: { hidden: boolean; wideCls: string }) 
         e.preventDefault()
         if (e.dataTransfer.files.length) addFiles([...e.dataTransfer.files])
       }}
-      className={`relative z-20 shrink-0 px-3 pt-1 pb-[max(1.25rem,env(safe-area-inset-bottom))] after:pointer-events-none after:absolute after:inset-x-0 after:top-(--foot-cut) after:bottom-0 after:-z-10 after:bg-white lg:row-start-5 lg:scrollbar-gutter-both lg:px-8 lg:pb-5 lg:group-data-duo/app:ml-[var(--duo-w,55%)] lg:group-data-[compose]/app:row-span-3 lg:group-data-[compose]/app:row-start-3 lg:group-data-[compose]/app:overflow-y-auto lg:group-data-[compose]/app:overscroll-contain lg:group-data-[compose]/app:pt-[5vh] lg:group-data-[compose]/app:pb-16 lg:group-data-duo/app:after:left-1 lg:group-data-[compose]/app:after:hidden lg:hover:scrollbar-thumb-zinc-500/80 dark:after:bg-zinc-950 dark:lg:hover:scrollbar-thumb-zinc-400/70 ${wideCls}`}
+      className={`relative z-20 shrink-0 px-3 pt-1 pb-[max(1.25rem,env(safe-area-inset-bottom))] after:pointer-events-none after:absolute after:inset-x-0 after:top-(--foot-cut) after:bottom-0 after:-z-10 after:bg-white lg:scrollbar-gutter-both lg:px-8 lg:pb-5 lg:group-data-[compose]/app:overflow-y-auto lg:group-data-[compose]/app:overscroll-contain lg:group-data-[compose]/app:pt-[5vh] lg:group-data-[compose]/app:pb-16 lg:group-data-[compose]/app:after:hidden lg:hover:scrollbar-thumb-zinc-500/80 dark:after:bg-zinc-950 dark:lg:hover:scrollbar-thumb-zinc-400/70 ${place}`}
     >
       {compose && ComposeHead() ? (
         <div
@@ -1292,11 +1293,11 @@ export const Tip = () => (
 
 // ---------------------------------------------------------------- the page
 /** The list column's body: the items, with the line on its right on the desktop (B523: the stories use it too). */
-export const ItemsView = ({ hidden }: { hidden: boolean }) => (
+export const ItemsView = ({ hidden, place = '' }: { hidden: boolean; place?: string }) => (
   <section
     id="itemsView"
     hidden={hidden}
-    className="flex min-h-0 flex-1 flex-col lg:col-start-1 lg:row-span-2 lg:row-start-4 lg:border-r lg:border-zinc-200 dark:lg:border-zinc-800"
+    className={`flex min-h-0 flex-1 flex-col lg:border-r lg:border-zinc-200 dark:lg:border-zinc-800 ${place}`}
   >
     <List />
   </section>

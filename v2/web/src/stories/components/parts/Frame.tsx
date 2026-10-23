@@ -26,7 +26,7 @@ import { WorkerMark } from '../../../components/List'
 import { FAILED, TOAST } from '../../../lib/toast'
 import { VW } from '../../../lib/viewer'
 import { Pane, type Setup } from '../../lib/demo'
-import { Column } from '../../lib/column'
+import { Column, drawerPlace } from '../../lib/column'
 
 // what this part of Storybook shows (T512: its stories are in the folders beside this file)
 export const area: Meta = {
@@ -174,7 +174,7 @@ export const NotSaved = pill(() => {
 /** The sidebar (desktop: projects, Documents, Activity, Deleted, Storybook, Settings) and the phone's drawer, open. */
 export const Sidebar: Story = {
   parameters: at(() => (DR.open = true)),
-  render: () => <Drawer hidden={false} over={false} />,
+  render: () => <Drawer hidden={false} place={drawerPlace()} />,
 }
 export const DrawerFoot: Story = {
   render: () => (

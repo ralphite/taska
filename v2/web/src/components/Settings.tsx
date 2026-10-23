@@ -1291,7 +1291,7 @@ function PhoneSection({ sec }: { sec: string }) {
     </>
   )
 }
-export function ProjectView({ hidden }: { hidden: boolean }) {
+export function ProjectView({ hidden, place = '' }: { hidden: boolean; place?: string }) {
   useArea('project')
   const nav = useRef<HTMLElement>(null),
     body = useRef<HTMLDivElement>(null)
@@ -1321,7 +1321,7 @@ export function ProjectView({ hidden }: { hidden: boolean }) {
       id="projectView"
       hidden={hidden}
       aria-label="Settings"
-      className="flex min-h-0 flex-1 flex-col bg-zinc-100 lg:col-span-2 lg:col-start-1 lg:row-span-5 lg:row-start-1 lg:flex-row lg:overflow-hidden lg:bg-transparent dark:bg-zinc-950 dark:lg:bg-transparent"
+      className={`flex min-h-0 flex-1 flex-col bg-zinc-100 lg:flex-row lg:overflow-hidden lg:bg-transparent dark:bg-zinc-950 dark:lg:bg-transparent ${place}`}
     >
       <nav
         id="projectNav"

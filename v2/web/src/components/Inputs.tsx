@@ -400,7 +400,7 @@ export function OutboxRows({ oldestFirst = false }: { oldestFirst?: boolean }) {
 }
 const FIRST_ROWS = 40,
   MORE_ROWS = 120
-export function InputsView({ hidden }: { hidden: boolean }) {
+export function InputsView({ hidden, place = '' }: { hidden: boolean; place?: string }) {
   useArea('inputs')
   useArea('list')
   const ref = useRef<HTMLElement>(null)
@@ -440,7 +440,7 @@ export function InputsView({ hidden }: { hidden: boolean }) {
       id="inputsView"
       ref={ref}
       hidden={hidden}
-      className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-6 max-lg:-mb-(--foot-h) max-lg:pb-[calc(var(--foot-h,0px)+1.5rem)] lg:col-start-1 lg:row-span-2 lg:row-start-4 lg:scrollbar-thin lg:scrollbar-gutter-stable lg:border-r lg:border-zinc-200 lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:border-zinc-800 dark:lg:hover:scrollbar-thumb-zinc-400/70"
+      className={`min-h-0 flex-1 overflow-y-auto overscroll-contain pb-6 max-lg:-mb-(--foot-h) max-lg:pb-[calc(var(--foot-h,0px)+1.5rem)] lg:scrollbar-thin lg:scrollbar-gutter-stable lg:border-r lg:border-zinc-200 lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:border-zinc-800 dark:lg:hover:scrollbar-thumb-zinc-400/70 ${place}`}
     >
       {hidden ? null : U.outbox.length && !words.length ? <OutboxRows /> : null}
       {hidden ? null : rows.length ? (

@@ -7,8 +7,8 @@ import { Composer } from '../../components/Composer'
 import { DetailView } from '../../components/Detail'
 import { InputsView } from '../../components/Inputs'
 import { DeskFilters, FilterStrip, Foot, ItemsView, MainHead, Tabs } from '../../components/Shell'
-import { deskPanes } from '../../layouts/DeskLayout'
-import { phonePanes } from '../../layouts/PhoneLayout'
+import { deskPanes, deskPlace, sidePlace } from '../../layouts/DeskLayout'
+import { DRAWER_PLACE, phonePanes } from '../../layouts/PhoneLayout'
 import { Dialog } from '../../components/Sheets'
 import { D, U, bump, desk, talkScroller, useArea } from '../../lib/state'
 import { Pane } from './demo'
@@ -42,7 +42,7 @@ export function Column({ text = '', wide = false }: { text?: string; wide?: bool
       {isDesk ? (
         // on the New input page the pane is its head, and the foot (the box and what you said lately) scrolls under it
         <div className={compose ? 'shrink-0' : 'flex min-h-0 flex-1 flex-col'}>
-          <DetailView hidden={v.detail} />
+          <DetailView hidden={v.detail} place={deskPlace().detail} />
         </div>
       ) : (
         <>
@@ -55,7 +55,7 @@ export function Column({ text = '', wide = false }: { text?: string; wide?: bool
         </>
       )}
       <div className={compose ? 'flex min-h-0 flex-1 flex-col [&>footer]:min-h-0 [&>footer]:flex-1' : 'contents'}>
-        <Foot hidden={v.foot} wideCls="" />
+        <Foot hidden={v.foot} place={isDesk ? deskPlace().foot : ''} />
       </div>
       <Composer />
       <Dialog />
@@ -82,10 +82,13 @@ export function ListColumn() {
       <InputsView hidden={v.inputs} />
       {isDesk ? null : (
         <>
-          <Foot hidden={v.foot} wideCls="" />
+          <Foot hidden={v.foot} />
           <Composer />
         </>
       )}
     </Pane>
   )
 }
+
+/** Where the projects sit, as each layout puts them: the desktop's sidebar, the phone's drawer. */
+export const drawerPlace = () => (desk() ? sidePlace(false) : DRAWER_PLACE)

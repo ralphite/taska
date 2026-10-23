@@ -917,7 +917,7 @@ function paneParts(): { head: ReactNode; acts: ReactNode; nav: ReactNode; menu: 
     body: <ItemPage key={it.n} it={it} />,
   }
 }
-export function DetailView({ hidden }: { hidden: boolean }) {
+export function DetailView({ hidden, place = '' }: { hidden: boolean; place?: string }) {
   useArea('detail')
   const body = useRef<HTMLDivElement>(null)
   const parts = paneParts()
@@ -980,11 +980,7 @@ export function DetailView({ hidden }: { hidden: boolean }) {
       .forEach((el) => el.toggleAttribute('data-over', el.scrollTop + el.clientHeight < el.scrollHeight - 2))
   })
   return (
-    <section
-      id="detailView"
-      hidden={hidden}
-      className={`flex min-h-0 flex-1 flex-col lg:row-span-3 lg:row-start-2 lg:group-data-[compose]/app:row-span-1 ${WIDE_CLS()}`}
-    >
+    <section id="detailView" hidden={hidden} className={`flex min-h-0 flex-1 flex-col ${place}`}>
       {strip && g ? <GoStrip g={g} /> : null}
       <header
         className={`flex h-14 shrink-0 items-center gap-1 border-b border-zinc-100 px-1 lg:border-zinc-200 lg:px-3 dark:border-zinc-800/70 dark:lg:border-zinc-800 ${U.side && !U.open && !shownDoc ? 'lg:hidden' : ''}`} // T438 #16: no empty bar over nothing
@@ -1034,9 +1030,4 @@ export function DetailView({ hidden }: { hidden: boolean }) {
       </div>
     </section>
   )
-}
-// one wide page: an item at full width (the inputs list takes the left column itself)
-export const WIDE_CLS = () => {
-  const wide = desk() && D.full && !!U.open && U.tab !== 'inputs' && !D.page
-  return wide ? 'lg:col-start-1 lg:col-span-2' : 'lg:col-start-2'
 }

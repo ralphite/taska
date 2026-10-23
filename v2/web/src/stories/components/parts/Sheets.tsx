@@ -10,7 +10,7 @@ import { confirmClick, popAt } from '../../../lib/dialog'
 import { FAILED } from '../../../lib/toast'
 import { VW_STATE } from '../../../lib/views'
 import { Pane, type Setup } from '../../lib/demo'
-import { Column, ListColumn } from '../../lib/column'
+import { Column, ListColumn, drawerPlace } from '../../lib/column'
 
 // what this part of Storybook shows (T512: its stories are in the folders beside this file)
 export const area: Meta = {
@@ -109,7 +109,7 @@ const FROM = {
   /** the sidebar (desktop) */
   sidebar: () => (
     <>
-      <Drawer hidden={false} over={false} />
+      <Drawer hidden={false} place={drawerPlace()} />
       <Dialog />
     </>
   ),

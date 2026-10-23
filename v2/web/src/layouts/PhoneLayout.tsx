@@ -40,6 +40,10 @@ export function phonePanes() {
   return { v, page, inputs, under }
 }
 
+/** The drawer: over the page from the left, the page pushed aside (F54). */
+export const DRAWER_PLACE =
+  'fixed top-0 left-0 w-80 max-w-[85vw] bg-zinc-100 pb-[max(1rem,env(safe-area-inset-bottom))]'
+
 export function PhoneLayout() {
   useTick((s) => s.view + s.side + s.head + s.list + s.project + s.detail)
   const { v } = phonePanes()
@@ -59,7 +63,7 @@ export function PhoneLayout() {
   })
   return (
     <>
-      <Drawer hidden={v.drawer} over={false} />
+      <Drawer hidden={v.drawer} place={DRAWER_PLACE} />
       <div
         id="drawerShade"
         hidden={!DR.open}
@@ -76,7 +80,7 @@ export function PhoneLayout() {
         <InputsView hidden={v.inputs} />
         <DetailView hidden={v.detail} />
         <ProjectView hidden={v.project} />
-        <Foot hidden={v.foot} wideCls="" />
+        <Foot hidden={v.foot} />
       </AppFrame>
     </>
   )
