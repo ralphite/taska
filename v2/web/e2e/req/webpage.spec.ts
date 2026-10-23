@@ -58,6 +58,23 @@ test('r688: a comment shows the part it is on: under the pointer and open; a cli
   await expect(thread).toHaveCount(0)
 })
 
+test('r562: in Comment mode a click picks the part even before the page has heard the mode is on (F432)', async ({
+  page,
+  request,
+}) => {
+  test.skip(!isDesk(page), 'Comment mode is for the pointer')
+  const p = await project(request, { ...LOOP, then: PAGE })
+  await open(page, p, 'D1')
+  const frame = page.frameLocator('#detailBody iframe')
+  await expect(frame.getByText('Ship option A today.')).toBeVisible()
+  await page.locator('[data-act="doc-inspect"]').click()
+  // a slow page: it still thinks Comment mode is off when the click comes
+  await frame.locator('body').evaluate(() => window.postMessage({ taska: 1, mode: false, keys: [], picked: '' }, '*'))
+  await frame.locator('#a').click()
+  await expect(page.locator('#scope')).toContainText('Ship option A today.')
+  await expect(page.locator('[data-ring]')).toHaveCount(1)
+})
+
 // nested parts, as in an app page: a board, its columns, their cards with buttons
 const APP = `${LOOP.then}T4 html App page
   <!doctype html><html><body style="margin:0;padding:24px;font:14px sans-serif"><div id="board" style="display:flex;gap:12px;padding:12px;border:1px solid #ccc"><div id="todo" style="flex:1;padding:8px;border:1px solid #ddd"><h3>To do</h3><div id="card1" style="padding:8px;border:1px solid #eee">Sketch the onboarding <button>Move</button></div><div id="card2" style="padding:8px;border:1px solid #eee;margin-top:8px">Write the notes <button>Move</button></div></div><div id="done" style="flex:1;padding:8px;border:1px solid #ddd"><h3>Done</h3><div id="card3" style="padding:8px;border:1px solid #eee">Fix the search <button>Move</button></div></div></div></body></html>

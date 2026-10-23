@@ -65,7 +65,11 @@ const HELPER = `<script>(() => {
   let down = [0, 0]
   addEventListener('mousedown', (e) => { down = [e.clientX, e.clientY] }, true)
   addEventListener('click', (e) => {
-    if (mode !== true && mode !== 'tap') return
+    if (mode !== true && mode !== 'tap') {
+      // Comment mode may be on in Taska before the page has heard: Taska decides (the click itself goes on)
+      if (!shutting && Math.abs(e.clientX - down[0]) + Math.abs(e.clientY - down[1]) <= 4) { const el = part(e.target); if (el) send({ maybe: info(el) }) }
+      return
+    }
     // B497: nothing else is picked while one part is; B503: a click that closes open comments only closes them
     if ((mode === true && picked) || shutting) { e.preventDefault(); e.stopPropagation(); return }
     if (Math.abs(e.clientX - down[0]) + Math.abs(e.clientY - down[1]) > 4) return
@@ -196,13 +200,17 @@ export function WebPage({ d }: { d: Doc }) {
         ready?: number
         used?: number
         down?: number
+        maybe?: Part
       }
       if (m.ready) frame.current?.contentWindow?.postMessage({ taska: 1, ...(JSON.parse(WANT.now) as object) }, '*')
       if (m.h) setHeight(m.h + 2)
       if ('hover' in m) hoverAt(m.hover || null, m.at)
       if (m.rects) setRects(m.rects)
       if (m.down) away.current?.()
-      if (m.pick) pick(m.pick)
+      // B497: on the desktop a part picked stays the one until Esc, whatever the page sends meanwhile
+      const one = desk() && !!U.docQuote?.key.startsWith('h:')
+      if (m.pick && !one) pick(m.pick)
+      if (m.maybe && desk() && U.docInspect && !one && !R.rec) pick(m.maybe)
       if (m.esc) escape()
       if (m.used) markUsed()
     }
