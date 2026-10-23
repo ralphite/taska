@@ -24,7 +24,15 @@ import { VW } from '../../lib/viewer'
 import { VW_STATE } from '../../lib/views'
 import type { Item, ProjectRow, State } from '../../lib/types'
 
-const FX = './fixtures/'
+// The saved answers sit beside Storybook's own page (./fixtures/ in a built Storybook under /storybook/), or under
+// /storybook/ when Storybook runs as its own server with the page's public files there
+let FX = './fixtures/'
+const fxReady = fetch(FX + 'meta.json').then(
+  (r) => {
+    if (!r.ok || !(r.headers.get('content-type') || '').includes('json')) FX = '/storybook/fixtures/'
+  },
+  () => (FX = '/storybook/fixtures/'),
+)
 const ISO = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2})$/
 const TIME_KEYS = new Set(['t', 'at', 't0', 't1', 'next', 'seen'])
 function move(x: unknown, d: number, k = ''): unknown {
@@ -42,15 +50,19 @@ const cache = new Map<string, Promise<unknown>>()
 /** A saved answer of the demo, its times moved to now. */
 export function fixture<T>(name: string): Promise<T> {
   if (!cache.has(name)) {
-    const p = Promise.all([
-      fetch(FX + name).then((r) => {
-        if (!r.ok) throw new Error(`no ${name} in the story data`)
-        return r.json()
-      }),
-      fetch(FX + 'meta.json')
-        .then((r) => r.json())
-        .catch(() => ({ now: Date.now() })),
-    ]).then(([j, m]) => move(j, Date.now() - (m as { now: number }).now))
+    const p = fxReady
+      .then(() =>
+        Promise.all([
+          fetch(FX + name).then((r) => {
+            if (!r.ok) throw new Error(`no ${name} in the story data`)
+            return r.json()
+          }),
+          fetch(FX + 'meta.json')
+            .then((r) => r.json())
+            .catch(() => ({ now: Date.now() })),
+        ]),
+      )
+      .then(([j, m]) => move(j, Date.now() - (m as { now: number }).now))
     p.catch(() => cache.delete(name))
     cache.set(name, p)
   }
