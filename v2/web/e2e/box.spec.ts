@@ -29,17 +29,18 @@ test('a pasted link keeps the box still while you record and agents write (B481)
   await page.locator('#composer [data-act="rec-cancel"]').click()
 })
 
-test('what scrolls shows only around the top of the box: from its middle down the page covers it, and the end clears the box (F478)', async ({
+test('what scrolls shows only around the top of the box: from its middle down the page covers it, and the end clears the box (F478, B506)', async ({
   page,
   request,
 }) => {
   const many = Array.from({ length: 30 }, (_, i) => `new task P2 now Item number ${i + 1} with a title long enough`).join('\n')
+  const lines = (what: string) => Array.from({ length: 60 }, (_, i) => `  ${what} ${i + 1} of the text.`).join('\n')
   const p = await project(request, {
-    agent: `${many}\nnew task P1 now A long one\n${Array.from({ length: 60 }, (_, i) => `  Line ${i + 1} of the body.`).join('\n')}\n`,
+    agent: `${many}\nnew task P1 now A long one\n${lines('Line')}\n`,
     approve: Array.from({ length: 31 }, (_, i) => `T${String(i + 1).padStart(2, '0')}`),
+    then: `${Array.from({ length: 30 }, (_, i) => `T31 say Progress note ${i + 1}, long enough to take a whole line here`).join('\n')}\nT31 doc Long notes\n${lines('Note')}\n`,
   })
   await open(page, p, isDesk(page) ? 'T31' : '')
-  const scroller = page.locator(isDesk(page) ? '#detailBody' : '#list')
   // the page's own colour from the box's middle to the bottom of the screen
   const cover = await page.evaluate(() => {
     const f = document.getElementById('foot') as HTMLElement,
@@ -51,17 +52,24 @@ test('what scrolls shows only around the top of the box: from its middle down th
   expect(Math.abs(cover.top - cover.middle)).toBeLessThan(2)
   expect(cover.bg).not.toBe('rgba(0, 0, 0, 0)')
   expect(cover.bottom).toBeGreaterThanOrEqual((page.viewportSize()?.height || 0) - 1)
-  // scrolled to the end, the last thing ends where the scroller's content ends: clear above the box
-  await scroller.evaluate((e) => (e.scrollTop = e.scrollHeight))
-  const gap = await scroller.evaluate((e) => {
-    const r = e.getBoundingClientRect(),
-      end = r.bottom - parseFloat(getComputedStyle(e).paddingBottom),
-      box = (document.getElementById('foot') as HTMLElement).getBoundingClientRect().top
-    return { gap: box - end, under: r.bottom >= box }
-  })
-  expect(gap.under).toBe(true) // it runs on under the box, around its top corners
-  const gapPx = gap.gap
-  expect(gapPx).toBeGreaterThanOrEqual(20)
+  // scrolled to the end, the last thing ends where the scroller's content ends: clear above the box; on the desktop
+  // an item's talk (one column as in two, B506) and a long document, on the phone the list
+  const clears = async (sel: string) => {
+    const gap = await page.locator(sel).evaluate((e) => {
+      e.scrollTop = e.scrollHeight
+      const r = e.getBoundingClientRect(),
+        end = r.bottom - parseFloat(getComputedStyle(e).paddingBottom),
+        box = (document.getElementById('foot') as HTMLElement).getBoundingClientRect().top
+      return { gap: box - end, under: r.bottom >= box }
+    })
+    expect(gap.under).toBe(true) // it runs on under the box, around its top corners
+    expect(gap.gap).toBeGreaterThanOrEqual(20)
+  }
+  if (!isDesk(page)) return clears('#list')
+  await clears('#itemTalk')
+  await open(page, p, 'D1')
+  await expect(page.locator('#detailBody').getByText('Note 60 of the text.')).toBeAttached()
+  await clears('#detailBody')
 })
 
 test('in two columns the line between them is one line to the bottom of the screen, and the item beside the box can be pointed at (B495)', async ({
