@@ -16,3 +16,11 @@
   his words; every check runs each night (`v2/tools/nightly-checks.sh`, a bug in Taska when one fails). A new clear
   requirement gets its check the same day; a bug that came back gets one when it is fixed. A check that stops a
   change meant to undo a requirement is changed only after Yadong agreed in the item.
+- Design problems are said, not worked around (10-23, two lessons). A rewrite is a new design in a new folder: the old
+  code is a behaviour reference only, never a structure to port (the React "rewrite" ported the one-file page's global
+  state and has to be redone). When a standard tool (Storybook, tests, router, state library) needs home-made
+  machinery to work, stop: compare with its normal use in its docs, and if our code's design is the cause, tell Yadong
+  the root cause and the options before building anything (Storybook once loaded the whole app in a frame and cropped
+  it, because components could not render from props). Stop signals: the support code outgrows the thing; copying
+  framework internals (CSS rules, fake servers, fake network); hundreds of lines for what takes a few elsewhere; tens
+  of seconds per run. Hard to test or to render alone is a design bug to report.
