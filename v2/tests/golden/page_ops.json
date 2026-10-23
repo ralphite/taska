@@ -500,17 +500,6 @@
   }
  },
  {
-  "name": "unmake T2",
-  "status": 400,
-  "json": {
-   "ok": false,
-   "res": [
-    "err: T2 changed since it was made: set it to won't do instead"
-   ],
-   "rev": "<rev>"
-  }
- },
- {
   "name": "user new 2",
   "status": 200,
   "json": {

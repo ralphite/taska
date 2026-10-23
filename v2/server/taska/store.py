@@ -269,14 +269,6 @@ class Store:
                 it = self.items.get(n)
                 if it:
                     it["archived"], it["t1"] = e["on"], e["t"]
-        elif k == "unmake":  # "Make item" undone: the item goes, and its input waits for an agent again
-            it, inp = self.items.get(e["n"]), self.inputs.get(e["src"])
-            if it:
-                it.update(status="dropped", archived=True, t1=e["t"])
-            if inp and e["n"] in inp["touched"]:
-                inp["touched"].remove(e["n"])
-                if not inp["touched"]:
-                    inp["acked"] = False
         elif k == "del":  # F177: an input deleted, with the items only it made (e["ns"]); restorable ("undel")
             rid = e["src"]
             inp = self.inputs.get(rid)

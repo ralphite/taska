@@ -368,8 +368,6 @@ def log_entries(s: "Store", n: int, before: int = 0) -> List[Dict[str, Any]]:
             t = f"undo organizer changes for {e['src']}"
         elif k == "redo":
             t = f"redo organizer changes for {e['src']}"
-        elif k == "unmake":
-            t = f"{s.code(e['n'])} unmade: {e['src']} waits again"
         elif k in ("del", "undel"):
             t = f"{e['src']} {'deleted' if k == 'del' else 'restored'}" + (" with " + " ".join(s.code(n) for n in e["ns"]) if e.get("ns") else "") \
                 + ("; kept " + ", ".join(f"{s.code(n)} ({why})" for n, why in e["kept"]) if e.get("kept") else "")

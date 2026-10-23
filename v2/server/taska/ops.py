@@ -474,15 +474,6 @@ def run(s: "Store", op: Op, by: str, ctx: Dict[str, Any]) -> Tuple[str, Any]:
         s.emit({"k": "del", "src": rid, "ns": plan["go"], "kept": plan["keep"], "by": by})
         return f"ok {rid} deleted" + (" with " + " ".join(s.code(n) for n in plan["go"]) if plan["go"] else "") \
             + ("; kept " + ", ".join(f"{s.code(n)} ({why})" for n, why in plan["keep"]) if plan["keep"] else ""), f"Deleted {rid}"
-    if name == "unmake":  # undo "Make item" (T113 A7): the item goes (won't do, archived) and its input waits again
-        it = s.item(op.get("ref", ""), ctx, follow=False)
-        add = next((x for x in s.events if x["k"] == "add" and x["n"] == it["n"]), None)
-        if not add or add.get("by") != "you" or not add.get("src"):
-            raise Err(f"{s.code(it['n'])} was not made from an input")
-        if s.touched_since(it["n"], add["seq"]):
-            raise Err(f"{s.code(it['n'])} changed since it was made: set it to won't do instead")
-        s.emit({"k": "unmake", "n": it["n"], "src": add["src"], "by": by})
-        return f"ok {s.code(it['n'])} unmade", "Undid " + s.code(it["n"])
     it = s.item(op.get("ref", ""), ctx)
     code = s.code(it["n"])
     if name == "set":

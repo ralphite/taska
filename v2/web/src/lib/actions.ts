@@ -178,16 +178,6 @@ export function editInput(id: string, mode: 'edit' | 'append') {
   t.focus()
   t.selectionStart = t.selectionEnd = t.value.length
 }
-// Make item's title (T113 A25): the first line, or when that is long, its first sentence, or its first words.
-function shortTitle(s: string) {
-  s = String(s || '').trim()
-  if (s.length <= 80) return s
-  const m = s.slice(0, 81).match(/^.{12,79}?(?:[.!?](?=\s)|[。！？])/u)
-  if (m) return m[0].replace(/[.。]$/u, '')
-  const cut = s.slice(0, 80),
-    sp = cut.lastIndexOf(' ')
-  return (sp > 40 ? cut.slice(0, sp) : cut).replace(/[\s,;:，；：]+$/u, '') + '…'
-}
 export const deletedSaid = (x: (typeof model.S.deleted)[number] | undefined, id: string) => {
   if (!x) return `Deleted ${rcode(id)}`
   const k = x.kept
@@ -709,7 +699,7 @@ export const ACT: Record<string, Handler> = {
     void change(n, d.f as string, d.v)
   },
   goto: (d) => {
-    // from a chip, a source, a subitem, the change log or Make item: to the item, leaving pages that hide it
+    // from a chip, a source, a subitem or the change log: to the item, leaving pages that hide it
     const walk = !desk() && U.go && U.peek && OV.spec ? { go: U.go as Go, n: U.peek } : null // B153
     closeDialog()
     const n = N(d),
@@ -1240,40 +1230,6 @@ export const ACT: Record<string, Handler> = {
   reparent: (d) => {
     if (desk()) closeDialog()
     movePicker(N(d))
-  },
-  'make-item': async (d) => {
-    // no organizer and no agent around: turn the input into an item yourself
-    const r = byR.get(d.id as string)
-    if (!r) return
-    const lines = r.text.trim().split('\n'),
-      first = lines[0].trim()
-    const title = shortTitle(first) || `Files from ${rcode(r.id)}`,
-      body = title !== first ? r.text.trim() : lines.slice(1).join('\n').trim() // T113 A25
-    try {
-      const a = await save({ op: 'new', title, body, src: r.id }, () => ACT['make-item'](d))
-      const n = Number((a.res[0].match(/[A-Z](\d+) new/) || [])[1])
-      if (!n) return
-      const run = pushUndo(`${code(n)} made from ${rcode(r.id)}`, () => {
-        toast(`${code(n)} undone: ${rcode(r.id)} waits again`)
-        return optimistic(
-          [{ n, f: { status: 'dropped', archived: true } }],
-          (p) => op({ op: 'unmake', ref: code(n) }, undefined, p),
-          (ex) => notSaved(ex, run),
-        )
-      })
-      toast(`${code(n)} made from ${rcode(r.id)}: set its type and priority`, run)
-      if (!desk()) return itemMenu(n)
-      const chip = [
-          ...document.querySelectorAll<HTMLElement>(
-            `:is(#inputsView, #composeList, #detailBody) [data-act="goto"][data-n="${n}"]`,
-          ),
-        ].find((el) => el.offsetParent),
-        at = chip?.getBoundingClientRect()
-      itemMenuDesk(n, 't')
-      if (at) popAt(at.left, at.bottom + 6)
-    } catch {
-      /* save said why */
-    }
   },
   'archive-all': () => {
     // r6: every finished item in this view goes to Archive at once; Undo in the toast for 10 seconds, then Z (B154)

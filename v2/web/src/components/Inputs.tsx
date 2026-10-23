@@ -123,7 +123,6 @@ export function inputActs(r: Input, cls = LINK_BTN): [ReactNode, ReactNode] {
       null,
     ]
   const S = model.S,
-    busy = busyOf(r),
     quiet = cls === LINK_BTN ? ' text-zinc-600 dark:text-zinc-300' : ''
   const retry =
     !r.acked && S.org?.on && r.org && (!r.org.ok || r.org.undone) ? (
@@ -132,21 +131,7 @@ export function inputActs(r: Input, cls = LINK_BTN): [ReactNode, ReactNode] {
         {r.org.undone ? 'Organize again' : 'Retry'}
       </button>
     ) : null
-  const make =
-    !r.acked && !r.scope && !busy ? (
-      <button
-        key="make"
-        data-act="make-item"
-        data-id={r.id}
-        className={cls
-          .replace(/text-zinc-500|hover:text-zinc-800/g, 'text-blue-600')
-          .replace(/dark:text-zinc-400|dark:hover:text-zinc-200/g, 'dark:text-blue-400')}
-      >
-        <Icon n="plus" c="size-3.5" sw="2" />
-        Create item
-      </button>
-    ) : null
-  const now = retry || make ? [retry, make] : null
+  const now = retry ? [retry] : null
   const more = (
     <button
       data-act="input-more"

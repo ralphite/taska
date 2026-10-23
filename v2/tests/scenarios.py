@@ -151,7 +151,6 @@ PAGE_OPS: List[Dict[str, Any]] = [
     op({"op": "set", "ref": "B1", "f": {"parent": "T2"}}, "parent loop"),
     op({"op": "set", "ref": "T2", "f": {"parent": "-"}}, "clear parent"),
     op({"op": "set", "ref": "T2", "f": {"rank": "0.5"}}, "rank"),
-    op({"op": "unmake", "ref": "T2"}, "unmake T2"),
     op({"op": "new", "title": "Another", "type": "feature", "src": "r2"}, "user new 2"),
     op({"op": "hide", "ref": "B1", "id": 1}, "hide a user message"),
     do("B1 say An agent note"),
