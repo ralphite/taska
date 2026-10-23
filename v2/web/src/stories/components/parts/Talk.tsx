@@ -29,6 +29,8 @@ export const area: Meta = {
       'VoiceLine',
       'Talk',
       'DocCard',
+      // Pic: a picture with its spinner, or its sign when it cannot load (D82 #8)
+      'Pic',
     ],
   },
 }

@@ -119,3 +119,20 @@ export const Armed = ({ k, ask, children }: { k: string; ask: string; children: 
   <>{armed(k) ? ask : children}</>
 )
 export const again = (what: string) => `${desk() ? 'Click' : 'Tap'} again${what}`
+
+/** D82 #8: a picture in its frame: a spinner while it loads, and if it cannot load the picture sign in its place (the
+ * frame's tip keeps its name), never the browser's broken mark; the same as a document's pictures (lib/markdown.ts).
+ * lib/dims.ts marks the img data-loaded or data-failed. */
+export function Pic({ src, alt = '', cls = '' }: { src: string; alt?: string; cls?: string }) {
+  return (
+    <span className="group/pic relative grid size-full place-items-center">
+      <img data-pic src={src} alt={alt} loading="lazy" className={`${cls} data-failed:invisible`} />
+      <span className="pointer-events-none absolute inset-0 grid place-items-center group-has-[img[data-failed]]/pic:hidden group-has-[img[data-loaded]]/pic:hidden">
+        <span className="size-5 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-600 dark:border-zinc-600 dark:border-t-zinc-300" />
+      </span>
+      <span className="pointer-events-none absolute inset-0 hidden place-items-center text-zinc-400 group-has-[img[data-failed]]/pic:grid dark:text-zinc-500">
+        <Icon n="image" c="size-5" />
+      </span>
+    </span>
+  )
+}

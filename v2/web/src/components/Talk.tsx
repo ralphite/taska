@@ -46,7 +46,7 @@ import { clean, groups, hasChoices, mdHtml, plainQuote } from '../lib/markdown'
 import { audioOf } from '../lib/audio'
 import { ticksNotSent } from '../lib/doctick'
 import { P_CACHE } from '../lib/settings'
-import { Avatar, Icon, Kbd } from './ui'
+import { Avatar, Icon, Kbd, Pic } from './ui'
 import { clock } from '../lib/state'
 
 const isAudio = (f: FileRef) => (f.mime || '').startsWith('audio/')
@@ -175,7 +175,7 @@ export function Thumbs({ files, gid, size = 'size-20' }: { files: FileRef[]; gid
               title={f.name}
               className={`${size} shrink-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 hover:brightness-95 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:brightness-110`}
             >
-              <img src={fileUrl(f.f)} alt={f.name} loading="lazy" className="size-full object-contain" />
+              <Pic src={fileUrl(f.f)} alt={f.name} cls="size-full object-contain" />
             </button>
           )
         return (

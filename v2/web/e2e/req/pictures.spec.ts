@@ -68,3 +68,31 @@ test('r466 r481 r483: a picture keeps its place while it loads, a spinner in the
   // nothing moved: the picture is the size it held, the words as far below it
   expect(await place()).toEqual(before)
 })
+
+test("D82 #8: a picture attached to a message shows a spinner while it loads and the picture sign when it cannot, never the browser's broken mark", async ({
+  page,
+  request,
+}) => {
+  const p = await project(request, LOOP)
+  const up = await request.post(`${p.url}api/file?name=shot.png`, {
+    headers: { 'Content-Type': 'image/png' },
+    data: Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+      'base64',
+    ),
+  })
+  const f = ((await up.json()) as { f: string }).f
+  await p.doAs(`T4 say files=${f} The screenshot.\n`)
+  let how: 'hold' | 'fail' = 'hold'
+  await page.route(`**/f/${f}`, async (r) => {
+    while (how === 'hold') await new Promise((ok) => setTimeout(ok, 100))
+    await r.abort()
+  })
+  await open(page, p, 'T4')
+  const thumb = page.locator(`#itemTalk [data-act="view"][data-f="${f}"]`).filter({ visible: true }).first()
+  await expect(thumb.locator('.animate-spin')).toBeVisible()
+  how = 'fail'
+  await expect(thumb.locator('img[data-pic]')).toHaveAttribute('data-failed', '')
+  await expect(thumb.locator('.animate-spin')).toBeHidden()
+  await expect(thumb.locator('svg')).toBeVisible()
+})

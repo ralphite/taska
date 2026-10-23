@@ -70,7 +70,7 @@ import {
   openKidsOf,
   SW,
 } from '../lib/rows'
-import { Avatar, Cnt, DraftMark, Empty, Hit, Icon, ProjTile, Soft, StateIcon } from './ui'
+import { Avatar, Cnt, DraftMark, Empty, Hit, Icon, Pic, ProjTile, Soft, StateIcon } from './ui'
 import { SideList } from './SideList'
 
 // B523: the dark tints are opaque, the same colours as before laid on the page's zinc-950: the row's buttons take the
@@ -351,12 +351,9 @@ export function ItemRow({
           aria-label="View image"
           className="-my-0.5 grid size-11 shrink-0 place-items-center rounded-lg hover:brightness-95 dark:hover:brightness-110"
         >
-          <img
-            src={`${ctx.P}f/${encodeURIComponent(img.f)}`}
-            alt=""
-            loading="lazy"
-            className="size-10 rounded-lg border border-zinc-200 bg-zinc-50 object-cover dark:border-zinc-700 dark:bg-zinc-900"
-          />
+          <span className="size-10 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900">
+            <Pic src={`${ctx.P}f/${encodeURIComponent(img.f)}`} cls="size-full object-cover" />
+          </span>
         </button>
       ) : null}
       {foldable ? (
