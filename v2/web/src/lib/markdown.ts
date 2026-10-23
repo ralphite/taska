@@ -26,8 +26,8 @@ import {
 } from './state'
 import type { Item } from './types'
 
-export const ico = (n: IconName | string, c = 'size-5', sw = '1.75') =>
-  `<svg class="${c} shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[n as IconName] ?? ''}</svg>`
+export const ico = (n: IconName, c = 'size-5', sw = '1.75') =>
+  `<svg class="${c} shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICON[n]}</svg>`
 export const KBD = (k: string) =>
   `<kbd class="ml-1 hidden h-5 min-w-5 place-items-center rounded-md px-1 font-sans text-[11px] font-semibold opacity-70 ring-1 ring-current/30 lg:inline-grid">${k}</kbd>`
 

@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Player, type Script } from '../lib/player'
 
 const meta: Meta = {
-  title: 'Demo',
+  title: 'Demo/Needs you',
   // the frame fits the room Storybook has, with the bar under it in sight: no fixed preview size around it
   parameters: { layout: 'fullscreen', viewport: { disable: true } },
 }

@@ -1,14 +1,14 @@
 // T457: an item's pane (the right side on the desktop, the whole page on the phone) in every state an item has, and
 // the card that asks you, on its own.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { NeedsCard } from '../../components/Detail'
-import { Column } from '../lib/column'
-import { D, U, byN, lastAgentMsg, parseRef } from '../../lib/state'
-import type { Item } from '../../lib/types'
-import { Pane, type Setup } from '../lib/demo'
+import { NeedsCard } from '../../../components/Detail'
+import { Column } from '../../lib/column'
+import { D, U, byN, lastAgentMsg, parseRef } from '../../../lib/state'
+import type { Item } from '../../../lib/types'
+import { Pane, type Setup } from '../../lib/demo'
 
-const meta: Meta = {
-  title: 'Components/Item',
+// what this part of Storybook shows (T512: its stories are in the folders beside this file)
+export const area: Meta = {
   parameters: {
     covers: [
       'DetailView',
@@ -19,17 +19,19 @@ const meta: Meta = {
       'BarIcon',
       'BarText',
       'GoStrip',
+      // NoSelection: the empty item pane, which the page no longer reaches (nothing open is the New input page; proposed
+      // for removal)
       'NoSelection',
       'Editor',
       'Inline',
+      'SectionHead',
     ],
   },
 }
-export default meta
-type Story = StoryObj
+export type Story = StoryObj
 
 /** The item pane with this item open. */
-const item = (ref: string | null, setup?: (x: Setup) => void): Story => ({
+const item = (ref: string | null, setup?: (x: Setup) => void, wide = false): Story => ({
   parameters: {
     taska: {
       setup: (x) => {
@@ -38,7 +40,7 @@ const item = (ref: string | null, setup?: (x: Setup) => void): Story => ({
       },
     },
   },
-  render: () => <Column />,
+  render: () => <Column wide={wide} />,
 })
 
 export const InProgressWithTalk = item('F1')
@@ -76,14 +78,11 @@ export const WithPictures = item('B36')
 export const Archived = item('B21')
 /** Editing the title, details and next step. */
 export const Editing = item('T3', ({ it }) => (U.editing = it('T3').n))
-/** Full width: the list makes room (desktop). */
-export const FullWidth = item('F1', () => (D.full = true))
-/** As wide as the window (full width, or a wide screen): the item beside its talk, one line between them from the top
- * to the bottom, the box under the talk (desktop; B495). */
-export const TwoColumns: Story = {
-  parameters: { taska: { setup: ({ it }) => (U.open = it('F1').n) } },
-  render: () => <Column wide />,
-}
+/** Full width (O): the list makes room (desktop). */
+export const FullWidth = item('F1', () => (D.full = true), true)
+/** Full width: the item (its body, subitems, document) beside its talk, one line between them from the top to the
+ * bottom, the box under the talk (desktop, B495). */
+export const TwoColumns = item('F1', () => (D.full = true), true)
 /** Going through what needs you: the amber strip on top (desktop). */
 export const GoingThrough = item('T7', ({ it }) => {
   const list = ['B2', 'T7', 'T9', 'I4', 'B6'].map((c) => it(c).n)
@@ -110,9 +109,8 @@ export const ReplySending = item('F1', ({ it }) => {
     sending: true,
   })
 })
-/** Nothing picked while the list column shows Documents, Activity or Deleted (desktop; with nothing open on Items
- * the desktop shows the New input page instead). */
-export const NothingOpen = item(null, () => (U.side = 'docs'))
+/** The item pane while the list column shows Documents and none is picked (desktop). */
+export const NothingPicked = item(null, () => (U.side = 'docs'))
 
 // ---------------------------------------------------------------- the card that asks you, alone
 

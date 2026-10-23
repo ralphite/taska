@@ -1,13 +1,13 @@
 // T457: a document as you read it, comment on it and edit it: in the item pane on the desktop, in a sheet on the phone.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { Column } from '../lib/column'
-import { VcBar } from '../../components/Composer'
-import { OV, U, bump, desk, model, threadKey } from '../../lib/state'
-import type { Doc } from '../../lib/types'
-import { type Setup } from '../lib/demo'
+import { Column } from '../../lib/column'
+import { VcBar } from '../../../components/Composer'
+import { OV, U, bump, desk, model, threadKey } from '../../../lib/state'
+import type { Doc } from '../../../lib/types'
+import { type Setup } from '../../lib/demo'
 
-const meta: Meta = {
-  title: 'Components/Document',
+// what this part of Storybook shows (T512: its stories are in the folders beside this file)
+export const area: Meta = {
   parameters: {
     covers: [
       'DocView',
@@ -31,8 +31,7 @@ const meta: Meta = {
     ],
   },
 }
-export default meta
-type Story = StoryObj
+export type Story = StoryObj
 
 const byTitle = (S: Setup['S'], t: string) => S.docs.find((d) => d.title.startsWith(t)) as Doc
 /** The document open: in the item pane on the desktop, in its sheet on the phone. */

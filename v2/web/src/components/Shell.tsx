@@ -5,6 +5,7 @@ const SHOWN_TABS = TABS.filter((t) => t !== 'archive')
 const DESK_TABS = SHOWN_TABS.filter((t) => t !== 'inputs')
 // list's head, the list, the item pane, Settings, the one input box at the foot, and what floats over them: the sheet,
 // the picture viewer, the tooltip, the bar on selected text, the toast. Below 1024px it is the phone's page.
+import type { IconName } from '../lib/icons'
 import { useEffect, useLayoutEffect, useRef, type ReactNode } from 'react'
 import {
   FIELD,
@@ -249,7 +250,7 @@ export function SideList() {
     </>
   )
 }
-export const SideLink = ({ sec, icon, label, phone }: { sec: string; icon: string; label: string; phone?: boolean }) =>
+export const SideLink = ({ sec, icon, label, phone }: { sec: string; icon: IconName; label: string; phone?: boolean }) =>
   phone ? (
     <a
       href={`${ctx.P}${PSEC[sec][0]}`}
@@ -662,7 +663,7 @@ export function ProjBar({ hidden }: { hidden: boolean }) {
     </nav>
   )
 }
-const filtersSet = (): [string, ReactNode][] =>
+export const filtersSet = (): [string, ReactNode][] =>
   (
     [
       U.type !== 'all' && U.tab !== 'rules'

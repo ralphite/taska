@@ -1,15 +1,16 @@
 // T457: every sheet and menu: a sheet from the bottom on the phone, a popover or a dialog on the desktop. Each opens
 // over the list, as on the page.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { Dialog } from '../../components/Sheets'
-import { OV, U, desk, type DialogOpts } from '../../lib/state'
-import { FAILED } from '../../lib/toast'
-import { VW_STATE } from '../../lib/views'
-import { type Setup } from '../lib/demo'
-import { ListColumn } from '../lib/column'
+import { Dialog } from '../../../components/Sheets'
+import { OV, U, byN, desk, type DialogOpts } from '../../../lib/state'
+import { confirmClick } from '../../../lib/dialog'
+import { FAILED } from '../../../lib/toast'
+import { VW_STATE } from '../../../lib/views'
+import { type Setup } from '../../lib/demo'
+import { ListColumn } from '../../lib/column'
 
-const meta: Meta = {
-  title: 'Components/Sheets',
+// what this part of Storybook shows (T512: its stories are in the folders beside this file)
+export const area: Meta = {
   parameters: {
     covers: [
       'Dialog',
@@ -22,11 +23,11 @@ const meta: Meta = {
       'Palette',
       'Picker',
       'MoveInputBody',
+      'Armed',
     ],
   },
 }
-export default meta
-type Story = StoryObj
+export type Story = StoryObj
 
 /** The sheet of that kind, open over the list; `xy` is where a desktop menu opens (under its button). */
 const sheet = (
@@ -66,6 +67,13 @@ export const ItemMenuPhone = sheet(
 export const ItemMenuPriority = sheet('menu', (x) => ({ n: x.it('F1').n, arm: 'p' }))
 /** An item's actions: a popover with each action's key (desktop). */
 export const ItemMenuDesktop = sheet('menu-desk', n('F1'), pop, ({ it }) => (U.menuFor = it('F1').n))
+/** Delete asks for a second click, in its own words, for 3 seconds (the page's own confirmClick, then it goes back). */
+export const ItemMenuDeleteAsks: Story = {
+  ...sheet('menu-desk', n('F1'), pop, ({ it }) => (U.menuFor = it('F1').n)),
+  play: () => {
+    confirmClick('item-delete ' + byN.get(U.menuFor as number)!.n)
+  },
+}
 /** One field's list (status) from the item's head (desktop). */
 export const ItemMenuStatus = sheet('menu-desk', n('F1'), { pop: true, narrow: true }, ({ it }) => {
   U.menuFor = it('F1').n

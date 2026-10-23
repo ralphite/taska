@@ -1,6 +1,7 @@
 // An item as a page of its own (T57): back, code and status on top, the rarely used things behind ⋯. Reading order:
 // title, what it needs from you, description, files, documents, subitems, conversation. On the desktop it is the pane
 // beside the list (I70), which also shows a document (T110), an input (T274 #9) or the New input page (B73).
+import type { IconName } from '../lib/icons'
 import { useLayoutEffect, useRef, type ReactNode } from 'react'
 import {
   CHIP,
@@ -88,7 +89,7 @@ export function NeedsCard({ it, onCard = false }: { it: Item; onCard?: boolean }
     m = cardMsg(it),
     name = msgName(m || it.wait || { by: it.by && it.by !== 'you' ? it.by : 'agent' })
   // F428 (P0): the same frame as the card it becomes once answered (NeedFrame), so nothing moves
-  const card = (icon: string, title: string, body: ReactNode, buttons: ReactNode, hint = '') => (
+  const card = (icon: IconName, title: string, body: ReactNode, buttons: ReactNode, hint = '') => (
     <NeedFrame icon={icon} title={title} t={m?.t} body={body} foot={buttons} hint={hint} />
   )
   if (it.wait) {
@@ -142,14 +143,14 @@ export function NeedsCard({ it, onCard = false }: { it: Item; onCard?: boolean }
           foot={
             <>
               {(dec.from === 'proposed'
-                ? [
+                ? ([
                     ['status', 'dropped', 'ban', "Won't do", 'W'],
                     ['status', 'open', 'thumb', 'Approve', 'A'],
-                  ]
-                : [
+                  ] as const satisfies readonly (readonly [string, string, IconName, string, string])[])
+                : ([
                     ['reopen', 'doing', 'reopen', 'Not yet', 'N'],
                     ['status', 'done', 'check', 'Accept', 'A'],
-                  ]
+                  ] as const satisfies readonly (readonly [string, string, IconName, string, string])[])
               ).map(([act, v, icon, label, k], i) => (
                 <button
                   key={v}
@@ -184,14 +185,14 @@ export function NeedsCard({ it, onCard = false }: { it: Item; onCard?: boolean }
           // same size too (the key's room is kept), and nothing takes their place
           <>
             {(dec.from === 'proposed'
-              ? [
+              ? ([
                   ['dropped', 'ban', "Won't do", 'W'],
                   ['open', 'thumb', 'Approve', 'A'],
-                ]
-              : [
+                ] as const satisfies readonly (readonly [string, IconName, string, string])[])
+              : ([
                   ['doing', 'reopen', 'Not yet', 'N'],
                   ['done', 'check', 'Accept', 'A'],
-                ]
+                ] as const satisfies readonly (readonly [string, IconName, string, string])[])
             ).map(([v, icon, label, k], i) => (
               <span
                 key={v}
@@ -671,7 +672,7 @@ const ItemHead = ({ it }: { it: Item }) => (
     </span>
   </>
 )
-const BarIcon = ({ act, icon, title }: { act: string; icon: string; title: string }) => (
+const BarIcon = ({ act, icon, title }: { act: string; icon: IconName; title: string }) => (
   <button
     data-act={act}
     title={title}
@@ -689,7 +690,7 @@ const BarText = ({
   data,
 }: {
   act: string
-  icon: string
+  icon: IconName
   label: string
   title: string
   data: Record<string, string | number>

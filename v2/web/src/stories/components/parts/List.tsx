@@ -1,13 +1,13 @@
 // T457: the item list and its rows, in every state, on the demo project. The list column is as wide as on the page.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { ItemRow, NeedsRow, WorkerMark, Zone } from '../../components/List'
-import { U, byN, parseRef } from '../../lib/state'
-import { VW_STATE } from '../../lib/views'
-import { Pane, type Setup } from '../lib/demo'
-import { ListColumn } from '../lib/column'
+import { ItemRow, NeedsRow, WorkerMark } from '../../../components/List'
+import { U, byN, parseRef } from '../../../lib/state'
+import { VW_STATE } from '../../../lib/views'
+import { Pane, type Setup } from '../../lib/demo'
+import { ListColumn } from '../../lib/column'
 
-const meta: Meta = {
-  title: 'Components/List',
+// what this part of Storybook shows (T512: its stories are in the folders beside this file)
+export const area: Meta = {
   parameters: {
     covers: [
       'List',
@@ -26,12 +26,16 @@ const meta: Meta = {
       'RowActs',
       'SwipeRow',
       'SearchHints',
+      'Zone',
+      'Soft',
+      'Cnt',
+      'DraftMark',
+      'Empty',
       'CrossHits',
     ],
   },
 }
-export default meta
-type Story = StoryObj
+export type Story = StoryObj
 
 const list = (setup?: (x: Setup) => void): Story => ({
   parameters: { taska: { setup } },
@@ -145,6 +149,12 @@ export const RowHover: Story = {
 }
 export const RowP0 = row('B36')
 export const RowP3 = row('T5')
+/** Something written for it and not sent yet: Draft. */
+export const RowWithDraft = row('T3', ({ it }) => {
+  U.parked['T' + String(it('T3').n).padStart(2, '0')] = [
+    { name: 'note.png', mime: 'image/png', done: Promise.resolve() },
+  ]
+})
 
 // ---------------------------------------------------------------- a row that waits on you
 
@@ -164,19 +174,6 @@ export const NeedsProposed = need('I4')
 export const NeedsReview = need('B6')
 export const NeedsRuleProposed = need('R17')
 
-// ---------------------------------------------------------------- group headers, the agent mark
-
-export const Zones: Story = {
-  render: () => (
-    <Pane w="list">
-      <Zone kind="needs" label="Needs you" n={7} />
-      <Zone kind="queue" label="Queue" n={12} />
-      <Zone kind="later" label="Later" n={3} />
-      <Zone kind="done" label="Finished" n={18} />
-      <Zone kind="rules" label="In force" n={4} />
-    </Pane>
-  ),
-}
 export const AgentMark: Story = {
   render: () => (
     <div className="flex items-center gap-4 p-6">

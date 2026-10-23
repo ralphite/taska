@@ -3,10 +3,9 @@ import type { ReactNode } from 'react'
 import { ICON, STATE_ICON, type IconName } from '../lib/icons'
 import { AVATAR, STATUS } from '../lib/constants'
 import { desk, projTone, searchWords, titleFor } from '../lib/state'
-import { clean } from '../lib/markdown'
 import { armed } from '../lib/dialog'
 
-export function Icon({ n, c = 'size-5', sw = '1.75' }: { n: IconName | string; c?: string; sw?: string }) {
+export function Icon({ n, c = 'size-5', sw = '1.75' }: { n: IconName; c?: string; sw?: string }) {
   return (
     <svg
       className={`${c} shrink-0`}
@@ -17,7 +16,7 @@ export function Icon({ n, c = 'size-5', sw = '1.75' }: { n: IconName | string; c
       strokeLinecap="round"
       strokeLinejoin="round"
       aria-hidden="true"
-      dangerouslySetInnerHTML={{ __html: ICON[n as IconName] ?? '' }}
+      dangerouslySetInnerHTML={{ __html: ICON[n] }}
     />
   )
 }
@@ -72,16 +71,6 @@ export function Avatar({ by }: { by: string }) {
     </span>
   )
 }
-/** HTML made by the Markdown renderer (escaped first, then checked by DOMPurify). */
-export function Html({
-  html,
-  className,
-  as = 'div',
-  ...rest
-}: { html: string; className?: string; as?: 'div' | 'span' | 'p' } & Record<string, unknown>) {
-  const T = as
-  return <T className={className} {...rest} dangerouslySetInnerHTML={{ __html: clean(html) }} />
-}
 /** T274 #35, F227: the searched words, marked where they show. */
 export function Hit({ text, words = searchWords() }: { text: string; words?: string[] }) {
   if (!words.length || !text) return <>{text}</>
@@ -124,17 +113,6 @@ export const SectionHead = ({ text, right }: { text: ReactNode; right?: ReactNod
 )
 export const Empty = ({ children }: { children: ReactNode }) => (
   <div className="px-6 py-16 text-center text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">{children}</div>
-)
-/** A <br> separated text in JSX. */
-export const Lines = ({ lines }: { lines: string[] }) => (
-  <>
-    {lines.map((l, i) => (
-      <span key={i}>
-        {i ? <br /> : null}
-        {l}
-      </span>
-    ))}
-  </>
 )
 /** A button that asks for a second click (B127, B131) says so in its own words while it waits. */
 export const Armed = ({ k, ask, children }: { k: string; ask: string; children: ReactNode }) => (

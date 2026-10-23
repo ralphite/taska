@@ -1,5 +1,6 @@
 // Words and looks shared by every part of the page. Colors carry one meaning each: amber = needs you, blue = in
 // progress, red = P0 / errors, green = done, faded = closed.
+import type { IconName } from './icons'
 import type { ItemType, Pri, Status, When } from './types'
 
 export const LETTER: Record<ItemType, string> = { feature: 'F', bug: 'B', idea: 'I', task: 'T', rule: 'R' }
@@ -158,7 +159,7 @@ export const ACT_TONE: Record<string, string> = {
   Retire: 'text-red-600 dark:text-red-400',
   Reactivate: 'text-blue-600 dark:text-blue-400',
 }
-export const ACT_ICON: Record<string, string> = {
+export const ACT_ICON: Record<string, IconName> = {
   Approve: 'thumb',
   Accept: 'check',
   Done: 'done',

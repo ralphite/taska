@@ -1,12 +1,12 @@
 // T457: one message of an item's talk, in each kind an agent or you write, and the parts a message is made of.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { DocCard, FileRows, MsgView, Rich, Talk, Thumbs, VoiceLine } from '../../components/Talk'
-import { byN, byR, model, parseRef } from '../../lib/state'
-import type { Item, Msg } from '../../lib/types'
-import { Pane } from '../lib/demo'
+import { DocCard, FileRows, MsgView, Rich, Talk, Thumbs, VoiceLine } from '../../../components/Talk'
+import { byN, byR, model, parseRef } from '../../../lib/state'
+import type { Item, Msg } from '../../../lib/types'
+import { Pane } from '../../lib/demo'
 
-const meta: Meta = {
-  title: 'Components/Talk',
+// what this part of Storybook shows (T512: its stories are in the folders beside this file)
+export const area: Meta = {
   parameters: {
     covers: [
       'MsgView',
@@ -26,8 +26,7 @@ const meta: Meta = {
     ],
   },
 }
-export default meta
-type Story = StoryObj
+export type Story = StoryObj
 
 const it = (ref: string) => byN.get(parseRef(ref) as number) as Item
 /** A message of the demo: in that item, the first that fits. */

@@ -1,16 +1,14 @@
 // B485: the card of a proposal or of finished work you replied on instead of deciding: what you did ("Skipped · you
 // replied") stands out as your pick; Approve / Accept waits quietly beside it and is itself again under the pointer.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { NeedsCard } from '../../components/Detail'
-import { byN, parseRef } from '../../lib/state'
-import type { Item } from '../../lib/types'
-import { Pane, type Setup } from '../lib/demo'
+import { NeedsCard } from '../../../components/Detail'
+import { byN, parseRef } from '../../../lib/state'
+import type { Item } from '../../../lib/types'
+import { Pane, type Setup } from '../../lib/demo'
 
-const meta: Meta = {
-  title: 'Components/Item card, you replied',
-}
-export default meta
-type Story = StoryObj
+// what this part of Storybook shows (T512: its stories are in the folders beside this file)
+export const area: Meta = {}
+export type Story = StoryObj
 
 const card = (ref: string, setup: (x: Setup) => void): Story => ({
   parameters: { taska: { setup } },

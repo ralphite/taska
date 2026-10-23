@@ -1,20 +1,21 @@
 // T457: what you said (inputs): the Inputs tab, one input in each state it can be in, and the New input page's list.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { ComposeHead, InputCard, InputPane, InputPaneHead, OutboxRows, SaidLately } from '../../components/Inputs'
-import { DraftCard } from '../../components/Composer'
-import { U, model } from '../../lib/state'
-import type { Input } from '../../lib/types'
-import { Pane, type Setup } from '../lib/demo'
-import { Column, ListColumn } from '../lib/column'
+import { ComposeHead, InputCard, OutboxRows, SaidLately } from '../../../components/Inputs'
+import { DraftCard } from '../../../components/Composer'
+import { U, model } from '../../../lib/state'
+import type { Input } from '../../../lib/types'
+import { Only, Pane, type Setup } from '../../lib/demo'
+import { Column, ListColumn } from '../../lib/column'
 
-const meta: Meta = {
-  title: 'Components/Inputs',
+// what this part of Storybook shows (T512: its stories are in the folders beside this file)
+export const area: Meta = {
   parameters: {
     covers: [
       'InputsView',
       'InputRow',
       'InputCard',
       'NotHandled',
+      // InputPane, InputPaneHead: the desktop's Inputs pane, which the page no longer reaches (proposed for removal)
       'InputPane',
       'InputPaneHead',
       'OutboxRows',
@@ -28,24 +29,15 @@ const meta: Meta = {
     ],
   },
 }
-export default meta
-type Story = StoryObj
+export type Story = StoryObj
 
-/** The Inputs tab: the list (and on the desktop the one picked, whole). */
+/** The Inputs tab, on the phone (the desktop has no Inputs tab: G I and /inputs open the New input page). */
 const tab = (setup?: (x: Setup) => void): Story => ({
   parameters: { taska: { setup: (x) => ((U.tab = 'inputs'), setup?.(x)) } },
   render: () => (
-    <div className="flex h-screen">
+    <Only on="phone">
       <ListColumn inputs />
-      <div className="hidden min-w-0 flex-1 flex-col lg:flex">
-        <header className="flex h-14 shrink-0 items-center gap-2 border-b border-zinc-200 px-5 dark:border-zinc-800">
-          <InputPaneHead />
-        </header>
-        <div className="min-h-0 flex-1 overflow-y-auto">
-          <InputPane />
-        </div>
-      </div>
-    </div>
+    </Only>
   ),
 })
 export const InputsTab = tab()

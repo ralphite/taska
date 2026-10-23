@@ -125,13 +125,13 @@ export const taskaLoader: Loader = async ({ parameters }) => {
   return {}
 }
 
-/** A pane as wide as the page gives it: the list column, the item pane, the phone's whole width. */
+/** As much room as the page gives a part: the list column, the item pane, the phone's whole width. Draws nothing. */
 export function Pane({
   w = 'list',
   children,
   h,
 }: {
-  w?: 'list' | 'item' | 'full' | 'sheet'
+  w?: 'list' | 'item' | 'wide' | 'full' | 'sheet'
   children: ReactNode
   h?: string
 }) {
@@ -139,11 +139,15 @@ export function Pane({
     // at 1440 the sidebar takes 16rem and the list 420px; the item pane has the rest
     list: 'w-full lg:w-[360px] xl:w-[420px]',
     item: 'w-full lg:w-[calc(100vw-4rem-360px)] xl:w-[calc(100vw-16rem-420px)]',
+    // the item at full width (O): the list's room too
+    wide: 'w-full lg:w-[calc(100vw-4rem)] xl:w-[calc(100vw-16rem)]',
     full: 'w-full',
     sheet: 'w-full max-w-lg',
   }[w]
   return (
-    <div className={`${width} ${h || ''} border-zinc-200 lg:border-r dark:border-zinc-800`} data-story-pane={w}>
+    // only the room the page gives the part: no line, colour or frame of its own (B495: nothing drawn that is not the
+    // page's)
+    <div className={`${width} ${h || ''}`} data-story-pane={w}>
       {children}
     </div>
   )

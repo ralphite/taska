@@ -1,15 +1,15 @@
 // T457: Settings, each section: its list of sections beside it on the desktop, a list of its own on the phone. Also
 // the list column's Documents, Activity and Deleted (desktop), and the home page with every project.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { ProjectView } from '../../components/Settings'
-import { DeletedView, SideList } from '../../components/SideList'
-import { Home } from '../../pages/Home'
-import { D, U, desk, model } from '../../lib/state'
-import { loadFixes, loadGuide, loadProjects } from '../../lib/settings'
-import { Pane, type Setup } from '../lib/demo'
+import { ProjectView } from '../../../components/Settings'
+import { DeletedView, SideList } from '../../../components/SideList'
+import { Home } from '../../../pages/Home'
+import { D, U, desk, model } from '../../../lib/state'
+import { loadFixes, loadGuide, loadProjects } from '../../../lib/settings'
+import { Pane, type Setup } from '../../lib/demo'
 
-const meta: Meta = {
-  title: 'Components/Settings',
+// what this part of Storybook shows (T512: its stories are in the folders beside this file)
+export const area: Meta = {
   parameters: {
     covers: [
       'ProjectView',
@@ -42,8 +42,7 @@ const meta: Meta = {
     ],
   },
 }
-export default meta
-type Story = StoryObj
+export type Story = StoryObj
 
 const section = (sec: string | null, setup?: (x: Setup) => void): Story => ({
   parameters: {
@@ -60,7 +59,7 @@ const section = (sec: string | null, setup?: (x: Setup) => void): Story => ({
     },
   },
   render: () => (
-    <div className="flex h-screen flex-col bg-white dark:bg-zinc-950">
+    <div className="flex h-screen flex-col">
       <ProjectView hidden={false} />
     </div>
   ),

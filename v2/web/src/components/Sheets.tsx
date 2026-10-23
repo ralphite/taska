@@ -1,6 +1,7 @@
 // Every sheet (one at a time): a handle, a title row (or a head), optional extra buttons beside x, an optional sub
 // line and a fixed foot. The focus card floats above the input box instead; a `pop` is a menu at a spot on the
 // desktop. lib/dialog.ts says which is open (OV.spec); this draws it.
+import type { IconName } from '../lib/icons'
 import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import {
   ACT_ICON,
@@ -183,7 +184,7 @@ function peekParts({ n }: Props): Parts | null {
   const pin = !it.wait ? cardMsg(it) : null,
     recent = it.thread.filter((x) => x.id !== it.wait?.id && x.id !== pin?.id).slice(-3),
     talk = it.thread.length
-  const btn = (attrs: Record<string, string | number>, icon: string, label: string, tone: string, key: string) => (
+  const btn = (attrs: Record<string, string | number>, icon: IconName, label: string, tone: string, key: string) => (
     <button
       key={key}
       {...attrs}
@@ -336,7 +337,7 @@ function menuParts({ n, arm }: Props): Parts | null {
   if (!it) return null
   const tile = (
     act: string,
-    icon: string,
+    icon: IconName,
     label: string,
     sub = '',
     attrs: Record<string, string> = {},
@@ -454,7 +455,7 @@ function menuDeskParts({ n }: Props): Parts | null {
   const arm = U.menuArm
   const row = (
     act: string,
-    icon: string,
+    icon: IconName,
     label: ReactNode,
     key: string,
     attrs: Record<string, string> = {},
@@ -1054,7 +1055,7 @@ function projMenuParts({ slug }: Props): Parts | null {
     here = s === S.project
   const p = here ? { name: S.project, title: S.title, open: openCount() } : (DR.list || []).find((p) => p.name === s)
   if (!p) return null
-  const row = (act: string, icon: string, label: string, key = '') => (
+  const row = (act: string, icon: IconName, label: string, key = '') => (
     <button
       key={act}
       data-act={act}
@@ -1100,7 +1101,7 @@ function inputMenuParts({ id }: Props): Parts | null {
   const r = byR.get(id as string)
   if (!r) return null
   const ok = inputMenuRows(r)
-  const row = (act: string, icon: string, label: string, tip = '') => (
+  const row = (act: string, icon: IconName, label: string, tip = '') => (
     <button
       key={act}
       data-act="input-pick"

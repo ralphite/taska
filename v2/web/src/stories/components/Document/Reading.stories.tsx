@@ -1,0 +1,11 @@
+// T512, B515: Document > Reading: its states, the parts modules draw them
+import type { Meta, StoryObj } from '@storybook/react-vite'
+import * as Document from '../parts/Document'
+
+const meta: Meta = { title: 'Components/Document/Reading' }
+export default meta
+
+export const WithComments: StoryObj = { ...Document.WithComments, name: 'With comments' }
+export const LongWithOutline: StoryObj = { ...Document.LongWithOutline, name: 'Long, with contents' }
+export const NoComments: StoryObj = { ...Document.NoComments, name: 'No comments' }
+export const WebPage: StoryObj = { ...Document.WebPage, name: 'Web page' }

@@ -10,25 +10,26 @@ import {
   FilterChips,
   FilterDot,
   FilterStrip,
+  filtersSet,
   MainHead,
   Pill,
   ProjBar,
   Rail,
-  SideFoot,
-  SideList,
   Tabs,
   Tip,
   Toast,
   Viewer,
-} from '../../components/Shell'
-import { D, DR, U, bump, model } from '../../lib/state'
-import { FAILED, TOAST } from '../../lib/toast'
-import { VW } from '../../lib/viewer'
-import { Only, Pane, type Setup } from '../lib/demo'
-import { Column } from '../lib/column'
+} from '../../../components/Shell'
+import { D, DR, U, byN, model, parseRef } from '../../../lib/state'
+import { tipShow } from '../../../lib/events'
+import { WorkerMark } from '../../../components/List'
+import { FAILED, TOAST } from '../../../lib/toast'
+import { VW } from '../../../lib/viewer'
+import { Only, Pane, type Setup } from '../../lib/demo'
+import { Column } from '../../lib/column'
 
-const meta: Meta = {
-  title: 'Components/Frame',
+// what this part of Storybook shows (T512: its stories are in the folders beside this file)
+export const area: Meta = {
   parameters: {
     covers: [
       'ProjBar',
@@ -53,8 +54,7 @@ const meta: Meta = {
     ],
   },
 }
-export default meta
-type Story = StoryObj
+export type Story = StoryObj
 const at = (setup: (x: Setup) => void) => ({ taska: { setup } })
 
 // ---------------------------------------------------------------- the heads
@@ -125,15 +125,13 @@ export const FiltersOpen: Story = {
   ),
 }
 export const FilterChipsAndDot: Story = {
-  parameters: at(() => (U.type = 'bug')),
+  parameters: at(() => {
+    U.type = 'bug'
+    U.pri = 'P0'
+  }),
   render: () => (
     <div className="flex items-center gap-4 p-6">
-      <FilterChips
-        set={[
-          ['type', 'Bug'],
-          ['pri', 'P0'],
-        ]}
-      />
+      <FilterChips set={filtersSet()} />
       <FilterDot />
     </div>
   ),
@@ -176,19 +174,8 @@ export const NotSaved = pill(() => {
 
 // ---------------------------------------------------------------- the sidebar, the rail, the phone's drawer
 
-/** The sidebar's projects (desktop) and its foot. */
+/** The sidebar (desktop: projects, Documents, Activity, Deleted, Storybook, Settings) and the phone's drawer, open. */
 export const Sidebar: Story = {
-  render: () => (
-    <div className="flex h-screen w-64 flex-col border-r border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900">
-      <div className="min-h-0 flex-1 overflow-y-auto">
-        <SideList />
-      </div>
-      <SideFoot />
-    </div>
-  ),
-}
-/** The whole drawer: the sidebar on the desktop, the drawer on the phone (open). */
-export const DrawerOpen: Story = {
   parameters: at(() => (DR.open = true)),
   render: () => <Drawer hidden={false} over={false} />,
 }
@@ -246,16 +233,16 @@ export const PictureViewer: Story = {
 
 function TipShown() {
   useEffect(() => {
-    const tip = document.getElementById('tip'),
-      text = document.getElementById('tipText')
-    if (!tip || !text) return
-    text.textContent = 'Claude Code · worker · 2 min · waiting for work'
-    tip.hidden = false
-    tip.style.transform = 'translate(40px, 40px)'
-    tip.setAttribute('data-on', '')
-    bump('tip')
+    // the page's own tip, shown for the agent's mark as pointing at it does (lib/events.ts)
+    const el = document.querySelector<HTMLElement>('[data-tip]')
+    if (el) tipShow(el, true)
   }, [])
-  return <Tip />
+  return (
+    <div className="p-10">
+      <WorkerMark it={byN.get(parseRef('F1') as number)!} />
+      <Tip />
+    </div>
+  )
 }
 /** The tip that shows when you point at something (desktop). */
 export const PointingTip: Story = { render: () => <TipShown /> }

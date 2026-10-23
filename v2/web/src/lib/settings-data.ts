@@ -1,8 +1,9 @@
 // Settings (B162): one page for everything you change now and then. Each section has its own address.
 // section: [address, icon, name, what it is for]
+import type { IconName } from './icons'
 import { projTitle } from './state'
 
-export const PSEC: Record<string, [string, string, string, string | (() => string)]> = {
+export const PSEC: Record<string, [string, IconName, string, string | (() => string)]> = {
   agents: [
     'agents',
     'bot',

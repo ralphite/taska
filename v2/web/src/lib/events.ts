@@ -66,7 +66,7 @@ function tipText(el: HTMLElement) {
   }
   return el.dataset.tip || (!el.textContent?.trim() && el.getAttribute('aria-label')) || ''
 }
-function tipShow(el: HTMLElement, quick: boolean) {
+export function tipShow(el: HTMLElement, quick: boolean) {
   const card = el.dataset.ref ? refCard(el.dataset.ref) : '',
     text = card || tipText(el) // F297: a code's card
   const tip = document.getElementById('tip'),

@@ -1,5 +1,6 @@
 // The list of items (Items, Archive, Rules), in the order of your loop (T65 "Needs you first"): what waits on you,
 // the agent's queue, Later, finished work, archived. Rows are swiped on the phone and dragged on the desktop.
+import type { IconName } from '../lib/icons'
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import {
   ACT_BG,
@@ -548,7 +549,7 @@ function NeedsBand({ needs, going }: { needs: Item[]; going: Go | null }) {
   const long = desk() && !going && needs.length > NEEDS_SHOWN + 1,
     cut = long && !U.needsAll && !needs.slice(NEEDS_SHOWN).some((it) => it.n === U.open)
   const rest = needs.length - NEEDS_SHOWN
-  const toggle = (label: string, icon: string) => (
+  const toggle = (label: string, icon: IconName) => (
     <button
       data-act="needs-more"
       className="flex h-10 w-full items-center gap-1.5 border-b border-zinc-100 pl-4 text-[13px] font-semibold text-amber-800 hover:bg-amber-50 dark:border-zinc-800/70 dark:text-amber-300 dark:hover:bg-amber-400/10"

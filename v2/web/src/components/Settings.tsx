@@ -1,5 +1,6 @@
 // Settings (B162): one page for everything you change now and then; each section has its own address. On the desktop
 // a column of sections and the section beside it; on the phone pages in the grouped style of a phone's own settings.
+import type { IconName } from '../lib/icons'
 import { useEffect, useLayoutEffect, useRef, type ReactNode } from 'react'
 import { AGENT_NAME, CHIP, FIELD, PRIMARY, P_BTN, SECOND, STATUS, TAB_NAME, TYPE_TEXT, WHEN } from '../lib/constants'
 import {
@@ -403,7 +404,7 @@ const BODY: Record<string, () => ReactNode> = {
       ask = agentAsk()
     const seen = [...(S.agents || [])].sort((a, b) => b.t - a.t)
     const CARD = 'rounded-2xl border border-zinc-200 dark:border-zinc-800'
-    const way = (icon: string, title: string, copy: string, body: ReactNode) => (
+    const way = (icon: IconName, title: string, copy: string, body: ReactNode) => (
       <section className={`${CARD} flex min-w-0 flex-col`}>
         <header className="flex h-12 items-center gap-2 border-b border-zinc-200 pr-2 pl-4 dark:border-zinc-800">
           <Icon n={icon} c="size-4 text-zinc-500 dark:text-zinc-400" />

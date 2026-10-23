@@ -1,12 +1,12 @@
 // T457: the one input box (and the line above it that says what happened to what you sent), in every state: what it
 // writes to, words, pictures, voice notes on their way, a recording, words still being worked out, sending, failing.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { OV, R_STATE, U, desk, model, type DraftFile } from '../../lib/state'
-import { type Setup } from '../lib/demo'
-import { Column } from '../lib/column'
+import { OV, R_STATE, U, desk, model, type DraftFile } from '../../../lib/state'
+import { type Setup } from '../../lib/demo'
+import { Column } from '../../lib/column'
 
-const meta: Meta = {
-  title: 'Components/Input box',
+// what this part of Storybook shows (T512: its stories are in the folders beside this file)
+export const area: Meta = {
   parameters: {
     covers: [
       'Composer',
@@ -28,8 +28,7 @@ const meta: Meta = {
     ],
   },
 }
-export default meta
-type Story = StoryObj
+export type Story = StoryObj
 
 const box = (text = '', setup?: (x: Setup) => void): Story => ({
   parameters: { taska: { setup } },

@@ -1,7 +1,7 @@
 // T457 (r680): the column the input box lives in, as on the page: on the desktop the right pane (the New input page
 // when nothing is open, else the item or its document) with the box at its foot; on the phone the list, or the open
 // item, with the box at the foot of the screen. Every story of the item, its document and the box stands in it. Wide: as
-// wide as the window, as a full-width item pane is (B495: two columns).
+// wide as a full-width item pane (B495: two columns).
 import { useLayoutEffect } from 'react'
 import { Composer } from '../../components/Composer'
 import { DetailView } from '../../components/Detail'
@@ -35,7 +35,7 @@ export function Column({ text = '', wide = false }: { text?: string; wide?: bool
   const isDesk = desk(),
     compose = isDesk && D.compose
   return (
-    <Pane w={isDesk && !wide ? 'item' : 'full'} h="flex h-screen flex-col lg:h-[calc(100dvh-3rem)]">
+    <Pane w={isDesk ? (wide ? 'wide' : 'item') : 'full'} h="flex h-screen flex-col lg:h-[calc(100dvh-3rem)]">
       {isDesk || U.open ? (
         // on the New input page the pane is its head, and the foot (the box and what you said lately) scrolls under it
         <div className={compose ? 'shrink-0' : 'flex min-h-0 flex-1 flex-col'}>

@@ -2,6 +2,7 @@
 // then one row: + (x while recording), the text (or the recording in the same place and size), and one round button
 // that never moves: the mic while the box is empty, Send once there is something to send, a check while recording.
 // B265: it is one element, written where it belongs (under a passage, in a thread, under an input); it moves there.
+import type { IconName } from '../lib/icons'
 import { useLayoutEffect, useRef, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { HIT, LINK_BTN } from '../lib/constants'
@@ -112,7 +113,7 @@ function ScopeLine({
   detail,
   right,
 }: {
-  icon: string
+  icon: IconName
   label: ReactNode
   detail?: ReactNode
   right?: ReactNode
@@ -677,7 +678,7 @@ export function RecTime() {
 }
 interface Btn {
   act: string
-  icon: string
+  icon: IconName
   label: string
   tip: string
   iconCls: string
@@ -685,7 +686,7 @@ interface Btn {
 }
 const btn = (
   act: string,
-  icon: string,
+  icon: IconName,
   label: string,
   tip: string,
   iconCls = 'size-6 lg:size-5',

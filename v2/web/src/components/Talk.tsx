@@ -1,5 +1,6 @@
 // A conversation on an item: your words on the right in blue, an agent's on the left in a card under its name, the
 // organizer's notes, documents' comments in time (T274 #4), files and voice notes. The same on the item page and the card.
+import type { IconName } from '../lib/icons'
 import type { ReactNode } from 'react'
 import {
   DC_BTN,
@@ -276,7 +277,7 @@ export function NeedFrame({
   going = '',
   act = null,
 }: {
-  icon: string
+  icon: IconName
   title: string
   going?: string
   act?: ReactNode

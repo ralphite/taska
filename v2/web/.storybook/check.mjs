@@ -1,10 +1,11 @@
 // T457, R489: Storybook must have every component. Each component of the page (a function or arrow component in
 // src/components and src/pages) has to be in a story: imported by a story file, or named in a story file's
-// `covers: [...]` (the parts a story shows inside a bigger one). A component with no story fails the build.
+// `covers: [...]` (the parts a story shows inside a bigger one); the story files and the modules that draw them
+// (src/stories/components/parts) count. A component with no story fails the build.
 //   node .storybook/check.mjs            the check
 //   node .storybook/check.mjs --open     and every story of the built Storybook (dist/storybook) opens: no error,
 //                                        something drawn (the real page too, for the Pages, Demo and Prototype)
-import { readFileSync, readdirSync, statSync } from 'node:fs'
+import { mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import { createServer } from 'node:http'
 import { extname, join } from 'node:path'
 
@@ -24,7 +25,7 @@ for (const f of files('src', (p) => /^src\/(components|pages)\/[^/]+\.tsx$/.test
 }
 // what the stories show
 const shown = new Set()
-for (const f of files('src', (p) => p.endsWith('.stories.tsx'))) {
+for (const f of files('src', (p) => p.startsWith('src/stories/') && p.endsWith('.tsx'))) {
   const src = readFileSync(join(ROOT, f), 'utf8')
   for (const m of src.matchAll(/import \{([^}]*)\} from '[./]+\/(components|pages)\//g))
     for (const n of m[1].split(',')) shown.add(n.trim().split(/\s+as\s+/)[0])
@@ -38,6 +39,44 @@ if (missing.length) {
   process.exit(1)
 }
 console.log(`Storybook: all ${comps.size} components are in stories`)
+
+// T513: every icon the page uses, and where: the gallery story (Icons and marks > Icons) is drawn from this file, made
+// here from the code at every build, so it cannot miss one. A name used as an icon that is not an icon fails (the
+// type checker says so too).
+{
+  const { iconUses } = await import('./icon-uses.mjs')
+  const { icons, uses, unknown } = iconUses()
+  if (unknown.length) {
+    console.error('Storybook: names used as icons that are not icons (src/lib/icons.ts):')
+    for (const u of unknown) console.error(`  ${u.name}  (${u.file}:${u.line})`)
+    process.exit(1)
+  }
+  const out = join(ROOT, 'src/stories/generated/iconUses.ts')
+  const text =
+    '// Made by .storybook/check.mjs from the code at every build (T513): each icon, and where the page uses it.\n' +
+    '// Do not edit by hand.\n' +
+    'export const ICON_USES: Record<string, { file: string; in: string }[]> = {\n' +
+    Object.entries(uses)
+      .map(([n, l]) => `  ${JSON.stringify(n)}: ${JSON.stringify(l)},`)
+      .join('\n') +
+    '\n}' +
+    '\n'
+  let was = ''
+  try {
+    was = readFileSync(out, 'utf8')
+  } catch {
+    /* first time */
+  }
+  if (was !== text) {
+    mkdirSync(join(ROOT, 'src/stories/generated'), { recursive: true })
+    writeFileSync(out, text)
+  }
+  const unused = icons.filter((n) => !uses[n].length)
+  console.log(
+    `Storybook: ${icons.length - unused.length} icons used, all in the gallery` +
+      (unused.length ? `; not used anywhere: ${unused.join(', ')}` : ''),
+  )
+}
 
 if (process.argv.includes('--open')) {
   const { chromium } = await import('@playwright/test')
