@@ -413,8 +413,10 @@ export const dayOf = (t: string) => {
 }
 export const dayShort = (t: string) =>
   t ? new Date(t).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : ''
-export const who = (b: string) => (b === 'you' ? 'You' : b === 'org' ? 'Organizer' : b === 'agent' ? 'Agent' : b)
-export const whoName = (b: string) => AGENT_NAME[b] || who(b)
+/** Who wrote it, as a name: an agent by its name; one Taska has no name for by its id with a capital ("gemini" is
+ * Gemini, T529), as you are You */
+export const whoName = (b: string) =>
+  AGENT_NAME[b] || (b === 'org' ? 'Organizer' : (b || '').charAt(0).toUpperCase() + (b || '').slice(1))
 /** T458: an agent's name with the session that wrote the message, e.g. "Claude Code · worker" */
 export const msgName = (x: { by: string; ses?: string }) => whoName(x.by) + (x.ses ? ` · ${x.ses}` : '')
 export const rcode = (id: string | null | undefined) => String(id || '').replace(/^r(\d+)$/, '#$1') // T274 #22: an input reads #315
@@ -794,7 +796,7 @@ export function agentState(
 ) {
   const list = [...(agents || [])].sort((a, b) => b.t - a.t),
     a = list.find((x) => x.waiting) || list[0]
-  const name = a ? AGENT_NAME[a.name] || a.name : ''
+  const name = a ? whoName(a.name) : ''
   if (a?.waiting) return ['ok', `${name} ready`, `${name} is connected and picks up new work right away.`] as const
   if (a && Date.now() - a.t < 10 * 60e3)
     return ['ok', `${name} · ${agoShort(a.t)}`, `${name} was here ${agoLong(a.t)}.`] as const

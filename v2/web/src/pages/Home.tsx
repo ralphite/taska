@@ -1,8 +1,8 @@
 // The home page (F251 B): one table of the projects, what needs you in each, and one button that goes through all of
 // it; search across every project; a new project in place (B131); a deleted project's old link says so (B287).
 import { useEffect, useRef, useState } from 'react'
-import { AGENT_NAME, PROJ_TONES } from '../lib/constants'
-import { projHash } from '../lib/state'
+import { PROJ_TONES } from '../lib/constants'
+import { projHash, whoName } from '../lib/state'
 import type { Need, ProjectRow } from '../lib/types'
 import { navigate } from '../lib/switch'
 
@@ -22,7 +22,7 @@ function AgentCell({ p }: { p: ProjectRow }) {
   // the agent last heard of: green while it is around, gray once it went quiet
   const a = [...(p.agents || [])].sort((x, y) => y.t - x.t)[0]
   const on = !!a && (a.waiting || Date.now() - a.t < 10 * 60e3),
-    name = a ? AGENT_NAME[a.name] || a.name : 'No agent'
+    name = a ? whoName(a.name) : 'No agent'
   return (
     <span className="flex min-w-0 items-center gap-1.5 text-zinc-600 dark:text-zinc-300">
       <span className={`size-1.5 shrink-0 rounded-full ${on ? 'bg-emerald-500' : 'bg-zinc-300 dark:bg-zinc-600'}`} />

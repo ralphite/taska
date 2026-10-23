@@ -19,7 +19,6 @@ import {
   TABS,
   WHEN,
   type Tab,
-  AGENT_NAME,
 } from '../lib/constants'
 import {
   D,
@@ -50,6 +49,7 @@ import {
   useArea,
   useTick,
   visible,
+  whoName,
 } from '../lib/state'
 import { PSEC } from '../lib/settings-data'
 import { FAILED, TOAST, hideToast } from '../lib/toast'
@@ -117,7 +117,7 @@ export function agentLine() {
     .flatMap((a) =>
       (a.sessions?.length ? a.sessions : [{ name: a.session || '', t: a.t }]).map((x, i) => ({
         t: x.t,
-        text: [AGENT_NAME[a.name] || a.name, x.name, agoShort(x.t), a.waiting && i === 0 ? 'waiting for work' : '']
+        text: [whoName(a.name), x.name, agoShort(x.t), a.waiting && i === 0 ? 'waiting for work' : '']
           .filter(Boolean)
           .join(' · '),
       })),

@@ -386,7 +386,7 @@ export const YouJustSent = talk(
 export const YouMoved = talk('F1', voiced, () => {
   byR.get('r4')!.moved = { to: 'mobile-app', as: 'r9' }
 })
-/** The pointer on its voice note: Original words floats above it (F364). */
+/** The pointer on its voice note: Original words floats to its left, clear of your words (F364, T529). */
 export const YouMovedVoicePointed = pointed(YouMoved, ['.group\\/voice'])
 // what you sent to this item and Taska does not have yet (B440), under the item's latest message (T13: Codex's)
 const latest =

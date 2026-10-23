@@ -432,7 +432,7 @@ const BODY: Record<string, () => ReactNode> = {
                     className={`flex h-9 items-center gap-2.5 text-sm ${a.name in AGENT_NAME && a.name !== 'agent' ? '' : 'opacity-55'}`}
                   >
                     <Avatar by={a.name} />
-                    <span className="min-w-0 flex-1 truncate">{AGENT_NAME[a.name] || a.name}</span>
+                    <span className="min-w-0 flex-1 truncate">{whoName(a.name)}</span>
                     <span className="text-xs text-zinc-500 tabular-nums dark:text-zinc-400">
                       {a.waiting ? 'waiting for work' : agoLong(a.t)}
                     </span>

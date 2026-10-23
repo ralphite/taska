@@ -3,6 +3,7 @@
 import type { IconName } from '../lib/icons'
 import type { ReactNode } from 'react'
 import {
+  ACT_ICON,
   DC_BTN,
   DONE_OTHER_BTN,
   DONE_PICK,
@@ -92,10 +93,13 @@ function VoiceTime({ src, total }: { src: string; total: number | null }) {
     )
   return <>{total !== null ? clock(total) : t !== null ? clock(t) : 'Play'}</>
 }
-// F364: pointing at a voice note floats this bar above it, as a selection does; its padding below bridges to the note
-function WordsBar({ f }: { f: string }) {
+// F364: pointing at a voice note floats this bar above it, as a selection does; its padding below bridges to the note.
+// T529: `beside`, under your words: to the note's left, in the line's empty room, so it covers none of your words
+function WordsBar({ f, beside = false }: { f: string; beside?: boolean }) {
   return (
-    <span className="absolute bottom-full left-0 z-20 hidden pb-1.5 lg:group-focus-within/voice:block lg:group-hover/voice:block">
+    <span
+      className={`absolute z-20 hidden lg:group-focus-within/voice:block lg:group-hover/voice:block ${beside ? 'top-0 right-full pr-1.5' : 'bottom-full left-0 pb-1.5'}`}
+    >
       <span className="flex rounded-full bg-zinc-900 p-1 shadow-lg ring-1 ring-black/10 dark:bg-zinc-100 dark:ring-white/10">
         <button
           data-act="as-said"
@@ -220,7 +224,15 @@ export function FileRows({
   )
 }
 // T274 #40: your voice note under your words is one small line: play, its length, the original words
-export function VoiceLine({ files, bare = false }: { files?: FileRef[]; bare?: boolean }) {
+export function VoiceLine({
+  files,
+  bare = false,
+  beside = false,
+}: {
+  files?: FileRef[]
+  bare?: boolean
+  beside?: boolean
+}) {
   const audio = (files || []).filter(isAudio)
   const tidy = !bare && P_CACHE.prefs?.tidy !== false // bare: Original words is in the message's ⋯ (B321)
   return (
@@ -255,7 +267,7 @@ export function VoiceLine({ files, bare = false }: { files?: FileRef[]; bare?: b
                 >
                   Original words
                 </button>
-                <WordsBar f={f.f} />
+                <WordsBar f={f.f} beside={beside} />
               </>
             ) : null}
           </span>
@@ -335,22 +347,19 @@ export function NeedFrame({
     </section>
   )
 }
+// What you chose on a proposal or finished work, in the words of its button
+const chosen = (d: NonNullable<Item['decided']>) =>
+  d.from === 'proposed' ? (d.to === 'dropped' ? "Won't do" : 'Approve') : d.to === 'done' ? 'Accept' : 'Not yet'
 // F427, F428: Approve or Accept as well as answering; inside the question's card, answered or not
 export const KeepBtn = ({ it, quiet = false }: { it: Item; quiet?: boolean }) =>
   it.decided &&
   it.status !== it.decided.from &&
   (lastAgentMsg(it)?.id ?? null) === it.decided.msg &&
   (it.decided.from === 'proposed' || it.decided.from === 'review') ? (
-    // T438 #5: decided: the button stays where it was, saying what you chose
+    // T438 #5: decided: the button stays where it was, saying what you chose, with that choice's own icon (T529)
     <span className={`${DONE_PICK} font-medium`}>
-      <Icon n="check" c="size-4" sw="2.25" />
-      {it.decided.from === 'proposed'
-        ? it.decided.to === 'dropped'
-          ? "Won't do"
-          : 'Approve'
-        : it.decided.to === 'done'
-          ? 'Accept'
-          : 'Not yet'}
+      <Icon n={ACT_ICON[chosen(it.decided)]} c="size-4" sw="2.25" />
+      {chosen(it.decided)}
     </span>
   ) : it.status === 'proposed' ? (
     // B485 (quiet): you answered or replied instead: what you did stands out, Approve waits quietly beside it
@@ -693,7 +702,7 @@ export function MsgView({
         )}
         {/* B321: one line under what you wrote: the voice note, who and when, and ⋯ with Edit, Add more and the rest */}
         <div className="flex flex-wrap items-center justify-end gap-x-1">
-          {ver?.old ? null : <VoiceLine files={src?.files} bare={!!src && !src.moved && !src.deleted} />}
+          {ver?.old ? null : <VoiceLine files={src?.files} bare={!!src && !src.moved && !src.deleted} beside />}
           <span className="px-1 text-[11px] text-zinc-400 dark:text-zinc-500">
             You · {ver?.old ? 'earlier version · ' : ver?.label ? ver.label + ' · ' : ''}
             {when(x.t)}
@@ -760,7 +769,7 @@ export function MsgView({
   if (withdrawn)
     return (
       <div className="flex flex-col items-start gap-1.5 opacity-60">
-        <div className="flex items-center gap-2 px-1 text-[11px] text-zinc-400 dark:text-zinc-500">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 px-1 text-[11px] whitespace-nowrap text-zinc-400 dark:text-zinc-500">
           <Avatar by={x.by} />
           <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">{whoName(x.by)}</span>
           {x.ses ? <span className="-ml-1 text-xs text-zinc-500 dark:text-zinc-400">· {x.ses}</span> : null}
@@ -795,7 +804,8 @@ export function MsgView({
     : 'border-zinc-200 bg-zinc-50 px-4 py-3 text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200'
   return (
     <div className="group/msg flex flex-col items-start gap-1.5">
-      <div className="flex items-center gap-2 px-1 text-[11px] text-zinc-400 dark:text-zinc-500">
+      {/* T529: on a narrow screen the header wraps between its parts, never inside one */}
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 px-1 text-[11px] whitespace-nowrap text-zinc-400 dark:text-zinc-500">
         <Avatar by={x.by} />
         <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">{whoName(x.by)}</span>
         {x.ses ? <span className="-ml-1 text-xs text-zinc-500 dark:text-zinc-400">· {x.ses}</span> : null}
@@ -809,22 +819,25 @@ export function MsgView({
         ) : (
           <KindTag x={x} />
         )}
-        <span>{when(x.t)}</span>
-        {form || !U.open ? null : x.hidden ? (
-          <button data-act="msg-hide" data-n={U.open} data-id={x.id} data-on={0} className={DC_BTN}>
-            Show again
-          </button>
-        ) : (
-          <button
-            data-act="msg-menu"
-            data-n={U.open}
-            data-id={x.id}
-            aria-label="More for this message"
-            className={`${DC_BTN} min-w-9 justify-center lg:opacity-0 lg:group-hover/msg:opacity-100 lg:focus-visible:opacity-100`}
-          >
-            <Icon n="more" c="size-3.5" />
-          </button>
-        )}
+        {/* the time and the message's More go together, so More is never alone on a line */}
+        <span className="flex items-center gap-2">
+          {when(x.t)}
+          {form || !U.open ? null : x.hidden ? (
+            <button data-act="msg-hide" data-n={U.open} data-id={x.id} data-on={0} className={DC_BTN}>
+              Show again
+            </button>
+          ) : (
+            <button
+              data-act="msg-menu"
+              data-n={U.open}
+              data-id={x.id}
+              aria-label="More for this message"
+              className={`${DC_BTN} min-w-9 justify-center lg:opacity-0 lg:group-hover/msg:opacity-100 lg:focus-visible:opacity-100`}
+            >
+              <Icon n="more" c="size-3.5" />
+            </button>
+          )}
+        </span>
       </div>
       <div className={`w-full rounded-2xl rounded-tl-md border text-[15px] leading-relaxed ${card}`}>
         {form ? (
@@ -858,12 +871,13 @@ export function docNotes(n: number, from = ''): Note[] {
     .sort((a, b) => a.c.t.localeCompare(b.c.t))
     .map(({ c, d, key }) => {
       const you = c.by === 'you',
+        // T529: its padding only gives the pointer's background room; the words sit as far apart as the line's others
         where = (
           <button
             data-act="doc-at"
             data-d={d.d}
             data-key={key}
-            className="min-w-0 truncate rounded px-1 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+            className="-mx-1 rounded px-1 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
           >
             on <span className="font-mono">D{d.d}</span>
           </button>
@@ -905,9 +919,9 @@ export function docNotes(n: number, from = ''): Note[] {
               <VoiceLine files={c.files} bare />
               <span className="flex max-w-full min-w-0 items-center gap-0.5 px-1">
                 <Icon n="comment" c="size-3 shrink-0" />
-                <span className="shrink-0">You ·</span>
-                {where}
-                <span className="shrink-0">· {when(c.t)}</span>
+                <span className="min-w-0 truncate">
+                  You · {where} · {when(c.t)}
+                </span>
               </span>
             </div>
           </div>

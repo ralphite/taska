@@ -14,7 +14,6 @@ import {
   NEEDS_SHOWN,
   PRI_TEXT,
   QUIET_MS,
-  AGENT_NAME,
   STATUS,
   TAB_NAME,
   TYPE_TEXT,
@@ -52,6 +51,7 @@ import {
   visible,
   walkOrder,
   type Go,
+  whoName,
 } from '../lib/state'
 import type { Item } from '../lib/types'
 import { LIST, ROW_H, holding, listEnter, listLeave } from '../lib/listhold'
@@ -98,7 +98,7 @@ const onlySession = (by: string) => {
 export function WorkerMark({ it }: { it: Item }) {
   const a = it.agent
   if (!a) return null
-  const name = AGENT_NAME[a.by] || a.by,
+  const name = whoName(a.by),
     quiet = Date.now() - new Date(a.t).getTime()
   const ses = a.ses || onlySession(a.by) // F450: the session working on it; F411: else the only one seen lately
   const who = name + (ses ? ` · ${ses}` : '')

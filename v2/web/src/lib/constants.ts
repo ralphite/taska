@@ -44,7 +44,8 @@ export const AGENT_NAME: Record<string, string> = {
   antigravity: 'Antigravity',
   agent: 'Agent',
 }
-export const AVATAR: Record<string, string> = { 'claude-code': 'C', codex: 'X', antigravity: 'A', org: 'O', agent: 'A' }
+// an agent's mark: one letter of its own (T529: Antigravity's is V, as A is any agent's and G an unknown Gemini's)
+export const AVATAR: Record<string, string> = { 'claude-code': 'C', codex: 'X', antigravity: 'V', org: 'O', agent: 'A' }
 export const QUIET_MS = 30 * 60 * 1000 // the server's CLAIM_TTL: quiet longer than this, another agent may take the item (F194)
 
 // Buttons and fields
