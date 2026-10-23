@@ -1,5 +1,6 @@
 // What needs you is one number wherever it is shown: the project's badge in the sidebar, the Needs you view, and what
 // the server tells the other pages (B482).
+// guards: src/components/Shell.tsx src/components/List.tsx src/components/SideList.tsx src/lib/views.ts src/lib/data.ts server/taska/hub.py server/taska/store.py server/taska/views.py
 import { expect, test } from '@playwright/test'
 import { isDesk, open, project } from './seed'
 

@@ -1,8 +1,9 @@
 // A form you answer by writing instead of picking says so: Skipped, on every kind of form (B471, T472).
+// guards: src/components/Talk.tsx src/components/Detail.tsx src/components/Doc.tsx src/lib/actions.ts src/lib/doctick.ts server/
 import { expect, test } from '@playwright/test'
 import { open, project } from './seed'
 
-test('a question, a proposal and finished work answered by a reply show Skipped (B471)', async ({ page, request }) => {
+test('r637 r140 r349: a question, a proposal and finished work answered by a reply show Skipped (B471)', async ({ page, request }) => {
   const p = await project(request, {
     agent: `new task P2 now Pick a colour
 new idea P2 now A proposal

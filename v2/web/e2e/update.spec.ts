@@ -1,5 +1,6 @@
 // A page left running old code after Taska got new code offers Reload while you use it, and reloads by itself once
 // nobody has touched it for 5 minutes (F449, R284).
+// guards: src/lib/data.ts src/lib/boot.ts src/lib/notices.ts src/components/Shell.tsx src/sw.ts server/taska/web.py
 import { expect, test } from '@playwright/test'
 import { LOOP, open, project } from './seed'
 

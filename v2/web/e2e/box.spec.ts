@@ -1,4 +1,5 @@
 // The box keeps its height while you record, whatever else the page draws meanwhile (B481).
+// guards: src/components/Composer.tsx src/components/Shell.tsx src/components/Detail.tsx src/components/Talk.tsx src/lib/voice.ts src/lib/audio.ts src/lib/outbox.ts src/lib/drafts.ts
 import { expect, test } from '@playwright/test'
 import { LOOP, isDesk, open, project } from './seed'
 

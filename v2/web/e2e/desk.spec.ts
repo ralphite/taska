@@ -1,4 +1,5 @@
 // The desktop's keys and panes (D20 section 4.3), and documents with comments in place (section 2.5).
+// guards: src/components/ src/lib/keys.ts src/lib/events.ts src/lib/actions.ts src/lib/docs.ts src/lib/doctick.ts src/lib/rows.ts src/lib/nav.ts src/lib/go.ts src/lib/listhold.ts src/lib/markdown.ts
 import { expect, test } from '@playwright/test'
 import { LOOP, isDesk, open, project } from './seed'
 
@@ -19,7 +20,7 @@ test('J opens the next item, the dot opens its menu, Esc steps back, ? shows the
   await expect(page.locator('#dlgTitle')).toHaveText('Keyboard shortcuts')
 })
 
-test('E archives the open item and Z puts it back', async ({ page, request }) => {
+test('r45 r330: E archives the open item and Z puts it back', async ({ page, request }) => {
   const p = await project(request, LOOP)
   await open(page, p)
   await page.locator('#list [data-act="open"]').filter({ hasText: 'Write the user docs' }).click()
@@ -29,7 +30,7 @@ test('E archives the open item and Z puts it back', async ({ page, request }) =>
   await expect.poll(async () => p.read('items?archived=1')).not.toContain('Write the user docs')
 })
 
-test('a comment on a paragraph of a document is written in the one box, which stays at the bottom (B340)', async ({
+test('r447 r503: a comment on a paragraph of a document is written in the one box, which stays at the bottom (B340)', async ({
   page,
   request,
 }) => {
@@ -90,7 +91,7 @@ test('two places picked in one paragraph keep two threads; an answer goes to the
   await expect(thread).not.toContainText('About pears')
 })
 
-test("a row's buttons sit side by side, with no empty room where one does not apply (T475)", async ({
+test("r641: a row's buttons sit side by side, with no empty room where one does not apply (T475)", async ({
   page,
   request,
 }) => {

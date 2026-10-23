@@ -1,4 +1,5 @@
 // More of what you do every day, on the phone and the desktop (D20 sections 4 to 6).
+// guards: src/components/ src/lib/nav.ts src/lib/keys.ts src/lib/actions.ts src/lib/edit.ts src/lib/pages.ts src/lib/views.ts src/lib/url.ts server/
 import { expect, test } from '@playwright/test'
 import { LOOP, isDesk, needsView, open, project } from './seed'
 

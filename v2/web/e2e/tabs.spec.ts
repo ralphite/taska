@@ -1,6 +1,7 @@
 /// <reference lib="dom" />
 // Many tabs and slow networks (T293): Taska stays quick with many tabs open, and opens again from what the browser
 // kept.
+// guards: src/lib/data.ts src/lib/boot.ts src/lib/switch.ts src/sw.ts server/taska/web.py server/taska/hub.py
 import { expect, test } from '@playwright/test'
 import { LOOP, isDesk, open, project } from './seed'
 

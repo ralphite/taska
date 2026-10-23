@@ -1,4 +1,5 @@
 // The loop between you and your agents, as the page shows it (D20 sections 3 and 4).
+// guards: src/components/List.tsx src/components/Detail.tsx src/components/Talk.tsx src/components/Composer.tsx src/components/Sheets.tsx src/lib/actions.ts src/lib/rows.ts src/lib/views.ts src/lib/outbox.ts src/lib/go.ts server/
 import { expect, test } from '@playwright/test'
 import { LOOP, isDesk, open, project, treeList } from './seed'
 
@@ -39,7 +40,7 @@ test('a question is answered by picking a choice and sending it', async ({ page,
   await expect.poll(async () => p.read('T1')).toContain('✓ JSON')
 })
 
-test('a new input goes to the inbox, and a reply goes to its item', async ({ page, request }) => {
+test('r113: a new input goes to the inbox, and a reply goes to its item', async ({ page, request }) => {
   const p = await project(request, LOOP)
   await open(page, p)
   await page.locator('#text').click()
