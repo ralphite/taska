@@ -288,7 +288,7 @@ export function WebPage({ d }: { d: Doc }) {
       {held && rects[held.key] ? ring(held.key, rects[held.key], 'ring-amber-300') : null}
       {amber.map((k) => ring(k, rects[k], 'ring-amber-400'))}
       {side && held && rects[held.key] ? (
-        // B498: the part picked or spoken about keeps its mic right there: press it to speak, it turns into Stop
+        // B497, B498: the part picked or spoken about keeps its buttons right there; the mic pressed turns into Stop
         <div
           className="absolute z-10 flex flex-row gap-1"
           style={{ left: btnsAt(rects[held.key]).x, top: btnsAt(rects[held.key]).y }}
@@ -306,6 +306,12 @@ export function WebPage({ d }: { d: Doc }) {
           >
             <Icon n={rec ? 'stop' : 'mic'} c="size-4" />
           </button>
+          {rec ? null : (
+            // B497 (r739): picked, both buttons stay on the part, where they are needed
+            <button data-act="page-pick" data-key={held.key} data-quote={held.text} title="Comment" className={btn}>
+              <Icon n="comment" c="size-4" />
+            </button>
+          )}
         </div>
       ) : hover && mode === true && !held ? (
         <div

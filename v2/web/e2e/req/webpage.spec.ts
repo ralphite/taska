@@ -58,6 +58,62 @@ test('r688: a comment shows the part it is on: under the pointer and open; a cli
   await expect(thread).toHaveCount(0)
 })
 
+// nested parts, as in an app page: a board, its columns, their cards with buttons
+const APP = `${LOOP.then}T4 html App page
+  <!doctype html><html><body style="margin:0;padding:24px;font:14px sans-serif"><div id="board" style="display:flex;gap:12px;padding:12px;border:1px solid #ccc"><div id="todo" style="flex:1;padding:8px;border:1px solid #ddd"><h3>To do</h3><div id="card1" style="padding:8px;border:1px solid #eee">Sketch the onboarding <button>Move</button></div><div id="card2" style="padding:8px;border:1px solid #eee;margin-top:8px">Write the notes <button>Move</button></div></div><div id="done" style="flex:1;padding:8px;border:1px solid #ddd"><h3>Done</h3><div id="card3" style="padding:8px;border:1px solid #eee">Fix the search <button>Move</button></div></div></div></body></html>
+`
+
+test('r684 r739: a part picked in nested HTML keeps its two buttons, reached across other parts; Esc lets another be picked (B497)', async ({
+  page,
+  request,
+}) => {
+  test.skip(!isDesk(page), 'Comment mode is for the pointer')
+  const p = await project(request, { ...LOOP, then: APP })
+  await open(page, p, 'D1')
+  const frame = page.frameLocator('#detailBody iframe')
+  await expect(frame.getByText('Sketch the onboarding')).toBeVisible()
+  await page.locator('[data-act="doc-inspect"]').click()
+  const card1 = await frame.locator('#card1').boundingBox()
+  if (!card1) throw new Error('not drawn')
+  // point at the card, then click it: it is the one picked
+  await page.mouse.move(card1.x + 20, card1.y + card1.height / 2, { steps: 5 })
+  await page.mouse.click(card1.x + 20, card1.y + card1.height / 2)
+  await expect(page.locator('#scope')).toContainText('Sketch the onboarding')
+  const say = page.locator('[data-act="page-say"]').filter({ visible: true }),
+    cmt = page.locator('[data-act="page-pick"]').filter({ visible: true })
+  await expect(say).toHaveCount(1)
+  await expect(cmt).toHaveCount(1)
+  const key = await say.getAttribute('data-key')
+  await expect(cmt).toHaveAttribute('data-key', key || '')
+  // across the column, the board and the other cards to the buttons: they stay, for the same part
+  const c = await cmt.boundingBox()
+  if (!c) throw new Error('no button')
+  const card2 = await frame.locator('#card2').boundingBox(),
+    card3 = await frame.locator('#card3').boundingBox()
+  if (!card2 || !card3) throw new Error('not drawn')
+  await page.mouse.move(card2.x + 30, card2.y + 10, { steps: 6 })
+  await page.mouse.move(card3.x + 30, card3.y + 10, { steps: 6 })
+  await page.mouse.move(c.x + c.width / 2, c.y + c.height / 2, { steps: 12 })
+  await page.waitForTimeout(400)
+  await expect(page.locator('#detailBody .ring-blue-500')).toHaveCount(0)
+  await expect(cmt).toHaveAttribute('data-key', key || '')
+  await cmt.click()
+  await expect(page.locator('#text')).toBeFocused()
+  await expect(page.locator('#scope')).toContainText('Sketch the onboarding')
+  // a click on another card does not take its place
+  await page.mouse.click(card3.x + 20, card3.y + 10)
+  await expect(page.locator('#scope')).toContainText('Sketch the onboarding')
+  // Esc lets it go; then pointing lights another card and a click picks it
+  await page.locator('#text').blur()
+  await page.keyboard.press('Escape')
+  await expect(say).toHaveCount(0)
+  await page.mouse.move(card3.x + 24, card3.y + 12, { steps: 4 })
+  await expect(page.locator('#detailBody .ring-blue-500')).toHaveCount(1)
+  await page.mouse.click(card3.x + 24, card3.y + 12)
+  await expect(page.locator('#scope')).toContainText('Fix the search')
+  await expect(cmt).toHaveCount(1)
+})
+
 test('r685: the mic of a part records right there: it turns into Stop, the part stays the one; Esc drops it (B498)', async ({
   page,
   request,

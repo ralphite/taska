@@ -138,7 +138,9 @@ test('a web page document is the page alone: no frame or line over it, the pane 
   await request.post(`${p.url}api/op`, {
     data: { op: 'dc', d: 1, key: 'h:body>p:nth-child(2)', quote: 'Ship option A today.', text: 'Why not B?' },
   })
-  await request.post(`${p.url}api/op`, { data: { op: 'dc', d: 1, key: 'doc', quote: '', text: 'And the page as a whole?' } })
+  await request.post(`${p.url}api/op`, {
+    data: { op: 'dc', d: 1, key: 'doc', quote: '', text: 'And the page as a whole?' },
+  })
   await open(page, p, 'D1')
   const frame = page.locator('#detailBody iframe')
   await expect(page.frameLocator('#detailBody iframe').getByText('Ship option A today.')).toBeVisible()
@@ -252,7 +254,10 @@ test('another document opens out of Comment mode (B500)', async ({ page, request
   await expect(page.locator('[data-act="doc-inspect"]')).toHaveAttribute('aria-pressed', 'false')
 })
 
-test('with a part picked, no other part lights or can be picked until Esc lets it go (B497)', async ({ page, request }) => {
+test('with a part picked, no other part lights or can be picked until Esc lets it go (B497)', async ({
+  page,
+  request,
+}) => {
   const p = await project(request, { ...LOOP, then: TWO_PAGES })
   await open(page, p, 'D1')
   const frame = page.frameLocator('#detailBody iframe')
@@ -265,7 +270,9 @@ test('with a part picked, no other part lights or can be picked until Esc lets i
   await page.mouse.move(b.x + 20, b.y + b.height / 2, { steps: 5 })
   await page.waitForTimeout(400)
   await expect(page.locator('#detailBody .ring-blue-500')).toHaveCount(0)
-  await expect(page.locator('[data-act="page-pick"]')).toHaveCount(0)
+  await expect(page.locator('[data-act="page-pick"][data-key="h:body>p:nth-child(3)"]')).toHaveCount(0)
+  // r739: the picked part keeps its two buttons
+  await expect(page.locator('[data-act="page-pick"][data-key="h:body>p:nth-child(2)"]')).toBeVisible()
   await page.mouse.click(b.x + 20, b.y + b.height / 2)
   await expect(page.locator('#scope')).toContainText('Ship option A today.') // still the first
   await page.keyboard.press('Escape')
@@ -307,4 +314,3 @@ test('a comment count outlines its part while pointed at and while open; a press
   await frame.locator('#b').click() // a press in the page closes it too
   await expect(pop).toHaveCount(0)
 })
-
