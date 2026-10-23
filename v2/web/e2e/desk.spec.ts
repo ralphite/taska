@@ -274,3 +274,37 @@ test('with a part picked, no other part lights or can be picked until Esc lets i
   await expect(page.locator('#detailBody .ring-blue-500')).toHaveCount(1)
 })
 
+test('a comment count outlines its part while pointed at and while open; a press anywhere else closes the comment (B503)', async ({
+  page,
+  request,
+}) => {
+  const p = await project(request, { ...LOOP, then: TWO_PAGES })
+  await request.post(`${p.url}api/op`, {
+    data: { op: 'dc', d: 1, key: 'h:body>p:nth-child(2)', quote: 'Ship option A today.', text: 'Why not B?' },
+  })
+  await open(page, p, 'D1')
+  const frame = page.frameLocator('#detailBody iframe')
+  await expect(frame.getByText('Ship option A today.')).toBeVisible()
+  const count = page.locator('[data-act="doc-thread"]').filter({ visible: true }).first()
+  const lit = page.locator('#detailBody .ring-amber-400')
+  await expect(lit).toHaveCount(0)
+  await count.hover()
+  await expect(lit).toHaveCount(1)
+  const a = await frame.locator('#a').boundingBox(),
+    r = await lit.boundingBox()
+  if (!a || !r) throw new Error('not drawn')
+  expect(r.y).toBeLessThanOrEqual(a.y) // around the part the comment is about
+  expect(r.y + r.height).toBeGreaterThanOrEqual(a.y + a.height)
+  await count.click()
+  const pop = page.locator('[data-thread-pop]')
+  await expect(pop).toContainText('Why not B?')
+  await page.mouse.move(5, 5)
+  await expect(lit).toHaveCount(1) // still outlined while open
+  await page.locator('#q').click() // elsewhere on the page
+  await expect(pop).toHaveCount(0)
+  await count.click()
+  await expect(pop).toContainText('Why not B?')
+  await frame.locator('#b').click() // a press in the page closes it too
+  await expect(pop).toHaveCount(0)
+})
+

@@ -75,6 +75,7 @@ const HELPER = `<script>(() => {
     send({ pick: info(el) })
   }, true)
   addEventListener('keydown', (e) => { if (e.key === 'Escape') send({ esc: 1 }) })
+  addEventListener('pointerdown', () => send({ down: 1 }), true) // B503: a press in the page closes an open comment
   let usedAt = 0 // F449: Taska does not reload under you while you use the page
   let pointer = ''
   const used = (e) => {
@@ -101,6 +102,16 @@ function inside(p: XY, a: XY, b: XY, c: XY) {
 }
 const WANT = { now: '{}' } // what the page was last told, for a page that loads after it was said
 /** B484: Esc steps back one level: the picked part first (the words in the box stay), then Comment mode */
+/** B503: a press anywhere but on a comment, its count or the box closes the open comments of the page */
+function closeThreads() {
+  let any = false
+  for (const k of [...U.docThreads])
+    if (k.startsWith('h:')) {
+      U.docThreads.delete(k)
+      any = true
+    }
+  if (any) renderDoc()
+}
 function escape() {
   if (U.docQuote?.key.startsWith('h:')) return act('doc-unpick')
   if (!U.docInspect) return
@@ -124,6 +135,7 @@ export function WebPage({ d }: { d: Doc }) {
   const [height, setHeight] = useState(480)
   const [hover, setHover] = useState<Part | null>(null)
   const [rects, setRects] = useState<Record<string, Box>>({})
+  const [lit, setLit] = useState<string | null>(null) // B503: the part of the comment count under the pointer
   // D56: the pointer leaves the page to reach the buttons over it: the part stays lit while it is on them. On the way
   // there (heading for them from where the part was lit) another part under the pointer does not take its place,
   // unless the pointer rests on it.
@@ -171,6 +183,7 @@ export function WebPage({ d }: { d: Doc }) {
         rects?: Record<string, Box>
         pick?: Part
         esc?: number
+        down?: number
         ready?: number
         used?: number
       }
@@ -180,6 +193,7 @@ export function WebPage({ d }: { d: Doc }) {
       if (m.rects) setRects(m.rects)
       if (m.pick) pick(m.pick)
       if (m.esc) escape()
+      if (m.down) closeThreads()
       if (m.used) markUsed()
     }
     addEventListener('message', on)
@@ -195,6 +209,14 @@ export function WebPage({ d }: { d: Doc }) {
   useEffect(() => {
     frame.current?.contentWindow?.postMessage({ taska: 1, ...(JSON.parse(want) as object) }, '*')
   }, [want])
+  useEffect(() => {
+    const away = (e: PointerEvent) => {
+      if (!(e.target as Element).closest?.('[data-thread-pop], [data-act="doc-thread"], #foot, #dlg, #overlay, #tip'))
+        closeThreads()
+    }
+    document.addEventListener('pointerdown', away, true)
+    return () => document.removeEventListener('pointerdown', away, true)
+  }, [])
   useEffect(() => {
     if (!U.docInspect) return
     const esc = (e: KeyboardEvent) => {
@@ -268,11 +290,16 @@ export function WebPage({ d }: { d: Doc }) {
           </button>
         </div>
       ) : null}
+      {/* B503: the part a comment is about is outlined while its count is pointed at, and while its comment is open */}
+      {open && rects[open.key] ? ring(rects[open.key], 'ring-amber-400') : null}
+      {lit && lit !== open?.key && rects[lit] ? ring(rects[lit], 'ring-amber-400') : null}
       {counts.map((c) => (
         <button
           key={c.tk}
           data-act="doc-thread"
           data-key={c.tk}
+          onMouseEnter={() => setLit(c.key)}
+          onMouseLeave={() => setLit(null)}
           style={{ top: c.top, left: c.left }}
           className="absolute z-10 flex h-7 min-w-7 items-center justify-center gap-0.5 rounded-lg bg-amber-100 px-1.5 text-xs font-semibold text-amber-900 shadow-sm hover:bg-amber-200 dark:bg-amber-900/80 dark:text-amber-100 dark:hover:bg-amber-800/80"
         >
@@ -282,6 +309,7 @@ export function WebPage({ d }: { d: Doc }) {
       ))}
       {side && open ? (
         <div
+          data-thread-pop
           className="absolute right-2 z-20 flex w-80 max-w-full flex-col gap-2 text-sm shadow-xl"
           style={{ top: (rects[open.key]?.y ?? 0) + (rects[open.key]?.h ?? 0) + 8 }}
         >
@@ -317,7 +345,7 @@ export function WebPage({ d }: { d: Doc }) {
         ? threads
             .filter((t) => threadOpen(t.tk))
             .map((t) => (
-              <div key={t.tk} className="mt-3">
+              <div key={t.tk} data-thread-pop className="mt-3">
                 <Thread d={d} k={t.tk} comments={t.comments} blockText={t.comments[0]?.quote} />
               </div>
             ))
