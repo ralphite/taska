@@ -226,7 +226,7 @@ export const U = {
   docEdit: false,
   docText: null as string | null,
   docSel: new Set<string>(),
-  docQuote: null as { key: string; text: string; words?: boolean } | null,
+  docQuote: null as { key: string; text: string } | null,
   docCircle: false,
   docInspect: false, // F432: a web page's comment mode: pointing lights a part of it, a click picks it, Esc leaves
   docThreads: new Set<string>(),

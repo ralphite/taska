@@ -1,6 +1,6 @@
 // F432 (D50): a document that is a web page an agent wrote. The page runs as it is, in a sandbox of its own (its
-// scripts cannot reach Taska); a small helper inside it tells Taska its height, the part you point at, tap or select
-// words in, and where the parts with comments are. Taska draws the rest over it, the same way as on a Markdown
+// scripts cannot reach Taska); a small helper inside it tells Taska its height, the part you point at or tap, and
+// where the parts with comments are. B502: words you select are only selected, as on any web page: never a comment. Taska draws the rest over it, the same way as on a Markdown
 // document: Comment mode outlines the part under the pointer with the speak and comment buttons in its corner, a picked
 // part gets the amber ring and the box says what you comment on, each thread has its count beside its part.
 import { useEffect, useRef, useState } from 'react'
@@ -13,7 +13,7 @@ import { Icon } from './ui'
 import { Thread } from './Doc'
 
 type Box = { x: number; y: number; w: number; h: number }
-type Part = { key: string; text: string; rect: Box; words?: number }
+type Part = { key: string; text: string; rect: Box }
 
 // Runs inside the page. A part is the nearest block around what you point at; its key is its place in the page.
 const HELPER = `<script>(() => {
@@ -54,14 +54,15 @@ const HELPER = `<script>(() => {
     if (!m.taska) return
     mode = m.mode
     keys = m.keys || []
-    if (picked && !m.picked) getSelection().removeAllRanges() // the pick was dropped: so are the words selected for it
     picked = m.picked || ''
     measure()
   })
-  addEventListener('mousemove', (e) => { if (mode === true) { const el = part(e.target); send({ hover: el ? info(el) : null, at: [e.clientX, e.clientY] }) } })
+  // B497: once a part is picked, no other one lights or can be picked until Esc lets it go
+  addEventListener('mousemove', (e) => { if (mode === true && !picked) { const el = part(e.target); send({ hover: el ? info(el) : null, at: [e.clientX, e.clientY] }) } })
   document.addEventListener('mouseleave', () => { if (mode === true) send({ hover: null }) })
   addEventListener('click', (e) => {
     if (mode !== true && mode !== 'tap') return
+    if (mode === true && picked) { e.preventDefault(); e.stopPropagation(); return }
     if (String(getSelection()).trim()) return
     const el = part(e.target)
     if (!el) return
@@ -69,16 +70,6 @@ const HELPER = `<script>(() => {
     e.stopPropagation()
     send({ pick: info(el) })
   }, true)
-  let t = 0
-  document.addEventListener('selectionchange', () => {
-    clearTimeout(t)
-    t = setTimeout(() => {
-      const s = getSelection(), words = String(s).trim()
-      if (!words || !s.anchorNode) return
-      const el = part(s.anchorNode.nodeType === 1 ? s.anchorNode : s.anchorNode.parentElement)
-      if (el) send({ pick: { key: place(el), text: words.slice(0, 500), rect: box(s.getRangeAt(0).getBoundingClientRect()), words: 1 } })
-    }, 400)
-  })
   addEventListener('keydown', (e) => { if (e.key === 'Escape') send({ esc: 1 }) })
   let usedAt = 0 // F449: Taska does not reload under you while you use the page
   let pointer = ''
@@ -112,11 +103,11 @@ function escape() {
   U.docInspect = false
   renderDoc()
 }
-/** Pick a part of the page (or words in it) to comment on: the box says it, as for a Markdown paragraph */
+/** Pick a part of the page to comment on: the box says it, as for a Markdown paragraph */
 function pick(p: Part) {
   U.docSel = new Set()
   U.docReply = null
-  U.docQuote = { key: p.key, text: p.text, ...(p.words ? { words: true } : {}) }
+  U.docQuote = { key: p.key, text: p.text }
   renderDoc()
   render() // the box's line says what you comment on
   if (desk()) els.text?.focus({ preventScroll: true })
@@ -237,10 +228,9 @@ export function WebPage({ d }: { d: Doc }) {
         style={{ height }}
         className="block w-full bg-white"
       />
-      {hover && mode === true ? ring(hover.rect, 'ring-blue-500') : null}
-      {/* F432: words you select are lit by the page itself, as on any web page; only a part you pick is outlined */}
-      {picked && !picked.words && rects[picked.key] ? ring(rects[picked.key], 'ring-amber-300') : null}
-      {hover && mode === true ? (
+      {hover && mode === true && !picked ? ring(hover.rect, 'ring-blue-500') : null}
+      {picked && rects[picked.key] ? ring(rects[picked.key], 'ring-amber-300') : null}
+      {hover && mode === true && !picked ? (
         <div
           className="absolute z-10 flex flex-row gap-1"
           style={{ left: btnsAt(hover.rect).x, top: btnsAt(hover.rect).y }}

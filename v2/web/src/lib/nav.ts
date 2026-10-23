@@ -83,7 +83,7 @@ export function openItem(n: number | null | undefined, push = true) {
   U.scopeOff = false
   if (desk() && U.doc && !U.docEdit) {
     U.docScroll[U.doc] = els.detailBody?.scrollTop || 0
-    Object.assign(U, { doc: null, docReply: null, docSel: new Set(), docQuote: null, docCircle: false })
+    Object.assign(U, { doc: null, docReply: null, docSel: new Set(), docQuote: null, docCircle: false, docInspect: false })
     D.docKey = null
   } // another item: the document closes
   if (desk() && U.tab === 'inputs') {
@@ -310,7 +310,7 @@ export function leaveCompose() {
   const dd = doc ? docById(doc) : undefined
   if (doc && dd && U.open === liveN(dd.n)) {
     // B14: back into the document you came from
-    Object.assign(U, { doc, docReply: null, docSel: new Set(), docQuote: null, docCircle: false })
+    Object.assign(U, { doc, docReply: null, docSel: new Set(), docQuote: null, docCircle: false, docInspect: false })
     D.docKey = null
     render()
     if (els.detailBody) els.detailBody.scrollTop = U.docScroll[doc] || 0

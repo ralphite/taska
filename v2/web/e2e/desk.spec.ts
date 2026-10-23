@@ -195,7 +195,7 @@ test('the buttons of a part of a web page stay while the pointer goes to them; E
   await expect(mode).toHaveAttribute('aria-pressed', 'false')
 })
 
-test('words selected in a web page are lit by the page alone: no outline around their part, which a click still outlines (F432)', async ({
+test('words selected in a web page are only selected, never a comment, in Comment mode or not (B502)', async ({
   page,
   request,
 }) => {
@@ -209,20 +209,66 @@ test('words selected in a web page are lit by the page alone: no outline around 
   const frame = page.frameLocator('#detailBody iframe'),
     words = frame.getByText('Save filters on the server')
   await expect(words).toBeVisible()
-  const r = await words.boundingBox()
-  if (!r) throw new Error('not drawn')
-  // the pointer selects the first words, as anyone selects words on a page
-  await page.mouse.move(r.x + 1, r.y + r.height / 2)
-  await page.mouse.down()
-  await page.mouse.move(r.x + 90, r.y + r.height / 2, { steps: 10 })
-  await page.mouse.up()
-  await expect(page.locator('#scope')).toContainText('Save')
-  await expect(page.locator('#scope')).not.toContainText('export from them')
-  await expect(page.locator('#detailBody .ring-amber-300')).toHaveCount(0)
-  // a part picked in Comment mode is outlined
-  await page.keyboard.press('Escape')
+  const select = async () => {
+    const r = await words.boundingBox()
+    if (!r) throw new Error('not drawn')
+    await page.mouse.move(r.x + 1, r.y + r.height / 2)
+    await page.mouse.down()
+    await page.mouse.move(r.x + 90, r.y + r.height / 2, { steps: 10 })
+    await page.mouse.up()
+    await page.waitForTimeout(800)
+    expect(await frame.locator('body').evaluate(() => String(getSelection()).trim())).toMatch(/^Save/)
+    await expect(page.locator('#scope')).toBeHidden()
+    await expect(page.locator('#detailBody .ring-amber-300')).toHaveCount(0)
+  }
+  await select()
+  await frame.locator('body').evaluate(() => getSelection()?.removeAllRanges()) // a new selection, not a drag of this one
   await page.locator('[data-act="doc-inspect"]').click()
+  await select()
+  // a part clicked in Comment mode is what you comment on
   await frame.getByText('Ship option A today.').click()
   await expect(page.locator('#scope')).toContainText('Ship option A today.')
   await expect(page.locator('#detailBody .ring-amber-300')).toHaveCount(1)
 })
+
+const TWO_PAGES = `${LOOP.then}T4 html Plan page
+  <!doctype html><html><body><h1>Export plan</h1><p id="a">Ship option A today.</p><p id="b">Keep option B for later.</p></body></html>
+T4 html Other page
+  <!doctype html><html><body><h1>Other plan</h1><p>Nothing to see here.</p></body></html>
+`
+
+test('another document opens out of Comment mode (B500)', async ({ page, request }) => {
+  const p = await project(request, { ...LOOP, then: TWO_PAGES })
+  await open(page, p, 'D1')
+  const mode = page.locator('[data-act="doc-inspect"]')
+  await mode.click()
+  await expect(mode).toHaveAttribute('aria-pressed', 'true')
+  // within the page, as you go: back to the item, then its other document
+  await page.locator('[data-act="doc-close"]').filter({ visible: true }).first().click()
+  await page.locator('[data-act="doc-open"][data-d="2"]').filter({ visible: true }).first().click()
+  await expect(page.frameLocator('#detailBody iframe').getByText('Nothing to see here.')).toBeVisible()
+  await expect(page.locator('[data-act="doc-inspect"]')).toHaveAttribute('aria-pressed', 'false')
+})
+
+test('with a part picked, no other part lights or can be picked until Esc lets it go (B497)', async ({ page, request }) => {
+  const p = await project(request, { ...LOOP, then: TWO_PAGES })
+  await open(page, p, 'D1')
+  const frame = page.frameLocator('#detailBody iframe')
+  await expect(frame.getByText('Ship option A today.')).toBeVisible()
+  await page.locator('[data-act="doc-inspect"]').click()
+  await frame.locator('#a').click()
+  await expect(page.locator('#scope')).toContainText('Ship option A today.')
+  const b = await frame.locator('#b').boundingBox()
+  if (!b) throw new Error('not drawn')
+  await page.mouse.move(b.x + 20, b.y + b.height / 2, { steps: 5 })
+  await page.waitForTimeout(400)
+  await expect(page.locator('#detailBody .ring-blue-500')).toHaveCount(0)
+  await expect(page.locator('[data-act="page-pick"]')).toHaveCount(0)
+  await page.mouse.click(b.x + 20, b.y + b.height / 2)
+  await expect(page.locator('#scope')).toContainText('Ship option A today.') // still the first
+  await page.keyboard.press('Escape')
+  await expect(page.locator('#scope')).toBeHidden()
+  await page.mouse.move(b.x + 30, b.y + b.height / 2, { steps: 3 })
+  await expect(page.locator('#detailBody .ring-blue-500')).toHaveCount(1)
+})
+

@@ -109,6 +109,7 @@ export function openDoc(d: number) {
       docSel: new Set(),
       docQuote: null,
       docCircle: false,
+      docInspect: U.doc === d && U.docInspect, // B500: another document starts out of Comment mode
     })
     if (D.compose) D.compose = false // a document shows in the item pane, never under the New input page
     pickBack(d)
@@ -126,6 +127,7 @@ export function openDoc(d: number) {
     docSel: new Set(),
     docQuote: null,
     docCircle: false,
+    docInspect: U.doc === d && U.docInspect, // B500: another document starts out of Comment mode
   })
   U.docType = !!(
     String(draftStore()[`doc ${d}`] || '').trim() ||
@@ -173,7 +175,7 @@ export function closeDoc() {
   } // Esc in the editor: back to reading, the edit kept as a draft
   const d = U.doc
   U.docScroll[d] = els.detailBody?.scrollTop || 0
-  Object.assign(U, { doc: null, docReply: null, docSel: new Set(), docQuote: null, docCircle: false })
+  Object.assign(U, { doc: null, docReply: null, docSel: new Set(), docQuote: null, docCircle: false, docInspect: false })
   if (desk() && U.side) U.open = null // T438 #16: opened from Documents, Activity or Deleted: back to that page
   D.docKey = null
   getSelection()?.removeAllRanges()
