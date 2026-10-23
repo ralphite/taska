@@ -63,12 +63,25 @@
     return json({ ok: false, error: 'not in the story data' }, 404)
   }
   // the demo's pictures and voice notes are among the saved answers
+  const saved = (v) => {
+    const m = v && /^\/p\/([^/]+)\/f\/([^?#]+)/.exec(v)
+    return m ? `${FX}p__${m[1]}__f__${decodeURIComponent(m[2])}` : null
+  }
   const fix = (el) => {
     for (const a of ['src', 'href', 'poster']) {
-      const v = el.getAttribute(a),
-        m = v && /^\/p\/([^/]+)\/f\/([^?#]+)/.exec(v)
-      if (m) el.setAttribute(a, `${FX}p__${m[1]}__f__${decodeURIComponent(m[2])}`)
+      const to = saved(el.getAttribute(a))
+      if (to) el.setAttribute(a, to)
     }
+  }
+  // T529: the page plays a voice note with new Audio(src), an element never put on the page (lib/audio.ts), so the
+  // watch below does not see it: it is made with the saved file's address instead
+  const RealAudio = window.Audio
+  if (RealAudio) {
+    const StoryAudio = function Audio(src) {
+      return src === undefined ? new RealAudio() : new RealAudio(saved(String(src)) || src)
+    }
+    StoryAudio.prototype = RealAudio.prototype
+    window.Audio = StoryAudio
   }
   new MutationObserver((ms) => {
     for (const m of ms) {
@@ -112,7 +125,8 @@
       if (this.context.state === 'running') return read.call(this, buf)
       const t = performance.now() / 1000
       // syllables about four a second, words in groups, a short breath every few seconds
-      const level = Math.max(0, Math.sin(t * 7.3) * 0.5 + Math.sin(t * 2.1 + 1) * 0.35 + 0.25) * (t % 3.4 < 0.35 ? 0.1 : 1)
+      const level =
+        Math.max(0, Math.sin(t * 7.3) * 0.5 + Math.sin(t * 2.1 + 1) * 0.35 + 0.25) * (t % 3.4 < 0.35 ? 0.1 : 1)
       for (let i = 0; i < buf.length; i++) buf[i] = 128 + Math.round((Math.random() * 2 - 1) * 70 * level)
     }
   }

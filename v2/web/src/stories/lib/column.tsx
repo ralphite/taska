@@ -10,7 +10,7 @@ import { DeskFilters, FilterStrip, Foot, ItemsView, MainHead, Tabs } from '../..
 import { deskPanes, deskPlace, sidePlace } from '../../layouts/DeskLayout'
 import { DRAWER_PLACE, phonePanes } from '../../layouts/PhoneLayout'
 import { Dialog } from '../../components/Sheets'
-import { D, U, bump, desk, talkScroller, useArea } from '../../lib/state'
+import { D, U, bump, desk, els, talkScroller, useArea } from '../../lib/state'
 import { Pane } from './demo'
 
 export function Column({ text = '', wide = false }: { text?: string; wide?: boolean }) {
@@ -18,11 +18,9 @@ export function Column({ text = '', wide = false }: { text?: string; wide?: bool
   useArea('detail')
   useArea('view')
   useLayoutEffect(() => {
-    const t = document.getElementById('text') as HTMLTextAreaElement | null
-    if (t && text) {
-      t.value = text
-      t.dispatchEvent(new Event('input', { bubbles: true }))
-    }
+    // the words as typing leaves them in the box, drawn again as typing draws it (bump: its buttons, its height), but
+    // never kept as a draft: typing's input event would save one (lib/drafts.ts), and a story leaves nothing behind
+    if (els.text && text) els.text.value = text
     bump('composer', 'feedback')
     // the desktop opens an item at its latest message, as the page does (lib/nav.ts, B279)
     const end = () => {

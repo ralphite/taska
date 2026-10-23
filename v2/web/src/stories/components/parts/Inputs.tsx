@@ -5,7 +5,7 @@ import { DraftCard } from '../../../components/Composer'
 import { U, model } from '../../../lib/state'
 import type { Input } from '../../../lib/types'
 import { Pane, type Setup } from '../../lib/demo'
-import { Column, ListColumn } from '../../lib/column'
+import { ListColumn } from '../../lib/column'
 
 // what this part of Storybook shows (T512: its stories are in the folders beside this file)
 export const area: Meta = {
@@ -157,10 +157,6 @@ export const OnItsWay: Story = {
   ),
 }
 
-/** The New input page (desktop: nothing open); on the phone, the list with the box at its foot. */
-export const NewInputPage: Story = {
-  render: () => <Column />,
-}
 export const SaidLatelyList: Story = {
   render: () => (
     <Pane w="item">
