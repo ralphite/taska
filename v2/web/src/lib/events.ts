@@ -220,6 +220,17 @@ export function wire() {
     own.forEach((t, i) => (t.addEventListener = plain[i]))
   }
 }
+/** The sheet sits above the input box; it follows the box whenever it changes size (a voice note, more lines). */
+export function followBox() {
+  const foot = document.getElementById('foot')
+  if (!foot) return () => {}
+  const ro = new ResizeObserver(() => {
+    const o = document.getElementById('overlay')
+    if (o?.dataset.above && OV.spec) o.style.bottom = footRoom() + 'px'
+  })
+  ro.observe(foot)
+  return () => ro.disconnect()
+}
 function wireAll() {
   // the pane you last acted in, for where feedback shows (B129)
   document.addEventListener(
@@ -800,13 +811,7 @@ function wireAll() {
       /* no storage */
     }
   })
-  // the sheet sits above the input box; it follows the box whenever it changes size
-  const foot = document.getElementById('foot')
-  if (foot)
-    new ResizeObserver(() => {
-      const o = document.getElementById('overlay')
-      if (o?.dataset.above && OV.spec) o.style.bottom = footRoom() + 'px'
-    }).observe(foot)
+  followBox()
   // Back and Forward
   addEventListener('popstate', () => {
     if (ownPop()) return // a step the page took back itself (B150)
