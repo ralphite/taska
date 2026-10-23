@@ -63,3 +63,34 @@ test('what scrolls shows only around the top of the box: from its middle down th
   const gapPx = gap.gap
   expect(gapPx).toBeGreaterThanOrEqual(20)
 })
+
+test('in two columns the line between them is one line to the bottom of the screen, and the item beside the box can be pointed at (B495)', async ({
+  page,
+  request,
+}) => {
+  test.skip(!isDesk(page), 'two columns are for a wide desktop pane')
+  await page.setViewportSize({ width: 1920, height: 1000 })
+  const p = await project(request, {
+    agent: `new task P1 now A long one\n${Array.from({ length: 60 }, (_, i) => `  Line ${i + 1} of the body.`).join('\n')}\n`,
+    approve: ['T1'],
+  })
+  await open(page, p, 'T1')
+  await expect(page.locator('#app')).toHaveAttribute('data-duo', '')
+  const at = await page.evaluate(() => {
+    const g = (document.querySelector('[data-grip="duo"]') as HTMLElement).getBoundingClientRect(),
+      f = (document.getElementById('foot') as HTMLElement).getBoundingClientRect(),
+      x = g.left - 200,
+      hit = document.elementFromPoint(x, innerHeight - 10)
+    return { lineEnd: g.bottom, lineRight: g.right, footLeft: f.left, height: innerHeight, inFoot: !!hit?.closest('#foot') }
+  })
+  expect(at.lineEnd).toBeGreaterThanOrEqual(at.height - 1) // one line, top to bottom: no second piece under the box
+  expect(at.footLeft).toBeGreaterThanOrEqual(at.lineRight - 1) // the box's row is the talk's column only
+  expect(at.inFoot).toBe(false) // the item's column runs down beside the box, free to point at and scroll
+  // the talk, scrolled to its end, still ends clear above the box
+  const gap = await page.locator('#itemTalk').evaluate((e) => {
+    e.scrollTop = e.scrollHeight
+    const end = e.getBoundingClientRect().bottom - parseFloat(getComputedStyle(e).paddingBottom)
+    return (document.getElementById('foot') as HTMLElement).getBoundingClientRect().top - end
+  })
+  expect(gap).toBeGreaterThanOrEqual(20)
+})

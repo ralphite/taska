@@ -611,7 +611,9 @@ export function ItemPage({ it, left = null }: { it: Item; left?: ReactNode }) {
         id="itemTalk"
         ref={talkRef}
         onScroll={(e) => moreBelow(e.currentTarget)}
-        className={`lg:min-h-0 lg:flex-1 lg:scrollbar-thin lg:overflow-y-auto lg:data-up:mask-t-from-[calc(100%-2rem)] ${duo ? 'lg:h-full lg:min-w-0' : ''}`}
+        // B495: in two columns they run to the bottom of the screen, so the line between them is one line from top to
+        // bottom; the talk ends clear above the box
+        className={`lg:min-h-0 lg:flex-1 lg:scrollbar-thin lg:overflow-y-auto lg:data-up:mask-t-from-[calc(100%-2rem)] ${duo ? 'lg:h-full lg:min-w-0 lg:pb-[calc(var(--foot-h,0px)+1.5rem)]' : ''}`}
       >
         <div className="flex flex-col gap-6 lg:mx-auto lg:w-full lg:max-w-[46rem] lg:px-8 lg:py-6">
           {thread.length || notes.length ? (
@@ -1014,7 +1016,7 @@ export function DetailView({ hidden }: { hidden: boolean }) {
         id="detailBody"
         ref={body}
         {...(it && (!U.doc || DUO.on) && !U.docEdit ? { 'data-split': '' } : {})}
-        className="-mb-(--foot-h) min-h-0 flex-1 overflow-y-auto overscroll-contain pb-[calc(var(--foot-h,0px)+1.5rem)] lg:scrollbar-gutter-both lg:mask-b-from-[calc(100%-2rem)] lg:group-data-[compose]/app:hidden lg:hover:scrollbar-thumb-zinc-500/80 lg:data-split:mask-none dark:lg:hover:scrollbar-thumb-zinc-400/70"
+        className="-mb-(--foot-h) min-h-0 flex-1 overflow-y-auto overscroll-contain pb-[calc(var(--foot-h,0px)+1.5rem)] lg:scrollbar-gutter-both lg:group-data-duo/app:pb-0 lg:mask-b-from-[calc(100%-2rem)] lg:group-data-[compose]/app:hidden lg:hover:scrollbar-thumb-zinc-500/80 lg:data-split:mask-none dark:lg:hover:scrollbar-thumb-zinc-400/70"
       >
         {parts.body}
       </div>
