@@ -125,7 +125,8 @@ export function NeedsCard({ it, onCard = false }: { it: Item; onCard?: boolean }
     // F428 (P0): what you decided stays in its card, where it was: grey, what you chose, and Modify to choose again
     const { dec, x } = dc
     const re = U.remodify === n, // T438 #6: Modify: the two buttons work again; the one you chose before just closes it
-      chose = (v: string) => dec.to === v || (v === 'open' && dec.from === 'proposed' && dec.to !== 'dropped')
+      chose = (v: string) => dec.to === v || (v === 'open' && dec.from === 'proposed' && dec.to !== 'dropped'),
+      picked = (v: string) => dec.to === v || (v === 'open' && dec.to === 'doing' && dec.from === 'proposed')
     if (re)
       return (
         <NeedFrame
@@ -197,9 +198,13 @@ export function NeedsCard({ it, onCard = false }: { it: Item; onCard?: boolean }
             ).map(([v, icon, label, k], i) => (
               <span
                 key={v}
-                className={`${dec.to === v || (v === 'open' && dec.to === 'doing' && dec.from === 'proposed') ? DONE_PICK : DONE_OTHER} ${i ? 'flex-[1.4] font-semibold' : 'flex-1 font-medium'} lg:flex-none`}
+                className={`${picked(v) ? DONE_PICK : DONE_OTHER} ${i ? 'flex-[1.4] font-semibold' : 'flex-1 font-medium'} lg:flex-none`}
               >
-                <Icon n={dec.to === v ? 'check' : icon} c={i ? 'size-4.5' : 'size-4'} sw="2.25" />
+                {/* D77 #10, D81 #19: only what you chose carries its icon (Not yet's redo, Won't do's no, Accept's tick,
+                    Approve's thumb); the other keeps the room but no icon, so a tick never reads as chosen */}
+                <span className={picked(v) ? '' : 'invisible'}>
+                  <Icon n={icon} c={i ? 'size-4.5' : 'size-4'} sw="2.25" />
+                </span>
                 {label}
                 <span className="invisible">
                   <Kbd k={k} />

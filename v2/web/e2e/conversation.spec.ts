@@ -91,6 +91,25 @@ I2 ask Worth doing?
   expect(wontDo).not.toContain(tick)
 })
 
+test('D77 #10: finished work sent back with Not yet: only Not yet carries an icon (its redo arrow); Accept, not chosen, shows none, so no tick reads as chosen', async ({
+  page,
+  request,
+}) => {
+  const p = await project(request, {
+    agent: 'new task P2 now Some work\n',
+    approve: ['T1'],
+    then: 'T1 done Finished: it works.\n',
+  })
+  await op(request, p, { op: 'set', ref: 'T1', f: { status: 'doing' } })
+  await open(page, p, 'T1')
+  // the card's two kept buttons, each its icon (or its room), its words and its key's room
+  const kept = (label: string) =>
+    page.locator('#detailBody section span.lg\\:flex-none').filter({ hasText: label }).filter({ visible: true })
+  await expect(kept('Not yet').locator('svg').first()).toBeVisible()
+  await expect(kept('Accept')).toHaveCount(1)
+  await expect(kept('Accept').locator('svg').first()).toBeHidden()
+})
+
 test('T529: two agents never share a mark, and an agent Taska has no name for is called by a name', async ({
   page,
   request,
