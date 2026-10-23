@@ -60,20 +60,20 @@ export const ReplyInsteadOfApproving = demo({
   steps: [
     ...open('I4', 'the idea the agent proposed'),
     write('Do not decide yet: write what you think', W.replyI4),
-    sent,
+    tap('Tap Send: the card says Skipped · you replied, with Approve beside it', 'send'),
     agent('The agent answers', `I4 say ${W.agentI4Reply}`),
   ],
-  done: 'Skipped · you replied: Approve waits beside it for when you decide',
+  done: 'The agent answered: its proposal waits for you again',
 })
 
 export const ReplyInsteadOfAccepting = demo({
   steps: [
     finished,
     write('Not sure it is fixed: say what you saw', W.replyB6),
-    sent,
+    tap('Tap Send: the card says Skipped · you replied, with Accept beside it', 'send'),
     agent('The agent looks again and answers', `B6 say ${W.agentB6Reply}`),
   ],
-  done: 'Skipped · you replied: Accept waits beside it',
+  done: 'The agent answered: the work waits for you to accept again',
 })
 
 export const AnswerAQuestion = demo({
