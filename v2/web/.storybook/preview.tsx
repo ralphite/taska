@@ -38,7 +38,12 @@ const preview: Preview = {
             'Item page',
             ['By item status', 'By what it holds', 'Layout and editing', 'Needs-you card', 'Loading and empty'],
             'Conversation',
-            ['Message', 'Whole conversation', 'Message parts'],
+            [
+              'Message',
+              ['From an agent', 'From you', 'Question', 'Document comment'],
+              'Whole conversation',
+              'Message parts',
+            ],
             'Input box',
             ['Writing', 'Voice', 'What it writes to', 'Pictures and files', 'Line after sending'],
             'Inputs',
