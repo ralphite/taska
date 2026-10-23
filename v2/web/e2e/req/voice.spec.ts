@@ -68,6 +68,28 @@ test('r512: a voice note you sent never comes back to the box: it goes once the 
   await expect(page.locator('#composer [data-act="unfile"], #composer [data-act="view-draft"]')).toHaveCount(0)
 })
 
+test('r512 B538: a voice note that waited offline a while goes within seconds of the network coming back', async ({
+  page,
+  context,
+  request,
+}) => {
+  test.setTimeout(90000)
+  const p = await project(request, LOOP)
+  await open(page, p)
+  const before = await voices(p)
+  const at = await record(page)
+  await page.waitForTimeout(1200)
+  await context.setOffline(true)
+  await page.mouse.click(at.x, at.y)
+  await expect(page.locator('#recBar')).toBeHidden()
+  // offline long enough that the pause before its next try has grown to 16 s (tries after 2, 4 and 8 s)
+  await page.waitForTimeout(16000)
+  await context.setOffline(false)
+  const back = Date.now()
+  await expect.poll(() => voices(p), { timeout: 30000 }).toBe(before + 1)
+  expect(Date.now() - back).toBeLessThan(6000)
+})
+
 test('r485 r497: the original words of a voice note float up when you point at it, and are not shown otherwise', async ({
   page,
   request,
@@ -105,7 +127,8 @@ test('r485 r497: the original words of a voice note float up when you point at i
   }
   // opening them is quick: no wait of seconds for a note that has its words (r485)
   await words.first().click()
-  await expect(page.getByText('Original words', { exact: true }).filter({ visible: true })).toBeVisible({
+  // its own title (the button that opened it, still under the pointer, has the same words)
+  await expect(page.locator('#dlgTitle').filter({ hasText: 'Original words', visible: true })).toBeVisible({
     timeout: 3000,
   })
 })

@@ -22,6 +22,7 @@ import {
   plural,
   scopeN,
   sleep,
+  sleepOrOnline,
   type DraftFile,
   type Job,
 } from './state'
@@ -517,7 +518,7 @@ export async function hear(f: DraftFile) {
       if (f.gone) break
       f.retrying = true
       bump('composer', 'feedback')
-      await sleep(Math.min(30000, 2000 * 2 ** Math.min(n, 4)))
+      await sleepOrOnline(Math.min(30000, 2000 * 2 ** Math.min(n, 4)))
     }
   }
   f.loop = false
@@ -556,7 +557,7 @@ async function hearMore(f: DraftFile) {
         60000,
       )
     } catch {
-      await sleep(Math.min(30000, 2000 * 2 ** Math.min(n, 4)))
+      await sleepOrOnline(Math.min(30000, 2000 * 2 ** Math.min(n, 4)))
       continue
     }
     if (d.more) continue
@@ -1146,7 +1147,7 @@ async function dvHear(note: (typeof DV.notes)[number]): Promise<string | null> {
       if (d.done && d.tr_error && ++tries < 4) throw new Error()
       return d.done ? d.tr || '' : null
     } catch {
-      await sleep(Math.min(30000, 2000 * 2 ** Math.min(n++, 4)))
+      await sleepOrOnline(Math.min(30000, 2000 * 2 ** Math.min(n++, 4)))
     }
   }
   return null
