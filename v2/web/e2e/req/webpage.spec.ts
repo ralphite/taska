@@ -440,8 +440,8 @@ test("r672 r799: a comment stays with its part when the page's own script moves 
   expect(await countsOn(page, '[data-id="8"]')).toHaveLength(0) // not left on the card now where it was
   await page1(page).locator('#hide').click()
   await expect(page.locator('[data-act="doc-thread"]').filter({ visible: true })).toHaveCount(0)
-  // and it can still be read: under the page on the phone, in the item's conversation on the desktop
-  if (!isDesk(page)) await expect(page.getByText('Not on the page now')).toBeVisible()
+  // and it can still be read: under the page (a desktop wide enough has it in the conversation beside instead)
+  await expect(page.getByText('Not on the page now')).toBeVisible()
   await expect(page.getByText('Who draws it?').filter({ visible: true }).first()).toBeVisible()
 })
 

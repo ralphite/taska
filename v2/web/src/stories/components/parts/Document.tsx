@@ -193,7 +193,7 @@ export const WebPageResolved = doc(PAGE, (_, d) => {
   d.resolved = { [threadKey(c)]: ago(30) }
 })
 /** r799: a comment on a part the page does not show now (another view of it, or the page changed since): under the
- * page on the phone (the desktop has it in the item's conversation) */
+ * page, on the phone and on a desktop too narrow for its conversation beside it (wider, it is in the conversation) */
 export const WebPageNotOnPage = also(
   doc(PAGE, (_, d) => {
     const c: Comment = {

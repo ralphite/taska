@@ -12,6 +12,7 @@ import type { Doc } from '../lib/types'
 import { plainQuote } from '../lib/markdown'
 import { Icon } from './ui'
 import { DraftCard, SayRow, Thread, markLive } from './Doc'
+import { DUO } from './Detail'
 
 type Box = { x: number; y: number; w: number; h: number }
 type Part = { key: string; text: string; rect: Box }
@@ -266,10 +267,10 @@ export function WebPage({ d }: { d: Doc }) {
     counts.push({ ...t, top, left })
   }
   spots.current = counts
-  // r799: on the phone, comments on parts the page does not show now (another view of it, or the page was changed
-  // since) are under it, as a paragraph's whose words changed are under a Markdown document (the desktop has them in
-  // its item's conversation)
-  const elsewhere = measured ? threads.filter((t) => !t.drafts && !shown(rects[t.key])) : []
+  // r799: comments on parts the page does not show now (another view of it, or the page was changed since) are under
+  // it, as a paragraph's whose words changed are under a Markdown document; beside its item's conversation (a wide
+  // desktop pane) they are there instead
+  const elsewhere = measured && !(side && DUO.on) ? threads.filter((t) => !t.drafts && !shown(rects[t.key])) : []
   const open = counts.find((c) => threadOpen(c.tk))
   /** r672: the frame takes the page's height; a page that grows by the same step each time its frame does (its height
    * follows its window's, 100vh) stops growing it after three such steps in quick succession */
@@ -406,7 +407,7 @@ export function WebPage({ d }: { d: Doc }) {
         style={{ height }}
         className="block w-full bg-white"
       />
-      {!side && elsewhere.length ? (
+      {elsewhere.length ? (
         <div className="mt-6 space-y-4 border-t border-zinc-200 px-4 pt-4 dark:border-zinc-800">
           <div className="text-xs font-medium text-zinc-500">Not on the page now</div>
           {elsewhere.map((t) => (
