@@ -87,6 +87,27 @@
     attributeFilter: ['src', 'href', 'poster'],
   })
   if (navigator.serviceWorker) navigator.serviceWorker.register = () => new Promise(() => {}) // no offline copy here
+  // T456, F479: Storybook never asks for your microphone: the page records a quiet tone instead, so a story can show
+  // the real recording (its bar, its time) without a permission prompt
+  if (navigator.mediaDevices)
+    navigator.mediaDevices.getUserMedia = async () => {
+      const ac = new AudioContext(),
+        tone = ac.createOscillator(),
+        loud = ac.createGain(),
+        wave = ac.createOscillator(),
+        swing = ac.createGain(),
+        out = ac.createMediaStreamDestination()
+      tone.frequency.value = 180
+      loud.gain.value = 0.2
+      wave.frequency.value = 2.5
+      swing.gain.value = 0.18
+      wave.connect(swing).connect(loud.gain)
+      tone.connect(loud).connect(out)
+      tone.start()
+      wave.start()
+      void ac.resume().catch(() => {})
+      return out.stream
+    }
 
   // The stories share their address with your Taska: they get storage of their own, so they never read or change
   // your drafts, views or settings, and start the same every time.

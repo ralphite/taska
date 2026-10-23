@@ -46,9 +46,20 @@ function mark(doc: Document) {
   return m
 }
 
-const W = 393,
-  H = 760
-export function Player({ path, script, scheme }: { path: string; script: Script; scheme: string }) {
+// the phone, or (F479) the desktop, scaled down to the room there is
+const SIZE = { phone: [393, 760], desktop: [1440, 900] } as const
+export function Player({
+  path,
+  script,
+  scheme,
+  on = 'phone',
+}: {
+  path: string
+  script: Script
+  scheme: string
+  on?: keyof typeof SIZE
+}) {
+  const [W, H] = SIZE[on]
   const box = useRef<HTMLDivElement>(null)
   const [line, setLine] = useState('') // #5879: no "Starting" while the page loads: the first step says itself
   const [run, setRun] = useState(0)
@@ -56,7 +67,9 @@ export function Player({ path, script, scheme }: { path: string; script: Script;
   const [auto, setAuto] = useState(true)
   const autoNow = useRef(true)
   // the frame as tall as the room holds with the bar under it, fixed once: it never moves or changes size
-  const [scale] = useState(() => Math.min(1, Math.max(0.5, (window.innerHeight - 32 - 136) / H)))
+  const [scale] = useState(() =>
+    Math.min(1, (window.innerWidth - 32) / W, Math.max(0.5, (window.innerHeight - 32 - 136) / H)),
+  )
   useEffect(() => {
     let stop = false
     const go = async () => {
