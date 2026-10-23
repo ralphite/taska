@@ -181,7 +181,8 @@ function Phone({
 
 const meta: Meta = {
   title: 'Prototype/New mobile layout',
-  parameters: { layout: 'fullscreen' },
+  // the screen fits the room Storybook has, with what is said under it in sight: no fixed preview size around it
+  parameters: { layout: 'fullscreen', viewport: { disable: true } },
 }
 export default meta
 
@@ -371,7 +372,7 @@ function Walkthrough({ scheme }: { scheme: string }) {
           >
             Restart
           </button>
-          <span className="ml-auto text-xs text-zinc-500 tabular-nums dark:text-zinc-400">
+          <span className="ml-auto text-xs whitespace-nowrap text-zinc-500 tabular-nums dark:text-zinc-400">
             {auto ? `${Math.min(step, TOUR.length)} / ${TOUR.length} taps` : 'You tap'}
           </span>
         </div>
