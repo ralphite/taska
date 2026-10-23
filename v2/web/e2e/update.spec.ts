@@ -42,8 +42,12 @@ test('a reload that comes back on old code goes again at once, 3 times at most, 
   await page.clock.install()
   // Taska keeps saying it has newer code than any page it gives: the new code never comes
   await page.route('**/api/poll*', async (route) => {
-    const r = await route.fetch({ url: route.request().url().replace(/&wait=\d+|$/, '&wait=0') })
-    await route.fulfill({ response: r, json: { ...((await r.json()) as object), ver: 'index-newer.js' } })
+    try {
+      const r = await route.fetch({ url: route.request().url().replace(/&wait=\d+|$/, '&wait=0') })
+      await route.fulfill({ response: r, json: { ...((await r.json()) as object), ver: 'index-newer.js' } })
+    } catch {
+      // the page reloaded while this poll was on its way (what this check makes it do): that poll is gone with it
+    }
   })
   let loads = 0
   page.on('load', () => loads++)
