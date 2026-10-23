@@ -13,7 +13,7 @@ import { Icon } from './ui'
 import { Thread } from './Doc'
 
 type Box = { x: number; y: number; w: number; h: number }
-type Part = { key: string; text: string; rect: Box }
+type Part = { key: string; text: string; rect: Box; words?: number }
 
 // Runs inside the page. A part is the nearest block around what you point at; its key is its place in the page.
 const HELPER = `<script>(() => {
@@ -76,7 +76,7 @@ const HELPER = `<script>(() => {
       const s = getSelection(), words = String(s).trim()
       if (!words || !s.anchorNode) return
       const el = part(s.anchorNode.nodeType === 1 ? s.anchorNode : s.anchorNode.parentElement)
-      if (el) send({ pick: { key: place(el), text: words.slice(0, 500), rect: box(s.getRangeAt(0).getBoundingClientRect()) } })
+      if (el) send({ pick: { key: place(el), text: words.slice(0, 500), rect: box(s.getRangeAt(0).getBoundingClientRect()), words: 1 } })
     }, 400)
   })
   addEventListener('keydown', (e) => { if (e.key === 'Escape') send({ esc: 1 }) })
@@ -116,7 +116,7 @@ function escape() {
 function pick(p: Part) {
   U.docSel = new Set()
   U.docReply = null
-  U.docQuote = { key: p.key, text: p.text }
+  U.docQuote = { key: p.key, text: p.text, ...(p.words ? { words: true } : {}) }
   renderDoc()
   render() // the box's line says what you comment on
   if (desk()) els.text?.focus({ preventScroll: true })
@@ -237,7 +237,8 @@ export function WebPage({ d }: { d: Doc }) {
         className="block w-full bg-white"
       />
       {hover && mode === true ? ring(hover.rect, 'ring-blue-500') : null}
-      {picked && rects[picked.key] ? ring(rects[picked.key], 'ring-amber-300') : null}
+      {/* F432: words you select are lit by the page itself, as on any web page; only a part you pick is outlined */}
+      {picked && !picked.words && rects[picked.key] ? ring(rects[picked.key], 'ring-amber-300') : null}
       {hover && mode === true ? (
         <div
           className="absolute z-10 flex flex-row gap-1"

@@ -184,3 +184,35 @@ test('the buttons of a part of a web page stay while the pointer goes to them; E
   await page.keyboard.press('Escape')
   await expect(mode).toHaveAttribute('aria-pressed', 'false')
 })
+
+test('words selected in a web page are lit by the page alone: no outline around their part, which a click still outlines (F432)', async ({
+  page,
+  request,
+}) => {
+  const p = await project(request, {
+    ...LOOP,
+    then: `${LOOP.then}T4 html Plan page
+  <!doctype html><html><body><h1>Export plan</h1><div style="padding:8px"><p>Save filters on the server and export from them.</p></div><p>Ship option A today.</p></body></html>
+`,
+  })
+  await open(page, p, 'D1')
+  const frame = page.frameLocator('#detailBody iframe'),
+    words = frame.getByText('Save filters on the server')
+  await expect(words).toBeVisible()
+  const r = await words.boundingBox()
+  if (!r) throw new Error('not drawn')
+  // the pointer selects the first words, as anyone selects words on a page
+  await page.mouse.move(r.x + 1, r.y + r.height / 2)
+  await page.mouse.down()
+  await page.mouse.move(r.x + 90, r.y + r.height / 2, { steps: 10 })
+  await page.mouse.up()
+  await expect(page.locator('#scope')).toContainText('Save')
+  await expect(page.locator('#scope')).not.toContainText('export from them')
+  await expect(page.locator('#detailBody .ring-amber-300')).toHaveCount(0)
+  // a part picked in Comment mode is outlined
+  await page.keyboard.press('Escape')
+  await page.locator('[data-act="doc-inspect"]').click()
+  await frame.getByText('Ship option A today.').click()
+  await expect(page.locator('#scope')).toContainText('Ship option A today.')
+  await expect(page.locator('#detailBody .ring-amber-300')).toHaveCount(1)
+})
