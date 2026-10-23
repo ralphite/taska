@@ -94,6 +94,41 @@ test('r524: choices in a document are ticked on the page and wait; the box says 
   expect(await p.read('D1')).not.toMatch(/\[x\] Pears/i)
 })
 
+test('r420: a sent form is greyed and Submitted, plainly showing what was picked; Modify makes it a form again', async ({
+  page,
+  request,
+}) => {
+  const p = await project(request, {
+    ...LOOP,
+    then: `${LOOP.then}T4 doc Pick the fruit
+  - ( ) Apples
+  - ( ) Pears
+`,
+  })
+  await open(page, p, 'D1')
+  await page.locator('[data-act="doc-tick"]').filter({ hasText: 'Apples' }).filter({ visible: true }).first().click()
+  await page.locator('#text').click()
+  await page.keyboard.press('Shift+Enter')
+  await expect.poll(() => p.read('D1')).toMatch(/\(x\) Apples/i)
+  const form = page.locator('#docBlocks [role="group"]').filter({ hasText: 'Pears' }).filter({ visible: true }).first()
+  await expect(form).toContainText('Submitted')
+  await expect(form.locator('button[data-act="doc-tick"]')).toHaveCount(0) // not clickable: sent
+  const row = (f: string) => form.locator('[aria-pressed]').filter({ hasText: f })
+  await expect(row('Apples')).toHaveAttribute('aria-pressed', 'true')
+  await expect(row('Pears')).toHaveAttribute('aria-pressed', 'false')
+  // the pick stands out from the rest, all of it quieter than a form waiting to be sent
+  const fg = (f: string) => row(f).evaluate((el) => getComputedStyle(el).color)
+  const dark = (c: string) => (c.match(/\d+/g) || []).slice(0, 3).reduce((a, x) => a + Number(x), 0)
+  expect(dark(await fg('Apples'))).toBeLessThan(dark(await fg('Pears')))
+  // Modify: a form again; another pick goes the same way
+  await form.hover()
+  await form.locator('[data-act="doc-tick-edit"]').click()
+  await page.locator('[data-act="doc-tick"]').filter({ hasText: 'Pears' }).filter({ visible: true }).first().click()
+  await page.locator('#text').click()
+  await page.keyboard.press('Shift+Enter')
+  await expect.poll(() => p.read('D1')).toMatch(/\(x\) Pears/i)
+})
+
 test('r280 B340: on the phone a comment needs no place picked: it is on the whole document', async ({
   page,
   request,

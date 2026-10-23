@@ -56,3 +56,27 @@ test('r97 r115 r295 r454: the New input page has the box in the middle and all y
   expect(h.y + h.height).toBeLessThanOrEqual(b.y + 1)
   expect(b.y + b.height).toBeLessThanOrEqual(s.y + 1)
 })
+
+test('r454: the list under the New input box is everything you said, more loading as you scroll down', async ({
+  page,
+  request,
+}) => {
+  test.skip(!isDesk(page), 'the phone opens a project on its list; its inputs are a tab')
+  const p = await project(request, LOOP)
+  for (let i = 1; i <= 75; i++)
+    await request.post(`${p.url}api/op`, { data: { op: 'input', text: `Thought number ${i} of many` } })
+  await open(page, p)
+  const said = page.locator('#composeList')
+  await expect(said).toContainText('Thought number 75 of many') // the newest first
+  await expect(said).not.toContainText('Thought number 1 of many') // not all drawn at once
+  // scrolling down brings the rest, to the very first
+  await expect
+    .poll(
+      async () => {
+        await page.locator('#foot').evaluate((el) => el.scrollTo(0, el.scrollHeight))
+        return (await said.innerText()).includes('Thought number 1 of many')
+      },
+      { timeout: 10000 },
+    )
+    .toBe(true)
+})
