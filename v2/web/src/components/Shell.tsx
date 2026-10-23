@@ -333,7 +333,7 @@ export function DrawerSettings() {
       ) : null}
       {S.project ? (
         <>
-          <SideLink sec="docs" icon="file" label="Documents" phone />
+          <SideLink sec="docs" icon="doc" label="Documents" phone />
           <SideLink sec="log" icon="history" label="Activity" phone />
           <SideLink sec="deleted" icon="trash" label="Deleted" phone />
         </>
@@ -359,7 +359,7 @@ export function SideFoot() {
     >
       {S.project ? (
         <>
-          <SideLink sec="docs" icon="file" label="Documents" />
+          <SideLink sec="docs" icon="doc" label="Documents" />
           <SideLink sec="log" icon="history" label="Activity" />
           <SideLink sec="deleted" icon="trash" label="Deleted" />
         </>

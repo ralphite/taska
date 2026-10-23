@@ -102,7 +102,7 @@ export function inputState(r: Input): [string, string, ReactNode] {
         : ['Organized', 'text-emerald-700 dark:text-emerald-400', check]
   if (r.org && !r.org.ok)
     return ['Organizer failed', 'text-red-600 dark:text-red-400', <Icon n="alert" c="size-3.5" sw="2" />] // T232 #5
-  if (r.org) return ['Left for your agent', 'text-zinc-600 dark:text-zinc-300', <Icon n="arrow" c="size-3.5" sw="2" />]
+  if (r.org) return ['Left for your agent', 'text-zinc-600 dark:text-zinc-300', <Icon n="bot" c="size-3.5" sw="2" />]
   return [
     S.org?.on ? 'Queued' : 'Waiting for your agent',
     'text-zinc-600 dark:text-zinc-300',
@@ -624,7 +624,7 @@ function SaidRow({ r, words = [] }: { r: Input; last?: boolean; words?: string[]
               data-n={scope.n}
               className="flex min-w-0 items-center gap-1 rounded-md px-1 hover:bg-zinc-100 hover:text-zinc-800 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
             >
-              <Icon n="reply" c="size-3.5 shrink-0" />
+              <Icon n="scope" c="size-3.5 shrink-0" />
               <span className={`shrink-0 font-mono text-xs font-bold ${TYPE_TEXT[scope.type]}`}>{code(scope.n)}</span>
               <span className="truncate">{scope.title}</span>
             </button>

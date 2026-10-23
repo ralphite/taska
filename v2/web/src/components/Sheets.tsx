@@ -363,13 +363,13 @@ function menuParts({ n, arm }: Props): Parts | null {
     inQueue(it) && it.when === 'now'
       ? tile(
           'do-next',
-          'up',
+          it.rank == null ? 'totop' : 'undo',
           it.rank == null ? 'Do this next' : 'Back in order',
           it.rank == null ? `first of the ${it.pri}s` : '',
         )
       : null // F197
   const state = it.archived
-    ? [tile('archive', 'archive', 'Unarchive', '', { 'data-on': '0' })]
+    ? [tile('archive', 'unarchive', 'Unarchive', '', { 'data-on': '0' })]
     : CLOSED(it.status)
       ? [tile('archive', 'archive', 'Archive', '', { 'data-on': '1' })]
       : [
@@ -529,7 +529,7 @@ function menuDeskParts({ n }: Props): Parts | null {
     inQueue(it) && it.when === 'now'
       ? row(
           'do-next',
-          'up',
+          it.rank == null ? 'totop' : 'undo',
           it.rank == null ? 'Do this next' : 'Back in order',
           '',
           {},
@@ -537,7 +537,7 @@ function menuDeskParts({ n }: Props): Parts | null {
         )
       : null // F197
   const state = it.archived
-    ? [row('archive', 'archive', 'Unarchive', 'E', { 'data-on': '0' })]
+    ? [row('archive', 'unarchive', 'Unarchive', 'E', { 'data-on': '0' })]
     : CLOSED(it.status)
       ? [row('archive', 'archive', 'Archive', 'E', { 'data-on': '1' })]
       : [
@@ -1130,15 +1130,15 @@ function inputMenuParts({ id }: Props): Parts | null {
                 data-f={f.f}
                 className="flex h-10 w-full items-center gap-2.5 rounded-lg px-3 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"
               >
-                <Icon n="mic" c="size-4 text-zinc-500 dark:text-zinc-400" />
+                <Icon n="quote" c="size-4 text-zinc-500 dark:text-zinc-400" />
                 Original words
               </button>
             ))
           : null}
         {canUndoInput(r) && ok.undo ? row('undo', 'undo', 'Undo organizing', filingTip(r)) : null}
         {ok.move ? row('move-input', 'arrow', 'Move to…', 'Sent to the wrong project?') : null}
-        {ok.history ? row('input-history', 'clock', 'History') : null}
-        {row('rescope-pick', 'reply', r.scope ? `Put with another item (now ${code(r.scope)})…` : 'Put with an item…')}
+        {ok.history ? row('input-history', 'history', 'History') : null}
+        {row('rescope-pick', 'scope', r.scope ? `Put with another item (now ${code(r.scope)})…` : 'Put with an item…')}
         {r.files.map((f) => (
           <button
             key={f.f}
@@ -1396,7 +1396,7 @@ const KINDS: Record<string, (p: Props) => Parts | null> = {
           data-i={i as number}
           className="flex h-10 w-full items-center gap-2.5 rounded-lg px-3 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"
         >
-          <Icon n="loop" c="size-4 text-zinc-500 dark:text-zinc-400" />
+          <Icon n="save" c="size-4 text-zinc-500 dark:text-zinc-400" />
           Save current filters to this view
         </button>
         <button

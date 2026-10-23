@@ -449,7 +449,7 @@ const BODY: Record<string, () => ReactNode> = {
           <h2 className="text-[15px] font-semibold">Connect one more agent</h2>
           <div className="grid gap-4 lg:grid-cols-2">
             {way(
-              'keyboard',
+              'terminal',
               'Run a command',
               cmd,
               <>
@@ -860,7 +860,7 @@ const BODY: Record<string, () => ReactNode> = {
                   data-d={d.d}
                   className="flex w-full items-center gap-3 px-1 py-3 text-left hover:bg-zinc-50 dark:hover:bg-zinc-900"
                 >
-                  <Icon n="file" c="size-5 shrink-0 text-zinc-500 dark:text-zinc-400" />
+                  <Icon n={d.fmt === 'html' ? 'web' : 'doc'} c="size-5 shrink-0 text-zinc-500 dark:text-zinc-400" />
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-[15px] font-medium">{d.title}</span>
                     <span className="block truncate text-xs text-zinc-500 dark:text-zinc-400">

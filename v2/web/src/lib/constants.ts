@@ -172,7 +172,7 @@ export const ACT_ICON: Record<string, IconName> = {
   Start: 'start',
   'Back to queue': 'reopen',
   Reopen: 'reopen',
-  Unarchive: 'archive',
+  Unarchive: 'unarchive',
   Answer: 'ask',
   Reply: 'reply',
   Retire: 'ban',

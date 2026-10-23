@@ -142,7 +142,7 @@ export function Thread({
         data-on={docResolved(d, k) ? 0 : 1}
         className={`${HIT} float-right flex h-8 items-center gap-1 rounded-lg px-1.5 text-xs font-medium text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800`}
       >
-        <Icon n="check" c="size-3.5" />
+        <Icon n={docResolved(d, k) ? 'reopen' : 'check'} c="size-3.5" />
         {docResolved(d, k) ? 'Reopen' : 'Resolve'}
       </button>
       {U.docReply === k ? null : (
@@ -928,7 +928,7 @@ const PaneBtn = ({ act, children, pressed }: { act: string; children: ReactNode;
 )
 export const DocPaneHead = ({ d, editing }: { d: Doc; editing: boolean }) => (
   <span className="flex min-w-0 items-center gap-2 text-sm">
-    <Icon n={editing ? 'pencil' : 'file'} c="size-[18px] text-zinc-500 dark:text-zinc-400" />
+    <Icon n={editing ? 'pencil' : d.fmt === 'html' ? 'web' : 'doc'} c="size-[18px] text-zinc-500 dark:text-zinc-400" />
     {editing ? <span className="font-semibold">Editing</span> : null}
     <span className="font-mono font-bold text-zinc-700 dark:text-zinc-200">D{d.d}</span>
     <span className={`truncate ${editing ? '' : 'font-semibold'}`}>{d.title}</span>

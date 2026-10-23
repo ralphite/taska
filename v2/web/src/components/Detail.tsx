@@ -717,7 +717,7 @@ function ItemActs({ it }: { it: Item }) {
         <>
           <BarText
             act="swipe"
-            icon="pause"
+            icon="clock"
             label={it.when === 'now' ? 'Later' : 'Back to now'}
             title={it.when === 'now' ? 'Later · L' : 'Back to now · L'}
             data={{ n: it.n, f: 'when', v: it.when === 'now' ? 'later' : 'now' }}
@@ -725,7 +725,7 @@ function ItemActs({ it }: { it: Item }) {
         </>
       )}
       {it.archived ? (
-        <BarText act="archive" icon="archive" label="Unarchive" title="Unarchive · E" data={{ n: it.n, on: '0' }} />
+        <BarText act="archive" icon="unarchive" label="Unarchive" title="Unarchive · E" data={{ n: it.n, on: '0' }} />
       ) : (
         <BarText act="archive" icon="archive" label="Archive" title="Archive · E" data={{ n: it.n, on: '1' }} />
       )}

@@ -102,7 +102,7 @@ function WordsBar({ f }: { f: string }) {
           data-f={f}
           className="flex h-8 items-center gap-1.5 rounded-full pr-3 pl-2.5 text-[13px] font-semibold whitespace-nowrap text-white hover:bg-white/15 dark:text-zinc-900 dark:hover:bg-zinc-900/10"
         >
-          <Icon n="doc" c="size-4" />
+          <Icon n="quote" c="size-4" />
           Original words
         </button>
       </span>
@@ -151,7 +151,7 @@ export function Thumbs({ files, gid, size = 'size-20' }: { files: FileRef[]; gid
                     aria-label="Original words"
                     className="mr-1 -ml-1.5 grid size-7 place-items-center rounded-full text-zinc-400 hover:bg-zinc-100 lg:hidden dark:text-zinc-500 dark:hover:bg-zinc-800"
                   >
-                    <Icon n="doc" c="size-4" />
+                    <Icon n="quote" c="size-4" />
                   </button>
                   <WordsBar f={f.f} />
                 </>

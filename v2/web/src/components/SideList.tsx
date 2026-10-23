@@ -38,7 +38,7 @@ function Docs() {
             {...(U.doc === d.d ? { 'aria-current': 'true' as const } : {})}
             className={`${ROW} cursor-pointer lg:aria-[current=true]:bg-blue-50 dark:lg:aria-[current=true]:bg-blue-400/10`}
           >
-            <Icon n={d.fmt === 'html' ? 'web' : 'file'} c="mt-0.5 size-5 shrink-0 text-zinc-500 dark:text-zinc-400" />
+            <Icon n={d.fmt === 'html' ? 'web' : 'doc'} c="mt-0.5 size-5 shrink-0 text-zinc-500 dark:text-zinc-400" />
             <div className="min-w-0 flex-1">
               <p className="truncate text-[15px] leading-snug font-medium">{d.title}</p>
               <p className="mt-1 truncate text-xs font-medium text-zinc-500 dark:text-zinc-400">

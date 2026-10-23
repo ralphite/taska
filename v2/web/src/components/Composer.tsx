@@ -200,7 +200,7 @@ function boxRole(): { line: ReactNode; ph: string; send: string; ready?: boolean
       edit = am.mode === 'edit'
     line = (
       <ScopeLine
-        icon={edit ? 'pencil' : 'listplus'}
+        icon={edit ? 'pencil' : 'plus'}
         label={`${edit ? 'Edit' : 'Add details to'} ${rcode(am.id)}`}
         detail={
           oneLine(r?.text)
@@ -270,13 +270,13 @@ function boxRole(): { line: ReactNode; ph: string; send: string; ready?: boolean
   } else if (desk())
     line = (
       <ScopeLine
-        icon="inbox"
+        icon="newinput"
         label="New input"
         detail={`· ${filesWord}`} // T322 (D22): no "Add to T38 instead": New input and a reply each have their own place
       />
     )
   else if (U.open && detailShown() && byN.has(U.open))
-    line = <ScopeLine icon="inbox" label="New input" detail={`· ${filesWord}`} /> // B298
+    line = <ScopeLine icon="newinput" label="New input" detail={`· ${filesWord}`} /> // B298
   if (R.rec && R.key && R.key !== U.draftKey)
     line = <ScopeLine icon="mic" label={`Recording for ${draftName(R.key)}`} detail="· it goes there when you stop" /> // B1
   // T438 #2: the line says what the box writes to; the placeholder does not say it again
