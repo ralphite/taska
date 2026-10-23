@@ -167,18 +167,35 @@ D1 reply ¶2 An agent note to delete
     data: { op: 'dc', d: 1, key: await para.getAttribute('data-key'), quote: '', text: 'My note in the wrong place' },
   })
   await expect.poll(async () => p.read('D1')).toContain('My note in the wrong place')
+  // the open page has both comments (it hears of the new one a moment later; later still on a slow machine)
+  const rail = page.locator('aside[aria-label="Comments"]')
+  await expect
+    .poll(async () => {
+      if (await rail.count()) return (await rail.innerText()).match(/wrong place|agent note to delete/g)?.length ?? 0
+      const ns = await page.locator('[data-act="doc-thread"]:visible').allInnerTexts()
+      return ns.reduce((a, t) => a + (Number(t.match(/\d+/)?.[0]) || 0), 0)
+    })
+    .toBe(2)
   for (const words of ['My note in the wrong place', 'An agent note to delete']) {
     const card = page
       .locator('.group')
       .filter({ hasText: words })
       .filter({ has: page.locator('[data-act="dc-delete"]') })
       .last()
-    // on a narrow page a thread opens from its count beside the paragraph
+    // the page shows the comment: in the comment column, or (a narrow page) behind a count beside its paragraph; wait
+    // for one of them, then open the thread if it is behind a count
+    const counts = page.locator('[data-act="doc-thread"]:visible')
+    await expect(card.or(counts).first()).toBeVisible()
     if (!(await card.isVisible()))
-      for (const c of await page.locator('[data-act="doc-thread"]:visible').all()) {
+      for (const c of await counts.all()) {
         await c.click()
-        if (await card.isVisible()) break
+        const open = await card.waitFor({ timeout: 5000 }).then(
+          () => true,
+          () => false,
+        )
+        if (open) break
       }
+    await expect(card).toBeVisible()
     await card.scrollIntoViewIfNeeded()
     await card.hover()
     await card.locator('[data-act="dc-delete"]').click()

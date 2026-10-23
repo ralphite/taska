@@ -49,12 +49,19 @@ test('r97 r115 r295 r454: the New input page has the box in the middle and all y
   await expect(head).toContainText(p.name.replace(/-/g, ' ')) // the project's title
   await expect(said).toContainText('First thought about the export')
   await expect(said).toContainText('Second thought about the docs')
-  const [h, b, s, pane] = await Promise.all([head, box, said, page.locator('#foot')].map((l) => l.boundingBox()))
-  if (!h || !b || !s || !pane) throw new Error('not laid out')
-  // the box sits in the middle of its pane, under the project's name, with what you said under it
-  expect(Math.abs(b.x + b.width / 2 - (pane.x + pane.width / 2))).toBeLessThan(24)
-  expect(h.y + h.height).toBeLessThanOrEqual(b.y + 1)
-  expect(b.y + b.height).toBeLessThanOrEqual(s.y + 1)
+  // the box sits in the middle of its pane, under the project's name, with what you said under it (polled: a slow
+  // machine lays the page out late)
+  await expect
+    .poll(async () => {
+      const [h, b, s, pane] = await Promise.all([head, box, said, page.locator('#foot')].map((l) => l.boundingBox()))
+      if (!h || !b || !s || !pane) return 'not laid out'
+      return {
+        middle: Math.abs(b.x + b.width / 2 - (pane.x + pane.width / 2)) < 24,
+        nameAbove: h.y + h.height <= b.y + 1,
+        saidBelow: b.y + b.height <= s.y + 1,
+      }
+    })
+    .toEqual({ middle: true, nameAbove: true, saidBelow: true })
 })
 
 test('r454: the list under the New input box is everything you said, more loading as you scroll down', async ({
@@ -76,7 +83,7 @@ test('r454: the list under the New input box is everything you said, more loadin
         await page.locator('#foot').evaluate((el) => el.scrollTo(0, el.scrollHeight))
         return (await said.innerText()).includes('Thought number 1 of many')
       },
-      { timeout: 10000 },
+      { timeout: 20000 },
     )
     .toBe(true)
 })

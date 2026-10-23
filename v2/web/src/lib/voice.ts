@@ -22,12 +22,11 @@ import {
   plural,
   scopeN,
   sleep,
-  sleepOrOnline,
   type DraftFile,
   type Job,
 } from './state'
 import { toast } from './toast'
-import { JSON_POST, net, pushUndo, save, sendLog } from './data'
+import { JSON_POST, net, pushUndo, save, sendLog, waitBack } from './data'
 import { draftName, draftStore, goDraft, kept, saveDraft } from './drafts'
 import { docKey, renderDoc } from './docs'
 import { plainQuote } from './markdown'
@@ -481,7 +480,7 @@ export async function hear(f: DraftFile) {
     P = f.p || ctx.P // B414: the project it was recorded in, wherever you are now
   let d: TrAnswer | null = null
   if (f.f) f.settle?.() // uploaded before (put back after a reload): sending does not wait for its words
-  for (let n = 0, tries = 0, waits = 0; !f.gone; n++) {
+  for (let n = 0, tries = 0, waits = 0, at = Date.now(); !f.gone; n++, at = Date.now()) {
     try {
       if (!f.f) {
         const r = await fetch(
@@ -522,7 +521,7 @@ export async function hear(f: DraftFile) {
       if (f.gone) break
       f.retrying = true
       bump('composer', 'feedback')
-      await sleepOrOnline(Math.min(30000, 2000 * 2 ** Math.min(n, 4)))
+      await waitBack(Math.min(30000, 2000 * 2 ** Math.min(n, 4)), at) // B538 (r512): the network back, it goes at once
     }
   }
   f.loop = false
@@ -561,7 +560,7 @@ async function hearMore(f: DraftFile) {
         60000,
       )
     } catch {
-      await sleepOrOnline(Math.min(30000, 2000 * 2 ** Math.min(n, 4)))
+      await waitBack(Math.min(30000, 2000 * 2 ** Math.min(n, 4))) // B538
       continue
     }
     if (d.more) continue
@@ -1151,7 +1150,7 @@ async function dvHear(note: (typeof DV.notes)[number]): Promise<string | null> {
       if (d.done && d.tr_error && ++tries < 4) throw new Error()
       return d.done ? d.tr || '' : null
     } catch {
-      await sleepOrOnline(Math.min(30000, 2000 * 2 ** Math.min(n++, 4)))
+      await waitBack(Math.min(30000, 2000 * 2 ** Math.min(n++, 4))) // B538
     }
   }
   return null

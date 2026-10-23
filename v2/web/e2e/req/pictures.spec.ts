@@ -40,20 +40,31 @@ test('r466 r481 r483: a picture keeps its place while it loads, a spinner in the
   const pic = page.locator(`img[data-pic][src$="${f}"]`).filter({ visible: true }).first()
   const holder = pic.locator('xpath=..')
   const under = page.getByText('The words under the chart.').filter({ visible: true }).first()
+  // the picture is held back, so everything below happens before it comes, however slow the machine is
   await expect(pic).toBeVisible()
   await expect(pic).not.toHaveAttribute('data-loaded', '')
-  const before = await pic.boundingBox(),
-    wordsBefore = await under.boundingBox()
-  if (!before || !wordsBefore) throw new Error('not drawn')
-  expect(Math.round(before.width / before.height)).toBe(2) // its own shape, before it loads
+  // its place is kept once Taska has said its size (asked when the project opens; on a slow machine that answer can
+  // come seconds later): wait for that, not for a fixed time
+  await expect(pic).toHaveAttribute('width', '400', { timeout: 15000 })
+  await expect(pic).toHaveAttribute('height', '200')
+  await expect
+    .poll(async () => {
+      const b = await pic.boundingBox()
+      return b ? Math.round(b.width / b.height) : 0
+    })
+    .toBe(2) // its own shape, before it loads
   await expect(holder.locator('.animate-spin').filter({ visible: true })).toHaveCount(1)
   expect(await holder.locator('.animate-pulse').count()).toBe(0)
+  // where it is and where the words under it are, measured from the picture (the talk may still scroll as a whole)
+  const place = async () => {
+    const [b, w] = [await pic.boundingBox(), await under.boundingBox()]
+    if (!b || !w) throw new Error('not drawn')
+    return { w: Math.round(b.width), h: Math.round(b.height), below: Math.round(w.y - b.y) }
+  }
+  const before = await place()
   release()
-  await expect(pic).toHaveAttribute('data-loaded', '')
+  await expect(pic).toHaveAttribute('data-loaded', '', { timeout: 15000 })
   await expect(holder.locator('.animate-spin').filter({ visible: true })).toHaveCount(0)
-  const after = await pic.boundingBox(),
-    wordsAfter = await under.boundingBox()
-  expect(after?.width).toBeCloseTo(before.width, 0)
-  expect(after?.height).toBeCloseTo(before.height, 0)
-  expect(wordsAfter?.y).toBeCloseTo(wordsBefore.y, 0)
+  // nothing moved: the picture is the size it held, the words as far below it
+  expect(await place()).toEqual(before)
 })

@@ -23,7 +23,9 @@ test('r506 r519: an item dragged onto another project in the sidebar leaves the 
     await route.continue()
   })
   await row.dragTo(target)
-  await expect(row).toHaveCount(0, { timeout: 1500 })
+  // the server's answer is held until after this, so the row leaving proves the page did not wait for it; no time
+  // limit needed, which keeps a slow machine from failing it
+  await expect(row).toHaveCount(0, { timeout: 15000 })
   release()
   await expect.poll(async () => to.read('items?status=all'), { timeout: 15000 }).toContain('Write the user docs')
   expect(await p.read('items?status=all')).not.toContain('Write the user docs')

@@ -25,12 +25,35 @@ async function record(page: Page) {
   return { x: at.x + at.width / 2, y: at.y + at.height / 2 }
 }
 
+/** A second of sound recorded, by the recording's own clock (not a fixed wait: a slow machine starts it late). */
+const aSecond = (page: Page) =>
+  expect(page.locator('#recBar')).toContainText(/\b(0:0[1-9]|0:[1-5]\d|[1-9]\d*:\d\d)\b/, { timeout: 15000 })
+
+/** The voice notes this browser keeps until Taska has them (IndexedDB taska-voice). */
+const keptNotes = (page: Page) =>
+  page.evaluate(
+    () =>
+      new Promise<number>((ok) => {
+        const r = indexedDB.open('taska-voice', 1)
+        r.onupgradeneeded = () => r.result.createObjectStore('notes', { keyPath: 'id' })
+        r.onerror = () => ok(-1)
+        r.onsuccess = () => {
+          const q = r.result.transaction('notes', 'readonly').objectStore('notes').count()
+          q.onsuccess = () => {
+            r.result.close()
+            ok(q.result)
+          }
+          q.onerror = () => ok(-1)
+        }
+      }),
+  )
+
 test('r245 r281: while recording, a second tap where the recording started sends it', async ({ page, request }) => {
   const p = await project(request, LOOP)
   await open(page, p)
   const before = await voices(p)
   const at = await record(page)
-  await page.waitForTimeout(1200) // a second of sound
+  await aSecond(page)
   // the same place is now Stop and send
   await expect
     .poll(() =>
@@ -54,17 +77,26 @@ test('r512: a voice note you sent never comes back to the box: it goes once the 
   await open(page, p)
   const before = await voices(p)
   const at = await record(page)
-  await page.waitForTimeout(1200)
+  await aSecond(page)
   await context.setOffline(true)
   await page.mouse.click(at.x, at.y)
   await expect(page.locator('#recBar')).toBeHidden()
+  // the page has kept the note in this browser (its sound is put together a moment after Send): only then reload
+  await expect.poll(() => keptNotes(page), { timeout: 15000 }).toBeGreaterThan(0)
+  let tried = 0
+  page.on('requestfailed', (r) => {
+    if (r.url().includes('/api/file')) tried++
+  })
   await page.reload()
   await page.locator('#text').waitFor()
   // not in the box: no words, no file waiting there
   await expect(page.locator('#text')).toHaveValue('')
   await expect(page.locator('#composer [data-act="unfile"], #composer [data-act="view-draft"]')).toHaveCount(0)
+  // offline long enough for its tries to space out (2, 4, 8 s): the next pause would be 16 s
+  await expect.poll(() => tried, { timeout: 40000 }).toBeGreaterThanOrEqual(4)
   await context.setOffline(false)
-  await expect.poll(() => voices(p), { timeout: 20000 }).toBe(before + 1)
+  // "the moment it can go, it goes" (r512, B538): well inside that 16 s pause, even on a busy machine
+  await expect.poll(() => voices(p), { timeout: 10000 }).toBe(before + 1)
   await expect(page.locator('#composer [data-act="unfile"], #composer [data-act="view-draft"]')).toHaveCount(0)
 })
 
@@ -78,16 +110,19 @@ test('r512 B538: a voice note that waited offline a while goes within seconds of
   await open(page, p)
   const before = await voices(p)
   const at = await record(page)
-  await page.waitForTimeout(1200)
+  await aSecond(page)
+  let tried = 0
+  page.on('requestfailed', (r) => {
+    if (r.url().includes('/api/file')) tried++
+  })
   await context.setOffline(true)
   await page.mouse.click(at.x, at.y)
   await expect(page.locator('#recBar')).toBeHidden()
-  // offline long enough that the pause before its next try has grown to 16 s (tries after 2, 4 and 8 s)
-  await page.waitForTimeout(16000)
+  // offline long enough that the pause before its next try has grown to 16 s (tries after 2, 4 and 8 s): counted
+  await expect.poll(() => tried, { timeout: 40000 }).toBeGreaterThanOrEqual(4)
   await context.setOffline(false)
-  const back = Date.now()
-  await expect.poll(() => voices(p), { timeout: 30000 }).toBe(before + 1)
-  expect(Date.now() - back).toBeLessThan(6000)
+  // well inside that 16 s pause, even on a busy machine
+  await expect.poll(() => voices(p), { timeout: 10000 }).toBe(before + 1)
 })
 
 test('r485 r497: the original words of a voice note float up when you point at it, and are not shown otherwise', async ({
@@ -125,10 +160,14 @@ test('r485 r497: the original words of a voice note float up when you point at i
     expect(w.x + w.width).toBeLessThanOrEqual(c.x + c.width + 1)
     expect(w.y).toBeGreaterThanOrEqual(c.y - 1)
   }
-  // opening them is quick: no wait of seconds for a note that has its words (r485)
-  await words.first().click()
-  // its own title (the button that opened it, still under the pointer, has the same words)
-  await expect(page.locator('#dlgTitle').filter({ hasText: 'Original words', visible: true })).toBeVisible({
-    timeout: 3000,
+  // they open from one question to Taska, not a second try that writes the note down again (that took seconds, r485,
+  // B363); counted, not timed, so a busy machine does not fail it
+  const asked: string[] = []
+  page.on('request', (r) => {
+    if (r.url().includes('/api/transcript')) asked.push(r.method())
   })
+  await words.first().click()
+  // what opens is the words' own pop-up (its title); the bar you clicked may stay while the pointer is on the note
+  await expect(page.locator('#dlgTitle').filter({ visible: true })).toHaveText('Original words', { timeout: 15000 })
+  expect(asked).toEqual(['GET'])
 })

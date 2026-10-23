@@ -375,17 +375,6 @@ export const onLayout = (fn: () => void) => DESK?.addEventListener('change', fn)
 
 export const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`
 export const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms))
-// B538 (r512): the wait before trying again ends as soon as the connection is back, not when the wait is over
-export const sleepOrOnline = (ms: number) =>
-  new Promise<void>((r) => {
-    const done = () => {
-      clearTimeout(t)
-      removeEventListener('online', done)
-      r()
-    }
-    const t = setTimeout(done, ms)
-    addEventListener('online', done)
-  })
 export const esc = (s: unknown) =>
   String(s ?? '').replace(
     /[&<>"']/g,

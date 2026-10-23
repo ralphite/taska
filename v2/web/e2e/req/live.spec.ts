@@ -10,11 +10,11 @@ test('r4: what an agent writes shows on the open page by itself, no reload', asy
   await page.evaluate(() => ((window as unknown as { still: boolean }).still = true)) // gone if the page reloads
   await p.doAs('T4 say The docs outline is ready\nnew task P2 now Fresh from the agent\n')
   await expect(page.getByText('The docs outline is ready').filter({ visible: true }).first()).toBeVisible({
-    timeout: 10000,
+    timeout: 20000,
   })
   // and the list: on the phone the item is a page of its own, so go back to the list without loading anything
   if (!(await page.locator('#list').isVisible())) await page.goBack()
   await page.locator('#list [data-views] [data-v="every"], #list [data-views] [data-v="all"]').first().click()
-  await expect(page.locator('#list').getByText('Fresh from the agent').first()).toBeVisible({ timeout: 10000 })
+  await expect(page.locator('#list').getByText('Fresh from the agent').first()).toBeVisible({ timeout: 20000 })
   expect(await page.evaluate(() => (window as unknown as { still?: boolean }).still)).toBe(true)
 })

@@ -151,8 +151,12 @@ const RETRY_MS = [1000, 2000, 4000, 8000, 15000]
 let lastSaid = '' // what the latest save was, for a Not saved that was not told (B326)
 export const newCid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8)
 const BACK = new Set<() => void>() // what waits for Taska to answer again
-const waitBack = (ms: number) =>
+let backAt = 0 // when the network or Taska was last back
+/** A pause before trying again that ends early once the network or Taska is back (B538); `since`: when the try that
+ * failed began: back since then (while it was on its way), there is no pause at all. */
+export const waitBack = (ms: number, since = Infinity) =>
   new Promise<void>((ok) => {
+    if (backAt > since) return ok()
     const go = () => {
       clearTimeout(t)
       BACK.delete(go)
@@ -163,6 +167,7 @@ const waitBack = (ms: number) =>
   })
 /** Taska answers again: every save waiting for it goes now, and what was not saved is sent again by itself. */
 export function backOnline() {
+  backAt = Date.now()
   for (const go of [...BACK]) go()
   retryFailed()
   const again = [...RELOAD.values()]
@@ -609,10 +614,12 @@ export async function poll(g: number) {
     }
     if (!idle) addEventListener('blur', leave)
     POLL.stop = leave // T339: switching project lets go of this project's wait at once
+    // B538: while Taska seems away, its first answer comes at once (no long wait), so what waits for it goes now
+    const quick = idle || !!model.offline
     try {
       const S = model.S
       const d = await (
-        await fetch(`${ctx.P}api/poll?rev=${S.rev}&boot=${S.boot}&pv=${S.pv ?? -1}${idle ? '&wait=0' : ''}`, {
+        await fetch(`${ctx.P}api/poll?rev=${S.rev}&boot=${S.boot}&pv=${S.pv ?? -1}${quick ? '&wait=0' : ''}`, {
           cache: 'no-store',
           signal: ctl.signal,
         })

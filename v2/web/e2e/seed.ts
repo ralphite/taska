@@ -61,6 +61,11 @@ B2 done Fixed: the export now uses the active filter
 }
 export const isDesk = (page: Page) => (page.viewportSize()?.width || 0) >= 1024
 export async function open(page: Page, p: Project, path = '') {
+  // PW_SLOW=6: the page's processor runs 6 times slower, to find checks that only pass on a quiet machine
+  if (process.env.PW_SLOW) {
+    const c = await page.context().newCDPSession(page)
+    await c.send('Emulation.setCPUThrottlingRate', { rate: Number(process.env.PW_SLOW) })
+  }
   await page.goto(p.url + path)
   await page
     .locator('#list [data-zone], #list [data-act="open"], #inputsView, #detailBody, #projectView')

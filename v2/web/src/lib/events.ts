@@ -8,7 +8,7 @@ import { closeDialog, popAt } from './dialog'
 import { closeDrawer, fullWidth, openItem, searchMode, applyURL } from './nav'
 import { openDrawer } from './actions'
 import { closeSwipe, SW } from './rows'
-import { checkOthers, refresh } from './data'
+import { backOnline, checkOthers, refresh } from './data'
 import { resendOutbox, warnUnload } from './outbox'
 import { kept, onStorage, keepChoice } from './drafts'
 import { keepItemEdit } from './edit'
@@ -778,6 +778,7 @@ function wireAll() {
   addEventListener('online', () => {
     void refresh()
     resendOutbox()
+    backOnline() // B538 (r512): what waits to try again (a voice note's upload among them) tries now, not after its pause
   })
   addEventListener('storage', onStorage)
   addEventListener('pagehide', () => {
