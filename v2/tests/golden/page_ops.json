@@ -24,12 +24,12 @@
  {
   "name": "inbox",
   "status": 200,
-  "text": "inbox 1 pending \u00b7 keep-going ON\nr1 <hm> you\n  First thought: the export is broken\n"
+  "text": "inbox 1 pending\nr1 <hm> you\n  First thought: the export is broken\n"
  },
  {
   "name": "do new bug src=r1 Export is broken",
   "status": 200,
-  "text": "ok B1 new (proposed: the user approves it before anyone works on it)\nrev <rev> \u00b7 keep-going ON: GET /next to continue\n"
+  "text": "ok B1 new (proposed: the user approves it before anyone works on it)\nrev <rev>: GET /next to continue\n"
  },
  {
   "name": "op set",
@@ -183,9 +183,7 @@
    "work": true,
    "width": 1,
    "file": "<store>",
-   "cfg": {
-    "auto": true
-   },
+   "cfg": {},
    "undo": [
     {
      "seq": 9,
@@ -524,7 +522,7 @@
  {
   "name": "do B1 say An agent note",
   "status": 200,
-  "text": "ok B1 say\nrev <rev> \u00b7 keep-going ON: GET /next to continue\n"
+  "text": "ok B1 say\nrev <rev>: GET /next to continue\n"
  },
  {
   "name": "state",
@@ -548,9 +546,7 @@
    "work": true,
    "width": 1,
    "file": "<store>",
-   "cfg": {
-    "auto": true
-   },
+   "cfg": {},
    "undo": [
     {
      "seq": 18,
@@ -861,7 +857,7 @@
  {
   "name": "do F3 say still here?",
   "status": 200,
-  "text": "ok F3 say (note: the user deleted F3 together with input #item: stop working on it)\nrev <rev> \u00b7 keep-going ON: GET /next to continue\n"
+  "text": "ok F3 say (note: the user deleted F3 together with input #item: stop working on it)\nrev <rev>: GET /next to continue\n"
  },
  {
   "name": "restore item F3",
@@ -912,9 +908,7 @@
    "work": true,
    "width": 1,
    "file": "<store>",
-   "cfg": {
-    "auto": true
-   },
+   "cfg": {},
    "undo": [
     {
      "seq": 18,
@@ -1211,17 +1205,6 @@
   }
  },
  {
-  "name": "keep-going switch",
-  "status": 200,
-  "json": {
-   "ok": true,
-   "res": [
-    "ok keep-going ON (always on)"
-   ],
-   "rev": "<rev>"
-  }
- },
- {
   "name": "log",
   "status": 0,
   "text": "no answer: RemoteDisconnected"
@@ -1229,7 +1212,7 @@
  {
   "name": "next",
   "status": 200,
-  "text": "keep-going ON: keep working without stopping. After each item, write back, then GET /next again.\nfirst handle the inbox (1):\nr1 <hm> you\n  First thought: the CSV export is broken\n\n  Also the PDF\n  updated: <hm>; latest text above replaces earlier versions\n  linked items: B1\n"
+  "text": "Keep working without stopping. After each item, write back, then GET /next again.\nfirst handle the inbox (1):\nr1 <hm> you\n  First thought: the CSV export is broken\n\n  Also the PDF\n  updated: <hm>; latest text above replaces earlier versions\n  linked items: B1\n"
  },
  {
   "name": "transcript of a non-voice file",
@@ -1263,7 +1246,6 @@
    "width": 1,
    "file": "<store>",
    "cfg": {
-    "auto": true,
     "name": "My App"
    },
    "undo": [

@@ -370,18 +370,18 @@ class Handler(BaseHTTPRequestHandler):
         elif p == "/agent":
             with s.lock:
                 n = len(s.rules())
-            self.send(200, AGENT.format(base=base, grammar=GRAMMAR, mode=s.mode(),
+            self.send(200, AGENT.format(base=base, grammar=GRAMMAR,
                                         rules=f"{n} project rule{'s' if n != 1 else ''}, read GET /rules" if n else "no project rules yet"))
         elif p == "/next":
             wait = max(0, min(int((q.get("wait") or ["0"])[0] or 0), 540))
             end = time.time() + wait
             given: List[int] = []
             try:
-                with s.cond:  # ?wait=N: while keep-going is on and there is nothing to do, hold until work arrives
+                with s.cond:  # ?wait=N: while there is nothing to do, hold until work arrives
                     who = (q.get("by") or [None])[0] if "ui" not in q else None  # each agent gets an item no other one is on (F194)
                     ses = self.session_of(q)  # F450: and each session of it
                     text, work = s.next_text(ref, who, given, ses)
-                    while not work and s.cfg["auto"] and not s.gone and time.time() < end:  # a deleted project lets its agents go (F173)
+                    while not work and not s.gone and time.time() < end:  # a deleted project lets its agents go (F173)
                         s.cond.wait(timeout=end - time.time())
                         given = []
                         text, work = s.next_text(ref, who, given, ses)
@@ -563,7 +563,6 @@ class Handler(BaseHTTPRequestHandler):
             with s.lock:  # F450: what other sessions wrote for it before these commands (its own words there come after)
                 calls = s.call_news(by, ses) if by not in PEOPLE else []
             lines, _ = s.run_all(parse_dsl(text), by, ses=" ".join(ses.split())[:60])
-            tail = "GET /next to continue" if s.cfg["auto"] else "stop after the current item"
             with s.lock:
                 news = s.news_for(by) if by not in PEOPLE else []
                 rules = s.rule_news(by, ses) if by not in PEOPLE else []  # T490
@@ -571,7 +570,7 @@ class Handler(BaseHTTPRequestHandler):
             note = (f"\n{len(news)} new input{'s' if len(news) != 1 else ''} since your last /next: {' '.join(news)}."
                     " Finish the step you are on, then GET /next.") if news else ""
             note += "".join("\n" + r for r in rules + calls)
-            self.send(200, "\n".join(lines) + f"\nrev {s.rev} · {s.mode()}: {tail}{note}\n")
+            self.send(200, "\n".join(lines) + f"\nrev {s.rev}: GET /next to continue{note}\n")
         elif p == "/api/op":
             data = json.loads(self.body(MAX_FILE) or b"{}")
             ops = [(0, x) for x in (data if isinstance(data, list) else [data])]  # pyright: ignore[reportUnknownVariableType]

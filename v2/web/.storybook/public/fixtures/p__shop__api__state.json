@@ -24,7 +24,7 @@
   "work": true,
   "width": 2,
   "file": "/data/shop/taska.db",
-  "cfg": { "auto": true, "name": "Shop" },
+  "cfg": { "name": "Shop" },
   "undo": [
     {
       "seq": 245,

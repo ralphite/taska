@@ -27,7 +27,7 @@ the Home indicator, two taps where one should do, unclear state: all count.
 
 1. First screen: header (menu icon + project, agent pill, search), tabs with counts and the filter button, then
    the Items list in three groups: Needs you (amber, a one-line quote and an action pill per row, Go through),
-   Agent queue (Keep going switch, /next order), Finished (Archive N). With nothing waiting, the list starts at the
+   Agent queue (/next order), Finished (Archive N). With nothing waiting, the list starts at the
    queue. Nothing cut off at 375 and 390 wide. Also the moment before the data arrives (a
    slow tunnel on a phone): the project name and "Loading…" show, not a blank page.
 2. Send: text with Shift+Enter, with an image, the mic button. The status line after sending; Undo. Put a long
@@ -44,7 +44,7 @@ the Home indicator, two taps where one should do, unclear state: all count.
    card), Go through (stepper "2 of 4", Next, progress bar; answering, accepting, approving or replying moves to
    the next; after the last: "Nothing else needs you"), a sideways swipe on the card. Gestures: swipe right all
    the way (the forward step, Undo toast), swipe left partway (reverse buttons with icons), the menu icon (drawer
-   with projects and This project: Keep going, Connect, Use on your phone, Change log; swipe it back to close),
+   with projects and This project: Connect, Use on your phone, Change log; swipe it back to close),
    long press (the focus card). Taps must not fire after a swipe. The swipe in from the left edge is the phone's
    own "back": Taska must not take it.
 5. "Archive N finished items", the Undo countdown, Undo.

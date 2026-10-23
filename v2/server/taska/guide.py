@@ -40,7 +40,6 @@ WRITE (plain text, one command per line; indented lines continue the previous co
 AGENT = """\
 Taska is the user's tracker for features, bugs, ideas and tasks. BASE={base}
 Item code = type letter (F/B/I/T) + number; padding may change as the list grows, B3 = B03.
-Now: {mode}  (the user flips this in the UI; every /next and /do reply repeats it)
 
 READ  (plain text)
   curl -s BASE/next         what to do now: the inbox first, items the user replied on, then the next item  <- start here
@@ -65,9 +64,9 @@ READ  (plain text)
 
 Now: {rules}
 LOOP  doing means work has started (not that you are on it this second). Mark an item doing when you start;
-      if you drop that work, set it back to open. keep-going ON: take /next, mark it doing, do the work, write progress and set done, then GET /next
+      if you drop that work, set it back to open. Keep going: take /next, mark it doing, do the work, write progress and set done, then GET /next
       again. Don't stop to chat. If you are stuck or need a decision, post `B03 block <what you need>` and
-      move on; /next brings the item back once the user replies. Nothing to do and keep-going ON: wait with
+      move on; /next brings the item back once the user replies. Nothing to do: wait with
       GET /next?wait=540 (returns when work arrives) and repeat. If a background command can wake you when it
       exits, end your turn with WATCH running instead: waiting costs no tokens and never interrupts your work.
       While you work, a /do reply ending "N new inputs since your last /next" means the user wrote meanwhile:
@@ -77,9 +76,9 @@ LOOP  doing means work has started (not that you are on it this second). Mark an
       Always call /next and /do with ?by=<your name>: with several agents on one project, /next gives each of you
       its own item and lists "others are on (skip)": another agent holds those, leave them. A hold lapses after
       30 minutes without a word from that agent.
-      keep-going OFF: finish the current item, write back, stop. /next picks items marked now, ideas included:
-      an idea is something to think through; do it when small and clear, otherwise propose a plan and ask.
-WATCH while o=$(curl -s "BASE/next?wait=540"); [ -z "$o" ] || echo "$o" | grep -qE 'nothing to do now|keep-going OFF'; do sleep 20; done
+      /next picks items marked now, ideas included: an idea is something to think through; do it when small
+      and clear, otherwise propose a plan and ask.
+WATCH while o=$(curl -s "BASE/next?wait=540"); [ -z "$o" ] || echo "$o" | grep -q 'nothing to do now'; do sleep 20; done
 YOURS Items you create start as proposed: the user approves them before anyone works on them. `B03 done`
       from you puts the item in review; the user accepts it. Write item content in the user's language.
       The message with done has four parts, in this order: Result (what is different now, one line); How to
@@ -140,14 +139,13 @@ Taska runs on this machine. You read and update it with curl; every reply is sho
    user's phone shows whether an agent is around. `curl -s "BASE/next?by=claude-code"` says what to do: the inbox first, then items the user replied on,
    then the next item by priority. Mark the item doing, do the work, write progress back, then mark it done
    (it goes to the user for review). Ask /next again.
-4. **Keep going.** The first line of /next says keep-going ON or OFF.
-   - ON and nothing to do: `curl -s "BASE/next?wait=540&by=claude-code"` waits and returns as soon as work arrives. Repeat.
+4. **Keep going.** After each item, take the next one; don't stop to chat.
+   - Nothing to do: `curl -s "BASE/next?wait=540&by=claude-code"` waits and returns as soon as work arrives. Repeat.
      After your last item, always check /next once more.
    - If you can run a command in the background that wakes you when it exits (Claude Code: Bash with
      `run_in_background`), start this and end your turn instead of holding it. Waiting costs no tokens, it
-     ends only when there is work and keep-going is ON, and it never interrupts you mid-task:
-     `while o=$(curl -s "BASE/next?wait=540&by=claude-code"); [ -z "$o" ] || echo "$o" | grep -qE 'nothing to do now|keep-going OFF'; do sleep 20; done`
-   - OFF: finish the current item, write back, stop.
+     ends only when there is work, and it never interrupts you mid-task:
+     `while o=$(curl -s "BASE/next?wait=540&by=claude-code"); [ -z "$o" ] || echo "$o" | grep -q 'nothing to do now'; do sleep 20; done`
 5. **Need the user?** Post `B03 block <what you need>` or `B03 ask <question>`, then take the next item.
    /next brings it back once the user replies. When the answer is a choice, list it under the question as
    indented `- ( ) option` lines (pick one) or `- [ ] option` lines (pick any): the user taps instead of typing.

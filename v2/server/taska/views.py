@@ -211,7 +211,7 @@ def input_card(s: "Store", inp: Input, ref: Ref = None) -> str:
 def inbox(s: "Store", ref: Ref = None) -> str:
     rows = sorted(s.for_agent(), key=lambda i: int(i["id"][1:]))
     busy = sum(1 for i in s.pending() if s.org_on and not i["org"])
-    head = f"inbox {len(rows)} pending" + (f" (+{busy} being organized)" if busy else "") + f" · {s.mode()}\n"
+    head = f"inbox {len(rows)} pending" + (f" (+{busy} being organized)" if busy else "") + "\n"
     return head + "".join(input_card(s, i, ref) + "\n" for i in rows)
 
 
@@ -255,9 +255,7 @@ def next_text(s: "Store", ref: Ref = None, who: Optional[str] = None, given: Opt
     skipped for it (F194). given (a list) gets the item whose card it holds, if any."""
     if s.gone:
         return f"Project {s.name} was deleted: there is no work here. The user can restore it in Taska (Settings › Projects).\n", False
-    auto = s.cfg["auto"]
-    out = [s.mode() + (": keep working without stopping. After each item, write back, then GET /next again."
-                       if auto else ": finish what you are doing, write back, then stop and wait for the user.")]
+    out = ["Keep working without stopping. After each item, write back, then GET /next again."]
     if s.rules():
         out.append(f"{len(s.rules())} project rule{'s' if len(s.rules()) != 1 else ''}: read GET /rules once per session and follow those that apply.")
     live = s.sorted(i for i in s.active() if i["status"] not in CLOSED and not i["archived"])  # F281: an archived item rests, whatever its state
@@ -305,8 +303,7 @@ def next_text(s: "Store", ref: Ref = None, who: Optional[str] = None, given: Opt
         how = ("\nan idea: think it through first. Small and clear: do it. Bigger, or more than one way to go: "
                f"post your plan ({s.code(it['n'])} propose ...) and ask before building.") if it["type"] == "idea" else ""
         return "\n".join(out) + f"\nnext {s.code(it['n'])} ({len(queue)} in queue: doing first, then P0→P3, oldest first){how}\n" + card(s, it, ref), True
-    idle = "nothing to do now." + (" Wait for work: GET /next?wait=540 (returns as soon as something comes in)." if auto else "")
-    return "\n".join(out) + "\n" + idle + "\n", False
+    return "\n".join(out) + "\nnothing to do now. Wait for work: GET /next?wait=540 (returns as soon as something comes in).\n", False
 
 
 LOG_WORDS = {
@@ -354,8 +351,8 @@ def log_entries(s: "Store", n: int, before: int = 0) -> List[Dict[str, Any]]:
             t = f"{s.code(e['n'])} merged into {s.code(e['into'])}"
         elif k == "ack":
             t = "ack " + " ".join(e["ids"])
-        elif k == "cfg":
-            t = f"renamed the project {e['f']['name']!r}" if "name" in e["f"] else "keep-going " + ("ON" if e["f"].get("auto") else "OFF")
+        elif k == "cfg" and "name" in e["f"]:
+            t = f"renamed the project {e['f']['name']!r}"
         elif k == "doc":
             t = f"doc D{e['d']} on {s.code(e['n'])} {first_line(e.get('title', ''))!r}"
         elif k == "dc":

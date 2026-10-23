@@ -165,7 +165,6 @@ PAGE_OPS: List[Dict[str, Any]] = [
     STATE,
     op({"op": "restore", "id": "r1"}, "restore input r1"),
     op({"op": "cfg", "name": "My App"}, "rename project"),
-    op({"op": "cfg", "auto": False}, "keep-going switch"),
     get(f"{P}/log?n=80", "log"),
     get(f"{P}/next?by=claude-code", "next"),
     get(f"{P}/api/transcript?f=f1-shot.png", "transcript of a non-voice file"),

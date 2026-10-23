@@ -56,7 +56,7 @@ class Store:
         self.rev = 0  # bumps on every change, including transient organizer state
         self.boot = format(int(time.time() * 1000), "x")  # rev restarts with the process; boot tells pages apart
         self.maxn = self.nin = self.nfile = 0
-        self.cfg: Dict[str, Any] = {"auto": True}  # auto = keep-going (always on, T260); name: what people call it (F173)
+        self.cfg: Dict[str, Any] = {}  # name: what people call the project (F173)
         self.name, self.gone = name or os.path.basename(self.folder), False  # name: the project's address and folder; gone: deleted while this ran (F173)
         self.docs: Dict[int, Doc] = {}
         self.maxd = 0
@@ -322,8 +322,8 @@ class Store:
                 inp["org"] = None if e.get("retry") else {"ok": e["ok"], "msg": e["msg"], "t": e["t"],
                                                           "keep": e.get("keep", "Left for your coding agent" in e["msg"]), "changed": e.get("changed", False)}
         elif k == "cfg":
-            self.cfg.update(e["f"])
-            self.cfg["auto"] = True  # T260: agents always keep going; an old "off" in the log no longer stops them
+            if "name" in e["f"]:
+                self.cfg["name"] = e["f"]["name"]
         elif k == "doc":
             d = self.docs.get(e["d"])
             if not d:
@@ -854,9 +854,6 @@ class Store:
     def rules(self) -> List[Item]:
         return [i for i in self.sorted(self.active()) if i["type"] == "rule" and i["status"] not in CLOSED + ("proposed",) and not i["archived"]]
 
-    def mode(self) -> str:
-        return "keep-going ON" if self.cfg["auto"] else "keep-going OFF"
-
     # -- agents ---------------------------------------------------------------
 
     def claimer(self, it: Item, now_: Optional[float] = None) -> Optional[Tuple[str, float]]:
@@ -1070,7 +1067,7 @@ class Store:
                             **({"sessions": [{"name": n, "t": int(t * 1000)} for n, t in sorted(v["sessions"].items(), key=lambda x: -x[1]) if t > day]}
                                if v.get("sessions") else {})}
                            for k, v in self.agents.items()],
-                "work": bool(self.cfg["auto"] and views.next_text(self)[1])}
+                "work": views.next_text(self)[1]}
 
     # -- voice notes (B165): you can send before the words are in. The message goes at once with its recording; the
     # words are worked out meanwhile and added to it, and agents and the organizer get it once they are in.

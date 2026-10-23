@@ -2,7 +2,7 @@
  {
   "name": "do new feature One",
   "status": 200,
-  "text": "ok F1 new (proposed: the user approves it before anyone works on it)\nok B2 new (proposed: the user approves it before anyone works on it)\nrev <rev> \u00b7 keep-going ON: GET /next to continue\n"
+  "text": "ok F1 new (proposed: the user approves it before anyone works on it)\nok B2 new (proposed: the user approves it before anyone works on it)\nrev <rev>: GET /next to continue\n"
  },
  {
   "name": "op batch",
@@ -134,9 +134,7 @@
    "work": true,
    "width": 1,
    "file": "<store>",
-   "cfg": {
-    "auto": true
-   },
+   "cfg": {},
    "undo": [
     {
      "seq": 7,

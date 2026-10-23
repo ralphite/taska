@@ -130,7 +130,7 @@ export const EMPTY_STATE: State = {
   work: false,
   width: 1,
   file: '',
-  cfg: { auto: true },
+  cfg: {},
   undo: [],
   org: { on: false, model: '', busy: null },
   items: [],

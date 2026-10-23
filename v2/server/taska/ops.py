@@ -395,15 +395,11 @@ def run(s: "Store", op: Op, by: str, ctx: Dict[str, Any]) -> Tuple[str, Any]:
         s.emit({"k": name, "d": d["d"], "id": cid, "by": by})
         return f"ok D{d['d']} comment {cid} {'deleted' if name == 'dcdel' else 'restored'}", f"{'Deleted' if name == 'dcdel' else 'Restored'} a comment on D{d['d']}"
     if name == "cfg":
-        if "auto" in op and "name" not in op:  # T260: there is no switch any more
-            return f"ok {s.mode()} (always on)", ""
-        f: Dict[str, Any] = {}
-        if "name" in op:  # the project's name for people (F173); its address stays
-            f["name"] = title_of(op["name"])
-        if not f:
-            raise Err("cfg needs auto or name")
-        s.emit({"k": "cfg", "f": f, "by": by})
-        return f"ok {s.mode()}" if "auto" in f else f"ok named {f['name']}", ""
+        if "name" not in op:
+            raise Err("cfg needs name")
+        title = title_of(op["name"])  # the project's name for people (F173); its address stays
+        s.emit({"k": "cfg", "f": {"name": title}, "by": by})
+        return f"ok named {title}", ""
     if name == "ack":
         ids = [i for i in op.get("ids", []) if i in s.inputs]
         bad = [i for i in op.get("ids", []) if i not in s.inputs]

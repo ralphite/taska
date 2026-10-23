@@ -3,7 +3,6 @@
     "name": "mobile-app",
     "title": "Mobile app",
     "open": 4,
-    "auto": true,
     "needs": 0,
     "agents": [
       {
@@ -24,7 +23,6 @@
     "name": "shop",
     "title": "Shop",
     "open": 19,
-    "auto": true,
     "needs": 7,
     "agents": [
       {
@@ -52,7 +50,6 @@
     "name": "website",
     "title": "Website",
     "open": 0,
-    "auto": true,
     "needs": 0,
     "agents": [],
     "work": false,

@@ -182,7 +182,7 @@ export interface State {
   work: boolean
   width: number
   file: string
-  cfg: { auto: boolean; name?: string }
+  cfg: { name?: string }
   undo: UndoEntry[]
   org: { on: boolean; model: string; busy: string | null }
   items: Item[]

@@ -2,7 +2,7 @@
  {
   "name": "do new feature Plan the release",
   "status": 200,
-  "text": "ok F1 new (proposed: the user approves it before anyone works on it)\nrev <rev> \u00b7 keep-going ON: GET /next to continue\n"
+  "text": "ok F1 new (proposed: the user approves it before anyone works on it)\nrev <rev>: GET /next to continue\n"
  },
  {
   "name": "op set",
@@ -18,7 +18,7 @@
  {
   "name": "do F1 doc The release plan",
   "status": 200,
-  "text": "ok D1 new on F1\nrev <rev> \u00b7 keep-going ON: GET /next to continue\n"
+  "text": "ok D1 new on F1\nrev <rev>: GET /next to continue\n"
  },
  {
   "name": "doc D1",
@@ -61,12 +61,12 @@
  {
   "name": "next: answer the comments",
   "status": 200,
-  "text": "keep-going ON: keep working without stopping. After each item, write back, then GET /next again.\nanswer the user's comments on D1 (GET /D1):\nD1 on F1  (updated <hm> by claude-code; reply with: D1 reply \u00b6N <text>, \u00b60 for the whole document)\n\u00b60 comments on the whole document:\n   > you <hm>: Looks good overall\n\u00b61 # The release plan\n\u00b62 ## Steps\n   > you <hm>: Why these steps?\n\u00b63 1. Build\n   2. Ship\n\u00b64 | a | b |\n   |---|---|\n   | 1 | 2 |\n\u00b65 ```\n   code here\n   ```\n\u00b66 > a quote\n\u00b67 Last paragraph.\n"
+  "text": "Keep working without stopping. After each item, write back, then GET /next again.\nanswer the user's comments on D1 (GET /D1):\nD1 on F1  (updated <hm> by claude-code; reply with: D1 reply \u00b6N <text>, \u00b60 for the whole document)\n\u00b60 comments on the whole document:\n   > you <hm>: Looks good overall\n\u00b61 # The release plan\n\u00b62 ## Steps\n   > you <hm>: Why these steps?\n\u00b63 1. Build\n   2. Ship\n\u00b64 | a | b |\n   |---|---|\n   | 1 | 2 |\n\u00b65 ```\n   code here\n   ```\n\u00b66 > a quote\n\u00b67 Last paragraph.\n"
  },
  {
   "name": "do D1 reply \u00b62 Because we must build first.",
   "status": 200,
-  "text": "ok D1 comment\nok D1 comment\nrev <rev> \u00b7 keep-going ON: GET /next to continue\n"
+  "text": "ok D1 comment\nok D1 comment\nrev <rev>: GET /next to continue\n"
  },
  {
   "name": "doc D1 with replies",
@@ -76,7 +76,7 @@
  {
   "name": "do D1 doc",
   "status": 200,
-  "text": "ok D1 updated\nrev <rev> \u00b7 keep-going ON: GET /next to continue\n"
+  "text": "ok D1 updated\nrev <rev>: GET /next to continue\n"
  },
  {
   "name": "doc D1 after rewrite: detached comments",
@@ -86,7 +86,7 @@
  {
   "name": "do F1 doc",
   "status": 200,
-  "text": "ok D2 new on F1\nrev <rev> \u00b7 keep-going ON: GET /next to continue\n"
+  "text": "ok D2 new on F1\nrev <rev>: GET /next to continue\n"
  },
  {
   "name": "card with docs",
@@ -115,9 +115,7 @@
    "work": true,
    "width": 1,
    "file": "<store>",
-   "cfg": {
-    "auto": true
-   },
+   "cfg": {},
    "undo": [
     {
      "seq": 2,
@@ -377,7 +375,7 @@
  {
   "name": "do new task Other item",
   "status": 200,
-  "text": "ok T2 new (proposed: the user approves it before anyone works on it)\nrev <rev> \u00b7 keep-going ON: GET /next to continue\n"
+  "text": "ok T2 new (proposed: the user approves it before anyone works on it)\nrev <rev>: GET /next to continue\n"
  },
  {
   "name": "move D2 to T2",
@@ -417,9 +415,7 @@
    "work": true,
    "width": 1,
    "file": "<store>",
-   "cfg": {
-    "auto": true
-   },
+   "cfg": {},
    "undo": [
     {
      "seq": 2,

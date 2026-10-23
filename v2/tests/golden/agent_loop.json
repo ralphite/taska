@@ -11,12 +11,12 @@
  {
   "name": "agent guide",
   "status": 200,
-  "text": "Taska is the user's tracker for features, bugs, ideas and tasks. BASE=http://<host>/p/default\nItem code = type letter (F/B/I/T) + number; padding may change as the list grows, B3 = B03.\nNow: keep-going ON  (the user flips this in the UI; every /next and /do reply repeats it)\n\nREAD  (plain text)\n  curl -s BASE/next         what to do now: the inbox first, items the user replied on, then the next item  <- start here\n  curl -s BASE/inbox        unprocessed user inputs: raw text, scoped item, files\n  curl -s BASE/items        open items, one line each: code pri when status title [flag] [^parent]\n                            flag: ? you asked / ! you are blocked (both wait on the user) / < the user replied\n                            filters: ?q=word&type=bug&pri=P0&when=now&status=all|open|doing|done|dropped&wait=1&reply=1&archived=1|all&limit=60\n  curl -s BASE/B03          full card: fields, body, thread, files (image/audio paths are readable from disk)\n  curl -s BASE/rules        project rules: standing instructions; follow those that apply to what you do\n                            (a rule added or changed while you work is named once in your next /next or /do reply:\n                            read it and follow it from then on)\n  curl -s BASE/D1           a document: numbered paragraphs (\u00b6) with the user's comments under each\n  curl -s BASE/log?n=30     recent changes\n  optional on any call: &session=<the title your app shows for this session> (or the header X-Taska-Session), so\n                            the user can tell your sessions apart\n\nWRITE (plain text, one command per line; indented lines continue the previous command's text):\n  new bug P1 now parent=B03 src=r12 Export ignores the active filter\n                            type (feature|bug|idea|task|rule), priority (P0-P3), now|later, parent= and src= are\n                            each optional and go before the title as plain words, no brackets\n    <optional body, indented>\n  B03 P1 later doing        set priority / when / status / type, any mix (status: open|doing|done|drop; drop = won't do)\n  B03 done <text>           words after the fields (and indented lines) are posted as progress, e.g. the done report\n  B03 title|body|next <text>      replace that field (body may continue on indented lines)\n  B03 say|ask|block|propose|decide|progress <text>     add to the thread: ask = question for the user,\n                                  block = you are stuck and need the user (say what you need),\n                                  withdraw = take back your open ask/block (say why),\n                                  propose = suggestion (not decided), decide = decision made\n  B03 say @worker <text>    to another agent session (its session= name): it gets B03 on its next /next or /do reply\n  B03 merge F01             merge B03 into F01 (use only for clear duplicates)\n  Messages and docs are Markdown (lists, **bold**, `code`, links). Show an image where it belongs with\n  ![what it shows](f12-a.png): upload it first with\n  curl -s BASE/api/file?name=a.png -H 'Content-Type: image/png' --data-binary @a.png   (prints its \"f\")\n  B03 say files=f12-a.png,f13-b.png <text>   images attached below the message instead\n  B03 ask <question>        with indented choices the user taps: \"- ( ) option\" lines = pick one (yes/no too),\n                            \"- [ ] option\" lines = pick any. The reply lists the picks as \"\u2713 option\".\n  B03 doc [title]           new document on B03 (plans, designs); its Markdown is the indented lines, first line = title\n  D1 doc [new title]        replace D1's Markdown with the indented lines; comments stay with unchanged paragraphs\n  B03 html [title]          new web page document on B03: the indented lines are HTML (scripts allowed), shown as a page\n  D1 html [new title]       replace D1 with the indented HTML\n  D1 reply \u00b63 <text>        answer the comments on paragraph 3 of D1\n  B03 archive|unarchive     hide a done/dropped item from the default lists (reopening unarchives)\n  ack r12 r13               mark inputs handled without changing items\n  $ means the item created earlier in the same request. Refs: B03, b3, 3 are the same item.\n  curl -s BASE/do --data-binary @- <<'EOF'\n  B03 doing\n  B03 progress Reproduced it: the export ignores the filter\n  EOF\n\nNow: no project rules yet\nLOOP  doing means work has started (not that you are on it this second). Mark an item doing when you start;\n      if you drop that work, set it back to open. keep-going ON: take /next, mark it doing, do the work, write progress and set done, then GET /next\n      again. Don't stop to chat. If you are stuck or need a decision, post `B03 block <what you need>` and\n      move on; /next brings the item back once the user replies. Nothing to do and keep-going ON: wait with\n      GET /next?wait=540 (returns when work arrives) and repeat. If a background command can wake you when it\n      exits, end your turn with WATCH running instead: waiting costs no tokens and never interrupts your work.\n      While you work, a /do reply ending \"N new inputs since your last /next\" means the user wrote meanwhile:\n      finish the step you are on, then GET /next. Nothing else interrupts you.\n      Big items have subitems (parent=B03): /next gives you the subitems first and the parent once they are\n      finished; split big work the same way with `new ... parent=B03`.\n      Always call /next and /do with ?by=<your name>: with several agents on one project, /next gives each of you\n      its own item and lists \"others are on (skip)\": another agent holds those, leave them. A hold lapses after\n      30 minutes without a word from that agent.\n      keep-going OFF: finish the current item, write back, stop. /next picks items marked now, ideas included:\n      an idea is something to think through; do it when small and clear, otherwise propose a plan and ask.\nWATCH while o=$(curl -s \"BASE/next?wait=540\"); [ -z \"$o\" ] || echo \"$o\" | grep -qE 'nothing to do now|keep-going OFF'; do sleep 20; done\nYOURS Items you create start as proposed: the user approves them before anyone works on them. `B03 done`\n      from you puts the item in review; the user accepts it. Write item content in the user's language.\n      The message with done has four parts, in this order: Result (what is different now, one line); How to\n      check (where to look or what to tap); What changed (a short list); a picture of it (T274 #41).\nWHO   Add ?by=<you> (claude-code, codex, antigravity) to /next and /do: the user sees whether an agent is around.\nTELL  The user reads Taska only, often on a phone: never your terminal or chat. Everything they should see\n      (what you did, how you checked it, screenshots, plans, questions) goes into the item's messages.\n      First line = the conclusion in one sentence; the page folds long messages to it. Then details, short,\n      in Markdown, images inline (see `say` above). Don't post \"starting now\": the status already says doing.\n      More than 10 lines (a plan, research, a checklist, a long report): write it as a document (`B03 doc`),\n      choices to tick included, and post one line that names it, e.g. \"The plan is in D2; tick at the end\".\n      Name items, documents and inputs by their code (B03, D2, r12): the page links each code and shows a card\n      about it on hover. A code alone means little to the user: the first time a message names one, add a few\n      words on what it is, e.g. \"D2 (the release plan)\".\nRULES Reuse existing items (/items?q=) instead of duplicating. Keep the user's wording. Never turn a\n      suggestion into a decision: use propose/ask/block and wait. Commands with src=rN (or ack rN) mark that\n      input handled; if an input is a question for you, answer it in the related item (or tell the user) and ack it.\n\nMANAGER MODE (optional: if your app can't run two sessions this way, work alone as above)\n      A manager session hands items to one long-lived worker session; it never edits code itself.\n      Manager: picks items from /next and the threads, claims them for the worker with /next?by=<worker>, sends the\n      worker a short list in priority order (small ones first), sleeps until an event below, and puts what needs\n      the user on the item. Worker: does the list in order and writes progress/done/ask/block on each item itself\n      (&session=worker); never polls Taska, never waits on the user, keeps working while a background command\n      runs, says on the item before a step longer than 15 minutes, and ends every turn with a message there.\n      Never stuck: the worker runs where nothing prompts for approval (a refused command is refused; it takes\n      another route); the manager never waits on a prompt or on the worker. A stuck worker: stop its turn, hand\n      the item out again, say why on the item.\n      Checks are code, not tokens. The manager wakes only when the item leaves doing or waits on the user, the\n      worker is silent 10 minutes mid-turn, its turn ended 20 minutes ago with no report, or the user writes.\n      The Taska source has scripts/watch_worker.py (one line per event, for a Monitor; it also writes a stop on\n      the item) and scripts/watch_taska.sh (new inputs and replies).\n      Reuse the worker for related items; between items, compact it once its context passes about 40%.\n      Cost: the done message ends with one line: active minutes, fresh tokens, cache-read tokens, steps, from\n      scripts/session_usage.py <worker session.jsonl> --since <start> --until <end>.\n      Claude Code: the worker is a resident session; send it a session message (both in the same permission\n        mode), or `claude -p --resume <session> --permission-mode auto --output-format json \"<brief>\"`.\n      Codex: `codex exec resume <session> --json \"<brief>\"` (exec never prompts; --json reports tokens).\n      Antigravity: one worker started from its Agent Manager and reused. Not tried yet, nor how to read its tokens.\n"
+  "text": "Taska is the user's tracker for features, bugs, ideas and tasks. BASE=http://<host>/p/default\nItem code = type letter (F/B/I/T) + number; padding may change as the list grows, B3 = B03.\n\nREAD  (plain text)\n  curl -s BASE/next         what to do now: the inbox first, items the user replied on, then the next item  <- start here\n  curl -s BASE/inbox        unprocessed user inputs: raw text, scoped item, files\n  curl -s BASE/items        open items, one line each: code pri when status title [flag] [^parent]\n                            flag: ? you asked / ! you are blocked (both wait on the user) / < the user replied\n                            filters: ?q=word&type=bug&pri=P0&when=now&status=all|open|doing|done|dropped&wait=1&reply=1&archived=1|all&limit=60\n  curl -s BASE/B03          full card: fields, body, thread, files (image/audio paths are readable from disk)\n  curl -s BASE/rules        project rules: standing instructions; follow those that apply to what you do\n                            (a rule added or changed while you work is named once in your next /next or /do reply:\n                            read it and follow it from then on)\n  curl -s BASE/D1           a document: numbered paragraphs (\u00b6) with the user's comments under each\n  curl -s BASE/log?n=30     recent changes\n  optional on any call: &session=<the title your app shows for this session> (or the header X-Taska-Session), so\n                            the user can tell your sessions apart\n\nWRITE (plain text, one command per line; indented lines continue the previous command's text):\n  new bug P1 now parent=B03 src=r12 Export ignores the active filter\n                            type (feature|bug|idea|task|rule), priority (P0-P3), now|later, parent= and src= are\n                            each optional and go before the title as plain words, no brackets\n    <optional body, indented>\n  B03 P1 later doing        set priority / when / status / type, any mix (status: open|doing|done|drop; drop = won't do)\n  B03 done <text>           words after the fields (and indented lines) are posted as progress, e.g. the done report\n  B03 title|body|next <text>      replace that field (body may continue on indented lines)\n  B03 say|ask|block|propose|decide|progress <text>     add to the thread: ask = question for the user,\n                                  block = you are stuck and need the user (say what you need),\n                                  withdraw = take back your open ask/block (say why),\n                                  propose = suggestion (not decided), decide = decision made\n  B03 say @worker <text>    to another agent session (its session= name): it gets B03 on its next /next or /do reply\n  B03 merge F01             merge B03 into F01 (use only for clear duplicates)\n  Messages and docs are Markdown (lists, **bold**, `code`, links). Show an image where it belongs with\n  ![what it shows](f12-a.png): upload it first with\n  curl -s BASE/api/file?name=a.png -H 'Content-Type: image/png' --data-binary @a.png   (prints its \"f\")\n  B03 say files=f12-a.png,f13-b.png <text>   images attached below the message instead\n  B03 ask <question>        with indented choices the user taps: \"- ( ) option\" lines = pick one (yes/no too),\n                            \"- [ ] option\" lines = pick any. The reply lists the picks as \"\u2713 option\".\n  B03 doc [title]           new document on B03 (plans, designs); its Markdown is the indented lines, first line = title\n  D1 doc [new title]        replace D1's Markdown with the indented lines; comments stay with unchanged paragraphs\n  B03 html [title]          new web page document on B03: the indented lines are HTML (scripts allowed), shown as a page\n  D1 html [new title]       replace D1 with the indented HTML\n  D1 reply \u00b63 <text>        answer the comments on paragraph 3 of D1\n  B03 archive|unarchive     hide a done/dropped item from the default lists (reopening unarchives)\n  ack r12 r13               mark inputs handled without changing items\n  $ means the item created earlier in the same request. Refs: B03, b3, 3 are the same item.\n  curl -s BASE/do --data-binary @- <<'EOF'\n  B03 doing\n  B03 progress Reproduced it: the export ignores the filter\n  EOF\n\nNow: no project rules yet\nLOOP  doing means work has started (not that you are on it this second). Mark an item doing when you start;\n      if you drop that work, set it back to open. Keep going: take /next, mark it doing, do the work, write progress and set done, then GET /next\n      again. Don't stop to chat. If you are stuck or need a decision, post `B03 block <what you need>` and\n      move on; /next brings the item back once the user replies. Nothing to do: wait with\n      GET /next?wait=540 (returns when work arrives) and repeat. If a background command can wake you when it\n      exits, end your turn with WATCH running instead: waiting costs no tokens and never interrupts your work.\n      While you work, a /do reply ending \"N new inputs since your last /next\" means the user wrote meanwhile:\n      finish the step you are on, then GET /next. Nothing else interrupts you.\n      Big items have subitems (parent=B03): /next gives you the subitems first and the parent once they are\n      finished; split big work the same way with `new ... parent=B03`.\n      Always call /next and /do with ?by=<your name>: with several agents on one project, /next gives each of you\n      its own item and lists \"others are on (skip)\": another agent holds those, leave them. A hold lapses after\n      30 minutes without a word from that agent.\n      /next picks items marked now, ideas included: an idea is something to think through; do it when small\n      and clear, otherwise propose a plan and ask.\nWATCH while o=$(curl -s \"BASE/next?wait=540\"); [ -z \"$o\" ] || echo \"$o\" | grep -q 'nothing to do now'; do sleep 20; done\nYOURS Items you create start as proposed: the user approves them before anyone works on them. `B03 done`\n      from you puts the item in review; the user accepts it. Write item content in the user's language.\n      The message with done has four parts, in this order: Result (what is different now, one line); How to\n      check (where to look or what to tap); What changed (a short list); a picture of it (T274 #41).\nWHO   Add ?by=<you> (claude-code, codex, antigravity) to /next and /do: the user sees whether an agent is around.\nTELL  The user reads Taska only, often on a phone: never your terminal or chat. Everything they should see\n      (what you did, how you checked it, screenshots, plans, questions) goes into the item's messages.\n      First line = the conclusion in one sentence; the page folds long messages to it. Then details, short,\n      in Markdown, images inline (see `say` above). Don't post \"starting now\": the status already says doing.\n      More than 10 lines (a plan, research, a checklist, a long report): write it as a document (`B03 doc`),\n      choices to tick included, and post one line that names it, e.g. \"The plan is in D2; tick at the end\".\n      Name items, documents and inputs by their code (B03, D2, r12): the page links each code and shows a card\n      about it on hover. A code alone means little to the user: the first time a message names one, add a few\n      words on what it is, e.g. \"D2 (the release plan)\".\nRULES Reuse existing items (/items?q=) instead of duplicating. Keep the user's wording. Never turn a\n      suggestion into a decision: use propose/ask/block and wait. Commands with src=rN (or ack rN) mark that\n      input handled; if an input is a question for you, answer it in the related item (or tell the user) and ack it.\n\nMANAGER MODE (optional: if your app can't run two sessions this way, work alone as above)\n      A manager session hands items to one long-lived worker session; it never edits code itself.\n      Manager: picks items from /next and the threads, claims them for the worker with /next?by=<worker>, sends the\n      worker a short list in priority order (small ones first), sleeps until an event below, and puts what needs\n      the user on the item. Worker: does the list in order and writes progress/done/ask/block on each item itself\n      (&session=worker); never polls Taska, never waits on the user, keeps working while a background command\n      runs, says on the item before a step longer than 15 minutes, and ends every turn with a message there.\n      Never stuck: the worker runs where nothing prompts for approval (a refused command is refused; it takes\n      another route); the manager never waits on a prompt or on the worker. A stuck worker: stop its turn, hand\n      the item out again, say why on the item.\n      Checks are code, not tokens. The manager wakes only when the item leaves doing or waits on the user, the\n      worker is silent 10 minutes mid-turn, its turn ended 20 minutes ago with no report, or the user writes.\n      The Taska source has scripts/watch_worker.py (one line per event, for a Monitor; it also writes a stop on\n      the item) and scripts/watch_taska.sh (new inputs and replies).\n      Reuse the worker for related items; between items, compact it once its context passes about 40%.\n      Cost: the done message ends with one line: active minutes, fresh tokens, cache-read tokens, steps, from\n      scripts/session_usage.py <worker session.jsonl> --since <start> --until <end>.\n      Claude Code: the worker is a resident session; send it a session message (both in the same permission\n        mode), or `claude -p --resume <session> --permission-mode auto --output-format json \"<brief>\"`.\n      Codex: `codex exec resume <session> --json \"<brief>\"` (exec never prompts; --json reports tokens).\n      Antigravity: one worker started from its Agent Manager and reused. Not tried yet, nor how to read its tokens.\n"
  },
  {
   "name": "next, empty",
   "status": 200,
-  "text": "keep-going ON: keep working without stopping. After each item, write back, then GET /next again.\nnothing to do now. Wait for work: GET /next?wait=540 (returns as soon as something comes in).\n"
+  "text": "Keep working without stopping. After each item, write back, then GET /next again.\nnothing to do now. Wait for work: GET /next?wait=540 (returns as soon as something comes in).\n"
  },
  {
   "name": "rules, none",
@@ -26,7 +26,7 @@
  {
   "name": "inbox, empty",
   "status": 200,
-  "text": "inbox 0 pending \u00b7 keep-going ON\n"
+  "text": "inbox 0 pending\n"
  },
  {
   "name": "items, none",
@@ -58,27 +58,27 @@
  {
   "name": "next: inbox of two",
   "status": 200,
-  "text": "keep-going ON: keep working without stopping. After each item, write back, then GET /next again.\nfirst handle the inbox (2):\nr1 <hm> you\n  The PDF export is broken too\nr2 <hm> you\n  We need docs, later\n"
+  "text": "Keep working without stopping. After each item, write back, then GET /next again.\nfirst handle the inbox (2):\nr1 <hm> you\n  The PDF export is broken too\nr2 <hm> you\n  We need docs, later\n"
  },
  {
   "name": "do new feature P1 now Export ignores the active filter",
   "status": 200,
-  "text": "ok F1 new (proposed: the user approves it before anyone works on it)\nrev <rev> \u00b7 keep-going ON: GET /next to continue\n2 new inputs since your last /next: r1 r2. Finish the step you are on, then GET /next.\n"
+  "text": "ok F1 new (proposed: the user approves it before anyone works on it)\nrev <rev>: GET /next to continue\n2 new inputs since your last /next: r1 r2. Finish the step you are on, then GET /next.\n"
  },
  {
   "name": "do new bug P0 parent=F1 src=r1 The PDF export too",
   "status": 200,
-  "text": "ok B2 new (proposed: the user approves it before anyone works on it)\nrev <rev> \u00b7 keep-going ON: GET /next to continue\n1 new input since your last /next: r2. Finish the step you are on, then GET /next.\n"
+  "text": "ok B2 new (proposed: the user approves it before anyone works on it)\nrev <rev>: GET /next to continue\n1 new input since your last /next: r2. Finish the step you are on, then GET /next.\n"
  },
  {
   "name": "do new [task] [P2] [later] Write the docs [src=r2]",
   "status": 200,
-  "text": "ok T3 new (proposed: the user approves it before anyone works on it)\nrev <rev> \u00b7 keep-going ON: GET /next to continue\n"
+  "text": "ok T3 new (proposed: the user approves it before anyone works on it)\nrev <rev>: GET /next to continue\n"
  },
  {
   "name": "do new idea Maybe a dark theme",
   "status": 200,
-  "text": "ok I4 new (proposed: the user approves it before anyone works on it)\nok R5 new (proposed: the user approves it before anyone works on it)\nrev <rev> \u00b7 keep-going ON: GET /next to continue\n"
+  "text": "ok I4 new (proposed: the user approves it before anyone works on it)\nok R5 new (proposed: the user approves it before anyone works on it)\nrev <rev>: GET /next to continue\n"
  },
  {
   "name": "items after new",
@@ -93,7 +93,7 @@
  {
   "name": "next: proposed items are skipped",
   "status": 200,
-  "text": "keep-going ON: keep working without stopping. After each item, write back, then GET /next again.\nproposed, the user has not approved yet (skip): B2 F1 I4 R5 T3\nnothing to do now. Wait for work: GET /next?wait=540 (returns as soon as something comes in).\n"
+  "text": "Keep working without stopping. After each item, write back, then GET /next again.\nproposed, the user has not approved yet (skip): B2 F1 I4 R5 T3\nnothing to do now. Wait for work: GET /next?wait=540 (returns as soon as something comes in).\n"
  },
  {
   "name": "user approves F1",
@@ -128,12 +128,12 @@
  {
   "name": "next: subitem first",
   "status": 200,
-  "text": "keep-going ON: keep working without stopping. After each item, write back, then GET /next again.\n1 project rule: read GET /rules once per session and follow those that apply.\nrule changed, apply it from now on: R5 Commit messages in English (GET /R5)\nnext B2 (2 in queue: doing first, then P0\u2192P3, oldest first)\nB2 bug P0 now open  The PDF export too\nparent F1 \u00b7 src r1\npart of F1 (open): Export ignores the active filter\n  The CSV export skips the filters.\n  Second line.\nthe user's own words (the inputs it came from):\nr1 <hm>:\n  The PDF export is broken too\n"
+  "text": "Keep working without stopping. After each item, write back, then GET /next again.\n1 project rule: read GET /rules once per session and follow those that apply.\nrule changed, apply it from now on: R5 Commit messages in English (GET /R5)\nnext B2 (2 in queue: doing first, then P0\u2192P3, oldest first)\nB2 bug P0 now open  The PDF export too\nparent F1 \u00b7 src r1\npart of F1 (open): Export ignores the active filter\n  The CSV export skips the filters.\n  Second line.\nthe user's own words (the inputs it came from):\nr1 <hm>:\n  The PDF export is broken too\n"
  },
  {
   "name": "do B2 doing",
   "status": 200,
-  "text": "ok B2 status=doing\nok B2 progress\nok B2 ask\nrev <rev> \u00b7 keep-going ON: GET /next to continue\n"
+  "text": "ok B2 status=doing\nok B2 progress\nok B2 ask\nrev <rev>: GET /next to continue\n"
  },
  {
   "name": "card B2 with ask",
@@ -143,7 +143,7 @@
  {
   "name": "next while B2 waits",
   "status": 200,
-  "text": "keep-going ON: keep working without stopping. After each item, write back, then GET /next again.\n1 project rule: read GET /rules once per session and follow those that apply.\nwaiting on the user (skip): B2\nnext I4 (1 in queue: doing first, then P0\u2192P3, oldest first)\nan idea: think it through first. Small and clear: do it. Bigger, or more than one way to go: post your plan (I4 propose ...) and ask before building.\nI4 idea P2 now open  Maybe a dark theme\n"
+  "text": "Keep working without stopping. After each item, write back, then GET /next again.\n1 project rule: read GET /rules once per session and follow those that apply.\nwaiting on the user (skip): B2\nnext I4 (1 in queue: doing first, then P0\u2192P3, oldest first)\nan idea: think it through first. Small and clear: do it. Bigger, or more than one way to go: post your plan (I4 propose ...) and ask before building.\nI4 idea P2 now open  Maybe a dark theme\n"
  },
  {
   "name": "items waiting",
@@ -175,27 +175,27 @@
  {
   "name": "inbox with the answer",
   "status": 200,
-  "text": "inbox 1 pending \u00b7 keep-going ON\nr3 <hm> you \u2192B2 The PDF export too\n  \u2713 No, replace it\n"
+  "text": "inbox 1 pending\nr3 <hm> you \u2192B2 The PDF export too\n  \u2713 No, replace it\n"
  },
  {
   "name": "next: the inbox first",
   "status": 200,
-  "text": "keep-going ON: keep working without stopping. After each item, write back, then GET /next again.\n1 project rule: read GET /rules once per session and follow those that apply.\nfirst handle the inbox (1):\nr3 <hm> you \u2192B2 The PDF export too\n  \u2713 No, replace it\n"
+  "text": "Keep working without stopping. After each item, write back, then GET /next again.\n1 project rule: read GET /rules once per session and follow those that apply.\nfirst handle the inbox (1):\nr3 <hm> you \u2192B2 The PDF export too\n  \u2713 No, replace it\n"
  },
  {
   "name": "do ack r3",
   "status": 200,
-  "text": "ok ack r3\nrev <rev> \u00b7 keep-going ON: GET /next to continue\n"
+  "text": "ok ack r3\nrev <rev>: GET /next to continue\n"
  },
  {
   "name": "next: resume B2",
   "status": 200,
-  "text": "keep-going ON: keep working without stopping. After each item, write back, then GET /next again.\n1 project rule: read GET /rules once per session and follow those that apply.\nresume B2: the user replied\nB2 bug P0 now doing  The PDF export too\nparent F1 \u00b7 src r1 r3\npart of F1 (open): Export ignores the active filter\n  The CSV export skips the filters.\n  Second line.\n< the user replied after the agent's last message (see thread)\nthe user's own words (the inputs it came from):\nr1 <hm>:\n  The PDF export is broken too\nthread:\n#14 <hm> claude-code progress: Reproduced it: the export ignores the filter\n#15 <hm> claude-code ask: Keep the old export as an option?\n- ( ) Yes, behind a setting\n- ( ) No, replace it\n#16 <hm> you: \u2713 No, replace it\n"
+  "text": "Keep working without stopping. After each item, write back, then GET /next again.\n1 project rule: read GET /rules once per session and follow those that apply.\nresume B2: the user replied\nB2 bug P0 now doing  The PDF export too\nparent F1 \u00b7 src r1 r3\npart of F1 (open): Export ignores the active filter\n  The CSV export skips the filters.\n  Second line.\n< the user replied after the agent's last message (see thread)\nthe user's own words (the inputs it came from):\nr1 <hm>:\n  The PDF export is broken too\nthread:\n#14 <hm> claude-code progress: Reproduced it: the export ignores the filter\n#15 <hm> claude-code ask: Keep the old export as an option?\n- ( ) Yes, behind a setting\n- ( ) No, replace it\n#16 <hm> you: \u2713 No, replace it\n"
  },
  {
   "name": "do B2 done Fixed: the export now applies the filters.",
   "status": 200,
-  "text": "ok B2 status=review (the user accepts it to make it done)\nok B2 progress\nrev <rev> \u00b7 keep-going ON: GET /next to continue\n"
+  "text": "ok B2 status=review (the user accepts it to make it done)\nok B2 progress\nrev <rev>: GET /next to continue\n"
  },
  {
   "name": "card B2 in review",
@@ -205,52 +205,52 @@
  {
   "name": "do F1 done",
   "status": 200,
-  "text": "ok F1 status=review (the user accepts it to make it done) (note: its subitems B2 are not finished yet)\nrev <rev> \u00b7 keep-going ON: GET /next to continue\n"
+  "text": "ok F1 status=review (the user accepts it to make it done) (note: its subitems B2 are not finished yet)\nrev <rev>: GET /next to continue\n"
  },
  {
   "name": "next after B2 done",
   "status": 200,
-  "text": "keep-going ON: keep working without stopping. After each item, write back, then GET /next again.\n1 project rule: read GET /rules once per session and follow those that apply.\nin review, the user accepts them (skip): B2 F1\nnext I4 (1 in queue: doing first, then P0\u2192P3, oldest first)\nan idea: think it through first. Small and clear: do it. Bigger, or more than one way to go: post your plan (I4 propose ...) and ask before building.\nI4 idea P2 now open  Maybe a dark theme\n"
+  "text": "Keep working without stopping. After each item, write back, then GET /next again.\n1 project rule: read GET /rules once per session and follow those that apply.\nin review, the user accepts them (skip): B2 F1\nnext I4 (1 in queue: doing first, then P0\u2192P3, oldest first)\nan idea: think it through first. Small and clear: do it. Bigger, or more than one way to go: post your plan (I4 propose ...) and ask before building.\nI4 idea P2 now open  Maybe a dark theme\n"
  },
  {
   "name": "do F1 P2 later",
   "status": 200,
-  "text": "ok F1 pri=P2 when=later\nok F1 title\nok F1 next\nok F1 body\nrev <rev> \u00b7 keep-going ON: GET /next to continue\n"
+  "text": "ok F1 pri=P2 when=later\nok F1 title\nok F1 next\nok F1 body\nrev <rev>: GET /next to continue\n"
  },
  {
   "name": "do T3 say files=f99-nope.png A picture",
   "status": 200,
-  "text": "err L1: unknown file f99-nope.png: upload it first with POST /api/file?name=<name>\nrev <rev> \u00b7 keep-going ON: GET /next to continue\n"
+  "text": "err L1: unknown file f99-nope.png: upload it first with POST /api/file?name=<name>\nrev <rev>: GET /next to continue\n"
  },
  {
   "name": "do T3 propose Use the new API",
   "status": 200,
-  "text": "ok T3 propose\nok T3 decide\nok T3 block\nok T3 withdraw\nrev <rev> \u00b7 keep-going ON: GET /next to continue\n"
+  "text": "ok T3 propose\nok T3 decide\nok T3 block\nok T3 withdraw\nrev <rev>: GET /next to continue\n"
  },
  {
   "name": "do T03 doing",
   "status": 200,
-  "text": "ok T3 status=doing\nok I4 merged into T3\nerr L3: $ is empty: no item created earlier in this request\nrev <rev> \u00b7 keep-going ON: GET /next to continue\n"
+  "text": "ok T3 status=doing\nok I4 merged into T3\nerr L3: $ is empty: no item created earlier in this request\nrev <rev>: GET /next to continue\n"
  },
  {
   "name": "do new task Fresh one",
   "status": 200,
-  "text": "ok T6 new (proposed: the user approves it before anyone works on it)\nerr L2: T6 is proposed: only the user can approve it. To move it on, answer them: `T6 say ...` or `T6 ask ...` puts it back in front of them to approve (B299)\nok T6 progress\nrev <rev> \u00b7 keep-going ON: GET /next to continue\n"
+  "text": "ok T6 new (proposed: the user approves it before anyone works on it)\nerr L2: T6 is proposed: only the user can approve it. To move it on, answer them: `T6 say ...` or `T6 ask ...` puts it back in front of them to approve (B299)\nok T6 progress\nrev <rev>: GET /next to continue\n"
  },
  {
   "name": "do zzz what",
   "status": 200,
-  "text": "err L1: unknown command 'zzz' (start with new, ack or an item code like B03)\nerr L2: cannot read 'frobnicate' after B2\nerr L3: B99 not found\nerr L4: new needs a title\nerr L5: ack needs input ids like r12\nerr L6: use: D5 reply \u00b63 <text>\nrev <rev> \u00b7 keep-going ON: GET /next to continue\n"
+  "text": "err L1: unknown command 'zzz' (start with new, ack or an item code like B03)\nerr L2: cannot read 'frobnicate' after B2\nerr L3: B99 not found\nerr L4: new needs a title\nerr L5: ack needs input ids like r12\nerr L6: use: D5 reply \u00b63 <text>\nrev <rev>: GET /next to continue\n"
  },
  {
   "name": "do B2 open",
   "status": 200,
-  "text": "ok B2 status=open\nrev <rev> \u00b7 keep-going ON: GET /next to continue\n"
+  "text": "ok B2 status=open\nrev <rev>: GET /next to continue\n"
  },
  {
   "name": "do R5 drop",
   "status": 200,
-  "text": "ok R5 status=dropped\nrev <rev> \u00b7 keep-going ON: GET /next to continue\n"
+  "text": "ok R5 status=dropped\nrev <rev>: GET /next to continue\n"
  },
  {
   "name": "user drops R5",
@@ -266,7 +266,7 @@
  {
   "name": "agent cannot reopen what the user dropped",
   "status": 200,
-  "text": "ok R5 status=open\nrev <rev> \u00b7 keep-going ON: GET /next to continue\n"
+  "text": "ok R5 status=open\nrev <rev>: GET /next to continue\n"
  },
  {
   "name": "items all",
@@ -331,17 +331,17 @@
  {
   "name": "skill",
   "status": 200,
-  "text": "---\nname: taska\ndescription: Work with Taska, the user's per-project tracker of features, bugs, ideas, tasks and rules (a small local web app). Use when the user mentions Taska or item codes like B03 or F12, asks you to work on, continue or keep working through the tasks, or when the project folder has a .taska file.\n---\n\n# Taska\n\nTaska runs on this machine. You read and update it with curl; every reply is short plain text.\n\n1. **Find it.** The project's `.taska` file (in the current folder or a parent) holds its URL, for example\n   `http://<host>/p/myapp`. No file: `curl -s http://<host>/api/projects` lists the projects;\n   pick the one for this folder or ask the user. Below, BASE is that project URL.\n2. **Learn it once per session.** `curl -s BASE/agent` is one page with every read and write command.\n   Then `curl -s BASE/rules` and follow the project rules that apply to what you are doing.\n3. **Work the loop.** Say who you are on /next and /do with `?by=claude-code` (or `codex`, `antigravity`): the\n   user's phone shows whether an agent is around. `curl -s \"BASE/next?by=claude-code\"` says what to do: the inbox first, then items the user replied on,\n   then the next item by priority. Mark the item doing, do the work, write progress back, then mark it done\n   (it goes to the user for review). Ask /next again.\n4. **Keep going.** The first line of /next says keep-going ON or OFF.\n   - ON and nothing to do: `curl -s \"BASE/next?wait=540&by=claude-code\"` waits and returns as soon as work arrives. Repeat.\n     After your last item, always check /next once more.\n   - If you can run a command in the background that wakes you when it exits (Claude Code: Bash with\n     `run_in_background`), start this and end your turn instead of holding it. Waiting costs no tokens, it\n     ends only when there is work and keep-going is ON, and it never interrupts you mid-task:\n     `while o=$(curl -s \"BASE/next?wait=540&by=claude-code\"); [ -z \"$o\" ] || echo \"$o\" | grep -qE 'nothing to do now|keep-going OFF'; do sleep 20; done`\n   - OFF: finish the current item, write back, stop.\n5. **Need the user?** Post `B03 block <what you need>` or `B03 ask <question>`, then take the next item.\n   /next brings it back once the user replies. When the answer is a choice, list it under the question as\n   indented `- ( ) option` lines (pick one) or `- [ ] option` lines (pick any): the user taps instead of typing.\n6. **The user reads Taska only**, usually on a phone, never your terminal or chat. Whatever they should see goes\n   into the item: what you did and how you checked it, screenshots, plans, questions. **The first line is the\n   conclusion in one sentence**: the page folds long messages to it. Messages are Markdown:\n   short paragraphs and lists, images inline with `![what it shows](f12-a.png)` after uploading\n   (`curl -s BASE/api/file?name=a.png -H 'Content-Type: image/png' --data-binary @a.png`).\n   Name items, documents and inputs by code (B03, D2, r12), and the first time add a few words on what each is,\n   e.g. \"D2 (the release plan)\": the page turns codes into links with a card on hover, but a bare code means little.\n7. Items you create start as proposed until the user approves them. Never treat a suggestion as decided.\n"
+  "text": "---\nname: taska\ndescription: Work with Taska, the user's per-project tracker of features, bugs, ideas, tasks and rules (a small local web app). Use when the user mentions Taska or item codes like B03 or F12, asks you to work on, continue or keep working through the tasks, or when the project folder has a .taska file.\n---\n\n# Taska\n\nTaska runs on this machine. You read and update it with curl; every reply is short plain text.\n\n1. **Find it.** The project's `.taska` file (in the current folder or a parent) holds its URL, for example\n   `http://<host>/p/myapp`. No file: `curl -s http://<host>/api/projects` lists the projects;\n   pick the one for this folder or ask the user. Below, BASE is that project URL.\n2. **Learn it once per session.** `curl -s BASE/agent` is one page with every read and write command.\n   Then `curl -s BASE/rules` and follow the project rules that apply to what you are doing.\n3. **Work the loop.** Say who you are on /next and /do with `?by=claude-code` (or `codex`, `antigravity`): the\n   user's phone shows whether an agent is around. `curl -s \"BASE/next?by=claude-code\"` says what to do: the inbox first, then items the user replied on,\n   then the next item by priority. Mark the item doing, do the work, write progress back, then mark it done\n   (it goes to the user for review). Ask /next again.\n4. **Keep going.** After each item, take the next one; don't stop to chat.\n   - Nothing to do: `curl -s \"BASE/next?wait=540&by=claude-code\"` waits and returns as soon as work arrives. Repeat.\n     After your last item, always check /next once more.\n   - If you can run a command in the background that wakes you when it exits (Claude Code: Bash with\n     `run_in_background`), start this and end your turn instead of holding it. Waiting costs no tokens, it\n     ends only when there is work, and it never interrupts you mid-task:\n     `while o=$(curl -s \"BASE/next?wait=540&by=claude-code\"); [ -z \"$o\" ] || echo \"$o\" | grep -q 'nothing to do now'; do sleep 20; done`\n5. **Need the user?** Post `B03 block <what you need>` or `B03 ask <question>`, then take the next item.\n   /next brings it back once the user replies. When the answer is a choice, list it under the question as\n   indented `- ( ) option` lines (pick one) or `- [ ] option` lines (pick any): the user taps instead of typing.\n6. **The user reads Taska only**, usually on a phone, never your terminal or chat. Whatever they should see goes\n   into the item: what you did and how you checked it, screenshots, plans, questions. **The first line is the\n   conclusion in one sentence**: the page folds long messages to it. Messages are Markdown:\n   short paragraphs and lists, images inline with `![what it shows](f12-a.png)` after uploading\n   (`curl -s BASE/api/file?name=a.png -H 'Content-Type: image/png' --data-binary @a.png`).\n   Name items, documents and inputs by code (B03, D2, r12), and the first time add a few words on what each is,\n   e.g. \"D2 (the release plan)\": the page turns codes into links with a card on hover, but a bare code means little.\n7. Items you create start as proposed until the user approves them. Never treat a suggestion as decided.\n"
  },
  {
   "name": "next for another agent",
   "status": 200,
-  "text": "keep-going ON: keep working without stopping. After each item, write back, then GET /next again.\n1 project rule: read GET /rules once per session and follow those that apply.\nproposed, the user has not approved yet (skip): T6\nin review, the user accepts them (skip): F1\nothers are on (skip): B2 (claude-code)\nnothing to do now. Wait for work: GET /next?wait=540 (returns as soon as something comes in).\n"
+  "text": "Keep working without stopping. After each item, write back, then GET /next again.\n1 project rule: read GET /rules once per session and follow those that apply.\nproposed, the user has not approved yet (skip): T6\nin review, the user accepts them (skip): F1\nothers are on (skip): B2 (claude-code)\nnothing to do now. Wait for work: GET /next?wait=540 (returns as soon as something comes in).\n"
  },
  {
   "name": "next wait 1s",
   "status": 200,
-  "text": "keep-going ON: keep working without stopping. After each item, write back, then GET /next again.\n1 project rule: read GET /rules once per session and follow those that apply.\nproposed, the user has not approved yet (skip): T6\nin review, the user accepts them (skip): F1\nnext B2 (1 in queue: doing first, then P0\u2192P3, oldest first)\nB2 bug P0 now open  The PDF export too\nparent F1 \u00b7 src r1 r3\npart of F1 (review): Export applies the active filter\n  New body\n  with two lines\nthe user's own words (the inputs it came from):\nr1 <hm>:\n  The PDF export is broken too\nthread:\n#14 <hm> claude-code progress: Reproduced it: the export ignores the filter\n#15 <hm> claude-code ask: Keep the old export as an option?\n- ( ) Yes, behind a setting\n- ( ) No, replace it\n#16 <hm> you: \u2713 No, replace it\n#19 <hm> claude-code progress: Fixed: the export now applies the filters.\n- What changed: one query\n- How to check: export with a filter\n"
+  "text": "Keep working without stopping. After each item, write back, then GET /next again.\n1 project rule: read GET /rules once per session and follow those that apply.\nproposed, the user has not approved yet (skip): T6\nin review, the user accepts them (skip): F1\nnext B2 (1 in queue: doing first, then P0\u2192P3, oldest first)\nB2 bug P0 now open  The PDF export too\nparent F1 \u00b7 src r1 r3\npart of F1 (review): Export applies the active filter\n  New body\n  with two lines\nthe user's own words (the inputs it came from):\nr1 <hm>:\n  The PDF export is broken too\nthread:\n#14 <hm> claude-code progress: Reproduced it: the export ignores the filter\n#15 <hm> claude-code ask: Keep the old export as an option?\n- ( ) Yes, behind a setting\n- ( ) No, replace it\n#16 <hm> you: \u2713 No, replace it\n#19 <hm> claude-code progress: Fixed: the export now applies the filters.\n- What changed: one query\n- How to check: export with a filter\n"
  },
  {
   "name": "state",
@@ -370,9 +370,7 @@
    "work": true,
    "width": 1,
    "file": "<store>",
-   "cfg": {
-    "auto": true
-   },
+   "cfg": {},
    "undo": [],
    "org": {
     "on": false,

@@ -302,7 +302,7 @@ class Hub:
                 needs = {i["n"] for i in live if not i["archived"] and (s.waiting(i) or (i["status"] in ("proposed", "review") and not s.talked(i)))}
                 # "open" as the project's own page counts it (A18): what Items holds that isn't finished, rules an agent
                 # proposed or that wait on you included, since they are in Items too
-                out.append({"name": name, "title": s.title, "open": sum(1 for i in live if not i["archived"] and (i["type"] != "rule" or i["status"] == "proposed" or i["n"] in needs)), "auto": s.cfg["auto"],
+                out.append({"name": name, "title": s.title, "open": sum(1 for i in live if not i["archived"] and (i["type"] != "rule" or i["status"] == "proposed" or i["n"] in needs)),
                             "needs": len(needs), **s.presence(),
                             "t": int(s.mtime() * 1000), **({"pos": self.order.index(name)} if name in self.order else {})})
         return out

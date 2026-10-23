@@ -159,7 +159,6 @@ export function logLine(l: string, withTime = true) {
       setPart(f, a, b),
     )
     .replace(/ \(undo #(\d+)\)$/, ' (undoing #$1)')
-    .replace(/^keep-going (ON|OFF)$/, (_, v: string) => `turned Keep going ${v.toLowerCase()}`)
     .replace(/^ack (.+)$/, (_, rs: string) => `saw ${rs.split(' ').join(', ')}`)
     .replace(/^doc (D\d+) on ([A-Z]\d+) /, 'wrote $1 on $2: ')
     .replace(/^(D\d+) comment /, 'commented on $1: ')

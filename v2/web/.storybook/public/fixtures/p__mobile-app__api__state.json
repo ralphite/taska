@@ -17,7 +17,7 @@
   "work": true,
   "width": 1,
   "file": "/data/mobile-app/taska.db",
-  "cfg": { "auto": true, "name": "Mobile app" },
+  "cfg": { "name": "Mobile app" },
   "undo": [
     { "seq": 9, "n": 4, "f": { "status": "open" }, "was": { "status": "proposed" }, "t": "2026-10-17T22:37:19-07:00" },
     { "seq": 7, "n": 3, "f": { "status": "open" }, "was": { "status": "proposed" }, "t": "2026-10-14T21:41:19-07:00" },

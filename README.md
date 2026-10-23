@@ -116,8 +116,8 @@ flowchart LR
 - **`/next` knows what's next.** New inputs come first, then items you replied on, then work in progress, then
   priority (P0 to P3), then the oldest item. Subitems come before their parent. `?wait=540` holds the request until new
   work arrives, so an agent can wait in the background.
-- **A loop that keeps going.** With **Keep going** on, agents take one item after another without stopping. Turn
-  it off, and they stop after the current one.
+- **A loop that keeps going.** Agents take one item after another without stopping, and wait in the background
+  when there is nothing to do.
 - **Works with any agent.** One command installs a skill for Claude Code, Codex and Antigravity. Any agent that
   can run `curl` can use the API.
 - **Rules.** Standing instructions for the project, such as how to write commit messages, which every agent

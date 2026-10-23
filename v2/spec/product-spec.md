@@ -245,7 +245,7 @@ All agents depend on these; v2 must be **fully compatible**:
 | `GET /connect` | one command connects an agent and installs the Taska skill |
 
 - Replies are short plain text, to save tokens.
-- **keep-going**: agents take one item after another (always on now, T260).
+- Agents keep going: they take one item after another without stopping.
 - Items an agent makes are proposals; an agent's done becomes review; an agent cannot approve or reopen what you
   dropped.
 - The page shows which agent is around, what it works on, and how long it has been quiet.
