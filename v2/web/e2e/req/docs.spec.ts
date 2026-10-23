@@ -36,3 +36,36 @@ test('r447 r467: the text of a document stays where it is when a comment comes, 
   if (!side || !text) throw new Error('not drawn')
   expect(side.x).toBeGreaterThanOrEqual(text.x + text.width - 1)
 })
+
+test('r473 r500: each item of a list has its own two buttons, the voice one first, reached by moving the pointer across', async ({
+  page,
+  request,
+}) => {
+  test.skip(!isDesk(page), 'the phone picks a list item with a tap')
+  const p = await project(request, {
+    ...LOOP,
+    then: `${LOOP.then}T4 doc Bakes
+  - Apple pie
+  - Banana bread
+  - Cherry tart
+`,
+  })
+  await open(page, p, 'D1')
+  const li = page.locator('#docBlocks li').filter({ hasText: 'Banana bread' })
+  await li.hover()
+  const say = page.locator('[data-act="doc-say"]').filter({ visible: true }),
+    pick = page.locator('[data-pick-btn]').filter({ visible: true })
+  await expect(say).toHaveCount(1) // only the item under the pointer
+  await expect(pick).toHaveCount(1)
+  const s = await say.boundingBox(),
+    c = await pick.boundingBox(),
+    t = await li.boundingBox()
+  if (!s || !c || !t) throw new Error('not drawn')
+  expect(s.x).toBeLessThan(c.x) // the voice one first
+  expect(Math.abs(s.y - c.y)).toBeLessThan(2) // side by side
+  // across from the item to the comment button: they stay, and it is this item that is picked
+  await page.mouse.move(t.x + t.width - 4, s.y + s.height / 2)
+  await page.mouse.move(c.x + c.width / 2, c.y + c.height / 2, { steps: 12 })
+  await pick.click()
+  await expect(page.locator('#scope')).toContainText('Banana bread')
+})

@@ -28,7 +28,7 @@ def main() -> int:
     backup = os.path.join(root, "backups", "voice-levels-" + time.strftime("%Y%m%d-%H%M"))
     seen = done = 0
     for project in sorted(os.listdir(root)):
-        files = os.path.join(root, project, f"{project}-files")
+        files = os.path.join(root, project, "taska-files")  # every project keeps its files in taska-files
         if not os.path.isdir(files):
             continue
         for fid in sorted(os.listdir(files)):
