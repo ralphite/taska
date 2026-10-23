@@ -7,23 +7,7 @@ import DOMPurify from 'dompurify'
 import { DIMS, wantDims } from './dims'
 import { ICON, type IconName } from './icons'
 import { LETTER as LETTERS, REF_CLS } from './constants'
-import {
-  U,
-  model,
-  byN,
-  byR,
-  code,
-  ctx,
-  docById,
-  esc,
-  liveN,
-  needsYou,
-  plural,
-  rcode,
-  statusName,
-  when,
-  whoName,
-} from './state'
+import { U, model, byN, byR, code, ctx, docById, esc, liveN, plural, rcode, shownStatus, when, whoName } from './state'
 import type { Item } from './types'
 
 export const ico = (n: IconName, c = 'size-5', sw = '1.75') =>
@@ -107,9 +91,8 @@ export function refCard(ref: string) {
     top([
       `${it.type[0].toUpperCase() + it.type.slice(1)} ${code(it.n)}`,
       it.pri,
-      statusName(it),
+      shownStatus(it).label, // its status in one word, as its row and its page say it (B555 r802)
       it.archived && 'Archived',
-      needsYou(it) && 'Needs you',
     ]) +
     name(it.title) +
     gist(clip(it.body, 200))

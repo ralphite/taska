@@ -122,3 +122,20 @@ test('r802: in a list sorted another way (Filters › Sort) what waits on you is
     await expect(page.locator('#list article[data-n="2"] [data-act="row-act"]'), 'nothing waits on T2').toHaveCount(0)
   }
 })
+
+test("r802: the card an item's code shows under the pointer says its status in one word, as its row and its page do: Needs you for a blocked item, not In progress and Needs you (B555)", async ({
+  page,
+  request,
+}) => {
+  test.skip(!isDesk(page), 'a pointer on the desktop')
+  const p = await project(request, {
+    agent: 'new task P1 now Ship the export\nnew task P2 now Write the notes\n',
+    approve: ['T1', 'T2'],
+    then: 'T1 doing\nT1 block I need the export key\nT2 progress Waiting for T1 before the notes.\n',
+  })
+  await open(page, p, 'T2')
+  await page.locator('#itemTalk [data-ref="T1"]').first().hover()
+  const tip = page.locator('#tip')
+  await expect(tip).toContainText('Needs you')
+  await expect(tip).not.toContainText('In progress')
+})
