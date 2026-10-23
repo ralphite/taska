@@ -124,6 +124,34 @@ test('a web page document opens as its page; in Comment mode a click on a part m
   await expect(page.locator('#scope')).toContainText('Ship option A today.')
 })
 
+test('a web page document is the page alone: no frame or line over it, the pane wide, its comment counts in it (B492)', async ({
+  page,
+  request,
+}) => {
+  const p = await project(request, {
+    ...LOOP,
+    then: `${LOOP.then}T4 html Plan page
+  <!doctype html><html><body><h1>Export plan</h1><p>Ship option A today.</p></body></html>
+`,
+  })
+  await request.post(`${p.url}api/op`, {
+    data: { op: 'dc', d: 1, key: 'h:body>p:nth-child(2)', quote: 'Ship option A today.', text: 'Why not B?' },
+  })
+  await open(page, p, 'D1')
+  const frame = page.locator('#detailBody iframe')
+  await expect(page.frameLocator('#detailBody iframe').getByText('Ship option A today.')).toBeVisible()
+  expect(await frame.getAttribute('title')).toBeNull() // no tooltip over the whole page
+  expect(await frame.evaluate((e) => getComputedStyle(e).borderTopWidth)).toBe('0px')
+  await expect(page.locator('#detailBody').getByText(/^on T4/)).toBeHidden()
+  const pane = await page.locator('#detailBody').boundingBox(),
+    f = await frame.boundingBox(),
+    count = await page.locator('[data-act="doc-thread"]').filter({ visible: true }).first().boundingBox()
+  if (!pane || !f || !count) throw new Error('not drawn')
+  expect(f.width).toBeGreaterThan(pane.width - 100) // the pane's width, not a column of text
+  expect(count.x).toBeGreaterThanOrEqual(f.x)
+  expect(count.x + count.width).toBeLessThanOrEqual(f.x + f.width) // in the page
+})
+
 test('the buttons of a part of a web page stay while the pointer goes to them; Esc drops the pick, then leaves Comment mode (D56, B484)', async ({
   page,
   request,

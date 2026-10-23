@@ -216,23 +216,25 @@ export function WebPage({ d }: { d: Doc }) {
       style={{ left: r.x - 4, top: r.y - 4, width: r.w + 8, height: r.h + 8 }}
     />
   )
-  // each thread's count sits level with its part, never on top of another one
+  // B492: each thread's count sits in the page, in its part's top right corner, never on top of another one
   let last = -40
   const counts = threads.map((t) => {
-    const top = Math.max((rects[t.key]?.y ?? 0) - (side ? 0 : 10), last + 32)
+    const r = rects[t.key],
+      top = Math.max((r?.y ?? 0) + 4, last + 32)
     last = top
-    return { ...t, top }
+    return { ...t, top, left: Math.max(4, (r ? r.x + r.w : 0) - 52) }
   })
   const open = counts.find((c) => threadOpen(c.tk))
   return (
     <div className="relative mt-3">
+      {/* B492: the page as it is: no frame around it, and no tooltip over all of it (a name for screen readers only) */}
       <iframe
         ref={frame}
-        title={d.title}
+        aria-label={d.title}
         sandbox="allow-scripts allow-popups allow-forms"
         srcDoc={d.md + HELPER}
         style={{ height }}
-        className="block w-full rounded-xl border border-zinc-200 bg-white dark:border-zinc-800"
+        className="block w-full bg-white"
       />
       {hover && mode === true ? ring(hover.rect, 'ring-blue-500') : null}
       {picked && rects[picked.key] ? ring(rects[picked.key], 'ring-amber-300') : null}
@@ -275,16 +277,16 @@ export function WebPage({ d }: { d: Doc }) {
           key={c.tk}
           data-act="doc-thread"
           data-key={c.tk}
-          style={{ top: c.top + 2 }}
-          className={`absolute z-10 flex h-7 min-w-7 items-center justify-center gap-0.5 rounded-lg bg-amber-100 px-1.5 text-xs font-semibold text-amber-900 hover:bg-amber-200 dark:bg-amber-900/60 dark:text-amber-100 dark:hover:bg-amber-800/70 ${side ? 'left-[calc(100%+0.25rem)]' : 'right-1.5'}`}
+          style={{ top: c.top, left: c.left }}
+          className="absolute z-10 flex h-7 min-w-7 items-center justify-center gap-0.5 rounded-lg bg-amber-100 px-1.5 text-xs font-semibold text-amber-900 shadow-sm hover:bg-amber-200 dark:bg-amber-900/80 dark:text-amber-100 dark:hover:bg-amber-800/80"
         >
-          {side ? null : <Icon n="comment" c="size-3.5" />}
+          <Icon n="comment" c="size-3.5" />
           {c.comments.length}
         </button>
       ))}
       {side && open ? (
         <div
-          className="absolute -right-10 z-20 flex w-80 max-w-full flex-col gap-2 text-sm shadow-xl"
+          className="absolute right-2 z-20 flex w-80 max-w-full flex-col gap-2 text-sm shadow-xl"
           style={{ top: (rects[open.key]?.y ?? 0) + (rects[open.key]?.h ?? 0) + 8 }}
         >
           <Thread d={d} k={open.tk} comments={open.comments} rail />

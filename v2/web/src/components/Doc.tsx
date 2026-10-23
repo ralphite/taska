@@ -641,7 +641,10 @@ export function DocView({ d }: { d: Doc }) {
     float = side && !rail
   return (
     <div ref={ref} className="flex min-h-full flex-col">
-      <div className="relative flex min-w-0 flex-col lg:mx-auto lg:w-full lg:max-w-[min(46rem,calc(100%-5rem))]">
+      {/* B492: a web page takes the pane's whole width, as a page in a browser does */}
+      <div
+        className={`relative flex min-w-0 flex-col lg:mx-auto lg:w-full ${d.fmt === 'html' ? '' : 'lg:max-w-[min(46rem,calc(100%-5rem))]'}`}
+      >
         <div className="relative flex items-center gap-1 text-xs text-zinc-500">
           {float && d.whole?.length ? (
             <>
@@ -660,7 +663,8 @@ export function DocView({ d }: { d: Doc }) {
               ) : null}
             </>
           ) : null}
-          <span className="min-w-0 flex-1 truncate">
+          {/* B492: nothing written over a web page: it is the page alone */}
+          <span hidden={d.fmt === 'html'} className="min-w-0 flex-1 truncate">
             on{' '}
             <button data-act="goto" data-n={d.n} className="text-blue-600 hover:underline dark:text-blue-400">
               {code(d.n)}
@@ -677,6 +681,7 @@ export function DocView({ d }: { d: Doc }) {
           </button>
           <button
             data-act="doc-circle"
+            hidden={d.fmt === 'html'}
             aria-pressed={!!U.docCircle}
             className={`${phoneBtn} aria-pressed:bg-amber-100 aria-pressed:text-amber-900 dark:aria-pressed:bg-amber-900/60 dark:aria-pressed:text-amber-100`}
           >
