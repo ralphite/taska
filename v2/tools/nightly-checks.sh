@@ -13,6 +13,7 @@ LAST=$R/.logs/nightly-checks.last  # the last failure: its code in Taska and wha
 # The checks build and run in a worktree of their own at main's newest commit, never in the main checkout: a ship
 # there rebuilds the page and runs its own checks meanwhile, and the two must not mix (B548)
 W=$R/.claude/worktrees/nightly
+git worktree prune  # a worktree folder deleted by a cleanup must not stay registered, or the add below fails
 [[ -d $W ]] || git worktree add -q --detach $W HEAD || exit 1
 git -C $W checkout -fq --detach $(git rev-parse HEAD) && git -C $W clean -fdq -e node_modules || exit 1
 ln -sfn $R/v2/web/node_modules $W/v2/web/node_modules
