@@ -6,11 +6,19 @@
 cd "$(dirname "$0")/../.." || exit 1
 export PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
 URL=${TASKA_URL:-http://127.0.0.1:7340}
+R=$PWD
 mkdir -p .logs
-LOG=.logs/nightly-checks.log
-LAST=.logs/nightly-checks.last  # the last failure: its code in Taska and what failed
+LOG=$R/.logs/nightly-checks.log
+LAST=$R/.logs/nightly-checks.last  # the last failure: its code in Taska and what failed
+# The checks build and run in a worktree of their own at main's newest commit, never in the main checkout: a ship
+# there rebuilds the page and runs its own checks meanwhile, and the two must not mix (B548)
+W=$R/.claude/worktrees/nightly
+[[ -d $W ]] || git worktree add -q --detach $W HEAD || exit 1
+git -C $W checkout -fq --detach $(git rev-parse HEAD) && git -C $W clean -fdq -e node_modules || exit 1
+ln -sfn $R/v2/web/node_modules $W/v2/web/node_modules
+cd $W || exit 1
 {
-  echo "nightly checks $(date '+%Y-%m-%d %H:%M')"
+  echo "nightly checks $(date '+%Y-%m-%d %H:%M') at $(git rev-parse --short HEAD)"
   npm --prefix v2/web run build >/dev/null 2>&1 || echo "FAILED: the page did not build"
   npm --prefix v2/web run test >/dev/null 2>&1 || echo "FAILED: the unit tests (npm --prefix v2/web run test)"
   /usr/bin/python3 v2/tests/test_compat.py >/dev/null 2>&1 || echo "FAILED: the agent interface (python3 v2/tests/test_compat.py)"

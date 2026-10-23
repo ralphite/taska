@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import shutil
 import subprocess
 import sys
 
@@ -27,10 +28,18 @@ def main() -> int:
     ap.add_argument("rest", nargs=argparse.REMAINDER)
     a = ap.parse_args()
     srv = Server(a.old or "v2")
+    rest = [x for x in a.rest if x != "--"]
+    # each run keeps its traces in a folder of its own: two runs at once (a ship and the nightly checks) never
+    # delete each other's files midway
+    out = os.path.join(V2, "web", "test-results", "run-%d" % os.getpid())
+    if not any(x == "--output" or x.startswith("--output=") for x in rest):
+        rest = ["--output=" + out, *rest]
     try:
         env = dict(os.environ, TASKA_URL=srv.base)
-        rest = [x for x in a.rest if x != "--"]
-        return subprocess.run(["npx", "playwright", "test", *rest], cwd=os.path.join(V2, "web"), env=env).returncode
+        code = subprocess.run(["npx", "playwright", "test", *rest], cwd=os.path.join(V2, "web"), env=env).returncode
+        if code == 0:
+            shutil.rmtree(out, ignore_errors=True)  # kept only when something failed, to look at
+        return code
     finally:
         srv.stop()
 
