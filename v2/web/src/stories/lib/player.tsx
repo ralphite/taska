@@ -19,6 +19,8 @@ export interface Ctx {
   wait: (ms: number) => Promise<void>
   /** a prototype has drawn its parts on the page: show it (until then the frame is blank, with `veil`) */
   show: () => void
+  /** Autoplay is on: the script does the gestures itself (a tap is marked and waited for either way) */
+  auto: () => boolean
 }
 export type Script = (c: Ctx) => Promise<void>
 
@@ -99,6 +101,7 @@ export function Player({
         doc,
         wait: (ms) => (stop ? new Promise<void>(() => {}) : (wait(ms) as Promise<void>)),
         show: () => !stop && setHidden(false),
+        auto: () => autoNow.current,
         say: (t) => !stop && setLine(t),
         find: async (sel, text) => {
           for (let i = 0; i < 60; i++) {

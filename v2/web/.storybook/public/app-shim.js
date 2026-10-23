@@ -131,6 +131,15 @@
         /* text */
       }
       ;(window.__storyWrites = window.__storyWrites || []).push({ method, path: p + u.search, body })
+      // T456: a voice note is heard as Taska hears one: kept under a name, then its words (always the same demo
+      // sentence), so what waits for words (a comment on a document) goes on as it does with Taska
+      if (/\/api\/file$/.test(p))
+        return json({ f: 'f990-' + (u.searchParams.get('name') || 'voice.webm').replace(/\s+/g, '_') })
+      if (/\/api\/transcript$/.test(p))
+        return json({
+          done: true,
+          tr: '\u5148\u505a\u65b9\u6848 A \u53ef\u4ee5\uff0c\u4f46\u8981\u5199\u6e05\u695a\u65b9\u6848 B \u4ec0\u4e48\u65f6\u5019\u505a\u3002',
+        })
       return json({ ok: true, res: ['ok'], rev: 1 })
     }
     const name = p.replace(/^\/|\/$/g, '').replace(/\//g, '__')

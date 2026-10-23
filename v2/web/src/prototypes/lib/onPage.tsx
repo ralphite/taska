@@ -28,6 +28,7 @@ export class OnPage {
     if (!before?.parentElement) return () => {}
     const box = this.doc.createElement('div')
     box.className = 'contents'
+    box.dataset.protoSlot = ''
     before.parentElement.insertBefore(box, before)
     const root = createRoot(box)
     return (node: ReactNode) => flushSync(() => root.render(node))
