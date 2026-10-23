@@ -55,8 +55,15 @@ function LiveBehind() {
   if (!behind) return null
   return createElement(
     'span',
-    { title: 'Storybook 显示的是现在的代码；线上 Taska 下次上线后才一样' },
-    createElement(Badge, { status: 'warning' }, `线上 Taska 还是旧版本（差 ${behind} 个提交）`),
+    {
+      title:
+        'Storybook \u663e\u793a\u7684\u662f\u73b0\u5728\u7684\u4ee3\u7801\uff1b\u7ebf\u4e0a Taska \u4e0b\u6b21\u4e0a\u7ebf\u540e\u624d\u4e00\u6837',
+    },
+    createElement(
+      Badge,
+      { status: 'warning' },
+      `\u7ebf\u4e0a Taska \u8fd8\u662f\u65e7\u7248\u672c\uff08\u5dee ${behind} \u4e2a\u63d0\u4ea4\uff09`,
+    ),
   )
 }
 addons.register('taska/live-behind', () => {

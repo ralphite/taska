@@ -110,14 +110,14 @@ def trim() -> None:
 
 
 def ms(v: float) -> str:
-    return f"{v / 1000:.1f} 秒" if v >= 1000 else f"{int(v)} 毫秒"
+    return f"{v / 1000:.1f} \u79d2" if v >= 1000 else f"{int(v)} \u6beb\u79d2"
 
 
 def panel_text(lines: List[Dict[str, Any]], restarts: List[str]) -> str:
     """The Dashboard's Storybook panel (Markdown, first line the title): the last 24 hours in a few lines."""
-    out = ["Storybook 服务"]
+    out = ["Storybook \u670d\u52a1"]
     if not lines:
-        return "\n".join(out + ["还没有记录。"]) + "\n"
+        return "\n".join(out + ["\u8fd8\u6ca1\u6709\u8bb0\u5f55\u3002"]) + "\n"
     last = lines[-1]
     up = sum(1 for x in lines if x.get("up"))
     times = sorted(x["page_ms"] for x in lines if x.get("page_ms") is not None)
@@ -125,20 +125,21 @@ def panel_text(lines: List[Dict[str, Any]], restarts: List[str]) -> str:
     started = sum(1 for x in lines if x.get("started"))
     hours = len(lines) / 60
     up_s = last.get("uptime_s")
-    now = "能打开" if last.get("up") else "**打不开**"
+    now = "\u80fd\u6253\u5f00" if last.get("up") else "**\u6253\u4e0d\u5f00**"
     if last.get("up") and last.get("index") != "ok":
-        now += f"，但故事列表{'出错' if last.get('index') == 'error' else '没回应'}"
+        failed = "\u51fa\u9519" if last.get("index") == "error" else "\u6ca1\u56de\u5e94"
+        now += "\uff0c\u4f46\u6545\u4e8b\u5217\u8868" + failed
     out.append(
-        f"- 现在：{now}（{last['t'][11:16]}）"
-        + (f"，已连续运行 {up_s // 3600} 小时 {up_s % 3600 // 60} 分" if up_s is not None else "")
+        f"- \u73b0\u5728\uff1a{now}\uff08{last['t'][11:16]}\uff09"
+        + (f"\uff0c\u5df2\u8fde\u7eed\u8fd0\u884c {up_s // 3600} \u5c0f\u65f6 {up_s % 3600 // 60} \u5206" if up_s is not None else "")
     )
-    out.append(f"- 最近 {hours:.0f} 小时：{100 * up / len(lines):.1f}% 的分钟能打开（每分钟查一次，共 {len(lines)} 次）")
+    out.append(f"- \u6700\u8fd1 {hours:.0f} \u5c0f\u65f6\uff1a{100 * up / len(lines):.1f}% \u7684\u5206\u949f\u80fd\u6253\u5f00\uff08\u6bcf\u5206\u949f\u67e5\u4e00\u6b21\uff0c\u5171 {len(lines)} \u6b21\uff09")
     if times:
         p95 = times[min(len(times) - 1, int(len(times) * 0.95))]
-        out.append(f"- 首页响应：一般 {ms(times[len(times) // 2])}，最慢 5% 超过 {ms(p95)}；超过 2 秒的有 {slow} 次")
-    out.append(f"- 重启：{started} 次" + ("" if not restarts else f"；最近一次 {restarts[-1][:160]}"))
+        out.append(f"- \u9996\u9875\u54cd\u5e94\uff1a\u4e00\u822c {ms(times[len(times) // 2])}\uff0c\u6700\u6162 5% \u8d85\u8fc7 {ms(p95)}\uff1b\u8d85\u8fc7 2 \u79d2\u7684\u6709 {slow} \u6b21")
+    out.append(f"- \u91cd\u542f\uff1a{started} \u6b21" + ("" if not restarts else f"\uff1b\u6700\u8fd1\u4e00\u6b21 {restarts[-1][:160]}"))
     out.append("")
-    out.append("agent 不许重启它；5 分钟打不开时看门狗自动重启，并记下时间和原因（B517）。")
+    out.append("agent \u4e0d\u8bb8\u91cd\u542f\u5b83\uff1b5 \u5206\u949f\u6253\u4e0d\u5f00\u65f6\u770b\u95e8\u72d7\u81ea\u52a8\u91cd\u542f\uff0c\u5e76\u8bb0\u4e0b\u65f6\u95f4\u548c\u539f\u56e0\uff08B517\uff09\u3002")
     return "\n".join(out) + "\n"
 
 
