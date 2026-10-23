@@ -19,6 +19,8 @@ export const area: Meta = {
       'NoSelection',
       // Missing: an item or document the address names, still loading or not in this project (D77 #1 #2)
       'Missing',
+      // OffLine: the phone item page's Offline, retrying while Taska is out of reach (D82 #5)
+      'OffLine',
       'Editor',
       'Inline',
       'SectionHead',

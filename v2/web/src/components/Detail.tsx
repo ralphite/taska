@@ -47,6 +47,7 @@ import { hasChoices, inlineMd, clean } from '../lib/markdown'
 import { noteText } from '../lib/docs'
 import { kept } from '../lib/drafts'
 import { Icon, Kbd, SectionHead, Soft, StateIcon } from './ui'
+import { Pill, agentLine } from './Shell'
 import {
   DocCard,
   FileRows,
@@ -791,6 +792,16 @@ function Missing({ what }: { what: string }) {
     </div>
   )
 }
+// D82 #5: the phone's item page says when Taska is out of reach, as its list does (the desktop's bar says it over both
+// panes)
+function OffLine() {
+  useArea('head')
+  return !desk() && agentLine().off ? (
+    <div className="flex shrink-0 justify-center border-b border-zinc-100 py-1.5 lg:hidden dark:border-zinc-800/70">
+      <Pill />
+    </div>
+  ) : null
+}
 function NoSelection() {
   if (U.side === 'deleted') return <DeletedView /> // B430: the deleted thing you clicked, with Restore
   if (U.side)
@@ -993,6 +1004,7 @@ export function DetailView({ hidden, place = '' }: { hidden: boolean; place?: st
           {shownDoc ? null : parts.nav}
         </div>
       </header>
+      <OffLine />
       {/* B536: in one column (not two: there the talk has its own room), in light, the talk runs down to the strip under
           the box (no white gap above it); its own padding keeps the last message clear of the strip at the end */}
       <div

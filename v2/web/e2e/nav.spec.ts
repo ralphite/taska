@@ -128,3 +128,16 @@ test('D82 #4: a link to a project that never was says only that it is not there;
   await page.locator('#goneRestore').click()
   await expect(page).toHaveURL(new RegExp(`/p/${p.name}/`))
 })
+
+test("D82 #5: on the phone an item's page says when Taska is out of reach, as the list does", async ({
+  page,
+  request,
+}) => {
+  test.skip(isDesk(page), 'the desktop says it in its bar over both panes')
+  const p = await project(request, LOOP)
+  await open(page, p, 'T4')
+  await expect(page.locator('#detailBody h1')).toHaveText('Write the user docs')
+  await page.route('**/api/**', (r) => r.abort())
+  for (let i = 0; i < 4; i++) await page.evaluate(() => dispatchEvent(new Event('focus')))
+  await expect(page.locator('#detailView [role="status"]')).toHaveText(/Offline, retrying/, { timeout: 45000 }) // once the poll in flight ends
+})
