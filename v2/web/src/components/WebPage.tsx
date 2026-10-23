@@ -254,7 +254,7 @@ export function WebPage({ d }: { d: Doc }) {
       // the box (a reply is written there), a sheet or a tip over the page keep it open
       if (
         pop.current?.contains(t) ||
-        t.closest?.(`[data-act="doc-thread"][data-key="${CSS.escape(openTk)}"], #foot, #dlg, #overlay, #tip`)
+        t.closest?.(`[data-act="doc-thread"][data-key="${CSS.escape(openTk)}"], #docCmts, #foot, #dlg, #overlay, #tip`)
       )
         return
       close()
@@ -363,8 +363,9 @@ export function WebPage({ d }: { d: Doc }) {
           {c.comments.length}
         </button>
       ))}
-      {open && rects[open.key] ? (
-        // B503: the comments open right under their part (outlined), its right edges lined up, not at the page's end
+      {open && rects[open.key] && !side ? (
+        // B503: the comments open right under their part (outlined), its right edges lined up, not at the page's end;
+        // B505: on the desktop they are in the comments' column beside the page, the part outlined while open
         <div
           ref={pop}
           data-thread-pop

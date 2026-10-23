@@ -502,6 +502,7 @@ function DocRail({ d }: { d: Doc }) {
     document.querySelector(`#docBlocks > section[data-key="${CSS.escape(k)}"]`)?.toggleAttribute('data-hl', on)
   return (
     <aside ref={ref} aria-label="Comments" className="relative">
+      {entries.length ? null : <p className="text-xs text-zinc-400 dark:text-zinc-500">No comments</p>}
       {entries.map((e, i) => (
         <div
           key={e.k + i}
@@ -680,209 +681,204 @@ export function DocView({ d }: { d: Doc }) {
   groups.delete('doc' + d.d) // its images, refilled as the blocks render
   const phoneBtn = `${HIT} ${BTN} text-sm lg:hidden`
   const side = desk() // B340: on the desktop the comments live in a column beside the text; the text never moves
-  // B349: the column only when there are comments, and only when the pane is wide enough for it beside the text;
-  // narrower, each commented paragraph shows a count beside it that opens its comments floating over the text.
-  // B354: the text is always in the middle of the pane, as the box below it; the column goes in the room on its right
-  // (it shows when that room holds it: the pane 90rem wide, the text 46rem and 22rem on each side, past the buttons)
-  const [wide, setWide] = useState(true)
-  useLayoutEffect(() => {
-    const el = ref.current
-    if (!el || !side || typeof ResizeObserver === 'undefined') return
-    const ro = new ResizeObserver(() =>
-      setWide(el.clientWidth >= 90 * (parseFloat(getComputedStyle(document.documentElement).fontSize) || 16)),
-    )
-    ro.observe(el)
-    return () => ro.disconnect()
-  }, [side])
-  const talked =
-    !!d.whole?.length ||
-    d.detached.length > 0 ||
-    d.blocks.some((b) => b.comments.length) ||
-    U.vcMarks.some((m) => m.d === d.d && markLive(m.label))
-  const rail = side && wide && talked && d.fmt !== 'html', // F432: a web page shows its counts beside its parts
-    float = side && !rail
+  // B505 (r691): on the desktop a document always has its comments in a column of its own, on the right of the text
+  // (Markdown and web pages alike), so the text stays where it is when the first comment comes (r447) and stays in the
+  // middle of its own column, the box under it (r467); no width decides it (B496)
+  const rail = side,
+    float = false
   return (
-    <div ref={ref} className="flex min-h-full flex-col">
-      {/* B492: a web page takes the pane's whole width, as a page in a browser does */}
-      <div
-        className={`relative flex min-w-0 flex-col lg:mx-auto lg:w-full ${d.fmt === 'html' ? '' : 'lg:max-w-[min(46rem,calc(100%-5rem))]'}`}
-      >
-        {/* B492: over a web page (desktop) this row holds only its comments on the whole page: in the page's corner */}
+    <div ref={ref} className="flex min-h-full flex-col lg:flex-row">
+      {/* B492: a web page takes its column's whole width, as a page in a browser does */}
+      <div className={`flex min-w-0 flex-1 flex-col ${d.fmt === 'html' ? '' : 'lg:px-8 lg:pt-8 lg:pb-12'}`}>
         <div
-          className={`relative flex items-center gap-1 text-xs text-zinc-500 ${d.fmt === 'html' ? 'lg:absolute lg:top-2 lg:right-2 lg:z-10' : ''}`}
+          className={`relative flex min-w-0 flex-col lg:mx-auto lg:w-full ${d.fmt === 'html' ? '' : 'lg:max-w-[min(46rem,calc(100%-5rem))]'}`}
         >
-          {float && d.whole?.length ? (
-            <>
-              <button
-                data-act="doc-thread"
-                data-key="doc"
-                className="order-last flex h-7 items-center gap-1 rounded-md bg-amber-100 px-2 font-medium text-amber-900 hover:bg-amber-200 dark:bg-amber-900/60 dark:text-amber-100 dark:hover:bg-amber-800/70"
-              >
-                <Icon n="comment" c="size-3.5" />
-                {plural(d.whole.length, 'comment')} on the document
-              </button>
-              {U.docThreads.has('doc') ? (
-                <div className="absolute top-full right-0 z-20 mt-1 w-80 text-sm">
-                  <Thread d={d} k="doc" comments={d.whole} rail />
-                </div>
-              ) : null}
-            </>
-          ) : null}
-          {/* B492: nothing written over a web page: it is the page alone */}
-          <span hidden={d.fmt === 'html'} className="min-w-0 flex-1 truncate">
-            on{' '}
-            <button data-act="goto" data-n={d.n} className="text-blue-600 hover:underline dark:text-blue-400">
-              {code(d.n)}
-            </button>{' '}
-            · {whoName(d.by)} · {when(d.t1)}
-          </span>
-          <button data-act="doc-move" className={phoneBtn}>
-            Move
-          </button>
-          <button data-act="doc-delete" className={phoneBtn}>
-            <Armed k={'doc-delete ' + d.d} ask={`Delete D${d.d}?`}>
-              Delete
-            </Armed>
-          </button>
-          <button
-            data-act="doc-circle"
-            hidden={d.fmt === 'html'}
-            aria-pressed={!!U.docCircle}
-            className={`${phoneBtn} aria-pressed:bg-amber-100 aria-pressed:text-amber-900 dark:aria-pressed:bg-amber-900/60 dark:aria-pressed:text-amber-100`}
+          {/* B492: over a web page (desktop) this row holds only its comments on the whole page: in the page's corner */}
+          <div
+            className={`relative flex items-center gap-1 text-xs text-zinc-500 ${d.fmt === 'html' ? 'lg:absolute lg:top-2 lg:right-2 lg:z-10' : ''}`}
           >
-            {U.docCircle ? 'Draw around it…' : 'Mark an area'}
-          </button>
-          <button data-act="doc-edit" className={phoneBtn}>
-            Edit
-          </button>
-        </div>
-        {titled || d.fmt === 'html' ? null : (
-          <div className="mt-3 text-2xl leading-tight font-bold tracking-tight">{d.title}</div>
-        )}
-        {d.fmt === 'html' ? <WebPage d={d} /> : null}
-        {d.fmt === 'html' ? null : <Outline d={d} />}
-        <div
-          hidden={d.fmt === 'html'}
-          id="docBlocks"
-          className={`relative mt-3 space-y-3 text-[15px] ${U.docCircle ? 'select-none' : ''}`}
-        >
-          {/* B503: a web page's parts are drawn by WebPage alone (their hidden copies here closed its open comments) */}
-          {(d.fmt === 'html' ? [] : d.blocks).map((b0, i) => {
-            const tk = tks[i] // B420: which of the paragraphs with these words it is
-            const now = tickText(d.d, tk, b0.text) // B412: ticked here and not sent yet
-            const b =
-              i === 0 && titleLine ? { ...b0, text: rest0.join('\n') } : now === b0.text ? b0 : { ...b0, text: now }
-            const lv = (b0.text.match(/^#+/) || ['#'])[0].length
-            const here =
-              !desk() &&
-              !U.docType &&
-              (R.rec
-                ? R.vc?.d === d.d && R.vc.key === b0.key && !R.vc.range
-                : U.docSel.has(b0.key) || U.docQuote?.key === b0.key) // B9 (T422): one item of a list picked
-            return (
-              <section
-                key={tk}
-                data-act="doc-pick"
-                data-key={b0.key}
-                {...(U.docSel.has(b0.key) ? { 'data-picked': '' } : {})}
-                className={`group/blk relative -mx-2 rounded-lg px-2 py-1 transition-colors hover:bg-zinc-50 has-[li[data-hov]]:bg-transparent data-hl:bg-amber-50 data-picked:bg-amber-50 data-picked:ring-2 data-picked:ring-amber-300 data-pressed:opacity-70 lg:cursor-text lg:after:absolute lg:after:inset-y-0 lg:after:left-full lg:after:w-18 dark:hover:bg-zinc-800/50 dark:data-hl:bg-amber-950/30 dark:data-picked:bg-amber-950/40 dark:data-picked:ring-amber-600 lg:[&_li[data-hov]]:rounded-md lg:[&_li[data-hov]]:bg-zinc-100 dark:lg:[&_li[data-hov]]:bg-zinc-800/70 [&_li[data-q]]:-mx-1 [&_li[data-q]]:rounded-md [&_li[data-q]]:bg-amber-50 [&_li[data-q]]:px-1 [&_li[data-q]]:ring-2 [&_li[data-q]]:ring-amber-300 dark:[&_li[data-q]]:bg-amber-950/40 dark:[&_li[data-q]]:ring-amber-600`}
-              >
-                <div className="relative flex flex-col gap-1 lg:flex-row lg:items-start lg:gap-2">
-                  <div
-                    data-block
-                    className={`min-w-0 flex-1 break-words ${b0.kind === 'heading' ? 'pr-14 lg:pr-0' : ''}`}
-                    dangerouslySetInnerHTML={{
-                      __html: clean(
-                        blockHtml(b, i === 0 && titled, 'doc' + d.d, {
-                          d: d.d,
-                          key: tk,
-                          sent: now === b0.text && TICKED_LINE.test(b0.text) && !tickOpen(d.d, tk),
-                        }),
-                      ),
-                    }}
-                  />
-                  {b0.comments.length ? (
-                    <button
-                      data-act="doc-thread"
-                      data-key={b0.key}
-                      aria-label={plural(b0.comments.length, 'comment')}
-                      className={`${b0.kind === 'heading' ? `absolute right-0 lg:relative lg:top-0 ${i === 0 && titled ? 'top-0.5' : lv <= 2 ? 'top-2.5' : 'top-1'}` : 'relative self-end'} flex h-6 shrink-0 items-center gap-1 rounded-md bg-amber-100 px-1.5 text-xs font-medium text-amber-900 after:absolute after:-inset-2.5 hover:bg-amber-200 lg:mt-0.5 lg:hidden lg:self-start dark:bg-amber-900/60 dark:text-amber-100 dark:hover:bg-amber-900`}
-                    >
-                      <Icon n="comment" c="size-3.5" />
-                      {b0.comments.length}
-                      {threadNew(d, b0.key, b0.comments) ? <NewDot /> : null}
-                    </button>
-                  ) : null}
-                </div>
-                {skipped && CHOICE_LINE.test(b0.text) && !TICKED_LINE.test(b0.text) ? (
-                  // T472 (D49): the item asked you to pick here, you replied on the item instead
-                  <div className="mt-1.5 flex items-center gap-1 text-[13px] font-medium text-zinc-500 dark:text-zinc-400">
-                    <Icon n="reply" c="size-3.5" />
-                    Skipped · you replied on {code(d.n)}
+            {float && d.whole?.length ? (
+              <>
+                <button
+                  data-act="doc-thread"
+                  data-key="doc"
+                  className="order-last flex h-7 items-center gap-1 rounded-md bg-amber-100 px-2 font-medium text-amber-900 hover:bg-amber-200 dark:bg-amber-900/60 dark:text-amber-100 dark:hover:bg-amber-800/70"
+                >
+                  <Icon n="comment" c="size-3.5" />
+                  {plural(d.whole.length, 'comment')} on the document
+                </button>
+                {U.docThreads.has('doc') ? (
+                  <div className="absolute top-full right-0 z-20 mt-1 w-80 text-sm">
+                    <Thread d={d} k="doc" comments={d.whole} rail />
                   </div>
                 ) : null}
-                {here ? (
-                  <SayRow
-                    act="doc-say"
-                    k={b0.key}
-                    rec={!!R.rec}
-                    quote={U.docQuote?.key === b0.key ? U.docQuote.text : undefined}
-                  />
-                ) : null}
-                {!side && b0.comments.length
-                  ? threadsOf(b0.comments)
-                      .filter((t) => threadOpen(t.tk))
-                      .map((t) => <Thread key={t.tk} d={d} k={t.tk} comments={t.comments} blockText={b0.text} />)
-                  : null}
-                {side ? <BlockActs d={d} k={b0.key} float={float} /> : null}
-              </section>
-            )
-          })}
-          {U.docCircle ? <Lasso /> : null}
-        </div>
-        {!side && d.whole?.length ? (
-          <section className="mt-6 border-t border-zinc-200 pt-4 dark:border-zinc-800">
-            <div className="text-xs font-medium text-zinc-500">On the whole document</div>
-            {threadsOf(d.whole).map((t) => (
-              <Thread key={t.tk} d={d} k={t.tk} comments={t.comments} />
-            ))}
-          </section>
-        ) : null}
-        {!side && d.detached.length ? (
-          <div className="mt-6 space-y-4 border-t border-zinc-200 pt-4 dark:border-zinc-800">
-            <div className="text-xs font-medium text-zinc-500">Original text changed</div>
-            {d.detached.map((t) => (
-              <section key={t.key}>
-                <div className="text-sm text-zinc-400 line-through">{t.quote}</div>
-                {threadsOf(t.comments).map((x) => (
-                  <Thread key={x.tk} d={d} k={x.tk} comments={x.comments} />
-                ))}
-              </section>
-            ))}
+              </>
+            ) : null}
+            {/* B492: nothing written over a web page: it is the page alone */}
+            <span hidden={d.fmt === 'html'} className="min-w-0 flex-1 truncate">
+              on{' '}
+              <button data-act="goto" data-n={d.n} className="text-blue-600 hover:underline dark:text-blue-400">
+                {code(d.n)}
+              </button>{' '}
+              · {whoName(d.by)} · {when(d.t1)}
+            </span>
+            <button data-act="doc-move" className={phoneBtn}>
+              Move
+            </button>
+            <button data-act="doc-delete" className={phoneBtn}>
+              <Armed k={'doc-delete ' + d.d} ask={`Delete D${d.d}?`}>
+                Delete
+              </Armed>
+            </button>
+            <button
+              data-act="doc-circle"
+              hidden={d.fmt === 'html'}
+              aria-pressed={!!U.docCircle}
+              className={`${phoneBtn} aria-pressed:bg-amber-100 aria-pressed:text-amber-900 dark:aria-pressed:bg-amber-900/60 dark:aria-pressed:text-amber-100`}
+            >
+              {U.docCircle ? 'Draw around it…' : 'Mark an area'}
+            </button>
+            <button data-act="doc-edit" className={phoneBtn}>
+              Edit
+            </button>
           </div>
-        ) : null}
-        {side ? null : (
-          <>
-            <p className="mt-6 text-center text-xs text-zinc-400">
-              Tap a paragraph, select text or circle an area to comment on it
-            </p>
-            {U.docType && !U.docSel.size && !U.docQuote && !U.docReply ? null : (
-              <button
-                data-act="doc-whole"
-                className="mx-auto mt-1 flex h-11 items-center gap-1.5 px-3 text-sm font-semibold text-blue-600 dark:text-blue-400"
-              >
-                <Icon n="comment" c="size-4" />
-                Comment on the whole document
-              </button>
-            )}
-          </>
-        )}
-        {rail ? (
-          <div className="absolute top-0 left-[calc(100%+5rem)] w-[17rem]">
+          {titled || d.fmt === 'html' ? null : (
+            <div className="mt-3 text-2xl leading-tight font-bold tracking-tight">{d.title}</div>
+          )}
+          {d.fmt === 'html' ? <WebPage d={d} /> : null}
+          {d.fmt === 'html' ? null : <Outline d={d} />}
+          <div
+            hidden={d.fmt === 'html'}
+            id="docBlocks"
+            className={`relative mt-3 space-y-3 text-[15px] ${U.docCircle ? 'select-none' : ''}`}
+          >
+            {/* B503: a web page's parts are drawn by WebPage alone (their hidden copies here closed its open comments) */}
+            {(d.fmt === 'html' ? [] : d.blocks).map((b0, i) => {
+              const tk = tks[i] // B420: which of the paragraphs with these words it is
+              const now = tickText(d.d, tk, b0.text) // B412: ticked here and not sent yet
+              const b =
+                i === 0 && titleLine ? { ...b0, text: rest0.join('\n') } : now === b0.text ? b0 : { ...b0, text: now }
+              const lv = (b0.text.match(/^#+/) || ['#'])[0].length
+              const here =
+                !desk() &&
+                !U.docType &&
+                (R.rec
+                  ? R.vc?.d === d.d && R.vc.key === b0.key && !R.vc.range
+                  : U.docSel.has(b0.key) || U.docQuote?.key === b0.key) // B9 (T422): one item of a list picked
+              return (
+                <section
+                  key={tk}
+                  data-act="doc-pick"
+                  data-key={b0.key}
+                  {...(U.docSel.has(b0.key) ? { 'data-picked': '' } : {})}
+                  className={`group/blk relative -mx-2 rounded-lg px-2 py-1 transition-colors hover:bg-zinc-50 has-[li[data-hov]]:bg-transparent data-hl:bg-amber-50 data-picked:bg-amber-50 data-picked:ring-2 data-picked:ring-amber-300 data-pressed:opacity-70 lg:cursor-text lg:after:absolute lg:after:inset-y-0 lg:after:left-full lg:after:w-18 dark:hover:bg-zinc-800/50 dark:data-hl:bg-amber-950/30 dark:data-picked:bg-amber-950/40 dark:data-picked:ring-amber-600 lg:[&_li[data-hov]]:rounded-md lg:[&_li[data-hov]]:bg-zinc-100 dark:lg:[&_li[data-hov]]:bg-zinc-800/70 [&_li[data-q]]:-mx-1 [&_li[data-q]]:rounded-md [&_li[data-q]]:bg-amber-50 [&_li[data-q]]:px-1 [&_li[data-q]]:ring-2 [&_li[data-q]]:ring-amber-300 dark:[&_li[data-q]]:bg-amber-950/40 dark:[&_li[data-q]]:ring-amber-600`}
+                >
+                  <div className="relative flex flex-col gap-1 lg:flex-row lg:items-start lg:gap-2">
+                    <div
+                      data-block
+                      className={`min-w-0 flex-1 break-words ${b0.kind === 'heading' ? 'pr-14 lg:pr-0' : ''}`}
+                      dangerouslySetInnerHTML={{
+                        __html: clean(
+                          blockHtml(b, i === 0 && titled, 'doc' + d.d, {
+                            d: d.d,
+                            key: tk,
+                            sent: now === b0.text && TICKED_LINE.test(b0.text) && !tickOpen(d.d, tk),
+                          }),
+                        ),
+                      }}
+                    />
+                    {b0.comments.length ? (
+                      <button
+                        data-act="doc-thread"
+                        data-key={b0.key}
+                        aria-label={plural(b0.comments.length, 'comment')}
+                        className={`${b0.kind === 'heading' ? `absolute right-0 lg:relative lg:top-0 ${i === 0 && titled ? 'top-0.5' : lv <= 2 ? 'top-2.5' : 'top-1'}` : 'relative self-end'} flex h-6 shrink-0 items-center gap-1 rounded-md bg-amber-100 px-1.5 text-xs font-medium text-amber-900 after:absolute after:-inset-2.5 hover:bg-amber-200 lg:mt-0.5 lg:hidden lg:self-start dark:bg-amber-900/60 dark:text-amber-100 dark:hover:bg-amber-900`}
+                      >
+                        <Icon n="comment" c="size-3.5" />
+                        {b0.comments.length}
+                        {threadNew(d, b0.key, b0.comments) ? <NewDot /> : null}
+                      </button>
+                    ) : null}
+                  </div>
+                  {skipped && CHOICE_LINE.test(b0.text) && !TICKED_LINE.test(b0.text) ? (
+                    // T472 (D49): the item asked you to pick here, you replied on the item instead
+                    <div className="mt-1.5 flex items-center gap-1 text-[13px] font-medium text-zinc-500 dark:text-zinc-400">
+                      <Icon n="reply" c="size-3.5" />
+                      Skipped · you replied on {code(d.n)}
+                    </div>
+                  ) : null}
+                  {here ? (
+                    <SayRow
+                      act="doc-say"
+                      k={b0.key}
+                      rec={!!R.rec}
+                      quote={U.docQuote?.key === b0.key ? U.docQuote.text : undefined}
+                    />
+                  ) : null}
+                  {!side && b0.comments.length
+                    ? threadsOf(b0.comments)
+                        .filter((t) => threadOpen(t.tk))
+                        .map((t) => <Thread key={t.tk} d={d} k={t.tk} comments={t.comments} blockText={b0.text} />)
+                    : null}
+                  {side ? <BlockActs d={d} k={b0.key} float={float} /> : null}
+                </section>
+              )
+            })}
+            {U.docCircle ? <Lasso /> : null}
+          </div>
+          {!side && d.whole?.length ? (
+            <section className="mt-6 border-t border-zinc-200 pt-4 dark:border-zinc-800">
+              <div className="text-xs font-medium text-zinc-500">On the whole document</div>
+              {threadsOf(d.whole).map((t) => (
+                <Thread key={t.tk} d={d} k={t.tk} comments={t.comments} />
+              ))}
+            </section>
+          ) : null}
+          {!side && d.detached.length ? (
+            <div className="mt-6 space-y-4 border-t border-zinc-200 pt-4 dark:border-zinc-800">
+              <div className="text-xs font-medium text-zinc-500">Original text changed</div>
+              {d.detached.map((t) => (
+                <section key={t.key}>
+                  <div className="text-sm text-zinc-400 line-through">{t.quote}</div>
+                  {threadsOf(t.comments).map((x) => (
+                    <Thread key={x.tk} d={d} k={x.tk} comments={x.comments} />
+                  ))}
+                </section>
+              ))}
+            </div>
+          ) : null}
+          {side ? null : (
+            <>
+              <p className="mt-6 text-center text-xs text-zinc-400">
+                Tap a paragraph, select text or circle an area to comment on it
+              </p>
+              {U.docType && !U.docSel.size && !U.docQuote && !U.docReply ? null : (
+                <button
+                  data-act="doc-whole"
+                  className="mx-auto mt-1 flex h-11 items-center gap-1.5 px-3 text-sm font-semibold text-blue-600 dark:text-blue-400"
+                >
+                  <Icon n="comment" c="size-4" />
+                  Comment on the whole document
+                </button>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+      {rail ? (
+        <>
+          {/* B505: the line between the text and its comments, dragged sideways like the other lines (F89) */}
+          <div
+            data-grip="cmt"
+            className="group/line relative z-10 w-px shrink-0 cursor-col-resize bg-zinc-200 after:absolute after:-inset-x-1.5 after:inset-y-0 dark:bg-zinc-800"
+          >
+            <span className="pointer-events-none absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 bg-blue-500 opacity-0 transition-opacity group-hover/line:opacity-100 group-hover/line:delay-150 group-data-drag/line:opacity-100" />
+          </div>
+          <div id="docCmts" className="w-[var(--cmt-w,min(20rem,40%))] shrink-0 px-4 pt-8 pb-12">
             <DocRail d={d} />
           </div>
-        ) : null}
-      </div>
+        </>
+      ) : null}
     </div>
   )
 }

@@ -1026,7 +1026,8 @@ export function Foot({ hidden, wideCls }: { hidden: boolean; wideCls: string }) 
   // Only around its top: from the box's middle down the foot is the page's own white, so nothing shows under the box.
   // B495: in two columns the foot is the box's column only: the line between the columns is the grip's, one line from
   // the top of the page to the bottom of the screen, never two pieces that can part; the item's column runs down
-  // beside the box, free to point at and scroll.
+  // beside the box, free to point at and scroll. B505: under a document the foot is its text's column only, the
+  // comments' column runs down beside it.
   useLayoutEffect(() => {
     const foot = document.getElementById('foot')
     if (!foot || typeof ResizeObserver === 'undefined') return
@@ -1050,7 +1051,7 @@ export function Foot({ hidden, wideCls }: { hidden: boolean; wideCls: string }) 
         e.preventDefault()
         if (e.dataTransfer.files.length) addFiles([...e.dataTransfer.files])
       }}
-      className={`relative z-20 shrink-0 px-3 pt-1 pb-[max(1.25rem,env(safe-area-inset-bottom))] after:pointer-events-none after:absolute after:inset-x-0 after:top-(--foot-cut) after:bottom-0 after:-z-10 after:bg-white lg:row-start-5 lg:scrollbar-gutter-both lg:px-8 lg:pb-5 lg:group-data-duo/app:ml-[var(--duo-w,55%)] lg:group-data-[compose]/app:row-span-3 lg:group-data-[compose]/app:row-start-3 lg:group-data-[compose]/app:overflow-y-auto lg:group-data-[compose]/app:overscroll-contain lg:group-data-[compose]/app:pt-[5vh] lg:group-data-[compose]/app:pb-16 lg:group-data-duo/app:after:left-1 lg:group-data-[compose]/app:after:hidden lg:hover:scrollbar-thumb-zinc-500/80 dark:after:bg-zinc-950 dark:lg:hover:scrollbar-thumb-zinc-400/70 ${wideCls}`}
+      className={`relative z-20 shrink-0 px-3 pt-1 pb-[max(1.25rem,env(safe-area-inset-bottom))] after:pointer-events-none after:absolute after:inset-x-0 after:top-(--foot-cut) after:bottom-0 after:-z-10 after:bg-white lg:row-start-5 lg:scrollbar-gutter-both lg:px-8 lg:pb-5 lg:group-data-cmts/app:mr-[calc(var(--cmt-w,min(20rem,40%))+1px)] lg:group-data-duo/app:ml-[var(--duo-w,55%)] lg:group-data-[compose]/app:row-span-3 lg:group-data-[compose]/app:row-start-3 lg:group-data-[compose]/app:overflow-y-auto lg:group-data-[compose]/app:overscroll-contain lg:group-data-[compose]/app:pt-[5vh] lg:group-data-[compose]/app:pb-16 lg:group-data-duo/app:after:left-1 lg:group-data-[compose]/app:after:hidden lg:hover:scrollbar-thumb-zinc-500/80 dark:after:bg-zinc-950 dark:lg:hover:scrollbar-thumb-zinc-400/70 ${wideCls}`}
     >
       {compose && ComposeHead() ? (
         <div

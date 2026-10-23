@@ -1,6 +1,6 @@
 // Yadong's requirements on documents (D29, "Documents"; T475, D45): each check is named by the codes of his inputs, so
 // a change that breaks one is stopped before it ships with his own words.
-// guards: src/components/Doc.tsx src/components/Detail.tsx src/lib/docs.ts src/lib/doctick.ts src/lib/markdown.ts
+// guards: src/components/Doc.tsx src/components/Detail.tsx src/components/WebPage.tsx src/components/Shell.tsx src/lib/docs.ts src/lib/doctick.ts src/lib/markdown.ts
 import { expect, test } from '@playwright/test'
 import { LOOP, isDesk, open, project } from '../seed'
 
@@ -184,4 +184,44 @@ D1 reply ¶2 An agent note to delete
     await card.locator('[data-act="dc-delete"]').click()
     await expect.poll(async () => p.read('D1')).not.toContain(words)
   }
+})
+
+test('r691 r467: a document open on the desktop has its comments in a column of its own on the right; its text and the box are in the middle of theirs (B505)', async ({
+  page,
+  request,
+}) => {
+  test.skip(!isDesk(page), 'on the phone a comment opens under its paragraph')
+  const p = await project(request, {
+    ...LOOP,
+    then: `${LOOP.then}T4 doc The plan
+  First part of the plan, long enough to fill a line of the page with words.
+
+  Second part of the plan.
+T4 html Plan page
+  <!doctype html><html><body><h1>Export plan</h1><p>Ship option A today.</p></body></html>
+`,
+  })
+  const para = page.locator('#docBlocks section[data-key]').filter({ hasText: 'First part' })
+  await open(page, p, 'D1')
+  const key = await para.getAttribute('data-key')
+  await request.post(`${p.url}api/op`, { data: { op: 'dc', d: 1, key, quote: '', text: 'Who signs it off?' } })
+  const col = page.locator('#docCmts')
+  await expect(col).toContainText('Who signs it off?')
+  const c = await col.boundingBox(),
+    t = await para.boundingBox(),
+    box = await page.locator('#composer').boundingBox()
+  if (!c || !t || !box) throw new Error('not drawn')
+  expect(c.x).toBeGreaterThanOrEqual(t.x + t.width) // beside the text, never over it
+  expect(Math.abs(t.x + t.width / 2 - (box.x + box.width / 2))).toBeLessThan(24) // the box under the text
+  expect(box.x + box.width).toBeLessThanOrEqual(c.x)
+  // a web page: the same column on its right
+  await request.post(`${p.url}api/op`, {
+    data: { op: 'dc', d: 2, key: 'h:body>p:nth-child(2)', quote: 'Ship option A today.', text: 'Why not B?' },
+  })
+  await open(page, p, 'D2')
+  await expect(col).toContainText('Why not B?')
+  const f = await page.locator('#detailBody iframe').boundingBox(),
+    c2 = await col.boundingBox()
+  if (!f || !c2) throw new Error('not drawn')
+  expect(c2.x).toBeGreaterThanOrEqual(f.x + f.width)
 })

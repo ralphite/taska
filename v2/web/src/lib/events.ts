@@ -177,6 +177,7 @@ const GRIP: Record<string, [string, string, number, number]> = {
   list: ['app', '--list-w', 1, 100000],
   top: ['', '--top-h', 1, 100000], // T322: the item above its talk; dragged up and down, anywhere you like
   duo: ['', '--duo-w', 1, 100000], // F395: in a wide pane, the item (left) beside its talk (right)
+  cmt: ['', '--cmt-w', 1, 100000], // B505: a document's comments, the column on the right of its text
 }
 function setGrip(kind: string, px: number) {
   const [id, v] = GRIP[kind],
@@ -643,15 +644,24 @@ function wireAll() {
     const kind = g.dataset.grip as string,
       [id, , min, max] = GRIP[kind],
       down = kind === 'top', // T322: the line between the item and its talk moves up and down
+      right = kind === 'cmt', // B505: the comments' column is on the right of its line: measured from its right edge
       box = (
-        down || kind === 'duo' ? document.getElementById('itemTop') : id ? document.getElementById(id) : null
+        down || kind === 'duo'
+          ? document.getElementById('itemTop')
+          : right
+            ? document.getElementById('docCmts')
+            : id
+              ? document.getElementById(id)
+              : null
       )?.getBoundingClientRect(),
-      from = (down ? box?.top : box?.left) || 0
+      from = (down ? box?.top : right ? box?.right : box?.left) || 0
     const most = down
       ? Math.min(max, document.getElementById('detailBody')?.clientHeight || max) // as far as you drag it
       : kind === 'list' || kind === 'duo'
         ? Math.min(max, innerWidth - from) // as far as you drag it (T322)
-        : Math.min(max, innerWidth)
+        : right
+          ? Math.min(max, from)
+          : Math.min(max, innerWidth)
     let w = 0
     e.preventDefault()
     g.setPointerCapture(e.pointerId)
@@ -659,7 +669,8 @@ function wireAll() {
     const cursor = down ? 'cursor-row-resize' : 'cursor-col-resize'
     document.body.classList.add('select-none', cursor)
     const move = (ev: PointerEvent) => {
-      w = Math.round(Math.min(most, Math.max(min, (down ? ev.clientY : ev.clientX) - from)))
+      const at = down ? ev.clientY : ev.clientX
+      w = Math.round(Math.min(most, Math.max(min, right ? from - at : at - from)))
       setGrip(kind, w)
     }
     const up = () => {

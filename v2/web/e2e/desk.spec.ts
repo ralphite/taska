@@ -64,7 +64,7 @@ test('r447 r503: a comment on a paragraph of a document is written in the one bo
   }
 })
 
-test('two places picked in one paragraph keep two threads; an answer goes to the one still waiting (B469)', async ({
+test('two places picked in one paragraph keep two threads; an answer goes to the one still waiting (B469, B505)', async ({
   page,
   request,
 }) => {
@@ -81,14 +81,13 @@ test('two places picked in one paragraph keep two threads; an answer goes to the
     await request.post(`${p.url}api/op`, { data: { op: 'dc', d: 1, para: 2, quote, text: `About ${quote}` } })
   await p.doAs('D1 reply ¶2 The apples answer')
   await open(page, p, 'D1')
-  const counts = page.locator('[data-act="doc-thread"][data-key*="#"]').filter({ visible: true })
-  await expect(counts).toHaveCount(2)
-  await counts.first().click()
-  const thread = page.locator('[data-thread]').filter({ visible: true })
-  await expect(thread).toHaveCount(1)
-  await expect(thread).toContainText('About apples')
-  await expect(thread).toContainText('The apples answer')
-  await expect(thread).not.toContainText('About pears')
+  // B505: in the comments' column, each place its own thread
+  const threads = page.locator('#docCmts [data-thread*="#"]').filter({ visible: true })
+  await expect(threads).toHaveCount(2)
+  const apples = threads.filter({ hasText: 'About apples' })
+  await expect(apples).toContainText('The apples answer')
+  await expect(apples).not.toContainText('About pears')
+  await expect(threads.filter({ hasText: 'About pears' })).not.toContainText('The apples answer')
 })
 
 test("r641: a row's buttons sit side by side, with no empty room where one does not apply (T475)", async ({
@@ -125,7 +124,7 @@ test('a web page document opens as its page; in Comment mode a click on a part m
   await expect(page.locator('#scope')).toContainText('Ship option A today.')
 })
 
-test('a web page document is the page alone: no frame or line over it, the pane wide, its comment counts in it (B492)', async ({
+test('a web page document is the page alone: no frame or line over it, as wide as the comments leave it, its comment counts in it (B492, B505)', async ({
   page,
   request,
 }) => {
@@ -149,19 +148,19 @@ test('a web page document is the page alone: no frame or line over it, the pane 
   await expect(page.locator('#detailBody').getByText(/^on T4/)).toBeHidden()
   const pane = await page.locator('#detailBody').boundingBox(),
     f = await frame.boundingBox(),
+    cmts = await page.locator('#docCmts').boundingBox(),
     count = await page.locator('[data-act="doc-thread"]').filter({ visible: true }).first().boundingBox()
-  if (!pane || !f || !count) throw new Error('not drawn')
-  expect(f.width).toBeGreaterThan(pane.width - 100) // the pane's width, not a column of text
+  if (!pane || !f || !cmts || !count) throw new Error('not drawn')
+  // B505: the page takes the pane up to its comments' column, which is on its right
+  expect(Math.abs(f.x + f.width + 1 - cmts.x)).toBeLessThan(2)
+  expect(cmts.x + cmts.width).toBeGreaterThan(pane.x + pane.width - 20)
   expect(count.x).toBeGreaterThanOrEqual(f.x)
   expect(count.x + count.width).toBeLessThanOrEqual(f.x + f.width) // in the page
   // no margins of Taska's around it: the page's own are enough (r689)
   expect(Math.abs(f.x - pane.x)).toBeLessThan(2)
   expect(Math.abs(f.y - pane.y)).toBeLessThan(2)
-  // the comments on the whole page sit in its top right corner
-  const whole = await page.locator('[data-act="doc-thread"][data-key="doc"]').filter({ visible: true }).boundingBox()
-  if (!whole) throw new Error('no whole-page comments')
-  expect(whole.y).toBeGreaterThanOrEqual(f.y)
-  expect(whole.x + whole.width).toBeLessThanOrEqual(f.x + f.width)
+  // the comments on the whole page are at the top of the comments' column
+  await expect(page.locator('#docCmts')).toContainText('And the page as a whole?')
 })
 
 test('the buttons of a part of a web page stay while the pointer goes to them; Esc drops the pick, then leaves Comment mode (D56, B484)', async ({
@@ -281,7 +280,7 @@ test('with a part picked, no other part lights or can be picked until Esc lets i
   await expect(page.locator('#detailBody .ring-blue-500')).toHaveCount(1)
 })
 
-test('a comment count outlines its part while pointed at and while open; a press anywhere else closes the comment (B503)', async ({
+test('a comment count outlines its part while pointed at and while open; a press anywhere else lets it go (B503, B505)', async ({
   page,
   request,
 }) => {
@@ -302,15 +301,16 @@ test('a comment count outlines its part while pointed at and while open; a press
   if (!a || !r) throw new Error('not drawn')
   expect(r.y).toBeLessThanOrEqual(a.y) // around the part the comment is about
   expect(r.y + r.height).toBeGreaterThanOrEqual(a.y + a.height)
+  // B505: the comment itself is in the comments' column all along
+  await expect(page.locator('#docCmts')).toContainText('Why not B?')
   await count.click()
-  const pop = page.locator('[data-thread-pop]')
-  await expect(pop).toContainText('Why not B?')
   await page.mouse.move(5, 5)
   await expect(lit).toHaveCount(1) // still outlined while open
   await page.locator('#q').click() // elsewhere on the page
-  await expect(pop).toHaveCount(0)
+  await expect(lit).toHaveCount(0)
   await count.click()
-  await expect(pop).toContainText('Why not B?')
-  await frame.locator('#b').click() // a press in the page closes it too
-  await expect(pop).toHaveCount(0)
+  await page.mouse.move(5, 5)
+  await expect(lit).toHaveCount(1)
+  await frame.locator('#b').click() // a press in the page lets it go too
+  await expect(lit).toHaveCount(0)
 })
