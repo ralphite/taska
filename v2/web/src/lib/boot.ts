@@ -1,5 +1,5 @@
 // A project's page starts here: what this browser kept is put back first (B190: the frame shows before the data),
-// then the state loads, and the page follows the address, a walk goes on, unsent inputs and voice notes go out, and
+// then the state loads, and the page follows the address, unsent inputs and voice notes go out, and
 // the page listens for changes (no reload by itself when Taska is updated: R284).
 import { loadDims } from './dims'
 import { D, U, beforeRender, byN, code, ctx, desk, els, model, parseRef, setProject } from './state'
@@ -17,14 +17,12 @@ import {
   slowLog,
 } from './data'
 import { restoreDraftFiles, syncDraft } from './drafts'
-import { restoreGo, startGoFromAnotherProject } from './go'
 import { applyURL, settleOpen } from './nav'
 import { restoreOutbox } from './outbox'
 import { restoreVoice } from './voice'
 import { projectCall } from './settings'
 import { toast } from './toast'
 import { wire } from './events'
-import { ACT } from './actions'
 import { grow } from './outbox'
 import type { Tab } from './constants'
 import { navigate } from './switch'
@@ -111,8 +109,6 @@ export async function enterProject(first = false) {
   } catch {
     /* no storage */
   }
-  restoreGo() // a walk you were on goes on after a reload (T113 B17)
-  startGoFromAnotherProject(() => ACT['go-through']({})) // or one that came over from another project (F193)
   applyURL()
   if (!desk()) {
     // a reload keeps your place in each tab of the list (B152)

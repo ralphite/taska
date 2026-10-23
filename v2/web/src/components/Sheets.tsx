@@ -45,7 +45,6 @@ import {
   isAudio,
   kids,
   model,
-  needsYou,
   oneLine,
   otherProjects,
   plural,
@@ -66,7 +65,6 @@ import { openItem } from '../lib/nav'
 import { P_CACHE } from '../lib/settings'
 import type { Item } from '../lib/types'
 import { closeDialog } from '../lib/dialog'
-import { goAllAhead } from '../lib/go'
 import { checkOthers } from '../lib/data'
 import { inlineMd, clean } from '../lib/markdown'
 import { deskSlots, swipeLeft, swipeRight } from '../lib/rows'
@@ -180,9 +178,7 @@ function cardSlots(it: Item): ([string, string, string] | null)[] {
 function peekParts({ n }: Props): Parts | null {
   const it = byN.get(n as number)
   if (!it) return null
-  const g = U.go && U.go.list.includes(it.n) ? U.go : null,
-    files = filesOf(it),
-    i = g ? g.list.indexOf(it.n) : -1
+  const files = filesOf(it)
   const pin = !it.wait ? cardMsg(it) : null,
     recent = it.thread.filter((x) => x.id !== it.wait?.id && x.id !== pin?.id).slice(-3),
     talk = it.thread.length,
@@ -213,41 +209,7 @@ function peekParts({ n }: Props): Parts | null {
       FWD_NEED[a[2]] ? NEED[FWD_NEED[a[2]]].text : FOCUS_TONE[a[2]] || 'text-zinc-700 dark:text-zinc-200',
       a[2],
     )
-  const last = g && !g.list.slice(i + 1).some((k) => !g.done.has(k) && byN.get(k) && needsYou(byN.get(k) as Item))
-  const nav = g ? (
-    <div className="flex items-center gap-1 px-2 pt-1">
-      <button
-        data-act="go-prev"
-        disabled={i <= 0}
-        className="flex h-11 items-center gap-0.5 rounded-full pr-3 pl-1.5 text-sm font-semibold text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800"
-      >
-        <Icon n="left" c="size-4" sw="2.25" />
-        Previous
-      </button>
-      <span className="min-w-0 flex-1" />
-      <button
-        data-act="go-next"
-        className="flex h-11 items-center gap-0.5 rounded-full pr-1.5 pl-3 text-sm font-semibold text-zinc-700 hover:bg-zinc-100 dark:text-zinc-200 dark:hover:bg-zinc-800"
-      >
-        {last ? (
-          goAllAhead() ? (
-            <>
-              Next project
-              <Icon n="right" c="size-4" sw="2.25" />
-            </>
-          ) : (
-            'End'
-          )
-        ) : (
-          <>
-            Next
-            <Icon n="right" c="size-4" sw="2.25" />
-          </>
-        )}
-      </button>
-    </div>
-  ) : null
-  // B158: the item's code and Open sit in the header row beside x; a walk's "Needs you · 2 of 5" goes there instead
+  // B158: the item's code and Open sit in the header row beside x
   const idRow = (
     <div className="flex items-center gap-2">
       <StateIcon {...shown} cls="size-5" />
@@ -263,31 +225,9 @@ function peekParts({ n }: Props): Parts | null {
     </div>
   )
   return {
-    head: g ? (
-      <span className="flex items-center gap-2">
-        <span className="text-xs font-bold tracking-wide whitespace-nowrap text-amber-700 uppercase dark:text-amber-400">
-          Needs you
-        </span>
-        <span className="text-xs font-medium whitespace-nowrap text-zinc-500 tabular-nums dark:text-zinc-400">
-          {i + 1} of {g.list.length}
-        </span>
-      </span>
-    ) : (
-      idRow
-    ),
-    sub: g ? (
-      <div className="flex gap-1 px-4 pb-1" aria-hidden="true">
-        {g.list.map((k) => (
-          <span
-            key={k}
-            className={`h-1 flex-1 rounded-full ${k === it.n ? 'bg-amber-500 dark:bg-amber-400' : g.done.has(k) ? 'bg-emerald-500 dark:bg-emerald-400' : 'bg-zinc-200 dark:bg-zinc-700'}`}
-          />
-        ))}
-      </div>
-    ) : null,
+    head: idRow,
     foot: (
       <div className="border-t border-zinc-100 dark:border-zinc-800">
-        {nav}
         <div className="flex gap-1 px-2 py-1">
           {cardSlots(it).map((a, k) => (a ? slot(a, k) : null))}
           {btn({ 'data-act': 'card-copy', 'data-n': it.n }, 'copy', 'Copy', 'text-zinc-700 dark:text-zinc-200', 'copy')}
@@ -296,8 +236,7 @@ function peekParts({ n }: Props): Parts | null {
     ),
     body: (
       <div className="pb-1">
-        {g ? idRow : null}
-        <h2 className={`${g ? 'mt-1' : ''} text-[19px] leading-snug font-semibold break-words`}>{it.title}</h2>
+        <h2 className="text-[19px] leading-snug font-semibold break-words">{it.title}</h2>
         <div className="mt-1 flex flex-wrap items-center gap-x-2.5 text-xs font-medium text-zinc-500 dark:text-zinc-400">
           {it.type === 'rule' ? null : <span className={PRI_TEXT[it.pri]}>{it.pri}</span>}
           <span className={shown.s === 'wait' ? `font-semibold ${NEED.answer.text}` : ''}>{shown.label}</span>
@@ -1643,7 +1582,6 @@ export function Dialog() {
   ].join(' ')
   const dCls = [
     'flex max-h-[min(88dvh,100%)] w-full max-w-2xl flex-col bg-white shadow-xl transition-transform duration-150 sm:rounded-3xl dark:bg-zinc-900 dark:ring-1 dark:ring-white/10',
-    spec.walk ? 'h-[92%]' : '',
     spec.tall ? 'h-[88dvh] sm:h-[85dvh]' : '',
     card ? 'shadow-2xl overflow-hidden max-h-[92%]' : 'max-h-[88dvh]',
     card && !flush ? 'rounded-3xl' : 'rounded-t-3xl',
@@ -1652,14 +1590,8 @@ export function Dialog() {
       : '',
   ].join(' ')
   const cardAim = (dx: number) => {
-    const f = document.getElementById('dlgFoot'),
-      fwd = f?.querySelector('[data-slot="fwd"]'),
-      nx = f?.querySelector('[data-act="go-next"]')
-    for (const [el, on] of [
-      [fwd, dx > 80],
-      [nx, dx < -80],
-    ] as const)
-      if (el) for (const c of ['bg-zinc-100', 'dark:bg-zinc-800']) el.classList.toggle(c, on)
+    const fwd = document.getElementById('dlgFoot')?.querySelector('[data-slot="fwd"]')
+    if (fwd) for (const c of ['bg-zinc-100', 'dark:bg-zinc-800']) fwd.classList.toggle(c, dx > 80)
   }
   const letGo = () => {
     if (FC.x === null) return
@@ -1673,11 +1605,7 @@ export function Dialog() {
       d.style.transform = ''
     }
     cardAim(0)
-    if (on && Math.abs(dx) > 80)
-      document
-        .getElementById('dlgFoot')
-        ?.querySelector<HTMLElement>(dx > 0 ? '[data-slot="fwd"]' : '[data-act="go-next"]')
-        ?.click()
+    if (on && dx > 80) document.getElementById('dlgFoot')?.querySelector<HTMLElement>('[data-slot="fwd"]')?.click()
   }
   const dragEnd = () => {
     if (!DRAG.on) return
@@ -1778,9 +1706,9 @@ export function Dialog() {
               FC.on = true
               if (dlg.current) dlg.current.style.transition = 'none'
             }
-            FC.dx = dx
-            if (dlg.current) dlg.current.style.transform = `translateX(${dx}px)`
-            cardAim(dx)
+            FC.dx = Math.max(0, dx) // a swipe right is the card's first action
+            if (dlg.current) dlg.current.style.transform = `translateX(${FC.dx}px)`
+            cardAim(FC.dx)
           }}
           onTouchEnd={letGo}
           onTouchCancel={() => {

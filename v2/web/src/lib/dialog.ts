@@ -50,7 +50,6 @@ export function closeDialog() {
   U.docNew = null
   U.docEdit = false
   U.sheet = null
-  U.go = null
   U.docReply = null
   OV.spec = null
   U.menuArm = null

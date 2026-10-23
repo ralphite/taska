@@ -150,16 +150,6 @@ export const byR = new Map<string, Input>()
 export const kids = new Map<number, Item[]>()
 export const S = () => model.S
 
-export interface Go {
-  list: number[]
-  done: Set<number>
-  how: Record<number, string>
-  undo: Record<number, () => unknown>
-  at: number | null
-  hidden: number
-  by: string
-  tab?: string // the tab it started in (T438 #9)
-}
 export interface DraftFile extends Partial<FileRef> {
   name: string
   mime: string
@@ -253,8 +243,6 @@ export const U = {
   subFor: null as number | null,
   choice: null as null | { n: number; picked: Set<number> },
   choiceLabels: {} as Record<number, string[]>,
-  go: null as Go | null,
-  goBack: null as null | { go: Go; n: number },
   sheet: null as string | null,
   searching: false,
   open: null as number | null,
@@ -666,15 +654,6 @@ export function filesOf(it: Item) {
 // What needs you, newest first (B238): what changed last on top, the Later ones under the rest (B153).
 export const laterLast = (a: Item, b: Item) => +(a.when === 'later') - +(b.when === 'later')
 export const needsOrder = (a: Item, b: Item) => laterLast(a, b) || (b.t1 > a.t1 ? 1 : b.t1 < a.t1 ? -1 : b.n - a.n)
-export const walkOrder = (g: Go) => (a: Item, b: Item) =>
-  (g.list.indexOf(a.n) + 1 || 1e9) - (g.list.indexOf(b.n) + 1 || 1e9) || needsOrder(a, b)
-export const walkTab = () =>
-  U.tab === 'rules' && !D.page && !D.compose && visible('rules').some(needsYou) ? 'rules' : 'items'
-export const needsList = (t = walkTab()) =>
-  visible(t)
-    .filter(needsYou)
-    .sort(needsOrder)
-    .map((it) => it.n)
 
 // T274 #5: what an agent wrote since you last looked at an item: a blue dot on its row (kept in this browser)
 const SEEN = { key: '', map: null as null | Record<string, string> }
@@ -793,8 +772,6 @@ export function sideProjects(): ProjectRow[] {
     : seen || { name: ctx.HERE, title: '', open: '…', needs: 0 }
   return [here, ...(DR.list || []).filter((p) => p.name !== here.name)].sort(projOrder)
 }
-export const othersNeeding = () =>
-  (DR.list || []).filter((p) => p.name !== (model.S.project || ctx.HERE) && p.needs).sort(projOrder)
 
 // ---------------------------------------------------------------- agents
 
@@ -829,7 +806,6 @@ export interface DialogOpts {
   tall?: boolean
   card?: boolean
   pop?: boolean
-  walk?: boolean
   narrow?: boolean // B358: a short list (one field's choices), not a whole menu
 }
 // Which sheet is open: its kind (components/sheets.tsx draws each kind) and what it is about.

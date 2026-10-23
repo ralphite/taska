@@ -20,7 +20,6 @@ export const area: Meta = {
       'ItemNav',
       'BarIcon',
       'BarText',
-      'GoStrip',
       // NoSelection: the item pane with no item to show (a link to an item that is not there, the page still loading)
       'NoSelection',
       'Editor',
@@ -133,19 +132,6 @@ export const FullWidth = item('T3', () => (D.full = true), true)
 /** Full width: the item (its body, subitems, document) beside its talk, one line between them from the top to the
  * bottom, the box under the talk (desktop, B495). */
 export const TwoColumns = item('F1', () => (D.full = true), true)
-/** Going through what needs you: the amber strip on top (desktop). */
-export const GoingThrough = item('T7', ({ it }) => {
-  const list = ['B2', 'T7', 'T9', 'I4', 'B6'].map((c) => it(c).n)
-  U.go = {
-    list,
-    done: new Set([list[0]]),
-    how: { [list[0]]: 'Answered' },
-    undo: {},
-    at: list[1],
-    hidden: 0,
-    by: 'list',
-  }
-})
 /** Your words on their way to the item, before Taska has them. */
 export const ReplySending = item('F1', ({ it }) => {
   U.outbox.push({

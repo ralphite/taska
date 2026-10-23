@@ -16,7 +16,6 @@ import {
   inTab,
   liveN,
   model,
-  needsYou,
   render,
 } from './state'
 import { hint, toast } from './toast'
@@ -41,7 +40,6 @@ import {
 } from './url'
 import { PSEC } from './settings-data'
 import { closeDialog } from './dialog'
-import { advance, goLeft, peek } from './go'
 import { openDoc } from './docs'
 import { ACT } from './actions'
 import { P_CACHE, loadFixes, loadLog, loadProjects, loadGuide } from './settings'
@@ -81,7 +79,14 @@ export function openItem(n: number | null | undefined, push = true) {
   U.scopeOff = false
   if (desk() && U.doc && !U.docEdit) {
     U.docScroll[U.doc] = els.detailBody?.scrollTop || 0
-    Object.assign(U, { doc: null, docReply: null, docSel: new Set(), docQuote: null, docCircle: false, docInspect: false })
+    Object.assign(U, {
+      doc: null,
+      docReply: null,
+      docSel: new Set(),
+      docQuote: null,
+      docCircle: false,
+      docInspect: false,
+    })
     D.docKey = null
   } // another item: the document closes
   if (desk()) {
@@ -124,17 +129,6 @@ export function closeItem() {
   writeURL(false, null)
   render()
   if (!desk() && els.list && els.inputsView) [els.list.scrollTop, els.inputsView.scrollTop] = U.listTop || [0, 0]
-  if (!desk() && U.goBack) {
-    // back from the item you opened while going through: the walk goes on where it was (B153)
-    const w = U.goBack
-    U.goBack = null
-    requestAnimationFrame(() => {
-      U.go = w.go
-      const it = byN.get(w.n)
-      if (it && needsYou(it) && !w.go.done.has(w.n)) peek(w.n, { focus: false })
-      else advance(w.n)
-    })
-  }
 }
 export const BK = { pull: false }
 
@@ -155,7 +149,6 @@ export function openSide(side: 'docs' | 'log' | 'deleted', push = true) {
   if (side === 'log' && P_CACHE.logRev !== model.S.rev) loadLog()
   if (push) writeURL(true)
   render()
-  goLeft() // T438 #9
 }
 export function setTab(t: Tab) {
   U.side = null
@@ -182,7 +175,6 @@ export function setTab(t: Tab) {
   U.amend = null
   U.correct = null
   U.prefsEdit = null
-  U.goBack = null
   const scrollOf = (k: string) => (k === 'inputs' ? els.inputsView : els.list)
   if (!desk() && t !== was && !U.open) U.tabTop[was] = scrollOf(was)?.scrollTop || 0 // B152
   U.tab = t
@@ -210,7 +202,6 @@ export function setTab(t: Tab) {
   render()
   const el = scrollOf(t)
   if (t !== was && el) el.scrollTop = carried ? 0 : U.tabTop[t] || 0
-  goLeft() // T438 #9
 }
 export function searchMode(on: boolean) {
   if (on !== !!U.searching) {
@@ -347,7 +338,6 @@ export function openProject(sec: string | null) {
   if (sec === 'projects') loadProjects()
   else loadProjects(true)
   if (part) requestAnimationFrame(() => document.getElementById(part)?.scrollIntoView({ block: 'start' }))
-  goLeft() // T438 #9
 }
 // The phone's back on a page of Settings: back where you came from when that was a step here, else one level up.
 export function pageUp() {

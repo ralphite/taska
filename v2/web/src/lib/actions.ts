@@ -33,7 +33,6 @@ import {
   standN,
   tabOf,
   visible,
-  type Go,
 } from './state'
 import { CHOICE, groups, hasChoices } from './markdown'
 import { clearTicks, tickDoc, tickModify } from './doctick'
@@ -78,7 +77,7 @@ import {
   stepItem,
   clearSearch,
 } from './nav'
-import { advance, endGoDesk, endWalk, goResume, goThroughPhone, peek, startGoDesk } from './go'
+import { peek, peekDone } from './peek'
 import { closeDoc, deleteComment, docTarget, editComment, newDoc, openDoc, renderDoc, saveDoc } from './docs'
 import { flushOutbox, send, sendChoice, sendTicks } from './outbox'
 import {
@@ -273,7 +272,7 @@ export const ACT: Record<string, Handler> = {
   status: (d) => {
     const n = N(d)
     change(n, 'status', d.v)
-    if (U.peek === n) advance(n) // the next card, or the card of one item closes (B153)
+    if (U.peek === n) peekDone() // the card closes (B153)
   },
   'row-act': (d) => {
     // Accept and Approve happen at once (with Undo); Answer and Reply open the item (desktop) or its card (phone)
@@ -283,7 +282,6 @@ export const ACT: Record<string, Handler> = {
       change(n, 'status', v === 'accept' ? 'done' : 'open')
       return
     }
-    if (!desk()) U.go = null
     if (desk()) {
       openItem(n)
       const first =
@@ -292,44 +290,6 @@ export const ACT: Record<string, Handler> = {
     }
     peek(n)
     if (v === 'reply' || !hasChoices(byN.get(n)?.wait?.text)) els.text?.focus()
-  },
-  'go-through': () => (desk() ? startGoDesk() : goThroughPhone()),
-  'go-prev': () => {
-    const g = U.go
-    if (!g) return
-    if (!desk()) {
-      const i = g.list.indexOf(U.peek ?? -1)
-      if (i > 0 && byN.get(g.list[i - 1])) peek(g.list[i - 1], { focus: false })
-      return
-    }
-    if (!g.list.includes(U.open ?? -1) || U.tab !== 'items' || D.page || D.compose) return goResume()
-    const i = g.list.indexOf(U.open ?? -1)
-    if (i <= 0) return toast('This is the first one')
-    openItem(g.list[i - 1])
-  },
-  'go-resume': () => goResume(),
-  'go-end': () => {
-    if (desk()) return endGoDesk('end')
-    U.go = null
-    render()
-  },
-  'go-undo': (d) => {
-    void U.go?.undo[N(d)]?.()
-  },
-  'go-next': () => {
-    if (desk()) {
-      const g = U.go
-      if (!g) return startGoDesk()
-      if (!g.list.includes(U.open ?? -1) || U.tab !== 'items' || D.page || D.compose) return goResume()
-      const i = g.list.indexOf(U.open ?? -1),
-        next = g.list.slice(i + 1).find((k) => byN.get(k) && needsYouN(k) && !g.done.has(k))
-      return next ? openItem(next) : endGoDesk('last')
-    }
-    const g = U.go,
-      i = g ? g.list.indexOf(U.peek ?? -1) : -1
-    const next = g && g.list.slice(i + 1).find((k) => byN.get(k) && needsYouN(k) && !g.done.has(k))
-    if (next) peek(next, { focus: false })
-    else if (g) endWalk()
   },
   prev: () => stepItem(-1),
   next: () => stepItem(1),
@@ -695,7 +655,6 @@ export const ACT: Record<string, Handler> = {
   },
   goto: (d) => {
     // from a chip, a source, a subitem or the change log: to the item, leaving pages that hide it
-    const walk = !desk() && U.go && U.peek && OV.spec ? { go: U.go as Go, n: U.peek } : null // B153
     closeDialog()
     const n = N(d),
       it = byN.get(liveN(n))
@@ -705,7 +664,6 @@ export const ACT: Record<string, Handler> = {
         D.page = null
       }
       openItem(n)
-      U.goBack = walk
       return
     }
     keepPlace() // B9
@@ -793,11 +751,9 @@ export const ACT: Record<string, Handler> = {
   },
   'peek-set': (d) => {
     const n = N(d),
-      f = d.f as string,
-      going = !!U.go
-    if (!going) closeDialog()
+      f = d.f as string
+    closeDialog()
     change(n, f, f === 'archived' ? d.v === 'true' : d.v)
-    if (going) advance(n)
   },
   'doc-open': (d) => openDoc(Number(d.d)),
   'doc-at': (d) => {
@@ -1818,15 +1774,6 @@ export const ACT: Record<string, Handler> = {
   'v-next': () => viewerAct('next'),
   'v-zoom': () => viewerAct('zoom'),
   play: (d) => playAudio(d.src as string),
-}
-export function needsYouN(n: number) {
-  const it = byN.get(n)
-  return (
-    !!it &&
-    !it.merged_into &&
-    !CLOSED(it.status) &&
-    (!!it.wait || ((it.status === 'proposed' || it.status === 'review') && !it.reply))
-  )
 }
 export function act(name: string, data: Data = {}, e?: KeyLike) {
   const h = ACT[name]

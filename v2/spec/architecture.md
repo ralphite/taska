@@ -97,6 +97,6 @@ one file, `taska.pyz` (`python3 -m zipapp`). `python3 taska.pyz` runs everything
 4. Frontend data layer, shell and list.
 5. Item page, input box, voice.
 6. Documents and Inputs.
-7. The rest: Settings, Activity, Deleted, Documents, Cmd+K, shortcuts, Go through, home page.
+7. The rest: Settings, Activity, Deleted, Documents, Cmd+K, shortcuts, home page.
 8. Side-by-side comparison at 393 and 1440; every difference fixed.
 9. Release workflow and `taska.pyz`.

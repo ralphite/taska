@@ -55,7 +55,7 @@ import {
   syncDraft,
 } from './drafts'
 import { docTarget, sendDocComment, renderDoc } from './docs'
-import { advance, advanceDesk, peek } from './go'
+import { peekDone } from './peek'
 import { finishRec, dropRec, keepRec, plainFile, sendVoiceComments, vcCount } from './voice'
 import { sendPrefs } from './settings'
 
@@ -107,20 +107,14 @@ export async function send() {
   box.value = ''
   U.files = []
   saveDraft()
-  // Going through what needs you, your reply settles this one (B118), but the box stays on it (A2, B146).
-  const going = U.go && n && U.go.list.includes(n) && (n === U.peek || (desk() && n === U.open))
-  if (going && U.go && n) {
-    U.go.done.add(n)
-    U.go.how[n] = 'Replied'
-    if (U.peek) peek(U.peek, { focus: false })
-  } else if (U.peek && n === U.peek)
-    advance(U.peek, `Sent to ${code(n)}`) // B155
+  if (U.peek && n === U.peek)
+    peekDone(`Sent to ${code(n)}`) // B155
   else if (!desk() && !n && U.tab === 'inputs' && !U.open && els.inputsView) els.inputsView.scrollTop = 0
   if (desk()) box.focus({ preventScroll: true }) // A1
   render()
   flushOutbox()
   if (desk() && D.compose && els.foot) els.foot.scrollTop = 0
-  else if (desk() && n && n === U.open && !U.go)
+  else if (desk() && n && n === U.open)
     requestAnimationFrame(() => {
       const talk = talkScroller()
       if (talk) talk.scrollTop = talk.scrollHeight
@@ -690,12 +684,11 @@ export async function sendChoice(n: number) {
     U.choice = null
     U.reask = null // F428: answered again: the card shows the new answer
     keepChoice()
-    if (U.peek === n) advance(n, said)
+    if (U.peek === n) peekDone(said)
     else if (U.open !== n) {
       toast(said) // T438 #11: with the card in sight, the card says it
       showSent(rid, code(n))
     }
-    if (desk() && U.go && U.open === n && U.go.list.includes(n)) advanceDesk(n, 'Answered')
     render()
   } catch {
     /* save said why */

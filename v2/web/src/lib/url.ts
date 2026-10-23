@@ -4,7 +4,7 @@
 // phone and full width are steps Back can undo, and so is a link to an item (B9); choosing items in the list on the
 // desktop, search and filters only rewrite the address.
 //
-// Back on the phone (B150): every sheet, the Go through card, the image viewer, the projects drawer and search is one
+// Back on the phone (B150): every sheet, an item's card, the image viewer, the projects drawer and search is one
 // step in the history, so Back closes what is on top and only that.
 import { PSEC } from './settings-data'
 import { D, U, byN, code, ctx, desk, docById, els, liveN, parseRef, tabOf, type UI } from './state'

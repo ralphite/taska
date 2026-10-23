@@ -148,27 +148,3 @@ export const AnswerByVoice = demo({
   steps: [needsYou, open.stuck, ...speak('Say your answer'), sendVoice, whatCameIn],
   done: 'Your voice note is on the item, with its words',
 })
-
-export const GoThroughAndReply = demo({
-  steps: [
-    needsYou,
-    tap('Tap Go through', 'goThrough'),
-    write('Not ready to decide: write a few words instead', W.goReply),
-    send,
-    tap('Replied: tap Next', 'goNext'),
-  ],
-  done: 'Your reply counts as dealing with it for now',
-})
-
-export const GoThroughWhatNeedsYou = demo({
-  steps: [
-    needsYou,
-    tap('Tap Go through: one at a time', 'goThrough'),
-    tap('The agent is stuck here: not now, go on', 'goNext'),
-    tap('A question: later, go on', 'goNext'),
-    tap('A list to tick: go on', 'goNext'),
-    tap('A proposal: approve it here', 'goApprove'),
-    tap('Done for now: tap End', 'goEnd'),
-  ],
-  done: 'Back to the list: what you decided has left Needs you',
-})

@@ -32,7 +32,6 @@ import { fixURL, writeURL } from './url'
 import { noticeItems, noticeProjects } from './notices'
 import { holdRow, settleMoved } from './listhold'
 import { noteWith, resendOutbox } from './outbox'
-import { advanceDesk } from './go'
 import { closeItem } from './nav'
 
 export const NET = { op: 10000, state: 30000, get: 15000 } // ms
@@ -555,7 +554,8 @@ function reloadFor(ver: string) {
 function offerReload(ver: string) {
   UPD.stale = true
   const was = reloads(ver)
-  if (was && was.n < 3 && Date.now() - was.t < 60000 && !busy()) return void window.setTimeout(() => reloadFor(ver), 1000)
+  if (was && was.n < 3 && Date.now() - was.t < 60000 && !busy())
+    return void window.setTimeout(() => reloadFor(ver), 1000)
   toast('Taska has an update', () => reloadFor(ver), { label: 'Reload', sticky: true })
   if (was && was.n >= 3) return // the new code does not come: Reload is yours
   const check = () => {
@@ -926,10 +926,6 @@ export function change(
     }
     job.undone = true
     U.settle.delete(n) // T241: the row shows the item again, not the line saying what was done
-    if (U.go) {
-      U.go.done.delete(n)
-      delete U.go.how?.[n]
-    }
     toast(`${ref} put back`)
     return optimistic(
       [{ n, f: { [f]: before, ...('decided' in dec ? { decided: decWas } : {}) } }],
@@ -942,7 +938,6 @@ export function change(
     ) // a change that never reached Taska has nothing to put back there
   }
   run = pushUndo(`${ref} ${words}`, undo)
-  const settles = desk() && !!U.go && U.go.list.includes(n) && f === 'status'
   if (desk() && n === U.open)
     U.stepFrom = {
       n,
@@ -950,12 +945,7 @@ export function change(
         Number(el.dataset.n),
       ),
     } // J goes on from here (B124)
-  if (settles && U.go) {
-    U.go.done.add(n)
-    U.go.how[n] = words.replace(/^is (marked )?/, '').replace(/^./, (c) => c.toUpperCase())
-    U.go.undo[n] = run
-  }
-  if (!settles && (n !== U.open || desk())) holdRow(n, `${words.replace(/^./, (c) => c.toUpperCase())}`, run, f, v) // the row you acted on holds still (B148)
+  if (n !== U.open || desk()) holdRow(n, `${words.replace(/^./, (c) => c.toUpperCase())}`, run, f, v) // the row you acted on holds still (B148)
   const left = f === 'status' && v === 'done' ? openKids(n) : 0 // done before its subitems: say so (B147)
   const noted = f === 'status' && noteWith(n) // B4: what you wrote for it goes with your decision
   // T438 #3: Undo is in the toast, always: never on the row, where a second click would undo what the first did
@@ -967,18 +957,11 @@ export function change(
     // taken back
     forget(run)
     if (U.settle.delete(n)) bump('list')
-    if (U.go?.done.has(n)) {
-      U.go.done.delete(n)
-      delete U.go.how?.[n]
-      delete U.go.undo?.[n]
-      render()
-    }
     if (!job.undone) notSaved(ex, () => change(n, f, v, { said: words, note }), `${ref} ${words}`) // A7 (T422)
   })
   saved.then((ok) => {
     job.saved = ok
   })
-  if (settles && U.open === n && U.go) advanceDesk(n, U.go.how[n])
   return saved
 }
 

@@ -50,8 +50,6 @@ import {
   unread,
   useArea,
   visible,
-  walkOrder,
-  type Go,
   whoName,
 } from '../lib/state'
 import type { Item } from '../lib/types'
@@ -73,7 +71,7 @@ import {
   openKidsOf,
   SW,
 } from '../lib/rows'
-import { Avatar, Cnt, DraftMark, Empty, Hit, Icon, Kbd, ProjTile, Soft, StateIcon } from './ui'
+import { Avatar, Cnt, DraftMark, Empty, Hit, Icon, ProjTile, Soft, StateIcon } from './ui'
 import { SideList } from './SideList'
 
 // B523: the dark tints are opaque, the same colours as before laid on the page's zinc-950: the row's buttons take the
@@ -459,46 +457,6 @@ export function NeedsRow({ it, depth = 0 }: { it: Item; depth?: number }) {
 const rowAction = (it: Item): ['answer' | 'approve' | 'accept', string] =>
   it.wait ? ['answer', 'Answer'] : it.status === 'proposed' ? ['approve', 'Approve'] : ['accept', 'Accept']
 
-// One you settled while going through (desktop): it stays in the band, green, with Undo.
-function SettledRow({ it, go }: { it: Item; go: Go }) {
-  const how = go.how[it.n] || 'Done'
-  return (
-    <article data-n={it.n} className="relative border-b border-zinc-100 dark:border-zinc-800/70">
-      <div
-        data-act="open"
-        data-n={it.n}
-        {...rowCur(it)}
-        className={`group relative flex cursor-pointer items-center gap-2.5 py-2.5 pr-3 pl-4 ${ROW_TINT}`}
-      >
-        <span className="absolute inset-y-0 left-0 w-1 bg-emerald-500 dark:bg-emerald-400" />
-        <span className="self-start">
-          <StateIcon s="done" label={how} />
-        </span>
-        <div className="min-w-0 flex-1">
-          <p className="line-clamp-1 text-[15px] leading-snug font-medium text-zinc-500 dark:text-zinc-400">
-            <span className={`mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[it.type]}`}>{code(it.n)}</span>
-            {it.title}
-          </p>
-          <div className="mt-1 flex min-w-0 items-center gap-2 text-xs font-medium">
-            <span className="shrink-0 font-semibold text-emerald-700 dark:text-emerald-400">✓ {how}</span>
-            <span className="min-w-0 truncate font-normal text-zinc-500 dark:text-zinc-400">{excerpt(it)}</span>
-          </div>
-        </div>
-        {go.undo[it.n] ? (
-          <button
-            data-act="go-undo"
-            data-n={it.n}
-            className="flex h-8 shrink-0 items-center gap-1 rounded-lg px-2 text-[13px] font-semibold text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10"
-          >
-            <Icon n="undo" c="size-4" sw="2" />
-            Undo
-          </button>
-        ) : null}
-      </div>
-    </article>
-  )
-}
-
 // A group header: Needs you (amber), the agent's queue, Later, finished work, the rule groups (F210).
 export function Zone({ kind, label, n, right }: { kind: string; label: string; n: number; right?: ReactNode }) {
   const needs = kind === 'needs'
@@ -532,15 +490,6 @@ export function Zone({ kind, label, n, right }: { kind: string; label: string; n
     </div>
   )
 }
-const GoThroughBtn = () => (
-  <button
-    data-act="go-through"
-    className="-my-1 ml-auto flex h-11 items-center gap-0.5 rounded-full pr-2 pl-3 text-[13px] font-semibold text-amber-800 hover:bg-amber-100 dark:text-amber-300 dark:hover:bg-amber-400/15"
-  >
-    Go through
-    <Icon n="right" c="size-4" sw="2.25" />
-  </button>
-)
 const ArchiveAllBtn = ({ n }: { n: number }) => (
   <button data-act="archive-all" className="group/arch -my-1 ml-auto flex h-11 items-center pr-2">
     <span className="inline-flex h-8 items-center gap-1.5 rounded-full bg-emerald-50 px-3 text-[13px] font-semibold text-emerald-800 ring-1 ring-emerald-600/20 ring-inset group-hover/arch:bg-emerald-100 dark:bg-emerald-400/10 dark:text-emerald-300 dark:ring-emerald-400/25 dark:group-hover/arch:bg-emerald-400/20">
@@ -549,11 +498,11 @@ const ArchiveAllBtn = ({ n }: { n: number }) => (
     </span>
   </button>
 )
-// What waits on you, at the top of Items and of Rules: Go through, or while you go through, End and what you settled.
-// F209: on the desktop the first 5 and a row for the rest; not while you go through, nor when the open one is in the rest.
-function NeedsBand({ needs, going }: { needs: Item[]; going: Go | null }) {
+// What waits on you, at the top of Rules. F209: on the desktop the first 5 and a row for the rest; not when the open one
+// is in the rest.
+function NeedsBand({ needs }: { needs: Item[] }) {
   if (!needs.length) return null // nothing waiting: no band (I71)
-  const long = desk() && !going && needs.length > NEEDS_SHOWN + 1,
+  const long = desk() && needs.length > NEEDS_SHOWN + 1,
     cut = long && !U.needsAll && !needs.slice(NEEDS_SHOWN).some((it) => it.n === U.open)
   const rest = needs.length - NEEDS_SHOWN
   const toggle = (label: string, icon: IconName) => (
@@ -567,42 +516,10 @@ function NeedsBand({ needs, going }: { needs: Item[]; going: Go | null }) {
   )
   return (
     <>
-      <Zone
-        kind="needs"
-        label="Needs you"
-        n={needs.filter(needsYou).length}
-        right={
-          going ? (
-            <>
-              <span className="text-xs font-medium text-amber-700 dark:text-amber-400">· Going through</span>
-              {desk() && U.go && !(U.open != null && U.go.list.includes(U.open)) ? (
-                // T438 #9: paused (you opened something else): the way back is here, not a banner over the item
-                <button
-                  data-act="go-resume"
-                  className="-my-1 ml-auto flex h-11 items-center gap-1 rounded-full pr-2 pl-3 text-[13px] font-semibold text-amber-800 hover:bg-amber-100 dark:text-amber-300 dark:hover:bg-amber-400/15"
-                >
-                  Back to it
-                  <Kbd k="⇧J" />
-                </button>
-              ) : null}
-              {desk() ? null : (
-                <button
-                  data-act="go-end"
-                  className="-my-1 ml-auto flex h-11 items-center gap-1 rounded-full pr-2 pl-3 text-[13px] font-semibold text-amber-800 hover:bg-amber-100 dark:text-amber-300 dark:hover:bg-amber-400/15"
-                >
-                  End
-                  <Kbd k="Esc" />
-                </button>
-              )}
-            </>
-          ) : (
-            <GoThroughBtn />
-          )
-        }
-      />
-      {(cut ? needs.slice(0, NEEDS_SHOWN) : needs).map((it) =>
-        going && going.done.has(it.n) ? <SettledRow key={it.n} it={it} go={going} /> : <NeedsRow key={it.n} it={it} />,
-      )}
+      <Zone kind="needs" label="Needs you" n={needs.filter(needsYou).length} />
+      {(cut ? needs.slice(0, NEEDS_SHOWN) : needs).map((it) => (
+        <NeedsRow key={it.n} it={it} />
+      ))}
       {cut ? toggle(`Show ${rest} more`, 'down') : long && U.needsAll ? toggle('Show fewer', 'chevup') : null}
     </>
   )
@@ -879,11 +796,6 @@ function treeBody(all: Item[]): { body: ReactNode; shown: number } {
     body: (
       <>
         <ViewBar />
-        {U.status === 'wait' && rows.length ? (
-          <div className="flex h-11 items-center border-b border-zinc-100 pr-1 pl-4 dark:border-zinc-800/70">
-            <GoThroughBtn />
-          </div>
-        ) : null}
         {U.status === 'closed' && rows.some((it) => !it.archived && CLOSED(it.status)) ? (
           <div className="flex h-11 items-center border-b border-zinc-100 pr-1 pl-4 dark:border-zinc-800/70">
             <ArchiveAllBtn n={rows.filter((it) => !it.archived && CLOSED(it.status)).length} />
@@ -1108,21 +1020,17 @@ function listBody(): { body: ReactNode; shown: number } {
       ),
       shown: 0,
     }
-  const going = desk() ? U.go : null,
-    settled = (it: Item) => !!going && going.done.has(it.n) && going.list.includes(it.n)
   if (U.tab === 'rules') {
     // the ones an agent proposed wait on you; then the rules in force, then the retired ones (T113 B29)
-    const wait = rows
-        .filter((it) => it.status === 'proposed' || settled(it))
-        .sort(going ? walkOrder(going) : needsOrder),
-      on = rows.filter((it) => it.status === 'open' && !settled(it)),
-      off = rows.filter((it) => it.status === 'dropped' && !settled(it))
+    const wait = rows.filter((it) => it.status === 'proposed').sort(needsOrder),
+      on = rows.filter((it) => it.status === 'open'),
+      off = rows.filter((it) => it.status === 'dropped')
     return {
       body: !rows.length ? (
         <Empty>No rules</Empty>
       ) : (
         <>
-          <NeedsBand needs={wait} going={going} />
+          <NeedsBand needs={wait} />
           {on.length ? (
             <>
               <Zone kind="rules" label="Active" n={on.length} />

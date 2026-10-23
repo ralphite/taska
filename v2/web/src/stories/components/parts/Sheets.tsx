@@ -365,15 +365,6 @@ export const SwitchProjectPointed = opens({
 export const Filters = opens({ from: 'list', setup: () => (U.type = 'bug'), sheet: () => ['filters', {}] })
 /** Answer on a row opens its card above the box (phone). */
 export const Peek = opens({ from: 'list', sheet: () => ['peek', { n: N('T7') }, { aboveComposer: true, card: true }] })
-/** Going through what needs you, one card at a time (phone). */
-export const PeekGoingThrough = opens({
-  from: 'list',
-  setup: () => {
-    const list = ['B2', 'T7', 'T9'].map(N)
-    U.go = { list, done: new Set(), how: {}, undo: {}, at: list[0], hidden: 0, by: 'list' }
-  },
-  sheet: () => ['peek', { n: N('B2') }, { aboveComposer: true, card: true, walk: true }],
-})
 /** Where an item came from: what you said that made it (its chip in the item's head). */
 export const Sources = opens({ from: 'item', setup: open('F1'), steps: [click('[data-act="sources"]')] })
 /** A voice note's words as said, beside the note on the desktop: before they were tidied. */

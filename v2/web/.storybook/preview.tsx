@@ -34,7 +34,7 @@ const preview: Preview = {
           'Components',
           [
             'Item list',
-            ['Views', 'Search and filters', 'Picking and going through', 'Item row', 'Needs-you row', 'Agent mark'],
+            ['Views', 'Search and filters', 'Picking', 'Item row', 'Needs-you row', 'Agent mark'],
             'Item page',
             ['By item status', 'By what it holds', 'Layout and editing', 'Needs-you card', 'Loading and empty'],
             'Conversation',

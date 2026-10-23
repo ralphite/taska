@@ -40,11 +40,9 @@ import {
   msgName,
   userWord,
   detailShown,
-  type Go,
 } from '../lib/state'
 import type { Item, Msg } from '../lib/types'
 import { hasChoices, inlineMd, clean } from '../lib/markdown'
-import { keepGo } from '../lib/go'
 import { noteText } from '../lib/docs'
 import { kept } from '../lib/drafts'
 import { Icon, Kbd, SectionHead, Soft, StateIcon } from './ui'
@@ -761,23 +759,8 @@ function ItemActs({ it }: { it: Item }) {
 }
 const ItemNav = () => (
   <>
-    {U.go ? (
-      U.open != null && U.go.list.includes(U.open) ? null : (
-        // T438 #9: paused (you opened something else while going through): the way back, in the bar, not a banner
-        <button
-          data-act="go-resume"
-          className="flex h-8 shrink-0 items-center gap-1 rounded-full bg-amber-50 pr-2 pl-3 text-[13px] font-semibold text-amber-800 hover:bg-amber-100 dark:bg-amber-400/10 dark:text-amber-300 dark:hover:bg-amber-400/20"
-        >
-          Going through · Back to it
-          <Kbd k="⇧J" />
-        </button>
-      )
-    ) : (
-      <>
-        <BarIcon act="prev" icon="chevup" title="Previous · K" />
-        <BarIcon act="next" icon="down" title="Next · J" />
-      </>
-    )}
+    <BarIcon act="prev" icon="chevup" title="Previous · K" />
+    <BarIcon act="next" icon="down" title="Next · J" />
     <BarIcon
       act="full"
       icon={D.full ? 'shrink' : 'open'}
@@ -785,58 +768,6 @@ const ItemNav = () => (
     />
   </>
 )
-// Going through what needs you on the desktop: an amber strip on the detail pane (T113 A13, B17)
-function GoStrip({ g }: { g: Go }) {
-  const i = g.list.indexOf(U.open ?? -1),
-    here = i >= 0,
-    at = g.list.indexOf(g.at ?? -1)
-  const b = (act: string, label: string, key: string) => (
-    <button
-      data-act={act}
-      className="flex h-8 items-center gap-1 rounded-lg px-2 font-medium text-zinc-700 hover:bg-amber-100 dark:text-zinc-200 dark:hover:bg-amber-400/15"
-    >
-      {label}
-      <Kbd k={key} />
-    </button>
-  )
-  return (
-    <div
-      id="goStrip"
-      className="flex h-11 shrink-0 items-center gap-3 border-b border-amber-200/70 bg-amber-50 px-4 text-[13px] dark:border-amber-400/15 dark:bg-amber-400/10"
-    >
-      <span className="shrink-0 text-xs font-bold tracking-wide text-amber-700 uppercase dark:text-amber-400">
-        Going through
-      </span>
-      <span className="shrink-0 text-xs text-zinc-500 tabular-nums dark:text-zinc-400">
-        {here ? `${i + 1} of ${g.list.length}` : `paused at ${at + 1} of ${g.list.length}`}
-      </span>
-      <span className="flex w-40 shrink-0 gap-1">
-        {g.list.map((k) => (
-          <span
-            key={k}
-            className={`h-1 flex-1 rounded-full ${k === g.at ? (here ? 'bg-amber-500 dark:bg-amber-400' : 'bg-amber-300 dark:bg-amber-400/50') : g.done.has(k) ? 'bg-emerald-500 dark:bg-emerald-400' : 'bg-zinc-200 dark:bg-zinc-700'}`}
-          />
-        ))}
-      </span>
-      {g.hidden ? (
-        <span className="min-w-0 truncate text-xs text-zinc-500 dark:text-zinc-400">
-          · {g.hidden} more hidden by your {g.by}
-        </span>
-      ) : null}
-      <span className="ml-auto flex shrink-0 items-center gap-0.5">
-        {here ? (
-          <>
-            {b('go-prev', 'Previous', '⇧K')}
-            {b('go-next', g.done.has(U.open ?? -1) ? 'Next' : 'Skip', '⇧J')}
-          </>
-        ) : (
-          b('go-resume', 'Back to it', '⇧J')
-        )}
-        {b('go-end', 'End', 'Esc')}
-      </span>
-    </div>
-  )
-}
 function NoSelection() {
   if (U.side === 'deleted') return <DeletedView /> // B430: the deleted thing you clicked, with Restore
   if (U.side)
@@ -854,13 +785,6 @@ function NoSelection() {
           <Kbd k="J" />
           <Kbd k="K" />
           <span className="ml-1">to move</span>
-          {model.S.items.some(needsYou) ? (
-            <>
-              <span>·</span>
-              <Kbd k="⇧J" />
-              <span className="ml-1">to go through what needs you</span>
-            </>
-          ) : null}
         </p>
       </div>
     </div>
@@ -945,10 +869,6 @@ export function DetailView({ hidden, place = '' }: { hidden: boolean; place?: st
   const body = useRef<HTMLDivElement>(null)
   const parts = paneParts()
   const it = U.open ? byN.get(U.open) : undefined
-  const g = U.go
-  if (g && U.open != null && g.list.includes(U.open)) g.at = U.open
-  // T438 #9 (B7): the strip only while you are on one of its items; paused, the list says so in its header instead
-  const strip = !!(g && desk() && !D.compose && U.open != null && g.list.includes(U.open))
   const shownDoc = desk() && U.doc && !U.docEdit ? U.doc : null
   useLayoutEffect(() => {
     // a document opens where you left it, or at its top (not where its item was scrolled)
@@ -996,7 +916,6 @@ export function DetailView({ hidden, place = '' }: { hidden: boolean; place?: st
   })
   useLayoutEffect(() => {
     els.detailBody = body.current
-    if (desk()) keepGo()
     if (it && model.S.project && (!desk() || detailShown())) markSeen(it) // T274 #5: seen once it shows
     body.current
       ?.querySelectorAll<HTMLElement>('[data-clip]')
@@ -1004,7 +923,6 @@ export function DetailView({ hidden, place = '' }: { hidden: boolean; place?: st
   })
   return (
     <section id="detailView" hidden={hidden} className={`flex min-h-0 flex-1 flex-col ${place}`}>
-      {strip && g ? <GoStrip g={g} /> : null}
       <header
         className={`flex h-14 shrink-0 items-center gap-1 border-b border-zinc-100 px-1 lg:border-zinc-200 lg:px-3 dark:border-zinc-800/70 dark:lg:border-zinc-800 ${U.side && !U.open && !shownDoc ? 'lg:hidden' : ''}`} // T438 #16: no empty bar over nothing
       >

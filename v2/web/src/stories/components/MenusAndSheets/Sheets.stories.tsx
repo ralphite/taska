@@ -53,11 +53,6 @@ export const Peek: StoryObj = {
   name: "An item's card",
   parameters: { ...Sheets.Peek.parameters, ...phone },
 }
-export const PeekGoingThrough: StoryObj = {
-  ...Sheets.PeekGoingThrough,
-  name: 'Going through what needs you',
-  parameters: { ...Sheets.PeekGoingThrough.parameters, ...phone },
-}
 export const Sources: StoryObj = { ...Sheets.Sources, name: 'What an item came from' }
 export const AsSaid: StoryObj = { ...Sheets.AsSaid, name: 'Original words' }
 export const AsSaidNothingTidied: StoryObj = { ...Sheets.AsSaidNothingTidied, name: 'Original words: nothing tidied' }

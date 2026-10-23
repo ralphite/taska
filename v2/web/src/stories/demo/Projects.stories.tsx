@@ -20,7 +20,7 @@ export const SwitchProject = demo({
 
 export const SeeEveryProject = demo({
   steps: [menu, tap('Tap Taska: the home page', 'home'), { say: 'Every project, and what needs you in each' }],
-  done: 'One page for all projects, with Go through for what needs you everywhere',
+  done: 'One page for all projects, with what needs you in each',
 })
 
 export const StartANewProject = demo({

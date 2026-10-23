@@ -1,7 +1,7 @@
 // More of what you do every day, on the phone and the desktop (D20 sections 4 to 6).
 // guards: src/components/ src/lib/nav.ts src/lib/keys.ts src/lib/actions.ts src/lib/edit.ts src/lib/pages.ts src/lib/views.ts src/lib/url.ts server/
 import { expect, test } from '@playwright/test'
-import { LOOP, isDesk, needsView, open, project } from './seed'
+import { LOOP, isDesk, open, project } from './seed'
 
 test('the phone: an item is a page of its own, and Back returns to the list', async ({ page, request }) => {
   test.skip(isDesk(page), 'phone only')
@@ -13,18 +13,6 @@ test('the phone: an item is a page of its own, and Back returns to the list', as
   await page.goBack()
   await expect(page.locator('#list')).toBeVisible()
   await expect(page.locator('#detailView')).toBeHidden()
-})
-
-test('the phone: Go through steps from card to card', async ({ page, request }) => {
-  test.skip(isDesk(page), 'phone only')
-  const p = await project(request, LOOP)
-  await open(page, p)
-  await needsView(page)
-  await page.locator('[data-act="go-through"]').click()
-  const title = page.locator('#dlgBody h2')
-  const first = await title.textContent()
-  await page.locator('#dlgFoot [data-act="go-next"]').click()
-  await expect(title).not.toHaveText(first || '')
 })
 
 test('search narrows the list and says where else the words are', async ({ page, request }) => {

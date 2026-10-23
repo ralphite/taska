@@ -18,11 +18,6 @@ export const TwoColumns: StoryObj = {
   parameters: { ...Item.TwoColumns.parameters, platform: 'desktop' },
 }
 export const LinePointed: StoryObj = { ...Item.LinePointed, name: 'Line, pointer on it' }
-export const GoingThrough: StoryObj = {
-  ...Item.GoingThrough,
-  name: 'Going through',
-  parameters: { ...Item.GoingThrough.parameters, platform: 'desktop' },
-}
 export const ReplySending: StoryObj = { ...Item.ReplySending, name: 'Your reply on its way' }
 /** T522 (r731): the head, its chips and the subitems under the pointer, the keyboard, a press, side by side. */
 export const HeadLooks: StoryObj = { ...Item.HeadLooks, name: 'Pointer, keys, pressed: all side by side' }

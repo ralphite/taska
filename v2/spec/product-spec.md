@@ -150,7 +150,6 @@ The core judgement of Taska; v2 must match it exactly:
 
 - One table: one row per project, with how many things need you, whether an agent is around, recent activity; tap to
   open.
-- "Go through": walk everything that needs you in all projects, one by one.
 - Search (Cmd+K) across projects.
 
 ### 4.3 The project page (three panes on desktop, one on the phone)
@@ -160,7 +159,7 @@ The core judgement of Taska; v2 must match it exactly:
 - **Top**: project name, tabs Items / Inputs / Archive / Rules, the agent status ("Claude Code - 2m").
 - **Middle: the list**. Items has sections:
   1. **Needs you**: each row has its action button on the right (Answer / Approve / Accept / Reply); beyond a few
-     rows it folds into "Show N more"; Go through at the top.
+     rows it folds into "Show N more".
   2. **Agent queue**: queued and in progress.
   3. **Later**: for later (agents do not take them).
   4. **Finished**: done and dropped, archivable in one step.
@@ -200,9 +199,8 @@ The core judgement of Taska; v2 must match it exactly:
 
 ### 4.5 Other interactions
 
-- **Go through**: walk what needs you one card at a time: answer / approve / accept / skip, with a summary at the end.
 - **Cmd+K palette**: jump to any item, or run any action.
-- **Shortcuts** (desktop, ? lists them): J/K move, Shift+J/Shift+K move among what needs you, A next step
+- **Shortcuts** (desktop, ? lists them): J/K move, A next step
   (accept/approve/answer), R reply, N send back, C new input, G S settings, and more.
 - **Undo**: every quick action can be undone (Undo on the toast).
 - **Toasts** and **tooltips** share one style.

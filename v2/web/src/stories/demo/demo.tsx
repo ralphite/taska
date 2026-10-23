@@ -124,12 +124,6 @@ export const T = {
   agentInfo: '[data-act="agent-info"]',
   // the desktop's command palette
   paletteField: '#cpFilter',
-  // going through what needs you
-  goThrough: '[data-act="go-through"]',
-  goNext: '[data-act="go-next"]',
-  goUndo: '[data-act="go-undo"]',
-  goApprove: { phone: '[data-act="peek-set"][data-v="open"]', desktop: '[data-act="status"][data-v="open"]' },
-  goEnd: { phone: '[data-act="close"]', desktop: '[data-act="go-end"]' },
   // the box
   send: '[data-act="send"]',
   mic: '[data-act="mic"]',

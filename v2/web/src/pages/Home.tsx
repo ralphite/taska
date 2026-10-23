@@ -1,5 +1,5 @@
-// The home page (F251 B): one table of the projects, what needs you in each, and one button that goes through all of
-// it; search across every project; a new project in place (B131); a deleted project's old link says so (B287).
+// The home page (F251 B): one table of the projects and what needs you in each; search across every project; a new
+// project in place (B131); a deleted project's old link says so (B287).
 import { useEffect, useRef, useState } from 'react'
 import { PROJ_TONES } from '../lib/constants'
 import { projHash, whoName } from '../lib/state'
@@ -190,29 +190,6 @@ export function Home() {
             ⌘K
           </kbd>
         </label>
-        <button
-          id="goAll"
-          hidden={!total}
-          onClick={() => {
-            // Go through everything that needs you: it starts in the project of the first one and goes on project by project
-            const x = needs[0]
-            if (!x) return
-            try {
-              sessionStorage.setItem('taska.go.start', x.project)
-              sessionStorage.setItem('taska.go.all', '1')
-            } catch {
-              /* no storage */
-            }
-            navigate(`/p/${encodeURIComponent(x.project)}/`)
-          }}
-          className="flex h-10 shrink-0 items-center gap-0.5 rounded-full pr-2 pl-3 text-[13px] font-semibold text-amber-800 hover:bg-amber-100 dark:text-amber-300 dark:hover:bg-amber-400/15"
-        >
-          {/* T438 #9 (B28): the same Go through as in a project's list */}
-          Go through {total}
-          <span aria-hidden="true" className="text-base leading-none">
-            ›
-          </span>
-        </button>
       </header>
       {gone ? (
         <div

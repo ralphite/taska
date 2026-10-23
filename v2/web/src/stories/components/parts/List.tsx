@@ -16,14 +16,12 @@ export const area: Meta = {
       'Tree',
       'HiddenKids',
       'NeedsBand',
-      'GoThroughBtn',
       'ArchiveAllBtn',
       'ViewBar',
       'OwnView',
       'SelBar',
       'ListMore',
       'HeldRow',
-      'SettledRow',
       'HitLine',
       'RowActs',
       'SwipeRow',
@@ -63,20 +61,6 @@ export const Filtered = list(() => {
 })
 /** Every item in Needs you shown (the band shows five and a row for the rest). */
 export const NeedsYouAllShown = list(() => (U.needsAll = true))
-/** Going through what needs you: the band says where you are and what you settled. */
-export const GoingThrough = list(({ it }) => {
-  const needs = [...byN.values()].filter((x) => x.wait || x.status === 'proposed' || x.status === 'review')
-  U.go = {
-    list: needs.map((x) => x.n),
-    done: new Set([needs[0].n]),
-    how: { [needs[0].n]: 'Approved' },
-    undo: {},
-    at: needs[1].n,
-    hidden: 0,
-    by: 'list',
-  }
-  U.open = it('B2').n
-})
 /** One item open: its row is marked. */
 export const OneOpen = list(({ it }) => (U.open = it('F1').n))
 /** Several rows picked with Cmd or Shift: the bar acts on all of them. */

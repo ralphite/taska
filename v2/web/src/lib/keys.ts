@@ -16,7 +16,6 @@ import {
   docById,
   els,
   render,
-  walkTab,
   canDone,
 } from './state'
 import { hasChoices } from './markdown'
@@ -36,7 +35,6 @@ import {
   stepItem,
   toList,
 } from './nav'
-import { startGoDesk } from './go'
 import { closeDoc, renderDoc } from './docs'
 import { cancelRec, docRecStart, docRecStop, finishRec, startRec, DV } from './voice'
 import { cancelPrefs } from './settings'
@@ -50,7 +48,6 @@ export const KEYS: [string, [string, string][]][] = [
     'Move',
     [
       ['J / K', 'Next or previous item'],
-      ['⇧J / ⇧K', 'Next or previous item needing you (Go through)'],
       ['O or ↵', 'Full width; Esc goes back'],
       ['Space', 'Scroll the item'],
       ['G then I N A R', 'Items, Inputs, Archive, Rules'], // T438 #14 (B16): as they are
@@ -282,12 +279,6 @@ export function deskKey(e: KeyboardEvent) {
       if (letter) hint(D.page ? 'Press Esc to return to the list' : 'J and K move in Items, Archive and Rules')
       return
     }
-    case 'J':
-    case 'K':
-      e.preventDefault()
-      if (U.go) return ACT[k === 'J' ? 'go-next' : 'go-prev']({})
-      if (walkTab() !== U.tab || D.page) setTab('items')
-      return startGoDesk(U.open)
     case 'o':
     case 'Enter':
       if (it) {
@@ -437,7 +428,7 @@ export function deskKey(e: KeyboardEvent) {
 }
 
 // Esc steps back one level: the drawer, the viewer, the recording, a correction or an edit, a picked passage, the
-// sheet, a field, the sidebar, Settings, the filters, Go through, full width, New input, the search, the item.
+// sheet, a field, the sidebar, Settings, the filters, full width, New input, the search, the item.
 export function escapeKey(e: KeyboardEvent) {
   const t = els.text,
     inBox = () => document.activeElement === t && !!t?.value.trim() && desk()
@@ -494,7 +485,6 @@ export function escapeKey(e: KeyboardEvent) {
         D.filters = false
         return render()
       }
-      if (U.go) return ACT['go-end']({})
       if (D.full) return fullWidth(false)
       if (D.compose) return leaveCompose()
       if (U.q) return clearSearch()
@@ -538,7 +528,6 @@ export const CP_PAGE: [string, string][] = [
   ['New input', 'c'],
   ['Search', '/'],
   ['Filter', 'f'],
-  ['Go through what needs you', 'J'],
   ['Record voice input', 'V'],
   ['Items', 'g i'],
   ['Inputs', 'g n'],
