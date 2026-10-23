@@ -27,8 +27,10 @@ export interface Failed {
   at: number
   retry: (() => unknown) | null
   p: string
+  go?: string // B527: where it belongs (an item, a document, the inputs), to go and see
+  said?: string // B527: the words it carried, so you know which one it was
 }
-type Stored = { sid: string; what: string; why: string; at: number; p: string }
+type Stored = { sid: string; what: string; why: string; at: number; p: string; go?: string; said?: string }
 export const FAILED: Failed[] = []
 let fid = 0
 export const nextFailedId = () => ++fid
@@ -47,10 +49,16 @@ export function failedStore(change?: (all: Stored[]) => Stored[]): Stored[] {
     return []
   }
 }
-export function addFailed(what: string, why: string, retry: (() => unknown) | null = null, p = ctx.P) {
-  const f: Failed = { id: ++fid, sid: Date.now().toString(36) + fid, what, why, at: Date.now(), retry, p }
+export function addFailed(
+  what: string,
+  why: string,
+  retry: (() => unknown) | null = null,
+  p = ctx.P,
+  more: { go?: string; said?: string } = {},
+) {
+  const f: Failed = { id: ++fid, sid: Date.now().toString(36) + fid, what, why, at: Date.now(), retry, p, ...more }
   FAILED.unshift(f)
-  failedStore((all) => [...all, { sid: f.sid, what, why, at: f.at, p }])
+  failedStore((all) => [...all, { sid: f.sid, what, why, at: f.at, p, ...more }])
   toast(retry ? `Not saved yet: ${what}. Saves when Taska is back` : `Not saved: ${what}: ${why}`, null, {
     error: !retry,
   })

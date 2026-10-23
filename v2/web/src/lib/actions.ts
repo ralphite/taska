@@ -591,6 +591,11 @@ export const ACT: Record<string, Handler> = {
     retryFailed(d.id ? Number(d.id) : undefined)
     if (!FAILED.length) closeDialog()
   },
+  'failed-go': (d) => {
+    // B527: to where a change that was not saved belongs, in its own project
+    closeDialog()
+    navigate(String(d.to))
+  },
   'failed-drop': (d) => {
     dropFailed(d.id ? Number(d.id) : undefined)
     if (!FAILED.length) closeDialog()
@@ -1253,7 +1258,7 @@ export const ACT: Record<string, Handler> = {
         toast(`${code(n)} undone: ${rcode(r.id)} waits again`)
         return optimistic(
           [{ n, f: { status: 'dropped', archived: true } }],
-          () => op({ op: 'unmake', ref: code(n) }),
+          (p) => op({ op: 'unmake', ref: code(n) }, undefined, p),
           (ex) => notSaved(ex, run),
         )
       })
@@ -1280,8 +1285,10 @@ export const ACT: Record<string, Handler> = {
     const put = (on: boolean) =>
       optimistic(
         ids.map((n) => ({ n, f: { archived: on } })),
-        async () => {
-          const left = ((await op({ op: 'archive', refs: ids.map(code), on })).res[0].match(/not archived: (.+)$/) ||
+        async (p) => {
+          const left = ((await op({ op: 'archive', refs: ids.map(code), on }, undefined, p)).res[0].match(
+            /not archived: (.+)$/,
+          ) ||
             [])[1] // one change, however many (T113 A5)
           if (left)
             toast(
@@ -1484,8 +1491,8 @@ export const ACT: Record<string, Handler> = {
     const got = { as: '', with: 0 }
     const done = optimistic(
       tree.map((k) => ({ n: k, f: { status: 'dropped', archived: true } })),
-      async () => {
-        const r = await postAgain<{ ok: boolean; as: string; with?: number; error?: string }>(ctx.P + 'api/move-item', {
+      async (p) => {
+        const r = await postAgain<{ ok: boolean; as: string; with?: number; error?: string }>(p + 'api/move-item', {
           ref,
           to,
         })
@@ -1915,7 +1922,7 @@ export function batchSet(f: string, v: unknown, said: string) {
   const set = (to: (n: number) => unknown) =>
     optimistic(
       ns.map((n) => ({ n, f: { [f]: to(n) } })),
-      () => Promise.all(ns.map((n) => op({ op: 'set', ref: code(n), f: { [f]: wire(to(n)) } }))),
+      (p) => Promise.all(ns.map((n) => op({ op: 'set', ref: code(n), f: { [f]: wire(to(n)) } }, undefined, p))),
       (ex) => notSaved(ex, run),
     )
   const run = pushUndo(`${plural(ns.length, 'item')} ${said}`, () => {

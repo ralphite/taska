@@ -151,7 +151,8 @@ export const AsSaid = sheet('as-said', (x) => {
   const f = x.S.inputs.flatMap((r) => r.files).find((f) => f.tr)!
   return { heard: f.tr, tr: f.tr }
 })
-/** Changes that did not go in, each to retry or let go. */
+/** Changes that did not go in, each to retry or let go: what it was, a link to where it belongs, the words it carried
+ * (B527), and the project when it is another one. */
 export const NotSaved = sheet(
   'failed',
   () => ({}),
@@ -166,15 +167,29 @@ export const NotSaved = sheet(
         at: Date.now() - 60000,
         retry: () => {},
         p: '/p/shop/',
+        go: '/p/shop/T3',
       },
       {
         id: 2,
         sid: 'b',
-        what: 'Comment on D1',
+        what: 'your comment on D1',
         why: 'Not reachable',
         at: Date.now() - 300000,
         retry: () => {},
         p: '/p/shop/',
+        go: '/p/shop/D1',
+        said: 'Who signs the plan off before Friday?',
+      },
+      {
+        id: 3,
+        sid: 'c',
+        what: 'what you added to #4',
+        why: 'unknown input r4',
+        at: Date.now() - 900000,
+        retry: null,
+        p: '/p/website/',
+        go: '/p/website/inputs',
+        said: 'This is a task of its own.',
       },
     )
   },

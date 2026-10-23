@@ -20,7 +20,6 @@ import {
   model,
   openKids,
   plural,
-  projName,
   R_STATE,
   rcode,
   render,
@@ -193,7 +192,7 @@ export async function op(o: unknown, cid?: string, p = ctx.P): Promise<OpAnswer>
   )
   if (!d.ok) {
     const why = ((d.res || []).find((x) => x.startsWith('err')) || d.error || 'Taska said no').replace(/^err:?\s*/, '')
-    addFailed(saidOp(o), why, null, p) // T424: Taska said no; sending it again would not help
+    addFailed(saidOp(o), why, null, p, { go: whereOp(o, p), said: wordsOp(o) }) // T424: Taska said no; sending it again would not help
     throw new Error('op failed')
   }
   if (!here) return d // T424: a change kept for another project, sent from here: nothing to show here
@@ -212,6 +211,23 @@ export function notSaved(ex: unknown, retry?: (() => unknown) & { entry?: UndoEn
   // A7 (T422): it says what it was: given, or the Undo it was, or the last save sent
   what ||= retry?.entry ? `undoing “${retry.entry.label}”` : lastSaid || 'a change'
   addFailed(what, "Taska out of reach. Sends when it's back", retry || null)
+}
+// B527: where a save belongs, to go and see it from the list of what is not saved: its item, its document, or the
+// project's inputs
+export function whereOp(o: unknown, p: string): string {
+  const x = (Array.isArray(o) ? o[0] : o) as Record<string, unknown> | undefined
+  const ref = x?.ref ?? (Array.isArray(x?.refs) ? (x.refs as unknown[])[0] : x?.scope)
+  if (typeof ref === 'string' && /^[A-Z]\d+$/.test(ref)) return p + ref
+  if (x?.d != null) return `${p}D${String(x.d)}`
+  return x && (x.id != null || x.op === 'input') ? p + 'inputs' : p
+}
+// B527: the words a save carried (what you added, a comment, a fix), in one short line
+export function wordsOp(o: unknown): string | undefined {
+  const x = (Array.isArray(o) ? o[0] : o) as Record<string, unknown> | undefined
+  const t = String(x?.text ?? x?.right ?? '')
+    .replace(/\s+/g, ' ')
+    .trim()
+  return t ? (t.length > 80 ? t.slice(0, 79) + '…' : t) : undefined
 }
 // What a save was, in a few words, for the toast that says it did not go through
 export function saidOp(o: unknown): string {
@@ -268,9 +284,9 @@ export function notLoaded(what: string, retry: () => unknown) {
   toast(`Couldn't load ${what}. Loads when Taska is back`, null, { error: true })
 }
 // Something that waits for Taska before it shows: its button stays busy meanwhile
-export async function save(o: unknown, retry?: () => unknown) {
+export async function save(o: unknown, retry?: () => unknown, p = ctx.P) {
   try {
-    return await op(o)
+    return await op(o, undefined, p)
   } catch (ex) {
     notSaved(ex, retry, saidOp(o))
     throw ex
@@ -729,14 +745,13 @@ export function restoreFailed() {
     FAILED.push({
       id: nextFailedId(),
       sid: e.sid,
-      what:
-        e.p === ctx.P
-          ? e.what
-          : `${e.what} (in ${projName(decodeURIComponent(e.p.replace(/^\/p\//, '').replace(/\/$/, '')))})`,
+      what: e.what, // B527: the list says which project it belongs to
       why: e.why,
       at: e.at,
       retry: null,
       p: e.p,
+      go: e.go,
+      said: e.said,
     })
   bump('head')
 }
@@ -761,22 +776,24 @@ export function restorePending() {
   }
 }
 // Show a change at once and save it behind you. -> a promise: true once saved, false if it couldn't be. `send` is
-// the op itself (kept in this browser until Taska has it, T424) or, for what is more than one op, how to send it.
+// the op itself (kept in this browser until Taska has it, T424) or, for what is more than one op, how to send it (to
+// the project it is given). B527: it goes to the project the change was made in (`at.p`, else the one open now),
+// however long it waits in the queue and wherever you have gone meanwhile; `at.id` is a change sent again.
 export function optimistic(
   patches: Patch[],
-  send: (() => Promise<unknown>) | Record<string, unknown> | Record<string, unknown>[],
+  send: ((p: string) => Promise<unknown>) | Record<string, unknown> | Record<string, unknown>[],
   fail: (ex: unknown) => void = (ex) => notSaved(ex, () => optimistic(patches, send), patchesSaid(patches)),
   needed: () => boolean = () => true,
-  again?: { id: string; p: string },
+  at?: { id?: string; p: string },
 ): Promise<boolean> {
-  const id = again?.id || newCid(),
-    p = again?.p || ctx.P,
+  const id = at?.id || newCid(),
+    p = at?.p || ctx.P,
     o = typeof send === 'function' ? null : send
   if (o) {
     SAVE.going.push(id)
-    if (!again) keptStore(p, (all) => [...all, { id, o, patches: patches.filter((x) => !x.fn), t: Date.now(), p }])
+    if (!at?.id) keptStore(p, (all) => [...all, { id, o, patches: patches.filter((x) => !x.fn), t: Date.now(), p }])
   }
-  const go = o ? () => op(o, id, p) : (send as () => Promise<unknown>)
+  const go = o ? () => op(o, id, p) : () => (send as (p: string) => Promise<unknown>)(p)
   const drop = () => {
     SAVE.pend = SAVE.pend.filter((x) => !patches.includes(x))
     if (o) {

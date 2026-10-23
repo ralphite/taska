@@ -8,6 +8,7 @@ import {
   bump,
   byN,
   code,
+  ctx,
   dcFind,
   desk,
   docById,
@@ -283,7 +284,8 @@ export function deleteComment(dn: number, id: number) {
 // B259: it takes what any box takes: words, pictures, files and voice notes. The box is empty at once; a voice note's
 // words go into the comment once they are in. Not saved: all of it comes back into the box.
 export async function sendDocComment(t: DocTarget) {
-  const box = els.text
+  const box = els.text,
+    at = ctx.P // B527: it goes to this project, however long its voice note's words take and wherever you go meanwhile
   if (!box) return
   const typed = box.value.trim(),
     drafts = [...U.files]
@@ -345,6 +347,8 @@ export async function sendDocComment(t: DocTarget) {
       ...(t.th ? { th: t.th } : {}),
     },
     back, // Taska said no (it says why); can't reach it: it is sent again until it can
+    undefined,
+    { p: at },
   )
   if (!ok) return
   gone() // what Taska saved shows instead

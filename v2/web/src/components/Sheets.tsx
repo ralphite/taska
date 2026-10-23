@@ -33,6 +33,7 @@ import {
   byN,
   byR,
   code,
+  ctx,
   dcFind,
   desk,
   detailShown,
@@ -48,6 +49,7 @@ import {
   oneLine,
   otherProjects,
   plural,
+  projName,
   projOrder,
   rcode,
   statusName,
@@ -1445,7 +1447,32 @@ const KINDS: Record<string, (p: Props) => Parts | null> = {
                 <div key={f.id} className="flex items-start gap-2 rounded-lg px-3 py-2">
                   <Icon n="alert" c="mt-0.5 size-4 shrink-0 text-red-600 dark:text-red-400" sw="2" />
                   <div className="min-w-0 flex-1">
-                    <p className="text-sm leading-snug font-medium break-words">{f.what}</p>
+                    {/* B527: what it was and where, as a link there; the words it carried; why and when */}
+                    <p className="text-sm leading-snug font-medium break-words">
+                      {f.go ? (
+                        <a
+                          href={f.go}
+                          data-act="failed-go"
+                          data-to={f.go}
+                          className="text-blue-600 hover:underline dark:text-blue-400"
+                        >
+                          {f.what}
+                        </a>
+                      ) : (
+                        f.what
+                      )}
+                      {f.p === ctx.P ? null : (
+                        <span className="font-normal text-zinc-500 dark:text-zinc-400">
+                          {' '}
+                          · in {projName(decodeURIComponent(f.p.replace(/^\/p\//, '').replace(/\/$/, '')))}
+                        </span>
+                      )}
+                    </p>
+                    {f.said ? (
+                      <p className="mt-0.5 line-clamp-2 text-[13px] break-words text-zinc-600 dark:text-zinc-300">
+                        “{f.said}”
+                      </p>
+                    ) : null}
                     <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
                       {f.why} · {when(f.at)}
                     </p>

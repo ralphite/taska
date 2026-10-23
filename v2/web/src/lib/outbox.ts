@@ -486,7 +486,8 @@ function putBack(set: () => void, text: string, files: DraftFile[] = []) {
 }
 export async function sendAmend() {
   const a = U.amend,
-    box = els.text
+    box = els.text,
+    at = ctx.P // B527: what you add or change goes to this project, wherever you are once its voice note is up
   if (!a || !box) return
   const text = box.value.trim(),
     drafts = [...U.files]
@@ -511,10 +512,16 @@ export async function sendAmend() {
     const files = drafts
       .filter((f) => f.f && !f.failed)
       .map((f) => ({ f: f.f, name: f.name, mime: f.mime, size: f.size, tr: f.tr }))
-    await optimistic([], { op: 'dcedit', d: a.d, id: a.id, text, ...(files.length ? { files } : {}) }, () => {
-      // Taska said no (it says why): your words come back to edit
-      putBack(() => (U.amend = a), text || was || '', drafts)
-    })
+    await optimistic(
+      [],
+      { op: 'dcedit', d: a.d, id: a.id, text, ...(files.length ? { files } : {}) },
+      () => {
+        // Taska said no (it says why): your words come back to edit
+        putBack(() => (U.amend = a), text || was || '', drafts)
+      },
+      undefined,
+      { p: at },
+    )
     gone()
     renderDoc()
     render()
@@ -544,15 +551,21 @@ export async function sendAmend() {
     .map((f) => ({ f: f.f, name: f.name, mime: f.mime, size: f.size, tr: f.tr }))
   const said = saidOp({ op: 'amend', id: a.id, mode: a.mode })
   let refused = false
-  const ok = await optimistic([], { op: 'amend', id: a.id, mode: a.mode, v: a.v, text, files }, (ex) => {
-    if (!(ex as { net?: boolean })?.net) refused = true
-    else {
-      putBack(() => (U.amend = a), text, drafts)
-      notSaved(ex, undefined, said)
-    }
-  })
+  const ok = await optimistic(
+    [],
+    { op: 'amend', id: a.id, mode: a.mode, v: a.v, text, files },
+    (ex) => {
+      if (!(ex as { net?: boolean })?.net) refused = true
+      else {
+        putBack(() => (U.amend = a), text, drafts)
+        notSaved(ex, undefined, said)
+      }
+    },
+    undefined,
+    { p: at },
+  )
   gone()
-  if (refused && (await editedElsewhere(a, text, files, said, drafts))) return render()
+  if (refused && at === ctx.P && (await editedElsewhere(a, text, files, said, drafts))) return render()
   if (ok) {
     for (const f of drafts) {
       f.sent = true
@@ -595,7 +608,8 @@ async function editedElsewhere(
 }
 export async function sendCorrect() {
   const c = U.correct,
-    box = els.text
+    box = els.text,
+    at = ctx.P // B527: the fix goes to this project, wherever you are when it is sent
   if (!c || !box) return
   const right = box.value.replace(/\s+/g, ' ').trim()
   if (!right) return box.focus()
@@ -615,17 +629,23 @@ export async function sendCorrect() {
     .then((r) => r.json() as Promise<{ wrong?: string; right: string }[]>)
     .then((l) => l.find((x) => x.wrong === c.wrong)) // A3
     .catch(() => undefined)
-  const ok = await optimistic([], { op: 'correct', id: c.id, wrong: c.wrong, right, v: c.v }, (ex) => {
-    putBack(() => (U.correct = c), right)
-    notSaved(ex, undefined, saidOp({ op: 'correct', id: c.id, wrong: c.wrong }))
-  })
+  const ok = await optimistic(
+    [],
+    { op: 'correct', id: c.id, wrong: c.wrong, right, v: c.v },
+    (ex) => {
+      putBack(() => (U.correct = c), right)
+      notSaved(ex, undefined, saidOp({ op: 'correct', id: c.id, wrong: c.wrong }))
+    },
+    undefined,
+    { p: at },
+  )
   gone()
   if (!ok) return render()
   const run = pushUndo(`Fix “${c.wrong}” → “${right}” in ${rcode(c.id)}`, async () => {
     // A3: Z puts back the words and the spelling
     const r = byR.get(c.id)
     if (r && before != null && r.text !== before) {
-      await op({ op: 'amend', id: c.id, mode: 'edit', v: r.v || 0, text: before })
+      await op({ op: 'amend', id: c.id, mode: 'edit', v: r.v || 0, text: before }, undefined, at)
     }
     await setFix(had ? { wrong: c.wrong, right: had.right } : { wrong: c.wrong })
     toast(`Put back “${c.wrong}” in ${c.id}${had ? '' : ', and forgot the spelling'}`)

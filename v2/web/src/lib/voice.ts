@@ -959,7 +959,8 @@ function vcSegments(text: string, d: NonNullable<ReturnType<typeof docById>>) {
   return { segs }
 }
 export async function sendVoiceComments() {
-  const d = docOpen()
+  const d = docOpen(),
+    at = ctx.P // B527: they go to this project, however long the words take and wherever you go meanwhile
   if (!d || U.vcSending || !els.text) return
   U.vcSending = true
   try {
@@ -985,7 +986,7 @@ export async function sendVoiceComments() {
     const sendOps = ops.filter((o) => o.text || o.files.length)
     if (!sendOps.length) return toast('Nothing to post yet: say or write something under a quote')
     const before = new Set(dcAll(d.d).map((c) => c.id))
-    await save(sendOps, () => sendVoiceComments())
+    await save(sendOps, () => sendVoiceComments(), at)
     for (const f of files) {
       f.sent = true
       dropRec(f)
@@ -1005,7 +1006,7 @@ export async function sendVoiceComments() {
       `Posted ${sendOps.length === 1 ? '1 comment' : sendOps.length + ' comments'} on D${d.d}${made.length && !desk() ? ' · Edit is under it' : ''}`,
       made.length
         ? pushUndo(`Post ${made.length === 1 ? '1 comment' : made.length + ' comments'}`, async () => {
-            for (const id of made) await save({ op: 'dcdel', d: d.d, id })
+            for (const id of made) await save({ op: 'dcdel', d: d.d, id }, undefined, at)
             renderDoc()
             toast('Taken back')
           })
