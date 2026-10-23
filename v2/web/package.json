@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && node .storybook/check.mjs && vite build && storybook build -o dist/storybook --quiet && node .storybook/app.mjs && node .storybook/check.mjs --open",
+    "build": "tsc -b && node .storybook/check.mjs && vite build && storybook build -o dist/storybook --quiet && node .storybook/app.mjs && node .storybook/check.mjs --open && node .storybook/same.mjs",
     "preview": "vite preview",
     "typecheck": "tsc -b",
     "lint": "eslint .",

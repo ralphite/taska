@@ -2,7 +2,7 @@
 // mark, counts, marks of a draft, section heads, empty places, search hits.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Avatar, Hit, Icon, Kbd, ProjTile, StateIcon } from '../../../components/ui'
-import { ICON, type IconName } from '../../../lib/icons'
+import type { IconName } from '../../../lib/icons'
 import { ICON_USES } from '../../generated/iconUses'
 import { STATUS } from '../../../lib/constants'
 
@@ -15,35 +15,19 @@ export const area: Meta = {
 export type Story = StoryObj
 
 /** Every icon the page uses, with its name. */
-/** Every icon the page uses, and the parts of the page that use it (T513: made from the code at every build, so
- * none is missing); then the icons in the set that nothing uses. */
+/** Every icon the page uses, with its name. The list is made from the code at every build (T513: an icon the page
+ * uses and the gallery lacks fails the build), so none can be missing. */
 export const Icons: Story = {
-  render: () => {
-    const names = Object.keys(ICON) as IconName[]
-    const used = names.filter((n) => ICON_USES[n]?.length),
-      unused = names.filter((n) => !ICON_USES[n]?.length)
-    const row = (n: IconName) => (
-      <li key={n} className="flex items-start gap-4 border-b border-zinc-100 py-3 dark:border-zinc-800">
-        <span className="grid size-10 shrink-0 place-items-center rounded-lg text-zinc-800 ring-1 ring-zinc-200 dark:text-zinc-100 dark:ring-zinc-700">
+  render: () => (
+    <div className="grid grid-cols-4 gap-2 p-6 lg:grid-cols-8">
+      {(Object.keys(ICON_USES) as IconName[]).map((n) => (
+        <div key={n} className="flex flex-col items-center gap-1.5 rounded-lg p-2 text-zinc-700 dark:text-zinc-300">
           <Icon n={n} c="size-6" />
-        </span>
-        <span className="w-24 shrink-0 pt-2 font-mono text-[13px] font-semibold">{n}</span>
-        <span className="min-w-0 flex-1 pt-2 text-[13px] text-zinc-600 dark:text-zinc-400">
-          {(ICON_USES[n] || [])
-            .map((u) => `${u.in} (${u.file.replace(/^components\/|^lib\/|^pages\//, '')})`)
-            .join(' \u00b7 ') || 'Not used anywhere'}
-        </span>
-      </li>
-    )
-    return (
-      <div className="max-w-4xl p-6">
-        <h2 className="mb-1 text-base font-semibold">Used on the page ({used.length})</h2>
-        <ul className="mb-8">{used.map(row)}</ul>
-        <h2 className="mb-1 text-base font-semibold">In the icon set, not used ({unused.length})</h2>
-        <ul>{unused.map(row)}</ul>
-      </div>
-    )
-  },
+          <span className="text-[11px] text-zinc-500">{n}</span>
+        </div>
+      ))}
+    </div>
+  ),
 }
 /** An item's state, as its round icon. */
 export const States: Story = {

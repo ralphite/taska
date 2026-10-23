@@ -34,7 +34,7 @@ export type Story = StoryObj
 /** The Inputs tab, on the phone (the desktop has no Inputs tab: G I and /inputs open the New input page). */
 const tab = (setup?: (x: Setup) => void): Story => ({
   parameters: { taska: { setup: (x) => ((U.tab = 'inputs'), setup?.(x)) } },
-  render: () => <ListColumn inputs />,
+  render: () => <ListColumn />,
 })
 export const InputsTab = tab()
 export const InputsTabSearch = tab(() => (U.q = '\u5bfc\u51fa'))

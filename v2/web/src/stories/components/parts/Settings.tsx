@@ -2,7 +2,8 @@
 // the list column's Documents, Activity and Deleted (desktop), and the home page with every project.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { ProjectView } from '../../../components/Settings'
-import { DeletedView, SideList } from '../../../components/SideList'
+import { DetailView } from '../../../components/Detail'
+import { ListColumn } from '../../lib/column'
 import { Home } from '../../../pages/Home'
 import { D, U, desk, model } from '../../../lib/state'
 import { loadFixes, loadGuide, loadProjects } from '../../../lib/settings'
@@ -59,9 +60,10 @@ const section = (sec: string | null, setup?: (x: Setup) => void): Story => ({
     },
   },
   render: () => (
-    <div className="flex h-screen flex-col">
+    // Settings fills the window on the desktop: the sidebar gives way to its own list of sections
+    <Pane w="full" h="flex h-screen flex-col">
       <ProjectView hidden={false} />
-    </div>
+    </Pane>
   ),
 })
 /** The phone's list of sections (the desktop opens on Agents). */
@@ -89,14 +91,13 @@ export const Organizer = section('organizer')
 
 const side = (s: 'docs' | 'log' | 'deleted', setup?: (x: Setup) => void): Story => ({
   parameters: { taska: { setup: (x) => ((U.side = s), setup?.(x)) } },
+  // as the page has them on the desktop: in the list column, and what is picked in the pane beside it
   render: () => (
-    <div className="flex h-screen">
-      <Pane w="list" h="flex flex-col">
-        <SideList side={s} />
+    <div className="flex">
+      <ListColumn />
+      <Pane w="item" h="flex h-screen flex-col lg:h-[calc(100dvh-3rem)]">
+        <DetailView hidden={false} />
       </Pane>
-      <div className="min-w-0 flex-1">
-        <DeletedView />
-      </div>
     </div>
   ),
 })

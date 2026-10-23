@@ -251,7 +251,17 @@ export function SideList() {
     </>
   )
 }
-export const SideLink = ({ sec, icon, label, phone }: { sec: string; icon: IconName; label: string; phone?: boolean }) =>
+export const SideLink = ({
+  sec,
+  icon,
+  label,
+  phone,
+}: {
+  sec: string
+  icon: IconName
+  label: string
+  phone?: boolean
+}) =>
   phone ? (
     <a
       href={`${ctx.P}${PSEC[sec][0]}`}
@@ -1040,7 +1050,7 @@ export function Foot({ hidden, wideCls }: { hidden: boolean; wideCls: string }) 
         e.preventDefault()
         if (e.dataTransfer.files.length) addFiles([...e.dataTransfer.files])
       }}
-      className={`relative z-20 shrink-0 px-3 pt-1 pb-[max(1.25rem,env(safe-area-inset-bottom))] after:pointer-events-none after:absolute after:inset-x-0 after:top-(--foot-cut) after:bottom-0 after:-z-10 after:bg-white lg:group-data-duo/app:after:left-1 lg:row-start-5 lg:scrollbar-gutter-both lg:px-8 lg:pb-5 lg:group-data-duo/app:ml-[var(--duo-w,55%)] lg:group-data-[compose]/app:row-span-3 lg:group-data-[compose]/app:row-start-3 lg:group-data-[compose]/app:overflow-y-auto lg:group-data-[compose]/app:overscroll-contain lg:group-data-[compose]/app:pt-[5vh] lg:group-data-[compose]/app:pb-16 lg:group-data-[compose]/app:after:hidden lg:hover:scrollbar-thumb-zinc-500/80 dark:after:bg-zinc-950 dark:lg:hover:scrollbar-thumb-zinc-400/70 ${wideCls}`}
+      className={`relative z-20 shrink-0 px-3 pt-1 pb-[max(1.25rem,env(safe-area-inset-bottom))] after:pointer-events-none after:absolute after:inset-x-0 after:top-(--foot-cut) after:bottom-0 after:-z-10 after:bg-white lg:row-start-5 lg:scrollbar-gutter-both lg:px-8 lg:pb-5 lg:group-data-duo/app:ml-[var(--duo-w,55%)] lg:group-data-[compose]/app:row-span-3 lg:group-data-[compose]/app:row-start-3 lg:group-data-[compose]/app:overflow-y-auto lg:group-data-[compose]/app:overscroll-contain lg:group-data-[compose]/app:pt-[5vh] lg:group-data-[compose]/app:pb-16 lg:group-data-duo/app:after:left-1 lg:group-data-[compose]/app:after:hidden lg:hover:scrollbar-thumb-zinc-500/80 dark:after:bg-zinc-950 dark:lg:hover:scrollbar-thumb-zinc-400/70 ${wideCls}`}
     >
       {compose && ComposeHead() ? (
         <div
@@ -1286,6 +1296,16 @@ export const Tip = () => (
 )
 
 // ---------------------------------------------------------------- the page
+/** The list column's body: the items, with the line on its right on the desktop (B523: the stories use it too). */
+export const ItemsView = ({ hidden }: { hidden: boolean }) => (
+  <section
+    id="itemsView"
+    hidden={hidden}
+    className="flex min-h-0 flex-1 flex-col lg:col-start-1 lg:row-span-2 lg:row-start-4 lg:border-r lg:border-zinc-200 dark:lg:border-zinc-800"
+  >
+    <List />
+  </section>
+)
 /** The page's frame (#app): what its parts look at to know where they are (the New input page, two columns). The
  * page lays its panes out in it (cls); a Storybook story puts one part in it, with no layout (T518). */
 export function AppFrame({ cls = '', children }: { cls?: string; children: ReactNode }) {
@@ -1297,9 +1317,9 @@ export function AppFrame({ cls = '', children }: { cls?: string; children: React
     </div>
   )
 }
-export function ProjectPage() {
-  useTick((s) => s.view + s.side + s.head + s.list + s.project + s.detail)
-  const S = model.S
+/** Which parts of the project page are hidden now (true = hidden), and where the item pane sits: the page's one
+ * rule for its layout, which Storybook's stories follow too (B523). */
+export function paneLayout() {
   const isDesk = desk()
   const page = !!D.page
   // desktop (I70, design A "three panes")
@@ -1340,6 +1360,12 @@ export function ProjectPage() {
         drawer: !DR.open,
         tabs: !under,
       }
+  return { v, isDesk, page, inputs, full, rail, over, side, under }
+}
+export function ProjectPage() {
+  useTick((s) => s.view + s.side + s.head + s.list + s.project + s.detail)
+  const S = model.S
+  const { v, isDesk, full, over } = paneLayout()
   const wideCls = full ? 'lg:col-start-1 lg:col-span-2' : 'lg:col-start-2'
   useLayoutEffect(() => {
     const waiting = S.items.filter(needsYou).length,
@@ -1386,13 +1412,7 @@ export function ProjectPage() {
         <Tabs hidden={v.tabs} />
         {isDesk ? null : <FilterStrip />}
         <DeskFilters hidden={v.deskFilters} />
-        <section
-          id="itemsView"
-          hidden={v.items}
-          className="flex min-h-0 flex-1 flex-col lg:col-start-1 lg:row-span-2 lg:row-start-4 lg:border-r lg:border-zinc-200 dark:lg:border-zinc-800"
-        >
-          <List />
-        </section>
+        <ItemsView hidden={v.items} />
         <InputsView hidden={v.inputs} />
         <DetailView hidden={v.detail} />
         <ProjectView hidden={v.project} />

@@ -109,7 +109,8 @@ const row = (ref: string, setup?: (x: Setup) => void, depth = 0): Story => ({
     const it = byN.get(parseRef(ref) as number)!
     return (
       <Pane w="list">
-        <div id="list">
+        {/* as wide as rows are in the list, which keeps a line's width on its right on the desktop */}
+        <div id="list" className="lg:mr-px">
           <ItemRow it={it} depth={depth} group={[...byN.values()]} />
         </div>
       </Pane>

@@ -85,11 +85,12 @@ export function Pane({
   h?: string
 }) {
   const width = {
-    // at 1440 the sidebar takes 16rem and the list 420px; the item pane has the rest
-    list: 'w-full lg:w-[360px] xl:w-[420px]',
-    item: 'w-full lg:w-[calc(100vw-4rem-360px)] xl:w-[calc(100vw-16rem-420px)]',
+    // as wide as the page's columns are (B523: .storybook/same.mjs compares each with the page, pixel for pixel): the
+    // sidebar is 15rem (16rem from 2xl), the list 360 / 420 / 460px, the item pane the rest
+    list: 'w-full lg:w-[360px] xl:w-[420px] 2xl:w-[460px]',
+    item: 'w-full lg:w-[calc(100vw-15rem-360px)] xl:w-[calc(100vw-15rem-420px)] 2xl:w-[calc(100vw-16rem-460px)]',
     // the item at full width (O): the list's room too
-    wide: 'w-full lg:w-[calc(100vw-4rem)] xl:w-[calc(100vw-16rem)]',
+    wide: 'w-full lg:w-[calc(100vw-15rem)] 2xl:w-[calc(100vw-16rem)]',
     full: 'w-full',
     sheet: 'w-full max-w-lg',
   }[w]

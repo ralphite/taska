@@ -75,8 +75,10 @@ import {
 import { Avatar, Cnt, DraftMark, Empty, Hit, Icon, Kbd, ProjTile, Soft, StateIcon } from './ui'
 import { SideList } from './SideList'
 
+// B523: the dark tints are opaque, the same colours as before laid on the page's zinc-950: the row's buttons take the
+// row's colour (bg-inherit) and must hide the title under them, which a see-through colour did not do
 const ROW_TINT =
-  'data-sel:bg-blue-100 dark:data-sel:bg-blue-400/20 lg:data-sel:hover:bg-blue-100 dark:lg:data-sel:hover:bg-blue-400/20 lg:hover:bg-zinc-50 dark:lg:hover:bg-zinc-900/70 lg:aria-[current=true]:bg-blue-50 dark:lg:aria-[current=true]:bg-blue-400/10 pointer-coarse:transition-colors pointer-coarse:delay-75 data-pressed:bg-zinc-100 lg:data-pressed:bg-zinc-100 dark:data-pressed:bg-zinc-900 dark:lg:data-pressed:bg-zinc-900'
+  'data-sel:bg-blue-100 dark:data-sel:bg-[color-mix(in_oklab,var(--color-blue-400)_20%,var(--color-zinc-950))] lg:data-sel:hover:bg-blue-100 dark:lg:data-sel:hover:bg-[color-mix(in_oklab,var(--color-blue-400)_20%,var(--color-zinc-950))] lg:hover:bg-zinc-50 dark:lg:hover:bg-[color-mix(in_oklab,var(--color-zinc-900)_70%,var(--color-zinc-950))] lg:aria-[current=true]:bg-blue-50 dark:lg:aria-[current=true]:bg-[color-mix(in_oklab,var(--color-blue-400)_10%,var(--color-zinc-950))] pointer-coarse:transition-colors pointer-coarse:delay-75 data-pressed:bg-zinc-100 lg:data-pressed:bg-zinc-100 dark:data-pressed:bg-zinc-900 dark:lg:data-pressed:bg-zinc-900'
 // T339: rows out of sight are not laid out until they scroll near (a long list shows at once)
 const ARTICLE =
   '[contain-intrinsic-size:auto_64px] [content-visibility:auto] relative border-b border-zinc-100 data-dragging:opacity-40 data-[drop=before]:shadow-[inset_0_2px_0_0_var(--color-blue-500)] data-[drop=after]:shadow-[inset_0_-2px_0_0_var(--color-blue-500)] data-[drop=into]:bg-blue-50 data-[drop=into]:ring-2 data-[drop=into]:ring-blue-500 data-[drop=into]:ring-inset dark:border-zinc-800/70 dark:data-[drop=into]:bg-blue-400/10'

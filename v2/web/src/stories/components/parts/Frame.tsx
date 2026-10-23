@@ -62,7 +62,11 @@ const at = (setup: (x: Setup) => void) => ({ taska: { setup } })
 
 /** The project's bar (desktop, over both panes): its name, the agent pill, search. */
 export const ProjectBar: Story = {
-  render: () => <ProjBar hidden={false} />,
+  render: () => (
+    <Pane w="wide">
+      <ProjBar hidden={false} />
+    </Pane>
+  ),
 }
 /** The list's head: the project (phone) or the search (desktop), the pill. */
 export const ListHead: Story = {
