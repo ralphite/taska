@@ -1,10 +1,22 @@
-// What needs you is one number wherever it is shown: the project's badge in the sidebar, the Needs you view, and what
-// the server tells the other pages (B482).
-// guards: src/components/Shell.tsx src/components/List.tsx src/components/SideList.tsx src/lib/views.ts src/lib/data.ts server/taska/hub.py server/taska/store.py server/taska/views.py
+// What needs you is one number wherever it is shown: the project's badge in the sidebar, the Needs you view (its chip
+// and its rows), the home table and its total, the phone's project list, and what the server tells the other pages
+// (B482, R483: "this inconsistency must never happen").
+// guards: src/components/Shell.tsx src/components/List.tsx src/components/SideList.tsx src/components/Sheets.tsx src/pages/Home.tsx src/lib/views.ts src/lib/data.ts src/lib/actions.ts server/taska/hub.py server/taska/store.py server/taska/views.py
 import { expect, test } from '@playwright/test'
+import type { APIRequestContext, Page } from '@playwright/test'
 import { isDesk, open, project } from './seed'
+import type { Project } from './seed'
 
-test('the sidebar badge, the Needs you view and the server count the same items (B482)', async ({
+const server = async (request: APIRequestContext, p: Project) => {
+  const list = (await (await request.get('/api/projects')).json()) as { name: string; needs: number }[]
+  const needs = (await (await request.get('/api/needs')).json()) as { project: string }[]
+  return {
+    projects: list.find((x) => x.name === p.name)?.needs,
+    needs: needs.filter((x) => x.project === p.name).length,
+  }
+}
+
+test('r659 R483: the sidebar badge, the Needs you view and the server count the same items (B482)', async ({
   page,
   request,
 }) => {
@@ -31,17 +43,80 @@ T6 ask Anything else?
   await open(page, p)
   const badge = page.locator(`a[data-slug="${p.name}"] [title$="need you"]`),
     view = page.locator('#list [data-views][data-v="wait"] .font-mono')
-  const server = async () =>
-    ((await (await request.get('/api/projects')).json()) as { name: string; needs: number }[]).find(
-      (x) => x.name === p.name,
-    )?.needs
   // T1 asks, I2 is proposed, T3 is in review, the rule R5 asks: 4
   await expect(view).toHaveText('4')
   await expect(badge).toHaveText('4')
-  expect(await server()).toBe(4)
-  // archived while the page is open: all three go down together
+  expect(await server(request, p)).toEqual({ projects: 4, needs: 4 })
+  // archived while the page is open: all of them go down together
   await request.post(`${p.url}api/op`, { data: { op: 'set', ref: 'T1', f: { archived: true } } })
   await expect(view).toHaveText('3')
   await expect(badge).toHaveText('3')
-  expect(await server()).toBe(3)
+  expect(await server(request, p)).toEqual({ projects: 3, needs: 3 })
+})
+
+/** Every number this page shows for what needs you in project p, and the rows of its Needs you view. */
+async function shown(page: Page, p: Project) {
+  const out: Record<string, number> = {}
+  const num = (s: string) => Number(s.match(/\d+/)?.[0] ?? 0)
+  out.chip = num(await page.locator('#list [data-views][data-v="wait"] .font-mono').innerText())
+  if (isDesk(page)) out.sidebar = num(await page.locator(`a[data-slug="${p.name}"] [title$="need you"]`).innerText())
+  else {
+    await page.locator('#projBtn').click()
+    const text = await page.locator(`a[data-slug="${p.name}"]`).filter({ visible: true }).first().innerText()
+    out.projects = num(text.match(/\d+ need you/)?.[0] ?? '0') // the title has digits too
+    await page.keyboard.press('Escape')
+  }
+  await page.locator('#list [data-views] [data-v="wait"]').click()
+  await expect(page.locator('#list [data-views] [data-v="wait"]')).toHaveAttribute('aria-pressed', 'true')
+  out.rows = await page.locator('#list [data-act="open"][data-n]').filter({ visible: true }).count()
+  return out
+}
+
+test('r659 R483: one number everywhere, on the desktop and the phone, the home table and its total included', async ({
+  page,
+  request,
+}) => {
+  // what counts: an ask (T1), a block (T2), a proposal (I3), finished work (T4), a rule asked about (R5), a subitem
+  // asking under an item still open (T7); what does not: a proposal you replied on (I8), an ask you answered (T9), an
+  // ask on dropped work (T10), a proposal merged away (I11 into I3)
+  const p = await project(request, {
+    agent: `new task P1 now Pick a format
+new bug P1 now Export fails
+new idea P2 now A proposal
+new task P2 now Finished work
+new rule P2 now Keep commits small
+new task P2 now The parent
+new task P2 now parent=T6 A subitem asking
+new idea P2 now A proposal you replied on
+new task P2 now An ask you answered
+new task P2 now Asked, then dropped
+new idea P2 now The same proposal again
+`,
+    approve: ['T1', 'B2', 'T4', 'R5', 'T6', 'T7', 'T9', 'T10'],
+    then: `T1 ask Which format?
+B2 block I need the export key
+T4 done Works now.
+R5 ask Does this cover documents too?
+T7 ask Which venue?
+T9 ask Still needed?
+T10 ask Keep it?
+I11 merge I3
+`,
+  })
+  for (const n of [8, 9])
+    await request.post(`${p.url}api/op`, { data: { op: 'input', text: 'Let us talk first', scope: n } })
+  await request.post(`${p.url}api/op`, { data: { op: 'set', ref: 'T10', f: { status: 'dropped' } } })
+  expect(await server(request, p)).toEqual({ projects: 6, needs: 6 })
+  await open(page, p)
+  expect(await shown(page, p)).toEqual(
+    isDesk(page) ? { chip: 6, sidebar: 6, rows: 6 } : { chip: 6, projects: 6, rows: 6 },
+  )
+  // the home table: this project's number, and the total is the sum of the rows
+  await page.goto('/')
+  const row = page.locator(`a[href="${p.url}"]`).filter({ visible: true }).first()
+  await expect(row.locator('.rounded-full').filter({ hasText: /^\d+$/ })).toHaveText('6')
+  const list = (await (await request.get('/api/projects')).json()) as { needs: number }[]
+  const sum = list.reduce((a, x) => a + x.needs, 0)
+  if (isDesk(page)) await expect(page.locator('#sum')).toContainText(sum ? `${sum} need you` : 'nothing needs you')
+  expect((await (await request.get('/api/needs')).json()).length).toBe(sum)
 })

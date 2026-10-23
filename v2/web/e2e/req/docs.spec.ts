@@ -31,7 +31,7 @@ test('r447 r467: the text of a document stays where it is when a comment comes, 
   expect(after?.x).toBe(before?.x)
   expect(after?.width).toBe(before?.width)
   // on its right: the comment column, or the count beside the paragraph
-  const side = await (((await rail.count()) ? rail : count).first().boundingBox())
+  const side = await ((await rail.count()) ? rail : count).first().boundingBox()
   const text = await para.locator('p, li').first().boundingBox()
   if (!side || !text) throw new Error('not drawn')
   expect(side.x).toBeGreaterThanOrEqual(text.x + text.width - 1)
@@ -92,4 +92,61 @@ test('r524: choices in a document are ticked on the page and wait; the box says 
   await expect.poll(() => p.read('D1')).toMatch(/\[x\] Apples/i)
   expect(await p.read('D1')).toMatch(/\[x\] Plums/i)
   expect(await p.read('D1')).not.toMatch(/\[x\] Pears/i)
+})
+
+test('r280 B340: on the phone a comment needs no place picked: it is on the whole document', async ({
+  page,
+  request,
+}) => {
+  // on the desktop, Yadong decided later (B340, D24 #6): nothing picked, the box replies to the item the document is on
+  test.skip(isDesk(page), 'the desktop replies to the item when nothing is picked (B340)')
+  const p = await project(request, {
+    ...LOOP,
+    then: `${LOOP.then}T4 doc The plan
+  First part of the plan.
+
+  Second part of the plan.
+`,
+  })
+  await open(page, p, 'D1')
+  const box = page.locator('#text')
+  await expect(box).toHaveAttribute('placeholder', 'Comment on D1…')
+  await box.fill('Looks fine overall')
+  await box.press('Shift+Enter')
+  await expect.poll(async () => p.read('D1')).toMatch(/¶0[\s\S]*Looks fine overall/)
+})
+
+test("r292 r298: any comment on a document can be deleted, yours and an agent's", async ({ page, request }) => {
+  const p = await project(request, {
+    ...LOOP,
+    then: `${LOOP.then}T4 doc The plan
+  First part of the plan.
+
+  Second part of the plan.
+D1 reply ¶2 An agent note to delete
+`,
+  })
+  await open(page, p, 'D1')
+  const para = page.locator('#docBlocks section[data-key]').filter({ hasText: 'First part' })
+  await request.post(`${p.url}api/op`, {
+    data: { op: 'dc', d: 1, key: await para.getAttribute('data-key'), quote: '', text: 'My note in the wrong place' },
+  })
+  await expect.poll(async () => p.read('D1')).toContain('My note in the wrong place')
+  for (const words of ['My note in the wrong place', 'An agent note to delete']) {
+    const card = page
+      .locator('.group')
+      .filter({ hasText: words })
+      .filter({ has: page.locator('[data-act="dc-delete"]') })
+      .last()
+    // on a narrow page a thread opens from its count beside the paragraph
+    if (!(await card.isVisible()))
+      for (const c of await page.locator('[data-act="doc-thread"]:visible').all()) {
+        await c.click()
+        if (await card.isVisible()) break
+      }
+    await card.scrollIntoViewIfNeeded()
+    await card.hover()
+    await card.locator('[data-act="dc-delete"]').click()
+    await expect.poll(async () => p.read('D1')).not.toContain(words)
+  }
 })
