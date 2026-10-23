@@ -10,7 +10,7 @@ declare const __PAGE_BODY__: string
 
 // T457: Components (every component in every state, on the demo project's data), Pages (the real page), Demo (the
 // real page, played), Prototype (designs not built yet). Every story on the desktop (1440 wide) or the phone (393),
-// light or dark, from the toolbar.
+// light or dark from the toolbar's one button.
 
 // the page's body, without what makes it a fixed frame: its colours, type and the pressed / focus rules
 const BODY = __PAGE_BODY__
@@ -115,12 +115,10 @@ const preview: Preview = {
     },
   },
   globalTypes: {
-    scheme: {
-      description: 'Light or dark',
-      toolbar: { title: 'Scheme', items: ['light', 'dark'], dynamicTitle: true },
-    },
+    // light or dark: switched by one button in the toolbar (manager.tsx, F528)
+    scheme: { description: 'Light or dark' },
   },
-  initialGlobals: { scheme: 'light', viewport: { value: 'desktop', isRotated: false } },
+  initialGlobals: { scheme: 'light' },
   loaders: [taskaLoader],
   decorators: [
     (Story, ctx) => {
