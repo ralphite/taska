@@ -69,3 +69,27 @@ test('r473 r500: each item of a list has its own two buttons, the voice one firs
   await pick.click()
   await expect(page.locator('#scope')).toContainText('Banana bread')
 })
+
+test('r524: choices in a document are ticked on the page and wait; the box says how many, and Send sends them together', async ({
+  page,
+  request,
+}) => {
+  const p = await project(request, {
+    ...LOOP,
+    then: `${LOOP.then}T4 doc Pick the fruit
+  - [ ] Apples
+  - [ ] Pears
+  - [ ] Plums
+`,
+  })
+  await open(page, p, 'D1')
+  for (const f of ['Apples', 'Plums'])
+    await page.locator('[data-act="doc-tick"]').filter({ hasText: f }).filter({ visible: true }).first().click()
+  await expect(page.locator('#scope')).toContainText('2 choices not sent')
+  expect(await p.read('D1')).not.toMatch(/\[x\] Apples/i) // waiting on the page, not sent one by one
+  await page.locator('#text').click()
+  await page.keyboard.press('Shift+Enter')
+  await expect.poll(() => p.read('D1')).toMatch(/\[x\] Apples/i)
+  expect(await p.read('D1')).toMatch(/\[x\] Plums/i)
+  expect(await p.read('D1')).not.toMatch(/\[x\] Pears/i)
+})

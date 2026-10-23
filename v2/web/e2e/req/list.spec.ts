@@ -43,3 +43,20 @@ test('r355 r397 r399 r663: the views read Needs you, Active, All, Archive, Queue
   expect(names).toEqual(['Needs you', 'Active', 'All', 'Archive', 'Queue', 'Later', 'Finished'])
   await expect(page.locator('#list [data-views] button[data-v="all"]')).toHaveAttribute('aria-pressed', 'true')
 })
+
+test('r445 r451 R337: archiving an item takes its finished subitems with it; one still open stays out', async ({
+  page,
+  request,
+}) => {
+  test.skip(!isDesk(page), 'E is the desktop key; the phone archives from the menu')
+  const p = await project(request, {
+    agent: 'new task P1 now Plan the launch\nnew task P2 now parent=T1 Book the venue\nnew task P2 now parent=T1 Print the posters\n',
+    approve: ['T1', 'T2', 'T3'],
+  })
+  await request.post(`${p.url}api/op`, { data: { op: 'set', ref: 'T2', f: { status: 'done' } } })
+  await open(page, p, 'T1')
+  await page.keyboard.press('e')
+  await expect.poll(() => p.read('items?status=all&archived=1')).toContain('Plan the launch')
+  expect(await p.read('items?status=all&archived=1')).toContain('Book the venue')
+  expect(await p.read('items?status=all&archived=1')).not.toContain('Print the posters')
+})
