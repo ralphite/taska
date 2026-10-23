@@ -22,6 +22,8 @@ export const area: Meta = {
       'BarText',
       // NoSelection: the item pane with no item to show (a link to an item that is not there, the page still loading)
       'NoSelection',
+      // Missing: an item or document the address names, still loading or not in this project (D77 #1 #2)
+      'Missing',
       'Editor',
       'Inline',
       'SectionHead',
