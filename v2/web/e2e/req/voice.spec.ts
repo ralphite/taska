@@ -66,6 +66,36 @@ test('r245 r281: while recording, a second tap where the recording started sends
   await expect.poll(() => voices(p), { timeout: 15000 }).toBeGreaterThan(before)
 })
 
+test('r245 r281 T529: started from the small mic beside your words, a second tap there sends it', async ({
+  page,
+  request,
+}) => {
+  const p = await project(request, LOOP)
+  await open(page, p)
+  const before = await voices(p)
+  await page.locator('#text').fill('About the export')
+  const mic = page.locator('#micBtn')
+  await expect(mic).toBeVisible()
+  const box = await mic.boundingBox()
+  if (!box) throw new Error('no small mic')
+  const at = { x: box.x + box.width / 2, y: box.y + box.height / 2 }
+  await mic.click()
+  await expect(page.locator('#recBar')).toBeVisible()
+  await aSecond(page)
+  // the same place is now Stop and send; the main button stops it into the box
+  await expect
+    .poll(() =>
+      page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.closest('[data-act]')?.getAttribute('data-act'), at),
+    )
+    .toBe('rec-send')
+  await expect(page.locator('#sendBtn')).toHaveAttribute('data-act', 'rec-stop')
+  await page.mouse.click(at.x, at.y)
+  await expect(page.locator('#recBar')).toBeHidden()
+  await expect(page.locator('#text')).toHaveValue('')
+  await expect.poll(() => voices(p), { timeout: 15000 }).toBeGreaterThan(before)
+  expect(await p.read('inbox')).toContain('About the export') // your words went with it
+})
+
 test('r512: a voice note you sent never comes back to the box: it goes once the network is back, even after a reload', async ({
   page,
   context,

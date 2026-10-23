@@ -8,6 +8,5 @@ export default meta
 
 export const WithPictures: StoryObj = { ...InputBox.WithPictures, name: 'Two pictures' }
 export const PictureUploading: StoryObj = { ...InputBox.PictureUploading, name: 'A picture going up' }
-export const PictureRefused: StoryObj = { ...InputBox.PictureRefused, name: 'A picture refused (too big)' }
 export const AFile: StoryObj = { ...InputBox.AFile, name: 'A file' }
 export const ManyPictures: StoryObj = { ...InputBox.ManyPictures, name: 'More than fit: they scroll sideways' }
