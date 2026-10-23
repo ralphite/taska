@@ -1,21 +1,17 @@
 // T457 (#6481): what waits on you, decided, answered, or replied to instead: each demo is its steps (./demo.tsx).
 import type { Meta } from '@storybook/react-vite'
-import { agent, demo, tap, write } from './demo'
+import { agent, demo, needsYou, whatCameIn, open, said, send, sendVoice, speak, tap, write } from './demo'
 import { W } from './words'
 
 export default { title: 'Demo/Needs you' } satisfies Meta
 
-/** From the list, only what waits on you, then one of them. */
-const open = (code: Parameters<typeof tap>[1], what: string) => [
-  tap('Tap Needs you: only what waits on you', 'needsYou'),
-  tap(`Tap ${what}`, code),
-]
-const sent = tap('Tap Send', 'send')
-const finished = tap('Tap the bug the agent finished: it waits for you to accept', 'B6')
+/** B06 is finished, and you replied on it before: the agent says it is done again, so it waits for you to accept */
+const doneAgain = 'B6 done'
 
 export const ApproveAProposal = demo({
   steps: [
-    ...open('I4', 'the idea the agent proposed'),
+    needsYou,
+    open.proposal,
     tap('Tap Approve: the agent can start', 'approve'),
     agent('The agent starts: its words come in by themselves', `I4 doing\nI4 progress ${W.agentI4Start}`),
   ],
@@ -23,62 +19,75 @@ export const ApproveAProposal = demo({
 })
 
 export const ApproveFromTheList = demo({
-  steps: [
-    tap('Tap Needs you: only what waits on you', 'needsYou'),
-    tap('Tap Approve on the row itself: no need to open it', 'rowApprove'),
-  ],
+  steps: [needsYou, tap('Tap Approve on the row itself: no need to open it', 'rowApprove')],
   done: 'Approved from the list: it leaves Needs you, with Undo for a few seconds',
 })
 
 export const SayWontDoToAProposal = demo({
-  steps: [...open('F11', 'the feature the agent proposed'), tap("Tap Won't do: nobody works on it", 'wontDo')],
+  steps: [
+    needsYou,
+    tap('Tap the feature the agent proposed', 'F11'),
+    tap("Tap Won't do: nobody works on it", 'wontDo'),
+  ],
   done: "Won't do: it is closed, with Undo for a few seconds",
 })
 
 export const ApproveARule = demo({
-  steps: [...open('R17', 'the rule the agent proposed'), tap('Tap Approve: agents follow it from now on', 'approve')],
+  steps: [
+    needsYou,
+    tap('Tap the rule the agent proposed', 'R17'),
+    tap('Tap Approve: agents follow it from now on', 'approve'),
+  ],
   done: 'The rule is in force',
 })
 
 export const AcceptFinishedWork = demo({
-  steps: [finished, tap('Read what it did, then tap Accept', 'accept')],
+  before: doneAgain,
+  steps: [open.finished, tap('Read what it did, then tap Accept', 'accept')],
   done: 'Accepted: it is done',
 })
 
 export const AcceptThenChangeYourMind = demo({
+  before: doneAgain,
   steps: [
-    finished,
+    open.finished,
     tap('Tap Accept', 'accept'),
     tap('Changed your mind? Tap Modify on the card', 'modifyDecision'),
     tap('Tap Not yet: the work goes back to the agent', 'notYet'),
     agent('The agent hears it and goes on', `B6 progress ${W.agentB6Again}`),
+    whatCameIn,
   ],
   done: 'Not done after all: it is back in progress',
 })
 
 export const ReplyInsteadOfApproving = demo({
   steps: [
-    ...open('I4', 'the idea the agent proposed'),
+    needsYou,
+    open.proposal,
     write('Do not decide yet: write what you think', W.replyI4),
     tap('Tap Send: the card says Skipped · you replied, with Approve beside it', 'send'),
     agent('The agent answers', `I4 say ${W.agentI4Reply}`),
+    whatCameIn,
   ],
   done: 'The agent answered: its proposal waits for you again',
 })
 
 export const ReplyInsteadOfAccepting = demo({
+  before: doneAgain,
   steps: [
-    finished,
+    open.finished,
     write('Not sure it is fixed: say what you saw', W.replyB6),
     tap('Tap Send: the card says Skipped · you replied, with Accept beside it', 'send'),
     agent('The agent looks again and answers', `B6 say ${W.agentB6Reply}`),
+    whatCameIn,
   ],
   done: 'The agent answered: the work waits for you to accept again',
 })
 
 export const AnswerAQuestion = demo({
   steps: [
-    ...open('T7', 'the question the agent asked'),
+    needsYou,
+    open.question,
     tap('Pick one answer', 'choice', 2),
     tap('Tap Send answer', 'sendAnswer'),
     agent('The agent goes on with your answer', `T7 progress ${W.agentT7}`),
@@ -88,7 +97,8 @@ export const AnswerAQuestion = demo({
 
 export const AnswerWithAFewWords = demo({
   steps: [
-    ...open('T7', 'the question the agent asked'),
+    needsYou,
+    open.question,
     tap('Pick one answer', 'choice', 2),
     write('Add a few words to it', W.noteT7),
     tap('Tap Send answer: the pick and the words go together', 'sendAnswer'),
@@ -98,7 +108,8 @@ export const AnswerWithAFewWords = demo({
 
 export const AnswerAChecklist = demo({
   steps: [
-    ...open('T9', 'the question with a list to tick'),
+    needsYou,
+    open.checklist,
     tap('Tick the first', 'choice', 1),
     tap('And the third', 'choice', 3),
     tap('Tap Send answer', 'sendAnswer'),
@@ -109,7 +120,8 @@ export const AnswerAChecklist = demo({
 
 export const ChangeAnAnswer = demo({
   steps: [
-    ...open('T7', 'the question the agent asked'),
+    needsYou,
+    open.question,
     tap('Pick one answer', 'choice', 1),
     tap('Tap Send answer', 'sendAnswer'),
     tap('Changed your mind? Tap Modify', 'modifyAnswer'),
@@ -121,31 +133,40 @@ export const ChangeAnAnswer = demo({
 
 export const UnblockTheAgent = demo({
   steps: [
-    ...open('B2', 'the bug where the agent is stuck'),
+    needsYou,
+    open.stuck,
     write('Give it what it needs', W.answerB2),
-    sent,
+    send,
     agent('The agent is unblocked and goes on', `B2 progress ${W.agentB2}`),
+    whatCameIn,
   ],
   done: 'The agent has what it needed: it no longer waits on you',
 })
 
 export const AnswerByVoice = demo({
-  steps: [
-    ...open('B2', 'the bug where the agent is stuck'),
-    tap('Tap the mic and say your answer', 'mic'),
-    { say: 'Speak: the waves follow your voice', speak: 5 },
-    tap('Tap Send: it is sent as soon as its words are in', 'recSend'),
-  ],
+  said: said('answerB2'),
+  steps: [needsYou, open.stuck, ...speak('Say your answer'), sendVoice, whatCameIn],
   done: 'Your voice note is on the item, with its words',
+})
+
+export const GoThroughAndReply = demo({
+  steps: [
+    needsYou,
+    tap('Tap Go through', 'goThrough'),
+    write('Not ready to decide: write a few words instead', W.goReply),
+    send,
+    tap('Replied: tap Next', 'goNext'),
+  ],
+  done: 'Your reply counts as dealing with it for now',
 })
 
 export const GoThroughWhatNeedsYou = demo({
   steps: [
-    tap('Tap Needs you', 'needsYou'),
+    needsYou,
     tap('Tap Go through: one at a time', 'goThrough'),
-    tap('Not now: go on to the next one', 'goNext'),
-    tap('This one too', 'goNext'),
-    tap('And this one', 'goNext'),
+    tap('The agent is stuck here: not now, go on', 'goNext'),
+    tap('A question: later, go on', 'goNext'),
+    tap('A list to tick: go on', 'goNext'),
     tap('A proposal: approve it here', 'goApprove'),
     tap('Done for now: tap End', 'goEnd'),
   ],

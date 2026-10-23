@@ -1,6 +1,6 @@
 // T457 (#6481): finding things in the item list: its views, search, filters, your own views. Each demo is its steps.
 import type { Meta } from '@storybook/react-vite'
-import { demo, only, openMenu, tap, write } from './demo'
+import { demo, drag, needsYou, open, openMenu, only, tap, write } from './demo'
 import { W } from './words'
 
 export default { title: 'Demo/Item list' } satisfies Meta
@@ -10,7 +10,7 @@ const search = [tap('Tap search', 'search'), write('Type a word', W.search, 'sea
 
 export const SwitchViews = demo({
   steps: [
-    tap('Needs you: what waits on you', 'needsYou'),
+    needsYou,
     tap('Queue: what agents do next, in order', 'queue'),
     tap('Later: put off for now', 'laterView'),
     tap('Finished: done or not doing', 'finished'),
@@ -31,8 +31,8 @@ export const LookInTheArchive = demo({
 })
 
 export const SearchItems = demo({
-  steps: [...search, tap('Open what you were looking for', 'F1')],
-  done: 'Found by its words; other projects show their hits below',
+  steps: [...search, { say: 'Found here, and in other projects below' }, open.feature],
+  done: 'Opened from the search',
 })
 
 export const SearchWhatYouSaid = demo({
@@ -68,4 +68,22 @@ export const PickSeveralAtOnce = demo({
     tap('Tap Later: both go to Later', 'selLater'),
   ],
   done: 'Both changed in one go, with Undo',
+})
+
+export const DragIntoYourOwnOrder = demo({
+  on: 'desktop',
+  steps: [drag('Drag a task above another: your order comes first', 'T3', 'T15', 'before')],
+  done: 'The agents take them in your order',
+})
+
+export const DragUnderAnotherItem = demo({
+  on: 'desktop',
+  steps: [drag('Drag a task onto another item: it goes under it', 'T3', 'F37', 'into')],
+  done: 'A subitem of F37 now',
+})
+
+export const DragToAnotherProject = demo({
+  on: 'desktop',
+  steps: [drag('Drag a task onto a project in the sidebar', 'T3', 'mobileApp', 'into')],
+  done: 'It moved to Mobile app',
 })

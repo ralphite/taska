@@ -313,7 +313,31 @@ def save_data(root: str, anchor: datetime):
         shutil.rmtree(tmp, ignore_errors=True)
 
 
+def save_said():
+    """T457 (#6481): what Storybook's microphone says in each voice demo: the words a demo names with said('<key>')
+    (src/stories/demo/words.ts), spoken in the Mac's reading voice, as fixtures/said-<key>.webm. The page records it
+    with its own recorder; the stand-in speech model hears the same words (story-server.js).
+      python3 v2/tools/story_fixtures.py --said"""
+    demo = os.path.join(HERE, "..", "web", "src", "stories", "demo")
+    with open(os.path.join(demo, "words.ts"), encoding="utf-8") as f:
+        words = {m.group(1): json.loads('"' + m.group(2) + '"') for m in re.finditer(r"^  (\w+):\s*'((?:[^'\\]|\\.)*)',$", f.read(), re.M)}
+    keys = set()
+    for name in os.listdir(demo):
+        if name.endswith(".tsx"):
+            with open(os.path.join(demo, name), encoding="utf-8") as f:
+                keys |= set(re.findall(r"said\('(\w+)'\)", f.read()))
+    for name in os.listdir(OUT):
+        if name.startswith("said-") and name[5:-5] not in keys:
+            os.remove(os.path.join(OUT, name))
+    for k in sorted(keys):
+        with open(os.path.join(OUT, f"said-{k}.webm"), "wb") as f:
+            f.write(spoken_webm(words[k]))
+    print(f"story fixtures: {len(keys)} spoken sentences")
+
+
 def main():
+    if "--said" in sys.argv:
+        return save_said()
     root = tempfile.mkdtemp(prefix="taska-stories-")
     anchor = datetime.now().astimezone().replace(microsecond=0)
     port = free_port()

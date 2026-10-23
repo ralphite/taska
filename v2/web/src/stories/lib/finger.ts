@@ -99,9 +99,10 @@ export async function touch(
     ],
     { duration: 600, easing: 'ease-out' },
   ).onfinish = () => ring.remove()
-  el.dispatchEvent(new win.PointerEvent('pointerdown', { ...at, pointerType: 'touch' }))
+  const pointerType = win.innerWidth > 800 ? 'mouse' : 'touch' // the desktop's mouse, the phone's finger
+  el.dispatchEvent(new win.PointerEvent('pointerdown', { ...at, pointerType }))
   await pause(PACE.press)
-  el.dispatchEvent(new win.PointerEvent('pointerup', { ...at, pointerType: 'touch' }))
+  el.dispatchEvent(new win.PointerEvent('pointerup', { ...at, pointerType }))
   if (hold)
     el.dispatchEvent(new win.MouseEvent('click', { ...at, metaKey: hold === 'Meta', shiftKey: hold === 'Shift' }))
   else el.click()
@@ -210,6 +211,85 @@ export async function swipe(el: HTMLElement, by: number, pause: (ms: number) => 
     await pause(28)
   }
   send('touchend', x0 + by, false)
+  await pause(PACE.lift)
+  m.style.opacity = '0'
+}
+
+/** Scroll this to its end, as a finger flicks up over it; the mark goes along. */
+export async function flick(el: HTMLElement, pause: (ms: number) => Promise<void>) {
+  const r = el.getBoundingClientRect(),
+    x = r.left + r.width / 2,
+    y = r.top + r.height * 0.7,
+    m = fingerAt(el.ownerDocument, x, y)
+  await pause(PACE.aim)
+  m.style.transition = 'opacity 200ms ease, top 400ms ease-out'
+  m.style.top = y - Math.min(200, r.height / 2) + 'px'
+  el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' })
+  await pause(PACE.lift)
+  m.style.opacity = '0'
+}
+
+/** Select these words in this element, as a finger drags over them; the mark shows on them while it does (false:
+ * the words are not there). */
+export async function selectIn(el: HTMLElement, words: string, pause: (ms: number) => Promise<void>) {
+  const doc = el.ownerDocument,
+    walk = doc.createTreeWalker(el, NodeFilter.SHOW_TEXT)
+  for (let n = walk.nextNode(); n; n = walk.nextNode()) {
+    const at = (n.textContent || '').indexOf(words)
+    if (at < 0) continue
+    const range = doc.createRange()
+    range.setStart(n, at)
+    range.setEnd(n, at + words.length)
+    inSight(el)
+    const r = range.getBoundingClientRect(),
+      m = fingerAt(doc, r.left, r.top + r.height / 2)
+    await pause(PACE.aim)
+    m.style.transition = 'opacity 200ms ease'
+    m.style.left = r.right + 'px'
+    const sel = doc.getSelection()
+    sel?.removeAllRanges()
+    sel?.addRange(range)
+    await pause(PACE.lift)
+    m.style.opacity = '0'
+    return true
+  }
+  return false
+}
+
+/** Drag this element onto that one (the desktop's mouse: a row onto another row, or onto a project in the sidebar),
+ * dropping it on the target's upper part, middle or lower part; the mark carries it over. */
+export async function drag(
+  from: HTMLElement,
+  to: HTMLElement,
+  pause: (ms: number) => Promise<void>,
+  where: 'before' | 'into' | 'after' = 'into',
+) {
+  const doc = from.ownerDocument,
+    win = doc.defaultView as Window & typeof globalThis,
+    dt = new win.DataTransfer()
+  inSight(from)
+  const a = from.getBoundingClientRect(),
+    m = fingerAt(doc, a.left + a.width / 2, a.top + a.height / 2)
+  await pause(PACE.aim)
+  const ev = (type: string, el: HTMLElement, x: number, y: number) =>
+    el.dispatchEvent(
+      new win.DragEvent(type, { dataTransfer: dt, clientX: x, clientY: y, bubbles: true, cancelable: true }),
+    )
+  ev('dragstart', from, a.left + a.width / 2, a.top + a.height / 2)
+  inSight(to)
+  const b = to.getBoundingClientRect(),
+    x = b.left + b.width / 2,
+    y = b.top + b.height * { before: 0.15, into: 0.5, after: 0.85 }[where]
+  m.style.transition = 'opacity 200ms ease, left 500ms ease, top 500ms ease'
+  m.style.left = x + 'px'
+  m.style.top = y + 'px'
+  ev('dragenter', to, x, y)
+  for (let k = 0; k < 5; k++) {
+    ev('dragover', to, x, y)
+    await pause(100)
+  }
+  ev('drop', to, x, y)
+  ev('dragend', from, x, y)
   await pause(PACE.lift)
   m.style.opacity = '0'
 }

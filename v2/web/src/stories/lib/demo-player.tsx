@@ -6,7 +6,7 @@
 // one size. Play again starts over. T456 (#5879): with Autoplay off, each tap waits for yours, in either frame.
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { App, pageIn, wait } from '../pages/screens'
-import { PACE, pasteIn, press, swipe, touch, typeIn } from './finger'
+import { PACE, drag, flick, pasteIn, press, selectIn, swipe, touch, typeIn } from './finger'
 
 export type On = 'phone' | 'desktop'
 /** Where to tap: a CSS selector; or one with the words the element shows, or the n-th of them (1 = the first); per
@@ -20,6 +20,9 @@ export interface Step {
   tap?: Place
   /** with a key held while tapping (the desktop's Cmd-click, Shift-click) */
   hold?: 'Meta' | 'Shift'
+  /** drag what `tap` names onto this (the desktop's mouse), dropping it before, into or after it */
+  onto?: Place
+  drop?: 'before' | 'into' | 'after'
   /** swipe across this, `by` px (right when more than 0) */
   swipe?: Place
   by?: number
@@ -32,8 +35,16 @@ export interface Step {
   key?: string
   /** speak for this many seconds (the microphone, already on, hears Storybook's sentence) */
   speak?: number
+  /** scroll this to its end, as a finger flicks up (to see what came in below) */
+  scroll?: Place
+  /** select these words in `into` (a sent input's words, a document's paragraph), as a finger drags over them */
+  select?: string
   /** an agent writes to Taska in its own commands (the /agent language), as claude-code */
   agent?: string
+  /** an agent reads this (a card, /next): Taska marks what it read */
+  read?: string
+  /** the connection to Taska goes away (false) or comes back (true) */
+  online?: boolean
   /** the organizer files the newest input with these commands */
   organize?: string
   /** right after the step before, as a person confirms a tap (Delete, then Delete again) */
@@ -48,7 +59,10 @@ export interface Demo {
   on?: On
   /** what happened before the demo starts, in the agents' commands (lines "you: ..." are Yadong's own) */
   before?: string
-  /** the speech model's answer for a voice note (doubts...), else it hears the microphone's sentence */
+  /** what the microphone says in this demo: one of Storybook's spoken sentences (fixtures/said-<clip>.webm, made by
+   * story_fixtures.py --said) and its words, which the speech model hears; else Storybook's own sentence */
+  said?: { clip: string; words: string }
+  /** more of the speech model's answer (what may be misheard...) */
   heard?: Record<string, unknown>
   steps: Step[]
   /** the last line, once it is all done */
@@ -63,6 +77,8 @@ interface Frame {
   server: {
     agent: (project: string, text: string) => string
     organize: (project: string, plan: string) => void
+    read: (project: string, path: string) => void
+    online: (on: boolean) => void
   }
 }
 const FILES = '/storybook/fixtures/' // Storybook's saved files (pictures, voice notes)
@@ -146,7 +162,12 @@ export function DemoPlayer({ demo, scheme }: { demo: Demo; scheme: string }) {
         setState({ step: i + 1, how: 'playing' })
         setLine(`${i + 1} / ${steps.length} · ${s.say}`)
         await pause(s.soon ? PACE.press : i ? PACE.read : PACE.read / 2)
-        if (s.tap) {
+        if (s.tap && s.onto) {
+          const from = await Promise.all(here.map((f) => find(f, s.tap!))),
+            to = await Promise.all(here.map((f) => find(f, s.onto!)))
+          if (from.includes(null) || to.includes(null)) return fail(i, 'nothing to drag, or nowhere to drop it')
+          await Promise.all(from.map((el, k) => drag(el!, to[k]!, pause, s.drop)))
+        } else if (s.tap) {
           const els = await Promise.all(here.map((f) => find(f, s.tap!)))
           const missing = here.find((_, k) => !els[k])
           if (missing) return fail(i, `nothing to tap on the ${missing.on}`)
@@ -178,6 +199,16 @@ export function DemoPlayer({ demo, scheme }: { demo: Demo; scheme: string }) {
           if (missing) return fail(i, `nothing to swipe on the ${missing.on}`)
           await Promise.all(els.map((el) => swipe(el!, s.by || 0, pause)))
         }
+        if (s.scroll) {
+          const els = await Promise.all(here.map((f) => find(f, s.scroll!)))
+          if (els.includes(null)) return fail(i, 'nothing to scroll')
+          await Promise.all(els.map((el) => flick(el!, pause)))
+        }
+        if (s.select != null) {
+          const els = await Promise.all(here.map((f) => find(f, s.into || '#text')))
+          const done = await Promise.all(els.map((el) => el && selectIn(el, s.select!, pause)))
+          if (done.includes(false) || done.includes(null)) return fail(i, `no "${s.select}" to select`)
+        }
         if (s.type != null) {
           const fields = await Promise.all(here.map((f) => (s.into ? find(f, s.into) : f.doc.querySelector('#text'))))
           const typed = await Promise.all(here.map((f, k) => typeIn(f.doc, s.type!, pause, fields[k])))
@@ -189,9 +220,16 @@ export function DemoPlayer({ demo, scheme }: { demo: Demo; scheme: string }) {
         if (s.speak) await pause(s.speak * 1000)
         try {
           if (s.agent) for (const f of here) f.server.agent(project(demo.path), s.agent)
+          if (s.read) for (const f of here) f.server.read(project(demo.path), s.read)
+          if (s.online != null)
+            for (const f of here) {
+              f.server.online(s.online)
+              f.doc.defaultView?.dispatchEvent(new Event(s.online ? 'online' : 'offline')) // as the browser says it
+            }
           if (s.organize) for (const f of here) f.server.organize(project(demo.path), s.organize)
           // you look at the page: a page you are not in asks Taska for news every few seconds; one you look at, now
-          if (s.agent || s.organize) for (const f of here) f.doc.defaultView?.dispatchEvent(new Event('focus'))
+          if (s.agent || s.organize || s.read)
+            for (const f of here) f.doc.defaultView?.dispatchEvent(new Event('focus'))
         } catch (ex) {
           return fail(i, String(ex))
         }
@@ -207,7 +245,12 @@ export function DemoPlayer({ demo, scheme }: { demo: Demo; scheme: string }) {
     }
   }, [run, demo, ons])
   // the demo's own beginning, carried to the page with its address (story-server.js does it before the page asks)
-  const seed = JSON.stringify({ project: project(demo.path), before: demo.before || '', heard: demo.heard || null })
+  const seed = JSON.stringify({
+    project: project(demo.path),
+    before: demo.before || '',
+    heard: { ...(demo.said ? { tr: demo.said.words } : {}), ...demo.heard },
+    mic: demo.said?.clip,
+  })
   // R488, r679: the pages in frames of a fixed size, the words under them with room between; nothing moves or
   // changes size while it plays
   return (

@@ -121,7 +121,14 @@
   if (navigator.serviceWorker) navigator.serviceWorker.register = () => new Promise(() => {}) // no offline copy here
   // T456, F479, B540: Storybook never asks for your microphone: the page "hears" a recorded sentence (fixtures/mic.webm,
   // the Mac's reading voice), played over and over, so its own recorder and meter draw the waveform of real speech
-  const micClip = real(FX + 'mic.webm').then((r) => r.arrayBuffer())
+  // T457: a Demo says its own sentence (fixtures/said-<clip>.webm), which its speech model hears
+  let said = ''
+  try {
+    said = JSON.parse(h.get('server') || '{}').mic || ''
+  } catch {
+    /* no demo */
+  }
+  const micClip = real(FX + (said ? `said-${said}.webm` : 'mic.webm')).then((r) => r.arrayBuffer())
   if (navigator.mediaDevices)
     navigator.mediaDevices.getUserMedia = async () => {
       const ac = new AudioContext(),

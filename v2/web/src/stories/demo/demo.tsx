@@ -3,6 +3,7 @@
 // one file (its title: Storybook reads it as written), a demo a few lines of data there.
 import type { StoryObj } from '@storybook/react-vite'
 import { DemoPlayer, type Demo, type Place, type Step } from '../lib/demo-player'
+import { W } from './words'
 
 const DONE = '[data-act="status"][data-v="done"]' // an item's Done, or Accept when it waits for you to accept
 
@@ -87,10 +88,44 @@ export const T = {
   docText: '#docMd',
   docSave: '[data-act="doc-done"]',
   docMove: '[data-act="doc-move"]',
+  docTo: '[data-act="doc-move-to"]',
+  moveComment: '[data-act="dc-move"]',
+  commentTo: '[data-act="dc-move-to"]',
+  wholeDoc: '[data-act="doc-whole"]',
+  tickAgain: '[data-act="doc-tick-edit"]',
   docDelete: '[data-act="doc-delete"]',
+  // voice: what may be misheard, a word put right
+  doubt: '[data-act="doubt-pick"]',
+  sentWords: '[data-voice]',
+  fixWord: '[data-act="vc-fix"]',
+  // projects: the drawer (the phone) or the sidebar, the home page, a new one
+  drawer: '#projBtn',
+  mobileApp: '#drawerList a[href="/p/mobile-app/"]',
+  home: '#homeLink',
+  newProject: '[data-act="new-project"]',
+  projectName: '#npName',
+  createProject: '[data-act="np-create"]',
+  // settings and the side lists (Documents, Activity, Deleted)
+  settings: ['[data-act="project"]', 'Settings'],
+  section: '[data-act="psec"]',
+  copy: '[data-act="copy-text"]',
+  projectMore: '[data-act="p-more"]',
+  rename: { phone: ['[data-act="p-rename"]', 1], desktop: ['[data-act="p-rename"]', 3] },
+  renameField: '#pRename',
+  deleteProject: { phone: ['[data-act="p-delete"]', 1], desktop: ['[data-act="p-delete"]', 3] },
+  restoreProject: '[data-act="p-restore"]',
+  spellingField: '#fixWord',
+  spellingAdd: '[data-act="fix-add"]',
+  undoChange: '[data-act="revert"]',
+  restoreInput: '[data-act="input-restore"]',
+  // agents
+  agentInfo: '[data-act="agent-info"]',
+  // the desktop's command palette
+  paletteField: '#cpFilter',
   // going through what needs you
   goThrough: '[data-act="go-through"]',
   goNext: '[data-act="go-next"]',
+  goUndo: '[data-act="go-undo"]',
   goApprove: { phone: '[data-act="peek-set"][data-v="open"]', desktop: '[data-act="status"][data-v="open"]' },
   goEnd: { phone: '[data-act="close"]', desktop: '[data-act="go-end"]' },
   // the box
@@ -109,6 +144,9 @@ export const T = {
   inputMove: '[data-act="input-pick"][data-pick="move-input"]',
   withItem: '[data-act="rescope-to"]',
   toProject: '[data-act="move-input-to"]',
+  // an item's page, and its talk (what scrolls on the phone: the whole page)
+  itemPage: '#detailView',
+  talk: { phone: '#detailBody', desktop: '#itemTalk' },
   // the line at the bottom that says what happened
   toastUndo: ['#toast [data-toast]', 'Undo'],
 } satisfies Record<string, Place>
@@ -123,8 +161,24 @@ export const at = (p: Name | Code, which?: number | string): Place =>
 export const tap = (say: string, p: Name | Code, which?: number | string): Step => ({ say, tap: at(p, which) })
 /** A step only the phone or only the desktop has (the phone's tabs, the desktop's keys). */
 export const only = (on: 'phone' | 'desktop', s: Step): Step => ({ ...s, on })
+/** A step that drags one place onto another (the desktop's mouse). */
+export const drag = (
+  say: string,
+  p: Name | Code,
+  onto: Name | Code,
+  drop: Step['drop'],
+  which?: number | string,
+): Step => only('desktop', { say, tap: at(p), onto: at(onto, which), drop })
 /** A step that swipes across a place, this far (px: right when more than 0). */
 export const swipe = (say: string, p: Name | Code, by: number): Step => ({ say, swipe: at(p), by })
+/** Select these words in a place, as a finger drags over them. */
+export const select = (say: string, words: string, p: Name, which?: number): Step => ({
+  say,
+  select: words,
+  into: at(p, which),
+})
+/** Scroll a place to its end, to see what came in below. */
+export const scroll = (say: string, p: Name): Step => ({ say, scroll: at(p) })
 /** A step that types into the box, or into this field. */
 export const write = (say: string, words: string, into?: Name): Step => ({
   say,
@@ -133,9 +187,35 @@ export const write = (say: string, words: string, into?: Name): Step => ({
 })
 /** An agent's turn: what the line says, and its commands (as agents write to Taska). */
 export const agent = (say: string, commands: string): Step => ({ say, agent: commands })
+/** What the microphone says in a voice demo: these words, spoken (story_fixtures.py --said makes the sound). */
+export const said = (k: keyof typeof W) => ({ clip: k, words: W[k] })
 
-/** Open an item's menu: everything else it can do. */
+/** Steps many demos share, each said once. */
+export const send = tap('Tap Send', 'send')
+export const sendVoice = tap('Tap Send: it goes as soon as its words are in', 'recSend')
+export const undo: Step = { ...tap('Tap Undo, while it is there', 'toastUndo'), soon: true }
+export const needsYou = tap('Tap Needs you: only what waits on you', 'needsYou')
+export const whatCameIn = scroll('Scroll down: what just came in', 'talk')
+/** Tap the mic and speak for a while: the real recorder hears the demo's sentence. */
+export const speak = (say = 'Speak: the waves follow your voice'): Step[] => [
+  tap('Tap the mic', 'mic'),
+  { say, speak: 5 },
+]
+/** The phone's menu (projects, settings, the side lists): the desktop has them in its sidebar. */
+export const menu = only('phone', tap('Tap the menu: projects, settings, side lists', 'drawer'))
+/** An item's menu: everything else it can do. */
 export const openMenu = tap('Tap ... : everything else you can do with it', 'itemMenu')
+/** The demo project's items that demos open, each once. */
+export const open = {
+  task: tap('Tap a task to open it', 'T3'),
+  feature: tap('Tap a feature to open it', 'F1'),
+  proposal: tap('Tap the idea the agent proposed', 'I4'),
+  finished: tap('Tap the bug the agent finished: it waits for you to accept', 'B6'),
+  question: tap('Tap the question the agent asked', 'T7'),
+  checklist: tap('Tap the question with a list to tick', 'T9'),
+  stuck: tap('Tap the bug where the agent is stuck', 'B2'),
+  screenshot: tap('Tap a bug with a screenshot', 'B36'),
+}
 
 /** One demo, as a story. */
 export const demo = (d: Demo): StoryObj => ({

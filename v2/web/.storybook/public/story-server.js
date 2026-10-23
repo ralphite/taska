@@ -31,6 +31,7 @@
   }
   const sleep = (ms) => new Promise((ok) => setTimeout(ok, ms))
   const log = (window.__storyLog = [])
+  let offline = false
   const enc = new TextEncoder(),
     dec = new TextDecoder()
 
@@ -70,6 +71,11 @@
       raw,
       async fetch(u, method, type, body, signal) {
         const path = u.pathname + u.search
+        if (offline) {
+          // no connection: the browser waits a moment, then says it could not reach Taska
+          await sleep(POLL_MS)
+          throw new TypeError('Failed to fetch')
+        }
         if (!/\/api\/poll$/.test(u.pathname))
           log.push(`${method} ${path} ${typeof body === 'string' ? body.slice(0, 300) : ''}`) // what the page asked, to look at
         if (/\/api\/poll$/.test(u.pathname)) {
@@ -102,6 +108,14 @@
         const out = dec.decode(r.body)
         if (/^err/m.test(out)) throw new Error(`demo agent: ${out}`)
         return out
+      },
+      /** an agent reads a card, its next work... (GET, as by=claude-code): Taska marks what it has read */
+      read(project, path, by = 'claude-code') {
+        raw('GET', `/p/${project}${path}${path.includes('?') ? '&' : '?'}by=${by}`)
+      },
+      /** the connection to Taska goes away, or comes back */
+      online(on) {
+        offline = !on
       },
       /** the organizer files the newest input with these commands, as its model would have written them */
       organize(project, plan) {

@@ -1,12 +1,12 @@
 // T457 (#6481): changing an item: its status, priority, type, when; archive, subitems, edit, move, delete. Each demo
 // is its steps (./demo.tsx).
 import type { Meta } from '@storybook/react-vite'
-import { demo, only, openMenu as menu, tap, write } from './demo'
+import { demo, only, open, openMenu as menu, tap, undo, write } from './demo'
 import { W } from './words'
 
 export default { title: 'Demo/Item changes' } satisfies Meta
 
-const task = tap('Tap a task to open it', 'T3')
+const task = open.task
 const status = tap('Tap its status', 'statusPill')
 
 export const MarkItDone = demo({
@@ -35,7 +35,11 @@ export const SayWontDo = demo({
 })
 
 export const PutItOffThenBackToNow = demo({
-  steps: [task, tap('Tap Later: off the active list', 'later', 1), tap('Tap Later again: back to now', 'later', 1)],
+  steps: [
+    task,
+    tap('Put it off: tap Later (on the phone, its Now)', 'later', 1),
+    tap('Tap it again: back to now', 'later', 1),
+  ],
   done: 'Back to now',
 })
 
@@ -45,7 +49,7 @@ export const ArchiveThenUndo = demo({
     tap('Open one', 'B35'),
     only('phone', menu),
     tap('Tap Archive: put it away', 'archive'),
-    tap('Tap Undo', 'toastUndo'),
+    undo,
   ],
   done: 'It is back where it was',
 })
@@ -93,7 +97,7 @@ export const DeleteThenUndo = demo({
     menu,
     tap('Tap Delete', 'deleteItem'),
     { ...tap('Tap it again to be sure', 'deleteItem'), soon: true },
-    tap('Tap Undo', 'toastUndo'),
+    undo,
   ],
   done: 'It is back; deleted items wait in Deleted too',
 })
