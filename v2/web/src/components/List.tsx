@@ -620,13 +620,14 @@ function Tree({ group, band = '', needs = false }: { group: Item[]; band?: strin
 // F291 (r397): Active first and by default: what agents are on or will take (not finished, archived or later).
 // 'all' stays the default value, so addresses and the other tabs are as before; All itself is 'every'.
 const VIEWS: [string, string][] = [
+  ['wait', 'Needs you'],
   ['all', 'Active'],
   ['every', 'All'],
-  ['wait', 'Needs you'],
+  ['archive', 'Archive'],
   ['queued', 'Queue'],
   ['later', 'Later'],
   ['closed', 'Finished'],
-] // in Yadong's order (r399)
+] // in Yadong's order (r399; F486: Needs you first, Archive after All); Active stays the one shown first
 const unfinished = (rows: Item[]) => rows.filter((it) => !CLOSED(it.status))
 // A9 (T422): the Archive view counts what it would show with the filters and search set now
 function archiveCount() {
@@ -756,6 +757,14 @@ function ViewBar() {
         className="flex h-12 [scrollbar-width:none] items-center gap-1 overflow-x-auto px-2"
       >
         {VIEWS.map(([v, label]) => {
+          if (v === 'archive')
+            return (
+              // F348: the archive is one of the views
+              <button key={v} data-act="tab" data-tab="archive" aria-pressed={U.tab === 'archive'} className={CHIP}>
+                {label}
+                <span className="font-mono text-[11px] tabular-nums opacity-60">{archiveCount()}</span>
+              </button>
+            )
           const n = viewCount(v)
           return (
             <button
@@ -773,11 +782,6 @@ function ViewBar() {
             </button>
           )
         })}
-        {/* F348: the archive is one of the views, after Finished */}
-        <button data-act="tab" data-tab="archive" aria-pressed={U.tab === 'archive'} className={CHIP}>
-          Archive
-          <span className="font-mono text-[11px] tabular-nums opacity-60">{archiveCount()}</span>
-        </button>
         {VW_STATE.list.map((v, i) => (
           <OwnView key={v.name} v={v} i={i} on={U.tab === 'items' && i === own} />
         ))}
