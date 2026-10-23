@@ -400,10 +400,13 @@ test('r672: a page as tall as its window (an app) fills what the pane shows, and
   const two = await frame.boundingBox()
   if (!one || !two) throw new Error('not drawn')
   expect(two.height).toBe(one.height)
-  // the app's footer is at the bottom of what the pane shows, in view
-  const h = page.viewportSize()?.height || 0
-  expect(one.y + one.height).toBeLessThanOrEqual(h + 1)
-  expect(one.y + one.height).toBeGreaterThan(h - 140)
+  // the app's footer is at the bottom of what the pane shows, in view: above the input box when the box is under it
+  const box = await page.locator('#foot').filter({ visible: true }).boundingBox()
+  let end = page.viewportSize()?.height || 0
+  if (box && box.y > one.y && box.x < one.x + one.width && box.x + box.width > one.x) end = Math.min(end, box.y)
+  expect(one.y + one.height).toBeLessThanOrEqual(end + 1)
+  expect(one.y + one.height).toBeGreaterThan(end - 140)
+  await expect(page1(page).getByText('Footer')).toBeInViewport()
 })
 
 // a board the page draws itself: a button moves the first card to the other column, another hides the board

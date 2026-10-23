@@ -291,7 +291,11 @@ export function WebPage({ d }: { d: Doc }) {
     const f = frame.current,
       pane = f?.closest('#detailBody, #dlgBody')
     if (!f || !pane || tall.current.h) return
-    const h = Math.round(Math.min(pane.getBoundingClientRect().bottom, innerHeight) - f.getBoundingClientRect().top)
+    const top = f.getBoundingClientRect(),
+      box = document.getElementById('foot')?.getBoundingClientRect() // the input box, when it is over the pane's end
+    let end = Math.min(pane.getBoundingClientRect().bottom, innerHeight)
+    if (box?.height && box.top > top.top && box.left < top.right && box.right > top.left) end = Math.min(end, box.top)
+    const h = Math.round(end - top.top)
     if (h > 240) setHeight(h)
   }, [])
   useEffect(() => {
