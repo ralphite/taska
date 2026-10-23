@@ -78,6 +78,12 @@ export const Archived = item('B21')
 export const Editing = item('T3', ({ it }) => (U.editing = it('T3').n))
 /** Full width: the list makes room (desktop). */
 export const FullWidth = item('F1', () => (D.full = true))
+/** As wide as the window (full width, or a wide screen): the item beside its talk, one line between them from the top
+ * to the bottom, the box under the talk (desktop; B495). */
+export const TwoColumns: Story = {
+  parameters: { taska: { setup: ({ it }) => (U.open = it('F1').n) } },
+  render: () => <Column wide />,
+}
 /** Going through what needs you: the amber strip on top (desktop). */
 export const GoingThrough = item('T7', ({ it }) => {
   const list = ['B2', 'T7', 'T9', 'I4', 'B6'].map((c) => it(c).n)
