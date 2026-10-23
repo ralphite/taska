@@ -291,7 +291,6 @@ export const U = {
   note: null as string | null,
   fbFor: null as number | null,
   listTop: null as null | [number, number],
-  inSel: null as string | null,
   needsAll: false,
   menuArm: null as string | null,
   menuFor: null as number | null,
@@ -328,7 +327,6 @@ export const D = {
   g: 0,
   compose: false,
   prev: null as number | null,
-  prevTab: null as Tab | null,
   prevDoc: null as number | null,
   docKey: null as string | null,
 }
@@ -808,7 +806,7 @@ export function agentState(
 
 // ---------------------------------------------------------------- the input box's target
 
-export const detailShown = () => !desk() || (U.tab !== 'inputs' && !D.page)
+export const detailShown = () => !desk() || !D.page
 export const scopeN = () =>
   U.peek && byN.has(U.peek) ? U.peek : U.open && !U.scopeOff && byN.has(U.open) && detailShown() ? U.open : null
 export const docOpen = () => (U.doc && !U.docEdit && (desk() || !!OV.spec) ? docById(U.doc) : undefined)

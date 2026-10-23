@@ -352,10 +352,6 @@ export const ACT: Record<string, Handler> = {
     if (D.page) D.page = null
     if (desk()) {
       // the New input page; from a document, Back goes to the document (B14)
-      if (U.tab === 'inputs') {
-        D.prevTab = 'inputs'
-        U.tab = 'items'
-      }
       if (U.open) D.prev = U.open
       D.prevDoc = U.doc && !U.docEdit && docById(U.doc) ? U.doc : null
       if (D.prevDoc) {
@@ -411,7 +407,6 @@ export const ACT: Record<string, Handler> = {
       U.editing = null
       U.subFor = null
     }
-    if (desk()) U.inSel = id
     if (U.tab !== 'inputs') setTab('inputs')
     else {
       render()
@@ -718,7 +713,7 @@ export const ACT: Record<string, Handler> = {
     try {
       D.page = null
       D.compose = false
-      if (it && (U.tab === 'inputs' || !inTab(it, U.tab))) setTab(tabOf(it))
+      if (it && !inTab(it, U.tab)) setTab(tabOf(it))
       openItem(n)
     } finally {
       URLS.hold = false
@@ -736,17 +731,10 @@ export const ACT: Record<string, Handler> = {
     else U.moreInputs.add(id)
     bump('inputs', 'detail')
   },
-  'in-pick': (d) => {
-    U.inSel = d.id || null
-    render()
-  },
   edit: (d) => {
     closeDialog()
     const n = N(d)
-    if (U.open !== n || !detailShown()) {
-      if (desk() && U.tab === 'inputs') setTab(byN.get(n)?.type === 'rule' ? 'rules' : 'items')
-      openItem(n)
-    }
+    if (U.open !== n || !detailShown()) openItem(n)
     U.editing = n
     render()
     const k = kept('edits')[n] as { title: string; body: string; next: string } | undefined,

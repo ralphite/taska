@@ -74,7 +74,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const got = reach()
   console.log(
     [...got]
-      .filter((k) => /^(components|pages)\/\S+ [A-Z]\w*[a-z]/.test(k))
+      .filter((k) => /^(components|pages|layouts)\/\S+ [A-Z]\w*[a-z]/.test(k))
       .sort()
       .join('\n'),
   )

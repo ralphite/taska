@@ -18,7 +18,6 @@ import {
   model,
   needsYou,
   render,
-  tabOf,
 } from './state'
 import { hint, toast } from './toast'
 import { stashEdit } from './edit'
@@ -85,10 +84,6 @@ export function openItem(n: number | null | undefined, push = true) {
     Object.assign(U, { doc: null, docReply: null, docSel: new Set(), docQuote: null, docCircle: false, docInspect: false })
     D.docKey = null
   } // another item: the document closes
-  if (desk() && U.tab === 'inputs') {
-    const it = byN.get(n)
-    if (it) U.tab = tabOf(it)
-  } // Inputs has no item pane
   if (desk()) {
     D.page = null
     D.compose = false
@@ -278,30 +273,23 @@ export function stepItem(dir: number) {
   else hint(dir < 0 ? 'Already first item' : 'Already last item')
 }
 export function toList() {
-  // T268: Settings, full width or Inputs give way to the list
+  // T268: Settings or full width give way to the list
   if (!desk()) return
   if (D.page) D.page = null
   if (D.full) D.full = false
-  if (U.tab === 'inputs') return setTab('items')
   render()
   writeURL(false)
 }
 export function leaveCompose() {
-  // back where you were: the Inputs page, or the item you had open
+  // back where you were: the item you had open
   els.text?.blur()
   const p = D.prev,
-    tab = D.prevTab,
     doc = D.prevDoc
   D.compose = false
   D.prev = null
-  D.prevTab = null
   D.prevDoc = null
-  if (tab) {
-    U.tab = tab
-    U.open = p && byN.has(p) ? p : null
-  }
   const back = leaveView(/^new(-rule)?$/.test(history.state?.v) ? history.state.v : 'new')
-  if (p && byN.has(p) && !tab) openItem(p)
+  if (p && byN.has(p)) openItem(p)
   else {
     render()
     if (!back) writeURL(false)

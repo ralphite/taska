@@ -734,7 +734,6 @@ export function MainHead({ hidden, place = '' }: { hidden: boolean; place?: stri
     els.q = qRef.current
     if (qRef.current && qRef.current.value !== U.q && document.activeElement !== qRef.current) qRef.current.value = U.q
   })
-  const inputs = U.tab === 'inputs'
   return (
     <header
       id="mainHead"
@@ -783,9 +782,7 @@ export function MainHead({ hidden, place = '' }: { hidden: boolean; place?: stri
         </button>
       </div>
       <div id="headSearch" hidden={!sq} className="contents">
-        <label
-          className={`ml-1 flex h-11 min-w-0 flex-1 items-center gap-2 rounded-xl bg-zinc-100 pl-3 text-zinc-400 lg:ml-0 lg:h-9 lg:ring-blue-500/40 lg:focus-within:bg-white lg:focus-within:ring-2 dark:bg-zinc-800 dark:text-zinc-500 dark:lg:focus-within:bg-zinc-900 ${desk() && inputs ? 'lg:ml-auto lg:max-w-sm' : ''}`}
-        >
+        <label className="ml-1 flex h-11 min-w-0 flex-1 items-center gap-2 rounded-xl bg-zinc-100 pl-3 text-zinc-400 lg:ml-0 lg:h-9 lg:ring-blue-500/40 lg:focus-within:bg-white lg:focus-within:ring-2 dark:bg-zinc-800 dark:text-zinc-500 dark:lg:focus-within:bg-zinc-900">
           <span id="searchIcon">
             <Icon n="search" c="size-4.5" />
           </span>
@@ -794,15 +791,7 @@ export function MainHead({ hidden, place = '' }: { hidden: boolean; place?: stri
             ref={qRef}
             type="search"
             autoComplete="off"
-            placeholder={
-              !desk()
-                ? 'Search title, text or code'
-                : inputs
-                  ? 'Search what you said'
-                  : U.tab === 'rules'
-                    ? 'Search rules'
-                    : 'Search items'
-            }
+            placeholder={!desk() ? 'Search title, text or code' : U.tab === 'rules' ? 'Search rules' : 'Search items'}
             defaultValue={U.q}
             className="min-w-0 flex-1 bg-transparent text-base text-zinc-900 outline-none placeholder:text-zinc-400 lg:text-sm dark:text-zinc-100 [&::-webkit-search-cancel-button]:hidden"
             onInput={(e) => onSearch((e.target as HTMLInputElement).value)}
@@ -812,8 +801,7 @@ export function MainHead({ hidden, place = '' }: { hidden: boolean; place?: stri
             onKeyDown={(e) => {
               // B130: from the search, Down or Enter goes to the first result
               if (!desk() || !(e.key === 'ArrowDown' || (e.key === 'Enter' && !e.nativeEvent.isComposing))) return
-              const first =
-                U.tab === 'inputs' ? null : document.querySelector<HTMLElement>('#list [data-act="open"][data-n]')
+              const first = document.querySelector<HTMLElement>('#list [data-act="open"][data-n]')
               e.preventDefault()
               qRef.current?.blur()
               if (first) openFirst(Number(first.dataset.n))
@@ -852,7 +840,6 @@ export function MainHead({ hidden, place = '' }: { hidden: boolean; place?: stri
         title="Filter · F"
         aria-label="Filters"
         aria-expanded={!!D.filters}
-        hidden={inputs}
         className="relative hidden size-9 shrink-0 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-100 aria-expanded:bg-zinc-100 lg:grid dark:text-zinc-400 dark:hover:bg-zinc-800 dark:aria-expanded:bg-zinc-800"
       >
         <Icon n="sliders" c="size-[18px]" />
@@ -1017,7 +1004,7 @@ export function DeskFilters({ hidden, place = '' }: { hidden: boolean; place?: s
 
 // ---------------------------------------------------------------- the foot: the box, and the New input page (B73)
 export function Foot({ hidden, place = '' }: { hidden: boolean; place?: string }) {
-  const compose = desk() && D.compose && !D.page && U.tab !== 'inputs'
+  const compose = desk() && D.compose && !D.page
   // F478: what scrolls above the box runs on under it, around its rounded corners; the room it needs is the foot's.
   // Only around its top: from the box's middle down the foot is the page's own white, so nothing shows under the box.
   // B495: in two columns the foot is the box's column only: the line between the columns is the grip's, one line from
@@ -1306,7 +1293,7 @@ export const ItemsView = ({ hidden, place = '' }: { hidden: boolean; place?: str
  * page lays its panes out in it (cls); a Storybook story puts one part in it, with no layout (T518). */
 export function AppFrame({ cls = '', children }: { cls?: string; children: ReactNode }) {
   useTick((s) => s.view + s.detail + s.project)
-  const compose = desk() && D.compose && !D.page && U.tab !== 'inputs'
+  const compose = desk() && D.compose && !D.page
   return (
     <div id="app" {...(compose ? { 'data-compose': '' } : {})} className={`group/app relative ${cls}`}>
       {children}

@@ -3,7 +3,6 @@
 import { useLayoutEffect } from 'react'
 import { D, OV, U, useTick } from '../lib/state'
 import { DetailView } from '../components/Detail'
-import { InputsView } from '../components/Inputs'
 import { ProjectView } from '../components/Settings'
 import {
   AppFrame,
@@ -23,26 +22,24 @@ import { closeDrawer } from '../lib/nav'
  * follow too (B523). */
 export function deskPanes() {
   const page = !!D.page,
-    inputs = U.tab === 'inputs',
-    full = D.full && !!U.open && !inputs && !page,
+    full = D.full && !!U.open && !page,
     rail = D.sideHidden, // B496: only you fold the sidebar, never the window's width
     over = rail && D.sideOpen,
     side = !!U.side && !page // T402: Documents, Activity or Deleted in the list column
   const v = {
     mainHead: page || full || side,
-    items: page || inputs || full,
-    inputs: page || !inputs,
+    items: page || full,
     detail: page,
     project: !page,
     foot: (page && !U.prefsEdit) || !!(U.doc && U.docEdit && !OV.spec) || (side && !U.open && !U.doc),
-    deskFilters: page || full || inputs || side || !(D.filters || filtersSet().length),
+    deskFilters: page || full || side || !(D.filters || filtersSet().length),
     grip: page || full,
     rail: !rail || page,
     projBar: page,
     drawer: (rail && !over) || page,
     tabs: true,
   }
-  return { v, page, inputs, full, rail, over, side }
+  return { v, page, full, rail, over, side }
 }
 
 /** Where each part sits in the desktop's grid: a sidebar beside a frame of two columns (the list's, the pane's) and five
@@ -55,7 +52,6 @@ export function deskPlace(full = deskPanes().full) {
     mainHead: 'col-start-1 row-start-2',
     deskFilters: 'col-start-1 row-start-3',
     items: 'col-start-1 row-span-2 row-start-4',
-    inputs: 'col-start-1 row-span-2 row-start-4',
     project: 'col-span-2 col-start-1 row-span-5 row-start-1',
     // the New input page: the pane is its head, the foot (the box, what you said lately) the rows under it
     detail: `row-span-3 row-start-2 group-data-[compose]/app:row-span-1 ${pane}`,
@@ -94,7 +90,6 @@ export function DeskLayout() {
         <Tabs hidden={v.tabs} />
         <DeskFilters hidden={v.deskFilters} place={at.deskFilters} />
         <ItemsView hidden={v.items} place={at.items} />
-        <InputsView hidden={v.inputs} place={at.inputs} />
         <DetailView hidden={v.detail} place={at.detail} />
         <ProjectView hidden={v.project} place={at.project} />
         <div

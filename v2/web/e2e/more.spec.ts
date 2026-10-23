@@ -114,6 +114,27 @@ test('the desktop: G then N shows the inputs, Settings opens on G S and Esc goes
   await expect(page.locator('#projectView')).toBeHidden()
 })
 
+test('F347 T545: on the desktop an old /inputs address opens New input, and Esc from there never opens an Inputs page', async ({
+  page,
+  request,
+}) => {
+  test.skip(!isDesk(page), 'desktop only')
+  const p = await project(request, LOOP)
+  await open(page, p)
+  await page.locator('#text').click()
+  await page.keyboard.type('A thought')
+  await page.keyboard.press('Shift+Enter')
+  await expect.poll(async () => p.read('inbox')).toContain('A thought')
+  await open(page, p, 'inputs')
+  await expect(page).toHaveURL(/\/new$/)
+  await expect(page.locator('#draftSlot')).toBeAttached()
+  await page.keyboard.press('Escape') // out of the box
+  await page.keyboard.press('Escape') // out of New input
+  await expect(page.locator('#list')).toBeVisible()
+  await expect(page).not.toHaveURL(/\/inputs$/)
+  await expect(page.locator('#inputsView')).toHaveCount(0) // the desktop has no Inputs page (T545)
+})
+
 test('a project is renamed in place, and its address stays', async ({ page, request }) => {
   const p = await project(request, LOOP)
   await open(page, p, 'projects')

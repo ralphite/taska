@@ -62,7 +62,6 @@ import {
   docNotes,
 } from './Talk'
 import { DocEdit, DocPaneActs, DocPaneHead, DocPaneNav, DocView } from './Doc'
-import { InputPane, InputPaneHead } from './Inputs'
 import { DeletedView } from './SideList'
 
 // The message the needs card shows: the question, or the agent's report or proposal (then not repeated below).
@@ -881,8 +880,6 @@ function paneParts(): { head: ReactNode; acts: ReactNode; nav: ReactNode; menu: 
           </div>
         ),
       }
-    if (U.tab === 'inputs' && !D.page)
-      return { head: <InputPaneHead />, acts: null, nav: null, menu: false, body: <InputPane /> }
     if (!it) {
       const back = D.compose && D.prev && byN.has(D.prev)
       return {
@@ -951,7 +948,7 @@ export function DetailView({ hidden, place = '' }: { hidden: boolean; place?: st
       // B539 (r743, #6525): once two columns, they stay while an item is open: a fold, a reply or another item that would
       // fit in one never takes the page back to one column; a pane too narrow shows one, and the same width again
       // shows two again, however the width went (r749)
-      const shows = !!U.open && !D.compose && !D.page && U.tab !== 'inputs'
+      const shows = !!U.open && !D.compose && !D.page
       if (!shows) DUO.stuck = false
       const on = desk() && shows && (docShown || (el.clientWidth >= DUO.min && (high || DUO.stuck)))
       if (on && !docShown) DUO.stuck = true

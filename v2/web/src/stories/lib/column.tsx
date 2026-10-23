@@ -50,7 +50,7 @@ export function Column({ text = '', wide = false }: { text?: string; wide?: bool
           <Tabs hidden={v.tabs} />
           <FilterStrip />
           <ItemsView hidden={v.items} />
-          <InputsView hidden={v.inputs} />
+          <InputsView hidden={phonePanes().v.inputs} />
           <DetailView hidden={v.detail} />
         </>
       )}
@@ -79,7 +79,7 @@ export function ListColumn() {
       <Tabs hidden={v.tabs} />
       {isDesk ? <DeskFilters hidden={dv.deskFilters} /> : <FilterStrip />}
       <ItemsView hidden={v.items} />
-      <InputsView hidden={v.inputs} />
+      {isDesk ? null : <InputsView hidden={phonePanes().v.inputs} />}
       {isDesk ? null : (
         <>
           <Foot hidden={v.foot} />

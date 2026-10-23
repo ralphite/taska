@@ -22,15 +22,13 @@ export const viewPath = (): string =>
         ? U.tab === 'items'
           ? 'new'
           : U.tab // T438 #8: Rules and Archive with nothing open keep their own address
-        : desk() && U.tab === 'inputs'
-          ? 'inputs'
-          : U.open
-            ? code(U.open)
-            : desk() && U.side
-              ? PSEC[U.side][0]
-              : U.tab === 'items'
-                ? ''
-                : U.tab
+        : U.open
+          ? code(U.open)
+          : desk() && U.side
+            ? PSEC[U.side][0]
+            : U.tab === 'items'
+              ? ''
+              : U.tab
 export function viewQuery() {
   const q = new URLSearchParams()
   if (U.q) q.set('q', U.q)

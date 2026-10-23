@@ -12,12 +12,8 @@ export const area: Meta = {
   parameters: {
     covers: [
       'InputsView',
-      'InputRow',
       'InputCard',
       'NotHandled',
-      // InputPane, InputPaneHead: the desktop's Inputs pane, which the page no longer reaches (proposed for removal)
-      'InputPane',
-      'InputPaneHead',
       'OutboxRows',
       'OutboxStep',
       'SaidLately',
@@ -57,24 +53,25 @@ export const InputsTabEmpty: Story = {
   parameters: { taska: { project: 'website', setup: () => (U.tab = 'inputs') } },
 }
 
-/** One input, whole, in the state `change` puts it in. */
+/** One input, in the state `change` puts it in, as a row of the phone's Inputs tab draws it (the only place an input
+ * is drawn this way: on the desktop what you said is under New input, F347). */
+let picked = ''
 const card = (pick: (S: Input[]) => Input, change?: (r: Input) => void): Story => ({
   parameters: {
+    platform: 'phone',
     taska: {
       setup: ({ S }) => {
         const r = pick(S.inputs)
         change?.(r)
-        U.inSel = r.id
+        picked = r.id
       },
     },
   },
   render: () => {
-    const r = model.S.inputs.find((x) => x.id === U.inSel)!
+    const r = model.S.inputs.find((x) => x.id === picked)!
     return (
-      <Pane w="item">
-        <div className="mx-auto w-full max-w-[46rem] px-4 pt-6 pb-12 lg:px-8">
-          <InputCard r={r} pane />
-        </div>
+      <Pane>
+        <InputCard r={r} />
       </Pane>
     )
   },

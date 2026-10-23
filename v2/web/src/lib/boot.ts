@@ -56,7 +56,7 @@ export function readStart() {
   } else if (desk()) {
     U.q = qs.get('q') || ''
     for (const k of ['type', 'when', 'status', 'pri', 'sort'] as const) U[k] = qs.get(k) || 'all'
-    if (/^(inputs|archive|rules)$/.test(seg)) U.tab = seg as Tab
+    if (/^(archive|rules)$/.test(seg)) U.tab = seg as Tab // an old /inputs address opens New input (F347)
   }
 }
 /** Once the page is drawn: listeners, the data, and everything that waits for it. */

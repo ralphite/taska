@@ -359,9 +359,8 @@ export function showSent(rid: string | null | undefined, scope: string | null) {
   const el =
     scope && U.open && code(U.open) === scope
       ? document.querySelector(`#detailBody [data-src="${rid}"]`)
-      : U.tab === 'inputs' && (desk() || !U.open)
-        ? (desk() && ((U.inSel = rid), render()),
-          document.querySelector(`:is(#inputsView, #detailBody) [data-r="${rid}"]`))
+      : !desk() && U.tab === 'inputs' && !U.open
+        ? document.querySelector(`#inputsView [data-r="${rid}"]`)
         : null
   if (!el) return
   el.scrollIntoView({ block: 'nearest' })

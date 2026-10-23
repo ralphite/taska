@@ -1,5 +1,5 @@
-// What you said (inputs), and what became of each: the Inputs tab (a list; on the desktop a list and a pane, T274 #9),
-// "You said lately" on the New input page, and what is still on its way (F85).
+// What you said (inputs), and what became of each: the phone's Inputs tab (on the desktop what you said is under New
+// input, F347), "You said lately" on the New input page, and what is still on its way (F85).
 import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
 import { HIT, LINK_BTN, SMALL_BTN, TYPE_TEXT } from '../lib/constants'
 import {
@@ -7,12 +7,10 @@ import {
   byN,
   code,
   dayOf,
-  desk,
   inputMatch,
   model,
   otherProjects,
   parseRef,
-  plural,
   projName,
   rcode,
   searchWords,
@@ -21,12 +19,12 @@ import {
   when,
   els,
 } from '../lib/state'
-import type { FileRef, Input } from '../lib/types'
+import type { Input } from '../lib/types'
 import type { Job } from '../lib/state'
-import { arrived, clock, outboxLine, outboxState, projTitle } from '../lib/state'
+import { arrived, outboxLine, outboxState, projTitle } from '../lib/state'
 import { draftsOf } from '../lib/drafts'
 import { DraftMark, Empty, Hit, Icon, ProjTile, StateIcon } from './ui'
-import { Rich, Thumbs, voiceLen } from './Talk'
+import { Rich, Thumbs } from './Talk'
 import { SearchHints } from './List'
 
 const isVoice = (r: Input | null | undefined) => !!r?.files?.some((f) => (f.mime || '').startsWith('audio/'))
@@ -155,17 +153,17 @@ export const inputMenuRows = (r: Input) => {
 }
 
 const long = (r: Input) => r.text.length > 160 || r.text.split('\n').length > 4
-// One input with what became of it and what you can do with it: a row of Inputs on the phone, the pane on the desktop
+// One input with what became of it and what you can do with it: a row of the phone's Inputs tab
 // B329: a dot on the inputs the Inputs tab's number counts: those not handled yet
 function NotHandled({ r }: { r: Input }) {
   return r.acked ? null : (
     <span title="Not handled yet" className="size-2 shrink-0 rounded-full bg-blue-500 dark:bg-blue-400" />
   )
 }
-export function InputCard({ r, pane = false }: { r: Input; pane?: boolean }) {
+export function InputCard({ r }: { r: Input }) {
   const [label, tone, icon] = inputState(r),
     scope = r.scope ? byN.get(r.scope) : null,
-    fold = !pane && long(r)
+    fold = long(r)
   // the chip says what was done with its item ("Created B224 …"); the line above keeps only what no chip says (T225 #18)
   const shown = r.moved ? [] : r.touched.filter((n) => byN.has(n) && n !== r.scope),
     did: Record<number, string> = {},
@@ -225,23 +223,15 @@ export function InputCard({ r, pane = false }: { r: Input; pane?: boolean }) {
   return (
     <article
       data-r={r.id}
-      className={
-        pane
-          ? 'rounded-xl transition-colors duration-700'
-          : 'border-b border-zinc-100 px-4 py-2 transition-colors duration-700 dark:border-zinc-800/70'
-      }
+      className="border-b border-zinc-100 px-4 py-2 transition-colors duration-700 dark:border-zinc-800/70"
     >
       <div className="min-w-0">
         <div className="flex min-h-5 items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
-          {pane ? null : (
-            <>
-              <NotHandled r={r} />
-              <span className="shrink-0 font-mono">
-                <Hit text={rcode(r.id)} />
-              </span>
-              <span className="shrink-0 whitespace-nowrap">{when(r.t)}</span>
-            </>
-          )}
+          <NotHandled r={r} />
+          <span className="shrink-0 font-mono">
+            <Hit text={rcode(r.id)} />
+          </span>
+          <span className="shrink-0 whitespace-nowrap">{when(r.t)}</span>
 
           {dk ? (
             <button data-act={`input-${dk}`} data-id={r.id} className={`${HIT} shrink-0`}>
@@ -257,11 +247,11 @@ export function InputCard({ r, pane = false }: { r: Input; pane?: boolean }) {
               ↳ {code(scope.n)} {scope.title}
             </button>
           ) : null}
-          <span className={`ml-auto flex shrink-0 items-center gap-1 font-medium lg:hidden ${tone}`}>
+          <span className={`ml-auto flex shrink-0 items-center gap-1 font-medium ${tone}`}>
             {icon}
             {label}
           </span>
-          {more ? <span className="-my-2 -mr-2 flex shrink-0 items-center lg:hidden">{more}</span> : null}
+          {more ? <span className="-my-2 -mr-2 flex shrink-0 items-center">{more}</span> : null}
         </div>
         <div
           data-hit-html
@@ -282,24 +272,14 @@ export function InputCard({ r, pane = false }: { r: Input; pane?: boolean }) {
             </button>
           ) : null}
           {r.files.length ? (
-            <div className="mt-2 flex items-end gap-2 overflow-x-auto lg:scrollbar-thin">
+            <div className="mt-2 flex items-end gap-2 overflow-x-auto">
               <Thumbs files={r.files} gid={'in' + r.id} size="size-11" />
             </div>
           ) : null}
         </div>
-        {now ? <div className="mt-1 flex flex-wrap items-center gap-1 lg:hidden">{now}</div> : null}
+        {now ? <div className="mt-1 flex flex-wrap items-center gap-1">{now}</div> : null}
       </div>
-      <div className="min-w-0 lg:pt-4">
-        <div className={`hidden items-center gap-1.5 text-[13px] font-semibold lg:flex ${tone}`}>
-          {icon}
-          {label}
-          {now || more ? (
-            <span className="-my-2 ml-auto flex items-center gap-1 font-normal">
-              {now}
-              {more}
-            </span>
-          ) : null}
-        </div>
+      <div className="min-w-0">
         {note && chips ? (
           <div className="mt-1 flex items-start gap-1.5">
             <span className="grid h-8 shrink-0 place-items-center text-zinc-400 dark:text-zinc-500">
@@ -321,42 +301,6 @@ export function InputCard({ r, pane = false }: { r: Input; pane?: boolean }) {
             ) : null}
           </>
         )}
-      </div>
-    </article>
-  )
-}
-const ROW_TINT =
-  'data-sel:bg-blue-100 dark:data-sel:bg-blue-400/20 lg:data-sel:hover:bg-blue-100 dark:lg:data-sel:hover:bg-blue-400/20 lg:hover:bg-zinc-50 dark:lg:hover:bg-zinc-900/70 lg:aria-[current=true]:bg-blue-50 dark:lg:aria-[current=true]:bg-blue-400/10 pointer-coarse:transition-colors pointer-coarse:delay-75 data-pressed:bg-zinc-100 lg:data-pressed:bg-zinc-100 dark:data-pressed:bg-zinc-900 dark:lg:data-pressed:bg-zinc-900'
-// B361: a voice note with no words yet says how long it is
-const voiceSaid = (files: FileRef[]) => {
-  const ms = files.filter((f) => (f.mime || '').startsWith('audio/')).reduce((a, f) => a + (voiceLen(f) || 0), 0)
-  return ms ? `Voice note · ${clock(ms)}` : 'Voice note'
-}
-// the desktop's list of inputs: what you said in two lines, where it stands
-function InputRow({ r }: { r: Input }) {
-  const [label, tone] = inputState(r),
-    said = r.text
-      ? r.text.replace(/\s+/g, ' ').trim()
-      : r.files.some((f) => (f.mime || '').startsWith('audio/'))
-        ? voiceSaid(r.files)
-        : plural(r.files.length, 'file')
-  return (
-    <article data-ri={r.id} className="border-b border-zinc-100 dark:border-zinc-800/70">
-      <div
-        data-act="in-pick"
-        data-id={r.id}
-        {...(U.inSel === r.id ? { 'aria-current': 'true' as const } : {})}
-        className={`cursor-pointer px-4 py-2.5 ${ROW_TINT}`}
-      >
-        <div className="flex items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
-          <NotHandled r={r} />
-          <span className="font-mono">{rcode(r.id)}</span>
-          <span>{when(r.t)}</span>
-          <span className={`ml-auto font-medium ${tone}`}>{label}</span>
-        </div>
-        <p className="mt-0.5 line-clamp-2 text-[15px] leading-snug">
-          <Hit text={said} />
-        </p>
       </div>
     </article>
   )
@@ -400,7 +344,7 @@ export function OutboxRows({ oldestFirst = false }: { oldestFirst?: boolean }) {
 }
 const FIRST_ROWS = 40,
   MORE_ROWS = 120
-export function InputsView({ hidden, place = '' }: { hidden: boolean; place?: string }) {
+export function InputsView({ hidden }: { hidden: boolean }) {
   useArea('inputs')
   useArea('list')
   const ref = useRef<HTMLElement>(null)
@@ -411,7 +355,6 @@ export function InputsView({ hidden, place = '' }: { hidden: boolean; place?: st
   const S = model.S,
     words = searchWords()
   const rows = hidden ? [] : newestFirst(S.inputs).filter((r) => inputMatch(r, words))
-  if (desk() && !rows.some((r) => r.id === U.inSel)) U.inSel = rows[0]?.id || null
   // T339: the tab shows at once with its first screenful; the rest follows a few frames later, not all 400 in one go
   const [upTo, setUpTo] = useState(FIRST_ROWS)
   useEffect(() => {
@@ -424,7 +367,7 @@ export function InputsView({ hidden, place = '' }: { hidden: boolean; place?: st
   const out: ReactNode[] = []
   for (const r of rows.slice(
     0,
-    Math.max(upTo, rows.findIndex((x) => x.id === U.inSel) + 1, Math.ceil((U.tabTop.inputs || 0) / 50) + FIRST_ROWS), // enough to come back to where you were
+    Math.max(upTo, Math.ceil((U.tabTop.inputs || 0) / 50) + FIRST_ROWS), // enough to come back to where you were
   )) {
     const d = dayOf(r.t)
     if (d !== day)
@@ -433,14 +376,14 @@ export function InputsView({ hidden, place = '' }: { hidden: boolean; place?: st
           {(day = d)}
         </div>,
       )
-    out.push(desk() ? <InputRow key={r.id} r={r} /> : <InputCard key={r.id} r={r} />)
+    out.push(<InputCard key={r.id} r={r} />)
   }
   return (
     <section
       id="inputsView"
       ref={ref}
       hidden={hidden}
-      className={`min-h-0 flex-1 overflow-y-auto overscroll-contain pb-6 max-lg:-mb-(--foot-h) max-lg:pb-[calc(var(--foot-h,0px)+1.5rem)] lg:scrollbar-thin lg:scrollbar-gutter-stable lg:border-r lg:border-zinc-200 lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:border-zinc-800 dark:lg:hover:scrollbar-thumb-zinc-400/70 ${place}`}
+      className="-mb-(--foot-h) min-h-0 flex-1 overflow-y-auto overscroll-contain pb-[calc(var(--foot-h,0px)+1.5rem)]"
     >
       {hidden ? null : U.outbox.length && !words.length ? <OutboxRows /> : null}
       {hidden ? null : rows.length ? (
@@ -465,31 +408,6 @@ export function InputsView({ hidden, place = '' }: { hidden: boolean; place?: st
     </section>
   )
 }
-// T274 #9: the input picked in the list, whole (the desktop's pane)
-export function InputPane() {
-  const r = U.inSel ? model.S.inputs.find((x) => x.id === U.inSel) : undefined
-  const ref = useRef<HTMLDivElement>(null)
-  useMarkHits(ref)
-  return r ? (
-    <div ref={ref} className="mx-auto w-full max-w-[46rem] px-8 pt-6 pb-12">
-      <InputCard r={r} pane />
-    </div>
-  ) : (
-    <div className="grid h-full place-items-center p-8 text-center text-[15px] text-zinc-500 dark:text-zinc-400">
-      Pick an input, or write one below
-    </div>
-  )
-}
-export function InputPaneHead() {
-  const r = U.inSel ? model.S.inputs.find((x) => x.id === U.inSel) : undefined
-  return r ? (
-    <>
-      <span className="font-mono text-sm font-bold">{rcode(r.id)}</span>
-      <span className="text-sm text-zinc-500 dark:text-zinc-400">{when(r.t)}</span>
-    </>
-  ) : null
-}
-
 // ---------------------------------------------------------------- You said lately (the New input page)
 // T359: one input in the list under New input: a line saying which it is, when, what it answers and where it
 // stands, with what you can do; under it your words and voice notes; under them what became of it. No timeline
