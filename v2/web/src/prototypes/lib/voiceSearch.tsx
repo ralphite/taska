@@ -26,7 +26,7 @@ const voice = (t: number) =>
   Math.max(0, Math.sin(t * 7.3) * 0.5 + Math.sin(t * 2.1 + 1) * 0.35 + 0.25) * (t % 3.4 < 0.35 ? 0.1 : 1)
 
 /** The big microphone: red with rings that follow the voice while it listens, quiet once it has heard you */
-function Mic({ phase, onFinish }: { phase: Phase; onFinish: () => void }) {
+export function Mic({ phase, onFinish }: { phase: Phase; onFinish: () => void }) {
   const near = useRef<HTMLSpanElement>(null),
     far = useRef<HTMLSpanElement>(null)
   useEffect(() => {
