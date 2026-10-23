@@ -832,7 +832,9 @@ function treeBody(all: Item[]): { body: ReactNode; shown: number } {
 }
 
 // ---------------------------------------------------------------- search hints (A9, B15, F196)
-const XS = { q: '', list: null as null | CrossHit[], timer: 0 }
+// D82 #7: the search in the other projects says it is searching, that it found nothing there, or that it could not
+// search: never nothing at all, which read as "the other projects have none"
+const XS = { q: '', list: null as null | CrossHit[], timer: 0, failed: false }
 interface CrossHit {
   project: string
   ptitle?: string
@@ -847,6 +849,7 @@ function crossSearch() {
   if (q === XS.q) return
   XS.q = q
   XS.list = null
+  XS.failed = false
   clearTimeout(XS.timer)
   if (!q) return
   XS.timer = window.setTimeout(async () => {
@@ -859,13 +862,30 @@ function crossSearch() {
         render()
       }
     } catch {
-      /* none */
+      if (XS.q === q) {
+        XS.failed = true
+        render()
+      }
     }
   }, 300)
 }
 function CrossHits() {
-  const list = XS.q === searchWords().join(' ') ? XS.list : null
-  if (!list?.length) return null
+  const now = XS.q === searchWords().join(' '),
+    list = now ? XS.list : null
+  if (!now || !XS.q) return null
+  if (!list?.length)
+    return (
+      <p
+        data-cross={XS.failed ? 'failed' : list ? 'none' : 'searching'}
+        className="mt-4 px-3 text-center text-xs text-zinc-500 dark:text-zinc-400"
+      >
+        {XS.failed
+          ? "Couldn't search the other projects"
+          : list
+            ? 'Not in other projects'
+            : 'Searching the other projects\u2026'}
+      </p>
+    )
   return (
     <div className="mx-auto mt-4 w-full max-w-xl px-2 text-left">
       <p className="px-3 pb-1 text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">

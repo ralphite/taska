@@ -152,3 +152,24 @@ test('D82 #6: Activity that cannot load says so on the desktop too, not Loading 
   await open(page, p, 'log')
   await expect(page.locator('#toast')).toContainText("Couldn't load the change log")
 })
+
+test('D82 #7: a search says what the other projects gave: searching, nothing there, or that they could not be searched', async ({
+  page,
+  request,
+}) => {
+  const p = await project(request, LOOP)
+  let answer: 'hold' | 'fail' | 'go' = 'hold'
+  await page.route('**/api/search**', async (r) => {
+    while (answer === 'hold') await new Promise((ok) => setTimeout(ok, 100))
+    return answer === 'fail' ? r.abort() : r.continue()
+  })
+  await open(page, p)
+  if (!isDesk(page)) await page.locator('#searchBtn').click()
+  await page.locator('#q').fill('zqxj-one')
+  await expect(page.locator('[data-cross="searching"]').filter({ visible: true })).toBeVisible()
+  answer = 'go'
+  await expect(page.locator('[data-cross="none"]').filter({ visible: true })).toHaveText('Not in other projects')
+  answer = 'fail'
+  await page.locator('#q').fill('zqxj-two')
+  await expect(page.locator('[data-cross="failed"]').filter({ visible: true })).toBeVisible()
+})
