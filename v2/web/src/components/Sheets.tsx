@@ -645,7 +645,7 @@ function filtersParts(): Parts {
     n = rows.length,
     open = rows.filter((it) => !CLOSED(it.status) && !it.archived).length // B158, B130
   return {
-    title: 'Filter',
+    title: 'Filters', // D84 #8: one name everywhere
     extra: filtered() ? (
       <button
         data-act="reset"
@@ -755,7 +755,8 @@ function Switcher() {
               href={`/p/${encodeURIComponent(p.name)}/`}
               data-i={k}
               aria-selected={k === at}
-              className="flex h-11 items-center gap-3 rounded-xl px-3 hover:bg-zinc-100 aria-selected:bg-zinc-100 aria-selected:ring-1 aria-selected:ring-zinc-300 dark:hover:bg-zinc-800 dark:aria-selected:bg-zinc-800 dark:aria-selected:ring-zinc-600"
+              // D84 #3: the keyboard's row (what Enter opens) is blue, the pointer's grey: never the same look
+              className="flex h-11 items-center gap-3 rounded-xl px-3 hover:bg-zinc-100 aria-selected:bg-blue-50 aria-selected:ring-1 aria-selected:ring-blue-200 dark:hover:bg-zinc-800 dark:aria-selected:bg-blue-400/15 dark:aria-selected:ring-blue-400/30"
             >
               <ProjTile name={p.name} cls="size-6 rounded-md text-xs" />
               <span className={`min-w-0 flex-1 truncate ${p.name === S.project ? 'font-semibold' : ''}`}>
@@ -843,7 +844,8 @@ function Palette() {
                 data-i={k}
                 {...(r.n ? { 'data-n': r.n } : { 'data-k': r.k })}
                 aria-selected={k === at}
-                className="flex h-10 w-full min-w-0 shrink-0 items-center gap-3 rounded-lg px-3 text-left text-sm hover:bg-zinc-100 aria-selected:bg-zinc-100 dark:hover:bg-zinc-800 dark:aria-selected:bg-zinc-800"
+                // D84 #3: the keyboard's row (what Enter runs) is blue, the pointer's grey: never the same look
+                className="flex h-10 w-full min-w-0 shrink-0 items-center gap-3 rounded-lg px-3 text-left text-sm hover:bg-zinc-100 aria-selected:bg-blue-50 dark:hover:bg-zinc-800 dark:aria-selected:bg-blue-400/15"
               >
                 {it ? (
                   <>

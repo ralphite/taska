@@ -964,7 +964,8 @@ function DeskNav({ sec }: { sec: string }) {
         data-act="psec"
         data-sec={k}
         {...(on ? { 'aria-current': 'page' as const } : {})}
-        className="flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-sm text-zinc-600 hover:bg-zinc-200/60 hover:text-zinc-900 aria-[current=page]:bg-zinc-200/70 aria-[current=page]:font-semibold aria-[current=page]:text-zinc-900 data-pressed:bg-zinc-200/80 dark:text-zinc-300 dark:hover:bg-zinc-800/60 dark:hover:text-zinc-100 dark:aria-[current=page]:bg-zinc-800 dark:aria-[current=page]:text-zinc-50"
+        // D84 #7: the section open is blue (as the sidebar's project), the one under the pointer grey
+        className="flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-sm text-zinc-600 hover:bg-zinc-200/60 hover:text-zinc-900 aria-[current=page]:bg-blue-50 aria-[current=page]:font-semibold aria-[current=page]:text-blue-700 data-pressed:bg-zinc-200/80 dark:text-zinc-300 dark:hover:bg-zinc-800/60 dark:hover:text-zinc-100 dark:aria-[current=page]:bg-blue-400/15 dark:aria-[current=page]:text-blue-200"
       >
         <Icon n={icon} c="size-4 opacity-70" />
         <span className="min-w-0 flex-1 truncate">{label}</span>

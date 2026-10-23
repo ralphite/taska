@@ -162,7 +162,7 @@ export function Home() {
           {list ? `${list.length} projects · ${total ? `${total} need you` : 'nothing needs you'}` : ''}
         </span>
         <span className="flex-1" />
-        <label className="order-last flex h-10 w-full items-center gap-2 rounded-xl bg-white px-3 text-sm text-zinc-400 ring-1 ring-zinc-900/10 focus-within:ring-2 focus-within:ring-blue-500/40 sm:order-none sm:w-72 dark:bg-zinc-800 dark:ring-white/10">
+        <label className="order-last flex h-10 w-full items-center gap-2 rounded-xl bg-white px-3 text-sm text-zinc-400 ring-1 ring-zinc-900/10 focus-within:ring-2 focus-within:ring-blue-500 sm:order-none sm:w-72 dark:bg-zinc-800 dark:ring-white/10">
           <svg
             className="size-4 shrink-0"
             viewBox="0 0 24 24"
@@ -288,7 +288,7 @@ export function Home() {
                 <li key={p.name} className="border-b border-zinc-100 last:border-b-0 dark:border-zinc-700/60">
                   <a
                     href={`/p/${encodeURIComponent(p.name)}/`}
-                    className="flex items-center gap-3 px-3 py-2.5 hover:bg-zinc-50 active:bg-zinc-100 lg:grid lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_4.5rem_5.5rem_minmax(0,2.4fr)] lg:px-4 lg:py-3 lg:text-[13px] dark:hover:bg-zinc-700/40"
+                    className="flex items-center gap-3 px-3 py-2.5 hover:bg-zinc-100 active:bg-zinc-200/70 lg:grid lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_4.5rem_5.5rem_minmax(0,2.4fr)] lg:px-4 lg:py-3 lg:text-[13px] dark:hover:bg-zinc-700/60"
                   >
                     <span className="flex min-w-0 items-center gap-2.5">
                       <span

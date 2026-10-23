@@ -75,11 +75,15 @@ import { SideList } from './SideList'
 
 // B523: the dark tints are opaque, the same colours as before laid on the page's zinc-950: the row's buttons take the
 // row's colour (bg-inherit) and must hide the title under them, which a see-through colour did not do
+// D84 #1 #9: a picked row stays blue under the pointer and while pressed (a deeper blue), never the grey of an
+// unpicked one; the buttons in a row darken its colour (List: RowActs), never a grey square on blue
 const ROW_TINT =
-  'data-sel:bg-blue-100 dark:data-sel:bg-[color-mix(in_oklab,var(--color-blue-400)_20%,var(--color-zinc-950))] lg:data-sel:hover:bg-blue-100 dark:lg:data-sel:hover:bg-[color-mix(in_oklab,var(--color-blue-400)_20%,var(--color-zinc-950))] lg:hover:bg-zinc-50 dark:lg:hover:bg-[color-mix(in_oklab,var(--color-zinc-900)_70%,var(--color-zinc-950))] lg:aria-[current=true]:bg-blue-50 dark:lg:aria-[current=true]:bg-[color-mix(in_oklab,var(--color-blue-400)_10%,var(--color-zinc-950))] pointer-coarse:transition-colors pointer-coarse:delay-75 data-pressed:bg-zinc-100 lg:data-pressed:bg-zinc-100 dark:data-pressed:bg-zinc-900 dark:lg:data-pressed:bg-zinc-900'
-// T339: rows out of sight are not laid out until they scroll near (a long list shows at once)
+  'data-sel:bg-blue-100 dark:data-sel:bg-[color-mix(in_oklab,var(--color-blue-400)_20%,var(--color-zinc-950))] lg:data-sel:hover:bg-blue-100 dark:lg:data-sel:hover:bg-[color-mix(in_oklab,var(--color-blue-400)_20%,var(--color-zinc-950))] lg:hover:bg-zinc-50 dark:lg:hover:bg-[color-mix(in_oklab,var(--color-zinc-900)_70%,var(--color-zinc-950))] lg:aria-[current=true]:bg-blue-50 dark:lg:aria-[current=true]:bg-[color-mix(in_oklab,var(--color-blue-400)_10%,var(--color-zinc-950))] pointer-coarse:transition-colors pointer-coarse:delay-75 data-pressed:bg-zinc-100 lg:data-pressed:bg-zinc-100 dark:data-pressed:bg-zinc-900 dark:lg:data-pressed:bg-zinc-900 data-sel:data-pressed:bg-blue-200 lg:data-sel:data-pressed:bg-blue-200 dark:data-sel:data-pressed:bg-[color-mix(in_oklab,var(--color-blue-400)_30%,var(--color-zinc-950))] dark:lg:data-sel:data-pressed:bg-[color-mix(in_oklab,var(--color-blue-400)_30%,var(--color-zinc-950))] lg:aria-[current=true]:data-pressed:bg-blue-100 dark:lg:aria-[current=true]:data-pressed:bg-[color-mix(in_oklab,var(--color-blue-400)_20%,var(--color-zinc-950))]'
+// T339: rows out of sight are not laid out until they scroll near (a long list shows at once). D84 #2: where a dragged
+// row would go (above it, below it, under it) is drawn over the row, not under it: the row's own layer (its swipe
+// cover, its picked or open colour) used to hide it
 const ARTICLE =
-  '[contain-intrinsic-size:auto_64px] [content-visibility:auto] relative border-b border-zinc-100 data-dragging:opacity-40 data-[drop=before]:shadow-[inset_0_2px_0_0_var(--color-blue-500)] data-[drop=after]:shadow-[inset_0_-2px_0_0_var(--color-blue-500)] data-[drop=into]:bg-blue-50 data-[drop=into]:ring-2 data-[drop=into]:ring-blue-500 data-[drop=into]:ring-inset dark:border-zinc-800/70 dark:data-[drop=into]:bg-blue-400/10'
+  '[contain-intrinsic-size:auto_64px] [content-visibility:auto] relative border-b border-zinc-100 data-dragging:opacity-40 after:pointer-events-none after:absolute after:inset-0 after:z-10 data-[drop=before]:after:shadow-[inset_0_2px_0_0_var(--color-blue-500)] data-[drop=after]:after:shadow-[inset_0_-2px_0_0_var(--color-blue-500)] data-[drop=into]:after:bg-blue-500/10 data-[drop=into]:after:ring-2 data-[drop=into]:after:ring-blue-500 data-[drop=into]:after:ring-inset dark:border-zinc-800/70 dark:data-[drop=into]:after:bg-blue-400/15'
 // aria-current: the open one; data-sel: picked with Cmd or Shift (T274 #34)
 const rowCur = (it: Item) => ({
   ...(U.open === it.n ? { 'aria-current': 'true' as const } : {}),
@@ -137,7 +141,8 @@ function RowActs({ it, needs = false }: { it: Item; needs?: boolean }) {
   const acts = deskSlots(it, needs).filter((a) => a !== null) // T475: side by side, no holes where one does not apply
   return (
     <div className="relative hidden shrink-0 self-stretch bg-inherit lg:block">
-      <div className="absolute inset-y-0 right-0 hidden items-center gap-0.5 bg-inherit pl-2 group-hover:flex">
+      {/* D84 #5: the title fades out under the buttons (their layer's left edge), never cut through a word */}
+      <div className="absolute inset-y-0 right-0 hidden items-center gap-0.5 bg-inherit [mask-image:linear-gradient(to_right,transparent,black_1.5rem)] pl-6 group-hover:flex">
         {acts.map((a) =>
           a[0] === 'reopen' ? (
             <button
@@ -146,7 +151,7 @@ function RowActs({ it, needs = false }: { it: Item; needs?: boolean }) {
               data-n={it.n}
               title="Not yet · N"
               aria-label="Not yet"
-              className="grid size-8 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-200/70 dark:text-zinc-400 dark:hover:bg-zinc-800"
+              className="grid size-8 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-900/7 dark:text-zinc-400 dark:hover:bg-white/10"
             >
               <Icon n="reopen" c="size-[18px]" />
             </button>
@@ -159,7 +164,7 @@ function RowActs({ it, needs = false }: { it: Item; needs?: boolean }) {
               data-v={a[1]}
               title={`${a[2]}${ACT_KEY[a[2]] ? ' · ' + ACT_KEY[a[2]] : ''}`}
               aria-label={a[2]}
-              className={`grid size-8 place-items-center rounded-lg hover:bg-zinc-200/70 dark:hover:bg-zinc-800 ${ACT_TONE[a[2]] || 'text-zinc-500 dark:text-zinc-400'}`}
+              className={`grid size-8 place-items-center rounded-lg hover:bg-zinc-900/7 dark:hover:bg-white/10 ${ACT_TONE[a[2]] || 'text-zinc-500 dark:text-zinc-400'}`}
             >
               <Icon n={ACT_ICON[a[2]]} c="size-[18px]" />
             </button>
@@ -434,9 +439,12 @@ export function NeedsRow({ it, depth = 0 }: { it: Item; depth?: number }) {
         data-n={it.n}
         data-v={v}
         title={`${label} · A`}
-        className="group/pill -my-1 grid h-11 shrink-0 place-items-center"
+        className="group/pill -my-1 grid h-11 shrink-0 place-items-center outline-none"
       >
-        <span className={`${ACTION_PILL(v)} group-hover/pill:brightness-95 dark:group-hover/pill:brightness-125`}>
+        {/* D84 #4: the keyboard's ring goes round the pill itself, not the taller square that only gives the finger room */}
+        <span
+          className={`${ACTION_PILL(v)} group-hover/pill:brightness-95 group-focus-visible/pill:outline-2 group-focus-visible/pill:outline-offset-2 group-focus-visible/pill:outline-blue-500 dark:group-hover/pill:brightness-125 dark:group-focus-visible/pill:outline-blue-400`}
+        >
           <Icon n={NEED[v].icon} c="size-3.5" sw="2.25" />
           {label}
         </span>

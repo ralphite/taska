@@ -527,7 +527,7 @@ export function captureKey(e: KeyboardEvent) {
 export const CP_PAGE: [string, string][] = [
   ['New input', 'c'],
   ['Search', '/'],
-  ['Filter', 'f'],
+  ['Filters', 'f'], // D84 #8
   ['Record voice input', 'V'],
   ['Items', 'g i'],
   ['Inputs', 'g n'],

@@ -837,7 +837,7 @@ export function MainHead({ hidden, place = '' }: { hidden: boolean; place?: stri
       <button
         id="deskFilterBtn"
         data-act="filters"
-        title="Filter · F"
+        title="Filters · F" // D84 #8: one name, as it reads aloud
         aria-label="Filters"
         aria-expanded={!!D.filters}
         className="relative hidden size-9 shrink-0 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-100 aria-expanded:bg-zinc-100 lg:grid dark:text-zinc-400 dark:hover:bg-zinc-800 dark:aria-expanded:bg-zinc-800"
