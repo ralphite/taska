@@ -287,6 +287,45 @@ AUDIO_EXT = {"audio/mp4": ".m4a", "audio/x-m4a": ".m4a", "audio/m4a": ".m4a", "a
              "audio/wav": ".wav", "audio/x-wav": ".wav", "audio/ogg": ".ogg"}
 
 
+# B494 (r694, r700): a voice note sounds as you spoke it, at the loudness of normal speech: the browser records what the
+# microphone hears, untouched (no call processing: B182), which on a laptop is far quieter than speech should be. The
+# whole note is brought up by one amount, its loudest moment to just under full scale: nothing is squeezed or cut, the
+# pauses stay as they were. What is loud enough already, or silent, stays as it is.
+LEVEL_PEAK = -1.0  # dB: where the loudest moment goes
+LEVEL_MIN_GAIN = 3.0  # dB: less than this and it is left alone
+LEVEL_MAX_GAIN = 30.0  # dB: never more, so a note of nothing but a hum is not made a roar
+
+
+def voice_level(data: bytes, mime: str) -> Optional[bytes]:
+    """A voice note (WebM or MP4) brought to the loudness of normal speech, in the same format. None when it is loud
+    enough already, silent, of another format, or there is no ffmpeg."""
+    tool = shutil.which("ffmpeg")
+    kind = mime.split(";")[0]
+    enc = {"audio/webm": ("webm", ["-c:a", "libopus", "-b:a", "96k"]),
+           **{m: ("mp4", ["-c:a", "aac", "-b:a", "128k"]) for m in ("audio/mp4", "audio/x-m4a", "audio/m4a")}}.get(kind)
+    if not tool or not enc:
+        return None
+    with tempfile.TemporaryDirectory() as d:
+        src, out = os.path.join(d, "in" + AUDIO_EXT.get(kind, ".webm")), os.path.join(d, "out." + enc[0])
+        try:
+            with open(src, "wb") as f:
+                f.write(data)
+            r = subprocess.run([tool, "-hide_banner", "-i", src, "-af", "volumedetect", "-f", "null", "-"],
+                               capture_output=True, text=True, timeout=60)
+            m = re.search(r"max_volume: (-?[\d.]+) dB", r.stderr)
+            if not m or float(m.group(1)) < -60:  # silence
+                return None
+            gain = min(LEVEL_PEAK - float(m.group(1)), LEVEL_MAX_GAIN)
+            if gain < LEVEL_MIN_GAIN:
+                return None
+            subprocess.run([tool, "-hide_banner", "-loglevel", "error", "-y", "-i", src, "-af", f"volume={gain:.1f}dB",
+                            *enc[1], "-f", enc[0], out], capture_output=True, timeout=120, check=True)
+            with open(out, "rb") as f:
+                return f.read() or None
+        except (OSError, subprocess.SubprocessError, ValueError):
+            return None
+
+
 def voice_louder(data: bytes, mime: str) -> Optional[bytes]:
     """B494: a note spoken far from the microphone, so quiet the speech model hears nobody: brought up to the loudness
     of normal speech (ffmpeg's loudnorm), as Opus in WebM. None when there is no sound in it at all, or no ffmpeg."""

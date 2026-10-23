@@ -30,7 +30,7 @@ from .logs import log
 from .core import MAX_FILE, MAX_TEXT, PEOPLE, Err, plain_key
 from .dsl import parse_dsl
 from .guide import AGENT, CONNECT, GRAMMAR, SKILL
-from .voice import voice_answer, voice_mime
+from .voice import voice_answer, voice_level, voice_mime
 
 if TYPE_CHECKING:
     from .hub import Hub
@@ -585,6 +585,8 @@ class Handler(BaseHTTPRequestHandler):
         elif p == "/api/file":
             data = self.body(MAX_FILE)
             mime = (self.headers.get("Content-Type") or "application/octet-stream").split(";")[0]
+            if q.get("transcribe") and mime.startswith("audio/"):  # B494: a voice note at the loudness of normal speech
+                data = voice_level(data, mime) or data
             f = s.save_file((q.get("name") or ["file"])[0], mime, data)
             if q.get("transcribe") and mime.startswith("audio/"):  # the words come later: ask /api/transcript (B165)
                 s.transcribe_later(f["f"], data, self.headers.get("Content-Type") or mime, self.scope_of(s, q))
