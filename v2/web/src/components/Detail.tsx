@@ -71,6 +71,10 @@ export const cardMsg = (it: Item): Msg | null =>
     : (it.status === 'review' || it.status === 'proposed') && !it.reply
       ? lastAgentMsg(it) || null
       : null // B299
+// B507 (r693): the message the item page's card holds: cardMsg's, and the agent's report or proposal still once you
+// replied instead of deciding: the card stays where it was, holding it (Skipped · you replied), and your words follow
+const heldMsg = (it: Item): Msg | null =>
+  cardMsg(it) ?? (it.status === 'review' || it.status === 'proposed' ? lastAgentMsg(it) || null : null)
 // B299: approving or accepting stays one tap away while the agent has the item back or a question is open
 // T438 #5: the card of what you decided on a proposal or finished work, from the item itself (so after a reload, in
 // another tab, archived, the same); a question you answered keeps its own card instead, its button showing your choice
@@ -85,7 +89,7 @@ function decidedCard(it: Item): { dec: NonNullable<Item['decided']>; x: Msg | un
 // What waits on you, as a card (T65): the question with its choices, the proposal, the finished work.
 export function NeedsCard({ it, onCard = false }: { it: Item; onCard?: boolean }) {
   const n = it.n,
-    m = cardMsg(it),
+    m = heldMsg(it),
     name = msgName(m || it.wait || { by: it.by && it.by !== 'you' ? it.by : 'agent' })
   // F428 (P0): the same frame as the card it becomes once answered (NeedFrame), so nothing moves
   const card = (icon: IconName, title: string, body: ReactNode, buttons: ReactNode, hint = '') => (
@@ -216,7 +220,7 @@ export function NeedsCard({ it, onCard = false }: { it: Item; onCard?: boolean }
     return card(
       it.status === 'proposed' ? 'propose' : 'done',
       `${name} ${it.status === 'proposed' ? 'proposed this' : 'finished this'}`,
-      m && !it.reply ? <MsgText x={m} gid={'card' + n} whole /> : null,
+      m ? <MsgText x={m} gid={'card' + n} whole /> : null,
       <>
         {/* B485: what you did (you replied) stands out; Approve / Accept waits quietly, itself again under the pointer */}
         <span className={`${DONE_PICK} flex-1 font-semibold lg:flex-none`}>
@@ -374,15 +378,7 @@ export function ItemPage({ it, left = null, bare = false }: { it: Item; left?: R
     files = filesOf(it),
     children = kids.get(n) || [],
     parent = it.parent ? byN.get(it.parent) : undefined,
-    shown = cardMsg(it),
-    srcs = it.srcs.filter((id) => byR.get(id)?.kind !== 'answer'), // F428: an answer to its question is not where it came from
-    decided = decidedCard(it)?.dec.msg ?? null // F428: its message is in the decided card, once
-  // T438 #12 (A8): the card that waits on you (or that you decided) sits where its message is in time, so what came
-  // after it (your note, a comment on a document) reads after it
-  const cardId = it.wait?.id ?? (answeredLast(it) ? null : shown?.id) ?? decided ?? null, // an answered question is drawn by the talk
-    thread = it.thread.filter((x) => x.id !== it.wait?.id || x.id === cardId),
-    hidden = U.more.has(n) ? 0 : Math.max(0, thread.length - 8),
-    inline = cardId != null && thread.slice(hidden).some((x) => x.id === cardId)
+    srcs = it.srcs.filter((id) => byR.get(id)?.kind !== 'answer') // F428: an answer to its question is not where it came from
   const caret = <Icon n="down" c="size-3 opacity-50" sw="2.25" />
   // T274 #10: the properties in one row, each one a tap away: status, priority, type, now or later
   const chips = (
@@ -486,7 +482,6 @@ export function ItemPage({ it, left = null, bare = false }: { it: Item; left?: R
       </div>
     ) : null
   const docs = docsOf(n)
-  const notes = docNotes(n, hidden ? thread[hidden]?.t : '') // T274 #4
   // T322 (design A, with B's handle): on the desktop the item and its talk are two parts, each scrolling on its own,
   // with a clear line between them. The talk opens at its latest message. The phone keeps one page that scrolls.
   // B346, B351: the line stays where you put it, the same for every item, so switching items moves nothing; an item
@@ -624,29 +619,53 @@ export function ItemPage({ it, left = null, bare = false }: { it: Item; left?: R
         className={`lg:min-h-0 lg:flex-1 lg:scrollbar-thin lg:overflow-y-auto lg:data-up:mask-t-from-[calc(100%-2rem)] ${duo ? 'lg:h-full lg:min-w-0 lg:pb-[calc(var(--foot-h,0px)+1.5rem)]' : ''}`}
       >
         <div className="flex flex-col gap-6 lg:mx-auto lg:w-full lg:max-w-[46rem] lg:px-8 lg:py-6">
-          {thread.length || notes.length ? (
-            <div className="flex flex-col gap-6 border-t border-zinc-100 pt-6 lg:border-0 lg:pt-0 dark:border-zinc-800/70">
-              {hidden ? (
-                <button
-                  data-act="more"
-                  data-n={n}
-                  className="-my-1 h-11 self-center rounded-lg px-3 text-sm font-medium text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10"
-                >
-                  Show {hidden} earlier
-                </button>
-              ) : null}
-              <Talk
-                it={it}
-                list={thread.slice(hidden)}
-                notes={notes}
-                card={inline && cardId != null ? { id: cardId, node: <NeedsCard it={it} /> } : undefined}
-              />
-            </div>
-          ) : null}
-          {inline ? null : <NeedsCard it={it} />}
+          <ItemTalk it={it} />
         </div>
       </div>
     </div>
+  )
+}
+// T438 #12 (A8): an item's talk, the card that waits on you (or that you decided, or replied on: B507) where its message
+// is in time, so what came after it (your reply, your note, a comment on a document) reads after it
+export function ItemTalk({ it }: { it: Item }) {
+  const n = it.n,
+    shown = heldMsg(it),
+    decided = decidedCard(it)?.dec.msg ?? null // F428: its message is in the decided card, once
+  const cardId = it.wait?.id ?? (answeredLast(it) ? null : shown?.id) ?? decided ?? null, // an answered question is drawn by the talk
+    thread = it.thread.filter((x) => x.id !== it.wait?.id || x.id === cardId),
+    // B507 (r693): a card with no message of its own (an agent's item decided or replied on before it wrote a word)
+    // heads the talk once you said something, as all of it came after the card; with nothing said it is last, as now
+    first = cardId == null && !lastAgentMsg(it) && (it.reply || thread.length > 0),
+    at = thread.findIndex((x) => x.id === cardId),
+    // B507: the card is never folded away with the earlier messages, or it would be drawn after what came later
+    hidden = U.more.has(n) || first ? 0 : Math.max(0, Math.min(thread.length - 8, at < 0 ? thread.length : at)),
+    inline = at >= 0,
+    notes = docNotes(n, hidden ? thread[hidden]?.t : ''), // T274 #4
+    top = first && (thread.length > 0 || notes.length > 0) // B507: drawn above the talk, not after it
+  return (
+    <>
+      {thread.length || notes.length ? (
+        <div className="flex flex-col gap-6 border-t border-zinc-100 pt-6 lg:border-0 lg:pt-0 dark:border-zinc-800/70">
+          {hidden ? (
+            <button
+              data-act="more"
+              data-n={n}
+              className="-my-1 h-11 self-center rounded-lg px-3 text-sm font-medium text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10"
+            >
+              Show {hidden} earlier
+            </button>
+          ) : null}
+          {top ? <NeedsCard it={it} /> : null}
+          <Talk
+            it={it}
+            list={thread.slice(hidden)}
+            notes={notes}
+            card={inline && cardId != null ? { id: cardId, node: <NeedsCard it={it} /> } : undefined}
+          />
+        </div>
+      ) : null}
+      {inline || top ? null : <NeedsCard it={it} />}
+    </>
   )
 }
 // B345: the talk fades at its bottom only while more of it is below, out of sight
