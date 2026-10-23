@@ -7,6 +7,7 @@ export default meta
 
 export const Subitem: StoryObj = { ...Item.Subitem, name: 'Subitem' }
 export const WithSubitemsAndDocument: StoryObj = { ...Item.WithSubitemsAndDocument, name: 'Subitems and a document' }
+export const SubitemInLater: StoryObj = { ...Item.SubitemInLater, name: 'A subitem in Later' }
 export const LongTalk: StoryObj = { ...Item.LongTalk, name: 'Long talk' }
 export const WithPictures: StoryObj = { ...Item.WithPictures, name: 'Pictures' }
 export const QuestionWithdrawn: StoryObj = { ...Item.QuestionWithdrawn, name: 'Question taken back' }

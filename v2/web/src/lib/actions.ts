@@ -1129,6 +1129,13 @@ export const ACT: Record<string, Handler> = {
     else U.folded.add(n)
     bump('list')
   },
+  'sub-more': (d) => {
+    // B532: a parent's subitems the view hides, shown under it or hidden again
+    const n = N(d)
+    if (U.subMore.has(n)) U.subMore.delete(n)
+    else U.subMore.add(n)
+    bump('list')
+  },
   'sub-new': (d) => {
     closeDialog()
     const n = (U.subFor = N(d))
@@ -1231,8 +1238,7 @@ export const ACT: Record<string, Handler> = {
         async (p) => {
           const left = ((await op({ op: 'archive', refs: ids.map(code), on }, undefined, p)).res[0].match(
             /not archived: (.+)$/,
-          ) ||
-            [])[1] // one change, however many (T113 A5)
+          ) || [])[1] // one change, however many (T113 A5)
           if (left)
             toast(
               `${left.split(' ').length === 1 ? `${left} isn't` : `${left.split(' ').join(', ')} aren't`} finished any more, so ${left.split(' ').length === 1 ? 'it stays' : 'they stay'}`,

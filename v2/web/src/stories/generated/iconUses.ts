@@ -3,7 +3,7 @@
 export const ICON_USES: Record<string, { file: string; in: string }[]> = {
   "menu": [{"file":"components/Shell.tsx","in":"MainHead"}],
   "logo": [{"file":"components/Shell.tsx","in":"Drawer"},{"file":"components/Shell.tsx","in":"Rail"}],
-  "down": [{"file":"components/List.tsx","in":"ItemRow"},{"file":"components/List.tsx","in":"NeedsBand"},{"file":"components/Detail.tsx","in":"ItemPage"},{"file":"components/Detail.tsx","in":"ItemNav"},{"file":"components/Shell.tsx","in":"DeskFilters"}],
+  "down": [{"file":"components/List.tsx","in":"ItemRow"},{"file":"components/List.tsx","in":"NeedsBand"},{"file":"components/List.tsx","in":"HiddenKids"},{"file":"components/Detail.tsx","in":"ItemPage"},{"file":"components/Detail.tsx","in":"ItemNav"},{"file":"components/Shell.tsx","in":"DeskFilters"}],
   "right": [{"file":"components/Settings.tsx","in":"BODY"},{"file":"components/Settings.tsx","in":"PhoneIndex"},{"file":"components/List.tsx","in":"ItemRow"},{"file":"components/List.tsx","in":"GoThroughBtn"},{"file":"components/List.tsx","in":"ViewBar"},{"file":"components/Talk.tsx","in":"DocCard"},{"file":"components/Sheets.tsx","in":"peekParts"},{"file":"components/Shell.tsx","in":"SideLink"},{"file":"components/Shell.tsx","in":"DrawerSettings"}],
   "left": [{"file":"components/Settings.tsx","in":"DeskNav"},{"file":"components/Settings.tsx","in":"PhHead"},{"file":"components/List.tsx","in":"ViewBar"},{"file":"components/Doc.tsx","in":"DocPaneNav"},{"file":"components/Detail.tsx","in":"paneParts"},{"file":"components/Detail.tsx","in":"DetailView"},{"file":"components/Sheets.tsx","in":"peekParts"}],
   "link": [{"file":"components/Detail.tsx","in":"ItemPage"}],
@@ -56,7 +56,7 @@ export const ICON_USES: Record<string, { file: string; in: string }[]> = {
   "spinner": [{"file":"components/Shell.tsx","in":"Pill"}],
   "mic": [{"file":"components/WebPage.tsx","in":"WebPage"},{"file":"components/Doc.tsx","in":"SayRow"},{"file":"components/Doc.tsx","in":"BlockActs"},{"file":"components/Doc.tsx","in":"DocMic"},{"file":"components/Shell.tsx","in":"Drawer"},{"file":"components/Composer.tsx","in":"boxRole"},{"file":"components/Composer.tsx","in":"DraftCard"},{"file":"components/Composer.tsx","in":"DraftFiles"},{"file":"components/Composer.tsx","in":"BoxInner"},{"file":"components/Composer.tsx","in":"feedbackBody"},{"file":"components/Composer.tsx","in":"VcBar"}],
   "stop": [{"file":"components/WebPage.tsx","in":"WebPage"},{"file":"components/Doc.tsx","in":"SayRow"},{"file":"components/Doc.tsx","in":"BlockActs"}],
-  "chevup": [{"file":"components/List.tsx","in":"NeedsBand"},{"file":"components/Detail.tsx","in":"ItemNav"},{"file":"components/Shell.tsx","in":"DeskFilters"}],
+  "chevup": [{"file":"components/List.tsx","in":"NeedsBand"},{"file":"components/List.tsx","in":"HiddenKids"},{"file":"components/Detail.tsx","in":"ItemNav"},{"file":"components/Shell.tsx","in":"DeskFilters"}],
   "shrink": [{"file":"components/Detail.tsx","in":"ItemNav"},{"file":"components/Sheets.tsx","in":"KINDS"}],
   "panel": [{"file":"components/Shell.tsx","in":"Drawer"}],
   "keyboard": [{"file":"components/Settings.tsx","in":"DeskNav"},{"file":"components/Shell.tsx","in":"SideFoot"},{"file":"components/Shell.tsx","in":"Rail"}],

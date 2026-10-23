@@ -47,7 +47,7 @@ import { hasChoices, inlineMd, clean } from '../lib/markdown'
 import { keepGo } from '../lib/go'
 import { noteText } from '../lib/docs'
 import { kept } from '../lib/drafts'
-import { Icon, Kbd, SectionHead, StateIcon } from './ui'
+import { Icon, Kbd, SectionHead, Soft, StateIcon } from './ui'
 import {
   DocCard,
   FileRows,
@@ -562,6 +562,12 @@ export function ItemPage({ it, left = null, bare = false }: { it: Item; left?: R
                             </span>
                             {k.title}
                           </span>
+                          {k.when === 'later' && !CLOSED(k.status) ? (
+                            // B532 (r760): in Later, which the list's Active view does not show: the list row's mark
+                            <span className="mt-0.5 flex shrink-0 text-xs font-medium">
+                              <Soft>Later</Soft>
+                            </span>
+                          ) : null}
                         </button>
                       ))}
                     </div>

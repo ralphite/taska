@@ -245,11 +245,14 @@ export function ItemRow({
   depth = 0,
   group = [],
   band = '',
+  more = false,
 }: {
   it: Item
   depth?: number
   group?: Item[]
   band?: string
+  /** B532: subitems of it the view hides have their line under it (it folds them, as it folds the ones shown) */
+  more?: boolean
 }) {
   useArea('list') // drawn again while the list holds still, to show the line of the one you acted on (B124)
   it = byN.get(it.n) || it // T438 #3: while the list holds still, its rows show the items as they are now
@@ -265,7 +268,7 @@ export function ItemRow({
     talk = it.thread.length
   const img = files.find((f) => (f.mime || '').startsWith('image/'))
   if (img) groups.set('row' + it.n, [img.f])
-  const foldable = group.some((k) => k.parent === it.n)
+  const foldable = more || group.some((k) => k.parent === it.n)
   const meta: ReactNode[] = [
     it.type === 'rule' ? null : (
       <span key="p" className={PRI_TEXT[it.pri]}>
@@ -603,18 +606,55 @@ function NeedsBand({ needs, going }: { needs: Item[]; going: Go | null }) {
     </>
   )
 }
-function Tree({ group, band = '', needs = false }: { group: Item[]; band?: string; needs?: boolean }) {
+// B532 (r760): under a parent, one grey line for its subitems the view hides (Active hides Later and finished ones), at
+// their level, as the Needs-you band's "Show N more"; a tap shows them as the All view draws them, and it reads Show fewer
+function HiddenKids({ n, more, open, depth }: { n: number; more: Item[]; open: boolean; depth: number }) {
+  const later = more.filter((k) => !CLOSED(k.status)).length,
+    done = more.length - later
+  const said =
+    later && done
+      ? `${more.length} more: ${later} in Later, ${done} finished`
+      : later
+        ? `${later} more in Later`
+        : `${done} more finished`
+  return (
+    <button
+      data-act="sub-more"
+      data-n={n}
+      aria-expanded={open}
+      className={`flex h-11 w-full items-center gap-1.5 border-b border-zinc-100 ${PAD[Math.min(depth, 8)]} text-[13px] font-semibold text-zinc-500 hover:bg-zinc-50 data-pressed:bg-zinc-100 lg:h-10 dark:border-zinc-800/70 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:data-pressed:bg-zinc-900`}
+    >
+      <Icon n={open ? 'chevup' : 'down'} c="size-4" sw="2.25" />
+      {open ? 'Show fewer' : said}
+    </button>
+  )
+}
+function Tree({
+  group,
+  band = '',
+  needs = false,
+  hidden,
+}: {
+  group: Item[]
+  band?: string
+  needs?: boolean
+  /** B532: each parent's subitems the view hides, for its line */
+  hidden?: Map<number, Item[]>
+}) {
   const inG = new Set(group.map((it) => it.n)),
     out: ReactNode[] = []
   const add = (it: Item, d: number) => {
+    const more = hidden?.get(it.n)
     out.push(
       needs && needsYou(it) ? (
         <NeedsRow key={it.n} it={it} depth={d} />
       ) : (
-        <ItemRow key={it.n} it={it} depth={d} group={group} band={band} />
+        <ItemRow key={it.n} it={it} depth={d} group={group} band={band} more={!!more} />
       ),
     )
-    if (!U.folded.has(it.n) && d < 8) for (const k of group) if (k.parent === it.n) add(k, d + 1)
+    if (U.folded.has(it.n) || d >= 8) return
+    for (const k of group) if (k.parent === it.n) add(k, d + 1) // with the hidden ones, once shown
+    if (more) out.push(<HiddenKids key={`more${it.n}`} n={it.n} more={more} open={U.subMore.has(it.n)} depth={d + 1} />)
   }
   for (const it of group) if (!(it.parent && inG.has(it.parent))) add(it, 0)
   return <>{out}</>
@@ -795,20 +835,45 @@ function ViewBar() {
     </div>
   )
 }
+const latestFirst = (a: Item, b: Item) => String(b.t1).localeCompare(String(a.t1)) || b.n - a.n
+// the order agents take the work: in progress first, now before later, priority, your order, the oldest first;
+// finished work after the rest, the latest first
+const workOrder = (all: Item[]) => [
+  ...sortQueue(unfinished(all)),
+  ...all.filter((it) => CLOSED(it.status)).sort(latestFirst),
+]
+/** B532 (r760): the subitems Active hides (in Later, finished) under each parent it shows, in the All view's order;
+ * those under a parent whose line you tapped join the rows (and their own hidden ones, under them). From the same
+ * subitems the counts are made of (kids), so the list and the item page tell the same. */
+const SUB_SHOWN = new Set<number>() // the hidden subitems shown now, rows of the list like the others
+function hiddenKids(rows: Item[]) {
+  const hidden = new Map<number, Item[]>(),
+    group = [...rows]
+  SUB_SHOWN.clear()
+  if (U.status !== 'all' || filtered()) return { group, hidden } // only the plain Active view hides them
+  const shown = new Set(rows.map((it) => it.n))
+  for (let i = 0; i < group.length; i++) {
+    const p = group[i],
+      more = workOrder((kids.get(p.n) || []).filter((k) => !shown.has(k.n) && (CLOSED(k.status) || k.when === 'later')))
+    if (!more.length) continue
+    hidden.set(p.n, more)
+    if (U.subMore.has(p.n))
+      for (const k of more) {
+        shown.add(k.n)
+        SUB_SHOWN.add(k.n)
+        group.push(k)
+      }
+  }
+  return { group, hidden }
+}
 function treeBody(all: Item[]): { body: ReactNode; shown: number } {
-  // the order agents take the work: in progress first, now before later, priority, your order, the oldest first;
-  // finished work the latest first
   const rows =
     U.status === 'closed'
-      ? [...all].sort((a, b) => String(b.t1).localeCompare(String(a.t1)) || b.n - a.n)
+      ? [...all].sort(latestFirst)
       : U.status === 'wait'
         ? [...all].sort(needsOrder) // what needs you, the newest first (B238)
-        : [
-            ...sortQueue(unfinished(all)),
-            ...all
-              .filter((it) => CLOSED(it.status))
-              .sort((a, b) => String(b.t1).localeCompare(String(a.t1)) || b.n - a.n),
-          ] // All: finished work after the rest, the latest first
+        : workOrder(all) // Active, All, Queue, Later
+  const { group, hidden } = hiddenKids(rows)
   return {
     body: (
       <>
@@ -824,7 +889,7 @@ function treeBody(all: Item[]): { body: ReactNode; shown: number } {
           </div>
         ) : null}
         {rows.length ? (
-          <Tree group={rows} needs />
+          <Tree group={group} hidden={hidden} needs />
         ) : searchWords().length || U.type !== 'all' || U.pri !== 'all' ? (
           <Empty>
             No matching items
@@ -1171,7 +1236,7 @@ function ItemList() {
     frozen = body
   }
   if (U.sel.size) {
-    const there = new Set(visible().map((it) => it.n))
+    const there = new Set([...visible().map((it) => it.n), ...SUB_SHOWN])
     for (const n of U.sel) if (!there.has(n)) U.sel.delete(n) // picked rows that left the list are let go
   }
   SW.open = SW.el = null // rows are drawn closed; a stale reference would swallow the next tap

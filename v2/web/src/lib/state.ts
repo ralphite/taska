@@ -248,6 +248,7 @@ export const U = {
   pri: 'all',
   sort: 'all',
   folded: new Set<number>(),
+  subMore: new Set<number>(), // B532: the parents whose subitems the view hides are shown under them (their line tapped)
   moreMsgs: new Set<number>(),
   subFor: null as number | null,
   choice: null as null | { n: number; picked: Set<number> },

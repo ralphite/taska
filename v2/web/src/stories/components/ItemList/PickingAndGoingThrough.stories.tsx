@@ -10,4 +10,9 @@ export const Picked: StoryObj = { ...List.Picked, name: 'Several picked' }
 export const GoingThrough: StoryObj = { ...List.GoingThrough, name: 'Going through what needs you' }
 export const NeedsYouAllShown: StoryObj = { ...List.NeedsYouAllShown, name: 'Needs you: all shown' }
 export const SubitemsFolded: StoryObj = { ...List.SubitemsFolded, name: 'Subitems folded' }
+export const SubitemsHidden: StoryObj = { ...List.SubitemsHidden, name: 'Subitems in Later or finished' }
+export const SubitemsHiddenShown: StoryObj = {
+  ...List.SubitemsHiddenShown,
+  name: 'Subitems in Later or finished, shown',
+}
 export const JustActedOn: StoryObj = { ...List.JustActedOn, name: 'A row you just acted on' }

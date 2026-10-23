@@ -13,6 +13,7 @@ export const area: Meta = {
       'List',
       'ItemList',
       'Tree',
+      'HiddenKids',
       'NeedsBand',
       'GoThroughBtn',
       'ArchiveAllBtn',
@@ -85,6 +86,16 @@ export const Picked = list(({ it }) => {
 export const SubitemsFolded = list(({ it }) => {
   U.folded.add(it('F1').n)
   U.folded.add(it('T12').n)
+})
+// B532 (r760): T12's only subitem, T13, in Later, and F01's T14 finished (its T15 open): Active does not show them
+const laterAndFinished = ({ it }: Setup) => Object.assign(it('T13'), { when: 'later', status: 'open' })
+/** Subitems Active hides (in Later, finished): under each parent a grey line says so; T12 (0/1) has its arrow. */
+export const SubitemsHidden = list(laterAndFinished)
+/** The grey lines tapped: the hidden subitems show as the All view draws them, and each line reads Show fewer. */
+export const SubitemsHiddenShown = list((x) => {
+  laterAndFinished(x)
+  U.subMore.add(x.it('T12').n)
+  U.subMore.add(x.it('F1').n)
 })
 /** A row you just acted on, while the list holds still: one quiet line with Undo. */
 export const JustActedOn = list(({ it }) => {

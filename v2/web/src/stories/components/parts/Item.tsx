@@ -81,6 +81,16 @@ export const Later = item('F8')
 export const Subitem = item('T14')
 /** A parent: its subitems, its plan document, two agents at work. */
 export const WithSubitemsAndDocument = item('T12')
+/** B532 (r760): its only subitem in Later, which the list's Active view does not show: marked Later. On the desktop
+ * at full width (O), so the item, down to its subitems, is in view beside its talk. */
+export const SubitemInLater = item(
+  'T12',
+  ({ it }) => {
+    Object.assign(it('T13'), { when: 'later', status: 'open' })
+    D.full = true
+  },
+  true,
+)
 export const RuleInForce = item('R16')
 export const RuleProposed = item('R17')
 /** A long talk (17 messages), the item finished. */
