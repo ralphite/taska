@@ -26,7 +26,7 @@ export interface Setup {
 export interface TaskaParams {
   project?: 'shop' | 'mobile-app' | 'website'
   /** what the story changes before it draws: U, D, OV, the state itself */
-  setup?: (x: Setup) => void
+  setup?: (x: Setup) => unknown
 }
 declare module '@storybook/react-vite' {
   interface Parameters {
@@ -58,7 +58,7 @@ export const taskaLoader: Loader = async ({ parameters }) => {
   D.section = null
   setProject(project)
   ingest(S)
-  p.setup?.({
+  await p.setup?.({
     S: model.S,
     it: (ref) => {
       const it = byN.get(parseRef(ref) as number)

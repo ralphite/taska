@@ -1,1 +1,155 @@
-{"rev": 12, "boot": "1a16780796b", "pv": 1, "agents": [{"name": "claude-code", "t": 1792737843245, "waiting": false, "session": "phone", "sessions": [{"name": "phone", "t": 1792737843245}, {"name": "manager", "t": 1792737842888}]}], "work": true, "width": 1, "file": "/data/mobile-app/taska.db", "cfg": {"auto": true, "name": "Mobile app"}, "undo": [{"seq": 9, "n": 4, "f": {"status": "open"}, "was": {"status": "proposed"}, "t": "2026-10-17T21:45:52-07:00"}, {"seq": 7, "n": 3, "f": {"status": "open"}, "was": {"status": "proposed"}, "t": "2026-10-14T20:49:52-07:00"}, {"seq": 6, "n": 2, "f": {"status": "open"}, "was": {"status": "proposed"}, "t": "2026-10-14T20:47:52-07:00"}], "org": {"on": false, "model": "gemini-flash-latest", "busy": null}, "items": [{"n": 1, "type": "bug", "title": "\u66f4\u65b0\u5230 2.2 \u4e4b\u540e\u63a8\u9001\u901a\u77e5\u6536\u4e0d\u5230\u4e86", "body": "iOS \u548c\u5b89\u5353\u90fd\u6709\u3002\u91cd\u65b0\u767b\u5f55\u540e\u6062\u590d\uff0c\u4f46\u8fc7\u4e00\u5929\u53c8\u6536\u4e0d\u5230\u3002", "pri": "P1", "when": "now", "status": "doing", "parent": null, "next": "", "thread": [{"id": 11, "by": "claude-code", "kind": "progress", "text": "\u63a8\u9001 token \u5728\u540e\u53f0\u5237\u65b0\u540e\u6ca1\u6709\u4e0a\u4f20\u5230\u670d\u52a1\u5668\u3002", "t": "2026-10-21T21:43:52-07:00", "src": null, "files": [], "ses": "phone"}], "srcs": [], "merged_into": null, "archived": false, "t0": "2026-10-14T20:43:52-07:00", "t1": "2026-10-21T21:43:52-07:00", "by": "claude-code", "agent": {"by": "claude-code", "t": "2026-10-21T21:43:52-07:00", "ses": "phone"}, "decided": {"from": "proposed", "to": "open", "msg": null, "t": "2026-10-14T20:45:52-07:00"}, "code": "B1", "wait": null, "reply": false}, {"n": 2, "type": "task", "title": "\u53d1\u5e03 2.3 \u5230 TestFlight", "body": "", "pri": "P2", "when": "now", "status": "open", "parent": null, "next": "", "thread": [], "srcs": [], "merged_into": null, "archived": false, "t0": "2026-10-14T20:43:52-07:00", "t1": "2026-10-14T20:47:52-07:00", "by": "claude-code", "agent": {"by": "claude-code", "t": "2026-10-14T20:43:52-07:00", "ses": "manager"}, "decided": {"from": "proposed", "to": "open", "msg": null, "t": "2026-10-14T20:47:52-07:00"}, "code": "T2", "wait": null, "reply": false}, {"n": 3, "type": "feature", "title": "\u8ba2\u5355\u72b6\u6001\u53d8\u5316\u65f6\u63a8\u9001", "body": "", "pri": "P2", "when": "later", "status": "open", "parent": null, "next": "", "thread": [], "srcs": [], "merged_into": null, "archived": false, "t0": "2026-10-14T20:43:52-07:00", "t1": "2026-10-14T20:49:52-07:00", "by": "claude-code", "agent": {"by": "claude-code", "t": "2026-10-14T20:43:52-07:00", "ses": "manager"}, "decided": {"from": "proposed", "to": "open", "msg": null, "t": "2026-10-14T20:49:52-07:00"}, "code": "F3", "wait": null, "reply": false}, {"n": 4, "type": "feature", "title": "\u8ba2\u5355\u5bfc\u51fa\u5728 App \u91cc\u4e5f\u8981\u80fd\u7528", "body": "\u548c\u7f51\u9875\u7248\u4e00\u6837\uff0c\u6309\u5f53\u524d\u7b5b\u9009\u5bfc\u51fa CSV\uff0c\u53ef\u4ee5\u76f4\u63a5\u5206\u4eab\u5230\u90ae\u4ef6\u6216\u5fae\u4fe1\u3002", "pri": "P2", "when": "now", "status": "open", "parent": null, "next": "", "thread": [], "srcs": [], "merged_into": null, "archived": false, "t0": "2026-10-17T21:43:52-07:00", "t1": "2026-10-17T21:45:52-07:00", "by": "claude-code", "agent": {"by": "claude-code", "t": "2026-10-17T21:43:52-07:00", "ses": "phone"}, "decided": {"from": "proposed", "to": "open", "msg": null, "t": "2026-10-17T21:45:52-07:00"}, "code": "F4", "wait": null, "reply": false}], "inputs": [{"id": "r1", "t": "2026-10-22T19:43:52-07:00", "by": "you", "text": "\u770b\u4e00\u4e0b\u5e94\u7528\u5546\u5e97\u8bc4\u8bba\u91cc\u8bf4\u7684\u5b89\u5353 12 \u95ea\u9000\u3002", "scope": null, "files": [], "acked": false, "touched": [], "org": null, "seq": 12}], "deleted": [], "docs": [], "gone": [], "sv": 5, "project": "mobile-app", "title": "Mobile app", "base": "http://127.0.0.1:7340/p/mobile-app", "key": "demo-key-0000", "remote": ""}
+{
+  "rev": 12,
+  "boot": "1a167af8b0f",
+  "pv": 1,
+  "agents": [
+    {
+      "name": "claude-code",
+      "t": 1792740927651,
+      "waiting": false,
+      "session": "phone",
+      "sessions": [
+        { "name": "phone", "t": 1792740927651 },
+        { "name": "manager", "t": 1792740927525 }
+      ]
+    }
+  ],
+  "work": true,
+  "width": 1,
+  "file": "/data/mobile-app/taska.db",
+  "cfg": { "auto": true, "name": "Mobile app" },
+  "undo": [
+    { "seq": 9, "n": 4, "f": { "status": "open" }, "was": { "status": "proposed" }, "t": "2026-10-17T22:37:19-07:00" },
+    { "seq": 7, "n": 3, "f": { "status": "open" }, "was": { "status": "proposed" }, "t": "2026-10-14T21:41:19-07:00" },
+    { "seq": 6, "n": 2, "f": { "status": "open" }, "was": { "status": "proposed" }, "t": "2026-10-14T21:39:19-07:00" }
+  ],
+  "org": { "on": false, "model": "gemini-flash-latest", "busy": null },
+  "items": [
+    {
+      "n": 1,
+      "type": "bug",
+      "title": "\u66f4\u65b0\u5230 2.2 \u4e4b\u540e\u63a8\u9001\u901a\u77e5\u6536\u4e0d\u5230\u4e86",
+      "body": "iOS \u548c\u5b89\u5353\u90fd\u6709\u3002\u91cd\u65b0\u767b\u5f55\u540e\u6062\u590d\uff0c\u4f46\u8fc7\u4e00\u5929\u53c8\u6536\u4e0d\u5230\u3002",
+      "pri": "P1",
+      "when": "now",
+      "status": "doing",
+      "parent": null,
+      "next": "",
+      "thread": [
+        {
+          "id": 11,
+          "by": "claude-code",
+          "kind": "progress",
+          "text": "\u63a8\u9001 token \u5728\u540e\u53f0\u5237\u65b0\u540e\u6ca1\u6709\u4e0a\u4f20\u5230\u670d\u52a1\u5668\u3002",
+          "t": "2026-10-21T22:35:19-07:00",
+          "src": null,
+          "files": [],
+          "ses": "phone"
+        }
+      ],
+      "srcs": [],
+      "merged_into": null,
+      "archived": false,
+      "t0": "2026-10-14T21:35:19-07:00",
+      "t1": "2026-10-21T22:35:19-07:00",
+      "by": "claude-code",
+      "agent": { "by": "claude-code", "t": "2026-10-21T22:35:19-07:00", "ses": "phone" },
+      "decided": { "from": "proposed", "to": "open", "msg": null, "t": "2026-10-14T21:37:19-07:00" },
+      "code": "B1",
+      "wait": null,
+      "reply": false
+    },
+    {
+      "n": 2,
+      "type": "task",
+      "title": "\u53d1\u5e03 2.3 \u5230 TestFlight",
+      "body": "",
+      "pri": "P2",
+      "when": "now",
+      "status": "open",
+      "parent": null,
+      "next": "",
+      "thread": [],
+      "srcs": [],
+      "merged_into": null,
+      "archived": false,
+      "t0": "2026-10-14T21:35:19-07:00",
+      "t1": "2026-10-14T21:39:19-07:00",
+      "by": "claude-code",
+      "agent": { "by": "claude-code", "t": "2026-10-14T21:35:19-07:00", "ses": "manager" },
+      "decided": { "from": "proposed", "to": "open", "msg": null, "t": "2026-10-14T21:39:19-07:00" },
+      "code": "T2",
+      "wait": null,
+      "reply": false
+    },
+    {
+      "n": 3,
+      "type": "feature",
+      "title": "\u8ba2\u5355\u72b6\u6001\u53d8\u5316\u65f6\u63a8\u9001",
+      "body": "",
+      "pri": "P2",
+      "when": "later",
+      "status": "open",
+      "parent": null,
+      "next": "",
+      "thread": [],
+      "srcs": [],
+      "merged_into": null,
+      "archived": false,
+      "t0": "2026-10-14T21:35:19-07:00",
+      "t1": "2026-10-14T21:41:19-07:00",
+      "by": "claude-code",
+      "agent": { "by": "claude-code", "t": "2026-10-14T21:35:19-07:00", "ses": "manager" },
+      "decided": { "from": "proposed", "to": "open", "msg": null, "t": "2026-10-14T21:41:19-07:00" },
+      "code": "F3",
+      "wait": null,
+      "reply": false
+    },
+    {
+      "n": 4,
+      "type": "feature",
+      "title": "\u8ba2\u5355\u5bfc\u51fa\u5728 App \u91cc\u4e5f\u8981\u80fd\u7528",
+      "body": "\u548c\u7f51\u9875\u7248\u4e00\u6837\uff0c\u6309\u5f53\u524d\u7b5b\u9009\u5bfc\u51fa CSV\uff0c\u53ef\u4ee5\u76f4\u63a5\u5206\u4eab\u5230\u90ae\u4ef6\u6216\u5fae\u4fe1\u3002",
+      "pri": "P2",
+      "when": "now",
+      "status": "open",
+      "parent": null,
+      "next": "",
+      "thread": [],
+      "srcs": [],
+      "merged_into": null,
+      "archived": false,
+      "t0": "2026-10-17T22:35:19-07:00",
+      "t1": "2026-10-17T22:37:19-07:00",
+      "by": "claude-code",
+      "agent": { "by": "claude-code", "t": "2026-10-17T22:35:19-07:00", "ses": "phone" },
+      "decided": { "from": "proposed", "to": "open", "msg": null, "t": "2026-10-17T22:37:19-07:00" },
+      "code": "F4",
+      "wait": null,
+      "reply": false
+    }
+  ],
+  "inputs": [
+    {
+      "id": "r1",
+      "t": "2026-10-22T20:35:19-07:00",
+      "by": "you",
+      "text": "\u770b\u4e00\u4e0b\u5e94\u7528\u5546\u5e97\u8bc4\u8bba\u91cc\u8bf4\u7684\u5b89\u5353 12 \u95ea\u9000\u3002",
+      "scope": null,
+      "files": [],
+      "acked": false,
+      "touched": [],
+      "org": null,
+      "seq": 12
+    }
+  ],
+  "deleted": [],
+  "docs": [],
+  "gone": [],
+  "sv": 5,
+  "project": "mobile-app",
+  "title": "Mobile app",
+  "base": "http://127.0.0.1:7340/p/mobile-app",
+  "key": "demo-key-0000",
+  "remote": ""
+}

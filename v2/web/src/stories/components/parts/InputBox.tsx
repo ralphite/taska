@@ -23,6 +23,7 @@ import {
   type Job,
 } from '../../../lib/state'
 import type { Input } from '../../../lib/types'
+import { levelOf } from '../../../lib/voice'
 import { Pane, type Setup } from '../../lib/demo'
 import { Column } from '../../lib/column'
 
@@ -144,12 +145,22 @@ export const PointingAtAdd = pointing('#attachBtn')
 
 // ---------------------------------------------------------------- Voice
 /** Recording: x drops it, the time and how loud you speak, the check puts its words in the box, the arrow sends it. */
-const recording = () =>
-  Object.assign(R_STATE, {
-    rec: {} as MediaRecorder,
-    t0: Date.now() - 14000,
-    levels: Array.from({ length: 48 }, (_, i) => Math.abs(Math.sin(i / 3)) * 0.9),
-  })
+// B540: the meter as the page draws it 14 s into a note, from a real recording: the sentence Storybook's microphone
+// plays (fixtures/mic.webm), measured every 100 ms the way the recorder measures (levelOf), the last 40 bars
+const recording = async () => {
+  const clip = await (await fetch('/storybook/fixtures/mic.webm')).arrayBuffer()
+  const audio = await new OfflineAudioContext(1, 1, 48000).decodeAudioData(clip)
+  const samples = audio.getChannelData(0),
+    step = audio.sampleRate / 10,
+    bytes = new Uint8Array(512)
+  const levels: number[] = []
+  for (let at = 0; at + 512 < samples.length && levels.length < 140; at += step) {
+    for (let i = 0; i < 512; i++) bytes[i] = Math.max(0, Math.min(255, Math.round(128 + 128 * samples[at + i])))
+    levels.push(levelOf(bytes))
+  }
+  const silent = new AudioContext().createMediaStreamDestination().stream
+  Object.assign(R_STATE, { rec: new MediaRecorder(silent), t0: Date.now() - 14000, levels: levels.slice(-40) })
+}
 export const Recording = box('', recording)
 export const RecordingPointingAtTheCheck = pointing('#micBtn', '', recording)
 export const VoiceTranscribing = box('', () => (U.files = [voice({ transcribing: true, tr: '' })]))

@@ -1,1 +1,61 @@
-[{"name": "mobile-app", "title": "Mobile app", "open": 4, "auto": true, "needs": 0, "agents": [{"name": "claude-code", "t": 1792737843245, "waiting": false, "session": "phone", "sessions": [{"name": "phone", "t": 1792737843245}, {"name": "manager", "t": 1792737842888}]}], "work": true, "t": 1792737843891}, {"name": "shop", "title": "Shop", "open": 19, "auto": true, "needs": 7, "agents": [{"name": "claude-code", "t": 1792737843264, "waiting": false, "session": "worker", "sessions": [{"name": "worker", "t": 1792737843264}, {"name": "manager", "t": 1792737843260}]}, {"name": "codex", "t": 1792737843288, "waiting": false, "session": "worker", "sessions": [{"name": "worker", "t": 1792737843288}]}], "work": true, "t": 1792737843783}, {"name": "website", "title": "Website", "open": 0, "auto": true, "needs": 0, "agents": [], "work": false, "t": 1792737835444}]
+[
+  {
+    "name": "mobile-app",
+    "title": "Mobile app",
+    "open": 4,
+    "auto": true,
+    "needs": 0,
+    "agents": [
+      {
+        "name": "claude-code",
+        "t": 1792740927651,
+        "waiting": false,
+        "session": "phone",
+        "sessions": [
+          { "name": "phone", "t": 1792740927651 },
+          { "name": "manager", "t": 1792740927525 }
+        ]
+      }
+    ],
+    "work": true,
+    "t": 1792740928532
+  },
+  {
+    "name": "shop",
+    "title": "Shop",
+    "open": 19,
+    "auto": true,
+    "needs": 7,
+    "agents": [
+      {
+        "name": "claude-code",
+        "t": 1792740927672,
+        "waiting": false,
+        "session": "worker",
+        "sessions": [
+          { "name": "worker", "t": 1792740927672 },
+          { "name": "manager", "t": 1792740927666 }
+        ]
+      },
+      {
+        "name": "codex",
+        "t": 1792740927695,
+        "waiting": false,
+        "session": "worker",
+        "sessions": [{ "name": "worker", "t": 1792740927695 }]
+      }
+    ],
+    "work": true,
+    "t": 1792740931300
+  },
+  {
+    "name": "website",
+    "title": "Website",
+    "open": 0,
+    "auto": true,
+    "needs": 0,
+    "agents": [],
+    "work": false,
+    "t": 1792740920084
+  }
+]

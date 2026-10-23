@@ -87,24 +87,18 @@
     attributeFilter: ['src', 'href', 'poster'],
   })
   if (navigator.serviceWorker) navigator.serviceWorker.register = () => new Promise(() => {}) // no offline copy here
-  // T456, F479: Storybook never asks for your microphone: the page records a quiet tone instead, so a story can show
-  // the real recording (its bar, its time) without a permission prompt
+  // T456, F479, B540: Storybook never asks for your microphone: the page "hears" a recorded sentence (fixtures/mic.webm,
+  // the Mac's reading voice), played over and over, so its own recorder and meter draw the waveform of real speech
+  const micClip = real(FX + 'mic.webm').then((r) => r.arrayBuffer())
   if (navigator.mediaDevices)
     navigator.mediaDevices.getUserMedia = async () => {
       const ac = new AudioContext(),
-        tone = ac.createOscillator(),
-        loud = ac.createGain(),
-        wave = ac.createOscillator(),
-        swing = ac.createGain(),
+        src = ac.createBufferSource(),
         out = ac.createMediaStreamDestination()
-      tone.frequency.value = 180
-      loud.gain.value = 0.2
-      wave.frequency.value = 2.5
-      swing.gain.value = 0.18
-      wave.connect(swing).connect(loud.gain)
-      tone.connect(loud).connect(out)
-      tone.start()
-      wave.start()
+      src.buffer = await ac.decodeAudioData((await micClip).slice(0))
+      src.loop = true
+      src.connect(out)
+      src.start()
       void ac.resume().catch(() => {})
       return out.stream
     }

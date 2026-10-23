@@ -31,6 +31,10 @@ SERVER = os.path.join(HERE, "..", "server")
 OUT = os.path.join(HERE, "..", "web", ".storybook", "public", "fixtures")
 DEMO = os.path.join(HERE, "story_demo.json")
 CLOCK = [""]
+# what the microphone says in Storybook (B540); \u escapes keep the code ASCII
+MIC_WORDS = ("\u8ba2\u5355\u5bfc\u51fa\u7684\u65f6\u5019\uff0c\u5148\u6309\u5f53\u524d\u7684\u7b5b\u9009\u5bfc\u51fa\uff0c"
+             "\u5217\u7684\u987a\u5e8f\u548c\u5c4f\u5e55\u4e0a\u4e00\u6837\u3002\u624b\u673a\u4e0a\u4e5f\u8981\u80fd\u7528\uff0c"
+             "\u6587\u4ef6\u540d\u5e26\u4e0a\u65e5\u671f\u3002")
 
 
 def free_port() -> int:
@@ -141,20 +145,35 @@ SHOTS = {
 }
 
 
-def voice_webm(seconds: int) -> bytes:
-    """A voice note of that length: a quiet hum that rises and falls like speech (no real voice)."""
-    out = os.path.join(tempfile.gettempdir(), f"story-voice-{seconds}.webm")
-    subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-f", "lavfi", "-i",
-                    f"sine=frequency=170:duration={seconds},volume=0.25,tremolo=f=3:d=0.8",
-                    "-c:a", "libopus", "-b:a", "12k", out], check=True)
+def spoken_webm(words: str) -> bytes:
+    """A voice note that says these words, in the Mac's own reading voice (Tingting: not anyone's real voice), as the
+    page records them (Opus in WebM). B540: so a voice note sounds like speech and its waveform is a real one."""
+    tmp = tempfile.mkdtemp(prefix="story-voice-")
+    aiff, out = os.path.join(tmp, "v.aiff"), os.path.join(tmp, "v.webm")
+    subprocess.run(["say", "-v", "Tingting", "-r", "160", "-o", aiff, words], check=True)
+    subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-i", aiff, "-ac", "1", "-c:a", "libopus", "-b:a", "24k", out],
+                   check=True)
     with open(out, "rb") as f:
-        return f.read()
+        b = f.read()
+    shutil.rmtree(tmp, ignore_errors=True)
+    return b
+
+
+def seconds_of(webm: bytes) -> int:
+    tmp = tempfile.NamedTemporaryFile(suffix=".webm", delete=False)
+    tmp.write(webm)
+    tmp.close()
+    out = subprocess.run(["ffprobe", "-v", "error", "-show_entries", "format=duration", "-of", "csv=p=0", tmp.name],
+                         capture_output=True, text=True, check=True).stdout
+    os.unlink(tmp.name)
+    return max(1, round(float(out.strip() or 0)))
 
 
 def media(t: T, p: str, spec: str, words: str) -> dict:
     if spec.startswith("voice-"):
-        s = int(spec.split("-")[1])
-        f = t.file(p, f"voice_0-{s:02d}.webm", voice_webm(s), "audio/webm")
+        audio = spoken_webm(words)
+        s = seconds_of(audio)
+        f = t.file(p, f"voice_{s // 60}-{s % 60:02d}.webm", audio, "audio/webm")
         return {**f, "mime": "audio/webm", "tr": words}
     title, rows, accent = SHOTS[spec]
     f = t.file(p, f"{spec}.png", screenshot_png(title, rows, accent), "image/png")
@@ -217,9 +236,11 @@ def seed(t: T, anchor: datetime):
 
 
 def save(t: T, projects, root: str, anchor: datetime):
-    if os.path.isdir(OUT):
-        shutil.rmtree(OUT)
-    os.makedirs(OUT)
+    # the answers this makes go again; other saved answers in the folder (dev__..., kept by other tools) stay
+    os.makedirs(OUT, exist_ok=True)
+    for name in os.listdir(OUT):
+        if name.startswith(("api__", "p__")) or name in ("meta.json", "mic.webm"):
+            os.remove(os.path.join(OUT, name))
 
     def keep(path: str, text: bool = False):
         # nothing of this machine goes in: its folders, the port, the throwaway Taska's key
@@ -248,6 +269,10 @@ def save(t: T, projects, root: str, anchor: datetime):
         for fid in {f["f"] if isinstance(f, dict) else f for f in refs}:
             with open(os.path.join(OUT, f"p__{p}__f__{fid}"), "wb") as out:
                 out.write(t.req(f"/p/{p}/f/{fid}", raw=True))
+    # B540: what Storybook's microphone hears (app-shim.js plays it instead of asking for yours): a sentence in the
+    # Mac's reading voice, so the page draws a real waveform from real speech
+    with open(os.path.join(OUT, "mic.webm"), "wb") as f:
+        f.write(spoken_webm(MIC_WORDS))
     with open(os.path.join(OUT, "meta.json"), "w") as f:
         json.dump({"now": int(anchor.timestamp() * 1000)}, f)
 

@@ -136,6 +136,12 @@ export function voiceWhy() {
   bump('feedback')
 }
 
+/** How loud a moment of sound is, 0 to 1, from its samples as bytes (128 = silence): one bar of the recording's meter. */
+export function levelOf(buf: Uint8Array) {
+  let sum = 0
+  for (const v of buf) sum += (v - 128) ** 2
+  return Math.min(1, Math.sqrt(sum / buf.length) / 40)
+}
 export async function startRec() {
   actLog('voice start', { into: U.draftKey || '' }) // F407
   if (!canRecord()) return voiceWhy() // B166
@@ -179,9 +185,7 @@ export async function startRec() {
     const buf = new Uint8Array(an.fftSize)
     R.meter = () => {
       an.getByteTimeDomainData(buf)
-      let sum = 0
-      for (const v of buf) sum += (v - 128) ** 2
-      return Math.min(1, Math.sqrt(sum / buf.length) / 40)
+      return levelOf(buf)
     }
   } catch {
     R.meter = () => 0.2
