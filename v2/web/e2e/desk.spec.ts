@@ -225,9 +225,11 @@ test('words selected in a web page are only selected, never a comment, in Commen
   await frame.locator('body').evaluate(() => getSelection()?.removeAllRanges()) // a new selection, not a drag of this one
   await page.locator('[data-act="doc-inspect"]').click()
   await select()
-  // a part clicked in Comment mode is what you comment on
-  await frame.getByText('Ship option A today.').click()
-  await expect(page.locator('#scope')).toContainText('Ship option A today.')
+  // a click in Comment mode, even right on the words still selected, picks their part
+  const r = await words.boundingBox()
+  if (!r) throw new Error('not drawn')
+  await page.mouse.click(r.x + 30, r.y + r.height / 2)
+  await expect(page.locator('#scope')).toContainText('Save filters on the server')
   await expect(page.locator('#detailBody .ring-amber-300')).toHaveCount(1)
 })
 

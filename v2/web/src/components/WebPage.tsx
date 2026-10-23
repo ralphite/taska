@@ -60,10 +60,14 @@ const HELPER = `<script>(() => {
   // B497: once a part is picked, no other one lights or can be picked until Esc lets it go
   addEventListener('mousemove', (e) => { if (mode === true && !picked) { const el = part(e.target); send({ hover: el ? info(el) : null, at: [e.clientX, e.clientY] }) } })
   document.addEventListener('mouseleave', () => { if (mode === true) send({ hover: null }) })
+  // B502: a drag selects words (and only that); a click where the pointer went down picks the part
+  let down = [0, 0]
+  addEventListener('mousedown', (e) => { down = [e.clientX, e.clientY] }, true)
   addEventListener('click', (e) => {
     if (mode !== true && mode !== 'tap') return
     if (mode === true && picked) { e.preventDefault(); e.stopPropagation(); return }
-    if (String(getSelection()).trim()) return
+    if (Math.abs(e.clientX - down[0]) + Math.abs(e.clientY - down[1]) > 4) return
+    getSelection().removeAllRanges()
     const el = part(e.target)
     if (!el) return
     e.preventDefault()
