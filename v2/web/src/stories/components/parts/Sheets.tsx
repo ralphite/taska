@@ -166,7 +166,7 @@ export const ItemLater = itemMenu('F8')
 export const Subitem = itemMenu('T15')
 /** Archived: Unarchive. */
 export const ItemArchived = itemMenu('B21')
-/** A rule: no priority, no Later; on the desktop no New doc, Add subitem or Put under. */
+/** A rule: no priority, no Later, no New doc, Add subitem or Put under (on the phone as on the desktop). */
 export const Rule = itemMenu('R16')
 /** A chip in the item's head opens just its choices: under it on the desktop, a sheet of them on the phone (B358). */
 const chip = (arm: string) =>

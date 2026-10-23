@@ -427,9 +427,14 @@ function menuParts({ n, arm }: Props): Parts | null {
         <div className="grid grid-cols-3 gap-2">
           {tile('edit', 'pencil', 'Edit')}
           {tile('copy', 'copy', 'Copy for agent')}
-          {tile('doc-new', 'docplus', 'New doc')}
-          {tile('sub-new', 'listplus', 'Add subitem')}
-          {tile('reparent', 'indent', 'Put under…', it.parent ? `now under ${code(it.parent)}` : '')}
+          {it.type === 'rule' ? null : (
+            <>
+              {/* T529: as on the desktop, a rule has no documents, subitems or parent */}
+              {tile('doc-new', 'docplus', 'New doc')}
+              {tile('sub-new', 'listplus', 'Add subitem')}
+              {tile('reparent', 'indent', 'Put under…', it.parent ? `now under ${code(it.parent)}` : '')}
+            </>
+          )}
           {state}
           {next}
           {tile('item-move-proj', 'arrow', 'Move to project…')}
@@ -898,7 +903,7 @@ function Palette() {
                 data-i={k}
                 {...(r.n ? { 'data-n': r.n } : { 'data-k': r.k })}
                 aria-selected={k === at}
-                className="flex h-10 w-full min-w-0 items-center gap-3 rounded-lg px-3 text-left text-sm hover:bg-zinc-100 aria-selected:bg-zinc-100 dark:hover:bg-zinc-800 dark:aria-selected:bg-zinc-800"
+                className="flex h-10 w-full min-w-0 shrink-0 items-center gap-3 rounded-lg px-3 text-left text-sm hover:bg-zinc-100 aria-selected:bg-zinc-100 dark:hover:bg-zinc-800 dark:aria-selected:bg-zinc-800"
               >
                 {it ? (
                   <>
@@ -974,7 +979,7 @@ function Picker({
         onChange={(e) => setQ(e.target.value)}
       />
       <div className="-mx-1 max-h-[55dvh] overflow-y-auto lg:max-h-80 lg:scrollbar-thin">
-        {cands.length || extra ? (
+        {cands.length ? (
           cands.map((c) => (
             <button
               key={c.n}

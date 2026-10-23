@@ -66,14 +66,16 @@ export const dialogOpen = () => !!OV.spec
 // A second click within 3 s confirms (B127, B131): the page asks in place, never in a browser dialog.
 const ARMED = new Map<string, number>()
 export function confirmClick(key: string) {
-  const t = ARMED.get(key)
-  if (t && Date.now() - t < 3000) {
+  const t = ARMED.get(key),
+    now = Date.now()
+  if (t && now - t < 3000) {
     ARMED.delete(key)
     return true
   }
-  ARMED.set(key, Date.now())
+  ARMED.set(key, now)
   setTimeout(() => {
-    if (ARMED.get(key) === t || ARMED.has(key)) {
+    // T529: only this ask ends here; a newer one for the same key keeps its own 3 s
+    if (ARMED.get(key) === now) {
       ARMED.delete(key)
       bump()
     }
