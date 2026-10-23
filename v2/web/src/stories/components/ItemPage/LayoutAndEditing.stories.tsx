@@ -6,6 +6,7 @@ const meta: Meta = { title: 'Components/Item page/Layout and editing' }
 export default meta
 
 export const Editing: StoryObj = { ...Item.Editing, name: 'Editing' }
+export const AddingSubitem: StoryObj = { ...Item.AddingSubitem, name: 'Adding a subitem' }
 export const FullWidth: StoryObj = {
   ...Item.FullWidth,
   name: 'Full width',
@@ -16,14 +17,10 @@ export const TwoColumns: StoryObj = {
   name: 'Two columns',
   parameters: { ...Item.TwoColumns.parameters, platform: 'desktop' },
 }
+export const LinePointed: StoryObj = { ...Item.LinePointed, name: 'Line, pointer on it' }
 export const GoingThrough: StoryObj = {
   ...Item.GoingThrough,
   name: 'Going through',
   parameters: { ...Item.GoingThrough.parameters, platform: 'desktop' },
 }
 export const ReplySending: StoryObj = { ...Item.ReplySending, name: 'Your reply on its way' }
-export const NothingPicked: StoryObj = {
-  ...Item.NothingPicked,
-  name: 'Nothing picked',
-  parameters: { ...Item.NothingPicked.parameters, platform: 'desktop' },
-}

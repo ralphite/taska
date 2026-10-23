@@ -29,3 +29,9 @@ export const FinishedYouReplied = card('B6', ({ it }) => {
 export const ProposalYouReplied = card('I4', ({ it }) => {
   it('I4').reply = true
 })
+/** The same, Approve under the pointer: a button again (T522: drawn without a pointer, storybook-addon-pseudo-states;
+ * the desktop only, as the phone has no pointer) */
+export const ProposalYouRepliedPointed: Story = {
+  ...ProposalYouReplied,
+  parameters: { ...ProposalYouReplied.parameters, pseudo: { hover: ['[data-act="status"]'] }, platform: 'desktop' },
+}
