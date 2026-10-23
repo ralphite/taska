@@ -52,7 +52,7 @@ import {
   projName,
   projOrder,
   rcode,
-  statusName,
+  shownStatus,
   titleOf,
   useArea,
   visible,
@@ -185,7 +185,8 @@ function peekParts({ n }: Props): Parts | null {
     i = g ? g.list.indexOf(it.n) : -1
   const pin = !it.wait ? cardMsg(it) : null,
     recent = it.thread.filter((x) => x.id !== it.wait?.id && x.id !== pin?.id).slice(-3),
-    talk = it.thread.length
+    talk = it.thread.length,
+    shown = shownStatus(it) // R055 (B535): Needs you while an agent's ask or block waits on you
   const btn = (attrs: Record<string, string | number>, icon: IconName, label: string, tone: string, key: string) => (
     <button
       key={key}
@@ -249,7 +250,7 @@ function peekParts({ n }: Props): Parts | null {
   // B158: the item's code and Open sit in the header row beside x; a walk's "Needs you · 2 of 5" goes there instead
   const idRow = (
     <div className="flex items-center gap-2">
-      <StateIcon s={it.status} label={statusName(it)} cls="size-5" />
+      <StateIcon {...shown} cls="size-5" />
       <span className={`font-mono text-sm font-bold ${TYPE_TEXT[it.type]}`}>{code(it.n)}</span>
       <button
         data-act="goto"
@@ -299,7 +300,7 @@ function peekParts({ n }: Props): Parts | null {
         <h2 className={`${g ? 'mt-1' : ''} text-[19px] leading-snug font-semibold break-words`}>{it.title}</h2>
         <div className="mt-1 flex flex-wrap items-center gap-x-2.5 text-xs font-medium text-zinc-500 dark:text-zinc-400">
           {it.type === 'rule' ? null : <span className={PRI_TEXT[it.pri]}>{it.pri}</span>}
-          <span>{statusName(it)}</span>
+          <span className={shown.s === 'wait' ? `font-semibold ${NEED.answer.text}` : ''}>{shown.label}</span>
           <span>{WHEN[it.when]}</span>
           <span>{it.type[0].toUpperCase() + it.type.slice(1)}</span>
           {talk ? <Cnt icon="comment" n={talk} label={plural(talk, 'comment')} /> : null}
@@ -907,7 +908,7 @@ function Palette() {
               >
                 {it ? (
                   <>
-                    <StateIcon s={it.status} label={statusName(it)} cls="size-4" />
+                    <StateIcon {...shownStatus(it)} cls="size-4" />
                     <span className={`font-mono text-xs font-bold ${TYPE_TEXT[it.type]}`}>{code(it.n)}</span>
                     <span className="min-w-0 flex-1 truncate">{r.t}</span>
                   </>
@@ -989,7 +990,7 @@ function Picker({
               {...(current === c.n ? { 'aria-current': 'true' as const } : {})}
               className="flex h-12 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-[15px] hover:bg-zinc-100 aria-[current=true]:bg-blue-50 lg:h-9 lg:text-sm dark:hover:bg-zinc-800 dark:aria-[current=true]:bg-blue-400/10"
             >
-              <StateIcon s={c.status} label={statusName(c)} cls="size-4" />
+              <StateIcon {...shownStatus(c)} cls="size-4" />
               <span className={`font-mono text-xs font-bold ${TYPE_TEXT[c.type]}`}>{code(c.n)}</span>
               <span className="min-w-0 flex-1 truncate">{c.title}</span>
             </button>

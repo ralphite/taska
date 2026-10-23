@@ -45,6 +45,7 @@ import {
   sortQueue,
   render,
   searchWords,
+  shownStatus,
   statusName,
   unread,
   useArea,
@@ -228,7 +229,7 @@ function HeldRow({ it, said }: { it: Item; said: string }) {
         style={h > 0 ? { minHeight: h } : undefined}
         className="flex cursor-pointer items-center gap-3 py-2 pr-3 pl-4 text-sm text-zinc-500 hover:bg-zinc-50 data-pressed:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-900/70 dark:data-pressed:bg-zinc-900"
       >
-        <StateIcon s={it.status} label={statusName(it)} />
+        <StateIcon {...shownStatus(it)} />
         <span className="min-w-0 flex-1 truncate">
           <span className={`mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[it.type]}`}>{code(it.n)}</span>
           {said}
@@ -326,7 +327,7 @@ export function ItemRow({
           title="New from an agent"
         />
       ) : null}
-      <StateIcon s={it.status} label={statusName(it)} />
+      <StateIcon {...shownStatus(it)} />
       <div className="min-w-0 flex-1">
         <p
           className={`line-clamp-2 text-[15px] leading-snug font-medium lg:line-clamp-1 ${closed && !it.archived ? 'line-through decoration-zinc-400' : ''}`}
@@ -401,7 +402,7 @@ export function NeedsRow({ it, depth = 0 }: { it: Item; depth?: number }) {
     >
       <span className="absolute inset-y-0 left-0 w-1 bg-amber-500 dark:bg-amber-400" />
       <span className="self-start">
-        <StateIcon s={it.status} label={statusName(it)} />
+        <StateIcon {...shownStatus(it)} />
       </span>
       <div className="min-w-0 flex-1">
         <p className="line-clamp-2 text-[15px] leading-snug font-medium lg:line-clamp-1">

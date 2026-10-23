@@ -4,7 +4,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Avatar, Hit, Icon, Kbd, ProjTile, StateIcon } from '../../../components/ui'
 import type { IconName } from '../../../lib/icons'
 import { ICON_USES } from '../../generated/iconUses'
-import { RULE_STATUS, STATUS } from '../../../lib/constants'
+import { RULE_STATUS, STATUS, STATUS_FILTER } from '../../../lib/constants'
 import { DR, whoName } from '../../../lib/state'
 
 // what this part of Storybook shows (T512: its stories are in the folders beside this file)
@@ -41,8 +41,9 @@ const statuses = (words: Partial<Record<string, string>>) => (
     ))}
   </div>
 )
-/** An item's status, as its round icon. */
-export const States: Story = { render: () => statuses(STATUS) }
+/** An item's status, as its round icon; last, Needs you, which an item shows instead while an agent's ask or block
+ * waits on you (R055, B535). */
+export const States: Story = { render: () => statuses({ ...STATUS, wait: STATUS_FILTER.wait }) }
 /** A rule's status: the same icons, with the words the page says for a rule (Active, Retired). */
 export const RuleStates: Story = { render: () => statuses(RULE_STATUS) }
 /** The keys the page shows beside a button or in a hint. Only the desktop shows them (a phone has no keys). */

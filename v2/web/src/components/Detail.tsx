@@ -35,7 +35,7 @@ import {
   model,
   needsYou,
   canDone,
-  statusName,
+  shownStatus,
   useArea,
   msgName,
   userWord,
@@ -380,6 +380,7 @@ export function ItemPage({ it, left = null, bare = false }: { it: Item; left?: R
     parent = it.parent ? byN.get(it.parent) : undefined,
     srcs = it.srcs.filter((id) => byR.get(id)?.kind !== 'answer') // F428: an answer to its question is not where it came from
   const caret = <Icon n="down" c="size-3 opacity-50" sw="2.25" />
+  const shown = shownStatus(it) // R055 (B535): Needs you while an agent's ask or block waits on you; the menu ticks its status
   // T274 #10: the properties in one row, each one a tap away: status, priority, type, now or later
   const chips = (
     <>
@@ -387,10 +388,10 @@ export function ItemPage({ it, left = null, bare = false }: { it: Item; left?: R
         data-act="item-menu"
         data-arm="s"
         title="Status · S"
-        className={`${CHIP} min-w-32 shrink-0 text-zinc-700 dark:text-zinc-200`} // T438 #14 (C8): one width, so the chips after it stay put
+        className={`${CHIP} min-w-32 shrink-0 ${shown.s === 'wait' ? `font-semibold ${NEED.answer.text}` : 'text-zinc-700 dark:text-zinc-200'}`} // T438 #14 (C8): one width, so the chips after it stay put
       >
-        <StateIcon s={it.status} label={statusName(it)} cls="size-3.5" />
-        {statusName(it)}
+        <StateIcon {...shown} cls="size-3.5" />
+        {shown.label}
         {caret}
       </button>
       {it.type === 'rule' ? null : (
@@ -548,7 +549,7 @@ export function ItemPage({ it, left = null, bare = false }: { it: Item; left?: R
                           data-n={k.n}
                           className={`flex w-full items-start gap-3 px-3 py-3 text-left first:rounded-t-xl last:rounded-b-xl hover:bg-zinc-50 data-pressed:bg-zinc-100 dark:hover:bg-zinc-900 dark:data-pressed:bg-zinc-800 ${CLOSED(k.status) ? 'opacity-55' : ''}`}
                         >
-                          <StateIcon s={k.status} label={statusName(k)} />
+                          <StateIcon {...shownStatus(k)} />
                           <span
                             className={`min-w-0 flex-1 text-[15px] leading-snug ${CLOSED(k.status) ? 'line-through' : ''}`}
                           >
@@ -682,7 +683,7 @@ function markOver(clip: HTMLElement) {
 const ItemHead = ({ it }: { it: Item }) => (
   <>
     <span className="hidden lg:inline">
-      <StateIcon s={it.status} label={statusName(it)} cls="size-[18px]" />
+      <StateIcon {...shownStatus(it)} cls="size-[18px]" />
     </span>
     <span className={`font-mono text-sm font-bold ${TYPE_TEXT[it.type]}`}>{code(it.n)}</span>
     <span className="text-[11px] font-semibold tracking-wider uppercase">

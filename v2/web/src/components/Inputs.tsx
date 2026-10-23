@@ -14,7 +14,7 @@ import {
   projName,
   rcode,
   searchWords,
-  statusName,
+  shownStatus,
   useArea,
   when,
   els,
@@ -497,7 +497,7 @@ function SaidRow({ r, words = [] }: { r: Input; last?: boolean; words?: string[]
               data-n={n}
               className="flex h-7 max-w-80 min-w-0 items-center gap-1.5 rounded-lg bg-zinc-100 pr-2.5 pl-1.5 text-[13px] text-zinc-800 hover:bg-zinc-200/80 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700"
             >
-              <StateIcon s={it.status} label={statusName(it)} cls="size-4" />
+              <StateIcon {...shownStatus(it)} cls="size-4" />
               <span className={`font-mono text-xs font-bold ${TYPE_TEXT[it.type]}`}>{code(n)}</span>
               <span className="truncate">{it.title}</span>
             </button>

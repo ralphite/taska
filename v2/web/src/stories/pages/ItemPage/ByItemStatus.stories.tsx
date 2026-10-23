@@ -6,8 +6,10 @@ const meta: Meta = { title: 'Pages/Item page/By item status', parameters: pagePa
 export default meta
 
 export const InProgressWithTalk: StoryObj = { ...screen(SHOP + 'F1'), name: 'In progress, with its talk' }
-/** An agent is blocked and needs you: the amber card at the end of the talk. */
+/** An agent is blocked and needs you: the amber card at the end of the talk, and its row and status read Needs you
+ * (R055, B535), though it is still in progress. */
 export const Blocked: StoryObj = { ...screen(SHOP + 'B2'), name: 'Blocked' }
+/** An agent asks you: its row and status read Needs you too. */
 export const Question: StoryObj = { ...screen(SHOP + 'T7'), name: 'Question' }
 /** A question with several answers to tick. */
 export const ChecklistQuestion: StoryObj = { ...screen(SHOP + 'T9'), name: 'Checklist question' }

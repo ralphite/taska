@@ -4,7 +4,7 @@
 // part of the page is a React component.
 import { create } from 'zustand'
 import { flushSync } from 'react-dom'
-import { AGENT_NAME, LETTER, PROJ_TONES, RULE_STATUS, STATUS, VIEW_KEYS, type Tab } from './constants'
+import { AGENT_NAME, LETTER, PROJ_TONES, RULE_STATUS, STATUS, STATUS_FILTER, VIEW_KEYS, type Tab } from './constants'
 import type { Comment, Doc, FileRef, Input, Item, Msg, ProjectRow, State, Status } from './types'
 
 // ---------------------------------------------------------------- redraw
@@ -454,8 +454,15 @@ export const needsYou = (it: Item) =>
   !it.archived &&
   !CLOSED(it.status) &&
   (!!it.wait || ((it.status === 'proposed' || it.status === 'review') && !it.reply)) // B286
+// R055 (r326, B535): an agent's open ask or block waits on you, by the rule above (the Needs you view's, the counts')
+const asksYou = (it: Item) => needsYou(it) && !!it.wait
 export const statusName = (it: Item) =>
   (it.type === 'rule' ? RULE_STATUS[it.status] : STATUS[it.status]) || STATUS[it.status]
+/** R055 (B535): an item's status as the page shows it (its round icon and word: rows, the item page's chip): Needs
+ * you while an agent's ask or block waits on you, not In progress; the status itself stays (the status menu ticks
+ * it), and once you answered or the agent took it back, it reads its status again */
+export const shownStatus = (it: Item): { s: string; label: string } =>
+  asksYou(it) ? { s: 'wait', label: STATUS_FILTER.wait } : { s: it.status, label: statusName(it) }
 export const userWord = (x: Msg) =>
   x.by === 'you' || (x.by === 'org' && ['say', 'decide', 'propose'].includes(x.kind) && !!x.src)
 export const lastAgentMsg = (it: Item) => [...it.thread].reverse().find((x) => !userWord(x))

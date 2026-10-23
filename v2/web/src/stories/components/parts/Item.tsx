@@ -64,8 +64,10 @@ const notLoaded = () => {
 }
 
 export const InProgressWithTalk = item('F1')
-/** An agent is blocked and needs you: the amber card at the end of the talk. */
+/** An agent is blocked and needs you: the amber card at the end of the talk, and its status reads Needs you (R055,
+ * B535), though it is still in progress (its menu ticks that). */
 export const Blocked = item('B2')
+/** An agent asks you: its status reads Needs you too, while it is open. */
 export const Question = item('T7')
 /** A question with several answers you can tick, and its plan as a document. */
 export const ChecklistQuestion = item('T9')

@@ -111,4 +111,10 @@ export const STATE_ICON: Record<string, [string, string]> = {
   review: ['<circle cx="12" cy="12" r="9"/><path d="m8 12.5 2.8 2.8L16.5 9"/>', 'text-amber-600 dark:text-amber-400'],
   done: ['<circle cx="12" cy="12" r="9"/><path d="m8 12.5 2.8 2.8L16.5 9"/>', 'text-emerald-600 dark:text-emerald-400'],
   dropped: ['<circle cx="12" cy="12" r="9"/><path d="M6.5 17.5 17.5 6.5"/>', 'text-zinc-400 dark:text-zinc-500'],
+  // R055 (B535): not a status: an agent's ask or block waits on you; the Needs you mark (its group's amber dot in its
+  // soft ring), at the size of the others
+  wait: [
+    '<circle cx="12" cy="12" r="9" fill="currentColor" fill-opacity=".2" stroke="none"/><circle cx="12" cy="12" r="5" fill="currentColor" stroke="none"/>',
+    'text-amber-500 dark:text-amber-400',
+  ],
 }
