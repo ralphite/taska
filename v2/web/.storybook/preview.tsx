@@ -92,6 +92,8 @@ const preview: Preview = {
             'Agents',
             'Keyboard',
           ],
+          'Review',
+          ['About this section'],
           'Prototype',
         ],
       },
