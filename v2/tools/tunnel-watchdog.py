@@ -5,8 +5,10 @@ The phone opens Taska through a dev tunnel (com.taska.tunnel, `devtunnel host ta
 lost its relay at 04:17, failed to refresh its token and hung for hours with its process still running: the link
 gave no answer and nobody knew. This watchdog keeps the link working and says so when it can't.
 
-Once a minute it opens the public address of port 7340 from the outside, the way a phone does, and writes one JSON
-line to .logs/tunnel-health.jsonl:
+It reads the tunnel's own log every 15 s (a local file, no network). When the log says the tunnel lost its relay or
+could not reconnect, it checks the link at once; otherwise it checks every 5 minutes (r811: cheap, far below the
+tunnel's 1500 requests a minute per port). A check opens the public address of port 7340 from the outside, the way a
+phone does (Taska answers 98 bytes asking for the key), and writes one JSON line to .logs/tunnel-health.jsonl:
 
   {"t": "2026-10-23T12:00:00", "up": true, "ms": 180, "status": 401, "restart": null}
 
@@ -14,8 +16,8 @@ line to .logs/tunnel-health.jsonl:
   status  the HTTP status (null without an answer); a 502/504 or no answer means the tunnel is down
   restart why the watchdog restarted the tunnel this minute (null when it did not)
 
-When the link has not answered for 3 minutes in a row it restarts the tunnel host (launchctl kickstart -k), not more
-than once in 10 minutes. When it is still down after two restarts, or devtunnel is no longer logged in, it opens a
+A failed check is checked again a minute later; after 2 failed checks in a row it restarts the tunnel host (launchctl
+kickstart -k), not more than once in 10 minutes. When it is still down after two restarts, or devtunnel is no longer logged in, it opens a
 P0 bug in Taska and blocks on it: a block is what Taska pushes to the phone (F195), and the push does not go through
 the tunnel. When the link answers again it says so on that bug. It also keeps the Dashboard panel
 ~/.taska/dev/panels/tunnel.md (now, the last 24 hours, restarts).
@@ -43,10 +45,15 @@ PORT = 7340
 TASKA = "http://127.0.0.1:7340/p/taska"
 
 TIMEOUT = 20  # seconds the link has to answer
-DOWN_MINUTES = 3  # minutes in a row without an answer before a restart
+EVERY = 5 * 60  # seconds between checks while the link works (r811)
+CONFIRM = 60  # after a failed check, the next one this soon
+FAILS_TO_RESTART = 2  # failed checks in a row before a restart (r811)
+TICK = 15  # seconds between looks at the tunnel's own log
 QUIET_AFTER_RESTART = 10 * 60
 TELL_AFTER_RESTARTS = 2  # restarts in one outage before Yadong is told
 KEEP_LINES = 30 * 24 * 60
+TUNNEL_LOGS = [LOGS / "tunnel.log", LOGS / "tunnel-error.log"]
+TROUBLE = re.compile(r"Connection lost|Reconnecting|Unauthorized|Error connecting|not valid")
 
 
 def run(*args: str, timeout: float = 60) -> str:
@@ -142,8 +149,10 @@ def panel_text(lines: List[Dict[str, Any]], url: Optional[str]) -> str:
     up = sum(1 for x in lines if x.get("up"))
     now = "\u80fd\u6253\u5f00" if last.get("up") else "**\u6253\u4e0d\u5f00**"  # opens / does NOT open
     out.append("- \u73b0\u5728\uff1a%s\uff08%s\uff09" % (now, last["t"][11:16]))
-    span = "%d \u5c0f\u65f6" % (len(lines) // 60) if len(lines) >= 60 else "%d \u5206\u949f" % len(lines)  # hours / minutes
-    out.append("- \u6700\u8fd1 %s\uff1a%.1f%% \u7684\u5206\u949f\u80fd\u6253\u5f00" % (span, 100 * up / len(lines)))
+    mins = int((time.time() - time.mktime(time.strptime(lines[0]["t"], "%Y-%m-%dT%H:%M:%S"))) / 60)
+    span = "%d \u5c0f\u65f6" % (mins // 60) if mins >= 60 else "%d \u5206\u949f" % max(mins, 1)  # hours / minutes
+    # the last N hours: X% of the checks opened (N checks)
+    out.append("- \u6700\u8fd1 %s\uff1a%.1f%% \u7684\u68c0\u67e5\u80fd\u6253\u5f00\uff08\u5171 %d \u6b21\uff09" % (span, 100 * up / len(lines), len(lines)))
     restarts = [x for x in lines if x.get("restart")]
     out.append("- \u81ea\u52a8\u91cd\u542f\uff1a%d \u6b21" % len(restarts) + ("\uff0c\u6700\u8fd1 %s" % restarts[-1]["t"][11:16] if restarts else ""))
     if url:
@@ -153,7 +162,8 @@ def panel_text(lines: List[Dict[str, Any]], url: Optional[str]) -> str:
 
 def write_panel(url: Optional[str]) -> None:
     try:
-        lines = [json.loads(x) for x in HEALTH.read_text().splitlines()[-24 * 60 :] if x.strip()]
+        day = time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime(time.time() - 24 * 3600))
+        lines = [x for x in (json.loads(y) for y in HEALTH.read_text().splitlines()[-24 * 60 :] if y.strip()) if x["t"] >= day]
         PANEL.parent.mkdir(parents=True, exist_ok=True)
         tmp = PANEL.with_suffix(".tmp")
         tmp.write_text(panel_text(lines, url))
@@ -173,55 +183,84 @@ def trim() -> None:
         tmp.replace(HEALTH)
 
 
+class LogWatch:
+    """New lines in the tunnel's own logs since the last look; True when one says the tunnel is in trouble."""
+
+    def __init__(self) -> None:
+        self.at = {f: (f.stat().st_size if f.exists() else 0) for f in TUNNEL_LOGS}
+
+    def trouble(self) -> bool:
+        hit = False
+        for f in TUNNEL_LOGS:
+            try:
+                size = f.stat().st_size
+                if size < self.at[f]:  # the log was rotated or cut
+                    self.at[f] = 0
+                with f.open("rb") as h:
+                    h.seek(self.at[f])
+                    new = h.read(size - self.at[f]).decode("utf-8", "replace")
+                self.at[f] = size
+                hit = hit or bool(TROUBLE.search(new))
+            except OSError:
+                continue
+        return hit
+
+
 def main() -> None:
     LOGS.mkdir(parents=True, exist_ok=True)
     trim()
     state = load_state()
     url = address()
+    logs = LogWatch()
+    next_check = time.time()  # check once at start
     down_since: Optional[float] = None
     last_restart = 0.0
+    fails = 0  # failed checks in a row
     restarts = 0  # in the current outage
-    n = 0
     while True:
         now = time.time()
-        if not url:
-            url = address()
-        status, ms = probe(url) if url else (None, None)
-        up = status is not None and status > 0
-        line: Dict[str, Any] = {
-            "t": time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime(now)),
-            "up": up,
-            "ms": ms if up else None,
-            "status": status,
-            "restart": None,
-        }
-        if up:
-            if state.get("code"):
-                taska("%s say %s\n" % (state["code"], BACK % time.strftime("%H:%M")))
-                taska("%s withdraw %s\n" % (state["code"], BACK % time.strftime("%H:%M")))
-                state = {}
-                save_state(state)
-            down_since, restarts = None, 0
-        else:
-            down_since = down_since or now
-            since = time.strftime("%H:%M", time.localtime(down_since))
-            if now - down_since >= (DOWN_MINUTES - 0.5) * 60 and now - last_restart >= QUIET_AFTER_RESTART:
-                if not logged_in():
-                    tell(state, NEEDS_LOGIN)
-                else:
-                    line["restart"] = "no answer since %s" % since
-                    restart()
-                    last_restart, restarts = now, restarts + 1
-                    url = None  # read the address again after the restart
-                    if restarts > TELL_AFTER_RESTARTS:
-                        tell(state, STILL_DOWN % (restarts - 1, since))
-        with HEALTH.open("a") as f:
-            f.write(json.dumps(line) + "\n")
-        write_panel(url)
-        n += 1
-        if n % 1440 == 0:
+        if logs.trouble():
+            next_check = min(next_check, now)
+        if now >= next_check:
+            if not url:
+                url = address()
+            status, ms = probe(url) if url else (None, None)
+            up = status is not None and status > 0
+            line: Dict[str, Any] = {
+                "t": time.strftime("%Y-%m-%dT%H:%M:%S", time.localtime(now)),
+                "up": up,
+                "ms": ms if up else None,
+                "status": status,
+                "restart": None,
+            }
+            if up:
+                if state.get("code"):
+                    taska("%s say %s\n" % (state["code"], BACK % time.strftime("%H:%M")))
+                    taska("%s withdraw %s\n" % (state["code"], BACK % time.strftime("%H:%M")))
+                    state = {}
+                    save_state(state)
+                down_since, fails, restarts = None, 0, 0
+                next_check = now + EVERY
+            else:
+                down_since = down_since or now
+                fails += 1
+                next_check = now + CONFIRM
+                since = time.strftime("%H:%M", time.localtime(down_since))
+                if fails >= FAILS_TO_RESTART and now - last_restart >= QUIET_AFTER_RESTART:
+                    if not logged_in():
+                        tell(state, NEEDS_LOGIN)
+                    else:
+                        line["restart"] = "no answer since %s" % since
+                        restart()
+                        last_restart, restarts, fails = now, restarts + 1, 0
+                        url = None  # read the address again after the restart
+                        if restarts > TELL_AFTER_RESTARTS:
+                            tell(state, STILL_DOWN % (restarts - 1, since))
+            with HEALTH.open("a") as f:
+                f.write(json.dumps(line) + "\n")
+            write_panel(url)
             trim()
-        time.sleep(max(1.0, 60 - (time.time() - now)))
+        time.sleep(TICK)
 
 
 if __name__ == "__main__":
