@@ -221,7 +221,7 @@ export function SideList() {
             href={`/p/${encodeURIComponent(p.name)}/`}
             data-slug={p.name}
             {...(cur ? { 'aria-current': 'page' as const, 'data-act': 'new-input' } : {})}
-            className="flex items-center gap-2.5 rounded-xl px-2.5 py-2 select-none [-webkit-touch-callout:none] hover:bg-zinc-200/60 aria-[current=page]:bg-blue-100 aria-[current=page]:ring-1 aria-[current=page]:ring-blue-200 aria-[current=page]:hover:bg-blue-100 data-dragging:bg-zinc-200/70 data-dragging:ring-0 data-drop:bg-blue-100 data-drop:ring-2 data-drop:ring-blue-500 data-pressed:bg-zinc-200/80 dark:hover:bg-zinc-800 dark:aria-[current=page]:bg-blue-400/15 dark:aria-[current=page]:ring-blue-400/30 dark:aria-[current=page]:hover:bg-blue-400/20 dark:data-dragging:bg-zinc-800/70 dark:data-drop:bg-blue-400/15 dark:data-drop:ring-blue-400 data-dragging:[&>*]:invisible"
+            className="flex items-center gap-2.5 rounded-xl px-2.5 py-2 select-none [-webkit-touch-callout:none] hover:bg-zinc-200/60 aria-[current=page]:bg-blue-100 aria-[current=page]:ring-1 aria-[current=page]:ring-blue-200 aria-[current=page]:hover:bg-blue-100 data-dragging:bg-zinc-200/70 data-dragging:ring-0 data-drop:bg-blue-100 data-drop:ring-2 data-drop:ring-blue-500 data-pressed:bg-zinc-200/80 dark:hover:bg-zinc-800 dark:aria-[current=page]:bg-blue-400/15 dark:aria-[current=page]:ring-blue-400/30 dark:aria-[current=page]:hover:bg-blue-400/20 dark:data-dragging:bg-zinc-800/70 dark:data-drop:bg-blue-400/15 dark:data-drop:ring-blue-400 dark:data-pressed:bg-zinc-800 data-dragging:[&>*]:invisible"
           >
             <ProjTile name={p.name} cls="size-6 rounded-md text-xs" />
             <span className="min-w-0 flex-1">

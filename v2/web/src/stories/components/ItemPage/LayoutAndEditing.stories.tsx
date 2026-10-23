@@ -24,3 +24,6 @@ export const GoingThrough: StoryObj = {
   parameters: { ...Item.GoingThrough.parameters, platform: 'desktop' },
 }
 export const ReplySending: StoryObj = { ...Item.ReplySending, name: 'Your reply on its way' }
+/** T522 (r731): the head, its chips and the subitems under the pointer, the keyboard, a press, side by side. */
+export const HeadLooks: StoryObj = { ...Item.HeadLooks, name: 'Pointer, keys, pressed: all side by side' }
+export const LineDragged: StoryObj = { ...Item.LineDragged, name: 'Line, dragged' }

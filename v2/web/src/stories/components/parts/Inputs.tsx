@@ -6,6 +6,7 @@ import { U, model } from '../../../lib/state'
 import type { Input } from '../../../lib/types'
 import { Pane, type Setup } from '../../lib/demo'
 import { ListColumn } from '../../lib/column'
+import { looks } from '../../lib/states'
 
 // what this part of Storybook shows (T512: its stories are in the folders beside this file)
 export const area: Meta = {
@@ -166,6 +167,28 @@ export const SaidLatelyList: Story = {
     </Pane>
   ),
 }
+// T522 (r731, r762): a line of what you said lately under the pointer (its time gives way to Add more and ⋯), from the
+// keys, its buttons pointed at, side by side (../../lib/states.tsx); the top of the list, the desktop only.
+const said = () => (
+  <div className="h-[230px] overflow-hidden">
+    <Pane w="item">
+      <div className="mx-auto max-w-[42rem] p-4">
+        <SaidLately draft={null} />
+      </div>
+    </Pane>
+  </div>
+)
+const LINE = 'li:nth-child(1 of [class~="group/row"])'
+export const SaidLooks: Story = looks(
+  [
+    { name: 'As it is', draw: said },
+    { name: 'Pointer on a line: Add more and ⋯ show', draw: said, hover: [LINE] },
+    { name: 'Keys: Tab on its item', draw: said, within: [LINE], focus: [`${LINE} button[data-act="goto"]`] },
+    { name: 'Pointer on its item', draw: said, hover: [LINE, `${LINE} button[data-act="goto"]`] },
+    { name: 'Pointer on its ⋯', draw: said, hover: [LINE, `${LINE} span.flex button:last-child`] },
+  ],
+  { w: 'w-[780px]' },
+)
 export const ProjectHead: Story = {
   render: () => (
     <div className="p-6">

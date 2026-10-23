@@ -5,6 +5,7 @@ import { U, byN, parseRef } from '../../../lib/state'
 import { VW_STATE } from '../../../lib/views'
 import { Pane, type Setup } from '../../lib/demo'
 import { ListColumn } from '../../lib/column'
+import { looks } from '../../lib/states'
 
 // what this part of Storybook shows (T512: its stories are in the folders beside this file)
 export const area: Meta = {
@@ -199,3 +200,77 @@ export const AgentMark: Story = {
     </div>
   ),
 }
+
+// ---------------------------------------------------------------- under the pointer, the keyboard, picked, dragged
+// T522 (r731, r762): every look of a row side by side, each drawn without a pointer or a key (../../lib/states.tsx).
+// The same item where its look does not depend on the list (T03); the open one (T40) and a picked one (T38) as the
+// list marks them. The desktop only: the phone has no pointer, and drags nothing (it swipes).
+const ROW = '[data-act="open"]',
+  ROW_BTN = `${ROW} div > button[data-act]:first-child`
+const oneRow = (ref: string) => () => (
+  <div className="lg:mr-px">
+    <ItemRow it={byN.get(parseRef(ref) as number)!} group={[...byN.values()]} />
+  </div>
+)
+export const RowLooks: Story = looks(
+  [
+    { name: 'As it is', draw: oneRow('T3') },
+    { name: 'Pointer on it: its buttons show', draw: oneRow('T3'), hover: [ROW] },
+    { name: 'Pointer on one of its buttons', draw: oneRow('T3'), hover: [ROW, ROW_BTN] },
+    { name: 'Pressed', draw: oneRow('T3'), pressed: [ROW] },
+    { name: 'Open in the pane', draw: oneRow('T40') },
+    { name: 'Open in the pane, pointer on it', draw: oneRow('T40'), hover: [ROW] },
+    { name: 'Open in the pane, pointer on a button', draw: oneRow('T40'), hover: [ROW, ROW_BTN] },
+    { name: 'Picked (Cmd or Shift)', draw: oneRow('T38') },
+    { name: 'Picked, pointer on it', draw: oneRow('T38'), hover: [ROW] },
+    { name: 'Picked, pointer on a button', draw: oneRow('T38'), hover: [ROW, ROW_BTN] },
+    { name: 'Picked, pressed', draw: oneRow('T38'), pressed: [ROW] },
+    { name: 'Pointer on its picture', draw: oneRow('B36'), hover: [ROW, 'button[data-act="view"]'] },
+    { name: 'Pointer on Hide subitems', draw: oneRow('F1'), hover: [ROW, 'button[data-act="fold"]'] },
+    { name: 'Keys: Tab on Hide subitems', draw: oneRow('F1'), focus: ['button[data-act="fold"]'] },
+    { name: 'Pointer on Part of (its parent)', draw: oneRow('T15'), hover: [ROW, 'button[data-act="goto"]'] },
+    { name: 'Keys: Tab on Part of', draw: oneRow('T15'), focus: ['button[data-act="goto"]'] },
+    { name: 'Being dragged', draw: oneRow('T3'), marks: [['article', 'data-dragging', '']] },
+    { name: 'The dragged one goes above it', draw: oneRow('T3'), marks: [['article', 'data-drop', 'before']] },
+    { name: 'The dragged one goes below it', draw: oneRow('T3'), marks: [['article', 'data-drop', 'after']] },
+    { name: 'The dragged one goes under it', draw: oneRow('T3'), marks: [['article', 'data-drop', 'into']] },
+  ],
+  {
+    id: 'list',
+    setup: ({ it }) => {
+      U.open = it('T40').n
+      U.sel.add(it('T38').n)
+    },
+  },
+)
+const oneNeed = (ref: string) => () => (
+  <div className="lg:mr-px">
+    <NeedsRow it={byN.get(parseRef(ref) as number)!} />
+  </div>
+)
+const PILL = 'button[data-act="row-act"]'
+export const NeedsLooks: Story = looks(
+  [
+    { name: 'As it is', draw: oneNeed('I4') },
+    { name: 'Pointer on it: its buttons show', draw: oneNeed('I4'), hover: [ROW] },
+    { name: 'Pointer on Approve', draw: oneNeed('I4'), hover: [ROW, PILL] },
+    { name: 'Pointer on one of its buttons', draw: oneNeed('I4'), hover: [ROW, ROW_BTN] },
+    { name: 'Keys: Tab on Approve', draw: oneNeed('I4'), focus: [PILL] },
+    { name: 'Pressed', draw: oneNeed('I4'), pressed: [ROW] },
+    { name: 'Approve pressed', draw: oneNeed('I4'), hover: [ROW, PILL], pressed: [PILL] },
+    { name: 'Open in the pane', draw: oneNeed('B2') },
+    { name: 'Open in the pane, pointer on it', draw: oneNeed('B2'), hover: [ROW] },
+    { name: 'Picked', draw: oneNeed('T7') },
+    { name: 'Picked, pointer on it', draw: oneNeed('T7'), hover: [ROW] },
+    { name: 'Picked, pointer on Answer', draw: oneNeed('T7'), hover: [ROW, PILL] },
+    { name: 'Being dragged', draw: oneNeed('I4'), marks: [['article', 'data-dragging', '']] },
+    { name: 'The dragged one goes under it', draw: oneNeed('I4'), marks: [['article', 'data-drop', 'into']] },
+  ],
+  {
+    id: 'list',
+    setup: ({ it }) => {
+      U.open = it('B2').n
+      U.sel.add(it('T7').n)
+    },
+  },
+)

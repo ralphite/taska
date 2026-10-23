@@ -21,3 +21,25 @@ export const RightClickOnARow: StoryObj = {
   name: 'Right-click on a row',
   parameters: { ...Sheets.RightClickOnARow.parameters, platform: 'desktop' },
 }
+/** T522 (r731): a row under the pointer, from the keys (Tab), pressed (desktop). */
+export const ItemMenuPointed: StoryObj = {
+  ...Sheets.ItemMenuPointed,
+  name: 'Pointer on a row',
+  parameters: { ...Sheets.ItemMenuPointed.parameters, platform: 'desktop' },
+}
+export const ItemMenuKeys: StoryObj = {
+  ...Sheets.ItemMenuKeys,
+  name: 'Keys: Tab on a row',
+  parameters: { ...Sheets.ItemMenuKeys.parameters, platform: 'desktop' },
+}
+export const ItemMenuPressed: StoryObj = { ...Sheets.ItemMenuPressed, name: 'A row pressed' }
+export const StatusPointed: StoryObj = {
+  ...Sheets.StatusPointed,
+  name: 'Status, pointer on a choice',
+  parameters: { ...Sheets.StatusPointed.parameters, platform: 'desktop' },
+}
+export const StatusPointedOnPicked: StoryObj = {
+  ...Sheets.StatusPointedOnPicked,
+  name: 'Status, pointer on the ticked one',
+  parameters: { ...Sheets.StatusPointedOnPicked.parameters, platform: 'desktop' },
+}

@@ -10,3 +10,5 @@ export const ProjectBar: StoryObj = {
   name: 'Project bar',
   parameters: { ...Frame.ProjectBar.parameters, platform: 'desktop' },
 }
+/** T522 (r731): every look under the pointer, the keyboard, a press, side by side. */
+export const ProjectBarLooks: StoryObj = { ...Frame.ProjectBarLooks, name: 'Pointer, keys, pressed: all side by side' }

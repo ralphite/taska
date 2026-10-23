@@ -7,3 +7,5 @@ export default meta
 
 export const ListHead: StoryObj = { ...Frame.ListHead, name: 'Search box' }
 export const ListHeadSearching: StoryObj = { ...Frame.ListHeadSearching, name: 'Searching' }
+/** T522 (r731): every look under the pointer, the keyboard, side by side. */
+export const ListHeadLooks: StoryObj = { ...Frame.ListHeadLooks, name: 'Pointer, keys, typing: all side by side' }

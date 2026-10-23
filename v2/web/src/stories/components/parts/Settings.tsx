@@ -8,6 +8,7 @@ import { Home } from '../../../pages/Home'
 import { D, U, desk, model } from '../../../lib/state'
 import { loadFixes, loadGuide, loadProjects } from '../../../lib/settings'
 import { Pane, type Setup } from '../../lib/demo'
+import { looks } from '../../lib/states'
 
 // what this part of Storybook shows (T512: its stories are in the folders beside this file)
 export const area: Meta = {
@@ -109,6 +110,45 @@ export const ListDeletedPicked = side('deleted', ({ S }) => (U.sideSel = S.delet
 
 // ---------------------------------------------------------------- the home page
 
+// ---------------------------------------------------------------- under the pointer, the keys, on and off
+// T522 (r731, r762): a section of Settings and a row of the home page as the pointer, Tab or a press leaves them, side
+// by side (../../lib/states.tsx), each scrolled to the part it shows. The desktop only.
+const settings = () => (
+  <div className="h-[260px] overflow-hidden">
+    <Pane w="full" h="flex h-screen flex-col">
+      <ProjectView hidden={false} />
+    </Pane>
+  </div>
+)
+const SEC = (k: string) => `a[data-act="psec"][data-sec="${k}"]`
+export const NavLooks: Story = looks(
+  [
+    { name: 'As it is (Agents open)', draw: settings },
+    { name: 'Pointer on a section', draw: settings, hover: [SEC('projects')] },
+    { name: 'Pointer on the section open', draw: settings, hover: [SEC('agents')] },
+    { name: 'Keys: Tab on a section', draw: settings, focus: [SEC('projects')] },
+    { name: 'A section pressed', draw: settings, pressed: [SEC('projects')] },
+    { name: 'Pointer on Back', draw: settings, hover: ['[data-act="project-back"]'] },
+  ],
+  { w: 'w-[680px]', setup: Agents.parameters!.taska!.setup },
+)
+const home = () => (
+  <div className="h-[330px] overflow-hidden">
+    <div className="min-h-dvh bg-zinc-100 text-zinc-900 antialiased dark:bg-zinc-900 dark:text-zinc-100">
+      <Home />
+    </div>
+  </div>
+)
+const PROJ = 'li:first-child > a[href^="/p/"]'
+export const HomeLooks: Story = looks(
+  [
+    { name: 'As it is', draw: home, scroll: PROJ },
+    { name: 'Pointer on a project', draw: home, scroll: PROJ, hover: [PROJ] },
+    { name: 'A project pressed (mouse down)', draw: home, scroll: PROJ, hover: [PROJ], active: [PROJ] },
+    { name: 'Keys: Tab on a project', draw: home, scroll: PROJ, focus: [PROJ] },
+  ],
+  { w: 'w-full', setup: () => (model.S.project = '') },
+)
 export const HomePage: Story = {
   parameters: { taska: { setup: () => (model.S.project = '') } },
   render: () => (

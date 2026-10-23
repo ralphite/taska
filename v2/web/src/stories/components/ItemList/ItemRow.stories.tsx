@@ -5,6 +5,8 @@ import * as List from '../parts/List'
 const meta: Meta = { title: 'Components/Item list/Item row' }
 export default meta
 
+/** T522 (r731): every look under the pointer, the keyboard, a press, picked, open, dragged, side by side. */
+export const RowLooks: StoryObj = { ...List.RowLooks, name: 'Pointer, keys, picked, dragged: all side by side' }
 export const RowOpen: StoryObj = { ...List.RowOpen, name: 'Open' }
 export const RowInProgress: StoryObj = { ...List.RowInProgress, name: 'In progress' }
 export const RowInProgressQuiet: StoryObj = { ...List.RowInProgressQuiet, name: 'In progress, agent quiet' }

@@ -5,6 +5,8 @@ import * as List from '../parts/List'
 const meta: Meta = { title: 'Components/Item list/Needs-you row' }
 export default meta
 
+/** T522 (r731): every look under the pointer, the keyboard, a press, picked, open, dragged, side by side. */
+export const NeedsLooks: StoryObj = { ...List.NeedsLooks, name: 'Pointer, keys, picked, dragged: all side by side' }
 export const NeedsQuestion: StoryObj = { ...List.NeedsQuestion, name: 'Question' }
 export const NeedsChecklist: StoryObj = { ...List.NeedsChecklist, name: 'Checklist question' }
 export const NeedsBlocked: StoryObj = { ...List.NeedsBlocked, name: 'Blocked' }

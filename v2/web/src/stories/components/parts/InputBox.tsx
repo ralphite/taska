@@ -28,6 +28,7 @@ import type { Input } from '../../../lib/types'
 import { levelOf } from '../../../lib/voice'
 import { Pane, type Setup } from '../../lib/demo'
 import { Column } from '../../lib/column'
+import { looks } from '../../lib/states'
 
 // what this part of Storybook shows
 export const area: Meta = {
@@ -144,6 +145,17 @@ export const TooLongForTheBox = page(LONGER)
 export const PointingAtTheMic = pointing('#sendBtn')
 export const PointingAtSend = pointing('#sendBtn', SAID)
 export const PointingAtAdd = pointing('#attachBtn')
+/** T522 (r731): the box you are writing in (its field focused): its edge a shade darker. The page has one box, so one
+ * look a story. */
+const BOX = '[class~="group/box"]'
+export const BoxFocused: Story = looks([{ name: 'Writing in the box', draw: () => <Column />, within: [BOX] }], {
+  w: 'w-full',
+  platform: 'both',
+})
+export const BoxFocusedWithWords: Story = looks(
+  [{ name: 'Writing in the box, words in it', draw: () => <Column text={SAID} />, within: [BOX] }],
+  { w: 'w-full', platform: 'both' },
+)
 
 // ---------------------------------------------------------------- Voice
 /** Recording: x drops it, the time and how loud you speak, the check puts its words in the box, the arrow sends it. */

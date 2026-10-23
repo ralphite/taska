@@ -65,3 +65,14 @@ export const InputHistory: StoryObj = { ...Sheets.InputHistory, name: 'What you 
 export const NotSaved: StoryObj = { ...Sheets.NotSaved, name: 'Not saved' }
 export const NotSavedOne: StoryObj = { ...Sheets.NotSavedOne, name: 'Not saved: one change' }
 export const SignIn: StoryObj = { ...Sheets.SignIn, name: 'Sign in' }
+/** T522 (r731): the row the arrow keys are on beside the one under the pointer. */
+export const CommandPalettePointed: StoryObj = {
+  ...Sheets.CommandPalettePointed,
+  name: 'Command palette: keys on one, pointer on another',
+  parameters: { ...Sheets.CommandPalettePointed.parameters, ...desktop },
+}
+export const SwitchProjectPointed: StoryObj = {
+  ...Sheets.SwitchProjectPointed,
+  name: 'Switch project: keys on one, pointer on another',
+  parameters: { ...Sheets.SwitchProjectPointed.parameters, ...desktop },
+}

@@ -25,3 +25,5 @@ export const TabsRules: StoryObj = {
   name: 'Rules',
   parameters: { ...Frame.TabsRules.parameters, platform: 'phone' },
 }
+/** T522 (r731): a tab or Filters pressed (the phone has no pointer). */
+export const TabsLooks: StoryObj = { ...Frame.TabsLooks, name: 'Pressed: all side by side' }

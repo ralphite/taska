@@ -315,6 +315,50 @@ export const SwitchProjectNothingMatches = opens({
 /** ?: every key. */
 export const Keys = opens({ from: 'list', sheet: () => ['keys', {}] })
 
+// ---------------------------------------------------------------- under the pointer, from the keys, pressed
+// T522 (r731, r762): a row of a menu as the pointer, Tab or a press leaves it, drawn without them: the page's own
+// :hover and :focus-visible rules turned on for that row the way storybook-addon-pseudo-states does (../../lib/states),
+// once the menu is open; a press is the page's data-pressed (lib/events.ts press). The desktop only for the pointer.
+const looksAt =
+  (sel: string, state: 'hover' | 'focus-visible' | 'pressed'): Step =>
+  (doc) => {
+    const el = doc.querySelector(sel)
+    if (!el) return
+    if (state === 'pressed') el.setAttribute('data-pressed', '')
+    else el.classList.add(`pseudo-${state}`)
+  }
+const ROW2 = '#dlgBody button[data-act]:nth-of-type(2)'
+/** The item's menu, the pointer on its second row. */
+export const ItemMenuPointed = itemMenu('F1', looksAt(ROW2, 'hover'))
+/** The item's menu, Tab on its second row. */
+export const ItemMenuKeys = itemMenu('F1', looksAt(ROW2, 'focus-visible'))
+/** The item's menu, its second row pressed. */
+export const ItemMenuPressed = itemMenu('F1', looksAt(ROW2, 'pressed'))
+/** The status's choices, the pointer on one not picked. */
+export const StatusPointed = opens({
+  from: 'item',
+  setup: open('F1'),
+  steps: [click('[data-act="item-menu"][data-arm="s"]'), looksAt('#dlgBody [aria-pressed="false"]', 'hover')],
+})
+/** The status's choices, the pointer on the one picked (ticked). */
+export const StatusPointedOnPicked = opens({
+  from: 'item',
+  setup: open('F1'),
+  steps: [click('[data-act="item-menu"][data-arm="s"]'), looksAt('#dlgBody [aria-pressed="true"]', 'hover')],
+})
+/** Cmd-K: the row the arrow keys are on, and the pointer on another. */
+export const CommandPalettePointed = opens({
+  from: 'list',
+  sheet: () => ['palette', {}],
+  steps: [looksAt('#dlgBody [aria-selected="false"]:nth-child(3)', 'hover')],
+})
+/** G P: the project the arrow keys are on, and the pointer on another. */
+export const SwitchProjectPointed = opens({
+  from: 'list',
+  sheet: () => ['switch', {}],
+  steps: [looksAt('#dlgBody [aria-selected="false"]', 'hover')],
+})
+
 // ---------------------------------------------------------------- sheets
 
 /** Filters (phone; the desktop has them over the list): one set, so Clear all shows. */

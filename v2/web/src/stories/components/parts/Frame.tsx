@@ -22,11 +22,12 @@ import {
 } from '../../../components/Shell'
 import { D, DR, U, byN, model, parseRef } from '../../../lib/state'
 import { tipShow } from '../../../lib/events'
-import { WorkerMark } from '../../../components/List'
+import { ItemRow, NeedsRow, WorkerMark } from '../../../components/List'
 import { FAILED, TOAST } from '../../../lib/toast'
 import { VW } from '../../../lib/viewer'
 import { Pane, type Setup } from '../../lib/demo'
 import { Column, drawerPlace } from '../../lib/column'
+import { looks, tipOn } from '../../lib/states'
 
 // what this part of Storybook shows (T512: its stories are in the folders beside this file)
 export const area: Meta = {
@@ -237,3 +238,166 @@ function TipShown() {
 }
 /** The tip that shows when you point at something (desktop). */
 export const PointingTip: Story = { render: () => <TipShown /> }
+
+// ---------------------------------------------------------------- every tip, shown
+// T522 (r731, #6209): the page's one tip (lib/events.ts tipShow), shown for each kind of place that has one, as
+// pointing at it shows it: its words, its key, its side (to the right in the sidebar and the rail, under the heads).
+const rowOf = (ref: string) => () => (
+  <Pane w="list">
+    <div id="list" className="lg:mr-px">
+      <ItemRow it={byN.get(parseRef(ref) as number)!} group={[...byN.values()]} />
+    </div>
+  </Pane>
+)
+const needOf = (ref: string) => () => (
+  <Pane w="list">
+    <div id="list" className="lg:mr-px">
+      <NeedsRow it={byN.get(parseRef(ref) as number)!} />
+    </div>
+  </Pane>
+)
+/** A row's button, the pointer on the row: what it does and its key. */
+export const TipRowButton: Story = {
+  ...tipOn(rowOf('T3'), '[data-act="open"] div > button[data-act]:first-child'),
+  parameters: { platform: 'desktop', pseudo: { hover: ['[data-act="open"]'] } },
+  globals: { pseudo: { hover: ['[data-act="open"]'] } },
+}
+/** The one action of a row that waits on you, and its key. */
+export const TipNeedsPill: Story = tipOn(needOf('I4'), 'button[data-act="row-act"]')
+/** A row's count of comments: what it counts. */
+export const TipRowCount: Story = tipOn(rowOf('T3'), '[data-act="open"] span[title]')
+/** How many need you, in a project of the sidebar (to its right). */
+export const TipSidebarNeeds: Story = tipOn(
+  () => <Drawer hidden={false} place={drawerPlace()} />,
+  '#drawerList span[title]',
+)
+/** Hide the sidebar and its key. */
+export const TipHideSidebar: Story = tipOn(() => <Drawer hidden={false} place={drawerPlace()} />, '#sideBtn')
+/** A project of the rail: its name (to its right). */
+export const TipRailProject: Story = tipOn(() => <Rail hidden={false} />, 'a[data-slug="mobile-app"]')
+/** Settings in the rail and its keys. */
+export const TipRailSettings: Story = tipOn(() => <Rail hidden={false} />, '#rail [data-act="project"]')
+/** Filters over the list (under it, as in a head) and its key. */
+export const TipFilters: Story = tipOn(
+  () => (
+    <Pane w="list">
+      <MainHead hidden={false} />
+    </Pane>
+  ),
+  '#deskFilterBtn',
+)
+/** The status chip of an item and its key. */
+export const TipStatusChip: Story = tipOn(() => <Column />, '[data-arm="s"]', {
+  taska: { setup: ({ it }: Setup) => (U.open = it('F1').n) },
+})
+/** All actions (⋯) of an item and its key. */
+export const TipAllActions: Story = tipOn(() => <Column />, '#itemMenuBtn', {
+  taska: { setup: ({ it }: Setup) => (U.open = it('F1').n) },
+})
+
+// ---------------------------------------------------------------- under the pointer, the keyboard, pressed, dragged
+// T522 (r731, r762): every look of the sidebar, the rail and the heads side by side, each drawn without a pointer or a
+// key (../../lib/states.tsx). The shop is the project open; the mobile app is another one in the sidebar.
+const OTHER = 'a[data-slug="mobile-app"]',
+  CUR = 'a[aria-current="page"][data-slug]',
+  NEW_INPUT = 'div:has(> #newInputBtn)'
+const side = () => <Drawer hidden={false} place={drawerPlace()} />
+export const SidebarLooks: Story = looks(
+  [
+    { name: 'As it is (New input open)', draw: side },
+    { name: 'Pointer on another project', draw: side, hover: [OTHER] },
+    { name: 'Pointer on the project open', draw: side, hover: [CUR] },
+    { name: 'Keys: Tab on a project', draw: side, focus: [OTHER] },
+    { name: 'A project pressed', draw: side, pressed: [OTHER] },
+    { name: 'A project dragged into a new place', draw: side, marks: [[OTHER, 'data-dragging', '']] },
+    { name: 'An item dragged onto a project', draw: side, marks: [[OTHER, 'data-drop', '']] },
+    { name: 'Pointer on New input: its mic shows', draw: side, hover: [NEW_INPUT, '#newInputBtn'] },
+    {
+      name: 'New input not open, pointer on it',
+      draw: side,
+      hover: [NEW_INPUT, '#newInputBtn'],
+      marks: [['#newInputBtn', 'aria-pressed', 'false']],
+    },
+    { name: 'Pointer on the mic of New input', draw: side, hover: [NEW_INPUT, '[data-act="new-voice"]'] },
+    { name: 'Pointer on New project', draw: side, hover: ['#drawerNew'] },
+    { name: 'Pointer on Hide the sidebar', draw: side, hover: ['#sideBtn'] },
+    { name: 'Pointer on Documents', draw: side, hover: ['#sideFoot [data-sec="docs"]'] },
+    { name: 'Pointer on Settings', draw: side, hover: ['#sideFoot [data-act="project"]'] },
+    { name: 'Keys: Tab on Keyboard shortcuts', draw: side, focus: ['#sideFoot [data-act="keys"]'] },
+    { name: 'Pointer on its edge: drag to widen', draw: side, hover: ['[data-grip="side"]'] },
+    { name: 'Its edge dragged', draw: side, marks: [['[data-grip="side"]', 'data-drag', '']] },
+  ],
+  { w: 'w-60' },
+)
+/** Documents open from the sidebar: its link marked, and under the pointer. */
+export const SidebarSideOpenLooks: Story = looks(
+  [
+    { name: 'Documents open', draw: side },
+    { name: 'Documents open, pointer on it', draw: side, hover: ['#sideFoot [data-sec="docs"]'] },
+    { name: 'Pointer on Activity', draw: side, hover: ['#sideFoot [data-sec="log"]'] },
+  ],
+  { w: 'w-60', setup: () => (U.side = 'docs') },
+)
+const rail = () => <Rail hidden={false} />
+export const RailLooks: Story = looks(
+  [
+    { name: 'As it is', draw: rail },
+    { name: 'Pointer on a project', draw: rail, hover: [OTHER] },
+    { name: 'Pointer on the project open', draw: rail, hover: [CUR] },
+    { name: 'Pointer on New input (open)', draw: rail, hover: ['[data-act="new-input"][aria-pressed]'] },
+    { name: 'Pointer on Show the sidebar', draw: rail, hover: ['[data-act="side"]'] },
+    { name: 'Pointer on Settings', draw: rail, hover: ['[data-act="project"]'] },
+    { name: 'Keys: Tab on Settings', draw: rail, focus: ['[data-act="project"]'] },
+    { name: 'Settings pressed', draw: rail, pressed: ['[data-act="project"]'] },
+  ],
+  { w: 'w-44' },
+)
+const bar = () => (
+  <Pane w="wide">
+    <ProjBar hidden={false} />
+  </Pane>
+)
+const TAB_ON = '[role="tab"][aria-selected="true"]',
+  TAB_OFF = '[role="tab"][data-tab="inputs"]',
+  DESK_OFF = '[role="tab"][data-tab="rules"]'
+export const ProjectBarLooks: Story = looks(
+  [
+    { name: 'As it is', draw: bar },
+    { name: 'Pointer on a tab', draw: bar, hover: [DESK_OFF] },
+    { name: 'Pointer on the tab open', draw: bar, hover: [TAB_ON] },
+    { name: 'Keys: Tab on a tab', draw: bar, focus: [DESK_OFF] },
+    { name: 'A tab pressed', draw: bar, pressed: [DESK_OFF] },
+    { name: 'Pointer on the agent', draw: bar, hover: ['[data-act="agent-info"]'] },
+  ],
+  { w: 'w-full' },
+)
+const head = () => (
+  <Pane w="list">
+    <MainHead hidden={false} />
+  </Pane>
+)
+export const ListHeadLooks: Story = looks(
+  [
+    { name: 'As it is, words searched', draw: head },
+    { name: 'Pointer on Filters', draw: head, hover: ['#deskFilterBtn'] },
+    { name: 'Filters open', draw: head, marks: [['#deskFilterBtn', 'aria-expanded', 'true']] },
+    { name: 'Keys: Tab on Filters', draw: head, focus: ['#deskFilterBtn'] },
+    { name: 'In the search box', draw: head, within: ['label:has(#q)'] },
+    { name: 'Pointer on Clear', draw: head, hover: ['#qX'] },
+  ],
+  { setup: () => (U.q = '导出') },
+)
+const phoneTabs = () => (
+  <Pane w="full">
+    <Tabs hidden={false} />
+  </Pane>
+)
+export const TabsLooks: Story = looks(
+  [
+    { name: 'As it is', draw: phoneTabs },
+    { name: 'A tab pressed', draw: phoneTabs, pressed: [TAB_OFF] },
+    { name: 'The tab open, pressed', draw: phoneTabs, pressed: [TAB_ON] },
+    { name: 'Filters pressed', draw: phoneTabs, pressed: ['#filterBtn'] },
+  ],
+  { w: 'w-[345px]', platform: 'phone' },
+)

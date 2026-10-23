@@ -6,3 +6,5 @@ const meta: Meta = { title: 'Components/Home page' }
 export default meta
 
 export const HomePage: StoryObj = { ...Settings.HomePage, name: 'Every project' }
+/** T522 (r731): a project's row under the pointer, pressed, from the keys. */
+export const HomeLooks: StoryObj = { ...Settings.HomeLooks, name: 'Pointer, pressed, keys: all side by side' }

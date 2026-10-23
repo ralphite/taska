@@ -1,12 +1,13 @@
 // T457: an item's pane (the right side on the desktop, the whole page on the phone) in every state an item has, and
 // the card that asks you, on its own.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { NeedsCard } from '../../../components/Detail'
+import { DetailView, NeedsCard } from '../../../components/Detail'
 import { Column } from '../../lib/column'
 import { D, EMPTY_STATE, U, byN, byR, kids, lastAgentMsg, model, parseRef } from '../../../lib/state'
 import { clearTicks, tickDoc, tickKeys } from '../../../lib/doctick'
 import type { Item } from '../../../lib/types'
 import { Pane, type Setup } from '../../lib/demo'
+import { looks } from '../../lib/states'
 
 // what this part of Storybook shows (T512: its stories are in the folders beside this file)
 export const area: Meta = {
@@ -210,6 +211,63 @@ export const CardAccepted = card('B6', ({ it }) => {
   i.status = 'done'
   i.decided = { from: 'review', to: 'done', msg: lastAgentMsg(i)?.id ?? null }
 })
+// ---------------------------------------------------------------- under the pointer, the keyboard, pressed, busy
+// T522 (r731, r762): every look of the item pane's head, its chips and its subitems side by side, each drawn without a
+// pointer or a key (../../lib/states.tsx); each shows the top of the pane (or its subitems), F01 open. The desktop only.
+// The pane alone (the page has one input box, so it is not drawn once a look).
+const pane = (tall = false) => (
+  <div className={`${tall ? 'h-[400px]' : 'h-[200px]'} overflow-hidden`}>
+    <Pane w="item" h="flex h-[calc(100dvh-3rem)] flex-col">
+      <DetailView hidden={false} />
+    </Pane>
+  </div>
+)
+const DONE = '#dActs > button:first-child',
+  SUBS = '[data-act="sub-new"]',
+  SUB = '.divide-y > button[data-act="goto"]'
+export const HeadLooks: Story = looks(
+  [
+    { name: 'As it is', draw: pane },
+    { name: 'Pointer on Done', draw: () => pane(), hover: [DONE] },
+    { name: 'Keys: Tab on Done', draw: () => pane(), focus: [DONE] },
+    { name: 'Done pressed', draw: () => pane(), hover: [DONE], pressed: [DONE] },
+    { name: 'Done sent, waiting for Taska', draw: () => pane(), marks: [[DONE, 'aria-busy', 'true']] },
+    { name: 'Pointer on All actions (⋯)', draw: () => pane(), hover: ['#itemMenuBtn'] },
+    { name: 'Pointer on the next item', draw: () => pane(), hover: ['#dNav button:nth-child(2)'] },
+    { name: 'Pointer on the status', draw: () => pane(), hover: ['[data-arm="s"]'] },
+    { name: 'Keys: Tab on the priority', draw: () => pane(), focus: ['[data-arm="p"]'] },
+    {
+      name: 'Pointer on Now (to Later)',
+      draw: () => pane(),
+      hover: ['#detailView [data-f="when"][title]:not(#dActs *)'],
+    },
+    { name: 'Its subitems', draw: () => pane(true), scroll: SUBS },
+    {
+      name: 'Pointer on a subitem',
+      draw: () => pane(true),
+      scroll: SUBS,
+      hover: [SUB + ':first-child'],
+    },
+    {
+      name: 'A subitem pressed',
+      draw: () => pane(true),
+      scroll: SUBS,
+      pressed: [SUB + ':first-child'],
+    },
+    {
+      name: 'Pointer on Add (a subitem)',
+      draw: () => pane(true),
+      scroll: SUBS,
+      hover: ['[data-act="sub-new"]'],
+    },
+  ],
+  { w: 'w-full', setup: ({ it }) => (U.open = it('F1').n) },
+)
+/** The line between the item and its talk, dragged: it stays blue while you drag. */
+export const LineDragged: Story = looks(
+  [{ name: 'The line dragged', draw: () => <Column />, marks: [['[data-grip]', 'data-drag', '']] }],
+  { w: 'w-full', setup: ({ it }) => (U.open = it('T3').n) },
+)
 /** Finished work you sent back with Not yet: the agent has it again. */
 export const CardSentBack = card('B6', ({ it }) => {
   const i = it('B6')

@@ -13,3 +13,5 @@ export const TooLongForTheBox: StoryObj = { ...InputBox.TooLongForTheBox, name: 
 export const PointingAtTheMic: StoryObj = { ...InputBox.PointingAtTheMic, name: 'Pointing at the mic' }
 export const PointingAtSend: StoryObj = { ...InputBox.PointingAtSend, name: 'Pointing at Send' }
 export const PointingAtAdd: StoryObj = { ...InputBox.PointingAtAdd, name: 'Pointing at + (add pictures or files)' }
+export const BoxFocused: StoryObj = { ...InputBox.BoxFocused, name: 'Writing in it (focused)' }
+export const BoxFocusedWithWords: StoryObj = { ...InputBox.BoxFocusedWithWords, name: 'Writing in it, words in it' }

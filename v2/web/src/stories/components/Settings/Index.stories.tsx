@@ -21,3 +21,5 @@ export const UseOnYourPhone: StoryObj = { ...Settings.UseOnYourPhone, name: 'Use
 export const Notifications: StoryObj = { ...Settings.Notifications, name: 'Notifications' }
 export const VoiceSpellings: StoryObj = { ...Settings.VoiceSpellings, name: 'Voice spellings' }
 export const Organizer: StoryObj = { ...Settings.Organizer, name: 'Organizer' }
+/** T522 (r731): its sections under the pointer, from the keys, pressed. */
+export const NavLooks: StoryObj = { ...Settings.NavLooks, name: 'Sections: pointer, keys, pressed' }
