@@ -85,3 +85,21 @@ for (const [kind, words] of [
     await open(page, p)
     await expect.poll(() => said(rowIcons(page)), 'the row once answered').toEqual(['In progress | In progress'])
   })
+
+for (const [kind, words] of [
+  ['block', 'I need the export key'],
+  ['ask', 'Which export key should I use?'],
+] as const)
+  test(`r781: an item whose agent ${kind === 'block' ? 'is blocked' : 'asks'} says so once: its status reads Needs you, and the line above it has only its code, no ${kind === 'block' ? 'Blocked' : 'Asks you'} (B555)`, async ({
+    page,
+    request,
+  }) => {
+    const p = await project(request, {
+      agent: 'new task P1 now Ship the export\n',
+      approve: ['T1'],
+      then: `T1 doing\nT1 ${kind} ${words}\n`,
+    })
+    await open(page, p, 'T1')
+    await expect(chip(page)).toHaveText(/^Needs you/)
+    await expect.poll(() => page.locator('#dHead').innerText(), 'the words on the line above').toBe('T1')
+  })

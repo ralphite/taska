@@ -677,7 +677,8 @@ const overflows = (el: HTMLElement) => el.scrollTop + el.clientHeight < el.scrol
 function markOver(clip: HTMLElement) {
   clip.toggleAttribute('data-over', overflows(clip))
 }
-// The item's header line: its code and where it stands (T230 #2: a state, the card's and the row's word)
+// The item's header line: its code and where it stands (T230 #2: a state, the card's and the row's word). B555 (r781):
+// an agent's ask or block is not said here: the status chip under the title says Needs you, and the card says the rest
 const ItemHead = ({ it }: { it: Item }) => (
   <>
     <span className="hidden lg:inline">
@@ -686,11 +687,7 @@ const ItemHead = ({ it }: { it: Item }) => (
     <span className={`font-mono text-sm font-bold ${TYPE_TEXT[it.type]}`}>{code(it.n)}</span>
     <span className="text-[11px] font-semibold tracking-wider uppercase">
       {
-        it.wait ? (
-          <span className="text-amber-600 dark:text-amber-400">
-            {it.wait.kind === 'block' ? 'Blocked' : 'Asks you'}
-          </span>
-        ) : it.reply && !CLOSED(it.status) ? (
+        !it.wait && it.reply && !CLOSED(it.status) ? (
           <span className="text-blue-600 dark:text-blue-400">Your agent&apos;s turn</span> // B321: you replied
         ) : null /* T438 #11: its status is the chip under the title: not said twice */
       }
