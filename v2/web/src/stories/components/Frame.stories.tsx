@@ -25,7 +25,7 @@ import { D, DR, U, bump, model } from '../../lib/state'
 import { FAILED, TOAST } from '../../lib/toast'
 import { VW } from '../../lib/viewer'
 import { Only, Pane, type Setup } from '../lib/demo'
-import { DetailView } from '../../components/Detail'
+import { Column } from '../lib/column'
 
 const meta: Meta = {
   title: 'Components/Frame',
@@ -220,9 +220,7 @@ const toast = (t: Partial<typeof TOAST>): Story => ({
   }),
   render: () => (
     <div className="relative h-screen">
-      <Pane w="item" h="h-screen flex flex-col">
-        <DetailView hidden={false} />
-      </Pane>
+      <Column />
       <Toast />
     </div>
   ),

@@ -1,9 +1,10 @@
 // T457: the item list and its rows, in every state, on the demo project. The list column is as wide as on the page.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { ItemRow, List, NeedsRow, WorkerMark, Zone } from '../../components/List'
+import { ItemRow, NeedsRow, WorkerMark, Zone } from '../../components/List'
 import { U, byN, parseRef } from '../../lib/state'
 import { VW_STATE } from '../../lib/views'
 import { Pane, type Setup } from '../lib/demo'
+import { ListColumn } from '../lib/column'
 
 const meta: Meta = {
   title: 'Components/List',
@@ -34,11 +35,7 @@ type Story = StoryObj
 
 const list = (setup?: (x: Setup) => void): Story => ({
   parameters: { taska: { setup } },
-  render: () => (
-    <Pane w="list" h="h-screen flex flex-col">
-      <List />
-    </Pane>
-  ),
+  render: () => <ListColumn />,
 })
 
 /** Items › Active: what needs you first (amber), then the agents' queue, then Later, then what finished lately. */

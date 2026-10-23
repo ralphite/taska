@@ -1,11 +1,10 @@
 // T457: a document as you read it, comment on it and edit it: in the item pane on the desktop, in a sheet on the phone.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { DetailView } from '../../components/Detail'
-import { Dialog } from '../../components/Sheets'
+import { Column } from '../lib/column'
 import { VcBar } from '../../components/Composer'
 import { OV, U, bump, desk, model, threadKey } from '../../lib/state'
 import type { Doc } from '../../lib/types'
-import { Pane, type Setup } from '../lib/demo'
+import { type Setup } from '../lib/demo'
 
 const meta: Meta = {
   title: 'Components/Document',
@@ -51,10 +50,7 @@ const doc = (title: string, setup?: (x: Setup, d: Doc) => void): Story => ({
   },
   render: () => (
     <>
-      <Pane w="item" h="h-screen flex flex-col">
-        <DetailView hidden={false} />
-      </Pane>
-      <Dialog />
+      <Column />
       <VcBar />
     </>
   ),

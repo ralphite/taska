@@ -1,7 +1,8 @@
 // T457: an item's pane (the right side on the desktop, the whole page on the phone) in every state an item has, and
 // the card that asks you, on its own.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { DetailView, NeedsCard } from '../../components/Detail'
+import { NeedsCard } from '../../components/Detail'
+import { Column } from '../lib/column'
 import { D, U, byN, lastAgentMsg, parseRef } from '../../lib/state'
 import type { Item } from '../../lib/types'
 import { Pane, type Setup } from '../lib/demo'
@@ -37,11 +38,7 @@ const item = (ref: string | null, setup?: (x: Setup) => void): Story => ({
       },
     },
   },
-  render: () => (
-    <Pane w="item" h="h-screen flex flex-col">
-      <DetailView hidden={false} />
-    </Pane>
-  ),
+  render: () => <Column />,
 })
 
 export const InProgressWithTalk = item('F1')
@@ -107,8 +104,9 @@ export const ReplySending = item('F1', ({ it }) => {
     sending: true,
   })
 })
-/** Nothing open (desktop). */
-export const NothingOpen = item(null)
+/** Nothing picked while the list column shows Documents, Activity or Deleted (desktop; with nothing open on Items
+ * the desktop shows the New input page instead). */
+export const NothingOpen = item(null, () => (U.side = 'docs'))
 
 // ---------------------------------------------------------------- the card that asks you, alone
 

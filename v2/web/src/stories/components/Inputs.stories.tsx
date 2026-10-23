@@ -1,19 +1,11 @@
 // T457: what you said (inputs): the Inputs tab, one input in each state it can be in, and the New input page's list.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import {
-  ComposeHead,
-  InputCard,
-  InputPane,
-  InputPaneHead,
-  InputsView,
-  OutboxRows,
-  SaidLately,
-} from '../../components/Inputs'
-import { Foot } from '../../components/Shell'
-import { Composer, DraftCard } from '../../components/Composer'
-import { D, U, model } from '../../lib/state'
+import { ComposeHead, InputCard, InputPane, InputPaneHead, OutboxRows, SaidLately } from '../../components/Inputs'
+import { DraftCard } from '../../components/Composer'
+import { U, model } from '../../lib/state'
 import type { Input } from '../../lib/types'
 import { Pane, type Setup } from '../lib/demo'
+import { Column, ListColumn } from '../lib/column'
 
 const meta: Meta = {
   title: 'Components/Inputs',
@@ -44,9 +36,7 @@ const tab = (setup?: (x: Setup) => void): Story => ({
   parameters: { taska: { setup: (x) => ((U.tab = 'inputs'), setup?.(x)) } },
   render: () => (
     <div className="flex h-screen">
-      <Pane w="list" h="flex flex-col">
-        <InputsView hidden={false} />
-      </Pane>
+      <ListColumn inputs />
       <div className="hidden min-w-0 flex-1 flex-col lg:flex">
         <header className="flex h-14 shrink-0 items-center gap-2 border-b border-zinc-200 px-5 dark:border-zinc-800">
           <InputPaneHead />
@@ -182,17 +172,9 @@ export const OnItsWay: Story = {
   ),
 }
 
-/** The New input page (desktop): the project's name, the box, and what you said lately under it. */
+/** The New input page (desktop: nothing open); on the phone, the list with the box at its foot. */
 export const NewInputPage: Story = {
-  parameters: { taska: { setup: () => (D.compose = true) } },
-  render: () => (
-    <div className="group/app" data-compose="">
-      <Pane w="item" h="h-screen overflow-y-auto">
-        <Foot hidden={false} wideCls="" />
-        <Composer />
-      </Pane>
-    </div>
-  ),
+  render: () => <Column />,
 }
 export const SaidLatelyList: Story = {
   render: () => (

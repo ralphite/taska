@@ -1,12 +1,12 @@
 // T457: every sheet and menu: a sheet from the bottom on the phone, a popover or a dialog on the desktop. Each opens
 // over the list, as on the page.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { List } from '../../components/List'
 import { Dialog } from '../../components/Sheets'
 import { OV, U, desk, type DialogOpts } from '../../lib/state'
 import { FAILED } from '../../lib/toast'
 import { VW_STATE } from '../../lib/views'
-import { Pane, type Setup } from '../lib/demo'
+import { type Setup } from '../lib/demo'
+import { ListColumn } from '../lib/column'
 
 const meta: Meta = {
   title: 'Components/Sheets',
@@ -47,9 +47,7 @@ const sheet = (
   },
   render: () => (
     <>
-      <Pane w="list" h="h-screen flex flex-col">
-        <List />
-      </Pane>
+      <ListColumn />
       <Dialog />
     </>
   ),

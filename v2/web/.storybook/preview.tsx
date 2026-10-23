@@ -2,7 +2,7 @@ import type { Preview } from '@storybook/react-vite'
 import { useEffect } from 'react'
 import '../src/index.css'
 import { bump } from '../src/lib/state'
-import { serveFiles, taskaLoader } from '../src/stories/lib/demo'
+import { PageFrame, serveFiles, taskaLoader } from '../src/stories/lib/demo'
 
 declare const __PAGE_BODY__: string
 
@@ -60,7 +60,13 @@ const preview: Preview = {
           document.removeEventListener('click', stay, true)
         }
       }, [])
-      return <Story />
+      return ctx.title.startsWith('Components/') ? (
+        <PageFrame>
+          <Story />
+        </PageFrame>
+      ) : (
+        <Story />
+      )
     },
   ],
 }

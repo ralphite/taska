@@ -1,11 +1,9 @@
 // T457: the one input box (and the line above it that says what happened to what you sent), in every state: what it
 // writes to, words, pictures, voice notes on their way, a recording, words still being worked out, sending, failing.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { useEffect } from 'react'
-import { Foot } from '../../components/Shell'
-import { Composer } from '../../components/Composer'
-import { R_STATE, U, bump, els, model, type DraftFile } from '../../lib/state'
-import { Pane, type Setup } from '../lib/demo'
+import { OV, R_STATE, U, desk, model, type DraftFile } from '../../lib/state'
+import { type Setup } from '../lib/demo'
+import { Column } from '../lib/column'
 
 const meta: Meta = {
   title: 'Components/Input box',
@@ -33,25 +31,9 @@ const meta: Meta = {
 export default meta
 type Story = StoryObj
 
-function Box({ text }: { text: string }) {
-  useEffect(() => {
-    const t = els.text
-    if (t) {
-      t.value = text
-      t.dispatchEvent(new Event('input', { bubbles: true }))
-    }
-    bump('composer', 'feedback')
-  }, [text])
-  return (
-    <Pane w="item" h="flex flex-col justify-end pt-40">
-      <Foot hidden={false} wideCls="" />
-      <Composer />
-    </Pane>
-  )
-}
 const box = (text = '', setup?: (x: Setup) => void): Story => ({
   parameters: { taska: { setup } },
-  render: () => <Box text={text} />,
+  render: () => <Column text={text} />,
 })
 const done = Promise.resolve()
 const shot = (i: number): DraftFile => {
@@ -113,6 +95,7 @@ export const CommentOnAParagraph = box('', ({ S }) => {
   U.open = d.n
   U.doc = d.d
   U.docSel = new Set([d.blocks[1].key])
+  if (!desk()) OV.spec = { kind: 'doc', props: { d: d.d }, focus: false, tall: true } // the phone reads it in a sheet
 })
 /** Sent: the line above the box says it is on its way, with Undo. */
 export const Sending = box('', () => {

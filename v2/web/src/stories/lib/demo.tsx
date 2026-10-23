@@ -10,7 +10,7 @@ import {
   OV,
   R_STATE,
   U,
-  bump,
+  render,
   desk,
   useArea,
   byN,
@@ -117,7 +117,10 @@ export const taskaLoader: Loader = async ({ parameters }) => {
       return it
     },
   })
-  bump()
+  // ingest() drew once with nothing open, which on the desktop is the New input page; opening something leaves it, as
+  // the page's own navigation does (lib/nav.ts)
+  if (U.open != null || U.doc || D.page || U.side) D.compose = false
+  render() // as the page draws: on the desktop, nothing open is the New input page (lib/state.ts idleCompose)
   Object.assign(window, { __taska: { U, D, OV, model } }) // to look into a story from the browser's console
   return {}
 }
@@ -199,5 +202,19 @@ export function Only({ on, children }: { on: 'phone' | 'desktop'; children: Reac
       The page shows this on the {on} only: pick {on === 'phone' ? 'iPhone 393x852' : 'Desktop 1440x900'} in the
       toolbar.
     </p>
+  )
+}
+
+/** The page's frame (#app): parts of the page look at it to know where they are (the New input page hides the box's
+ * line, two columns...). Every component story stands in it, so a part looks as it does on the page (r680). */
+export function PageFrame({ children }: { children: ReactNode }) {
+  useArea('view')
+  useArea('detail')
+  useArea('project')
+  const compose = desk() && D.compose && !D.page && U.tab !== 'inputs' // as ProjectPage sets it
+  return (
+    <div id="app" className="group/app relative" {...(compose ? { 'data-compose': '' } : {})}>
+      {children}
+    </div>
   )
 }
