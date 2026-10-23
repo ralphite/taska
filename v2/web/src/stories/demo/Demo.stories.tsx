@@ -4,7 +4,8 @@ import { Player, type Script } from '../lib/player'
 
 const meta: Meta = {
   title: 'Demo',
-  parameters: { layout: 'fullscreen' },
+  // the frame fits the room Storybook has, with the bar under it in sight: no fixed preview size around it
+  parameters: { layout: 'fullscreen', viewport: { disable: true } },
 }
 export default meta
 type Story = StoryObj

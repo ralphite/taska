@@ -1,7 +1,8 @@
 // T457, R488: a demo plays the real page by itself, as a person would: each tap shows a large, clear mark where the
 // finger lands, and the steps take the time they take for a person (look, move, tap, wait for the page). What each
 // step does is said in a bar under the page, with room between, never over it; the page keeps one size. Play again
-// starts it over.
+// starts it over. T456 (#5879): Autoplay can be switched off: then each step marks where to tap and waits for your
+// own tap there.
 import { useEffect, useRef, useState } from 'react'
 import { App, pageIn, wait } from '../pages/screens'
 
@@ -45,11 +46,17 @@ function mark(doc: Document) {
   return m
 }
 
+const W = 393,
+  H = 760
 export function Player({ path, script, scheme }: { path: string; script: Script; scheme: string }) {
   const box = useRef<HTMLDivElement>(null)
-  const [line, setLine] = useState('Starting…')
+  const [line, setLine] = useState('') // #5879: no "Starting" while the page loads: the first step says itself
   const [run, setRun] = useState(0)
   const [done, setDone] = useState(false)
+  const [auto, setAuto] = useState(true)
+  const autoNow = useRef(true)
+  // the frame as tall as the room holds with the bar under it, fixed once: it never moves or changes size
+  const [scale] = useState(() => Math.min(1, Math.max(0.5, (window.innerHeight - 32 - 136) / H)))
   useEffect(() => {
     let stop = false
     const go = async () => {
@@ -79,6 +86,18 @@ export function Player({ path, script, scheme }: { path: string; script: Script;
           m.style.left = r.left + r.width / 2 + 'px'
           m.style.top = r.top + r.height / 2 + 'px'
           m.style.opacity = '1'
+          if (!autoNow.current) {
+            // you tap it yourself: the mark breathes where to tap until you do
+            const breathe = m.animate([{ opacity: 1 }, { opacity: 0.35 }, { opacity: 1 }], {
+              duration: 1400,
+              iterations: Infinity,
+            })
+            await new Promise<void>((done) => el.addEventListener('click', () => done(), { once: true, capture: true }))
+            breathe.cancel()
+            m.style.opacity = '0'
+            await c.wait(900)
+            return
+          }
           await c.wait(700) // the eye finds the spot before the finger lands
           m.style.transform = 'scale(0.82)'
           const at = { bubbles: true, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 }
@@ -115,21 +134,46 @@ export function Player({ path, script, scheme }: { path: string; script: Script;
   return (
     <div className="flex min-h-screen flex-col items-center bg-zinc-100 py-4 dark:bg-zinc-900">
       <div
-        ref={box}
-        key={run}
-        className="h-[760px] w-[393px] shrink-0 overflow-hidden rounded-2xl border border-zinc-300 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-950 [&_iframe]:h-full"
+        className="shrink-0 overflow-hidden rounded-2xl border border-zinc-300 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-950"
+        style={{ width: W * scale, height: H * scale }}
       >
-        <App path={path} scheme={scheme} />
-      </div>
-      <div className="mt-4 flex h-16 w-[393px] shrink-0 items-center gap-3 rounded-2xl bg-zinc-900 px-4 text-white dark:bg-zinc-800">
-        <span className="line-clamp-2 min-w-0 flex-1 text-sm leading-snug font-medium">{line}</span>
-        <button
-          onClick={() => setRun((n) => n + 1)}
-          className="h-9 shrink-0 rounded-full bg-white px-4 text-sm font-semibold text-zinc-900 disabled:opacity-40"
-          disabled={!done}
+        <div
+          ref={box}
+          key={run}
+          className="[&_iframe]:h-full"
+          style={{ width: W, height: H, transform: `scale(${scale})`, transformOrigin: '0 0' }}
         >
-          Play again
-        </button>
+          <App path={path} scheme={scheme} />
+        </div>
+      </div>
+      <div
+        className="mt-4 flex h-[104px] shrink-0 flex-col gap-2 rounded-2xl bg-zinc-900 p-3 text-white dark:bg-zinc-800"
+        style={{ width: W * scale }}
+      >
+        <span className="line-clamp-2 h-10 text-sm leading-snug font-medium">{line}</span>
+        <div className="flex items-center gap-2">
+          <button
+            role="switch"
+            aria-checked={auto}
+            onClick={() => {
+              autoNow.current = !auto
+              setAuto(!auto)
+            }}
+            className="flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-white/10 px-2.5 text-xs font-semibold"
+          >
+            <span className={`flex h-4 w-7 items-center rounded-full p-0.5 ${auto ? 'bg-blue-500' : 'bg-zinc-500'}`}>
+              <span className={`size-3 rounded-full bg-white transition-transform ${auto ? 'translate-x-3' : ''}`} />
+            </span>
+            Autoplay
+          </button>
+          <button
+            onClick={() => setRun((n) => n + 1)}
+            className="h-9 shrink-0 rounded-full bg-white px-3 text-sm font-semibold text-zinc-900 disabled:opacity-40"
+            disabled={!done}
+          >
+            Play again
+          </button>
+        </div>
       </div>
     </div>
   )
