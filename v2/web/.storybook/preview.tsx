@@ -76,6 +76,7 @@ const preview: Preview = {
             'Dev',
           ],
           'Demo',
+          ['Needs you', 'Item list', 'Item page', 'Document', 'Projects'],
           'Prototype',
         ],
       },
