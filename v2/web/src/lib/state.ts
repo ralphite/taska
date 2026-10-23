@@ -363,6 +363,11 @@ const REDUCE = typeof matchMedia === 'function' ? matchMedia('(prefers-reduced-m
 export const desk = () => !!DESK?.matches
 export const wide = () => !!WIDE?.matches
 export const reduceMotion = () => !!REDUCE?.matches
+// F448 (r696): the page opened on this computer (localhost, 127.x.x.x, ::1), not over the tunnel or from another
+// machine: only then it shows the links for making Taska (Storybook)
+export const localHost = (host: string) =>
+  /^(localhost|127(\.\d{1,3}){3}|\[::1\]|::1)$/.test(host) || host.endsWith('.localhost')
+export const onThisComputer = () => typeof location !== 'undefined' && localHost(location.hostname)
 // B333: the phone's back swipe shows the list under the item page by hand while the finger moves
 export const SWIPE = { back: false }
 export const onLayout = (fn: () => void) => {

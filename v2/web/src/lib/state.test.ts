@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { U, byN, code, inQueue, needsYou, parseRef, queueHead, sideProjects, visible } from './state'
+import { U, byN, code, inQueue, localHost, needsYou, parseRef, queueHead, sideProjects, visible } from './state'
 import { ask, item, load } from '../test/fixture'
 import type { Wait } from './types'
 
@@ -59,5 +59,13 @@ describe('what needs you, and the queue', () => {
     U.q = 'filter'
     expect(visible('items').map((it) => it.n)).toEqual([1, 2])
     U.q = ''
+  })
+})
+
+describe('links for making Taska (F448)', () => {
+  it('show only on this computer: not over the tunnel, nor from another machine', () => {
+    for (const h of ['localhost', '127.0.0.1', '127.1.2.3', '[::1]', 'taska.localhost']) expect(localHost(h)).toBe(true)
+    for (const h of ['abc123-7340.usw2.devtunnels.ms', '192.168.1.20', 'example.com', 'localhost.example.com'])
+      expect(localHost(h)).toBe(false)
   })
 })

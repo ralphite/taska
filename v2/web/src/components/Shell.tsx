@@ -35,6 +35,7 @@ import {
   filtered,
   model,
   needsYou,
+  onThisComputer,
   openCount,
   plural,
   projOrder,
@@ -275,19 +276,22 @@ export const SideLink = ({ sec, icon, label, phone }: { sec: string; icon: IconN
     </a>
   )
 // F451, T456 (r678, r679): the page's stories, on Storybook's own server on this computer (it shows a change at once);
-// for the desktop only, where the page is made
+// for the desktop only, where the page is made. F448 (r696): a link for making Taska: shown only when the page is open
+// on this computer, its icon in violet so it reads as one
 const STORYBOOK = 'http://localhost:6007/'
-export const StoryLink = () => (
-  <a
-    href={STORYBOOK}
-    target="_blank"
-    rel="noopener"
-    className="flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-sm text-zinc-600 hover:bg-zinc-200/60 dark:text-zinc-300 dark:hover:bg-zinc-800"
-  >
-    <Icon n="book" c="size-4 shrink-0 text-zinc-500 dark:text-zinc-400" sw="2" />
-    <span className="min-w-0 flex-1 truncate">Storybook</span>
-  </a>
-)
+export const StoryLink = () =>
+  onThisComputer() ? (
+    <a
+      href={STORYBOOK}
+      target="_blank"
+      rel="noopener"
+      data-dev=""
+      className="flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-sm text-zinc-600 hover:bg-zinc-200/60 dark:text-zinc-300 dark:hover:bg-zinc-800"
+    >
+      <Icon n="book" c="size-4 shrink-0 text-violet-500 dark:text-violet-400" sw="2" />
+      <span className="min-w-0 flex-1 truncate">Storybook</span>
+    </a>
+  ) : null
 // the phone's drawer ends in a card (B162): Undo while there is one (a phone has no Z), and Settings
 export function DrawerSettings() {
   const u = U.mine.at(-1),
