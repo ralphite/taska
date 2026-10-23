@@ -96,6 +96,8 @@ export const SCREENS: Record<string, Screen> = {
   ItemOpen: { path: P + 'T3' },
   ItemSubitem: { path: P + 'T13' },
   ItemLongTalk: { path: P + 'B35' },
+  // B495: full width (O) on a wide screen: the item and its talk side by side, one line between them to the bottom
+  ItemTwoColumns: { path: P + 'B35', steps: [key('o')] },
   RuleProposed: { path: P + 'R17' },
   ItemReplying: { path: P + 'F1', steps: [type('\u5148\u505a\u624b\u673a\u4e0a\u7684\u3002')] },
   ItemMenu: { path: P + 'F1', steps: [key('.')] },
