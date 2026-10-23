@@ -1,10 +1,13 @@
-// T457: the real Taska page in a story. It runs before the page's own code: it moves the address to the place the
-// story shows (#path=...), and answers the page's requests from saved answers (fixtures/) instead of a server.
+// T457, T518 (#6214): what the page talks to in Storybook, with no Taska behind it. It runs before the page's own
+// code, in the real page (app.html) and in the component stories (preview-head.html): the page's requests are
+// answered here in the browser from saved answers (fixtures/); what it writes is kept in memory
+// (window.__storyWrites) and answered as Taska answers a change that went in. The real client code runs unchanged.
+// In app.html it also moves the address to the place the story shows (#path=...).
 ;(() => {
   const h = new URLSearchParams(location.hash.slice(1))
   const theme = h.get('theme')
   if (theme) document.documentElement.dataset.theme = theme
-  history.replaceState(null, '', h.get('path') || '/p/shop/')
+  if (h.has('path')) history.replaceState(null, '', h.get('path'))
   const real = window.fetch.bind(window)
   const FX = '/storybook/fixtures/'
   const json = (o, status = 200) =>
@@ -35,11 +38,21 @@
   window.fetch = async (input, init) => {
     const u = new URL(typeof input === 'string' ? input : input instanceof URL ? input.href : input.url, location.href)
     const p = u.pathname
-    if (u.origin !== location.origin || p.startsWith('/storybook/') || p.startsWith('/assets/'))
-      return real(input, init)
+    // only what the page asks Taska; Storybook's own files and the page's code go as they are
+    if (u.origin !== location.origin || !/^\/(api|p|k|health|login|skill)(\/|$)/.test(p)) return real(input, init)
     const method = String((init && init.method) || (input instanceof Request ? input.method : 'GET')).toUpperCase()
     if (/\/api\/poll$/.test(p)) return new Promise(() => {}) // nothing changes while you look
-    if (method !== 'GET') return json({ ok: true, res: ['ok'], rev: 1 })
+    if (method !== 'GET') {
+      // a change: kept here, answered as a change Taska took
+      let body = init && init.body
+      try {
+        body = typeof body === 'string' ? JSON.parse(body) : body
+      } catch {
+        /* text */
+      }
+      ;(window.__storyWrites = window.__storyWrites || []).push({ method, path: p + u.search, body })
+      return json({ ok: true, res: ['ok'], rev: 1 })
+    }
     const name = p.replace(/^\/|\/$/g, '').replace(/\//g, '__')
     for (const ext of ['.json', '.txt', '']) {
       const r = await real(FX + name + ext)

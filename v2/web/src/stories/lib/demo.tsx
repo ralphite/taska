@@ -1,72 +1,21 @@
 // T457: what every component story stands on: the demo project's state (the same saved answers the Pages stories
 // run the real page on, made by v2/tools/story_fixtures.py), put into the page's model the way the page does it, then
-// the story's own changes (an item opened, a sheet, a toast...). Times move on with the clock, as on the Pages.
+// the story's own changes (an item opened, a sheet, a toast...).
 import type { Loader } from '@storybook/react-vite'
 import type { ReactNode } from 'react'
 import { ingest } from '../../lib/data'
-import {
-  D,
-  DR,
-  OV,
-  R_STATE,
-  U,
-  render,
-  desk,
-  useArea,
-  byN,
-  model,
-  parseRef,
-  resetPageState,
-  setProject,
-} from '../../lib/state'
+import { D, DR, OV, R_STATE, U, render, byN, model, parseRef, resetPageState, setProject } from '../../lib/state'
 import { FAILED, TOAST } from '../../lib/toast'
 import { VW } from '../../lib/viewer'
 import { VW_STATE } from '../../lib/views'
 import type { Item, ProjectRow, State } from '../../lib/types'
 
-// The saved answers sit beside Storybook's own page (./fixtures/ in a built Storybook under /storybook/), or under
-// /storybook/ when Storybook runs as its own server with the page's public files there
-let FX = './fixtures/'
-const fxReady = fetch(FX + 'meta.json').then(
-  (r) => {
-    if (!r.ok || !(r.headers.get('content-type') || '').includes('json')) FX = '/storybook/fixtures/'
-  },
-  () => (FX = '/storybook/fixtures/'),
-)
-const ISO = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2})$/
-const TIME_KEYS = new Set(['t', 'at', 't0', 't1', 'next', 'seen'])
-function move(x: unknown, d: number, k = ''): unknown {
-  if (typeof x === 'string') return ISO.test(x) ? new Date(Date.parse(x) + d).toISOString() : x
-  if (typeof x === 'number' && TIME_KEYS.has(k)) {
-    if (x > 1.5e12 && x < 2.5e12) return x + d
-    if (x > 1.5e9 && x < 2.5e9) return x + d / 1000
-    return x
-  }
-  if (Array.isArray(x)) return x.map((v) => move(v, d, k))
-  if (x && typeof x === 'object') return Object.fromEntries(Object.entries(x).map(([kk, v]) => [kk, move(v, d, kk)]))
-  return x
-}
-const cache = new Map<string, Promise<unknown>>()
-/** A saved answer of the demo, its times moved to now. */
-export function fixture<T>(name: string): Promise<T> {
-  if (!cache.has(name)) {
-    const p = fxReady
-      .then(() =>
-        Promise.all([
-          fetch(FX + name).then((r) => {
-            if (!r.ok) throw new Error(`no ${name} in the story data`)
-            return r.json()
-          }),
-          fetch(FX + 'meta.json')
-            .then((r) => r.json())
-            .catch(() => ({ now: Date.now() })),
-        ]),
-      )
-      .then(([j, m]) => move(j, Date.now() - (m as { now: number }).now))
-    p.catch(() => cache.delete(name))
-    cache.set(name, p)
-  }
-  return cache.get(name)!.then((j) => structuredClone(j) as T)
+/** What the page would get from Taska: asked the way the page asks, answered in the browser by the stand-in for
+ * Taska (.storybook/public/app-shim.js, T518) from the saved answers. */
+async function ask<T>(path: string): Promise<T> {
+  const r = await fetch(path)
+  if (!r.ok) throw new Error(`no ${path} in the story data`)
+  return (await r.json()) as T
 }
 
 export interface Setup {
@@ -90,8 +39,8 @@ export const taskaLoader: Loader = async ({ parameters }) => {
   const p = (parameters.taska || {}) as TaskaParams
   const project = p.project || 'shop'
   const [S, projects] = await Promise.all([
-    fixture<State>(`p__${project}__api__state.json`),
-    fixture<ProjectRow[] | { projects: ProjectRow[] }>('api__projects.json'),
+    ask<State>(`/p/${project}/api/state?since=0`),
+    ask<ProjectRow[] | { projects: ProjectRow[] }>('/api/projects'),
   ])
   resetPageState()
   OV.spec = null
@@ -148,76 +97,6 @@ export function Pane({
     // only the room the page gives the part: no line, colour or frame of its own (B495: nothing drawn that is not the
     // page's)
     <div className={`${width} ${h || ''}`} data-story-pane={w}>
-      {children}
-    </div>
-  )
-}
-
-/** What the parts ask Taska (the log, the projects, the home page's lists): the saved answers, as on the Pages. A
- * change is answered "ok" and changes nothing. The demo's pictures and voice notes: the page asks
- * /p/<project>/f/<file>; here they are among the saved answers. */
-export function serveFiles() {
-  const real = window.fetch.bind(window)
-  window.fetch = async (input: RequestInfo | URL, init?: RequestInit) => {
-    const u = new URL(typeof input === 'string' ? input : input instanceof URL ? input.href : input.url, location.href)
-    const p = u.pathname
-    if (u.origin !== location.origin || !/^\/(api|p)\//.test(p)) return real(input, init)
-    const json = (o: unknown, status = 200) =>
-      new Response(JSON.stringify(o), { status, headers: { 'Content-Type': 'application/json' } })
-    if (/\/api\/poll$/.test(p)) return new Promise<Response>(() => {}) // nothing changes while you look
-    const method = String(init?.method || (input instanceof Request ? input.method : 'GET')).toUpperCase()
-    if (method !== 'GET') return json({ ok: true, res: ['ok'], rev: 1 })
-    const name = p.replace(/^\/|\/$/g, '').replace(/\//g, '__')
-    try {
-      return json(await fixture(name + '.json'))
-    } catch {
-      const r = await real(FX + name + '.txt')
-      return r.ok ? r : json({ ok: false, error: 'not in the story data' }, 404)
-    }
-  }
-  const fix = (el: Element) => {
-    for (const a of ['src', 'href', 'poster']) {
-      const v = el.getAttribute(a),
-        m = v && /^\/p\/([^/]+)\/f\/([^?#]+)/.exec(v)
-      if (m) el.setAttribute(a, `${FX}p__${m[1]}__f__${decodeURIComponent(m[2])}`)
-    }
-  }
-  const all = (root: ParentNode) => root.querySelectorAll('[src^="/p/"], [href*="/f/"], [poster^="/p/"]').forEach(fix)
-  all(document)
-  new MutationObserver((ms) => {
-    for (const m of ms) {
-      if (m.type === 'attributes') fix(m.target as Element)
-      else m.addedNodes.forEach((n) => n instanceof Element && (fix(n), all(n)))
-    }
-  }).observe(document.documentElement, {
-    subtree: true,
-    childList: true,
-    attributes: true,
-    attributeFilter: ['src', 'href', 'poster'],
-  })
-}
-
-/** A part the page shows only on the phone or only on the desktop: on the other, a line says so. */
-export function Only({ on, children }: { on: 'phone' | 'desktop'; children: ReactNode }) {
-  useArea('view')
-  if ((on === 'phone') === !desk()) return <>{children}</>
-  return (
-    <p className="p-6 text-sm text-zinc-500 dark:text-zinc-400">
-      The page shows this on the {on} only: pick {on === 'phone' ? 'iPhone 393x852' : 'Desktop 1440x900'} in the
-      toolbar.
-    </p>
-  )
-}
-
-/** The page's frame (#app): parts of the page look at it to know where they are (the New input page hides the box's
- * line, two columns...). Every component story stands in it, so a part looks as it does on the page (r680). */
-export function PageFrame({ children }: { children: ReactNode }) {
-  useArea('view')
-  useArea('detail')
-  useArea('project')
-  const compose = desk() && D.compose && !D.page && U.tab !== 'inputs' // as ProjectPage sets it
-  return (
-    <div id="app" className="group/app relative" {...(compose ? { 'data-compose': '' } : {})}>
       {children}
     </div>
   )

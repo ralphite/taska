@@ -117,7 +117,7 @@ if (process.argv.includes('--open')) {
       const errors = []
       page.removeAllListeners('pageerror')
       page.on('pageerror', (e) => errors.push(String(e.message || e)))
-      await page.goto(`${base}iframe.html?id=${s.id}&viewMode=story`)
+      await page.goto(`${base}iframe.html?id=${s.id}&viewMode=story&single=1`) // a component as it draws, not its two frames
       let ok = false
       for (let t = 0; t < 60 && !ok; t++) {
         await page.waitForTimeout(250)

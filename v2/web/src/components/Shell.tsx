@@ -1275,6 +1275,17 @@ export const Tip = () => (
 )
 
 // ---------------------------------------------------------------- the page
+/** The page's frame (#app): what its parts look at to know where they are (the New input page, two columns). The
+ * page lays its panes out in it (cls); a Storybook story puts one part in it, with no layout (T518). */
+export function AppFrame({ cls = '', children }: { cls?: string; children: ReactNode }) {
+  useTick((s) => s.view + s.detail + s.project)
+  const compose = desk() && D.compose && !D.page && U.tab !== 'inputs'
+  return (
+    <div id="app" {...(compose ? { 'data-compose': '' } : {})} className={`group/app relative ${cls}`}>
+      {children}
+    </div>
+  )
+}
 export function ProjectPage() {
   useTick((s) => s.view + s.side + s.head + s.list + s.project + s.detail)
   const S = model.S
@@ -1358,11 +1369,7 @@ export function ProjectPage() {
         className="fixed top-0 right-0 z-30 h-dvh lg:bg-zinc-900/20 dark:lg:bg-black/50"
         aria-label="Close projects"
       />
-      <div
-        id="app"
-        {...(isDesk && D.compose && !page && !inputs ? { 'data-compose': '' } : {})}
-        className="group/app relative z-10 mx-auto flex h-full max-w-3xl flex-col bg-white pt-[env(safe-area-inset-top)] md:border-x md:border-zinc-200 lg:mx-0 lg:grid lg:max-w-none lg:min-w-0 lg:flex-1 lg:grid-cols-[var(--list-w,360px)_minmax(0,1fr)] lg:grid-rows-[auto_auto_auto_minmax(0,1fr)_auto] lg:border-x-0 xl:grid-cols-[var(--list-w,420px)_minmax(0,1fr)] 2xl:grid-cols-[var(--list-w,460px)_minmax(0,1fr)] dark:bg-zinc-950 md:dark:border-zinc-800"
-      >
+      <AppFrame cls="z-10 mx-auto flex h-full max-w-3xl flex-col bg-white pt-[env(safe-area-inset-top)] md:border-x md:border-zinc-200 lg:mx-0 lg:grid lg:max-w-none lg:min-w-0 lg:flex-1 lg:grid-cols-[var(--list-w,360px)_minmax(0,1fr)] lg:grid-rows-[auto_auto_auto_minmax(0,1fr)_auto] lg:border-x-0 xl:grid-cols-[var(--list-w,420px)_minmax(0,1fr)] 2xl:grid-cols-[var(--list-w,460px)_minmax(0,1fr)] dark:bg-zinc-950 md:dark:border-zinc-800">
         <ProjBar hidden={v.projBar} />
         <MainHead hidden={v.mainHead} />
         <Tabs hidden={v.tabs} />
@@ -1387,7 +1394,7 @@ export function ProjectPage() {
           <span className="pointer-events-none absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 bg-blue-500 opacity-0 transition-opacity group-hover/line:opacity-100 group-hover/line:delay-150 group-data-drag/line:opacity-100" />
         </div>
         <Foot hidden={v.foot} wideCls={wideCls} />
-      </div>
+      </AppFrame>
       <Composer />
       <Dialog />
       <Viewer />

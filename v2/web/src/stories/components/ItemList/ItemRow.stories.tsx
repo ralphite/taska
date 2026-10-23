@@ -21,7 +21,11 @@ export const RowWithDraft: StoryObj = { ...List.RowWithDraft, name: 'With a draf
 export const RowUnread: StoryObj = { ...List.RowUnread, name: 'New from an agent' }
 export const RowCurrent: StoryObj = { ...List.RowCurrent, name: 'Open in the pane' }
 export const RowPicked: StoryObj = { ...List.RowPicked, name: 'Picked' }
-export const RowHover: StoryObj = { ...List.RowHover, name: 'Pointer on it' }
+export const RowHover: StoryObj = {
+  ...List.RowHover,
+  name: 'Pointer on it',
+  parameters: { ...List.RowHover.parameters, platform: 'desktop' },
+}
 export const RowP0: StoryObj = { ...List.RowP0, name: 'P0' }
 export const RowP3: StoryObj = { ...List.RowP3, name: 'P3' }
 export const RowLongChineseTitle: StoryObj = { ...List.RowLongChineseTitle, name: 'Long Chinese title' }

@@ -4,7 +4,7 @@ import { ComposeHead, InputCard, OutboxRows, SaidLately } from '../../../compone
 import { DraftCard } from '../../../components/Composer'
 import { U, model } from '../../../lib/state'
 import type { Input } from '../../../lib/types'
-import { Only, Pane, type Setup } from '../../lib/demo'
+import { Pane, type Setup } from '../../lib/demo'
 import { Column, ListColumn } from '../../lib/column'
 
 // what this part of Storybook shows (T512: its stories are in the folders beside this file)
@@ -34,11 +34,7 @@ export type Story = StoryObj
 /** The Inputs tab, on the phone (the desktop has no Inputs tab: G I and /inputs open the New input page). */
 const tab = (setup?: (x: Setup) => void): Story => ({
   parameters: { taska: { setup: (x) => ((U.tab = 'inputs'), setup?.(x)) } },
-  render: () => (
-    <Only on="phone">
-      <ListColumn inputs />
-    </Only>
-  ),
+  render: () => <ListColumn inputs />,
 })
 export const InputsTab = tab()
 export const InputsTabSearch = tab(() => (U.q = '\u5bfc\u51fa'))

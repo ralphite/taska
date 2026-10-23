@@ -17,6 +17,9 @@ const config: StorybookConfig = {
     // the built page and its live copy are not sources: a build or a ship must not reload the stories you look at
     server: {
       ...config.server,
+      // T518 (#6214): Storybook asks no Taska: the page's calls are answered in the browser (app-shim.js), so none of
+      // the page's development proxies to a Taska server is kept
+      proxy: undefined,
       watch: {
         ...config.server?.watch,
         ignored: ['**/dist/**', '**/live/**', '**/test-results/**', '**/playwright-report/**'],

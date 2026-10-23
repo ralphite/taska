@@ -24,7 +24,7 @@ async function one(page, [s, m]) {
   const errors = []
   page.removeAllListeners('pageerror')
   page.on('pageerror', (e) => errors.push(String(e.message || e)))
-  await page.goto(new URL(`iframe.html?id=${s.id}&viewMode=story&globals=scheme:${scheme}`, url).href)
+  await page.goto(new URL(`iframe.html?id=${s.id}&viewMode=story&single=1&globals=scheme:${scheme}`, url).href)
   await page.waitForSelector('#storybook-root > *, .sb-show-errordisplay', { timeout: 15000 }).catch(() => {})
   // the real page in a frame needs a moment to draw; a played story its steps
   const frame = await page.$('iframe')

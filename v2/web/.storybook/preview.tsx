@@ -2,7 +2,9 @@ import type { Preview } from '@storybook/react-vite'
 import { useEffect } from 'react'
 import '../src/index.css'
 import { bump } from '../src/lib/state'
-import { PageFrame, serveFiles, taskaLoader } from '../src/stories/lib/demo'
+import { taskaLoader } from '../src/stories/lib/demo'
+import { AppFrame } from '../src/components/Shell'
+import { Both, single, type Platform } from '../src/stories/lib/both'
 
 declare const __PAGE_BODY__: string
 
@@ -15,8 +17,6 @@ const BODY = __PAGE_BODY__
   .split(/\s+/)
   .filter((c) => !/^(h-dvh|overflow-hidden|lg:flex)$/.test(c))
   .join(' ')
-
-serveFiles()
 
 const preview: Preview = {
   parameters: {
@@ -59,7 +59,55 @@ const preview: Preview = {
             ['Icons', 'Item status icon', 'Keys', 'Project tile', 'Agent avatar', 'Search hit'],
           ],
           'Pages',
-          ['Desktop', 'Phone'],
+          [
+            'Item list',
+            [
+              'Active',
+              'Needs you',
+              'All',
+              'Queue',
+              'Later',
+              'Finished',
+              'Archive',
+              'Rules',
+              'Search',
+              'Filtered: bugs',
+              'Going through what needs you',
+            ],
+            'Item page',
+            [
+              'In progress, with its talk',
+              'Blocked',
+              'Question',
+              'Checklist question',
+              'Proposed',
+              'Waits for review',
+              'Open',
+              'Done',
+              "Won't do",
+              'Subitem',
+              'Long talk',
+              'Rule proposed',
+              'Writing a reply',
+              'Item menu',
+              'Message menu',
+              'Archived, with Undo',
+            ],
+            'Document',
+            ['With comments', 'Long, with contents', 'Web page', 'With choices', 'Editing'],
+            'New input',
+            ['New input page', 'Writing a new input'],
+            'Inputs',
+            ['Inputs tab'],
+            'Projects',
+            ['Home: every project', 'Small project', 'Empty project', 'Project drawer'],
+            'Settings',
+            ['Settings', 'Agents', 'Projects', 'Use on your phone', 'Notifications', 'Voice spellings', 'Organizer'],
+            'Side lists',
+            ['Documents', 'Activity', 'Deleted'],
+            'Keyboard',
+            ['Keyboard shortcuts', 'Command palette'],
+          ],
           'Demo',
           'Prototype',
         ],
@@ -95,12 +143,13 @@ const preview: Preview = {
           document.removeEventListener('click', stay, true)
         }
       }, [])
-      return ctx.title.startsWith('Components/') ? (
-        <PageFrame>
+      if (!ctx.title.startsWith('Components/')) return <Story />
+      // T518 (#6195): a component on the desktop and the phone at once; each frame draws the story itself
+      if (!single()) return <Both id={ctx.id} scheme={theme} platform={ctx.parameters.platform as Platform} />
+      return (
+        <AppFrame>
           <Story />
-        </PageFrame>
-      ) : (
-        <Story />
+        </AppFrame>
       )
     },
   ],

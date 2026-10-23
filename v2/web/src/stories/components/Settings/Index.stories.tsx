@@ -5,7 +5,11 @@ import * as Settings from '../parts/Settings'
 const meta: Meta = { title: 'Components/Settings' }
 export default meta
 
-export const SettingsIndex: StoryObj = { ...Settings.SettingsIndex, name: 'Settings list on the phone' }
+export const SettingsIndex: StoryObj = {
+  ...Settings.SettingsIndex,
+  name: 'Settings list on the phone',
+  parameters: { ...Settings.SettingsIndex.parameters, platform: 'phone' },
+}
 export const Agents: StoryObj = { ...Settings.Agents, name: 'Agents' }
 export const AgentsNoneYet: StoryObj = { ...Settings.AgentsNoneYet, name: 'Agents, none yet' }
 export const Documents: StoryObj = { ...Settings.Documents, name: 'Documents' }

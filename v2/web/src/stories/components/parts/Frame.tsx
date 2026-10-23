@@ -25,13 +25,14 @@ import { tipShow } from '../../../lib/events'
 import { WorkerMark } from '../../../components/List'
 import { FAILED, TOAST } from '../../../lib/toast'
 import { VW } from '../../../lib/viewer'
-import { Only, Pane, type Setup } from '../../lib/demo'
+import { Pane, type Setup } from '../../lib/demo'
 import { Column } from '../../lib/column'
 
 // what this part of Storybook shows (T512: its stories are in the folders beside this file)
 export const area: Meta = {
   parameters: {
     covers: [
+      'AppFrame', // every component story stands in the page's own frame
       'ProjBar',
       'MainHead',
       'Tabs',
@@ -61,11 +62,7 @@ const at = (setup: (x: Setup) => void) => ({ taska: { setup } })
 
 /** The project's bar (desktop, over both panes): its name, the agent pill, search. */
 export const ProjectBar: Story = {
-  render: () => (
-    <Only on="desktop">
-      <ProjBar hidden={false} />
-    </Only>
-  ),
+  render: () => <ProjBar hidden={false} />,
 }
 /** The list's head: the project (phone) or the search (desktop), the pill. */
 export const ListHead: Story = {
@@ -86,11 +83,9 @@ export const ListHeadSearching: Story = {
 const tabs = (tab: 'items' | 'inputs' | 'archive' | 'rules'): Story => ({
   parameters: at(() => (U.tab = tab)),
   render: () => (
-    <Only on="phone">
-      <Pane w="list">
-        <Tabs hidden={false} />
-      </Pane>
-    </Only>
+    <Pane w="list">
+      <Tabs hidden={false} />
+    </Pane>
   ),
 })
 export const TabsItems = tabs('items')
@@ -106,9 +101,7 @@ export const FiltersStrip: Story = {
   }),
   render: () => (
     <Pane w="list">
-      <Only on="phone">
-        <FilterStrip />
-      </Only>
+      <FilterStrip />
     </Pane>
   ),
 }
@@ -182,19 +175,13 @@ export const Sidebar: Story = {
 export const DrawerFoot: Story = {
   render: () => (
     <div className="w-80 p-3">
-      <Only on="phone">
-        <DrawerSettings />
-      </Only>
+      <DrawerSettings />
     </div>
   ),
 }
 /** The rail: the sidebar folded to icons (desktop, narrower windows). */
 export const RailFolded: Story = {
-  render: () => (
-    <Only on="desktop">
-      <Rail hidden={false} />
-    </Only>
-  ),
+  render: () => <Rail hidden={false} />,
 }
 
 // ---------------------------------------------------------------- what floats over the page
