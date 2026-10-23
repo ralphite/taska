@@ -75,8 +75,7 @@ export async function send() {
   const box = els.text
   if (!box) return
   if (docOpen() && vcCount(box.value)) return sendVoiceComments() // F184
-  const td = docOpen()
-  if (td && !docTarget() && ticksOf(td).length) return sendTicks(td)
+  // B524 (r736): choices ticked in a document never go with the box: only with Send choices in its line (sendTicks)
   const dt = docTarget()
   if (dt) return sendDocComment(dt) // a document comment (I087)
   const od = docOpen()
@@ -127,29 +126,25 @@ export async function send() {
       if (talk) talk.scrollTop = talk.scrollHeight
     }) // B124
 }
-// B412: the choices ticked in a document go in at once: into its text, and to its item as one reply (with your note)
-async function sendTicks(doc: Doc) {
-  const box = els.text,
-    note = box?.value.trim() || '',
-    n = liveN(doc.n),
+// B412: the choices ticked in a document go in at once: into its text, and to its item as one reply. B524 (r736): Send
+// choices in the box's line sends them, and only them: what is in the box stays there, for what the box writes to.
+export function sendTicks(doc: Doc | undefined) {
+  if (!doc || !ticksOf(doc).length) return
+  const n = liveN(doc.n),
     sent = Object.fromEntries(ticksOf(doc).map(({ k, now }) => [k, now])),
     words = tickWords(doc)
   if (byN.has(n)) {
     outboxPush({
-      text:
-        [`Answered in D${doc.d}:`, ...(words.length ? words : ['nothing ticked'])].join('\n') +
-        (note ? '\n\n' + note : ''),
-      files: U.files,
+      text: [`Answered in D${doc.d}:`, ...(words.length ? words : ['nothing ticked'])].join('\n'),
+      files: [],
       scope: code(n),
       kind: 'answer', // F419
     })
-    if (box) box.value = ''
-    U.files = []
-    saveDraft()
     flushOutbox()
     if (!desk()) toast(`Choices sent to ${code(n)}`) // the desktop's box says Sent already
   }
-  if (!desk()) U.docType = false // the phone: the box leaves the document again, as before you ticked
+  // the phone: the box leaves the document again, as before you ticked, unless something is written in it
+  if (!desk() && !(els.text?.value.trim() || U.files.length)) U.docType = false
   saveTicks(doc.d, sent)
 }
 // B1, B2 (T422): only the choices go, into the document as it is when they get there (an agent may have changed the

@@ -2,7 +2,7 @@
 // desktop (T110) and in a sheet on the phone. Comments are written in the one input box (I087). The editor is a
 // plain textarea; the first line is the title.
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
-import { BTN, DC_BTN, HIT, MSG, PRIMARY, WHO } from '../lib/constants'
+import { BTN, DC_BTN, HIT, MSG, NEEDS_PILL, PRIMARY, WHO } from '../lib/constants'
 import {
   R_STATE as R,
   U,
@@ -24,7 +24,7 @@ import {
 import type { Comment, Doc } from '../lib/types'
 import { blockHtml, clean, groups, plainQuote } from '../lib/markdown'
 import { seeThreads, threadNew, renderDoc } from '../lib/docs'
-import { tickKeys, tickOpen, tickText } from '../lib/doctick'
+import { tickKeys, tickOpen, tickText, ticksNotSent } from '../lib/doctick'
 
 const TICKED_LINE = /^\s*[-*+]\s+[([][xX][)\]]/m // T415: a list with a choice sent in it
 const CHOICE_LINE = /^\s*[-*+]\s+(\(|\[)[ xX]?(\)|\])\s+/m
@@ -571,7 +571,8 @@ export function DocView({ d }: { d: Doc }) {
     li?.setAttribute('data-q', '')
   })
   const titled = !!d.blocks[0] && sameText(d.blocks[0].text.replace(/^#+\s*/, ''), d.title)
-  const tks = tickKeys(d).map((x) => x.k)
+  const tks = tickKeys(d).map((x) => x.k),
+    waiting = ticksNotSent(d)
   const [line0, ...rest0] = (d.blocks[0]?.text || '').split('\n'),
     titleLine =
       !titled && d.blocks[0]?.kind === 'para' && rest0.length > 0 && sameText(line0.replace(/^#+\s*/, ''), d.title) // T227 #4
@@ -636,6 +637,13 @@ export function DocView({ d }: { d: Doc }) {
             Edit
           </button>
         </div>
+        {waiting ? (
+          // B524 (r736): choices ticked and not sent are said at the top too, so they are not forgotten; the box's line
+          // sends them
+          <div className="mt-3 flex">
+            <span className={NEEDS_PILL}>{waiting}</span>
+          </div>
+        ) : null}
         {titled || d.fmt === 'html' ? null : (
           <div className="mt-3 text-2xl leading-tight font-bold tracking-tight">{d.title}</div>
         )}

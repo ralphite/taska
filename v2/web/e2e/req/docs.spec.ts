@@ -1,6 +1,6 @@
 // Yadong's requirements on documents (D29, "Documents"; T475, D45): each check is named by the codes of his inputs, so
 // a change that breaks one is stopped before it ships with his own words.
-// guards: src/components/Doc.tsx src/components/Detail.tsx src/components/WebPage.tsx src/components/Shell.tsx src/lib/docs.ts src/lib/doctick.ts src/lib/markdown.ts
+// guards: src/components/Doc.tsx src/components/Detail.tsx src/components/WebPage.tsx src/components/Shell.tsx src/components/Composer.tsx src/components/Talk.tsx src/lib/docs.ts src/lib/doctick.ts src/lib/markdown.ts src/lib/outbox.ts
 import { expect, test } from '@playwright/test'
 import { LOOP, isDesk, open, project } from '../seed'
 
@@ -70,7 +70,7 @@ test('r473 r500: each item of a list has its own two buttons, the voice one firs
   await expect(page.locator('#scope')).toContainText('Banana bread')
 })
 
-test('r524: choices in a document are ticked on the page and wait; the box says how many, and Send sends them together', async ({
+test("r524: choices in a document are ticked on the page and wait; the box's line says how many, and its Send choices sends them together", async ({
   page,
   request,
 }) => {
@@ -87,8 +87,7 @@ test('r524: choices in a document are ticked on the page and wait; the box says 
     await page.locator('[data-act="doc-tick"]').filter({ hasText: f }).filter({ visible: true }).first().click()
   await expect(page.locator('#scope')).toContainText('2 choices not sent')
   expect(await p.read('D1')).not.toMatch(/\[x\] Apples/i) // waiting on the page, not sent one by one
-  await page.locator('#text').click()
-  await page.keyboard.press('Shift+Enter')
+  await page.locator('#scope [data-act="doc-ticks-send"]').click() // B524 (r736): the line's own button, not the box's
   await expect.poll(() => p.read('D1')).toMatch(/\[x\] Apples/i)
   expect(await p.read('D1')).toMatch(/\[x\] Plums/i)
   expect(await p.read('D1')).not.toMatch(/\[x\] Pears/i)
@@ -107,8 +106,7 @@ test('r420: a sent form is greyed and Submitted, plainly showing what was picked
   })
   await open(page, p, 'D1')
   await page.locator('[data-act="doc-tick"]').filter({ hasText: 'Apples' }).filter({ visible: true }).first().click()
-  await page.locator('#text').click()
-  await page.keyboard.press('Shift+Enter')
+  await page.locator('#scope [data-act="doc-ticks-send"]').click()
   await expect.poll(() => p.read('D1')).toMatch(/\(x\) Apples/i)
   const form = page.locator('#docBlocks [role="group"]').filter({ hasText: 'Pears' }).filter({ visible: true }).first()
   await expect(form).toContainText('Submitted')
@@ -124,9 +122,62 @@ test('r420: a sent form is greyed and Submitted, plainly showing what was picked
   await form.hover()
   await form.locator('[data-act="doc-tick-edit"]').click()
   await page.locator('[data-act="doc-tick"]').filter({ hasText: 'Pears' }).filter({ visible: true }).first().click()
-  await page.locator('#text').click()
-  await page.keyboard.press('Shift+Enter')
+  await page.locator('#scope [data-act="doc-ticks-send"]').click()
   await expect.poll(() => p.read('D1')).toMatch(/\(x\) Pears/i)
+})
+
+test("r736 r722: ticks wait, the box's mic stays the mic; Send choices is in the line above the box, and the document's top and its card on the item say what is not sent", async ({
+  page,
+  request,
+}) => {
+  const p = await project(request, {
+    ...LOOP,
+    then: `${LOOP.then}T4 doc Pick the fruit
+  - [ ] Apples
+  - [ ] Pears
+`,
+  })
+  await open(page, p, 'D1')
+  const main = page.locator('#sendBtn'),
+    line = page.locator('#scope'),
+    sendChoices = line.locator('[data-act="doc-ticks-send"]')
+  const at = async () => (await main.isVisible()) && (await main.boundingBox())
+  const before = await at()
+  await page.locator('[data-act="doc-tick"]').filter({ hasText: 'Apples' }).filter({ visible: true }).first().click()
+  // the box's round button is still the mic, where it was (B524: reaching for it sent the choices)
+  await expect(line).toContainText('1 choice not sent')
+  await expect(main).toBeVisible()
+  await expect(main).toHaveAttribute('data-act', 'mic')
+  await expect(page.locator('#micBtn')).toBeHidden() // the mic did not move aside
+  if (before) expect(await main.boundingBox()).toEqual(before)
+  // Send choices is a button of its own, in the line that says how many wait
+  await expect(sendChoices).toBeVisible()
+  await expect(sendChoices).toHaveText('Send choices')
+  // the document says it at its top, over its text
+  const doc = page.locator('#docBlocks').locator('xpath=..')
+  const top = doc.getByText('1 choice not sent', { exact: true })
+  await expect(top).toBeVisible()
+  const t = await top.boundingBox(),
+    first = await page.locator('#docBlocks section[data-key]').first().boundingBox()
+  expect(t && first && t.y < first.y).toBe(true)
+  expect(await p.read('D1')).not.toMatch(/\[x\] Apples/i) // nothing sent yet
+  // on the item, the document's card says it too, after a reload
+  await open(page, p, 'T4')
+  const card = page.locator('[data-act="doc-open"][data-d="1"]').filter({ visible: true })
+  await expect(card).toContainText('1 choice not sent')
+  // open it from the card; the line's button sends the choices, and every notice goes
+  await card.click()
+  await expect(sendChoices).toBeVisible()
+  await sendChoices.click()
+  await expect.poll(() => p.read('D1')).toMatch(/\[x\] Apples/i)
+  expect(await p.read('D1')).not.toMatch(/\[x\] Pears/i)
+  await expect.poll(() => p.read('T4')).toContain('Answered in D1')
+  await expect(sendChoices).toHaveCount(0)
+  await expect(page.getByText('1 choice not sent', { exact: true }).filter({ visible: true })).toHaveCount(0)
+  await open(page, p, 'T4')
+  await expect(page.locator('[data-act="doc-open"][data-d="1"]').filter({ visible: true })).not.toContainText(
+    'not sent',
+  )
 })
 
 test('r280 B340: on the phone a comment needs no place picked: it is on the whole document', async ({

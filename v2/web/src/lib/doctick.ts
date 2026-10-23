@@ -1,6 +1,6 @@
 // B412: choices ticked in a document wait on the page, and in this browser across reloads, until you send them;
-// Send puts them all in the document at once and tells the item which ones you ticked.
-import { ctx, docById } from './state'
+// Send choices puts them all in the document at once and tells the item which ones you ticked.
+import { ctx, docById, plural } from './state'
 import { CHOICE, isTicked, tickedBlock } from './markdown'
 import type { Doc } from './types'
 
@@ -88,6 +88,9 @@ export const tickWords = (doc: Doc) =>
   ticksOf(doc).flatMap(({ now, head }) =>
     now.split('\n').flatMap((l) => (isTicked(l) ? ['✓ ' + l.replace(CHOICE, '') + (head ? ` (${head})` : '')] : [])),
   )
+/** B524 (r736): "2 choices not sent" while ticks wait (the box's line, the document's top, its card on the item), else ''. */
+export const ticksNotSent = (doc: Doc | undefined) =>
+  doc && ticksOf(doc).length ? `${plural(tickWords(doc).length, 'choice')} not sent` : ''
 /** F428: a sent form is shown as sent until you choose to change it. */
 export const tickOpen = (d: number, k: string) => DT.open.has(`${d} ${k}`)
 export function tickModify(d: number, k: string) {

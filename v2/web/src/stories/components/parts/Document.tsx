@@ -340,7 +340,8 @@ export const NotSentYet = also(
 // ---------------------------------------------------------------- choices
 
 const CHOICES = 2 // the paragraph of choices
-/** Ticked on the page and not sent yet: the box says how many and sends them with an optional note (B412). */
+/** Ticked on the page and not sent yet (B412): the box's line says how many, with its own Send choices; the box's round
+ * button stays the mic (B524, r736); the document's top says it too. */
 export const TickedNotSent = doc(TICKS, (_, d) => {
   clearTicks(d.d)
   const k = tickKeys(d)[CHOICES].k

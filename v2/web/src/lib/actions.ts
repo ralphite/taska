@@ -80,7 +80,7 @@ import {
 } from './nav'
 import { advance, endGoDesk, endWalk, goResume, goThroughPhone, peek, startGoDesk } from './go'
 import { closeDoc, deleteComment, docTarget, editComment, newDoc, openDoc, renderDoc, saveDoc } from './docs'
-import { flushOutbox, send, sendChoice } from './outbox'
+import { flushOutbox, send, sendChoice, sendTicks } from './outbox'
 import {
   cancelRec,
   docRecStart,
@@ -1034,10 +1034,10 @@ export const ACT: Record<string, Handler> = {
   },
   'dc-edit': (d) => editComment(Number(d.d), Number(d.id)),
   'doc-tick': (d) => {
-    // F393, B412: a choice in a document is ticked on the page at once and waits; the box below sends them all
+    // F393, B412: a choice in a document is ticked on the page at once and waits; the box's line sends them all
     if (!tickDoc(Number(d.d), d.key as string, Number(d.i)))
       return toast('Document changed; open it again', null, { error: true })
-    if (!desk()) U.docType = true // the phone: the box comes under the document, with Send
+    if (!desk()) U.docType = true // the phone: the box comes under the document, its line with Send choices
     renderDoc()
     bump('composer')
   },
@@ -1046,6 +1046,7 @@ export const ACT: Record<string, Handler> = {
     tickModify(Number(d.d), d.key as string)
     renderDoc()
   },
+  'doc-ticks-send': () => sendTicks(docOpen()), // B524 (r736): the box's line sends the choices, never the box's button
   'doc-ticks-clear': () => {
     const doc = docOpen()
     if (doc) clearTicks(doc.d)

@@ -4,6 +4,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { NeedsCard } from '../../../components/Detail'
 import { Column } from '../../lib/column'
 import { D, EMPTY_STATE, U, byN, byR, kids, lastAgentMsg, model, parseRef } from '../../../lib/state'
+import { clearTicks, tickDoc, tickKeys } from '../../../lib/doctick'
 import type { Item } from '../../../lib/types'
 import { Pane, type Setup } from '../../lib/demo'
 
@@ -68,6 +69,14 @@ export const Blocked = item('B2')
 export const Question = item('T7')
 /** A question with several answers you can tick, and its plan as a document. */
 export const ChecklistQuestion = item('T9')
+/** B524 (r736): a choice ticked in its document and not sent yet: the document's card in Documents says so. */
+export const DocumentChoicesNotSent = item('T9', ({ S, it }) => {
+  const d = S.docs.find((x) => x.n === it('T9').n && x.fmt !== 'html')
+  if (!d) return
+  clearTicks(d.d)
+  const form = tickKeys(d).find(({ b }) => /^\s*[-*+]\s+\[ \]/m.test(b.text))
+  if (form) tickDoc(d.d, form.k, 0)
+})
 /** An idea the agent proposed, with a web page preview and its proposal. */
 export const ProposedWithPreview = item('I4')
 /** Proposed, nothing said yet. */
