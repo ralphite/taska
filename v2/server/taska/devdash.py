@@ -2,13 +2,16 @@
 
 Only counts and times: never the words of a draft, a message or an input. Shown at /dev/dashboard, on this computer
 only (web.py). Below the numbers, the analyses agents wrote: Markdown files in <data folder>/dev/analyses, newest
-first (a file is named by its date, 2026-10-22-what-it-is-about.md, and its first line is its title).
+first (a file is named by its date, 2026-10-22-what-it-is-about.md, and its first line is its title). Above them, the
+panels agents and scripts keep up to date (Markdown files in <data folder>/dev/panels, each rewritten in place, e.g.
+how the Storybook server is doing), and what each item cost to make: the cost line agents end a done message with (I447).
 """
 
 from __future__ import annotations
 
 import json
 import os
+import re
 import sqlite3
 import statistics
 from collections import Counter, defaultdict
@@ -150,6 +153,76 @@ def analyses(root: str) -> List[Dict[str, str]]:
             continue
         first, _, rest = md.lstrip().partition("\n")
         out.append({"name": name, "date": name[:10], "title": first.lstrip("# ").strip() or name, "md": rest.strip()})
+    return out
+
+
+# I447: the line an agent ends a done message with: "<cost>: 9 min · 66,321 token (cache 8,163,512) · 34 steps", in Chinese
+COST = re.compile("\u6210\u672c\uff1a\\s*(\\d+)\\s*\u5206\u949f")
+TOKENS = re.compile("([\\d,]+)\\s*token")
+CACHE = re.compile("\u8bfb\u7f13\u5b58\\s*([\\d,]+)")
+STEPS = re.compile("(\\d+)\\s*\u6b65")
+
+
+def _num(m: Optional["re.Match[str]"]) -> int:
+    return int(m.group(1).replace(",", "")) if m else 0
+
+
+def costs(stores: Dict[str, Any], days: Optional[int]) -> Dict[str, Any]:
+    """What each item cost to make (I447), from the cost lines in the agents' messages since the start of the day `days`
+    days ago (None: all): per item its rounds, minutes, fresh and cache-read tokens and steps, the latest first."""
+    now = datetime.now().astimezone()
+    start = None if days is None else now.replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=days)
+    per: Dict[Tuple[str, int], Dict[str, Any]] = {}
+    for p, s in stores.items():
+        for n, it in list(s.items.items()):
+            for x in it.get("thread", []):
+                text = x.get("text") or ""
+                if x.get("by") in ("you", "org") or "\u6210\u672c\uff1a" not in text:
+                    continue
+                m = COST.search(text)
+                if not m:
+                    continue
+                t = _when(x["t"])
+                if start and t < start:
+                    continue
+                line = text[m.start():].split("\n", 1)[0]
+                r = per.setdefault((p, n), {"project": p, "code": s.code(n), "title": str(it.get("title", ""))[:80],
+                                            "rounds": 0, "minutes": 0, "tokens": 0, "cache": 0, "steps": 0, "t": t})
+                r["rounds"] += 1
+                r["minutes"] += int(m.group(1))
+                r["tokens"] += _num(TOKENS.search(line))
+                r["cache"] += _num(CACHE.search(line))
+                r["steps"] += _num(STEPS.search(line))
+                r["t"] = max(r["t"], t)
+    rows = sorted(per.values(), key=lambda r: r["t"], reverse=True)
+    mins = [r["minutes"] for r in rows]
+    toks = [r["tokens"] for r in rows]
+    for r in rows:
+        r["t"] = r["t"].strftime("%m-%d %H:%M")
+    return {"items": rows, "minutes": sum(mins), "tokens": sum(toks), "cache": sum(r["cache"] for r in rows),
+            "median_minutes": round(statistics.median(mins)) if mins else 0,
+            "median_tokens": round(statistics.median(toks)) if toks else 0}
+
+
+def panels(root: str) -> List[Dict[str, str]]:
+    """The panels agents and scripts keep up to date in <data folder>/dev/panels: each Markdown file is one, its first
+    line its title, in the order of their names; `updated` is when the file was last written."""
+    folder = os.path.join(root, "dev", "panels")
+    out: List[Dict[str, str]] = []
+    if not os.path.isdir(folder):
+        return out
+    for name in sorted(os.listdir(folder)):
+        path = os.path.join(folder, name)
+        if not name.endswith(".md"):
+            continue
+        try:
+            with open(path, encoding="utf-8") as f:
+                md = f.read()
+            when = datetime.fromtimestamp(os.path.getmtime(path)).astimezone().strftime("%m-%d %H:%M")
+        except OSError:
+            continue
+        first, _, rest = md.lstrip().partition("\n")
+        out.append({"name": name, "updated": when, "title": first.lstrip("# ").strip() or name, "md": rest.strip()})
     return out
 
 

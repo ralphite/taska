@@ -1,5 +1,6 @@
 // F448 (r696, D71): the dashboard for making Taska, on this computer only (/dev/dashboard): what you did in Taska, from
-// its log, worked out each time it opens; below it, the analyses agents wrote. Counts and times only, never your words.
+// its log, worked out each time it opens; the panels agents and scripts keep up to date, what each item cost to make
+// (I447) and the analyses agents wrote. Counts and times only, never your words.
 import { useEffect, useState, type ReactNode } from 'react'
 import { Rich } from '../components/Talk'
 
@@ -23,6 +24,25 @@ interface Dash {
   slow: { n: number; timeouts: number; median: number; via: [string, number, number][]; where: Pair[] }
   reloads: number
   updates: number
+  costs: {
+    items: {
+      project: string
+      code: string
+      title: string
+      rounds: number
+      minutes: number
+      tokens: number
+      cache: number
+      steps: number
+      t: string
+    }[]
+    minutes: number
+    tokens: number
+    cache: number
+    median_minutes: number
+    median_tokens: number
+  }
+  panels: { name: string; updated: string; title: string; md: string }[]
   analyses: { name: string; date: string; title: string; md: string }[]
 }
 
@@ -31,14 +51,30 @@ const RANGES: [string, string][] = [
   ['7', '7 days'],
   ['all', 'All'],
 ]
-const CARD = 'rounded-xl bg-white p-4 ring-1 ring-zinc-900/10 dark:bg-zinc-800 dark:ring-white/10'
+/** 3,620,181 -> 3.6M, 65,467 -> 65k */
+const short = (n: number) =>
+  n >= 1e6 ? `${(n / 1e6).toFixed(1)}M` : n >= 1e3 ? `${Math.round(n / 1e3)}k` : String(n)
+const CARD = 'min-w-0 rounded-xl bg-white p-4 ring-1 ring-zinc-900/10 dark:bg-zinc-800 dark:ring-white/10'
 const HEAD = 'mb-3 text-sm font-semibold text-zinc-900 dark:text-zinc-100'
 const MUTED = 'text-zinc-500 dark:text-zinc-400'
 
-function Card({ title, children, wide = false }: { title: string; children: ReactNode; wide?: boolean }) {
+function Card({
+  title,
+  children,
+  wide = false,
+  note,
+  cls = '',
+}: {
+  title: string
+  children: ReactNode
+  wide?: boolean
+  note?: string
+  cls?: string
+}) {
   return (
-    <section className={`${CARD} ${wide ? 'lg:col-span-2' : ''}`}>
+    <section className={`${CARD} ${wide ? 'lg:col-span-2' : ''} ${cls}`}>
       <h2 className={HEAD}>{title}</h2>
+      {note ? <p className={`-mt-2 mb-3 text-xs ${MUTED}`}>{note}</p> : null}
       {children}
     </section>
   )
@@ -140,6 +176,16 @@ export function Dashboard() {
             />
             <Stat n={d.reloads.toLocaleString()} label="reloads by hand" sub={`“Taska has an update” ${d.updates}×`} />
           </div>
+          {d.panels.length ? (
+            // what agents and scripts keep up to date, e.g. how the Storybook server is doing: first, as it is live
+            <div className="mb-3 grid gap-3 lg:grid-cols-2">
+              {d.panels.map((p) => (
+                <Card key={p.name} title={p.title} note={`updated ${p.updated}`} cls="lg:last:odd:col-span-2">
+                  <Rich text={p.md} cls="text-sm" />
+                </Card>
+              ))}
+            </div>
+          ) : null}
           <div className="grid gap-3 lg:grid-cols-2">
             <Card title={d.hourly ? 'By hour' : 'By day'} wide>
               <div className="flex h-36 items-end gap-0.5">
@@ -198,6 +244,66 @@ export function Dashboard() {
             </Card>
             <Card title="What the page said went wrong">
               <Bars rows={d.errors} />
+            </Card>
+            <Card
+              title="What each item cost"
+              wide
+              note={
+                d.costs.items.length
+                  ? `${d.costs.items.length} items · ${d.costs.minutes} min · ${short(d.costs.tokens)} token · middle ${d.costs.median_minutes} min, ${short(d.costs.median_tokens)} token`
+                  : undefined
+              }
+            >
+              {d.costs.items.length ? (
+                <table className="w-full table-fixed text-sm">
+                  <colgroup>
+                    <col className="w-14" />
+                    <col />
+                    <col className="w-14" />
+                    <col className="w-16" />
+                    <col className="hidden w-20 lg:table-column" />
+                    <col className="hidden w-14 lg:table-column" />
+                    <col className="hidden w-24 lg:table-column" />
+                  </colgroup>
+                  <thead className={`text-left text-xs ${MUTED}`}>
+                    <tr>
+                      <th colSpan={2} className="pb-2 font-medium">
+                        Item
+                      </th>
+                      <th className="pb-2 text-right font-medium">min</th>
+                      <th className="pb-2 text-right font-medium">token</th>
+                      <th className="hidden pb-2 text-right font-medium lg:table-cell">cache read</th>
+                      <th className="hidden pb-2 text-right font-medium lg:table-cell">steps</th>
+                      <th className="hidden pb-2 text-right font-medium lg:table-cell">last</th>
+                    </tr>
+                  </thead>
+                  <tbody className="tabular-nums">
+                    {d.costs.items.map((c) => (
+                      <tr key={c.project + c.code} className="border-t border-zinc-100 dark:border-zinc-700">
+                        <td className="py-1.5">
+                          <a
+                            href={`/p/${encodeURIComponent(c.project)}/${c.code}`}
+                            className="font-mono text-xs font-bold text-blue-600 hover:underline dark:text-blue-400"
+                          >
+                            {c.code}
+                          </a>
+                        </td>
+                        <td className="truncate py-1.5 pr-2" title={c.title}>
+                          {c.title}
+                          {c.rounds > 1 ? <span className={MUTED}> · {c.rounds} rounds</span> : null}
+                        </td>
+                        <td className="py-1.5 text-right">{c.minutes}</td>
+                        <td className="py-1.5 text-right">{short(c.tokens)}</td>
+                        <td className={`hidden py-1.5 text-right lg:table-cell ${MUTED}`}>{short(c.cache)}</td>
+                        <td className={`hidden py-1.5 text-right lg:table-cell ${MUTED}`}>{c.steps}</td>
+                        <td className={`hidden py-1.5 text-right lg:table-cell ${MUTED}`}>{c.t}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <p className={`text-sm ${MUTED}`}>Nothing yet.</p>
+              )}
             </Card>
             <Card title="Analyses" wide>
               {d.analyses.length ? (

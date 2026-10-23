@@ -317,8 +317,9 @@ class Handler(BaseHTTPRequestHandler):
                     return self.page()
                 if p == "/dev/api/dashboard":
                     days = (q.get("days") or ["7"])[0]
-                    return self.json(dict(devdash.summary(logs.db_path(), None if days == "all" else int(days),
-                                                          devdash.item_of(hub.projects)),
+                    since = None if days == "all" else int(days)
+                    return self.json(dict(devdash.summary(logs.db_path(), since, devdash.item_of(hub.projects)),
+                                          costs=devdash.costs(hub.projects, since), panels=devdash.panels(hub.root),
                                           analyses=devdash.analyses(hub.root)))
                 return self.send(404, "Not found\n")
             if p == "/api/idle":  # R328: how long since you last did something here, for a deploy to wait for
