@@ -2,22 +2,29 @@
   {
     "name": "mobile-app",
     "title": "Mobile app",
-    "open": 4,
-    "needs": 0,
+    "open": 5,
+    "needs": 2,
     "agents": [
       {
         "name": "claude-code",
-        "t": 1792740927651,
+        "t": 1792781706688,
         "waiting": false,
         "session": "phone",
         "sessions": [
-          { "name": "phone", "t": 1792740927651 },
-          { "name": "manager", "t": 1792740927525 }
+          { "name": "phone", "t": 1792781706688 },
+          { "name": "manager", "t": 1792781706621 }
         ]
+      },
+      {
+        "name": "codex",
+        "t": 1792781706688,
+        "waiting": false,
+        "session": "design",
+        "sessions": [{ "name": "design", "t": 1792781706688 }]
       }
     ],
     "work": true,
-    "t": 1792740928532
+    "t": 1792781707623
   },
   {
     "name": "shop",
@@ -27,32 +34,24 @@
     "agents": [
       {
         "name": "claude-code",
-        "t": 1792740927672,
+        "t": 1792781706687,
         "waiting": false,
         "session": "worker",
         "sessions": [
-          { "name": "worker", "t": 1792740927672 },
-          { "name": "manager", "t": 1792740927666 }
+          { "name": "worker", "t": 1792781706687 },
+          { "name": "manager", "t": 1792781706685 }
         ]
       },
       {
         "name": "codex",
-        "t": 1792740927695,
+        "t": 1792781706705,
         "waiting": false,
         "session": "worker",
-        "sessions": [{ "name": "worker", "t": 1792740927695 }]
+        "sessions": [{ "name": "worker", "t": 1792781706705 }]
       }
     ],
     "work": true,
-    "t": 1792740931300
+    "t": 1792781708269
   },
-  {
-    "name": "website",
-    "title": "Website",
-    "open": 0,
-    "needs": 0,
-    "agents": [],
-    "work": false,
-    "t": 1792740920084
-  }
+  { "name": "website", "title": "Website", "open": 0, "needs": 0, "agents": [], "work": false, "t": 1792781702994 }
 ]

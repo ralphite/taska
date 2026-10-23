@@ -1,13 +1,8 @@
 // T457: an item's pane (the right side on the desktop, the whole page on the phone) in every state an item has, and
 // the card that asks you, on its own.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { DetailView, NeedsCard } from '../../../components/Detail'
-import { Column } from '../../lib/column'
-import { D, EMPTY_STATE, U, byN, byR, kids, lastAgentMsg, model, parseRef } from '../../../lib/state'
-import { clearTicks, tickDoc, tickKeys } from '../../../lib/doctick'
-import type { Item } from '../../../lib/types'
-import { Pane, type Setup } from '../../lib/demo'
-import { looks } from '../../lib/states'
+import { looksOf } from '../../lib/onpage'
+import type { Do, Twin } from '../../lib/twin'
 
 // what this part of Storybook shows (T512: its stories are in the folders beside this file)
 export const area: Meta = {
@@ -27,238 +22,150 @@ export const area: Meta = {
       'Editor',
       'Inline',
       'SectionHead',
+      'NeedsCard',
+      'ItemTalk',
     ],
   },
 }
 export type Story = StoryObj
 
-/** The item pane with this item open. */
-const item = (ref: string | null, setup?: (x: Setup) => void, wide = false): Story => ({
-  parameters: {
-    taska: {
-      setup: (x) => {
-        U.open = ref ? x.it(ref).n : null
-        setup?.(x)
-      },
-    },
-  },
-  render: () => <Column wide={wide} />,
+/** An item's or a document's address: in Shop, or "mobile-app/B1" in another project. */
+const addr = (ref: string) => '/p/' + (ref.includes('/') ? ref : 'shop/' + ref)
+/** B555: the real page with this item open: its pane (and its box), or on the phone its page; then these steps. */
+const at = (ref: string, steps?: Do[], more?: Partial<Twin>): Story => ({
+  parameters: { taska: { page: { at: addr(ref), part: ['#detailView', '#foot'], steps, ...more } } },
+  render: () => <></>,
 })
-// T522 (r731): a state seen only under the pointer, drawn without one (storybook-addon-pseudo-states); the desktop
-// only, as the phone has no pointer
-const pointed = (s: Story, hover: string[]): Story => ({
-  ...s,
-  parameters: { ...s.parameters, pseudo: { hover }, platform: 'desktop' },
-})
+/** A story of the desktop only (what the phone does not have). */
+const desk = (s: Story): Story => ({ ...s, parameters: { ...s.parameters, platform: 'desktop' } })
 
-// the demo's B6 has your reply after the agent's report (that is "Finished, you replied"); here the report is the last
-// word, so the card asks you to accept it
-const reportLast = ({ it }: Setup) => {
-  const i = it('B6'),
-    last = lastAgentMsg(i)
-  if (last) i.thread = i.thread.slice(0, i.thread.indexOf(last) + 1)
-  i.reply = false
-}
-// T522: the page before Taska's first answer (a reload): its own empty state, nothing of the project yet
-const notLoaded = () => {
-  model.S = structuredClone(EMPTY_STATE)
-  for (const m of [byN, byR, kids]) m.clear()
-}
-
-export const InProgressWithTalk = item('F1')
+export const InProgressWithTalk = at('F1')
 /** An agent is blocked and needs you: the amber card at the end of the talk, and its status reads Needs you (R055,
  * B535), though it is still in progress (its menu ticks that). */
-export const Blocked = item('B2')
+export const Blocked = at('B2')
 /** An agent asks you: its status reads Needs you too, while it is open. */
-export const Question = item('T7')
+export const Question = at('T7')
 /** A question with several answers you can tick, and its plan as a document. */
-export const ChecklistQuestion = item('T9')
+export const ChecklistQuestion = at('T9')
 /** B524 (r736): a choice ticked in its document and not sent yet: the document's card in Documents says so. */
-export const DocumentChoicesNotSent = item('T9', ({ S, it }) => {
-  const d = S.docs.find((x) => x.n === it('T9').n && x.fmt !== 'html')
-  if (!d) return
-  clearTicks(d.d)
-  const form = tickKeys(d).find(({ b }) => /^\s*[-*+]\s+\[ \]/m.test(b.text))
-  if (form) tickDoc(d.d, form.k, 0)
-})
+export const DocumentChoicesNotSent = at('D4', [
+  { click: '[data-act="doc-tick"]' },
+  { click: '[data-act="doc-close"]', on: 'd' },
+  { click: '[data-act="close"]', on: 'p' },
+])
 /** An idea the agent proposed, with a web page preview and its proposal. */
-export const ProposedWithPreview = item('I4')
+export const ProposedWithPreview = at('I4')
 /** Proposed, nothing said yet. */
-export const ProposedEmpty = item('F11')
-/** Finished by the agent, waiting for you: Not yet or Accept. */
-export const WaitsForReview = item('B6', reportLast)
-export const Done = item('B10')
-export const WontDo = item('T5')
-export const Open = item('T3')
-export const Later = item('F8')
-export const Subitem = item('T14')
+export const ProposedEmpty = at('F11')
+/** Finished by the agent, waiting for you: Not yet or Accept (Mobile app's B1: its report is the last word). */
+export const WaitsForReview = at('mobile-app/B1')
+export const Done = at('B10')
+export const WontDo = at('T5')
+export const Open = at('T3')
+export const Later = at('F8')
+export const Subitem = at('T14')
 /** A parent: its subitems, its plan document, two agents at work. */
-export const WithSubitemsAndDocument = item('T12')
-/** B532 (r760): its only subitem in Later, which the list's Active view does not show: marked Later. On the desktop
- * at full width (O), so the item, down to its subitems, is in view beside its talk. */
-export const SubitemInLater = item(
-  'T12',
-  ({ it }) => {
-    Object.assign(it('T13'), { when: 'later', status: 'open' })
-    D.full = true
-  },
-  true,
-)
-export const RuleInForce = item('R16')
-export const RuleProposed = item('R17')
+export const WithSubitemsAndDocument = at('T12')
+/** B532 (r760): its only subitem put in Later, which the list's Active view does not show: marked Later. On the
+ * desktop at full width (O), so the item, down to its subitems, is in view beside its talk. */
+export const SubitemInLater = at('T13', [
+  { click: '#detailView [data-f="when"][title]:not(#dActs *)' },
+  { click: '#detailView [data-act="goto"][data-n="12"]' },
+  { key: 'o', on: 'd' },
+])
+export const RuleInForce = at('R16')
+export const RuleProposed = at('R17')
 /** A long talk (17 messages), the item finished. */
-export const LongTalk = item('B35')
+export const LongTalk = at('B35')
 /** The agent asked, then took its question back. */
-export const QuestionWithdrawn = item('T38')
+export const QuestionWithdrawn = at('T38')
 /** A proposal you approved: the card says what you decided. */
-export const Decided = item('I4', ({ it }) => {
-  const i = it('I4')
-  i.status = 'open'
-  i.decided = { from: 'proposed', to: 'open', msg: lastAgentMsg(i)?.id ?? null }
-})
-export const WithPictures = item('B36')
-export const Archived = item('B21')
+export const Decided = at('I4', [{ click: '[data-act="status"][data-v="open"]' }])
+export const WithPictures = at('B36')
+export const Archived = at('B21')
 /** Opened from its link while the page waits for Taska's first answer (a reload). */
-export const Loading = item('T7', notLoaded)
+export const Loading = at('T7', undefined, { net: { '^/(p|api)/': 'hang' }, part: '#app' })
 /** Its link names an item the project does not have (T99). */
-export const NotThere = item(null, () => (U.open = 99))
+export const NotThere = at('T99')
 /** Editing the title, details and next step. */
-export const Editing = item('T3', ({ it }) => (U.editing = it('T3').n))
+export const Editing = at('T3', [{ click: '#itemMenuBtn' }, { click: '[data-act="edit"]' }])
 /** Adding the first subitem: Add pressed, its title box open (an item short enough that the box is in sight above
  * the line, as the page scrolls it into sight). */
-export const AddingSubitem = item('T38', ({ it }) => (U.subFor = it('T38').n))
+export const AddingSubitem = at('T38', [{ click: '#itemMenuBtn' }, { click: '[data-act="sub-new"]' }])
 /** The line between the item and its talk, pointed at: it turns blue, to drag (desktop). */
-export const LinePointed = pointed(item('T3'), ['[data-grip]'])
+export const LinePointed = desk(at('T3', undefined, { hover: '[data-grip="top"]' }))
 /** Full width (O): the list makes room; an item that fits stays in one column (desktop). */
-export const FullWidth = item('T3', () => (D.full = true), true)
+export const FullWidth = desk(at('T3', [{ key: 'o' }]))
 /** Full width: the item (its body, subitems, document) beside its talk, one line between them from the top to the
  * bottom, the box under the talk (desktop, B495). */
-export const TwoColumns = item('F1', () => (D.full = true), true)
+export const TwoColumns = desk(at('F1', [{ key: 'o' }]))
 /** Your words on their way to the item, before Taska has them. */
-export const ReplySending = item('F1', ({ it }) => {
-  U.outbox.push({
-    id: 'q1',
-    q: 'q1',
-    t: Date.now(),
-    text: '\u624b\u673a\u4e0a\u7684\u95ee\u9898\u4f18\u5148\u5904\u7406',
-    files: [],
-    scope: 'F' + it('F1').n,
-    p: '/p/shop/',
-    sending: true,
-  })
-})
+export const ReplySending = at(
+  'F1',
+  [
+    { type: '\u624b\u673a\u4e0a\u7684\u95ee\u9898\u4f18\u5148\u5904\u7406', into: '#text' },
+    { click: '[data-act="send"]' },
+  ],
+  { net: { '^/p/shop/api/op': 'hang' }, part: ['#detailView div[data-q]', '#foot'] },
+)
 /** The item pane while the list column shows Documents and none is picked (desktop). */
-export const NothingPicked = item(null, () => (U.side = 'docs'))
+export const NothingPicked = desk({
+  parameters: { taska: { page: { at: '/p/shop/docs', part: ['#detailView', '#foot'] } } },
+  render: () => <></>,
+})
 
 // ---------------------------------------------------------------- the card that asks you, alone
 
-const card = (ref: string, setup?: (x: Setup) => void): Story => ({
-  parameters: { taska: { setup } },
-  render: () => (
-    <Pane w="item">
-      <div className="p-4">
-        <NeedsCard it={byN.get(parseRef(ref) as number) as Item} />
-      </div>
-    </Pane>
-  ),
+/** B555: the card in the item's talk, on the real page, after these steps. */
+const card = (ref: string, steps?: Do[], more?: Partial<Twin>): Story => ({
+  parameters: { taska: { page: { at: addr(ref), part: CARD, steps, ...more } } },
+  render: () => <></>,
 })
+const CARD = '#detailView section.w-full.rounded-2xl.border'
 export const CardQuestion = card('T7')
 export const CardChecklist = card('T9')
-/** A question on an idea still proposed: Approve stays one tap away beside the answer (B299). */
-export const CardQuestionOnProposal = card('T7', ({ it }) => {
-  const i = it('T7')
-  i.status = 'proposed'
-  i.decided = null
-})
 export const CardBlocked = card('B2')
 export const CardProposal = card('I4')
 export const CardProposedNoWords = card('F11')
-export const CardReview = card('B6', reportLast)
 export const CardRule = card('R17')
-const approved = ({ it }: Setup) => {
-  const i = it('I4')
-  i.status = 'open'
-  i.decided = { from: 'proposed', to: 'open', msg: lastAgentMsg(i)?.id ?? null }
-}
-export const CardDecided = card('I4', approved)
-/** Approved, pointed at: Modify shows (on the phone it always shows). */
-export const CardDecidedPointed = pointed(CardDecided, ['.group\\/form'])
-/** Approved, then Modify: the two buttons work again; the one you chose before closes it, as Cancel does. */
-export const CardDecidedModify = card('I4', (x) => {
-  approved(x)
-  U.remodify = x.it('I4').n
-})
-/** A proposal you declined. */
-export const CardDeclined = card('I4', ({ it }) => {
-  const i = it('I4')
-  i.status = 'dropped'
-  i.decided = { from: 'proposed', to: 'dropped', msg: lastAgentMsg(i)?.id ?? null }
-})
-export const CardAccepted = card('B6', ({ it }) => {
-  const i = it('B6')
-  i.status = 'done'
-  i.decided = { from: 'review', to: 'done', msg: lastAgentMsg(i)?.id ?? null }
-})
-// ---------------------------------------------------------------- under the pointer, the keyboard, pressed, busy
-// T522 (r731, r762): every look of the item pane's head, its chips and its subitems side by side, each drawn without a
-// pointer or a key (../../lib/states.tsx); each shows the top of the pane (or its subitems), F01 open. The desktop only.
-// The pane alone (the page has one input box, so it is not drawn once a look).
-const pane = (tall = false) => (
-  <div className={`${tall ? 'h-[400px]' : 'h-[200px]'} overflow-hidden`}>
-    <Pane w="item" h="flex h-[calc(100dvh-3rem)] flex-col">
-      <DetailView hidden={false} />
-    </Pane>
-  </div>
-)
-const DONE = '#dActs > button:first-child',
-  SUBS = '[data-act="sub-new"]',
-  SUB = '.divide-y > button[data-act="goto"]'
-export const HeadLooks: Story = looks(
-  [
-    { name: 'As it is', draw: pane },
-    { name: 'Pointer on Done', draw: () => pane(), hover: [DONE] },
-    { name: 'Keys: Tab on Done', draw: () => pane(), focus: [DONE] },
-    { name: 'Done pressed', draw: () => pane(), hover: [DONE], pressed: [DONE] },
-    { name: 'Done sent, waiting for Taska', draw: () => pane(), marks: [[DONE, 'aria-busy', 'true']] },
-    { name: 'Pointer on All actions (⋯)', draw: () => pane(), hover: ['#itemMenuBtn'] },
-    { name: 'Pointer on the next item', draw: () => pane(), hover: ['#dNav button:nth-child(2)'] },
-    { name: 'Pointer on the status', draw: () => pane(), hover: ['[data-arm="s"]'] },
-    { name: 'Keys: Tab on the priority', draw: () => pane(), focus: ['[data-arm="p"]'] },
-    {
-      name: 'Pointer on Now (to Later)',
-      draw: () => pane(),
-      hover: ['#detailView [data-f="when"][title]:not(#dActs *)'],
-    },
-    { name: 'Its subitems', draw: () => pane(true), scroll: SUBS },
-    {
-      name: 'Pointer on a subitem',
-      draw: () => pane(true),
-      scroll: SUBS,
-      hover: [SUB + ':first-child'],
-    },
-    {
-      name: 'A subitem pressed',
-      draw: () => pane(true),
-      scroll: SUBS,
-      pressed: [SUB + ':first-child'],
-    },
-    {
-      name: 'Pointer on Add (a subitem)',
-      draw: () => pane(true),
-      scroll: SUBS,
-      hover: ['[data-act="sub-new"]'],
-    },
-  ],
-  { w: 'w-full', setup: ({ it }) => (U.open = it('F1').n) },
-)
-/** The line between the item and its talk, dragged: it stays blue while you drag. */
-export const LineDragged: Story = looks(
-  [{ name: 'The line dragged', draw: () => <Column />, marks: [['[data-grip]', 'data-drag', '']] }],
-  { w: 'w-full', setup: ({ it }) => (U.open = it('T3').n) },
-)
+/** Finished work waiting for you (Mobile app's B1). */
+export const CardReview = card('mobile-app/B1')
+export const CardAccepted = card('mobile-app/B1', [{ click: '[data-act="status"][data-v="done"]' }])
 /** Finished work you sent back with Not yet: the agent has it again. */
-export const CardSentBack = card('B6', ({ it }) => {
-  const i = it('B6')
-  i.status = 'doing'
-  i.decided = { from: 'review', to: 'doing', msg: lastAgentMsg(i)?.id ?? null }
-})
+export const CardSentBack = card('mobile-app/B1', [{ click: '[data-act="reopen"]' }])
+/** A question on an idea still proposed (Mobile app's I5): Approve stays one tap away beside the answer (B299). */
+export const CardQuestionOnProposal = card('mobile-app/I5')
+const approve = { click: '[data-act="status"][data-v="open"]' }
+export const CardDecided = card('I4', [approve])
+/** Approved, pointed at: Modify shows (on the phone it always shows). */
+export const CardDecidedPointed = desk(card('I4', [approve], { hover: CARD }))
+/** Approved, then Modify: the two buttons work again; the one you chose before closes it, as Cancel does. */
+export const CardDecidedModify = card('I4', [approve, { click: '[data-act="decided-modify"]' }])
+/** A proposal you declined. */
+export const CardDeclined = card('I4', [{ click: '[data-act="status"][data-v="dropped"]' }])
+// ---------------------------------------------------------------- under the pointer, the keyboard, pressed, busy
+// T522 (r731, r762): every look of the item pane's head, its chips and its subitems side by side, each the real page
+// with F01 open and the pointer, a key or a press on it. The desktop only.
+const HEAD = ['#dHead', '#dNav', '#itemTop'],
+  DONE = '#dActs > button:first-child',
+  SUBS = '#detailBody section:has([data-act="sub-new"])',
+  SUB = `${SUBS} .divide-y > button[data-act="goto"]:first-child`
+const tipped = (sel: string) => ({ part: [...HEAD, '#tip'], hover: sel })
+export const HeadLooks: Story = looksOf({ at: addr('F1'), part: HEAD }, [
+  { name: 'As it is' },
+  { name: 'Pointer on Done', ...tipped(DONE) },
+  { name: 'Keys: Tab on Done', focus: DONE },
+  { name: 'Done pressed', hover: DONE, steps: [{ press: DONE }] },
+  { name: 'Done sent, waiting for Taska', steps: [{ click: DONE }], net: { '^/p/shop/api/op': 'hang' } },
+  { name: 'Pointer on All actions (\u22ef)', ...tipped('#itemMenuBtn') },
+  { name: 'Pointer on the next item', ...tipped('#dNav button:nth-child(2)') },
+  { name: 'Pointer on the status', ...tipped('#detailBody [data-arm="s"]') },
+  { name: 'Keys: Tab on the priority', focus: '#detailBody [data-arm="p"]' },
+  { name: 'Pointer on Now (to Later)', ...tipped('#detailView [data-f="when"][title]:not(#dActs *)') },
+  { name: 'Its subitems', part: SUBS },
+  { name: 'Pointer on a subitem', part: SUBS, hover: SUB },
+  { name: 'A subitem pressed', part: SUBS, steps: [{ press: SUB }] },
+  { name: 'Pointer on Add (a subitem)', part: [SUBS, '#tip'], hover: `${SUBS} [data-act="sub-new"]` },
+])
+/** The line between the item and its talk, dragged: it stays blue while you drag. */
+export const LineDragged = desk(at('T3', [{ press: '[data-grip="top"]' }], { live: false }))

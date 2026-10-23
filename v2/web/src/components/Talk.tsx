@@ -290,7 +290,10 @@ export function NeedFrame({
   hint = '',
   going = '',
   act = null,
+  mid,
 }: {
+  /** the message it holds (an answered question): its id on the page, as a message has */
+  mid?: number
   icon: IconName
   title: string
   going?: string
@@ -303,6 +306,7 @@ export function NeedFrame({
 }) {
   return (
     <section
+      data-mid={mid}
       className={`w-full rounded-2xl border ${done ? 'group/form border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900' : NEEDS_CARD}`}
     >
       <div className="flex items-center gap-2.5 px-4 pt-3.5 lg:px-5 lg:pt-4">
@@ -502,6 +506,7 @@ function Answered({ x, gid, done }: { x: Msg; gid: string; done: string[] }) {
   if (U.reask === x.id && n)
     return (
       <NeedFrame
+        mid={x.id}
         icon="ask"
         title={`${msgName(x)} asks you`}
         t={x.t}
@@ -520,6 +525,7 @@ function Answered({ x, gid, done }: { x: Msg; gid: string; done: string[] }) {
   const g = n && it?.thread.filter((m) => m.kind === 'ask').at(-1)?.id === x.id ? answerGoing(n) : undefined
   return (
     <NeedFrame
+      mid={x.id}
       icon="ask"
       title={`${msgName(x)} asks you`}
       t={x.t}
@@ -680,6 +686,7 @@ export function MsgView({
   if (you)
     return (
       <div
+        data-mid={x.id}
         {...(x.src ? { 'data-src': x.src } : {})}
         className={`group flex scroll-mb-4 flex-col items-end gap-1 rounded-2xl transition-colors duration-700 ${ver?.old ? 'opacity-60' : ''}`}
       >
@@ -759,7 +766,10 @@ export function MsgView({
     )
   if (x.kind === 'withdraw')
     return (
-      <div className="flex items-start gap-2 px-1 text-[13px] leading-snug text-zinc-500 dark:text-zinc-400">
+      <div
+        data-mid={x.id}
+        className="flex items-start gap-2 px-1 text-[13px] leading-snug text-zinc-500 dark:text-zinc-400"
+      >
         <Icon n="undo" c="mt-0.5 size-3.5 shrink-0" />
         <div className="min-w-0 flex-1">
           <span className="font-medium text-zinc-600 dark:text-zinc-300">{whoName(x.by)} took back its question</span>{' '}
@@ -770,7 +780,7 @@ export function MsgView({
     ) // F220: a line, not a message
   if (withdrawn)
     return (
-      <div className="flex flex-col items-start gap-1.5 opacity-60">
+      <div data-mid={x.id} className="flex flex-col items-start gap-1.5 opacity-60">
         <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 px-1 text-[11px] whitespace-nowrap text-zinc-400 dark:text-zinc-500">
           <Avatar by={x.by} />
           <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">{whoName(x.by)}</span>
@@ -793,6 +803,7 @@ export function MsgView({
       <button
         data-act="msg-peek"
         data-id={x.id}
+        data-mid={x.id}
         className="flex items-center gap-1.5 self-start px-1 text-[12px] text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300"
       >
         {whoName(x.by)} · hidden message · {when(x.t)} · Show
@@ -805,7 +816,7 @@ export function MsgView({
     ? 'space-y-2.5 border-amber-200 bg-amber-50 p-3 text-zinc-900 dark:border-amber-400/25 dark:bg-amber-400/7 dark:text-zinc-100'
     : 'border-zinc-200 bg-zinc-50 px-4 py-3 text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200'
   return (
-    <div className="group/msg flex flex-col items-start gap-1.5">
+    <div data-mid={x.id} className="group/msg flex flex-col items-start gap-1.5">
       {/* T529: on a narrow screen the header wraps between its parts, never inside one */}
       <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 px-1 text-[11px] whitespace-nowrap text-zinc-400 dark:text-zinc-500">
         <Avatar by={x.by} />
@@ -915,7 +926,7 @@ export function docNotes(n: number, from = ''): Note[] {
       return {
         t: c.t,
         node: you ? (
-          <div key={`dn${d.d}-${c.id}`} className="flex flex-col items-end gap-1">
+          <div key={`dn${d.d}-${c.id}`} data-cid={c.id} className="flex flex-col items-end gap-1">
             <div className={YOU_BUBBLE}>
               {quote}
               {words}
@@ -931,7 +942,7 @@ export function docNotes(n: number, from = ''): Note[] {
             </div>
           </div>
         ) : (
-          <div key={`dn${d.d}-${c.id}`} className="flex flex-col items-start gap-1.5">
+          <div key={`dn${d.d}-${c.id}`} data-cid={c.id} className="flex flex-col items-start gap-1.5">
             <div className="flex max-w-full min-w-0 items-center gap-2 px-1 text-[11px] text-zinc-400 dark:text-zinc-500">
               <Avatar by={c.by} />
               <span className="shrink-0 text-xs font-semibold text-zinc-700 dark:text-zinc-300">{whoName(c.by)}</span>

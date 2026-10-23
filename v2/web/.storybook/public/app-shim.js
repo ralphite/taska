@@ -36,14 +36,16 @@
     if (Array.isArray(x)) return x.map((v) => move(v, d, k))
     if (x && typeof x === 'object') {
       const o = {}
-      for (const [kk, v] of Object.entries(x)) o[kk] = move(v, d, kk)
+      // an item's "read" holds, by agent, when it read the item (ms): times too
+      for (const [kk, v] of Object.entries(x)) o[kk] = move(v, d, k === 'read' ? 't' : kk)
       return o
     }
     return x
   }
   // T522: how Taska answers in this story, for the page's loading and error states (#net={"<path regex>": how}):
   // "hang" Taska never answers (the page's own time limits end the wait, as with a stuck Taska), "down" nothing
-  // answers (refused: Taska stopped or restarting), a number answers with that HTTP status, as a crashed request does.
+  // answers (refused: Taska stopped or restarting), a number answers with that HTTP status, as a crashed request does,
+  // "no" Taska says no to a change (its item deleted meanwhile).
   // The first rule whose regex matches the address's path decides; a path no rule matches is answered as usual.
   let rules = []
   try {
@@ -100,12 +102,30 @@
       o.items = o.items.map((it) => (items[it.n] ? { ...it, ...items[it.n] } : it))
     return o
   }
-  window.fetch = async (input, init) => {
+  // B555: how many of the page's requests to Taska are still on their way (not the long wait for news): a story does
+  // its steps once the page has what it asked for, as a person starts once the page is there
+  let busy = 0
+  window.__storyBusy = () => busy
+  const answerOf = async (input, init) => {
     const u = new URL(typeof input === 'string' ? input : input instanceof URL ? input.href : input.url, location.href)
     const p = u.pathname
     // only what the page asks Taska; Storybook's own files and the page's code go as they are
     if (u.origin !== location.origin || !/^\/(api|p|k|health|login|skill|dev)(\/|$)/.test(p)) return real(input, init) // F448: dev, the dashboard's
     const how = ruleFor(p)
+    if (how === 'no') {
+      // B555: Taska refuses the change, as its /api/op says when the item was deleted meanwhile (store.py)
+      let o = {}
+      try {
+        o = JSON.parse(String((init && init.body) || '{}'))
+      } catch {
+        /* not words */
+      }
+      const x = Array.isArray(o) ? o[0] || {} : o
+      // what it names, as the store words it (store.py item: "<ref> not found"; a reply names its item's number)
+      const ref = x.ref ?? (Array.isArray(x.refs) ? x.refs[0] : undefined) ?? x.scope
+      // a comment on a document deleted meanwhile: "no document D1"
+      return json({ ok: false, res: [x.d != null ? `err: no document D${x.d}` : `err: ${ref} not found`] })
+    }
     if (how !== undefined) return answerBy(how, signalOf(input, init))
     const method = String((init && init.method) || (input instanceof Request ? input.method : 'GET')).toUpperCase()
     if (live) {
@@ -150,6 +170,19 @@
       return json(edit(p, move(await r.json(), await shift)))
     }
     return json({ ok: false, error: 'not in the story data' }, 404)
+  }
+  window.fetch = (input, init) => {
+    const u = new URL(typeof input === 'string' ? input : input instanceof URL ? input.href : input.url, location.href)
+    if (u.origin !== location.origin || !/^\/(api|p|k|health|login|skill|dev)(\/|$)/.test(u.pathname))
+      return real(input, init)
+    if (/\/api\/poll$/.test(u.pathname)) return answerOf(input, init)
+    busy++
+    const r = answerOf(input, init)
+    r.then(
+      () => busy--,
+      () => busy--,
+    )
+    return r
   }
   // the demo's pictures and voice notes are among the saved answers
   const saved = (v) => {
@@ -198,6 +231,69 @@
     attributes: true,
     attributeFilter: ['src', 'href', 'poster'],
   })
+  // B555: a component story is a picture of the page at one moment: once its steps are done, a story may stop the
+  // page's clock (window.__storyStill), so what would go by itself a few seconds later (a toast) stays in the picture
+  let still = false
+  for (const name of ['setTimeout', 'setInterval']) {
+    const orig = window[name].bind(window)
+    window[name] = (fn, ...rest) =>
+      orig(typeof fn === 'function' ? (...a) => (still ? undefined : fn(...a)) : fn, ...rest)
+  }
+  window.__storyStill = () => (still = true)
+  // B555: Storybook's pointer (twin.ts) is not one the browser knows, so the browser takes every focus that follows a
+  // story's click for the keyboard's and rings it (:focus-visible), where a real click leaves none (a menu's first row).
+  // So in a story the page's focus rings show where a real keyboard's would: in a text field, and on what a story's
+  // Tab marks (data-sb-focus-visible, twin.ts pointed).
+  const FV = /(?<!\\):focus-visible\b/g
+  const quiet = (list) => {
+    for (const r of list) {
+      if (r instanceof CSSStyleRule && FV.test(r.selectorText)) {
+        FV.lastIndex = 0
+        r.selectorText = r.selectorText
+          .split(',')
+          .map((x) =>
+            FV.test(x)
+              ? ((FV.lastIndex = 0),
+                x.replace(
+                  FV,
+                  ':is(:focus-visible:is(input, textarea, select, [contenteditable]), [data-sb-focus-visible])',
+                ))
+              : x,
+          )
+          .join(',')
+      }
+      FV.lastIndex = 0
+      if (r.cssRules && r.cssRules.length) quiet(r.cssRules)
+    }
+  }
+  const done = new WeakSet()
+  const quietAll = () => {
+    for (const sh of document.styleSheets) {
+      if (done.has(sh)) continue
+      try {
+        quiet(sh.cssRules)
+        done.add(sh)
+      } catch {
+        /* not loaded yet, or another origin's */
+      }
+    }
+  }
+  new MutationObserver(quietAll).observe(document.documentElement, {
+    subtree: true,
+    childList: true,
+    characterData: true,
+  })
+  addEventListener('load', quietAll, true) // a stylesheet's link has loaded
+  // B555: a web page document is drawn in a frame of its own (WebPage.tsx), sandboxed apart from the page. A story's
+  // pointer (Storybook's stand-in for the mouse and the finger, src/stories/lib/twin.ts) has to reach into it to point
+  // at or pick a part, as a real one does; so here, and only here, the frame is let be of the page's origin. What the
+  // page and the frame's own script do is unchanged.
+  const setAttr = Element.prototype.setAttribute
+  Element.prototype.setAttribute = function (name, value) {
+    if (this.tagName === 'IFRAME' && String(name).toLowerCase() === 'sandbox' && !/allow-same-origin/.test(value))
+      value = value + ' allow-same-origin'
+    return setAttr.call(this, name, value)
+  }
   if (navigator.serviceWorker) navigator.serviceWorker.register = () => new Promise(() => {}) // no offline copy here
   // T456, F479, B540: Storybook never asks for your microphone: the page "hears" a recorded sentence (fixtures/mic.webm,
   // the Mac's reading voice), played over and over, so its own recorder and meter draw the waveform of real speech
@@ -236,8 +332,20 @@
       for (let i = 0; i < buf.length; i++) buf[i] = 128 + Math.round((Math.random() * 2 - 1) * 70 * level)
     }
   }
+  // B555: a voice note played before any tap in its page (a story's steps play it) is stopped by the browser until one
+  // comes; the speaker is a device Storybook stands in for, so it plays on, muted: the page's own player runs as it does
+  if (window.HTMLMediaElement) {
+    const play = HTMLMediaElement.prototype.play
+    HTMLMediaElement.prototype.play = function () {
+      return play.call(this).catch((e) => {
+        if (!e || e.name !== 'NotAllowedError') throw e
+        this.muted = true
+        return play.call(this)
+      })
+    }
+  }
   if (window.MediaRecorder) {
-    const note = fetch(FX + 'p__shop__f__f3-voice_0-08.webm')
+    const note = fetch(FX + 'mic.webm') // the demo's sentence, whatever the voice notes' names are this time
       .then((r) => r.blob())
       .catch(() => null)
     let held = null

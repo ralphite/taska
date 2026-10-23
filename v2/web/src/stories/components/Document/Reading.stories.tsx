@@ -6,7 +6,6 @@ const meta: Meta = { title: 'Components/Document/Reading' }
 export default meta
 
 export const WithComments: StoryObj = { ...Document.WithComments, name: 'With comments' }
-export const NoComments: StoryObj = { ...Document.NoComments, name: 'No comments' }
 export const LongWithOutline: StoryObj = { ...Document.LongWithOutline, name: 'Long, with contents' }
 export const ContentsOpen: StoryObj = { ...Document.ContentsOpen, name: 'Contents opened' }
 export const PointingAtParagraph: StoryObj = { ...Document.PointingAtParagraph, name: 'Pointing at a paragraph' }

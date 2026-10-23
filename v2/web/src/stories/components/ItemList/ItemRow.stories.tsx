@@ -10,7 +10,6 @@ export const RowLooks: StoryObj = { ...List.RowLooks, name: 'Pointer, keys, pick
 export const RowOpen: StoryObj = { ...List.RowOpen, name: 'Open' }
 export const RowInProgress: StoryObj = { ...List.RowInProgress, name: 'In progress' }
 export const RowInProgressQuiet: StoryObj = { ...List.RowInProgressQuiet, name: 'In progress, agent quiet' }
-export const RowProposed: StoryObj = { ...List.RowProposed, name: 'Proposed' }
 export const RowWaitsForReview: StoryObj = { ...List.RowWaitsForReview, name: 'Waits for review' }
 export const RowDone: StoryObj = { ...List.RowDone, name: 'Done' }
 export const RowWontDo: StoryObj = { ...List.RowWontDo, name: "Won't do" }

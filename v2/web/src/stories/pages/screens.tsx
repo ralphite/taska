@@ -6,6 +6,7 @@
 // is on, with nothing to pick; light or dark from the toolbar. The pages are in folders by area, most used first,
 // each named as the page names it.
 import type { StoryObj } from '@storybook/react-vite'
+import type { Ref } from 'react'
 import { Both, single, type Platform } from '../lib/both'
 import type { Item } from '../../lib/types'
 
@@ -19,11 +20,12 @@ export async function pageIn(canvas: HTMLElement) {
 }
 
 /** T522: how Taska answers the page in a story, and the story's own data. `net`: for each path (a regex), "hang"
- * (Taska never answers; the page's own time limits end the wait), "down" (refused) or an HTTP status (an error);
+ * (Taska never answers; the page's own time limits end the wait), "down" (refused), "no" (a change Taska says no
+ * to: its item deleted meanwhile) or an HTTP status (an error);
  * `items`: items of the shown project with other fields, by number ({3: {title: ...}}). The stand-in for Taska
  * (.storybook/public/app-shim.js) answers by them; the page is the page, as it is. */
 export interface Answers {
-  net?: Record<string, 'hang' | 'down' | number>
+  net?: Record<string, 'hang' | 'down' | 'no' | number>
   items?: Record<number, Partial<Item>>
 }
 const answers = (a?: Answers) =>
@@ -32,10 +34,23 @@ const answers = (a?: Answers) =>
 
 /** The real page at this address; with `server` (a Demo's beginning, T457 #6481), on the real Taska server run in
  * the page; with `as`, Taska answering as it says (T522). */
-export function App({ path, scheme, server, as }: { path: string; scheme: string; server?: string; as?: Answers }) {
+export function App({
+  path,
+  scheme,
+  server,
+  as,
+  frameRef,
+}: {
+  path: string
+  scheme: string
+  server?: string
+  as?: Answers
+  frameRef?: Ref<HTMLIFrameElement>
+}) {
   const theme = scheme === 'dark' ? 'dark' : 'light'
   return (
     <iframe
+      ref={frameRef}
       title="Taska"
       src={`/storybook/app.html#path=${encodeURIComponent(path)}&theme=${theme}${server ? '&server=' + encodeURIComponent(server) : ''}${answers(as)}`}
       className="block h-screen w-full border-0"

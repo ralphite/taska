@@ -10,7 +10,6 @@ export const VoiceNote: StoryObj = { ...Inputs.VoiceNote, name: 'Voice note' }
 export const Transcribing: StoryObj = { ...Inputs.Transcribing, name: 'Transcribing' }
 export const MadeAnItem: StoryObj = { ...Inputs.MadeAnItem, name: 'Made an item' }
 export const AddedToAnItem: StoryObj = { ...Inputs.AddedToAnItem, name: 'Added to an item' }
-export const Organizing: StoryObj = { ...Inputs.Organizing, name: 'Organizing' }
 export const LeftForYourAgent: StoryObj = { ...Inputs.LeftForYourAgent, name: 'Left for your agent' }
 export const HandledByYourAgent: StoryObj = { ...Inputs.HandledByYourAgent, name: 'Handled by your agent' }
 export const SeenByYourAgent: StoryObj = { ...Inputs.SeenByYourAgent, name: 'Seen by your agent' }

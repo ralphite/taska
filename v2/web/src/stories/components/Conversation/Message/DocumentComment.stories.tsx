@@ -10,4 +10,4 @@ export const Yours: StoryObj = { ...Talk.CommentYours, name: 'Yours, with what i
 export const Agent: StoryObj = { ...Talk.CommentAgent, name: "An agent's answer" }
 export const WholeDoc: StoryObj = { ...Talk.CommentWholeDoc, name: 'On the whole document' }
 export const OnTable: StoryObj = { ...Talk.CommentOnTable, name: 'About a table' }
-export const Voice: StoryObj = { ...Talk.CommentVoice, name: 'Voice comment, no words yet' }
+export const Voice: StoryObj = { ...Talk.CommentVoice, name: 'Voice comment, no words heard' }

@@ -6,8 +6,6 @@ const meta: Meta = { title: 'Components/Top bar and list head/Agent pill' }
 export default meta
 
 export const PillWorking: StoryObj = { ...Frame.PillWorking, name: 'At work' }
-export const PillReady: StoryObj = { ...Frame.PillReady, name: 'Waiting for work' }
-export const PillNoAgent: StoryObj = { ...Frame.PillNoAgent, name: 'No agent' }
-export const PillIdle: StoryObj = { ...Frame.PillIdle, name: 'Idle' }
+export const PillIdle: StoryObj = { ...Frame.PillIdle, name: 'No agent yet' }
 export const PillOffline: StoryObj = { ...Frame.PillOffline, name: 'Offline' }
 export const NotSaved: StoryObj = { ...Frame.NotSaved, name: 'Not saved count' }

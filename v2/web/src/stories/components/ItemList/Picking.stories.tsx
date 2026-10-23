@@ -7,7 +7,6 @@ export default meta
 
 export const OneOpen: StoryObj = { ...List.OneOpen, name: 'One item open' }
 export const Picked: StoryObj = { ...List.Picked, name: 'Several picked' }
-export const NeedsYouAllShown: StoryObj = { ...List.NeedsYouAllShown, name: 'Needs you: all shown' }
 export const SubitemsFolded: StoryObj = { ...List.SubitemsFolded, name: 'Subitems folded' }
 export const SubitemsHidden: StoryObj = { ...List.SubitemsHidden, name: 'Subitems in Later or finished' }
 export const SubitemsHiddenShown: StoryObj = {

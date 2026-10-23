@@ -2,9 +2,9 @@ import type { Preview } from '@storybook/react-vite'
 import { useEffect } from 'react'
 import '../src/index.css'
 import { bump } from '../src/lib/state'
-import { taskaLoader } from '../src/stories/lib/demo'
 import { AppFrame } from '../src/components/Shell'
 import { Both, single, type Platform } from '../src/stories/lib/both'
+import { Looks, OnPage } from '../src/stories/lib/onpage'
 
 declare const __PAGE_BODY__: string
 
@@ -33,6 +33,7 @@ const preview: Preview = {
         order: [
           'Components',
           [
+            'About this section',
             'Item list',
             ['Views', 'Search and filters', 'Picking', 'Item row', 'Needs-you row', 'Agent mark'],
             'Item page',
@@ -104,7 +105,6 @@ const preview: Preview = {
     scheme: { description: 'Light or dark' },
   },
   initialGlobals: { scheme: 'light' },
-  loaders: [taskaLoader],
   decorators: [
     (Story, ctx) => {
       const theme = ctx.globals.scheme === 'dark' ? 'dark' : 'light'
@@ -126,13 +126,29 @@ const preview: Preview = {
           document.removeEventListener('click', stay, true)
         }
       }, [])
-      if (!ctx.title.startsWith('Components/')) return <Story />
+      if (!ctx.title.startsWith('Components/') || ctx.parameters.taska?.about) return <Story />
       // T518 (#6195): a component on the desktop and the phone at once; each frame draws the story itself
       if (!single()) return <Both id={ctx.id} scheme={theme} platform={ctx.parameters.platform as Platform} />
+      // B555: a place on the real page, its part only (not drawn on the screen a story is not for)
+      const only = ctx.parameters.platform as Platform | undefined
+      if (only && only !== 'both' && (only === 'desktop') !== innerWidth >= 1024)
+        return <p data-not-here>Not on the {only === 'desktop' ? 'phone' : 'desktop'}</p>
+      const twin = ctx.parameters.taska?.page
+      if (twin) return <OnPage twin={twin} scheme={theme} />
+      const looks = ctx.parameters.taska?.looks
+      if (looks) return <Looks base={looks.base} each={looks.each} scheme={theme} />
+      // only a gallery of one component's looks, given its props, draws the component itself
+      if (ctx.parameters.taska?.gallery)
+        return (
+          <AppFrame>
+            <Story />
+          </AppFrame>
+        )
       return (
-        <AppFrame>
-          <Story />
-        </AppFrame>
+        <p data-story-bad className="m-4 rounded bg-red-600 p-3 text-sm text-white">
+          B555: a component story is the real page (place, looksOf in src/stories/lib/onpage.tsx) or a gallery of one
+          component given its props
+        </p>
       )
     },
   ],

@@ -6,9 +6,6 @@ const meta: Meta = { title: 'Components/Conversation/Message parts' }
 export default meta
 
 export const Markdown: StoryObj = { ...Talk.Markdown, name: 'Markdown' }
-export const Pictures: StoryObj = { ...Talk.Pictures, name: 'Pictures' }
-export const FilesAndVoice: StoryObj = { ...Talk.FilesAndVoice, name: 'Files and voice notes' }
 export const VoiceChipPointed: StoryObj = { ...Talk.VoiceChipPointed, name: 'Voice note, pointer on it' }
-export const VoiceNoteLine: StoryObj = { ...Talk.VoiceNoteLine, name: 'Voice note line' }
 export const DocumentCard: StoryObj = { ...Talk.DocumentCard, name: 'Document card' }
 export const DocumentCardPointed: StoryObj = { ...Talk.DocumentCardPointed, name: 'Document card, pointer on it' }

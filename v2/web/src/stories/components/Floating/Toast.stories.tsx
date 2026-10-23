@@ -5,8 +5,7 @@ import * as Frame from '../parts/Frame'
 const meta: Meta = { title: 'Components/Floating/Toast' }
 export default meta
 
-export const ToastPlain: StoryObj = { ...Frame.ToastPlain, name: 'Plain' }
+export const ToastPlain: StoryObj = { ...Frame.ToastPlain, name: 'Plain (Copied)' }
 export const ToastWithUndo: StoryObj = { ...Frame.ToastWithUndo, name: 'With Undo' }
-export const ToastError: StoryObj = { ...Frame.ToastError, name: 'Error' }
-export const ToastStays: StoryObj = { ...Frame.ToastStays, name: 'Stays until closed' }
-export const ToastLong: StoryObj = { ...Frame.ToastLong, name: 'Long' }
+export const ToastError: StoryObj = { ...Frame.ToastError, name: 'Error: Taska said no' }
+export const ToastLong: StoryObj = { ...Frame.ToastLong, name: 'Moved, with Open' }

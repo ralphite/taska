@@ -7,7 +7,7 @@
 //                                        something drawn (the real page too, for the Pages, Demo and Prototype)
 import { mkdirSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs'
 import { createServer } from 'node:http'
-import { extname, join } from 'node:path'
+import { dirname, extname, join } from 'node:path'
 
 const ROOT = new URL('..', import.meta.url).pathname
 const files = (dir, ok) =>
@@ -39,6 +39,34 @@ if (missing.length) {
   process.exit(1)
 }
 console.log(`Storybook: all ${comps.size} components are in stories`)
+
+// B555 (r781, r785, r786): a component story is the real page (the app in a frame, at an address, after real steps:
+// src/stories/lib/onpage.tsx place / looksOf), or a gallery of one component's looks given its props only. So no file
+// of the Components stories may reach into the page's state or actions (it could draw a state the page never reaches),
+// and only a gallery may draw a component itself. In --open each Components story must also be one of the three.
+{
+  const OK_LIB = /^(constants|icons|types)$/ // words and shapes, not the page's state
+  const bad = []
+  for (const f of files('src/stories/components', (p) => /\.tsx?$/.test(p))) {
+    const src = readFileSync(join(ROOT, f), 'utf8')
+    const gallery = /gallery: true/.test(src)
+    for (const m of src.matchAll(/from '(\.[^']*)'/g)) {
+      const to = join(dirname(f), m[1]) // where it is, from src/
+      const lib = /^src\/lib\/(\w+)$/.exec(to)
+      if (lib && !OK_LIB.test(lib[1])) bad.push(`${f}: imports the page's ${to}`)
+      if (/^src\/(components|pages|layouts)\//.test(to) && !gallery)
+        bad.push(`${f}: draws the page's ${to} itself (only a gallery, parameters.taska.gallery, may)`)
+    }
+    if (/\brender: (?!\(\) => <><\/>)/.test(src) && !gallery && !/taska: \{ about: true \}/.test(src))
+      bad.push(`${f}: a story that draws something of its own (use place / looksOf: the real page)`)
+  }
+  if (bad.length) {
+    console.error(`Storybook: ${bad.length} Components file(s) not the real page (B555):`)
+    for (const b of bad) console.error('  ' + b)
+    process.exit(1)
+  }
+  console.log('Storybook: every Components story is the real page or a gallery of props')
+}
 
 // T545: and each of them is one the page really draws: reached from the page's entry (src/main.tsx) through the
 // code that names it (.storybook/reach.mjs). One that only its story draws fails: delete it with its story (R410).
@@ -146,7 +174,10 @@ if (process.argv.includes('--open')) {
         })
       }
       const failed = await page.evaluate(() => document.body.classList.contains('sb-show-errordisplay'))
-      if (failed || !ok || errors.length) bad.push(`${s.id}: ${failed ? 'error' : !ok ? 'nothing drawn' : errors[0]}`)
+      // B555: a Components story neither the real page, its looks, nor a gallery draws only this
+      const fake = await page.evaluate(() => !!document.querySelector('[data-story-bad]'))
+      if (failed || fake || !ok || errors.length)
+        bad.push(`${s.id}: ${failed ? 'error' : fake ? 'not the real page (B555)' : !ok ? 'nothing drawn' : errors[0]}`)
     }
     await page.close()
   }

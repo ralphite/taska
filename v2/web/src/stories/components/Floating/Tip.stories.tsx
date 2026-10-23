@@ -5,11 +5,7 @@ import * as Frame from '../parts/Frame'
 const meta: Meta = { title: 'Components/Floating/Tip' }
 export default meta
 
-export const PointingTip: StoryObj = {
-  ...Frame.PointingTip,
-  name: 'Pointing tip',
-  parameters: { ...Frame.PointingTip.parameters, platform: 'desktop' },
-}
+export const PointingTip: StoryObj = { ...Frame.PointingTip, name: "On an agent's mark" }
 export const TipRowButton: StoryObj = { ...Frame.TipRowButton, name: "On a row's button" }
 export const TipNeedsPill: StoryObj = { ...Frame.TipNeedsPill, name: 'On Approve, in a row that waits on you' }
 export const TipRowCount: StoryObj = { ...Frame.TipRowCount, name: "On a row's count of comments" }

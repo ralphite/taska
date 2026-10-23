@@ -55,7 +55,6 @@ export const Peek: StoryObj = {
 }
 export const Sources: StoryObj = { ...Sheets.Sources, name: 'What an item came from' }
 export const AsSaid: StoryObj = { ...Sheets.AsSaid, name: 'Original words' }
-export const AsSaidNothingTidied: StoryObj = { ...Sheets.AsSaidNothingTidied, name: 'Original words: nothing tidied' }
 export const InputHistory: StoryObj = { ...Sheets.InputHistory, name: 'What you said: history' }
 export const NotSaved: StoryObj = { ...Sheets.NotSaved, name: 'Not saved' }
 export const NotSavedOne: StoryObj = { ...Sheets.NotSavedOne, name: 'Not saved: one change' }

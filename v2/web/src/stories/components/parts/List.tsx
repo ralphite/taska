@@ -1,11 +1,7 @@
 // T457: the item list and its rows, in every state, on the demo project. The list column is as wide as on the page.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { ItemRow, NeedsRow, WorkerMark } from '../../../components/List'
-import { U, byN, parseRef } from '../../../lib/state'
-import { VW_STATE } from '../../../lib/views'
-import { Pane, type Setup } from '../../lib/demo'
-import { ListColumn } from '../../lib/column'
-import { looks } from '../../lib/states'
+import { looksOf, place, type Look } from '../../lib/onpage'
+import type { Do, Twin } from '../../lib/twin'
 
 // what this part of Storybook shows (T512: its stories are in the folders beside this file)
 export const area: Meta = {
@@ -32,229 +28,229 @@ export const area: Meta = {
       'DraftMark',
       'Empty',
       'CrossHits',
+      'WorkerMark',
+      'ItemRow',
+      'NeedsRow',
+      'ItemsView',
     ],
   },
 }
 export type Story = StoryObj
 
-const list = (setup?: (x: Setup) => void): Story => ({
-  parameters: { taska: { setup } },
-  render: () => <ListColumn />,
-})
+// B555: each story is the real page at an address, after Yadong's steps there, showing the list column (on the
+// phone its whole screen) or one row of it.
+const SHOP = '/p/shop/'
+const LIST = {
+  d: ['#mainHead', '#deskFilters', '#itemsView'],
+  p: ['#mainHead', '#tabs', '#filterStrip', '#itemsView', '#foot'],
+}
+const list = (at = '', steps?: Do[], more?: Partial<Twin>, on?: 'desktop'): Story =>
+  place({ at: at.startsWith('/') ? at : SHOP + at, part: LIST, steps, ...more }, on)
+const rowOf = (code: string) => `#list article[data-n="${code.replace(/^\D+/, '')}"]`
+const open = (code: string) => `#list [data-act="open"][data-n="${code.replace(/^\D+/, '')}"]`
 
 /** Items › Active: what needs you first (amber), then the agents' queue, then Later, then what finished lately. */
 export const Active = list()
-export const All = list(() => (U.status = 'every'))
-export const NeedsYou = list(() => (U.status = 'wait'))
-export const Queue = list(() => (U.status = 'queued'))
-export const Later = list(() => (U.status = 'later'))
-export const Finished = list(() => (U.status = 'closed'))
-export const Archive = list(() => (U.tab = 'archive'))
-export const Rules = list(() => (U.tab = 'rules'))
+export const All = list('?status=every')
+export const NeedsYou = list('?status=wait')
+export const Queue = list('?status=queued')
+export const Later = list('?status=later')
+export const Finished = list('?status=closed')
+export const Archive = list('archive')
+export const Rules = list('rules')
 /** A search: the words found are marked; words found only inside an item show their line under the title. */
-export const Search = list(() => (U.q = '\u5bfc\u51fa'))
-export const SearchNothingFound = list(() => (U.q = 'kubernetes'))
-/** Bugs only, P0 and P1. */
-export const Filtered = list(() => {
-  U.type = 'bug'
-  U.pri = 'P0'
-})
-/** Every item in Needs you shown (the band shows five and a row for the rest). */
-export const NeedsYouAllShown = list(() => (U.needsAll = true))
-/** One item open: its row is marked. */
-export const OneOpen = list(({ it }) => (U.open = it('F1').n))
-/** Several rows picked with Cmd or Shift: the bar acts on all of them. */
-export const Picked = list(({ it }) => {
-  for (const c of ['T3', 'F8', 'T15']) U.sel.add(it(c).n)
-})
+export const Search = list('?q=\u5bfc\u51fa')
+export const SearchNothingFound = list('?q=kubernetes')
+/** Bugs only, P0. */
+export const Filtered = list('?type=bug&pri=P0')
+/** One item open: its row is marked (desktop: the list stays beside it). */
+export const OneOpen = list('F1', undefined, undefined, 'desktop')
+/** Several rows picked with Cmd: the bar acts on all of them (desktop). */
+export const Picked = list(
+  '',
+  ['T3', 'T15', 'T40'].map((c) => ({ click: open(c), hold: 'Meta' as const })),
+  { live: false },
+  'desktop',
+)
 /** Subitems folded under their parent. */
-export const SubitemsFolded = list(({ it }) => {
-  U.folded.add(it('F1').n)
-  U.folded.add(it('T12').n)
-})
-// B532 (r760): T12's only subitem, T13, in Later, and F01's T14 finished (its T15 open): Active does not show them
-const laterAndFinished = ({ it }: Setup) => Object.assign(it('T13'), { when: 'later', status: 'open' })
-/** Subitems Active hides (in Later, finished): under each parent a grey line says so; T12 (0/1) has its arrow. */
-export const SubitemsHidden = list(laterAndFinished)
+export const SubitemsFolded = list(
+  '',
+  [{ click: '[data-act="fold"][data-n="1"]' }, { click: '[data-act="fold"][data-n="12"]' }],
+  {
+    live: false,
+  },
+)
+// B532 (r760): T12's only subitem, T13, put in Later (F01's T14 is finished, its T15 open): Active does not show them
+const laterT13: Do[] = [
+  { click: '#detailView [data-f="when"][title]:not(#dActs *)' },
+  { key: 'Escape', on: 'd' }, // the item closes: the list shows itself as it is now, not the line it held for T13
+  { click: '#backBtn', on: 'p' },
+]
+/** Subitems Active hides (in Later, finished): under each parent a grey line says so. */
+export const SubitemsHidden = list('T13', laterT13)
 /** The grey lines tapped: the hidden subitems show as the All view draws them, and each line reads Show fewer. */
-export const SubitemsHiddenShown = list((x) => {
-  laterAndFinished(x)
-  U.subMore.add(x.it('T12').n)
-  U.subMore.add(x.it('F1').n)
-})
-/** A row you just acted on, while the list holds still: one quiet line with Undo. */
-export const JustActedOn = list(({ it }) => {
-  U.settle.set(it('T7').n, { said: 'T07 is done', undo: () => {} })
-  it('T7').status = 'done'
-})
-/** Your own saved views beside the preset ones. */
-export const OwnViews = list(() => {
-  VW_STATE.list = [
-    { name: 'P0 bugs', q: '', type: 'bug', when: 'all', status: 'all', pri: 'P0', sort: 'all' },
-    { name: '\u7ed3\u8d26', q: '\u7ed3\u8d26', type: 'all', when: 'all', status: 'every', pri: 'all', sort: 'all' },
-  ] as unknown as typeof VW_STATE.list
-})
-export const EmptyProject: Story = { ...list(), parameters: { taska: { project: 'website' } } }
-export const SmallProject: Story = { ...list(), parameters: { taska: { project: 'mobile-app' } } }
+export const SubitemsHiddenShown = list('T13', [
+  ...laterT13,
+  { click: '[data-act="sub-more"][data-n="12"]' },
+  { click: '[data-act="sub-more"][data-n="1"]' },
+])
+/** A row you just acted on (Done on its row), while the list holds still: one quiet line with Undo (desktop). */
+export const JustActedOn = list(
+  '',
+  [{ point: open('T3') }, { click: `${rowOf('T3')} [data-act="swipe"][data-v="done"]` }],
+  undefined,
+  'desktop',
+)
+/** Your own saved view beside the preset ones. */
+export const OwnViews = list('', [
+  { click: '[data-act="filters"]' },
+  { click: '[data-act="set-filter"][data-v="bug"]' },
+  { click: '[data-act="set-filter"][data-v="P0"]' },
+  { type: 'P0 bugs', into: '#viewName' },
+  { click: '[data-act="view-save"]' },
+])
+export const EmptyProject = list('/p/website/')
+export const SmallProject = list('/p/mobile-app/')
 
-// ---------------------------------------------------------------- one row
+// ---------------------------------------------------------------- one row, where the list shows it
 
-const row = (ref: string, setup?: (x: Setup) => void, depth = 0): Story => ({
-  parameters: { taska: { setup } },
-  render: () => {
-    const it = byN.get(parseRef(ref) as number)!
-    return (
-      <Pane w="list">
-        {/* as wide as rows are in the list, which keeps a line's width on its right on the desktop */}
-        <div id="list" className="lg:mr-px">
-          <ItemRow it={it} depth={depth} group={[...byN.values()]} />
-        </div>
-      </Pane>
-    )
+const row = (code: string, at = '', more?: Partial<Twin>, on?: 'desktop'): Story =>
+  place({ at: at.startsWith('/') ? at : SHOP + at, part: rowOf(code), ...more }, on)
+export const RowOpen = row('T3')
+export const RowInProgress = row('T43')
+/** The agent on it has been quiet a while (T12's, three days): its mark turns amber. */
+export const RowInProgressQuiet = row('T12')
+/** Finished by the agent, and you replied (B6): an ordinary row, no longer waiting on you. */
+export const RowWaitsForReview = row('B6')
+export const RowDone = row('B10', '?status=closed')
+export const RowWontDo = row('T5', '?status=closed')
+export const RowArchived = row('B21', 'archive')
+/** A subitem, under its parent (F01's T14, finished: in All). */
+export const RowSubitem = row('T14', '?status=every')
+export const RowWithPicture = row('B36')
+export const RowLater = row('F8', '?status=later')
+export const RowRule = row('R16', 'rules')
+export const RowLongChineseTitle = row('B25', '?status=closed')
+export const RowLongEnglishTitle = row('T24', '?status=closed', {
+  words: {
+    24: {
+      title:
+        'Update the shipping rates for Canada and Mexico after the new carrier contract, including the remote areas surcharge',
+    },
   },
 })
-export const RowOpen = row('T3')
-export const RowInProgress = row('F1')
-/** The agent on it has been quiet a while: its mark turns amber. */
-export const RowInProgressQuiet = row('T12', ({ it }) => {
-  it('T12').agent = { by: 'codex', t: new Date(Date.now() - 3 * 3600e3).toISOString() }
+/** New from an agent since you last looked: a blue dot (its agent writes while the list is open). */
+export const RowUnread = row('T13', '', {
+  steps: [{ agent: 'T13 progress \u538b\u6d4b\u8dd1\u5b8c\u7b2c\u4e00\u8f6e\u4e86\uff0cp95 \u662f 1.8 \u79d2\u3002' }],
 })
-export const RowProposed = row('F11')
-export const RowWaitsForReview = row('B6')
-export const RowDone = row('B10')
-export const RowWontDo = row('T5')
-export const RowArchived = row('B21')
-export const RowSubitem = row('T14', undefined, 1)
-export const RowWithPicture = row('B36')
-export const RowLater = row('F8')
-export const RowRule = row('R16')
-export const RowLongChineseTitle = row('B25')
-export const RowLongEnglishTitle = row('T24', ({ it }) => {
-  it('T24').title =
-    'Update the shipping rates for Canada and Mexico after the new carrier contract, including the remote areas surcharge'
-})
-/** New from an agent since you last looked: a blue dot. */
-export const RowUnread = row('T13', ({ it }) => {
-  it('T13').read = { you: 0 }
-})
-export const RowCurrent = row('F1', ({ it }) => (U.open = it('F1').n))
-export const RowPicked = row('T3', ({ it }) => U.sel.add(it('T3').n))
+/** The one open in the pane (desktop). */
+export const RowCurrent = row('F1', 'F1', undefined, 'desktop')
+/** Picked with Cmd (desktop). */
+export const RowPicked = row('T3', '', { steps: [{ click: open('T3'), hold: 'Meta' }], live: false }, 'desktop')
 /** The pointer on a row: its buttons show over the end of the title (desktop). */
-export const RowHover: Story = {
-  ...row('T3'),
-  parameters: { pseudo: { hover: ['article .group'] } },
-}
-export const RowP0 = row('B36')
-export const RowP3 = row('T5')
-/** Something written for it and not sent yet: Draft. */
-export const RowWithDraft = row('T3', ({ it }) => {
-  U.parked['T' + String(it('T3').n).padStart(2, '0')] = [
-    { name: 'note.png', mime: 'image/png', done: Promise.resolve() },
-  ]
+export const RowHover = row('T3', '', { hover: open('T3') }, 'desktop')
+export const RowP0 = row('B2')
+export const RowP3 = row('T5', '?status=closed')
+/** Something written for it and not sent yet: Draft (written in its box, then back to the list). */
+export const RowWithDraft = row('T3', 'T3', {
+  steps: [
+    { type: '\u9000\u8d27\u653f\u7b56\u5148\u53d1\u7ed9\u6cd5\u52a1\u770b\u4e00\u4e0b', into: '#text' },
+    { click: '#backBtn', on: 'p' },
+  ],
+  live: false,
 })
 
 // ---------------------------------------------------------------- a row that waits on you
 
-const need = (ref: string): Story => ({
-  render: () => (
-    <Pane w="list">
-      <div id="list">
-        <NeedsRow it={byN.get(parseRef(ref) as number)!} />
-      </div>
-    </Pane>
-  ),
-})
-export const NeedsQuestion = need('T7')
-export const NeedsChecklist = need('T9')
-export const NeedsBlocked = need('B2')
-export const NeedsProposed = need('I4')
-export const NeedsReview = need('B6')
-export const NeedsRuleProposed = need('R17')
+export const NeedsQuestion = row('T7')
+export const NeedsChecklist = row('T9')
+export const NeedsBlocked = row('B2')
+export const NeedsProposed = row('I4')
+/** Finished by the agent, waiting for you to accept (Mobile app's B1). */
+export const NeedsReview = row('B1', '/p/mobile-app/')
+export const NeedsRuleProposed = row('R17')
 
-export const AgentMark: Story = {
-  render: () => (
-    <div className="flex items-center gap-4 p-6">
-      <WorkerMark it={byN.get(parseRef('F1') as number)!} />
-      <WorkerMark
-        it={{
-          ...byN.get(parseRef('T12') as number)!,
-          agent: { by: 'codex', t: new Date(Date.now() - 4 * 3600e3).toISOString() },
-        }}
-      />
-    </div>
-  ),
-}
+/** An agent at work on an item (T43's, a few minutes ago) and one gone quiet (T12's, amber). */
+export const AgentMark = looksOf(
+  { at: SHOP, part: rowOf('T43') },
+  [
+    { name: 'At work', part: rowOf('T43') },
+    { name: 'Quiet a while', part: rowOf('T12') },
+  ],
+  'both',
+)
 
 // ---------------------------------------------------------------- under the pointer, the keyboard, picked, dragged
-// T522 (r731, r762): every look of a row side by side, each drawn without a pointer or a key (../../lib/states.tsx).
-// The same item where its look does not depend on the list (T03); the open one (T40) and a picked one (T38) as the
-// list marks them. The desktop only: the phone has no pointer, and drags nothing (it swipes).
-const ROW = '[data-act="open"]',
-  ROW_BTN = `${ROW} div > button[data-act]:first-child`
-const oneRow = (ref: string) => () => (
-  <div className="lg:mr-px">
-    <ItemRow it={byN.get(parseRef(ref) as number)!} group={[...byN.values()]} />
-  </div>
-)
-export const RowLooks: Story = looks(
-  [
-    { name: 'As it is', draw: oneRow('T3') },
-    { name: 'Pointer on it: its buttons show', draw: oneRow('T3'), hover: [ROW] },
-    { name: 'Pointer on one of its buttons', draw: oneRow('T3'), hover: [ROW, ROW_BTN] },
-    { name: 'Pressed', draw: oneRow('T3'), pressed: [ROW] },
-    { name: 'Open in the pane', draw: oneRow('T40') },
-    { name: 'Open in the pane, pointer on it', draw: oneRow('T40'), hover: [ROW] },
-    { name: 'Open in the pane, pointer on a button', draw: oneRow('T40'), hover: [ROW, ROW_BTN] },
-    { name: 'Picked (Cmd or Shift)', draw: oneRow('T38') },
-    { name: 'Picked, pointer on it', draw: oneRow('T38'), hover: [ROW] },
-    { name: 'Picked, pointer on a button', draw: oneRow('T38'), hover: [ROW, ROW_BTN] },
-    { name: 'Picked, pressed', draw: oneRow('T38'), pressed: [ROW] },
-    { name: 'Pointer on its picture', draw: oneRow('B36'), hover: [ROW, 'button[data-act="view"]'] },
-    { name: 'Pointer on Hide subitems', draw: oneRow('F1'), hover: [ROW, 'button[data-act="fold"]'] },
-    { name: 'Keys: Tab on Hide subitems', draw: oneRow('F1'), focus: ['button[data-act="fold"]'] },
-    { name: 'Pointer on Part of (its parent)', draw: oneRow('T15'), hover: [ROW, 'button[data-act="goto"]'] },
-    { name: 'Keys: Tab on Part of', draw: oneRow('T15'), focus: ['button[data-act="goto"]'] },
-    { name: 'Being dragged', draw: oneRow('T3'), marks: [['article', 'data-dragging', '']] },
-    { name: 'The dragged one goes above it', draw: oneRow('T3'), marks: [['article', 'data-drop', 'before']] },
-    { name: 'The dragged one goes below it', draw: oneRow('T3'), marks: [['article', 'data-drop', 'after']] },
-    { name: 'The dragged one goes under it', draw: oneRow('T3'), marks: [['article', 'data-drop', 'into']] },
-  ],
+// T522 (r731, r762): every look of a row side by side, each the real page with the pointer, a key, a press, a pick or
+// a drag on it. T03 where its look does not depend on the list; the open one (T40) and a picked one (T38) as the list
+// marks them. The desktop only: the phone has no pointer, and drags nothing (it swipes).
+const ROW_BTN = (code: string) => `${open(code)} div > button[data-act]:first-child`
+const pick: Do = { click: open('T38'), hold: 'Meta' }
+const dragOver = (drop: 'before' | 'into' | 'after'): Look => ({
+  name: {
+    before: 'The dragged one goes above it',
+    into: 'The dragged one goes under it',
+    after: 'The dragged one goes below it',
+  }[drop],
+  part: rowOf('T3'),
+  steps: [{ drag: open('T40'), onto: open('T3'), drop }],
+})
+export const RowLooks: Story = looksOf({ at: SHOP + 'T40', part: rowOf('T3') }, [
+  { name: 'As it is' },
+  { name: 'Pointer on it: its buttons show', hover: open('T3') },
+  { name: 'Pointer on one of its buttons', part: [rowOf('T3'), '#tip'], hover: ROW_BTN('T3') },
+  { name: 'Pressed', steps: [{ press: open('T3') }] },
+  { name: 'Open in the pane', part: rowOf('T40') },
+  { name: 'Open in the pane, pointer on it', part: rowOf('T40'), hover: open('T40') },
+  { name: 'Open in the pane, pointer on a button', part: [rowOf('T40'), '#tip'], hover: ROW_BTN('T40') },
+  { name: 'Picked (Cmd or Shift)', part: rowOf('T38'), steps: [pick] },
+  { name: 'Picked, pointer on it', part: rowOf('T38'), steps: [pick], hover: open('T38') },
   {
-    id: 'list',
-    setup: ({ it }) => {
-      U.open = it('T40').n
-      U.sel.add(it('T38').n)
-    },
+    name: 'Picked, pointer on a button',
+    steps: [pick],
+    hover: ROW_BTN('T38'),
+    part: [rowOf('T38'), '#tip'],
   },
-)
-const oneNeed = (ref: string) => () => (
-  <div className="lg:mr-px">
-    <NeedsRow it={byN.get(parseRef(ref) as number)!} />
-  </div>
-)
-const PILL = 'button[data-act="row-act"]'
-export const NeedsLooks: Story = looks(
-  [
-    { name: 'As it is', draw: oneNeed('I4') },
-    { name: 'Pointer on it: its buttons show', draw: oneNeed('I4'), hover: [ROW] },
-    { name: 'Pointer on Approve', draw: oneNeed('I4'), hover: [ROW, PILL] },
-    { name: 'Pointer on one of its buttons', draw: oneNeed('I4'), hover: [ROW, ROW_BTN] },
-    { name: 'Keys: Tab on Approve', draw: oneNeed('I4'), focus: [PILL] },
-    { name: 'Pressed', draw: oneNeed('I4'), pressed: [ROW] },
-    { name: 'Approve pressed', draw: oneNeed('I4'), hover: [ROW, PILL], pressed: [PILL] },
-    { name: 'Open in the pane', draw: oneNeed('B2') },
-    { name: 'Open in the pane, pointer on it', draw: oneNeed('B2'), hover: [ROW] },
-    { name: 'Picked', draw: oneNeed('T7') },
-    { name: 'Picked, pointer on it', draw: oneNeed('T7'), hover: [ROW] },
-    { name: 'Picked, pointer on Answer', draw: oneNeed('T7'), hover: [ROW, PILL] },
-    { name: 'Being dragged', draw: oneNeed('I4'), marks: [['article', 'data-dragging', '']] },
-    { name: 'The dragged one goes under it', draw: oneNeed('I4'), marks: [['article', 'data-drop', 'into']] },
-  ],
+  { name: 'Picked, pressed', part: rowOf('T38'), steps: [pick, { press: open('T38') }] },
+  { name: 'Pointer on its picture', part: rowOf('B36'), hover: `${open('B36')} button[data-act="view"]` },
+  { name: 'Pointer on Hide subitems', part: rowOf('F1'), hover: `${open('F1')} button[data-act="fold"]` },
+  { name: 'Keys: Tab on Hide subitems', part: rowOf('F1'), focus: `${open('F1')} button[data-act="fold"]` },
   {
-    id: 'list',
-    setup: ({ it }) => {
-      U.open = it('B2').n
-      U.sel.add(it('T7').n)
-    },
+    name: 'Pointer on Part of (its parent)',
+    part: rowOf('T15'),
+    at: SHOP + '?sort=new',
+    hover: `${open('T15')} button[data-act="goto"]`,
   },
-)
+  {
+    name: 'Keys: Tab on Part of',
+    part: rowOf('T15'),
+    at: SHOP + '?sort=new',
+    focus: `${open('T15')} button[data-act="goto"]`,
+  },
+  { name: 'Being dragged', part: rowOf('T40'), steps: [{ drag: open('T40'), onto: open('T3'), drop: 'into' }] },
+  dragOver('before'),
+  dragOver('after'),
+  dragOver('into'),
+])
+const PILL = (code: string) => `${open(code)} button[data-act="row-act"]`
+export const NeedsLooks: Story = looksOf({ at: SHOP + 'B2', part: rowOf('I4') }, [
+  { name: 'As it is' },
+  { name: 'Pointer on it: its buttons show', hover: open('I4') },
+  { name: 'Pointer on Approve', hover: PILL('I4') },
+  { name: 'Pointer on one of its buttons', part: [rowOf('I4'), '#tip'], hover: ROW_BTN('I4') },
+  { name: 'Keys: Tab on Approve', focus: PILL('I4') },
+  { name: 'Pressed', steps: [{ press: open('I4') }] },
+  { name: 'Approve pressed', hover: PILL('I4'), steps: [{ press: PILL('I4') }] },
+  { name: 'Open in the pane', part: rowOf('B2') },
+  { name: 'Open in the pane, pointer on it', part: rowOf('B2'), hover: open('B2') },
+  { name: 'Picked', part: rowOf('T7'), steps: [{ click: open('T7'), hold: 'Meta' }] },
+  { name: 'Picked, pointer on it', part: rowOf('T7'), steps: [{ click: open('T7'), hold: 'Meta' }], hover: open('T7') },
+  {
+    name: 'Picked, pointer on Answer',
+    part: rowOf('T7'),
+    steps: [{ click: open('T7'), hold: 'Meta' }],
+    hover: PILL('T7'),
+  },
+  { name: 'Being dragged', steps: [{ drag: open('I4'), onto: open('T3'), drop: 'into' }] },
+  { name: 'The dragged one goes under it', steps: [{ drag: open('T3'), onto: open('I4'), drop: 'into' }] },
+])

@@ -15,7 +15,6 @@ export const VoiceTranscribing: StoryObj = { ...InputBox.VoiceTranscribing, name
 export const VoiceRetrying: StoryObj = { ...InputBox.VoiceRetrying, name: 'Transcribing, trying again' }
 export const VoiceWithWords: StoryObj = { ...InputBox.VoiceWithWords, name: 'Transcribed, its words in the box' }
 export const VoiceDoubts: StoryObj = { ...InputBox.VoiceDoubts, name: 'Maybe misheard' }
-export const VoiceDoubtsShown: StoryObj = { ...InputBox.VoiceDoubtsShown, name: 'Maybe misheard, the words shown' }
 export const VoiceOtherPicked: StoryObj = {
   ...InputBox.VoiceOtherPicked,
   name: 'Maybe misheard, the other version picked',
@@ -28,5 +27,3 @@ export const VoiceUnsure: StoryObj = { ...InputBox.VoiceUnsure, name: 'A word on
 export const VoiceCutShort: StoryObj = { ...InputBox.VoiceCutShort, name: 'May be cut short' }
 export const VoiceNoWords: StoryObj = { ...InputBox.VoiceNoWords, name: 'No words heard' }
 export const VoiceFailed: StoryObj = { ...InputBox.VoiceFailed, name: 'No transcript' }
-export const VoiceNeedsSecureLink: StoryObj = { ...InputBox.VoiceNeedsSecureLink, name: 'Needs a secure link' }
-export const VoiceNeedsHttps: StoryObj = { ...InputBox.VoiceNeedsHttps, name: 'Needs https, no link yet' }

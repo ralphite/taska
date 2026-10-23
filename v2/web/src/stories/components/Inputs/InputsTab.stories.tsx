@@ -5,23 +5,7 @@ import * as Inputs from '../parts/Inputs'
 const meta: Meta = { title: 'Components/Inputs/Inputs tab' }
 export default meta
 
-export const InputsTab: StoryObj = {
-  ...Inputs.InputsTab,
-  name: 'All inputs',
-  parameters: { ...Inputs.InputsTab.parameters, platform: 'phone' },
-}
-export const InputsTabSearch: StoryObj = {
-  ...Inputs.InputsTabSearch,
-  name: 'Search',
-  parameters: { ...Inputs.InputsTabSearch.parameters, platform: 'phone' },
-}
-export const InputsTabWithOneOnItsWay: StoryObj = {
-  ...Inputs.InputsTabWithOneOnItsWay,
-  name: 'One on its way',
-  parameters: { ...Inputs.InputsTabWithOneOnItsWay.parameters, platform: 'phone' },
-}
-export const InputsTabEmpty: StoryObj = {
-  ...Inputs.InputsTabEmpty,
-  name: 'Empty',
-  parameters: { ...Inputs.InputsTabEmpty.parameters, platform: 'phone' },
-}
+export const InputsTab: StoryObj = { ...Inputs.InputsTab, name: 'All inputs' }
+export const InputsTabSearch: StoryObj = { ...Inputs.InputsTabSearch, name: 'Search' }
+export const InputsTabWithOneOnItsWay: StoryObj = { ...Inputs.InputsTabWithOneOnItsWay, name: 'One on its way' }
+export const InputsTabEmpty: StoryObj = { ...Inputs.InputsTabEmpty, name: 'Empty' }

@@ -1,11 +1,11 @@
 // T457: the small parts everything else is made of: icons, the status of an item, keys, a project's tile, an agent's
-// mark, search hits. Each story shows the part as the page draws it, on the demo's data.
+// mark, search hits. B555: each is a gallery of one part's looks, the real component given only its props (what the
+// page passes it), side by side; where the page shows them in place, the other Components stories have them.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Avatar, Hit, Icon, Kbd, ProjTile, StateIcon } from '../../../components/ui'
 import type { IconName } from '../../../lib/icons'
 import { ICON_USES } from '../../generated/iconUses'
 import { RULE_STATUS, STATUS, STATUS_FILTER } from '../../../lib/constants'
-import { DR, whoName } from '../../../lib/state'
 
 // what this part of Storybook shows (T512: its stories are in the folders beside this file)
 export const area: Meta = {
@@ -14,11 +14,14 @@ export const area: Meta = {
   },
 }
 export type Story = StoryObj
+/** A gallery of one component's looks, given its props only (.storybook/check.mjs lets only these draw a component). */
+const gallery = { taska: { gallery: true } }
 
 /** Every icon the page uses, with its name. */
 /** Every icon the page uses, with its name. The list is made from the code at every build (T513: an icon the page
  * uses and the gallery lacks fails the build), so none can be missing. */
 export const Icons: Story = {
+  parameters: gallery,
   render: () => (
     <div className="grid grid-cols-4 gap-2 p-6 lg:grid-cols-8">
       {(Object.keys(ICON_USES) as IconName[]).map((n) => (
@@ -43,12 +46,12 @@ const statuses = (words: Partial<Record<string, string>>) => (
 )
 /** An item's status, as its round icon; last, Needs you, which an item shows instead while an agent's ask or block
  * waits on you (R055, B535). */
-export const States: Story = { render: () => statuses({ ...STATUS, wait: STATUS_FILTER.wait }) }
+export const States: Story = { parameters: gallery, render: () => statuses({ ...STATUS, wait: STATUS_FILTER.wait }) }
 /** A rule's status: the same icons, with the words the page says for a rule (Active, Retired). */
-export const RuleStates: Story = { render: () => statuses(RULE_STATUS) }
+export const RuleStates: Story = { parameters: gallery, render: () => statuses(RULE_STATUS) }
 /** The keys the page shows beside a button or in a hint. Only the desktop shows them (a phone has no keys). */
 export const Keys: Story = {
-  parameters: { platform: 'desktop' },
+  parameters: { ...gallery, platform: 'desktop' },
   render: () => (
     <div className="flex flex-wrap items-center gap-3 p-6">
       {['J', 'K', '⇧J', 'A', 'W', 'N', 'C', 'G S', '?', '↵', '⇧↵', '⌘↵', 'Esc'].map((k) => (
@@ -57,9 +60,11 @@ export const Keys: Story = {
     </div>
   ),
 }
+const PROJECTS = ['mobile-app', 'shop', 'website'] // the demo's
 /** The demo's projects, in each size the page draws a project's tile, largest first (the New input page, home and
  * settings, the rail and sheets, the sidebar and top bar, the default, a list row, the settings head). */
 export const ProjectTiles: Story = {
+  parameters: gallery,
   render: () => (
     <div className="flex flex-col gap-4 p-6">
       {[
@@ -73,22 +78,23 @@ export const ProjectTiles: Story = {
         'size-4 rounded text-[9px]',
       ].map((cls) => (
         <div key={cls || 'default'} className="flex items-center gap-3">
-          {(DR.list || []).map((p) => (
-            <ProjTile key={p.name} name={p.name} cls={cls} />
+          {PROJECTS.map((p) => (
+            <ProjTile key={p} name={p} cls={cls} />
           ))}
         </div>
       ))}
     </div>
   ),
 }
-/** Who wrote: each agent's mark, with the name the page shows beside it; the last is an agent Taska has no mark for. */
+/** Who wrote: each agent's mark, with its name in Taska; the last is an agent Taska has no mark for. */
 export const AgentMarks: Story = {
+  parameters: gallery,
   render: () => (
     <div className="flex flex-wrap items-center gap-4 p-6">
       {['claude-code', 'codex', 'antigravity', 'agent', 'org', 'gemini'].map((a) => (
         <span key={a} className="flex items-center gap-2 text-sm">
           <Avatar by={a} />
-          {whoName(a)}
+          {a}
         </span>
       ))}
     </div>
@@ -96,6 +102,7 @@ export const AgentMarks: Story = {
 }
 /** The words you searched, marked where they show. */
 export const SearchHit: Story = {
+  parameters: gallery,
   render: () => (
     <p className="p-6 text-[15px]">
       <Hit

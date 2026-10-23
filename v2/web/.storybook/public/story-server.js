@@ -24,14 +24,16 @@
     if (Array.isArray(x)) return x.map((v) => move(v, d, k))
     if (x && typeof x === 'object') {
       const o = {}
-      for (const [kk, v] of Object.entries(x)) o[kk] = move(v, d, kk)
+      // an item's "read" holds, by agent, when it read the item (ms): times too
+      for (const [kk, v] of Object.entries(x)) o[kk] = move(v, d, k === 'read' ? 't' : kk)
       return o
     }
     return x
   }
   const sleep = (ms) => new Promise((ok) => setTimeout(ok, ms))
   const log = (window.__storyLog = [])
-  let offline = false
+  let offline = false,
+    heardNow = {} // what the speech model hears (story_server.py HEARD)
   const enc = new TextEncoder(),
     dec = new TextDecoder()
 
@@ -99,7 +101,15 @@
           }
         }
         const bytes = body == null ? null : new Uint8Array(await new Response(body).arrayBuffer())
-        if (u.pathname.endsWith('/api/transcript') && method === 'POST') await sleep(HEARING_MS)
+        if (u.pathname.endsWith('/api/transcript') && method === 'POST') {
+          // B555: the speech model still at work (a story's heard "working") answers no page while it is looked at
+          // or, after its first words, the fuller words still to come (heard "more")
+          if (heardNow.working || (heardNow.more && u.searchParams.get('more')))
+            return await new Promise((_, no) =>
+              signal?.addEventListener('abort', () => no(new DOMException('aborted', 'AbortError'))),
+            )
+          await sleep(HEARING_MS)
+        }
         return answer(raw(method, path, type, bytes))
       },
       /** an agent writes to Taska, in its own words (the commands of /agent) */
@@ -123,7 +133,8 @@
       },
       /** what the speech model hears in the next voice note: {tr, doubts...}, or the microphone's sentence */
       heard(said) {
-        py.globals.set('HEARD', py.toPy(said || {}))
+        heardNow = said || {}
+        py.globals.set('HEARD', py.toPy(heardNow))
       },
       /** a file Taska keeps (a picture, a voice note), for the page to show: a blob address */
       file: (() => {

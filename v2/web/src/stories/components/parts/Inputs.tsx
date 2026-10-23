@@ -1,12 +1,9 @@
 // T457: what you said (inputs): the Inputs tab, one input in each state it can be in, and the New input page's list.
+// B555: each story is the real page at an address, after Yadong's steps there (an agent or the organizer writing to
+// the real Taska server in the page when the steps change something), showing that part of it.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { ComposeHead, InputCard, OutboxRows, SaidLately } from '../../../components/Inputs'
-import { DraftCard } from '../../../components/Composer'
-import { U, model } from '../../../lib/state'
-import type { Input } from '../../../lib/types'
-import { Pane, type Setup } from '../../lib/demo'
-import { ListColumn } from '../../lib/column'
-import { looks } from '../../lib/states'
+import { looksOf, place } from '../../lib/onpage'
+import type { Do, Twin } from '../../lib/twin'
 
 // what this part of Storybook shows (T512: its stories are in the folders beside this file)
 export const area: Meta = {
@@ -28,171 +25,108 @@ export const area: Meta = {
 }
 export type Story = StoryObj
 
+const INPUTS = '/p/shop/inputs'
 /** The Inputs tab, on the phone (the desktop has no Inputs tab: G I and /inputs open the New input page). */
-const tab = (setup?: (x: Setup) => void): Story => ({
-  parameters: { taska: { setup: (x) => ((U.tab = 'inputs'), setup?.(x)) } },
-  render: () => <ListColumn />,
-})
+const TAB = ['#mainHead', '#tabs', '#inputsView', '#foot']
+const tab = (more: Partial<Twin> = {}): Story => place({ at: INPUTS, part: TAB, ...more }, 'phone')
+// a new input, written under the list and sent: the demo's next one, #22
+const NEW =
+  '\u7ed3\u8d26\u9875\u7684\u4f18\u60e0\u5238\u8f93\u5165\u6846\u5728\u624b\u673a\u4e0a\u88ab\u952e\u76d8\u6321\u4f4f\u4e86\u3002' // the coupon field is under the keyboard on the phone
+const say = (words = NEW): Do[] => [{ type: words, into: '#text' }, { click: '#sendBtn[data-act="send"]' }]
+const OP = '^/p/shop/api/op'
 export const InputsTab = tab()
-export const InputsTabSearch = tab(() => (U.q = '\u5bfc\u51fa'))
-export const InputsTabWithOneOnItsWay = tab(() => {
-  U.outbox = [
-    {
-      id: 'q1',
-      q: 'q1',
-      t: Date.now(),
-      text: '\u987a\u4fbf\u628a\u5bfc\u51fa\u6309\u94ae\u6539\u6210\u84dd\u8272',
-      files: [],
-      scope: null,
-      p: '/p/shop/',
-      sending: true,
-    },
-  ]
-})
-export const InputsTabEmpty: Story = {
-  ...tab(),
-  parameters: { taska: { project: 'website', setup: () => (U.tab = 'inputs') } },
-}
+export const InputsTabSearch = tab({ at: INPUTS + '?q=\u5bfc\u51fa' })
+/** Just sent, Taska not answering yet: on its way, first. */
+export const InputsTabWithOneOnItsWay = tab({ steps: say(), net: { [OP]: 'hang' } })
+export const InputsTabEmpty = tab({ at: '/p/website/inputs' })
 
-/** One input, in the state `change` puts it in, as a row of the phone's Inputs tab draws it (the only place an input
- * is drawn this way: on the desktop what you said is under New input, F347). */
-let picked = ''
-const card = (pick: (S: Input[]) => Input, change?: (r: Input) => void): Story => ({
-  parameters: {
-    platform: 'phone',
-    taska: {
-      setup: ({ S }) => {
-        const r = pick(S.inputs)
-        change?.(r)
-        picked = r.id
-      },
-    },
-  },
-  render: () => {
-    const r = model.S.inputs.find((x) => x.id === picked)!
-    return (
-      <Pane>
-        <InputCard r={r} />
-      </Pane>
-    )
-  },
+/** One input, as a row of the phone's Inputs tab draws it (the only place an input is drawn this way: on the desktop
+ * what you said is under New input, F347), after these steps. */
+const card = (r: string, more: Partial<Twin> = {}): Story =>
+  place({ at: INPUTS, part: `#inputsView article[data-r="${r}"]`, ...more }, 'phone')
+const more = (r: string, pick: string): Do[] => [
+  { click: `#inputsView [data-act="input-more"][data-id="${r}"]` },
+  { click: `#dlgBody [data-act="input-pick"][data-pick="${pick}"]` },
+]
+/** #19, with its screenshot: no agent has read it yet. */
+export const WaitingForYourAgent = card('r19')
+export const VoiceNote = card('r20')
+/** Said into the box's mic and sent while the speech model still works out its words. */
+export const Transcribing = card('r22', {
+  steps: [{ click: '#sendBtn[data-act="mic"]' }, { wait: 2500 }, { click: '#sendBtn[data-act="rec-send"]' }],
+  heard: { working: true },
 })
-const waiting = (S: Input[]) => S.find((r) => !r.acked && r.files.some((f) => f.mime?.startsWith('image/')))!
-const voice = (S: Input[]) => S.find((r) => !r.acked && r.files.some((f) => f.mime?.startsWith('audio/')))!
-const made = (S: Input[]) => S.find((r) => r.org?.msg.startsWith('Created') && r.files.length > 1)!
-const added = (S: Input[]) => S.find((r) => r.org?.msg.startsWith('Added'))!
-
-export const WaitingForYourAgent = card(waiting)
-export const VoiceNote = card(voice)
-export const Transcribing = card(voice, (r) => (r.tr_wait = true))
-/** Made into an item: what became of it under your words. */
-export const MadeAnItem = card(made)
-export const AddedToAnItem = card(added)
-export const Organizing = card(waiting, (r) => {
-  model.S.org = { on: true, model: 'gemini', busy: r.id }
+/** Made into an item: what became of it under your words (#15, B36 with two screenshots). */
+export const MadeAnItem = card('r15')
+export const AddedToAnItem = card('r3')
+/** The organizer left it for your coding agent (its model said pass). */
+const left: Do[] = [...say(), { organize: 'pass' }]
+export const LeftForYourAgent = card('r22', { steps: left })
+/** Left for your agent, and your agent has taken it. */
+export const HandledByYourAgent = card('r22', { steps: [...left, { agent: 'ack r22' }] })
+/** Your agent read #19 and took it, with no item made. */
+export const SeenByYourAgent = card('r19', { steps: [{ agent: 'ack r19' }] })
+/** The organizer's commands failed (it named an item the project does not have). */
+export const OrganizerFailed = card('r22', {
+  steps: [...say(), { organize: 'B99 say \u4f18\u60e0\u5238\u8f93\u5165\u6846\u88ab\u6321\u4f4f\u4e86' }],
 })
-export const LeftForYourAgent = card(waiting, (r) => {
-  r.org = { ok: true, msg: 'Left for your coding agent', t: r.t, keep: true }
-})
-export const HandledByYourAgent = card(waiting, (r) => {
-  r.acked = true
-  r.org = { ok: true, msg: 'Left for your coding agent', t: r.t, keep: true }
-})
-export const SeenByYourAgent = card(waiting, (r) => (r.acked = true))
-export const OrganizerFailed = card(waiting, (r) => {
-  r.org = { ok: false, msg: 'Some commands failed: B99 not found', t: r.t, keep: false }
-})
-export const Undone = card(made, (r) => {
-  if (r.org) r.org.undone = true
-})
-export const Edited = card(added, (r) => {
-  r.history = [{ text: r.text.slice(0, 12), t: r.t, mode: 'edit' }]
-  r.updated = new Date().toISOString()
-  r.v = 1
-})
-export const MovedToAnotherProject = card(waiting, (r) => {
-  r.moved = { to: 'mobile-app', as: 'r4' }
-})
-export const AnAnswer = card(added, (r) => (r.kind = 'answer'))
-
-/** What is still on its way, first where your inputs are listed. */
-export const OnItsWay: Story = {
-  parameters: {
-    taska: {
-      setup: () => {
-        const base = { files: [], scope: null, p: '/p/shop/' }
-        U.outbox = [
-          {
-            ...base,
-            id: 'q1',
-            q: 'q1',
-            t: Date.now() - 5000,
-            text: '\u53d1\u9001\u4e2d\u7684\u4e00\u6761',
-            sending: true,
-          },
-          {
-            ...base,
-            id: 'q2',
-            q: 'q2',
-            t: Date.now() - 60000,
-            text: '\u6ca1\u53d1\u51fa\u53bb\u7684\u4e00\u6761',
-            failed: true,
-          },
-          {
-            ...base,
-            id: 'q3',
-            q: 'q3',
-            t: Date.now() - 120000,
-            text: '\u7b49 Taska \u56de\u6765\u518d\u53d1\u7684\u4e00\u6761',
-            failed: true,
-            net: true,
-          },
-        ]
-      },
-    },
-  },
-  render: () => (
-    <Pane w="list">
-      <OutboxRows />
-    </Pane>
-  ),
-}
-
-export const SaidLatelyList: Story = {
-  render: () => (
-    <Pane w="item">
-      <div className="mx-auto max-w-[42rem] p-4">
-        <SaidLately draft={<DraftCard />} />
-      </div>
-    </Pane>
-  ),
-}
-// T522 (r731, r762): a line of what you said lately under the pointer (its time gives way to Add more and ⋯), from the
-// keys, its buttons pointed at, side by side (../../lib/states.tsx); the top of the list, the desktop only.
-const said = () => (
-  <div className="h-[230px] overflow-hidden">
-    <Pane w="item">
-      <div className="mx-auto max-w-[42rem] p-4">
-        <SaidLately draft={null} />
-      </div>
-    </Pane>
-  </div>
-)
-const LINE = 'li:nth-child(1 of [class~="group/row"])'
-export const SaidLooks: Story = looks(
-  [
-    { name: 'As it is', draw: said },
-    { name: 'Pointer on a line: Add more and ⋯ show', draw: said, hover: [LINE] },
-    { name: 'Keys: Tab on its item', draw: said, within: [LINE], focus: [`${LINE} button[data-act="goto"]`] },
-    { name: 'Pointer on its item', draw: said, hover: [LINE, `${LINE} button[data-act="goto"]`] },
-    { name: 'Pointer on its ⋯', draw: said, hover: [LINE, `${LINE} span.flex button:last-child`] },
+/** Filed as a new bug, then Undo on the line after sending: what the organizer did is taken back. */
+export const Undone = card('r22', {
+  steps: [
+    ...say(),
+    { organize: 'new bug P1 now \u4f18\u60e0\u5238\u8f93\u5165\u6846\u88ab\u952e\u76d8\u6321\u4f4f' },
+    { click: '#feedback [data-act="undo"]' },
   ],
-  { w: 'w-[780px]' },
+})
+/** Changed after sending (Edit, new words, Save): when, and the earlier words a tap away. */
+export const Edited = card('r19', {
+  steps: [
+    ...more('r19', 'input-edit'),
+    {
+      type: '\u8ba2\u5355\u9875\u5217\u8868\u5f88\u957f\u7684\u65f6\u5019\u6eda\u52a8\u5f88\u5361\u3002',
+      into: '#text',
+    },
+    { click: '#sendBtn[data-act="send"]' },
+  ],
+})
+export const MovedToAnotherProject = card('r19', {
+  steps: [...more('r19', 'move-input'), { click: '#dlgBody [data-act="move-input-to"][data-to="mobile-app"]' }],
+})
+/** Your answer to T07's question, sent from its card: an input of its own, an answer. */
+export const AnAnswer = card('r22', {
+  at: '/p/shop/T7',
+  steps: [
+    { click: '[data-act="choice"][data-n="7"][data-i="0"]' },
+    { click: '[data-act="choice-send"][data-n="7"]' },
+    { wait: 1000 },
+    { click: '#backBtn' },
+    { click: '#tabs [data-tab="inputs"]' },
+  ],
+})
+
+/** What is still on its way, first where your inputs are listed: two sent while Taska is out of reach (they go by
+ * themselves when it answers). */
+export const OnItsWay = place(
+  {
+    at: INPUTS,
+    steps: [...say(), ...say('\u987a\u4fbf\u628a\u5bfc\u51fa\u6309\u94ae\u6539\u6210\u84dd\u8272')],
+    net: { [OP]: 'down' },
+    part: ['#inputsView > article:nth-child(1)', '#inputsView > article:nth-child(2)'],
+  },
+  'phone', // the desktop lists them under You said lately, on the New input page
 )
-export const ProjectHead: Story = {
-  render: () => (
-    <div className="p-6">
-      <ComposeHead />
-    </div>
-  ),
-}
+
+/** The New input page (desktop): what you said lately, under the box. */
+export const SaidLatelyList = place({ at: '/p/shop/', part: '#composeList' }, 'desktop')
+// T522 (r731, r762): a line of what you said lately under the pointer (its time gives way to Add more and ⋯), from the
+// keys, its buttons pointed at, side by side; the desktop only.
+const LINE = '#composeList li:nth-child(1 of [class~="group/row"])'
+export const SaidLooks: Story = looksOf({ at: '/p/shop/', part: LINE }, [
+  { name: 'As it is' },
+  { name: 'Pointer on a line: Add more and \u22ef show', hover: LINE },
+  { name: 'Keys: Tab on its item', focus: `${LINE} button[data-act="goto"]` },
+  { name: 'Pointer on its item', part: [LINE, '#tip'], hover: `${LINE} button[data-act="goto"]` },
+  { name: 'Pointer on its \u22ef', part: [LINE, '#tip'], hover: `${LINE} [data-act="input-more"]` },
+])
+/** The project's name over the New input page (desktop). */
+export const ProjectHead = place({ at: '/p/shop/', part: '#composeHead' }, 'desktop')

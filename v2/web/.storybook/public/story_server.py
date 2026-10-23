@@ -54,7 +54,9 @@ from datetime import datetime  # noqa: E402
 core.now = lambda: datetime.fromtimestamp(time.time()).astimezone().isoformat(timespec="seconds")
 
 # one thread: what Taska starts on a thread runs now; timers that only wake waiting agents are not needed
-threading.Thread.start = lambda self: self.run()
+# B555: the speech model of a story still at work ("working") has not answered while the story is looked at: the job
+# Taska started for a voice note's words stays open, as it is while the real model works
+threading.Thread.start = lambda self: None if HEARD.get("working") and getattr(self, "_target", None) and self._target.__name__ == "work" else self.run()  # noqa: E501
 threading.Timer.start = lambda self: None
 
 from taska import organizer, voice  # noqa: E402
@@ -65,7 +67,10 @@ HEARD = {}
 
 
 def _transcribe(store, data, mime, scope, path=None, later=None):
-    return {"tr": MIC, "tr_by": "asr", **HEARD}  # noqa: F821
+    # B555: a story's speech model that fails says why, as the real one's error reaches Taska
+    if HEARD.get("fails"):
+        raise RuntimeError(HEARD["fails"])
+    return {"tr": MIC, "tr_by": "asr", **{k: v for k, v in HEARD.items() if k != "working"}}  # noqa: F821
 
 
 voice.transcribe = _transcribe
