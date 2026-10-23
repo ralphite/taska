@@ -273,30 +273,20 @@ export const SideLink = ({ sec, icon, label, phone }: { sec: string; icon: strin
       <span className="min-w-0 flex-1 truncate">{label}</span>
     </a>
   )
-// F451: the page's stories in every state, built with the page and served by Taska at /storybook/
-export const StoryLink = ({ phone }: { phone?: boolean }) =>
-  phone ? (
-    <a
-      href="/storybook/"
-      target="_blank"
-      rel="noopener"
-      className="flex min-h-12 w-full items-center gap-3 px-3.5 py-2.5 text-left text-[15px]"
-    >
-      <Icon n="book" c="size-5 shrink-0 text-zinc-500 dark:text-zinc-400" />
-      <span className="min-w-0 flex-1">Storybook</span>
-      <Icon n="right" c="size-4 shrink-0 text-zinc-300 dark:text-zinc-600" />
-    </a>
-  ) : (
-    <a
-      href="/storybook/"
-      target="_blank"
-      rel="noopener"
-      className="flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-sm text-zinc-600 hover:bg-zinc-200/60 dark:text-zinc-300 dark:hover:bg-zinc-800"
-    >
-      <Icon n="book" c="size-4 shrink-0 text-zinc-500 dark:text-zinc-400" sw="2" />
-      <span className="min-w-0 flex-1 truncate">Storybook</span>
-    </a>
-  )
+// F451, T456 (r678, r679): the page's stories, on Storybook's own server on this computer (it shows a change at once);
+// for the desktop only, where the page is made
+const STORYBOOK = 'http://localhost:6007/'
+export const StoryLink = () => (
+  <a
+    href={STORYBOOK}
+    target="_blank"
+    rel="noopener"
+    className="flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-sm text-zinc-600 hover:bg-zinc-200/60 dark:text-zinc-300 dark:hover:bg-zinc-800"
+  >
+    <Icon n="book" c="size-4 shrink-0 text-zinc-500 dark:text-zinc-400" sw="2" />
+    <span className="min-w-0 flex-1 truncate">Storybook</span>
+  </a>
+)
 // the phone's drawer ends in a card (B162): Undo while there is one (a phone has no Z), and Settings
 export function DrawerSettings() {
   const u = U.mine.at(-1),
@@ -322,7 +312,6 @@ export function DrawerSettings() {
           <SideLink sec="deleted" icon="trash" label="Deleted" phone />
         </>
       ) : null}
-      <StoryLink phone />
       <button
         data-act="project"
         className="flex min-h-12 w-full items-center gap-3 px-3.5 py-2.5 text-left text-[15px]"
@@ -1032,7 +1021,7 @@ export function Foot({ hidden, wideCls }: { hidden: boolean; wideCls: string }) 
         e.preventDefault()
         if (e.dataTransfer.files.length) addFiles([...e.dataTransfer.files])
       }}
-      className={`relative z-20 shrink-0 px-3 pt-1 pb-[max(1.25rem,env(safe-area-inset-bottom))] after:pointer-events-none after:absolute after:inset-x-0 after:top-(--foot-cut) after:bottom-0 after:-z-10 after:bg-white lg:group-data-[compose]/app:after:hidden dark:after:bg-zinc-950 lg:row-start-5 lg:scrollbar-gutter-both lg:px-8 lg:pb-5 lg:group-data-duo/app:pl-[calc(var(--duo-w,55%)+2rem)] lg:group-data-[compose]/app:row-span-3 lg:group-data-[compose]/app:row-start-3 lg:group-data-[compose]/app:overflow-y-auto lg:group-data-[compose]/app:overscroll-contain lg:group-data-[compose]/app:pt-[5vh] lg:group-data-[compose]/app:pb-16 lg:group-data-duo/app:before:absolute lg:group-data-duo/app:before:inset-y-0 lg:group-data-duo/app:before:left-[var(--duo-w,55%)] lg:group-data-duo/app:before:w-px lg:group-data-duo/app:before:bg-zinc-200 lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:group-data-duo/app:before:bg-zinc-800 dark:lg:hover:scrollbar-thumb-zinc-400/70 ${wideCls}`}
+      className={`relative z-20 shrink-0 px-3 pt-1 pb-[max(1.25rem,env(safe-area-inset-bottom))] after:pointer-events-none after:absolute after:inset-x-0 after:top-(--foot-cut) after:bottom-0 after:-z-10 after:bg-white lg:row-start-5 lg:scrollbar-gutter-both lg:px-8 lg:pb-5 lg:group-data-duo/app:pl-[calc(var(--duo-w,55%)+2rem)] lg:group-data-[compose]/app:row-span-3 lg:group-data-[compose]/app:row-start-3 lg:group-data-[compose]/app:overflow-y-auto lg:group-data-[compose]/app:overscroll-contain lg:group-data-[compose]/app:pt-[5vh] lg:group-data-[compose]/app:pb-16 lg:group-data-duo/app:before:absolute lg:group-data-duo/app:before:inset-y-0 lg:group-data-duo/app:before:left-[var(--duo-w,55%)] lg:group-data-duo/app:before:w-px lg:group-data-duo/app:before:bg-zinc-200 lg:group-data-[compose]/app:after:hidden lg:hover:scrollbar-thumb-zinc-500/80 dark:after:bg-zinc-950 dark:lg:group-data-duo/app:before:bg-zinc-800 dark:lg:hover:scrollbar-thumb-zinc-400/70 ${wideCls}`}
     >
       {compose && ComposeHead() ? (
         <div

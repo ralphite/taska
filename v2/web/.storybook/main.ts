@@ -6,7 +6,9 @@ const BODY = /<body class="([^"]*)"/.exec(readFileSync(new URL('../index.html', 
 
 const config: StorybookConfig = {
   stories: ['../src/**/*.stories.@(ts|tsx)'],
-  staticDirs: ['./public'], // T457: the saved answers the real page runs on, and the shim that serves them
+  // T457: the saved answers the real page runs on, and the shim that serves them. T456: Storybook's own server gives
+  // them under /storybook/, as a built Storybook has them, with the page from the source (app.mjs --dev)
+  staticDirs: process.argv.includes('dev') ? [{ from: './public', to: '/storybook' }] : ['./public'],
   addons: ['@storybook/addon-a11y', '@storybook/addon-themes', '@storybook/addon-mcp', 'storybook-addon-pseudo-states'],
   framework: { name: '@storybook/react-vite', options: {} },
   // the page's service worker is not Storybook's: leave the PWA plugin out of it

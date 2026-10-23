@@ -9,7 +9,7 @@ URL=${TASKA_URL:-http://127.0.0.1:7340}
 # something never goes live by itself (F449: a page left alone reloads into whatever Taska serves)
 [[ "$1" == "--build" ]] && {
   npm --prefix v2/web run build >/dev/null || { echo "ship: the page did not build"; exit 1; }
-  rsync -a --delete v2/web/dist/ v2/web/live/
+  rsync -a --delete --delete-excluded --exclude /storybook/ v2/web/dist/ v2/web/live/  # Storybook is its own server (T456)
 }
 idle() { curl -s -m 3 "$URL/api/idle" | /usr/bin/python3 -c 'import json,sys; print(json.load(sys.stdin)["idle"])' 2>/dev/null || echo 9999; }
 boot() { curl -s -m 3 "$URL/p/taska/api/poll?rev=0&wait=0" | /usr/bin/python3 -c 'import json,sys; print(json.load(sys.stdin)["boot"])' 2>/dev/null; }

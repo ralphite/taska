@@ -5,3 +5,4 @@ storybook-static/
 test-results/
 playwright-report/
 *.tsbuildinfo
+.storybook/public/app.html

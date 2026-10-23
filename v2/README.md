@@ -25,7 +25,7 @@ Or the single file from a release: `python3 taska.pyz --port 7341 --root ~/taska
 | What | Command |
 |---|---|
 | Frontend with hot reload (API on 7341) | `npm --prefix v2/web run dev` (http://127.0.0.1:5341) |
-| Components | `npm --prefix v2/web run storybook` (http://127.0.0.1:6007) |
+| Storybook (components, pages, prototypes) | always on at http://127.0.0.1:6007 from the source (LaunchAgent `com.taska.storybook` runs `v2/tools/storybook-service.sh`); not part of Taska |
 | Type checks | `npm --prefix v2/web run typecheck` and `npm --prefix v2/web run typecheck:server` |
 | Lint | `npm --prefix v2/web run lint` |
 | Frontend unit tests | `npm --prefix v2/web test` |

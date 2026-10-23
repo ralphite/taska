@@ -94,27 +94,17 @@ def version() -> str:
 
 def public(path: str) -> bool:
     """A path the page needs before it has the key: its files, and nothing with data in it."""
-    return (path in ROOT_FILES or path == "/manifest.webmanifest" or path.startswith("/assets/") or path == "/login.html"
-            or story(path) is not None)
-
-
-def story(path: str) -> Optional[str]:
-    """F451: the file under the page's build for a Storybook address (/storybook/..., built with the page), or None."""
-    if path == "/storybook/":
-        return "storybook/index.html"
-    if path.startswith("/storybook/") and re.fullmatch(r"/storybook(/[\w.\-]+)+", path) and ".." not in path:
-        return path[1:]
-    return None
+    return path in ROOT_FILES or path == "/manifest.webmanifest" or path.startswith("/assets/") or path == "/login.html"
 
 
 def static(path: str) -> Optional[Tuple[bytes, str, str]]:
     """(data, content type, cache control) for one of the page's files, or None."""
     if path == "/manifest.webmanifest":
         return MANIFEST.encode(), "application/manifest+json", "no-cache"
-    name = story(path)
-    if name is None and path not in ROOT_FILES and not (path.startswith("/assets/") and re.fullmatch(r"/assets/[\w.\-]+", path)):
+    # T456 (r678, r679): Storybook is a server of its own (v2/tools/storybook-service.sh), not part of Taska
+    if path not in ROOT_FILES and not (path.startswith("/assets/") and re.fullmatch(r"/assets/[\w.\-]+", path)):
         return None
-    name = name or path[1:]
+    name = path[1:]
     data = DIST.read(name)
     if data is None:
         return None
