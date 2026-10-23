@@ -99,6 +99,7 @@ function idleCompose() {
     ['items', 'archive', 'rules'].includes(U.tab) &&
     !U.side &&
     !U.open &&
+    !U.missing &&
     !U.doc &&
     !D.page &&
     !D.compose &&
@@ -246,6 +247,9 @@ export const U = {
   sheet: null as string | null,
   searching: false,
   open: null as number | null,
+  /** D77 #1 #2, D82 #1-3: what the address names (T03, D4) that the page does not have: not yet (its data is still
+   * coming: it says Loading) or not at all (T99: it says so), instead of the list or the New input page */
+  missing: null as string | null,
   scopeOff: false,
   editing: null as number | null,
   files: [] as DraftFile[],

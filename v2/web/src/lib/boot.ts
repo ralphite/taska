@@ -2,7 +2,7 @@
 // then the state loads, and the page follows the address, unsent inputs and voice notes go out, and
 // the page listens for changes (no reload by itself when Taska is updated: R284).
 import { loadDims } from './dims'
-import { D, U, beforeRender, byN, code, ctx, desk, els, model, parseRef, setProject } from './state'
+import { D, U, beforeRender, byN, code, ctx, desk, docById, els, model, parseRef, setProject } from './state'
 import { PSEC_AT, readURL, viewQuery, writeURL } from './url'
 import { loadViews } from './views'
 import {
@@ -31,6 +31,13 @@ export function bootProject(name: string) {
   setProject(name)
   beforeRender(settleOpen) // B5: never a merged item, whichever way it came back
   beforeRender(syncDraft) // the box follows what it writes to: its draft comes along (B185)
+  beforeRender(() => {
+    // D82 #2: the item or document the address names came with data that arrived late (Taska was out of reach): open it
+    const m = U.missing,
+      d = m && /^D(\d+)$/.exec(m)
+    if (m && model.S.rev >= 0 && (d ? docById(Number(d[1])) : byN.has(parseRef(m) || 0)))
+      setTimeout(() => U.missing === m && applyURL())
+  })
   try {
     U.oldDraft = localStorage.getItem('taska.draft') || ''
     localStorage.removeItem('taska.draft')
@@ -55,7 +62,9 @@ export function readStart() {
     U.q = qs.get('q') || ''
     for (const k of ['type', 'when', 'status', 'pri', 'sort'] as const) U[k] = qs.get(k) || 'all'
     if (/^(archive|rules)$/.test(seg)) U.tab = seg as Tab // an old /inputs address opens New input (F347)
-  }
+  } else if (/^(inputs|archive|rules)$/.test(seg)) U.tab = seg as Tab // D82 #10: the phone's tab, not Items first
+  // D77 #1, D82 #1: an item or a document: its place says Loading until the data comes (not the list, not New input)
+  U.missing = /^[Dd]\d+$/.test(seg) || parseRef(seg) ? seg.toUpperCase() : null
 }
 /** Once the page is drawn: listeners, the data, and everything that waits for it. */
 export async function startProject() {

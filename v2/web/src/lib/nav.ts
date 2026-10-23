@@ -61,6 +61,7 @@ export function settleOpen() {
 // Opening an item is a step in the browser's history on the phone; on the desktop it only selects it.
 export function openItem(n: number | null | undefined, push = true) {
   if (!n || !byN.has(n)) return closeItem()
+  U.missing = null
   const asked = n
   n = mergedTo(n)
   if (n !== asked && URLS.applying)
@@ -114,6 +115,10 @@ export function openItem(n: number | null | undefined, push = true) {
   if (desk()) document.querySelector(`#list [data-act="open"][data-n="${n}"]`)?.scrollIntoView({ block: 'nearest' })
 }
 export function closeItem() {
+  if (U.missing) {
+    U.missing = null
+    if (!U.open) return render()
+  }
   if (!U.open) return
   stashEdit()
   U.open = null
@@ -141,6 +146,7 @@ export function clearSearch() {
 /** T402: Documents, Activity or Deleted in the list column (the desktop); the sidebar stays, the item pane shows what
  * you open from it. */
 export function openSide(side: 'docs' | 'log' | 'deleted', push = true) {
+  U.missing = null
   keepPlace()
   Object.assign(U, { side, open: null, doc: null, docEdit: false })
   D.page = null
@@ -151,6 +157,7 @@ export function openSide(side: 'docs' | 'log' | 'deleted', push = true) {
   render()
 }
 export function setTab(t: Tab) {
+  U.missing = null
   U.side = null
   if (t === 'inputs' && desk()) return void ACT['new-input']({}) // F347: on the desktop what you said is under New input
   const was = U.tab,
@@ -298,6 +305,7 @@ export function leaveCompose() {
 // Opening a section is a step Back undoes; history.state.page counts the steps, so Back to Items undoes them all.
 // sec null: the phone's Settings page, the list of sections.
 export function openProject(sec: string | null) {
+  U.missing = null
   const part = sec === 'connect' ? 'pConnect' : null
   sec =
     sec === 'connect'
@@ -388,9 +396,18 @@ function showURL() {
     D.compose = false
   }
   D.page = null
+  U.missing = null
   const t = parseTarget(seg)
   if (t.side) return openSide(t.side, false) // T402
   if (t.doc == null && U.doc && OV.spec) closeDialog()
+  if (t.doc != null && !docById(t.doc)) t.missing = 'D' + t.doc
+  if (t.missing) {
+    // D77 #1 #2, D82 #1-3: an item or document not here: its place says Loading, or that it is not in this project
+    closeItem()
+    U.missing = t.missing
+    if (desk()) D.compose = false
+    return render()
+  }
   if (t.doc != null) {
     const d = docById(t.doc)
     if (d && !U.open) openItem(d.n, false) // r749: a document is over its item, on the phone as on the desktop

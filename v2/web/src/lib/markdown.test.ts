@@ -46,7 +46,9 @@ describe('choices in a document (F393, B412, B420)', () => {
     const all = '- [x] All\n- [x] Red\n- [x] Blue'
     expect(tickedBlock(all, 1)).toBe('- [ ] All\n- [ ] Red\n- [x] Blue')
     expect(tickedBlock('- [ ] All\n- [ ] Red\n- [x] Blue', 1)).toBe(all)
-    expect(tickedBlock('Pick:\n- [ ] All\n- [ ] Red\n\n- [ ] Other', 1)).toBe('Pick:\n- [x] All\n- [x] Red\n\n- [ ] Other')
+    expect(tickedBlock('Pick:\n- [ ] All\n- [ ] Red\n\n- [ ] Other', 1)).toBe(
+      'Pick:\n- [x] All\n- [x] Red\n\n- [ ] Other',
+    )
   })
 })
 

@@ -1,5 +1,5 @@
 // Going to a project from the sidebar opens the project itself, never a place inside it (B324, B463).
-// guards: src/components/Shell.tsx src/components/SideList.tsx src/lib/nav.ts src/lib/url.ts src/lib/events.ts src/lib/switch.ts src/lib/boot.ts src/pages/
+// guards: src/components/Shell.tsx src/components/SideList.tsx src/lib/nav.ts src/lib/url.ts src/lib/events.ts src/lib/switch.ts src/lib/boot.ts src/pages/ src/components/Detail.tsx src/layouts/
 import { expect, test } from '@playwright/test'
 import { LOOP, isDesk, open, project } from './seed'
 
@@ -86,4 +86,28 @@ test('r454: the list under the New input box is everything you said, more loadin
       { timeout: 20000 },
     )
     .toBe(true)
+})
+
+test("D77 #1 #2, D82 #1-3: an item's address reloaded says Loading in its place until the data comes, then shows the item; an item or a document not in the project says so, and the address keeps it", async ({
+  page,
+  request,
+}) => {
+  const p = await project(request, LOOP)
+  let hold = true
+  await page.route('**/api/state**', async (r) => {
+    while (hold) await new Promise((ok) => setTimeout(ok, 100))
+    await r.continue()
+  })
+  await page.goto(p.url + 'T4')
+  await expect(page.locator('[data-missing="loading"]').filter({ visible: true })).toHaveText('Loading T4\u2026')
+  hold = false
+  await expect(page.locator('#detailBody h1')).toHaveText('Write the user docs')
+  await page.unroute('**/api/state**')
+  for (const what of ['T99', 'D99']) {
+    await page.goto(p.url + what)
+    await expect(page.locator('[data-missing="none"]').filter({ visible: true })).toHaveText(
+      `${what} is not in this project`,
+    )
+    await expect(page).toHaveURL(new RegExp(`/${what}$`))
+  }
 })

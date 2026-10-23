@@ -765,6 +765,23 @@ const ItemNav = () => (
     />
   </>
 )
+// D77 #1 #2, D82 #1-3: the item or document the address names, not here: its data still coming (or Taska out of
+// reach meanwhile), or not in this project at all
+function Missing({ what }: { what: string }) {
+  const loading = model.S.rev < 0,
+    off = model.offline >= 2
+  return (
+    <div data-missing={loading ? 'loading' : 'none'} className="grid h-full place-items-center p-8 text-center">
+      <p className="text-[15px] text-zinc-500 dark:text-zinc-400">
+        {!loading
+          ? `${what} is not in this project`
+          : off
+            ? 'Taska is out of reach, retrying\u2026'
+            : `Loading ${what}\u2026`}
+      </p>
+    </div>
+  )
+}
 function NoSelection() {
   if (U.side === 'deleted') return <DeletedView /> // B430: the deleted thing you clicked, with Restore
   if (U.side)
@@ -790,6 +807,14 @@ function NoSelection() {
 // What the pane shows now, its header, its actions, its way back.
 function paneParts(): { head: ReactNode; acts: ReactNode; nav: ReactNode; menu: boolean; body: ReactNode } {
   const it = U.open ? byN.get(U.open) : undefined
+  if (!it && U.missing)
+    return {
+      head: <span className="font-mono text-sm font-bold">{U.missing}</span>,
+      acts: null,
+      nav: null,
+      menu: false,
+      body: <Missing what={U.missing} />,
+    }
   if (desk()) {
     const d = U.doc ? docById(U.doc) : undefined
     const dIt = d ? byN.get(liveN(d.n)) : undefined

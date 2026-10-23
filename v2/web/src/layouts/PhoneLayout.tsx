@@ -24,7 +24,7 @@ import { closeDrawer } from '../lib/nav'
 export function phonePanes() {
   const page = !!D.page,
     inputs = U.tab === 'inputs',
-    open = !!U.open && !page,
+    open = (!!U.open || !!U.missing) && !page, // D77 #1: an item still loading or not here has its page too
     under = !open && !page
   const v = {
     mainHead: !under,

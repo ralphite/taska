@@ -89,6 +89,7 @@ function pickBack(d: number) {
     Object.assign(U, { docSel: new Set(m.sel), docQuote: m.quote, docReply: m.reply })
 }
 export function openDoc(d: number) {
+  U.missing = null
   if (U.doc !== d)
     setTimeout(() =>
       !desk() && layersNow().at(-1) === 'sheet' && OV.spec ? writeURL(false, { v: `D${d}` }) : writeURL(true),
@@ -179,7 +180,14 @@ export function closeDoc() {
   } // Esc in the editor: back to reading, the edit kept as a draft
   const d = U.doc
   U.docScroll[d] = els.detailBody?.scrollTop || 0
-  Object.assign(U, { doc: null, docReply: null, docSel: new Set(), docQuote: null, docCircle: false, docInspect: false })
+  Object.assign(U, {
+    doc: null,
+    docReply: null,
+    docSel: new Set(),
+    docQuote: null,
+    docCircle: false,
+    docInspect: false,
+  })
   if (desk() && U.side) U.open = null // T438 #16: opened from Documents, Activity or Deleted: back to that page
   D.docKey = null
   getSelection()?.removeAllRanges()
