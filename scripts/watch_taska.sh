@@ -43,6 +43,34 @@ while true; do
       done
     fi
     echo "$now" > $STATE
+    # every input the user sends, once, even one the organizer already filed into an item and marked handled
+    # (those never show in /next, and a ticked form does not always mark its row as replied)
+    DB=${TASKA_DATA:-$HOME/.taska}/$p/taska.db LASTIN=$DIR/lastin-$p
+    if [ -f $DB ]; then
+      seq=$(cat $LASTIN 2>/dev/null || sqlite3 $DB "select max(seq) from events")
+      # a voice note is told once its words are in (the inputs table), or after 3 minutes without them
+      /usr/bin/python3 - $DB ${seq:-0} $LASTIN $p $([ -s $DIR/.started-$p ] && echo tell) <<'PY'
+import json, sqlite3, sys, time
+from datetime import datetime
+db, seq, last, p = sys.argv[1], int(sys.argv[2]), sys.argv[3], sys.argv[4]
+tell = len(sys.argv) > 5
+c = sqlite3.connect("file:%s?mode=ro" % db, uri=True)
+said = {}
+for (d,) in c.execute("select data from inputs"):
+    d = json.loads(d)
+    said[d.get("id")] = d.get("text") or ""
+for s, d in c.execute("select seq, data from events where k='in' and seq>? order by seq", (seq,)):
+    d = json.loads(d)
+    text = said.get(d.get("id")) or d.get("text") or ""
+    age = time.time() - datetime.fromisoformat(d["t"]).timestamp()
+    if not text and d.get("files") and age < 180:
+        break  # its words are still coming: tell it next round
+    open(last, "w").write(str(s))
+    if tell:
+        print("[%s] INPUT %s scope %s %s" % (p, d.get("id"), d.get("scope"), (text or "(no words)")[:120].replace("\n", " ")), flush=True)
+PY
+      [ -s $LASTIN ] || sqlite3 $DB "select max(seq) from events" > $LASTIN
+    fi
     echo 1 > $DIR/.started-$p  # the first pass only learns what is there
   done
   sleep 20
