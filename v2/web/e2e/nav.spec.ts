@@ -141,3 +141,14 @@ test("D82 #5: on the phone an item's page says when Taska is out of reach, as th
   for (let i = 0; i < 4; i++) await page.evaluate(() => dispatchEvent(new Event('focus')))
   await expect(page.locator('#detailView [role="status"]')).toHaveText(/Offline, retrying/, { timeout: 45000 }) // once the poll in flight ends
 })
+
+test('D82 #6: Activity that cannot load says so on the desktop too, not Loading for ever', async ({
+  page,
+  request,
+}) => {
+  test.skip(!isDesk(page), 'the phone said so already')
+  const p = await project(request, LOOP)
+  await page.route('**/api/log**', (r) => r.abort())
+  await open(page, p, 'log')
+  await expect(page.locator('#toast')).toContainText("Couldn't load the change log")
+})

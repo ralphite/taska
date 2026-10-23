@@ -67,7 +67,8 @@ export function loadLog() {
       bump('project')
     },
     () => {
-      if (D.page) notLoaded('the change log', loadLog)
+      // D82 #6: on the desktop the log is a side list beside the items, not a page: it says so there too
+      if (D.page || U.side === 'log') notLoaded('the change log', loadLog)
     },
   )
 }
