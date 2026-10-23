@@ -40,6 +40,22 @@ if (missing.length) {
 }
 console.log(`Storybook: all ${comps.size} components are in stories`)
 
+// T545: and each of them is one the page really draws: reached from the page's entry (src/main.tsx) through the
+// code that names it (.storybook/reach.mjs). One that only its story draws fails: delete it with its story (R410).
+// Prototypes (src/prototypes) are not the page and are not counted.
+{
+  const { reach } = await import('./reach.mjs')
+  const reached = reach()
+  const dead = [...comps].filter(([n, f]) => !reached.has(`${f.replace(/^src\//, '')} ${n}`))
+  if (dead.length) {
+    console.error(`Storybook: ${dead.length} component(s) the page never draws, only a story (T545):`)
+    for (const [n, f] of dead) console.error(`  ${n}  (${f})`)
+    console.error('Delete each with its story and the code only it used (R410).')
+    process.exit(1)
+  }
+  console.log(`Storybook: all ${comps.size} components are drawn by the page`)
+}
+
 // T513: every icon the page uses, and where: the gallery story (Icons and marks > Icons) is drawn from this file, made
 // here from the code at every build, so it cannot miss one. A name used as an icon that is not an icon fails (the
 // type checker says so too).
