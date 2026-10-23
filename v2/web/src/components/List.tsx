@@ -100,7 +100,8 @@ export function WorkerMark({ it }: { it: Item }) {
   if (!a) return null
   const name = AGENT_NAME[a.by] || a.by,
     quiet = Date.now() - new Date(a.t).getTime()
-  const who = name + (onlySession(a.by) ? ` · ${onlySession(a.by)}` : '') // F411: which session, when it is clear
+  const ses = a.ses || onlySession(a.by) // F450: the session working on it; F411: else the only one seen lately
+  const who = name + (ses ? ` · ${ses}` : '')
   const tip = quiet > QUIET_MS ? `${who} · quiet ${agoShort(new Date(a.t).getTime())}` : `${who} is on it`
   return (
     <span

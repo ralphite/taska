@@ -18,7 +18,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Set, Tupl
 
 from . import ops, storage, views, voice
 from .core import (CLAIM_TTL, CLOSED, DOC_KEY, LETTER, PEOPLE, TR_HOLD, TYPE_OF, Doc, Err, Event, Input, Item, Msg, Op,
-                   block_key, clean_title, edit_note, md_blocks, now, stamp, user_word)
+                   block_key, clean_title, edit_note, first_line, md_blocks, now, stamp, user_word)
 
 if TYPE_CHECKING:
     from .hub import Hub
@@ -65,6 +65,9 @@ class Store:
         self.trs: Dict[str, Job] = {}  # voice notes being transcribed in the background, by file (B165): t0, done, tr, err
         self.claims: Dict[int, Tuple[str, float]] = {}  # n -> (agent, time): what /next gave an agent (F194)
         self.rule_marks: Dict[str, int] = {}  # T490: per agent session, how much of the log it has been told rules from
+        self.to_items: Set[int] = set()  # F450: items with a message addressed to a session (@name)
+        self.told: Dict[str, Set[int]] = {}  # F450: per agent session, the messages for it its /do replies have named
+        self.acted: Dict[str, Dict[int, int]] = {}  # F450: per agent session, item -> its first change or word there
         self.fwd: Dict[str, List[Tuple["Store", str]]] = {}  # file -> [(project, file)]: copies of notes whose input moved before their words came (F79, T101)
         self.db = storage.Db(self.path)
         for seq, line in self.db.events():
@@ -95,6 +98,9 @@ class Store:
                         pass
         reads = self.db.get("reads")  # F220: item -> agent -> when it last read it (the item's card, or /next giving it)
         self.reads: Dict[int, Dict[str, float]] = {int(n): dict(v) for n, v in reads.items()} if isinstance(reads, dict) else {}
+        heard = self.db.get("heard")  # F450: agent session -> item -> the last message on it that session has read
+        self.heard: Dict[str, Dict[int, int]] = ({str(k): {int(n): int(m) for n, m in v.items()} for k, v in heard.items()}
+                                                 if isinstance(heard, dict) else {})
         self.pv, self.saved = 0, 0.0  # pv: bumps when an agent turns up, starts or stops waiting
         # T293: (kind, id) -> [hash as last served, change number]; pages ask only for what changed
         self.sv: Dict[Tuple[str, Any], List[Any]] = {}
@@ -158,8 +164,10 @@ class Store:
 
     def entry(self, it: Item, e: Event, kind: str, text: str, src: Optional[str] = None, files: Optional[List[Any]] = None) -> None:
         it["thread"].append({"id": e["seq"], "by": e["by"], "kind": kind, "text": text, "t": e["t"], "src": src, "files": files or [],
-                             **({"ses": e["ses"]} if e.get("ses") else {})})
+                             **({"ses": e["ses"]} if e.get("ses") else {}), **({"to": e["to"]} if e.get("to") else {})})
         it["t1"] = e["t"]
+        if e.get("to"):
+            self.to_items.add(it["n"])
 
     def apply(self, e: Event) -> None:
         self.rev += 1
@@ -421,7 +429,16 @@ class Store:
                     d["comments"].remove(c)
                     d.setdefault("gone", {})[e["id"]] = c
         if e.get("by") and e["by"] not in PEOPLE and k in ("add", "set", "say") and e.get("n") in self.items:
-            self.items[e["n"]]["agent"] = {"by": e["by"], "t": e["t"]}  # who works on it, and since when it was last heard of (F194)
+            it_ = self.items[e["n"]]
+            a = it_.get("agent")
+            # F450: another session's message on an item a session is working on leaves the work with that session
+            if k != "say" or not a or it_["status"] != "doing" or self.ident(a["by"], a.get("ses")) == self.ident(e["by"], e.get("ses")) \
+                    or stamp(e["t"]) - stamp(a["t"]) >= CLAIM_TTL:
+                # who works on it, and since when it was last heard of (F194)
+                it_["agent"] = {"by": e["by"], "t": e["t"], **({"ses": e["ses"]} if e.get("ses") else {})}
+                if k != "say":  # F450: a change it makes (doing, done, ...) is its hold, over what /next gave someone before
+                    self.claims[e["n"]] = (self.ident(e["by"], e.get("ses")), stamp(e["t"]))
+            self.acted.setdefault(self.ident(e["by"], e.get("ses")), {}).setdefault(e["n"], e["seq"])  # F450
 
     def touches(self, e: Event) -> List[Any]:
         """The items an event changes or adds to: a change, a message, a reply, a subitem, a document, a comment."""
@@ -860,8 +877,114 @@ class Store:
         if a and it["status"] == "doing":
             t = stamp(a["t"])
             if t_now - t < CLAIM_TTL and (not best or t >= best[1]):
-                best = (a["by"], t)
+                best = (self.ident(a["by"], a.get("ses")), t)
         return best
+
+    @staticmethod
+    def ident(by: Any, ses: Any = "") -> str:
+        """F450: an agent session as the page and the agents name it, "claude-code · worker" (the agent alone without one)."""
+        ses = " ".join(str(ses or "").split())[:60]
+        return f"{by} · {ses}" if ses else str(by)
+
+    @staticmethod
+    def name_key(name: Any) -> str:
+        return "-".join(str(name).lower().split())
+
+    def known_names(self) -> List[str]:
+        """F450: the agents and sessions that called or wrote here, longest first (a session's name may have spaces)."""
+        out: Set[str] = set()
+        for k, v in self.agents.items():
+            out.add(k)
+            out.update(" ".join(str(x).split())[:60] for x in v.get("sessions") or {})
+        for e in self.events[-3000:]:
+            if e.get("by") and e["by"] not in PEOPLE:
+                out.add(e["by"])
+                if e.get("ses"):
+                    out.add(e["ses"])
+        return sorted((x for x in out if x), key=len, reverse=True)
+
+    def mentions(self, text: str) -> Tuple[List[str], List[str]]:
+        """F450: the sessions (or agents) a message names with @name, outside code -> (names, those nobody goes by yet)."""
+        plain = re.sub(r"```.*?```|`[^`\n]*`", " ", text, flags=re.S)
+        known = self.known_names()
+        keys = {self.name_key(k) for k in known}
+        names: List[str] = []
+        unknown: List[str] = []
+        for m in re.finditer(r"(?<![A-Za-z0-9_@.])@", plain):
+            rest = plain[m.end():]
+            hit = next((k for k in known if rest[:len(k)].lower() == k.lower() and not re.match(r"[A-Za-z0-9_-]", rest[len(k):len(k) + 1])), "")
+            if not hit:
+                t = re.match(r"[A-Za-z0-9_][A-Za-z0-9_.-]*", rest)
+                hit = t.group(0).rstrip(".-") if t else ""
+                if not hit:
+                    continue
+                if self.name_key(hit) not in keys and hit not in unknown:
+                    unknown.append(hit)
+            if all(self.name_key(hit) != self.name_key(x) for x in names):
+                names.append(hit)
+        return names, unknown
+
+    def addressed(self, x: Msg, by: Any, ses: str = "") -> bool:
+        """F450: a message names this agent session: by its session's name, or by the agent's (all its sessions)."""
+        to = {self.name_key(t) for t in x.get("to") or []}
+        return bool(to) and ((bool(ses) and self.name_key(ses) in to) or self.name_key(by) in to)
+
+    def calls_for(self, by: Any, ses: str = "") -> List[Tuple[Item, Msg, bool]]:
+        """F450: what other agents or sessions wrote for this session that it has not read yet, oldest first, as
+        (item, message, named it): words addressed to it (@name) on any item, and any of theirs on the items it is on."""
+        if not by or by in PEOPLE:
+            return []
+        me = self.ident(by, ses)
+        heard, acted = self.heard.get(me, {}), self.acted.get(me, {})
+        t_now = time.time()
+        maybe = self.to_items | set(self.claims) | {n for n, i in self.items.items() if i.get("agent") and i["status"] == "doing"}
+        out: List[Tuple[Item, Msg, bool]] = []
+        for n in maybe:
+            it = self.items.get(n)
+            if not it or it.get("deleted") or it["merged_into"]:
+                continue
+            c = self.claimer(it, t_now)
+            mine = bool(c and c[0] == me)
+            if not mine and n not in self.to_items:
+                continue
+            mark, took = heard.get(n, 0), acted.get(n, 0)
+            for x in reversed(it["thread"]):
+                if x["id"] <= mark:
+                    break
+                if x["by"] in PEOPLE or x.get("hidden"):
+                    continue
+                if self.ident(x["by"], x.get("ses")) == me:
+                    break  # its own word: it had read what came before
+                to_me = self.addressed(x, by, ses)
+                if to_me or (mine and x["id"] > took):  # what was said before it took the item up is not news to it
+                    out.append((it, x, to_me))
+        return sorted(out, key=lambda r: int(r[1]["id"]))
+
+    def heard_item(self, n: int, by: Any, ses: str = "") -> None:
+        """F450: an agent session read item n (its card, or /next gave it): the messages on it so far have reached it."""
+        it = self.items.get(n)
+        if not by or by in PEOPLE or not it:
+            return
+        with self.cond:
+            last = int(it["thread"][-1]["id"]) if it["thread"] else 0
+            mine = self.heard.setdefault(self.ident(by, ses), {})
+            if mine.get(n, 0) < last:
+                mine[n] = last
+                if not self.gone:
+                    self.db.put("heard", {k: {str(i): m for i, m in v.items()} for k, v in self.heard.items()})
+
+    def call_news(self, by: Any, ses: str = "") -> List[str]:
+        """F450: for a /do reply, one line for each message for this session that no reply has named to it yet."""
+        told = self.told.setdefault(self.ident(by, ses), set())
+        out: List[str] = []
+        for it, x, to_me in self.calls_for(by, ses):
+            if x["id"] in told:
+                continue
+            told.add(x["id"])
+            c = self.code(it["n"])
+            where = f"to you on {c}" if to_me else f"on {c}, which you are on"
+            out.append(f"{self.ident(x['by'], x.get('ses'))} wrote {where}: {first_line(x['text'], 120)} (GET /{c})")
+        return out
 
     @staticmethod
     def agent_name(name: Any) -> str:
@@ -1168,8 +1291,9 @@ class Store:
     def rules_text(self) -> str:
         return views.rules_text(self)
 
-    def next_text(self, ref: Optional[Callable[[str], str]] = None, who: Optional[str] = None, given: Optional[List[int]] = None) -> Tuple[str, bool]:
-        return views.next_text(self, ref, who, given)
+    def next_text(self, ref: Optional[Callable[[str], str]] = None, who: Optional[str] = None, given: Optional[List[int]] = None,
+                  ses: str = "") -> Tuple[str, bool]:
+        return views.next_text(self, ref, who, given, ses)
 
     def close(self) -> None:
         with self.lock:

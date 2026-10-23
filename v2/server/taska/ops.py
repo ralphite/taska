@@ -542,8 +542,14 @@ def run(s: "Store", op: Op, by: str, ctx: Dict[str, Any]) -> Tuple[str, Any]:
             links = [u for u in re.findall(r"https?://\S+", s.inputs[src].get("text") or "") if u not in text]
             if links:
                 text += "\n\n" + "\n".join(links)
-        s.emit({"k": "say", "n": it["n"], "by": by, "kind": kind, "text": text, "src": src, **({"files": files} if files else {}), **keep})
-        return f"ok {code} {kind}" + s.gone_note(it, by), {"ask": "Asked on ", "block": "Blocked on ", "decide": "Decided on "}.get(kind, "Noted on ") + code
+        to, unknown = s.mentions(text) if by not in PEOPLE else ([], [])  # F450: @name speaks to that agent session
+        to = [x for x in to if not s.ses or s.name_key(x) != s.name_key(s.ses)]  # not to itself
+        s.emit({"k": "say", "n": it["n"], "by": by, "kind": kind, "text": text, "src": src, **({"files": files} if files else {}),
+                **({"to": to} if to else {}), **keep})
+        sent = (" → " + ", ".join(to)) if to else ""
+        if unknown:
+            sent += f" ({', '.join(unknown)}: no session by that name has called Taska yet; it hears this once it calls with session=<that name>)"
+        return f"ok {code} {kind}{sent}" + s.gone_note(it, by),{"ask": "Asked on ", "block": "Blocked on ", "decide": "Decided on "}.get(kind, "Noted on ") + code
     if name == "merge":
         into = s.item(op.get("into", ""), ctx)
         if into["n"] == it["n"]:

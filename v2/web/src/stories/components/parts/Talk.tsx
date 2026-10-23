@@ -69,6 +69,9 @@ export const DoneReport = msg('B6', (x) => x.text.includes('**'))
 /** What the organizer added from something you said: where it comes from. */
 export const FromTheOrganizer = msg('B36', (x) => x.by === 'org')
 export const FromCodex = msg('T13', (x) => x.by === 'codex')
+/** F450: one agent session writing to another with @name: "→ worker" after who wrote it. */
+export const ToAnotherSession = msg('F1', (x) => !!x.to?.length && x.ses === 'manager')
+export const AnswerToAnotherSession = msg('F1', (x) => !!x.to?.length && x.ses === 'worker')
 /** Read by the agent after your words, no answer yet. */
 export const ReadByAgent: Story = {
   render: () => {

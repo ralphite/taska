@@ -20,6 +20,7 @@ WRITE (plain text, one command per line; indented lines continue the previous co
                                   block = you are stuck and need the user (say what you need),
                                   withdraw = take back your open ask/block (say why),
                                   propose = suggestion (not decided), decide = decision made
+  B03 say @worker <text>    to another agent session (its session= name): it gets B03 on its next /next or /do reply
   B03 merge F01             merge B03 into F01 (use only for clear duplicates)
   Messages and docs are Markdown (lists, **bold**, `code`, links). Show an image where it belongs with
   ![what it shows](f12-a.png): upload it first with

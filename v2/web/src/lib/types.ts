@@ -26,6 +26,7 @@ export interface Msg {
   files: FileRef[]
   edited?: string
   ses?: string // T458: the agent's session that wrote it
+  to?: string[] // F450: the sessions it names with @name
   change?: boolean
   hidden?: boolean
 }
@@ -57,7 +58,7 @@ export interface Item {
   t0: string
   t1: string
   by?: string | null
-  agent?: { by: string; t: string }
+  agent?: { by: string; t: string; ses?: string }
   rank?: number | null
   wait: Wait | null
   reply: boolean

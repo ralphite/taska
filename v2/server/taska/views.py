@@ -184,7 +184,8 @@ def card(s: "Store", it: Item, ref: Ref = None) -> str:
     if it["thread"]:
         out.append("thread:")
         for x in it["thread"][-30:]:
-            tag = x["by"] + (f" · {x['ses']}" if x.get("ses") else "") + ("" if x["kind"] == "say" else " " + x["kind"])
+            tag = x["by"] + (f" · {x['ses']}" if x.get("ses") else "") + ("" if x["kind"] == "say" else " " + x["kind"]) \
+                + (" → " + ", ".join(x["to"]) if x.get("to") else "")  # F450: to whom
             out.append(f"#{x['id']} {hm(x['t'])} {tag}" + (f" (edited {hm(x['edited'])})" if x.get("edited") else "") + f": {x['text']}"
                        + "".join(f" [{(ref or s.local)(f['f'])}]" for f in x.get("files", [])))
     return "\n".join(out) + "\n"
@@ -249,9 +250,9 @@ def doc_text(s: "Store", d: Doc) -> str:
     return "\n".join(out) + "\n"
 
 
-def next_text(s: "Store", ref: Ref = None, who: Optional[str] = None, given: Optional[List[int]] = None) -> Tuple[str, bool]:
-    """-> (text, has_work). who: the agent asking: items another agent is on are skipped for it (F194). given (a
-    list) gets the item whose card it holds, if any."""
+def next_text(s: "Store", ref: Ref = None, who: Optional[str] = None, given: Optional[List[int]] = None, ses: str = "") -> Tuple[str, bool]:
+    """-> (text, has_work). who: the agent asking, ses: its session (F450): items another agent session is on are
+    skipped for it (F194). given (a list) gets the item whose card it holds, if any."""
     if s.gone:
         return f"Project {s.name} was deleted: there is no work here. The user can restore it in Taska (Settings › Projects).\n", False
     auto = s.cfg["auto"]
@@ -280,17 +281,25 @@ def next_text(s: "Store", ref: Ref = None, who: Optional[str] = None, given: Opt
         if given is not None:
             given.append(back[0]["n"])
         return "\n".join(out) + f"\nresume {s.code(back[0]['n'])}: the user replied\n" + card(s, back[0], ref), True
+    calls = s.calls_for(who, ses) if who else []
+    if calls:  # F450: another agent or session wrote to this one, or on the item it is on
+        it, x, to_me = calls[0]
+        if given is not None:
+            given.append(it["n"])
+        what = "wrote to you" if to_me else "wrote on it (you are on it)"
+        return "\n".join(out) + f"\nresume {s.code(it['n'])}: {s.ident(x['by'], x.get('ses'))} {what} (#{x['id']})\n" + card(s, it, ref), True
+    me = s.ident(who, ses) if who else None
     queue = sort_queue([i for i in live if i["when"] == "now" and i["type"] in WORK_TYPES and i["status"] in ("open", "doing") and not s.waiting(i)
                         and not s.open_kids(i)])  # subitems first: the parent comes when they are finished
-    if who:  # F194: what another agent is on is theirs; each agent gets its own next item
-        theirs = [(i, c[0]) for i in queue for c in [s.claimer(i)] if c and c[0] != who]
+    if me:  # F194: what another agent (F450: or session) is on is theirs; each gets its own next item
+        theirs = [(i, c[0]) for i in queue for c in [s.claimer(i)] if c and c[0] != me]
         if theirs:
             out.append("others are on (skip): " + " ".join(f"{s.code(i['n'])} ({a})" for i, a in theirs))
             queue = [i for i in queue if all(i is not x for x, _ in theirs)]
     if queue:
         it = queue[0]
-        if who:
-            s.claims[it["n"]] = (who, time.time())
+        if me:
+            s.claims[it["n"]] = (me, time.time())
         if given is not None:
             given.append(it["n"])
         how = ("\nan idea: think it through first. Small and clear: do it. Bigger, or more than one way to go: "

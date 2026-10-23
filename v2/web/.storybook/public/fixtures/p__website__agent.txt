@@ -10,6 +10,8 @@ READ  (plain text)
                             filters: ?q=word&type=bug&pri=P0&when=now&status=all|open|doing|done|dropped&wait=1&reply=1&archived=1|all&limit=60
   curl -s BASE/B03          full card: fields, body, thread, files (image/audio paths are readable from disk)
   curl -s BASE/rules        project rules: standing instructions; follow those that apply to what you do
+                            (a rule added or changed while you work is named once in your next /next or /do reply:
+                            read it and follow it from then on)
   curl -s BASE/D1           a document: numbered paragraphs (¶) with the user's comments under each
   curl -s BASE/log?n=30     recent changes
   optional on any call: &session=<the title your app shows for this session> (or the header X-Taska-Session), so
@@ -27,6 +29,7 @@ WRITE (plain text, one command per line; indented lines continue the previous co
                                   block = you are stuck and need the user (say what you need),
                                   withdraw = take back your open ask/block (say why),
                                   propose = suggestion (not decided), decide = decision made
+  B03 say @worker <text>    to another agent session (its session= name): it gets B03 on its next /next or /do reply
   B03 merge F01             merge B03 into F01 (use only for clear duplicates)
   Messages and docs are Markdown (lists, **bold**, `code`, links). Show an image where it belongs with
   ![what it shows](f12-a.png): upload it first with

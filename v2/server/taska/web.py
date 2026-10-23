@@ -378,11 +378,14 @@ class Handler(BaseHTTPRequestHandler):
             try:
                 with s.cond:  # ?wait=N: while keep-going is on and there is nothing to do, hold until work arrives
                     who = (q.get("by") or [None])[0] if "ui" not in q else None  # each agent gets an item no other one is on (F194)
-                    text, work = s.next_text(ref, who, given)
+                    ses = self.session_of(q)  # F450: and each session of it
+                    text, work = s.next_text(ref, who, given, ses)
                     while not work and s.cfg["auto"] and not s.gone and time.time() < end:  # a deleted project lets its agents go (F173)
                         s.cond.wait(timeout=end - time.time())
                         given = []
-                        text, work = s.next_text(ref, who, given)
+                        text, work = s.next_text(ref, who, given, ses)
+                    if given and who:  # F450: the card it was given holds what other sessions wrote there
+                        s.heard_item(given[-1], who, ses)
             finally:
                 if q.get("wait"):
                     s.saw(by, -1)
@@ -450,6 +453,8 @@ class Handler(BaseHTTPRequestHandler):
                 else:
                     it = s.item(ref_, follow=False)
                     self.send(200, s.card(it, ref))
+                    if "ui" not in q:
+                        s.heard_item(it["n"], by, self.session_of(q))  # F450
             if it is not None and "ui" not in q:  # F220: an agent read the item, and so your words on it
                 s.read_item(it["n"], by)
         else:
@@ -554,14 +559,17 @@ class Handler(BaseHTTPRequestHandler):
             ses = self.session_of(q) if by not in PEOPLE else ""
             if by not in PEOPLE:
                 s.saw(by, 0, ses)
+            with s.lock:  # F450: what other sessions wrote for it before these commands (its own words there come after)
+                calls = s.call_news(by, ses) if by not in PEOPLE else []
             lines, _ = s.run_all(parse_dsl(text), by, ses=" ".join(ses.split())[:60])
             tail = "GET /next to continue" if s.cfg["auto"] else "stop after the current item"
             with s.lock:
                 news = s.news_for(by) if by not in PEOPLE else []
                 rules = s.rule_news(by, ses) if by not in PEOPLE else []  # T490
+                calls += s.call_news(by, ses) if by not in PEOPLE else []
             note = (f"\n{len(news)} new input{'s' if len(news) != 1 else ''} since your last /next: {' '.join(news)}."
                     " Finish the step you are on, then GET /next.") if news else ""
-            note += "".join("\n" + r for r in rules)
+            note += "".join("\n" + r for r in rules + calls)
             self.send(200, "\n".join(lines) + f"\nrev {s.rev} · {s.mode()}: {tail}{note}\n")
         elif p == "/api/op":
             data = json.loads(self.body(MAX_FILE) or b"{}")
