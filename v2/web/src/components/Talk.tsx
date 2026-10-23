@@ -41,7 +41,7 @@ import {
   useArea,
   type Job,
 } from '../lib/state'
-import type { Doc, FileRef, Input, Item, Msg } from '../lib/types'
+import type { Comment, Doc, FileRef, Input, Item, Msg } from '../lib/types'
 import { clean, groups, hasChoices, mdHtml, plainQuote } from '../lib/markdown'
 import { audioOf } from '../lib/audio'
 import { ticksNotSent } from '../lib/doctick'
@@ -867,12 +867,15 @@ export function docNotes(n: number, from = ''): Note[] {
     .flatMap((d) => [
       ...d.blocks.flatMap((b) => b.comments.map((c) => ({ c, d, key: b.key }))),
       ...(d.whole || []).map((c) => ({ c, d, key: 'doc' })),
-      ...d.detached.flatMap((t) => t.comments.map((c) => ({ c, d, key: t.key }))),
+      ...d.detached.flatMap((t) => t.comments.map((c) => ({ c, d, key: t.key, changed: true }))),
     ])
     .filter(({ c }) => c.t && (!from || c.t >= from))
     .sort((a, b) => a.c.t.localeCompare(b.c.t))
-    .map(({ c, d, key }) => {
+    .map(({ c, d, key, changed }: { c: Comment; d: Doc; key: string; changed?: boolean }) => {
       const you = c.by === 'you',
+        // D80 #14: the words it is about were changed in the document since: the quote struck through, and said, as the
+        // document says it of them (the phone's own list of such comments)
+        gone = changed ? <span className="shrink-0">· Original text changed</span> : null,
         // T529: its padding only gives the pointer's background room; the words sit as far apart as the line's others
         where = (
           <button
@@ -890,7 +893,7 @@ export function docNotes(n: number, from = ''): Note[] {
             data-act="doc-at"
             data-d={d.d}
             data-key={key}
-            className={`mb-1.5 line-clamp-3 block w-full border-l-2 pl-2 text-left text-[13px] leading-snug ${
+            className={`mb-1.5 line-clamp-3 block w-full border-l-2 pl-2 text-left text-[13px] leading-snug ${changed ? 'line-through' : ''} ${
               you
                 ? 'border-white/50 text-white/85'
                 : 'border-zinc-300 text-zinc-500 dark:border-zinc-600 dark:text-zinc-400'
@@ -922,7 +925,7 @@ export function docNotes(n: number, from = ''): Note[] {
               <span className="flex max-w-full min-w-0 items-center gap-0.5 px-1">
                 <Icon n="comment" c="size-3 shrink-0" />
                 <span className="min-w-0 truncate">
-                  You · {where} · {when(c.t)}
+                  You · {where} · {when(c.t)} {gone}
                 </span>
               </span>
             </div>
@@ -935,6 +938,7 @@ export function docNotes(n: number, from = ''): Note[] {
               <Icon n="comment" c="size-3 shrink-0" />
               {where}
               <span className="shrink-0">{when(c.t)}</span>
+              {gone}
             </div>
             <div className="w-full rounded-2xl rounded-tl-md border border-zinc-200 bg-zinc-50 px-4 py-3 text-[15px] leading-relaxed text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200">
               {quote}

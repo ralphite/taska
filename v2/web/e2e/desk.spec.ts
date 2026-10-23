@@ -316,3 +316,29 @@ test('a comment count outlines its part while pointed at and while open; a press
   await frame.locator('#b').click({ position: { x: 3, y: 3 } }) // a press in the page closes it too (left of the comments)
   await expect(pop).toHaveCount(0)
 })
+
+test('D80 #14: a comment on words since changed in the document says so in the talk, as the document does: its quote struck through, Original text changed', async ({
+  page,
+  request,
+}) => {
+  const p = await project(request, {
+    ...LOOP,
+    then: `${LOOP.then}T4 doc The plan
+  First part of the plan, long enough to fill a line of the page with words.
+
+  Second part of the plan.
+`,
+  })
+  await open(page, p, 'D1')
+  const key = await page
+    .locator('#docBlocks section[data-key]')
+    .filter({ hasText: 'First part' })
+    .getAttribute('data-key')
+  await request.post(`${p.url}api/op`, { data: { op: 'dc', d: 1, key, quote: '', text: 'Who signs it off?' } })
+  await p.doAs('D1 doc The plan\n  A new first part, other words.\n\n  Second part of the plan.\n')
+  await open(page, p, 'T4')
+  const talk = page.locator('#itemTalk')
+  await expect(talk).toContainText('Who signs it off?')
+  await expect(talk).toContainText('Original text changed')
+  await expect(talk.locator('[data-act="doc-at"].line-through')).toHaveCount(1)
+})
