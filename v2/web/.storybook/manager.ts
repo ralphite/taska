@@ -2,10 +2,10 @@
 // F528: every component story shows the desktop and the phone at once, so the toolbar has no screen-size picker; light
 // or dark is one button that switches between them.
 import { addons, types, useGlobals } from 'storybook/manager-api'
-import { IconButton } from 'storybook/internal/components'
+import { Badge, IconButton } from 'storybook/internal/components'
 import { CHANNEL_WS_DISCONNECT } from 'storybook/internal/core-events'
 import { MoonIcon, SunIcon } from '@storybook/icons'
-import { createElement } from 'react'
+import { createElement, useEffect, useState } from 'react'
 
 addons.setConfig({
   showPanel: false,
@@ -35,6 +35,36 @@ addons.register('taska/scheme', () => {
     title: 'Light or dark',
     match: ({ viewMode }) => viewMode === 'story',
     render: SchemeButton,
+  })
+})
+
+// B537: Storybook draws the code as it is now; live Taska runs its last ship. When live Taska is behind, the toolbar
+// says so (asked of Storybook's server each minute, .storybook/live-version.ts); nothing shows when they are the same.
+function LiveBehind() {
+  const [behind, setBehind] = useState(0)
+  useEffect(() => {
+    const ask = () =>
+      fetch('/taska-live.json', { cache: 'no-store' })
+        .then((r) => r.json())
+        .then((d: { behind: number | null }) => setBehind(d.behind || 0))
+        .catch(() => {})
+    ask()
+    const t = setInterval(ask, 60_000)
+    return () => clearInterval(t)
+  }, [])
+  if (!behind) return null
+  return createElement(
+    'span',
+    { title: 'Storybook 显示的是现在的代码；线上 Taska 下次上线后才一样' },
+    createElement(Badge, { status: 'warning' }, `线上 Taska 还是旧版本（差 ${behind} 个提交）`),
+  )
+}
+addons.register('taska/live-behind', () => {
+  addons.add('taska/live-behind/tool', {
+    type: types.TOOL,
+    title: 'Live Taska behind',
+    match: () => true,
+    render: LiveBehind,
   })
 })
 

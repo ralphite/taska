@@ -1,6 +1,7 @@
 import type { StorybookConfig } from '@storybook/react-vite'
 import { readFileSync } from 'node:fs'
 import './heal-index' // B517: the story list mends itself when story files move
+import { liveVersionRoute } from './live-version'
 
 // T457: the page's body classes (index.html), for the component stories' frame
 const BODY = /<body class="([^"]*)"/.exec(readFileSync(new URL('../index.html', import.meta.url), 'utf8'))?.[1] || ''
@@ -16,6 +17,8 @@ const config: StorybookConfig = {
   // (each agent's commit, in any worktree) and walked the module graph again; and nothing is sent home
   features: { changeDetection: false },
   core: { disableTelemetry: true },
+  // B537: how far live Taska is behind the code Storybook draws, for the notice in Storybook's toolbar
+  experimental_devServer: (app) => liveVersionRoute(app),
   // the page's service worker is not Storybook's: leave the PWA plugin out of it
   viteFinal: (config) => ({
     ...config,
