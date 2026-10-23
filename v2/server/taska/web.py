@@ -344,7 +344,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self.json({"key": hub.push.public, "on": hub.push.has((q.get("endpoint") or [""])[0])})
             gone = re.fullmatch(r"/p/([a-z0-9][a-z0-9-]*)(/.*)?", p)
             if gone and gone.group(1) not in hub.projects and "text/html" in (self.headers.get("Accept") or ""):  # B287: a person opening a project that is gone lands on the home page, which says so
-                return self.redirect("/?gone=" + gone.group(1) if os.path.isdir(os.path.join(hub.trash, gone.group(1))) else "/")
+                # D82 #4: deleted, it can be restored there; never there, the home page says only that
+                return self.redirect(("/?gone=" if os.path.isdir(os.path.join(hub.trash, gone.group(1))) else "/?none=") + gone.group(1))
             s, sub, base = self.project(p)
             if sub == "":
                 return self.redirect(p + "/")

@@ -66,6 +66,8 @@ export function Home() {
   const [np, setNp] = useState(false)
   const [npErr, setNpErr] = useState('')
   const [gone, setGone] = useState(() => new URLSearchParams(location.search).get('gone'))
+  // D82 #4: a project that never was (an old or mistyped link): said so, nothing to restore
+  const [none, setNone] = useState(() => new URLSearchParams(location.search).get('none'))
   const [goneText, setGoneText] = useState('')
   const qRef = useRef<HTMLInputElement>(null),
     npRef = useRef<HTMLInputElement>(null)
@@ -83,7 +85,7 @@ export function Home() {
     )
   useEffect(() => {
     load().catch(() => {})
-    if (gone) history.replaceState(null, '', '/')
+    if (gone || none) history.replaceState(null, '', '/')
     const show = (e: PageTransitionEvent) => {
       if (e.persisted) void load()
     } // back from a project: fresh counts
@@ -219,6 +221,21 @@ export function Home() {
             aria-label="Close"
             onClick={() => setGone(null)}
             className="grid size-9 shrink-0 place-items-center rounded-lg text-amber-800 hover:bg-amber-100 dark:text-amber-200 dark:hover:bg-amber-400/15"
+          >
+            ✕
+          </button>
+        </div>
+      ) : null}
+      {none ? (
+        <div
+          id="none"
+          className="mb-3 flex items-center gap-3 rounded-xl bg-zinc-100 px-4 py-3 text-sm text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100"
+        >
+          <span className="min-w-0 flex-1">There is no project “{none}”. Pick one below.</span>
+          <button
+            aria-label="Close"
+            onClick={() => setNone(null)}
+            className="grid size-9 shrink-0 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-200 dark:text-zinc-400 dark:hover:bg-zinc-700"
           >
             ✕
           </button>

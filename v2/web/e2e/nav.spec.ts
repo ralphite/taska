@@ -111,3 +111,20 @@ test("D77 #1 #2, D82 #1-3: an item's address reloaded says Loading in its place 
     await expect(page).toHaveURL(new RegExp(`/${what}$`))
   }
 })
+
+test('D82 #4: a link to a project that never was says only that it is not there; a deleted one offers Restore', async ({
+  page,
+  request,
+}) => {
+  const p = await project(request, LOOP)
+  const none = 'no-such-project-' + p.name
+  await page.goto(`/p/${none}/`)
+  await expect(page.locator('#none')).toContainText(`There is no project “${none}”`)
+  await expect(page.locator('#goneRestore')).toHaveCount(0)
+  await request.post('/api/projects/delete', { data: { name: p.name } })
+  await page.goto(p.url)
+  await expect(page.locator('#gone')).toContainText(p.name)
+  await expect(page.locator('#goneRestore')).toBeVisible()
+  await page.locator('#goneRestore').click()
+  await expect(page).toHaveURL(new RegExp(`/p/${p.name}/`))
+})

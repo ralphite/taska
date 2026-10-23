@@ -340,8 +340,10 @@ export async function load() {
   )
   if (g !== gen) return
   if (/^project \S+ was deleted/.test(text) || /^no project /.test(text)) {
+    // D82 #4: a deleted project can be restored there; one that never was is only said to be not there
+    const was = /^project \S+ was deleted/.test(text) ? 'gone' : 'none'
     if (!U.leaving)
-      void import('./switch').then(({ navigate }) => navigate('/?gone=' + encodeURIComponent(ctx.HERE), true))
+      void import('./switch').then(({ navigate }) => navigate(`/?${was}=${encodeURIComponent(ctx.HERE)}`, true))
     return
   }
   applyState(JSON.parse(text) as State & { delta?: number })
