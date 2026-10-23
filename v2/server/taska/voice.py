@@ -283,6 +283,34 @@ def voice_gated(path: Optional[str], mime: str) -> float:
     return sum(1 for f in frames[voiced[0]:voiced[-1] + 1] if not any(f)) * 0.05
 
 
+AUDIO_EXT = {"audio/mp4": ".m4a", "audio/x-m4a": ".m4a", "audio/m4a": ".m4a", "audio/aac": ".aac", "audio/mpeg": ".mp3",
+             "audio/wav": ".wav", "audio/x-wav": ".wav", "audio/ogg": ".ogg"}
+
+
+def voice_louder(data: bytes, mime: str) -> Optional[bytes]:
+    """B494: a note spoken far from the microphone, so quiet the speech model hears nobody: brought up to the loudness
+    of normal speech (ffmpeg's loudnorm), as Opus in WebM. None when there is no sound in it at all, or no ffmpeg."""
+    tool = shutil.which("ffmpeg")
+    if not tool:
+        return None
+    with tempfile.TemporaryDirectory() as d:
+        src, out = os.path.join(d, "in" + AUDIO_EXT.get(mime.split(";")[0], ".webm")), os.path.join(d, "out.webm")
+        try:
+            with open(src, "wb") as f:
+                f.write(data)
+            r = subprocess.run([tool, "-hide_banner", "-i", src, "-af", "volumedetect", "-f", "null", "-"], capture_output=True,
+                               text=True, timeout=60)
+            m = re.search(r"max_volume: (-?[\d.]+) dB", r.stderr)
+            if not m or float(m.group(1)) < -45:  # silence, or nothing above a breath: nothing was said
+                return None
+            subprocess.run([tool, "-hide_banner", "-loglevel", "error", "-y", "-i", src, "-af", "loudnorm=I=-18:TP=-2", "-c:a",
+                            "libopus", out], capture_output=True, timeout=120, check=True)
+            with open(out, "rb") as f:
+                return f.read() or None
+        except (OSError, subprocess.SubprocessError, ValueError):
+            return None
+
+
 def traditional(text: Optional[str]) -> List[str]:
     """The Traditional characters in text: CJK ones that GB2312 (Simplified) cannot encode but Big5 can."""
     out = []
@@ -563,6 +591,16 @@ def transcribe(store: "Store", data: bytes, mime: str, scope: Optional[int], pat
         calls.append(lambda: capped(lambda: voice_main(audio, prompt, PRO_MODEL), PRO_CAP, "the strong model", times, "pro", slow))
     (tr, err), (alt, alt_err), *pro = together(*calls)
     out = {"tr": "", "tr_by": "asr", "times": times, **({"gated": True} if gated else {})}
+    if alt_err is None and not alt:  # B494: heard nobody: said too quietly? once more, made loud enough to hear
+        louder = voice_louder(data, mime)
+        if louder:
+            loud = {"inline_data": {"mime_type": "audio/webm", "data": base64.b64encode(louder).decode()}}
+            (tr, err), (alt, alt_err) = together(
+                lambda: capped(lambda: voice_main(loud, prompt), VOICE_CAP, "the main model, louder", times, "main_loud"),
+                lambda: capped(lambda: voice_asr(loud, vocab), VOICE_CAP, "the speech model, louder", times, "asr_loud"))
+            pro = []  # the strong model heard the quiet note: its words are not the louder note's
+            if alt:
+                out["louder"] = True
     if err:
         out["main_error"] = str(err)
     if alt_err:
