@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react'
 import {
   DC_BTN,
-  DONE_OTHER,
+  DONE_OTHER_BTN,
   DONE_PICK,
   HIT,
   KIND,
@@ -335,7 +335,7 @@ export function NeedFrame({
   )
 }
 // F427, F428: Approve or Accept as well as answering; inside the question's card, answered or not
-export const KeepBtn = ({ it }: { it: Item }) =>
+export const KeepBtn = ({ it, quiet = false }: { it: Item; quiet?: boolean }) =>
   it.decided &&
   it.status !== it.decided.from &&
   (lastAgentMsg(it)?.id ?? null) === it.decided.msg &&
@@ -352,12 +352,13 @@ export const KeepBtn = ({ it }: { it: Item }) =>
           : 'Not yet'}
     </span>
   ) : it.status === 'proposed' ? (
-    <button data-act="status" data-n={it.n} data-v="open" className={SECOND}>
+    // B485 (quiet): you answered or replied instead: what you did stands out, Approve waits quietly beside it
+    <button data-act="status" data-n={it.n} data-v="open" className={quiet ? DONE_OTHER_BTN : SECOND}>
       <Icon n="thumb" c="size-4" />
       Approve
     </button>
   ) : it.status === 'review' ? (
-    <button data-act="status" data-n={it.n} data-v="done" className={SECOND}>
+    <button data-act="status" data-n={it.n} data-v="done" className={quiet ? DONE_OTHER_BTN : SECOND}>
       <Icon n="check" c="size-4" sw="2.25" />
       Accept
     </button>
@@ -521,8 +522,9 @@ function Answered({ x, gid, done }: { x: Msg; gid: string; done: string[] }) {
       foot={
         <>
           {/* F428, R369 review: the buttons stay where they were; Send answer is now the grey Submitted */}
-          {it && answeredLast(it) && lastAgentMsg(it)?.id === x.id ? <KeepBtn it={it} /> : null}
-          <span className={`${done.length ? DONE_PICK : DONE_OTHER} flex-[1.4] font-semibold lg:flex-none`}>
+          {it && answeredLast(it) && lastAgentMsg(it)?.id === x.id ? <KeepBtn it={it} quiet /> : null}
+          {/* B485: replying instead of picking is what you did: it stands out as a pick does */}
+          <span className={`${DONE_PICK} flex-[1.4] font-semibold lg:flex-none`}>
             <Icon n={done.length ? 'check' : 'reply'} c="size-4" sw="2.25" />
             {done.length ? 'Submitted' : 'Skipped · you replied'}
             <span className="invisible">

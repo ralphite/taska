@@ -64,6 +64,9 @@ const DONE_BASE =
 export const DONE_PICK =
   DONE_BASE + ' border-transparent bg-zinc-200 text-zinc-700 dark:bg-zinc-700/70 dark:text-zinc-200'
 export const DONE_OTHER = DONE_BASE + ' border-zinc-200 text-zinc-400 dark:border-zinc-800 dark:text-zinc-500'
+// B485: what you did not choose, still a button: quiet like the other, and itself again under the pointer
+export const DONE_OTHER_BTN =
+  'inline-flex h-11 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-zinc-200 px-4 text-[15px] font-medium text-zinc-400 hover:border-zinc-300 hover:bg-white hover:text-zinc-700 dark:border-zinc-800 dark:text-zinc-500 dark:hover:border-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200'
 export const MODIFY_LINK =
   '-my-2 h-9 shrink-0 rounded-lg px-2.5 text-sm font-semibold text-blue-600 hover:bg-blue-50 lg:opacity-0 lg:group-hover/form:opacity-100 lg:focus-visible:opacity-100 dark:text-blue-400 dark:hover:bg-blue-400/10'
 export const CHIP = `${HIT} flex h-8 items-center gap-1.5 rounded-lg bg-zinc-100 px-2.5 text-[13px] hover:bg-zinc-200/70 dark:bg-zinc-800/80 dark:hover:bg-zinc-700/80`

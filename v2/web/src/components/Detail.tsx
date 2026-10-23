@@ -218,11 +218,12 @@ export function NeedsCard({ it, onCard = false }: { it: Item; onCard?: boolean }
       `${name} ${it.status === 'proposed' ? 'proposed this' : 'finished this'}`,
       m && !it.reply ? <MsgText x={m} gid={'card' + n} whole /> : null,
       <>
-        <span className={`${DONE_OTHER} flex-1 font-semibold lg:flex-none`}>
+        {/* B485: what you did (you replied) stands out; Approve / Accept waits quietly, itself again under the pointer */}
+        <span className={`${DONE_PICK} flex-1 font-semibold lg:flex-none`}>
           <Icon n="reply" c="size-4" sw="2.25" />
           Skipped · you replied
         </span>
-        <KeepBtn it={it} />
+        <KeepBtn it={it} quiet />
       </>,
     )
   if (it.status === 'proposed')
