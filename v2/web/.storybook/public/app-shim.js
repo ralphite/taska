@@ -102,6 +102,43 @@
       void ac.resume().catch(() => {})
       return out.stream
     }
+  // T456: a story that plays itself has had no tap in its page, and the browser keeps sound stopped until one comes
+  // (the tone above is then silent, the recording empty). So the stand-in speaks on: the page's level meter reads a
+  // voice's rise and fall, and a recording that got nothing holds one of the demo's voice notes. With sound running
+  // (you tapped), both are the real tone's.
+  if (window.AnalyserNode) {
+    const read = AnalyserNode.prototype.getByteTimeDomainData
+    AnalyserNode.prototype.getByteTimeDomainData = function (buf) {
+      if (this.context.state === 'running') return read.call(this, buf)
+      const t = performance.now() / 1000
+      // syllables about four a second, words in groups, a short breath every few seconds
+      const level = Math.max(0, Math.sin(t * 7.3) * 0.5 + Math.sin(t * 2.1 + 1) * 0.35 + 0.25) * (t % 3.4 < 0.35 ? 0.1 : 1)
+      for (let i = 0; i < buf.length; i++) buf[i] = 128 + Math.round((Math.random() * 2 - 1) * 70 * level)
+    }
+  }
+  if (window.MediaRecorder) {
+    const note = fetch(FX + 'p__shop__f__f3-voice_0-08.webm')
+      .then((r) => r.blob())
+      .catch(() => null)
+    let held = null
+    void note.then((b) => (held = b))
+    const Real = window.MediaRecorder
+    window.MediaRecorder = class extends Real {
+      constructor(...a) {
+        super(...a)
+        this.got = 0
+        this.addEventListener('dataavailable', (e) => (this.got += e.data.size))
+      }
+      stop() {
+        if (!this.got && held && this.state !== 'inactive') {
+          const e = new Event('dataavailable')
+          e.data = held
+          this.dispatchEvent(e)
+        }
+        super.stop()
+      }
+    }
+  }
 
   // The stories share their address with your Taska: they get storage of their own, so they never read or change
   // your drafts, views or settings, and start the same every time.

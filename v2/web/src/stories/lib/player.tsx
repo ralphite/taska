@@ -17,6 +17,8 @@ export interface Ctx {
   /** type words into the box, letter by letter */
   type: (text: string) => Promise<void>
   wait: (ms: number) => Promise<void>
+  /** a prototype has drawn its parts on the page: show it (until then the frame is blank, with `veil`) */
+  show: () => void
 }
 export type Script = (c: Ctx) => Promise<void>
 
@@ -39,31 +41,46 @@ function mark(doc: Document) {
       boxShadow: '0 0 0 6px rgba(255, 255, 255, 0.7)',
       pointerEvents: 'none',
       opacity: '0',
-      transition: 'left 450ms ease, top 450ms ease, opacity 200ms ease, transform 160ms ease',
+      // T456: it shows where the finger lands, never sliding there from the last tap
+      transition: 'opacity 200ms ease, transform 160ms ease',
     })
     doc.body.append(m)
   }
   return m
 }
 
-// the phone, or (F479) the desktop, scaled down to the room there is
-const SIZE = { phone: [393, 760], desktop: [1440, 900] } as const
+/** The page inside, the moment its list is drawn (nothing more to wait for: it is not shown yet) */
+async function listIn(canvas: HTMLElement) {
+  const f = canvas.querySelector('iframe')
+  for (let i = 0; i < 300 && !f?.contentDocument?.querySelector('#list [data-n]'); i++) await wait(30)
+  await new Promise((r) => requestAnimationFrame(r))
+  return f
+}
+
+// the phone, or (F479) the desktop, scaled down to the room there is; T456: the prototypes' phone is the whole
+// iPhone screen (393x852)
+const SIZE = { phone: [393, 760], iphone: [393, 852], desktop: [1440, 900] } as const
 export function Player({
   path,
   script,
   scheme,
   on = 'phone',
+  veil = false,
 }: {
   path: string
   script: Script
   scheme: string
   on?: keyof typeof SIZE
+  /** T456: a prototype changes the page before you see it: the page shows once its script calls show(), never
+   * first as it was and then changed in front of you */
+  veil?: boolean
 }) {
   const [W, H] = SIZE[on]
   const box = useRef<HTMLDivElement>(null)
   const [line, setLine] = useState('') // #5879: no "Starting" while the page loads: the first step says itself
   const [run, setRun] = useState(0)
   const [done, setDone] = useState(false)
+  const [hidden, setHidden] = useState(veil)
   const [auto, setAuto] = useState(true)
   const autoNow = useRef(true)
   // the frame as tall as the room holds with the bar under it, fixed once: it never moves or changes size
@@ -74,12 +91,14 @@ export function Player({
     let stop = false
     const go = async () => {
       setDone(false)
-      const f = box.current && (await pageIn(box.current))
+      setHidden(veil)
+      const f = box.current && (await (veil ? listIn(box.current) : pageIn(box.current)))
       const doc = f?.contentDocument
       if (!doc || stop) return
       const c: Ctx = {
         doc,
         wait: (ms) => (stop ? new Promise<void>(() => {}) : (wait(ms) as Promise<void>)),
+        show: () => !stop && setHidden(false),
         say: (t) => !stop && setLine(t),
         find: async (sel, text) => {
           for (let i = 0; i < 60; i++) {
@@ -141,7 +160,7 @@ export function Player({
     return () => {
       stop = true
     }
-  }, [run, script])
+  }, [run, script, veil])
   // R488, r679: the page in a frame of a fixed size (a phone), the words under it with room between; nothing moves
   // or changes size while it plays
   return (
@@ -153,7 +172,7 @@ export function Player({
         <div
           ref={box}
           key={run}
-          className="[&_iframe]:h-full"
+          className={`[&_iframe]:h-full ${hidden ? 'opacity-0' : ''}`}
           style={{ width: W, height: H, transform: `scale(${scale})`, transformOrigin: '0 0' }}
         >
           <App path={path} scheme={scheme} />
