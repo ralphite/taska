@@ -623,8 +623,10 @@ export function ItemPage({ it, left = null, bare = false }: { it: Item; left?: R
         ref={talkRef}
         onScroll={(e) => moreBelow(e.currentTarget)}
         // B495: in two columns they run to the bottom of the screen, so the line between them is one line from top to
-        // bottom; the talk ends clear above the box
-        className={`lg:min-h-0 lg:flex-1 lg:scrollbar-thin lg:overflow-y-auto lg:data-up:mask-t-from-[calc(100%-2rem)] ${duo ? 'lg:h-full lg:min-w-0 lg:pb-[calc(var(--foot-h,0px)+1.5rem)]' : ''}`}
+        // bottom; the talk ends clear above the box. #6915 (F478): in one column the talk runs on under the box too (its
+        // words show around the box's top corners in dark; in light the strip covers them), through the body's room for
+        // the box, and its own padding keeps its end where it was
+        className={`lg:min-h-0 lg:flex-1 lg:scrollbar-thin lg:overflow-y-auto lg:data-up:mask-t-from-[calc(100%-2rem)] ${duo ? 'lg:h-full lg:min-w-0 lg:pb-[calc(var(--foot-h,0px)+1.5rem)]' : 'lg:-mb-(--foot-h) lg:pb-(--foot-h) dark:lg:-mb-[calc(var(--foot-h,0px)+1.5rem)] dark:lg:pb-[calc(var(--foot-h,0px)+1.5rem)]'}`}
       >
         <div className="flex flex-col gap-6 lg:mx-auto lg:w-full lg:max-w-[46rem] lg:px-8 lg:py-6">
           <ItemTalk it={it} />

@@ -51,6 +51,34 @@ test('r469 #6715: in light the talk of an item in one column runs down to the st
   expect(t.y + t.height, 'the talk ends at the strip, not above it').toBeGreaterThanOrEqual(f.y - 1)
 })
 
+test('#6915 r711 r712: in dark the talk of an item in one column runs on under the box as in two columns: its words show above the box, and its end stays clear of it (F478)', async ({
+  page,
+  request,
+}) => {
+  test.skip(!isDesk(page), 'one column with its talk under the item is the desktop\u2019s')
+  await page.emulateMedia({ colorScheme: 'dark' })
+  const p = await project(request, LOOP)
+  for (let i = 0; i < 14; i++)
+    await p.doAs(`T1 say A long talk, message ${i + 1}, so that it scrolls behind the box.\n`)
+  await open(page, p, 'T1')
+  await expect(page.locator('#app')).not.toHaveAttribute('data-duo', '')
+  const talk = page.locator('#itemTalk')
+  await talk.evaluate((e) => (e.scrollTop = (e.scrollHeight - e.clientHeight) / 2))
+  const under = await page.evaluate(() => {
+    const b = (document.getElementById('composer') as HTMLElement).getBoundingClientRect(),
+      t = document.getElementById('itemTalk') as HTMLElement
+    // just above the box, beside its rounded corner: what is there is the talk, seen through the foot
+    return document.elementsFromPoint(b.left + 3, b.top - 2).some((e) => t.contains(e))
+  })
+  expect(under, 'the talk is what shows just above the box').toBe(true)
+  await talk.evaluate((e) => (e.scrollTop = e.scrollHeight))
+  const gap = await page.evaluate(() => {
+    const last = document.getElementById('itemTalk')?.firstElementChild?.lastElementChild as HTMLElement
+    return (document.getElementById('foot') as HTMLElement).getBoundingClientRect().top - last.getBoundingClientRect().bottom
+  })
+  expect(gap, 'at the end the last message is clear above the box').toBeGreaterThanOrEqual(20)
+})
+
 test('r514: there is no New rule: the box never offers to write a rule', async ({ page, request }) => {
   const p = await project(request, LOOP)
   for (const at of ['', 'rules', 'T1']) {
