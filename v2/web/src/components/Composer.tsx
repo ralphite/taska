@@ -478,11 +478,14 @@ async function draftFixSave(redraw: () => void) {
   const before = t.value
   U.fixEd = null
   if (!x || !right || right === x.wrong || before.slice(x.s, x.e) !== x.wrong) return redraw()
+  let note = ''
   for (const f of U.files) {
     // the voice note's words keep their stretch
     const at = f.trAdded ? before.indexOf(f.trAdded) : -1
-    if (f.trAdded && at >= 0 && x.s >= at && x.e <= at + f.trAdded.length)
+    if (f.trAdded && at >= 0 && x.s >= at && x.e <= at + f.trAdded.length) {
       f.trAdded = f.trAdded.slice(0, x.s - at) + right + f.trAdded.slice(x.e - at)
+      note = f.f || ''
+    }
   }
   t.value = before.slice(0, x.s) + right + before.slice(x.e)
   saveDraft()
@@ -499,7 +502,9 @@ async function draftFixSave(redraw: () => void) {
     /* none known */
   }
   try {
-    await setFix({ wrong: x.wrong, right })
+    // T487: the server logs the fix for developers, with where it was heard
+    const n = scopeN()
+    await setFix({ wrong: x.wrong, right, project: ctx.HERE, item: n ? code(n) : '', file: note })
   } catch {
     return
   } // setFix said why; the draft keeps your words
@@ -511,7 +516,7 @@ async function draftFixSave(redraw: () => void) {
       grow()
       BUMP()
     }
-    await setFix(had ? { wrong: x.wrong, right: had.right } : { wrong: x.wrong })
+    await setFix(had ? { wrong: x.wrong, right: had.right, undo: true } : { wrong: x.wrong })
   })
 }
 const BUMP = () => bump('composer')

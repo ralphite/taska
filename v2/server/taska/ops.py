@@ -13,6 +13,8 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple
 
 from .core import (CLOSED, DOC_KEY, KINDS, LETTER, MAX_OPS, MAX_TEXT, PEOPLE, PRIS, STATUSES, WHENS, Err, Item, Op,
                    block_key, md_blocks, title_of)
+from .logs import voicefix
+from .voice import AUDIO_MIME, voice_saved
 
 if TYPE_CHECKING:
     from .store import Store
@@ -125,6 +127,18 @@ def field(s: "Store", f: str, v: Any, ctx: Optional[Dict[str, Any]] = None, me: 
     return v
 
 
+def code_of(s: "Store", n: Optional[int]) -> Optional[str]:
+    it = s.items.get(n) if n is not None else None
+    return f"{LETTER[it['type']]}{it['n']}" if it else None
+
+
+def heard_in(s: "Store", inp: Dict[str, Any], wrong: str) -> Optional[str]:
+    """T487: the input's voice note whose words held `wrong` (all its voice notes when none of them says)."""
+    notes = [f["f"] for f in inp["files"] if os.path.splitext(f["f"])[1].lower() in AUDIO_MIME]
+    said = [f for f in notes if wrong in " ".join(str(v) for k, v in (voice_saved(s, f) or {}).items() if k in ("tr", "heard"))]
+    return " ".join(said or notes) or None
+
+
 def op_files(s: "Store", op: Op) -> List[Dict[str, Any]]:
     """The uploaded files an op brings along, checked to exist."""
     files: List[Dict[str, Any]] = []
@@ -170,6 +184,8 @@ def run(s: "Store", op: Op, by: str, ctx: Dict[str, Any]) -> Tuple[str, Any]:
             raise Err(f"{rid} does not say that")
         if s.hub:
             s.hub.correct(wrong, right)
+        voicefix(wrong, right, project=s.name, item=code_of(s, inp["scope"]), input=rid, who=by, via="input",
+                 file=heard_in(s, inp, wrong))
         op, name = {"op": "amend", "id": rid, "mode": "edit", "v": op.get("v"), "text": inp["text"].replace(wrong, right)}, "amend"
     if name == "amend":
         rid = str(op.get("id") or "")

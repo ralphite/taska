@@ -647,7 +647,7 @@ export async function sendCorrect() {
     if (r && before != null && r.text !== before) {
       await op({ op: 'amend', id: c.id, mode: 'edit', v: r.v || 0, text: before }, undefined, at)
     }
-    await setFix(had ? { wrong: c.wrong, right: had.right } : { wrong: c.wrong })
+    await setFix(had ? { wrong: c.wrong, right: had.right, undo: true } : { wrong: c.wrong })
     toast(`Put back “${c.wrong}” in ${c.id}${had ? '' : ', and forgot the spelling'}`)
   })
   toast(`Fixed ${c.id}. Voice notes will use “${right}”`, run)

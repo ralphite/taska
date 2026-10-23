@@ -5,6 +5,16 @@
 
 The page logs too: it sends its records to POST /api/pagelog, and the server writes them through the same logger.
 Extra fields go in `extra={"f": {...}}`: the common ones get their own columns, the rest stays whole in `data`.
+
+T487: every word a voice note got wrong and someone corrected is a record of kind "voicefix" (for developers; the page
+shows none of it). How often each one happens, most first:
+
+  sqlite3 ~/.taska/logs.db "select lower(json_extract(data,'$.wrong')) heard, lower(json_extract(data,'$.right')) said,
+    count(*) n, max(t) last from logs where kind='voicefix' group by 1, 2 order by n desc, last desc"
+
+The page logs one when you fix a word (in a sent input, or in the box before sending); an agent that finds one logs it
+from v2/server with: python3 -c "from taska import logs; logs.setup('$HOME/.taska/logs.db'); logs.voicefix('escape',
+'skip', project='taska', item='T487', input='r662', file='f1303-voice_0-37.webm', who='claude-code', via='agent')"
 """
 
 from __future__ import annotations
@@ -74,6 +84,12 @@ class SQLiteHandler(logging.Handler):
                     db.executemany(sql, rows)
             except sqlite3.Error:
                 pass  # the log never takes Taska down
+            for _ in rows:
+                self.q.task_done()
+
+    def flush(self) -> None:
+        """Waits until what was logged is in the file (logging calls it on exit, so a short script loses nothing)."""
+        self.q.join()
 
 
 _db: List[Optional[str]] = [None]  # F448: where the records go, for the dashboard to read them back
@@ -95,3 +111,9 @@ def setup(db_path: Optional[str], level: str = "INFO") -> None:
     if db_path:
         os.makedirs(os.path.dirname(os.path.abspath(db_path)), exist_ok=True)
         log.addHandler(SQLiteHandler(db_path))
+
+
+def voicefix(wrong: str, right: str, **f: Any) -> None:
+    """T487: a voice note heard `wrong` where the speaker said `right`. f: project, item, input (r662), file (the voice
+    note, f1303), who, via (input: fixed in a sent input; draft: in the box before sending; agent: found by an agent)."""
+    log.info(f"voice fix: {wrong} -> {right}", extra={"f": dict(source="server", kind="voicefix", wrong=wrong, right=right, **f)})

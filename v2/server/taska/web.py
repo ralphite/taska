@@ -26,7 +26,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, Generator, List, Optional
 from urllib.parse import SplitResult, parse_qs, quote, unquote, urlsplit
 
 from . import assets, devdash, imgsize, logs, views
-from .logs import log
+from .logs import log, voicefix
 from .core import MAX_FILE, MAX_TEXT, PEOPLE, Err, plain_key
 from .dsl import parse_dsl
 from .guide import AGENT, CONNECT, GRAMMAR, SKILL
@@ -519,6 +519,9 @@ class Handler(BaseHTTPRequestHandler):
                     hub.word(d.get("right"), bool(d.get("forget")))
                 else:
                     hub.correct(d.get("wrong"), d.get("right") if "right" in d else None)
+                    if d.get("right") and not d.get("undo"):  # T487: a word fixed in the box before sending
+                        voicefix(" ".join(str(d["wrong"]).split()), " ".join(str(d["right"]).split()), via="draft", who="you",
+                                 **{k: str(d[k])[:200] for k in ("project", "item", "file") if d.get(k)})
                 return self.json({"ok": True, "corrections": hub.corrections()})
             if p == "/api/push":  # F195: {sub, quiet} turns pushes on for a phone; {endpoint, off: true} turns them off
                 d = json.loads(self.body(10_000) or b"{}")
