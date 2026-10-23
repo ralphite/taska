@@ -39,7 +39,7 @@
     const u = new URL(typeof input === 'string' ? input : input instanceof URL ? input.href : input.url, location.href)
     const p = u.pathname
     // only what the page asks Taska; Storybook's own files and the page's code go as they are
-    if (u.origin !== location.origin || !/^\/(api|p|k|health|login|skill)(\/|$)/.test(p)) return real(input, init)
+    if (u.origin !== location.origin || !/^\/(api|p|k|health|login|skill|dev)(\/|$)/.test(p)) return real(input, init) // F448: dev, the dashboard's
     const method = String((init && init.method) || (input instanceof Request ? input.method : 'GET')).toUpperCase()
     if (/\/api\/poll$/.test(p)) return new Promise(() => {}) // nothing changes while you look
     if (method !== 'GET') {

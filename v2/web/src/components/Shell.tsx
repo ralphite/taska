@@ -276,21 +276,32 @@ export const SideLink = ({ sec, icon, label, phone }: { sec: string; icon: IconN
     </a>
   )
 // F451, T456 (r678, r679): the page's stories, on Storybook's own server on this computer (it shows a change at once);
-// for the desktop only, where the page is made. F448 (r696): a link for making Taska: shown only when the page is open
-// on this computer, its icon in violet so it reads as one
-const STORYBOOK = 'http://localhost:6007/'
-export const StoryLink = () =>
+// F448 (D71): the dashboard of what you did. F508 (r696, r727): the links for making Taska are a section of their own,
+// above the sidebar's foot, shown only when the page is open on this computer (desktop), their icons in violet
+const DEV_LINKS: [string, string, IconName][] = [
+  ['Storybook', 'http://localhost:6007/', 'book'],
+  ['Dashboard', '/dev/dashboard', 'chart'],
+]
+export const DevLinks = () =>
   onThisComputer() ? (
-    <a
-      href={STORYBOOK}
-      target="_blank"
-      rel="noopener"
-      data-dev=""
-      className="flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-sm text-zinc-600 hover:bg-zinc-200/60 dark:text-zinc-300 dark:hover:bg-zinc-800"
-    >
-      <Icon n="book" c="size-4 shrink-0 text-violet-500 dark:text-violet-400" sw="2" />
-      <span className="min-w-0 flex-1 truncate">Storybook</span>
-    </a>
+    <div id="devLinks" className="hidden shrink-0 flex-col gap-0.5 px-2 pb-2 lg:flex">
+      <div className="px-3 pb-1.5 text-[11px] font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">
+        Dev
+      </div>
+      {DEV_LINKS.map(([label, href, icon]) => (
+        <a
+          key={label}
+          href={href}
+          target="_blank"
+          rel="noopener"
+          data-dev=""
+          className="flex h-9 items-center gap-2.5 rounded-lg px-2.5 text-sm text-zinc-600 hover:bg-zinc-200/60 dark:text-zinc-300 dark:hover:bg-zinc-800"
+        >
+          <Icon n={icon} c="size-4 shrink-0 text-violet-500 dark:text-violet-400" sw="2" />
+          <span className="min-w-0 flex-1 truncate">{label}</span>
+        </a>
+      ))}
+    </div>
   ) : null
 // the phone's drawer ends in a card (B162): Undo while there is one (a phone has no Z), and Settings
 export function DrawerSettings() {
@@ -343,7 +354,6 @@ export function SideFoot() {
           <SideLink sec="deleted" icon="trash" label="Deleted" />
         </>
       ) : null}
-      <StoryLink />
       <div className="flex items-center gap-0.5">
         <button
           data-act="project"
@@ -514,6 +524,7 @@ export function Drawer({ hidden, over }: { hidden: boolean; over: boolean }) {
         )}
       </div>
       <DrawerSettings />
+      <DevLinks />
       <SideFoot />
     </nav>
   )

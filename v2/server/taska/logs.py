@@ -17,7 +17,7 @@ import sqlite3
 import sys
 import threading
 from datetime import datetime, timezone
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 log = logging.getLogger("taska")
 
@@ -76,8 +76,16 @@ class SQLiteHandler(logging.Handler):
                 pass  # the log never takes Taska down
 
 
+_db: List[Optional[str]] = [None]  # F448: where the records go, for the dashboard to read them back
+
+
+def db_path() -> Optional[str]:
+    return _db[0]
+
+
 def setup(db_path: Optional[str], level: str = "INFO") -> None:
     """The terminal at `level` (INFO: what is worth seeing scroll by), and every record into db_path if given."""
+    _db[0] = db_path or None
     log.setLevel(logging.DEBUG)
     log.propagate = False
     term = logging.StreamHandler(sys.stderr)

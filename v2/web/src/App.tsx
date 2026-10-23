@@ -3,6 +3,7 @@
 // agents' and phone links keep working.
 import { useLayoutEffect, useSyncExternalStore } from 'react'
 import { Home } from './pages/Home'
+import { Dashboard } from './pages/Dashboard'
 import { ProjectPage } from './components/Shell'
 import { bootProject, startProject } from './lib/boot'
 import { PAGE, onPage, wireLinks } from './lib/switch'
@@ -24,13 +25,16 @@ function Project() {
   }, [])
   return <ProjectPage />
 }
+// F448: the pages for making Taska (/dev/...), on this computer only: the server answers nothing else there
+const DEV = location.pathname.startsWith('/dev/')
 export function App() {
   const home = useSyncExternalStore(onPage, () => PAGE.home)
   useLayoutEffect(() => {
     // the home page scrolls as a page; the project page is a frame of panes
     document.documentElement.classList.toggle('overflow-hidden', !home)
-    document.body.className = home ? HOME_BODY : PROJECT_BODY
-    if (home) document.title = 'Taska'
+    document.body.className = home || DEV ? HOME_BODY : PROJECT_BODY
+    if (home && !DEV) document.title = 'Taska'
   }, [home])
+  if (DEV) return <Dashboard />
   return home ? <Home /> : <Project />
 }

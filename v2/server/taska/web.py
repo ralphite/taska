@@ -25,7 +25,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import TYPE_CHECKING, Any, Callable, Dict, Generator, List, Optional, Tuple
 from urllib.parse import SplitResult, parse_qs, quote, unquote, urlsplit
 
-from . import assets, imgsize, views
+from . import assets, devdash, imgsize, logs, views
 from .logs import log
 from .core import MAX_FILE, MAX_TEXT, PEOPLE, Err, plain_key
 from .dsl import parse_dsl
@@ -310,6 +310,17 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send(200, data, ctype, cache=cache)
             if p == "/health":
                 return self.json({"status": "ok", "app": "taska", "projects": len(hub.projects)})
+            if p.startswith("/dev/"):  # F448: for making Taska, on this computer only: never through the tunnel
+                if not self.local():
+                    return self.send(404, "Not found\n")
+                if p == "/dev/dashboard":
+                    return self.page()
+                if p == "/dev/api/dashboard":
+                    days = (q.get("days") or ["7"])[0]
+                    return self.json(dict(devdash.summary(logs.db_path(), None if days == "all" else int(days),
+                                                          devdash.item_of(hub.projects)),
+                                          analyses=devdash.analyses(hub.root)))
+                return self.send(404, "Not found\n")
             if p == "/api/idle":  # R328: how long since you last did something here, for a deploy to wait for
                 return self.json({"idle": int(time.time() - self.srv.last_user), "update": self.srv.update_ready()})
             if p == "/skill":

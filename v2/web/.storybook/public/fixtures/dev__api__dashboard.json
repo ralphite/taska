@@ -1,0 +1,194 @@
+{
+ "days": 7,
+ "from": "10-16 09:12",
+ "to": "10-22 18:40",
+ "actions": 1843,
+ "tabs": 5,
+ "top": [
+  [
+   "Open an item",
+   512
+  ],
+  [
+   "Send",
+   214
+  ],
+  [
+   "Start a voice note",
+   188
+  ],
+  [
+   "Change a view or filter",
+   96
+  ],
+  [
+   "Open a document",
+   71
+  ],
+  [
+   "Pick an answer",
+   40
+  ],
+  [
+   "Archive",
+   33
+  ],
+  [
+   "Look at an image",
+   29
+  ]
+ ],
+ "span": [
+  [
+   "10-16",
+   140
+  ],
+  [
+   "10-17",
+   310
+  ],
+  [
+   "10-18",
+   95
+  ],
+  [
+   "10-19",
+   260
+  ],
+  [
+   "10-20",
+   402
+  ],
+  [
+   "10-21",
+   351
+  ],
+  [
+   "10-22",
+   285
+  ]
+ ],
+ "hourly": false,
+ "via": [
+  [
+   "this computer",
+   1510
+  ],
+  [
+   "phone",
+   333
+  ]
+ ],
+ "projects": [
+  [
+   "shop",
+   1402
+  ],
+  [
+   "mobile-app",
+   361
+  ],
+  [
+   "website",
+   80
+  ]
+ ],
+ "items": [
+  {
+   "project": "shop",
+   "code": "F01",
+   "title": "Export only the rows the filter shows",
+   "n": 48
+  },
+  {
+   "project": "shop",
+   "code": "B02",
+   "title": "Pay now does nothing in Safari on the iPhone",
+   "n": 31
+  },
+  {
+   "project": "shop",
+   "code": "T12",
+   "title": "Load test before the sale weekend",
+   "n": 22
+  },
+  {
+   "project": "mobile-app",
+   "code": "F03",
+   "title": "Sign in with a passkey",
+   "n": 14
+  }
+ ],
+ "voice": {
+  "n": 188,
+  "ends": [
+   [
+    "sent as it was",
+    161
+   ],
+   [
+    "words into the box",
+    21
+   ],
+   [
+    "discarded",
+    6
+   ]
+  ],
+  "median": 18,
+  "minutes": 61
+ },
+ "errors": [
+  [
+   "Taska has an update",
+   12
+  ],
+  [
+   "Not saved: T03 done: Taska said no",
+   1
+  ]
+ ],
+ "slow": {
+  "n": 64,
+  "timeouts": 2,
+  "median": 1650,
+  "via": [
+   [
+    "this computer",
+    40,
+    1400
+   ],
+   [
+    "phone",
+    24,
+    2100
+   ]
+  ],
+  "where": [
+   [
+    "/p/*/api/op",
+    30
+   ],
+   [
+    "/p/*/api/file",
+    21
+   ],
+   [
+    "/p/*/api/state",
+    13
+   ]
+  ]
+ },
+ "reloads": 6,
+ "updates": 12,
+ "analyses": [
+  {
+   "name": "2026-10-22-voice-and-reloads.md",
+   "date": "2026-10-22",
+   "title": "Voice is the main way in",
+   "md": "- 86% of voice notes are sent as they are; 11% go into the box first.\n- Reloads by hand fell from 9 a day to 2 once a page reloads itself (F449).\n- The same three items were opened 100 times: they need fewer trips."
+  }
+ ],
+ "opens": 640,
+ "opened": 57
+}
