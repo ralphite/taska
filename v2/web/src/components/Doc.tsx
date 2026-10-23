@@ -645,7 +645,10 @@ export function DocView({ d }: { d: Doc }) {
       <div
         className={`relative flex min-w-0 flex-col lg:mx-auto lg:w-full ${d.fmt === 'html' ? '' : 'lg:max-w-[min(46rem,calc(100%-5rem))]'}`}
       >
-        <div className="relative flex items-center gap-1 text-xs text-zinc-500">
+        {/* B492: over a web page (desktop) this row holds only its comments on the whole page: in the page's corner */}
+        <div
+          className={`relative flex items-center gap-1 text-xs text-zinc-500 ${d.fmt === 'html' ? 'lg:absolute lg:top-2 lg:right-2 lg:z-10' : ''}`}
+        >
           {float && d.whole?.length ? (
             <>
               <button

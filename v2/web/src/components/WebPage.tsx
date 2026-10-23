@@ -226,7 +226,8 @@ export function WebPage({ d }: { d: Doc }) {
   })
   const open = counts.find((c) => threadOpen(c.tk))
   return (
-    <div className="relative mt-3">
+    // B492: edge to edge: on the phone across the sheet's side margins too
+    <div className="relative -mx-4 mt-3 lg:mx-0 lg:mt-0">
       {/* B492: the page as it is: no frame around it, and no tooltip over all of it (a name for screen readers only) */}
       <iframe
         ref={frame}

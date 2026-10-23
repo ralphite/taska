@@ -328,7 +328,7 @@ function Editor({ it }: { it: Item }) {
 // shows the item (or its open document) on the left and its talk on the right, so nothing has to hide behind a scroll
 export const DUO = { on: false, min: 1100 }
 const NEEDS_SEEN = { n: 0, on: false } // A3 (T422): the item shown, and whether its card asked you
-export function ItemPage({ it, left = null }: { it: Item; left?: ReactNode }) {
+export function ItemPage({ it, left = null, bare = false }: { it: Item; left?: ReactNode; bare?: boolean }) {
   const duo = DUO.on
   const talkRef = useRef<HTMLDivElement>(null)
   useLayoutEffect(() => {
@@ -498,7 +498,7 @@ export function ItemPage({ it, left = null }: { it: Item; left?: ReactNode }) {
       {duo && left ? (
         <div
           id="itemTop"
-          className="lg:h-full lg:w-[var(--duo-w,55%)] lg:shrink-0 lg:scrollbar-thin lg:overflow-y-auto lg:px-8 lg:pt-8 lg:pb-12"
+          className={`lg:h-full lg:w-[var(--duo-w,55%)] lg:shrink-0 lg:scrollbar-thin lg:overflow-y-auto ${bare ? '' : 'lg:px-8 lg:pt-8 lg:pb-12'}`}
         >
           {left}
         </div>
@@ -852,7 +852,7 @@ function paneParts(): { head: ReactNode; acts: ReactNode; nav: ReactNode; menu: 
         acts: <DocPaneActs d={d} />,
         nav: <DocPaneNav d={d} />,
         menu: false,
-        body: <ItemPage it={dIt} left={<DocView d={d} />} />,
+        body: <ItemPage it={dIt} left={<DocView d={d} />} bare={d.fmt === 'html'} />,
       }
     if (d && !U.docEdit)
       return {
@@ -861,7 +861,8 @@ function paneParts(): { head: ReactNode; acts: ReactNode; nav: ReactNode; menu: 
         nav: <DocPaneNav d={d} />,
         menu: false,
         body: (
-          <div className="w-full px-8 pt-8 pb-12">
+          // B492: a web page brings its own margins: Taska adds none around it
+          <div className={d.fmt === 'html' ? 'w-full' : 'w-full px-8 pt-8 pb-12'}>
             <DocView d={d} />
           </div>
         ),

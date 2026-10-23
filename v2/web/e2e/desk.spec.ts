@@ -137,6 +137,7 @@ test('a web page document is the page alone: no frame or line over it, the pane 
   await request.post(`${p.url}api/op`, {
     data: { op: 'dc', d: 1, key: 'h:body>p:nth-child(2)', quote: 'Ship option A today.', text: 'Why not B?' },
   })
+  await request.post(`${p.url}api/op`, { data: { op: 'dc', d: 1, key: 'doc', quote: '', text: 'And the page as a whole?' } })
   await open(page, p, 'D1')
   const frame = page.locator('#detailBody iframe')
   await expect(page.frameLocator('#detailBody iframe').getByText('Ship option A today.')).toBeVisible()
@@ -150,6 +151,14 @@ test('a web page document is the page alone: no frame or line over it, the pane 
   expect(f.width).toBeGreaterThan(pane.width - 100) // the pane's width, not a column of text
   expect(count.x).toBeGreaterThanOrEqual(f.x)
   expect(count.x + count.width).toBeLessThanOrEqual(f.x + f.width) // in the page
+  // no margins of Taska's around it: the page's own are enough (r689)
+  expect(Math.abs(f.x - pane.x)).toBeLessThan(2)
+  expect(Math.abs(f.y - pane.y)).toBeLessThan(2)
+  // the comments on the whole page sit in its top right corner
+  const whole = await page.locator('[data-act="doc-thread"][data-key="doc"]').filter({ visible: true }).boundingBox()
+  if (!whole) throw new Error('no whole-page comments')
+  expect(whole.y).toBeGreaterThanOrEqual(f.y)
+  expect(whole.x + whole.width).toBeLessThanOrEqual(f.x + f.width)
 })
 
 test('the buttons of a part of a web page stay while the pointer goes to them; Esc drops the pick, then leaves Comment mode (D56, B484)', async ({
