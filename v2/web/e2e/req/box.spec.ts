@@ -2,7 +2,7 @@
 // the codes of his inputs, so a change that breaks one is stopped before it ships with his own words.
 // guards: src/components/Composer.tsx src/lib/outbox.ts src/lib/drafts.ts src/lib/voice.ts src/lib/audio.ts src/lib/data.ts src/lib/events.ts src/sw.ts
 import { expect, test } from '@playwright/test'
-import { LOOP, open, project } from '../seed'
+import { LOOP, isDesk, open, project } from '../seed'
 
 test.use({
   launchOptions: {
@@ -72,4 +72,23 @@ test('r121 r129 r389: Esc ends a recording and sends nothing; leaving while reco
   await expect(page.locator('#text')).toHaveValue('')
   await page.waitForTimeout(1500)
   expect(await p.read('inbox')).toBe(before)
+})
+
+test('r480: a voice note shows play and its length, not the word Voice and no drawn waveform', async ({
+  page,
+  request,
+}) => {
+  const p = await project(request, LOOP)
+  await open(page, p)
+  await page.locator('[data-act="mic"]').filter({ visible: true }).first().click()
+  await expect(page.locator('#recBar')).toBeVisible()
+  await page.waitForTimeout(1500)
+  await page.keyboard.press('Shift+Enter')
+  await expect.poll(async () => p.read('inbox'), { timeout: 15000 }).toMatch(/voice/i)
+  if (!isDesk(page)) await page.locator('[data-act="tab"][data-tab="inputs"]').filter({ visible: true }).first().click()
+  const chip = page.locator('button[data-act="play"]').filter({ visible: true }).first()
+  await expect(chip.locator('[data-time]')).toHaveText(/^\d+:\d\d/)
+  const box = chip.locator('xpath=..')
+  await expect(box).not.toContainText(/voice/i)
+  await expect(box.locator('canvas, [data-wave]')).toHaveCount(0)
 })
