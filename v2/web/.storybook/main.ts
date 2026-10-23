@@ -24,7 +24,12 @@ const config: StorybookConfig = {
   features: { changeDetection: false },
   core: { disableTelemetry: true },
   // B537: how far live Taska is behind the code Storybook draws, for the notice in Storybook's toolbar
-  experimental_devServer: (app) => liveVersionRoute(app),
+  // T522: a picture that never comes (a slow network), for the stories of pictures still loading (app-shim.js): the
+  // request is kept open and never answered. A built Storybook has no such route: there the picture fails instead.
+  experimental_devServer: (app) => {
+    app.get('/story-hang', () => {})
+    return liveVersionRoute(app)
+  },
   // the page's service worker is not Storybook's: leave the PWA plugin out of it
   viteFinal: (config) => ({
     ...config,

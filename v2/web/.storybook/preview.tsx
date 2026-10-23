@@ -67,7 +67,7 @@ const preview: Preview = {
           [
             'Item list',
             'Item page',
-            ['By item status', 'By what it holds'],
+            ['By item status', 'By what it holds', 'Loading and errors'],
             'Document',
             'Inputs',
             'Projects',

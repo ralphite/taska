@@ -41,11 +41,72 @@
     }
     return x
   }
+  // T522: how Taska answers in this story, for the page's loading and error states (#net={"<path regex>": how}):
+  // "hang" Taska never answers (the page's own time limits end the wait, as with a stuck Taska), "down" nothing
+  // answers (refused: Taska stopped or restarting), a number answers with that HTTP status, as a crashed request does.
+  // The first rule whose regex matches the address's path decides; a path no rule matches is answered as usual.
+  let rules = []
+  try {
+    rules = Object.entries(JSON.parse(h.get('net') || '{}')).map(([re, how]) => [new RegExp(re), how])
+  } catch {
+    /* no rules */
+  }
+  const ruleFor = (p) => (rules.find(([re]) => re.test(p)) || [])[1]
+  const signalOf = (input, init) => (init && init.signal) || (input instanceof Request ? input.signal : null)
+  const aborted = () => new DOMException('The user aborted a request.', 'AbortError')
+  const answerBy = (how, signal) => {
+    if (how === 'down') return Promise.reject(new TypeError('Failed to fetch')) // what the browser says when refused
+    if (how === 'hang')
+      return new Promise((_, no) => {
+        if (signal?.aborted) no(aborted())
+        signal?.addEventListener('abort', () => no(aborted()))
+      })
+    return Promise.resolve(
+      new Response(`${how} story server error\n`, { status: Number(how), headers: { 'Content-Type': 'text/plain' } }),
+    )
+  }
+  // T522: a project Taska does not have, or one deleted, is answered as Taska answers it (server/taska/web.py)
+  const projects = Promise.all(
+    ['api__projects.json', 'api__projects__deleted.json'].map((f) =>
+      real(FX + f)
+        .then((r) => r.json())
+        .catch(() => []),
+    ),
+  )
+  const noProject = async (p) => {
+    const m = /^\/p\/([a-z0-9][a-z0-9-]*)(\/|$)/.exec(p)
+    if (!m) return null
+    const [have, deleted] = await projects
+    const list = Array.isArray(have) ? have : have.projects || []
+    if (list.some((x) => x.name === m[1])) return null
+    const text = deleted.some((x) => x.name === m[1])
+      ? `project ${m[1]} was deleted: there is no work here. The user can restore it in Taska (Settings › Projects).\n`
+      : `no project ${m[1]}. Projects: ${list
+          .map((x) => x.name)
+          .sort()
+          .join(', ')}\n`
+    return new Response(text, { status: 404, headers: { 'Content-Type': 'text/plain' } })
+  }
+  // T522: the story's own data, changed from the saved answers (#items={"<n>": {fields}}): those items of the project
+  // the page shows, with those fields (a very long title...). Only data: the page draws it as it draws any item.
+  let items = {}
+  try {
+    items = JSON.parse(h.get('items') || '{}')
+  } catch {
+    /* none */
+  }
+  const edit = (p, o) => {
+    if (/\/api\/state$/.test(p) && o && Array.isArray(o.items))
+      o.items = o.items.map((it) => (items[it.n] ? { ...it, ...items[it.n] } : it))
+    return o
+  }
   window.fetch = async (input, init) => {
     const u = new URL(typeof input === 'string' ? input : input instanceof URL ? input.href : input.url, location.href)
     const p = u.pathname
     // only what the page asks Taska; Storybook's own files and the page's code go as they are
     if (u.origin !== location.origin || !/^\/(api|p|k|health|login|skill|dev)(\/|$)/.test(p)) return real(input, init) // F448: dev, the dashboard's
+    const how = ruleFor(p)
+    if (how !== undefined) return answerBy(how, signalOf(input, init))
     const method = String((init && init.method) || (input instanceof Request ? input.method : 'GET')).toUpperCase()
     if (live) {
       const hd = new Headers((init && init.headers) || (input instanceof Request ? input.headers : undefined))
@@ -58,6 +119,8 @@
         init && init.signal,
       )
     }
+    const none = await noProject(p)
+    if (none) return none
     if (/\/api\/poll$/.test(p)) return new Promise(() => {}) // nothing changes while you look
     if (method !== 'GET') {
       // a change: kept here, answered as a change Taska took
@@ -75,7 +138,7 @@
       const r = await real(FX + name + ext)
       if (!r.ok) continue
       if (ext !== '.json') return r
-      return json(move(await r.json(), await shift))
+      return json(edit(p, move(await r.json(), await shift)))
     }
     return json({ ok: false, error: 'not in the story data' }, 404)
   }
@@ -84,11 +147,19 @@
     const m = v && /^\/p\/([^/]+)\/f\/([^?#]+)/.exec(v)
     return m ? `${FX}p__${m[1]}__f__${decodeURIComponent(m[2])}` : null
   }
+  // T522: a picture whose path a "hang" rule matches never comes (Storybook's server keeps the request open,
+  // .storybook/main.ts); "down" or a status: it fails to load, as the browser shows a picture that did not come
+  const held = (v) => {
+    const how = v && ruleFor(v.split(/[?#]/)[0])
+    return how === undefined || !how ? null : how === 'hang' ? '/story-hang' : FX + 'not-there'
+  }
   const fix = (el) => {
     for (const a of ['src', 'href', 'poster']) {
       const v = el.getAttribute(a),
+        stop = held(v),
         to = saved(v)
-      if (to && live) void window.__storyServer.then((s) => el.setAttribute(a, s.file(v.split(/[?#]/)[0])))
+      if (stop) el.setAttribute(a, stop)
+      else if (to && live) void window.__storyServer.then((s) => el.setAttribute(a, s.file(v.split(/[?#]/)[0])))
       else if (to) el.setAttribute(a, to)
     }
   }

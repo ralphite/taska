@@ -13,3 +13,13 @@ export const UseOnYourPhone: StoryObj = { ...screen(SHOP + 'phone'), name: 'Use 
 export const Notifications: StoryObj = { ...screen(SHOP + 'notifications'), name: 'Notifications' }
 export const VoiceSpellings: StoryObj = { ...screen(SHOP + 'spellings'), name: 'Voice spellings' }
 export const Organizer: StoryObj = { ...screen(SHOP + 'organizer'), name: 'Organizer' }
+/** T522: Settings opened (or reloaded) while Taska has not answered: "Loading…" under the page's title. */
+export const Loading: StoryObj = {
+  ...screen(SHOP + 'agents', undefined, { net: { '^/(p|api)/': 'hang' } }),
+  name: 'Loading',
+}
+/** T522: the project's data is here, the list of every project is not yet: Projects says "Loading…". */
+export const ProjectsLoading: StoryObj = {
+  ...screen(SHOP + 'projects', undefined, { net: { '^/api/projects': 'hang' } }),
+  name: 'Projects: loading',
+}
