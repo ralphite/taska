@@ -19,6 +19,8 @@ while true; do
     last=$(echo "$o" | grep -oE '^#[0-9]+ [0-9-]+ [0-9:]+ you' | tail -1)  # a later reply on the same item is new again
     for line in ${(f)"$(echo "$o" | grep -E '^r[0-9]+ [0-9-]+ [0-9:]+ you|^resume [A-Z][0-9]+: the user replied')"}; do
       h="$p $(echo "$line $last" | cut -c1-160 | md5 -q)"
+      # a reply is told once, whether /next names it ("resume X") or the list marks it (REPLIED X): same key
+      [[ $line == resume* ]] && h="$p REPLIED ${${line#resume }%%:*} ${last%% *}"
       grep -qxF "$h" $TOLD || { echo "$h" >> $TOLD; echo "[$p] $line" | cut -c1-200; }
     done
     items=$(curl -s --max-time 20 "$B/items" || true)
