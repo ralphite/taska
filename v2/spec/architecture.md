@@ -73,10 +73,9 @@ requests against the old app (recorded once into `v2/tests/golden/`) and against
 ## Frontend (D15, D16, D17)
 
 - **React 19 + TypeScript (strict) + Vite**, **Tailwind CSS v4** (`@tailwindcss/vite`, built at build time, no
-  runtime compiler), **Zustand** (UI state, drafts, outbox), **TanStack Query** (server data), **React Router**
-  (addresses as before: `/p/<project>/B03`, `/inputs`, `/settings` ...), **Radix UI** primitives styled in the
-  repo (shadcn/ui style), **lucide-react** icons, **markdown-it + DOMPurify**, **vite-plugin-pwa** (installable,
-  push, the page shell cached).
+  runtime compiler), **Zustand** (UI state, drafts, outbox), **lucide-react** icons, **markdown-it + DOMPurify**,
+  **vite-plugin-pwa** (installable, push, the page shell cached). Server data, addresses (`/p/<project>/B03`,
+  `/inputs`, `/settings` ...) and dialogs are Taska's own code (`src/lib`, `src/components`).
 - **Styling: Tailwind utilities only**; no hand-written CSS (the only CSS file imports Tailwind and declares the
   dark variant).
 - **Storybook** (with its MCP addon) for every component, phone 393x852 and desktop 1440x900, light and dark;
