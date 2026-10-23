@@ -326,9 +326,11 @@ function Editor({ it }: { it: Item }) {
 }
 // F395, T423: a pane wide enough (1100px or more) where the item does not fit above or its talk does not fit below
 // shows the item (or its open document) on the left and its talk on the right, so nothing has to hide behind a scroll
-export const DUO = { on: false, min: 1100 }
+// stuck: the item has been in two columns since it (or the item before it) opened: a width going and coming back
+// finds it in two columns again (r749), as content changing at one width keeps them (r743)
+export const DUO = { on: false, min: 1100, stuck: false }
 const NEEDS_SEEN = { n: 0, on: false } // A3 (T422): the item shown, and whether its card asked you
-export function ItemPage({ it, left = null }: { it: Item; left?: ReactNode }) {
+export function ItemPage({ it, left = null, bare = false }: { it: Item; left?: ReactNode; bare?: boolean }) {
   const duo = DUO.on
   const talkRef = useRef<HTMLDivElement>(null)
   useLayoutEffect(() => {
@@ -498,7 +500,7 @@ export function ItemPage({ it, left = null }: { it: Item; left?: ReactNode }) {
       {duo && left ? (
         <div
           id="itemTop"
-          className="lg:h-full lg:w-[var(--duo-w,55%)] lg:shrink-0 lg:scrollbar-thin lg:overflow-y-auto"
+          className={`lg:h-full lg:w-[var(--duo-w,55%)] lg:shrink-0 lg:scrollbar-thin lg:overflow-y-auto ${bare ? '' : 'lg:px-8 lg:pt-8 lg:pb-12'}`}
         >
           {left}
         </div>
@@ -852,7 +854,7 @@ function paneParts(): { head: ReactNode; acts: ReactNode; nav: ReactNode; menu: 
         acts: <DocPaneActs d={d} />,
         nav: <DocPaneNav d={d} />,
         menu: false,
-        body: <ItemPage it={dIt} left={<DocView d={d} />} />,
+        body: <ItemPage it={dIt} left={<DocView d={d} />} bare={d.fmt === 'html'} />,
       }
     if (d && !U.docEdit)
       return {
@@ -861,9 +863,8 @@ function paneParts(): { head: ReactNode; acts: ReactNode; nav: ReactNode; menu: 
         nav: <DocPaneNav d={d} />,
         menu: false,
         body: (
-          // B492: a web page brings its own margins: Taska adds none around it (B505: the document puts its own around
-          // its text, beside its comments' column)
-          <div className="min-h-full w-full">
+          // B492: a web page brings its own margins: Taska adds none around it
+          <div className={d.fmt === 'html' ? 'w-full' : 'w-full px-8 pt-8 pb-12'}>
             <DocView d={d} />
           </div>
         ),
@@ -945,20 +946,16 @@ export function DetailView({ hidden }: { hidden: boolean }) {
       const high =
         ((top?.firstElementChild as HTMLElement | null)?.offsetHeight || 0) > upper ||
         ((talk?.firstElementChild as HTMLElement | null)?.offsetHeight || 0) > H - upper
-      // B539 (r743): once two columns, they stay while an item is open and the pane is wide: a fold, a reply or another
-      // item that would fit in one never takes the page back to one column
-      const on =
-        desk() &&
-        !!U.open &&
-        !D.compose &&
-        !D.page &&
-        U.tab !== 'inputs' &&
-        el.clientWidth >= DUO.min &&
-        (high || DUO.on)
-      const app = document.getElementById('app')
-      app?.toggleAttribute('data-duo', on)
-      // B505: a document fills the pane with its comments' column on the right: the box goes under its text
-      app?.toggleAttribute('data-cmts', desk() && !!U.doc && !U.docEdit && !on && !D.compose && !D.page)
+      // B505 (#6505): a document on the desktop is always beside its item's conversation, which holds its comments
+      const docShown = !!U.doc && !U.docEdit
+      // B539 (r743, #6525): once two columns, they stay while an item is open: a fold, a reply or another item that would
+      // fit in one never takes the page back to one column; a pane too narrow shows one, and the same width again
+      // shows two again, however the width went (r749)
+      const shows = !!U.open && !D.compose && !D.page && U.tab !== 'inputs'
+      if (!shows) DUO.stuck = false
+      const on = desk() && shows && (docShown || (el.clientWidth >= DUO.min && (high || DUO.stuck)))
+      if (on && !docShown) DUO.stuck = true
+      document.getElementById('app')?.toggleAttribute('data-duo', on)
       if (on !== DUO.on) {
         DUO.on = on
         bump('detail')

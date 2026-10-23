@@ -81,7 +81,9 @@ test('r743: once an item is in two columns it stays so: another item that would 
   await expect(page.locator('#detailBody h1')).toContainText('Pick the export format')
   await page.waitForTimeout(300)
   await expect(app).toHaveAttribute('data-duo', '')
-  // only a pane too narrow for two columns makes it one
+  // only a pane too narrow for two columns makes it one; the same width again is two columns again (r749)
   await width(page, 1100)
   await expect(app).not.toHaveAttribute('data-duo', '')
+  await width(page, 1920)
+  await expect(app).toHaveAttribute('data-duo', '')
 })

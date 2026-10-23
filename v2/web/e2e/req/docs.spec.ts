@@ -186,42 +186,31 @@ D1 reply ¶2 An agent note to delete
   }
 })
 
-test('r691 r467: a document open on the desktop has its comments in a column of its own on the right; its text and the box are in the middle of theirs (B505)', async ({
+test("r691 #6505: a document open on the desktop is a column of its own beside its item's conversation, which holds its comments (B505)", async ({
   page,
   request,
 }) => {
-  test.skip(!isDesk(page), 'on the phone a comment opens under its paragraph')
+  test.skip(!isDesk(page), 'the phone shows a document in a sheet')
   const p = await project(request, {
     ...LOOP,
     then: `${LOOP.then}T4 doc The plan
   First part of the plan, long enough to fill a line of the page with words.
 
   Second part of the plan.
-T4 html Plan page
-  <!doctype html><html><body><h1>Export plan</h1><p>Ship option A today.</p></body></html>
 `,
   })
-  const para = page.locator('#docBlocks section[data-key]').filter({ hasText: 'First part' })
   await open(page, p, 'D1')
+  const para = page.locator('#docBlocks section[data-key]').filter({ hasText: 'First part' })
   const key = await para.getAttribute('data-key')
   await request.post(`${p.url}api/op`, { data: { op: 'dc', d: 1, key, quote: '', text: 'Who signs it off?' } })
-  const col = page.locator('#docCmts')
-  await expect(col).toContainText('Who signs it off?')
-  const c = await col.boundingBox(),
-    t = await para.boundingBox(),
+  await expect(page.locator('#app')).toHaveAttribute('data-duo', '')
+  const talk = page.locator('#itemTalk')
+  await expect(talk).toContainText('Who signs it off?') // the comment is in the conversation
+  const t = await para.boundingBox(),
+    c = await talk.boundingBox(),
     box = await page.locator('#composer').boundingBox()
-  if (!c || !t || !box) throw new Error('not drawn')
-  expect(c.x).toBeGreaterThanOrEqual(t.x + t.width) // beside the text, never over it
-  expect(Math.abs(t.x + t.width / 2 - (box.x + box.width / 2))).toBeLessThan(24) // the box under the text
-  expect(box.x + box.width).toBeLessThanOrEqual(c.x)
-  // a web page: the same column on its right
-  await request.post(`${p.url}api/op`, {
-    data: { op: 'dc', d: 2, key: 'h:body>p:nth-child(2)', quote: 'Ship option A today.', text: 'Why not B?' },
-  })
-  await open(page, p, 'D2')
-  await expect(col).toContainText('Why not B?')
-  const f = await page.locator('#detailBody iframe').boundingBox(),
-    c2 = await col.boundingBox()
-  if (!f || !c2) throw new Error('not drawn')
-  expect(c2.x).toBeGreaterThanOrEqual(f.x + f.width)
+  if (!t || !c || !box) throw new Error('not drawn')
+  expect(c.x).toBeGreaterThanOrEqual(t.x + t.width) // the conversation on the right of the text, never over it
+  expect(box.x).toBeGreaterThanOrEqual(c.x - 1) // the box under the conversation
+  await expect(page.locator('aside[aria-label="Comments"]')).toHaveCount(0) // no fifth column of comments
 })

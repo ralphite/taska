@@ -12,7 +12,6 @@ export const area: Meta = {
     covers: [
       'DocView',
       'DocEdit',
-      'DocRail',
       'Outline',
       'Thread',
       'DcActs',
