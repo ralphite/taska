@@ -183,7 +183,7 @@ export const DrawerFoot: Story = {
     </div>
   ),
 }
-/** The rail: the sidebar folded to icons (desktop, narrower windows). */
+/** The rail: the sidebar folded to icons (desktop, once you fold it with [ or its button; never by the width, B496). */
 export const RailFolded: Story = {
   render: () => <Rail hidden={false} />,
 }

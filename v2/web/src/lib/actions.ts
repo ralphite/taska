@@ -15,7 +15,6 @@ import {
   ctx,
   dcFind,
   desk,
-  wide,
   detailShown,
   docById,
   docOpen,
@@ -466,7 +465,7 @@ export const ACT: Record<string, Handler> = {
   },
   'new-project': () => {
     // B131: the button becomes a name field in place; Enter makes it, Esc stops
-    if (desk() && !D.page && (D.sideHidden || !wide())) D.sideOpen = true // from the rail or the bar's menu: the sidebar comes over the page (F173)
+    if (desk() && !D.page && D.sideHidden) D.sideOpen = true // from the rail or the bar's menu: the sidebar comes over the page (F173)
     U.npOpen = true
     U.npErr = ''
     render()

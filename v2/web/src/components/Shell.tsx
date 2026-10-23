@@ -52,7 +52,6 @@ import {
   useArea,
   useTick,
   visible,
-  wide,
 } from '../lib/state'
 import { PSEC } from '../lib/settings-data'
 import { FAILED, TOAST, hideToast } from '../lib/toast'
@@ -87,7 +86,8 @@ export function setDrawer(x: number, animate = true) {
   shade.style.left = x + 'px'
   if (x <= 0 && animate)
     setTimeout(() => {
-      if (!DR.open && !app.style.transform) drawer.hidden = true
+      // B496: not once the window has become the desktop's meanwhile, where this is the sidebar, shown by the page
+      if (!DR.open && !app.style.transform && !desk()) drawer.hidden = true
     }, 240)
 }
 
@@ -1325,7 +1325,7 @@ export function paneLayout() {
   // desktop (I70, design A "three panes")
   const inputs = U.tab === 'inputs',
     full = isDesk && D.full && !!U.open && !inputs && !page
-  const rail = isDesk && (!wide() || D.sideHidden),
+  const rail = isDesk && D.sideHidden, // B496: only you fold the sidebar, never the window's width
     over = rail && D.sideOpen
   // phone: the item page covers the list and its tabs; the input box stays, now adding to that item
   const d = !!U.open && !page,

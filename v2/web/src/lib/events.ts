@@ -12,7 +12,7 @@ import { checkOthers, refresh } from './data'
 import { resendOutbox, warnUnload } from './outbox'
 import { kept, onStorage, keepChoice } from './drafts'
 import { keepItemEdit } from './edit'
-import { docKey, noteText } from './docs'
+import { docKey, noteText, renderDoc } from './docs'
 import { micRelease, doubtPick } from './voice'
 import { cancelCorrect } from './keys'
 import { refCard } from './markdown'
@@ -689,17 +689,19 @@ function wireAll() {
       }
     }
   })
-  // crossing 1024px: each layout puts back what it owns
+  // B496 (r683): crossing 1024px changes how the page is laid out, never what is open: the item, its document (or its
+  // editor), the page you are on, New input, full width and the sidebar all stay. A document moves between the
+  // desktop's item pane and the phone's sheet; only what floats (a menu, a sheet, a peek) closes.
   onLayout(() => {
-    if (desk()) {
-      DR.open = false
-      if (D.page && !D.section) D.section = 'agents'
-    } else {
-      D.full = false
-      D.compose = false
-      if (D.page) D.page = null
+    const doc = U.doc != null || U.docNew != null
+    if (OV.spec) {
+      OV.spec = null
+      U.sheet = null
+      U.menuArm = null
+      U.peek = null
     }
-    closeDialog()
+    if (desk() && D.page && !D.section) D.section = 'agents'
+    if (doc) renderDoc()
     render()
   })
   // the phone's drawer: drag it shut, or open from what is left of the page (F54)

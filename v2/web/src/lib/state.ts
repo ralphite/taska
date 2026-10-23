@@ -358,10 +358,8 @@ export const DR = {
 // ---------------------------------------------------------------- layout
 
 const DESK = typeof matchMedia === 'function' ? matchMedia('(min-width: 1024px)') : null
-const WIDE = typeof matchMedia === 'function' ? matchMedia('(min-width: 1280px)') : null
 const REDUCE = typeof matchMedia === 'function' ? matchMedia('(prefers-reduced-motion: reduce)') : null
 export const desk = () => !!DESK?.matches
-export const wide = () => !!WIDE?.matches
 export const reduceMotion = () => !!REDUCE?.matches
 // F448 (r696): the page opened on this computer (localhost, 127.x.x.x, ::1), not over the tunnel or from another
 // machine: only then it shows the links for making Taska (Storybook)
@@ -370,10 +368,8 @@ export const localHost = (host: string) =>
 export const onThisComputer = () => typeof location !== 'undefined' && localHost(location.hostname)
 // B333: the phone's back swipe shows the list under the item page by hand while the finger moves
 export const SWIPE = { back: false }
-export const onLayout = (fn: () => void) => {
-  DESK?.addEventListener('change', fn)
-  WIDE?.addEventListener('change', fn)
-}
+// B496 (r683): the one width that changes the layout (the phone's or the desktop's); no other width does anything
+export const onLayout = (fn: () => void) => DESK?.addEventListener('change', fn)
 
 // ---------------------------------------------------------------- small words
 

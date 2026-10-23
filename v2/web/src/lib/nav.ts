@@ -19,7 +19,6 @@ import {
   needsYou,
   render,
   tabOf,
-  wide,
 } from './state'
 import { hint, toast } from './toast'
 import { stashEdit } from './edit'
@@ -447,13 +446,13 @@ function showURL() {
   if (!desk() && U.tab !== was && el) el.scrollTop = U.tabTop[U.tab] || 0
 }
 export const sideToggle = () => {
-  if (wide()) {
-    D.sideHidden = !D.sideHidden
-    try {
-      localStorage.setItem('taska.sideHidden', D.sideHidden ? '1' : '')
-    } catch {
-      /* no storage */
-    }
-  } else D.sideOpen = !D.sideOpen
+  // B496: the sidebar folds and unfolds only by your hand, at any width
+  D.sideHidden = !D.sideHidden
+  D.sideOpen = false
+  try {
+    localStorage.setItem('taska.sideHidden', D.sideHidden ? '1' : '')
+  } catch {
+    /* no storage */
+  }
   render()
 }
