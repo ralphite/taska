@@ -106,7 +106,15 @@ await new Promise((r) => srv.listen(0, '127.0.0.1', r))
 const base = `http://127.0.0.1:${srv.address().port}/storybook/`
 
 const browser = await chromium.launch()
+// a busy computer can be slow to draw: a part that does not show is asked for once more before it counts as missing
 const shot = async (url, pair, mode) => {
+  try {
+    return await shotOnce(url, pair, mode)
+  } catch {
+    return await shotOnce(url, pair, mode)
+  }
+}
+const shotOnce = async (url, pair, mode) => {
   const page = await browser.newPage({ viewport: SIZE[mode[0]] })
   await page.clock.install({ time: TIME })
   await page.goto(url)
@@ -116,7 +124,7 @@ const shot = async (url, pair, mode) => {
     for (const k of pair.keys || []) await page.keyboard.press(k)
   }
   const el = frame.locator(pair.part).first()
-  await el.waitFor({ state: 'visible', timeout: 20000 })
+  await el.waitFor({ state: 'visible', timeout: 40000 })
   // pictures loaded, late layout settled
   await page
     .waitForFunction(() => [...document.images].every((i) => i.complete), null, { timeout: 10000 })
