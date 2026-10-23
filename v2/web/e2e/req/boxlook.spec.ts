@@ -3,7 +3,7 @@
 // guards: src/components/Composer.tsx src/components/Shell.tsx src/components/Detail.tsx src/index.css
 import { expect, test } from '@playwright/test'
 import type { Page } from '@playwright/test'
-import { LOOP, open, project } from '../seed'
+import { LOOP, isDesk, open, project } from '../seed'
 
 /** The box's colour and the colour of the page just beside it (left of it, at its middle). */
 const colours = (page: Page) =>
@@ -24,8 +24,7 @@ const colours = (page: Page) =>
 
 for (const scheme of ['light', 'dark'] as const)
   test(`r469: the box stands apart from the page around it (${scheme})`, async ({ page, request }) => {
-    // light: the box is white on the white page, only its border apart: B536 asks Yadong (T475)
-    test.fixme(scheme === 'light', 'the box is white on a white page in light: asked in B536')
+    // light: the white box stands on a light grey strip (B536, Yadong's pick 2, #6715)
     await page.emulateMedia({ colorScheme: scheme })
     const p = await project(request, LOOP)
     for (const at of ['', 'T1']) {
@@ -34,6 +33,23 @@ for (const scheme of ['light', 'dark'] as const)
       expect(c.box, `${at || 'New input'}: the box and the page beside it`).not.toBe(c.page)
     }
   })
+
+test('r469 #6715: in light the talk of an item in one column runs down to the strip under the box, no white gap above it (B536)', async ({
+  page,
+  request,
+}) => {
+  test.skip(!isDesk(page), 'one column with its talk under the item is the desktop\u2019s')
+  await page.emulateMedia({ colorScheme: 'light' })
+  const p = await project(request, LOOP)
+  for (let i = 0; i < 14; i++)
+    await p.doAs(`T1 say A long talk, message ${i + 1}, so that it scrolls behind the box.\n`)
+  await open(page, p, 'T1')
+  const talk = page.locator('#itemTalk')
+  await talk.evaluate((e) => (e.scrollTop = (e.scrollHeight - e.clientHeight) / 2))
+  const [t, f] = [await talk.boundingBox(), await page.locator('#foot').boundingBox()]
+  if (!t || !f) throw new Error('not drawn')
+  expect(t.y + t.height, 'the talk ends at the strip, not above it').toBeGreaterThanOrEqual(f.y - 1)
+})
 
 test('r514: there is no New rule: the box never offers to write a rule', async ({ page, request }) => {
   const p = await project(request, LOOP)

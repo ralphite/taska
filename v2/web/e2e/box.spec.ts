@@ -59,8 +59,13 @@ test('what scrolls shows only around the top of the box: from its middle down th
   // scrolled to the end, the last thing ends where the scroller's content ends: clear above the box
   await scroller.evaluate((e) => (e.scrollTop = e.scrollHeight))
   const gap = await scroller.evaluate((e) => {
-    const r = e.getBoundingClientRect(),
-      end = r.bottom - parseFloat(getComputedStyle(e).paddingBottom),
+    // in one column the talk is what runs down to the box: what ends there is its last message, kept clear by the
+    // talk's own padding (B536); otherwise the scroller's own padding keeps its end clear
+    const talk = e.hasAttribute('data-split') ? document.getElementById('itemTalk') : null
+    if (talk) talk.scrollTop = talk.scrollHeight
+    const last = talk?.firstElementChild?.lastElementChild,
+      r = e.getBoundingClientRect(),
+      end = last ? last.getBoundingClientRect().bottom : r.bottom - parseFloat(getComputedStyle(e).paddingBottom),
       box = (document.getElementById('foot') as HTMLElement).getBoundingClientRect().top
     return { gap: box - end, under: r.bottom >= box }
   })

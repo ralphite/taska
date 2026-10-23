@@ -51,7 +51,7 @@ export const BOX: HTMLDivElement = (() => {
   const b = document.createElement('div')
   b.id = 'composer'
   b.className =
-    'group/box flex flex-col rounded-4xl border border-zinc-200 bg-white focus-within:border-zinc-300 lg:mx-auto lg:max-w-[42rem] dark:border-zinc-800 dark:bg-zinc-900 dark:focus-within:border-zinc-700'
+    'group/box flex flex-col rounded-4xl border border-zinc-200 bg-white shadow-sm focus-within:border-zinc-300 lg:mx-auto lg:max-w-[42rem] dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-none dark:focus-within:border-zinc-700'
   return b
 })()
 const home = () => document.getElementById('boxHome')

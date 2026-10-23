@@ -1043,11 +1043,13 @@ export function DetailView({ hidden, place = '' }: { hidden: boolean; place?: st
           {shownDoc ? null : parts.nav}
         </div>
       </header>
+      {/* B536: in one column (not two: there the talk has its own room), in light, the talk runs down to the strip under
+          the box (no white gap above it); its own padding keeps the last message clear of the strip at the end */}
       <div
         id="detailBody"
         ref={body}
         {...(it && (!U.doc || DUO.on) && !U.docEdit ? { 'data-split': '' } : {})}
-        className="-mb-(--foot-h) min-h-0 flex-1 overflow-y-auto overscroll-contain pb-[calc(var(--foot-h,0px)+1.5rem)] lg:scrollbar-gutter-both lg:mask-b-from-[calc(100%-2rem)] lg:group-data-duo/app:pb-0 lg:group-data-[compose]/app:hidden lg:hover:scrollbar-thumb-zinc-500/80 lg:data-split:mask-none dark:lg:hover:scrollbar-thumb-zinc-400/70"
+        className={`-mb-(--foot-h) min-h-0 flex-1 overflow-y-auto overscroll-contain pb-[calc(var(--foot-h,0px)+1.5rem)] lg:scrollbar-gutter-both lg:mask-b-from-[calc(100%-2rem)] lg:group-data-duo/app:pb-0 lg:group-data-[compose]/app:hidden lg:hover:scrollbar-thumb-zinc-500/80 lg:data-split:mask-none dark:lg:hover:scrollbar-thumb-zinc-400/70 ${DUO.on ? '' : 'lg:data-split:pb-(--foot-h) dark:lg:data-split:pb-[calc(var(--foot-h,0px)+1.5rem)]'}`}
       >
         {parts.body}
       </div>
