@@ -5,4 +5,4 @@ import * as Basics from '../parts/Basics'
 const meta: Meta = { title: 'Components/Icons and marks/Project tile' }
 export default meta
 
-export const ProjectTiles: StoryObj = { ...Basics.ProjectTiles, name: 'Project tiles' }
+export const ProjectTiles: StoryObj = { ...Basics.ProjectTiles, name: 'Every size the page draws' }

@@ -1,10 +1,11 @@
-// T457: the small parts everything else is made of: icons, the state of an item, keys, a project's tile, an agent's
-// mark, counts, marks of a draft, section heads, empty places, search hits.
+// T457: the small parts everything else is made of: icons, the status of an item, keys, a project's tile, an agent's
+// mark, search hits. Each story shows the part as the page draws it, on the demo's data.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Avatar, Hit, Icon, Kbd, ProjTile, StateIcon } from '../../../components/ui'
 import type { IconName } from '../../../lib/icons'
 import { ICON_USES } from '../../generated/iconUses'
-import { STATUS } from '../../../lib/constants'
+import { RULE_STATUS, STATUS } from '../../../lib/constants'
+import { DR, whoName } from '../../../lib/state'
 
 // what this part of Storybook shows (T512: its stories are in the folders beside this file)
 export const area: Meta = {
@@ -29,48 +30,64 @@ export const Icons: Story = {
     </div>
   ),
 }
-/** An item's state, as its round icon. */
-export const States: Story = {
-  render: () => (
-    <div className="flex flex-col gap-3 p-6">
-      {Object.entries(STATUS).map(([s, label]) => (
-        <div key={s} className="flex items-center gap-3 text-sm">
-          <StateIcon s={s} />
-          {label}
-        </div>
-      ))}
-    </div>
-  ),
-}
+// a status's round icon, with the word the page says for it
+const statuses = (words: Partial<Record<string, string>>) => (
+  <div className="flex flex-col gap-3 p-6">
+    {Object.entries(words).map(([s, label]) => (
+      <div key={s} className="flex items-center gap-3 text-sm">
+        <StateIcon s={s} label={label} />
+        {label}
+      </div>
+    ))}
+  </div>
+)
+/** An item's status, as its round icon. */
+export const States: Story = { render: () => statuses(STATUS) }
+/** A rule's status: the same icons, with the words the page says for a rule (Active, Retired). */
+export const RuleStates: Story = { render: () => statuses(RULE_STATUS) }
+/** The keys the page shows beside a button or in a hint. Only the desktop shows them (a phone has no keys). */
 export const Keys: Story = {
+  parameters: { platform: 'desktop' },
   render: () => (
     <div className="flex flex-wrap items-center gap-3 p-6">
-      {['J', 'K', '⇧J', 'E', '.', '/', '⌘K', 'Esc', '⌥V'].map((k) => (
+      {['J', 'K', '⇧J', 'A', 'W', 'N', 'C', 'G S', '?', '↵', '⇧↵', '⌘↵', 'Esc'].map((k) => (
         <Kbd key={k} k={k} />
       ))}
     </div>
   ),
 }
+/** The demo's projects, in each size the page draws a project's tile, largest first (the New input page, home and
+ * settings, the rail and sheets, the sidebar and top bar, the default, a list row, the settings head). */
 export const ProjectTiles: Story = {
   render: () => (
-    <div className="flex items-center gap-4 p-6">
-      {['shop', 'mobile-app', 'website', 'taska', 'lumina'].map((p) => (
-        <ProjTile key={p} name={p} cls="size-9 rounded-lg text-base" />
-      ))}
-      {['shop', 'mobile-app', 'website'].map((p) => (
-        <ProjTile key={'s' + p} name={p} />
+    <div className="flex flex-col gap-4 p-6">
+      {[
+        'size-11 rounded-xl text-xl shadow-sm',
+        'size-8 rounded-lg text-sm',
+        'size-7 rounded-lg text-sm',
+        'size-7 rounded-lg text-xs',
+        'size-6 rounded-md text-xs',
+        undefined,
+        'size-5 rounded text-[10px]',
+        'size-4 rounded text-[9px]',
+      ].map((cls) => (
+        <div key={cls || 'default'} className="flex items-center gap-3">
+          {(DR.list || []).map((p) => (
+            <ProjTile key={p.name} name={p.name} cls={cls} />
+          ))}
+        </div>
       ))}
     </div>
   ),
 }
-/** Who wrote: each agent's mark. */
+/** Who wrote: each agent's mark, with the name the page shows beside it; the last is an agent Taska has no mark for. */
 export const AgentMarks: Story = {
   render: () => (
-    <div className="flex items-center gap-4 p-6">
-      {['claude-code', 'codex', 'antigravity', 'agent', 'org'].map((a) => (
+    <div className="flex flex-wrap items-center gap-4 p-6">
+      {['claude-code', 'codex', 'antigravity', 'agent', 'org', 'gemini'].map((a) => (
         <span key={a} className="flex items-center gap-2 text-sm">
           <Avatar by={a} />
-          {a}
+          {whoName(a)}
         </span>
       ))}
     </div>

@@ -6,3 +6,4 @@ const meta: Meta = { title: 'Components/Icons and marks/Item status icon' }
 export default meta
 
 export const States: StoryObj = { ...Basics.States, name: 'Every item status' }
+export const RuleStates: StoryObj = { ...Basics.RuleStates, name: 'Every rule status' }

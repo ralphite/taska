@@ -5,4 +5,4 @@ import * as Basics from '../parts/Basics'
 const meta: Meta = { title: 'Components/Icons and marks/Keys' }
 export default meta
 
-export const Keys: StoryObj = { ...Basics.Keys, name: 'Keyboard keys' }
+export const Keys: StoryObj = { ...Basics.Keys, name: 'Every key the page shows' }
