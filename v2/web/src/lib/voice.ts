@@ -26,7 +26,7 @@ import {
   type Job,
 } from './state'
 import { toast } from './toast'
-import { JSON_POST, net, pushUndo, save, sendLog, waitBack } from './data'
+import { JSON_POST, net, optimistic, pushUndo, save, sendLog, waitBack } from './data'
 import { draftName, draftStore, goDraft, kept, markSent, saveDraft } from './drafts'
 import { docKey, renderDoc, standInComment } from './docs'
 import { plainQuote } from './markdown'
@@ -1013,11 +1013,9 @@ export async function sendVoiceComments() {
     .map(({ s, fs }) => ({ op: 'dc', d: d.d, key: s.key, quote: s.quote, text: s.text, files: ups(fs) }))
     .filter((o) => o.text || o.files.length)
   if (!ops.length) return back()
-  try {
-    await save(ops, undefined, at)
-  } catch {
-    return back() // Taska said no (it says why)
-  }
+  // T424: kept in this browser with its id until Taska has it (a reload meanwhile sends it again, once); Taska said no:
+  // back into the box (it says why)
+  if (!(await optimistic([], ops, back, undefined, { p: at }))) return
   for (const f of files) {
     f.sent = true
     dropRec(f)
