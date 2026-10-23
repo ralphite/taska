@@ -64,6 +64,7 @@ class Store:
         self.org_busy: Optional[str] = None
         self.trs: Dict[str, Job] = {}  # voice notes being transcribed in the background, by file (B165): t0, done, tr, err
         self.claims: Dict[int, Tuple[str, float]] = {}  # n -> (agent, time): what /next gave an agent (F194)
+        self.rule_marks: Dict[str, int] = {}  # T490: per agent session, how much of the log it has been told rules from
         self.fwd: Dict[str, List[Tuple["Store", str]]] = {}  # file -> [(project, file)]: copies of notes whose input moved before their words came (F79, T101)
         self.db = storage.Db(self.path)
         for seq, line in self.db.events():
@@ -915,6 +916,37 @@ class Store:
         if not since:
             return []
         return [i["id"] for i in sorted(self.for_agent(), key=lambda i: int(i["id"][1:])) if stamp(i["t"]) >= int(since)]  # times are kept to the second
+
+    def rule_news(self, name: Any, ses: str = "") -> List[str]:
+        """T490: the rules someone else added, changed or ended since this agent session last heard from Taska, told
+        once, in its next /next or /do, so it applies them at once. Its first call only sets the mark (it reads /rules)."""
+        name, ses = self.agent_name(name), " ".join(str(ses or "").split())[:60]
+        key = f"{name}\x00{ses}"
+        mark = self.rule_marks.get(key)
+        self.rule_marks[key] = len(self.events)
+        if mark is None:
+            return []
+        changed: Dict[int, Event] = {}
+        for e in self.events[mark:]:
+            if e.get("by") == name and (e.get("ses") or "") == ses:
+                continue  # its own change: it knows
+            n = e.get("n")
+            it = self.items.get(n) if e.get("k") in ("add", "set") and isinstance(n, int) else None
+            if not it:
+                continue
+            f = e.get("f") or {}
+            if (e["k"] == "add" and it["type"] == "rule") or (e["k"] == "set" and (it["type"] == "rule" or "type" in f)
+                                                               and set(f) & {"title", "body", "status", "type", "archived"}):
+                changed[it["n"]] = e
+        out: List[str] = []
+        for n, e in changed.items():
+            it = self.items[n]
+            live = it["type"] == "rule" and it["status"] not in CLOSED + ("proposed",) and not it["archived"] and not it["merged_into"]
+            if live:
+                out.append(f"rule changed, apply it from now on: {self.code(n)} {it['title']} (GET /{self.code(n)})")
+            elif it["status"] != "proposed":  # dropped, done, archived or no longer a rule (a proposal is not one yet)
+                out.append(f"rule ended, it no longer applies: {self.code(n)} {it['title']}")
+        return out
 
     def presence(self) -> Dict[str, Any]:
         """What the page shows about agents: who came when, who waits now, and whether work is waiting for them."""

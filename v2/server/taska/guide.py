@@ -49,6 +49,8 @@ READ  (plain text)
                             filters: ?q=word&type=bug&pri=P0&when=now&status=all|open|doing|done|dropped&wait=1&reply=1&archived=1|all&limit=60
   curl -s BASE/B03          full card: fields, body, thread, files (image/audio paths are readable from disk)
   curl -s BASE/rules        project rules: standing instructions; follow those that apply to what you do
+                            (a rule added or changed while you work is named once in your next /next or /do reply:
+                            read it and follow it from then on)
   curl -s BASE/D1           a document: numbered paragraphs (¶) with the user's comments under each
   curl -s BASE/log?n=30     recent changes
   optional on any call: &session=<the title your app shows for this session> (or the header X-Taska-Session), so

@@ -379,6 +379,12 @@ class Handler(BaseHTTPRequestHandler):
                 s.read_next(by)
                 if given:  # F220: the item it was given, it has read
                     s.read_item(given[-1], by)
+                with s.lock:
+                    rules = s.rule_news(by, self.session_of(q))  # T490: a rule changed since it last heard: said first
+                if rules:
+                    lines = text.split("\n")
+                    at = next((i + 1 for i, x in enumerate(lines) if "project rule" in x), 1)
+                    text = "\n".join(lines[:at] + rules + lines[at:])
             self.send(200, text)
         elif p == "/rules":
             with s.lock:
@@ -538,8 +544,10 @@ class Handler(BaseHTTPRequestHandler):
             tail = "GET /next to continue" if s.cfg["auto"] else "stop after the current item"
             with s.lock:
                 news = s.news_for(by) if by not in PEOPLE else []
+                rules = s.rule_news(by, ses) if by not in PEOPLE else []  # T490
             note = (f"\n{len(news)} new input{'s' if len(news) != 1 else ''} since your last /next: {' '.join(news)}."
                     " Finish the step you are on, then GET /next.") if news else ""
+            note += "".join("\n" + r for r in rules)
             self.send(200, "\n".join(lines) + f"\nrev {s.rev} · {s.mode()}: {tail}{note}\n")
         elif p == "/api/op":
             data = json.loads(self.body(MAX_FILE) or b"{}")
