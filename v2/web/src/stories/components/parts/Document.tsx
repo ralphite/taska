@@ -164,6 +164,34 @@ export const WebPageCommentOpen = doc(PAGE, (_, d) => {
   d.blocks = [...d.blocks.filter((b) => b.key !== ROW), { key: ROW, kind: 'para', text: ROW_TEXT, comments: [c] }]
   U.docThreads.add(threadKey(c))
 })
+/** a thread on the row of three cards, as Taska sends it */
+const onRow = (d: Doc, c: Omit<Comment, 'key' | 'quote' | 'by'>) => {
+  const full: Comment = { ...c, key: ROW, quote: ROW_TEXT, by: 'you' }
+  d.blocks = [...d.blocks.filter((b) => b.key !== ROW), { key: ROW, kind: 'para', text: ROW_TEXT, comments: [full] }]
+  return full
+}
+/** r799: said about a part and not sent yet (desktop: Stop puts it in the box): it waits beside the part, Not sent */
+export const WebPageNotSent = also(
+  doc(PAGE, (_, d) => {
+    U.docInspect = true
+    U.docQuote = { key: ROW, text: ROW_TEXT }
+    U.vcMarks = [{ label: ROW_TEXT, d: d.d, key: ROW, quote: ROW_TEXT }]
+    U.docThreads.add(`${ROW}#new`)
+  }),
+  // what was said about it, under its quote in the box
+  { platform: 'desktop', text: `> “${ROW_TEXT}”\n按周看更清楚` }, // clearer by week
+)
+/** r799: a comment just sent is on its part at once, open under it, while it is saved (a voice note's words still
+ * coming: …); it has no Edit, Move or Delete until it is saved */
+export const WebPageCommentSaving = doc(PAGE, (_, d) => {
+  onRow(d, { id: -1, text: '…', t: new Date().toISOString() })
+  U.docThreads.add(ROW)
+})
+/** B12 (r562): a resolved thread on a web page: its count looks done (a check, grey), as beside a paragraph */
+export const WebPageResolved = doc(PAGE, (_, d) => {
+  const c = onRow(d, { id: 9002, th: 9002, text: '就这样', t: ago(60) }) // fine as it is
+  d.resolved = { [threadKey(c)]: ago(30) }
+})
 /** A paragraph picked to comment on: the box below writes to it. */
 export const ParagraphPicked = doc(PLAN, (_, d) => {
   U.docSel = new Set([d.blocks[1].key])

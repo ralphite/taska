@@ -485,7 +485,12 @@ export function WebPage({ d }: { d: Doc }) {
           }}
         >
           {open.drafts ? (
-            open.drafts.map((label) => <DraftCard key={label} label={label} />)
+            // over the page, as the comments are: nothing of the page shows through
+            <div className="flex flex-col gap-2 rounded-xl bg-white dark:bg-zinc-900">
+              {open.drafts.map((label) => (
+                <DraftCard key={label} label={label} />
+              ))}
+            </div>
           ) : (
             <Thread d={d} k={open.tk} comments={open.comments} rail />
           )}
