@@ -881,9 +881,10 @@ export function vcSelection(): null | { key: string | null; text: string; range:
     const sec = !node.closest('[data-thread]') && node.closest<HTMLElement>('#docBlocks > section[data-key]')
     return sec ? { key: sec.dataset.key || null, text: text.slice(0, 500), range: sel.getRangeAt(0) } : null
   }
-  // F199: an item's text and its thread, what you said in Inputs
+  // F199: an item's text and its thread, what you said in Inputs, and under the New input page (T529 #24: there too
+  // the bar comes, with Correct on the words of a voice note)
   if (node.closest('#composer, input, textarea, [contenteditable], button, #vcBar, #toast')) return null
-  return node.closest('#detailBody, #dlgBody, #inputsView')
+  return node.closest('#detailBody, #dlgBody, #inputsView, #composeList')
     ? { key: null, text: text.slice(0, 500), range: sel.getRangeAt(0) }
     : null
 }

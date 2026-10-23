@@ -153,3 +153,43 @@ test('correcting a word of a voice note names the input as the page does everywh
   await expect(line).toContainText(`in #${id.slice(1)} · remembered for every project`)
   await expect(line).not.toContainText(`in ${id}`)
 })
+
+test('T529 #24: on the desktop New input page, words selected in a voice note under what you said lately can be corrected, as in a thread', async ({
+  page,
+  request,
+}) => {
+  test.skip(!isDesk(page), 'the New input page with its list under the box is the desktop\u2019s')
+  const p = await project(request, LOOP)
+  const up = await request.post(`${p.url}api/file?name=${encodeURIComponent('voice 0-09.webm')}`, {
+    headers: { 'Content-Type': 'audio/webm' },
+    data: Buffer.from('not really sound'),
+  })
+  const f = (await up.json()) as { f: string }
+  const said = await request.post(`${p.url}api/op`, {
+    data: {
+      op: 'input',
+      text: 'About the export format',
+      files: [{ f: f.f, name: 'voice 0-09.webm', mime: 'audio/webm' }],
+    },
+  })
+  const id = ((await said.json()) as { res: string[] }).res[0].split(' ')[1]
+  await page.goto(p.url + 'new')
+  const note = page.locator(`#composeList [data-voice="${id}"]`).filter({ visible: true }).first()
+  await expect(note).toBeVisible()
+  await note.evaluate((el) => {
+    const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT)
+    for (let t = w.nextNode(); t; t = w.nextNode()) {
+      const i = (t.textContent || '').indexOf('export')
+      if (i < 0) continue
+      const r = document.createRange()
+      r.setStart(t, i)
+      r.setEnd(t, i + 'export'.length)
+      getSelection()?.removeAllRanges()
+      getSelection()?.addRange(r)
+      return
+    }
+  })
+  await expect(page.locator('#fixBtn')).toBeVisible()
+  await page.locator('#fixBtn').click()
+  await expect(page.locator('#scope')).toContainText('Correct \u201cexport\u201d')
+})
