@@ -272,9 +272,10 @@ test('with a part picked, no other part lights or can be picked until Esc lets i
   await page.mouse.move(b.x + 20, b.y + b.height / 2, { steps: 5 })
   await page.waitForTimeout(400)
   await expect(page.locator('#detailBody .ring-blue-500')).toHaveCount(0)
-  await expect(page.locator('[data-act="page-pick"][data-key="h:body>p:nth-child(3)"]')).toHaveCount(0)
-  // r739: the picked part keeps its two buttons
-  await expect(page.locator('[data-act="page-pick"][data-key="h:body>p:nth-child(2)"]')).toBeVisible()
+  // r739: the picked part keeps its two buttons, and the other part has none
+  const pickBtn = page.locator('[data-act="page-pick"]').filter({ visible: true })
+  await expect(pickBtn).toHaveCount(1)
+  await expect(pickBtn).toHaveAttribute('data-quote', 'Ship option A today.')
   await page.mouse.click(b.x + 20, b.y + b.height / 2)
   await expect(page.locator('#scope')).toContainText('Ship option A today.') // still the first
   await page.keyboard.press('Escape')

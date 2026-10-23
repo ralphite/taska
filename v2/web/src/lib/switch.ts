@@ -5,7 +5,7 @@
 // the page loads the other place the old way instead: those must not go to the wrong project.
 import { CACHE, SAVE, ingest, stopPoll } from './data'
 import { failedWaiting } from './toast'
-import { EMPTY_STATE, R_STATE, U, byN, byR, kids, model, render, resetPageState, setProject, ctx } from './state'
+import { EMPTY_STATE, R_STATE, byN, byR, kids, model, render, resetPageState, setProject, ctx } from './state'
 import { DV } from './voice'
 import { P_CACHE } from './settings'
 import { noticeFresh } from './notices'
@@ -28,7 +28,7 @@ const projectOf = (path: string) => {
   return m ? decodeURIComponent(m[1]) : null
 }
 // B414: what you sent goes on in the background to the project it was written in, so it does not hold the page here
-const busy = () => !PAGE.home && !!(R_STATE.rec || DV.rec || failedWaiting() || U.vcSending)
+const busy = () => !PAGE.home && !!(R_STATE.rec || DV.rec || failedWaiting())
 
 /** Go to `url` (an address in Taska) without loading the page again when it can; how: a new step in the history, the
  * step it replaces, or one the browser went back or forward to. Returns false when it is not a Taska address. */

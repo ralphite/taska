@@ -295,6 +295,31 @@ export function deleteComment(dn: number, id: number) {
   )
 }
 
+let stands = 0
+/** B3 (T422), r799: a comment shown where it goes at once, while it is saved behind you (its voice note's words first),
+ * in the thread it will be in: the same place quoted again joins its thread, as Taska does (B469), so its count does
+ * not show twice and then jump. -> takes it away again */
+export function standInComment(dn: number, c: { key: string; quote: string; text: string; th?: number }) {
+  const doc0 = docById(dn),
+    same = (doc0 && (c.key === 'doc' ? doc0.whole : doc0.blocks.find((b) => b.key === c.key)?.comments)) || [],
+    th = c.th ?? same.find((x) => x.th === x.id && sameText(x.quote, c.quote))?.th,
+    stand: Comment = {
+      id: -Date.now() - ++stands,
+      key: c.key,
+      ...(th ? { th } : {}),
+      quote: c.quote,
+      text: c.text || '…',
+      by: 'you',
+      t: new Date().toISOString(),
+    }
+  return standIn(() => {
+    const doc = docById(dn),
+      list = doc && (c.key === 'doc' ? doc.whole : doc.blocks.find((b) => b.key === c.key)?.comments)
+    if (list && !list.some((x) => x.id === stand.id)) list.push(stand)
+    else if (!list && doc?.fmt === 'html' && !doc.blocks.some((b) => b.key === c.key))
+      doc.blocks.push({ key: c.key, kind: 'para', text: c.quote, comments: [stand] }) // F432: a new part of a page
+  })
+}
 // B259: it takes what any box takes: words, pictures, files and voice notes. The box is empty at once; a voice note's
 // words go into the comment once they are in. Not saved: all of it comes back into the box.
 export async function sendDocComment(t: DocTarget) {
@@ -309,23 +334,8 @@ export async function sendDocComment(t: DocTarget) {
   U.files = []
   saveDraft()
   // B3 (T422): the comment is on its paragraph at once; it is saved behind you (its voice note's words first)
-  const dn = t.d.d,
-    stand: Comment = {
-      id: -Date.now(),
-      key: t.key,
-      ...(t.th ? { th: t.th } : {}),
-      quote: t.reply ? '' : t.quote,
-      text: typed || '…',
-      by: 'you',
-      t: new Date().toISOString(),
-    }
-  const gone = standIn(() => {
-    const doc = docById(dn),
-      list = doc && (t.key === 'doc' ? doc.whole : doc.blocks.find((b) => b.key === t.key)?.comments)
-    if (list && !list.some((c) => c.id === stand.id)) list.push(stand)
-    else if (!list && doc?.fmt === 'html' && !doc.blocks.some((b) => b.key === t.key))
-      doc.blocks.push({ key: t.key, kind: 'para', text: t.quote, comments: [stand] }) // F432: a new part of a page
-  })
+  const dn = t.d.d
+  const gone = standInComment(dn, { key: t.key, quote: t.reply ? '' : t.quote, text: typed, th: t.th })
   U.docThreads.add(t.th ? `${t.key}#${t.th}` : t.key)
   U.docSel = new Set()
   U.docQuote = null

@@ -298,7 +298,6 @@ export const U = {
   pErr: '',
   pMenu: null as string | null,
   showHidden: new Set<number>(),
-  vcSending: false,
   leaving: false,
   boxGone: null as null | { k: string; t: number },
 }

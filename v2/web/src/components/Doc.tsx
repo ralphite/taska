@@ -125,7 +125,8 @@ export function Thread({
               {when(c.t)}
               {c.edited ? ` · edited ${when(c.edited)}` : ''}
             </span>
-            <DcActs d={d} c={c} />
+            {/* r799: a comment shown while it is being saved (its words still coming) has nothing to edit or delete yet */}
+            {c.id > 0 ? <DcActs d={d} c={c} /> : null}
           </div>
           <Rich text={c.text} gid={'dc' + c.t} />
           {c.files?.some((f) => !isAudio(f)) ? (
@@ -312,7 +313,7 @@ function BlockActs({ d, k, float = false }: { d: Doc; k: string; float?: boolean
     if (!openTk) return
     const away = (e: MouseEvent) => {
       const t = e.target as Element
-      if (pop.current?.contains(t) || t.closest(`[data-act="doc-thread"][data-key="${openTk}"]`)) return
+      if (pop.current?.contains(t) || t.closest(`[data-act="doc-thread"][data-key="${CSS.escape(openTk)}"]`)) return
       U.docThreads.delete(openTk)
       U.docThreads.delete(k)
       renderDoc()
@@ -384,10 +385,10 @@ function BlockActs({ d, k, float = false }: { d: Doc; k: string; float?: boolean
   )
 }
 // B7 (T422): a comment not sent yet is there while the box still holds its words or its voice note; emptied, it is gone
-const markLive = (label: string) =>
+export const markLive = (label: string) =>
   (els.text?.value || '').split('\n').some((l) => VC_MARK.exec(l)?.[1] === label) || U.files.some((f) => f.vc === label)
 // B340: a comment not sent yet, where it will go: its words under its quote in the box, and its voice notes
-function DraftCard({ label }: { label: string }) {
+export function DraftCard({ label }: { label: string }) {
   useArea('composer')
   useArea('vc')
   const lines = (els.text?.value || '').split('\n')
@@ -565,7 +566,7 @@ export function DocView({ d }: { d: Doc }) {
     for (const li of root.querySelectorAll('li[data-q]')) li.removeAttribute('data-q')
     const q = !desk() && U.docQuote
     if (!q) return
-    const li = [...root.querySelectorAll<HTMLElement>(`section[data-key="${q.key}"] li`)].find(
+    const li = [...root.querySelectorAll<HTMLElement>(`section[data-key="${CSS.escape(q.key)}"] li`)].find(
       (l) => l.innerText.trim() === q.text,
     )
     li?.setAttribute('data-q', '')
@@ -752,7 +753,10 @@ export function DocView({ d }: { d: Doc }) {
         {side ? null : (
           <>
             <p className="mt-6 text-center text-xs text-zinc-400">
-              Tap a paragraph, select text or circle an area to comment on it
+              {/* B502 (r687): in a web page selected words are only selected, and there is no circling: a tap picks */}
+              {d.fmt === 'html'
+                ? 'Tap a part of the page to comment on it'
+                : 'Tap a paragraph, select text or circle an area to comment on it'}
             </p>
             {U.docType && !U.docSel.size && !U.docQuote && !U.docReply ? null : (
               <button

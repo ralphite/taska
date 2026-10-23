@@ -27,8 +27,8 @@ import {
 } from './state'
 import { toast } from './toast'
 import { JSON_POST, net, pushUndo, save, sendLog, waitBack } from './data'
-import { draftName, draftStore, goDraft, kept, saveDraft } from './drafts'
-import { docKey, renderDoc } from './docs'
+import { draftName, draftStore, goDraft, kept, markSent, saveDraft } from './drafts'
+import { docKey, renderDoc, standInComment } from './docs'
 import { plainQuote } from './markdown'
 import { send, outboxPush, flushOutbox } from './outbox'
 import { standalone } from './notices'
@@ -931,7 +931,8 @@ export async function docSay(key: string, quote?: string) {
 /** F432: speak about a part of a web page (key "h:<its place>"); the same button stops and posts. */
 export async function pageSay(key: string, quote: string, rect: DOMRect) {
   if (R.rec) {
-    if (R.vc) await vcToggle()
+    // the same button stops it; on the phone it posts it too, as the row under the part says (r685), the box open or not
+    if (R.vc) await (desk() ? vcToggle() : finishRec(true))
     return renderDoc()
   }
   R.vc = { d: U.doc, key, quote: quote.slice(0, 500), range: null, rect, top: vcScroller()?.scrollTop || 0 }
@@ -964,63 +965,79 @@ function vcSegments(text: string, d: NonNullable<ReturnType<typeof docById>>) {
 }
 export async function sendVoiceComments() {
   const d = docOpen(),
-    at = ctx.P // B527: they go to this project, however long the words take and wherever you go meanwhile
-  if (!d || U.vcSending || !els.text) return
-  U.vcSending = true
-  try {
-    const files = [...U.files]
-    await Promise.all(files.map((f) => f.done))
-    if (files.some((f) => f.transcribing)) toast('Posting when words are ready…')
-    for (let i = 0; files.some((f) => f.transcribing) && i < 240; i++) await sleep(500)
-    const { segs, err } = vcSegments(els.text.value, d)
-    if (err || !segs) return toast(err || 'Nothing to post', null, { error: true })
-    const ups = (fs: DraftFile[]) =>
-      fs
-        .filter((f) => f.f && !f.failed)
-        .map(({ f, name, mime, size, tr }) => ({ f, name, mime, size, ...(tr ? { tr } : {}) }))
-    const ops = segs.map((s) => ({
-      op: 'dc',
-      d: d.d,
-      key: s.key,
-      quote: s.quote,
-      text: s.text,
-      files: ups(files.filter((f) => f.vc === s.label)),
+    at = ctx.P, // B527: they go to this project, however long the words take and wherever you go meanwhile
+    box = els.text
+  if (!d || !box) return
+  const typed = box.value,
+    { segs, err } = vcSegments(typed, d)
+  if (err || !segs) return toast(err || 'Nothing to post', null, { error: true })
+  const files = [...U.files],
+    marks = U.vcMarks.filter((m) => m.d === d.d)
+  // each comment with the voice notes said about its quote; any other file goes with the last
+  const posts = segs
+    .map((s, i) => ({
+      s,
+      fs: files.filter((f) => f.vc === s.label || (i === segs.length - 1 && !segs.some((x) => x.label === f.vc))),
     }))
-    ops.at(-1)?.files.push(...ups(files.filter((f) => !segs.some((s) => s.label === f.vc)))) // other files go with the last
-    const sendOps = ops.filter((o) => o.text || o.files.length)
-    if (!sendOps.length) return toast('Nothing to post yet: say or write something under a quote')
-    const before = new Set(dcAll(d.d).map((c) => c.id))
-    await save(sendOps, () => sendVoiceComments(), at)
-    for (const f of files) {
-      f.sent = true
-      dropRec(f)
-    }
-    els.text.value = ''
-    U.files = []
-    U.vcMarks = U.vcMarks.filter((m) => m.d !== d.d)
+    .filter(({ s, fs }) => s.text || fs.length)
+  if (!posts.length) return toast('Nothing to post yet: say or write something under a quote')
+  // B3 (T422), r799: each comment is where it goes at once, the box empty; it is saved behind you, its voice notes'
+  // words first. Not saved: all of it comes back into the box.
+  markSent(U.draftKey)
+  box.value = ''
+  U.files = []
+  U.vcMarks = U.vcMarks.filter((m) => m.d !== d.d)
+  saveDraft()
+  const before = new Set(dcAll(d.d).map((c) => c.id)),
+    gone = posts.map(({ s }) => standInComment(d.d, { key: s.key!, quote: s.quote!, text: s.text! }))
+  for (const { s } of posts) U.docThreads.add(s.key!)
+  Object.assign(U, { docQuote: null, docSel: new Set(), docReply: null })
+  renderDoc()
+  bump()
+  const back = () => {
+    for (const g of gone) g()
+    if (els.text) els.text.value = [typed.trim(), els.text.value.trim()].filter(Boolean).join('\n')
+    U.files = [...files, ...U.files]
+    U.vcMarks = [...U.vcMarks, ...marks]
     saveDraft()
-    for (const s of segs) if (s.key) U.docThreads.add(s.key)
-    Object.assign(U, { docQuote: null, docSel: new Set(), docReply: null })
     renderDoc()
     bump()
-    const made = dcAll(d.d)
-      .filter((c) => !before.has(c.id) && c.by === 'you')
-      .map((c) => c.id)
-    toast(
-      `Posted ${sendOps.length === 1 ? '1 comment' : sendOps.length + ' comments'} on D${d.d}${made.length && !desk() ? ' · Edit is under it' : ''}`,
-      made.length
-        ? pushUndo(`Post ${made.length === 1 ? '1 comment' : made.length + ' comments'}`, async () => {
-            for (const id of made) await save({ op: 'dcdel', d: d.d, id }, undefined, at)
-            renderDoc()
-            toast('Taken back')
-          })
-        : null,
-    )
-  } catch {
-    /* save said why */
-  } finally {
-    U.vcSending = false
   }
+  await Promise.all(files.map((f) => f.done))
+  for (let i = 0; files.some((f) => f.transcribing) && i < 240; i++) await sleep(500) // their words go with them
+  const ups = (fs: DraftFile[]) =>
+    fs
+      .filter((f) => f.f && !f.failed)
+      .map(({ f, name, mime, size, tr }) => ({ f, name, mime, size, ...(tr ? { tr } : {}) }))
+  const ops = posts
+    .map(({ s, fs }) => ({ op: 'dc', d: d.d, key: s.key, quote: s.quote, text: s.text, files: ups(fs) }))
+    .filter((o) => o.text || o.files.length)
+  if (!ops.length) return back()
+  try {
+    await save(ops, undefined, at)
+  } catch {
+    return back() // Taska said no (it says why)
+  }
+  for (const f of files) {
+    f.sent = true
+    dropRec(f)
+  }
+  for (const g of gone) g() // what Taska saved shows instead
+  renderDoc()
+  bump()
+  const made = dcAll(d.d)
+    .filter((c) => !before.has(c.id) && c.id > 0 && c.by === 'you')
+    .map((c) => c.id)
+  toast(
+    `Posted ${ops.length === 1 ? '1 comment' : ops.length + ' comments'} on D${d.d}${made.length && !desk() ? ' · Edit is under it' : ''}`,
+    made.length
+      ? pushUndo(`Post ${made.length === 1 ? '1 comment' : made.length + ' comments'}`, async () => {
+          for (const id of made) await save({ op: 'dcdel', d: d.d, id }, undefined, at)
+          renderDoc()
+          toast('Taken back')
+        })
+      : null,
+  )
 }
 
 // ---------------------------------------------------------------- speaking into a document (F208)
