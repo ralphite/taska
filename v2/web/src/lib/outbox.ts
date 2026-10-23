@@ -127,19 +127,32 @@ export async function send() {
     }) // B124
 }
 // B412: the choices ticked in a document go in at once: into its text, and to its item as one reply. B524 (r736): Send
-// choices in the box's line sends them, and only them: what is in the box stays there, for what the box writes to.
+// choices in the box's line sends them; (#6754) what is written in the box goes with them, as their note.
 export function sendTicks(doc: Doc | undefined) {
   if (!doc || !ticksOf(doc).length) return
   const n = liveN(doc.n),
     sent = Object.fromEntries(ticksOf(doc).map(({ k, now }) => [k, now])),
-    words = tickWords(doc)
+    words = tickWords(doc),
+    box = els.text,
+    note = box?.value.trim() || ''
   if (byN.has(n)) {
-    outboxPush({
-      text: [`Answered in D${doc.d}:`, ...(words.length ? words : ['nothing ticked'])].join('\n'),
-      files: [],
+    const job = outboxPush({
+      text: [
+        `Answered in D${doc.d}:`,
+        ...(words.length ? words : ['nothing ticked']),
+        ...(note ? ['', note] : []),
+      ].join('\n'),
+      files: U.files,
       scope: code(n),
       kind: 'answer', // F419
     })
+    actLog('send', { to: job.scope, q: job.q, chars: job.text.length, files: job.files.length }) // F407
+    if (box && (note || U.files.length)) {
+      unsendable(job)
+      box.value = ''
+      U.files = []
+      saveDraft()
+    }
     flushOutbox()
     if (!desk()) toast(`Choices sent to ${code(n)}`) // the desktop's box says Sent already
   }

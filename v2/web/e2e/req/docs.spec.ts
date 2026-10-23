@@ -180,6 +180,28 @@ test("r736 r722: ticks wait, the box's mic stays the mic; Send choices is in the
   )
 })
 
+test('r736 #6754: what is written in the box goes with Send choices as their note, and the box is empty after (B524)', async ({
+  page,
+  request,
+}) => {
+  const p = await project(request, {
+    ...LOOP,
+    then: `${LOOP.then}T4 doc Pick the fruit
+  - [ ] Apples
+  - [ ] Pears
+`,
+  })
+  await open(page, p, 'D1')
+  await page.locator('[data-act="doc-tick"]').filter({ hasText: 'Pears' }).filter({ visible: true }).first().click()
+  await expect(page.locator('#scope')).toContainText('1 choice not sent')
+  await page.locator('#text').fill('Ripe ones only, please')
+  await page.locator('#scope [data-act="doc-ticks-send"]').click()
+  // one reply on the item: the choices, then the note
+  await expect.poll(() => p.read('T4')).toMatch(/Answered in D1:[\s\S]*Pears[\s\S]*Ripe ones only, please/)
+  await expect(page.locator('#text')).toHaveValue('')
+  await expect.poll(() => p.read('D1')).toMatch(/\[x\] Pears/i)
+})
+
 test('r280 B340: on the phone a comment needs no place picked: it is on the whole document', async ({
   page,
   request,
