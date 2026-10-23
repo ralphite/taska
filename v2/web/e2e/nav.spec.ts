@@ -173,3 +173,23 @@ test('D82 #7: a search says what the other projects gave: searching, nothing the
   await page.locator('#q').fill('zqxj-two')
   await expect(page.locator('[data-cross="failed"]').filter({ visible: true })).toBeVisible()
 })
+
+test('D82 #9: switching to another project, its name shows at once (not its address) and the desktop sidebar keeps Documents, Activity and Deleted while its data comes', async ({
+  page,
+  request,
+}) => {
+  const a = await project(request, LOOP),
+    b = await project(request, LOOP),
+    title = b.name.replace(/-/g, ' ')
+  await open(page, a)
+  await page.route(`**${b.url}api/state**`, async (r) => {
+    await new Promise((ok) => setTimeout(ok, 4000))
+    await r.continue()
+  })
+  if (!isDesk(page)) await page.locator('#projBtn').click()
+  await page.locator(`#drawerList a[href="${b.url}"]`).click()
+  await expect(page).toHaveURL(new RegExp(b.url))
+  const name = page.locator(isDesk(page) ? '#projBar' : '#projName')
+  await expect(name, 'before its data comes').toContainText(title, { timeout: 2000 })
+  if (isDesk(page)) await expect(page.locator('#sideFoot')).toContainText('Documents', { timeout: 2000 })
+})

@@ -352,7 +352,7 @@ export function SideFoot() {
       id="sideFoot"
       className="hidden shrink-0 flex-col gap-0.5 border-t border-zinc-200 p-2 lg:flex dark:border-zinc-800"
     >
-      {S.project ? (
+      {S.project || ctx.HERE ? ( // D82 #9: they stay while a project's data comes
         <>
           <SideLink sec="docs" icon="doc" label="Documents" />
           <SideLink sec="log" icon="history" label="Activity" />
@@ -620,8 +620,7 @@ function tabNumber(t: Tab): string | number {
 }
 export function ProjBar({ hidden, place = '' }: { hidden: boolean; place?: string }) {
   const S = model.S
-  const pre = !S.project && sideProjects()[0]
-  const name = pre ? titleOf(pre) : projTitle()
+  const name = projTitle() // D82 #9: its name from the project list until its data comes, never its address
   const { title } = agentLine()
   return (
     <nav
@@ -759,7 +758,8 @@ export function MainHead({ hidden, place = '' }: { hidden: boolean; place?: stri
             />
           </span>
           <span id="projName" className="truncate text-[19px] font-semibold tracking-tight">
-            {S.project ? projTitle() : decodeURIComponent(ctx.HERE || 'Taska')}
+            {/* D82 #9: switching, its name from the project list until its data comes, never its address */}
+            {ctx.HERE || S.project ? projTitle() : 'Taska'}
           </span>
         </button>
         <FailedPill />
