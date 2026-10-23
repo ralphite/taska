@@ -8,7 +8,8 @@ export const PACE = {
   press: 120,
   lift: 500,
   settle: 1700, // the page answered: time to see what changed
-  letter: 110, // typing
+  letter: 110, // typing a letter; a Chinese character takes longer
+  han: 300,
   agent: 2200, // an agent's words reach the page (it hears of them by itself)
   find: 8000, // the most a step waits for what it taps to show
 }
@@ -26,6 +27,22 @@ function overlay(doc: Document, id: string, css: Partial<CSSStyleDeclaration>) {
   return m
 }
 
+/** Bring it into sight, as a finger scrolls: up or down as little as needed; a chip in a strip that scrolls sideways
+ * (the views) to the strip's middle, so it is never half under the strip's arrows. */
+function inSight(el: HTMLElement) {
+  const view = el.ownerDocument.defaultView
+  for (let s = el.parentElement; s && view; s = s.parentElement) {
+    const o = view.getComputedStyle(s).overflowX
+    if ((o === 'auto' || o === 'scroll') && s.scrollWidth > s.clientWidth) {
+      const r = el.getBoundingClientRect(),
+        b = s.getBoundingClientRect()
+      s.scrollLeft += r.left + r.width / 2 - (b.left + b.width / 2)
+      break
+    }
+  }
+  el.scrollIntoView({ block: 'nearest' })
+}
+
 /** The mark where the finger is. */
 function fingerAt(doc: Document, x: number, y: number) {
   const m = overlay(doc, 'demoTap', {
@@ -36,7 +53,7 @@ function fingerAt(doc: Document, x: number, y: number) {
     background: 'rgba(37, 99, 235, 0.28)',
     border: '3px solid rgba(37, 99, 235, 0.9)',
     boxShadow: '0 0 0 6px rgba(255, 255, 255, 0.7)',
-    transition: 'left 450ms ease, top 450ms ease, opacity 200ms ease, transform 160ms ease',
+    transition: 'opacity 200ms ease, transform 160ms ease', // T456: where the finger lands, never sliding there
   })
   m.style.left = x + 'px'
   m.style.top = y + 'px'
@@ -55,7 +72,7 @@ export async function touch(
 ) {
   const doc = el.ownerDocument,
     win = doc.defaultView as Window & typeof globalThis
-  el.scrollIntoView({ block: 'nearest' })
+  inSight(el)
   const r = el.getBoundingClientRect(),
     at = { bubbles: true, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 },
     m = fingerAt(doc, at.clientX, at.clientY)
@@ -144,7 +161,7 @@ export async function typeIn(
   for (const ch of words) {
     set?.call(field, field.value + ch)
     field.dispatchEvent(new win.Event('input', { bubbles: true }))
-    await pause(PACE.letter)
+    await pause(/[\u3000-\u9fff\uff00-\uffef]/.test(ch) ? PACE.han : PACE.letter)
   }
   return true
 }
@@ -167,7 +184,7 @@ export async function pasteIn(doc: Document, url: string) {
 export async function swipe(el: HTMLElement, by: number, pause: (ms: number) => Promise<void>) {
   const doc = el.ownerDocument,
     win = doc.defaultView as Window & typeof globalThis
-  el.scrollIntoView({ block: 'nearest' })
+  inSight(el)
   const r = el.getBoundingClientRect(),
     y = r.top + Math.min(r.height / 2, 120),
     x0 = by > 0 ? r.left + 40 : r.right - 40,

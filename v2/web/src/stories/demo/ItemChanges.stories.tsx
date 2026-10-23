@@ -4,7 +4,7 @@ import type { Meta } from '@storybook/react-vite'
 import { demo, only, openMenu as menu, tap, write } from './demo'
 import { W } from './words'
 
-export default { title: 'Demo/Items' } satisfies Meta
+export default { title: 'Demo/Item changes' } satisfies Meta
 
 const task = tap('Tap a task to open it', 'T3')
 const status = tap('Tap its status', 'statusPill')

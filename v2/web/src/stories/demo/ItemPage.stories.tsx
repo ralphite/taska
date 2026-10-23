@@ -1,43 +1,70 @@
-// T457, R488, D68 (6): an item's page, played by itself on the real page: open an item, see the inputs it came
-// from, go to one of its subitems and back. Its voice note is not played: in Storybook the page cannot load a
-// recording yet (the player's Audio is not in the page, so the saved answers never serve its file).
-import type { Meta, StoryObj } from '@storybook/react-vite'
-import { Player, type Script } from '../lib/player'
-import { end, first, look, tap } from './steps'
+// T457 (#6481): an item's page: where it came from, its links, pictures and voice notes, its talk, replying. Each
+// demo is its steps (./demo.tsx).
+import type { Meta } from '@storybook/react-vite'
+import { agent, demo, only, tap, write } from './demo'
+import { W } from './words'
 
-const meta: Meta = {
-  title: 'Demo/Item page',
-  parameters: { layout: 'fullscreen', viewport: { disable: true } },
-  globals: { viewport: { value: '100pct-100pct', isRotated: false } }, // the frame fits the room (see Needs you)
-}
-export default meta
-type Story = StoryObj
+export default { title: 'Demo/Item page' } satisfies Meta
 
-/** Open F01: its words, its document, the inputs it came from, its subitems; open one, come back. */
-const open =
-  (desktop: boolean): Script =>
-  async (c) => {
-    await first(c, 'Items \u00b7 tap F01 to open it')
-    await tap(c, '', '#list [data-act="open"][data-n="1"]')
-    await look(c, 'F01 \u00b7 its words, document, subitems', 3000)
-    await tap(c, 'F01 \u00b7 tap From 4 inputs: your words', '#detailView [data-act="sources"]')
-    await look(c, 'Came from \u00b7 your words, voice too', 3200)
-    await tap(c, 'Came from \u00b7 tap \u00d7 to close it', '#dlgClose')
-    await tap(c, 'F01 \u00b7 tap T15, one of its subitems', '#detailView [data-act="goto"][data-n="15"]')
-    await look(c, 'T15 \u00b7 a subitem: its parent is F01', 2800)
-    if (desktop) await tap(c, 'T15 \u00b7 tap F01 in the list to go back', '#list [data-act="open"][data-n="1"]')
-    else await tap(c, 'T15 \u00b7 tap Back to go to F01', '#backBtn')
-    await end(c, 'F01 \u00b7 back where you were')
-  }
-const openPhone = open(false),
-  openDesktop = open(true)
-export const OpenAnItem: Story = {
-  name: 'Open an item \u00b7 phone',
-  render: (_, { globals }) => <Player path="/p/shop/" script={openPhone} scheme={String(globals.scheme)} />,
-}
-export const OpenAnItemOnTheDesktop: Story = {
-  name: 'Open an item \u00b7 desktop',
-  render: (_, { globals }) => (
-    <Player path="/p/shop/" script={openDesktop} scheme={String(globals.scheme)} on="desktop" />
-  ),
-}
+const feature = tap('Tap a feature to open it', 'F1')
+const task = tap('Tap a task to open it', 'T3')
+const answer = agent('The agent answers: it shows up by itself', `T3 say ${W.agentT3}`)
+
+export const OpenAnItem = demo({
+  steps: [
+    feature,
+    tap('Tap From 4 inputs: your own words it came from', 'sources'),
+    tap('Close them', 'closeSheet'),
+    tap('Tap T15, one of its subitems', 'link', 'T15'),
+    only('phone', tap('Tap Back', 'back')),
+    only('desktop', tap('Tap F01 in the list to go back', 'F1')),
+  ],
+  done: 'Back on F01, where you were',
+})
+
+export const ReplyToAnItem = demo({
+  steps: [task, write('Write to the agent', W.replyT3), tap('Tap Send', 'send'), answer],
+  done: 'Your reply and its answer, in the talk',
+})
+
+export const ReplyByVoice = demo({
+  steps: [task, tap('Tap the mic', 'mic'), { say: 'Speak', speak: 5 }, tap('Tap Send', 'recSend'), answer],
+  done: 'Your voice note with its words, and the agent answered',
+})
+
+export const LookAtAPicture = demo({
+  steps: [
+    tap('Tap a bug with a screenshot', 'B36'),
+    tap('Tap the picture', 'picture', 1),
+    tap('Tap to see it at full size', 'zoom'),
+    tap('Close it', 'closePicture'),
+  ],
+  done: 'Back on the item',
+})
+
+export const PlayAVoiceNote = demo({
+  steps: [feature, tap('Tap play on a voice note', 'play', 1), { say: 'Listen' }],
+  done: 'It plays your words as you said them',
+})
+
+export const ReadAllOfALongMessage = demo({
+  steps: [tap('Tap a bug the agent wrote a lot on', 'B2'), tap('Tap Show more', 'showMore', 'Show')],
+  done: 'The whole message',
+})
+
+export const FollowALink = demo({
+  steps: [
+    tap('Tap the idea the agent proposed', 'I4'),
+    tap('Tap D2 in its words: the document it names', 'docLink', 'D2'),
+  ],
+  done: 'The document it names, opened from its code',
+})
+
+export const FoldAnAgentsMessage = demo({
+  steps: [
+    tap('Tap a bug the agent wrote a lot on', 'B2'),
+    tap('Tap ... on its message', 'messageMenu', 1),
+    tap('Tap Hide: it folds to one line', 'hideMessage'),
+  ],
+  done: 'Folded to one line; tap it to read it again',
+})
