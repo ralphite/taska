@@ -5,4 +5,4 @@
 cd "$(dirname "$0")/../web" || exit 1
 export PATH="$HOME/.local/bin:/opt/homebrew/bin:$PATH" # the same node as the shell builds the page with
 node .storybook/app.mjs --dev || exit 1 # the page as the stories open it, from the source
-exec ./node_modules/.bin/storybook dev -p 6007 --host 127.0.0.1 --no-open --ci
+exec ./node_modules/.bin/storybook dev -p 6007 --exact-port --host 127.0.0.1 --no-open --ci # always 6007: the link and Local Hub point there

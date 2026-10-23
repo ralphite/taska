@@ -14,6 +14,14 @@ const config: StorybookConfig = {
   // the page's service worker is not Storybook's: leave the PWA plugin out of it
   viteFinal: (config) => ({
     ...config,
+    // the built page and its live copy are not sources: a build or a ship must not reload the stories you look at
+    server: {
+      ...config.server,
+      watch: {
+        ...config.server?.watch,
+        ignored: ['**/dist/**', '**/live/**', '**/test-results/**', '**/playwright-report/**'],
+      },
+    },
     define: { ...config.define, __PAGE_BODY__: JSON.stringify(BODY) },
     plugins: (config.plugins || [])
       .flat()
