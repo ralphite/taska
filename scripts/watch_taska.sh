@@ -54,12 +54,16 @@ import json, sqlite3, sys, time
 from datetime import datetime
 db, seq, last, p = sys.argv[1], int(sys.argv[2]), sys.argv[3], sys.argv[4]
 tell = len(sys.argv) > 5
-c = sqlite3.connect("file:%s?mode=ro" % db, uri=True)
-said = {}
-for (d,) in c.execute("select data from inputs"):
-    d = json.loads(d)
-    said[d.get("id")] = d.get("text") or ""
-for s, d in c.execute("select seq, data from events where k='in' and seq>? order by seq", (seq,)):
+try:  # while Taska restarts the database may not open read-only: try again next round, quietly
+    c = sqlite3.connect("file:%s?mode=ro" % db, uri=True)
+    said = {}
+    for (d,) in c.execute("select data from inputs"):
+        d = json.loads(d)
+        said[d.get("id")] = d.get("text") or ""
+    rows = c.execute("select seq, data from events where k='in' and seq>? order by seq", (seq,)).fetchall()
+except sqlite3.Error:
+    sys.exit(0)
+for s, d in rows:
     d = json.loads(d)
     text = said.get(d.get("id")) or d.get("text") or ""
     age = time.time() - datetime.fromisoformat(d["t"]).timestamp()
