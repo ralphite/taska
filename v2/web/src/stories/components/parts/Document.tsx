@@ -192,6 +192,23 @@ export const WebPageResolved = doc(PAGE, (_, d) => {
   const c = onRow(d, { id: 9002, th: 9002, text: '就这样', t: ago(60) }) // fine as it is
   d.resolved = { [threadKey(c)]: ago(30) }
 })
+/** r799: a comment on a part the page does not show now (another view of it, or the page changed since): under the
+ * page on the phone (the desktop has it in the item's conversation) */
+export const WebPageNotOnPage = also(
+  doc(PAGE, (_, d) => {
+    const c: Comment = {
+      id: 9003,
+      key: "h:[id='weekly']", // a part this page does not have now
+      th: 9003,
+      quote: 'Orders per week',
+      text: '按周的那张图还在吗？', // is the weekly chart still there?
+      by: 'you',
+      t: ago(45),
+    }
+    d.blocks = [...d.blocks, { key: c.key, kind: 'para', text: c.quote, comments: [c] }]
+  }),
+  { platform: 'phone' },
+)
 /** A paragraph picked to comment on: the box below writes to it. */
 export const ParagraphPicked = doc(PLAN, (_, d) => {
   U.docSel = new Set([d.blocks[1].key])

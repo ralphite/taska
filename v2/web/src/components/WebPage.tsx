@@ -9,6 +9,7 @@ import { renderDoc } from '../lib/docs'
 import { act } from '../lib/actions'
 import { markUsed } from '../lib/data'
 import type { Doc } from '../lib/types'
+import { plainQuote } from '../lib/markdown'
 import { Icon } from './ui'
 import { DraftCard, SayRow, Thread, markLive } from './Doc'
 
@@ -186,6 +187,7 @@ export function WebPage({ d }: { d: Doc }) {
   const tall = useRef({ h: 0, at: 0, step: 0, n: 0 }) // r672: what the page said its height was, and how it grew
   const [hover, setHover] = useState<Part | null>(null)
   const [rects, setRects] = useState<Record<string, Box>>({})
+  const [measured, setMeasured] = useState(false) // the page has said where its parts are
   const [lit, setLit] = useState<string | null>(null) // B503: the part whose comment count is under the pointer
   const away = useRef<(() => void) | null>(null) // B503: closes the open comments (a click anywhere else)
   // D56: the pointer leaves the page to reach the buttons over it: the part stays lit while it is on them. On the way
@@ -264,6 +266,10 @@ export function WebPage({ d }: { d: Doc }) {
     counts.push({ ...t, top, left })
   }
   spots.current = counts
+  // r799: on the phone, comments on parts the page does not show now (another view of it, or the page was changed
+  // since) are under it, as a paragraph's whose words changed are under a Markdown document (the desktop has them in
+  // its item's conversation)
+  const elsewhere = measured ? threads.filter((t) => !t.drafts && !shown(rects[t.key])) : []
   const open = counts.find((c) => threadOpen(c.tk))
   /** r672: the frame takes the page's height; a page that grows by the same step each time its frame does (its height
    * follows its window's, 100vh) stops growing it after three such steps in quick succession */
@@ -306,7 +312,10 @@ export function WebPage({ d }: { d: Doc }) {
       if (m.ready) frame.current?.contentWindow?.postMessage({ taska: 1, ...(JSON.parse(WANT.now) as object) }, '*')
       if (m.h) fit(m.h)
       if ('hover' in m) hoverAt(m.hover || null, m.at)
-      if (m.rects) setRects(m.rects)
+      if (m.rects) {
+        setRects(m.rects)
+        setMeasured(true)
+      }
       if (m.down) away.current?.()
       // B497: on the desktop a part picked stays the one until Esc, whatever the page sends meanwhile
       const one = desk() && !!U.docQuote?.key.startsWith('h:')
@@ -393,6 +402,17 @@ export function WebPage({ d }: { d: Doc }) {
         style={{ height }}
         className="block w-full bg-white"
       />
+      {!side && elsewhere.length ? (
+        <div className="mt-6 space-y-4 border-t border-zinc-200 px-4 pt-4 dark:border-zinc-800">
+          <div className="text-xs font-medium text-zinc-500">Not on the page now</div>
+          {elsewhere.map((t) => (
+            <section key={t.tk}>
+              <div className="line-clamp-2 text-sm text-zinc-400">“{plainQuote(t.quote)}”</div>
+              <Thread d={d} k={t.tk} comments={t.comments} />
+            </section>
+          ))}
+        </div>
+      ) : null}
       {hover && mode === true && !held ? ring('hover', hover.rect, 'ring-blue-500') : null}
       {held && rects[held.key] ? ring(held.key, rects[held.key], 'ring-amber-300') : null}
       {amber.map((k) => ring(k, rects[k], 'ring-amber-400'))}

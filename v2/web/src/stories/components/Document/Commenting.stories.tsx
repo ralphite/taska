@@ -18,3 +18,7 @@ export const WebPageCommentOpen: StoryObj = { ...Document.WebPageCommentOpen, na
 export const WebPageNotSent: StoryObj = { ...Document.WebPageNotSent, name: 'Web page part, said and not sent' }
 export const WebPageCommentSaving: StoryObj = { ...Document.WebPageCommentSaving, name: 'Web page comment being saved' }
 export const WebPageResolved: StoryObj = { ...Document.WebPageResolved, name: 'Web page thread resolved' }
+export const WebPageNotOnPage: StoryObj = {
+  ...Document.WebPageNotOnPage,
+  name: 'Web page comment on a part not shown now',
+}
