@@ -96,6 +96,10 @@ TELL  The user reads Taska only, often on a phone: never your terminal or chat. 
 RULES Reuse existing items (/items?q=) instead of duplicating. Keep the user's wording. Never turn a
       suggestion into a decision: use propose/ask/block and wait. Commands with src=rN (or ack rN) mark that
       input handled; if an input is a question for you, answer it in the related item (or tell the user) and ack it.
+ASK   Ask only when a wrong guess would do damage that is hard to undo: spending money, sending something to
+      someone, deleting, or a choice of scope or design that is the user's to make. Otherwise take the most
+      likely answer from what you already know (their address, their earlier choices), say the assumption in
+      one line, and finish the work; the user corrects you if needed. Never ask what they already said (r814).
 
 MANAGER MODE (optional: if your app can't run two sessions this way, work alone as above)
       A manager session hands items to one long-lived worker session; it never edits code itself.
