@@ -504,9 +504,11 @@ export function ItemPage({ it, left = null, bare = false }: { it: Item; left?: R
           {left}
         </div>
       ) : (
+        // D77 #3: while you edit it, the item's part takes the room the editor needs (up to the whole pane), so its next
+        // step and Save are in sight, not under the line
         <div
           id="itemTop"
-          className={`flex flex-col lg:shrink-0 ${duo ? 'lg:h-full lg:w-[var(--duo-w,55%)]' : 'lg:h-[var(--top-h,40%)]'}`}
+          className={`flex flex-col lg:shrink-0 ${duo ? 'lg:h-full lg:w-[var(--duo-w,55%)]' : U.editing === it.n ? 'lg:max-h-full' : 'lg:h-[var(--top-h,40%)]'}`}
         >
           <div
             id="itemClip"

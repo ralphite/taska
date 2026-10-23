@@ -359,3 +359,33 @@ test("D81 #20: Done is one icon wherever it is offered: the item bar's is the sa
   const row = await svg(page.locator('#list article[data-n="1"] [data-act="swipe"][data-v="done"]').first())
   expect(bar).toBe(row)
 })
+
+test('D77 #3: editing an item with a long description and a long talk, its next step and Save are in sight, not under the line to its talk', async ({
+  page,
+  request,
+}) => {
+  const long = Array.from(
+    { length: 14 },
+    (_, i) => `  Line ${i + 1} of a long description, with enough words to fill the line.`,
+  ).join('\n')
+  const p = await project(request, {
+    agent: `new task P2 now A long one\n${long}\n`,
+    approve: ['T1'],
+    then:
+      Array.from(
+        { length: 8 },
+        (_, i) => `T1 say Message ${i + 1} from the agent, long enough to take a line or two.`,
+      ).join('\n') + '\n',
+  })
+  await open(page, p, 'T1')
+  await page.locator('#itemMenuBtn').click()
+  await page.locator('[data-act="edit"]').filter({ visible: true }).first().click()
+  const save = page.locator('[data-act="edit-save"]').filter({ visible: true })
+  await expect(save).toBeVisible()
+  const shown = await save.evaluate((e) => {
+    const r = e.getBoundingClientRect(),
+      top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2)
+    return !!top && (top === e || e.contains(top))
+  })
+  expect(shown, 'Save is in sight, nothing over it').toBe(true)
+})
