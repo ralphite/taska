@@ -4,6 +4,8 @@
 // changes what Taska keeps. The phone and the desktop play side by side, step by step together. Each tap shows a
 // large mark that presses and ripples where the finger lands (finger.ts); the steps take the time a person takes. What each step does is said in a bar under the frames, never over them; the frames keep
 // one size. Play again starts over. T456 (#5879): with Autoplay off, each tap waits for yours, in either frame.
+// T553 (r778): a guided demo starts with Autoplay off, the place to tap breathing; a focused one shows only its part of
+// the page (the item's pane and the box, say), not the whole screen.
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { App, pageIn, wait } from '../pages/screens'
 import { PACE, drag, flick, pasteIn, press, selectIn, swipe, touch, typeIn } from './finger'
@@ -67,9 +69,14 @@ export interface Demo {
   steps: Step[]
   /** the last line, once it is all done */
   done: string
+  /** a guided demo (T553): Autoplay starts off, so each tap waits for yours where the mark breathes */
+  guided?: boolean
+  /** only this part of the page shows, not the whole screen (T553): the box around these, per device */
+  focus?: Partial<Record<On, readonly string[]>>
 }
 
 const SIZE: Record<On, [number, number]> = { phone: [393, 852], desktop: [1440, 900] }
+type Box = { x: number; y: number; w: number; h: number }
 
 interface Frame {
   on: On
@@ -112,17 +119,25 @@ export function DemoPlayer({ demo, scheme }: { demo: Demo; scheme: string }) {
   })
   const start = useRef<() => void>(() => {})
   const [run, setRun] = useState(0)
-  const [auto, setAuto] = useState(true)
-  const autoNow = useRef(true)
-  // the frames as big as the room holds with the bar under them, fixed once: they never move or change size. The
+  const [auto, setAuto] = useState(!demo.guided)
+  const autoNow = useRef(!demo.guided)
+  // T553: the part of the page a focused demo shows, once the page has drawn it
+  const [crop, setCrop] = useState<Partial<Record<On, Box>>>({})
+  const dims = (on: On): [number, number] => {
+    const c = crop[on]
+    return c ? [c.w, c.h] : SIZE[on]
+  }
+  // the frames as big as the room holds with the bar under them: they never move or change size while it plays. The
   // phone is the one Yadong holds: it gets the height there is, the desktop the width left beside it.
-  const [scale] = useState(() => {
+  const scale = useMemo(() => {
     const h = Math.max(320, innerHeight - 32 - 136),
-      w = innerWidth - 32
-    const phone = ons.includes('phone') ? Math.min(1, h / SIZE.phone[1], w / SIZE.phone[0]) : 0
-    const left = w - (phone ? SIZE.phone[0] * phone + 24 : 0)
-    return { phone, desktop: Math.min(1, h / SIZE.desktop[1], left / SIZE.desktop[0]) }
-  })
+      w = innerWidth - 32,
+      [pw, ph] = crop.phone ? [crop.phone.w, crop.phone.h] : SIZE.phone,
+      [dw, dh] = crop.desktop ? [crop.desktop.w, crop.desktop.h] : SIZE.desktop
+    const phone = ons.includes('phone') ? Math.min(1, h / ph, w / pw) : 0
+    const left = w - (phone ? pw * phone + 24 : 0)
+    return { phone, desktop: Math.min(1, h / dh, left / dw) }
+  }, [crop, ons])
   useEffect(() => {
     let stop = false
     const pause = (ms: number) => (stop ? new Promise<void>(() => {}) : (wait(ms) as Promise<void>))
@@ -136,6 +151,25 @@ export function DemoPlayer({ demo, scheme }: { demo: Demo; scheme: string }) {
           (Window & typeof globalThis & { __storyServer?: Promise<Frame['server']> }) | null
         if (!f?.contentDocument || !win?.__storyServer || stop) return
         frames.push({ on, doc: f.contentDocument, server: await win.__storyServer })
+      }
+      // T553: a focused demo shows only its part of the page: the box around what it names, found once it is drawn
+      if (demo.focus) {
+        const next: Partial<Record<On, Box>> = {}
+        for (const f of frames) {
+          const els = await Promise.all((demo.focus[f.on] || []).map((sel) => find(f, sel)))
+          const rs = els.flatMap((el) => (el ? [el.getBoundingClientRect()] : []))
+          if (!rs.length) continue
+          const x = Math.min(...rs.map((r) => r.left)),
+            y = Math.min(...rs.map((r) => r.top))
+          next[f.on] = {
+            x,
+            y,
+            w: Math.max(...rs.map((r) => r.right)) - x,
+            h: Math.max(...rs.map((r) => r.bottom)) - y,
+          }
+        }
+        if (stop) return
+        setCrop(next)
       }
       // a voice note needs sound, and a browser lets a page have it only after you clicked or tapped there
       const mute = frames.some((f) => {
@@ -261,8 +295,9 @@ export function DemoPlayer({ demo, scheme }: { demo: Demo; scheme: string }) {
     >
       <div className="flex items-start gap-6" key={run}>
         {ons.map((on) => {
-          const [w, h] = SIZE[on],
-            k = scale[on]
+          const [w, h] = dims(on),
+            k = scale[on],
+            c = crop[on]
           return (
             <div
               key={on}
@@ -272,7 +307,12 @@ export function DemoPlayer({ demo, scheme }: { demo: Demo; scheme: string }) {
               <div
                 ref={(el) => void (boxes.current[on] = el)}
                 className="[&_iframe]:h-full"
-                style={{ width: w, height: h, transform: `scale(${k})`, transformOrigin: '0 0' }}
+                style={{
+                  width: SIZE[on][0],
+                  height: SIZE[on][1],
+                  transform: `scale(${k})${c ? ` translate(${-c.x}px, ${-c.y}px)` : ''}`,
+                  transformOrigin: '0 0',
+                }}
               >
                 <App path={demo.path || '/p/shop/'} scheme={scheme} server={seed} />
               </div>

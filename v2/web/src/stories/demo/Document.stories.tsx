@@ -9,8 +9,6 @@ export default { title: 'Demo/Document' } satisfies Meta
 const doc = tap('Tap its document', 'docOpen')
 /** F01's plan, D1, with comments on it */
 const plan = [open.feature, doc]
-/** T09's plan, D4, with a list to tick */
-const form = [open.checklist, doc]
 const thread = tap('Tap 2: the talk on that paragraph', 'thread', '2')
 const pick = tap('Tap a paragraph: your words go to it', 'paragraph', 4)
 
@@ -56,14 +54,44 @@ export const DeleteACommentThenUndo = demo({
   done: 'It is back',
 })
 
+// T553 (r778): the choices in a document, guided: each tap waits for yours where the mark breathes, and the desktop
+// shows only the item's pane, its document and the box under it, not the whole screen (B524: the box's line sends
+// the ticks, with what is written in the box as their note)
+const choices = { guided: true, path: '/p/shop/T9', focus: { desktop: ['#detailView', '#foot'] } } as const
+const sendChoices = tap('Tap Send choices, in the line over the box: the ticks go', 'sendChoices')
+
 export const TickAListAndSend = demo({
+  ...choices,
   steps: [
-    ...form,
+    doc,
     tap('Tick what you want first', 'tick', 1),
-    tap('And this one', 'tick', 3),
-    tap('Tap Send: your ticks go into the document and to the agent', 'send'),
+    tap('And this one: the line over the box says 2 choices not sent', 'tick', 3),
+    sendChoices,
   ],
-  done: 'Sent: the ticks are in the document, and the agent has them',
+  done: 'Sent: the ticks are in the document, and the agent has them as one reply',
+})
+
+export const AddANoteToYourChoices = demo({
+  ...choices,
+  steps: [
+    doc,
+    tap('Tick one', 'tick', 2),
+    write('Write a note in the box', W.noteT7),
+    tap('Tap Send choices: the note goes with them', 'sendChoices'),
+  ],
+  done: 'The agent has your ticks and your note, in one reply; the box is empty again',
+})
+
+export const TicksWaitUntilSent = demo({
+  ...choices,
+  steps: [
+    doc,
+    tap('Tick one: it waits in the document until you send it', 'tick', 1),
+    tap('Go back to the item: its card for the document says 1 choice not sent', 'docBack'),
+    tap('Open the document again: your tick is still there', 'docOpen'),
+    sendChoices,
+  ],
+  done: 'Nothing ticked is lost: it waits, said on the document and its card, until you send it',
 })
 
 export const EditTheDocument = demo({
@@ -103,13 +131,14 @@ export const MoveACommentToAnotherParagraph = demo({
 })
 
 export const ChangeYourTicks = demo({
+  ...choices,
   steps: [
-    ...form,
+    doc,
     tap('Tick one', 'tick', 1),
-    send,
+    sendChoices,
     tap('Changed your mind? Tap Modify', 'tickAgain'),
     tap('Tick another', 'tick', 2),
-    tap('Tap Send again', 'send'),
+    tap('Tap Send choices again', 'sendChoices'),
   ],
   done: 'The document and the agent have your new ticks',
 })

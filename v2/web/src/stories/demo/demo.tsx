@@ -93,6 +93,8 @@ export const T = {
   commentTo: '[data-act="dc-move-to"]',
   wholeDoc: '[data-act="doc-whole"]',
   tickAgain: '[data-act="doc-tick-edit"]',
+  sendChoices: '[data-act="doc-ticks-send"]', // B524: the box's line sends the ticks, never its round button
+  docBack: { phone: '[data-act="close"]', desktop: '[data-act="doc-close"]' },
   docDelete: '[data-act="doc-delete"]',
   // voice: what may be misheard, a word put right
   doubt: '[data-act="doubt-pick"]',
