@@ -112,6 +112,27 @@ test("D77 #1 #2, D82 #1-3: an item's address reloaded says Loading in its place 
   }
 })
 
+test('D82 #2: the home page says when Taska is out of reach and loads by itself once it answers, without a reload', async ({
+  page,
+  request,
+}) => {
+  await project(request) // at least one project to show
+  let down = true
+  await page.route('**/api/projects', (r) => (down ? r.abort('connectionrefused') : r.continue()))
+  await page.goto('/')
+  await expect(page.locator('#list')).toContainText('Taska is out of reach, retrying\u2026')
+  down = false
+  await expect(page.locator('#list a').first()).toBeVisible({ timeout: 15000 })
+  await expect(page.locator('#list')).not.toContainText('out of reach')
+  // the browser kept the list: it stays, and a line over it says Taska is out of reach until it answers again
+  down = true
+  await page.reload()
+  await expect(page.locator('#offline')).toHaveText('Taska is out of reach, retrying\u2026')
+  await expect(page.locator('#list a').first()).toBeVisible()
+  down = false
+  await expect(page.locator('#offline')).toHaveCount(0, { timeout: 15000 })
+})
+
 test('D82 #4: a link to a project that never was says only that it is not there; a deleted one offers Restore', async ({
   page,
   request,

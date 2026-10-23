@@ -69,6 +69,7 @@ export function Home() {
   // D82 #4: a project that never was (an old or mistyped link): said so, nothing to restore
   const [none, setNone] = useState(() => new URLSearchParams(location.search).get('none'))
   const [goneText, setGoneText] = useState('')
+  const [off, setOff] = useState(false)
   const qRef = useRef<HTMLInputElement>(null),
     npRef = useRef<HTMLInputElement>(null)
   const load = () =>
@@ -84,7 +85,20 @@ export function Home() {
       },
     )
   useEffect(() => {
-    load().catch(() => {})
+    // D82 #2 (T424): Taska out of reach or failing: said so, and asked again by itself, more slowly each time, until it
+    // answers
+    let stop = false,
+      timer = 0
+    const tryLoad = (wait: number) =>
+      load().then(
+        () => setOff(false),
+        () => {
+          if (stop) return
+          setOff(true)
+          timer = window.setTimeout(() => tryLoad(Math.min(wait * 2, 10000)), wait)
+        },
+      )
+    void tryLoad(1000)
     if (gone || none) history.replaceState(null, '', '/')
     const show = (e: PageTransitionEvent) => {
       if (e.persisted) void load()
@@ -105,6 +119,8 @@ export function Home() {
     addEventListener('pageshow', show)
     addEventListener('keydown', key)
     return () => {
+      stop = true
+      clearTimeout(timer)
       removeEventListener('pageshow', show)
       removeEventListener('keydown', key)
     }
@@ -241,6 +257,15 @@ export function Home() {
           </button>
         </div>
       ) : null}
+      {off && list ? (
+        // D82 #2: the projects below are the ones this browser kept from before
+        <div
+          id="offline"
+          className="mb-3 rounded-xl bg-zinc-100 px-4 py-3 text-sm text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100"
+        >
+          {'Taska is out of reach, retrying\u2026'}
+        </div>
+      ) : null}
       {hits && q.trim() ? (
         <div
           id="hits"
@@ -286,7 +311,9 @@ export function Home() {
         </div>
         <ul id="list">
           {!list ? (
-            <li className="px-4 py-3 text-sm text-zinc-500">Loading…</li>
+            <li className="px-4 py-3 text-sm text-zinc-500">
+              {off ? 'Taska is out of reach, retrying\u2026' : 'Loading\u2026'}
+            </li>
           ) : !list.length ? (
             <li className="px-4 py-3 text-sm text-zinc-500">No projects yet.</li>
           ) : (
