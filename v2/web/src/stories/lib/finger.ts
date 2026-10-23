@@ -26,27 +26,39 @@ function overlay(doc: Document, id: string, css: Partial<CSSStyleDeclaration>) {
   return m
 }
 
-/** Touch this element. `mine`: Autoplay is off, so the mark breathes there until it settles: true when you tapped
- * here yourself, false when you tapped the same step elsewhere and this one follows. */
-export async function touch(el: HTMLElement, pause: (ms: number) => Promise<void>, mine?: Promise<boolean>) {
+/** The mark where the finger is. */
+function fingerAt(doc: Document, x: number, y: number) {
+  const m = overlay(doc, 'demoTap', {
+    width: MARK + 'px',
+    height: MARK + 'px',
+    margin: `-${MARK / 2}px 0 0 -${MARK / 2}px`,
+    borderRadius: '50%',
+    background: 'rgba(37, 99, 235, 0.28)',
+    border: '3px solid rgba(37, 99, 235, 0.9)',
+    boxShadow: '0 0 0 6px rgba(255, 255, 255, 0.7)',
+    transition: 'left 450ms ease, top 450ms ease, opacity 200ms ease, transform 160ms ease',
+  })
+  m.style.left = x + 'px'
+  m.style.top = y + 'px'
+  m.style.opacity = '1'
+  return m
+}
+
+/** Touch this element (with a key held: "Meta" or "Shift", a desktop's Cmd-click or Shift-click). `mine`: Autoplay
+ * is off, so the mark breathes there until it settles: true when you tapped here yourself, false when you tapped the
+ * same step elsewhere and this one follows. */
+export async function touch(
+  el: HTMLElement,
+  pause: (ms: number) => Promise<void>,
+  mine?: Promise<boolean>,
+  hold?: 'Meta' | 'Shift',
+) {
   const doc = el.ownerDocument,
     win = doc.defaultView as Window & typeof globalThis
   el.scrollIntoView({ block: 'nearest' })
   const r = el.getBoundingClientRect(),
     at = { bubbles: true, clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 },
-    m = overlay(doc, 'demoTap', {
-      width: MARK + 'px',
-      height: MARK + 'px',
-      margin: `-${MARK / 2}px 0 0 -${MARK / 2}px`,
-      borderRadius: '50%',
-      background: 'rgba(37, 99, 235, 0.28)',
-      border: '3px solid rgba(37, 99, 235, 0.9)',
-      boxShadow: '0 0 0 6px rgba(255, 255, 255, 0.7)',
-      transition: 'left 450ms ease, top 450ms ease, opacity 200ms ease, transform 160ms ease',
-    })
-  m.style.left = at.clientX + 'px'
-  m.style.top = at.clientY + 'px'
-  m.style.opacity = '1'
+    m = fingerAt(doc, at.clientX, at.clientY)
   if (mine) {
     const breathe = m.animate([{ opacity: 1 }, { opacity: 0.35 }, { opacity: 1 }], {
       duration: 1400,
@@ -73,7 +85,10 @@ export async function touch(el: HTMLElement, pause: (ms: number) => Promise<void
   el.dispatchEvent(new win.PointerEvent('pointerdown', { ...at, pointerType: 'touch' }))
   await pause(PACE.press)
   el.dispatchEvent(new win.PointerEvent('pointerup', { ...at, pointerType: 'touch' }))
-  el.click()
+  if (hold)
+    el.dispatchEvent(new win.MouseEvent('click', { ...at, metaKey: hold === 'Meta', shiftKey: hold === 'Shift' }))
+  else el.click()
+  if (el.matches('input, textarea, select')) el.focus() // a field you tap is the one you type in
   m.style.transform = 'scale(1)'
   await pause(PACE.lift)
   m.style.opacity = '0'
@@ -114,15 +129,21 @@ export async function press(doc: Document, chord: string, pause: (ms: number) =>
   cap.style.opacity = '0'
 }
 
-/** Type words into the box, letter by letter (false: there is no box). */
-export async function typeIn(doc: Document, words: string, pause: (ms: number) => Promise<void>) {
-  const win = doc.defaultView as Window & typeof globalThis,
-    t = doc.querySelector<HTMLTextAreaElement>('#text')
-  if (!t) return false
-  t.focus()
+/** Type words, letter by letter, into this field (the box when none is given): false when it is not there. */
+export async function typeIn(
+  doc: Document,
+  words: string,
+  pause: (ms: number) => Promise<void>,
+  field: Element | null = doc.querySelector('#text'),
+) {
+  const win = doc.defaultView as Window & typeof globalThis
+  if (!(field instanceof win.HTMLInputElement || field instanceof win.HTMLTextAreaElement)) return false
+  field.focus()
+  // the field's own setter, as the browser sets it when you type: a field the page keeps in step sees the change
+  const set = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(field), 'value')?.set
   for (const ch of words) {
-    t.value += ch
-    t.dispatchEvent(new win.Event('input', { bubbles: true }))
+    set?.call(field, field.value + ch)
+    field.dispatchEvent(new win.Event('input', { bubbles: true }))
     await pause(PACE.letter)
   }
   return true
@@ -139,4 +160,39 @@ export async function pasteIn(doc: Document, url: string) {
   t.focus()
   t.dispatchEvent(new win.ClipboardEvent('paste', { clipboardData: dt, bubbles: true, cancelable: true }))
   return true
+}
+
+/** Swipe across this element, this far (px: right when more than 0), the finger's mark going along. From its edge
+ * when it is the whole page (the phone's swipe back starts at the left edge of the screen). */
+export async function swipe(el: HTMLElement, by: number, pause: (ms: number) => Promise<void>) {
+  const doc = el.ownerDocument,
+    win = doc.defaultView as Window & typeof globalThis
+  el.scrollIntoView({ block: 'nearest' })
+  const r = el.getBoundingClientRect(),
+    y = r.top + Math.min(r.height / 2, 120),
+    x0 = by > 0 ? r.left + 40 : r.right - 40,
+    m = fingerAt(doc, x0, y)
+  await pause(PACE.aim)
+  m.style.transition = 'opacity 200ms ease'
+  const t = (x: number) => new win.Touch({ identifier: 1, target: el, clientX: x, clientY: y })
+  const send = (type: string, x: number, on = true) =>
+    el.dispatchEvent(
+      new win.TouchEvent(type, {
+        touches: on ? [t(x)] : [],
+        targetTouches: on ? [t(x)] : [],
+        changedTouches: [t(x)],
+        bubbles: true,
+        cancelable: true,
+      }),
+    )
+  send('touchstart', x0)
+  for (let k = 1; k <= 14; k++) {
+    const x = x0 + (by * k) / 14
+    m.style.left = x + 'px'
+    send('touchmove', x)
+    await pause(28)
+  }
+  send('touchend', x0 + by, false)
+  await pause(PACE.lift)
+  m.style.opacity = '0'
 }

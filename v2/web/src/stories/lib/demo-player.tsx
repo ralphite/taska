@@ -6,7 +6,7 @@
 // one size. Play again starts over. T456 (#5879): with Autoplay off, each tap waits for yours, in either frame.
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { App, pageIn, wait } from '../pages/screens'
-import { PACE, pasteIn, press, touch, typeIn } from './finger'
+import { PACE, pasteIn, press, swipe, touch, typeIn } from './finger'
 
 export type On = 'phone' | 'desktop'
 /** Where to tap: a CSS selector; or one with the words the element shows, or the n-th of them (1 = the first); per
@@ -18,8 +18,14 @@ export interface Step {
   say: string
   /** tap here (the mark comes, the finger presses, the page answers) */
   tap?: Place
-  /** type these words into the box, letter by letter */
+  /** with a key held while tapping (the desktop's Cmd-click, Shift-click) */
+  hold?: 'Meta' | 'Shift'
+  /** swipe across this, `by` px (right when more than 0) */
+  swipe?: Place
+  by?: number
+  /** type these words, letter by letter, into the box, or into this field */
   type?: string
+  into?: Place
   /** paste this picture into the box, as from the clipboard (one of Storybook's saved files) */
   paste?: string
   /** press this key, with Meta+ / Shift+ in front for a chord ("Meta+k", "Shift+Enter") */
@@ -30,6 +36,8 @@ export interface Step {
   agent?: string
   /** the organizer files the newest input with these commands */
   organize?: string
+  /** right after the step before, as a person confirms a tap (Delete, then Delete again) */
+  soon?: boolean
   /** a step only one of the two does (a swipe on the phone, a shortcut on the desktop) */
   on?: On
 }
@@ -82,7 +90,11 @@ export function DemoPlayer({ demo, scheme }: { demo: Demo; scheme: string }) {
   const ons = useMemo<On[]>(() => (demo.on ? [demo.on] : ['phone', 'desktop']), [demo.on])
   const boxes = useRef<Partial<Record<On, HTMLDivElement | null>>>({})
   const [line, setLine] = useState('') // #5879: no "Starting" while the page loads: the first step says itself
-  const [state, setState] = useState<{ step: number; how: 'playing' | 'done' | 'failed' }>({ step: 0, how: 'playing' })
+  const [state, setState] = useState<{ step: number; how: 'playing' | 'waiting' | 'done' | 'failed' }>({
+    step: 0,
+    how: 'playing',
+  })
+  const start = useRef<() => void>(() => {})
   const [run, setRun] = useState(0)
   const [auto, setAuto] = useState(true)
   const autoNow = useRef(true)
@@ -109,6 +121,19 @@ export function DemoPlayer({ demo, scheme }: { demo: Demo; scheme: string }) {
         if (!f?.contentDocument || !win?.__storyServer || stop) return
         frames.push({ on, doc: f.contentDocument, server: await win.__storyServer })
       }
+      // a voice note needs sound, and a browser lets a page have it only after you clicked or tapped there
+      const mute = frames.some((f) => {
+        const a = new (f.doc.defaultView as Window & typeof globalThis).AudioContext(),
+          ok = a.state === 'running'
+        void a.close()
+        return !ok
+      })
+      if (demo.steps.some((s) => s.speak) && mute) {
+        setLine('Tap Play: this demo records a voice note, and the browser gives a page sound only after a tap')
+        setState({ step: 0, how: 'waiting' })
+        await new Promise<void>((ok) => (start.current = ok))
+        if (stop) return
+      }
       const fail = (i: number, why: string) => {
         setLine(`Step ${i + 1} could not be played: ${why}`)
         setState({ step: i, how: 'failed' })
@@ -120,7 +145,7 @@ export function DemoPlayer({ demo, scheme }: { demo: Demo; scheme: string }) {
         const here = frames.filter((f) => !s.on || s.on === f.on)
         setState({ step: i + 1, how: 'playing' })
         setLine(`${i + 1} / ${steps.length} · ${s.say}`)
-        await pause(i ? PACE.read : PACE.read / 2)
+        await pause(s.soon ? PACE.press : i ? PACE.read : PACE.read / 2)
         if (s.tap) {
           const els = await Promise.all(here.map((f) => find(f, s.tap!)))
           const missing = here.find((_, k) => !els[k])
@@ -142,12 +167,22 @@ export function DemoPlayer({ demo, scheme }: { demo: Demo; scheme: string }) {
                 els[k]!,
                 pause,
                 yours?.then((who) => who === f),
+                s.hold,
               ),
             ),
           )
         }
-        if (s.type != null && (await Promise.all(here.map((f) => typeIn(f.doc, s.type!, pause)))).includes(false))
-          return fail(i, 'no box to type in')
+        if (s.swipe) {
+          const els = await Promise.all(here.map((f) => find(f, s.swipe!)))
+          const missing = here.find((_, k) => !els[k])
+          if (missing) return fail(i, `nothing to swipe on the ${missing.on}`)
+          await Promise.all(els.map((el) => swipe(el!, s.by || 0, pause)))
+        }
+        if (s.type != null) {
+          const fields = await Promise.all(here.map((f) => (s.into ? find(f, s.into) : f.doc.querySelector('#text'))))
+          const typed = await Promise.all(here.map((f, k) => typeIn(f.doc, s.type!, pause, fields[k])))
+          if (typed.includes(false)) return fail(i, 'nowhere to type')
+        }
         if (s.paste && (await Promise.all(here.map((f) => pasteIn(f.doc, FILES + s.paste)))).includes(false))
           return fail(i, 'no box to paste in')
         if (s.key) await Promise.all(here.map((f) => press(f.doc, s.key!, pause)))
@@ -161,7 +196,7 @@ export function DemoPlayer({ demo, scheme }: { demo: Demo; scheme: string }) {
           return fail(i, String(ex))
         }
         if (stop) return
-        await pause(s.agent || s.organize ? PACE.agent : PACE.settle)
+        await pause(steps[i + 1]?.soon ? PACE.press : s.agent || s.organize ? PACE.agent : PACE.settle)
       }
       setLine(`Done · ${demo.done}`)
       setState({ step: steps.length, how: 'done' })
@@ -227,11 +262,11 @@ export function DemoPlayer({ demo, scheme }: { demo: Demo; scheme: string }) {
             Autoplay
           </button>
           <button
-            onClick={() => setRun((n) => n + 1)}
+            onClick={() => (state.how === 'waiting' ? start.current() : setRun((n) => n + 1))}
             className="h-9 shrink-0 rounded-full bg-white px-3 text-sm font-semibold text-zinc-900 disabled:opacity-40"
             disabled={state.how === 'playing'}
           >
-            Play again
+            {state.how === 'waiting' ? 'Play' : 'Play again'}
           </button>
         </div>
       </div>

@@ -4,21 +4,64 @@
 import type { StoryObj } from '@storybook/react-vite'
 import { DemoPlayer, type Demo, type Place, type Step } from '../lib/demo-player'
 
+const DONE = '[data-act="status"][data-v="done"]' // an item's Done, or Accept when it waits for you to accept
+
 /** The places demos tap, each named once. */
 export const T = {
-  // the item list
+  // the item list: its views, search, filters, a row
   needsYou: '[data-act="set-filter"][data-v="wait"]',
   active: '[data-act="set-filter"][data-v="all"]',
+  all: '[data-act="set-filter"][data-v="every"]',
+  queue: '[data-act="set-filter"][data-v="queued"]',
+  laterView: '[data-act="set-filter"][data-v="later"]',
+  finished: '[data-act="set-filter"][data-v="closed"]',
+  archiveTab: '[data-act="tab"][data-tab="archive"]',
+  search: { phone: '[data-act="search"]', desktop: '#q' },
+  searchField: '#q',
+  searchInputs: '[data-act="search-in"]',
+  filters: '[data-act="filters"]',
+  bugs: '[data-act="set-filter"][data-v="bug"]',
+  p0: '[data-act="set-filter"][data-v="P0"]',
+  newest: '[data-act="set-filter"][data-v="new"]',
+  viewName: '#viewName',
+  viewSave: '[data-act="view-save"]',
+  fold: '[data-act="fold"]',
   rowApprove: '[data-act="row-act"][data-v="approve"]',
+  selLater: '[data-act="sel-do"][data-v=\'"later"\']',
   // an item: its decision buttons, its question's choices
   approve: '[data-act="status"][data-v="open"]',
   wontDo: '[data-act="status"][data-v="dropped"]',
-  accept: '[data-act="status"][data-v="done"]',
+  accept: DONE,
+  done: { phone: '[data-act="set-field"][data-v="done"]', desktop: DONE },
   modifyDecision: '[data-act="decided-modify"]',
   notYet: '[data-act="reopen"]',
   choice: '[data-act="choice"]',
   sendAnswer: '[data-act="choice-send"]',
   modifyAnswer: '[data-act="ask-modify"]',
+  // an item's own buttons, its fields, its menu
+  later: '[data-act="swipe"][data-f="when"]',
+  archive: { phone: '#dlgBody [data-act="archive"]', desktop: '#detailView [data-act="archive"]' }, // or Unarchive
+  statusPill: '[data-act="item-menu"][data-arm="s"]',
+  priorityPill: '[data-act="item-menu"][data-arm="p"]',
+  typePill: '[data-act="item-menu"][data-arm="t"]',
+  inProgress: '[data-act="set-field"][data-v="doing"]',
+  dropped: '[data-act="set-field"][data-v="dropped"]',
+  p1: '[data-act="set-field"][data-v="P1"]',
+  bug: '[data-act="set-field"][data-v="bug"]',
+  itemMenu: ['[data-act="item-menu"]', 'Item actions'],
+  edit: '#dlgBody [data-act="edit"]',
+  editBody: '#eBody',
+  editSave: '[data-act="edit-save"]',
+  addSubitem: '#dlgBody [data-act="sub-new"]',
+  subTitle: '#subTitle',
+  subAdd: '[data-act="sub-add"]',
+  putUnder: '#dlgBody [data-act="reparent"]',
+  under: '[data-act="move-to"]',
+  doNext: '#dlgBody [data-act="do-next"]',
+  moveItem: '#dlgBody [data-act="item-move-proj"]',
+  itemTo: '[data-act="item-move-to"]',
+  deleteItem: '#dlgBody [data-act="item-delete"]',
+  back: '[data-act="back"]',
   // going through what needs you
   goThrough: '[data-act="go-through"]',
   goNext: '[data-act="go-next"]',
@@ -54,10 +97,19 @@ export const at = (p: Name | Code, which?: number | string): Place =>
 export const tap = (say: string, p: Name | Code, which?: number | string): Step => ({ say, tap: at(p, which) })
 /** A step only the phone or only the desktop has (the phone's tabs, the desktop's keys). */
 export const only = (on: 'phone' | 'desktop', s: Step): Step => ({ ...s, on })
-/** A step that types into the box. */
-export const write = (say: string, words: string): Step => ({ say, type: words })
+/** A step that swipes across a place, this far (px: right when more than 0). */
+export const swipe = (say: string, p: Name | Code, by: number): Step => ({ say, swipe: at(p), by })
+/** A step that types into the box, or into this field. */
+export const write = (say: string, words: string, into?: Name): Step => ({
+  say,
+  type: words,
+  ...(into ? { into: at(into) } : {}),
+})
 /** An agent's turn: what the line says, and its commands (as agents write to Taska). */
 export const agent = (say: string, commands: string): Step => ({ say, agent: commands })
+
+/** Open an item's menu: everything else it can do. */
+export const openMenu = tap('Tap ... : everything else you can do with it', 'itemMenu')
 
 /** One demo, as a story. */
 export const demo = (d: Demo): StoryObj => ({
