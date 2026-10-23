@@ -18,12 +18,14 @@ import os
 import re
 import shutil
 import socket
+import sqlite3
 import subprocess
 import sys
 import tempfile
 import threading
 import time
 import urllib.request
+import zipfile
 from datetime import datetime, timedelta
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -239,7 +241,7 @@ def save(t: T, projects, root: str, anchor: datetime):
     # the answers this makes go again; other saved answers in the folder (dev__..., kept by other tools) stay
     os.makedirs(OUT, exist_ok=True)
     for name in os.listdir(OUT):
-        if name.startswith(("api__", "p__")) or name in ("meta.json", "mic.webm"):
+        if name.startswith(("api__", "p__")) or name in ("meta.json", "mic.webm", "demo-data.zip"):
             os.remove(os.path.join(OUT, name))
 
     def keep(path: str, text: bool = False):
@@ -275,6 +277,40 @@ def save(t: T, projects, root: str, anchor: datetime):
         f.write(spoken_webm(MIC_WORDS))
     with open(os.path.join(OUT, "meta.json"), "w") as f:
         json.dump({"now": int(anchor.timestamp() * 1000)}, f)
+    save_data(root, anchor)
+
+
+def save_data(root: str, anchor: datetime):
+    """T457 (#6481): the demo's data folder itself, for the Demo stories: they run the real Taska server in the page
+    (Pyodide, .storybook/public/story-server.js) on this copy, so every tap really changes it. Each database is
+    copied whole as it is now (the server still has it open), in plain journal mode; no key of this machine goes in:
+    the throwaway Taska's key is the demo's, and its push key is made anew in the page. story.json says when "now"
+    was and what Storybook's microphone says (its words, as the stand-in transcription gives them).
+      python3 v2/tools/story_fixtures.py --data   -> only demo-data.zip"""
+    tmp = tempfile.mkdtemp(prefix="story-data-")
+    try:
+        with zipfile.ZipFile(os.path.join(OUT, "demo-data.zip"), "w", zipfile.ZIP_DEFLATED) as z:
+            z.writestr("story.json", json.dumps({"now": int(anchor.timestamp() * 1000), "mic": MIC_WORDS}))
+            for dp, dirs, files in os.walk(root):
+                dirs[:] = [d for d in dirs if d != ".push"]
+                for name in files:
+                    path = os.path.join(dp, name)
+                    rel = os.path.relpath(path, root)
+                    if name == "taska.db":
+                        copy = os.path.join(tmp, rel.replace(os.sep, "__"))
+                        src, dst = sqlite3.connect(path), sqlite3.connect(copy)
+                        src.backup(dst)
+                        src.close()
+                        dst.execute("PRAGMA journal_mode=DELETE")
+                        dst.execute("VACUUM")
+                        dst.close()
+                        z.write(copy, rel)
+                    elif name == "key":
+                        z.writestr(rel, "demo-key-0000")
+                    elif not name.startswith(("logs.db", ".last-user")) and not name.endswith(("-wal", "-shm")):
+                        z.write(path, rel)
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
 
 
 def main():
@@ -287,7 +323,10 @@ def main():
         t = T(port, hub)
         projects = seed(t, anchor)
         time.sleep(0.5)  # the last writes reach the files
-        save(t, projects, root, anchor)
+        if "--data" in sys.argv:
+            save_data(root, anchor)
+        else:
+            save(t, projects, root, anchor)
         print(f"story fixtures: {len(os.listdir(OUT))} files in {os.path.relpath(OUT)}")
     finally:
         srv.shutdown()

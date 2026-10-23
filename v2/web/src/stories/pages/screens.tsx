@@ -17,13 +17,14 @@ export async function pageIn(canvas: HTMLElement) {
   return f
 }
 
-/** The real page at this address. */
-export function App({ path, scheme }: { path: string; scheme: string }) {
+/** The real page at this address; with `server` (a Demo's beginning, T457 #6481), on the real Taska server run in
+ * the page. */
+export function App({ path, scheme, server }: { path: string; scheme: string; server?: string }) {
   const theme = scheme === 'dark' ? 'dark' : 'light'
   return (
     <iframe
       title="Taska"
-      src={`/storybook/app.html#path=${encodeURIComponent(path)}&theme=${theme}`}
+      src={`/storybook/app.html#path=${encodeURIComponent(path)}&theme=${theme}${server ? '&server=' + encodeURIComponent(server) : ''}`}
       className="block h-screen w-full border-0"
     />
   )

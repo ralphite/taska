@@ -10,7 +10,13 @@ const config: StorybookConfig = {
   stories: ['../src/**/*.stories.@(ts|tsx)'],
   // T457: the saved answers the real page runs on, and the shim that serves them. T456: Storybook's own server gives
   // them under /storybook/, as a built Storybook has them, with the page from the source (app.mjs --dev)
-  staticDirs: process.argv.includes('dev') ? [{ from: './public', to: '/storybook' }] : ['./public'],
+  // T457 (#6481): the server's own code too, for the Demo stories, which run it in the page (public/story-server.js)
+  staticDirs: process.argv.includes('dev')
+    ? [
+        { from: './public', to: '/storybook' },
+        { from: '../../server/taska', to: '/storybook/server/taska' },
+      ]
+    : ['./public', { from: '../../server/taska', to: '/server/taska' }],
   addons: ['@storybook/addon-a11y', '@storybook/addon-themes', '@storybook/addon-mcp', 'storybook-addon-pseudo-states'],
   framework: { name: '@storybook/react-vite', options: {} },
   // B517: no "new / changed" marks from git in the sidebar: they ran git six times on every change in the shared .git

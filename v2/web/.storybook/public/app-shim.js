@@ -8,6 +8,12 @@
   const theme = h.get('theme')
   if (theme) document.documentElement.dataset.theme = theme
   if (h.has('path')) history.replaceState(null, '', h.get('path'))
+  // T457 (#6481): a Demo plays on the real Taska server, run in the page (story-server.js): every request goes to it
+  const live = h.has('server')
+  if (live) {
+    window.__storySeed = h.get('server') // the demo's beginning: what happened before it starts
+    document.write('<script src="/storybook/story-server.js"></' + 'script>')
+  }
   const real = window.fetch.bind(window)
   const FX = '/storybook/fixtures/'
   const json = (o, status = 200) =>
@@ -41,6 +47,17 @@
     // only what the page asks Taska; Storybook's own files and the page's code go as they are
     if (u.origin !== location.origin || !/^\/(api|p|k|health|login|skill|dev)(\/|$)/.test(p)) return real(input, init) // F448: dev, the dashboard's
     const method = String((init && init.method) || (input instanceof Request ? input.method : 'GET')).toUpperCase()
+    if (live) {
+      const hd = new Headers((init && init.headers) || (input instanceof Request ? input.headers : undefined))
+      const body = init && 'body' in init ? init.body : input instanceof Request ? await input.blob() : null
+      return (await window.__storyServer).fetch(
+        u,
+        method,
+        hd.get('Content-Type') || (body && body.type) || '',
+        body,
+        init && init.signal,
+      )
+    }
     if (/\/api\/poll$/.test(p)) return new Promise(() => {}) // nothing changes while you look
     if (method !== 'GET') {
       // a change: kept here, answered as a change Taska took
@@ -69,8 +86,10 @@
   }
   const fix = (el) => {
     for (const a of ['src', 'href', 'poster']) {
-      const to = saved(el.getAttribute(a))
-      if (to) el.setAttribute(a, to)
+      const v = el.getAttribute(a),
+        to = saved(v)
+      if (to && live) void window.__storyServer.then((s) => el.setAttribute(a, s.file(v.split(/[?#]/)[0])))
+      else if (to) el.setAttribute(a, to)
     }
   }
   // T529: the page plays a voice note with new Audio(src), an element never put on the page (lib/audio.ts), so the
