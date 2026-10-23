@@ -37,7 +37,6 @@ import {
   inputMatch,
   kids,
   model,
-  needWord,
   needsOrder,
   needsYou,
   plural,
@@ -274,11 +273,7 @@ export function ItemRow({
         {it.pri}
       </span>
     ),
-    needsYou(it) ? (
-      <span key="s" className="font-semibold text-amber-700 dark:text-amber-400">
-        {needWord(it)}
-      </span>
-    ) : hasDraft(c) ? (
+    hasDraft(c) ? (
       <DraftMark key="s" />
     ) : it.status === 'doing' ? (
       <span key="s">In progress</span>
@@ -1021,10 +1016,11 @@ function listBody(): { body: ReactNode; shown: number } {
       shown: 0,
     }
   if (U.tab === 'rules') {
-    // the ones an agent proposed wait on you; then the rules in force, then the retired ones (T113 B29)
-    const wait = rows.filter((it) => it.status === 'proposed').sort(needsOrder),
-      on = rows.filter((it) => it.status === 'open'),
-      off = rows.filter((it) => it.status === 'dropped')
+    // the ones that wait on you (an agent proposed it, or asks about it) first, each the Needs-you row, as everywhere
+    // (B555 r802); then the rules in force, then the retired ones (T113 B29)
+    const wait = rows.filter((it) => it.status === 'proposed' || needsYou(it)).sort(needsOrder),
+      on = rows.filter((it) => it.status === 'open' && !needsYou(it)),
+      off = rows.filter((it) => it.status === 'dropped' && !needsYou(it))
     return {
       body: !rows.length ? (
         <Empty>No rules</Empty>
@@ -1052,13 +1048,14 @@ function listBody(): { body: ReactNode; shown: number } {
       shown: rows.length,
     }
   }
-  // Archive, or Items sorted another way (T274 #36): the list in that order
+  // Archive, or Items sorted another way (T274 #36): the list in that order; what waits on you is the Needs-you row
+  // there too, its Approve, Accept or Answer the button on its right, as in every other list (B555 r802)
   return {
     body: (
       <>
         {U.tab === 'archive' ? <ViewBar /> : null}
         {rows.length ? (
-          rows.map((it) => <ItemRow key={it.n} it={it} />)
+          rows.map((it) => (needsYou(it) ? <NeedsRow key={it.n} it={it} /> : <ItemRow key={it.n} it={it} />))
         ) : (
           <Empty>{U.tab === 'archive' ? 'Nothing archived' : 'No items'}</Empty>
         )}

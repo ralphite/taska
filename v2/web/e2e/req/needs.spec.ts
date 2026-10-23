@@ -103,3 +103,22 @@ for (const [kind, words] of [
     await expect(chip(page)).toHaveText(/^Needs you/)
     await expect.poll(() => page.locator('#dHead').innerText(), 'the words on the line above').toBe('T1')
   })
+
+test('r802: in a list sorted another way (Filters › Sort) what waits on you is the Needs-you row, its Approve the button on its right, as in Active; no plain row with a word for it (B565)', async ({
+  page,
+  request,
+}) => {
+  const p = await project(request, {
+    agent: 'new task P1 now Ship the export\nnew task P2 now Still going\n',
+    approve: ['T2'],
+  })
+  for (const at of ['', '?sort=new', '?sort=upd']) {
+    await open(page, p, at)
+    const row = page.locator('#list article[data-n="1"]')
+    await expect(
+      row.locator('[data-act="row-act"][data-v="approve"]'),
+      `the proposal's Approve ${at || 'in Active'}`,
+    ).toBeVisible()
+    await expect(page.locator('#list article[data-n="2"] [data-act="row-act"]'), 'nothing waits on T2').toHaveCount(0)
+  }
+})

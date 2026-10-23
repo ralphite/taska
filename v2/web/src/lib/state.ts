@@ -472,7 +472,6 @@ export const rowAction = (it: Item): ['answer' | 'approve' | 'accept', string] =
 // first and finished work is accepted
 export const canDone = (it: Item) =>
   it.type !== 'rule' && !CLOSED(it.status) && it.status !== 'proposed' && it.status !== 'review'
-export const needWord = (it: Item) => (needsYou(it) ? rowAction(it)[1] : '')
 export const inTab = (it: Item, t: string) =>
   t === 'rules'
     ? it.type === 'rule' && !it.archived
