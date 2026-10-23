@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build && storybook build -o dist/storybook --quiet && node .storybook/app.mjs",
+    "build": "tsc -b && node .storybook/check.mjs && vite build && storybook build -o dist/storybook --quiet && node .storybook/app.mjs && node .storybook/check.mjs --open",
     "preview": "vite preview",
     "typecheck": "tsc -b",
     "lint": "eslint .",
@@ -14,7 +14,8 @@
     "e2e": "playwright test",
     "storybook": "storybook dev -p 6007 --no-open",
     "build-storybook": "storybook build",
-    "typecheck:server": "pyright -p ../server"
+    "typecheck:server": "pyright -p ../server",
+    "storybook:shots": "node .storybook/shots.mjs"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.104.5",
@@ -53,6 +54,7 @@
     "prettier-plugin-tailwindcss": "^0.8.1",
     "pyright": "^1.1.414",
     "storybook": "^10.6.2",
+    "storybook-addon-pseudo-states": "10.6.2",
     "tailwindcss": "^4.3.3",
     "typescript": "6.0",
     "typescript-eslint": "^8.72.0",

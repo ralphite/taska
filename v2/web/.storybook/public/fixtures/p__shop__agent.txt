@@ -36,6 +36,8 @@ WRITE (plain text, one command per line; indented lines continue the previous co
                             "- [ ] option" lines = pick any. The reply lists the picks as "✓ option".
   B03 doc [title]           new document on B03 (plans, designs); its Markdown is the indented lines, first line = title
   D1 doc [new title]        replace D1's Markdown with the indented lines; comments stay with unchanged paragraphs
+  B03 html [title]          new web page document on B03: the indented lines are HTML (scripts allowed), shown as a page
+  D1 html [new title]       replace D1 with the indented HTML
   D1 reply ¶3 <text>        answer the comments on paragraph 3 of D1
   B03 archive|unarchive     hide a done/dropped item from the default lists (reopening unarchives)
   ack r12 r13               mark inputs handled without changing items
@@ -45,7 +47,7 @@ WRITE (plain text, one command per line; indented lines continue the previous co
   B03 progress Reproduced it: the export ignores the filter
   EOF
 
-Now: 1 project rule, read GET /rules
+Now: 3 project rules, read GET /rules
 LOOP  doing means work has started (not that you are on it this second). Mark an item doing when you start;
       if you drop that work, set it back to open. keep-going ON: take /next, mark it doing, do the work, write progress and set done, then GET /next
       again. Don't stop to chat. If you are stuck or need a decision, post `B03 block <what you need>` and

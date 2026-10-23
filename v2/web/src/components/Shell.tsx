@@ -139,7 +139,7 @@ export function agentLine() {
     off,
   }
 }
-function Pill() {
+export function Pill() {
   const { kind, label, off } = agentLine()
   return off ? (
     <span
@@ -160,7 +160,7 @@ function Pill() {
 }
 
 // T424 step 3: the one place that shows changes that did not go in, until each is retried or let go
-function FailedPill() {
+export function FailedPill() {
   const n = FAILED.length
   if (!n) return null
   return (
@@ -177,7 +177,7 @@ function FailedPill() {
 }
 
 // ---------------------------------------------------------------- the sidebar, the rail, the drawer
-function SideList() {
+export function SideList() {
   const S = model.S,
     phone = !desk()
   if (phone) {
@@ -249,7 +249,7 @@ function SideList() {
     </>
   )
 }
-const SideLink = ({ sec, icon, label, phone }: { sec: string; icon: string; label: string; phone?: boolean }) =>
+export const SideLink = ({ sec, icon, label, phone }: { sec: string; icon: string; label: string; phone?: boolean }) =>
   phone ? (
     <a
       href={`${ctx.P}${PSEC[sec][0]}`}
@@ -274,7 +274,7 @@ const SideLink = ({ sec, icon, label, phone }: { sec: string; icon: string; labe
     </a>
   )
 // F451: the page's stories in every state, built with the page and served by Taska at /storybook/
-const StoryLink = ({ phone }: { phone?: boolean }) =>
+export const StoryLink = ({ phone }: { phone?: boolean }) =>
   phone ? (
     <a
       href="/storybook/"
@@ -298,7 +298,7 @@ const StoryLink = ({ phone }: { phone?: boolean }) =>
     </a>
   )
 // the phone's drawer ends in a card (B162): Undo while there is one (a phone has no Z), and Settings
-function DrawerSettings() {
+export function DrawerSettings() {
   const u = U.mine.at(-1),
     S = model.S
   return (
@@ -335,7 +335,7 @@ function DrawerSettings() {
   )
 }
 // the sidebar's foot: Settings and the keys (T274 #24: Undo is on the toast and Z)
-function SideFoot() {
+export function SideFoot() {
   const S = model.S
   return (
     <div
@@ -371,7 +371,7 @@ function SideFoot() {
     </div>
   )
 }
-function Drawer({ hidden, over }: { hidden: boolean; over: boolean }) {
+export function Drawer({ hidden, over }: { hidden: boolean; over: boolean }) {
   const list = useRef<HTMLDivElement>(null)
   useLayoutEffect(() => (list.current ? bindProjDrag(list.current) : undefined), [])
   useEffect(() => {
@@ -524,7 +524,7 @@ function Drawer({ hidden, over }: { hidden: boolean; over: boolean }) {
     </nav>
   )
 }
-function Rail({ hidden }: { hidden: boolean }) {
+export function Rail({ hidden }: { hidden: boolean }) {
   const b = (act: string, inner: ReactNode, title: string, attrs: Record<string, string | boolean> = {}) => (
     <button
       data-act={act}
@@ -607,7 +607,7 @@ function tabNumber(t: Tab): string | number {
         ? visible().filter((it) => !it.archived).length
         : tabCount(t)
 }
-function ProjBar({ hidden }: { hidden: boolean }) {
+export function ProjBar({ hidden }: { hidden: boolean }) {
   const S = model.S
   const pre = !S.project && sideProjects()[0]
   const name = pre ? titleOf(pre) : projTitle()
@@ -695,7 +695,7 @@ const filtersSet = (): [string, ReactNode][] =>
       U.sort !== 'all' ? ['sort', SORTS.find(([v]) => v === U.sort)?.[1]] : null,
     ] as ([string, ReactNode] | null)[]
   ).filter(Boolean) as [string, ReactNode][]
-const FilterChips = ({ set }: { set: [string, ReactNode][] }) => (
+export const FilterChips = ({ set }: { set: [string, ReactNode][] }) => (
   <>
     {set.map(([k, label]) => (
       <button
@@ -710,11 +710,11 @@ const FilterChips = ({ set }: { set: [string, ReactNode][] }) => (
     ))}
   </>
 )
-const FilterDot = () =>
+export const FilterDot = () =>
   filtersSet().length ? (
     <span className="absolute top-2 right-2 size-2 rounded-full bg-blue-600 ring-2 ring-white dark:bg-blue-400 dark:ring-zinc-950" />
   ) : null
-function MainHead({ hidden }: { hidden: boolean }) {
+export function MainHead({ hidden }: { hidden: boolean }) {
   const S = model.S
   const sq = desk() || !!(U.searching || U.q)
   const { title } = agentLine()
@@ -860,7 +860,7 @@ function onSearch(v: string) {
 }
 // From 360 px the four tabs fit with their counts; narrower, only the open tab keeps its count (T225 #12, B158).
 const COUNTS_KEPT: Record<string, string> = {}
-function Tabs({ hidden }: { hidden: boolean }) {
+export function Tabs({ hidden }: { hidden: boolean }) {
   const ref = useRef<HTMLDivElement>(null)
   const S = model.S,
     words = searchWords().length,
@@ -944,7 +944,7 @@ function Tabs({ hidden }: { hidden: boolean }) {
     </nav>
   )
 }
-function FilterStrip() {
+export function FilterStrip() {
   const set = filtersSet()
   return (
     <div
@@ -963,7 +963,7 @@ function FilterStrip() {
   )
 }
 // On the desktop the same controls open in place under the list header instead of a sheet.
-function DeskFilters({ hidden }: { hidden: boolean }) {
+export function DeskFilters({ hidden }: { hidden: boolean }) {
   const set = filtersSet()
   return (
     <div
@@ -1005,7 +1005,7 @@ function DeskFilters({ hidden }: { hidden: boolean }) {
 }
 
 // ---------------------------------------------------------------- the foot: the box, and the New input page (B73)
-function Foot({ hidden, wideCls }: { hidden: boolean; wideCls: string }) {
+export function Foot({ hidden, wideCls }: { hidden: boolean; wideCls: string }) {
   const compose = desk() && D.compose && !D.page && U.tab !== 'inputs'
   // F478: what scrolls above the box runs on under it, around its rounded corners; the room it needs is the foot's.
   // Only around its top: from the box's middle down the foot is the page's own white, so nothing shows under the box.
@@ -1056,7 +1056,7 @@ function Foot({ hidden, wideCls }: { hidden: boolean; wideCls: string }) {
 }
 
 // ---------------------------------------------------------------- what floats over the page
-function Toast() {
+export function Toast() {
   useArea('toast')
   useArea('dialog')
   const ref = useRef<HTMLDivElement>(null)
@@ -1152,7 +1152,7 @@ export const LAST = { pane: null as HTMLElement | null }
 // Closing and moving like a photo app (B140): a tap on the dark area closes; on a phone, at fit size, a sideways swipe
 // goes to the next or previous picture and a swipe down closes; two fingers zoom the picture, never the page (B302).
 const VS = { x: 0, y: 0, on: false, d0: 0, d1: 0 }
-function Viewer() {
+export function Viewer() {
   useArea('viewer')
   const f = VW.group[VW.idx] || '',
     url = `${ctx.P}f/${encodeURIComponent(f)}`
@@ -1265,7 +1265,7 @@ function Viewer() {
   )
 }
 // One tooltip for the whole page (T094); lib/tip.ts shows and places it.
-const Tip = () => (
+export const Tip = () => (
   <div
     id="tip"
     role="tooltip"

@@ -9,6 +9,29 @@
   const FX = '/storybook/fixtures/'
   const json = (o, status = 200) =>
     new Response(JSON.stringify(o), { status, headers: { 'Content-Type': 'application/json' } })
+  // the demo was made at one moment (fixtures/meta.json): every time in it moves on by as long as has passed since,
+  // so "5 min ago" stays 5 min ago
+  const shift = real(FX + 'meta.json')
+    .then((r) => r.json())
+    .then((m) => Date.now() - m.now)
+    .catch(() => 0)
+  const ISO = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2})$/
+  const TIME_KEYS = new Set(['t', 'at', 't0', 't1', 'next', 'seen'])
+  const move = (x, d, k) => {
+    if (typeof x === 'string') return ISO.test(x) ? new Date(Date.parse(x) + d).toISOString() : x
+    if (typeof x === 'number' && TIME_KEYS.has(k)) {
+      if (x > 1.5e12 && x < 2.5e12) return x + d
+      if (x > 1.5e9 && x < 2.5e9) return x + d / 1000
+      return x
+    }
+    if (Array.isArray(x)) return x.map((v) => move(v, d, k))
+    if (x && typeof x === 'object') {
+      const o = {}
+      for (const [kk, v] of Object.entries(x)) o[kk] = move(v, d, kk)
+      return o
+    }
+    return x
+  }
   window.fetch = async (input, init) => {
     const u = new URL(typeof input === 'string' ? input : input instanceof URL ? input.href : input.url, location.href)
     const p = u.pathname
@@ -20,10 +43,36 @@
     const name = p.replace(/^\/|\/$/g, '').replace(/\//g, '__')
     for (const ext of ['.json', '.txt', '']) {
       const r = await real(FX + name + ext)
-      if (r.ok) return r
+      if (!r.ok) continue
+      if (ext !== '.json') return r
+      return json(move(await r.json(), await shift))
     }
     return json({ ok: false, error: 'not in the story data' }, 404)
   }
+  // the demo's pictures and voice notes are among the saved answers
+  const fix = (el) => {
+    for (const a of ['src', 'href', 'poster']) {
+      const v = el.getAttribute(a),
+        m = v && /^\/p\/([^/]+)\/f\/([^?#]+)/.exec(v)
+      if (m) el.setAttribute(a, `${FX}p__${m[1]}__f__${decodeURIComponent(m[2])}`)
+    }
+  }
+  new MutationObserver((ms) => {
+    for (const m of ms) {
+      if (m.type === 'attributes') fix(m.target)
+      else
+        m.addedNodes.forEach((n) => {
+          if (!(n instanceof Element)) return
+          fix(n)
+          n.querySelectorAll('[src^="/p/"], [href*="/f/"], [poster^="/p/"]').forEach(fix)
+        })
+    }
+  }).observe(document.documentElement, {
+    subtree: true,
+    childList: true,
+    attributes: true,
+    attributeFilter: ['src', 'href', 'poster'],
+  })
   if (navigator.serviceWorker) navigator.serviceWorker.register = () => new Promise(() => {}) // no offline copy here
 
   // The stories share their address with your Taska: they get storage of their own, so they never read or change

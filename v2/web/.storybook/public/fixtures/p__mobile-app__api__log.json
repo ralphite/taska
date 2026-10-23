@@ -1,1 +1,55 @@
-[{"seq": 5, "t": "2026-10-22T13:45:09-07:00", "who": "you", "what": "in r1 'Check the crash on Android 12 from the store reviews.'"}, {"seq": 4, "t": "2026-10-22T13:45:09-07:00", "who": "you", "what": "B1 status proposed→open"}, {"seq": 3, "t": "2026-10-22T13:45:09-07:00", "who": "claude-code", "what": "new T2 task P2 now 'Release 2.3 to TestFlight'"}, {"seq": 2, "t": "2026-10-22T13:45:09-07:00", "who": "claude-code", "what": "new B1 bug P1 now 'Push notifications stop after an update'"}, {"seq": 1, "t": "2026-10-22T13:45:09-07:00", "who": "you", "what": "renamed the project 'Mobile app'"}]
+[
+  {
+    "seq": 12,
+    "t": "2026-10-22T12:53:58-07:00",
+    "who": "you",
+    "what": "in r1 '\u770b\u4e00\u4e0b\u5e94\u7528\u5546\u5e97\u8bc4\u8bba\u91cc\u8bf4\u7684\u5b89\u5353 12 \u95ea\u9000\u3002'"
+  },
+  {
+    "seq": 11,
+    "t": "2026-10-21T14:53:58-07:00",
+    "who": "claude-code",
+    "what": "B1 progress '\u63a8\u9001 token \u5728\u540e\u53f0\u5237\u65b0\u540e\u6ca1\u6709\u4e0a\u4f20\u5230\u670d\u52a1\u5668\u3002'",
+    "ses": "phone"
+  },
+  {
+    "seq": 10,
+    "t": "2026-10-21T14:53:58-07:00",
+    "who": "claude-code",
+    "what": "B1 status open\u2192doing",
+    "ses": "phone"
+  },
+  { "seq": 9, "t": "2026-10-17T14:55:58-07:00", "who": "you", "what": "F4 status proposed\u2192open" },
+  {
+    "seq": 8,
+    "t": "2026-10-17T14:53:58-07:00",
+    "who": "claude-code",
+    "what": "new F4 feature P2 now '\u8ba2\u5355\u5bfc\u51fa\u5728 App \u91cc\u4e5f\u8981\u80fd\u7528'",
+    "ses": "phone"
+  },
+  { "seq": 7, "t": "2026-10-14T13:59:58-07:00", "who": "you", "what": "F3 status proposed\u2192open" },
+  { "seq": 6, "t": "2026-10-14T13:57:58-07:00", "who": "you", "what": "T2 status proposed\u2192open" },
+  { "seq": 5, "t": "2026-10-14T13:55:58-07:00", "who": "you", "what": "B1 status proposed\u2192open" },
+  {
+    "seq": 4,
+    "t": "2026-10-14T13:53:58-07:00",
+    "who": "claude-code",
+    "what": "new F3 feature P2 later '\u8ba2\u5355\u72b6\u6001\u53d8\u5316\u65f6\u63a8\u9001'",
+    "ses": "manager"
+  },
+  {
+    "seq": 3,
+    "t": "2026-10-14T13:53:58-07:00",
+    "who": "claude-code",
+    "what": "new T2 task P2 now '\u53d1\u5e03 2.3 \u5230 TestFlight'",
+    "ses": "manager"
+  },
+  {
+    "seq": 2,
+    "t": "2026-10-14T13:53:58-07:00",
+    "who": "claude-code",
+    "what": "new B1 bug P1 now '\u66f4\u65b0\u5230 2.2 \u4e4b\u540e\u63a8\u9001\u901a\u77e5\u6536\u4e0d\u5230\u4e86'",
+    "ses": "manager"
+  },
+  { "seq": 1, "t": "2026-10-22T16:53:58-07:00", "who": "you", "what": "renamed the project 'Mobile app'" }
+]

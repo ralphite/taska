@@ -1,1 +1,61 @@
-[{"name": "mobile-app", "title": "Mobile app", "open": 2, "auto": true, "needs": 1, "agents": [{"name": "claude-code", "t": 1792701909279, "waiting": false}], "work": true, "t": 1792701909280}, {"name": "shop", "title": "Shop", "open": 14, "auto": true, "needs": 9, "agents": [{"name": "claude-code", "t": 1792701909279, "waiting": false, "session": "worker", "sessions": [{"name": "worker", "t": 1792701909279}]}, {"name": "codex", "t": 1792701909210, "waiting": false, "session": "worker", "sessions": [{"name": "worker", "t": 1792701909210}]}], "work": true, "t": 1792701909278}, {"name": "website", "title": "Website", "open": 0, "auto": true, "needs": 0, "agents": [], "work": false, "t": 1792701909195}]
+[
+  {
+    "name": "mobile-app",
+    "title": "Mobile app",
+    "open": 4,
+    "auto": true,
+    "needs": 0,
+    "agents": [
+      {
+        "name": "claude-code",
+        "t": 1792713239096,
+        "waiting": false,
+        "session": "phone",
+        "sessions": [
+          { "name": "phone", "t": 1792713239096 },
+          { "name": "manager", "t": 1792713239025 }
+        ]
+      }
+    ],
+    "work": true,
+    "t": 1792713239388
+  },
+  {
+    "name": "shop",
+    "title": "Shop",
+    "open": 19,
+    "auto": true,
+    "needs": 7,
+    "agents": [
+      {
+        "name": "claude-code",
+        "t": 1792713239104,
+        "waiting": false,
+        "session": "worker",
+        "sessions": [
+          { "name": "worker", "t": 1792713239104 },
+          { "name": "manager", "t": 1792713239092 }
+        ]
+      },
+      {
+        "name": "codex",
+        "t": 1792713239121,
+        "waiting": false,
+        "session": "worker",
+        "sessions": [{ "name": "worker", "t": 1792713239121 }]
+      }
+    ],
+    "work": true,
+    "t": 1792713239501
+  },
+  {
+    "name": "website",
+    "title": "Website",
+    "open": 0,
+    "auto": true,
+    "needs": 0,
+    "agents": [],
+    "work": false,
+    "t": 1792713238385
+  }
+]
