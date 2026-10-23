@@ -1,4 +1,5 @@
-// T512, B515: Input box > Writing: its states, the parts modules draw them
+// T512, B515: Input box > Writing: what you write, where a new input is written (the New input page on the desktop,
+// under the list on the phone). The parts module draws them.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import * as InputBox from '../parts/InputBox'
 
@@ -6,9 +7,9 @@ const meta: Meta = { title: 'Components/Input box/Writing' }
 export default meta
 
 export const Empty: StoryObj = { ...InputBox.Empty, name: 'Empty' }
-export const Words: StoryObj = { ...InputBox.Words, name: 'Words' }
+export const Words: StoryObj = { ...InputBox.Words, name: 'A few words' }
 export const ManyLines: StoryObj = { ...InputBox.ManyLines, name: 'Many lines' }
-export const ToAnItem: StoryObj = { ...InputBox.ToAnItem, name: 'Reply to an item' }
-export const CommentOnAParagraph: StoryObj = { ...InputBox.CommentOnAParagraph, name: 'Comment on a paragraph' }
-export const EditingAnInput: StoryObj = { ...InputBox.EditingAnInput, name: 'Editing an input' }
-export const AddingToAnInput: StoryObj = { ...InputBox.AddingToAnInput, name: 'Adding to an input' }
+export const TooLongForTheBox: StoryObj = { ...InputBox.TooLongForTheBox, name: 'Longer than the box: it scrolls' }
+export const PointingAtTheMic: StoryObj = { ...InputBox.PointingAtTheMic, name: 'Pointing at the mic' }
+export const PointingAtSend: StoryObj = { ...InputBox.PointingAtSend, name: 'Pointing at Send' }
+export const PointingAtAdd: StoryObj = { ...InputBox.PointingAtAdd, name: 'Pointing at + (add pictures or files)' }
