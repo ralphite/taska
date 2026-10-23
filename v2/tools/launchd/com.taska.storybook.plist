@@ -7,7 +7,7 @@
 	<key>Label</key>
 	<string>com.taska.storybook</string>
 	<key>ProcessType</key>
-	<string>Standard</string>
+	<string>Interactive</string>
 	<key>ProgramArguments</key>
 	<array>
 		<string>/bin/zsh</string>

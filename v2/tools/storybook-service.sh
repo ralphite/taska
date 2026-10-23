@@ -11,8 +11,9 @@
 # to restart it is storybook-restart.sh <who> <why>, which logs the time, who and why in .logs/storybook-restarts.log.
 # Health, once a minute: .logs/storybook-health.jsonl.
 #
-# The LaunchAgent runs it as ProcessType Standard, not Background: a background job gets the lowest CPU priority, and
-# while agents keep the computer busy the page then went minutes without an answer (B517).
+# The LaunchAgent runs it as ProcessType Interactive, not Background: a background job gets the lowest CPU priority
+# (4), and while agents keep the computer busy the page went minutes without an answer; Standard (20) still gave way
+# to every build the agents ran (B517).
 cd "$(dirname "$0")/../web" || exit 1
 export PATH="$HOME/.local/bin:/opt/homebrew/bin:$PATH" # the same node as the shell builds the page with
 node .storybook/app.mjs --dev || exit 1 # the page as the stories open it, from the source
