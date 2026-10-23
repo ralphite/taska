@@ -779,7 +779,8 @@ export function DocEdit({ d, md }: { d: Doc | undefined; md: string }) {
   useArea('rec')
   return (
     <div className="flex min-h-full flex-col">
-      <div className="sticky -top-2 z-10 -mx-4 -mt-2 mb-2 flex items-center gap-2 bg-white px-4 py-2 text-xs text-zinc-500 dark:bg-zinc-900">
+      {/* D80 #17: on the phone the hint has a line of its own under the buttons, not a narrow column beside them */}
+      <div className="sticky -top-2 z-10 -mx-4 -mt-2 mb-2 flex flex-wrap items-center gap-2 bg-white px-4 py-2 text-xs text-zinc-500 dark:bg-zinc-900">
         <DocHint />
         <DocMic />
         <button
@@ -805,7 +806,7 @@ function DocHint() {
   useArea('vc')
   useArea('rec')
   return (
-    <span id="docHint" className="min-w-0 flex-1">
+    <span id="docHint" className="min-w-0 flex-1 max-lg:order-last max-lg:basis-full">
       {docMicLabel().hint}
     </span>
   )
@@ -819,7 +820,7 @@ function DocMic() {
       id="docMic"
       data-act="doc-mic"
       {...(on ? { 'data-on': '' } : {})}
-      className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold text-zinc-600 tabular-nums hover:bg-zinc-100 data-on:bg-red-600 data-on:text-white data-on:hover:bg-red-700 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:data-on:bg-red-600 dark:data-on:text-white"
+      className="inline-flex h-11 shrink-0 items-center gap-1.5 rounded-xl px-3 text-sm font-semibold text-zinc-600 tabular-nums hover:bg-zinc-100 data-on:bg-red-600 data-on:text-white data-on:hover:bg-red-700 max-lg:mr-auto dark:text-zinc-300 dark:hover:bg-zinc-800 dark:data-on:bg-red-600 dark:data-on:text-white"
     >
       <Icon n="mic" />
       <span>{text}</span>
