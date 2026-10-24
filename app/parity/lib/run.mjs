@@ -43,7 +43,7 @@ export async function loadScenarios(want) {
 // Speed: a scenario is slower on B when its steps took, in all, a quarter longer and 300 ms more than on A. One step
 // alone says little (both sides share the machine); the sum over a scenario is steady from run to run.
 export function speedOf(steps) {
-  const ok = steps.filter((s) => s.kind === 'check' && typeof s.ms?.a === 'number')
+  const ok = steps.filter((s) => s.kind === 'check' && !s.untimed && typeof s.ms?.a === 'number')
   const a = ok.reduce((n, s) => n + s.ms.a, 0)
   const b = ok.reduce((n, s) => n + s.ms.b, 0)
   const worst = ok

@@ -76,6 +76,8 @@ class H(BaseHTTPRequestHandler):
         if p == "/api/selftest":
             f = os.path.join(OUT, "selftest", "summary.json")
             return self.send_file(f, "application/json") if os.path.isfile(f) else self.send_text(200, "{}", "application/json")
+        if p == "/api/findings":
+            return self.send_file(os.path.join(HERE, "findings.md"), "text/plain; charset=utf-8")
         if p == "/tw.js":
             return self.send_file(TW, "text/javascript")
         if p.startswith("/out/"):

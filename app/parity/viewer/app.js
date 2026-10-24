@@ -47,15 +47,38 @@ function kindsOf(res) {
 }
 
 // ------------------------------------------------------------------ overview
+// findings.md's table: | # | Found in | Where | What differs | Status |
+function findingsCard(md) {
+  const rows = md
+    .split('\n')
+    .filter((l) => /^\| P\d+ /.test(l))
+    .map((l) => l.split('|').slice(1, -1).map((c) => c.trim()))
+  if (!rows.length) return ''
+  const open = rows.filter((r) => r[4].startsWith('open')).length
+  const md2 = (t) => esc(t).replace(/`([^`]+)`/g, '<code class="rounded bg-zinc-100 px-1 dark:bg-zinc-800">$1</code>')
+  return card(`<div class="flex flex-wrap items-center gap-3"><h2 class="text-base font-semibold">差别清单</h2>
+    ${open ? chip(`${open} 条还没解决`, 'bad') : chip('全部解决', 'ok')}<span class="text-xs text-zinc-500">每条都人工看过截图确认；编号用来对话</span></div>
+    <div class="mt-3 overflow-x-auto"><table class="w-full text-left text-sm"><thead class="text-xs text-zinc-500"><tr>
+      <th class="py-1 pr-3 font-medium">#</th><th class="py-1 pr-3 font-medium">发现于</th><th class="py-1 pr-3 font-medium">哪里</th><th class="py-1 pr-3 font-medium">旧版 → 新版</th><th class="py-1 pr-3 font-medium">状态</th></tr></thead>
+    <tbody>${rows
+      .map(
+        (r) => `<tr class="border-t border-zinc-100 align-top dark:border-zinc-800"><td class="py-1.5 pr-3 font-mono text-xs">${esc(r[0])}</td>
+        <td class="py-1.5 pr-3 font-mono text-xs">${esc(r[1])}</td><td class="py-1.5 pr-3">${md2(r[2])}</td><td class="py-1.5 pr-3">${md2(r[3])}</td>
+        <td class="py-1.5 pr-3">${chip(r[4], r[4].startsWith('open') ? 'bad' : 'ok')}</td></tr>`,
+      )
+      .join('')}</tbody></table></div>`)
+}
+
 async function home() {
-  const [st, runs] = await Promise.all([getJSON('/api/selftest'), getJSON('/api/runs')])
+  const [st, runs, findings] = await Promise.all([getJSON('/api/selftest'), getJSON('/api/runs'), fetch('/api/findings', { cache: 'no-store' }).then((r) => r.text())])
   const muts = Object.entries(st.mutants || {})
   const caught = muts.filter(([, m]) => m.pass).length
   const same = st.same || []
   const trusted = same.length >= 2 && same.every((x) => x.pass) && muts.length && caught === muts.length
-  const newRuns = runs.filter((r) => r.b?.name === 'new')
+  const newRuns = runs.filter((r) => r.b?.name?.startsWith('new'))
   $main.innerHTML = `
   <div class="grid gap-4">
+    ${findingsCard(findings)}
     ${card(`
       <div class="flex flex-wrap items-center gap-3"><h2 class="text-base font-semibold">新版和旧版的差别</h2>
       ${newRuns.length ? (newRuns[0].bad ? chip(`最近一次：${newRuns[0].bad} 处场景有差别`, 'bad') : chip('最近一次：没有差别', 'ok')) : chip('新版还没有可比的部分', 'dim')}</div>

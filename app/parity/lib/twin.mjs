@@ -257,7 +257,7 @@ export class Twin {
 
   // ------------------------------------------------------------------ steps
   /** Runs fn(side) on both sides at once, then settles, captures and compares (unless check is false). */
-  async step(label, fn, { check = true, settle = {} } = {}) {
+  async step(label, fn, { check = true, settle = {}, untimed = false } = {}) {
     if (check) await Promise.all(this.sides.map((s) => s.filmStart()))
     const t0 = Date.now()
     const res = await Promise.allSettled(this.sides.map((s) => fn(s)))
@@ -269,7 +269,7 @@ export class Twin {
     }
     const done = await Promise.all(this.sides.map((s) => s.settle(settle)))
     const films = this.variant.engine === 'webkit' ? null : await Promise.all(this.sides.map((s) => s.filmStop()))
-    await this.compare(label, { t0, done, failed, films })
+    await this.compare(label, { t0, done, failed, films, untimed })
   }
   /** The screen point of a target on side A: fn(page) -> locator, "text" (exact text), or {x, y}. */
   async point(target, { dx, dy } = {}) {
@@ -311,10 +311,7 @@ export class Twin {
     const pt = await this.point(target, opts)
     await this.step(
       label || `滚动 ${dy}`,
-      async (s) => {
-        await s.page.mouse.move(pt.x, pt.y)
-        await s.page.mouse.wheel(0, dy)
-      },
+      (s) => scrollAt(s, pt.x, pt.y, dy),
       opts,
     )
   }
@@ -330,10 +327,7 @@ export class Twin {
       if (cy >= 60 && cy <= vp.height - 120) break
       const x = Math.min(Math.max(box.x + box.width / 2, 5), vp.width - 5)
       const dy = Math.round(cy - vp.height / 2)
-      await this.step('', async (s) => {
-        await s.page.mouse.move(x, vp.height / 2)
-        await s.page.mouse.wheel(0, dy)
-      }, { check: false })
+      await this.step('', (s) => scrollAt(s, x, vp.height / 2, dy), { check: false })
       await sleep(350)
     }
     await this.step(label || `滚到 ${describe(target)}`, () => sleep(50), opts)
@@ -395,19 +389,20 @@ export class Twin {
   }
   /** Both servers stop (Taska out of reach) or start again on the same port and data. */
   async servers(up, label) {
-    await this.step(label || (up ? '服务器恢复' : '服务器停了'), (s) => (up ? s.server.restart() : s.server.stop()))
+    await this.step(label || (up ? '服务器恢复' : '服务器停了'), (s) => (up ? s.server.restart() : s.server.stop()), { untimed: true })
   }
   async offline(on, label, opts = {}) {
-    await this.step(label || (on ? '断网' : '恢复网络'), (s) => s.ctx.setOffline(on), opts)
+    await this.step(label || (on ? '断网' : '恢复网络'), (s) => s.ctx.setOffline(on), { untimed: true, ...opts })
   }
   async wait(ms, label = `等 ${ms / 1000} 秒`) {
-    await this.step(label, () => sleep(ms))
+    await this.step(label, () => sleep(ms), { untimed: true })
   }
   /** Waits until both pages show `text` (agent writes appear without a reload); records how long each took. */
   async waitText(text, label = `等页面出现 "${text}"`, timeout = 10000) {
     // never fails: a side that does not show it in time is seen in the capture that follows
     await this.step(label, (s) =>
       s.page.waitForFunction((t) => document.body.innerText.includes(t), text, { timeout, polling: 50 }).catch(() => null),
+      { untimed: true },
     )
   }
 
@@ -463,7 +458,7 @@ export class Twin {
   }
 
   // ------------------------------------------------------------------ comparing
-  async compare(label, { t0, done, failed, films }) {
+  async compare(label, { t0, done, failed, films, untimed }) {
     const n = this.steps.length
     let caps
     let cats
@@ -524,6 +519,7 @@ export class Twin {
       ms: t0 ? { a: Math.max(0, Math.round(done[0] - t0)), b: Math.max(0, Math.round(done[1] - t0)) } : {},
       files,
       errorsA: errs[0],
+      untimed: untimed || undefined, // a wait on purpose: its time says nothing about speed
       film: film && { a: film.a, b: film.b, short: film.short },
       // compared over the whole scenario (run.mjs): a fade can start a step later on one side, as an image arrives
       motion: caps[0].motion.length || caps[1].motion.length ? { a: caps[0].motion, b: caps[1].motion } : undefined,
@@ -535,6 +531,24 @@ export class Twin {
     const mark = step.same ? 'same' : 'DIFF ' + Object.keys(step.cats).join(',')
     this.log(`    ${String(step.i).padStart(3)} ${mark.padEnd(22)} ${step.ms?.a ?? '-'}/${step.ms?.b ?? '-'} ms  ${step.label}`)
   }
+}
+
+// The wheel at a point; mobile WebKit has no wheel, so there the nearest scrollable box under the point scrolls.
+async function scrollAt(side, x, y, dy) {
+  if (side.variant.engine !== 'webkit') {
+    await side.page.mouse.move(x, y)
+    return side.page.mouse.wheel(0, dy)
+  }
+  await side.page.evaluate(
+    ([x, y, dy]) => {
+      for (let el = document.elementFromPoint(x, y); el; el = el.parentElement) {
+        const st = getComputedStyle(el)
+        if (/(auto|scroll)/.test(st.overflowY) && el.scrollHeight > el.clientHeight) return el.scrollBy(0, dy)
+      }
+      scrollBy(0, dy)
+    },
+    [x, y, dy],
+  )
 }
 
 // A finger: down at the first point, held, moved through the rest, up (Chrome's touch events, as a phone sends).
