@@ -48,7 +48,7 @@ export interface RowLook {
 // The dark tints are opaque (the colours laid on the page's zinc-950): the row's buttons take the row's colour and
 // hide the title under them. A picked row stays blue under the pointer and while pressed.
 const ROW_TINT =
-  'data-sel:bg-blue-100 dark:data-sel:bg-[color-mix(in_oklab,var(--color-blue-400)_20%,var(--color-zinc-950))] desk:data-sel:hover:bg-blue-100 dark:desk:data-sel:hover:bg-[color-mix(in_oklab,var(--color-blue-400)_20%,var(--color-zinc-950))] desk:hover:bg-zinc-50 dark:desk:hover:bg-[color-mix(in_oklab,var(--color-zinc-900)_70%,var(--color-zinc-950))] desk:aria-[current=true]:bg-blue-50 dark:desk:aria-[current=true]:bg-[color-mix(in_oklab,var(--color-blue-400)_10%,var(--color-zinc-950))] pointer-coarse:transition-colors pointer-coarse:delay-75 data-pressed:bg-zinc-100 desk:data-pressed:bg-zinc-100 dark:data-pressed:bg-zinc-900 dark:desk:data-pressed:bg-zinc-900 data-sel:data-pressed:bg-blue-200 desk:data-sel:data-pressed:bg-blue-200 dark:data-sel:data-pressed:bg-[color-mix(in_oklab,var(--color-blue-400)_30%,var(--color-zinc-950))] dark:desk:data-sel:data-pressed:bg-[color-mix(in_oklab,var(--color-blue-400)_30%,var(--color-zinc-950))] desk:aria-[current=true]:data-pressed:bg-blue-100 dark:desk:aria-[current=true]:data-pressed:bg-[color-mix(in_oklab,var(--color-blue-400)_20%,var(--color-zinc-950))]'
+  'data-sel:bg-blue-100 dark:data-sel:bg-[color-mix(in_oklab,var(--color-blue-400)_20%,var(--color-zinc-950))] lg:data-sel:hover:bg-blue-100 dark:lg:data-sel:hover:bg-[color-mix(in_oklab,var(--color-blue-400)_20%,var(--color-zinc-950))] lg:hover:bg-zinc-50 dark:lg:hover:bg-[color-mix(in_oklab,var(--color-zinc-900)_70%,var(--color-zinc-950))] lg:aria-[current=true]:bg-blue-50 dark:lg:aria-[current=true]:bg-[color-mix(in_oklab,var(--color-blue-400)_10%,var(--color-zinc-950))] pointer-coarse:transition-colors pointer-coarse:delay-75 data-pressed:bg-zinc-100 lg:data-pressed:bg-zinc-100 dark:data-pressed:bg-zinc-900 dark:lg:data-pressed:bg-zinc-900 data-sel:data-pressed:bg-blue-200 lg:data-sel:data-pressed:bg-blue-200 dark:data-sel:data-pressed:bg-[color-mix(in_oklab,var(--color-blue-400)_30%,var(--color-zinc-950))] dark:lg:data-sel:data-pressed:bg-[color-mix(in_oklab,var(--color-blue-400)_30%,var(--color-zinc-950))] lg:aria-[current=true]:data-pressed:bg-blue-100 dark:lg:aria-[current=true]:data-pressed:bg-[color-mix(in_oklab,var(--color-blue-400)_20%,var(--color-zinc-950))]'
 // rows out of sight are not laid out until they scroll near (a long list shows at once)
 export const ARTICLE =
   '[contain-intrinsic-size:auto_64px] [content-visibility:auto] relative border-b border-zinc-100 data-dragging:opacity-40 after:pointer-events-none after:absolute after:inset-0 after:z-10 data-[drop=before]:after:shadow-[inset_0_2px_0_0_var(--color-blue-500)] data-[drop=after]:after:shadow-[inset_0_-2px_0_0_var(--color-blue-500)] data-[drop=into]:after:bg-blue-500/10 data-[drop=into]:after:ring-2 data-[drop=into]:after:ring-blue-500 data-[drop=into]:after:ring-inset dark:border-zinc-800/70 dark:data-[drop=into]:after:bg-blue-400/15'
@@ -62,7 +62,7 @@ const marks = (look: RowLook) => ({
 
 function CodeTitle({ it, code, look, struck }: { it: Item; code: string; look: RowLook; struck: boolean }) {
   return (
-    <p className={`line-clamp-2 text-[15px] leading-snug font-medium desk:line-clamp-1 ${struck ? 'line-through decoration-zinc-400' : ''}`}>
+    <p className={`line-clamp-2 text-[15px] leading-snug font-medium lg:line-clamp-1 ${struck ? 'line-through decoration-zinc-400' : ''}`}>
       <span className={`mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[it.type]}`}>
         <Hit text={code} words={look.words} />
       </span>
@@ -96,7 +96,7 @@ function WorkerMark({ worker }: { worker: NonNullable<RowFacts['worker']> }) {
 function RowActs({ it, needs, on }: { it: Item; needs: boolean; on: RowEvents }) {
   const acts = deskSlots(it, needs).filter((a): a is Slot => a !== null)
   return (
-    <div className="relative hidden shrink-0 self-stretch bg-inherit desk:block">
+    <div className="relative hidden shrink-0 self-stretch bg-inherit lg:block">
       <div className="absolute inset-y-0 right-0 hidden items-center gap-0.5 bg-inherit [mask-image:linear-gradient(to_right,transparent,black_1.5rem)] pl-6 group-hover:flex">
         {acts.map(([f, v, label]) =>
           f === 'reopen' ? (
@@ -285,7 +285,7 @@ export function NeedsRow({ it, depth, facts, look, excerpt, on }: { it: Item; de
           <StateIcon {...shownStatus(it)} />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="line-clamp-2 text-[15px] leading-snug font-medium desk:line-clamp-1">
+          <p className="line-clamp-2 text-[15px] leading-snug font-medium lg:line-clamp-1">
             <span className={`mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[it.type]}`}>
               <Hit text={facts.code} words={look.words} />
             </span>
@@ -387,7 +387,7 @@ export function HiddenKidsLine({ depth, open, later, done, onToggle }: { depth: 
     <button
       aria-expanded={open}
       onClick={onToggle}
-      className={`flex h-11 w-full items-center gap-1.5 border-b border-zinc-100 ${pad(depth)} text-[13px] font-semibold text-zinc-500 hover:bg-zinc-50 data-pressed:bg-zinc-100 desk:h-10 dark:border-zinc-800/70 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:data-pressed:bg-zinc-900`}
+      className={`flex h-11 w-full items-center gap-1.5 border-b border-zinc-100 ${pad(depth)} text-[13px] font-semibold text-zinc-500 hover:bg-zinc-50 data-pressed:bg-zinc-100 lg:h-10 dark:border-zinc-800/70 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:data-pressed:bg-zinc-900`}
     >
       <Icon n={open ? 'chevup' : 'down'} c="size-4" sw="2.25" />
       {open ? 'Show fewer' : said}

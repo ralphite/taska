@@ -11,7 +11,7 @@ export function ItemPane({ it, model }: { it: Item; model: ProjectModel; slug: s
   const code = codeOf(model, it.n)
   const st = shownStatus(it)
   return (
-    <div className="px-4 pt-4 desk:px-8">
+    <div className="px-4 pt-4 lg:px-8">
       <div className="flex items-center gap-2 text-sm">
         <StateIcon {...st} />
         <span className={`font-mono font-bold ${TYPE_TEXT[it.type]}`}>{code}</span>

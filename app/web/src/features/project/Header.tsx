@@ -47,11 +47,11 @@ export function NotSavedPill({ n, onOpen }: { n: number; onOpen(): void }) {
     <button
       onClick={onOpen}
       aria-label={`${n} not saved`}
-      className="flex h-8 shrink-0 items-center gap-1.5 rounded-full bg-red-50 px-2.5 text-[13px] font-semibold text-red-700 ring-1 ring-red-600/20 ring-inset hover:bg-red-100 desk:px-3 dark:bg-red-400/10 dark:text-red-300 dark:ring-red-400/25 dark:hover:bg-red-400/20"
+      className="flex h-8 shrink-0 items-center gap-1.5 rounded-full bg-red-50 px-2.5 text-[13px] font-semibold text-red-700 ring-1 ring-red-600/20 ring-inset hover:bg-red-100 lg:px-3 dark:bg-red-400/10 dark:text-red-300 dark:ring-red-400/25 dark:hover:bg-red-400/20"
     >
       <Icon n="alert" c="size-3.5" sw="2.25" />
       {n}
-      <span className="hidden desk:inline">not saved</span>
+      <span className="hidden lg:inline">not saved</span>
     </button>
   )
 }
@@ -168,7 +168,7 @@ export function ListHead({
     if (el && el.value !== q && document.activeElement !== el) el.value = q
   })
   return (
-    <header hidden={hidden} className={`flex h-14 shrink-0 items-center gap-1 px-2 desk:gap-2 desk:border-r desk:border-b desk:border-zinc-200 desk:px-3 dark:desk:border-zinc-800 ${place}`}>
+    <header hidden={hidden} className={`flex h-14 shrink-0 items-center gap-1 px-2 lg:gap-2 lg:border-r lg:border-b lg:border-zinc-200 lg:px-3 dark:lg:border-zinc-800 ${place}`}>
       <div hidden={showSearch} className="contents">
         <button onClick={on.menu} aria-label="Projects and settings" className="flex h-12 min-w-0 flex-1 items-center gap-2.5 rounded-xl px-2.5 text-left data-pressed:bg-zinc-100 dark:data-pressed:bg-zinc-800">
           <span className="relative text-zinc-700 dark:text-zinc-300">
@@ -190,7 +190,7 @@ export function ListHead({
         </button>
       </div>
       <div hidden={!showSearch} className="contents">
-        <label className="ml-1 flex h-11 min-w-0 flex-1 items-center gap-2 rounded-xl bg-zinc-100 pl-3 text-zinc-400 desk:ml-0 desk:h-9 desk:ring-blue-500/40 desk:focus-within:bg-white desk:focus-within:ring-2 dark:bg-zinc-800 dark:text-zinc-500 dark:desk:focus-within:bg-zinc-900">
+        <label className="ml-1 flex h-11 min-w-0 flex-1 items-center gap-2 rounded-xl bg-zinc-100 pl-3 text-zinc-400 lg:ml-0 lg:h-9 lg:ring-blue-500/40 lg:focus-within:bg-white lg:focus-within:ring-2 dark:bg-zinc-800 dark:text-zinc-500 dark:lg:focus-within:bg-zinc-900">
           <Icon n="search" c="size-4.5" />
           <input
             ref={input}
@@ -198,7 +198,7 @@ export function ListHead({
             autoComplete="off"
             placeholder={placeholder}
             defaultValue={q}
-            className="min-w-0 flex-1 bg-transparent text-base text-zinc-900 outline-none placeholder:text-zinc-400 desk:text-sm dark:text-zinc-100 [&::-webkit-search-cancel-button]:hidden"
+            className="min-w-0 flex-1 bg-transparent text-base text-zinc-900 outline-none placeholder:text-zinc-400 lg:text-sm dark:text-zinc-100 [&::-webkit-search-cancel-button]:hidden"
             onInput={(e) => on.query(e.currentTarget.value)}
             onFocus={() => phone && !searching && on.search(true)}
             onKeyDown={(e) => {
@@ -208,14 +208,14 @@ export function ListHead({
               on.firstResult()
             }}
           />
-          <kbd className={`mr-2 hidden h-5 min-w-5 place-items-center rounded-md px-1 font-sans text-[11px] font-semibold text-zinc-400 ring-1 ring-zinc-300 dark:ring-zinc-600 ${q ? '' : 'desk:grid'}`}>/</kbd>
-          <button onClick={on.clear} aria-label="Clear search" className={`group -mr-1 grid size-11 shrink-0 place-items-center rounded-full desk:size-9 ${q ? '' : 'desk:hidden'}`}>
+          <kbd className={`mr-2 hidden h-5 min-w-5 place-items-center rounded-md px-1 font-sans text-[11px] font-semibold text-zinc-400 ring-1 ring-zinc-300 dark:ring-zinc-600 ${q ? '' : 'lg:grid'}`}>/</kbd>
+          <button onClick={on.clear} aria-label="Clear search" className={`group -mr-1 grid size-11 shrink-0 place-items-center rounded-full lg:size-9 ${q ? '' : 'lg:hidden'}`}>
             <span className="grid size-5 place-items-center rounded-full bg-zinc-400 text-white group-hover:bg-zinc-500 dark:bg-zinc-600 dark:text-zinc-900 dark:group-hover:bg-zinc-500">
               <Icon n="x" c="size-3" sw="3" />
             </span>
           </button>
         </label>
-        <button onClick={() => on.search(false)} className="h-11 shrink-0 px-2.5 text-[15px] font-medium text-blue-600 desk:hidden dark:text-blue-400">
+        <button onClick={() => on.search(false)} className="h-11 shrink-0 px-2.5 text-[15px] font-medium text-blue-600 lg:hidden dark:text-blue-400">
           Cancel
         </button>
       </div>
@@ -224,7 +224,7 @@ export function ListHead({
         title="Filters · F"
         aria-label="Filters"
         aria-expanded={filtersOpen}
-        className="relative hidden size-9 shrink-0 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-100 aria-expanded:bg-zinc-100 desk:grid dark:text-zinc-400 dark:hover:bg-zinc-800 dark:aria-expanded:bg-zinc-800"
+        className="relative hidden size-9 shrink-0 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-100 aria-expanded:bg-zinc-100 lg:grid dark:text-zinc-400 dark:hover:bg-zinc-800 dark:aria-expanded:bg-zinc-800"
       >
         <Icon n="sliders" c="size-[18px]" />
         <FilterDot on={filtersSet} />
@@ -282,7 +282,7 @@ export function FilterChips({ set, onUnset }: { set: [string, ReactNode][]; onUn
         <button
           key={k}
           onClick={() => onUnset(k)}
-          className={`${HIT} flex h-8 shrink-0 items-center gap-1 rounded-full bg-blue-50 pr-2 pl-3 text-[13px] font-medium text-blue-800 ring-1 ring-blue-200 ring-inset hover:bg-blue-100 desk:h-7 dark:bg-blue-400/10 dark:text-blue-200 dark:ring-blue-400/25 dark:hover:bg-blue-400/20`}
+          className={`${HIT} flex h-8 shrink-0 items-center gap-1 rounded-full bg-blue-50 pr-2 pl-3 text-[13px] font-medium text-blue-800 ring-1 ring-blue-200 ring-inset hover:bg-blue-100 lg:h-7 dark:bg-blue-400/10 dark:text-blue-200 dark:ring-blue-400/25 dark:hover:bg-blue-400/20`}
         >
           {label}
           <Icon n="x" c="size-3.5" sw="2.25" />

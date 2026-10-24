@@ -20,12 +20,12 @@ export function SaidStep({ head, acts, body, foot, time }: { head: ReactNode; ac
         {time || acts ? (
           <div className="grid shrink-0 justify-items-end">
             {time ? (
-              <span className="col-start-1 row-start-1 hidden pt-0.5 font-mono text-xs text-zinc-400 tabular-nums desk:block desk:group-focus-within/row:invisible desk:group-hover/row:invisible dark:text-zinc-500">
+              <span className="col-start-1 row-start-1 hidden pt-0.5 font-mono text-xs text-zinc-400 tabular-nums lg:block lg:group-focus-within/row:invisible lg:group-hover/row:invisible dark:text-zinc-500">
                 {time}
               </span>
             ) : null}
             {acts ? (
-              <span className="col-start-1 row-start-1 -my-0.5 flex items-center desk:invisible desk:group-focus-within/row:visible desk:group-hover/row:visible">{acts}</span>
+              <span className="col-start-1 row-start-1 -my-0.5 flex items-center lg:invisible lg:group-focus-within/row:visible lg:group-hover/row:visible">{acts}</span>
             ) : null}
           </div>
         ) : null}
@@ -33,7 +33,7 @@ export function SaidStep({ head, acts, body, foot, time }: { head: ReactNode; ac
       {foot ? <div className="mt-2 flex min-w-0 flex-wrap items-center gap-1.5 empty:hidden">{foot}</div> : null}
       <div className="mt-1.5 flex min-h-5 min-w-0 items-center gap-1.5 text-[13px] text-zinc-500 dark:text-zinc-400">
         {head}
-        {time ? <span className="shrink-0 tabular-nums desk:hidden">· {time}</span> : null}
+        {time ? <span className="shrink-0 tabular-nums lg:hidden">· {time}</span> : null}
       </div>
     </li>
   )

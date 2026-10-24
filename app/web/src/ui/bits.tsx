@@ -7,7 +7,7 @@ import { Icon, type IconName } from './Icon'
 /** A key cap, shown on the desktop only. */
 export function Kbd({ k }: { k: string }) {
   return (
-    <kbd className="ml-1 hidden h-5 min-w-5 place-items-center rounded-md px-1 font-sans text-[11px] font-semibold opacity-70 ring-1 ring-current/30 desk:inline-grid">
+    <kbd className="ml-1 hidden h-5 min-w-5 place-items-center rounded-md px-1 font-sans text-[11px] font-semibold opacity-70 ring-1 ring-current/30 lg:inline-grid">
       {k}
     </kbd>
   )

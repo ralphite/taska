@@ -54,7 +54,7 @@ export function VoiceChip({ f, src, play, tidy, onPlay, onWords }: { f: FileRef;
         <button
           aria-label="Original words"
           onClick={(e) => (e.stopPropagation(), onWords(f.f))}
-          className="mr-1 -ml-1.5 grid size-7 place-items-center rounded-full text-zinc-400 hover:bg-zinc-100 desk:hidden dark:text-zinc-500 dark:hover:bg-zinc-800"
+          className="mr-1 -ml-1.5 grid size-7 place-items-center rounded-full text-zinc-400 hover:bg-zinc-100 lg:hidden dark:text-zinc-500 dark:hover:bg-zinc-800"
         >
           <Icon n="quote" c="size-4" />
         </button>

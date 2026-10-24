@@ -45,7 +45,7 @@ export interface ComposerProps {
   }
 }
 
-const BTN_ICON = 'size-6 desk:size-5'
+const BTN_ICON = 'size-6 lg:size-5'
 
 export function Composer({ line, lineOnComposePage, placeholder, sendWord, text, desk, composePage, micTip, files, on }: ComposerProps) {
   const area = useRef<HTMLTextAreaElement>(null)
@@ -73,21 +73,21 @@ export function Composer({ line, lineOnComposePage, placeholder, sendWord, text,
     <div
       ref={box}
       id="composer"
-      className="group/box flex flex-col rounded-4xl border border-zinc-200 bg-white shadow-sm focus-within:border-zinc-300 desk:mx-auto desk:max-w-[42rem] dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-none dark:focus-within:border-zinc-700"
+      className="group/box flex flex-col rounded-4xl border border-zinc-200 bg-white shadow-sm focus-within:border-zinc-300 lg:mx-auto lg:max-w-[42rem] dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-none dark:focus-within:border-zinc-700"
     >
       <div
         hidden={!line}
-        className={`@container flex h-8 items-center gap-1.5 pt-1 pr-1.5 pl-4 text-[13px] text-zinc-500 dark:text-zinc-400 ${lineOnComposePage ? '' : 'desk:group-data-[compose]/app:hidden'}`}
+        className={`@container flex h-8 items-center gap-1.5 pt-1 pr-1.5 pl-4 text-[13px] text-zinc-500 dark:text-zinc-400 ${lineOnComposePage ? '' : 'lg:group-data-[compose]/app:hidden'}`}
       >
         {line ? <ScopeLine {...line} /> : null}
       </div>
       {files}
-      <div className="flex items-end gap-2 p-1.5 group-data-[multi]/box:flex-wrap desk:gap-0.5 desk:group-data-[compose]/app:order-first">
+      <div className="flex items-end gap-2 p-1.5 group-data-[multi]/box:flex-wrap lg:gap-0.5 lg:group-data-[compose]/app:order-first">
         <button
           aria-label="Add images or files"
           title={desk ? 'Add images or files' : undefined}
           onClick={() => picker.current?.click()}
-          className="grid size-11 shrink-0 place-items-center rounded-full text-zinc-500 group-data-[multi]/box:mr-auto hover:bg-zinc-100 hover:text-zinc-800 desk:m-1 desk:size-9 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+          className="grid size-11 shrink-0 place-items-center rounded-full text-zinc-500 group-data-[multi]/box:mr-auto hover:bg-zinc-100 hover:text-zinc-800 lg:m-1 lg:size-9 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
         >
           <Icon n="plus" c={BTN_ICON} />
         </button>
@@ -98,7 +98,7 @@ export function Composer({ line, lineOnComposePage, placeholder, sendWord, text,
             value={text}
             placeholder={placeholder}
             aria-label="Input"
-            className="col-start-1 row-start-1 max-h-48 min-h-11 w-full min-w-0 resize-none bg-transparent px-1 py-2.5 text-[17px] leading-6 outline-none placeholder:text-zinc-400 roomy:text-[15px] desk:scrollbar-thin dark:placeholder:text-zinc-500"
+            className="col-start-1 row-start-1 max-h-48 min-h-11 w-full min-w-0 resize-none bg-transparent px-1 py-2.5 text-[17px] leading-6 outline-none placeholder:text-zinc-400 roomy:text-[15px] lg:scrollbar-thin dark:placeholder:text-zinc-500"
             onChange={(e) => on.text(e.currentTarget.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.nativeEvent.isComposing && (e.shiftKey || e.metaKey || e.ctrlKey)) {
@@ -120,7 +120,7 @@ export function Composer({ line, lineOnComposePage, placeholder, sendWord, text,
           title={desk ? micTip : undefined}
           hidden={!has}
           onClick={() => on.mic(true)}
-          className="mr-4 grid size-11 shrink-0 place-items-center rounded-full text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 desk:m-1 desk:mr-0 desk:size-9 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+          className="mr-4 grid size-11 shrink-0 place-items-center rounded-full text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 lg:m-1 lg:mr-0 lg:size-9 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
         >
           <Icon n="mic" c="size-5" />
         </button>
@@ -128,7 +128,7 @@ export function Composer({ line, lineOnComposePage, placeholder, sendWord, text,
           aria-label={has ? `${sendWord} (Shift + Enter)` : 'Record a voice note'}
           title={desk ? (has ? `${sendWord} · ⇧↵` : micTip) : undefined}
           onClick={() => (has ? on.send() : on.mic(false))}
-          className="grid size-11 shrink-0 place-items-center rounded-full bg-zinc-900 text-white disabled:opacity-25 desk:m-1 desk:size-9 desk:hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:desk:hover:bg-white"
+          className="grid size-11 shrink-0 place-items-center rounded-full bg-zinc-900 text-white disabled:opacity-25 lg:m-1 lg:size-9 lg:hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:lg:hover:bg-white"
         >
           {has ? <Icon n="up" c="size-5" sw="2.25" /> : <Icon n="mic" c={BTN_ICON} />}
         </button>
@@ -293,7 +293,7 @@ export function Feedback({ line, on }: { line: FeedbackLine | null; on: { dismis
     <div
       hidden={!line}
       role="status"
-      className="mb-1.5 flex min-h-7 items-center gap-2 rounded-full bg-white/95 pr-1 pl-2.5 text-[13px] text-zinc-600 desk:mx-auto desk:max-w-[42rem] dark:bg-zinc-950/95 dark:text-zinc-300"
+      className="mb-1.5 flex min-h-7 items-center gap-2 rounded-full bg-white/95 pr-1 pl-2.5 text-[13px] text-zinc-600 lg:mx-auto lg:max-w-[42rem] dark:bg-zinc-950/95 dark:text-zinc-300"
     >
       {node}
     </div>

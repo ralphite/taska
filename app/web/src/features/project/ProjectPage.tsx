@@ -116,7 +116,7 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
             filters: () => {},
           }}
         />
-        <section className="col-start-1 row-span-2 row-start-4 flex min-h-0 flex-1 flex-col desk:border-r desk:border-zinc-200 dark:desk:border-zinc-800" hidden={settings}>
+        <section className="col-start-1 row-span-2 row-start-4 flex min-h-0 flex-1 flex-col lg:border-r lg:border-zinc-200 dark:lg:border-zinc-800" hidden={settings}>
           <ItemListContainer route={route} />
         </section>
         <DetailContainer route={route} place={`row-span-3 row-start-2 group-data-[compose]/app:row-span-1 col-start-2`} hidden={settings} />

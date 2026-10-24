@@ -26,7 +26,7 @@ export function Toast({ toast, style, place, onAction, onClose }: {
       role={t?.error ? 'alert' : 'status'}
       data-error={t?.error ? '' : undefined}
       style={style}
-      className={`fixed z-[60] flex w-fit max-w-[92vw] items-center gap-3 rounded-full bg-zinc-900 py-2 pr-4 pl-4 text-sm text-white shadow-lg has-[button]:py-1.5 has-[button]:pr-1.5 data-error:bg-red-600 data-error:text-white desk:max-w-md dark:bg-zinc-100 dark:text-zinc-900 dark:data-error:bg-red-600 dark:data-error:text-white ${t?.action || t?.sticky ? '' : 'pointer-events-none'} ${place}`}
+      className={`fixed z-[60] flex w-fit max-w-[92vw] items-center gap-3 rounded-full bg-zinc-900 py-2 pr-4 pl-4 text-sm text-white shadow-lg has-[button]:py-1.5 has-[button]:pr-1.5 data-error:bg-red-600 data-error:text-white lg:max-w-md dark:bg-zinc-100 dark:text-zinc-900 dark:data-error:bg-red-600 dark:data-error:text-white ${t?.action || t?.sticky ? '' : 'pointer-events-none'} ${place}`}
     >
       {t?.error ? <Icon n="alert" c="size-4" sw="2" /> : null}
       <span className="line-clamp-2 min-w-0 leading-snug">{t?.text}</span>

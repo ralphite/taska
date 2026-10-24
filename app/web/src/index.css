@@ -1,5 +1,17 @@
 @import 'tailwindcss';
 
+/* The layout a part is drawn in is said by data-layout on an ancestor ("desk" or "phone"): the page sets it from the
+   window's width, a story's frame from its own, so any part draws alone in either. lg: is the desktop's layout
+   (it keeps lg's place before dark, so a dark colour wins over it as before); phone: is the phone's. Widths that
+   only size panes answer to the frame they are drawn in ("@container/frame"): wide from 80rem, huge from 96rem,
+   roomy from 40rem, wide-phone from 400px. */
+@custom-variant lg (&:where([data-layout='desk'], [data-layout='desk'] *));
+@custom-variant phone (&:where([data-layout='phone'], [data-layout='phone'] *));
+@custom-variant wide (@container frame (width >= 80rem));
+@custom-variant huge (@container frame (width >= 96rem));
+@custom-variant roomy (@container frame (width >= 40rem));
+@custom-variant wide-phone (@container frame (width >= 400px));
+
 /* Dark follows the system; data-theme on any ancestor forces one (Storybook frames use it). */
 @custom-variant dark {
   &:where([data-theme='dark'], [data-theme='dark'] *) {
@@ -11,12 +23,3 @@
     }
   }
 }
-
-/* Layout answers to the width of the frame it is drawn in (the window, or a story's frame: "@container/frame"):
-   desk from 64rem, wide from 80rem, huge from 96rem, roomy from 40rem; phone below desk. */
-@custom-variant desk (@container frame (width >= 64rem));
-@custom-variant wide (@container frame (width >= 80rem));
-@custom-variant huge (@container frame (width >= 96rem));
-@custom-variant roomy (@container frame (width >= 40rem));
-@custom-variant phone (@container frame (width < 64rem));
-@custom-variant wide-phone (@container frame (width >= 400px));

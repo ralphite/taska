@@ -132,28 +132,28 @@ export function Sidebar(props: SidebarProps) {
   const { phone, projects, composing, links, undoLabel, devLinks, place, hidden, newProjectField, on } = props
   return (
     <nav id="drawer" hidden={hidden} aria-label="Projects" className={`flex h-full flex-col pt-[env(safe-area-inset-top)] dark:bg-zinc-900 ${place}`}>
-      <div className="flex h-14 shrink-0 items-center gap-2 px-5 desk:pr-2 desk:pl-4">
+      <div className="flex h-14 shrink-0 items-center gap-2 px-5 lg:pr-2 lg:pl-4">
         <a
           href="/"
           onClick={(e) => on.go('/', e)}
           title="All projects"
-          className="-mx-1.5 flex h-11 items-center gap-2 rounded-lg px-1.5 hover:bg-zinc-200/60 desk:h-9 dark:hover:bg-zinc-800"
+          className="-mx-1.5 flex h-11 items-center gap-2 rounded-lg px-1.5 hover:bg-zinc-200/60 lg:h-9 dark:hover:bg-zinc-800"
         >
           <span className="text-blue-600 dark:text-blue-400">
             <Icon n="logo" c="size-6" sw="2.25" />
           </span>
-          <span className="text-xl font-semibold tracking-tight desk:text-[19px]">Taska</span>
+          <span className="text-xl font-semibold tracking-tight lg:text-[19px]">Taska</span>
         </a>
         <button
           onClick={on.hide}
           title="Hide the sidebar · ["
           aria-label="Hide the sidebar"
-          className="ml-auto hidden size-8 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-200/70 desk:grid dark:text-zinc-400 dark:hover:bg-zinc-800"
+          className="ml-auto hidden size-8 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-200/70 lg:grid dark:text-zinc-400 dark:hover:bg-zinc-800"
         >
           <Icon n="panel" c="size-[18px]" />
         </button>
       </div>
-      <div className="group/ni relative mx-2.5 mb-3 hidden shrink-0 desk:block">
+      <div className="group/ni relative mx-2.5 mb-3 hidden shrink-0 lg:block">
         <button
           onClick={on.newInput}
           aria-pressed={composing}
@@ -174,15 +174,15 @@ export function Sidebar(props: SidebarProps) {
           <Icon n="mic" c="size-4" />
         </button>
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 desk:scrollbar-thin desk:pb-3 desk:hover:scrollbar-thumb-zinc-500/80 dark:desk:hover:scrollbar-thumb-zinc-400/70">
-        <div className="px-3 pb-1.5 text-xs font-semibold text-zinc-500 desk:text-[11px] desk:tracking-wider desk:uppercase dark:text-zinc-400">Projects</div>
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 lg:scrollbar-thin lg:pb-3 lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70">
+        <div className="px-3 pb-1.5 text-xs font-semibold text-zinc-500 lg:text-[11px] lg:tracking-wider lg:uppercase dark:text-zinc-400">Projects</div>
         <div className="flex flex-col gap-0.5">
           <ProjectRows phone={phone} projects={projects} on={on} />
         </div>
         {newProjectField ?? (
           <button
             onClick={on.newProject}
-            className="mt-1 flex h-12 w-full items-center gap-3 rounded-2xl px-3 text-[15px] font-medium text-blue-600 hover:bg-zinc-200/60 desk:h-9 desk:rounded-xl desk:text-sm dark:text-blue-400 dark:hover:bg-zinc-800"
+            className="mt-1 flex h-12 w-full items-center gap-3 rounded-2xl px-3 text-[15px] font-medium text-blue-600 hover:bg-zinc-200/60 lg:h-9 lg:rounded-xl lg:text-sm dark:text-blue-400 dark:hover:bg-zinc-800"
           >
             <Icon n="plus" c="size-5" />
             New project

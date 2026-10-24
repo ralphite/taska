@@ -23,7 +23,7 @@ export function App() {
   return (
     <LayoutProvider layout={layout}>
       <PanesProvider>
-        <div className="@container/frame h-dvh w-full">
+        <div data-layout={layout} className="@container/frame h-dvh w-full">
           {route.page === 'project' ? <ProjectPage route={route} /> : <div className="p-8 text-sm text-zinc-500">Taska</div>}
         </div>
         <Tooltip />
