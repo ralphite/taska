@@ -12,6 +12,9 @@ what the old version does. Each is also sent to the coordinator ("Nota & Taska d
   Reported by the parity check; the coordinator is asking Yadong.
 - [ ] **No 0.3 s first frame while loading.** The old page shows a passing frame for about 0.3 s while it loads; the
   rewrite draws the page at once. Reported by the parity check; the coordinator is asking Yadong.
+- [ ] **Documents (the side list) never says when a document was written.** The old list sorts by and shows a
+  document's `t`, which the server never sends (it sends `t0` and `t1`), so it shows no time and lists the newest
+  number first. The rewrite does the same. Showing `t1` ("· 14:30") would be a change: only with Yadong's yes.
 
 ## Glitches of the old version not copied
 
