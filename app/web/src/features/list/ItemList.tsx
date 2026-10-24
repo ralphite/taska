@@ -1,12 +1,13 @@
 // The item list: the views' row, then its rows in the order of your loop (what waits on you, the agents' queue,
 // Later, finished work), or a word on why it is empty. Props only; ItemListContainer gives it the rows.
 
-import { forwardRef, type ReactNode } from 'react'
+import { forwardRef, type ReactNode, useRef } from 'react'
 import type { Item } from '../../model/types'
 import { Empty } from '../../ui/bits'
 import { ArchiveAllLine, HeldRow, HiddenKidsLine, ItemRow, NeedsMoreLine, NeedsRow, Zone, type RowEvents, type RowFacts, type RowLook } from './ListRows'
 import type { ViewChip } from './rows'
 import { ViewBar, type OwnViewChip } from './ViewBar'
+import { useRowSwipe, type RowSwipe } from './rowSwipe'
 
 export type DrawnRow =
   | { kind: 'item'; key: string; it: Item; depth: number; band: string; foldable: boolean; folded: boolean; facts: RowFacts; look: RowLook }
@@ -53,15 +54,25 @@ export interface ItemListProps {
   /** an item is being dragged (its rows are marked through their look): off every row it stands on its own */
   dragging?: { out: boolean } | null
   desk?: boolean
+  /** the phone: a row swipes right to go forward, left to show the ways back */
+  swipe?: RowSwipe
 }
 
+const NO_SWIPE: RowSwipe = { right: () => null, blocked: () => true }
+
 export const ItemList = forwardRef<HTMLDivElement, ItemListProps>(function ItemList(props, ref) {
-  const { loading, views, ownViews, rows, empty, top, bottom, on, onScroll, rowRef, dragging = null, desk = false } = props
+  const { loading, views, ownViews, rows, empty, top, bottom, on, onScroll, rowRef, dragging = null, desk = false, swipe } = props
+  const own = useRef<HTMLDivElement | null>(null)
+  useRowSwipe(own, !desk && !!swipe, swipe ?? NO_SWIPE, rows)
   const rowOf = (t: EventTarget) => (t as Element).closest?.<HTMLElement>('article[data-n]') ?? null
   return (
     <div
       id="list"
-      ref={ref}
+      ref={(el) => {
+        own.current = el
+        if (typeof ref === 'function') ref(el)
+        else if (ref) ref.current = el
+      }}
       {...(dragging?.out ? { 'data-drop-out': '' } : {})}
       onScroll={(e) => onScroll?.(e.currentTarget.scrollTop)}
       onPointerDown={(e) => {

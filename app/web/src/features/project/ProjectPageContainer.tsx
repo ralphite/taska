@@ -3,6 +3,8 @@
 
 import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { Grip } from '../../ui/Grip'
+import { runAction } from '../../app/actions'
+import { useBackSwipe, useDrawerPull } from './phoneGestures'
 import { gripVars } from '../../stores/grips'
 import { useApp, useLayout, useStoreValue } from '../../app/context'
 import { useAway, useProjectModel, type ProjectRoute } from '../../app/hooks'
@@ -205,10 +207,15 @@ function PhoneLayout({ route }: { route: ProjectRoute }) {
     return () => clearTimeout(t)
   }, [closing])
   const open = route.place.kind === 'item' || route.place.kind === 'doc'
+  const sheet = useStoreValue(app.stores.sheet, (s) => !!s.spec)
+  const drawerPull = useDrawerPull(drawer && !sheet, () => app.nav.drawer(false))
+  const backSwipe = useBackSwipe(route.place.kind === 'item' && !sheet && !drawer, () => runAction(app, 'back'))
+  const floating = backSwipe.pull
   // Settings' pages (Documents, Activity and Deleted are pages of it on the phone)
   const settings = route.place.kind === 'settings' || route.place.kind === 'side'
   const prefsEditing = useStoreValue(app.stores.box, (s) => s.mode?.kind === 'prefs')
-  const under = !open && !settings
+  // while the item's page is swiped back, the list shows underneath it
+  const under = (!open && !settings) || !!floating
   const phoneSet = filtersSet(route.tab, route.list)
   const [footH, setFootH] = useState(0)
   const tabs: TabInfo[] = TABS.filter((t) => t !== 'archive').map((t) => ({
@@ -219,16 +226,18 @@ function PhoneLayout({ route }: { route: ProjectRoute }) {
   const reduce = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches
   const frame: CSSProperties = {
     '--foot-h': footH + 'px',
-    transition: reduce ? 'none' : 'transform 220ms ease-out',
-    ...(drawer ? { transform: `translateX(${DRAWER_W})` } : {}),
-  } as CSSProperties
+    transition: reduce || drawerPull.pull != null ? 'none' : 'transform 220ms ease-out',
+    ...(drawerPull.pull != null ? { transform: `translateX(${drawerPull.pull}px)` } : drawer ? { transform: `translateX(${DRAWER_W})` } : {}),
+  } as unknown as CSSProperties
   return (
     <>
-      <SidebarContainer slug={route.slug} place={DRAWER_PLACE} hidden={!drawer && !closing} />
-      <div hidden={!drawer} onClick={() => app.nav.drawer(false)} style={{ left: DRAWER_W }} className="fixed top-0 right-0 z-30 h-dvh" aria-label="Close projects" />
+      <div {...drawerPull.handlers}>
+        <SidebarContainer slug={route.slug} place={DRAWER_PLACE} hidden={!drawer && !closing} />
+        <div hidden={!drawer} onClick={() => app.nav.drawer(false)} style={{ left: drawerPull.pull != null ? drawerPull.pull + 'px' : DRAWER_W }} className="fixed top-0 right-0 z-30 h-dvh" aria-label="Close projects" />
+      </div>
       <div
         style={frame}
-        className={`group/app relative z-10 mx-auto flex h-full max-w-3xl flex-col bg-white pt-[env(safe-area-inset-top)] md:border-x md:border-zinc-200 dark:bg-zinc-950 md:dark:border-zinc-800 ${drawer ? 'overflow-hidden rounded-l-3xl shadow-2xl' : ''}`}
+        className={`group/app relative z-10 mx-auto flex h-full max-w-3xl flex-col bg-white pt-[env(safe-area-inset-top)] md:border-x md:border-zinc-200 dark:bg-zinc-950 md:dark:border-zinc-800 ${drawer || drawerPull.pull ? 'overflow-hidden rounded-l-3xl shadow-2xl' : ''}`}
       >
         <ListHead
           phone
@@ -261,7 +270,14 @@ function PhoneLayout({ route }: { route: ProjectRoute }) {
           <ItemListContainer route={route} />
         </section>
         <InputsContainer route={route} hidden={!under || route.tab !== 'inputs'} />
-        <DetailContainer route={route} place="" hidden={!open} footRoom={footH} />
+        <div
+          {...backSwipe.handlers}
+          hidden={!open}
+          style={floating ? { bottom: footH, transform: floating.dx ? `translateX(${floating.dx}px)` : undefined, transition: floating.anim ? 'transform 180ms ease-out' : 'none' } : undefined}
+          className={floating ? 'absolute inset-x-0 top-[env(safe-area-inset-top)] z-20 flex flex-col bg-white shadow-2xl dark:bg-zinc-950' : 'flex min-h-0 flex-1 flex-col'}
+        >
+          <DetailContainer route={route} place="" hidden={!open} footRoom={footH} />
+        </div>
         {settings ? <SettingsContainer route={route} place="" /> : null}
         <FootContainer route={route} composePage={false} place="" hidden={settings && !prefsEditing} onHeight={setFootH} />
       </div>

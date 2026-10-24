@@ -7,6 +7,7 @@ import { usePaneRef } from '../../app/panes'
 import { useProjectModel, type ProjectRoute } from '../../app/hooks'
 import { agoShort } from '../../model/agents'
 import { closed, excerpt, lastAgentMessage, queueHead } from '../../model/items'
+import { forward } from '../../model/actions'
 import { codeOf, draftCodes, liveN, filesOf, type ProjectModel } from '../../model/project'
 import type { Item } from '../../model/types'
 import { searchWords, showsView, visible } from '../../model/visible'
@@ -136,6 +137,15 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
   const orderKey = order.join(',')
   useLayoutEffect(() => app.listOrder.set(orderKey ? orderKey.split(',').map(Number) : [], openN), [app, orderKey, openN])
 
+  // the phone's swipe right: the row's way forward (an answer opens its card)
+  const swipe = {
+    right: (n: number) => {
+      const r = forward(m?.byN.get(n))
+      if (!r) return null
+      return r[0] === 'need' ? { slide: false, run: () => on.need(n, r[1]) } : { slide: true, run: () => on.act(n, r[0], r[1], r[2]) }
+    },
+    blocked: () => app.stores.route.getState().layers.includes('drawer'),
+  }
   const on: ListEvents = {
     open: (n) => app.nav.openItem(codeOf(m as ProjectModel, n)),
     act: (n, f, v) => void app.items.change(n, f, f === 'archived' ? v === 'true' : v),
@@ -194,6 +204,7 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
         ref={pane}
         desk={desk}
         dragging={drag.n != null ? { out: drag.at?.how === 'out' } : null}
+        swipe={swipe}
         loading={!m}
         views={views}
         ownViews={ownViews}
