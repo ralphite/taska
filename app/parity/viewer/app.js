@@ -48,26 +48,38 @@ function kindsOf(res) {
 }
 
 // ------------------------------------------------------------------ overview
-// findings.md's table: | # | Found in | Where | What differs | Status |
+// findings.md's table, whatever its columns: a cell with .png paths shows them as pictures (old, new), the status
+// and the kind show as chips
 function findingsCard(md) {
-  const rows = md
-    .split('\n')
-    .filter((l) => /^\| P\d+ /.test(l))
-    .map((l) => l.split('|').slice(1, -1).map((c) => c.trim()))
-  if (!rows.length) return ''
-  const open = rows.filter((r) => r[4].startsWith('open')).length
+  const lines = md.split('\n').filter((l) => l.startsWith('|'))
+  if (lines.length < 3) return ''
+  const cells = (l) => l.split('|').slice(1, -1).map((c) => c.trim())
+  const head = cells(lines[0])
+  const rows = lines.slice(2).map(cells)
+  const col = (name) => head.findIndex((h) => h.includes(name))
+  const [iState, iKind] = [col('状态'), col('类别')]
+  const bad = (t) => /^open|未批准/.test(t)
+  const open = rows.filter((r) => bad(r[iState] || '') && (iKind < 0 || bad(r[iKind] || ''))).length
   const md2 = (t) => esc(t).replace(/`([^`]+)`/g, '<code class="rounded bg-zinc-100 px-1 dark:bg-zinc-800">$1</code>')
+  const pics = (t) =>
+    `<div class="flex gap-1">${t
+      .split(/\s+/)
+      .filter((x) => x.replace(/`/g, '').endsWith('.png'))
+      .map((x) => x.replace(/`/g, ''))
+      .map((x, k) => `<a href="/out/${esc(x)}" target="_blank" title="${k ? '新版' : '旧版'}"><img loading="lazy" class="h-16 max-w-28 rounded border border-zinc-200 object-cover object-top dark:border-zinc-700" src="/out/${esc(x)}"></a>`)
+      .join('')}</div>`
+  const td = (t, k) =>
+    k === iState || k === iKind
+      ? chip(t, bad(t) ? 'bad' : /待|pending/.test(t) ? 'warn' : 'ok')
+      : /\.png/.test(t)
+        ? pics(t)
+        : md2(t)
   return card(`<div class="flex flex-wrap items-center gap-3"><h2 class="text-base font-semibold">差别清单</h2>
-    ${open ? chip(`${open} 条还没解决`, 'bad') : chip('全部解决', 'ok')}<span class="text-xs text-zinc-500">每条都人工看过截图确认；编号用来对话</span></div>
-    <div class="mt-3 overflow-x-auto"><table class="w-full text-left text-sm"><thead class="text-xs text-zinc-500"><tr>
-      <th class="py-1 pr-3 font-medium">#</th><th class="py-1 pr-3 font-medium">发现于</th><th class="py-1 pr-3 font-medium">哪里</th><th class="py-1 pr-3 font-medium">旧版 → 新版</th><th class="py-1 pr-3 font-medium">状态</th></tr></thead>
-    <tbody>${rows
-      .map(
-        (r) => `<tr class="border-t border-zinc-100 align-top dark:border-zinc-800"><td class="py-1.5 pr-3 font-mono text-xs">${esc(r[0])}</td>
-        <td class="py-1.5 pr-3 font-mono text-xs">${esc(r[1])}</td><td class="py-1.5 pr-3">${md2(r[2])}</td><td class="py-1.5 pr-3">${md2(r[3])}</td>
-        <td class="py-1.5 pr-3">${chip(r[4], r[4].startsWith('open') ? 'bad' : 'ok')}</td></tr>`,
-      )
-      .join('')}</tbody></table></div>`)
+    ${open ? chip(`${open} 条未批准的差别还在`, 'bad') : chip('没有未批准的差别', 'ok')}<span class="text-xs text-zinc-500">每条都人工看过截图确认；编号用来对话</span></div>
+    <div class="mt-3 overflow-x-auto"><table class="w-full text-left text-sm"><thead class="text-xs text-zinc-500"><tr>${head
+      .map((h) => `<th class="py-1 pr-3 font-medium">${esc(h)}</th>`)
+      .join('')}</tr></thead>
+    <tbody>${rows.map((r) => `<tr class="border-t border-zinc-100 align-top dark:border-zinc-800">${r.map((c, k) => `<td class="py-1.5 pr-3">${td(c, k)}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`)
 }
 
 async function home() {

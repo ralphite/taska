@@ -83,6 +83,16 @@ export function freshData(name, src) {
   return dst
 }
 
+// servers this process started: stopped with it, even when it is killed, so none is left holding a port
+const started = new Set()
+process.once('exit', () => {
+  for (const pid of started)
+    try {
+      process.kill(-pid, 'SIGKILL')
+    } catch {}
+})
+for (const sig of ['SIGTERM', 'SIGINT', 'SIGHUP']) process.once(sig, () => process.exit(128 + 15))
+
 export async function startServer(spec, port, root, logFile) {
   if (!spec.cmd) throw new Error(`no start command for this version yet (versions.json)`)
   if (await portBusy(port)) throw new Error(`port ${port} is in use by another program; parity does not take it over`)
@@ -92,6 +102,8 @@ export async function startServer(spec, port, root, logFile) {
   const cmd = spec.cmd.map((x) => x.replace('{port}', String(port)).replace('{root}', root))
   const log = fs.openSync(logFile, 'a')
   const proc = spawn(cmd[0], cmd.slice(1), { cwd: spec.cwd || undefined, env, stdio: ['ignore', log, log], detached: true })
+  started.add(proc.pid)
+  proc.once('exit', () => started.delete(proc.pid))
   const base = `http://127.0.0.1:${port}`
   try {
     await waitUp(base)

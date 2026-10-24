@@ -105,7 +105,7 @@ const sameImage = (a, b) => a.equals(b) || imageDiff(a, b).pixels === 0
 
 /** films: [{ png, ms }] per side -> { diff, rows, a, b, short }; a/b list the seen screens: { i, ms, match }. */
 export function filmDiff(fa, fb, [prevA, prevB] = []) {
-  const seen = (f) => f.map((x, i) => ({ i, ms: x.ms })).filter((x) => x.ms >= SEEN)
+  const seen = (f) => f.map((x, i) => ({ i, ms: x.ms, inMotion: x.inMotion })).filter((x) => x.ms >= SEEN)
   const a = seen(fa)
   const b = seen(fb)
   const n = a.length
@@ -131,8 +131,10 @@ export function filmDiff(fa, fb, [prevA, prevB] = []) {
   const left = (xs, side) => xs.filter((x) => x.match === undefined && !x.briefly).map((x) => ({ ...x, side }))
   const all = [...left(a, 'A'), ...left(b, 'B')]
   const say = (x) => `${x.side} 有、${x.side === 'A' ? 'B' : 'A'} 从没出现的画面（${x.side} 上停了 ${x.ms} ms）`
-  const rows = all.filter((x) => x.ms >= HELD).map(say)
-  const brief = all.filter((x) => x.ms < HELD).map(say)
+  // a frame painted mid-motion is held as long as the machine is slow: which ones there are depends on timing (the
+  // motion itself is compared apart); listed, not counted
+  const rows = all.filter((x) => x.ms >= HELD && !x.inMotion).map(say)
+  const brief = all.filter((x) => x.ms < HELD || x.inMotion).map((x) => say(x) + (x.inMotion ? '，动画中间' : ''))
   // frames under SEEN on one side only, for the record (a flash): not counted, listed
   const short = { a: fa.filter((x) => x.ms < SEEN).length, b: fb.filter((x) => x.ms < SEEN).length }
   return { diff: rows.length > 0, rows, brief, a, b, short }

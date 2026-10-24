@@ -45,8 +45,14 @@ const INIT = () => {
     const ms = Math.round(+t.duration || 0)
     // a spinner (endless) shows only while something loads, so whether it starts depends on timing: the film judges
     // it (a screen shown 120 ms or more); 0 ms: nothing moves
-    if (ms > 0 && t.iterations !== Infinity) P.motion.push(`${what} ${ms}ms delay ${Math.round(+t.delay || 0)} ${t.easing || ''} x${t.iterations ?? 1}`) // 0 ms: nothing moves
+    if (ms > 0 && t.iterations !== Infinity) {
+      P.motion.push(`${what} ${ms}ms delay ${Math.round(+t.delay || 0)} ${t.easing || ''} x${t.iterations ?? 1}`)
+      // when it moves, in wall-clock ms: the frames painted meanwhile depend on how busy the machine is
+      const t0 = performance.timeOrigin + performance.now()
+      P.moving.push([t0, t0 + (+t.delay || 0) + ms * (+t.iterations || 1)])
+    }
   }
+  P.moving = []
   document.addEventListener('animationstart', rec, true)
   document.addEventListener('transitionrun', rec, true)
   const watch = () =>
@@ -188,7 +194,7 @@ class Side {
         this.film.push({ t: metadata.timestamp * 1000, png })
       })
     }
-    await this.page.evaluate(() => window.__parity && (window.__parity.motion = [])).catch(() => {})
+    await this.page.evaluate(() => window.__parity && ((window.__parity.motion = []), (window.__parity.moving = []))).catch(() => {})
     this.film = []
     this.prevFrame = this.lastFrame // the screen before this step, as the previous step's film ended
     const vp = this.variant.viewport
@@ -202,7 +208,13 @@ class Side {
     const f = this.film || []
     this.film = null
     if (f.length) this.lastFrame = f[f.length - 1].png
-    return f.map((x, i) => ({ png: x.png, ms: Math.round((i + 1 < f.length ? f[i + 1].t : end) - x.t) }))
+    const moving = await this.page.evaluate(() => window.__parity?.moving || []).catch(() => [])
+    return f.map((x, i) => {
+      const t1 = i + 1 < f.length ? f[i + 1].t : end
+      // painted while something was moving (a slide, a fade): a frame in the middle of a motion
+      const inMotion = moving.some(([m0, m1]) => x.t >= m0 - 20 && x.t <= m1 + 20)
+      return { png: x.png, ms: Math.round(t1 - x.t), inMotion }
+    })
   }
   shot(scale = 'device', type = 'png') {
     return this.page.screenshot({ animations: 'disabled', caret: 'hide', scale, type, quality: type === 'jpeg' ? 70 : undefined })
