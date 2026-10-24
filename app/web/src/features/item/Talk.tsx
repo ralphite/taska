@@ -2,7 +2,7 @@
 // notes, comments on its documents in time, files and voice notes; what you sent and Taska has not yet, saying where
 // it is. The card that waits on you goes where its message is. Props only.
 
-import type { ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { oneLine } from '../../model/items'
 import { voiceMark } from '../../model/inputs'
 import { hasChoices, plainQuote } from '../../model/markdown'
@@ -97,6 +97,17 @@ function FromInput({ r, n, code, on }: { r: Input | undefined; n: number; code(n
   )
 }
 
+/** Lit for a moment (what you just sent): the colour comes in once the message is drawn, so it fades in and out. */
+function useLitIn(lit: boolean): boolean {
+  const [on, setOn] = useState(false)
+  useEffect(() => {
+    if (!lit) return
+    const f = requestAnimationFrame(() => setOn(true))
+    return () => cancelAnimationFrame(f)
+  }, [lit])
+  return lit && on
+}
+
 function MsgView({ it, x, env, on, facts, docs, code, done, ver, gone, read }: {
   it: Item
   x: Message
@@ -113,6 +124,7 @@ function MsgView({ it, x, env, on, facts, docs, code, done, ver, gone, read }: {
   const you = x.by === 'you'
   const src = you && x.src ? facts.inputs.get(x.src) : undefined
   const y = ver ? { ...x, text: ver.text } : x
+  const lit = useLitIn(!!src && env.lit === src.id)
   const strip = (files: FileRef[] | undefined, size?: string) =>
     files?.length ? (
       <FileRows files={files} url={env.url} size={size} play={env.play} tidy={env.tidy} on={on} cls={you ? 'items-end max-w-full [&>div]:max-w-full' : 'mt-3'} />
@@ -123,7 +135,7 @@ function MsgView({ it, x, env, on, facts, docs, code, done, ver, gone, read }: {
     return (
       <div
         ref={src && env.lit === src.id ? (el) => el?.scrollIntoView({ block: 'nearest' }) : undefined}
-        className={`group flex scroll-mb-4 flex-col items-end gap-1 rounded-2xl transition-colors duration-700 ${src && env.lit === src.id ? 'bg-blue-50 dark:bg-blue-400/10' : ''} ${ver?.old ? 'opacity-60' : ''}`}
+        className={`group flex scroll-mb-4 flex-col items-end gap-1 rounded-2xl transition-colors duration-700 ${lit ? 'bg-blue-50 dark:bg-blue-400/10' : ''} ${ver?.old ? 'opacity-60' : ''}`}
       >
         {y.text ? (
           <div {...voiceMark(src)} className={YOU_BUBBLE}>

@@ -17,6 +17,8 @@ export class Navigation {
   /** Back out of Settings on the desktop: where it lands, the list shows (Documents, Activity or Deleted, open when
    * Settings was, close), and the address says so */
   private toList = false
+  /** the project the page last came into (its address was made the page's own then) */
+  private entered = ''
   constructor(route: RouteStore, desk: () => boolean) {
     this.route = route
     this.desk = desk
@@ -105,8 +107,13 @@ export class Navigation {
   normalize(): void {
     const r = this.here()
     if (!r) return
+    // coming into a project: the desktop's list is the New input page, and its address says so (later, closing an
+    // item leaves the list's own address, as it always has)
+    const coming = this.entered !== r.slug
+    this.entered = r.slug
     if (this.desk()) {
-      if (r.place.kind === 'tab' && (r.tab === 'items' || r.tab === 'inputs')) this.go('items', { kind: 'new' }, r.list, false)
+      if (coming && r.place.kind === 'tab' && r.tab === 'items') this.go('items', { kind: 'new' }, r.list, false)
+      if (r.place.kind === 'tab' && r.tab === 'inputs') this.go('items', { kind: 'new' }, r.list, false)
       // Settings opens on its first section: its address says so
       if (r.place.kind === 'settings' && !r.place.section) this.go(r.tab, { kind: 'settings', section: 'agents' }, r.list, false)
     } else if (r.place.kind === 'new') this.go('items', { kind: 'tab' }, r.list, false)
@@ -201,7 +208,7 @@ export class Navigation {
     if (this.route.getState().full) this.route.getState().setFull(false, true)
     // opened from Documents, Activity or Deleted: back to that list
     const side = this.desk() ? this.route.getState().side : null
-    this.go(r.tab, side ? { kind: 'side', side } : this.desk() ? { kind: 'new' } : { kind: 'tab' }, r.list, false)
+    this.go(r.tab, side ? { kind: 'side', side } : { kind: 'tab' }, r.list, false)
   }
 
   /** A document: a step Back goes back to where you were. */

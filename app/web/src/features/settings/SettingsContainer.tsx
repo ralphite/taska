@@ -127,7 +127,7 @@ export function SettingsContainer({ route, place, prefsBox }: { route: ProjectRo
         ) : (
           (() => {
             // on the Home Screen with a push service: this phone's pushes (asked once)
-            if (!standalone() || !Notices.pushable()) return <PhonePushBody standalone={standalone()} onPhone={() => open('phone')} />
+            if (!standalone() || !Notices.pushable()) return <PhonePushBody standalone={standalone()} onPhone={() => open('phone')} phoneHref={href('phone')} />
             if (app.notices.sub === undefined) {
               void app.notices.pushState()
               return <Loading />

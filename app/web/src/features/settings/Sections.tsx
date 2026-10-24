@@ -390,7 +390,7 @@ export function NotificationsBody({ state, quiet, on }: { state: 'On' | 'Off' | 
 
 /** The phone's: Taska on the Home Screen subscribes for pushes (not on the Home Screen yet: it says so). `push`: what
  * this phone has (null: it cannot have them here). */
-export function PhonePushBody({ standalone, onPhone, push = null }: { standalone: boolean; onPhone(): void; push?: { sub: boolean; blocked: boolean; quiet: boolean; on: { turnOn(): void; turnOff(): void; quiet(): void } } | null }) {
+export function PhonePushBody({ standalone, onPhone, phoneHref = '', push = null }: { standalone: boolean; onPhone(): void; /** Use on your phone's address */ phoneHref?: string; push?: { sub: boolean; blocked: boolean; quiet: boolean; on: { turnOn(): void; turnOff(): void; quiet(): void } } | null }) {
   if (push)
     return (
       <>
@@ -418,10 +418,18 @@ export function PhonePushBody({ standalone, onPhone, push = null }: { standalone
       about={standalone ? 'Its browser has no push service.' : 'See Use on your phone, then open Taska from the Home Screen and turn notifications on.'}
     >
       {standalone ? null : (
-        <button onClick={onPhone} className={`${SECOND} mt-3`}>
+        <a
+          href={phoneHref}
+          onClick={(e) => {
+            if (e.metaKey || e.ctrlKey) return
+            e.preventDefault()
+            onPhone()
+          }}
+          className={`${SECOND} mt-3`}
+        >
           <Icon n="phone" c="size-4" />
           Use on your phone
-        </button>
+        </a>
       )}
     </Part>
   )

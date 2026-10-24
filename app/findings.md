@@ -19,6 +19,12 @@ what the old version does. Each is also sent to the coordinator ("Nota & Taska d
   input page, the old code means one click on a word the model was unsure of to open the small field to correct it
   (I176), but it only selects the word; double-clicking or dragging over words does open the field. The rewrite does
   the same. Opening the field on one click would be a change: only with Yadong's yes.
+- [ ] **On the iPhone (Safari), answering a question does not jump the talk to its end.** When the answer goes in, the
+  talk shows one message more and folds its earliest shown one into "Show 67 earlier" (about 380 px less above the
+  view). Chromium keeps the view where it was in both versions (scroll anchoring). WebKit keeps it in the rewrite but
+  not in the old page, whose talk then sits at its end (the answered card at the top, the later messages under it).
+  Doing as the old page does would mean defeating Safari's scroll anchoring on purpose. Reported by the parity check
+  (P28); the rewrite keeps the view where you answered until Yadong says otherwise.
 
 ## Glitches of the old version not copied
 

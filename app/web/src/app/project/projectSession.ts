@@ -95,7 +95,7 @@ export class ProjectSession {
   }
 
   show(slug: string): void {
-    if (this.sync?.slug === slug) return
+    if (this.sync?.slug === slug && !this.sync.closed) return
     this.sync?.close()
     const f = this.d.fresh
     f.ui.getState().reset()
@@ -125,7 +125,7 @@ export class ProjectSession {
           if (!away && was) this.d.back.reached()
         },
         keyNeeded: () => this.d.keyNeeded(),
-        gone: (s, how) => this.d.route.getState().go(`/?${how}=${encodeURIComponent(s)}`, true),
+        gone: (s, how) => this.d.route.getState().go(`/?${how}=${encodeURIComponent(s)}`, false), // in place of the project's address
       },
       this.d.presence,
     )

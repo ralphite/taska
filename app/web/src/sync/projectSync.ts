@@ -65,6 +65,11 @@ export class ProjectSync {
     this.stop.abort()
   }
 
+  /** closed, or stopped by itself (the project is not there) */
+  get closed(): boolean {
+    return this.stop.signal.aborted
+  }
+
   /** Take a newer answer (a command's) into the copy. */
   take(a: ViewAnswer): void {
     this.show(merge(this.copy, a, Date.now()))
@@ -74,14 +79,16 @@ export class ProjectSync {
     return this.copy?.cursor ?? null
   }
 
-  /** Load what changed now (or all of it). */
-  async refresh(): Promise<void> {
+  /** Load what changed now (or all of it). -> it came */
+  async refresh(): Promise<boolean> {
     try {
       const a = await this.api.view(this.slug, this.copy?.cursor ?? null, this.stop.signal)
       this.answered()
       this.show(merge(this.copy, a, Date.now()))
+      return true
     } catch (ex) {
       this.failed(ex)
+      return false
     }
   }
 
@@ -104,8 +111,12 @@ export class ProjectSync {
     if (ex instanceof Abandoned) return
     if (ex instanceof KeyNeeded) return this.on.keyNeeded()
     const msg = (ex as Error)?.message || ''
-    if (/^project \S+ was deleted/.test(msg)) return this.on.gone(this.slug, 'gone')
-    if (/^no project /.test(msg)) return this.on.gone(this.slug, 'none')
+    // the project is not there: nothing more to ask for it
+    const gone = /^project \S+ was deleted/.test(msg) ? 'gone' : /^no project /.test(msg) ? 'none' : null
+    if (gone) {
+      this.close()
+      return this.on.gone(this.slug, gone)
+    }
     this.failures += 1
     this.away += ex instanceof Unreachable && ex.timedOut ? 2 : 1
     this.on.reach(this.slug, this.away)
@@ -121,8 +132,10 @@ export class ProjectSync {
       let left = false
       if (!idle) void this.presence.blurred(leave.signal).then(() => ((left = true), leave.abort()))
       try {
-        if (!this.copy) await this.refresh()
-        else {
+        if (!this.copy) {
+          // not loaded yet: asked again after a pause, as an answer that failed is
+          if (!(await this.refresh()) && !this.stop.signal.aborted) await sleep(Math.min(5000, 500 * 2 ** Math.min(Math.max(this.failures, 1) - 1, 4)))
+        } else {
           const a = await this.api.changes(this.slug, this.copy.cursor, quick ? 0 : 25, leave.signal)
           this.answered()
           const news = !a.same

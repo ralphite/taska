@@ -29,7 +29,7 @@ import { filterEvents } from '../features/list/FiltersContainer'
 import { DetailContainer } from './DetailContainer'
 import { ListHead, PhoneTabs, ProjectBar, type AgentInfo, type TabInfo } from './Header'
 
-function useHeadFacts(route: ProjectRoute) {
+function useHeadFacts(route: ProjectRoute, desk: boolean) {
   const stores = useStores('data', 'feedback')
   const m = useProjectModel(route.slug)
   const away = useAway(route.slug)
@@ -45,13 +45,15 @@ function useHeadFacts(route: ProjectRoute) {
     // counts what is finished too, as its Active view is only Active where it shows)
     const found = (t: Tab) => visible(m.items, t, t === route.tab ? route.list : { ...NO_FILTERS, q: route.list.q, status: t === 'items' ? 'every' : 'all' }).length
     const isFiltered = route.tab === 'items' && filtered(route.tab, route.list)
+    // the phone's tabs say 1234 as 1k and nothing for none; the desktop's say the number, and Items says its 0 too
+    const num = (n: number, zero = false) => (desk ? n || (zero ? 0 : '') : tabNumber(n))
     return {
-      items: tabNumber(words.length ? found('items') : isFiltered ? visible(m.items, 'items', route.list).filter((it) => !it.archived).length : openCount(m.items)),
-      inputs: tabNumber(words.length ? m.inputs.filter((r) => inputMatch(r, words)).length : m.inputs.filter((r) => !r.acked).length),
-      archive: tabNumber(words.length ? found('archive') : m.items.filter((it) => it.archived && !it.mergedInto).length),
-      rules: tabNumber(words.length ? found('rules') : m.items.filter((it) => it.type === 'rule' && !it.mergedInto && !it.archived && it.status !== 'dropped').length),
+      items: words.length ? num(found('items')) : num(isFiltered ? visible(m.items, 'items', route.list).filter((it) => !it.archived).length : openCount(m.items), true),
+      inputs: num(words.length ? m.inputs.filter((r) => inputMatch(r, words)).length : m.inputs.filter((r) => !r.acked).length),
+      archive: num(words.length ? found('archive') : m.items.filter((it) => it.archived && !it.mergedInto).length),
+      rules: num(words.length ? found('rules') : m.items.filter((it) => it.type === 'rule' && !it.mergedInto && !it.archived && it.status !== 'dropped').length),
     } as Record<Tab, string | number>
-  }, [m, route.tab, route.list])
+  }, [m, route.tab, route.list, desk])
   return { m, title, agent, counts, notSaved, away, otherNeeds }
 }
 
@@ -77,7 +79,7 @@ export function ProjectPageContainer({ route }: { route: ProjectRoute }) {
 function DeskLayout({ route }: { route: ProjectRoute }) {
   const app = useServices('fields', 'listOrder', 'model', 'nav', 'sheets', 'views')
   const stores = useStores('docView', 'grips', 'route', 'ui')
-  const { title, agent, counts, notSaved } = useHeadFacts(route)
+  const { title, agent, counts, notSaved } = useHeadFacts(route, true)
   const { tones } = useSideProjects(route.slug)
   const sideHidden = useStoreValue(stores.ui, (s) => s.sideHidden)
   const sideOver = useStoreValue(stores.ui, (s) => s.sideOver)
@@ -198,7 +200,7 @@ const DRAWER_W = 'min(85vw, 320px)'
 function PhoneLayout({ route }: { route: ProjectRoute }) {
   const app = useServices('actions', 'fields', 'nav', 'sheets', 'views')
   const stores = useStores('box', 'route', 'sheet')
-  const { title, agent, counts, notSaved, otherNeeds } = useHeadFacts(route)
+  const { title, agent, counts, notSaved, otherNeeds } = useHeadFacts(route, false)
   const layers = useStoreValue(stores.route, (s) => s.layers)
   const searching = layers.includes('search')
   const drawer = layers.includes('drawer')

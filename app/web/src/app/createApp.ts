@@ -324,7 +324,7 @@ export function createApp(env: AppEnv): App {
   // a merged item gives way to the one it went into; what you wrote for it goes along
   const merges = new Merges({ route, data, drafts, box: boxStore, toasts, model, showItem: (code, tab) => nav.openItemHere(code, tab), goDraft })
   const sideOver = new SideOver(route, ui)
-  const arrival = new Arrival({ route, fields, data, model, desk: env.desk })
+  const arrival = new Arrival({ route, fields, data, model, desk: env.desk, session: env.session ?? memoryStore() })
   const notices = new Notices(env.kv, () => settingsStore.getState().set({ noticeRev: settingsStore.getState().noticeRev + 1 }), { api, toasts, data, slug, desk: env.desk, go: goUrl })
   const access = new Access({ api, sheets, toasts, refresh: () => void session().refresh() })
   const updates = new Updates({
