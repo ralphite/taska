@@ -3,7 +3,7 @@
 // it, the body that scrolls and a fixed foot. A menu on the desktop pops at a spot instead, with no title row and no
 // close button (a click outside or Esc closes it). Props only; it places itself from its own size.
 
-import { createContext, useContext, useLayoutEffect, useRef, type ReactNode, type RefObject } from 'react'
+import { createContext, useContext, useLayoutEffect, useRef, type ReactNode, type Ref, type RefObject } from 'react'
 import { Icon } from './Icon'
 
 export interface SheetLook {
@@ -33,14 +33,14 @@ const CloseX = () => (
 )
 
 /** What the frame tells what it holds: whether it pops at a spot, how it closes, its close button. */
-const Frame = createContext<{ pop: boolean; onClose(): void; close: RefObject<HTMLButtonElement | null> }>({ pop: false, onClose: () => {}, close: { current: null } })
+const Frame = createContext<{ pop: boolean; onClose(): void; close: RefObject<HTMLButtonElement | null>; bodyRef?: Ref<HTMLDivElement> }>({ pop: false, onClose: () => {}, close: { current: null } })
 
 /** What a sheet holds, laid out in its frame. */
 export function SheetLayout({ menu, title, head, extra, sub, foot, body }: SheetParts) {
-  const { pop, onClose, close } = useContext(Frame)
+  const { pop, onClose, close, bodyRef } = useContext(Frame)
   return (
     <>
-      <header className={`flex shrink-0 touch-none items-center gap-2 py-1 pr-2 pl-5 ${(head || title) && !(pop && menu) ? '' : 'lg:hidden'}`}>
+      <header data-tip-side="bottom" className={`flex shrink-0 touch-none items-center gap-2 py-1 pr-2 pl-5 ${(head || title) && !(pop && menu) ? '' : 'lg:hidden'}`}>
         <h2 id="dlgTitle" className="min-w-0 flex-1 truncate text-[17px] font-semibold">
           {head ?? title ?? ''}
         </h2>
@@ -53,6 +53,7 @@ export function SheetLayout({ menu, title, head, extra, sub, foot, body }: Sheet
         {sub}
       </div>
       <div
+        ref={bodyRef}
         className={`min-h-0 flex-1 overflow-y-auto px-4 pt-2 lg:scrollbar-thin lg:overscroll-contain lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70 ${foot ? 'pb-3' : 'pb-[max(1.25rem,env(safe-area-inset-bottom))]'}`}
       >
         {body}
@@ -64,7 +65,7 @@ export function SheetLayout({ menu, title, head, extra, sub, foot, body }: Sheet
   )
 }
 
-export function Sheet({ open, look, parts, children, desk, footRoom = 0, focus = false, onClose }: {
+export function Sheet({ open, look, parts, children, desk, footRoom = 0, focus = false, bodyRef, onClose }: {
   open: boolean
   look: SheetLook
   /** what it holds, as parts (or as `children` that lay themselves out with SheetLayout) */
@@ -74,6 +75,8 @@ export function Sheet({ open, look, parts, children, desk, footRoom = 0, focus =
   /** room the box takes at the bottom, for a sheet above it */
   footRoom?: number
   focus?: boolean
+  /** the body that holds its buttons (a menu's keys walk them) */
+  bodyRef?: Ref<HTMLDivElement>
   onClose(): void
 }) {
   const overlay = useRef<HTMLDivElement>(null)
@@ -158,7 +161,7 @@ export function Sheet({ open, look, parts, children, desk, footRoom = 0, focus =
         <div data-handle className="flex shrink-0 touch-none justify-center pt-2 sm:hidden">
           <span className="h-1 w-10 rounded-full bg-zinc-300 dark:bg-zinc-600" />
         </div>
-        <Frame.Provider value={{ pop, onClose, close }}>{parts ? <SheetLayout {...parts} /> : children}</Frame.Provider>
+        <Frame.Provider value={{ pop, onClose, close, bodyRef }}>{parts ? <SheetLayout {...parts} /> : children}</Frame.Provider>
       </section>
     </div>
   )

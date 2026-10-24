@@ -1,9 +1,46 @@
-// What a row offers: the desktop's quick actions (shown on hover) and the phone's swipes, as (field, value, label).
+// What can be done to an item, and why not: its next step for you, what Done, Won't do and Later do and why they
+// cannot (in a few words, said instead); and what a row offers: the desktop's quick actions (shown on hover) and the
+// phone's swipes, as (field, value, label).
 
 import { canDone, closed, rowAction } from './items'
+import { hasChoices } from './markdown'
 import type { Item } from './types'
 
 export type Slot = readonly [field: string, value: string, label: string]
+
+/** The item's next step for you (A): accept or approve it, or answer what waits on you. */
+export type YourStep = { set: readonly [field: 'status', value: string, label: string, said: string] } | { answer: 'choices' | 'words' } | null
+
+export function yourStep(it: Item): YourStep {
+  if (it.status === 'review') return { set: ['status', 'done', 'Accept', 'accepted'] }
+  if (it.status === 'proposed') return { set: ['status', 'open', 'Approve', 'approved'] }
+  if (it.wait) return { answer: it.wait.kind === 'ask' && hasChoices(it.wait.text) ? 'choices' : 'words' }
+  return null
+}
+
+/** What Done and Won't do set (a rule: active, retired). */
+export const doneTo = (it: Item) => (it.type === 'rule' ? 'open' : 'done')
+export const dropTo = () => 'dropped'
+
+/** Why a step cannot be taken on this item, in a few words; null: it can. */
+export const whyNot = {
+  next: (it: Item, code: string) => (yourStep(it) ? null : `Nothing waits on you in ${code}`),
+  notYet: (it: Item) => (it.status === 'review' ? null : 'Not yet works on items in review'),
+  done: (it: Item, code: string) =>
+    it.type === 'rule'
+      ? it.status === 'open'
+        ? `${code} is active already`
+        : null
+      : closed(it.status)
+        ? `${code} is ${it.status === 'done' ? 'done' : "marked won't do"} already`
+        : !canDone(it)
+          ? it.status === 'proposed'
+            ? `Approve ${code} first (A)`
+            : `Accept ${code} first (A)`
+          : null,
+  drop: (it: Item, code: string) => (it.status === 'dropped' ? (it.type === 'rule' ? `${code} is retired already` : `${code} is marked won't do already`) : null),
+  later: (it: Item) => (it.type !== 'rule' && !closed(it.status) ? null : it.type === 'rule' ? 'Rules have no Later' : 'Later works on open items'),
+}
 
 /** Swipe right all the way, or the desktop's first action: the step forward you take most. On an item that waits on
  * your answer the step forward is that answer (its pill), never Done. */
@@ -11,8 +48,8 @@ export function forward(it: Item | undefined): readonly [string, string, string,
   if (!it || it.archived) return null
   if (it.type === 'rule' && it.status === 'open') return null
   if (it.wait) return ['need', ...rowAction(it)]
-  if (it.status === 'proposed') return ['status', 'open', 'Approve', 'approved']
-  if (it.status === 'review') return ['status', 'done', 'Accept', 'accepted']
+  const step = yourStep(it)
+  if (step && 'set' in step) return step.set
   if (closed(it.status)) return ['archived', 'true', 'Archive', 'archived']
   return ['status', 'done', 'Done', 'done']
 }

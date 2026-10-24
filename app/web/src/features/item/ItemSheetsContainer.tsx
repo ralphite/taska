@@ -1,7 +1,8 @@
 // The item's sheets with the page's data: its menu (a sheet on the phone, a menu at the button on the desktop),
 // putting it under another item, moving it to another project, what it came from, and a message's menu.
 
-import { copyText, forAgent } from '../../app/clipboard'
+import { useLayoutEffect } from 'react'
+import { hereFor, keysShown, runAction, type ActionId } from '../../app/actions'
 import { useApp, useLayout, useStoreValue } from '../../app/context'
 import { useCloseSheetWhen, useProjectModel, useProjectRoute } from '../../app/hooks'
 import { codeOf, type ProjectModel } from '../../model/project'
@@ -17,6 +18,8 @@ import { useItemWorld } from './ItemPageContainer'
 import { moveParentSheet } from './Pickers'
 
 type Req<K extends SheetRequest['kind']> = { req: Extract<SheetRequest, { kind: K }> }
+
+const FIELD_OF = { s: 'status', p: 'pri', t: 'type' } as const
 
 /** The open project, and the item the sheet is about (closing the sheet when it went). */
 function useSubject(n: number) {
@@ -37,28 +40,35 @@ export function ItemMenuSheet({ req }: Req<'item-menu'>) {
   const at = useStoreValue(app.stores.sheet, (s) => s.spec?.at)
   const asking = useStoreValue(app.stores.sheet, (s) => !!s.asked['item-delete ' + req.n])
   const others = useOtherProjects(slug)
+  const arm = req.arm ?? storeArm
+  useLayoutEffect(() => {
+    // the desktop's menu: the keys start on its first row (one field's: on the value it has)
+    const box = desk ? app.fields.get('sheet') : null
+    if (!box || box.contains(document.activeElement)) return
+    const f = arm ? FIELD_OF[arm] : null
+    const el = (f && (box.querySelector<HTMLElement>(`[data-f="${f}"][aria-pressed="true"]`) || box.querySelector<HTMLElement>(`[data-f="${f}"]`))) || box.querySelector<HTMLElement>('button')
+    el?.focus({ preventScroll: true })
+  })
   if (!m || !it) return null
   const n = it.n
   const close = () => app.sheets.close()
   const done = (run: () => void) => () => (close(), run())
+  // what the table of actions does, on this item (it may not be the open one)
+  const run = (id: ActionId) => runAction(app, id, hereFor(app, n))
   const on: ItemMenuEvents = {
     edit: done(() => {
       app.nav.openItem(code(n))
-      app.stores.itemView.getState().setEditing(n)
+      run('edit')
     }),
-    copy: done(() => void copyText(forAgent(it, code(n), m.facts.base)).then(() => app.toasts.show('Copied'))),
-    newDoc: done(() => {}),
+    copy: done(() => run('copy')),
+    newDoc: done(() => run('new-doc')),
     addSub: done(() => {
       app.nav.openItem(code(n))
-      app.stores.itemView.getState().setSubFor(n)
+      run('add-sub')
     }),
     reparent: () => app.sheets.open({ kind: 'item-move-parent', n }, { pop: desk, focus: false, at }),
-    later: done(() => void app.items.change(n, 'when', it.when === 'now' ? 'later' : 'now')),
-    archive: (on) => {
-      close()
-      void app.items.change(n, 'archived', on, { note: on ? 'Find it under Archive' : '' })
-      if (on && route?.place.kind === 'item') app.nav.closeItem()
-    },
+    later: done(() => run('later')),
+    archive: done(() => run('archive')),
     doNext: done(() => void app.items.doNext(n)),
     moveProject: () => (others.length ? app.sheets.open({ kind: 'item-move-project', n }, { focus: false }) : (close(), app.toasts.show('No other project to move to'))),
     remove: () => {
@@ -68,11 +78,12 @@ export function ItemMenuSheet({ req }: Req<'item-menu'>) {
       if (route?.place.kind === 'item') app.nav.closeItem()
     },
     set: (f, v) => {
-      if (req.arm || storeArm) close()
+      if (arm) close()
       void app.items.change(n, f, v)
     },
   }
-  const facts = { it, code: code(n), parentCode: it.parent ? code(it.parent) : null, asking, arm: req.arm ?? storeArm }
+  const keys = { edit: keysShown('edit'), copy: keysShown('copy'), newDoc: keysShown('new-doc'), addSub: keysShown('add-sub'), reparent: keysShown('put-under'), later: keysShown('later'), archive: keysShown('archive') }
+  const facts = { it, code: code(n), parentCode: it.parent ? code(it.parent) : null, asking, arm, keys }
   return desk ? <SheetLayout {...itemMenuPop(facts, on)} /> : <SheetLayout {...itemMenuSheet(facts, on)} />
 }
 

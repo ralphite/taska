@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { item } from '../../stories/fixtures'
 import { SheetFrames, no } from '../../stories/sheetFixtures'
 import { PROJECT_TONES } from '../../ui/tones'
+import { keyHelp, paletteRows } from '../../app/actions'
 import { Palette, Switcher, keysSheet } from './Finders'
 
 const meta: Meta = { title: 'Components/Sheets/Finders' }
@@ -9,7 +10,7 @@ export default meta
 type Story = StoryObj
 
 /** Every key (?). */
-export const Keys: Story = { render: () => <SheetFrames height={820} parts={() => keysSheet()} /> }
+export const Keys: Story = { render: () => <SheetFrames height={820} parts={() => keysSheet(keyHelp())} /> }
 
 /** G P: the projects, the keys' row on the first that is not this one. */
 export const Switch: Story = {
@@ -35,5 +36,5 @@ export const Switch: Story = {
 
 /** Cmd-K: the open item's commands, the page's, and items found. */
 export const Commands: Story = {
-  render: () => <SheetFrames height={760} parts={() => ({ title: 'Go to or do', body: <Palette items={[item({ n: 12 })]} code={(n) => 'F' + String(n).padStart(3, '0')} open={12} onItem={no} onKeys={no} /> })} />,
+  render: () => <SheetFrames height={760} parts={() => ({ title: 'Go to or do', body: <Palette items={[item({ n: 12 })]} code={(n) => 'F' + String(n).padStart(3, '0')} open={12} commands={[...paletteRows(true), ...paletteRows(false)]} onItem={no} onCommand={no} /> })} />,
 }

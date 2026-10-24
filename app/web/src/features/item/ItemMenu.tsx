@@ -89,6 +89,18 @@ export interface ItemMenuFacts {
   asking: boolean
   /** one field's choices only (from its chip, or S, P, T) */
   arm: 's' | 'p' | 't' | null
+  /** the keys of the desktop's rows, as the keys sheet writes them */
+  keys: MenuKeys
+}
+
+export interface MenuKeys {
+  edit: string
+  copy: string
+  newDoc: string
+  addSub: string
+  reparent: string
+  later: string
+  archive: string
 }
 
 /** The phone's sheet. */
@@ -170,7 +182,7 @@ export function itemMenuSheet({ it, code, parentCode, asking, arm }: ItemMenuFac
 }
 
 /** The desktop's menu: rows with their keys, or one field's choices. */
-export function itemMenuPop({ it, code, parentCode, asking, arm }: ItemMenuFacts, on: ItemMenuEvents): SheetParts {
+export function itemMenuPop({ it, code, parentCode, asking, arm, keys }: ItemMenuFacts, on: ItemMenuEvents): SheetParts {
   const row = (key: string, icon: IconName, label: ReactNode, k: string, run: () => void, sub = '') => (
     <button key={key} onClick={run} className="flex h-9 w-full items-center gap-3 rounded-lg px-2.5 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800">
       <Icon n={icon} c="size-[18px] text-zinc-500 dark:text-zinc-400" />
@@ -205,6 +217,7 @@ export function itemMenuPop({ it, code, parentCode, asking, arm }: ItemMenuFacts
             <button
               key={v}
               data-f={f}
+              data-v={v}
               onClick={() => on.set(f, v)}
               aria-pressed={cur === v}
               className="flex h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-sm hover:bg-zinc-100 aria-pressed:font-semibold dark:hover:bg-zinc-800"
@@ -219,22 +232,22 @@ export function itemMenuPop({ it, code, parentCode, asking, arm }: ItemMenuFacts
   }
   const next = inQueue(it) && it.when === 'now' ? row('next', it.rank == null ? 'totop' : 'undo', it.rank == null ? 'Do this next' : 'Back in order', '', on.doNext, it.rank == null ? `first ${it.pri} in queue` : 'where it was, by age') : null
   const state = it.archived
-    ? [row('unarchive', 'unarchive', 'Unarchive', 'E', () => on.archive(false))]
+    ? [row('unarchive', 'unarchive', 'Unarchive', keys.archive, () => on.archive(false))]
     : closed(it.status)
-      ? [row('archive', 'archive', 'Archive', 'E', () => on.archive(true))]
-      : [it.type === 'rule' ? null : row('later', 'clock', it.when === 'now' ? 'Later' : 'Back to now', 'L', on.later), row('archive', 'archive', 'Archive', 'E', () => on.archive(true))]
+      ? [row('archive', 'archive', 'Archive', keys.archive, () => on.archive(true))]
+      : [it.type === 'rule' ? null : row('later', 'clock', it.when === 'now' ? 'Later' : 'Back to now', keys.later, on.later), row('archive', 'archive', 'Archive', keys.archive, () => on.archive(true))]
   return {
     menu: true,
     body: (
       <div className="flex flex-col gap-3">
         <div className="-mx-1 -mt-1">
-          {row('edit', 'pencil', 'Edit', 'I', on.edit)}
-          {row('copy', 'copy', 'Copy for agent', '⇧C', on.copy)}
+          {row('edit', 'pencil', 'Edit', keys.edit, on.edit)}
+          {row('copy', 'copy', 'Copy for agent', keys.copy, on.copy)}
           {it.type === 'rule' ? null : (
             <>
-              {row('doc', 'docplus', 'New doc', '⇧D', on.newDoc)}
-              {row('sub', 'listplus', 'Add subitem', '⇧A', on.addSub)}
-              {row('reparent', 'indent', 'Put under…', 'M', on.reparent, parentCode ? 'now under ' + parentCode : 'stands on its own')}
+              {row('doc', 'docplus', 'New doc', keys.newDoc, on.newDoc)}
+              {row('sub', 'listplus', 'Add subitem', keys.addSub, on.addSub)}
+              {row('reparent', 'indent', 'Put under…', keys.reparent, on.reparent, parentCode ? 'now under ' + parentCode : 'stands on its own')}
             </>
           )}
           {state}

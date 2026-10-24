@@ -171,7 +171,7 @@ export function ListHead({
     if (el && el.value !== q && document.activeElement !== el) el.value = q
   })
   return (
-    <header hidden={hidden} className={`flex h-14 shrink-0 items-center gap-1 px-2 lg:gap-2 lg:border-r lg:border-b lg:border-zinc-200 lg:px-3 dark:lg:border-zinc-800 ${place}`}>
+    <header data-tip-side="bottom" hidden={hidden} className={`flex h-14 shrink-0 items-center gap-1 px-2 lg:gap-2 lg:border-r lg:border-b lg:border-zinc-200 lg:px-3 dark:lg:border-zinc-800 ${place}`}>
       <div hidden={showSearch} className="contents">
         <button onClick={on.menu} aria-label="Projects and settings" className="flex h-12 min-w-0 flex-1 items-center gap-2.5 rounded-xl px-2.5 text-left data-pressed:bg-zinc-100 dark:data-pressed:bg-zinc-800">
           <span className="relative text-zinc-700 dark:text-zinc-300">

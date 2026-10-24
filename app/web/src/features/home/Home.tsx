@@ -122,7 +122,7 @@ export function Home({ facts, on, searchRef }: { facts: HomeFacts; on: HomeEvent
   }
   return (
     <main className="mx-auto max-w-[1200px] px-3 pt-[env(safe-area-inset-top)] pb-[max(1.5rem,env(safe-area-inset-bottom))] lg:px-10 lg:pt-8">
-      <header className="flex min-h-14 flex-wrap items-center gap-x-3 gap-y-2 px-1 py-2">
+      <header data-tip-side="bottom" className="flex min-h-14 flex-wrap items-center gap-x-3 gap-y-2 px-1 py-2">
         <h1 className="flex items-center gap-2 text-xl font-semibold tracking-tight">
           <Icon n="logo" c="size-6 text-blue-600 dark:text-blue-400" sw="2.25" />
           Taska

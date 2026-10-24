@@ -28,6 +28,7 @@ import { Answers } from './answers'
 import { Box } from './box'
 import { CrossSearch } from './crossSearch'
 import { Projects } from './projects'
+import { KeyArm } from './keyArm'
 import { Activity } from './activity'
 import { Restores } from './restores'
 import { createActivityStore, type ActivityStore } from '../stores/activity'
@@ -98,6 +99,8 @@ export interface App {
   /** show a project: its copy, then its changes as they come */
   showProject(slug: string): void
   projects: Projects
+  /** S, P or T pressed: the key after it sets that field */
+  keyArm: KeyArm
   activity: Activity
   restores: Restores
   refreshProjects(): Promise<boolean>
@@ -289,6 +292,7 @@ export function createApp(env: AppEnv): App {
     model,
     showProject,
     projects,
+    keyArm: new KeyArm(),
     activity,
     restores,
     refreshProjects,

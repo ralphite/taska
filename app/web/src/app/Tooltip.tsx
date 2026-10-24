@@ -130,7 +130,8 @@ export function Tooltip() {
     const h = t.offsetHeight
     const gap = 8
     const pad = 8
-    let side = shown.el.dataset.tipSide || (shown.el.closest('#drawer, #rail') ? 'right' : shown.el.closest('header') ? 'bottom' : 'top')
+    // the side a tip takes: its own, or its part of the page's (a sidebar's right, a bar's bottom)
+    let side = shown.el.closest<HTMLElement>('[data-tip-side]')?.dataset.tipSide || 'top'
     const room: Record<string, number> = { top: r.top - h - gap, bottom: innerHeight - r.bottom - h - gap, right: innerWidth - r.right - w - gap, left: r.left - w - gap }
     const flip: Record<string, string> = { top: 'bottom', bottom: 'top', right: 'left', left: 'right' }
     if (room[side] < pad && room[flip[side]] > room[side]) side = flip[side]

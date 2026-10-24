@@ -37,7 +37,7 @@ export function SheetContainer() {
   const desk = useLayout() === 'desk'
   const spec = useStoreValue(app.stores.sheet, (s) => s.spec)
   return (
-    <Sheet open={!!spec} look={{ pop: spec?.pop, narrow: spec?.narrow, tall: spec?.tall, card: spec?.card, aboveComposer: spec?.aboveComposer, at: spec?.at }} desk={desk} focus={!!spec?.focus} onClose={() => app.sheets.close()}>
+    <Sheet open={!!spec} look={{ pop: spec?.pop, narrow: spec?.narrow, tall: spec?.tall, card: spec?.card, aboveComposer: spec?.aboveComposer, at: spec?.at }} desk={desk} focus={!!spec?.focus} bodyRef={app.fields.ref('sheet')} onClose={() => app.sheets.close()}>
       {spec ? <Holds key={JSON.stringify(spec.req)} req={spec.req} /> : null}
     </Sheet>
   )

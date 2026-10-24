@@ -1,7 +1,7 @@
 // The item list with the page's data: the rows of the list's settings, each with what it shows, and what a tap on
 // each part of a row does.
 
-import { useLayoutEffect, useMemo, useState } from 'react'
+import { useCallback, useLayoutEffect, useMemo, useState } from 'react'
 import { useApp, useLayout, useStoreValue } from '../../app/context'
 import { usePaneRef } from '../../app/panes'
 import { useProjectModel, type ProjectRoute } from '../../app/hooks'
@@ -35,7 +35,15 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
   const layout = useLayout()
   const m = useProjectModel(route.slug)
   const ui = useStoreValue(app.stores.ui, (s) => s)
-  const pane = usePaneRef('list')
+  const paneRef = usePaneRef('list')
+  const fieldRef = app.fields.ref('list')
+  const pane = useCallback(
+    (el: HTMLDivElement | null) => {
+      paneRef(el)
+      fieldRef(el)
+    },
+    [paneRef, fieldRef],
+  )
   // the rows of the last drawing that did not hold still (React's way to keep what an earlier drawing had)
   const [kept, setKept] = useState<{ key: string; rows: Row[] } | null>(null)
   const desk = layout === 'desk'

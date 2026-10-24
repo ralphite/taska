@@ -11,7 +11,8 @@ type Story = StoryObj
 const no = () => {}
 const on: ItemMenuEvents = { edit: no, copy: no, newDoc: no, addSub: no, reparent: no, later: no, archive: no, doNext: no, moveProject: no, remove: no, set: no }
 const it = item({ n: 12, pri: 'P1', parent: 3 })
-const facts = { it, code: 'F012', parentCode: 'F003', asking: false, arm: null }
+const keys = { edit: 'I', copy: '⇧C', newDoc: '⇧D', addSub: '⇧A', reparent: 'M', later: 'L', archive: 'E' }
+const facts = { it, code: 'F012', parentCode: 'F003', asking: false, arm: null, keys }
 
 /** The phone's sheet: every action, then type, priority and status. */
 export const PhoneSheet: Story = {

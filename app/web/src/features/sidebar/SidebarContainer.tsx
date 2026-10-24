@@ -1,6 +1,7 @@
 // The sidebar with the page's data: every project in your order, this one with what this page knows now.
 
 import { useMemo } from 'react'
+import { runAction } from '../../app/actions'
 import { useApp, useLayout, useStoreValue } from '../../app/context'
 import { useProjectModel } from '../../app/hooks'
 import { needsYou } from '../../model/items'
@@ -76,7 +77,7 @@ export function SidebarContainer({ slug, place, hidden, rail }: { slug: string; 
       ]
     : []
   const on: SidebarEvents = {
-    newInput: () => app.nav.newInput(),
+    newInput: () => runAction(app, 'new-input'),
     newVoice: () => app.nav.newInput(),
     newProject: () => {},
     hide: () => app.stores.ui.getState().setSideHidden(!sideHidden),

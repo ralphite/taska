@@ -1,135 +1,18 @@
-// The keys, for the whole page. On the desktop a single key acts while you are not typing: J and K walk the list,
-// G then I N A R the tabs, / the search, and the item's keys (A the next step, D Done, W Won't do, L Later, E
-// Archive, 1-9 a choice, Cmd-Enter the answer). Esc steps back one level, on the phone too. A key that cannot act
-// where you are says why, in a few words.
+// The keys, for the whole page: each key is looked up in the table of actions (actions.ts), which says whether it can
+// act here and does it. On the desktop a single key acts while you are not typing; G then a letter, and S, P or T then
+// a digit or letter, are two keys. Esc steps back one level, on the phone too; Cmd-K opens Go to or do. The home page
+// has one key: Cmd-K or / go to its search.
 
-import { canDone, closed } from '../model/items'
-import { choiceMulti, hasChoices } from '../model/markdown'
-import { codeOf, liveN } from '../model/project'
-import type { Item } from '../model/types'
-import type { Tab } from '../model/words'
-import { copyText, forAgent } from './clipboard'
+import { actionOfKeys, hereOf, pickChoice, runAction, setArmed, type ActionId } from './actions'
 import type { App } from './createApp'
 
 const typingIn = (el: Element | null) => /INPUT|TEXTAREA|SELECT/.test(el?.tagName || '') || !!(el as HTMLElement | null)?.isContentEditable
-const ITEM_KEYS = 'arndwle.sptmiCDA' // the keys that act on the open item
 
 export function pageKeys(app: App): (e: KeyboardEvent) => void {
   let gAt = 0
-  let arm: { k: string; n: number; t: number } | null = null
-  const say = (words: string) => app.toasts.show(words)
-  const here = () => {
-    const r = app.stores.route.getState().route
-    return r.page === 'project' ? r : null
-  }
-
-  const escape = (e: KeyboardEvent, active: Element | null) => {
-    const r = here()
-    if (!r) return
-    const layers = app.stores.route.getState().layers
-    if (layers.includes('drawer')) return app.nav.drawer(false)
-    if (app.stores.sheet.getState().spec) return app.sheets.close()
-    const view = app.stores.itemView.getState()
-    if (view.subFor != null && typingIn(active)) return view.setSubFor(null)
-    if (view.editing != null) return view.setEditing(null)
-    if (app.desk()) {
-      if (app.fields.focused('search')) {
-        if (r.list.q) app.nav.setList({ q: '' })
-        return app.fields.get('search')?.blur()
-      }
-      if (typingIn(active)) return (active as HTMLElement).blur()
-      if (app.stores.route.getState().full) return app.nav.full(false)
-      if (r.list.q) return app.nav.setList({ q: '' })
-      if (r.place.kind === 'item' && r.tab !== 'inputs') return app.nav.closeItem()
-      return
-    }
-    if (layers.includes('search') && app.fields.focused('search')) return app.nav.search(false)
-    if (r.place.kind === 'item' && !typingIn(active)) return app.nav.closeItem()
-    void e
-  }
-
-  const itemKey = (e: KeyboardEvent, it: Item, slug: string) => {
-    const m = app.model(slug)
-    if (!m) return
-    const n = it.n
-    const code = codeOf(m, n)
-    const act = () => e.preventDefault()
-    const status = (v: string) => (act(), void app.items.change(n, 'status', v))
-    const ruleTo = (v: string) => (it.status === v ? say(`${code} is ${v === 'open' ? 'active' : 'retired'} already`) : status(v))
-    switch (e.key) {
-      case 'a':
-        if (it.status === 'review') return status('done')
-        if (it.status === 'proposed') return status('open')
-        if (it.wait?.kind === 'ask' && hasChoices(it.wait.text)) return act()
-        if (it.wait) return (act(), app.fields.focus('box'))
-        return say(`Nothing waits on you in ${code}`)
-      case 'r':
-        return (act(), app.fields.focus('box'))
-      case 'n':
-        if (it.status === 'review') return (act(), void app.items.change(n, 'status', 'doing', { said: 'is back in progress' }))
-        return say('Not yet works on items in review')
-      case 'd':
-        if (it.type === 'rule') return ruleTo('open')
-        if (closed(it.status)) return say(`${code} is ${it.status === 'done' ? 'done' : "marked won't do"} already`)
-        if (!canDone(it)) return say(it.status === 'proposed' ? `Approve ${code} first (A)` : `Accept ${code} first (A)`)
-        return status('done')
-      case 'w':
-        if (it.type === 'rule') return ruleTo('dropped')
-        if (it.status === 'dropped') return say(`${code} is marked won't do already`)
-        return status('dropped')
-      case 'l':
-        if (it.type !== 'rule' && !closed(it.status)) return (act(), void app.items.change(n, 'when', it.when === 'now' ? 'later' : 'now'))
-        return say(it.type === 'rule' ? 'Rules have no Later' : 'Later works on open items')
-      case 'e':
-        act()
-        void app.items.change(n, 'archived', !it.archived, { note: it.archived ? '' : 'Find it under Archive' })
-        if (!it.archived) app.nav.closeItem()
-        return
-      case 'i':
-        return (act(), app.stores.itemView.getState().setEditing(n))
-      case '.':
-        return (act(), app.sheets.open({ kind: 'item-menu', n, arm: null }, { pop: true, focus: false }))
-      case 'm':
-        return (act(), app.sheets.open({ kind: 'item-move-parent', n }, { pop: true, focus: false }))
-      case 'C':
-        act()
-        return void copyText(forAgent(it, code, m.facts.base)).then(() => say('Copied'))
-      case 'A':
-        return (act(), app.stores.itemView.getState().setSubFor(n))
-      case 's':
-      case 'p':
-      case 't':
-        act()
-        arm = { k: e.key, n, t: Date.now() }
-        return say(({ s: 'Status: 1–6', p: 'Priority: 0–3', t: 'Type: F B I T R' } as Record<string, string>)[e.key])
-    }
-    if (/^[1-9]$/.test(e.key) && it.wait?.kind === 'ask') {
-      const i = Number(e.key) - 1
-      if (i < app.answers.labels(it).length) {
-        act()
-        app.answers.pick(it, i, choiceMulti(it.wait.text, i))
-      }
-    }
-  }
-
-  const armed = (e: KeyboardEvent, it: Item) => {
-    const a = arm
-    arm = null
-    if (!a || a.n !== it.n || Date.now() - a.t > 3000) return false
-    const STATUSES = it.type === 'rule' ? ['proposed', 'open', 'dropped'] : ['proposed', 'open', 'doing', 'review', 'done', 'dropped']
-    const TYPES: Record<string, string> = { f: 'feature', b: 'bug', i: 'idea', t: 'task', r: 'rule' }
-    const [f, v] =
-      a.k === 'p' ? ['pri', /^[0-3]$/.test(e.key) && 'P' + e.key] : a.k === 't' ? ['type', TYPES[e.key.toLowerCase()]] : ['status', /^[1-9]$/.test(e.key) && STATUSES[Number(e.key) - 1]]
-    if (!v) return false
-    e.preventDefault()
-    void app.items.change(it.n, f as string, v)
-    return true
-  }
-
   return (e: KeyboardEvent) => {
     if (e.defaultPrevented) return
     const active = document.activeElement
-    // the home page: Cmd-K or / go to its search (Esc there clears it)
     if (app.stores.route.getState().route.page === 'home') {
       if (((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') || (e.key === '/' && !typingIn(active))) {
         e.preventDefault()
@@ -137,100 +20,91 @@ export function pageKeys(app: App): (e: KeyboardEvent) => void {
       }
       return
     }
-    if (e.key === 'Escape') return escape(e, active)
-    // Cmd-K anywhere on the desktop, even while typing: Go to or do (again: closes it)
+    const h = hereOf(app)
+    if (!h) return
+    const act = (id: ActionId | null, quiet = false) => {
+      if (id && runAction(app, id, { ...h, shift: e.shiftKey }, quiet)) e.preventDefault()
+    }
+    if (e.key === 'Escape') return act('back')
+    // Cmd-K anywhere on the desktop, even while typing (again: closes it)
     if (app.desk() && (e.metaKey || e.ctrlKey) && !e.altKey && e.key.toLowerCase() === 'k') {
       e.preventDefault()
       const open = app.stores.sheet.getState().spec
       if (open) app.sheets.close()
-      if (open?.req.kind !== 'palette') app.sheets.open({ kind: 'palette' }, { focus: false })
+      if (open?.req.kind !== 'palette') act('palette')
       return
     }
-    if (app.stores.sheet.getState().spec) return // a sheet or menu is open: it has its own keys
-    const r = here()
-    if (!r) return
+    // the desktop's item menu: arrows walk it, S P T and then a digit or letter set a field, and the keys it shows
+    // work from it (it closes, the key acts)
+    const menu = app.desk() ? app.sheets.shown('item-menu') : null
+    if (menu && menuKey(app, e, menu.n, menu.arm)) return
+    if (menu && /^[a-zA-Z]$/.test(e.key)) app.sheets.close()
+    else if (app.stores.sheet.getState().spec) return // a sheet or menu is open: it has its own keys
     if (!app.desk()) {
-      // the phone's keyboard: / opens the search
-      if (e.key === '/' && !typingIn(active)) {
-        e.preventDefault()
-        if (!app.stores.route.getState().layers.includes('search')) app.nav.search(true)
-        else app.fields.focus('search')
-      }
+      if (e.key === '/' && !typingIn(active)) act('search') // the phone's keyboard
       return
     }
     if (typingIn(active) || e.altKey) return
     // Enter and Space press the button or link you are on; they are keys only on the page or a row
-    if ((e.key === 'Enter' || e.key === ' ') && active && active !== document.body && !active.closest('#list') && active.closest('button, a[href], [role=button], summary')) return
-    const m = app.model(r.slug)
-    const n = r.place.kind === 'item' && m ? liveN(m, Number(/\d+/.exec(r.place.ref)?.[0])) : null
-    const it = n != null ? m?.byN.get(n) : undefined
-    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter' && it && m) {
-      if (app.answers.send(m, r.slug, it)) e.preventDefault()
-      return
-    }
+    if ((e.key === 'Enter' || e.key === ' ') && active && active !== document.body && !app.fields.get('list')?.contains(active) && active.closest('button, a[href], [role=button], summary')) return
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') return act('send-answer', true)
     if (e.metaKey || e.ctrlKey) return
-    const lists = r.tab !== 'inputs' && r.place.kind !== 'settings'
     if (gAt && Date.now() - gAt < 1000) {
       gAt = 0
-      const tab = ({ i: 'items', n: 'inputs', a: 'archive', r: 'rules' } as Record<string, Tab>)[e.key.toLowerCase()]
-      if (tab) return (e.preventDefault(), app.nav.tab(tab))
-      if (e.key.toLowerCase() === 's') return (e.preventDefault(), app.nav.to(`/p/${encodeURIComponent(r.slug)}/settings`))
-      if (e.key.toLowerCase() === 'p') return (e.preventDefault(), app.sheets.open({ kind: 'switch-project' }, { focus: false }))
+      const id = actionOfKeys('g ' + e.key.toLowerCase())
+      if (id) return act(id)
     }
-    if (it && armed(e, it)) return
-    switch (e.key) {
-      case 'j':
-      case 'ArrowDown':
-      case 'k':
-      case 'ArrowUp': {
-        const dir = e.key === 'j' || e.key === 'ArrowDown' ? 1 : -1
-        if (lists && m) return (e.preventDefault(), app.nav.step(dir, app.listOrder, (k) => codeOf(m, k), say))
-        if (e.key === 'j' || e.key === 'k') say(r.place.kind === 'settings' ? 'Press Esc to return to the list' : 'J and K move in Items, Archive and Rules')
-        return
-      }
-      case 'o':
-      case 'Enter':
-        if (it) return (e.preventDefault(), app.nav.full(!app.stores.route.getState().full))
-        if (e.key === 'o') say('First pick an item: J or a click')
-        return
-      case ' ': {
-        const talk = app.fields.get('talk')
-        if (it && talk) {
-          e.preventDefault()
-          talk.scrollBy({ top: (e.shiftKey ? -0.8 : 0.8) * talk.clientHeight, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' })
-        }
-        return
-      }
-      case 'g':
-        gAt = Date.now()
-        return
-      case '[':
-        e.preventDefault()
-        return app.stores.ui.getState().setSideHidden(!app.stores.ui.getState().sideHidden)
-      case '/':
-        e.preventDefault()
-        return requestAnimationFrame(() => app.fields.focus('search'))
-      case '?':
-        e.preventDefault()
-        return app.sheets.open({ kind: 'keys' })
-      case 'f':
-        e.preventDefault()
-        return app.stores.ui.getState().setDeskFilters(!app.stores.ui.getState().deskFilters)
-      case 'c':
-        e.preventDefault()
-        return app.nav.newInput()
-      case 'z': {
-        e.preventDefault()
-        const step = app.stores.feedback.getState().undo.at(-1)
-        if (step) void step.run()
-        else say('Nothing of yours to undo here. Older changes are in Change log')
-        return
-      }
-    }
-    if (!it || !m) {
-      if (e.key.length === 1 && ITEM_KEYS.includes(e.key)) say(r.tab === 'inputs' || r.place.kind === 'new' ? 'Open an item in Items, Archive or Rules to use these keys' : 'First pick an item: J or a click')
+    if (e.key === 'g') {
+      gAt = Date.now()
       return
     }
-    itemKey(e, it, r.slug)
+    if (setArmed(app, h, e.key)) return e.preventDefault()
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') return act(e.key === 'ArrowDown' ? 'step' : 'step-back', true)
+    if (e.key === 'Enter') return act('full', true)
+    const id = actionOfKeys(e.key)
+    if (id) return act(id)
+    if (/^[1-9]$/.test(e.key) && pickChoice(app, h, Number(e.key) - 1)) e.preventDefault()
   }
+}
+
+const FIELD = { s: 'status', p: 'pri', t: 'type' } as const
+const TYPE_OF: Record<string, string> = { f: 'feature', b: 'bug', i: 'idea', t: 'task', r: 'rule' }
+
+/** A key in the desktop's item menu. -> whether it was the menu's */
+function menuKey(app: App, e: KeyboardEvent, n: number, arm: 's' | 'p' | 't' | null): boolean {
+  const box = app.fields.get('sheet')
+  if (!box) return false
+  const k = e.key
+  if (['ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(k)) {
+    const btns = [...box.querySelectorAll<HTMLButtonElement>('button:not(:disabled)')]
+    const i = btns.indexOf(document.activeElement as HTMLButtonElement)
+    const d = k === 'ArrowDown' || k === 'ArrowRight' || (k === 'Tab' && !e.shiftKey) ? 1 : -1
+    e.preventDefault()
+    btns[i < 0 ? (d > 0 ? 0 : btns.length - 1) : (i + d + btns.length) % btns.length]?.focus()
+    return true
+  }
+  if (k.length !== 1 || (e.shiftKey && k !== k.toLowerCase())) return false // C, D, A with Shift: the menu's own keys
+  const low = k.toLowerCase()
+  const f = arm ? FIELD[arm] : null
+  const v = arm === 'p' && /^[0-3]$/.test(k) ? 'P' + k : arm === 't' ? TYPE_OF[low] : arm === 's' && /^[1-9]$/.test(k) ? box.querySelectorAll<HTMLElement>('[data-f="status"]')[Number(k) - 1]?.dataset.v : null
+  const b = f && v ? box.querySelector<HTMLElement>(`[data-f="${f}"][data-v="${v}"]`) : null
+  if (b) {
+    e.preventDefault()
+    b.focus({ preventScroll: true })
+    b.click()
+    return true
+  }
+  if (low === 's' || low === 'p' || low === 't') {
+    e.preventDefault()
+    const at = app.stores.sheet.getState().spec?.at
+    app.sheets.open({ kind: 'item-menu', n, arm: low }, { pop: true, focus: false, narrow: true, at })
+    return true
+  }
+  if (/^[0-9]$/.test(k)) {
+    e.preventDefault()
+    const count = box.querySelectorAll('[data-f="status"]').length
+    app.toasts.show(f ? `${({ pri: 'Priority', type: 'Type', status: 'Status' } as const)[f]}: ${({ pri: '0–3', type: 'F B I T R', status: `1–${count}` } as const)[f]}` : 'First S, P or T: then a digit')
+    return true
+  }
+  return false
 }

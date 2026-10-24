@@ -10,100 +10,20 @@ import { StateIcon } from '../../ui/Icon'
 import type { SheetParts } from '../../ui/Sheet'
 import { FIELD, TYPE_TEXT } from '../../ui/tones'
 
-export const KEYS: [string, [string, string][]][] = [
-  [
-    'Move',
-    [
-      ['J / K', 'Next or previous item'],
-      ['O or ↵', 'Full width; Esc goes back'],
-      ['Space', 'Scroll the item'],
-      ['G then I N A R', 'Items, Inputs, Archive, Rules'],
-      ['G then P', 'Switch project'],
-      ['G then S', 'Settings'],
-      ['[', 'Toggle sidebar'],
-    ],
-  ],
-  [
-    'Act on the selected item',
-    [
-      ['A', "The item's next step: Accept, Approve, Answer or Reply"],
-      ['R', 'Reply or add to it'],
-      ['N', 'Not yet: back to in progress at once'],
-      ['1–9, ⌘↵', 'Pick a choice, send the answer'],
-      ['D · W · L', "Done · Won't do · Later / Now"],
-      ['E / ⇧E', 'Archive or unarchive / archive every finished item'],
-      ['S · P · T', "Status, priority, type (then the menu's digit)"],
-      ['M · ⇧C', 'Put under… · Copy for agent'],
-      ['I · ⇧D · ⇧A', 'Edit · New doc · Add subitem'],
-      ['.', 'All actions'],
-      ['Z', 'Undo last action; older changes in Change log'],
-    ],
-  ],
-  [
-    'Mouse',
-    [
-      ['Hover a row', 'Quick actions'],
-      ['Right-click a row', 'Item menu'],
-      ['Click cut-off words', 'Show them all'],
-      ['Drag a pane edge', 'Resize; double-click for the default'],
-    ],
-  ],
-  [
-    'Write and find',
-    [
-      ['⌘K', 'Go to an item or do anything here'],
-      ['⌘ / ⇧ click', 'Select multiple rows to act on together'],
-      ['C', 'New input'],
-      ['V', 'Voice note for the selected item; V again stops'],
-      ['⇧V', 'New input by voice; ⇧V again stops and sends'],
-      ['⌥V', 'Voice note while typing'],
-      ['↵', 'While recording: stop, into the box'],
-      ['⇧↵ or ⌘↵', 'Send; while recording: stop and send'],
-      ['/', 'Search'],
-      ['F', 'Filters'],
-      ['?', 'This sheet'],
-      ['Esc', 'Step back one level'],
-    ],
-  ],
-]
+/** The keys sheet's groups: [group, [keys, what][]] (from the table of actions). */
+export type KeyGroups = [string, [string, string][]][]
 
-/** The palette's rows: a command replays its keys, so it does exactly what the key does where you are. */
-export const CP_PAGE: [string, string][] = [
-  ['New input', 'c'],
-  ['Search', '/'],
-  ['Filters', 'f'],
-  ['Record voice input', 'V'],
-  ['Items', 'g i'],
-  ['Inputs', 'g n'],
-  ['Archive', 'g a'],
-  ['Rules', 'g r'],
-  ['Switch project', 'g p'],
-  ['Settings', 'g s'],
-  ['Toggle sidebar', '['],
-  ['Undo', 'z'],
-  ['Keyboard shortcuts', '?'],
-]
-export const CP_ITEM: [string, string][] = [
-  ['Accept or approve', 'a'],
-  ['Reply', 'r'],
-  ['Not yet', 'n'],
-  ['Done', 'd'],
-  ['Later or back to now', 'l'],
-  ['Archive', 'e'],
-  ["Won't do", 'w'],
-  ['Edit', 'i'],
-  ['Status…', 's'],
-  ['Priority…', 'p'],
-  ['Type…', 't'],
-  ['Put under…', 'm'],
-  ['Add subitem', 'A'],
-  ['New doc', 'D'],
-  ['Copy for agent', 'C'],
-  ['Full width', 'o'],
-]
+/** A row of the palette: an action, with its words and keys. */
+export interface Command {
+  id: string
+  label: string
+  keys: string
+  /** it acts on the open item (its code shows beside it) */
+  item: boolean
+}
 
-export function keysSheet(): SheetParts {
-  const sec = ([group, keys]: (typeof KEYS)[number]) => (
+export function keysSheet(groups: KeyGroups): SheetParts {
+  const sec = ([group, keys]: KeyGroups[number]) => (
     <section key={group} className="mb-5">
       <h3 className="mb-2 text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">{group}</h3>
       <dl className="flex flex-col gap-1.5 text-sm">
@@ -121,12 +41,12 @@ export function keysSheet(): SheetParts {
     body: (
       <div className="grid gap-x-8 sm:grid-cols-2">
         <div>
-          {sec(KEYS[0])}
-          {sec(KEYS[3])}
+          {sec(groups[0])}
+          {sec(groups[3])}
         </div>
         <div>
-          {sec(KEYS[1])}
-          {sec(KEYS[2])}
+          {sec(groups[1])}
+          {sec(groups[2])}
         </div>
       </div>
     ),
@@ -213,7 +133,7 @@ export function Switcher({ rows, loading, onOpen }: { rows: SwitchRow[]; loading
   )
 }
 
-export function Palette({ items, code, open, onItem, onKeys }: { items: readonly Item[]; code(n: number): string; open: number | null; onItem(n: number): void; onKeys(keys: string): void }) {
+export function Palette({ items, code, open, commands, onItem, onCommand }: { items: readonly Item[]; code(n: number): string; open: number | null; commands: readonly Command[]; onItem(n: number): void; onCommand(id: string): void }) {
   const [q0, setQ] = useState('')
   const q = q0.trim().toLowerCase()
   const has = (t: string) => !q || t.toLowerCase().includes(q)
@@ -223,16 +143,16 @@ export function Palette({ items, code, open, onItem, onKeys }: { items: readonly
         .sort((a, b) => Number(closed(a.status)) - Number(closed(b.status)) || b.n - a.n)
         .slice(0, 6)
     : []
-  const rows: { t: string; sub?: string; k?: string; it?: Item }[] = [
-    ...(open ? CP_ITEM.filter(([t]) => has(t) || has(code(open))).map(([t, k]) => ({ t, sub: code(open), k })) : []),
-    ...CP_PAGE.filter(([t]) => has(t)).map(([t, k]) => ({ t, k })),
+  const rows: { t: string; sub?: string; k?: string; id?: string; it?: Item }[] = [
+    ...(open ? commands.filter((c) => c.item && (has(c.label) || has(code(open)))).map((c) => ({ t: c.label, sub: code(open), k: c.keys, id: c.id })) : []),
+    ...commands.filter((c) => !c.item && has(c.label)).map((c) => ({ t: c.label, k: c.keys, id: c.id })),
     ...found.map((it) => ({ t: it.title, it })),
   ]
   const { at, setI, list } = useKeyRow(rows.length)
   const run = (r: (typeof rows)[number] | undefined) => {
     if (!r) return
     if (r.it) return onItem(r.it.n)
-    onKeys(r.k || '')
+    if (r.id) onCommand(r.id)
   }
   const kbd = (x: string, j: number): ReactNode => (
     <kbd key={j} className="grid h-5 min-w-5 place-items-center rounded-md px-1 font-sans text-[11px] font-semibold text-zinc-500 ring-1 ring-zinc-300 dark:text-zinc-400 dark:ring-zinc-600">

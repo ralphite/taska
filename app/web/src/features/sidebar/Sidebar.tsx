@@ -131,7 +131,7 @@ function SideLink({ link, phone, on }: { link: SideLinkInfo; phone: boolean; on:
 export function Sidebar(props: SidebarProps) {
   const { phone, projects, composing, links, undoLabel, devLinks, place, hidden, newProjectField, on } = props
   return (
-    <nav id="drawer" hidden={hidden} aria-label="Projects" className={`flex h-full flex-col pt-[env(safe-area-inset-top)] dark:bg-zinc-900 ${place}`}>
+    <nav id="drawer" data-tip-side="right" hidden={hidden} aria-label="Projects" className={`flex h-full flex-col pt-[env(safe-area-inset-top)] dark:bg-zinc-900 ${place}`}>
       <div className="flex h-14 shrink-0 items-center gap-2 px-5 lg:pr-2 lg:pl-4">
         <a
           href="/"
@@ -268,7 +268,7 @@ export function Rail({ projects, composing, settingsOpen, hidden, on }: { projec
     </button>
   )
   return (
-    <nav id="rail" hidden={hidden} aria-label="Projects" className="z-30 flex h-full w-14 shrink-0 flex-col items-center gap-1 border-r border-zinc-200 bg-zinc-50 py-2 dark:border-zinc-800 dark:bg-zinc-900">
+    <nav id="rail" data-tip-side="right" hidden={hidden} aria-label="Projects" className="z-30 flex h-full w-14 shrink-0 flex-col items-center gap-1 border-r border-zinc-200 bg-zinc-50 py-2 dark:border-zinc-800 dark:bg-zinc-900">
       {btn(
         'side',
         <span className="text-blue-600 dark:text-blue-400">
