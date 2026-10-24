@@ -6,11 +6,15 @@ import { useApp, useLayout, useStoreValue } from '../../app/context'
 import { usePaneRef } from '../../app/panes'
 import { useAway, useProjectModel, type ProjectRoute } from '../../app/hooks'
 import { dayOf, newestFirst, organizing, SHORT_STANDING, standing, timeOf } from '../../model/inputs'
-import { shownStatus } from '../../model/items'
+import { oneLine, shownStatus } from '../../model/items'
 import { codeOf, type ProjectModel } from '../../model/project'
 import { inputMatch } from '../../model/visible'
-import { inputCode } from '../../model/words'
+import type { Input } from '../../model/types'
+import { inputCode, plural } from '../../model/words'
+import type { BoxMode } from '../../stores/box'
 import { outgoingLine, outgoingState, type Outgoing } from '../../stores/outbox'
+import { Icon } from '../../ui/Icon'
+import { DraftFiles } from './DraftFiles'
 import { ProjTile } from '../../ui/bits'
 import { toneOf } from '../../ui/tones'
 import { SaidLately, type SaidChip, type SaidInput, type SaidOutgoing } from '../inputs/SaidLately'
@@ -21,7 +25,7 @@ import { Composer, Feedback, type BoxLine, type FeedbackLine } from './Composer'
 const STEP = 30
 
 /** The line over the box: what you sent is on its way, or what became of the last one you sent from here. */
-function feedbackLine(a: { m: ProjectModel | null; desk: boolean; composePage: boolean; scope: string | null; mine: Outgoing[]; lastSent: string | null; others: boolean }): { line: FeedbackLine; final?: string } | null {
+function feedbackLine(a: { m: ProjectModel | null; desk: boolean; composePage: boolean; scope: string | null; mine: Outgoing[]; lastSent: string | null; others: boolean; undoable(q: string | undefined): boolean; lastQ?: string }): { line: FeedbackLine; final?: string } | null {
   if ((a.desk && a.composePage) || a.scope) return null // on the New input page each input is in the list; in an item, in its talk
   const first = a.mine[0]
   const q = first?.quiet && first.state !== 'failed' ? null : first
@@ -29,7 +33,7 @@ function feedbackLine(a: { m: ProjectModel | null; desk: boolean; composePage: b
     const more = a.mine.length - 1
     if (q.state === 'failed' && q.net) return { line: { kind: 'waiting', text: outgoingLine(q), more } }
     if (q.state === 'failed') return { line: { kind: 'not-sent', text: outgoingLine(q), more } }
-    return { line: { kind: 'sending', text: outgoingLine(q), more, uploading: q.files.some((f) => f.uploading), canUndo: false } }
+    return { line: { kind: 'sending', text: outgoingLine(q), more, uploading: q.files.some((f) => f.uploading), canUndo: a.undoable(q.q) } }
   }
   const r = a.lastSent && a.m ? a.m.byId.get(a.lastSent) : undefined
   if (!r || !a.m || r.scope) return null
@@ -49,15 +53,38 @@ function feedbackLine(a: { m: ProjectModel | null; desk: boolean; composePage: b
       undo: !!(r.org && r.org.ok && !r.org.undone && !r.org.keep && r.touched.length),
       move,
     }
-  else line = { kind: 'sent', organizer: !!r.org, canUndo: false, move }
+  else line = { kind: 'sent', organizer: !!r.org, canUndo: a.undoable(a.lastQ), move }
   const final = r.acked || (r.org && r.org.ok) || r.moved
   return { line, final: final ? r.id : undefined }
 }
 
 /** What the box writes to now: its key in the drafts, the line on top, the placeholder, what Send says. */
-function boxRole(m: ProjectModel | null, route: ProjectRoute, desk: boolean, title: string) {
+function boxRole(m: ProjectModel | null, route: ProjectRoute, desk: boolean, title: string, mode: BoxMode, stop: () => void) {
   const open = route.place.kind === 'item' ? m?.byN.get(Number(/\d+/.exec(route.place.ref)?.[0])) : undefined
   const files = m?.facts.organizer.on ? 'the organizer files it' : 'your agent files it'
+  if (mode?.kind === 'amend' && m?.byId.has(mode.id)) {
+    const r = m.byId.get(mode.id) as Input
+    const edit = mode.mode === 'edit'
+    const voice = r.files.some((f) => (f.mime || '').startsWith('audio/'))
+    const said = oneLine(r.text)
+    const x = edit ? 'Stop editing' : 'Stop adding details'
+    const line: BoxLine = {
+      icon: edit ? 'pencil' : 'plus',
+      label: `${edit ? 'Edit' : 'Add details to'} ${inputCode(mode.id)}`,
+      detail: said ? `\u201c${said.slice(0, 120)}\u201d` : `· ${voice ? 'a voice note' : plural(r.files.length, 'file')}`,
+      right: (
+        <button
+          onClick={stop}
+          aria-label={x}
+          title={`${x} · Esc`}
+          className="-my-1.5 grid size-11 shrink-0 place-items-center rounded-full text-zinc-400 hover:text-zinc-800 lg:size-8 lg:hover:bg-zinc-100 dark:text-zinc-500 dark:hover:text-zinc-200 dark:lg:hover:bg-zinc-800"
+        >
+          <Icon n="x" c="size-4" />
+        </button>
+      ),
+    }
+    return { key: `${mode.mode} ${mode.id}`, scope: open && m ? codeOf(m, open.n) : null, line, placeholder: 'Write…', send: 'Save' }
+  }
   if (open && m) return { key: codeOf(m, open.n), scope: codeOf(m, open.n), line: null as BoxLine | null, placeholder: `Reply to ${codeOf(m, open.n)}…`, send: 'Send' }
   const line: BoxLine | null = desk ? { icon: 'newinput', label: 'New input', detail: `· ${files}` } : null
   return { key: 'new', scope: null, line, placeholder: m ? `Write to ${title}…` : 'Write anything…', send: 'Send' }
@@ -96,18 +123,18 @@ export function FootContainer({ route, place, hidden, composePage, onHeight }: {
   const outbox = useStoreValue(app.stores.outbox, (s) => s.list)
   const { tones } = useSideProjects(route.slug)
   const title = m?.facts.title || route.slug
-  const role = boxRole(m, route, desk, title)
-  const [text, setText] = useState('')
+  const mode = useStoreValue(app.stores.box, (s) => s.mode)
+  const role = boxRole(m, route, desk, title, mode, () => app.box.stop())
+  const key = app.box.key(role.scope, mode)
+  const text = useStoreValue(app.stores.drafts, (s) => s.bySlug[route.slug]?.[key] ?? '')
+  const draftFiles = useStoreValue(app.stores.box, (s) => s.files[key])
+  const setText = (v: string) => app.box.write(route.slug, key, v)
+  const justSent = useStoreValue(app.stores.box, (s) => s.sent)
   const [q, setQ] = useState('')
   const [upTo, setUpTo] = useState(STEP)
   const [opened, setOpened] = useState<ReadonlySet<string>>(new Set())
 
-  const send = () => {
-    const words = text.trim()
-    if (!words) return
-    app.inputs.push({ slug: route.slug, text: words, scope: role.scope, files: [] })
-    setText('')
-  }
+  const send = () => void app.box.send(route.slug, m, role.scope)
   const mine = outbox.filter((o) => o.slug === route.slug && !o.unsent)
   const words = useMemo(() => q.trim().toLowerCase().split(/\s+/).filter(Boolean), [q])
   const said = useMemo(() => {
@@ -131,20 +158,20 @@ export function FootContainer({ route, place, hidden, composePage, onHeight }: {
         chips: r.moved ? [] : (r.touched.filter((n) => m.byN.has(n) && n !== r.scope).map(chip).filter(Boolean) as SaidChip[]),
         busy: organizing(r, m.facts.organizer),
         draft: null,
-        canUndoSend: false,
+        canUndoSend: justSent.some((x) => x.rid === r.id),
         retry: !r.acked && m.facts.organizer.on && r.org && (!r.org.ok || r.org.undone) ? (r.org.undone ? 'Organize again' : 'Retry') : null,
         opened: opened.has(r.id),
       }
     })
     return { all, rows }
-  }, [m, composePage, words, upTo, opened])
+  }, [m, composePage, words, upTo, opened, justSent])
   const outgoing: SaidOutgoing[] = words.length
     ? []
-    : [...mine].reverse().map((o) => ({ q: o.q, text: o.text || outgoingLine(o), state: outgoingState(o, away), failed: o.state === 'failed', net: !!o.net, canUndo: false }))
+    : [...mine].reverse().map((o) => ({ q: o.q, text: o.text || outgoingLine(o), state: outgoingState(o, away), failed: o.state === 'failed', net: !!o.net, canUndo: justSent.some((x) => x.q === o.q) }))
 
   const lastSent = useStoreValue(app.stores.ui, (s) => s.lastSent)
   const projects = useStoreValue(app.stores.data, (s) => s.projects)
-  const feedback = feedbackLine({ m, desk, composePage, scope: role.scope, mine, lastSent: lastSent?.slug === route.slug ? lastSent.rid : null, others: (projects || []).some((p) => p.name !== route.slug) })
+  const feedback = feedbackLine({ m, desk, composePage, scope: role.scope, mine, lastSent: lastSent?.slug === route.slug ? lastSent.rid : null, lastQ: lastSent?.q, others: (projects || []).some((p) => p.name !== route.slug), undoable: (q) => !!q && justSent.some((x) => x.q === q) })
   // a line that says where it ended up goes after a while
   useEffect(() => {
     if (!feedback?.final) return
@@ -172,7 +199,7 @@ export function FootContainer({ route, place, hidden, composePage, onHeight }: {
       ) : null}
       <Feedback
         line={feedback?.line ?? null}
-        on={{ dismiss: () => app.stores.ui.getState().setLastSent(null), undo: () => {}, retry: () => void app.inputs.flush(), edit: () => {}, view: () => {}, undoFiling: () => {}, move: () => {}, retryOrganizer: () => {} }}
+        on={{ dismiss: () => app.stores.ui.getState().setLastSent(null), undo: () => { const q = mine[0]?.q ?? lastSent?.q; if (q) app.box.unsend(q) }, retry: () => void app.inputs.flush(), edit: () => {}, view: () => {}, undoFiling: () => {}, move: () => {}, retryOrganizer: () => {} }}
       />
       <Composer
         line={role.line}
@@ -184,7 +211,10 @@ export function FootContainer({ route, place, hidden, composePage, onHeight }: {
         micTip={composePage ? 'Voice note · ⌥V' : 'Voice note · V'}
         boxRef={boxRef}
         fieldRef={app.fields.ref('box')}
-        on={{ text: setText, send, attach: () => {}, mic: () => {} }}
+        lineOnComposePage={!!mode}
+        hasFiles={!!draftFiles?.length}
+        files={<DraftFiles files={draftFiles || []} url={url} onRemove={(fk) => app.box.removeFile(key, fk)} onView={() => {}} />}
+        on={{ text: setText, send, attach: (list) => app.box.attach(route.slug, key, list), mic: () => {} }}
       />
       {desk && composePage && said ? (
         <section aria-label="You said lately" className="mx-auto mt-8 block max-w-[42rem]">
@@ -202,7 +232,7 @@ export function FootContainer({ route, place, hidden, composePage, onHeight }: {
               more: (id) => setOpened((s) => new Set(s).add(id)),
               append: () => {},
               menu: () => {},
-              undoSend: () => {},
+              undoSend: (k) => app.box.unsend(justSent.find((x) => x.q === k || x.rid === k)?.q ?? k),
               retry: () => {},
               outboxRetry: () => void app.inputs.flush(),
               outboxEdit: () => {},

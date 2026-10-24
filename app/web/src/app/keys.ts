@@ -27,6 +27,7 @@ export function pageKeys(app: App): (e: KeyboardEvent) => void {
     if (!r) return
     const layers = app.stores.route.getState().layers
     if (layers.includes('drawer')) return app.nav.drawer(false)
+    if (app.stores.sheet.getState().spec) return app.sheets.close()
     const view = app.stores.itemView.getState()
     if (view.subFor != null && typingIn(active)) return view.setSubFor(null)
     if (view.editing != null) return view.setEditing(null)
@@ -85,6 +86,8 @@ export function pageKeys(app: App): (e: KeyboardEvent) => void {
         return
       case 'i':
         return (act(), app.stores.itemView.getState().setEditing(n))
+      case '.':
+        return (act(), app.sheets.open('menu-desk', { n }, { pop: true, focus: false }))
       case 'A':
         return (act(), app.stores.itemView.getState().setSubFor(n))
       case 's':
@@ -121,6 +124,7 @@ export function pageKeys(app: App): (e: KeyboardEvent) => void {
     if (e.defaultPrevented) return
     const active = document.activeElement
     if (e.key === 'Escape') return escape(e, active)
+    if (app.stores.sheet.getState().spec) return // a sheet or menu is open: it has its own keys
     const r = here()
     if (!r) return
     if (!app.desk()) {

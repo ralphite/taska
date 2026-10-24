@@ -7,7 +7,7 @@ import { useAway, useProjectModel, type ProjectRoute } from '../../app/hooks'
 import { codeOf, liveN } from '../../model/project'
 import { Icon } from '../../ui/Icon'
 import { ItemActs, ItemHead, ItemNav, Missing, NoSelection } from '../item/ItemPage'
-import { ItemPageContainer } from '../item/ItemPageContainer'
+import { ItemPageContainer, openItemMenu } from '../item/ItemPageContainer'
 import { PaneFrame } from '../item/PaneFrame'
 
 export function DetailContainer({ route, place, hidden, full = false }: { route: ProjectRoute; place: string; hidden?: boolean; full?: boolean }) {
@@ -46,7 +46,7 @@ export function DetailContainer({ route, place, hidden, full = false }: { route:
         nav={<ItemNav full={full} on={nav} />}
         menu
         onBack={back}
-        onMenu={() => {}}
+        onMenu={(from) => openItemMenu(app, desk, it.n, null, from)}
       >
         <ItemPageContainer key={it.n} it={it} m={m} slug={route.slug} tab={route.tab} desk={desk} />
       </PaneFrame>

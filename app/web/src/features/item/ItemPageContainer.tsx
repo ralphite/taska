@@ -17,15 +17,21 @@ import { ItemPage, type ItemEvents, type ItemFacts } from './ItemPage'
 import type { Outgoing, TalkFacts } from './Talk'
 import type { TalkEnv } from './talkEnv'
 
-export function useItemWorld(m: ProjectModel, slug: string): InlineWorld {
+export function useItemWorld(m: ProjectModel | null, slug: string): InlineWorld {
   return useMemo(
     () => ({
-      find: (c: string) => findRef(m, c),
+      find: (c: string) => (m ? findRef(m, c) : null),
       url: (f: string) => `/p/${encodeURIComponent(slug)}/f/${encodeURIComponent(f)}`,
       size: () => undefined,
     }),
     [m, slug],
   )
+}
+
+/** The item's menu: under the button on the desktop (one field's choices from its chip), a sheet on the phone. */
+export function openItemMenu(app: ReturnType<typeof useApp>, desk: boolean, n: number, arm: 's' | 'p' | 't' | null, from: Element | null) {
+  if (desk) app.sheets.openFrom(from, 'menu-desk', { n, arm }, { focus: false, narrow: !!arm })
+  else app.sheets.open('menu', { n, arm }, { focus: false })
 }
 
 export function ItemPageContainer({ it, m, slug, tab, desk }: { it: Item; m: ProjectModel; slug: string; tab: Tab; desk: boolean }) {
@@ -117,7 +123,7 @@ export function ItemPageContainer({ it, m, slug, tab, desk }: { it: Item; m: Pro
         if (v) app.nav.closeItem()
       } else void app.items.change(n, field, v)
     },
-    menu: () => {},
+    menu: (arm, from) => openItemMenu(app, desk, n, arm, from),
     sources: () => {},
     goto,
     doc: () => {},

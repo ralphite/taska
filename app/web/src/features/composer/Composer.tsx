@@ -37,6 +37,8 @@ export interface ComposerProps {
   /** the voice button's tip (desktop) */
   micTip: string
   files?: ReactNode
+  /** files wait in the draft: Send shows, as words do */
+  hasFiles?: boolean
   /** the box's element, for the layout to measure */
   boxRef?: RefObject<HTMLDivElement | null>
   /** where you write, for the keys (R replies) */
@@ -51,11 +53,11 @@ export interface ComposerProps {
 
 const BTN_ICON = 'size-6 lg:size-5'
 
-export function Composer({ line, lineOnComposePage, placeholder, sendWord, text, desk, composePage, micTip, files, boxRef, fieldRef, on }: ComposerProps) {
+export function Composer({ line, lineOnComposePage, placeholder, sendWord, text, desk, composePage, micTip, files, hasFiles = false, boxRef, fieldRef, on }: ComposerProps) {
   const area = useRef<HTMLTextAreaElement | null>(null)
   const box = useRef<HTMLDivElement | null>(null)
   const picker = useRef<HTMLInputElement>(null)
-  const has = !!text.trim()
+  const has = !!text.trim() || hasFiles
   useLayoutEffect(() => {
     const t = area.current
     const b = box.current

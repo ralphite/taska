@@ -10,28 +10,36 @@ import { createDataStore, type DataStore } from '../stores/data'
 import { createFeedbackStore, type FeedbackStore } from '../stores/feedback'
 import { createOutboxStore, keptOutgoing, type OutboxStore } from '../stores/outbox'
 import { createRouteStore, type History, type RouteStore } from '../stores/route'
-import type { KeyValueStore } from '../stores/storage'
+import { memoryStore, type KeyValueStore } from '../stores/storage'
+import { createBoxStore, type BoxStore } from '../stores/box'
+import { createDraftsStore, type DraftsStore } from '../stores/drafts'
 import { createItemViewStore, type ItemViewStore } from '../stores/itemView'
 import { createSearchStore, type SearchStore } from '../stores/search'
+import { createSheetStore, type SheetStore } from '../stores/sheet'
 import { createUiStore, type UiStore } from '../stores/ui'
 import { noCache, type CopyCache } from '../sync/cache'
 import { ProjectSync, type Presence } from '../sync/projectSync'
-import { ChangeRunner } from './changeRunner'
+import { ChangeRunner, newId } from './changeRunner'
+import { InputActions } from './inputActions'
 import { InputSender } from './inputSender'
 import { ItemActions } from './itemActions'
 import { Navigation } from './navigation'
 import { ListHold } from './listHold'
 import { Answers } from './answers'
+import { Box } from './box'
 import { CrossSearch } from './crossSearch'
 import { Fields } from './fields'
 import { ListOrder } from './listOrder'
 import { RowSizes } from './rowSizes'
+import { Sheets } from './sheets'
 import { Seen } from '../stores/seen'
 import { Toasts } from './toasts'
 
 export interface AppEnv {
   http?: Http
   kv: KeyValueStore
+  /** this tab's own store (what a reload of this tab keeps) */
+  session?: KeyValueStore
   history: History
   presence: Presence
   cache?: CopyCache
@@ -49,6 +57,9 @@ export interface App {
     ui: UiStore
     itemView: ItemViewStore
     search: SearchStore
+    drafts: DraftsStore
+    box: BoxStore
+    sheet: SheetStore
     route: RouteStore
   }
   toasts: Toasts
@@ -67,6 +78,12 @@ export interface App {
   answers: Answers
   /** the places the keys reach (the search, the box, the talk), given by ref */
   fields: Fields
+  /** what you do to something you said */
+  inputActions: InputActions
+  /** the box: its drafts, files, sending */
+  box: Box
+  /** what floats over the page: sheets and menus */
+  sheets: Sheets
   desk(): boolean
   runner: ChangeRunner
   /** the project the page shows now, with your pending changes over it */
@@ -94,6 +111,11 @@ export function createApp(env: AppEnv): App {
   const listOrder = new ListOrder()
   const itemView = createItemViewStore(env.kv)
   const search = createSearchStore()
+  const drafts = createDraftsStore(env.kv)
+  const boxStore = createBoxStore(env.session ?? memoryStore())
+  const sheetStore = createSheetStore()
+  const sheets = new Sheets(sheetStore, route, env.desk)
+  const unsheet = route.subscribe(() => sheets.gone()) // Back closed it
   let sync: ProjectSync | null = null
   let projectsTimer = 0
 
@@ -109,7 +131,7 @@ export function createApp(env: AppEnv): App {
     const hit = memo.get(slug)
     if (hit && hit.copy === copy && hit.pending === pending) return hit.model
     const mine = pending.filter((c) => c.slug === slug)
-    const m = project(copy, mine.flatMap((c) => c.patches), Math.max(copy.at, ...mine.map((c) => c.t)))
+    const m = project(copy, mine.flatMap((c) => c.patches), Math.max(copy.at, ...mine.map((c) => c.t)), mine.flatMap((c) => c.inputPatches || []))
     memo.set(slug, { copy, pending, model: m })
     return m
   }
@@ -132,7 +154,10 @@ export function createApp(env: AppEnv): App {
     changes: take,
     stale,
     sent: (o, rid) => {
-      if (o.slug === currentSlug()) ui.getState().setLastSent(o.quiet || o.unsent ? null : { slug: o.slug, rid })
+      // taken back while on its way: once Taska has it, it is deleted there behind you
+      if (rid) boxStore.getState().sentAs(o.q, rid)
+      if (o.unsent && rid) void runner.send({ id: newId(), slug: o.slug, commands: [{ op: 'delete', id: rid }], patches: [], said: `taking back ${rid}`, t: Date.now() })
+      if (o.slug === currentSlug()) ui.getState().setLastSent(o.quiet || o.unsent ? null : { slug: o.slug, rid, q: o.q })
     },
     refused: (_o, why) => toasts.show(why ? `err: ${why}` : 'Not saved', null),
     log: () => {},
@@ -175,6 +200,8 @@ export function createApp(env: AppEnv): App {
     sync?.close()
     ui.getState().reset()
     itemView.getState().show(slug)
+    boxStore.getState().show(slug)
+    drafts.getState().reload(slug)
     sync = new ProjectSync(slug, api, env.cache ?? noCache, {
       copy: (s, copy) => data.getState().setCopy(s, copy),
       reach: (s, away) => {
@@ -216,7 +243,7 @@ export function createApp(env: AppEnv): App {
 
   return {
     api,
-    stores: { data, changes, outbox, feedback, ui, itemView, search, route },
+    stores: { data, changes, outbox, feedback, ui, itemView, search, drafts, box: boxStore, sheet: sheetStore, route },
     toasts,
     items,
     inputs,
@@ -228,6 +255,9 @@ export function createApp(env: AppEnv): App {
     crossSearch: new CrossSearch(api, search),
     answers: new Answers({ inputs, view: itemView, outbox }),
     fields: new Fields(),
+    inputActions: new InputActions(runner),
+    box: new Box({ api, store: boxStore, drafts, outbox, inputs, runner, toasts }),
+    sheets,
     desk: env.desk,
     runner,
     model,
@@ -238,6 +268,7 @@ export function createApp(env: AppEnv): App {
       clearInterval(projectsTimer)
       unwatch()
       unlisten()
+      unsheet()
     },
   }
 }

@@ -80,7 +80,7 @@ export function visible(items: readonly Item[], tab: Tab, list: ListQuery): Item
     .sort(order)
 }
 
-export const inputMatch = (r: Input, words: string[]) => words.every((w) => (r.id + ' ' + r.text).toLowerCase().includes(w))
+export const inputMatch = (r: Input, words: readonly string[]) => words.every((w) => (r.id + ' ' + r.text).toLowerCase().includes(w))
 
 /** Not finished, on Items. */
 export const openCount = (items: readonly Item[]) => items.filter((it) => !it.mergedInto && inTab(it, 'items') && !closed(it.status)).length

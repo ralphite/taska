@@ -25,7 +25,7 @@ export function PaneFrame({
   nav?: ReactNode
   menu?: boolean
   onBack(): void
-  onMenu?(): void
+  onMenu?(from: Element): void
   /** the pane's element, for the layout (what floats over the page shows over the pane you acted in) */
   paneRef?: Ref<HTMLElement>
   /** it shows an item in its two parts (they scroll, not the body) */
@@ -48,7 +48,7 @@ export function PaneFrame({
           hidden={!menu}
           aria-label="Item actions"
           title="All actions · ."
-          onClick={onMenu}
+          onClick={(e) => onMenu?.(e.currentTarget)}
           className="grid size-11 shrink-0 place-items-center rounded-full text-zinc-600 data-pressed:bg-zinc-100 lg:size-9 lg:rounded-lg lg:hover:bg-zinc-100 dark:text-zinc-400 dark:data-pressed:bg-zinc-800 dark:lg:hover:bg-zinc-800"
         >
           <Icon n="more" c="size-6 lg:size-5" />

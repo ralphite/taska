@@ -23,9 +23,12 @@ export interface UiState {
   heldFor: string
   selected: ReadonlySet<number>
   sideHidden: boolean
+  /** long inputs opened whole (More) */
+  openedInputs: ReadonlySet<string>
+  toggleInput(id: string): void
   /** the input you sent last from this page, for the line over the box */
-  lastSent: { slug: string; rid: string } | null
-  setLastSent(x: { slug: string; rid: string } | null): void
+  lastSent: { slug: string; rid: string; q?: string } | null
+  setLastSent(x: { slug: string; rid: string; q?: string } | null): void
   toggleFold(n: number): void
   unfold(n: number): void
   toggleSubMore(n: number): void
@@ -57,6 +60,8 @@ export function createUiStore(kv: KeyValueStore): UiStore {
     heldFor: '',
     selected: new Set(),
     sideHidden: !!kv.get('taska.sideHidden'),
+    openedInputs: new Set(),
+    toggleInput: (id) => set((s) => ({ openedInputs: flip(s.openedInputs, id) })),
     lastSent: null,
     setLastSent: (lastSent) => set({ lastSent }),
     toggleFold: (n) => set((s) => ({ folded: flip(s.folded, n) })),

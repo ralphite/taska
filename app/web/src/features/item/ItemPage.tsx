@@ -20,7 +20,7 @@ import type { TalkEnv } from './talkEnv'
 
 export interface ItemEvents extends TalkLineEvents {
   /** the item's menu, or one of its fields' (status, priority, type) */
-  menu(arm?: 's' | 'p' | 't'): void
+  menu(arm: 's' | 'p' | 't' | null, from: Element): void
   set(f: 'when' | 'archived' | 'status', v: string | boolean): void
   sources(): void
   goto(n: number): void
@@ -58,7 +58,7 @@ function Chips({ it, f, on }: { it: Item; f: ItemFacts; on: ItemEvents }) {
     <>
       <button
         title="Status · S"
-        onClick={() => on.menu('s')}
+        onClick={(e) => on.menu('s', e.currentTarget)}
         className={`${CHIP} min-w-32 shrink-0 ${shown.s === 'wait' ? `font-semibold ${NEED.answer.text}` : 'text-zinc-700 dark:text-zinc-200'}`}
       >
         <StateIcon {...shown} cls="size-3.5" />
@@ -68,7 +68,7 @@ function Chips({ it, f, on }: { it: Item; f: ItemFacts; on: ItemEvents }) {
       {it.type === 'rule' ? null : (
         <button
           title="Priority · P"
-          onClick={() => on.menu('p')}
+          onClick={(e) => on.menu('p', e.currentTarget)}
           className={`${CHIP} shrink-0 ${it.pri === 'P0' ? 'font-semibold text-red-600 dark:text-red-400' : 'font-semibold text-zinc-700 dark:text-zinc-200'}`}
         >
           {it.pri}
@@ -76,7 +76,7 @@ function Chips({ it, f, on }: { it: Item; f: ItemFacts; on: ItemEvents }) {
         </button>
       )}
       {it.type === 'rule' ? null : (
-        <button title="Type · T" onClick={() => on.menu('t')} className={`${CHIP} shrink-0 text-zinc-700 dark:text-zinc-200`}>
+        <button title="Type · T" onClick={(e) => on.menu('t', e.currentTarget)} className={`${CHIP} shrink-0 text-zinc-700 dark:text-zinc-200`}>
           {it.type[0].toUpperCase() + it.type.slice(1)}
           {caret}
         </button>

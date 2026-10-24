@@ -9,11 +9,8 @@ import { agoShort } from '../../model/agents'
 import { closed, excerpt, lastAgentMessage, queueHead } from '../../model/items'
 import { codeOf, filesOf, type ProjectModel } from '../../model/project'
 import type { Item } from '../../model/types'
-import { hay, inTab, inputMatch, searchWords } from '../../model/visible'
-import { TABS, type Tab } from '../../model/words'
-import { toneOf } from '../../ui/tones'
-import { useSideProjects } from '../sidebar/SidebarContainer'
-import { SearchHints } from './SearchHints'
+import { searchWords } from '../../model/visible'
+import { useSearchHints } from './SearchHintsContainer'
 import { QUIET_MS } from '../../model/words'
 import { unreadSince } from '../../stores/seen'
 import { EmptyList, ItemList, type DrawnRow, type ListEvents } from './ItemList'
@@ -140,29 +137,7 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
     ownView: () => {},
   }
 
-  // under a search: the other tabs' matches, and the other projects'
-  const q = words.join(' ')
-  useLayoutEffect(() => app.crossSearch.want(q, route.slug), [app, q, route.slug])
-  const cross = useStoreValue(app.stores.search, (s) => s)
-  const { tones } = useSideProjects(route.slug)
-  const hints = (shown: number) => {
-    if (!words.length || !m) return null
-    const other =
-      shown >= 5
-        ? []
-        : TABS.filter((t) => t !== route.tab)
-            .map((t): [Tab, number] => [t, t === 'inputs' ? m.inputs.filter((r) => inputMatch(r, words)).length : m.items.filter((it) => !it.mergedInto && inTab(it, t) && words.every((w) => hay(it).includes(w))).length])
-            .filter(([, k]) => k)
-    return (
-      <SearchHints
-        other={other}
-        cross={cross.q === q ? cross : null}
-        tone={(slug) => toneOf(tones, slug)}
-        onShow={(t) => app.nav.tab(t)}
-        onGo={(href) => app.nav.to(href)}
-      />
-    )
-  }
+  const hints = useSearchHints(route, m, words)
   const shownRows = drawn.filter((r) => r.kind === 'item' || r.kind === 'needs' || r.kind === 'held').length
 
   const empty =

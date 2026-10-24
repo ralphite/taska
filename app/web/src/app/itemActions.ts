@@ -114,6 +114,31 @@ export class ItemActions {
     })
     return saved
   }
+
+  /** With its subitems, to Deleted; Undo (or Restore in Deleted) brings them back. Gone at once. */
+  remove(n: number): Promise<boolean> {
+    const m = this.d.model()
+    if (!m || !m.byN.has(n)) return Promise.resolve(false)
+    const slug = this.d.slug()
+    const ref = codeOf(m, n)
+    const tree: number[] = []
+    for (let k = [n]; k.length; k = k.flatMap((x) => (m.kids.get(x) || []).map((it) => it.n))) tree.push(...k)
+    const saved = this.d.runner.send({ id: newId(), slug, commands: [{ op: 'idel', ref }], patches: tree.map((k) => ({ n: k, f: {}, gone: true })), said: `deleting ${ref}`, t: Date.now() })
+    const undo = this.d.toasts.undoable(`${ref} deleted`, async () => {
+      const ok = await this.d.runner.send({ id: newId(), slug, commands: [{ op: 'iundel', ref }], patches: [], said: `restoring ${ref}`, t: Date.now() })
+      if (ok) this.d.toasts.show(`${ref} is back`)
+      return ok
+    })
+    this.d.toasts.show(`Deleted ${ref}`, undo)
+    return saved
+  }
+
+  /** First of its priority in the agents' queue, or back where it was. */
+  doNext(n: number): Promise<boolean> {
+    const it = this.d.model()?.byN.get(n)
+    if (!it) return Promise.resolve(false)
+    return this.change(n, 'rank', it.rank == null ? -Math.round(Date.now() / 1000) : null)
+  }
 }
 
 const lastAgentId = (it: Item) => [...it.thread].reverse().find((m) => !(m.by === 'you' || (m.by === 'org' && ['say', 'decide', 'propose'].includes(m.kind) && !!m.src)))?.id ?? null

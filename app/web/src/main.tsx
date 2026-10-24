@@ -12,6 +12,7 @@ import { browserStore } from './stores/storage'
 
 const app = createApp({
   kv: browserStore(),
+  session: browserStore('session'),
   history: browserHistory(),
   presence: windowPresence,
   cache: new BrowserCopyCache(),

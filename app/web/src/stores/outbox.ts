@@ -10,6 +10,10 @@ export interface OutFile extends FileRef {
   /** still being uploaded */
   uploading?: boolean
   failed?: boolean
+  /** a picture's look before it is up (this page only) */
+  preview?: string
+  /** the page's own id for it while it goes up */
+  key?: string
 }
 
 export interface Outgoing {
@@ -38,6 +42,8 @@ export interface OutboxState {
   list: Outgoing[]
   push(o: Outgoing): void
   update(q: string, f: Partial<Outgoing>): void
+  /** one of the files on their way is up (or failed) */
+  updateFile(fileKey: string, patch: Partial<OutFile>): void
   remove(q: string): void
 }
 
@@ -74,6 +80,17 @@ export function createOutboxStore(kv: KeyValueStore): OutboxStore {
     push: (o) => {
       set((s) => ({ list: [...s.list, o] }))
       keep(o.slug, get().list)
+    },
+    updateFile: (fileKey, patch) => {
+      const touched = new Set<string>()
+      set((s) => ({
+        list: s.list.map((o) => {
+          if (!o.files.some((x) => x.key === fileKey)) return o
+          touched.add(o.slug)
+          return { ...o, files: o.files.map((x) => (x.key === fileKey ? { ...x, ...patch } : x)) }
+        }),
+      }))
+      for (const slug of touched) keep(slug, get().list)
     },
     update: (q, f) => {
       const o = get().list.find((x) => x.q === q)

@@ -42,6 +42,8 @@ export interface ItemPatch {
   n: number
   f: Partial<Item>
   add?: Item
+  /** gone at once (deleted, moved to another project) */
+  gone?: boolean
 }
 
 /** Stand-in numbers start here, above any real one, growing with time: a stand-in sorts after its older siblings. */
@@ -73,11 +75,18 @@ export interface ProjectModel {
 }
 
 /** The page's view: the server's copy with your pending changes over it. */
-export function project(copy: ServerCopy, patches: readonly ItemPatch[] = [], at = copy.at): ProjectModel {
+/** A change to an input shown before the server has it (an edit, details added). */
+export interface InputPatch {
+  id: string
+  f: Partial<Input>
+}
+
+export function project(copy: ServerCopy, patches: readonly ItemPatch[] = [], at = copy.at, inputPatches: readonly InputPatch[] = []): ProjectModel {
   const byN = new Map(copy.items)
   for (const p of patches) {
     const it = byN.get(p.n)
-    if (it) byN.set(p.n, patched(it, p.f))
+    if (p.gone) byN.delete(p.n)
+    else if (it) byN.set(p.n, patched(it, p.f))
     else if (p.add) byN.set(p.n, p.add)
   }
   const items = [...byN.values()]
@@ -88,13 +97,22 @@ export function project(copy: ServerCopy, patches: readonly ItemPatch[] = [], at
       if (list) list.push(it)
       else kids.set(it.parent, [it])
     }
-  const inputs = [...copy.inputs.values()]
+  let byId: ReadonlyMap<string, Input> = copy.inputs
+  if (inputPatches.length) {
+    const m = new Map(copy.inputs)
+    for (const p of inputPatches) {
+      const r = m.get(p.id)
+      if (r) m.set(p.id, { ...r, ...p.f })
+    }
+    byId = m
+  }
+  const inputs = [...byId.values()]
   return {
     items,
     byN,
     kids,
     inputs,
-    byId: copy.inputs,
+    byId,
     docs: [...copy.docs.values()],
     facts: copy.facts,
     width: copy.facts.width,

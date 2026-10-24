@@ -9,9 +9,11 @@ export interface KeyValueStore {
   keys(): string[]
 }
 
-export function browserStore(): KeyValueStore {
+/** `session`: this tab's own store (sessionStorage), gone when the tab closes. */
+export function browserStore(kind: 'local' | 'session' = 'local'): KeyValueStore {
   const ls = (): Storage | null => {
     try {
+      if (kind === 'session') return typeof sessionStorage === 'undefined' ? null : sessionStorage
       return typeof localStorage === 'undefined' ? null : localStorage
     } catch {
       return null

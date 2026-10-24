@@ -5,6 +5,7 @@ import { useEffect } from 'react'
 import { useApp, LayoutProvider, useWindowLayout } from './context'
 import { useRoute } from './hooks'
 import { ProjectPageContainer } from '../features/project/ProjectPageContainer'
+import { SheetContainer } from '../features/sheets/SheetContainer'
 import { pageKeys } from './keys'
 import { Tooltip } from './Tooltip'
 import { PanesProvider } from './panes'
@@ -28,6 +29,7 @@ export function App() {
         <div data-layout={layout} className="@container/frame h-dvh w-full">
           {route.page === 'project' ? <ProjectPageContainer route={route} /> : <div className="p-8 text-sm text-zinc-500">Taska</div>}
         </div>
+        <SheetContainer />
         <Tooltip />
       </PanesProvider>
     </LayoutProvider>

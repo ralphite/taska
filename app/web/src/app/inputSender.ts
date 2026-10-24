@@ -77,10 +77,11 @@ export class InputSender {
           const rid = (a.results[0] || '').split(' ')[1] || ''
           if (o.tries || o.back)
             this.on.log('sent late', `${o.q} (${o.slug}) in after ${Math.round((Date.now() - o.t) / 1000)} s, ${o.tries} failed tries${o.back ? ', after a reload' : ''}`)
+          const now = this.store.getState().list.find((x) => x.q === o.q) ?? o // taken back while on its way?
           this.store.getState().remove(o.q)
           if (a.changes) this.on.changes(o.slug, a.changes)
           else this.on.stale(o.slug)
-          this.on.sent(o, rid)
+          this.on.sent(now, rid)
         } catch (ex) {
           const net = ex instanceof Unreachable
           const tries = o.tries + 1

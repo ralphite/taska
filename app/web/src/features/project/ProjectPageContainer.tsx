@@ -15,6 +15,7 @@ import { ToastContainer } from '../feedback/ToastContainer'
 import { ItemListContainer } from '../list/ItemListContainer'
 import { SidebarContainer, useSideProjects } from '../sidebar/SidebarContainer'
 import { codeOf } from '../../model/project'
+import { InputsContainer } from '../inputs/InputsContainer'
 import { DetailContainer } from './DetailContainer'
 import { ListHead, PhoneTabs, ProjectBar, type AgentInfo, type TabInfo } from './Header'
 
@@ -216,6 +217,7 @@ function PhoneLayout({ route }: { route: ProjectRoute }) {
         <section className="flex min-h-0 flex-1 flex-col" hidden={!under || route.tab === 'inputs'}>
           <ItemListContainer route={route} />
         </section>
+        <InputsContainer route={route} hidden={!under || route.tab !== 'inputs'} />
         <DetailContainer route={route} place="" hidden={!open} />
         <FootContainer route={route} composePage={false} place="" hidden={settings} onHeight={setFootH} />
       </div>
