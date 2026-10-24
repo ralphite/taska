@@ -6,11 +6,13 @@
 import { createStore, type StoreApi } from 'zustand/vanilla'
 import type { OutFile } from './outbox'
 import type { Doubt } from '../model/types'
+import type { VcMark } from '../model/voiceComments'
 import type { KeyValueStore } from './storage'
 
 export type BoxMode =
   | { kind: 'amend'; id: string; mode: 'edit' | 'append'; v: number }
-  | { kind: 'correct'; id: string; wrong: string }
+  /** words of a voice note's input being corrected (`v`: the input's version); `bySel`: started from a selection */
+  | { kind: 'correct'; id: string; wrong: string; v: number; bySel?: boolean }
   /** a comment of yours on a document, being edited */
   | { kind: 'comment'; d: number; id: number; was: string }
   /** the transcription preferences, being edited (every project's) */
@@ -38,6 +40,8 @@ export interface DraftFile extends OutFile {
   t?: number
   /** a picture or another file kept until it is up: no words to wait for */
   plain?: boolean
+  /** a voice comment: the quote line its words go under */
+  vc?: string
 }
 
 export interface JustSent {
@@ -62,6 +66,9 @@ export interface BoxState {
   /** the phone: the words show in the box with the versions of misheard words to pick from */
   showWords: boolean
   setShowWords(on: boolean): void
+  /** what each quote line of a voice comment is about */
+  marks: readonly VcMark[]
+  setMarks(m: readonly VcMark[]): void
   show(slug: string): void
   setMode(m: BoxMode): void
   addFile(key: string, f: DraftFile): void
@@ -107,6 +114,8 @@ export function createBoxStore(session: KeyValueStore): BoxStore {
       shown: { key: 'new', scope: null },
       showWords: false,
       setShowWords: (showWords) => set({ showWords }),
+      marks: [],
+      setMarks: (marks) => set({ marks }),
       setShown: (key, scope) => {
         const was = get().shown
         if (was.key !== key || was.scope !== scope) set({ shown: { key, scope } })

@@ -4,6 +4,7 @@
 
 import type { ReactNode } from 'react'
 import { oneLine } from '../../model/items'
+import { voiceMark } from '../../model/inputs'
 import { hasChoices, plainQuote } from '../../model/markdown'
 import { answerOf, readMark, versions, withdrawn, type Version } from '../../model/talk'
 import { when } from '../../model/time'
@@ -120,7 +121,7 @@ function MsgView({ it, x, env, on, facts, docs, code, done, ver, gone, read }: {
     return (
       <div className={`group flex scroll-mb-4 flex-col items-end gap-1 rounded-2xl transition-colors duration-700 ${ver?.old ? 'opacity-60' : ''}`}>
         {y.text ? (
-          <div className={YOU_BUBBLE}>
+          <div {...voiceMark(src)} className={YOU_BUBBLE}>
             {ver?.old ? (
               <div className="line-clamp-2">
                 <MsgText x={y} env={env} on={on} />

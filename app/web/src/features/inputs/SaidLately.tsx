@@ -2,7 +2,7 @@
 // it stands and what became of it; what is still on its way on top. A search of its own. Props only.
 
 import { Fragment, useEffect, useRef, type ReactNode } from 'react'
-import type { InputStanding } from '../../model/inputs'
+import { voiceMark, type InputStanding } from '../../model/inputs'
 import type { FileRef, Input, ItemType } from '../../model/types'
 import { DraftMark, Hit } from '../../ui/bits'
 import { Icon, StateIcon } from '../../ui/Icon'
@@ -156,7 +156,7 @@ function SaidRow({ x, words, files, on }: { x: SaidInput; words: string[]; files
       body={
         <>
           {r.text ? (
-            <p className={`whitespace-pre-line ${x.opened ? '' : 'line-clamp-3'} break-words`} onClick={() => on.more(r.id)}>
+            <p {...voiceMark(r)} className={`whitespace-pre-line ${x.opened ? '' : 'line-clamp-3'} break-words`} onClick={() => on.more(r.id)}>
               <Hit text={r.text} words={words} />
             </p>
           ) : null}

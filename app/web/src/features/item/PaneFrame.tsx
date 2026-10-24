@@ -64,6 +64,7 @@ export function PaneFrame({
       </header>
       <div
         {...(split ? { 'data-split': '' } : {})}
+        data-vc-area
         className="-mb-(--foot-h) min-h-0 flex-1 overflow-y-auto overscroll-contain pb-[calc(var(--foot-h,0px)+1.5rem)] lg:scrollbar-gutter-both lg:mask-b-from-[calc(100%-2rem)] lg:group-data-duo/app:pb-0 lg:group-data-[compose]/app:hidden lg:hover:scrollbar-thumb-zinc-500/80 lg:data-split:mask-none lg:data-split:pb-(--foot-h) dark:lg:hover:scrollbar-thumb-zinc-400/70 dark:lg:data-split:pb-[calc(var(--foot-h,0px)+1.5rem)]"
       >
         {children}

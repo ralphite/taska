@@ -54,6 +54,7 @@ export function SheetLayout({ menu, title, head, extra, sub, foot, body }: Sheet
       </div>
       <div
         ref={bodyRef}
+        data-vc-area
         className={`min-h-0 flex-1 overflow-y-auto px-4 pt-2 lg:scrollbar-thin lg:overscroll-contain lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70 ${foot ? 'pb-3' : 'pb-[max(1.25rem,env(safe-area-inset-bottom))]'}`}
       >
         {body}

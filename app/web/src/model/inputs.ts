@@ -63,3 +63,6 @@ export function dayOf(t: string, now = new Date()): string {
 }
 
 export const timeOf = (t: string) => new Date(t).toTimeString().slice(0, 5)
+
+/** The words of a voice note's input can be selected to correct them: their element says whose they are. */
+export const voiceMark = (r: { id: string; files?: readonly { mime?: string }[] } | null | undefined): { 'data-voice'?: string } => (r?.files?.some((f) => (f.mime || '').startsWith('audio/')) ? { 'data-voice': r.id } : {})

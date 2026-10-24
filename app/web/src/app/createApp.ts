@@ -38,6 +38,7 @@ import { Notices } from './notices'
 import { Voice } from './voice'
 import { VoiceWords } from './voiceWords'
 import { KeptNotes } from './keptNotes'
+import { DocVoice } from './docVoice'
 import { memoryVault, type NoteVault } from '../stores/noteVault'
 import { draftName } from '../model/words'
 import { createRecordingStore, type RecordingStore } from '../stores/recording'
@@ -127,6 +128,7 @@ export interface App {
   notices: Notices
   voice: Voice
   voiceWords: VoiceWords
+  docVoice: DocVoice
   refreshProjects(): Promise<boolean>
   stop(): void
 }
@@ -263,7 +265,7 @@ export function createApp(env: AppEnv): App {
     title: (slug) => data.getState().projects?.find((p) => p.name === slug)?.title || slug,
     go: (url) => route.getState().go(url, true),
   })
-  const box = new Box({ api, store: boxStore, drafts, outbox, inputs, runner, toasts, keep: (blob) => keep(blob), recording: () => !!recording.getState().rec, goDraft: (key) => goDraft(key) })
+  const box = new Box({ api, store: boxStore, drafts, outbox, inputs, runner, toasts, keep: (blob) => keep(blob), recording: () => !!recording.getState().rec, goDraft: (key) => goDraft(key), model })
   const activity = new Activity({ api, store: activityStore, toasts })
   const restores = new Restores({ runner, toasts, inputs: inputActions, model })
   docs = new Docs({ runner, toasts, view: docView, nav, route, sheets, fields, desk: env.desk, model, box, boxStore, kv: env.kv, ticks: docTicks, inputs })
@@ -283,6 +285,8 @@ export function createApp(env: AppEnv): App {
     desk: env.desk,
     // what the draft holds goes to what it writes to (an item's draft: a reply to it; a new input's: a new input)
     send: (slug, key) => {
+      const dm = /^doc (\d+)$/.exec(key)
+      if (dm) return void docVoice.send(slug, Number(dm[1]), key) // a document's box: its voice comments, or a comment
       const scope = /^[A-Z]\d+$/.test(key) ? key : null
       if (key === boxKeyNow()) void box.send(slug, model(slug), scope)
       else {
@@ -293,7 +297,10 @@ export function createApp(env: AppEnv): App {
     boxKey: () => boxKeyNow(),
     flush: () => void inputs.flush(),
     keep: (blob) => keep(blob),
+    goDraft: (key) => goDraft(key),
+    about: (a) => docVoice.about(a.d, a.key, a.quote),
   })
+  const docVoice = new DocVoice({ voice, docs, box, boxStore, recording, view: docView, runner, changes, toasts, model, desk: env.desk, reply: (slug, key, scope) => void box.send(slug, model(slug), scope, key) })
   const keptNotes = new KeptNotes({
     vault: env.vault ?? memoryVault(),
     kv: env.kv,
@@ -419,6 +426,7 @@ export function createApp(env: AppEnv): App {
     notices,
     voice,
     voiceWords,
+    docVoice,
     refreshProjects,
     stop: () => {
       projects.stop()

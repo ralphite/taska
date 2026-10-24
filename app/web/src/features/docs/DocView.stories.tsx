@@ -23,7 +23,7 @@ const view = (l: DocLook, height = 900) => (
   <Frames height={height} deskWidth={820} phoneWidth={393}>
     {(layout) => (
       <div className={layout === 'desk' ? 'h-full overflow-y-auto px-8 pt-8 pb-12' : 'h-full overflow-y-auto px-4 pt-2'}>
-        <DocView facts={factsOf(m, d, l, seen, layout === 'desk', {}, false, { mine: {}, going: {}, open: new Set() })} env={env(layout === 'desk')} on={on} />
+        <DocView facts={factsOf(m, d, l, seen, layout === 'desk', {}, null, { mine: {}, going: {}, open: new Set() })} env={env(layout === 'desk')} on={on} />
       </div>
     )}
   </Frames>

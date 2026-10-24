@@ -10,7 +10,8 @@ import { oneLine, shownStatus } from '../../model/items'
 import { codeOf, inputDraft, liveN, type ProjectModel } from '../../model/project'
 import { inputMatch } from '../../model/visible'
 import type { Input } from '../../model/types'
-import { inputCode, plural } from '../../model/words'
+import { draftName, inputCode, plural } from '../../model/words'
+import { vcCount } from '../../model/voiceComments'
 import type { BoxMode } from '../../stores/box'
 import type { DocViewState } from '../../stores/docView'
 import { docTarget, type DocTarget } from '../../model/docs'
@@ -93,6 +94,11 @@ function boxRole(m: ProjectModel | null, route: ProjectRoute, desk: boolean, tit
     const line: BoxLine = { icon: 'pencil', label: 'Edit transcription preferences', detail: '· every project', right: xButton('Stop editing', stop) }
     return { ...none, key: 'prefs', scope: null, doc: null, line, placeholder: 'How should voice notes be transcribed?', send: 'Save' }
   }
+  if (mode?.kind === 'correct') {
+    // the line says before and after as you type (the container adds what you typed)
+    const line: BoxLine = { icon: 'pencil', label: `Correct \u201c${mode.wrong}\u201d`, detail: `in ${inputCode(mode.id)} \u00b7 remembered for every project`, right: xButton('Stop correcting', stop) }
+    return { ...none, key: `correct ${mode.id}`, scope: null, doc: null, line, placeholder: 'Write\u2026', send: 'Save' }
+  }
   if (mode?.kind === 'comment') {
     const was = oneLine(mode.was)
     const line: BoxLine = { icon: 'pencil', label: `Edit your comment on D${mode.d}`, detail: was ? `\u201c${was.slice(0, 120)}\u201d` : '', right: xButton('Stop editing', stop) }
@@ -131,7 +137,7 @@ function boxRole(m: ProjectModel | null, route: ProjectRoute, desk: boolean, tit
     const host = m ? liveN(m, docOf.n) : null
     const reply = desk && host != null && m ? codeOf(m, host) : null
     return reply
-      ? { ...none, key: reply, scope: reply, doc: null, line, placeholder: `Reply to ${reply}…`, send: 'Send' }
+      ? { ...none, key: `doc ${docOf.d}`, scope: reply, doc: docOf.d, line, placeholder: `Reply to ${reply}…`, send: 'Send' }
       : { aim: { d: docOf.d, target: { key: 'doc', quote: '' } } as DocAim, key: `doc ${docOf.d}`, scope: null, doc: docOf.d, line, placeholder: `Comment on D${docOf.d}…`, send: 'Comment' }
   }
   if (docOf && !desk && !mode) {
@@ -176,7 +182,8 @@ function boxRole(m: ProjectModel | null, route: ProjectRoute, desk: boolean, tit
     }
     return { ...none, key: `${mode.mode} ${mode.id}`, scope: open && m ? codeOf(m, open.n) : null, doc: null, line, placeholder: 'Write…', send: 'Save' }
   }
-  if (open && m) return { ...none, key: codeOf(m, open.n), scope: codeOf(m, open.n), doc: null, line: null as BoxLine | null, placeholder: `Reply to ${codeOf(m, open.n)}…`, send: 'Send' }
+  // a document open, nothing picked (the desktop): a reply to its item, written in the document's own draft
+  if (open && m) return { ...none, key: docOf ? `doc ${docOf.d}` : codeOf(m, open.n), scope: codeOf(m, open.n), doc: docOf ? docOf.d : null, line: null as BoxLine | null, placeholder: `Reply to ${codeOf(m, open.n)}…`, send: 'Send' }
   const line: BoxLine | null = desk ? { icon: 'newinput', label: 'New input', detail: `· ${files}` } : null
   return { ...none, key: 'new', scope: null, doc: null, line, placeholder: m ? `Write to ${title}…` : 'Write anything…', send: 'Send' }
 }
@@ -238,10 +245,15 @@ export function FootContainer({ route, place, hidden, composePage, onHeight, bar
     if (!bare) app.stores.box.getState().setShown(key, role.scope)
   }, [app, key, role.scope, bare])
   const recording = useStoreValue(app.stores.recording, (s) => s.rec)
-  // the recording shows in the box it was started in
-  const rec = recording && recording.slug === route.slug && recording.key === key ? { time: clock(recording.ms), levels: recording.levels, from: recording.from } : null
+  // the recording shows in the box wherever you are; it goes to the draft it was started in
+  const rec = recording && recording.slug === route.slug ? { time: clock(recording.ms), levels: recording.levels, from: recording.from } : null
   const drafts = useStoreValue(app.stores.drafts, (s) => s.bySlug[route.slug]) || EMPTY
   const text = drafts[key] ?? ''
+  // voice comments in a document's box: Send posts each beside its paragraph
+  const vcN = role.doc != null && !mode ? vcCount(text) : 0
+  const told = vcN ? { line: { icon: 'comment', label: `${plural(vcN, 'comment')} on D${role.doc} not sent`, detail: '\u00b7 Send posts each beside its paragraph' } as BoxLine, placeholder: role.aim ? 'Write\u2026' : 'Add to the comments\u2026', send: vcN > 1 ? `Post ${vcN} comments` : 'Post the comment' } : role
+  const right = mode?.kind === 'correct' ? text.replace(/\s+/g, ' ').trim() : ''
+  const boxLine: BoxLine | null = mode?.kind === 'correct' && told.line && right ? { ...told.line, label: `${told.line.label} \u2192 \u201c${right.slice(0, 60)}\u201d` } : recording && rec && recording.key !== key ? { icon: 'mic', label: `Recording for ${draftName(recording.key)}`, detail: '\u00b7 it goes there when you stop' } : told.line
   const draftFiles = useStoreValue(app.stores.box, (s) => s.files[key])
   const setText = (v: string) => app.box.write(route.slug, key, v)
   const showWords = useStoreValue(app.stores.box, (s) => s.showWords)
@@ -255,8 +267,9 @@ export function FootContainer({ route, place, hidden, composePage, onHeight, bar
   const send = () => {
     if (mode?.kind === 'prefs') return void app.settings.savePrefs(route.slug)
     if (mode?.kind === 'comment') return void app.docs.saveComment(route.slug, mode.d, mode.id, key)
+    if (vcN && role.doc != null) return void app.docVoice.post(route.slug, role.doc, key) // each quote's words, a comment on its passage
     if (role.aim) return void app.docs.comment(route.slug, role.aim.d, role.aim.target, key)
-    void app.box.send(route.slug, m, role.scope)
+    void app.box.send(route.slug, m, role.scope, key)
   }
   const mine = outbox.filter((o) => o.slug === route.slug && !o.unsent)
   const words = useMemo(() => q.trim().toLowerCase().split(/\s+/).filter(Boolean), [q])
@@ -352,9 +365,9 @@ export function FootContainer({ route, place, hidden, composePage, onHeight, bar
   })()
   const composer = (
     <Composer
-      line={role.line}
-      placeholder={role.placeholder}
-      sendWord={role.send}
+      line={boxLine}
+      placeholder={told.placeholder}
+      sendWord={told.send}
       text={text}
       desk={desk}
       composePage={desk && composePage}
@@ -402,7 +415,7 @@ export function FootContainer({ route, place, hidden, composePage, onHeight, bar
       />
       {composer}
       {desk && composePage && said ? (
-        <section aria-label="You said lately" className="mx-auto mt-8 block max-w-[42rem]">
+        <section aria-label="You said lately" data-vc-area className="mx-auto mt-8 block max-w-[42rem]">
           <SaidLately
             count={words.length ? said.all.length : m?.inputs.length || 0}
             total={m?.inputs.length || 0}

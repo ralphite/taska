@@ -5,6 +5,9 @@
 
 import { Refused } from '../api/http'
 import { clock } from '../model/time'
+import { vcLabel, vcLineEnd, withQuote } from '../model/voiceComments'
+import { draftName } from '../model/words'
+import type { Recording } from '../stores/recording'
 import type { TaskaApi } from '../api/taska'
 import type { DraftFile } from '../stores/box'
 import type { BoxStore } from '../stores/box'
@@ -31,6 +34,10 @@ export interface VoiceDeps {
   flush(): void
   /** kept in this browser with its audio until Taska has it: its id there */
   keep(blob: Blob): string
+  /** to the box a draft belongs to */
+  goDraft(key: string): void
+  /** a voice comment stopped: what it is about is what the box comments on now (a document's passage) */
+  about?(a: NonNullable<Recording['about']>): void
 }
 
 
@@ -88,7 +95,7 @@ export class Voice {
   }
 
   /** Record a voice note for draft `key` (it belongs where it was started, whatever is open when it stops). */
-  async start(slug: string, key: string, scope: string | null, from: 'main' | 'aux'): Promise<void> {
+  async start(slug: string, key: string, scope: string | null, from: 'main' | 'aux', about: Recording['about'] = null): Promise<void> {
     if (this.rec) return
     if (!this.can()) return this.d.toasts.show('This browser can’t record voice notes')
     const box = this.d.fields.get('box')
@@ -121,7 +128,7 @@ export class Voice {
     } catch {
       /* no meter: the bars stay even */
     }
-    this.d.store.getState().start({ slug, key, scope, from })
+    this.d.store.getState().start({ slug, key, scope, from, about })
     this.tick = window.setInterval(() => this.d.store.getState().tick(Date.now() - this.t0, meter()), 100)
   }
 
@@ -147,17 +154,27 @@ export class Voice {
   }
 
   /** Stop: the note goes into its draft (and is sent, with `andSend`). */
-  async finish(andSend: boolean, kept?: { blob: Blob; ms: number; slug: string; key: string; scope: string | null }): Promise<void> {
+  async finish(andSend: boolean, kept?: { blob: Blob; ms: number; slug: string; key: string; scope: string | null; about: Recording['about'] }): Promise<void> {
     const r = this.d.store.getState().rec
     const slug = kept?.slug ?? r?.slug
     const key = kept?.key ?? r?.key
     const scope = kept ? kept.scope : (r?.scope ?? null)
+    const about = kept ? kept.about : (r?.about ?? null)
     const ms = kept?.ms ?? Date.now() - this.t0
     const blob = kept?.blob ?? (await this.stopped())
     if (!blob || !slug || key == null) return
     if (ms < 800 || !blob.size) {
       void this.d.api.pageLog(slug, [{ kind: 'mic', level: 'warn', msg: `${ms} ms, ${blob.size} bytes`, name: blob.size ? 'short' : 'empty', where: 'stop' }]).catch(() => {})
       return this.d.toasts.show(blob.size ? 'Too short, discarded' : 'Nothing was recorded: the microphone gave no sound. Try again, or check Settings › Apps › Safari › Microphone')
+    }
+    // a voice comment: the quote first, then its words
+    const label = about ? vcLabel(about.quote) : null
+    if (about && label) {
+      this.d.box.write(slug, key, withQuote(this.d.box.text(slug, key), label))
+      const marks = this.d.boxStore.getState().marks.filter((x) => x.label !== label)
+      this.d.boxStore.getState().setMarks(about.d != null && about.key ? [...marks, { label, d: about.d, key: about.key, quote: about.quote }] : marks)
+      this.d.about?.(about)
+      if (typeof getSelection !== 'undefined') getSelection()?.removeAllRanges()
     }
     const ext = blob.type.includes('mp4') ? 'm4a' : blob.type.includes('ogg') ? 'ogg' : 'webm'
     const f: DraftFile = {
@@ -172,16 +189,18 @@ export class Voice {
       at: this.d.box.text(slug, key).length,
       t: Date.now(),
       rid: this.d.keep(blob),
+      ...(label ? { vc: label } : {}),
     }
     this.d.boxStore.getState().addFile(key, f)
     void this.hear(slug, key, f, blob, scope)
-    if (andSend) {
-      if (key === this.d.boxKey()) this.d.send(slug, key)
-      else {
+    if (key !== this.d.boxKey()) {
+      // you moved on while recording: the note is in the box where you started it
+      if (andSend && (key === 'new' || /^[A-Z]\d+$/.test(key))) {
         this.d.send(slug, key)
-        this.d.toasts.show(`Sent to ${scope || 'New input'}`)
-      }
-    } else if (this.d.desk() && !kept) this.d.fields.get('box')?.focus({ preventScroll: true })
+        this.d.toasts.show(`Sent to ${draftName(key)}`)
+      } else this.d.toasts.show(`Voice note is in the box for ${draftName(key)}`, () => this.d.goDraft(key), { label: 'Go there' })
+    } else if (andSend) this.d.send(slug, key)
+    else if (this.d.desk() && !kept) this.d.fields.get('box')?.focus({ preventScroll: true })
   }
 
   /** Discard it; Undo brings it back for a few seconds. */
@@ -190,7 +209,7 @@ export class Voice {
     const ms = Date.now() - this.t0
     const blob = await this.stopped()
     if (!r || !blob || ms < 800 || !blob.size) return
-    this.d.toasts.show('Recording discarded', () => this.finish(false, { blob, ms, slug: r.slug, key: r.key, scope: r.scope }))
+    this.d.toasts.show('Recording discarded', () => this.finish(false, { blob, ms, slug: r.slug, key: r.key, scope: r.scope, about: r.about ?? null }))
   }
 
   private patch(fk: string, p: Partial<DraftFile>): void {
@@ -290,7 +309,8 @@ export class Voice {
     }
     if (!tr) return this.d.toasts.show(err ? 'Transcription failed. Audio is ready to send' : 'No words heard. Audio is ready to send')
     const text = this.d.box.text(slug, key)
-    const at = Math.min(inDraft.at ?? text.length, text.length)
+    const q = inDraft.vc ? vcLineEnd(text, inDraft.vc) : -1 // a voice comment's words: under its quote, wherever that is now
+    const at = q >= 0 ? q : Math.min(inDraft.at ?? text.length, text.length)
     const before = text.slice(0, at)
     const after = text.slice(at)
     this.d.box.write(slug, key, before + (before.trim() && !before.endsWith('\n') ? '\n' : '') + tr + (after.trim() && !after.startsWith('\n') ? '\n' : '') + after)

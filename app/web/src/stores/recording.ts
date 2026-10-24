@@ -9,6 +9,9 @@ export interface Recording {
   key: string
   scope: string | null
   from: 'main' | 'aux'
+  /** a voice comment: what it is about (a document's passage, or words selected elsewhere); `bar`: started from the
+   * bar on the selection (it stays there to stop it), not a paragraph's own mic */
+  about?: { d: number | null; key: string | null; quote: string; bar: boolean } | null
   ms: number
   levels: readonly number[]
 }

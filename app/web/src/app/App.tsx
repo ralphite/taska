@@ -7,6 +7,7 @@ import { useRoute } from './hooks'
 import { HomeContainer } from '../features/home/HomeContainer'
 import { ProjectPageContainer } from '../features/project/ProjectPageContainer'
 import { SheetContainer } from '../features/sheets/SheetContainer'
+import { SelectionBarContainer } from '../features/composer/SelectionBarContainer'
 import { pageKeys } from './keys'
 import { Tooltip } from './Tooltip'
 import { PanesProvider } from './panes'
@@ -32,6 +33,7 @@ export function App() {
           {route.page === 'project' ? <ProjectPageContainer route={route} /> : route.page === 'home' ? <HomeContainer route={route} /> : <div className="p-8 text-sm text-zinc-500">Taska</div>}
           {/* over the page, in its layout */}
           <SheetContainer />
+          {route.page === 'project' ? <SelectionBarContainer route={route} /> : null}
           <Tooltip />
         </div>
       </PanesProvider>

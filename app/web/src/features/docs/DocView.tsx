@@ -12,7 +12,8 @@ import { RichFrame } from '../../ui/Markdown'
 import { BTN, HIT, NEEDS_PILL } from '../../ui/tones'
 import { BlockActs, type CountInfo } from './BlockActs'
 import { DocBlock } from './DocBlock'
-import { NewDot, Thread, type DocEnv, type ThreadEvents } from './Thread'
+import { DraftCard, NewDot, Thread, type DocEnv, type ThreadEvents } from './Thread'
+import type { NotSent } from '../../model/voiceComments'
 
 export interface ShownThread {
   t: DocThread
@@ -41,6 +42,10 @@ export interface DocRow {
   skipped: boolean
   /** the phone's row to speak or type a comment, under the paragraph picked */
   say: boolean
+  /** its own mic is recording a comment about it */
+  speaking: boolean
+  /** voice comments on it not sent yet */
+  drafts: readonly NotSent[]
 }
 
 export interface DocFacts {
@@ -259,7 +264,7 @@ export function DocView({ facts, env, on, popover, lasso, page }: {
         {facts.showTitle ? <div className="mt-3 text-2xl leading-tight font-bold tracking-tight">{d.title}</div> : null}
         {web ? page : null}
         {web ? null : <Outline heads={facts.outline} onJump={(key) => root.current?.querySelector(`section[data-key="${CSS.escape(key)}"]`)?.scrollIntoView({ block: 'start', behavior: 'smooth' })} />}
-        <div hidden={web} className={`relative mt-3 space-y-3 text-[15px] ${facts.circle ? 'select-none' : ''}`}>
+        <div hidden={web} data-doc-blocks={facts.d.d} className={`relative mt-3 space-y-3 text-[15px] ${facts.circle ? 'select-none' : ''}`}>
           {(web ? [] : rows).map((r) => {
             const lv = (r.b.text.match(/^#+/) || ['#'])[0].length
             const n = r.b.comments.length
@@ -305,12 +310,13 @@ export function DocView({ facts, env, on, popover, lasso, page }: {
                   <BlockActs
                     counts={r.counts}
                     open={r.open}
-                    rec={facts.recording && r.say}
+                    rec={r.speaking}
                     on={{ say: (q) => on.say(r.b.key, q), comment: (q) => on.pick(r.b.key, q, 'button'), toggle: on.toggle, away: on.away }}
                   >
                     {r.open ? (
                       <>
                         {r.threads.filter((s) => s.t.tk === r.open).map((s) => thread(s, r.b.text, true))}
+                        {r.open === `${r.b.key}#new` ? r.drafts.map((x) => <DraftCard key={x.label} words={x.words} voice={x.voice} transcribing={x.transcribing} />) : null}
                         {popover?.(r)}
                       </>
                     ) : null}

@@ -2,7 +2,7 @@
 // or changed, the organizer's note) and what you can do about it; what is still on its way on top. Props only.
 
 import { useRef, type ReactNode } from 'react'
-import type { InputStanding } from '../../model/inputs'
+import { voiceMark, type InputStanding } from '../../model/inputs'
 import type { FileRef, Input, ItemType } from '../../model/types'
 import { DraftMark, Empty, Hit } from '../../ui/bits'
 import { Icon } from '../../ui/Icon'
@@ -121,6 +121,7 @@ export function InputCard({ x, words, world, files, on }: { x: InputFacts; words
         </div>
         <div
           data-hit-html
+          {...voiceMark(r)}
           onClick={x.long ? () => on.more(r.id) : undefined}
           className={`mt-1.5 rounded-2xl rounded-tr-md bg-blue-50 px-3.5 py-2 text-[15px] leading-relaxed text-zinc-900 dark:bg-blue-400/10 dark:text-zinc-100 ${x.long ? 'cursor-pointer' : ''}`}
         >
@@ -235,6 +236,7 @@ export function InputsView({ hidden, rows, outgoing, words, world, files, hints,
         viewRef?.(el)
       }}
       hidden={hidden}
+      data-vc-area
       className="-mb-(--foot-h) min-h-0 flex-1 overflow-y-auto overscroll-contain pb-[calc(var(--foot-h,0px)+1.5rem)]"
     >
       {hidden ? null : outgoing.length && !words.length ? <OutboxRows list={outgoing} /> : null}

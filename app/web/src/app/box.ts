@@ -30,6 +30,8 @@ export interface BoxDeps {
   recording?(): boolean
   /** to the box a draft belongs to */
   goDraft?(key: string): void
+  /** the project's model now (Undo puts back what it says then) */
+  model?(slug: string): ProjectModel | null
 }
 
 export class Box {
@@ -126,12 +128,13 @@ export class Box {
   }
 
   /** Send what the box has, to what it writes to. -> whether anything went */
-  send(slug: string, m: ProjectModel | null, scope: string | null): boolean {
+  send(slug: string, m: ProjectModel | null, scope: string | null, draft?: string): boolean {
     const st = this.d.store.getState()
     const mode = st.mode
-    const key = this.key(scope, mode)
+    const key = draft ?? this.key(scope, mode)
     const text = this.text(slug, key).trim()
     const files = st.files[key] || []
+    if (mode?.kind === 'correct') return this.correct(slug, m, mode, key)
     if (!text && !files.length) return false
     if (mode?.kind === 'amend') return this.amend(slug, m, mode, key, text)
     this.write(slug, key, '')
@@ -198,7 +201,49 @@ export class Box {
     if (mode === 'edit' && !this.text(slug, key).trim()) this.write(slug, key, r.text)
   }
 
+  /** Words selected in a voice note's input: corrected in the box (the input changes, Taska remembers the spelling). */
+  correctStart(id: string, wrong: string, v: number, bySel = true): void {
+    this.d.store.getState().setMode({ kind: 'correct', id, wrong, v, bySel })
+  }
+
+  /** The right words: the input shows them at once and they are saved behind you, with Undo (words and spelling). */
+  private correct(slug: string, m: ProjectModel | null, mode: Extract<BoxMode, { kind: 'correct' }>, key: string): boolean {
+    const right = this.text(slug, key).replace(/\s+/g, ' ').trim()
+    if (!right) return false
+    const r = m?.byId.get(mode.id)
+    const before = r?.text
+    this.write(slug, key, '')
+    this.d.store.getState().setMode(null)
+    if (typeof getSelection !== 'undefined') getSelection()?.removeAllRanges()
+    void (async () => {
+      const had = await this.d.api.corrections().then((l) => l.find((x) => x.wrong === mode.wrong), () => undefined)
+      const ok = await this.d.runner.send({
+        id: newId(),
+        slug,
+        commands: [{ op: 'correct', id: mode.id, wrong: mode.wrong, right, v: mode.v } as never],
+        patches: [],
+        inputPatches: r ? [{ id: mode.id, f: { text: r.text.split(mode.wrong).join(right) } }] : [],
+        said: `correcting ${inputCode(mode.id)}`,
+        t: Date.now(),
+      })
+      if (!ok) {
+        this.d.store.getState().setMode(mode)
+        this.putBack(slug, key, right)
+        return
+      }
+      this.d.toasts.show(`Fixed ${mode.id}. Voice notes will use \u201c${right}\u201d`, async () => {
+        // the words come back, and the spelling is forgotten (or the one before comes back)
+        const now = this.d.model?.(slug)?.byId.get(mode.id)
+        if (now && before != null && now.text !== before) await this.d.runner.send({ id: newId(), slug, commands: [{ op: 'amend', id: mode.id, mode: 'edit', v: now.v || 0, text: before } as never], patches: [], inputPatches: [{ id: mode.id, f: { text: before } }], said: `putting back ${inputCode(mode.id)}`, t: Date.now() })
+        await this.d.api.setCorrection(had?.wrong ? { wrong: mode.wrong, right: had.right, undo: true } : { wrong: mode.wrong }).catch(() => {})
+        this.d.toasts.show(`Put back \u201c${mode.wrong}\u201d in ${mode.id}${had ? '' : ', and forgot the spelling'}`)
+      })
+    })()
+    return true
+  }
+
   stop(): void {
+    if (this.d.store.getState().mode?.kind === 'correct' && typeof getSelection !== 'undefined') getSelection()?.removeAllRanges()
     this.d.store.getState().setMode(null)
   }
 }

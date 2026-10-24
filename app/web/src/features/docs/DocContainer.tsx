@@ -15,6 +15,7 @@ import { Lasso } from './Lasso'
 import { Thread } from './Thread'
 import { codeOf, liveN } from '../../model/project'
 import { factsOf } from './docFacts'
+import { notSent } from '../../model/voiceComments'
 import { Sheet, SheetLayout } from '../../ui/Sheet'
 import { useItemWorld } from '../item/ItemPageContainer'
 import { PaneFrame } from '../item/PaneFrame'
@@ -36,7 +37,16 @@ function useDoc(slug: string, dn: number) {
   const world = useItemWorld(m, slug)
   const d = m?.docs.find((x) => x.d === dn)
   const seen = app.seen.of(slug)
-  const facts = useMemo(() => (m && d ? factsOf(m, d, v, seen, desk, asked, false, ticks) : null), [m, d, v, seen, desk, asked, ticks])
+  // the paragraph whose own mic records a comment about it
+  // (read as one word, so the document is not drawn again at every moment of sound)
+  const said = useStoreValue(app.stores.recording, (s) => (s.rec ? JSON.stringify({ key: s.rec.about?.d === dn ? s.rec.about.key : null, bar: !!s.rec.about?.bar }) : ''))
+  const speaking = useMemo(() => (said ? (JSON.parse(said) as { key: string | null; bar: boolean }) : null), [said])
+  // voice comments in the box not sent yet show where they will go
+  const draft = useStoreValue(app.stores.drafts, (s) => s.bySlug[slug]?.[`doc ${dn}`] ?? '')
+  const draftFiles = useStoreValue(app.stores.box, (s) => s.files[`doc ${dn}`])
+  const marks = useStoreValue(app.stores.box, (s) => s.marks)
+  const waiting = useMemo(() => notSent(draft, draftFiles || [], marks, dn), [draft, draftFiles, marks, dn])
+  const facts = useMemo(() => (m && d ? factsOf(m, d, v, seen, desk, asked, speaking, ticks, waiting) : null), [m, d, v, seen, desk, asked, speaking, ticks, waiting])
   useEffect(() => {
     // what the document shows now counts as seen
     if (d) for (const [k, t] of seenNow(seen, d)) app.seen.markKey(slug, k, t)
@@ -64,8 +74,8 @@ function useDoc(slug: string, dn: number) {
     toggle: (tk) => docs.toggle(tk),
     away: (tk) => docs.away(tk),
     pick: (key, quote, by) => docs.pick(key, quote, by),
-    say: () => {},
-    sayCancel: () => {},
+    say: (key, quote) => void app.docVoice.say(slug, dn, key, quote ?? d?.blocks.find((b) => b.key === key)?.text ?? ''),
+    sayCancel: () => void app.voice.cancel(),
     type: () => docs.type(),
     moveDoc: () => app.sheets.open({ kind: 'doc-move', d: dn }, { focus: false }),
     deleteDoc: () => docs.remove(dn),
@@ -76,17 +86,23 @@ function useDoc(slug: string, dn: number) {
     tick: (tk, i) => docs.tick(dn, tk, i),
     modifyTicks: (tk) => docs.modifyTicks(dn, tk),
   }
-  const page = d?.fmt === 'html' && m ? <WebPageContainer d={d} v={v} seen={seen} env={env} on={on} /> : null
+  const page = d?.fmt === 'html' && m ? <WebPageContainer slug={slug} d={d} v={v} seen={seen} env={env} on={on} /> : null
   return { m, d, facts, env, on, v, desk, page }
 }
 
 /** A web page document's own view, with its threads. */
-function WebPageContainer({ d, v, seen, env, on }: { d: Doc; v: DocViewState; seen: Readonly<Record<string, string>>; env: DocEnv; on: DocEvents }) {
+function WebPageContainer({ slug, d, v, seen, env, on }: { slug: string; d: Doc; v: DocViewState; seen: Readonly<Record<string, string>>; env: DocEnv; on: DocEvents }) {
   const app = useApp()
   const asked = useStoreValue(app.stores.sheet, (s) => s.asked)
   const all = d.blocks.flatMap((b) => threadsOf(b.comments).map((t) => ({ t, key: b.key })))
   const threads = all.map(({ t, key }) => ({ tk: t.tk, key, quote: t.quote, n: t.comments.length, done: resolved(d, t.tk) }))
-  const held = v.quote?.key.startsWith('h:') ? v.quote : null
+  // the part spoken about: the mic pressed turns into Stop right there, and no other part lights
+  const spoken = useStoreValue(app.stores.recording, (s) => {
+    const a = s.rec?.about
+    return a && a.d === d.d && a.key?.startsWith('h:') && !a.bar ? JSON.stringify({ key: a.key, text: a.quote }) : ''
+  })
+  const rec = !!spoken
+  const held = useMemo(() => (spoken ? (JSON.parse(spoken) as { key: string; text: string }) : v.quote?.key.startsWith('h:') ? v.quote : null), [spoken, v.quote])
   const open = all.find(({ t, key }) => v.threads.has(t.tk) || v.threads.has(key))?.t.tk ?? null
   const thread = (tk: string, rail: boolean) => {
     const x = all.find((y) => y.t.tk === tk)
@@ -103,13 +119,13 @@ function WebPageContainer({ d, v, seen, env, on }: { d: Doc; v: DocViewState; se
       desk={env.desk}
       inspect={v.inspect}
       renderThread={thread}
-      sayRow={<SayRow rec={false} on={{ say: () => {}, cancel: () => {}, type: () => app.docs.type() }} />}
+      sayRow={<SayRow rec={rec} on={{ say: () => held && void app.docVoice.say(slug, d.d, held.key, held.text, true), cancel: () => void app.voice.cancel(), type: () => app.docs.type() }} />}
       on={{
         pick: (p) => {
           app.stores.docView.getState().pick({ quote: p, sel: new Set(), reply: null })
           if (env.desk) app.fields.get('box')?.focus({ preventScroll: true })
         },
-        say: () => {},
+        say: (part) => void app.docVoice.say(slug, d.d, part.key, part.text, true),
         esc: () => runAction(app, 'back'),
         toggle: (tk) => app.docs.toggle(tk),
         away: (tk, key) => app.stores.docView.getState().closeThreads(tk, key),
