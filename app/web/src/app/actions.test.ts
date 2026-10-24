@@ -22,6 +22,7 @@ describe('the table of actions', () => {
   it('writes the keys as the sheet always has', () => {
     const keys = Object.fromEntries(keyHelp().flatMap(([, r]) => r.map(([k, t]) => [t, k])))
     expect(keys["The item's next step: Accept, Approve, Answer or Reply"]).toBe('A')
+    expect(keys['Archive or unarchive / archive every finished item']).toBe('E / ⇧E')
     expect(keys["Done · Won't do · Later / Now"]).toBe('D · W · L')
     expect(keys['Edit · New doc · Add subitem']).toBe('I · ⇧D · ⇧A')
     expect(keys['Next or previous item']).toBe('J / K')

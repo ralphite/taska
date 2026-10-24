@@ -156,7 +156,6 @@ export const ACTIONS = {
   'archive-all': page({
     label: 'Archive every finished item',
     keys: 'E',
-    palette: true,
     why: (_, h) => (h.m && h.r.tab !== 'archive' ? null : 'Nothing finished to archive here'),
     run: (app, h) => {
       if (h.m) app.items.archiveAll(visible(h.m.items, h.r.tab, h.r.list).filter((it) => !it.archived && closed(it.status)).map((it) => it.n))
@@ -370,7 +369,7 @@ const HELP: [string, HelpRow[]][] = [
       { ids: ['not-yet'], sep: '', text: 'Not yet: back to in progress at once' },
       { keys: '1–9, ⌘↵', text: 'Pick a choice, send the answer' },
       { ids: ['done', 'drop', 'later'], sep: ' · ', text: "Done · Won't do · Later / Now" },
-      { keys: 'E / ⇧E', text: 'Archive or unarchive / archive every finished item' },
+      { ids: ['archive', 'archive-all'], sep: ' / ', text: 'Archive or unarchive / archive every finished item' },
       { ids: ['status', 'priority', 'type'], sep: ' · ', text: "Status, priority, type (then the menu's digit)" },
       { ids: ['put-under', 'copy'], sep: ' · ', text: 'Put under… · Copy for agent' },
       { ids: ['edit', 'new-doc', 'add-sub'], sep: ' · ', text: 'Edit · New doc · Add subitem' },
