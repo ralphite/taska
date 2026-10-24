@@ -88,7 +88,7 @@ export const ACTIONS = {
   type: item({ label: 'Type…', keys: 't', palette: true, run: arm('t', 'Type: F B I T R') }),
   'put-under': item({ label: 'Put under…', keys: 'm', palette: true, run: (app, h) => app.sheets.open({ kind: 'item-move-parent', n: h.it.n }, { pop: true, focus: false }) }),
   'add-sub': item({ label: 'Add subitem', keys: 'A', palette: true, run: (app, h) => app.stores.itemView.getState().setSubFor(h.it.n) }),
-  'new-doc': item({ label: 'New doc', keys: 'D', palette: true, run: () => {} }),
+  'new-doc': item({ label: 'New doc', keys: 'D', palette: true, run: (app, h) => app.docs.create(h.it.n) }),
   copy: item({ label: 'Copy for agent', keys: 'C', palette: true, run: (app, h) => void copyText(forAgent(h.it, h.code, h.m.facts.base)).then(() => app.toasts.show('Copied')) }),
   full: item({ none: 'First pick an item: J or a click', label: 'Full width', keys: 'o', palette: true, run: (app) => app.nav.full(!app.stores.route.getState().full) }),
   menu: item({ label: 'All actions', keys: '.', run: (app, h) => app.sheets.open({ kind: 'item-menu', n: h.it.n, arm: null }, { pop: true, focus: false }) }),
@@ -175,13 +175,15 @@ function stepBack(app: App, h: Here): void {
   const active = document.activeElement
   const layers = app.stores.route.getState().layers
   if (layers.includes('drawer')) return app.nav.drawer(false)
+  if (app.stores.sheet.getState().spec?.req.kind === 'doc-edit') return app.docs.keep() // its text kept as a draft
   if (app.stores.sheet.getState().spec) return app.sheets.close()
   const view = app.stores.itemView.getState()
   if (view.subFor != null && typingIn(active)) return view.setSubFor(null)
   if (view.editing != null) return view.setEditing(null)
   if (r.place.kind === 'doc') {
-    // a document: the area being drawn, what you picked, then the document itself (once you are not typing)
+    // a document: its editor (kept as a draft), the area being drawn, what you picked, then the document itself
     const doc = app.stores.docView.getState()
+    if (doc.editing) return app.docs.keep()
     if (doc.circle) return doc.setCircle(false)
     if (doc.quote || doc.sel.size || doc.reply) return app.docs.unpick()
     if (!typingIn(active)) {

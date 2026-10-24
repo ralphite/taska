@@ -3,7 +3,8 @@
 // close its threads, resolve them, move a comment, delete, restore or move the document. Each change shows at once
 // and is saved behind you, with Undo.
 
-import { allComments, docTarget, sameText, splitThread, type DocTarget } from '../model/docs'
+import { allComments, docTarget, noteText, sameText, splitThread, type DocTarget } from '../model/docs'
+import type { KeyValueStore } from '../stores/storage'
 import type { Comment } from '../model/types'
 import type { Box } from './box'
 import type { BoxStore } from '../stores/box'
@@ -29,6 +30,7 @@ export interface DocsDeps {
   model(slug: string): ProjectModel | null
   box: Box
   boxStore: BoxStore
+  kv: KeyValueStore
 }
 
 export class Docs {
@@ -222,6 +224,94 @@ export class Docs {
   private commentOf(slug: string, dn: number, id: number): Comment | undefined {
     const doc = this.d.model(slug)?.docs.find((x) => x.d === dn)
     return doc ? allComments(doc).find((x) => x.id === id) : undefined
+  }
+
+  // ---- the editor: the first line is the title; leaving it without saving keeps the text as a draft
+
+  private drafts(slug: string): Record<string, string> {
+    return this.d.kv.getJson<Record<string, string>>('taska.docs.' + slug) || {}
+  }
+
+  private setDraft(slug: string, key: string, md: string | null): void {
+    const all = this.drafts(slug)
+    if (md) all[key] = md
+    else delete all[key]
+    this.d.kv.setJson('taska.docs.' + slug, all)
+  }
+
+  /** Edit it: in the pane on the desktop, in a sheet on the phone; a draft kept from before comes back. */
+  edit(dn: number): void {
+    const h = this.here()
+    if (!h) return
+    const was = this.drafts(h.slug)[`D${dn}`]
+    this.d.view.getState().edit(true, was ?? null)
+    if (!this.d.desk()) this.d.sheets.open({ kind: 'doc-edit', d: dn }, { focus: false, tall: true })
+    if (was) this.d.toasts.show('Draft restored')
+  }
+
+  /** A new document on item `n`, in a sheet. */
+  create(n: number): void {
+    const h = this.here()
+    if (!h) return
+    const was = this.drafts(h.slug)[`new ${n}`] || ''
+    this.d.view.getState().edit(true, was, n)
+    this.d.sheets.open({ kind: 'doc-edit', n }, { focus: false, tall: true })
+    if (was) this.d.toasts.show('Draft restored')
+  }
+
+  private editing(): { slug: string; m: ProjectModel; dn: number | null; n: number | null; md: string; was: string; key: string } | null {
+    const h = this.here()
+    const v = this.d.view.getState()
+    if (!h || !v.editing) return null
+    const doc = v.newFor == null && v.d != null ? h.m.docs.find((x) => x.d === v.d) : undefined
+    const was = doc ? noteText(doc).trim() : ''
+    const md = (v.text ?? (doc ? noteText(doc) : '')).trim()
+    return { slug: h.slug, m: h.m, dn: doc?.d ?? null, n: v.newFor, md, was, key: doc ? `D${doc.d}` : `new ${v.newFor}` }
+  }
+
+  /** Leaving the editor without Save: the text is kept as a draft, which Edit (or New doc) brings back. */
+  keep(): void {
+    const e = this.editing()
+    this.d.view.getState().edit(false)
+    if (!e) return
+    const changed = !!e.md && e.md !== e.was
+    this.setDraft(e.slug, e.key, changed ? e.md : null)
+    if (changed) this.d.toasts.show(e.dn != null ? 'Draft saved: Edit brings it back' : `Draft saved: ${this.d.desk() ? '⇧D' : 'New doc'} brings it back`)
+    if (!this.d.desk() || e.dn == null) this.d.sheets.close()
+  }
+
+  discard(): void {
+    const e = this.editing()
+    this.d.view.getState().edit(false)
+    if (e) this.setDraft(e.slug, e.key, null)
+    if (!this.d.desk() || !e || e.dn == null) this.d.sheets.close()
+  }
+
+  /** Save (or Create); an empty new one is dropped. Not saved: the editor comes back with your text. */
+  async save(): Promise<void> {
+    const e = this.editing()
+    if (!e) return
+    this.d.view.getState().edit(false)
+    this.setDraft(e.slug, e.key, null)
+    if (!this.d.desk() || e.dn == null) this.d.sheets.close()
+    if (!e.md || (e.dn != null && e.md === e.was)) return
+    const doc = e.dn != null ? e.m.docs.find((x) => x.d === e.dn) : undefined
+    const before = new Set(e.m.docs.map((x) => x.d))
+    const command = doc ? { op: 'doc', d: doc.d, md: e.md, ...(doc.fmt === 'html' ? { fmt: 'html' } : {}) } : { op: 'doc', ref: codeOf(e.m, e.n as number), md: e.md }
+    const ok = await this.send(e.slug, command, doc ? `saving D${doc.d}` : 'creating a document')
+    if (!ok) {
+      this.d.view.getState().edit(true, e.md, e.n)
+      if (!this.d.desk() || !doc) this.d.sheets.open({ kind: 'doc-edit', ...(doc ? { d: doc.d } : { n: e.n as number }) }, { focus: false, tall: true })
+      return
+    }
+    this.d.toasts.show(doc ? 'Saved' : 'Document created')
+    if (doc) return
+    // the new one opens once it is here
+    for (let i = 0; i < 30; i++) {
+      const made = this.d.model(e.slug)?.docs.find((x) => !before.has(x.d) && x.n === e.n)
+      if (made) return this.open(made.d)
+      await new Promise((ok2) => setTimeout(ok2, 100))
+    }
   }
 
   /** Delete it (a second press within 3 seconds); Undo brings it back. */

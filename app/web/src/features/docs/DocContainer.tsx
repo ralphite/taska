@@ -13,6 +13,7 @@ import { Sheet, SheetLayout } from '../../ui/Sheet'
 import { useItemWorld } from '../item/ItemPageContainer'
 import { PaneFrame } from '../item/PaneFrame'
 import { DocPaneActs, DocPaneHead, DocPaneNav } from './DocPane'
+import { DocEditContainer } from './DocEditContainer'
 import { DocView, type DocEvents } from './DocView'
 import type { DocEnv } from './Thread'
 
@@ -63,7 +64,7 @@ function useDoc(slug: string, dn: number) {
     deleteDoc: () => docs.remove(dn),
     circle: () => app.stores.docView.getState().setCircle(!v.circle),
     quote: (key, text) => app.stores.docView.getState().pick({ quote: { key, text }, sel: new Set(), reply: null }),
-    editDoc: () => {},
+    editDoc: () => docs.edit(dn),
     whole: () => docs.whole(),
   }
   return { m, d, facts, env, on, v, desk }
@@ -78,6 +79,15 @@ export function DocPaneContainer({ route, dn, place, hidden }: { route: ProjectR
   const { m, d, facts, env, on, v } = useDoc(route.slug, dn)
   if (!m || !d || !facts) return null
   const web = d.fmt === 'html'
+  if (v.editing && v.newFor == null)
+    // an existing document is edited where it is read
+    return (
+      <PaneFrame place={place} hidden={hidden} desk paneRef={pane} head={<DocPaneHead d={d} editing />} onBack={() => app.docs.keep()}>
+        <div className="mx-auto flex min-h-full w-full max-w-[46rem] flex-col px-8 pt-4 pb-12">
+          <DocEditContainer slug={route.slug} />
+        </div>
+      </PaneFrame>
+    )
   return (
     <PaneFrame
       place={place}

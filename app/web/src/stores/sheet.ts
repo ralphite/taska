@@ -29,6 +29,9 @@ export type SheetRequest =
   /** a document onto another item; a comment to another paragraph */
   | { kind: 'doc-move'; d: number }
   | { kind: 'comment-move'; d: number; id: number }
+  /** a document's editor (the phone's, and a new one's): an existing one, or a new one on item n */
+  | { kind: 'doc-edit'; d: number }
+  | { kind: 'doc-edit'; n: number }
 
 export type SheetKind = SheetRequest['kind']
 

@@ -135,15 +135,25 @@ export function createApp(env: AppEnv): App {
   // the document shown is the address's: another one (or none) starts afresh
   const docShown = () => {
     const r = route.getState().route
-    docView.getState().show(r.page === 'project' && r.place.kind === 'doc' ? r.place.d : null)
+    const d = r.page === 'project' && r.place.kind === 'doc' ? r.place.d : null
+    // leaving a document being edited (on the desktop, in the pane) keeps its text as a draft
+    const v = docView.getState()
+    if (v.editing && v.newFor == null && d !== v.d) docs?.keep()
+    v.show(d)
   }
+  let docs: Docs | null = null
   docShown()
   const undoc = route.subscribe(docShown)
   const drafts = createDraftsStore(env.kv)
   const boxStore = createBoxStore(env.session ?? memoryStore())
   const sheetStore = createSheetStore()
   const sheets = new Sheets(sheetStore, route, env.desk)
-  const unsheet = route.subscribe(() => sheets.gone()) // Back closed it
+  const unsheet = route.subscribe(() => {
+    // Back closed it (an editor's text is kept as a draft)
+    const was = sheetStore.getState().spec
+    sheets.gone()
+    if (was?.req.kind === 'doc-edit' && !sheetStore.getState().spec && docView.getState().editing) docs?.keep()
+  })
   let sync: ProjectSync | null = null
   let projectsTimer = 0
 
@@ -225,6 +235,7 @@ export function createApp(env: AppEnv): App {
   const box = new Box({ api, store: boxStore, drafts, outbox, inputs, runner, toasts })
   const activity = new Activity({ api, store: activityStore, toasts })
   const restores = new Restores({ runner, toasts, inputs: inputActions, model })
+  docs = new Docs({ runner, toasts, view: docView, nav, route, sheets, fields, desk: env.desk, model, box, boxStore, kv: env.kv })
   const projects = new Projects({ api, data, kv: env.kv, home: () => route.getState().route.page === 'home' })
   const refreshProjects = () => projects.refresh()
 
@@ -309,7 +320,7 @@ export function createApp(env: AppEnv): App {
     keyArm: new KeyArm(),
     activity,
     restores,
-    docs: new Docs({ runner, toasts, view: docView, nav, route, sheets, fields, desk: env.desk, model, box, boxStore }),
+    docs,
     refreshProjects,
     stop: () => {
       projects.stop()

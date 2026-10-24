@@ -81,6 +81,8 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
   const settings = route.place.kind === 'settings'
   const full = useStoreValue(app.stores.route, (s) => s.full) && route.place.kind === 'item' && !settings
   const shownSide = useStoreValue(app.stores.route, (s) => s.side)
+  // a document edited in the pane has no box under it
+  const docEditing = useStoreValue(app.stores.docView, (s) => s.editing && s.newFor == null) && route.place.kind === 'doc'
   const side = !!shownSide && !settings
   const compose = route.place.kind === 'new' || (route.place.kind === 'tab' && route.tab !== 'inputs')
   const filtersOpen = useStoreValue(app.stores.ui, (s) => s.deskFilters)
@@ -157,7 +159,7 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
           route={route}
           composePage={compose}
           place={`row-start-5 group-data-duo/app:ml-[var(--duo-w,55%)] group-data-duo/app:after:left-1 group-data-[compose]/app:row-span-3 group-data-[compose]/app:row-start-3 ${pane}`}
-          hidden={settings || route.place.kind === 'side'}
+          hidden={settings || route.place.kind === 'side' || docEditing}
           onHeight={setFootH}
         />
       </div>

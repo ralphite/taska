@@ -9,7 +9,7 @@ import { KeysSheet, PaletteSheet, SwitchProjectSheet } from '../find/FindersCont
 import { AsSaidSheet, InputHistorySheet, InputMenuSheet, InputMoveSheet, InputRescopeSheet } from '../inputs/InputSheetsContainer'
 import { ItemMenuSheet, MessageMenuSheet, MoveItemProjectSheet, MoveParentSheet, SourcesSheet } from '../item/ItemSheetsContainer'
 import { FiltersSheet } from '../list/FiltersContainer'
-import { CommentMoveSheet, DocMoveSheet } from '../docs/DocSheetsContainer'
+import { CommentMoveSheet, DocEditSheet, DocMoveSheet } from '../docs/DocSheetsContainer'
 
 const KINDS: { [K in SheetKind]: ComponentType<{ req: Extract<SheetRequest, { kind: K }> }> } = {
   'item-menu': ItemMenuSheet,
@@ -28,6 +28,7 @@ const KINDS: { [K in SheetKind]: ComponentType<{ req: Extract<SheetRequest, { ki
   palette: PaletteSheet,
   'doc-move': DocMoveSheet,
   'comment-move': CommentMoveSheet,
+  'doc-edit': DocEditSheet,
 }
 
 function Holds({ req }: { req: SheetRequest }) {
@@ -40,7 +41,7 @@ export function SheetContainer() {
   const desk = useLayout() === 'desk'
   const spec = useStoreValue(app.stores.sheet, (s) => s.spec)
   return (
-    <Sheet open={!!spec} look={{ pop: spec?.pop, narrow: spec?.narrow, tall: spec?.tall, card: spec?.card, aboveComposer: spec?.aboveComposer, at: spec?.at }} desk={desk} focus={!!spec?.focus} bodyRef={app.fields.ref('sheet')} onClose={() => app.sheets.close()}>
+    <Sheet open={!!spec} look={{ pop: spec?.pop, narrow: spec?.narrow, tall: spec?.tall, card: spec?.card, aboveComposer: spec?.aboveComposer, at: spec?.at }} desk={desk} focus={!!spec?.focus} bodyRef={app.fields.ref('sheet')} onClose={() => (spec?.req.kind === 'doc-edit' ? app.docs.keep() : app.sheets.close())}>
       {spec ? <Holds key={JSON.stringify(spec.req)} req={spec.req} /> : null}
     </Sheet>
   )

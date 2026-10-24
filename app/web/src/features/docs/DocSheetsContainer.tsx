@@ -8,6 +8,7 @@ import type { SheetRequest } from '../../stores/sheet'
 import { SheetLayout } from '../../ui/Sheet'
 import { pickSheet } from '../item/Pickers'
 import { commentMoveSheet } from './DocSheets'
+import { DocEditContainer } from './DocEditContainer'
 
 type Req<K extends SheetRequest['kind']> = { req: Extract<SheetRequest, { kind: K }> }
 
@@ -49,4 +50,14 @@ export function CommentMoveSheet({ req }: Req<'comment-move'>) {
       })}
     />
   )
+}
+
+/** The editor in a sheet: the phone's, and a new document's. */
+export function DocEditSheet({ req }: Req<'doc-edit'>) {
+  const slug = useProjectRoute()?.slug ?? ''
+  const m = useProjectModel(slug)
+  const d = 'd' in req ? m?.docs.find((x) => x.d === req.d) : undefined
+  useCloseSheetWhen(!!m && 'd' in req && !d)
+  if (!m || ('d' in req && !d)) return null
+  return <SheetLayout title={d ? `D${d.d}` : `New doc on ${codeOf(m, (req as { n: number }).n)}`} body={<DocEditContainer slug={slug} />} />
 }
