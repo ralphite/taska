@@ -7,12 +7,13 @@ import { when } from '../../model/time'
 import type { Doc } from '../../model/types'
 import { whoName } from '../../model/words'
 import type { DocViewState } from '../../stores/docView'
+import { TICKED_LINE, tickText, ticksNotSent, type TickState } from '../../model/docTicks'
 import type { DocFacts, ShownThread } from './DocView'
 
 export type DocLook = Pick<DocViewState, 'threads' | 'sel' | 'quote' | 'reply' | 'circle' | 'typing'>
 
 
-export function factsOf(m: ProjectModel, d: Doc, v: DocLook, seen: Readonly<Record<string, string>>, desk: boolean, asked: Readonly<Record<string, number>>, recording: boolean): DocFacts {
+export function factsOf(m: ProjectModel, d: Doc, v: DocLook, seen: Readonly<Record<string, string>>, desk: boolean, asked: Readonly<Record<string, number>>, recording: boolean, ticks: TickState): DocFacts {
   const shown = (t: ReturnType<typeof threadsOf>[number], key: string): ShownThread => ({ t, isNew: threadNew(seen, d, key, t.comments), done: resolved(d, t.tk) })
   const isOpen = (tk: string, key: string) => v.threads.has(tk) || v.threads.has(key)
   const tks = blockKeys(d)
@@ -24,10 +25,12 @@ export function factsOf(m: ProjectModel, d: Doc, v: DocLook, seen: Readonly<Reco
     const threads = threadsOf(b.comments)
     // the thread opened over the text; a paragraph opened as a whole (just commented on) opens its latest thread
     const open = desk ? (threads.map((t) => t.tk).find((tk) => v.threads.has(tk)) ?? (v.threads.has(b.key) ? (threads.at(-1)?.tk ?? null) : null)) : null
+    const now = tickText(ticks, d.d, tks[i], b.text) // ticked here and not sent yet
     return {
       b,
       tk: tks[i],
-      text: i === 0 && first != null ? first : b.text,
+      text: i === 0 && first != null ? first : now,
+      sent: now === b.text && TICKED_LINE.test(b.text) && !ticks.open.has(`${d.d} ${tks[i]}`),
       title: i === 0 && isTitled,
       counts: threads.map((t) => ({ tk: t.tk, n: t.comments.length, done: resolved(d, t.tk), quote: t.quote })),
       open,
@@ -51,7 +54,7 @@ export function factsOf(m: ProjectModel, d: Doc, v: DocLook, seen: Readonly<Reco
     whole: { n: (d.whole || []).length, open: desk && v.threads.has('doc') && d.whole.length ? { t: { tk: 'doc', comments: d.whole, quote: '' }, isNew: threadNew(seen, d, 'doc', d.whole), done: resolved(d, 'doc') } : null },
     wholeThreads: desk ? [] : wholeThreads.map((t) => shown(t, 'doc')),
     detached: desk ? [] : d.detached.map((t) => ({ key: t.key, quote: t.quote, threads: threadsOf(t.comments).map((x) => shown(x, t.key)) })),
-    waiting: '',
+    waiting: ticksNotSent(ticks, d),
     circle: v.circle,
     deleting: !!asked['doc-delete ' + d.d],
     replying: v.reply,

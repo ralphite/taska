@@ -18,13 +18,15 @@ import type { Outgoing, TalkFacts } from './Talk'
 import type { TalkEnv } from './talkEnv'
 
 export function useItemWorld(m: ProjectModel | null, slug: string): InlineWorld {
+  const app = useApp()
+  const sizes = useStoreValue(app.stores.data, (s) => s.sizes[slug])
   return useMemo(
     () => ({
       find: (c: string) => (m ? findRef(m, c) : null),
       url: (f: string) => `/p/${encodeURIComponent(slug)}/f/${encodeURIComponent(f)}`,
-      size: () => undefined,
+      size: (f: string) => sizes?.[f],
     }),
-    [m, slug],
+    [m, slug, sizes],
   )
 }
 

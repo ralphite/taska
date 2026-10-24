@@ -26,10 +26,11 @@ function useDoc(slug: string, dn: number) {
   const m = useProjectModel(slug)
   const v = useStoreValue(app.stores.docView, (s) => s)
   const asked = useStoreValue(app.stores.sheet, (s) => s.asked)
+  const ticks = useStoreValue(app.stores.docTicks, (s) => s)
   const world = useItemWorld(m, slug)
   const d = m?.docs.find((x) => x.d === dn)
   const seen = app.seen.of(slug)
-  const facts = useMemo(() => (m && d ? factsOf(m, d, v, seen, desk, asked, false) : null), [m, d, v, seen, desk, asked])
+  const facts = useMemo(() => (m && d ? factsOf(m, d, v, seen, desk, asked, false, ticks) : null), [m, d, v, seen, desk, asked, ticks])
   useEffect(() => {
     // what the document shows now counts as seen
     if (d) for (const [k, t] of seenNow(seen, d)) app.seen.markKey(slug, k, t)
@@ -66,6 +67,8 @@ function useDoc(slug: string, dn: number) {
     quote: (key, text) => app.stores.docView.getState().pick({ quote: { key, text }, sel: new Set(), reply: null }),
     editDoc: () => docs.edit(dn),
     whole: () => docs.whole(),
+    tick: (tk, i) => docs.tick(dn, tk, i),
+    modifyTicks: (tk) => docs.modifyTicks(dn, tk),
   }
   return { m, d, facts, env, on, v, desk }
 }

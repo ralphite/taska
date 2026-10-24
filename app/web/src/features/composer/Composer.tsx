@@ -10,12 +10,14 @@ export interface BoxLine {
   label: ReactNode
   detail?: ReactNode
   right?: ReactNode
+  /** a line with a button of its own drops its icon in a narrow box, so its words are whole */
+  tight?: boolean
 }
 
-export function ScopeLine({ icon, label, detail, right }: BoxLine) {
+export function ScopeLine({ icon, label, detail, right, tight = false }: BoxLine) {
   return (
     <>
-      <Icon n={icon} c="size-3.5 text-zinc-400 dark:text-zinc-500" />
+      <Icon n={icon} c={`size-3.5 text-zinc-400 dark:text-zinc-500 ${tight ? '@max-xs:hidden' : ''}`} />
       <span className="min-w-0 flex-1 truncate">
         <span className="font-medium text-zinc-800 dark:text-zinc-100">{label}</span>
         {detail ? <> {detail}</> : null}

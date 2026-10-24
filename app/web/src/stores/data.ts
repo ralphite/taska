@@ -17,6 +17,9 @@ export interface DataState {
   listedAt: number
   /** the list could not be asked lately: the one shown is the one kept from before */
   listAway: boolean
+  /** each project's pictures' sizes, by file */
+  sizes: Readonly<Record<string, Readonly<Record<string, readonly [number, number]>>>>
+  setSizes(slug: string, sizes: Record<string, [number, number]>): void
   setCopy(slug: string, copy: ServerCopy): void
   setAway(slug: string, away: number): void
   setProjects(rows: ProjectRow[], needs: Need[] | null, at: number): void
@@ -33,6 +36,8 @@ export function createDataStore(projects: ProjectRow[] | null = null, needs: Nee
     needs,
     listedAt: at,
     listAway: false,
+    sizes: {},
+    setSizes: (slug, sizes) => set((s) => ({ sizes: { ...s.sizes, [slug]: { ...s.sizes[slug], ...sizes } } })),
     setCopy: (slug, copy) => set((s) => ({ copies: { ...s.copies, [slug]: copy } })),
     setAway: (slug, away) => set((s) => (s.away[slug] === away ? s : { away: { ...s.away, [slug]: away } })),
     setProjects: (rows, needs, at) => set((s) => ({ projects: rows, needs: needs ?? s.needs, listedAt: at, listAway: false })),

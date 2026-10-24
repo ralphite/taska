@@ -26,6 +26,8 @@ export interface DocRow {
   tk: string
   /** its words as shown (ticked and not sent yet, or without the title line) */
   text: string
+  /** its choices were sent and not changed since */
+  sent: boolean
   title: boolean
   /** the desktop's counts beside it, and the thread open over it */
   counts: CountInfo[]
@@ -82,6 +84,8 @@ export interface DocEvents extends ThreadEvents {
   quote(key: string, text: string): void
   editDoc(): void
   whole(): void
+  tick(tk: string, i: number): void
+  modifyTicks(tk: string): void
 }
 
 const TICKED_LINE = /^\s*[-*+]\s+[([][xX][)\]]/m
@@ -272,7 +276,7 @@ export function DocView({ facts, env, on, popover, lasso }: {
               >
                 <div className="relative flex flex-col gap-1 lg:flex-row lg:items-start lg:gap-2">
                   <RichFrame text={r.text} data-block="" cls={`min-w-0 flex-1 break-words ${r.b.kind === 'heading' ? 'pr-14 lg:pr-0' : ''}`} onRef={on.ref} onPicture={on.picture}>
-                    <DocBlock b={{ kind: r.b.kind, text: r.text }} title={r.title} world={env.world} />
+                    <DocBlock b={{ kind: r.b.kind, text: r.text }} title={r.title} world={env.world} ticking={{ sent: r.sent, tick: (i) => on.tick(r.tk, i), modify: () => on.modifyTicks(r.tk) }} />
                   </RichFrame>
                   {n ? (
                     <button

@@ -109,6 +109,11 @@ export class TaskaApi {
     return this.http.json<SearchHit[]>(`/api/search?q=${encodeURIComponent(q)}&skip=${encodeURIComponent(skip)}`)
   }
 
+  /** The pictures of the project's files, each with its width and height. */
+  pictureSizes(slug: string): Promise<Record<string, [number, number]>> {
+    return this.http.json(P(slug) + 'picture-sizes')
+  }
+
   /** The change log, the latest first: the last n changes, or the n before change `before`. */
   activity(slug: string, n: number, before = 0): Promise<LogRow[]> {
     return this.http.json<LogRow[]>(P(slug) + `activity?n=${n}` + (before ? `&before=${before}` : ''))

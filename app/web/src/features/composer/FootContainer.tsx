@@ -14,6 +14,7 @@ import { inputCode, plural } from '../../model/words'
 import type { BoxMode } from '../../stores/box'
 import type { DocViewState } from '../../stores/docView'
 import { docTarget, type DocTarget } from '../../model/docs'
+import { ticksNotSent, type TickState } from '../../model/docTicks'
 import { plainQuote } from '../../model/markdown'
 import { outgoingLine, outgoingState, type Outgoing } from '../../stores/outbox'
 import { Icon } from '../../ui/Icon'
@@ -76,7 +77,7 @@ const xButton = (label: string, run: () => void, esc = true) => (
 /** What a comment from the box goes to: what is picked in the document, or (the phone) the whole document. */
 export type DocAim = { d: number; target: DocTarget } | null
 
-function boxRole(m: ProjectModel | null, route: ProjectRoute, desk: boolean, title: string, mode: BoxMode, stop: () => void, pick: DocViewState, on: { unpick(): void; toItem(): void }) {
+function boxRole(m: ProjectModel | null, route: ProjectRoute, desk: boolean, title: string, mode: BoxMode, stop: () => void, pick: DocViewState, ticks: TickState, on: { unpick(): void; toItem(): void; sendTicks(): void; clearTicks(): void }) {
   // the item open, or the one whose document is open (nothing picked in it, the box replies on the item)
   const docOf = route.place.kind === 'doc' ? m?.docs.find((x) => x.d === (route.place as { d: number }).d) : undefined
   const open = route.place.kind === 'item' ? m?.byN.get(Number(/\d+/.exec(route.place.ref)?.[0])) : docOf && m ? m.byN.get(liveN(m, docOf.n)) : undefined
@@ -96,6 +97,32 @@ function boxRole(m: ProjectModel | null, route: ProjectRoute, desk: boolean, tit
       right: xButton('Cancel the comment', on.unpick),
     }
     return { aim: { d: docOf.d, target: dt } as DocAim, key: `doc ${docOf.d}`, scope: null, doc: docOf.d, line, placeholder: 'Write…', send: dt.reply ? 'Reply' : 'Comment' }
+  }
+  const waiting = docOf && !mode ? ticksNotSent(ticks, docOf) : ''
+  if (docOf && waiting) {
+    // choices ticked in the document wait; they go only with this line's Send choices
+    const line: BoxLine = {
+      icon: 'check',
+      label: waiting,
+      detail: <span className="@max-xs:hidden">· D{docOf.d}</span>,
+      tight: true,
+      right: (
+        <>
+          <button
+            onClick={on.sendTicks}
+            className={`${HIT} -my-1 flex h-8 shrink-0 items-center gap-1 rounded-lg px-2 text-[13px] font-semibold text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10`}
+          >
+            Send choices
+          </button>
+          {xButton('Clear the ticks', on.clearTicks, false)}
+        </>
+      ),
+    }
+    const host = m ? liveN(m, docOf.n) : null
+    const reply = desk && host != null && m ? codeOf(m, host) : null
+    return reply
+      ? { ...none, key: reply, scope: reply, doc: null, line, placeholder: `Reply to ${reply}…`, send: 'Send' }
+      : { aim: { d: docOf.d, target: { key: 'doc', quote: '' } } as DocAim, key: `doc ${docOf.d}`, scope: null, doc: docOf.d, line, placeholder: `Comment on D${docOf.d}…`, send: 'Comment' }
   }
   if (docOf && !desk && !mode) {
     // the phone, nothing picked: a comment on the whole document (Reply to its item instead)
@@ -179,7 +206,13 @@ export function FootContainer({ route, place, hidden, composePage, onHeight }: {
   const title = m?.facts.title || route.slug
   const mode = useStoreValue(app.stores.box, (s) => s.mode)
   const pick = useStoreValue(app.stores.docView, (s) => s)
-  const role = boxRole(m, route, desk, title, mode, () => app.box.stop(), pick, { unpick: () => app.docs.unpick(), toItem: () => app.docs.toItem() })
+  const ticks = useStoreValue(app.stores.docTicks, (s) => s)
+  const role = boxRole(m, route, desk, title, mode, () => app.box.stop(), pick, ticks, {
+    unpick: () => app.docs.unpick(),
+    toItem: () => app.docs.toItem(),
+    sendTicks: () => pick.d != null && void app.docs.sendTicks(route.slug, pick.d),
+    clearTicks: () => pick.d != null && app.docs.clearTicks(pick.d),
+  })
   const key = app.box.key(role.scope, mode, role.doc)
   const text = useStoreValue(app.stores.drafts, (s) => s.bySlug[route.slug]?.[key] ?? '')
   const draftFiles = useStoreValue(app.stores.box, (s) => s.files[key])

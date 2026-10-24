@@ -29,10 +29,12 @@ import { Box } from './box'
 import { CrossSearch } from './crossSearch'
 import { Projects } from './projects'
 import { KeyArm } from './keyArm'
+import { PictureSizes } from './pictureSizes'
 import { Activity } from './activity'
 import { Restores } from './restores'
 import { Docs } from './docs'
 import { createDocViewStore, type DocViewStore } from '../stores/docView'
+import { createDocTicksStore, type DocTicksStore } from '../stores/docTicks'
 import { createActivityStore, type ActivityStore } from '../stores/activity'
 import { Fields } from './fields'
 import { ListOrder } from './listOrder'
@@ -70,6 +72,7 @@ export interface App {
     route: RouteStore
     activity: ActivityStore
     docView: DocViewStore
+    docTicks: DocTicksStore
   }
   toasts: Toasts
   items: ItemActions
@@ -131,6 +134,15 @@ export function createApp(env: AppEnv): App {
   const search = createSearchStore()
   const activityStore = createActivityStore()
   const docView = createDocViewStore()
+  const docTicks = createDocTicksStore(env.kv)
+  const pictureSizes = new PictureSizes({ api, data })
+  // a text showing a picture of unknown size (one just uploaded) asks for the sizes again
+  const unsize = data.subscribe((s, was) => {
+    for (const slug of Object.keys(s.copies)) if (s.copies[slug] !== was.copies[slug]) {
+      const m = model(slug)
+      if (m) pictureSizes.check(slug, m)
+    }
+  })
   const fields = new Fields()
   // the document shown is the address's: another one (or none) starts afresh
   const docShown = () => {
@@ -235,7 +247,7 @@ export function createApp(env: AppEnv): App {
   const box = new Box({ api, store: boxStore, drafts, outbox, inputs, runner, toasts })
   const activity = new Activity({ api, store: activityStore, toasts })
   const restores = new Restores({ runner, toasts, inputs: inputActions, model })
-  docs = new Docs({ runner, toasts, view: docView, nav, route, sheets, fields, desk: env.desk, model, box, boxStore, kv: env.kv })
+  docs = new Docs({ runner, toasts, view: docView, nav, route, sheets, fields, desk: env.desk, model, box, boxStore, kv: env.kv, ticks: docTicks, inputs })
   const projects = new Projects({ api, data, kv: env.kv, home: () => route.getState().route.page === 'home' })
   const refreshProjects = () => projects.refresh()
 
@@ -244,6 +256,8 @@ export function createApp(env: AppEnv): App {
     sync?.close()
     ui.getState().reset()
     itemView.getState().show(slug)
+    docTicks.getState().show(slug)
+    void pictureSizes.load(slug)
     boxStore.getState().show(slug)
     drafts.getState().reload(slug)
     sync = new ProjectSync(slug, api, env.cache ?? noCache, {
@@ -288,7 +302,7 @@ export function createApp(env: AppEnv): App {
 
   return {
     api,
-    stores: { data, changes, outbox, feedback, ui, itemView, search, drafts, box: boxStore, sheet: sheetStore, route, activity: activityStore, docView },
+    stores: { data, changes, outbox, feedback, ui, itemView, search, drafts, box: boxStore, sheet: sheetStore, route, activity: activityStore, docView, docTicks },
     toasts,
     items,
     inputs,
@@ -330,6 +344,7 @@ export function createApp(env: AppEnv): App {
       unlisten()
       unsheet()
       undoc()
+      unsize()
     },
   }
 }
