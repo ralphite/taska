@@ -333,12 +333,7 @@ export function createApp(env: AppEnv): App {
     toasts,
     session: env.session ?? memoryStore(),
     busy: () => recordingNow() || Object.values(boxStore.getState().files).some((fs) => fs.some((f) => f.uploading || f.transcribing)) || outbox.getState().list.some((o) => o.state === 'sending'),
-    boot: async () => {
-      const s = slug()
-      const cur = s ? data.getState().copies[s]?.cursor : null
-      if (!s || !cur) return null
-      return (await api.changes(s, cur, 0)).cursor.split('.')[0] || null
-    },
+    boot: () => session().boot(),
     reload: () => location.reload(),
     mine: env.pageScript ?? '',
   })

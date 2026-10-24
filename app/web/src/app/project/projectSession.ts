@@ -82,6 +82,14 @@ export class ProjectSession {
     if (this.sync?.slug === slug) void this.sync.refresh()
   }
 
+  /** which run of Taska answers now (the first part of a change cursor): it changes when Taska restarts */
+  async boot(): Promise<string | null> {
+    const s = this.slug()
+    const cur = s ? this.d.data.getState().copies[s]?.cursor : null
+    if (!s || !cur) return null
+    return (await this.d.api.changes(s, cur, 0)).cursor.split('.')[0] || null
+  }
+
   async refresh(slug?: string): Promise<void> {
     if (this.sync && (slug == null || this.sync.slug === slug)) await this.sync.refresh()
   }
