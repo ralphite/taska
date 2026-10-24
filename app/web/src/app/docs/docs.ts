@@ -6,9 +6,9 @@ import { docTarget, splitThread } from '../../model/docs'
 import { codeOf, liveN } from '../../model/project'
 import type { Tab } from '../../model/words'
 import type { DocViewStore } from '../../stores/docView'
-import type { Fields } from '../fields'
-import type { Navigation } from '../navigation'
-import type { Toasts } from '../toasts'
+import type { Fields } from '../page/fields'
+import type { Navigation } from '../page/navigation'
+import type { Toasts } from '../page/toasts'
 import { docHere, type DocPlace } from './shared'
 
 export interface DocsDeps extends DocPlace {

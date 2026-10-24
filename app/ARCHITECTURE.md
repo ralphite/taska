@@ -66,9 +66,11 @@ root files, `taska-files/fN-name`. The old version must run on data this version
 
 ```
 web/src/
-  app/          composition root (createApp: makes the stores and services, only assembling them), the services,
-                the hooks containers share (the route, a project's model, the projects listed, search hints),
-                page-wide behaviours (keys, tooltip)
+  app/          composition root (createApp: makes the stores and services, only assembling them), the hooks
+                containers share (the route, a project's model, the projects listed, search hints), the table of
+                actions, page-wide behaviours (keys, tooltip, panes), and the services more than one feature uses,
+                by area: page/ (navigation, sheets, toasts, fields, media), project/ (the project open, its sync,
+                the projects, notices, settings), items/, inputs/ (the box, sending, drafts), docs/, voice/
   api/          typed HTTP calls (time limits, retry, the key)                 no React
   sync/         a project's change stream (the long poll and its pauses), the IndexedDB copy   no React
   model/        pure: types, selectors (sections, needs you, counts, order), words, times              no React
@@ -76,8 +78,9 @@ web/src/
   ui/           presentational parts more than one feature shows: primitives (buttons, icons, sheets, segments),
                 Markdown, files, pickers, the projects' sheets, log lines, search hints, the pane's frame
   features/     one folder per area (sidebar, list, item, composer, inputs, docs, settings, side, find, home, ...):
-                presentational components (props only) and their containers (hooks into stores); a feature is a
-                leaf: it imports no other feature and no page
+                presentational components (props only), their containers (hooks into stores) and the services
+                only that feature uses (features/list/views.ts, ...); a feature is a leaf: it imports no other
+                feature and no page
   pages/        puts features together: the page's root (App.tsx), the project page (its layout, header, the
                 detail pane) and the sheets; a feature shown inside another is given as a prop (a slot)
 ```
@@ -88,7 +91,8 @@ Rules, checked by `web/eslint.config.js` (imports, page lookups) and `web/script
 1. Presentational components get everything through props; they import nothing from `app/`, `stores/`, `api/`,
    `sync/`. Features are leaves: a feature imports no other feature and no page; what features share is in `app/`
    (services, hooks), `model/` (selectors) or `ui/` (parts), and `pages/` puts them together. `app/`, `ui/`,
-   `model/`, `stores/`, `api/` and `sync/` know no feature and no page. A container (`*Container.tsx`) reads stores and passes props; it names the parts of the app it uses
+   `model/`, `stores/`, `api/` and `sync/` know no feature and no page (only `app/createApp.ts`, the composition root,
+   makes the services a feature keeps for itself). A container (`*Container.tsx`) reads stores and passes props; it names the parts of the app it uses
    (`useServices('nav', 'sheets')`, `useStores('ui')`) and can reach nothing else (`useApp` is the page's root's
    only); an action of the table runs through `app.actions.run(id)` (`app/actions.ts`: each action names the
    services it uses and is given only those).
@@ -100,7 +104,7 @@ Rules, checked by `web/eslint.config.js` (imports, page lookups) and `web/script
    which pane you acted in), are set in `app/` only. A component may listen on the document or the window for what
    it shows, while it is shown (a menu's click outside it, a document's selected words, a row's swipe), and stops
    when it goes. (`features/docs/pageHelper.ts` runs inside a web page's frame, not in Taska's page.) Elements the
-   app measures are given by ref (`app/panes.tsx` for the panes, `app/rowSizes.ts` for the list's rows).
+   app measures are given by ref (`app/panes.tsx` for the panes, `features/list/rowSizes.ts` for the list's rows).
 4. Layout is an attribute, not the window: `data-layout="desk"|"phone"` on the page's frame (and on a story's
    frame) chooses the layout; `lg:` means the desktop layout and `phone:` the phone's (`src/index.css`), and the
    widths within a layout are container queries on the frame (`wide:`, `huge:`, `roomy:`, `wide-phone:`). So any

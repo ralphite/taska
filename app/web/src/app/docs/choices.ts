@@ -7,10 +7,10 @@ import { docDraft, replyDraft } from '../../model/draftTarget'
 import { codeOf, liveN } from '../../model/project'
 import type { DocTicksStore } from '../../stores/docTicks'
 import type { DocViewStore } from '../../stores/docView'
-import type { Box } from '../box'
+import type { Box } from '../inputs/box'
 import type { ChangeRunner } from '../changeRunner'
-import type { InputSender } from '../inputSender'
-import type { Toasts } from '../toasts'
+import type { InputSender } from '../inputs/inputSender'
+import type { Toasts } from '../page/toasts'
 import { docHere, docSend, type DocPlace } from './shared'
 
 export interface DocChoicesDeps extends DocPlace {

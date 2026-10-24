@@ -7,8 +7,8 @@ import { codeOf, type ProjectModel } from '../../model/project'
 import type { DocViewStore } from '../../stores/docView'
 import type { KeyValueStore } from '../../stores/storage'
 import type { ChangeRunner } from '../changeRunner'
-import type { Sheets } from '../sheets'
-import type { Toasts } from '../toasts'
+import type { Sheets } from '../page/sheets'
+import type { Toasts } from '../page/toasts'
 import { docHere, docSend, type DocPlace } from './shared'
 
 export interface DocEditorDeps extends DocPlace {

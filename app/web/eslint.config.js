@@ -42,9 +42,15 @@ export default tseslint.config(
     rules: { 'no-restricted-imports': restricted([...APP_LAYERS, '**/features/**', '**/pages/**'], 'Shared parts get this by props, and know no feature or page.') },
   },
   {
-    // the app's services and hooks know no feature and no page (the page's root, pages/App.tsx, puts them together)
+    // the app's services and hooks know no feature and no page (the page's root, pages/App.tsx, puts them together);
+    // only the composition root makes the services a feature keeps for itself (features/list/views.ts, ...)
     files: ['src/app/**/*.{ts,tsx}'],
+    ignores: ['src/app/createApp.ts'],
     rules: { 'no-restricted-imports': restricted(['**/features/**', '**/pages/**'], 'The app layer knows no feature or page: pages/ puts them together.') },
+  },
+  {
+    files: ['src/app/createApp.ts'],
+    rules: { 'no-restricted-imports': restricted(['**/pages/**', '**/features/**/*.tsx'], 'The composition root makes services: a feature’s own (a .ts in its folder), never its components or a page.') },
   },
   {
     // containers name the parts of the app they use (useServices, useStores), never the whole of it

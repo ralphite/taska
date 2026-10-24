@@ -3,7 +3,7 @@
 // when the section opens; what you do goes to app.settings (and app.docs, app.restores for the phone's lists).
 
 import { useEffect, useMemo, type ReactNode } from 'react'
-import { Notices } from '../../app/notices'
+import { Notices } from '../../app/project/notices'
 import { useLayout, useServices, useStores, useStoreValue } from '../../app/context'
 import { usePaneRef } from '../../app/panes'
 import { useProjectModel, type ProjectRoute } from '../../app/hooks'
