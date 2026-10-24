@@ -227,7 +227,11 @@ export class Voice {
       try {
         d = await this.d.api.words(slug, fid, true, { scope, again: tries > 0 })
         if (!d.done && ++waits < 20) continue // still working: the server answers after 45 s for another ask
-        if (d.done && d.tr_error && ++tries < 4) continue // the models had trouble: a few more tries
+        if (d.done && d.tr_error && ++tries < 4) {
+          // the models had trouble: a few more tries, with growing pauses
+          await wait(Math.min(30000, 2000 * 2 ** Math.min(n, 4)))
+          continue
+        }
         break
       } catch {
         await wait(Math.min(30000, 2000 * 2 ** Math.min(n, 4)))

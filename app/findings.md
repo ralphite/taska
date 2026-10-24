@@ -42,3 +42,6 @@ what the old version does. Each is also sent to the coordinator ("Nota & Taska d
   opened by its address only when it has the project's copy kept from before (nearly always: it draws that first); in
   a browser that never had Taska open its rows come too late for it and the list stays at its top. The rewrite shows
   the row in both.
+- **Asked for its key, the page behind does not say Taska is out of reach.** The old page counts the answers that
+  ask for the key as Taska being away, so behind the key sheet (after a wrong key) the item says "Taska is out of
+  reach, retrying…" though Taska answered; the rewrite keeps saying it is loading the item until the key is right.

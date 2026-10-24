@@ -33,11 +33,11 @@ const CloseX = () => (
 )
 
 /** What the frame tells what it holds: whether it pops at a spot, how it closes, its close button. */
-const Frame = createContext<{ pop: boolean; onClose(): void; close: RefObject<HTMLButtonElement | null>; bodyRef?: Ref<HTMLDivElement> }>({ pop: false, onClose: () => {}, close: { current: null } })
+const Frame = createContext<{ pop: boolean; onClose(): void; close: RefObject<HTMLButtonElement | null>; bodyRef?: Ref<HTMLDivElement>; footRef?: Ref<HTMLDivElement> }>({ pop: false, onClose: () => {}, close: { current: null } })
 
 /** What a sheet holds, laid out in its frame. */
 export function SheetLayout({ menu, title, head, extra, sub, foot, body }: SheetParts) {
-  const { pop, onClose, close, bodyRef } = useContext(Frame)
+  const { pop, onClose, close, bodyRef, footRef } = useContext(Frame)
   return (
     <>
       <header data-tip-side="bottom" className={`flex shrink-0 touch-none items-center gap-2 py-1 pr-2 pl-5 ${(head || title) && !(pop && menu) ? '' : 'lg:hidden'}`}>
@@ -59,14 +59,14 @@ export function SheetLayout({ menu, title, head, extra, sub, foot, body }: Sheet
       >
         {body}
       </div>
-      <div hidden={!foot} className="shrink-0">
+      <div ref={footRef} hidden={!foot} className="shrink-0">
         {foot}
       </div>
     </>
   )
 }
 
-export function Sheet({ open, look, parts, children, desk, footRoom = 0, focus = false, bodyRef, onClose }: {
+export function Sheet({ open, look, parts, children, desk, footRoom = 0, focus = false, bodyRef, footRef, onClose }: {
   open: boolean
   look: SheetLook
   /** what it holds, as parts (or as `children` that lay themselves out with SheetLayout) */
@@ -78,6 +78,8 @@ export function Sheet({ open, look, parts, children, desk, footRoom = 0, focus =
   focus?: boolean
   /** the body that holds its buttons (a menu's keys walk them) */
   bodyRef?: Ref<HTMLDivElement>
+  /** its fixed foot (the phone's toast sits above it) */
+  footRef?: Ref<HTMLDivElement>
   onClose(): void
 }) {
   const overlay = useRef<HTMLDivElement>(null)
@@ -162,7 +164,7 @@ export function Sheet({ open, look, parts, children, desk, footRoom = 0, focus =
         <div data-handle className="flex shrink-0 touch-none justify-center pt-2 sm:hidden">
           <span className="h-1 w-10 rounded-full bg-zinc-300 dark:bg-zinc-600" />
         </div>
-        <Frame.Provider value={{ pop, onClose, close, bodyRef }}>{parts ? <SheetLayout {...parts} /> : children}</Frame.Provider>
+        <Frame.Provider value={{ pop, onClose, close, bodyRef, footRef }}>{parts ? <SheetLayout {...parts} /> : children}</Frame.Provider>
       </section>
     </div>
   )

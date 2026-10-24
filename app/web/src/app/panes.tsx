@@ -3,7 +3,7 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, type ReactNode } from 'react'
 
-export type PaneName = 'list' | 'detail' | 'drawer' | 'inputs' | 'settings' | 'foot'
+export type PaneName = 'list' | 'detail' | 'drawer' | 'inputs' | 'settings' | 'foot' | 'drawerFoot' | 'sheetFoot'
 
 export class Panes {
   private els = new Map<PaneName, HTMLElement>()

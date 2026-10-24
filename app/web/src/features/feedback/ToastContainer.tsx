@@ -9,11 +9,16 @@ import { Toast } from './Toast'
 
 export function ToastContainer() {
   const app = useServices('toasts')
-  const stores = useStores('feedback', 'route')
+  const stores = useStores('feedback', 'route', 'sheet')
   const layout = useLayout()
   const panes = usePanes()
   const t = useStoreValue(stores.feedback, (s) => s.toast)
   const onPage = useStoreValue(stores.route, (s) => s.route.page === 'project' && s.route.place.kind === 'settings')
+  // the phone: what is open over the page (the drawer, a sheet, a card) the toast keeps clear of
+  const drawer = useStoreValue(stores.route, (s) => s.layers.includes('drawer'))
+  const docOver = useStoreValue(stores.route, (s) => s.route.page === 'project' && s.route.place.kind === 'doc') && layout === 'phone'
+  const sheet = useStoreValue(stores.sheet, (s) => (s.spec ? (s.spec.card ? 'card' : 'sheet') : null))
+  const over = sheet ?? (docOver ? 'sheet' : null)
   const [style, setStyle] = useState<CSSProperties | undefined>(undefined)
   const [centered, setCentered] = useState(false)
   // you act in another pane: the toast shown goes over it
@@ -37,10 +42,12 @@ export function ToastContainer() {
       setCentered(!!r)
       setStyle(r ? { left: `${r.left + r.width / 2}px`, bottom: `${above && f ? innerHeight - f.top + 12 : 20}px` } : undefined)
     } else {
+      // just above what you act on (the box, the drawer's foot, a sheet's foot), never on it; else near the top
       setCentered(false)
-      setStyle(foot && !foot.hidden ? { bottom: `${Math.round(innerHeight - foot.getBoundingClientRect().top + 8)}px` } : undefined)
+      const bar = drawer ? panes.get('drawerFoot') : !over ? (foot && !foot.hidden ? foot : null) : over === 'card' ? null : panes.get('sheetFoot')
+      setStyle(bar && bar.offsetHeight ? { bottom: `${Math.round(innerHeight - bar.getBoundingClientRect().top + 8)}px` } : over ? { top: 'calc(env(safe-area-inset-top) + 0.75rem)', bottom: 'auto' } : undefined)
     }
-  }, [t, layout, panes, onPage, moved])
+  }, [t, layout, panes, onPage, moved, drawer, over])
   const place =
     layout === 'desk'
       ? `${style ? '' : 'bottom-5 left-5'} ${centered ? '-translate-x-1/2' : ''}`

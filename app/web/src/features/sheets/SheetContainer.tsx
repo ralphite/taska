@@ -5,6 +5,7 @@ import type { ComponentType } from 'react'
 import { useLayout, useServices, useStores, useStoreValue } from '../../app/context'
 import type { SheetKind, SheetRequest } from '../../stores/sheet'
 import { Sheet } from '../../ui/Sheet'
+import { usePaneRef } from '../../app/panes'
 import { KeysSheet, PaletteSheet, SwitchProjectSheet } from '../find/FindersContainer'
 import { AsSaidSheet, InputHistorySheet, InputMenuSheet, InputMoveSheet, InputRescopeSheet } from '../inputs/InputSheetsContainer'
 import { ItemMenuSheet, MessageMenuSheet, MoveItemProjectSheet, MoveParentSheet, SourcesSheet } from '../item/ItemSheetsContainer'
@@ -46,10 +47,11 @@ function Holds({ req }: { req: SheetRequest }) {
 export function SheetContainer() {
   const app = useServices('docs', 'fields', 'sheets')
   const stores = useStores('sheet')
+  const sheetFoot = usePaneRef('sheetFoot')
   const desk = useLayout() === 'desk'
   const spec = useStoreValue(stores.sheet, (s) => s.spec)
   return (
-    <Sheet open={!!spec} look={{ pop: spec?.pop, narrow: spec?.narrow, tall: spec?.tall, card: spec?.card, aboveComposer: spec?.aboveComposer, at: spec?.at }} desk={desk} focus={!!spec?.focus} bodyRef={app.fields.ref('sheet')} onClose={() => (spec?.req.kind === 'doc-edit' ? app.docs.keep() : app.sheets.close())}>
+    <Sheet footRef={sheetFoot} open={!!spec} look={{ pop: spec?.pop, narrow: spec?.narrow, tall: spec?.tall, card: spec?.card, aboveComposer: spec?.aboveComposer, at: spec?.at }} desk={desk} focus={!!spec?.focus} bodyRef={app.fields.ref('sheet')} onClose={() => (spec?.req.kind === 'doc-edit' ? app.docs.keep() : app.sheets.close())}>
       {spec ? <Holds key={JSON.stringify(spec.req)} req={spec.req} /> : null}
     </Sheet>
   )

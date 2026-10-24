@@ -2,7 +2,7 @@
 // project with how many things need you there and how many are open; New input, New project; at the foot the
 // project's Documents, Activity, Deleted, and Settings. Props only.
 
-import { useRef, type ReactNode } from 'react'
+import { useRef, type ReactNode, type Ref } from 'react'
 import { useOrderDrag } from './orderDrag'
 import { plural } from '../../model/words'
 import { Kbd, ProjTile } from '../../ui/bits'
@@ -48,6 +48,8 @@ export interface SidebarEvents {
 
 export interface SidebarProps {
   phone: boolean
+  /** the phone's card at the drawer's foot (the toast sits above it) */
+  footRef?: Ref<HTMLDivElement>
   /** null: never listed in this browser yet */
   projects: SideProject[] | null
   composing: boolean
@@ -147,7 +149,7 @@ function SideLink({ link, phone, on }: { link: SideLinkInfo; phone: boolean; on:
 }
 
 export function Sidebar(props: SidebarProps) {
-  const { phone, projects, composing, links, undoLabel, devLinks, place, hidden, newProjectField, edge, on } = props
+  const { phone, projects, composing, links, undoLabel, devLinks, place, hidden, newProjectField, edge, footRef, on } = props
   const rows = useRef<HTMLDivElement>(null)
   useOrderDrag(rows, (names, moved) => on.order?.(names, moved))
   return (
@@ -228,7 +230,7 @@ export function Sidebar(props: SidebarProps) {
         )}
       </div>
       {phone ? (
-        <div className="mx-2 mt-2 shrink-0 divide-y divide-zinc-100 overflow-hidden rounded-2xl bg-white dark:divide-zinc-700/60 dark:bg-zinc-800">
+        <div ref={footRef} className="mx-2 mt-2 shrink-0 divide-y divide-zinc-100 overflow-hidden rounded-2xl bg-white dark:divide-zinc-700/60 dark:bg-zinc-800">
           {undoLabel ? (
             <button onClick={on.undo} className="flex min-h-12 w-full items-center gap-3 px-3.5 py-2.5 text-left text-[15px]">
               <Icon n="undo" c="size-5 shrink-0 text-zinc-500 dark:text-zinc-400" sw="2" />

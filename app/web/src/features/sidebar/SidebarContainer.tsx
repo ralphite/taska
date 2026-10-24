@@ -5,6 +5,7 @@ import { Grip } from '../../ui/Grip'
 import { NewProjectField } from './NewProjectField'
 import { useLayout, useServices, useStores, useStoreValue } from '../../app/context'
 import { useProjectModel } from '../../app/hooks'
+import { usePaneRef } from '../../app/panes'
 import { needsYou } from '../../model/items'
 import type { ProjectRow } from '../../model/types'
 import { openCount } from '../../model/visible'
@@ -64,6 +65,7 @@ export function SidebarContainer({ slug, place, hidden, rail }: { slug: string; 
   const app = useServices('itemDrag', 'nav', 'projects', 'run', 'sheets', 'voice')
   const stores = useStores('drag', 'feedback', 'grips', 'route', 'ui')
   const layout = useLayout()
+  const drawerFoot = usePaneRef('drawerFoot')
   const { list: listed } = useSideProjects(slug)
   // an item dragged from the list over a project lights it
   const dropOn = useStoreValue(stores.drag, (s) => s.project)
@@ -75,7 +77,8 @@ export function SidebarContainer({ slug, place, hidden, rail }: { slug: string; 
   const undo = useStoreValue(stores.feedback, (s) => s.undo.at(-1) ?? null)
   const sideHidden = useStoreValue(stores.ui, (s) => s.sideHidden)
   const composing = route.page === 'project' && (route.place.kind === 'new' || (route.place.kind === 'tab' && route.tab !== 'inputs'))
-  const side = route.page === 'project' && route.place.kind === 'side' ? route.place.side : null
+  // the list beside the pane (Documents, Activity, Deleted) stays lit while what you opened from it shows
+  const side = useStoreValue(stores.route, (s) => s.side)
   const base = `/p/${encodeURIComponent(slug)}/`
   const links: SideLinkInfo[] = slug
     ? [
@@ -117,6 +120,7 @@ export function SidebarContainer({ slug, place, hidden, rail }: { slug: string; 
   if (rail) return <Rail projects={list} composing={composing && layout === 'desk'} settingsOpen={route.page === 'project' && route.place.kind === 'settings'} hidden={hidden} on={on} />
   return (
     <Sidebar
+      footRef={drawerFoot}
       phone={layout === 'phone'}
       projects={list}
       composing={composing && layout === 'desk'}
