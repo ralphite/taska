@@ -18,6 +18,7 @@ const KIND = {
   data: '数据',
   speed: '速度',
   error: '场景没跑完',
+  scroll: '滚动位置',
 }
 // what only a screen reader, or text out of sight, would show: counted, but marked apart from what is seen
 const SOFT = new Set(['text', 'aria'])
@@ -196,6 +197,8 @@ function stepRow(dir, s) {
     <span class="${s.same ? '' : 'font-medium'}">${esc(s.label)}</span>
     ${s.same ? '' : Object.keys(s.cats).map((k) => chip(KIND[k] || k, tone(k))).join('')}
     ${s.retries ? chip(`重拍 ${s.retries} 次`, 'dim') : ''}
+    ${s.note?.brief ? chip(`短暂画面，需人看：${s.note.brief.join('；')}`, 'dim') : ''}
+    ${s.note?.scroll ? chip(`只是滚动位置差 ${Math.abs(s.note.scroll)}px（旧版自己也会这样，不算差别）`, 'dim') : ''}
     <span class="ml-auto text-xs text-zinc-500">${s.kind === 'check' ? `${s.url ? esc(s.url) + ' · ' : ''}A ${s.ms?.a ?? '—'} / B ${s.ms?.b ?? '—'} ms` : s.kind === 'agent' ? `agent 接口 · ${s.ms?.a ?? '—'} / ${s.ms?.b ?? '—'} ms` : s.kind === 'timed' ? `单独计时，各 ${s.all?.a?.length} 次的中位数：A ${s.ms.a} / B ${s.ms.b} ms` : ''}</span></div>`
   if (s.same) {
     return `<li class="rounded-lg border border-zinc-100 px-2 py-1.5 dark:border-zinc-800">${head}${

@@ -11,7 +11,7 @@ export default [
       await t.agent('GET', '/p/taska/I447')
       await t.click((p) => p.getByRole('textbox', { name: 'Input' }), '点回复框')
       await t.type('Parity: a reply from Yadong', '写回复')
-      if (t.desk) await t.key('Enter', '按 Enter 发出')
+      if (t.desk) await t.key('Meta+Enter', '按 ⌘↵ 发出')
       else await t.click((p) => p.getByRole('button', { name: /^Send/ }), '点发送')
       await t.agent('GET', '/p/taska/next?by=claude-code')
       await t.agent('GET', '/p/taska/I447')

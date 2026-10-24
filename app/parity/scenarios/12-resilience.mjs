@@ -9,7 +9,7 @@ export default [
       await t.wait(4000, '等 4 秒')
       await t.click((p) => p.getByRole('textbox', { name: 'Input' }), '点输入框')
       await t.type('Parity: written while Taska was down', '打字')
-      if (t.desk) await t.key('Enter', '按 Enter 发送')
+      if (t.desk) await t.key('Meta+Enter', '按 ⌘↵ 发送')
       else await t.click((p) => p.getByRole('button', { name: /^Send/ }), '点发送')
       await t.wait(3000, '再等 3 秒')
       await t.servers(true, 'Taska 回来了')

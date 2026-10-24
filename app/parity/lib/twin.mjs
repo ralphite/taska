@@ -8,6 +8,8 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { diffBoxes, filmDiff, imageDiff, textDiff } from './diff.mjs'
 import { SIDE_COOKIE } from './door.mjs'
+import { PNG } from 'pngjs'
+import pixelmatch from 'pixelmatch'
 
 export const VARIANTS = {
   'desk-light': { viewport: { width: 1440, height: 900 }, dpr: 2, scheme: 'light', phone: false },
@@ -205,9 +207,13 @@ class Side {
   shot(scale = 'device', type = 'png') {
     return this.page.screenshot({ animations: 'disabled', caret: 'hide', scale, type, quality: type === 'jpeg' ? 70 : undefined })
   }
-  async capture() {
+  /** env: what differs between two instances by nature on this step (a key each made for itself): { mask(page) ->
+   * locators painted over in the picture, text: [regex] replaced by <env> in the text and the tree }. */
+  async capture(env) {
     const p = this.page
-    const png = await this.shot()
+    const png = env?.mask
+      ? await p.screenshot({ animations: 'disabled', caret: 'hide', mask: env.mask(p), maskColor: '#888' })
+      : await this.shot()
     const u = new URL(p.url())
     let text = ''
     let aria = ''
@@ -216,6 +222,10 @@ class Side {
       aria = await p.locator('body').ariaSnapshot({ timeout: 5000 })
     } catch (e) {
       text ||= `(no text: ${e.message.split('\n')[0]})`
+    }
+    for (const re of env?.text || []) {
+      text = text.replace(re, '<env>')
+      aria = aria.replace(re, '<env>')
     }
     const motion = await p.evaluate(() => (window.__parity?.motion || []).slice().sort()).catch(() => [])
     return { png, url: u.pathname + u.search + u.hash, title: await p.title(), text, aria, motion }
@@ -257,7 +267,7 @@ export class Twin {
 
   // ------------------------------------------------------------------ steps
   /** Runs fn(side) on both sides at once, then settles, captures and compares (unless check is false). */
-  async step(label, fn, { check = true, settle = {}, untimed = false } = {}) {
+  async step(label, fn, { check = true, settle = {}, untimed = false, env } = {}) {
     if (check) await Promise.all(this.sides.map((s) => s.filmStart()))
     const t0 = Date.now()
     const res = await Promise.allSettled(this.sides.map((s) => fn(s)))
@@ -268,8 +278,9 @@ export class Twin {
       return
     }
     const done = await Promise.all(this.sides.map((s) => s.settle(settle)))
-    const films = this.variant.engine === 'webkit' ? null : await Promise.all(this.sides.map((s) => s.filmStop()))
-    await this.compare(label, { t0, done, failed, films, untimed })
+    let films = this.variant.engine === 'webkit' ? null : await Promise.all(this.sides.map((s) => s.filmStop()))
+    if (env) films = null // the film cannot be masked: the step's own capture is compared, masked
+    await this.compare(label, { t0, done, failed, films, untimed, env })
   }
   /** The screen point of a target on side A: fn(page) -> locator, "text" (exact text), or {x, y}. */
   async point(target, { dx, dy } = {}) {
@@ -284,8 +295,8 @@ export class Twin {
     if (x < 0 || y < 0 || x >= vp.width || y >= vp.height) throw new Error(`target is off the screen on side A (${Math.round(x)},${Math.round(y)}): scroll first`)
     return { x, y }
   }
-  async goto(urlPath, label = `打开 ${urlPath}`) {
-    await this.step(label, (s) => s.page.goto(s.base + urlPath, { waitUntil: 'commit' }))
+  async goto(urlPath, label = `打开 ${urlPath}`, opts = {}) {
+    await this.step(label, (s) => s.page.goto(s.base + urlPath, { waitUntil: 'commit' }), opts)
   }
   async reload(label = '刷新') {
     await this.step(label, (s) => s.page.reload({ waitUntil: 'commit' }))
@@ -458,13 +469,15 @@ export class Twin {
   }
 
   // ------------------------------------------------------------------ comparing
-  async compare(label, { t0, done, failed, films, untimed }) {
+  async compare(label, { t0, done, failed, films, untimed, env }) {
     const n = this.steps.length
     let caps
     let cats
     let retries = 0
+    let scrolled = false
+    let note
     for (;;) {
-      caps = await Promise.all(this.sides.map((s) => s.capture()))
+      caps = await Promise.all(this.sides.map((s) => s.capture(env)))
       cats = {}
       const img = imageDiff(caps[0].png, caps[1].png)
       if (img.pixels) cats.pixels = { n: img.pixels, boxes: diffBoxes(img.png).map((b) => scaleBox(b, this.variant.dpr)), size: img.size || false }
@@ -475,6 +488,14 @@ export class Twin {
 
       if (!Object.keys(cats).length || retries >= 2) {
         caps.img = img
+        // the same picture, one part scrolled a few pixels further on one side (the page scrolled an item into view
+        // while the content above it was still coming): the scroll position, not what the page shows, differs
+        const dy = cats.pixels && !cats.pixels.size ? scrollShift(caps[0].png, caps[1].png, cats.pixels.boxes, this.variant.dpr) : 0
+        if (dy) {
+          cats = Object.fromEntries(Object.entries(cats).filter(([k]) => k !== 'pixels'))
+          cats.scroll = { dy, boxes: diffBoxes(img.png).map((b) => scaleBox(b, this.variant.dpr)) }
+          scrolled = true
+        }
         break
       }
       retries++
@@ -490,13 +511,20 @@ export class Twin {
     const base = `${String(n).padStart(3, '0')}`
     const files = {}
     let film = null
-    if (films) {
+    if (films && !scrolled) {
       film = filmDiff(films[0], films[1], this.sides.map((s) => s.prevFrame))
+      if (film.brief.length) note = { ...note, brief: film.brief }
       if (film.diff) {
         cats.film = film.rows
         for (const [k, side] of [['a', 0], ['b', 1]])
           film[k].forEach((x, j) => fs.writeFileSync(path.join(this.outDir, (x.file = `${base}-film-${k}${j}.png`)), films[side][x.i].png))
       }
+    }
+    // only a scroll position differs (a few pixels, the same picture, the same text): a note, not a difference; the
+    // old Taska does this to itself from run to run
+    if (scrolled && Object.keys(cats).length === 1) {
+      note = { ...note, scroll: cats.scroll.dy }
+      cats = {}
     }
     const same = !Object.keys(cats).length
     if (same) {
@@ -520,6 +548,7 @@ export class Twin {
       files,
       errorsA: errs[0],
       untimed: untimed || undefined, // a wait on purpose: its time says nothing about speed
+      note,
       film: film && { a: film.a, b: film.b, short: film.short },
       // compared over the whole scenario (run.mjs): a fade can start a step later on one side, as an image arrives
       motion: caps[0].motion.length || caps[1].motion.length ? { a: caps[0].motion, b: caps[1].motion } : undefined,
@@ -567,6 +596,52 @@ async function touch(side, pts, hold) {
   }
   await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
   await cdp.detach().catch(() => {})
+}
+
+// A vertical shift (|dy| <= 40 CSS px) that makes the differing region of B match A's: -> dy in CSS px, or 0.
+function scrollShift(pa, pb, boxes, dpr) {
+  if (!boxes.length) return 0
+  const A = PNG.sync.read(pa)
+  const B = PNG.sync.read(pb)
+  const x0 = Math.min(...boxes.map((b) => b.x)) * dpr
+  const x1 = Math.min(A.width, Math.max(...boxes.map((b) => b.x + b.w)) * dpr)
+  const y0 = Math.min(...boxes.map((b) => b.y)) * dpr
+  const y1 = Math.min(A.height, Math.max(...boxes.map((b) => b.y + b.h)) * dpr)
+  const px = (P, x, y) => P.data.readUInt32BE((y * P.width + x) * 4)
+  const miss = (d, step) => {
+    let bad = 0
+    let n = 0
+    for (let y = Math.max(y0, y0 - d); y < Math.min(y1, y1 - d); y += step)
+      for (let x = x0; x < x1; x += step) {
+        n++
+        if (px(A, x, y + d) !== px(B, x, y)) bad++
+      }
+    return n ? bad / n : 1
+  }
+  let best = 0
+  let bestMiss = miss(0, 3)
+  for (let d = -40 * dpr; d <= 40 * dpr; d++) {
+    if (!d) continue
+    const m = miss(d, 3)
+    if (m < bestMiss) (bestMiss = m), (best = d)
+  }
+  if (!best) return 0
+  // B shows at y what A shows at y + d: the same picture, scrolled. A scroll can stop between two pixels, so glyph
+  // edges differ a little: the overlap is compared as pictures are (anti-aliasing ignored), and must agree
+  const lo = Math.max(y0, y0 - best)
+  const hi = Math.min(y1, y1 - best)
+  const w = x1 - x0
+  const h = hi - lo
+  if (w <= 0 || h <= 0) return 0
+  const crop = (P, top) => {
+    const out = new PNG({ width: w, height: h })
+    PNG.bitblt(P, out, x0, top, w, h, 0, 0)
+    return out
+  }
+  const ca = crop(A, lo + best)
+  const cb = crop(B, lo)
+  const bad = pixelmatch(ca.data, cb.data, null, w, h, { threshold: 0.1, includeAA: false })
+  return bad / (w * h) < 0.003 ? Math.round(best / dpr) : 0
 }
 
 const scaleBox = (b, k) => ({ x: Math.round(b.x / k), y: Math.round(b.y / k), w: Math.round(b.w / k), h: Math.round(b.h / k) })

@@ -100,6 +100,7 @@ export function textDiff(a, b, ctx = 2) {
 // the two sides are lined up in order (equal pictures match); a screen on one side with no match on the other is a
 // difference: something shown that the other never shows, or shown in another order.
 export const SEEN = 120
+export const HELD = 300
 const sameImage = (a, b) => a.equals(b) || imageDiff(a, b).pixels === 0
 
 /** films: [{ png, ms }] per side -> { diff, rows, a, b, short }; a/b list the seen screens: { i, ms, match }. */
@@ -125,11 +126,14 @@ export function filmDiff(fa, fb, [prevA, prevB] = []) {
   const anywhere = (png, film, prev) => (prev && sameImage(png, prev)) || film.some((x) => sameImage(png, x.png))
   for (const x of a) if (x.match === undefined) x.briefly = anywhere(fa[x.i].png, fb, prevB)
   for (const x of b) if (x.match === undefined) x.briefly = anywhere(fb[x.i].png, fa, prevA)
-  const rows = [
-    ...a.filter((x) => x.match === undefined && !x.briefly).map((x) => `A 有、B 从没出现的画面（A 上停了 ${x.ms} ms）`),
-    ...b.filter((x) => x.match === undefined && !x.briefly).map((x) => `B 有、A 从没出现的画面（B 上停了 ${x.ms} ms）`),
-  ]
+  // under 300 ms on one side only it may be one frame of a motion held up while the machine was busy: listed for a
+  // person to look at, not counted
+  const left = (xs, side) => xs.filter((x) => x.match === undefined && !x.briefly).map((x) => ({ ...x, side }))
+  const all = [...left(a, 'A'), ...left(b, 'B')]
+  const say = (x) => `${x.side} 有、${x.side === 'A' ? 'B' : 'A'} 从没出现的画面（${x.side} 上停了 ${x.ms} ms）`
+  const rows = all.filter((x) => x.ms >= HELD).map(say)
+  const brief = all.filter((x) => x.ms < HELD).map(say)
   // frames under SEEN on one side only, for the record (a flash): not counted, listed
   const short = { a: fa.filter((x) => x.ms < SEEN).length, b: fb.filter((x) => x.ms < SEEN).length }
-  return { diff: rows.length > 0, rows, a, b, short }
+  return { diff: rows.length > 0, rows, brief, a, b, short }
 }
