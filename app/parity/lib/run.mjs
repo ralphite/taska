@@ -156,7 +156,9 @@ export function motionCheck(res) {
 // Errors are compared over the scenario too: the same error (the network gone while offline) can come a step
 // later on one side. A step keeps its errors difference only for an error the other side never had in the scenario.
 export function errorsCheck(res) {
-  const bare = (e) => e.replace(/(BASE\/[^\s?]*)\?\S*/g, '$1?…')
+  // a failed answer counts by its status: the page's own API is the rewrite's to shape (its paths differ), the agent
+  // interface is compared word for word elsewhere
+  const bare = (e) => e.replace(/^HTTP (\d+) \w+ BASE\S*/, 'HTTP $1').replace(/(BASE\/[^\s?]*)\?\S*/g, '$1?…')
   const seenA = new Set(res.steps.flatMap((s) => [...(s.errorsA || []), ...(s.cats?.errors?.a || [])]).map(bare))
   for (const s of res.steps) {
     if (!s.cats?.errors) continue

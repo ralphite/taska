@@ -11,7 +11,9 @@ const notes = argv.includes('--notes')
 const groups = new Map()
 // what is already known and waiting on Yadong: the sidebar's Storybook link (P02), on every desktop page
 const P02 = /localhost:(6007|6351)/
+// and a list's scroll position: the old page's own lands 40-90 px differently from run to run (old vs old, P19)
 function known(kind, diff) {
+  if (kind === 'scroll') return true
   if (kind !== 'aria' && kind !== 'text') return false
   const changed = diff.filter((d) => d.op === '+' || d.op === '-')
   return changed.length > 0 && changed.every((d) => P02.test(d.line))
