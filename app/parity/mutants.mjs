@@ -23,7 +23,7 @@ export const MUTANTS = [
     name: 'shade',
     title: '黄色徽章深了一档（amber-100 用成 amber-200 的亮度）',
     patches: [{ file: CSS, find: '--color-amber-100:oklch(96.2% .059 95.617);', replace: '--color-amber-100:oklch(92.4% .12 95.746);' }],
-    expect: { scenario: 'home', variants: ['desk-light', 'phone-light'], cats: ['pixels'] },
+    expect: { scenario: 'home', variants: ['desk-light', 'phone-light', 'iphone-light'], cats: ['pixels'] },
   },
   {
     name: 'nudge',
@@ -117,6 +117,36 @@ export const MUTANTS = [
     title: '保存慢 0.45 秒（按钮的“处理中”样子多停了一会儿）',
     patches: [{ file: WEB, find: '        elif p == "/api/op":\n', replace: '        elif p == "/api/op":\n            time.sleep(0.45)\n' }],
     expect: { scenario: 'approve', variants: ['desk-light'], cats: ['film', 'speed'] },
+  },
+  {
+    name: 'iphone-only',
+    title: '只在 iPhone（Safari 内核）上顶栏挪了 1 像素',
+    patches: [{ file: CSS, find: '/*! tailwindcss', replace: '@supports (font: -apple-system-body){header{margin-top:1px}}/*! tailwindcss' }],
+    expect: { scenario: 'list', variants: ['iphone-light'], cats: ['pixels'], clean: ['phone-light'] },
+  },
+  {
+    name: 'toast-word',
+    title: '改优先级后的提示条说 “became P2” 而不是 “is now P2”',
+    patches: [{ file: SW, find: 'e===`pri`?`is now ${t}`', replace: 'e===`pri`?`became ${t}`' }],
+    expect: { scenario: 'item-fields', variants: ['desk-light', 'iphone-light'], cats: ['pixels', 'text'] },
+  },
+  {
+    name: 'shortcuts-title',
+    title: '快捷键面板标题写成 “Keyboard Shortcuts”',
+    patches: [{ file: JS, find: 'return{title:`Keyboard shortcuts`,body:', replace: 'return{title:`Keyboard Shortcuts`,body:' }],
+    expect: { scenario: 'keys', variants: ['desk-light'], cats: ['pixels', 'text'] },
+  },
+  {
+    name: 'down-words',
+    title: 'Taska 停了时的提示改成 “Taska is unreachable, retrying…”',
+    patches: [{ file: JS, find: '`Taska is out of reach, retrying…`', replace: '`Taska is unreachable, retrying…`', count: 3 }],
+    expect: { scenario: 'server-down', variants: ['desk-light', 'phone-light'], cats: ['pixels', 'text'] },
+  },
+  {
+    name: 'file-name',
+    title: '上传的文件存成另一个名字（数据和 agent 读到的不同）',
+    patches: [{ file: 'server/taska/store.py', find: 'base = re.sub(r"[^\\w.\\-]+", "_", os.path.basename(name or "file"))', replace: 'base = "up-" + re.sub(r"[^\\w.\\-]+", "_", os.path.basename(name or "file"))' }],
+    expect: { scenario: 'new-input', variants: ['desk-light'], cats: ['data', 'agent'] },
   },
 ]
 

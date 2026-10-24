@@ -21,24 +21,33 @@ fs.mkdirSync(OUT, { recursive: true })
 const sumFile = path.join(OUT, 'summary.json')
 const summary = fs.existsSync(sumFile) ? JSON.parse(fs.readFileSync(sumFile, 'utf8')) : { same: [], mutants: {} }
 const save = () => fs.writeFileSync(sumFile, JSON.stringify(summary, null, 1))
+// each run's step-by-step lines go to out/selftest/<run>.log (three runs at once would mix them on the screen)
+const fileLog = (id) => (line) => fs.appendFileSync(path.join(OUT, `${id}.log`), line + '\n')
+for (const f of fs.readdirSync(OUT)) if (f.endsWith('.log')) fs.rmSync(path.join(OUT, f))
 const browser = await chromium.launch()
 try {
-  if (!skipSame && !only) {
-    summary.same = []
-    for (const k of [1, 2]) {
-      const rep = await run({ a: 'old', b: 'old', scenarios: sameScenarios, runId: `selftest-same-${k}`, browser })
-      const found = rep.results.filter((r) => kindsOf(r).size).map((r) => `${r.scenario}/${r.variant}: ${[...kindsOf(r)].join(',')}`)
-      const checks = rep.results.reduce((n, r) => n + r.steps.length, 0)
-      summary.same.push({ run: rep.run, runs: rep.results.length, steps: checks, found, pass: found.length === 0, at: rep.finished })
-      save()
-      console.log(`old vs old #${k}: ${rep.results.length} runs, ${checks} steps, ${found.length ? 'FOUND ' + found.join('; ') : 'nothing found'}`)
-    }
+  // the two passes of old vs old and the planted faults run at the same time (each on its own ports and data): the
+  // tool has to be right on a busy machine too
+  const same = async (k) => {
+    const rep = await run({ a: 'old', b: 'old', scenarios: sameScenarios, runId: `selftest-same-${k}`, browser, log: fileLog(`selftest-same-${k}`) })
+    const found = rep.results.filter((r) => kindsOf(r).size).map((r) => `${r.scenario}/${r.variant}: ${[...kindsOf(r)].join(',')}`)
+    const checks = rep.results.reduce((n, r) => n + r.steps.length, 0)
+    summary.same[k - 1] = { run: rep.run, runs: rep.results.length, steps: checks, found, pass: found.length === 0, at: rep.finished }
+    save()
+    console.log(`old vs old #${k}: ${rep.results.length} runs, ${checks} steps, ${found.length ? 'FOUND ' + found.join('; ') : 'nothing found'}`)
   }
+  if (!skipSame && !only) summary.same = []
+  await Promise.all([...(!skipSame && !only ? [same(1), same(2)] : []), mutants()])
+} finally {
+  await browser.close()
+}
+
+async function mutants() {
   for (const m of MUTANTS) {
     if (only && !only.includes(m.name)) continue
     const e = m.expect
     const variants = [...new Set([...e.variants, ...(e.clean || [])])]
-    const rep = await run({ a: 'old', b: `mutant:${m.name}`, scenarios: [e.scenario], variants, runId: `selftest-${m.name}`, browser })
+    const rep = await run({ a: 'old', b: `mutant:${m.name}`, scenarios: [e.scenario], variants, runId: `selftest-${m.name}`, browser, log: fileLog(`selftest-${m.name}`) })
     const rows = rep.results.map((r) => {
       const kinds = kindsOf(r)
       const wanted = e.variants.includes(r.variant)
@@ -51,8 +60,6 @@ try {
     save()
     console.log(`${pass ? 'CAUGHT ' : 'MISSED '} ${m.name}: ${rows.map((x) => `${x.variant}=${x.kinds.join('+') || 'nothing'}${x.ok ? '' : ' (wrong)'}`).join('  ')}`)
   }
-} finally {
-  await browser.close()
 }
 const mut = Object.values(summary.mutants)
 console.log(

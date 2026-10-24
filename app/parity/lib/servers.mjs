@@ -24,6 +24,10 @@ const portBusy = (port) =>
 
 /** n free ports from the parity range (7450-7479), held for this process (a lock file with its pid), so two runs at
  * once never pick the same; ports others listen on are skipped. */
+const mine = new Set() // ports this process already holds for a run still going
+export function releasePorts(ports) {
+  for (const p of ports) mine.delete(p)
+}
 export async function freePorts(n, from = 7450, to = 7479) {
   const dir = path.join(RUNS, '.ports')
   fs.mkdirSync(dir, { recursive: true })
@@ -42,8 +46,12 @@ export async function freePorts(n, from = 7450, to = 7479) {
     try {
       holder = Number(fs.readFileSync(lock, 'utf8'))
     } catch {}
-    if (holder && holder !== process.pid && alive(holder)) continue
-    if (await portBusy(p)) continue
+    if (mine.has(p) || (holder && holder !== process.pid && alive(holder))) continue
+    mine.add(p) // taken before the check below waits, so a second run in this process cannot pick it meanwhile
+    if (await portBusy(p)) {
+      mine.delete(p)
+      continue
+    }
     fs.writeFileSync(lock, String(process.pid))
     out.push(p)
   }

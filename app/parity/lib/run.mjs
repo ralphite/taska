@@ -3,7 +3,7 @@ import { chromium, webkit } from 'playwright'
 import { execFileSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
-import { PARITY, RUNS, freePorts, freshData, startServer, versions } from './servers.mjs'
+import { PARITY, RUNS, freePorts, freshData, releasePorts, startServer, versions } from './servers.mjs'
 import { Twin, VARIANTS } from './twin.mjs'
 import { openDoor } from './door.mjs'
 import { textDiff } from './diff.mjs'
@@ -127,6 +127,7 @@ export async function run({ a = 'old', b = 'new', scenarios: want, variants, run
     report.finished = new Date().toISOString()
     save()
     for (const x of ['a', 'b']) fs.rmSync(path.join(RUNS, `${runId}-${x}`), { recursive: true, force: true })
+    if (!ports) releasePorts([portDoor, portA, portB])
   }
   return report
 }
