@@ -26,8 +26,6 @@ const fileLog = (id) => (line) => fs.appendFileSync(path.join(OUT, `${id}.log`),
 for (const f of fs.readdirSync(OUT)) if (f.endsWith('.log')) fs.rmSync(path.join(OUT, f))
 const browser = await chromium.launch()
 try {
-  // the two passes of old vs old and the planted faults run at the same time (each on its own ports and data): the
-  // tool has to be right on a busy machine too
   const same = async (k) => {
     const rep = await run({ a: 'old', b: 'old', scenarios: sameScenarios, runId: `selftest-same-${k}`, browser, log: fileLog(`selftest-same-${k}`) })
     const found = rep.results.filter((r) => kindsOf(r).size).map((r) => `${r.scenario}/${r.variant}: ${[...kindsOf(r)].join(',')}`)
@@ -37,7 +35,12 @@ try {
     console.log(`old vs old #${k}: ${rep.results.length} runs, ${checks} steps, ${found.length ? 'FOUND ' + found.join('; ') : 'nothing found'}`)
   }
   if (!skipSame && !only) summary.same = []
-  await Promise.all([...(!skipSame && !only ? [same(1), same(2)] : []), mutants()])
+  // one at a time: the machine guard allows five browser pages for all agents together
+  if (!skipSame && !only) {
+    await same(1)
+    await same(2)
+  }
+  await mutants()
 } finally {
   await browser.close()
 }

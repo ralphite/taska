@@ -7,6 +7,7 @@ import path from 'node:path'
 import { PARITY, RUNS, freePorts, freshData, releasePorts, startServer, versions } from './servers.mjs'
 import { Twin, VARIANTS } from './twin.mjs'
 import { openDoor } from './door.mjs'
+import { guard } from './guard.mjs'
 import { textDiff } from './diff.mjs'
 import { mutantSpec } from '../mutants.mjs'
 
@@ -59,26 +60,13 @@ export function speedOf(steps) {
   return { a, b, slow: slowB.length >= 2 && slowB.length >= slowA.length + 2, worst, slowA: slowA.length, slowB: slowB.length }
 }
 
-// Yadong's own Taska (and its tunnel) runs on this machine. A run starts a scenario only after the load has stayed
-// under PARITY_MAX_LOAD (10) for three minutes in a row (the load is a lagging average: one dip proves nothing), and
-// a step waits while the load is over twice that. A file PARITY_HOLD in out/ holds everything until removed.
-const HOLD = path.join(PARITY, 'out', 'PARITY_HOLD')
-const maxLoad = () => Number(process.env.PARITY_MAX_LOAD || 10)
-export async function quietMachine(log = () => {}, { minutes = 3 } = {}) {
-  let calm = 0
-  let said = false
-  while (calm < minutes * 4) {
-    const busy = os.loadavg()[0] >= maxLoad() || fs.existsSync(HOLD)
-    calm = busy ? 0 : calm + 1
-    if (busy && !said) log(`    waiting: load ${os.loadavg()[0].toFixed(1)}${fs.existsSync(HOLD) ? ', held' : ''}; starts after ${minutes} quiet minutes`)
-    said ||= busy
-    await new Promise((r) => setTimeout(r, 15000))
-  }
+// Yadong's own Taska (and its tunnel) runs on this machine: the machine guard decides when pages may open
+// (lib/guard.mjs). Between steps a run asks it for no pages, which only waits while the machine is held.
+export async function quietMachine(log = () => {}) {
+  guard(0, log)
 }
 export async function notBusy(log = () => {}) {
-  if (os.loadavg()[0] < maxLoad() * 2 && !fs.existsSync(HOLD)) return
-  log(`    pausing: load ${os.loadavg()[0].toFixed(1)}`)
-  await quietMachine(log, { minutes: 1 })
+  guard(0, log)
 }
 
 /** -> the report; it is also written to out/<runId>/report.json after every scenario/variant. */

@@ -8,6 +8,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { diffBoxes, filmDiff, imageDiff, textDiff } from './diff.mjs'
 import { SIDE_COOKIE } from './door.mjs'
+import { guard } from './guard.mjs'
 import { PNG } from 'pngjs'
 import pixelmatch from 'pixelmatch'
 
@@ -289,6 +290,7 @@ export class Twin {
     return this.variant.scheme === 'dark'
   }
   async open() {
+    guard(2, this.log) // the old and the new page
     await Promise.all(this.sides.map((s) => s.open()))
   }
   async close() {
@@ -422,6 +424,7 @@ export class Twin {
   }
   /** A second tab of the same browser on both sides, opened at urlPath; it becomes the one the steps act on. */
   async newTab(urlPath, label = `新开一个标签页 ${urlPath}`) {
+    guard(2, this.log)
     await Promise.all(this.sides.map((s) => s.newPage()))
     await this.goto(urlPath, label)
   }
