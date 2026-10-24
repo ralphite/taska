@@ -1,5 +1,10 @@
 # Working on Taska v2 (for coding agents)
 
+> **Since 2026-10-24 12:40 v2 is not the live Taska.** Port 7340 (and the phone, the tunnel) run the rewrite in
+> `app/` (F581). v2 is kept only as the backup: `zsh v2/tools/switch-back.sh` puts it back on 7340, same data.
+> Do not change or ship v2 (`v2/tools/ship.sh` would restart the live rewrite); work in `app/`, ship with
+> `zsh app/tools/ship.sh`. v2 will be deleted once the rewrite has proved itself.
+
 - Everything here is English: code, comments, docs, commit messages. No personal data, no keys.
 - The agent interface (`/agent`, `/next`, `/do`, `/items`, cards, `/D1`, `/log`, `/rules`, `/inbox`, `/connect`,
   `/skill`, `/api/file`) must not change by a single word. After any backend change run
