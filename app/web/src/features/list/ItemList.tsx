@@ -1,7 +1,7 @@
 // The item list: the views' row, then its rows in the order of your loop (what waits on you, the agents' queue,
 // Later, finished work), or a word on why it is empty. Props only; ItemListContainer gives it the rows.
 
-import { forwardRef, type ReactNode, useRef } from 'react'
+import { forwardRef, type ReactNode, useLayoutEffect, useRef } from 'react'
 import type { Item } from '../../model/types'
 import { Empty } from '../../ui/bits'
 import { ArchiveAllLine, HeldRow, HiddenKidsLine, ItemRow, NeedsMoreLine, NeedsRow, Zone, type RowEvents, type RowFacts, type RowLook } from './ListRows'
@@ -54,6 +54,8 @@ export interface ItemListProps {
   /** an item is being dragged (its rows are marked through their look): off every row it stands on its own */
   dragging?: { out: boolean } | null
   desk?: boolean
+  /** the item open beside the list (the desktop): opening another brings its row into view */
+  openN?: number | null
   /** the phone: a row swipes right to go forward, left to show the ways back */
   swipe?: RowSwipe
 }
@@ -61,8 +63,15 @@ export interface ItemListProps {
 const NO_SWIPE: RowSwipe = { right: () => null, blocked: () => true }
 
 export const ItemList = forwardRef<HTMLDivElement, ItemListProps>(function ItemList(props, ref) {
-  const { loading, views, ownViews, rows, empty, top, bottom, on, onScroll, rowRef, dragging = null, desk = false, swipe } = props
+  const { loading, views, ownViews, rows, empty, top, bottom, on, onScroll, rowRef, dragging = null, desk = false, swipe, openN = null } = props
   const own = useRef<HTMLDivElement | null>(null)
+  const wasOpen = useRef(openN)
+  useLayoutEffect(() => {
+    // not when the page loads with it open: only when you go from one item to another
+    if (openN === wasOpen.current) return
+    wasOpen.current = openN
+    if (desk && openN != null) own.current?.querySelector(`article[data-n="${openN}"] > :first-child`)?.scrollIntoView({ block: 'nearest' })
+  }, [openN, desk])
   useRowSwipe(own, !desk && !!swipe, swipe ?? NO_SWIPE, rows)
   const rowOf = (t: EventTarget) => (t as Element).closest?.<HTMLElement>('article[data-n]') ?? null
   return (
