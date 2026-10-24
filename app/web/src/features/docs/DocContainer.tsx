@@ -12,10 +12,10 @@ import type { DocViewState } from '../../stores/docView'
 import { runAction } from '../../app/actions'
 import { WebPage } from './WebPage'
 import { Lasso } from './Lasso'
-import { Thread } from './Thread'
+import { DraftCard, Thread } from './Thread'
 import { codeOf, liveN } from '../../model/project'
 import { factsOf } from './docFacts'
-import { notSent } from '../../model/voiceComments'
+import { notSent, type NotSent } from '../../model/voiceComments'
 import { Sheet, SheetLayout } from '../../ui/Sheet'
 import { useItemWorld } from '../item/ItemPageContainer'
 import { PaneFrame } from '../item/PaneFrame'
@@ -86,17 +86,23 @@ function useDoc(slug: string, dn: number) {
     tick: (tk, i) => docs.tick(dn, tk, i),
     modifyTicks: (tk) => docs.modifyTicks(dn, tk),
   }
-  const page = d?.fmt === 'html' && m ? <WebPageContainer slug={slug} d={d} v={v} seen={seen} env={env} on={on} /> : null
+  const page = d?.fmt === 'html' && m ? <WebPageContainer slug={slug} d={d} v={v} seen={seen} env={env} on={on} waiting={waiting} /> : null
   const aimed = useCallback(() => app.stores.docView.getState().setAim(null), [app])
   return { m, d, facts, env, on, v, desk, page, aimed }
 }
 
 /** A web page document's own view, with its threads. */
-function WebPageContainer({ slug, d, v, seen, env, on }: { slug: string; d: Doc; v: DocViewState; seen: Readonly<Record<string, string>>; env: DocEnv; on: DocEvents }) {
+function WebPageContainer({ slug, d, v, seen, env, on, waiting }: { slug: string; d: Doc; v: DocViewState; seen: Readonly<Record<string, string>>; env: DocEnv; on: DocEvents; waiting: readonly NotSent[] }) {
   const app = useApp()
   const asked = useStoreValue(app.stores.sheet, (s) => s.asked)
   const all = d.blocks.flatMap((b) => threadsOf(b.comments).map((t) => ({ t, key: b.key })))
-  const threads = all.map(({ t, key }) => ({ tk: t.tk, key, quote: t.quote, n: t.comments.length, done: resolved(d, t.tk) }))
+  // a comment not sent yet (its quote in the box, with what was said or written under it) shows where it will go
+  const drafts = waiting.filter((x) => x.key.startsWith('h:'))
+  const draftKeys = [...new Set(drafts.map((x) => x.key))]
+  const threads = [
+    ...all.map(({ t, key }) => ({ tk: t.tk, key, quote: t.quote, n: t.comments.length, done: resolved(d, t.tk) })),
+    ...draftKeys.map((key) => ({ tk: `${key}#new`, key, quote: '', n: drafts.filter((x) => x.key === key).length, done: false, draft: true })),
+  ]
   // the part spoken about: the mic pressed turns into Stop right there, and no other part lights
   const spoken = useStoreValue(app.stores.recording, (s) => {
     const a = s.rec?.about
@@ -104,8 +110,19 @@ function WebPageContainer({ slug, d, v, seen, env, on }: { slug: string; d: Doc;
   })
   const rec = !!spoken
   const held = useMemo(() => (spoken ? (JSON.parse(spoken) as { key: string; text: string }) : v.quote?.key.startsWith('h:') ? v.quote : null), [spoken, v.quote])
-  const open = all.find(({ t, key }) => v.threads.has(t.tk) || v.threads.has(key))?.t.tk ?? null
+  const open = all.find(({ t, key }) => v.threads.has(t.tk) || v.threads.has(key))?.t.tk ?? draftKeys.map((k) => `${k}#new`).find((tk) => v.threads.has(tk)) ?? null
   const thread = (tk: string, rail: boolean) => {
+    if (tk.endsWith('#new')) {
+      const mine = drafts.filter((x) => `${x.key}#new` === tk)
+      return mine.length ? (
+        // over the page, as the comments are: nothing of the page shows through
+        <div className="flex flex-col gap-2 rounded-xl bg-white dark:bg-zinc-900">
+          {mine.map((x) => (
+            <DraftCard key={x.label} words={x.words} voice={x.voice} transcribing={x.transcribing} />
+          ))}
+        </div>
+      ) : null
+    }
     const x = all.find((y) => y.t.tk === tk)
     if (!x) return null
     return <Thread t={x.t} rail={rail} isNew={threadNew(seen, d, x.key, x.t.comments)} done={resolved(d, tk)} replying={v.reply === tk} asking={Object.keys(asked).find((k) => k.startsWith(`unfile ${d.d} `))?.slice(`unfile ${d.d} `.length) ?? null} env={env} on={on} />
@@ -116,6 +133,7 @@ function WebPageContainer({ slug, d, v, seen, env, on }: { slug: string; d: Doc;
       html={d.md}
       threads={threads}
       held={held}
+      rec={rec}
       open={open}
       desk={env.desk}
       inspect={v.inspect}

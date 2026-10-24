@@ -21,6 +21,8 @@ export interface PageThread {
   quote: string
   n: number
   done: boolean
+  /** comments in the box not sent yet: a count of their own that opens their card */
+  draft?: boolean
 }
 
 export interface WebPageEvents {
@@ -53,12 +55,14 @@ function inside(p: XY, a: XY, b: XY, c: XY) {
   return !((d1 < 0 || d2 < 0 || d3 < 0) && (d1 > 0 || d2 > 0 || d3 > 0))
 }
 
-export function WebPage({ title, html, threads, held, open, desk, inspect, renderThread, sayRow, on }: {
+export function WebPage({ title, html, threads, held, rec = false, open, desk, inspect, renderThread, sayRow, on }: {
   title: string
   html: string
   threads: PageThread[]
   /** the part picked to comment on */
   held: { key: string; text: string } | null
+  /** a voice comment about the part held is being recorded: its mic is Stop */
+  rec?: boolean
   /** the thread open */
   open: string | null
   desk: boolean
@@ -111,7 +115,7 @@ export function WebPage({ title, html, threads, held, open, desk, inspect, rende
   useLayoutEffect(() => {
     spots.current = counts
   })
-  const elsewhere = measured ? threads.filter((t) => !shown(rects[t.key])) : []
+  const elsewhere = measured ? threads.filter((t) => !t.draft && !shown(rects[t.key])) : []
   const opened = counts.find((c) => c.tk === open)
   const keys = [...new Set([...threads.map((t) => t.key), ...(held ? [held.key] : [])])]
   const want = JSON.stringify({ mode, keys, picked: held?.key || '', shut: !!opened })
@@ -228,6 +232,7 @@ export function WebPage({ title, html, threads, held, open, desk, inspect, rende
   const btn = 'grid size-7 place-items-center rounded-lg bg-white text-zinc-500 shadow-sm ring-1 ring-zinc-900/10 hover:text-zinc-900 dark:bg-zinc-800 dark:text-zinc-300 dark:ring-white/10 dark:hover:text-white'
   const buttons = (p: { key: string; text: string }, r: Box, hovering: boolean) => {
     const at = btnsAt(r, counts)
+    const stop = rec && !hovering
     return (
       <div
         className="absolute z-20 flex flex-row gap-1"
@@ -249,12 +254,15 @@ export function WebPage({ title, html, threads, held, open, desk, inspect, rende
             }
           : {})}
       >
-        <button onClick={() => on.say(p)} title="Speak a comment" className={btn}>
-          <Icon n="mic" c="size-4" />
+        {/* the part spoken about keeps its buttons right there; the mic pressed turns into Stop */}
+        <button onClick={() => on.say(p)} title={stop ? 'Stop' : 'Speak a comment'} className={stop ? 'grid size-7 place-items-center rounded-lg bg-red-600 text-white shadow-sm ring-1 ring-red-700' : btn}>
+          <Icon n={stop ? 'stop' : 'mic'} c="size-4" />
         </button>
-        <button onClick={() => on.pick(p)} title="Comment" className={btn}>
-          <Icon n="comment" c="size-4" />
-        </button>
+        {stop ? null : (
+          <button onClick={() => on.pick(p)} title="Comment" className={btn}>
+            <Icon n="comment" c="size-4" />
+          </button>
+        )}
       </div>
     )
   }
@@ -282,6 +290,7 @@ export function WebPage({ title, html, threads, held, open, desk, inspect, rende
         <button
           key={c.tk}
           data-count={c.tk}
+          {...(c.draft ? { 'data-draft': '' } : {})}
           onClick={() => on.toggle(c.tk)}
           style={{ top: c.top, left: c.left }}
           onMouseEnter={() => setLit(c.key)}
