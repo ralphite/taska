@@ -271,7 +271,7 @@ export function createApp(env: AppEnv): App {
   const activity = new Activity({ api, store: activityStore, toasts })
   const restores = new Restores({ runner, toasts, inputs: inputActions, model })
   const docs = new Docs({ route, model, view: docView, nav, fields, toasts, desk: env.desk, leaveEditor: () => docEditor.keep() })
-  const docEditor: DocEditor = new DocEditor({ route, model, runner, view: docView, sheets, toasts, kv: env.kv, desk: env.desk, open: (dn) => docs.open(dn), close: () => docs.close(), mic: { stop: () => dictation.stop(), discard: (key) => dictation.discard(key), settled: () => dictation.settled() } })
+  const docEditor: DocEditor = new DocEditor({ route, model, runner, view: docView, sheets, toasts, kv: env.kv, desk: env.desk, open: (dn) => docs.open(dn), close: () => docs.close(), mic: { discard: (key) => dictation.discard(key), settled: () => dictation.settled() } })
   const docComments = new DocComments({ route, model, runner, changes, view: docView, box, boxStore, fields, sheets, toasts, desk: env.desk })
   const docChoices = new DocChoices({ route, model, runner, ticks: docTicks, view: docView, box, inputs, toasts, desk: env.desk })
   const projects = new Projects({ api, data, kv: env.kv, toasts, home: () => route.getState().route.page === 'home' })

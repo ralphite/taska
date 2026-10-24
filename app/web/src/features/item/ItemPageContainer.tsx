@@ -12,7 +12,7 @@ import { answerOf } from '../../model/talk'
 import type { Item } from '../../model/types'
 import { inTab, tabOf } from '../../model/visible'
 import type { Tab } from '../../model/words'
-import { outgoingLine, outgoingState } from '../../model/outgoing'
+import { outgoingLine, outgoingState, showsOnItsWay } from '../../model/outgoing'
 import { ItemPage, type ItemEvents, type ItemFacts } from './ItemPage'
 import type { Outgoing, TalkFacts } from './Talk'
 import type { TalkEnv } from './talkEnv'
@@ -49,7 +49,7 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
   const picked = app.answers.picked(it)
   const choosing = { picked, pick: (i: number, multi: boolean) => app.answers.pick(it, i, multi) }
 
-  const mine = outbox.filter((o) => o.slug === slug && o.scope === ref)
+  const mine = outbox.filter((o) => o.slug === slug && o.scope === ref && showsOnItsWay(o))
   const answering = mine.filter((o) => o.kind === 'answer').at(-1)
   const outgoing: Outgoing[] = mine
     .filter((o) => !(o.kind === 'answer' && !o.files.length))

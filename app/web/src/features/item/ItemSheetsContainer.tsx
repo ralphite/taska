@@ -119,6 +119,7 @@ export function SourcesSheet({ req }: Req<'item-sources'>) {
   const { slug, m, it, code } = useSubject(req.n)
   const world = useItemWorld(m, slug)
   const media = useFiles(slug)
+  const desk = useLayout() === 'desk'
   if (!m || !it) return null
   return (
     <SheetLayout
@@ -130,7 +131,9 @@ export function SourcesSheet({ req }: Req<'item-sources'>) {
           now: m.at,
           files: (f) => <Thumbs files={f} url={world.url} play={media.play} tidy={media.tidy} on={media.on} />,
         },
-        (id) => app.sheets.close(() => app.nav.goInput(id, (x) => stores.ui.getState().setLit(x))),
+        // the phone's Inputs lights it where its list is (the sheet's closing takes the list back to its top), as it
+        // always has
+        (id) => app.sheets.close(() => app.nav.goInput(id, (x) => stores.ui.getState().setLit(x, !desk))),
       )}
     />
   )

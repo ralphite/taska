@@ -5,6 +5,7 @@ import { useEffect } from 'react'
 import { useLayout, useServices, useStores, useStoreValue } from '../../app/context'
 import { useProjectModel, type ProjectRoute } from '../../app/hooks'
 import { feedbackLine } from '../../model/boxFoot'
+import { showsOnItsWay } from '../../model/outgoing'
 import type { DraftKey } from '../../model/draftTarget'
 import { codeOf } from '../../model/project'
 import { Feedback } from './Composer'
@@ -18,7 +19,7 @@ export function FeedbackContainer({ route, composePage, scope, boxKey }: { route
   const justSent = useStoreValue(stores.box, (s) => s.sent)
   const lastSent = useStoreValue(stores.ui, (s) => s.lastSent)
   const projects = useStoreValue(stores.data, (s) => s.projects)
-  const mine = outbox.filter((o) => o.slug === route.slug && !o.unsent)
+  const mine = outbox.filter((o) => o.slug === route.slug && !o.unsent && showsOnItsWay(o))
   // the input the line speaks of
   const sentRow = lastSent?.slug === route.slug && m ? m.byId.get(lastSent.rid) : undefined
   const feedback = feedbackLine({ m, desk, composePage, scope, mine, lastSent: lastSent?.slug === route.slug ? lastSent.rid : null, lastQ: lastSent?.q, others: (projects || []).some((p) => p.name !== route.slug), undoable: (q) => !!q && justSent.some((x) => x.q === q) })

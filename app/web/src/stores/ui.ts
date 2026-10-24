@@ -31,6 +31,8 @@ export interface UiState {
   duo: boolean
   /** an input gone to (from an item's source, the activity log): lit up for a moment where it is listed */
   lit: string | null
+  /** lit where it is, the list not moved to it (the phone's way from the Sources sheet, as it always has been) */
+  litStill: boolean
   /** the desktop's filters opened under the search (F) */
   deskFilters: boolean
   setDeskFilters(on: boolean): void
@@ -55,7 +57,7 @@ export interface UiState {
   setSideOver(on: boolean): void
   setNaming(n: { error: string } | null): void
   setDuo(on: boolean): void
-  setLit(id: string | null): void
+  setLit(id: string | null, still?: boolean): void
   /** the row of Activity or Deleted shown in the pane beside it */
   sideSel: string | null
   setSideSel(key: string | null): void
@@ -82,6 +84,7 @@ export function createUiStore(kv: KeyValueStore): UiStore {
     selected: new Set(),
     duo: false,
     lit: null,
+    litStill: false,
     sideHidden: !!kv.get('taska.sideHidden'),
     sideOver: false,
     naming: null,
@@ -115,7 +118,7 @@ export function createUiStore(kv: KeyValueStore): UiStore {
         return { held }
       }),
     setSelected: (selected) => set({ selected }),
-    setLit: (lit) => set({ lit }),
+    setLit: (lit, still = false) => set({ lit, litStill: !!lit && still }),
     setDuo: (duo) => set((s) => (s.duo === duo ? s : { duo })),
     setSideHidden: (on) => {
       kv.set('taska.sideHidden', on ? '1' : null)

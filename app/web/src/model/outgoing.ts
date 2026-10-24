@@ -36,6 +36,10 @@ export interface Outgoing {
   unsent?: boolean
 }
 
+/** Whether it shows as on its way: one sent before a reload whose file goes up again shows once it is up, as the page
+ * always has (it is sent all the same). */
+export const showsOnItsWay = (o: Pick<Outgoing, 'back' | 'files'>) => !(o.back && o.files.some((f) => f.uploading))
+
 /** The first line of what you sent, as the lists show it while it is on its way. */
 export const outgoingLine = (o: Pick<Outgoing, 'text' | 'files'>) =>
   o.text.split('\n')[0] ||

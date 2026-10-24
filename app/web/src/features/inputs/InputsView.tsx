@@ -23,8 +23,8 @@ export interface InputChip {
 
 export interface InputFacts {
   r: Input
-  /** gone to: in view, lit up for a moment */
-  lit?: boolean
+  /** gone to: lit up for a moment, brought into view ('shown') or where the list is ('still') */
+  lit?: 'shown' | 'still'
   code: string
   time: string
   /** the day's name when this input starts a day */
@@ -89,7 +89,7 @@ export function InputCard({ x, words, world, files, on }: { x: InputFacts; words
       <span className="min-w-0">{x.note}</span>
     </div>
   ) : null
-  const litRef = useLitRow<HTMLElement>(!!x.lit)
+  const litRef = useLitRow<HTMLElement>(x.lit === 'shown')
   const more = (
     <button title="More" aria-label={`More for ${x.code}`} onClick={() => on.menu(r.id)} className={`${LINK_BTN} text-zinc-600 dark:text-zinc-300`}>
       <Icon n="more" c="size-4" />

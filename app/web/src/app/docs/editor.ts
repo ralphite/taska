@@ -22,8 +22,8 @@ export interface DocEditorDeps extends DocPlace {
   open(dn: number): void
   /** back from the document (it was deleted) */
   close(): void
-  /** the editor's microphone: stopped (its words still go to the draft, or nowhere), and waited for before Save */
-  mic?: { stop(): void; discard(key: string): void; settled(): Promise<boolean> }
+  /** the editor's microphone: its words dropped with the editor's text (Discard), and waited for before Save */
+  mic?: { discard(key: string): void; settled(): Promise<boolean> }
 }
 
 export class DocEditor {
@@ -77,9 +77,9 @@ export class DocEditor {
     return { slug: h.slug, m: h.m, dn: doc?.d ?? null, n: v.newFor, md, was, key: doc ? `D${doc.d}` : `new ${v.newFor}` }
   }
 
-  /** Leaving the editor without Save: the text is kept as a draft, which Edit (or New doc) brings back. */
+  /** Leaving the editor without Save: the text is kept as a draft, which Edit (or New doc) brings back. A microphone
+   * recording into it goes on, as it always has: its words go into that draft once it stops. */
   keep(): void {
-    this.d.mic?.stop()
     const e = this.editing()
     this.d.view.getState().edit(false)
     if (!e) return

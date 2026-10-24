@@ -9,6 +9,7 @@ import type { DraftKey } from '../../model/draftTarget'
 import { fixRange, voiceStretches } from '../../model/doubts'
 import { codeOf } from '../../model/project'
 import { saidOutgoing, saidRows } from '../../model/saidLately'
+import { showsOnItsWay } from '../../model/outgoing'
 import { Thumbs } from '../../ui/Files'
 import { DraftWords, type Fixing } from './Doubts'
 import { DraftCard, DRAFT_WORDS, type DraftHint } from './DraftCard'
@@ -42,7 +43,7 @@ export function SaidLatelyContainer({ route, boxKey, view, draft }: { route: Pro
   const said = useMemo(() => (m ? saidRows(m, { words, upTo, opened, justSent, drafts, mode, title: (s) => projects?.find((p) => p.name === s)?.title || s }) : null), [m, words, upTo, opened, justSent, drafts, mode, projects])
   const media = useFiles(route.slug)
   if (!m || !said) return null
-  const mine = outbox.filter((o) => o.slug === route.slug && !o.unsent)
+  const mine = outbox.filter((o) => o.slug === route.slug && !o.unsent && showsOnItsWay(o))
   const url = (f: string) => `/p/${encodeURIComponent(route.slug)}/f/${encodeURIComponent(f)}`
   return (
     <section aria-label="You said lately" data-vc-area className="mx-auto mt-8 block max-w-[42rem]">

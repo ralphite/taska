@@ -9,7 +9,7 @@ import { codeOf, findRef, inputDraft, type ProjectModel } from '../../model/proj
 import { when } from '../../model/time'
 import { inputMatch, searchWords } from '../../model/visible'
 import { inputCode } from '../../model/words'
-import { outgoingLine, outgoingState } from '../../model/outgoing'
+import { outgoingLine, outgoingState, showsOnItsWay } from '../../model/outgoing'
 import { useItemWorld } from '../../app/hooks'
 import { useSearchHints } from '../../app/searchHints'
 import { Thumbs } from '../../ui/Files'
@@ -31,6 +31,7 @@ export function InputsContainer({ route, hidden }: { route: ProjectRoute; hidden
   const writing = useMemo(() => (mode?.kind === 'amend' ? { id: mode.id, mode: mode.mode } : null), [mode])
   const media = useFiles(route.slug)
   const lit = useStoreValue(stores.ui, (s) => s.lit)
+  const litStill = useStoreValue(stores.ui, (s) => s.litStill)
   const rows: InputFacts[] = useMemo(() => {
     if (!m || hidden) return []
     const title = (slug: string) => projects?.find((p) => p.name === slug)?.title || slug
@@ -72,15 +73,15 @@ export function InputsContainer({ route, hidden }: { route: ProjectRoute; hidden
         spark: !!org && !note && shown.some((n) => did[n]),
         retry: !r.acked && m.facts.organizer.on && r.org && (!r.org.ok || r.org.undone) ? (r.org.undone ? 'Organize again' : 'Retry') : null,
         moved: r.moved ? { href: `/p/${encodeURIComponent(r.moved.to)}/`, label: `Open ${title(r.moved.to)} · ${inputCode(r.moved.as)}` } : null,
-        lit: lit === r.id,
+        lit: lit === r.id ? (litStill ? 'still' : 'shown') : undefined,
         draft: inputDraft(r.id, draftWords || stores.drafts.getState().of(route.slug), writing),
         long: r.text.length > 160 || r.text.split('\n').length > 4,
         opened: opened.has(r.id),
       }
     })
-  }, [m, hidden, words, projects, opened, draftWords, stores, route.slug, writing, lit])
+  }, [m, hidden, words, projects, opened, draftWords, stores, route.slug, writing, lit, litStill])
   const outgoing: OutgoingRow[] = outbox
-    .filter((o) => o.slug === route.slug)
+    .filter((o) => o.slug === route.slug && showsOnItsWay(o))
     .reverse()
     .map((o) => ({ q: o.q, text: o.text || outgoingLine(o), state: outgoingState(o, away), bad: o.state === 'failed' && !o.net, scope: o.scope, previews: o.files.flatMap((f) => (f.preview ? [f.preview] : [])) }))
   return (
