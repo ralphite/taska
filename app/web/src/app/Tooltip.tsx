@@ -1,15 +1,18 @@
 // One tooltip for the whole page, in the page's own look, for anything with a title (or data-tip, or an icon button's
 // label): after half a second under a fine pointer, at once when you move from one to the next, beside the sidebar's
-// buttons, under the heads' buttons, above the rest. A key at the end of the words ("Done · D") shows as a key cap.
+// buttons, under the heads' buttons, above the rest. A key at the end of the words ("Done · D") shows as a key cap. A
+// code in some words (data-ref) shows a card about what it names instead.
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import type { RefCard } from '../model/refCard'
 
-const TARGET = '[data-tip], [title], button[aria-label], a[aria-label]'
+const TARGET = '[data-ref], [data-tip], [title], button[aria-label], a[aria-label]'
 
 interface Shown {
   el: HTMLElement
   text: string
   key: string
+  card: RefCard | null
   quick: boolean
 }
 
@@ -29,11 +32,16 @@ function split(text: string): { text: string; key: string } {
   return { text: parts.join(' · '), key }
 }
 
-export function Tooltip() {
+/** `card`: what a code names, as its card (read when it shows). */
+export function Tooltip({ card }: { card(ref: string): RefCard | null }) {
   const [shown, setShown] = useState<Shown | null>(null)
   const [on, setOn] = useState(false)
   const tip = useRef<HTMLDivElement>(null)
   const arrow = useRef<HTMLSpanElement>(null)
+  const told = useRef(card)
+  useEffect(() => {
+    told.current = card
+  })
   useEffect(() => {
     const fine = matchMedia('(hover: hover) and (pointer: fine)')
     let timer = 0
@@ -41,11 +49,12 @@ export function Tooltip() {
     let closedAt = 0
     let hush: Element | null = null
     const show = (el: HTMLElement, quick: boolean) => {
-      const words = tipText(el)
-      if (!words || !el.isConnected) return
+      const c = el.dataset.ref ? told.current(el.dataset.ref) : null
+      const words = c ? '' : tipText(el)
+      if ((!c && !words) || !el.isConnected) return
       current = el
       el.setAttribute('aria-describedby', 'tip')
-      setShown({ el, ...split(words), quick })
+      setShown({ el, ...split(words), card: c, quick })
     }
     const hide = () => {
       clearTimeout(timer)
@@ -168,19 +177,28 @@ export function Tooltip() {
       role="tooltip"
       hidden={!shown}
       data-on={on ? '' : undefined}
-      className="pointer-events-auto fixed top-0 left-0 z-[80] max-w-[260px] rounded-lg bg-zinc-900 px-2 py-1.5 text-[13px] leading-snug text-white opacity-0 shadow-lg shadow-black/20 transition-[opacity,translate] duration-[120ms] data-[on]:opacity-100 motion-reduce:transition-none dark:bg-zinc-100 dark:text-zinc-900"
+      data-card={shown?.card ? '' : undefined}
+      className="pointer-events-auto fixed top-0 left-0 z-[80] max-w-[260px] rounded-lg bg-zinc-900 px-2 py-1.5 text-[13px] leading-snug text-white opacity-0 shadow-lg shadow-black/20 transition-[opacity,translate] duration-[120ms] data-[card]:w-80 data-[card]:max-w-80 data-[card]:px-3 data-[card]:py-2.5 data-[on]:opacity-100 motion-reduce:transition-none dark:bg-zinc-100 dark:text-zinc-900"
     >
-      <span>
-        {shown?.text.split('\n').map((line, i) => (
-          <span key={i}>
-            {i ? <br /> : null}
-            {line}
-          </span>
-        ))}
-        {shown?.key ? (
-          <kbd className="ml-1.5 inline-grid h-[18px] min-w-[18px] place-items-center rounded px-1 font-sans text-[11px] font-semibold ring-1 ring-current/30">{shown.key}</kbd>
-        ) : null}
-      </span>
+      {shown?.card ? (
+        <span>
+          <div className="text-[11px] font-medium opacity-70">{shown.card.top}</div>
+          {shown.card.name ? <div className="mt-0.5 font-semibold">{shown.card.name}</div> : null}
+          {shown.card.gist ? <div className="mt-1 line-clamp-4 opacity-80">{shown.card.gist}</div> : null}
+        </span>
+      ) : (
+        <span>
+          {shown?.text.split('\n').map((line, i) => (
+            <span key={i}>
+              {i ? <br /> : null}
+              {line}
+            </span>
+          ))}
+          {shown?.key ? (
+            <kbd className="ml-1.5 inline-grid h-[18px] min-w-[18px] place-items-center rounded px-1 font-sans text-[11px] font-semibold ring-1 ring-current/30">{shown.key}</kbd>
+          ) : null}
+        </span>
+      )}
       <span ref={arrow} className="absolute size-2 rotate-45 bg-inherit" />
     </div>
   )

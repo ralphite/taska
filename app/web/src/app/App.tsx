@@ -13,6 +13,14 @@ import { DashboardContainer } from '../features/dev/DashboardContainer'
 import { pageKeys } from './keys'
 import { Tooltip } from './Tooltip'
 import { PanesProvider } from './panes'
+import { refCard } from '../model/refCard'
+import type { App as TaskaApp } from './createApp'
+
+/** What a code names in the project shown, as its hover card. */
+const cardOf = (app: TaskaApp, slug: string, ref: string) => {
+  const m = app.model(slug)
+  return m ? refCard(m, ref) : null
+}
 
 export function App() {
   const app = useApp()
@@ -38,7 +46,7 @@ export function App() {
           <SheetContainer />
           {route.page === 'project' ? <SelectionBarContainer route={route} /> : null}
           <ViewerContainer />
-          <Tooltip />
+          <Tooltip card={(ref) => (route.page === 'project' ? cardOf(app, route.slug, ref) : null)} />
         </div>
       </PanesProvider>
     </LayoutProvider>
