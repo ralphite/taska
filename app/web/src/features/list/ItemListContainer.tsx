@@ -215,7 +215,6 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
         desk={desk}
         openN={openN}
         itemShown={route.place.kind === 'item'}
-        firstShows={route.tab === 'items'}
         listKey={route.tab}
         dragging={drag.n != null ? { out: drag.at?.how === 'out' } : null}
         top={ui.selected.size && desk ? <SelBar n={ui.selected.size} on={{ set: (f, v, said) => app.selection.set(f, v, said), clear: () => app.selection.clear() }} /> : undefined}

@@ -41,7 +41,10 @@ what the old version does. Each is also sent to the coordinator ("Nota & Taska d
 - **An item's address opened in a new browser: the list shows its row.** The old page scrolls the list to the item
   opened by its address only when it has the project's copy kept from before (nearly always: it draws that first); in
   a browser that never had Taska open its rows come too late for it and the list stays at its top. The rewrite shows
-  the row in both.
+  the row in both, in whichever list it is (Items, Archive, Rules), scrolled as the old one does: as the rows are
+  first drawn, before the browser has their heights (so the next row shows a little under it). Where the old page's
+  own drawing races its scroll (the same address lands a little higher or lower from one load to the next, or not
+  scrolled at all), the rewrite lands where the old one does most of the time.
 - **Asked for its key, the page behind does not say Taska is out of reach.** The old page counts the answers that
   ask for the key as Taska being away, so behind the key sheet (after a wrong key) the item says "Taska is out of
   reach, retrying…" though Taska answered; the rewrite keeps saying it is loading the item until the key is right.

@@ -59,8 +59,6 @@ export interface ItemListProps {
   openN?: number | null
   /** what is open is the item itself (not its document) */
   itemShown?: boolean
-  /** the page opened at the item shows its row too (in Items; an item of Archive or Rules opens at the list's top) */
-  firstShows?: boolean
   /** which list this is (its tab) */
   listKey?: string
   /** the phone: a row swipes right to go forward, left to show the ways back */
@@ -70,18 +68,30 @@ export interface ItemListProps {
 const NO_SWIPE: RowSwipe = { right: () => null, blocked: () => true }
 
 export const ItemList = forwardRef<HTMLDivElement, ItemListProps>(function ItemList(props, ref) {
-  const { loading, views, ownViews, rows, empty, top, bottom, on, onScroll, rowRef, dragging = null, desk = false, swipe, openN = null, itemShown = false, firstShows = false, listKey = '' } = props
+  const { loading, views, ownViews, rows, empty, top, bottom, on, onScroll, rowRef, dragging = null, desk = false, swipe, openN = null, itemShown = false, listKey = '' } = props
   const own = useRef<HTMLDivElement | null>(null)
   const wasOpen = useRef<{ n: number | null; list: string; loading: boolean } | null>(null)
+  /** the page opened at an item: its row comes into view the first time it shows, in whichever list it is */
+  const first = useRef<boolean | null>(null)
   useLayoutEffect(() => {
-    // the item's row comes into view when its rows first show (the page opened at it) and when you go from one item
-    // to another in the same list; not for a document, not for another tab
+    // and when you go from one item to another in the same list; not for a document, not for another tab. It is done
+    // as the rows are drawn, before the browser has laid out those it does not show yet, as the page always has.
     const was = wasOpen.current
     wasOpen.current = { n: openN, list: listKey, loading }
+    if (first.current === null && !loading) first.current = itemShown && openN != null
     if (loading || !itemShown || !desk || openN == null) return
-    if (was && !was.loading ? openN === was.n || listKey !== was.list : !firstShows) return
-    own.current?.querySelector(`article[data-n="${openN}"] > :first-child`)?.scrollIntoView({ block: 'nearest' })
-  }, [openN, desk, listKey, loading, itemShown, firstShows])
+    const row = own.current?.querySelector(`article[data-n="${openN}"] > :first-child`)
+    if (first.current) {
+      // braces: scrollIntoView may return a promise, and an effect may return only a clean-up
+      if (row) {
+        first.current = false
+        row.scrollIntoView({ block: 'nearest' })
+      }
+      return
+    }
+    if (!was || was.loading || openN === was.n || listKey !== was.list) return
+    row?.scrollIntoView({ block: 'nearest' })
+  }, [openN, desk, listKey, loading, itemShown, rows])
   useRowSwipe(own, !desk && !!swipe, swipe ?? NO_SWIPE, rows)
   const rowOf = (t: EventTarget) => (t as Element).closest?.<HTMLElement>('article[data-n]') ?? null
   return (
