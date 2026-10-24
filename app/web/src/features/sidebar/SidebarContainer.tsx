@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react'
 import { runAction } from '../../app/actions'
+import { Grip } from '../../ui/Grip'
 import { useApp, useLayout, useStoreValue } from '../../app/context'
 import { useProjectModel } from '../../app/hooks'
 import { needsYou } from '../../model/items'
@@ -62,7 +63,10 @@ export function useOtherProjects(slug: string): { slug: string; title: string; t
 export function SidebarContainer({ slug, place, hidden, rail }: { slug: string; place: string; hidden?: boolean; rail?: boolean }) {
   const app = useApp()
   const layout = useLayout()
-  const { list } = useSideProjects(slug)
+  const { list: listed } = useSideProjects(slug)
+  // an item dragged from the list over a project lights it
+  const dropOn = useStoreValue(app.stores.drag, (s) => s.project)
+  const list = dropOn && listed ? listed.map((p) => (p.slug === dropOn ? { ...p, drop: true } : p)) : listed
   const route = useStoreValue(app.stores.route, (s) => s.route)
   const undo = useStoreValue(app.stores.feedback, (s) => s.undo.at(-1) ?? null)
   const sideHidden = useStoreValue(app.stores.ui, (s) => s.sideHidden)
@@ -84,6 +88,9 @@ export function SidebarContainer({ slug, place, hidden, rail }: { slug: string; 
     settings: () => app.nav.to(base + 'settings'),
     keys: () => app.sheets.open({ kind: 'keys' }),
     undo: () => void undo?.run(),
+    order: (names, moved) => void app.projects.order(names, `${list?.find((p) => p.slug === moved)?.title || moved} moved`),
+    dragProject: (to) => app.itemDrag.overProject(to),
+    dropProject: () => app.itemDrag.drop(),
     go: (href, e) => {
       if (e.metaKey || e.ctrlKey) return
       e.preventDefault()
@@ -104,6 +111,18 @@ export function SidebarContainer({ slug, place, hidden, rail }: { slug: string; 
       devLinks={dev ? DEV_LINKS : []}
       place={place}
       hidden={hidden}
+      edge={
+        layout === 'desk' ? (
+          <Grip
+            axis="x"
+            place="absolute inset-y-0 right-0 z-10 hidden w-3 translate-x-1/2 lg:block"
+            measure={(el) => ({ from: el.parentElement?.getBoundingClientRect().left ?? 0, most: innerWidth })}
+            onSize={(px) => app.stores.grips.getState().size('side', px)}
+            onDone={(px) => app.stores.grips.getState().keep('side', px)}
+            onReset={() => app.stores.grips.getState().keep('side', 0)}
+          />
+        ) : null
+      }
       on={on}
     />
   )

@@ -2,7 +2,8 @@
 // project with how many things need you there and how many are open; New input, New project; at the foot the
 // project's Documents, Activity, Deleted, and Settings. Props only.
 
-import type { ReactNode } from 'react'
+import { useRef, type ReactNode } from 'react'
+import { useOrderDrag } from './orderDrag'
 import { plural } from '../../model/words'
 import { Kbd, ProjTile } from '../../ui/bits'
 import { Icon, type IconName } from '../../ui/Icon'
@@ -15,6 +16,8 @@ export interface SideProject {
   open: number | string
   current: boolean
   href: string
+  /** an item dragged from the list would move here */
+  drop?: boolean
 }
 
 export interface SideLinkInfo {
@@ -34,6 +37,11 @@ export interface SidebarEvents {
   keys(): void
   go(href: string, e: { preventDefault(): void; metaKey: boolean; ctrlKey: boolean }): void
   undo?(): void
+  /** the projects dragged into this order (`moved`: the one you held) */
+  order?(names: string[], moved: string): void
+  /** an item from the list dragged over a project (null: off them); -> it can go there */
+  dragProject?(slug: string | null): boolean
+  dropProject?(): void
 }
 
 export interface SidebarProps {
@@ -48,6 +56,8 @@ export interface SidebarProps {
   /** where the sidebar sits (the layout says) */
   place: string
   hidden?: boolean
+  /** its right edge, to drag wider or narrower (the desktop) */
+  edge?: ReactNode
   newProjectField?: ReactNode
   on: SidebarEvents
 }
@@ -82,6 +92,7 @@ export function ProjectRows({ phone, projects, on }: { phone: boolean; projects:
             key={p.slug}
             href={p.href}
             data-slug={p.slug}
+            {...(p.drop ? { 'data-drop': '' } : {})}
             aria-current={p.current ? 'page' : undefined}
             onClick={(e) => (p.current ? (e.preventDefault(), on.newInput()) : on.go(p.href, e))}
             className={DESK_ROW}
@@ -129,9 +140,12 @@ function SideLink({ link, phone, on }: { link: SideLinkInfo; phone: boolean; on:
 }
 
 export function Sidebar(props: SidebarProps) {
-  const { phone, projects, composing, links, undoLabel, devLinks, place, hidden, newProjectField, on } = props
+  const { phone, projects, composing, links, undoLabel, devLinks, place, hidden, newProjectField, edge, on } = props
+  const rows = useRef<HTMLDivElement>(null)
+  useOrderDrag(rows, (names, moved) => on.order?.(names, moved))
   return (
     <nav id="drawer" data-tip-side="right" hidden={hidden} aria-label="Projects" className={`flex h-full flex-col pt-[env(safe-area-inset-top)] dark:bg-zinc-900 ${place}`}>
+      {edge}
       <div className="flex h-14 shrink-0 items-center gap-2 px-5 lg:pr-2 lg:pl-4">
         <a
           href="/"
@@ -176,7 +190,24 @@ export function Sidebar(props: SidebarProps) {
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 lg:scrollbar-thin lg:pb-3 lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70">
         <div className="px-3 pb-1.5 text-xs font-semibold text-zinc-500 lg:text-[11px] lg:tracking-wider lg:uppercase dark:text-zinc-400">Projects</div>
-        <div className="flex flex-col gap-0.5">
+        <div
+          ref={rows}
+          className="flex flex-col gap-0.5"
+          onDragOver={(e) => {
+            // an item dragged from the list onto another project moves there
+            const a = (e.target as Element).closest<HTMLElement>('a[data-slug]')
+            if (!on.dragProject?.(a?.dataset.slug ?? null)) return
+            e.preventDefault()
+            e.dataTransfer.dropEffect = 'move'
+          }}
+          onDragLeave={(e) => {
+            if (!e.currentTarget.contains(e.relatedTarget as Node | null)) on.dragProject?.(null)
+          }}
+          onDrop={(e) => {
+            e.preventDefault()
+            on.dropProject?.()
+          }}
+        >
           <ProjectRows phone={phone} projects={projects} on={on} />
         </div>
         {newProjectField ?? (

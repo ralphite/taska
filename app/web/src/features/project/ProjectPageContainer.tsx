@@ -2,6 +2,8 @@
 // two never share layout code; they place the same parts.
 
 import { useEffect, useMemo, useState, type CSSProperties } from 'react'
+import { Grip } from '../../ui/Grip'
+import { gripVars } from '../../stores/grips'
 import { useApp, useLayout, useStoreValue } from '../../app/context'
 import { useAway, useProjectModel, type ProjectRoute } from '../../app/hooks'
 import { agentLine } from '../../model/agents'
@@ -85,6 +87,7 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
   // a document edited in the pane has no box under it
   const docEditing = useStoreValue(app.stores.docView, (s) => s.editing && s.newFor == null) && route.place.kind === 'doc'
   const side = !!shownSide && !settings
+  const grips = useStoreValue(app.stores.grips, (s) => s.px)
   const compose = route.place.kind === 'new' || (route.place.kind === 'tab' && route.tab !== 'inputs')
   const filtersOpen = useStoreValue(app.stores.ui, (s) => s.deskFilters)
   const set = filtersSet(route.tab, route.list)
@@ -97,7 +100,7 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
     selected: (route.tab === t || (t === 'items' && route.tab === 'archive')) && !settings && !side,
   }))
   return (
-    <div className="flex h-full w-full">
+    <div className="flex h-full w-full" style={gripVars(grips) as CSSProperties}>
       <SidebarContainer slug={route.slug} hidden={sideHidden || settings} place="relative z-40 w-[var(--side-w,15rem)] shrink-0 border-r border-zinc-200 bg-zinc-50 huge:w-[var(--side-w,16rem)] dark:border-zinc-800" />
       <SidebarContainer slug={route.slug} place="" rail hidden={!sideHidden || settings} />
       <div
@@ -154,9 +157,19 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
         </section>
         <DetailContainer route={route} place={`row-span-3 row-start-2 group-data-[compose]/app:row-span-1 ${pane}`} hidden={settings} full={full} />
         {settings ? <SettingsContainer route={route} place="col-span-2 col-start-1 row-span-5 row-start-1" /> : null}
-        <div hidden={settings || full} className="group/line relative z-30 col-start-1 row-span-4 row-start-2 block w-3 translate-x-1/2 cursor-col-resize justify-self-end">
-          <span className="pointer-events-none absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 bg-blue-500 opacity-0 transition-opacity group-hover/line:opacity-100 group-hover/line:delay-150 group-data-drag/line:opacity-100" />
-        </div>
+        {settings || full ? null : (
+          <Grip
+            axis="x"
+            place="relative z-30 col-start-1 row-span-4 row-start-2 block w-3 translate-x-1/2 justify-self-end"
+            measure={(el) => {
+              const from = el.parentElement?.getBoundingClientRect().left ?? 0
+              return { from, most: innerWidth - from }
+            }}
+            onSize={(px) => app.stores.grips.getState().size('list', px)}
+            onDone={(px) => app.stores.grips.getState().keep('list', px)}
+            onReset={() => app.stores.grips.getState().keep('list', 0)}
+          />
+        )}
         <FootContainer
           route={route}
           composePage={compose}

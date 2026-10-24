@@ -91,3 +91,31 @@ export const workOrder = (all: Item[]) => [
   ...queueOrder(all.filter((it) => !closed(it.status))),
   ...all.filter((it) => closed(it.status)).sort(latestFirst),
 ]
+
+/** In the agents' queue to be done now. */
+export const queuedNow = (it: Item) => inQueue(it) && it.when === 'now'
+
+export type DropHow = 'before' | 'after' | 'into' | 'out'
+
+/** Where item `n` dragged over row `t` (at `y`, 0 at its top to 1 at its bottom) would go: before or after it in the
+ * queue's order (both in the queue now), else under it; over no row, out from under its parent. Null: not there. */
+export function dropOn(byN: ReadonlyMap<number, Item>, n: number, t: number | null, y: number): { n?: number; how: DropHow } | null {
+  const it = byN.get(n)
+  if (!it) return null
+  if (t == null) return it.parent ? { how: 'out' } : null
+  const to = byN.get(t)
+  if (!to || t === n || to.type === 'rule' || closed(to.status)) return null
+  for (let p = to.parent; p; p = byN.get(p)?.parent ?? null) if (p === n) return null // not under one of its own subitems
+  const line = queuedNow(it) && queuedNow(to)
+  return { n: t, how: line && y < 0.3 ? 'before' : line && y > 0.7 ? 'after' : 'into' }
+}
+
+/** The ranks that put item `n` before or after `t` in the queue, whatever the priorities (the priority stays). */
+export function ranksFor(items: readonly Item[], byN: ReadonlyMap<number, Item>, n: number, t: number, after: boolean): { n: number; rank: number; was: number | null }[] {
+  const it = byN.get(n)
+  const to = byN.get(t)
+  if (!it || !to) return []
+  const group = queueOrder(items.filter((x) => queuedNow(x) && x.n !== n))
+  group.splice(group.indexOf(to) + (after ? 1 : 0), 0, it)
+  return group.map((x, i) => ({ n: x.n, rank: i, was: x.rank ?? null })).filter((p) => p.was !== p.rank)
+}

@@ -3,7 +3,7 @@
 // same), and the row you acted on holds still so the next row never slides under a second click.
 
 import type { Command } from '../api/taska'
-import { closed } from '../model/items'
+import { closed, ranksFor } from '../model/items'
 import { codeOf, type ItemPatch, type ProjectModel } from '../model/project'
 import type { Item } from '../model/types'
 import { DID, LETTER, plural } from '../model/words'
@@ -139,6 +139,23 @@ export class ItemActions {
     if (!m || !m.byN.has(n)) return Promise.resolve(false)
     const ref = codeOf(m, n)
     return this.d.runner.send({ id: newId(), slug: this.d.slug(), commands: [{ op: 'hide', ref, id, on: true }], patches: [], said: `hiding a message on ${ref}`, t: Date.now() })
+  }
+
+  /** Dragged before or after another in the agents' queue: your order comes first, the priority stays. */
+  reorder(n: number, t: number, after: boolean): Promise<boolean> {
+    const m = this.d.model()
+    const it = m?.byN.get(n)
+    const to = m?.byN.get(t)
+    if (!m || !it || !to) return Promise.resolve(false)
+    const ref = codeOf(m, n)
+    const ranks = ranksFor(m.items, m.byN, n, t, after)
+    const send = (list: { n: number; rank: number | null }[]) =>
+      this.d.runner.send({ id: newId(), slug: this.d.slug(), commands: list.map((p) => ({ op: 'set', ref: codeOf(m, p.n), f: { rank: p.rank } })) as Command[], patches: list.map((p) => ({ n: p.n, f: { rank: p.rank } })), said: `moving ${ref}`, t: Date.now() })
+    this.d.toasts.show(`${ref} ${after ? 'after' : 'before'} ${codeOf(m, t)}${it.pri !== to.pri ? `, now ${to.pri}` : ''}`, async () => {
+      this.d.toasts.show(`${ref} put back`)
+      return send(ranks.map((p) => ({ n: p.n, rank: p.was })))
+    })
+    return send(ranks)
   }
 
   /** First of its priority in the agents' queue, or back where it was. */

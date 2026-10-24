@@ -7,6 +7,7 @@ import { canDone, closed, shownStatus } from '../../model/items'
 import { talkPlan } from '../../model/talk'
 import type { Doc, FileRef, Item } from '../../model/types'
 import { Kbd, SectionHead, Soft } from '../../ui/bits'
+import { Grip } from '../../ui/Grip'
 import { Icon, StateIcon } from '../../ui/Icon'
 import type { IconName } from '../../ui/icon-paths'
 import { Rich } from '../../ui/Markdown'
@@ -23,6 +24,8 @@ export interface ItemEvents extends TalkLineEvents {
   menu(arm: 's' | 'p' | 't' | null, from: Element): void
   set(f: 'when' | 'archived' | 'status', v: string | boolean): void
   sources(): void
+  /** the item's part over its talk dragged to this height (`done`: let go, kept) */
+  topSize(px: number, done: boolean): void
   goto(n: number): void
   doc(d: number): void
   earlier(): void
@@ -303,10 +306,14 @@ export function ItemPage({ it, f, env, facts, on, talkRef }: {
           </div>
         </div>
       </div>
-      <div className="group/line relative z-10 hidden h-px shrink-0 cursor-row-resize bg-zinc-200 after:absolute after:inset-x-0 after:-inset-y-2 lg:block dark:bg-zinc-800">
-        {/* every line you can drag looks the same: pointed at or dragged, the line itself turns blue */}
-        <span className="pointer-events-none absolute inset-x-0 top-1/2 h-0.5 -translate-y-1/2 bg-blue-500 opacity-0 transition-opacity group-hover/line:opacity-100 group-hover/line:delay-150 group-data-drag/line:opacity-100" />
-      </div>
+      {/* the line between the item and its talk, dragged up and down anywhere you like (a double-click leaves it) */}
+      <Grip
+        axis="y"
+        place="relative z-10 hidden h-px shrink-0 bg-zinc-200 after:absolute after:inset-x-0 after:-inset-y-2 lg:block dark:bg-zinc-800"
+        measure={(el) => ({ from: el.previousElementSibling?.getBoundingClientRect().top ?? 0, most: el.parentElement?.clientHeight ?? innerHeight })}
+        onSize={(px) => on.topSize(px, false)}
+        onDone={(px) => on.topSize(px, true)}
+      />
       <div
         ref={(el) => {
           talk.current = el

@@ -20,6 +20,12 @@ export type DrawnRow =
 export interface ListEvents extends RowEvents {
   view(value: string): void
   ownView(i: number): void
+  /** an item dragged in the list (the desktop, with a mouse): -> its code, if it can be */
+  dragStart(n: number): string | null
+  /** over row `n` (at `y`, 0 its top to 1 its bottom) or over no row: -> it can go there */
+  dragOver(n: number | null, y: number): boolean
+  drop(): void
+  dragEnd(): void
   ownMenu(i: number, x: number, y: number): void
   rename(i: number, name: string): void
   renameStop(): void
@@ -44,15 +50,46 @@ export interface ItemListProps {
   onScroll?(top: number): void
   /** each item row's element, for its height */
   rowRef?(n: number): (el: HTMLElement | null) => void
+  /** an item is being dragged (its rows are marked through their look): off every row it stands on its own */
+  dragging?: { out: boolean } | null
+  desk?: boolean
 }
 
 export const ItemList = forwardRef<HTMLDivElement, ItemListProps>(function ItemList(props, ref) {
-  const { loading, views, ownViews, rows, empty, top, bottom, on, onScroll, rowRef } = props
+  const { loading, views, ownViews, rows, empty, top, bottom, on, onScroll, rowRef, dragging = null, desk = false } = props
+  const rowOf = (t: EventTarget) => (t as Element).closest?.<HTMLElement>('article[data-n]') ?? null
   return (
     <div
       id="list"
       ref={ref}
+      {...(dragging?.out ? { 'data-drop-out': '' } : {})}
       onScroll={(e) => onScroll?.(e.currentTarget.scrollTop)}
+      onPointerDown={(e) => {
+        // only a mouse drags a row (a finger scrolls and swipes)
+        const a = rowOf(e.target)
+        if (a) a.draggable = desk && e.pointerType === 'mouse' && !(e.target as Element).closest('button, a, input, textarea')
+      }}
+      onDragStart={(e) => {
+        const a = rowOf(e.target)
+        const code = a ? on.dragStart(Number(a.dataset.n)) : null
+        if (!code) return e.preventDefault()
+        e.dataTransfer.effectAllowed = 'move'
+        e.dataTransfer.setData('text/plain', code)
+      }}
+      onDragOver={(e) => {
+        if (!dragging) return
+        const a = rowOf(e.target)
+        const r = a?.getBoundingClientRect()
+        if (!on.dragOver(a ? Number(a.dataset.n) : null, r ? (e.clientY - r.top) / r.height : 0)) return
+        e.preventDefault()
+        e.dataTransfer.dropEffect = 'move'
+      }}
+      onDrop={(e) => {
+        if (!dragging) return
+        e.preventDefault()
+        on.drop()
+      }}
+      onDragEnd={() => on.dragEnd()}
       className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-6 data-drop-out:bg-blue-50/60 phone:-mb-(--foot-h) phone:pb-[calc(var(--foot-h,0px)+1.5rem)] lg:scrollbar-thin lg:scrollbar-gutter-stable lg:hover:scrollbar-thumb-zinc-500/80 dark:data-drop-out:bg-blue-400/5 dark:lg:hover:scrollbar-thumb-zinc-400/70"
     >
       {loading ? (

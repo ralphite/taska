@@ -43,7 +43,12 @@ export interface RowLook {
   selected: boolean
   words: readonly string[]
   desk: boolean
+  /** being dragged, or where the dragged one would go: before, after or under it */
+  drag?: 'dragging' | 'before' | 'after' | 'into'
 }
+
+/** A row's marks while an item is dragged. */
+const dragMarks = (look: RowLook) => (look.drag === 'dragging' ? { 'data-dragging': '' } : look.drag ? { 'data-drop': look.drag } : {})
 
 // The dark tints are opaque (the colours laid on the page's zinc-950): the row's buttons take the row's colour and
 // hide the title under them. A picked row stays blue under the pointer and while pressed.
@@ -168,7 +173,7 @@ function SwipeLayers({ it, openKids, on, children }: { it: Item; openKids: numbe
 
 function Shell({ it, look, facts, on, rowRef, children }: { it: Item; look: RowLook; facts: RowFacts; on: RowEvents; rowRef?: Ref<HTMLElement>; children: ReactNode }) {
   return (
-    <article ref={rowRef} data-n={it.n} className={ARTICLE}>
+    <article ref={rowRef} data-n={it.n} {...dragMarks(look)} className={ARTICLE}>
       {it.type === 'rule' && look.desk ? (
         children
       ) : (

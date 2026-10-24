@@ -7,11 +7,13 @@ import type { TaskaApi } from '../api/taska'
 import type { KeyValueStore } from '../stores/storage'
 import type { DataStore } from '../stores/data'
 import type { Need, ProjectRow } from '../model/types'
+import type { Toasts } from './toasts'
 
 export interface ProjectsDeps {
   api: TaskaApi
   data: DataStore
   kv: KeyValueStore
+  toasts?: Toasts
   /** whether the home page is shown (only there does an unanswered list keep asking) */
   home(): boolean
 }
@@ -51,6 +53,34 @@ export class Projects {
       }
       return false
     }
+  }
+
+  /** The sidebar's projects in your own order: it shows at once and Taska keeps it, with Undo. */
+  async order(names: string[], said: string): Promise<void> {
+    const rows = this.d.data.getState().projects || []
+    const was = [...rows].sort((a, b) => (a.pos ?? 1e9) - (b.pos ?? 1e9)).map((p) => p.name)
+    const put = (list: string[]) => {
+      const next = (this.d.data.getState().projects || []).map((p) => {
+        const i = list.indexOf(p.name)
+        const q = { ...p }
+        if (i >= 0) q.pos = i
+        else delete q.pos
+        return q
+      })
+      this.d.data.getState().setProjects(next, null, this.d.data.getState().listedAt)
+      this.d.kv.setJson('taska.projects', next)
+    }
+    put(names)
+    try {
+      await this.d.api.orderProjects(names)
+    } catch {
+      put(was)
+      return this.d.toasts?.show('Order not saved', () => this.order(names, said), { error: true, label: 'Retry' })
+    }
+    this.d.toasts?.show(said, async () => {
+      put(was)
+      await this.d.api.orderProjects(was).catch(() => {})
+    })
   }
 
   create(title: string): Promise<Made> {

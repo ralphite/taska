@@ -42,6 +42,9 @@ import { DocVoice } from './docVoice'
 import { Dictation } from './dictation'
 import { Media } from './media'
 import { SavedViews } from './views'
+import { createGripsStore, type GripsStore } from '../stores/grips'
+import { createDragStore, type DragStore } from '../stores/drag'
+import { ItemDrag } from './itemDrag'
 import { createViewsStore, type ViewsStore } from '../stores/views'
 import { createMediaStore, type MediaStore } from '../stores/media'
 import { createDictationStore, type DictationStore } from '../stores/dictation'
@@ -96,6 +99,8 @@ export interface App {
     dictation: DictationStore
     media: MediaStore
     views: ViewsStore
+    grips: GripsStore
+    drag: DragStore
   }
   toasts: Toasts
   items: ItemActions
@@ -141,6 +146,7 @@ export interface App {
   dictation: Dictation
   media: Media
   views: SavedViews
+  itemDrag: ItemDrag
   refreshProjects(): Promise<boolean>
   stop(): void
 }
@@ -171,6 +177,8 @@ export function createApp(env: AppEnv): App {
   const dictationStore = createDictationStore()
   const mediaStore = createMediaStore()
   const viewsStore = createViewsStore()
+  const gripsStore = createGripsStore(env.kv)
+  const dragStore = createDragStore()
   const pictureSizes = new PictureSizes({ api, data })
   // a text showing a picture of unknown size (one just uploaded) asks for the sizes again
   const unsize = data.subscribe((s, was) => {
@@ -284,7 +292,7 @@ export function createApp(env: AppEnv): App {
   const activity = new Activity({ api, store: activityStore, toasts })
   const restores = new Restores({ runner, toasts, inputs: inputActions, model })
   docs = new Docs({ runner, toasts, view: docView, nav, route, sheets, fields, desk: env.desk, model, box, boxStore, kv: env.kv, ticks: docTicks, inputs, mic: { stop: () => dictation.stop(), discard: (key) => dictation.discard(key), settled: (): Promise<boolean> => dictation.settled() } })
-  const projects = new Projects({ api, data, kv: env.kv, home: () => route.getState().route.page === 'home' })
+  const projects = new Projects({ api, data, kv: env.kv, toasts, home: () => route.getState().route.page === 'home' })
   const refreshProjects = () => projects.refresh()
   const settings = new Settings({ api, store: settingsStore, data, projects, route, sheets, toasts, box, boxStore, fields, refresh: (slug) => stale(slug) })
   const boxKeyNow = () => boxStore.getState().shown.key
@@ -318,6 +326,16 @@ export function createApp(env: AppEnv): App {
   const docVoice = new DocVoice({ voice, docs, box, boxStore, recording, view: docView, runner, changes, toasts, model, desk: env.desk, reply: (slug, key, scope) => void box.send(slug, model(slug), scope, key) })
   const dictation: Dictation = new Dictation({ api, store: dictationStore, view: docView, route, docs, fields, toasts, model, recording: () => !!recording.getState().rec })
   const views = new SavedViews({ api, store: viewsStore, nav, toasts, list: () => { const r = route.getState().route; return r.page === 'project' ? r.list : null } })
+  const moves = new Moves({
+    api,
+    changes,
+    toasts,
+    model,
+    title: (slug) => data.getState().projects?.find((p) => p.name === slug)?.title || slug,
+    go: (url) => route.getState().go(url, true),
+    refresh: (slug) => stale(slug),
+  })
+  const itemDrag = new ItemDrag({ store: dragStore, items, moves, slug: currentSlug, model: () => model(currentSlug()) })
   const media = new Media({ api, store: mediaStore, route, sheets, toasts, desk: env.desk })
   const keptNotes = new KeptNotes({
     vault: env.vault ?? memoryVault(),
@@ -407,7 +425,7 @@ export function createApp(env: AppEnv): App {
 
   return {
     api,
-    stores: { data, changes, outbox, feedback, ui, itemView, search, drafts, box: boxStore, sheet: sheetStore, route, activity: activityStore, docView, docTicks, settings: settingsStore, recording, dictation: dictationStore, media: mediaStore, views: viewsStore },
+    stores: { data, changes, outbox, feedback, ui, itemView, search, drafts, box: boxStore, sheet: sheetStore, route, activity: activityStore, docView, docTicks, settings: settingsStore, recording, dictation: dictationStore, media: mediaStore, views: viewsStore, grips: gripsStore, drag: dragStore },
     toasts,
     items,
     inputs,
@@ -422,15 +440,7 @@ export function createApp(env: AppEnv): App {
     inputActions,
     box,
     sheets,
-    moves: new Moves({
-      api,
-      changes,
-      toasts,
-      model,
-      title: (slug) => data.getState().projects?.find((p) => p.name === slug)?.title || slug,
-      go: (url) => route.getState().go(url, true),
-      refresh: (slug) => stale(slug),
-    }),
+    moves,
     desk: env.desk,
     runner,
     model,
@@ -448,6 +458,7 @@ export function createApp(env: AppEnv): App {
     dictation,
     media,
     views,
+    itemDrag,
     refreshProjects,
     stop: () => {
       projects.stop()

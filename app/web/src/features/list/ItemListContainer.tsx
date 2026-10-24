@@ -101,7 +101,14 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
       hitLine: words.length ? hitLine(it, code, words) : null,
     }
   }
-  const look = (it: Item): RowLook => ({ current: it.n === openN, selected: ui.selected.has(it.n), words, desk })
+  const drag = useStoreValue(app.stores.drag, (s) => s)
+  const look = (it: Item): RowLook => ({
+    current: it.n === openN,
+    selected: ui.selected.has(it.n),
+    words,
+    desk,
+    ...(drag.n === it.n ? { drag: 'dragging' as const } : drag.at?.n === it.n && drag.at.how !== 'out' ? { drag: drag.at.how } : {}),
+  })
   const drawn: DrawnRow[] = rows.map((r, i): DrawnRow => {
     switch (r.kind) {
       case 'item':
@@ -148,6 +155,10 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
     needsMore: () => app.stores.ui.getState().toggleNeedsAll(),
     archiveAll: () => {},
     ownView: (i) => app.views.show(i),
+    dragStart: (n) => app.itemDrag.start(n),
+    dragOver: (n, y) => app.itemDrag.over(n, y),
+    drop: () => app.itemDrag.drop(),
+    dragEnd: () => app.itemDrag.end(),
     ownMenu: (i, x, y) => app.sheets.open({ kind: 'view-menu', i }, { pop: true, focus: false, at: { x, y } }),
     rename: (i, name) => app.views.rename(i, name),
     renameStop: () => app.stores.views.getState().setEdit(-1),
@@ -181,6 +192,8 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
     >
       <ItemList
         ref={pane}
+        desk={desk}
+        dragging={drag.n != null ? { out: drag.at?.how === 'out' } : null}
         loading={!m}
         views={views}
         ownViews={ownViews}

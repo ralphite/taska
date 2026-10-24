@@ -139,6 +139,7 @@ export function ItemPageContainer({ it, m, slug, tab, desk }: { it: Item; m: Pro
     },
     picture: (f, all) => media.on.view(f, all),
     ...media.on,
+    topSize: (px, done) => (done ? app.stores.grips.getState().keep('top', px) : app.stores.grips.getState().size('top', px)),
     subNew: () => iv().setSubFor(n),
     subCancel: () => iv().setSubFor(null),
     subAdd: (title) => {
