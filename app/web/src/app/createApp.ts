@@ -40,6 +40,8 @@ import { VoiceWords } from './voiceWords'
 import { KeptNotes } from './keptNotes'
 import { DocVoice } from './docVoice'
 import { Dictation } from './dictation'
+import { Media } from './media'
+import { createMediaStore, type MediaStore } from '../stores/media'
 import { createDictationStore, type DictationStore } from '../stores/dictation'
 import { memoryVault, type NoteVault } from '../stores/noteVault'
 import { draftName } from '../model/words'
@@ -90,6 +92,7 @@ export interface App {
     settings: SettingsStore
     recording: RecordingStore
     dictation: DictationStore
+    media: MediaStore
   }
   toasts: Toasts
   items: ItemActions
@@ -133,6 +136,7 @@ export interface App {
   voiceWords: VoiceWords
   docVoice: DocVoice
   dictation: Dictation
+  media: Media
   refreshProjects(): Promise<boolean>
   stop(): void
 }
@@ -161,6 +165,7 @@ export function createApp(env: AppEnv): App {
   const settingsStore = createSettingsStore()
   const recording = createRecordingStore()
   const dictationStore = createDictationStore()
+  const mediaStore = createMediaStore()
   const pictureSizes = new PictureSizes({ api, data })
   // a text showing a picture of unknown size (one just uploaded) asks for the sizes again
   const unsize = data.subscribe((s, was) => {
@@ -307,6 +312,7 @@ export function createApp(env: AppEnv): App {
   })
   const docVoice = new DocVoice({ voice, docs, box, boxStore, recording, view: docView, runner, changes, toasts, model, desk: env.desk, reply: (slug, key, scope) => void box.send(slug, model(slug), scope, key) })
   const dictation: Dictation = new Dictation({ api, store: dictationStore, view: docView, route, docs, fields, toasts, model, recording: () => !!recording.getState().rec })
+  const media = new Media({ api, store: mediaStore, route, sheets, toasts, desk: env.desk })
   const keptNotes = new KeptNotes({
     vault: env.vault ?? memoryVault(),
     kv: env.kv,
@@ -395,7 +401,7 @@ export function createApp(env: AppEnv): App {
 
   return {
     api,
-    stores: { data, changes, outbox, feedback, ui, itemView, search, drafts, box: boxStore, sheet: sheetStore, route, activity: activityStore, docView, docTicks, settings: settingsStore, recording, dictation: dictationStore },
+    stores: { data, changes, outbox, feedback, ui, itemView, search, drafts, box: boxStore, sheet: sheetStore, route, activity: activityStore, docView, docTicks, settings: settingsStore, recording, dictation: dictationStore, media: mediaStore },
     toasts,
     items,
     inputs,
@@ -434,6 +440,7 @@ export function createApp(env: AppEnv): App {
     voiceWords,
     docVoice,
     dictation,
+    media,
     refreshProjects,
     stop: () => {
       projects.stop()

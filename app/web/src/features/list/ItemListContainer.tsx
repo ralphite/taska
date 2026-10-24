@@ -142,7 +142,7 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
     reopen: (n) => void app.items.change(n, 'status', 'doing'),
     fold: (n) => app.stores.ui.getState().toggleFold(n),
     goto: (n) => app.nav.openItem(codeOf(m as ProjectModel, n)),
-    picture: () => {},
+    picture: (_group, f) => app.media.view(route.slug, [f], f),
     view: (value: string) => app.nav.view(value),
     subMore: (n) => app.stores.ui.getState().toggleSubMore(n),
     needsMore: () => app.stores.ui.getState().toggleNeedsAll(),

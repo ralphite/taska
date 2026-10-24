@@ -8,6 +8,7 @@ import { HomeContainer } from '../features/home/HomeContainer'
 import { ProjectPageContainer } from '../features/project/ProjectPageContainer'
 import { SheetContainer } from '../features/sheets/SheetContainer'
 import { SelectionBarContainer } from '../features/composer/SelectionBarContainer'
+import { ViewerContainer } from '../features/media/ViewerContainer'
 import { pageKeys } from './keys'
 import { Tooltip } from './Tooltip'
 import { PanesProvider } from './panes'
@@ -34,6 +35,7 @@ export function App() {
           {/* over the page, in its layout */}
           <SheetContainer />
           {route.page === 'project' ? <SelectionBarContainer route={route} /> : null}
+          <ViewerContainer />
           <Tooltip />
         </div>
       </PanesProvider>

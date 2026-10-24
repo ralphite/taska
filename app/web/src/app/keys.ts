@@ -26,6 +26,14 @@ export function pageKeys(app: App): (e: KeyboardEvent) => void {
       if (id && runAction(app, id, { ...h, shift: e.shiftKey }, quiet)) e.preventDefault()
     }
     if (e.key === 'Escape') return act('back')
+    // the picture viewer: the arrows go through its pictures; no other key acts under it
+    if (app.media.open()) {
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        e.preventDefault()
+        app.media.step(e.key === 'ArrowLeft' ? -1 : 1)
+      }
+      return
+    }
     // Cmd-K anywhere on the desktop, even while typing (again: closes it)
     if (app.desk() && (e.metaKey || e.ctrlKey) && !e.altKey && e.key.toLowerCase() === 'k') {
       e.preventDefault()

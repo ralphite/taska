@@ -4,7 +4,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import { useApp, useLayout, useStoreValue } from '../../app/context'
 import { usePaneRef } from '../../app/panes'
-import { useAway, useProjectModel, type ProjectRoute } from '../../app/hooks'
+import { useAway, useFiles, useProjectModel, type ProjectRoute } from '../../app/hooks'
 import { dayOf, newestFirst, organizing, SHORT_STANDING, standing, timeOf } from '../../model/inputs'
 import { oneLine, shownStatus } from '../../model/items'
 import { codeOf, inputDraft, liveN, type ProjectModel } from '../../model/project'
@@ -315,6 +315,7 @@ export function FootContainer({ route, place, hidden, composePage, onHeight, bar
     return () => clearTimeout(t)
   }, [app, feedback?.final])
 
+  const media = useFiles(route.slug)
   const url = (f: string) => `/p/${encodeURIComponent(route.slug)}/f/${encodeURIComponent(f)}`
   // words of a voice note that may be misheard: under the box; on the phone in the box itself, to pick from
   const pickWord = (fk: string, k: number, side: 'was' | 'alt') => void app.voiceWords.pick(route.slug, key, fk, k, side)
@@ -376,7 +377,12 @@ export function FootContainer({ route, place, hidden, composePage, onHeight, bar
       fieldRef={app.fields.ref('box')}
       lineOnComposePage={!!mode}
       hasFiles={!!draftFiles?.length}
-      files={<DraftFiles files={draftFiles || []} url={url} onRemove={(fk) => app.box.removeFile(key, fk)} onView={() => {}} />}
+      files={<DraftFiles files={draftFiles || []} url={url} onRemove={(fk) => app.box.removeFile(key, fk)} onView={(fk) => {
+        // a picture of the draft, with its others that are up
+        const pics = (draftFiles || []).filter((x) => x.f && (x.mime || '').startsWith('image/')).map((x) => x.f)
+        const f = draftFiles?.find((x) => x.key === fk)?.f
+        if (f) app.media.view(route.slug, pics, f)
+      }} />}
       doubts={doubts}
       words={phoneWords}
       rec={rec}
@@ -425,7 +431,7 @@ export function FootContainer({ route, place, hidden, composePage, onHeight, bar
             more={said.all.length > said.rows.length}
             words={words}
             draft={card}
-            files={(f) => <Thumbs files={f} url={url} size="size-12" play={() => ({ playing: false, t: null })} tidy={false} on={{ play: () => {}, words: () => {}, view: () => {} }} />}
+            files={(f) => <Thumbs files={f} url={url} size="size-12" play={media.play} tidy={media.tidy} on={media.on} />}
             on={{
               goto: (n) => m && app.nav.openItem(codeOf(m, n)),
               more: (id) => setOpened((s) => new Set(s).add(id)),

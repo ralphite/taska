@@ -4,7 +4,7 @@
 import { useLayoutEffect } from 'react'
 import { hereFor, keysShown, runAction, type ActionId } from '../../app/actions'
 import { useApp, useLayout, useStoreValue } from '../../app/context'
-import { useCloseSheetWhen, useProjectModel, useProjectRoute } from '../../app/hooks'
+import { useCloseSheetWhen, useFiles, useProjectModel, useProjectRoute } from '../../app/hooks'
 import { codeOf, type ProjectModel } from '../../model/project'
 import type { Input } from '../../model/types'
 import type { SheetRequest } from '../../stores/sheet'
@@ -116,6 +116,7 @@ export function SourcesSheet({ req }: Req<'item-sources'>) {
   const app = useApp()
   const { slug, m, it, code } = useSubject(req.n)
   const world = useItemWorld(m, slug)
+  const media = useFiles(slug)
   if (!m || !it) return null
   return (
     <SheetLayout
@@ -125,7 +126,7 @@ export function SourcesSheet({ req }: Req<'item-sources'>) {
           inputs: sourcesOf(m, it.srcs),
           world,
           now: m.at,
-          files: (f) => <Thumbs files={f} url={world.url} play={() => ({ playing: false, t: null })} tidy on={{ play() {}, words() {}, view() {} }} />,
+          files: (f) => <Thumbs files={f} url={world.url} play={media.play} tidy={media.tidy} on={media.on} />,
         },
         () => app.sheets.close(),
       )}

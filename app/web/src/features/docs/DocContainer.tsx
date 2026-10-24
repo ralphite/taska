@@ -4,7 +4,7 @@
 
 import { useEffect, useMemo } from 'react'
 import { useApp, useLayout, useStoreValue } from '../../app/context'
-import { useProjectModel, type ProjectRoute } from '../../app/hooks'
+import { useFiles, useProjectModel, type ProjectRoute } from '../../app/hooks'
 import { usePaneRef } from '../../app/panes'
 import { resolved, seenNow, threadNew, threadsOf } from '../../model/docs'
 import type { Doc } from '../../model/types'
@@ -51,7 +51,8 @@ function useDoc(slug: string, dn: number) {
     // what the document shows now counts as seen
     if (d) for (const [k, t] of seenNow(seen, d)) app.seen.markKey(slug, k, t)
   })
-  const env: DocEnv = { world, now: m?.at ?? 0, desk, tidy: true, play: () => ({ playing: false, t: null }), url: world.url }
+  const media = useFiles(slug)
+  const env: DocEnv = { world, now: m?.at ?? 0, desk, tidy: media.tidy, play: media.play, url: world.url }
   const docs = app.docs
   const on: DocEvents = {
     ref: (c) => {
@@ -60,10 +61,8 @@ function useDoc(slug: string, dn: number) {
       if (to.kind === 'item') app.nav.openItem(codeOf(m, to.n))
       else if (to.kind === 'doc') docs.open(to.d)
     },
-    picture: () => {},
-    play: () => {},
-    words: () => {},
-    view: () => {},
+    picture: (f, all) => media.on.view(f, all),
+    ...media.on,
     edit: (id) => docs.editComment(slug, dn, id),
     move: (id) => app.sheets.open({ kind: 'comment-move', d: dn, id }, { focus: false }),
     takeOff: (id, f) => docs.takeOff(dn, id, f),

@@ -146,7 +146,7 @@ export function NeedsCard({ it, env, on, remodify, going = null, onCard = false 
         <Rich text={w.text} world={env.world} cls="text-zinc-900 dark:text-zinc-100" choosing={asking} onRef={on.ref} onPicture={on.picture} />
         {w.files?.length ? (
           <div className="flex gap-2 overflow-x-auto lg:scrollbar-thin">
-            <Thumbs files={w.files} url={env.url} size="h-48 w-24" play={env.play} tidy={env.tidy} bar on={on} />
+            <Thumbs files={w.files} url={env.url} size="h-48 w-24" play={env.play} tidy={env.tidy} on={on} />
           </div>
         ) : null}
       </>

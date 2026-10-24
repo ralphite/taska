@@ -195,6 +195,7 @@ function stepBack(app: App, h: Here): void {
   const active = document.activeElement
   const layers = app.stores.route.getState().layers
   if (layers.includes('drawer')) return app.nav.drawer(false)
+  if (layers.includes('viewer')) return app.media.close()
   if (app.voice.recording()) return void app.voice.cancel() // a recording stops first, as everywhere
   // a correction, an edit, details added, the preferences: stopped, unless you are writing words in the box
   const inBox = app.desk() && app.fields.focused('box') && !!(app.fields.get('box') as HTMLTextAreaElement | null)?.value.trim()

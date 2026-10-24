@@ -3,7 +3,7 @@
 
 import { useMemo } from 'react'
 import { useApp, useStoreValue } from '../../app/context'
-import { useAway, useProjectModel, type ProjectRoute } from '../../app/hooks'
+import { useAway, useFiles, useProjectModel, type ProjectRoute } from '../../app/hooks'
 import { dayOf, newestFirst, standing } from '../../model/inputs'
 import { codeOf, inputDraft } from '../../model/project'
 import { when } from '../../model/time'
@@ -28,6 +28,7 @@ export function InputsContainer({ route, hidden }: { route: ProjectRoute; hidden
   const draftWords = useStoreValue(app.stores.drafts, (s) => s.bySlug[route.slug])
   const mode = useStoreValue(app.stores.box, (s) => s.mode)
   const writing = useMemo(() => (mode?.kind === 'amend' ? { id: mode.id, mode: mode.mode } : null), [mode])
+  const media = useFiles(route.slug)
   const rows: InputFacts[] = useMemo(() => {
     if (!m || hidden) return []
     const title = (slug: string) => projects?.find((p) => p.name === slug)?.title || slug
@@ -87,7 +88,7 @@ export function InputsContainer({ route, hidden }: { route: ProjectRoute; hidden
       words={words}
       world={world}
       hints={hints(rows.length)}
-      files={(f) => <Thumbs files={f} url={world.url} size="size-11" play={() => ({ playing: false, t: null })} tidy on={{ play: () => {}, words: () => {}, view: () => {} }} />}
+      files={(f) => <Thumbs files={f} url={world.url} size="size-11" play={media.play} tidy={media.tidy} on={media.on} />}
       on={{
         goto: (n) => m && app.nav.openItem(codeOf(m, n), 'items'),
         more: (id) => app.stores.ui.getState().toggleInput(id),
@@ -96,7 +97,7 @@ export function InputsContainer({ route, hidden }: { route: ProjectRoute; hidden
         draft: (id, mode) => app.box.amendStart(route.slug, m, id, mode),
         moved: (href) => app.nav.to(href),
         ref: () => {},
-        picture: () => {},
+        picture: (f, all) => media.on.view(f, all),
       }}
     />
   )

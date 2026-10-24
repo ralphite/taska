@@ -3,7 +3,7 @@
 
 import { useMemo } from 'react'
 import { useApp, useStoreValue } from '../../app/context'
-import { useAway } from '../../app/hooks'
+import { useAway, useFiles } from '../../app/hooks'
 import { newId } from '../../app/changeRunner'
 import { CHOICE } from '../../model/markdown'
 import { codeOf, docsOf, filesOf, findRef, liveN, STAND, type ProjectModel } from '../../model/project'
@@ -57,12 +57,13 @@ export function ItemPageContainer({ it, m, slug, tab, desk }: { it: Item; m: Pro
     .filter((o) => !(o.kind === 'answer' && !o.files.length))
     .map((o) => ({ q: o.q, text: o.text || outgoingLine(o), state: outgoingState(o, away), bad: o.state === 'failed' && !o.net }))
 
+  const media = useFiles(slug)
   const env: TalkEnv = {
     world,
     now: m.at,
     desk,
-    tidy: true,
-    play: () => ({ playing: false, t: null }),
+    tidy: media.tidy,
+    play: media.play,
     url: world.url,
     opened: view.opened,
     latest: it.thread.filter((x) => x.by !== 'org').at(-1)?.id ?? null,
@@ -136,10 +137,8 @@ export function ItemPageContainer({ it, m, slug, tab, desk }: { it: Item; m: Pro
       if (to?.kind === 'item') goto(to.n)
       else if (to?.kind === 'doc') app.docs.open(to.d)
     },
-    picture: () => {},
-    play: () => {},
-    words: () => {},
-    view: () => {},
+    picture: (f, all) => media.on.view(f, all),
+    ...media.on,
     subNew: () => iv().setSubFor(n),
     subCancel: () => iv().setSubFor(null),
     subAdd: (title) => {

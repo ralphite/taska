@@ -53,7 +53,7 @@ function WordsBar({ f, beside = false, onWords }: { f: string; beside?: boolean;
   )
 }
 
-export function VoiceChip({ f, src, play, tidy, bar = false, onPlay, onWords }: { f: FileRef; src: string; play: PlayState; tidy: boolean; bar?: boolean; onPlay(src: string): void; onWords(f: string): void }) {
+export function VoiceChip({ f, src, play, tidy, onPlay, onWords }: { f: FileRef; src: string; play: PlayState; tidy: boolean; onPlay(src: string): void; onWords(f: string): void }) {
   const total = voiceLength(f)
   return (
     <span className="group/voice relative flex h-9 shrink-0 items-center self-end rounded-full border border-zinc-200 pl-1 text-[13px] text-zinc-600 dark:border-zinc-700 dark:text-zinc-300">
@@ -78,7 +78,7 @@ export function VoiceChip({ f, src, play, tidy, bar = false, onPlay, onWords }: 
           <Icon n="quote" c="size-4" />
         </button>
       ) : null}
-      {tidy && bar ? <WordsBar f={f.f} onWords={onWords} /> : null}
+      {tidy ? <WordsBar f={f.f} onWords={onWords} /> : null}
     </span>
   )
 }
@@ -86,7 +86,8 @@ export function VoiceChip({ f, src, play, tidy, bar = false, onPlay, onWords }: 
 export interface FileEvents {
   play(src: string): void
   words(f: string): void
-  view(f: string): void
+  /** a picture in the viewer, with the others of the same message */
+  view(f: string, all: string[]): void
 }
 
 export function Thumbs({
@@ -95,7 +96,6 @@ export function Thumbs({
   size = 'size-20',
   play,
   tidy,
-  bar = false,
   on,
 }: {
   files: FileRef[]
@@ -103,23 +103,22 @@ export function Thumbs({
   size?: string
   play(src: string): PlayState
   tidy: boolean
-  /** a voice note floats its original words above it when pointed at (the talk; not the list of what you said) */
-  bar?: boolean
   on: FileEvents
 }) {
+  const pictures = files.filter(isImage).map((f) => f.f)
   return (
     <>
       {files.map((f) => {
         if (isAudio(f)) {
           const src = url(f.f)
-          return <VoiceChip key={f.f} f={f} src={src} play={play(src)} tidy={tidy} bar={bar} onPlay={on.play} onWords={on.words} />
+          return <VoiceChip key={f.f} f={f} src={src} play={play(src)} tidy={tidy} onPlay={on.play} onWords={on.words} />
         }
         if (isImage(f))
           return (
             <button
               key={f.f}
               title={f.name}
-              onClick={(e) => (e.stopPropagation(), on.view(f.f))}
+              onClick={(e) => (e.stopPropagation(), on.view(f.f, pictures))}
               className={`${size} shrink-0 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 hover:brightness-95 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:brightness-110`}
             >
               <Pic src={url(f.f)} alt={f.name} cls="size-full object-contain" />
@@ -150,12 +149,12 @@ export function FileRows({ files, cls = '', ...rest }: { files: FileRef[]; cls?:
     <div className={`${cls} flex flex-col gap-2`}>
       {others.length ? (
         <div className={`flex items-end gap-2 overflow-x-auto lg:scrollbar-thin ${others.length > 3 ? '[mask-image:linear-gradient(to_right,black_85%,transparent)]' : ''}`}>
-          <Thumbs files={others} bar {...rest} />
+          <Thumbs files={others} {...rest} />
         </div>
       ) : null}
       {audio.length ? (
         <div className="flex flex-wrap gap-2">
-          <Thumbs files={audio} bar {...rest} />
+          <Thumbs files={audio} {...rest} />
         </div>
       ) : null}
     </div>
