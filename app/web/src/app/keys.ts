@@ -70,6 +70,8 @@ export function pageKeys(app: App): (e: KeyboardEvent) => void {
       return void app.voice.finish(e.shiftKey || e.metaKey || e.ctrlKey)
     }
     if (typingIn(active) || e.altKey) return
+    // the sidebar over the page takes the keys: only [ (or Esc) closes it
+    if (app.stores.ui.getState().sideOver && e.key !== '[' && /^[a-zA-Z0-9./[?]$/.test(e.key) && !e.metaKey && !e.ctrlKey) return app.toasts.show('Press [ to close the sidebar')
     // Enter and Space press the button or link you are on; they are keys only on the page or a row
     if ((e.key === 'Enter' || e.key === ' ') && active && active !== document.body && !app.fields.get('list')?.contains(active) && active.closest('button, a[href], [role=button], summary')) return
     if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') return act('send-answer', true)

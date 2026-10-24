@@ -1,6 +1,6 @@
 // The sidebar with the page's data: every project in your order, this one with what this page knows now.
 
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { runAction } from '../../app/actions'
 import { Grip } from '../../ui/Grip'
 import { NewProjectField } from './NewProjectField'
@@ -70,7 +70,8 @@ export function SidebarContainer({ slug, place, hidden, rail }: { slug: string; 
   const list = dropOn && listed ? listed.map((p) => (p.slug === dropOn ? { ...p, drop: true } : p)) : listed
   const route = useStoreValue(app.stores.route, (s) => s.route)
   // the sidebar's New project, being named (and why it was not made)
-  const [making, setMaking] = useState<{ error: string } | null>(null)
+  const making = useStoreValue(app.stores.ui, (s) => s.naming)
+  const setMaking = (n: { error: string } | null) => app.stores.ui.getState().setNaming(n)
   const undo = useStoreValue(app.stores.feedback, (s) => s.undo.at(-1) ?? null)
   const sideHidden = useStoreValue(app.stores.ui, (s) => s.sideHidden)
   const composing = route.page === 'project' && (route.place.kind === 'new' || (route.place.kind === 'tab' && route.tab !== 'inputs'))
@@ -91,7 +92,11 @@ export function SidebarContainer({ slug, place, hidden, rail }: { slug: string; 
       app.nav.newInput()
       void app.voice.start(slug, 'new', null, 'main')
     },
-    newProject: () => setMaking({ error: '' }),
+    newProject: () => {
+      // from the folded sidebar's rail: the sidebar comes over the page
+      if (rail && layout === 'desk') app.stores.ui.getState().setSideOver(true)
+      setMaking({ error: '' })
+    },
     hide: () => app.stores.ui.getState().setSideHidden(!sideHidden),
     settings: () => app.nav.to(base + 'settings'),
     keys: () => app.sheets.open({ kind: 'keys' }),

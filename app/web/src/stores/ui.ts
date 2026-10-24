@@ -23,6 +23,10 @@ export interface UiState {
   heldFor: string
   selected: ReadonlySet<number>
   sideHidden: boolean
+  /** the desktop's folded sidebar, opened over the page (New project from its rail) */
+  sideOver: boolean
+  /** the sidebar's New project, being named (and why it was not made) */
+  naming: { error: string } | null
   /** the desktop's item pane in two columns: the item (or its document) on the left, its talk on the right */
   duo: boolean
   /** an input gone to (from an item's source, the activity log): lit up for a moment where it is listed */
@@ -45,6 +49,8 @@ export interface UiState {
   dropHeld(n: number): void
   setSelected(s: ReadonlySet<number>): void
   setSideHidden(on: boolean): void
+  setSideOver(on: boolean): void
+  setNaming(n: { error: string } | null): void
   setDuo(on: boolean): void
   setLit(id: string | null): void
   /** the row of Activity or Deleted shown in the pane beside it */
@@ -74,6 +80,8 @@ export function createUiStore(kv: KeyValueStore): UiStore {
     duo: false,
     lit: null,
     sideHidden: !!kv.get('taska.sideHidden'),
+    sideOver: false,
+    naming: null,
     sideSel: null,
     setSideSel: (sideSel) => set({ sideSel }),
     deskFilters: false,
@@ -106,8 +114,10 @@ export function createUiStore(kv: KeyValueStore): UiStore {
     setDuo: (duo) => set((s) => (s.duo === duo ? s : { duo })),
     setSideHidden: (on) => {
       kv.set('taska.sideHidden', on ? '1' : null)
-      set({ sideHidden: on })
+      set({ sideHidden: on, sideOver: false })
     },
+    setSideOver: (sideOver) => set({ sideOver }),
+    setNaming: (naming) => set({ naming }),
     reset: () => set({ folded: new Set(), subMore: new Set(), needsAll: false, held: new Map(), heldFor: '', selected: new Set(), lastSent: null, sideSel: null }),
   }))
 }

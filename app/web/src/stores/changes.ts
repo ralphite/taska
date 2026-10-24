@@ -24,6 +24,8 @@ export interface PendingChange {
   showOnly?: boolean
   /** a refusal is for the sender to answer (it is not listed as not saved) */
   ownRefusal?: boolean
+  /** a refusal is said in red, in Taska's words or these (it is not listed as not saved) */
+  refusedSay?: string
 }
 
 export interface ChangesState {

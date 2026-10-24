@@ -16,8 +16,9 @@ export class InputActions {
     this.d = d
   }
 
-  private send(slug: string, op: Record<string, unknown>, said: string, inputPatches: InputPatch[] = []) {
-    return this.d.runner.send({ id: newId(), slug, commands: [op as never], patches: [], inputPatches, said, t: Date.now() })
+  /** `refusedSay`: a refusal is said in red (in Taska's words, or these), not listed as not saved */
+  private send(slug: string, op: Record<string, unknown>, said: string, inputPatches: InputPatch[] = [], refusedSay?: string) {
+    return this.d.runner.send({ id: newId(), slug, commands: [op as never], patches: [], inputPatches, said, t: Date.now(), ...(refusedSay ? { refusedSay } : {}) })
   }
 
   organizeAgain(slug: string, id: string): void {
@@ -50,10 +51,10 @@ export class InputActions {
 
   undoFiling(slug: string, id: string): void {
     const what = this.d.model(slug)?.byId.get(id)?.filing?.what
-    void this.send(slug, { op: 'filing-undo', id }, `undoing the filing of ${inputCode(id)}`).then((ok) => {
+    void this.send(slug, { op: 'filing-undo', id }, `undoing the filing of ${inputCode(id)}`, [], 'Could not undo').then((ok) => {
       if (!ok) return
       const back = this.d.toasts.undoable(`Filing of ${inputCode(id)} undone`, async () => {
-        const done = await this.send(slug, { op: 'filing-redo', id }, `restoring the filing of ${inputCode(id)}`)
+        const done = await this.send(slug, { op: 'filing-redo', id }, `restoring the filing of ${inputCode(id)}`, [], 'Could not restore')
         if (done) this.d.toasts.show(`Restored ${inputCode(id)}’s filing`)
         return done
       })

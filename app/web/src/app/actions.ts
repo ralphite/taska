@@ -214,6 +214,7 @@ function stepBack(app: App, h: Here): void {
   if (app.stores.box.getState().mode && !inBox) return app.box.stop()
   if (app.stores.sheet.getState().spec?.req.kind === 'doc-edit') return app.docs.keep() // its text kept as a draft
   if (app.stores.sheet.getState().spec) return app.sheets.close()
+  if (app.stores.ui.getState().sideOver) return app.stores.ui.getState().setSideOver(false)
   const view = app.stores.itemView.getState()
   if (view.subFor != null && typingIn(active)) return app.itemEdits.subLeave()
   if (view.editing != null) return app.itemEdits.leave()

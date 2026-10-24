@@ -259,7 +259,7 @@ export function createApp(env: AppEnv): App {
     stale,
     cursor: (slug) => (sync?.slug === slug ? sync.cursor : null),
     unreachable: () => {},
-    refused: (c, why) => c.ownRefusal || toasts.notSaved({ what: changeWords(c.commands), why, slug: c.slug, go: changePlace(c.commands, c.slug), said: changeText(c.commands) }),
+    refused: (c, why) => c.ownRefusal || (c.refusedSay != null ? toasts.show(why || c.refusedSay, null, { error: true }) : toasts.notSaved({ what: changeWords(c.commands), why, slug: c.slug, go: changePlace(c.commands, c.slug), said: changeText(c.commands) })),
   })
   const inputs = new InputSender(api, outbox, {
     cursor: (slug) => (sync?.slug === slug ? sync.cursor : null),
@@ -439,6 +439,8 @@ export function createApp(env: AppEnv): App {
   })
   route.subscribe((s, was) => {
     if (s.route !== was.route) merges.settle()
+    // going anywhere closes the sidebar opened over the page
+    if (s.url !== was.url && ui.getState().sideOver) ui.getState().setSideOver(false)
   })
   const notices = new Notices(env.kv, () => settingsStore.getState().set({ noticeRev: settingsStore.getState().noticeRev + 1 }), { api, toasts, desk: env.desk, go: (url) => route.getState().go(url, true) })
   // the projects listed again: what newly needs you in the others
