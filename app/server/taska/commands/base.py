@@ -67,14 +67,17 @@ class Changes(Protocol):
 
     def emit(self, event: Event) -> None:
         """Write a change to the log and apply it."""
+        ...
 
     def file_exists(self, fid: str) -> bool: ...
 
     def with_words(self, text: str, files: List[FileRef]) -> Tuple[str, List[FileRef]]:
         """Words of voice notes that came in after the page let go of them: the text and the files get them."""
+        ...
 
     def is_moving(self, rid: str) -> bool:
         """An input being moved to another project right now."""
+        ...
 
     def mentions(self, text: str) -> Tuple[List[str], List[str]]: ...
 

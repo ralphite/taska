@@ -22,6 +22,8 @@ export function ToastContainer() {
       const r = pane?.getBoundingClientRect()
       const f = foot?.getBoundingClientRect()
       const above = r && f && f.height < 300 && f.left < r.right && f.right > r.left
+      // placed by measuring the panes before the browser paints (React's useLayoutEffect measuring pattern)
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCentered(!!r)
       setStyle(r ? { left: `${r.left + r.width / 2}px`, bottom: `${above && f ? innerHeight - f.top + 12 : 20}px` } : undefined)
     } else {

@@ -58,9 +58,10 @@ def main(argv: Optional[List[str]] = None) -> None:
     ap.add_argument("--log-level", default="INFO", help="what the terminal shows (DEBUG shows every request)")
     args = ap.parse_args(argv)
     if args.command == "install-skill":
-        from .agent_api.skill import install_skill
+        from .agent_text.guide_text import SKILL
+        from .infra.skill_files import install_skill
         print("Installed the Taska skill:")
-        install_skill()
+        install_skill(SKILL)
         return
     if args.command == "import":
         sys.exit("taska import: the one-file Taska's data was imported on 2026-10-19; this version reads taska.db only")
@@ -88,7 +89,7 @@ def serve(root: str, host: str, port: int, organizer: bool, public: str, log_db:
     def opened(p: "object") -> None:
         from .services.project import Project
         assert isinstance(p, Project)
-        p.organizer_on = organizer
+        p.organizing.on = organizer
         p.voice.set_transcriber(transcriber_for(p, lambda: ws))
         p.voice.resume()  # before the organizer: an input waiting for its words is held for them again
         organizers.start(p)

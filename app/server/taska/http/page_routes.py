@@ -19,13 +19,12 @@ import re
 import time
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
-from ..agent_api.render import log_entries
+from ..agent_text.render import log_entries
 from ..domain.rules import item_at
 from ..domain.vocab import MAX_FILE, Refused
 from ..infra.audio import audio_type, leveled
 from ..page_api import views
 from ..page_api.sync import Cursor
-from ..services import moves
 from ..services.project import Project
 from ..services.voice_jobs import answer as voice_answer
 from .agent_routes import presence
@@ -39,12 +38,12 @@ def _view(ctx: "AppContext", req: Request, p: Project, since: Optional[Cursor]) 
     """The project for the page (all of it, or what changed since the cursor), with its own facts."""
     ws = ctx.workspace
     with p.lock:
-        at = (p.rev, p.agents.version)
-        out = ctx.feed(p).view(at, p.boot, lambda: views.entities(p.state, p.agents, p.held), since)
+        at = (p.news.rev, p.agents.version)
+        out = ctx.pages(p).feed.view(at, p.news.boot, lambda: views.entities(p.state, p.agents, p.held), since)
         pres = presence(p)
-        out["project"] = views.project_view(p.state, p.agents, slug=p.slug, title=p.title, organizer_on=p.organizer_on,
-                                            organizer_busy=p.organizer_busy, presence=pres["agents"], work=pres["work"],
-                                            db_path=p.db.path)
+        out["project"] = views.project_view(p.state, p.agents, slug=p.slug, title=p.title, organizer_on=p.organizing.on,
+                                            organizer_busy=p.organizing.busy, presence=pres["agents"], work=pres["work"],
+                                            db_path=p.store.path)
     key = ws.key.value
     out["project"].update(base=f"{req.host()}{req.prefix}/p/{p.slug}", key=key,
                           remote=f"{ws.public}/k/{key}/p/{p.slug}" if ws.public else "")
@@ -53,7 +52,7 @@ def _view(ctx: "AppContext", req: Request, p: Project, since: Optional[Cursor]) 
 
 
 def _changed(p: Project, since: Optional[Cursor]) -> bool:
-    return since is None or since.boot != p.boot or since.rev != p.rev or since.agents != p.agents.version
+    return since is None or since.boot != p.news.boot or since.rev != p.news.rev or since.agents != p.agents.version
 
 
 def get(ctx: "AppContext", req: Request, p: Project, sub: str) -> Optional[Response]:
@@ -62,9 +61,7 @@ def get(ctx: "AppContext", req: Request, p: Project, sub: str) -> Optional[Respo
     if sub == "/api/changes":  # a long wait for news: a page in the background asks with wait=0 and lets go
         since = Cursor.parse(req.arg("cursor"))
         wait = max(0, min(25, int(req.arg("wait", "25") or 25)))
-        with p.changed:
-            p.changed.wait_for(lambda: _changed(p, since), timeout=wait)
-            news = _changed(p, since)
+        news = p.news.wait_for(lambda: _changed(p, since), timeout=wait)
         if not news:
             return as_json({"cursor": req.arg("cursor"), "same": True,
                             "server": {"page": ctx.page.version(), "update": ctx.status.update_ready()}})
@@ -97,16 +94,16 @@ def post(ctx: "AppContext", req: Request, p: Project, sub: str) -> Response:
         return as_json({"ok": True})
     if sub == "/api/move-input":
         d = req.json_body(10_000)
-        return as_json(moves.move_input(p, ctx.workspace.projects.get(str(d.get("to") or "")), d.get("id")))
+        return as_json(ctx.workspace.moves.input(p, ctx.workspace.projects.get(str(d.get("to") or "")), d.get("id")))
     if sub == "/api/move-item":
         cid = req.arg("id")[:64]
-        with p.move_lock:  # a move sent again after a lost answer is done once
-            done = p.page_answers.get("move:" + cid) if cid else None
+        ws, kept = ctx.workspace, ctx.pages(p).once.moves
+        with ws.moves.one_at_a_time:  # a move sent again after a lost answer is done once
+            done = kept.get(cid)
             if done is None:
                 d = req.json_body(10_000)
-                done = (moves.move_item(p, ctx.workspace.projects.get(str(d.get("to") or "")), d.get("ref"), d.get("under")), 200)
-                if cid:
-                    p.page_answers["move:" + cid] = done
+                done = (ws.moves.item(p, ws.projects.get(str(d.get("to") or "")), d.get("ref"), d.get("under")), 200)
+                kept.put(cid, done)
         return as_json(done[0], done[1])
     return text(404, NOT_FOUND)
 
@@ -117,18 +114,16 @@ def _commands(ctx: "AppContext", req: Request, p: Project) -> Response:
     cid = str(body.get("id") or "")[:64]
     commands: List[Any] = body.get("commands") or []
     t0 = time.monotonic()
+    kept = ctx.pages(p).once.changes
     with p.lock:
         ctx.status.note_lock_wait(req, int((time.monotonic() - t0) * 1000))
-        if cid and cid in p.page_answers:
-            answer, code = p.page_answers[cid]
-        else:
+        done = kept.get(cid)
+        if done is None:
             lines, _ = p.run([(0, c) for c in commands if isinstance(c, dict)], "you")
             code = 400 if any(x.startswith("err") for x in lines) or len(lines) != len(commands) else 200
-            answer = {"ok": code == 200, "results": lines}
-            if cid:
-                p.page_answers[cid] = (answer, code)
-                while len(p.page_answers) > 500:
-                    p.page_answers.pop(next(iter(p.page_answers)))
+            done = ({"ok": code == 200, "results": lines}, code)
+            kept.put(cid, done)
+        answer, code = done
     out: Dict[str, Any] = dict(answer)
     if code == 200 and "cursor" in req.query:  # what changed comes with the answer: one trip, not two
         out["changes"] = _view(ctx, req, p, Cursor.parse(req.arg("cursor")))
@@ -167,11 +162,11 @@ def _words(req: Request, p: Project) -> Response:
         with open(path, "rb") as fh:
             p.voice.start(fid, fh.read(), mime, _scope(p, req))
     more = bool(req.query.get("more"))
-    with p.changed:
+    with p.lock:
         job = p.voice.jobs.get(fid)
         if job:  # more=1: waits for the fuller words of a note whose strong model ran out of time
             j = job
-            p.changed.wait_for(lambda: j.done and not (more and j.res.get("more")), timeout=45)
+            p.news.wait_for(lambda: j.done and not (more and j.res.get("more")), timeout=45)
     return as_json(voice_answer(fid, job))
 
 

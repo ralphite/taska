@@ -19,6 +19,7 @@ from ..domain import rules
 from ..domain.text import project_title, slug_of
 from ..domain.vocab import CLOSED, PROJECT_NAME, SLUG_CHARS, Refused
 from ..infra.project_db import ProjectDb
+from .moves import Moves
 from .project import Project, now_iso
 from .settings import AccessKey, ListViews, ProjectOrder, Spellings, VoicePrefs
 
@@ -44,6 +45,7 @@ class Workspace:
         self.views = ListViews(self.root)
         self.voice_prefs = VoicePrefs(self.root)
         self.order = ProjectOrder(self.root)
+        self.moves = Moves()
         self.projects: Dict[str, Project] = {}
         for name in sorted(os.listdir(self.root)):
             if PROJECT_NAME.fullmatch(name) and ProjectDb.exists_in(os.path.join(self.root, name)):
@@ -59,6 +61,9 @@ class Workspace:
     def note_voice_fix(self, wrong: str, right: str, **where: Any) -> None:
         if self._voice_fix:
             self._voice_fix(wrong, right, **{k: v for k, v in where.items()})
+
+    def input_moving(self, slug: str, rid: str) -> bool:
+        return self.moves.moving(slug, rid)
 
     # -- opening and changing projects ---------------------------------------------------------
 
@@ -113,10 +118,10 @@ class Workspace:
         """Out of the way, nothing lost: the folder moves to .deleted/; agents asking for work hear it was deleted."""
         with self._lock:
             p = self.live(slug)
-            with p.changed:
+            with p.lock:
                 p.gone = True
                 info = {"t": now_iso(), "title": p.title, "items": len(p.state.live_items())}
-                p.bump()  # pages and agents waiting on it hear at once
+                p.news.bump()  # pages and agents waiting on it hear at once
                 p.close()
             del self.projects[p.slug]
             os.makedirs(self.trash, exist_ok=True)
@@ -185,7 +190,7 @@ class Workspace:
                 # proposed or that wait on you included
                 open_ = sum(1 for i in live if not i.archived and (i.type != "rule" or i.status == "proposed" or i.n in needs))
                 row: Dict[str, Any] = {"name": name, "title": p.title, "open": open_, "needs": len(needs), **presence(p),
-                                       "t": int(p.changed_at() * 1000)}
+                                       "t": int(p.store.changed_at() * 1000)}
                 pos = self.order.position(name)
                 if pos is not None:
                     row["pos"] = pos

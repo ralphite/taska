@@ -53,6 +53,7 @@ export class BrowserCopyCache implements CopyCache {
         docs: new Map(s.docs.map((x) => [x.d, x])),
         facts: s.facts,
         server: s.server,
+        at: Date.now(),
       }
     } catch {
       return null

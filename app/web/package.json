@@ -8,12 +8,14 @@
     "build": "tsc -b && vite build",
     "typecheck": "tsc -b",
     "lint": "eslint .",
-    "check:architecture": "node scripts/check-architecture.mjs",
+    "check:architecture": "node scripts/check-architecture.mjs --self",
     "test": "vitest run",
     "storybook": "storybook dev -p 6351 --no-open",
     "build-storybook": "storybook build -o dist-storybook --quiet",
     "e2e": "playwright test",
-    "typecheck:server": "pyright -p ../server"
+    "typecheck:server": "pyright -p ../server",
+    "test:server": "python3 -m unittest discover -s ../tests -p \"test_*.py\"",
+    "check": "tsc -b && eslint . && npm run check:architecture && vitest run && npm run typecheck:server && npm run test:server"
   },
   "dependencies": {
     "dompurify": "^3.4.17",

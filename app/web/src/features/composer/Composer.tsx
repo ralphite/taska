@@ -2,7 +2,7 @@
 // (add files; a voice note, or Send once there are words). Past one line on the desktop the words take the box's
 // whole width and the buttons go to a row under them. Props only.
 
-import { useLayoutEffect, useRef, type ReactNode } from 'react'
+import { useLayoutEffect, useRef, type ReactNode, type RefObject } from 'react'
 import { Icon, type IconName } from '../../ui/Icon'
 
 export interface BoxLine {
@@ -37,6 +37,8 @@ export interface ComposerProps {
   /** the voice button's tip (desktop) */
   micTip: string
   files?: ReactNode
+  /** the box's element, for the layout to measure */
+  boxRef?: RefObject<HTMLDivElement | null>
   on: {
     text(t: string): void
     send(): void
@@ -47,9 +49,9 @@ export interface ComposerProps {
 
 const BTN_ICON = 'size-6 lg:size-5'
 
-export function Composer({ line, lineOnComposePage, placeholder, sendWord, text, desk, composePage, micTip, files, on }: ComposerProps) {
+export function Composer({ line, lineOnComposePage, placeholder, sendWord, text, desk, composePage, micTip, files, boxRef, on }: ComposerProps) {
   const area = useRef<HTMLTextAreaElement>(null)
-  const box = useRef<HTMLDivElement>(null)
+  const box = useRef<HTMLDivElement | null>(null)
   const picker = useRef<HTMLInputElement>(null)
   const has = !!text.trim()
   useLayoutEffect(() => {
@@ -71,7 +73,10 @@ export function Composer({ line, lineOnComposePage, placeholder, sendWord, text,
   })
   return (
     <div
-      ref={box}
+      ref={(el) => {
+        box.current = el
+        if (boxRef) boxRef.current = el
+      }}
       id="composer"
       className="group/box flex flex-col rounded-4xl border border-zinc-200 bg-white shadow-sm focus-within:border-zinc-300 lg:mx-auto lg:max-w-[42rem] dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-none dark:focus-within:border-zinc-700"
     >

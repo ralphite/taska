@@ -14,9 +14,9 @@ import threading
 import time
 from typing import Any, Dict, List, Optional
 
-from ..agent_api import render
-from ..agent_api.language import parse
-from ..agent_api.organizer_text import INSTRUCTIONS
+from ..agent_text import render
+from ..agent_text.language import parse
+from ..agent_text.organizer_text import INSTRUCTIONS
 from ..domain import events as ev, rules
 from ..domain.model import Input
 from ..domain.text import hm
@@ -52,17 +52,17 @@ class Organizer(threading.Thread):
     def run(self) -> None:
         p = self.p
         while True:
-            with p.changed:
+            with p.lock:
                 while True:
                     if p.gone:  # the project was deleted: its organizer stops; restoring it starts a new one
                         return
                     todo = [i for i in rules.pending(p.state) if not i.org and not p.held(i)]
                     if todo:
                         break
-                    p.changed.wait(timeout=30)
+                    p.news.wait(timeout=30)
                 inp = min(todo, key=lambda i: i.number)
-                p.organizer_busy = inp.id
-                p.bump()
+                p.organizing.busy = inp.id
+                p.news.bump()
             self.organize(inp.id)
 
     def organize(self, rid: str) -> None:
@@ -86,10 +86,10 @@ class Organizer(threading.Thread):
         except Exception as ex:
             plan, err = "", str(ex)
         with p.lock:
-            p.organizer_busy = None
+            p.organizing.busy = None
             current = p.state.inputs[rid]
             if current.v != version or current.moved or current.acked:
-                p.bump()  # a plan made for older words must not overwrite or handle the newer input
+                p.news.bump()  # a plan made for older words must not overwrite or handle the newer input
                 return
             if err:
                 print(f"[organizer] {time.strftime('%Y-%m-%d %H:%M:%S')} {p.slug} {rid} failed: {err[:300]}",

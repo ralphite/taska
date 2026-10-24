@@ -9,10 +9,10 @@ import time
 from typing import Callable, List, Optional
 from urllib.parse import quote
 
-from ..agent_api import render
-from ..agent_api.guide_text import AGENT, CONNECT, GRAMMAR
-from ..agent_api.language import parse
-from ..agent_api.work import Asker, Work, next_work
+from ..agent_text import render
+from ..agent_text.guide_text import AGENT, CONNECT, GRAMMAR
+from ..agent_text.language import parse
+from ..agent_text.work import Asker, Work, next_work
 from ..domain import rules
 from ..domain.vocab import MAX_FILE, PEOPLE, Refused
 from ..services.project import Project
@@ -94,11 +94,11 @@ def _next(req: Request, p: Project, by: str) -> Response:
     given: Optional[int] = None
     session = req.session()
     try:
-        with p.changed:  # ?wait=N: while there is nothing to do, hold until work arrives
+        with p.lock:  # ?wait=N: while there is nothing to do, hold until work arrives
             who = req.arg("by") or None if "ui" not in q else None
             w = work_for(p, req, who, session)
             while not w.has_work and not p.gone and time.time() < end:  # a deleted project lets its agents go
-                p.changed.wait(timeout=end - time.time())
+                p.news.wait(timeout=end - time.time())
                 w = work_for(p, req, who, session)
             given = w.given
             if given is not None and who:  # the card it was given holds what other sessions wrote there
@@ -156,10 +156,10 @@ def do(req: Request, p: Project) -> Response:
         calls: List[str] = p.agents.call_news(p.state, by, session) if agent else []  # what others wrote before
     lines, _ = p.run(parse(body), by, session=session)
     with p.lock:
-        news = p.agents.news_for(by, rules.for_agent(p.state, p.organizer_on, p.held_fn)) if agent else []
+        news = p.agents.news_for(by, rules.for_agent(p.state, p.organizing.on, p.held_fn)) if agent else []
         rule_lines = p.agents.rule_news(p.state, by, session) if agent else []
         calls += p.agents.call_news(p.state, by, session) if agent else []
-        rev = p.rev
+        rev = p.news.rev
     note = (f"\n{len(news)} new input{'s' if len(news) != 1 else ''} since your last /next: {' '.join(news)}."
             " Finish the step you are on, then GET /next.") if news else ""
     note += "".join("\n" + r for r in rule_lines + calls)

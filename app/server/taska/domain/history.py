@@ -51,7 +51,7 @@ def filings(state: ProjectState) -> Dict[str, Filing]:
             if isinstance(x, ev.ItemAdded):
                 words.append(f"removes {c}")
             elif isinstance(x, ev.FieldsSet):
-                words += [f"{c} back to {STATUS_WORDS.get(x.was.get(f), x.was.get(f))}"
+                words += [f"{c} back to {STATUS_WORDS.get(str(x.was.get(f)), x.was.get(f))}"
                           if f in ("pri", "status", "when", "type") else f"{c}'s old {f}" for f in x.f]
             elif isinstance(x, ev.MessagePosted):
                 words.append(f"takes back the note on {c}")

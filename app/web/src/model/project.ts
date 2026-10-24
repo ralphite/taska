@@ -13,14 +13,16 @@ export interface ServerCopy {
   docs: ReadonlyMap<number, Doc>
   facts: ProjectFacts
   server: ServerFacts
+  /** when this answer came (ms) */
+  at: number
 }
 
 /** A question on a closed item is history, not a pending one. */
 const settled = (it: Item): Item => (closed(it.status) && it.wait ? { ...it, wait: null } : it)
 
-/** The server's answer folded into the copy the page has (all of it, or what changed). */
-export function merge(prev: ServerCopy | null, a: ViewAnswer): ServerCopy {
-  if (a.same && prev) return { ...prev, cursor: a.cursor, server: a.server }
+/** The server's answer, come at `at`, folded into the copy the page has (all of it, or what changed). */
+export function merge(prev: ServerCopy | null, a: ViewAnswer, at: number): ServerCopy {
+  if (a.same && prev) return { ...prev, cursor: a.cursor, server: a.server, at }
   const full = a.full || !prev
   const items = new Map(full ? [] : prev.items)
   const inputs = new Map(full ? [] : prev.inputs)
@@ -31,7 +33,7 @@ export function merge(prev: ServerCopy | null, a: ViewAnswer): ServerCopy {
   for (const it of a.items || []) items.set(it.n, settled(it))
   for (const r of a.inputs || []) inputs.set(r.id, r)
   for (const d of a.docs || []) docs.set(d.d, d)
-  return { cursor: a.cursor, items, inputs, docs, facts: a.project ?? prev?.facts, server: a.server ?? prev?.server }
+  return { cursor: a.cursor, items, inputs, docs, facts: a.project ?? prev?.facts, server: a.server ?? prev?.server, at }
 }
 
 /** A change to an item shown before the server has it. */
@@ -60,10 +62,13 @@ export interface ProjectModel {
   docs: Doc[]
   facts: ProjectFacts
   width: number
+  /** the time its times are told against ("2m ago", quiet agents): when the server last answered or you last
+   * changed something, as the page draws then */
+  at: number
 }
 
 /** The page's view: the server's copy with your pending changes over it. */
-export function project(copy: ServerCopy, patches: readonly ItemPatch[] = []): ProjectModel {
+export function project(copy: ServerCopy, patches: readonly ItemPatch[] = [], at = copy.at): ProjectModel {
   const byN = new Map(copy.items)
   for (const p of patches) {
     const it = byN.get(p.n)
@@ -87,6 +92,7 @@ export function project(copy: ServerCopy, patches: readonly ItemPatch[] = []): P
     docs: [...copy.docs.values()],
     facts: copy.facts,
     width: copy.facts.width,
+    at,
   }
 }
 

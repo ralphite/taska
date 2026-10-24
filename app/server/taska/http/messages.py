@@ -7,12 +7,18 @@ import hashlib
 import ipaddress
 import json
 from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Mapping, Optional
+from typing import Any, Callable, Dict, List, Optional, Protocol
 from urllib.parse import parse_qs, unquote, urlsplit
 
 Query = Dict[str, List[str]]
 ZIPPED = ("text/html", "application/json", "text/plain", "text/javascript", "text/css", "image/svg+xml",
           "application/manifest+json")
+
+
+class Headers(Protocol):
+    """A request's headers: looked up by name, any case."""
+
+    def get(self, name: str, /) -> Optional[str]: ...
 
 
 class TooLarge(Exception):
@@ -23,7 +29,7 @@ class TooLarge(Exception):
 class Request:
     method: str
     raw_path: str  # as sent: path and query, %-encoded
-    headers: Mapping[str, str]
+    headers: Headers
     client_ip: str
     read_body: Callable[[int], bytes] = field(repr=False, default=lambda limit: b"")
     prefix: str = ""  # "/k/<key>" when the key came in the path (answers name addresses with it)

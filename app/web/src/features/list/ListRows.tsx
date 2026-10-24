@@ -2,7 +2,7 @@
 // amber bar, what the agent said, its one action on the thumb side), a row you just acted on (one quiet line), and the
 // group heads. Props only: the list container works out what each row says.
 
-import type { ReactNode } from 'react'
+import type { ReactNode, Ref } from 'react'
 import { deskSlots, forward, backward, ACT_KEY, type Slot } from '../../model/actions'
 import { closed, rowAction, shownStatus, statusWord } from '../../model/items'
 import type { Item } from '../../model/types'
@@ -166,9 +166,9 @@ function SwipeLayers({ it, openKids, on, children }: { it: Item; openKids: numbe
   )
 }
 
-function Shell({ it, look, facts, on, children }: { it: Item; look: RowLook; facts: RowFacts; on: RowEvents; children: ReactNode }) {
+function Shell({ it, look, facts, on, rowRef, children }: { it: Item; look: RowLook; facts: RowFacts; on: RowEvents; rowRef?: Ref<HTMLElement>; children: ReactNode }) {
   return (
-    <article data-n={it.n} className={ARTICLE}>
+    <article ref={rowRef} data-n={it.n} className={ARTICLE}>
       {it.type === 'rule' && look.desk ? (
         children
       ) : (
@@ -189,8 +189,10 @@ export function ItemRow(props: {
   facts: RowFacts
   look: RowLook
   on: RowEvents
+  /** the row's element, for its height */
+  rowRef?: Ref<HTMLElement>
 }) {
-  const { it, depth, band, foldable, folded, facts, look, on } = props
+  const { it, depth, band, foldable, folded, facts, look, on, rowRef } = props
   const isClosed = closed(it.status)
   const meta: ReactNode[] = [
     it.type === 'rule' ? null : (
@@ -227,7 +229,7 @@ export function ItemRow(props: {
     it.status === 'doing' && facts.worker ? <WorkerMark key="w" worker={facts.worker} /> : null,
   ].filter(Boolean)
   return (
-    <Shell it={it} look={look} facts={facts} on={on}>
+    <Shell it={it} look={look} facts={facts} on={on} rowRef={rowRef}>
       <div
         {...marks(look)}
         onClick={() => on.open(it.n)}
@@ -271,10 +273,10 @@ export function ItemRow(props: {
   )
 }
 
-export function NeedsRow({ it, depth, facts, look, excerpt, on }: { it: Item; depth: number; facts: RowFacts; look: RowLook; excerpt: string; on: RowEvents }) {
+export function NeedsRow({ it, depth, facts, look, excerpt, on, rowRef }: { it: Item; depth: number; facts: RowFacts; look: RowLook; excerpt: string; on: RowEvents; rowRef?: Ref<HTMLElement> }) {
   const [v, label] = rowAction(it)
   return (
-    <Shell it={it} look={look} facts={facts} on={on}>
+    <Shell it={it} look={look} facts={facts} on={on} rowRef={rowRef}>
       <div
         {...marks(look)}
         onClick={() => on.open(it.n)}

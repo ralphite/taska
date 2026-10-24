@@ -27,6 +27,7 @@ export function ViewBar({
   onOwn?(i: number): void
 }) {
   const row = useRef<HTMLDivElement>(null)
+  const shown = useRef<HTMLButtonElement>(null)
   const [edge, setEdge] = useState({ l: false, r: false })
   const measure = () => {
     const el = row.current
@@ -47,7 +48,7 @@ export function ViewBar({
   useEffect(() => {
     // the view that shows is never hidden past the edge or under an arrow (48px wide)
     const el = row.current
-    const b = el?.querySelector<HTMLElement>('[aria-pressed="true"]')
+    const b = shown.current
     if (!el || !b) return
     const l = b.offsetLeft - 48
     const r = b.offsetLeft + b.offsetWidth + 48 - el.clientWidth
@@ -70,14 +71,14 @@ export function ViewBar({
     <div className="relative border-b border-zinc-200 dark:border-zinc-800">
       <div ref={row} onScroll={measure} className="flex h-12 [scrollbar-width:none] items-center gap-1 overflow-x-auto px-2">
         {views.map((v) => (
-          <button key={v.value} aria-pressed={v.on} onClick={() => onView(v.value)} className={CHIP}>
+          <button key={v.value} ref={v.on ? shown : undefined} aria-pressed={v.on} onClick={() => onView(v.value)} className={CHIP}>
             {v.dot ? <span className="size-2 rounded-full bg-amber-500 dark:bg-amber-400" /> : null}
             {v.label}
             <span className="font-mono text-[11px] tabular-nums opacity-60">{v.count}</span>
           </button>
         ))}
         {own.map((v, i) => (
-          <button key={v.name} aria-pressed={v.on} onClick={() => onOwn?.(i)} className={CHIP}>
+          <button key={v.name} ref={v.on ? shown : undefined} aria-pressed={v.on} onClick={() => onOwn?.(i)} className={CHIP}>
             {v.name}
             <span className="font-mono text-[11px] tabular-nums opacity-60">{v.count}</span>
           </button>

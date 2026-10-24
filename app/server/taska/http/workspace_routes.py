@@ -7,7 +7,7 @@ from __future__ import annotations
 import time
 from typing import TYPE_CHECKING, Optional
 
-from ..agent_api.guide_text import SKILL
+from ..agent_text.guide_text import SKILL
 from ..infra.logs import voice_fix
 from .access import key_answer
 from .agent_routes import presence

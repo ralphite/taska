@@ -1,6 +1,6 @@
 """Running commands: each one checked by its handler, which emits the changes; a run answers one line per command.
 
-The page sends commands as JSON; agents write lines that agent_api.language turns into the same commands.
+The page sends commands as JSON; agents write lines that agent_text.language turns into the same commands.
 """
 
 from __future__ import annotations

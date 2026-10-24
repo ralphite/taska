@@ -1,7 +1,7 @@
 // The item list with the page's data: the rows of the list's settings, each with what it shows, and what a tap on
 // each part of a row does.
 
-import { useMemo, useRef } from 'react'
+import { useMemo, useState } from 'react'
 import { useApp, useLayout, useStoreValue } from '../../app/context'
 import { usePaneRef } from '../../app/panes'
 import { useProjectModel, type ProjectRoute } from '../../app/hooks'
@@ -50,7 +50,8 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
   const m = useProjectModel(route.slug)
   const ui = useStoreValue(app.stores.ui, (s) => s)
   const pane = usePaneRef('list')
-  const frozen = useRef<{ key: string; rows: Row[] } | null>(null)
+  // the rows of the last drawing that did not hold still (React's way to keep what an earlier drawing had)
+  const [kept, setKept] = useState<{ key: string; rows: Row[] } | null>(null)
   const desk = layout === 'desk'
   const openN = route.place.kind === 'item' ? Number(/\d+/.exec(route.place.ref)?.[0]) : null
   const listKey = JSON.stringify([route.slug, route.tab, route.list])
@@ -64,10 +65,10 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
   const holding = ui.held.size > 0 && ui.heldFor === listKey
   let rows: Row[] = []
   if (body.kind === 'rows') {
-    if (holding && frozen.current?.key === listKey && m) rows = heldRows(frozen.current.rows, m, route.tab, route.list, new Map([...ui.held].map(([n, h]) => [n, h.said])))
+    if (holding && kept?.key === listKey && m) rows = heldRows(kept.rows, m, route.tab, route.list, new Map([...ui.held].map(([n, h]) => [n, h.said])))
     else {
       rows = body.rows
-      frozen.current = { key: listKey, rows }
+      if (kept?.key !== listKey || kept.rows !== rows) setKept({ key: listKey, rows })
     }
   }
 
@@ -82,10 +83,10 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
     let worker: RowFacts['worker'] = null
     if (a) {
       const t = new Date(a.t).getTime()
-      const quiet = Date.now() - t > QUIET_MS
-      const only = (mm.facts.agents.find((x) => x.name === a.by)?.sessions || []).filter((x) => Date.now() - x.t < 3600e3)
+      const quiet = mm.at - t > QUIET_MS
+      const only = (mm.facts.agents.find((x) => x.name === a.by)?.sessions || []).filter((x) => mm.at - x.t < 3600e3)
       const ses = a.ses || (only.length === 1 ? only[0].name : '')
-      worker = { by: a.by, quiet, tip: workerTip(a.by, ses, quiet, agoShort(t)) }
+      worker = { by: a.by, quiet, tip: workerTip(a.by, ses, quiet, agoShort(t, mm.at)) }
     }
     return {
       code,
@@ -162,7 +163,7 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
       onPointerEnter={() => app.listHold.enter()}
       onPointerLeave={() => app.listHold.leave()}
     >
-      <ItemList ref={pane} loading={!m} views={views} rows={drawn} empty={body.kind === 'empty' ? empty : body.kind === 'rows' && body.empty ? empty : null} on={on} />
+      <ItemList ref={pane} loading={!m} views={views} rows={drawn} empty={body.kind === 'empty' ? empty : body.kind === 'rows' && body.empty ? empty : null} on={on} rowRef={app.rows.ref} />
     </div>
   )
 }

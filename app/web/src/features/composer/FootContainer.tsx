@@ -1,7 +1,7 @@
 // The foot of the project page: the line about what you sent last, the box, and on the desktop's New input page the
 // project's name over the box and what you said under it.
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import { useApp, useLayout, useStoreValue } from '../../app/context'
 import { usePaneRef } from '../../app/panes'
 import { useAway, useProjectModel, type ProjectRoute } from '../../app/hooks'
@@ -67,14 +67,14 @@ function boxRole(m: ProjectModel | null, route: ProjectRoute, desk: boolean, tit
 }
 
 /** The foot's height, for what scrolls under it: the list and the pane run on under the box, around its corners. */
-function useFootRoom(hidden: boolean | undefined, onHeight: ((px: number) => void) | undefined) {
+function useFootRoom(hidden: boolean | undefined, onHeight: ((px: number) => void) | undefined, boxRef: RefObject<HTMLDivElement | null>) {
   const ref = useRef<HTMLElement>(null)
   useLayoutEffect(() => {
     const foot = ref.current
     if (!foot || typeof ResizeObserver === 'undefined') return
     const set = () => {
       const f = foot.getBoundingClientRect()
-      const box = foot.querySelector('#composer')?.getBoundingClientRect()
+      const box = boxRef.current?.getBoundingClientRect()
       onHeight?.(foot.hidden ? 0 : foot.offsetHeight)
       // only around the box's top: from its middle down the foot is the page's own colour
       foot.style.setProperty('--foot-cut', (box ? box.top - f.top + box.height / 2 : f.height) + 'px')
@@ -83,13 +83,14 @@ function useFootRoom(hidden: boolean | undefined, onHeight: ((px: number) => voi
     ro.observe(foot)
     set()
     return () => ro.disconnect()
-  }, [hidden, onHeight])
+  }, [hidden, onHeight, boxRef])
   return ref
 }
 
 export function FootContainer({ route, place, hidden, composePage, onHeight }: { route: ProjectRoute; place: string; hidden?: boolean; composePage: boolean; onHeight?(px: number): void }) {
   const app = useApp()
-  const footRef = useFootRoom(hidden, onHeight)
+  const boxRef = useRef<HTMLDivElement | null>(null)
+  const footRef = useFootRoom(hidden, onHeight, boxRef)
   const pane = usePaneRef('foot')
   const layout = useLayout()
   const desk = layout === 'desk'
@@ -111,7 +112,7 @@ export function FootContainer({ route, place, hidden, composePage, onHeight }: {
     setText('')
   }
   const mine = outbox.filter((o) => o.slug === route.slug && !o.unsent)
-  const words = q.trim().toLowerCase().split(/\s+/).filter(Boolean)
+  const words = useMemo(() => q.trim().toLowerCase().split(/\s+/).filter(Boolean), [q])
   const said = useMemo(() => {
     if (!m || !composePage) return null
     const all = newestFirst(m.inputs).filter((r) => inputMatch(r, words))
@@ -139,7 +140,7 @@ export function FootContainer({ route, place, hidden, composePage, onHeight }: {
       }
     })
     return { all, rows }
-  }, [m, composePage, words.join(' '), upTo, opened])
+  }, [m, composePage, words, upTo, opened])
   const outgoing: SaidOutgoing[] = words.length
     ? []
     : [...mine].reverse().map((o) => ({ q: o.q, text: o.text || outgoingLine(o), state: outgoingState(o, away), failed: o.state === 'failed', net: !!o.net, canUndo: false }))
@@ -184,6 +185,7 @@ export function FootContainer({ route, place, hidden, composePage, onHeight }: {
         desk={desk}
         composePage={desk && composePage}
         micTip={composePage ? 'Voice note · ⌥V' : 'Voice note · V'}
+        boxRef={boxRef}
         on={{ text: setText, send, attach: () => {}, mic: () => {} }}
       />
       {desk && composePage && said ? (

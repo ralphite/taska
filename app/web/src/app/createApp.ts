@@ -19,6 +19,7 @@ import { InputSender } from './inputSender'
 import { ItemActions } from './itemActions'
 import { Navigation } from './navigation'
 import { ListHold } from './listHold'
+import { RowSizes } from './rowSizes'
 import { Seen } from '../stores/seen'
 import { Toasts } from './toasts'
 
@@ -30,8 +31,6 @@ export interface AppEnv {
   cache?: CopyCache
   /** the page's layout is the desktop's (the window is 64rem or wider) */
   desk(): boolean
-  /** the height of the list's row of an item, as drawn now (0: not drawn) */
-  rowHeight?(n: number): number
 }
 
 export interface App {
@@ -50,6 +49,8 @@ export interface App {
   nav: Navigation
   listHold: ListHold
   seen: Seen
+  /** the list's rows give their elements here, for their heights */
+  rows: RowSizes
   desk(): boolean
   runner: ChangeRunner
   /** the project the page shows now, with your pending changes over it */
@@ -72,6 +73,7 @@ export function createApp(env: AppEnv): App {
   const nav = new Navigation(route, env.desk)
   const listHold = new ListHold(ui, env.desk)
   const seen = new Seen(env.kv)
+  const rows = new RowSizes()
   let sync: ProjectSync | null = null
   let projectsTimer = 0
 
@@ -86,13 +88,14 @@ export function createApp(env: AppEnv): App {
     const pending = changes.getState().list
     const hit = memo.get(slug)
     if (hit && hit.copy === copy && hit.pending === pending) return hit.model
-    const m = project(copy, pending.filter((c) => c.slug === slug).flatMap((c) => c.patches))
+    const mine = pending.filter((c) => c.slug === slug)
+    const m = project(copy, mine.flatMap((c) => c.patches), Math.max(copy.at, ...mine.map((c) => c.t)))
     memo.set(slug, { copy, pending, model: m })
     return m
   }
   const take = (slug: string, a: Parameters<ProjectSync['take']>[0]) => {
     if (sync?.slug === slug) sync.take(a)
-    else data.getState().setCopy(slug, merge(data.getState().copies[slug] ?? null, a))
+    else data.getState().setCopy(slug, merge(data.getState().copies[slug] ?? null, a, Date.now()))
   }
   const stale = (slug: string) => {
     if (sync?.slug === slug) void sync.refresh()
@@ -132,7 +135,7 @@ export function createApp(env: AppEnv): App {
       return Number.isFinite(n) ? n : null
     },
     desk: env.desk,
-    rowHeight: (n) => env.rowHeight?.(n) ?? 0,
+    rowHeight: (n) => rows.height(n),
     undoSeq: (n, f) => model(currentSlug())?.facts.undo.find((u) => u.n === n && f in u.f)?.seq ?? null,
     noteWith: () => false,
   })
@@ -185,6 +188,7 @@ export function createApp(env: AppEnv): App {
     nav,
     listHold,
     seen,
+    rows,
     desk: env.desk,
     runner,
     model,

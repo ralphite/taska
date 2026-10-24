@@ -64,7 +64,7 @@ export class ProjectSync {
 
   /** Take a newer answer (a command's) into the copy. */
   take(a: ViewAnswer): void {
-    this.show(merge(this.copy, a))
+    this.show(merge(this.copy, a, Date.now()))
   }
 
   get cursor(): string | null {
@@ -76,7 +76,7 @@ export class ProjectSync {
     try {
       const a = await this.api.view(this.slug, this.copy?.cursor ?? null, this.stop.signal)
       this.answered()
-      this.show(merge(this.copy, a))
+      this.show(merge(this.copy, a, Date.now()))
     } catch (ex) {
       this.failed(ex)
     }
@@ -122,7 +122,7 @@ export class ProjectSync {
           const a = await this.api.changes(this.slug, this.copy.cursor, quick ? 0 : 25, leave.signal)
           this.answered()
           const news = !a.same
-          this.show(merge(this.copy, a), news)
+          this.show(merge(this.copy, a, Date.now()), news)
           if (idle && !news) await this.presence.nap(this.presence.hidden() ? 20000 : 5000)
         }
       } catch (ex) {

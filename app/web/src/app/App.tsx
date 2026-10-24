@@ -4,8 +4,8 @@
 import { useEffect } from 'react'
 import { useApp, LayoutProvider, useWindowLayout } from './context'
 import { useRoute } from './hooks'
-import { ProjectPage } from '../features/project/ProjectPage'
-import { Tooltip } from '../ui/Tooltip'
+import { ProjectPageContainer } from '../features/project/ProjectPageContainer'
+import { Tooltip } from './Tooltip'
 import { PanesProvider } from './panes'
 
 export function App() {
@@ -24,7 +24,7 @@ export function App() {
     <LayoutProvider layout={layout}>
       <PanesProvider>
         <div data-layout={layout} className="@container/frame h-dvh w-full">
-          {route.page === 'project' ? <ProjectPage route={route} /> : <div className="p-8 text-sm text-zinc-500">Taska</div>}
+          {route.page === 'project' ? <ProjectPageContainer route={route} /> : <div className="p-8 text-sm text-zinc-500">Taska</div>}
         </div>
         <Tooltip />
       </PanesProvider>

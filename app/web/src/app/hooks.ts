@@ -1,7 +1,6 @@
 // What containers read: the route, the open project's model, its facts, the projects' list. Each draws again only
 // when what it reads changes.
 
-import { useMemo } from 'react'
 import type { ProjectModel } from '../model/project'
 import type { Route } from '../model/route'
 import { useApp, useStoreValue } from './context'
@@ -21,9 +20,10 @@ export function useProjectRoute(): ProjectRoute | null {
 /** The project's model: the server's copy with your pending changes over it (null until its data comes). */
 export function useProjectModel(slug: string): ProjectModel | null {
   const app = useApp()
+  // subscribed to both, so a change to either draws again; the app keeps one model per copy and pending changes
   const copy = useStoreValue(app.stores.data, (s) => s.copies[slug])
-  const pending = useStoreValue(app.stores.changes, (s) => s.list)
-  return useMemo(() => (copy ? app.model(slug) : null), [app, slug, copy, pending])
+  useStoreValue(app.stores.changes, (s) => s.list)
+  return copy ? app.model(slug) : null
 }
 
 /** How sure the page is that the server is away (2 and more: it says so). */

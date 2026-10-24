@@ -120,6 +120,8 @@ export function Tooltip() {
   useLayoutEffect(() => {
     const t = tip.current
     const a = arrow.current
+    // measured, then placed and faded in before the browser paints (React's useLayoutEffect measuring pattern)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setOn(false)
     if (!t || !a || !shown) return
     t.style.transition = shown.quick ? 'none' : ''

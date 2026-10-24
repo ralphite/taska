@@ -1,7 +1,8 @@
 // Made-up data for stories: items, inputs and the facts a row or a list shows, each built from a few fields.
 
 import type { RowEvents, RowFacts, RowLook } from '../features/list/ListRows'
-import type { Input, Item, Message } from '../model/types'
+import { project, type ProjectModel } from '../model/project'
+import type { Input, Item, Message, ProjectFacts } from '../model/types'
 
 const T = '2026-10-23T14:30:00-07:00'
 
@@ -57,3 +58,20 @@ export const noRowEvents: RowEvents = {
 export const PICTURE =
   'data:image/svg+xml,' +
   encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="80" height="60"><rect width="80" height="60" fill="#dbeafe"/><rect x="10" y="12" width="44" height="8" rx="2" fill="#60a5fa"/><rect x="10" y="28" width="60" height="6" rx="2" fill="#93c5fd"/><rect x="10" y="40" width="36" height="6" rx="2" fill="#93c5fd"/></svg>')
+
+export function projectFacts(f: Partial<ProjectFacts> = {}): ProjectFacts {
+  return { slug: 'taska', title: 'Taska', width: 3, file: '', organizer: { on: false, busy: null }, agents: [], work: false, agentsVersion: 0, undo: [], deletedInputs: [], deleted: [], base: '', key: '', remote: '', ...f }
+}
+
+/** A project's model made of these items and inputs, as the page would have it. */
+export function modelOf(items: Item[], inputs: Input[] = [], f: Partial<ProjectFacts> = {}): ProjectModel {
+  return project({
+    cursor: '',
+    items: new Map(items.map((it) => [it.n, it])),
+    inputs: new Map(inputs.map((r) => [r.id, r])),
+    docs: new Map(),
+    facts: projectFacts(f),
+    server: { page: '', update: false },
+    at: Date.parse(T),
+  })
+}

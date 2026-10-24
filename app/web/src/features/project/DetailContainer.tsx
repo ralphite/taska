@@ -2,6 +2,7 @@
 // page's head.
 
 import { useApp, useLayout } from '../../app/context'
+import { usePaneRef } from '../../app/panes'
 import { useProjectModel, type ProjectRoute } from '../../app/hooks'
 import { liveN } from '../../model/project'
 import { ItemPane } from '../item/ItemPane'
@@ -11,13 +12,14 @@ import { Icon } from '../../ui/Icon'
 export function DetailContainer({ route, place, hidden }: { route: ProjectRoute; place: string; hidden?: boolean }) {
   const app = useApp()
   const layout = useLayout()
+  const pane = usePaneRef('detail')
   const m = useProjectModel(route.slug)
   const n = route.place.kind === 'item' ? Number(/\d+/.exec(route.place.ref)?.[0]) : null
   const it = m && n ? m.byN.get(liveN(m, n)) : undefined
   const compose = route.place.kind === 'new' || (route.place.kind === 'tab' && route.tab !== 'inputs')
   if (it && m)
     return (
-      <PaneFrame place={place} hidden={hidden} desk={layout === 'desk'} onBack={() => app.nav.closeItem()}>
+      <PaneFrame place={place} hidden={hidden} desk={layout === 'desk'} paneRef={pane} onBack={() => app.nav.closeItem()}>
         <ItemPane it={it} model={m} slug={route.slug} />
       </PaneFrame>
     )
@@ -26,6 +28,7 @@ export function DetailContainer({ route, place, hidden }: { route: ProjectRoute;
       place={place}
       hidden={hidden}
       desk={layout === 'desk'}
+      paneRef={pane}
       onBack={() => app.nav.closeItem()}
       head={
         compose ? (

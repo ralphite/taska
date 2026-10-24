@@ -39,10 +39,12 @@ export interface ItemListProps {
   on: ListEvents
   /** room for the box over the list's end on the phone */
   onScroll?(top: number): void
+  /** each item row's element, for its height */
+  rowRef?(n: number): (el: HTMLElement | null) => void
 }
 
 export const ItemList = forwardRef<HTMLDivElement, ItemListProps>(function ItemList(props, ref) {
-  const { loading, views, ownViews, rows, empty, top, bottom, on, onScroll } = props
+  const { loading, views, ownViews, rows, empty, top, bottom, on, onScroll, rowRef } = props
   return (
     <div
       id="list"
@@ -59,9 +61,9 @@ export const ItemList = forwardRef<HTMLDivElement, ItemListProps>(function ItemL
           {rows.map((r) => {
             switch (r.kind) {
               case 'item':
-                return <ItemRow key={r.key} it={r.it} depth={r.depth} band={r.band} foldable={r.foldable} folded={r.folded} facts={r.facts} look={r.look} on={on} />
+                return <ItemRow key={r.key} it={r.it} depth={r.depth} band={r.band} foldable={r.foldable} folded={r.folded} facts={r.facts} look={r.look} on={on} rowRef={rowRef?.(r.it.n)} />
               case 'needs':
-                return <NeedsRow key={r.key} it={r.it} depth={r.depth} facts={r.facts} look={r.look} excerpt={r.excerpt} on={on} />
+                return <NeedsRow key={r.key} it={r.it} depth={r.depth} facts={r.facts} look={r.look} excerpt={r.excerpt} on={on} rowRef={rowRef?.(r.it.n)} />
               case 'held':
                 return <HeldRow key={r.key} it={r.it} code={r.code} said={r.said} height={r.height} on={on} />
               case 'zone':

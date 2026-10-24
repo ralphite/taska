@@ -24,7 +24,7 @@ function useHeadFacts(route: ProjectRoute) {
   const rows = useStoreValue(app.stores.data, (s) => s.projects)
   const title = m?.facts.title || rows?.find((p) => p.name === route.slug)?.title || route.slug
   const otherNeeds = (rows || []).some((p) => p.name !== route.slug && p.needs > 0)
-  const agent: AgentInfo | null = m ? { ...agentLine(m.facts.agents, m.facts.work), offline: away >= 2 } : null
+  const agent: AgentInfo | null = m ? { ...agentLine(m.facts.agents, m.facts.work, m.at), offline: away >= 2 } : null
   const counts = useMemo(() => {
     if (!m) return null
     const isFiltered = route.tab === 'items' && filtered(route.tab, route.list)
@@ -38,7 +38,7 @@ function useHeadFacts(route: ProjectRoute) {
   return { m, title, agent, counts, notSaved, away, otherNeeds }
 }
 
-export function ProjectPage({ route }: { route: ProjectRoute }) {
+export function ProjectPageContainer({ route }: { route: ProjectRoute }) {
   const app = useApp()
   const layout = useLayout()
   useEffect(() => app.showProject(route.slug), [app, route.slug])

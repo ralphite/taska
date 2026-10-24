@@ -18,6 +18,7 @@ from typing import Callable, Optional, Tuple
 from ..domain.vocab import Refused
 from ..infra.images import PictureSizes
 from ..infra.logs import log
+from ..page_api.once import PageOnce
 from ..page_api.sync import Feed
 from ..services.project import Project
 from ..services.push import Push
@@ -74,6 +75,14 @@ class Status:
         self._local.lock_ms = 0
 
 
+class ProjectPages:
+    """A project's page side: what its pages were last sent, and the answers to changes they sent."""
+
+    def __init__(self) -> None:
+        self.feed = Feed()
+        self.once = PageOnce()
+
+
 class AppContext:
     """What the routes share."""
 
@@ -86,16 +95,16 @@ class AppContext:
         self.status = Status(workspace.root)
         self.pictures = PictureSizes()
         self.log = log
-        self._feeds: "weakref.WeakKeyDictionary[Project, Feed]" = weakref.WeakKeyDictionary()
-        self._feeds_lock = threading.Lock()
+        self._pages: "weakref.WeakKeyDictionary[Project, ProjectPages]" = weakref.WeakKeyDictionary()
+        self._pages_lock = threading.Lock()
 
-    def feed(self, p: Project) -> Feed:
-        """What a project's pages were last sent."""
-        with self._feeds_lock:
-            f = self._feeds.get(p)
-            if f is None:
-                f = self._feeds[p] = Feed()
-            return f
+    def pages(self, p: Project) -> "ProjectPages":
+        """What the page side keeps for a project while it is open."""
+        with self._pages_lock:
+            got = self._pages.get(p)
+            if got is None:
+                got = self._pages[p] = ProjectPages()
+            return got
 
     def page_answer(self) -> Response:
         html = self.page.index()

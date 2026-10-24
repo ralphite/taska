@@ -16,7 +16,6 @@ const app = createApp({
   presence: windowPresence,
   cache: new BrowserCopyCache(),
   desk: () => matchMedia('(min-width: 1024px)').matches,
-  rowHeight: (n) => document.querySelector<HTMLElement>(`#list article[data-n="${n}"]`)?.offsetHeight ?? 0,
 })
 installPressFeedback()
 

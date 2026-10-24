@@ -18,8 +18,10 @@ from ..domain import events as ev
 from ..domain.model import FileRef, Input
 from ..domain.text import squash
 from ..domain.vocab import VOICE_HOLD
+from .news import News
 
 Transcript = Dict[str, Any]
+AUDIO_EXTS = (".webm", ".ogg", ".m4a", ".mp4", ".mp3", ".wav", ".aac", ".flac")
 
 
 @dataclass
@@ -35,17 +37,13 @@ class VoiceProject(Protocol):
     """What the jobs need from their project."""
 
     lock: Any
-    changed: threading.Condition
+    news: News
+    organizing: Any  # .busy: the input the organizer works on now
 
     @property
     def state(self) -> Any: ...
 
-    @property
-    def organizer_busy(self) -> Optional[str]: ...
-
     def emit(self, event: ev.Event) -> None: ...
-
-    def bump(self) -> None: ...
 
     def file_path(self, fid: str) -> str: ...
 
@@ -99,6 +97,14 @@ class VoiceJobs:
     def job(self, fid: str) -> Optional[Job]:
         return self.jobs.get(fid) or (self.saved_job(fid) if fid else None)
 
+    def notes_of(self, inp: Input) -> List[str]:
+        """The input's voice notes."""
+        return [f.f for f in inp.files if os.path.splitext(f.f)[1].lower() in AUDIO_EXTS]
+
+    def heard(self, fid: str, words: str) -> bool:
+        """Whether the words were in what was heard in the note (its words, as first heard and as given)."""
+        return words in " ".join(str(v) for k, v in (self.kept(fid) or {}).items() if k in ("tr", "heard"))
+
     # -- what inputs see -----------------------------------------------------------------
 
     def held(self, inp: Input) -> bool:
@@ -133,7 +139,7 @@ class VoiceJobs:
     def start(self, fid: str, data: bytes, mime: str, scope: Optional[int]) -> None:
         """Start working out a note's words; words kept from before are used as they are. Call without the lock."""
         saved = self.saved_job(fid)
-        with self._p.changed:
+        with self._p.lock:
             job = saved or Job(t0=time.time())
             self.jobs[fid] = job
             if saved:
@@ -153,20 +159,20 @@ class VoiceJobs:
         except Exception as ex:  # a failed transcription is said on the page; Taska goes on
             err = str(ex) or "transcription failed"
         hold.cancel()
-        with self._p.changed:
+        with self._p.lock:
             job.done, job.tr, job.err, job.res = True, str(res.get("tr", "")), err, res
             self.words_in(fid, job)
             forwards = list(self.forwards.get(fid, ()))
         for jobs, other in forwards:  # its input went to another project meanwhile: the copy there gets the words
             if not err:
                 jobs.keep(other, res)
-            with jobs._p.changed:
+            with jobs._p.lock:
                 jobs.words_in(other, job)
 
     def _more(self, fid: str, job: Job, words: Optional[str]) -> None:
         """The strong model's words after its cap: fuller ones replace those given."""
-        with self._p.changed:
-            self._p.changed.wait_for(lambda: job.done, timeout=self.LATE)
+        with self._p.lock:
+            self._p.news.wait_for(lambda: job.done, timeout=self.LATE)
             was = job.tr
             res = {k: v for k, v in job.res.items() if k != "more"}
             if words:
@@ -178,15 +184,15 @@ class VoiceJobs:
                 self.words_more(fid, was, words)
             elif words:
                 self.words_in(fid, job)
-            self._p.bump()
+            self._p.news.bump()
         self.keep(fid, res)
 
     def hold_timer(self, job: Job) -> threading.Timer:
         """When an input's hold for its words runs out, whoever waits for work hears it."""
         def over() -> None:
-            with self._p.changed:
+            with self._p.lock:
                 if not job.done:
-                    self._p.bump()
+                    self._p.news.bump()
 
         t = threading.Timer(max(0.0, job.t0 + VOICE_HOLD - time.time()) + 0.05, over)
         t.daemon = True
@@ -197,7 +203,7 @@ class VoiceJobs:
         return next((i for i in self._p.state.inputs.values() if not i.moved and any(f.f == fid for f in i.files)), None)
 
     def _late(self, inp: Input) -> bool:
-        return bool(inp.acked or inp.org or self._p.organizer_busy == inp.id)
+        return bool(inp.acked or inp.org or self._p.organizing.busy == inp.id)
 
     def words_in(self, fid: str, job: Job) -> None:
         """A note's words are in: the input that has the note gets them. They come late when an agent or the
@@ -206,7 +212,7 @@ class VoiceJobs:
         if inp and job.tr and not any(f.f == fid and f.tr for f in inp.files):
             self._p.emit(ev.WordsIn(src=inp.id, f=fid, tr=job.tr, by="you", late=self._late(inp)))
         else:
-            self._p.bump()  # an input waiting for these words goes on without them; the page hears it is done
+            self._p.news.bump()  # an input waiting for these words goes on without them; the page hears it is done
 
     def words_more(self, fid: str, was: str, tr: str) -> None:
         inp = self._input_with(fid)
