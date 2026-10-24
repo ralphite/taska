@@ -3,22 +3,13 @@
 // draft (pictures and files kept over a reload of this tab, as taska.draftfiles.<project>), and what you just sent
 // that you can still take back.
 
+import type { BoxMode } from '../model/boxFoot'
 import { createStore, type StoreApi } from 'zustand/vanilla'
-import type { OutFile } from './outbox'
+import type { OutFile } from '../model/outgoing'
 import type { Doubt } from '../model/types'
 import type { VcMark } from '../model/voiceComments'
 import type { KeyValueStore } from './storage'
 import { NEW_DRAFT, type DraftKey } from '../model/draftTarget'
-
-export type BoxMode =
-  | { kind: 'amend'; id: string; mode: 'edit' | 'append'; v: number; /** its words when the edit began */ base?: string }
-  /** words of a voice note's input being corrected (`v`: the input's version); `bySel`: started from a selection */
-  | { kind: 'correct'; id: string; wrong: string; v: number; bySel?: boolean }
-  /** a comment of yours on a document, being edited */
-  | { kind: 'comment'; d: number; id: number; was: string }
-  /** the transcription preferences, being edited (every project's) */
-  | { kind: 'prefs'; was: string }
-  | null
 
 export interface DraftFile extends OutFile {
   /** the page's own id for it (it has no "f" until it is up) */

@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frames, States } from '../../stories/Frames'
-import { Composer, Feedback, type ComposerProps, type FeedbackLine } from './Composer'
+import type { FeedbackLine } from '../../model/boxFoot'
+import { Composer, Feedback, type ComposerProps } from './Composer'
 
 const meta: Meta = { title: 'Components/Box' }
 export default meta
@@ -27,6 +28,30 @@ export const Box: Story = {
               ['words: Send', box(desk, { text: 'The export should keep the filter' })],
               ['many lines (the buttons go under the words on the desktop)', box(desk, { text: 'First line\nSecond line\nThird line' })],
               ['its line: New input', box(desk, { line: { icon: 'newinput', label: 'New input', detail: '· your agent files it' } })],
+            ]}
+          />
+        )
+      }}
+    </Frames>
+  ),
+}
+
+/** Its line on top, for each thing it writes to: a comment on a paragraph (its x lets go), choices ticked in a
+ * document (Send choices), the phone's document (Reply to its item instead), an edit of what you said (Stop), a
+ * recording made for another draft. */
+export const Lines: Story = {
+  render: () => (
+    <Frames phoneWidth={393} deskWidth={720}>
+      {(layout) => {
+        const desk = layout === 'desk'
+        return (
+          <States
+            items={[
+              ['a comment on a paragraph', box(desk, { line: { icon: 'comment', label: 'Comment on D12', detail: '\u201cstays in use\u201d', right: { kind: 'x', label: 'Cancel the comment', act: 'unpick' } } })],
+              ['choices ticked', box(desk, { line: { icon: 'check', label: '2 choices ticked, not sent', detail: '· D12', wideOnly: true, tight: true, right: { kind: 'ticks' } } })],
+              ['the phone’s document', box(desk, { line: { icon: 'comment', label: 'Comment on D12', detail: '· or tap a part', right: { kind: 'to-item', code: 'F12' } } })],
+              ['an edit of what you said', box(desk, { line: { icon: 'pencil', label: 'Edit #7', detail: '\u201cKeep the filter\u201d', right: { kind: 'x', label: 'Stop editing', act: 'stop' } } })],
+              ['recording for another draft', box(desk, { line: { icon: 'mic', label: 'Recording for F12', detail: '· it goes there when you stop' } })],
             ]}
           />
         )

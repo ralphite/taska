@@ -34,7 +34,10 @@ import { KeyArm } from './keyArm'
 import { PictureSizes } from './pictureSizes'
 import { Activity } from './activity'
 import { Restores } from './restores'
-import { Docs } from './docs'
+import { Docs } from './docs/docs'
+import { DocComments } from './docs/comments'
+import { DocChoices } from './docs/choices'
+import { DocEditor } from './docs/editor'
 import { Settings } from './settings'
 import { Notices } from './notices'
 import { Voice } from './voice'
@@ -160,7 +163,13 @@ export interface App {
   keyArm: KeyArm
   activity: Activity
   restores: Restores
+  /** a document as you read it: open, close, what a comment goes to, its threads */
   docs: Docs
+  docComments: DocComments
+  /** a document's choices, ticked and sent */
+  docChoices: DocChoices
+  /** the document itself: edited, saved or kept as a draft, made, deleted, moved */
+  docEditor: DocEditor
   settings: Settings
   notices: Notices
   voice: Voice
@@ -263,7 +272,10 @@ export function createApp(env: AppEnv): App {
   const box = new Box({ api, store: boxStore, drafts, outbox, inputs, runner, toasts, keep, recording: recordingNow, goDraft, model, kv: env.kv, sent: (s, key) => otherTabs.sent(s, key), refresh: (s) => session().refresh(s) })
   const activity = new Activity({ api, store: activityStore, toasts })
   const restores = new Restores({ runner, toasts, inputs: inputActions, model })
-  const docs = new Docs({ runner, changes, toasts, view: docView, nav, route, sheets, fields, desk: env.desk, model, box, boxStore, kv: env.kv, ticks: docTicks, inputs, mic: { stop: () => dictation.stop(), discard: (key) => dictation.discard(key), settled: () => dictation.settled() } })
+  const docs = new Docs({ route, model, view: docView, nav, fields, toasts, desk: env.desk, leaveEditor: () => docEditor.keep() })
+  const docEditor: DocEditor = new DocEditor({ route, model, runner, view: docView, sheets, toasts, kv: env.kv, desk: env.desk, open: (dn) => docs.open(dn), close: () => docs.close(), mic: { stop: () => dictation.stop(), discard: (key) => dictation.discard(key), settled: () => dictation.settled() } })
+  const docComments = new DocComments({ route, model, runner, changes, view: docView, box, boxStore, fields, sheets, toasts, desk: env.desk })
+  const docChoices = new DocChoices({ route, model, runner, ticks: docTicks, view: docView, box, inputs, toasts, desk: env.desk })
   const projects = new Projects({ api, data, kv: env.kv, toasts, home: () => route.getState().route.page === 'home' })
   const refreshProjects = () => projects.refresh()
   const settings = new Settings({ api, store: settingsStore, data, projects, route, sheets, toasts, box, boxStore, fields, refresh: (s) => session().stale(s) })
@@ -285,8 +297,8 @@ export function createApp(env: AppEnv): App {
     goDraft,
     about: (a) => docVoice.about(a.d, a.key, a.quote),
   })
-  const docVoice = new DocVoice({ voice, docs, box, boxStore, recording, view: docView, runner, changes, toasts, model, desk: env.desk, reply: (s, key, scope) => void box.send(s, model(s), scope, key) })
-  const dictation: Dictation = new Dictation({ api, store: dictationStore, view: docView, route, docs, fields, toasts, model, recording: recordingNow })
+  const docVoice = new DocVoice({ voice, docs, comments: docComments, box, boxStore, recording, view: docView, runner, changes, toasts, model, desk: env.desk, reply: (s, key, scope) => void box.send(s, model(s), scope, key) })
+  const dictation: Dictation = new Dictation({ api, store: dictationStore, view: docView, route, editor: docEditor, fields, toasts, model, recording: recordingNow })
   const views = new SavedViews({ api, store: viewsStore, nav, toasts, list: () => { const r = route.getState().route; return r.page === 'project' ? r.list : null } })
   const moves = new Moves({ api, changes, toasts, model, title, go: goUrl, refresh: (s) => session().stale(s) })
   const selection = new Selection({ ui, order: listOrder, runner, toasts, slug, model: here, open: () => openItemN(route.getState().route) })
@@ -295,7 +307,7 @@ export function createApp(env: AppEnv): App {
   const itemEdits = new ItemEdits({ view: itemView, kept: keptEdits, route, toasts, desk: env.desk, model: here })
   const keyArm = new KeyArm()
   const answers = new Answers({ inputs, view: itemView, outbox })
-  const actions = new Actions({ items, itemEdits, keyArm, answers, toasts, nav, fields, sheets, docs, box, voice, media, selection, listOrder, route, ui, feedback, sheet: sheetStore, itemView, docView, boxStore, desk: env.desk, model })
+  const actions = new Actions({ items, itemEdits, keyArm, answers, toasts, nav, fields, sheets, docs, docEditor, box, voice, media, selection, listOrder, route, ui, feedback, sheet: sheetStore, itemView, docView, boxStore, desk: env.desk, model })
   const keptNotes: KeptNotes = new KeptNotes({
     vault: env.vault ?? memoryVault(),
     kv: env.kv,
@@ -310,7 +322,7 @@ export function createApp(env: AppEnv): App {
     boxKey: () => boxStore.getState().shown.key,
   })
   // where a draft belongs, to go there
-  const draftPlaces: DraftPlaces = new DraftPlaces({ route, nav, box, docs: () => docs, fields, toasts, slug, model })
+  const draftPlaces: DraftPlaces = new DraftPlaces({ route, nav, box, docs, comments: docComments, fields, toasts, slug, model })
   // a merged item gives way to the one it went into; what you wrote for it goes along
   const merges = new Merges({ route, data, drafts, box: boxStore, toasts, model, showItem: (code, tab) => nav.openItemHere(code, tab), goDraft })
   const sideOver = new SideOver(route, ui)
@@ -388,6 +400,9 @@ export function createApp(env: AppEnv): App {
     activity,
     restores,
     docs,
+    docComments,
+    docChoices,
+    docEditor,
     settings,
     notices,
     voice,
@@ -401,7 +416,7 @@ export function createApp(env: AppEnv): App {
     access,
     refreshProjects,
     stop: () => {
-      for (const s of [projects, projectSession, pictureSizes, sheets, docs, merges, sideOver, notices]) s.stop()
+      for (const s of [projects, projectSession, pictureSizes, sheets, docs, docEditor, merges, sideOver, notices]) s.stop()
       unlisten()
     },
     actions,

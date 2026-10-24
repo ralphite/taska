@@ -5,7 +5,8 @@
 import { Refused, Unreachable } from '../api/http'
 import type { TaskaApi } from '../api/taska'
 import type { ViewAnswer } from '../model/types'
-import type { OutboxStore, Outgoing } from '../stores/outbox'
+import type { OutboxStore } from '../stores/outbox'
+import type { Outgoing } from '../model/outgoing'
 
 export interface SenderEvents {
   cursor(slug: string): string | null

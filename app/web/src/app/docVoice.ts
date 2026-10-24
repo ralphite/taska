@@ -14,7 +14,8 @@ import type { DocViewStore } from '../stores/docView'
 import type { RecordingStore } from '../stores/recording'
 import type { Box } from './box'
 import { newId, type ChangeRunner } from './changeRunner'
-import type { Docs } from './docs'
+import type { Docs } from './docs/docs'
+import type { DocComments } from './docs/comments'
 import type { Toasts } from './toasts'
 import type { Voice } from './voice'
 import { docDraft, draftKey, type DraftKey } from '../model/draftTarget'
@@ -22,6 +23,7 @@ import { docDraft, draftKey, type DraftKey } from '../model/draftTarget'
 export interface DocVoiceDeps {
   voice: Voice
   docs: Docs
+  comments: DocComments
   box: Box
   boxStore: BoxStore
   recording: RecordingStore
@@ -88,7 +90,7 @@ export class DocVoice {
     if (vcCount(this.d.box.text(slug, key))) return this.post(slug, dn, key)
     // what is picked; on the phone nothing picked is the whole document; on the desktop, a reply to its item
     const t = this.d.docs.target(dn) ?? (this.d.desk() ? null : { key: 'doc', quote: '' })
-    if (t) return this.d.docs.comment(slug, dn, t, key)
+    if (t) return this.d.comments.comment(slug, dn, t, key)
     this.d.reply(slug, key, this.host(slug, dn))
     return Promise.resolve(true)
   }

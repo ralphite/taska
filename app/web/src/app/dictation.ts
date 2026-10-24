@@ -8,7 +8,7 @@ import { codeOf, liveN, type ProjectModel } from '../model/project'
 import type { DictationStore } from '../stores/dictation'
 import type { DocViewStore } from '../stores/docView'
 import type { RouteStore } from '../stores/route'
-import type { Docs } from './docs'
+import type { DocEditor } from './docs/editor'
 import type { Fields } from './fields'
 import { canRecord, micTrouble, openMic } from './mic'
 import type { Toasts } from './toasts'
@@ -19,7 +19,8 @@ export interface DictationDeps {
   store: DictationStore
   view: DocViewStore
   route: RouteStore
-  docs: Docs
+  /** the documents being written, kept in this browser */
+  editor: DocEditor
   fields: Fields
   toasts: Toasts
   model(slug: string): ProjectModel | null
@@ -186,9 +187,9 @@ export class Dictation {
       return
     }
     if (!note.key) return
-    const v = this.d.docs.drafts(slug)[note.key]
+    const v = this.d.editor.drafts(slug)[note.key]
     if (v == null) return
-    this.d.docs.setDraft(slug, note.key, v.includes(note.mark) ? v.replace(note.mark, words) : words ? v.trimEnd() + '\n\n' + words : v)
+    this.d.editor.setDraft(slug, note.key, v.includes(note.mark) ? v.replace(note.mark, words) : words ? v.trimEnd() + '\n\n' + words : v)
     if (words) this.d.toasts.show('Words added to draft')
   }
 

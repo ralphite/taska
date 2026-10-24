@@ -14,6 +14,7 @@ import { filtered, filtersSet, inputMatch, openCount, searchWords, tabNumber, vi
 import { TABS, type Tab } from '../model/words'
 import { toneOf } from '../ui/tones'
 import { FootContainer } from '../features/composer/FootContainer'
+import { BoxContainer } from '../features/composer/BoxContainer'
 import { ToastContainer } from '../features/feedback/ToastContainer'
 import { ItemListContainer } from '../features/list/ItemListContainer'
 import { SidebarContainer } from '../features/sidebar/SidebarContainer'
@@ -163,7 +164,7 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
           {shownSide ? <SideListContainer slug={route.slug} side={shownSide} /> : <ItemListContainer route={route} />}
         </section>
         <DetailContainer route={route} place={`row-span-3 row-start-2 group-data-[compose]/app:row-span-1 ${pane}`} hidden={settings} full={full} />
-        {settings ? <SettingsContainer route={route} place="col-span-2 col-start-1 row-span-5 row-start-1" prefsBox={<FootContainer route={route} composePage={false} place="" bare />} /> : null}
+        {settings ? <SettingsContainer route={route} place="col-span-2 col-start-1 row-span-5 row-start-1" prefsBox={<BoxContainer route={route} composePage={false} bare />} /> : null}
         {settings || full ? null : (
           <Grip
             axis="x"

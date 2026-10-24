@@ -4,7 +4,8 @@ import { Frames } from '../../stories/Frames'
 import { input } from '../../stories/fixtures'
 import type { Input } from '../../model/types'
 import { Thumbs } from '../../ui/Files'
-import { SaidLately, type SaidEvents, type SaidInput } from './SaidLately'
+import type { SaidInput } from '../../model/saidLately'
+import { SaidLately, type SaidEvents } from './SaidLately'
 
 const meta: Meta = { title: 'Components/You said' }
 export default meta

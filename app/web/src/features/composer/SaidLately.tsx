@@ -3,7 +3,8 @@
 
 import { Fragment, useEffect, useRef, type ReactNode } from 'react'
 import { voiceMark, type InputStanding } from '../../model/inputs'
-import type { FileRef, Input, ItemType } from '../../model/types'
+import type { SaidChip, SaidInput, SaidOutgoing } from '../../model/saidLately'
+import type { FileRef } from '../../model/types'
 import { DraftMark, Hit } from '../../ui/bits'
 import { Icon, StateIcon } from '../../ui/Icon'
 import { HIT, TYPE_TEXT } from '../../ui/tones'
@@ -37,40 +38,6 @@ export function SaidStep({ head, acts, body, foot, time }: { head: ReactNode; ac
       </div>
     </li>
   )
-}
-
-export interface SaidChip {
-  n: number
-  code: string
-  type: ItemType
-  title: string
-  status: { s: string; label: string }
-}
-
-export interface SaidInput {
-  r: Input
-  code: string
-  time: string
-  /** the day's name when this input starts a day */
-  day: string | null
-  standing: InputStanding
-  short: string
-  scope: SaidChip | null
-  chips: SaidChip[]
-  busy: boolean
-  draft: 'edit' | 'append' | null
-  canUndoSend: boolean
-  retry: string | null
-  opened: boolean
-}
-
-export interface SaidOutgoing {
-  q: string
-  text: string
-  state: string
-  failed: boolean
-  net: boolean
-  canUndo: boolean
 }
 
 export interface SaidEvents {

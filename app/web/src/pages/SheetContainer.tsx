@@ -45,13 +45,13 @@ function Holds({ req }: { req: SheetRequest }) {
 }
 
 export function SheetContainer() {
-  const app = useServices('docs', 'fields', 'sheets')
+  const app = useServices('docEditor', 'fields', 'sheets')
   const stores = useStores('sheet')
   const sheetFoot = usePaneRef('sheetFoot')
   const desk = useLayout() === 'desk'
   const spec = useStoreValue(stores.sheet, (s) => s.spec)
   return (
-    <Sheet footRef={sheetFoot} open={!!spec} look={{ pop: spec?.pop, narrow: spec?.narrow, tall: spec?.tall, card: spec?.card, aboveComposer: spec?.aboveComposer, at: spec?.at }} desk={desk} focus={!!spec?.focus} bodyRef={app.fields.ref('sheet')} onClose={() => (spec?.req.kind === 'doc-edit' ? app.docs.keep() : app.sheets.close())}>
+    <Sheet footRef={sheetFoot} open={!!spec} look={{ pop: spec?.pop, narrow: spec?.narrow, tall: spec?.tall, card: spec?.card, aboveComposer: spec?.aboveComposer, at: spec?.at }} desk={desk} focus={!!spec?.focus} bodyRef={app.fields.ref('sheet')} onClose={() => (spec?.req.kind === 'doc-edit' ? app.docEditor.keep() : app.sheets.close())}>
       {spec ? <Holds key={JSON.stringify(spec.req)} req={spec.req} /> : null}
     </Sheet>
   )

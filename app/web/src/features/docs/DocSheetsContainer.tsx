@@ -21,7 +21,7 @@ function useDocOf(dn: number) {
 }
 
 export function DocMoveSheet({ req }: Req<'doc-move'>) {
-  const app = useServices('docs', 'sheets')
+  const app = useServices('docEditor', 'sheets')
   const desk = useLayout() === 'desk'
   const { m, d } = useDocOf(req.d)
   if (!m || !d) return null
@@ -30,14 +30,14 @@ export function DocMoveSheet({ req }: Req<'doc-move'>) {
     <SheetLayout
       {...pickSheet({ head: `Put D${d.d} on…`, items: m.items, skip: [liveN(m, d.n)], code, desk }, (n) => {
         app.sheets.close()
-        app.docs.moveTo(d.d, code(n))
+        app.docEditor.moveTo(d.d, code(n))
       })}
     />
   )
 }
 
 export function CommentMoveSheet({ req }: Req<'comment-move'>) {
-  const app = useServices('docs', 'sheets')
+  const app = useServices('docComments', 'sheets')
   const { m, d } = useDocOf(req.d)
   const c = d ? allComments(d).find((x) => x.id === req.id) : undefined
   useCloseSheetWhen(!!d && !c)
@@ -46,7 +46,7 @@ export function CommentMoveSheet({ req }: Req<'comment-move'>) {
     <SheetLayout
       {...commentMoveSheet(d, c.key, (key) => {
         app.sheets.close()
-        if (key !== c.key) void app.docs.moveComment(d.d, c.id, key, c.key)
+        if (key !== c.key) void app.docComments.moveComment(d.d, c.id, key, c.key)
       })}
     />
   )

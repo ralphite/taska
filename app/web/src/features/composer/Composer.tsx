@@ -3,32 +3,75 @@
 // whole width and the buttons go to a row under them. Props only.
 
 import { useLayoutEffect, useRef, type ReactNode, type RefObject } from 'react'
+import type { BoxLine, BoxRight, FeedbackLine } from '../../model/boxFoot'
 import { Icon, type IconName } from '../../ui/Icon'
+import { HIT } from '../../ui/tones'
 
-export interface BoxLine {
-  icon: IconName
-  label: ReactNode
-  detail?: ReactNode
-  right?: ReactNode
-  /** a line with a button of its own drops its icon in a narrow box, so its words are whole */
-  tight?: boolean
+/** What the line's buttons do: stop what the box is in, let go of what is picked in the document, send or clear the
+ * choices ticked, reply to the document's item instead. */
+export interface LineEvents {
+  stop(): void
+  unpick(): void
+  sendTicks(): void
+  clearTicks(): void
+  toItem(): void
 }
 
-export function ScopeLine({ icon, label, detail, right, tight = false }: BoxLine) {
+const NO_LINE_EVENTS: LineEvents = { stop() {}, unpick() {}, sendTicks() {}, clearTicks() {}, toItem() {} }
+
+const xButton = (label: string, run: () => void, esc = true) => (
+  <button
+    onClick={run}
+    aria-label={label}
+    title={esc ? `${label} · Esc` : label}
+    className="-my-1.5 grid size-11 shrink-0 place-items-center rounded-full text-zinc-400 hover:text-zinc-800 lg:size-8 lg:hover:bg-zinc-100 dark:text-zinc-500 dark:hover:text-zinc-200 dark:lg:hover:bg-zinc-800"
+  >
+    <Icon n="x" c="size-4" />
+  </button>
+)
+
+function LineRight({ right, on }: { right: BoxRight; on: LineEvents }) {
+  if (right.kind === 'x') return xButton(right.label, right.act === 'stop' ? on.stop : on.unpick)
+  if (right.kind === 'ticks')
+    return (
+      <>
+        <button
+          onClick={on.sendTicks}
+          className={`${HIT} -my-1 flex h-8 shrink-0 items-center gap-1 rounded-lg px-2 text-[13px] font-semibold text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10`}
+        >
+          Send choices
+        </button>
+        {xButton('Clear the ticks', on.clearTicks, false)}
+      </>
+    )
+  return (
+    <button
+      onClick={on.toItem}
+      className={`${HIT} -my-1 flex h-8 shrink-0 items-center rounded-full px-2 text-[13px] font-medium text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200`}
+    >
+      Reply to {right.code}
+    </button>
+  )
+}
+
+/** The line on top of the box: what it writes to, with its button. */
+export function ScopeLine({ line: { icon, label, detail, wideOnly = false, right, tight = false }, on = NO_LINE_EVENTS }: { line: BoxLine; on?: LineEvents }) {
   return (
     <>
       <Icon n={icon} c={`size-3.5 text-zinc-400 dark:text-zinc-500 ${tight ? '@max-xs:hidden' : ''}`} />
       <span className="min-w-0 flex-1 truncate">
         <span className="font-medium text-zinc-800 dark:text-zinc-100">{label}</span>
-        {detail ? <> {detail}</> : null}
+        {detail ? <> {wideOnly ? <span className="@max-xs:hidden">{detail}</span> : detail}</> : null}
       </span>
-      {right}
+      {right ? <LineRight right={right} on={on} /> : null}
     </>
   )
 }
 
 export interface ComposerProps {
   line: BoxLine | null
+  /** what the line's buttons do */
+  lineOn?: LineEvents
   /** the line hides on the New input page, where the page's head says it */
   lineOnComposePage?: boolean
   placeholder: string
@@ -97,7 +140,7 @@ function insertedAt(was: string, now: string): number | null {
   return now.endsWith(was.slice(a)) ? a : null
 }
 
-export function Composer({ line, lineOnComposePage, placeholder, sendWord, text, desk, composePage, micTip, files, doubts, words, hasFiles = false, boxRef, fieldRef, rec = null, on }: ComposerProps) {
+export function Composer({ line, lineOn, lineOnComposePage, placeholder, sendWord, text, desk, composePage, micTip, files, doubts, words, hasFiles = false, boxRef, fieldRef, rec = null, on }: ComposerProps) {
   const area = useRef<HTMLTextAreaElement | null>(null)
   const box = useRef<HTMLDivElement | null>(null)
   const picker = useRef<HTMLInputElement>(null)
@@ -150,7 +193,7 @@ export function Composer({ line, lineOnComposePage, placeholder, sendWord, text,
         hidden={!line}
         className={`@container flex h-8 items-center gap-1.5 pt-1 pr-1.5 pl-4 text-[13px] text-zinc-500 dark:text-zinc-400 ${lineOnComposePage ? '' : 'lg:group-data-[compose]/app:hidden'}`}
       >
-        {line ? <ScopeLine {...line} /> : null}
+        {line ? <ScopeLine line={line} on={lineOn} /> : null}
       </div>
       {files}
       {doubts}
@@ -250,18 +293,6 @@ const Dismiss = ({ onClick }: { onClick(): void }) => (
 )
 
 const Pulse = () => <span className="size-2 shrink-0 animate-pulse rounded-full bg-blue-500 dark:bg-blue-400" />
-
-export type FeedbackLine =
-  | { kind: 'sending'; text: string; more: number; uploading: boolean; canUndo: boolean }
-  | { kind: 'waiting'; text: string; more: number }
-  | { kind: 'not-sent'; text: string; more: number }
-  | { kind: 'organizing' }
-  | { kind: 'transcribing' }
-  | { kind: 'org-failed'; msg: string }
-  | { kind: 'undone'; code: string }
-  | { kind: 'organized'; msg: string; view: boolean; undo: boolean; move: boolean }
-  | { kind: 'sent'; organizer: boolean; canUndo: boolean; move: boolean }
-  | { kind: 'moved'; code: string; to: string; as: string; href: string }
 
 /** The line above the box: what happened to what you sent last. */
 export function Feedback({ line, on }: { line: FeedbackLine | null; on: { dismiss(): void; undo(): void; retry(): void; edit(): void; view(): void; undoFiling(): void; move(): void; retryOrganizer(): void } }) {

@@ -28,7 +28,7 @@ const SIDE_NAME = { docs: 'Documents', log: 'Activity', deleted: 'Deleted' } as 
 
 /** The document's view, with what it does. */
 function useDoc(slug: string, dn: number) {
-  const app = useServices('docVoice', 'docs', 'nav', 'seen', 'sheets', 'voice')
+  const app = useServices('docChoices', 'docComments', 'docEditor', 'docVoice', 'docs', 'nav', 'seen', 'sheets', 'voice')
   const stores = useStores('box', 'docTicks', 'docView', 'drafts', 'recording', 'sheet', 'ui')
   const desk = useLayout() === 'desk'
   const m = useProjectModel(slug)
@@ -65,11 +65,11 @@ function useDoc(slug: string, dn: number) {
     },
     picture: (f, all) => media.on.view(f, all),
     ...media.on,
-    edit: (id) => docs.editComment(slug, dn, id),
+    edit: (id) => app.docComments.editComment(slug, dn, id),
     move: (id) => app.sheets.open({ kind: 'comment-move', d: dn, id }, { focus: false }),
-    takeOff: (id, f) => docs.takeOff(dn, id, f),
-    remove: (id) => docs.deleteComment(dn, id),
-    resolve: (tk, on2) => docs.resolve(dn, tk, on2),
+    takeOff: (id, f) => app.docComments.takeOff(dn, id, f),
+    remove: (id) => app.docComments.deleteComment(dn, id),
+    resolve: (tk, on2) => app.docComments.resolve(dn, tk, on2),
     reply: (tk) => docs.reply(tk),
     goItem: () => m && d && app.nav.openItem(codeOf(m, liveN(m, d.n))),
     toggle: (tk) => docs.toggle(tk),
@@ -79,13 +79,13 @@ function useDoc(slug: string, dn: number) {
     sayCancel: () => void app.voice.cancel(),
     type: () => docs.type(),
     moveDoc: (from?: HTMLElement) => (desk && from ? app.sheets.openFrom(from, { kind: 'doc-move', d: dn }, { focus: false }) : app.sheets.open({ kind: 'doc-move', d: dn }, { focus: false })),
-    deleteDoc: () => docs.remove(dn),
+    deleteDoc: () => app.docEditor.remove(dn),
     circle: () => stores.docView.getState().setCircle(!v.circle),
     quote: (key, text) => stores.docView.getState().pick({ quote: { key, text }, sel: new Set(), reply: null }),
-    editDoc: () => docs.edit(dn),
+    editDoc: () => app.docEditor.edit(dn),
     whole: () => docs.whole(),
-    tick: (tk, i) => docs.tick(dn, tk, i),
-    modifyTicks: (tk) => docs.modifyTicks(dn, tk),
+    tick: (tk, i) => app.docChoices.tick(dn, tk, i),
+    modifyTicks: (tk) => app.docChoices.modifyTicks(dn, tk),
   }
   const page = d?.fmt === 'html' && m ? <WebPageContainer slug={slug} d={d} v={v} seen={seen} env={env} on={on} waiting={waiting} /> : null
   const aimed = useCallback(() => stores.docView.getState().setAim(null), [stores])
@@ -157,7 +157,7 @@ function WebPageContainer({ slug, d, v, seen, env, on, waiting }: { slug: string
 
 /** The desktop's pane with a document. */
 export function DocPaneContainer({ route, dn, place, hidden, bodyRef, beside }: { route: ProjectRoute; dn: number; place: string; hidden?: boolean; bodyRef?: (el: HTMLElement | null) => void; /** wide: the document on the left, its item's talk on the right */ beside?: (view: ReactNode, web: boolean) => ReactNode }) {
-  const app = useServices('docs')
+  const app = useServices('docEditor', 'docs')
   const stores = useStores('docView', 'route', 'sheet')
   const pane = usePaneRef('detail')
   const side = useStoreValue(stores.route, (s) => s.side)
@@ -168,7 +168,7 @@ export function DocPaneContainer({ route, dn, place, hidden, bodyRef, beside }: 
   if (v.editing && v.newFor == null)
     // an existing document is edited where it is read
     return (
-      <PaneFrame place={place} hidden={hidden} desk paneRef={pane} bodyRef={bodyRef} head={<DocPaneHead d={d} editing />} onBack={() => app.docs.keep()}>
+      <PaneFrame place={place} hidden={hidden} desk paneRef={pane} bodyRef={bodyRef} head={<DocPaneHead d={d} editing />} onBack={() => app.docEditor.keep()}>
         <div className="mx-auto flex min-h-full w-full max-w-[46rem] flex-col px-8 pt-4 pb-12">
           <DocEditContainer slug={route.slug} />
         </div>

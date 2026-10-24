@@ -9,7 +9,7 @@ import { codeOf, findRef, inputDraft, type ProjectModel } from '../../model/proj
 import { when } from '../../model/time'
 import { inputMatch, searchWords } from '../../model/visible'
 import { inputCode } from '../../model/words'
-import { outgoingLine, outgoingState } from '../../stores/outbox'
+import { outgoingLine, outgoingState } from '../../model/outgoing'
 import { useItemWorld } from '../../app/hooks'
 import { useSearchHints } from '../../app/searchHints'
 import { Thumbs } from '../../ui/Files'

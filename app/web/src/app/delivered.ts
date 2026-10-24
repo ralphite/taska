@@ -5,7 +5,7 @@
 import { inputCode } from '../model/words'
 import type { ProjectModel } from '../model/project'
 import type { BoxStore } from '../stores/box'
-import type { Outgoing } from '../stores/outbox'
+import type { Outgoing } from '../model/outgoing'
 import type { RouteStore } from '../stores/route'
 import type { UiStore } from '../stores/ui'
 import { newId, type ChangeRunner } from './changeRunner'

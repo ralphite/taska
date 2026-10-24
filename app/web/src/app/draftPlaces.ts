@@ -8,7 +8,8 @@ import { codeOf, type ProjectModel } from '../model/project'
 import { inTab, tabOf } from '../model/visible'
 import type { RouteStore } from '../stores/route'
 import type { Box } from './box'
-import type { Docs } from './docs'
+import type { Docs } from './docs/docs'
+import type { DocComments } from './docs/comments'
 import type { Fields } from './fields'
 import type { Navigation } from './navigation'
 import type { Toasts } from './toasts'
@@ -17,7 +18,8 @@ export interface DraftPlacesDeps {
   route: RouteStore
   nav: Navigation
   box: Box
-  docs(): Docs | null
+  docs: Docs
+  comments: DocComments
   fields: Fields
   toasts: Toasts
   slug(): string
@@ -38,7 +40,7 @@ export class DraftPlaces {
       case 'new':
         return this.d.nav.newInput()
       case 'doc':
-        if (m?.docs.some((x) => x.d === t.d)) return this.d.docs()?.open(t.d)
+        if (m?.docs.some((x) => x.d === t.d)) return this.d.docs.open(t.d)
         break
       case 'amend':
         if (!m?.byId.has(t.id)) return this.d.toasts.show('Input no longer exists', null, { error: true })
@@ -62,8 +64,8 @@ export class DraftPlaces {
       case 'comment': {
         const doc = m?.docs.find((x) => (t.d == null || x.d === t.d) && allComments(x).some((c) => c.id === t.id))
         if (!doc) break
-        this.d.docs()?.open(doc.d)
-        return this.d.docs()?.editComment(slug, doc.d, t.id)
+        this.d.docs.open(doc.d)
+        return this.d.comments.editComment(slug, doc.d, t.id)
       }
     }
     this.d.toasts.show(`${draftName(key).replace(/^the /, 'The ')} is gone`, null, { error: true })

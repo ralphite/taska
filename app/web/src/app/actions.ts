@@ -21,7 +21,8 @@ import type { UiStore } from '../stores/ui'
 import type { Answers } from './answers'
 import type { Box } from './box'
 import { copyText, forAgent } from './clipboard'
-import type { Docs } from './docs'
+import type { Docs } from './docs/docs'
+import type { DocEditor } from './docs/editor'
 import type { Fields } from './fields'
 import type { ProjectRoute } from './hooks'
 import type { ItemActions } from './itemActions'
@@ -46,6 +47,7 @@ export interface ActionWorld {
   fields: Fields
   sheets: Sheets
   docs: Docs
+  docEditor: DocEditor
   box: Box
   voice: Voice
   media: Media
@@ -158,7 +160,7 @@ export const ACTIONS = {
   type: item(['keyArm', 'toasts'], { label: 'Type…', keys: 't', palette: true, run: arm('t', 'Type: F B I T R') }),
   'put-under': item(['sheets'], { label: 'Put under…', keys: 'm', palette: true, run: (w, h) => w.sheets.open({ kind: 'item-move-parent', n: h.it.n }, { pop: true, focus: false }) }),
   'add-sub': item(['itemEdits'], { label: 'Add subitem', keys: 'A', palette: true, run: (w, h) => w.itemEdits.subStart(h.it.n) }),
-  'new-doc': item(['docs'], { label: 'New doc', keys: 'D', palette: true, run: (w, h) => w.docs.create(h.it.n) }),
+  'new-doc': item(['docEditor'], { label: 'New doc', keys: 'D', palette: true, run: (w, h) => w.docEditor.create(h.it.n) }),
   copy: item(['toasts'], { label: 'Copy for agent', keys: 'C', palette: true, run: (w, h) => void copyText(forAgent(h.it, h.code, h.m.facts.base)).then(() => w.toasts.show('Copied')) }),
   full: item(['nav', 'route'], { none: 'First pick an item: J or a click', label: 'Full width', keys: 'o', palette: true, run: (w) => w.nav.full(!w.route.getState().full) }),
   menu: item(['sheets'], { label: 'All actions', keys: '.', run: (w, h) => w.sheets.open({ kind: 'item-menu', n: h.it.n, arm: null }, { pop: true, focus: false }) }),
@@ -232,7 +234,7 @@ export const ACTIONS = {
   }),
   keys: page(['sheets'], { label: 'Keyboard shortcuts', keys: '?', palette: true, run: (w) => w.sheets.open({ kind: 'keys' }) }),
   palette: page(['sheets'], { label: 'Go to or do', keys: 'Meta+k', run: (w) => w.sheets.open({ kind: 'palette' }, { focus: false }) }),
-  back: page(['route', 'nav', 'media', 'ui', 'sheet', 'sheets', 'selection', 'voice', 'desk', 'fields', 'boxStore', 'box', 'docs', 'itemEdits', 'itemView', 'docView'], { label: 'Step back one level', keys: 'Escape', run: (w, h) => stepBack(w, h) }),
+  back: page(['route', 'nav', 'media', 'ui', 'sheet', 'sheets', 'selection', 'voice', 'desk', 'fields', 'boxStore', 'box', 'docs', 'docEditor', 'itemEdits', 'itemView', 'docView'], { label: 'Step back one level', keys: 'Escape', run: (w, h) => stepBack(w, h) }),
   step: page(['nav', 'listOrder', 'toasts'], { label: 'Next item', keys: 'j', why: stepWhy, run: steps(1) }),
   'step-back': page(['nav', 'listOrder', 'toasts'], { label: 'Previous item', keys: 'k', why: stepWhy, run: steps(-1) }),
 } satisfies Record<string, Action>
@@ -244,7 +246,7 @@ export const ACTION_IDS = Object.keys(ACTIONS) as ActionId[]
 
 const typingIn = (el: Element | null) => /INPUT|TEXTAREA|SELECT/.test(el?.tagName || '') || !!(el as HTMLElement | null)?.isContentEditable
 
-type BackWorld = Pick<ActionWorld, 'route' | 'nav' | 'media' | 'ui' | 'sheet' | 'sheets' | 'selection' | 'voice' | 'desk' | 'fields' | 'boxStore' | 'box' | 'docs' | 'itemEdits' | 'itemView' | 'docView'>
+type BackWorld = Pick<ActionWorld, 'route' | 'nav' | 'media' | 'ui' | 'sheet' | 'sheets' | 'selection' | 'voice' | 'desk' | 'fields' | 'boxStore' | 'box' | 'docs' | 'docEditor' | 'itemEdits' | 'itemView' | 'docView'>
 
 /** Esc: one level back: the drawer, the sheet, a subitem being written, an edit, the search, a field, full width, the
  * search's words, the item. */
@@ -260,7 +262,7 @@ function stepBack(w: BackWorld, h: Here): void {
   // a correction, an edit, details added, the preferences: stopped, unless you are writing words in the box
   const inBox = w.desk() && w.fields.focused('box') && !!(w.fields.get('box') as HTMLTextAreaElement | null)?.value.trim()
   if (w.boxStore.getState().mode && !inBox) return w.box.stop()
-  if (w.sheet.getState().spec?.req.kind === 'doc-edit') return w.docs.keep() // its text kept as a draft
+  if (w.sheet.getState().spec?.req.kind === 'doc-edit') return w.docEditor.keep() // its text kept as a draft
   if (w.sheet.getState().spec) return w.sheets.close()
   if (w.ui.getState().sideOver) return w.ui.getState().setSideOver(false)
   const view = w.itemView.getState()
@@ -269,7 +271,7 @@ function stepBack(w: BackWorld, h: Here): void {
   if (r.place.kind === 'doc') {
     // a document: its editor (kept as a draft), the area being drawn, what you picked, then the document itself
     const doc = w.docView.getState()
-    if (doc.editing) return w.docs.keep()
+    if (doc.editing) return w.docEditor.keep()
     if (doc.circle) return doc.setCircle(false)
     if (doc.quote || doc.sel.size || doc.reply) return w.docs.unpick()
     if (doc.inspect) return doc.setInspect(false) // a web page's Comment mode

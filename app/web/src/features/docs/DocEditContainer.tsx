@@ -8,7 +8,7 @@ import { DocEdit } from './DocEdit'
 import { clock } from '../../model/time'
 
 export function DocEditContainer({ slug }: { slug: string }) {
-  const app = useServices('dictation', 'docs', 'fields')
+  const app = useServices('dictation', 'docEditor', 'fields')
   const stores = useStores('dictation', 'docView')
   const desk = useLayout() === 'desk'
   const m = useProjectModel(slug)
@@ -35,8 +35,8 @@ export function DocEditContainer({ slug }: { slug: string }) {
       fieldRef={app.fields.ref('doc')}
       on={{
         change: (t) => stores.docView.getState().setText(t),
-        discard: () => app.docs.discard(),
-        save: () => void app.docs.save(),
+        discard: () => app.docEditor.discard(),
+        save: () => void app.docEditor.save(),
         mic: () => app.dictation.toggle(),
       }}
     />
