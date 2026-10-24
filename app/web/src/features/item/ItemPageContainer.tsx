@@ -124,7 +124,7 @@ export function ItemPageContainer({ it, m, slug, tab, desk }: { it: Item; m: Pro
       } else void app.items.change(n, field, v)
     },
     menu: (arm, from) => openItemMenu(app, desk, n, arm, from),
-    sources: () => {},
+    sources: () => app.sheets.open('sources', { n }),
     goto,
     doc: () => {},
     earlier: () => iv().showAll(n),
@@ -158,10 +158,10 @@ export function ItemPageContainer({ it, m, slug, tab, desk }: { it: Item; m: Pro
       })
     },
     editCancel: () => iv().setEditing(null),
-    inputMore: () => {},
-    inputHistory: () => {},
+    inputMore: (id) => app.sheets.open('input-menu', { id }, desk ? { pop: true, focus: false } : { focus: false }),
+    inputHistory: (id) => app.sheets.open('history', { id }),
     goInput: () => {},
-    msgMenu: () => {},
+    msgMenu: (id) => app.sheets.open('msg-menu', { n, id }, desk ? { pop: true, focus: false, narrow: true } : { focus: false }),
     peek: (id) => iv().peek(id),
     unhide: (id) => void send([{ op: 'hide', ref, id, on: false }], `showing a message on ${ref} again`),
     docAt: () => {},

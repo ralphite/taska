@@ -71,7 +71,7 @@ export function SidebarContainer({ slug, place, hidden, rail }: { slug: string; 
     newProject: () => {},
     hide: () => app.stores.ui.getState().setSideHidden(!sideHidden),
     settings: () => app.nav.to(base + 'settings'),
-    keys: () => {},
+    keys: () => app.sheets.open('keys'),
     undo: () => void undo?.run(),
     go: (href, e) => {
       if (e.metaKey || e.ctrlKey) return

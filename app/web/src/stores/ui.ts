@@ -23,6 +23,9 @@ export interface UiState {
   heldFor: string
   selected: ReadonlySet<number>
   sideHidden: boolean
+  /** the desktop's filters opened under the search (F) */
+  deskFilters: boolean
+  setDeskFilters(on: boolean): void
   /** long inputs opened whole (More) */
   openedInputs: ReadonlySet<string>
   toggleInput(id: string): void
@@ -60,6 +63,8 @@ export function createUiStore(kv: KeyValueStore): UiStore {
     heldFor: '',
     selected: new Set(),
     sideHidden: !!kv.get('taska.sideHidden'),
+    deskFilters: false,
+    setDeskFilters: (deskFilters) => set({ deskFilters }),
     openedInputs: new Set(),
     toggleInput: (id) => set((s) => ({ openedInputs: flip(s.openedInputs, id) })),
     lastSent: null,

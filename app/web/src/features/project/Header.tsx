@@ -297,3 +297,15 @@ export function FilterChips({ set, onUnset }: { set: [string, ReactNode][]; onUn
     </>
   )
 }
+
+/** The phone's row of the filters set, under the tabs, with Clear. */
+export function FilterStrip({ set, hidden, onUnset, onReset }: { set: [string, ReactNode][]; hidden: boolean; onUnset(k: string): void; onReset(): void }) {
+  return (
+    <div hidden={hidden} className="flex h-11 shrink-0 [scrollbar-width:none] items-center gap-2 overflow-x-auto border-b border-zinc-100 px-4 lg:hidden dark:border-zinc-800/70">
+      <FilterChips set={set} onUnset={onUnset} />
+      <button onClick={onReset} className="ml-auto h-11 shrink-0 px-1 text-[13px] font-semibold text-blue-600 hover:underline dark:text-blue-400">
+        Clear
+      </button>
+    </div>
+  )
+}

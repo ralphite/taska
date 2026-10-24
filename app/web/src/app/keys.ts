@@ -8,6 +8,7 @@ import { choiceMulti, hasChoices } from '../model/markdown'
 import { codeOf, liveN } from '../model/project'
 import type { Item } from '../model/types'
 import type { Tab } from '../model/words'
+import { copyText, forAgent } from './clipboard'
 import type { App } from './createApp'
 
 const typingIn = (el: Element | null) => /INPUT|TEXTAREA|SELECT/.test(el?.tagName || '') || !!(el as HTMLElement | null)?.isContentEditable
@@ -88,6 +89,11 @@ export function pageKeys(app: App): (e: KeyboardEvent) => void {
         return (act(), app.stores.itemView.getState().setEditing(n))
       case '.':
         return (act(), app.sheets.open('menu-desk', { n }, { pop: true, focus: false }))
+      case 'm':
+        return (act(), app.sheets.open('move', { n }, { pop: true, focus: false }))
+      case 'C':
+        act()
+        return void copyText(forAgent(it, code, m.facts.base)).then(() => say('Copied'))
       case 'A':
         return (act(), app.stores.itemView.getState().setSubFor(n))
       case 's':
@@ -124,6 +130,14 @@ export function pageKeys(app: App): (e: KeyboardEvent) => void {
     if (e.defaultPrevented) return
     const active = document.activeElement
     if (e.key === 'Escape') return escape(e, active)
+    // Cmd-K anywhere on the desktop, even while typing: Go to or do (again: closes it)
+    if (app.desk() && (e.metaKey || e.ctrlKey) && !e.altKey && e.key.toLowerCase() === 'k') {
+      e.preventDefault()
+      const open = app.stores.sheet.getState().spec
+      if (open) app.sheets.close()
+      if (open?.kind !== 'palette') app.sheets.open('palette', {}, { focus: false })
+      return
+    }
     if (app.stores.sheet.getState().spec) return // a sheet or menu is open: it has its own keys
     const r = here()
     if (!r) return
@@ -153,6 +167,7 @@ export function pageKeys(app: App): (e: KeyboardEvent) => void {
       const tab = ({ i: 'items', n: 'inputs', a: 'archive', r: 'rules' } as Record<string, Tab>)[e.key.toLowerCase()]
       if (tab) return (e.preventDefault(), app.nav.tab(tab))
       if (e.key.toLowerCase() === 's') return (e.preventDefault(), app.nav.to(`/p/${encodeURIComponent(r.slug)}/settings`))
+      if (e.key.toLowerCase() === 'p') return (e.preventDefault(), app.sheets.open('switch', {}, { focus: false }))
     }
     if (it && armed(e, it)) return
     switch (e.key) {
@@ -187,6 +202,12 @@ export function pageKeys(app: App): (e: KeyboardEvent) => void {
       case '/':
         e.preventDefault()
         return requestAnimationFrame(() => app.fields.focus('search'))
+      case '?':
+        e.preventDefault()
+        return app.sheets.open('keys')
+      case 'f':
+        e.preventDefault()
+        return app.stores.ui.getState().setDeskFilters(!app.stores.ui.getState().deskFilters)
       case 'c':
         e.preventDefault()
         return app.nav.newInput()

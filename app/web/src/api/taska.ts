@@ -53,6 +53,21 @@ export class TaskaApi {
     })
   }
 
+  /** An input sent to the wrong project goes to another one: -> what it is called there. */
+  moveInput(slug: string, to: string, id: string): Promise<{ ok: boolean; to: string; as: string }> {
+    return this.http.json(P(slug) + 'move-input', { method: 'POST', body: { id, to }, timeout: TIME_LIMIT.command })
+  }
+
+  /** An item (with its subitems, words and talk) goes to another project; done once per id. */
+  moveItem(slug: string, to: string, ref: string, id: string, under?: string): Promise<{ ok: boolean; as: string; with?: number; docs?: number }> {
+    return this.http.json(P(slug) + 'move-item?id=' + encodeURIComponent(id), { method: 'POST', body: { to, ref, ...(under ? { under } : {}) }, timeout: TIME_LIMIT.command })
+  }
+
+  /** A voice note's words: at once when they are kept (GET), or waiting for them (POST). */
+  words(slug: string, f: string, wait = false): Promise<{ ok?: boolean; tr?: string; heard?: string; error?: string }> {
+    return this.http.json(P(slug) + 'words?f=' + encodeURIComponent(f), wait ? { method: 'POST', timeout: 60000 } : {})
+  }
+
   projects(): Promise<ProjectRow[]> {
     return this.http.json<ProjectRow[]>('/api/projects')
   }

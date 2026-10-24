@@ -2,9 +2,9 @@
 // and the search, in the list's order. Pure: from the project and the list's settings.
 
 import { closed, inQueue, needsYou } from './items'
-import type { ListQuery } from './route'
+import type { ListKey, ListQuery } from './route'
 import type { Input, Item } from './types'
-import { LETTER, type Tab } from './words'
+import { ARCHIVE_FILTER_WORD, LETTER, RULE_STATUS_WORD, SORT_WORDS, STATUS_FILTER_WORD, STATUS_WORD, WHEN_WORD, type Tab } from './words'
 
 /** An item's words, for the search: its code, title, text, next and talk. */
 const HAY = new WeakMap<Item, string>()
@@ -87,3 +87,15 @@ export const openCount = (items: readonly Item[]) => items.filter((it) => !it.me
 
 /** 1234 reads 1k. */
 export const tabNumber = (n: number) => (n >= 1000 ? Math.floor(n / 1000) + 'k' : n || '')
+
+/** The filters set on a list, each with its word (a type, when, a status that is not the view, priority, sort). */
+export function filtersSet(tab: Tab, list: ListQuery): [ListKey, string][] {
+  const out: [ListKey, string][] = []
+  if (list.type !== 'all' && tab !== 'rules') out.push(['type', list.type[0].toUpperCase() + list.type.slice(1)])
+  if (list.when !== 'all') out.push(['when', WHEN_WORD[list.when as 'now'] ?? list.when])
+  if (list.status !== 'all' && !statusIsView(tab, list))
+    out.push(['status', tab === 'rules' ? RULE_STATUS_WORD[list.status as 'open'] || STATUS_WORD[list.status as 'open'] : STATUS_FILTER_WORD[list.status] || ARCHIVE_FILTER_WORD[list.status] || STATUS_WORD[list.status as 'open']])
+  if (list.pri !== 'all') out.push(['pri', list.pri])
+  if (list.sort !== 'all') out.push(['sort', SORT_WORDS.find(([v]) => v === list.sort)?.[1] ?? list.sort])
+  return out
+}

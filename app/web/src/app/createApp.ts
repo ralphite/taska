@@ -30,6 +30,7 @@ import { Box } from './box'
 import { CrossSearch } from './crossSearch'
 import { Fields } from './fields'
 import { ListOrder } from './listOrder'
+import { Moves } from './moves'
 import { RowSizes } from './rowSizes'
 import { Sheets } from './sheets'
 import { Seen } from '../stores/seen'
@@ -84,6 +85,8 @@ export interface App {
   box: Box
   /** what floats over the page: sheets and menus */
   sheets: Sheets
+  /** an item going to another project */
+  moves: Moves
   desk(): boolean
   runner: ChangeRunner
   /** the project the page shows now, with your pending changes over it */
@@ -255,9 +258,26 @@ export function createApp(env: AppEnv): App {
     crossSearch: new CrossSearch(api, search),
     answers: new Answers({ inputs, view: itemView, outbox }),
     fields: new Fields(),
-    inputActions: new InputActions(runner),
+    inputActions: new InputActions({
+      runner,
+      toasts,
+      api,
+      model,
+      refresh: (slug) => stale(slug),
+      title: (slug) => data.getState().projects?.find((p) => p.name === slug)?.title || slug,
+      go: (url) => route.getState().go(url, true),
+    }),
     box: new Box({ api, store: boxStore, drafts, outbox, inputs, runner, toasts }),
     sheets,
+    moves: new Moves({
+      api,
+      changes,
+      toasts,
+      model,
+      title: (slug) => data.getState().projects?.find((p) => p.name === slug)?.title || slug,
+      go: (url) => route.getState().go(url, true),
+      refresh: (slug) => stale(slug),
+    }),
     desk: env.desk,
     runner,
     model,

@@ -46,6 +46,8 @@ export const PLACE_WORD: Record<string, string> = {
   later: 'Later',
   closed: 'Finished',
 }
+/** The five places an item can be, as the Status filter offers them. */
+export const STATUS_FILTER_WORD: Record<string, string> = { wait: 'Needs you', doing: 'In progress', queued: 'Queued', later: 'Later', closed: 'Finished' }
 export const ARCHIVE_FILTER_WORD: Record<string, string> = { done: 'Done', dropped: "Won't do", active: 'Not finished' }
 export const SORT_WORDS: [string, string][] = [
   ['all', 'Priority'],

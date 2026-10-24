@@ -79,6 +79,8 @@ export interface ProjectModel {
 export interface InputPatch {
   id: string
   f: Partial<Input>
+  /** gone at once (deleted) */
+  gone?: boolean
 }
 
 export function project(copy: ServerCopy, patches: readonly ItemPatch[] = [], at = copy.at, inputPatches: readonly InputPatch[] = []): ProjectModel {
@@ -102,7 +104,8 @@ export function project(copy: ServerCopy, patches: readonly ItemPatch[] = [], at
     const m = new Map(copy.inputs)
     for (const p of inputPatches) {
       const r = m.get(p.id)
-      if (r) m.set(p.id, { ...r, ...p.f })
+      if (p.gone) m.delete(p.id)
+      else if (r) m.set(p.id, { ...r, ...p.f })
     }
     byId = m
   }

@@ -7,7 +7,7 @@ import { useAway, useProjectModel, type ProjectRoute } from '../../app/hooks'
 import { agentLine } from '../../model/agents'
 import { needsYou } from '../../model/items'
 import { NO_FILTERS } from '../../model/route'
-import { filtered, inputMatch, openCount, searchWords, tabNumber, visible } from '../../model/visible'
+import { filtered, filtersSet, inputMatch, openCount, searchWords, tabNumber, visible } from '../../model/visible'
 import { TABS, type Tab } from '../../model/words'
 import { toneOf } from '../../ui/tones'
 import { FootContainer } from '../composer/FootContainer'
@@ -16,8 +16,17 @@ import { ItemListContainer } from '../list/ItemListContainer'
 import { SidebarContainer, useSideProjects } from '../sidebar/SidebarContainer'
 import { codeOf } from '../../model/project'
 import { InputsContainer } from '../inputs/InputsContainer'
+import { DeskFilters, type FilterEvents } from '../sheets/Filters'
 import { DetailContainer } from './DetailContainer'
-import { ListHead, PhoneTabs, ProjectBar, type AgentInfo, type TabInfo } from './Header'
+import { FilterStrip, ListHead, PhoneTabs, ProjectBar, type AgentInfo, type TabInfo } from './Header'
+
+/** What the filters do: set one, take one off, clear them all (and the search), keep them as a view. */
+export const filterEvents = (app: ReturnType<typeof useApp>): FilterEvents => ({
+  set: (k, v) => app.nav.setList({ [k]: v }),
+  unset: (k) => app.nav.setList({ [k]: 'all' }),
+  reset: () => app.nav.setList({ q: '', type: 'all', when: 'all', status: 'all', pri: 'all', sort: 'all' }),
+  saveView: () => {},
+})
 
 function useHeadFacts(route: ProjectRoute) {
   const app = useApp()
@@ -72,6 +81,8 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
   const full = useStoreValue(app.stores.route, (s) => s.full) && route.place.kind === 'item' && !settings
   const side = route.place.kind === 'side' && !settings
   const compose = route.place.kind === 'new' || (route.place.kind === 'tab' && route.tab !== 'inputs')
+  const filtersOpen = useStoreValue(app.stores.ui, (s) => s.deskFilters)
+  const set = filtersSet(route.tab, route.list)
   // the pane, and the foot under it, take the list's column too when an item is full width (O)
   const pane = full ? 'col-span-2 col-start-1' : 'col-start-2'
   const [footH, setFootH] = useState(0)
@@ -108,8 +119,8 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
           placeholder={route.tab === 'rules' ? 'Search rules' : 'Search items'}
           agent={agent}
           notSaved={notSaved}
-          filtersSet={false}
-          filtersOpen={false}
+          filtersSet={set.length > 0}
+          filtersOpen={filtersOpen}
           place="col-start-1 row-start-2"
           hidden={settings || full || side}
           searchRef={app.fields.ref('search')}
@@ -121,8 +132,17 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
             query: (q) => app.nav.setList({ q }),
             clear: () => app.nav.setList({ q: '' }),
             firstResult: () => app.nav.first(app.listOrder, (n) => codeOf(app.model(route.slug) ?? { byN: new Map(), width: 0 }, n)),
-            filters: () => {},
+            filters: () => app.stores.ui.getState().setDeskFilters(!filtersOpen),
           }}
+        />
+        <DeskFilters
+          tab={route.tab}
+          list={route.list}
+          set={set}
+          open={filtersOpen}
+          place="col-start-1 row-start-3"
+          hidden={settings || full || side || !(filtersOpen || set.length)}
+          on={{ ...filterEvents(app), toggle: () => app.stores.ui.getState().setDeskFilters(!filtersOpen) }}
         />
         <section className="col-start-1 row-span-2 row-start-4 flex min-h-0 flex-1 flex-col lg:border-r lg:border-zinc-200 dark:lg:border-zinc-800" hidden={settings || full}>
           <ItemListContainer route={route} />
@@ -168,6 +188,7 @@ function PhoneLayout({ route }: { route: ProjectRoute }) {
   const open = route.place.kind === 'item' || route.place.kind === 'doc'
   const settings = route.place.kind === 'settings'
   const under = !open && !settings
+  const phoneSet = filtersSet(route.tab, route.list)
   const [footH, setFootH] = useState(0)
   const tabs: TabInfo[] = TABS.filter((t) => t !== 'archive').map((t) => ({
     tab: t,
@@ -197,7 +218,7 @@ function PhoneLayout({ route }: { route: ProjectRoute }) {
           placeholder="Search title, text or code"
           agent={agent}
           notSaved={notSaved}
-          filtersSet={false}
+          filtersSet={phoneSet.length > 0}
           filtersOpen={false}
           place=""
           hidden={!under}
@@ -213,7 +234,8 @@ function PhoneLayout({ route }: { route: ProjectRoute }) {
             filters: () => {},
           }}
         />
-        <PhoneTabs tabs={tabs} filtersSet={false} showFilter={route.tab !== 'inputs'} hidden={!under} on={{ tab: (t) => app.nav.tab(t), filters: () => {} }} />
+        <PhoneTabs tabs={tabs} filtersSet={phoneSet.length > 0} showFilter={route.tab !== 'inputs'} hidden={!under} on={{ tab: (t) => app.nav.tab(t), filters: () => app.sheets.open('filters', {}, { focus: false }) }} />
+        <FilterStrip set={phoneSet} hidden={!under || route.tab === 'inputs' || !phoneSet.length} onUnset={(k) => app.nav.setList({ [k]: 'all' })} onReset={() => filterEvents(app).reset()} />
         <section className="flex min-h-0 flex-1 flex-col" hidden={!under || route.tab === 'inputs'}>
           <ItemListContainer route={route} />
         </section>

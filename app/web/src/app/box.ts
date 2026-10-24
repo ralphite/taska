@@ -145,9 +145,13 @@ export class Box {
     return this.d.store.getState().sent.some((x) => x.q === q && x.until > now)
   }
 
-  /** Edit or add details to something you said: the box writes there. */
-  amendStart(id: string, mode: 'edit' | 'append', v: number): void {
-    this.d.store.getState().setMode({ kind: 'amend', id, mode, v })
+  /** Edit or add details to something you said: the box writes there (an edit begins with its words). */
+  amendStart(slug: string, m: ProjectModel | null, id: string, mode: 'edit' | 'append'): void {
+    const r = m?.byId.get(id)
+    if (!r || r.moved) return
+    this.d.store.getState().setMode({ kind: 'amend', id, mode, v: r.v || 0 })
+    const key = `${mode} ${id}`
+    if (mode === 'edit' && !this.text(slug, key).trim()) this.write(slug, key, r.text)
   }
 
   stop(): void {
