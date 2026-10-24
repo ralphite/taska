@@ -298,6 +298,7 @@ export class Twin {
   // ------------------------------------------------------------------ steps
   /** Runs fn(side) on both sides at once, then settles, captures and compares (unless check is false). */
   async step(label, fn, { check = true, settle = {}, untimed = this.untimed, env } = {}) {
+    await this.beforeStep?.()
     if (check) await Promise.all(this.sides.map((s) => s.filmStart()))
     const t0 = Date.now()
     const res = await Promise.allSettled(this.sides.map((s) => fn(s)))

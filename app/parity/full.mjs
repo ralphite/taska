@@ -3,7 +3,7 @@
 //   node full.mjs <sha> [--jobs 3] [--only scenarios|sweeps]
 // Runs are named full-<sha>-<part>; each writes out/<run>/report.json as it goes.
 import { chromium } from 'playwright'
-import { kindsOf, run } from './lib/run.mjs'
+import { kindsOf, quietMachine, run } from './lib/run.mjs'
 import { VARIANTS } from './lib/twin.mjs'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -25,6 +25,8 @@ if (only !== 'scenarios')
 
 const logDir = path.join(PARITY, 'out', `full-${sha}-logs`)
 fs.mkdirSync(logDir, { recursive: true })
+// no browser until the machine has been quiet a while (run.mjs waits again before each scenario)
+await quietMachine((l) => console.log(l.trim()))
 const browser = await chromium.launch()
 const queue = [...parts]
 const done = []

@@ -34,7 +34,7 @@ app/findings.md 里记的那几条，单独标出，不算未批准的差别）�
 | P25 | 未批准的差别 | 不存在的项目 /p/nosuchproject/ 的地址 | “/” → “/?none=nosuchproject”（画面一样） | | open | 585b67d |
 | P26 | 未批准的差别 | 电脑 G S 进设置后按 Esc 的地址 | /p/taska/ → /p/taska/new（画面一样） | | open | 585b67d |
 | P27 | 未批准的差别 | 回到项目时的视图 | 旧版记住上次的 Archive（/p/taska/archive）→ 新版回到 Active（/p/taska/new） | `batch2-585b67d/speed--desk-light/004-a.png` `batch2-585b67d/speed--desk-light/004-b.png` | open | 585b67d |
-| P28 | 未批准的差别 | iPhone：回答问题后对话的滚动 | 旧版往下滚，回答过的卡片到顶 → 新版停在原处 | `recheck-729303d/talk--iphone-light/003-a.png` `recheck-729303d/talk--iphone-light/003-b.png` | open | 729303d |
+| P28 | 待 Yadong 定 | iPhone：回答问题后对话的滚动（实现方查明：旧版 WebKit 滚动锚定没稳住，被夹到最底；建议记为旧版毛病不照搬） | 旧版往下滚，回答过的卡片到顶 → 新版停在原处 | `recheck-729303d/talk--iphone-light/003-a.png` `recheck-729303d/talk--iphone-light/003-b.png` | open | 729303d |
 | P29 | 未批准的差别（只影响读屏/控制台） | 手机设置 “Use on your phone”；D39 评论框读屏顺序；iPhone 控制台 api/view 报错 | 链接 → 按钮；顺序不同；新版多一个报错 | | open（低） | 585b67d |
 | L1 | 待 Yadong 定 | 对话里的缩略图（旧版毛病） | `loading="lazy"` 的图不滚动就一直空白（Chromium、WebKit 都这样） | | 已转 Yadong | — |
 | L2 | 待 Yadong 定 | Documents 侧栏列表的时间 | 实现方记的：旧版从不显示文档时间，新版照旧（改要 Yadong 批） | | 待定 | — |

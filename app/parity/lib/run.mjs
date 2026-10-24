@@ -59,16 +59,26 @@ export function speedOf(steps) {
   return { a, b, slow: slowB.length >= 2 && slowB.length >= slowA.length + 2, worst, slowA: slowA.length, slowB: slowB.length }
 }
 
-// Yadong's own Taska (and its tunnel) runs on this machine: a run starts a scenario only while the machine is not
-// busy (load over the last minute under PARITY_MAX_LOAD, 10 by default), and waits otherwise.
-async function quietMachine(log) {
-  const max = Number(process.env.PARITY_MAX_LOAD || 10)
+// Yadong's own Taska (and its tunnel) runs on this machine. A run starts a scenario only after the load has stayed
+// under PARITY_MAX_LOAD (10) for three minutes in a row (the load is a lagging average: one dip proves nothing), and
+// a step waits while the load is over twice that. A file PARITY_HOLD in out/ holds everything until removed.
+const HOLD = path.join(PARITY, 'out', 'PARITY_HOLD')
+const maxLoad = () => Number(process.env.PARITY_MAX_LOAD || 10)
+export async function quietMachine(log = () => {}, { minutes = 3 } = {}) {
+  let calm = 0
   let said = false
-  while (os.loadavg()[0] >= max) {
-    if (!said) log(`    waiting: machine load ${os.loadavg()[0].toFixed(1)} >= ${max}`)
-    said = true
+  while (calm < minutes * 4) {
+    const busy = os.loadavg()[0] >= maxLoad() || fs.existsSync(HOLD)
+    calm = busy ? 0 : calm + 1
+    if (busy && !said) log(`    waiting: load ${os.loadavg()[0].toFixed(1)}${fs.existsSync(HOLD) ? ', held' : ''}; starts after ${minutes} quiet minutes`)
+    said ||= busy
     await new Promise((r) => setTimeout(r, 15000))
   }
+}
+export async function notBusy(log = () => {}) {
+  if (os.loadavg()[0] < maxLoad() * 2 && !fs.existsSync(HOLD)) return
+  log(`    pausing: load ${os.loadavg()[0].toFixed(1)}`)
+  await quietMachine(log, { minutes: 1 })
 }
 
 /** -> the report; it is also written to out/<runId>/report.json after every scenario/variant. */
@@ -90,6 +100,7 @@ export async function run({ a = 'old', b = 'new', scenarios: want, variants, run
   const save = () => fs.writeFileSync(path.join(OUT, 'report.json'), JSON.stringify(report, null, 1))
   const scenarios = await loadScenarios(want)
   const variantNames = variants || Object.keys(VARIANTS)
+  await quietMachine(log)
   const browser = shared || (await chromium.launch())
   let wk = null // Safari's engine, started when an iphone variant first needs it
   const door = await openDoor(portDoor, { a: portA, b: portB })
@@ -115,6 +126,7 @@ export async function run({ a = 'old', b = 'new', scenarios: want, variants, run
           for (const x of up) if (x.status === 'rejected') throw x.reason
           const engine = VARIANTS[vn].engine === 'webkit' ? (wk ||= await webkit.launch()) : browser
           twin = new Twin({ browser: engine, door, a: sa, b: sb, variantName: vn, outDir: path.join(OUT, `${sc.id}--${vn}`), log })
+          twin.beforeStep = () => notBusy(log)
           await twin.open()
           // long runs (the sweeps) are written as they go, every 25 steps, to be read before they end
           twin.onRecord = () => {
