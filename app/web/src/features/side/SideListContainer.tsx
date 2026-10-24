@@ -2,7 +2,7 @@
 // shown in the pane beside it.
 
 import { useEffect, useMemo } from 'react'
-import { useApp, useStoreValue } from '../../app/context'
+import { useServices, useStores, useStoreValue } from '../../app/context'
 import { useProjectModel } from '../../app/hooks'
 import { logSentence, logTarget } from '../../model/activity'
 import { codeOf, liveN, type ProjectModel } from '../../model/project'
@@ -37,7 +37,7 @@ function goneRows(m: ProjectModel): GoneRow[] {
 }
 
 function useRestore(slug: string, m: ProjectModel | null) {
-  const app = useApp()
+  const app = useServices('restores')
   return (key: string) => {
     if (!m) return
     const x = m.facts.deletedInputs.find((y) => y.id === key)
@@ -48,13 +48,14 @@ function useRestore(slug: string, m: ProjectModel | null) {
 }
 
 export function SideListContainer({ slug, side }: { slug: string; side: Side }) {
-  const app = useApp()
+  const app = useServices('activity', 'docs', 'nav', 'restores', 'sheets')
+  const stores = useStores('activity', 'data', 'route', 'ui')
   const m = useProjectModel(slug)
-  const route = useStoreValue(app.stores.route, (s) => s.route)
-  const picked = useStoreValue(app.stores.ui, (s) => s.sideSel)
-  const rows = useStoreValue(app.stores.activity, (s) => (s.slug === slug ? s.rows : null))
-  const end = useStoreValue(app.stores.activity, (s) => s.slug === slug && s.end)
-  const cursor = useStoreValue(app.stores.data, (s) => s.copies[slug]?.cursor ?? '')
+  const route = useStoreValue(stores.route, (s) => s.route)
+  const picked = useStoreValue(stores.ui, (s) => s.sideSel)
+  const rows = useStoreValue(stores.activity, (s) => (s.slug === slug ? s.rows : null))
+  const end = useStoreValue(stores.activity, (s) => s.slug === slug && s.end)
+  const cursor = useStoreValue(stores.data, (s) => s.copies[slug]?.cursor ?? '')
   useEffect(() => {
     if (side === 'log' && cursor) void app.activity.show(slug, cursor) // what changed since shows too
   }, [app, side, slug, cursor])
@@ -76,7 +77,7 @@ export function SideListContainer({ slug, side }: { slug: string; side: Side }) 
   const gone = useMemo(() => (m ? goneRows(m) : []), [m])
 
   const openItem = (n: number) => m && app.nav.openItem(codeOf(m, n))
-  const openInput = (id?: string) => (id ? app.nav.goInput(id, (x) => app.stores.ui.getState().setLit(x)) : app.nav.newInput())
+  const openInput = (id?: string) => (id ? app.nav.goInput(id, (x) => stores.ui.getState().setLit(x)) : app.nav.newInput())
   const count = side === 'docs' ? docs.length : side === 'deleted' ? gone.length : 0 // the log loads as you scroll
   return (
     <SideFrame side={side} count={count}>
@@ -92,7 +93,7 @@ export function SideListContainer({ slug, side }: { slug: string; side: Side }) 
               const e = rows?.find((x) => '#' + x.seq === key)
               const to = m && e ? logTarget(m, e) : null
               if (!to) return
-              app.stores.ui.getState().setSideSel(key)
+              stores.ui.getState().setSideSel(key)
               if ('n' in to) openItem(to.n)
               else if ('d' in to) app.docs.open(to.d)
               else openInput(to.id)
@@ -109,7 +110,7 @@ export function SideListContainer({ slug, side }: { slug: string; side: Side }) 
           picked={picked}
           on={{
             show: (key) => {
-              app.stores.ui.getState().setSideSel(key)
+              stores.ui.getState().setSideSel(key)
               if (route.page === 'project' && route.place.kind !== 'side') app.nav.side('deleted')
             },
             restore,
@@ -122,9 +123,9 @@ export function SideListContainer({ slug, side }: { slug: string; side: Side }) 
 
 /** The deleted thing picked in Deleted, beside the list. */
 export function DeletedPickContainer({ slug }: { slug: string }) {
-  const app = useApp()
+  const stores = useStores('ui')
   const m = useProjectModel(slug)
-  const picked = useStoreValue(app.stores.ui, (s) => s.sideSel)
+  const picked = useStoreValue(stores.ui, (s) => s.sideSel)
   const restore = useRestore(slug, m)
   const x = m && picked ? goneRows(m).find((g) => g.key === picked) : undefined
   return x ? <DeletedView x={x} onRestore={() => restore(x.key)} /> : null

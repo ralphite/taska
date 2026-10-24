@@ -2,7 +2,7 @@
 // by day, and what is still on its way.
 
 import { useMemo } from 'react'
-import { useApp, useStoreValue } from '../../app/context'
+import { useServices, useStores, useStoreValue } from '../../app/context'
 import { useAway, useFiles, useProjectModel, type ProjectRoute } from '../../app/hooks'
 import { dayOf, newestFirst, standing } from '../../model/inputs'
 import { codeOf, findRef, inputDraft, type ProjectModel } from '../../model/project'
@@ -16,20 +16,21 @@ import { Thumbs } from './Files'
 import { InputsView, type InputFacts, type OutgoingRow } from './InputsView'
 
 export function InputsContainer({ route, hidden }: { route: ProjectRoute; hidden: boolean }) {
-  const app = useApp()
+  const app = useServices('box', 'docs', 'inputActions', 'nav', 'sheets')
+  const stores = useStores('box', 'data', 'drafts', 'outbox', 'ui')
   const m = useProjectModel(route.slug)
   const away = useAway(route.slug)
-  const outbox = useStoreValue(app.stores.outbox, (s) => s.list)
-  const opened = useStoreValue(app.stores.ui, (s) => s.openedInputs)
-  const projects = useStoreValue(app.stores.data, (s) => s.projects)
+  const outbox = useStoreValue(stores.outbox, (s) => s.list)
+  const opened = useStoreValue(stores.ui, (s) => s.openedInputs)
+  const projects = useStoreValue(stores.data, (s) => s.projects)
   const words = useMemo(() => searchWords(route.list.q), [route.list.q])
   const world = useItemWorld(m, route.slug)
   const hints = useSearchHints(route, m, words)
-  const draftWords = useStoreValue(app.stores.drafts, (s) => s.bySlug[route.slug])
-  const mode = useStoreValue(app.stores.box, (s) => s.mode)
+  const draftWords = useStoreValue(stores.drafts, (s) => s.bySlug[route.slug])
+  const mode = useStoreValue(stores.box, (s) => s.mode)
   const writing = useMemo(() => (mode?.kind === 'amend' ? { id: mode.id, mode: mode.mode } : null), [mode])
   const media = useFiles(route.slug)
-  const lit = useStoreValue(app.stores.ui, (s) => s.lit)
+  const lit = useStoreValue(stores.ui, (s) => s.lit)
   const rows: InputFacts[] = useMemo(() => {
     if (!m || hidden) return []
     const title = (slug: string) => projects?.find((p) => p.name === slug)?.title || slug
@@ -72,12 +73,12 @@ export function InputsContainer({ route, hidden }: { route: ProjectRoute; hidden
         retry: !r.acked && m.facts.organizer.on && r.org && (!r.org.ok || r.org.undone) ? (r.org.undone ? 'Organize again' : 'Retry') : null,
         moved: r.moved ? { href: `/p/${encodeURIComponent(r.moved.to)}/`, label: `Open ${title(r.moved.to)} · ${inputCode(r.moved.as)}` } : null,
         lit: lit === r.id,
-        draft: inputDraft(r.id, draftWords || app.stores.drafts.getState().of(route.slug), writing),
+        draft: inputDraft(r.id, draftWords || stores.drafts.getState().of(route.slug), writing),
         long: r.text.length > 160 || r.text.split('\n').length > 4,
         opened: opened.has(r.id),
       }
     })
-  }, [m, hidden, words, projects, opened, draftWords, app, route.slug, writing, lit])
+  }, [m, hidden, words, projects, opened, draftWords, stores, route.slug, writing, lit])
   const outgoing: OutgoingRow[] = outbox
     .filter((o) => o.slug === route.slug)
     .reverse()
@@ -93,7 +94,7 @@ export function InputsContainer({ route, hidden }: { route: ProjectRoute; hidden
       files={(f) => <Thumbs files={f} url={world.url} size="size-11" play={media.play} tidy={media.tidy} on={media.on} />}
       on={{
         goto: (n) => m && app.nav.openItem(codeOf(m, n), 'items'),
-        more: (id) => app.stores.ui.getState().toggleInput(id),
+        more: (id) => stores.ui.getState().toggleInput(id),
         menu: (id) => app.sheets.open({ kind: 'input-menu', id }, { focus: false }),
         retry: (id) => app.inputActions.organizeAgain(route.slug, id),
         draft: (id, mode) => app.box.amendStart(route.slug, m, id, mode),
@@ -102,7 +103,7 @@ export function InputsContainer({ route, hidden }: { route: ProjectRoute; hidden
           const to = m ? findRef(m, c) : null
           if (to?.kind === 'item') app.nav.openItem(codeOf(m as ProjectModel, to.n), 'items')
           else if (to?.kind === 'doc') app.docs.open(to.d)
-          else if (to?.kind === 'input') app.nav.goInput(to.id, (x) => app.stores.ui.getState().setLit(x))
+          else if (to?.kind === 'input') app.nav.goInput(to.id, (x) => stores.ui.getState().setLit(x))
         },
         picture: (f, all) => media.on.view(f, all),
       }}

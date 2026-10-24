@@ -2,19 +2,23 @@
 // desktop above the box when the box is in that pane), or above the box on the phone; on a page of Settings near its
 // top.
 
-import { useLayoutEffect, useState, type CSSProperties } from 'react'
-import { useApp, useLayout, useStoreValue } from '../../app/context'
+import { useEffect, useLayoutEffect, useState, type CSSProperties } from 'react'
+import { useLayout, useServices, useStores, useStoreValue } from '../../app/context'
 import { usePanes } from '../../app/panes'
 import { Toast } from './Toast'
 
 export function ToastContainer() {
-  const app = useApp()
+  const app = useServices('toasts')
+  const stores = useStores('feedback', 'route')
   const layout = useLayout()
   const panes = usePanes()
-  const t = useStoreValue(app.stores.feedback, (s) => s.toast)
-  const onPage = useStoreValue(app.stores.route, (s) => s.route.page === 'project' && s.route.place.kind === 'settings')
+  const t = useStoreValue(stores.feedback, (s) => s.toast)
+  const onPage = useStoreValue(stores.route, (s) => s.route.page === 'project' && s.route.place.kind === 'settings')
   const [style, setStyle] = useState<CSSProperties | undefined>(undefined)
   const [centered, setCentered] = useState(false)
+  // you act in another pane: the toast shown goes over it
+  const [moved, setMoved] = useState(0)
+  useEffect(() => panes?.onLast(() => setMoved((x) => x + 1)), [panes])
   useLayoutEffect(() => {
     if (!t || !panes) return
     const foot = panes.get('foot')
@@ -36,7 +40,7 @@ export function ToastContainer() {
       setCentered(false)
       setStyle(foot && !foot.hidden ? { bottom: `${Math.round(innerHeight - foot.getBoundingClientRect().top + 8)}px` } : undefined)
     }
-  }, [t, layout, panes, onPage])
+  }, [t, layout, panes, onPage, moved])
   const place =
     layout === 'desk'
       ? `${style ? '' : 'bottom-5 left-5'} ${centered ? '-translate-x-1/2' : ''}`

@@ -2,7 +2,7 @@
 // each part of a row does.
 
 import { useCallback, useLayoutEffect, useMemo, useState } from 'react'
-import { useApp, useLayout, useStoreValue } from '../../app/context'
+import { useLayout, useServices, useStores, useStoreValue } from '../../app/context'
 import { usePaneRef } from '../../app/panes'
 import { useProjectModel, type ProjectRoute } from '../../app/hooks'
 import { agoShort } from '../../model/agents'
@@ -33,10 +33,11 @@ function hitLine(it: Item, code: string, words: string[], shown = ''): string | 
 }
 
 export function ItemListContainer({ route }: { route: ProjectRoute }) {
-  const app = useApp()
+  const app = useServices('fields', 'itemDrag', 'items', 'listHold', 'listOrder', 'media', 'nav', 'rows', 'seen', 'selection', 'sheets', 'views')
+  const stores = useStores('box', 'drafts', 'drag', 'route', 'ui', 'views')
   const layout = useLayout()
   const m = useProjectModel(route.slug)
-  const ui = useStoreValue(app.stores.ui, (s) => s)
+  const ui = useStoreValue(stores.ui, (s) => s)
   const paneRef = usePaneRef('list')
   const fieldRef = app.fields.ref('list')
   const pane = useCallback(
@@ -71,9 +72,9 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
   }
 
   const head = m ? queueHead(m.items) : undefined
-  const draftWords = useStoreValue(app.stores.drafts, (s) => s.bySlug[route.slug])
-  const draftFiles = useStoreValue(app.stores.box, (s) => s.files)
-  const drafts = useMemo(() => (m ? draftCodes(m, draftWords || app.stores.drafts.getState().of(route.slug), draftFiles) : new Set<string>()), [m, draftWords, draftFiles, app, route.slug])
+  const draftWords = useStoreValue(stores.drafts, (s) => s.bySlug[route.slug])
+  const draftFiles = useStoreValue(stores.box, (s) => s.files)
+  const drafts = useMemo(() => (m ? draftCodes(m, draftWords || stores.drafts.getState().of(route.slug), draftFiles) : new Set<string>()), [m, draftWords, draftFiles, stores, route.slug])
   useStoreValue(app.seen.rev, (r) => r) // a dot goes once its item is seen
   const seen = app.seen.of(route.slug)
   const facts = (it: Item): RowFacts => {
@@ -104,7 +105,7 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
       hitLine: words.length ? hitLine(it, code, words) : null,
     }
   }
-  const drag = useStoreValue(app.stores.drag, (s) => s)
+  const drag = useStoreValue(stores.drag, (s) => s)
   const look = (it: Item): RowLook => ({
     current: it.n === openN,
     selected: ui.selected.has(it.n),
@@ -140,10 +141,10 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
   useLayoutEffect(() => app.listOrder.set(orderKey ? orderKey.split(',').map(Number) : [], openN), [app, orderKey, openN])
   useLayoutEffect(() => {
     // picked rows that left the list are let go
-    const sel = app.stores.ui.getState().selected
+    const sel = stores.ui.getState().selected
     if (!sel.size) return
     const there = new Set(order)
-    if ([...sel].some((n) => !there.has(n))) app.stores.ui.getState().setSelected(new Set([...sel].filter((n) => there.has(n))))
+    if ([...sel].some((n) => !there.has(n))) stores.ui.getState().setSelected(new Set([...sel].filter((n) => there.has(n))))
   }, [app, orderKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // the phone's swipe right: the row's way forward (an answer opens its card)
@@ -153,7 +154,7 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
       if (!r) return null
       return r[0] === 'need' ? { slide: false, run: () => on.need(n, r[1]) } : { slide: true, run: () => on.act(n, r[0], r[1], r[2]) }
     },
-    blocked: () => app.stores.route.getState().layers.includes('drawer'),
+    blocked: () => stores.route.getState().layers.includes('drawer'),
   }
   const on: ListEvents = {
     open: (n, how) => (desk && how && (how.metaKey || how.ctrlKey || how.shiftKey) ? app.selection.pick(n, how.shiftKey) : app.nav.openItem(codeOf(m as ProjectModel, n))),
@@ -166,12 +167,12 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
       else app.nav.openItem(codeOf(m as ProjectModel, n))
     },
     reopen: (n) => void app.items.change(n, 'status', 'doing'),
-    fold: (n) => app.stores.ui.getState().toggleFold(n),
+    fold: (n) => stores.ui.getState().toggleFold(n),
     goto: (n) => app.nav.openItem(codeOf(m as ProjectModel, n)),
     picture: (_group, f) => app.media.view(route.slug, [f], f),
     view: (value: string) => app.nav.view(value),
-    subMore: (n) => app.stores.ui.getState().toggleSubMore(n),
-    needsMore: () => app.stores.ui.getState().toggleNeedsAll(),
+    subMore: (n) => stores.ui.getState().toggleSubMore(n),
+    needsMore: () => stores.ui.getState().toggleNeedsAll(),
     archiveAll: () => m && app.items.archiveAll(visible(m.items, route.tab, route.list).filter((it) => !it.archived && closed(it.status)).map((it) => it.n)),
     ownView: (i) => app.views.show(i),
     dragStart: (n) => app.itemDrag.start(n),
@@ -180,7 +181,7 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
     dragEnd: () => app.itemDrag.end(),
     ownMenu: (i, x, y) => app.sheets.open({ kind: 'view-menu', i }, { pop: true, focus: false, at: { x, y } }),
     rename: (i, name) => app.views.rename(i, name),
-    renameStop: () => app.stores.views.getState().setEdit(-1),
+    renameStop: () => stores.views.getState().setEdit(-1),
   }
 
   const hints = useSearchHints(route, m, words)
@@ -199,7 +200,7 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
     ) : null
   const presets = m && (body.kind === 'rows' && body.views) ? viewChips(m, route.tab, route.list) : null
   // your own views, after the presets: what each would show; the one that shows is lit
-  const saved = useStoreValue(app.stores.views, (s) => s)
+  const saved = useStoreValue(stores.views, (s) => s)
   const lit = route.tab === 'items' ? saved.list.findIndex((v) => showsView(route.list, v)) : -1
   const views = presets && lit >= 0 ? presets.map((v) => ({ ...v, on: false })) : presets
   const ownViews = views && m ? saved.list.map((v, i) => ({ name: v.name, count: visible(m.items, 'items', { ...route.list, ...v }).length, on: i === lit, editing: saved.edit === i })) : undefined
@@ -212,7 +213,9 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
       <ItemList
         ref={pane}
         desk={desk}
-        openN={route.place.kind === 'item' ? openN : null}
+        openN={openN}
+        itemShown={route.place.kind === 'item'}
+        firstShows={route.tab === 'items'}
         listKey={route.tab}
         dragging={drag.n != null ? { out: drag.at?.how === 'out' } : null}
         top={ui.selected.size && desk ? <SelBar n={ui.selected.size} on={{ set: (f, v, said) => app.selection.set(f, v, said), clear: () => app.selection.clear() }} /> : undefined}

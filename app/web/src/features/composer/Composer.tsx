@@ -89,12 +89,21 @@ function RecBar({ time, levels }: { time: string; levels: readonly number[] }) {
 }
 
 
+/** Where words were put in, when that is all that changed (null: more than that changed). */
+function insertedAt(was: string, now: string): number | null {
+  if (now.length < was.length) return null
+  let a = 0
+  while (a < was.length && was[a] === now[a]) a++
+  return now.endsWith(was.slice(a)) ? a : null
+}
+
 export function Composer({ line, lineOnComposePage, placeholder, sendWord, text, desk, composePage, micTip, files, doubts, words, hasFiles = false, boxRef, fieldRef, rec = null, on }: ComposerProps) {
   const area = useRef<HTMLTextAreaElement | null>(null)
   const box = useRef<HTMLDivElement | null>(null)
   const picker = useRef<HTMLInputElement>(null)
   const has = !!text.trim() || hasFiles
-  // where you were in the words: words that come from elsewhere after yours (another tab's) keep your place in them
+  // where you were in the words: words put in from elsewhere (a voice note's, another tab's) keep your place in
+  // yours, as typing there would
   const mine = useRef({ text, start: text.length, end: text.length })
   const keep = (t: HTMLTextAreaElement) => {
     mine.current = { text: t.value, start: t.selectionStart, end: t.selectionEnd }
@@ -103,7 +112,12 @@ export function Composer({ line, lineOnComposePage, placeholder, sendWord, text,
     const t = area.current
     const was = mine.current
     if (!t || text === was.text) return
-    if (was.text && text.startsWith(was.text)) t.setSelectionRange(was.start, was.end)
+    const at = insertedAt(was.text, text)
+    if (was.text && at != null) {
+      const by = text.length - was.text.length
+      const move = (i: number) => (i > at ? i + by : i)
+      t.setSelectionRange(move(was.start), move(was.end))
+    }
     keep(t)
   }, [text])
   useLayoutEffect(() => {

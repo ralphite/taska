@@ -4,7 +4,7 @@
 
 import { useEffect, useMemo, type ReactNode } from 'react'
 import { Notices } from '../../app/notices'
-import { useApp, useLayout, useStoreValue } from '../../app/context'
+import { useLayout, useServices, useStores, useStoreValue } from '../../app/context'
 import { usePaneRef } from '../../app/panes'
 import { useProjectModel, type ProjectRoute } from '../../app/hooks'
 import { logSentence } from '../../model/activity'
@@ -26,16 +26,17 @@ import { Loading, PhHead } from './SettingsParts'
 const standalone = () => typeof matchMedia !== 'undefined' && (matchMedia('(display-mode: standalone)').matches || (navigator as unknown as { standalone?: boolean }).standalone === true)
 
 export function SettingsContainer({ route, place }: { route: ProjectRoute; place: string }) {
-  const app = useApp()
+  const app = useServices('activity', 'docs', 'nav', 'notices', 'restores', 'settings', 'sheets')
+  const stores = useStores('activity', 'box', 'data', 'settings', 'sheet')
   const pane = usePaneRef('settings')
   const desk = useLayout() === 'desk'
   const m = useProjectModel(route.slug)
-  const st = useStoreValue(app.stores.settings, (s) => s)
-  const asked = useStoreValue(app.stores.sheet, (s) => s.asked)
-  const projects = useStoreValue(app.stores.data, (s) => s.projects)
-  const mode = useStoreValue(app.stores.box, (s) => s.mode)
-  const activity = useStoreValue(app.stores.activity, (s) => (s.slug === route.slug ? s : null))
-  const cursor = useStoreValue(app.stores.data, (s) => s.copies[route.slug]?.cursor ?? '')
+  const st = useStoreValue(stores.settings, (s) => s)
+  const asked = useStoreValue(stores.sheet, (s) => s.asked)
+  const projects = useStoreValue(stores.data, (s) => s.projects)
+  const mode = useStoreValue(stores.box, (s) => s.mode)
+  const activity = useStoreValue(stores.activity, (s) => (s.slug === route.slug ? s : null))
+  const cursor = useStoreValue(stores.data, (s) => s.copies[route.slug]?.cursor ?? '')
   const { list: side, tones } = useSideProjects(route.slug)
   const phoneList = !desk && route.place.kind === 'side' ? route.place.side : null
   const sec: SectionKey | null = phoneList ?? (route.place.kind === 'settings' ? sectionOf(route.place.section, desk) : null)
@@ -45,9 +46,9 @@ export function SettingsContainer({ route, place }: { route: ProjectRoute; place
   useEffect(() => {
     // what a section shows is asked for when it opens (Agents: the guide; the projects and spellings once)
     if (sec === 'agents') void s.loadGuide(route.slug)
-    if (!app.stores.settings.getState().fixes) void s.loadSpellings()
-    if (sec === 'projects' || !app.stores.settings.getState().deleted) void s.loadProjects()
-  }, [app, s, sec, route.slug])
+    if (!stores.settings.getState().fixes) void s.loadSpellings()
+    if (sec === 'projects' || !stores.settings.getState().deleted) void s.loadProjects()
+  }, [app, stores, s, sec, route.slug])
   useEffect(() => {
     if (sec === 'log' && cursor) void app.activity.show(route.slug, cursor)
   }, [app, sec, route.slug, cursor])

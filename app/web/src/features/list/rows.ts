@@ -100,6 +100,8 @@ function needsBand(needs: Item[], st: ListState): Row[] {
  * waiting on you is an ordinary row, where it was. */
 export function heldRows(frozen: readonly Row[], m: ProjectModel, tab: Tab, list: ListQuery, held: ReadonlyMap<number, string>): Row[] {
   const shownNow = new Set(visible(m.items, tab, list).map((it) => it.n))
+  // a row made a subitem meanwhile: its new parent folds at once
+  const parents = new Set(frozen.flatMap((r) => (r.kind === 'item' || r.kind === 'needs' || r.kind === 'held' ? [m.byN.get(r.it.n)?.parent] : [])))
   return frozen.map((r) => {
     if (r.kind !== 'item' && r.kind !== 'needs' && r.kind !== 'held') return r
     const it = m.byN.get(r.it.n) || r.it
@@ -107,7 +109,7 @@ export function heldRows(frozen: readonly Row[], m: ProjectModel, tab: Tab, list
     if (said != null && !shownNow.has(it.n)) return { kind: 'held', it, said }
     if (r.kind === 'held') return { kind: 'item', it, depth: 0, foldable: false, folded: false, band: '' }
     if (r.kind === 'needs' && !needsYou(it)) return { kind: 'item', it, depth: r.depth, foldable: false, folded: false, band: '' }
-    return { ...r, it }
+    return r.kind === 'item' && !r.foldable && parents.has(it.n) ? { ...r, it, foldable: true } : { ...r, it }
   })
 }
 

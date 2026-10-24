@@ -7,7 +7,22 @@ export type PaneName = 'list' | 'detail' | 'drawer' | 'inputs' | 'settings' | 'f
 
 export class Panes {
   private els = new Map<PaneName, HTMLElement>()
+  private told = new Set<() => void>()
   last: PaneName | null = null
+
+  /** You act in another pane: what floats over the page goes over it. -> how to stop */
+  onLast(fn: () => void): () => void {
+    this.told.add(fn)
+    return () => this.told.delete(fn)
+  }
+
+  /** The pane a pointer went down in becomes the last one. */
+  down(target: EventTarget | null): void {
+    const to = this.of(target) ?? this.last
+    if (to === this.last) return
+    this.last = to
+    for (const fn of this.told) fn()
+  }
 
   set(name: PaneName, el: HTMLElement | null): void {
     if (el) this.els.set(name, el)
@@ -31,9 +46,7 @@ const PanesContext = createContext<Panes | null>(null)
 export function PanesProvider({ children }: { children: ReactNode }) {
   const panes = useMemo(() => new Panes(), [])
   useEffect(() => {
-    const down = (e: PointerEvent) => {
-      panes.last = panes.of(e.target) ?? panes.last
-    }
+    const down = (e: PointerEvent) => panes.down(e.target)
     document.addEventListener('pointerdown', down, true)
     return () => document.removeEventListener('pointerdown', down, true)
   }, [panes])

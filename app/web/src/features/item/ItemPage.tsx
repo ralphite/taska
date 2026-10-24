@@ -314,7 +314,8 @@ export function ItemPage({ it, f, env, facts, on, talkRef, duo = false, left = n
     return () => ro.disconnect()
   }, [])
   useLayoutEffect(() => {
-    // the talk at its latest message stays there when the part above grows or shrinks (and opens there)
+    // the talk at its latest message stays there when the part above grows or shrinks, or its own words do (and opens
+    // there)
     const el = talk.current
     if (!el || typeof ResizeObserver === 'undefined') return
     let atEnd = true
@@ -325,9 +326,18 @@ export function ItemPage({ it, f, env, facts, on, talkRef, duo = false, left = n
     })
     el.addEventListener('scroll', seen, { passive: true })
     ro.observe(el)
+    // and when what it shows grows (a picture loads, a message comes) while you are at its end
+    if (el.firstElementChild) ro.observe(el.firstElementChild)
+    // the item opens at its latest message, again a moment later as the page settles (pictures, the parts above)
+    const end = () => {
+      el.scrollTop = el.scrollHeight
+      atEnd = true
+    }
+    const timers = [120, 400, 1000].map((ms) => setTimeout(end, ms))
     return () => {
       ro.disconnect()
       el.removeEventListener('scroll', seen)
+      timers.forEach(clearTimeout)
     }
   }, [])
   const asks = !!it.wait || ((it.status === 'proposed' || it.status === 'review') && !it.talked)

@@ -3,13 +3,12 @@
 // view; what you do goes to app.docs.
 
 import { useEffect, useMemo, type ReactNode, useCallback } from 'react'
-import { useApp, useLayout, useStoreValue } from '../../app/context'
+import { useLayout, useServices, useStores, useStoreValue } from '../../app/context'
 import { useFiles, useProjectModel, type ProjectRoute } from '../../app/hooks'
 import { usePaneRef } from '../../app/panes'
 import { resolved, seenNow, threadNew, threadsOf } from '../../model/docs'
 import type { Doc } from '../../model/types'
 import type { DocViewState } from '../../stores/docView'
-import { runAction } from '../../app/actions'
 import { WebPage } from './WebPage'
 import { Lasso } from './Lasso'
 import { DraftCard, Thread } from './Thread'
@@ -28,23 +27,24 @@ const SIDE_NAME = { docs: 'Documents', log: 'Activity', deleted: 'Deleted' } as 
 
 /** The document's view, with what it does. */
 function useDoc(slug: string, dn: number) {
-  const app = useApp()
+  const app = useServices('docVoice', 'docs', 'nav', 'seen', 'sheets', 'voice')
+  const stores = useStores('box', 'docTicks', 'docView', 'drafts', 'recording', 'sheet', 'ui')
   const desk = useLayout() === 'desk'
   const m = useProjectModel(slug)
-  const v = useStoreValue(app.stores.docView, (s) => s)
-  const asked = useStoreValue(app.stores.sheet, (s) => s.asked)
-  const ticks = useStoreValue(app.stores.docTicks, (s) => s)
+  const v = useStoreValue(stores.docView, (s) => s)
+  const asked = useStoreValue(stores.sheet, (s) => s.asked)
+  const ticks = useStoreValue(stores.docTicks, (s) => s)
   const world = useItemWorld(m, slug)
   const d = m?.docs.find((x) => x.d === dn)
   const seen = app.seen.of(slug)
   // the paragraph whose own mic records a comment about it
   // (read as one word, so the document is not drawn again at every moment of sound)
-  const said = useStoreValue(app.stores.recording, (s) => (s.rec ? JSON.stringify({ key: s.rec.about?.d === dn ? s.rec.about.key : null, bar: !!s.rec.about?.bar }) : ''))
+  const said = useStoreValue(stores.recording, (s) => (s.rec ? JSON.stringify({ key: s.rec.about?.d === dn ? s.rec.about.key : null, bar: !!s.rec.about?.bar }) : ''))
   const speaking = useMemo(() => (said ? (JSON.parse(said) as { key: string | null; bar: boolean }) : null), [said])
   // voice comments in the box not sent yet show where they will go
-  const draft = useStoreValue(app.stores.drafts, (s) => s.bySlug[slug]?.[`doc ${dn}`] ?? '')
-  const draftFiles = useStoreValue(app.stores.box, (s) => s.files[`doc ${dn}`])
-  const marks = useStoreValue(app.stores.box, (s) => s.marks)
+  const draft = useStoreValue(stores.drafts, (s) => s.bySlug[slug]?.[`doc ${dn}`] ?? '')
+  const draftFiles = useStoreValue(stores.box, (s) => s.files[`doc ${dn}`])
+  const marks = useStoreValue(stores.box, (s) => s.marks)
   const waiting = useMemo(() => notSent(draft, draftFiles || [], marks, dn), [draft, draftFiles, marks, dn])
   const facts = useMemo(() => (m && d ? factsOf(m, d, v, seen, desk, asked, speaking, ticks, waiting) : null), [m, d, v, seen, desk, asked, speaking, ticks, waiting])
   useEffect(() => {
@@ -60,7 +60,7 @@ function useDoc(slug: string, dn: number) {
       if (!to || !m) return
       if (to.kind === 'item') app.nav.openItem(codeOf(m, to.n))
       else if (to.kind === 'doc') docs.open(to.d)
-      else app.nav.goInput(to.id, (x) => app.stores.ui.getState().setLit(x))
+      else app.nav.goInput(to.id, (x) => stores.ui.getState().setLit(x))
     },
     picture: (f, all) => media.on.view(f, all),
     ...media.on,
@@ -79,22 +79,23 @@ function useDoc(slug: string, dn: number) {
     type: () => docs.type(),
     moveDoc: (from?: HTMLElement) => (desk && from ? app.sheets.openFrom(from, { kind: 'doc-move', d: dn }, { focus: false }) : app.sheets.open({ kind: 'doc-move', d: dn }, { focus: false })),
     deleteDoc: () => docs.remove(dn),
-    circle: () => app.stores.docView.getState().setCircle(!v.circle),
-    quote: (key, text) => app.stores.docView.getState().pick({ quote: { key, text }, sel: new Set(), reply: null }),
+    circle: () => stores.docView.getState().setCircle(!v.circle),
+    quote: (key, text) => stores.docView.getState().pick({ quote: { key, text }, sel: new Set(), reply: null }),
     editDoc: () => docs.edit(dn),
     whole: () => docs.whole(),
     tick: (tk, i) => docs.tick(dn, tk, i),
     modifyTicks: (tk) => docs.modifyTicks(dn, tk),
   }
   const page = d?.fmt === 'html' && m ? <WebPageContainer slug={slug} d={d} v={v} seen={seen} env={env} on={on} waiting={waiting} /> : null
-  const aimed = useCallback(() => app.stores.docView.getState().setAim(null), [app])
+  const aimed = useCallback(() => stores.docView.getState().setAim(null), [stores])
   return { m, d, facts, env, on, v, desk, page, aimed }
 }
 
 /** A web page document's own view, with its threads. */
 function WebPageContainer({ slug, d, v, seen, env, on, waiting }: { slug: string; d: Doc; v: DocViewState; seen: Readonly<Record<string, string>>; env: DocEnv; on: DocEvents; waiting: readonly NotSent[] }) {
-  const app = useApp()
-  const asked = useStoreValue(app.stores.sheet, (s) => s.asked)
+  const app = useServices('docVoice', 'docs', 'fields', 'run', 'voice')
+  const stores = useStores('docView', 'recording', 'sheet')
+  const asked = useStoreValue(stores.sheet, (s) => s.asked)
   const all = d.blocks.flatMap((b) => threadsOf(b.comments).map((t) => ({ t, key: b.key })))
   // a comment not sent yet (its quote in the box, with what was said or written under it) shows where it will go
   const drafts = waiting.filter((x) => x.key.startsWith('h:'))
@@ -104,7 +105,7 @@ function WebPageContainer({ slug, d, v, seen, env, on, waiting }: { slug: string
     ...draftKeys.map((key) => ({ tk: `${key}#new`, key, quote: '', n: drafts.filter((x) => x.key === key).length, done: false, draft: true })),
   ]
   // the part spoken about: the mic pressed turns into Stop right there, and no other part lights
-  const spoken = useStoreValue(app.stores.recording, (s) => {
+  const spoken = useStoreValue(stores.recording, (s) => {
     const a = s.rec?.about
     return a && a.d === d.d && a.key?.startsWith('h:') && !a.bar ? JSON.stringify({ key: a.key, text: a.quote }) : ''
   })
@@ -141,13 +142,13 @@ function WebPageContainer({ slug, d, v, seen, env, on, waiting }: { slug: string
       sayRow={<SayRow rec={rec} on={{ say: () => held && void app.docVoice.say(slug, d.d, held.key, held.text, true), cancel: () => void app.voice.cancel(), type: () => app.docs.type() }} />}
       on={{
         pick: (p) => {
-          app.stores.docView.getState().pick({ quote: p, sel: new Set(), reply: null })
+          stores.docView.getState().pick({ quote: p, sel: new Set(), reply: null })
           if (env.desk) app.fields.get('box')?.focus({ preventScroll: true })
         },
         say: (part) => void app.docVoice.say(slug, d.d, part.key, part.text, true),
-        esc: () => runAction(app, 'back'),
+        esc: () => app.run('back'),
         toggle: (tk) => app.docs.toggle(tk),
-        away: (tk, key) => app.stores.docView.getState().closeThreads(tk, key),
+        away: (tk, key) => stores.docView.getState().closeThreads(tk, key),
       }}
     />
   )
@@ -155,10 +156,11 @@ function WebPageContainer({ slug, d, v, seen, env, on, waiting }: { slug: string
 
 /** The desktop's pane with a document. */
 export function DocPaneContainer({ route, dn, place, hidden, bodyRef, beside }: { route: ProjectRoute; dn: number; place: string; hidden?: boolean; bodyRef?: (el: HTMLElement | null) => void; /** wide: the document on the left, its item's talk on the right */ beside?: (view: ReactNode, web: boolean) => ReactNode }) {
-  const app = useApp()
+  const app = useServices('docs')
+  const stores = useStores('docView', 'route', 'sheet')
   const pane = usePaneRef('detail')
-  const side = useStoreValue(app.stores.route, (s) => s.side)
-  const asked = useStoreValue(app.stores.sheet, (s) => s.asked)
+  const side = useStoreValue(stores.route, (s) => s.side)
+  const asked = useStoreValue(stores.sheet, (s) => s.asked)
   const { m, d, facts, env, on, v, page, aimed } = useDoc(route.slug, dn)
   if (!m || !d || !facts) return null
   const web = d.fmt === 'html'
@@ -181,7 +183,7 @@ export function DocPaneContainer({ route, dn, place, hidden, bodyRef, beside }: 
       split={!!beside}
       duo={!!beside}
       head={<DocPaneHead d={d} editing={false} />}
-      acts={<DocPaneActs web={web} inspect={v.inspect} deleting={!!asked['doc-delete ' + dn]} d={dn} on={{ inspect: () => app.stores.docView.getState().setInspect(!v.inspect), edit: on.editDoc, move: on.moveDoc, remove: on.deleteDoc }} />}
+      acts={<DocPaneActs web={web} inspect={v.inspect} deleting={!!asked['doc-delete ' + dn]} d={dn} on={{ inspect: () => stores.docView.getState().setInspect(!v.inspect), edit: on.editDoc, move: on.moveDoc, remove: on.deleteDoc }} />}
       lead={<DocPaneNav to={side ? SIDE_NAME[side] : codeOf(m, liveN(m, d.n))} onBack={() => app.docs.close()} />}
       onBack={() => app.docs.close()}
     >
@@ -199,7 +201,7 @@ export function DocPaneContainer({ route, dn, place, hidden, bodyRef, beside }: 
 
 /** The phone's sheet with a document, over its item. */
 export function DocSheetContainer({ slug, dn, footRoom }: { slug: string; dn: number; footRoom: number }) {
-  const app = useApp()
+  const app = useServices('docs')
   const { m, d, facts, env, on, v, page, aimed } = useDoc(slug, dn)
   if (!m || !d || !facts) return null
   return (

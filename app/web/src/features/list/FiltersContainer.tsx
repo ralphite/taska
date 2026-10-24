@@ -1,6 +1,6 @@
 // The phone's filters sheet with the page's data: the list's filters, and how many items they leave.
 
-import { useApp } from '../../app/context'
+import { useServices } from '../../app/context'
 import { useProjectModel, useProjectRoute } from '../../app/hooks'
 import { closed } from '../../model/items'
 import { filtered, visible } from '../../model/visible'
@@ -10,7 +10,7 @@ import { filterEvents } from '../project/ProjectPageContainer'
 import { filtersSheet } from './Filters'
 
 export function FiltersSheet(_: { req: Extract<SheetRequest, { kind: 'filters' }> }) {
-  const app = useApp()
+  const app = useServices('nav', 'sheets', 'views')
   const route = useProjectRoute()
   const m = useProjectModel(route?.slug ?? '')
   if (!m || !route) return null

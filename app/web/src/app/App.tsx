@@ -17,7 +17,7 @@ import { refCard } from '../model/refCard'
 import type { App as TaskaApp } from './createApp'
 
 /** What a code names in the project shown, as its hover card. */
-const cardOf = (app: TaskaApp, slug: string, ref: string) => {
+const cardOf = (app: Pick<TaskaApp, 'model'>, slug: string, ref: string) => {
   const m = app.model(slug)
   return m ? refCard(m, ref) : null
 }

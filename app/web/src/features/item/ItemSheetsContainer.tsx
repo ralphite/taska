@@ -2,8 +2,8 @@
 // putting it under another item, moving it to another project, what it came from, and a message's menu.
 
 import { useLayoutEffect } from 'react'
-import { hereFor, keysShown, runAction, type ActionId } from '../../app/actions'
-import { useApp, useLayout, useStoreValue } from '../../app/context'
+import { keysShown, type ActionId } from '../../app/actions'
+import { useLayout, useServices, useStores, useStoreValue } from '../../app/context'
 import { useCloseSheetWhen, useFiles, useProjectModel, useProjectRoute } from '../../app/hooks'
 import { codeOf, type ProjectModel } from '../../model/project'
 import type { Input } from '../../model/types'
@@ -33,12 +33,13 @@ function useSubject(n: number) {
 }
 
 export function ItemMenuSheet({ req }: Req<'item-menu'>) {
-  const app = useApp()
+  const app = useServices('fields', 'items', 'nav', 'run', 'sheets', 'toasts')
+  const stores = useStores('sheet')
   const desk = useLayout() === 'desk'
   const { route, slug, m, it, code } = useSubject(req.n)
-  const storeArm = useStoreValue(app.stores.sheet, (s) => s.arm)
-  const at = useStoreValue(app.stores.sheet, (s) => s.spec?.at)
-  const asking = useStoreValue(app.stores.sheet, (s) => !!s.asked['item-delete ' + req.n])
+  const storeArm = useStoreValue(stores.sheet, (s) => s.arm)
+  const at = useStoreValue(stores.sheet, (s) => s.spec?.at)
+  const asking = useStoreValue(stores.sheet, (s) => !!s.asked['item-delete ' + req.n])
   const others = useOtherProjects(slug)
   const arm = req.arm ?? storeArm
   useLayoutEffect(() => {
@@ -54,7 +55,7 @@ export function ItemMenuSheet({ req }: Req<'item-menu'>) {
   const close = () => app.sheets.close()
   const done = (run: () => void) => () => (close(), run())
   // what the table of actions does, on this item (it may not be the open one)
-  const run = (id: ActionId) => runAction(app, id, hereFor(app, n))
+  const run = (id: ActionId) => app.run(id, n)
   const on: ItemMenuEvents = {
     edit: done(() => {
       app.nav.openItem(code(n))
@@ -88,7 +89,7 @@ export function ItemMenuSheet({ req }: Req<'item-menu'>) {
 }
 
 export function MoveParentSheet({ req }: Req<'item-move-parent'>) {
-  const app = useApp()
+  const app = useServices('items', 'sheets')
   const desk = useLayout() === 'desk'
   const { m, it, code } = useSubject(req.n)
   if (!m || !it) return null
@@ -96,7 +97,7 @@ export function MoveParentSheet({ req }: Req<'item-move-parent'>) {
 }
 
 export function MoveItemProjectSheet({ req }: Req<'item-move-project'>) {
-  const app = useApp()
+  const app = useServices('moves', 'sheets')
   const { slug, m, it, code } = useSubject(req.n)
   const others = useOtherProjects(slug)
   if (!m || !it) return null
@@ -113,7 +114,8 @@ export function MoveItemProjectSheet({ req }: Req<'item-move-project'>) {
 const sourcesOf = (m: ProjectModel, srcs: readonly string[]) => srcs.map((id) => m.byId.get(id)).filter((r): r is Input => !!r && r.kind !== 'answer')
 
 export function SourcesSheet({ req }: Req<'item-sources'>) {
-  const app = useApp()
+  const app = useServices('nav', 'sheets')
+  const stores = useStores('ui')
   const { slug, m, it, code } = useSubject(req.n)
   const world = useItemWorld(m, slug)
   const media = useFiles(slug)
@@ -128,14 +130,14 @@ export function SourcesSheet({ req }: Req<'item-sources'>) {
           now: m.at,
           files: (f) => <Thumbs files={f} url={world.url} play={media.play} tidy={media.tidy} on={media.on} />,
         },
-        (id) => app.sheets.close(() => app.nav.goInput(id, (x) => app.stores.ui.getState().setLit(x))),
+        (id) => app.sheets.close(() => app.nav.goInput(id, (x) => stores.ui.getState().setLit(x))),
       )}
     />
   )
 }
 
 export function MessageMenuSheet({ req }: Req<'message-menu'>) {
-  const app = useApp()
+  const app = useServices('items', 'sheets')
   const { m, it } = useSubject(req.n)
   if (!m || !it) return null
   const hide = () => {

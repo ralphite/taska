@@ -2,7 +2,7 @@
 // project's name over the box and what you said under it.
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type RefObject } from 'react'
-import { useApp, useLayout, useStoreValue } from '../../app/context'
+import { useLayout, useServices, useStores, useStoreValue } from '../../app/context'
 import { usePaneRef } from '../../app/panes'
 import { useAway, useFiles, useProjectModel, type ProjectRoute } from '../../app/hooks'
 import { dayOf, newestFirst, organizing, SHORT_STANDING, standing, timeOf } from '../../model/inputs'
@@ -220,7 +220,8 @@ function useFootRoom(hidden: boolean | undefined, onHeight: ((px: number) => voi
 }
 
 export function FootContainer({ route, place, hidden, composePage, onHeight, bare = false }: { route: ProjectRoute; place: string; hidden?: boolean; composePage: boolean; onHeight?(px: number): void; /** just the box (Settings' transcription preferences) */ bare?: boolean }) {
-  const app = useApp()
+  const app = useServices('box', 'docVoice', 'docs', 'fields', 'inputActions', 'inputs', 'media', 'nav', 'settings', 'sheets', 'toasts', 'voice', 'voiceWords')
+  const stores = useStores('box', 'data', 'docTicks', 'docView', 'drafts', 'outbox', 'recording', 'ui')
   const boxRef = useRef<HTMLDivElement | null>(null)
   const footRef = useFootRoom(hidden, onHeight, boxRef)
   const pane = usePaneRef('foot')
@@ -228,12 +229,12 @@ export function FootContainer({ route, place, hidden, composePage, onHeight, bar
   const desk = layout === 'desk'
   const m = useProjectModel(route.slug)
   const away = useAway(route.slug)
-  const outbox = useStoreValue(app.stores.outbox, (s) => s.list)
+  const outbox = useStoreValue(stores.outbox, (s) => s.list)
   const { tones } = useSideProjects(route.slug)
   const title = m?.facts.title || route.slug
-  const mode = useStoreValue(app.stores.box, (s) => s.mode)
-  const pick = useStoreValue(app.stores.docView, (s) => s)
-  const ticks = useStoreValue(app.stores.docTicks, (s) => s)
+  const mode = useStoreValue(stores.box, (s) => s.mode)
+  const pick = useStoreValue(stores.docView, (s) => s)
+  const ticks = useStoreValue(stores.docTicks, (s) => s)
   const role = boxRole(m, route, desk, title, mode, () => app.box.stop(), pick, ticks, {
     unpick: () => app.docs.unpick(),
     toItem: () => app.docs.toItem(),
@@ -242,24 +243,24 @@ export function FootContainer({ route, place, hidden, composePage, onHeight, bar
   })
   const key = app.box.key(role.scope, mode, role.doc)
   useLayoutEffect(() => {
-    if (!bare) app.stores.box.getState().setShown(key, role.scope)
-  }, [app, key, role.scope, bare])
-  const recording = useStoreValue(app.stores.recording, (s) => s.rec)
+    if (!bare) stores.box.getState().setShown(key, role.scope)
+  }, [app, stores, key, role.scope, bare])
+  const recording = useStoreValue(stores.recording, (s) => s.rec)
   // the recording shows in the box wherever you are; it goes to the draft it was started in
   const rec = recording && recording.slug === route.slug ? { time: clock(recording.ms), levels: recording.levels, from: recording.from } : null
-  const drafts = useStoreValue(app.stores.drafts, (s) => s.bySlug[route.slug]) || EMPTY
+  const drafts = useStoreValue(stores.drafts, (s) => s.bySlug[route.slug]) || EMPTY
   const text = drafts[key] ?? ''
   // voice comments in a document's box: Send posts each beside its paragraph
   const vcN = role.doc != null && !mode ? vcCount(text) : 0
   const told = vcN ? { line: { icon: 'comment', label: `${plural(vcN, 'comment')} on D${role.doc} not sent`, detail: '\u00b7 Send posts each beside its paragraph' } as BoxLine, placeholder: role.aim ? 'Write\u2026' : 'Add to the comments\u2026', send: vcN > 1 ? `Post ${vcN} comments` : 'Post the comment' } : role
   const right = mode?.kind === 'correct' ? text.replace(/\s+/g, ' ').trim() : ''
   const boxLine: BoxLine | null = mode?.kind === 'correct' && told.line && right ? { ...told.line, label: `${told.line.label} \u2192 \u201c${right.slice(0, 60)}\u201d` } : recording && rec && recording.key !== key ? { icon: 'mic', label: `Recording for ${draftName(recording.key)}`, detail: '\u00b7 it goes there when you stop' } : told.line
-  const draftFiles = useStoreValue(app.stores.box, (s) => s.files[key])
+  const draftFiles = useStoreValue(stores.box, (s) => s.files[key])
   const setText = (v: string) => app.box.write(route.slug, key, v)
-  const showWords = useStoreValue(app.stores.box, (s) => s.showWords)
+  const showWords = useStoreValue(stores.box, (s) => s.showWords)
   const [fixing, setFixing] = useState<Fixing | null>(null)
   const heard = useHeard(text, draftFiles)
-  const justSent = useStoreValue(app.stores.box, (s) => s.sent)
+  const justSent = useStoreValue(stores.box, (s) => s.sent)
   const [q, setQ] = useState('')
   const [upTo, setUpTo] = useState(STEP)
   const [opened, setOpened] = useState<ReadonlySet<string>>(new Set())
@@ -305,17 +306,17 @@ export function FootContainer({ route, place, hidden, composePage, onHeight, bar
     ? []
     : [...mine].reverse().map((o) => ({ q: o.q, text: o.text || outgoingLine(o), state: outgoingState(o, away), failed: o.state === 'failed', net: !!o.net, canUndo: justSent.some((x) => x.q === o.q) }))
 
-  const lastSent = useStoreValue(app.stores.ui, (s) => s.lastSent)
-  const projects = useStoreValue(app.stores.data, (s) => s.projects)
+  const lastSent = useStoreValue(stores.ui, (s) => s.lastSent)
+  const projects = useStoreValue(stores.data, (s) => s.projects)
   // the input the line above the box speaks of
   const sentRow = lastSent?.slug === route.slug && m ? m.byId.get(lastSent.rid) : undefined
   const feedback = feedbackLine({ m, desk, composePage, scope: role.scope, mine, lastSent: lastSent?.slug === route.slug ? lastSent.rid : null, lastQ: lastSent?.q, others: (projects || []).some((p) => p.name !== route.slug), undoable: (q) => !!q && justSent.some((x) => x.q === q) })
   // a line that says where it ended up goes after a while
   useEffect(() => {
     if (!feedback?.final) return
-    const t = window.setTimeout(() => app.stores.ui.getState().setLastSent(null), 6000)
+    const t = window.setTimeout(() => stores.ui.getState().setLastSent(null), 6000)
     return () => clearTimeout(t)
-  }, [app, feedback?.final])
+  }, [app, stores, feedback?.final])
 
   const media = useFiles(route.slug)
   const url = (f: string) => `/p/${encodeURIComponent(route.slug)}/f/${encodeURIComponent(f)}`
@@ -419,7 +420,7 @@ export function FootContainer({ route, place, hidden, composePage, onHeight, bar
       ) : null}
       <Feedback
         line={feedback?.line ?? null}
-        on={{ dismiss: () => app.stores.ui.getState().setLastSent(null), undo: () => { const q = mine[0]?.q ?? lastSent?.q; if (q) app.box.unsend(q) }, retry: () => void app.inputs.flush(), edit: () => app.box.editOutgoing(route.slug, key) && app.fields.focus('box'), view: () => { const n = sentRow?.touched[0]; if (m && n) app.nav.openItem(codeOf(m, n)) }, undoFiling: () => sentRow && app.inputActions.undoFiling(route.slug, sentRow.id), move: () => sentRow && app.sheets.open({ kind: 'input-move', id: sentRow.id }), retryOrganizer: () => sentRow && app.inputActions.organizeAgain(route.slug, sentRow.id) }}
+        on={{ dismiss: () => stores.ui.getState().setLastSent(null), undo: () => { const q = mine[0]?.q ?? lastSent?.q; if (q) app.box.unsend(q) }, retry: () => void app.inputs.flush(), edit: () => app.box.editOutgoing(route.slug, key) && app.fields.focus('box'), view: () => { const n = sentRow?.touched[0]; if (m && n) app.nav.openItem(codeOf(m, n)) }, undoFiling: () => sentRow && app.inputActions.undoFiling(route.slug, sentRow.id), move: () => sentRow && app.sheets.open({ kind: 'input-move', id: sentRow.id }), retryOrganizer: () => sentRow && app.inputActions.organizeAgain(route.slug, sentRow.id) }}
       />
       {composer}
       {desk && composePage && said ? (

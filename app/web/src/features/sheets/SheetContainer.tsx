@@ -2,7 +2,7 @@
 // Each feature draws its own kinds; this only picks the one for the request and frames it.
 
 import type { ComponentType } from 'react'
-import { useApp, useLayout, useStoreValue } from '../../app/context'
+import { useLayout, useServices, useStores, useStoreValue } from '../../app/context'
 import type { SheetKind, SheetRequest } from '../../stores/sheet'
 import { Sheet } from '../../ui/Sheet'
 import { KeysSheet, PaletteSheet, SwitchProjectSheet } from '../find/FindersContainer'
@@ -44,9 +44,10 @@ function Holds({ req }: { req: SheetRequest }) {
 }
 
 export function SheetContainer() {
-  const app = useApp()
+  const app = useServices('docs', 'fields', 'sheets')
+  const stores = useStores('sheet')
   const desk = useLayout() === 'desk'
-  const spec = useStoreValue(app.stores.sheet, (s) => s.spec)
+  const spec = useStoreValue(stores.sheet, (s) => s.spec)
   return (
     <Sheet open={!!spec} look={{ pop: spec?.pop, narrow: spec?.narrow, tall: spec?.tall, card: spec?.card, aboveComposer: spec?.aboveComposer, at: spec?.at }} desk={desk} focus={!!spec?.focus} bodyRef={app.fields.ref('sheet')} onClose={() => (spec?.req.kind === 'doc-edit' ? app.docs.keep() : app.sheets.close())}>
       {spec ? <Holds key={JSON.stringify(spec.req)} req={spec.req} /> : null}

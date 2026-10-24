@@ -2,7 +2,7 @@
 // every project, a new project, and the note a deleted or unknown project's link brought.
 
 import { useEffect, useMemo, useState } from 'react'
-import { useApp, useStoreValue } from '../../app/context'
+import { useServices, useStores, useStoreValue } from '../../app/context'
 import { lastAgent } from '../../model/agents'
 import { homeOrder } from '../../model/projects'
 import type { Route } from '../../model/route'
@@ -12,12 +12,13 @@ import { Home, type HomeEvents, type HomeRow } from './Home'
 type HomeRoute = Extract<Route, { page: 'home' }>
 
 export function HomeContainer({ route }: { route: HomeRoute }) {
-  const app = useApp()
-  const projects = useStoreValue(app.stores.data, (s) => s.projects)
-  const needs = useStoreValue(app.stores.data, (s) => s.needs)
-  const at = useStoreValue(app.stores.data, (s) => s.listedAt)
-  const away = useStoreValue(app.stores.data, (s) => s.listAway)
-  const hits = useStoreValue(app.stores.search, (s) => s.last)
+  const app = useServices('crossSearch', 'fields', 'projects')
+  const stores = useStores('data', 'route', 'search')
+  const projects = useStoreValue(stores.data, (s) => s.projects)
+  const needs = useStoreValue(stores.data, (s) => s.needs)
+  const at = useStoreValue(stores.data, (s) => s.listedAt)
+  const away = useStoreValue(stores.data, (s) => s.listAway)
+  const hits = useStoreValue(stores.search, (s) => s.last)
   const [q, setQ] = useState('')
   // the note the link brought stays until closed; the address goes back to plain /
   const [gone, setGone] = useState(() => {
@@ -29,7 +30,7 @@ export function HomeContainer({ route }: { route: HomeRoute }) {
 
   useEffect(() => {
     void app.projects.refresh()
-    if (route.query.get('gone') || route.query.get('none')) app.stores.route.getState().go('/', false)
+    if (route.query.get('gone') || route.query.get('none')) stores.route.getState().go('/', false)
     // once, on coming here
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [app])
@@ -51,7 +52,7 @@ export function HomeContainer({ route }: { route: HomeRoute }) {
     })
   }, [projects, needs, at])
 
-  const open = (url: string) => app.stores.route.getState().go(url, true)
+  const open = (url: string) => stores.route.getState().go(url, true)
   const on: HomeEvents = {
     query: (v) => {
       setQ(v)

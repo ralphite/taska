@@ -3,7 +3,7 @@
 // while it records it stays where the words were.
 
 import { useEffect, useReducer, useRef } from 'react'
-import { useApp, useStoreValue } from '../../app/context'
+import { useServices, useStores, useStoreValue } from '../../app/context'
 import { useProjectModel, type ProjectRoute } from '../../app/hooks'
 import { SelectionBar, type Box } from './SelectionBar'
 
@@ -43,11 +43,12 @@ function fixable(byId: ReadonlyMap<string, { text: string; v?: number }> | undef
 }
 
 export function SelectionBarContainer({ route }: { route: ProjectRoute }) {
-  const app = useApp()
+  const app = useServices('box', 'docVoice', 'fields')
+  const stores = useStores('box', 'docView', 'recording')
   const m = useProjectModel(route.slug)
-  const rec = useStoreValue(app.stores.recording, (s) => s.rec)
-  const circle = useStoreValue(app.stores.docView, (s) => s.circle)
-  const mode = useStoreValue(app.stores.box, (s) => s.mode)
+  const rec = useStoreValue(stores.recording, (s) => s.rec)
+  const circle = useStoreValue(stores.docView, (s) => s.circle)
+  const mode = useStoreValue(stores.box, (s) => s.mode)
   const [, redraw] = useReducer((n: number) => n + 1, 0)
   // where the words were when it started recording, and how far the page had scrolled
   const started = useRef<{ range: Range; rect: Box; top: number; scroller: Element | null } | null>(null)
@@ -55,7 +56,7 @@ export function SelectionBarContainer({ route }: { route: ProjectRoute }) {
     const seen = () => {
       redraw()
       // the selection went before you wrote anything: no more correcting
-      const b = app.stores.box.getState().mode
+      const b = stores.box.getState().mode
       const text = getSelection()?.toString().trim()
       const box = app.fields.get('box') as HTMLTextAreaElement | null
       if (b?.kind === 'correct' && b.bySel && !text && !box?.value.trim() && !box?.closest('#composer')?.contains(document.activeElement)) app.box.stop()
@@ -68,7 +69,7 @@ export function SelectionBarContainer({ route }: { route: ProjectRoute }) {
       removeEventListener('scroll', redraw, true)
       removeEventListener('resize', redraw)
     }
-  }, [app])
+  }, [app, stores])
   const doc = route.place.kind === 'doc' ? route.place.d : null
   const on = !!rec?.about?.bar
   const s = rec ? null : selected(doc, circle)
@@ -104,7 +105,7 @@ export function SelectionBarContainer({ route }: { route: ProjectRoute }) {
             started.current = { range: pick.range.cloneRange(), rect: { top: r.top, bottom: r.bottom, left: r.left, width: r.width, height: r.height }, top: scroller?.scrollTop || 0, scroller }
           }
           void app.docVoice.bar(route.slug, pick ? { d: pick.d, key: pick.key, quote: pick.text } : null).then((go) => {
-            if (!go && !app.stores.recording.getState().rec) started.current = null
+            if (!go && !stores.recording.getState().rec) started.current = null
           })
         },
         comment: () => app.fields.get('box')?.focus({ preventScroll: true }),

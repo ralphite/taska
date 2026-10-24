@@ -1,13 +1,14 @@
 // The picture viewer with the page: open while the route has it (Back closes it), on the picture the media service
 // shows.
 
-import { useApp, useStoreValue } from '../../app/context'
+import { useServices, useStores, useStoreValue } from '../../app/context'
 import { Viewer } from './Viewer'
 
 export function ViewerContainer() {
-  const app = useApp()
-  const open = useStoreValue(app.stores.route, (s) => s.layers.includes('viewer'))
-  const v = useStoreValue(app.stores.media, (s) => s.viewer)
+  const app = useServices('media')
+  const stores = useStores('media', 'route')
+  const open = useStoreValue(stores.route, (s) => s.layers.includes('viewer'))
+  const v = useStoreValue(stores.media, (s) => s.viewer)
   const f = v.group[v.idx] || ''
   return (
     <Viewer

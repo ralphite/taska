@@ -1,6 +1,6 @@
 // The project's menu (from the sidebar) and the list of what was not saved, with what they do.
 
-import { useApp, useStoreValue } from '../../app/context'
+import { useServices, useStores, useStoreValue } from '../../app/context'
 import { useProjectModel, useProjectRoute } from '../../app/hooks'
 import { openCount } from '../../model/visible'
 import { when } from '../../model/time'
@@ -12,12 +12,13 @@ import { notSavedSheet } from './NotSaved'
 import { projectMenuSheet } from './ProjectSheets'
 
 export function ProjectMenuSheet({ req }: { req: Extract<SheetRequest, { kind: 'project-menu' }> }) {
-  const app = useApp()
+  const app = useServices('nav', 'sheets')
+  const stores = useStores('data')
   const route = useProjectRoute()
   const here = route?.slug === req.slug
   const m = useProjectModel(req.slug)
   const { tones } = useSideProjects(route?.slug ?? '')
-  const rows = useStoreValue(app.stores.data, (s) => s.projects)
+  const rows = useStoreValue(stores.data, (s) => s.projects)
   const row = rows?.find((p) => p.name === req.slug)
   const title = (here && m?.facts.title) || row?.title || req.slug
   const open = here && m ? openCount(m.items) : (row?.open ?? '')
@@ -41,10 +42,11 @@ export function ProjectMenuSheet({ req }: { req: Extract<SheetRequest, { kind: '
 }
 
 export function NotSavedSheet() {
-  const app = useApp()
+  const app = useServices('nav', 'sheets', 'toasts')
+  const stores = useStores('data', 'feedback')
   const route = useProjectRoute()
-  const list = useStoreValue(app.stores.feedback, (s) => s.notSaved)
-  const titles = useStoreValue(app.stores.data, (s) => s.projects)
+  const list = useStoreValue(stores.feedback, (s) => s.notSaved)
+  const titles = useStoreValue(stores.data, (s) => s.projects)
   // its times are told against the time the project's news last came
   const now = useProjectModel(route?.slug ?? '')?.at
   const rows = list.map((f) => ({
@@ -64,11 +66,11 @@ export function NotSavedSheet() {
     },
     retry: (sid) => {
       app.toasts.retryNotSaved(sid)
-      if (!app.stores.feedback.getState().notSaved.length) app.sheets.close()
+      if (!stores.feedback.getState().notSaved.length) app.sheets.close()
     },
     drop: (sid) => {
-      app.stores.feedback.getState().dropNotSaved(sid)
-      if (!app.stores.feedback.getState().notSaved.length) app.sheets.close()
+      stores.feedback.getState().dropNotSaved(sid)
+      if (!stores.feedback.getState().notSaved.length) app.sheets.close()
     },
   })
   if (!parts) return null

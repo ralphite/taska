@@ -18,6 +18,19 @@ export function useApp(): App {
   return app
 }
 
+/** The parts of the app a container uses, by name: it can reach nothing else (what it depends on is said where it
+ * starts). */
+export function useServices<K extends keyof App>(...names: K[]): Pick<App, K> {
+  void names
+  return useApp()
+}
+
+/** The app's stores a container reads or changes, by name (the same narrowing for its state). */
+export function useStores<K extends keyof App['stores']>(...names: K[]): Pick<App['stores'], K> {
+  void names
+  return useApp().stores
+}
+
 /** A value from one of the app's stores; the component draws again when it changes. */
 export function useStoreValue<S, T>(store: StoreApi<S>, select: (s: S) => T): T {
   return useStore(store, select)

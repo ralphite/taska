@@ -67,6 +67,8 @@ export const ACTIONS = {
       if (!step) return
       if ('set' in step) return set(app, h, step.set[0], step.set[1])
       if (step.answer === 'words') app.fields.focus('box')
+      // a question with choices: on its first choice
+      else app.fields.get('talk')?.querySelector<HTMLElement>('button[data-choice]')?.focus()
     },
   }),
   reply: item({ label: 'Reply', keys: 'r', palette: true, run: (app) => app.fields.focus('box') }),

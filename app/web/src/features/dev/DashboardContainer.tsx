@@ -2,12 +2,12 @@
 // says what it is.
 
 import { useEffect, useState } from 'react'
-import { useApp } from '../../app/context'
+import { useServices } from '../../app/context'
 import type { Dash } from '../../model/dashboard'
 import { Dashboard } from './Dashboard'
 
 export function DashboardContainer() {
-  const app = useApp()
+  const app = useServices('api')
   const [range, setRange] = useState(() => new URLSearchParams(location.search).get('days') || '7')
   const [d, setD] = useState<Dash | null>(null)
   const [err, setErr] = useState('')

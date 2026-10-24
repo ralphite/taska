@@ -1,7 +1,7 @@
 // An input's sheets with the page's data: its menu, its versions, moving it to another project, putting it with
 // another item, and a voice note's words as said.
 
-import { useApp, useLayout, useStoreValue } from '../../app/context'
+import { useLayout, useServices, useStores, useStoreValue } from '../../app/context'
 import { useCloseSheetWhen, useProjectModel, useProjectRoute } from '../../app/hooks'
 import { canUndoFiling, organizing } from '../../model/inputs'
 import { codeOf } from '../../model/project'
@@ -27,10 +27,11 @@ function useSubject(id: string) {
 }
 
 export function InputMenuSheet({ req }: Req<'input-menu'>) {
-  const app = useApp()
+  const app = useServices('api', 'box', 'inputActions', 'sheets')
+  const stores = useStores('sheet')
   const desk = useLayout() === 'desk'
   const { slug, m, r, code } = useSubject(req.id)
-  const asked = useStoreValue(app.stores.sheet, (s) => s.asked)
+  const asked = useStoreValue(stores.sheet, (s) => s.asked)
   const others = useOtherProjects(slug)
   if (!m || !r) return null
   const id = r.id
@@ -81,7 +82,7 @@ export function InputHistorySheet({ req }: Req<'input-history'>) {
 }
 
 export function InputMoveSheet({ req }: Req<'input-move'>) {
-  const app = useApp()
+  const app = useServices('inputActions', 'sheets')
   const { slug, m, r, code } = useSubject(req.id)
   const others = useOtherProjects(slug)
   if (!m || !r) return null
@@ -104,7 +105,7 @@ export function InputMoveSheet({ req }: Req<'input-move'>) {
 }
 
 export function InputRescopeSheet({ req }: Req<'input-rescope'>) {
-  const app = useApp()
+  const app = useServices('inputActions', 'sheets')
   const desk = useLayout() === 'desk'
   const { slug, m, r, code } = useSubject(req.id)
   if (!m || !r) return null

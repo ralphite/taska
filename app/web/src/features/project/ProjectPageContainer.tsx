@@ -3,10 +3,9 @@
 
 import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { Grip } from '../../ui/Grip'
-import { runAction } from '../../app/actions'
 import { useBackSwipe, useDrawerPull } from './phoneGestures'
 import { gripVars } from '../../stores/grips'
-import { useApp, useLayout, useStoreValue } from '../../app/context'
+import { useLayout, useServices, useStores, useStoreValue } from '../../app/context'
 import { useAway, useProjectModel, type ProjectRoute } from '../../app/hooks'
 import { agentLine } from '../../model/agents'
 import { needsYou } from '../../model/items'
@@ -25,9 +24,10 @@ import { InputsContainer } from '../inputs/InputsContainer'
 import { DeskFilters, type FilterEvents } from '../list/Filters'
 import { DetailContainer } from './DetailContainer'
 import { FilterStrip, ListHead, PhoneTabs, ProjectBar, type AgentInfo, type TabInfo } from './Header'
+import type { App } from '../../app/createApp'
 
 /** What the filters do: set one, take one off, clear them all (and the search), keep them as a view. */
-export const filterEvents = (app: ReturnType<typeof useApp>): FilterEvents => ({
+export const filterEvents = (app: Pick<App, 'nav' | 'views'>): FilterEvents => ({
   set: (k, v) => app.nav.setList({ [k]: v }),
   unset: (k) => app.nav.setList({ [k]: 'all' }),
   reset: () => app.nav.setList({ q: '', type: 'all', when: 'all', status: 'all', pri: 'all', sort: 'all' }),
@@ -35,11 +35,11 @@ export const filterEvents = (app: ReturnType<typeof useApp>): FilterEvents => ({
 })
 
 function useHeadFacts(route: ProjectRoute) {
-  const app = useApp()
+  const stores = useStores('data', 'feedback')
   const m = useProjectModel(route.slug)
   const away = useAway(route.slug)
-  const notSaved = useStoreValue(app.stores.feedback, (s) => s.notSaved.length)
-  const rows = useStoreValue(app.stores.data, (s) => s.projects)
+  const notSaved = useStoreValue(stores.feedback, (s) => s.notSaved.length)
+  const rows = useStoreValue(stores.data, (s) => s.projects)
   const title = m?.facts.title || rows?.find((p) => p.name === route.slug)?.title || route.slug
   const otherNeeds = (rows || []).some((p) => p.name !== route.slug && p.needs > 0)
   const agent: AgentInfo | null = m ? { ...agentLine(m.facts.agents, m.facts.work, m.at), offline: away >= 2 } : null
@@ -60,7 +60,7 @@ function useHeadFacts(route: ProjectRoute) {
 }
 
 export function ProjectPageContainer({ route }: { route: ProjectRoute }) {
-  const app = useApp()
+  const app = useServices('nav', 'showProject')
   const layout = useLayout()
   useEffect(() => app.showProject(route.slug), [app, route.slug])
   useEffect(() => app.nav.normalize(), [app, route, layout])
@@ -79,21 +79,22 @@ export function ProjectPageContainer({ route }: { route: ProjectRoute }) {
 }
 
 function DeskLayout({ route }: { route: ProjectRoute }) {
-  const app = useApp()
+  const app = useServices('fields', 'listOrder', 'model', 'nav', 'sheets', 'views')
+  const stores = useStores('docView', 'grips', 'route', 'ui')
   const { title, agent, counts, notSaved } = useHeadFacts(route)
   const { tones } = useSideProjects(route.slug)
-  const sideHidden = useStoreValue(app.stores.ui, (s) => s.sideHidden)
-  const sideOver = useStoreValue(app.stores.ui, (s) => s.sideOver)
+  const sideHidden = useStoreValue(stores.ui, (s) => s.sideHidden)
+  const sideOver = useStoreValue(stores.ui, (s) => s.sideOver)
   const settings = route.place.kind === 'settings'
-  const full = useStoreValue(app.stores.route, (s) => s.full) && route.place.kind === 'item' && !settings
-  const shownSide = useStoreValue(app.stores.route, (s) => s.side)
+  const full = useStoreValue(stores.route, (s) => s.full) && route.place.kind === 'item' && !settings
+  const shownSide = useStoreValue(stores.route, (s) => s.side)
   // a document edited in the pane has no box under it
-  const docEditing = useStoreValue(app.stores.docView, (s) => s.editing && s.newFor == null) && route.place.kind === 'doc'
+  const docEditing = useStoreValue(stores.docView, (s) => s.editing && s.newFor == null) && route.place.kind === 'doc'
   const side = !!shownSide && !settings
-  const grips = useStoreValue(app.stores.grips, (s) => s.px)
-  const duo = useStoreValue(app.stores.ui, (s) => s.duo)
+  const grips = useStoreValue(stores.grips, (s) => s.px)
+  const duo = useStoreValue(stores.ui, (s) => s.duo)
   const compose = route.place.kind === 'new' || (route.place.kind === 'tab' && route.tab !== 'inputs')
-  const filtersOpen = useStoreValue(app.stores.ui, (s) => s.deskFilters)
+  const filtersOpen = useStoreValue(stores.ui, (s) => s.deskFilters)
   const set = filtersSet(route.tab, route.list)
   // the pane, and the foot under it, take the list's column too when an item is full width (O)
   const pane = full ? 'col-span-2 col-start-1' : 'col-start-2'
@@ -110,7 +111,7 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
       <SidebarContainer slug={route.slug} place="" rail hidden={!sideHidden || settings} />
       <div
         hidden={!(sideHidden && sideOver) || settings}
-        onClick={() => app.stores.ui.getState().setSideOver(false)}
+        onClick={() => stores.ui.getState().setSideOver(false)}
         aria-label="Close projects"
         className="fixed top-0 right-0 left-[var(--side-w,15rem)] z-30 h-dvh bg-zinc-900/20 huge:left-[var(--side-w,16rem)] dark:bg-black/50"
       />
@@ -152,7 +153,7 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
             query: (q) => app.nav.setList({ q }),
             clear: () => app.nav.setList({ q: '' }),
             firstResult: () => app.nav.first(app.listOrder, (n) => codeOf(app.model(route.slug) ?? { byN: new Map(), width: 0 }, n)),
-            filters: () => app.stores.ui.getState().setDeskFilters(!filtersOpen),
+            filters: () => stores.ui.getState().setDeskFilters(!filtersOpen),
           }}
         />
         <DeskFilters
@@ -162,7 +163,7 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
           open={filtersOpen}
           place="col-start-1 row-start-3"
           hidden={settings || full || side || !(filtersOpen || set.length)}
-          on={{ ...filterEvents(app), toggle: () => app.stores.ui.getState().setDeskFilters(!filtersOpen) }}
+          on={{ ...filterEvents(app), toggle: () => stores.ui.getState().setDeskFilters(!filtersOpen) }}
         />
         <section className="col-start-1 row-span-2 row-start-4 flex min-h-0 flex-1 flex-col lg:border-r lg:border-zinc-200 dark:lg:border-zinc-800" hidden={settings || full}>
           {shownSide ? <SideListContainer slug={route.slug} side={shownSide} /> : <ItemListContainer route={route} />}
@@ -177,9 +178,9 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
               const from = el.parentElement?.getBoundingClientRect().left ?? 0
               return { from, most: innerWidth - from }
             }}
-            onSize={(px) => app.stores.grips.getState().size('list', px)}
-            onDone={(px) => app.stores.grips.getState().keep('list', px)}
-            onReset={() => app.stores.grips.getState().keep('list', 0)}
+            onSize={(px) => stores.grips.getState().size('list', px)}
+            onDone={(px) => stores.grips.getState().keep('list', px)}
+            onReset={() => stores.grips.getState().keep('list', 0)}
           />
         )}
         <FootContainer
@@ -199,9 +200,10 @@ const DRAWER_PLACE = 'fixed top-0 left-0 w-80 max-w-[85vw] bg-zinc-100 pb-[max(1
 const DRAWER_W = 'min(85vw, 320px)'
 
 function PhoneLayout({ route }: { route: ProjectRoute }) {
-  const app = useApp()
+  const app = useServices('fields', 'nav', 'run', 'sheets', 'views')
+  const stores = useStores('box', 'route', 'sheet')
   const { title, agent, counts, notSaved, otherNeeds } = useHeadFacts(route)
-  const layers = useStoreValue(app.stores.route, (s) => s.layers)
+  const layers = useStoreValue(stores.route, (s) => s.layers)
   const searching = layers.includes('search')
   const drawer = layers.includes('drawer')
   // the drawer stays drawn while the page slides back over it
@@ -217,13 +219,13 @@ function PhoneLayout({ route }: { route: ProjectRoute }) {
     return () => clearTimeout(t)
   }, [closing])
   const open = route.place.kind === 'item' || route.place.kind === 'doc'
-  const sheet = useStoreValue(app.stores.sheet, (s) => !!s.spec)
+  const sheet = useStoreValue(stores.sheet, (s) => !!s.spec)
   const drawerPull = useDrawerPull(drawer && !sheet, () => app.nav.drawer(false))
-  const backSwipe = useBackSwipe(route.place.kind === 'item' && !sheet && !drawer, () => runAction(app, 'back'))
+  const backSwipe = useBackSwipe(route.place.kind === 'item' && !sheet && !drawer, () => app.run('back'))
   const floating = backSwipe.pull
   // Settings' pages (Documents, Activity and Deleted are pages of it on the phone)
   const settings = route.place.kind === 'settings' || route.place.kind === 'side'
-  const prefsEditing = useStoreValue(app.stores.box, (s) => s.mode?.kind === 'prefs')
+  const prefsEditing = useStoreValue(stores.box, (s) => s.mode?.kind === 'prefs')
   // while the item's page is swiped back, the list shows underneath it
   const under = (!open && !settings) || !!floating
   const phoneSet = filtersSet(route.tab, route.list)

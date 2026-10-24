@@ -114,6 +114,7 @@ function Choices({ b, world, choosing, done }: { b: Extract<MdBlock, { kind: 'ch
           <button
             key={k}
             disabled={!choosing}
+            {...(choosing ? { 'data-choice': i } : {})}
             onClick={choosing ? () => choosing.pick(i, b.multi) : undefined}
             aria-pressed={on}
             className={`group flex min-h-11 w-full items-center gap-3 rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-left text-[15px] leading-snug aria-pressed:border-blue-500 aria-pressed:bg-blue-50 dark:border-zinc-700 dark:bg-zinc-900 dark:aria-pressed:border-blue-400 dark:aria-pressed:bg-blue-400/10 ${choosing ? 'hover:border-zinc-300 hover:bg-zinc-50 dark:hover:border-zinc-600 dark:hover:bg-zinc-800/70' : ''}`}

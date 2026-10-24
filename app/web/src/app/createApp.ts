@@ -48,6 +48,7 @@ import { ItemDrag } from './itemDrag'
 import { Selection } from './selection'
 import { Updates } from './updates'
 import { Merges } from './merges'
+import { hereFor, runAction, type ActionId } from './actions'
 import { OtherTabs } from './otherTabs'
 import { ItemEdits } from './itemEdits'
 import { createKeptEditsStore, type KeptEditsStore } from '../stores/keptEdits'
@@ -131,6 +132,8 @@ export interface App {
   answers: Answers
   /** an item's editor and its subitem title: what you typed is kept */
   itemEdits: ItemEdits
+  /** an action of the table, done here (`n`: on that item, open or not) -> it was done */
+  run(id: ActionId, n?: number): boolean
   /** the places the keys reach (the search, the box, the talk), given by ref */
   fields: Fields
   /** what you do to something you said */
@@ -319,7 +322,7 @@ export function createApp(env: AppEnv): App {
   } })
   const activity = new Activity({ api, store: activityStore, toasts })
   const restores = new Restores({ runner, toasts, inputs: inputActions, model })
-  docs = new Docs({ runner, toasts, view: docView, nav, route, sheets, fields, desk: env.desk, model, box, boxStore, kv: env.kv, ticks: docTicks, inputs, mic: { stop: () => dictation.stop(), discard: (key) => dictation.discard(key), settled: (): Promise<boolean> => dictation.settled() } })
+  docs = new Docs({ runner, changes, toasts, view: docView, nav, route, sheets, fields, desk: env.desk, model, box, boxStore, kv: env.kv, ticks: docTicks, inputs, mic: { stop: () => dictation.stop(), discard: (key) => dictation.discard(key), settled: (): Promise<boolean> => dictation.settled() } })
   const projects = new Projects({ api, data, kv: env.kv, toasts, home: () => route.getState().route.page === 'home' })
   const refreshProjects = () => projects.refresh()
   const settings = new Settings({ api, store: settingsStore, data, projects, route, sheets, toasts, box, boxStore, fields, refresh: (slug) => stale(slug) })
@@ -521,7 +524,7 @@ export function createApp(env: AppEnv): App {
     },
   })
 
-  return {
+  const app: App = {
     api,
     stores: { data, changes, outbox, feedback, ui, itemView, search, drafts, box: boxStore, sheet: sheetStore, route, activity: activityStore, docView, docTicks, settings: settingsStore, recording, dictation: dictationStore, media: mediaStore, views: viewsStore, grips: gripsStore, drag: dragStore, keptEdits },
     toasts,
@@ -571,5 +574,7 @@ export function createApp(env: AppEnv): App {
       undoc()
       unsize()
     },
+    run: (id, n) => runAction(app, id, n == null ? undefined : hereFor(app, n)),
   }
+  return app
 }

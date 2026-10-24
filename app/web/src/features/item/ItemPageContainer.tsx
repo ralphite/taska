@@ -2,7 +2,7 @@
 // what you sent to it and Taska does not have yet, what you are doing on it) and what a tap on each part does.
 
 import { useEffect, useMemo, type ReactNode } from 'react'
-import { useApp, useStoreValue } from '../../app/context'
+import { useServices, useStores, useStoreValue } from '../../app/context'
 import { useAway, useFiles } from '../../app/hooks'
 import { newId } from '../../app/changeRunner'
 import { CHOICE } from '../../model/markdown'
@@ -17,10 +17,11 @@ import type { InlineWorld } from '../../ui/markdown/inline'
 import { ItemPage, type ItemEvents, type ItemFacts } from './ItemPage'
 import type { Outgoing, TalkFacts } from './Talk'
 import type { TalkEnv } from './talkEnv'
+import type { App } from '../../app/createApp'
 
 export function useItemWorld(m: ProjectModel | null, slug: string): InlineWorld {
-  const app = useApp()
-  const sizes = useStoreValue(app.stores.data, (s) => s.sizes[slug])
+  const stores = useStores('data')
+  const sizes = useStoreValue(stores.data, (s) => s.sizes[slug])
   return useMemo(
     () => ({
       find: (c: string) => (m ? findRef(m, c) : null),
@@ -32,17 +33,18 @@ export function useItemWorld(m: ProjectModel | null, slug: string): InlineWorld 
 }
 
 /** The item's menu: under the button on the desktop (one field's choices from its chip), a sheet on the phone. */
-export function openItemMenu(app: ReturnType<typeof useApp>, desk: boolean, n: number, arm: 's' | 'p' | 't' | null, from: Element | null) {
+export function openItemMenu(app: Pick<App, 'sheets'>, desk: boolean, n: number, arm: 's' | 'p' | 't' | null, from: Element | null) {
   if (desk) app.sheets.openFrom(from, { kind: 'item-menu', n, arm }, { focus: false, narrow: !!arm })
   else app.sheets.open({ kind: 'item-menu', n, arm }, { focus: false })
 }
 
 export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = false }: { it: Item; m: ProjectModel; slug: string; tab: Tab; desk: boolean; /** in two columns, its document on the left */ left?: ReactNode; bare?: boolean }) {
-  const app = useApp()
-  const duo = useStoreValue(app.stores.ui, (s) => s.duo) && desk
-  const view = useStoreValue(app.stores.itemView, (s) => s)
-  const kept = useStoreValue(app.stores.keptEdits, (s) => s)
-  const outbox = useStoreValue(app.stores.outbox, (s) => s.list)
+  const app = useServices('answers', 'box', 'docs', 'fields', 'inputs', 'itemEdits', 'items', 'nav', 'runner', 'seen', 'sheets', 'toasts')
+  const stores = useStores('grips', 'itemView', 'keptEdits', 'outbox', 'ui')
+  const duo = useStoreValue(stores.ui, (s) => s.duo) && desk
+  const view = useStoreValue(stores.itemView, (s) => s)
+  const kept = useStoreValue(stores.keptEdits, (s) => s)
+  const outbox = useStoreValue(stores.outbox, (s) => s.list)
   const away = useAway(slug)
   const world = useItemWorld(m, slug)
   const n = it.n
@@ -98,7 +100,7 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
     addingSub: view.subFor === n,
   }
 
-  const iv = () => app.stores.itemView.getState()
+  const iv = () => stores.itemView.getState()
   const goto = (k: number) => {
     const to = m.byN.get(liveN(m, k))
     if (to) app.nav.openItem(code(to.n), inTab(to, tab) ? undefined : tabOf(to))
@@ -144,12 +146,12 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
       const to = findRef(m, c)
       if (to?.kind === 'item') goto(to.n)
       else if (to?.kind === 'doc') app.docs.open(to.d)
-      else if (to?.kind === 'input') app.nav.goInput(to.id, (x) => app.stores.ui.getState().setLit(x))
+      else if (to?.kind === 'input') app.nav.goInput(to.id, (x) => stores.ui.getState().setLit(x))
     },
     picture: (f, all) => media.on.view(f, all),
     ...media.on,
-    topSize: (px, done) => (done ? app.stores.grips.getState().keep('top', px) : app.stores.grips.getState().size('top', px)),
-    duoSize: (px, done) => (done ? app.stores.grips.getState().keep('duo', px) : app.stores.grips.getState().size('duo', px)),
+    topSize: (px, done) => (done ? stores.grips.getState().keep('top', px) : stores.grips.getState().size('top', px)),
+    duoSize: (px, done) => (done ? stores.grips.getState().keep('duo', px) : stores.grips.getState().size('duo', px)),
     subNew: () => app.itemEdits.subStart(n),
     subCancel: () => app.itemEdits.subCancel(),
     subTyped: (title) => app.itemEdits.subTyped(n, title),
@@ -161,7 +163,7 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
       const stand: Item = { ...it, n: tmp, code: '…', type, title, body: '', status: 'open', parent: n, next: '', thread: [], srcs: [], wait: null, talked: false, archived: false, rank: null, t0: now, t1: now, agent: undefined, readBy: undefined, by: 'you', decided: null }
       void send([{ op: 'new', title, parent: ref, type, pri: it.pri, when: it.when }], `adding “${title}” under ${ref}`, [{ n: tmp, f: {}, add: stand }])
       app.itemEdits.subAdded(n)
-      app.stores.ui.getState().unfold(n)
+      stores.ui.getState().unfold(n)
     },
     editSave: (fields) => {
       const was = { title: it.title, body: it.body, next: it.next }
@@ -176,7 +178,7 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
     editTyped: (fields) => app.itemEdits.typed(it, fields),
     inputMore: (id, from) => (desk ? app.sheets.openFrom(from, { kind: 'input-menu', id }, { focus: false }) : app.sheets.open({ kind: 'input-menu', id }, { focus: false })),
     inputHistory: (id) => app.sheets.open({ kind: 'input-history', id }),
-    goInput: (id) => app.nav.goInput(id, (x) => app.stores.ui.getState().setLit(x)),
+    goInput: (id) => app.nav.goInput(id, (x) => stores.ui.getState().setLit(x)),
     msgMenu: (id, from) => (desk ? app.sheets.openFrom(from, { kind: 'message-menu', n, id }, { focus: false }) : app.sheets.open({ kind: 'message-menu', n, id }, { focus: false })),
     peek: (id) => iv().peek(id),
     unhide: (id) => void send([{ op: 'hide', ref, id, on: false }], `showing a message on ${ref} again`),

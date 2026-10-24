@@ -1,6 +1,6 @@
 // A document's sheets with the page's data: putting it on another item, and moving one of its comments.
 
-import { useApp, useLayout } from '../../app/context'
+import { useLayout, useServices } from '../../app/context'
 import { useCloseSheetWhen, useProjectModel, useProjectRoute } from '../../app/hooks'
 import { allComments } from '../../model/docs'
 import { codeOf, liveN } from '../../model/project'
@@ -21,7 +21,7 @@ function useDocOf(dn: number) {
 }
 
 export function DocMoveSheet({ req }: Req<'doc-move'>) {
-  const app = useApp()
+  const app = useServices('docs', 'sheets')
   const desk = useLayout() === 'desk'
   const { m, d } = useDocOf(req.d)
   if (!m || !d) return null
@@ -37,7 +37,7 @@ export function DocMoveSheet({ req }: Req<'doc-move'>) {
 }
 
 export function CommentMoveSheet({ req }: Req<'comment-move'>) {
-  const app = useApp()
+  const app = useServices('docs', 'sheets')
   const { m, d } = useDocOf(req.d)
   const c = d ? allComments(d).find((x) => x.id === req.id) : undefined
   useCloseSheetWhen(!!d && !c)

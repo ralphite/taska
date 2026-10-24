@@ -1,6 +1,6 @@
 // Lint for the page: the TypeScript and React hooks rules, and the architecture's import rules (ARCHITECTURE.md):
 // presentational components take everything by props, the model is pure, stores and the API know no React. What
-// a lint rule cannot say is checked by scripts/check-architecture.mjs.
+// a lint rule cannot say is checked by scripts/check-architecture.mjs. Containers name the parts of the app they use.
 
 import js from '@eslint/js'
 import reactHooks from 'eslint-plugin-react-hooks'
@@ -34,6 +34,13 @@ export default tseslint.config(
     files: ['src/features/**/*.tsx', 'src/ui/**/*.tsx'],
     ignores: ['**/*Container.tsx', '**/*.stories.tsx'],
     rules: { 'no-restricted-imports': restricted(APP_LAYERS, 'A presentational component gets this by props; a *Container passes it.') },
+  },
+  {
+    // containers name the parts of the app they use (useServices, useStores), never the whole of it
+    files: ['src/features/**/*Container.tsx'],
+    rules: {
+      'no-restricted-imports': ['error', { paths: [{ name: '../../app/context', importNames: ['useApp'], message: 'Name what the container uses: useServices(...) and useStores(...).' }] }],
+    },
   },
   {
     // the model: pure functions and types

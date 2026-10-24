@@ -1,7 +1,7 @@
 // Under a search, with the page's data: the other tabs' matches (with a way there), and the other projects'.
 
 import { useLayoutEffect } from 'react'
-import { useApp, useStoreValue } from '../../app/context'
+import { useServices, useStores, useStoreValue } from '../../app/context'
 import type { ProjectRoute } from '../../app/hooks'
 import type { ProjectModel } from '../../model/project'
 import { hay, inTab, inputMatch } from '../../model/visible'
@@ -12,10 +12,11 @@ import { SearchHints } from './SearchHints'
 
 /** -> the hints for a list that shows `shown` rows. */
 export function useSearchHints(route: ProjectRoute, m: ProjectModel | null, words: readonly string[]) {
-  const app = useApp()
+  const app = useServices('crossSearch', 'nav')
+  const stores = useStores('search')
   const q = words.join(' ')
   useLayoutEffect(() => app.crossSearch.want(q, route.slug), [app, q, route.slug])
-  const cross = useStoreValue(app.stores.search, (s) => s)
+  const cross = useStoreValue(stores.search, (s) => s)
   const { tones } = useSideProjects(route.slug)
   return (shown: number) => {
     if (!words.length || !m) return null

@@ -34,3 +34,11 @@ what the old version does. Each is also sent to the coordinator ("Nota & Taska d
 - **An item that shows has no blue dot on its row.** The old page marks what the agents wrote as seen when the item
   shows, but its row keeps the dot until the list happens to draw again (an item merged into the one you look at, its
   row lit with a dot for a moment); the rewrite takes the dot off at once.
+- **Words put into your draft from elsewhere keep your place in it.** The old box keeps the caret when a voice note's
+  words are placed in the middle after a reload (setRangeText), but when another tab of the browser inserts words in
+  the middle of the same draft it jumps the caret to the end; the rewrite keeps it in place for both (another tab's
+  words added at the end, or anything else changed there, behave as in the old one).
+- **An item's address opened in a new browser: the list shows its row.** The old page scrolls the list to the item
+  opened by its address only when it has the project's copy kept from before (nearly always: it draws that first); in
+  a browser that never had Taska open its rows come too late for it and the list stays at its top. The rewrite shows
+  the row in both.

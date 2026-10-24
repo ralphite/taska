@@ -15,6 +15,7 @@ import type { BoxStore } from '../stores/box'
 import { codeOf, liveN, type DocPatch, type ProjectModel } from '../model/project'
 import type { Tab } from '../model/words'
 import type { DocViewStore } from '../stores/docView'
+import type { ChangesStore } from '../stores/changes'
 import type { RouteStore } from '../stores/route'
 import { newId, type ChangeRunner } from './changeRunner'
 import type { Fields } from './fields'
@@ -24,6 +25,8 @@ import type { Toasts } from './toasts'
 
 export interface DocsDeps {
   runner: ChangeRunner
+  /** a stand-in shown while what it stands for waits (its files going up) */
+  changes: ChangesStore
   toasts: Toasts
   view: DocViewStore
   nav: Navigation
@@ -182,21 +185,35 @@ export class Docs {
     const m = this.d.model(slug)
     const doc = m?.docs.find((x) => x.d === dn)
     if (!doc) return false
-    const up = () => (this.d.boxStore.getState().files[key] || []).some((f) => f.uploading)
-    for (let i = 0; up() && i < 300; i++) await new Promise((ok) => setTimeout(ok, 200))
-    const { text, files } = this.d.box.take(slug, key)
-    const sent = files.filter((f) => f.f && !f.failed)
-    if (!text && !sent.length) return false
+    const { text: typed, files } = this.d.box.take(slug, key)
+    if (!typed && !files.length) return false
     this.d.box.markSent(slug, key)
+    // the box empties and the comment is on its passage at once; its files wait out of sight until they are up (a
+    // voice note's words too, which go with it)
+    const hold = `sending ${newId()}`
+    if (files.length) this.d.boxStore.getState().putFiles(hold, files)
+    const live = () => this.d.boxStore.getState().files[hold] || []
     const quote = t.reply ? '' : t.quote
     const same = t.key === 'doc' ? doc.whole : doc.blocks.find((b) => b.key === t.key)?.comments || []
     const th = t.th ?? same.find((x) => x.th === x.id && sameText(x.quote, quote))?.th
-    const stand: Comment = { id: -Date.now(), key: t.key, th: th ?? 0, quote, text: text || '…', by: 'you', t: new Date().toISOString(), files: [] }
+    const stand: Comment = { id: -Date.now(), key: t.key, th: th ?? 0, quote, text: typed || '…', by: 'you', t: new Date().toISOString(), files: [] }
+    const showing = { id: 'show-' + newId(), slug, commands: [], patches: [], docPatches: [{ d: dn, comment: stand }], said: '', t: Date.now(), showOnly: true }
+    this.d.changes.getState().add(showing)
     const v = this.d.view.getState()
     v.openThread(t.th ? `${t.key}#${t.th}` : t.key)
     v.unpick()
     if (typeof getSelection !== 'undefined') getSelection()?.removeAllRanges()
     if (this.d.desk()) this.d.fields.get('box')?.focus({ preventScroll: true })
+    for (let i = 0; live().some((f) => f.uploading || f.transcribing) && i < 240; i++) await new Promise((ok) => setTimeout(ok, 500))
+    const held = files.length ? this.d.boxStore.getState().takeFiles(hold) : []
+    const sent = held.filter((f) => f.f && !f.failed)
+    let text = typed
+    for (const f of sent) if (f.tr && !text.includes(f.tr)) text = (text ? text + '\n' : '') + f.tr
+    this.d.changes.getState().remove(showing.id)
+    if (!text && !sent.length) {
+      this.d.box.putBack(slug, key, typed, held)
+      return false
+    }
     const ok = await this.d.runner.send({
       id: newId(),
       slug,
@@ -206,7 +223,7 @@ export class Docs {
       said: `commenting on D${dn}`,
       t: Date.now(),
     })
-    if (!ok) this.d.box.putBack(slug, key, text, files)
+    if (!ok) this.d.box.putBack(slug, key, typed, held)
     return ok
   }
 

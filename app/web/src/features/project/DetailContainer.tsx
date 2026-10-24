@@ -3,7 +3,7 @@ import { useState } from 'react'
 // page's head.
 
 import { useTwoColumns } from './twoColumns'
-import { useApp, useLayout, useStoreValue } from '../../app/context'
+import { useLayout, useServices, useStores, useStoreValue } from '../../app/context'
 import { usePaneRef } from '../../app/panes'
 import { useAway, useProjectModel, type ProjectRoute } from '../../app/hooks'
 import { codeOf, liveN } from '../../model/project'
@@ -15,7 +15,8 @@ import { DeletedPickContainer } from '../side/SideListContainer'
 import { DocPaneContainer, DocSheetContainer } from '../docs/DocContainer'
 
 export function DetailContainer({ route, place, hidden, full = false, footRoom = 0 }: { route: ProjectRoute; place: string; hidden?: boolean; full?: boolean; footRoom?: number }) {
-  const app = useApp()
+  const app = useServices('items', 'listOrder', 'nav', 'sheets', 'toasts')
+  const stores = useStores('docView', 'route', 'ui')
   const layout = useLayout()
   const desk = layout === 'desk'
   const pane = usePaneRef('detail')
@@ -28,13 +29,13 @@ export function DetailContainer({ route, place, hidden, full = false, footRoom =
   const it = m && n ? m.byN.get(liveN(m, n)) : undefined
   const compose = route.place.kind === 'new' || (route.place.kind === 'tab' && route.tab !== 'inputs')
   const back = () => app.nav.closeItem()
-  const from = useStoreValue(app.stores.route, (s) => s.from)
+  const from = useStoreValue(stores.route, (s) => s.from)
   // the desktop's two columns, while the pane is wide: the item (or its document) on the left, its talk on the right
   const [body, setBody] = useState<HTMLElement | null>(null)
-  const duo = useStoreValue(app.stores.ui, (s) => s.duo)
-  const editingDoc = useStoreValue(app.stores.docView, (s) => s.editing)
+  const duo = useStoreValue(stores.ui, (s) => s.duo)
+  const editingDoc = useStoreValue(stores.docView, (s) => s.editing)
   const docIt = doc && m ? m.byN.get(liveN(m, doc.n)) : undefined
-  useTwoColumns(desk && !hidden ? body : null, desk && !compose && (!!it || (!!doc && !editingDoc && !!docIt)), !!doc && !editingDoc, (on) => app.stores.ui.getState().setDuo(on))
+  useTwoColumns(desk && !hidden ? body : null, desk && !compose && (!!it || (!!doc && !editingDoc && !!docIt)), !!doc && !editingDoc, (on) => stores.ui.getState().setDuo(on))
   if (dn != null && desk) {
     if (doc)
       return (
