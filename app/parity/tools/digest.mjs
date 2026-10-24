@@ -9,6 +9,13 @@ import { PARITY } from '../lib/servers.mjs'
 const argv = process.argv.slice(2)
 const notes = argv.includes('--notes')
 const groups = new Map()
+// what is already known and waiting on Yadong: the sidebar's Storybook link (P02), on every desktop page
+const P02 = /localhost:(6007|6351)/
+function known(kind, diff) {
+  if (kind !== 'aria' && kind !== 'text') return false
+  const changed = diff.filter((d) => d.op === '+' || d.op === '-')
+  return changed.length > 0 && changed.every((d) => P02.test(d.line))
+}
 for (const id of argv.filter((x) => !x.startsWith('--'))) {
   const rep = JSON.parse(fs.readFileSync(path.join(PARITY, 'out', id, 'report.json'), 'utf8'))
   for (const r of rep.results) {
@@ -17,7 +24,7 @@ for (const id of argv.filter((x) => !x.startsWith('--'))) {
     if (r.data && !r.data.same) add(`${r.scenario} | 数据: ${r.data.diffs.map((d) => d.what).join('; ')}`, r.variant, null)
     if (r.speed?.slow) add(`${r.scenario} | 速度: ${r.speed.worst.map((w) => `${w.label} ${w.a}→${w.b}ms`).join(', ')}`, r.variant, null)
     for (const s of r.steps) {
-      const kinds = Object.keys(s.cats || {})
+      const kinds = Object.keys(s.cats || {}).filter((k) => !known(k, s.cats[k]))
       if (kinds.length) add(`${r.scenario} | ${s.label} | ${kinds.join(',')}`, r.variant, s.files?.a ? [`${dir}/${s.files.a}`, `${dir}/${s.files.b}`] : null)
       if (notes && s.note?.film) add(`${r.scenario} | ${s.label} | 过程画面（需人看）`, r.variant, null)
     }
