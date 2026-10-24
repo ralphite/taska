@@ -1,0 +1,22 @@
+@import 'tailwindcss';
+
+/* Dark follows the system; data-theme on any ancestor forces one (Storybook frames use it). */
+@custom-variant dark {
+  &:where([data-theme='dark'], [data-theme='dark'] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(:not([data-theme='light'], [data-theme='light'] *)) {
+      @slot;
+    }
+  }
+}
+
+/* Layout answers to the width of the frame it is drawn in (the window, or a story's frame: "@container/frame"):
+   desk from 64rem, wide from 80rem, huge from 96rem, roomy from 40rem; phone below desk. */
+@custom-variant desk (@container frame (width >= 64rem));
+@custom-variant wide (@container frame (width >= 80rem));
+@custom-variant huge (@container frame (width >= 96rem));
+@custom-variant roomy (@container frame (width >= 40rem));
+@custom-variant phone (@container frame (width < 64rem));
+@custom-variant wide-phone (@container frame (width >= 400px));

@@ -1,0 +1,97 @@
+// The sidebar with the page's data: every project in your order, this one with what this page knows now.
+
+import { useMemo } from 'react'
+import { useApp, useLayout, useStoreValue } from '../../app/context'
+import { useProjectModel } from '../../app/hooks'
+import { needsYou } from '../../model/items'
+import type { ProjectRow } from '../../model/types'
+import { openCount } from '../../model/visible'
+import { projectTones, toneOf } from '../../ui/tones'
+import { Rail, Sidebar, type SideLinkInfo, type SideProject, type SidebarEvents } from './Sidebar'
+
+const DEV_LINKS = [
+  { label: 'Storybook', href: 'http://localhost:6351/', icon: 'book' as const },
+  { label: 'Dashboard', href: '/dev/dashboard', icon: 'chart' as const },
+]
+
+type Shown = Omit<ProjectRow, 'open'> & { open: number | string }
+
+const order = (a: Shown, b: Shown) => (a.pos ?? 1e9) - (b.pos ?? 1e9) || (a.title || a.name).localeCompare(b.title || b.name)
+
+/** The projects as the sidebar lists them: this one with this page's counts, the others as last listed. */
+export function useSideProjects(slug: string): { list: SideProject[] | null; tones: Map<string, string> } {
+  const app = useApp()
+  const rows = useStoreValue(app.stores.data, (s) => s.projects)
+  const m = useProjectModel(slug)
+  return useMemo(() => {
+    const tones = projectTones([slug, ...(rows || []).map((p) => p.name)])
+    if (!rows && !slug) return { list: null, tones }
+    const seen = (rows || []).find((p) => p.name === slug)
+    const here: Shown | null = slug
+      ? m
+        ? { name: slug, title: m.facts.title, open: openCount(m.items), needs: m.items.filter(needsYou).length, pos: seen?.pos }
+        : seen || { name: slug, title: '', open: '…', needs: 0 }
+      : null
+    const all: Shown[] = [...(here ? [here] : []), ...(rows || []).filter((p) => p.name !== slug)].sort(order)
+    return {
+      tones,
+      list: all.map((p) => ({
+        slug: p.name,
+        title: p.title || p.name,
+        tone: toneOf(tones, p.name),
+        needs: p.needs,
+        open: p.open,
+        current: p.name === slug,
+        href: `/p/${encodeURIComponent(p.name)}/`,
+      })),
+    }
+  }, [rows, m, slug])
+}
+
+export function SidebarContainer({ slug, place, hidden, rail }: { slug: string; place: string; hidden?: boolean; rail?: boolean }) {
+  const app = useApp()
+  const layout = useLayout()
+  const { list } = useSideProjects(slug)
+  const route = useStoreValue(app.stores.route, (s) => s.route)
+  const undo = useStoreValue(app.stores.feedback, (s) => s.undo.at(-1) ?? null)
+  const sideHidden = useStoreValue(app.stores.ui, (s) => s.sideHidden)
+  const composing = route.page === 'project' && (route.place.kind === 'new' || (route.place.kind === 'tab' && route.tab !== 'inputs'))
+  const side = route.page === 'project' && route.place.kind === 'side' ? route.place.side : null
+  const base = `/p/${encodeURIComponent(slug)}/`
+  const links: SideLinkInfo[] = slug
+    ? [
+        { key: 'docs', label: 'Documents', icon: 'doc', href: base + 'docs', current: side === 'docs' },
+        { key: 'log', label: 'Activity', icon: 'history', href: base + 'log', current: side === 'log' },
+        { key: 'deleted', label: 'Deleted', icon: 'trash', href: base + 'deleted', current: side === 'deleted' },
+      ]
+    : []
+  const on: SidebarEvents = {
+    newInput: () => app.nav.newInput(),
+    newVoice: () => app.nav.newInput(),
+    newProject: () => {},
+    hide: () => app.stores.ui.getState().setSideHidden(!sideHidden),
+    settings: () => app.nav.to(base + 'settings'),
+    keys: () => {},
+    undo: () => void undo?.run(),
+    go: (href, e) => {
+      if (e.metaKey || e.ctrlKey) return
+      e.preventDefault()
+      app.nav.to(href)
+    },
+  }
+  const dev = typeof location !== 'undefined' && /^(localhost|127(\.\d{1,3}){3}|\[::1\])$/.test(location.hostname)
+  if (rail) return <Rail projects={list} composing={composing && layout === 'desk'} settingsOpen={route.page === 'project' && route.place.kind === 'settings'} on={on} />
+  return (
+    <Sidebar
+      phone={layout === 'phone'}
+      projects={list}
+      composing={composing && layout === 'desk'}
+      links={links}
+      undoLabel={undo?.label ?? null}
+      devLinks={dev ? DEV_LINKS : []}
+      place={place}
+      hidden={hidden}
+      on={on}
+    />
+  )
+}

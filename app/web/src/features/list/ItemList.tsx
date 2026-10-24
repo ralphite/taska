@@ -1,0 +1,121 @@
+// The item list: the views' row, then its rows in the order of your loop (what waits on you, the agents' queue,
+// Later, finished work), or a word on why it is empty. Props only; ItemListContainer gives it the rows.
+
+import { forwardRef, type ReactNode } from 'react'
+import type { Item } from '../../model/types'
+import { Empty } from '../../ui/bits'
+import { ArchiveAllLine, HeldRow, HiddenKidsLine, ItemRow, NeedsMoreLine, NeedsRow, Zone, type RowEvents, type RowFacts, type RowLook } from './ListRows'
+import type { ViewChip } from './rows'
+import { ViewBar, type OwnViewChip } from './ViewBar'
+
+export type DrawnRow =
+  | { kind: 'item'; key: string; it: Item; depth: number; band: string; foldable: boolean; folded: boolean; facts: RowFacts; look: RowLook }
+  | { kind: 'needs'; key: string; it: Item; depth: number; facts: RowFacts; look: RowLook; excerpt: string }
+  | { kind: 'held'; key: string; it: Item; code: string; said: string; height: number }
+  | { kind: 'zone'; key: string; zone: string; label: string; n: number }
+  | { kind: 'hidden-kids'; key: string; parent: number; depth: number; open: boolean; later: number; done: number }
+  | { kind: 'needs-more'; key: string; open: boolean; rest: number }
+  | { kind: 'archive-all'; key: string; n: number }
+
+export interface ListEvents extends RowEvents {
+  view(value: string): void
+  ownView(i: number): void
+  subMore(parent: number): void
+  needsMore(): void
+  archiveAll(): void
+}
+
+export interface ItemListProps {
+  loading: boolean
+  views: ViewChip[] | null
+  ownViews?: OwnViewChip[]
+  rows: DrawnRow[]
+  /** shown when there are no rows */
+  empty?: ReactNode
+  /** above the rows: the bar of what is selected */
+  top?: ReactNode
+  /** under the rows: search hints */
+  bottom?: ReactNode
+  on: ListEvents
+  /** room for the box over the list's end on the phone */
+  onScroll?(top: number): void
+}
+
+export const ItemList = forwardRef<HTMLDivElement, ItemListProps>(function ItemList(props, ref) {
+  const { loading, views, ownViews, rows, empty, top, bottom, on, onScroll } = props
+  return (
+    <div
+      id="list"
+      ref={ref}
+      onScroll={(e) => onScroll?.(e.currentTarget.scrollTop)}
+      className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-6 data-drop-out:bg-blue-50/60 phone:-mb-(--foot-h) phone:pb-[calc(var(--foot-h,0px)+1.5rem)] desk:scrollbar-thin desk:scrollbar-gutter-stable desk:hover:scrollbar-thumb-zinc-500/80 dark:data-drop-out:bg-blue-400/5 dark:desk:hover:scrollbar-thumb-zinc-400/70"
+    >
+      {loading ? (
+        <div className="px-6 py-16 text-center text-sm text-zinc-400">Loading…</div>
+      ) : (
+        <>
+          {top}
+          {views ? <ViewBar views={views} own={ownViews} onView={on.view} onOwn={on.ownView} /> : null}
+          {rows.map((r) => {
+            switch (r.kind) {
+              case 'item':
+                return <ItemRow key={r.key} it={r.it} depth={r.depth} band={r.band} foldable={r.foldable} folded={r.folded} facts={r.facts} look={r.look} on={on} />
+              case 'needs':
+                return <NeedsRow key={r.key} it={r.it} depth={r.depth} facts={r.facts} look={r.look} excerpt={r.excerpt} on={on} />
+              case 'held':
+                return <HeldRow key={r.key} it={r.it} code={r.code} said={r.said} height={r.height} on={on} />
+              case 'zone':
+                return <Zone key={r.key} kind={r.zone} label={r.label} n={r.n} />
+              case 'hidden-kids':
+                return <HiddenKidsLine key={r.key} depth={r.depth} open={r.open} later={r.later} done={r.done} onToggle={() => on.subMore(r.parent)} />
+              case 'needs-more':
+                return <NeedsMoreLine key={r.key} open={r.open} rest={r.rest} onToggle={on.needsMore} />
+              case 'archive-all':
+                return <ArchiveAllLine key={r.key} n={r.n} onArchive={on.archiveAll} />
+            }
+          })}
+          {!rows.length ? empty : null}
+          {bottom}
+        </>
+      )}
+    </div>
+  )
+})
+
+/** The words for an empty list. */
+export function EmptyList({ why, status, organizerOn, onReset, onConnect, hints }: {
+  why: string
+  status: string
+  organizerOn: boolean
+  onReset(): void
+  onConnect(): void
+  hints?: ReactNode
+}) {
+  if (why === 'no-items')
+    return (
+      <Empty>
+        No items yet.
+        <br />
+        Write your first thought below
+        {organizerOn ? ' and the organizer turns it into items' : ' and your coding agent turns it into items'}.
+        <br />
+        <button onClick={onConnect} className="mt-3 h-11 text-blue-600 hover:underline dark:text-blue-400">
+          Connect a coding agent
+        </button>
+      </Empty>
+    )
+  if (why === 'none') return <Empty>No items</Empty>
+  if (why === 'no-rules') return <Empty>No rules</Empty>
+  if (why === 'nothing-archived') return <Empty>Nothing archived</Empty>
+  if (why === 'no-match' || why === 'no-match-rules')
+    return (
+      <Empty>
+        {why === 'no-match-rules' ? 'No matching rules' : 'No matching items'}
+        <span className="mt-3 flex flex-col">{hints}</span>
+        <button onClick={onReset} className="mt-3 h-11 text-blue-600 hover:underline dark:text-blue-400">
+          Clear search and filters
+        </button>
+      </Empty>
+    )
+  return <Empty>{status === 'wait' ? 'Nothing needs you.' : status === 'closed' ? 'Nothing finished yet.' : 'Nothing here.'}</Empty>
+}
