@@ -8,7 +8,7 @@ import { usePaneRef } from '../../app/panes'
 import { useAway, useProjectModel, type ProjectRoute } from '../../app/hooks'
 import { codeOf, liveN } from '../../model/project'
 import { Icon } from '../../ui/Icon'
-import { ItemActs, ItemHead, ItemNav, Missing, NoSelection } from '../item/ItemPage'
+import { BackTo, ItemActs, ItemHead, ItemNav, Missing, NoSelection } from '../item/ItemPage'
 import { ItemPageContainer, openItemMenu } from '../item/ItemPageContainer'
 import { PaneFrame } from '../item/PaneFrame'
 import { DeletedPickContainer } from '../side/SideListContainer'
@@ -28,6 +28,7 @@ export function DetailContainer({ route, place, hidden, full = false, footRoom =
   const it = m && n ? m.byN.get(liveN(m, n)) : undefined
   const compose = route.place.kind === 'new' || (route.place.kind === 'tab' && route.tab !== 'inputs')
   const back = () => app.nav.closeItem()
+  const from = useStoreValue(app.stores.route, (s) => s.from)
   // the desktop's two columns, while the pane is wide: the item (or its document) on the left, its talk on the right
   const [body, setBody] = useState<HTMLElement | null>(null)
   const duo = useStoreValue(app.stores.ui, (s) => s.duo)
@@ -93,6 +94,8 @@ export function DetailContainer({ route, place, hidden, full = false, footRoom =
       </PaneFrame>
     )
   const side = route.place.kind === 'side' ? route.place.side : null
+  // opened from an item or a document: the way back to it
+  const fromCode = from && m && /^[A-CE-Z]\d+$/.test(from) ? codeOf(m, Number(from.slice(1))) : from // D89 is a document
   return (
     <PaneFrame
       place={place}
@@ -101,6 +104,7 @@ export function DetailContainer({ route, place, hidden, full = false, footRoom =
       paneRef={pane}
       onBack={back}
       bar={!side}
+      nav={compose && fromCode ? <BackTo label={fromCode} onBack={() => app.nav.composeBack()} /> : null}
       head={
         compose ? (
           <span className="flex items-center gap-2 text-sm font-semibold">

@@ -2,6 +2,8 @@
 // few words, said instead) and what it does. The keys (keys.ts), the command palette, the keys sheet and the item's
 // menu all read this table, so a key, a palette row and a menu row always do the same thing.
 
+import { closed } from '../model/items'
+import { visible } from '../model/visible'
 import { choiceMulti } from '../model/markdown'
 import { doneTo, dropTo, whyNot, yourStep } from '../model/actions'
 import { codeOf, liveN, type ProjectModel } from '../model/project'
@@ -151,6 +153,15 @@ export const ACTIONS = {
   }),
   items: page({ label: 'Items', keys: 'g i', palette: true, run: tab('items') }),
   inputs: page({ label: 'Inputs', keys: 'g n', palette: true, run: tab('inputs') }),
+  'archive-all': page({
+    label: 'Archive every finished item',
+    keys: 'E',
+    palette: true,
+    why: (_, h) => (h.m && h.r.tab !== 'archive' ? null : 'Nothing finished to archive here'),
+    run: (app, h) => {
+      if (h.m) app.items.archiveAll(visible(h.m.items, h.r.tab, h.r.list).filter((it) => !it.archived && closed(it.status)).map((it) => it.n))
+    },
+  }),
   'archive-tab': page({ label: 'Archive', keys: 'g a', palette: true, run: tab('archive') }),
   rules: page({ label: 'Rules', keys: 'g r', palette: true, run: tab('rules') }),
   'switch-project': page({ label: 'Switch project', keys: 'g p', palette: true, run: (app) => app.sheets.open({ kind: 'switch-project' }, { focus: false }) }),
@@ -227,12 +238,16 @@ function stepBack(app: App, h: Here): void {
     return app.nav.settingsBack()
   }
   if (app.desk()) {
+    // the New input page opened from an item or a document: Esc in the empty box goes back there
+    const boxEmpty = !(app.fields.get('box') as HTMLTextAreaElement | null)?.value.trim() && !app.stores.box.getState().files[app.stores.box.getState().shown.key]?.length
+    if (r.place.kind === 'new' && app.fields.focused('box') && boxEmpty && app.nav.composeBack()) return
     if (app.fields.focused('search')) {
       if (r.list.q) app.nav.setList({ q: '' })
       return app.fields.get('search')?.blur()
     }
     if (typingIn(active)) return (active as HTMLElement).blur()
     if (app.stores.route.getState().full) return app.nav.full(false)
+    if (r.place.kind === 'new' && app.nav.composeBack()) return
     if (r.list.q) return app.nav.setList({ q: '' })
     if (r.place.kind === 'item' && r.tab !== 'inputs') return app.nav.closeItem()
     return

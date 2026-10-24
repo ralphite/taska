@@ -2,7 +2,7 @@
 // Delete, the way back), on the phone in a sheet over its item. What it shows comes from the model and the document's
 // view; what you do goes to app.docs.
 
-import { useEffect, useMemo, type ReactNode } from 'react'
+import { useEffect, useMemo, type ReactNode, useCallback } from 'react'
 import { useApp, useLayout, useStoreValue } from '../../app/context'
 import { useFiles, useProjectModel, type ProjectRoute } from '../../app/hooks'
 import { usePaneRef } from '../../app/panes'
@@ -60,6 +60,7 @@ function useDoc(slug: string, dn: number) {
       if (!to || !m) return
       if (to.kind === 'item') app.nav.openItem(codeOf(m, to.n))
       else if (to.kind === 'doc') docs.open(to.d)
+      else app.nav.goInput(to.id, (x) => app.stores.ui.getState().setLit(x))
     },
     picture: (f, all) => media.on.view(f, all),
     ...media.on,
@@ -86,7 +87,8 @@ function useDoc(slug: string, dn: number) {
     modifyTicks: (tk) => docs.modifyTicks(dn, tk),
   }
   const page = d?.fmt === 'html' && m ? <WebPageContainer slug={slug} d={d} v={v} seen={seen} env={env} on={on} /> : null
-  return { m, d, facts, env, on, v, desk, page }
+  const aimed = useCallback(() => app.stores.docView.getState().setAim(null), [app])
+  return { m, d, facts, env, on, v, desk, page, aimed }
 }
 
 /** A web page document's own view, with its threads. */
@@ -139,7 +141,7 @@ export function DocPaneContainer({ route, dn, place, hidden, bodyRef, beside }: 
   const pane = usePaneRef('detail')
   const side = useStoreValue(app.stores.route, (s) => s.side)
   const asked = useStoreValue(app.stores.sheet, (s) => s.asked)
-  const { m, d, facts, env, on, v, page } = useDoc(route.slug, dn)
+  const { m, d, facts, env, on, v, page, aimed } = useDoc(route.slug, dn)
   if (!m || !d || !facts) return null
   const web = d.fmt === 'html'
   if (v.editing && v.newFor == null)
@@ -166,11 +168,11 @@ export function DocPaneContainer({ route, dn, place, hidden, bodyRef, beside }: 
       onBack={() => app.docs.close()}
     >
       {beside ? (
-        beside(<DocView facts={facts} env={env} on={on} page={page} lasso={v.circle ? <Lasso onDrawn={(keys) => app.docs.circled(keys)} /> : null} />, web)
+        beside(<DocView facts={facts} env={env} on={on} page={page} aim={v.aim} onAimed={aimed} lasso={v.circle ? <Lasso onDrawn={(keys) => app.docs.circled(keys)} /> : null} />, web)
       ) : (
         // a web page brings its own margins: none are added around it
         <div className={web ? 'w-full' : 'w-full px-8 pt-8 pb-12'}>
-          <DocView facts={facts} env={env} on={on} page={page} lasso={v.circle ? <Lasso onDrawn={(keys) => app.docs.circled(keys)} /> : null} />
+          <DocView facts={facts} env={env} on={on} page={page} aim={v.aim} onAimed={aimed} lasso={v.circle ? <Lasso onDrawn={(keys) => app.docs.circled(keys)} /> : null} />
         </div>
       )}
     </PaneFrame>
@@ -180,11 +182,11 @@ export function DocPaneContainer({ route, dn, place, hidden, bodyRef, beside }: 
 /** The phone's sheet with a document, over its item. */
 export function DocSheetContainer({ slug, dn, footRoom }: { slug: string; dn: number; footRoom: number }) {
   const app = useApp()
-  const { m, d, facts, env, on, v, page } = useDoc(slug, dn)
+  const { m, d, facts, env, on, v, page, aimed } = useDoc(slug, dn)
   if (!m || !d || !facts) return null
   return (
     <Sheet open look={{ tall: true, aboveComposer: v.typing }} desk={false} footRoom={footRoom} onClose={() => app.docs.close()}>
-      <SheetLayout title={`D${d.d}`} body={<DocView facts={facts} env={env} on={on} page={page} lasso={v.circle ? <Lasso onDrawn={(keys) => app.docs.circled(keys)} /> : null} />} />
+      <SheetLayout title={`D${d.d}`} body={<DocView facts={facts} env={env} on={on} page={page} aim={v.aim} onAimed={aimed} lasso={v.circle ? <Lasso onDrawn={(keys) => app.docs.circled(keys)} /> : null} />} />
     </Sheet>
   )
 }

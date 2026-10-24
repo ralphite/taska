@@ -170,10 +170,13 @@ function Outline({ heads, onJump }: { heads: DocFacts['outline']; onJump(key: st
   )
 }
 
-export function DocView({ facts, env, on, popover, lasso, page }: {
+export function DocView({ facts, env, on, popover, lasso, page, aim = null, onAimed }: {
   facts: DocFacts
   env: DocEnv
   on: DocEvents
+  /** the passage to bring into view ("doc": the end, its comments on the whole document) */
+  aim?: string | null
+  onAimed?(): void
   /** the drafts not sent yet, beside a paragraph (the desktop) */
   popover?(row: DocRow): ReactNode
   /** drawing around an area */
@@ -185,6 +188,14 @@ export function DocView({ facts, env, on, popover, lasso, page }: {
   const web = d.fmt === 'html'
   const root = useRef<HTMLDivElement>(null)
   useMarkQuotes(root, rows, (tk) => !!d.resolved?.[tk])
+  useLayoutEffect(() => {
+    // come from the item's talk to a comment: its passage in view
+    if (!aim) return
+    const el = root.current
+    const at = aim === 'doc' ? [...(el?.querySelectorAll('section') || [])].at(-1) : el?.querySelector(`[data-doc-blocks] [data-key="${CSS.escape(aim)}"]`)
+    requestAnimationFrame(() => at?.scrollIntoView({ block: 'center' }))
+    onAimed?.()
+  }, [aim, onAimed])
   useLayoutEffect(() => {
     // on the phone the one item of a list you picked is marked, not the whole list
     const el = root.current

@@ -171,7 +171,7 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
     view: (value: string) => app.nav.view(value),
     subMore: (n) => app.stores.ui.getState().toggleSubMore(n),
     needsMore: () => app.stores.ui.getState().toggleNeedsAll(),
-    archiveAll: () => {},
+    archiveAll: () => m && app.items.archiveAll(visible(m.items, route.tab, route.list).filter((it) => !it.archived && closed(it.status)).map((it) => it.n)),
     ownView: (i) => app.views.show(i),
     dragStart: (n) => app.itemDrag.start(n),
     dragOver: (n, y) => app.itemDrag.over(n, y),

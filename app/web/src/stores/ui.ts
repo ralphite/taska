@@ -25,6 +25,8 @@ export interface UiState {
   sideHidden: boolean
   /** the desktop's item pane in two columns: the item (or its document) on the left, its talk on the right */
   duo: boolean
+  /** an input gone to (from an item's source, the activity log): lit up for a moment where it is listed */
+  lit: string | null
   /** the desktop's filters opened under the search (F) */
   deskFilters: boolean
   setDeskFilters(on: boolean): void
@@ -44,6 +46,7 @@ export interface UiState {
   setSelected(s: ReadonlySet<number>): void
   setSideHidden(on: boolean): void
   setDuo(on: boolean): void
+  setLit(id: string | null): void
   /** the row of Activity or Deleted shown in the pane beside it */
   sideSel: string | null
   setSideSel(key: string | null): void
@@ -69,6 +72,7 @@ export function createUiStore(kv: KeyValueStore): UiStore {
     heldFor: '',
     selected: new Set(),
     duo: false,
+    lit: null,
     sideHidden: !!kv.get('taska.sideHidden'),
     sideSel: null,
     setSideSel: (sideSel) => set({ sideSel }),
@@ -98,6 +102,7 @@ export function createUiStore(kv: KeyValueStore): UiStore {
         return { held }
       }),
     setSelected: (selected) => set({ selected }),
+    setLit: (lit) => set({ lit }),
     setDuo: (duo) => set((s) => (s.duo === duo ? s : { duo })),
     setSideHidden: (on) => {
       kv.set('taska.sideHidden', on ? '1' : null)

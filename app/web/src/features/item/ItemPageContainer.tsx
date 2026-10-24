@@ -137,6 +137,7 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
       const to = findRef(m, c)
       if (to?.kind === 'item') goto(to.n)
       else if (to?.kind === 'doc') app.docs.open(to.d)
+      else if (to?.kind === 'input') app.nav.goInput(to.id, (x) => app.stores.ui.getState().setLit(x))
     },
     picture: (f, all) => media.on.view(f, all),
     ...media.on,
@@ -165,14 +166,14 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
     editCancel: () => iv().setEditing(null),
     inputMore: (id) => app.sheets.open({ kind: 'input-menu', id }, desk ? { pop: true, focus: false } : { focus: false }),
     inputHistory: (id) => app.sheets.open({ kind: 'input-history', id }),
-    goInput: () => {},
+    goInput: (id) => app.nav.goInput(id, (x) => app.stores.ui.getState().setLit(x)),
     msgMenu: (id) => app.sheets.open({ kind: 'message-menu', n, id }, desk ? { pop: true, focus: false, narrow: true } : { focus: false }),
     peek: (id) => iv().peek(id),
     unhide: (id) => void send([{ op: 'hide', ref, id, on: false }], `showing a message on ${ref} again`),
-    docAt: () => {},
-    unsend: () => {},
+    docAt: (d, key) => app.docs.openAt(d, key),
+    unsend: (q) => app.box.unsend(q),
     outboxRetry: () => void app.inputs.flush(),
-    outboxEdit: () => {},
+    outboxEdit: () => app.box.editOutgoing(slug, ref) && app.fields.focus('box'),
   }
   return <ItemPage it={it} f={f} env={env} facts={facts} on={on} talkRef={app.fields.ref('talk')} duo={duo} left={left} bare={bare} />
 }

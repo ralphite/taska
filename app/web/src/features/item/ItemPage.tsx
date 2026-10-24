@@ -469,6 +469,17 @@ export function Missing({ what, loading, away }: { what: string; loading: boolea
 }
 
 /** The pane with nothing open: what to do. */
+/** The desktop's New input page, opened from an item or a document: the way back to it. */
+export function BackTo({ label, onBack }: { label: string; onBack(): void }) {
+  return (
+    <button onClick={onBack} className="flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800">
+      <Icon n="left" c="size-4" />
+      Back to {label}
+      <Kbd k="Esc" />
+    </button>
+  )
+}
+
 export function NoSelection({ side }: { side: 'docs' | 'log' | null }): ReactNode {
   if (side)
     return <div className="grid h-full place-items-center p-8 text-center text-[15px] text-zinc-500 dark:text-zinc-400">{side === 'docs' ? 'Pick a document to read it here' : 'Select a line to view'}</div>

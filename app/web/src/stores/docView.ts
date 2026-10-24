@@ -12,6 +12,8 @@ export interface DocViewState {
   sel: ReadonlySet<string>
   /** words picked inside one paragraph (a list's item, a selection) */
   quote: { key: string; text: string } | null
+  /** the passage to bring into view once the document shows it ("doc": its end, the whole document's comments) */
+  aim: string | null
   /** the thread a reply goes to */
   reply: string | null
   /** drawing around an area to comment on it */
@@ -30,6 +32,7 @@ export interface DocViewState {
   toggleThread(tk: string): void
   closeThreads(...tks: string[]): void
   openThread(tk: string): void
+  setAim(key: string | null): void
   pick(p: { sel?: ReadonlySet<string>; quote?: { key: string; text: string } | null; reply?: string | null }): void
   unpick(): void
   setCircle(on: boolean): void
@@ -42,7 +45,7 @@ export interface DocViewState {
 
 export type DocViewStore = StoreApi<DocViewState>
 
-const fresh = { threads: new Set<string>(), sel: new Set<string>(), quote: null, reply: null, circle: false, typing: false, editing: false, text: null, newFor: null }
+const fresh = { aim: null, threads: new Set<string>(), sel: new Set<string>(), quote: null, reply: null, circle: false, typing: false, editing: false, text: null, newFor: null }
 
 export function createDocViewStore(): DocViewStore {
   return createStore<DocViewState>()((set, get) => ({
@@ -61,6 +64,7 @@ export function createDocViewStore(): DocViewStore {
         else threads.add(tk)
         return { threads }
       }),
+    setAim: (aim) => set({ aim }),
     openThread: (tk) => set((s) => (s.threads.has(tk) ? s : { threads: new Set([...s.threads, tk]) })),
     closeThreads: (...tks) => set((s) => ({ threads: new Set([...s.threads].filter((t) => !tks.includes(t))) })),
     pick: (p) => set((s) => ({ sel: p.sel ?? s.sel, quote: p.quote !== undefined ? p.quote : s.quote, reply: p.reply !== undefined ? p.reply : s.reply })),

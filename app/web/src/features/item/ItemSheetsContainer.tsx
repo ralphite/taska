@@ -128,7 +128,7 @@ export function SourcesSheet({ req }: Req<'item-sources'>) {
           now: m.at,
           files: (f) => <Thumbs files={f} url={world.url} play={media.play} tidy={media.tidy} on={media.on} />,
         },
-        () => app.sheets.close(),
+        (id) => app.sheets.close(() => app.nav.goInput(id, (x) => app.stores.ui.getState().setLit(x))),
       )}
     />
   )

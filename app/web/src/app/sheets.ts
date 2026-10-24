@@ -32,10 +32,12 @@ export class Sheets {
     return req?.kind === kind ? (req as Extract<SheetRequest, { kind: K }>) : null
   }
 
-  close(): void {
+  /** `then`: once its step in the history has gone (somewhere to go from it) */
+  close(then?: () => void): void {
     const was = this.store.getState().spec
     this.store.getState().close()
-    if (was && !this.desk()) this.route.getState().shutLayer('sheet')
+    if (was && !this.desk()) this.route.getState().shutLayer('sheet', then)
+    else then?.()
   }
 
   /** Back closed it (its step in the history went). */

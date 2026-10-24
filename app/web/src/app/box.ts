@@ -171,6 +171,20 @@ export class Box {
     return true
   }
 
+  /** What did not go out yet, back in the box to change (the box must be empty). -> it came back */
+  editOutgoing(slug: string, key: string): boolean {
+    const o = this.d.outbox.getState().list.find((x) => x.slug === slug && !x.unsent)
+    if (!o) return false
+    if (this.text(slug, key).trim() || (this.d.store.getState().files[key] || []).length) {
+      this.d.toasts.show('Send or clear the box first')
+      return false
+    }
+    this.d.outbox.getState().remove(o.q)
+    this.write(slug, key, o.text)
+    if (o.files.length) this.d.store.getState().putFiles(key, o.files.map((f) => ({ ...f, key: f.key || f.f })))
+    return true
+  }
+
   /** Take back what you just sent: its words come back to the box (there, or to the draft it was written in). */
   unsend(q: string): void {
     const st = this.d.store.getState()

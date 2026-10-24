@@ -68,6 +68,14 @@ export class Docs {
     this.d.nav.openDoc(dn, this.d.route.getState().side ? undefined : tab)
   }
 
+  /** From an item's talk to a comment in its document: the document, the comment's thread open, its passage in view. */
+  openAt(dn: number, key: string): void {
+    this.open(dn)
+    const v = this.d.view.getState()
+    if (key !== 'doc') v.openThread(key)
+    v.setAim(key)
+  }
+
   /** Back from a document: to the list it was opened from (Documents, Activity, Deleted), else its item. */
   close(): void {
     const h = this.here()

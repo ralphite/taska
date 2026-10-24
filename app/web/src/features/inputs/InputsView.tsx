@@ -3,6 +3,7 @@
 
 import { useRef, type ReactNode } from 'react'
 import { voiceMark, type InputStanding } from '../../model/inputs'
+import { LIT, useLitRow } from './litRow'
 import type { FileRef, Input, ItemType } from '../../model/types'
 import { DraftMark, Empty, Hit } from '../../ui/bits'
 import { Icon } from '../../ui/Icon'
@@ -22,6 +23,8 @@ export interface InputChip {
 
 export interface InputFacts {
   r: Input
+  /** gone to: in view, lit up for a moment */
+  lit?: boolean
   code: string
   time: string
   /** the day's name when this input starts a day */
@@ -86,13 +89,14 @@ export function InputCard({ x, words, world, files, on }: { x: InputFacts; words
       <span className="min-w-0">{x.note}</span>
     </div>
   ) : null
+  const litRef = useLitRow<HTMLElement>(!!x.lit)
   const more = (
     <button title="More" aria-label={`More for ${x.code}`} onClick={() => on.menu(r.id)} className={`${LINK_BTN} text-zinc-600 dark:text-zinc-300`}>
       <Icon n="more" c="size-4" />
     </button>
   )
   return (
-    <article className="border-b border-zinc-100 px-4 py-2 transition-colors duration-700 dark:border-zinc-800/70">
+    <article ref={litRef} className={`border-b border-zinc-100 px-4 py-2 transition-colors duration-700 dark:border-zinc-800/70 ${x.lit ? LIT : ''}`}>
       <div className="min-w-0">
         <div className="flex min-h-5 items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
           {r.acked ? null : <span title="Not handled yet" className="size-2 shrink-0 rounded-full bg-blue-500 dark:bg-blue-400" />}

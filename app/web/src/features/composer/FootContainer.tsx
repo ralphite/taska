@@ -307,6 +307,8 @@ export function FootContainer({ route, place, hidden, composePage, onHeight, bar
 
   const lastSent = useStoreValue(app.stores.ui, (s) => s.lastSent)
   const projects = useStoreValue(app.stores.data, (s) => s.projects)
+  // the input the line above the box speaks of
+  const sentRow = lastSent?.slug === route.slug && m ? m.byId.get(lastSent.rid) : undefined
   const feedback = feedbackLine({ m, desk, composePage, scope: role.scope, mine, lastSent: lastSent?.slug === route.slug ? lastSent.rid : null, lastQ: lastSent?.q, others: (projects || []).some((p) => p.name !== route.slug), undoable: (q) => !!q && justSent.some((x) => x.q === q) })
   // a line that says where it ended up goes after a while
   useEffect(() => {
@@ -417,7 +419,7 @@ export function FootContainer({ route, place, hidden, composePage, onHeight, bar
       ) : null}
       <Feedback
         line={feedback?.line ?? null}
-        on={{ dismiss: () => app.stores.ui.getState().setLastSent(null), undo: () => { const q = mine[0]?.q ?? lastSent?.q; if (q) app.box.unsend(q) }, retry: () => void app.inputs.flush(), edit: () => {}, view: () => {}, undoFiling: () => {}, move: () => {}, retryOrganizer: () => {} }}
+        on={{ dismiss: () => app.stores.ui.getState().setLastSent(null), undo: () => { const q = mine[0]?.q ?? lastSent?.q; if (q) app.box.unsend(q) }, retry: () => void app.inputs.flush(), edit: () => app.box.editOutgoing(route.slug, key) && app.fields.focus('box'), view: () => { const n = sentRow?.touched[0]; if (m && n) app.nav.openItem(codeOf(m, n)) }, undoFiling: () => sentRow && app.inputActions.undoFiling(route.slug, sentRow.id), move: () => sentRow && app.sheets.open({ kind: 'input-move', id: sentRow.id }), retryOrganizer: () => sentRow && app.inputActions.organizeAgain(route.slug, sentRow.id) }}
       />
       {composer}
       {desk && composePage && said ? (
@@ -441,7 +443,7 @@ export function FootContainer({ route, place, hidden, composePage, onHeight, bar
               undoSend: (k) => app.box.unsend(justSent.find((x) => x.q === k || x.rid === k)?.q ?? k),
               retry: (id) => app.inputActions.organizeAgain(route.slug, id),
               outboxRetry: () => void app.inputs.flush(),
-              outboxEdit: () => {},
+              outboxEdit: () => app.box.editOutgoing(route.slug, key) && app.fields.focus('box'),
               query: (v) => (setQ(v), setUpTo(STEP)),
               loadMore: () => setUpTo((u) => u + STEP),
             }}

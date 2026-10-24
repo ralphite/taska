@@ -34,11 +34,13 @@ export interface RouteState {
   /** the list beside the pane on the desktop when it is Documents, Activity or Deleted: it stays while what you open
    * from it shows beside it */
   side: Side | null
+  /** the desktop's New input page opened from an item or a document: its name, for the way back ("B333", "D89") */
+  from: string | null
   /** go full width, or back to the list (`here`: by rewriting this step, not going back) */
   setFull(on: boolean, here?: boolean): void
   /** go to an address: a step in the history (push) or the address rewritten; `layers`: what the new step has open
    * (a step from the drawer leaves it closed: its step becomes the new one) */
-  go(url: string, push?: boolean, layers?: readonly string[]): void
+  go(url: string, push?: boolean, layers?: readonly string[], from?: string | null): void
   /** something opens over the page: a step Back undoes */
   openLayer(kind: string): void
   /** it closes by its own button: its step goes too; `then` runs once the history has moved */
@@ -64,6 +66,10 @@ const sideOf = (route: Route, state: unknown): Side | null => {
   const s = (state as { side?: unknown } | null)?.side
   return (route.place.kind === 'item' || route.place.kind === 'doc') && typeof s === 'string' && SIDES.includes(s) ? (s as Side) : null
 }
+const fromOf = (route: Route, state: unknown): string | null => {
+  const f = (state as { from?: unknown } | null)?.from
+  return route.page === 'project' && route.place.kind === 'new' && typeof f === 'string' ? f : null
+}
 const layersOf = (state: unknown): string[] => {
   const l = (state as { layers?: unknown } | null)?.layers
   return Array.isArray(l) ? l.filter((x): x is string => typeof x === 'string') : []
@@ -75,7 +81,7 @@ export function createRouteStore(history: History): RouteStore {
   const now = () => {
     const p = history.location()
     const route = parseRoute(p.path, p.search, p.hash)
-    return { route, url: urlOf(p), layers: layersOf(history.state()), full: fullOf(history.state()), side: sideOf(route, history.state()) }
+    return { route, url: urlOf(p), layers: layersOf(history.state()), full: fullOf(history.state()), side: sideOf(route, history.state()), from: fromOf(route, history.state()) }
   }
   const first = parseRoute(at.path, at.search, at.hash)
   return createStore<RouteState>()((set, get) => ({
@@ -84,7 +90,8 @@ export function createRouteStore(history: History): RouteStore {
     layers: layersOf(history.state()),
     full: fullOf(history.state()),
     side: sideOf(first, history.state()),
-    go: (url, push = false, layers) => {
+    from: fromOf(first, history.state()),
+    go: (url, push = false, layers, from) => {
       const open = get().layers
       if (url === get().url && layers === undefined) return
       // full width goes on to what a link opens; Back from there comes back; so does the side list, beside what opens
@@ -92,7 +99,8 @@ export function createRouteStore(history: History): RouteStore {
       const side = get().side
       const to = side ? parseRoute(...placeOf(url)) : null
       const keep = side && to?.page === 'project' && (to.place.kind === 'item' || to.place.kind === 'doc') ? { side } : {}
-      const state = (l: readonly string[]) => (l.length || get().full || 'side' in keep ? { ...full, ...keep, ...(l.length ? { layers: [...l] } : {}) } : null)
+      const back = from ? { from } : {}
+      const state = (l: readonly string[]) => (l.length || get().full || 'side' in keep || from ? { ...full, ...keep, ...back, ...(l.length ? { layers: [...l] } : {}) } : null)
       if (push && url !== get().url) {
         // from the drawer: its step becomes the new one (as closing it, then going on, would leave the history)
         if (open.includes('drawer')) history.replace(url, state(layers ?? open.filter((k) => k !== 'drawer')))

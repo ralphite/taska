@@ -61,12 +61,12 @@ export class Navigation {
     return r.page === 'project' ? r : null
   }
 
-  private go(tab: Tab, place: Place, list: ListQuery, push: boolean) {
+  private go(tab: Tab, place: Place, list: ListQuery, push: boolean, from?: string | null) {
     const r = this.here()
     if (!r) return
     // on the phone a step from the search keeps it open: Back comes back to it
     const searching = !this.desk() && this.route.getState().layers.includes('search')
-    this.route.getState().go(projectPath(r.slug, tab, place, list), push, push && searching ? ['search'] : undefined)
+    this.route.getState().go(projectPath(r.slug, tab, place, list), push, push && searching ? ['search'] : undefined, from)
   }
 
   /** The phone's search: open, or closed by Cancel (the search ends: its words go). */
@@ -74,6 +74,14 @@ export class Navigation {
     if (this.desk()) return
     if (on) this.route.getState().openLayer('search')
     else this.route.getState().shutLayer('search', () => this.setList({ q: '' }))
+  }
+
+  /** To an input where it is listed (the phone's Inputs, the desktop's New input page), lit up for a moment. */
+  goInput(id: string, lit: (id: string | null) => void): void {
+    if (this.desk()) this.newInput()
+    else this.tab('inputs')
+    lit(id)
+    setTimeout(() => lit(null), 1600)
   }
 
   /** The phone's drawer of projects. */
@@ -157,7 +165,16 @@ export class Navigation {
   newInput(): void {
     const r = this.here()
     if (!r) return
-    this.go(r.tab === 'inputs' ? 'items' : r.tab, { kind: 'new' }, r.list, true)
+    // on the desktop, from an item or a document: the page offers the way back to it
+    const from = this.desk() ? (r.place.kind === 'item' ? r.place.ref.toUpperCase() : r.place.kind === 'doc' ? `D${r.place.d}` : null) : null
+    this.go(r.tab === 'inputs' ? 'items' : r.tab, { kind: 'new' }, r.list, true, from)
+  }
+
+  /** Back from the New input page to the item or document it was opened from. -> there was one */
+  composeBack(): boolean {
+    if (!this.route.getState().from) return false
+    this.route.getState().backBy(1)
+    return true
   }
 
   /** The open item full width (O), or back to the list. */

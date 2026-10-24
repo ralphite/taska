@@ -28,3 +28,6 @@ what the old version does. Each is also sent to the coordinator ("Nota & Taska d
 - **Leaving a document's editor while it records stops the microphone.** The old page keeps recording out of sight
   (its Stop button is gone with the editor) until the page is left; the rewrite stops it when the editor closes, and
   the words still go into the draft kept for it, as they do in the old one once stopped.
+- **From an item's sources to one of its inputs (the phone): the input comes into view, lit.** The old page means to
+  (B131) and does so from the talk, but from the Sources sheet the sheet's closing undoes the scroll and the list shows
+  its top; the rewrite closes the sheet first, then goes there.

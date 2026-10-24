@@ -141,6 +141,22 @@ export class ItemActions {
     return this.d.runner.send({ id: newId(), slug: this.d.slug(), commands: [{ op: 'hide', ref, id, on: true }], patches: [], said: `hiding a message on ${ref}`, t: Date.now() })
   }
 
+  /** Every finished item the list shows, to Archive at once; Undo for 10 seconds (then Z). */
+  archiveAll(ns: number[]): void {
+    const m = this.d.model()
+    if (!m || !ns.length) return
+    const put = (on: boolean) => this.d.runner.send({ id: newId(), slug: this.d.slug(), commands: [{ op: 'archive', refs: ns.map((n) => codeOf(m, n)), on } as unknown as Command], patches: ns.map((n) => ({ n, f: { archived: on } })), said: on ? `archiving ${plural(ns.length, 'item')}` : `unarchiving ${plural(ns.length, 'item')}`, t: Date.now() })
+    void put(true)
+    this.d.toasts.show(
+      `Archived ${plural(ns.length, 'item')}`,
+      async () => {
+        this.d.toasts.show(`Put back ${plural(ns.length, 'item')}`)
+        return put(false)
+      },
+      { ms: 10000 },
+    )
+  }
+
   /** Dragged before or after another in the agents' queue: your order comes first, the priority stays. */
   reorder(n: number, t: number, after: boolean): Promise<boolean> {
     const m = this.d.model()

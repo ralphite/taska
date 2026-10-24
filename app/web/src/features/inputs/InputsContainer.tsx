@@ -5,7 +5,7 @@ import { useMemo } from 'react'
 import { useApp, useStoreValue } from '../../app/context'
 import { useAway, useFiles, useProjectModel, type ProjectRoute } from '../../app/hooks'
 import { dayOf, newestFirst, standing } from '../../model/inputs'
-import { codeOf, inputDraft } from '../../model/project'
+import { codeOf, findRef, inputDraft, type ProjectModel } from '../../model/project'
 import { when } from '../../model/time'
 import { inputMatch, searchWords } from '../../model/visible'
 import { inputCode } from '../../model/words'
@@ -29,6 +29,7 @@ export function InputsContainer({ route, hidden }: { route: ProjectRoute; hidden
   const mode = useStoreValue(app.stores.box, (s) => s.mode)
   const writing = useMemo(() => (mode?.kind === 'amend' ? { id: mode.id, mode: mode.mode } : null), [mode])
   const media = useFiles(route.slug)
+  const lit = useStoreValue(app.stores.ui, (s) => s.lit)
   const rows: InputFacts[] = useMemo(() => {
     if (!m || hidden) return []
     const title = (slug: string) => projects?.find((p) => p.name === slug)?.title || slug
@@ -70,12 +71,13 @@ export function InputsContainer({ route, hidden }: { route: ProjectRoute; hidden
         spark: !!org && !note && shown.some((n) => did[n]),
         retry: !r.acked && m.facts.organizer.on && r.org && (!r.org.ok || r.org.undone) ? (r.org.undone ? 'Organize again' : 'Retry') : null,
         moved: r.moved ? { href: `/p/${encodeURIComponent(r.moved.to)}/`, label: `Open ${title(r.moved.to)} · ${inputCode(r.moved.as)}` } : null,
+        lit: lit === r.id,
         draft: inputDraft(r.id, draftWords || app.stores.drafts.getState().of(route.slug), writing),
         long: r.text.length > 160 || r.text.split('\n').length > 4,
         opened: opened.has(r.id),
       }
     })
-  }, [m, hidden, words, projects, opened, draftWords, app, route.slug, writing])
+  }, [m, hidden, words, projects, opened, draftWords, app, route.slug, writing, lit])
   const outgoing: OutgoingRow[] = outbox
     .filter((o) => o.slug === route.slug)
     .reverse()
@@ -96,7 +98,12 @@ export function InputsContainer({ route, hidden }: { route: ProjectRoute; hidden
         retry: (id) => app.inputActions.organizeAgain(route.slug, id),
         draft: (id, mode) => app.box.amendStart(route.slug, m, id, mode),
         moved: (href) => app.nav.to(href),
-        ref: () => {},
+        ref: (c) => {
+          const to = m ? findRef(m, c) : null
+          if (to?.kind === 'item') app.nav.openItem(codeOf(m as ProjectModel, to.n), 'items')
+          else if (to?.kind === 'doc') app.docs.open(to.d)
+          else if (to?.kind === 'input') app.nav.goInput(to.id, (x) => app.stores.ui.getState().setLit(x))
+        },
         picture: (f, all) => media.on.view(f, all),
       }}
     />
