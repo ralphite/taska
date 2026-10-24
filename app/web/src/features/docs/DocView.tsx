@@ -165,7 +165,7 @@ function Outline({ heads, onJump }: { heads: DocFacts['outline']; onJump(key: st
   )
 }
 
-export function DocView({ facts, env, on, popover, lasso }: {
+export function DocView({ facts, env, on, popover, lasso, page }: {
   facts: DocFacts
   env: DocEnv
   on: DocEvents
@@ -173,6 +173,8 @@ export function DocView({ facts, env, on, popover, lasso }: {
   popover?(row: DocRow): ReactNode
   /** drawing around an area */
   lasso?: ReactNode
+  /** a web page's own view (WebPage) */
+  page?: ReactNode
 }) {
   const { d, rows, desk } = { ...facts, desk: env.desk }
   const web = d.fmt === 'html'
@@ -255,6 +257,7 @@ export function DocView({ facts, env, on, popover, lasso }: {
           </div>
         ) : null}
         {facts.showTitle ? <div className="mt-3 text-2xl leading-tight font-bold tracking-tight">{d.title}</div> : null}
+        {web ? page : null}
         {web ? null : <Outline heads={facts.outline} onJump={(key) => root.current?.querySelector(`section[data-key="${CSS.escape(key)}"]`)?.scrollIntoView({ block: 'start', behavior: 'smooth' })} />}
         <div hidden={web} className={`relative mt-3 space-y-3 text-[15px] ${facts.circle ? 'select-none' : ''}`}>
           {(web ? [] : rows).map((r) => {

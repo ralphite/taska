@@ -186,7 +186,9 @@ function stepBack(app: App, h: Here): void {
     if (doc.editing) return app.docs.keep()
     if (doc.circle) return doc.setCircle(false)
     if (doc.quote || doc.sel.size || doc.reply) return app.docs.unpick()
-    if (!typingIn(active)) {
+    if (doc.inspect) return doc.setInspect(false) // a web page's Comment mode
+    // the phone's document is a sheet: Esc closes it, even from the box
+    if (!app.desk() || !typingIn(active)) {
       if (app.desk() && app.stores.route.getState().full) return app.nav.full(false)
       return app.docs.close()
     }

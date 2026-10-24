@@ -107,6 +107,14 @@ export class Docs {
     requestAnimationFrame(() => this.d.fields.get('box')?.focus({ preventScroll: true }))
   }
 
+  /** Drawn around: the paragraphs inside are picked. */
+  circled(keys: string[]): void {
+    const v = this.d.view.getState()
+    v.setCircle(false)
+    v.pick({ sel: new Set(keys), quote: null })
+    if (!keys.length) this.d.toasts.show('Nothing inside the circle')
+  }
+
   toggle(tk: string): void {
     this.d.view.getState().toggleThread(tk)
   }

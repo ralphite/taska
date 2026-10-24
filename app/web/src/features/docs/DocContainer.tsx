@@ -6,7 +6,13 @@ import { useEffect, useMemo } from 'react'
 import { useApp, useLayout, useStoreValue } from '../../app/context'
 import { useProjectModel, type ProjectRoute } from '../../app/hooks'
 import { usePaneRef } from '../../app/panes'
-import { seenNow } from '../../model/docs'
+import { resolved, seenNow, threadNew, threadsOf } from '../../model/docs'
+import type { Doc } from '../../model/types'
+import type { DocViewState } from '../../stores/docView'
+import { runAction } from '../../app/actions'
+import { WebPage } from './WebPage'
+import { Lasso } from './Lasso'
+import { Thread } from './Thread'
 import { codeOf, liveN } from '../../model/project'
 import { factsOf } from './docFacts'
 import { Sheet, SheetLayout } from '../../ui/Sheet'
@@ -14,7 +20,7 @@ import { useItemWorld } from '../item/ItemPageContainer'
 import { PaneFrame } from '../item/PaneFrame'
 import { DocPaneActs, DocPaneHead, DocPaneNav } from './DocPane'
 import { DocEditContainer } from './DocEditContainer'
-import { DocView, type DocEvents } from './DocView'
+import { DocView, SayRow, type DocEvents } from './DocView'
 import type { DocEnv } from './Thread'
 
 const SIDE_NAME = { docs: 'Documents', log: 'Activity', deleted: 'Deleted' } as const
@@ -70,7 +76,46 @@ function useDoc(slug: string, dn: number) {
     tick: (tk, i) => docs.tick(dn, tk, i),
     modifyTicks: (tk) => docs.modifyTicks(dn, tk),
   }
-  return { m, d, facts, env, on, v, desk }
+  const page = d?.fmt === 'html' && m ? <WebPageContainer d={d} v={v} seen={seen} env={env} on={on} /> : null
+  return { m, d, facts, env, on, v, desk, page }
+}
+
+/** A web page document's own view, with its threads. */
+function WebPageContainer({ d, v, seen, env, on }: { d: Doc; v: DocViewState; seen: Readonly<Record<string, string>>; env: DocEnv; on: DocEvents }) {
+  const app = useApp()
+  const asked = useStoreValue(app.stores.sheet, (s) => s.asked)
+  const all = d.blocks.flatMap((b) => threadsOf(b.comments).map((t) => ({ t, key: b.key })))
+  const threads = all.map(({ t, key }) => ({ tk: t.tk, key, quote: t.quote, n: t.comments.length, done: resolved(d, t.tk) }))
+  const held = v.quote?.key.startsWith('h:') ? v.quote : null
+  const open = all.find(({ t, key }) => v.threads.has(t.tk) || v.threads.has(key))?.t.tk ?? null
+  const thread = (tk: string, rail: boolean) => {
+    const x = all.find((y) => y.t.tk === tk)
+    if (!x) return null
+    return <Thread t={x.t} rail={rail} isNew={threadNew(seen, d, x.key, x.t.comments)} done={resolved(d, tk)} replying={v.reply === tk} asking={Object.keys(asked).find((k) => k.startsWith(`unfile ${d.d} `))?.slice(`unfile ${d.d} `.length) ?? null} env={env} on={on} />
+  }
+  return (
+    <WebPage
+      title={d.title}
+      html={d.md}
+      threads={threads}
+      held={held}
+      open={open}
+      desk={env.desk}
+      inspect={v.inspect}
+      renderThread={thread}
+      sayRow={<SayRow rec={false} on={{ say: () => {}, cancel: () => {}, type: () => app.docs.type() }} />}
+      on={{
+        pick: (p) => {
+          app.stores.docView.getState().pick({ quote: p, sel: new Set(), reply: null })
+          if (env.desk) app.fields.get('box')?.focus({ preventScroll: true })
+        },
+        say: () => {},
+        esc: () => runAction(app, 'back'),
+        toggle: (tk) => app.docs.toggle(tk),
+        away: (tk, key) => app.stores.docView.getState().closeThreads(tk, key),
+      }}
+    />
+  )
 }
 
 /** The desktop's pane with a document. */
@@ -79,7 +124,7 @@ export function DocPaneContainer({ route, dn, place, hidden }: { route: ProjectR
   const pane = usePaneRef('detail')
   const side = useStoreValue(app.stores.route, (s) => s.side)
   const asked = useStoreValue(app.stores.sheet, (s) => s.asked)
-  const { m, d, facts, env, on, v } = useDoc(route.slug, dn)
+  const { m, d, facts, env, on, v, page } = useDoc(route.slug, dn)
   if (!m || !d || !facts) return null
   const web = d.fmt === 'html'
   if (v.editing && v.newFor == null)
@@ -104,7 +149,7 @@ export function DocPaneContainer({ route, dn, place, hidden }: { route: ProjectR
     >
       {/* a web page brings its own margins: none are added around it */}
       <div className={web ? 'w-full' : 'w-full px-8 pt-8 pb-12'}>
-        <DocView facts={facts} env={env} on={on} />
+        <DocView facts={facts} env={env} on={on} page={page} lasso={v.circle ? <Lasso onDrawn={(keys) => app.docs.circled(keys)} /> : null} />
       </div>
     </PaneFrame>
   )
@@ -113,11 +158,11 @@ export function DocPaneContainer({ route, dn, place, hidden }: { route: ProjectR
 /** The phone's sheet with a document, over its item. */
 export function DocSheetContainer({ slug, dn, footRoom }: { slug: string; dn: number; footRoom: number }) {
   const app = useApp()
-  const { m, d, facts, env, on, v } = useDoc(slug, dn)
+  const { m, d, facts, env, on, v, page } = useDoc(slug, dn)
   if (!m || !d || !facts) return null
   return (
     <Sheet open look={{ tall: true, aboveComposer: v.typing }} desk={false} footRoom={footRoom} onClose={() => app.docs.close()}>
-      <SheetLayout title={`D${d.d}`} body={<DocView facts={facts} env={env} on={on} />} />
+      <SheetLayout title={`D${d.d}`} body={<DocView facts={facts} env={env} on={on} page={page} lasso={v.circle ? <Lasso onDrawn={(keys) => app.docs.circled(keys)} /> : null} />} />
     </Sheet>
   )
 }
