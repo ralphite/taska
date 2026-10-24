@@ -31,3 +31,6 @@ what the old version does. Each is also sent to the coordinator ("Nota & Taska d
 - **From an item's sources to one of its inputs (the phone): the input comes into view, lit.** The old page means to
   (B131) and does so from the talk, but from the Sources sheet the sheet's closing undoes the scroll and the list shows
   its top; the rewrite closes the sheet first, then goes there.
+- **An item that shows has no blue dot on its row.** The old page marks what the agents wrote as seen when the item
+  shows, but its row keeps the dot until the list happens to draw again (an item merged into the one you look at, its
+  row lit with a dot for a moment); the rewrite takes the dot off at once.

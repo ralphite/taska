@@ -1,6 +1,7 @@
 // What an agent wrote since you last looked at an item: a blue dot on its row. Kept in this browser per project
 // ("taska.seen.<project>": {since, <n>: the time of the agent's last message you saw}).
 
+import { createStore, type StoreApi } from 'zustand/vanilla'
 import type { KeyValueStore } from './storage'
 
 export type SeenMap = Record<string, string>
@@ -8,6 +9,8 @@ export type SeenMap = Record<string, string>
 export class Seen {
   private maps = new Map<string, SeenMap>()
   private readonly kv: KeyValueStore
+  /** counts each change, for what shows the dots to draw again */
+  readonly rev: StoreApi<number> = createStore<number>()(() => 0)
   constructor(kv: KeyValueStore) {
     this.kv = kv
   }
@@ -34,6 +37,12 @@ export class Seen {
     const m = this.of(slug)
     m[n] = t
     this.kv.setJson('taska.seen.' + slug, m)
+    this.rev.setState((r) => r + 1)
+  }
+
+  /** The item shows: what its agents wrote is seen (its dot goes). */
+  see(slug: string, n: number, lastAgentT: string | undefined, archived: boolean): void {
+    if (lastAgentT && unreadSince(this.of(slug), n, lastAgentT, archived)) this.mark(slug, n, lastAgentT)
   }
 }
 

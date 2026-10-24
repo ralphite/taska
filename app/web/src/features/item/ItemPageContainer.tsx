@@ -1,12 +1,13 @@
 // An item's page with the page's data: what it shows (the item, its documents and files, your answer on its way,
 // what you sent to it and Taska does not have yet, what you are doing on it) and what a tap on each part does.
 
-import { useMemo, type ReactNode } from 'react'
+import { useEffect, useMemo, type ReactNode } from 'react'
 import { useApp, useStoreValue } from '../../app/context'
 import { useAway, useFiles } from '../../app/hooks'
 import { newId } from '../../app/changeRunner'
 import { CHOICE } from '../../model/markdown'
 import { codeOf, docsOf, filesOf, findRef, liveN, STAND, type ProjectModel } from '../../model/project'
+import { lastAgentMessage } from '../../model/items'
 import { answerOf } from '../../model/talk'
 import type { Item } from '../../model/types'
 import { inTab, tabOf } from '../../model/visible'
@@ -46,6 +47,9 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
   const n = it.n
   const code = (k: number | null | undefined) => codeOf(m, k)
   const ref = code(n)
+  // seen once it shows: what its agents wrote has no dot on its row any more
+  const lastAgentT = lastAgentMessage(it)?.t
+  useEffect(() => app.seen.see(slug, n, lastAgentT, !!it.archived), [app, slug, n, lastAgentT, it.archived])
 
   // the open question's choices: picked here, or before a reload (kept by their words)
   void view.choice

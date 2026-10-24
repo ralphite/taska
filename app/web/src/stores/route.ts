@@ -3,6 +3,7 @@
 
 import { createStore, type StoreApi } from 'zustand/vanilla'
 import { parseRoute, type Route } from '../model/route'
+import { TABS, type Tab } from '../model/words'
 
 export type Side = 'docs' | 'log' | 'deleted'
 
@@ -36,11 +37,15 @@ export interface RouteState {
   side: Side | null
   /** the desktop's New input page opened from an item or a document: its name, for the way back ("B333", "D89") */
   from: string | null
+  /** the list's tab came with the step (an item or a document opened in the page); without, the address was opened
+   * as it is and the item's own tab is the list's */
+  tabKept: boolean
   /** go full width, or back to the list (`here`: by rewriting this step, not going back) */
   setFull(on: boolean, here?: boolean): void
   /** go to an address: a step in the history (push) or the address rewritten; `layers`: what the new step has open
-   * (a step from the drawer leaves it closed: its step becomes the new one) */
-  go(url: string, push?: boolean, layers?: readonly string[], from?: string | null): void
+   * (a step from the drawer leaves it closed: its step becomes the new one); `tab`: the list's tab beside an item or a
+   * document (their address does not say it) */
+  go(url: string, push?: boolean, layers?: readonly string[], from?: string | null, tab?: Tab): void
   /** something opens over the page: a step Back undoes */
   openLayer(kind: string): void
   /** it closes by its own button: its step goes too; `then` runs once the history has moved */
@@ -58,6 +63,11 @@ const placeOf = (url: string): [string, string, string] => {
   const u = new URL(url, 'http://taska.local')
   return [u.pathname, u.search, u.hash]
 }
+/** an item's or a document's address */
+const itemOrDoc = (url: string) => {
+  const r = parseRoute(...placeOf(url))
+  return r.page === 'project' && (r.place.kind === 'item' || r.place.kind === 'doc')
+}
 const fullOf = (state: unknown) => !!(state as { full?: unknown } | null)?.full
 const SIDES: readonly string[] = ['docs', 'log', 'deleted']
 const sideOf = (route: Route, state: unknown): Side | null => {
@@ -70,6 +80,15 @@ const fromOf = (route: Route, state: unknown): string | null => {
   const f = (state as { from?: unknown } | null)?.from
   return route.page === 'project' && route.place.kind === 'new' && typeof f === 'string' ? f : null
 }
+/** The list's tab beside an item or a document, kept in its step (none: the address was opened as it is) */
+export const keptTab = (state: unknown): Tab | null => {
+  const t = (state as { tab?: unknown } | null)?.tab
+  return typeof t === 'string' && (TABS as readonly string[]).includes(t) ? (t as Tab) : null
+}
+const withTab = (route: Route, state: unknown): Route => {
+  const t = keptTab(state)
+  return t && route.page === 'project' && (route.place.kind === 'item' || route.place.kind === 'doc') ? { ...route, tab: t } : route
+}
 const layersOf = (state: unknown): string[] => {
   const l = (state as { layers?: unknown } | null)?.layers
   return Array.isArray(l) ? l.filter((x): x is string => typeof x === 'string') : []
@@ -80,10 +99,10 @@ export function createRouteStore(history: History): RouteStore {
   let after: (() => void) | null = null
   const now = () => {
     const p = history.location()
-    const route = parseRoute(p.path, p.search, p.hash)
-    return { route, url: urlOf(p), layers: layersOf(history.state()), full: fullOf(history.state()), side: sideOf(route, history.state()), from: fromOf(route, history.state()) }
+    const route = withTab(parseRoute(p.path, p.search, p.hash), history.state())
+    return { route, url: urlOf(p), layers: layersOf(history.state()), full: fullOf(history.state()), side: sideOf(route, history.state()), from: fromOf(route, history.state()), tabKept: !!keptTab(history.state()) }
   }
-  const first = parseRoute(at.path, at.search, at.hash)
+  const first = withTab(parseRoute(at.path, at.search, at.hash), history.state())
   return createStore<RouteState>()((set, get) => ({
     route: first,
     url: urlOf(at),
@@ -91,21 +110,23 @@ export function createRouteStore(history: History): RouteStore {
     full: fullOf(history.state()),
     side: sideOf(first, history.state()),
     from: fromOf(first, history.state()),
-    go: (url, push = false, layers, from) => {
+    tabKept: !!keptTab(history.state()),
+    go: (url, push = false, layers, from, tab) => {
       const open = get().layers
-      if (url === get().url && layers === undefined) return
+      if (url === get().url && layers === undefined && (tab === undefined || tab === keptTab(history.state()))) return
       // full width goes on to what a link opens; Back from there comes back; so does the side list, beside what opens
       const full = get().full ? { full: true, link: true } : {}
       const side = get().side
       const to = side ? parseRoute(...placeOf(url)) : null
       const keep = side && to?.page === 'project' && (to.place.kind === 'item' || to.place.kind === 'doc') ? { side } : {}
       const back = from ? { from } : {}
-      const state = (l: readonly string[]) => (l.length || get().full || 'side' in keep || from ? { ...full, ...keep, ...back, ...(l.length ? { layers: [...l] } : {}) } : null)
+      const lists = tab && itemOrDoc(url) ? { tab } : {}
+      const state = (l: readonly string[]) => (l.length || get().full || 'side' in keep || from || 'tab' in lists ? { ...full, ...keep, ...back, ...lists, ...(l.length ? { layers: [...l] } : {}) } : null)
       if (push && url !== get().url) {
         // from the drawer: its step becomes the new one (as closing it, then going on, would leave the history)
         if (open.includes('drawer')) history.replace(url, state(layers ?? open.filter((k) => k !== 'drawer')))
         else history.push(url, state(layers ?? []))
-      } else history.replace(url, layers === undefined ? history.state() : state(layers))
+      } else history.replace(url, layers === undefined ? (tab === undefined ? history.state() : { ...((history.state() as object | null) ?? {}), ...lists }) : state(layers))
       set(now())
     },
     setFull: (on, here = false) => {

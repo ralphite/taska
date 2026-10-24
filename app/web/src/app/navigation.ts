@@ -66,7 +66,7 @@ export class Navigation {
     if (!r) return
     // on the phone a step from the search keeps it open: Back comes back to it
     const searching = !this.desk() && this.route.getState().layers.includes('search')
-    this.route.getState().go(projectPath(r.slug, tab, place, list), push, push && searching ? ['search'] : undefined, from)
+    this.route.getState().go(projectPath(r.slug, tab, place, list), push, push && searching ? ['search'] : undefined, from, place.kind === 'item' || place.kind === 'doc' ? tab : undefined)
   }
 
   /** The phone's search: open, or closed by Cancel (the search ends: its words go). */
@@ -156,10 +156,10 @@ export class Navigation {
     this.go(tab ?? (r.tab === 'inputs' ? 'items' : r.tab), { kind: 'item', ref: code }, r.list, fresh)
   }
 
-  /** An item, in place of what shows (no step Back: coming back from its document). */
-  openItemHere(code: string): void {
+  /** An item, in place of what shows (no step Back: coming back from its document); `tab`: the list's, when not this. */
+  openItemHere(code: string, tab?: Tab): void {
     const r = this.here()
-    if (r) this.go(r.tab === 'inputs' ? 'items' : r.tab, { kind: 'item', ref: code }, r.list, false)
+    if (r) this.go(tab ?? (r.tab === 'inputs' ? 'items' : r.tab), { kind: 'item', ref: code }, r.list, false)
   }
 
   newInput(): void {

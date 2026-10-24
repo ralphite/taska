@@ -74,6 +74,7 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
   const draftWords = useStoreValue(app.stores.drafts, (s) => s.bySlug[route.slug])
   const draftFiles = useStoreValue(app.stores.box, (s) => s.files)
   const drafts = useMemo(() => (m ? draftCodes(m, draftWords || app.stores.drafts.getState().of(route.slug), draftFiles) : new Set<string>()), [m, draftWords, draftFiles, app, route.slug])
+  useStoreValue(app.seen.rev, (r) => r) // a dot goes once its item is seen
   const seen = app.seen.of(route.slug)
   const facts = (it: Item): RowFacts => {
     const mm = m as ProjectModel
@@ -212,6 +213,7 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
         ref={pane}
         desk={desk}
         openN={openN}
+        listKey={route.tab}
         dragging={drag.n != null ? { out: drag.at?.how === 'out' } : null}
         top={ui.selected.size && desk ? <SelBar n={ui.selected.size} on={{ set: (f, v, said) => app.selection.set(f, v, said), clear: () => app.selection.clear() }} /> : undefined}
         swipe={swipe}

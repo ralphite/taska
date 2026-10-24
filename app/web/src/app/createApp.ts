@@ -47,6 +47,7 @@ import { createDragStore, type DragStore } from '../stores/drag'
 import { ItemDrag } from './itemDrag'
 import { Selection } from './selection'
 import { Updates } from './updates'
+import { Merges } from './merges'
 import { changePlace, changeText, changeWords } from '../model/saidOf'
 import { Access } from './access'
 import { createViewsStore, type ViewsStore } from '../stores/views'
@@ -387,6 +388,15 @@ export function createApp(env: AppEnv): App {
       box.amendStart(currentSlug(), m, am[2], am[1] as 'edit' | 'append')
     } else if (/^[A-Z]\d+$/.test(key)) nav.openItem(key)
   }
+  // a merged item gives way to the one it went into; what you wrote for it goes along
+  const merges = new Merges({ route, drafts, box: boxStore, toasts, model, showItem: (code, tab) => nav.openItemHere(code, tab), goDraft })
+  data.subscribe((s, was) => {
+    const slug = currentSlug()
+    if (slug && s.copies[slug] !== was.copies[slug]) merges.settle()
+  })
+  route.subscribe((s, was) => {
+    if (s.route !== was.route) merges.settle()
+  })
   const notices = new Notices(env.kv, () => settingsStore.getState().set({ noticeRev: settingsStore.getState().noticeRev + 1 }), { api, toasts, desk: env.desk, go: (url) => route.getState().go(url, true) })
   // the projects listed again: what newly needs you in the others
   data.subscribe((s, was) => {

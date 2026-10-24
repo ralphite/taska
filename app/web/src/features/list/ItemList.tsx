@@ -54,8 +54,11 @@ export interface ItemListProps {
   /** an item is being dragged (its rows are marked through their look): off every row it stands on its own */
   dragging?: { out: boolean } | null
   desk?: boolean
-  /** the item open beside the list (the desktop): opening another brings its row into view */
+  /** the item open beside the list (the desktop): opening another brings its row into view (not when the list
+   * changes with it: another tab) */
   openN?: number | null
+  /** which list this is (its tab) */
+  listKey?: string
   /** the phone: a row swipes right to go forward, left to show the ways back */
   swipe?: RowSwipe
 }
@@ -63,15 +66,16 @@ export interface ItemListProps {
 const NO_SWIPE: RowSwipe = { right: () => null, blocked: () => true }
 
 export const ItemList = forwardRef<HTMLDivElement, ItemListProps>(function ItemList(props, ref) {
-  const { loading, views, ownViews, rows, empty, top, bottom, on, onScroll, rowRef, dragging = null, desk = false, swipe, openN = null } = props
+  const { loading, views, ownViews, rows, empty, top, bottom, on, onScroll, rowRef, dragging = null, desk = false, swipe, openN = null, listKey = '' } = props
   const own = useRef<HTMLDivElement | null>(null)
-  const wasOpen = useRef(openN)
+  const wasOpen = useRef({ n: openN, list: listKey })
   useLayoutEffect(() => {
-    // not when the page loads with it open: only when you go from one item to another
-    if (openN === wasOpen.current) return
-    wasOpen.current = openN
-    if (desk && openN != null) own.current?.querySelector(`article[data-n="${openN}"] > :first-child`)?.scrollIntoView({ block: 'nearest' })
-  }, [openN, desk])
+    // not when the page loads with it open: only when you go from one item to another in the same list
+    const was = wasOpen.current
+    if (openN === was.n && listKey === was.list) return
+    wasOpen.current = { n: openN, list: listKey }
+    if (desk && openN != null && listKey === was.list) own.current?.querySelector(`article[data-n="${openN}"] > :first-child`)?.scrollIntoView({ block: 'nearest' })
+  }, [openN, desk, listKey])
   useRowSwipe(own, !desk && !!swipe, swipe ?? NO_SWIPE, rows)
   const rowOf = (t: EventTarget) => (t as Element).closest?.<HTMLElement>('article[data-n]') ?? null
   return (
