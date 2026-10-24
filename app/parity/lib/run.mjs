@@ -40,18 +40,22 @@ export async function loadScenarios(want) {
   return all.filter((s) => (want ? want.includes(s.id) : !s.optIn))
 }
 
-// Speed: a scenario is slower on B when its steps took, in all, a quarter longer and 300 ms more than on A. One step
-// alone says little (both sides share the machine); the sum over a scenario is steady from run to run.
+// Speed in a scenario: both sides run at the same moment on a shared, busy machine, so one step can stall for
+// seconds on either side. Slower means a pattern: at least two steps clearly slower on B (200 ms and half again),
+// and at least two more such steps than the other way round. A single slow step is listed, not counted. (The speed
+// scenario times each side alone, three times, and compares the medians.)
 export function speedOf(steps) {
   const ok = steps.filter((s) => s.kind === 'check' && !s.untimed && typeof s.ms?.a === 'number')
   const a = ok.reduce((n, s) => n + s.ms.a, 0)
   const b = ok.reduce((n, s) => n + s.ms.b, 0)
-  const worst = ok
-    .filter((s) => s.ms.b - s.ms.a > 250)
+  const slower = (x, y) => x - y > Math.max(200, y * 0.5)
+  const slowB = ok.filter((s) => slower(s.ms.b, s.ms.a))
+  const slowA = ok.filter((s) => slower(s.ms.a, s.ms.b))
+  const worst = slowB
     .sort((x, y) => y.ms.b - y.ms.a - (x.ms.b - x.ms.a))
     .slice(0, 5)
     .map((s) => ({ i: s.i, label: s.label, a: s.ms.a, b: s.ms.b }))
-  return { a, b, slow: b > a * 1.25 + 300, worst }
+  return { a, b, slow: slowB.length >= 2 && slowB.length >= slowA.length + 2, worst, slowA: slowA.length, slowB: slowB.length }
 }
 
 /** -> the report; it is also written to out/<runId>/report.json after every scenario/variant. */
@@ -98,6 +102,7 @@ export async function run({ a = 'old', b = 'new', scenarios: want, variants, run
           const engine = VARIANTS[vn].engine === 'webkit' ? (wk ||= await webkit.launch()) : browser
           twin = new Twin({ browser: engine, door, a: sa, b: sb, variantName: vn, outDir: path.join(OUT, `${sc.id}--${vn}`), log })
           await twin.open()
+          twin.untimed = !!sc.untimed // retries and timers decide how long its steps take: not a measure of speed
           await sc.run(twin)
         } catch (e) {
           res.error = String(e.message || e).split('\n')[0]
@@ -114,6 +119,7 @@ export async function run({ a = 'old', b = 'new', scenarios: want, variants, run
           res.data = { same: false, notes: [`could not compare: ${e.message.split('\n')[0]}`], diffs: [] }
         }
         motionCheck(res)
+        errorsCheck(res)
         res.speed = speedOf(res.steps)
         if (res.speed.slow) log(`    SLOWER on B: ${res.speed.a} ms vs ${res.speed.b} ms`)
         res.ms = Date.now() - t0
@@ -143,6 +149,20 @@ export function motionCheck(res) {
     if (a.join('\n') !== b.join('\n')) {
       s.cats.motion = textDiff(a.join('\n'), b.join('\n'))
       s.same = false
+    }
+  }
+}
+
+// Errors are compared over the scenario too: the same error (the network gone while offline) can come a step
+// later on one side. A step keeps its errors difference only for an error the other side never had in the scenario.
+export function errorsCheck(res) {
+  const bare = (e) => e.replace(/(BASE\/[^\s?]*)\?\S*/g, '$1?…')
+  const seenA = new Set(res.steps.flatMap((s) => [...(s.errorsA || []), ...(s.cats?.errors?.a || [])]).map(bare))
+  for (const s of res.steps) {
+    if (!s.cats?.errors) continue
+    if (s.cats.errors.b.every((e) => seenA.has(bare(e)))) {
+      delete s.cats.errors
+      if (!Object.keys(s.cats).length) s.same = true
     }
   }
 }

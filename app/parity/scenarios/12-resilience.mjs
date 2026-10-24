@@ -2,6 +2,7 @@
 export default [
   {
     id: 'server-down',
+    untimed: true,
     title: 'Taska 停了又回来',
     async run(t) {
       await t.goto('/p/taska/')

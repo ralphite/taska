@@ -1,7 +1,7 @@
 """Fresh copies of Yadong's data snapshot for the parity runs.
 
-The snapshot (/Users/yadong/taska-rewrite/snapshot) is only read. A copy takes every file with `cp -cR` (an APFS
-clone: a real, separate file, made instantly) and then makes each SQLite database again through SQLite's backup
+The snapshot (/Users/yadong/taska-rewrite/snapshot) is only read. A copy clones the whole tree at once (APFS
+clonefile: real, separate files, made instantly; `cp -cR` where that fails) and then makes each SQLite database again through SQLite's backup
 interface, read from the snapshot as an immutable file, so a database that something had open is still copied whole.
 The -wal and -shm files are left out: the backup holds everything. Phone push subscriptions (.push) are left out, so a
 copy never sends a push to Yadong's phone.
@@ -11,6 +11,7 @@ copy never sends a push to Yadong's phone.
 
 from __future__ import annotations
 
+import ctypes
 import os
 import shutil
 import sqlite3
@@ -38,7 +39,11 @@ def copy_data(dst: str, src: str = SNAPSHOT) -> None:
     if os.path.exists(dst):
         raise SystemExit(f"{dst} exists already")
     os.makedirs(os.path.dirname(dst) or ".", exist_ok=True)
-    subprocess.run(["cp", "-cR", src, dst], check=True)
+    # one clonefile(2) call clones the whole tree (APFS copy-on-write: separate files, made at once, and far less
+    # work for the file-event and Spotlight services than thousands of single copies); cp -cR where it cannot
+    libc = ctypes.CDLL("/usr/lib/libSystem.B.dylib", use_errno=True)
+    if libc.clonefile(os.fsencode(src), os.fsencode(dst), 0) != 0:
+        subprocess.run(["cp", "-cR", src, dst], check=True)
     for dirpath, _dirs, files in os.walk(dst):
         for f in files:
             p = os.path.join(dirpath, f)

@@ -12,7 +12,8 @@ export default [
       await t.goto('/p/dev2/')
       await t.goto('/p/nosuchproject/')
       await t.goto('/p/taska/B9999')
-      await t.goto('/dev/dashboard')
+      // (the dev dashboard shows how fast this server answered during the run: it differs by the machine's load, so
+      // it is left out)
     },
   },
   {

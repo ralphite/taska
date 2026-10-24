@@ -121,7 +121,8 @@ class Side {
     this.lastFrame = null
   }
   strip(s) {
-    return s.split(this.base).join('BASE').split(this.server.root).join('ROOT')
+    // addresses without their query (a server's own boot id and revision in a poll address)
+    return s.split(this.base).join('BASE').split(this.server.root).join('ROOT').replace(/(BASE\/[^\s?]*)\?\S*/g, '$1?…')
   }
   takeErrors() {
     const e = this.errors
@@ -199,8 +200,10 @@ class Side {
     await this.page.evaluate(() => window.__parity && ((window.__parity.motion = []), (window.__parity.moving = []))).catch(() => {})
     this.film = []
     this.prevFrame = this.lastFrame // the screen before this step, as the previous step's film ended
+    // the desktop film at half size: four times less work for a busy machine, still plain enough for a person to read
     const vp = this.variant.viewport
-    await this.cdp.send('Page.startScreencast', { format: 'png', maxWidth: vp.width, maxHeight: vp.height, everyNthFrame: 1 })
+    const k = this.phone ? 1 : 2
+    await this.cdp.send('Page.startScreencast', { format: 'png', maxWidth: vp.width / k, maxHeight: vp.height / k, everyNthFrame: 1 })
   }
   /** -> [{ png, ms }]: each distinct screen in order and how long it stayed. */
   async filmStop() {
@@ -294,7 +297,7 @@ export class Twin {
 
   // ------------------------------------------------------------------ steps
   /** Runs fn(side) on both sides at once, then settles, captures and compares (unless check is false). */
-  async step(label, fn, { check = true, settle = {}, untimed = false, env } = {}) {
+  async step(label, fn, { check = true, settle = {}, untimed = this.untimed, env } = {}) {
     if (check) await Promise.all(this.sides.map((s) => s.filmStart()))
     const t0 = Date.now()
     const res = await Promise.allSettled(this.sides.map((s) => fn(s)))
@@ -314,7 +317,7 @@ export class Twin {
     if (target && typeof target.x === 'number') return target
     const p = this.A.page
     const loc = typeof target === 'function' ? target(p) : p.getByText(target, { exact: true }).first()
-    const box = await loc.boundingBox({ timeout: 5000 })
+    const box = await loc.boundingBox({ timeout: 15000 })
     if (!box) throw new Error(`target not shown on side A: ${target}`)
     const vp = this.variant.viewport
     const x = box.x + (dx ?? box.width / 2)
@@ -359,7 +362,7 @@ export class Twin {
     for (let i = 0; i < 10; i++) {
       const p = this.A.page
       const loc = typeof target === 'function' ? target(p) : p.getByText(target, { exact: true }).first()
-      const box = await loc.boundingBox({ timeout: 5000 })
+      const box = await loc.boundingBox({ timeout: 15000 })
       if (!box) throw new Error(`target not shown on side A: ${target}`)
       const cy = box.y + box.height / 2
       if (cy >= 60 && cy <= vp.height - 120) break
@@ -408,7 +411,7 @@ export class Twin {
       label || `选文件 ${files.map((f) => path.basename(f)).join(', ')}`,
       async (s) => {
         const [chooser] = await Promise.all([
-          s.page.waitForEvent('filechooser', { timeout: 5000 }),
+          s.page.waitForEvent('filechooser', { timeout: 15000 }),
           this.phone ? s.page.touchscreen.tap(pt.x, pt.y) : s.page.mouse.click(pt.x, pt.y),
         ])
         await chooser.setFiles(files)
@@ -535,7 +538,7 @@ export class Twin {
     }
     const errs = this.sides.map((s) => s.takeErrors())
     const newErrs = errs[1].filter((e) => !errs[0].includes(e))
-    if (newErrs.length) cats.errors = { a: errs[0], b: errs[1] }
+    if (newErrs.length) cats.errors = { a: errs[0], b: errs[1] } // judged again over the scenario (run.mjs)
     const dialogs = this.sides.map((s) => s.takeDialogs())
     if (JSON.stringify(dialogs[0]) !== JSON.stringify(dialogs[1])) cats.dialogs = dialogs
     if (failed?.[1]) cats.action = failed
@@ -581,6 +584,7 @@ export class Twin {
       ms: t0 ? { a: Math.max(0, Math.round(done[0] - t0)), b: Math.max(0, Math.round(done[1] - t0)) } : {},
       files,
       errorsA: errs[0],
+      errorsB: errs[1],
       untimed: untimed || undefined, // a wait on purpose: its time says nothing about speed
       note,
       film: film && { a: film.a, b: film.b, short: film.short },

@@ -138,8 +138,8 @@ export const MUTANTS = [
   },
   {
     name: 'down-words',
-    title: 'Taska 停了时的提示改成 “Taska is unreachable, retrying…”',
-    patches: [{ file: JS, find: '`Taska is out of reach, retrying…`', replace: '`Taska is unreachable, retrying…`', count: 3 }],
+    title: 'Taska 停了时右上角的提示改成 “Offline, trying again…”',
+    patches: [{ file: JS, find: '`Offline, retrying…`', replace: '`Offline, trying again…`' }],
     expect: { scenario: 'server-down', variants: ['desk-light', 'phone-light'], cats: ['pixels', 'text'] },
   },
   {

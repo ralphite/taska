@@ -2,6 +2,7 @@
 export default [
   {
     id: 'offline-send',
+    untimed: true,
     title: '断网时发送',
     async run(t) {
       await t.goto('/p/taska/')

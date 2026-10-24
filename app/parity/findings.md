@@ -13,7 +13,7 @@
 | P05 | a3e6a45 | 搜索（电脑） | 搜索时旧版 Rules 标签显示匹配数（1），新版还是 51；旧版列表末尾有 “IN OTHER PROJECTS · n”，新版没有；在搜索框里按 `/`：旧版只是聚焦，新版把 `/` 打进去（`?q=%2F`）；按 Enter：旧版打开第一条，新版不动 | open |
 | P06 | a3e6a45 | 搜索（手机） | 点右上角搜索：旧版出现搜索栏（Search title, text or code / Cancel），新版没反应 | open |
 | P07 | a3e6a45 | 项目抽屉（手机） | 点左上角：旧版打开项目抽屉，新版没反应 | open |
-| P08 | a3e6a45 | 侧栏收起再展开（电脑） | 收起后刷新，过程中的画面不同；再展开时新版多了 “All projects” 提示框和 0.12 秒的滑动，旧版没有 | open |
+| P08 | a3e6a45 | 侧栏收起再展开（电脑） | 收起后刷新，过程中的画面不同（待整体比对重新判）。~~再展开时新版多了 “All projects” 提示框和 0.12 秒的滑动~~：工具误报，旧版自己也时有时无（鼠标停 0.5 秒才出现），10-24 已更正 | open |
 | P09 | a3e6a45 | 断网时发送（手机） | 网络一恢复，旧版马上发出（“Sent. Waiting for your agent · Undo · Move to…”，Inputs 标签出现 1）；新版那一刻还是 “Waiting for Taska: … · Edit”，几秒后才发出 | open |
 | P10 | a3e6a45 | 首页、Documents、Activity、Deleted、Settings | 新版还没做（不在试点范围） | open |
 
