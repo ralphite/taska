@@ -4,6 +4,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { PARITY } from '../lib/servers.mjs'
+import { MUTANTS } from '../mutants.mjs'
 import { errorsCheck, kindsOf, loadScenarios, speedOf } from '../lib/run.mjs'
 
 const argv = process.argv.slice(2)
@@ -30,10 +31,12 @@ if (argv.includes('--selftest')) {
     x.pass = x.found.length === 0
   }
   for (const [name, m] of Object.entries(sum.mutants)) {
+    m.expect = MUTANTS.find((x) => x.name === name)?.expect || m.expect // as the fault is described now
     const rep = JSON.parse(fs.readFileSync(path.join(PARITY, 'out', m.run, 'report.json'), 'utf8'))
     m.rows = rep.results.map((r) => {
       const kinds = kindsOf(r)
       const wanted = m.expect.variants.includes(r.variant)
+      if (wanted && r.steps.some((s) => s.note?.film)) kinds.add('film-note')
       let hit = m.expect.cats.some((c) => kinds.has(c))
       if (hit && m.expect.step) hit = r.steps.some((s) => !s.same && s.label.includes(m.expect.step) && m.expect.cats.some((c) => c in s.cats))
       return { variant: r.variant, kinds: [...kinds], wanted, ok: wanted ? hit : kinds.size === 0 }

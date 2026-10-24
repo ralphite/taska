@@ -202,8 +202,8 @@ class Side {
     this.prevFrame = this.lastFrame // the screen before this step, as the previous step's film ended
     // the desktop film at half size: four times less work for a busy machine, still plain enough for a person to read
     const vp = this.variant.viewport
-    const k = this.phone ? 1 : 2
-    await this.cdp.send('Page.startScreencast', { format: 'png', maxWidth: vp.width / k, maxHeight: vp.height / k, everyNthFrame: 1 })
+    const k = this.variant.phone ? 1 : 2
+    await this.cdp.send('Page.startScreencast', { format: 'png', maxWidth: Math.round(vp.width / k), maxHeight: Math.round(vp.height / k), everyNthFrame: 1 })
   }
   /** -> [{ png, ms }]: each distinct screen in order and how long it stayed. */
   async filmStop() {

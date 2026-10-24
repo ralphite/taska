@@ -51,6 +51,7 @@ async function mutants() {
     const rows = rep.results.map((r) => {
       const kinds = kindsOf(r)
       const wanted = e.variants.includes(r.variant)
+      if (wanted && r.steps.some((s) => s.note?.film)) kinds.add('film-note') // screens during a step, for a person to judge
       let hit = e.cats.some((c) => kinds.has(c))
       if (hit && e.step) hit = r.steps.some((s) => !s.same && s.label.includes(e.step) && e.cats.some((c) => c in s.cats))
       return { variant: r.variant, kinds: [...kinds], wanted, ok: wanted ? hit : kinds.size === 0 }

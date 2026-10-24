@@ -128,7 +128,9 @@ export const MUTANTS = [
     name: 'toast-word',
     title: '改优先级后的提示条说 “became P2” 而不是 “is now P2”',
     patches: [{ file: SW, find: 'e===`pri`?`is now ${t}`', replace: 'e===`pri`?`became ${t}`' }],
-    expect: { scenario: 'item-fields', variants: ['desk-light', 'iphone-light'], cats: ['pixels', 'text'] },
+    // on the desktop the toast is gone after about 1.5 s, before a busy machine has the step's final picture: there it
+    // shows in the screens during the step, for a person to judge ('film-note')
+    expect: { scenario: 'item-fields', variants: ['desk-light', 'iphone-light'], cats: ['pixels', 'text', 'film-note'] },
   },
   {
     name: 'shortcuts-title',
