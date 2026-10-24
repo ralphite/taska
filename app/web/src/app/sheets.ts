@@ -9,10 +9,19 @@ export class Sheets {
   private readonly store: SheetStore
   private readonly route: RouteStore
   private readonly desk: () => boolean
+  private readonly told = new Set<(req: SheetRequest) => void>()
+  readonly stop: () => void
   constructor(store: SheetStore, route: RouteStore, desk: () => boolean) {
     this.store = store
     this.route = route
     this.desk = desk
+    this.stop = route.subscribe(() => this.gone())
+  }
+
+  /** Back closed a sheet: `fn` hears which. -> how to stop */
+  onGone(fn: (req: SheetRequest) => void): () => void {
+    this.told.add(fn)
+    return () => this.told.delete(fn)
   }
 
   open(req: SheetRequest, place: SheetPlace = {}): void {
@@ -41,8 +50,11 @@ export class Sheets {
   }
 
   /** Back closed it (its step in the history went). */
-  gone(): void {
-    if (this.store.getState().spec && !this.route.getState().layers.includes('sheet') && !this.desk()) this.store.getState().close()
+  private gone(): void {
+    const spec = this.store.getState().spec
+    if (!spec || this.route.getState().layers.includes('sheet') || this.desk()) return
+    this.store.getState().close()
+    for (const fn of this.told) fn(spec.req)
   }
 
   /** -> true on the second click within 3 seconds; the first one asks. */

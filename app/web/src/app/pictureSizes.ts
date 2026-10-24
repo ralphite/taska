@@ -8,12 +8,21 @@ import type { DataStore } from '../stores/data'
 import { picturesIn } from '../ui/markdown/inline'
 
 export class PictureSizes {
-  private readonly d: { api: TaskaApi; data: DataStore }
+  private readonly d: { api: TaskaApi; data: DataStore; model(slug: string): ProjectModel | null }
   private at = 0
   private timer = 0
   private gen = 0
+  readonly stop: () => void
   constructor(d: PictureSizes['d']) {
     this.d = d
+    // a text showing a picture of unknown size (one just uploaded) asks for the sizes again
+    this.stop = d.data.subscribe((s, was) => {
+      for (const slug of Object.keys(s.copies))
+        if (s.copies[slug] !== was.copies[slug]) {
+          const m = d.model(slug)
+          if (m) this.check(slug, m)
+        }
+    })
   }
 
   async load(slug: string): Promise<void> {

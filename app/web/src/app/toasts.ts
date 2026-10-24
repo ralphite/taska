@@ -2,6 +2,8 @@
 // error); a sticky one stays until you act on it. Every Undo on a toast is also your last undo step (Z).
 
 import type { FeedbackStore, NotSaved, UndoStep } from '../stores/feedback'
+import type { PendingChange } from '../stores/changes'
+import { changePlace, changeText, changeWords } from '../model/saidOf'
 
 export interface ToastOptions {
   error?: boolean
@@ -74,6 +76,14 @@ export class Toasts {
     const go = this.store.getState().notSaved.filter((f) => f.retry && (sid == null || f.sid === sid)).reverse()
     for (const f of go) this.store.getState().dropNotSaved(f.sid)
     for (const f of go) void f.retry?.()
+  }
+
+  /** A change Taska said no to: its sender answers it, or it is said in red in Taska's words (or the sender's), or it
+   * is listed as not saved (what it was, where it belongs, its words). */
+  changeRefused(c: PendingChange, why: string): void {
+    if (c.ownRefusal) return
+    if (c.refusedSay != null) return this.show(why || c.refusedSay, null, { error: true })
+    this.notSaved({ what: changeWords(c.commands), why, slug: c.slug, go: changePlace(c.commands, c.slug), said: changeText(c.commands) })
   }
 
   notSaved(f: Omit<NotSaved, 'sid' | 'at'>): void {

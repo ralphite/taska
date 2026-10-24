@@ -8,6 +8,7 @@ import { needsYou } from '../model/items'
 import { codeOf, type ProjectModel } from '../model/project'
 import type { ProjectRow } from '../model/types'
 import { plural } from '../model/words'
+import type { DataStore } from '../stores/data'
 import type { KeyValueStore } from '../stores/storage'
 import type { Toasts } from './toasts'
 
@@ -22,6 +23,9 @@ interface Ev {
 export interface NoticesDeps {
   api: TaskaApi
   toasts: Toasts
+  data: DataStore
+  /** the project shown (none: '') */
+  slug(): string
   desk(): boolean
   go(url: string): void
 }
@@ -38,10 +42,16 @@ export class Notices {
   private timer = 0
   /** the phone's push subscription (undefined: not asked yet) */
   sub: PushSubscription | null | undefined = undefined
+  readonly stop: () => void = () => {}
   constructor(kv: KeyValueStore, changed: () => void, d: NoticesDeps | null = null) {
     this.kv = kv
     this.changed = changed
     this.d = d
+    // the projects listed again: what newly needs you in the others
+    if (d)
+      this.stop = d.data.subscribe((s, was) => {
+        if (s.projects && s.projects !== was.projects) this.projects(s.projects, d.slug())
+      })
   }
 
   private read<T>(key: string, fallback: T): T {

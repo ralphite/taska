@@ -1,9 +1,11 @@
-// The composition root: the page's services, made once and handed to the components through React context. Each
-// piece gets what it needs; nothing reaches for a global. Stories and tests make their own with fakes.
+// The composition root: the page's services, made once and handed to the components through React context. It only
+// assembles: each piece gets what it needs and watches what it follows itself; nothing reaches for a global. Stories
+// and tests make their own with fakes.
 
 import { Http } from '../api/http'
 import { TaskaApi } from '../api/taska'
-import { merge, project, type ProjectModel, type ServerCopy } from '../model/project'
+import type { ProjectModel } from '../model/project'
+import { openItemN, routeSlug } from '../model/route'
 import { createChangesStore, keptChanges, type ChangesStore } from '../stores/changes'
 import { createDataStore, type DataStore } from '../stores/data'
 import { createFeedbackStore, type FeedbackStore } from '../stores/feedback'
@@ -17,8 +19,8 @@ import { createSearchStore, type SearchStore } from '../stores/search'
 import { createSheetStore, type SheetStore } from '../stores/sheet'
 import { createUiStore, type UiStore } from '../stores/ui'
 import { noCache, type CopyCache } from '../sync/cache'
-import { ProjectSync, type Presence } from '../sync/projectSync'
-import { ChangeRunner, newId } from './changeRunner'
+import type { Presence } from '../sync/projectSync'
+import { ChangeRunner } from './changeRunner'
 import { InputActions } from './inputActions'
 import { InputSender } from './inputSender'
 import { ItemActions } from './itemActions'
@@ -49,18 +51,16 @@ import { Selection } from './selection'
 import { Updates } from './updates'
 import { Merges } from './merges'
 import { DraftPlaces } from './draftPlaces'
-import { draftName, draftTarget, type DraftKey } from '../model/draftTarget'
+import { draftName, type DraftKey } from '../model/draftTarget'
 import { hereFor, runAction, type ActionId } from './actions'
 import { OtherTabs } from './otherTabs'
 import { ItemEdits } from './itemEdits'
 import { createKeptEditsStore, type KeptEditsStore } from '../stores/keptEdits'
-import { changePlace, changeText, changeWords } from '../model/saidOf'
 import { Access } from './access'
 import { createViewsStore, type ViewsStore } from '../stores/views'
 import { createMediaStore, type MediaStore } from '../stores/media'
 import { createDictationStore, type DictationStore } from '../stores/dictation'
 import { memoryVault, type NoteVault } from '../stores/noteVault'
-import { inputCode } from '../model/words'
 import { createRecordingStore, type RecordingStore } from '../stores/recording'
 import { createSettingsStore, type SettingsStore } from '../stores/settings'
 import { createDocViewStore, type DocViewStore } from '../stores/docView'
@@ -73,6 +73,11 @@ import { RowSizes } from './rowSizes'
 import { Sheets } from './sheets'
 import { Seen } from '../stores/seen'
 import { Toasts } from './toasts'
+import { ProjectModels } from './projectModels'
+import { ProjectSession } from './projectSession'
+import { Delivered } from './delivered'
+import { DraftSender } from './draftSender'
+import { SideOver } from './sideOver'
 
 export interface AppEnv {
   http?: Http
@@ -200,99 +205,44 @@ export function createApp(env: AppEnv): App {
   const viewsStore = createViewsStore()
   const gripsStore = createGripsStore(env.kv)
   const dragStore = createDragStore()
-  const pictureSizes = new PictureSizes({ api, data })
-  // a text showing a picture of unknown size (one just uploaded) asks for the sizes again
-  const unsize = data.subscribe((s, was) => {
-    for (const slug of Object.keys(s.copies)) if (s.copies[slug] !== was.copies[slug]) {
-      const m = model(slug)
-      if (m) pictureSizes.check(slug, m)
-    }
-  })
-  const fields = new Fields()
-  // the document shown is the address's: another one (or none) starts afresh
-  const docShown = () => {
-    const r = route.getState().route
-    const d = r.page === 'project' && r.place.kind === 'doc' ? r.place.d : null
-    // leaving a document being edited (on the desktop, in the pane) keeps its text as a draft
-    const v = docView.getState()
-    if (v.editing && v.newFor == null && d !== v.d) docs?.keep()
-    v.show(d)
-  }
-  let docs: Docs | null = null
-  docShown()
-  const undoc = route.subscribe(docShown)
   const drafts = createDraftsStore(env.kv)
   const boxStore = createBoxStore(env.session ?? memoryStore())
   const sheetStore = createSheetStore()
-  const sheets = new Sheets(sheetStore, route, env.desk)
-  const unsheet = route.subscribe(() => {
-    // Back closed it (an editor's text is kept as a draft)
-    const was = sheetStore.getState().spec
-    sheets.gone()
-    if (was?.req.kind === 'doc-edit' && !sheetStore.getState().spec && docView.getState().editing) docs?.keep()
-  })
-  let sync: ProjectSync | null = null
-  let projectsTimer = 0
 
-  const currentSlug = () => {
-    const r = route.getState().route
-    return r.page === 'project' ? r.slug : ''
-  }
-  const memo = new Map<string, { copy: ServerCopy; pending: unknown; model: ProjectModel }>()
-  const model = (slug: string): ProjectModel | null => {
-    const copy = data.getState().copies[slug]
-    if (!copy) return null
-    const pending = changes.getState().list
-    const hit = memo.get(slug)
-    if (hit && hit.copy === copy && hit.pending === pending) return hit.model
-    const mine = pending.filter((c) => c.slug === slug)
-    const m = project(copy, mine.flatMap((c) => c.patches), Math.max(copy.at, ...mine.map((c) => c.t)), mine.flatMap((c) => c.inputPatches || []), mine.flatMap((c) => c.docPatches || []))
-    memo.set(slug, { copy, pending, model: m })
-    return m
-  }
-  const take = (slug: string, a: Parameters<ProjectSync['take']>[0]) => {
-    if (sync?.slug === slug) sync.take(a)
-    else data.getState().setCopy(slug, merge(data.getState().copies[slug] ?? null, a, Date.now()))
-  }
-  const stale = (slug: string) => {
-    if (sync?.slug === slug) void sync.refresh()
-  }
+  const slug = () => routeSlug(route.getState().route)
+  const models = new ProjectModels({ data, changes })
+  const model = models.of
+  const here = () => model(slug())
+  const title = (s: string) => data.getState().projects?.find((p) => p.name === s)?.title || s
+  const goUrl = (url: string) => route.getState().go(url, true)
+  const recordingNow = () => !!recording.getState().rec
+  // the project open in the page (made last: what it needs is made below)
+  const session = (): ProjectSession => projectSession
+  const keep = (blob: Blob) => keptNotes.keep(blob)
+  const goDraft = (key: DraftKey) => draftPlaces.go(key)
+
+  const pictureSizes = new PictureSizes({ api, data, model })
+  const fields = new Fields()
+  const sheets = new Sheets(sheetStore, route, env.desk)
   const runner = new ChangeRunner(api, changes, {
-    changes: take,
-    stale,
-    cursor: (slug) => (sync?.slug === slug ? sync.cursor : null),
+    changes: (s, a) => session().take(s, a),
+    stale: (s) => session().stale(s),
+    cursor: (s) => session().cursor(s),
     unreachable: () => {},
-    refused: (c, why) => c.ownRefusal || (c.refusedSay != null ? toasts.show(why || c.refusedSay, null, { error: true }) : toasts.notSaved({ what: changeWords(c.commands), why, slug: c.slug, go: changePlace(c.commands, c.slug), said: changeText(c.commands) })),
+    refused: (c, why) => toasts.changeRefused(c, why),
   })
+  const delivered = new Delivered({ box: boxStore, ui, route, runner, toasts, model, slug, desk: env.desk })
   const inputs = new InputSender(api, outbox, {
-    cursor: (slug) => (sync?.slug === slug ? sync.cursor : null),
-    changes: take,
-    stale,
-    sent: (o, rid) => {
-      // taken back while on its way: once Taska has it, it is deleted there behind you
-      if (rid) boxStore.getState().sentAs(o.q, rid)
-      if (o.unsent && rid) {
-        // what the organizer or your agent already has stays: it is deleted from Inputs
-        const m = model(o.slug)
-        const r = m?.byId.get(rid)
-        if (m && r && (r.acked || m.facts.organizer.busy === rid || r.org)) toasts.show(`${inputCode(rid)} already reached ${r.org ? 'the organizer' : 'your agent'}; delete it from Inputs`)
-        else void runner.send({ id: newId(), slug: o.slug, commands: [{ op: 'delete', id: rid }], patches: [], said: `taking back ${rid}`, t: Date.now() })
-      }
-      if (o.slug === currentSlug()) ui.getState().setLastSent(o.quiet || o.unsent ? null : { slug: o.slug, rid, q: o.q })
-      // what you sent shows up where you are, in view and lit up for a moment
-      if (rid && !o.quiet && !o.unsent && o.slug === currentSlug()) {
-        ui.getState().setJustSent(rid)
-        setTimeout(() => ui.getState().justSent === rid && ui.getState().setJustSent(null), 1500)
-        const r = route.getState().route
-        if (!env.desk() && r.page === 'project' && r.tab === 'inputs' && r.place.kind === 'tab') ui.getState().setLit(rid)
-      }
-    },
+    cursor: (s) => session().cursor(s),
+    changes: (s, a) => session().take(s, a),
+    stale: (s) => session().stale(s),
+    sent: (o, rid) => delivered.sent(o, rid),
     refused: (_o, why) => toasts.show(why ? `err: ${why}` : 'Not saved', null),
     log: () => {},
   })
   const items = new ItemActions({
-    slug: currentSlug,
-    model: () => model(currentSlug()),
+    slug,
+    model: here,
     runner,
     toasts,
     ui,
@@ -301,40 +251,24 @@ export function createApp(env: AppEnv): App {
       const r = route.getState().route
       return r.page === 'project' ? JSON.stringify([r.slug, r.tab, r.list]) : ''
     },
-    openItem: () => {
-      const r = route.getState().route
-      if (r.page !== 'project' || r.place.kind !== 'item') return null
-      const n = Number(/\d+/.exec(r.place.ref)?.[0])
-      return Number.isFinite(n) ? n : null
-    },
+    openItem: () => openItemN(route.getState().route),
     desk: env.desk,
     rowHeight: (n) => rows.height(n),
-    undoSeq: (n, f) => model(currentSlug())?.facts.undo.find((u) => u.n === n && f in u.f)?.seq ?? null,
+    undoSeq: (n, f) => here()?.facts.undo.find((u) => u.n === n && f in u.f)?.seq ?? null,
     noteWith: () => false,
   })
-
-  const inputActions = new InputActions({
-    runner,
-    toasts,
-    api,
-    model,
-    refresh: (slug) => stale(slug),
-    title: (slug) => data.getState().projects?.find((p) => p.name === slug)?.title || slug,
-    go: (url) => route.getState().go(url, true),
-  })
+  const inputActions = new InputActions({ runner, toasts, api, model, refresh: (s) => session().stale(s), title, go: goUrl })
   // the other tabs of this browser: their drafts show here too
-  const otherTabs = new OtherTabs({ kv: env.kv, drafts, box: boxStore, toasts, slug: () => currentSlug(), recording: () => !!recording.getState().rec })
-  const box = new Box({ api, store: boxStore, drafts, outbox, inputs, runner, toasts, keep: (blob) => keep(blob), recording: () => !!recording.getState().rec, goDraft: (key) => goDraft(key), model, kv: env.kv, sent: (slug, key) => otherTabs.sent(slug, key), refresh: async (slug) => {
-    if (sync?.slug === slug) await sync.refresh()
-  } })
+  const otherTabs = new OtherTabs({ kv: env.kv, drafts, box: boxStore, toasts, slug, recording: recordingNow })
+  const box = new Box({ api, store: boxStore, drafts, outbox, inputs, runner, toasts, keep, recording: recordingNow, goDraft, model, kv: env.kv, sent: (s, key) => otherTabs.sent(s, key), refresh: (s) => session().refresh(s) })
   const activity = new Activity({ api, store: activityStore, toasts })
   const restores = new Restores({ runner, toasts, inputs: inputActions, model })
-  docs = new Docs({ runner, changes, toasts, view: docView, nav, route, sheets, fields, desk: env.desk, model, box, boxStore, kv: env.kv, ticks: docTicks, inputs, mic: { stop: () => dictation.stop(), discard: (key) => dictation.discard(key), settled: (): Promise<boolean> => dictation.settled() } })
+  const docs = new Docs({ runner, changes, toasts, view: docView, nav, route, sheets, fields, desk: env.desk, model, box, boxStore, kv: env.kv, ticks: docTicks, inputs, mic: { stop: () => dictation.stop(), discard: (key) => dictation.discard(key), settled: () => dictation.settled() } })
   const projects = new Projects({ api, data, kv: env.kv, toasts, home: () => route.getState().route.page === 'home' })
   const refreshProjects = () => projects.refresh()
-  const settings = new Settings({ api, store: settingsStore, data, projects, route, sheets, toasts, box, boxStore, fields, refresh: (slug) => stale(slug) })
-  const boxKeyNow = () => boxStore.getState().shown.key
+  const settings = new Settings({ api, store: settingsStore, data, projects, route, sheets, toasts, box, boxStore, fields, refresh: (s) => session().stale(s) })
   const voiceWords = new VoiceWords({ api, box, store: boxStore, toasts, fields })
+  const draftSender = new DraftSender({ box, boxStore, inputs, docVoice: () => docVoice, model })
   const voice = new Voice({
     api,
     store: recording,
@@ -344,160 +278,83 @@ export function createApp(env: AppEnv): App {
     toasts,
     fields,
     desk: env.desk,
-    // what the draft holds goes to what it writes to (an item's draft: a reply to it; a new input's: a new input)
-    send: (slug, key) => {
-      const t = draftTarget(key)
-      if (t.kind === 'doc') return void docVoice.send(slug, t.d, key) // a document's box: its voice comments, or a comment
-      const scope = t.kind === 'reply' ? t.code : null
-      if (key === boxKeyNow()) void box.send(slug, model(slug), scope)
-      else {
-        const { text, files } = box.take(slug, key)
-        inputs.push({ slug, text, scope, files: files.map(({ key: k, ...f }) => ({ ...f, key: k })) })
-      }
-    },
-    boxKey: () => boxKeyNow(),
+    send: (s, key) => draftSender.send(s, key),
+    boxKey: () => boxStore.getState().shown.key,
     flush: () => void inputs.flush(),
-    keep: (blob) => keep(blob),
-    goDraft: (key) => goDraft(key),
+    keep,
+    goDraft,
     about: (a) => docVoice.about(a.d, a.key, a.quote),
   })
-  const docVoice = new DocVoice({ voice, docs, box, boxStore, recording, view: docView, runner, changes, toasts, model, desk: env.desk, reply: (slug, key, scope) => void box.send(slug, model(slug), scope, key) })
-  const dictation: Dictation = new Dictation({ api, store: dictationStore, view: docView, route, docs, fields, toasts, model, recording: () => !!recording.getState().rec })
+  const docVoice = new DocVoice({ voice, docs, box, boxStore, recording, view: docView, runner, changes, toasts, model, desk: env.desk, reply: (s, key, scope) => void box.send(s, model(s), scope, key) })
+  const dictation: Dictation = new Dictation({ api, store: dictationStore, view: docView, route, docs, fields, toasts, model, recording: recordingNow })
   const views = new SavedViews({ api, store: viewsStore, nav, toasts, list: () => { const r = route.getState().route; return r.page === 'project' ? r.list : null } })
-  const moves = new Moves({
-    api,
-    changes,
-    toasts,
-    model,
-    title: (slug) => data.getState().projects?.find((p) => p.name === slug)?.title || slug,
-    go: (url) => route.getState().go(url, true),
-    refresh: (slug) => stale(slug),
-  })
-  const selection = new Selection({
-    ui,
-    order: listOrder,
-    runner,
-    toasts,
-    slug: currentSlug,
-    model: () => model(currentSlug()),
-    open: () => {
-      const r = route.getState().route
-      return r.page === 'project' && r.place.kind === 'item' ? Number(/\d+/.exec(r.place.ref)?.[0]) || null : null
-    },
-  })
-  const itemDrag = new ItemDrag({ store: dragStore, items, moves, slug: currentSlug, model: () => model(currentSlug()) })
+  const moves = new Moves({ api, changes, toasts, model, title, go: goUrl, refresh: (s) => session().stale(s) })
+  const selection = new Selection({ ui, order: listOrder, runner, toasts, slug, model: here, open: () => openItemN(route.getState().route) })
+  const itemDrag = new ItemDrag({ store: dragStore, items, moves, slug, model: here })
   const media = new Media({ api, store: mediaStore, route, sheets, toasts, desk: env.desk })
-  const keptNotes = new KeptNotes({
+  const keptNotes: KeptNotes = new KeptNotes({
     vault: env.vault ?? memoryVault(),
     kv: env.kv,
     box: boxStore,
     outbox,
     inputs,
     toasts,
-    resume: (slug, key, f, blob, scope) => (f.plain ? box.resume(slug, f.key, blob, f.name) : voice.resume(slug, key, f, blob, scope)),
-    place: (slug, key, f) => voice.placeKept(slug, key, f),
+    resume: (s, key, f, blob, scope) => (f.plain ? box.resume(s, f.key, blob, f.name) : voice.resume(s, key, f, blob, scope)),
+    place: (s, key, f) => voice.placeKept(s, key, f),
     draftName,
-    goDraft: (key) => goDraft(key),
-    boxKey: () => boxKeyNow(),
+    goDraft,
+    boxKey: () => boxStore.getState().shown.key,
   })
-  function keep(blob: Blob): string {
-    const rid = keptNotes.id()
-    keptNotes.hold(rid, blob)
-    return rid
-  }
-  // to the box a draft belongs to
   // where a draft belongs, to go there
-  const draftPlaces = new DraftPlaces({ route, nav, box, docs: () => docs, fields, toasts, slug: currentSlug, model })
-  const goDraft = (key: DraftKey) => draftPlaces.go(key)
+  const draftPlaces: DraftPlaces = new DraftPlaces({ route, nav, box, docs: () => docs, fields, toasts, slug, model })
   // a merged item gives way to the one it went into; what you wrote for it goes along
-  const merges = new Merges({ route, drafts, box: boxStore, toasts, model, showItem: (code, tab) => nav.openItemHere(code, tab), goDraft })
-  data.subscribe((s, was) => {
-    const slug = currentSlug()
-    if (slug && s.copies[slug] !== was.copies[slug]) merges.settle()
-  })
-  route.subscribe((s, was) => {
-    if (s.route !== was.route) merges.settle()
-    // going anywhere closes the sidebar opened over the page
-    if (s.url !== was.url && ui.getState().sideOver) ui.getState().setSideOver(false)
-  })
-  const notices = new Notices(env.kv, () => settingsStore.getState().set({ noticeRev: settingsStore.getState().noticeRev + 1 }), { api, toasts, desk: env.desk, go: (url) => route.getState().go(url, true) })
-  // the projects listed again: what newly needs you in the others
-  data.subscribe((s, was) => {
-    if (s.projects && s.projects !== was.projects) notices.projects(s.projects, currentSlug())
-  })
-
-  const access = new Access({ api, sheets, toasts, refresh: () => void sync?.refresh() })
+  const merges = new Merges({ route, data, drafts, box: boxStore, toasts, model, showItem: (code, tab) => nav.openItemHere(code, tab), goDraft })
+  const sideOver = new SideOver(route, ui)
+  const notices = new Notices(env.kv, () => settingsStore.getState().set({ noticeRev: settingsStore.getState().noticeRev + 1 }), { api, toasts, data, slug, desk: env.desk, go: goUrl })
+  const access = new Access({ api, sheets, toasts, refresh: () => void session().refresh() })
   const updates = new Updates({
     api,
     toasts,
     session: env.session ?? memoryStore(),
-    busy: () => !!recording.getState().rec || Object.values(boxStore.getState().files).some((fs) => fs.some((f) => f.uploading || f.transcribing)) || outbox.getState().list.some((o) => o.state === 'sending'),
+    busy: () => recordingNow() || Object.values(boxStore.getState().files).some((fs) => fs.some((f) => f.uploading || f.transcribing)) || outbox.getState().list.some((o) => o.state === 'sending'),
     boot: async () => {
-      const slug = currentSlug()
-      const cur = slug ? data.getState().copies[slug]?.cursor : null
-      if (!slug || !cur) return null
-      return (await api.changes(slug, cur, 0)).cursor.split('.')[0] || null
+      const s = slug()
+      const cur = s ? data.getState().copies[s]?.cursor : null
+      if (!s || !cur) return null
+      return (await api.changes(s, cur, 0)).cursor.split('.')[0] || null
     },
     reload: () => location.reload(),
     mine: env.pageScript ?? '',
   })
-  const showProject = (slug: string) => {
-    if (sync?.slug === slug) return
-    sync?.close()
-    ui.getState().reset()
-    itemView.getState().show(slug)
-    keptEdits.getState().show(slug)
-    docTicks.getState().show(slug)
-    void pictureSizes.load(slug)
-    boxStore.getState().show(slug)
-    keptNotes.reset()
-    notices.fresh()
-    drafts.getState().reload(slug)
-    sync = new ProjectSync(slug, api, env.cache ?? noCache, {
-      copy: (s, copy, fresh) => {
-        data.getState().setCopy(s, copy)
-        const m = fresh ? model(s) : null
-        if (m) void keptNotes.restore(s, m)
-        if (fresh) updates.seen(copy.server) // new code for Taska, or for this page
-        if (m) notices.items(s, m) // what newly needs you here // what this browser kept that did not go out comes back
+  const projectSession = new ProjectSession({
+    api,
+    data,
+    route,
+    cache: env.cache ?? noCache,
+    presence: env.presence,
+    model,
+    fresh: { ui, itemView, keptEdits, docTicks, box: boxStore, drafts, pictureSizes, keptNotes, notices },
+    server: (v) => updates.seen(v),
+    back: {
+      window: () => inputs.back(),
+      reached: () => {
+        runner.back()
+        inputs.back()
+        activity.back()
       },
-      reach: (s, away) => {
-        const was = data.getState().away[s] || 0
-        data.getState().setAway(s, away)
-        if (!away && was) {
-          runner.back()
-          inputs.back()
-          activity.back()
-        }
+      online: () => {
+        inputs.back()
+        runner.back()
       },
-      keyNeeded: () => access.ask(),
-      gone: (s, how) => route.getState().go(`/?${how}=${encodeURIComponent(s)}`, true),
-    }, env.presence)
-    void sync.start()
-  }
+    },
+    keyNeeded: () => access.ask(),
+    projects: refreshProjects,
+  })
 
   // what did not go out before a reload goes now, in the order it was made
   for (const c of keptChanges(env.kv)) void runner.send(c)
   for (const o of keptOutgoing(env.kv)) outbox.getState().push(o)
   if (outbox.getState().list.length) void inputs.flush()
-
-  projectsTimer = window.setInterval(() => {
-    if (!env.presence.hidden()) void refreshProjects()
-  }, 20000)
-  // coming back to the window: what changed meanwhile, and what failed for want of the server goes now; the network
-  // back: the same at once, and what waits to try again tries now, not after its pause
-  const unwatch = env.presence.watch({
-    back: () => {
-      void sync?.refresh()
-      void refreshProjects()
-      inputs.back()
-    },
-    online: () => {
-      void sync?.refresh()
-      inputs.back()
-      runner.back()
-    },
-  })
 
   const app: App = {
     api,
@@ -512,7 +369,7 @@ export function createApp(env: AppEnv): App {
     listOrder,
     crossSearch: new CrossSearch(api, search),
     answers: new Answers({ inputs, view: itemView, outbox }),
-    itemEdits: new ItemEdits({ view: itemView, kept: keptEdits, route, toasts, desk: env.desk, model: () => model(currentSlug()) }),
+    itemEdits: new ItemEdits({ view: itemView, kept: keptEdits, route, toasts, desk: env.desk, model: here }),
     fields,
     inputActions,
     box,
@@ -521,7 +378,7 @@ export function createApp(env: AppEnv): App {
     desk: env.desk,
     runner,
     model,
-    showProject,
+    showProject: (s) => projectSession.show(s),
     projects,
     keyArm: new KeyArm(),
     activity,
@@ -540,14 +397,8 @@ export function createApp(env: AppEnv): App {
     access,
     refreshProjects,
     stop: () => {
-      projects.stop()
-      sync?.close()
-      clearInterval(projectsTimer)
-      unwatch()
+      for (const s of [projects, projectSession, pictureSizes, sheets, docs, merges, sideOver, notices]) s.stop()
       unlisten()
-      unsheet()
-      undoc()
-      unsize()
     },
     run: (id, n) => runAction(app, id, n == null ? undefined : hereFor(app, n)),
   }

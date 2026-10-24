@@ -35,6 +35,16 @@ export type Route =
   | { page: 'dev'; path: string }
   | { page: 'project'; slug: string; tab: Tab; place: Place; list: ListQuery }
 
+/** the project an address shows (none: '') */
+export const routeSlug = (r: Route): string => (r.page === 'project' ? r.slug : '')
+
+/** the number of the item an address opens (none: null) */
+export function openItemN(r: Route): number | null {
+  if (r.page !== 'project' || r.place.kind !== 'item') return null
+  const n = Number(/\d+/.exec(r.place.ref)?.[0])
+  return Number.isFinite(n) && n ? n : null
+}
+
 const ITEM = /^[A-Za-z]?\d+$/
 const DOC = /^[Dd](\d+)$/
 

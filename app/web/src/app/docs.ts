@@ -47,8 +47,27 @@ export interface DocsDeps {
 
 export class Docs {
   private readonly d: DocsDeps
+  readonly stop: () => void
   constructor(d: DocsDeps) {
     this.d = d
+    this.follow()
+    const unroute = d.route.subscribe(() => this.follow())
+    // Back closed the phone's editor: its text is kept as a draft
+    const ungone = d.sheets.onGone((req) => req.kind === 'doc-edit' && d.view.getState().editing && this.keep())
+    this.stop = () => {
+      unroute()
+      ungone()
+    }
+  }
+
+  /** The document shown is the address's: another one (or none) starts afresh; leaving one being edited (on the
+   * desktop, in the pane) keeps its text as a draft. */
+  private follow(): void {
+    const r = this.d.route.getState().route
+    const d = r.page === 'project' && r.place.kind === 'doc' ? r.place.d : null
+    const v = this.d.view.getState()
+    if (v.editing && v.newFor == null && d !== v.d) this.keep()
+    v.show(d)
   }
 
   private here() {

@@ -57,6 +57,13 @@ export class KeptNotes {
     return 'v' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8) + ++this.n
   }
 
+  /** A new note's audio (or a file) kept under a new id -> the id. */
+  keep(blob: Blob): string {
+    const rid = this.id()
+    this.hold(rid, blob)
+    return rid
+  }
+
   /** Its audio (or the file), kept with what is known of it. */
   hold(rid: string, blob: Blob): void {
     this.blobs.set(rid, blob)

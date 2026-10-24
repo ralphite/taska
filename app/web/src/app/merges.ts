@@ -7,6 +7,7 @@ import { codeOf, liveN, type ProjectModel } from '../model/project'
 import { tabOf } from '../model/visible'
 import type { Tab } from '../model/words'
 import type { BoxStore } from '../stores/box'
+import type { DataStore } from '../stores/data'
 import type { DraftsStore } from '../stores/drafts'
 import type { RouteStore } from '../stores/route'
 import type { Toasts } from './toasts'
@@ -14,6 +15,7 @@ import { draftKey, draftTarget, replyDraft } from '../model/draftTarget'
 
 export interface MergesDeps {
   route: RouteStore
+  data: DataStore
   drafts: DraftsStore
   box: BoxStore
   toasts: Toasts
@@ -25,8 +27,19 @@ export interface MergesDeps {
 
 export class Merges {
   private readonly d: MergesDeps
+  readonly stop: () => void
   constructor(d: MergesDeps) {
     this.d = d
+    // settled again when the project shown comes or changes, and when where you are changes
+    const undata = d.data.subscribe((s, was) => {
+      const r = d.route.getState().route
+      if (r.page === 'project' && s.copies[r.slug] !== was.copies[r.slug]) this.settle()
+    })
+    const unroute = d.route.subscribe((s, was) => s.route !== was.route && this.settle())
+    this.stop = () => {
+      undata()
+      unroute()
+    }
   }
 
   /** The project shown changed, or where you are in it. */
