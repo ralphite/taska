@@ -74,7 +74,7 @@ export const MUTANTS = [
     name: 'flash',
     title: '提示条出现时先红 0.45 秒（最后的画面一样，只有过程不同）',
     patches: [{ file: CSS, find: '/*! tailwindcss', replace: '[role=status]{animation:parityflash .45s steps(1)}@keyframes parityflash{0%{background-color:#dc2626}}/*! tailwindcss' }],
-    expect: { scenario: 'approve', variants: ['desk-light'], cats: ['film', 'motion'] },
+    expect: { scenario: 'approve', variants: ['desk-light'], cats: ['motion'] },
   },
   {
     name: 'fade',
@@ -116,7 +116,7 @@ export const MUTANTS = [
     name: 'slow-save',
     title: '保存慢 0.45 秒（按钮的“处理中”样子多停了一会儿）',
     patches: [{ file: WEB, find: '        elif p == "/api/op":\n', replace: '        elif p == "/api/op":\n            time.sleep(0.45)\n' }],
-    expect: { scenario: 'approve', variants: ['desk-light'], cats: ['film', 'speed'] },
+    expect: { scenario: 'approve', variants: ['desk-light'], cats: ['speed'] },
   },
   {
     name: 'iphone-only',

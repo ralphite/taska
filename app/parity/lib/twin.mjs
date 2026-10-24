@@ -135,7 +135,9 @@ class Side {
   }
   /** The page is still: no DOM change for `quiet` ms, images and fonts loaded, no fresh request open, and two
    * pictures in a row the same. -> the wall time of its last change. */
-  async settle({ quiet = 300, max = 15000 } = {}) {
+  async settle({ quiet, max = 15000 } = {}) {
+    // a tooltip comes 500 ms after the pointer stops on a control (desktop): still means past that too
+    quiet ??= this.variant.phone ? 300 : 650
     const p = this.page
     const t0 = Date.now()
     let doneAt = Date.now()
@@ -240,7 +242,20 @@ class Side {
       aria = aria.replace(re, '<env>')
     }
     const motion = await p.evaluate(() => (window.__parity?.motion || []).slice().sort()).catch(() => [])
-    return { png, url: u.pathname + u.search + u.hash, title: await p.title(), text, aria, motion }
+    // every box that scrolls, where it is and how far it is scrolled: [x, y, w, h, scrollTop]
+    const scrollers = await p
+      .evaluate(() => {
+        const out = [[0, 0, innerWidth, innerHeight, Math.round(scrollY)]]
+        for (const el of document.querySelectorAll('*')) {
+          if (el.scrollHeight <= el.clientHeight + 1) continue
+          if (!/(auto|scroll)/.test(getComputedStyle(el).overflowY)) continue
+          const r = el.getBoundingClientRect()
+          out.push([Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height), Math.round(el.scrollTop * 100) / 100])
+        }
+        return out
+      })
+      .catch(() => [])
+    return { png, url: u.pathname + u.search + u.hash, title: await p.title(), text, aria, motion, scrollers }
   }
   async close() {
     await this.ctx?.close().catch(() => {})
@@ -502,7 +517,11 @@ export class Twin {
         caps.img = img
         // the same picture, one part scrolled a few pixels further on one side (the page scrolled an item into view
         // while the content above it was still coming): the scroll position, not what the page shows, differs
-        const dy = cats.pixels && !cats.pixels.size ? scrollShift(caps[0].png, caps[1].png, cats.pixels.boxes, this.variant.dpr) : 0
+        // a box that scrolls, in the same place on both sides, holding every differing pixel, scrolled further on one
+        // side; and the picture inside it the same once moved by that much: the scroll position differs, not the page.
+        // A shift of the layout itself (1 px lower) leaves the scroll positions equal, and is a difference.
+        const dy = cats.pixels && !cats.pixels.size ? scrollExplains(caps[0], caps[1], cats.pixels.boxes, this.variant.dpr) : 0
+        if (cats.pixels) cats.pixels.geo = { dy, a: caps[0].scrollers, b: caps[1].scrollers } // why it was or was not a scroll
         if (dy) {
           cats = Object.fromEntries(Object.entries(cats).filter(([k]) => k !== 'pixels'))
           cats.scroll = { dy, boxes: diffBoxes(img.png).map((b) => scaleBox(b, this.variant.dpr)) }
@@ -526,8 +545,11 @@ export class Twin {
     if (films && !scrolled) {
       film = filmDiff(films[0], films[1], this.sides.map((s) => s.prevFrame))
       if (film.brief.length) note = { ...note, brief: film.brief }
+      // screens during a step depend on how fast each side answered at that moment (on a busy machine a hover before a
+      // click, a spinner while a picture comes, can last a second on one side only): listed for a person to judge with
+      // the two strips, not counted. What a step ends on, and every motion, is counted.
       if (film.diff) {
-        cats.film = film.rows
+        note = { ...note, film: film.rows }
         for (const [k, side] of [['a', 0], ['b', 1]])
           film[k].forEach((x, j) => fs.writeFileSync(path.join(this.outDir, (x.file = `${base}-film-${k}${j}.png`)), films[side][x.i].png))
       }
@@ -610,50 +632,37 @@ async function touch(side, pts, hold) {
   await cdp.detach().catch(() => {})
 }
 
-// A vertical shift (|dy| <= 40 CSS px) that makes the differing region of B match A's: -> dy in CSS px, or 0.
-function scrollShift(pa, pb, boxes, dpr) {
-  if (!boxes.length) return 0
-  const A = PNG.sync.read(pa)
-  const B = PNG.sync.read(pb)
-  const x0 = Math.min(...boxes.map((b) => b.x)) * dpr
-  const x1 = Math.min(A.width, Math.max(...boxes.map((b) => b.x + b.w)) * dpr)
-  const y0 = Math.min(...boxes.map((b) => b.y)) * dpr
-  const y1 = Math.min(A.height, Math.max(...boxes.map((b) => b.y + b.h)) * dpr)
-  const px = (P, x, y) => P.data.readUInt32BE((y * P.width + x) * 4)
-  const miss = (d, step) => {
-    let bad = 0
-    let n = 0
-    for (let y = Math.max(y0, y0 - d); y < Math.min(y1, y1 - d); y += step)
-      for (let x = x0; x < x1; x += step) {
-        n++
-        if (px(A, x, y + d) !== px(B, x, y)) bad++
+// -> how much further B's box is scrolled (CSS px) when that explains every differing pixel, else 0
+export function scrollExplains(ca, cb, boxes, dpr) {
+  const near = (p, q) => p.slice(0, 4).every((v, k) => Math.abs(v - q[k]) <= 2)
+  const inside = (c) => boxes.every((b) => b.x >= c[0] - 24 && b.y >= c[1] - 24 && b.x + b.w <= c[0] + c[2] + 24 && b.y + b.h <= c[1] + c[3] + 24)
+  let A
+  let B
+  for (const sa of ca.scrollers)
+    for (const sb of cb.scrollers) {
+      const d = sb[4] - sa[4]
+      if (!near(sa, sb) || Math.abs(d) < 0.5 || Math.abs(d) > sa[3] / 2 || !inside(sa)) continue
+      A ||= PNG.sync.read(ca.png)
+      B ||= PNG.sync.read(cb.png)
+      // inside the box: B at row y shows what A shows at row y + d
+      const dd = Math.round(d * dpr)
+      const x0 = Math.max(0, sa[0] * dpr)
+      const w = Math.min(A.width - x0, sa[2] * dpr)
+      const top = Math.max(0, sa[1] * dpr)
+      const bottom = Math.min(A.height, (sa[1] + sa[3]) * dpr)
+      const h = bottom - top - Math.abs(dd)
+      if (w <= 0 || h <= 0) continue
+      const crop = (P, y) => {
+        const out = new PNG({ width: w, height: h })
+        PNG.bitblt(P, out, x0, y, w, h, 0, 0)
+        return out
       }
-    return n ? bad / n : 1
-  }
-  let best = 0
-  let bestMiss = miss(0, 3)
-  for (let d = -40 * dpr; d <= 40 * dpr; d++) {
-    if (!d) continue
-    const m = miss(d, 3)
-    if (m < bestMiss) (bestMiss = m), (best = d)
-  }
-  if (!best) return 0
-  // B shows at y what A shows at y + d: the same picture, scrolled. A scroll can stop between two pixels, so glyph
-  // edges differ a little: the overlap is compared as pictures are (anti-aliasing ignored), and must agree
-  const lo = Math.max(y0, y0 - best)
-  const hi = Math.min(y1, y1 - best)
-  const w = x1 - x0
-  const h = hi - lo
-  if (w <= 0 || h <= 0) return 0
-  const crop = (P, top) => {
-    const out = new PNG({ width: w, height: h })
-    PNG.bitblt(P, out, x0, top, w, h, 0, 0)
-    return out
-  }
-  const ca = crop(A, lo + best)
-  const cb = crop(B, lo)
-  const bad = pixelmatch(ca.data, cb.data, null, w, h, { threshold: 0.1, includeAA: false })
-  return bad / (w * h) < 0.003 ? Math.round(best / dpr) : 0
+      const pa = crop(A, dd > 0 ? top + dd : top)
+      const pb = crop(B, dd > 0 ? top : top - dd)
+      const bad = pixelmatch(pa.data, pb.data, null, w, h, { threshold: 0.1, includeAA: false })
+      if (bad / (w * h) < 0.003) return Math.round(d)
+    }
+  return 0
 }
 
 const scaleBox = (b, k) => ({ x: Math.round(b.x / k), y: Math.round(b.y / k), w: Math.round(b.w / k), h: Math.round(b.h / k) })

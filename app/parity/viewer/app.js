@@ -232,10 +232,11 @@ function stepRow(dir, s) {
     <span class="${s.same ? '' : 'font-medium'}">${esc(s.label)}</span>
     ${s.same ? '' : Object.keys(s.cats).map((k) => chip(KIND[k] || k, tone(k))).join('')}
     ${s.retries ? chip(`重拍 ${s.retries} 次`, 'dim') : ''}
+    ${s.note?.film ? chip('过程画面不同，需人看', 'warn') : ''}
     ${s.note?.brief ? chip(`短暂画面，需人看：${s.note.brief.join('；')}`, 'dim') : ''}
     ${s.note?.scroll ? chip(`只是滚动位置差 ${Math.abs(s.note.scroll)}px（旧版自己也会这样，不算差别）`, 'dim') : ''}
     <span class="ml-auto text-xs text-zinc-500">${s.kind === 'check' ? `${s.url ? esc(s.url) + ' · ' : ''}A ${s.ms?.a ?? '—'} / B ${s.ms?.b ?? '—'} ms` : s.kind === 'agent' ? `agent 接口 · ${s.ms?.a ?? '—'} / ${s.ms?.b ?? '—'} ms` : s.kind === 'timed' ? `单独计时，各 ${s.all?.a?.length} 次的中位数：A ${s.ms.a} / B ${s.ms.b} ms` : ''}</span></div>`
-  if (s.same) {
+  if (s.same && !s.note?.film) {
     return `<li class="rounded-lg border border-zinc-100 px-2 py-1.5 dark:border-zinc-800">${head}${
       s.files?.preview ? `<details class="ml-10"><summary class="cursor-pointer text-xs text-zinc-500">看画面</summary><img loading="lazy" class="mt-2 max-h-96 rounded border border-zinc-200 dark:border-zinc-700" src="${dir}/${s.files.preview}"></details>` : ''
     }</li>`
@@ -249,7 +250,7 @@ function stepRow(dir, s) {
     (s.film?.[side] || [])
       .map((x) => `<figure class="w-40 shrink-0"><img loading="lazy" class="w-full rounded border ${x.match === undefined && !x.briefly ? 'border-red-500 ring-2 ring-red-500' : 'border-zinc-200 dark:border-zinc-700'}" src="${dir}/${x.file}"><figcaption class="text-xs text-zinc-500">停 ${x.ms} ms</figcaption></figure>`)
       .join('')
-  return `<li class="rounded-lg border border-red-200 bg-red-50/40 p-2 dark:border-red-900 dark:bg-red-950/20">${head}
+  return `<li class="rounded-lg border p-2 ${s.same ? 'border-amber-200 bg-amber-50/40 dark:border-amber-900 dark:bg-amber-950/20' : 'border-red-200 bg-red-50/40 dark:border-red-900 dark:bg-red-950/20'}">${head}
     <div class="ml-10 mt-2 grid grid-cols-[minmax(0,1fr)] gap-3">
       ${s.files?.a ? `<div class="grid grid-cols-1 gap-2 md:grid-cols-3 [&>*]:min-w-0">${img(s.files.a, 'A 旧版')}${img(s.files.b, 'B')}${img(s.files.diff, '不同的地方（红）')}</div>` : ''}
       ${c.pixels ? `<p class="text-xs text-zinc-500">${c.pixels.n} 个像素不同${c.pixels.size ? '（画面大小都不一样）' : ''}；位置：${c.pixels.boxes.map((b) => `(${b.x},${b.y}) ${b.w}×${b.h}`).join('、')}</p>
@@ -259,7 +260,7 @@ function stepRow(dir, s) {
       ${c.text ? `<div><div class="text-sm font-medium">文字（含要滚动才看到的）</div>${diffText(c.text)}</div>` : ''}
       ${c.aria ? `<div><div class="text-sm font-medium">读屏/按键看到的结构</div>${diffText(c.aria)}</div>` : ''}
       ${c.motion ? `<div><div class="text-sm font-medium">动效（动画和过渡）</div>${diffText(c.motion)}</div>` : ''}
-      ${c.film ? `<div><div class="text-sm font-medium">过程中的画面：${esc(c.film.join('；'))}</div>
+      ${c.film || s.note?.film ? `<div><div class="text-sm font-medium">过程中的画面${c.film ? '' : '（需人看：两边当时的快慢不同也会这样）'}：${esc((c.film || s.note.film).join('；'))}</div>
         <div class="mt-1 text-xs text-zinc-500">A</div><div class="flex gap-2 overflow-x-auto">${film('a')}</div>
         <div class="mt-1 text-xs text-zinc-500">B</div><div class="flex gap-2 overflow-x-auto">${film('b')}</div></div>` : ''}
       ${c.agent ? `<div><div class="text-sm font-medium">agent 回答${c.agent.status[0] !== c.agent.status[1] ? `（状态码 ${c.agent.status.join(' / ')}）` : ''}</div>${diffText(c.agent.diff)}</div>` : ''}
