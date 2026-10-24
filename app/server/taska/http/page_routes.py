@@ -27,6 +27,7 @@ from ..page_api import views
 from ..page_api.sync import Cursor
 from ..services.project import Project
 from ..services.voice_jobs import answer as voice_answer
+from . import old_page_poll
 from .agent_routes import presence, scope_of
 from .messages import NOT_FOUND, Request, Response, as_json, text
 
@@ -56,6 +57,8 @@ def _changed(p: Project, since: Optional[Cursor]) -> bool:
 
 
 def get(ctx: "AppContext", req: Request, p: Project, sub: str) -> Optional[Response]:
+    if sub == old_page_poll.PATH:  # F581 transition: delete with old_page_poll
+        return old_page_poll.answer(req)
     if sub == "/api/view":
         return as_json(_view(ctx, req, p, Cursor.parse(req.arg("cursor"))))
     if sub == "/api/changes":  # a long wait for news: a page in the background asks with wait=0 and lets go
