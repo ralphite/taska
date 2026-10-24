@@ -6,7 +6,7 @@
 
 import type { TaskaApi } from '../api/taska'
 import type { ProjectModel } from '../model/project'
-import { inputCode } from '../model/words'
+import { draftName, inputCode } from '../model/words'
 import type { BoxMode, BoxStore, DraftFile } from '../stores/box'
 import type { DraftsStore } from '../stores/drafts'
 import type { OutboxStore } from '../stores/outbox'
@@ -250,7 +250,7 @@ export class Box {
     const text = o?.text ?? ''
     this.write(j.slug, j.key, was.trim() ? text + '\n\n' + was : text)
     if (o) st.putFiles(j.key, o.files.filter((f) => !f.failed).map((f) => ({ ...f, key: f.key || f.f })) as DraftFile[])
-    this.d.toasts.show('Not sent. Text restored')
+    this.d.toasts.show(j.key === st.shown.key ? 'Not sent. Text restored' : `Not sent. Text restored to ${draftName(j.key)}`)
   }
 
   /** Whether what you sent can still be taken back. */

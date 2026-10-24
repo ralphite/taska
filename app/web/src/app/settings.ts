@@ -213,8 +213,8 @@ export class Settings {
         const back = await this.d.api.setVoicePrefs(was)
         this.s.set({ prefs: back })
       })
-    } catch (ex) {
-      this.d.toasts.show(why(ex), null, { error: true })
+    } catch {
+      this.d.toasts.show('Connection lost. Your words are still in the box; try again.', null, { error: true })
     }
   }
 

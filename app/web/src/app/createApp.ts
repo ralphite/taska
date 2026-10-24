@@ -57,7 +57,7 @@ import { createViewsStore, type ViewsStore } from '../stores/views'
 import { createMediaStore, type MediaStore } from '../stores/media'
 import { createDictationStore, type DictationStore } from '../stores/dictation'
 import { memoryVault, type NoteVault } from '../stores/noteVault'
-import { draftName } from '../model/words'
+import { draftName, inputCode } from '../model/words'
 import { inTab, tabOf } from '../model/visible'
 import { allComments } from '../model/docs'
 import { createRecordingStore, type RecordingStore } from '../stores/recording'
@@ -268,7 +268,13 @@ export function createApp(env: AppEnv): App {
     sent: (o, rid) => {
       // taken back while on its way: once Taska has it, it is deleted there behind you
       if (rid) boxStore.getState().sentAs(o.q, rid)
-      if (o.unsent && rid) void runner.send({ id: newId(), slug: o.slug, commands: [{ op: 'delete', id: rid }], patches: [], said: `taking back ${rid}`, t: Date.now() })
+      if (o.unsent && rid) {
+        // what the organizer or your agent already has stays: it is deleted from Inputs
+        const m = model(o.slug)
+        const r = m?.byId.get(rid)
+        if (m && r && (r.acked || m.facts.organizer.busy === rid || r.org)) toasts.show(`${inputCode(rid)} already reached ${r.org ? 'the organizer' : 'your agent'}; delete it from Inputs`)
+        else void runner.send({ id: newId(), slug: o.slug, commands: [{ op: 'delete', id: rid }], patches: [], said: `taking back ${rid}`, t: Date.now() })
+      }
       if (o.slug === currentSlug()) ui.getState().setLastSent(o.quiet || o.unsent ? null : { slug: o.slug, rid, q: o.q })
     },
     refused: (_o, why) => toasts.show(why ? `err: ${why}` : 'Not saved', null),
