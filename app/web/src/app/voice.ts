@@ -4,6 +4,7 @@
 // sends it at once (sending waits only for the upload; its words join the input when they come).
 
 import { Refused } from '../api/http'
+import { canRecord, micTrouble, openMic } from './mic'
 import { clock } from '../model/time'
 import { vcLabel, vcLineEnd, withQuote } from '../model/voiceComments'
 import { draftName } from '../model/words'
@@ -66,32 +67,18 @@ export class Voice {
   }
 
   can(): boolean {
-    return typeof window !== 'undefined' && window.isSecureContext && typeof navigator.mediaDevices?.getUserMedia === 'function' && typeof window.MediaRecorder === 'function'
+    return canRecord()
   }
 
   recording(): boolean {
     return !!this.d.store.getState().rec
   }
 
-  /** Why the microphone did not start, and what to do. */
+  /** Why the microphone did not start, and what to do (told to the developers' log too). */
   private why(slug: string, e: unknown): string {
     const name = (e as Error)?.name || ''
     void this.d.api.pageLog(slug, [{ kind: 'mic', level: 'warn', msg: String((e as Error)?.message || e || ''), name, where: 'start', secure: String(window.isSecureContext), ua: navigator.userAgent }]).catch(() => {})
-    if (!window.isSecureContext) return 'Microphone requires HTTPS: open Taska using its https link.'
-    if (name === 'NotAllowedError' || name === 'SecurityError') return 'Microphone access denied. Allow it for this site (Safari: aA › Website Settings › Microphone), then try again.'
-    if (name === 'NotFoundError' || name === 'OverconstrainedError') return 'No microphone found'
-    if (name === 'NotReadableError' || name === 'AbortError') return 'Microphone busy (call, app, or tab). Stop the other use and try again'
-    return `The microphone did not start (${name || 'unknown error'}). Try again.`
-  }
-
-  private async mic(): Promise<MediaStream> {
-    const md = navigator.mediaDevices
-    try {
-      return await md.getUserMedia({ audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false } })
-    } catch (e) {
-      if ((e as Error)?.name === 'NotAllowedError' || (e as Error)?.name === 'SecurityError') throw e
-      return md.getUserMedia({ audio: true })
-    }
+    return micTrouble(e)
   }
 
   /** Record a voice note for draft `key` (it belongs where it was started, whatever is open when it stops). */
@@ -101,7 +88,7 @@ export class Voice {
     const box = this.d.fields.get('box')
     this.typing = !!box && box === box.ownerDocument.activeElement
     try {
-      this.stream = await this.mic()
+      this.stream = await openMic()
     } catch (e) {
       return this.d.toasts.show(this.why(slug, e), null, { error: true })
     }

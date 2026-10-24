@@ -37,6 +37,8 @@ export interface DocsDeps {
   kv: KeyValueStore
   ticks: DocTicksStore
   inputs: InputSender
+  /** the editor's microphone: stopped (its words still go to the draft, or nowhere), and waited for before Save */
+  mic?: { stop(): void; discard(key: string): void; settled(): Promise<boolean> }
 }
 
 export class Docs {
@@ -291,11 +293,12 @@ export class Docs {
 
   // ---- the editor: the first line is the title; leaving it without saving keeps the text as a draft
 
-  private drafts(slug: string): Record<string, string> {
+  /** Documents being written, kept in this browser ("taska.docs.<project>": {"D12" | "new 4": text}). */
+  drafts(slug: string): Record<string, string> {
     return this.d.kv.getJson<Record<string, string>>('taska.docs.' + slug) || {}
   }
 
-  private setDraft(slug: string, key: string, md: string | null): void {
+  setDraft(slug: string, key: string, md: string | null): void {
     const all = this.drafts(slug)
     if (md) all[key] = md
     else delete all[key]
@@ -334,6 +337,7 @@ export class Docs {
 
   /** Leaving the editor without Save: the text is kept as a draft, which Edit (or New doc) brings back. */
   keep(): void {
+    this.d.mic?.stop()
     const e = this.editing()
     this.d.view.getState().edit(false)
     if (!e) return
@@ -345,6 +349,7 @@ export class Docs {
 
   discard(): void {
     const e = this.editing()
+    if (e) this.d.mic?.discard(e.key)
     this.d.view.getState().edit(false)
     if (e) this.setDraft(e.slug, e.key, null)
     if (!this.d.desk() || !e || e.dn == null) this.d.sheets.close()
@@ -352,6 +357,7 @@ export class Docs {
 
   /** Save (or Create); an empty new one is dropped. Not saved: the editor comes back with your text. */
   async save(): Promise<void> {
+    if (this.d.mic && !(await this.d.mic.settled())) return // the words still coming go in first
     const e = this.editing()
     if (!e) return
     this.d.view.getState().edit(false)

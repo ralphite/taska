@@ -11,7 +11,7 @@ export interface DocEditEvents {
   mic(): void
 }
 
-export function DocEdit({ isNew, text, hint, mic, on }: { isNew: boolean; text: string; hint: string; mic: { on: boolean; text: string }; on: DocEditEvents }) {
+export function DocEdit({ isNew, text, hint, mic, fieldRef, on }: { isNew: boolean; text: string; hint: string; mic: { on: boolean; text: string }; /** where you write, for Speak (its words go at the caret) */ fieldRef?: (el: HTMLTextAreaElement | null) => void; on: DocEditEvents }) {
   return (
     <div className="flex min-h-full flex-col">
       {/* on the phone the hint has a line of its own under the buttons, not a narrow column beside them */}
@@ -33,6 +33,7 @@ export function DocEdit({ isNew, text, hint, mic, on }: { isNew: boolean; text: 
         </button>
       </div>
       <textarea
+        ref={fieldRef}
         autoFocus
         value={text}
         onChange={(e) => on.change(e.target.value)}

@@ -25,3 +25,6 @@ what the old version does. Each is also sent to the coordinator ("Nota & Taska d
 - **A voice note sent before a reload, going out again: its row shows at once.** On the New input page the old
   page puts it back on its way after a reload but does not draw its row ("Voice note · Uploading…") until it is in;
   the rewrite shows the row while it goes, as it does for anything else on its way. It is sent the same way.
+- **Leaving a document's editor while it records stops the microphone.** The old page keeps recording out of sight
+  (its Stop button is gone with the editor) until the page is left; the rewrite stops it when the editor closes, and
+  the words still go into the draft kept for it, as they do in the old one once stopped.

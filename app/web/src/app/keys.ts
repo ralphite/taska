@@ -44,6 +44,11 @@ export function pageKeys(app: App): (e: KeyboardEvent) => void {
       if (e.key === '/' && !typingIn(active)) act('search') // the phone's keyboard
       return
     }
+    // Option-V in the document editor speaks into the document
+    if (e.altKey && e.code === 'KeyV' && !e.metaKey && !e.ctrlKey && app.stores.docView.getState().editing && app.fields.get('doc')) {
+      e.preventDefault()
+      return app.dictation.toggle()
+    }
     // Option-V records even while you type in the box
     if (e.altKey && e.code === 'KeyV' && !e.metaKey && !e.ctrlKey) {
       e.preventDefault()

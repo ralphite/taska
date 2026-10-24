@@ -39,6 +39,8 @@ import { Voice } from './voice'
 import { VoiceWords } from './voiceWords'
 import { KeptNotes } from './keptNotes'
 import { DocVoice } from './docVoice'
+import { Dictation } from './dictation'
+import { createDictationStore, type DictationStore } from '../stores/dictation'
 import { memoryVault, type NoteVault } from '../stores/noteVault'
 import { draftName } from '../model/words'
 import { createRecordingStore, type RecordingStore } from '../stores/recording'
@@ -87,6 +89,7 @@ export interface App {
     docTicks: DocTicksStore
     settings: SettingsStore
     recording: RecordingStore
+    dictation: DictationStore
   }
   toasts: Toasts
   items: ItemActions
@@ -129,6 +132,7 @@ export interface App {
   voice: Voice
   voiceWords: VoiceWords
   docVoice: DocVoice
+  dictation: Dictation
   refreshProjects(): Promise<boolean>
   stop(): void
 }
@@ -156,6 +160,7 @@ export function createApp(env: AppEnv): App {
   const docTicks = createDocTicksStore(env.kv)
   const settingsStore = createSettingsStore()
   const recording = createRecordingStore()
+  const dictationStore = createDictationStore()
   const pictureSizes = new PictureSizes({ api, data })
   // a text showing a picture of unknown size (one just uploaded) asks for the sizes again
   const unsize = data.subscribe((s, was) => {
@@ -268,7 +273,7 @@ export function createApp(env: AppEnv): App {
   const box = new Box({ api, store: boxStore, drafts, outbox, inputs, runner, toasts, keep: (blob) => keep(blob), recording: () => !!recording.getState().rec, goDraft: (key) => goDraft(key), model })
   const activity = new Activity({ api, store: activityStore, toasts })
   const restores = new Restores({ runner, toasts, inputs: inputActions, model })
-  docs = new Docs({ runner, toasts, view: docView, nav, route, sheets, fields, desk: env.desk, model, box, boxStore, kv: env.kv, ticks: docTicks, inputs })
+  docs = new Docs({ runner, toasts, view: docView, nav, route, sheets, fields, desk: env.desk, model, box, boxStore, kv: env.kv, ticks: docTicks, inputs, mic: { stop: () => dictation.stop(), discard: (key) => dictation.discard(key), settled: (): Promise<boolean> => dictation.settled() } })
   const projects = new Projects({ api, data, kv: env.kv, home: () => route.getState().route.page === 'home' })
   const refreshProjects = () => projects.refresh()
   const settings = new Settings({ api, store: settingsStore, data, projects, route, sheets, toasts, box, boxStore, fields, refresh: (slug) => stale(slug) })
@@ -301,6 +306,7 @@ export function createApp(env: AppEnv): App {
     about: (a) => docVoice.about(a.d, a.key, a.quote),
   })
   const docVoice = new DocVoice({ voice, docs, box, boxStore, recording, view: docView, runner, changes, toasts, model, desk: env.desk, reply: (slug, key, scope) => void box.send(slug, model(slug), scope, key) })
+  const dictation: Dictation = new Dictation({ api, store: dictationStore, view: docView, route, docs, fields, toasts, model, recording: () => !!recording.getState().rec })
   const keptNotes = new KeptNotes({
     vault: env.vault ?? memoryVault(),
     kv: env.kv,
@@ -389,7 +395,7 @@ export function createApp(env: AppEnv): App {
 
   return {
     api,
-    stores: { data, changes, outbox, feedback, ui, itemView, search, drafts, box: boxStore, sheet: sheetStore, route, activity: activityStore, docView, docTicks, settings: settingsStore, recording },
+    stores: { data, changes, outbox, feedback, ui, itemView, search, drafts, box: boxStore, sheet: sheetStore, route, activity: activityStore, docView, docTicks, settings: settingsStore, recording, dictation: dictationStore },
     toasts,
     items,
     inputs,
@@ -427,6 +433,7 @@ export function createApp(env: AppEnv): App {
     voice,
     voiceWords,
     docVoice,
+    dictation,
     refreshProjects,
     stop: () => {
       projects.stop()
