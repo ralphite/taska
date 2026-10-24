@@ -14,6 +14,8 @@ export const VARIANTS = {
   'desk-dark': { viewport: { width: 1440, height: 900 }, dpr: 2, scheme: 'dark', phone: false },
   'phone-light': { viewport: { width: 393, height: 852 }, dpr: 3, scheme: 'light', phone: true },
   'phone-dark': { viewport: { width: 393, height: 852 }, dpr: 3, scheme: 'dark', phone: true },
+  // Safari's engine, as on Yadong's iPhone (no film there: the screencast is Chrome's)
+  'iphone-light': { viewport: { width: 393, height: 852 }, dpr: 3, scheme: 'light', phone: true, engine: 'webkit' },
 }
 const IPHONE_UA =
   'Mozilla/5.0 (iPhone; CPU iPhone OS 18_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.6 Mobile/15E148 Safari/604.1'
@@ -78,8 +80,14 @@ class Side {
     })
     await this.ctx.addCookies([{ name: SIDE_COOKIE, value: this.name, url: this.base }])
     await this.ctx.addInitScript(INIT)
-    this.page = await this.ctx.newPage()
-    const p = this.page
+    this.pages = []
+    await this.newPage()
+  }
+  /** A new tab in the same browser (shares cookies and storage, as a second tab of Yadong's) becomes the active one. */
+  async newPage() {
+    const p = await this.ctx.newPage()
+    this.pages.push(p)
+    this.use(this.pages.length - 1)
     p.on('request', (r) => {
       if (!['eventsource', 'websocket'].includes(r.resourceType())) this.pending.set(r, Date.now())
     })
@@ -97,6 +105,12 @@ class Side {
       this.dialogs.push(`${d.type()}: ${d.message()}`)
       await d.dismiss().catch(() => {})
     })
+    return p
+  }
+  use(i) {
+    this.page = this.pages[i]
+    this.cdp = null // the film follows the active tab
+    this.lastFrame = null
   }
   strip(s) {
     return s.split(this.base).join('BASE').split(this.server.root).join('ROOT')
@@ -160,6 +174,7 @@ class Side {
   }
   // ---- the film: every frame the page paints during a step (Chrome's screencast), kept as the distinct screens
   async filmStart() {
+    if (this.variant.engine === 'webkit') return
     if (!this.cdp) {
       this.cdp = await this.ctx.newCDPSession(this.page)
       this.cdp.on('Page.screencastFrame', ({ data, metadata, sessionId }) => {
@@ -179,6 +194,7 @@ class Side {
   }
   /** -> [{ png, ms }]: each distinct screen in order and how long it stayed. */
   async filmStop() {
+    if (this.variant.engine === 'webkit') return null
     const end = Date.now()
     await this.cdp.send('Page.stopScreencast').catch(() => {})
     const f = this.film || []
@@ -252,7 +268,7 @@ export class Twin {
       return
     }
     const done = await Promise.all(this.sides.map((s) => s.settle(settle)))
-    const films = await Promise.all(this.sides.map((s) => s.filmStop()))
+    const films = this.variant.engine === 'webkit' ? null : await Promise.all(this.sides.map((s) => s.filmStop()))
     await this.compare(label, { t0, done, failed, films })
   }
   /** The screen point of a target on side A: fn(page) -> locator, "text" (exact text), or {x, y}. */
@@ -302,6 +318,85 @@ export class Twin {
       opts,
     )
   }
+  /** Scrolls (the wheel, at the same point on both sides) until the target is on side A's screen, then checks. */
+  async reveal(target, label, opts = {}) {
+    const vp = this.variant.viewport
+    for (let i = 0; i < 10; i++) {
+      const p = this.A.page
+      const loc = typeof target === 'function' ? target(p) : p.getByText(target, { exact: true }).first()
+      const box = await loc.boundingBox({ timeout: 5000 })
+      if (!box) throw new Error(`target not shown on side A: ${target}`)
+      const cy = box.y + box.height / 2
+      if (cy >= 60 && cy <= vp.height - 120) break
+      const x = Math.min(Math.max(box.x + box.width / 2, 5), vp.width - 5)
+      const dy = Math.round(cy - vp.height / 2)
+      await this.step('', async (s) => {
+        await s.page.mouse.move(x, vp.height / 2)
+        await s.page.mouse.wheel(0, dy)
+      }, { check: false })
+      await sleep(350)
+    }
+    await this.step(label || `滚到 ${describe(target)}`, () => sleep(50), opts)
+  }
+  /** Press, move and let go (select text, drag a row); on the phone a finger. */
+  async drag(from, to, label, opts = {}) {
+    const a = await this.point(from, opts.from || {})
+    const b = await this.point(to, opts.to || {})
+    await this.step(
+      label || `拖 ${describe(from)} 到 ${describe(to)}`,
+      async (s) => {
+        if (this.phone) return touch(s, [a, b], opts.hold ?? 600)
+        await s.page.mouse.move(a.x, a.y)
+        await s.page.mouse.down()
+        await s.page.mouse.move(b.x, b.y, { steps: 12 })
+        await s.page.mouse.up()
+      },
+      opts,
+    )
+  }
+  /** Hold a finger (phone) or the mouse button (desktop) on the target. */
+  async press(target, label, opts = {}) {
+    const a = await this.point(target, opts)
+    await this.step(
+      label || `长按 ${describe(target)}`,
+      async (s) => {
+        if (this.phone) return touch(s, [a], opts.hold ?? 700)
+        await s.page.mouse.move(a.x, a.y)
+        await s.page.mouse.down()
+        await sleep(opts.hold ?? 700)
+        await s.page.mouse.up()
+      },
+      opts,
+    )
+  }
+  /** Tap/click the target, which opens the file picker, and choose these files (paths) on both sides. */
+  async upload(target, files, label, opts = {}) {
+    const pt = await this.point(target, opts)
+    await this.step(
+      label || `选文件 ${files.map((f) => path.basename(f)).join(', ')}`,
+      async (s) => {
+        const [chooser] = await Promise.all([
+          s.page.waitForEvent('filechooser', { timeout: 5000 }),
+          this.phone ? s.page.touchscreen.tap(pt.x, pt.y) : s.page.mouse.click(pt.x, pt.y),
+        ])
+        await chooser.setFiles(files)
+      },
+      opts,
+    )
+  }
+  /** A second tab of the same browser on both sides, opened at urlPath; it becomes the one the steps act on. */
+  async newTab(urlPath, label = `新开一个标签页 ${urlPath}`) {
+    await Promise.all(this.sides.map((s) => s.newPage()))
+    await this.goto(urlPath, label)
+  }
+  async tab(i, label = `回到第 ${i + 1} 个标签页`) {
+    for (const s of this.sides) s.use(i)
+    await this.step(label, (s) => s.page.bringToFront())
+  }
+  /** Both servers stop (Taska out of reach) or start again on the same port and data. */
+  async servers(up, label) {
+    await this.step(label || (up ? '服务器恢复' : '服务器停了'), (s) => (up ? s.server.restart() : s.server.stop()))
+  }
   async offline(on, label, opts = {}) {
     await this.step(label || (on ? '断网' : '恢复网络'), (s) => s.ctx.setOffline(on), opts)
   }
@@ -314,6 +409,25 @@ export class Twin {
     await this.step(label, (s) =>
       s.page.waitForFunction((t) => document.body.innerText.includes(t), text, { timeout, polling: 50 }).catch(() => null),
     )
+  }
+
+  /** Speed, one side at a time (no sharing of the machine): before(side) sets the scene, fn(side) is timed until the
+   * page is still; n times each, alternating; the medians are compared. Slower: a quarter longer and 150 ms more. */
+  async timed(label, fn, { n = 3, before } = {}) {
+    const ms = { a: [], b: [] }
+    for (let i = 0; i < n; i++)
+      for (const s of this.sides) {
+        if (before) await before(s)
+        await s.settle()
+        const t0 = Date.now()
+        await fn(s)
+        ms[s.name].push(Math.max(0, Math.round((await s.settle()) - t0)))
+      }
+    const med = (x) => [...x].sort((p, q) => p - q)[Math.floor(x.length / 2)]
+    const [a, b] = [med(ms.a), med(ms.b)]
+    const slow = b > a * 1.25 + 150
+    for (const s of this.sides) s.takeErrors()
+    this.record({ label, kind: 'timed', same: !slow, cats: slow ? { speed: { a, b, all: ms } } : {}, ms: { a, b }, all: ms })
   }
 
   /** An agent call on both servers at once; the answers must be the same, word for word. */
@@ -421,6 +535,24 @@ export class Twin {
     const mark = step.same ? 'same' : 'DIFF ' + Object.keys(step.cats).join(',')
     this.log(`    ${String(step.i).padStart(3)} ${mark.padEnd(22)} ${step.ms?.a ?? '-'}/${step.ms?.b ?? '-'} ms  ${step.label}`)
   }
+}
+
+// A finger: down at the first point, held, moved through the rest, up (Chrome's touch events, as a phone sends).
+async function touch(side, pts, hold) {
+  if (side.variant.engine === 'webkit') throw new Error('a long press or a finger drag needs Chrome (no CDP in WebKit)')
+  const cdp = await side.ctx.newCDPSession(side.page)
+  const tp = (p) => [{ x: p.x, y: p.y, id: 1, radiusX: 4, radiusY: 4, force: 1 }]
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: tp(pts[0]) })
+  await sleep(hold)
+  for (let i = 1; i < pts.length; i++) {
+    const [a, b] = [pts[i - 1], pts[i]]
+    for (let k = 1; k <= 10; k++) {
+      await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: tp({ x: a.x + ((b.x - a.x) * k) / 10, y: a.y + ((b.y - a.y) * k) / 10 }) })
+      await sleep(16)
+    }
+  }
+  await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] })
+  await cdp.detach().catch(() => {})
 }
 
 const scaleBox = (b, k) => ({ x: Math.round(b.x / k), y: Math.round(b.y / k), w: Math.round(b.w / k), h: Math.round(b.h / k) })

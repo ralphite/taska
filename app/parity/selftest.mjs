@@ -3,7 +3,7 @@
 //   2. each planted fault (mutants.mjs) against the old Taska: found where it is, of the kind it is, and not found
 //      where it is not (a dark-only fault leaves light alone).
 //
-//   node selftest.mjs [--only shade,flash] [--skip-same]      -> out/selftest/summary.json, shown by the viewer
+//   node selftest.mjs [--only shade,flash] [--skip-same] [--scenarios home,list]   -> out/selftest/summary.json
 import { chromium } from 'playwright'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -14,6 +14,8 @@ import { MUTANTS } from './mutants.mjs'
 const argv = process.argv.slice(2)
 const only = argv.includes('--only') ? argv[argv.indexOf('--only') + 1].split(',') : null
 const skipSame = argv.includes('--skip-same')
+// old vs old on these scenarios only (default: all)
+const sameScenarios = argv.includes('--scenarios') ? argv[argv.indexOf('--scenarios') + 1].split(',') : undefined
 const OUT = path.join(PARITY, 'out', 'selftest')
 fs.mkdirSync(OUT, { recursive: true })
 const sumFile = path.join(OUT, 'summary.json')
@@ -24,7 +26,7 @@ try {
   if (!skipSame && !only) {
     summary.same = []
     for (const k of [1, 2]) {
-      const rep = await run({ a: 'old', b: 'old', runId: `selftest-same-${k}`, browser })
+      const rep = await run({ a: 'old', b: 'old', scenarios: sameScenarios, runId: `selftest-same-${k}`, browser })
       const found = rep.results.filter((r) => kindsOf(r).size).map((r) => `${r.scenario}/${r.variant}: ${[...kindsOf(r)].join(',')}`)
       const checks = rep.results.reduce((n, r) => n + r.steps.length, 0)
       summary.same.push({ run: rep.run, runs: rep.results.length, steps: checks, found, pass: found.length === 0, at: rep.finished })

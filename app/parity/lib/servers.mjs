@@ -22,10 +22,31 @@ const portBusy = (port) =>
     s.once('error', () => resolve(false))
   })
 
-/** n free ports from the parity range (7450-7479); ports others hold are skipped. */
+/** n free ports from the parity range (7450-7479), held for this process (a lock file with its pid), so two runs at
+ * once never pick the same; ports others listen on are skipped. */
 export async function freePorts(n, from = 7450, to = 7479) {
+  const dir = path.join(RUNS, '.ports')
+  fs.mkdirSync(dir, { recursive: true })
+  const alive = (pid) => {
+    try {
+      process.kill(pid, 0)
+      return true
+    } catch {
+      return false
+    }
+  }
   const out = []
-  for (let p = from; p <= to && out.length < n; p++) if (!(await portBusy(p))) out.push(p)
+  for (let p = from; p <= to && out.length < n; p++) {
+    const lock = path.join(dir, String(p))
+    let holder = 0
+    try {
+      holder = Number(fs.readFileSync(lock, 'utf8'))
+    } catch {}
+    if (holder && holder !== process.pid && alive(holder)) continue
+    if (await portBusy(p)) continue
+    fs.writeFileSync(lock, String(process.pid))
+    out.push(p)
+  }
   if (out.length < n) throw new Error(`no ${n} free ports in ${from}-${to}`)
   return out
 }
@@ -72,10 +93,15 @@ export async function startServer(spec, port, root, logFile) {
     } catch {}
     throw new Error(`${e.message}; log: ${logFile}`)
   }
-  return {
+  const srv = {
     base,
     port,
     root,
+    /** Again on the same port and data, after stop(). */
+    restart: async () => {
+      const again = await startServer(spec, port, root, logFile)
+      Object.assign(srv, { stop: again.stop, restart: again.restart })
+    },
     stop: async () => {
       try {
         process.kill(-proc.pid, 'SIGTERM')
@@ -89,4 +115,5 @@ export async function startServer(spec, port, root, logFile) {
       fs.closeSync(log)
     },
   }
+  return srv
 }

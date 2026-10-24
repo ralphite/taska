@@ -1,5 +1,5 @@
 // One comparison run: scenarios x variants on two versions, each pair on fresh data, then the report.
-import { chromium } from 'playwright'
+import { chromium, webkit } from 'playwright'
 import { execFileSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
@@ -13,6 +13,13 @@ const specs = new Map()
 export function spec(name) {
   if (!specs.has(name)) {
     if (name.startsWith('mutant:')) specs.set(name, mutantSpec(name.slice(7)))
+    else if (name.startsWith('new@')) {
+      // a committed build of the rewrite (tools/build-new.sh <sha>)
+      const dir = `/Users/yadong/taska-rewrite/parity/new-builds/${name.slice(4)}/app`
+      if (!fs.existsSync(`${dir}/web/dist/index.html`)) throw new Error(`no build of ${name}: run tools/build-new.sh ${name.slice(4)}`)
+      const n = versions().new
+      specs.set(name, { ...n, title: `新版 ${name.slice(4)}`, cwd: `${dir}/server`, env: { ...n.env, TASKA_WEB_DIST: `${dir}/web/dist` } })
+    }
     else {
       const s = versions()[name]
       if (!s) throw new Error(`no version "${name}" in versions.json`)
@@ -29,7 +36,8 @@ export async function loadScenarios(want) {
     const m = await import(path.join(dir, f))
     all.push(...(Array.isArray(m.default) ? m.default : [m.default]))
   }
-  return all.filter((s) => !want || want.includes(s.id))
+  // a scenario marked optIn (the long sweeps) runs only when named
+  return all.filter((s) => (want ? want.includes(s.id) : !s.optIn))
 }
 
 // Speed: a scenario is slower on B when its steps took, in all, a quarter longer and 300 ms more than on A. One step
@@ -66,6 +74,7 @@ export async function run({ a = 'old', b = 'new', scenarios: want, variants, run
   const scenarios = await loadScenarios(want)
   const variantNames = variants || Object.keys(VARIANTS)
   const browser = shared || (await chromium.launch())
+  let wk = null // Safari's engine, started when an iphone variant first needs it
   const door = await openDoor(portDoor, { a: portA, b: portB })
   log(`run ${runId}: ${a} vs ${b}, both at ${door.base}; ${scenarios.length} scenarios x ${variantNames.length} variants`)
   try {
@@ -86,7 +95,8 @@ export async function run({ a = 'old', b = 'new', scenarios: want, variants, run
           ])
           ;[sa, sb] = up.map((x) => x.value)
           for (const x of up) if (x.status === 'rejected') throw x.reason
-          twin = new Twin({ browser, door, a: sa, b: sb, variantName: vn, outDir: path.join(OUT, `${sc.id}--${vn}`), log })
+          const engine = VARIANTS[vn].engine === 'webkit' ? (wk ||= await webkit.launch()) : browser
+          twin = new Twin({ browser: engine, door, a: sa, b: sb, variantName: vn, outDir: path.join(OUT, `${sc.id}--${vn}`), log })
           await twin.open()
           await sc.run(twin)
         } catch (e) {
@@ -112,6 +122,7 @@ export async function run({ a = 'old', b = 'new', scenarios: want, variants, run
     }
   } finally {
     if (!shared) await browser.close()
+    await wk?.close()
     await door.close()
     report.finished = new Date().toISOString()
     save()

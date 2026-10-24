@@ -12,7 +12,9 @@ The parity acceptance of the Taska rewrite: the same data and the same steps on 
 
 ```bash
 cd app/parity && npm install                     # once: Playwright, pixelmatch, pngjs, the Tailwind browser build
-node compare.mjs --a old --b new                 # every scenario, desktop/phone x light/dark
+zsh tools/build-new.sh                          # the rewrite as committed: app/ of the last commit, built apart
+node compare.mjs --a old --b new@<sha>           # every scenario, every variant, against that build
+node compare.mjs --a old --b new                 # against the working tree as it is (app/server, app/web/dist)
 node compare.mjs --a old --b new --scenarios approve,list --variants desk-light
 node selftest.mjs                                # the tool's own check (old vs old twice, then every planted fault)
 ```
@@ -27,7 +29,8 @@ Each scenario (`scenarios/*.mjs`) runs on both versions at the same moment, step
 target is found on the old page and the step acts on that screen point on both, so the new version is driven only
 by what it shows. Both pages are reached through one front door (`lib/door.mjs`) at the same address, so every
 address a page shows is the same text on both sides. Variants: desktop 1440x900 and phone 393x852 (an iPhone's
-user agent, touch), light and dark.
+user agent, touch), light and dark; and the phone in Safari's engine (WebKit, light; no film there, the
+screencast is Chrome's).
 
 After every step, once both pages are still:
 

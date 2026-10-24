@@ -19,7 +19,10 @@ const KIND = {
   speed: '速度',
   error: '场景没跑完',
 }
-const VAR = { 'desk-light': '电脑 1440 · 浅色', 'desk-dark': '电脑 1440 · 深色', 'phone-light': '手机 393 · 浅色', 'phone-dark': '手机 393 · 深色' }
+// what only a screen reader, or text out of sight, would show: counted, but marked apart from what is seen
+const SOFT = new Set(['text', 'aria'])
+const tone = (k) => (SOFT.has(k) ? 'warn' : 'bad')
+const VAR = { 'desk-light': '电脑 1440 · 浅色', 'desk-dark': '电脑 1440 · 深色', 'phone-light': '手机 393 · 浅色', 'phone-dark': '手机 393 · 深色', 'iphone-light': 'iPhone（Safari 内核）393 · 浅色' }
 const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c])
 const chip = (text, tone) =>
   `<span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${
@@ -125,7 +128,7 @@ function resultCard(rep, r, only) {
   const steps = only ? r.steps.filter((s) => !s.same) : r.steps
   return card(`
     <div class="flex flex-wrap items-center gap-2"><h3 class="font-semibold">${esc(r.title)}</h3><span class="text-sm text-zinc-500">${esc(r.scenario)} · ${esc(VAR[r.variant] || r.variant)}</span>
-      ${kinds.length ? kinds.map((k) => chip(KIND[k] || k, 'bad')).join('') : chip('一样', 'ok')}
+      ${kinds.length ? kinds.map((k) => chip(KIND[k] || k, tone(k))).join('') : chip('一样', 'ok')}
       <span class="ml-auto text-xs text-zinc-500">${r.steps.length} 步 · 用时 A ${r.speed?.a ?? '—'} ms / B ${r.speed?.b ?? '—'} ms</span></div>
     ${r.error ? `<p class="mt-2 text-sm text-red-600">场景没跑完：${esc(r.error)}</p>` : ''}
     ${r.data && !r.data.same ? `<div class="mt-3"><div class="text-sm font-medium">数据不同</div>${r.data.diffs.map((d) => `<pre class="mt-1 overflow-x-auto rounded bg-zinc-100 p-2 text-xs dark:bg-zinc-800">${esc(d.what)}\n只在 A：${esc((d.only_a || d.a || []).join('\n'))}\n只在 B：${esc((d.only_b || d.b || []).join('\n'))}</pre>`).join('')}</div>` : ''}
@@ -168,9 +171,9 @@ function fillZooms() {
 function stepRow(dir, s) {
   const head = `<div class="flex flex-wrap items-center gap-2 text-sm"><span class="w-8 text-right text-xs text-zinc-400">${s.i}</span>
     <span class="${s.same ? '' : 'font-medium'}">${esc(s.label)}</span>
-    ${s.same ? '' : Object.keys(s.cats).map((k) => chip(KIND[k] || k, 'bad')).join('')}
+    ${s.same ? '' : Object.keys(s.cats).map((k) => chip(KIND[k] || k, tone(k))).join('')}
     ${s.retries ? chip(`重拍 ${s.retries} 次`, 'dim') : ''}
-    <span class="ml-auto text-xs text-zinc-500">${s.kind === 'check' ? `${s.url ? esc(s.url) + ' · ' : ''}A ${s.ms?.a ?? '—'} / B ${s.ms?.b ?? '—'} ms` : s.kind === 'agent' ? `agent 接口 · ${s.ms?.a ?? '—'} / ${s.ms?.b ?? '—'} ms` : ''}</span></div>`
+    <span class="ml-auto text-xs text-zinc-500">${s.kind === 'check' ? `${s.url ? esc(s.url) + ' · ' : ''}A ${s.ms?.a ?? '—'} / B ${s.ms?.b ?? '—'} ms` : s.kind === 'agent' ? `agent 接口 · ${s.ms?.a ?? '—'} / ${s.ms?.b ?? '—'} ms` : s.kind === 'timed' ? `单独计时，各 ${s.all?.a?.length} 次的中位数：A ${s.ms.a} / B ${s.ms.b} ms` : ''}</span></div>`
   if (s.same) {
     return `<li class="rounded-lg border border-zinc-100 px-2 py-1.5 dark:border-zinc-800">${head}${
       s.files?.preview ? `<details class="ml-10"><summary class="cursor-pointer text-xs text-zinc-500">看画面</summary><img loading="lazy" class="mt-2 max-h-96 rounded border border-zinc-200 dark:border-zinc-700" src="${dir}/${s.files.preview}"></details>` : ''
@@ -202,6 +205,7 @@ function stepRow(dir, s) {
       ${c.errors ? `<div class="text-sm">B 的新报错：<pre class="mt-1 overflow-x-auto rounded bg-zinc-100 p-2 text-xs dark:bg-zinc-800">${esc(c.errors.b.filter((e) => !c.errors.a.includes(e)).join('\n'))}</pre></div>` : ''}
       ${c.dialogs ? `<p class="text-sm">弹窗：A ${esc(JSON.stringify(c.dialogs[0]))} · B ${esc(JSON.stringify(c.dialogs[1]))}</p>` : ''}
       ${c.action ? `<p class="text-sm text-red-600">这一步在 B 上做不了：${esc(c.action[1])}</p>` : ''}
+      ${c.speed ? `<p class="text-sm text-red-600">B 慢：中位数 ${c.speed.b} ms，A ${c.speed.a} ms（每次：A ${c.speed.all.a.join(' / ')}，B ${c.speed.all.b.join(' / ')}）</p>` : ''}
     </div></li>`
 }
 
