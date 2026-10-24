@@ -2,7 +2,7 @@
 // narrow screen), code and choices. In an open question the choices are buttons; answered, they keep their place and
 // shape, quieter, yours ticked. A code in the words opens what it names, a picture opens the viewer. Props only.
 
-import { useLayoutEffect, useRef, type KeyboardEvent, type MouseEvent } from 'react'
+import { useLayoutEffect, useRef, type HTMLAttributes, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react'
 import { blocks, type ListNode, type MdBlock } from '../model/markdown'
 import { Kbd } from './bits'
 import { Icon } from './Icon'
@@ -128,7 +128,8 @@ function Choices({ b, world, choosing, done }: { b: Extract<MdBlock, { kind: 'ch
   )
 }
 
-function Block({ b, world, choosing, done }: { b: MdBlock; world: InlineWorld; choosing?: Choosing | null; done?: readonly string[] | null }) {
+/** One block of text as it shows. */
+export function Block({ b, world, choosing, done }: { b: MdBlock; world: InlineWorld; choosing?: Choosing | null; done?: readonly string[] | null }) {
   switch (b.kind) {
     case 'para':
       return <p className="leading-[1.75] whitespace-pre-wrap" dangerouslySetInnerHTML={html(b.text, world)} />
@@ -158,7 +159,9 @@ function Block({ b, world, choosing, done }: { b: MdBlock; world: InlineWorld; c
   }
 }
 
-export function Rich({ text, world, cls = '', choosing = null, done = null, onRef, onPicture }: RichProps) {
+/** Words drawn by its children (blocks, a document's paragraph): a code in them opens what it names, a picture the
+ * viewer, and a picture says when it has loaded. `text`: the words (their pictures are what the viewer goes through). */
+export function RichFrame({ text, cls, onRef, onPicture, children, ...rest }: { text: string; cls: string; onRef?(code: string): void; onPicture?(fid: string, all: string[]): void; children: ReactNode } & HTMLAttributes<HTMLDivElement>) {
   const root = useRef<HTMLDivElement>(null)
   useLayoutEffect(() => {
     // a picture in the words says when it has loaded, or could not: its place shows a spinner until then, or says so
@@ -198,10 +201,18 @@ export function Rich({ text, world, cls = '', choosing = null, done = null, onRe
     }
   }
   return (
-    <div ref={root} onClick={click} onKeyDown={key} className={`space-y-2 break-words [&_p]:leading-relaxed ${cls}`}>
+    <div ref={root} onClick={click} onKeyDown={key} className={cls} {...rest}>
+      {children}
+    </div>
+  )
+}
+
+export function Rich({ text, world, cls = '', choosing = null, done = null, onRef, onPicture }: RichProps) {
+  return (
+    <RichFrame text={text} cls={`space-y-2 break-words [&_p]:leading-relaxed ${cls}`} onRef={onRef} onPicture={onPicture}>
       {blocks(text, !!choosing || !!done).map((b, i) => (
         <Block key={i} b={b} world={world} choosing={choosing} done={done} />
       ))}
-    </div>
+    </RichFrame>
   )
 }

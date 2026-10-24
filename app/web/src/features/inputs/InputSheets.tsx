@@ -1,11 +1,10 @@
 // Sheets about what you said and what agents wrote: an input's menu (Edit, Add more, its original words, Undo
 // organizing, Move to…, History, Put with an item…, Take off a file, Delete), its versions, what an item came
-// from, a voice note's original words, a message's menu, a comment's new place in its document. Props only.
+// from, a voice note's original words, a message's menu. Props only.
 
 import type { ReactNode } from 'react'
-import { oneLine } from '../../model/items'
 import { when } from '../../model/time'
-import type { Doc, FileRef, Input } from '../../model/types'
+import type { FileRef, Input } from '../../model/types'
 import { inputCode, whoName } from '../../model/words'
 import { Icon } from '../../ui/Icon'
 import type { IconName } from '../../ui/icon-paths'
@@ -152,29 +151,6 @@ export function messageMenuSheet(onHide: () => void): SheetParts {
           <Icon n="shrink" c="size-4 text-zinc-500 dark:text-zinc-400" />
           Hide (folds to one line)
         </button>
-      </div>
-    ),
-  }
-}
-
-/** Where in its document a comment goes: the whole document, or one of its paragraphs. */
-export function commentMoveSheet(doc: Doc, current: string, onPick: (key: string) => void): SheetParts {
-  const opt = (key: string, label: ReactNode) => (
-    <button
-      key={key}
-      onClick={() => onPick(key)}
-      {...(key === current ? { 'aria-current': 'true' as const } : {})}
-      className="flex min-h-11 w-full items-center rounded-lg px-3 py-1.5 text-left text-sm hover:bg-zinc-100 aria-[current=true]:bg-blue-50 dark:hover:bg-zinc-800 dark:aria-[current=true]:bg-blue-400/10"
-    >
-      <span className="line-clamp-2">{label}</span>
-    </button>
-  )
-  return {
-    title: 'Move the comment to…',
-    body: (
-      <div className="-mx-1 flex max-h-[60dvh] flex-col gap-0.5 overflow-y-auto">
-        {opt('doc', <b>The whole document</b>)}
-        {doc.blocks.map((x) => opt(x.key, oneLine(x.text).slice(0, 120)))}
       </div>
     ),
   }

@@ -7,7 +7,7 @@ import { usePaneRef } from '../../app/panes'
 import { useAway, useProjectModel, type ProjectRoute } from '../../app/hooks'
 import { dayOf, newestFirst, organizing, SHORT_STANDING, standing, timeOf } from '../../model/inputs'
 import { oneLine, shownStatus } from '../../model/items'
-import { codeOf, type ProjectModel } from '../../model/project'
+import { codeOf, liveN, type ProjectModel } from '../../model/project'
 import { inputMatch } from '../../model/visible'
 import type { Input } from '../../model/types'
 import { inputCode, plural } from '../../model/words'
@@ -60,7 +60,9 @@ function feedbackLine(a: { m: ProjectModel | null; desk: boolean; composePage: b
 
 /** What the box writes to now: its key in the drafts, the line on top, the placeholder, what Send says. */
 function boxRole(m: ProjectModel | null, route: ProjectRoute, desk: boolean, title: string, mode: BoxMode, stop: () => void) {
-  const open = route.place.kind === 'item' ? m?.byN.get(Number(/\d+/.exec(route.place.ref)?.[0])) : undefined
+  // the item open, or the one whose document is open (nothing picked in it, the box replies on the item)
+  const docOf = route.place.kind === 'doc' ? m?.docs.find((x) => x.d === (route.place as { d: number }).d) : undefined
+  const open = route.place.kind === 'item' ? m?.byN.get(Number(/\d+/.exec(route.place.ref)?.[0])) : docOf && m ? m.byN.get(liveN(m, docOf.n)) : undefined
   const files = m?.facts.organizer.on ? 'the organizer files it' : 'your agent files it'
   if (mode?.kind === 'amend' && m?.byId.has(mode.id)) {
     const r = m.byId.get(mode.id) as Input

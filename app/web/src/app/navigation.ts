@@ -99,6 +99,12 @@ export class Navigation {
     this.go(tab ?? (r.tab === 'inputs' ? 'items' : r.tab), { kind: 'item', ref: code }, r.list, fresh)
   }
 
+  /** An item, in place of what shows (no step Back: coming back from its document). */
+  openItemHere(code: string): void {
+    const r = this.here()
+    if (r) this.go(r.tab === 'inputs' ? 'items' : r.tab, { kind: 'item', ref: code }, r.list, false)
+  }
+
   newInput(): void {
     const r = this.here()
     if (!r) return

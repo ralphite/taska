@@ -3,7 +3,7 @@
 // place.
 
 import { closed } from './items'
-import type { Doc, FileRef, Input, Item, ProjectFacts, ServerFacts, ViewAnswer } from './types'
+import type { Comment, Doc, FileRef, Input, Item, ProjectFacts, ServerFacts, ViewAnswer } from './types'
 import { LETTER } from './words'
 
 export interface ServerCopy {
@@ -83,7 +83,36 @@ export interface InputPatch {
   gone?: boolean
 }
 
-export function project(copy: ServerCopy, patches: readonly ItemPatch[] = [], at = copy.at, inputPatches: readonly InputPatch[] = []): ProjectModel {
+/** A change to a document shown before the server has it: deleted, a thread resolved or open again, a comment gone
+ * or (shown while it is saved) there, its text edited. */
+export type DocPatch =
+  | { d: number; gone: true }
+  | { d: number; resolved: { tk: string; on: boolean } }
+  | { d: number; commentGone: number }
+  | { d: number; comment: Comment }
+  | { d: number; f: Partial<Pick<Doc, 'md' | 'title'>> }
+
+function patchedDoc(doc: Doc, p: DocPatch): Doc {
+  if ('resolved' in p) {
+    const resolved = { ...doc.resolved }
+    if (p.resolved.on) resolved[p.resolved.tk] ||= new Date(0).toISOString()
+    else delete resolved[p.resolved.tk]
+    return { ...doc, resolved }
+  }
+  if ('commentGone' in p) {
+    const keep = (cs: Comment[]) => cs.filter((c) => c.id !== p.commentGone)
+    return { ...doc, whole: keep(doc.whole), blocks: doc.blocks.map((b) => ({ ...b, comments: keep(b.comments) })), detached: doc.detached.map((t) => ({ ...t, comments: keep(t.comments) })) }
+  }
+  if ('comment' in p) {
+    const c = p.comment
+    if (c.key === 'doc') return { ...doc, whole: [...doc.whole, c] }
+    if (doc.blocks.some((b) => b.key === c.key)) return { ...doc, blocks: doc.blocks.map((b) => (b.key === c.key ? { ...b, comments: [...b.comments, c] } : b)) }
+    return doc.fmt === 'html' ? { ...doc, blocks: [...doc.blocks, { key: c.key, kind: 'para', text: c.quote, comments: [c] }] } : doc
+  }
+  return 'f' in p ? { ...doc, ...p.f } : doc
+}
+
+export function project(copy: ServerCopy, patches: readonly ItemPatch[] = [], at = copy.at, inputPatches: readonly InputPatch[] = [], docPatches: readonly DocPatch[] = []): ProjectModel {
   const byN = new Map(copy.items)
   for (const p of patches) {
     const it = byN.get(p.n)
@@ -116,11 +145,22 @@ export function project(copy: ServerCopy, patches: readonly ItemPatch[] = [], at
     kids,
     inputs,
     byId,
-    docs: [...copy.docs.values()],
+    docs: docPatches.length ? docsPatched(copy.docs, docPatches) : [...copy.docs.values()],
     facts: copy.facts,
     width: copy.facts.width,
     at,
   }
+}
+
+function docsPatched(docs: ReadonlyMap<number, Doc>, patches: readonly DocPatch[]): Doc[] {
+  const m = new Map(docs)
+  for (const p of patches) {
+    const doc = m.get(p.d)
+    if (!doc) continue
+    if ('gone' in p) m.delete(p.d)
+    else m.set(p.d, patchedDoc(doc, p))
+  }
+  return [...m.values()]
 }
 
 /** An item's code as the page shows it, padded to the project's width. */

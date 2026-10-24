@@ -16,6 +16,7 @@ export function PaneFrame({
   paneRef,
   split = false,
   bar = true,
+  lead,
   children,
 }: {
   place: string
@@ -33,6 +34,8 @@ export function PaneFrame({
   split?: boolean
   /** false: no bar on the desktop (nothing shows to have one) */
   bar?: boolean
+  /** the desktop's way back, first in the bar (a document's) */
+  lead?: ReactNode
   children?: ReactNode
 }) {
   return (
@@ -45,6 +48,7 @@ export function PaneFrame({
         >
           <Icon n="left" c="size-6" sw="2" />
         </button>
+        {lead ? <div className="hidden shrink-0 lg:flex">{lead}</div> : null}
         <div className="flex min-w-0 flex-1 flex-col items-center leading-tight lg:flex-row lg:items-center lg:gap-2 lg:pl-2">{head}</div>
         <div className="hidden items-center gap-0.5 lg:flex">{desk ? acts : null}</div>
         <button
@@ -56,7 +60,7 @@ export function PaneFrame({
         >
           <Icon n="more" c="size-6 lg:size-5" />
         </button>
-        <div className="hidden items-center gap-0.5 border-l border-zinc-200 pl-2 lg:ml-1.5 lg:flex dark:border-zinc-800">{desk ? nav : null}</div>
+        <div className={`hidden items-center gap-0.5 border-l border-zinc-200 pl-2 lg:ml-1.5 dark:border-zinc-800 ${lead ? '' : 'lg:flex'}`}>{desk && !lead ? nav : null}</div>
       </header>
       <div
         {...(split ? { 'data-split': '' } : {})}

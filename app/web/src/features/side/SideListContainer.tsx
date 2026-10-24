@@ -81,7 +81,7 @@ export function SideListContainer({ slug, side }: { slug: string; side: Side }) 
   return (
     <SideFrame side={side} count={count}>
       {side === 'docs' ? (
-        <DocsList docs={docs} open={route.page === 'project' && route.place.kind === 'doc' ? route.place.d : null} onOpen={(d) => app.nav.openDoc(d)} />
+        <DocsList docs={docs} open={route.page === 'project' && route.place.kind === 'doc' ? route.place.d : null} onOpen={(d) => app.docs.open(d)} />
       ) : side === 'log' ? (
         <ActivityList
           rows={activity}
@@ -94,7 +94,7 @@ export function SideListContainer({ slug, side }: { slug: string; side: Side }) 
               if (!to) return
               app.stores.ui.getState().setSideSel(key)
               if ('n' in to) openItem(to.n)
-              else if ('d' in to) app.nav.openDoc(to.d)
+              else if ('d' in to) app.docs.open(to.d)
               else openInput()
             },
             item: openItem,

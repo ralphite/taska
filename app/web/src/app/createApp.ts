@@ -31,6 +31,8 @@ import { Projects } from './projects'
 import { KeyArm } from './keyArm'
 import { Activity } from './activity'
 import { Restores } from './restores'
+import { Docs } from './docs'
+import { createDocViewStore, type DocViewStore } from '../stores/docView'
 import { createActivityStore, type ActivityStore } from '../stores/activity'
 import { Fields } from './fields'
 import { ListOrder } from './listOrder'
@@ -67,6 +69,7 @@ export interface App {
     sheet: SheetStore
     route: RouteStore
     activity: ActivityStore
+    docView: DocViewStore
   }
   toasts: Toasts
   items: ItemActions
@@ -103,6 +106,7 @@ export interface App {
   keyArm: KeyArm
   activity: Activity
   restores: Restores
+  docs: Docs
   refreshProjects(): Promise<boolean>
   stop(): void
 }
@@ -126,6 +130,15 @@ export function createApp(env: AppEnv): App {
   const itemView = createItemViewStore(env.kv)
   const search = createSearchStore()
   const activityStore = createActivityStore()
+  const docView = createDocViewStore()
+  const fields = new Fields()
+  // the document shown is the address's: another one (or none) starts afresh
+  const docShown = () => {
+    const r = route.getState().route
+    docView.getState().show(r.page === 'project' && r.place.kind === 'doc' ? r.place.d : null)
+  }
+  docShown()
+  const undoc = route.subscribe(docShown)
   const drafts = createDraftsStore(env.kv)
   const boxStore = createBoxStore(env.session ?? memoryStore())
   const sheetStore = createSheetStore()
@@ -146,7 +159,7 @@ export function createApp(env: AppEnv): App {
     const hit = memo.get(slug)
     if (hit && hit.copy === copy && hit.pending === pending) return hit.model
     const mine = pending.filter((c) => c.slug === slug)
-    const m = project(copy, mine.flatMap((c) => c.patches), Math.max(copy.at, ...mine.map((c) => c.t)), mine.flatMap((c) => c.inputPatches || []))
+    const m = project(copy, mine.flatMap((c) => c.patches), Math.max(copy.at, ...mine.map((c) => c.t)), mine.flatMap((c) => c.inputPatches || []), mine.flatMap((c) => c.docPatches || []))
     memo.set(slug, { copy, pending, model: m })
     return m
   }
@@ -263,7 +276,7 @@ export function createApp(env: AppEnv): App {
 
   return {
     api,
-    stores: { data, changes, outbox, feedback, ui, itemView, search, drafts, box: boxStore, sheet: sheetStore, route, activity: activityStore },
+    stores: { data, changes, outbox, feedback, ui, itemView, search, drafts, box: boxStore, sheet: sheetStore, route, activity: activityStore, docView },
     toasts,
     items,
     inputs,
@@ -274,7 +287,7 @@ export function createApp(env: AppEnv): App {
     listOrder,
     crossSearch: new CrossSearch(api, search),
     answers: new Answers({ inputs, view: itemView, outbox }),
-    fields: new Fields(),
+    fields,
     inputActions,
     box: new Box({ api, store: boxStore, drafts, outbox, inputs, runner, toasts }),
     sheets,
@@ -295,6 +308,7 @@ export function createApp(env: AppEnv): App {
     keyArm: new KeyArm(),
     activity,
     restores,
+    docs: new Docs({ runner, toasts, view: docView, nav, route, sheets, fields, desk: env.desk, model }),
     refreshProjects,
     stop: () => {
       projects.stop()
@@ -303,6 +317,7 @@ export function createApp(env: AppEnv): App {
       unwatch()
       unlisten()
       unsheet()
+      undoc()
     },
   }
 }

@@ -126,12 +126,13 @@ export function ItemPageContainer({ it, m, slug, tab, desk }: { it: Item; m: Pro
     menu: (arm, from) => openItemMenu(app, desk, n, arm, from),
     sources: () => app.sheets.open({ kind: 'item-sources', n }),
     goto,
-    doc: () => {},
+    doc: (d: number) => app.docs.open(d),
     earlier: () => iv().showAll(n),
     more: (id) => iv().toggleOpened(id),
     ref: (c) => {
       const to = findRef(m, c)
       if (to?.kind === 'item') goto(to.n)
+      else if (to?.kind === 'doc') app.docs.open(to.d)
     },
     picture: () => {},
     play: () => {},

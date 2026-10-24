@@ -10,6 +10,7 @@ import { ItemActs, ItemHead, ItemNav, Missing, NoSelection } from '../item/ItemP
 import { ItemPageContainer, openItemMenu } from '../item/ItemPageContainer'
 import { PaneFrame } from '../item/PaneFrame'
 import { DeletedPickContainer } from '../side/SideListContainer'
+import { DocPaneContainer, DocSheetContainer } from '../docs/DocContainer'
 
 export function DetailContainer({ route, place, hidden, full = false }: { route: ProjectRoute; place: string; hidden?: boolean; full?: boolean }) {
   const app = useApp()
@@ -18,10 +19,21 @@ export function DetailContainer({ route, place, hidden, full = false }: { route:
   const pane = usePaneRef('detail')
   const m = useProjectModel(route.slug)
   const away = useAway(route.slug)
-  const n = route.place.kind === 'item' ? Number(/\d+/.exec(route.place.ref)?.[0]) : null
+  const dn = route.place.kind === 'doc' ? route.place.d : null
+  const doc = dn != null ? m?.docs.find((x) => x.d === dn) : undefined
+  // a document: on the desktop in the pane; on the phone over its item
+  const n = route.place.kind === 'item' ? Number(/\d+/.exec(route.place.ref)?.[0]) : doc && !desk ? doc.n : null
   const it = m && n ? m.byN.get(liveN(m, n)) : undefined
   const compose = route.place.kind === 'new' || (route.place.kind === 'tab' && route.tab !== 'inputs')
   const back = () => app.nav.closeItem()
+  if (dn != null && desk) {
+    if (doc) return <DocPaneContainer route={route} dn={dn} place={place} hidden={hidden} />
+    return (
+      <PaneFrame place={place} hidden={hidden} desk={desk} paneRef={pane} head={<span className="font-mono text-sm font-bold">D{dn}</span>} onBack={back}>
+        <Missing what={`D${dn}`} loading={!m} away={away >= 2} />
+      </PaneFrame>
+    )
+  }
   if (it && m) {
     const code = codeOf(m, it.n)
     const nav = {
@@ -50,6 +62,7 @@ export function DetailContainer({ route, place, hidden, full = false }: { route:
         onMenu={(from) => openItemMenu(app, desk, it.n, null, from)}
       >
         <ItemPageContainer key={it.n} it={it} m={m} slug={route.slug} tab={route.tab} desk={desk} />
+        {doc && !desk ? <DocSheetContainer slug={route.slug} dn={doc.d} /> : null}
       </PaneFrame>
     )
   }

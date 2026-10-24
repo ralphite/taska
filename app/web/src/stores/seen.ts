@@ -22,6 +22,13 @@ export class Seen {
     return m
   }
 
+  /** A document's paragraph seen up to its last comment's time ("D4:key"). */
+  markKey(slug: string, key: string, t: string): void {
+    const m = this.of(slug)
+    m[key] = t
+    this.kv.setJson('taska.seen.' + slug, m)
+  }
+
   /** Seen up to this agent message's time. */
   mark(slug: string, n: number, t: string): void {
     const m = this.of(slug)

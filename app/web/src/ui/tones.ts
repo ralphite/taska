@@ -160,3 +160,9 @@ export const ACT_BG: Record<string, string> = {
   Done: 'bg-emerald-600 dark:bg-emerald-500',
 }
 export const FORWARD_NEED: Record<string, NeedKind> = { Accept: 'accept', Approve: 'approve', Answer: 'answer', Reply: 'reply' }
+
+/** A comment of a document: yours blue, an agent's white; who wrote it, in its tone. */
+export const COMMENT_CARD = (by: string) => (by === 'you' ? 'rounded-xl bg-blue-100/80 px-3 py-2 dark:bg-blue-900/40' : 'rounded-xl bg-white px-3 py-2 ring-1 ring-zinc-200/80 dark:bg-zinc-900 dark:ring-zinc-800')
+export const COMMENT_WHO = (by: string) => (by === 'you' ? 'font-medium text-blue-700 dark:text-blue-300' : 'font-medium text-zinc-700 dark:text-zinc-300')
+/** A plain small button (the phone's document row). */
+export const BTN = 'rounded-lg px-2.5 py-2.5 sm:py-1.5 text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800'

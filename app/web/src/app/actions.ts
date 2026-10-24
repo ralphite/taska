@@ -179,6 +179,16 @@ function stepBack(app: App, h: Here): void {
   const view = app.stores.itemView.getState()
   if (view.subFor != null && typingIn(active)) return view.setSubFor(null)
   if (view.editing != null) return view.setEditing(null)
+  if (r.place.kind === 'doc') {
+    // a document: the area being drawn, what you picked, then the document itself (once you are not typing)
+    const doc = app.stores.docView.getState()
+    if (doc.circle) return doc.setCircle(false)
+    if (doc.quote || doc.sel.size || doc.reply) return app.docs.unpick()
+    if (!typingIn(active)) {
+      if (app.desk() && app.stores.route.getState().full) return app.nav.full(false)
+      return app.docs.close()
+    }
+  }
   if (app.desk()) {
     if (app.fields.focused('search')) {
       if (r.list.q) app.nav.setList({ q: '' })

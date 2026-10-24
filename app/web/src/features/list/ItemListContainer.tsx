@@ -7,7 +7,7 @@ import { usePaneRef } from '../../app/panes'
 import { useProjectModel, type ProjectRoute } from '../../app/hooks'
 import { agoShort } from '../../model/agents'
 import { closed, excerpt, lastAgentMessage, queueHead } from '../../model/items'
-import { codeOf, filesOf, type ProjectModel } from '../../model/project'
+import { codeOf, liveN, filesOf, type ProjectModel } from '../../model/project'
 import type { Item } from '../../model/types'
 import { searchWords } from '../../model/visible'
 import { useSearchHints } from './SearchHintsContainer'
@@ -47,7 +47,9 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
   // the rows of the last drawing that did not hold still (React's way to keep what an earlier drawing had)
   const [kept, setKept] = useState<{ key: string; rows: Row[] } | null>(null)
   const desk = layout === 'desk'
-  const openN = route.place.kind === 'item' ? Number(/\d+/.exec(route.place.ref)?.[0]) : null
+  // the item open, or the one whose document is open
+  const docN = route.place.kind === 'doc' ? (m?.docs.find((x) => x.d === (route.place as { d: number }).d)?.n ?? null) : null
+  const openN = route.place.kind === 'item' ? Number(/\d+/.exec(route.place.ref)?.[0]) : docN != null && m ? liveN(m, docN) : null
   const listKey = JSON.stringify([route.slug, route.tab, route.list])
   const words = useMemo(() => searchWords(route.list.q), [route.list.q])
 

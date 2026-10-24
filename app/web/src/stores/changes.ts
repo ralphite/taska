@@ -5,7 +5,7 @@
 
 import { createStore, type StoreApi } from 'zustand/vanilla'
 import type { Command } from '../api/taska'
-import type { InputPatch, ItemPatch } from '../model/project'
+import type { DocPatch, InputPatch, ItemPatch } from '../model/project'
 import type { KeyValueStore } from './storage'
 
 export interface PendingChange {
@@ -15,6 +15,8 @@ export interface PendingChange {
   patches: ItemPatch[]
   /** inputs shown changed meanwhile (an edit, details added); not kept over a reload */
   inputPatches?: InputPatch[]
+  /** documents shown changed meanwhile; not kept over a reload */
+  docPatches?: DocPatch[]
   /** what it was, in a few words ("F12 marked done"), for the list of what is not saved */
   said: string
   t: number

@@ -26,6 +26,9 @@ export type SheetRequest =
   | { kind: 'keys' }
   | { kind: 'switch-project' }
   | { kind: 'palette' }
+  /** a document onto another item; a comment to another paragraph */
+  | { kind: 'doc-move'; d: number }
+  | { kind: 'comment-move'; d: number; id: number }
 
 export type SheetKind = SheetRequest['kind']
 
