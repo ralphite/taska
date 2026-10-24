@@ -140,7 +140,7 @@ function WebPageContainer({ slug, d, v, seen, env, on, waiting }: { slug: string
       desk={env.desk}
       inspect={v.inspect}
       renderThread={thread}
-      sayRow={<SayRow rec={rec} on={{ say: () => held && void app.docVoice.say(slug, d.d, held.key, held.text, true), cancel: () => void app.voice.cancel(), type: () => app.docs.type() }} />}
+      sayRow={<SayRow rec={rec} part={held ? { key: held.key, quote: held.text } : undefined} on={{ say: () => held && void app.docVoice.say(slug, d.d, held.key, held.text, true), cancel: () => void app.voice.cancel(), type: () => app.docs.type() }} />}
       on={{
         pick: (p) => {
           stores.docView.getState().pick({ quote: p, sel: new Set(), reply: null })

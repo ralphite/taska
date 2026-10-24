@@ -80,4 +80,10 @@ export default tseslint.config(
     files: ['*.config.{js,ts}', '.storybook/**/*.{ts,tsx}', 'scripts/**/*.mjs'],
     languageOptions: { globals: globals.node },
   },
+  {
+    // the browser checks look at the page from outside: what they run in it finds its parts by the page's marks
+    files: ['e2e/**/*.ts'],
+    languageOptions: { globals: { ...globals.node, ...globals.browser } },
+    rules: { 'no-restricted-properties': 'off' },
+  },
 )

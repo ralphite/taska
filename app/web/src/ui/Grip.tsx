@@ -4,7 +4,9 @@
 
 import { useRef, useState } from 'react'
 
-export function Grip({ axis, place, measure, onSize, onDone, onReset }: {
+export function Grip({ name, axis, place, measure, onSize, onDone, onReset }: {
+  /** which line it is (side, list, top, duo): its mark on the page */
+  name: string
   axis: 'x' | 'y'
   /** where it sits and how wide its pointing area is */
   place: string
@@ -18,6 +20,7 @@ export function Grip({ axis, place, measure, onSize, onDone, onReset }: {
   const at = useRef({ from: 0, most: 0, px: 0 })
   return (
     <div
+      data-grip={name}
       {...(drag ? { 'data-drag': '' } : {})}
       onPointerDown={(e) => {
         if (e.button || (e.target as Element).closest('button')) return

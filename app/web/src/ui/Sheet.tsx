@@ -133,6 +133,7 @@ export function Sheet({ open, look, parts, children, desk, footRoom = 0, focus =
   return (
     <div
       ref={overlay}
+      data-part="sheet"
       data-card={card ? '1' : ''}
       data-above={look.aboveComposer ? '1' : ''}
       className={oCls}

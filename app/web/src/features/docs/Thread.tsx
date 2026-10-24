@@ -92,7 +92,7 @@ export function Thread({ t, blockText, rail = false, isNew, done, replying, aski
         </div>
       ) : null}
       {t.comments.map((c) => (
-        <div key={c.id} className={`group relative text-sm ${COMMENT_CARD(c.by)}`}>
+        <div key={c.id} data-dc={c.id} className={`group relative text-sm ${COMMENT_CARD(c.by)}`}>
           {blockText !== undefined && !sameText(c.quote, blockText) ? <div className="mb-0.5 line-clamp-2 text-xs text-zinc-500 dark:text-zinc-300">“{plainQuote(c.quote)}”</div> : null}
           <div className="flex min-h-6 flex-wrap items-center gap-1 lg:relative">
             <span className={COMMENT_WHO(c.by)}>{whoName(c.by)}</span>{' '}

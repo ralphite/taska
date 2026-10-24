@@ -86,6 +86,7 @@ export function Pic({ src, alt = '', cls = '' }: { src: string; alt?: string; cl
   return (
     <span className="relative grid size-full place-items-center">
       <img
+        {...(state === 'loading' ? {} : { [state === 'loaded' ? 'data-loaded' : 'data-failed']: '' })}
         src={src}
         alt={alt}
         loading="lazy"

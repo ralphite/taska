@@ -402,6 +402,7 @@ export function ItemPage({ it, f, env, facts, on, talkRef, duo = false, left = n
       {duo ? (
         // the line between the two columns, dragged sideways like the other lines
         <Grip
+          name="duo"
           axis="x"
           place="relative z-10 hidden w-px shrink-0 bg-zinc-200 after:absolute after:-inset-x-1.5 after:inset-y-0 lg:block dark:bg-zinc-800"
           measure={(el) => {
@@ -415,6 +416,7 @@ export function ItemPage({ it, f, env, facts, on, talkRef, duo = false, left = n
       ) : (
       /* the line between the item and its talk, dragged up and down anywhere you like (a double-click leaves it) */
       <Grip
+        name="top"
         axis="y"
         place="relative z-10 hidden h-px shrink-0 bg-zinc-200 after:absolute after:inset-x-0 after:-inset-y-2 lg:block dark:bg-zinc-800"
         measure={(el) => ({ from: el.previousElementSibling?.getBoundingClientRect().top ?? 0, most: el.parentElement?.clientHeight ?? innerHeight })}

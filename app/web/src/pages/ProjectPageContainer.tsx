@@ -163,13 +163,14 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
           hidden={settings || full || side || !(filtersOpen || set.length)}
           on={{ ...filterEvents(app), toggle: () => stores.ui.getState().setDeskFilters(!filtersOpen) }}
         />
-        <section className="col-start-1 row-span-2 row-start-4 flex min-h-0 flex-1 flex-col lg:border-r lg:border-zinc-200 dark:lg:border-zinc-800" hidden={settings || full}>
+        <section data-part="items" className="col-start-1 row-span-2 row-start-4 flex min-h-0 flex-1 flex-col lg:border-r lg:border-zinc-200 dark:lg:border-zinc-800" hidden={settings || full}>
           {shownSide ? <SideListContainer slug={route.slug} side={shownSide} /> : <ItemListContainer route={route} />}
         </section>
         <DetailContainer route={route} place={`row-span-3 row-start-2 group-data-[compose]/app:row-span-1 ${pane}`} hidden={settings} full={full} />
         {settings ? <SettingsContainer route={route} place="col-span-2 col-start-1 row-span-5 row-start-1" prefsBox={<BoxContainer route={route} composePage={false} bare />} /> : null}
         {settings || full ? null : (
           <Grip
+            name="list"
             axis="x"
             place="relative z-30 col-start-1 row-span-4 row-start-2 block w-3 translate-x-1/2 justify-self-end"
             measure={(el) => {
@@ -276,7 +277,7 @@ function PhoneLayout({ route }: { route: ProjectRoute }) {
         />
         <PhoneTabs tabs={tabs} filtersSet={phoneSet.length > 0} showFilter={route.tab !== 'inputs'} hidden={!under} on={{ tab: (t) => app.nav.tab(t), filters: () => app.sheets.open({ kind: 'filters' }, { focus: false }) }} />
         <FilterStrip set={phoneSet} hidden={!under || route.tab === 'inputs' || !phoneSet.length} onUnset={(k) => app.nav.setList({ [k]: 'all' })} onReset={() => filterEvents(app).reset()} />
-        <section className="flex min-h-0 flex-1 flex-col" hidden={!under || route.tab === 'inputs'}>
+        <section data-part="items" className="flex min-h-0 flex-1 flex-col" hidden={!under || route.tab === 'inputs'}>
           <ItemListContainer route={route} />
         </section>
         <InputsContainer route={route} hidden={!under || route.tab !== 'inputs'} />

@@ -194,6 +194,7 @@ export function SettingsContainer({ route, place, prefsBox }: { route: ProjectRo
   const k = sec ?? 'agents'
   return (
     <section
+      data-part="settings"
       aria-label="Settings"
       className={`flex min-h-0 flex-1 flex-col bg-zinc-100 lg:flex-row lg:overflow-hidden lg:bg-transparent dark:bg-zinc-950 dark:lg:bg-transparent ${place}`}
     >

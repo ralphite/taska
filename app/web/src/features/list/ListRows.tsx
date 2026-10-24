@@ -103,7 +103,7 @@ function RowActs({ it, needs, on }: { it: Item; needs: boolean; on: RowEvents })
   const acts = deskSlots(it, needs).filter((a): a is Slot => a !== null)
   return (
     <div className="relative hidden shrink-0 self-stretch bg-inherit lg:block">
-      <div className="absolute inset-y-0 right-0 hidden items-center gap-0.5 bg-inherit [mask-image:linear-gradient(to_right,transparent,black_1.5rem)] pl-6 group-hover:flex">
+      <div data-row-acts className="absolute inset-y-0 right-0 hidden items-center gap-0.5 bg-inherit [mask-image:linear-gradient(to_right,transparent,black_1.5rem)] pl-6 group-hover:flex">
         {acts.map(([f, v, label]) =>
           f === 'reopen' ? (
             <button
@@ -324,6 +324,7 @@ export function NeedsRow({ it, depth, facts, look, excerpt, on, rowRef }: { it: 
         </div>
         {it.type === 'rule' ? null : <RowActs it={it} needs on={on} />}
         <button
+          data-need={v}
           title={`${label} · A`}
           onClick={(e) => (e.stopPropagation(), on.need(it.n, v))}
           className="group/pill -my-1 grid h-11 shrink-0 place-items-center outline-none"
@@ -389,10 +390,11 @@ export function Zone({ kind, label, n, right }: { kind: string; label: string; n
 }
 
 /** Under a parent, one line for its subitems the view hides (Later, finished); a tap shows them. */
-export function HiddenKidsLine({ depth, open, later, done, onToggle }: { depth: number; open: boolean; later: number; done: number; onToggle(): void }) {
+export function HiddenKidsLine({ parent, depth, open, later, done, onToggle }: { parent: number; depth: number; open: boolean; later: number; done: number; onToggle(): void }) {
   const said = later && done ? `${later + done} more: ${later} in Later, ${done} finished` : later ? `${later} more in Later` : `${done} more finished`
   return (
     <button
+      data-kids-of={parent}
       aria-expanded={open}
       onClick={onToggle}
       className={`flex h-11 w-full items-center gap-1.5 border-b border-zinc-100 ${pad(depth)} text-[13px] font-semibold text-zinc-500 hover:bg-zinc-50 data-pressed:bg-zinc-100 lg:h-10 dark:border-zinc-800/70 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:data-pressed:bg-zinc-900`}

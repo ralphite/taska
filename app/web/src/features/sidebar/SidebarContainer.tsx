@@ -98,6 +98,7 @@ export function SidebarContainer({ slug, place, hidden, rail }: { slug: string; 
       edge={
         layout === 'desk' ? (
           <Grip
+            name="side"
             axis="x"
             place="absolute inset-y-0 right-0 z-10 hidden w-3 translate-x-1/2 lg:block"
             measure={(el) => ({ from: el.parentElement?.getBoundingClientRect().left ?? 0, most: innerWidth })}

@@ -45,7 +45,7 @@ export function PaneFrame({
   children?: ReactNode
 }) {
   return (
-    <section ref={paneRef} hidden={hidden} className={`flex min-h-0 flex-1 flex-col ${place}`}>
+    <section data-part="pane" ref={paneRef} hidden={hidden} className={`flex min-h-0 flex-1 flex-col ${place}`}>
       <header data-tip-side="bottom" className={`flex h-14 shrink-0 items-center gap-1 border-b border-zinc-100 px-1 lg:border-zinc-200 lg:px-3 dark:border-zinc-800/70 dark:lg:border-zinc-800 ${bar ? '' : 'lg:hidden'}`}>
         <button
           aria-label="Back"
@@ -55,7 +55,7 @@ export function PaneFrame({
           <Icon n="left" c="size-6" sw="2" />
         </button>
         {lead ? <div className="hidden shrink-0 lg:flex">{lead}</div> : null}
-        <div className="flex min-w-0 flex-1 flex-col items-center leading-tight lg:flex-row lg:items-center lg:gap-2 lg:pl-2">{head}</div>
+        <div data-pane-head className="flex min-w-0 flex-1 flex-col items-center leading-tight lg:flex-row lg:items-center lg:gap-2 lg:pl-2">{head}</div>
         <div className="hidden items-center gap-0.5 lg:flex">{desk ? acts : null}</div>
         <button
           hidden={!menu}

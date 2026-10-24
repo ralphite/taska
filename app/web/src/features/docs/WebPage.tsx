@@ -225,7 +225,7 @@ export function WebPage({ title, html, threads, held, rec = false, open, desk, i
     }
   }, [openTk, openKey])
   const ring = (k: string, r: Box, cls: string) => (
-    <div key={k} className={`pointer-events-none absolute rounded-lg ring-2 ${cls}`} style={{ left: r.x - 4, top: r.y - 4, width: r.w + 8, height: r.h + 8 }} />
+    <div key={k} {...(k === 'hover' ? {} : { 'data-ring': k })} className={`pointer-events-none absolute rounded-lg ring-2 ${cls}`} style={{ left: r.x - 4, top: r.y - 4, width: r.w + 8, height: r.h + 8 }} />
   )
   // the part a comment is on is outlined while its count is under the pointer and while it is open
   const amber = [...new Set([lit, openKey])].filter((k): k is string => !!k && k !== held?.key && !!rects[k])
@@ -255,11 +255,11 @@ export function WebPage({ title, html, threads, held, rec = false, open, desk, i
           : {})}
       >
         {/* the part spoken about keeps its buttons right there; the mic pressed turns into Stop */}
-        <button onClick={() => on.say(p)} title={stop ? 'Stop' : 'Speak a comment'} className={stop ? 'grid size-7 place-items-center rounded-lg bg-red-600 text-white shadow-sm ring-1 ring-red-700' : btn}>
+        <button data-part-say data-key={p.key} data-quote={p.text} onClick={() => on.say(p)} title={stop ? 'Stop' : 'Speak a comment'} className={stop ? 'grid size-7 place-items-center rounded-lg bg-red-600 text-white shadow-sm ring-1 ring-red-700' : btn}>
           <Icon n={stop ? 'stop' : 'mic'} c="size-4" />
         </button>
         {stop ? null : (
-          <button onClick={() => on.pick(p)} title="Comment" className={btn}>
+          <button data-part-pick data-key={p.key} data-quote={p.text} onClick={() => on.pick(p)} title="Comment" className={btn}>
             <Icon n="comment" c="size-4" />
           </button>
         )}
@@ -309,6 +309,7 @@ export function WebPage({ title, html, threads, held, rec = false, open, desk, i
         // the comments open right under their part (outlined), its right edges lined up
         <div
           ref={pop}
+          data-thread-pop
           className={`absolute z-20 flex flex-col gap-2 text-sm shadow-xl ${desk ? 'w-80 max-w-full' : 'inset-x-0 mx-1'}`}
           style={{ top: rects[opened.key].y + rects[opened.key].h + 8, ...(desk ? { left: Math.max(0, rects[opened.key].x + rects[opened.key].w - 320) } : {}) }}
         >

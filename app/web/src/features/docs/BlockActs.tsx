@@ -120,6 +120,7 @@ export function BlockActs({ counts, open, rec, children, on }: {
       {counts.map((c) => (
         <button
           key={c.tk}
+          data-thread-count={c.tk}
           ref={(el) => {
             if (el) btns.current.set(c.tk, el)
             else btns.current.delete(c.tk)

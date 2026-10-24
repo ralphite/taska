@@ -252,6 +252,7 @@ export function Composer({ line, lineOn, lineOnComposePage, placeholder, sendWor
           return (
             <>
               <button
+                data-box="aux"
                 aria-label={aux.label}
                 title={desk ? aux.tip : undefined}
                 hidden={!(rec || has)}
@@ -261,6 +262,7 @@ export function Composer({ line, lineOn, lineOnComposePage, placeholder, sendWor
                 <Icon n={aux.icon} c={aux.iconCls} sw={aux.sw} />
               </button>
               <button
+                data-box="main"
                 aria-label={main.label}
                 title={desk ? main.tip : undefined}
                 onClick={main.run}

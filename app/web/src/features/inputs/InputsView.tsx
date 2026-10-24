@@ -235,6 +235,7 @@ export function InputsView({ hidden, rows, outgoing, words, world, files, hints,
   useMarks(ref, words)
   return (
     <section
+      data-part="inputs"
       ref={(el) => {
         ref.current = el
         viewRef?.(el)

@@ -248,7 +248,7 @@ export function Sidebar(props: SidebarProps) {
         </div>
       ) : null}
       {!phone && devLinks?.length ? (
-        <div className="flex shrink-0 flex-col gap-0.5 px-2 pb-2">
+        <div data-dev-links className="flex shrink-0 flex-col gap-0.5 px-2 pb-2">
           <div className="px-3 pb-1.5 text-[11px] font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">Dev</div>
           {devLinks.map((d) => (
             <a
@@ -265,7 +265,7 @@ export function Sidebar(props: SidebarProps) {
         </div>
       ) : null}
       {!phone ? (
-        <div className="flex shrink-0 flex-col gap-0.5 border-t border-zinc-200 p-2 dark:border-zinc-800">
+        <div data-side-foot className="flex shrink-0 flex-col gap-0.5 border-t border-zinc-200 p-2 dark:border-zinc-800">
           {links.map((l) => (
             <SideLink key={l.key} link={l} phone={false} on={on} />
           ))}

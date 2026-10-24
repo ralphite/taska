@@ -126,10 +126,11 @@ function useMarkQuotes(root: React.RefObject<HTMLDivElement | null>, rows: DocRo
 }
 
 /** On the phone, under the paragraph you tapped: speak (the same button stops and posts), or type. */
-export function SayRow({ rec, on }: { rec: boolean; on: { say(): void; cancel(): void; type(): void } }) {
+export function SayRow({ rec, part, on }: { rec: boolean; part?: { key: string; quote: string }; on: { say(): void; cancel(): void; type(): void } }) {
+  const marks = part ? { 'data-part-say': '', 'data-key': part.key, 'data-quote': part.quote } : {}
   return rec ? (
     <div className="mt-2 flex items-center gap-2">
-      <button onClick={on.say} aria-label="Stop and post the comment" className="grid size-12 shrink-0 place-items-center rounded-full bg-red-600 text-white shadow-lg">
+      <button {...marks} onClick={on.say} aria-label="Stop and post the comment" className="grid size-12 shrink-0 place-items-center rounded-full bg-red-600 text-white shadow-lg">
         <Icon n="stop" c="size-5" />
       </button>
       <span className="text-[13px] text-zinc-500 dark:text-zinc-400">· tap to post</span>
@@ -139,7 +140,7 @@ export function SayRow({ rec, on }: { rec: boolean; on: { say(): void; cancel():
     </div>
   ) : (
     <div className="mt-2 flex items-center gap-2">
-      <button onClick={on.say} aria-label="Dictate comment" className="grid size-12 shrink-0 place-items-center rounded-full bg-zinc-900 text-white shadow-lg dark:bg-zinc-100 dark:text-zinc-900">
+      <button {...marks} onClick={on.say} aria-label="Dictate comment" className="grid size-12 shrink-0 place-items-center rounded-full bg-zinc-900 text-white shadow-lg dark:bg-zinc-100 dark:text-zinc-900">
         <Icon n="mic" c="size-5" />
       </button>
       <span className="text-[13px] text-zinc-500 dark:text-zinc-400">Tap to speak, tap again to post</span>
