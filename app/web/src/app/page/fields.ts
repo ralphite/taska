@@ -29,6 +29,12 @@ export class Fields {
     this.get(name)?.focus()
   }
 
+  /** the place scrolled to its end (the talk, to what was said last) */
+  toEnd(name: FieldName): void {
+    const el = this.get(name)
+    if (el) el.scrollTop = el.scrollHeight
+  }
+
   /** whether the place is where the keys go now */
   focused(name: FieldName): boolean {
     const el = this.get(name)

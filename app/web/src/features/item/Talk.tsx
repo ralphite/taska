@@ -41,6 +41,8 @@ export interface Outgoing {
   text: string
   state: string
   bad: boolean
+  /** you just sent it: Undo takes it back */
+  canUndo: boolean
 }
 
 export interface TalkFacts {
@@ -371,6 +373,10 @@ function Pending({ list, on }: { list: Outgoing[]; on: TalkLineEvents }) {
                   Edit
                 </button>
               </>
+            ) : q.canUndo ? (
+              <button onClick={() => on.unsend(q.q)} className={DC_BTN}>
+                Undo
+              </button>
             ) : null}
           </div>
         </div>

@@ -54,6 +54,9 @@ export interface RouteState {
   shutLayer(kind: string, then?: () => void): void
   /** n steps back in the history */
   backBy(n: number): void
+  /** the page opened at this address (an item, on the phone): `under` goes under it in the history, so Back lands
+   * there (once: a reload finds it there) */
+  putUnder(under: string): void
   /** the history moved (Back, Forward): read it again */
   read(): void
 }
@@ -170,6 +173,14 @@ export function createRouteStore(history: History): RouteStore {
       }
     },
     backBy: (n) => stepBack(n),
+    putUnder: (under) => {
+      const st = history.state() as Record<string, unknown> | null
+      if (st?.under) return
+      const here = get().url
+      history.replace(under, null)
+      history.push(here, { ...(st ?? {}), under: true })
+      set({ ...now(), fromBrowser: get().fromBrowser })
+    },
     read: () => {
       const mine = ownBack > 0
       if (mine) ownBack--

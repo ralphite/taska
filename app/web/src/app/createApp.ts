@@ -5,7 +5,7 @@
 import { Http } from '../api/http'
 import { TaskaApi } from '../api/taska'
 import type { ProjectModel } from '../model/project'
-import { openItemN, routeSlug } from '../model/route'
+import { holdKey, openItemN, routeSlug } from '../model/route'
 import { createChangesStore, keptChanges, type ChangesStore } from '../stores/changes'
 import { createDataStore, type DataStore } from '../stores/data'
 import { createFeedbackStore, type FeedbackStore } from '../stores/feedback'
@@ -241,7 +241,7 @@ export function createApp(env: AppEnv): App {
     unreachable: () => {},
     refused: (c, why) => toasts.changeRefused(c, why),
   })
-  const delivered = new Delivered({ box: boxStore, ui, route, runner, toasts, model, slug, desk: env.desk })
+  const delivered = new Delivered({ box: boxStore, ui, route, runner, toasts, fields, model, slug, desk: env.desk })
   const inputs = new InputSender(api, outbox, {
     cursor: (s) => session().cursor(s),
     changes: (s, a) => session().take(s, a),
@@ -257,10 +257,7 @@ export function createApp(env: AppEnv): App {
     toasts,
     ui,
     held: () => listHold.started(),
-    listKey: () => {
-      const r = route.getState().route
-      return r.page === 'project' ? JSON.stringify([r.slug, r.tab, r.list]) : ''
-    },
+    listKey: () => holdKey(route.getState().route, env.desk()),
     openItem: () => openItemN(route.getState().route),
     desk: env.desk,
     rowHeight: (n) => rows.height(n),
@@ -270,7 +267,7 @@ export function createApp(env: AppEnv): App {
   const inputActions = new InputActions({ runner, toasts, api, model, refresh: (s) => session().stale(s), title, go: goUrl })
   // the other tabs of this browser: their drafts show here too
   const otherTabs = new OtherTabs({ kv: env.kv, drafts, box: boxStore, toasts, slug, recording: recordingNow })
-  const box = new Box({ api, store: boxStore, drafts, outbox, inputs, runner, toasts, keep, recording: recordingNow, goDraft, model, kv: env.kv, sent: (s, key) => otherTabs.sent(s, key), refresh: (s) => session().refresh(s) })
+  const box = new Box({ api, store: boxStore, drafts, outbox, inputs, runner, toasts, keep, recording: recordingNow, goDraft, model, kv: env.kv, sent: (s, key) => otherTabs.sent(s, key), refresh: (s) => session().refresh(s), replied: (s, scope) => delivered.replied(s, scope) })
   const activity = new Activity({ api, store: activityStore, toasts })
   const restores = new Restores({ runner, toasts, inputs: inputActions, model })
   const docs = new Docs({ route, model, view: docView, nav, fields, toasts, desk: env.desk, leaveEditor: () => docEditor.keep() })
@@ -327,7 +324,7 @@ export function createApp(env: AppEnv): App {
   // a merged item gives way to the one it went into; what you wrote for it goes along
   const merges = new Merges({ route, data, drafts, box: boxStore, toasts, model, showItem: (code, tab) => nav.openItemHere(code, tab), goDraft })
   const sideOver = new SideOver(route, ui)
-  const arrival = new Arrival({ route, fields, desk: env.desk })
+  const arrival = new Arrival({ route, fields, data, model, desk: env.desk })
   const notices = new Notices(env.kv, () => settingsStore.getState().set({ noticeRev: settingsStore.getState().noticeRev + 1 }), { api, toasts, data, slug, desk: env.desk, go: goUrl })
   const access = new Access({ api, sheets, toasts, refresh: () => void session().refresh() })
   const updates = new Updates({

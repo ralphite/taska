@@ -63,7 +63,7 @@ export const Moments: Story = {
               ['a hidden message', talk(item({ n: 12, thread: [message({ id: 2, hidden: true })] }), desk)],
               ['an answered question', talk(item({ n: 12, thread: [ask, you({ id: 3, text: '✓ Excel', t: later(1) })] }), desk)],
               ['comments on its document', talk(item({ n: 12, thread: [message({ id: 2 })] }), desk, {}, [d])],
-              ['sending, and not sent', talk(item({ n: 12, thread: [message({ id: 2 })] }), desk, { outgoing: [{ q: 'q1', text: 'Also keep the sort.', state: 'Sending…', bad: false }, { q: 'q2', text: 'And the columns.', state: 'Not sent', bad: true }] })],
+              ['sending, and not sent', talk(item({ n: 12, thread: [message({ id: 2 })] }), desk, { outgoing: [{ q: 'q1', text: 'Also keep the sort.', state: 'Sending…', bad: false, canUndo: true }, { q: 'q2', text: 'And the columns.', state: 'Not sent', bad: true, canUndo: false }] })],
             ]}
           />
         )

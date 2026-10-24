@@ -42,6 +42,8 @@ export interface BoxDeps {
   refresh?(slug: string): Promise<void>
   /** the other tabs: this draft went out from here */
   sent?(slug: string, key: DraftKey): void
+  /** a reply to the item open on the desktop: its talk goes to its end, where the reply shows */
+  replied?(slug: string, scope: string): void
 }
 
 export class Box {
@@ -178,6 +180,7 @@ export class Box {
     const o = this.d.inputs.push({ slug, text, scope, files: files.map(({ key: k, ...f }) => ({ ...f, key: k })) })
     st.sentNow({ q: o.q, slug, key, until: Date.now() + UNSEND_MS })
     this.markSent(slug, key)
+    if (scope) this.d.replied?.(slug, scope)
     const step = this.d.toasts.undoable(`Send to ${scope || 'New input'}`, async () => (this.unsend(o.q), true))
     setTimeout(() => {
       this.d.toasts.forget(step)

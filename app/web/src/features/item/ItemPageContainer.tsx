@@ -27,11 +27,13 @@ export function openItemMenu(app: Pick<App, 'sheets'>, desk: boolean, n: number,
 
 export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = false }: { it: Item; m: ProjectModel; slug: string; tab: Tab; desk: boolean; /** in two columns, its document on the left */ left?: ReactNode; bare?: boolean }) {
   const app = useServices('answers', 'box', 'docs', 'fields', 'inputs', 'itemEdits', 'items', 'nav', 'runner', 'seen', 'sheets', 'toasts')
-  const stores = useStores('grips', 'itemView', 'keptEdits', 'outbox', 'ui')
+  const stores = useStores('box', 'grips', 'itemView', 'keptEdits', 'outbox', 'ui')
   const duo = useStoreValue(stores.ui, (s) => s.duo) && desk
   const view = useStoreValue(stores.itemView, (s) => s)
   const kept = useStoreValue(stores.keptEdits, (s) => s)
   const justSent = useStoreValue(stores.ui, (s) => s.justSent)
+  // what you sent here that you can still take back
+  const takeBack = useStoreValue(stores.box, (s) => s.sent)
   const outbox = useStoreValue(stores.outbox, (s) => s.list)
   const away = useAway(slug)
   const world = useItemWorld(m, slug)
@@ -51,7 +53,7 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
   const answering = mine.filter((o) => o.kind === 'answer').at(-1)
   const outgoing: Outgoing[] = mine
     .filter((o) => !(o.kind === 'answer' && !o.files.length))
-    .map((o) => ({ q: o.q, text: o.text || outgoingLine(o), state: outgoingState(o, away), bad: o.state === 'failed' && !o.net }))
+    .map((o) => ({ q: o.q, text: o.text || outgoingLine(o), state: outgoingState(o, away), bad: o.state === 'failed' && !o.net, canUndo: takeBack.some((x) => x.q === o.q) }))
 
   const media = useFiles(slug)
   const env: TalkEnv = {
@@ -72,7 +74,7 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
     reask: view.reask,
     going: answering ? { text: answering.text, state: outgoingState(answering, away) } : null,
     outgoing,
-    undo: () => null,
+    undo: (rid) => takeBack.find((x) => x.rid === rid)?.q ?? null,
   }
   const f: ItemFacts = {
     code,

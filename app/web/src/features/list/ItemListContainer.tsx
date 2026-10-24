@@ -10,6 +10,7 @@ import { closed, excerpt, lastAgentMessage, queueHead } from '../../model/items'
 import { forward } from '../../model/actions'
 import { codeOf, draftCodes, liveN, filesOf, type ProjectModel } from '../../model/project'
 import type { Item } from '../../model/types'
+import { holdKey } from '../../model/route'
 import { searchWords, showsView, visible } from '../../model/visible'
 import { useSearchHints } from '../../app/searchHints'
 import { QUIET_MS } from '../../model/words'
@@ -61,7 +62,12 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
     [m, route.tab, route.list, ui.folded, ui.subMore, ui.needsAll, openN, desk],
   )
   // while a row you acted on holds still the list keeps the rows it had
-  const holding = ui.held.size > 0 && ui.heldFor === listKey
+  const heldFor = holdKey(route, desk)
+  const holding = ui.held.size > 0 && ui.heldFor === heldFor
+  useLayoutEffect(() => {
+    // another list, or (the desktop) another item in the pane: the rows held let go, and the list is as it is now
+    if (ui.held.size && ui.heldFor !== heldFor) stores.ui.getState().release()
+  }, [ui.held, ui.heldFor, heldFor, stores])
   let rows: Row[] = []
   if (body.kind === 'rows') {
     if (holding && kept?.key === listKey && m) rows = heldRows(kept.rows, m, route.tab, route.list, new Map([...ui.held].map(([n, h]) => [n, h.said])))

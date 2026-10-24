@@ -38,6 +38,12 @@ export type Route =
 /** the project an address shows (none: '') */
 export const routeSlug = (r: Route): string => (r.page === 'project' ? r.slug : '')
 
+/** What rows you acted on hold still for: the list (its project, tab, search and filters) and, on the desktop, what
+ * the pane shows (going on to another item lets them go). */
+export function holdKey(r: Route, desk: boolean): string {
+  return r.page === 'project' ? JSON.stringify([r.slug, r.tab, r.list, desk ? r.place : null]) : ''
+}
+
 /** the number of the item an address opens (none: null) */
 export function openItemN(r: Route): number | null {
   if (r.page !== 'project' || r.place.kind !== 'item') return null
