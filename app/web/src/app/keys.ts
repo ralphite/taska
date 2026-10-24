@@ -3,8 +3,11 @@
 // a digit or letter, are two keys. Esc steps back one level, on the phone too; Cmd-K opens Go to or do. The home page
 // has one key: Cmd-K or / go to its search.
 
-import { actionOfKeys, hereOf, pickChoice, runAction, setArmed, type ActionId } from './actions'
+import { actionOfKeys, type ActionId } from './actions'
+import { armedSet } from '../model/actions'
+import { statusChoices } from '../model/items'
 import type { App } from './createApp'
+import type { Item } from '../model/types'
 
 const typingIn = (el: Element | null) => /INPUT|TEXTAREA|SELECT/.test(el?.tagName || '') || !!(el as HTMLElement | null)?.isContentEditable
 
@@ -20,10 +23,10 @@ export function pageKeys(app: App): (e: KeyboardEvent) => void {
       }
       return
     }
-    const h = hereOf(app)
+    const h = app.actions.here()
     if (!h) return
     const act = (id: ActionId | null, quiet = false) => {
-      if (id && runAction(app, id, { ...h, shift: e.shiftKey }, quiet)) e.preventDefault()
+      if (id && app.actions.run(id, { ...h, shift: e.shiftKey }, quiet)) e.preventDefault()
     }
     if (e.key === 'Escape') return act('back')
     // the picture viewer: the arrows go through its pictures; no other key acts under it
@@ -45,7 +48,7 @@ export function pageKeys(app: App): (e: KeyboardEvent) => void {
     // the desktop's item menu: arrows walk it, S P T and then a digit or letter set a field, and the keys it shows
     // work from it (it closes, the key acts)
     const menu = app.desk() ? app.sheets.shown('item-menu') : null
-    if (menu && menuKey(app, e, menu.n, menu.arm)) return
+    if (menu && menuKey(app, e, h.m?.byN.get(menu.n), menu.arm)) return
     if (menu && /^[a-zA-Z]$/.test(e.key)) app.sheets.close()
     else if (app.stores.sheet.getState().spec) return // a sheet or menu is open: it has its own keys
     if (!app.desk()) {
@@ -85,22 +88,20 @@ export function pageKeys(app: App): (e: KeyboardEvent) => void {
       gAt = Date.now()
       return
     }
-    if (setArmed(app, h, e.key)) return e.preventDefault()
+    if (app.actions.setArmed(h, e.key)) return e.preventDefault()
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') return act(e.key === 'ArrowDown' ? 'step' : 'step-back', true)
     if (e.key === 'Enter') return act('full', true)
     const id = actionOfKeys(e.key)
     if (id) return act(id)
-    if (/^[1-9]$/.test(e.key) && pickChoice(app, h, Number(e.key) - 1)) e.preventDefault()
+    if (/^[1-9]$/.test(e.key) && app.actions.pickChoice(h, Number(e.key) - 1)) e.preventDefault()
   }
 }
 
-const FIELD = { s: 'status', p: 'pri', t: 'type' } as const
-const TYPE_OF: Record<string, string> = { f: 'feature', b: 'bug', i: 'idea', t: 'task', r: 'rule' }
-
-/** A key in the desktop's item menu. -> whether it was the menu's */
-function menuKey(app: App, e: KeyboardEvent, n: number, arm: 's' | 'p' | 't' | null): boolean {
+/** A key in the desktop's item menu: the arrows walk it; with S, P or T shown, the key sets that field (as the
+ * menu numbers it); S, P or T show that field. -> whether it was the menu's */
+function menuKey(app: App, e: KeyboardEvent, it: Item | undefined, arm: 's' | 'p' | 't' | null): boolean {
   const box = app.fields.get('sheet')
-  if (!box) return false
+  if (!box || !it) return false
   const k = e.key
   if (['ArrowDown', 'ArrowUp', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(k)) {
     const btns = [...box.querySelectorAll<HTMLButtonElement>('button:not(:disabled)')]
@@ -111,26 +112,24 @@ function menuKey(app: App, e: KeyboardEvent, n: number, arm: 's' | 'p' | 't' | n
     return true
   }
   if (k.length !== 1 || (e.shiftKey && k !== k.toLowerCase())) return false // C, D, A with Shift: the menu's own keys
-  const low = k.toLowerCase()
-  const f = arm ? FIELD[arm] : null
-  const v = arm === 'p' && /^[0-3]$/.test(k) ? 'P' + k : arm === 't' ? TYPE_OF[low] : arm === 's' && /^[1-9]$/.test(k) ? box.querySelectorAll<HTMLElement>('[data-f="status"]')[Number(k) - 1]?.dataset.v : null
-  const b = f && v ? box.querySelector<HTMLElement>(`[data-f="${f}"][data-v="${v}"]`) : null
-  if (b) {
+  const statuses = statusChoices(it).map(([v]) => v)
+  const to = arm ? armedSet(arm, k, statuses) : null
+  if (to) {
     e.preventDefault()
-    b.focus({ preventScroll: true })
-    b.click()
+    app.sheets.close()
+    void app.items.change(it.n, to[0], to[1])
     return true
   }
+  const low = k.toLowerCase()
   if (low === 's' || low === 'p' || low === 't') {
     e.preventDefault()
     const at = app.stores.sheet.getState().spec?.at
-    app.sheets.open({ kind: 'item-menu', n, arm: low }, { pop: true, focus: false, narrow: true, at })
+    app.sheets.open({ kind: 'item-menu', n: it.n, arm: low }, { pop: true, focus: false, narrow: true, at })
     return true
   }
   if (/^[0-9]$/.test(k)) {
     e.preventDefault()
-    const count = box.querySelectorAll('[data-f="status"]').length
-    app.toasts.show(f ? `${({ pri: 'Priority', type: 'Type', status: 'Status' } as const)[f]}: ${({ pri: '0–3', type: 'F B I T R', status: `1–${count}` } as const)[f]}` : 'First S, P or T: then a digit')
+    app.toasts.show(arm === 'p' ? 'Priority: 0–3' : arm === 't' ? 'Type: F B I T R' : arm === 's' ? `Status: 1–${statuses.length}` : 'First S, P or T: then a digit')
     return true
   }
   return false

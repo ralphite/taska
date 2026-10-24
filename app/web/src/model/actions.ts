@@ -8,6 +8,20 @@ import type { Item } from './types'
 
 export type Slot = readonly [field: string, value: string, label: string]
 
+const TYPE_KEY: Record<string, string> = { f: 'feature', b: 'bug', i: 'idea', t: 'task', r: 'rule' }
+
+/** S, P or T was pressed, then `key`: the field it sets and the value (a status by its number in `statuses`, a
+ * priority by its digit, a type by its letter); null: the key sets nothing. */
+export function armedSet(arm: 's' | 'p' | 't', key: string, statuses: readonly string[]): readonly [field: string, value: string] | null {
+  if (arm === 'p') return /^[0-3]$/.test(key) ? ['pri', 'P' + key] : null
+  if (arm === 't') return TYPE_KEY[key.toLowerCase()] ? ['type', TYPE_KEY[key.toLowerCase()]] : null
+  const v = /^[1-9]$/.test(key) ? statuses[Number(key) - 1] : undefined
+  return v ? ['status', v] : null
+}
+
+/** What S then a digit counts on the page (a rule: its three statuses). */
+export const pageStatuses = (it: Item): readonly string[] => (it.type === 'rule' ? ['proposed', 'open', 'dropped'] : ['proposed', 'open', 'doing', 'review', 'done', 'dropped'])
+
 /** The item's next step for you (A): accept or approve it, or answer what waits on you. */
 export type YourStep = { set: readonly [field: 'status', value: string, label: string, said: string] } | { answer: 'choices' | 'words' } | null
 

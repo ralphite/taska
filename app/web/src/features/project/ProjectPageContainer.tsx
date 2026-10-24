@@ -201,7 +201,7 @@ const DRAWER_PLACE = 'fixed top-0 left-0 w-80 max-w-[85vw] bg-zinc-100 pb-[max(1
 const DRAWER_W = 'min(85vw, 320px)'
 
 function PhoneLayout({ route }: { route: ProjectRoute }) {
-  const app = useServices('fields', 'nav', 'run', 'sheets', 'views')
+  const app = useServices('actions', 'fields', 'nav', 'sheets', 'views')
   const stores = useStores('box', 'route', 'sheet')
   const { title, agent, counts, notSaved, otherNeeds } = useHeadFacts(route)
   const layers = useStoreValue(stores.route, (s) => s.layers)
@@ -222,7 +222,7 @@ function PhoneLayout({ route }: { route: ProjectRoute }) {
   const open = route.place.kind === 'item' || route.place.kind === 'doc'
   const sheet = useStoreValue(stores.sheet, (s) => !!s.spec)
   const drawerPull = useDrawerPull(drawer && !sheet, () => app.nav.drawer(false))
-  const backSwipe = useBackSwipe(route.place.kind === 'item' && !sheet && !drawer, () => app.run('back'))
+  const backSwipe = useBackSwipe(route.place.kind === 'item' && !sheet && !drawer, () => app.actions.run('back'))
   const floating = backSwipe.pull
   // Settings' pages (Documents, Activity and Deleted are pages of it on the phone)
   const settings = route.place.kind === 'settings' || route.place.kind === 'side'

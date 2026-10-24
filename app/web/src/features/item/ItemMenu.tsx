@@ -3,9 +3,9 @@
 // with their keys, or just one field's choices (from its chip, or S, P, T). Props only.
 
 import type { ReactNode } from 'react'
-import { closed, inQueue } from '../../model/items'
+import { closed, inQueue, statusChoices } from '../../model/items'
 import type { Item, Pri, Status } from '../../model/types'
-import { RULE_STATUS_WORD, STATUS_WORD, WORK_TYPES } from '../../model/words'
+import { WORK_TYPES } from '../../model/words'
 import { StateIcon, Icon } from '../../ui/Icon'
 import { STATE_ICON, type IconName } from '../../ui/icon-paths'
 import type { SheetParts } from '../../ui/Sheet'
@@ -71,9 +71,6 @@ const StatIcon = ({ s, t, size }: { s: string; t: string; size: string }) => (
     }
   />
 )
-
-export const statusesOf = (it: Item): [string, string][] =>
-  it.type === 'rule' ? (Object.entries(RULE_STATUS_WORD) as [string, string][]).filter(([v]) => v !== 'proposed' || it.status === 'proposed') : (Object.entries(STATUS_WORD) as [string, string][])
 
 const ItemHeadLine = ({ it, code }: { it: Item; code: string }) => (
   <span className="block truncate text-[15px] font-semibold">
@@ -143,7 +140,7 @@ export function itemMenuSheet({ it, code, parentCode, asking, arm }: ItemMenuFac
     <div>
       {lab('Status')}
       <div className="grid grid-cols-3 gap-1.5">
-        {statusesOf(it).map(([s, t]) => (
+        {statusChoices(it).map(([s, t]) => (
           <button key={s} onClick={() => on.set('status', s)} aria-pressed={it.status === s} className={`${STAT_BTN} h-11 rounded-xl px-2.5`}>
             <StatIcon s={s} t={t} size="size-4.5" />
             <span className="truncate">{t}</span>
@@ -202,7 +199,7 @@ export function itemMenuPop({ it, code, parentCode, asking, arm, keys }: ItemMen
         ? typeOpts(true).map(([v, l]) => [v, l, v[0].toUpperCase()])
         : arm === 'p'
           ? priOpts(false).map(([v, l]) => [v, l, v.slice(1)])
-          : statusesOf(it).map(([v, t], i) => [
+          : statusChoices(it).map(([v, t], i) => [
               v,
               <span key={v} className="flex items-center gap-2">
                 <StatIcon s={v} t={t} size="size-4" />

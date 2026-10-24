@@ -52,7 +52,7 @@ import { Updates } from './updates'
 import { Merges } from './merges'
 import { DraftPlaces } from './draftPlaces'
 import { draftName, type DraftKey } from '../model/draftTarget'
-import { hereFor, runAction, type ActionId } from './actions'
+import { Actions } from './actions'
 import { OtherTabs } from './otherTabs'
 import { ItemEdits } from './itemEdits'
 import { createKeptEditsStore, type KeptEditsStore } from '../stores/keptEdits'
@@ -137,8 +137,8 @@ export interface App {
   answers: Answers
   /** an item's editor and its subitem title: what you typed is kept */
   itemEdits: ItemEdits
-  /** an action of the table, done here (`n`: on that item, open or not) -> it was done */
-  run(id: ActionId, n?: number): boolean
+  /** the table of actions, done here */
+  actions: Actions
   /** the places the keys reach (the search, the box, the talk), given by ref */
   fields: Fields
   /** what you do to something you said */
@@ -292,6 +292,10 @@ export function createApp(env: AppEnv): App {
   const selection = new Selection({ ui, order: listOrder, runner, toasts, slug, model: here, open: () => openItemN(route.getState().route) })
   const itemDrag = new ItemDrag({ store: dragStore, items, moves, slug, model: here })
   const media = new Media({ api, store: mediaStore, route, sheets, toasts, desk: env.desk })
+  const itemEdits = new ItemEdits({ view: itemView, kept: keptEdits, route, toasts, desk: env.desk, model: here })
+  const keyArm = new KeyArm()
+  const answers = new Answers({ inputs, view: itemView, outbox })
+  const actions = new Actions({ items, itemEdits, keyArm, answers, toasts, nav, fields, sheets, docs, box, voice, media, selection, listOrder, route, ui, feedback, sheet: sheetStore, itemView, docView, boxStore, desk: env.desk, model })
   const keptNotes: KeptNotes = new KeptNotes({
     vault: env.vault ?? memoryVault(),
     kv: env.kv,
@@ -368,8 +372,8 @@ export function createApp(env: AppEnv): App {
     rows,
     listOrder,
     crossSearch: new CrossSearch(api, search),
-    answers: new Answers({ inputs, view: itemView, outbox }),
-    itemEdits: new ItemEdits({ view: itemView, kept: keptEdits, route, toasts, desk: env.desk, model: here }),
+    answers,
+    itemEdits,
     fields,
     inputActions,
     box,
@@ -380,7 +384,7 @@ export function createApp(env: AppEnv): App {
     model,
     showProject: (s) => projectSession.show(s),
     projects,
-    keyArm: new KeyArm(),
+    keyArm,
     activity,
     restores,
     docs,
@@ -400,7 +404,7 @@ export function createApp(env: AppEnv): App {
       for (const s of [projects, projectSession, pictureSizes, sheets, docs, merges, sideOver, notices]) s.stop()
       unlisten()
     },
-    run: (id, n) => runAction(app, id, n == null ? undefined : hereFor(app, n)),
+    actions,
   }
   return app
 }

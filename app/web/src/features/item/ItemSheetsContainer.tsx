@@ -33,7 +33,7 @@ function useSubject(n: number) {
 }
 
 export function ItemMenuSheet({ req }: Req<'item-menu'>) {
-  const app = useServices('fields', 'items', 'nav', 'run', 'sheets', 'toasts')
+  const app = useServices('actions', 'fields', 'items', 'nav', 'sheets', 'toasts')
   const stores = useStores('sheet')
   const desk = useLayout() === 'desk'
   const { route, slug, m, it, code } = useSubject(req.n)
@@ -55,7 +55,7 @@ export function ItemMenuSheet({ req }: Req<'item-menu'>) {
   const close = () => app.sheets.close()
   const done = (run: () => void) => () => (close(), run())
   // what the table of actions does, on this item (it may not be the open one)
-  const run = (id: ActionId) => app.run(id, n)
+  const run = (id: ActionId) => app.actions.runOn(id, n)
   const on: ItemMenuEvents = {
     edit: done(() => {
       app.nav.openItem(code(n))

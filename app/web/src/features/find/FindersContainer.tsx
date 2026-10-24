@@ -7,7 +7,7 @@ import { codeOf } from '../../model/project'
 import type { SheetRequest } from '../../stores/sheet'
 import { SheetLayout } from '../../ui/Sheet'
 import { useSideProjects } from '../sidebar/SidebarContainer'
-import { keyHelp, paletteRows, type ActionId } from '../../app/actions'
+import { keyHelp, paletteRows } from '../../app/actions'
 import { keysSheet, Palette, Switcher } from './Finders'
 
 type Req<K extends SheetRequest['kind']> = { req: Extract<SheetRequest, { kind: K }> }
@@ -32,7 +32,7 @@ export function SwitchProjectSheet(_: Req<'switch-project'>) {
 const COMMANDS = [...paletteRows(true), ...paletteRows(false)]
 
 export function PaletteSheet(_: Req<'palette'>) {
-  const app = useServices('nav', 'run', 'sheets')
+  const app = useServices('nav', 'actions', 'sheets')
   const route = useProjectRoute()
   const m = useProjectModel(route?.slug ?? '')
   const code = (n: number) => (m ? codeOf(m, n) : '')
@@ -51,7 +51,7 @@ export function PaletteSheet(_: Req<'palette'>) {
           onCommand={(id) => {
             close()
             ;(document.activeElement as HTMLElement | null)?.blur()
-            requestAnimationFrame(() => app.run(id as ActionId))
+            requestAnimationFrame(() => app.actions.run(id))
           }}
         />
       }

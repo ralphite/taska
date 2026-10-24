@@ -94,7 +94,7 @@ function useDoc(slug: string, dn: number) {
 
 /** A web page document's own view, with its threads. */
 function WebPageContainer({ slug, d, v, seen, env, on, waiting }: { slug: string; d: Doc; v: DocViewState; seen: Readonly<Record<string, string>>; env: DocEnv; on: DocEvents; waiting: readonly NotSent[] }) {
-  const app = useServices('docVoice', 'docs', 'fields', 'run', 'voice')
+  const app = useServices('actions', 'docVoice', 'docs', 'fields', 'voice')
   const stores = useStores('docView', 'recording', 'sheet')
   const asked = useStoreValue(stores.sheet, (s) => s.asked)
   const all = d.blocks.flatMap((b) => threadsOf(b.comments).map((t) => ({ t, key: b.key })))
@@ -147,7 +147,7 @@ function WebPageContainer({ slug, d, v, seen, env, on, waiting }: { slug: string
           if (env.desk) app.fields.get('box')?.focus({ preventScroll: true })
         },
         say: (part) => void app.docVoice.say(slug, d.d, part.key, part.text, true),
-        esc: () => app.run('back'),
+        esc: () => app.actions.run('back'),
         toggle: (tk) => app.docs.toggle(tk),
         away: (tk, key) => stores.docView.getState().closeThreads(tk, key),
       }}

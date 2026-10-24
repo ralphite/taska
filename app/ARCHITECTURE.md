@@ -82,7 +82,8 @@ Rules, checked by `web/eslint.config.js` (imports, page lookups) and `web/script
 1. Presentational components get everything through props; they import nothing from `app/`, `stores/`, `api/`,
    `sync/`. A container (`*Container.tsx`) reads stores and passes props; it names the parts of the app it uses
    (`useServices('nav', 'sheets')`, `useStores('ui')`) and can reach nothing else (`useApp` is the page's root's
-   only); an action of the table runs through `app.run(id)`.
+   only); an action of the table runs through `app.actions.run(id)` (`app/actions.ts`: each action names the
+   services it uses and is given only those).
 2. The model (`model/`) is pure: no React, no stores, no `window`/`document`/`fetch`. Stores, `api/` and `sync/`
    are plain TypeScript (no React). Stores change only through their own actions; no state is kept in a module
    (stores are made per app by `createApp`; a WeakMap memo of a pure function is not state).

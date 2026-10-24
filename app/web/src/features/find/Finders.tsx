@@ -14,8 +14,8 @@ import { FIELD, TYPE_TEXT } from '../../ui/tones'
 export type KeyGroups = [string, [string, string][]][]
 
 /** A row of the palette: an action, with its words and keys. */
-export interface Command {
-  id: string
+export interface Command<Id extends string = string> {
+  id: Id
   label: string
   keys: string
   /** it acts on the open item (its code shows beside it) */
@@ -133,7 +133,7 @@ export function Switcher({ rows, loading, onOpen }: { rows: SwitchRow[]; loading
   )
 }
 
-export function Palette({ items, code, open, commands, onItem, onCommand }: { items: readonly Item[]; code(n: number): string; open: number | null; commands: readonly Command[]; onItem(n: number): void; onCommand(id: string): void }) {
+export function Palette<Id extends string>({ items, code, open, commands, onItem, onCommand }: { items: readonly Item[]; code(n: number): string; open: number | null; commands: readonly Command<Id>[]; onItem(n: number): void; onCommand(id: Id): void }) {
   const [q0, setQ] = useState('')
   const q = q0.trim().toLowerCase()
   const has = (t: string) => !q || t.toLowerCase().includes(q)
@@ -143,7 +143,7 @@ export function Palette({ items, code, open, commands, onItem, onCommand }: { it
         .sort((a, b) => Number(closed(a.status)) - Number(closed(b.status)) || b.n - a.n)
         .slice(0, 6)
     : []
-  const rows: { t: string; sub?: string; k?: string; id?: string; it?: Item }[] = [
+  const rows: { t: string; sub?: string; k?: string; id?: Id; it?: Item }[] = [
     ...(open ? commands.filter((c) => c.item && (has(c.label) || has(code(open)))).map((c) => ({ t: c.label, sub: code(open), k: c.keys, id: c.id })) : []),
     ...commands.filter((c) => !c.item && has(c.label)).map((c) => ({ t: c.label, k: c.keys, id: c.id })),
     ...found.map((it) => ({ t: it.title, it })),

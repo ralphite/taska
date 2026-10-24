@@ -17,6 +17,10 @@ export const needsYou = (it: Item) =>
 
 const asksYou = (it: Item) => needsYou(it) && !!it.wait
 
+/** The statuses an item can be set to, in the menu's order (a rule is proposed only while it is): [status, word][] */
+export const statusChoices = (it: Item): [string, string][] =>
+  it.type === 'rule' ? (Object.entries(RULE_STATUS_WORD) as [string, string][]).filter(([v]) => v !== 'proposed' || it.status === 'proposed') : (Object.entries(STATUS_WORD) as [string, string][])
+
 export const statusWord = (it: Item) =>
   (it.type === 'rule' ? RULE_STATUS_WORD[it.status] : STATUS_WORD[it.status]) || STATUS_WORD[it.status]
 
