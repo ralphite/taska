@@ -17,6 +17,8 @@ export function PaneFrame({
   split = false,
   bar = true,
   lead,
+  bodyRef,
+  duo = false,
   children,
 }: {
   place: string
@@ -36,6 +38,10 @@ export function PaneFrame({
   bar?: boolean
   /** the desktop's way back, first in the bar (a document's) */
   lead?: ReactNode
+  /** the body's element, for the layout (two columns when wide) */
+  bodyRef?: (el: HTMLElement | null) => void
+  /** two columns: the talk ends clear above the box, the body does not run on under it */
+  duo?: boolean
   children?: ReactNode
 }) {
   return (
@@ -63,9 +69,10 @@ export function PaneFrame({
         <div className={`hidden items-center gap-0.5 border-l border-zinc-200 pl-2 lg:ml-1.5 dark:border-zinc-800 ${lead ? '' : 'lg:flex'}`}>{desk && !lead ? nav : null}</div>
       </header>
       <div
+        ref={bodyRef}
         {...(split ? { 'data-split': '' } : {})}
         data-vc-area
-        className="-mb-(--foot-h) min-h-0 flex-1 overflow-y-auto overscroll-contain pb-[calc(var(--foot-h,0px)+1.5rem)] lg:scrollbar-gutter-both lg:mask-b-from-[calc(100%-2rem)] lg:group-data-duo/app:pb-0 lg:group-data-[compose]/app:hidden lg:hover:scrollbar-thumb-zinc-500/80 lg:data-split:mask-none lg:data-split:pb-(--foot-h) dark:lg:hover:scrollbar-thumb-zinc-400/70 dark:lg:data-split:pb-[calc(var(--foot-h,0px)+1.5rem)]"
+        className={`-mb-(--foot-h) min-h-0 flex-1 overflow-y-auto overscroll-contain pb-[calc(var(--foot-h,0px)+1.5rem)] lg:scrollbar-gutter-both lg:mask-b-from-[calc(100%-2rem)] lg:group-data-duo/app:pb-0 lg:group-data-[compose]/app:hidden lg:hover:scrollbar-thumb-zinc-500/80 lg:data-split:mask-none dark:lg:hover:scrollbar-thumb-zinc-400/70 ${duo ? '' : 'lg:data-split:pb-(--foot-h) dark:lg:data-split:pb-[calc(var(--foot-h,0px)+1.5rem)]'}`}
       >
         {children}
       </div>

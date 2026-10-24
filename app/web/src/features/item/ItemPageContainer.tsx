@@ -1,7 +1,7 @@
 // An item's page with the page's data: what it shows (the item, its documents and files, your answer on its way,
 // what you sent to it and Taska does not have yet, what you are doing on it) and what a tap on each part does.
 
-import { useMemo } from 'react'
+import { useMemo, type ReactNode } from 'react'
 import { useApp, useStoreValue } from '../../app/context'
 import { useAway, useFiles } from '../../app/hooks'
 import { newId } from '../../app/changeRunner'
@@ -36,8 +36,9 @@ export function openItemMenu(app: ReturnType<typeof useApp>, desk: boolean, n: n
   else app.sheets.open({ kind: 'item-menu', n, arm }, { focus: false })
 }
 
-export function ItemPageContainer({ it, m, slug, tab, desk }: { it: Item; m: ProjectModel; slug: string; tab: Tab; desk: boolean }) {
+export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = false }: { it: Item; m: ProjectModel; slug: string; tab: Tab; desk: boolean; /** in two columns, its document on the left */ left?: ReactNode; bare?: boolean }) {
   const app = useApp()
+  const duo = useStoreValue(app.stores.ui, (s) => s.duo) && desk
   const view = useStoreValue(app.stores.itemView, (s) => s)
   const outbox = useStoreValue(app.stores.outbox, (s) => s.list)
   const away = useAway(slug)
@@ -140,6 +141,7 @@ export function ItemPageContainer({ it, m, slug, tab, desk }: { it: Item; m: Pro
     picture: (f, all) => media.on.view(f, all),
     ...media.on,
     topSize: (px, done) => (done ? app.stores.grips.getState().keep('top', px) : app.stores.grips.getState().size('top', px)),
+    duoSize: (px, done) => (done ? app.stores.grips.getState().keep('duo', px) : app.stores.grips.getState().size('duo', px)),
     subNew: () => iv().setSubFor(n),
     subCancel: () => iv().setSubFor(null),
     subAdd: (title) => {
@@ -172,5 +174,5 @@ export function ItemPageContainer({ it, m, slug, tab, desk }: { it: Item; m: Pro
     outboxRetry: () => void app.inputs.flush(),
     outboxEdit: () => {},
   }
-  return <ItemPage it={it} f={f} env={env} facts={facts} on={on} talkRef={app.fields.ref('talk')} />
+  return <ItemPage it={it} f={f} env={env} facts={facts} on={on} talkRef={app.fields.ref('talk')} duo={duo} left={left} bare={bare} />
 }

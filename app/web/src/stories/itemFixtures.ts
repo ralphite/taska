@@ -52,7 +52,7 @@ export function itemFacts(m: ProjectModel, it: Item, f: Partial<ItemFacts> = {})
 const no = () => {}
 export const noItemEvents: ItemEvents = {
   decide: no, notYet: no, modify: no, cancelModify: no, sendAnswer: no, reask: no, cancelReask: no,
-  ref: no, picture: no, more: no, play: no, words: no, view: no, topSize: no,
+  ref: no, picture: no, more: no, play: no, words: no, view: no, topSize: no, duoSize: no,
   inputMore: no, inputHistory: no, goInput: no, msgMenu: no, peek: no, unhide: no, docAt: no, unsend: no, outboxRetry: no, outboxEdit: no,
   menu: no, set: no, sources: no, goto: no, doc: no, earlier: no, subNew: no, subAdd: no, subCancel: no, editSave: no, editCancel: no,
 }

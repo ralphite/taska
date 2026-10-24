@@ -23,6 +23,8 @@ export interface UiState {
   heldFor: string
   selected: ReadonlySet<number>
   sideHidden: boolean
+  /** the desktop's item pane in two columns: the item (or its document) on the left, its talk on the right */
+  duo: boolean
   /** the desktop's filters opened under the search (F) */
   deskFilters: boolean
   setDeskFilters(on: boolean): void
@@ -41,6 +43,7 @@ export interface UiState {
   dropHeld(n: number): void
   setSelected(s: ReadonlySet<number>): void
   setSideHidden(on: boolean): void
+  setDuo(on: boolean): void
   /** the row of Activity or Deleted shown in the pane beside it */
   sideSel: string | null
   setSideSel(key: string | null): void
@@ -65,6 +68,7 @@ export function createUiStore(kv: KeyValueStore): UiStore {
     held: new Map(),
     heldFor: '',
     selected: new Set(),
+    duo: false,
     sideHidden: !!kv.get('taska.sideHidden'),
     sideSel: null,
     setSideSel: (sideSel) => set({ sideSel }),
@@ -94,6 +98,7 @@ export function createUiStore(kv: KeyValueStore): UiStore {
         return { held }
       }),
     setSelected: (selected) => set({ selected }),
+    setDuo: (duo) => set((s) => (s.duo === duo ? s : { duo })),
     setSideHidden: (on) => {
       kv.set('taska.sideHidden', on ? '1' : null)
       set({ sideHidden: on })

@@ -26,6 +26,8 @@ export interface ItemEvents extends TalkLineEvents {
   sources(): void
   /** the item's part over its talk dragged to this height (`done`: let go, kept) */
   topSize(px: number, done: boolean): void
+  /** in two columns, the left one dragged to this width (0: back to the page's own) */
+  duoSize(px: number, done: boolean): void
   goto(n: number): void
   doc(d: number): void
   earlier(): void
@@ -211,7 +213,7 @@ const marks = (el: HTMLElement) => {
   el.toggleAttribute('data-up', el.scrollTop > 2)
 }
 
-export function ItemPage({ it, f, env, facts, on, talkRef }: {
+export function ItemPage({ it, f, env, facts, on, talkRef, duo = false, left = null, bare = false }: {
   it: Item
   f: ItemFacts
   env: TalkEnv
@@ -219,6 +221,11 @@ export function ItemPage({ it, f, env, facts, on, talkRef }: {
   on: ItemEvents
   /** the talk's element, for the keys (Space scrolls it) */
   talkRef?: (el: HTMLElement | null) => void
+  /** the desktop's two columns: the item (or `left`, its document) on the left, its talk on the right */
+  duo?: boolean
+  left?: ReactNode
+  /** `left` brings its own margins (a web page) */
+  bare?: boolean
 }) {
   const clip = useRef<HTMLDivElement>(null)
   const talk = useRef<HTMLDivElement | null>(null)
@@ -287,9 +294,14 @@ export function ItemPage({ it, f, env, facts, on, talkRef }: {
   const top = plan.first && (plan.thread.length > 0 || notes.length > 0)
   const card = <NeedsCard it={it} env={env} on={on} remodify={f.remodify} going={facts.going?.text ?? null} />
   return (
-    <div className="group/item flex flex-col gap-6 px-5 pt-5 pb-10 lg:h-full lg:gap-0 lg:p-0">
-      <div className={`flex flex-col lg:shrink-0 ${f.editing ? 'lg:max-h-full' : 'lg:h-[var(--top-h,40%)]'}`}>
-        <div ref={clip} onScroll={(e) => e.currentTarget.toggleAttribute('data-over', overflows(e.currentTarget))} className="lg:min-h-0 lg:scrollbar-thin lg:overflow-y-auto lg:data-over:mask-b-from-[calc(100%-4rem)]">
+    <div className={`group/item flex flex-col gap-6 px-5 pt-5 pb-10 lg:h-full lg:gap-0 lg:p-0 ${duo ? 'lg:flex-row' : ''}`}>
+      {duo && left ? (
+        <div data-item-top className={`lg:h-full lg:w-[var(--duo-w,55%)] lg:shrink-0 lg:scrollbar-thin lg:overflow-y-auto ${bare ? '' : 'lg:px-8 lg:pt-8 lg:pb-12'}`}>
+          {left}
+        </div>
+      ) : (
+      <div data-item-top className={`flex flex-col lg:shrink-0 ${duo ? 'lg:h-full lg:w-[var(--duo-w,55%)]' : f.editing ? 'lg:max-h-full' : 'lg:h-[var(--top-h,40%)]'}`}>
+        <div ref={clip} data-item-clip onScroll={(e) => e.currentTarget.toggleAttribute('data-over', overflows(e.currentTarget))} className="lg:min-h-0 lg:scrollbar-thin lg:overflow-y-auto lg:data-over:mask-b-from-[calc(100%-4rem)]">
           <div className="flex flex-col gap-6 lg:mx-auto lg:w-full lg:max-w-[46rem] lg:px-8 lg:pt-7 lg:pb-6">
             {head}
             {desc}
@@ -306,7 +318,22 @@ export function ItemPage({ it, f, env, facts, on, talkRef }: {
           </div>
         </div>
       </div>
-      {/* the line between the item and its talk, dragged up and down anywhere you like (a double-click leaves it) */}
+      )}
+      {duo ? (
+        // the line between the two columns, dragged sideways like the other lines
+        <Grip
+          axis="x"
+          place="relative z-10 hidden w-px shrink-0 bg-zinc-200 after:absolute after:-inset-x-1.5 after:inset-y-0 lg:block dark:bg-zinc-800"
+          measure={(el) => {
+            const from = el.previousElementSibling?.getBoundingClientRect().left ?? 0
+            return { from, most: innerWidth - from }
+          }}
+          onSize={(px) => on.duoSize(px, false)}
+          onDone={(px) => on.duoSize(px, true)}
+          onReset={() => on.duoSize(0, true)}
+        />
+      ) : (
+      /* the line between the item and its talk, dragged up and down anywhere you like (a double-click leaves it) */
       <Grip
         axis="y"
         place="relative z-10 hidden h-px shrink-0 bg-zinc-200 after:absolute after:inset-x-0 after:-inset-y-2 lg:block dark:bg-zinc-800"
@@ -314,13 +341,17 @@ export function ItemPage({ it, f, env, facts, on, talkRef }: {
         onSize={(px) => on.topSize(px, false)}
         onDone={(px) => on.topSize(px, true)}
       />
+      )}
       <div
+        data-item-talk
         ref={(el) => {
           talk.current = el
           talkRef?.(el)
         }}
         onScroll={(e) => marks(e.currentTarget)}
-        className="lg:-mb-(--foot-h) lg:min-h-0 lg:flex-1 lg:scrollbar-thin lg:overflow-y-auto lg:pb-(--foot-h) lg:data-up:mask-t-from-[calc(100%-2rem)] dark:lg:-mb-[calc(var(--foot-h,0px)+1.5rem)] dark:lg:pb-[calc(var(--foot-h,0px)+1.5rem)]"
+        // in two columns they run to the bottom of the screen and the talk ends clear above the box; in one the talk
+        // runs on under the box, its own padding keeping its end where it was
+        className={`lg:min-h-0 lg:flex-1 lg:scrollbar-thin lg:overflow-y-auto lg:data-up:mask-t-from-[calc(100%-2rem)] ${duo ? 'lg:h-full lg:min-w-0 lg:pb-[calc(var(--foot-h,0px)+1.5rem)]' : 'lg:-mb-(--foot-h) lg:pb-(--foot-h) dark:lg:-mb-[calc(var(--foot-h,0px)+1.5rem)] dark:lg:pb-[calc(var(--foot-h,0px)+1.5rem)]'}`}
       >
         <div className="flex flex-col gap-6 lg:mx-auto lg:w-full lg:max-w-[46rem] lg:px-8 lg:py-6">
           {plan.thread.length || notes.length ? (

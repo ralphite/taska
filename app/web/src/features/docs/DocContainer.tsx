@@ -2,7 +2,7 @@
 // Delete, the way back), on the phone in a sheet over its item. What it shows comes from the model and the document's
 // view; what you do goes to app.docs.
 
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, type ReactNode } from 'react'
 import { useApp, useLayout, useStoreValue } from '../../app/context'
 import { useFiles, useProjectModel, type ProjectRoute } from '../../app/hooks'
 import { usePaneRef } from '../../app/panes'
@@ -134,7 +134,7 @@ function WebPageContainer({ slug, d, v, seen, env, on }: { slug: string; d: Doc;
 }
 
 /** The desktop's pane with a document. */
-export function DocPaneContainer({ route, dn, place, hidden }: { route: ProjectRoute; dn: number; place: string; hidden?: boolean }) {
+export function DocPaneContainer({ route, dn, place, hidden, bodyRef, beside }: { route: ProjectRoute; dn: number; place: string; hidden?: boolean; bodyRef?: (el: HTMLElement | null) => void; /** wide: the document on the left, its item's talk on the right */ beside?: (view: ReactNode, web: boolean) => ReactNode }) {
   const app = useApp()
   const pane = usePaneRef('detail')
   const side = useStoreValue(app.stores.route, (s) => s.side)
@@ -145,7 +145,7 @@ export function DocPaneContainer({ route, dn, place, hidden }: { route: ProjectR
   if (v.editing && v.newFor == null)
     // an existing document is edited where it is read
     return (
-      <PaneFrame place={place} hidden={hidden} desk paneRef={pane} head={<DocPaneHead d={d} editing />} onBack={() => app.docs.keep()}>
+      <PaneFrame place={place} hidden={hidden} desk paneRef={pane} bodyRef={bodyRef} head={<DocPaneHead d={d} editing />} onBack={() => app.docs.keep()}>
         <div className="mx-auto flex min-h-full w-full max-w-[46rem] flex-col px-8 pt-4 pb-12">
           <DocEditContainer slug={route.slug} />
         </div>
@@ -157,15 +157,22 @@ export function DocPaneContainer({ route, dn, place, hidden }: { route: ProjectR
       hidden={hidden}
       desk
       paneRef={pane}
+      bodyRef={bodyRef}
+      split={!!beside}
+      duo={!!beside}
       head={<DocPaneHead d={d} editing={false} />}
       acts={<DocPaneActs web={web} inspect={v.inspect} deleting={!!asked['doc-delete ' + dn]} d={dn} on={{ inspect: () => app.stores.docView.getState().setInspect(!v.inspect), edit: on.editDoc, move: on.moveDoc, remove: on.deleteDoc }} />}
       lead={<DocPaneNav to={side ? SIDE_NAME[side] : codeOf(m, liveN(m, d.n))} onBack={() => app.docs.close()} />}
       onBack={() => app.docs.close()}
     >
-      {/* a web page brings its own margins: none are added around it */}
-      <div className={web ? 'w-full' : 'w-full px-8 pt-8 pb-12'}>
-        <DocView facts={facts} env={env} on={on} page={page} lasso={v.circle ? <Lasso onDrawn={(keys) => app.docs.circled(keys)} /> : null} />
-      </div>
+      {beside ? (
+        beside(<DocView facts={facts} env={env} on={on} page={page} lasso={v.circle ? <Lasso onDrawn={(keys) => app.docs.circled(keys)} /> : null} />, web)
+      ) : (
+        // a web page brings its own margins: none are added around it
+        <div className={web ? 'w-full' : 'w-full px-8 pt-8 pb-12'}>
+          <DocView facts={facts} env={env} on={on} page={page} lasso={v.circle ? <Lasso onDrawn={(keys) => app.docs.circled(keys)} /> : null} />
+        </div>
+      )}
     </PaneFrame>
   )
 }

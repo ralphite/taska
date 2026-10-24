@@ -90,6 +90,7 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
   const docEditing = useStoreValue(app.stores.docView, (s) => s.editing && s.newFor == null) && route.place.kind === 'doc'
   const side = !!shownSide && !settings
   const grips = useStoreValue(app.stores.grips, (s) => s.px)
+  const duo = useStoreValue(app.stores.ui, (s) => s.duo)
   const compose = route.place.kind === 'new' || (route.place.kind === 'tab' && route.tab !== 'inputs')
   const filtersOpen = useStoreValue(app.stores.ui, (s) => s.deskFilters)
   const set = filtersSet(route.tab, route.list)
@@ -107,6 +108,7 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
       <SidebarContainer slug={route.slug} place="" rail hidden={!sideHidden || settings} />
       <div
         {...(compose ? { 'data-compose': '' } : {})}
+        {...(duo ? { 'data-duo': '' } : {})}
         style={{ '--foot-h': footH + 'px' } as CSSProperties}
         className="group/app relative z-10 grid h-full min-w-0 flex-1 grid-cols-[var(--list-w,360px)_minmax(0,1fr)] grid-rows-[auto_auto_auto_minmax(0,1fr)_auto] bg-white pt-[env(safe-area-inset-top)] wide:grid-cols-[var(--list-w,420px)_minmax(0,1fr)] huge:grid-cols-[var(--list-w,460px)_minmax(0,1fr)] dark:bg-zinc-950"
       >

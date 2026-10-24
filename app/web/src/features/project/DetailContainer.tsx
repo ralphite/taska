@@ -1,7 +1,9 @@
+import { useState } from 'react'
 // The pane beside the list on the desktop (the whole screen on the phone): an item, a document, or the New input
 // page's head.
 
-import { useApp, useLayout } from '../../app/context'
+import { useTwoColumns } from './twoColumns'
+import { useApp, useLayout, useStoreValue } from '../../app/context'
 import { usePaneRef } from '../../app/panes'
 import { useAway, useProjectModel, type ProjectRoute } from '../../app/hooks'
 import { codeOf, liveN } from '../../model/project'
@@ -26,8 +28,24 @@ export function DetailContainer({ route, place, hidden, full = false, footRoom =
   const it = m && n ? m.byN.get(liveN(m, n)) : undefined
   const compose = route.place.kind === 'new' || (route.place.kind === 'tab' && route.tab !== 'inputs')
   const back = () => app.nav.closeItem()
+  // the desktop's two columns, while the pane is wide: the item (or its document) on the left, its talk on the right
+  const [body, setBody] = useState<HTMLElement | null>(null)
+  const duo = useStoreValue(app.stores.ui, (s) => s.duo)
+  const editingDoc = useStoreValue(app.stores.docView, (s) => s.editing)
+  const docIt = doc && m ? m.byN.get(liveN(m, doc.n)) : undefined
+  useTwoColumns(desk && !hidden ? body : null, desk && !compose && (!!it || (!!doc && !editingDoc && !!docIt)), !!doc && !editingDoc, (on) => app.stores.ui.getState().setDuo(on))
   if (dn != null && desk) {
-    if (doc) return <DocPaneContainer route={route} dn={dn} place={place} hidden={hidden} />
+    if (doc)
+      return (
+        <DocPaneContainer
+          route={route}
+          dn={dn}
+          place={place}
+          hidden={hidden}
+          bodyRef={setBody}
+          beside={duo && docIt && m ? (view, web) => <ItemPageContainer key={docIt.n} it={docIt} m={m} slug={route.slug} tab={route.tab} desk left={view} bare={web} /> : undefined}
+        />
+      )
     return (
       <PaneFrame place={place} hidden={hidden} desk={desk} paneRef={pane} head={<span className="font-mono text-sm font-bold">D{dn}</span>} onBack={back}>
         <Missing what={`D${dn}`} loading={!m} away={away >= 2} />
@@ -53,6 +71,8 @@ export function DetailContainer({ route, place, hidden, full = false, footRoom =
         hidden={hidden}
         desk={desk}
         paneRef={pane}
+        bodyRef={setBody}
+        duo={duo && desk}
         split
         head={<ItemHead it={it} code={code} />}
         acts={<ItemActs it={it} on={{ set }} />}
