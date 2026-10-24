@@ -7,6 +7,8 @@ export interface KeyValueStore {
   getJson<T>(key: string): T | null
   setJson(key: string, value: unknown): void
   keys(): string[]
+  /** another tab of this browser changed a key (`fn` gets its name); returns how to stop */
+  onChange?(fn: (key: string) => void): () => void
 }
 
 /** `session`: this tab's own store (sessionStorage), gone when the tab closes. */
@@ -64,6 +66,17 @@ export function browserStore(kind: 'local' | 'session' = 'local'): KeyValueStore
       }
       return out
     },
+    ...(kind === 'local' && typeof addEventListener !== 'undefined'
+      ? {
+          onChange: (fn: (key: string) => void) => {
+            const on = (e: StorageEvent) => {
+              if (e.key && e.storageArea === ls()) fn(e.key)
+            }
+            addEventListener('storage', on)
+            return () => removeEventListener('storage', on)
+          },
+        }
+      : {}),
   }
 }
 

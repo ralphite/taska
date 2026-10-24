@@ -379,7 +379,7 @@ export function FootContainer({ route, place, hidden, composePage, onHeight, bar
       fieldRef={app.fields.ref('box')}
       lineOnComposePage={!!mode}
       hasFiles={!!draftFiles?.length}
-      files={<DraftFiles files={draftFiles || []} url={url} onRemove={(fk) => app.box.removeFile(key, fk)} onView={(fk) => {
+      files={<DraftFiles files={draftFiles || []} url={url} onRemove={(fk) => app.box.removeFile(route.slug, key, fk)} onView={(fk) => {
         // a picture of the draft, with its others that are up
         const pics = (draftFiles || []).filter((x) => x.f && (x.mime || '').startsWith('image/')).map((x) => x.f)
         const f = draftFiles?.find((x) => x.key === fk)?.f

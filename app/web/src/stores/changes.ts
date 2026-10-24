@@ -22,6 +22,8 @@ export interface PendingChange {
   t: number
   /** shown only: it adds nothing the server keeps (a stand-in until the server's own shows) */
   showOnly?: boolean
+  /** a refusal is for the sender to answer (it is not listed as not saved) */
+  ownRefusal?: boolean
 }
 
 export interface ChangesState {

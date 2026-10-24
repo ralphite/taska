@@ -187,6 +187,7 @@ export class Docs {
     const { text, files } = this.d.box.take(slug, key)
     const sent = files.filter((f) => f.f && !f.failed)
     if (!text && !sent.length) return false
+    this.d.box.markSent(slug, key)
     const quote = t.reply ? '' : t.quote
     const same = t.key === 'doc' ? doc.whole : doc.blocks.find((b) => b.key === t.key)?.comments || []
     const th = t.th ?? same.find((x) => x.th === x.id && sameText(x.quote, quote))?.th

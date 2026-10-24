@@ -48,6 +48,7 @@ import { ItemDrag } from './itemDrag'
 import { Selection } from './selection'
 import { Updates } from './updates'
 import { Merges } from './merges'
+import { OtherTabs } from './otherTabs'
 import { changePlace, changeText, changeWords } from '../model/saidOf'
 import { Access } from './access'
 import { createViewsStore, type ViewsStore } from '../stores/views'
@@ -250,7 +251,7 @@ export function createApp(env: AppEnv): App {
     stale,
     cursor: (slug) => (sync?.slug === slug ? sync.cursor : null),
     unreachable: () => {},
-    refused: (c, why) => toasts.notSaved({ what: changeWords(c.commands), why, slug: c.slug, go: changePlace(c.commands, c.slug), said: changeText(c.commands) }),
+    refused: (c, why) => c.ownRefusal || toasts.notSaved({ what: changeWords(c.commands), why, slug: c.slug, go: changePlace(c.commands, c.slug), said: changeText(c.commands) }),
   })
   const inputs = new InputSender(api, outbox, {
     cursor: (slug) => (sync?.slug === slug ? sync.cursor : null),
@@ -297,7 +298,11 @@ export function createApp(env: AppEnv): App {
     title: (slug) => data.getState().projects?.find((p) => p.name === slug)?.title || slug,
     go: (url) => route.getState().go(url, true),
   })
-  const box = new Box({ api, store: boxStore, drafts, outbox, inputs, runner, toasts, keep: (blob) => keep(blob), recording: () => !!recording.getState().rec, goDraft: (key) => goDraft(key), model })
+  // the other tabs of this browser: their drafts show here too
+  const otherTabs = new OtherTabs({ kv: env.kv, drafts, box: boxStore, toasts, slug: () => currentSlug(), recording: () => !!recording.getState().rec })
+  const box = new Box({ api, store: boxStore, drafts, outbox, inputs, runner, toasts, keep: (blob) => keep(blob), recording: () => !!recording.getState().rec, goDraft: (key) => goDraft(key), model, kv: env.kv, sent: (slug, key) => otherTabs.sent(slug, key), refresh: async (slug) => {
+    if (sync?.slug === slug) await sync.refresh()
+  } })
   const activity = new Activity({ api, store: activityStore, toasts })
   const restores = new Restores({ runner, toasts, inputs: inputActions, model })
   docs = new Docs({ runner, toasts, view: docView, nav, route, sheets, fields, desk: env.desk, model, box, boxStore, kv: env.kv, ticks: docTicks, inputs, mic: { stop: () => dictation.stop(), discard: (key) => dictation.discard(key), settled: (): Promise<boolean> => dictation.settled() } })

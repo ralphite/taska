@@ -10,6 +10,7 @@ import { inputCode } from '../model/words'
 import type { BoxMode, BoxStore, DraftFile } from '../stores/box'
 import type { DraftsStore } from '../stores/drafts'
 import type { OutboxStore } from '../stores/outbox'
+import type { KeyValueStore } from '../stores/storage'
 import { newId, type ChangeRunner } from './changeRunner'
 import type { InputSender } from './inputSender'
 import type { Toasts } from './toasts'
@@ -32,6 +33,12 @@ export interface BoxDeps {
   goDraft?(key: string): void
   /** the project's model now (Undo puts back what it says then) */
   model?(slug: string): ProjectModel | null
+  /** this browser's own store: the words an input had when you began an edit of it */
+  kv?: KeyValueStore
+  /** the project loaded afresh */
+  refresh?(slug: string): Promise<void>
+  /** the other tabs: this draft went out from here */
+  sent?(slug: string, key: string): void
 }
 
 export class Box {
@@ -123,8 +130,27 @@ export class Box {
     }
   }
 
-  removeFile(key: string, fk: string): void {
-    this.d.store.getState().removeFile(key, fk)
+  /** A file off the draft; a voice note takes the words it put there with it, and both come back with Undo. */
+  removeFile(slug: string, key: string, fk: string): void {
+    const st = this.d.store.getState()
+    const files = st.files[key] || []
+    const i = files.findIndex((f) => f.key === fk)
+    const f = files[i]
+    if (!f) return
+    const before = this.text(slug, key)
+    st.removeFile(key, fk)
+    if (!f.trAdded || !before.includes(f.trAdded)) return
+    this.write(slug, key, before.replace(f.trAdded, '').replace(/\n{3,}/g, '\n\n').trim())
+    this.d.toasts.show('Removed the voice note and its words', () => {
+      const rest = this.d.store.getState().takeFiles(key)
+      this.d.store.getState().putFiles(key, [...rest.slice(0, i), f, ...rest.slice(i)])
+      this.write(slug, key, before)
+    })
+  }
+
+  /** The draft `key` went out from this tab: the other tabs drop it from their box. */
+  markSent(slug: string, key: string): void {
+    this.d.sent?.(slug, key)
   }
 
   /** Send what the box has, to what it writes to. -> whether anything went */
@@ -141,6 +167,7 @@ export class Box {
     st.takeFiles(key)
     const o = this.d.inputs.push({ slug, text, scope, files: files.map(({ key: k, ...f }) => ({ ...f, key: k })) })
     st.sentNow({ q: o.q, slug, key, until: Date.now() + UNSEND_MS })
+    this.markSent(slug, key)
     const step = this.d.toasts.undoable(`Send to ${scope || 'New input'}`, async () => (this.unsend(o.q), true))
     setTimeout(() => {
       this.d.toasts.forget(step)
@@ -159,16 +186,41 @@ export class Box {
     const now = r ? (mode.mode === 'edit' ? text : r.text.endsWith(text) ? r.text : [r.text, text].filter(Boolean).join('\n\n')) : text
     this.d.toasts.show(mode.mode === 'edit' ? `${inputCode(mode.id)} updated` : `Added to ${inputCode(mode.id)}`)
     const files = drafts.filter((f) => f.f && !f.failed).map((f) => ({ f: f.f, name: f.name, mime: f.mime, size: f.size, ...(f.tr ? { tr: f.tr } : {}) }))
-    void this.d.runner.send({
-      id: newId(),
-      slug,
-      commands: [{ op: 'amend', id: mode.id, mode: mode.mode, v: mode.v, text, files }],
-      patches: [],
-      inputPatches: text ? [{ id: mode.id, f: { text: now } }] : [],
-      said: mode.mode === 'edit' ? `editing ${inputCode(mode.id)}` : `adding to ${inputCode(mode.id)}`,
-      t: Date.now(),
-    })
+    const said = mode.mode === 'edit' ? `editing ${inputCode(mode.id)}` : `adding to ${inputCode(mode.id)}`
+    void (async () => {
+      const ok = await this.d.runner.send({
+        id: newId(),
+        slug,
+        commands: [{ op: 'amend', id: mode.id, mode: mode.mode, v: mode.v, text, files }],
+        patches: [],
+        inputPatches: text ? [{ id: mode.id, f: { text: now } }] : [],
+        said,
+        t: Date.now(),
+        ownRefusal: true,
+      })
+      if (!ok) await this.editedElsewhere(slug, mode, key, text, files, drafts, said)
+    })()
     return true
+  }
+
+  /** Your edit was refused because the input changed in another window (another tab added to it, its voice note's
+   * words came): when that only added words after the ones you began from, they go on after yours and it is saved;
+   * otherwise your words come back in the box with what it says now, and Save puts yours in its place. */
+  private async editedElsewhere(slug: string, mode: Extract<BoxMode, { kind: 'amend' }>, key: string, text: string, files: unknown[], drafts: DraftFile[], said: string): Promise<void> {
+    await this.d.refresh?.(slug)
+    const r = this.d.model?.(slug)?.byId.get(mode.id)
+    if (!r) return
+    const code = inputCode(mode.id)
+    if (mode.mode === 'edit' && mode.base != null && r.text !== mode.base && r.text.startsWith(mode.base)) {
+      const merged = text + r.text.slice(mode.base.length)
+      const ok = await this.d.runner.send({ id: newId(), slug, commands: [{ op: 'amend', id: mode.id, mode: 'edit', v: r.v || 0, text: merged, files }], patches: [], inputPatches: [{ id: mode.id, f: { text: merged } }], said, t: Date.now() })
+      if (ok) this.d.toasts.show(`${code} updated with changes from another window`)
+      return
+    }
+    this.d.store.getState().setMode({ ...mode, v: r.v || 0, base: r.text })
+    this.write(slug, key, text)
+    if (drafts.length) this.d.store.getState().putFiles(key, drafts)
+    this.d.toasts.show(`${code} changed elsewhere. Text restored; save to apply`, null, { error: true, sticky: true }) // the box's line shows what it says now
   }
 
   /** What did not go out yet, back in the box to change (the box must be empty). -> it came back */
@@ -210,9 +262,28 @@ export class Box {
   amendStart(slug: string, m: ProjectModel | null, id: string, mode: 'edit' | 'append'): void {
     const r = m?.byId.get(id)
     if (!r || r.moved) return
-    this.d.store.getState().setMode({ kind: 'amend', id, mode, v: r.v || 0 })
+    this.d.store.getState().setMode({ kind: 'amend', id, mode, v: r.v || 0, base: r.text })
     const key = `${mode} ${id}`
+    const base = this.editBase(slug, key)
     if (mode === 'edit' && !this.text(slug, key).trim()) this.write(slug, key, r.text)
+    else if (mode === 'edit' && base != null && base !== r.text) {
+      // your edit not saved began before it changed elsewhere: what was added since goes on after your words
+      if (r.text.startsWith(base)) {
+        this.write(slug, key, this.text(slug, key) + r.text.slice(base.length))
+        this.d.toasts.show(`${inputCode(id)}: merged new text from another window`)
+      } else this.d.toasts.show(`${inputCode(id)} changed in another window since you began`, null, { error: true, sticky: true }) // the box's line shows what it says now
+    }
+    this.editBase(slug, key, r.text)
+  }
+
+  /** The words an input had when you began an edit of it (kept with the draft, in this browser). */
+  private editBase(slug: string, key: string, set?: string): string | null {
+    const kv = this.d.kv
+    if (!kv) return null
+    const all = kv.getJson<Record<string, string>>('taska.editbase.' + slug) || {}
+    if (set === undefined) return all[key] ?? null
+    kv.setJson('taska.editbase.' + slug, { ...all, [key]: set })
+    return null
   }
 
   /** Words selected in a voice note's input: corrected in the box (the input changes, Taska remembers the spelling). */

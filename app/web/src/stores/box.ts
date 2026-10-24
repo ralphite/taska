@@ -10,7 +10,7 @@ import type { VcMark } from '../model/voiceComments'
 import type { KeyValueStore } from './storage'
 
 export type BoxMode =
-  | { kind: 'amend'; id: string; mode: 'edit' | 'append'; v: number }
+  | { kind: 'amend'; id: string; mode: 'edit' | 'append'; v: number; /** its words when the edit began */ base?: string }
   /** words of a voice note's input being corrected (`v`: the input's version); `bySel`: started from a selection */
   | { kind: 'correct'; id: string; wrong: string; v: number; bySel?: boolean }
   /** a comment of yours on a document, being edited */

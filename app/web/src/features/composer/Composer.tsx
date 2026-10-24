@@ -94,6 +94,18 @@ export function Composer({ line, lineOnComposePage, placeholder, sendWord, text,
   const box = useRef<HTMLDivElement | null>(null)
   const picker = useRef<HTMLInputElement>(null)
   const has = !!text.trim() || hasFiles
+  // where you were in the words: words that come from elsewhere after yours (another tab's) keep your place in them
+  const mine = useRef({ text, start: text.length, end: text.length })
+  const keep = (t: HTMLTextAreaElement) => {
+    mine.current = { text: t.value, start: t.selectionStart, end: t.selectionEnd }
+  }
+  useLayoutEffect(() => {
+    const t = area.current
+    const was = mine.current
+    if (!t || text === was.text) return
+    if (was.text && text.startsWith(was.text)) t.setSelectionRange(was.start, was.end)
+    keep(t)
+  }, [text])
   useLayoutEffect(() => {
     const t = area.current
     const b = box.current
@@ -148,7 +160,11 @@ export function Composer({ line, lineOnComposePage, placeholder, sendWord, text,
             placeholder={placeholder}
             aria-label="Input"
             className={`col-start-1 row-start-1 max-h-48 min-h-11 w-full min-w-0 resize-none bg-transparent px-1 py-2.5 text-[17px] leading-6 outline-none placeholder:text-zinc-400 roomy:text-[15px] lg:scrollbar-thin dark:placeholder:text-zinc-500 ${rec || words ? 'invisible' : ''}`}
-            onChange={(e) => on.text(e.currentTarget.value)}
+            onChange={(e) => {
+              keep(e.currentTarget)
+              on.text(e.currentTarget.value)
+            }}
+            onSelect={(e) => keep(e.currentTarget)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.nativeEvent.isComposing && (e.shiftKey || e.metaKey || e.ctrlKey)) {
                 e.preventDefault()
