@@ -12,7 +12,8 @@ after you found a problem, to explain it.
 
 1. Copy the project and start a scratch Taska on another port:
    `cp -R ~/.taska/taska <scratchpad>/qa/` then
-   `python3 taska.py --host 127.0.0.1 --port 7341 --root <scratchpad>/qa --organizer off`
+   `PYTHONPATH=v2/server python3 -m taska --host 127.0.0.1 --port 7341 --root <scratchpad>/qa --organizer off`
+   from the repository root, after `npm --prefix v2/web run build` when the page changed
    (keep the organizer on only when you test it; it calls Gemini).
 2. Built-in browser on `http://127.0.0.1:7341/p/taska/`, viewport 390x844 (a phone: touch, coarse pointer).
    Do the pass in light mode, then the screens that matter again in dark mode.

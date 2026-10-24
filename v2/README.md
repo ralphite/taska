@@ -1,21 +1,21 @@
 # Taska v2
 
-The rewrite of Taska: a typed Python backend on SQLite and a React frontend, with the same agent interface and the
-same features as the one-file `taska.py`. See [spec/product-spec.md](spec/product-spec.md) for what it does and
+The running Taska: a typed Python backend on SQLite and a React frontend. It replaced the one-file `taska.py` on
+10-19 with the same agent interface and the same features. See [spec/product-spec.md](spec/product-spec.md) for what it does and
 [spec/architecture.md](spec/architecture.md) for how it is built.
 
 ## Run it
 
 ```sh
-# once: a copy of your data (the old data is only read)
-PYTHONPATH=v2/server python3 -m taska import --from ~/.taska --to ~/taska-v2-data
-
 # the page (once, and after frontend changes)
 npm --prefix v2/web install
 npm --prefix v2/web run build
 
-# the server, next to the old one
+# a server on a copy of the data, next to the live Taska on 7340
 PYTHONPATH=v2/server python3 -m taska --port 7341 --root ~/taska-v2-data
+
+# data of the old one-file Taska (taska.jsonl folders), as a copy (the old data is only read)
+PYTHONPATH=v2/server python3 -m taska import --from <old data folder> --to ~/taska-v2-data
 ```
 
 Or the single file from a release: `python3 taska.pyz --port 7341 --root ~/taska-v2-data`.
@@ -30,9 +30,9 @@ Or the single file from a release: `python3 taska.pyz --port 7341 --root ~/taska
 | Lint | `npm --prefix v2/web run lint` |
 | Frontend unit tests | `npm --prefix v2/web test` |
 | Agent API compatibility | `python3 v2/tests/test_compat.py` |
-| Old data imports the same | `python3 v2/tests/check_import.py <old taska.py> <copy of ~/.taska>` |
+| Old data imports the same | `python3 v2/tests/check_import.py <old taska.py> <copy of old data>`; the old app is in git: `git show deddaf7^:taska.py > /tmp/old-taska.py` |
 | Behaviour tests, v2 (a fresh data folder each run) | `python3 v2/tests/run_e2e.py` |
-| The same tests on the old app | `python3 v2/tests/run_e2e.py --old taska.py` |
+| The same tests on the old app | `python3 v2/tests/run_e2e.py --old /tmp/old-taska.py` (from git, as above) |
 | The single file | `python3 v2/tools/build_pyz.py` (builds the page, then `v2/dist/taska.pyz`; `--skip-web` uses the page already built) |
 
 Never point a development server at `~/.taska`: use a copy.

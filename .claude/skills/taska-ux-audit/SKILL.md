@@ -32,7 +32,7 @@ On the phone (T137) they reported 77 findings in 14 groups; the scenario lens fo
 
 Use the Agent tool, `model: opus`, high or max effort, in the background, one message with both calls. Each
 prompt says: read the brief; its letter (A or B); its app port, data root and Chrome port; its lens; **do not
-edit taska.py**; return the whole report as its final message (this harness may refuse a subagent writing
+edit the code**; return the whole report as its final message (this harness may refuse a subagent writing
 files, so the orchestrator saves the report).
 
 - **A, real work start to finish.** Play the user for a day: capture thoughts (text, screenshot, voice), go

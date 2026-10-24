@@ -125,9 +125,10 @@ flowchart LR
 
 **Under the hood**
 
-- **One Python file, standard library only.** No build step, no database, no Node.js, no packages to install.
-- **Your data stays plain text.** Each project is an append-only JSON Lines file. The full history comes with it,
-  and every change can be traced back to what you said.
+- **Python standard library only on the server.** No packages to install; storage is SQLite, which comes with
+  Python. The page is built once with Node.js, and the release is one file, `taska.pyz`, that needs only Python.
+- **Your history stays with your data.** Each project is one SQLite file holding an append-only log of every
+  change. The full history comes with it, and every change can be traced back to what you said.
 - **Local first.** Taska runs on your machine. Reach it from your phone through a tunnel, protected by a key.
 
 ## Quick start
@@ -135,8 +136,12 @@ flowchart LR
 ```sh
 git clone https://github.com/ralphite/taska.git
 cd taska
-python3 taska.py
+npm --prefix v2/web install && npm --prefix v2/web run build   # the page, once (needs Node.js)
+PYTHONPATH=v2/server python3 -m taska
 ```
+
+Or make the one file and run it anywhere with only Python: `python3 v2/tools/build_pyz.py`, then
+`python3 v2/dist/taska.pyz`.
 
 Then:
 
@@ -220,28 +225,28 @@ Taska is designed for the phone first. Open it in your phone's browser and add i
 | `TASKA_VOICE_MODEL`, `TASKA_ASR_MODEL` | The two transcription models (default `gemini-3.8-flash`, a fixed version, and `gemini-3.5-transcribe`) |
 | `TASKA_PRO_MODEL` | The strong model that also hears a phone's voice-processed notes (default `gemini-3.1-pro-preview`; needs macOS `afconvert` to tell such notes) |
 
-To keep Taska running, start `scripts/taska-service.sh` from a macOS LaunchAgent or a systemd unit. It reads the
-public address from `$TASKA_PUBLIC` or `~/.taska/public-url`.
+To keep Taska running, start `v2/tools/taska-service.sh` from a macOS LaunchAgent or a systemd unit (edit its
+Python path and data folder to match your machine). It reads the public address from `$TASKA_PUBLIC` or
+`~/.taska/public-url`.
 
 ## Your data
 
 - **Where it lives.** Everything is on your machine, in `~/.taska/<project>/`:
-  - `taska.jsonl` holds every input, item, message and change, one JSON record per line, append only;
+  - `taska.db` is one SQLite database: every input, item, message and change in an append-only log, plus the
+    current state, so other tools can read it without Taska;
   - `taska-files/` holds images, files and voice notes, each voice note with its transcript (`<file>.tr.json`).
 - **What leaves your machine.** Only what you send to Gemini for organizing and transcription. That happens only
   when you set `GEMINI_API_KEY`.
 
 ## Development
 
-- **One file.** The whole app is `taska.py`: server, storage, organizer, agent API, and the page itself. The page
-  is written with Tailwind utility classes.
-- **Run your changes.** Start a copy on another port with its own data: `python3 taska.py --port 7341 --root
-  /tmp/taska-dev`.
+- **The code.** `v2/server/taska` is the server, organizer and agent API: a Python package, standard library
+  only. `v2/web` is the page: React, TypeScript, Vite and Tailwind. [v2/README.md](v2/README.md) lists every
+  command (hot reload, type checks, tests, the one file), and `v2/spec/` says what Taska does and how it is built.
+- **Run your changes.** Start a copy on another port with its own data, never on `~/.taska`:
+  `PYTHONPATH=v2/server python3 -m taska --port 7341 --root /tmp/taska-dev`.
 - **Phone testing.** `.claude/skills/taska-mobile-qa` is a checklist for testing the phone UI on a copy of your
   data.
-- **Transcription check.** `scripts/transcribe_check.py <folder>` replays your own recordings (kept outside the
-  repository, with what each should say) and reports key terms, error rate, notes cut short, Traditional
-  characters, refusals and words made up from silence. Run it before and after changing the voice models or prompt.
 - **Design exploration.** `scripts/ui_mocks.py` asks Gemini for several phone designs of one screen and takes
   light and dark screenshots of each. `--shots-only <folder>` re-shoots designs edited by hand; add `--desktop` for
   1440x900 screenshots.

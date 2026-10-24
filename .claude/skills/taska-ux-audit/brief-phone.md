@@ -9,7 +9,7 @@ user experience is what is being audited**: behavior, flow, placement, feedback,
 phone and the desktop treat the same thing the same way without a reason not to. Be exhaustive; a short list
 means the audit failed.
 
-You are an auditor, not a fixer: **do not edit taska.py**. Report findings with evidence.
+You are an auditor, not a fixer: **do not edit the code**. Report findings with evidence.
 
 ## What Taska is
 Read `README.md` first. In short: one person shares a task list with their coding agents. The user drops in
@@ -30,7 +30,8 @@ The desktop (1024px and wider) is out of scope, but compare with it when the pho
 - The live app runs on port 7340 with the user's real data. **Do not open it, call it, or read or write the
   real data root (`~/.taska`).**
 - Start your own copy, in the background, and stop it when you are done:
-  `python3 taska.py --host 127.0.0.1 --port <PORT> --root <ROOT> --organizer off`
+  `PYTHONPATH=v2/server python3 -m taska --host 127.0.0.1 --port <PORT> --root <ROOT> --organizer off`
+  (from the repository root; the page is `v2/web/dist`, built with `npm --prefix v2/web run build`)
   Your root has <projects: a realistic copy of the user's project and the small demo>. Change this data freely. To act as the coding agent, use the text
   API on your port: `curl -s "http://127.0.0.1:<PORT>/p/my-app/do?by=claude-code" --data-binary "B03 say hello"`.
 - Drive headless Chrome with `scripts/cdp.py` (read its docstring) on Chrome port <CHROME_PORT>, as a phone:
@@ -55,7 +56,8 @@ The desktop (1024px and wider) is out of scope, but compare with it when the pho
     `p.call('Emulation.setEmulatedMedia', features=[{'name': 'prefers-color-scheme', 'value': 'dark'}])`). LOOK at
     every screenshot with the Read tool; most phone problems are visible, not in the state.
   - The on-screen keyboard cannot be emulated: note where it would cover things, but don't guess beyond that.
-- Read taska.py only **after** you have seen a problem, to explain it.
+- Read the code (`v2/server/taska` for the server, `v2/web/src` for the page) only **after** you have seen a
+  problem, to explain it.
 
 ## Your lens: <LENS>
 

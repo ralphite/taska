@@ -8,7 +8,7 @@ user: it is inconsistent, confusing, surprising, slow, or easy to get wrong. **T
 being audited**: behavior, flow, placement, feedback, consistency. Be exhaustive; a short list means the audit
 failed.
 
-You are an auditor, not a fixer: **do not edit taska.py**. Report findings with evidence.
+You are an auditor, not a fixer: **do not edit the code**. Report findings with evidence.
 
 ## What Taska is
 Read `README.md` first. In short: one person shares a task list with their coding agents. The user drops in
@@ -21,14 +21,16 @@ Design intent, where there is some: <paths to design notes>. Intent is not proof
 - The live app runs on port 7340 with the user's real data. **Do not open it, call it, or read or write the
   real data root.**
 - Start your own copy on your own data copy, in the background, and stop it when you are done:
-  `python3 taska.py --host 127.0.0.1 --port <PORT> --root <ROOT> --organizer off`
+  `PYTHONPATH=v2/server python3 -m taska --host 127.0.0.1 --port <PORT> --root <ROOT> --organizer off`
+  (from the repository root; the page is `v2/web/dist`, built with `npm --prefix v2/web run build`)
   Your root has <projects>. You may change this data freely. To act as the coding agent, use the text API on
   your port: `curl -s "http://127.0.0.1:<PORT>/p/<project>/do?by=claude-code" --data-binary "B03 say hello"`.
 - Drive a real browser with `scripts/cdp.py` (see its docstring), on Chrome port <CHROME_PORT>.
   - Act like a user: click and type. Use `p.js` only to find where things are and to read state, never to call
     the app's functions as a shortcut. A finding must be reproducible with a mouse and a keyboard.
   - Check the important screens at <sizes>, in light and in dark, and LOOK at each screenshot.
-- Read taska.py only **after** you have seen a problem in the UI, to explain it.
+- Read the code (`v2/server/taska` for the server, `v2/web/src` for the page) only **after** you have seen a
+  problem in the UI, to explain it.
 
 ## Your lens: <A: real work start to finish / B: the systematic matrix>
 <Paste the lens from SKILL.md, step 2.>
