@@ -3,7 +3,7 @@
 // right-click, at the pointer. An ask is confirmed by a second click within 3 seconds.
 
 import type { RouteStore } from '../stores/route'
-import type { SheetSpec, SheetStore } from '../stores/sheet'
+import type { SheetPlace, SheetRequest, SheetStore } from '../stores/sheet'
 
 export class Sheets {
   private readonly store: SheetStore
@@ -15,15 +15,21 @@ export class Sheets {
     this.desk = desk
   }
 
-  open(kind: string, props: Record<string, unknown> = {}, opts: Omit<SheetSpec, 'kind' | 'props'> = {}): void {
+  open(req: SheetRequest, place: SheetPlace = {}): void {
     if (!this.store.getState().spec && !this.desk()) this.route.getState().openLayer('sheet')
-    this.store.getState().open({ focus: true, ...opts, kind, props })
+    this.store.getState().open({ focus: true, ...place, req })
   }
 
   /** A desktop menu under the element it came from. */
-  openFrom(el: Element | null, kind: string, props: Record<string, unknown> = {}, opts: Omit<SheetSpec, 'kind' | 'props'> = {}): void {
+  openFrom(el: Element | null, req: SheetRequest, place: SheetPlace = {}): void {
     const r = el?.getBoundingClientRect()
-    this.open(kind, props, { ...opts, pop: true, at: r ? { x: r.right, y: r.bottom + 4, right: true, top: r.top, left: r.left } : null })
+    this.open(req, { ...place, pop: true, at: r ? { x: r.right, y: r.bottom + 4, right: true, top: r.top, left: r.left } : null })
+  }
+
+  /** What is open now, if it is of this kind. */
+  shown<K extends SheetRequest['kind']>(kind: K): Extract<SheetRequest, { kind: K }> | null {
+    const req = this.store.getState().spec?.req
+    return req?.kind === kind ? (req as Extract<SheetRequest, { kind: K }>) : null
   }
 
   close(): void {

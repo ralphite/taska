@@ -133,6 +133,14 @@ export class ItemActions {
     return saved
   }
 
+  /** A message of its talk folds to one line. */
+  hideMessage(n: number, id: number): Promise<boolean> {
+    const m = this.d.model()
+    if (!m || !m.byN.has(n)) return Promise.resolve(false)
+    const ref = codeOf(m, n)
+    return this.d.runner.send({ id: newId(), slug: this.d.slug(), commands: [{ op: 'hide', ref, id, on: true }], patches: [], said: `hiding a message on ${ref}`, t: Date.now() })
+  }
+
   /** First of its priority in the agents' queue, or back where it was. */
   doNext(n: number): Promise<boolean> {
     const it = this.d.model()?.byN.get(n)

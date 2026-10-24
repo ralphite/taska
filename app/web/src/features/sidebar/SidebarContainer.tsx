@@ -48,6 +48,16 @@ export function useSideProjects(slug: string): { list: SideProject[] | null; ton
   }, [rows, m, slug])
 }
 
+/** The other projects, to move something to: by name, with their colour and open count. */
+export function useOtherProjects(slug: string): { slug: string; title: string; tone: string; open: number }[] {
+  const app = useApp()
+  const rows = useStoreValue(app.stores.data, (s) => s.projects)
+  return useMemo(() => {
+    const tones = projectTones([slug, ...(rows || []).map((p) => p.name)])
+    return (rows || []).filter((p) => p.name !== slug).map((p) => ({ slug: p.name, title: p.title || p.name, tone: toneOf(tones, p.name), open: p.open }))
+  }, [rows, slug])
+}
+
 export function SidebarContainer({ slug, place, hidden, rail }: { slug: string; place: string; hidden?: boolean; rail?: boolean }) {
   const app = useApp()
   const layout = useLayout()
@@ -71,7 +81,7 @@ export function SidebarContainer({ slug, place, hidden, rail }: { slug: string; 
     newProject: () => {},
     hide: () => app.stores.ui.getState().setSideHidden(!sideHidden),
     settings: () => app.nav.to(base + 'settings'),
-    keys: () => app.sheets.open('keys'),
+    keys: () => app.sheets.open({ kind: 'keys' }),
     undo: () => void undo?.run(),
     go: (href, e) => {
       if (e.metaKey || e.ctrlKey) return

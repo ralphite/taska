@@ -30,9 +30,10 @@ export function App() {
       <PanesProvider>
         <div data-layout={layout} className="@container/frame h-dvh w-full">
           {route.page === 'project' ? <ProjectPageContainer route={route} /> : route.page === 'home' ? <HomeContainer route={route} /> : <div className="p-8 text-sm text-zinc-500">Taska</div>}
+          {/* over the page, in its layout */}
+          <SheetContainer />
+          <Tooltip />
         </div>
-        <SheetContainer />
-        <Tooltip />
       </PanesProvider>
     </LayoutProvider>
   )

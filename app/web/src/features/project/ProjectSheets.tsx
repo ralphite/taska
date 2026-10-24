@@ -93,6 +93,7 @@ export function projectMenuSheet({ here, slug, title, tone, open }: { here: bool
     </button>
   )
   return {
+    menu: true,
     head: here ? undefined : (
       <span className="flex items-center gap-2.5">
         <ProjTile title={title} tone={tone} cls="size-8 rounded-lg text-sm" />

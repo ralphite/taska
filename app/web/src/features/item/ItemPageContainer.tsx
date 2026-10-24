@@ -30,8 +30,8 @@ export function useItemWorld(m: ProjectModel | null, slug: string): InlineWorld 
 
 /** The item's menu: under the button on the desktop (one field's choices from its chip), a sheet on the phone. */
 export function openItemMenu(app: ReturnType<typeof useApp>, desk: boolean, n: number, arm: 's' | 'p' | 't' | null, from: Element | null) {
-  if (desk) app.sheets.openFrom(from, 'menu-desk', { n, arm }, { focus: false, narrow: !!arm })
-  else app.sheets.open('menu', { n, arm }, { focus: false })
+  if (desk) app.sheets.openFrom(from, { kind: 'item-menu', n, arm }, { focus: false, narrow: !!arm })
+  else app.sheets.open({ kind: 'item-menu', n, arm }, { focus: false })
 }
 
 export function ItemPageContainer({ it, m, slug, tab, desk }: { it: Item; m: ProjectModel; slug: string; tab: Tab; desk: boolean }) {
@@ -124,7 +124,7 @@ export function ItemPageContainer({ it, m, slug, tab, desk }: { it: Item; m: Pro
       } else void app.items.change(n, field, v)
     },
     menu: (arm, from) => openItemMenu(app, desk, n, arm, from),
-    sources: () => app.sheets.open('sources', { n }),
+    sources: () => app.sheets.open({ kind: 'item-sources', n }),
     goto,
     doc: () => {},
     earlier: () => iv().showAll(n),
@@ -158,10 +158,10 @@ export function ItemPageContainer({ it, m, slug, tab, desk }: { it: Item; m: Pro
       })
     },
     editCancel: () => iv().setEditing(null),
-    inputMore: (id) => app.sheets.open('input-menu', { id }, desk ? { pop: true, focus: false } : { focus: false }),
-    inputHistory: (id) => app.sheets.open('history', { id }),
+    inputMore: (id) => app.sheets.open({ kind: 'input-menu', id }, desk ? { pop: true, focus: false } : { focus: false }),
+    inputHistory: (id) => app.sheets.open({ kind: 'input-history', id }),
     goInput: () => {},
-    msgMenu: (id) => app.sheets.open('msg-menu', { n, id }, desk ? { pop: true, focus: false, narrow: true } : { focus: false }),
+    msgMenu: (id) => app.sheets.open({ kind: 'message-menu', n, id }, desk ? { pop: true, focus: false, narrow: true } : { focus: false }),
     peek: (id) => iv().peek(id),
     unhide: (id) => void send([{ op: 'hide', ref, id, on: false }], `showing a message on ${ref} again`),
     docAt: () => {},

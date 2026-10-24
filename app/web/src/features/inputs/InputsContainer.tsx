@@ -88,7 +88,7 @@ export function InputsContainer({ route, hidden }: { route: ProjectRoute; hidden
       on={{
         goto: (n) => m && app.nav.openItem(codeOf(m, n), 'items'),
         more: (id) => app.stores.ui.getState().toggleInput(id),
-        menu: (id) => app.sheets.open('input-menu', { id }, { focus: false }),
+        menu: (id) => app.sheets.open({ kind: 'input-menu', id }, { focus: false }),
         retry: (id) => app.inputActions.organizeAgain(route.slug, id),
         draft: () => {},
         moved: (href) => app.nav.to(href),

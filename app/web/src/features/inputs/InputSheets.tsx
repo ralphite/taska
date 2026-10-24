@@ -131,6 +131,7 @@ export function sourcesSheet({ code, inputs, world, now, files }: { code: string
 /** A voice note's words as said, before they were tidied. */
 export function asSaidSheet(heard: string, tr: string): SheetParts {
   return {
+    menu: true,
     title: 'Original words',
     body: (
       <>

@@ -1,9 +1,9 @@
-// The frame of every sheet: a handle (the phone drags it down to close), a title row (or a head), extra buttons
-// beside the close button, an optional line under it, the body that scrolls and a fixed foot. A menu on the desktop
-// pops at a spot instead, with no title row and no close button (a click outside or Esc closes it). Props only; it
-// places itself from its own size.
+// The frame of every sheet (Sheet): a handle (the phone drags it down to close) around what it holds. What it holds
+// is laid out by SheetLayout: a title row (or a head), extra buttons beside the close button, an optional line under
+// it, the body that scrolls and a fixed foot. A menu on the desktop pops at a spot instead, with no title row and no
+// close button (a click outside or Esc closes it). Props only; it places itself from its own size.
 
-import { useLayoutEffect, useRef, type ReactNode } from 'react'
+import { createContext, useContext, useLayoutEffect, useRef, type ReactNode, type RefObject } from 'react'
 import { Icon } from './Icon'
 
 export interface SheetLook {
@@ -12,12 +12,12 @@ export interface SheetLook {
   tall?: boolean
   card?: boolean
   aboveComposer?: boolean
-  /** a menu: no title row on the desktop */
-  menu?: boolean
   at?: { x: number; y: number; right?: boolean; top?: number; left?: number } | null
 }
 
 export interface SheetParts {
+  /** a menu: no title row on the desktop */
+  menu?: boolean
   title?: string
   head?: ReactNode
   extra?: ReactNode
@@ -32,10 +32,44 @@ const CloseX = () => (
   </span>
 )
 
-export function Sheet({ open, look, parts, desk, footRoom = 0, focus = false, onClose }: {
+/** What the frame tells what it holds: whether it pops at a spot, how it closes, its close button. */
+const Frame = createContext<{ pop: boolean; onClose(): void; close: RefObject<HTMLButtonElement | null> }>({ pop: false, onClose: () => {}, close: { current: null } })
+
+/** What a sheet holds, laid out in its frame. */
+export function SheetLayout({ menu, title, head, extra, sub, foot, body }: SheetParts) {
+  const { pop, onClose, close } = useContext(Frame)
+  return (
+    <>
+      <header className={`flex shrink-0 touch-none items-center gap-2 py-1 pr-2 pl-5 ${(head || title) && !(pop && menu) ? '' : 'lg:hidden'}`}>
+        <h2 id="dlgTitle" className="min-w-0 flex-1 truncate text-[17px] font-semibold">
+          {head ?? title ?? ''}
+        </h2>
+        <span className="contents">{extra}</span>
+        <button ref={close} onClick={onClose} aria-label="Close" className={`group grid size-11 shrink-0 place-items-center rounded-full ${pop ? 'lg:hidden' : ''}`}>
+          <CloseX />
+        </button>
+      </header>
+      <div hidden={!sub} className="shrink-0">
+        {sub}
+      </div>
+      <div
+        className={`min-h-0 flex-1 overflow-y-auto px-4 pt-2 lg:scrollbar-thin lg:overscroll-contain lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70 ${foot ? 'pb-3' : 'pb-[max(1.25rem,env(safe-area-inset-bottom))]'}`}
+      >
+        {body}
+      </div>
+      <div hidden={!foot} className="shrink-0">
+        {foot}
+      </div>
+    </>
+  )
+}
+
+export function Sheet({ open, look, parts, children, desk, footRoom = 0, focus = false, onClose }: {
   open: boolean
   look: SheetLook
-  parts: SheetParts | null
+  /** what it holds, as parts (or as `children` that lay themselves out with SheetLayout) */
+  parts?: SheetParts | null
+  children?: ReactNode
   desk: boolean
   /** room the box takes at the bottom, for a sheet above it */
   footRoom?: number
@@ -65,7 +99,7 @@ export function Sheet({ open, look, parts, desk, footRoom = 0, focus = false, on
     // no ring on opening
     if (open && focus && desk) close.current?.focus({ preventScroll: true, focusVisible: false } as FocusOptions)
   }, [open, focus, desk])
-  if (!open || !parts) return <div ref={overlay} hidden />
+  if (!open || !(parts || children)) return <div ref={overlay} hidden />
   const card = !!look.card
   const pop = !!look.pop && desk
   const flush = card && !!look.aboveComposer
@@ -124,26 +158,7 @@ export function Sheet({ open, look, parts, desk, footRoom = 0, focus = false, on
         <div data-handle className="flex shrink-0 touch-none justify-center pt-2 sm:hidden">
           <span className="h-1 w-10 rounded-full bg-zinc-300 dark:bg-zinc-600" />
         </div>
-        <header className={`flex shrink-0 touch-none items-center gap-2 py-1 pr-2 pl-5 ${(parts.head || parts.title) && !(pop && look.menu) ? '' : 'lg:hidden'}`}>
-          <h2 id="dlgTitle" className="min-w-0 flex-1 truncate text-[17px] font-semibold">
-            {parts.head ?? parts.title ?? ''}
-          </h2>
-          <span className="contents">{parts.extra}</span>
-          <button ref={close} onClick={onClose} aria-label="Close" className={`group grid size-11 shrink-0 place-items-center rounded-full ${pop ? 'lg:hidden' : ''}`}>
-            <CloseX />
-          </button>
-        </header>
-        <div hidden={!parts.sub} className="shrink-0">
-          {parts.sub}
-        </div>
-        <div
-          className={`min-h-0 flex-1 overflow-y-auto px-4 pt-2 lg:scrollbar-thin lg:overscroll-contain lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70 ${parts.foot ? 'pb-3' : 'pb-[max(1.25rem,env(safe-area-inset-bottom))]'}`}
-        >
-          {parts.body}
-        </div>
-        <div hidden={!parts.foot} className="shrink-0">
-          {parts.foot}
-        </div>
+        <Frame.Provider value={{ pop, onClose, close }}>{parts ? <SheetLayout {...parts} /> : children}</Frame.Provider>
       </section>
     </div>
   )

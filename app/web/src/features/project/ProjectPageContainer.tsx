@@ -17,7 +17,7 @@ import { SidebarContainer, useSideProjects } from '../sidebar/SidebarContainer'
 import { SideListContainer } from '../side/SideListContainer'
 import { codeOf } from '../../model/project'
 import { InputsContainer } from '../inputs/InputsContainer'
-import { DeskFilters, type FilterEvents } from '../sheets/Filters'
+import { DeskFilters, type FilterEvents } from '../list/Filters'
 import { DetailContainer } from './DetailContainer'
 import { FilterStrip, ListHead, PhoneTabs, ProjectBar, type AgentInfo, type TabInfo } from './Header'
 
@@ -236,7 +236,7 @@ function PhoneLayout({ route }: { route: ProjectRoute }) {
             filters: () => {},
           }}
         />
-        <PhoneTabs tabs={tabs} filtersSet={phoneSet.length > 0} showFilter={route.tab !== 'inputs'} hidden={!under} on={{ tab: (t) => app.nav.tab(t), filters: () => app.sheets.open('filters', {}, { focus: false }) }} />
+        <PhoneTabs tabs={tabs} filtersSet={phoneSet.length > 0} showFilter={route.tab !== 'inputs'} hidden={!under} on={{ tab: (t) => app.nav.tab(t), filters: () => app.sheets.open({ kind: 'filters' }, { focus: false }) }} />
         <FilterStrip set={phoneSet} hidden={!under || route.tab === 'inputs' || !phoneSet.length} onUnset={(k) => app.nav.setList({ [k]: 'all' })} onReset={() => filterEvents(app).reset()} />
         <section className="flex min-h-0 flex-1 flex-col" hidden={!under || route.tab === 'inputs'}>
           <ItemListContainer route={route} />

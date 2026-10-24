@@ -231,7 +231,7 @@ export function FootContainer({ route, place, hidden, composePage, onHeight }: {
               goto: (n) => m && app.nav.openItem(codeOf(m, n)),
               more: (id) => setOpened((s) => new Set(s).add(id)),
               append: (id) => app.box.amendStart(route.slug, m, id, 'append'),
-              menu: (id) => app.sheets.open('input-menu', { id }, { pop: true, focus: false }),
+              menu: (id) => app.sheets.open({ kind: 'input-menu', id }, { pop: true, focus: false }),
               undoSend: (k) => app.box.unsend(justSent.find((x) => x.q === k || x.rid === k)?.q ?? k),
               retry: (id) => app.inputActions.organizeAgain(route.slug, id),
               outboxRetry: () => void app.inputs.flush(),

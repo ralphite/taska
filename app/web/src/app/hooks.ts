@@ -1,6 +1,7 @@
 // What containers read: the route, the open project's model, its facts, the projects' list. Each draws again only
 // when what it reads changes.
 
+import { useEffect } from 'react'
 import type { ProjectModel } from '../model/project'
 import type { Route } from '../model/route'
 import { useApp, useStoreValue } from './context'
@@ -30,4 +31,12 @@ export function useProjectModel(slug: string): ProjectModel | null {
 export function useAway(slug: string): number {
   const app = useApp()
   return useStoreValue(app.stores.data, (s) => s.away[slug] || 0)
+}
+
+/** A sheet whose subject went (deleted, moved, merged meanwhile) closes. */
+export function useCloseSheetWhen(gone: boolean): void {
+  const app = useApp()
+  useEffect(() => {
+    if (gone) app.sheets.close()
+  }, [app, gone])
 }

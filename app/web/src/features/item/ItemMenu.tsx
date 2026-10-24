@@ -198,6 +198,7 @@ export function itemMenuPop({ it, code, parentCode, asking, arm }: ItemMenuFacts
               String(i + 1),
             ])
     return {
+      menu: true,
       body: (
         <div className="-mx-1 -mt-1">
           {opts.map(([v, l, k]) => (
@@ -223,6 +224,7 @@ export function itemMenuPop({ it, code, parentCode, asking, arm }: ItemMenuFacts
       ? [row('archive', 'archive', 'Archive', 'E', () => on.archive(true))]
       : [it.type === 'rule' ? null : row('later', 'clock', it.when === 'now' ? 'Later' : 'Back to now', 'L', on.later), row('archive', 'archive', 'Archive', 'E', () => on.archive(true))]
   return {
+    menu: true,
     body: (
       <div className="flex flex-col gap-3">
         <div className="-mx-1 -mt-1">

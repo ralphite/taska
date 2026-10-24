@@ -25,10 +25,10 @@ export const DeskMenu: Story = {
       {() => (
         <div className="grid h-full grid-cols-2">
           <div className="relative transform-gpu">
-            <Sheet open look={{ pop: true, menu: true }} parts={itemMenuPop({ ...facts, asking: true }, on)} desk onClose={no} />
+            <Sheet open look={{ pop: true }} parts={itemMenuPop({ ...facts, asking: true }, on)} desk onClose={no} />
           </div>
           <div className="relative transform-gpu">
-            <Sheet open look={{ pop: true, narrow: true, menu: true }} parts={itemMenuPop({ ...facts, arm: 's' }, on)} desk onClose={no} />
+            <Sheet open look={{ pop: true, narrow: true }} parts={itemMenuPop({ ...facts, arm: 's' }, on)} desk onClose={no} />
           </div>
         </div>
       )}

@@ -9,7 +9,7 @@ import { Icon } from '../../ui/Icon'
 import type { SheetParts } from '../../ui/Sheet'
 import { FIELD, PRIMARY } from '../../ui/tones'
 import { FilterChips } from '../project/Header'
-import { priOpts, SegCtl, typeOpts } from './ItemMenu'
+import { priOpts, SegCtl, typeOpts } from '../item/ItemMenu'
 
 export interface FilterEvents {
   set(k: ListKey, v: string): void
