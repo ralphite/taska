@@ -87,10 +87,12 @@ Rules, checked by `web/eslint.config.js` (imports, page lookups) and `web/script
 2. The model (`model/`) is pure: no React, no stores, no `window`/`document`/`fetch`. Stores, `api/` and `sync/`
    are plain TypeScript (no React). Stores change only through their own actions; no state is kept in a module
    (stores are made per app by `createApp`; a WeakMap memo of a pure function is not state).
-3. No `document.querySelector`/`getElementById` (refs only; `main.tsx` mounts the page). Page-wide behaviours
-   that apply to every element (the tooltip for anything with a title, the pressed look of buttons, which pane you
-   acted in) listen on the document, in `app/` only. Elements the app measures are given by ref (`app/panes.tsx`
-   for the panes, `app/rowSizes.ts` for the list's rows).
+3. No `document.querySelector`/`getElementById` (refs only; `main.tsx` mounts the page). Listeners for the whole
+   page, for as long as it is open (the keys, the tooltip for anything with a title, the pressed look of buttons,
+   which pane you acted in), are set in `app/` only. A component may listen on the document or the window for what
+   it shows, while it is shown (a menu's click outside it, a document's selected words, a row's swipe), and stops
+   when it goes. (`features/docs/pageHelper.ts` runs inside a web page's frame, not in Taska's page.) Elements the
+   app measures are given by ref (`app/panes.tsx` for the panes, `app/rowSizes.ts` for the list's rows).
 4. Layout is an attribute, not the window: `data-layout="desk"|"phone"` on the page's frame (and on a story's
    frame) chooses the layout; `lg:` means the desktop layout and `phone:` the phone's (`src/index.css`), and the
    widths within a layout are container queries on the frame (`wide:`, `huge:`, `roomy:`, `wide-phone:`). So any
