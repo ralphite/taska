@@ -8,7 +8,7 @@ const meta: Meta = { title: 'Components/List/Item list' }
 export default meta
 type Story = StoryObj
 
-const on: ListEvents = { ...noRowEvents, view() {}, ownView() {}, subMore() {}, needsMore() {}, archiveAll() {} }
+const on: ListEvents = { ...noRowEvents, view() {}, ownView() {}, ownMenu() {}, rename() {}, renameStop() {}, subMore() {}, needsMore() {}, archiveAll() {} }
 const views: ViewChip[] = [
   { value: 'needs', label: 'Needs you', count: 2, on: true, dot: true },
   { value: 'active', label: 'Active', count: 9, on: false, dot: false },

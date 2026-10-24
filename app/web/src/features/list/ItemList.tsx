@@ -20,6 +20,9 @@ export type DrawnRow =
 export interface ListEvents extends RowEvents {
   view(value: string): void
   ownView(i: number): void
+  ownMenu(i: number, x: number, y: number): void
+  rename(i: number, name: string): void
+  renameStop(): void
   subMore(parent: number): void
   needsMore(): void
   archiveAll(): void
@@ -57,7 +60,7 @@ export const ItemList = forwardRef<HTMLDivElement, ItemListProps>(function ItemL
       ) : (
         <>
           {top}
-          {views ? <ViewBar views={views} own={ownViews} onView={on.view} onOwn={on.ownView} /> : null}
+          {views ? <ViewBar views={views} own={ownViews} onView={on.view} onOwn={on.ownView} onOwnMenu={on.ownMenu} onRename={on.rename} onRenameStop={on.renameStop} /> : null}
           {rows.map((r) => {
             switch (r.kind) {
               case 'item':

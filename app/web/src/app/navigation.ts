@@ -121,6 +121,15 @@ export class Navigation {
     this.go(r.tab, r.place, list, false)
   }
 
+  /** One of your views: its filters on Items (from Archive too), the search kept. */
+  showFilters(f: Omit<ListQuery, 'q'>): void {
+    const r = this.here()
+    if (!r) return
+    const list = { ...r.list, ...f }
+    if (r.tab !== 'items') return this.go('items', this.desk() ? { kind: 'new' } : { kind: 'tab' }, list, true)
+    this.go('items', r.place, list, false)
+  }
+
   /** The Items view: on Archive it goes back to Items. */
   view(value: string): void {
     const r = this.here()

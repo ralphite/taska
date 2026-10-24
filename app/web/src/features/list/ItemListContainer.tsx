@@ -9,7 +9,7 @@ import { agoShort } from '../../model/agents'
 import { closed, excerpt, lastAgentMessage, queueHead } from '../../model/items'
 import { codeOf, draftCodes, liveN, filesOf, type ProjectModel } from '../../model/project'
 import type { Item } from '../../model/types'
-import { searchWords } from '../../model/visible'
+import { searchWords, showsView, visible } from '../../model/visible'
 import { useSearchHints } from './SearchHintsContainer'
 import { QUIET_MS } from '../../model/words'
 import { unreadSince } from '../../stores/seen'
@@ -147,7 +147,10 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
     subMore: (n) => app.stores.ui.getState().toggleSubMore(n),
     needsMore: () => app.stores.ui.getState().toggleNeedsAll(),
     archiveAll: () => {},
-    ownView: () => {},
+    ownView: (i) => app.views.show(i),
+    ownMenu: (i, x, y) => app.sheets.open({ kind: 'view-menu', i }, { pop: true, focus: false, at: { x, y } }),
+    rename: (i, name) => app.views.rename(i, name),
+    renameStop: () => app.stores.views.getState().setEdit(-1),
   }
 
   const hints = useSearchHints(route, m, words)
@@ -164,7 +167,12 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
         onConnect={() => app.nav.to(`/p/${encodeURIComponent(route.slug)}/agents`)}
       />
     ) : null
-  const views = m && (body.kind === 'rows' && body.views) ? viewChips(m, route.tab, route.list) : null
+  const presets = m && (body.kind === 'rows' && body.views) ? viewChips(m, route.tab, route.list) : null
+  // your own views, after the presets: what each would show; the one that shows is lit
+  const saved = useStoreValue(app.stores.views, (s) => s)
+  const lit = route.tab === 'items' ? saved.list.findIndex((v) => showsView(route.list, v)) : -1
+  const views = presets && lit >= 0 ? presets.map((v) => ({ ...v, on: false })) : presets
+  const ownViews = views && m ? saved.list.map((v, i) => ({ name: v.name, count: visible(m.items, 'items', { ...route.list, ...v }).length, on: i === lit, editing: saved.edit === i })) : undefined
   return (
     <div
       className="flex min-h-0 flex-1 flex-col"
@@ -175,6 +183,7 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
         ref={pane}
         loading={!m}
         views={views}
+        ownViews={ownViews}
         rows={drawn}
         empty={body.kind === 'empty' ? empty : body.kind === 'rows' && body.empty ? empty : null}
         bottom={words.length && drawn.length ? <div className="flex flex-col py-4">{hints(shownRows)}</div> : null}

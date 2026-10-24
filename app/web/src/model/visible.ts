@@ -99,3 +99,6 @@ export function filtersSet(tab: Tab, list: ListQuery): [ListKey, string][] {
   if (list.sort !== 'all') out.push(['sort', SORT_WORDS.find(([v]) => v === list.sort)?.[1] ?? list.sort])
   return out
 }
+
+/** Whether the list shows exactly one of your views (its type, when, status, priority and sort). */
+export const showsView = (list: Record<string, string>, v: Record<'type' | 'when' | 'status' | 'pri' | 'sort', string>) => (['type', 'when', 'status', 'pri', 'sort'] as const).every((k) => list[k] === v[k])

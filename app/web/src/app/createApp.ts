@@ -41,6 +41,8 @@ import { KeptNotes } from './keptNotes'
 import { DocVoice } from './docVoice'
 import { Dictation } from './dictation'
 import { Media } from './media'
+import { SavedViews } from './views'
+import { createViewsStore, type ViewsStore } from '../stores/views'
 import { createMediaStore, type MediaStore } from '../stores/media'
 import { createDictationStore, type DictationStore } from '../stores/dictation'
 import { memoryVault, type NoteVault } from '../stores/noteVault'
@@ -93,6 +95,7 @@ export interface App {
     recording: RecordingStore
     dictation: DictationStore
     media: MediaStore
+    views: ViewsStore
   }
   toasts: Toasts
   items: ItemActions
@@ -137,6 +140,7 @@ export interface App {
   docVoice: DocVoice
   dictation: Dictation
   media: Media
+  views: SavedViews
   refreshProjects(): Promise<boolean>
   stop(): void
 }
@@ -166,6 +170,7 @@ export function createApp(env: AppEnv): App {
   const recording = createRecordingStore()
   const dictationStore = createDictationStore()
   const mediaStore = createMediaStore()
+  const viewsStore = createViewsStore()
   const pictureSizes = new PictureSizes({ api, data })
   // a text showing a picture of unknown size (one just uploaded) asks for the sizes again
   const unsize = data.subscribe((s, was) => {
@@ -312,6 +317,7 @@ export function createApp(env: AppEnv): App {
   })
   const docVoice = new DocVoice({ voice, docs, box, boxStore, recording, view: docView, runner, changes, toasts, model, desk: env.desk, reply: (slug, key, scope) => void box.send(slug, model(slug), scope, key) })
   const dictation: Dictation = new Dictation({ api, store: dictationStore, view: docView, route, docs, fields, toasts, model, recording: () => !!recording.getState().rec })
+  const views = new SavedViews({ api, store: viewsStore, nav, toasts, list: () => { const r = route.getState().route; return r.page === 'project' ? r.list : null } })
   const media = new Media({ api, store: mediaStore, route, sheets, toasts, desk: env.desk })
   const keptNotes = new KeptNotes({
     vault: env.vault ?? memoryVault(),
@@ -401,7 +407,7 @@ export function createApp(env: AppEnv): App {
 
   return {
     api,
-    stores: { data, changes, outbox, feedback, ui, itemView, search, drafts, box: boxStore, sheet: sheetStore, route, activity: activityStore, docView, docTicks, settings: settingsStore, recording, dictation: dictationStore, media: mediaStore },
+    stores: { data, changes, outbox, feedback, ui, itemView, search, drafts, box: boxStore, sheet: sheetStore, route, activity: activityStore, docView, docTicks, settings: settingsStore, recording, dictation: dictationStore, media: mediaStore, views: viewsStore },
     toasts,
     items,
     inputs,
@@ -441,6 +447,7 @@ export function createApp(env: AppEnv): App {
     docVoice,
     dictation,
     media,
+    views,
     refreshProjects,
     stop: () => {
       projects.stop()

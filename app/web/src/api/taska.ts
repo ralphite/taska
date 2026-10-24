@@ -1,7 +1,7 @@
 // The server's page interface, one typed call each (the server's http/page_routes.py and workspace_routes.py).
 
 import { Http, TIME_LIMIT } from './http'
-import type { FileRef, LogRow, Need, ProjectRow, SearchHit, Spelling, ViewAnswer, VoicePrefs, WordsAnswer } from '../model/types'
+import type { FileRef, LogRow, Need, ProjectRow, SearchHit, Spelling, ViewAnswer, VoicePrefs, WordsAnswer, SavedView } from '../model/types'
 
 /** A change the page asks for: the same commands agents write, as data ({op: "set", ref: "B03", f: {...}}). */
 export type Command = Record<string, unknown> & { op: string }
@@ -117,6 +117,15 @@ export class TaskaApi {
   /** What a coding agent reads first (the guide), as the page shows it. */
   guide(slug: string): Promise<string> {
     return this.http.text(`/p/${encodeURIComponent(slug)}/agent?ui=1`)
+  }
+
+  /** Your own views of the item list, the same in every project. */
+  views(): Promise<SavedView[]> {
+    return this.http.json('/api/views')
+  }
+
+  setViews(views: SavedView[]): Promise<{ ok: boolean; views: SavedView[] }> {
+    return this.http.json('/api/views', { method: 'POST', body: { views } })
   }
 
   /** Voice spellings: corrections (wrong -> right) and words to hear, for every project. */

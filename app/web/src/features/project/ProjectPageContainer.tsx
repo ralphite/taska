@@ -27,7 +27,7 @@ export const filterEvents = (app: ReturnType<typeof useApp>): FilterEvents => ({
   set: (k, v) => app.nav.setList({ [k]: v }),
   unset: (k) => app.nav.setList({ [k]: 'all' }),
   reset: () => app.nav.setList({ q: '', type: 'all', when: 'all', status: 'all', pri: 'all', sort: 'all' }),
-  saveView: () => {},
+  saveView: (name) => app.views.add(name),
 })
 
 function useHeadFacts(route: ProjectRoute) {

@@ -13,6 +13,8 @@ export interface OwnViewChip {
   name: string
   count: number
   on: boolean
+  /** its name being edited here */
+  editing?: boolean
 }
 
 export function ViewBar({
@@ -20,12 +22,20 @@ export function ViewBar({
   own = [],
   onView,
   onOwn,
+  onOwnMenu,
+  onRename,
+  onRenameStop,
 }: {
   views: ViewChip[]
   own?: OwnViewChip[]
   onView(value: string): void
   onOwn?(i: number): void
+  /** its menu (right-click, or hold on the phone), at the pointer */
+  onOwnMenu?(i: number, x: number, y: number): void
+  onRename?(i: number, name: string): void
+  onRenameStop?(): void
 }) {
+  const hold = useRef(0)
   const row = useRef<HTMLDivElement>(null)
   const shown = useRef<HTMLButtonElement>(null)
   const [edge, setEdge] = useState({ l: false, r: false })
@@ -77,12 +87,44 @@ export function ViewBar({
             <span className="font-mono text-[11px] tabular-nums opacity-60">{v.count}</span>
           </button>
         ))}
-        {own.map((v, i) => (
-          <button key={v.name} ref={v.on ? shown : undefined} aria-pressed={v.on} onClick={() => onOwn?.(i)} className={CHIP}>
-            {v.name}
-            <span className="font-mono text-[11px] tabular-nums opacity-60">{v.count}</span>
-          </button>
-        ))}
+        {own.map((v, i) =>
+          v.editing ? (
+            <input
+              key={v.name}
+              autoFocus
+              defaultValue={v.name}
+              aria-label="View name"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') onRename?.(i, e.currentTarget.value)
+                if (e.key === 'Escape') onRenameStop?.()
+              }}
+              onBlur={(e) => onRename?.(i, e.currentTarget.value)}
+              className="h-8 w-32 shrink-0 rounded-full bg-white px-3 text-[13px] ring-2 ring-blue-500 outline-none dark:bg-zinc-900"
+            />
+          ) : (
+            <button
+              key={v.name}
+              ref={v.on ? shown : undefined}
+              aria-pressed={v.on}
+              onClick={() => onOwn?.(i)}
+              onContextMenu={(e) => {
+                e.preventDefault()
+                onOwnMenu?.(i, e.clientX, e.clientY)
+              }}
+              onPointerDown={(e) => {
+                if (e.pointerType === 'mouse') return
+                const { clientX: x, clientY: y } = e
+                hold.current = window.setTimeout(() => onOwnMenu?.(i, x, y + 8), 500)
+              }}
+              onPointerUp={() => clearTimeout(hold.current)}
+              onPointerLeave={() => clearTimeout(hold.current)}
+              className={CHIP}
+            >
+              {v.name}
+              <span className="font-mono text-[11px] tabular-nums opacity-60">{v.count}</span>
+            </button>
+          ),
+        )}
       </div>
       {edge.l ? arrow(-1) : null}
       {edge.r ? arrow(1) : null}

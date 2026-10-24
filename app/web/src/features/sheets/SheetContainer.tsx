@@ -9,6 +9,7 @@ import { KeysSheet, PaletteSheet, SwitchProjectSheet } from '../find/FindersCont
 import { AsSaidSheet, InputHistorySheet, InputMenuSheet, InputMoveSheet, InputRescopeSheet } from '../inputs/InputSheetsContainer'
 import { ItemMenuSheet, MessageMenuSheet, MoveItemProjectSheet, MoveParentSheet, SourcesSheet } from '../item/ItemSheetsContainer'
 import { FiltersSheet } from '../list/FiltersContainer'
+import { ViewMenuSheet } from '../list/ViewMenuContainer'
 import { CommentMoveSheet, DocEditSheet, DocMoveSheet } from '../docs/DocSheetsContainer'
 
 const KINDS: { [K in SheetKind]: ComponentType<{ req: Extract<SheetRequest, { kind: K }> }> } = {
@@ -29,6 +30,7 @@ const KINDS: { [K in SheetKind]: ComponentType<{ req: Extract<SheetRequest, { ki
   'doc-move': DocMoveSheet,
   'comment-move': CommentMoveSheet,
   'doc-edit': DocEditSheet,
+  'view-menu': ViewMenuSheet,
 }
 
 function Holds({ req }: { req: SheetRequest }) {

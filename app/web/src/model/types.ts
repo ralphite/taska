@@ -285,3 +285,13 @@ export interface SearchHit {
   archived?: boolean
   t: string
 }
+
+/** One of your views of the item list: the filters it sets, with a name (the same in every project). */
+export interface SavedView {
+  name: string
+  type: string
+  when: string
+  status: string
+  pri: string
+  sort: string
+}

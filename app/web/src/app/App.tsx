@@ -26,6 +26,7 @@ export function App() {
   useEffect(() => {
     // the projects for the sidebar (the home page asks for them itself)
     if (app.stores.route.getState().route.page !== 'home') void app.refreshProjects()
+    void app.views.load() // your own views of the list
   }, [app])
   return (
     <LayoutProvider layout={layout}>
