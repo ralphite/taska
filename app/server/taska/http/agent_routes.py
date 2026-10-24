@@ -1,5 +1,6 @@
 """The agent interface: plain text in, plain text out. /agent, /next, /do, /items, /rules, /inbox, /log, /connect,
-an item's card (/B03), an input (/r12), a document (/D1). Every word of these answers is part of the interface."""
+an item's card (/B03), an input (/r12), a document (/D1); and a file sent (POST /api/file, its answer in JSON, which
+the page uses too). Every word of these answers is part of the interface."""
 
 from __future__ import annotations
 
@@ -14,9 +15,11 @@ from ..agent_text.guide_text import AGENT, CONNECT, GRAMMAR
 from ..agent_text.language import parse
 from ..agent_text.work import Asker, Work, next_work
 from ..domain import rules
+from ..domain.rules import item_at
 from ..domain.vocab import MAX_FILE, PEOPLE, Refused
+from ..infra.audio import leveled
 from ..services.project import Project
-from .messages import NOT_FOUND, Request, Response, text
+from .messages import NOT_FOUND, Request, Response, as_json, text
 
 ITEM_PATH = re.compile(r"/([A-Za-z]?\d+)")
 AGENT_READS = ("/agent", "/next", "/rules", "/inbox", "/items", "/log")
@@ -181,3 +184,27 @@ def serve_file(p: Project, name: str) -> Response:
     return Response(200, data, mime, headers={"Content-Security-Policy": "sandbox",
                                               "Content-Disposition": f"inline; filename*=UTF-8''{quote(name)}"},
                     cache="private, max-age=31536000, immutable")
+
+
+def scope_of(p: Project, req: Request) -> Optional[int]:
+    """The item a voice note is about (?scope=): its words are spelled like that item's."""
+    try:
+        return item_at(p.state, req.arg("scope"), follow=False).n if req.query.get("scope") else None
+    except Refused:
+        return None
+
+
+def upload(req: Request, p: Project) -> Response:
+    """POST /api/file?name=: a file, kept under a new name ("f"), which `say files=` and the rest then name.
+    With transcribe=1 a voice note is brought to the loudness of speech and its words are worked out meanwhile."""
+    data = req.body(MAX_FILE)
+    mime = (req.header("Content-Type") or "application/octet-stream").split(";")[0]
+    voice = bool(req.query.get("transcribe")) and mime.startswith("audio/")
+    if voice:
+        data = leveled(data, mime) or data
+    f = p.files.save(req.arg("name", "file"), mime, data)
+    out = {"f": f.f, "name": f.name, "mime": f.mime, "size": f.size}
+    if voice:  # its words come later: the page asks for them
+        p.voice.start(f.f, data, req.header("Content-Type") or mime, scope_of(p, req))
+        out["pending"] = True
+    return as_json(out)

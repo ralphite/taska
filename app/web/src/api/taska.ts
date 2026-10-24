@@ -43,9 +43,9 @@ export class TaskaApi {
 
   upload(slug: string, file: Blob, name: string, opts: { voice?: boolean; scope?: string | null } = {}): Promise<FileRef & { pending?: boolean }> {
     const q = new URLSearchParams({ name })
-    if (opts.voice) q.set('voice', '1')
+    if (opts.voice) q.set('transcribe', '1')
     if (opts.scope) q.set('scope', opts.scope)
-    return this.http.json(P(slug) + 'files?' + q.toString(), {
+    return this.http.json(P(slug) + 'file?' + q.toString(), {
       method: 'POST',
       raw: file,
       headers: { 'Content-Type': file.type || 'application/octet-stream' },

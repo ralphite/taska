@@ -19,7 +19,6 @@ import threading
 import time
 from typing import List, Optional
 
-from .domain.vocab import PROJECT_NAME
 
 MODEL = os.environ.get("TASKA_MODEL", "gemini-flash-latest")
 KEY_VARS = ("GEMINI_API_KEY", "GOOGLE_API_KEY", "GOOGLE_GENERATIVE_AI_API_KEY")
@@ -32,28 +31,15 @@ def api_key() -> Optional[str]:
     return None
 
 
-def old_projects(root: str) -> List[str]:
-    """Projects of the one-file Taska (taska.jsonl) that have no database yet."""
-    root = os.path.abspath(os.path.expanduser(root))
-    if not os.path.isdir(root):
-        return []
-    return [n for n in sorted(os.listdir(root)) if PROJECT_NAME.fullmatch(n)
-            and os.path.isfile(os.path.join(root, n, "taska.jsonl")) and not os.path.isfile(os.path.join(root, n, "taska.db"))]
-
-
 def main(argv: Optional[List[str]] = None) -> None:
     ap = argparse.ArgumentParser(prog="taska", description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("command", nargs="?", default="serve", choices=("serve", "install-skill", "import"),
+    ap.add_argument("command", nargs="?", default="serve", choices=("serve", "install-skill"),
                     help="install-skill: teach Claude Code, Codex and Antigravity how to use Taska")
     ap.add_argument("--port", type=int, default=7340)
     ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--root", default="~/.taska", help="data folder, one subfolder per project (default ~/.taska)")
     ap.add_argument("--organizer", choices=("auto", "off"), default="auto", help="auto = use Gemini when a key is set")
     ap.add_argument("--public", default="", help="the tunnel's public address, e.g. https://xxxx-7340.usw2.devtunnels.ms")
-    ap.add_argument("--from", dest="src", default="~/.taska", help="import: the old data folder (only read)")
-    ap.add_argument("--to", dest="dst", default="", help="import: the new data folder")
-    ap.add_argument("--in-place", action="store_true", help="import: write taska.db next to each taska.jsonl")
-    ap.add_argument("--force", action="store_true", help="import: make databases that exist already again")
     ap.add_argument("--log-db", default=None, help="the log also goes into this SQLite file (default: logs.db in the data folder; '' for none)")
     ap.add_argument("--log-level", default="INFO", help="what the terminal shows (DEBUG shows every request)")
     args = ap.parse_args(argv)
@@ -63,12 +49,6 @@ def main(argv: Optional[List[str]] = None) -> None:
         print("Installed the Taska skill:")
         install_skill(SKILL)
         return
-    if args.command == "import":
-        sys.exit("taska import: the one-file Taska's data was imported on 2026-10-19; this version reads taska.db only")
-    old = old_projects(args.root)
-    if old:
-        sys.exit(f"taska: {os.path.expanduser(args.root)} holds projects of the one-file Taska ({', '.join(old)}) that "
-                 "are not imported yet.")
     serve(args.root, args.host, args.port, args.organizer == "auto" and bool(api_key()), args.public,
           os.path.join(os.path.expanduser(args.root), "logs.db") if args.log_db is None else args.log_db, args.log_level)
 

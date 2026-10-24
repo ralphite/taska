@@ -3,7 +3,7 @@
     GET  view?cursor=           the project as the page draws it; with a cursor, only what changed since
     GET  changes?cursor=&wait=  the same, as soon as something changed (or after `wait` seconds: {"same": true})
     POST commands?cursor=       {id, commands: [...]}: changes, run once per id; the answer brings what changed
-    POST files?name=&voice=1    a file (a voice note's words are worked out meanwhile)
+    (a file is sent as an agent sends one: POST /api/file, in agent_routes)
     GET  words?f=   POST words?f=&again=1&more=1     a voice note's words (POST waits for them)
     GET  activity?n=&before=    the change log, newest first
     GET  picture-sizes          each picture's width and height
@@ -20,14 +20,13 @@ import time
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from ..agent_text.render import log_entries
-from ..domain.rules import item_at
-from ..domain.vocab import MAX_FILE, Refused
-from ..infra.audio import audio_type, leveled
+from ..domain.vocab import MAX_FILE
+from ..infra.audio import audio_type
 from ..page_api import views
 from ..page_api.sync import Cursor
 from ..services.project import Project
 from ..services.voice_jobs import answer as voice_answer
-from .agent_routes import presence
+from .agent_routes import presence, scope_of
 from .messages import NOT_FOUND, Request, Response, as_json, text
 
 if TYPE_CHECKING:
@@ -85,8 +84,6 @@ def get(ctx: "AppContext", req: Request, p: Project, sub: str) -> Optional[Respo
 def post(ctx: "AppContext", req: Request, p: Project, sub: str) -> Response:
     if sub == "/api/commands":
         return _commands(ctx, req, p)
-    if sub == "/api/files":
-        return _file(req, p)
     if sub == "/api/words":
         return _words(req, p)
     if sub == "/api/page-log":
@@ -130,28 +127,6 @@ def _commands(ctx: "AppContext", req: Request, p: Project) -> Response:
     return as_json(out, code)
 
 
-def _scope(p: Project, req: Request) -> Optional[int]:
-    """The item a voice note is about: its words are spelled like that item's."""
-    try:
-        return item_at(p.state, req.arg("scope"), follow=False).n if req.query.get("scope") else None
-    except Refused:
-        return None
-
-
-def _file(req: Request, p: Project) -> Response:
-    data = req.body(MAX_FILE)
-    mime = (req.header("Content-Type") or "application/octet-stream").split(";")[0]
-    voice = bool(req.query.get("voice")) and mime.startswith("audio/")
-    if voice:  # a voice note at the loudness of normal speech
-        data = leveled(data, mime) or data
-    f = p.files.save(req.arg("name", "file"), mime, data)
-    out: Dict[str, Any] = views.file_view(f)
-    if voice:  # its words come later: ask words?f=
-        p.voice.start(f.f, data, req.header("Content-Type") or mime, _scope(p, req))
-        out["pending"] = True
-    return as_json(out)
-
-
 def _words(req: Request, p: Project) -> Response:
     """A voice note's words: waits for them a while; again=1 tries a failed one once more."""
     fid = os.path.basename(req.arg("f"))
@@ -160,7 +135,7 @@ def _words(req: Request, p: Project) -> Response:
         job = p.voice.jobs.get(fid)
     if fid and mime and os.path.isfile(path) and (not job or (job.done and job.err and req.query.get("again"))):
         with open(path, "rb") as fh:
-            p.voice.start(fid, fh.read(), mime, _scope(p, req))
+            p.voice.start(fid, fh.read(), mime, scope_of(p, req))
     more = bool(req.query.get("more"))
     with p.lock:
         job = p.voice.jobs.get(fid)

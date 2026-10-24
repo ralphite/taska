@@ -180,6 +180,8 @@ class AppContext:
             p, sub, _ = self.project_of(req, path)
             if sub == "/do":
                 return agent_routes.do(req, p)
+            if sub == "/api/file":
+                return agent_routes.upload(req, p)
             return page_routes.post(self, req, p, sub)
         except (Refused, ValueError, KeyError, TooLarge) as ex:
             return as_json({"ok": False, "error": str(ex) if not isinstance(ex, TooLarge) else "body too large"}, 400)
