@@ -11,7 +11,8 @@ import { PARITY } from './lib/servers.mjs'
 
 const argv = process.argv.slice(2)
 const sha = argv[0]
-const jobs = argv.includes('--jobs') ? +argv[argv.indexOf('--jobs') + 1] : 3
+// one run at a time (two browsers) by default: Yadong uses this machine
+const jobs = argv.includes('--jobs') ? +argv[argv.indexOf('--jobs') + 1] : 1
 const only = argv.includes('--only') ? argv[argv.indexOf('--only') + 1] : null
 if (!sha) throw new Error('usage: node full.mjs <sha>')
 const b = `new@${sha}`

@@ -595,6 +595,7 @@ export class Twin {
   record(step) {
     step.i = this.steps.length
     this.steps.push(step)
+    this.onRecord?.()
     const mark = step.same ? 'same' : 'DIFF ' + Object.keys(step.cats).join(',')
     this.log(`    ${String(step.i).padStart(3)} ${mark.padEnd(22)} ${step.ms?.a ?? '-'}/${step.ms?.b ?? '-'} ms  ${step.label}`)
   }

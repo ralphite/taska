@@ -2,6 +2,7 @@
 import { chromium, webkit } from 'playwright'
 import { execFileSync } from 'node:child_process'
 import fs from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import { PARITY, RUNS, freePorts, freshData, releasePorts, startServer, versions } from './servers.mjs'
 import { Twin, VARIANTS } from './twin.mjs'
@@ -58,6 +59,18 @@ export function speedOf(steps) {
   return { a, b, slow: slowB.length >= 2 && slowB.length >= slowA.length + 2, worst, slowA: slowA.length, slowB: slowB.length }
 }
 
+// Yadong's own Taska (and its tunnel) runs on this machine: a run starts a scenario only while the machine is not
+// busy (load over the last minute under PARITY_MAX_LOAD, 10 by default), and waits otherwise.
+async function quietMachine(log) {
+  const max = Number(process.env.PARITY_MAX_LOAD || 10)
+  let said = false
+  while (os.loadavg()[0] >= max) {
+    if (!said) log(`    waiting: machine load ${os.loadavg()[0].toFixed(1)} >= ${max}`)
+    said = true
+    await new Promise((r) => setTimeout(r, 15000))
+  }
+}
+
 /** -> the report; it is also written to out/<runId>/report.json after every scenario/variant. */
 export async function run({ a = 'old', b = 'new', scenarios: want, variants, runId, ports, log = console.log, browser: shared }) {
   runId ||= `${new Date().toISOString().slice(0, 16).replace(/[-:T]/g, '')}-${a}-vs-${b.replace(':', '-')}`
@@ -85,6 +98,7 @@ export async function run({ a = 'old', b = 'new', scenarios: want, variants, run
     for (const sc of scenarios) {
       for (const vn of variantNames) {
         if (sc.variants && !sc.variants.includes(vn)) continue
+        await quietMachine(log)
         const res = { scenario: sc.id, title: sc.title, variant: vn, steps: [], error: null, data: null, speed: null, ms: 0 }
         report.results.push(res)
         const t0 = Date.now()
@@ -102,6 +116,12 @@ export async function run({ a = 'old', b = 'new', scenarios: want, variants, run
           const engine = VARIANTS[vn].engine === 'webkit' ? (wk ||= await webkit.launch()) : browser
           twin = new Twin({ browser: engine, door, a: sa, b: sb, variantName: vn, outDir: path.join(OUT, `${sc.id}--${vn}`), log })
           await twin.open()
+          // long runs (the sweeps) are written as they go, every 25 steps, to be read before they end
+          twin.onRecord = () => {
+            if (twin.steps.length % 25) return
+            res.steps = twin.steps
+            save()
+          }
           twin.untimed = !!sc.untimed // retries and timers decide how long its steps take: not a measure of speed
           await sc.run(twin)
         } catch (e) {
