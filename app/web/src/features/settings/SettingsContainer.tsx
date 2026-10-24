@@ -5,12 +5,13 @@
 import { useEffect, useMemo, type ReactNode } from 'react'
 import { Notices } from '../../app/notices'
 import { useApp, useLayout, useStoreValue } from '../../app/context'
+import { usePaneRef } from '../../app/panes'
 import { useProjectModel, type ProjectRoute } from '../../app/hooks'
 import { logSentence } from '../../model/activity'
 import { agentState, agoLong } from '../../model/agents'
 import { closed, inQueue } from '../../model/items'
 import { codeOf, liveN } from '../../model/project'
-import { when } from '../../model/time'
+import { dayShort, when } from '../../model/time'
 import { AGENT_NAME, inputCode, plural, whoName } from '../../model/words'
 import { toneOf } from '../../ui/tones'
 import { commentCount } from '../item/DocCard'
@@ -22,11 +23,11 @@ import { SECTIONS, sectionOf, type SectionKey } from './sectionList'
 import { DeskNav, PhoneIndex, type NavFacts } from './SettingsNav'
 import { Loading, PhHead } from './SettingsParts'
 
-const dayShort = (t: string, now: number) => (t ? when(t, now) : '')
 const standalone = () => typeof matchMedia !== 'undefined' && (matchMedia('(display-mode: standalone)').matches || (navigator as unknown as { standalone?: boolean }).standalone === true)
 
 export function SettingsContainer({ route, place }: { route: ProjectRoute; place: string }) {
   const app = useApp()
+  const pane = usePaneRef('settings')
   const desk = useLayout() === 'desk'
   const m = useProjectModel(route.slug)
   const st = useStoreValue(app.stores.settings, (s) => s)
@@ -89,7 +90,7 @@ export function SettingsContainer({ route, place }: { route: ProjectRoute; place
 
   const projectsFacts: ProjectsFacts = {
     live: projects && side ? side.map((p) => ({ name: p.slug, title: p.title, tone: p.tone, open: typeof p.open === 'number' ? p.open : 0, here: p.current })) : null,
-    gone: (st.deleted || []).map((d) => ({ name: d.name, title: d.title, when: dayShort(d.t, m?.at ?? 0), items: d.items })),
+    gone: (st.deleted || []).map((d) => ({ name: d.name, title: d.title, when: dayShort(d.t), items: d.items })),
     file: m?.facts.file || '',
     pNew: st.pNew,
     pNewText: st.pNewText,
@@ -203,6 +204,7 @@ export function SettingsContainer({ route, place }: { route: ProjectRoute; place
         {desk ? <DeskNav current={k} back={app.nav.cameFromLabel()} f={nav} on={{ open, back, keys: () => app.sheets.open({ kind: 'keys' }), href }} /> : sec ? null : <PhoneIndex f={nav} on={{ open, back, href }} />}
       </nav>
       <div
+        ref={pane}
         hidden={!desk && !sec}
         className={`min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain lg:scrollbar-gutter-both lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70 ${mode?.kind === 'prefs' ? 'pb-64' : ''}`}
       >

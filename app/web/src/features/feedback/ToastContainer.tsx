@@ -1,5 +1,6 @@
 // The toast with the page's data: what the feedback store says now, placed over the pane you acted in (on the
-// desktop above the box when the box is in that pane), or above the box on the phone.
+// desktop above the box when the box is in that pane), or above the box on the phone; on a page of Settings near its
+// top.
 
 import { useLayoutEffect, useState, type CSSProperties } from 'react'
 import { useApp, useLayout, useStoreValue } from '../../app/context'
@@ -11,26 +12,31 @@ export function ToastContainer() {
   const layout = useLayout()
   const panes = usePanes()
   const t = useStoreValue(app.stores.feedback, (s) => s.toast)
+  const onPage = useStoreValue(app.stores.route, (s) => s.route.page === 'project' && s.route.place.kind === 'settings')
   const [style, setStyle] = useState<CSSProperties | undefined>(undefined)
   const [centered, setCentered] = useState(false)
   useLayoutEffect(() => {
     if (!t || !panes) return
     const foot = panes.get('foot')
-    if (layout === 'desk') {
+    if (onPage) {
+      const r = layout === 'desk' ? panes.get('settings')?.getBoundingClientRect() : undefined
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setCentered(!!r)
+      setStyle(r ? { left: `${r.left + r.width / 2}px`, top: '8rem', bottom: 'auto' } : { top: layout === 'desk' ? '8rem' : 'calc(env(safe-area-inset-top) + 0.75rem)', bottom: 'auto' })
+    } else if (layout === 'desk') {
       const last = panes.last === 'drawer' ? null : panes.last ? panes.get(panes.last) : null
       const pane = last || panes.get('detail') || panes.get('inputs') || panes.get('settings')
       const r = pane?.getBoundingClientRect()
       const f = foot?.getBoundingClientRect()
       const above = r && f && f.height < 300 && f.left < r.right && f.right > r.left
       // placed by measuring the panes before the browser paints (React's useLayoutEffect measuring pattern)
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setCentered(!!r)
       setStyle(r ? { left: `${r.left + r.width / 2}px`, bottom: `${above && f ? innerHeight - f.top + 12 : 20}px` } : undefined)
     } else {
       setCentered(false)
       setStyle(foot && !foot.hidden ? { bottom: `${Math.round(innerHeight - foot.getBoundingClientRect().top + 8)}px` } : undefined)
     }
-  }, [t, layout, panes])
+  }, [t, layout, panes, onPage])
   const place =
     layout === 'desk'
       ? `${style ? '' : 'bottom-5 left-5'} ${centered ? '-translate-x-1/2' : ''}`

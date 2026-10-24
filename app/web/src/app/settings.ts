@@ -118,11 +118,24 @@ export class Settings {
     this.s.set({ pMenu: null })
     const r = await this.d.projects.remove(slug)
     if ('error' in r) return this.d.toasts.show(r.error)
+    const title = r.title
     if (slug === here) {
+      // this project is gone: on to another one, whose Projects offers it back; Undo brings it back
       const rows = (this.d.data.getState().projects || []).filter((p) => p.name !== slug).sort((a, b) => (b.t || 0) - (a.t || 0))
-      return this.d.route.getState().go(rows[0] ? `/p/${encodeURIComponent(rows[0].name)}/projects` : '/', true)
+      this.d.route.getState().go(rows[0] ? `/p/${encodeURIComponent(rows[0].name)}/projects` : '/', true)
+      return this.d.toasts.show(`Deleted ${title}`, async () => {
+        const back = await this.d.projects.restore(slug)
+        if ('error' in back) return this.d.toasts.show(back.error)
+        this.d.route.getState().go(`/p/${encodeURIComponent(slug)}/`, true)
+      })
     }
     await this.loadProjects()
+    this.d.toasts.show(`Deleted ${title}`, async () => {
+      const back = await this.d.projects.restore(slug)
+      if ('error' in back) return this.d.toasts.show(back.error)
+      await this.loadProjects()
+      this.d.toasts.show(`${title} is back`)
+    })
   }
 
   async restore(slug: string): Promise<void> {

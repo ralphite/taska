@@ -13,3 +13,6 @@ export function when(t: string | number | undefined | null, now: number): string
 
 /** A length as a clock shows it: 1:05. */
 export const clock = (ms: number) => `${Math.floor(ms / 60000)}:${String(Math.floor(ms / 1000) % 60).padStart(2, '0')}`
+
+/** A day as the page says it: "Oct 21", today's too. */
+export const dayShort = (t: string | null | undefined) => (t ? new Date(t).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '')
