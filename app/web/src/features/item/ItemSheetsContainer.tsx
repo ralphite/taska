@@ -66,7 +66,7 @@ export function ItemMenuSheet({ req }: Req<'item-menu'>) {
       app.nav.openItem(code(n))
       run('add-sub')
     }),
-    reparent: () => app.sheets.open({ kind: 'item-move-parent', n }, { pop: desk, focus: false, at }),
+    reparent: (from) => (desk && from ? app.sheets.openFrom(from, { kind: 'item-move-parent', n }, { focus: false }) : app.sheets.open({ kind: 'item-move-parent', n }, { pop: desk, focus: false, at })),
     later: done(() => run('later')),
     archive: done(() => run('archive')),
     doNext: done(() => void app.items.doNext(n)),

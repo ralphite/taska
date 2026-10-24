@@ -48,6 +48,7 @@ export function inputMenuSheet({ r, tidy, undo, move, history, scope, asking, de
     </button>
   )
   return {
+    menu: true,
     title: inputCode(r.id),
     body: (
       <div className="-mx-1 flex flex-col gap-0.5">
@@ -144,6 +145,7 @@ export function asSaidSheet(heard: string, tr: string): SheetParts {
 /** A message's menu: hide it (it folds to one line). */
 export function messageMenuSheet(onHide: () => void): SheetParts {
   return {
+    menu: true,
     title: 'Message',
     body: (
       <div className="-mx-1 flex flex-col gap-0.5">

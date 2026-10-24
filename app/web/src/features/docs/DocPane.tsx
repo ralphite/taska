@@ -1,12 +1,12 @@
 // The desktop pane's bar over a document: what it is (D4 and its title, or Editing), what can be done to it (Comment
 // mode for a web page, Edit, Move, Delete), and the way back, first and plain to see. Props only.
 
-import type { ReactNode } from 'react'
+import type { MouseEvent, ReactNode } from 'react'
 import type { Doc } from '../../model/types'
 import { Kbd } from '../../ui/bits'
 import { Icon } from '../../ui/Icon'
 
-const PaneBtn = ({ pressed, onClick, children }: { pressed?: boolean; onClick(): void; children: ReactNode }) => (
+const PaneBtn = ({ pressed, onClick, children }: { pressed?: boolean; onClick(e: MouseEvent<HTMLButtonElement>): void; children: ReactNode }) => (
   <button
     onClick={onClick}
     {...(pressed === undefined ? {} : { 'aria-pressed': pressed })}
@@ -27,7 +27,7 @@ export function DocPaneHead({ d, editing }: { d: Pick<Doc, 'd' | 'title' | 'fmt'
   )
 }
 
-export function DocPaneActs({ web, inspect, deleting, d, on }: { web: boolean; inspect: boolean; deleting: boolean; d: number; on: { inspect(): void; edit(): void; move(): void; remove(): void } }) {
+export function DocPaneActs({ web, inspect, deleting, d, on }: { web: boolean; inspect: boolean; deleting: boolean; d: number; on: { inspect(): void; edit(): void; move(from: HTMLElement): void; remove(): void } }) {
   return (
     <>
       {web ? (
@@ -41,7 +41,7 @@ export function DocPaneActs({ web, inspect, deleting, d, on }: { web: boolean; i
         <Icon n="pencil" c="size-4" />
         Edit
       </PaneBtn>
-      <PaneBtn onClick={on.move}>
+      <PaneBtn onClick={(e) => on.move(e.currentTarget)}>
         <Icon n="arrow" c="size-4" />
         Move
       </PaneBtn>

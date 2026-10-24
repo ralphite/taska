@@ -168,10 +168,10 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
       })
     },
     editCancel: () => iv().setEditing(null),
-    inputMore: (id) => app.sheets.open({ kind: 'input-menu', id }, desk ? { pop: true, focus: false } : { focus: false }),
+    inputMore: (id, from) => (desk ? app.sheets.openFrom(from, { kind: 'input-menu', id }, { focus: false }) : app.sheets.open({ kind: 'input-menu', id }, { focus: false })),
     inputHistory: (id) => app.sheets.open({ kind: 'input-history', id }),
     goInput: (id) => app.nav.goInput(id, (x) => app.stores.ui.getState().setLit(x)),
-    msgMenu: (id) => app.sheets.open({ kind: 'message-menu', n, id }, desk ? { pop: true, focus: false, narrow: true } : { focus: false }),
+    msgMenu: (id, from) => (desk ? app.sheets.openFrom(from, { kind: 'message-menu', n, id }, { focus: false }) : app.sheets.open({ kind: 'message-menu', n, id }, { focus: false })),
     peek: (id) => iv().peek(id),
     unhide: (id) => void send([{ op: 'hide', ref, id, on: false }], `showing a message on ${ref} again`),
     docAt: (d, key) => app.docs.openAt(d, key),

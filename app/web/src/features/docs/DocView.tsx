@@ -82,7 +82,7 @@ export interface DocEvents extends ThreadEvents {
   say(key: string, quote: string | null): void
   sayCancel(): void
   type(): void
-  moveDoc(): void
+  moveDoc(from?: HTMLElement): void
   deleteDoc(): void
   circle(): void
   /** words selected in a paragraph: what a comment quotes */
@@ -249,7 +249,7 @@ export function DocView({ facts, env, on, popover, lasso, page, aim = null, onAi
             </button>{' '}
             · {facts.by} · {facts.when}
           </span>
-          <button onClick={on.moveDoc} className={phoneBtn}>
+          <button onClick={() => on.moveDoc()} className={phoneBtn}>
             Move
           </button>
           <button onClick={on.deleteDoc} className={phoneBtn}>

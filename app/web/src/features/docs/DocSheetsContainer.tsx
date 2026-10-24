@@ -46,7 +46,7 @@ export function CommentMoveSheet({ req }: Req<'comment-move'>) {
     <SheetLayout
       {...commentMoveSheet(d, c.key, (key) => {
         app.sheets.close()
-        if (key !== c.key) app.docs.moveComment(d.d, c.id, key)
+        if (key !== c.key) void app.docs.moveComment(d.d, c.id, key, c.key)
       })}
     />
   )

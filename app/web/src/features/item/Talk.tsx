@@ -21,11 +21,11 @@ import type { TalkEnv } from './talkEnv'
 
 export interface TalkLineEvents extends CardEvents {
   /** the input a message of yours came from: its menu, its versions, the input itself */
-  inputMore(id: string): void
+  inputMore(id: string, from: HTMLElement): void
   inputHistory(id: string): void
   goInput(id: string): void
   /** a message's menu; a hidden one shown for a moment, or again for good */
-  msgMenu(id: number): void
+  msgMenu(id: number, from: HTMLElement): void
   peek(id: number): void
   unhide(id: number): void
   /** a place in one of the item's documents */
@@ -59,7 +59,7 @@ export interface TalkFacts {
 }
 
 const YOU_BUBBLE =
-  'max-w-[85%] rounded-2xl rounded-tr-md bg-blue-600 px-4 py-2.5 text-[15px] leading-relaxed text-white dark:bg-blue-500 [&_[data-ref]]:text-white [&_[data-ref]]:underline [&_[data-ref]]:decoration-white/60 [&_[data-ref]]:underline-offset-2 [&_a]:text-white [&_a]:decoration-white/60 [&_blockquote]:border-white/50 [&_blockquote]:text-white/85 [&_code]:bg-white/15 [&_code]:text-white [&_mark]:text-zinc-900 [&_pre]:bg-white/15 [&_pre]:text-white'
+  'max-w-[85%] rounded-2xl rounded-tr-md bg-blue-600 px-4 py-2.5 text-[15px] leading-relaxed text-white dark:bg-blue-500 [&_[data-ref]]:text-white [&_[data-ref]]:underline [&_[data-ref]]:decoration-white/60 [&_[data-ref]]:underline-offset-2 [&_a]:text-white [&_a]:decoration-white/60 [&_blockquote]:border-white/50 [&_blockquote]:text-white/85 [&_button[data-more]]:text-white [&_code]:bg-white/15 [&_code]:text-white [&_mark]:text-zinc-900 [&_pre]:bg-white/15 [&_pre]:text-white'
 
 function KindTag({ x }: { x: Message }) {
   const w = KIND_WORD[x.kind || '']
@@ -175,7 +175,7 @@ function MsgView({ it, x, env, on, facts, docs, code, done, ver, gone, read }: {
             </button>
           ) : null}
           {src && !ver?.old && !src.moved ? (
-            <button aria-label={`More for ${inputCode(src.id)}`} onClick={() => on.inputMore(src.id)} className={`${DC_BTN} min-w-11 justify-center`}>
+            <button aria-label={`More for ${inputCode(src.id)}`} onClick={(e) => on.inputMore(src.id, e.currentTarget)} className={`${DC_BTN} min-w-11 justify-center`}>
               <Icon n="more" c="size-3.5" />
             </button>
           ) : null}
@@ -256,7 +256,7 @@ function MsgView({ it, x, env, on, facts, docs, code, done, ver, gone, read }: {
                 Show again
               </button>
             ) : (
-              <button aria-label="More for this message" onClick={() => on.msgMenu(x.id)} className={`${DC_BTN} min-w-9 justify-center lg:opacity-0 lg:group-hover/msg:opacity-100 lg:focus-visible:opacity-100`}>
+              <button aria-label="More for this message" onClick={(e) => on.msgMenu(x.id, e.currentTarget)} className={`${DC_BTN} min-w-9 justify-center lg:opacity-0 lg:group-hover/msg:opacity-100 lg:focus-visible:opacity-100`}>
                 <Icon n="more" c="size-3.5" />
               </button>
             )}

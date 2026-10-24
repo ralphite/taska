@@ -79,7 +79,7 @@ export interface SaidEvents {
   append(id: string): void
   /** the draft of an edit, or of details to add, written on */
   draft(id: string, mode: 'edit' | 'append'): void
-  menu(id: string): void
+  menu(id: string, from: HTMLElement): void
   undoSend(key: string): void
   retry(id: string): void
   outboxRetry(): void
@@ -148,7 +148,7 @@ function SaidRow({ x, words, files, on }: { x: SaidInput; words: string[]; files
               Add more
             </button>
           )}
-          <button title="More" aria-label={`More for ${x.code}`} onClick={() => on.menu(r.id)} className={SMALL_BTN}>
+          <button title="More" aria-label={`More for ${x.code}`} onClick={(e) => on.menu(r.id, e.currentTarget)} className={SMALL_BTN}>
             <Icon n="more" c="size-4" />
           </button>
         </>

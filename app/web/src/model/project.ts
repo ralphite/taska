@@ -90,7 +90,7 @@ export type DocPatch =
   | { d: number; resolved: { tk: string; on: boolean } }
   | { d: number; commentGone: number }
   | { d: number; comment: Comment }
-  | { d: number; f: Partial<Pick<Doc, 'md' | 'title'>> }
+  | { d: number; f: Partial<Pick<Doc, 'md' | 'title' | 'n'>> }
 
 function patchedDoc(doc: Doc, p: DocPatch): Doc {
   if ('resolved' in p) {

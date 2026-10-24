@@ -77,7 +77,7 @@ function useDoc(slug: string, dn: number) {
     say: (key, quote) => void app.docVoice.say(slug, dn, key, quote ?? d?.blocks.find((b) => b.key === key)?.text ?? ''),
     sayCancel: () => void app.voice.cancel(),
     type: () => docs.type(),
-    moveDoc: () => app.sheets.open({ kind: 'doc-move', d: dn }, { focus: false }),
+    moveDoc: (from?: HTMLElement) => (desk && from ? app.sheets.openFrom(from, { kind: 'doc-move', d: dn }, { focus: false }) : app.sheets.open({ kind: 'doc-move', d: dn }, { focus: false })),
     deleteDoc: () => docs.remove(dn),
     circle: () => app.stores.docView.getState().setCircle(!v.circle),
     quote: (key, text) => app.stores.docView.getState().pick({ quote: { key, text }, sel: new Set(), reply: null }),

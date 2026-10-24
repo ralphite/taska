@@ -16,7 +16,8 @@ export interface ItemMenuEvents {
   copy(): void
   newDoc(): void
   addSub(): void
-  reparent(): void
+  /** `from`: the row it was chosen on (the desktop's picker opens under it) */
+  reparent(from?: HTMLElement): void
   later(): void
   archive(on: boolean): void
   doNext(): void
@@ -165,7 +166,7 @@ export function itemMenuSheet({ it, code, parentCode, asking, arm }: ItemMenuFac
             <>
               {tile('doc', 'docplus', 'New doc', on.newDoc)}
               {tile('sub', 'listplus', 'Add subitem', on.addSub)}
-              {tile('reparent', 'indent', 'Put under…', on.reparent, parentCode ? `now under ${parentCode}` : '')}
+              {tile('reparent', 'indent', 'Put under…', () => on.reparent(), parentCode ? `now under ${parentCode}` : '')}
             </>
           )}
           {state}
@@ -183,8 +184,8 @@ export function itemMenuSheet({ it, code, parentCode, asking, arm }: ItemMenuFac
 
 /** The desktop's menu: rows with their keys, or one field's choices. */
 export function itemMenuPop({ it, code, parentCode, asking, arm, keys }: ItemMenuFacts, on: ItemMenuEvents): SheetParts {
-  const row = (key: string, icon: IconName, label: ReactNode, k: string, run: () => void, sub = '') => (
-    <button key={key} onClick={run} className="flex h-9 w-full items-center gap-3 rounded-lg px-2.5 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800">
+  const row = (key: string, icon: IconName, label: ReactNode, k: string, run: (from: HTMLElement) => void, sub = '') => (
+    <button key={key} onClick={(e) => run(e.currentTarget)} className="flex h-9 w-full items-center gap-3 rounded-lg px-2.5 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800">
       <Icon n={icon} c="size-[18px] text-zinc-500 dark:text-zinc-400" />
       <span className="min-w-0 flex-1 truncate">
         {label}

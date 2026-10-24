@@ -410,13 +410,29 @@ export class Docs {
   /** On another item. */
   moveTo(dn: number, to: string): void {
     const h = this.here()
-    if (h) void this.send(h.slug, { op: 'dmove', d: dn, to }, `moving D${dn} to ${to}`)
+    const doc = h?.m.docs.find((x) => x.d === dn)
+    if (!h || !doc) return
+    const was = { code: codeOf(h.m, doc.n), n: doc.n }
+    // on its new item at once
+    const put = (ref: string, n: number) => this.send(h.slug, { op: 'dmove', d: dn, to: ref }, `moving D${dn} to ${ref}`, [{ d: dn, f: { n } }])
+    void put(to, Number(/\d+/.exec(to)?.[0]) || doc.n)
+    this.d.toasts.show(
+      `D${dn} is now on ${to}`,
+      this.d.toasts.undoable(`D${dn} moved`, async () => {
+        const ok = await put(was.code, was.n)
+        if (ok) this.d.toasts.show(`D${dn} is back on ${was.code}`)
+        return ok
+      }),
+    )
   }
 
-  /** A comment to another paragraph, or to the whole document. */
-  moveComment(dn: number, id: number, key: string): void {
+  /** A comment to another paragraph (`from`: where it was), or to the whole document: there once Taska has it, its
+   * thread open there. */
+  async moveComment(dn: number, id: number, key: string, from: string): Promise<void> {
     const h = this.here()
-    if (h) void this.send(h.slug, { op: 'dcmove', d: dn, id, key }, `moving a comment on D${dn}`)
+    if (!h || !(await this.send(h.slug, { op: 'dcmove', d: dn, id, key }, `moving a comment on D${dn}`))) return
+    this.d.view.getState().openThread(key)
+    this.d.toasts.show('Comment moved', this.d.toasts.undoable('Move a comment', () => this.send(h.slug, { op: 'dcmove', d: dn, id, key: from }, `moving a comment on D${dn}`)))
   }
 
   /** Gone at once, saved behind you; Undo puts it back where it was. */
