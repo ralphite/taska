@@ -78,7 +78,7 @@ async function home() {
   const trusted = same.length >= 2 && same.every((x) => x.pass) && muts.length && caught === muts.length
   const newRuns = runs.filter((r) => r.b?.name?.startsWith('new'))
   $main.innerHTML = `
-  <div class="grid gap-4">
+  <div class="grid grid-cols-[minmax(0,1fr)] gap-4">
     ${findingsCard(findings)}
     ${card(`
       <div class="flex flex-wrap items-center gap-3"><h2 class="text-base font-semibold">新版和旧版的差别</h2>
@@ -134,23 +134,44 @@ async function runView(id, only) {
   const bad = rep.results.filter((r) => kindsOf(r).length)
   const show = only ? bad : rep.results
   $main.innerHTML = `
-  <div class="grid gap-4">
+  <div class="grid grid-cols-[minmax(0,1fr)] gap-4">
     ${card(`<div class="flex flex-wrap items-center gap-3"><h2 class="text-base font-semibold">${esc(rep.run)}</h2>
       ${bad.length ? chip(`${bad.length}/${rep.results.length} 组有差别`, 'bad') : chip(`${rep.results.length} 组全一样`, 'ok')}
       ${rep.finished ? '' : chip('进行中', 'warn')}
       <label class="ml-auto flex items-center gap-2 text-sm"><input type="checkbox" id="only" ${only ? 'checked' : ''}> 只看有差别的</label></div>
       <p class="mt-1 text-sm text-zinc-500">A = ${esc(rep.a.title)}，B = ${esc(rep.b.title)} · ${time(rep.started)} – ${time(rep.finished)}</p>`)}
+    ${matrix(rep)}
     ${show.map((r) => resultCard(rep, r, only)).join('') || card('<p class="text-sm text-zinc-500">没有差别。</p>')}
   </div>`
   fillZooms()
   document.getElementById('only').onchange = (e) => (location.hash = `#/run/${id}${e.target.checked ? '?only' : ''}`)
 }
 
+// scenarios x variants at a glance: green the same, red different (what kinds), grey not run
+function matrix(rep) {
+  const scen = [...new Map(rep.results.map((r) => [r.scenario, r.title])).entries()]
+  const vars = [...new Set(rep.results.map((r) => r.variant))]
+  const cell = (sc, v) => {
+    const r = rep.results.find((x) => x.scenario === sc && x.variant === v)
+    if (!r) return '<td class="px-2 py-1 text-center text-zinc-300 dark:text-zinc-700">—</td>'
+    const k = kindsOf(r)
+    return `<td class="px-2 py-1"><a href="#res-${esc(sc)}-${esc(v)}" class="block rounded px-2 py-1 text-xs ${
+      k.length ? 'bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300' : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/50 dark:text-emerald-300'
+    }">${k.length ? k.map((x) => esc(KIND[x] || x)).join('、') : '一样'}</a></td>`
+  }
+  return card(`<div class="overflow-x-auto"><table class="w-full text-left text-sm"><thead class="text-xs text-zinc-500"><tr><th class="py-1 pr-3 font-medium">场景</th>${vars
+    .map((v) => `<th class="px-2 py-1 font-medium">${esc(VAR[v] || v)}</th>`)
+    .join('')}</tr></thead><tbody>${scen
+    .map(([sc, title]) => `<tr class="border-t border-zinc-100 align-top dark:border-zinc-800"><td class="py-1 pr-3">${esc(title)}</td>${vars.map((v) => cell(sc, v)).join('')}</tr>`)
+    .join('')}</tbody></table></div>`)
+}
+
 function resultCard(rep, r, only) {
   const kinds = kindsOf(r)
   const dir = `/out/${encodeURIComponent(rep.run)}/${encodeURIComponent(`${r.scenario}--${r.variant}`)}`
   const steps = only ? r.steps.filter((s) => !s.same) : r.steps
-  return card(`
+  return card(
+    `
     <div class="flex flex-wrap items-center gap-2"><h3 class="font-semibold">${esc(r.title)}</h3><span class="text-sm text-zinc-500">${esc(r.scenario)} · ${esc(VAR[r.variant] || r.variant)}</span>
       ${kinds.length ? kinds.map((k) => chip(KIND[k] || k, tone(k))).join('') : chip('一样', 'ok')}
       <span class="ml-auto text-xs text-zinc-500">${r.steps.length} 步 · 用时 A ${r.speed?.a ?? '—'} ms / B ${r.speed?.b ?? '—'} ms</span></div>
@@ -158,7 +179,9 @@ function resultCard(rep, r, only) {
     ${r.data && !r.data.same ? `<div class="mt-3"><div class="text-sm font-medium">数据不同</div>${r.data.diffs.map((d) => `<pre class="mt-1 overflow-x-auto rounded bg-zinc-100 p-2 text-xs dark:bg-zinc-800">${esc(d.what)}\n只在 A：${esc((d.only_a || d.a || []).join('\n'))}\n只在 B：${esc((d.only_b || d.b || []).join('\n'))}</pre>`).join('')}</div>` : ''}
     ${r.data?.notes?.length ? `<p class="mt-2 text-xs text-amber-700 dark:text-amber-400">${esc(r.data.notes.join('；'))}</p>` : ''}
     ${r.speed?.slow ? `<p class="mt-2 text-sm text-red-600">B 慢：合计 ${r.speed.b} ms，A ${r.speed.a} ms。最慢的几步：${r.speed.worst.map((w) => `${esc(w.label)}（${w.a}→${w.b} ms）`).join('、')}</p>` : ''}
-    <ol class="mt-3 grid gap-2">${steps.map((s) => stepRow(dir, s)).join('')}</ol>`)
+    <ol class="mt-3 grid grid-cols-[minmax(0,1fr)] gap-2">${steps.map((s) => stepRow(dir, s)).join('')}</ol>`,
+    `scroll-mt-20" id="res-${esc(r.scenario)}-${esc(r.variant)}`,
+  )
 }
 
 // The largest differing area, cut from A and from B and enlarged, side by side.
@@ -215,8 +238,8 @@ function stepRow(dir, s) {
       .map((x) => `<figure class="w-40 shrink-0"><img loading="lazy" class="w-full rounded border ${x.match === undefined && !x.briefly ? 'border-red-500 ring-2 ring-red-500' : 'border-zinc-200 dark:border-zinc-700'}" src="${dir}/${x.file}"><figcaption class="text-xs text-zinc-500">停 ${x.ms} ms</figcaption></figure>`)
       .join('')
   return `<li class="rounded-lg border border-red-200 bg-red-50/40 p-2 dark:border-red-900 dark:bg-red-950/20">${head}
-    <div class="ml-10 mt-2 grid gap-3">
-      ${s.files?.a ? `<div class="grid grid-cols-1 gap-2 md:grid-cols-3">${img(s.files.a, 'A 旧版')}${img(s.files.b, 'B')}${img(s.files.diff, '不同的地方（红）')}</div>` : ''}
+    <div class="ml-10 mt-2 grid grid-cols-[minmax(0,1fr)] gap-3">
+      ${s.files?.a ? `<div class="grid grid-cols-1 gap-2 md:grid-cols-3 [&>*]:min-w-0">${img(s.files.a, 'A 旧版')}${img(s.files.b, 'B')}${img(s.files.diff, '不同的地方（红）')}</div>` : ''}
       ${c.pixels ? `<p class="text-xs text-zinc-500">${c.pixels.n} 个像素不同${c.pixels.size ? '（画面大小都不一样）' : ''}；位置：${c.pixels.boxes.map((b) => `(${b.x},${b.y}) ${b.w}×${b.h}`).join('、')}</p>
         ${c.pixels.boxes.length && !c.pixels.size ? `<div class="flex flex-wrap gap-3" data-zoom='${esc(JSON.stringify({ a: `${dir}/${s.files.a}`, b: `${dir}/${s.files.b}`, box: c.pixels.boxes[0] }))}'></div>` : ''}` : ''}
       ${c.url ? `<p class="text-sm">地址：A <code>${esc(c.url[0])}</code> · B <code>${esc(c.url[1])}</code></p>` : ''}
@@ -246,7 +269,7 @@ function live() {
       <a class="text-xs text-blue-600 hover:underline dark:text-blue-400" target="_blank" href="${base}${esc(path)}">${base}${esc(path)} ↗</a></div>
     <div class="overflow-hidden rounded-lg border border-zinc-300 dark:border-zinc-700" style="width:${Math.floor(w * avail)}px;height:${Math.floor(h * avail)}px">
       <iframe src="${base}${esc(path)}" style="width:${w}px;height:${h}px;transform:scale(${avail});transform-origin:0 0" class="border-0 bg-white"></iframe></div></div>`
-  $main.innerHTML = `<div class="grid gap-4">
+  $main.innerHTML = `<div class="grid grid-cols-[minmax(0,1fr)] gap-4">
     ${card(`<form id="lf" class="flex flex-wrap items-center gap-3 text-sm">
       <label class="flex items-center gap-2">地址 <input name="path" value="${esc(path)}" class="w-64 rounded-md border border-zinc-300 bg-white px-2 py-1 font-mono dark:border-zinc-700 dark:bg-zinc-800"></label>
       <label class="flex items-center gap-2"><input type="radio" name="size" value="phone" ${size === 'phone' ? 'checked' : ''}> 手机 393×852</label>
