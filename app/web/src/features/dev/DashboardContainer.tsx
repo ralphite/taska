@@ -21,7 +21,8 @@ export function DashboardContainer() {
         setD(x)
         setErr('')
       })
-      .catch((e: Error) => !gone && setErr(e.message))
+      // as Taska answered (its status), or the browser's own words when nothing came back
+      .catch((e: Error & { status?: number; detail?: string }) => !gone && setErr(e.status ? `Taska answered ${e.status}` : e.detail || e.message))
     history.replaceState(null, '', `?days=${range}`)
     return () => {
       gone = true

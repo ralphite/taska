@@ -19,6 +19,8 @@ export interface TalkEnv {
   latest: number | null
   /** picking the choices of the item's open question */
   choosing: Choosing | null
+  /** what you just sent (an input's id): its message comes into view, lit up for a moment */
+  lit?: string | null
 }
 
 export interface TalkEvents extends FileEvents {

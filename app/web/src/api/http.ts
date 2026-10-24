@@ -6,9 +6,15 @@ export const TIME_LIMIT = { command: 10000, view: 30000, read: 15000 } // ms
 /** The server could not be reached, or did not answer in time: worth sending again. */
 export class Unreachable extends Error {
   readonly timedOut: boolean
-  constructor(timedOut: boolean) {
+  /** the server's answer, when it gave one (it failed) */
+  readonly status?: number
+  /** the browser's own words, when nothing came back */
+  readonly detail?: string
+  constructor(timedOut: boolean, status?: number, detail?: string) {
     super(timedOut ? 'No answer from Taska' : 'Taska is unreachable')
     this.timedOut = timedOut
+    this.status = status
+    this.detail = detail
   }
 }
 
@@ -20,7 +26,13 @@ export class KeyNeeded extends Error {
 }
 
 /** The server answered no, with its reason. Sending it again would not help. */
-export class Refused extends Error {}
+export class Refused extends Error {
+  readonly status?: number
+  constructor(why: string, status?: number) {
+    super(why)
+    this.status = status
+  }
+}
 
 /** The request was stopped on purpose (the page moved on). */
 export class Abandoned extends Error {}
@@ -67,9 +79,9 @@ export class Http {
     let res: Response
     try {
       res = await this.transport(url, { method: req.method || 'GET', headers, body, cache: 'no-store', signal: ctl.signal })
-    } catch {
+    } catch (ex) {
       if (outer?.aborted) throw new Abandoned()
-      throw new Unreachable(ctl.signal.aborted)
+      throw new Unreachable(ctl.signal.aborted, undefined, ex instanceof Error ? ex.message : undefined)
     } finally {
       clearTimeout(timer)
       outer?.removeEventListener('abort', stop)
@@ -89,8 +101,8 @@ export class Http {
       } catch {
         /* plain text */
       }
-      if (res.status >= 500) throw new Unreachable(false)
-      throw new Refused(why || 'Taska said no')
+      if (res.status >= 500) throw new Unreachable(false, res.status)
+      throw new Refused(why || 'Taska said no', res.status)
     }
     return text
   }

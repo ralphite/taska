@@ -279,6 +279,13 @@ export function createApp(env: AppEnv): App {
         else void runner.send({ id: newId(), slug: o.slug, commands: [{ op: 'delete', id: rid }], patches: [], said: `taking back ${rid}`, t: Date.now() })
       }
       if (o.slug === currentSlug()) ui.getState().setLastSent(o.quiet || o.unsent ? null : { slug: o.slug, rid, q: o.q })
+      // what you sent shows up where you are, in view and lit up for a moment
+      if (rid && !o.quiet && !o.unsent && o.slug === currentSlug()) {
+        ui.getState().setJustSent(rid)
+        setTimeout(() => ui.getState().justSent === rid && ui.getState().setJustSent(null), 1500)
+        const r = route.getState().route
+        if (!env.desk() && r.page === 'project' && r.tab === 'inputs' && r.place.kind === 'tab') ui.getState().setLit(rid)
+      }
     },
     refused: (_o, why) => toasts.show(why ? `err: ${why}` : 'Not saved', null),
     log: () => {},

@@ -119,7 +119,10 @@ function MsgView({ it, x, env, on, facts, docs, code, done, ver, gone, read }: {
   if (you) {
     const undo = src ? facts.undo(src.id) : null
     return (
-      <div className={`group flex scroll-mb-4 flex-col items-end gap-1 rounded-2xl transition-colors duration-700 ${ver?.old ? 'opacity-60' : ''}`}>
+      <div
+        ref={src && env.lit === src.id ? (el) => el?.scrollIntoView({ block: 'nearest' }) : undefined}
+        className={`group flex scroll-mb-4 flex-col items-end gap-1 rounded-2xl transition-colors duration-700 ${src && env.lit === src.id ? 'bg-blue-50 dark:bg-blue-400/10' : ''} ${ver?.old ? 'opacity-60' : ''}`}
+      >
         {y.text ? (
           <div {...voiceMark(src)} className={YOU_BUBBLE}>
             {ver?.old ? (

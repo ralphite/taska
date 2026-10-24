@@ -83,16 +83,23 @@ export interface LogEvents {
 
 /** One change as a sentence: who, then what, its codes as links; the time in grey when asked for. */
 export function LogLine({ s, withTime = false, on }: { s: LogSentence; withTime?: boolean; on: LogEvents }) {
+  // the spaces go with the words beside them, one run of text each, as the words are set
+  const parts: LogSentence['parts'] = []
+  for (const p of [' ', ...s.parts, ...(withTime ? [' '] : [])]) {
+    const last = parts.at(-1)
+    if (typeof p === 'string' && typeof last === 'string') parts[parts.length - 1] = last + p
+    else parts.push(p)
+  }
   return (
     <>
       <span className="font-medium text-zinc-800 dark:text-zinc-100">{s.who}</span>
       {s.session ? (
         <>
           {' '}
-          <span className="text-zinc-500 dark:text-zinc-400">· {s.session}</span>
+          <span className="text-zinc-500 dark:text-zinc-400">{'· ' + s.session}</span>
         </>
-      ) : null}{' '}
-      {s.parts.map((p, i) =>
+      ) : null}
+      {parts.map((p, i) =>
         typeof p === 'string' ? (
           p
         ) : 'n' in p ? (
@@ -105,12 +112,7 @@ export function LogLine({ s, withTime = false, on }: { s: LogSentence; withTime?
           </button>
         ),
       )}
-      {withTime ? (
-        <>
-          {' '}
-          <span className="font-mono text-[11px] whitespace-nowrap text-zinc-400">{s.time}</span>
-        </>
-      ) : null}
+      {withTime ? <span className="font-mono text-[11px] whitespace-nowrap text-zinc-400">{s.time}</span> : null}
     </>
   )
 }
