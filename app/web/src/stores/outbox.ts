@@ -14,6 +14,8 @@ export interface OutFile extends FileRef {
   preview?: string
   /** the page's own id for it while it goes up */
   key?: string
+  /** kept in this browser (with its audio) under this id until Taska has it */
+  rid?: string
 }
 
 export interface Outgoing {

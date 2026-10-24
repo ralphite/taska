@@ -29,6 +29,8 @@ export interface VoiceDeps {
   boxKey(): string
   /** what waits to be sent goes now (a file it waited for is up) */
   flush(): void
+  /** kept in this browser with its audio until Taska has it: its id there */
+  keep(blob: Blob): string
 }
 
 
@@ -168,6 +170,8 @@ export class Voice {
       uploading: true,
       transcribing: true,
       at: this.d.box.text(slug, key).length,
+      t: Date.now(),
+      rid: this.d.keep(blob),
     }
     this.d.boxStore.getState().addFile(key, f)
     void this.hear(slug, key, f, blob, scope)
@@ -196,7 +200,7 @@ export class Voice {
 
   /** Up to Taska, then its words, tried again with growing pauses while Taska can't be reached. */
   private async hear(slug: string, key: string, f: DraftFile, blob: Blob, scope: string | null): Promise<void> {
-    let fid = ''
+    let fid = f.f
     for (let n = 0; !fid; n++) {
       try {
         const up = await this.d.api.upload(slug, blob, f.name, { voice: true, scope })
@@ -265,6 +269,16 @@ export class Voice {
     this.d.box.write(slug, key, was && v.includes(was) ? v.replace(was, words) : (v.trim() ? v.trimEnd() + '\n' : '') + words)
     this.d.boxStore.getState().updateFile(f.key, { tr: words, trAdded: words, doubts: [] })
     this.d.toasts.show('More complete transcription added')
+  }
+
+  /** A kept note from before a reload: up, if it was not, then its words. */
+  resume(slug: string, key: string, f: DraftFile, blob: Blob, scope: string | null): void {
+    void this.hear(slug, key, f, blob, scope)
+  }
+
+  /** A kept note's words, worked out before the reload, into its draft. */
+  placeKept(slug: string, key: string, f: DraftFile): void {
+    this.place(slug, key, f.key, f.tr || '', f.trError || '')
   }
 
   /** Its words go where it was recorded in its draft, around what was typed since; none: it says so. */

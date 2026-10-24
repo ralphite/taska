@@ -37,6 +37,9 @@ import { Settings } from './settings'
 import { Notices } from './notices'
 import { Voice } from './voice'
 import { VoiceWords } from './voiceWords'
+import { KeptNotes } from './keptNotes'
+import { memoryVault, type NoteVault } from '../stores/noteVault'
+import { draftName } from '../model/words'
 import { createRecordingStore, type RecordingStore } from '../stores/recording'
 import { createSettingsStore, type SettingsStore } from '../stores/settings'
 import { createDocViewStore, type DocViewStore } from '../stores/docView'
@@ -58,6 +61,8 @@ export interface AppEnv {
   history: History
   presence: Presence
   cache?: CopyCache
+  /** voice notes and files not up yet, kept with their audio over a reload */
+  vault?: NoteVault
   /** the page's layout is the desktop's (the window is 64rem or wider) */
   desk(): boolean
 }
@@ -258,7 +263,7 @@ export function createApp(env: AppEnv): App {
     title: (slug) => data.getState().projects?.find((p) => p.name === slug)?.title || slug,
     go: (url) => route.getState().go(url, true),
   })
-  const box = new Box({ api, store: boxStore, drafts, outbox, inputs, runner, toasts })
+  const box = new Box({ api, store: boxStore, drafts, outbox, inputs, runner, toasts, keep: (blob) => keep(blob), recording: () => !!recording.getState().rec, goDraft: (key) => goDraft(key) })
   const activity = new Activity({ api, store: activityStore, toasts })
   const restores = new Restores({ runner, toasts, inputs: inputActions, model })
   docs = new Docs({ runner, toasts, view: docView, nav, route, sheets, fields, desk: env.desk, model, box, boxStore, kv: env.kv, ticks: docTicks, inputs })
@@ -287,7 +292,38 @@ export function createApp(env: AppEnv): App {
     },
     boxKey: () => boxKeyNow(),
     flush: () => void inputs.flush(),
+    keep: (blob) => keep(blob),
   })
+  const keptNotes = new KeptNotes({
+    vault: env.vault ?? memoryVault(),
+    kv: env.kv,
+    box: boxStore,
+    outbox,
+    inputs,
+    toasts,
+    resume: (slug, key, f, blob, scope) => (f.plain ? box.resume(slug, f.key, blob, f.name) : voice.resume(slug, key, f, blob, scope)),
+    place: (slug, key, f) => voice.placeKept(slug, key, f),
+    draftName,
+    goDraft: (key) => goDraft(key),
+    boxKey: () => boxKeyNow(),
+  })
+  function keep(blob: Blob): string {
+    const rid = keptNotes.id()
+    keptNotes.hold(rid, blob)
+    return rid
+  }
+  // to the box a draft belongs to
+  const goDraft = (key: string) => {
+    const m = model(currentSlug())
+    const dm = /^doc (\d+)$/.exec(key)
+    const am = /^(edit|append) (\S+)$/.exec(key)
+    if (key === 'new') nav.newInput()
+    else if (dm) nav.openDoc(Number(dm[1]))
+    else if (am && m) {
+      nav.newInput()
+      box.amendStart(currentSlug(), m, am[2], am[1] as 'edit' | 'append')
+    } else if (/^[A-Z]\d+$/.test(key)) nav.openItem(key)
+  }
   const notices = new Notices(env.kv, () => settingsStore.getState().set({ noticeRev: settingsStore.getState().noticeRev + 1 }))
 
   const showProject = (slug: string) => {
@@ -298,9 +334,14 @@ export function createApp(env: AppEnv): App {
     docTicks.getState().show(slug)
     void pictureSizes.load(slug)
     boxStore.getState().show(slug)
+    keptNotes.reset()
     drafts.getState().reload(slug)
     sync = new ProjectSync(slug, api, env.cache ?? noCache, {
-      copy: (s, copy) => data.getState().setCopy(s, copy),
+      copy: (s, copy, fresh) => {
+        data.getState().setCopy(s, copy)
+        const m = fresh ? model(s) : null
+        if (m) void keptNotes.restore(s, m) // what this browser kept that did not go out comes back
+      },
       reach: (s, away) => {
         const was = data.getState().away[s] || 0
         data.getState().setAway(s, away)

@@ -34,6 +34,10 @@ export interface DraftFile extends OutFile {
   more?: boolean
   /** why its words did not come */
   trError?: string
+  /** when it was made (ms) */
+  t?: number
+  /** a picture or another file kept until it is up: no words to wait for */
+  plain?: boolean
 }
 
 export interface JustSent {
@@ -79,7 +83,7 @@ export function createBoxStore(session: KeyValueStore): BoxStore {
   const keep = (slug: string, files: Record<string, readonly DraftFile[]>) => {
     const out: Record<string, unknown[]> = {}
     for (const [k, fs] of Object.entries(files)) {
-      const ok = fs.filter((f) => f.f && !f.failed && !(f.mime || '').startsWith('audio/')).map((f) => ({ f: f.f, name: f.name, mime: f.mime, size: f.size }))
+      const ok = fs.filter((f) => f.f && !f.failed && !(f.mime || '').startsWith('audio/')).map((f) => ({ f: f.f, name: f.name, mime: f.mime, size: f.size, ...(f.rid ? { rid: f.rid } : {}) }))
       if (ok.length) out[k] = ok
     }
     session.setJson(KEY + slug, Object.keys(out).length ? out : null)

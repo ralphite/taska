@@ -24,6 +24,12 @@ export interface BoxDeps {
   inputs: InputSender
   runner: ChangeRunner
   toasts: Toasts
+  /** kept in this browser until it is up and sent: its id there */
+  keep?(blob: Blob): string
+  /** a voice note is being recorded */
+  recording?(): boolean
+  /** to the box a draft belongs to */
+  goDraft?(key: string): void
 }
 
 export class Box {
@@ -31,6 +37,12 @@ export class Box {
   private n = 0
   constructor(d: BoxDeps) {
     this.d = d
+    // a new input not sent stays in its draft when the box goes to write elsewhere: it says so
+    d.store.subscribe((s, was) => {
+      if (s.slug !== was.slug || was.shown.key !== 'new' || s.shown.key === 'new' || this.d.recording?.()) return
+      if (!this.text(s.slug, 'new').trim() && !s.files.new?.length) return
+      setTimeout(() => this.d.toasts.show('Your new input is kept, not sent', () => this.d.goDraft?.('new'), { label: 'Open' }))
+    })
   }
 
   /** The draft the box shows: what it writes to (`doc`: a comment on that document). */
@@ -79,15 +91,21 @@ export class Box {
     for (const file of list) {
       const fk = `local-${Date.now().toString(36)}-${++this.n}`
       const image = (file.type || '').startsWith('image/')
-      const f: DraftFile = { key: fk, f: '', name: file.name || 'file', mime: file.type || 'application/octet-stream', size: file.size, uploading: true, ...(image && typeof URL !== 'undefined' ? { preview: URL.createObjectURL(file) } : {}) }
+      const rid = this.d.keep?.(file)
+      const f: DraftFile = { key: fk, f: '', name: file.name || 'file', mime: file.type || 'application/octet-stream', size: file.size, uploading: true, t: Date.now(), plain: true, ...(rid ? { rid } : {}), ...(image && typeof URL !== 'undefined' ? { preview: URL.createObjectURL(file) } : {}) }
       this.d.store.getState().addFile(key, f)
       void this.upload(slug, fk, file)
     }
   }
 
-  private async upload(slug: string, fk: string, file: File, tries = 0): Promise<void> {
+  /** A kept file not up before the reload: up now. */
+  resume(slug: string, fk: string, blob: Blob, name: string): void {
+    void this.upload(slug, fk, blob, name)
+  }
+
+  private async upload(slug: string, fk: string, file: Blob, name = (file as File).name || 'file', tries = 0): Promise<void> {
     try {
-      const up = await this.d.api.upload(slug, file, file.name || 'file')
+      const up = await this.d.api.upload(slug, file, name)
       const patch = { f: up.f, name: up.name, mime: up.mime, size: up.size, uploading: false, failed: false }
       this.d.store.getState().updateFile(fk, patch)
       this.d.outbox.getState().updateFile(fk, patch)
@@ -95,7 +113,7 @@ export class Box {
     } catch {
       if (tries < 4) {
         await new Promise((ok) => setTimeout(ok, 2000 * (tries + 1)))
-        return this.upload(slug, fk, file, tries + 1)
+        return this.upload(slug, fk, file, name, tries + 1)
       }
       this.d.store.getState().updateFile(fk, { uploading: false, failed: true })
       this.d.outbox.getState().updateFile(fk, { uploading: false, failed: true })

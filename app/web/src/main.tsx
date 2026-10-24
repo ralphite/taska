@@ -9,6 +9,7 @@ import { windowPresence } from './app/presence'
 import { BrowserCopyCache } from './sync/cache'
 import { browserHistory } from './stores/route'
 import { browserStore } from './stores/storage'
+import { browserVault } from './stores/noteVault'
 
 const app = createApp({
   kv: browserStore(),
@@ -16,6 +17,7 @@ const app = createApp({
   history: browserHistory(),
   presence: windowPresence,
   cache: new BrowserCopyCache(),
+  vault: browserVault(),
   desk: () => matchMedia('(min-width: 1024px)').matches,
 })
 installPressFeedback()

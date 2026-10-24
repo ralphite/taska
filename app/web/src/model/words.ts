@@ -82,3 +82,15 @@ export const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' :
 
 /** An input's number as the page shows it: r315 reads #315 (so it is not taken for rule R315). */
 export const inputCode = (id: string | null | undefined) => String(id || '').replace(/^r(\d+)$/, '#$1')
+
+/** A draft's name in what the page says ("a new input", "B12", "the edit of #461"...). */
+export const draftName = (key: string) =>
+  key === 'new'
+    ? 'a new input'
+    : key === 'rule'
+      ? 'a new rule'
+      : /^[A-Z]\d+$/.test(key)
+        ? key
+        : key
+            .replace(/ r(\d+)$/, ' #$1')
+            .replace(/^(\w+) /, (_, m: string) => ({ edit: 'the edit of ', append: 'the details for ', correct: 'the correction in ', dc: 'the edit of comment ', doc: 'the comment on D' })[m] || '')

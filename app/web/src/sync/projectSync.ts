@@ -11,7 +11,8 @@ import type { ViewAnswer } from '../model/types'
 import type { CopyCache } from './cache'
 
 export interface SyncEvents {
-  copy(slug: string, copy: ServerCopy): void
+  /** `fresh`: from the server now, not this browser's copy from before */
+  copy(slug: string, copy: ServerCopy, fresh: boolean): void
   /** how sure the page is that the server is away (0: it answers; 2 and more: say so) */
   reach(slug: string, away: number): void
   keyNeeded(): void
@@ -87,7 +88,7 @@ export class ProjectSync {
   private show(copy: ServerCopy, keep = true): void {
     if (this.stop.signal.aborted) return
     this.copy = copy
-    this.on.copy(this.slug, copy)
+    this.on.copy(this.slug, copy, keep)
     if (keep) this.cache.put(this.slug, copy)
   }
 

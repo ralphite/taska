@@ -22,4 +22,6 @@ what the old version does. Each is also sent to the coordinator ("Nota & Taska d
 
 ## Glitches of the old version not copied
 
-(none yet)
+- **A voice note sent before a reload, going out again: its row shows at once.** On the New input page the old
+  page puts it back on its way after a reload but does not draw its row ("Voice note · Uploading…") until it is in;
+  the rewrite shows the row while it goes, as it does for anything else on its way. It is sent the same way.
