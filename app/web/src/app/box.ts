@@ -4,6 +4,7 @@
 // What you just sent can be taken back for a while (Undo, Z); an edit or details added show at once and are saved
 // behind you.
 
+import { Refused } from '../api/http'
 import type { TaskaApi } from '../api/taska'
 import type { ProjectModel } from '../model/project'
 import { draftName, inputCode } from '../model/words'
@@ -112,6 +113,8 @@ export class Box {
     void this.upload(slug, fk, blob, name)
   }
 
+  /** Up to Taska, tried again with growing pauses for as long as it cannot be reached; refused (too big), it leaves
+   * the draft (what was sent goes without it) and says so. */
   private async upload(slug: string, fk: string, file: Blob, name = (file as File).name || 'file', tries = 0): Promise<void> {
     try {
       const up = await this.d.api.upload(slug, file, name)
@@ -119,14 +122,19 @@ export class Box {
       this.d.store.getState().updateFile(fk, patch)
       this.d.outbox.getState().updateFile(fk, patch)
       void this.d.inputs.flush()
-    } catch {
-      if (tries < 4) {
-        await new Promise((ok) => setTimeout(ok, 2000 * (tries + 1)))
+    } catch (ex) {
+      const st = this.d.store.getState()
+      const key = Object.keys(st.files).find((k) => st.files[k].some((f) => f.key === fk))
+      const inOutbox = this.d.outbox.getState().list.some((o) => o.files.some((f) => f.key === fk))
+      if (!key && !inOutbox) return // taken off the draft meanwhile
+      if (!(ex instanceof Refused)) {
+        await new Promise((ok) => setTimeout(ok, Math.min(30000, 2000 * 2 ** Math.min(tries, 4))))
         return this.upload(slug, fk, file, name, tries + 1)
       }
-      this.d.store.getState().updateFile(fk, { uploading: false, failed: true })
+      if (key) st.removeFile(key, fk)
       this.d.outbox.getState().updateFile(fk, { uploading: false, failed: true })
       void this.d.inputs.flush()
+      this.d.toasts.show(`Failed to upload ${name}`)
     }
   }
 
