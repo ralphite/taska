@@ -46,6 +46,8 @@ import { createGripsStore, type GripsStore } from '../stores/grips'
 import { createDragStore, type DragStore } from '../stores/drag'
 import { ItemDrag } from './itemDrag'
 import { Selection } from './selection'
+import { Updates } from './updates'
+import { Access } from './access'
 import { createViewsStore, type ViewsStore } from '../stores/views'
 import { createMediaStore, type MediaStore } from '../stores/media'
 import { createDictationStore, type DictationStore } from '../stores/dictation'
@@ -74,6 +76,8 @@ export interface AppEnv {
   cache?: CopyCache
   /** voice notes and files not up yet, kept with their audio over a reload */
   vault?: NoteVault
+  /** the name of the page's main script, to tell when Taska has newer code than this page */
+  pageScript?: string
   /** the page's layout is the desktop's (the window is 64rem or wider) */
   desk(): boolean
 }
@@ -149,6 +153,7 @@ export interface App {
   views: SavedViews
   itemDrag: ItemDrag
   selection: Selection
+  access: Access
   refreshProjects(): Promise<boolean>
   stop(): void
 }
@@ -381,8 +386,27 @@ export function createApp(env: AppEnv): App {
       box.amendStart(currentSlug(), m, am[2], am[1] as 'edit' | 'append')
     } else if (/^[A-Z]\d+$/.test(key)) nav.openItem(key)
   }
-  const notices = new Notices(env.kv, () => settingsStore.getState().set({ noticeRev: settingsStore.getState().noticeRev + 1 }))
+  const notices = new Notices(env.kv, () => settingsStore.getState().set({ noticeRev: settingsStore.getState().noticeRev + 1 }), { api, toasts, desk: env.desk, go: (url) => route.getState().go(url, true) })
+  // the projects listed again: what newly needs you in the others
+  data.subscribe((s, was) => {
+    if (s.projects && s.projects !== was.projects) notices.projects(s.projects, currentSlug())
+  })
 
+  const access = new Access({ api, sheets, toasts, refresh: () => void sync?.refresh() })
+  const updates = new Updates({
+    api,
+    toasts,
+    session: env.session ?? memoryStore(),
+    busy: () => !!recording.getState().rec || Object.values(boxStore.getState().files).some((fs) => fs.some((f) => f.uploading || f.transcribing)) || outbox.getState().list.some((o) => o.state === 'sending'),
+    boot: async () => {
+      const slug = currentSlug()
+      const cur = slug ? data.getState().copies[slug]?.cursor : null
+      if (!slug || !cur) return null
+      return (await api.changes(slug, cur, 0)).cursor.split('.')[0] || null
+    },
+    reload: () => location.reload(),
+    mine: env.pageScript ?? '',
+  })
   const showProject = (slug: string) => {
     if (sync?.slug === slug) return
     sync?.close()
@@ -392,12 +416,15 @@ export function createApp(env: AppEnv): App {
     void pictureSizes.load(slug)
     boxStore.getState().show(slug)
     keptNotes.reset()
+    notices.fresh()
     drafts.getState().reload(slug)
     sync = new ProjectSync(slug, api, env.cache ?? noCache, {
       copy: (s, copy, fresh) => {
         data.getState().setCopy(s, copy)
         const m = fresh ? model(s) : null
-        if (m) void keptNotes.restore(s, m) // what this browser kept that did not go out comes back
+        if (m) void keptNotes.restore(s, m)
+        if (fresh) updates.seen(copy.server) // new code for Taska, or for this page
+        if (m) notices.items(s, m) // what newly needs you here // what this browser kept that did not go out comes back
       },
       reach: (s, away) => {
         const was = data.getState().away[s] || 0
@@ -408,7 +435,7 @@ export function createApp(env: AppEnv): App {
           activity.back()
         }
       },
-      keyNeeded: () => {},
+      keyNeeded: () => access.ask(),
       gone: (s, how) => route.getState().go(`/?${how}=${encodeURIComponent(s)}`, true),
     }, env.presence)
     void sync.start()
@@ -474,6 +501,7 @@ export function createApp(env: AppEnv): App {
     views,
     itemDrag,
     selection,
+    access,
     refreshProjects,
     stop: () => {
       projects.stop()

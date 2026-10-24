@@ -3,6 +3,7 @@
 // when the section opens; what you do goes to app.settings (and app.docs, app.restores for the phone's lists).
 
 import { useEffect, useMemo, type ReactNode } from 'react'
+import { Notices } from '../../app/notices'
 import { useApp, useLayout, useStoreValue } from '../../app/context'
 import { useProjectModel, type ProjectRoute } from '../../app/hooks'
 import { logSentence } from '../../model/activity'
@@ -78,7 +79,7 @@ export function SettingsContainer({ route, place }: { route: ProjectRoute; place
     tone: toneOf(tones, route.slug),
     agentTone: m ? agentState(m.facts.agents, m.facts.work, m.at)[0] : 'idle',
     right: {
-      notifications: desk ? app.notices.state().replace('Blocked by the browser', 'Blocked') : 'Off',
+      notifications: desk ? app.notices.state().replace('Blocked by the browser', 'Blocked') : app.notices.sub ? 'On' : 'Off',
       agents: m ? agentState(m.facts.agents, m.facts.work, m.at)[1] : '',
       projects: projects ? projects.length : '',
       spellings: st.fixes?.length || '',
@@ -122,7 +123,16 @@ export function SettingsContainer({ route, place }: { route: ProjectRoute; place
         return desk ? (
           <NotificationsBody state={app.notices.state()} quiet={app.notices.quiet()} on={{ turnOn: () => void app.notices.turnOn(), quiet: () => app.notices.setQuiet(!app.notices.quiet()) }} />
         ) : (
-          <PhonePushBody standalone={standalone()} onPhone={() => open('phone')} />
+          (() => {
+            // on the Home Screen with a push service: this phone's pushes (asked once)
+            if (!standalone() || !Notices.pushable()) return <PhonePushBody standalone={standalone()} onPhone={() => open('phone')} />
+            if (app.notices.sub === undefined) {
+              void app.notices.pushState()
+              return <Loading />
+            }
+            const push = { sub: !!app.notices.sub, blocked: Notification.permission === 'denied', quiet: app.notices.quiet(), on: { turnOn: () => void app.notices.pushOn(), turnOff: () => void app.notices.pushOff(), quiet: () => app.notices.setQuiet(!app.notices.quiet()) } }
+            return <PhonePushBody standalone onPhone={() => open('phone')} push={push} />
+          })()
         )
       case 'spellings':
         return (

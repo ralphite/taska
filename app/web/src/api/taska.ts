@@ -119,6 +119,25 @@ export class TaskaApi {
     return this.http.text(`/p/${encodeURIComponent(slug)}/agent?ui=1`)
   }
 
+  /** Taska restarted now (it answers, then stops as a deploy does). */
+  restart(): Promise<unknown> {
+    return this.http.json('/api/restart', { method: 'POST', body: {} })
+  }
+
+  /** The key, given once on a device reaching Taska from outside this computer's network. */
+  login(key: string): Promise<{ ok?: boolean; error?: string }> {
+    return this.http.json('/api/login', { method: 'POST', body: { key } })
+  }
+
+  /** The phone's pushes: the server's public key; a phone subscribed (with quiet hours) or let go. */
+  pushKey(): Promise<{ key: string }> {
+    return this.http.json('/api/push')
+  }
+
+  setPush(body: { sub?: unknown; quiet?: boolean; endpoint?: string; off?: boolean }): Promise<unknown> {
+    return this.http.json('/api/push', { method: 'POST', body })
+  }
+
   /** Your own views of the item list, the same in every project. */
   views(): Promise<SavedView[]> {
     return this.http.json('/api/views')

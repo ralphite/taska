@@ -10,6 +10,7 @@ import { AsSaidSheet, InputHistorySheet, InputMenuSheet, InputMoveSheet, InputRe
 import { ItemMenuSheet, MessageMenuSheet, MoveItemProjectSheet, MoveParentSheet, SourcesSheet } from '../item/ItemSheetsContainer'
 import { FiltersSheet } from '../list/FiltersContainer'
 import { ViewMenuSheet } from '../list/ViewMenuContainer'
+import { SignInSheet } from '../project/SignInContainer'
 import { CommentMoveSheet, DocEditSheet, DocMoveSheet } from '../docs/DocSheetsContainer'
 
 const KINDS: { [K in SheetKind]: ComponentType<{ req: Extract<SheetRequest, { kind: K }> }> } = {
@@ -31,6 +32,7 @@ const KINDS: { [K in SheetKind]: ComponentType<{ req: Extract<SheetRequest, { ki
   'comment-move': CommentMoveSheet,
   'doc-edit': DocEditSheet,
   'view-menu': ViewMenuSheet,
+  'sign-in': SignInSheet,
 }
 
 function Holds({ req }: { req: SheetRequest }) {

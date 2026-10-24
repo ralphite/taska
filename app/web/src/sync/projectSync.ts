@@ -56,7 +56,7 @@ export class ProjectSync {
   async start(): Promise<void> {
     const kept = await this.cache.get(this.slug)
     if (this.stop.signal.aborted) return
-    if (kept && !this.copy) this.show(kept, false)
+    if (kept && !this.copy) this.show(kept, false, true)
     await this.refresh()
     void this.loop()
   }
@@ -85,10 +85,11 @@ export class ProjectSync {
     }
   }
 
-  private show(copy: ServerCopy, keep = true): void {
+  /** `cached`: this browser's copy from before, not an answer of the server's */
+  private show(copy: ServerCopy, keep = true, cached = false): void {
     if (this.stop.signal.aborted) return
     this.copy = copy
-    this.on.copy(this.slug, copy, keep)
+    this.on.copy(this.slug, copy, !cached)
     if (keep) this.cache.put(this.slug, copy)
   }
 

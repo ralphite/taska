@@ -388,8 +388,30 @@ export function NotificationsBody({ state, quiet, on }: { state: 'On' | 'Off' | 
   )
 }
 
-/** The phone's: Taska on the Home Screen subscribes for pushes (not on the Home Screen yet: it says so). */
-export function PhonePushBody({ standalone, onPhone }: { standalone: boolean; onPhone(): void }) {
+/** The phone's: Taska on the Home Screen subscribes for pushes (not on the Home Screen yet: it says so). `push`: what
+ * this phone has (null: it cannot have them here). */
+export function PhonePushBody({ standalone, onPhone, push = null }: { standalone: boolean; onPhone(): void; push?: { sub: boolean; blocked: boolean; quiet: boolean; on: { turnOn(): void; turnOff(): void; quiet(): void } } | null }) {
+  if (push)
+    return (
+      <>
+        <Setting
+          title={push.blocked ? 'Blocked by the phone' : push.sub ? 'On' : 'Off'}
+          about="Alerts when something needs you, even with Taska closed."
+          control={
+            push.sub ? (
+              <button onClick={push.on.turnOff} className={SECOND}>
+                Turn off
+              </button>
+            ) : (
+              <button onClick={push.on.turnOn} disabled={push.blocked} className={PRIMARY}>
+                Turn on
+              </button>
+            )
+          }
+        />
+        {push.sub ? <Setting title="Quiet 22:00–08:00" about="Alerts held until morning." control={<Toggle on={push.quiet} label="Quiet 22:00–08:00" onToggle={push.on.quiet} />} /> : null}
+      </>
+    )
   return (
     <Part
       title={standalone ? 'Notifications not supported' : 'Add Taska to the Home Screen first'}
