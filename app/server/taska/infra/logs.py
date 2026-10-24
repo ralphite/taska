@@ -107,8 +107,17 @@ class TableHandler(logging.Handler):
         self.writer.wait()
 
 
+_DB: List[Optional[str]] = [None]
+
+
+def db_path() -> Optional[str]:
+    """The SQLite file the log goes into, if any."""
+    return _DB[0]
+
+
 def setup(db_path: Optional[str], level: str = "INFO") -> None:
     """The terminal at `level`, and every record into db_path when there is one."""
+    _DB[0] = db_path or None
     terminal = logging.StreamHandler(sys.stderr)
     terminal.setLevel(getattr(logging, level.upper(), logging.INFO))
     terminal.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(message)s", "%Y-%m-%d %H:%M:%S"))

@@ -1,5 +1,6 @@
 // The server's page interface, one typed call each (the server's http/page_routes.py and workspace_routes.py).
 
+import type { Dash } from '../model/dashboard'
 import { Http, TIME_LIMIT } from './http'
 import type { FileRef, LogRow, Need, ProjectRow, SearchHit, Spelling, ViewAnswer, VoicePrefs, WordsAnswer, SavedView } from '../model/types'
 
@@ -136,6 +137,11 @@ export class TaskaApi {
 
   setPush(body: { sub?: unknown; quiet?: boolean; endpoint?: string; off?: boolean }): Promise<unknown> {
     return this.http.json('/api/push', { method: 'POST', body })
+  }
+
+  /** The dashboard for making Taska (this computer only): `days` 0 today, 7 a week, 'all'. */
+  devDashboard(days: string): Promise<Dash> {
+    return this.http.json('/dev/api/dashboard?days=' + encodeURIComponent(days))
   }
 
   /** Your own views of the item list, the same in every project. */

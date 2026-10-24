@@ -8,7 +8,9 @@ import time
 from typing import TYPE_CHECKING, Optional
 
 from ..agent_text.guide_text import SKILL
+from ..infra import logs
 from ..infra.logs import voice_fix
+from ..services import devdash
 from .access import key_answer
 from .agent_routes import presence
 from .messages import NOT_FOUND, Request, Response, as_json, text
@@ -26,6 +28,9 @@ def get(ctx: "AppContext", req: Request, path: str) -> Optional[Response]:
             return text(404, "Not found\n")
         if path == "/dev/dashboard":
             return ctx.page_answer()
+        if path == "/dev/api/dashboard":
+            days = req.arg("days", "7") or "7"
+            return as_json(devdash.dashboard(ws.root, ws.projects, logs.db_path(), None if days == "all" else int(days)))
         return text(404, "Not found\n")
     if path == "/api/idle":  # how long since you last did something here, for a deploy to wait for
         return as_json({"idle": int(time.time() - ctx.status.last_user), "update": ctx.status.update_ready()})

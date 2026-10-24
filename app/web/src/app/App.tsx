@@ -9,6 +9,7 @@ import { ProjectPageContainer } from '../features/project/ProjectPageContainer'
 import { SheetContainer } from '../features/sheets/SheetContainer'
 import { SelectionBarContainer } from '../features/composer/SelectionBarContainer'
 import { ViewerContainer } from '../features/media/ViewerContainer'
+import { DashboardContainer } from '../features/dev/DashboardContainer'
 import { pageKeys } from './keys'
 import { Tooltip } from './Tooltip'
 import { PanesProvider } from './panes'
@@ -32,7 +33,7 @@ export function App() {
     <LayoutProvider layout={layout}>
       <PanesProvider>
         <div data-layout={layout} className="@container/frame h-dvh w-full">
-          {route.page === 'project' ? <ProjectPageContainer route={route} /> : route.page === 'home' ? <HomeContainer route={route} /> : <div className="p-8 text-sm text-zinc-500">Taska</div>}
+          {route.page === 'project' ? <ProjectPageContainer route={route} /> : route.page === 'home' ? <HomeContainer route={route} /> : route.page === 'dev' && route.path === '/dev/dashboard' ? <DashboardContainer /> : <div className="p-8 text-sm text-zinc-500">Taska</div>}
           {/* over the page, in its layout */}
           <SheetContainer />
           {route.page === 'project' ? <SelectionBarContainer route={route} /> : null}
