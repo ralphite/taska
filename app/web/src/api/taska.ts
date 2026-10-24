@@ -124,7 +124,7 @@ export class TaskaApi {
     return this.http.json('/api/corrections')
   }
 
-  setCorrection(body: { wrong?: string; right?: string; forget?: boolean }): Promise<{ ok: boolean; corrections: Spelling[] }> {
+  setCorrection(body: { wrong?: string; right?: string; forget?: boolean; undo?: boolean; project?: string; item?: string; file?: string }): Promise<{ ok: boolean; corrections: Spelling[] }> {
     return this.http.json('/api/corrections', { method: 'POST', body })
   }
 

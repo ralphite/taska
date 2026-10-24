@@ -7,7 +7,7 @@ import { usePaneRef } from '../../app/panes'
 import { useProjectModel, type ProjectRoute } from '../../app/hooks'
 import { agoShort } from '../../model/agents'
 import { closed, excerpt, lastAgentMessage, queueHead } from '../../model/items'
-import { codeOf, liveN, filesOf, type ProjectModel } from '../../model/project'
+import { codeOf, draftCodes, liveN, filesOf, type ProjectModel } from '../../model/project'
 import type { Item } from '../../model/types'
 import { searchWords } from '../../model/visible'
 import { useSearchHints } from './SearchHintsContainer'
@@ -69,6 +69,9 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
   }
 
   const head = m ? queueHead(m.items) : undefined
+  const draftWords = useStoreValue(app.stores.drafts, (s) => s.bySlug[route.slug])
+  const draftFiles = useStoreValue(app.stores.box, (s) => s.files)
+  const drafts = useMemo(() => (m ? draftCodes(m, draftWords || app.stores.drafts.getState().of(route.slug), draftFiles) : new Set<string>()), [m, draftWords, draftFiles, app, route.slug])
   const seen = app.seen.of(route.slug)
   const facts = (it: Item): RowFacts => {
     const mm = m as ProjectModel
@@ -91,7 +94,7 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
       kids: kids.length ? { done: kids.filter((k) => closed(k.status)).length, all: kids.length } : null,
       openKids: kids.filter((k) => !closed(k.status)).length,
       talk: it.thread.length,
-      draft: false,
+      draft: drafts.has(code),
       next: it.n === head,
       unread: unreadSince(seen, it.n, lastAgentMessage(it)?.t, it.archived),
       worker,

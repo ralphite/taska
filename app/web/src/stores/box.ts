@@ -55,6 +55,9 @@ export interface BoxState {
   /** the draft the box shows now, and the item it writes to (a voice note stopped elsewhere knows where it goes) */
   shown: { key: string; scope: string | null }
   setShown(key: string, scope: string | null): void
+  /** the phone: the words show in the box with the versions of misheard words to pick from */
+  showWords: boolean
+  setShowWords(on: boolean): void
   show(slug: string): void
   setMode(m: BoxMode): void
   addFile(key: string, f: DraftFile): void
@@ -98,6 +101,8 @@ export function createBoxStore(session: KeyValueStore): BoxStore {
       files: {},
       sent: [],
       shown: { key: 'new', scope: null },
+      showWords: false,
+      setShowWords: (showWords) => set({ showWords }),
       setShown: (key, scope) => {
         const was = get().shown
         if (was.key !== key || was.scope !== scope) set({ shown: { key, scope } })

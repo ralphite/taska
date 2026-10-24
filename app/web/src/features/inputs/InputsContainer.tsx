@@ -5,7 +5,7 @@ import { useMemo } from 'react'
 import { useApp, useStoreValue } from '../../app/context'
 import { useAway, useProjectModel, type ProjectRoute } from '../../app/hooks'
 import { dayOf, newestFirst, standing } from '../../model/inputs'
-import { codeOf } from '../../model/project'
+import { codeOf, inputDraft } from '../../model/project'
 import { when } from '../../model/time'
 import { inputMatch, searchWords } from '../../model/visible'
 import { inputCode } from '../../model/words'
@@ -25,6 +25,9 @@ export function InputsContainer({ route, hidden }: { route: ProjectRoute; hidden
   const words = useMemo(() => searchWords(route.list.q), [route.list.q])
   const world = useItemWorld(m, route.slug)
   const hints = useSearchHints(route, m, words)
+  const draftWords = useStoreValue(app.stores.drafts, (s) => s.bySlug[route.slug])
+  const mode = useStoreValue(app.stores.box, (s) => s.mode)
+  const writing = useMemo(() => (mode?.kind === 'amend' ? { id: mode.id, mode: mode.mode } : null), [mode])
   const rows: InputFacts[] = useMemo(() => {
     if (!m || hidden) return []
     const title = (slug: string) => projects?.find((p) => p.name === slug)?.title || slug
@@ -66,12 +69,12 @@ export function InputsContainer({ route, hidden }: { route: ProjectRoute; hidden
         spark: !!org && !note && shown.some((n) => did[n]),
         retry: !r.acked && m.facts.organizer.on && r.org && (!r.org.ok || r.org.undone) ? (r.org.undone ? 'Organize again' : 'Retry') : null,
         moved: r.moved ? { href: `/p/${encodeURIComponent(r.moved.to)}/`, label: `Open ${title(r.moved.to)} · ${inputCode(r.moved.as)}` } : null,
-        draft: null,
+        draft: inputDraft(r.id, draftWords || app.stores.drafts.getState().of(route.slug), writing),
         long: r.text.length > 160 || r.text.split('\n').length > 4,
         opened: opened.has(r.id),
       }
     })
-  }, [m, hidden, words, projects, opened])
+  }, [m, hidden, words, projects, opened, draftWords, app, route.slug, writing])
   const outgoing: OutgoingRow[] = outbox
     .filter((o) => o.slug === route.slug)
     .reverse()
@@ -90,7 +93,7 @@ export function InputsContainer({ route, hidden }: { route: ProjectRoute; hidden
         more: (id) => app.stores.ui.getState().toggleInput(id),
         menu: (id) => app.sheets.open({ kind: 'input-menu', id }, { focus: false }),
         retry: (id) => app.inputActions.organizeAgain(route.slug, id),
-        draft: () => {},
+        draft: (id, mode) => app.box.amendStart(route.slug, m, id, mode),
         moved: (href) => app.nav.to(href),
         ref: () => {},
         picture: () => {},

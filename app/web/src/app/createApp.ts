@@ -36,6 +36,7 @@ import { Docs } from './docs'
 import { Settings } from './settings'
 import { Notices } from './notices'
 import { Voice } from './voice'
+import { VoiceWords } from './voiceWords'
 import { createRecordingStore, type RecordingStore } from '../stores/recording'
 import { createSettingsStore, type SettingsStore } from '../stores/settings'
 import { createDocViewStore, type DocViewStore } from '../stores/docView'
@@ -120,6 +121,7 @@ export interface App {
   settings: Settings
   notices: Notices
   voice: Voice
+  voiceWords: VoiceWords
   refreshProjects(): Promise<boolean>
   stop(): void
 }
@@ -264,6 +266,7 @@ export function createApp(env: AppEnv): App {
   const refreshProjects = () => projects.refresh()
   const settings = new Settings({ api, store: settingsStore, data, projects, route, sheets, toasts, box, boxStore, fields, refresh: (slug) => stale(slug) })
   const boxKeyNow = () => boxStore.getState().shown.key
+  const voiceWords = new VoiceWords({ api, box, store: boxStore, toasts, fields })
   const voice = new Voice({
     api,
     store: recording,
@@ -374,6 +377,7 @@ export function createApp(env: AppEnv): App {
     settings,
     notices,
     voice,
+    voiceWords,
     refreshProjects,
     stop: () => {
       projects.stop()

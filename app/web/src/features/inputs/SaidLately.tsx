@@ -77,6 +77,8 @@ export interface SaidEvents {
   goto(n: number): void
   more(id: string): void
   append(id: string): void
+  /** the draft of an edit, or of details to add, written on */
+  draft(id: string, mode: 'edit' | 'append'): void
   menu(id: string): void
   undoSend(key: string): void
   retry(id: string): void
@@ -125,7 +127,7 @@ function SaidRow({ x, words, files, on }: { x: SaidInput; words: string[]; files
             </button>
           ) : null}
           {x.draft ? (
-            <button onClick={() => on.append(r.id)} className={`${HIT} shrink-0`}>
+            <button onClick={() => on.draft(r.id, x.draft as 'edit')} className={`${HIT} shrink-0`}>
               <DraftMark small />
             </button>
           ) : null}

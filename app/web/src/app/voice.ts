@@ -226,7 +226,45 @@ export class Voice {
     const tr = d?.tr || ''
     const err = d?.tr_error || (d?.done ? '' : 'no answer')
     this.patch(f.key, { transcribing: false, tr, doubts: d?.doubts || [], more: !!d?.more, trError: err })
+    if (!this.d.desk() && d?.doubts?.some((x) => x.alt)) this.d.boxStore.getState().setShowWords(true) // the words to check show in the box on the phone
     this.place(slug, key, f.key, tr, err)
+    if (d?.more) void this.hearMore(slug, f.key, fid)
+  }
+
+  private draftOf(fk: string): { key: string; f: DraftFile } | null {
+    for (const [key, fs] of Object.entries(this.d.boxStore.getState().files)) {
+      const f = fs.find((x) => x.key === fk)
+      if (f) return { key, f }
+    }
+    return null
+  }
+
+  /** The strong model ran out of time on this note: its fuller words may come within a few minutes. */
+  private async hearMore(slug: string, fk: string, fid: string): Promise<void> {
+    for (let n = 0, t0 = Date.now(); Date.now() - t0 < 5 * 60000 && this.draftOf(fk)?.f.more; n++) {
+      let d: Awaited<ReturnType<TaskaApi['words']>>
+      try {
+        d = await this.d.api.words(slug, fid, true, { more: true })
+      } catch {
+        await wait(Math.min(30000, 2000 * 2 ** Math.min(n, 4)))
+        continue
+      }
+      if (d.more) continue
+      const at = this.draftOf(fk)
+      this.patch(fk, { more: false })
+      if (at && d.tr && d.tr !== at.f.tr) this.fuller(slug, at.key, at.f, d.tr)
+      return
+    }
+    this.patch(fk, { more: false })
+  }
+
+  /** The fuller words take the place of the first ones in the draft (or go after it). */
+  private fuller(slug: string, key: string, f: DraftFile, words: string): void {
+    const was = f.trAdded || f.tr
+    const v = this.d.box.text(slug, key)
+    this.d.box.write(slug, key, was && v.includes(was) ? v.replace(was, words) : (v.trim() ? v.trimEnd() + '\n' : '') + words)
+    this.d.boxStore.getState().updateFile(f.key, { tr: words, trAdded: words, doubts: [] })
+    this.d.toasts.show('More complete transcription added')
   }
 
   /** Its words go where it was recorded in its draft, around what was typed since; none: it says so. */

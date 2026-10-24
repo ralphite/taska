@@ -10,7 +10,7 @@ const meta: Meta = { title: 'Components/You said' }
 export default meta
 type Story = StoryObj
 
-const on: SaidEvents = { goto() {}, more() {}, append() {}, menu() {}, undoSend() {}, retry() {}, outboxRetry() {}, outboxEdit() {}, query() {}, loadMore() {} }
+const on: SaidEvents = { goto() {}, more() {}, append() {}, draft() {}, menu() {}, undoSend() {}, retry() {}, outboxRetry() {}, outboxEdit() {}, query() {}, loadMore() {} }
 const org = { on: false, busy: null }
 const row = (r: Input, extra: Partial<SaidInput> = {}): SaidInput => {
   const s = standing(r, org, (x) => x)

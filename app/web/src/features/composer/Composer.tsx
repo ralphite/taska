@@ -39,6 +39,10 @@ export interface ComposerProps {
   /** the voice button's tip (desktop) */
   micTip: string
   files?: ReactNode
+  /** words of a voice note that may be misheard, under its files */
+  doubts?: ReactNode
+  /** the phone: the words shown with the versions to pick from, where you type */
+  words?: ReactNode
   /** files wait in the draft: Send shows, as words do */
   hasFiles?: boolean
   /** the box's element, for the layout to measure */
@@ -85,7 +89,7 @@ function RecBar({ time, levels }: { time: string; levels: readonly number[] }) {
 }
 
 
-export function Composer({ line, lineOnComposePage, placeholder, sendWord, text, desk, composePage, micTip, files, hasFiles = false, boxRef, fieldRef, rec = null, on }: ComposerProps) {
+export function Composer({ line, lineOnComposePage, placeholder, sendWord, text, desk, composePage, micTip, files, doubts, words, hasFiles = false, boxRef, fieldRef, rec = null, on }: ComposerProps) {
   const area = useRef<HTMLTextAreaElement | null>(null)
   const box = useRef<HTMLDivElement | null>(null)
   const picker = useRef<HTMLInputElement>(null)
@@ -123,6 +127,7 @@ export function Composer({ line, lineOnComposePage, placeholder, sendWord, text,
         {line ? <ScopeLine {...line} /> : null}
       </div>
       {files}
+      {doubts}
       <div className="flex items-end gap-2 p-1.5 group-data-[multi]/box:flex-wrap lg:gap-0.5 lg:group-data-[compose]/app:order-first">
         <button
           aria-label={rec ? 'Discard the recording' : 'Add images or files'}
@@ -142,7 +147,7 @@ export function Composer({ line, lineOnComposePage, placeholder, sendWord, text,
             value={text}
             placeholder={placeholder}
             aria-label="Input"
-            className={`col-start-1 row-start-1 max-h-48 min-h-11 w-full min-w-0 resize-none bg-transparent px-1 py-2.5 text-[17px] leading-6 outline-none placeholder:text-zinc-400 roomy:text-[15px] lg:scrollbar-thin dark:placeholder:text-zinc-500 ${rec ? 'invisible' : ''}`}
+            className={`col-start-1 row-start-1 max-h-48 min-h-11 w-full min-w-0 resize-none bg-transparent px-1 py-2.5 text-[17px] leading-6 outline-none placeholder:text-zinc-400 roomy:text-[15px] lg:scrollbar-thin dark:placeholder:text-zinc-500 ${rec || words ? 'invisible' : ''}`}
             onChange={(e) => on.text(e.currentTarget.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.nativeEvent.isComposing && (e.shiftKey || e.metaKey || e.ctrlKey)) {
@@ -158,6 +163,7 @@ export function Composer({ line, lineOnComposePage, placeholder, sendWord, text,
               }
             }}
           />
+          {rec ? null : words}
           {/* the same box while recording, wherever it is */}
           <div hidden={!rec} role="status" aria-label="Recording" className="col-start-1 row-start-1 flex min-w-0 items-center gap-2.5 px-1">
             {rec ? <RecBar time={rec.time} levels={rec.levels} /> : null}

@@ -15,6 +15,10 @@ what the old version does. Each is also sent to the coordinator ("Nota & Taska d
 - [ ] **Documents (the side list) never says when a document was written.** The old list sorts by and shows a
   document's `t`, which the server never sends (it sends `t0` and `t1`), so it shows no time and lists the newest
   number first. The rewrite does the same. Showing `t1` ("· 14:30") would be a change: only with Yadong's yes.
+- [ ] **One click on a dotted (unsure) word in the Draft card does not open the correction.** On the desktop's New
+  input page, the old code means one click on a word the model was unsure of to open the small field to correct it
+  (I176), but it only selects the word; double-clicking or dragging over words does open the field. The rewrite does
+  the same. Opening the field on one click would be a change: only with Yadong's yes.
 
 ## Glitches of the old version not copied
 

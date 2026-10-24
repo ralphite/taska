@@ -7,7 +7,7 @@ import { usePaneRef } from '../../app/panes'
 import { useAway, useProjectModel, type ProjectRoute } from '../../app/hooks'
 import { dayOf, newestFirst, organizing, SHORT_STANDING, standing, timeOf } from '../../model/inputs'
 import { oneLine, shownStatus } from '../../model/items'
-import { codeOf, liveN, type ProjectModel } from '../../model/project'
+import { codeOf, inputDraft, liveN, type ProjectModel } from '../../model/project'
 import { inputMatch } from '../../model/visible'
 import type { Input } from '../../model/types'
 import { inputCode, plural } from '../../model/words'
@@ -26,8 +26,13 @@ import { SaidLately, type SaidChip, type SaidInput, type SaidOutgoing } from '..
 import { Thumbs } from '../inputs/Files'
 import { useSideProjects } from '../sidebar/SidebarContainer'
 import { Composer, Feedback, type BoxLine, type FeedbackLine } from './Composer'
+import { Doubts, DraftWords, type DoubtsView, type Fixing } from './Doubts'
+import { DraftCard, DRAFT_WORDS, type DraftHint } from './DraftCard'
+import { fixRange, openDoubts, spotsIn, voiceStretches } from '../../model/doubts'
+import type { DraftFile } from '../../stores/box'
 
 const STEP = 30
+const EMPTY: Record<string, string> = {}
 
 /** The line over the box: what you sent is on its way, or what became of the last one you sent from here. */
 function feedbackLine(a: { m: ProjectModel | null; desk: boolean; composePage: boolean; scope: string | null; mine: Outgoing[]; lastSent: string | null; others: boolean; undoable(q: string | undefined): boolean; lastQ?: string }): { line: FeedbackLine; final?: string } | null {
@@ -176,6 +181,16 @@ function boxRole(m: ProjectModel | null, route: ProjectRoute, desk: boolean, tit
   return { ...none, key: 'new', scope: null, doc: null, line, placeholder: m ? `Write to ${title}…` : 'Write anything…', send: 'Send' }
 }
 
+/** Where a voice note's words may be misheard in the draft now. */
+function useHeard(text: string, files: readonly DraftFile[] | undefined) {
+  return useMemo(() => {
+    const fs = files || []
+    const spots = spotsIn(text, fs)
+    const open = openDoubts(text, fs)
+    return { spots, open, altOpen: open.filter((d) => d.x.alt).length, pickable: spots.some((p) => p.x.alt) }
+  }, [text, files])
+}
+
 /** The foot's height, for what scrolls under it: the list and the pane run on under the box, around its corners. */
 function useFootRoom(hidden: boolean | undefined, onHeight: ((px: number) => void) | undefined, boxRef: RefObject<HTMLDivElement | null>) {
   const ref = useRef<HTMLElement>(null)
@@ -225,9 +240,13 @@ export function FootContainer({ route, place, hidden, composePage, onHeight, bar
   const recording = useStoreValue(app.stores.recording, (s) => s.rec)
   // the recording shows in the box it was started in
   const rec = recording && recording.slug === route.slug && recording.key === key ? { time: clock(recording.ms), levels: recording.levels, from: recording.from } : null
-  const text = useStoreValue(app.stores.drafts, (s) => s.bySlug[route.slug]?.[key] ?? '')
+  const drafts = useStoreValue(app.stores.drafts, (s) => s.bySlug[route.slug]) || EMPTY
+  const text = drafts[key] ?? ''
   const draftFiles = useStoreValue(app.stores.box, (s) => s.files[key])
   const setText = (v: string) => app.box.write(route.slug, key, v)
+  const showWords = useStoreValue(app.stores.box, (s) => s.showWords)
+  const [fixing, setFixing] = useState<Fixing | null>(null)
+  const heard = useHeard(text, draftFiles)
   const justSent = useStoreValue(app.stores.box, (s) => s.sent)
   const [q, setQ] = useState('')
   const [upTo, setUpTo] = useState(STEP)
@@ -261,14 +280,14 @@ export function FootContainer({ route, place, hidden, composePage, onHeight, bar
         scope: r.scope ? chip(r.scope) : null,
         chips: r.moved ? [] : (r.touched.filter((n) => m.byN.has(n) && n !== r.scope).map(chip).filter(Boolean) as SaidChip[]),
         busy: organizing(r, m.facts.organizer),
-        draft: null,
+        draft: inputDraft(r.id, drafts, mode?.kind === 'amend' ? { id: mode.id, mode: mode.mode } : null),
         canUndoSend: justSent.some((x) => x.rid === r.id),
         retry: !r.acked && m.facts.organizer.on && r.org && (!r.org.ok || r.org.undone) ? (r.org.undone ? 'Organize again' : 'Retry') : null,
         opened: opened.has(r.id),
       }
     })
     return { all, rows }
-  }, [m, composePage, words, upTo, opened, justSent])
+  }, [m, composePage, words, upTo, opened, justSent, drafts, mode])
   const outgoing: SaidOutgoing[] = words.length
     ? []
     : [...mine].reverse().map((o) => ({ q: o.q, text: o.text || outgoingLine(o), state: outgoingState(o, away), failed: o.state === 'failed', net: !!o.net, canUndo: justSent.some((x) => x.q === o.q) }))
@@ -284,6 +303,53 @@ export function FootContainer({ route, place, hidden, composePage, onHeight, bar
   }, [app, feedback?.final])
 
   const url = (f: string) => `/p/${encodeURIComponent(route.slug)}/f/${encodeURIComponent(f)}`
+  // words of a voice note that may be misheard: under the box; on the phone in the box itself, to pick from
+  const pickWord = (fk: string, k: number, side: 'was' | 'alt') => void app.voiceWords.pick(route.slug, key, fk, k, side)
+  const viewWords = !desk && heard.pickable && showWords && !rec
+  const doubtsView: DoubtsView | null =
+    desk && composePage ? (heard.altOpen ? { kind: 'card', toCheck: heard.altOpen } : null) : !desk ? (heard.pickable ? { kind: 'phone', toCheck: heard.altOpen, showing: viewWords } : null) : heard.open.length ? { kind: 'list', lines: heard.open } : null
+  const doubts = doubtsView ? <Doubts view={doubtsView} on={{ use: (fk, k) => app.voiceWords.use(route.slug, key, fk, k), show: () => app.voiceWords.show(true) }} /> : null
+  const phoneWords = viewWords ? (
+    <DraftWords
+      text={text}
+      spots={heard.spots}
+      className="col-start-1 row-start-1 max-h-48 min-h-11 overflow-y-auto px-1 py-1.5 text-[17px] leading-8 break-words whitespace-pre-wrap text-zinc-900 roomy:text-[15px] dark:text-zinc-100"
+      on={{ pick: pickWord, escape: () => app.fields.focus('box'), plain: () => app.voiceWords.show(false) }}
+    />
+  ) : null
+  // the New input page: the draft at the top of what you said, while a voice note's words are there to check
+  const card = (() => {
+    if (!desk || !composePage || mode || (!text.trim() && !draftFiles?.length)) return null
+    const files = draftFiles || []
+    const voice = files.filter((f) => (f.mime || '').startsWith('audio/'))
+    if (!voice.length && !heard.pickable) return null
+    const open = new Set(heard.spots.filter((p) => p.x.alt && !p.x.pick).map((p) => `${p.fk} ${p.k}`)).size
+    const hint: DraftHint = open ? { kind: 'check', n: open } : heard.spots.some((p) => p.x.pick) ? { kind: 'switch' } : files.some((f) => f.trAdded && text.includes(f.trAdded)) ? { kind: 'fix' } : null
+    const words = text.trim() ? (
+      <DraftWords
+        text={text}
+        spots={heard.spots}
+        stretches={voiceStretches(text, files)}
+        fixing={fixing}
+        className={DRAFT_WORDS}
+        on={{
+          pick: pickWord,
+          escape: () => app.fields.focus('box'),
+          select: (s, e) => {
+            const r = fixRange(text, s, e)
+            if (r && 'error' in r) app.toasts.show(r.error)
+            else if (r) setFixing(r)
+          },
+          fixSave: (right) => {
+            setFixing(null)
+            if (fixing) void app.voiceWords.fix(route.slug, key, fixing, right, role.scope)
+          },
+          fixStop: () => setFixing(null),
+        }}
+      />
+    ) : null
+    return <DraftCard voice={voice.length} ms={voice.reduce((a, f) => a + (f.ms || 0), 0)} files={files.length - voice.length} transcribing={files.some((f) => f.transcribing)} words={words} hint={hint} />
+  })()
   const composer = (
     <Composer
       line={role.line}
@@ -298,6 +364,8 @@ export function FootContainer({ route, place, hidden, composePage, onHeight, bar
       lineOnComposePage={!!mode}
       hasFiles={!!draftFiles?.length}
       files={<DraftFiles files={draftFiles || []} url={url} onRemove={(fk) => app.box.removeFile(key, fk)} onView={() => {}} />}
+      doubts={doubts}
+      words={phoneWords}
       rec={rec}
       on={{
         text: setText,
@@ -343,11 +411,13 @@ export function FootContainer({ route, place, hidden, composePage, onHeight, bar
             outgoing={outgoing}
             more={said.all.length > said.rows.length}
             words={words}
+            draft={card}
             files={(f) => <Thumbs files={f} url={url} size="size-12" play={() => ({ playing: false, t: null })} tidy={false} on={{ play: () => {}, words: () => {}, view: () => {} }} />}
             on={{
               goto: (n) => m && app.nav.openItem(codeOf(m, n)),
               more: (id) => setOpened((s) => new Set(s).add(id)),
               append: (id) => app.box.amendStart(route.slug, m, id, 'append'),
+              draft: (id, mode) => app.box.amendStart(route.slug, m, id, mode),
               menu: (id) => app.sheets.open({ kind: 'input-menu', id }, { pop: true, focus: false }),
               undoSend: (k) => app.box.unsend(justSent.find((x) => x.q === k || x.rid === k)?.q ?? k),
               retry: (id) => app.inputActions.organizeAgain(route.slug, id),

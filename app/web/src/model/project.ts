@@ -207,3 +207,22 @@ export function findRef(m: Pick<ProjectModel, 'byN' | 'byId' | 'docs'>, c: strin
   const it = m.byN.get(n)
   return it && LETTER[it.type] === c[0] ? { kind: 'item', n } : null
 }
+
+/** The items with a draft not sent: words in any tab of this browser, or files waiting (a draft of a comment on a
+ * document counts for the item it belongs to). */
+export function draftCodes(m: ProjectModel, words: Readonly<Record<string, string>>, files: Readonly<Record<string, readonly unknown[]>>): Set<string> {
+  const out = new Set<string>()
+  for (const k of new Set([...Object.keys(words), ...Object.keys(files)])) {
+    if (!String(words[k] || '').trim() && !files[k]?.length) continue
+    const dm = /^doc (\d+)$/.exec(k)
+    const doc = dm ? m.docs.find((x) => x.d === Number(dm[1])) : undefined
+    if (doc) out.add(codeOf(m, liveN(m, doc.n)))
+    else if (/^[A-Z]\d+$/.test(k)) out.add(k)
+  }
+  return out
+}
+
+/** Which of an input's drafts (an edit, details to add) waits, unless it is the one being written now. */
+export function inputDraft(id: string, words: Readonly<Record<string, string>>, writing: { id: string; mode: 'edit' | 'append' } | null): 'edit' | 'append' | null {
+  return (['edit', 'append'] as const).find((mode) => !(writing?.id === id && writing.mode === mode) && String(words[`${mode} ${id}`] || '').trim()) || null
+}
