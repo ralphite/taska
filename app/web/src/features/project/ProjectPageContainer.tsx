@@ -46,8 +46,9 @@ function useHeadFacts(route: ProjectRoute) {
   const counts = useMemo(() => {
     if (!m) return null
     const words = searchWords(route.list.q)
-    // under a search each tab says how many it matches (the tab shown with its own settings)
-    const found = (t: Tab) => visible(m.items, t, t === route.tab ? route.list : { ...NO_FILTERS, q: route.list.q }).length
+    // under a search each tab says how many it matches (the tab shown with its own settings; Items from another tab
+    // counts what is finished too, as its Active view is only Active where it shows)
+    const found = (t: Tab) => visible(m.items, t, t === route.tab ? route.list : { ...NO_FILTERS, q: route.list.q, status: t === 'items' ? 'every' : 'all' }).length
     const isFiltered = route.tab === 'items' && filtered(route.tab, route.list)
     return {
       items: tabNumber(words.length ? found('items') : isFiltered ? visible(m.items, 'items', route.list).filter((it) => !it.archived).length : openCount(m.items)),

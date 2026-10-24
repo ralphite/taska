@@ -9,7 +9,7 @@ import { Toast } from './Toast'
 
 export function ToastContainer() {
   const app = useServices('toasts')
-  const stores = useStores('feedback', 'route', 'sheet')
+  const stores = useStores('feedback', 'route', 'sheet', 'ui')
   const layout = useLayout()
   const panes = usePanes()
   const t = useStoreValue(stores.feedback, (s) => s.toast)
@@ -19,6 +19,9 @@ export function ToastContainer() {
   const docOver = useStoreValue(stores.route, (s) => s.route.page === 'project' && s.route.place.kind === 'doc') && layout === 'phone'
   const sheet = useStoreValue(stores.sheet, (s) => (s.spec ? (s.spec.card ? 'card' : 'sheet') : null))
   const over = sheet ?? (docOver ? 'sheet' : null)
+  // the panes change their place (full width, the sidebar folded): it goes over the pane again
+  const full = useStoreValue(stores.route, (s) => s.full)
+  const folded = useStoreValue(stores.ui, (s) => s.sideHidden)
   const [style, setStyle] = useState<CSSProperties | undefined>(undefined)
   const [centered, setCentered] = useState(false)
   // you act in another pane: the toast shown goes over it
@@ -47,7 +50,7 @@ export function ToastContainer() {
       const bar = drawer ? panes.get('drawerFoot') : !over ? (foot && !foot.hidden ? foot : null) : over === 'card' ? null : panes.get('sheetFoot')
       setStyle(bar && bar.offsetHeight ? { bottom: `${Math.round(innerHeight - bar.getBoundingClientRect().top + 8)}px` } : over ? { top: 'calc(env(safe-area-inset-top) + 0.75rem)', bottom: 'auto' } : undefined)
     }
-  }, [t, layout, panes, onPage, moved, drawer, over])
+  }, [t, layout, panes, onPage, moved, drawer, over, full, folded])
   const place =
     layout === 'desk'
       ? `${style ? '' : 'bottom-5 left-5'} ${centered ? '-translate-x-1/2' : ''}`

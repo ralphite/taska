@@ -3,6 +3,7 @@
 // name, the agent pill, search) and the tabs under it. Props only.
 
 import { useLayoutEffect, useRef, type ReactNode } from 'react'
+import { flushSync } from 'react-dom'
 import type { AgentTone } from '../../model/agents'
 import { TAB_WORD, type Tab } from '../../model/words'
 import { ProjTile } from '../../ui/bits'
@@ -188,7 +189,13 @@ export function ListHead({
         <button onClick={on.agents} aria-label="Agents" title={agent?.tip} className="flex h-11 shrink-0 items-center px-1">
           {agent ? <AgentPill tone={agent.tone} label={agent.label} offline={agent.offline} /> : null}
         </button>
-        <button onClick={() => on.search(true)} aria-label="Search" className="grid size-11 shrink-0 place-items-center rounded-full text-zinc-500 data-pressed:bg-zinc-100 dark:text-zinc-400 dark:data-pressed:bg-zinc-800">
+        <button
+          onClick={() => {
+            // the field takes the focus in the tap itself, or the phone's keyboard does not come up
+            flushSync(() => on.search(true))
+            input.current?.focus()
+          }}
+          aria-label="Search" className="grid size-11 shrink-0 place-items-center rounded-full text-zinc-500 data-pressed:bg-zinc-100 dark:text-zinc-400 dark:data-pressed:bg-zinc-800">
           <Icon n="search" c="size-5.5" />
         </button>
       </div>
