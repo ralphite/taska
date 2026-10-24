@@ -20,6 +20,7 @@ import time
 from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 from ..agent_text.render import log_entries
+from ..infra import gemini
 from ..domain.vocab import MAX_FILE
 from ..infra.audio import audio_type
 from ..page_api import views
@@ -41,8 +42,8 @@ def _view(ctx: "AppContext", req: Request, p: Project, since: Optional[Cursor]) 
         out = ctx.pages(p).feed.view(at, p.news.boot, lambda: views.entities(p.state, p.agents, p.held), since)
         pres = presence(p)
         out["project"] = views.project_view(p.state, p.agents, slug=p.slug, title=p.title, organizer_on=p.organizing.on,
-                                            organizer_busy=p.organizing.busy, presence=pres["agents"], work=pres["work"],
-                                            db_path=p.store.path)
+                                            organizer_busy=p.organizing.busy, organizer_model=gemini.MODEL,
+                                            presence=pres["agents"], work=pres["work"], db_path=p.store.path)
     key = ws.key.value
     out["project"].update(base=f"{req.host()}{req.prefix}/p/{p.slug}", key=key,
                           remote=f"{ws.public}/k/{key}/p/{p.slug}" if ws.public else "")

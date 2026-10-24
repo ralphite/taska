@@ -33,6 +33,9 @@ import { PictureSizes } from './pictureSizes'
 import { Activity } from './activity'
 import { Restores } from './restores'
 import { Docs } from './docs'
+import { Settings } from './settings'
+import { Notices } from './notices'
+import { createSettingsStore, type SettingsStore } from '../stores/settings'
 import { createDocViewStore, type DocViewStore } from '../stores/docView'
 import { createDocTicksStore, type DocTicksStore } from '../stores/docTicks'
 import { createActivityStore, type ActivityStore } from '../stores/activity'
@@ -73,6 +76,7 @@ export interface App {
     activity: ActivityStore
     docView: DocViewStore
     docTicks: DocTicksStore
+    settings: SettingsStore
   }
   toasts: Toasts
   items: ItemActions
@@ -110,6 +114,8 @@ export interface App {
   activity: Activity
   restores: Restores
   docs: Docs
+  settings: Settings
+  notices: Notices
   refreshProjects(): Promise<boolean>
   stop(): void
 }
@@ -135,6 +141,7 @@ export function createApp(env: AppEnv): App {
   const activityStore = createActivityStore()
   const docView = createDocViewStore()
   const docTicks = createDocTicksStore(env.kv)
+  const settingsStore = createSettingsStore()
   const pictureSizes = new PictureSizes({ api, data })
   // a text showing a picture of unknown size (one just uploaded) asks for the sizes again
   const unsize = data.subscribe((s, was) => {
@@ -250,6 +257,8 @@ export function createApp(env: AppEnv): App {
   docs = new Docs({ runner, toasts, view: docView, nav, route, sheets, fields, desk: env.desk, model, box, boxStore, kv: env.kv, ticks: docTicks, inputs })
   const projects = new Projects({ api, data, kv: env.kv, home: () => route.getState().route.page === 'home' })
   const refreshProjects = () => projects.refresh()
+  const settings = new Settings({ api, store: settingsStore, data, projects, route, sheets, toasts, box, boxStore, fields, refresh: (slug) => stale(slug) })
+  const notices = new Notices(env.kv, () => settingsStore.getState().set({ noticeRev: settingsStore.getState().noticeRev + 1 }))
 
   const showProject = (slug: string) => {
     if (sync?.slug === slug) return
@@ -302,7 +311,7 @@ export function createApp(env: AppEnv): App {
 
   return {
     api,
-    stores: { data, changes, outbox, feedback, ui, itemView, search, drafts, box: boxStore, sheet: sheetStore, route, activity: activityStore, docView, docTicks },
+    stores: { data, changes, outbox, feedback, ui, itemView, search, drafts, box: boxStore, sheet: sheetStore, route, activity: activityStore, docView, docTicks, settings: settingsStore },
     toasts,
     items,
     inputs,
@@ -335,6 +344,8 @@ export function createApp(env: AppEnv): App {
     activity,
     restores,
     docs,
+    settings,
+    notices,
     refreshProjects,
     stop: () => {
       projects.stop()

@@ -83,6 +83,10 @@ function boxRole(m: ProjectModel | null, route: ProjectRoute, desk: boolean, tit
   const open = route.place.kind === 'item' ? m?.byN.get(Number(/\d+/.exec(route.place.ref)?.[0])) : docOf && m ? m.byN.get(liveN(m, docOf.n)) : undefined
   const files = m?.facts.organizer.on ? 'the organizer files it' : 'your agent files it'
   const none = { aim: null as DocAim }
+  if (mode?.kind === 'prefs') {
+    const line: BoxLine = { icon: 'pencil', label: 'Edit transcription preferences', detail: '· every project', right: xButton('Stop editing', stop) }
+    return { ...none, key: 'prefs', scope: null, doc: null, line, placeholder: 'How should voice notes be transcribed?', send: 'Save' }
+  }
   if (mode?.kind === 'comment') {
     const was = oneLine(mode.was)
     const line: BoxLine = { icon: 'pencil', label: `Edit your comment on D${mode.d}`, detail: was ? `\u201c${was.slice(0, 120)}\u201d` : '', right: xButton('Stop editing', stop) }
@@ -192,7 +196,7 @@ function useFootRoom(hidden: boolean | undefined, onHeight: ((px: number) => voi
   return ref
 }
 
-export function FootContainer({ route, place, hidden, composePage, onHeight }: { route: ProjectRoute; place: string; hidden?: boolean; composePage: boolean; onHeight?(px: number): void }) {
+export function FootContainer({ route, place, hidden, composePage, onHeight, bare = false }: { route: ProjectRoute; place: string; hidden?: boolean; composePage: boolean; onHeight?(px: number): void; /** just the box (Settings' transcription preferences) */ bare?: boolean }) {
   const app = useApp()
   const boxRef = useRef<HTMLDivElement | null>(null)
   const footRef = useFootRoom(hidden, onHeight, boxRef)
@@ -223,6 +227,7 @@ export function FootContainer({ route, place, hidden, composePage, onHeight }: {
   const [opened, setOpened] = useState<ReadonlySet<string>>(new Set())
 
   const send = () => {
+    if (mode?.kind === 'prefs') return void app.settings.savePrefs(route.slug)
     if (mode?.kind === 'comment') return void app.docs.saveComment(route.slug, mode.d, mode.id, key)
     if (role.aim) return void app.docs.comment(route.slug, role.aim.d, role.aim.target, key)
     void app.box.send(route.slug, m, role.scope)
@@ -272,6 +277,24 @@ export function FootContainer({ route, place, hidden, composePage, onHeight }: {
   }, [app, feedback?.final])
 
   const url = (f: string) => `/p/${encodeURIComponent(route.slug)}/f/${encodeURIComponent(f)}`
+  const composer = (
+    <Composer
+      line={role.line}
+      placeholder={role.placeholder}
+      sendWord={role.send}
+      text={text}
+      desk={desk}
+      composePage={desk && composePage}
+      micTip={composePage ? 'Voice note · ⌥V' : 'Voice note · V'}
+      boxRef={boxRef}
+      fieldRef={app.fields.ref('box')}
+      lineOnComposePage={!!mode}
+      hasFiles={!!draftFiles?.length}
+      files={<DraftFiles files={draftFiles || []} url={url} onRemove={(fk) => app.box.removeFile(key, fk)} onView={() => {}} />}
+      on={{ text: setText, send, attach: (list) => app.box.attach(route.slug, key, list), mic: () => {} }}
+    />
+  )
+  if (bare) return composer
   return (
     <footer
       ref={(el) => {
@@ -293,21 +316,7 @@ export function FootContainer({ route, place, hidden, composePage, onHeight }: {
         line={feedback?.line ?? null}
         on={{ dismiss: () => app.stores.ui.getState().setLastSent(null), undo: () => { const q = mine[0]?.q ?? lastSent?.q; if (q) app.box.unsend(q) }, retry: () => void app.inputs.flush(), edit: () => {}, view: () => {}, undoFiling: () => {}, move: () => {}, retryOrganizer: () => {} }}
       />
-      <Composer
-        line={role.line}
-        placeholder={role.placeholder}
-        sendWord={role.send}
-        text={text}
-        desk={desk}
-        composePage={desk && composePage}
-        micTip={composePage ? 'Voice note · ⌥V' : 'Voice note · V'}
-        boxRef={boxRef}
-        fieldRef={app.fields.ref('box')}
-        lineOnComposePage={!!mode}
-        hasFiles={!!draftFiles?.length}
-        files={<DraftFiles files={draftFiles || []} url={url} onRemove={(fk) => app.box.removeFile(key, fk)} onView={() => {}} />}
-        on={{ text: setText, send, attach: (list) => app.box.attach(route.slug, key, list), mic: () => {} }}
-      />
+      {composer}
       {desk && composePage && said ? (
         <section aria-label="You said lately" className="mx-auto mt-8 block max-w-[42rem]">
           <SaidLately

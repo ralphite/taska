@@ -166,3 +166,6 @@ export const COMMENT_CARD = (by: string) => (by === 'you' ? 'rounded-xl bg-blue-
 export const COMMENT_WHO = (by: string) => (by === 'you' ? 'font-medium text-blue-700 dark:text-blue-300' : 'font-medium text-zinc-700 dark:text-zinc-300')
 /** A plain small button (the phone's document row). */
 export const BTN = 'rounded-lg px-2.5 py-2.5 sm:py-1.5 text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800'
+/** A small row button (Settings' Rename, Delete, Restore). */
+export const P_BTN =
+  'relative after:absolute after:inset-x-0 after:-inset-y-1 inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-zinc-100'

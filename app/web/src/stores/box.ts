@@ -12,6 +12,8 @@ export type BoxMode =
   | { kind: 'correct'; id: string; wrong: string }
   /** a comment of yours on a document, being edited */
   | { kind: 'comment'; d: number; id: number; was: string }
+  /** the transcription preferences, being edited (every project's) */
+  | { kind: 'prefs'; was: string }
   | null
 
 export interface DraftFile extends OutFile {

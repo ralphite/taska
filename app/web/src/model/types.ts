@@ -141,6 +141,20 @@ export interface AgentSeen {
   sessions?: { name: string; t: number }[]
 }
 
+/** A voice spelling: words heard wrong and the right ones, or a word to hear (no `wrong`). */
+export interface Spelling {
+  wrong?: string
+  right: string
+  t?: string
+}
+
+/** How voice notes are written down (`default`: the text Taska came with). */
+export interface VoicePrefs {
+  text: string
+  default: boolean
+  tidy?: boolean
+}
+
 /** One change of the project's log, as the server lists it. */
 export interface LogRow {
   seq: number
@@ -185,7 +199,7 @@ export interface ProjectFacts {
   title: string
   width: number
   file: string
-  organizer: { on: boolean; busy: string | null }
+  organizer: { on: boolean; model: string; busy: string | null }
   agents: AgentSeen[]
   work: boolean
   agentsVersion: number

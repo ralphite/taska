@@ -193,6 +193,12 @@ function stepBack(app: App, h: Here): void {
       return app.docs.close()
     }
   }
+  if (r.place.kind === 'settings' || (!app.desk() && r.place.kind === 'side')) {
+    // Settings: a field first, then back out of it
+    if (typingIn(active)) return (active as HTMLElement).blur()
+    if (app.stores.box.getState().mode?.kind === 'prefs') return app.box.stop()
+    return app.nav.settingsBack()
+  }
   if (app.desk()) {
     if (app.fields.focused('search')) {
       if (r.list.q) app.nav.setList({ q: '' })

@@ -18,6 +18,8 @@ export interface History {
   replace(url: string, state?: unknown): void
   state(): unknown
   back(): void
+  /** n steps back at once */
+  backBy(n: number): void
   /** calls back on Back and Forward; returns how to stop */
   listen(fn: () => void): () => void
 }
@@ -41,6 +43,8 @@ export interface RouteState {
   openLayer(kind: string): void
   /** it closes by its own button: its step goes too; `then` runs once the history has moved */
   shutLayer(kind: string, then?: () => void): void
+  /** n steps back in the history */
+  backBy(n: number): void
   /** the history moved (Back, Forward): read it again */
   read(): void
 }
@@ -126,6 +130,7 @@ export function createRouteStore(history: History): RouteStore {
         then?.()
       }
     },
+    backBy: (n) => history.backBy(n),
     read: () => {
       set(now())
       const run = after
@@ -142,6 +147,7 @@ export function browserHistory(): History {
     replace: (url, state) => window.history.replaceState(state ?? null, '', url),
     state: () => window.history.state,
     back: () => window.history.back(),
+    backBy: (n) => window.history.go(-n),
     listen: (fn) => {
       addEventListener('popstate', fn)
       return () => removeEventListener('popstate', fn)
@@ -173,6 +179,12 @@ export function memoryHistory(start = '/'): History {
         i--
         for (const fn of subs) fn()
       }
+    },
+    backBy: (n) => {
+      const to = Math.max(0, i - n)
+      if (to === i) return
+      i = to
+      for (const fn of subs) fn()
     },
     listen: (fn) => {
       subs.add(fn)

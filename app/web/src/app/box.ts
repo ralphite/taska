@@ -38,6 +38,7 @@ export class Box {
     if (mode?.kind === 'correct') return `correct ${mode.id}`
     if (mode?.kind === 'amend') return `${mode.mode} ${mode.id}`
     if (mode?.kind === 'comment') return `dc ${mode.d} ${mode.id}`
+    if (mode?.kind === 'prefs') return 'prefs'
     if (doc != null) return `doc ${doc}`
     return scope || 'new'
   }

@@ -1,7 +1,7 @@
 // The server's page interface, one typed call each (the server's http/page_routes.py and workspace_routes.py).
 
 import { Http, TIME_LIMIT } from './http'
-import type { FileRef, LogRow, Need, ProjectRow, SearchHit, ViewAnswer } from '../model/types'
+import type { FileRef, LogRow, Need, ProjectRow, SearchHit, Spelling, ViewAnswer, VoicePrefs } from '../model/types'
 
 /** A change the page asks for: the same commands agents write, as data ({op: "set", ref: "B03", f: {...}}). */
 export type Command = Record<string, unknown> & { op: string }
@@ -107,6 +107,38 @@ export class TaskaApi {
 
   search(q: string, skip: string): Promise<SearchHit[]> {
     return this.http.json<SearchHit[]>(`/api/search?q=${encodeURIComponent(q)}&skip=${encodeURIComponent(skip)}`)
+  }
+
+  /** What a coding agent reads first (the guide), as the page shows it. */
+  guide(slug: string): Promise<string> {
+    return this.http.text(`/p/${encodeURIComponent(slug)}/agent?ui=1`)
+  }
+
+  /** Voice spellings: corrections (wrong -> right) and words to hear, for every project. */
+  corrections(): Promise<Spelling[]> {
+    return this.http.json('/api/corrections')
+  }
+
+  setCorrection(body: { wrong?: string; right?: string; forget?: boolean }): Promise<{ ok: boolean; corrections: Spelling[] }> {
+    return this.http.json('/api/corrections', { method: 'POST', body })
+  }
+
+  /** How voice notes are written down, for every project, and whether they are tidied. */
+  voicePrefs(): Promise<VoicePrefs> {
+    return this.http.json('/api/voiceprefs')
+  }
+
+  setVoicePrefs(text: string): Promise<VoicePrefs & { ok: boolean }> {
+    return this.http.json('/api/voiceprefs', { method: 'POST', body: { text } })
+  }
+
+  setTidy(on: boolean): Promise<{ ok: boolean; tidy: boolean }> {
+    return this.http.json('/api/voicetidy', { method: 'POST', body: { on } })
+  }
+
+  /** A new key: this device keeps working, every other one needs the new link. */
+  newKey(): Promise<{ ok: boolean; key: string }> {
+    return this.http.json('/api/key', { method: 'POST' })
   }
 
   /** The pictures of the project's files, each with its width and height. */

@@ -15,6 +15,7 @@ import { ToastContainer } from '../feedback/ToastContainer'
 import { ItemListContainer } from '../list/ItemListContainer'
 import { SidebarContainer, useSideProjects } from '../sidebar/SidebarContainer'
 import { SideListContainer } from '../side/SideListContainer'
+import { SettingsContainer } from '../settings/SettingsContainer'
 import { codeOf } from '../../model/project'
 import { InputsContainer } from '../inputs/InputsContainer'
 import { DeskFilters, type FilterEvents } from '../list/Filters'
@@ -152,6 +153,7 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
           {shownSide ? <SideListContainer slug={route.slug} side={shownSide} /> : <ItemListContainer route={route} />}
         </section>
         <DetailContainer route={route} place={`row-span-3 row-start-2 group-data-[compose]/app:row-span-1 ${pane}`} hidden={settings} full={full} />
+        {settings ? <SettingsContainer route={route} place="col-span-2 col-start-1 row-span-5 row-start-1" /> : null}
         <div hidden={settings || full} className="group/line relative z-30 col-start-1 row-span-4 row-start-2 block w-3 translate-x-1/2 cursor-col-resize justify-self-end">
           <span className="pointer-events-none absolute inset-y-0 left-1/2 w-0.5 -translate-x-1/2 bg-blue-500 opacity-0 transition-opacity group-hover/line:opacity-100 group-hover/line:delay-150 group-data-drag/line:opacity-100" />
         </div>
@@ -190,7 +192,9 @@ function PhoneLayout({ route }: { route: ProjectRoute }) {
     return () => clearTimeout(t)
   }, [closing])
   const open = route.place.kind === 'item' || route.place.kind === 'doc'
-  const settings = route.place.kind === 'settings'
+  // Settings' pages (Documents, Activity and Deleted are pages of it on the phone)
+  const settings = route.place.kind === 'settings' || route.place.kind === 'side'
+  const prefsEditing = useStoreValue(app.stores.box, (s) => s.mode?.kind === 'prefs')
   const under = !open && !settings
   const phoneSet = filtersSet(route.tab, route.list)
   const [footH, setFootH] = useState(0)
@@ -245,7 +249,8 @@ function PhoneLayout({ route }: { route: ProjectRoute }) {
         </section>
         <InputsContainer route={route} hidden={!under || route.tab !== 'inputs'} />
         <DetailContainer route={route} place="" hidden={!open} footRoom={footH} />
-        <FootContainer route={route} composePage={false} place="" hidden={settings} onHeight={setFootH} />
+        {settings ? <SettingsContainer route={route} place="" /> : null}
+        <FootContainer route={route} composePage={false} place="" hidden={settings && !prefsEditing} onHeight={setFootH} />
       </div>
     </>
   )

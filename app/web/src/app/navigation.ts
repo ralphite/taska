@@ -3,7 +3,7 @@
 // picking items in the desktop's list, search and filters only rewrite the address.
 
 import { LIST_KEYS, NO_FILTERS, projectPath, type ListQuery, type Place } from '../model/route'
-import type { Tab } from '../model/words'
+import { TAB_WORD, type Tab } from '../model/words'
 import type { RouteStore } from '../stores/route'
 
 export class Navigation {
@@ -11,9 +11,49 @@ export class Navigation {
   private readonly desk: () => boolean
   /** each tab's own search and filters while this page lives, by project and tab */
   private readonly views = new Map<string, ListQuery>()
+  /** Settings: the steps taken in it (Back leaves by as many), and the place it was opened from */
+  private settingsSteps = 0
+  private from: { tab: Tab; compose: boolean } | null = null
   constructor(route: RouteStore, desk: () => boolean) {
     this.route = route
     this.desk = desk
+    route.subscribe((st) => {
+      const r = st.route
+      if (r.page !== 'project' || this.inSettings(r.place)) return
+      this.settingsSteps = 0
+      this.from = { tab: r.tab, compose: r.place.kind === 'new' || (r.place.kind === 'tab' && r.tab !== 'inputs') }
+    })
+  }
+
+  /** Settings' pages (the phone's Documents, Activity and Deleted are pages of it). */
+  private inSettings(place: Place): boolean {
+    return place.kind === 'settings' || (!this.desk() && place.kind === 'side')
+  }
+
+  /** What Settings' way back says: where it was opened from. */
+  cameFromLabel(): string {
+    const f = this.from
+    return !f ? TAB_WORD.items : this.desk() && f.compose ? 'New input' : TAB_WORD[f.tab]
+  }
+
+  /** Back from Settings: the desktop leaves it; the phone goes up a level (a section to the index, the index out). */
+  settingsBack(): void {
+    const r = this.here()
+    if (!r) return
+    const phoneSection = !this.desk() && (r.place.kind === 'side' || (r.place.kind === 'settings' && r.place.section))
+    if (phoneSection) {
+      if (this.settingsSteps > 1) {
+        this.settingsSteps--
+        return this.route.getState().backBy(1)
+      }
+      return this.go('items', { kind: 'settings', section: null }, NO_FILTERS, false)
+    }
+    if (this.settingsSteps > 0) {
+      const n = this.settingsSteps
+      this.settingsSteps = 0
+      return this.route.getState().backBy(n)
+    }
+    this.go(this.from?.tab ?? 'items', this.desk() ? { kind: 'new' } : { kind: 'tab' }, NO_FILTERS, false)
   }
 
   private here() {
@@ -157,8 +197,11 @@ export class Navigation {
     if (typeof to === 'number') this.openItem(code(to))
   }
 
-  /** Another address of the page (a project, the home page). */
+  /** Another address of the page (a project, the home page, a section of Settings). */
   to(url: string, push = true): void {
+    const was = this.here()
     this.route.getState().go(url, push)
+    const now = this.here()
+    if (push && now && this.inSettings(now.place) && (!was || this.inSettings(was.place) || now.slug === was.slug)) this.settingsSteps++
   }
 }
