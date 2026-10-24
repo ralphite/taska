@@ -4,6 +4,7 @@
 import { useEffect } from 'react'
 import { useApp, LayoutProvider, useWindowLayout } from './context'
 import { useRoute } from './hooks'
+import { HomeContainer } from '../features/home/HomeContainer'
 import { ProjectPageContainer } from '../features/project/ProjectPageContainer'
 import { SheetContainer } from '../features/sheets/SheetContainer'
 import { pageKeys } from './keys'
@@ -21,13 +22,14 @@ export function App() {
     return () => document.removeEventListener('keydown', keys)
   }, [app])
   useEffect(() => {
-    void app.refreshProjects()
+    // the projects for the sidebar (the home page asks for them itself)
+    if (app.stores.route.getState().route.page !== 'home') void app.refreshProjects()
   }, [app])
   return (
     <LayoutProvider layout={layout}>
       <PanesProvider>
         <div data-layout={layout} className="@container/frame h-dvh w-full">
-          {route.page === 'project' ? <ProjectPageContainer route={route} /> : <div className="p-8 text-sm text-zinc-500">Taska</div>}
+          {route.page === 'project' ? <ProjectPageContainer route={route} /> : route.page === 'home' ? <HomeContainer route={route} /> : <div className="p-8 text-sm text-zinc-500">Taska</div>}
         </div>
         <SheetContainer />
         <Tooltip />

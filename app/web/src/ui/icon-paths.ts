@@ -15,6 +15,8 @@ export const ICON = {
     '<path d="M21 12h-8"/><path d="M21 6H8"/><path d="M21 18h-8"/><path d="M3 6v4c0 1.1.9 2 2 2h3"/><path d="M3 10v6c0 1.1.9 2 2 2h3"/>',
   more: '<circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/><circle cx="5" cy="12" r="1"/>',
   search: '<path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/>',
+  // the home page's search (a smaller glass)
+  find: '<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>',
   sliders:
     '<path d="M10 5H3"/><path d="M12 19H3"/><path d="M14 3v4"/><path d="M16 17v4"/><path d="M21 12h-9"/><path d="M21 19h-5"/><path d="M21 5h-7"/><path d="M8 10v4"/><path d="M8 12H3"/>',
   plus: '<path d="M5 12h14"/><path d="M12 5v14"/>',

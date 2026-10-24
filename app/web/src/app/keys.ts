@@ -129,6 +129,14 @@ export function pageKeys(app: App): (e: KeyboardEvent) => void {
   return (e: KeyboardEvent) => {
     if (e.defaultPrevented) return
     const active = document.activeElement
+    // the home page: Cmd-K or / go to its search (Esc there clears it)
+    if (app.stores.route.getState().route.page === 'home') {
+      if (((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') || (e.key === '/' && !typingIn(active))) {
+        e.preventDefault()
+        app.fields.focus('home')
+      }
+      return
+    }
     if (e.key === 'Escape') return escape(e, active)
     // Cmd-K anywhere on the desktop, even while typing: Go to or do (again: closes it)
     if (app.desk() && (e.metaKey || e.ctrlKey) && !e.altKey && e.key.toLowerCase() === 'k') {

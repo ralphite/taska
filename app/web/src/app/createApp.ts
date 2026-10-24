@@ -4,7 +4,6 @@
 import { Http } from '../api/http'
 import { TaskaApi } from '../api/taska'
 import { merge, project, type ProjectModel, type ServerCopy } from '../model/project'
-import type { ProjectRow } from '../model/types'
 import { createChangesStore, keptChanges, type ChangesStore } from '../stores/changes'
 import { createDataStore, type DataStore } from '../stores/data'
 import { createFeedbackStore, type FeedbackStore } from '../stores/feedback'
@@ -28,6 +27,7 @@ import { ListHold } from './listHold'
 import { Answers } from './answers'
 import { Box } from './box'
 import { CrossSearch } from './crossSearch'
+import { Projects } from './projects'
 import { Fields } from './fields'
 import { ListOrder } from './listOrder'
 import { Moves } from './moves'
@@ -93,13 +93,15 @@ export interface App {
   model(slug: string): ProjectModel | null
   /** show a project: its copy, then its changes as they come */
   showProject(slug: string): void
-  refreshProjects(): Promise<void>
+  projects: Projects
+  refreshProjects(): Promise<boolean>
   stop(): void
 }
 
 export function createApp(env: AppEnv): App {
   const api = new TaskaApi(env.http)
-  const data = createDataStore(env.kv.getJson<ProjectRow[]>('taska.projects'))
+  const kept = Projects.kept(env.kv)
+  const data = createDataStore(kept.rows, kept.needs, Date.now())
   const changes = createChangesStore(env.kv)
   const outbox = createOutboxStore(env.kv)
   const feedback = createFeedbackStore(env.kv)
@@ -188,15 +190,8 @@ export function createApp(env: AppEnv): App {
     noteWith: () => false,
   })
 
-  const refreshProjects = async () => {
-    try {
-      const rows = (await api.projects()).sort((a, b) => (b.t || 0) - (a.t || 0))
-      data.getState().setProjects(rows)
-      env.kv.setJson('taska.projects', rows)
-    } catch {
-      /* the list stays as last seen */
-    }
-  }
+  const projects = new Projects({ api, data, kv: env.kv, home: () => route.getState().route.page === 'home' })
+  const refreshProjects = () => projects.refresh()
 
   const showProject = (slug: string) => {
     if (sync?.slug === slug) return
@@ -282,8 +277,10 @@ export function createApp(env: AppEnv): App {
     runner,
     model,
     showProject,
+    projects,
     refreshProjects,
     stop: () => {
+      projects.stop()
       sync?.close()
       clearInterval(projectsTimer)
       unwatch()

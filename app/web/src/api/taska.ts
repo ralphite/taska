@@ -72,6 +72,35 @@ export class TaskaApi {
     return this.http.json<ProjectRow[]>('/api/projects')
   }
 
+  /** A new project, any name: its address is made from it. */
+  createProject(title: string): Promise<{ ok: boolean; name: string; title: string }> {
+    return this.http.json('/api/projects', { method: 'POST', body: { title } })
+  }
+
+  renameProject(name: string, title: string): Promise<{ ok: boolean; name: string; title: string; was: string }> {
+    return this.http.json('/api/projects/rename', { method: 'POST', body: { name, title } })
+  }
+
+  deleteProject(name: string): Promise<{ ok: boolean; name: string; title: string }> {
+    return this.http.json('/api/projects/delete', { method: 'POST', body: { name } })
+  }
+
+  restoreProject(name: string): Promise<{ ok: boolean; name: string; title: string }> {
+    return this.http.json('/api/projects/restore', { method: 'POST', body: { name } })
+  }
+
+  purgeProject(name: string): Promise<{ ok: boolean; name: string }> {
+    return this.http.json('/api/projects/purge', { method: 'POST', body: { name } })
+  }
+
+  deletedProjects(): Promise<{ name: string; title: string; t: string; items: number }[]> {
+    return this.http.json('/api/projects/deleted')
+  }
+
+  orderProjects(names: string[]): Promise<{ ok: boolean }> {
+    return this.http.json('/api/projects/order', { method: 'POST', body: { names } })
+  }
+
   needs(): Promise<Need[]> {
     return this.http.json<Need[]>('/api/needs')
   }

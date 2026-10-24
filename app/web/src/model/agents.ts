@@ -53,3 +53,9 @@ export function agentLine(agents: readonly AgentSeen[] | undefined, work: boolea
     tip: lines.map((l) => l.text).filter((l) => l !== label).join('\n') || undefined,
   }
 }
+
+/** The home page's agent cell: the agent last heard of, around while it waits for work or was here in 10 minutes. */
+export function lastAgent(agents: readonly AgentSeen[] | undefined, now: number): { name: string; on: boolean } | null {
+  const a = [...(agents || [])].sort((x, y) => y.t - x.t)[0]
+  return a ? { name: whoName(a.name), on: a.waiting || now - a.t < 10 * 60e3 } : null
+}

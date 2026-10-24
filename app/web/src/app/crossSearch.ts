@@ -12,8 +12,8 @@ export class CrossSearch {
     this.store = store
   }
 
-  /** The words the list searches now, in project `slug` (the others are searched). */
-  want(q: string, slug: string): void {
+  /** The words searched now, from project `slug` (the others are searched; '': every project). */
+  want(q: string, slug: string, wait = 300): void {
     if (q === this.store.getState().q) return
     this.store.getState().asked(q)
     clearTimeout(this.timer)
@@ -24,6 +24,6 @@ export class CrossSearch {
       } catch {
         this.store.getState().answered(q, null, true)
       }
-    }, 300)
+    }, wait)
   }
 }

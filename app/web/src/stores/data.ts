@@ -1,9 +1,9 @@
 // The server's data as the page has it: each project's copy (kept up to date by sync/projectSync), how sure the page
-// is that the server is away, and the projects' list (the sidebar, the home page).
+// is that the server is away, and the projects' list with what needs you in each (the sidebar, the home page).
 
 import { createStore, type StoreApi } from 'zustand/vanilla'
 import type { ServerCopy } from '../model/project'
-import type { ProjectRow } from '../model/types'
+import type { Need, ProjectRow } from '../model/types'
 
 export interface DataState {
   copies: Record<string, ServerCopy>
@@ -11,20 +11,31 @@ export interface DataState {
   away: Record<string, number>
   /** the projects as last listed (null: never listed in this browser) */
   projects: ProjectRow[] | null
+  /** what needs you, every project's, the most pressing first (as last listed) */
+  needs: Need[]
+  /** when the projects were last listed (what "an agent is around" is measured against) */
+  listedAt: number
+  /** the list could not be asked lately: the one shown is the one kept from before */
+  listAway: boolean
   setCopy(slug: string, copy: ServerCopy): void
   setAway(slug: string, away: number): void
-  setProjects(rows: ProjectRow[]): void
+  setProjects(rows: ProjectRow[], needs: Need[] | null, at: number): void
+  setListAway(away: boolean): void
 }
 
 export type DataStore = StoreApi<DataState>
 
-export function createDataStore(projects: ProjectRow[] | null = null): DataStore {
+export function createDataStore(projects: ProjectRow[] | null = null, needs: Need[] = [], at = 0): DataStore {
   return createStore<DataState>()((set) => ({
     copies: {},
     away: {},
     projects,
+    needs,
+    listedAt: at,
+    listAway: false,
     setCopy: (slug, copy) => set((s) => ({ copies: { ...s.copies, [slug]: copy } })),
     setAway: (slug, away) => set((s) => (s.away[slug] === away ? s : { away: { ...s.away, [slug]: away } })),
-    setProjects: (rows) => set({ projects: rows }),
+    setProjects: (rows, needs, at) => set((s) => ({ projects: rows, needs: needs ?? s.needs, listedAt: at, listAway: false })),
+    setListAway: (away) => set((s) => (s.listAway === away ? s : { listAway: away })),
   }))
 }
