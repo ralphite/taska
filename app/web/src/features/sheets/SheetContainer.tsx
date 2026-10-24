@@ -11,6 +11,7 @@ import { ItemMenuSheet, MessageMenuSheet, MoveItemProjectSheet, MoveParentSheet,
 import { FiltersSheet } from '../list/FiltersContainer'
 import { ViewMenuSheet } from '../list/ViewMenuContainer'
 import { SignInSheet } from '../project/SignInContainer'
+import { NotSavedSheet, ProjectMenuSheet } from '../project/ProjectSheetsContainer'
 import { CommentMoveSheet, DocEditSheet, DocMoveSheet } from '../docs/DocSheetsContainer'
 
 const KINDS: { [K in SheetKind]: ComponentType<{ req: Extract<SheetRequest, { kind: K }> }> } = {
@@ -33,6 +34,8 @@ const KINDS: { [K in SheetKind]: ComponentType<{ req: Extract<SheetRequest, { ki
   'doc-edit': DocEditSheet,
   'view-menu': ViewMenuSheet,
   'sign-in': SignInSheet,
+  'project-menu': ProjectMenuSheet,
+  'not-saved': NotSavedSheet,
 }
 
 function Holds({ req }: { req: SheetRequest }) {

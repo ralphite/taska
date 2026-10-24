@@ -47,6 +47,7 @@ import { createDragStore, type DragStore } from '../stores/drag'
 import { ItemDrag } from './itemDrag'
 import { Selection } from './selection'
 import { Updates } from './updates'
+import { changePlace, changeText, changeWords } from '../model/saidOf'
 import { Access } from './access'
 import { createViewsStore, type ViewsStore } from '../stores/views'
 import { createMediaStore, type MediaStore } from '../stores/media'
@@ -248,7 +249,7 @@ export function createApp(env: AppEnv): App {
     stale,
     cursor: (slug) => (sync?.slug === slug ? sync.cursor : null),
     unreachable: () => {},
-    refused: (c, why) => toasts.notSaved({ what: c.said || 'a change', why, slug: c.slug }),
+    refused: (c, why) => toasts.notSaved({ what: changeWords(c.commands), why, slug: c.slug, go: changePlace(c.commands, c.slug), said: changeText(c.commands) }),
   })
   const inputs = new InputSender(api, outbox, {
     cursor: (slug) => (sync?.slug === slug ? sync.cursor : null),

@@ -42,6 +42,8 @@ export interface SidebarEvents {
   /** an item from the list dragged over a project (null: off them); -> it can go there */
   dragProject?(slug: string | null): boolean
   dropProject?(): void
+  /** a project's menu, at the pointer (right-click, the desktop) */
+  projectMenu?(slug: string, x: number, y: number): void
 }
 
 export interface SidebarProps {
@@ -93,6 +95,11 @@ export function ProjectRows({ phone, projects, on }: { phone: boolean; projects:
             href={p.href}
             data-slug={p.slug}
             {...(p.drop ? { 'data-drop': '' } : {})}
+            onContextMenu={(e) => {
+              if (!on.projectMenu) return
+              e.preventDefault()
+              on.projectMenu(p.slug, e.clientX, e.clientY)
+            }}
             aria-current={p.current ? 'page' : undefined}
             onClick={(e) => (p.current ? (e.preventDefault(), on.newInput()) : on.go(p.href, e))}
             className={DESK_ROW}

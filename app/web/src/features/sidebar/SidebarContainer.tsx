@@ -1,8 +1,9 @@
 // The sidebar with the page's data: every project in your order, this one with what this page knows now.
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { runAction } from '../../app/actions'
 import { Grip } from '../../ui/Grip'
+import { NewProjectField } from './NewProjectField'
 import { useApp, useLayout, useStoreValue } from '../../app/context'
 import { useProjectModel } from '../../app/hooks'
 import { needsYou } from '../../model/items'
@@ -68,6 +69,8 @@ export function SidebarContainer({ slug, place, hidden, rail }: { slug: string; 
   const dropOn = useStoreValue(app.stores.drag, (s) => s.project)
   const list = dropOn && listed ? listed.map((p) => (p.slug === dropOn ? { ...p, drop: true } : p)) : listed
   const route = useStoreValue(app.stores.route, (s) => s.route)
+  // the sidebar's New project, being named (and why it was not made)
+  const [making, setMaking] = useState<{ error: string } | null>(null)
   const undo = useStoreValue(app.stores.feedback, (s) => s.undo.at(-1) ?? null)
   const sideHidden = useStoreValue(app.stores.ui, (s) => s.sideHidden)
   const composing = route.page === 'project' && (route.place.kind === 'new' || (route.place.kind === 'tab' && route.tab !== 'inputs'))
@@ -82,14 +85,20 @@ export function SidebarContainer({ slug, place, hidden, rail }: { slug: string; 
     : []
   const on: SidebarEvents = {
     newInput: () => runAction(app, 'new-input'),
-    newVoice: () => app.nav.newInput(),
-    newProject: () => {},
+    newVoice: () => {
+      // New input, recording at once (again: stop and send)
+      if (app.voice.recording()) return void app.voice.finish(true)
+      app.nav.newInput()
+      void app.voice.start(slug, 'new', null, 'main')
+    },
+    newProject: () => setMaking({ error: '' }),
     hide: () => app.stores.ui.getState().setSideHidden(!sideHidden),
     settings: () => app.nav.to(base + 'settings'),
     keys: () => app.sheets.open({ kind: 'keys' }),
     undo: () => void undo?.run(),
     order: (names, moved) => void app.projects.order(names, `${list?.find((p) => p.slug === moved)?.title || moved} moved`),
     dragProject: (to) => app.itemDrag.overProject(to),
+    projectMenu: (to, x, y) => app.sheets.open({ kind: 'project-menu', slug: to }, { pop: true, focus: false, at: { x, y } }),
     dropProject: () => app.itemDrag.drop(),
     go: (href, e) => {
       if (e.metaKey || e.ctrlKey) return
@@ -111,6 +120,20 @@ export function SidebarContainer({ slug, place, hidden, rail }: { slug: string; 
       devLinks={dev ? DEV_LINKS : []}
       place={place}
       hidden={hidden}
+      newProjectField={
+        making ? (
+          <NewProjectField
+            error={making.error}
+            on={{
+              create: (title) => {
+                if (!title.trim()) return
+                void app.projects.create(title.trim()).then((r) => ('name' in r ? app.nav.to(`/p/${r.name}/`) : setMaking({ error: r.error })))
+              },
+              cancel: () => setMaking(null),
+            }}
+          />
+        ) : undefined
+      }
       edge={
         layout === 'desk' ? (
           <Grip

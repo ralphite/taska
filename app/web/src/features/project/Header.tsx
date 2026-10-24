@@ -41,11 +41,11 @@ export function AgentPill({ tone, label, offline }: { tone: AgentTone; label: st
 }
 
 /** The changes that could not be saved, in one place until each is let go. */
-export function NotSavedPill({ n, onOpen }: { n: number; onOpen(): void }) {
+export function NotSavedPill({ n, onOpen }: { n: number; onOpen(from: HTMLElement): void }) {
   if (!n) return null
   return (
     <button
-      onClick={onOpen}
+      onClick={(e) => onOpen(e.currentTarget)}
       aria-label={`${n} not saved`}
       className="flex h-8 shrink-0 items-center gap-1.5 rounded-full bg-red-50 px-2.5 text-[13px] font-semibold text-red-700 ring-1 ring-red-600/20 ring-inset hover:bg-red-100 lg:px-3 dark:bg-red-400/10 dark:text-red-300 dark:ring-red-400/25 dark:hover:bg-red-400/20"
     >
@@ -87,7 +87,7 @@ export function ProjectBar({
   notSaved: number
   place: string
   hidden?: boolean
-  on: { tab(t: Tab): void; agents(): void; notSaved(): void }
+  on: { tab(t: Tab): void; agents(): void; notSaved(from: HTMLElement): void }
 }) {
   return (
     <nav hidden={hidden} aria-label="This project" className={`flex h-12 min-w-0 items-stretch gap-1 border-b border-zinc-200 pr-3 pl-2 dark:border-zinc-800 ${place}`}>
@@ -156,7 +156,7 @@ export function ListHead({
   on: {
     menu(): void
     agents(): void
-    notSaved(): void
+    notSaved(from: HTMLElement): void
     search(on: boolean): void
     query(q: string): void
     clear(): void

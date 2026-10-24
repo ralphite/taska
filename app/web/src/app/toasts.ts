@@ -69,6 +69,13 @@ export class Toasts {
   }
 
   /** Taska said no: it is listed with why, and said once. */
+  /** Sent again (one, or every one that can be): it leaves the list; failing again, it comes back. */
+  retryNotSaved(sid?: string): void {
+    const go = this.store.getState().notSaved.filter((f) => f.retry && (sid == null || f.sid === sid)).reverse()
+    for (const f of go) this.store.getState().dropNotSaved(f.sid)
+    for (const f of go) void f.retry?.()
+  }
+
   notSaved(f: Omit<NotSaved, 'sid' | 'at'>): void {
     const sid = Date.now().toString(36) + ++this.n
     this.store.getState().addNotSaved({ ...f, sid, at: Date.now() })

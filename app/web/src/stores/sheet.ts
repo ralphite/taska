@@ -32,6 +32,10 @@ export type SheetRequest =
   | { kind: 'view-menu'; i: number }
   /** Taska wants its key */
   | { kind: 'sign-in' }
+  /** a project's menu (the sidebar's) */
+  | { kind: 'project-menu'; slug: string }
+  /** what was not saved */
+  | { kind: 'not-saved' }
   | { kind: 'comment-move'; d: number; id: number }
   /** a document's editor (the phone's, and a new one's): an existing one, or a new one on item n */
   | { kind: 'doc-edit'; d: number }

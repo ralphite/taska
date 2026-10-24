@@ -1,0 +1,76 @@
+// The project's menu (from the sidebar) and the list of what was not saved, with what they do.
+
+import { useApp, useStoreValue } from '../../app/context'
+import { useProjectModel, useProjectRoute } from '../../app/hooks'
+import { openCount } from '../../model/visible'
+import { when } from '../../model/time'
+import type { SheetRequest } from '../../stores/sheet'
+import { SheetLayout } from '../../ui/Sheet'
+import { toneOf } from '../../ui/tones'
+import { useSideProjects } from '../sidebar/SidebarContainer'
+import { notSavedSheet } from './NotSaved'
+import { projectMenuSheet } from './ProjectSheets'
+
+export function ProjectMenuSheet({ req }: { req: Extract<SheetRequest, { kind: 'project-menu' }> }) {
+  const app = useApp()
+  const route = useProjectRoute()
+  const here = route?.slug === req.slug
+  const m = useProjectModel(req.slug)
+  const { tones } = useSideProjects(route?.slug ?? '')
+  const rows = useStoreValue(app.stores.data, (s) => s.projects)
+  const row = rows?.find((p) => p.name === req.slug)
+  const title = (here && m?.facts.title) || row?.title || req.slug
+  const open = here && m ? openCount(m.items) : (row?.open ?? '')
+  const done = (run: () => void) => () => {
+    app.sheets.close()
+    run()
+  }
+  const base = route ? `/p/${encodeURIComponent(route.slug)}/` : '/'
+  return (
+    <SheetLayout
+      {...projectMenuSheet(
+        { here, slug: req.slug, title, tone: toneOf(tones, req.slug), open },
+        {
+          open: done(() => app.nav.to(`/p/${encodeURIComponent(req.slug)}/`)),
+          settings: done(() => app.nav.to(`/p/${encodeURIComponent(req.slug)}/settings`)),
+          manage: done(() => app.nav.to(base + 'projects')),
+        },
+      )}
+    />
+  )
+}
+
+export function NotSavedSheet() {
+  const app = useApp()
+  const route = useProjectRoute()
+  const list = useStoreValue(app.stores.feedback, (s) => s.notSaved)
+  const titles = useStoreValue(app.stores.data, (s) => s.projects)
+  // its times are told against the time the project's news last came
+  const now = useProjectModel(route?.slug ?? '')?.at
+  const rows = list.map((f) => ({
+    sid: f.sid,
+    what: f.what,
+    why: f.why,
+    when: when(f.at, now ?? f.at),
+    go: f.go,
+    said: f.said,
+    elsewhere: route && f.slug !== route.slug ? titles?.find((p) => p.name === f.slug)?.title || f.slug : undefined,
+    canRetry: !!f.retry,
+  }))
+  const parts = notSavedSheet(rows, {
+    go: (url) => {
+      app.sheets.close()
+      app.nav.to(url)
+    },
+    retry: (sid) => {
+      app.toasts.retryNotSaved(sid)
+      if (!app.stores.feedback.getState().notSaved.length) app.sheets.close()
+    },
+    drop: (sid) => {
+      app.stores.feedback.getState().dropNotSaved(sid)
+      if (!app.stores.feedback.getState().notSaved.length) app.sheets.close()
+    },
+  })
+  if (!parts) return null
+  return <SheetLayout {...parts} />
+}

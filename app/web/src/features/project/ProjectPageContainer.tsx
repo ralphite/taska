@@ -120,7 +120,7 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
           notSaved={notSaved}
           place="col-span-2 col-start-1 row-start-1"
           hidden={settings}
-          on={{ tab: (t) => app.nav.tab(t), agents: () => app.nav.to(`/p/${encodeURIComponent(route.slug)}/agents`), notSaved: () => {} }}
+          on={{ tab: (t) => app.nav.tab(t), agents: () => app.nav.to(`/p/${encodeURIComponent(route.slug)}/agents`), notSaved: (from) => app.sheets.openFrom(from, { kind: 'not-saved' }, { focus: false }) }}
         />
         <ListHead
           phone={false}
@@ -257,8 +257,8 @@ function PhoneLayout({ route }: { route: ProjectRoute }) {
           searchRef={app.fields.ref('search')}
           on={{
             menu: () => app.nav.drawer(true),
-            agents: () => {},
-            notSaved: () => {},
+            agents: () => app.nav.to(`/p/${encodeURIComponent(route.slug)}/agents`),
+            notSaved: () => app.sheets.open({ kind: 'not-saved' }, { focus: false }),
             search: (on) => app.nav.search(on),
             query: (q) => app.nav.setList({ q }),
             clear: () => app.nav.setList({ q: '' }),
