@@ -242,7 +242,7 @@ function PhoneLayout({ route }: { route: ProjectRoute }) {
           <ItemListContainer route={route} />
         </section>
         <InputsContainer route={route} hidden={!under || route.tab !== 'inputs'} />
-        <DetailContainer route={route} place="" hidden={!open} />
+        <DetailContainer route={route} place="" hidden={!open} footRoom={footH} />
         <FootContainer route={route} composePage={false} place="" hidden={settings} onHeight={setFootH} />
       </div>
     </>

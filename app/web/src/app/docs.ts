@@ -3,7 +3,10 @@
 // close its threads, resolve them, move a comment, delete, restore or move the document. Each change shows at once
 // and is saved behind you, with Undo.
 
-import { docTarget, splitThread } from '../model/docs'
+import { allComments, docTarget, sameText, splitThread, type DocTarget } from '../model/docs'
+import type { Comment } from '../model/types'
+import type { Box } from './box'
+import type { BoxStore } from '../stores/box'
 import { codeOf, liveN, type DocPatch, type ProjectModel } from '../model/project'
 import type { Tab } from '../model/words'
 import type { DocViewStore } from '../stores/docView'
@@ -24,6 +27,8 @@ export interface DocsDeps {
   fields: Fields
   desk(): boolean
   model(slug: string): ProjectModel | null
+  box: Box
+  boxStore: BoxStore
 }
 
 export class Docs {
@@ -88,6 +93,12 @@ export class Docs {
     if (desk && sel.size) this.d.fields.get('box')?.focus({ preventScroll: true })
   }
 
+  /** From a document to its item: the box replies there. */
+  toItem(): void {
+    this.close()
+    requestAnimationFrame(() => this.d.fields.get('box')?.focus({ preventScroll: true }))
+  }
+
   toggle(tk: string): void {
     this.d.view.getState().toggleThread(tk)
   }
@@ -137,6 +148,80 @@ export class Docs {
     if (on) this.d.view.getState().closeThreads(tk)
     else this.d.view.getState().openThread(tk)
     this.d.toasts.show(on ? 'Resolved' : 'Open again', this.d.toasts.undoable(on ? 'Resolve a thread' : 'Reopen a thread', () => put(!on)))
+  }
+
+  /** The box's words as a comment where it goes: there at once (in the thread it will be in: the same words quoted
+   * again join their thread), saved behind you; not saved, the words come back to the box. Its files go once up. */
+  async comment(slug: string, dn: number, t: DocTarget, key: string): Promise<boolean> {
+    const m = this.d.model(slug)
+    const doc = m?.docs.find((x) => x.d === dn)
+    if (!doc) return false
+    const up = () => (this.d.boxStore.getState().files[key] || []).some((f) => f.uploading)
+    for (let i = 0; up() && i < 300; i++) await new Promise((ok) => setTimeout(ok, 200))
+    const { text, files } = this.d.box.take(slug, key)
+    const sent = files.filter((f) => f.f && !f.failed)
+    if (!text && !sent.length) return false
+    const quote = t.reply ? '' : t.quote
+    const same = t.key === 'doc' ? doc.whole : doc.blocks.find((b) => b.key === t.key)?.comments || []
+    const th = t.th ?? same.find((x) => x.th === x.id && sameText(x.quote, quote))?.th
+    const stand: Comment = { id: -Date.now(), key: t.key, th: th ?? 0, quote, text: text || '…', by: 'you', t: new Date().toISOString(), files: [] }
+    const v = this.d.view.getState()
+    v.openThread(t.th ? `${t.key}#${t.th}` : t.key)
+    v.unpick()
+    if (typeof getSelection !== 'undefined') getSelection()?.removeAllRanges()
+    if (this.d.desk()) this.d.fields.get('box')?.focus({ preventScroll: true })
+    const ok = await this.d.runner.send({
+      id: newId(),
+      slug,
+      commands: [{ op: 'dc', d: dn, key: t.key, text, files: sent.map(({ f, name, mime, size, tr }) => ({ f, name, mime, size, ...(tr ? { tr } : {}) })), ...(t.reply ? {} : { quote }), ...(t.th ? { th: t.th } : {}) } as never],
+      patches: [],
+      docPatches: [{ d: dn, comment: stand }],
+      said: `commenting on D${dn}`,
+      t: Date.now(),
+    })
+    if (!ok) this.d.box.putBack(slug, key, text, files)
+    return ok
+  }
+
+  /** Edit a comment of yours, in the box. */
+  editComment(slug: string, dn: number, id: number): void {
+    const c = this.commentOf(slug, dn, id)
+    if (!c) return
+    this.d.box.commentStart(slug, dn, id, c.text)
+    this.d.fields.focus('box')
+  }
+
+  /** Save the edit: it changes at once and is saved behind you; not saved, your words come back to edit. */
+  async saveComment(slug: string, dn: number, id: number, key: string): Promise<boolean> {
+    const c = this.commentOf(slug, dn, id)
+    const { text, files } = this.d.box.take(slug, key)
+    const sent = files.filter((f) => f.f && !f.failed)
+    if (!text && !sent.length && !c?.files.length) {
+      this.d.box.putBack(slug, key, text, files)
+      this.d.toasts.show('Write something, or delete the comment instead')
+      return false
+    }
+    this.d.boxStore.getState().setMode(null)
+    const patch: DocPatch[] = c && text ? [{ d: dn, commentGone: id }, { d: dn, comment: { ...c, text } }] : []
+    const ok = await this.d.runner.send({
+      id: newId(),
+      slug,
+      commands: [{ op: 'dcedit', d: dn, id, text, ...(sent.length ? { files: sent.map(({ f, name, mime, size, tr }) => ({ f, name, mime, size, ...(tr ? { tr } : {}) })) } : {}) } as never],
+      patches: [],
+      docPatches: patch,
+      said: `editing a comment on D${dn}`,
+      t: Date.now(),
+    })
+    if (!ok) {
+      this.d.boxStore.getState().setMode({ kind: 'comment', d: dn, id, was: c?.text || '' })
+      this.d.box.putBack(slug, key, text, files)
+    }
+    return ok
+  }
+
+  private commentOf(slug: string, dn: number, id: number): Comment | undefined {
+    const doc = this.d.model(slug)?.docs.find((x) => x.d === dn)
+    return doc ? allComments(doc).find((x) => x.id === id) : undefined
   }
 
   /** Delete it (a second press within 3 seconds); Undo brings it back. */

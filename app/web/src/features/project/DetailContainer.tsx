@@ -12,7 +12,7 @@ import { PaneFrame } from '../item/PaneFrame'
 import { DeletedPickContainer } from '../side/SideListContainer'
 import { DocPaneContainer, DocSheetContainer } from '../docs/DocContainer'
 
-export function DetailContainer({ route, place, hidden, full = false }: { route: ProjectRoute; place: string; hidden?: boolean; full?: boolean }) {
+export function DetailContainer({ route, place, hidden, full = false, footRoom = 0 }: { route: ProjectRoute; place: string; hidden?: boolean; full?: boolean; footRoom?: number }) {
   const app = useApp()
   const layout = useLayout()
   const desk = layout === 'desk'
@@ -62,7 +62,7 @@ export function DetailContainer({ route, place, hidden, full = false }: { route:
         onMenu={(from) => openItemMenu(app, desk, it.n, null, from)}
       >
         <ItemPageContainer key={it.n} it={it} m={m} slug={route.slug} tab={route.tab} desk={desk} />
-        {doc && !desk ? <DocSheetContainer slug={route.slug} dn={doc.d} /> : null}
+        {doc && !desk ? <DocSheetContainer slug={route.slug} dn={doc.d} footRoom={footRoom} /> : null}
       </PaneFrame>
     )
   }

@@ -12,11 +12,14 @@ import { inputMatch } from '../../model/visible'
 import type { Input } from '../../model/types'
 import { inputCode, plural } from '../../model/words'
 import type { BoxMode } from '../../stores/box'
+import type { DocViewState } from '../../stores/docView'
+import { docTarget, type DocTarget } from '../../model/docs'
+import { plainQuote } from '../../model/markdown'
 import { outgoingLine, outgoingState, type Outgoing } from '../../stores/outbox'
 import { Icon } from '../../ui/Icon'
 import { DraftFiles } from './DraftFiles'
 import { ProjTile } from '../../ui/bits'
-import { toneOf } from '../../ui/tones'
+import { HIT, toneOf } from '../../ui/tones'
 import { SaidLately, type SaidChip, type SaidInput, type SaidOutgoing } from '../inputs/SaidLately'
 import { Thumbs } from '../inputs/Files'
 import { useSideProjects } from '../sidebar/SidebarContainer'
@@ -59,11 +62,60 @@ function feedbackLine(a: { m: ProjectModel | null; desk: boolean; composePage: b
 }
 
 /** What the box writes to now: its key in the drafts, the line on top, the placeholder, what Send says. */
-function boxRole(m: ProjectModel | null, route: ProjectRoute, desk: boolean, title: string, mode: BoxMode, stop: () => void) {
+const xButton = (label: string, run: () => void, esc = true) => (
+  <button
+    onClick={run}
+    aria-label={label}
+    title={esc ? `${label} · Esc` : label}
+    className="-my-1.5 grid size-11 shrink-0 place-items-center rounded-full text-zinc-400 hover:text-zinc-800 lg:size-8 lg:hover:bg-zinc-100 dark:text-zinc-500 dark:hover:text-zinc-200 dark:lg:hover:bg-zinc-800"
+  >
+    <Icon n="x" c="size-4" />
+  </button>
+)
+
+/** What a comment from the box goes to: what is picked in the document, or (the phone) the whole document. */
+export type DocAim = { d: number; target: DocTarget } | null
+
+function boxRole(m: ProjectModel | null, route: ProjectRoute, desk: boolean, title: string, mode: BoxMode, stop: () => void, pick: DocViewState, on: { unpick(): void; toItem(): void }) {
   // the item open, or the one whose document is open (nothing picked in it, the box replies on the item)
   const docOf = route.place.kind === 'doc' ? m?.docs.find((x) => x.d === (route.place as { d: number }).d) : undefined
   const open = route.place.kind === 'item' ? m?.byN.get(Number(/\d+/.exec(route.place.ref)?.[0])) : docOf && m ? m.byN.get(liveN(m, docOf.n)) : undefined
   const files = m?.facts.organizer.on ? 'the organizer files it' : 'your agent files it'
+  const none = { aim: null as DocAim }
+  if (mode?.kind === 'comment') {
+    const was = oneLine(mode.was)
+    const line: BoxLine = { icon: 'pencil', label: `Edit your comment on D${mode.d}`, detail: was ? `\u201c${was.slice(0, 120)}\u201d` : '', right: xButton('Stop editing', stop) }
+    return { ...none, key: `dc ${mode.d} ${mode.id}`, scope: null, doc: null, line, placeholder: 'Write…', send: 'Save' }
+  }
+  const dt = docOf && !mode ? docTarget(docOf, pick) : null
+  if (docOf && dt) {
+    const line: BoxLine = {
+      icon: dt.reply ? 'reply' : 'comment',
+      label: `${dt.reply ? 'Reply in' : 'Comment on'} D${docOf.d}`,
+      detail: (dt.many || 0) > 1 ? `· ${dt.many} paragraphs` : dt.quote ? `\u201c${plainQuote(dt.quote).slice(0, 120)}\u201d` : '',
+      right: xButton('Cancel the comment', on.unpick),
+    }
+    return { aim: { d: docOf.d, target: dt } as DocAim, key: `doc ${docOf.d}`, scope: null, doc: docOf.d, line, placeholder: 'Write…', send: dt.reply ? 'Reply' : 'Comment' }
+  }
+  if (docOf && !desk && !mode) {
+    // the phone, nothing picked: a comment on the whole document (Reply to its item instead)
+    const host = m ? liveN(m, docOf.n) : null
+    const line: BoxLine = {
+      icon: 'comment',
+      label: `Comment on D${docOf.d}`,
+      detail: '· or tap a part',
+      right:
+        host != null && m?.byN.has(host) ? (
+          <button
+            onClick={on.toItem}
+            className={`${HIT} -my-1 flex h-8 shrink-0 items-center rounded-full px-2 text-[13px] font-medium text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200`}
+          >
+            Reply to {codeOf(m, host)}
+          </button>
+        ) : null,
+    }
+    return { aim: { d: docOf.d, target: { key: 'doc', quote: '' } } as DocAim, key: `doc ${docOf.d}`, scope: null, doc: docOf.d, line, placeholder: `Comment on D${docOf.d}…`, send: 'Comment' }
+  }
   if (mode?.kind === 'amend' && m?.byId.has(mode.id)) {
     const r = m.byId.get(mode.id) as Input
     const edit = mode.mode === 'edit'
@@ -85,11 +137,11 @@ function boxRole(m: ProjectModel | null, route: ProjectRoute, desk: boolean, tit
         </button>
       ),
     }
-    return { key: `${mode.mode} ${mode.id}`, scope: open && m ? codeOf(m, open.n) : null, line, placeholder: 'Write…', send: 'Save' }
+    return { ...none, key: `${mode.mode} ${mode.id}`, scope: open && m ? codeOf(m, open.n) : null, doc: null, line, placeholder: 'Write…', send: 'Save' }
   }
-  if (open && m) return { key: codeOf(m, open.n), scope: codeOf(m, open.n), line: null as BoxLine | null, placeholder: `Reply to ${codeOf(m, open.n)}…`, send: 'Send' }
+  if (open && m) return { ...none, key: codeOf(m, open.n), scope: codeOf(m, open.n), doc: null, line: null as BoxLine | null, placeholder: `Reply to ${codeOf(m, open.n)}…`, send: 'Send' }
   const line: BoxLine | null = desk ? { icon: 'newinput', label: 'New input', detail: `· ${files}` } : null
-  return { key: 'new', scope: null, line, placeholder: m ? `Write to ${title}…` : 'Write anything…', send: 'Send' }
+  return { ...none, key: 'new', scope: null, doc: null, line, placeholder: m ? `Write to ${title}…` : 'Write anything…', send: 'Send' }
 }
 
 /** The foot's height, for what scrolls under it: the list and the pane run on under the box, around its corners. */
@@ -126,8 +178,9 @@ export function FootContainer({ route, place, hidden, composePage, onHeight }: {
   const { tones } = useSideProjects(route.slug)
   const title = m?.facts.title || route.slug
   const mode = useStoreValue(app.stores.box, (s) => s.mode)
-  const role = boxRole(m, route, desk, title, mode, () => app.box.stop())
-  const key = app.box.key(role.scope, mode)
+  const pick = useStoreValue(app.stores.docView, (s) => s)
+  const role = boxRole(m, route, desk, title, mode, () => app.box.stop(), pick, { unpick: () => app.docs.unpick(), toItem: () => app.docs.toItem() })
+  const key = app.box.key(role.scope, mode, role.doc)
   const text = useStoreValue(app.stores.drafts, (s) => s.bySlug[route.slug]?.[key] ?? '')
   const draftFiles = useStoreValue(app.stores.box, (s) => s.files[key])
   const setText = (v: string) => app.box.write(route.slug, key, v)
@@ -136,7 +189,11 @@ export function FootContainer({ route, place, hidden, composePage, onHeight }: {
   const [upTo, setUpTo] = useState(STEP)
   const [opened, setOpened] = useState<ReadonlySet<string>>(new Set())
 
-  const send = () => void app.box.send(route.slug, m, role.scope)
+  const send = () => {
+    if (mode?.kind === 'comment') return void app.docs.saveComment(route.slug, mode.d, mode.id, key)
+    if (role.aim) return void app.docs.comment(route.slug, role.aim.d, role.aim.target, key)
+    void app.box.send(route.slug, m, role.scope)
+  }
   const mine = outbox.filter((o) => o.slug === route.slug && !o.unsent)
   const words = useMemo(() => q.trim().toLowerCase().split(/\s+/).filter(Boolean), [q])
   const said = useMemo(() => {

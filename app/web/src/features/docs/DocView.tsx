@@ -2,7 +2,7 @@
 // their comment threads (beside the text on the desktop, under the paragraph on the phone), the comments on the whole
 // document, and those whose words changed since. On the phone a paragraph is tapped to comment on it. Props only.
 
-import { useLayoutEffect, useRef, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useRef, type ReactNode } from 'react'
 import { plainQuote } from '../../model/markdown'
 import { sameText, type Thread as DocThread } from '../../model/docs'
 import type { Block, Doc } from '../../model/types'
@@ -70,13 +70,16 @@ export interface DocEvents extends ThreadEvents {
   goItem(): void
   toggle(tk: string): void
   away(tk: string): void
-  pick(key: string, quote: string | null): void
+  /** a paragraph tapped, or its Comment pressed (`quote`: one item of its list) */
+  pick(key: string, quote: string | null, by: 'button' | 'tap'): void
   say(key: string, quote: string | null): void
   sayCancel(): void
   type(): void
   moveDoc(): void
   deleteDoc(): void
   circle(): void
+  /** words selected in a paragraph: what a comment quotes */
+  quote(key: string, text: string): void
   editDoc(): void
   whole(): void
 }
@@ -181,6 +184,21 @@ export function DocView({ facts, env, on, popover, lasso }: {
     const li = [...el.querySelectorAll<HTMLElement>(`section[data-key="${CSS.escape(r.b.key)}"] li`)].find((l) => l.innerText.trim() === r.quote)
     li?.setAttribute('data-q', '')
   })
+  useEffect(() => {
+    // words selected in a paragraph (not in a comment) are what a comment quotes; a collapsed selection keeps the last
+    const seen = () => {
+      const sel = getSelection()
+      const text = sel?.toString().trim()
+      if (facts.circle || !sel || !text || text.length < 2) return
+      const node = sel.anchorNode
+      const at = node?.nodeType === 1 ? (node as Element) : node?.parentElement
+      const sec = at?.closest<HTMLElement>('section[data-key]')
+      if (!sec || !root.current?.contains(sec) || at?.closest('[data-thread]')) return
+      on.quote(sec.dataset.key || '', text.slice(0, 500))
+    }
+    document.addEventListener('selectionchange', seen)
+    return () => document.removeEventListener('selectionchange', seen)
+  }, [facts.circle, on])
   const thread = (s: ShownThread, blockText?: string, rail = false) => (
     <Thread key={s.t.tk} t={s.t} blockText={blockText} rail={rail} isNew={s.isNew} done={s.done} replying={facts.replying === s.t.tk} asking={facts.asking} env={env} on={on} />
   )
@@ -243,8 +261,11 @@ export function DocView({ facts, env, on, popover, lasso }: {
                 key={r.tk}
                 data-key={r.b.key}
                 onClick={(e) => {
-                  if ((e.target as Element).closest('button, a, [data-ref]')) return
-                  on.pick(r.b.key, null)
+                  const t = e.target as Element
+                  if (t.closest('button, a, [data-ref]')) return
+                  // on the phone a tap on one item of a list picks that item, as pointing at it does on the desktop
+                  const li = desk ? null : t.closest<HTMLElement>('li')
+                  on.pick(r.b.key, li ? li.innerText.trim().slice(0, 500) : null, 'tap')
                 }}
                 {...(r.picked ? { 'data-picked': '' } : {})}
                 className="group/blk relative -mx-2 rounded-lg px-2 py-1 transition-colors hover:bg-zinc-50 has-[li[data-hov]]:bg-transparent data-hl:bg-amber-50 data-picked:bg-amber-50 data-picked:ring-2 data-picked:ring-amber-300 data-pressed:opacity-70 lg:cursor-text lg:after:absolute lg:after:inset-y-0 lg:after:left-full lg:after:w-18 dark:hover:bg-zinc-800/50 dark:data-hl:bg-amber-950/30 dark:data-picked:bg-amber-950/40 dark:data-picked:ring-amber-600 lg:[&_li[data-hov]]:rounded-md lg:[&_li[data-hov]]:bg-zinc-100 dark:lg:[&_li[data-hov]]:bg-zinc-800/70 [&_li[data-q]]:-mx-1 [&_li[data-q]]:rounded-md [&_li[data-q]]:bg-amber-50 [&_li[data-q]]:px-1 [&_li[data-q]]:ring-2 [&_li[data-q]]:ring-amber-300 dark:[&_li[data-q]]:bg-amber-950/40 dark:[&_li[data-q]]:ring-amber-600"
@@ -278,7 +299,7 @@ export function DocView({ facts, env, on, popover, lasso }: {
                     counts={r.counts}
                     open={r.open}
                     rec={facts.recording && r.say}
-                    on={{ say: (q) => on.say(r.b.key, q), comment: (q) => on.pick(r.b.key, q), toggle: on.toggle, away: on.away }}
+                    on={{ say: (q) => on.say(r.b.key, q), comment: (q) => on.pick(r.b.key, q, 'button'), toggle: on.toggle, away: on.away }}
                   >
                     {r.open ? (
                       <>

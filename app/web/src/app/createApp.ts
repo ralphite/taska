@@ -222,6 +222,7 @@ export function createApp(env: AppEnv): App {
     title: (slug) => data.getState().projects?.find((p) => p.name === slug)?.title || slug,
     go: (url) => route.getState().go(url, true),
   })
+  const box = new Box({ api, store: boxStore, drafts, outbox, inputs, runner, toasts })
   const activity = new Activity({ api, store: activityStore, toasts })
   const restores = new Restores({ runner, toasts, inputs: inputActions, model })
   const projects = new Projects({ api, data, kv: env.kv, home: () => route.getState().route.page === 'home' })
@@ -289,7 +290,7 @@ export function createApp(env: AppEnv): App {
     answers: new Answers({ inputs, view: itemView, outbox }),
     fields,
     inputActions,
-    box: new Box({ api, store: boxStore, drafts, outbox, inputs, runner, toasts }),
+    box,
     sheets,
     moves: new Moves({
       api,
@@ -308,7 +309,7 @@ export function createApp(env: AppEnv): App {
     keyArm: new KeyArm(),
     activity,
     restores,
-    docs: new Docs({ runner, toasts, view: docView, nav, route, sheets, fields, desk: env.desk, model }),
+    docs: new Docs({ runner, toasts, view: docView, nav, route, sheets, fields, desk: env.desk, model, box, boxStore }),
     refreshProjects,
     stop: () => {
       projects.stop()

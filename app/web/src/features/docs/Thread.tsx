@@ -84,7 +84,7 @@ export function Thread({ t, blockText, rail = false, isNew, done, replying, aski
   on: ThreadEvents
 }) {
   return (
-    <div className={rail ? 'space-y-2 rounded-xl border border-zinc-200 bg-white p-3 shadow-sm dark:border-zinc-800 dark:bg-zinc-900' : 'mt-2 space-y-2 border-l-2 border-amber-300 pl-3 dark:border-amber-600'}>
+    <div data-thread={t.tk} className={rail ? 'space-y-2 rounded-xl border border-zinc-200 bg-white p-3 shadow-sm dark:border-zinc-800 dark:bg-zinc-900' : 'mt-2 space-y-2 border-l-2 border-amber-300 pl-3 dark:border-amber-600'}>
       {isNew ? (
         <div className="flex items-center gap-1 text-[11px] font-semibold text-blue-600 dark:text-blue-400">
           <NewDot />

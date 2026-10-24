@@ -46,7 +46,7 @@ function useDoc(slug: string, dn: number) {
     play: () => {},
     words: () => {},
     view: () => {},
-    edit: () => {},
+    edit: (id) => docs.editComment(slug, dn, id),
     move: (id) => app.sheets.open({ kind: 'comment-move', d: dn, id }, { focus: false }),
     takeOff: (id, f) => docs.takeOff(dn, id, f),
     remove: (id) => docs.deleteComment(dn, id),
@@ -55,13 +55,14 @@ function useDoc(slug: string, dn: number) {
     goItem: () => m && d && app.nav.openItem(codeOf(m, liveN(m, d.n))),
     toggle: (tk) => docs.toggle(tk),
     away: (tk) => docs.away(tk),
-    pick: (key, quote) => docs.pick(key, quote, quote ? 'button' : 'tap'),
+    pick: (key, quote, by) => docs.pick(key, quote, by),
     say: () => {},
     sayCancel: () => {},
     type: () => docs.type(),
     moveDoc: () => app.sheets.open({ kind: 'doc-move', d: dn }, { focus: false }),
     deleteDoc: () => docs.remove(dn),
     circle: () => app.stores.docView.getState().setCircle(!v.circle),
+    quote: (key, text) => app.stores.docView.getState().pick({ quote: { key, text }, sel: new Set(), reply: null }),
     editDoc: () => {},
     whole: () => docs.whole(),
   }
@@ -97,12 +98,12 @@ export function DocPaneContainer({ route, dn, place, hidden }: { route: ProjectR
 }
 
 /** The phone's sheet with a document, over its item. */
-export function DocSheetContainer({ slug, dn }: { slug: string; dn: number }) {
+export function DocSheetContainer({ slug, dn, footRoom }: { slug: string; dn: number; footRoom: number }) {
   const app = useApp()
   const { m, d, facts, env, on, v } = useDoc(slug, dn)
   if (!m || !d || !facts) return null
   return (
-    <Sheet open look={{ tall: true, aboveComposer: v.typing }} desk={false} onClose={() => app.docs.close()}>
+    <Sheet open look={{ tall: true, aboveComposer: v.typing }} desk={false} footRoom={footRoom} onClose={() => app.docs.close()}>
       <SheetLayout title={`D${d.d}`} body={<DocView facts={facts} env={env} on={on} />} />
     </Sheet>
   )

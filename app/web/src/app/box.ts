@@ -33,11 +33,36 @@ export class Box {
     this.d = d
   }
 
-  /** The draft the box shows: what it writes to. */
-  key(scope: string | null, mode: BoxMode = this.d.store.getState().mode): string {
+  /** The draft the box shows: what it writes to (`doc`: a comment on that document). */
+  key(scope: string | null, mode: BoxMode = this.d.store.getState().mode, doc: number | null = null): string {
     if (mode?.kind === 'correct') return `correct ${mode.id}`
     if (mode?.kind === 'amend') return `${mode.mode} ${mode.id}`
+    if (mode?.kind === 'comment') return `dc ${mode.d} ${mode.id}`
+    if (doc != null) return `doc ${doc}`
     return scope || 'new'
+  }
+
+  /** What the draft holds, taken out of the box (its files once they are up). */
+  take(slug: string, key: string): { text: string; files: DraftFile[] } {
+    const text = this.text(slug, key).trim()
+    const files = [...(this.d.store.getState().files[key] || [])]
+    this.write(slug, key, '')
+    this.d.store.getState().takeFiles(key)
+    return { text, files }
+  }
+
+  /** It was not saved: the words come back to the draft, before what was written since. */
+  putBack(slug: string, key: string, text: string, files: DraftFile[] = []): void {
+    const now = this.text(slug, key).trim()
+    this.write(slug, key, [text, now].filter(Boolean).join('\n'))
+    if (files.length) this.d.store.getState().putFiles(key, files)
+  }
+
+  /** Edit a comment of yours: the box writes there, beginning with its words. */
+  commentStart(slug: string, d: number, id: number, was: string): void {
+    this.d.store.getState().setMode({ kind: 'comment', d, id, was })
+    const key = `dc ${d} ${id}`
+    if (!this.text(slug, key).trim()) this.write(slug, key, was)
   }
 
   text(slug: string, key: string): string {

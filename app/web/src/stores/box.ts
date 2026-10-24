@@ -7,7 +7,12 @@ import { createStore, type StoreApi } from 'zustand/vanilla'
 import type { OutFile } from './outbox'
 import type { KeyValueStore } from './storage'
 
-export type BoxMode = { kind: 'amend'; id: string; mode: 'edit' | 'append'; v: number } | { kind: 'correct'; id: string; wrong: string } | null
+export type BoxMode =
+  | { kind: 'amend'; id: string; mode: 'edit' | 'append'; v: number }
+  | { kind: 'correct'; id: string; wrong: string }
+  /** a comment of yours on a document, being edited */
+  | { kind: 'comment'; d: number; id: number; was: string }
+  | null
 
 export interface DraftFile extends OutFile {
   /** the page's own id for it (it has no "f" until it is up) */
