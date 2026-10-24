@@ -18,12 +18,9 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from ..domain.vocab import KEY_CHARS, Refused
+from ..domain.voice_words import VOICE_PREFS
 
-DEFAULT_VOICE_PREFS = """\
-Chinese in Simplified characters, never Traditional.
-Technical terms stay in English, as spoken: code names, commands, file names, product names.
-Numbers, priorities and item codes the short way: 3, P1, B73.
-My own words, as I said them: no summary, no translation."""
+DEFAULT_VOICE_PREFS = VOICE_PREFS  # how voice notes are written down until the user says otherwise
 MAX_PREFS = 4000
 
 
