@@ -23,8 +23,19 @@ export interface History {
 export interface RouteState {
   route: Route
   url: string
-  /** go to an address: a step in the history (push) or the address rewritten */
-  go(url: string, push?: boolean, state?: unknown): void
+  /** what is open over the page that Back closes (the phone's search, its drawer), the latest last */
+  layers: readonly string[]
+  /** the desktop's item full width (O): a step Back undoes; `link`: reached by a link while full width */
+  full: boolean
+  /** go full width, or back to the list (`here`: by rewriting this step, not going back) */
+  setFull(on: boolean, here?: boolean): void
+  /** go to an address: a step in the history (push) or the address rewritten; `layers`: what the new step has open
+   * (a step from the drawer leaves it closed: its step becomes the new one) */
+  go(url: string, push?: boolean, layers?: readonly string[]): void
+  /** something opens over the page: a step Back undoes */
+  openLayer(kind: string): void
+  /** it closes by its own button: its step goes too; `then` runs once the history has moved */
+  shutLayer(kind: string, then?: () => void): void
   /** the history moved (Back, Forward): read it again */
   read(): void
 }
@@ -32,22 +43,72 @@ export interface RouteState {
 export type RouteStore = StoreApi<RouteState>
 
 const urlOf = (p: Place) => p.path + p.search + p.hash
+const fullOf = (state: unknown) => !!(state as { full?: unknown } | null)?.full
+const layersOf = (state: unknown): string[] => {
+  const l = (state as { layers?: unknown } | null)?.layers
+  return Array.isArray(l) ? l.filter((x): x is string => typeof x === 'string') : []
+}
 
 export function createRouteStore(history: History): RouteStore {
   const at = history.location()
+  let after: (() => void) | null = null
+  const now = () => {
+    const p = history.location()
+    return { route: parseRoute(p.path, p.search, p.hash), url: urlOf(p), layers: layersOf(history.state()), full: fullOf(history.state()) }
+  }
   return createStore<RouteState>()((set, get) => ({
     route: parseRoute(at.path, at.search, at.hash),
     url: urlOf(at),
-    go: (url, push = false, state) => {
-      if (url === get().url && state === undefined) return
-      if (push && url !== get().url) history.push(url, state)
-      else history.replace(url, state === undefined ? history.state() : state)
-      const p = history.location()
-      set({ route: parseRoute(p.path, p.search, p.hash), url: urlOf(p) })
+    layers: layersOf(history.state()),
+    full: fullOf(history.state()),
+    go: (url, push = false, layers) => {
+      const open = get().layers
+      if (url === get().url && layers === undefined) return
+      // full width goes on to what a link opens; Back from there comes back
+      const full = get().full ? { full: true, link: true } : {}
+      const state = (l: readonly string[]) => (l.length || get().full ? { ...full, ...(l.length ? { layers: [...l] } : {}) } : null)
+      if (push && url !== get().url) {
+        // from the drawer: its step becomes the new one (as closing it, then going on, would leave the history)
+        if (open.includes('drawer')) history.replace(url, state(layers ?? open.filter((k) => k !== 'drawer')))
+        else history.push(url, state(layers ?? []))
+      } else history.replace(url, layers === undefined ? history.state() : state(layers))
+      set(now())
+    },
+    setFull: (on, here = false) => {
+      if (on === get().full) return
+      const st = (history.state() || {}) as Record<string, unknown>
+      if (on) history.push(get().url, { ...st, full: true })
+      else if (st.full && !st.link && !here) return history.back() // Back leaves full width
+      else {
+        const rest = { ...st }
+        delete rest.full
+        delete rest.link
+        history.replace(get().url, Object.keys(rest).length ? rest : null)
+      }
+      set(now())
+    },
+    openLayer: (kind) => {
+      const open = get().layers
+      if (open.includes(kind)) return
+      history.push(get().url, { layers: [...open, kind] })
+      set(now())
+    },
+    shutLayer: (kind, then) => {
+      const open = get().layers
+      if (open.at(-1) === kind) {
+        after = then ?? null
+        history.back()
+      } else {
+        if (open.includes(kind)) history.replace(get().url, { layers: open.filter((k) => k !== kind) })
+        set(now())
+        then?.()
+      }
     },
     read: () => {
-      const p = history.location()
-      set({ route: parseRoute(p.path, p.search, p.hash), url: urlOf(p) })
+      set(now())
+      const run = after
+      after = null
+      run?.()
     },
   }))
 }

@@ -42,7 +42,7 @@ export function createChangesStore(kv: KeyValueStore): ChangesStore {
   const keep = (slug: string, list: PendingChange[]) => {
     const mine: Kept[] = list
       .filter((c) => c.slug === slug && !c.showOnly)
-      .map((c) => ({ id: c.id, o: c.commands.length === 1 ? c.commands[0] : c.commands, patches: c.patches, t: c.t, p: `/p/${encodeURIComponent(slug)}/` }))
+      .map((c) => ({ id: c.id, o: c.commands.length === 1 ? c.commands[0] : c.commands, patches: c.patches.filter((x) => !x.add), t: c.t, p: `/p/${encodeURIComponent(slug)}/` })) // a stand-in item is not kept
     kv.setJson(KEY + slug, mine.length ? mine : null)
   }
   return createStore<ChangesState>()((set, get) => ({

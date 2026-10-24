@@ -10,7 +10,7 @@ import { shownStatus } from '../../model/items'
 import { codeOf, type ProjectModel } from '../../model/project'
 import { inputMatch } from '../../model/visible'
 import { inputCode } from '../../model/words'
-import { outgoingLine, type Outgoing } from '../../stores/outbox'
+import { outgoingLine, outgoingState, type Outgoing } from '../../stores/outbox'
 import { ProjTile } from '../../ui/bits'
 import { toneOf } from '../../ui/tones'
 import { SaidLately, type SaidChip, type SaidInput, type SaidOutgoing } from '../inputs/SaidLately'
@@ -53,9 +53,6 @@ function feedbackLine(a: { m: ProjectModel | null; desk: boolean; composePage: b
   const final = r.acked || (r.org && r.org.ok) || r.moved
   return { line, final: final ? r.id : undefined }
 }
-
-export const outgoingState = (o: Outgoing, away: number) =>
-  o.state === 'failed' && !o.net ? 'Not sent' : o.state === 'failed' || away >= 2 ? 'Waiting for Taska…' : o.files.some((f) => f.uploading) ? 'Uploading…' : 'Sending…'
 
 /** What the box writes to now: its key in the drafts, the line on top, the placeholder, what Send says. */
 function boxRole(m: ProjectModel | null, route: ProjectRoute, desk: boolean, title: string) {
@@ -186,6 +183,7 @@ export function FootContainer({ route, place, hidden, composePage, onHeight }: {
         composePage={desk && composePage}
         micTip={composePage ? 'Voice note · ⌥V' : 'Voice note · V'}
         boxRef={boxRef}
+        fieldRef={app.fields.ref('box')}
         on={{ text: setText, send, attach: () => {}, mic: () => {} }}
       />
       {desk && composePage && said ? (

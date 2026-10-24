@@ -76,11 +76,13 @@ export function SidebarContainer({ slug, place, hidden, rail }: { slug: string; 
     go: (href, e) => {
       if (e.metaKey || e.ctrlKey) return
       e.preventDefault()
-      app.nav.to(href)
+      // from the phone's drawer: the place it opens closes it (the same place: only closes it)
+      if (layout === 'phone' && app.stores.route.getState().url === href) app.nav.drawer(false)
+      else app.nav.to(href)
     },
   }
   const dev = typeof location !== 'undefined' && /^(localhost|127(\.\d{1,3}){3}|\[::1\])$/.test(location.hostname)
-  if (rail) return <Rail projects={list} composing={composing && layout === 'desk'} settingsOpen={route.page === 'project' && route.place.kind === 'settings'} on={on} />
+  if (rail) return <Rail projects={list} composing={composing && layout === 'desk'} settingsOpen={route.page === 'project' && route.place.kind === 'settings'} hidden={hidden} on={on} />
   return (
     <Sidebar
       phone={layout === 'phone'}

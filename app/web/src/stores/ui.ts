@@ -27,6 +27,7 @@ export interface UiState {
   lastSent: { slug: string; rid: string } | null
   setLastSent(x: { slug: string; rid: string } | null): void
   toggleFold(n: number): void
+  unfold(n: number): void
   toggleSubMore(n: number): void
   toggleNeedsAll(): void
   hold(n: number, h: Held, forList: string): void
@@ -59,6 +60,7 @@ export function createUiStore(kv: KeyValueStore): UiStore {
     lastSent: null,
     setLastSent: (lastSent) => set({ lastSent }),
     toggleFold: (n) => set((s) => ({ folded: flip(s.folded, n) })),
+    unfold: (n) => set((s) => (s.folded.has(n) ? { folded: flip(s.folded, n) } : s)),
     toggleSubMore: (n) => set((s) => ({ subMore: flip(s.subMore, n) })),
     toggleNeedsAll: () => set((s) => ({ needsAll: !s.needsAll })),
     hold: (n, h, forList) =>

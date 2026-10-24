@@ -11,6 +11,8 @@ import { createFeedbackStore, type FeedbackStore } from '../stores/feedback'
 import { createOutboxStore, keptOutgoing, type OutboxStore } from '../stores/outbox'
 import { createRouteStore, type History, type RouteStore } from '../stores/route'
 import type { KeyValueStore } from '../stores/storage'
+import { createItemViewStore, type ItemViewStore } from '../stores/itemView'
+import { createSearchStore, type SearchStore } from '../stores/search'
 import { createUiStore, type UiStore } from '../stores/ui'
 import { noCache, type CopyCache } from '../sync/cache'
 import { ProjectSync, type Presence } from '../sync/projectSync'
@@ -19,6 +21,10 @@ import { InputSender } from './inputSender'
 import { ItemActions } from './itemActions'
 import { Navigation } from './navigation'
 import { ListHold } from './listHold'
+import { Answers } from './answers'
+import { CrossSearch } from './crossSearch'
+import { Fields } from './fields'
+import { ListOrder } from './listOrder'
 import { RowSizes } from './rowSizes'
 import { Seen } from '../stores/seen'
 import { Toasts } from './toasts'
@@ -41,6 +47,8 @@ export interface App {
     outbox: OutboxStore
     feedback: FeedbackStore
     ui: UiStore
+    itemView: ItemViewStore
+    search: SearchStore
     route: RouteStore
   }
   toasts: Toasts
@@ -51,6 +59,14 @@ export interface App {
   seen: Seen
   /** the list's rows give their elements here, for their heights */
   rows: RowSizes
+  /** the list's items in the order it shows them, for Previous and Next */
+  listOrder: ListOrder
+  /** the list's search, in the other projects */
+  crossSearch: CrossSearch
+  /** answering an agent's question by its choices */
+  answers: Answers
+  /** the places the keys reach (the search, the box, the talk), given by ref */
+  fields: Fields
   desk(): boolean
   runner: ChangeRunner
   /** the project the page shows now, with your pending changes over it */
@@ -69,11 +85,15 @@ export function createApp(env: AppEnv): App {
   const feedback = createFeedbackStore(env.kv)
   const ui = createUiStore(env.kv)
   const route = createRouteStore(env.history)
+  const unlisten = env.history.listen(() => route.getState().read()) // Back and Forward
   const toasts = new Toasts(feedback)
   const nav = new Navigation(route, env.desk)
   const listHold = new ListHold(ui, env.desk)
   const seen = new Seen(env.kv)
   const rows = new RowSizes()
+  const listOrder = new ListOrder()
+  const itemView = createItemViewStore(env.kv)
+  const search = createSearchStore()
   let sync: ProjectSync | null = null
   let projectsTimer = 0
 
@@ -154,6 +174,7 @@ export function createApp(env: AppEnv): App {
     if (sync?.slug === slug) return
     sync?.close()
     ui.getState().reset()
+    itemView.getState().show(slug)
     sync = new ProjectSync(slug, api, env.cache ?? noCache, {
       copy: (s, copy) => data.getState().setCopy(s, copy),
       reach: (s, away) => {
@@ -178,10 +199,24 @@ export function createApp(env: AppEnv): App {
   projectsTimer = window.setInterval(() => {
     if (!env.presence.hidden()) void refreshProjects()
   }, 20000)
+  // coming back to the window: what changed meanwhile, and what failed for want of the server goes now; the network
+  // back: the same at once, and what waits to try again tries now, not after its pause
+  const unwatch = env.presence.watch({
+    back: () => {
+      void sync?.refresh()
+      void refreshProjects()
+      inputs.back()
+    },
+    online: () => {
+      void sync?.refresh()
+      inputs.back()
+      runner.back()
+    },
+  })
 
   return {
     api,
-    stores: { data, changes, outbox, feedback, ui, route },
+    stores: { data, changes, outbox, feedback, ui, itemView, search, route },
     toasts,
     items,
     inputs,
@@ -189,6 +224,10 @@ export function createApp(env: AppEnv): App {
     listHold,
     seen,
     rows,
+    listOrder,
+    crossSearch: new CrossSearch(api, search),
+    answers: new Answers({ inputs, view: itemView, outbox }),
+    fields: new Fields(),
     desk: env.desk,
     runner,
     model,
@@ -197,6 +236,8 @@ export function createApp(env: AppEnv): App {
     stop: () => {
       sync?.close()
       clearInterval(projectsTimer)
+      unwatch()
+      unlisten()
     },
   }
 }

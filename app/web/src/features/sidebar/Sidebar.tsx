@@ -254,7 +254,7 @@ export function Sidebar(props: SidebarProps) {
 }
 
 /** The sidebar folded: a narrow rail of the same. */
-export function Rail({ projects, composing, settingsOpen, on }: { projects: SideProject[] | null; composing: boolean; settingsOpen: boolean; on: SidebarEvents }) {
+export function Rail({ projects, composing, settingsOpen, hidden, on }: { projects: SideProject[] | null; composing: boolean; settingsOpen: boolean; hidden?: boolean; on: SidebarEvents }) {
   const btn = (key: string, inner: ReactNode, title: string, onClick: () => void, attrs: Record<string, unknown> = {}) => (
     <button
       key={key}
@@ -268,7 +268,7 @@ export function Rail({ projects, composing, settingsOpen, on }: { projects: Side
     </button>
   )
   return (
-    <nav id="rail" aria-label="Projects" className="z-30 flex h-full w-14 shrink-0 flex-col items-center gap-1 border-r border-zinc-200 bg-zinc-50 py-2 dark:border-zinc-800 dark:bg-zinc-900">
+    <nav id="rail" hidden={hidden} aria-label="Projects" className="z-30 flex h-full w-14 shrink-0 flex-col items-center gap-1 border-r border-zinc-200 bg-zinc-50 py-2 dark:border-zinc-800 dark:bg-zinc-900">
       {btn(
         'side',
         <span className="text-blue-600 dark:text-blue-400">

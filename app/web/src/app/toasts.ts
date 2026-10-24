@@ -35,7 +35,9 @@ export class Toasts {
     if (!o.sticky) this.timer = window.setTimeout(() => this.store.getState().hideToast(id), o.ms || (o.error ? 8000 : run ? 5000 : 2600))
   }
 
-  hide(): void {
+  /** `unlessSticky`: one that stays until you act on it stays. */
+  hide(unlessSticky = false): void {
+    if (unlessSticky && this.store.getState().toast?.sticky) return
     this.store.getState().hideToast()
   }
 

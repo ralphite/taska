@@ -39,6 +39,8 @@ export interface ComposerProps {
   files?: ReactNode
   /** the box's element, for the layout to measure */
   boxRef?: RefObject<HTMLDivElement | null>
+  /** where you write, for the keys (R replies) */
+  fieldRef?: (el: HTMLTextAreaElement | null) => void
   on: {
     text(t: string): void
     send(): void
@@ -49,8 +51,8 @@ export interface ComposerProps {
 
 const BTN_ICON = 'size-6 lg:size-5'
 
-export function Composer({ line, lineOnComposePage, placeholder, sendWord, text, desk, composePage, micTip, files, boxRef, on }: ComposerProps) {
-  const area = useRef<HTMLTextAreaElement>(null)
+export function Composer({ line, lineOnComposePage, placeholder, sendWord, text, desk, composePage, micTip, files, boxRef, fieldRef, on }: ComposerProps) {
+  const area = useRef<HTMLTextAreaElement | null>(null)
   const box = useRef<HTMLDivElement | null>(null)
   const picker = useRef<HTMLInputElement>(null)
   const has = !!text.trim()
@@ -98,7 +100,10 @@ export function Composer({ line, lineOnComposePage, placeholder, sendWord, text,
         </button>
         <div className="grid min-w-0 flex-1 group-data-[multi]/box:order-first group-data-[multi]/box:basis-full group-data-[multi]/box:px-2 group-data-[multi]/box:pt-1">
           <textarea
-            ref={area}
+            ref={(el) => {
+              area.current = el
+              fieldRef?.(el)
+            }}
             rows={1}
             value={text}
             placeholder={placeholder}

@@ -1,5 +1,5 @@
-// Whether this window is seen and in use, for the sync's pace: a window you are in waits for news, others ask now
-// and then.
+// Whether this window is seen and in use, for the sync's pace (a window you are in waits for news, others ask now
+// and then), and when you come back to it or the network does.
 
 import type { Presence } from '../sync/projectSync'
 
@@ -27,4 +27,17 @@ export const windowPresence: Presence = {
       addEventListener('blur', done)
       signal.addEventListener('abort', () => removeEventListener('blur', done))
     }),
+  watch: (on) => {
+    const shown = () => {
+      if (!document.hidden) on.back()
+    }
+    addEventListener('visibilitychange', shown)
+    addEventListener('focus', on.back)
+    addEventListener('online', on.online)
+    return () => {
+      removeEventListener('visibilitychange', shown)
+      removeEventListener('focus', on.back)
+      removeEventListener('online', on.online)
+    }
+  },
 }

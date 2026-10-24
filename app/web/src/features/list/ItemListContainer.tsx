@@ -1,36 +1,25 @@
 // The item list with the page's data: the rows of the list's settings, each with what it shows, and what a tap on
 // each part of a row does.
 
-import { useMemo, useState } from 'react'
+import { useLayoutEffect, useMemo, useState } from 'react'
 import { useApp, useLayout, useStoreValue } from '../../app/context'
 import { usePaneRef } from '../../app/panes'
 import { useProjectModel, type ProjectRoute } from '../../app/hooks'
 import { agoShort } from '../../model/agents'
 import { closed, excerpt, lastAgentMessage, queueHead } from '../../model/items'
-import { codeOf, type ProjectModel } from '../../model/project'
-import type { FileRef, Item } from '../../model/types'
-import { searchWords } from '../../model/visible'
+import { codeOf, filesOf, type ProjectModel } from '../../model/project'
+import type { Item } from '../../model/types'
+import { hay, inTab, inputMatch, searchWords } from '../../model/visible'
+import { TABS, type Tab } from '../../model/words'
+import { toneOf } from '../../ui/tones'
+import { useSideProjects } from '../sidebar/SidebarContainer'
+import { SearchHints } from './SearchHints'
 import { QUIET_MS } from '../../model/words'
 import { unreadSince } from '../../stores/seen'
 import { EmptyList, ItemList, type DrawnRow, type ListEvents } from './ItemList'
 import type { RowFacts, RowLook } from './ListRows'
 import { workerTip } from './ListRows'
 import { heldRows, listBody, viewChips, type Row } from './rows'
-
-/** An item's own files: those of the inputs it was made from (a reply keeps its files to itself). */
-function filesOf(m: ProjectModel, it: Item): FileRef[] {
-  const replies = new Set(it.thread.filter((x) => x.by === 'you' && x.src).map((x) => x.src))
-  const seen = new Set<string>()
-  const out: FileRef[] = []
-  for (const rid of it.srcs)
-    if (!replies.has(rid))
-      for (const f of m.byId.get(rid)?.files || [])
-        if (!seen.has(f.f)) {
-          seen.add(f.f)
-          out.push(f)
-        }
-  return out
-}
 
 /** The line a search word was found in, when it is not in the code or title. */
 function hitLine(it: Item, code: string, words: string[], shown = ''): string | null {
@@ -125,6 +114,11 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
     }
   })
 
+  // Previous and Next walk the items as the list shows them
+  const order = drawn.flatMap((r) => (r.kind === 'item' || r.kind === 'needs' || r.kind === 'held' ? [r.it.n] : []))
+  const orderKey = order.join(',')
+  useLayoutEffect(() => app.listOrder.set(orderKey ? orderKey.split(',').map(Number) : [], openN), [app, orderKey, openN])
+
   const on: ListEvents = {
     open: (n) => app.nav.openItem(codeOf(m as ProjectModel, n)),
     act: (n, f, v) => void app.items.change(n, f, f === 'archived' ? v === 'true' : v),
@@ -146,9 +140,35 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
     ownView: () => {},
   }
 
+  // under a search: the other tabs' matches, and the other projects'
+  const q = words.join(' ')
+  useLayoutEffect(() => app.crossSearch.want(q, route.slug), [app, q, route.slug])
+  const cross = useStoreValue(app.stores.search, (s) => s)
+  const { tones } = useSideProjects(route.slug)
+  const hints = (shown: number) => {
+    if (!words.length || !m) return null
+    const other =
+      shown >= 5
+        ? []
+        : TABS.filter((t) => t !== route.tab)
+            .map((t): [Tab, number] => [t, t === 'inputs' ? m.inputs.filter((r) => inputMatch(r, words)).length : m.items.filter((it) => !it.mergedInto && inTab(it, t) && words.every((w) => hay(it).includes(w))).length])
+            .filter(([, k]) => k)
+    return (
+      <SearchHints
+        other={other}
+        cross={cross.q === q ? cross : null}
+        tone={(slug) => toneOf(tones, slug)}
+        onShow={(t) => app.nav.tab(t)}
+        onGo={(href) => app.nav.to(href)}
+      />
+    )
+  }
+  const shownRows = drawn.filter((r) => r.kind === 'item' || r.kind === 'needs' || r.kind === 'held').length
+
   const empty =
     body.kind === 'empty' || (body.kind === 'rows' && body.empty) ? (
       <EmptyList
+        hints={hints(0)}
         why={body.kind === 'empty' ? body.why : (body.empty as string)}
         status={route.list.status}
         organizerOn={!!m?.facts.organizer.on}
@@ -163,7 +183,16 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
       onPointerEnter={() => app.listHold.enter()}
       onPointerLeave={() => app.listHold.leave()}
     >
-      <ItemList ref={pane} loading={!m} views={views} rows={drawn} empty={body.kind === 'empty' ? empty : body.kind === 'rows' && body.empty ? empty : null} on={on} rowRef={app.rows.ref} />
+      <ItemList
+        ref={pane}
+        loading={!m}
+        views={views}
+        rows={drawn}
+        empty={body.kind === 'empty' ? empty : body.kind === 'rows' && body.empty ? empty : null}
+        bottom={words.length && drawn.length ? <div className="flex flex-col py-4">{hints(shownRows)}</div> : null}
+        on={on}
+        rowRef={app.rows.ref}
+      />
     </div>
   )
 }

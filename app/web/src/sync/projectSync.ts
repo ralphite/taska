@@ -25,6 +25,8 @@ export interface Presence {
   nap(ms: number): Promise<void>
   /** resolves when the window loses the focus */
   blurred(signal: AbortSignal): Promise<void>
+  /** calls `back` when the window shows again or gets the focus, `online` when the network comes back; -> stop */
+  watch(on: { back(): void; online(): void }): () => void
 }
 
 export class ProjectSync {

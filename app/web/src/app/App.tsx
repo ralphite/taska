@@ -5,6 +5,7 @@ import { useEffect } from 'react'
 import { useApp, LayoutProvider, useWindowLayout } from './context'
 import { useRoute } from './hooks'
 import { ProjectPageContainer } from '../features/project/ProjectPageContainer'
+import { pageKeys } from './keys'
 import { Tooltip } from './Tooltip'
 import { PanesProvider } from './panes'
 
@@ -13,9 +14,10 @@ export function App() {
   const route = useRoute()
   const layout = useWindowLayout()
   useEffect(() => {
-    const stop = () => app.stores.route.getState().read()
-    addEventListener('popstate', stop)
-    return () => removeEventListener('popstate', stop)
+    // the keys, for the whole page
+    const keys = pageKeys(app)
+    document.addEventListener('keydown', keys)
+    return () => document.removeEventListener('keydown', keys)
   }, [app])
   useEffect(() => {
     void app.refreshProjects()

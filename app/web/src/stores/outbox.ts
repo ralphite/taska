@@ -117,3 +117,7 @@ export function keptOutgoing(kv: KeyValueStore): Outgoing[] {
 export const outgoingLine = (o: Pick<Outgoing, 'text' | 'files'>) =>
   o.text.split('\n')[0] ||
   (o.files.some((f) => (f.mime || '').startsWith('audio/')) ? 'Voice note' : `${o.files.length} file${o.files.length === 1 ? '' : 's'}`)
+
+/** Where it is, in a few words: on its way, waiting for Taska (away), uploading its files, or not sent. */
+export const outgoingState = (o: Outgoing, away: number) =>
+  o.state === 'failed' && !o.net ? 'Not sent' : o.state === 'failed' || away >= 2 ? 'Waiting for Taska…' : o.files.some((f) => f.uploading) ? 'Uploading…' : 'Sending…'

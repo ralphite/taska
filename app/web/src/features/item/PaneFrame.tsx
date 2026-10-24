@@ -14,6 +14,7 @@ export function PaneFrame({
   onBack,
   onMenu,
   paneRef,
+  split = false,
   children,
 }: {
   place: string
@@ -27,6 +28,8 @@ export function PaneFrame({
   onMenu?(): void
   /** the pane's element, for the layout (what floats over the page shows over the pane you acted in) */
   paneRef?: Ref<HTMLElement>
+  /** it shows an item in its two parts (they scroll, not the body) */
+  split?: boolean
   children?: ReactNode
 }) {
   return (
@@ -52,7 +55,10 @@ export function PaneFrame({
         </button>
         <div className="hidden items-center gap-0.5 border-l border-zinc-200 pl-2 lg:ml-1.5 lg:flex dark:border-zinc-800">{desk ? nav : null}</div>
       </header>
-      <div className="-mb-(--foot-h) min-h-0 flex-1 overflow-y-auto overscroll-contain pb-[calc(var(--foot-h,0px)+1.5rem)] lg:scrollbar-gutter-both lg:mask-b-from-[calc(100%-2rem)] lg:group-data-[compose]/app:hidden lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70">
+      <div
+        {...(split ? { 'data-split': '' } : {})}
+        className="-mb-(--foot-h) min-h-0 flex-1 overflow-y-auto overscroll-contain pb-[calc(var(--foot-h,0px)+1.5rem)] lg:scrollbar-gutter-both lg:mask-b-from-[calc(100%-2rem)] lg:group-data-duo/app:pb-0 lg:group-data-[compose]/app:hidden lg:hover:scrollbar-thumb-zinc-500/80 lg:data-split:mask-none lg:data-split:pb-(--foot-h) dark:lg:hover:scrollbar-thumb-zinc-400/70 dark:lg:data-split:pb-[calc(var(--foot-h,0px)+1.5rem)]"
+      >
         {children}
       </div>
     </section>

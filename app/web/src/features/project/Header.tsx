@@ -136,6 +136,7 @@ export function ListHead({
   filtersOpen,
   place,
   hidden,
+  searchRef,
   on,
 }: {
   phone: boolean
@@ -150,6 +151,8 @@ export function ListHead({
   filtersOpen: boolean
   place: string
   hidden?: boolean
+  /** the search field's element, for the keys (/ goes there) */
+  searchRef?: (el: HTMLInputElement | null) => void
   on: {
     menu(): void
     agents(): void
@@ -162,7 +165,7 @@ export function ListHead({
   }
 }) {
   const showSearch = !phone || searching || !!q
-  const input = useRef<HTMLInputElement>(null)
+  const input = useRef<HTMLInputElement | null>(null)
   useLayoutEffect(() => {
     const el = input.current
     if (el && el.value !== q && document.activeElement !== el) el.value = q
@@ -193,7 +196,10 @@ export function ListHead({
         <label className="ml-1 flex h-11 min-w-0 flex-1 items-center gap-2 rounded-xl bg-zinc-100 pl-3 text-zinc-400 lg:ml-0 lg:h-9 lg:ring-blue-500/40 lg:focus-within:bg-white lg:focus-within:ring-2 dark:bg-zinc-800 dark:text-zinc-500 dark:lg:focus-within:bg-zinc-900">
           <Icon n="search" c="size-4.5" />
           <input
-            ref={input}
+            ref={(el) => {
+              input.current = el
+              searchRef?.(el)
+            }}
             type="search"
             autoComplete="off"
             placeholder={placeholder}

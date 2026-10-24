@@ -2,9 +2,9 @@
 
 import type { RowEvents, RowFacts, RowLook } from '../features/list/ListRows'
 import { project, type ProjectModel } from '../model/project'
-import type { Input, Item, Message, ProjectFacts } from '../model/types'
+import type { Doc, Input, Item, Message, ProjectFacts } from '../model/types'
 
-const T = '2026-10-23T14:30:00-07:00'
+export const T = '2026-10-23T14:30:00-07:00'
 
 export function item(f: Partial<Item> & { n: number }): Item {
   return {
@@ -64,12 +64,12 @@ export function projectFacts(f: Partial<ProjectFacts> = {}): ProjectFacts {
 }
 
 /** A project's model made of these items and inputs, as the page would have it. */
-export function modelOf(items: Item[], inputs: Input[] = [], f: Partial<ProjectFacts> = {}): ProjectModel {
+export function modelOf(items: Item[], inputs: Input[] = [], f: Partial<ProjectFacts> = {}, docs: Doc[] = []): ProjectModel {
   return project({
     cursor: '',
     items: new Map(items.map((it) => [it.n, it])),
     inputs: new Map(inputs.map((r) => [r.id, r])),
-    docs: new Map(),
+    docs: new Map(docs.map((d) => [d.d, d])),
     facts: projectFacts(f),
     server: { page: '', update: false },
     at: Date.parse(T),
