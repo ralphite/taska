@@ -14,7 +14,7 @@ import { Icon } from '../../ui/Icon'
 import type { IconName } from '../../ui/icon-paths'
 import { Rich } from '../../ui/Markdown'
 import { ACT_ICON, DONE_OTHER, DONE_OTHER_BTN, DONE_PICK, MODIFY_LINK, NEED, NEEDS_CARD, PRIMARY_BASE, SECOND } from '../../ui/tones'
-import { Thumbs } from '../inputs/Files'
+import { Thumbs } from '../../ui/Files'
 import { MsgText } from './MsgText'
 import type { TalkEnv, TalkEvents } from './talkEnv'
 

@@ -1,11 +1,13 @@
 // Documents, Activity and Deleted: lists in the list's column on the desktop, like the item list; the pane beside
 // shows what you open from them. Actions repeated on every row show when the pointer is on the row. Props only.
 
-import { useEffect, useRef, type MouseEvent, type ReactNode } from 'react'
+import type { MouseEvent, ReactNode } from 'react'
 import type { LogSentence } from '../../model/activity'
 import { plural } from '../../model/words'
 import { Icon } from '../../ui/Icon'
 import { PRIMARY } from '../../ui/tones'
+import { Empty } from '../../ui/bits'
+import { LogLine, LogMore, type LogEvents } from '../../ui/Log'
 
 export type Side = 'docs' | 'log' | 'deleted'
 const TITLE: Record<Side, string> = { docs: 'Documents', log: 'Activity', deleted: 'Deleted' }
@@ -18,10 +20,6 @@ const current = (on: boolean) => (on ? { 'aria-current': 'true' as const } : {})
 /** a row's own click, not one on a button or link in it */
 const onRow = (run: () => void) => (e: MouseEvent) => {
   if (!(e.target as Element).closest('button, a')) run()
-}
-
-export function Empty({ children }: { children: ReactNode }) {
-  return <div className="px-6 py-16 text-center text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">{children}</div>
 }
 
 /** The list's head and its scroller. */
@@ -73,64 +71,6 @@ export function DocsList({ docs, open, onOpen }: { docs: DocRow[]; open: number 
         </div>
       ))}
     </>
-  )
-}
-
-export interface LogEvents {
-  item(n: number): void
-  input(id: string): void
-}
-
-/** One change as a sentence: who, then what, its codes as links; the time in grey when asked for. */
-export function LogLine({ s, withTime = false, on }: { s: LogSentence; withTime?: boolean; on: LogEvents }) {
-  // the spaces go with the words beside them, one run of text each, as the words are set
-  const parts: LogSentence['parts'] = []
-  for (const p of [' ', ...s.parts, ...(withTime ? [' '] : [])]) {
-    const last = parts.at(-1)
-    if (typeof p === 'string' && typeof last === 'string') parts[parts.length - 1] = last + p
-    else parts.push(p)
-  }
-  return (
-    <>
-      <span className="font-medium text-zinc-800 dark:text-zinc-100">{s.who}</span>
-      {s.session ? (
-        <>
-          {' '}
-          <span className="text-zinc-500 dark:text-zinc-400">{'· ' + s.session}</span>
-        </>
-      ) : null}
-      {parts.map((p, i) =>
-        typeof p === 'string' ? (
-          p
-        ) : 'n' in p ? (
-          <button key={i} onClick={() => on.item(p.n)} className="font-semibold text-blue-600 hover:underline dark:text-blue-400">
-            {p.code}
-          </button>
-        ) : (
-          <button key={i} onClick={() => on.input(p.id)} className="font-mono text-blue-600 hover:underline dark:text-blue-400">
-            {p.code}
-          </button>
-        ),
-      )}
-      {withTime ? <span className="font-mono text-[11px] whitespace-nowrap text-zinc-400">{s.time}</span> : null}
-    </>
-  )
-}
-
-/** The end of what is loaded: when it comes near, the changes before load. */
-export function LogMore({ end, cls, onNear }: { end: boolean; cls: string; onNear(): void }) {
-  const ref = useRef<HTMLParagraphElement>(null)
-  useEffect(() => {
-    const el = ref.current
-    if (!el || end || typeof IntersectionObserver === 'undefined') return
-    const io = new IntersectionObserver((es) => es.some((e) => e.isIntersecting) && onNear(), { root: el.closest('.overflow-y-auto'), rootMargin: '0px 0px 600px 0px' })
-    io.observe(el)
-    return () => io.disconnect()
-  })
-  return (
-    <p ref={ref} className={`text-[13px] text-zinc-400 dark:text-zinc-500 ${cls}`}>
-      {end ? 'No earlier changes' : 'Loading…'}
-    </p>
   )
 }
 

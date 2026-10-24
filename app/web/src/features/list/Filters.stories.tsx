@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { NO_FILTERS } from '../../model/route'
 import { Frames } from '../../stories/Frames'
 import { SheetFrames, no } from '../../stories/sheetFixtures'
-import { DeskFilters, filtersSheet } from './Filters'
+import { DeskFilters, FilterStrip, filtersSheet } from './Filters'
 
 const meta: Meta = { title: 'Components/Sheets/Filters' }
 export default meta
@@ -14,6 +14,15 @@ const list = { ...NO_FILTERS, type: 'bug', pri: 'P1', sort: 'new' }
 /** The phone's sheet on Items (with Save as a view) and on Rules. */
 export const PhoneSheet: Story = {
   render: () => <SheetFrames desk={false} height={760} parts={() => filtersSheet({ tab: 'items', list, filtered: true, shown: 12, open: 9 }, { ...on, close: no })} />,
+}
+
+/** The phone's row of the filters set, under the tabs, with Clear. */
+export const PhoneStrip: Story = {
+  render: () => (
+    <Frames desk={false} phoneWidth={393}>
+      {() => <FilterStrip set={[['type', 'Bug'], ['pri', 'P1'], ['sort', 'Newest']]} hidden={false} onUnset={no} onReset={no} />}
+    </Frames>
+  ),
 }
 
 /** The desktop's row under the search: what is set, then opened to the controls. */

@@ -7,9 +7,9 @@ import { when } from '../../model/time'
 import type { SheetRequest } from '../../stores/sheet'
 import { SheetLayout } from '../../ui/Sheet'
 import { toneOf } from '../../ui/tones'
-import { useSideProjects } from '../sidebar/SidebarContainer'
+import { useSideProjects } from '../../app/projectLists'
 import { notSavedSheet } from './NotSaved'
-import { projectMenuSheet } from './ProjectSheets'
+import { projectMenuSheet } from '../../ui/ProjectSheets'
 
 export function ProjectMenuSheet({ req }: { req: Extract<SheetRequest, { kind: 'project-menu' }> }) {
   const app = useServices('nav', 'sheets')

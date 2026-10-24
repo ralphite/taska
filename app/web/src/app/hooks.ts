@@ -3,9 +3,10 @@
 
 import { useEffect, useMemo } from 'react'
 import { playOf, type PlayState } from '../stores/media'
-import type { ProjectModel } from '../model/project'
+import { findRef, type ProjectModel } from '../model/project'
+import type { InlineWorld } from '../ui/markdown/inline'
 import type { Route } from '../model/route'
-import { useApp, useStoreValue } from './context'
+import { useApp, useStores, useStoreValue } from './context'
 
 export type ProjectRoute = Extract<Route, { page: 'project' }>
 
@@ -55,5 +56,19 @@ export function useFiles(slug: string): { play(src: string): PlayState; /** a vo
       on: { play: (src: string) => app.media.play(src), words: (f: string) => app.media.words(slug, f), view: (f: string, all: string[]) => app.media.view(slug, all, f) },
     }),
     [app, player, slug, tidy],
+  )
+}
+
+/** What the Markdown of a project knows: its codes, its files' addresses, its pictures' sizes. */
+export function useItemWorld(m: ProjectModel | null, slug: string): InlineWorld {
+  const stores = useStores('data')
+  const sizes = useStoreValue(stores.data, (s) => s.sizes[slug])
+  return useMemo(
+    () => ({
+      find: (c: string) => (m ? findRef(m, c) : null),
+      url: (f: string) => `/p/${encodeURIComponent(slug)}/f/${encodeURIComponent(f)}`,
+      size: (f: string) => sizes?.[f],
+    }),
+    [m, slug, sizes],
   )
 }

@@ -3,13 +3,10 @@
 
 import { when } from '../../model/time'
 import type { Doc } from '../../model/types'
+import { commentCount } from '../../model/docs'
 import { plural } from '../../model/words'
 import { Icon } from '../../ui/Icon'
 import { NEEDS_PILL } from '../../ui/tones'
-
-/** Every comment the document has (on its paragraphs, on the whole of it, on words changed since). */
-export const commentCount = (d: Doc) =>
-  d.blocks.reduce((k, b) => k + b.comments.length, 0) + (d.whole?.length || 0) + d.detached.reduce((k, t) => k + t.comments.length, 0)
 
 export function DocCard({ d, now, waiting = '', cls = '', onOpen }: { d: Doc; now: number; waiting?: string; cls?: string; onOpen(d: number): void }) {
   return (

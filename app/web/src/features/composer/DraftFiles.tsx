@@ -1,7 +1,7 @@
 // The files waiting in the box's draft: a voice note (its length and whether its words came), a picture, a file;
 // faded until it is up; each with a way to take it out. Props only.
 
-import { clock } from '../inputs/Files'
+import { clock } from '../../model/time'
 import { Icon } from '../../ui/Icon'
 
 export interface DraftFile {

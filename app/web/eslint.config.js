@@ -31,13 +31,24 @@ export default tseslint.config(
   },
   {
     // presentational components: props only
-    files: ['src/features/**/*.tsx', 'src/ui/**/*.tsx'],
-    ignores: ['**/*Container.tsx', '**/*.stories.tsx'],
+    files: ['src/features/**/*.tsx', 'src/pages/**/*.tsx', 'src/ui/**/*.tsx'],
+    ignores: ['**/*Container.tsx', '**/*.stories.tsx', 'src/pages/App.tsx'],
     rules: { 'no-restricted-imports': restricted(APP_LAYERS, 'A presentational component gets this by props; a *Container passes it.') },
   },
   {
+    // the shared parts know no feature and no page (a feature is a leaf; pages/ puts features together)
+    files: ['src/ui/**/*.{ts,tsx}'],
+    ignores: ['**/*.stories.tsx'],
+    rules: { 'no-restricted-imports': restricted([...APP_LAYERS, '**/features/**', '**/pages/**'], 'Shared parts get this by props, and know no feature or page.') },
+  },
+  {
+    // the app's services and hooks know no feature and no page (the page's root, pages/App.tsx, puts them together)
+    files: ['src/app/**/*.{ts,tsx}'],
+    rules: { 'no-restricted-imports': restricted(['**/features/**', '**/pages/**'], 'The app layer knows no feature or page: pages/ puts them together.') },
+  },
+  {
     // containers name the parts of the app they use (useServices, useStores), never the whole of it
-    files: ['src/features/**/*Container.tsx'],
+    files: ['src/features/**/*Container.tsx', 'src/pages/**/*Container.tsx'],
     rules: {
       'no-restricted-imports': ['error', { paths: [{ name: '../../app/context', importNames: ['useApp'], message: 'Name what the container uses: useServices(...) and useStores(...).' }] }],
     },
@@ -46,14 +57,14 @@ export default tseslint.config(
     // the model: pure functions and types
     files: ['src/model/**/*.ts'],
     rules: {
-      'no-restricted-imports': restricted(['react', 'react-dom', 'zustand*', '**/app/**', '**/stores/**', '**/api/**', '**/sync/**', '**/ui/**', '**/features/**'], 'The model is pure: no React, no stores, no I/O.'),
+      'no-restricted-imports': restricted(['react', 'react-dom', 'zustand*', '**/app/**', '**/stores/**', '**/api/**', '**/sync/**', '**/ui/**', '**/features/**', '**/pages/**'], 'The model is pure: no React, no stores, no I/O.'),
       'no-restricted-globals': ['error', 'window', 'document', 'localStorage', 'fetch'],
     },
   },
   {
     // stores, the API and sync know no React and no components
     files: ['src/stores/**/*.ts', 'src/api/**/*.ts', 'src/sync/**/*.ts'],
-    rules: { 'no-restricted-imports': restricted(['react', 'react-dom', '**/features/**', '**/ui/**', '**/app/**'], 'Stores, the API and sync are plain TypeScript.') },
+    rules: { 'no-restricted-imports': restricted(['react', 'react-dom', '**/features/**', '**/pages/**', '**/ui/**', '**/app/**'], 'Stores, the API and sync are plain TypeScript.') },
   },
   {
     files: ['src/main.tsx'],

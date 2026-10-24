@@ -1,6 +1,6 @@
 // What every part of an item's talk draws with, and what it can do: given by the item page's container.
 
-import type { FileEvents, PlayState } from '../inputs/Files'
+import type { FileEvents, PlayState } from '../../ui/Files'
 import type { Choosing } from '../../ui/Markdown'
 import type { InlineWorld } from '../../ui/markdown/inline'
 

@@ -10,7 +10,7 @@ import { Avatar, Kbd, ProjTile } from '../../ui/bits'
 import { Icon } from '../../ui/Icon'
 import type { IconName } from '../../ui/icon-paths'
 import { CHIP, FIELD, P_BTN, PRIMARY, SECOND } from '../../ui/tones'
-import { Empty } from '../side/SideLists'
+import { Empty } from '../../ui/bits'
 import { CopyBtn, Loading, Part, Ruled, Setting, TextBox, Toggle } from './SettingsParts'
 
 // ---- Agents

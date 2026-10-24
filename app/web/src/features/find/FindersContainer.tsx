@@ -6,7 +6,7 @@ import { useProjectModel, useProjectRoute } from '../../app/hooks'
 import { codeOf } from '../../model/project'
 import type { SheetRequest } from '../../stores/sheet'
 import { SheetLayout } from '../../ui/Sheet'
-import { useSideProjects } from '../sidebar/SidebarContainer'
+import { useSideProjects } from '../../app/projectLists'
 import { keyHelp, paletteRows } from '../../app/actions'
 import { keysSheet, Palette, Switcher } from './Finders'
 

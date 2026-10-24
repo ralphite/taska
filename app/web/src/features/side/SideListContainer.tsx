@@ -8,7 +8,7 @@ import { logSentence, logTarget } from '../../model/activity'
 import { codeOf, liveN, type ProjectModel } from '../../model/project'
 import { when } from '../../model/time'
 import { inputCode, plural } from '../../model/words'
-import { commentCount } from '../item/DocCard'
+import { commentCount } from '../../model/docs'
 import { ActivityList, DeletedList, DeletedView, DocsList, SideFrame, type ActivityRow, type DocRow, type GoneRow, type Side } from './SideLists'
 
 /** Everything deleted, one list, the latest first, whatever it was. */

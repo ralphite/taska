@@ -3,16 +3,16 @@ import { useState } from 'react'
 // page's head.
 
 import { useTwoColumns } from './twoColumns'
-import { useLayout, useServices, useStores, useStoreValue } from '../../app/context'
-import { usePaneRef } from '../../app/panes'
-import { useAway, useProjectModel, type ProjectRoute } from '../../app/hooks'
-import { codeOf, liveN } from '../../model/project'
-import { Icon } from '../../ui/Icon'
-import { BackTo, ItemActs, ItemHead, ItemNav, Missing, NoSelection } from '../item/ItemPage'
-import { ItemPageContainer, openItemMenu } from '../item/ItemPageContainer'
-import { PaneFrame } from '../item/PaneFrame'
-import { DeletedPickContainer } from '../side/SideListContainer'
-import { DocPaneContainer, DocSheetContainer } from '../docs/DocContainer'
+import { useLayout, useServices, useStores, useStoreValue } from '../app/context'
+import { usePaneRef } from '../app/panes'
+import { useAway, useProjectModel, type ProjectRoute } from '../app/hooks'
+import { codeOf, liveN } from '../model/project'
+import { Icon } from '../ui/Icon'
+import { BackTo, ItemActs, ItemHead, ItemNav, Missing, NoSelection } from '../features/item/ItemPage'
+import { ItemPageContainer, openItemMenu } from '../features/item/ItemPageContainer'
+import { PaneFrame } from '../ui/PaneFrame'
+import { DeletedPickContainer } from '../features/side/SideListContainer'
+import { DocPaneContainer, DocSheetContainer } from '../features/docs/DocContainer'
 
 export function DetailContainer({ route, place, hidden, full = false, footRoom = 0 }: { route: ProjectRoute; place: string; hidden?: boolean; full?: boolean; footRoom?: number }) {
   const app = useServices('items', 'listOrder', 'nav', 'sheets', 'toasts')

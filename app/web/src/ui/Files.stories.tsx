@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { Frames, States } from '../../stories/Frames'
-import { PICTURE } from '../../stories/fixtures'
-import type { FileRef } from '../../model/types'
+import { Frames, States } from '../stories/Frames'
+import { PICTURE } from '../stories/fixtures'
+import type { FileRef } from '../model/types'
 import { Thumbs, VoiceChip, type PlayState } from './Files'
 
 const meta: Meta = { title: 'Components/Inputs/Files' }

@@ -1,7 +1,7 @@
 // The pane's frame: its bar (Back on the phone, what it shows, its actions) and its body, which scrolls. Props only.
 
 import type { ReactNode, Ref } from 'react'
-import { Icon } from '../../ui/Icon'
+import { Icon } from './Icon'
 
 export function PaneFrame({
   place,

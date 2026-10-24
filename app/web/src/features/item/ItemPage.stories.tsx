@@ -5,7 +5,7 @@ import { item, message, modelOf } from '../../stories/fixtures'
 import { comment, doc, itemFacts, noItemEvents, talkEnv, talkFacts } from '../../stories/itemFixtures'
 import { ItemActs, ItemHead, ItemNav, ItemPage, Missing, NoSelection } from './ItemPage'
 import type { ItemFacts } from './ItemPage'
-import { PaneFrame } from './PaneFrame'
+import { PaneFrame } from '../../ui/PaneFrame'
 
 const meta: Meta = { title: 'Components/Item/Item page' }
 export default meta

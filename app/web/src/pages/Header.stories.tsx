@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { ReactElement } from 'react'
-import { Frames, States } from '../../stories/Frames'
-import { PROJECT_TONES } from '../../ui/tones'
+import { Frames, States } from '../stories/Frames'
+import { PROJECT_TONES } from '../ui/tones'
 import { AgentPill, ListHead, PhoneTabs, ProjectBar, type TabInfo } from './Header'
 
 const meta: Meta = { title: 'Components/Project head' }

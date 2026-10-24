@@ -1,11 +1,11 @@
 // Files that came with what was said: a voice note is one chip (play and its length), a picture a thumbnail, any
 // other file a link with its name. Props only.
 
-import type { FileRef } from '../../model/types'
-import { Pic } from '../../ui/bits'
-import { Icon } from '../../ui/Icon'
-import { HIT } from '../../ui/tones'
-import { clock } from '../../model/time'
+import type { FileRef } from '../model/types'
+import { Pic } from './bits'
+import { Icon } from './Icon'
+import { HIT } from './tones'
+import { clock } from '../model/time'
 
 export const isAudio = (f: { mime?: string }) => (f.mime || '').startsWith('audio/')
 export const isImage = (f: { mime?: string }) => (f.mime || '').startsWith('image/')
@@ -16,7 +16,6 @@ export const voiceLength = (f: FileRef) => {
   return m ? (60 * +m[1] + +m[2]) * 1000 : null
 }
 
-export { clock }
 
 export interface PlayState {
   playing: boolean

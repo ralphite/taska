@@ -6,8 +6,16 @@ import { closed } from '../../model/items'
 import { filtered, visible } from '../../model/visible'
 import type { SheetRequest } from '../../stores/sheet'
 import { SheetLayout } from '../../ui/Sheet'
-import { filterEvents } from '../project/ProjectPageContainer'
-import { filtersSheet } from './Filters'
+import { filtersSheet, type FilterEvents } from './Filters'
+import type { App } from '../../app/createApp'
+
+/** What the filters do: set one, take one off, clear them all (and the search), keep them as a view. */
+export const filterEvents = (app: Pick<App, 'nav' | 'views'>): FilterEvents => ({
+  set: (k, v) => app.nav.setList({ [k]: v }),
+  unset: (k) => app.nav.setList({ [k]: 'all' }),
+  reset: () => app.nav.setList({ q: '', type: 'all', when: 'all', status: 'all', pri: 'all', sort: 'all' }),
+  saveView: (name) => app.views.add(name),
+})
 
 export function FiltersSheet(_: { req: Extract<SheetRequest, { kind: 'filters' }> }) {
   const app = useServices('nav', 'sheets', 'views')

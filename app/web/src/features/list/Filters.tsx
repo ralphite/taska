@@ -7,9 +7,8 @@ import type { ListKey, ListQuery } from '../../model/route'
 import { ARCHIVE_FILTER_WORD, RULE_STATUS_WORD, SORT_WORDS, STATUS_FILTER_WORD, type Tab } from '../../model/words'
 import { Icon } from '../../ui/Icon'
 import type { SheetParts } from '../../ui/Sheet'
-import { FIELD, PRIMARY } from '../../ui/tones'
-import { FilterChips } from '../project/Header'
-import { priOpts, SegCtl, typeOpts } from '../item/ItemMenu'
+import { FIELD, HIT, PRIMARY } from '../../ui/tones'
+import { priOpts, SegCtl, typeOpts } from '../../ui/Segments'
 
 export interface FilterEvents {
   set(k: ListKey, v: string): void
@@ -156,6 +155,35 @@ export function DeskFilters({ tab, list, set, open, place, hidden, on }: {
           ) : null}
         </>
       )}
+    </div>
+  )
+}
+
+export function FilterChips({ set, onUnset }: { set: [string, ReactNode][]; onUnset(k: string): void }) {
+  return (
+    <>
+      {set.map(([k, label]) => (
+        <button
+          key={k}
+          onClick={() => onUnset(k)}
+          className={`${HIT} flex h-8 shrink-0 items-center gap-1 rounded-full bg-blue-50 pr-2 pl-3 text-[13px] font-medium text-blue-800 ring-1 ring-blue-200 ring-inset hover:bg-blue-100 lg:h-7 dark:bg-blue-400/10 dark:text-blue-200 dark:ring-blue-400/25 dark:hover:bg-blue-400/20`}
+        >
+          {label}
+          <Icon n="x" c="size-3.5" sw="2.25" />
+        </button>
+      ))}
+    </>
+  )
+}
+
+/** The phone's row of the filters set, under the tabs, with Clear. */
+export function FilterStrip({ set, hidden, onUnset, onReset }: { set: [string, ReactNode][]; hidden: boolean; onUnset(k: string): void; onReset(): void }) {
+  return (
+    <div hidden={hidden} className="flex h-11 shrink-0 [scrollbar-width:none] items-center gap-2 overflow-x-auto border-b border-zinc-100 px-4 lg:hidden dark:border-zinc-800/70">
+      <FilterChips set={set} onUnset={onUnset} />
+      <button onClick={onReset} className="ml-auto h-11 shrink-0 px-1 text-[13px] font-semibold text-blue-600 hover:underline dark:text-blue-400">
+        Clear
+      </button>
     </div>
   )
 }

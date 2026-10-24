@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { Frames, States } from '../../stories/Frames'
-import { T } from '../../stories/fixtures'
-import { PROJECT_TONES } from '../../ui/tones'
+import { Frames, States } from '../stories/Frames'
+import { T } from '../stories/fixtures'
+import { PROJECT_TONES } from './tones'
 import { SearchHints } from './SearchHints'
 
 const meta: Meta = { title: 'Components/List/Search hints' }

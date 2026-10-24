@@ -1,14 +1,15 @@
-// Under a search, with the page's data: the other tabs' matches (with a way there), and the other projects'.
+// Under a search, with the page's data: the other tabs' matches (with a way there), and the other projects'. Both
+// the list and Inputs show them.
 
 import { useLayoutEffect } from 'react'
-import { useServices, useStores, useStoreValue } from '../../app/context'
-import type { ProjectRoute } from '../../app/hooks'
-import type { ProjectModel } from '../../model/project'
-import { hay, inTab, inputMatch } from '../../model/visible'
-import { TABS, type Tab } from '../../model/words'
-import { toneOf } from '../../ui/tones'
-import { useSideProjects } from '../sidebar/SidebarContainer'
-import { SearchHints } from './SearchHints'
+import { useServices, useStores, useStoreValue } from './context'
+import type { ProjectRoute } from './hooks'
+import type { ProjectModel } from '../model/project'
+import { hay, inTab, inputMatch } from '../model/visible'
+import { TABS, type Tab } from '../model/words'
+import { toneOf } from '../ui/tones'
+import { useSideProjects } from './projectLists'
+import { SearchHints } from '../ui/SearchHints'
 
 /** -> the hints for a list that shows `shown` rows. */
 export function useSearchHints(route: ProjectRoute, m: ProjectModel | null, words: readonly string[]) {

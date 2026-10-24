@@ -10,7 +10,7 @@ import { plural, whoName } from '../../model/words'
 import { Icon } from '../../ui/Icon'
 import { Rich } from '../../ui/Markdown'
 import { COMMENT_CARD, COMMENT_WHO, DC_BTN, HIT } from '../../ui/tones'
-import { Thumbs, VoiceLine, type FileEvents, type PlayState } from '../inputs/Files'
+import { Thumbs, VoiceLine, type FileEvents, type PlayState } from '../../ui/Files'
 import type { InlineWorld } from '../../ui/markdown/inline'
 
 /** What a document's parts draw with. */

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { SheetFrames, no } from '../../stories/sheetFixtures'
-import { PROJECT_TONES } from '../../ui/tones'
+import { SheetFrames, no } from '../stories/sheetFixtures'
+import { PROJECT_TONES } from './tones'
 import { itemMoveProjectSheet, moveInputSheet, projectMenuSheet } from './ProjectSheets'
 
 const meta: Meta = { title: 'Components/Sheets/Projects' }

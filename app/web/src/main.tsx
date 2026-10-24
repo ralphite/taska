@@ -1,7 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
-import { App } from './app/App'
+import { App } from './pages/App'
 import { AppProvider } from './app/context'
 import { createApp } from './app/createApp'
 import { installPressFeedback } from './app/press'

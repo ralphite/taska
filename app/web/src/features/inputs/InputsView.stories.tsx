@@ -4,7 +4,7 @@ import type { Input } from '../../model/types'
 import { Frames } from '../../stories/Frames'
 import { input, modelOf } from '../../stories/fixtures'
 import { talkEnv } from '../../stories/itemFixtures'
-import { Thumbs } from './Files'
+import { Thumbs } from '../../ui/Files'
 import { InputsView, type InputFacts } from './InputsView'
 
 const meta: Meta = { title: 'Components/Inputs/Inputs tab' }

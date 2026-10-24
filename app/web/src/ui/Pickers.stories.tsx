@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { item, modelOf } from '../../stories/fixtures'
-import { SheetFrames, no } from '../../stories/sheetFixtures'
+import { item, modelOf } from '../stories/fixtures'
+import { SheetFrames, no } from '../stories/sheetFixtures'
 import { moveParentSheet, pickSheet } from './Pickers'
 
 const meta: Meta = { title: 'Components/Sheets/Pickers' }

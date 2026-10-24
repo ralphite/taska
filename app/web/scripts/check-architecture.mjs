@@ -53,13 +53,24 @@ export function check(src) {
     if (story) {
       // stories draw components from props; only demos play
       if (/^\s*(play\s*:|async play\s*\()/m.test(text) && !/title:\s*'Demos\//.test(text)) say(p, 'a story that plays outside Demos/')
-      if (/from '[./]*(app\/(createApp|App|context)|main)'/.test(text)) say(p, 'a story that loads the app (feed the component data instead)')
+      if (/from '[./]*(app\/(createApp|context)|pages\/App|main)'/.test(text)) say(p, 'a story that loads the app (feed the component data instead)')
+    }
+  }
+  // a feature is a leaf: it imports no other feature and no page (pages/ puts features together; what they share is
+  // in app/, model/ or ui/)
+  for (const p of code) {
+    const own = /^features\/([^/]+)\//.exec(rel(p))
+    if (!own) continue
+    for (const [, spec] of readFileSync(p, 'utf8').matchAll(/from '(\.[^']*)'/g)) {
+      const to = rel(join(dirname(p), spec))
+      const other = /^features\/([^/]+)\//.exec(to)
+      if ((other && other[1] !== own[1]) || to.startsWith('pages/')) say(p, `imports ${to} (a feature is a leaf: share through app/, model/ or ui/)`)
     }
   }
   // every presentational component has its stories next to it
   for (const p of code) {
     const r = rel(p)
-    if (!/^(features|ui)\//.test(r) || !r.endsWith('.tsx') || r.endsWith('.stories.tsx') || r.endsWith('Container.tsx')) continue
+    if (!/^(features|pages|ui)\//.test(r) || r === 'pages/App.tsx' || !r.endsWith('.tsx') || r.endsWith('.stories.tsx') || r.endsWith('Container.tsx')) continue
     if (!existsSync(p.replace(/\.tsx$/, '.stories.tsx'))) say(p, `no ${basename(p, '.tsx')}.stories.tsx next to it`)
   }
   return breaks
@@ -73,9 +84,10 @@ function selfCheck() {
     const plant = {
       'extra.css': '.x { color: red }\n',
       'features/list/Planted.tsx': 'export const Planted = () => <div style={{ color: "#ff0000" }} />\n',
-      'stories/Planted.stories.tsx': "import { App } from '../app/App'\nexport default { title: 'Components/X' }\nexport const A = {\n  play: async () => {},\n  render: () => <App />,\n}\n",
+      'stories/Planted.stories.tsx': "import { App } from '../pages/App'\nexport default { title: 'Components/X' }\nexport const A = {\n  play: async () => {},\n  render: () => <App />,\n}\n",
       'model/planted.ts': 'let count = 0\nexport const seen = new Map()\nexport const up = () => ++count\n',
       'ui/Long.tsx': 'export const Long = () => null\n' + '// filler\n'.repeat(MAX_LINES + 1),
+      'features/list/leans.ts': "import { Sidebar } from '../sidebar/Sidebar'\nimport { Header } from '../../pages/Header'\nexport const s = [Sidebar, Header]\n",
     }
     for (const [p, text] of Object.entries(plant)) writeFileSync(join(tmp, p), text)
     const got = check(tmp).join('\n')
@@ -88,6 +100,8 @@ function selfCheck() {
       'model/planted.ts: line 1: state kept',
       'model/planted.ts: line 2: state kept',
       'ui/Long.tsx: 603 lines',
+      'features/list/leans.ts: imports features/sidebar/Sidebar',
+      'features/list/leans.ts: imports pages/Header',
     ]
     const missed = want.filter((w) => !got.includes(w))
     return missed

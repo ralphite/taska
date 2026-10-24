@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { Frames, States } from '../../stories/Frames'
-import { Icon } from '../../ui/Icon'
+import { Frames, States } from '../stories/Frames'
+import { Icon } from './Icon'
 import { PaneFrame } from './PaneFrame'
 
 const meta: Meta = { title: 'Components/Item/Pane frame' }

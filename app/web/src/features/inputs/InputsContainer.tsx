@@ -10,9 +10,9 @@ import { when } from '../../model/time'
 import { inputMatch, searchWords } from '../../model/visible'
 import { inputCode } from '../../model/words'
 import { outgoingLine, outgoingState } from '../../stores/outbox'
-import { useItemWorld } from '../item/ItemPageContainer'
-import { useSearchHints } from '../list/SearchHintsContainer'
-import { Thumbs } from './Files'
+import { useItemWorld } from '../../app/hooks'
+import { useSearchHints } from '../../app/searchHints'
+import { Thumbs } from '../../ui/Files'
 import { InputsView, type InputFacts, type OutgoingRow } from './InputsView'
 
 export function InputsContainer({ route, hidden }: { route: ProjectRoute; hidden: boolean }) {

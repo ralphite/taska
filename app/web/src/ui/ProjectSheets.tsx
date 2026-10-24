@@ -1,9 +1,9 @@
 // Sheets about projects: moving an item or an input to another project, and a project's menu. Props only.
 
-import { Icon } from '../../ui/Icon'
-import type { IconName } from '../../ui/icon-paths'
-import { ProjTile } from '../../ui/bits'
-import type { SheetParts } from '../../ui/Sheet'
+import { Icon } from './Icon'
+import type { IconName } from './icon-paths'
+import { ProjTile } from './bits'
+import type { SheetParts } from './Sheet'
 
 export interface OtherProject {
   slug: string

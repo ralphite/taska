@@ -6,7 +6,7 @@ import { allComments } from '../../model/docs'
 import { codeOf, liveN } from '../../model/project'
 import type { SheetRequest } from '../../stores/sheet'
 import { SheetLayout } from '../../ui/Sheet'
-import { pickSheet } from '../item/Pickers'
+import { pickSheet } from '../../ui/Pickers'
 import { commentMoveSheet } from './DocSheets'
 import { DocEditContainer } from './DocEditContainer'
 

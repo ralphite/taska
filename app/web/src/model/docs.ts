@@ -104,3 +104,7 @@ export function docTarget(d: Doc, pick: { reply: string | null; quote: { key: st
   const picked: Block[] = d.blocks.filter((b) => pick.sel.has(b.key))
   return picked.length ? { key: picked[0].key, quote: picked.map((b) => b.text).join('\n'), many: picked.length } : null
 }
+
+/** Every comment the document has (on its paragraphs, on the whole of it, on words changed since). */
+export const commentCount = (d: Doc) =>
+  d.blocks.reduce((k, b) => k + b.comments.length, 0) + (d.whole?.length || 0) + d.detached.reduce((k, t) => k + t.comments.length, 0)

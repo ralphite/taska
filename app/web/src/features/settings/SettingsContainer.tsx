@@ -14,9 +14,8 @@ import { codeOf, liveN } from '../../model/project'
 import { dayShort, when } from '../../model/time'
 import { AGENT_NAME, inputCode, plural, whoName } from '../../model/words'
 import { toneOf } from '../../ui/tones'
-import { commentCount } from '../item/DocCard'
-import { FootContainer } from '../composer/FootContainer'
-import { useSideProjects } from '../sidebar/SidebarContainer'
+import { commentCount } from '../../model/docs'
+import { useSideProjects } from '../../app/projectLists'
 import { DeletedBody, DocsBody, LogBody, PhoneProjectsBody } from './PhoneSections'
 import { AgentsBody, NotificationsBody, OrganizerBody, PhoneBody, PhonePushBody, ProjectsBody, SpellingsBody, type ProjectsEvents, type ProjectsFacts } from './Sections'
 import { SECTIONS, sectionOf, type SectionKey } from './sectionList'
@@ -25,7 +24,8 @@ import { Loading, PhHead } from './SettingsParts'
 
 const standalone = () => typeof matchMedia !== 'undefined' && (matchMedia('(display-mode: standalone)').matches || (navigator as unknown as { standalone?: boolean }).standalone === true)
 
-export function SettingsContainer({ route, place }: { route: ProjectRoute; place: string }) {
+/** `prefsBox`: the box the transcription rules are edited in (the desktop's) */
+export function SettingsContainer({ route, place, prefsBox }: { route: ProjectRoute; place: string; prefsBox: ReactNode }) {
   const app = useServices('activity', 'docs', 'nav', 'notices', 'restores', 'settings', 'sheets')
   const stores = useStores('activity', 'box', 'data', 'settings', 'sheet')
   const pane = usePaneRef('settings')
@@ -142,7 +142,7 @@ export function SettingsContainer({ route, place }: { route: ProjectRoute; place
             fixes={st.fixes}
             prefs={st.prefs}
             editing={mode?.kind === 'prefs'}
-            prefsSlot={desk ? <FootContainer route={route} composePage={false} place="" bare /> : null}
+            prefsSlot={desk ? prefsBox : null}
             on={{ editPrefs: () => s.editPrefs(route.slug), toggleTidy: () => void s.toggleTidy(), addWord: (w) => s.addWord(w), forget: (c) => void s.forget(c) }}
           />
         )

@@ -2,37 +2,30 @@
 // two never share layout code; they place the same parts.
 
 import { useEffect, useMemo, useState, type CSSProperties } from 'react'
-import { Grip } from '../../ui/Grip'
+import { Grip } from '../ui/Grip'
 import { useBackSwipe, useDrawerPull } from './phoneGestures'
-import { gripVars } from '../../stores/grips'
-import { useLayout, useServices, useStores, useStoreValue } from '../../app/context'
-import { useAway, useProjectModel, type ProjectRoute } from '../../app/hooks'
-import { agentLine } from '../../model/agents'
-import { needsYou } from '../../model/items'
-import { NO_FILTERS } from '../../model/route'
-import { filtered, filtersSet, inputMatch, openCount, searchWords, tabNumber, visible } from '../../model/visible'
-import { TABS, type Tab } from '../../model/words'
-import { toneOf } from '../../ui/tones'
-import { FootContainer } from '../composer/FootContainer'
-import { ToastContainer } from '../feedback/ToastContainer'
-import { ItemListContainer } from '../list/ItemListContainer'
-import { SidebarContainer, useSideProjects } from '../sidebar/SidebarContainer'
-import { SideListContainer } from '../side/SideListContainer'
-import { SettingsContainer } from '../settings/SettingsContainer'
-import { codeOf } from '../../model/project'
-import { InputsContainer } from '../inputs/InputsContainer'
-import { DeskFilters, type FilterEvents } from '../list/Filters'
+import { gripVars } from '../stores/grips'
+import { useLayout, useServices, useStores, useStoreValue } from '../app/context'
+import { useAway, useProjectModel, type ProjectRoute } from '../app/hooks'
+import { agentLine } from '../model/agents'
+import { needsYou } from '../model/items'
+import { NO_FILTERS } from '../model/route'
+import { filtered, filtersSet, inputMatch, openCount, searchWords, tabNumber, visible } from '../model/visible'
+import { TABS, type Tab } from '../model/words'
+import { toneOf } from '../ui/tones'
+import { FootContainer } from '../features/composer/FootContainer'
+import { ToastContainer } from '../features/feedback/ToastContainer'
+import { ItemListContainer } from '../features/list/ItemListContainer'
+import { SidebarContainer } from '../features/sidebar/SidebarContainer'
+import { useSideProjects } from '../app/projectLists'
+import { SideListContainer } from '../features/side/SideListContainer'
+import { SettingsContainer } from '../features/settings/SettingsContainer'
+import { codeOf } from '../model/project'
+import { InputsContainer } from '../features/inputs/InputsContainer'
+import { DeskFilters, FilterStrip } from '../features/list/Filters'
+import { filterEvents } from '../features/list/FiltersContainer'
 import { DetailContainer } from './DetailContainer'
-import { FilterStrip, ListHead, PhoneTabs, ProjectBar, type AgentInfo, type TabInfo } from './Header'
-import type { App } from '../../app/createApp'
-
-/** What the filters do: set one, take one off, clear them all (and the search), keep them as a view. */
-export const filterEvents = (app: Pick<App, 'nav' | 'views'>): FilterEvents => ({
-  set: (k, v) => app.nav.setList({ [k]: v }),
-  unset: (k) => app.nav.setList({ [k]: 'all' }),
-  reset: () => app.nav.setList({ q: '', type: 'all', when: 'all', status: 'all', pri: 'all', sort: 'all' }),
-  saveView: (name) => app.views.add(name),
-})
+import { ListHead, PhoneTabs, ProjectBar, type AgentInfo, type TabInfo } from './Header'
 
 function useHeadFacts(route: ProjectRoute) {
   const stores = useStores('data', 'feedback')
@@ -170,7 +163,7 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
           {shownSide ? <SideListContainer slug={route.slug} side={shownSide} /> : <ItemListContainer route={route} />}
         </section>
         <DetailContainer route={route} place={`row-span-3 row-start-2 group-data-[compose]/app:row-span-1 ${pane}`} hidden={settings} full={full} />
-        {settings ? <SettingsContainer route={route} place="col-span-2 col-start-1 row-span-5 row-start-1" /> : null}
+        {settings ? <SettingsContainer route={route} place="col-span-2 col-start-1 row-span-5 row-start-1" prefsBox={<FootContainer route={route} composePage={false} place="" bare />} /> : null}
         {settings || full ? null : (
           <Grip
             axis="x"
@@ -291,7 +284,7 @@ function PhoneLayout({ route }: { route: ProjectRoute }) {
         >
           <DetailContainer route={route} place="" hidden={!open} footRoom={footH} />
         </div>
-        {settings ? <SettingsContainer route={route} place="" /> : null}
+        {settings ? <SettingsContainer route={route} place="" prefsBox={null} /> : null}
         <FootContainer route={route} composePage={false} place="" hidden={settings && !prefsEditing} onHeight={setFootH} />
       </div>
     </>

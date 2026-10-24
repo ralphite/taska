@@ -2,18 +2,18 @@
 // Each feature draws its own kinds; this only picks the one for the request and frames it.
 
 import type { ComponentType } from 'react'
-import { useLayout, useServices, useStores, useStoreValue } from '../../app/context'
-import type { SheetKind, SheetRequest } from '../../stores/sheet'
-import { Sheet } from '../../ui/Sheet'
-import { usePaneRef } from '../../app/panes'
-import { KeysSheet, PaletteSheet, SwitchProjectSheet } from '../find/FindersContainer'
-import { AsSaidSheet, InputHistorySheet, InputMenuSheet, InputMoveSheet, InputRescopeSheet } from '../inputs/InputSheetsContainer'
-import { ItemMenuSheet, MessageMenuSheet, MoveItemProjectSheet, MoveParentSheet, SourcesSheet } from '../item/ItemSheetsContainer'
-import { FiltersSheet } from '../list/FiltersContainer'
-import { ViewMenuSheet } from '../list/ViewMenuContainer'
-import { SignInSheet } from '../project/SignInContainer'
-import { NotSavedSheet, ProjectMenuSheet } from '../project/ProjectSheetsContainer'
-import { CommentMoveSheet, DocEditSheet, DocMoveSheet } from '../docs/DocSheetsContainer'
+import { useLayout, useServices, useStores, useStoreValue } from '../app/context'
+import type { SheetKind, SheetRequest } from '../stores/sheet'
+import { Sheet } from '../ui/Sheet'
+import { usePaneRef } from '../app/panes'
+import { KeysSheet, PaletteSheet, SwitchProjectSheet } from '../features/find/FindersContainer'
+import { AsSaidSheet, InputHistorySheet, InputMenuSheet, InputMoveSheet, InputRescopeSheet } from '../features/inputs/InputSheetsContainer'
+import { ItemMenuSheet, MessageMenuSheet, MoveItemProjectSheet, MoveParentSheet, SourcesSheet } from '../features/item/ItemSheetsContainer'
+import { FiltersSheet } from '../features/list/FiltersContainer'
+import { ViewMenuSheet } from '../features/list/ViewMenuContainer'
+import { SignInSheet } from '../features/project/SignInContainer'
+import { NotSavedSheet, ProjectMenuSheet } from '../features/project/ProjectSheetsContainer'
+import { CommentMoveSheet, DocEditSheet, DocMoveSheet } from '../features/docs/DocSheetsContainer'
 
 const KINDS: { [K in SheetKind]: ComponentType<{ req: Extract<SheetRequest, { kind: K }> }> } = {
   'item-menu': ItemMenuSheet,

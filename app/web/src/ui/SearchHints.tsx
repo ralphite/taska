@@ -1,11 +1,11 @@
 // Under a search: how many it matches in the other tabs (with a way there), and what the other projects have: the
 // search there says it is searching, that it found nothing there, or that it could not search. Props only.
 
-import { closed } from '../../model/items'
-import type { SearchHit } from '../../model/types'
-import { STATUS_WORD, TAB_WORD, type Tab } from '../../model/words'
-import { ProjTile } from '../../ui/bits'
-import { LINK_BTN } from '../../ui/tones'
+import { closed } from '../model/items'
+import type { SearchHit } from '../model/types'
+import { STATUS_WORD, TAB_WORD, type Tab } from '../model/words'
+import { ProjTile } from './bits'
+import { LINK_BTN } from './tones'
 
 export interface CrossFacts {
   list: SearchHit[] | null

@@ -1,9 +1,9 @@
 // An item's page with the page's data: what it shows (the item, its documents and files, your answer on its way,
 // what you sent to it and Taska does not have yet, what you are doing on it) and what a tap on each part does.
 
-import { useEffect, useMemo, type ReactNode } from 'react'
+import { useEffect, type ReactNode } from 'react'
 import { useServices, useStores, useStoreValue } from '../../app/context'
-import { useAway, useFiles } from '../../app/hooks'
+import { useAway, useFiles, useItemWorld } from '../../app/hooks'
 import { newId } from '../../app/changeRunner'
 import { CHOICE } from '../../model/markdown'
 import { codeOf, docsOf, filesOf, findRef, liveN, STAND, type ProjectModel } from '../../model/project'
@@ -13,25 +13,11 @@ import type { Item } from '../../model/types'
 import { inTab, tabOf } from '../../model/visible'
 import type { Tab } from '../../model/words'
 import { outgoingLine, outgoingState } from '../../stores/outbox'
-import type { InlineWorld } from '../../ui/markdown/inline'
 import { ItemPage, type ItemEvents, type ItemFacts } from './ItemPage'
 import type { Outgoing, TalkFacts } from './Talk'
 import type { TalkEnv } from './talkEnv'
 import type { App } from '../../app/createApp'
 import { replyDraft } from '../../model/draftTarget'
-
-export function useItemWorld(m: ProjectModel | null, slug: string): InlineWorld {
-  const stores = useStores('data')
-  const sizes = useStoreValue(stores.data, (s) => s.sizes[slug])
-  return useMemo(
-    () => ({
-      find: (c: string) => (m ? findRef(m, c) : null),
-      url: (f: string) => `/p/${encodeURIComponent(slug)}/f/${encodeURIComponent(f)}`,
-      size: (f: string) => sizes?.[f],
-    }),
-    [m, slug, sizes],
-  )
-}
 
 /** The item's menu: under the button on the desktop (one field's choices from its chip), a sheet on the phone. */
 export function openItemMenu(app: Pick<App, 'sheets'>, desk: boolean, n: number, arm: 's' | 'p' | 't' | null, from: Element | null) {

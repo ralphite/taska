@@ -8,9 +8,9 @@ import { codeOf } from '../../model/project'
 import { inputCode } from '../../model/words'
 import type { SheetRequest } from '../../stores/sheet'
 import { SheetLayout } from '../../ui/Sheet'
-import { pickSheet } from '../item/Pickers'
-import { moveInputSheet } from '../project/ProjectSheets'
-import { useOtherProjects } from '../sidebar/SidebarContainer'
+import { pickSheet } from '../../ui/Pickers'
+import { moveInputSheet } from '../../ui/ProjectSheets'
+import { useOtherProjects } from '../../app/projectLists'
 import { asSaidSheet, historySheet, inputMenuSheet } from './InputSheets'
 
 type Req<K extends SheetRequest['kind']> = { req: Extract<SheetRequest, { kind: K }> }

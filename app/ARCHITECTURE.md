@@ -66,21 +66,29 @@ root files, `taska-files/fN-name`. The old version must run on data this version
 
 ```
 web/src/
-  app/          composition root: creates the stores and services, provides them; page-wide behaviours
+  app/          composition root (createApp: makes the stores and services, only assembling them), the services,
+                the hooks containers share (the route, a project's model, the projects listed, search hints),
+                page-wide behaviours (keys, tooltip)
   api/          typed HTTP calls (time limits, retry, the key)                 no React
   sync/         a project's change stream (the long poll and its pauses), the IndexedDB copy   no React
   model/        pure: types, selectors (sections, needs you, counts, order), words, times              no React
   stores/       Zustand stores, one per concern: server data, pending changes (outbox), drafts, UI, toasts
-  ui/           presentational primitives (buttons, icons, pills, menus, toasts)
-  features/     one folder per area (sidebar, list, item, composer, inputs, docs, settings, home):
-                presentational components (props only) and their containers (hooks into stores)
+  ui/           presentational parts more than one feature shows: primitives (buttons, icons, sheets, segments),
+                Markdown, files, pickers, the projects' sheets, log lines, search hints, the pane's frame
+  features/     one folder per area (sidebar, list, item, composer, inputs, docs, settings, side, find, home, ...):
+                presentational components (props only) and their containers (hooks into stores); a feature is a
+                leaf: it imports no other feature and no page
+  pages/        puts features together: the page's root (App.tsx), the project page (its layout, header, the
+                detail pane) and the sheets; a feature shown inside another is given as a prop (a slot)
 ```
 
 Rules, checked by `web/eslint.config.js` (imports, page lookups) and `web/scripts/check-architecture.mjs` (the rest;
 `--self` plants one break of each rule in a copy and fails unless every one is caught):
 
 1. Presentational components get everything through props; they import nothing from `app/`, `stores/`, `api/`,
-   `sync/`. A container (`*Container.tsx`) reads stores and passes props; it names the parts of the app it uses
+   `sync/`. Features are leaves: a feature imports no other feature and no page; what features share is in `app/`
+   (services, hooks), `model/` (selectors) or `ui/` (parts), and `pages/` puts them together. `app/`, `ui/`,
+   `model/`, `stores/`, `api/` and `sync/` know no feature and no page. A container (`*Container.tsx`) reads stores and passes props; it names the parts of the app it uses
    (`useServices('nav', 'sheets')`, `useStores('ui')`) and can reach nothing else (`useApp` is the page's root's
    only); an action of the table runs through `app.actions.run(id)` (`app/actions.ts`: each action names the
    services it uses and is given only those).

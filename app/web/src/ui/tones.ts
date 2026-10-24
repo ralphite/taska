@@ -29,6 +29,8 @@ export const STATE_ON: Record<Status, string> = {
 
 /** A 32px control gets a 44px touch area. */
 export const HIT = 'relative after:absolute after:inset-x-0 after:-inset-y-1.5'
+/** a row of a menu sheet */
+export const MENU_ROW = 'flex h-10 w-full items-center gap-2.5 rounded-lg px-3 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800'
 export const LINK_BTN = `${HIT} flex h-8 items-center gap-1 rounded-lg px-2 text-[13px] font-semibold text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10`
 export const PRIMARY_BASE =
   'inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-transparent px-4 text-[15px] font-semibold'

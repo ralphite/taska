@@ -2,19 +2,19 @@
 // page; the addresses are the projects' own, so agents' and phone links keep working.
 
 import { useEffect } from 'react'
-import { useApp, LayoutProvider, useWindowLayout } from './context'
-import { useRoute } from './hooks'
+import { useApp, LayoutProvider, useWindowLayout } from '../app/context'
+import { useRoute } from '../app/hooks'
 import { HomeContainer } from '../features/home/HomeContainer'
-import { ProjectPageContainer } from '../features/project/ProjectPageContainer'
-import { SheetContainer } from '../features/sheets/SheetContainer'
+import { ProjectPageContainer } from './ProjectPageContainer'
+import { SheetContainer } from './SheetContainer'
 import { SelectionBarContainer } from '../features/composer/SelectionBarContainer'
 import { ViewerContainer } from '../features/media/ViewerContainer'
 import { DashboardContainer } from '../features/dev/DashboardContainer'
-import { pageKeys } from './keys'
-import { Tooltip } from './Tooltip'
-import { PanesProvider } from './panes'
+import { pageKeys } from '../app/keys'
+import { Tooltip } from '../app/Tooltip'
+import { PanesProvider } from '../app/panes'
 import { refCard } from '../model/refCard'
-import type { App as TaskaApp } from './createApp'
+import type { App as TaskaApp } from '../app/createApp'
 
 /** What a code names in the project shown, as its hover card. */
 const cardOf = (app: Pick<TaskaApp, 'model'>, slug: string, ref: string) => {

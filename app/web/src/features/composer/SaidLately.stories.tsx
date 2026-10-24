@@ -3,7 +3,7 @@ import { standing, SHORT_STANDING } from '../../model/inputs'
 import { Frames } from '../../stories/Frames'
 import { input } from '../../stories/fixtures'
 import type { Input } from '../../model/types'
-import { Thumbs } from './Files'
+import { Thumbs } from '../../ui/Files'
 import { SaidLately, type SaidEvents, type SaidInput } from './SaidLately'
 
 const meta: Meta = { title: 'Components/You said' }

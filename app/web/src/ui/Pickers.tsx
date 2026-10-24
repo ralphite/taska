@@ -2,12 +2,12 @@
 // command needs. Props only.
 
 import { useState, type ReactNode } from 'react'
-import { closed, shownStatus } from '../../model/items'
-import type { Item } from '../../model/types'
-import { hay } from '../../model/visible'
-import { Icon, StateIcon } from '../../ui/Icon'
-import type { SheetParts } from '../../ui/Sheet'
-import { FIELD, TYPE_TEXT } from '../../ui/tones'
+import { closed, shownStatus } from '../model/items'
+import type { Item } from '../model/types'
+import { hay } from '../model/visible'
+import { Icon, StateIcon } from './Icon'
+import type { SheetParts } from './Sheet'
+import { FIELD, TYPE_TEXT } from './tones'
 
 export function Picker({ items, code, placeholder, skip, sort, current, desk, extra, onPick }: {
   items: readonly Item[]
