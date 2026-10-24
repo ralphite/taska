@@ -15,6 +15,7 @@ export function PaneFrame({
   onMenu,
   paneRef,
   split = false,
+  bar = true,
   children,
 }: {
   place: string
@@ -30,11 +31,13 @@ export function PaneFrame({
   paneRef?: Ref<HTMLElement>
   /** it shows an item in its two parts (they scroll, not the body) */
   split?: boolean
+  /** false: no bar on the desktop (nothing shows to have one) */
+  bar?: boolean
   children?: ReactNode
 }) {
   return (
     <section ref={paneRef} hidden={hidden} className={`flex min-h-0 flex-1 flex-col ${place}`}>
-      <header className="flex h-14 shrink-0 items-center gap-1 border-b border-zinc-100 px-1 lg:border-zinc-200 lg:px-3 dark:border-zinc-800/70 dark:lg:border-zinc-800">
+      <header className={`flex h-14 shrink-0 items-center gap-1 border-b border-zinc-100 px-1 lg:border-zinc-200 lg:px-3 dark:border-zinc-800/70 dark:lg:border-zinc-800 ${bar ? '' : 'lg:hidden'}`}>
         <button
           aria-label="Back"
           onClick={onBack}

@@ -1,6 +1,6 @@
-// Going places in a project: a tab, an item, the New input page, the list's search and filters. Changing tab,
-// opening the New input page or an item on the phone are steps Back can undo; picking items in the desktop's list,
-// search and filters only rewrite the address.
+// Going places in a project: a tab, an item, a document, the New input page, the lists beside the items, the list's
+// search and filters. Changing tab, opening the New input page or an item on the phone are steps Back can undo;
+// picking items in the desktop's list, search and filters only rewrite the address.
 
 import { LIST_KEYS, NO_FILTERS, projectPath, type ListQuery, type Place } from '../model/route'
 import type { Tab } from '../model/words'
@@ -116,7 +116,23 @@ export class Navigation {
     const r = this.here()
     if (!r) return
     if (this.route.getState().full) this.route.getState().setFull(false, true)
-    this.go(r.tab, this.desk() ? { kind: 'new' } : { kind: 'tab' }, r.list, false)
+    // opened from Documents, Activity or Deleted: back to that list
+    const side = this.desk() ? this.route.getState().side : null
+    this.go(r.tab, side ? { kind: 'side', side } : this.desk() ? { kind: 'new' } : { kind: 'tab' }, r.list, false)
+  }
+
+  /** A document: a step Back goes back to where you were. */
+  openDoc(d: number, tab?: Tab): void {
+    const r = this.here()
+    if (!r) return
+    this.go(tab ?? (r.tab === 'inputs' ? 'items' : r.tab), { kind: 'doc', d }, r.list, !(r.place.kind === 'doc' && r.place.d === d))
+  }
+
+  /** Documents, Activity or Deleted, in the list's column (the desktop). */
+  side(side: 'docs' | 'log' | 'deleted'): void {
+    const r = this.here()
+    if (!r) return
+    this.go('items', { kind: 'side', side }, r.list, !(r.place.kind === 'side' && r.place.side === side))
   }
 
   /** The item one step on in the list (Previous, Next); `say` tells when there is none that way. */

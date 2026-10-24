@@ -1,7 +1,7 @@
 // The server's page interface, one typed call each (the server's http/page_routes.py and workspace_routes.py).
 
 import { Http, TIME_LIMIT } from './http'
-import type { FileRef, Need, ProjectRow, SearchHit, ViewAnswer } from '../model/types'
+import type { FileRef, LogRow, Need, ProjectRow, SearchHit, ViewAnswer } from '../model/types'
 
 /** A change the page asks for: the same commands agents write, as data ({op: "set", ref: "B03", f: {...}}). */
 export type Command = Record<string, unknown> & { op: string }
@@ -107,6 +107,11 @@ export class TaskaApi {
 
   search(q: string, skip: string): Promise<SearchHit[]> {
     return this.http.json<SearchHit[]>(`/api/search?q=${encodeURIComponent(q)}&skip=${encodeURIComponent(skip)}`)
+  }
+
+  /** The change log, the latest first: the last n changes, or the n before change `before`. */
+  activity(slug: string, n: number, before = 0): Promise<LogRow[]> {
+    return this.http.json<LogRow[]>(P(slug) + `activity?n=${n}` + (before ? `&before=${before}` : ''))
   }
 
   pageLog(slug: string, list: Record<string, unknown>[]): Promise<unknown> {

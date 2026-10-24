@@ -9,6 +9,7 @@ import { Icon } from '../../ui/Icon'
 import { ItemActs, ItemHead, ItemNav, Missing, NoSelection } from '../item/ItemPage'
 import { ItemPageContainer, openItemMenu } from '../item/ItemPageContainer'
 import { PaneFrame } from '../item/PaneFrame'
+import { DeletedPickContainer } from '../side/SideListContainer'
 
 export function DetailContainer({ route, place, hidden, full = false }: { route: ProjectRoute; place: string; hidden?: boolean; full?: boolean }) {
   const app = useApp()
@@ -58,6 +59,7 @@ export function DetailContainer({ route, place, hidden, full = false }: { route:
         <Missing what={route.place.ref.toUpperCase()} loading={!m} away={away >= 2} />
       </PaneFrame>
     )
+  const side = route.place.kind === 'side' ? route.place.side : null
   return (
     <PaneFrame
       place={place}
@@ -65,6 +67,7 @@ export function DetailContainer({ route, place, hidden, full = false }: { route:
       desk={desk}
       paneRef={pane}
       onBack={back}
+      bar={!side}
       head={
         compose ? (
           <span className="flex items-center gap-2 text-sm font-semibold">
@@ -74,7 +77,7 @@ export function DetailContainer({ route, place, hidden, full = false }: { route:
         ) : null
       }
     >
-      {compose ? null : <NoSelection side={null} />}
+      {compose ? null : side === 'deleted' ? <DeletedPickContainer slug={route.slug} /> : <NoSelection side={side} />}
     </PaneFrame>
   )
 }

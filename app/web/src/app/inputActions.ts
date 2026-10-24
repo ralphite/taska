@@ -5,6 +5,7 @@
 
 import type { TaskaApi } from '../api/taska'
 import type { InputPatch, ProjectModel } from '../model/project'
+import type { DeletedInput } from '../model/types'
 import { inputCode } from '../model/words'
 import { newId, type ChangeRunner } from './changeRunner'
 import type { Toasts } from './toasts'
@@ -33,6 +34,18 @@ export class InputActions {
       return true
     })
     this.d.toasts.show(`Deleted ${inputCode(id)}`, undo)
+  }
+
+  /** Back from Deleted, with the items only it made; Undo deletes it again. */
+  async restore(slug: string, id: string): Promise<void> {
+    const x = this.d.model(slug)?.facts.deletedInputs.find((y) => y.id === id)
+    if (!(await this.send(slug, { op: 'restore', id }, `restoring ${inputCode(id)}`))) return
+    const undo = this.d.toasts.undoable(`${inputCode(id)} restored`, async () => {
+      const ok = await this.send(slug, { op: 'delete', id }, `deleting ${inputCode(id)}`, [{ id, f: {}, gone: true }])
+      if (ok) this.d.toasts.show(deletedSaid(this.d.model(slug)?.facts.deletedInputs.find((y) => y.id === id), id))
+      return ok
+    })
+    this.d.toasts.show(`${inputCode(id)} is back${x?.items.length ? ` with ${x.items.map((i) => i.code).join(', ')}` : ''}`, undo)
   }
 
   undoFiling(slug: string, id: string): void {
@@ -82,4 +95,11 @@ export class InputActions {
       return false
     }
   }
+}
+
+/** What deleting an input took with it, and what it kept (made from other inputs too). */
+export function deletedSaid(x: DeletedInput | undefined, id: string): string {
+  if (!x) return `Deleted ${inputCode(id)}`
+  const k = x.kept
+  return `Deleted ${inputCode(id)}${x.items.length ? ` and ${x.items.map((i) => i.code).join(', ')}` : ''}${k.length ? ` · ${k[0].code} kept: ${k[0].why}${k.length > 1 ? ` · ${k.length - 1} more kept` : ''}` : ''}`
 }

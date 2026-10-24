@@ -41,6 +41,9 @@ export interface UiState {
   dropHeld(n: number): void
   setSelected(s: ReadonlySet<number>): void
   setSideHidden(on: boolean): void
+  /** the row of Activity or Deleted shown in the pane beside it */
+  sideSel: string | null
+  setSideSel(key: string | null): void
   /** a project is shown again as a fresh page shows it */
   reset(): void
 }
@@ -63,6 +66,8 @@ export function createUiStore(kv: KeyValueStore): UiStore {
     heldFor: '',
     selected: new Set(),
     sideHidden: !!kv.get('taska.sideHidden'),
+    sideSel: null,
+    setSideSel: (sideSel) => set({ sideSel }),
     deskFilters: false,
     setDeskFilters: (deskFilters) => set({ deskFilters }),
     openedInputs: new Set(),
@@ -93,6 +98,6 @@ export function createUiStore(kv: KeyValueStore): UiStore {
       kv.set('taska.sideHidden', on ? '1' : null)
       set({ sideHidden: on })
     },
-    reset: () => set({ folded: new Set(), subMore: new Set(), needsAll: false, held: new Map(), heldFor: '', selected: new Set(), lastSent: null }),
+    reset: () => set({ folded: new Set(), subMore: new Set(), needsAll: false, held: new Map(), heldFor: '', selected: new Set(), lastSent: null, sideSel: null }),
   }))
 }

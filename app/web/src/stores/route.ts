@@ -4,6 +4,8 @@
 import { createStore, type StoreApi } from 'zustand/vanilla'
 import { parseRoute, type Route } from '../model/route'
 
+export type Side = 'docs' | 'log' | 'deleted'
+
 export interface Place {
   path: string
   search: string
@@ -27,6 +29,9 @@ export interface RouteState {
   layers: readonly string[]
   /** the desktop's item full width (O): a step Back undoes; `link`: reached by a link while full width */
   full: boolean
+  /** the list beside the pane on the desktop when it is Documents, Activity or Deleted: it stays while what you open
+   * from it shows beside it */
+  side: Side | null
   /** go full width, or back to the list (`here`: by rewriting this step, not going back) */
   setFull(on: boolean, here?: boolean): void
   /** go to an address: a step in the history (push) or the address rewritten; `layers`: what the new step has open
@@ -43,7 +48,18 @@ export interface RouteState {
 export type RouteStore = StoreApi<RouteState>
 
 const urlOf = (p: Place) => p.path + p.search + p.hash
+const placeOf = (url: string): [string, string, string] => {
+  const u = new URL(url, 'http://taska.local')
+  return [u.pathname, u.search, u.hash]
+}
 const fullOf = (state: unknown) => !!(state as { full?: unknown } | null)?.full
+const SIDES: readonly string[] = ['docs', 'log', 'deleted']
+const sideOf = (route: Route, state: unknown): Side | null => {
+  if (route.page !== 'project') return null
+  if (route.place.kind === 'side') return route.place.side
+  const s = (state as { side?: unknown } | null)?.side
+  return (route.place.kind === 'item' || route.place.kind === 'doc') && typeof s === 'string' && SIDES.includes(s) ? (s as Side) : null
+}
 const layersOf = (state: unknown): string[] => {
   const l = (state as { layers?: unknown } | null)?.layers
   return Array.isArray(l) ? l.filter((x): x is string => typeof x === 'string') : []
@@ -54,19 +70,25 @@ export function createRouteStore(history: History): RouteStore {
   let after: (() => void) | null = null
   const now = () => {
     const p = history.location()
-    return { route: parseRoute(p.path, p.search, p.hash), url: urlOf(p), layers: layersOf(history.state()), full: fullOf(history.state()) }
+    const route = parseRoute(p.path, p.search, p.hash)
+    return { route, url: urlOf(p), layers: layersOf(history.state()), full: fullOf(history.state()), side: sideOf(route, history.state()) }
   }
+  const first = parseRoute(at.path, at.search, at.hash)
   return createStore<RouteState>()((set, get) => ({
-    route: parseRoute(at.path, at.search, at.hash),
+    route: first,
     url: urlOf(at),
     layers: layersOf(history.state()),
     full: fullOf(history.state()),
+    side: sideOf(first, history.state()),
     go: (url, push = false, layers) => {
       const open = get().layers
       if (url === get().url && layers === undefined) return
-      // full width goes on to what a link opens; Back from there comes back
+      // full width goes on to what a link opens; Back from there comes back; so does the side list, beside what opens
       const full = get().full ? { full: true, link: true } : {}
-      const state = (l: readonly string[]) => (l.length || get().full ? { ...full, ...(l.length ? { layers: [...l] } : {}) } : null)
+      const side = get().side
+      const to = side ? parseRoute(...placeOf(url)) : null
+      const keep = side && to?.page === 'project' && (to.place.kind === 'item' || to.place.kind === 'doc') ? { side } : {}
+      const state = (l: readonly string[]) => (l.length || get().full || 'side' in keep ? { ...full, ...keep, ...(l.length ? { layers: [...l] } : {}) } : null)
       if (push && url !== get().url) {
         // from the drawer: its step becomes the new one (as closing it, then going on, would leave the history)
         if (open.includes('drawer')) history.replace(url, state(layers ?? open.filter((k) => k !== 'drawer')))

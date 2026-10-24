@@ -14,6 +14,7 @@ import { FootContainer } from '../composer/FootContainer'
 import { ToastContainer } from '../feedback/ToastContainer'
 import { ItemListContainer } from '../list/ItemListContainer'
 import { SidebarContainer, useSideProjects } from '../sidebar/SidebarContainer'
+import { SideListContainer } from '../side/SideListContainer'
 import { codeOf } from '../../model/project'
 import { InputsContainer } from '../inputs/InputsContainer'
 import { DeskFilters, type FilterEvents } from '../sheets/Filters'
@@ -79,7 +80,8 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
   const sideHidden = useStoreValue(app.stores.ui, (s) => s.sideHidden)
   const settings = route.place.kind === 'settings'
   const full = useStoreValue(app.stores.route, (s) => s.full) && route.place.kind === 'item' && !settings
-  const side = route.place.kind === 'side' && !settings
+  const shownSide = useStoreValue(app.stores.route, (s) => s.side)
+  const side = !!shownSide && !settings
   const compose = route.place.kind === 'new' || (route.place.kind === 'tab' && route.tab !== 'inputs')
   const filtersOpen = useStoreValue(app.stores.ui, (s) => s.deskFilters)
   const set = filtersSet(route.tab, route.list)
@@ -89,7 +91,7 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
   const tabs: TabInfo[] = TABS.filter((t) => t !== 'archive' && t !== 'inputs').map((t) => ({
     tab: t,
     count: counts ? counts[t] : '',
-    selected: (route.tab === t || (t === 'items' && route.tab === 'archive')) && !settings && route.place.kind !== 'side',
+    selected: (route.tab === t || (t === 'items' && route.tab === 'archive')) && !settings && !side,
   }))
   return (
     <div className="flex h-full w-full">
@@ -145,7 +147,7 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
           on={{ ...filterEvents(app), toggle: () => app.stores.ui.getState().setDeskFilters(!filtersOpen) }}
         />
         <section className="col-start-1 row-span-2 row-start-4 flex min-h-0 flex-1 flex-col lg:border-r lg:border-zinc-200 dark:lg:border-zinc-800" hidden={settings || full}>
-          <ItemListContainer route={route} />
+          {shownSide ? <SideListContainer slug={route.slug} side={shownSide} /> : <ItemListContainer route={route} />}
         </section>
         <DetailContainer route={route} place={`row-span-3 row-start-2 group-data-[compose]/app:row-span-1 ${pane}`} hidden={settings} full={full} />
         <div hidden={settings || full} className="group/line relative z-30 col-start-1 row-span-4 row-start-2 block w-3 translate-x-1/2 cursor-col-resize justify-self-end">
@@ -155,7 +157,7 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
           route={route}
           composePage={compose}
           place={`row-start-5 group-data-duo/app:ml-[var(--duo-w,55%)] group-data-duo/app:after:left-1 group-data-[compose]/app:row-span-3 group-data-[compose]/app:row-start-3 ${pane}`}
-          hidden={settings}
+          hidden={settings || route.place.kind === 'side'}
           onHeight={setFootH}
         />
       </div>

@@ -28,6 +28,9 @@ import { Answers } from './answers'
 import { Box } from './box'
 import { CrossSearch } from './crossSearch'
 import { Projects } from './projects'
+import { Activity } from './activity'
+import { Restores } from './restores'
+import { createActivityStore, type ActivityStore } from '../stores/activity'
 import { Fields } from './fields'
 import { ListOrder } from './listOrder'
 import { Moves } from './moves'
@@ -62,6 +65,7 @@ export interface App {
     box: BoxStore
     sheet: SheetStore
     route: RouteStore
+    activity: ActivityStore
   }
   toasts: Toasts
   items: ItemActions
@@ -94,6 +98,8 @@ export interface App {
   /** show a project: its copy, then its changes as they come */
   showProject(slug: string): void
   projects: Projects
+  activity: Activity
+  restores: Restores
   refreshProjects(): Promise<boolean>
   stop(): void
 }
@@ -116,6 +122,7 @@ export function createApp(env: AppEnv): App {
   const listOrder = new ListOrder()
   const itemView = createItemViewStore(env.kv)
   const search = createSearchStore()
+  const activityStore = createActivityStore()
   const drafts = createDraftsStore(env.kv)
   const boxStore = createBoxStore(env.session ?? memoryStore())
   const sheetStore = createSheetStore()
@@ -190,6 +197,17 @@ export function createApp(env: AppEnv): App {
     noteWith: () => false,
   })
 
+  const inputActions = new InputActions({
+    runner,
+    toasts,
+    api,
+    model,
+    refresh: (slug) => stale(slug),
+    title: (slug) => data.getState().projects?.find((p) => p.name === slug)?.title || slug,
+    go: (url) => route.getState().go(url, true),
+  })
+  const activity = new Activity({ api, store: activityStore, toasts })
+  const restores = new Restores({ runner, toasts, inputs: inputActions, model })
   const projects = new Projects({ api, data, kv: env.kv, home: () => route.getState().route.page === 'home' })
   const refreshProjects = () => projects.refresh()
 
@@ -208,6 +226,7 @@ export function createApp(env: AppEnv): App {
         if (!away && was) {
           runner.back()
           inputs.back()
+          activity.back()
         }
       },
       keyNeeded: () => {},
@@ -241,7 +260,7 @@ export function createApp(env: AppEnv): App {
 
   return {
     api,
-    stores: { data, changes, outbox, feedback, ui, itemView, search, drafts, box: boxStore, sheet: sheetStore, route },
+    stores: { data, changes, outbox, feedback, ui, itemView, search, drafts, box: boxStore, sheet: sheetStore, route, activity: activityStore },
     toasts,
     items,
     inputs,
@@ -253,15 +272,7 @@ export function createApp(env: AppEnv): App {
     crossSearch: new CrossSearch(api, search),
     answers: new Answers({ inputs, view: itemView, outbox }),
     fields: new Fields(),
-    inputActions: new InputActions({
-      runner,
-      toasts,
-      api,
-      model,
-      refresh: (slug) => stale(slug),
-      title: (slug) => data.getState().projects?.find((p) => p.name === slug)?.title || slug,
-      go: (url) => route.getState().go(url, true),
-    }),
+    inputActions,
     box: new Box({ api, store: boxStore, drafts, outbox, inputs, runner, toasts }),
     sheets,
     moves: new Moves({
@@ -278,6 +289,8 @@ export function createApp(env: AppEnv): App {
     model,
     showProject,
     projects,
+    activity,
+    restores,
     refreshProjects,
     stop: () => {
       projects.stop()

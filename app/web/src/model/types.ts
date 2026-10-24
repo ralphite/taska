@@ -141,6 +141,15 @@ export interface AgentSeen {
   sessions?: { name: string; t: number }[]
 }
 
+/** One change of the project's log, as the server lists it. */
+export interface LogRow {
+  seq: number
+  t: string
+  who: string
+  what: string
+  ses?: string
+}
+
 export interface UndoEntry {
   seq: number
   n: number
