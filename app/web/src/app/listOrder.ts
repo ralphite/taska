@@ -8,6 +8,11 @@ export class ListOrder {
   /** the rows when the open item was last among them */
   private at: { n: number; rows: readonly number[] } | null = null
 
+  /** The rows as the list shows them now. */
+  rows(): readonly number[] {
+    return this.now
+  }
+
   set(rows: readonly number[], open: number | null): void {
     this.now = rows
     if (open != null && rows.includes(open)) this.at = { n: open, rows }

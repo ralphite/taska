@@ -29,7 +29,8 @@ export interface RowFacts {
 }
 
 export interface RowEvents {
-  open(n: number): void
+  /** a row clicked (the desktop's Cmd- or Shift-click picks it instead) */
+  open(n: number, how?: { metaKey: boolean; ctrlKey: boolean; shiftKey: boolean }): void
   act(n: number, field: string, value: string, label: string): void
   need(n: number, action: string): void
   reopen(n: number): void
@@ -237,7 +238,7 @@ export function ItemRow(props: {
     <Shell it={it} look={look} facts={facts} on={on} rowRef={rowRef}>
       <div
         {...marks(look)}
-        onClick={() => on.open(it.n)}
+        onClick={(e) => on.open(it.n, e)}
         className={`group relative flex cursor-pointer items-start gap-3 py-2.5 pr-3 ${pad(depth)} ${isClosed && !it.archived ? 'opacity-55' : ''} ${ROW_TINT}`}
       >
         {facts.unread ? <span className="absolute top-4.5 left-1 size-2 rounded-full bg-blue-600 dark:bg-blue-400" title="New from an agent" /> : null}
@@ -284,7 +285,7 @@ export function NeedsRow({ it, depth, facts, look, excerpt, on, rowRef }: { it: 
     <Shell it={it} look={look} facts={facts} on={on} rowRef={rowRef}>
       <div
         {...marks(look)}
-        onClick={() => on.open(it.n)}
+        onClick={(e) => on.open(it.n, e)}
         className={`group relative flex cursor-pointer items-center gap-2.5 py-2.5 pr-3 ${pad(depth)} ${ROW_TINT}`}
       >
         <span className="absolute inset-y-0 left-0 w-1 bg-amber-500 dark:bg-amber-400" />
@@ -344,7 +345,7 @@ export function HeldRow({ it, code, said, height, on }: { it: Item; code: string
   return (
     <article data-n={it.n} className={ARTICLE}>
       <div
-        onClick={() => on.open(it.n)}
+        onClick={(e) => on.open(it.n, e)}
         style={height > 0 ? { minHeight: height } : undefined}
         className="flex cursor-pointer items-center gap-3 py-2 pr-3 pl-4 text-sm text-zinc-500 hover:bg-zinc-50 data-pressed:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-900/70 dark:data-pressed:bg-zinc-900"
       >

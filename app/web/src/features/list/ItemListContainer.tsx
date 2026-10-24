@@ -15,6 +15,7 @@ import { useSearchHints } from './SearchHintsContainer'
 import { QUIET_MS } from '../../model/words'
 import { unreadSince } from '../../stores/seen'
 import { EmptyList, ItemList, type DrawnRow, type ListEvents } from './ItemList'
+import { SelBar } from './SelBar'
 import type { RowFacts, RowLook } from './ListRows'
 import { workerTip } from './ListRows'
 import { heldRows, listBody, viewChips, type Row } from './rows'
@@ -136,6 +137,13 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
   const order = drawn.flatMap((r) => (r.kind === 'item' || r.kind === 'needs' || r.kind === 'held' ? [r.it.n] : []))
   const orderKey = order.join(',')
   useLayoutEffect(() => app.listOrder.set(orderKey ? orderKey.split(',').map(Number) : [], openN), [app, orderKey, openN])
+  useLayoutEffect(() => {
+    // picked rows that left the list are let go
+    const sel = app.stores.ui.getState().selected
+    if (!sel.size) return
+    const there = new Set(order)
+    if ([...sel].some((n) => !there.has(n))) app.stores.ui.getState().setSelected(new Set([...sel].filter((n) => there.has(n))))
+  }, [app, orderKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // the phone's swipe right: the row's way forward (an answer opens its card)
   const swipe = {
@@ -147,7 +155,7 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
     blocked: () => app.stores.route.getState().layers.includes('drawer'),
   }
   const on: ListEvents = {
-    open: (n) => app.nav.openItem(codeOf(m as ProjectModel, n)),
+    open: (n, how) => (desk && how && (how.metaKey || how.ctrlKey || how.shiftKey) ? app.selection.pick(n, how.shiftKey) : app.nav.openItem(codeOf(m as ProjectModel, n))),
     act: (n, f, v) => void app.items.change(n, f, f === 'archived' ? v === 'true' : v),
     need: (n, action) => {
       const it = m?.byN.get(n)
@@ -204,6 +212,7 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
         ref={pane}
         desk={desk}
         dragging={drag.n != null ? { out: drag.at?.how === 'out' } : null}
+        top={ui.selected.size && desk ? <SelBar n={ui.selected.size} on={{ set: (f, v, said) => app.selection.set(f, v, said), clear: () => app.selection.clear() }} /> : undefined}
         swipe={swipe}
         loading={!m}
         views={views}

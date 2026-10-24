@@ -45,6 +45,7 @@ import { SavedViews } from './views'
 import { createGripsStore, type GripsStore } from '../stores/grips'
 import { createDragStore, type DragStore } from '../stores/drag'
 import { ItemDrag } from './itemDrag'
+import { Selection } from './selection'
 import { createViewsStore, type ViewsStore } from '../stores/views'
 import { createMediaStore, type MediaStore } from '../stores/media'
 import { createDictationStore, type DictationStore } from '../stores/dictation'
@@ -147,6 +148,7 @@ export interface App {
   media: Media
   views: SavedViews
   itemDrag: ItemDrag
+  selection: Selection
   refreshProjects(): Promise<boolean>
   stop(): void
 }
@@ -335,6 +337,18 @@ export function createApp(env: AppEnv): App {
     go: (url) => route.getState().go(url, true),
     refresh: (slug) => stale(slug),
   })
+  const selection = new Selection({
+    ui,
+    order: listOrder,
+    runner,
+    toasts,
+    slug: currentSlug,
+    model: () => model(currentSlug()),
+    open: () => {
+      const r = route.getState().route
+      return r.page === 'project' && r.place.kind === 'item' ? Number(/\d+/.exec(r.place.ref)?.[0]) || null : null
+    },
+  })
   const itemDrag = new ItemDrag({ store: dragStore, items, moves, slug: currentSlug, model: () => model(currentSlug()) })
   const media = new Media({ api, store: mediaStore, route, sheets, toasts, desk: env.desk })
   const keptNotes = new KeptNotes({
@@ -459,6 +473,7 @@ export function createApp(env: AppEnv): App {
     media,
     views,
     itemDrag,
+    selection,
     refreshProjects,
     stop: () => {
       projects.stop()
