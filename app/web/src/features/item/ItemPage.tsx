@@ -2,7 +2,7 @@
 // documents, files and subitems, then its talk. On the desktop the item and its talk are two parts, each scrolling
 // on its own, with a line between them; the talk opens at its latest message. The phone has one page. Props only.
 
-import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { canDone, closed, shownStatus } from '../../model/items'
 import { talkPlan } from '../../model/talk'
 import type { Doc, FileRef, Item } from '../../model/types'
@@ -34,8 +34,12 @@ export interface ItemEvents extends TalkLineEvents {
   subNew(): void
   subAdd(title: string): void
   subCancel(): void
+  /** the subitem title as you type it (kept) */
+  subTyped(title: string): void
   editSave(f: { title: string; body: string; next: string }): void
   editCancel(): void
+  /** the editor's words as you type them (kept) */
+  editTyped(f: { title: string; body: string; next: string }): void
 }
 
 export interface ItemFacts {
@@ -52,7 +56,11 @@ export interface ItemFacts {
   /** the whole talk shows (Show earlier) */
   allTalk: boolean
   editing: boolean
+  /** what you typed in its editor before and did not save */
+  editDraft?: { title: string; body: string; next: string } | null
   addingSub: boolean
+  /** a subitem title you started before */
+  subDraft?: string
 }
 
 const caret = <Icon n="down" c="size-3 opacity-50" sw="2.25" />
@@ -121,15 +129,51 @@ function Chips({ it, f, on }: { it: Item; f: ItemFacts; on: ItemEvents }) {
   )
 }
 
-function Editor({ it, on }: { it: Item; on: ItemEvents }) {
-  const [title, setTitle] = useState(it.title)
-  const [body, setBody] = useState(it.body)
-  const [next, setNext] = useState(it.next)
+function Editor({ it, kept, on }: { it: Item; kept: { title: string; body: string; next: string } | null; on: ItemEvents }) {
+  const [title, setTitle] = useState(kept?.title ?? it.title)
+  const [body, setBody] = useState(kept?.body ?? it.body)
+  const [next, setNext] = useState(kept?.next ?? it.next)
+  const details = useRef<HTMLTextAreaElement>(null)
+  useEffect(() => {
+    // write on after the details, not before them
+    const t = details.current
+    if (!t) return
+    t.focus()
+    t.selectionStart = t.selectionEnd = t.value.length
+  }, [])
   return (
     <div className="flex flex-col gap-2">
-      <input className={`${FIELD} font-medium`} value={title} onChange={(e) => setTitle(e.target.value)} aria-label="Title" />
-      <textarea rows={8} className={`${FIELD} leading-relaxed`} aria-label="Details" placeholder="Details" value={body} onChange={(e) => setBody(e.target.value)} />
-      <input className={FIELD} value={next} onChange={(e) => setNext(e.target.value)} aria-label="Next step" placeholder="Next step (optional)" />
+      <input
+        className={`${FIELD} font-medium`}
+        value={title}
+        onChange={(e) => {
+          setTitle(e.target.value)
+          on.editTyped({ title: e.target.value, body, next })
+        }}
+        aria-label="Title"
+      />
+      <textarea
+        ref={details}
+        rows={8}
+        className={`${FIELD} leading-relaxed`}
+        aria-label="Details"
+        placeholder="Details"
+        value={body}
+        onChange={(e) => {
+          setBody(e.target.value)
+          on.editTyped({ title, body: e.target.value, next })
+        }}
+      />
+      <input
+        className={FIELD}
+        value={next}
+        onChange={(e) => {
+          setNext(e.target.value)
+          on.editTyped({ title, body, next: e.target.value })
+        }}
+        aria-label="Next step"
+        placeholder="Next step (optional)"
+      />
       <div className="flex justify-end gap-2">
         <button onClick={on.editCancel} className={SECOND}>
           Cancel
@@ -142,9 +186,35 @@ function Editor({ it, on }: { it: Item; on: ItemEvents }) {
   )
 }
 
+/** A field fully in sight in the part that scrolls it, above the fade at that part's end. */
+function inSight(f: HTMLElement) {
+  let sc = f.parentElement
+  while (sc && !(sc.scrollHeight > sc.clientHeight && /auto|scroll/.test(getComputedStyle(sc).overflowY))) sc = sc.parentElement
+  if (!sc) return
+  const r = f.getBoundingClientRect()
+  const c = sc.getBoundingClientRect()
+  const fade = overflows(sc) ? 72 : 8 // the part fades over its last 4rem while there is more below
+  if (r.bottom > c.bottom - fade) sc.scrollTop += r.bottom - (c.bottom - fade)
+  else if (r.top < c.top) sc.scrollTop -= c.top - r.top + 8
+}
+
 function Subitems({ it, f, on }: { it: Item; f: ItemFacts; on: ItemEvents }) {
-  const [title, setTitle] = useState('')
+  const [title, setTitle] = useState(f.subDraft ?? '')
+  const field = useRef<HTMLInputElement>(null)
+  const added = useRef(true) // opened: the field comes into sight; then after each one added
   const kids = f.kids
+  useLayoutEffect(() => {
+    if (!added.current || !field.current) return
+    added.current = false
+    inSight(field.current)
+  }, [kids.length, f.addingSub])
+  // the field stays for the next one
+  const add = () => {
+    if (!title.trim()) return
+    added.current = true
+    on.subAdd(title.trim())
+    setTitle('')
+  }
   return (
     <section className="flex flex-col gap-2">
       <SectionHead
@@ -183,18 +253,21 @@ function Subitems({ it, f, on }: { it: Item; f: ItemFacts; on: ItemEvents }) {
       {f.addingSub ? (
         <div className="flex items-center gap-2">
           <input
+            ref={field}
             autoFocus
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={(e) => {
+              setTitle(e.target.value)
+              on.subTyped(e.target.value)
+            }}
             onKeyDown={(e) => {
-              if (e.key === 'Enter' && title.trim()) on.subAdd(title.trim())
-              if (e.key === 'Escape') on.subCancel()
+              if (e.key === 'Enter') add()
             }}
             className={`${FIELD} min-w-0 flex-1`}
             placeholder={`Subitem of ${f.code(it.n)}`}
             aria-label="Subitem title"
           />
-          <button onClick={() => title.trim() && on.subAdd(title.trim())} className={PRIMARY}>
+          <button onClick={add} className={PRIMARY}>
             Add
           </button>
           <button aria-label="Cancel" onClick={on.subCancel} className="grid size-11 shrink-0 place-items-center rounded-full text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800">
@@ -267,7 +340,7 @@ export function ItemPage({ it, f, env, facts, on, talkRef, duo = false, left = n
   }, [asks, it.n])
 
   const head = f.editing ? (
-    <Editor key={it.n} it={it} on={on} />
+    <Editor key={it.n} it={it} kept={f.editDraft ?? null} on={on} />
   ) : (
     <div className="flex flex-col gap-3">
       <h1 className={`text-[22px] leading-[1.35] font-semibold break-words ${it.status === 'dropped' ? 'line-through' : ''}`}>{it.title}</h1>

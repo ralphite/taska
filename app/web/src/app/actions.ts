@@ -84,12 +84,12 @@ export const ACTIONS = {
     },
   }),
   drop: item({ label: "Won't do", keys: 'w', palette: true, why: (_, h) => whyNot.drop(h.it, h.code), run: (app, h) => set(app, h, 'status', dropTo()) }),
-  edit: item({ label: 'Edit', keys: 'i', palette: true, run: (app, h) => app.stores.itemView.getState().setEditing(h.it.n) }),
+  edit: item({ label: 'Edit', keys: 'i', palette: true, run: (app, h) => app.itemEdits.start(h.it.n) }),
   status: item({ label: 'Status…', keys: 's', palette: true, run: arm('s', 'Status: 1–6') }),
   priority: item({ label: 'Priority…', keys: 'p', palette: true, run: arm('p', 'Priority: 0–3') }),
   type: item({ label: 'Type…', keys: 't', palette: true, run: arm('t', 'Type: F B I T R') }),
   'put-under': item({ label: 'Put under…', keys: 'm', palette: true, run: (app, h) => app.sheets.open({ kind: 'item-move-parent', n: h.it.n }, { pop: true, focus: false }) }),
-  'add-sub': item({ label: 'Add subitem', keys: 'A', palette: true, run: (app, h) => app.stores.itemView.getState().setSubFor(h.it.n) }),
+  'add-sub': item({ label: 'Add subitem', keys: 'A', palette: true, run: (app, h) => app.itemEdits.subStart(h.it.n) }),
   'new-doc': item({ label: 'New doc', keys: 'D', palette: true, run: (app, h) => app.docs.create(h.it.n) }),
   copy: item({ label: 'Copy for agent', keys: 'C', palette: true, run: (app, h) => void copyText(forAgent(h.it, h.code, h.m.facts.base)).then(() => app.toasts.show('Copied')) }),
   full: item({ none: 'First pick an item: J or a click', label: 'Full width', keys: 'o', palette: true, run: (app) => app.nav.full(!app.stores.route.getState().full) }),
@@ -215,8 +215,8 @@ function stepBack(app: App, h: Here): void {
   if (app.stores.sheet.getState().spec?.req.kind === 'doc-edit') return app.docs.keep() // its text kept as a draft
   if (app.stores.sheet.getState().spec) return app.sheets.close()
   const view = app.stores.itemView.getState()
-  if (view.subFor != null && typingIn(active)) return view.setSubFor(null)
-  if (view.editing != null) return view.setEditing(null)
+  if (view.subFor != null && typingIn(active)) return app.itemEdits.subLeave()
+  if (view.editing != null) return app.itemEdits.leave()
   if (r.place.kind === 'doc') {
     // a document: its editor (kept as a draft), the area being drawn, what you picked, then the document itself
     const doc = app.stores.docView.getState()

@@ -41,6 +41,7 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
   const app = useApp()
   const duo = useStoreValue(app.stores.ui, (s) => s.duo) && desk
   const view = useStoreValue(app.stores.itemView, (s) => s)
+  const kept = useStoreValue(app.stores.keptEdits, (s) => s)
   const outbox = useStoreValue(app.stores.outbox, (s) => s.list)
   const away = useAway(slug)
   const world = useItemWorld(m, slug)
@@ -92,6 +93,8 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
     remodify: view.remodify === n,
     allTalk: view.talkAll.has(n),
     editing: view.editing === n,
+    editDraft: kept.edits[n] ?? null,
+    subDraft: kept.subs[n],
     addingSub: view.subFor === n,
   }
 
@@ -147,8 +150,9 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
     ...media.on,
     topSize: (px, done) => (done ? app.stores.grips.getState().keep('top', px) : app.stores.grips.getState().size('top', px)),
     duoSize: (px, done) => (done ? app.stores.grips.getState().keep('duo', px) : app.stores.grips.getState().size('duo', px)),
-    subNew: () => iv().setSubFor(n),
-    subCancel: () => iv().setSubFor(null),
+    subNew: () => app.itemEdits.subStart(n),
+    subCancel: () => app.itemEdits.subCancel(),
+    subTyped: (title) => app.itemEdits.subTyped(n, title),
     subAdd: (title) => {
       // same kind, priority and now/later as the parent; it shows under its parent at once (its code "…")
       const type = it.type === 'rule' ? 'task' : it.type
@@ -156,18 +160,20 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
       const now = new Date().toISOString()
       const stand: Item = { ...it, n: tmp, code: '…', type, title, body: '', status: 'open', parent: n, next: '', thread: [], srcs: [], wait: null, talked: false, archived: false, rank: null, t0: now, t1: now, agent: undefined, readBy: undefined, by: 'you', decided: null }
       void send([{ op: 'new', title, parent: ref, type, pri: it.pri, when: it.when }], `adding “${title}” under ${ref}`, [{ n: tmp, f: {}, add: stand }])
+      app.itemEdits.subAdded(n)
       app.stores.ui.getState().unfold(n)
     },
     editSave: (fields) => {
       const was = { title: it.title, body: it.body, next: it.next }
       void send([{ op: 'set', ref, f: fields }], `${ref} edited`, [{ n, f: fields }]).then((ok) => {
         if (!ok) return
-        iv().setEditing(null)
+        app.itemEdits.saved(n)
         const back = app.toasts.undoable(`${ref} edited`, () => send([{ op: 'set', ref, f: was }], `putting ${ref} back`, [{ n, f: was }]).then((done) => (done && app.toasts.show(`${ref} put back`), done)))
         app.toasts.show('Saved', back)
       })
     },
-    editCancel: () => iv().setEditing(null),
+    editCancel: () => app.itemEdits.cancel(),
+    editTyped: (fields) => app.itemEdits.typed(it, fields),
     inputMore: (id, from) => (desk ? app.sheets.openFrom(from, { kind: 'input-menu', id }, { focus: false }) : app.sheets.open({ kind: 'input-menu', id }, { focus: false })),
     inputHistory: (id) => app.sheets.open({ kind: 'input-history', id }),
     goInput: (id) => app.nav.goInput(id, (x) => app.stores.ui.getState().setLit(x)),

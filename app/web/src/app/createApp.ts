@@ -3,7 +3,7 @@
 
 import { Http } from '../api/http'
 import { TaskaApi } from '../api/taska'
-import { merge, project, type ProjectModel, type ServerCopy } from '../model/project'
+import { codeOf, merge, project, type ProjectModel, type ServerCopy } from '../model/project'
 import { createChangesStore, keptChanges, type ChangesStore } from '../stores/changes'
 import { createDataStore, type DataStore } from '../stores/data'
 import { createFeedbackStore, type FeedbackStore } from '../stores/feedback'
@@ -49,6 +49,8 @@ import { Selection } from './selection'
 import { Updates } from './updates'
 import { Merges } from './merges'
 import { OtherTabs } from './otherTabs'
+import { ItemEdits } from './itemEdits'
+import { createKeptEditsStore, type KeptEditsStore } from '../stores/keptEdits'
 import { changePlace, changeText, changeWords } from '../model/saidOf'
 import { Access } from './access'
 import { createViewsStore, type ViewsStore } from '../stores/views'
@@ -56,6 +58,8 @@ import { createMediaStore, type MediaStore } from '../stores/media'
 import { createDictationStore, type DictationStore } from '../stores/dictation'
 import { memoryVault, type NoteVault } from '../stores/noteVault'
 import { draftName } from '../model/words'
+import { inTab, tabOf } from '../model/visible'
+import { allComments } from '../model/docs'
 import { createRecordingStore, type RecordingStore } from '../stores/recording'
 import { createSettingsStore, type SettingsStore } from '../stores/settings'
 import { createDocViewStore, type DocViewStore } from '../stores/docView'
@@ -109,6 +113,7 @@ export interface App {
     views: ViewsStore
     grips: GripsStore
     drag: DragStore
+    keptEdits: KeptEditsStore
   }
   toasts: Toasts
   items: ItemActions
@@ -124,6 +129,8 @@ export interface App {
   crossSearch: CrossSearch
   /** answering an agent's question by its choices */
   answers: Answers
+  /** an item's editor and its subitem title: what you typed is kept */
+  itemEdits: ItemEdits
   /** the places the keys reach (the search, the box, the talk), given by ref */
   fields: Fields
   /** what you do to something you said */
@@ -178,6 +185,7 @@ export function createApp(env: AppEnv): App {
   const rows = new RowSizes()
   const listOrder = new ListOrder()
   const itemView = createItemViewStore(env.kv)
+  const keptEdits = createKeptEditsStore(env.kv)
   const search = createSearchStore()
   const activityStore = createActivityStore()
   const docView = createDocViewStore()
@@ -383,15 +391,39 @@ export function createApp(env: AppEnv): App {
   }
   // to the box a draft belongs to
   const goDraft = (key: string) => {
-    const m = model(currentSlug())
+    const slug = currentSlug()
+    const m = model(slug)
     const dm = /^doc (\d+)$/.exec(key)
     const am = /^(edit|append) (\S+)$/.exec(key)
-    if (key === 'new') nav.newInput()
-    else if (dm) nav.openDoc(Number(dm[1]))
-    else if (am && m) {
+    const cm = /^correct (\S+)$/.exec(key)
+    const dc = /^dc (\d+)$/.exec(key)
+    const n = /^[A-Z]\d+$/.test(key) ? Number(key.slice(1)) : NaN
+    if (key === 'new') return nav.newInput()
+    if (dm && m?.docs.some((d) => d.d === Number(dm[1]))) return docs?.open(Number(dm[1]))
+    if (am) {
+      if (!m?.byId.has(am[2])) return toasts.show('Input no longer exists', null, { error: true })
       nav.newInput()
-      box.amendStart(currentSlug(), m, am[2], am[1] as 'edit' | 'append')
-    } else if (/^[A-Z]\d+$/.test(key)) nav.openItem(key)
+      return box.amendStart(slug, m, am[2], am[1] as 'edit' | 'append')
+    }
+    const it = m?.byN.get(n)
+    if (m && it) {
+      const r = route.getState().route
+      nav.openItem(codeOf(m, n), inTab(it, r.page === 'project' ? r.tab : 'items') ? undefined : tabOf(it))
+      return fields.focus('box')
+    }
+    const fix = cm && m?.byId.get(cm[1])
+    if (fix) {
+      nav.newInput()
+      box.correctStart(fix.id, '', fix.v || 0, false)
+      return fields.focus('box')
+    }
+    const withComment = dc && m?.docs.find((d) => allComments(d).some((c) => c.id === Number(dc[1])))
+    if (dc && withComment) {
+      docs?.open(withComment.d)
+      return docs?.editComment(slug, withComment.d, Number(dc[1]))
+    }
+    // what the box was for is gone: say which, never a Go there that does nothing
+    toasts.show(`${draftName(key).replace(/^the /, 'The ')} is gone`, null, { error: true })
   }
   // a merged item gives way to the one it went into; what you wrote for it goes along
   const merges = new Merges({ route, drafts, box: boxStore, toasts, model, showItem: (code, tab) => nav.openItemHere(code, tab), goDraft })
@@ -428,6 +460,7 @@ export function createApp(env: AppEnv): App {
     sync?.close()
     ui.getState().reset()
     itemView.getState().show(slug)
+    keptEdits.getState().show(slug)
     docTicks.getState().show(slug)
     void pictureSizes.load(slug)
     boxStore.getState().show(slug)
@@ -482,7 +515,7 @@ export function createApp(env: AppEnv): App {
 
   return {
     api,
-    stores: { data, changes, outbox, feedback, ui, itemView, search, drafts, box: boxStore, sheet: sheetStore, route, activity: activityStore, docView, docTicks, settings: settingsStore, recording, dictation: dictationStore, media: mediaStore, views: viewsStore, grips: gripsStore, drag: dragStore },
+    stores: { data, changes, outbox, feedback, ui, itemView, search, drafts, box: boxStore, sheet: sheetStore, route, activity: activityStore, docView, docTicks, settings: settingsStore, recording, dictation: dictationStore, media: mediaStore, views: viewsStore, grips: gripsStore, drag: dragStore, keptEdits },
     toasts,
     items,
     inputs,
@@ -493,6 +526,7 @@ export function createApp(env: AppEnv): App {
     listOrder,
     crossSearch: new CrossSearch(api, search),
     answers: new Answers({ inputs, view: itemView, outbox }),
+    itemEdits: new ItemEdits({ view: itemView, kept: keptEdits, route, toasts, desk: env.desk, model: () => model(currentSlug()) }),
     fields,
     inputActions,
     box,

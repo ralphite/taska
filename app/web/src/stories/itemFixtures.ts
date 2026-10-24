@@ -54,7 +54,7 @@ export const noItemEvents: ItemEvents = {
   decide: no, notYet: no, modify: no, cancelModify: no, sendAnswer: no, reask: no, cancelReask: no,
   ref: no, picture: no, more: no, play: no, words: no, view: no, topSize: no, duoSize: no,
   inputMore: no, inputHistory: no, goInput: no, msgMenu: no, peek: no, unhide: no, docAt: no, unsend: no, outboxRetry: no, outboxEdit: no,
-  menu: no, set: no, sources: no, goto: no, doc: no, earlier: no, subNew: no, subAdd: no, subCancel: no, editSave: no, editCancel: no,
+  menu: no, set: no, sources: no, goto: no, doc: no, earlier: no, subNew: no, subAdd: no, subCancel: no, subTyped: no, editSave: no, editCancel: no, editTyped: no,
 }
 
 export const comment = (f: Partial<Comment> & { id: number }): Comment => ({ key: 'k1', th: f.id, quote: 'The export keeps the filter', text: 'Yes, and its name says which filter.', by: 'you', t: T, files: [], ...f })
