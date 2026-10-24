@@ -44,6 +44,18 @@ export function pageKeys(app: App): (e: KeyboardEvent) => void {
       if (e.key === '/' && !typingIn(active)) act('search') // the phone's keyboard
       return
     }
+    // Option-V records even while you type in the box
+    if (e.altKey && e.code === 'KeyV' && !e.metaKey && !e.ctrlKey) {
+      e.preventDefault()
+      if (app.voice.recording()) return void app.voice.finish(false)
+      const { key, scope } = app.stores.box.getState().shown
+      return void app.voice.start(h.r.slug, key, scope, 'main')
+    }
+    // while recording, Shift- or Cmd-Enter stops and sends, Enter stops into the box
+    if (app.voice.recording() && e.key === 'Enter' && !e.isComposing) {
+      e.preventDefault()
+      return void app.voice.finish(e.shiftKey || e.metaKey || e.ctrlKey)
+    }
     if (typingIn(active) || e.altKey) return
     // Enter and Space press the button or link you are on; they are keys only on the page or a row
     if ((e.key === 'Enter' || e.key === ' ') && active && active !== document.body && !app.fields.get('list')?.contains(active) && active.closest('button, a[href], [role=button], summary')) return

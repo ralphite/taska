@@ -128,7 +128,27 @@ export const ACTIONS = {
     },
   }),
   filters: page({ label: 'Filters', keys: 'f', palette: true, run: (app) => app.stores.ui.getState().setDeskFilters(!app.stores.ui.getState().deskFilters) }),
-  voice: page({ label: 'Record voice input', keys: 'V', palette: true, run: () => {} }),
+  voice: page({
+    label: 'Record voice input',
+    keys: 'V',
+    palette: true,
+    // a new input by voice; again: it stops and is sent
+    run: (app, h) => {
+      if (app.voice.recording()) return void app.voice.finish(true)
+      runAction(app, 'new-input', h)
+      requestAnimationFrame(() => void app.voice.start(h.r.slug, 'new', null, 'main'))
+    },
+  }),
+  'voice-note': page({
+    label: 'Voice note',
+    keys: 'v',
+    // into the box as it is now (the open item's reply); again: it stops into the box
+    run: (app, h) => {
+      if (app.voice.recording()) return void app.voice.finish(false)
+      const { key, scope } = app.stores.box.getState().shown
+      void app.voice.start(h.r.slug, key, scope, 'main')
+    },
+  }),
   items: page({ label: 'Items', keys: 'g i', palette: true, run: tab('items') }),
   inputs: page({ label: 'Inputs', keys: 'g n', palette: true, run: tab('inputs') }),
   'archive-tab': page({ label: 'Archive', keys: 'g a', palette: true, run: tab('archive') }),
@@ -175,6 +195,7 @@ function stepBack(app: App, h: Here): void {
   const active = document.activeElement
   const layers = app.stores.route.getState().layers
   if (layers.includes('drawer')) return app.nav.drawer(false)
+  if (app.voice.recording()) return void app.voice.cancel() // a recording stops first, as everywhere
   if (app.stores.sheet.getState().spec?.req.kind === 'doc-edit') return app.docs.keep() // its text kept as a draft
   if (app.stores.sheet.getState().spec) return app.sheets.close()
   const view = app.stores.itemView.getState()
@@ -351,7 +372,7 @@ const HELP: [string, HelpRow[]][] = [
       { ids: ['palette'], sep: '', text: 'Go to an item or do anything here' },
       { keys: '⌘ / ⇧ click', text: 'Select multiple rows to act on together' },
       { ids: ['new-input'], sep: '', text: 'New input' },
-      { keys: 'V', text: 'Voice note for the selected item; V again stops' },
+      { ids: ['voice-note'], sep: '', text: 'Voice note for the selected item; V again stops' },
       { ids: ['voice'], sep: '', text: 'New input by voice; ⇧V again stops and sends' },
       { keys: '⌥V', text: 'Voice note while typing' },
       { keys: '↵', text: 'While recording: stop, into the box' },

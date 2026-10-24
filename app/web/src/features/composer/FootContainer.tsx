@@ -21,6 +21,7 @@ import { Icon } from '../../ui/Icon'
 import { DraftFiles } from './DraftFiles'
 import { ProjTile } from '../../ui/bits'
 import { HIT, toneOf } from '../../ui/tones'
+import { clock } from '../../model/time'
 import { SaidLately, type SaidChip, type SaidInput, type SaidOutgoing } from '../inputs/SaidLately'
 import { Thumbs } from '../inputs/Files'
 import { useSideProjects } from '../sidebar/SidebarContainer'
@@ -218,6 +219,12 @@ export function FootContainer({ route, place, hidden, composePage, onHeight, bar
     clearTicks: () => pick.d != null && app.docs.clearTicks(pick.d),
   })
   const key = app.box.key(role.scope, mode, role.doc)
+  useLayoutEffect(() => {
+    if (!bare) app.stores.box.getState().setShown(key, role.scope)
+  }, [app, key, role.scope, bare])
+  const recording = useStoreValue(app.stores.recording, (s) => s.rec)
+  // the recording shows in the box it was started in
+  const rec = recording && recording.slug === route.slug && recording.key === key ? { time: clock(recording.ms), levels: recording.levels, from: recording.from } : null
   const text = useStoreValue(app.stores.drafts, (s) => s.bySlug[route.slug]?.[key] ?? '')
   const draftFiles = useStoreValue(app.stores.box, (s) => s.files[key])
   const setText = (v: string) => app.box.write(route.slug, key, v)
@@ -291,7 +298,16 @@ export function FootContainer({ route, place, hidden, composePage, onHeight, bar
       lineOnComposePage={!!mode}
       hasFiles={!!draftFiles?.length}
       files={<DraftFiles files={draftFiles || []} url={url} onRemove={(fk) => app.box.removeFile(key, fk)} onView={() => {}} />}
-      on={{ text: setText, send, attach: (list) => app.box.attach(route.slug, key, list), mic: () => {} }}
+      rec={rec}
+      on={{
+        text: setText,
+        send,
+        attach: (list) => app.box.attach(route.slug, key, list),
+        mic: (aux) => void app.voice.start(route.slug, key, role.scope, aux ? 'aux' : 'main'),
+        recCancel: () => void app.voice.cancel(),
+        recStop: () => void app.voice.finish(false),
+        recSend: () => void app.voice.finish(true),
+      }}
     />
   )
   if (bare) return composer

@@ -141,6 +141,29 @@ export interface AgentSeen {
   sessions?: { name: string; t: number }[]
 }
 
+/** A place where a voice note may be misheard: its words, what the other model heard there, why; the same two
+ * words elsewhere (also); which side you picked. */
+export interface Doubt {
+  was: string
+  alt: string
+  why: string
+  unsure?: boolean
+  show?: [string, string]
+  also?: { was: string; alt: string }[]
+  pick?: 'was' | 'alt'
+}
+
+/** What the server says of a voice note's words. */
+export interface WordsAnswer {
+  f: string
+  done: boolean
+  tr: string
+  tr_error: string
+  doubts?: Doubt[]
+  more?: boolean
+  heard?: string
+}
+
 /** A voice spelling: words heard wrong and the right ones, or a word to hear (no `wrong`). */
 export interface Spelling {
   wrong?: string

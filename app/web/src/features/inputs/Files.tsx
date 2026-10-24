@@ -5,6 +5,7 @@ import type { FileRef } from '../../model/types'
 import { Pic } from '../../ui/bits'
 import { Icon } from '../../ui/Icon'
 import { HIT } from '../../ui/tones'
+import { clock } from '../../model/time'
 
 export const isAudio = (f: { mime?: string }) => (f.mime || '').startsWith('audio/')
 export const isImage = (f: { mime?: string }) => (f.mime || '').startsWith('image/')
@@ -15,7 +16,7 @@ export const voiceLength = (f: FileRef) => {
   return m ? (60 * +m[1] + +m[2]) * 1000 : null
 }
 
-export const clock = (ms: number) => `${Math.floor(ms / 60000)}:${String(Math.floor(ms / 1000) % 60).padStart(2, '0')}`
+export { clock }
 
 export interface PlayState {
   playing: boolean

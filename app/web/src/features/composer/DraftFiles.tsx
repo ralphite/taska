@@ -41,7 +41,11 @@ export function DraftFiles({ files, url, onRemove, onView }: { files: readonly D
             <div className="flex h-16 items-center gap-2 rounded-xl border border-zinc-200 px-3 text-xs text-zinc-600 dark:border-zinc-700 dark:text-zinc-300">
               <Icon n="mic" c="size-4" />
               <span className="font-mono tabular-nums">{clock(f.ms || 0)}</span>
-              <span className="font-semibold text-zinc-500">{voiceWord(f)}</span>
+              <span
+                className={`font-semibold ${f.transcribing ? 'animate-pulse text-blue-600 dark:text-blue-400' : f.more ? 'max-w-40 leading-snug text-amber-700 dark:text-amber-400' : f.tr ? 'text-emerald-600 dark:text-emerald-400' : 'text-zinc-500'}`}
+              >
+                {voiceWord(f)}
+              </span>
             </div>
           ) : (f.mime || '').startsWith('image/') ? (
             <button onClick={() => onView(f.key)} aria-label={`Look at ${f.name}`} className="block cursor-zoom-in rounded-xl">

@@ -45,17 +45,47 @@ export interface ComposerProps {
   boxRef?: RefObject<HTMLDivElement | null>
   /** where you write, for the keys (R replies) */
   fieldRef?: (el: HTMLTextAreaElement | null) => void
+  /** recording a voice note here: its time, its loudness lately (0 to 1), and which mic started it */
+  rec?: { time: string; levels: readonly number[]; from: 'main' | 'aux' } | null
   on: {
     text(t: string): void
     send(): void
     attach(files: File[]): void
     mic(aux: boolean): void
+    /** recording: discard it, stop into the box, stop and send */
+    recCancel?(): void
+    recStop?(): void
+    recSend?(): void
   }
 }
 
-const BTN_ICON = 'size-6 lg:size-5'
+interface Btn {
+  label: string
+  tip: string
+  icon: IconName
+  iconCls: string
+  sw: string
+  run(): void
+}
+const btn = (label: string, tip: string, icon: IconName, run: () => void, iconCls = 'size-6 lg:size-5', sw = '1.75'): Btn => ({ label, tip, icon, iconCls, sw, run })
 
-export function Composer({ line, lineOnComposePage, placeholder, sendWord, text, desk, composePage, micTip, files, hasFiles = false, boxRef, fieldRef, on }: ComposerProps) {
+/** The recording: a red dot, its time, and a bar for each moment of sound lately. */
+function RecBar({ time, levels }: { time: string; levels: readonly number[] }) {
+  return (
+    <>
+      <span className="size-2.5 shrink-0 animate-pulse rounded-full bg-red-500" />
+      <span className="shrink-0 font-mono text-[15px] text-zinc-800 tabular-nums dark:text-zinc-100">{time}</span>
+      <span className="flex h-8 min-w-0 flex-1 items-center justify-end gap-[3px] overflow-hidden">
+        {levels.map((l, i) => (
+          <span key={i} className="w-[3px] shrink-0 rounded-full bg-zinc-500 dark:bg-zinc-400" style={{ height: Math.round(4 + l * 24) }} />
+        ))}
+      </span>
+    </>
+  )
+}
+
+
+export function Composer({ line, lineOnComposePage, placeholder, sendWord, text, desk, composePage, micTip, files, hasFiles = false, boxRef, fieldRef, rec = null, on }: ComposerProps) {
   const area = useRef<HTMLTextAreaElement | null>(null)
   const box = useRef<HTMLDivElement | null>(null)
   const picker = useRef<HTMLInputElement>(null)
@@ -95,12 +125,12 @@ export function Composer({ line, lineOnComposePage, placeholder, sendWord, text,
       {files}
       <div className="flex items-end gap-2 p-1.5 group-data-[multi]/box:flex-wrap lg:gap-0.5 lg:group-data-[compose]/app:order-first">
         <button
-          aria-label="Add images or files"
-          title={desk ? 'Add images or files' : undefined}
-          onClick={() => picker.current?.click()}
+          aria-label={rec ? 'Discard the recording' : 'Add images or files'}
+          title={desk ? (rec ? 'Discard · Esc' : 'Add images or files') : undefined}
+          onClick={() => (rec ? on.recCancel?.() : picker.current?.click())}
           className="grid size-11 shrink-0 place-items-center rounded-full text-zinc-500 group-data-[multi]/box:mr-auto hover:bg-zinc-100 hover:text-zinc-800 lg:m-1 lg:size-9 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
         >
-          <Icon n="plus" c={BTN_ICON} />
+          <Icon n={rec ? 'x' : 'plus'} c="size-6 lg:size-5" />
         </button>
         <div className="grid min-w-0 flex-1 group-data-[multi]/box:order-first group-data-[multi]/box:basis-full group-data-[multi]/box:px-2 group-data-[multi]/box:pt-1">
           <textarea
@@ -112,7 +142,7 @@ export function Composer({ line, lineOnComposePage, placeholder, sendWord, text,
             value={text}
             placeholder={placeholder}
             aria-label="Input"
-            className="col-start-1 row-start-1 max-h-48 min-h-11 w-full min-w-0 resize-none bg-transparent px-1 py-2.5 text-[17px] leading-6 outline-none placeholder:text-zinc-400 roomy:text-[15px] lg:scrollbar-thin dark:placeholder:text-zinc-500"
+            className={`col-start-1 row-start-1 max-h-48 min-h-11 w-full min-w-0 resize-none bg-transparent px-1 py-2.5 text-[17px] leading-6 outline-none placeholder:text-zinc-400 roomy:text-[15px] lg:scrollbar-thin dark:placeholder:text-zinc-500 ${rec ? 'invisible' : ''}`}
             onChange={(e) => on.text(e.currentTarget.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.nativeEvent.isComposing && (e.shiftKey || e.metaKey || e.ctrlKey)) {
@@ -128,24 +158,40 @@ export function Composer({ line, lineOnComposePage, placeholder, sendWord, text,
               }
             }}
           />
+          {/* the same box while recording, wherever it is */}
+          <div hidden={!rec} role="status" aria-label="Recording" className="col-start-1 row-start-1 flex min-w-0 items-center gap-2.5 px-1">
+            {rec ? <RecBar time={rec.time} levels={rec.levels} /> : null}
+          </div>
         </div>
-        <button
-          aria-label="Record a voice note"
-          title={desk ? micTip : undefined}
-          hidden={!has}
-          onClick={() => on.mic(true)}
-          className="mr-4 grid size-11 shrink-0 place-items-center rounded-full text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 lg:m-1 lg:mr-0 lg:size-9 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
-        >
-          <Icon n="mic" c="size-5" />
-        </button>
-        <button
-          aria-label={has ? `${sendWord} (Shift + Enter)` : 'Record a voice note'}
-          title={desk ? (has ? `${sendWord} · ⇧↵` : micTip) : undefined}
-          onClick={() => (has ? on.send() : on.mic(false))}
-          className="grid size-11 shrink-0 place-items-center rounded-full bg-zinc-900 text-white disabled:opacity-25 lg:m-1 lg:size-9 lg:hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:lg:hover:bg-white"
-        >
-          {has ? <Icon n="up" c="size-5" sw="2.25" /> : <Icon n="mic" c={BTN_ICON} />}
-        </button>
+        {(() => {
+          // a second press where the recording started sends it; the other button stops it into the box
+          const recSend = btn('Stop and send', 'Stop and send · ⇧↵', 'up', () => on.recSend?.(), 'size-5', '2')
+          const recStop = btn('Stop and put words in the box', 'Words into the box · ↵', 'check', () => on.recStop?.(), 'size-5', '2.5')
+          const mic = (aux: boolean, cls?: string) => btn('Record a voice note', micTip, 'mic', () => on.mic(aux), cls)
+          const main = rec ? (rec.from === 'main' ? recSend : recStop) : has ? btn(`${sendWord} (Shift + Enter)`, `${sendWord} · ⇧↵`, 'up', on.send, 'size-5', '2.25') : mic(false)
+          const aux = rec ? (rec.from === 'main' ? recStop : recSend) : mic(true, 'size-5')
+          return (
+            <>
+              <button
+                aria-label={aux.label}
+                title={desk ? aux.tip : undefined}
+                hidden={!(rec || has)}
+                onClick={aux.run}
+                className="mr-4 grid size-11 shrink-0 place-items-center rounded-full text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 lg:m-1 lg:mr-0 lg:size-9 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+              >
+                <Icon n={aux.icon} c={aux.iconCls} sw={aux.sw} />
+              </button>
+              <button
+                aria-label={main.label}
+                title={desk ? main.tip : undefined}
+                onClick={main.run}
+                className="grid size-11 shrink-0 place-items-center rounded-full bg-zinc-900 text-white disabled:opacity-25 lg:m-1 lg:size-9 lg:hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:lg:hover:bg-white"
+              >
+                <Icon n={main.icon} c={main.iconCls} sw={main.sw} />
+              </button>
+            </>
+          )
+        })()}
       </div>
       <input
         ref={picker}

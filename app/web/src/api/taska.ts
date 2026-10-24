@@ -1,7 +1,7 @@
 // The server's page interface, one typed call each (the server's http/page_routes.py and workspace_routes.py).
 
 import { Http, TIME_LIMIT } from './http'
-import type { FileRef, LogRow, Need, ProjectRow, SearchHit, Spelling, ViewAnswer, VoicePrefs } from '../model/types'
+import type { FileRef, LogRow, Need, ProjectRow, SearchHit, Spelling, ViewAnswer, VoicePrefs, WordsAnswer } from '../model/types'
 
 /** A change the page asks for: the same commands agents write, as data ({op: "set", ref: "B03", f: {...}}). */
 export type Command = Record<string, unknown> & { op: string }
@@ -63,9 +63,14 @@ export class TaskaApi {
     return this.http.json(P(slug) + 'move-item?id=' + encodeURIComponent(id), { method: 'POST', body: { to, ref, ...(under ? { under } : {}) }, timeout: TIME_LIMIT.command })
   }
 
-  /** A voice note's words: at once when they are kept (GET), or waiting for them (POST). */
-  words(slug: string, f: string, wait = false): Promise<{ ok?: boolean; tr?: string; heard?: string; error?: string }> {
-    return this.http.json(P(slug) + 'words?f=' + encodeURIComponent(f), wait ? { method: 'POST', timeout: 60000 } : {})
+  /** A voice note's words: at once when they are kept (GET), or waiting for them (POST; again: a failed one tried
+   * once more; more: the fuller words that may follow). */
+  words(slug: string, f: string, wait = false, o: { scope?: string | null; again?: boolean; more?: boolean } = {}): Promise<WordsAnswer> {
+    const q = new URLSearchParams({ f })
+    if (o.scope) q.set('scope', o.scope)
+    if (o.again) q.set('again', '1')
+    if (o.more) q.set('more', '1')
+    return this.http.json(P(slug) + 'words?' + q.toString(), wait ? { method: 'POST', timeout: 60000 } : {})
   }
 
   projects(): Promise<ProjectRow[]> {

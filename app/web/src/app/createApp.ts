@@ -35,6 +35,8 @@ import { Restores } from './restores'
 import { Docs } from './docs'
 import { Settings } from './settings'
 import { Notices } from './notices'
+import { Voice } from './voice'
+import { createRecordingStore, type RecordingStore } from '../stores/recording'
 import { createSettingsStore, type SettingsStore } from '../stores/settings'
 import { createDocViewStore, type DocViewStore } from '../stores/docView'
 import { createDocTicksStore, type DocTicksStore } from '../stores/docTicks'
@@ -77,6 +79,7 @@ export interface App {
     docView: DocViewStore
     docTicks: DocTicksStore
     settings: SettingsStore
+    recording: RecordingStore
   }
   toasts: Toasts
   items: ItemActions
@@ -116,6 +119,7 @@ export interface App {
   docs: Docs
   settings: Settings
   notices: Notices
+  voice: Voice
   refreshProjects(): Promise<boolean>
   stop(): void
 }
@@ -142,6 +146,7 @@ export function createApp(env: AppEnv): App {
   const docView = createDocViewStore()
   const docTicks = createDocTicksStore(env.kv)
   const settingsStore = createSettingsStore()
+  const recording = createRecordingStore()
   const pictureSizes = new PictureSizes({ api, data })
   // a text showing a picture of unknown size (one just uploaded) asks for the sizes again
   const unsize = data.subscribe((s, was) => {
@@ -258,6 +263,28 @@ export function createApp(env: AppEnv): App {
   const projects = new Projects({ api, data, kv: env.kv, home: () => route.getState().route.page === 'home' })
   const refreshProjects = () => projects.refresh()
   const settings = new Settings({ api, store: settingsStore, data, projects, route, sheets, toasts, box, boxStore, fields, refresh: (slug) => stale(slug) })
+  const boxKeyNow = () => boxStore.getState().shown.key
+  const voice = new Voice({
+    api,
+    store: recording,
+    box,
+    boxStore,
+    outbox,
+    toasts,
+    fields,
+    desk: env.desk,
+    // what the draft holds goes to what it writes to (an item's draft: a reply to it; a new input's: a new input)
+    send: (slug, key) => {
+      const scope = /^[A-Z]\d+$/.test(key) ? key : null
+      if (key === boxKeyNow()) void box.send(slug, model(slug), scope)
+      else {
+        const { text, files } = box.take(slug, key)
+        inputs.push({ slug, text, scope, files: files.map(({ key: k, ...f }) => ({ ...f, key: k })) })
+      }
+    },
+    boxKey: () => boxKeyNow(),
+    flush: () => void inputs.flush(),
+  })
   const notices = new Notices(env.kv, () => settingsStore.getState().set({ noticeRev: settingsStore.getState().noticeRev + 1 }))
 
   const showProject = (slug: string) => {
@@ -311,7 +338,7 @@ export function createApp(env: AppEnv): App {
 
   return {
     api,
-    stores: { data, changes, outbox, feedback, ui, itemView, search, drafts, box: boxStore, sheet: sheetStore, route, activity: activityStore, docView, docTicks, settings: settingsStore },
+    stores: { data, changes, outbox, feedback, ui, itemView, search, drafts, box: boxStore, sheet: sheetStore, route, activity: activityStore, docView, docTicks, settings: settingsStore, recording },
     toasts,
     items,
     inputs,
@@ -346,6 +373,7 @@ export function createApp(env: AppEnv): App {
     docs,
     settings,
     notices,
+    voice,
     refreshProjects,
     stop: () => {
       projects.stop()

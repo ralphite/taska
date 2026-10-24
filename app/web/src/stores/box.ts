@@ -5,6 +5,7 @@
 
 import { createStore, type StoreApi } from 'zustand/vanilla'
 import type { OutFile } from './outbox'
+import type { Doubt } from '../model/types'
 import type { KeyValueStore } from './storage'
 
 export type BoxMode =
@@ -21,6 +22,18 @@ export interface DraftFile extends OutFile {
   key: string
   /** a voice note's length, ms */
   ms?: number
+  /** a voice note whose words are still being worked out */
+  transcribing?: boolean
+  /** where in the draft's words it was recorded (its words go there) */
+  at?: number
+  /** its words as put in the draft (they are looked for there, to swap a misheard word) */
+  trAdded?: string
+  /** words that may be misheard */
+  doubts?: Doubt[]
+  /** fuller words may follow */
+  more?: boolean
+  /** why its words did not come */
+  trError?: string
 }
 
 export interface JustSent {
@@ -39,6 +52,9 @@ export interface BoxState {
   mode: BoxMode
   files: Readonly<Record<string, readonly DraftFile[]>>
   sent: readonly JustSent[]
+  /** the draft the box shows now, and the item it writes to (a voice note stopped elsewhere knows where it goes) */
+  shown: { key: string; scope: string | null }
+  setShown(key: string, scope: string | null): void
   show(slug: string): void
   setMode(m: BoxMode): void
   addFile(key: string, f: DraftFile): void
@@ -81,6 +97,11 @@ export function createBoxStore(session: KeyValueStore): BoxStore {
       mode: null,
       files: {},
       sent: [],
+      shown: { key: 'new', scope: null },
+      setShown: (key, scope) => {
+        const was = get().shown
+        if (was.key !== key || was.scope !== scope) set({ shown: { key, scope } })
+      },
       show: (slug) => {
         if (get().slug === slug) return
         set({ slug, mode: null, files: kept(slug) })
