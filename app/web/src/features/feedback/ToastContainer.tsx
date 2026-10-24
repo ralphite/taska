@@ -1,16 +1,42 @@
-// The toast with the page's data: what the feedback store says now.
+// The toast with the page's data: what the feedback store says now, placed over the pane you acted in (on the
+// desktop above the box when the box is in that pane), or above the box on the phone.
 
+import { useLayoutEffect, useState, type CSSProperties } from 'react'
 import { useApp, useLayout, useStoreValue } from '../../app/context'
+import { usePanes } from '../../app/panes'
 import { Toast } from './Toast'
 
 export function ToastContainer() {
   const app = useApp()
   const layout = useLayout()
+  const panes = usePanes()
   const t = useStoreValue(app.stores.feedback, (s) => s.toast)
-  const place = layout === 'desk' ? 'bottom-5 left-1/2 -translate-x-1/2' : 'inset-x-0 bottom-28 mx-auto'
+  const [style, setStyle] = useState<CSSProperties | undefined>(undefined)
+  const [centered, setCentered] = useState(false)
+  useLayoutEffect(() => {
+    if (!t || !panes) return
+    const foot = panes.get('foot')
+    if (layout === 'desk') {
+      const last = panes.last === 'drawer' ? null : panes.last ? panes.get(panes.last) : null
+      const pane = last || panes.get('detail') || panes.get('inputs') || panes.get('settings')
+      const r = pane?.getBoundingClientRect()
+      const f = foot?.getBoundingClientRect()
+      const above = r && f && f.height < 300 && f.left < r.right && f.right > r.left
+      setCentered(!!r)
+      setStyle(r ? { left: `${r.left + r.width / 2}px`, bottom: `${above && f ? innerHeight - f.top + 12 : 20}px` } : undefined)
+    } else {
+      setCentered(false)
+      setStyle(foot && !foot.hidden ? { bottom: `${Math.round(innerHeight - foot.getBoundingClientRect().top + 8)}px` } : undefined)
+    }
+  }, [t, layout, panes])
+  const place =
+    layout === 'desk'
+      ? `${style ? '' : 'bottom-5 left-5'} ${centered ? '-translate-x-1/2' : ''}`
+      : `inset-x-0 mx-auto ${style ? '' : 'bottom-28'}`
   return (
     <Toast
       toast={t ? { text: t.text, error: t.error, sticky: t.sticky, action: t.action ? { label: t.action.label } : null } : null}
+      style={style}
       place={place}
       onAction={() => {
         const run = t?.action?.run

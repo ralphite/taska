@@ -1,6 +1,7 @@
 // The pane's frame: its bar (Back on the phone, what it shows, its actions) and its body, which scrolls. Props only.
 
 import type { ReactNode } from 'react'
+import { usePaneRef } from '../../app/panes'
 import { Icon } from '../../ui/Icon'
 
 export function PaneFrame({
@@ -26,8 +27,9 @@ export function PaneFrame({
   onMenu?(): void
   children?: ReactNode
 }) {
+  const pane = usePaneRef('detail')
   return (
-    <section hidden={hidden} className={`flex min-h-0 flex-1 flex-col ${place}`}>
+    <section ref={pane} hidden={hidden} className={`flex min-h-0 flex-1 flex-col ${place}`}>
       <header className="flex h-14 shrink-0 items-center gap-1 border-b border-zinc-100 px-1 desk:border-zinc-200 desk:px-3 dark:border-zinc-800/70 dark:desk:border-zinc-800">
         <button
           aria-label="Back"

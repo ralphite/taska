@@ -268,7 +268,7 @@ export function Rail({ projects, composing, settingsOpen, on }: { projects: Side
     </button>
   )
   return (
-    <nav aria-label="Projects" className="z-30 flex h-full w-14 shrink-0 flex-col items-center gap-1 border-r border-zinc-200 bg-zinc-50 py-2 dark:border-zinc-800 dark:bg-zinc-900">
+    <nav id="rail" aria-label="Projects" className="z-30 flex h-full w-14 shrink-0 flex-col items-center gap-1 border-r border-zinc-200 bg-zinc-50 py-2 dark:border-zinc-800 dark:bg-zinc-900">
       {btn(
         'side',
         <span className="text-blue-600 dark:text-blue-400">

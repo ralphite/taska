@@ -108,7 +108,9 @@ export function createApp(env: AppEnv): App {
     cursor: (slug) => (sync?.slug === slug ? sync.cursor : null),
     changes: take,
     stale,
-    sent: () => {},
+    sent: (o, rid) => {
+      if (o.slug === currentSlug()) ui.getState().setLastSent(o.quiet || o.unsent ? null : { slug: o.slug, rid })
+    },
     refused: (_o, why) => toasts.show(why ? `err: ${why}` : 'Not saved', null),
     log: () => {},
   })

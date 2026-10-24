@@ -3,6 +3,7 @@
 
 import { useMemo, useRef } from 'react'
 import { useApp, useLayout, useStoreValue } from '../../app/context'
+import { usePaneRef } from '../../app/panes'
 import { useProjectModel, type ProjectRoute } from '../../app/hooks'
 import { agoShort } from '../../model/agents'
 import { closed, excerpt, lastAgentMessage, queueHead } from '../../model/items'
@@ -48,7 +49,7 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
   const layout = useLayout()
   const m = useProjectModel(route.slug)
   const ui = useStoreValue(app.stores.ui, (s) => s)
-  const ref = useRef<HTMLDivElement>(null)
+  const pane = usePaneRef('list')
   const frozen = useRef<{ key: string; rows: Row[] } | null>(null)
   const desk = layout === 'desk'
   const openN = route.place.kind === 'item' ? Number(/\d+/.exec(route.place.ref)?.[0]) : null
@@ -161,7 +162,7 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
       onPointerEnter={() => app.listHold.enter()}
       onPointerLeave={() => app.listHold.leave()}
     >
-      <ItemList ref={ref} loading={!m} views={views} rows={drawn} empty={body.kind === 'empty' ? empty : body.kind === 'rows' && body.empty ? empty : null} on={on} />
+      <ItemList ref={pane} loading={!m} views={views} rows={drawn} empty={body.kind === 'empty' ? empty : body.kind === 'rows' && body.empty ? empty : null} on={on} />
     </div>
   )
 }

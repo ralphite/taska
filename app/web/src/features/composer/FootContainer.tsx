@@ -1,8 +1,9 @@
 // The foot of the project page: the line about what you sent last, the box, and on the desktop's New input page the
 // project's name over the box and what you said under it.
 
-import { useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useApp, useLayout, useStoreValue } from '../../app/context'
+import { usePaneRef } from '../../app/panes'
 import { useAway, useProjectModel, type ProjectRoute } from '../../app/hooks'
 import { dayOf, newestFirst, organizing, SHORT_STANDING, standing, timeOf } from '../../model/inputs'
 import { shownStatus } from '../../model/items'
@@ -18,6 +19,40 @@ import { useSideProjects } from '../sidebar/SidebarContainer'
 import { Composer, Feedback, type BoxLine, type FeedbackLine } from './Composer'
 
 const STEP = 30
+
+/** The line over the box: what you sent is on its way, or what became of the last one you sent from here. */
+function feedbackLine(a: { m: ProjectModel | null; desk: boolean; composePage: boolean; scope: string | null; mine: Outgoing[]; lastSent: string | null; others: boolean }): { line: FeedbackLine; final?: string } | null {
+  if ((a.desk && a.composePage) || a.scope) return null // on the New input page each input is in the list; in an item, in its talk
+  const first = a.mine[0]
+  const q = first?.quiet && first.state !== 'failed' ? null : first
+  if (q) {
+    const more = a.mine.length - 1
+    if (q.state === 'failed' && q.net) return { line: { kind: 'waiting', text: outgoingLine(q), more } }
+    if (q.state === 'failed') return { line: { kind: 'not-sent', text: outgoingLine(q), more } }
+    return { line: { kind: 'sending', text: outgoingLine(q), more, uploading: q.files.some((f) => f.uploading), canUndo: false } }
+  }
+  const r = a.lastSent && a.m ? a.m.byId.get(a.lastSent) : undefined
+  if (!r || !a.m || r.scope) return null
+  const org = a.m.facts.organizer
+  const move = a.others && !r.scope
+  let line: FeedbackLine
+  if (r.moved) line = { kind: 'moved', code: inputCode(r.id), to: r.moved.to, as: inputCode(r.moved.as), href: `/p/${encodeURIComponent(r.moved.to)}/` }
+  else if (r.trWait) line = { kind: 'transcribing' }
+  else if (org.busy === r.id || (!r.acked && org.on && !r.org)) line = { kind: 'organizing' }
+  else if (r.org && !r.org.ok) line = { kind: 'org-failed', msg: r.org.msg }
+  else if (r.org?.undone) line = { kind: 'undone', code: inputCode(r.id) }
+  else if (r.acked)
+    line = {
+      kind: 'organized',
+      msg: r.org?.msg || (r.touched.length ? 'Organized' : 'Seen by your agent, no item made'),
+      view: !!r.touched.length,
+      undo: !!(r.org && r.org.ok && !r.org.undone && !r.org.keep && r.touched.length),
+      move,
+    }
+  else line = { kind: 'sent', organizer: !!r.org, canUndo: false, move }
+  const final = r.acked || (r.org && r.org.ok) || r.moved
+  return { line, final: final ? r.id : undefined }
+}
 
 export const outgoingState = (o: Outgoing, away: number) =>
   o.state === 'failed' && !o.net ? 'Not sent' : o.state === 'failed' || away >= 2 ? 'Waiting for Taska…' : o.files.some((f) => f.uploading) ? 'Uploading…' : 'Sending…'
@@ -55,6 +90,7 @@ function useFootRoom(hidden: boolean | undefined, onHeight: ((px: number) => voi
 export function FootContainer({ route, place, hidden, composePage, onHeight }: { route: ProjectRoute; place: string; hidden?: boolean; composePage: boolean; onHeight?(px: number): void }) {
   const app = useApp()
   const footRef = useFootRoom(hidden, onHeight)
+  const pane = usePaneRef('foot')
   const layout = useLayout()
   const desk = layout === 'desk'
   const m = useProjectModel(route.slug)
@@ -108,22 +144,23 @@ export function FootContainer({ route, place, hidden, composePage, onHeight }: {
     ? []
     : [...mine].reverse().map((o) => ({ q: o.q, text: o.text || outgoingLine(o), state: outgoingState(o, away), failed: o.state === 'failed', net: !!o.net, canUndo: false }))
 
-  const first = mine[0]
-  const feedback: FeedbackLine | null =
-    (desk && composePage) || role.scope
-      ? null
-      : first
-        ? first.state === 'failed' && first.net
-          ? { kind: 'waiting', text: outgoingLine(first), more: mine.length - 1 }
-          : first.state === 'failed'
-            ? { kind: 'not-sent', text: outgoingLine(first), more: mine.length - 1 }
-            : { kind: 'sending', text: outgoingLine(first), more: mine.length - 1, uploading: first.files.some((f) => f.uploading), canUndo: false }
-        : null
+  const lastSent = useStoreValue(app.stores.ui, (s) => s.lastSent)
+  const projects = useStoreValue(app.stores.data, (s) => s.projects)
+  const feedback = feedbackLine({ m, desk, composePage, scope: role.scope, mine, lastSent: lastSent?.slug === route.slug ? lastSent.rid : null, others: (projects || []).some((p) => p.name !== route.slug) })
+  // a line that says where it ended up goes after a while
+  useEffect(() => {
+    if (!feedback?.final) return
+    const t = window.setTimeout(() => app.stores.ui.getState().setLastSent(null), 6000)
+    return () => clearTimeout(t)
+  }, [app, feedback?.final])
 
   const url = (f: string) => `/p/${encodeURIComponent(route.slug)}/f/${encodeURIComponent(f)}`
   return (
     <footer
-      ref={footRef}
+      ref={(el) => {
+        footRef.current = el
+        pane(el)
+      }}
       hidden={hidden}
       className={`relative z-20 shrink-0 border-t border-zinc-200 bg-zinc-50 px-3 pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))] after:pointer-events-none after:absolute after:inset-x-0 after:top-(--foot-cut) after:bottom-0 after:-z-10 after:bg-zinc-50 desk:scrollbar-gutter-both desk:px-8 desk:pb-5 desk:group-data-[compose]/app:overflow-y-auto desk:group-data-[compose]/app:overscroll-contain desk:group-data-[compose]/app:border-transparent desk:group-data-[compose]/app:pt-[5vh] desk:group-data-[compose]/app:pb-16 desk:group-data-[compose]/app:after:hidden desk:hover:scrollbar-thumb-zinc-500/80 dark:border-transparent dark:bg-transparent dark:pt-1 dark:after:bg-zinc-950 dark:desk:hover:scrollbar-thumb-zinc-400/70 ${place}`}
     >
@@ -136,8 +173,8 @@ export function FootContainer({ route, place, hidden, composePage, onHeight }: {
         </div>
       ) : null}
       <Feedback
-        line={feedback}
-        on={{ dismiss: () => {}, undo: () => {}, retry: () => void app.inputs.flush(), edit: () => {}, view: () => {}, undoFiling: () => {}, move: () => {}, retryOrganizer: () => {} }}
+        line={feedback?.line ?? null}
+        on={{ dismiss: () => app.stores.ui.getState().setLastSent(null), undo: () => {}, retry: () => void app.inputs.flush(), edit: () => {}, view: () => {}, undoFiling: () => {}, move: () => {}, retryOrganizer: () => {} }}
       />
       <Composer
         line={role.line}
