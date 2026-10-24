@@ -7,8 +7,9 @@ import { LOOP, isDesk, open, project } from './seed'
 
 test('many tabs in the background do not hold up the one you look at', async ({ page, context, request }) => {
   test.skip(isDesk(page), 'once is enough')
-  // 8 pages at once: over the machine's page budget for every agent together (5), so only by hand on a free machine
-  test.skip(!process.env.TASKA_E2E_MANY_PAGES, 'opens 8 pages at once (TASKA_E2E_MANY_PAGES=1 to run it)')
+  // 8 pages at once: over the machine's page budget for every agent together (5, by hand too); how to check it within
+  // that waits for Yadong (F581)
+  test.skip(true, 'opens 8 pages at once, over the machine budget of 5: waits for Yadong (F581)')
   const p = await project(request, LOOP)
   // A browser keeps at most 6 connections to one server. Seven tabs behind, each waiting for news, used to take them all.
   const behind = []
