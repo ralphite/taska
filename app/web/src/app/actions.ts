@@ -12,6 +12,7 @@ import type { Tab } from '../model/words'
 import { copyText, forAgent } from './clipboard'
 import type { App } from './createApp'
 import type { ProjectRoute } from './hooks'
+import { NEW_DRAFT } from '../model/draftTarget'
 
 /** Where an action is done: the project shown, its model, the open item. */
 export interface Here {
@@ -140,7 +141,7 @@ export const ACTIONS = {
     run: (app, h) => {
       if (app.voice.recording()) return void app.voice.finish(true)
       runAction(app, 'new-input', h)
-      requestAnimationFrame(() => void app.voice.start(h.r.slug, 'new', null, 'main'))
+      requestAnimationFrame(() => void app.voice.start(h.r.slug, NEW_DRAFT, null, 'main'))
     },
   }),
   'voice-note': page({

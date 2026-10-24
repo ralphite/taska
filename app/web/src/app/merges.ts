@@ -10,6 +10,7 @@ import type { BoxStore } from '../stores/box'
 import type { DraftsStore } from '../stores/drafts'
 import type { RouteStore } from '../stores/route'
 import type { Toasts } from './toasts'
+import { draftKey, draftTarget, replyDraft } from '../model/draftTarget'
 
 export interface MergesDeps {
   route: RouteStore
@@ -57,11 +58,13 @@ export class Merges {
     const box = this.d.box.getState()
     const files = box.slug === slug ? box.files : {}
     const moved: [string, string][] = []
-    for (const key of new Set([...Object.keys(words), ...Object.keys(files)])) {
-      if (!/^[A-Z]\d+$/.test(key)) continue
-      const n = Number(key.slice(1))
+    for (const stored of new Set([...Object.keys(words), ...Object.keys(files)])) {
+      const t = draftTarget(stored)
+      if (t.kind !== 'reply') continue
+      const key = draftKey(t)
+      const n = Number(t.code.slice(1))
       if (!m.byN.get(n)?.mergedInto || liveN(m, n) === n) continue
-      const to = codeOf(m, liveN(m, n))
+      const to = replyDraft(codeOf(m, liveN(m, n)))
       const text = words[key] || ''
       const fs = files[key]?.length ? this.d.box.getState().takeFiles(key) : []
       if (text) this.d.drafts.getState().set(slug, key, '')

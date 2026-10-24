@@ -18,6 +18,7 @@ import { ItemPage, type ItemEvents, type ItemFacts } from './ItemPage'
 import type { Outgoing, TalkFacts } from './Talk'
 import type { TalkEnv } from './talkEnv'
 import type { App } from '../../app/createApp'
+import { replyDraft } from '../../model/draftTarget'
 
 export function useItemWorld(m: ProjectModel | null, slug: string): InlineWorld {
   const stores = useStores('data')
@@ -187,7 +188,7 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
     docAt: (d, key) => app.docs.openAt(d, key),
     unsend: (q) => app.box.unsend(q),
     outboxRetry: () => void app.inputs.flush(),
-    outboxEdit: () => app.box.editOutgoing(slug, ref) && app.fields.focus('box'),
+    outboxEdit: () => app.box.editOutgoing(slug, replyDraft(ref)) && app.fields.focus('box'),
   }
   return <ItemPage it={it} f={f} env={env} facts={facts} on={on} talkRef={app.fields.ref('talk')} duo={duo} left={left} bare={bare} />
 }

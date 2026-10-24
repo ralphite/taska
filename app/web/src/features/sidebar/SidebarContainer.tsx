@@ -11,6 +11,7 @@ import type { ProjectRow } from '../../model/types'
 import { openCount } from '../../model/visible'
 import { projectTones, toneOf } from '../../ui/tones'
 import { Rail, Sidebar, type SideLinkInfo, type SideProject, type SidebarEvents } from './Sidebar'
+import { NEW_DRAFT } from '../../model/draftTarget'
 
 const DEV_LINKS = [
   { label: 'Storybook', href: 'http://localhost:6351/', icon: 'book' as const },
@@ -93,7 +94,7 @@ export function SidebarContainer({ slug, place, hidden, rail }: { slug: string; 
       // New input, recording at once (again: stop and send)
       if (app.voice.recording()) return void app.voice.finish(true)
       app.nav.newInput()
-      void app.voice.start(slug, 'new', null, 'main')
+      void app.voice.start(slug, NEW_DRAFT, null, 'main')
     },
     newProject: () => {
       // from the folded sidebar's rail: the sidebar comes over the page

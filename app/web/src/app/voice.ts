@@ -7,7 +7,6 @@ import { Refused } from '../api/http'
 import { canRecord, micTrouble, openMic } from './mic'
 import { clock } from '../model/time'
 import { vcLabel, vcLineEnd, withQuote } from '../model/voiceComments'
-import { draftName } from '../model/words'
 import type { Recording } from '../stores/recording'
 import type { TaskaApi } from '../api/taska'
 import type { DraftFile } from '../stores/box'
@@ -17,6 +16,7 @@ import type { RecordingStore } from '../stores/recording'
 import type { Box } from './box'
 import type { Fields } from './fields'
 import type { Toasts } from './toasts'
+import { draftName, draftTarget, keyOf, type DraftKey } from '../model/draftTarget'
 
 export interface VoiceDeps {
   api: TaskaApi
@@ -28,7 +28,7 @@ export interface VoiceDeps {
   fields: Fields
   desk(): boolean
   /** send what the draft holds now (it goes to what the draft writes to) */
-  send(slug: string, key: string): void
+  send(slug: string, key: DraftKey): void
   /** the draft the box shows now */
   boxKey(): string
   /** what waits to be sent goes now (a file it waited for is up) */
@@ -36,7 +36,7 @@ export interface VoiceDeps {
   /** kept in this browser with its audio until Taska has it: its id there */
   keep(blob: Blob): string
   /** to the box a draft belongs to */
-  goDraft(key: string): void
+  goDraft(key: DraftKey): void
   /** a voice comment stopped: what it is about is what the box comments on now (a document's passage) */
   about?(a: NonNullable<Recording['about']>): void
 }
@@ -82,7 +82,7 @@ export class Voice {
   }
 
   /** Record a voice note for draft `key` (it belongs where it was started, whatever is open when it stops). */
-  async start(slug: string, key: string, scope: string | null, from: 'main' | 'aux', about: Recording['about'] = null): Promise<void> {
+  async start(slug: string, key: DraftKey, scope: string | null, from: 'main' | 'aux', about: Recording['about'] = null): Promise<void> {
     if (this.rec) return
     if (!this.can()) return this.d.toasts.show('This browser can’t record voice notes')
     const box = this.d.fields.get('box')
@@ -141,7 +141,7 @@ export class Voice {
   }
 
   /** Stop: the note goes into its draft (and is sent, with `andSend`). */
-  async finish(andSend: boolean, kept?: { blob: Blob; ms: number; slug: string; key: string; scope: string | null; about: Recording['about'] }): Promise<void> {
+  async finish(andSend: boolean, kept?: { blob: Blob; ms: number; slug: string; key: DraftKey; scope: string | null; about: Recording['about'] }): Promise<void> {
     const r = this.d.store.getState().rec
     const slug = kept?.slug ?? r?.slug
     const key = kept?.key ?? r?.key
@@ -182,7 +182,8 @@ export class Voice {
     void this.hear(slug, key, f, blob, scope)
     if (key !== this.d.boxKey()) {
       // you moved on while recording: the note is in the box where you started it
-      if (andSend && (key === 'new' || /^[A-Z]\d+$/.test(key))) {
+      const to = draftTarget(key).kind
+      if (andSend && (to === 'new' || to === 'reply')) {
         this.d.send(slug, key)
         this.d.toasts.show(`Sent to ${draftName(key)}`)
       } else this.d.toasts.show(`Voice note is in the box for ${draftName(key)}`, () => this.d.goDraft(key), { label: 'Go there' })
@@ -205,7 +206,7 @@ export class Voice {
   }
 
   /** Up to Taska, then its words, tried again with growing pauses while Taska can't be reached. */
-  private async hear(slug: string, key: string, f: DraftFile, blob: Blob, scope: string | null): Promise<void> {
+  private async hear(slug: string, key: DraftKey, f: DraftFile, blob: Blob, scope: string | null): Promise<void> {
     let fid = f.f
     for (let n = 0; !fid; n++) {
       try {
@@ -245,10 +246,10 @@ export class Voice {
     if (d?.more) void this.hearMore(slug, f.key, fid)
   }
 
-  private draftOf(fk: string): { key: string; f: DraftFile } | null {
+  private draftOf(fk: string): { key: DraftKey; f: DraftFile } | null {
     for (const [key, fs] of Object.entries(this.d.boxStore.getState().files)) {
       const f = fs.find((x) => x.key === fk)
-      if (f) return { key, f }
+      if (f) return { key: keyOf(key), f }
     }
     return null
   }
@@ -273,7 +274,7 @@ export class Voice {
   }
 
   /** The fuller words take the place of the first ones in the draft (or go after it). */
-  private fuller(slug: string, key: string, f: DraftFile, words: string): void {
+  private fuller(slug: string, key: DraftKey, f: DraftFile, words: string): void {
     const was = f.trAdded || f.tr
     const v = this.d.box.text(slug, key)
     this.d.box.write(slug, key, was && v.includes(was) ? v.replace(was, words) : (v.trim() ? v.trimEnd() + '\n' : '') + words)
@@ -282,17 +283,17 @@ export class Voice {
   }
 
   /** A kept note from before a reload: up, if it was not, then its words. */
-  resume(slug: string, key: string, f: DraftFile, blob: Blob, scope: string | null): void {
+  resume(slug: string, key: DraftKey, f: DraftFile, blob: Blob, scope: string | null): void {
     void this.hear(slug, key, f, blob, scope)
   }
 
   /** A kept note's words, worked out before the reload, into its draft. */
-  placeKept(slug: string, key: string, f: DraftFile): void {
+  placeKept(slug: string, key: DraftKey, f: DraftFile): void {
     this.place(slug, key, f.key, f.tr || '', f.trError || '')
   }
 
   /** Its words go where it was recorded in its draft, around what was typed since; none: it says so. */
-  private place(slug: string, key: string, fk: string, tr: string, err: string): void {
+  private place(slug: string, key: DraftKey, fk: string, tr: string, err: string): void {
     const inDraft = (this.d.boxStore.getState().files[key] || []).find((x) => x.key === fk)
     if (!inDraft) {
       if (!tr) this.d.toasts.show(err ? 'Transcription failed. Audio sent as is' : 'No words heard. Audio sent as is')

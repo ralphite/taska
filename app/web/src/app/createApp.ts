@@ -3,7 +3,7 @@
 
 import { Http } from '../api/http'
 import { TaskaApi } from '../api/taska'
-import { codeOf, merge, project, type ProjectModel, type ServerCopy } from '../model/project'
+import { merge, project, type ProjectModel, type ServerCopy } from '../model/project'
 import { createChangesStore, keptChanges, type ChangesStore } from '../stores/changes'
 import { createDataStore, type DataStore } from '../stores/data'
 import { createFeedbackStore, type FeedbackStore } from '../stores/feedback'
@@ -48,6 +48,8 @@ import { ItemDrag } from './itemDrag'
 import { Selection } from './selection'
 import { Updates } from './updates'
 import { Merges } from './merges'
+import { DraftPlaces } from './draftPlaces'
+import { draftName, draftTarget, type DraftKey } from '../model/draftTarget'
 import { hereFor, runAction, type ActionId } from './actions'
 import { OtherTabs } from './otherTabs'
 import { ItemEdits } from './itemEdits'
@@ -58,9 +60,7 @@ import { createViewsStore, type ViewsStore } from '../stores/views'
 import { createMediaStore, type MediaStore } from '../stores/media'
 import { createDictationStore, type DictationStore } from '../stores/dictation'
 import { memoryVault, type NoteVault } from '../stores/noteVault'
-import { draftName, inputCode } from '../model/words'
-import { inTab, tabOf } from '../model/visible'
-import { allComments } from '../model/docs'
+import { inputCode } from '../model/words'
 import { createRecordingStore, type RecordingStore } from '../stores/recording'
 import { createSettingsStore, type SettingsStore } from '../stores/settings'
 import { createDocViewStore, type DocViewStore } from '../stores/docView'
@@ -346,9 +346,9 @@ export function createApp(env: AppEnv): App {
     desk: env.desk,
     // what the draft holds goes to what it writes to (an item's draft: a reply to it; a new input's: a new input)
     send: (slug, key) => {
-      const dm = /^doc (\d+)$/.exec(key)
-      if (dm) return void docVoice.send(slug, Number(dm[1]), key) // a document's box: its voice comments, or a comment
-      const scope = /^[A-Z]\d+$/.test(key) ? key : null
+      const t = draftTarget(key)
+      if (t.kind === 'doc') return void docVoice.send(slug, t.d, key) // a document's box: its voice comments, or a comment
+      const scope = t.kind === 'reply' ? t.code : null
       if (key === boxKeyNow()) void box.send(slug, model(slug), scope)
       else {
         const { text, files } = box.take(slug, key)
@@ -406,41 +406,9 @@ export function createApp(env: AppEnv): App {
     return rid
   }
   // to the box a draft belongs to
-  const goDraft = (key: string) => {
-    const slug = currentSlug()
-    const m = model(slug)
-    const dm = /^doc (\d+)$/.exec(key)
-    const am = /^(edit|append) (\S+)$/.exec(key)
-    const cm = /^correct (\S+)$/.exec(key)
-    const dc = /^dc (\d+)$/.exec(key)
-    const n = /^[A-Z]\d+$/.test(key) ? Number(key.slice(1)) : NaN
-    if (key === 'new') return nav.newInput()
-    if (dm && m?.docs.some((d) => d.d === Number(dm[1]))) return docs?.open(Number(dm[1]))
-    if (am) {
-      if (!m?.byId.has(am[2])) return toasts.show('Input no longer exists', null, { error: true })
-      nav.newInput()
-      return box.amendStart(slug, m, am[2], am[1] as 'edit' | 'append')
-    }
-    const it = m?.byN.get(n)
-    if (m && it) {
-      const r = route.getState().route
-      nav.openItem(codeOf(m, n), inTab(it, r.page === 'project' ? r.tab : 'items') ? undefined : tabOf(it))
-      return fields.focus('box')
-    }
-    const fix = cm && m?.byId.get(cm[1])
-    if (fix) {
-      nav.newInput()
-      box.correctStart(fix.id, '', fix.v || 0, false)
-      return fields.focus('box')
-    }
-    const withComment = dc && m?.docs.find((d) => allComments(d).some((c) => c.id === Number(dc[1])))
-    if (dc && withComment) {
-      docs?.open(withComment.d)
-      return docs?.editComment(slug, withComment.d, Number(dc[1]))
-    }
-    // what the box was for is gone: say which, never a Go there that does nothing
-    toasts.show(`${draftName(key).replace(/^the /, 'The ')} is gone`, null, { error: true })
-  }
+  // where a draft belongs, to go there
+  const draftPlaces = new DraftPlaces({ route, nav, box, docs: () => docs, fields, toasts, slug: currentSlug, model })
+  const goDraft = (key: DraftKey) => draftPlaces.go(key)
   // a merged item gives way to the one it went into; what you wrote for it goes along
   const merges = new Merges({ route, drafts, box: boxStore, toasts, model, showItem: (code, tab) => nav.openItemHere(code, tab), goDraft })
   data.subscribe((s, was) => {

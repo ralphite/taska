@@ -5,6 +5,7 @@ import type { BoxStore } from '../stores/box'
 import type { DraftsStore } from '../stores/drafts'
 import type { KeyValueStore } from '../stores/storage'
 import type { Toasts } from './toasts'
+import { draftTarget, type DraftKey } from '../model/draftTarget'
 
 const DRAFTS = 'taska.drafts.'
 const SENT = 'taska.sent.'
@@ -29,7 +30,7 @@ export class OtherTabs {
   }
 
   /** This tab sent the draft `key`: the other tabs drop it from their box. */
-  sent(slug: string, key: string): void {
+  sent(slug: string, key: DraftKey): void {
     this.d.kv.setJson(SENT + slug, { k: key, t: Date.now() })
   }
 
@@ -45,8 +46,9 @@ export class OtherTabs {
     } else if (key === SENT + slug) {
       const x = this.d.kv.getJson<{ k: string; t: number }>(key)
       const text = this.d.drafts.getState().of(slug)[shown] || ''
-      if (x && x.k === shown && (text.trim() || (this.gone?.k === x.k && Date.now() - this.gone.t < 3000)))
-        this.d.toasts.show(`${/^[A-Z]\d+$/.test(x.k) ? `Your reply to ${x.k}` : x.k === 'new' ? 'Your new input' : 'What you wrote'} was sent from another tab`)
+      if (!x || x.k !== shown || !(text.trim() || (this.gone?.k === x.k && Date.now() - this.gone.t < 3000))) return
+      const t = draftTarget(x.k)
+      this.d.toasts.show(`${t.kind === 'reply' ? `Your reply to ${t.code}` : t.kind === 'new' ? 'Your new input' : 'What you wrote'} was sent from another tab`)
     }
   }
 }

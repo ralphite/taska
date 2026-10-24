@@ -9,6 +9,7 @@ import type { BoxStore } from '../stores/box'
 import type { Box } from './box'
 import type { Fields } from './fields'
 import type { Toasts } from './toasts'
+import type { DraftKey } from '../model/draftTarget'
 
 export interface VoiceWordsDeps {
   api: TaskaApi
@@ -24,12 +25,12 @@ export class VoiceWords {
     this.d = d
   }
 
-  private file(key: string, fk: string): HeardFile | undefined {
+  private file(key: DraftKey, fk: string): HeardFile | undefined {
     return (this.d.store.getState().files[key] || []).find((f) => f.key === fk)
   }
 
   /** One side of a doubt picked; true when the words changed. */
-  pick(slug: string, key: string, fk: string, k: number, side: 'was' | 'alt'): boolean {
+  pick(slug: string, key: DraftKey, fk: string, k: number, side: 'was' | 'alt'): boolean {
     const f = this.file(key, fk)
     if (!f) return false
     const r = pickSide(this.d.box.text(slug, key), f, k, side)
@@ -39,7 +40,7 @@ export class VoiceWords {
   }
 
   /** The other model's words, with Undo. */
-  use(slug: string, key: string, fk: string, k: number): void {
+  use(slug: string, key: DraftKey, fk: string, k: number): void {
     const x = this.file(key, fk)?.doubts?.[k]
     if (!x || !this.pick(slug, key, fk, k, 'alt')) return
     this.d.toasts.show(`Changed to “${(x.show || [])[1] || x.alt}”`, () => {
@@ -56,7 +57,7 @@ export class VoiceWords {
   }
 
   /** Words corrected by hand: into the draft, and remembered (Undo puts the words back and forgets it). */
-  async fix(slug: string, key: string, at: { s: number; e: number; wrong: string }, right: string, item: string | null): Promise<void> {
+  async fix(slug: string, key: DraftKey, at: { s: number; e: number; wrong: string }, right: string, item: string | null): Promise<void> {
     const files = this.d.store.getState().files[key] || []
     const before = this.d.box.text(slug, key)
     const r = fixIn(before, files, at, right)

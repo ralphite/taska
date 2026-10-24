@@ -7,7 +7,8 @@
 import { Refused } from '../api/http'
 import type { TaskaApi } from '../api/taska'
 import type { ProjectModel } from '../model/project'
-import { draftName, inputCode } from '../model/words'
+import { inputCode } from '../model/words'
+import { docDraft, draftKey, draftName, keyOf, NEW_DRAFT, PREFS_DRAFT, scopeDraft, type DraftKey } from '../model/draftTarget'
 import type { BoxMode, BoxStore, DraftFile } from '../stores/box'
 import type { DraftsStore } from '../stores/drafts'
 import type { OutboxStore } from '../stores/outbox'
@@ -31,7 +32,7 @@ export interface BoxDeps {
   /** a voice note is being recorded */
   recording?(): boolean
   /** to the box a draft belongs to */
-  goDraft?(key: string): void
+  goDraft?(key: DraftKey): void
   /** the project's model now (Undo puts back what it says then) */
   model?(slug: string): ProjectModel | null
   /** this browser's own store: the words an input had when you began an edit of it */
@@ -39,7 +40,7 @@ export interface BoxDeps {
   /** the project loaded afresh */
   refresh?(slug: string): Promise<void>
   /** the other tabs: this draft went out from here */
-  sent?(slug: string, key: string): void
+  sent?(slug: string, key: DraftKey): void
 }
 
 export class Box {
@@ -49,24 +50,24 @@ export class Box {
     this.d = d
     // a new input not sent stays in its draft when the box goes to write elsewhere: it says so
     d.store.subscribe((s, was) => {
-      if (s.slug !== was.slug || was.shown.key !== 'new' || s.shown.key === 'new' || this.d.recording?.()) return
-      if (!this.text(s.slug, 'new').trim() && !s.files.new?.length) return
-      setTimeout(() => this.d.toasts.show('Your new input is kept, not sent', () => this.d.goDraft?.('new'), { label: 'Open' }))
+      if (s.slug !== was.slug || was.shown.key !== NEW_DRAFT || s.shown.key === NEW_DRAFT || this.d.recording?.()) return
+      if (!this.text(s.slug, NEW_DRAFT).trim() && !s.files[NEW_DRAFT]?.length) return
+      setTimeout(() => this.d.toasts.show('Your new input is kept, not sent', () => this.d.goDraft?.(NEW_DRAFT), { label: 'Open' }))
     })
   }
 
   /** The draft the box shows: what it writes to (`doc`: a comment on that document). */
-  key(scope: string | null, mode: BoxMode = this.d.store.getState().mode, doc: number | null = null): string {
-    if (mode?.kind === 'correct') return `correct ${mode.id}`
-    if (mode?.kind === 'amend') return `${mode.mode} ${mode.id}`
-    if (mode?.kind === 'comment') return `dc ${mode.d} ${mode.id}`
-    if (mode?.kind === 'prefs') return 'prefs'
-    if (doc != null) return `doc ${doc}`
-    return scope || 'new'
+  key(scope: string | null, mode: BoxMode = this.d.store.getState().mode, doc: number | null = null): DraftKey {
+    if (mode?.kind === 'correct') return draftKey({ kind: 'correct', id: mode.id })
+    if (mode?.kind === 'amend') return draftKey({ kind: 'amend', mode: mode.mode, id: mode.id })
+    if (mode?.kind === 'comment') return draftKey({ kind: 'comment', d: mode.d, id: mode.id })
+    if (mode?.kind === 'prefs') return PREFS_DRAFT
+    if (doc != null) return docDraft(doc)
+    return scopeDraft(scope)
   }
 
   /** What the draft holds, taken out of the box (its files once they are up). */
-  take(slug: string, key: string): { text: string; files: DraftFile[] } {
+  take(slug: string, key: DraftKey): { text: string; files: DraftFile[] } {
     const text = this.text(slug, key).trim()
     const files = [...(this.d.store.getState().files[key] || [])]
     this.write(slug, key, '')
@@ -75,7 +76,7 @@ export class Box {
   }
 
   /** It was not saved: the words come back to the draft, before what was written since. */
-  putBack(slug: string, key: string, text: string, files: DraftFile[] = []): void {
+  putBack(slug: string, key: DraftKey, text: string, files: DraftFile[] = []): void {
     const now = this.text(slug, key).trim()
     this.write(slug, key, [text, now].filter(Boolean).join('\n'))
     if (files.length) this.d.store.getState().putFiles(key, files)
@@ -84,20 +85,20 @@ export class Box {
   /** Edit a comment of yours: the box writes there, beginning with its words. */
   commentStart(slug: string, d: number, id: number, was: string): void {
     this.d.store.getState().setMode({ kind: 'comment', d, id, was })
-    const key = `dc ${d} ${id}`
+    const key = draftKey({ kind: 'comment', d, id })
     if (!this.text(slug, key).trim()) this.write(slug, key, was)
   }
 
-  text(slug: string, key: string): string {
+  text(slug: string, key: DraftKey): string {
     return this.d.drafts.getState().of(slug)[key] || ''
   }
 
-  write(slug: string, key: string, text: string): void {
+  write(slug: string, key: DraftKey, text: string): void {
     this.d.drafts.getState().set(slug, key, text)
   }
 
   /** Files added to the draft: each goes up at once. */
-  attach(slug: string, key: string, list: File[]): void {
+  attach(slug: string, key: DraftKey, list: File[]): void {
     for (const file of list) {
       const fk = `local-${Date.now().toString(36)}-${++this.n}`
       const image = (file.type || '').startsWith('image/')
@@ -131,7 +132,7 @@ export class Box {
         await new Promise((ok) => setTimeout(ok, Math.min(30000, 2000 * 2 ** Math.min(tries, 4))))
         return this.upload(slug, fk, file, name, tries + 1)
       }
-      if (key) st.removeFile(key, fk)
+      if (key) st.removeFile(keyOf(key), fk)
       this.d.outbox.getState().updateFile(fk, { uploading: false, failed: true })
       void this.d.inputs.flush()
       this.d.toasts.show(`Failed to upload ${name}`)
@@ -139,7 +140,7 @@ export class Box {
   }
 
   /** A file off the draft; a voice note takes the words it put there with it, and both come back with Undo. */
-  removeFile(slug: string, key: string, fk: string): void {
+  removeFile(slug: string, key: DraftKey, fk: string): void {
     const st = this.d.store.getState()
     const files = st.files[key] || []
     const i = files.findIndex((f) => f.key === fk)
@@ -157,12 +158,12 @@ export class Box {
   }
 
   /** The draft `key` went out from this tab: the other tabs drop it from their box. */
-  markSent(slug: string, key: string): void {
+  markSent(slug: string, key: DraftKey): void {
     this.d.sent?.(slug, key)
   }
 
   /** Send what the box has, to what it writes to. -> whether anything went */
-  send(slug: string, m: ProjectModel | null, scope: string | null, draft?: string): boolean {
+  send(slug: string, m: ProjectModel | null, scope: string | null, draft?: DraftKey): boolean {
     const st = this.d.store.getState()
     const mode = st.mode
     const key = draft ?? this.key(scope, mode)
@@ -185,7 +186,7 @@ export class Box {
   }
 
   /** An edit of something you said, or details added: it shows at once and is saved behind you. */
-  private amend(slug: string, m: ProjectModel | null, mode: Extract<BoxMode, { kind: 'amend' }>, key: string, text: string): boolean {
+  private amend(slug: string, m: ProjectModel | null, mode: Extract<BoxMode, { kind: 'amend' }>, key: DraftKey, text: string): boolean {
     const st = this.d.store.getState()
     const drafts = st.takeFiles(key)
     this.write(slug, key, '')
@@ -214,7 +215,7 @@ export class Box {
   /** Your edit was refused because the input changed in another window (another tab added to it, its voice note's
    * words came): when that only added words after the ones you began from, they go on after yours and it is saved;
    * otherwise your words come back in the box with what it says now, and Save puts yours in its place. */
-  private async editedElsewhere(slug: string, mode: Extract<BoxMode, { kind: 'amend' }>, key: string, text: string, files: unknown[], drafts: DraftFile[], said: string): Promise<void> {
+  private async editedElsewhere(slug: string, mode: Extract<BoxMode, { kind: 'amend' }>, key: DraftKey, text: string, files: unknown[], drafts: DraftFile[], said: string): Promise<void> {
     await this.d.refresh?.(slug)
     const r = this.d.model?.(slug)?.byId.get(mode.id)
     if (!r) return
@@ -232,7 +233,7 @@ export class Box {
   }
 
   /** What did not go out yet, back in the box to change (the box must be empty). -> it came back */
-  editOutgoing(slug: string, key: string): boolean {
+  editOutgoing(slug: string, key: DraftKey): boolean {
     const o = this.d.outbox.getState().list.find((x) => x.slug === slug && !x.unsent)
     if (!o) return false
     if (this.text(slug, key).trim() || (this.d.store.getState().files[key] || []).length) {
@@ -271,7 +272,7 @@ export class Box {
     const r = m?.byId.get(id)
     if (!r || r.moved) return
     this.d.store.getState().setMode({ kind: 'amend', id, mode, v: r.v || 0, base: r.text })
-    const key = `${mode} ${id}`
+    const key = draftKey({ kind: 'amend', mode, id })
     const base = this.editBase(slug, key)
     if (mode === 'edit' && !this.text(slug, key).trim()) this.write(slug, key, r.text)
     else if (mode === 'edit' && base != null && base !== r.text) {
@@ -285,7 +286,7 @@ export class Box {
   }
 
   /** The words an input had when you began an edit of it (kept with the draft, in this browser). */
-  private editBase(slug: string, key: string, set?: string): string | null {
+  private editBase(slug: string, key: DraftKey, set?: string): string | null {
     const kv = this.d.kv
     if (!kv) return null
     const all = kv.getJson<Record<string, string>>('taska.editbase.' + slug) || {}
@@ -300,7 +301,7 @@ export class Box {
   }
 
   /** The right words: the input shows them at once and they are saved behind you, with Undo (words and spelling). */
-  private correct(slug: string, m: ProjectModel | null, mode: Extract<BoxMode, { kind: 'correct' }>, key: string): boolean {
+  private correct(slug: string, m: ProjectModel | null, mode: Extract<BoxMode, { kind: 'correct' }>, key: DraftKey): boolean {
     const right = this.text(slug, key).replace(/\s+/g, ' ').trim()
     if (!right) return false
     const r = m?.byId.get(mode.id)

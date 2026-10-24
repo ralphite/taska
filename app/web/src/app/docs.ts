@@ -22,6 +22,7 @@ import type { Fields } from './fields'
 import type { Navigation } from './navigation'
 import type { Sheets } from './sheets'
 import type { Toasts } from './toasts'
+import { docDraft, draftKey, replyDraft, type DraftKey } from '../model/draftTarget'
 
 export interface DocsDeps {
   runner: ChangeRunner
@@ -181,7 +182,7 @@ export class Docs {
 
   /** The box's words as a comment where it goes: there at once (in the thread it will be in: the same words quoted
    * again join their thread), saved behind you; not saved, the words come back to the box. Its files go once up. */
-  async comment(slug: string, dn: number, t: DocTarget, key: string): Promise<boolean> {
+  async comment(slug: string, dn: number, t: DocTarget, key: DraftKey): Promise<boolean> {
     const m = this.d.model(slug)
     const doc = m?.docs.find((x) => x.d === dn)
     if (!doc) return false
@@ -190,7 +191,7 @@ export class Docs {
     this.d.box.markSent(slug, key)
     // the box empties and the comment is on its passage at once; its files wait out of sight until they are up (a
     // voice note's words too, which go with it)
-    const hold = `sending ${newId()}`
+    const hold = draftKey({ kind: 'held', id: newId() })
     if (files.length) this.d.boxStore.getState().putFiles(hold, files)
     const live = () => this.d.boxStore.getState().files[hold] || []
     const quote = t.reply ? '' : t.quote
@@ -236,7 +237,7 @@ export class Docs {
   }
 
   /** Save the edit: it changes at once and is saved behind you; not saved, your words come back to edit. */
-  async saveComment(slug: string, dn: number, id: number, key: string): Promise<boolean> {
+  async saveComment(slug: string, dn: number, id: number, key: DraftKey): Promise<boolean> {
     const c = this.commentOf(slug, dn, id)
     const { text, files } = this.d.box.take(slug, key)
     const sent = files.filter((f) => f.f && !f.failed)
@@ -303,7 +304,7 @@ export class Docs {
     const words = tickWords(t, doc)
     if (m.byN.has(n)) {
       // what the box holds goes along (it writes to the item on the desktop, to the document on the phone)
-      const { text: note, files } = this.d.box.take(slug, this.d.desk() ? codeOf(m, n) : `doc ${dn}`)
+      const { text: note, files } = this.d.box.take(slug, this.d.desk() ? replyDraft(codeOf(m, n)) : docDraft(dn))
       this.d.inputs.push({ slug, text: [`Answered in D${dn}:`, ...(words.length ? words : ['nothing ticked']), ...(note ? ['', note] : [])].join('\n'), scope: codeOf(m, n), files: files.map(({ key: fk, ...f }) => ({ ...f, key: fk })), kind: 'answer' })
       if (!this.d.desk()) this.d.toasts.show(`Choices sent to ${codeOf(m, n)}`)
     }

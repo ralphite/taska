@@ -10,7 +10,8 @@ import { oneLine, shownStatus } from '../../model/items'
 import { codeOf, inputDraft, liveN, type ProjectModel } from '../../model/project'
 import { inputMatch } from '../../model/visible'
 import type { Input } from '../../model/types'
-import { draftName, inputCode, plural } from '../../model/words'
+import { inputCode, plural } from '../../model/words'
+import { draftName } from '../../model/draftTarget'
 import { vcCount } from '../../model/voiceComments'
 import type { BoxMode } from '../../stores/box'
 import type { DocViewState } from '../../stores/docView'
@@ -92,17 +93,17 @@ function boxRole(m: ProjectModel | null, route: ProjectRoute, desk: boolean, tit
   const none = { aim: null as DocAim }
   if (mode?.kind === 'prefs') {
     const line: BoxLine = { icon: 'pencil', label: 'Edit transcription preferences', detail: '· every project', right: xButton('Stop editing', stop) }
-    return { ...none, key: 'prefs', scope: null, doc: null, line, placeholder: 'How should voice notes be transcribed?', send: 'Save' }
+    return { ...none, scope: null, doc: null, line, placeholder: 'How should voice notes be transcribed?', send: 'Save' }
   }
   if (mode?.kind === 'correct') {
     // the line says before and after as you type (the container adds what you typed)
     const line: BoxLine = { icon: 'pencil', label: `Correct \u201c${mode.wrong}\u201d`, detail: `in ${inputCode(mode.id)} \u00b7 remembered for every project`, right: xButton('Stop correcting', stop) }
-    return { ...none, key: `correct ${mode.id}`, scope: null, doc: null, line, placeholder: 'Write\u2026', send: 'Save' }
+    return { ...none, scope: null, doc: null, line, placeholder: 'Write\u2026', send: 'Save' }
   }
   if (mode?.kind === 'comment') {
     const was = oneLine(mode.was)
     const line: BoxLine = { icon: 'pencil', label: `Edit your comment on D${mode.d}`, detail: was ? `\u201c${was.slice(0, 120)}\u201d` : '', right: xButton('Stop editing', stop) }
-    return { ...none, key: `dc ${mode.d} ${mode.id}`, scope: null, doc: null, line, placeholder: 'Write…', send: 'Save' }
+    return { ...none, scope: null, doc: null, line, placeholder: 'Write…', send: 'Save' }
   }
   const dt = docOf && !mode ? docTarget(docOf, pick) : null
   if (docOf && dt) {
@@ -112,7 +113,7 @@ function boxRole(m: ProjectModel | null, route: ProjectRoute, desk: boolean, tit
       detail: (dt.many || 0) > 1 ? `· ${dt.many} paragraphs` : dt.quote ? `\u201c${plainQuote(dt.quote).slice(0, 120)}\u201d` : '',
       right: xButton('Cancel the comment', on.unpick),
     }
-    return { aim: { d: docOf.d, target: dt } as DocAim, key: `doc ${docOf.d}`, scope: null, doc: docOf.d, line, placeholder: 'Write…', send: dt.reply ? 'Reply' : 'Comment' }
+    return { aim: { d: docOf.d, target: dt } as DocAim, scope: null, doc: docOf.d, line, placeholder: 'Write…', send: dt.reply ? 'Reply' : 'Comment' }
   }
   const waiting = docOf && !mode ? ticksNotSent(ticks, docOf) : ''
   if (docOf && waiting) {
@@ -137,8 +138,8 @@ function boxRole(m: ProjectModel | null, route: ProjectRoute, desk: boolean, tit
     const host = m ? liveN(m, docOf.n) : null
     const reply = desk && host != null && m ? codeOf(m, host) : null
     return reply
-      ? { ...none, key: `doc ${docOf.d}`, scope: reply, doc: docOf.d, line, placeholder: `Reply to ${reply}…`, send: 'Send' }
-      : { aim: { d: docOf.d, target: { key: 'doc', quote: '' } } as DocAim, key: `doc ${docOf.d}`, scope: null, doc: docOf.d, line, placeholder: `Comment on D${docOf.d}…`, send: 'Comment' }
+      ? { ...none, scope: reply, doc: docOf.d, line, placeholder: `Reply to ${reply}…`, send: 'Send' }
+      : { aim: { d: docOf.d, target: { key: 'doc', quote: '' } } as DocAim, scope: null, doc: docOf.d, line, placeholder: `Comment on D${docOf.d}…`, send: 'Comment' }
   }
   if (docOf && !desk && !mode) {
     // the phone, nothing picked: a comment on the whole document (Reply to its item instead)
@@ -157,7 +158,7 @@ function boxRole(m: ProjectModel | null, route: ProjectRoute, desk: boolean, tit
           </button>
         ) : null,
     }
-    return { aim: { d: docOf.d, target: { key: 'doc', quote: '' } } as DocAim, key: `doc ${docOf.d}`, scope: null, doc: docOf.d, line, placeholder: `Comment on D${docOf.d}…`, send: 'Comment' }
+    return { aim: { d: docOf.d, target: { key: 'doc', quote: '' } } as DocAim, scope: null, doc: docOf.d, line, placeholder: `Comment on D${docOf.d}…`, send: 'Comment' }
   }
   if (mode?.kind === 'amend' && m?.byId.has(mode.id)) {
     const r = m.byId.get(mode.id) as Input
@@ -180,12 +181,12 @@ function boxRole(m: ProjectModel | null, route: ProjectRoute, desk: boolean, tit
         </button>
       ),
     }
-    return { ...none, key: `${mode.mode} ${mode.id}`, scope: open && m ? codeOf(m, open.n) : null, doc: null, line, placeholder: 'Write…', send: 'Save' }
+    return { ...none, scope: open && m ? codeOf(m, open.n) : null, doc: null, line, placeholder: 'Write…', send: 'Save' }
   }
   // a document open, nothing picked (the desktop): a reply to its item, written in the document's own draft
-  if (open && m) return { ...none, key: docOf ? `doc ${docOf.d}` : codeOf(m, open.n), scope: codeOf(m, open.n), doc: docOf ? docOf.d : null, line: null as BoxLine | null, placeholder: `Reply to ${codeOf(m, open.n)}…`, send: 'Send' }
+  if (open && m) return { ...none, scope: codeOf(m, open.n), doc: docOf ? docOf.d : null, line: null as BoxLine | null, placeholder: `Reply to ${codeOf(m, open.n)}…`, send: 'Send' }
   const line: BoxLine | null = desk ? { icon: 'newinput', label: 'New input', detail: `· ${files}` } : null
-  return { ...none, key: 'new', scope: null, doc: null, line, placeholder: m ? `Write to ${title}…` : 'Write anything…', send: 'Send' }
+  return { ...none, scope: null, doc: null, line, placeholder: m ? `Write to ${title}…` : 'Write anything…', send: 'Send' }
 }
 
 /** Where a voice note's words may be misheard in the draft now. */

@@ -15,6 +15,7 @@ import type { Fields } from './fields'
 import type { Projects } from './projects'
 import type { Sheets } from './sheets'
 import type { Toasts } from './toasts'
+import { PREFS_DRAFT } from '../model/draftTarget'
 
 export interface SettingsDeps {
   api: TaskaApi
@@ -208,12 +209,12 @@ export class Settings {
     const pr = this.s.prefs
     if (!pr) return
     this.d.boxStore.getState().setMode({ kind: 'prefs', was: pr.text })
-    if (!this.d.box.text(slug, 'prefs').trim()) this.d.box.write(slug, 'prefs', pr.text)
+    if (!this.d.box.text(slug, PREFS_DRAFT).trim()) this.d.box.write(slug, PREFS_DRAFT, pr.text)
     requestAnimationFrame(() => this.d.fields.focus('box'))
   }
 
   async savePrefs(slug: string): Promise<void> {
-    const text = this.d.box.text(slug, 'prefs').trim()
+    const text = this.d.box.text(slug, PREFS_DRAFT).trim()
     const mode = this.d.boxStore.getState().mode
     const was = mode?.kind === 'prefs' ? mode.was : ''
     if (!text) return this.d.toasts.show('Enter transcription rules, or press Esc to cancel')
@@ -221,7 +222,7 @@ export class Settings {
       const d = await this.d.api.setVoicePrefs(text)
       this.s.set({ prefs: d })
       this.d.boxStore.getState().setMode(null)
-      this.d.box.take(slug, 'prefs')
+      this.d.box.take(slug, PREFS_DRAFT)
       this.d.toasts.show('Saved: applies to all projects', async () => {
         const back = await this.d.api.setVoicePrefs(was)
         this.s.set({ prefs: back })

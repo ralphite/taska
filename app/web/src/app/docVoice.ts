@@ -17,6 +17,7 @@ import { newId, type ChangeRunner } from './changeRunner'
 import type { Docs } from './docs'
 import type { Toasts } from './toasts'
 import type { Voice } from './voice'
+import { docDraft, draftKey, type DraftKey } from '../model/draftTarget'
 
 export interface DocVoiceDeps {
   voice: Voice
@@ -31,7 +32,7 @@ export interface DocVoiceDeps {
   model(slug: string): ProjectModel | null
   desk(): boolean
   /** what the document's box holds goes as a reply to its item */
-  reply(slug: string, key: string, scope: string | null): void
+  reply(slug: string, key: DraftKey, scope: string | null): void
 }
 
 const wait = (ms: number) => new Promise((ok) => setTimeout(ok, ms))
@@ -57,7 +58,7 @@ export class DocVoice {
       if (r.about) await this.d.voice.finish(!this.d.desk() && (page || !this.d.view.getState().typing))
       return
     }
-    await this.d.voice.start(slug, `doc ${dn}`, this.host(slug, dn), 'main', { d: dn, key, quote: quote.slice(0, 500), bar: false })
+    await this.d.voice.start(slug, docDraft(dn), this.host(slug, dn), 'main', { d: dn, key, quote: quote.slice(0, 500), bar: false })
   }
 
   /** The bar on selected words: speak about them (words of document `d`'s passage `key`, or words elsewhere, which
@@ -70,7 +71,7 @@ export class DocVoice {
     }
     if (r || !sel) return false
     const shown = this.d.boxStore.getState().shown
-    const key = sel.d != null ? `doc ${sel.d}` : shown.key
+    const key = sel.d != null ? docDraft(sel.d) : shown.key
     const scope = sel.d != null ? this.host(slug, sel.d) : shown.scope
     await this.d.voice.start(slug, key, scope, 'main', { ...sel, quote: sel.quote.slice(0, 500), bar: true })
     return !!this.d.recording.getState().rec
@@ -83,7 +84,7 @@ export class DocVoice {
   }
 
   /** Send in a document's box: its voice comments if it has quote lines, else a comment on what is picked. */
-  send(slug: string, dn: number, key: string): Promise<boolean> {
+  send(slug: string, dn: number, key: DraftKey): Promise<boolean> {
     if (vcCount(this.d.box.text(slug, key))) return this.post(slug, dn, key)
     // what is picked; on the phone nothing picked is the whole document; on the desktop, a reply to its item
     const t = this.d.docs.target(dn) ?? (this.d.desk() ? null : { key: 'doc', quote: '' })
@@ -93,7 +94,7 @@ export class DocVoice {
   }
 
   /** Each quote line's words as a comment on its passage, with the voice notes said about it. */
-  async post(slug: string, dn: number, key: string): Promise<boolean> {
+  async post(slug: string, dn: number, key: DraftKey): Promise<boolean> {
     const doc = this.d.model(slug)?.docs.find((x) => x.d === dn)
     if (!doc) return false
     const typed = this.d.box.text(slug, key)
@@ -115,7 +116,7 @@ export class DocVoice {
     }
     // the box empties; its files wait out of sight for their words (they are still kept and heard)
     const { files } = this.d.box.take(slug, key)
-    const hold = `sending ${newId()}`
+    const hold = draftKey({ kind: 'held', id: newId() })
     this.d.boxStore.getState().putFiles(hold, files)
     const live = () => [...(this.d.boxStore.getState().files[hold] || [])]
     this.d.boxStore.getState().setMarks(marks.filter((x) => x.d !== dn))

@@ -13,6 +13,7 @@ import type { KeyValueStore } from '../stores/storage'
 import { plural } from '../model/words'
 import type { InputSender } from './inputSender'
 import type { Toasts } from './toasts'
+import { draftKey, draftTarget, NEW_DRAFT, replyDraft, scopeDraft, type DraftKey } from '../model/draftTarget'
 
 type Rec = Omit<KeptNote, 'data'>
 
@@ -24,13 +25,13 @@ export interface KeptNotesDeps {
   inputs: InputSender
   toasts: Toasts
   /** a kept note's words or upload go on (voice: up, then its words; a file: up) */
-  resume(slug: string, key: string, f: DraftFile, blob: Blob, scope: string | null): void
+  resume(slug: string, key: DraftKey, f: DraftFile, blob: Blob, scope: string | null): void
   /** its words go into its draft */
-  place(slug: string, key: string, f: DraftFile): void
+  place(slug: string, key: DraftKey, f: DraftFile): void
   /** a draft's name, as the box says it ("New input", "B12") */
-  draftName(key: string): string
-  goDraft(key: string): void
-  boxKey(): string
+  draftName(key: DraftKey): string
+  goDraft(key: DraftKey): void
+  boxKey(): DraftKey
 }
 
 const locks = (): LockManager | null => (typeof navigator !== 'undefined' && navigator.locks) || null
@@ -150,13 +151,14 @@ export class KeptNotes {
   }
 
   /** The draft a kept note goes back to: the one it was recorded in, if that is still there. */
-  private keyFor(m: ProjectModel, key: string | null): string {
-    const n = /^[A-Z]\d+$/.test(key || '') ? Number(/\d+/.exec(key as string)?.[0]) : 0
-    if (n) return m.byN.has(n) ? codeOf(m, liveN(m, n)) : 'new'
-    const inp = /^(edit|append|correct) (r\d+)$/.exec(key || '')
-    const dm = /^doc (\d+)$/.exec(key || '')
-    if ((inp && m.byId.has(inp[2])) || (dm && m.docs.some((x) => x.d === Number(dm[1])))) return key as string
-    return 'new'
+  private keyFor(m: ProjectModel, key: string | null): DraftKey {
+    const t = draftTarget(key || 'new')
+    if (t.kind === 'reply') {
+      const n = Number(/\d+/.exec(t.code)?.[0])
+      return m.byN.has(n) ? replyDraft(codeOf(m, liveN(m, n))) : NEW_DRAFT
+    }
+    if (((t.kind === 'amend' || t.kind === 'correct') && m.byId.has(t.id)) || (t.kind === 'doc' && m.docs.some((x) => x.d === t.d))) return draftKey(t)
+    return NEW_DRAFT
   }
 
   /** The project opened: what this browser kept that did not go out comes back. */
@@ -170,7 +172,7 @@ export class KeptNotes {
     const goingQ = new Set(out.map((o) => o.q))
     const sent = new Set(m.inputs.flatMap((r) => r.files.map((x) => x.f)))
     const resend = new Map<string, { slug: string; text: string; scope: string | null; t: number; files: DraftFile[] }>()
-    const back: { key: string; f: DraftFile }[] = []
+    const back: { key: DraftKey; f: DraftFile }[] = []
     for (const r of (await this.d.vault.all()).sort((a, b) => a.t - b.t)) {
       if ((r.project !== slug && !r.job) || here.has(r.id)) continue
       if ((r.f && going.has(r.f)) || (r.job && goingQ.has(r.job.id))) continue // on its way already
@@ -213,11 +215,11 @@ export class KeptNotes {
     }
     for (const [q, j] of resend) {
       this.d.inputs.push({ q, slug: j.slug, text: j.text, scope: j.scope, files: j.files, t: j.t, back: true })
-      for (const f of j.files) if (!f.f) this.d.resume(j.slug, j.scope || 'new', f, this.blobs.get(f.rid as string) as Blob, j.scope)
+      for (const f of j.files) if (!f.f) this.d.resume(j.slug, scopeDraft(j.scope), f, this.blobs.get(f.rid as string) as Blob, j.scope)
     }
     for (const { key, f } of back) {
       this.d.box.getState().addFile(key, f)
-      if (f.transcribing || !f.f) this.d.resume(slug, key, f, this.blobs.get(f.rid as string) as Blob, /^[A-Z]\d+$/.test(key) ? key : null)
+      if (f.transcribing || !f.f) this.d.resume(slug, key, f, this.blobs.get(f.rid as string) as Blob, (() => { const t = draftTarget(key); return t.kind === 'reply' ? t.code : null })())
       else if (!f.plain && f.tr && !f.trAdded) this.d.place(slug, key, f)
     }
     this.soon()

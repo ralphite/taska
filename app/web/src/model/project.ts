@@ -5,6 +5,7 @@
 import { closed } from './items'
 import type { Comment, Doc, FileRef, Input, Item, ProjectFacts, ServerFacts, ViewAnswer } from './types'
 import { LETTER } from './words'
+import { draftKey, draftTarget } from './draftTarget'
 
 export interface ServerCopy {
   cursor: string
@@ -214,15 +215,15 @@ export function draftCodes(m: ProjectModel, words: Readonly<Record<string, strin
   const out = new Set<string>()
   for (const k of new Set([...Object.keys(words), ...Object.keys(files)])) {
     if (!String(words[k] || '').trim() && !files[k]?.length) continue
-    const dm = /^doc (\d+)$/.exec(k)
-    const doc = dm ? m.docs.find((x) => x.d === Number(dm[1])) : undefined
+    const t = draftTarget(k)
+    const doc = t.kind === 'doc' ? m.docs.find((x) => x.d === t.d) : undefined
     if (doc) out.add(codeOf(m, liveN(m, doc.n)))
-    else if (/^[A-Z]\d+$/.test(k)) out.add(k)
+    else if (t.kind === 'reply') out.add(t.code)
   }
   return out
 }
 
 /** Which of an input's drafts (an edit, details to add) waits, unless it is the one being written now. */
 export function inputDraft(id: string, words: Readonly<Record<string, string>>, writing: { id: string; mode: 'edit' | 'append' } | null): 'edit' | 'append' | null {
-  return (['edit', 'append'] as const).find((mode) => !(writing?.id === id && writing.mode === mode) && String(words[`${mode} ${id}`] || '').trim()) || null
+  return (['edit', 'append'] as const).find((mode) => !(writing?.id === id && writing.mode === mode) && String(words[draftKey({ kind: 'amend', mode, id })] || '').trim()) || null
 }

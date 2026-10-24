@@ -22,6 +22,7 @@ import { DocPaneActs, DocPaneHead, DocPaneNav } from './DocPane'
 import { DocEditContainer } from './DocEditContainer'
 import { DocView, SayRow, type DocEvents } from './DocView'
 import type { DocEnv } from './Thread'
+import { docDraft } from '../../model/draftTarget'
 
 const SIDE_NAME = { docs: 'Documents', log: 'Activity', deleted: 'Deleted' } as const
 
@@ -42,8 +43,8 @@ function useDoc(slug: string, dn: number) {
   const said = useStoreValue(stores.recording, (s) => (s.rec ? JSON.stringify({ key: s.rec.about?.d === dn ? s.rec.about.key : null, bar: !!s.rec.about?.bar }) : ''))
   const speaking = useMemo(() => (said ? (JSON.parse(said) as { key: string | null; bar: boolean }) : null), [said])
   // voice comments in the box not sent yet show where they will go
-  const draft = useStoreValue(stores.drafts, (s) => s.bySlug[slug]?.[`doc ${dn}`] ?? '')
-  const draftFiles = useStoreValue(stores.box, (s) => s.files[`doc ${dn}`])
+  const draft = useStoreValue(stores.drafts, (s) => s.bySlug[slug]?.[docDraft(dn)] ?? '')
+  const draftFiles = useStoreValue(stores.box, (s) => s.files[docDraft(dn)])
   const marks = useStoreValue(stores.box, (s) => s.marks)
   const waiting = useMemo(() => notSent(draft, draftFiles || [], marks, dn), [draft, draftFiles, marks, dn])
   const facts = useMemo(() => (m && d ? factsOf(m, d, v, seen, desk, asked, speaking, ticks, waiting) : null), [m, d, v, seen, desk, asked, speaking, ticks, waiting])

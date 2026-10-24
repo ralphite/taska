@@ -5,6 +5,7 @@ import { memoryVault } from '../stores/noteVault'
 import { createOutboxStore } from '../stores/outbox'
 import { memoryStore } from '../stores/storage'
 import { KeptNotes } from './keptNotes'
+import { NEW_DRAFT, replyDraft } from '../model/draftTarget'
 
 const tick = () => new Promise((ok) => setTimeout(ok, 0))
 const model = { byN: new Map(), byId: new Map(), docs: [], inputs: [], width: 2 } as unknown as ProjectModel
@@ -26,7 +27,7 @@ function page(vault = memoryVault()) {
     place: () => {},
     draftName: (k) => k,
     goDraft: () => {},
-    boxKey: () => 'new',
+    boxKey: () => NEW_DRAFT,
   })
   box.getState().show('p')
   return { box, outbox, kept, vault, pushed, resumed, toasts }
@@ -37,7 +38,7 @@ describe('voice notes kept over a reload', () => {
     const a = page()
     const rid = a.kept.id()
     a.kept.hold(rid, new Blob(['sound'], { type: 'audio/webm' }))
-    a.box.getState().addFile('B12', { key: rid, rid, f: '', name: 'voice 0-03.webm', mime: 'audio/webm', ms: 3000, uploading: true, transcribing: true })
+    a.box.getState().addFile(replyDraft('B12'), { key: rid, rid, f: '', name: 'voice 0-03.webm', mime: 'audio/webm', ms: 3000, uploading: true, transcribing: true })
     await tick()
     await tick()
     expect((await a.vault.all()).map((n) => [n.key, n.tr])).toEqual([['B12', null]])

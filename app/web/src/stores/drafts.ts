@@ -4,11 +4,12 @@
 
 import { createStore, type StoreApi } from 'zustand/vanilla'
 import type { KeyValueStore } from './storage'
+import type { DraftKey } from '../model/draftTarget'
 
 export interface DraftsState {
   bySlug: Record<string, Record<string, string>>
   of(slug: string): Record<string, string>
-  set(slug: string, key: string, text: string): void
+  set(slug: string, key: DraftKey, text: string): void
   /** another tab changed them */
   reload(slug: string): void
 }

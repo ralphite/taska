@@ -8,6 +8,7 @@ import type { OutFile } from './outbox'
 import type { Doubt } from '../model/types'
 import type { VcMark } from '../model/voiceComments'
 import type { KeyValueStore } from './storage'
+import { NEW_DRAFT, type DraftKey } from '../model/draftTarget'
 
 export type BoxMode =
   | { kind: 'amend'; id: string; mode: 'edit' | 'append'; v: number; /** its words when the edit began */ base?: string }
@@ -48,7 +49,7 @@ export interface JustSent {
   q: string
   slug: string
   /** the draft it was written in */
-  key: string
+  key: DraftKey
   /** until when it can be taken back (ms) */
   until: number
   /** the input it became, once Taska has it */
@@ -61,8 +62,8 @@ export interface BoxState {
   files: Readonly<Record<string, readonly DraftFile[]>>
   sent: readonly JustSent[]
   /** the draft the box shows now, and the item it writes to (a voice note stopped elsewhere knows where it goes) */
-  shown: { key: string; scope: string | null }
-  setShown(key: string, scope: string | null): void
+  shown: { key: DraftKey; scope: string | null }
+  setShown(key: DraftKey, scope: string | null): void
   /** the phone: the words show in the box with the versions of misheard words to pick from */
   showWords: boolean
   setShowWords(on: boolean): void
@@ -71,12 +72,12 @@ export interface BoxState {
   setMarks(m: readonly VcMark[]): void
   show(slug: string): void
   setMode(m: BoxMode): void
-  addFile(key: string, f: DraftFile): void
+  addFile(key: DraftKey, f: DraftFile): void
   updateFile(fileKey: string, patch: Partial<DraftFile>): void
-  removeFile(key: string, fileKey: string): void
+  removeFile(key: DraftKey, fileKey: string): void
   /** the draft's files go (with what it sends) */
-  takeFiles(key: string): DraftFile[]
-  putFiles(key: string, files: DraftFile[]): void
+  takeFiles(key: DraftKey): DraftFile[]
+  putFiles(key: DraftKey, files: DraftFile[]): void
   sentNow(j: JustSent): void
   sentAs(q: string, rid: string): void
   forgetSent(q: string): void
@@ -111,7 +112,7 @@ export function createBoxStore(session: KeyValueStore): BoxStore {
       mode: null,
       files: {},
       sent: [],
-      shown: { key: 'new', scope: null },
+      shown: { key: NEW_DRAFT, scope: null },
       showWords: false,
       setShowWords: (showWords) => set({ showWords }),
       marks: [],
