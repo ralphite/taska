@@ -21,6 +21,7 @@ import { SidebarContainer } from '../features/sidebar/SidebarContainer'
 import { useSideProjects } from '../app/projectLists'
 import { SideListContainer } from '../features/side/SideListContainer'
 import { SettingsContainer } from '../features/settings/SettingsContainer'
+import { settingsTitle } from '../features/settings/sectionList'
 import { codeOf } from '../model/project'
 import { InputsContainer } from '../features/inputs/InputsContainer'
 import { DeskFilters, FilterStrip } from '../features/list/Filters'
@@ -62,9 +63,9 @@ export function ProjectPageContainer({ route }: { route: ProjectRoute }) {
   const m = useProjectModel(route.slug)
   useEffect(() => {
     const waiting = m ? m.items.filter(needsYou).length : 0
-    const sec = route.place.kind === 'settings' ? 'Settings · ' : ''
-    document.title = (waiting ? `(${waiting}) ` : '') + sec + (m ? `${m.facts.title} · Taska` : 'Taska')
-  }, [m, route.place.kind])
+    const sec = settingsTitle(route.place, layout === 'desk')
+    document.title = (waiting ? `(${waiting}) ` : '') + (sec ? sec + ' · ' : '') + (m ? `${m.facts.title} · Taska` : 'Taska')
+  }, [m, route.place, layout])
   return (
     <>
       {layout === 'desk' ? <DeskLayout route={route} /> : <PhoneLayout route={route} />}

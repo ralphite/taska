@@ -81,6 +81,7 @@ import { ProjectSession } from './project/projectSession'
 import { Delivered } from './inputs/delivered'
 import { DraftSender } from './inputs/draftSender'
 import { SideOver } from './page/sideOver'
+import { Arrival } from './page/arrival'
 
 export interface AppEnv {
   http?: Http
@@ -326,6 +327,7 @@ export function createApp(env: AppEnv): App {
   // a merged item gives way to the one it went into; what you wrote for it goes along
   const merges = new Merges({ route, data, drafts, box: boxStore, toasts, model, showItem: (code, tab) => nav.openItemHere(code, tab), goDraft })
   const sideOver = new SideOver(route, ui)
+  const arrival = new Arrival({ route, fields, desk: env.desk })
   const notices = new Notices(env.kv, () => settingsStore.getState().set({ noticeRev: settingsStore.getState().noticeRev + 1 }), { api, toasts, data, slug, desk: env.desk, go: goUrl })
   const access = new Access({ api, sheets, toasts, refresh: () => void session().refresh() })
   const updates = new Updates({
@@ -411,7 +413,7 @@ export function createApp(env: AppEnv): App {
     access,
     refreshProjects,
     stop: () => {
-      for (const s of [projects, projectSession, pictureSizes, sheets, docs, docEditor, merges, sideOver, notices]) s.stop()
+      for (const s of [projects, projectSession, pictureSizes, sheets, docs, docEditor, merges, sideOver, arrival, notices]) s.stop()
       unlisten()
     },
     actions,

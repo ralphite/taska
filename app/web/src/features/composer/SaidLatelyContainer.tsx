@@ -29,16 +29,17 @@ export type SaidView = ReturnType<typeof useSaidView>
 
 export function SaidLatelyContainer({ route, boxKey, view, draft }: { route: ProjectRoute; boxKey: DraftKey; view: SaidView; draft: ReactNode }) {
   const app = useServices('box', 'fields', 'inputActions', 'inputs', 'nav', 'sheets')
-  const stores = useStores('box', 'drafts', 'outbox')
+  const stores = useStores('box', 'data', 'drafts', 'outbox')
   const m = useProjectModel(route.slug)
   const away = useAway(route.slug)
   const outbox = useStoreValue(stores.outbox, (s) => s.list)
   const drafts = useStoreValue(stores.drafts, (s) => s.bySlug[route.slug]) || EMPTY
   const mode = useStoreValue(stores.box, (s) => s.mode)
   const justSent = useStoreValue(stores.box, (s) => s.sent)
+  const projects = useStoreValue(stores.data, (s) => s.projects)
   const { q, upTo, opened } = view
   const words = useMemo(() => q.trim().toLowerCase().split(/\s+/).filter(Boolean), [q])
-  const said = useMemo(() => (m ? saidRows(m, { words, upTo, opened, justSent, drafts, mode }) : null), [m, words, upTo, opened, justSent, drafts, mode])
+  const said = useMemo(() => (m ? saidRows(m, { words, upTo, opened, justSent, drafts, mode, title: (s) => projects?.find((p) => p.name === s)?.title || s }) : null), [m, words, upTo, opened, justSent, drafts, mode, projects])
   const media = useFiles(route.slug)
   if (!m || !said) return null
   const mine = outbox.filter((o) => o.slug === route.slug && !o.unsent)
@@ -67,6 +68,7 @@ export function SaidLatelyContainer({ route, boxKey, view, draft }: { route: Pro
           outboxEdit: () => app.box.editOutgoing(route.slug, boxKey) && app.fields.focus('box'),
           query: view.query,
           loadMore: view.more,
+          moved: (href) => app.nav.to(href),
         }}
       />
     </section>

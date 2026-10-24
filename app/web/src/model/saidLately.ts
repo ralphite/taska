@@ -33,6 +33,8 @@ export interface SaidInput {
   canUndoSend: boolean
   retry: string | null
   opened: boolean
+  /** moved to another project: the way there ("Open taska · #474") */
+  moved: { href: string; label: string } | null
 }
 
 export interface SaidOutgoing {
@@ -45,7 +47,7 @@ export interface SaidOutgoing {
 }
 
 /** What you said that the search finds (`all`) and the rows shown of it (the first `upTo`). */
-export function saidRows(m: ProjectModel, a: { words: readonly string[]; upTo: number; opened: ReadonlySet<string>; justSent: readonly { rid?: string }[]; drafts: Readonly<Record<string, string>>; mode: BoxMode }): { all: Input[]; rows: SaidInput[] } {
+export function saidRows(m: ProjectModel, a: { words: readonly string[]; upTo: number; opened: ReadonlySet<string>; justSent: readonly { rid?: string }[]; drafts: Readonly<Record<string, string>>; mode: BoxMode; title(slug: string): string }): { all: Input[]; rows: SaidInput[] } {
   const all = newestFirst(m.inputs).filter((r) => inputMatch(r, a.words))
   const recent = all.slice(0, a.upTo)
   const chip = (n: number): SaidChip | null => {
@@ -68,6 +70,7 @@ export function saidRows(m: ProjectModel, a: { words: readonly string[]; upTo: n
       canUndoSend: a.justSent.some((x) => x.rid === r.id),
       retry: !r.acked && m.facts.organizer.on && r.org && (!r.org.ok || r.org.undone) ? (r.org.undone ? 'Organize again' : 'Retry') : null,
       opened: a.opened.has(r.id),
+      moved: r.moved ? { href: `/p/${encodeURIComponent(r.moved.to)}/`, label: `Open ${a.title(r.moved.to)} · ${inputCode(r.moved.as)}` } : null,
     }
   })
   return { all, rows }

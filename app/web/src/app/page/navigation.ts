@@ -2,7 +2,7 @@
 // search and filters. Changing tab, opening the New input page or an item on the phone are steps Back can undo;
 // picking items in the desktop's list, search and filters only rewrite the address.
 
-import { LIST_KEYS, NO_FILTERS, projectPath, type ListQuery, type Place } from '../../model/route'
+import { LIST_KEYS, NO_FILTERS, parseRoute, projectPath, type ListQuery, type Place } from '../../model/route'
 import { TAB_WORD, type Tab } from '../../model/words'
 import type { RouteStore } from '../../stores/route'
 
@@ -14,12 +14,19 @@ export class Navigation {
   /** Settings: the steps taken in it (Back leaves by as many), and the place it was opened from */
   private settingsSteps = 0
   private from: { tab: Tab; compose: boolean } | null = null
+  /** Back out of Settings on the desktop: where it lands, the list shows (Documents, Activity or Deleted, open when
+   * Settings was, close), and the address says so */
+  private toList = false
   constructor(route: RouteStore, desk: () => boolean) {
     this.route = route
     this.desk = desk
     route.subscribe((st) => {
       const r = st.route
       if (r.page !== 'project' || this.inSettings(r.place)) return
+      if (this.toList) {
+        this.toList = false
+        if (this.desk() && r.place.kind === 'side') queueMicrotask(() => this.go(r.tab, { kind: 'new' }, r.list, false))
+      }
       this.settingsSteps = 0
       this.from = { tab: r.tab, compose: r.place.kind === 'new' || (r.place.kind === 'tab' && r.tab !== 'inputs') }
     })
@@ -42,7 +49,8 @@ export class Navigation {
     if (!r) return
     const phoneSection = !this.desk() && (r.place.kind === 'side' || (r.place.kind === 'settings' && r.place.section))
     if (phoneSection) {
-      if (this.settingsSteps > 1) {
+      // a step taken to it is a step back; reached by its address, up to the list of sections
+      if (this.settingsSteps > 0) {
         this.settingsSteps--
         return this.route.getState().backBy(1)
       }
@@ -51,6 +59,7 @@ export class Navigation {
     if (this.settingsSteps > 0) {
       const n = this.settingsSteps
       this.settingsSteps = 0
+      this.toList = this.desk()
       return this.route.getState().backBy(n)
     }
     this.go(this.from?.tab ?? 'items', this.desk() ? { kind: 'new' } : { kind: 'tab' }, NO_FILTERS, false)
@@ -98,6 +107,8 @@ export class Navigation {
     if (!r) return
     if (this.desk()) {
       if (r.place.kind === 'tab' && (r.tab === 'items' || r.tab === 'inputs')) this.go('items', { kind: 'new' }, r.list, false)
+      // Settings opens on its first section: its address says so
+      if (r.place.kind === 'settings' && !r.place.section) this.go(r.tab, { kind: 'settings', section: 'agents' }, r.list, false)
     } else if (r.place.kind === 'new') this.go('items', { kind: 'tab' }, r.list, false)
   }
 
@@ -225,6 +236,16 @@ export class Navigation {
 
   /** Another address of the page (a project, the home page, a section of Settings). */
   to(url: string, push = true): void {
+    const to = new URL(url, 'http://taska.local')
+    const target = parseRoute(to.pathname, to.search, to.hash)
+    if (push && !this.desk() && target.page === 'project' && this.inSettings(target.place) && this.route.getState().layers.at(-1) === 'drawer') {
+      // a page of Settings from the phone's drawer: it takes the place of the drawer and of the page under it (one
+      // step back leaves it, as it always has)
+      return this.route.getState().shutLayer('drawer', () => {
+        this.route.getState().go(url, false)
+        this.settingsSteps = 1
+      })
+    }
     const was = this.here()
     this.route.getState().go(url, push)
     const now = this.here()

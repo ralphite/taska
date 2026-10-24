@@ -49,6 +49,8 @@ export interface SaidEvents {
   menu(id: string, from: HTMLElement): void
   undoSend(key: string): void
   retry(id: string): void
+  /** to the project it was moved to */
+  moved(href: string): void
   outboxRetry(): void
   outboxEdit(): void
   query(q: string): void
@@ -115,9 +117,11 @@ function SaidRow({ x, words, files, on }: { x: SaidInput; words: string[]; files
               Add more
             </button>
           )}
-          <button title="More" aria-label={`More for ${x.code}`} onClick={(e) => on.menu(r.id, e.currentTarget)} className={SMALL_BTN}>
-            <Icon n="more" c="size-4" />
-          </button>
+          {x.moved ? null : (
+            <button title="More" aria-label={`More for ${x.code}`} onClick={(e) => on.menu(r.id, e.currentTarget)} className={SMALL_BTN}>
+              <Icon n="more" c="size-4" />
+            </button>
+          )}
         </>
       }
       body={
@@ -137,7 +141,23 @@ function SaidRow({ x, words, files, on }: { x: SaidInput; words: string[]; files
           ))}
           {x.busy ? <span className="h-7 w-44 animate-pulse rounded-lg bg-zinc-100 dark:bg-zinc-800" /> : null}
           {r.org && !r.org.ok ? <span className="min-w-0 basis-full truncate text-[13px] text-red-600/80 dark:text-red-400/80">{r.org.msg}</span> : null}
-          {x.retry ? (
+          {x.moved ? (
+            // the first thing on the line starts where the words above it start
+            <span className={`flex items-center gap-1.5 ${x.chips.length || x.busy ? '' : '-ml-2'}`}>
+              <a
+                href={x.moved.href}
+                onClick={(e) => {
+                  if (e.metaKey || e.ctrlKey) return
+                  e.preventDefault()
+                  on.moved((x.moved as { href: string }).href)
+                }}
+                className={`${SMALL_BTN} max-w-full min-w-0`}
+              >
+                <Icon n="arrow" c="size-3.5" sw="2" />
+                <span className="truncate">{x.moved.label}</span>
+              </a>
+            </span>
+          ) : x.retry ? (
             <span className={`flex items-center gap-1.5 ${x.chips.length || x.busy ? '' : '-ml-2'}`}>
               <button onClick={() => on.retry(r.id)} className={SMALL_BTN}>
                 <Icon n="loop" c="size-3.5" sw="2" />

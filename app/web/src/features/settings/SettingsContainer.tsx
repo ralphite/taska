@@ -14,7 +14,7 @@ import { codeOf, liveN } from '../../model/project'
 import { dayShort, when } from '../../model/time'
 import { AGENT_NAME, inputCode, plural, whoName } from '../../model/words'
 import { toneOf } from '../../ui/tones'
-import { commentCount } from '../../model/docs'
+import { listedCommentCount } from '../../model/docs'
 import { useSideProjects } from '../../app/projectLists'
 import { DeletedBody, DocsBody, LogBody, PhoneProjectsBody } from './PhoneSections'
 import { AgentsBody, NotificationsBody, OrganizerBody, PhoneBody, PhonePushBody, ProjectsBody, SpellingsBody, type ProjectsEvents, type ProjectsFacts } from './Sections'
@@ -153,7 +153,7 @@ export function SettingsContainer({ route, place, prefsBox }: { route: ProjectRo
           <DocsBody
             docs={[...m.docs].sort((a, b) => b.d - a.d).map((d) => {
               const it = m.byN.get(liveN(m, d.n))
-              return { d: d.d, title: d.title, web: d.fmt === 'html', on: it ? `${codeOf(m, it.n)} ${it.title}` : '', comments: commentCount(d) }
+              return { d: d.d, title: d.title, web: d.fmt === 'html', on: it ? `${codeOf(m, it.n)} ${it.title}` : '', comments: listedCommentCount(d) }
             })}
             onOpen={(d) => app.docs.open(d)}
           />

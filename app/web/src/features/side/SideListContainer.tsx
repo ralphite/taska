@@ -8,7 +8,7 @@ import { logSentence, logTarget } from '../../model/activity'
 import { codeOf, liveN, type ProjectModel } from '../../model/project'
 import { when } from '../../model/time'
 import { inputCode, plural } from '../../model/words'
-import { commentCount } from '../../model/docs'
+import { listedCommentCount } from '../../model/docs'
 import { ActivityList, DeletedList, DeletedView, DocsList, SideFrame, type ActivityRow, type DocRow, type GoneRow, type Side } from './SideLists'
 
 /** Everything deleted, one list, the latest first, whatever it was. */
@@ -67,7 +67,7 @@ export function SideListContainer({ slug, side }: { slug: string; side: Side }) 
       .sort((a, b) => b.d - a.d)
       .map((d) => {
         const it = m.byN.get(liveN(m, d.n))
-        return { d: d.d, title: d.title, web: d.fmt === 'html', on: it ? `${codeOf(m, it.n)} ${it.title}` : '', comments: commentCount(d) }
+        return { d: d.d, title: d.title, web: d.fmt === 'html', on: it ? `${codeOf(m, it.n)} ${it.title}` : '', comments: listedCommentCount(d) }
       })
   }, [m])
   const activity = useMemo((): ActivityRow[] | null => {

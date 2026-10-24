@@ -2,6 +2,7 @@
 // for every project. Documents, Activity and Deleted are lists beside the items on the desktop, and pages here on the
 // phone.
 
+import type { Place } from '../../model/route'
 import type { IconName } from '../../ui/icon-paths'
 
 export type SectionKey = 'agents' | 'projects' | 'phone' | 'notifications' | 'spellings' | 'organizer' | 'docs' | 'log' | 'deleted'
@@ -27,4 +28,14 @@ export function sectionOf(path: string | null, desk: boolean): SectionKey | null
   if (path === 'about') return 'projects'
   if (path && path in SECTIONS) return path as SectionKey
   return desk ? 'agents' : null
+}
+
+/** What the page's title calls a place of Settings: its section (the phone's Documents, Activity and Deleted are its
+ * pages), or the phone's list of them; null: not Settings. */
+export function settingsTitle(place: Place, desk: boolean): string | null {
+  if (place.kind === 'settings') {
+    const k = sectionOf(place.section, desk)
+    return k ? SECTIONS[k].name : 'Settings'
+  }
+  return place.kind === 'side' && !desk ? SECTIONS[place.side].name : null
 }

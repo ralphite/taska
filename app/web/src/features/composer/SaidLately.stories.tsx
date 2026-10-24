@@ -11,11 +11,11 @@ const meta: Meta = { title: 'Components/You said' }
 export default meta
 type Story = StoryObj
 
-const on: SaidEvents = { goto() {}, more() {}, append() {}, draft() {}, menu() {}, undoSend() {}, retry() {}, outboxRetry() {}, outboxEdit() {}, query() {}, loadMore() {} }
+const on: SaidEvents = { goto() {}, more() {}, append() {}, draft() {}, menu() {}, undoSend() {}, retry() {}, outboxRetry() {}, outboxEdit() {}, query() {}, loadMore() {}, moved() {} }
 const org = { on: false, busy: null }
 const row = (r: Input, extra: Partial<SaidInput> = {}): SaidInput => {
   const s = standing(r, org, (x) => x)
-  return { r, code: '#' + r.id.slice(1), time: '14:57', day: null, standing: s, short: SHORT_STANDING[s.label] || s.label, scope: null, chips: [], busy: false, draft: null, canUndoSend: false, retry: null, opened: false, ...extra }
+  return { r, code: '#' + r.id.slice(1), time: '14:57', day: null, standing: s, short: SHORT_STANDING[s.label] || s.label, scope: null, chips: [], busy: false, draft: null, canUndoSend: false, retry: null, opened: false, moved: null, ...extra }
 }
 const voice = { f: 'f10-voice_0-16.webm', name: 'voice_0-16.webm', mime: 'audio/webm' }
 
@@ -26,8 +26,8 @@ export const SaidList: Story = {
       {() => (
         <div className="mx-auto max-w-[42rem] p-6">
           <SaidLately
-            count={5}
-            total={5}
+            count={6}
+            total={6}
             q=""
             words={[]}
             more={false}
@@ -48,6 +48,7 @@ export const SaidList: Story = {
               row(input({ id: 'r817', text: 'Seen and handled.', acked: true })),
               row(input({ id: 'r816', text: 'The organizer could not file this one.', org: { ok: false, msg: 'Gemini HTTP 503: overloaded', t: '', keep: false, changed: false, undone: false } }), { retry: 'Retry', day: 'Yesterday' }),
               row(input({ id: 'r815', text: 'A long one. '.repeat(30) })),
+              row(input({ id: 'r814', text: 'This belongs in the other project.', acked: true, moved: { to: 'taska', as: 'r474' } }), { moved: { href: '/p/taska/', label: 'Open taska · #474' } }),
             ]}
             files={(f) => <Thumbs files={f} url={(x) => '#' + x} size="size-12" play={() => ({ playing: false, t: null })} tidy={false} on={{ play() {}, words() {}, view() {} }} />}
             on={on}

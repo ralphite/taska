@@ -108,3 +108,7 @@ export function docTarget(d: Doc, pick: { reply: string | null; quote: { key: st
 /** Every comment the document has (on its paragraphs, on the whole of it, on words changed since). */
 export const commentCount = (d: Doc) =>
   d.blocks.reduce((k, b) => k + b.comments.length, 0) + (d.whole?.length || 0) + d.detached.reduce((k, t) => k + t.comments.length, 0)
+
+/** The comments the lists of documents count: those on its paragraphs and on the whole of it (not those on words
+ * changed since). */
+export const listedCommentCount = (d: Doc) => d.blocks.reduce((k, b) => k + b.comments.length, 0) + (d.whole?.length || 0)

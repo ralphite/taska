@@ -37,6 +37,8 @@ export interface RouteState {
   side: Side | null
   /** the desktop's New input page opened from an item or a document: its name, for the way back ("B333", "D89") */
   from: string | null
+  /** this address came from the browser (the page loaded, Back or Forward), not from a step the page took */
+  fromBrowser: boolean
   /** the list's tab came with the step (an item or a document opened in the page); without, the address was opened
    * as it is and the item's own tab is the list's */
   tabKept: boolean
@@ -97,10 +99,17 @@ const layersOf = (state: unknown): string[] => {
 export function createRouteStore(history: History): RouteStore {
   const at = history.location()
   let after: (() => void) | null = null
+  /** steps back the page took itself, whose arrival is not the browser's */
+  let ownBack = 0
+  const stepBack = (n = 1) => {
+    ownBack++
+    if (n === 1) history.back()
+    else history.backBy(n)
+  }
   const now = () => {
     const p = history.location()
     const route = withTab(parseRoute(p.path, p.search, p.hash), history.state())
-    return { route, url: urlOf(p), layers: layersOf(history.state()), full: fullOf(history.state()), side: sideOf(route, history.state()), from: fromOf(route, history.state()), tabKept: !!keptTab(history.state()) }
+    return { route, url: urlOf(p), layers: layersOf(history.state()), full: fullOf(history.state()), side: sideOf(route, history.state()), from: fromOf(route, history.state()), tabKept: !!keptTab(history.state()), fromBrowser: false }
   }
   const first = withTab(parseRoute(at.path, at.search, at.hash), history.state())
   return createStore<RouteState>()((set, get) => ({
@@ -111,6 +120,7 @@ export function createRouteStore(history: History): RouteStore {
     side: sideOf(first, history.state()),
     from: fromOf(first, history.state()),
     tabKept: !!keptTab(history.state()),
+    fromBrowser: true,
     go: (url, push = false, layers, from, tab) => {
       const open = get().layers
       if (url === get().url && layers === undefined && (tab === undefined || tab === keptTab(history.state()))) return
@@ -133,7 +143,7 @@ export function createRouteStore(history: History): RouteStore {
       if (on === get().full) return
       const st = (history.state() || {}) as Record<string, unknown>
       if (on) history.push(get().url, { ...st, full: true })
-      else if (st.full && !st.link && !here) return history.back() // Back leaves full width
+      else if (st.full && !st.link && !here) return stepBack() // Back leaves full width
       else {
         const rest = { ...st }
         delete rest.full
@@ -152,16 +162,18 @@ export function createRouteStore(history: History): RouteStore {
       const open = get().layers
       if (open.at(-1) === kind) {
         after = then ?? null
-        history.back()
+        stepBack()
       } else {
         if (open.includes(kind)) history.replace(get().url, { layers: open.filter((k) => k !== kind) })
         set(now())
         then?.()
       }
     },
-    backBy: (n) => history.backBy(n),
+    backBy: (n) => stepBack(n),
     read: () => {
-      set(now())
+      const mine = ownBack > 0
+      if (mine) ownBack--
+      set({ ...now(), fromBrowser: !mine })
       const run = after
       after = null
       run?.()
