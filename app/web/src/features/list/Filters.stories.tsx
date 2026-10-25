@@ -8,7 +8,7 @@ import { headOf } from '../../stories/headFixtures'
 export default { title: 'Components/Top bar and list head/Filters' } satisfies Meta
 type Story = StoryObj
 
-const BUGS = { type: 'bug', pri: 'P1', sort: 'new' }
+const BUGS = { type: 'bug', pri: 'P0', sort: 'new' }
 
 export const PhoneStrip: Story = { name: 'Strip on the phone', render: () => <Frames desk={false} phoneWidth={393} height={200}>{() => headOf(false, { list: BUGS })}</Frames> }
 export const DeskPanel: Story = { name: 'Panel on the desktop', render: () => <Frames phone={false} deskWidth={1100} height={460}>{() => headOf(true, { list: BUGS, filtersOpen: true })}</Frames> }

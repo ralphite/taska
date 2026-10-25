@@ -18,7 +18,7 @@ export const ProjectBarLooks: Story = {
         <States
           items={[
             ['pointer on Rules and on the agent', <div data-look="pointer">{headOf(true)}</div>],
-            ['keys: Tab on Rules', <div data-look="keys">{headOf(true)}</div>],
+            ['keys: Tab on Rules (the browser draws the ring itself)', <div data-look="keys">{headOf(true)}</div>],
             ['Rules pressed', <div data-look="pressed">{headOf(true)}</div>],
           ]}
         />
