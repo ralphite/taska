@@ -86,6 +86,7 @@ const SearchButton = ({ onTap }: { onTap(): void }) => (
 const FilterIcon = ({ on, set, onTap }: { on: boolean; set: boolean; onTap(): void }) => (
   <button
     onClick={onTap}
+    data-search="filters"
     aria-label="Filters"
     aria-expanded={on}
     className="relative mr-2 grid size-9 shrink-0 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-100 aria-expanded:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:aria-expanded:bg-zinc-800"
@@ -271,7 +272,7 @@ const DESK_STEPS: Step[] = [
   { say: 'It works out your words, then finds in every project, by the words and by what they mean. Tap Documents', tap: sel('[data-kind="doc"]') },
   { say: 'Only documents. Tap All: every kind, the closest few of each', tap: sel('[data-kind="all"]') },
   { say: 'Tap F001: the dialog closes and F001 opens beside the list', tap: sel('button[data-code="F001"]') },
-  { say: 'The filters are an icon at the end of the views. Tap it', tap: sel('[aria-label="Filters"]') },
+  { say: 'The filters are an icon at the end of the views. Tap it', tap: sel('[data-search="filters"]') },
 ]
 
 function Desk({ n = -1, onNext }: { n?: number; onNext?(): void }) {
@@ -343,7 +344,7 @@ const PHONE_STEPS: Step[] = [
   { say: 'Tap F001: it opens', tap: sel('button[data-code="F001"]') },
   { say: 'Tap ←: back to what it found', tap: sel('[aria-label="Back to the results"]') },
   { say: 'Tap ✕: back to the list', tap: sel('[aria-label="Close the search"]') },
-  { say: 'The filters are an icon at the end of the views. Tap it', tap: sel('[aria-label="Filters"]') },
+  { say: 'The filters are an icon at the end of the views. Tap it', tap: sel('[data-search="filters"]') },
 ]
 
 function Phone({ n = -1, onNext }: { n?: number; onNext?(): void }) {
