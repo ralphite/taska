@@ -93,5 +93,5 @@ def next_work(rd: Reading, project_name: str, gone: bool, asker: Asker) -> Work:
         how = IDEA.format(code=st.code(it.n)) if it.type == "idea" else ""
         return Work(f"{head}\nnext {st.code(it.n)} ({len(queue)} in queue: doing first, then P0→P3, oldest first){how}\n"
                     + card(rd, it), True, given=it.n, claim=(it.n, me) if me else None)
-    return Work(f"{head}\nnothing to do now. Wait for work: GET /next?wait=540 (returns as soon as something comes in).\n",
+    return Work(f"{head}\nnothing to do now. End your turn: Taska wakes you when the user writes (never wait, poll or set a timer).\n",
                 False)

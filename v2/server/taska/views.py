@@ -303,7 +303,7 @@ def next_text(s: "Store", ref: Ref = None, who: Optional[str] = None, given: Opt
         how = ("\nan idea: think it through first. Small and clear: do it. Bigger, or more than one way to go: "
                f"post your plan ({s.code(it['n'])} propose ...) and ask before building.") if it["type"] == "idea" else ""
         return "\n".join(out) + f"\nnext {s.code(it['n'])} ({len(queue)} in queue: doing first, then P0→P3, oldest first){how}\n" + card(s, it, ref), True
-    return "\n".join(out) + "\nnothing to do now. Wait for work: GET /next?wait=540 (returns as soon as something comes in).\n", False
+    return "\n".join(out) + "\nnothing to do now. End your turn: Taska wakes you when the user writes (never wait, poll or set a timer).\n", False
 
 
 LOG_WORDS = {

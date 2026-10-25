@@ -7,6 +7,8 @@ agent has been seen there for a while, it finds the agent session that last work
 Claude Code, from their own session files) and sends it one message from the command line, so it picks the work up.
 
 Nothing here calls a model: asking Taska costs nothing; only a wake-up starts the agent, which then spends its tokens.
+A wake-up that does not take (the agent exits with an error, e.g. its chat is open in the ChatGPT or Claude app and
+the command line cannot write to it) is said in Taska at once, under T325, never left silent (R594).
 
     python3 v2/tools/waker.py            run forever
     python3 v2/tools/waker.py --once     one round, for a test (add --dry to only say what it would do)
@@ -34,6 +36,9 @@ NAMED = ("claude-code", "codex", "antigravity")  # unnamed visitors ("agent", "p
 AROUND_S = 10 * 60  # a named agent seen this recently is around: leave it be
 AGAIN_S = 30 * 60  # the same news is woken for again at most this often
 RECENT_S = 7 * 24 * 3600  # sessions older than this are not woken
+TOLD_S = 12 * 3600  # a wake-up that failed is said in Taska at most this often for the same project and session
+# the wake-ups on their way: project -> (the agent's process, its log, "agent session")
+RUNNING: Dict[str, Tuple[subprocess.Popen, str, str]] = {}
 
 
 def get(path: str, timeout: float = 10) -> str:
@@ -153,9 +158,48 @@ def wake(project: str, agent: str, sid: str, cwd: str, path: str, what: str, dry
         return "would run: " + " ".join(cmd[:-1]) + " <message>"
     os.makedirs(LOGS, exist_ok=True)
     log = open(os.path.join(LOGS, f"{project}-{time.strftime('%Y%m%d-%H%M%S')}.log"), "w")
-    subprocess.Popen(cmd, cwd=cwd if os.path.isdir(cwd) else None, stdout=log, stderr=subprocess.STDOUT,
-                     stdin=subprocess.DEVNULL, start_new_session=True)
+    proc = subprocess.Popen(cmd, cwd=cwd if os.path.isdir(cwd) else None, stdout=log, stderr=subprocess.STDOUT,
+                            stdin=subprocess.DEVNULL, start_new_session=True)
+    RUNNING[project] = (proc, log.name, f"{agent} {sid}")
     return f"woke {agent} {sid}"
+
+
+def why(log: str) -> str:
+    """The error the woken agent gave, in one line."""
+    try:
+        with open(log, encoding="utf-8", errors="replace") as f:
+            lines = [l.strip() for l in f if l.strip()]
+    except OSError:
+        return ""
+    errors = [l for l in lines if "error" in l.lower()]
+    return ((errors or lines or [""])[-1])[:300]
+
+
+def failed(state: Dict[str, Any], now: float) -> None:
+    """Each wake-up that ended with an error: said in Taska (once per project and session in TOLD_S)."""
+    told = state.setdefault("told", {})
+    for project, (proc, log, who) in list(RUNNING.items()):
+        code = proc.poll()
+        if code is None:
+            continue
+        del RUNNING[project]
+        if code == 0:
+            continue
+        print(f"[waker] {time.strftime('%Y-%m-%d %H:%M:%S')} {project}: {who} did not wake (exit {code})", flush=True)
+        key = f"{project} {who}"
+        if now - told.get(key, 0) < TOLD_S:
+            continue
+        told[key] = now
+        text = (f"new bug P1 now parent=T325 \u53eb\u9192\u5668\u53eb\u4e0d\u9192 {project} \u7684 agent\uff08{who}\uff09\n"
+                f"  {time.strftime('%m-%d %H:%M')} {project} \u6709 Yadong \u7684\u65b0\u8bdd\uff0c\u53eb\u9192\u5668\u53bb\u53eb {who}\uff0c\u5b83\u6ca1\u8d77\u6765\uff1a\n"
+                f"  `{why(log)}`\n"
+                "  \u5e38\u89c1\u539f\u56e0\uff1a\u8fd9\u4e2a\u5bf9\u8bdd\u6b63\u5f00\u5728 ChatGPT / Claude \u5e94\u7528\u91cc\uff0c\u547d\u4ee4\u884c\u63a5\u4e0d\u8fdb\u53bb\u3002"
+                f"\u65e5\u5fd7\uff1a{log}\n")
+        try:
+            req = urllib.request.Request(f"{URL}/p/taska/do?by=waker", data=text.encode("utf-8"), method="POST")
+            urllib.request.urlopen(req, timeout=10).read()
+        except OSError as ex:
+            print(f"[waker] {time.strftime('%Y-%m-%d %H:%M:%S')} {project}: could not say so in Taska: {ex}", flush=True)
 
 
 def off() -> set:
@@ -168,6 +212,7 @@ def off() -> set:
 
 def round_(state: Dict[str, Any], dry: bool) -> None:
     now = time.time()
+    failed(state, now)
     skip = off()
     for p in json.loads(get("/api/projects")):
         name = p["name"]

@@ -66,9 +66,11 @@ Now: {rules}
 LOOP  doing means work has started (not that you are on it this second). Mark an item doing when you start;
       if you drop that work, set it back to open. Keep going: take /next, mark it doing, do the work, write progress and set done, then GET /next
       again. Don't stop to chat. If you are stuck or need a decision, post `B03 block <what you need>` and
-      move on; /next brings the item back once the user replies. Nothing to do: wait with
-      GET /next?wait=540 (returns when work arrives) and repeat. If a background command can wake you when it
-      exits, end your turn with WATCH running instead: waiting costs no tokens and never interrupts your work.
+      move on; /next brings the item back once the user replies. Nothing to do: end your turn. Never wait in
+      the foreground, poll, or set a timer or scheduled task (heartbeat, cron, automation) to look at Taska:
+      each look is a model call, and wasting tokens is never allowed. Taska wakes your session when the user
+      writes. If a background command can wake you when it exits, end your turn with WATCH running: it waits
+      without tokens and never interrupts your work.
       While you work, a /do reply ending "N new inputs since your last /next" means the user wrote meanwhile:
       finish the step you are on, then GET /next. Nothing else interrupts you.
       Big items have subitems (parent=B03): /next gives you the subitems first and the parent once they are
@@ -144,10 +146,11 @@ Taska runs on this machine. You read and update it with curl; every reply is sho
    then the next item by priority. Mark the item doing, do the work, write progress back, then mark it done
    (it goes to the user for review). Ask /next again.
 4. **Keep going.** After each item, take the next one; don't stop to chat.
-   - Nothing to do: `curl -s "BASE/next?wait=540&by=claude-code"` waits and returns as soon as work arrives. Repeat.
-     After your last item, always check /next once more.
+   - After your last item, always check /next once more. Nothing to do: end your turn. Never wait in the
+     foreground, poll, or set a timer or scheduled task (heartbeat, cron, automation) to look at Taska: each
+     look is a model call, and wasting tokens is never allowed. Taska wakes your session when the user writes.
    - If you can run a command in the background that wakes you when it exits (Claude Code: Bash with
-     `run_in_background`), start this and end your turn instead of holding it. Waiting costs no tokens, it
+     `run_in_background`), start this and end your turn. Waiting costs no tokens, it
      ends only when there is work, and it never interrupts you mid-task:
      `while o=$(curl -s "BASE/next?wait=540&by=claude-code"); [ -z "$o" ] || echo "$o" | grep -q 'nothing to do now'; do sleep 20; done`
 5. **Need the user?** Post `B03 block <what you need>` or `B03 ask <question>`, then take the next item.
