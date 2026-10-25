@@ -213,7 +213,8 @@ const ROWS = `${LOOP.then}T4 html Rows page
   <!doctype html><html><body style="margin:0;padding:24px;font:15px/1.4 sans-serif"><h1>Export plan</h1><div id="bars"><div id="r1" style="padding:2px 0">Read list 720 ms</div><div id="r2" style="padding:2px 0">Apply filter 180 ms</div><div id="r3" style="padding:2px 0">Write CSV 410 ms</div></div><p id="low" style="margin-top:320px;padding:8px">Ask again next week.</p></body></html>
 `
 const page1 = (page: Page) => page.frameLocator('iframe').first()
-/** the comment counts in the top right corner of the part `sel` of the page (its own counts, not another part's) */
+/** the comment counts at the top right corner of the part `sel` of the page (its own counts, not another part's): level
+ * with its top, at most half over its right edge (D83 #5) */
 async function countsOn(page: Page, sel: string) {
   const p = await page1(page).locator(sel).boundingBox()
   if (!p) throw new Error('no part ' + sel)
@@ -227,7 +228,7 @@ async function countsOn(page: Page, sel: string) {
       }),
     )
   return all.filter(
-    (c) => c.y >= p.y - 2 && c.y <= p.y + Math.max(p.height, 28) && c.x >= p.x && c.x + c.w <= p.x + p.width + 2,
+    (c) => c.y >= p.y - 2 && c.y <= p.y + Math.max(p.height, 28) && c.x >= p.x && c.x + c.w <= p.x + p.width + c.w / 2 + 2,
   )
 }
 /** comment on a part as you do: the desktop points at it in Comment mode and presses its comment button; the phone
@@ -482,4 +483,21 @@ test('r687: on the phone the line under a web page asks for a tap on a part: wor
   await expect(page1(page).getByText('Write CSV')).toBeVisible()
   await expect(page.getByText('Tap a part of the page to comment on it')).toBeVisible()
   await expect(page.getByText(/select text or circle/)).toHaveCount(0)
+})
+
+const TILES = `${LOOP.then}T4 html Orders page
+  <!doctype html><html><body style="margin:0;padding:24px;font:15px sans-serif"><h1>Orders</h1><div style="display:flex;gap:12px"><div id="t1" style="width:130px;padding:8px;border:1px solid #ddd">Avg. order value</div><div id="t2" style="width:130px;padding:8px;border:1px solid #ddd">Orders this week</div></div></body></html>
+`
+test("D83 #5 (r767 r774): a comment's count sits on its part's corner, half over its edge as a badge, not over a narrow part's words", async ({ page, request }) => {
+  const p = await project(request, { ...LOOP, then: TILES })
+  await p.op({ op: 'dc', d: 1, key: 'h:#t1', quote: 'Avg. order value', text: 'Per week?' })
+  await open(page, p, 'D1')
+  const count = pageCount(page, 'h:#t1')
+  await expect(count).toBeVisible()
+  const part = await page.frameLocator('iframe').first().locator('#t1').boundingBox(),
+    c = await count.boundingBox()
+  if (!part || !c) throw new Error('not drawn')
+  expect(c.y).toBeGreaterThanOrEqual(part.y - 2) // level with the part's top
+  expect(c.x + c.width).toBeGreaterThan(part.x + part.width) // half over its right edge
+  expect(c.x).toBeGreaterThan(part.x + part.width - c.width) // covering only its corner
 })

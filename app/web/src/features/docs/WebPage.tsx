@@ -82,6 +82,8 @@ export function WebPage({ title, html, threads, held, rec = false, open, desk, i
   const [hover, setHover] = useState<Part | null>(null)
   const [rects, setRects] = useState<Record<string, Box>>({})
   const [measured, setMeasured] = useState(false)
+  // the page's width, measured with its parts: a count stays inside it
+  const [width, setWidth] = useState(Infinity)
   const [lit, setLit] = useState<string | null>(null)
   const onBtns = useRef(false)
   const drop = useRef(0)
@@ -95,12 +97,14 @@ export function WebPage({ title, html, threads, held, rec = false, open, desk, i
     live.current = { held, inspect, desk, on }
   })
   const mode = desk ? inspect : 'tap'
-  // each thread's count in its part's top right corner (top of the page down); one that would cover another goes
-  // just under it; a part the page does not show now has none
+  // each thread's count at its part's top right corner, half over its right edge as a badge is, so it covers little
+  // of a narrow part's words (D83 #5: all inside the corner it covered them); level with the part's top, never on the
+  // part above (r799: rows close together); kept inside the page; one that would cover another goes just under it; a
+  // part the page does not show now has none
   const counts: (PageThread & Spot)[] = []
   for (const t of threads.filter((x) => shown(rects[x.key])).sort((a, b) => rects[a.key].y - rects[b.key].y || rects[a.key].x - rects[b.key].x)) {
     const r = rects[t.key]
-    const left = Math.max(4, r.x + r.w - 52)
+    const left = Math.max(4, Math.min(r.x + r.w - 20, width - 48))
     let top = r.y + 4
     for (let moved = true; moved; ) {
       moved = false
@@ -185,6 +189,7 @@ export function WebPage({ title, html, threads, held, rec = false, open, desk, i
       if (m.rects) {
         setRects(m.rects)
         setMeasured(true)
+        setWidth(root.current?.clientWidth ?? Infinity)
       }
       if (m.down) awayRef.current?.()
       // on the desktop a part picked stays the one until Esc, whatever the page sends meanwhile
