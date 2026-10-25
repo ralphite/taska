@@ -239,6 +239,9 @@ async function commentOn(page: Page, sel: string, words: string) {
     if (!r) throw new Error('not drawn')
     await page.mouse.move(r.x + 30, r.y + r.height / 2, { steps: 4 })
     const btn = partPick(page)
+    // this part's buttons: a part just commented on lets go a moment after its comment is sent, and then the part
+    // the pointer went to lights without the pointer moving again
+    await expect(btn).toHaveAttribute('data-quote', (await page1(page).locator(sel).innerText()).trim().slice(0, 500))
     const b = await btn.boundingBox()
     if (!b) throw new Error('no comment button')
     await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 8 })

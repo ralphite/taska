@@ -257,22 +257,21 @@ export function WebPage({ title, html, threads, held, rec = false, open, desk, i
       <div
         className="absolute z-20 flex flex-row gap-1"
         style={{ left: at.x, top: at.y }}
-        {...(hovering
-          ? {
-              onMouseEnter: () => {
-                onBtns.current = true
-                clearTimeout(drop.current)
-                clearTimeout(swap.current)
-              },
-              onMouseLeave: () => {
-                onBtns.current = false
-                drop.current = window.setTimeout(() => {
-                  cur.current = null
-                  setHover(null)
-                }, 150)
-              },
-            }
-          : {})}
+        // whether the pointer is on them, whichever part they are for (r799: else it says so after they moved on);
+        // one wait to let the part go at a time (r799: an earlier one let go the part the pointer went to)
+        onMouseEnter={() => {
+          onBtns.current = true
+          clearTimeout(drop.current)
+          clearTimeout(swap.current)
+        }}
+        onMouseLeave={() => {
+          onBtns.current = false
+          clearTimeout(drop.current)
+          drop.current = window.setTimeout(() => {
+            cur.current = null
+            setHover(null)
+          }, 150)
+        }}
       >
         {/* the part spoken about keeps its buttons right there; the mic pressed turns into Stop */}
         <button data-part-say data-key={p.key} data-quote={p.text} onClick={() => on.say(p)} title={stop ? 'Stop' : 'Speak a comment'} className={stop ? 'grid size-7 place-items-center rounded-lg bg-red-600 text-white shadow-sm ring-1 ring-red-700' : btn}>

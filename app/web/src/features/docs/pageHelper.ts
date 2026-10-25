@@ -66,22 +66,33 @@ export const PAGE_HELPER = String.raw`<script>(() => {
     const s = JSON.stringify(out)
     if (s !== said) send({ rects: JSON.parse((said = s)) })
   }
+  // where the pointer is in the page, and whether it moved since its last click (r799)
+  let at = null, moved = false
+  const hoverAt = (x, y, target) => { const el = part(target); send({ hover: el ? info(el) : null, at: [x, y] }) }
   addEventListener('message', (e) => {
     const m = e.data || {}
     if (!m.taska) return
+    const was = picked
     mode = m.mode
     keys = m.keys || []
     picked = m.picked || ''
     shut = !!m.shut
     said = '' // Taska asks again: it is told again
     measure()
+    // r799: the part let go (a comment just sent) while the pointer moved on to another one: that one is under it now;
+    // let go where it was clicked (Esc), nothing lights until the pointer moves
+    if (was && !picked && mode === true && at && moved) hoverAt(at[0], at[1], document.elementFromPoint(at[0], at[1]))
   })
   // B497: once a part is picked, no other one lights or can be picked until Esc lets it go
-  addEventListener('mousemove', (e) => { if (mode === true && !picked) { const el = part(e.target); send({ hover: el ? info(el) : null, at: [e.clientX, e.clientY] }) } })
-  document.addEventListener('mouseleave', () => { if (mode === true) send({ hover: null }) })
+  addEventListener('mousemove', (e) => {
+    at = [e.clientX, e.clientY]
+    moved = true
+    if (mode === true && !picked) hoverAt(e.clientX, e.clientY, e.target)
+  })
+  document.addEventListener('mouseleave', () => { at = null; if (mode === true) send({ hover: null }) })
   // B502: a drag selects words (and only that); a click where the pointer went down picks the part
   let down = [0, 0]
-  addEventListener('mousedown', (e) => { down = [e.clientX, e.clientY] }, true)
+  addEventListener('mousedown', (e) => { down = [e.clientX, e.clientY]; moved = false }, true)
   addEventListener('click', (e) => {
     if (mode !== true && mode !== 'tap') {
       // Comment mode may be on in Taska before the page has heard: Taska decides (the click itself goes on)
