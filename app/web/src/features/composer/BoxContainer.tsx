@@ -10,7 +10,7 @@ import { clock } from '../../model/time'
 import { Composer } from './Composer'
 import { Doubts, DraftWords, type DoubtsView } from './Doubts'
 import { DraftFiles } from './DraftFiles'
-import { useBoxHere } from './boxHere'
+import { useBoxHere } from '../../app/inputs/boxHere'
 import { useHeard } from './heard'
 
 const EMPTY: Record<string, string> = {}

@@ -12,7 +12,7 @@ import { ComposeHead } from './ComposeHead'
 import type { Fixing } from './Doubts'
 import { FeedbackContainer } from './FeedbackContainer'
 import { DraftCardContainer, SaidLatelyContainer, useSaidView } from './SaidLatelyContainer'
-import { useBoxHere } from './boxHere'
+import { useBoxHere } from '../../app/inputs/boxHere'
 
 /** The foot's height, for what scrolls under it: the list and the pane run on under the box, around its corners. */
 function useFootRoom(hidden: boolean | undefined, onHeight: ((px: number) => void) | undefined, boxRef: RefObject<HTMLDivElement | null>) {

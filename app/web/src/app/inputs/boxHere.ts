@@ -1,8 +1,8 @@
 // What the box writes to here, with the page's data: the project, what the box is in, its role (worked out by the
 // model) and its draft's key.
 
-import { useLayout, useServices, useStores, useStoreValue } from '../../app/context'
-import { useProjectModel, type ProjectRoute } from '../../app/hooks'
+import { useLayout, useServices, useStores, useStoreValue } from '../context'
+import { useProjectModel, type ProjectRoute } from '../hooks'
 import { boxRole } from '../../model/boxFoot'
 
 export function useBoxHere(route: ProjectRoute) {

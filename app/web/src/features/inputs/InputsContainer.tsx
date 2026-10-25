@@ -9,7 +9,7 @@ import { searchWords } from '../../model/visible'
 import { useItemWorld } from '../../app/hooks'
 import { useSearchHints } from '../../app/searchHints'
 import { Thumbs } from '../../ui/Files'
-import { useBoxHere } from '../composer/boxHere'
+import { useBoxHere } from '../../app/inputs/boxHere'
 import { InputsView, type InputFacts } from './InputsView'
 import { inputRows, outgoingRows } from './inputRows'
 
