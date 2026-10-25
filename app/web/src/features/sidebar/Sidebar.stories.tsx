@@ -31,7 +31,7 @@ export const SidebarLooks: Story = {
           ['an item dragged over Home', 'drop', { drop: 'home' }],
         ] as const
       ).map(([label, look, f]) => (
-        <Frame key={look} layout="desk" width={240} height={460} label={label}>
+        <Frame key={look} layout="desk" width={240} height={720} label={label}>
           <div data-look={look} className="h-full">
             <After run={look === 'pressed' ? mark('home', 'data-pressed') : look === 'dragged' ? mark('home', 'data-dragging') : () => {}}>{side(false, f)}</After>
           </div>
