@@ -119,7 +119,7 @@ interface Btn {
 const btn = (label: string, tip: string, icon: IconName, run: () => void, iconCls = 'size-6 lg:size-5', sw = '1.75'): Btn => ({ label, tip, icon, iconCls, sw, run })
 
 /** The recording: a red dot, its time, and a bar for each moment of sound lately. */
-function RecBar({ time, levels }: { time: string; levels: readonly number[] }) {
+export function RecBar({ time, levels }: { time: string; levels: readonly number[] }) {
   return (
     <>
       <span className="size-2.5 shrink-0 animate-pulse rounded-full bg-red-500" />

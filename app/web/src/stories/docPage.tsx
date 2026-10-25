@@ -47,7 +47,7 @@ export interface DocHere {
   item?: Partial<Item>
 }
 
-const envOf = (m: ReturnType<typeof modelOf>, desk: boolean): DocEnv => {
+export const envOf = (m: ReturnType<typeof modelOf>, desk: boolean): DocEnv => {
   const url = (f: string) => (/\.(png|jpe?g)$/.test(f) ? PICTURE : '#' + f)
   return { world: { find: (c) => findRef(m, c), url, size: () => undefined }, now: Date.parse(T) + 60_000, desk, tidy: true, play: () => ({ playing: false, t: null }), url }
 }
