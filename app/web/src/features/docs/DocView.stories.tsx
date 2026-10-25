@@ -2,9 +2,9 @@
 // page's own facts (factsOf) and DocView with a demo document, in the desktop's pane and the phone's sheet.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { Doc } from '../../model/types'
-import { Frames } from '../../stories/Frames'
+import { After, Frames } from '../../stories/Frames'
 import { LONG, doc } from '../../stories/docFixtures'
-import { After, docAt, type DocHere } from '../../stories/docPage'
+import { docAt, type DocHere } from '../../stories/docPage'
 
 export default { title: 'Components/Document/Reading' } satisfies Meta
 type Story = StoryObj

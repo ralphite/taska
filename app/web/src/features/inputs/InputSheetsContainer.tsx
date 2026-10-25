@@ -3,7 +3,6 @@
 
 import { useLayout, useServices, useStores, useStoreValue } from '../../app/context'
 import { useCloseSheetWhen, useProjectModel, useProjectRoute } from '../../app/hooks'
-import { canUndoFiling, organizing } from '../../model/inputs'
 import { codeOf } from '../../model/project'
 import { inputCode } from '../../model/words'
 import type { SheetRequest } from '../../stores/sheet'
@@ -12,6 +11,7 @@ import { pickSheet } from '../../ui/Pickers'
 import { moveInputSheet } from '../../ui/ProjectSheets'
 import { useOtherProjects } from '../../app/projectLists'
 import { asSaidSheet, historySheet, inputMenuSheet } from './InputSheets'
+import { inputMenuFacts, inputMoveFacts } from './inputSheetFacts'
 
 type Req<K extends SheetRequest['kind']> = { req: Extract<SheetRequest, { kind: K }> }
 
@@ -30,27 +30,14 @@ export function InputMenuSheet({ req }: Req<'input-menu'>) {
   const app = useServices('api', 'box', 'inputActions', 'sheets')
   const stores = useStores('sheet')
   const desk = useLayout() === 'desk'
-  const { slug, m, r, code } = useSubject(req.id)
+  const { slug, m, r } = useSubject(req.id)
   const asked = useStoreValue(stores.sheet, (s) => s.asked)
   const others = useOtherProjects(slug)
   if (!m || !r) return null
   const id = r.id
   const close = () => app.sheets.close()
   const done = (run: () => void) => () => (close(), run())
-  const busy = organizing(r, m.facts.organizer)
-  const facts = {
-    r,
-    tidy: true,
-    undo: canUndoFiling(r) ? { tip: `${inputCode(id)}: ${r.filing?.what || ''}` } : null,
-    move: others.length > 0 && !busy,
-    history: !!r.history?.length,
-    scope: r.scope ? code(r.scope) : null,
-    asking: r.files.find((f) => asked[`unfile ${id} ${f.f}`])?.f ?? null,
-    deleteTip:
-      `Delete ${inputCode(id)}` +
-      (r.deletion?.go.length ? ` and ${r.deletion.go.map(code).join(', ')}` : '') +
-      (r.deletion?.keep.length ? `; ${r.deletion.keep.map(([n, why]) => `${code(n)} stays: ${why}`).join('; ')}` : ''),
-  }
+  const facts = inputMenuFacts(m, r, others.length, asked)
   return (
     <SheetLayout
       {...inputMenuSheet(facts, {
@@ -83,21 +70,13 @@ export function InputHistorySheet({ req }: Req<'input-history'>) {
 
 export function InputMoveSheet({ req }: Req<'input-move'>) {
   const app = useServices('inputActions', 'sheets')
-  const { slug, m, r, code } = useSubject(req.id)
+  const { slug, m, r } = useSubject(req.id)
   const others = useOtherProjects(slug)
   if (!m || !r) return null
-  const made = r.touched.filter((n) => n !== r.scope && m.byN.has(n) && !m.byN.get(n)?.archived)
   return (
     <SheetLayout
       {...moveInputSheet(
-        {
-          code: inputCode(r.id),
-          words: r.text || `${r.files.length} file${r.files.length === 1 ? '' : 's'}`,
-          others,
-          made: made.map((n) => `${code(n)} ${m.byN.get(n)?.title}`),
-          byOrganizer: !!(r.org && r.org.ok && !r.org.undone && !r.org.keep),
-          scope: r.scope && m.byN.has(r.scope) ? code(r.scope) : null,
-        },
+        { ...inputMoveFacts(m, r), others },
         (to) => void app.inputActions.move(slug, r.id, to).then((ok) => ok && app.sheets.close()),
       )}
     />

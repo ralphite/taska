@@ -1,12 +1,14 @@
+// One of your views' menu (T591: Menus and sheets > Other menus): the page's own parts, at the pointer on the view's
+// tab on the desktop, a sheet on the phone.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { SheetFrames } from '../../stories/sheetFixtures'
+import { Frames } from '../../stories/Frames'
+import { AT_POINTER, no, opened, underList } from '../../stories/menuFixtures'
 import { viewMenuSheet } from './ViewMenu'
 
-const meta: Meta = { title: 'Components/Item list/View menu' }
-export default meta
+export default { title: 'Components/Menus and sheets/Other menus' } satisfies Meta
 type Story = StoryObj
 
-const no = () => {}
-
-/** A view of yours: rename, the filters shown now, delete. */
-export const Menu: Story = { render: () => <SheetFrames height={260} look={{ pop: true }} parts={() => viewMenuSheet('Bugs now', { rename: no, update: no, remove: no })} /> }
+export const ViewMenu: Story = {
+  name: 'One of your views',
+  render: () => <Frames height={420} deskWidth={900} phoneWidth={393}>{(layout) => opened(viewMenuSheet('Bugs now', { rename: no, update: no, remove: no }), layout === 'desk', { under: underList(layout === 'desk'), look: layout === 'desk' ? { pop: true, at: AT_POINTER(420, 100) } : {} })}</Frames>,
+}

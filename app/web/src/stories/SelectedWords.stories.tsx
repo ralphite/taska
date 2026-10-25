@@ -3,9 +3,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { SelectionBar, type Box } from '../features/composer/SelectionBar'
-import { Frames } from './Frames'
+import { After, Frames } from './Frames'
 import { doc } from './docFixtures'
-import { After, docAt } from './docPage'
+import { docAt } from './docPage'
 
 export default { title: 'Components/Document/Commenting' } satisfies Meta
 type Story = StoryObj

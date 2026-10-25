@@ -3,10 +3,10 @@
 // paragraph on the phone), with a demo document.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { Doc } from '../../model/types'
-import { Frames } from '../../stories/Frames'
+import { After, Frames } from '../../stories/Frames'
 import { comment, doc } from '../../stories/docFixtures'
 import { T } from '../../stories/fixtures'
-import { After, docAt, type DocHere } from '../../stories/docPage'
+import { docAt, type DocHere } from '../../stories/docPage'
 
 export default { title: 'Components/Document/Comment threads' } satisfies Meta
 type Story = StoryObj

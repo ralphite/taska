@@ -2,7 +2,7 @@
 // Storybook's toolbar switch, one at a time (R598). Each frame is a layout container ("@container/frame") of that
 // width, so the part lays itself out as it does on that screen; the layout mode comes with it.
 
-import type { ReactNode } from 'react'
+import { useLayoutEffect, useRef, type ReactNode } from 'react'
 import { LayoutProvider, type Layout } from '../app/context'
 import { PAGE_BODY } from '../ui/tones'
 
@@ -70,4 +70,31 @@ export function States({ items }: { items: [string, ReactNode][] }) {
       ))}
     </div>
   )
+}
+
+/** Something done to the page once it is drawn, as you would have done it: a pointer over a part (its mousemove),
+ * the contents opened, words selected, words typed into a field, a key pressed in it. */
+export function After({ run, children }: { run(root: HTMLElement): void; children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null)
+  useLayoutEffect(() => {
+    const t = setTimeout(() => ref.current && run(ref.current), 50)
+    return () => clearTimeout(t)
+  })
+  return (
+    <div ref={ref} className="contents">
+      {children}
+    </div>
+  )
+}
+
+/** Types `text` into the field, as the keyboard would (the page hears its input event). */
+export function typeInto(field: HTMLInputElement | null, text: string) {
+  if (!field || field.value === text) return
+  Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set?.call(field, text)
+  field.dispatchEvent(new Event('input', { bubbles: true }))
+}
+
+/** Presses `key` in the field `n` times. */
+export function press(field: HTMLElement | null, key: string, n = 1) {
+  for (let i = 0; i < n; i++) field?.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }))
 }

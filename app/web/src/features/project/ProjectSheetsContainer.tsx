@@ -3,12 +3,12 @@
 import { useServices, useStores, useStoreValue } from '../../app/context'
 import { useProjectModel, useProjectRoute } from '../../app/hooks'
 import { openCount } from '../../model/visible'
-import { when } from '../../model/time'
 import type { SheetRequest } from '../../stores/sheet'
 import { SheetLayout } from '../../ui/Sheet'
 import { toneOf } from '../../ui/tones'
 import { useSideProjects } from '../../app/projectLists'
 import { notSavedSheet } from './NotSaved'
+import { notSavedRows } from './notSavedRows'
 import { projectMenuSheet } from '../../ui/ProjectSheets'
 
 export function ProjectMenuSheet({ req }: { req: Extract<SheetRequest, { kind: 'project-menu' }> }) {
@@ -49,16 +49,7 @@ export function NotSavedSheet() {
   const titles = useStoreValue(stores.data, (s) => s.projects)
   // its times are told against the time the project's news last came
   const now = useProjectModel(route?.slug ?? '')?.at
-  const rows = list.map((f) => ({
-    sid: f.sid,
-    what: f.what,
-    why: f.why,
-    when: when(f.at, now ?? f.at),
-    go: f.go,
-    said: f.said,
-    elsewhere: route && f.slug !== route.slug ? titles?.find((p) => p.name === f.slug)?.title || f.slug : undefined,
-    canRetry: !!f.retry,
-  }))
+  const rows = notSavedRows(list, route?.slug ?? null, (slug) => titles?.find((p) => p.name === slug)?.title || slug, now)
   const parts = notSavedSheet(rows, {
     go: (url) => {
       app.sheets.close()

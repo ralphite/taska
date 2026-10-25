@@ -2,7 +2,7 @@
 // actions, the way back), on the phone in a sheet over its item. What it shows comes from the page's own factsOf and
 // webFacts with a demo project, and the page's DocView, WebPage, Thread and DocEdit draw it. Used by the document's
 // stories.
-import { useLayoutEffect, useRef, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { DocEdit } from '../features/docs/DocEdit'
 import { DocPaneActs, DocPaneHead, DocPaneNav } from '../features/docs/DocPane'
 import { DocView, SayRow, type DocEvents } from '../features/docs/DocView'
@@ -117,20 +117,5 @@ export function editAt(d: Doc | null, text: string, desk: boolean, f: { rec?: { 
     <Sheet open look={{ tall: true }} desk={desk} onClose={no}>
       <SheetLayout title={d ? `D${d.d}` : 'New doc on F012'} body={edit} />
     </Sheet>
-  )
-}
-
-/** Something the page itself does once it is drawn, as you would have done it: a pointer over a part (its mousemove),
- * the contents opened, words selected. */
-export function After({ run, children }: { run(root: HTMLElement): void; children: ReactNode }) {
-  const ref = useRef<HTMLDivElement>(null)
-  useLayoutEffect(() => {
-    const t = setTimeout(() => ref.current && run(ref.current), 50)
-    return () => clearTimeout(t)
-  })
-  return (
-    <div ref={ref} className="contents">
-      {children}
-    </div>
   )
 }

@@ -8,4 +8,4 @@ export default meta
 type Story = StoryObj
 
 /** Where a comment goes: the whole document, or one of its paragraphs (the one it is on now lit). */
-export const MoveComment: Story = { render: () => <SheetFrames height={600} parts={() => commentMoveSheet(doc(), 'p1', no)} /> }
+export const MoveComment: Story = { name: 'Move a comment', render: () => <SheetFrames height={600} parts={() => commentMoveSheet(doc(), 'p1', no)} /> }

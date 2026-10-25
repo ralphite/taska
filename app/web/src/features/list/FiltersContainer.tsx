@@ -2,11 +2,10 @@
 
 import { useServices } from '../../app/context'
 import { useProjectModel, useProjectRoute } from '../../app/hooks'
-import { closed } from '../../model/items'
-import { filtered, visible } from '../../model/visible'
 import type { SheetRequest } from '../../stores/sheet'
 import { SheetLayout } from '../../ui/Sheet'
 import { filtersSheet, type FilterEvents } from './Filters'
+import { filterFacts } from './filterFacts'
 import type { App } from '../../app/createApp'
 
 /** What the filters do: set one, take one off, clear them all (and the search), keep them as a view. */
@@ -22,7 +21,6 @@ export function FiltersSheet(_: { req: Extract<SheetRequest, { kind: 'filters' }
   const route = useProjectRoute()
   const m = useProjectModel(route?.slug ?? '')
   if (!m || !route) return null
-  const rows = visible(m.items, route.tab, route.list)
-  const facts = { tab: route.tab, list: route.list, filtered: filtered(route.tab, route.list), shown: rows.length, open: rows.filter((it) => !closed(it.status) && !it.archived).length }
+  const facts = filterFacts(m, route.tab, route.list)
   return <SheetLayout {...filtersSheet(facts, { ...filterEvents(app), close: () => app.sheets.close() })} />
 }

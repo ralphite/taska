@@ -4,7 +4,7 @@ import { Frames } from '../../stories/Frames'
 import { SheetFrames, no } from '../../stories/sheetFixtures'
 import { DeskFilters, FilterStrip, filtersSheet } from './Filters'
 
-const meta: Meta = { title: 'Components/Sheets/Filters' }
+const meta: Meta = { title: 'Components/Top bar and list head/Filters' }
 export default meta
 type Story = StoryObj
 

@@ -2,7 +2,7 @@
 // putting it under another item, moving it to another project, what it came from, and a message's menu.
 
 import { useLayoutEffect } from 'react'
-import { keysShown, type ActionId } from '../../app/actions'
+import type { ActionId } from '../../app/actions'
 import { useLayout, useServices, useStores, useStoreValue } from '../../app/context'
 import { useCloseSheetWhen, useFiles, useProjectModel, useProjectRoute } from '../../app/hooks'
 import { codeOf, type ProjectModel } from '../../model/project'
@@ -14,6 +14,7 @@ import { messageMenuSheet, sourcesSheet } from './ItemSheets'
 import { itemMoveProjectSheet } from '../../ui/ProjectSheets'
 import { useOtherProjects } from '../../app/projectLists'
 import { itemMenuPop, itemMenuSheet, type ItemMenuEvents } from './ItemMenu'
+import { itemMenuFacts } from './itemMenuFacts'
 import { useItemWorld } from '../../app/hooks'
 import { moveParentSheet } from '../../ui/Pickers'
 
@@ -83,8 +84,7 @@ export function ItemMenuSheet({ req }: Req<'item-menu'>) {
       void app.items.change(n, f, v)
     },
   }
-  const keys = { edit: keysShown('edit'), copy: keysShown('copy'), newDoc: keysShown('new-doc'), addSub: keysShown('add-sub'), reparent: keysShown('put-under'), later: keysShown('later'), archive: keysShown('archive') }
-  const facts = { it, code: code(n), parentCode: it.parent ? code(it.parent) : null, asking, arm, keys }
+  const facts = itemMenuFacts(m, it, asking, arm)
   return desk ? <SheetLayout {...itemMenuPop(facts, on)} /> : <SheetLayout {...itemMenuSheet(facts, on)} />
 }
 

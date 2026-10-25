@@ -1,26 +1,26 @@
+// A voice note's words as said, and what you said's earlier versions (T591: Menus and sheets > Sheets): the page's
+// own sheets, beside the note on the desktop (Original words), a sheet on the phone. Its menu is in
+// stories/OtherMenus.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { input } from '../../stories/fixtures'
-import { SheetFrames, no } from '../../stories/sheetFixtures'
-import { asSaidSheet, historySheet, inputMenuSheet } from './InputSheets'
+import { Frames } from '../../stories/Frames'
+import { input, T } from '../../stories/fixtures'
+import { AT_BUTTON, opened } from '../../stories/menuFixtures'
+import { asSaidSheet, historySheet } from './InputSheets'
 
-const meta: Meta = { title: 'Components/Sheets/Inputs' }
-export default meta
+export default { title: 'Components/Menus and sheets/Sheets' } satisfies Meta
 type Story = StoryObj
 
-const r = input({ id: 'r12', scope: 4, files: [{ f: 'f2-voice_0-12.webm', name: 'voice_0-12.webm', mime: 'audio/webm' }, { f: 'f3-shot.png', name: 'shot.png', mime: 'image/png' }], history: [{ text: 'The export should keep it.', t: '2026-10-23T14:00:00-07:00', mode: 'edit' }] })
-const on = { edit: no, append: no, asSaid: no, undo: no, move: no, history: no, rescope: no, takeOff: no, remove: no }
+const at = (min: number) => new Date(Date.parse(T) - min * 60_000).toISOString()
+const r = input({
+  id: 'r12',
+  text: 'The export should keep the filter and the sort I set.',
+  history: [
+    { text: 'The export should keep it.', t: at(60), mode: 'edit' },
+    { text: 'The export should keep the filter I set.', t: at(40), mode: 'append' },
+  ],
+})
 
-/** An input's menu: every row, a file's Take off asking. */
-export const Menu: Story = {
-  render: () => <SheetFrames parts={() => inputMenuSheet({ r, tidy: true, undo: { tip: '#12: created F012' }, move: true, history: true, scope: 'F004', asking: 'f3-shot.png', deleteTip: 'Delete #12 and F012' }, on)} />,
-}
-
-/** Its versions; a voice note's original words. */
-export const Others: Story = {
-  render: () => (
-    <div className="flex flex-col gap-8">
-      <SheetFrames height={420} parts={() => historySheet(r, Date.parse('2026-10-23T15:00:00-07:00'))} />
-      <SheetFrames height={320} parts={() => asSaidSheet('', 'Keep the filter, um, in the export.')} />
-    </div>
-  ),
-}
+/** Before its words were tidied: as the speech model heard them. */
+export const AsSaid: Story = { name: 'Original words', render: () => <Frames height={360} deskWidth={900} phoneWidth={393}>{(layout) => opened(asSaidSheet('', 'Keep the filter, um, in the export, and, uh, the sort.'), layout === 'desk', { look: layout === 'desk' ? { pop: true, at: AT_BUTTON } : {} })}</Frames> }
+/** Each version, the latest first, with when and how it changed. */
+export const InputHistory: Story = { name: 'What you said: history', render: () => <Frames height={520} deskWidth={900} phoneWidth={393}>{(layout) => opened(historySheet(r, Date.parse(T)), layout === 'desk')}</Frames> }
