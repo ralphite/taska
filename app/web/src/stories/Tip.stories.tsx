@@ -15,22 +15,22 @@ import { rail, side } from './sideFixtures'
 export default { title: 'Components/Floating/Tip' } satisfies Meta
 type Story = StoryObj
 
-const point = (sel: string) => (root: HTMLElement) => root.querySelector(sel)?.dispatchEvent(new PointerEvent('pointerover', { bubbles: true, pointerType: 'mouse' }))
 const m = modelOf(PROJECT)
-const one = (part: (desk: boolean) => ReactNode, sel: string, f: { phone?: boolean; width?: number; height?: number } = {}): Story => ({
+/** The tooltip is drawn over the whole window, outside the frame, as the page's is (it is placed where the part is on
+ * the screen). */
+const one = (part: (desk: boolean) => ReactNode, find: string | ((root: HTMLElement) => Element | null | undefined), f: { width?: number; height?: number } = {}): Story => ({
   render: () => (
-    <Frames phone={false} deskWidth={f.width ?? 900} height={f.height ?? 360}>
-      {() => (
-        <After run={point(sel)}>
-          {part(true)}
-          <Tooltip card={(ref) => refCard(m, ref)} />
-        </After>
-      )}
-    </Frames>
+    <>
+      <Frames phone={false} deskWidth={f.width ?? 900} height={f.height ?? 360}>
+        {() => <After run={(root) => (typeof find === 'string' ? root.querySelector(find) : find(root))?.dispatchEvent(new PointerEvent('pointerover', { bubbles: true, pointerType: 'mouse' }))}>{part(true)}</After>}
+      </Frames>
+      <Tooltip card={(ref) => refCard(m, ref)} />
+    </>
   ),
 })
+const button = (row: string, words: string) => (root: HTMLElement) => [...root.querySelectorAll(`${row} button`)].find((b) => b.textContent?.includes(words))
 
-export const OnApprove: Story = { ...one(() => listOf(PROJECT, 'items', {}, true), '[data-n="3"] button[data-tip], [data-n="3"] button[title]', { height: 520 }), name: 'On Approve, in a row that waits on you' }
+export const OnApprove: Story = { ...one(() => listOf(PROJECT, 'items', {}, true), button('[data-n="3"]', 'Approve'), { height: 520 }), name: 'On Approve, in a row that waits on you' }
 export const OnHideSidebar: Story = { ...one(() => <div className="h-full w-60">{side(false)}</div>, 'button[aria-label="Hide the sidebar"]', { height: 520 }), name: 'On Hide the sidebar' }
 export const OnRailProject: Story = { ...one(() => <div className="h-full w-14">{rail()}</div>, '#rail a[aria-label="Home"]', { height: 520 }), name: 'On a project in the rail' }
 export const OnRailSettings: Story = { ...one(() => <div className="h-full w-14">{rail()}</div>, '#rail button[aria-label="Settings"]', { height: 520 }), name: 'On Settings in the rail' }
