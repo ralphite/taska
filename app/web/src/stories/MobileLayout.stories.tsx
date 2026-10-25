@@ -232,7 +232,7 @@ function Phone() {
     const look = { threads: new Set<string>(), sel: new Set(sel ? [sel] : []), quote: null, reply: null, circle: false, typing: false }
     body = (
       <div className="px-4 pt-2 pb-6">
-        <DocView facts={factsOf(M, D1, look, { since: T }, false, {}, null, { mine: {}, going: {}, open: new Set() })} env={docEnv} on={docOn} />
+        <DocView facts={factsOf(M, D1, look, { since: T }, false, {}, { key: sel, bar: true }, { mine: {}, going: {}, open: new Set() })} env={docEnv} on={docOn} />
       </div>
     )
   } else if (place === 'inputs') {
