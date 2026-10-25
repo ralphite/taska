@@ -4,7 +4,7 @@
 // is a layout container ("@container/frame"), so the part lays itself out as it does on a screen of that size; the
 // layout mode comes with it.
 
-import { useLayoutEffect, useRef, type ReactNode } from 'react'
+import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { LayoutProvider, type Layout } from '../app/context'
 import { PAGE_BODY } from '../ui/tones'
 
@@ -23,13 +23,25 @@ export const PHONE = { width: 393, height: 852 }
 
 export function Frame({ layout, width, height, label, page = false, children }: FrameProps) {
   const phone = layout === 'phone'
-  // the phone: its screen (a part narrower than the screen, as the drawer, says its own width); the desktop: where it
-  // starts, its height its content's unless the story says
-  const size = phone ? { width: width ?? PHONE.width, height: PHONE.height } : { width: width ?? 1440, height }
+  // the phone: its screen (a part narrower than the screen, as the drawer, says its own width); the desktop: where the
+  // story starts it (F554: no one desktop width), its height its content's unless the story says
+  const size = phone ? { width: width ?? PHONE.width, height: PHONE.height } : { width, height }
+  // how wide the desktop is now, as Yadong resizes it (F554)
+  const box = useRef<HTMLDivElement>(null)
+  const [now, setNow] = useState<number | null>(null)
+  useLayoutEffect(() => {
+    const el = box.current
+    if (phone || !el) return
+    const ro = new ResizeObserver(() => setNow(Math.round(el.getBoundingClientRect().width)))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [phone])
+  const caption = [label, phone || now == null ? null : `${now} px wide`].filter(Boolean).join(' · ')
   return (
     <figure className="m-0 flex flex-col gap-1">
-      {label ? <figcaption className="font-sans text-xs text-zinc-500">{label}</figcaption> : null}
+      {caption ? <figcaption className="font-sans text-xs text-zinc-500">{caption}</figcaption> : null}
       <div
+        ref={box}
         data-layout={layout}
         style={{ ...size, transform: 'translateZ(0)' }}
         className={`@container/frame relative ring-1 ring-zinc-300 ${phone ? 'overflow-y-auto' : 'min-h-24 min-w-80 resize overflow-hidden'} ${page ? PAGE_BODY : 'bg-white text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-100'}`}
@@ -40,16 +52,15 @@ export function Frame({ layout, width, height, label, page = false, children }: 
   )
 }
 
-/** The same part in each frame: phone and desktop. */
+/** The same part in each frame: phone and desktop. The desktop's width is the story's own: what its part needs (F554:
+ * there is no one desktop width), Yadong resizes it from there. */
 export function Frames({ children, phone = true, desk = true, deskWidth, phoneWidth, height, page = false }: {
   children: (layout: Layout) => ReactNode
   phone?: boolean
-  desk?: boolean
-  deskWidth?: number
   phoneWidth?: number
   height?: number
   page?: boolean
-}) {
+} & ({ desk: false; deskWidth?: undefined } | { desk?: boolean; deskWidth: number })) {
   return (
     <div className="flex flex-wrap items-start gap-6 bg-zinc-200 p-6 dark:bg-zinc-800">
       {phone ? (
