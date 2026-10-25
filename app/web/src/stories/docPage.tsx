@@ -96,7 +96,7 @@ export function docAt(d: Doc, desk: boolean, h: DocHere = {}) {
       </PaneFrame>
     </div>
   ) : (
-    <Sheet open look={{ tall: true, aboveComposer: !!h.typing }} desk={false} onClose={no}>
+    <Sheet open look={{ tall: true, aboveComposer: true }} desk={false} onClose={no}>
       <SheetLayout title={`D${d.d}`} body={view} />
     </Sheet>
   )

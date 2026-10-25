@@ -23,8 +23,16 @@ import { DocEditContainer } from './DocEditContainer'
 import { DocView, SayRow, type DocEvents } from './DocView'
 import type { DocEnv } from './Thread'
 import { docDraft } from '../../model/draftTarget'
+import { clock } from '../../model/time'
 
 const SIDE_NAME = { docs: 'Documents', log: 'Activity', deleted: 'Deleted' } as const
+
+/** How long the recording has gone on (on its own, so the document is not drawn again at every tick). */
+function RecTime() {
+  const stores = useStores('recording')
+  const ms = useStoreValue(stores.recording, (s) => s.rec?.ms ?? null)
+  return ms == null ? null : <>{clock(ms)}</>
+}
 
 /** The document's view, with what it does. */
 function useDoc(slug: string, dn: number) {
@@ -115,7 +123,7 @@ function WebPageContainer({ slug, d, v, seen, env, on, waiting }: { slug: string
       desk={env.desk}
       inspect={v.inspect}
       renderThread={(tk, rail) => <WebThread card={w.cards[tk]} rail={rail} replying={v.reply === tk} asking={w.asking} env={env} on={on} />}
-      sayRow={<SayRow rec={rec} part={held ? { key: held.key, quote: held.text } : undefined} on={{ say: () => held && void app.docVoice.say(slug, d.d, held.key, held.text, true), cancel: () => void app.voice.cancel(), type: () => app.docs.type() }} />}
+      sayRow={<SayRow rec={rec} time={<RecTime />} part={held ? { key: held.key, quote: held.text } : undefined} on={{ say: () => held && void app.docVoice.say(slug, d.d, held.key, held.text, true), cancel: () => void app.voice.cancel(), type: () => app.docs.type() }} />}
       on={{
         pick: (p) => {
           stores.docView.getState().pick({ quote: p, sel: new Set(), reply: null })
@@ -164,11 +172,11 @@ export function DocPaneContainer({ route, dn, place, hidden, bodyRef, beside }: 
       onBack={() => app.docs.close()}
     >
       {beside ? (
-        beside(<DocView facts={facts} env={env} on={on} page={page} aim={v.aim} onAimed={aimed} lasso={v.circle ? <Lasso onDrawn={(keys) => app.docs.circled(keys)} /> : null} />, web)
+        beside(<DocView facts={facts} env={env} on={on} page={page} recTime={<RecTime />} aim={v.aim} onAimed={aimed} lasso={v.circle ? <Lasso onDrawn={(keys) => app.docs.circled(keys)} /> : null} />, web)
       ) : (
         // a web page brings its own margins: none are added around it
         <div className={web ? 'w-full' : 'w-full px-8 pt-8 pb-12'}>
-          <DocView facts={facts} env={env} on={on} page={page} aim={v.aim} onAimed={aimed} lasso={v.circle ? <Lasso onDrawn={(keys) => app.docs.circled(keys)} /> : null} />
+          <DocView facts={facts} env={env} on={on} page={page} recTime={<RecTime />} aim={v.aim} onAimed={aimed} lasso={v.circle ? <Lasso onDrawn={(keys) => app.docs.circled(keys)} /> : null} />
         </div>
       )}
     </PaneFrame>
@@ -181,8 +189,9 @@ export function DocSheetContainer({ slug, dn, footRoom }: { slug: string; dn: nu
   const { m, d, facts, env, on, v, page, aimed } = useDoc(slug, dn)
   if (!m || !d || !facts) return null
   return (
-    <Sheet open look={{ tall: true, aboveComposer: v.typing }} desk={false} footRoom={footRoom} onClose={() => app.docs.close()}>
-      <SheetLayout title={`D${d.d}`} body={<DocView facts={facts} env={env} on={on} page={page} aim={v.aim} onAimed={aimed} lasso={v.circle ? <Lasso onDrawn={(keys) => app.docs.circled(keys)} /> : null} />} />
+    // above the box, which stays under it (what it says shows), so nothing of the document is under the box (r672)
+    <Sheet open look={{ tall: true, aboveComposer: true }} desk={false} footRoom={footRoom} onClose={() => app.docs.close()}>
+      <SheetLayout title={`D${d.d}`} body={<DocView facts={facts} env={env} on={on} page={page} recTime={<RecTime />} aim={v.aim} onAimed={aimed} lasso={v.circle ? <Lasso onDrawn={(keys) => app.docs.circled(keys)} /> : null} />} />
     </Sheet>
   )
 }

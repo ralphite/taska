@@ -128,15 +128,30 @@ export function WebPage({ title, html, threads, held, rec = false, open, desk, i
     wantNow.current = want
     frame.current?.contentWindow?.postMessage({ taska: 1, ...(JSON.parse(want) as object) }, '*')
   }, [want])
+  // what the pane shows below the frame's top, last given to the page
+  const shownH = useRef(0)
   useLayoutEffect(() => {
-    // before the page says how tall it is, it has what the pane shows below its top: a page as tall as its window
-    // (an app) fills that
+    // before the page says how tall it is, it has what the pane shows below its top, down to the box (the pane reaches
+    // under the box, kept clear by its padding: r672); a page as tall as that (an app, which follows its window) keeps
+    // filling it when the pane changes (the phone's sheet takes its place above the box after this)
     const f = frame.current
     const pane = f?.closest('.overflow-y-auto')
-    if (!f || !pane || tall.current.h) return
-    const top = f.getBoundingClientRect()
-    const h = Math.round(Math.min(pane.getBoundingClientRect().bottom, innerHeight) - top.top)
-    if (h > 240) setHeight(h)
+    if (!f || !pane) return
+    const size = () => {
+      const top = f.getBoundingClientRect()
+      const under = parseFloat(getComputedStyle(pane).paddingBottom) || 0
+      const h = Math.round(Math.min(pane.getBoundingClientRect().bottom - under, innerHeight) - top.top)
+      const t = tall.current
+      if (h <= 240 || h === shownH.current || (t.h && Math.abs(t.h - shownH.current) > 2)) return
+      shownH.current = h
+      t.h = 0
+      setHeight(h)
+    }
+    size()
+    if (typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(size)
+    ro.observe(pane)
+    return () => ro.disconnect()
   }, [])
   useEffect(() => {
     const take = (part: Part, from: XY) => {

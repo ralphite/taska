@@ -124,13 +124,18 @@ function useMarkQuotes(root: React.RefObject<HTMLDivElement | null>, rows: DocRo
 }
 
 /** On the phone, under the paragraph you tapped: speak (the same button stops and posts), or type. */
-export function SayRow({ rec, part, on }: { rec: boolean; part?: { key: string; quote: string }; on: { say(): void; cancel(): void; type(): void } }) {
+export function SayRow({ rec, part, time, on }: { rec: boolean; part?: { key: string; quote: string }; /** how long it has recorded */ time?: ReactNode; on: { say(): void; cancel(): void; type(): void } }) {
   const marks = part ? { 'data-part-say': '', 'data-key': part.key, 'data-quote': part.quote } : {}
   return rec ? (
     <div className="mt-2 flex items-center gap-2">
       <button {...marks} onClick={on.say} aria-label="Stop and post the comment" className="grid size-12 shrink-0 place-items-center rounded-full bg-red-600 text-white shadow-lg">
         <Icon n="stop" c="size-5" />
       </button>
+      {time ? (
+        <span data-rec-time className="font-mono text-[13px] text-red-600 tabular-nums dark:text-red-400">
+          {time}
+        </span>
+      ) : null}
       <span className="text-[13px] text-zinc-500 dark:text-zinc-400">· tap to post</span>
       <button onClick={on.cancel} className="ml-auto h-10 rounded-full px-3 text-sm font-semibold text-zinc-600 ring-1 ring-zinc-300 dark:text-zinc-300 dark:ring-zinc-600">
         Cancel
@@ -169,7 +174,7 @@ function Outline({ heads, onJump }: { heads: DocFacts['outline']; onJump(key: st
   )
 }
 
-export function DocView({ facts, env, on, popover, lasso, page, aim = null, onAimed }: {
+export function DocView({ facts, env, on, popover, lasso, page, recTime, aim = null, onAimed }: {
   facts: DocFacts
   env: DocEnv
   on: DocEvents
@@ -182,6 +187,8 @@ export function DocView({ facts, env, on, popover, lasso, page, aim = null, onAi
   lasso?: ReactNode
   /** a web page's own view (WebPage) */
   page?: ReactNode
+  /** how long the phone's mic under a paragraph has recorded */
+  recTime?: ReactNode
 }) {
   const { d, rows, desk } = { ...facts, desk: env.desk }
   const web = d.fmt === 'html'
@@ -299,7 +306,7 @@ export function DocView({ facts, env, on, popover, lasso, page, aim = null, onAi
                     Skipped · you replied on {facts.itemCode}
                   </div>
                 ) : null}
-                {r.say ? <SayRow rec={facts.recording} on={{ say: () => on.say(r.b.key, r.quote), cancel: on.sayCancel, type: on.type }} /> : null}
+                {r.say ? <SayRow rec={facts.recording} time={recTime} on={{ say: () => on.say(r.b.key, r.quote), cancel: on.sayCancel, type: on.type }} /> : null}
                 {desk ? null : r.threads.map((s) => thread(s, r.b.text))}
                 {desk ? (
                   <BlockActs
