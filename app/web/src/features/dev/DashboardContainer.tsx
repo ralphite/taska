@@ -11,6 +11,9 @@ export function DashboardContainer() {
   const [range, setRange] = useState(() => new URLSearchParams(location.search).get('days') || '7')
   const [d, setD] = useState<Dash | null>(null)
   const [err, setErr] = useState('')
+  // which rounds of work the chart shows, and when it is (now, as the page last drew it)
+  const [rounds, setRounds] = useState('last20')
+  const [now, setNow] = useState(0)
   useEffect(() => {
     document.title = 'Dashboard · Taska'
     let gone = false
@@ -19,6 +22,7 @@ export function DashboardContainer() {
       .then((x) => {
         if (gone) return
         setD(x)
+        setNow(Date.now())
         setErr('')
       })
       // as Taska answered (its status), or the browser's own words when nothing came back
@@ -28,5 +32,5 @@ export function DashboardContainer() {
       gone = true
     }
   }, [app, range])
-  return <Dashboard d={d} err={err} range={range} onRange={setRange} />
+  return <Dashboard d={d} err={err} range={range} onRange={setRange} rounds={rounds} now={now} onRounds={(r) => (setRounds(r), setNow(Date.now()))} />
 }

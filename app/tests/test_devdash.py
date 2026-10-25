@@ -7,9 +7,11 @@ import sys
 import tempfile
 import unittest
 from datetime import datetime, timedelta, timezone
+from types import SimpleNamespace
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "server"))
 
+from taska.domain import events as ev  # noqa: E402
 from taska.services import devdash  # noqa: E402
 
 
@@ -44,6 +46,31 @@ class DashboardTest(unittest.TestCase):
 
     def test_no_log(self) -> None:
         self.assertEqual(devdash.summary(None, 7, lambda p, n: None)["actions"], 0)
+
+    def test_rounds_of_work(self) -> None:
+        """F576: each round from started (doing) to handed over (review) or done, with its minutes and the tokens of
+        the cost line that came with it; a round put back before it was handed over does not count."""
+        def at(m: int) -> str:
+            return f"2026-10-24T10:{m:02d}:00+00:00"
+
+        done = SimpleNamespace(by="claude-code", t=at(41), text="Done.\n成本：40 分钟 · 66,321 token（读缓存 8,163,512）· 34 步")
+        st = SimpleNamespace(
+            events=[
+                ev.ItemAdded(n=1, status="open", t=at(0)),
+                ev.FieldsSet(n=1, f={"status": "doing"}, t=at(1)),
+                ev.FieldsSet(n=1, f={"status": "review"}, t=at(41)),
+                ev.FieldsSet(n=1, f={"status": "doing"}, t=at(50)),  # sent back: a second round
+                ev.FieldsSet(n=1, f={"status": "done"}, t=at(55)),
+                ev.ItemAdded(n=2, status="doing", t=at(2)),
+                ev.FieldsSet(n=2, f={"status": "open"}, t=at(9)),  # put back: no round
+                ev.FieldsSet(n=2, f={"pri": "P0"}, t=at(10)),
+            ],
+            items={1: SimpleNamespace(title="Export keeps the filter", thread=[done], live=True),
+                   2: SimpleNamespace(title="Put back", thread=[], live=True)},
+            code=lambda n: f"T{n:02d}",
+        )
+        got = [(r["code"], r["minutes"], r["tokens"]) for r in devdash.rounds("taska", st)]  # type: ignore[arg-type]
+        self.assertEqual(got, [("T01", 40, 66321), ("T01", 5, None)])
 
 
 if __name__ == "__main__":

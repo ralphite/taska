@@ -1,9 +1,10 @@
 // The dashboard for making Taska, on this computer only (/dev/dashboard): what you did in Taska, from its log, worked
-// out each time it opens; the panels agents and scripts keep up to date, what each item cost to make and the
-// analyses agents wrote. Counts and times only, never your words. Props only.
+// out each time it opens; the panels agents and scripts keep up to date, how long each item took and its tokens (F576),
+// what each item cost to make and the analyses agents wrote. Counts and times only, never your words. Props only.
 
 import type { ReactNode } from 'react'
-import { short, type Dash, type Pair } from '../../model/dashboard'
+import { minutes, ROUND_RANGES, roundFacts, roundsIn, short, type Dash, type Pair, type Round } from '../../model/dashboard'
+import { SegCtl } from '../../ui/Segments'
 import { Rich } from '../../ui/Markdown'
 import type { InlineWorld } from '../../ui/markdown/inline'
 
@@ -51,6 +52,102 @@ function Bars({ rows, unit = '' }: { rows: Pair[]; unit?: string }) {
   )
 }
 
+/** Rounds of work, each a row: the item, a bar as long as its time (or tokens) against the longest shown, the number. */
+function RoundBars({ rows, value, label }: { rows: Round[]; value(r: Round): number; label(r: Round): string }) {
+  const max = Math.max(1, ...rows.map(value))
+  return (
+    <ul className="flex flex-col gap-1.5 text-sm">
+      {rows.map((r, i) => (
+        <li key={`${r.project} ${r.code} ${r.end} ${i}`} className="grid grid-cols-[3.5rem_minmax(0,1fr)_3rem_5.5rem] items-center gap-2 lg:grid-cols-[3.5rem_minmax(0,18rem)_1fr_6rem_5.5rem]">
+          <a href={`/p/${encodeURIComponent(r.project)}/${r.code}`} className="font-mono text-xs font-bold text-blue-600 hover:underline dark:text-blue-400">
+            {r.code}
+          </a>
+          <span className="truncate" title={r.title}>
+            {r.title}
+          </span>
+          <span className="h-2 overflow-hidden rounded-full bg-zinc-100 dark:bg-zinc-700">
+            <span className="block h-full rounded-full bg-blue-500" style={{ width: `${(value(r) / max) * 100}%` }} />
+          </span>
+          <span className="text-right tabular-nums">{label(r)}</span>
+          <span className={`hidden text-right text-xs tabular-nums lg:block ${MUTED}`}>{r.at}</span>
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+/** How long each item took, from started to handed over, and its tokens (F576): the rounds of the time picked, how
+ * they spread over groups of time, and each one. */
+function Rounds({ all, range, now, onRange }: { all: Round[]; range: string; now: number; onRange(r: string): void }) {
+  const rs = roundsIn(all, range, now)
+  const f = roundFacts(rs)
+  const most = Math.max(1, ...f.groups.map((g) => g[1]))
+  const SHOWN = 30
+  const withTokens = rs.filter((r) => r.tokens != null)
+  const more = (n: number) => (n > SHOWN ? <p className={`mt-2 text-xs ${MUTED}`}>And {n - SHOWN} more before these.</p> : null)
+  return (
+    <>
+      <section className={`${CARD} lg:col-span-2`}>
+        <div className="mb-3 flex flex-wrap items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">How long each item took</h2>
+            <p className={`text-xs ${MUTED}`}>From started (In progress) to handed to you (Waits for review) or done; an item sent back counts again.</p>
+          </div>
+          <div className="w-full lg:w-[28rem]">
+            <SegCtl small opts={ROUND_RANGES} on={range} pick={onRange} />
+          </div>
+        </div>
+        {f.n ? (
+          <>
+            <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+              <Stat n={f.n} label="handed over" />
+              <Stat n={minutes(f.middle)} label="middle (half took less)" />
+              <Stat n={minutes(f.average)} label="average" />
+              <Stat n={minutes(f.slowTenth)} label="or more: the slowest one in ten" />
+            </div>
+            <div className="flex h-36 items-end gap-1 lg:gap-2">
+              {f.groups.map(([k, n]) => (
+                <div key={k} className="flex h-full min-w-0 flex-1 flex-col justify-end" title={`${k}: ${n}`}>
+                  <span className={`mb-1 text-center text-xs tabular-nums ${MUTED}`}>{n || ''}</span>
+                  <div className="rounded-t bg-blue-500/80 dark:bg-blue-400/70" style={{ height: `${(n / most) * 100}%` }} />
+                </div>
+              ))}
+            </div>
+            <div className={`mt-1 mb-5 flex gap-1 text-[11px] tabular-nums lg:gap-2 ${MUTED}`}>
+              {f.groups.map(([k]) => (
+                <span key={k} className="min-w-0 flex-1 truncate text-center">
+                  {k}
+                </span>
+              ))}
+            </div>
+            <h3 className={`mb-2 text-xs font-semibold tracking-wider uppercase ${MUTED}`}>Each one, the latest first</h3>
+            <RoundBars rows={rs.slice(0, SHOWN)} value={(r) => r.minutes} label={(r) => minutes(r.minutes)} />
+            {more(rs.length)}
+          </>
+        ) : (
+          <p className={`text-sm ${MUTED}`}>Nothing handed over in this time.</p>
+        )}
+      </section>
+      <section className={`${CARD} lg:col-span-2`}>
+        <h2 className={HEAD}>Tokens for each item</h2>
+        <p className={`-mt-2 mb-3 text-xs ${MUTED}`}>
+          {withTokens.length
+            ? `${withTokens.length} of ${f.n} say their tokens (their agent's cost line) · middle ${short(f.tokens.middle)} · average ${short(f.tokens.average)} · ${short(f.tokens.total)} in all`
+            : f.n
+              ? `None of these ${f.n} says its tokens: an agent writes them in the cost line it ends a done message with.`
+              : 'Nothing handed over in this time.'}
+        </p>
+        {withTokens.length ? (
+          <>
+            <RoundBars rows={withTokens.slice(0, SHOWN)} value={(r) => r.tokens ?? 0} label={(r) => `${short(r.tokens ?? 0)} token`} />
+            {more(withTokens.length)}
+          </>
+        ) : null}
+      </section>
+    </>
+  )
+}
+
 function Stat({ n, label, sub }: { n: string | number; label: string; sub?: string }) {
   return (
     <div className={CARD}>
@@ -61,7 +158,16 @@ function Stat({ n, label, sub }: { n: string | number; label: string; sub?: stri
   )
 }
 
-export function Dashboard({ d, err, range, onRange }: { d: Dash | null; err: string; range: string; onRange(r: string): void }) {
+export function Dashboard({ d, err, range, onRange, rounds, now, onRounds }: {
+  d: Dash | null
+  err: string
+  range: string
+  onRange(r: string): void
+  /** which rounds of work to show (ROUND_RANGES), and the time it is now */
+  rounds: string
+  now: number
+  onRounds(r: string): void
+}) {
   const max = Math.max(1, ...(d?.span || []).map((s) => s[1]))
   return (
     <main className="mx-auto max-w-[1200px] px-3 pt-[env(safe-area-inset-top)] pb-10 lg:px-10 lg:pt-8">
@@ -108,6 +214,7 @@ export function Dashboard({ d, err, range, onRange }: { d: Dash | null; err: str
             </div>
           ) : null}
           <div className="grid gap-3 lg:grid-cols-2">
+            <Rounds all={d.rounds} range={rounds} now={now} onRange={onRounds} />
             <Card title={d.hourly ? 'By hour' : 'By day'} wide>
               <div className="flex h-36 items-end gap-0.5">
                 {d.span.map(([k, n]) => (

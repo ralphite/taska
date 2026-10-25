@@ -4,7 +4,7 @@ Only counts and times: never the words of a draft, a message or an input. Shown 
 only. Below the numbers, the analyses agents wrote: Markdown files in <data folder>/dev/analyses, newest first (a file
 is named by its date, 2026-10-22-what-it-is-about.md, and its first line is its title). Above them, the panels agents
 and scripts keep up to date (Markdown files in <data folder>/dev/panels, each rewritten in place), and what each item
-cost to make: the cost line agents end a done message with.
+cost to make: the cost line agents end a done message with, and how long each round of work on an item took (F576).
 """
 
 from __future__ import annotations
@@ -18,6 +18,9 @@ from collections import Counter, defaultdict
 from datetime import datetime, timedelta, timezone
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
+from ..domain import events as ev
+from ..domain.model import Item as ItemRow
+from ..domain.state import ProjectState
 from .project import Project
 
 # what the page's actions are, in plain words
@@ -228,6 +231,59 @@ def costs(projects: Dict[str, Project], days: Optional[int]) -> Dict[str, Any]:
             "median_tokens": round(statistics.median(toks)) if toks else 0}
 
 
+def _round_tokens(it: ItemRow, a: datetime, b: datetime) -> Optional[int]:
+    """The tokens the cost lines of a round say: an agent's messages on the item from its start until a little after it
+    was handed over (the done message with the cost line comes with it or just after). None: no cost line."""
+    got: Optional[int] = None
+    for x in it.thread:
+        if x.by in ("you", "org") or "成本：" not in (x.text or ""):
+            continue
+        t = _when(x.t)
+        if a <= t <= b + timedelta(minutes=15):
+            m = COST.search(x.text)
+            k = TOKENS.search(x.text[m.start():].split("\n", 1)[0]) if m else None
+            if k:  # a cost line that gives no tokens says nothing about them
+                got = (got or 0) + _num(k)
+    return got
+
+
+def rounds(slug: str, st: ProjectState) -> List[Dict[str, Any]]:
+    """Each round of work on an item (F576): from when it was started (doing) until it was handed to you (review) or
+    done, its minutes, and the tokens its agent's cost line gives for it (None: no cost line). A round put back (open)
+    before it was handed over does not count; a deleted or merged item's rounds neither."""
+    out: List[Dict[str, Any]] = []
+    began: Dict[int, str] = {}
+    for e in st.events:
+        if isinstance(e, ev.ItemAdded):
+            if e.status == "doing":
+                began[e.n] = e.t
+            continue
+        if not isinstance(e, ev.FieldsSet) or "status" not in e.f:
+            continue
+        now = e.f["status"]
+        if now == "doing":
+            began.setdefault(e.n, e.t)
+            continue
+        t0 = began.pop(e.n, None)
+        it = st.items.get(e.n)
+        if t0 is None or now not in ("review", "done") or it is None or not it.live:
+            continue
+        a, b = _when(t0), _when(e.t)
+        out.append({"project": slug, "code": st.code(e.n), "title": it.title[:80], "end": b.isoformat(),
+                    "at": b.strftime("%m-%d %H:%M"), "minutes": max(0, round((b - a).total_seconds() / 60)),
+                    "tokens": _round_tokens(it, a, b)})
+    return out
+
+
+def all_rounds(projects: Dict[str, Project]) -> List[Dict[str, Any]]:
+    """Every project's rounds of work, the latest first."""
+    out: List[Dict[str, Any]] = []
+    for slug, p in list(projects.items()):
+        with p.lock:
+            out.extend(rounds(slug, p.state))
+    return sorted(out, key=lambda r: r["end"], reverse=True)
+
+
 def item_of(projects: Dict[str, Project]) -> Item:
     """(code, title) of item n in a project, from the projects Taska has open."""
     def get(slug: str, n: int) -> Optional[Tuple[str, str]]:
@@ -241,4 +297,4 @@ def item_of(projects: Dict[str, Project]) -> Item:
 
 
 def dashboard(root: str, projects: Dict[str, Project], db_path: Optional[str], days: Optional[int]) -> Dict[str, Any]:
-    return dict(summary(db_path, days, item_of(projects)), costs=costs(projects, days), panels=panels(root), analyses=analyses(root))
+    return dict(summary(db_path, days, item_of(projects)), costs=costs(projects, days), rounds=all_rounds(projects), panels=panels(root), analyses=analyses(root))
