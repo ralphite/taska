@@ -8,7 +8,7 @@ import { Frames } from './Frames'
 export default { title: 'Components/Icons and marks/Keys' } satisfies Meta
 type Story = StoryObj
 
-const keys = [...new Set(keyHelp().flatMap(([, rows]) => rows.flatMap(([k]) => k.split(/\s+/))))].filter((k) => k && k !== 'then' && k !== 'or')
+const keys = [...new Set(keyHelp().flatMap(([, rows]) => rows.flatMap(([k]) => k.split(/\s+/))))].filter((k) => k && !/^[a-z]/.test(k) && !/^(Hover|Right-click|Click|Drag)$/.test(k)) // the keys, not the words around them
 
 export const Keys: Story = {
   name: 'Every key the page shows',
