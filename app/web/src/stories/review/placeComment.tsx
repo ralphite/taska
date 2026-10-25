@@ -205,7 +205,7 @@ function WebPlace({ phone, step, go }: { phone: boolean; step: Step; go: Go }) {
         <div className="relative">
           <Bar label="Write CSV" w="w-[41%]" ms="410 ms" />
           <div className={`pointer-events-none absolute -inset-1 rounded-lg ${sent ? 'ring-2 ring-amber-400' : RING}`} />
-          {sent ? <Count cls="absolute -top-1 right-0" /> : null}
+          {sent ? <Count cls="absolute -top-4 -right-3" /> : null}
           {!phone && !sent ? (
             <div className="absolute -top-11 right-0 z-10">
               <DeskControl step={step} go={go} />
