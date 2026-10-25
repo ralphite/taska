@@ -4,7 +4,7 @@ import { item, modelOf } from '../stories/fixtures'
 import { talkEnv } from '../stories/itemFixtures'
 import { Rich } from './Markdown'
 
-const meta: Meta = { title: 'Components/Primitives/Markdown' }
+const meta: Meta = { title: 'Components/Conversation/Message parts' }
 export default meta
 type Story = StoryObj
 
@@ -20,6 +20,7 @@ const QUESTION = 'Which format should the export use?\n\n- ( ) CSV\n- ( ) Excel\
 
 /** Text as Taska shows it: words, lists, quotes, code, tables, codes that open what they name, choices. */
 export const Blocks: Story = {
+  name: 'Markdown: every kind of block',
   render: () => (
     <Frames phoneWidth={393} deskWidth={640}>
       {() => (
@@ -42,6 +43,7 @@ export const Blocks: Story = {
 
 /** A question's choices: shown only, open to pick (one picked), answered (yours ticked). */
 export const Choices: Story = {
+  name: 'Markdown: choices to tick',
   render: () => (
     <Frames phoneWidth={393} deskWidth={640}>
       {() => (

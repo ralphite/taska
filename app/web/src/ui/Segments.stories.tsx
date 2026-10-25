@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frames, States } from '../stories/Frames'
 import { priOpts, SegCtl, typeOpts } from './Segments'
 
-const meta: Meta = { title: 'Components/Primitives/Segments' }
+const meta: Meta = { title: 'Components/Top bar and list head/Filters' }
 export default meta
 type Story = StoryObj
 
@@ -10,6 +10,7 @@ const no = () => {}
 
 /** A type, a priority (P0 in red), each with and without All or Any; the small one of the desktop's filters. */
 export const Segments: Story = {
+  name: 'The segmented choices',
   render: () => (
     <Frames phoneWidth={393} deskWidth={480} height={400}>
       {() => (

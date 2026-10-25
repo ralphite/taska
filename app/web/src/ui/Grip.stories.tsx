@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { Frames } from '../stories/Frames'
 import { Grip } from './Grip'
 
-const meta: Meta = { title: 'Components/Grip' }
+const meta: Meta = { title: 'Components/Item page/Layout and editing' }
 export default meta
 type Story = StoryObj
 
@@ -21,4 +21,5 @@ function Panes() {
 }
 
 /** A pane's edge: pointed at or dragged, the line turns blue. */
-export const Edge: Story = { render: () => <Frames phone={false} deskWidth={640}>{() => <Panes />}</Frames> }
+export const Edge: Story = {
+  name: 'The line between panes: pointer, dragged', render: () => <Frames phone={false} deskWidth={640}>{() => <Panes />}</Frames> }

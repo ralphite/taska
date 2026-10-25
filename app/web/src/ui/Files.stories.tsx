@@ -4,7 +4,7 @@ import { PICTURE } from '../stories/fixtures'
 import type { FileRef } from '../model/types'
 import { Thumbs, VoiceChip, type PlayState } from './Files'
 
-const meta: Meta = { title: 'Components/Inputs/Files' }
+const meta: Meta = { title: 'Components/Conversation/Message parts' }
 export default meta
 type Story = StoryObj
 
@@ -20,6 +20,7 @@ const chip = (f: FileRef, play: PlayState, tidy = false) => (
 
 /** A voice note: its length; playing, how far; paused partway; a note whose words were tidied (its original words). */
 export const Voice: Story = {
+  name: 'Voice notes',
   render: () => (
     <Frames phoneWidth={393} deskWidth={480}>
       {() => (
@@ -39,6 +40,7 @@ export const Voice: Story = {
 
 /** What came with something said: a voice note, a picture, another file; small and large. */
 export const Together: Story = {
+  name: 'Pictures and files together',
   render: () => (
     <Frames phoneWidth={393} deskWidth={480}>
       {() => (
