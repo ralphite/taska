@@ -15,9 +15,7 @@ it says which requirement, in his words.
     python3 app/tools/e2e.py --against <old server folder> ...                the same checks on the old version
 
 Each run starts the Taska on a fresh, empty data folder and a free port (no key, no organizer), so the checks never
-touch ~/.taska or the live Taska, and each check makes its own project. Before each spec file it waits for the
-machine's page budget (machine-guard wait --pages 1): one page at a time, and a long run gives the machine back
-between files.
+touch ~/.taska or the live Taska, and each check makes its own project.
 """
 
 from __future__ import annotations
@@ -42,7 +40,6 @@ SHIPPED = "refs/taska/shipped-app"  # a local ref, never pushed: the commit the 
 # a change to one of these can break any page: every check runs
 CORE = ("src/main.tsx", "src/pages/App.tsx", "src/index.css", "src/app/createApp.ts", "package.json",
         "package-lock.json", "vite.config.ts", "playwright.config.ts", "e2e/seed.ts")
-GUARD = os.path.expanduser("~/.local/bin/machine-guard")
 KEYS = ("GEMINI_API_KEY", "GOOGLE_API_KEY", "GOOGLE_GENERATIVE_AI_API_KEY", "GOOGLE_APPLICATION_CREDENTIALS")
 
 
@@ -129,15 +126,6 @@ class Taska:
         shutil.rmtree(self.root, ignore_errors=True)
 
 
-def wait_for_a_page() -> None:
-    """The machine's page budget (5 pages for every agent together): one, waited for as long as it takes."""
-    if not os.path.exists(GUARD):
-        return
-    while subprocess.run([GUARD, "wait", "--pages", "1", "--timeout", "3600"], stdout=subprocess.DEVNULL,
-                         stderr=subprocess.DEVNULL).returncode != 0:
-        pass
-
-
 def words(code: str) -> str:
     """Yadong's words for an input code, from the Taska the change goes to (only for the message: none if away)."""
     url = os.environ.get("TASKA_URL", "http://127.0.0.1:7340")
@@ -172,12 +160,11 @@ def report(failed: List[tuple]) -> None:
 
 
 def run(specs: List[str], old: Optional[str], rest: List[str]) -> int:
-    """Each spec file on a Taska of its own, one after another, each when the machine has a page for it."""
+    """Each spec file on a Taska of its own, one after another."""
     bad: List[tuple] = []
     broken: List[str] = []
     passed = 0
     for spec in specs:
-        wait_for_a_page()
         t0 = time.monotonic()
         t = Taska(old)
         out_dir = os.path.join(WEB, "test-results", f"run-{os.getpid()}")
