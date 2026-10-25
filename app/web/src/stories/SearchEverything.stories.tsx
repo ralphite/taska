@@ -21,7 +21,7 @@ import { Icon, StateIcon } from '../ui/Icon'
 import { Sheet } from '../ui/Sheet'
 import { PROJECT_TONES, TYPE_TEXT } from '../ui/tones'
 import { Frame, States } from './Frames'
-import { GuideLine, Level, Mark, sel, withText, type Step } from './guide'
+import { GuideLine, Level, Mark, sel, type Step } from './guide'
 import { item, modelOf } from './fixtures'
 import { pageOf } from './itemPage'
 import { PROJECT, listOf } from './listFixtures'
@@ -208,7 +208,7 @@ function SearchBody({ state, kind, onKind, onDone, onAgain, onPick }: { state: S
         {mic(state === 'speaking')}
         <p className="text-sm text-zinc-600 dark:text-zinc-300">{state === 'speaking' ? 'Listening… it stops when you pause' : 'Listening… say what to find, in any project'}</p>
         {state === 'speaking' ? <Level /> : <span className="h-8" />}
-        <button onClick={onDone} className="h-10 rounded-full px-5 text-sm font-semibold text-zinc-700 ring-1 ring-zinc-300 dark:text-zinc-200 dark:ring-zinc-600">
+        <button data-search="done" onClick={onDone} className="h-10 rounded-full px-5 text-sm font-semibold text-zinc-700 ring-1 ring-zinc-300 dark:text-zinc-200 dark:ring-zinc-600">
           Done
         </button>
       </>,
@@ -267,7 +267,7 @@ function useSearch() {
 
 const DESK_STEPS: Step[] = [
   { say: 'There is no row over the list now. Search sits at the top of the sidebar, left of its fold button. Tap it: it listens at once', tap: sel('[aria-label="Search everything"]') },
-  { say: 'Say what to find; your words come once you stop. Tap Done (or just pause)', tap: withText('button', 'Done') },
+  { say: 'Say what to find; your words come once you stop. Tap Done (or just pause)', tap: sel('[data-search="done"]') },
   { say: 'It works out your words, then finds in every project, by the words and by what they mean. Tap Documents', tap: sel('[data-kind="doc"]') },
   { say: 'Only documents. Tap All: every kind, the closest few of each', tap: sel('[data-kind="all"]') },
   { say: 'Tap F001: the dialog closes and F001 opens beside the list', tap: sel('button[data-code="F001"]') },
@@ -338,7 +338,7 @@ function GuidedDesk() {
 
 const PHONE_STEPS: Step[] = [
   { say: 'The magnifier stays where it is. Tap it: a panel rises and listens at once', tap: sel('[aria-label="Search"]') },
-  { say: 'Say what to find; your words come once you stop. Tap Done (or just pause)', tap: withText('button', 'Done') },
+  { say: 'Say what to find; your words come once you stop. Tap Done (or just pause)', tap: sel('[data-search="done"]') },
   { say: 'What it found, on a page of its own, by kind. Tap Items', tap: sel('[data-kind="item"]') },
   { say: 'Tap F001: it opens', tap: sel('button[data-code="F001"]') },
   { say: 'Tap ←: back to what it found', tap: sel('[aria-label="Back to the results"]') },
