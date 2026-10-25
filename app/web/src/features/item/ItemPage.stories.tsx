@@ -1,89 +1,37 @@
+// An item's page in each status it can be in (T591: the groups and names Yadong had before the rewrite): the page's own
+// pane bar and ItemPage with that item's data, on the phone and the desktop (../../stories/itemPage).
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { Item } from '../../model/types'
 import { Frames } from '../../stories/Frames'
-import { item, message, modelOf } from '../../stories/fixtures'
-import { comment, doc, itemFacts, noItemEvents, talkEnv, talkFacts } from '../../stories/itemFixtures'
-import { ItemActs, ItemHead, ItemNav, ItemPage, Missing, NoSelection } from './ItemPage'
-import type { ItemFacts } from './ItemPage'
-import { PaneFrame } from '../../ui/PaneFrame'
+import { T, item, message } from '../../stories/fixtures'
+import { PARENT, pageOf, you, type PageOpts } from '../../stories/itemPage'
 
-const meta: Meta = { title: 'Components/Item/Item page' }
-export default meta
+export default { title: 'Components/Item page/By item status' } satisfies Meta
 type Story = StoryObj
 
-const parent = item({ n: 3, title: 'Exports that keep what you see' })
-const kids = [item({ n: 14, parent: 12, title: 'Keep the filter in the file name' }), item({ n: 15, parent: 12, status: 'done', title: 'Write the rows the list shows' }), item({ n: 16, parent: 12, when: 'later', title: 'Excel as well' })]
-const proposal = item({
-  n: 12,
-  status: 'proposed',
-  parent: 3,
-  pri: 'P1',
-  body: 'The export writes **every** row; it should write the rows the list shows.\n\n- with the filter\n- with the sort',
-  next: 'Read the filter from the address',
-  srcs: ['r4'],
-  thread: [message({ id: 1, by: 'you', kind: 'say', text: 'The export should keep the filter I set.' }), message({ id: 2, kind: 'propose', text: 'Keep the filter in the export, and its name in the file name.' })],
+const body = 'The export writes **every** row; it should write the rows the list shows.\n\n- with the filter\n- with the sort'
+const base = (f: Partial<Item>): Item => item({ n: 12, parent: 3, pri: 'P1', body, next: 'Read the filter from the address', srcs: ['r4'], ...f })
+const at = (f: Partial<Item>, o: PageOpts = {}, height = 820): Story => ({
+  render: () => <Frames phoneWidth={393} deskWidth={900} height={height}>{(layout) => pageOf(base(f), layout === 'desk', { others: [PARENT], ...o })}</Frames>,
 })
-const docs = [doc({ d: 1, n: 12, blocks: [{ key: 'k1', kind: 'para', text: 'x', comments: [comment({ id: 9 })] }] })]
+const said = you(1, 'The export should keep the filter I set.')
+const ask = (id: number, text: string, kind: 'ask' | 'block' = 'ask'): Partial<Item> => ({ wait: { id, kind, text, by: 'claude-code', files: [] }, thread: [said, message({ id, kind, text })] })
+const report = message({ id: 6, text: 'Done: the export writes the rows the list shows. Tested with three filters.' })
 
-function page(it: Item, desk: boolean, f: Partial<ItemFacts> = {}) {
-  const m = modelOf([parent, it, ...kids], [], {}, docs)
-  const facts = itemFacts(m, it, f)
-  return (
-    <div className="flex h-full flex-col">
-      <PaneFrame
-        place=""
-        desk={desk}
-        split
-        menu
-        head={<ItemHead it={it} code={facts.code(it.n)} />}
-        acts={<ItemActs it={it} on={noItemEvents} />}
-        nav={<ItemNav full={false} on={{ prev: () => {}, next: () => {}, full: () => {} }} />}
-        onBack={() => {}}
-      >
-        <ItemPage it={it} f={facts} env={talkEnv(m, desk)} facts={talkFacts(m)} on={noItemEvents} />
-      </PaneFrame>
-    </div>
-  )
+export const Open = at({ thread: [said] })
+export const InProgressWithItsTalk: Story = {
+  ...at({ status: 'doing', agent: { by: 'claude-code', t: T }, thread: [said, message({ id: 2, text: 'Reproduced it: the export reads the list before the filter.' }), message({ id: 3, text: 'Fixed the order; testing with three filters now.' })] }),
+  name: 'In progress, with its talk',
 }
-
-/** A proposal on its page: its fields, text and next step, its document and subitems, and the card in its talk. */
-export const Proposal: Story = {
-  render: () => <Frames phoneWidth={393} deskWidth={900} height={1000}>{(layout) => page(proposal, layout === 'desk', { sources: 1 })}</Frames>,
-}
-
-/** In progress, Later, archived; its talk past eight messages (Show earlier). */
-export const Others: Story = {
-  render: () => (
-    <Frames phoneWidth={393} deskWidth={900} height={760}>
-      {(layout) =>
-        page(
-          item({ n: 12, status: 'doing', when: 'later', archived: true, type: 'bug', pri: 'P0', title: 'Saving drops the last word', thread: Array.from({ length: 11 }, (_, i) => message({ id: i + 1, text: `Step ${i + 1} done.` })) }),
-          layout === 'desk',
-        )
-      }
-    </Frames>
-  ),
-}
-
-/** Editing its title, text and next step; adding a subitem. */
-export const Editing: Story = {
-  render: () => (
-    <Frames phoneWidth={393} deskWidth={900} height={760}>
-      {(layout) => page(item({ n: 12, title: 'Export ignores the active filter', body: 'The rows.' }), layout === 'desk', { editing: true, addingSub: true })}
-    </Frames>
-  ),
-}
-
-/** The pane with nothing open, and with an item that is not here. */
-export const Empty: Story = {
-  render: () => (
-    <Frames phoneWidth={393} deskWidth={720} height={240}>
-      {() => (
-        <div className="grid h-full grid-cols-2 divide-x divide-zinc-200">
-          <NoSelection side={null} />
-          <Missing what="F099" loading={false} away={false} />
-        </div>
-      )}
-    </Frames>
-  ),
-}
+export const Blocked = at({ status: 'doing', ...ask(4, 'I need the API key for staging to test the export there.', 'block') })
+export const Question = at(ask(4, 'Which format should the export use?\n- ( ) CSV\n- ( ) Excel'))
+export const ChecklistQuestion = at(ask(4, 'Which formats should the export offer?\n- [ ] CSV\n- [ ] Excel\n- [ ] JSON'))
+export const ProposedWithAPreview: Story = { ...at({ status: 'proposed', by: 'claude-code', thread: [said, message({ id: 2, kind: 'propose', text: 'Keep the filter in the export, and its name in the file name: `export-bugs-P0.csv`.' })] }), name: 'Proposed, with a preview' }
+export const ProposedNothingSaid: Story = { ...at({ status: 'proposed', by: 'claude-code', body: '', next: '', srcs: [], thread: [] }), name: 'Proposed, nothing said' }
+export const WaitsForReview = at({ status: 'review', thread: [said, report] })
+export const Done = at({ status: 'done', thread: [said, report], decided: { from: 'review', to: 'done', msg: 6, t: T } })
+export const WontDo: Story = { ...at({ status: 'dropped', thread: [said, message({ id: 2, text: 'Not needed: the filter is kept by the new export.' })] }), name: 'Won’t do' }
+export const Later = at({ when: 'later', thread: [said] })
+export const Archived = at({ status: 'done', archived: true, thread: [said, report] })
+export const RuleInForce = at({ type: 'rule', parent: null, title: 'Commit messages are in English', body: 'Code, commit messages and docs are in English; Chinese only to talk with Yadong.', next: '', thread: [] })
+export const RuleProposed = at({ type: 'rule', parent: null, status: 'proposed', by: 'claude-code', title: 'Screenshots go in the item', body: 'Every screenshot of a change is posted on its item, not only in the chat.', next: '', thread: [] })
