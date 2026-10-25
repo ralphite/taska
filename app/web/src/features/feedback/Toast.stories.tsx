@@ -1,32 +1,31 @@
+// What just happened (T591: Floating > Toast): the page's own Toast over the item list, as the page places it: above
+// the box over the pane you acted in on the desktop, above the box on the phone.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { Frames, States } from '../../stories/Frames'
+import { Frames } from '../../stories/Frames'
+import { listOf, PROJECT } from '../../stories/listFixtures'
 import { Toast, type ToastView } from './Toast'
 
-const meta: Meta = { title: 'Components/Toast' }
-export default meta
+export default { title: 'Components/Floating/Toast' } satisfies Meta
 type Story = StoryObj
 
-const toast = (t: ToastView) => (
-  <div className="relative h-20 transform-gpu">
-    <Toast toast={t} place="left-1/2 top-4 -translate-x-1/2" onAction={() => {}} onClose={() => {}} />
-  </div>
-)
-
-/** What just happened: plain, with Undo, an error, one that stays until closed. */
-export const Toasts: Story = {
+const one = (t: ToastView): Story => ({
   render: () => (
-    <Frames phoneWidth={393} deskWidth={720}>
-      {() => (
-        <States
-          items={[
-            ['plain', toast({ text: 'T9 put back', error: false, sticky: false, action: null })],
-            ['with Undo', toast({ text: 'T9 approved', error: false, sticky: false, action: { label: 'Undo' } })],
-            ['an error', toast({ text: 'Not saved: T9 marked done: T09 is proposed', error: true, sticky: false, action: null })],
-            ['stays until closed', toast({ text: 'Taska has an update', error: false, sticky: true, action: { label: 'Reload' } })],
-            ['long words (two lines at most)', toast({ text: 'F012 is done, with your note · 3 subitems still open. Their talk stays with them.', error: false, sticky: false, action: { label: 'Undo' } })],
-          ]}
-        />
+    <Frames phoneWidth={393} deskWidth={900} height={420}>
+      {(layout) => (
+        <div className="relative h-full">
+          {listOf(PROJECT, 'items', {}, layout === 'desk')}
+          <Toast toast={t} place={layout === 'desk' ? '-translate-x-1/2' : 'inset-x-0 mx-auto'} style={layout === 'desk' ? { left: '50%', bottom: '20px' } : { bottom: '24px' }} onAction={() => {}} onClose={() => {}} />
+        </div>
       )}
     </Frames>
   ),
-}
+})
+
+export const Plain: Story = { ...one({ text: 'Copied for your agent', error: false, sticky: false, action: null }), name: 'Plain (Copied)' }
+export const WithUndo: Story = { ...one({ text: 'T009 approved', error: false, sticky: false, action: { label: 'Undo' } }), name: 'With Undo' }
+export const Error: Story = { ...one({ text: 'Not saved: F012 marked done: Taska said it is archived', error: true, sticky: false, action: null }), name: 'Error: Taska said no' }
+export const Moved: Story = { ...one({ text: 'F012 moved to Home', error: false, sticky: false, action: { label: 'Open' } }), name: 'Moved, with Open' }
+/** It stays until closed. */
+export const Sticky: Story = { ...one({ text: 'Taska has an update', error: false, sticky: true, action: { label: 'Restart' } }), name: 'Stays until closed' }
+/** Long words: two lines at most. */
+export const Long: Story = { ...one({ text: 'F012 is done, with your note · 3 subitems still open. Their talk stays with them.', error: false, sticky: false, action: { label: 'Undo' } }), name: 'Long words' }
