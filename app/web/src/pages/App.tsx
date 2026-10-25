@@ -15,10 +15,10 @@ import { Tooltip } from '../app/Tooltip'
 import { PanesProvider } from '../app/panes'
 import { refCard } from '../model/refCard'
 import type { App as TaskaApp } from '../app/createApp'
+import { PAGE_BODY } from '../ui/tones'
 
-/** The home page and the dashboard scroll as a page, on grey; a project is a frame of panes (the body index.html
- * gives, with its pressed and focus looks). */
-const PAGE_BODY = 'min-h-dvh bg-zinc-100 text-zinc-900 antialiased dark:bg-zinc-900 dark:text-zinc-100'
+// the home page and the dashboard on grey (PAGE_BODY); a project is a frame of panes (the body index.html gives, with
+// its pressed and focus looks)
 
 /** What a code names in the project shown, as its hover card. */
 const cardOf = (app: Pick<TaskaApp, 'model'>, slug: string, ref: string) => {

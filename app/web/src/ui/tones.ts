@@ -28,6 +28,9 @@ export const STATE_ON: Record<Status, string> = {
 }
 
 /** A 32px control gets a 44px touch area. */
+/** The home page and the dashboard scroll as a page, on grey (the page's body; a story's frame of such a page too). */
+export const PAGE_BODY = 'min-h-dvh bg-zinc-100 text-zinc-900 antialiased dark:bg-zinc-900 dark:text-zinc-100'
+
 export const HIT = 'relative after:absolute after:inset-x-0 after:-inset-y-1.5'
 /** a row of a menu sheet */
 export const MENU_ROW = 'flex h-10 w-full items-center gap-2.5 rounded-lg px-3 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800'

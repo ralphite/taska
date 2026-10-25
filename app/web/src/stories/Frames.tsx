@@ -4,16 +4,19 @@
 
 import type { ReactNode } from 'react'
 import { LayoutProvider, type Layout } from '../app/context'
+import { PAGE_BODY } from '../ui/tones'
 
 export interface FrameProps {
   layout: Layout
   width?: number
   height?: number
   label?: string
+  /** a page that scrolls as a page (home, dashboard): the page's own grey body, not a pane's white */
+  page?: boolean
   children: ReactNode
 }
 
-export function Frame({ layout, width, height, label, children }: FrameProps) {
+export function Frame({ layout, width, height, label, page = false, children }: FrameProps) {
   const w = width ?? (layout === 'phone' ? 393 : 1440)
   return (
     <figure className="m-0 flex flex-col gap-1">
@@ -21,7 +24,7 @@ export function Frame({ layout, width, height, label, children }: FrameProps) {
       <div
         data-layout={layout}
         style={{ width: w, height, transform: 'translateZ(0)' }}
-        className="@container/frame relative overflow-hidden bg-white text-zinc-900 antialiased ring-1 ring-zinc-300 dark:bg-zinc-950 dark:text-zinc-100"
+        className={`@container/frame relative overflow-hidden ring-1 ring-zinc-300 ${page ? PAGE_BODY : 'bg-white text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-100'}`}
       >
         <LayoutProvider layout={layout}>{children}</LayoutProvider>
       </div>
@@ -30,23 +33,24 @@ export function Frame({ layout, width, height, label, children }: FrameProps) {
 }
 
 /** The same part in each frame: phone and desktop. */
-export function Frames({ children, phone = true, desk = true, deskWidth, phoneWidth, height }: {
+export function Frames({ children, phone = true, desk = true, deskWidth, phoneWidth, height, page = false }: {
   children: (layout: Layout) => ReactNode
   phone?: boolean
   desk?: boolean
   deskWidth?: number
   phoneWidth?: number
   height?: number
+  page?: boolean
 }) {
   return (
     <div className="flex flex-wrap items-start gap-6 bg-zinc-200 p-6 dark:bg-zinc-800">
       {phone ? (
-        <Frame layout="phone" width={phoneWidth} height={height} label="phone">
+        <Frame layout="phone" width={phoneWidth} height={height} label="phone" page={page}>
           {children('phone')}
         </Frame>
       ) : null}
       {desk ? (
-        <Frame layout="desk" width={deskWidth} height={height} label="desktop">
+        <Frame layout="desk" width={deskWidth} height={height} label="desktop" page={page}>
           {children('desk')}
         </Frame>
       ) : null}

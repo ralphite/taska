@@ -25,7 +25,7 @@ const hits: SearchHit[] = [
 ]
 
 const shown = (f: Partial<HomeFacts>, height = 620) => (
-  <Frames phoneWidth={393} deskWidth={1100} height={height}>
+  <Frames phoneWidth={393} deskWidth={1100} height={height} page>
     {() => <Home facts={{ ...facts, ...f }} on={on} />}
   </Frames>
 )

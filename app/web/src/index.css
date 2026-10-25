@@ -11,6 +11,18 @@
 @custom-variant huge (@container frame (width >= 96rem));
 @custom-variant roomy (@container frame (width >= 40rem));
 @custom-variant wide-phone (@container frame (width >= 400px));
+/* Tailwind's own widths answer to the frame too, never to the window (B593): a story's 393 frame inside a wide
+   Storybook draws as the phone does. On the page the frame is the window, so nothing there changes. max-lg: is the
+   phone's layout, as lg: is the desktop's. */
+@custom-variant sm (@container frame (width >= 40rem));
+@custom-variant md (@container frame (width >= 48rem));
+@custom-variant xl (@container frame (width >= 80rem));
+@custom-variant 2xl (@container frame (width >= 96rem));
+@custom-variant max-sm (@container frame (width < 40rem));
+@custom-variant max-md (@container frame (width < 48rem));
+@custom-variant max-lg (&:where([data-layout='phone'], [data-layout='phone'] *));
+@custom-variant max-xl (@container frame (width < 80rem));
+@custom-variant max-2xl (@container frame (width < 96rem));
 
 /* Dark follows the system; data-theme on any ancestor forces one (Storybook frames use it). */
 @custom-variant dark {

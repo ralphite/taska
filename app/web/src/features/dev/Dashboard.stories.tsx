@@ -32,7 +32,7 @@ const d: Dash = {
 }
 
 /** A week of what you did; the panels, costs and analyses agents keep. */
-export const Week: Story = { render: () => <Frames phoneWidth={393} deskWidth={1200}>{() => <Dashboard d={d} err="" range="7" onRange={() => {}} />}</Frames> }
+export const Week: Story = { render: () => <Frames phoneWidth={393} deskWidth={1200} page>{() => <Dashboard d={d} err="" range="7" onRange={() => {}} />}</Frames> }
 
 /** Before Taska answers. */
-export const Loading: Story = { render: () => <Frames phoneWidth={393} deskWidth={1200}>{() => <Dashboard d={null} err="" range="7" onRange={() => {}} />}</Frames> }
+export const Loading: Story = { render: () => <Frames phoneWidth={393} deskWidth={1200} page>{() => <Dashboard d={null} err="" range="7" onRange={() => {}} />}</Frames> }
