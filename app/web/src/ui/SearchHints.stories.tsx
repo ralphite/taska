@@ -4,7 +4,7 @@ import { T } from '../stories/fixtures'
 import { PROJECT_TONES } from './tones'
 import { SearchHints } from './SearchHints'
 
-const meta: Meta = { title: 'Components/List/Search hints' }
+const meta: Meta = { title: 'Components/Item list/Search hints' }
 export default meta
 type Story = StoryObj
 

@@ -3,7 +3,7 @@ import { Frames, States } from '../../stories/Frames'
 import type { ViewChip } from './rows'
 import { ViewBar } from './ViewBar'
 
-const meta: Meta = { title: 'Components/List/Views' }
+const meta: Meta = { title: 'Components/Item list/View chips' }
 export default meta
 type Story = StoryObj
 

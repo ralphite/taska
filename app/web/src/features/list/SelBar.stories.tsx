@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frames } from '../../stories/Frames'
 import { SelBar } from './SelBar'
 
-const meta: Meta = { title: 'Components/List/Selection bar' }
+const meta: Meta = { title: 'Components/Item list/Selection bar' }
 export default meta
 type Story = StoryObj
 

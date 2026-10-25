@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { SheetFrames } from '../../stories/sheetFixtures'
 import { viewMenuSheet } from './ViewMenu'
 
-const meta: Meta = { title: 'Components/List/View menu' }
+const meta: Meta = { title: 'Components/Item list/View menu' }
 export default meta
 type Story = StoryObj
 

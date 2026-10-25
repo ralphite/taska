@@ -3,7 +3,7 @@ import { Frames, States } from '../../stories/Frames'
 import { item, noRowEvents } from '../../stories/fixtures'
 import { ArchiveAllLine, HeldRow, HiddenKidsLine, NeedsMoreLine, Zone } from './ListRows'
 
-const meta: Meta = { title: 'Components/List/Rows' }
+const meta: Meta = { title: 'Components/Item list/Lines between rows' }
 export default meta
 type Story = StoryObj
 
