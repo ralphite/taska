@@ -58,6 +58,7 @@ export function BoxContainer({ route, composePage, boxRef, bare = false }: { rou
   return (
     <Composer
       line={shown.line}
+      waiting={shown.waiting}
       lineOn={{
         stop: () => app.box.stop(),
         unpick: () => app.docs.unpick(),

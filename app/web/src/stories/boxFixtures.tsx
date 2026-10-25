@@ -65,6 +65,7 @@ export function boxAt(h: Here, desk: boolean, extra: Partial<ComposerProps> = {}
     <div className="bg-zinc-50 p-3 dark:bg-zinc-950">
       <Composer
         line={shown.line}
+        waiting={shown.waiting}
         placeholder={shown.placeholder}
         sendWord={shown.send}
         text={text}

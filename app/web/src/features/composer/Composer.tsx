@@ -70,6 +70,8 @@ export function ScopeLine({ line: { icon, label, detail, wideOnly = false, right
 
 export interface ComposerProps {
   line: BoxLine | null
+  /** choices ticked in the document that wait while something else is picked: their own line, over the line */
+  waiting?: BoxLine | null
   /** what the line's buttons do */
   lineOn?: LineEvents
   /** the line hides on the New input page, where the page's head says it */
@@ -140,7 +142,7 @@ function insertedAt(was: string, now: string): number | null {
   return now.endsWith(was.slice(a)) ? a : null
 }
 
-export function Composer({ line, lineOn, lineOnComposePage, placeholder, sendWord, text, desk, composePage, micTip, files, doubts, words, hasFiles = false, boxRef, fieldRef, rec = null, on }: ComposerProps) {
+export function Composer({ line, waiting = null, lineOn, lineOnComposePage, placeholder, sendWord, text, desk, composePage, micTip, files, doubts, words, hasFiles = false, boxRef, fieldRef, rec = null, on }: ComposerProps) {
   const area = useRef<HTMLTextAreaElement | null>(null)
   const box = useRef<HTMLDivElement | null>(null)
   const picker = useRef<HTMLInputElement>(null)
@@ -189,6 +191,11 @@ export function Composer({ line, lineOn, lineOnComposePage, placeholder, sendWor
       id="composer"
       className="group/box flex flex-col rounded-4xl border border-zinc-200 bg-white shadow-sm focus-within:border-zinc-300 lg:mx-auto lg:max-w-[42rem] dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-none dark:focus-within:border-zinc-700"
     >
+      {waiting ? (
+        <div className={`@container flex h-8 items-center gap-1.5 pt-1 pr-1.5 pl-4 text-[13px] text-zinc-500 dark:text-zinc-400 ${lineOnComposePage ? '' : 'lg:group-data-[compose]/app:hidden'}`}>
+          <ScopeLine line={waiting} on={lineOn} />
+        </div>
+      ) : null}
       <div
         hidden={!line}
         className={`@container flex h-8 items-center gap-1.5 pt-1 pr-1.5 pl-4 text-[13px] text-zinc-500 dark:text-zinc-400 ${lineOnComposePage ? '' : 'lg:group-data-[compose]/app:hidden'}`}

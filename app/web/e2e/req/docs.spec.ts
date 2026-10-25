@@ -352,3 +352,32 @@ test('r824 r837 r849 (B584): selecting words in a document changes nothing in th
   await expect(boxLine(page)).toContainText('Comment on D1')
   await expect(boxLine(page)).toContainText('First part')
 })
+
+test('D83 #4 (r767 r774): choices ticked and then a paragraph picked: the box says both, and Send choices still sends the choices', async ({
+  page,
+  request,
+}) => {
+  const p = await project(request, {
+    ...LOOP,
+    then: `${LOOP.then}T4 doc Pick the fruit
+  Which fruit for the pie?
+
+  - [ ] Apples
+  - [ ] Pears
+`,
+  })
+  await open(page, p, 'D1')
+  await choice(page, 'Apples').click()
+  // a paragraph picked to comment on: on the desktop its Comment, on the phone a tap
+  const para = docBlock(page, 'Which fruit')
+  if (isDesk(page)) {
+    await para.hover()
+    await blockPick(page).click()
+  } else await para.click()
+  const composer = page.locator('#composer')
+  await expect(composer).toContainText('Comment on D1')
+  await expect(composer).toContainText('1 choice not sent')
+  await composer.getByRole('button', { name: 'Send choices' }).click()
+  await expect.poll(() => p.read('D1')).toMatch(/\[x\] Apples/i)
+  await expect(composer).toContainText('Comment on D1') // the paragraph is still what a comment goes to
+})

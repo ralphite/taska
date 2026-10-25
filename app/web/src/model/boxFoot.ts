@@ -57,6 +57,8 @@ export interface BoxRole {
   /** the document whose box it is */
   doc: number | null
   line: BoxLine | null
+  /** choices ticked in the document that wait while something else is picked: their own line, over it (D83 #4) */
+  waiting?: BoxLine
   placeholder: string
   send: string
 }
@@ -89,6 +91,8 @@ export function boxRole(m: ProjectModel | null, route: ProjectPlace, desk: boole
     return { ...none, scope: null, doc: null, line, placeholder: 'Write…', send: 'Save' }
   }
   const dt = docOf && !mode ? docTarget(docOf, pick) : null
+  const waiting = docOf && !mode ? ticksNotSent(ticks, docOf) : ''
+  const ticksLine = (d: number): BoxLine => ({ icon: 'check', label: waiting, detail: `· D${d}`, wideOnly: true, tight: true, right: { kind: 'ticks' } })
   if (docOf && dt) {
     const line: BoxLine = {
       icon: dt.reply ? 'reply' : 'comment',
@@ -96,12 +100,11 @@ export function boxRole(m: ProjectModel | null, route: ProjectPlace, desk: boole
       detail: (dt.many || 0) > 1 ? `· ${dt.many} paragraphs` : dt.quote ? `“${plainQuote(dt.quote).slice(0, 120)}”` : '',
       right: { kind: 'x', label: 'Cancel the comment', act: 'unpick' },
     }
-    return { aim: { d: docOf.d, target: dt }, scope: null, doc: docOf.d, line, placeholder: 'Write…', send: dt.reply ? 'Reply' : 'Comment' }
+    return { aim: { d: docOf.d, target: dt }, scope: null, doc: docOf.d, line, ...(waiting ? { waiting: ticksLine(docOf.d) } : {}), placeholder: 'Write…', send: dt.reply ? 'Reply' : 'Comment' }
   }
-  const waiting = docOf && !mode ? ticksNotSent(ticks, docOf) : ''
   if (docOf && waiting) {
     // choices ticked in the document wait; they go only with this line's Send choices
-    const line: BoxLine = { icon: 'check', label: waiting, detail: `· D${docOf.d}`, wideOnly: true, tight: true, right: { kind: 'ticks' } }
+    const line = ticksLine(docOf.d)
     const host = m ? liveN(m, docOf.n) : null
     const reply = desk && host != null && m ? codeOf(m, host) : null
     return reply
@@ -136,7 +139,7 @@ export function boxRole(m: ProjectModel | null, route: ProjectPlace, desk: boole
 /** What the box shows with what it holds: voice comments in a document's box (Send posts each beside its paragraph),
  * the correction as you type it, or a recording made for another draft. -> the line, the placeholder, what Send
  * says, and how many voice comments wait */
-export function shownBox(role: BoxRole, a: { mode: BoxMode; text: string; key: string; recordingFor: string | null }): { line: BoxLine | null; placeholder: string; send: string; voiceComments: number } {
+export function shownBox(role: BoxRole, a: { mode: BoxMode; text: string; key: string; recordingFor: string | null }): { line: BoxLine | null; waiting: BoxLine | null; placeholder: string; send: string; voiceComments: number } {
   const vcN = role.doc != null && !a.mode ? vcCount(a.text) : 0
   const told = vcN
     ? { line: { icon: 'comment', label: `${plural(vcN, 'comment')} on D${role.doc} not sent`, detail: '· Send posts each beside its paragraph' } as BoxLine, placeholder: role.aim ? 'Write…' : 'Add to the comments…', send: vcN > 1 ? `Post ${vcN} comments` : 'Post the comment' }
@@ -148,7 +151,7 @@ export function shownBox(role: BoxRole, a: { mode: BoxMode; text: string; key: s
       : a.recordingFor != null && a.recordingFor !== a.key
         ? { icon: 'mic', label: `Recording for ${draftName(a.recordingFor)}`, detail: '· it goes there when you stop' }
         : told.line
-  return { line, placeholder: told.placeholder, send: told.send, voiceComments: vcN }
+  return { line, waiting: a.mode ? null : (role.waiting ?? null), placeholder: told.placeholder, send: told.send, voiceComments: vcN }
 }
 
 /** The line over the box: what you sent is on its way, or what became of the last one you sent from here. */
