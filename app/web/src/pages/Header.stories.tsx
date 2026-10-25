@@ -1,57 +1,28 @@
+// The desktop's bar over the panes (T591: Top bar and list head > Project bar): the project's name, its tabs with
+// their counts, whether an agent is around, from the page's own headFacts with the item list's demo project.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import type { ReactElement } from 'react'
 import { Frames, States } from '../stories/Frames'
-import { PROJECT_TONES } from '../ui/tones'
-import { AgentPill, ListHead, PhoneTabs, ProjectBar, type TabInfo } from './Header'
+import { headOf } from '../stories/headFixtures'
 
-const meta: Meta = { title: 'Components/Project head' }
-export default meta
+export default { title: 'Components/Top bar and list head/Project bar' } satisfies Meta
 type Story = StoryObj
 
-const tabs = (phone: boolean): TabInfo[] =>
-  (phone ? (['items', 'inputs', 'rules'] as const) : (['items', 'rules'] as const)).map((t, i) => ({ tab: t, count: [32, 4, 51][i], selected: i === 0 }))
-const headOn = { menu() {}, agents() {}, notSaved() {}, search() {}, query() {}, clear() {}, firstResult() {}, filters() {} }
-const agent = { tone: 'bad' as const, label: 'No agent · 2h', offline: false }
-
-/** Whether an agent is around, in each of its looks. */
-export const Agent: Story = {
+export const ProjectBar: Story = { name: 'Project bar', render: () => <Frames phone={false} deskWidth={1100} height={180}>{() => headOf(true)}</Frames> }
+/** A tab under the pointer, from the keys, pressed; the agent pill under the pointer. */
+export const ProjectBarLooks: Story = {
+  name: 'Pointer, keys, pressed: all side by side',
+  parameters: { pseudo: { hover: ['[data-look="pointer"] [role="tab"]:nth-of-type(2)', '[data-look="pointer"] nav > div:last-child button'], focusVisible: ['[data-look="keys"] [role="tab"]:nth-of-type(2)'], active: ['[data-look="pressed"] [role="tab"]:nth-of-type(2)'] } },
   render: () => (
-    <Frames phoneWidth={393} deskWidth={460}>
+    <Frames phone={false} deskWidth={1100}>
       {() => (
         <States
           items={[
-            ['ready', <div className="p-2"><AgentPill tone="ready" label="Claude Code ready" offline={false} /></div>],
-            ['here lately', <div className="p-2"><AgentPill tone="recent" label="Codex · 4m" offline={false} /></div>],
-            ['nothing waits for it', <div className="p-2"><AgentPill tone="idle" label="Claude Code · 3h" offline={false} /></div>],
-            ['work waits, no agent', <div className="p-2"><AgentPill tone="bad" label="No agent · 2h" offline={false} /></div>],
-            ['Taska is away', <div className="p-2"><AgentPill tone="bad" label="No agent" offline /></div>],
+            ['pointer on Rules and on the agent', <div data-look="pointer">{headOf(true)}</div>],
+            ['keys: Tab on Rules', <div data-look="keys">{headOf(true)}</div>],
+            ['Rules pressed', <div data-look="pressed">{headOf(true)}</div>],
           ]}
         />
       )}
-    </Frames>
-  ),
-}
-
-/** The project's bar on the desktop, the list's head, the phone's head and tabs. */
-export const Heads: Story = {
-  render: () => (
-    <Frames phoneWidth={393} deskWidth={1024}>
-      {(layout) => {
-        const phone = layout === 'phone'
-        return (
-          <States
-            items={[
-              ...(phone
-                ? []
-                : ([['the project’s bar', <ProjectBar title="taska" tone={PROJECT_TONES[4]} tabs={tabs(false)} agent={agent} notSaved={0} place="" on={{ tab() {}, agents() {}, notSaved() {} }} />],
-                    ['with changes not saved', <ProjectBar title="taska" tone={PROJECT_TONES[4]} tabs={tabs(false)} agent={agent} notSaved={2} place="" on={{ tab() {}, agents() {}, notSaved() {} }} />]] as [string, ReactElement][])),
-              ['the list’s head', <ListHead phone={phone} title="taska" otherNeeds searching={false} q="" placeholder={phone ? 'Search title, text or code' : 'Search items'} agent={agent} notSaved={0} filtersSet={false} filtersOpen={false} place="" on={headOn} />],
-              ['searching, filters set', <ListHead phone={phone} title="taska" otherNeeds={false} searching q="export" placeholder="Search items" agent={agent} notSaved={0} filtersSet filtersOpen={false} place="" on={headOn} />],
-              ...(phone ? ([['the tabs', <PhoneTabs tabs={tabs(true)} filtersSet={false} showFilter on={{ tab() {}, filters() {} }} />]] as [string, ReactElement][]) : []),
-            ]}
-          />
-        )
-      }}
     </Frames>
   ),
 }

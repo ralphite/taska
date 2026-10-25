@@ -7,11 +7,8 @@ import { useBackSwipe, useDrawerPull } from './phoneGestures'
 import { gripVars } from '../stores/grips'
 import { useLayout, useServices, useStores, useStoreValue } from '../app/context'
 import { useAway, useProjectModel, type ProjectRoute } from '../app/hooks'
-import { agentLine } from '../model/agents'
 import { needsYou } from '../model/items'
-import { NO_FILTERS } from '../model/route'
-import { filtered, filtersSet, inputMatch, openCount, searchWords, tabNumber, visible } from '../model/visible'
-import { TABS, type Tab } from '../model/words'
+import { filtersSet } from '../model/visible'
 import { toneOf } from '../ui/tones'
 import { FootContainer } from '../features/composer/FootContainer'
 import { BoxContainer } from '../features/composer/BoxContainer'
@@ -27,7 +24,8 @@ import { InputsContainer } from '../features/inputs/InputsContainer'
 import { DeskFilters, FilterStrip } from '../features/list/Filters'
 import { filterEvents } from '../features/list/FiltersContainer'
 import { DetailContainer } from './DetailContainer'
-import { ListHead, PhoneTabs, ProjectBar, type AgentInfo, type TabInfo } from './Header'
+import { ListHead, PhoneTabs, ProjectBar } from './Header'
+import { agentInfo, deskTabs, phoneTabs, tabCounts } from './headFacts'
 
 function useHeadFacts(route: ProjectRoute, desk: boolean) {
   const stores = useStores('data', 'feedback')
@@ -37,23 +35,8 @@ function useHeadFacts(route: ProjectRoute, desk: boolean) {
   const rows = useStoreValue(stores.data, (s) => s.projects)
   const title = m?.facts.title || rows?.find((p) => p.name === route.slug)?.title || route.slug
   const otherNeeds = (rows || []).some((p) => p.name !== route.slug && p.needs > 0)
-  const agent: AgentInfo | null = m ? { ...agentLine(m.facts.agents, m.facts.work, m.at), offline: away >= 2 } : null
-  const counts = useMemo(() => {
-    if (!m) return null
-    const words = searchWords(route.list.q)
-    // under a search each tab says how many it matches (the tab shown with its own settings; Items from another tab
-    // counts what is finished too, as its Active view is only Active where it shows)
-    const found = (t: Tab) => visible(m.items, t, t === route.tab ? route.list : { ...NO_FILTERS, q: route.list.q, status: t === 'items' ? 'every' : 'all' }).length
-    const isFiltered = route.tab === 'items' && filtered(route.tab, route.list)
-    // the phone's tabs say 1234 as 1k and nothing for none; the desktop's say the number, and Items says its 0 too
-    const num = (n: number, zero = false) => (desk ? n || (zero ? 0 : '') : tabNumber(n))
-    return {
-      items: words.length ? num(found('items')) : num(isFiltered ? visible(m.items, 'items', route.list).filter((it) => !it.archived).length : openCount(m.items), true),
-      inputs: num(words.length ? m.inputs.filter((r) => inputMatch(r, words)).length : m.inputs.filter((r) => !r.acked).length),
-      archive: num(words.length ? found('archive') : m.items.filter((it) => it.archived && !it.mergedInto).length),
-      rules: num(words.length ? found('rules') : m.items.filter((it) => it.type === 'rule' && !it.mergedInto && !it.archived && it.status !== 'dropped').length),
-    } as Record<Tab, string | number>
-  }, [m, route.tab, route.list, desk])
+  const agent = m ? agentInfo(m, away) : null
+  const counts = useMemo(() => (m ? tabCounts(m, route.tab, route.list, desk) : null), [m, route.tab, route.list, desk])
   return { m, title, agent, counts, notSaved, away, otherNeeds }
 }
 
@@ -97,11 +80,7 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
   // the pane, and the foot under it, take the list's column too when an item is full width (O)
   const pane = full ? 'col-span-2 col-start-1' : 'col-start-2'
   const [footH, setFootH] = useState(0)
-  const tabs: TabInfo[] = TABS.filter((t) => t !== 'archive' && t !== 'inputs').map((t) => ({
-    tab: t,
-    count: counts ? counts[t] : '',
-    selected: (route.tab === t || (t === 'items' && route.tab === 'archive')) && !settings && !side,
-  }))
+  const tabs = deskTabs(counts, route.tab, settings || side)
   return (
     <div className="flex h-full w-full" style={gripVars(grips) as CSSProperties}>
       {/* folded, it opens over the page (New project from its rail) */}
@@ -231,11 +210,7 @@ function PhoneLayout({ route }: { route: ProjectRoute }) {
   const under = (!open && !settings) || !!floating
   const phoneSet = filtersSet(route.tab, route.list)
   const [footH, setFootH] = useState(0)
-  const tabs: TabInfo[] = TABS.filter((t) => t !== 'archive').map((t) => ({
-    tab: t,
-    count: counts ? counts[t] : '',
-    selected: route.tab === t || (t === 'items' && route.tab === 'archive'),
-  }))
+  const tabs = phoneTabs(counts, route.tab)
   const reduce = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches
   const frame: CSSProperties = {
     '--foot-h': footH + 'px',

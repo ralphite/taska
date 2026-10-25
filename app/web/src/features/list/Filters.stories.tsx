@@ -1,40 +1,16 @@
+// The filters (T591: Top bar and list head > Filters): what is set as chips that take it off, on the phone a row under
+// the tabs, on the desktop a row under the search that opens to every control, from the page's own filtersSet with
+// the item list's demo project. The phone's sheet of controls is in Menus and sheets > Sheets.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { NO_FILTERS } from '../../model/route'
 import { Frames } from '../../stories/Frames'
-import { SheetFrames, no } from '../../stories/sheetFixtures'
-import { DeskFilters, FilterStrip, filtersSheet } from './Filters'
+import { headOf } from '../../stories/headFixtures'
 
-const meta: Meta = { title: 'Components/Top bar and list head/Filters' }
-export default meta
+export default { title: 'Components/Top bar and list head/Filters' } satisfies Meta
 type Story = StoryObj
 
-const on = { set: no, unset: no, reset: no, saveView: no }
-const list = { ...NO_FILTERS, type: 'bug', pri: 'P1', sort: 'new' }
+const BUGS = { type: 'bug', pri: 'P1', sort: 'new' }
 
-/** The phone's sheet on Items (with Save as a view) and on Rules. */
-export const PhoneSheet: Story = {
-  render: () => <SheetFrames desk={false} height={760} parts={() => filtersSheet({ tab: 'items', list, filtered: true, shown: 12, open: 9 }, { ...on, close: no })} />,
-}
-
-/** The phone's row of the filters set, under the tabs, with Clear. */
-export const PhoneStrip: Story = {
-  render: () => (
-    <Frames desk={false} phoneWidth={393}>
-      {() => <FilterStrip set={[['type', 'Bug'], ['pri', 'P1'], ['sort', 'Newest']]} hidden={false} onUnset={no} onReset={no} />}
-    </Frames>
-  ),
-}
-
-/** The desktop's row under the search: what is set, then opened to the controls. */
-export const DeskRow: Story = {
-  render: () => (
-    <Frames phone={false} deskWidth={420}>
-      {() => (
-        <div className="flex flex-col gap-6">
-          <DeskFilters tab="items" list={list} set={[['type', 'Bug'], ['pri', 'P1'], ['sort', 'Newest']]} open={false} place="" hidden={false} on={{ ...on, toggle: no }} />
-          <DeskFilters tab="archive" list={{ ...list, when: 'later', status: 'done' }} set={[['when', 'Later'], ['status', 'Done']]} open place="" hidden={false} on={{ ...on, toggle: no }} />
-        </div>
-      )}
-    </Frames>
-  ),
-}
+export const PhoneStrip: Story = { name: 'Strip on the phone', render: () => <Frames desk={false} phoneWidth={393} height={200}>{() => headOf(false, { list: BUGS })}</Frames> }
+export const DeskPanel: Story = { name: 'Panel on the desktop', render: () => <Frames phone={false} deskWidth={1100} height={460}>{() => headOf(true, { list: BUGS, filtersOpen: true })}</Frames> }
+/** Set and folded: the chips, Clear, the dot on the filters button. */
+export const FilterChipsAndDot: Story = { name: 'Chips', render: () => <Frames deskWidth={1100} phoneWidth={393} height={220}>{(layout) => headOf(layout === 'desk', { list: BUGS })}</Frames> }
