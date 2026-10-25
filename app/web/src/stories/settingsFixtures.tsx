@@ -27,7 +27,7 @@ export const SEEN: AgentSeen[] = [
 const ROWS: ProjectRow[] = [
   { name: 'home', title: 'Home', open: 13, needs: 11, pos: 0 },
   { name: 'shop', title: 'Shop', open: 0, needs: 0, pos: 1 },
-  { name: 'notes', title: '读书笔记', open: 2, needs: 1, pos: 2 },
+  { name: 'notes', title: '\u8bfb\u4e66\u7b14\u8bb0', open: 2, needs: 1, pos: 2 },
 ]
 const GONE: DeletedProject[] = [{ name: 'old', title: 'Old notes', t: at(60 * 24 * 4), items: 4 }]
 export const LOG: LogRow[] = [

@@ -53,7 +53,7 @@ class DashboardTest(unittest.TestCase):
         def at(m: int) -> str:
             return f"2026-10-24T10:{m:02d}:00+00:00"
 
-        done = SimpleNamespace(by="claude-code", t=at(41), text="Done.\n成本：40 分钟 · 66,321 token（读缓存 8,163,512）· 34 步")
+        done = SimpleNamespace(by="claude-code", t=at(41), text="Done.\n\u6210\u672c\uff1a40 \u5206\u949f · 66,321 token\uff08\u8bfb\u7f13\u5b58 8,163,512\uff09· 34 \u6b65")
         st = SimpleNamespace(
             events=[
                 ev.ItemAdded(n=1, status="open", t=at(0)),

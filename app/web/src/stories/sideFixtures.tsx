@@ -14,7 +14,7 @@ export const sideOn: SidebarEvents = { newInput() {}, newVoice() {}, newProject(
 const ROWS: ProjectRow[] = [
   { name: 'home', title: 'Home', open: 13, needs: 11, pos: 0 },
   { name: 'shop', title: 'Shop', open: 0, needs: 0, pos: 1 },
-  { name: 'notes', title: '读书笔记', open: 2, needs: 1, pos: 2 },
+  { name: 'notes', title: '\u8bfb\u4e66\u7b14\u8bb0', open: 2, needs: 1, pos: 2 },
   { name: 'long', title: 'A project with a very long name that does not fit', open: 0, needs: 0, pos: 3 },
 ]
 const DEV = [

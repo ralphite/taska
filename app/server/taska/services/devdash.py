@@ -184,10 +184,10 @@ def panels(root: str) -> List[Dict[str, str]]:
 
 
 # the line an agent ends a done message with: "<cost>: 9 min · 66,321 token (cache 8,163,512) · 34 steps", in Chinese
-COST = re.compile("成本：\\s*(\\d+)\\s*分钟")
+COST = re.compile("\u6210\u672c\uff1a\\s*(\\d+)\\s*\u5206\u949f")
 TOKENS = re.compile("([\\d,]+)\\s*token")
-CACHE = re.compile("读缓存\\s*([\\d,]+)")
-STEPS = re.compile("(\\d+)\\s*步")
+CACHE = re.compile("\u8bfb\u7f13\u5b58\\s*([\\d,]+)")
+STEPS = re.compile("(\\d+)\\s*\u6b65")
 
 
 def _num(m: Optional["re.Match[str]"]) -> int:
@@ -204,7 +204,7 @@ def costs(projects: Dict[str, Project], days: Optional[int]) -> Dict[str, Any]:
             st = p.state
             for n, it in list(st.items.items()):
                 for x in it.thread:
-                    if x.by in ("you", "org") or "成本：" not in (x.text or ""):
+                    if x.by in ("you", "org") or "\u6210\u672c\uff1a" not in (x.text or ""):
                         continue
                     m = COST.search(x.text)
                     if not m:
@@ -236,7 +236,7 @@ def _round_tokens(it: ItemRow, a: datetime, b: datetime) -> Optional[int]:
     was handed over (the done message with the cost line comes with it or just after). None: no cost line."""
     got: Optional[int] = None
     for x in it.thread:
-        if x.by in ("you", "org") or "成本：" not in (x.text or ""):
+        if x.by in ("you", "org") or "\u6210\u672c\uff1a" not in (x.text or ""):
             continue
         t = _when(x.t)
         if a <= t <= b + timedelta(minutes=15):
