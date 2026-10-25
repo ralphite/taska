@@ -7,8 +7,9 @@ agent has been seen there for a while, it finds the agent session that last work
 Claude Code, from their own session files) and sends it one message from the command line, so it picks the work up.
 
 Nothing here calls a model: asking Taska costs nothing; only a wake-up starts the agent, which then spends its tokens.
-A wake-up that does not take (the agent exits with an error, e.g. its chat is open in the ChatGPT or Claude app and
-the command line cannot write to it) is said in Taska at once, under T325, never left silent (R594).
+A wake-up that does not take (the agent exits with an error) is said in Taska at once, under T325, never left silent
+(R594). A Codex chat of the ChatGPT app is never resumed (the command line cannot write to it while the app has it):
+Codex is woken on the command line, in its own session (T596).
 
     python3 v2/tools/waker.py            run forever
     python3 v2/tools/waker.py --once     one round, for a test (add --dry to only say what it would do)
@@ -105,9 +106,22 @@ def last_project(path: str, mtime: float) -> Optional[str]:
     return found
 
 
+def originator(path: str) -> str:
+    """Who started a Codex session: "codex_exec" (the command line) or "Codex Desktop" (the ChatGPT app)."""
+    try:
+        with open(path, encoding="utf-8", errors="replace") as f:
+            return str(json.loads(f.readline()).get("payload", {}).get("originator", ""))
+    except (OSError, ValueError):
+        return ""
+
+
 def session_for(project: str, now: float) -> Optional[Tuple[str, str, str, str]]:
     """The newest Codex or Claude Code session that works on this project: (agent, id, cwd, file).
-    agent is "" when that session is running right now (its file is being written): never a second writer."""
+    agent is "" when that session is running right now (its file is being written): never a second writer.
+    A session of the ChatGPT app cannot be written to from the command line while the app has it open (it "already
+    has an active writer"), so Codex runs on the command line instead (T596, Yadong's choice): the newest command-line
+    session of the project, or, when it has only the app's, a new one in the app session's folder ("codex-new")."""
+    app: Optional[Tuple[str, str]] = None
     found: List[Tuple[float, str, str]] = []
     for path in glob.glob(os.path.expanduser("~/.codex/sessions/*/*/*/*.jsonl")):
         found.append((os.path.getmtime(path), "codex", path))
@@ -126,7 +140,11 @@ def session_for(project: str, now: float) -> Optional[Tuple[str, str, str, str]]
         if agent == "codex":
             with open(path, encoding="utf-8", errors="replace") as f:
                 meta = json.loads(f.readline()).get("payload", {})
-            return agent, str(meta.get("id", "")), str(meta.get("cwd", os.path.expanduser("~"))), path
+            cwd = str(meta.get("cwd", os.path.expanduser("~")))
+            if meta.get("originator") == "Codex Desktop":
+                app = app or (cwd, path)
+                continue
+            return agent, str(meta.get("id", "")), cwd, path
         sid = os.path.splitext(os.path.basename(path))[0]
         cwd = os.path.expanduser("~")
         with open(path, encoding="utf-8", errors="replace") as f:
@@ -138,7 +156,7 @@ def session_for(project: str, now: float) -> Optional[Tuple[str, str, str, str]]
                     except ValueError:
                         pass
         return agent, sid, cwd, path
-    return None
+    return ("codex-new", "", app[0], app[1]) if app else None
 
 
 def wake(project: str, agent: str, sid: str, cwd: str, path: str, what: str, dry: bool) -> str:
@@ -151,6 +169,11 @@ def wake(project: str, agent: str, sid: str, cwd: str, path: str, what: str, dry
         cmd = [CODEX, "exec", "resume", "--skip-git-repo-check", sid, prompt]
         if contains(path, b'"danger-full-access"'):  # it ran with full access: it goes on the same way
             cmd.insert(3, "--dangerously-bypass-approvals-and-sandbox")
+    elif agent == "codex-new":
+        # the project's first command-line session, with the access its app session had; later ones resume it
+        cmd = [CODEX, "exec", "--skip-git-repo-check", prompt.replace("by=codex-new", "by=codex")]
+        if contains(path, b'"danger-full-access"'):
+            cmd.insert(2, "--dangerously-bypass-approvals-and-sandbox")
     else:
         cmd = [CLAUDE, "-p", "--resume", sid, prompt]
         if contains(path, b'"permissionMode":"bypassPermissions"'):

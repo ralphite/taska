@@ -140,6 +140,49 @@ class TheWaker(unittest.TestCase):
         self.assertIn("active writer", self.told[0])
 
 
+class CodexOnTheCommandLine(unittest.TestCase):
+    """T596 (Yadong's choice): a Codex chat of the ChatGPT app is never resumed (the command line cannot write to it while
+    the app has it open); Codex is woken on the command line: its own session there, or a new one in the app's folder."""
+
+    def setUp(self) -> None:
+        self.w = waker()
+        self.dir = tempfile.mkdtemp()
+        self.now = time.time()
+
+    def session(self, name: str, originator: str, project: str, age_s: float) -> str:
+        path = os.path.join(self.dir, name + ".jsonl")
+        with open(path, "w") as f:
+            f.write(json.dumps({"payload": {"id": name, "cwd": "/tmp", "originator": originator}}) + "\n")
+            f.write(json.dumps({"cmd": f"curl -s http://127.0.0.1:7340/p/{project}/next?by=codex"}) + "\n")
+        os.utime(path, (self.now - age_s, self.now - age_s))
+        return path
+
+    def pick(self) -> Any:
+        paths = glob.glob(os.path.join(self.dir, "*.jsonl"))
+        self.w.glob = types.SimpleNamespace(glob=lambda pattern: paths if ".codex" in pattern else [])
+        return self.w.session_for("home", self.now)
+
+    def test_the_app_chat_alone_gets_a_new_command_line_session(self) -> None:
+        self.session("app", "Codex Desktop", "home", 3600)
+        agent, sid, cwd, _ = self.pick()
+        self.assertEqual((agent, sid, cwd), ("codex-new", "", "/tmp"))
+
+    def test_its_command_line_session_is_resumed_not_the_newer_app_chat(self) -> None:
+        self.session("app", "Codex Desktop", "home", 3600)
+        self.session("cli", "codex_exec", "home", 7200)
+        agent, sid, _, _ = self.pick()
+        self.assertEqual((agent, sid), ("codex", "cli"))
+
+    def test_a_new_session_runs_codex_exec_not_resume(self) -> None:
+        cmd: List[List[str]] = []
+        self.w.subprocess = types.SimpleNamespace(Popen=lambda c, **k: cmd.append(c) or types.SimpleNamespace(poll=lambda: None), DEVNULL=None, STDOUT=None)
+        self.w.LOGS = self.dir
+        self.w.wake("home", "codex-new", "", "/tmp", self.session("app", "Codex Desktop", "home", 3600), "fix the tap", False)
+        self.assertEqual(cmd[0][1:2], ["exec"])
+        self.assertNotIn("resume", cmd[0])
+        self.assertIn("by=codex ", cmd[0][-1])
+
+
 def often(rrule: str) -> bool:
     """A schedule that fires more than once an hour."""
     freq = re.search(r"FREQ=(\w+)", rrule)
