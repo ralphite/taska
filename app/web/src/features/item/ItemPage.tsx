@@ -369,10 +369,6 @@ export function ItemPage({ it, f, env, facts, on, talkRef, duo = false, left = n
       </div>
     ) : null
 
-  const plan = talkPlan(it, { all: f.allTalk, going: facts.going?.text ?? null })
-  const notes = docNotes(f.docs, env, on, plan.hidden ? plan.thread[plan.hidden]?.t : '')
-  const top = plan.first && (plan.thread.length > 0 || notes.length > 0)
-  const card = <NeedsCard it={it} env={env} on={on} remodify={f.remodify} going={facts.going?.text ?? null} />
   return (
     <div className={`group/item flex flex-col gap-6 px-5 pt-5 pb-10 lg:h-full lg:gap-0 lg:p-0 ${duo ? 'lg:flex-row' : ''}`}>
       {duo && left ? (
@@ -436,31 +432,45 @@ export function ItemPage({ it, f, env, facts, on, talkRef, duo = false, left = n
         className={`lg:min-h-0 lg:flex-1 lg:scrollbar-thin lg:overflow-y-auto lg:data-up:mask-t-from-[calc(100%-2rem)] ${duo ? 'lg:h-full lg:min-w-0 lg:pb-[calc(var(--foot-h,0px)+1.5rem)]' : 'lg:-mb-(--foot-h) lg:pb-(--foot-h) dark:lg:-mb-[calc(var(--foot-h,0px)+1.5rem)] dark:lg:pb-[calc(var(--foot-h,0px)+1.5rem)]'}`}
       >
         <div className="flex flex-col gap-6 lg:mx-auto lg:w-full lg:max-w-[46rem] lg:px-8 lg:py-6">
-          {plan.thread.length || notes.length ? (
-            <div className="flex flex-col gap-6 border-t border-zinc-100 pt-6 lg:border-0 lg:pt-0 dark:border-zinc-800/70">
-              {plan.hidden ? (
-                <button onClick={on.earlier} className="-my-1 h-11 self-center rounded-lg px-3 text-sm font-medium text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10">
-                  Show {plan.hidden} earlier
-                </button>
-              ) : null}
-              {top ? card : null}
-              <Talk
-                it={it}
-                list={plan.thread.slice(plan.hidden)}
-                notes={notes}
-                card={plan.inline && plan.cardId != null ? { id: plan.cardId, node: card } : undefined}
-                env={env}
-                on={on}
-                facts={facts}
-                docs={f.docs}
-                code={f.code}
-              />
-            </div>
-          ) : null}
-          {plan.inline || top ? null : card}
+          <ItemTalk it={it} f={f} env={env} facts={facts} on={on} />
         </div>
       </div>
     </div>
+  )
+}
+
+/** The item's talk: its messages and documents' comments in time, and the card that waits on you where its message
+ * is (heading the talk when it has none of its own, after it when nothing was said). */
+export function ItemTalk({ it, f, env, facts, on }: { it: Item; f: ItemFacts; env: TalkEnv; facts: TalkFacts; on: ItemEvents }) {
+  const plan = talkPlan(it, { all: f.allTalk, going: facts.going?.text ?? null })
+  const notes = docNotes(f.docs, env, on, plan.hidden ? plan.thread[plan.hidden]?.t : '')
+  const top = plan.first && (plan.thread.length > 0 || notes.length > 0)
+  const card = <NeedsCard it={it} env={env} on={on} remodify={f.remodify} going={facts.going?.text ?? null} />
+  return (
+    <>
+      {plan.thread.length || notes.length ? (
+        <div className="flex flex-col gap-6 border-t border-zinc-100 pt-6 lg:border-0 lg:pt-0 dark:border-zinc-800/70">
+          {plan.hidden ? (
+            <button onClick={on.earlier} className="-my-1 h-11 self-center rounded-lg px-3 text-sm font-medium text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10">
+              Show {plan.hidden} earlier
+            </button>
+          ) : null}
+          {top ? card : null}
+          <Talk
+            it={it}
+            list={plan.thread.slice(plan.hidden)}
+            notes={notes}
+            card={plan.inline && plan.cardId != null ? { id: plan.cardId, node: card } : undefined}
+            env={env}
+            on={on}
+            facts={facts}
+            docs={f.docs}
+            code={f.code}
+          />
+        </div>
+      ) : null}
+      {plan.inline || top ? null : card}
+    </>
   )
 }
 

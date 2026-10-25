@@ -79,6 +79,7 @@ AGENT = (
     'WATCH while o=$(curl -s "BASE/next?wait=540"); [ -z "$o" ] || echo "$o" | grep -q \'nothing to do now\'; do sleep 20; done\n'
     'YOURS Items you create start as proposed: the user approves them before anyone works on them. `B03 done`\n'
     "      from you puts the item in review; the user accepts it. Write item content in the user's language.\n"
+    '      A question left: ask it instead of done. One after done: set the item back to doing, then ask (r809).\n'
     '      The message with done has four parts, in this order: Result (what is different now, one line); How to\n'
     '      check (where to look or what to tap); What changed (a short list); a picture of it (T274 #41).\n'
     'WHO   Add ?by=<you> (claude-code, codex, antigravity) to /next and /do: the user sees whether an agent is around.\n'
