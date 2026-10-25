@@ -46,6 +46,8 @@ export interface DocRow {
   speaking: boolean
   /** voice comments on it not sent yet */
   drafts: readonly NotSent[]
+  /** the phone's Not sent cards shown open under it */
+  draftsShown: boolean
 }
 
 export interface DocFacts {
@@ -220,7 +222,8 @@ export function DocView({ facts, env, on, popover, lasso, page, recTime, aim = n
     <div ref={root} className="flex min-h-full flex-col">
       {/* a web page takes the pane's whole width, as a page in a browser does */}
       <div className={`relative flex min-w-0 flex-col lg:mx-auto lg:w-full ${web ? '' : 'lg:max-w-[min(46rem,calc(100%-5rem))]'}`}>
-        <div className={`relative flex items-center gap-1 text-xs text-zinc-500 ${web ? 'lg:absolute lg:top-2 lg:right-2 lg:z-10' : ''}`}>
+        {/* on the phone, what it is on, who wrote it and when take their own line, the buttons the next */}
+        <div className={`relative flex flex-wrap items-center gap-1 text-xs text-zinc-500 ${web ? 'lg:absolute lg:top-2 lg:right-2 lg:z-10' : ''}`}>
           {desk && facts.whole.n ? (
             <>
               <button
@@ -233,7 +236,7 @@ export function DocView({ facts, env, on, popover, lasso, page, recTime, aim = n
               {facts.whole.open ? <div className="absolute top-full right-0 z-20 mt-1 w-80 text-sm">{thread(facts.whole.open, undefined, true)}</div> : null}
             </>
           ) : null}
-          <span hidden={web} className="min-w-0 flex-1 truncate">
+          <span hidden={web} className="min-w-0 flex-1 basis-full truncate lg:basis-auto">
             on{' '}
             <button onClick={on.goItem} className="text-blue-600 hover:underline dark:text-blue-400">
               {facts.itemCode}
@@ -269,7 +272,8 @@ export function DocView({ facts, env, on, popover, lasso, page, recTime, aim = n
         <div hidden={web} data-doc-blocks={facts.d.d} className={`relative mt-3 space-y-3 text-[15px] ${facts.circle ? 'select-none' : ''}`}>
           {(web ? [] : rows).map((r) => {
             const lv = (r.b.text.match(/^#+/) || ['#'])[0].length
-            const n = r.b.comments.length
+            // the phone's count has the comments not sent yet too (the desktop's are BlockActs')
+            const n = r.b.comments.length + r.drafts.length
             return (
               <section
                 key={r.tk}
@@ -308,6 +312,13 @@ export function DocView({ facts, env, on, popover, lasso, page, recTime, aim = n
                 ) : null}
                 {r.say ? <SayRow rec={facts.recording} time={recTime} on={{ say: () => on.say(r.b.key, r.quote), cancel: on.sayCancel, type: on.type }} /> : null}
                 {desk ? null : r.threads.map((s) => thread(s, r.b.text))}
+                {r.draftsShown ? (
+                  <div className="mt-2 space-y-2">
+                    {r.drafts.map((x) => (
+                      <DraftCard key={x.label} words={x.words} voice={x.voice} transcribing={x.transcribing} />
+                    ))}
+                  </div>
+                ) : null}
                 {desk ? (
                   <BlockActs
                     counts={r.counts}

@@ -38,6 +38,7 @@ export function factsOf(m: ProjectModel, d: Doc, v: DocLook, seen: Readonly<Reco
       title: i === 0 && isTitled,
       counts: [...threads.map((t) => ({ tk: t.tk, n: t.comments.length, done: resolved(d, t.tk), quote: t.quote })), ...(drafts.length ? [{ tk: newKey, n: drafts.length, done: false, quote: '' }] : [])],
       drafts,
+      draftsShown: !desk && drafts.length > 0 && isOpen(newKey, b.key),
       open,
       threads: threads.filter((t) => (desk ? t.tk === open : isOpen(t.tk, b.key))).map((t) => shown(t, b.key)),
       isNew: threadNew(seen, d, b.key, b.comments),

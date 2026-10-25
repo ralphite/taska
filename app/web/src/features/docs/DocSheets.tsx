@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react'
 import { oneLine } from '../../model/items'
+import { plainQuote } from '../../model/markdown'
 import type { Doc } from '../../model/types'
 import type { SheetParts } from '../../ui/Sheet'
 
@@ -22,7 +23,8 @@ export function commentMoveSheet(doc: Doc, current: string, onPick: (key: string
     body: (
       <div className="-mx-1 flex max-h-[60dvh] flex-col gap-0.5 overflow-y-auto">
         {opt('doc', <b>The whole document</b>)}
-        {doc.blocks.map((x) => opt(x.key, oneLine(x.text).slice(0, 120)))}
+        {/* each paragraph read as words (a table's cells, not its pipes) */}
+        {doc.blocks.map((x) => opt(x.key, oneLine(plainQuote(x.text)).slice(0, 120)))}
       </div>
     ),
   }

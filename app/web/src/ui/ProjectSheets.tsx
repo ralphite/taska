@@ -94,7 +94,8 @@ export function projectMenuSheet({ here, slug, title, tone, open }: { here: bool
   )
   return {
     menu: true,
-    head: here ? undefined : (
+    // which project it is, this one too (on the phone the sheet would show nothing over its rows)
+    head: (
       <span className="flex items-center gap-2.5">
         <ProjTile title={title} tone={tone} cls="size-8 rounded-lg text-sm" />
         <span className="min-w-0">
