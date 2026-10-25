@@ -1,23 +1,14 @@
+// Naming a new project in the sidebar (T591: Sidebar): the page's own field where the projects are, Create (any name:
+// its address is made from it), and why it was not made.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frames } from '../../stories/Frames'
+import { side } from '../../stories/sideFixtures'
 import { NewProjectField } from './NewProjectField'
 
-const meta: Meta = { title: 'Components/Sidebar/New project' }
-export default meta
+export default { title: 'Components/Sidebar' } satisfies Meta
 type Story = StoryObj
 
 const on = { create: () => {}, cancel: () => {} }
 
-/** A name and Create (any name: its address is made from it); not made, why. */
-export const Field: Story = {
-  render: () => (
-    <Frames phoneWidth={320} deskWidth={260}>
-      {() => (
-        <div className="flex flex-col gap-4 bg-zinc-50 py-2 dark:bg-zinc-900">
-          <NewProjectField error="" on={on} />
-          <NewProjectField error="A project of that name exists" on={on} />
-        </div>
-      )}
-    </Frames>
-  ),
-}
+export const NewProject: Story = { name: 'New project: naming it', render: () => <Frames phoneWidth={320} deskWidth={240} height={760}>{(layout) => side(layout === 'phone', { newProject: <NewProjectField error="" on={on} /> })}</Frames> }
+export const NewProjectNotMade: Story = { name: 'New project: not made', render: () => <Frames phoneWidth={320} deskWidth={240} height={760}>{(layout) => side(layout === 'phone', { newProject: <NewProjectField error="A project of that name exists" on={on} /> })}</Frames> }

@@ -5,7 +5,8 @@ import { NewProjectField } from './NewProjectField'
 import { useLayout, useServices, useStores, useStoreValue } from '../../app/context'
 import { useSideProjects } from '../../app/projectLists'
 import { usePaneRef } from '../../app/panes'
-import { Rail, Sidebar, type SideLinkInfo, type SidebarEvents } from './Sidebar'
+import { Rail, Sidebar, type SidebarEvents } from './Sidebar'
+import { sideLinks } from './sideLinks'
 import { NEW_DRAFT } from '../../model/draftTarget'
 
 const DEV_LINKS = [
@@ -32,13 +33,7 @@ export function SidebarContainer({ slug, place, hidden, rail }: { slug: string; 
   // the list beside the pane (Documents, Activity, Deleted) stays lit while what you opened from it shows
   const side = useStoreValue(stores.route, (s) => s.side)
   const base = `/p/${encodeURIComponent(slug)}/`
-  const links: SideLinkInfo[] = slug
-    ? [
-        { key: 'docs', label: 'Documents', icon: 'doc', href: base + 'docs', current: side === 'docs' },
-        { key: 'log', label: 'Activity', icon: 'history', href: base + 'log', current: side === 'log' },
-        { key: 'deleted', label: 'Deleted', icon: 'trash', href: base + 'deleted', current: side === 'deleted' },
-      ]
-    : []
+  const links = sideLinks(slug, side)
   const on: SidebarEvents = {
     newInput: () => app.actions.run('new-input'),
     newVoice: () => {

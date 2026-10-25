@@ -1,55 +1,72 @@
+// The sidebar and the phone's drawer, one story for each state (T591: the groups and names Yadong had before the
+// rewrite): the page's own list of projects (sideProjects, in your order, this one with this page's counts) and links
+// (sideLinks), and the page's Sidebar and Rail.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { Frame, Frames } from '../../stories/Frames'
-import { PROJECT_TONES } from '../../ui/tones'
-import { Rail, Sidebar, type SideLinkInfo, type SideProject, type SidebarEvents } from './Sidebar'
+import { After, Frame, Frames } from '../../stories/Frames'
+import { rail, side, sideOn } from '../../stories/sideFixtures'
+import { Sidebar } from './Sidebar'
 
-const meta: Meta = { title: 'Components/Sidebar' }
-export default meta
+export default { title: 'Components/Sidebar' } satisfies Meta
 type Story = StoryObj
 
-const on: SidebarEvents = { newInput() {}, newVoice() {}, newProject() {}, hide() {}, settings() {}, keys() {}, go: (_, e) => e.preventDefault(), undo() {} }
-const projects: SideProject[] = [
-  { slug: 'home', title: 'Home', tone: PROJECT_TONES[0], needs: 11, open: 13, current: false, href: '#' },
-  { slug: 'shop', title: 'Shop redesign', tone: PROJECT_TONES[1], needs: 0, open: 4, current: false, href: '#' },
-  { slug: 'taska', title: 'taska', tone: PROJECT_TONES[4], needs: 2, open: 32, current: true, href: '#' },
-  { slug: 'notes', title: '读书笔记', tone: PROJECT_TONES[2], needs: 1, open: 2, current: false, href: '#' },
-  { slug: 'long', title: 'A project with a very long name that does not fit', tone: PROJECT_TONES[6], needs: 0, open: 0, current: false, href: '#' },
-]
-const links: SideLinkInfo[] = [
-  { key: 'docs', label: 'Documents', icon: 'doc', href: '#', current: false },
-  { key: 'log', label: 'Activity', icon: 'history', href: '#', current: true },
-  { key: 'deleted', label: 'Deleted', icon: 'trash', href: '#', current: false },
-]
-const dev = [
-  { label: 'Storybook', href: '#', icon: 'book' as const },
-  { label: 'Dashboard', href: '#', icon: 'chart' as const },
-]
+/** Marks a row as the page's own code does while you press it or drag it. */
+const mark = (slug: string, attr: string) => (root: HTMLElement) => root.querySelector(`a[data-slug="${slug}"]`)?.setAttribute(attr, '')
 
-/** The desktop's sidebar and the phone's drawer, with the projects, their counts and the foot. */
-export const Projects: Story = {
+/** The desktop's sidebar (New input lit while you write one) and the phone's drawer: the projects in your order, each
+ * with what needs you and how many are open; Documents, Activity, Deleted; the foot. */
+export const Projects: Story = { name: 'Sidebar and phone drawer', render: () => <Frames phoneWidth={320} deskWidth={240} height={760}>{(layout) => side(layout === 'phone', { composing: true })}</Frames> }
+/** A project under the pointer, from the keys, pressed, dragged to a new place, and one an item from the list is
+ * dragged over. */
+export const SidebarLooks: Story = {
+  name: 'Pointer, keys, pressed, dragged: all side by side',
+  parameters: { pseudo: { hover: ['[data-look="pointer"] a[data-slug="home"]'], focusVisible: ['[data-look="keys"] a[data-slug="home"]'] } },
   render: () => (
-    <Frames phoneWidth={320} deskWidth={240} height={760}>
-      {(layout) => <Sidebar phone={layout === 'phone'} projects={projects} composing={layout === 'desk'} links={links} undoLabel={layout === 'phone' ? 'T9 approved' : null} devLinks={layout === 'desk' ? dev : []} place={layout === "phone" ? "h-full bg-zinc-100" : "h-full bg-zinc-50"} on={on} />}
-    </Frames>
-  ),
-}
-
-/** Before the projects were ever listed in this browser. */
-export const NotListedYet: Story = {
-  render: () => (
-    <Frames phoneWidth={320} deskWidth={240} height={420}>
-      {(layout) => <Sidebar phone={layout === 'phone'} projects={null} composing={false} links={[]} place={layout === "phone" ? "h-full bg-zinc-100" : "h-full bg-zinc-50"} on={on} />}
-    </Frames>
-  ),
-}
-
-/** The sidebar folded: the rail. */
-export const Folded: Story = {
-  render: () => (
-    <div className="flex gap-6 bg-zinc-200 p-6 dark:bg-zinc-800">
-      <Frame layout="desk" width={56} height={560}>
-        <Rail projects={projects} composing settingsOpen={false} on={on} />
-      </Frame>
+    <div className="flex flex-wrap gap-6 bg-zinc-200 p-6 dark:bg-zinc-800">
+      {(
+        [
+          ['pointer on Home', 'pointer', {}],
+          ['keys: Tab on Home', 'keys', {}],
+          ['Home pressed', 'pressed', {}],
+          ['Home dragged', 'dragged', {}],
+          ['an item dragged over Home', 'drop', { drop: 'home' }],
+        ] as const
+      ).map(([label, look, f]) => (
+        <Frame key={look} layout="desk" width={240} height={460} label={label}>
+          <div data-look={look} className="h-full">
+            <After run={look === 'pressed' ? mark('home', 'data-pressed') : look === 'dragged' ? mark('home', 'data-dragging') : () => {}}>{side(false, f)}</After>
+          </div>
+        </Frame>
+      ))}
     </div>
   ),
+}
+/** Documents open beside the pane (lit), and the pointer on Activity. */
+export const SidebarSideOpenLooks: Story = {
+  name: 'Documents open, and the pointer',
+  parameters: { pseudo: { hover: ['nav a[href$="/log"]'] } },
+  render: () => <Frames phone={false} deskWidth={240} height={760}>{() => side(false, { side: 'docs' })}</Frames>,
+}
+/** The sidebar folded to icons: a project under the pointer, from the keys, pressed. */
+export const RailLooks: Story = {
+  name: 'Folded to icons: pointer, keys, pressed',
+  parameters: { pseudo: { hover: ['[data-look="pointer"] #rail a:nth-of-type(1)'], focusVisible: ['[data-look="keys"] #rail a:nth-of-type(1)'], active: ['[data-look="pressed"] #rail a:nth-of-type(1)'] } },
+  render: () => (
+    <div className="flex gap-6 bg-zinc-200 p-6 dark:bg-zinc-800">
+      {(['pointer', 'keys', 'pressed'] as const).map((look) => (
+        <Frame key={look} layout="desk" width={56} height={420} label={look}>
+          <div data-look={look} className="h-full">
+            {rail()}
+          </div>
+        </Frame>
+      ))}
+    </div>
+  ),
+}
+/** The drawer's foot on the phone: Undo of what you did last (a phone has no Z), the links. */
+export const DrawerFoot: Story = { name: 'Drawer foot on the phone', render: () => <Frames desk={false} phoneWidth={320} height={760}>{() => side(true, { undo: 'T009 approved' })}</Frames> }
+export const RailFolded: Story = { name: 'Folded to icons', render: () => <div className="flex gap-6 bg-zinc-200 p-6 dark:bg-zinc-800"><Frame layout="desk" width={56} height={560}>{rail()}</Frame></div> }
+/** Before the projects were ever listed in this browser. */
+export const NotListedYet: Story = {
+  name: 'Not listed yet',
+  render: () => <Frames phoneWidth={320} deskWidth={240} height={420}>{(layout) => <Sidebar phone={layout === 'phone'} projects={null} composing={false} links={[]} place={layout === 'phone' ? 'h-full bg-zinc-100' : 'h-full bg-zinc-50'} on={sideOn} />}</Frames>,
 }
