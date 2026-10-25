@@ -17,14 +17,18 @@ const [t] = threadsOf([
   comment({ id: 2, key: 'p1', th: 1, quote: 'stays in use', text: 'Until every check is green.', edited: T }),
 ])
 
-/** Under a paragraph (the phone) and as a card beside the text (the desktop): new from an agent; resolved; replying. */
+const [sending] = threadsOf([comment({ id: -1, key: 'p1', th: 0, quote: 'stays in use', text: 'Who signs it off?', by: 'you' })])
+
+/** Under a paragraph (the phone) and as a card beside the text (the desktop): new from an agent; resolved; replying;
+ * yours, still being saved. */
 export const Threads: Story = {
   render: () => (
-    <Frames height={520} deskWidth={360} phoneWidth={393}>
+    <Frames height={680} deskWidth={360} phoneWidth={393}>
       {(layout) => (
         <div className="flex flex-col gap-4 p-4">
           <Thread t={t} blockText="The old one stays in use." rail={layout === 'desk'} isNew done={false} replying={false} asking={null} env={env(layout === 'desk')} on={on} />
           <Thread t={t} rail={layout === 'desk'} isNew={false} done replying asking="1 a.pdf" env={env(layout === 'desk')} on={on} />
+          <Thread t={sending} rail={layout === 'desk'} isNew={false} done={false} replying={false} asking={null} env={env(layout === 'desk')} on={on} />
         </div>
       )}
     </Frames>

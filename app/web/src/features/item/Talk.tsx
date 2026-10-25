@@ -340,7 +340,7 @@ export function docNotes(docs: readonly Doc[], env: TalkEnv, on: TalkLineEvents,
             <span className="flex max-w-full min-w-0 items-center gap-0.5 px-1">
               <Icon n="comment" c="size-3 shrink-0" />
               <span className="min-w-0 truncate">
-                You · {where} · {when(c.t, env.now)} {gone}
+                You · {where} · {c.id > 0 ? when(c.t, env.now) : 'Sending…'} {gone}
               </span>
             </span>
           </div>

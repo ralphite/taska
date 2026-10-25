@@ -98,3 +98,32 @@ test('D83 #3 (T550): a comment Taska refused comes back to the box with its para
   await page.keyboard.press('Shift+Enter')
   await expect.poll(async () => p.read('D1')).toContain('Who signs it off?')
 })
+
+test('D83 #1 (T550): your comment says Sending… beside its paragraph until Taska has it', async ({ page, request }) => {
+  test.skip(!isDesk(page), 'the desktop writes a comment beside its paragraph')
+  const p = await project(request, {
+    ...LOOP,
+    then: `${LOOP.then}T4 doc The plan
+  First part of the plan.
+`,
+  })
+  let release = () => {}
+  const held = new Promise<void>((ok) => (release = ok))
+  await page.route(/\/api\/(op|commands)\b/, async (route) => {
+    const o = route.request().postDataJSON() as { op?: string; commands?: { op?: string }[] } | null
+    if (o?.op !== 'dc' && !o?.commands?.some((x) => x?.op === 'dc')) return route.continue()
+    await held
+    await route.continue()
+  })
+  await open(page, p, 'D1')
+  const para = docBlock(page, 'First part')
+  await para.hover()
+  await para.locator(blockPick(page)).click()
+  await page.keyboard.type('Who signs it off?')
+  await page.keyboard.press('Shift+Enter')
+  const mine = page.locator('[data-dc]').filter({ hasText: 'Who signs it off?' }).filter({ visible: true }).first()
+  await expect(mine).toContainText('Sending…')
+  release()
+  await expect.poll(async () => p.read('D1')).toContain('Who signs it off?')
+  await expect(mine).not.toContainText('Sending…')
+})

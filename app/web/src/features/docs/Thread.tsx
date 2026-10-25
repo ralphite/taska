@@ -97,7 +97,8 @@ export function Thread({ t, blockText, rail = false, isNew, done, replying, aski
           <div className="flex min-h-6 flex-wrap items-center gap-1 lg:relative">
             <span className={COMMENT_WHO(c.by)}>{whoName(c.by)}</span>{' '}
             <span className="text-xs text-zinc-400">
-              {when(c.t, env.now)}
+              {/* shown while it is being saved (D83 #1): it says so, as what you send in the talk does */}
+              {c.id > 0 ? when(c.t, env.now) : 'Sending…'}
               {c.edited ? ` · edited ${when(c.edited, env.now)}` : ''}
             </span>
             {/* a comment shown while it is being saved has nothing to edit or delete yet */}

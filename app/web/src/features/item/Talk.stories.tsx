@@ -48,7 +48,8 @@ export const Messages: Story = {
   ),
 }
 
-/** A question taken back, a hidden message, an answered question, a document's comments in time, what you sent on its way. */
+/** A question taken back, a hidden message, an answered question, a document's comments in time (yours while it is
+ * saved too), what you sent on its way. */
 export const Moments: Story = {
   render: () => (
     <Frames phoneWidth={393} deskWidth={720}>
@@ -56,6 +57,7 @@ export const Moments: Story = {
         const desk = layout === 'desk'
         const ask = message({ id: 2, kind: 'ask', text: 'Which format?\n\n- ( ) CSV\n- ( ) Excel' })
         const d = doc({ d: 1, n: 12, blocks: [{ key: 'k1', kind: 'para', text: 'x', comments: [comment({ id: 9, t: later(1) }), comment({ id: 10, by: 'claude-code', t: later(2), quote: '', text: 'Done in the plan.' })] }] })
+        const saving = doc({ d: 1, n: 12, blocks: [{ key: 'k1', kind: 'para', text: 'x', comments: [comment({ id: -1, t: later(1), text: 'Who signs it off?' })] }] })
         return (
           <States
             items={[
@@ -63,6 +65,7 @@ export const Moments: Story = {
               ['a hidden message', talk(item({ n: 12, thread: [message({ id: 2, hidden: true })] }), desk)],
               ['an answered question', talk(item({ n: 12, thread: [ask, you({ id: 3, text: '✓ Excel', t: later(1) })] }), desk)],
               ['comments on its document', talk(item({ n: 12, thread: [message({ id: 2 })] }), desk, {}, [d])],
+              ['your comment on its document, still being saved', talk(item({ n: 12, thread: [message({ id: 2 })] }), desk, {}, [saving])],
               ['sending, and not sent', talk(item({ n: 12, thread: [message({ id: 2 })] }), desk, { outgoing: [{ q: 'q1', text: 'Also keep the sort.', state: 'Sending…', bad: false, canUndo: true }, { q: 'q2', text: 'And the columns.', state: 'Not sent', bad: true, canUndo: false }] })],
             ]}
           />
