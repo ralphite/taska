@@ -5,33 +5,16 @@ import { useCallback, useLayoutEffect, useMemo, useState } from 'react'
 import { useLayout, useServices, useStores, useStoreValue } from '../../app/context'
 import { usePaneRef } from '../../app/panes'
 import { useProjectModel, type ProjectRoute } from '../../app/hooks'
-import { agoShort } from '../../model/agents'
-import { closed, excerpt, lastAgentMessage, queueHead } from '../../model/items'
+import { closed, queueHead } from '../../model/items'
 import { forward } from '../../model/actions'
-import { codeOf, draftCodes, liveN, filesOf, type ProjectModel } from '../../model/project'
-import type { Item } from '../../model/types'
+import { codeOf, draftCodes, liveN, type ProjectModel } from '../../model/project'
 import { holdKey } from '../../model/route'
-import { searchWords, showsView, visible } from '../../model/visible'
+import { searchWords, visible } from '../../model/visible'
 import { useSearchHints } from '../../app/searchHints'
-import { QUIET_MS } from '../../model/words'
-import { unreadSince } from '../../stores/seen'
 import { EmptyList, ItemList, type DrawnRow, type ListEvents } from './ItemList'
 import { SelBar } from './SelBar'
-import type { RowFacts, RowLook } from './ListRows'
-import { workerTip } from './ListRows'
-import { heldRows, listBody, viewChips, type Row } from './rows'
-
-/** The line a search word was found in, when it is not in the code or title. */
-function hitLine(it: Item, code: string, words: string[], shown = ''): string | null {
-  const title = (code + ' ' + it.title + ' ' + shown).toLowerCase()
-  const w = words.find((x) => !title.includes(x))
-  if (!w) return null
-  const text = [it.body, it.next, ...it.thread.map((x) => x.text)].find((t) => (t || '').toLowerCase().includes(w)) || ''
-  const at = text.toLowerCase().indexOf(w)
-  const from = Math.max(0, at - 12)
-  const line = ((from ? '…' : '') + text.slice(from, at + w.length + 80)).replace(/[*`#>]+/g, '').replace(/\s+/g, ' ').trim()
-  return line || null
-}
+import { drawRows, listViews } from './drawRows'
+import { heldRows, listBody, type Row } from './rows'
 
 export function ItemListContainer({ route }: { route: ProjectRoute }) {
   const app = useServices('fields', 'itemDrag', 'items', 'listHold', 'listOrder', 'media', 'nav', 'rows', 'seen', 'selection', 'sheets', 'views')
@@ -83,63 +66,10 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
   const drafts = useMemo(() => (m ? draftCodes(m, draftWords || stores.drafts.getState().of(route.slug), draftFiles) : new Set<string>()), [m, draftWords, draftFiles, stores, route.slug])
   useStoreValue(app.seen.rev, (r) => r) // a dot goes once its item is seen
   const seen = app.seen.of(route.slug)
-  const facts = (it: Item): RowFacts => {
-    const mm = m as ProjectModel
-    const code = codeOf(mm, it.n)
-    const kids = mm.kids.get(it.n) || []
-    const img = filesOf(mm, it).find((f) => (f.mime || '').startsWith('image/'))
-    const a = it.agent
-    let worker: RowFacts['worker'] = null
-    if (a) {
-      const t = new Date(a.t).getTime()
-      const quiet = mm.at - t > QUIET_MS
-      const only = (mm.facts.agents.find((x) => x.name === a.by)?.sessions || []).filter((x) => mm.at - x.t < 3600e3)
-      const ses = a.ses || (only.length === 1 ? only[0].name : '')
-      worker = { by: a.by, quiet, tip: workerTip(a.by, ses, quiet, agoShort(t, mm.at)) }
-    }
-    return {
-      code,
-      parentCode: it.parent ? codeOf(mm, it.parent) : null,
-      image: img ? { f: img.f, src: `/p/${encodeURIComponent(route.slug)}/f/${encodeURIComponent(img.f)}` } : null,
-      kids: kids.length ? { done: kids.filter((k) => closed(k.status)).length, all: kids.length } : null,
-      openKids: kids.filter((k) => !closed(k.status)).length,
-      talk: it.thread.length,
-      draft: drafts.has(code),
-      next: it.n === head,
-      unread: unreadSince(seen, it.n, lastAgentMessage(it)?.t, it.archived),
-      worker,
-      hitLine: words.length ? hitLine(it, code, words) : null,
-    }
-  }
   const drag = useStoreValue(stores.drag, (s) => s)
-  const look = (it: Item): RowLook => ({
-    current: it.n === openN,
-    selected: ui.selected.has(it.n),
-    words,
-    desk,
-    ...(drag.n === it.n ? { drag: 'dragging' as const } : drag.at?.n === it.n && drag.at.how !== 'out' ? { drag: drag.at.how } : {}),
-  })
-  const drawn: DrawnRow[] = rows.map((r, i): DrawnRow => {
-    switch (r.kind) {
-      case 'item':
-        return { kind: 'item', key: 'i' + r.it.n, it: r.it, depth: r.depth, band: r.band, foldable: r.foldable, folded: r.folded, facts: facts(r.it), look: look(r.it) }
-      case 'needs': {
-        const ex = excerpt(r.it)
-        const f = facts(r.it)
-        return { kind: 'needs', key: 'i' + r.it.n, it: r.it, depth: r.depth, facts: { ...f, hitLine: words.length ? hitLine(r.it, f.code, words, ex) : null }, look: look(r.it), excerpt: ex }
-      }
-      case 'held':
-        return { kind: 'held', key: 'i' + r.it.n, it: r.it, code: codeOf(m as ProjectModel, r.it.n), said: r.said, height: (ui.held.get(r.it.n)?.height || 0) - 1 }
-      case 'zone':
-        return { kind: 'zone', key: 'z' + r.zone + i, zone: r.zone, label: r.label, n: r.n }
-      case 'hidden-kids':
-        return { kind: 'hidden-kids', key: 'h' + r.parent, parent: r.parent, depth: r.depth, open: r.open, later: r.later, done: r.done }
-      case 'needs-more':
-        return { kind: 'needs-more', key: 'needs-more', open: r.open, rest: r.rest }
-      case 'archive-all':
-        return { kind: 'archive-all', key: 'archive-all', n: r.n }
-    }
-  })
+  const drawn: DrawnRow[] = m
+    ? drawRows(m, rows, { slug: route.slug, openN, selected: ui.selected, words, desk, drafts, head, seen, drag, heldHeight: (n) => ui.held.get(n)?.height || 0 })
+    : []
 
   // Previous and Next walk the items as the list shows them
   const order = drawn.flatMap((r) => (r.kind === 'item' || r.kind === 'needs' || r.kind === 'held' ? [r.it.n] : []))
@@ -204,12 +134,8 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
         onConnect={() => app.nav.to(`/p/${encodeURIComponent(route.slug)}/agents`)}
       />
     ) : null
-  const presets = m && (body.kind === 'rows' && body.views) ? viewChips(m, route.tab, route.list) : null
-  // your own views, after the presets: what each would show; the one that shows is lit
   const saved = useStoreValue(stores.views, (s) => s)
-  const lit = route.tab === 'items' ? saved.list.findIndex((v) => showsView(route.list, v)) : -1
-  const views = presets && lit >= 0 ? presets.map((v) => ({ ...v, on: false })) : presets
-  const ownViews = views && m ? saved.list.map((v, i) => ({ name: v.name, count: visible(m.items, 'items', { ...route.list, ...v }).length, on: i === lit, editing: saved.edit === i })) : undefined
+  const { views, ownViews } = m ? listViews(m, route.tab, route.list, body, saved) : { views: null, ownViews: undefined }
   return (
     <div
       className="flex min-h-0 flex-1 flex-col"
