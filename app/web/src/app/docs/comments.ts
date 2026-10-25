@@ -67,6 +67,7 @@ export class DocComments {
     const showing = { id: 'show-' + newId(), slug, commands: [], patches: [], docPatches: [{ d: dn, comment: stand }], said: '', t: Date.now(), showOnly: true }
     this.d.changes.getState().add(showing)
     const v = this.d.view.getState()
+    const picked = { sel: v.sel, quote: v.quote, reply: v.reply }
     v.openThread(t.th ? `${t.key}#${t.th}` : t.key)
     v.unpick()
     if (typeof getSelection !== 'undefined') getSelection()?.removeAllRanges()
@@ -90,7 +91,12 @@ export class DocComments {
       said: `commenting on D${dn}`,
       t: Date.now(),
     })
-    if (!ok) this.d.box.putBack(slug, key, typed, held)
+    if (!ok) {
+      this.d.box.putBack(slug, key, typed, held)
+      // what it was on is picked again, so Send comments there again (D83 #3), unless you picked something else since
+      const now = this.d.view.getState()
+      if (now.d === dn && !now.sel.size && !now.quote && !now.reply) now.pick(picked)
+    }
     return ok
   }
 

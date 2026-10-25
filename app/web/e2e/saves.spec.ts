@@ -4,7 +4,7 @@
 // guards: src/app/inputs/ src/app/docs/ src/stores/outbox.ts src/app/page/toasts.ts src/model/saidOf.ts src/features/composer/ src/features/project/NotSaved.tsx src/pages/Header.tsx src/app/actions.ts
 import { expect, test, type Page } from '@playwright/test'
 import { LOOP, isDesk, open, project } from './seed'
-import { blockPick, box, docBlock, fileInput, refuseComments, sheetBody } from './ui'
+import { blockPick, box, boxLine, docBlock, fileInput, refuseComments, sheetBody } from './ui'
 
 const PNG = Buffer.from(
   'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
@@ -71,4 +71,30 @@ test('a change Taska refused says the words it carried and links to where it bel
   await link.click()
   await expect(page.locator('#dlgBody, [role="dialog"]').filter({ visible: true })).toHaveCount(0)
   await expect(page).toHaveURL(new RegExp(p.url + 'D1'))
+})
+
+test('D83 #3 (T550): a comment Taska refused comes back to the box with its paragraph picked again, so Send comments there again', async ({
+  page,
+  request,
+}) => {
+  test.skip(!isDesk(page), 'the desktop writes a comment beside its paragraph')
+  const p = await project(request, {
+    ...LOOP,
+    then: `${LOOP.then}T4 doc The plan
+  First part of the plan.
+`,
+  })
+  await refuseComments(page, 'err that paragraph is gone')
+  await open(page, p, 'D1')
+  const para = docBlock(page, 'First part')
+  await para.hover()
+  await para.locator(blockPick(page)).click()
+  await page.keyboard.type('Who signs it off?')
+  await page.keyboard.press('Shift+Enter')
+  await expect(box(page)).toHaveValue(/Who signs it off\?/)
+  await expect(boxLine(page)).toContainText('Comment on D1')
+  await page.unrouteAll()
+  await box(page).focus()
+  await page.keyboard.press('Shift+Enter')
+  await expect.poll(async () => p.read('D1')).toContain('Who signs it off?')
 })

@@ -173,11 +173,11 @@ export const OnADocument: Story = {
 }
 
 /** The box after a comment: sent, what was picked is let go and the box is as with nothing picked (a comment, a reply
- * and a voice comment alike); not sent (Taska said no), its words come back, and nothing is picked. */
+ * and a voice comment alike); not sent (Taska said no), its words come back with what it was on picked again. */
 export const AfterAComment: Story = {
   render: () =>
     states([
       ['sent', { d: 1 }],
-      ['not sent: the words back, nothing picked', { d: 1, text: 'Also keep the sort.' }],
+      ['not sent: the words back, the paragraph picked again', { d: 1, sel: ['k1'], text: 'Also keep the sort.' }],
     ]),
 }
