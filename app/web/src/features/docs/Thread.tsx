@@ -12,6 +12,7 @@ import { Rich } from '../../ui/Markdown'
 import { COMMENT_CARD, COMMENT_WHO, DC_BTN, HIT } from '../../ui/tones'
 import { Thumbs, VoiceLine, type FileEvents, type PlayState } from '../../ui/Files'
 import type { InlineWorld } from '../../ui/markdown/inline'
+import type { WebCard } from './docFacts'
 
 /** What a document's parts draw with. */
 export interface DocEnv {
@@ -142,4 +143,19 @@ export function DraftCard({ words, voice, transcribing }: { words: string; voice
       {voice ? <div className="text-xs text-zinc-500 dark:text-zinc-400">{transcribing ? 'Transcribing…' : plural(voice, 'voice note')}</div> : null}
     </div>
   )
+}
+
+/** What a count over a web page opens: its thread, or the comments in the box not sent yet on that part. */
+export function WebThread({ card, rail, replying, asking, env, on }: { card: WebCard | undefined; rail: boolean; replying: boolean; asking: string | null; env: DocEnv; on: ThreadEvents }) {
+  if (!card) return null
+  if (card.kind === 'drafts')
+    return card.list.length ? (
+      // over the page, as the comments are: nothing of the page shows through
+      <div className="flex flex-col gap-2 rounded-xl bg-white dark:bg-zinc-900">
+        {card.list.map((x) => (
+          <DraftCard key={x.label} words={x.words} voice={x.voice} transcribing={x.transcribing} />
+        ))}
+      </div>
+    ) : null
+  return <Thread t={card.s.t} rail={rail} isNew={card.s.isNew} done={card.s.done} replying={replying} asking={asking} env={env} on={on} />
 }

@@ -3,16 +3,16 @@
 
 import { blockKeys, outline, resolved, skipped, threadNew, threadsOf, titled, titleLine } from '../../model/docs'
 import { codeOf, liveN, type ProjectModel } from '../../model/project'
-import { when } from '../../model/time'
+import { clock, when } from '../../model/time'
 import type { Doc } from '../../model/types'
 import { whoName } from '../../model/words'
 import type { DocViewState } from '../../stores/docView'
 import { TICKED_LINE, tickText, ticksNotSent, type TickState } from '../../model/docTicks'
 import type { DocFacts, ShownThread } from './DocView'
+import type { PageThread } from './WebPage'
 import type { NotSent } from '../../model/voiceComments'
 
 export type DocLook = Pick<DocViewState, 'threads' | 'sel' | 'quote' | 'reply' | 'circle' | 'typing'>
-
 
 export function factsOf(m: ProjectModel, d: Doc, v: DocLook, seen: Readonly<Record<string, string>>, desk: boolean, asked: Readonly<Record<string, number>>, speaking: { key: string | null; bar: boolean } | null, ticks: TickState, notSent: readonly NotSent[] = []): DocFacts {
   const shown = (t: ReturnType<typeof threadsOf>[number], key: string): ShownThread => ({ t, isNew: threadNew(seen, d, key, t.comments), done: resolved(d, t.tk) })
@@ -71,3 +71,50 @@ export function factsOf(m: ProjectModel, d: Doc, v: DocLook, seen: Readonly<Reco
   }
 }
 
+
+/** What a web page's comments over it show: each thread's count in its part's corner (and the count of comments in the
+ * box not sent yet on a part), the part picked or spoken about, the thread open, and what each count opens. */
+export interface WebFacts {
+  threads: PageThread[]
+  held: { key: string; text: string } | null
+  open: string | null
+  cards: Readonly<Record<string, WebCard>>
+  asking: string | null
+}
+export type WebCard = { kind: 'thread'; s: ShownThread } | { kind: 'drafts'; list: readonly NotSent[] }
+
+export function webFacts(d: Doc, v: Pick<DocViewState, 'threads' | 'quote'>, seen: Readonly<Record<string, string>>, asked: Readonly<Record<string, number>>, notSent: readonly NotSent[], spoken: { key: string; text: string } | null): WebFacts {
+  const all = d.blocks.flatMap((b) => threadsOf(b.comments).map((t) => ({ t, key: b.key })))
+  // a comment not sent yet (its quote in the box, with what was said or written under it) shows where it will go
+  const drafts = notSent.filter((x) => x.key.startsWith('h:'))
+  const draftKeys = [...new Set(drafts.map((x) => x.key))]
+  const cards: Record<string, WebCard> = {}
+  for (const { t, key } of all) cards[t.tk] = { kind: 'thread', s: { t, isNew: threadNew(seen, d, key, t.comments), done: resolved(d, t.tk) } }
+  for (const key of draftKeys) cards[`${key}#new`] = { kind: 'drafts', list: drafts.filter((x) => x.key === key) }
+  return {
+    threads: [
+      ...all.map(({ t, key }) => ({ tk: t.tk, key, quote: t.quote, n: t.comments.length, done: resolved(d, t.tk) })),
+      ...draftKeys.map((key) => ({ tk: `${key}#new`, key, quote: '', n: drafts.filter((x) => x.key === key).length, done: false, draft: true })),
+    ],
+    // the part spoken about: the mic pressed turns into Stop right there, and no other part lights
+    held: spoken ?? (v.quote?.key.startsWith('h:') ? v.quote : null),
+    open: all.find(({ t, key }) => v.threads.has(t.tk) || v.threads.has(key))?.t.tk ?? draftKeys.map((k) => `${k}#new`).find((tk) => v.threads.has(tk)) ?? null,
+    cards,
+    asking: Object.keys(asked).find((k) => k.startsWith(`unfile ${d.d} `))?.slice(`unfile ${d.d} `.length) ?? null,
+  }
+}
+
+/** What the editor's line over the text says, and its Speak button: listening, working out the words of voice notes
+ * said into it (`waiting` of them), or how the editor works. */
+export function editFacts(rec: { ms: number } | null, waiting: number, desk: boolean) {
+  return {
+    hint: rec
+      ? 'Listening. Words go at the mark; you can keep typing.'
+      : waiting
+        ? `Working out the words of ${waiting > 1 ? waiting + ' voice notes' : 'the voice note'}\u2026`
+        : desk
+          ? 'First line is the title. Esc keeps it as a draft.'
+          : 'The first line is the title.',
+    mic: { on: !!rec, text: rec ? `Stop ${clock(rec.ms)}` : 'Speak' },
+  }
+}

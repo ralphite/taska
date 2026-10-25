@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frame } from '../../stories/Frames'
 import { DocPaneActs, DocPaneHead, DocPaneNav } from './DocPane'
 
-const meta: Meta = { title: 'Components/Document/Pane bar' }
+const meta: Meta = { title: 'Components/Document/Reading' }
 export default meta
 type Story = StoryObj
 
@@ -11,6 +11,7 @@ const bar = (children: React.ReactNode) => <div className="flex h-14 items-cente
 
 /** Reading a document, a web page in Comment mode with Delete asking, and editing. */
 export const Bars: Story = {
+  name: 'The pane’s bar: a document, a web page, being edited',
   render: () => (
     <Frame layout="desk" width={900} height={200}>
       {bar(

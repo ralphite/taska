@@ -3,7 +3,7 @@ import { doc } from '../../stories/docFixtures'
 import { SheetFrames, no } from '../../stories/sheetFixtures'
 import { commentMoveSheet } from './DocSheets'
 
-const meta: Meta = { title: 'Components/Document/Sheets' }
+const meta: Meta = { title: 'Components/Menus and sheets/Move and pick' }
 export default meta
 type Story = StoryObj
 

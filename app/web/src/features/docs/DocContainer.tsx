@@ -6,14 +6,14 @@ import { useEffect, useMemo, type ReactNode, useCallback } from 'react'
 import { useLayout, useServices, useStores, useStoreValue } from '../../app/context'
 import { useFiles, useProjectModel, type ProjectRoute } from '../../app/hooks'
 import { usePaneRef } from '../../app/panes'
-import { resolved, seenNow, threadNew, threadsOf } from '../../model/docs'
+import { seenNow } from '../../model/docs'
 import type { Doc } from '../../model/types'
 import type { DocViewState } from '../../stores/docView'
 import { WebPage } from './WebPage'
 import { Lasso } from './Lasso'
-import { DraftCard, Thread } from './Thread'
+import { WebThread } from './Thread'
 import { codeOf, liveN } from '../../model/project'
-import { factsOf } from './docFacts'
+import { factsOf, webFacts } from './docFacts'
 import { notSent, type NotSent } from '../../model/voiceComments'
 import { Sheet, SheetLayout } from '../../ui/Sheet'
 import { useItemWorld } from '../../app/hooks'
@@ -96,49 +96,25 @@ function WebPageContainer({ slug, d, v, seen, env, on, waiting }: { slug: string
   const app = useServices('actions', 'docVoice', 'docs', 'fields', 'voice')
   const stores = useStores('docView', 'recording', 'sheet')
   const asked = useStoreValue(stores.sheet, (s) => s.asked)
-  const all = d.blocks.flatMap((b) => threadsOf(b.comments).map((t) => ({ t, key: b.key })))
-  // a comment not sent yet (its quote in the box, with what was said or written under it) shows where it will go
-  const drafts = waiting.filter((x) => x.key.startsWith('h:'))
-  const draftKeys = [...new Set(drafts.map((x) => x.key))]
-  const threads = [
-    ...all.map(({ t, key }) => ({ tk: t.tk, key, quote: t.quote, n: t.comments.length, done: resolved(d, t.tk) })),
-    ...draftKeys.map((key) => ({ tk: `${key}#new`, key, quote: '', n: drafts.filter((x) => x.key === key).length, done: false, draft: true })),
-  ]
   // the part spoken about: the mic pressed turns into Stop right there, and no other part lights
   const spoken = useStoreValue(stores.recording, (s) => {
     const a = s.rec?.about
     return a && a.d === d.d && a.key?.startsWith('h:') && !a.bar ? JSON.stringify({ key: a.key, text: a.quote }) : ''
   })
   const rec = !!spoken
-  const held = useMemo(() => (spoken ? (JSON.parse(spoken) as { key: string; text: string }) : v.quote?.key.startsWith('h:') ? v.quote : null), [spoken, v.quote])
-  const open = all.find(({ t, key }) => v.threads.has(t.tk) || v.threads.has(key))?.t.tk ?? draftKeys.map((k) => `${k}#new`).find((tk) => v.threads.has(tk)) ?? null
-  const thread = (tk: string, rail: boolean) => {
-    if (tk.endsWith('#new')) {
-      const mine = drafts.filter((x) => `${x.key}#new` === tk)
-      return mine.length ? (
-        // over the page, as the comments are: nothing of the page shows through
-        <div className="flex flex-col gap-2 rounded-xl bg-white dark:bg-zinc-900">
-          {mine.map((x) => (
-            <DraftCard key={x.label} words={x.words} voice={x.voice} transcribing={x.transcribing} />
-          ))}
-        </div>
-      ) : null
-    }
-    const x = all.find((y) => y.t.tk === tk)
-    if (!x) return null
-    return <Thread t={x.t} rail={rail} isNew={threadNew(seen, d, x.key, x.t.comments)} done={resolved(d, tk)} replying={v.reply === tk} asking={Object.keys(asked).find((k) => k.startsWith(`unfile ${d.d} `))?.slice(`unfile ${d.d} `.length) ?? null} env={env} on={on} />
-  }
+  const w = useMemo(() => webFacts(d, v, seen, asked, waiting, spoken ? (JSON.parse(spoken) as { key: string; text: string }) : null), [d, v, seen, asked, waiting, spoken])
+  const held = w.held
   return (
     <WebPage
       title={d.title}
       html={d.md}
-      threads={threads}
+      threads={w.threads}
       held={held}
       rec={rec}
-      open={open}
+      open={w.open}
       desk={env.desk}
       inspect={v.inspect}
-      renderThread={thread}
+      renderThread={(tk, rail) => <WebThread card={w.cards[tk]} rail={rail} replying={v.reply === tk} asking={w.asking} env={env} on={on} />}
       sayRow={<SayRow rec={rec} part={held ? { key: held.key, quote: held.text } : undefined} on={{ say: () => held && void app.docVoice.say(slug, d.d, held.key, held.text, true), cancel: () => void app.voice.cancel(), type: () => app.docs.type() }} />}
       on={{
         pick: (p) => {

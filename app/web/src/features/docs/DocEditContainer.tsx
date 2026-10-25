@@ -5,7 +5,7 @@ import { useLayout, useServices, useStores, useStoreValue } from '../../app/cont
 import { useProjectModel } from '../../app/hooks'
 import { noteText } from '../../model/docs'
 import { DocEdit } from './DocEdit'
-import { clock } from '../../model/time'
+import { editFacts } from './docFacts'
 
 export function DocEditContainer({ slug }: { slug: string }) {
   const app = useServices('dictation', 'docEditor', 'fields')
@@ -22,16 +22,7 @@ export function DocEditContainer({ slug }: { slug: string }) {
     <DocEdit
       isNew={!d}
       text={text}
-      hint={
-        rec
-          ? 'Listening. Words go at the mark; you can keep typing.'
-          : waiting
-            ? `Working out the words of ${waiting > 1 ? waiting + ' voice notes' : 'the voice note'}\u2026`
-            : desk
-              ? 'First line is the title. Esc keeps it as a draft.'
-              : 'The first line is the title.'
-      }
-      mic={{ on: !!rec, text: rec ? `Stop ${clock(rec.ms)}` : 'Speak' }}
+      {...editFacts(rec, waiting, desk)}
       fieldRef={app.fields.ref('doc')}
       on={{
         change: (t) => stores.docView.getState().setText(t),

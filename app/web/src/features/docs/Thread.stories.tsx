@@ -1,46 +1,33 @@
+// A document's comment threads, one story for each state (T591: the groups and names Yadong had before the rewrite):
+// the page's own facts (factsOf) and DocView, whose threads Thread draws (over the text on the desktop, under the
+// paragraph on the phone), with a demo document.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { threadsOf } from '../../model/docs'
-import { comment } from '../../stories/docFixtures'
-import { T } from '../../stories/fixtures'
+import type { Doc } from '../../model/types'
 import { Frames } from '../../stories/Frames'
-import { DraftCard, Thread, type DocEnv, type ThreadEvents } from './Thread'
+import { comment, doc } from '../../stories/docFixtures'
+import { T } from '../../stories/fixtures'
+import { docAt, type DocHere } from '../../stories/docPage'
 
-const meta: Meta = { title: 'Components/Document/Thread' }
-export default meta
+export default { title: 'Components/Document/Comment threads' } satisfies Meta
 type Story = StoryObj
 
-const no = () => {}
-const on: ThreadEvents = { ref: no, picture: no, play: no, words: no, view: no, edit: no, move: no, takeOff: no, remove: no, resolve: no, reply: no }
-const env = (desk: boolean): DocEnv => ({ world: { find: () => null, url: (f) => '#' + f, size: () => undefined }, now: Date.parse(T), desk, tidy: true, play: () => ({ playing: false, t: null }), url: (f) => '#' + f })
-const [t] = threadsOf([
-  comment({ id: 1, key: 'p1', th: 1, quote: 'stays in use', text: 'Until when exactly?', by: 'you', files: [{ f: 'a.pdf', name: 'plan.pdf', mime: 'application/pdf', size: 12000 }] }),
-  comment({ id: 2, key: 'p1', th: 1, quote: 'stays in use', text: 'Until every check is green.', edited: T }),
-])
+const PLAN = doc()
+const at = (min: number) => new Date(Date.parse(T) - min * 60_000).toISOString()
+const one = (h: DocHere, d: Doc = PLAN, height = 760): Story => ({ render: () => <Frames height={height} deskWidth={900} phoneWidth={393}>{(layout) => docAt(d, layout === 'desk', h)}</Frames> })
+const VOICE = { f: 'f8-voice_0-07.webm', name: 'voice_0-07.webm', mime: 'audio/webm' }
+const SHOT = { f: 'f9-filter.png', name: 'filter.png', mime: 'image/png' }
+const withFiles = doc({ blocks: PLAN.blocks.map((b) => (b.key === 'p1' ? { ...b, comments: [...b.comments, comment({ id: 7, key: 'p1', th: 1, quote: 'stays in use', text: 'Like this, with the filter kept.', by: 'you', t: at(5), files: [SHOT, VOICE] })] } : b)) })
 
-const [sending] = threadsOf([comment({ id: -1, key: 'p1', th: 0, quote: 'stays in use', text: 'Who signs it off?', by: 'you' })])
-
-/** Under a paragraph (the phone) and as a card beside the text (the desktop): new from an agent; resolved; replying;
- * yours, still being saved. */
-export const Threads: Story = {
-  render: () => (
-    <Frames height={900} deskWidth={360} phoneWidth={393}>
-      {(layout) => (
-        <div className="flex flex-col gap-4 p-4">
-          <Thread t={t} blockText="The old one stays in use." rail={layout === 'desk'} isNew done={false} replying={false} asking={null} env={env(layout === 'desk')} on={on} />
-          <Thread t={t} rail={layout === 'desk'} isNew={false} done replying asking="1 a.pdf" env={env(layout === 'desk')} on={on} />
-          <Thread t={sending} rail={layout === 'desk'} isNew={false} done={false} replying={false} asking={null} env={env(layout === 'desk')} on={on} />
-        </div>
-      )}
-    </Frames>
-  ),
-}
-
-/** A comment not sent yet, where it will go. */
-export const NotSent: Story = {
-  render: () => (
-    <div className="flex max-w-80 flex-col gap-3 p-6">
-      <DraftCard words="Pilot first, then the rest." voice={0} transcribing={false} />
-      <DraftCard words="" voice={2} transcribing />
-    </div>
-  ),
-}
+/** Its count pressed: its comments, the words it quotes, Resolve and Reply. */
+export const ThreadOpened: Story = { ...one({ threads: ['p1#1'] }), name: 'Opened from its count' }
+/** An agent answered since you last looked: its count and thread marked new. */
+export const NewReply: Story = { ...one({ threads: ['p1#1'], seen: { since: at(30) } }), name: 'Answered by an agent' }
+/** The desktop: the pointer on your comment shows Edit, Move and Delete (an agent's: Move and Delete). */
+export const PointingAtYourComment: Story = { ...one({ threads: ['p1#1'] }), name: 'Pointing at your comment: Edit, Move, Delete', parameters: { pseudo: { hover: ['[data-thread] .group:first-of-type'] } } }
+export const CommentWithFiles: Story = { ...one({ threads: ['p1#1'] }, withFiles), name: 'With a picture and a voice note' }
+/** Resolved, its count quieter; opened again it says Reopen. */
+export const ResolvedOpened: Story = { ...one({ threads: ['t1#4'] }), name: 'Resolved, opened again' }
+/** The words it was on were changed since: under Original text changed, the old words struck through. */
+export const TextChanged: Story = { ...one({}), name: 'Its text changed' }
+/** Said about a paragraph, still in the box: a count of its own, opening its Not sent card. */
+export const NotSentYet: Story = { ...one({ notSent: [{ label: '1', key: 'p1', words: 'Pilot first, then the rest.', voice: 1, transcribing: false }], threads: ['p1#new'] }), name: 'Not sent yet' }

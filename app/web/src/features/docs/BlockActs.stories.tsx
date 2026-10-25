@@ -1,23 +1,21 @@
+// Commenting on a document, one story for each state (T591: the groups and names Yadong had before the rewrite): the
+// page's own facts (factsOf) and DocView, whose buttons beside each paragraph BlockActs draws, with a demo document.
+// A web page's are in WebPageCommenting.stories, words selected in stories/document, drawing around an area in
+// Lasso.stories.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { Frame } from '../../stories/Frames'
-import { BlockActs } from './BlockActs'
+import type { Doc } from '../../model/types'
+import { Frames } from '../../stories/Frames'
+import { doc } from '../../stories/docFixtures'
+import { docAt, type DocHere } from '../../stories/docPage'
 
-const meta: Meta = { title: 'Components/Document/Beside a paragraph' }
-export default meta
+export default { title: 'Components/Document/Commenting' } satisfies Meta
 type Story = StoryObj
 
-const on = { say() {}, comment() {}, toggle() {}, away() {} }
+const PLAN = doc()
+const one = (h: DocHere, d: Doc = PLAN): Story => ({ render: () => <Frames height={760} deskWidth={900} phoneWidth={393}>{(layout) => docAt(d, layout === 'desk', h)}</Frames> })
 
-/** A paragraph's counts beside it (one resolved), and the buttons to speak or comment (shown while recording). */
-export const Counts: Story = {
-  render: () => (
-    <Frame layout="desk" width={700} height={220}>
-      <div className="p-6 pr-32">
-        <section className="group/blk relative rounded-lg px-2 py-1 text-[15px]">
-          <div data-block>The new page is written from scratch, and the old one stays in use until the ports are swapped.</div>
-          <BlockActs counts={[{ tk: 'p1#1', n: 2, done: false, quote: '' }, { tk: 'p1#7', n: 1, done: true, quote: 'ports' }]} open={null} rec on={on} />
-        </section>
-      </div>
-    </Frame>
-  ),
-}
+/** A paragraph picked: its amber ring; on the phone the row to speak or type a comment under it. */
+export const ParagraphPicked: Story = { ...one({ sel: ['p1'] }), name: 'Paragraph picked' }
+/** Reply pressed in a thread: what you write goes to it (the box says so). */
+export const Replying: Story = { ...one({ threads: ['p1#1'], reply: 'p1#1' }), name: 'Replying in a thread' }
+export const ResolvedThread: Story = { ...one({ threads: ['p1#1'] }, { ...PLAN, resolved: { 'p1#1': PLAN.t1 } }), name: 'Thread resolved' }
