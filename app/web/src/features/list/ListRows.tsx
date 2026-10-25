@@ -288,7 +288,6 @@ export function NeedsRow({ it, depth, facts, look, excerpt, on, rowRef }: { it: 
         onClick={(e) => on.open(it.n, e)}
         className={`group relative flex cursor-pointer items-center gap-2.5 py-2.5 pr-3 ${pad(depth)} ${ROW_TINT}`}
       >
-        <span className="absolute inset-y-0 left-0 w-1 bg-amber-500 dark:bg-amber-400" />
         <span className="self-start">
           <StateIcon {...shownStatus(it)} />
         </span>
