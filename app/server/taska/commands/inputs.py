@@ -41,6 +41,11 @@ def new_input(r: Run, a: Args) -> Outcome:
     answer = a.get("kind") == "answer" and scope is not None  # a form you sent: it goes to its item as it is
     r.emit(ev.InputAdded(id=rid, by=r.by, text=text, scope=scope, files=files, q=q,
                                  kind="answer" if answer else None))
+    # B607 (Yadong's choice): words on an item that waits for review, not Accept, take it back to in progress, so its
+    # mark and "Your agent's turn" agree and the agent goes on with it
+    it = s.items.get(scope) if scope is not None else None
+    if it is not None and it.status == "review" and r.by == "you":
+        r.emit(ev.FieldsSet(n=it.n, by=r.by, f={"status": "doing"}, was={"status": "review"}, src=rid))
     return Outcome(f"ok {rid}", "Received")
 
 
