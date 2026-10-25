@@ -1,29 +1,16 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frames } from '../../stories/Frames'
 import { PICTURE } from '../../stories/fixtures'
-import { DraftFiles } from './DraftFiles'
+import { DraftFiles, type DraftFile } from './DraftFiles'
 
-const meta: Meta = { title: 'Components/Composer/Draft files' }
+const meta: Meta = { title: 'Components/Input box/Pictures and files' }
 export default meta
 type Story = StoryObj
 
-/** Files in the draft: a picture going up, one up, a file, a voice note transcribed. */
-export const Files: Story = {
-  render: () => (
-    <Frames phoneWidth={393} deskWidth={640}>
-      {() => (
-        <DraftFiles
-          files={[
-            { key: 'a', f: '', name: 'shot.png', mime: 'image/png', preview: PICTURE },
-            { key: 'b', f: 'f2-shot.png', name: 'shot.png', mime: 'image/png', preview: PICTURE },
-            { key: 'c', f: 'f3-report.pdf', name: 'Quarterly report.pdf', mime: 'application/pdf' },
-            { key: 'd', f: 'f4-voice_0-12.webm', name: 'voice_0-12.webm', mime: 'audio/webm', ms: 12000, tr: 'Keep the filter.' },
-          ]}
-          url={() => PICTURE}
-          onRemove={() => {}}
-          onView={() => {}}
-        />
-      )}
-    </Frames>
-  ),
-}
+const files = (list: DraftFile[]): Story => ({ render: () => <Frames phoneWidth={393} deskWidth={640}>{() => <DraftFiles files={list} url={() => PICTURE} onRemove={() => {}} onView={() => {}} />}</Frames> })
+const pic = (n: number, up = true): DraftFile => ({ key: 'p' + n, f: up ? `f${n}-shot.png` : '', name: 'shot.png', mime: 'image/png', preview: PICTURE })
+
+export const TwoPictures = files([pic(1), pic(2)])
+export const APictureGoingUp = files([pic(1, false)])
+export const AFile = files([{ key: 'c', f: 'f3-report.pdf', name: 'Quarterly report.pdf', mime: 'application/pdf' }])
+export const MoreThanFitTheyScrollSideways: Story = { ...files(Array.from({ length: 9 }, (_, i) => pic(i + 1))), name: 'More than fit: they scroll sideways' }
