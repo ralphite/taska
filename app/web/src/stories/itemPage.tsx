@@ -1,8 +1,9 @@
 // An item open in its pane, as the page draws it: the pane's bar (the item's code and status, its actions, Previous
 // and Next) and the page's own ItemPage, with a demo project around it. Used by the item page's stories.
 import type { ItemFacts } from '../features/item/ItemPage'
-import { ItemActs, ItemHead, ItemNav, ItemPage } from '../features/item/ItemPage'
+import { ItemActs, ItemHead, ItemNav, ItemPage, ItemTalk } from '../features/item/ItemPage'
 import type { TalkFacts } from '../features/item/Talk'
+import type { TalkEnv } from '../features/item/talkEnv'
 import type { Doc, Input, Item } from '../model/types'
 import { PaneFrame } from '../ui/PaneFrame'
 import { item, message } from './fixtures'
@@ -29,6 +30,8 @@ export interface PageOpts {
   duo?: boolean
   /** shown full width (O) */
   full?: boolean
+  /** what the talk draws with: messages opened, a voice note playing */
+  env?: Partial<TalkEnv>
 }
 
 export function pageOf(it: Item, desk: boolean, o: PageOpts = {}) {
@@ -49,6 +52,17 @@ export function pageOf(it: Item, desk: boolean, o: PageOpts = {}) {
       >
         <ItemPage it={it} f={facts} env={talkEnv(m, desk)} facts={talkFacts(m, o.t)} on={noItemEvents} duo={o.duo} />
       </PaneFrame>
+    </div>
+  )
+}
+
+/** Only the item's talk, as its pane draws it: its messages and documents' comments in time, the card that waits on
+ * you where its message is. */
+export function talkOf(it: Item, desk: boolean, o: PageOpts = {}) {
+  const m = modelOf([...(o.others ?? []), it], o.inputs ?? [], {}, o.docs ?? [])
+  return (
+    <div className="flex flex-col gap-6 p-4">
+      <ItemTalk it={it} f={itemFacts(m, it, o.f)} env={talkEnv(m, desk, o.env)} facts={talkFacts(m, o.t)} on={noItemEvents} />
     </div>
   )
 }

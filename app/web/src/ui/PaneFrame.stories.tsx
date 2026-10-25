@@ -3,7 +3,7 @@ import { Frames, States } from '../stories/Frames'
 import { Icon } from './Icon'
 import { PaneFrame } from './PaneFrame'
 
-const meta: Meta = { title: 'Components/Item/Pane frame' }
+const meta: Meta = { title: 'Components/Item page/Pane frame' }
 export default meta
 type Story = StoryObj
 

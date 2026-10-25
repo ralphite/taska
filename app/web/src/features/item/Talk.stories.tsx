@@ -1,76 +1,43 @@
+// An item's whole talk (T591: the groups and names Yadong had before the rewrite): every kind of message with the
+// document's comments among them in time; with the card that asks you where its question is; a long back-and-forth
+// (the earlier ones folded). The page's own ItemTalk.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import type { Doc, Item, Message } from '../../model/types'
-import { Frames, States } from '../../stories/Frames'
-import { T, input, item, message, modelOf } from '../../stories/fixtures'
-import { comment, doc, noItemEvents, talkEnv, talkFacts } from '../../stories/itemFixtures'
-import { Talk, docNotes } from './Talk'
-import type { TalkFacts } from './Talk'
+import type { Item, Message } from '../../model/types'
+import { Frames } from '../../stories/Frames'
+import { T, input, item, message } from '../../stories/fixtures'
+import { comment, doc } from '../../stories/itemFixtures'
+import { talkOf, type PageOpts } from '../../stories/itemPage'
 
-const meta: Meta = { title: 'Components/Item/Talk' }
-export default meta
+export default { title: 'Components/Conversation/Whole conversation' } satisfies Meta
 type Story = StoryObj
 
-const you = (f: Partial<Message> & { id: number }) => message({ by: 'you', kind: 'say', text: 'The export should keep the filter I set.', ...f })
-const later = (min: number) => new Date(Date.parse(T) + min * 60_000).toISOString()
+const at = (min: number) => new Date(Date.parse(T) + min * 60_000).toISOString()
+const you = (id: number, min: number, text: string, src?: string) => message({ id, by: 'you', kind: 'say', text, t: at(min), ...(src ? { src } : {}) })
+const agent = (id: number, min: number, text: string, f: Partial<Message> = {}) => message({ id, text, t: at(min), ...f })
+const whole = (thread: Message[], f: Partial<Item> = {}, o: PageOpts = {}, height?: number): Story => ({
+  render: () => <Frames phoneWidth={393} deskWidth={720} height={height}>{(layout) => talkOf(item({ n: 12, thread, ...f }), layout === 'desk', o)}</Frames>,
+})
+const plan = doc({ d: 1, n: 12, title: 'Plan: the export keeps the filter', blocks: [{ key: 'k1', kind: 'para', text: 'Read the filter first.', comments: [comment({ id: 20, t: at(6), quote: 'Read the filter', text: 'Before or after the sort?' })] }] })
 
-function talk(it: Item, desk: boolean, f: Partial<TalkFacts> = {}, docs: Doc[] = []) {
-  const m = modelOf([it], [input({ id: 'r4', text: 'The export should keep the filter I set.', files: [{ f: 'f2-voice_0-12.webm', name: 'voice_0-12.webm', mime: 'audio/webm' }] })])
-  const env = talkEnv(m, desk)
-  return (
-    <div className="flex flex-col gap-6 p-4">
-      <Talk it={it} list={it.thread} notes={docNotes(docs, env, noItemEvents)} env={env} on={noItemEvents} facts={talkFacts(m, f)} docs={docs} code={(n) => 'F' + String(n).padStart(3, '0')} />
-    </div>
-  )
-}
-
-/** Messages: yours (with its voice note, read by an agent), an agent's with its kind, the organizer's from an input,
- * a long one, one edited, versions of an input you edited. */
-export const Messages: Story = {
-  render: () => (
-    <Frames phoneWidth={393} deskWidth={720}>
-      {(layout) => {
-        const desk = layout === 'desk'
-        return (
-          <States
-            items={[
-              ['yours, from an input with a voice note', talk(item({ n: 12, thread: [you({ id: 1, src: 'r4' })] }), desk)],
-              ['yours, read by an agent', talk(item({ n: 12, thread: [you({ id: 1 })], readBy: { 'claude-code': Date.parse(T) + 30_000 } }), desk)],
-              ['an agent’s: progress, a proposal, a decision', talk(item({ n: 12, thread: [message({ id: 2 }), message({ id: 3, kind: 'propose', text: 'Put the filter in the file name.' }), message({ id: 4, kind: 'decide', text: 'CSV it is.', by: 'codex', ses: 'tests' })] }), desk)],
-              ['the organizer’s, from what you said', talk(item({ n: 12, thread: [message({ id: 2, by: 'org', kind: 'say', src: 'r4', text: 'Added to F012: keep the filter' })] }), desk)],
-              ['a long one', talk(item({ n: 12, thread: [message({ id: 2, text: Array.from({ length: 12 }, (_, i) => `Line ${i + 1} of the report, with some words to fill it.`).join('\n') }), you({ id: 3, t: later(2) })] }), desk)],
-              ['edited', talk(item({ n: 12, thread: [you({ id: 1, edited: later(1) })] }), desk)],
-              ['to another session', talk(item({ n: 12, thread: [message({ id: 2, to: ['worker-b'], text: '@worker-b take the tests' })] }), desk)],
-            ]}
-          />
-        )
-      }}
-    </Frames>
+export const EveryMessageWithDocumentComments: Story = {
+  ...whole(
+    [
+      you(1, 0, 'The export should keep the filter I set.', 'r4'),
+      message({ id: 2, by: 'org', kind: 'say', src: 'r4', text: 'Added to F012: keep the filter', t: at(0) }),
+      agent(3, 2, 'Reproduced it: the export reads the list before the filter.'),
+      agent(4, 4, 'Put the filter in the file name too.', { kind: 'propose' }),
+      agent(5, 8, 'The plan is in D1.', { by: 'codex', ses: 'tests' }),
+      you(6, 9, 'Good, go ahead.'),
+    ],
+    {},
+    { inputs: [input({ id: 'r4', text: 'The export should keep the filter I set.' })], docs: [plan] },
   ),
+  name: 'Every message, with document comments',
 }
-
-/** A question taken back, a hidden message, an answered question, a document's comments in time (yours while it is
- * saved too), what you sent on its way. */
-export const Moments: Story = {
-  render: () => (
-    <Frames phoneWidth={393} deskWidth={720}>
-      {(layout) => {
-        const desk = layout === 'desk'
-        const ask = message({ id: 2, kind: 'ask', text: 'Which format?\n\n- ( ) CSV\n- ( ) Excel' })
-        const d = doc({ d: 1, n: 12, blocks: [{ key: 'k1', kind: 'para', text: 'x', comments: [comment({ id: 9, t: later(1) }), comment({ id: 10, by: 'claude-code', t: later(2), quote: '', text: 'Done in the plan.' })] }] })
-        const saving = doc({ d: 1, n: 12, blocks: [{ key: 'k1', kind: 'para', text: 'x', comments: [comment({ id: -1, t: later(1), text: 'Who signs it off?' })] }] })
-        return (
-          <States
-            items={[
-              ['a question taken back', talk(item({ n: 12, thread: [message({ id: 2, kind: 'ask', text: 'Keep the old export?' }), message({ id: 3, kind: 'withdraw', text: 'Found it in the notes.', t: later(1) })] }), desk)],
-              ['a hidden message', talk(item({ n: 12, thread: [message({ id: 2, hidden: true })] }), desk)],
-              ['an answered question', talk(item({ n: 12, thread: [ask, you({ id: 3, text: '✓ Excel', t: later(1) })] }), desk)],
-              ['comments on its document', talk(item({ n: 12, thread: [message({ id: 2 })] }), desk, {}, [d])],
-              ['your comment on its document, still being saved', talk(item({ n: 12, thread: [message({ id: 2 })] }), desk, {}, [saving])],
-              ['sending, and not sent', talk(item({ n: 12, thread: [message({ id: 2 })] }), desk, { outgoing: [{ q: 'q1', text: 'Also keep the sort.', state: 'Sending…', bad: false, canUndo: true }, { q: 'q2', text: 'And the columns.', state: 'Not sent', bad: true, canUndo: false }] })],
-            ]}
-          />
-        )
-      }}
-    </Frames>
-  ),
-}
+export const WithTheCardThatAsksYou = whole([you(1, 0, 'The export should keep the filter I set.'), agent(2, 3, 'Reproduced it.'), agent(3, 5, 'Which format?\n- ( ) CSV\n- ( ) Excel', { kind: 'ask' })], { wait: { id: 3, kind: 'ask', text: 'Which format?\n- ( ) CSV\n- ( ) Excel', by: 'claude-code', files: [] } })
+export const LongBackAndForth = whole(
+  Array.from({ length: 14 }, (_, i) => (i % 2 ? agent(i + 1, i * 3, `Step ${(i + 1) / 2} done.`) : you(i + 1, i * 3, `Then step ${i / 2 + 1}, please.`))),
+  {},
+  {},
+  900,
+)

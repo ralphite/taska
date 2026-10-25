@@ -1,39 +1,30 @@
+// The parts a message is made of (T591: the groups and names Yadong had before the rewrite): its words in Markdown,
+// its voice note under the pointer. The page's own message words and talk.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { Frames, States } from '../../stories/Frames'
-import { message, modelOf } from '../../stories/fixtures'
+import { Frames } from '../../stories/Frames'
+import { input, item, message, modelOf } from '../../stories/fixtures'
 import { noItemEvents, talkEnv } from '../../stories/itemFixtures'
+import { talkOf } from '../../stories/itemPage'
 import { MsgText } from './MsgText'
 
-const meta: Meta = { title: 'Components/Item/Message words' }
-export default meta
+export default { title: 'Components/Conversation/Message parts' } satisfies Meta
 type Story = StoryObj
 
-const LONG = Array.from({ length: 14 }, (_, i) => `Line ${i + 1}: what the agent did, and why, in a few words.`).join('\n')
-const m = modelOf([])
+const MD = '**Result**: the export keeps the filter.\n\n- with the filter\n- with the sort\n\n`npm run check` passes; see [the plan](#D1) and F014.\n\n> The old export stays a week.'
 
-/** A message's words: short; long (on the desktop a fade and Show all, on the phone its first line and Show more);
- * opened; the item's latest message, whole. */
-export const Words: Story = {
+export const Markdown: Story = {
+  render: () => <Frames phoneWidth={393} deskWidth={640}>{(layout) => <div className="p-3 text-[15px]"><MsgText x={message({ id: 1, text: MD })} env={talkEnv(modelOf([]), layout === 'desk')} on={noItemEvents} /></div>}</Frames>,
+}
+export const VoiceNotePointerOnIt: Story = {
+  name: 'Voice note, pointer on it',
+  parameters: { pseudo: { hover: ['button'] } },
   render: () => (
     <Frames phoneWidth={393} deskWidth={640}>
-      {(layout) => {
-        const desk = layout === 'desk'
-        const words = (x: ReturnType<typeof message>, f: Partial<ReturnType<typeof talkEnv>> = {}) => (
-          <div className="p-3 text-[15px]">
-            <MsgText x={x} env={talkEnv(m, desk, f)} on={noItemEvents} />
-          </div>
-        )
-        return (
-          <States
-            items={[
-              ['short', words(message({ id: 1 }))],
-              ['long', words(message({ id: 2, text: LONG }))],
-              ['long, opened', words(message({ id: 3, text: LONG }), { opened: new Set([3]) })],
-              ['long, the latest message', words(message({ id: 4, text: LONG }), { latest: 4 })],
-            ]}
-          />
-        )
-      }}
+      {(layout) =>
+        talkOf(item({ n: 12, thread: [message({ id: 1, by: 'you', kind: 'say', text: 'Keep the filter.', src: 'r4' })] }), layout === 'desk', {
+          inputs: [input({ id: 'r4', text: 'Keep the filter.', files: [{ f: 'f2-voice_0-12.webm', name: 'voice_0-12.webm', mime: 'audio/webm' }] })],
+        })
+      }
     </Frames>
   ),
 }
