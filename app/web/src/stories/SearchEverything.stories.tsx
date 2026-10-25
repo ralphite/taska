@@ -22,7 +22,7 @@ import { Sheet } from '../ui/Sheet'
 import { PROJECT_TONES, TYPE_TEXT } from '../ui/tones'
 import { Frame, States } from './Frames'
 import { GuideLine, Level, Mark, sel, type Step } from './guide'
-import { item, modelOf } from './fixtures'
+import { item, message, modelOf } from './fixtures'
 import { pageOf } from './itemPage'
 import { PROJECT, listOf } from './listFixtures'
 import { side } from './sideFixtures'
@@ -43,8 +43,20 @@ interface Found {
   /** why it is here */
   why: string
 }
-const M = modelOf(PROJECT, [], { title: 'Shop', agents: [{ name: 'claude-code', t: Date.parse('2026-10-23T14:29:00-07:00'), waiting: true }], work: true })
-const byN = (n: number) => PROJECT.find((x) => x.n === n) as Item
+const ITEMS: Item[] = PROJECT.map((x) =>
+  x.n === 1
+    ? {
+        ...x,
+        body: 'The export writes **every** row; it should write the rows the list shows, with the filter and the sort.',
+        thread: [
+          message({ id: 2, by: 'you', kind: 'say', text: 'The export should keep the filter I set.', t: '2026-10-23T14:10:00-07:00' }),
+          message({ id: 3, text: 'Reproduced it: the export reads the list before the filter.', t: '2026-10-23T14:20:00-07:00' }),
+        ],
+      }
+    : x,
+)
+const M = modelOf(ITEMS, [], { title: 'Shop', agents: [{ name: 'claude-code', t: Date.parse('2026-10-23T14:29:00-07:00'), waiting: true }], work: true })
+const byN = (n: number) => ITEMS.find((x) => x.n === n) as Item
 const HEARD = 'where the export loses my filter'
 const WORDS = ['export', 'filter']
 const FOUND: Found[] = [
@@ -138,7 +150,7 @@ function Results({ kind, onKind, onPick, onAgain, none }: { kind: Kind | 'all'; 
           Again
         </button>
       </div>
-      <div className="-mx-1 flex [scrollbar-width:none] gap-1.5 overflow-x-auto px-1">
+      <div className="flex flex-wrap gap-1.5">
         {KINDS.map(([k, label]) => {
           const n = k === 'all' ? list.length : of(k).length
           return (
@@ -156,12 +168,12 @@ function Results({ kind, onKind, onPick, onAgain, none }: { kind: Kind | 'all'; 
         })}
       </div>
       {none ? (
-        <p className="py-8 text-center text-sm text-zinc-500 dark:text-zinc-400">Nothing found for this in any project. Say it another way: Again.</p>
+        <p className="py-8 text-center text-sm text-zinc-500 dark:text-zinc-400">Nothing found in any project. Tap Again and say it another way.</p>
       ) : shown ? (
         shown.length ? (
           <div className="-mx-3 flex flex-col">{shown.map((f) => <FoundRow key={f.code} f={f} onPick={onPick} />)}</div>
         ) : (
-          <p className="py-8 text-center text-sm text-zinc-500 dark:text-zinc-400">No {KINDS.find(([k]) => k === kind)?.[1].toLowerCase()} for this. All has the rest.</p>
+          <p className="py-8 text-center text-sm text-zinc-500 dark:text-zinc-400">No {KINDS.find(([k]) => k === kind)?.[1].toLowerCase()} match this. All shows what does.</p>
         )
       ) : (
         <div className="-mx-3 flex flex-col gap-3">
@@ -175,7 +187,7 @@ function Results({ kind, onKind, onPick, onAgain, none }: { kind: Kind | 'all'; 
                 ))}
                 {g.length > 3 ? (
                   <button onClick={() => onKind(k)} className="px-3 py-1 text-[13px] font-semibold text-blue-600 dark:text-blue-400">
-                    {g.length - 3} more {label.toLowerCase()}
+                    {g.length - 3} more
                   </button>
                 ) : null}
               </section>
@@ -189,8 +201,8 @@ function Results({ kind, onKind, onPick, onAgain, none }: { kind: Kind | 'all'; 
 
 /** The search in each state: listening, you speaking, working out your words, finding, what it found, nothing, no
  * sound, no microphone, Taska out of reach. */
-function SearchBody({ state, kind, onKind, onDone, onAgain, onPick }: { state: State; kind: Kind | 'all'; onKind(k: Kind | 'all'): void; onDone(): void; onAgain(): void; onPick(f: Found): void }) {
-  const middle = (children: ReactNode) => <div className="flex min-h-64 flex-col items-center justify-center gap-4 py-6 text-center">{children}</div>
+function SearchBody({ state, kind, onKind, onDone, onAgain, onPick, onCancel = () => {} }: { state: State; kind: Kind | 'all'; onKind(k: Kind | 'all'): void; onDone(): void; onAgain(): void; onPick(f: Found): void; onCancel?(): void }) {
+  const middle = (children: ReactNode) => <div className="flex min-h-[26rem] flex-col items-center justify-center gap-4 py-6 text-center">{children}</div>
   const mic = (loud: boolean) => (
     <span className="relative grid size-20 place-items-center rounded-full bg-red-600 text-white shadow-lg">
       {loud ? <span className="absolute inset-0 animate-ping rounded-full bg-red-500/40" /> : null}
@@ -247,21 +259,41 @@ function SearchBody({ state, kind, onKind, onDone, onAgain, onPick }: { state: S
           <Icon n="spinner" c="size-4 animate-spin" sw="2" />
           Can’t reach Taska · trying again; it finds as soon as Taska answers
         </p>
+        <button onClick={onCancel} className="h-10 rounded-full px-5 text-sm font-semibold text-zinc-700 ring-1 ring-zinc-300 dark:text-zinc-200 dark:ring-zinc-600">
+          Cancel
+        </button>
       </>,
     )
-  return <Results kind={kind} onKind={onKind} onPick={onPick} onAgain={onAgain} none={state === 'none'} />
+  return (
+    <div className="min-h-[26rem]">
+      <Results kind={kind} onKind={onKind} onPick={onPick} onAgain={onAgain} none={state === 'none'} />
+    </div>
+  )
 }
 
 /** The search's words, working out and finding take a moment, as they will in the page. */
 function useSearch() {
   const [state, setState] = useState<State | null>(null)
   const [kind, setKind] = useState<Kind | 'all'>('all')
+  // what it found last stays: Search again shows it (Again says it anew)
+  const [last, setLast] = useState(false)
   useEffect(() => {
     if (state !== 'working' && state !== 'finding') return
-    const t = setTimeout(() => setState(state === 'working' ? 'finding' : 'found'), 1100)
+    const t = setTimeout(() => {
+      if (state === 'finding') setLast(true)
+      setState(state === 'working' ? 'finding' : 'found')
+    }, 1100)
     return () => clearTimeout(t)
   }, [state])
-  return { state, kind, setKind, open: () => (setKind('all'), setState('listening')), done: () => setState('working'), close: () => setState(null) }
+  return {
+    state,
+    kind,
+    setKind,
+    open: () => (last ? setState('found') : (setKind('all'), setState('listening'))),
+    again: () => (setKind('all'), setState('listening')),
+    done: () => setState('working'),
+    close: () => setState(null),
+  }
 }
 
 // ---------------------------------------------------------------- the desktop
@@ -272,7 +304,9 @@ const DESK_STEPS: Step[] = [
   { say: 'It works out your words, then finds in every project, by the words and by what they mean. Tap Documents', tap: sel('[data-kind="doc"]') },
   { say: 'Only documents. Tap All: every kind, the closest few of each', tap: sel('[data-kind="all"]') },
   { say: 'Tap F001: the dialog closes and F001 opens beside the list', tap: sel('button[data-code="F001"]') },
-  { say: 'The filters are an icon at the end of the views. Tap it', tap: sel('[data-search="filters"]') },
+  { say: 'Tap Search again: what it found is still there (Again says it anew)', tap: sel('[aria-label="Search everything"]') },
+  { say: 'Tap ✕. The filters are an icon at the end of the views', tap: sel('[role="dialog"] button[aria-label="Close"]') },
+  { say: 'Tap the filter icon: the page’s own filters', tap: sel('[data-search="filters"]') },
 ]
 
 function Desk({ n = -1, onNext }: { n?: number; onNext?(): void }) {
@@ -290,7 +324,7 @@ function Desk({ n = -1, onNext }: { n?: number; onNext?(): void }) {
     s.close()
     if (f.it && !f.project) setOpen(f.it.n)
   }
-  const it = open ? PROJECT.find((x) => x.n === open) : null
+  const it = open ? ITEMS.find((x) => x.n === open) : null
   return (
     <div ref={root} onClickCapture={next} className="relative flex h-full">
       <div className="relative h-full w-60 shrink-0 border-r border-zinc-200 dark:border-zinc-800">
@@ -300,7 +334,7 @@ function Desk({ n = -1, onNext }: { n?: number; onNext?(): void }) {
       <div className="grid min-w-0 flex-1 grid-cols-[420px_minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)]">
         <ProjectBar title="Shop" tone={PROJECT_TONES[1]} tabs={deskTabs(tabCounts(M, 'items', list, true), 'items', false)} agent={agentInfo(M, 0)} notSaved={0} place="col-span-2" on={{ tab() {}, agents() {}, notSaved() {} }} />
         <div className="flex min-h-0 flex-col border-r border-zinc-200 dark:border-zinc-800">
-          {listOf(PROJECT, 'items', {}, true, {
+          {listOf(ITEMS, 'items', {}, true, {
             open: open ?? undefined,
             viewsEnd: <FilterIcon on={filters} set={false} onTap={() => setFilters((x) => !x)} />,
             top: null,
@@ -315,7 +349,7 @@ function Desk({ n = -1, onNext }: { n?: number; onNext?(): void }) {
         </div>
       ) : null}
       {s.state ? (
-        <Sheet open look={{}} desk parts={{ title: 'Search', body: <SearchBody state={s.state} kind={s.kind} onKind={s.setKind} onDone={s.done} onAgain={s.open} onPick={pick} /> }} onClose={s.close} />
+        <Sheet open look={{}} desk parts={{ title: 'Search', body: <SearchBody state={s.state} kind={s.kind} onKind={s.setKind} onDone={s.done} onAgain={s.again} onPick={pick} onCancel={s.close} /> }} onClose={s.close} />
       ) : null}
       <Mark root={root} step={step} />
     </div>
@@ -336,6 +370,19 @@ function GuidedDesk() {
 }
 
 // ---------------------------------------------------------------- the phone
+
+/** On the phone what it found is a page of its own: its title, ✕ back to the list. */
+const ResultsPage = ({ onClose, children }: { onClose(): void; children: ReactNode }) => (
+  <div className="flex h-full flex-col">
+    <div className="flex h-12 shrink-0 items-center gap-2 border-b border-zinc-200 px-4 dark:border-zinc-800">
+      <span className="flex-1 text-[17px] font-semibold">Search</span>
+      <button aria-label="Close the search" onClick={onClose} className="grid size-10 place-items-center rounded-full text-zinc-500 dark:text-zinc-400">
+        <Icon n="x" c="size-5" sw="2" />
+      </button>
+    </div>
+    <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">{children}</div>
+  </div>
+)
 
 const PHONE_STEPS: Step[] = [
   { say: 'The magnifier stays where it is. Tap it: a panel rises and listens at once', tap: sel('[aria-label="Search"]') },
@@ -358,29 +405,18 @@ function Phone({ n = -1, onNext }: { n?: number; onNext?(): void }) {
     if (el && el.contains(e.target as Node)) setTimeout(() => onNext?.(), 0)
   }
   const page = s.state === 'found' || s.state === 'none'
-  const it = open ? PROJECT.find((x) => x.n === open) : null
-  const body = <SearchBody state={s.state ?? 'listening'} kind={s.kind} onKind={s.setKind} onDone={s.done} onAgain={s.open} onPick={(f) => f.it && !f.project && setOpen(f.it.n)} />
+  const it = open ? ITEMS.find((x) => x.n === open) : null
+  const body = <SearchBody state={s.state ?? 'listening'} kind={s.kind} onKind={s.setKind} onDone={s.done} onAgain={s.again} onPick={(f) => f.it && !f.project && setOpen(f.it.n)} onCancel={s.close} />
   let screen: ReactNode
   if (it && page)
     // the item's own back goes back to what it found
     screen = <div className="h-full">{pageOf(it, false, { onBack: () => setOpen(null) })}</div>
-  else if (page)
-    screen = (
-      <div className="flex h-full flex-col">
-        <div className="flex h-12 shrink-0 items-center gap-2 border-b border-zinc-200 px-4 dark:border-zinc-800">
-          <span className="flex-1 text-[17px] font-semibold">Search</span>
-          <button aria-label="Close the search" onClick={s.close} className="grid size-10 place-items-center rounded-full text-zinc-500 dark:text-zinc-400">
-            <Icon n="x" c="size-5" sw="2" />
-          </button>
-        </div>
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">{body}</div>
-      </div>
-    )
+  else if (page) screen = <ResultsPage onClose={s.close}>{body}</ResultsPage>
   else
     screen = (
       <div className="flex h-full flex-col">
         <ListHead phone title="Shop" otherNeeds={false} searching={false} q="" placeholder="" agent={agentInfo(M, 0)} notSaved={0} filtersSet={false} filtersOpen={false} place="" on={{ menu() {}, agents() {}, notSaved() {}, search: () => s.open(), query() {}, clear() {}, firstResult() {}, filters() {} }} />
-        <div className="flex min-h-0 flex-1 flex-col">{listOf(PROJECT, 'items', {}, false, { viewsEnd: <FilterIcon on={filters} set={false} onTap={() => setFilters(true)} />, top: null })}</div>
+        <div className="flex min-h-0 flex-1 flex-col">{listOf(ITEMS, 'items', {}, false, { viewsEnd: <FilterIcon on={filters} set={false} onTap={() => setFilters(true)} />, top: null })}</div>
         {s.state ? <Sheet open look={{}} desk={false} parts={{ title: 'Search', body }} onClose={s.close} /> : null}
         {filters ? <Sheet open look={{}} desk={false} parts={filtersSheet(filterFacts(M, 'items', { ...NO_FILTERS }), { set() {}, unset() {}, reset() {}, saveView() {}, close: () => setFilters(false) })} onClose={() => setFilters(false)} /> : null}
       </div>
@@ -450,7 +486,7 @@ export const StatesPhone: StoryObj = {
       {STATES.map(([label, state, kind]) => (
         <Frame key={label} layout="phone" width={393} height={720} label={label}>
           {state === 'found' || state === 'none' ? (
-            <div className="h-full overflow-y-auto px-4 py-3">{body(state, kind)}</div>
+            <ResultsPage onClose={none}>{body(state, kind)}</ResultsPage>
           ) : (
             <Sheet open look={{}} desk={false} parts={{ title: 'Search', body: body(state, kind) }} onClose={none} />
           )}
@@ -469,7 +505,7 @@ export const Filters: StoryObj = {
           'desktop: the icon at the end of the views, opened',
           <Frame layout="desk" width={420} height={560}>
             <div className="flex h-full flex-col">
-              {listOf(PROJECT, 'items', {}, true, { viewsEnd: <FilterIcon on set={false} onTap={none} />, top: null })}
+              {listOf(ITEMS, 'items', {}, true, { viewsEnd: <FilterIcon on set={false} onTap={none} />, top: null })}
               <div className="absolute inset-x-0 top-[3.25rem] bg-white shadow-lg dark:bg-zinc-950">
                 <DeskFilters tab="items" list={NO_FILTERS} set={[]} open place="" hidden={false} on={{ set: none, unset: none, reset: none, saveView: none, toggle: none }} />
               </div>
@@ -480,7 +516,7 @@ export const Filters: StoryObj = {
           'phone: the icon at the end of the views, and its sheet',
           <Frame layout="phone" width={393} height={760}>
             <div className="relative flex h-full flex-col">
-              {listOf(PROJECT, 'items', {}, false, { viewsEnd: <FilterIcon on={false} set={false} onTap={none} />, top: null })}
+              {listOf(ITEMS, 'items', {}, false, { viewsEnd: <FilterIcon on={false} set={false} onTap={none} />, top: null })}
               <Sheet open look={{}} desk={false} parts={filtersSheet(filterFacts(M, 'items', NO_FILTERS), { set: none, unset: none, reset: none, saveView: none, close: none })} onClose={none} />
             </div>
           </Frame>,
