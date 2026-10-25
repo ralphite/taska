@@ -132,7 +132,7 @@ export function DeskFilters({ tab, list, set, open, place, hidden, on }: {
   on: FilterEvents & { toggle(): void }
 }) {
   return (
-    <div hidden={hidden} className={`border-zinc-200 lg:border-r lg:border-b dark:border-zinc-800 ${place}`}>
+    <div hidden={hidden} className={`border-zinc-200 lg:border-b dark:border-zinc-800 ${place}`}>
       {!set.length && !open ? null : (
         <>
           <div className="flex min-h-11 flex-wrap items-center gap-2 px-3 py-1.5">

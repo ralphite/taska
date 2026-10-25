@@ -163,16 +163,18 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
           hidden={settings || full || side || !(filtersOpen || set.length)}
           on={{ ...filterEvents(app), toggle: () => stores.ui.getState().setDeskFilters(!filtersOpen) }}
         />
-        <section data-part="items" className="col-start-1 row-span-2 row-start-4 flex min-h-0 flex-1 flex-col lg:border-r lg:border-zinc-200 dark:lg:border-zinc-800" hidden={settings || full}>
+        <section data-part="items" className="col-start-1 row-span-2 row-start-4 flex min-h-0 flex-1 flex-col" hidden={settings || full}>
           {shownSide ? <SideListContainer slug={route.slug} side={shownSide} /> : <ItemListContainer route={route} />}
         </section>
         <DetailContainer route={route} place={`row-span-3 row-start-2 group-data-[compose]/app:row-span-1 ${pane}`} hidden={settings} full={full} />
         {settings ? <SettingsContainer route={route} place="col-span-2 col-start-1 row-span-5 row-start-1" prefsBox={<BoxContainer route={route} composePage={false} bare />} /> : null}
         {settings || full ? null : (
+          // the line between the list and the pane, from under the project's bar to the bottom: one line, drawn here only
+          // (B573), dragged sideways like the other lines
           <Grip
             name="list"
             axis="x"
-            place="relative z-30 col-start-1 row-span-4 row-start-2 block w-3 translate-x-1/2 justify-self-end"
+            place="relative z-30 col-start-1 row-span-4 row-start-2 block w-px justify-self-end bg-zinc-200 after:absolute after:-inset-x-1.5 after:inset-y-0 dark:bg-zinc-800"
             measure={(el) => {
               const from = el.parentElement?.getBoundingClientRect().left ?? 0
               return { from, most: innerWidth - from }

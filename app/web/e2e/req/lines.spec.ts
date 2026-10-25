@@ -1,6 +1,6 @@
 // Yadong's requirements on the lines you drag (D29, "Details"; R267; T475, D45): each check is named by the codes of his
 // inputs, so a change that breaks one is stopped before it ships with his own words.
-// guards: src/ui/Grip.tsx src/features/item/ItemPage.tsx src/features/item/ItemPageContainer.tsx src/features/sidebar/SidebarContainer.tsx src/pages/ProjectPageContainer.tsx src/stores/grips.ts src/app/keys.ts
+// guards: src/ui/Grip.tsx src/features/item/ItemPage.tsx src/features/item/ItemPageContainer.tsx src/features/sidebar/SidebarContainer.tsx src/pages/ProjectPageContainer.tsx src/pages/Header.tsx src/features/list/Filters.tsx src/features/composer/FootContainer.tsx src/stores/grips.ts src/app/keys.ts
 import { expect, test } from '@playwright/test'
 import type { Locator, Page } from '@playwright/test'
 import { LOOP, isDesk, open, project } from '../seed'
@@ -113,3 +113,51 @@ test('r448 r458 r464 r470: a line goes wherever it is dragged, and stays there f
   if (across) expect(Math.abs(there.y - got.y)).toBeLessThan(2)
   else expect(Math.abs(there.x - got.x)).toBeLessThan(2)
 })
+
+/** The colours down the line between the list and the pane, from under the project's bar to the bottom of the window,
+ * as the screen shows them. */
+async function downTheLine(page: Page): Promise<string[]> {
+  await page.mouse.move(2, 2)
+  const list = await page.locator('[data-part="items"]').filter({ visible: true }).first().boundingBox()
+  const head = await page.locator('[data-part="list-head"]').filter({ visible: true }).first().boundingBox()
+  if (!list || !head) throw new Error('not drawn')
+  const shot = (await page.screenshot({ scale: 'css' })).toString('base64')
+  return page.evaluate(
+    async ({ shot, x, top }) => {
+      const img = new Image()
+      img.src = 'data:image/png;base64,' + shot
+      await img.decode()
+      const c = document.createElement('canvas')
+      c.width = img.width
+      c.height = img.height
+      const g = c.getContext('2d') as CanvasRenderingContext2D
+      g.drawImage(img, 0, 0)
+      const px = g.getImageData(x, 0, 1, img.height).data
+      const out: string[] = []
+      for (let y = top; y < img.height; y++) out.push(`${px[y * 4]},${px[y * 4 + 1]},${px[y * 4 + 2]}`)
+      return out
+    },
+    { shot, x: Math.round(list.x + list.width) - 1, top: Math.ceil(head.y) },
+  )
+}
+
+for (const scheme of ['light', 'dark'] as const)
+  test(`r558 r682 r813: the line between the list and the pane is one line from under the project's bar to the bottom, in an item, a document and the new input (B573, ${scheme})`, async ({
+    page,
+    request,
+  }) => {
+    await page.emulateMedia({ colorScheme: scheme })
+    const p = await project(request, {
+      ...LOOP,
+      then: `${LOOP.then}T1 doc The plan
+  First part of the plan.
+`,
+    })
+    for (const at of ['T1', 'D1', '']) {
+      await open(page, p, at)
+      await page.waitForTimeout(300)
+      const down = await downTheLine(page)
+      const breaks = down.map((c, i) => [i, c] as const).filter(([, c]) => c !== down[0])
+      expect(breaks.slice(0, 5), `${at || 'New input'}: one colour all the way down (${down[0]}), not broken where it is another`).toEqual([])
+    }
+  })
