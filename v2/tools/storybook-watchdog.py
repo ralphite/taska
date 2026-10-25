@@ -22,6 +22,8 @@ From the last 24 hours of that log it rewrites the Dashboard's panel ~/.taska/de
 It restarts Storybook only when it is stuck, never on a slow minute:
   - the page has not answered for 5 minutes in a row, or
   - the story list has failed for 5 minutes naming files that no longer exist (the index kept files that moved).
+  - the page has been blank for 5 minutes: the addon files it names answer 404 (B612: their cache was cleared under
+    a running Storybook).
 Not more than once in 15 minutes. A restart goes through storybook-restart.sh, which logs it in
 .logs/storybook-restarts.log. Nothing else restarts Storybook: agents never do (rule R489).
 """
@@ -164,13 +166,17 @@ def main() -> None:
     trim()
     down_since: Optional[float] = None  # first minute in the current run without a page answer
     stale_since: Optional[float] = None  # first minute in the current run of a story list naming gone files
+    blank_since: Optional[float] = None  # first minute in the current run of a page whose addon files are gone (B612)
     last_restart = 0.0
     last_pid: Optional[int] = None
     n = 0
     while True:
         now = time.time()
-        status, page_ms, _ = get("/", PAGE_TIMEOUT)
+        status, page_ms, html = get("/", PAGE_TIMEOUT)
         up = status == 200
+        # B612: the page answers but draws nothing when the addon files it names are gone (their cache was cleared
+        # under a running Storybook)
+        missing = [a for a in sorted(set(re.findall(r"\./(sb-addons/[^'\"]+\.js)", html or "")))[:4] if get("/" + a, PAGE_TIMEOUT)[0] == 404] if up else []
         istatus, index_ms, body = get("/index.json", INDEX_TIMEOUT) if up else (None, None, "")
         index = "ok" if istatus == 200 else "error" if istatus else "timeout" if up else "down"
         pid, uptime = process()
@@ -189,11 +195,14 @@ def main() -> None:
         down_since = None if up else (down_since or now)
         gone = gone_files(body) if index == "error" else []
         stale_since = (stale_since or now) if gone else None
+        blank_since = (blank_since or now) if missing else None
         why = ""
         if down_since and now - down_since >= (STUCK_MINUTES - 0.5) * 60:
             why = f"the page has not answered since {time.strftime('%H:%M', time.localtime(down_since))}"
         elif stale_since and now - stale_since >= (STUCK_MINUTES - 0.5) * 60:
             why = f"the story list fails on files that are gone ({', '.join(gone[:3])})"
+        elif blank_since and now - blank_since >= (STUCK_MINUTES - 0.5) * 60:
+            why = f"the page is blank: its addon files are gone ({', '.join(missing[:2])})"
         if why and now - last_restart >= QUIET_AFTER_RESTART:
             line["restart"] = why
             restart(why)
