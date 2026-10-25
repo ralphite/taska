@@ -32,7 +32,7 @@ export const SaidLooks: Story = {
           items={[
             ['as it is', line()],
             ['pointer on a line: Add more and ⋯ show', <div data-pointer>{line()}</div>],
-            ['keys: Tab on its item', <div data-keys>{line()}</div>],
+            ['keys: Tab on its item (Add more and ⋯ show; the browser draws the ring itself)', <div data-keys>{line()}</div>],
           ]}
         />
       )}
