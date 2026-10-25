@@ -173,7 +173,7 @@ function MsgView({ it, x, env, on, facts, docs, code, done, ver, gone, read }: {
             {src?.trWait ? (
               <>
                 {' · '}
-                <span className="animate-pulse text-blue-600 dark:text-blue-400">transcribing the voice note…</span>
+                <span className="animate-pulse text-blue-600 dark:text-blue-400">transcribing…</span>
               </>
             ) : null}
             {read ? (

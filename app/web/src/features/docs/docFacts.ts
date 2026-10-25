@@ -112,7 +112,7 @@ export function editFacts(rec: { ms: number } | null, waiting: number, desk: boo
     hint: rec
       ? 'Listening. Words go at the mark; you can keep typing.'
       : waiting
-        ? `Working out the words of ${waiting > 1 ? waiting + ' voice notes' : 'the voice note'}\u2026`
+        ? 'Transcribing\u2026'
         : desk
           ? 'First line is the title. Esc keeps it as a draft.'
           : 'The first line is the title.',

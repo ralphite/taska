@@ -229,7 +229,7 @@ export const ACTIONS = {
     label: 'Undo',
     keys: 'z',
     palette: true,
-    why: (w) => (w.feedback.getState().undo.length ? null : 'Nothing of yours to undo here. Older changes are in Change log'),
+    why: (w) => (w.feedback.getState().undo.length ? null : 'Nothing of yours to undo here. Older changes are in Activity'),
     run: (w) => void w.feedback.getState().undo.at(-1)?.run(),
   }),
   keys: page(['sheets'], { label: 'Keyboard shortcuts', keys: '?', palette: true, run: (w) => w.sheets.open({ kind: 'keys' }) }),
@@ -442,7 +442,7 @@ const HELP: [string, HelpRow[]][] = [
       { ids: ['put-under', 'copy'], sep: ' · ', text: 'Put under… · Copy for agent' },
       { ids: ['edit', 'new-doc', 'add-sub'], sep: ' · ', text: 'Edit · New doc · Add subitem' },
       { ids: ['menu'], sep: '', text: 'All actions' },
-      { ids: ['undo'], sep: '', text: 'Undo last action; older changes in Change log' },
+      { ids: ['undo'], sep: '', text: 'Undo last action; older changes in Activity' },
     ],
   ],
   [

@@ -329,12 +329,12 @@ export class Box {
         this.putBack(slug, key, right)
         return
       }
-      this.d.toasts.show(`Fixed ${mode.id}. Voice notes will use \u201c${right}\u201d`, async () => {
+      this.d.toasts.show(`Fixed ${inputCode(mode.id)}. Voice notes will use \u201c${right}\u201d`, async () => {
         // the words come back, and the spelling is forgotten (or the one before comes back)
         const now = this.d.model?.(slug)?.byId.get(mode.id)
         if (now && before != null && now.text !== before) await this.d.runner.send({ id: newId(), slug, commands: [{ op: 'amend', id: mode.id, mode: 'edit', v: now.v || 0, text: before } as never], patches: [], inputPatches: [{ id: mode.id, f: { text: before } }], said: `putting back ${inputCode(mode.id)}`, t: Date.now() })
         await this.d.api.setCorrection(had?.wrong ? { wrong: mode.wrong, right: had.right, undo: true } : { wrong: mode.wrong }).catch(() => {})
-        this.d.toasts.show(`Put back \u201c${mode.wrong}\u201d in ${mode.id}${had ? '' : ', and forgot the spelling'}`)
+        this.d.toasts.show(`Put back \u201c${mode.wrong}\u201d in ${inputCode(mode.id)}${had ? '' : ', and forgot the spelling'}`)
       })
     })()
     return true
