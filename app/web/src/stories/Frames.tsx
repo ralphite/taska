@@ -1,26 +1,24 @@
-// Frames for stories: a part drawn at the phone's width (393) and the desktop's (1440), light and dark, side by side.
-// Each frame is a layout container ("@container/frame") of that width, so the part lays itself out as it does on that
-// screen; the layout mode comes with it.
+// Frames for stories: a part drawn at the phone's width (393) and the desktop's (1440), side by side. Light or dark is
+// Storybook's toolbar switch, one at a time (R598). Each frame is a layout container ("@container/frame") of that
+// width, so the part lays itself out as it does on that screen; the layout mode comes with it.
 
 import type { ReactNode } from 'react'
 import { LayoutProvider, type Layout } from '../app/context'
 
 export interface FrameProps {
   layout: Layout
-  theme?: 'light' | 'dark'
   width?: number
   height?: number
   label?: string
   children: ReactNode
 }
 
-export function Frame({ layout, theme = 'light', width, height, label, children }: FrameProps) {
+export function Frame({ layout, width, height, label, children }: FrameProps) {
   const w = width ?? (layout === 'phone' ? 393 : 1440)
   return (
     <figure className="m-0 flex flex-col gap-1">
       {label ? <figcaption className="font-sans text-xs text-zinc-500">{label}</figcaption> : null}
       <div
-        data-theme={theme}
         data-layout={layout}
         style={{ width: w, height, transform: 'translateZ(0)' }}
         className="@container/frame relative overflow-hidden bg-white text-zinc-900 antialiased ring-1 ring-zinc-300 dark:bg-zinc-950 dark:text-zinc-100"
@@ -31,7 +29,7 @@ export function Frame({ layout, theme = 'light', width, height, label, children 
   )
 }
 
-/** The same part in each frame: phone and desktop, light and dark. */
+/** The same part in each frame: phone and desktop. */
 export function Frames({ children, phone = true, desk = true, deskWidth, phoneWidth, height }: {
   children: (layout: Layout) => ReactNode
   phone?: boolean
@@ -41,21 +39,17 @@ export function Frames({ children, phone = true, desk = true, deskWidth, phoneWi
   height?: number
 }) {
   return (
-    <div className="flex flex-wrap items-start gap-6 bg-zinc-200 p-6">
-      {(['light', 'dark'] as const).map((theme) => (
-        <div key={theme} className="flex items-start gap-6">
-          {phone ? (
-            <Frame layout="phone" theme={theme} width={phoneWidth} height={height} label={`phone · ${theme}`}>
-              {children('phone')}
-            </Frame>
-          ) : null}
-          {desk ? (
-            <Frame layout="desk" theme={theme} width={deskWidth} height={height} label={`desktop · ${theme}`}>
-              {children('desk')}
-            </Frame>
-          ) : null}
-        </div>
-      ))}
+    <div className="flex flex-wrap items-start gap-6 bg-zinc-200 p-6 dark:bg-zinc-800">
+      {phone ? (
+        <Frame layout="phone" width={phoneWidth} height={height} label="phone">
+          {children('phone')}
+        </Frame>
+      ) : null}
+      {desk ? (
+        <Frame layout="desk" width={deskWidth} height={height} label="desktop">
+          {children('desk')}
+        </Frame>
+      ) : null}
     </div>
   )
 }

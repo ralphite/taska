@@ -46,12 +46,10 @@ export const NotListedYet: Story = {
 /** The sidebar folded: the rail. */
 export const Folded: Story = {
   render: () => (
-    <div className="flex gap-6 bg-zinc-200 p-6">
-      {(['light', 'dark'] as const).map((theme) => (
-        <Frame key={theme} layout="desk" theme={theme} width={56} height={560} label={theme}>
-          <Rail projects={projects} composing settingsOpen={false} on={on} />
-        </Frame>
-      ))}
+    <div className="flex gap-6 bg-zinc-200 p-6 dark:bg-zinc-800">
+      <Frame layout="desk" width={56} height={560}>
+        <Rail projects={projects} composing settingsOpen={false} on={on} />
+      </Frame>
     </div>
   ),
 }

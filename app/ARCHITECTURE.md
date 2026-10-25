@@ -109,7 +109,7 @@ Rules, checked by `web/eslint.config.js` (imports, page lookups) and `web/script
    frame) chooses the layout; `lg:` means the desktop layout and `phone:` the phone's (`src/index.css`), and the
    widths within a layout are container queries on the frame (`wide:`, `huge:`, `roomy:`, `wide-phone:`). So any
    component renders alone at 393 or 1440, side by side.
-5. Dark mode follows the system; `data-theme` on any ancestor forces one (Storybook frames use it).
+5. Dark mode follows the system; `data-theme` on any ancestor forces one (Storybook sets it on `<html>` from its toolbar, one theme at a time, R598).
 6. Styling: Tailwind utility classes only; the one CSS file imports Tailwind and declares the variants; no raw
    colours, no `<style>`.
 7. Every presentational component has a story file next to it: its states side by side, drawn from props (static);

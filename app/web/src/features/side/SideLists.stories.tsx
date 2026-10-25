@@ -28,13 +28,11 @@ const on = { item() {}, input() {}, open() {}, undo() {}, more() {} }
 
 const column = (children: React.ReactNode, side: 'docs' | 'log' | 'deleted', count = 0) => (
   <div className="flex gap-6">
-    {(['light', 'dark'] as const).map((theme) => (
-      <Frame key={theme} layout="desk" theme={theme} width={420} height={420}>
-        <SideFrame side={side} count={count}>
-          {children}
-        </SideFrame>
-      </Frame>
-    ))}
+    <Frame layout="desk" width={420} height={420}>
+      <SideFrame side={side} count={count}>
+        {children}
+      </SideFrame>
+    </Frame>
   </div>
 )
 
