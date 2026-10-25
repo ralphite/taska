@@ -1,6 +1,6 @@
 // Commenting on a document, one story for each state (T591: the groups and names Yadong had before the rewrite): the
 // page's own facts (factsOf) and DocView, whose buttons beside each paragraph BlockActs draws, with a demo document.
-// A web page's are in WebPageCommenting.stories, words selected in stories/document, drawing around an area in
+// A web page's are in WebPageCommenting.stories, words selected in stories/SelectedWords.stories, drawing around an area in
 // Lasso.stories.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { Doc } from '../../model/types'
