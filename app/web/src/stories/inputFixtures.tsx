@@ -72,7 +72,7 @@ export interface Said {
 const title = (slug: string) => ({ 'mobile-app': 'Mobile app' })[slug] ?? slug
 const project = (s: Said) => modelOf(ITEMS, s.inputs ?? DAY, { organizer: { on: !!s.organizer, model: 'gemini-flash-latest', busy: s.busy ?? null } })
 const thumbs = (size: string) => (f: FileRef[]) => <Thumbs files={f} url={(x) => (x.endsWith('.png') ? PICTURE : '#' + x)} size={size} play={() => ({ playing: false, t: null })} tidy on={{ play() {}, words() {}, view() {} }} />
-const noInput: InputEvents = { goto() {}, more() {}, menu() {}, retry() {}, draft() {}, moved() {}, ref() {}, picture() {} }
+const noInput: InputEvents = { goto() {}, more() {}, menu() {}, retry() {}, draft() {}, moved() {}, ref() {}, picture() {}, outboxRetry() {}, outboxEdit() {} }
 
 function rowsOf(s: Said) {
   const m = project(s)

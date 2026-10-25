@@ -9,11 +9,12 @@ import { searchWords } from '../../model/visible'
 import { useItemWorld } from '../../app/hooks'
 import { useSearchHints } from '../../app/searchHints'
 import { Thumbs } from '../../ui/Files'
+import { useBoxHere } from '../composer/boxHere'
 import { InputsView, type InputFacts } from './InputsView'
 import { inputRows, outgoingRows } from './inputRows'
 
 export function InputsContainer({ route, hidden }: { route: ProjectRoute; hidden: boolean }) {
-  const app = useServices('box', 'docs', 'inputActions', 'nav', 'sheets')
+  const app = useServices('box', 'docs', 'fields', 'inputActions', 'inputs', 'nav', 'sheets')
   const stores = useStores('box', 'data', 'drafts', 'outbox', 'ui')
   const m = useProjectModel(route.slug)
   const away = useAway(route.slug)
@@ -27,6 +28,7 @@ export function InputsContainer({ route, hidden }: { route: ProjectRoute; hidden
   const mode = useStoreValue(stores.box, (s) => s.mode)
   const writing = useMemo(() => (mode?.kind === 'amend' ? { id: mode.id, mode: mode.mode } : null), [mode])
   const media = useFiles(route.slug)
+  const { key: boxKey } = useBoxHere(route)
   const lit = useStoreValue(stores.ui, (s) => s.lit)
   const litStill = useStoreValue(stores.ui, (s) => s.litStill)
   const rows: InputFacts[] = useMemo(() => {
@@ -58,6 +60,8 @@ export function InputsContainer({ route, hidden }: { route: ProjectRoute; hidden
           else if (to?.kind === 'input') app.nav.goInput(to.id, (x) => stores.ui.getState().setLit(x))
         },
         picture: (f, all) => media.on.view(f, all),
+        outboxRetry: () => void app.inputs.flush(),
+        outboxEdit: () => app.box.editOutgoing(route.slug, boxKey) && app.fields.focus('box'),
       }}
     />
   )

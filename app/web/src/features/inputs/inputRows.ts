@@ -75,4 +75,4 @@ export const outgoingRows = (outbox: readonly Outgoing[], slug: string, away: nu
   outbox
     .filter((o) => o.slug === slug && showsOnItsWay(o))
     .reverse()
-    .map((o) => ({ q: o.q, text: o.text || outgoingLine(o), state: outgoingState(o, away), bad: o.state === 'failed' && !o.net, scope: o.scope, previews: o.files.flatMap((f) => (f.preview ? [f.preview] : [])) }))
+    .map((o) => ({ q: o.q, text: o.text || outgoingLine(o), state: outgoingState(o, away), bad: o.state === 'failed' && !o.net, failed: o.state === 'failed', scope: o.scope, previews: o.files.flatMap((f) => (f.preview ? [f.preview] : [])) }))

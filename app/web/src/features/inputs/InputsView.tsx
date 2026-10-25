@@ -48,7 +48,10 @@ export interface OutgoingRow {
   q: string
   text: string
   state: string
+  /** Taska said no (not only a lost connection): it can be sent again */
   bad: boolean
+  /** not sent: it can be taken back into the box */
+  failed: boolean
   scope: string | null
   previews: string[]
 }
@@ -62,6 +65,9 @@ export interface InputEvents {
   moved(href: string): void
   ref(code: string): void
   picture(fid: string, all: string[]): void
+  /** what is on its way and was not sent: send it again, or take it back into the box */
+  outboxRetry(): void
+  outboxEdit(): void
 }
 
 const dot = (cls: string) => <span className={`size-1.5 animate-pulse rounded-full ${cls}`} />
@@ -129,7 +135,7 @@ export function InputCard({ x, words, world, files, on }: { x: InputFacts; words
           onClick={x.long ? () => on.more(r.id) : undefined}
           className={`mt-1.5 rounded-2xl rounded-tr-md bg-blue-50 px-3.5 py-2 text-[15px] leading-relaxed text-zinc-900 dark:bg-blue-400/10 dark:text-zinc-100 ${x.long ? 'cursor-pointer' : ''}`}
         >
-          {r.text ? <Rich text={r.text} world={world} cls={x.long && !x.opened ? 'max-h-28 overflow-hidden' : ''} onRef={on.ref} onPicture={on.picture} /> : null}
+          {r.text ? <Rich text={r.text} world={world} cls={x.long && !x.opened ? 'line-clamp-4' : ''} onRef={on.ref} onPicture={on.picture} /> : null}
           {x.long ? (
             <button onClick={(e) => (e.stopPropagation(), on.more(r.id))} className="-my-2 flex h-11 items-center text-sm font-medium text-blue-600 hover:underline dark:text-blue-400">
               {x.opened ? 'Less' : 'More'}
@@ -151,13 +157,6 @@ export function InputCard({ x, words, world, files, on }: { x: InputFacts; words
               <Icon n="arrow" c="size-3.5" sw="2" />
               <span className="truncate">{x.moved.label}</span>
             </a>
-          </div>
-        ) : x.retry ? (
-          <div className="mt-1 flex flex-wrap items-center gap-1">
-            <button onClick={() => on.retry(r.id)} className={LINK_BTN}>
-              <Icon n="loop" c="size-3.5" sw="2" />
-              {x.retry}
-            </button>
           </div>
         ) : null}
       </div>
@@ -187,13 +186,22 @@ export function InputCard({ x, words, world, files, on }: { x: InputFacts; words
             ) : null}
           </>
         )}
+        {/* what failed is said first, then what to do about it */}
+        {x.retry && !x.moved ? (
+          <div className="mt-1 flex flex-wrap items-center gap-1">
+            <button onClick={() => on.retry(r.id)} className={LINK_BTN}>
+              <Icon n="loop" c="size-3.5" sw="2" />
+              {x.retry}
+            </button>
+          </div>
+        ) : null}
       </div>
     </article>
   )
 }
 
 /** What is still on its way, shown first where your inputs are listed. */
-export function OutboxRows({ list }: { list: OutgoingRow[] }) {
+export function OutboxRows({ list, on }: { list: OutgoingRow[]; on: Pick<InputEvents, 'outboxRetry' | 'outboxEdit'> }) {
   return (
     <>
       {list.map((q) => (
@@ -213,6 +221,21 @@ export function OutboxRows({ list }: { list: OutgoingRow[] }) {
               </div>
             ) : null}
           </div>
+          {q.failed ? (
+            // as the New input page has them (You said lately)
+            <div className="mt-1 flex flex-wrap items-center gap-1">
+              {q.bad ? (
+                <button onClick={on.outboxRetry} className={LINK_BTN}>
+                  <Icon n="loop" c="size-3.5" sw="2" />
+                  Retry
+                </button>
+              ) : null}
+              <button onClick={on.outboxEdit} className={`${LINK_BTN} text-zinc-600 dark:text-zinc-300`}>
+                <Icon n="pencil" c="size-3.5" sw="2" />
+                Edit
+              </button>
+            </div>
+          ) : null}
         </article>
       ))}
     </>
@@ -244,7 +267,7 @@ export function InputsView({ hidden, rows, outgoing, words, world, files, hints,
       data-vc-area
       className="-mb-(--foot-h) min-h-0 flex-1 overflow-y-auto overscroll-contain pb-[calc(var(--foot-h,0px)+1.5rem)]"
     >
-      {hidden ? null : outgoing.length && !words.length ? <OutboxRows list={outgoing} /> : null}
+      {hidden ? null : outgoing.length && !words.length ? <OutboxRows list={outgoing} on={on} /> : null}
       {hidden ? null : rows.length ? (
         <>
           {rows.map((x) => (
