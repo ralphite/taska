@@ -23,7 +23,7 @@ const [sending] = threadsOf([comment({ id: -1, key: 'p1', th: 0, quote: 'stays i
  * yours, still being saved. */
 export const Threads: Story = {
   render: () => (
-    <Frames height={680} deskWidth={360} phoneWidth={393}>
+    <Frames height={900} deskWidth={360} phoneWidth={393}>
       {(layout) => (
         <div className="flex flex-col gap-4 p-4">
           <Thread t={t} blockText="The old one stays in use." rail={layout === 'desk'} isNew done={false} replying={false} asking={null} env={env(layout === 'desk')} on={on} />
