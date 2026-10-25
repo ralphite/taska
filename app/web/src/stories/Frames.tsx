@@ -1,6 +1,8 @@
-// Frames for stories: a part drawn at the phone's width (393) and the desktop's (1440), side by side. Light or dark is
-// Storybook's toolbar switch, one at a time (R598). Each frame is a layout container ("@container/frame") of that
-// width, so the part lays itself out as it does on that screen; the layout mode comes with it.
+// Frames for stories: a part drawn on the phone and on the desktop, side by side. Light or dark is Storybook's toolbar
+// switch, one at a time (R598). The phone's frame is the phone (393 by 852, B593 #7615: its width and its height); the
+// desktop's starts at the size the story gives and Yadong resizes it from its corner, as a window (#7615). Each frame
+// is a layout container ("@container/frame"), so the part lays itself out as it does on a screen of that size; the
+// layout mode comes with it.
 
 import { useLayoutEffect, useRef, type ReactNode } from 'react'
 import { LayoutProvider, type Layout } from '../app/context'
@@ -16,15 +18,21 @@ export interface FrameProps {
   children: ReactNode
 }
 
+/** the phone's screen */
+export const PHONE = { width: 393, height: 852 }
+
 export function Frame({ layout, width, height, label, page = false, children }: FrameProps) {
-  const w = width ?? (layout === 'phone' ? 393 : 1440)
+  const phone = layout === 'phone'
+  // the phone: its screen (a part narrower than the screen, as the drawer, says its own width); the desktop: where it
+  // starts, its height its content's unless the story says
+  const size = phone ? { width: width ?? PHONE.width, height: PHONE.height } : { width: width ?? 1440, height }
   return (
     <figure className="m-0 flex flex-col gap-1">
       {label ? <figcaption className="font-sans text-xs text-zinc-500">{label}</figcaption> : null}
       <div
         data-layout={layout}
-        style={{ width: w, height, transform: 'translateZ(0)' }}
-        className={`@container/frame relative overflow-hidden ring-1 ring-zinc-300 ${page ? PAGE_BODY : 'bg-white text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-100'}`}
+        style={{ ...size, transform: 'translateZ(0)' }}
+        className={`@container/frame relative ring-1 ring-zinc-300 ${phone ? 'overflow-y-auto' : 'min-h-24 min-w-80 resize overflow-hidden'} ${page ? PAGE_BODY : 'bg-white text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-100'}`}
       >
         <LayoutProvider layout={layout}>{children}</LayoutProvider>
       </div>
