@@ -415,7 +415,11 @@ export function ItemPage({ it, f, env, facts, on, talkRef, duo = false, left = n
         name="top"
         axis="y"
         place="relative z-10 hidden h-px shrink-0 bg-zinc-200 after:absolute after:inset-x-0 after:-inset-y-2 lg:block dark:bg-zinc-800"
-        measure={(el) => ({ from: el.previousElementSibling?.getBoundingClientRect().top ?? 0, most: el.parentElement?.clientHeight ?? innerHeight })}
+        // anywhere you like, down to the window's bottom (T322, R267): no limit of its own
+        measure={(el) => {
+          const from = el.previousElementSibling?.getBoundingClientRect().top ?? 0
+          return { from, most: innerHeight - from }
+        }}
         onSize={(px) => on.topSize(px, false)}
         onDone={(px) => on.topSize(px, true)}
       />
