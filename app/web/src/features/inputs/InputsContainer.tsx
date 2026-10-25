@@ -4,16 +4,13 @@
 import { useMemo } from 'react'
 import { useServices, useStores, useStoreValue } from '../../app/context'
 import { useAway, useFiles, useProjectModel, type ProjectRoute } from '../../app/hooks'
-import { dayOf, newestFirst, standing } from '../../model/inputs'
-import { codeOf, findRef, inputDraft, type ProjectModel } from '../../model/project'
-import { when } from '../../model/time'
-import { inputMatch, searchWords } from '../../model/visible'
-import { inputCode } from '../../model/words'
-import { outgoingLine, outgoingState, showsOnItsWay } from '../../model/outgoing'
+import { codeOf, findRef, type ProjectModel } from '../../model/project'
+import { searchWords } from '../../model/visible'
 import { useItemWorld } from '../../app/hooks'
 import { useSearchHints } from '../../app/searchHints'
 import { Thumbs } from '../../ui/Files'
-import { InputsView, type InputFacts, type OutgoingRow } from './InputsView'
+import { InputsView, type InputFacts } from './InputsView'
+import { inputRows, outgoingRows } from './inputRows'
 
 export function InputsContainer({ route, hidden }: { route: ProjectRoute; hidden: boolean }) {
   const app = useServices('box', 'docs', 'inputActions', 'nav', 'sheets')
@@ -35,55 +32,9 @@ export function InputsContainer({ route, hidden }: { route: ProjectRoute; hidden
   const rows: InputFacts[] = useMemo(() => {
     if (!m || hidden) return []
     const title = (slug: string) => projects?.find((p) => p.name === slug)?.title || slug
-    const list = newestFirst(m.inputs).filter((r) => inputMatch(r, words))
-    let day = ''
-    return list.map((r): InputFacts => {
-      const d = dayOf(r.t, new Date(m.at))
-      const startsDay = d !== day
-      day = d
-      const st = standing(r, m.facts.organizer, title)
-      // the chips say what was done with their items ("Created B224"); the note keeps only what no chip says
-      const shown = r.moved ? [] : r.touched.filter((n) => m.byN.has(n) && n !== r.scope)
-      const did: Record<number, string> = {}
-      const rest: string[] = []
-      for (const part of (r.org?.msg || '').split(' · ').map((p) => p.trim()).filter(Boolean)) {
-        const mm = /^(.+?) ([A-Z]\d+)$/.exec(part)
-        const n = mm ? Number(/\d+/.exec(mm[2])?.[0]) : null
-        if (mm && n && shown.includes(n)) did[n] ||= mm[1]
-        else rest.push(part)
-      }
-      const org = !r.moved && r.org && !(r.acked && r.org.keep)
-      const told = (p: string) => p.toLowerCase() === st.label.toLowerCase() || (/^Left for your/.test(p) && /^Left for your/.test(st.label))
-      const left = rest.filter((p) => !told(p))
-      const note = org && left.length ? left.join(' · ') : null
-      const scope = r.scope ? m.byN.get(r.scope) : undefined
-      return {
-        r,
-        code: inputCode(r.id),
-        time: when(r.t, m.at),
-        day: startsDay ? d : null,
-        standing: st,
-        scope: scope ? { n: scope.n, code: codeOf(m, scope.n), title: scope.title } : null,
-        chips: shown.map((n) => {
-          const it = m.byN.get(n)!
-          return { n, code: codeOf(m, n), type: it.type, title: it.title, did: did[n] || '' }
-        }),
-        note,
-        noteBad: !r.org?.ok,
-        spark: !!org && !note && shown.some((n) => did[n]),
-        retry: !r.acked && m.facts.organizer.on && r.org && (!r.org.ok || r.org.undone) ? (r.org.undone ? 'Organize again' : 'Retry') : null,
-        moved: r.moved ? { href: `/p/${encodeURIComponent(r.moved.to)}/`, label: `Open ${title(r.moved.to)} · ${inputCode(r.moved.as)}` } : null,
-        lit: lit === r.id ? (litStill ? 'still' : 'shown') : undefined,
-        draft: inputDraft(r.id, draftWords || stores.drafts.getState().of(route.slug), writing),
-        long: r.text.length > 160 || r.text.split('\n').length > 4,
-        opened: opened.has(r.id),
-      }
-    })
+    return inputRows(m, { words, title, opened, drafts: draftWords || stores.drafts.getState().of(route.slug), writing, lit, litStill })
   }, [m, hidden, words, projects, opened, draftWords, stores, route.slug, writing, lit, litStill])
-  const outgoing: OutgoingRow[] = outbox
-    .filter((o) => o.slug === route.slug && showsOnItsWay(o))
-    .reverse()
-    .map((o) => ({ q: o.q, text: o.text || outgoingLine(o), state: outgoingState(o, away), bad: o.state === 'failed' && !o.net, scope: o.scope, previews: o.files.flatMap((f) => (f.preview ? [f.preview] : [])) }))
+  const outgoing = outgoingRows(outbox, route.slug, away)
   return (
     <InputsView
       hidden={hidden}

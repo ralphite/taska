@@ -5,8 +5,7 @@ import { useLayoutEffect } from 'react'
 import { useServices, useStores, useStoreValue } from './context'
 import type { ProjectRoute } from './hooks'
 import type { ProjectModel } from '../model/project'
-import { hay, inTab, inputMatch } from '../model/visible'
-import { TABS, type Tab } from '../model/words'
+import { otherTabs } from '../model/visible'
 import { toneOf } from '../ui/tones'
 import { useSideProjects } from './projectLists'
 import { SearchHints } from '../ui/SearchHints'
@@ -21,15 +20,9 @@ export function useSearchHints(route: ProjectRoute, m: ProjectModel | null, word
   const { tones } = useSideProjects(route.slug)
   return (shown: number) => {
     if (!words.length || !m) return null
-    const other =
-      shown >= 5
-        ? []
-        : TABS.filter((t) => t !== route.tab)
-            .map((t): [Tab, number] => [t, t === 'inputs' ? m.inputs.filter((r) => inputMatch(r, words)).length : m.items.filter((it) => !it.mergedInto && inTab(it, t) && words.every((w) => hay(it).includes(w))).length])
-            .filter(([, k]) => k)
     return (
       <SearchHints
-        other={other}
+        other={otherTabs(m, words, route.tab, shown)}
         cross={cross.q === q ? cross : null}
         tone={(slug) => toneOf(tones, slug)}
         onShow={(t) => app.nav.tab(t)}

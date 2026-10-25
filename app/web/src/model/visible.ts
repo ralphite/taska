@@ -2,9 +2,10 @@
 // and the search, in the list's order. Pure: from the project and the list's settings.
 
 import { closed, inQueue, needsYou } from './items'
+import type { ProjectModel } from './project'
 import type { ListKey, ListQuery } from './route'
 import type { Input, Item } from './types'
-import { ARCHIVE_FILTER_WORD, LETTER, RULE_STATUS_WORD, SORT_WORDS, STATUS_FILTER_WORD, STATUS_WORD, WHEN_WORD, type Tab } from './words'
+import { ARCHIVE_FILTER_WORD, LETTER, RULE_STATUS_WORD, SORT_WORDS, STATUS_FILTER_WORD, STATUS_WORD, TABS, WHEN_WORD, type Tab } from './words'
 
 /** An item's words, for the search: its code, title, text, next and talk. */
 const HAY = new WeakMap<Item, string>()
@@ -102,3 +103,11 @@ export function filtersSet(tab: Tab, list: ListQuery): [ListKey, string][] {
 
 /** Whether the list shows exactly one of your views (its type, when, status, priority and sort). */
 export const showsView = (list: Record<string, string>, v: Record<'type' | 'when' | 'status' | 'pri' | 'sort', string>) => (['type', 'when', 'status', 'pri', 'sort'] as const).every((k) => list[k] === v[k])
+
+/** How many the search matches in each other tab that has some, while the tab it is on shows fewer than five. */
+export const otherTabs = (m: ProjectModel, words: readonly string[], tab: Tab, shown: number): [Tab, number][] =>
+  shown >= 5
+    ? []
+    : TABS.filter((t) => t !== tab)
+        .map((t): [Tab, number] => [t, t === 'inputs' ? m.inputs.filter((r) => inputMatch(r, words)).length : m.items.filter((it) => !it.mergedInto && inTab(it, t) && words.every((w) => hay(it).includes(w))).length])
+        .filter(([, k]) => k)

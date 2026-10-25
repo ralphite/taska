@@ -6,9 +6,9 @@ import { useLayout } from '../../app/context'
 import { usePaneRef } from '../../app/panes'
 import { useSideProjects } from '../../app/projectLists'
 import type { ProjectRoute } from '../../app/hooks'
-import { ProjTile } from '../../ui/bits'
 import { toneOf } from '../../ui/tones'
 import { BoxContainer } from './BoxContainer'
+import { ComposeHead } from './ComposeHead'
 import type { Fixing } from './Doubts'
 import { FeedbackContainer } from './FeedbackContainer'
 import { DraftCardContainer, SaidLatelyContainer, useSaidView } from './SaidLatelyContainer'
@@ -55,12 +55,7 @@ export function FootContainer({ route, place, hidden, composePage, onHeight }: {
       className={`relative z-20 shrink-0 border-t border-zinc-200 bg-zinc-50 px-3 pt-3 pb-[max(1.25rem,env(safe-area-inset-bottom))] after:pointer-events-none after:absolute after:inset-x-0 after:top-(--foot-cut) after:bottom-0 after:-z-10 after:bg-zinc-50 lg:scrollbar-gutter-both lg:px-8 lg:pb-5 lg:group-data-[compose]/app:overflow-y-auto lg:group-data-[compose]/app:overscroll-contain lg:group-data-[compose]/app:border-transparent lg:group-data-[compose]/app:pt-[5vh] lg:group-data-[compose]/app:pb-16 lg:group-data-[compose]/app:after:hidden lg:hover:scrollbar-thumb-zinc-500/80 dark:border-transparent dark:bg-transparent dark:pt-1 dark:after:bg-zinc-950 dark:lg:hover:scrollbar-thumb-zinc-400/70 ${place}`}
     >
       {desk && composePage ? (
-        <div className="mx-auto mb-6 flex max-w-[42rem] flex-col items-center text-center">
-          <div className="flex items-center gap-3">
-            <ProjTile title={title} tone={toneOf(tones, route.slug)} cls="size-11 rounded-xl text-xl shadow-sm" />
-            <h1 className="text-[28px] leading-none font-semibold tracking-tight">{title}</h1>
-          </div>
-        </div>
+        <ComposeHead title={title} tone={toneOf(tones, route.slug)} />
       ) : null}
       <FeedbackContainer route={route} composePage={composePage} scope={role.scope} boxKey={key} />
       <BoxContainer route={route} composePage={composePage} boxRef={boxRef} />
