@@ -12,8 +12,10 @@ export const no = () => {}
 export const MENU_PROJECT = PROJECT
 export const menuModel = () => modelOf(PROJECT)
 
-/** Where the desktop's menu opens: under a button at the right of the pane's bar, or at the pointer. */
-export const AT_BUTTON = { x: 880, y: 56, right: true, top: 20, left: 848 }
+/** Where the desktop's menu opens: under a button at the right of the pane's bar (its right edge at the button's, as
+ * the page puts it when the window ends there: Storybook's window is wider than the frame), or at the pointer. */
+export const AT_BUTTON = { x: 880 - 384, y: 56 }
+export const AT_BUTTON_NARROW = { x: 880 - 224, y: 56 }
 export const AT_POINTER = (x: number, y: number) => ({ x, y })
 
 /** The page under the sheet: the item list. */

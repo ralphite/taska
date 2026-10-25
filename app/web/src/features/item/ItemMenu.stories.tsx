@@ -3,7 +3,7 @@
 // field's choices), opened over the item list as the page opens it.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frames } from '../../stories/Frames'
-import { AT_BUTTON, AT_POINTER, menuModel, no, opened, underList } from '../../stories/menuFixtures'
+import { AT_BUTTON, AT_BUTTON_NARROW, AT_POINTER, menuModel, no, opened, underList } from '../../stories/menuFixtures'
 import { itemMenuPop, itemMenuSheet, type ItemMenuEvents, type ItemMenuFacts } from './ItemMenu'
 import { itemMenuFacts } from './itemMenuFacts'
 
@@ -21,7 +21,7 @@ interface Open {
 const menu = (o: Open, desk: boolean) => {
   const m = menuModel()
   const facts = itemMenuFacts(m, m.byN.get(o.n)!, !!o.asking, o.arm ?? null)
-  return opened(desk ? itemMenuPop(facts, on) : itemMenuSheet(facts, on), desk, { under: underList(desk), look: desk ? { pop: true, narrow: !!o.arm, at: o.at ?? AT_BUTTON } : {} })
+  return opened(desk ? itemMenuPop(facts, on) : itemMenuSheet(facts, on), desk, { under: underList(desk), look: desk ? { pop: true, narrow: !!o.arm, at: o.at ?? (o.arm ? AT_BUTTON_NARROW : AT_BUTTON) } : {} })
 }
 const both = (o: Open): Story => ({ render: () => <Frames height={720} deskWidth={900} phoneWidth={393}>{(layout) => menu(o, layout === 'desk')}</Frames> })
 const desk = (o: Open, pseudo: Record<string, string[]>): Story => ({ parameters: { pseudo }, render: () => <Frames phone={false} height={560} deskWidth={900}>{() => menu(o, true)}</Frames> })
