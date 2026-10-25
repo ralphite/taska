@@ -5,7 +5,7 @@
 // What is not built yet is drawn here: the bar, the top line with only the project and its agent, the line saying
 // where the words go, the line after sending, the listening panel. Every page in between is the page's own component
 // with the demo project's data. Nothing here changes Taska itself.
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Composer } from '../features/composer/Composer'
 import { SaidLately, type SaidEvents } from '../features/composer/SaidLately'
@@ -23,6 +23,7 @@ import { Icon } from '../ui/Icon'
 import type { IconName } from '../ui/icon-paths'
 import { PROJECT_TONES } from '../ui/tones'
 import { Frame } from './Frames'
+import { GuideLine, Level, Mark, sel, withText, type Step } from './guide'
 import { doc } from './docFixtures'
 import { T, input, message, modelOf } from './fixtures'
 import { itemFacts, noItemEvents, talkEnv, talkFacts } from './itemFixtures'
@@ -160,7 +161,8 @@ function Listening({ onDone, onCancel }: { onDone(): void; onCancel(): void }) {
         <Icon n="mic" c="size-9" sw="2" />
       </span>
       <p className="text-sm text-zinc-500 dark:text-zinc-400">Listening · say what to find in Shop</p>
-      <p className="text-xl font-medium">“export filter”</p>
+      {/* no words while you speak (#6930): they come once it stops */}
+      <Level />
       <div className="flex gap-3">
         <button onClick={onCancel} className="h-11 rounded-full px-5 text-sm font-medium text-zinc-600 dark:text-zinc-300">
           Cancel
@@ -175,13 +177,6 @@ function Listening({ onDone, onCancel }: { onDone(): void; onCancel(): void }) {
 
 // ---------------------------------------------------------------- the guide: where to tap next (R488, B524)
 
-/** A step of the way through: what it does, and what to tap (found in the screen). */
-interface Step {
-  say: string
-  tap(root: HTMLElement): Element | null
-}
-const sel = (q: string) => (root: HTMLElement) => root.querySelector(q)
-const withText = (q: string, text: string) => (root: HTMLElement) => [...root.querySelectorAll(q)].find((e) => e.textContent?.includes(text)) || null
 const STEPS: Step[] = [
   { say: 'The voice button says where it goes (New input). Tap it: it records at once', tap: sel('[aria-label="Say something"]') },
   { say: 'Tap ✓: the recording stops and its words go into the box, to change or add to', tap: sel('[aria-label="Stop and put words in the box"]') },
@@ -203,32 +198,6 @@ const STEPS: Step[] = [
   { say: 'Tap Find: what it found in Shop', tap: withText('button', 'Find') },
   { say: 'Tap Projects: every project, and Documents, Activity, Deleted, Settings', tap: sel('[data-tab="Projects"]') },
 ]
-
-/** A big mark where to tap next, spreading out (R488): on the part the step names, wherever it is now. */
-function Mark({ root, step }: { root: RefObject<HTMLDivElement | null>; step: Step | null }) {
-  const [at, setAt] = useState<{ x: number; y: number } | null>(null)
-  useLayoutEffect(() => {
-    const find = () => {
-      const r = root.current
-      const el = r && step ? step.tap(r) : null
-      if (!r || !el) return setAt(null)
-      const a = r.getBoundingClientRect()
-      const b = el.getBoundingClientRect()
-      setAt({ x: b.left - a.left + b.width / 2, y: b.top - a.top + b.height / 2 })
-    }
-    find()
-    const t = setInterval(find, 250)
-    return () => clearInterval(t)
-  }, [root, step])
-  return at ? (
-    <span className="pointer-events-none absolute z-40 size-14 -translate-x-1/2 -translate-y-1/2" style={{ left: at.x, top: at.y }}>
-      <span className="absolute inset-0 animate-ping rounded-full bg-blue-500/30" />
-      <span className="absolute inset-0 rounded-full border-4 border-blue-500" />
-    </span>
-  ) : null
-}
-
-// ---------------------------------------------------------------- the screen
 
 function Phone({ mic, n = -1, onNext }: { mic: boolean; n?: number; onNext?(): void }) {
   const [place, setPlace] = useState<Place>('items')
@@ -383,16 +352,7 @@ function Guided() {
       <Frame layout="phone" width={393} height={852} label="the voice button in the middle (D75) · the blue mark is the next tap">
         <Phone key={k} mic n={n} onNext={() => setN((x) => x + 1)} />
       </Frame>
-      {/* what the step does, under the screen and apart from it (R488) */}
-      <p className="flex min-h-10 items-center gap-3 text-sm text-zinc-700 dark:text-zinc-200">
-        <span className="font-mono text-xs text-zinc-400">
-          {Math.min(n + 1, STEPS.length)} / {STEPS.length}
-        </span>
-        <span className="flex-1">{step ? step.say : 'That is all of it: tap anything, or start again.'}</span>
-      </p>
-      <button onClick={() => (setK((x) => x + 1), setN(0))} className="self-start rounded-full px-3 py-1.5 text-sm font-medium text-blue-600 ring-1 ring-blue-200 dark:text-blue-400 dark:ring-blue-400/30">
-        Start again
-      </button>
+      <GuideLine n={n} total={STEPS.length} say={step?.say} onAgain={() => (setK((x) => x + 1), setN(0))} />
     </div>
   )
 }

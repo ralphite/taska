@@ -15,7 +15,7 @@ NOT_YET = {
     "Demo/Needs you", "Demo/New input", "Demo/Phone gestures", "Demo/Projects", "Demo/Settings", "Demo/Side lists",
     "Demo/Sync and errors", "Demo/Voice", "Pages/Dev", "Pages/Document", "Pages/Inputs", "Pages/Item list",
     "Pages/Item page/By item status", "Pages/Item page/By what it holds", "Pages/Item page/Loading and errors",
-    "Pages/Projects", "Pages/Settings", "Pages/Side lists", "Prototype/F479 Search everything",
+    "Pages/Projects", "Pages/Settings", "Pages/Side lists",
     "Review/B498 Comment on a place: voice and words",
 }
 

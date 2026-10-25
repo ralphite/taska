@@ -4,6 +4,7 @@
 import type { ReactNode } from 'react'
 import { EmptyList, ItemList, type ListEvents } from '../features/list/ItemList'
 import { drawRows, listViews } from '../features/list/drawRows'
+import { ViewBar } from '../features/list/ViewBar'
 import { heldRows, listBody } from '../features/list/rows'
 import { queueHead } from '../model/items'
 import { NO_FILTERS, type ListQuery } from '../model/route'
@@ -46,6 +47,8 @@ export interface Holding {
   held?: { before: Item[]; said: Record<number, string> }
   saved?: readonly SavedView[]
   top?: ReactNode
+  /** drawn at the end of the views' row (a prototype's part not built yet) */
+  viewsEnd?: ReactNode
   on?: Partial<ListEvents>
 }
 
@@ -69,10 +72,24 @@ export function listOf(items: Item[], tab: Tab, q: Partial<ListQuery>, desk: boo
         loading={body.kind === 'loading'}
         desk={desk}
         openN={h.open ?? null}
-        views={views}
+        views={h.viewsEnd ? null : views}
         ownViews={ownViews}
         rows={drawn}
-        top={h.top}
+        top={
+          h.viewsEnd ? (
+            <>
+              {h.top}
+              <div className="flex items-center">
+                <div className="min-w-0 flex-1">
+                  <ViewBar views={views ?? []} own={ownViews} onView={() => {}} />
+                </div>
+                {h.viewsEnd}
+              </div>
+            </>
+          ) : (
+            h.top
+          )
+        }
         empty={why ? <EmptyList why={why} status={query.status} organizerOn={false} onReset={() => {}} onConnect={() => {}} /> : null}
         on={{ ...listOn, ...h.on }}
       />
