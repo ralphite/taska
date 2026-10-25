@@ -11,7 +11,7 @@ import { PROJECT_TONES } from './tones'
 export default { title: 'Components/Menus and sheets/Move and pick' } satisfies Meta
 type Story = StoryObj
 
-export const OTHERS = [
+const OTHERS = [
   { slug: 'home', title: 'Home', tone: PROJECT_TONES[1], open: 13 },
   { slug: 'todos', title: 'todos', tone: PROJECT_TONES[2], open: 8 },
 ]
