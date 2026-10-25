@@ -35,6 +35,7 @@ CLAUDE = os.environ.get("CLAUDE_BIN", os.path.expanduser("~/.local/bin/claude"))
 NAMED = ("claude-code", "codex", "antigravity")  # unnamed visitors ("agent", "probe") are scripts, not agents
 AROUND_S = 10 * 60  # a named agent seen this recently is around: leave it be
 AGAIN_S = 30 * 60  # the same news is woken for again at most this often
+TIMES = 2  # and at most this many times in all: a third would only spend tokens again (R594); Taska is told instead
 RECENT_S = 7 * 24 * 3600  # sessions older than this are not woken
 TOLD_S = 12 * 3600  # a wake-up that failed is said in Taska at most this often for the same project and session
 # the wake-ups on their way: project -> (the agent's process, its log, "agent session")
@@ -195,11 +196,16 @@ def failed(state: Dict[str, Any], now: float) -> None:
                 f"  `{why(log)}`\n"
                 "  \u5e38\u89c1\u539f\u56e0\uff1a\u8fd9\u4e2a\u5bf9\u8bdd\u6b63\u5f00\u5728 ChatGPT / Claude \u5e94\u7528\u91cc\uff0c\u547d\u4ee4\u884c\u63a5\u4e0d\u8fdb\u53bb\u3002"
                 f"\u65e5\u5fd7\uff1a{log}\n")
-        try:
-            req = urllib.request.Request(f"{URL}/p/taska/do?by=waker", data=text.encode("utf-8"), method="POST")
-            urllib.request.urlopen(req, timeout=10).read()
-        except OSError as ex:
-            print(f"[waker] {time.strftime('%Y-%m-%d %H:%M:%S')} {project}: could not say so in Taska: {ex}", flush=True)
+        tell(text)
+
+
+def tell(text: str) -> None:
+    """Say something to Yadong in Taska (the taska project), as the waker."""
+    try:
+        req = urllib.request.Request(f"{URL}/p/taska/do?by=waker", data=text.encode("utf-8"), method="POST")
+        urllib.request.urlopen(req, timeout=10).read()
+    except OSError as ex:
+        print(f"[waker] {time.strftime('%Y-%m-%d %H:%M:%S')} could not say so in Taska: {ex}", flush=True)
 
 
 def off() -> set:
@@ -228,7 +234,15 @@ def round_(state: Dict[str, Any], dry: bool) -> None:
         if around(p.get("agents") or [], now):
             continue
         last = state.get(name) or {}
-        if last.get("what") == what and now - last.get("t", 0) < AGAIN_S:
+        same = last.get("what") == what
+        if same and now - last.get("t", 0) < AGAIN_S:
+            continue
+        if same and last.get("n", 1) >= TIMES:
+            if not last.get("told"):
+                last["told"] = True
+                tell(f"new bug P1 now parent=T325 \u53eb\u4e86 {TIMES} \u6b21\uff0c{name} \u7684 agent \u8fd8\u6ca1\u5904\u7406\u8fd9\u6761\u65b0\u8bdd\n"
+                     f"  {time.strftime('%m-%d %H:%M')} \u53eb\u9192\u5668\u4e0d\u518d\u53eb\u4e86\uff08\u518d\u53eb\u53ea\u4f1a\u767d\u82b1 token\uff0cR594\uff09\u3002\u6ca1\u5904\u7406\u7684\uff1a\n"
+                     + "".join(f"  > {l}\n" for l in what.splitlines()[:6]))
             continue
         found = session_for(name, now)
         if not found:
@@ -239,7 +253,7 @@ def round_(state: Dict[str, Any], dry: bool) -> None:
             continue  # its session is working right now and will see the news itself
         said = wake(name, *found, what=what, dry=dry)
         print(f"[waker] {time.strftime('%Y-%m-%d %H:%M:%S')} {name}: {said}", flush=True)
-        state[name] = {"what": what, "t": now}
+        state[name] = {"what": what, "t": now, "n": (last.get("n", 1) + 1) if same else 1}
 
 
 def main() -> None:
