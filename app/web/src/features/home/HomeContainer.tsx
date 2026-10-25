@@ -3,11 +3,9 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import { useServices, useStores, useStoreValue } from '../../app/context'
-import { lastAgent } from '../../model/agents'
-import { homeOrder } from '../../model/projects'
 import type { Route } from '../../model/route'
-import { projectTones, toneOf } from '../../ui/tones'
-import { Home, type HomeEvents, type HomeRow } from './Home'
+import { Home, type HomeEvents } from './Home'
+import { homeRows } from './homeRows'
 
 type HomeRoute = Extract<Route, { page: 'home' }>
 
@@ -35,22 +33,7 @@ export function HomeContainer({ route }: { route: HomeRoute }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [app])
 
-  const rows = useMemo((): HomeRow[] | null => {
-    if (!projects) return null
-    const tones = projectTones(projects.map((p) => p.name))
-    return homeOrder(projects).map((p) => {
-      const top = needs.find((x) => x.project === p.name)
-      return {
-        name: p.name,
-        title: p.title || p.name,
-        tone: toneOf(tones, p.name),
-        open: p.open,
-        needs: p.needs,
-        agent: lastAgent(p.agents, at),
-        next: top ? { code: top.code, title: top.title } : null,
-      }
-    })
-  }, [projects, needs, at])
+  const rows = useMemo(() => (projects ? homeRows(projects, needs, at) : null), [projects, needs, at])
 
   const open = (url: string) => stores.route.getState().go(url, true)
   const on: HomeEvents = {

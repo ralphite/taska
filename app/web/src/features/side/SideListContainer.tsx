@@ -4,37 +4,11 @@
 import { useEffect, useMemo } from 'react'
 import { useServices, useStores, useStoreValue } from '../../app/context'
 import { useProjectModel } from '../../app/hooks'
-import { logSentence, logTarget } from '../../model/activity'
-import { codeOf, liveN, type ProjectModel } from '../../model/project'
-import { when } from '../../model/time'
-import { inputCode, plural } from '../../model/words'
-import { listedCommentCount } from '../../model/docs'
-import { ActivityList, DeletedList, DeletedView, DocsList, SideFrame, type ActivityRow, type DocRow, type GoneRow, type Side } from './SideLists'
-
-/** Everything deleted, one list, the latest first, whatever it was. */
-function goneRows(m: ProjectModel): GoneRow[] {
-  const at = (t: string) => when(t, m.at)
-  return [
-    ...m.facts.deleted.map((x): GoneRow & { t: string } => ({
-      key: x.kind === 'item' ? x.code || '' : `D${x.d}`,
-      kind: x.kind,
-      title: x.title,
-      what: x.kind === 'item' ? `Item${x.more ? `, with ${plural(x.more, 'subitem')}` : ''}` : `Document${x.on ? ` on ${x.on}` : ''}`,
-      at: at(x.at),
-      t: x.at,
-    })),
-    ...m.facts.deletedInputs.map((x): GoneRow & { t: string } => ({
-      key: x.id,
-      kind: 'input',
-      id: x.id,
-      text: x.text || (x.files ? plural(x.files, 'file') : ''),
-      code: inputCode(x.id),
-      with: x.items.map((i) => i.code).join(', '),
-      at: at(x.at),
-      t: x.at,
-    })),
-  ].sort((a, b) => Date.parse(b.t) - Date.parse(a.t))
-}
+import { activityRows, logTarget } from '../../model/activity'
+import { codeOf, type ProjectModel } from '../../model/project'
+import { listedDocs } from '../../model/docs'
+import { goneRows } from './goneRows'
+import { ActivityList, DeletedList, DeletedView, DocsList, SideFrame, type ActivityRow, type DocRow, type Side } from './SideLists'
 
 function useRestore(slug: string, m: ProjectModel | null) {
   const app = useServices('restores')
@@ -61,19 +35,8 @@ export function SideListContainer({ slug, side }: { slug: string; side: Side }) 
   }, [app, side, slug, cursor])
   const restore = useRestore(slug, m)
 
-  const docs = useMemo((): DocRow[] => {
-    if (!m) return []
-    return [...m.docs]
-      .sort((a, b) => b.d - a.d)
-      .map((d) => {
-        const it = m.byN.get(liveN(m, d.n))
-        return { d: d.d, title: d.title, web: d.fmt === 'html', on: it ? `${codeOf(m, it.n)} ${it.title}` : '', comments: listedCommentCount(d) }
-      })
-  }, [m])
-  const activity = useMemo((): ActivityRow[] | null => {
-    if (!m || !rows) return null
-    return rows.map((e) => ({ s: logSentence(m, e), opens: !!logTarget(m, e), undo: m.facts.undo.find((u) => u.seq === e.seq)?.seq ?? null }))
-  }, [m, rows])
+  const docs = useMemo((): DocRow[] => (m ? listedDocs(m) : []), [m])
+  const activity = useMemo((): ActivityRow[] | null => (m && rows ? activityRows(m, rows) : null), [m, rows])
   const gone = useMemo(() => (m ? goneRows(m) : []), [m])
 
   const openItem = (n: number) => m && app.nav.openItem(codeOf(m, n))

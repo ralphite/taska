@@ -3,7 +3,7 @@ import type { Dash } from '../../model/dashboard'
 import { Frames } from '../../stories/Frames'
 import { Dashboard } from './Dashboard'
 
-const meta: Meta = { title: 'Pages/Dashboard' }
+const meta: Meta = { title: 'Components/Dev' }
 export default meta
 type Story = StoryObj
 
@@ -32,7 +32,7 @@ const d: Dash = {
 }
 
 /** A week of what you did; the panels, costs and analyses agents keep. */
-export const Week: Story = { render: () => <Frames phoneWidth={393} deskWidth={1200} page>{() => <Dashboard d={d} err="" range="7" onRange={() => {}} />}</Frames> }
+export const Week: Story = { name: 'Dashboard', render: () => <Frames phoneWidth={393} deskWidth={1200} page>{() => <Dashboard d={d} err="" range="7" onRange={() => {}} />}</Frames> }
 
 /** Before Taska answers. */
-export const Loading: Story = { render: () => <Frames phoneWidth={393} deskWidth={1200} page>{() => <Dashboard d={null} err="" range="7" onRange={() => {}} />}</Frames> }
+export const Loading: Story = { name: 'Dashboard, loading', render: () => <Frames phoneWidth={393} deskWidth={1200} page>{() => <Dashboard d={null} err="" range="7" onRange={() => {}} />}</Frames> }

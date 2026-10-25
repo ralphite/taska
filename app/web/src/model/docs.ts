@@ -3,6 +3,7 @@
 // first paragraph is its title, and what a comment written now goes to.
 
 import { userWord } from './items'
+import { codeOf, liveN, type ProjectModel } from './project'
 import type { Block, Comment, Doc, Item } from './types'
 
 export const threadKey = (c: { key: string; th?: number }) => (c.th ? `${c.key}#${c.th}` : c.key)
@@ -112,3 +113,14 @@ export const commentCount = (d: Doc) =>
 /** The comments the lists of documents count: those on its paragraphs and on the whole of it (not those on words
  * changed since). */
 export const listedCommentCount = (d: Doc) => d.blocks.reduce((k, b) => k + b.comments.length, 0) + (d.whole?.length || 0)
+
+/** The documents as Documents lists them, the newest first: each with its item (its code and title) and how many
+ * comments it has. */
+export function listedDocs(m: ProjectModel): { d: number; title: string; web: boolean; on: string; comments: number }[] {
+  return [...m.docs]
+    .sort((a, b) => b.d - a.d)
+    .map((d) => {
+      const it = m.byN.get(liveN(m, d.n))
+      return { d: d.d, title: d.title, web: d.fmt === 'html', on: it ? `${codeOf(m, it.n)} ${it.title}` : '', comments: listedCommentCount(d) }
+    })
+}

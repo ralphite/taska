@@ -1,20 +1,27 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import type { SearchHit } from '../../model/types'
+import type { Need, ProjectRow, SearchHit } from '../../model/types'
 import { Frames } from '../../stories/Frames'
-import { PROJECT_TONES } from '../../ui/tones'
-import { Home, type HomeEvents, type HomeFacts, type HomeRow } from './Home'
+import { T } from '../../stories/fixtures'
+import { Home, type HomeEvents, type HomeFacts } from './Home'
+import { homeRows } from './homeRows'
 
-const meta: Meta = { title: 'Components/Home' }
+const meta: Meta = { title: 'Components/Home page' }
 export default meta
 type Story = StoryObj
 
 const on: HomeEvents = { query() {}, restore() {}, closeGone() {}, closeNone() {}, startNew() {}, cancelNew() {}, create() {}, open() {} }
-const rows: HomeRow[] = [
-  { name: 'taska', title: 'taska', tone: PROJECT_TONES[4], open: 32, needs: 2, agent: { name: 'Claude', on: true }, next: { code: 'F581', title: 'Rewrite Taska from scratch' } },
-  { name: 'home', title: 'Home', tone: PROJECT_TONES[0], open: 13, needs: 11, agent: { name: 'Codex', on: false }, next: { code: 'B12', title: 'The garden tap drips when it is turned off all the way' } },
-  { name: 'notes', title: '读书笔记', tone: PROJECT_TONES[2], open: 2, needs: 0, agent: null, next: null },
-  { name: 'long', title: 'A project with a very long name that does not fit anywhere at all', tone: PROJECT_TONES[6], open: 0, needs: 0, agent: null, next: null },
+const now = Date.parse(T)
+const PROJECTS: ProjectRow[] = [
+  { name: 'taska', title: 'taska', open: 32, needs: 2, pos: 0, agents: [{ name: 'claude-code', t: now - 60_000, waiting: true }] },
+  { name: 'home', title: 'Home', open: 13, needs: 11, pos: 1, agents: [{ name: 'codex', t: now - 3 * 3600_000, waiting: false }] },
+  { name: 'notes', title: '读书笔记', open: 2, needs: 0, pos: 2 },
+  { name: 'long', title: 'A project with a very long name that does not fit anywhere at all', open: 0, needs: 0, pos: 3 },
 ]
+const NEEDS: Need[] = [
+  { project: 'taska', ptitle: 'taska', n: 581, code: 'F581', title: 'Rewrite Taska from scratch', kind: 'ask', pri: 'P1', t: '' },
+  { project: 'home', ptitle: 'Home', n: 12, code: 'B012', title: 'The garden tap drips when it is turned off all the way', kind: 'review', pri: 'P2', t: '' },
+]
+const rows = homeRows(PROJECTS, NEEDS, now)
 const facts: HomeFacts = { rows, needs: 13, away: false, gone: null, none: null, q: '', hits: null, making: null }
 const hits: SearchHit[] = [
   { project: 'taska', ptitle: 'taska', kind: 'item', code: 'F581', title: 'Rewrite Taska from scratch', status: 'doing', t: '' },
@@ -31,7 +38,23 @@ const shown = (f: Partial<HomeFacts>, height = 620) => (
 )
 
 /** Every project with its agent, open count, what needs you and the first of it. */
-export const Projects: Story = { render: () => shown({}) }
+export const Projects: Story = { name: 'Every project', render: () => shown({}) }
+
+/** A project under the pointer, pressed, from the keys, side by side. */
+export const HomeLooks: Story = {
+  name: 'Pointer, pressed, keys: all side by side',
+  parameters: { pseudo: { hover: ['[data-look="pointer"] a[href="/p/home/"]'], active: ['[data-look="pressed"] a[href="/p/home/"]'], focusVisible: ['[data-look="keys"] a[href="/p/home/"]'] } },
+  render: () => (
+    <div className="flex flex-col gap-6">
+      {(['pointer', 'pressed', 'keys'] as const).map((look) => (
+        <div key={look} data-look={look}>
+          <p className="px-6 pt-2 font-mono text-[10px] text-zinc-400">{look === 'keys' ? 'keys (the browser draws the ring itself)' : look}</p>
+          {shown({}, 420)}
+        </div>
+      ))}
+    </div>
+  ),
+}
 
 /** Words typed in the search: what was found in every project (an item, a done one, an input). */
 export const Searching: Story = { render: () => shown({ q: 'rewrite', hits }) }

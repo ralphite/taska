@@ -30,7 +30,7 @@ const ROWS: ProjectRow[] = [
   { name: 'notes', title: '读书笔记', open: 2, needs: 1, pos: 2 },
 ]
 const GONE: DeletedProject[] = [{ name: 'old', title: 'Old notes', t: at(60 * 24 * 4), items: 4 }]
-const LOG: LogRow[] = [
+export const LOG: LogRow[] = [
   { seq: 41, t: at(5), who: 'claude-code', what: "F001 progress 'Reproduced it: the export reads the list before the filter'", ses: 'claude-code' },
   { seq: 40, t: at(20), who: 'you', what: 'T004 status review→done' },
   { seq: 39, t: at(60), who: 'claude-code', what: 'new F003 Keep the filter in the export file name' },
@@ -44,10 +44,11 @@ export interface SettingsHere {
   projects?: { pNew?: boolean; pNewText?: string; pErr?: string; renaming?: string; purging?: string[]; menu?: string }
 }
 
-export function settingsAt(sec: SectionKey | null, desk: boolean, h: SettingsHere = {}) {
-  const m = modelOf(PROJECT, [], {
+/** Shop with its history: agents, documents, what was deleted, what can be undone. */
+export const shopWithHistory = (agents: AgentSeen[] = SEEN) =>
+  modelOf(PROJECT, [], {
     title: 'Shop',
-    agents: h.agents ?? SEEN,
+    agents,
     work: true,
     base: 'http://localhost:7340/p/shop',
     remote: 'https://taska.example/k/a1b2/p/shop',
@@ -57,6 +58,9 @@ export function settingsAt(sec: SectionKey | null, desk: boolean, h: SettingsHer
     deleted: [{ kind: 'item', n: 9, code: 'B009', title: 'Export button too small on the phone', at: at(90) }, { kind: 'doc', d: 3, title: 'Old export notes', at: at(200), on: 'F001' }],
     deletedInputs: [{ id: 'r6', t: at(60 * 26), at: at(120), text: 'the drawer jumps when it opens', files: 0, scope: null, items: [], kept: [] }],
   }, [doc({ d: 1, n: 1, title: 'Plan: the export keeps the filter' }), doc({ d: 2, n: 3, fmt: 'html', title: 'Export options', blocks: [], whole: [], detached: [] })])
+
+export function settingsAt(sec: SectionKey | null, desk: boolean, h: SettingsHere = {}) {
+  const m = shopWithHistory(h.agents ?? SEEN)
   const side = sideProjects(ROWS, m, 'shop').list
   const tone = PROJECT_TONES[1]
   const st = { deleted: GONE, pNew: !!h.projects?.pNew, pNewText: h.projects?.pNewText ?? '', pErr: h.projects?.pErr ?? '', renaming: h.projects?.renaming ?? null, pMenu: h.projects?.menu ?? null }

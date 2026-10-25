@@ -117,3 +117,6 @@ export function undoLabel(m: World, u: UndoEntry): string {
   if ('parent' in f) return f.parent ? `${c} moved under ${codeOf(m, f.parent as number)}` : `${c} stands on its own`
   return `${c} ${Object.keys(f).join(' and ')} edited`
 }
+
+/** Activity's rows: each change in words, whether it opens what it changed, and whether it can be undone. */
+export const activityRows = (m: ProjectModel, rows: readonly LogRow[]) => rows.map((e) => ({ s: logSentence(m, e), opens: !!logTarget(m, e), undo: m.facts.undo.find((u) => u.seq === e.seq)?.seq ?? null }))

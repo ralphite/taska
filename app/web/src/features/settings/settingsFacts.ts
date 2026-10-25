@@ -3,11 +3,11 @@
 // Pure: the container and the stories both use it.
 
 import type { ListedProject } from '../../app/sideProjects'
-import { logSentence } from '../../model/activity'
+import { activityRows } from '../../model/activity'
 import { agentState, agoLong } from '../../model/agents'
 import { closed, inQueue } from '../../model/items'
-import { listedCommentCount } from '../../model/docs'
-import { codeOf, liveN, type ProjectModel } from '../../model/project'
+import { listedDocs } from '../../model/docs'
+import type { ProjectModel } from '../../model/project'
 import { dayShort, when } from '../../model/time'
 import type { LogRow, ProjectRow } from '../../model/types'
 import type { DeletedProject } from '../../stores/settings'
@@ -57,16 +57,10 @@ export function projectsOf(
 }
 
 /** Documents, newest first, each with its item. */
-export const docRows = (m: ProjectModel): PhoneDocRow[] =>
-  [...m.docs]
-    .sort((a, b) => b.d - a.d)
-    .map((d) => {
-      const it = m.byN.get(liveN(m, d.n))
-      return { d: d.d, title: d.title, web: d.fmt === 'html', on: it ? `${codeOf(m, it.n)} ${it.title}` : '', comments: listedCommentCount(d) }
-    })
+export const docRows = (m: ProjectModel): PhoneDocRow[] => listedDocs(m)
 
 /** Activity: each change in words, and whether it can be undone. */
-export const logRows = (m: ProjectModel, rows: readonly LogRow[]) => rows.map((e) => ({ s: logSentence(m, e), undo: m.facts.undo.find((u) => u.seq === e.seq)?.seq ?? null }))
+export const logRows = (m: ProjectModel, rows: readonly LogRow[]) => activityRows(m, rows)
 
 /** Deleted: the items and documents, and what you said. */
 export const deletedRows = (m: ProjectModel): { things: GoneThingRow[]; inputs: GoneInputRow[] } => ({
