@@ -9,12 +9,12 @@ import { inputsOf, type Said } from '../../stories/inputFixtures'
 export default { title: 'Components/Inputs/Inputs tab' } satisfies Meta
 type Story = StoryObj
 
-const one = (s: Said, name: string): Story => ({ name, render: () => <Frames desk={false} phoneWidth={393} height={852}>{() => inputsOf(s)}</Frames> })
+const one = (s: Said): Story => ({ render: () => <Frames desk={false} phoneWidth={393} height={852}>{() => inputsOf(s)}</Frames> })
 
 /** Everything you said, by day, with where each stands and what became of it. */
-export const InputsTab = one({ organizer: true }, 'All inputs')
+export const InputsTab: Story = { ...one({ organizer: true }), name: 'All inputs' }
 /** A search: the words lit where they are, and how many the other tabs have. */
-export const InputsTabSearch = one({ organizer: true, q: 'coupon' }, 'Search')
+export const InputsTabSearch: Story = { ...one({ organizer: true, q: 'coupon' }), name: 'Search' }
 /** Just sent, Taska not answering yet: on its way, first. */
-export const InputsTabWithOneOnItsWay = one({ organizer: true, outbox: [out({ text: 'Also the sort, please.' })] }, 'One on its way')
-export const InputsTabEmpty = one({ inputs: [] }, 'Empty')
+export const InputsTabWithOneOnItsWay: Story = { ...one({ organizer: true, outbox: [out({ text: 'Also the sort, please.' })] }), name: 'One on its way' }
+export const InputsTabEmpty: Story = { ...one({ inputs: [] }), name: 'Empty' }
