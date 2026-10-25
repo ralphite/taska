@@ -46,7 +46,7 @@ export function PaneFrame({
 }) {
   return (
     <section data-part="pane" ref={paneRef} hidden={hidden} className={`flex min-h-0 flex-1 flex-col ${place}`}>
-      <header data-tip-side="bottom" className={`flex h-14 shrink-0 items-center gap-1 border-b border-zinc-100 px-1 lg:border-zinc-200 lg:px-3 dark:border-zinc-800/70 dark:lg:border-zinc-800 ${bar ? '' : 'lg:hidden'}`}>
+      <header data-tip-side="bottom" className={`@container/bar flex h-14 shrink-0 items-center gap-1 border-b border-zinc-100 px-1 lg:border-zinc-200 lg:px-3 dark:border-zinc-800/70 dark:lg:border-zinc-800 ${bar ? '' : 'lg:hidden'}`}>
         <button
           aria-label="Back"
           onClick={onBack}
