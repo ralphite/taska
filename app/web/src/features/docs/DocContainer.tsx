@@ -81,7 +81,6 @@ function useDoc(slug: string, dn: number) {
     moveDoc: (from?: HTMLElement) => (desk && from ? app.sheets.openFrom(from, { kind: 'doc-move', d: dn }, { focus: false }) : app.sheets.open({ kind: 'doc-move', d: dn }, { focus: false })),
     deleteDoc: () => app.docEditor.remove(dn),
     circle: () => stores.docView.getState().setCircle(!v.circle),
-    quote: (key, text) => stores.docView.getState().pick({ quote: { key, text }, sel: new Set(), reply: null }),
     editDoc: () => app.docEditor.edit(dn),
     whole: () => docs.whole(),
     tick: (tk, i) => app.docChoices.tick(dn, tk, i),

@@ -2,7 +2,7 @@
 // their comment threads (beside the text on the desktop, under the paragraph on the phone), the comments on the whole
 // document, and those whose words changed since. On the phone a paragraph is tapped to comment on it. Props only.
 
-import { useEffect, useLayoutEffect, useRef, type ReactNode } from 'react'
+import { useLayoutEffect, useRef, type ReactNode } from 'react'
 import { plainQuote } from '../../model/markdown'
 import { sameText, type Thread as DocThread } from '../../model/docs'
 import type { Block, Doc } from '../../model/types'
@@ -85,8 +85,6 @@ export interface DocEvents extends ThreadEvents {
   moveDoc(from?: HTMLElement): void
   deleteDoc(): void
   circle(): void
-  /** words selected in a paragraph: what a comment quotes */
-  quote(key: string, text: string): void
   editDoc(): void
   whole(): void
   tick(tk: string, i: number): void
@@ -207,21 +205,6 @@ export function DocView({ facts, env, on, popover, lasso, page, aim = null, onAi
     const li = [...el.querySelectorAll<HTMLElement>(`section[data-key="${CSS.escape(r.b.key)}"] li`)].find((l) => l.innerText.trim() === r.quote)
     li?.setAttribute('data-q', '')
   })
-  useEffect(() => {
-    // words selected in a paragraph (not in a comment) are what a comment quotes; a collapsed selection keeps the last
-    const seen = () => {
-      const sel = getSelection()
-      const text = sel?.toString().trim()
-      if (facts.circle || !sel || !text || text.length < 2) return
-      const node = sel.anchorNode
-      const at = node?.nodeType === 1 ? (node as Element) : node?.parentElement
-      const sec = at?.closest<HTMLElement>('section[data-key]')
-      if (!sec || !root.current?.contains(sec) || at?.closest('[data-thread]')) return
-      on.quote(sec.dataset.key || '', text.slice(0, 500))
-    }
-    document.addEventListener('selectionchange', seen)
-    return () => document.removeEventListener('selectionchange', seen)
-  }, [facts.circle, on])
   const thread = (s: ShownThread, blockText?: string, rail = false) => (
     <Thread key={s.t.tk} t={s.t} blockText={blockText} rail={rail} isNew={s.isNew} done={s.done} replying={facts.replying === s.t.tk} asking={facts.asking} env={env} on={on} />
   )

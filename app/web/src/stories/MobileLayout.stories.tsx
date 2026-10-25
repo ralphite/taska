@@ -266,7 +266,7 @@ function Phone({ mic, n = -1, onNext }: { mic: boolean; n?: number; onNext?(): v
   const env = talkEnv(M, false)
   const facts = itemFacts(M, F1, { docs: [D1] })
   const itemOn = { ...noItemEvents, doc: () => go('doc') }
-  const docOn: DocEvents = { ref: noDoc, picture: noDoc, play: noDoc, words: noDoc, view: noDoc, edit: noDoc, move: noDoc, takeOff: noDoc, remove: noDoc, resolve: noDoc, reply: noDoc, goItem: () => go('detail'), toggle: noDoc, away: noDoc, pick: (key) => setSel((s) => (s === key ? null : key)), say: noDoc, sayCancel: noDoc, type: noDoc, moveDoc: noDoc, deleteDoc: noDoc, circle: noDoc, quote: noDoc, editDoc: noDoc, whole: noDoc, tick: noDoc, modifyTicks: noDoc }
+  const docOn: DocEvents = { ref: noDoc, picture: noDoc, play: noDoc, words: noDoc, view: noDoc, edit: noDoc, move: noDoc, takeOff: noDoc, remove: noDoc, resolve: noDoc, reply: noDoc, goItem: () => go('detail'), toggle: noDoc, away: noDoc, pick: (key) => setSel((s) => (s === key ? null : key)), say: noDoc, sayCancel: noDoc, type: noDoc, moveDoc: noDoc, deleteDoc: noDoc, circle: noDoc, editDoc: noDoc, whole: noDoc, tick: noDoc, modifyTicks: noDoc }
   const docEnv = { world: { find: (c: string) => findRef(M, c), url: (f: string) => '#' + f, size: () => undefined }, now: Date.parse(T), desk: false, tidy: true, play: () => ({ playing: false, t: null }), url: (f: string) => '#' + f }
   let top: ReactNode
   let body: ReactNode

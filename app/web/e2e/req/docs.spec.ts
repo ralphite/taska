@@ -319,3 +319,36 @@ test('r783: at 1440 wide a document on the desktop is one column, the document a
   await page.setViewportSize({ width: 1440, height: 900 })
   await expect(duo(page)).toHaveCount(0)
 })
+
+test('r824 r837 r849 (B584): selecting words in a document changes nothing in the box; only its Comment makes them what the box comments on', async ({
+  page,
+  request,
+}) => {
+  test.skip(!isDesk(page), 'the desktop selects words with the pointer')
+  const p = await project(request, {
+    ...LOOP,
+    then: `${LOOP.then}T4 doc The plan
+  First part of the plan, long enough to fill a line of the page with words.
+`,
+  })
+  await open(page, p, 'D1')
+  const para = docBlock(page, 'First part')
+  await expect(para).toBeVisible()
+  const before = (await boxLine(page).count()) ? await boxLine(page).innerText() : ''
+  // select a few words with the pointer, as a person does
+  const r = await para.boundingBox()
+  if (!r) throw new Error('not drawn')
+  await page.mouse.move(r.x + 2, r.y + 12)
+  await page.mouse.down()
+  await page.mouse.move(r.x + 120, r.y + 12, { steps: 10 })
+  await page.mouse.up()
+  await page.waitForTimeout(600)
+  expect(await page.evaluate(() => String(getSelection()).trim().length)).toBeGreaterThan(2)
+  const after = (await boxLine(page).count()) ? await boxLine(page).innerText() : ''
+  expect(after, 'selecting words leaves the box as it was').toBe(before)
+  expect(after).not.toContain('Comment on D1')
+  // Comment on the bar over the words: now the box comments on them
+  await page.getByLabel('On the selected text').getByRole('button', { name: 'Comment', exact: true }).click()
+  await expect(boxLine(page)).toContainText('Comment on D1')
+  await expect(boxLine(page)).toContainText('First part')
+})
