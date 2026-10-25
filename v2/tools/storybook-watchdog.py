@@ -43,7 +43,7 @@ HEALTH = LOGS / "storybook-health.jsonl"
 RESTARTS = LOGS / "storybook-restarts.log"  # written by storybook-restart.sh
 PANEL = Path.home() / ".taska/dev/panels/storybook.md"  # the Dashboard (/dev/dashboard) shows it at the top
 BASE = "http://127.0.0.1:6007"
-LABEL = "com.taska.storybook"
+LABEL = "com.taska.storybook-app"  # the page's Storybook on 6007 since 10-24 (T518 #7555)
 
 PAGE_TIMEOUT = 20  # seconds the page has to answer
 INDEX_TIMEOUT = 60
@@ -95,7 +95,7 @@ def gone_files(error: str) -> List[str]:
 
 
 def restart(why: str) -> None:
-    subprocess.run(["/bin/zsh", str(TOOLS / "storybook-restart.sh"), "watchdog", why], timeout=60)
+    subprocess.run(["/bin/zsh", str(TOOLS.parent.parent / "app" / "tools" / "storybook-restart.sh"), "watchdog", why], timeout=60)
 
 
 def trim() -> None:

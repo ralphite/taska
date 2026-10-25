@@ -9,7 +9,7 @@ import { Rail, Sidebar, type SideLinkInfo, type SidebarEvents } from './Sidebar'
 import { NEW_DRAFT } from '../../model/draftTarget'
 
 const DEV_LINKS = [
-  { label: 'Storybook', href: 'http://localhost:6351/', icon: 'book' as const },
+  { label: 'Storybook', href: 'http://localhost:6007/', icon: 'book' as const },
   { label: 'Dashboard', href: '/dev/dashboard', icon: 'chart' as const },
 ]
 

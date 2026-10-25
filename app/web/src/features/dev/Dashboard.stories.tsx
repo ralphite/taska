@@ -27,7 +27,7 @@ const d: Dash = {
   reloads: 9,
   updates: 4,
   costs: { items: [{ project: 'taska', code: 'B533', title: 'A bug', rounds: 2, minutes: 14, tokens: 96000, cache: 8100000, steps: 41, t: '10-23 21:02' }], minutes: 14, tokens: 96000, cache: 8100000, median_minutes: 14, median_tokens: 96000 },
-  panels: [{ name: 'storybook.md', updated: '10-23 22:00', title: 'Storybook', md: 'Up on 6351, 214 stories.' }],
+  panels: [{ name: 'storybook.md', updated: '10-23 22:00', title: 'Storybook', md: 'Up on 6007, 214 stories.' }],
   analyses: [{ name: '2026-10-22-speed.md', date: '2026-10-22', title: 'Where the time goes', md: 'Mostly waiting for the tunnel.' }],
 }
 

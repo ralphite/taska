@@ -10,7 +10,7 @@
     "lint": "eslint .",
     "check:architecture": "node scripts/check-architecture.mjs --self",
     "test": "vitest run",
-    "storybook": "storybook dev -p 6351 --no-open",
+    "storybook": "storybook dev -p 6007 --no-open",
     "build-storybook": "storybook build -o dist-storybook --quiet",
     "e2e": "playwright test",
     "typecheck:server": "pyright -p ../server",
