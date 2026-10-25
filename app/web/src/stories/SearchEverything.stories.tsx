@@ -21,7 +21,7 @@ import { Icon, StateIcon } from '../ui/Icon'
 import { Sheet } from '../ui/Sheet'
 import { PROJECT_TONES, TYPE_TEXT } from '../ui/tones'
 import { Frame, States } from './Frames'
-import { GuideLine, Level, Mark, sel, type Step } from './guide'
+import { GuideLine, Level, Mark, find, sel, type Step } from './guide'
 import { item, message, modelOf } from './fixtures'
 import { pageOf } from './itemPage'
 import { PROJECT, listOf } from './listFixtures'
@@ -316,7 +316,7 @@ function Desk({ n = -1, onNext }: { n?: number; onNext?(): void }) {
   const root = useRef<HTMLDivElement>(null)
   const step = n >= 0 ? (DESK_STEPS[n] ?? null) : null
   const next = (e: React.MouseEvent) => {
-    const el = root.current && step ? step.tap(root.current) : null
+    const el = root.current && step ? find(root.current, step.tap) : null
     if (el && el.contains(e.target as Node)) setTimeout(() => onNext?.(), 0)
   }
   const list = { ...NO_FILTERS }
@@ -401,7 +401,7 @@ function Phone({ n = -1, onNext }: { n?: number; onNext?(): void }) {
   const root = useRef<HTMLDivElement>(null)
   const step = n >= 0 ? (PHONE_STEPS[n] ?? null) : null
   const next = (e: React.MouseEvent) => {
-    const el = root.current && step ? step.tap(root.current) : null
+    const el = root.current && step ? find(root.current, step.tap) : null
     if (el && el.contains(e.target as Node)) setTimeout(() => onNext?.(), 0)
   }
   const page = s.state === 'found' || s.state === 'none'

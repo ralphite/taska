@@ -23,7 +23,7 @@ import { Icon } from '../ui/Icon'
 import type { IconName } from '../ui/icon-paths'
 import { PROJECT_TONES } from '../ui/tones'
 import { Frame } from './Frames'
-import { GuideLine, Level, Mark, sel, withText, type Step } from './guide'
+import { GuideLine, Level, Mark, find, sel, withText, type Step } from './guide'
 import { doc } from './docFixtures'
 import { T, input, message, modelOf } from './fixtures'
 import { itemFacts, noItemEvents, talkEnv, talkFacts } from './itemFixtures'
@@ -325,7 +325,7 @@ function Phone({ mic, n = -1, onNext }: { mic: boolean; n?: number; onNext?(): v
   }
   // a tap on what the step names moves the guide on (any other tap just does what it does)
   const next = (e: React.MouseEvent) => {
-    const el = root.current && step ? step.tap(root.current) : null
+    const el = root.current && step ? find(root.current, step.tap) : null
     if (el && el.contains(e.target as Node)) setTimeout(() => onNext?.(), 0)
   }
   // without the voice button the box is always there, as it is now
