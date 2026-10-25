@@ -342,7 +342,7 @@ const PHONE_STEPS: Step[] = [
   { say: 'Say what to find; your words come once you stop. Tap Done (or just pause)', tap: sel('[data-search="done"]') },
   { say: 'What it found, on a page of its own, by kind. Tap Items', tap: sel('[data-kind="item"]') },
   { say: 'Tap F001: it opens', tap: sel('button[data-code="F001"]') },
-  { say: 'Tap ←: back to what it found', tap: sel('[aria-label="Back to the results"]') },
+  { say: 'Tap ←: back to what it found', tap: sel('[aria-label="Back"]') },
   { say: 'Tap ✕: back to the list', tap: sel('[aria-label="Close the search"]') },
   { say: 'The filters are an icon at the end of the views. Tap it', tap: sel('[data-search="filters"]') },
 ]
@@ -362,15 +362,8 @@ function Phone({ n = -1, onNext }: { n?: number; onNext?(): void }) {
   const body = <SearchBody state={s.state ?? 'listening'} kind={s.kind} onKind={s.setKind} onDone={s.done} onAgain={s.open} onPick={(f) => f.it && !f.project && setOpen(f.it.n)} />
   let screen: ReactNode
   if (it && page)
-    screen = (
-      <div className="flex h-full flex-col">
-        <button aria-label="Back to the results" onClick={() => setOpen(null)} className="flex h-11 shrink-0 items-center gap-1 px-3 text-[15px] font-medium text-blue-600 dark:text-blue-400">
-          <Icon n="left" c="size-5" sw="2.25" />
-          Search
-        </button>
-        <div className="min-h-0 flex-1">{pageOf(it, false)}</div>
-      </div>
-    )
+    // the item's own back goes back to what it found
+    screen = <div className="h-full">{pageOf(it, false, { onBack: () => setOpen(null) })}</div>
   else if (page)
     screen = (
       <div className="flex h-full flex-col">

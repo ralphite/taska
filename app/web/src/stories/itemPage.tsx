@@ -32,6 +32,8 @@ export interface PageOpts {
   full?: boolean
   /** what the talk draws with: messages opened, a voice note playing */
   env?: Partial<TalkEnv>
+  /** the pane's back (a prototype's way back) */
+  onBack?(): void
 }
 
 export function pageOf(it: Item, desk: boolean, o: PageOpts = {}) {
@@ -48,7 +50,7 @@ export function pageOf(it: Item, desk: boolean, o: PageOpts = {}) {
         head={<ItemHead it={it} code={facts.code(it.n)} />}
         acts={<ItemActs it={it} on={noItemEvents} />}
         nav={<ItemNav full={!!o.full} on={{ prev: () => {}, next: () => {}, full: () => {} }} />}
-        onBack={() => {}}
+        onBack={o.onBack ?? (() => {})}
       >
         <ItemPage it={it} f={facts} env={talkEnv(m, desk)} facts={talkFacts(m, o.t)} on={noItemEvents} duo={o.duo} />
       </PaneFrame>
