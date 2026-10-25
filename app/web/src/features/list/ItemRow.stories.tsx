@@ -34,10 +34,10 @@ const one = (r: Row): Story => ({ render: () => <Frames phoneWidth={393} deskWid
 
 const agent = { by: 'claude-code', t: '2026-10-23T14:30:00-07:00' }
 
-/** Open in the pane, picked, dragged and where a dragged row would go, together. (Under the pointer is not drawn:
- * only a pointer shows it.) */
+/** Under the pointer, open in the pane, picked, dragged and where a dragged row would go, together. */
 export const Together: Story = {
   name: 'Pointer, keys, picked, dragged: all side by side',
+  parameters: { pseudo: { hover: ['[data-pointer] .group'] } },
   render: () => (
     <Frames phoneWidth={393} deskWidth={460}>
       {(layout) => {
@@ -45,6 +45,7 @@ export const Together: Story = {
         return (
           <States
             items={[
+              ['under the pointer', <div data-pointer>{row({}, desk)}</div>],
               ['open in the pane (where the keys are)', row({ l: { current: true } }, desk)],
               ['picked', row({ l: { selected: true } }, desk)],
               ['dragged', row({ l: { drag: 'dragging' } }, desk)],
@@ -79,6 +80,8 @@ export const WithADraft = one({ f: { draft: true } })
 export const NewFromAnAgent = one({ f: { unread: true, talk: 2 } })
 export const OpenInThePane = one({ l: { current: true } })
 export const Picked = one({ l: { selected: true } })
+/** The desktop shows the row's quick actions while the pointer is on it (the phone has no pointer). */
+export const PointerOnIt: Story = { ...one({}), parameters: { pseudo: { hover: ['.group'] } } }
 export const SearchedWords: Story = { ...one({ l: { words: ['filter', 'csv'] }, f: { hitLine: '…the CSV keeps every row' } }), name: 'Searched words marked, one found in its talk' }
 export const P0 = one({ it: { type: 'bug', pri: 'P0', title: 'Saving drops the last word' }, f: { code: 'B012' } })
 export const P3 = one({ it: { pri: 'P3' } })

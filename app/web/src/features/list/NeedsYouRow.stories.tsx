@@ -21,10 +21,10 @@ const row = (r: Row, desk: boolean) => <NeedsRow it={item({ n: 12, ...r.it })} d
 const one = (r: Row): Story => ({ render: () => <Frames phoneWidth={393} deskWidth={460}>{(layout) => row(r, layout === 'desk')}</Frames> })
 const question: Row = { it: ask('Keep the old export for a while?'), excerpt: 'Keep the old export for a while?' }
 
-/** Open in the pane, picked, dragged and where a dragged row would go, together. (Under the pointer is not drawn:
- * only a pointer shows it.) */
+/** Under the pointer, open in the pane, picked, dragged and where a dragged row would go, together. */
 export const Together: Story = {
   name: 'Pointer, keys, picked, dragged: all side by side',
+  parameters: { pseudo: { hover: ['[data-pointer] .group'] } },
   render: () => (
     <Frames phoneWidth={393} deskWidth={460}>
       {(layout) => {
@@ -32,6 +32,7 @@ export const Together: Story = {
         return (
           <States
             items={[
+              ['under the pointer', <div data-pointer>{row(question, desk)}</div>],
               ['open in the pane (where the keys are)', row({ ...question, l: { current: true } }, desk)],
               ['picked', row({ ...question, l: { selected: true } }, desk)],
               ['dragged', row({ ...question, l: { drag: 'dragging' } }, desk)],
