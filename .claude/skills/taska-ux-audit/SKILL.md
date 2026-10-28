@@ -57,7 +57,7 @@ missed by both.
 ## 4. Verify, dedupe, group
 
 1. Re-run, on the newest code, every finding that only one auditor reported or that came from an older build.
-   Use `scripts/cdp.py` against your own test copy. Drop what no longer happens; note what was fixed meanwhile.
+   Use `tools/cdp.py` against your own test copy. Drop what no longer happens; note what was fixed meanwhile.
 2. Merge duplicates across auditors. Group by **root cause** (for example "one draft for the whole browser",
    "keys act on hidden items", "rows move under the pointer"), not by screen.
 3. Severity sets priority: high → P1, medium → P2, low → P3 (one "small issues" group at P3 is fine).

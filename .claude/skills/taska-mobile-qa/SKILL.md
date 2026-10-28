@@ -8,18 +8,17 @@ description: Black-box test Taska on a phone-sized screen, find what is broken o
 Find the problems a phone user would hit, quickly. Test like the user: through the UI only. Read the code only
 after you found a problem, to explain it.
 
-## Set up (never test on the live data)
+## Set up (mutation tests use a data copy)
 
 1. Copy the project and start a scratch Taska on another port:
-   `cp -R ~/.taska/taska <scratchpad>/qa/` then
-   `PYTHONPATH=v2/server python3 -m taska --host 127.0.0.1 --port 7341 --root <scratchpad>/qa --organizer off`
-   from the repository root, after `npm --prefix v2/web run build` when the page changed
+   `python3 tools/copy_data.py ~/.taska <scratchpad>/qa` then
+   `PYTHONPATH=server python3 -m taska --host 127.0.0.1 --port 7341 --root <scratchpad>/qa --organizer off`
+   from the repository root, after `npm --prefix web run build` when the page changed
    (keep the organizer on only when you test it; it calls Gemini).
 2. Built-in browser on `http://127.0.0.1:7341/p/taska/`, viewport 390x844 (a phone: touch, coarse pointer).
    Do the pass in light mode, then the screens that matter again in dark mode.
-3. At 1024px and wider Taska switches to its desktop layout (three panes, keyboard; all `lg:` classes). A phone
-   pass never sees it, and a change to it must leave the phone pixel-identical: compare phone screenshots from
-   before and after.
+3. Verify both desktop and phone layouts. Components follow the page frame's `data-layout` and container widths.
+   A desktop-only change must leave the phone unchanged: compare screenshots from before and after.
 
 ## The pass
 
@@ -45,8 +44,8 @@ the Home indicator, two taps where one should do, unclear state: all count.
    card), Go through (stepper "2 of 4", Next, progress bar; answering, accepting, approving or replying moves to
    the next; after the last: "Nothing else needs you"), a sideways swipe on the card. Gestures: swipe right all
    the way (the forward step, Undo toast), swipe left partway (reverse buttons with icons), the menu icon (drawer
-   with projects and This project: Connect, Use on your phone, Change log; swipe it back to close),
-   long press (the focus card). Taps must not fire after a swipe. The swipe in from the left edge is the phone's
+   with projects and This project: Connect, Use on your phone, Activity; swipe it back to close),
+   Taps must not fire after a swipe. The swipe in from the left edge is the phone's
    own "back": Taska must not take it.
 5. "Archive N finished items", the Undo countdown, Undo.
 6. Search (the header turns into a field; it searches Inputs too), the Filter sheet (type, when, status,
@@ -72,6 +71,8 @@ the tap as a hover and never sends the click (B62: rows would not open). Chrome 
 emulator passes. Check in code that nothing is shown at touch down; reveal only once a swipe has started.
 
 Closing the drawer by swipe listens to touch events: dispatch `TouchEvent`s with `new Touch({identifier: 1, target, clientX, clientY})`.
+
+After deployment, inspect the actual live app and existing records as well. Avoid test mutations in live user data.
 
 ## Report in Taska (the live project)
 

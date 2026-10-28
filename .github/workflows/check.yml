@@ -1,0 +1,62 @@
+name: Check and release
+
+on:
+  push:
+    branches: ['**']
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '26'
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: npm ci --prefix web
+      - run: npm --prefix web run check
+      - run: npm --prefix web run build
+      - name: Browser regression checks
+        run: |
+          cd web
+          npx playwright install --with-deps chromium
+          cd ..
+          python3 tools/e2e.py --all
+      - name: Use the minimum supported runtime
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+      - name: Build and smoke-test the standalone release on Python 3.9
+        run: |
+          python3 tools/build_pyz.py --skip-web
+          python3 tools/check_package.py dist/taska.pyz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: taska.pyz
+          path: dist/taska.pyz
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: taska.pyz
+          path: dist
+      - name: Publish the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: gh release create "$GITHUB_REF_NAME" dist/taska.pyz --title "Taska $GITHUB_REF_NAME" --notes "Run with python3 taska.pyz"

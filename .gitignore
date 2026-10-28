@@ -9,3 +9,5 @@ mobile-preview.tar.gz
 
 .claude/scheduled_tasks.lock
 .claude/settings.local.json
+
+dist/

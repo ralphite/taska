@@ -136,12 +136,12 @@ flowchart LR
 ```sh
 git clone https://github.com/ralphite/taska.git
 cd taska
-npm --prefix v2/web install && npm --prefix v2/web run build   # the page, once (needs Node.js)
-PYTHONPATH=v2/server python3 -m taska
+npm --prefix web install && npm --prefix web run build   # the page, once (needs Node.js)
+PYTHONPATH=server python3 -m taska
 ```
 
-Or make the one file and run it anywhere with only Python: `python3 v2/tools/build_pyz.py`, then
-`python3 v2/dist/taska.pyz`.
+Or make the one file and run it anywhere with only Python: `python3 tools/build_pyz.py`, then
+`python3 dist/taska.pyz`.
 
 Then:
 
@@ -225,7 +225,7 @@ Taska is designed for the phone first. Open it in your phone's browser and add i
 | `TASKA_VOICE_MODEL`, `TASKA_ASR_MODEL` | The two transcription models (default `gemini-3.8-flash`, a fixed version, and `gemini-3.5-transcribe`) |
 | `TASKA_PRO_MODEL` | The strong model that also hears a phone's voice-processed notes (default `gemini-3.1-pro-preview`; needs macOS `afconvert` to tell such notes) |
 
-To keep Taska running, start `v2/tools/taska-service.sh` from a macOS LaunchAgent or a systemd unit (edit its
+To keep Taska running, start `tools/taska-service.sh` from a macOS LaunchAgent or a systemd unit (edit its
 Python path and data folder to match your machine). It reads the public address from `$TASKA_PUBLIC` or
 `~/.taska/public-url`.
 
@@ -240,19 +240,16 @@ Python path and data folder to match your machine). It reads the public address 
 
 ## Development
 
-- **The code.** `v2/server/taska` is the server, organizer and agent API: a Python package, standard library
-  only. `v2/web` is the page: React, TypeScript, Vite and Tailwind. [v2/README.md](v2/README.md) lists every
-  command (hot reload, type checks, tests, the one file), and `v2/spec/` says what Taska does and how it is built.
+- **The code.** `server/taska` is the server, organizer and agent API: a Python package, standard library
+  only. `web` is the page: React, TypeScript, Vite and Tailwind. [Development](docs/development.md) lists
+  the commands; [Architecture](docs/architecture.md) explains the layers and data flow.
 - **Run your changes.** Start a copy on another port with its own data, never on `~/.taska`:
-  `PYTHONPATH=v2/server python3 -m taska --port 7341 --root /tmp/taska-dev`.
+  `PYTHONPATH=server python3 -m taska --port 7341 --root /tmp/taska-dev`.
 - **Phone testing.** `.claude/skills/taska-mobile-qa` is a checklist for testing the phone UI on a copy of your
   data.
-- **Design exploration.** `scripts/ui_mocks.py` asks Gemini for several phone designs of one screen and takes
+- **Design exploration.** `tools/ui_mocks.py` asks Gemini for several phone designs of one screen and takes
   light and dark screenshots of each. `--shots-only <folder>` re-shoots designs edited by hand; add `--desktop` for
   1440x900 screenshots.
-
-Taska grew out of [PROJECT_BRIEF.md](PROJECT_BRIEF.md), the original idea. It was then built by using it: coding
-agents worked through Taska's own items.
 
 ## License
 
