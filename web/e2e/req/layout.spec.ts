@@ -42,15 +42,16 @@ test('r683: the window made narrow and wide again closes nothing: the document s
   // the phone: the same document, in its sheet
   await width(page, 393)
   await expect(sheet(page).getByText('Second part of the plan.')).toBeVisible()
-  // wide again: the document where it was, the sidebar as it was
-  for (const w of [800, 1100, 1440]) await width(page, w)
+  // Drag back through the breakpoint without settling at each width; delayed phone cleanup must not hide the sidebar.
+  for (const w of [800, 1023, 1024, 1100, 1440]) await page.setViewportSize({ width: w, height: 900 })
+  await page.waitForTimeout(500) // beyond the phone drawer's 240 ms closing transition
   await expect(page).toHaveURL(/\/D1$/)
   await expect(text).toBeVisible()
   await expect(sheet(page)).toBeHidden()
   await expect(sidebar(page)).toBeVisible()
 })
 
-test('r683: the sidebar you folded stays folded at every width, and opens only when you open it (B496)', async ({
+test('r683: the desktop sidebar and phone drawer keep their own state across widths (B496)', async ({
   page,
   request,
 }) => {
@@ -62,7 +63,36 @@ test('r683: the sidebar you folded stays folded at every width, and opens only w
   for (const w of [1100, 393, 1440, 1920]) await width(page, w)
   await expect(page.locator('#rail')).toBeVisible()
   await expect(pane(page).locator('h1')).toBeVisible()
+  // Opening and closing the phone drawer does not unfold the desktop sidebar.
+  await open(page, p)
+  await width(page, 393)
+  const projects = page.getByRole('button', { name: 'Projects and settings', exact: true })
+  const shade = page.locator('[aria-label="Close projects"]').filter({ visible: true })
+  await projects.click()
+  await expect(sidebar(page)).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(shade).toHaveCount(0)
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.waitForTimeout(500)
+  await expect(sidebar(page)).toBeHidden()
+  await expect(page.locator('#rail')).toBeVisible()
   await page.keyboard.press('[')
+  await expect(sidebar(page)).toBeVisible()
+  await expect(page.locator('#rail')).toBeHidden()
+  // A phone drawer left open survives a trip to the desktop, without folding its sidebar.
+  await width(page, 393)
+  await projects.click()
+  await expect(shade).toHaveCount(1)
+  for (const w of [1023, 1024, 1440]) await page.setViewportSize({ width: w, height: 900 })
+  await expect(sidebar(page)).toBeVisible()
+  await expect(page.locator('#rail')).toBeHidden()
+  await width(page, 393)
+  await expect(sidebar(page)).toBeVisible()
+  await expect(shade).toHaveCount(1)
+  await page.keyboard.press('Escape')
+  await expect(shade).toHaveCount(0)
+  await page.setViewportSize({ width: 1440, height: 900 })
+  await page.waitForTimeout(500)
   await expect(sidebar(page)).toBeVisible()
   await expect(page.locator('#rail')).toBeHidden()
 })

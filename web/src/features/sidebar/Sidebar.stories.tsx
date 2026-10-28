@@ -18,12 +18,14 @@ export const Projects: Story = { name: 'Sidebar and phone drawer', render: () =>
  * dragged over. */
 export const SidebarLooks: Story = {
   name: 'Pointer, keys, pressed, dragged: all side by side',
-  parameters: { pseudo: { hover: ['[data-look="pointer"] a[data-slug="home"]'], focusVisible: ['[data-look="keys"] a[data-slug="home"]'] } },
+  parameters: { pseudo: { hover: ['[data-look="pointer"] a[data-slug="home"]', '[data-look="current"] a[data-slug="shop"]', '[data-look="new-input"] .group\\/ni'], focusVisible: ['[data-look="keys"] a[data-slug="home"]'] } },
   render: () => (
     <div className="flex flex-wrap gap-6 bg-zinc-200 p-6 dark:bg-zinc-800">
       {(
         [
           ['pointer on Home', 'pointer', {}],
+          ['pointer on Shop, the current project', 'current', {}],
+          ['pointer on New input: its mic shows', 'new-input', {}],
           ['keys: Tab on Home', 'keys', {}],
           ['Home pressed', 'pressed', {}],
           ['Home dragged', 'dragged', {}],
@@ -44,6 +46,14 @@ export const SidebarSideOpenLooks: Story = {
   name: 'Documents open, and the pointer',
   parameters: { pseudo: { hover: ['nav a[href$="/log"]'] } },
   render: () => <Frames phone={false} deskWidth={240} height={760}>{() => side(false, { side: 'docs' })}</Frames>,
+}
+export const ActivityOpen: Story = {
+  name: 'Activity open',
+  render: () => <Frames phone={false} deskWidth={240} height={760}>{() => side(false, { side: 'log' })}</Frames>,
+}
+export const DeletedOpen: Story = {
+  name: 'Deleted open',
+  render: () => <Frames phone={false} deskWidth={240} height={760}>{() => side(false, { side: 'deleted' })}</Frames>,
 }
 /** The sidebar folded to icons: a project under the pointer, from the keys, pressed. */
 export const RailLooks: Story = {
