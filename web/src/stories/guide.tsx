@@ -1,10 +1,5 @@
-// The guide through a prototype or a demo (F566, R488, B524): one list of steps, each saying what it does, what to tap
-// (found on the screen by its role and name, or its words, as you would find it) and, when it says so, what the
-// screen shows once it is done. A big blue mark is on that part at once and stays on it wherever it goes; a step is
-// done when the screen shows what it should (however you got there), or when its part is tapped; steps already done
-// are skipped; a part that cannot be found is said under the screen, never tapped blindly. Two ways through: you tap
-// (guided, the default) or it taps for you at a person's pace (autoplay, only in demos: R577). What the step does is
-// said under the screen, with Start again. And how loud you speak while it listens. Used by the prototypes and demos.
+// Shared guide parts for prototypes: find a target by its role, name or words, mark where to tap, describe the step
+// below the screen, and show a simulated microphone level. Each prototype owns its steps and transitions.
 import { useLayoutEffect, useState, type RefObject } from 'react'
 
 /** What to tap: a part by its role and name (as a screen reader finds it), by its words, by a CSS selector, or found

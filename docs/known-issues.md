@@ -10,3 +10,7 @@ product behavior; these issues remain for separate work. The corresponding check
 
 The complete browser sweep is therefore not all green. CI runs the verified representative core journeys;
 `python3 tools/e2e.py --all` remains available for the full set.
+
+The documentation review also found a historical **Go through / ⇧J guided-triage** promise. The current action
+table has J/K item navigation and the Needs you view, but no guided-triage action or stepper. The README and mobile
+QA instructions now describe the available controls. Restoring guided triage would be separate product work.

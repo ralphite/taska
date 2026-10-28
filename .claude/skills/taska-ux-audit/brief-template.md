@@ -47,9 +47,9 @@ Design intent, where there is some: <paths to design notes>. Intent is not proof
 7. **Words and labels.** Does a label promise something else? Two names for one thing, or one name for two?
 8. **Changing what already exists.** Edit and add to a sent input, change an item's type, priority, status and
    parent, rename it, merge it. What does the thread show afterwards, does the code or address change, and is
-   there a toast with Undo? (T113 run 1 missed both known answers in this area.)
-8. **Efficiency.** Count clicks and keys for common jobs; look for dead ends and detours.
-9. **Edge states.** Empty, very long, many, nothing selected, an item that disappears while open, two tabs.
+   there a toast with Undo?
+9. **Efficiency.** Count clicks and keys for common jobs; look for dead ends and detours.
+10. **Edge states.** Empty, very long, many, nothing selected, an item that disappears while open, two tabs.
 
 ## Each finding
 Verify it by doing it, then write:

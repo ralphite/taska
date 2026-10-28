@@ -79,15 +79,14 @@ def ask(model, parts, temperature=1.0):
             time.sleep(5 * (attempt + 1))
 
 
-def shoot_desktop(html_path, png_path, dark, size=(1440, 900)):
-    """A desktop screenshot of the page itself, no phone frame, at 1x (wide enough to read, small enough to share)."""
-    html_path, png_path = os.path.abspath(html_path), os.path.abspath(png_path)
+def _capture(source, png_path, size, scale, flags):
+    """Capture one local page with a throwaway Chrome profile, then stop its process group."""
     if os.path.exists(png_path):
         os.remove(png_path)
     with tempfile.TemporaryDirectory() as profile:
         cmd = [CHROME, "--headless=new", "--disable-gpu", "--hide-scrollbars", "--no-first-run", f"--user-data-dir={profile}",
-               f"--window-size={size[0]},{size[1]}", "--force-device-scale-factor=1", "--virtual-time-budget=5000",
-               *(DARK if dark else LIGHT), f"--screenshot={png_path}", "file://" + html_path]
+               f"--window-size={size[0]},{size[1]}", f"--force-device-scale-factor={scale}", "--virtual-time-budget=5000",
+               *flags, f"--screenshot={png_path}", "file://" + source]
         proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
         size_now, deadline = -1, time.time() + 90
         try:
@@ -103,42 +102,24 @@ def shoot_desktop(html_path, png_path, dark, size=(1440, 900)):
             except ProcessLookupError:
                 pass
     if not os.path.exists(png_path):
-        raise RuntimeError(f"no screenshot for {html_path}")
+        raise RuntimeError(f"no screenshot for {source}")
+
+
+def shoot_desktop(html_path, png_path, dark, size=(1440, 900)):
+    """A desktop screenshot of the page itself, no phone frame, at 1x."""
+    _capture(os.path.abspath(html_path), os.path.abspath(png_path), size, 1, DARK if dark else LIGHT)
 
 
 def shoot(html_path, png_path, dark, flags=None):
-    """390x844 phone screenshot at 2x. Headless Chrome is at least 500px wide, so the design goes into a 390x844 frame
-    and the picture is cropped back to its center (sips, built into macOS). Chrome here does not always exit after the screenshot,
-    so we wait for the file and then stop that Chrome ourselves (a throwaway profile, never the user's browser)."""
+    """390x844 phone screenshot at 2x. Chrome's minimum window is 500px wide, so frame the design and crop its center."""
     html_path, png_path = os.path.abspath(html_path), os.path.abspath(png_path)
     frame = os.path.join(os.path.dirname(html_path), f".frame-{os.path.basename(html_path)}")
     with open(frame, "w", encoding="utf-8") as f:
         f.write(f'<!doctype html><body style="margin:0"><iframe src="{os.path.basename(html_path)}" width="390" height="844" '
-                'style="border:0;display:block;margin:43.5px 55px"></iframe></body>')  # centered in the 500x931 window
-    if os.path.exists(png_path):
-        os.remove(png_path)
-    with tempfile.TemporaryDirectory() as profile:
-        cmd = [CHROME, "--headless=new", "--disable-gpu", "--hide-scrollbars", "--no-first-run", f"--user-data-dir={profile}",
-               "--window-size=500,931", "--force-device-scale-factor=2", "--virtual-time-budget=5000",  # page time for Tailwind to style it
-               *(flags if flags is not None else (DARK if dark else LIGHT)), f"--screenshot={png_path}", "file://" + frame]
-        proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, start_new_session=True)
-        size, deadline = -1, time.time() + 90
-        try:
-            while time.time() < deadline and proc.poll() is None:
-                time.sleep(0.5)
-                now = os.path.getsize(png_path) if os.path.exists(png_path) else -1
-                if now > 0 and now == size:
-                    break  # written and no longer growing
-                size = now
-        finally:
-            try:
-                os.killpg(proc.pid, signal.SIGKILL)
-            except ProcessLookupError:
-                pass
+                'style="border:0;display:block;margin:43.5px 55px"></iframe></body>')
+    _capture(frame, png_path, (500, 931), 2, flags if flags is not None else (DARK if dark else LIGHT))
     os.remove(frame)
-    if not os.path.exists(png_path):
-        raise RuntimeError(f"no screenshot for {html_path}")
-    subprocess.run(["sips", "-c", "1688", "780", png_path], check=True, capture_output=True)  # sips crops around the center
+    subprocess.run(["sips", "-c", "1688", "780", png_path], check=True, capture_output=True)
 
 
 def shots_for(out, desktop=False):

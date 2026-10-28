@@ -35,24 +35,25 @@ the Home indicator, two taps where one should do, unclear state: all count.
 3. Open an item: it is a page of its own (T57). The "needs you" card (review with the agent's report, proposed,
    question with options, blocked), conversation (yours on the right in blue, agents' in cards with an avatar,
    images, "Show more"), subitems, docs, sources, voice notes playing in place, the "⋯" sheet (tiles, type and
-   priority segments, status grid). Reply through the "Adding to …" / "Reply to …" chip. Back three ways: the
+   priority segments, status grid). Verify the composer names the destination before replying. Back three ways: the
    arrow, the browser's Back (`history.back()`), a swipe right on the page; and after opening a parent or subitem
    from inside (each step goes back one page). A link with `#B12` opens the page and Back lands on the list.
    Scroll deep into the list or the page, tap something, let a data refresh come in: nothing jumps (B60); after
    Back the list is where you left it.
-4. Needs you: the row pills (Accept / Approve happen at once with an Undo toast; Answer / Reply open the focus
-   card), Go through (stepper "2 of 4", Next, progress bar; answering, accepting, approving or replying moves to
-   the next; after the last: "Nothing else needs you"), a sideways swipe on the card. Gestures: swipe right all
+4. Needs you: the row pills (Accept / Approve happen at once with an Undo toast; Answer / Reply open the item),
+   and the Needs you view. Confirm the list reflects each action. Gestures: swipe right all
    the way (the forward step, Undo toast), swipe left partway (reverse buttons with icons), the menu icon (drawer
-   with projects and This project: Connect, Use on your phone, Activity; swipe it back to close),
+   with projects and Settings; open Agents, Use on your phone and Activity through Settings; swipe it back to close),
    Taps must not fire after a swipe. The swipe in from the left edge is the phone's
    own "back": Taska must not take it.
-5. "Archive N finished items", the Undo countdown, Undo.
+5. In the Finished view, archive the finished items, check the Undo countdown, then Undo. Open the Archive view
+   to verify archived items and restore one.
 6. Search (the header turns into a field; it searches Inputs too), the Filter sheet (type, when, status,
-   priority) and the chips under the tabs, the Inputs / Archive / Rules tabs (Rules: Needs you, Active, Retired).
+   priority) and the chips under the tabs. On the phone the tabs are Items, Inputs and Rules; Archive is a list view.
+   Rules has Needs you, Active and Retired states.
 7. Documents: open, tap paragraphs, select text, circle an area, comment, Edit/Done, a new doc.
 8. The projects page (`/`), the drawer's project rows and the amber dot on the menu icon when another project
-   needs you, the Agents sheet (tap the pill).
+   needs you, and Agents settings (tap the agent pill).
 9. Edges: very long Chinese and English titles, many items, an empty project, the server stopped ("Offline,
    retrying") and started again (the page recovers and picks up the new version).
 
@@ -73,6 +74,7 @@ emulator passes. Check in code that nothing is shown at touch down; reveal only 
 Closing the drawer by swipe listens to touch events: dispatch `TouchEvent`s with `new Touch({identifier: 1, target, clientX, clientY})`.
 
 After deployment, inspect the actual live app and existing records as well. Avoid test mutations in live user data.
+Known gaps, including the historical guided-triage workflow, are recorded in `docs/known-issues.md`.
 
 ## Report in Taska (the live project)
 

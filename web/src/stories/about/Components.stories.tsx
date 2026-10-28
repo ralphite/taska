@@ -36,7 +36,7 @@ export const About: StoryObj = {
       </p>
       <p>
         <b>Kept up to date.</b> A change to the page changes its stories in the same commit; a part that is removed takes its stories with it. The
-        build says which stories are missing or do not open.
+        checks report missing required stories and enforce the component boundaries.
       </p>
       <p>
         <b>Asked first.</b> A new way of doing stories is shown to Yadong first (the rules and one sample folder) and spread once Yadong agrees.

@@ -89,13 +89,13 @@ flowchart LR
 
 **For you**
 
-- **Needs you, first.** The list opens on what's waiting on you. The action sits right on the row: Accept,
-  Approve, Answer or Reply. **Go through** takes you through all of them, one card at a time.
+- **Needs you, first.** The list puts what's waiting on you first. The action sits right on the row: Accept,
+  Approve, Answer or Reply. The Needs you view keeps that work together.
 - **Built for the phone.** Swipe right to move an item forward and left for the rest. Tap a row to open it.
   Every quick action can be undone.
 - **A desk on the desktop.** On a wide screen, Taska opens in three panes: your projects, the list, and the item
   you are reading. Hover a row for its actions, and triage from the keyboard: `J`/`K` to move, `A` to accept or
-  approve, `R` to reply, `⇧J` to go through what needs you. Press `?` for every shortcut.
+  approve, `R` to reply. Press `?` for every shortcut.
 - **Voice in, words out.** Voice notes are transcribed with your project's own terms, so names, paths and
   commands come out right. A second, speech-only model listens too: it catches notes where nobody spoke, steps in
   when the first one fails, and words the two hear differently are pointed out before you send. A recording stays
@@ -149,8 +149,8 @@ Then:
    box at the bottom.
 2. **Organize automatically (optional).** Set `GEMINI_API_KEY` before starting Taska. What you write is then
    organized into items, and voice notes are transcribed.
-3. **Connect a coding agent.** Open the menu (top left) and choose **Connect a coding agent**. It gives you one
-   command to run in your project's folder:
+3. **Connect a coding agent.** Open **Settings → Agents** and copy the connection command to run in your
+   project's folder:
 
    ```sh
    curl -s http://127.0.0.1:7340/p/<project>/connect | sh

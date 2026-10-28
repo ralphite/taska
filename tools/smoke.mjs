@@ -16,13 +16,20 @@ for (const [name, viewport, mobile] of [['desktop', { width: 1440, height: 900 }
   page.on('pageerror', (e) => errors.push(String(e)));
   page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
   const t0 = Date.now();
-  const res = await page.goto(`${base}/p/${project}/`, { waitUntil: 'networkidle', timeout: 60000 });
+  const res = await page.goto(`${base}/p/${project}/`, { waitUntil: 'domcontentloaded', timeout: 60000 });
+  await page.locator('#list article[data-n], #list [data-zone], #list [data-views]')
+    .or(page.locator('#list').getByText(/^No items(?: yet\.)?/)).filter({ visible: true }).first().waitFor();
   const text = await page.locator('body').innerText();
-  const ok = res.status() === 200 && text.includes('Items') && text.length > 200;
+  const ok = res.status() === 200 && text.includes('Items') && await page.locator('#list').isVisible();
   let opened = '';
   if (open && ok) {
-    const row = page.locator('a[href*="/p/' + project + '/"][href*="/"]').filter({ hasText: /\S/ }).nth(3);
-    if (await row.count()) { await row.click(); await page.waitForTimeout(1500); opened = page.url(); }
+    const row = page.locator('#list article[data-n]').filter({ visible: true }).first();
+    if (await row.count()) {
+      const number = await row.getAttribute('data-n');
+      await row.locator('p').first().click();
+      await page.waitForURL((url) => new RegExp(`/[A-Z]0*${number}$`, 'i').test(url.pathname));
+      opened = page.url();
+    }
   }
   if (shots) await page.screenshot({ path: `${shots}/${name}.png` });
   console.log(`${name}: HTTP ${res.status()}, ${Date.now() - t0} ms, ${text.length} chars, list ${ok ? 'shown' : 'MISSING'}` +

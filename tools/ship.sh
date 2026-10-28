@@ -3,8 +3,7 @@
 #   zsh tools/ship.sh
 # Every check runs first (npm run check in web: types, lint, the architecture check, the page's and
 # the server's tests), then the page is built and copied to web/live, which the service serves (a build made to
-# test something never goes live by itself). None of these opens a browser; a check added later that does waits for
-# the machine's page budget first (~/.local/bin/machine-guard wait). If nobody used Taska in the last minute, it
+# test something never goes live by itself). None of these opens a browser. If nobody used Taska in the last minute, it
 # restarts now. Otherwise the open pages offer "Taska has an update · Restart", and this waits: it restarts by itself
 # once Taska has been left alone for a minute (or Yadong clicked Restart).
 cd "$(dirname "$0")/.." || exit 1

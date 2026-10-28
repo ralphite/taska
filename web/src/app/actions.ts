@@ -394,9 +394,6 @@ export function actionOfKeys(keys: string): ActionId | null {
   return ACTION_IDS.find((id) => ACTIONS[id].keys === keys) ?? null
 }
 
-/** Whether an action acts on the open item. */
-export const onItem = (id: ActionId) => 'item' in byId(id)
-
 /** An action's keys as the page writes them: ⇧C, G P, ⌘K. */
 export function keysShown(id: ActionId): string {
   const k = byId(id).keys

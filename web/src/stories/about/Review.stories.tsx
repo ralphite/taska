@@ -7,14 +7,14 @@ export default { title: 'Review/About this section', parameters: { layout: 'padd
 /** What goes in Review, and when it leaves. */
 export const About: StoryObj = {
   render: () => (
-    <SectionAbout name="Review" note="A case the page cannot show yet is not drawn: its demo says what would have to change.">
+    <SectionAbout name="Review" note="Proposed controls are identified separately from the product components they accompany.">
       <p>
-        Demos of what Yadong asked about: a question, a problem, something that may change. Each plays the real page on the real Taska server, like every
-        demo, and shows all the cases side by side on the phone and the desktop. Its folder is named after the item it answers.
+        Cases Yadong asked about: a question, a problem, something that may change. Each draws the relevant product components with story data,
+        on the phone and the desktop. Interactive cases keep their state in the story and need no Taska server.
       </p>
       <p>
-        Yadong opens the link from the item, plays it, and confirms there. Once it is settled, the demo moves into Demo and stays there, so the same case
-        is checked again whenever the page changes.
+        Yadong opens the link from the item, compares the states or tries the available controls, and confirms there. Once settled and built,
+        keep the case in the component&apos;s stories or a demo so it can be checked when the page changes.
       </p>
     </SectionAbout>
   ),
