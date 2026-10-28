@@ -26,9 +26,9 @@ At each step: do it, take a screenshot, look hard. Off by a few pixels, cut-off 
 the Home indicator, two taps where one should do, unclear state: all count.
 
 1. First screen: header (menu icon + project, agent pill, search), tabs with counts and the filter button, then
-   the Items list in three groups: Needs you (amber, a one-line quote and an action pill per row, Go through),
-   Agent queue (/next order), Finished (Archive N). With nothing waiting, the list starts at the
-   queue. Nothing cut off at 375 and 390 wide. Also the moment before the data arrives (a
+   the Items views: Needs you, Active, All, Archive, Queue, Later and Finished. Needs-you rows have a one-line
+   quote and an action pill; the agent queue follows /next order. Nothing cut off at 375 and 390 wide.
+   Also the moment before the data arrives (a
    slow tunnel on a phone): the project name and "Loading…" show, not a blank page.
 2. Send: text with Shift+Enter, with an image, the mic button. The status line after sending; Undo. Put a long
    paragraph in at once (paste, or the keyboard's dictation): the box grows to fit, no line cut off.

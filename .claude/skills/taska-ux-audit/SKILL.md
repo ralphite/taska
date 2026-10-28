@@ -34,13 +34,13 @@ prompt says: read the brief; its letter (A or B); its app port, data root and Ch
 edit the code**; return the whole report as its final message (this harness may refuse a subagent writing
 files, so the orchestrator saves the report).
 
-- **A, real work start to finish.** Play the user for a day: capture thoughts (text, screenshot, voice), go
-  through what needs you, answer, approve, accept, archive, search, switch projects, use two tabs, come back
+- **A, real work start to finish.** Play the user for a day: capture thoughts (text, screenshot, voice), handle
+  pending decisions, answer, approve, accept, archive, search, switch projects, use two tabs, come back
   later. Note every surprise.
 - **B, the systematic matrix.** List every control and key (sidebar, rail, tabs, list header, bands, row pills
-  and hover actions, detail toolbar, the item menu, the box, Go through, New input, project page, every key in
+  and hover actions, detail toolbar, the item menu, the box, the Needs you view, New input, project page, every key in
   the `?` sheet, Esc, Back/Forward, reload, right- and double-click). Run each in every context (each tab, each
-  item state, full width, Go through, New input, project page, filters open, search active, 1440 and 1024,
+  item state, full width, the Needs you view, New input, project page, filters open, search active, 1440 and 1024,
   sidebar hidden). Record the grid; every cell that differs without a reason is a finding.
 
 While they run, keep working on other items. The app may change under them: ask them to re-check every finding

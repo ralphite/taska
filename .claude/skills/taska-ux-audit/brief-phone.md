@@ -1,6 +1,6 @@
 # Taska phone UX audit (<ID>): shared brief
 
-<!-- Fill the <...> parts. Never mention the known answers here. Used for T137. -->
+<!-- Fill the <...> parts. Never mention the known answers here. -->
 
 ## The job
 Find every place where Taska's **phone** experience (the layout below 1024px wide) does not make sense to a real
@@ -18,9 +18,10 @@ tasks, rules). Agents post progress, questions and results; the user answers, ap
 
 On the phone the user is often away from the computer: walking, between meetings, one hand. The layout:
 - a header (menu for projects and settings, the project name, the agent badge, search);
-- the tabs Items, Inputs, Archive, Rules, and a filter button;
-- the list, grouped (Needs you, Agent queue, Finished), with swipe actions on rows and a pill on rows that need you;
-- an item opens as its own page; "Go through" walks what needs you in a card;
+- the tabs Items, Inputs and Rules, and a filter button; Archive is an Items view;
+- the Items views (Needs you, Active, All, Archive, Queue, Later, Finished), with swipe actions on rows and a pill
+  on rows that need you;
+- an item opens as its own page;
 - documents, the image viewer and menus open as sheets;
 - one input box at the bottom for everything (new input, reply, document comment, adding details to an input),
   with attach, voice and send.
@@ -63,7 +64,7 @@ The desktop (1024px and wider) is out of scope, but compare with it when the pho
 
 ## Also look through these
 1. **The same action, different places.** Every action should behave the same on every screen (list, item page,
-   Go through card, sheets), and the same as on the desktop unless the phone has a reason.
+   Needs you view, sheets), and the same as on the desktop unless the phone has a reason.
 2. **Thumb and reach.** Can you reach what you use most with one hand? Are tap targets at least 44px and far
    enough apart? Do swipes conflict with scrolling or with the edge "back" swipe?
 3. **Spatial logic.** Where does new content appear compared with where you created it? Is anything hidden under
