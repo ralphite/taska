@@ -56,6 +56,8 @@ def _changed(p: Project, since: Optional[Cursor]) -> bool:
 
 
 def get(ctx: "AppContext", req: Request, p: Project, sub: str) -> Optional[Response]:
+    if sub == "/api/codex-notifications":
+        return as_json(p.codex_notifications.status(req.arg("id")))
     if sub == "/api/view":
         return as_json(_view(ctx, req, p, Cursor.parse(req.arg("cursor"))))
     if sub == "/api/changes":  # a long wait for news: a page in the background asks with wait=0 and lets go
@@ -83,6 +85,17 @@ def get(ctx: "AppContext", req: Request, p: Project, sub: str) -> Optional[Respo
 
 
 def post(ctx: "AppContext", req: Request, p: Project, sub: str) -> Response:
+    if sub == "/api/codex-notifications":
+        d = req.json_body(10_000)
+        if not isinstance(d, dict):
+            raise ValueError("expected an object")
+        if "ack" in d:
+            return as_json(p.codex_notifications.acknowledge(str(d["ack"])))
+        if d.get("enabled") is False:
+            return as_json(p.codex_notifications.disable())
+        if d.get("retry") is True:
+            return as_json(p.codex_notifications.retry())
+        return as_json(p.codex_notifications.bind(str(d.get("threadId", "")), str(d.get("mode", ""))))
     if sub == "/api/commands":
         return _commands(ctx, req, p)
     if sub == "/api/words":

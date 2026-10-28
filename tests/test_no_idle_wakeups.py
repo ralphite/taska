@@ -2,33 +2,29 @@
 with every other check (npm run check: before each ship and every night), T603 (r868):
 
   - what Taska tells agents (/agent, /skill, and /next with nothing to do) says to end the turn, never to wait or poll;
-  - the waker (tools/waker.py) wakes an agent only for news, never while one is around, at most twice for the same
-    news, and says so in Taska when a wake-up did not take or the news is still unhandled;
-  - no schedule on this Mac is switched on that wakes a model to look at Taska more than once an hour (the Codex
+  - the retired polling waker cannot start an agent, even when invoked directly;
+  - no recognized idle-check schedule on this Mac is switched on at any frequency (the Codex
     automations of the ChatGPT app, Claude's scheduled tasks). Skipped where those folders do not exist.
 """
 
 from __future__ import annotations
 
 import glob
-import importlib.util
 import json
 import os
-import re
 import socket
 import subprocess
 import sys
 import tempfile
 import time
 import tomllib
-import types
 import unittest
 import urllib.request
-from typing import Any, List
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 HOME = os.path.expanduser("~")
-TASKA = re.compile(r"taska|127\.0\.0\.1:7340|/next\b", re.I)
+sys.path.insert(0, os.path.join(ROOT, "server"))
+from taska.domain.agent_work_policy import idle_check_prompt
 
 
 class WhatAgentsAreTold(unittest.TestCase):
@@ -74,123 +70,31 @@ class WhatAgentsAreTold(unittest.TestCase):
     def test_no_word_says_to_wait_or_poll(self) -> None:
         for name, text in self.texts.items():
             for line in text.splitlines():
-                if "while o=$(curl" in line or line.lstrip().startswith("`while o=$(curl"):
-                    continue  # the background command that wakes only when it ends, the one way of waiting allowed
                 self.assertNotRegex(line, r"(?i)wait (with|for work)[^.]*next\?wait|waits and returns as soon as work arrives\. Repeat", f"{name}: {line}")
         for name in ("agent", "skill"):
+            self.assertNotIn("while o=$(curl", self.texts[name], name)
+            self.assertNotIn("/next?wait=", self.texts[name], name)
+            self.assertNotIn("codex exec resume", self.texts[name], name)
+            self.assertNotIn("Taska wakes your session", self.texts[name], name)
+            self.assertIn("at any frequency", self.texts[name], name)
             self.assertRegex(self.texts[name], r"Never wait in\s+(the\s+)?foreground, poll, or set a timer", name)
         self.assertIn("never wait, poll or set a timer", self.texts["next"])
 
 
-def waker() -> Any:
-    spec = importlib.util.spec_from_file_location("waker", os.path.join(ROOT, "tools", "waker.py"))
-    assert spec and spec.loader
-    m = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(m)
-    return m
-
-
-class TheWaker(unittest.TestCase):
-    """The waker with Taska, the sessions and the wake-up replaced by stand-ins, so nothing is woken for real."""
-
-    def setUp(self) -> None:
-        self.w = waker()
-        self.told: List[str] = []
-        self.woke: List[str] = []
-        self.news = "first handle the inbox (1):\nr33 10-24 you\n  fix the tap\n\n"
-        self.agents: List[dict] = []
-        w = self.w
-        w.tell = lambda text: self.told.append(text)
-        w.get = lambda path, timeout=10: json.dumps([{"name": "home", "agents": self.agents}]) if path == "/api/projects" else self.news
-        w.session_for = lambda name, now: ("codex", "s1", "/tmp", "/tmp/s1.jsonl")
-        w.wake = lambda project, agent, sid, cwd, path, what, dry: self.woke.append(project) or f"woke {agent} {sid}"
-        self.now = time.time()
-        w.time = types.SimpleNamespace(time=lambda: self.now, strftime=time.strftime, sleep=time.sleep)  # its clock only
-
-    def rounds(self, n: int, apart_s: float = 31 * 60) -> None:
-        state: dict = {}
-        for _ in range(n):
-            self.w.round_(state, False)
-            self.now += apart_s
-
-    def test_no_news_wakes_nobody(self) -> None:
-        self.news = "nothing to do now. End your turn\n"
-        self.rounds(5)
-        self.assertEqual(self.woke, [])
-
-    def test_an_agent_around_is_not_woken(self) -> None:
-        self.agents = [{"name": "codex", "t": self.now * 1000, "waiting": False}]
-        self.w.round_({}, False)
-        self.assertEqual(self.woke, [])
-
-    def test_the_same_news_is_woken_for_twice_at_most_then_said_once(self) -> None:
-        self.rounds(8)
-        self.assertEqual(len(self.woke), 2)
-        self.assertEqual(len(self.told), 1)
-        self.assertIn("fix the tap", self.told[0])
-
-    def test_a_wake_up_that_did_not_take_is_said(self) -> None:
-        with tempfile.NamedTemporaryFile("w", suffix=".log", delete=False) as log:
-            p = subprocess.Popen(["/bin/sh", "-c", "echo 'Error: thread already has an active writer'; exit 1"], stdout=log)
-            p.wait()
-        self.w.RUNNING["home"] = (p, log.name, "codex s1")
-        self.w.failed({}, self.now)
-        self.assertEqual(len(self.told), 1)
-        self.assertIn("active writer", self.told[0])
-
-
-class CodexOnTheCommandLine(unittest.TestCase):
-    """T596 (Yadong's choice): a Codex chat of the ChatGPT app is never resumed (the command line cannot write to it while
-    the app has it open); Codex is woken on the command line: its own session there, or a new one in the app's folder."""
-
-    def setUp(self) -> None:
-        self.w = waker()
-        self.dir = tempfile.mkdtemp()
-        self.now = time.time()
-
-    def session(self, name: str, originator: str, project: str, age_s: float) -> str:
-        path = os.path.join(self.dir, name + ".jsonl")
-        with open(path, "w") as f:
-            f.write(json.dumps({"payload": {"id": name, "cwd": "/tmp", "originator": originator}}) + "\n")
-            f.write(json.dumps({"cmd": f"curl -s http://127.0.0.1:7340/p/{project}/next?by=codex"}) + "\n")
-        os.utime(path, (self.now - age_s, self.now - age_s))
-        return path
-
-    def pick(self) -> Any:
-        paths = glob.glob(os.path.join(self.dir, "*.jsonl"))
-        self.w.glob = types.SimpleNamespace(glob=lambda pattern: paths if ".codex" in pattern else [])
-        return self.w.session_for("home", self.now)
-
-    def test_the_app_chat_alone_gets_a_new_command_line_session(self) -> None:
-        self.session("app", "Codex Desktop", "home", 3600)
-        agent, sid, cwd, _ = self.pick()
-        self.assertEqual((agent, sid, cwd), ("codex-new", "", "/tmp"))
-
-    def test_its_command_line_session_is_resumed_not_the_newer_app_chat(self) -> None:
-        self.session("app", "Codex Desktop", "home", 3600)
-        self.session("cli", "codex_exec", "home", 7200)
-        agent, sid, _, _ = self.pick()
-        self.assertEqual((agent, sid), ("codex", "cli"))
-
-    def test_a_new_session_runs_codex_exec_not_resume(self) -> None:
-        cmd: List[List[str]] = []
-        self.w.subprocess = types.SimpleNamespace(Popen=lambda c, **k: cmd.append(c) or types.SimpleNamespace(poll=lambda: None), DEVNULL=None, STDOUT=None)
-        self.w.LOGS = self.dir
-        self.w.wake("home", "codex-new", "", "/tmp", self.session("app", "Codex Desktop", "home", 3600), "fix the tap", False)
-        self.assertEqual(cmd[0][1:2], ["exec"])
-        self.assertNotIn("resume", cmd[0])
-        self.assertIn("by=codex ", cmd[0][-1])
-
-
-def often(rrule: str) -> bool:
-    """A schedule that fires more than once an hour."""
-    freq = re.search(r"FREQ=(\w+)", rrule)
-    every = int((re.search(r"INTERVAL=(\d+)", rrule) or ["", "1"])[1])
-    return bool(freq) and (freq.group(1) == "SECONDLY" or (freq.group(1) == "MINUTELY" and every < 60))
+class RetiredWaker(unittest.TestCase):
+    def test_old_entry_point_cannot_start_models_or_wait(self) -> None:
+        for args in ([], ["--once"], ["--dry"]):
+            with self.subTest(args=args):
+                result = subprocess.run([sys.executable, os.path.join(ROOT, "tools", "waker.py"), *args],
+                                        capture_output=True, text=True, timeout=3,
+                                        env={**os.environ, "TASKA_URL": "http://127.0.0.1:1",
+                                             "CODEX_BIN": "/usr/bin/false", "CLAUDE_BIN": "/usr/bin/false"})
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("retired", result.stderr.lower())
 
 
 class SchedulesOnThisMac(unittest.TestCase):
-    def test_no_codex_automation_wakes_a_model_to_look_at_taska_often(self) -> None:
+    def test_no_codex_automation_wakes_a_model_to_check_for_work_at_any_frequency(self) -> None:
         files = glob.glob(os.path.join(HOME, ".codex", "automations", "*", "automation.toml"))
         if not files:
             self.skipTest("no Codex automations here")
@@ -198,11 +102,11 @@ class SchedulesOnThisMac(unittest.TestCase):
         for f in files:
             with open(f, "rb") as fh:
                 a = tomllib.load(fh)
-            if a.get("status") != "PAUSED" and often(str(a.get("rrule", ""))) and TASKA.search(str(a.get("prompt", ""))):
+            if a.get("status") != "PAUSED" and idle_check_prompt(str(a.get("prompt", ""))):
                 bad.append(f"{a.get('name')} ({a.get('rrule')}): {f}")
-        self.assertEqual(bad, [], "switched on, waking a model more than once an hour to look at Taska (R594): pause it")
+        self.assertEqual(bad, [], "switched on, waking a model at any frequency to check for work (R594): pause it")
 
-    def test_no_claude_scheduled_task_wakes_a_model_to_look_at_taska_often(self) -> None:
+    def test_no_claude_scheduled_task_wakes_a_model_to_check_for_work_at_any_frequency(self) -> None:
         files = glob.glob(os.path.join(HOME, "Library", "Application Support", "Claude", "claude-code-sessions", "*", "*", "scheduled-tasks.json"))
         if not files:
             self.skipTest("no Claude scheduled tasks here")
@@ -212,14 +116,13 @@ class SchedulesOnThisMac(unittest.TestCase):
                 tasks = json.load(fh).get("scheduledTasks", [])
             for t in tasks:
                 cron = t.get("cronExpression") or ""
-                minute = cron.split()[0] if cron else ""
-                if not t.get("enabled") or not cron or re.fullmatch(r"\d+", minute):
-                    continue  # off, once, or at one minute of the hours it names
+                if not t.get("enabled"):
+                    continue
                 skill = os.path.join(HOME, ".claude", "scheduled-tasks", str(t.get("id")), "SKILL.md")
                 words = open(skill, encoding="utf-8").read() if os.path.exists(skill) else ""
-                if TASKA.search(words):
+                if idle_check_prompt(words):
                     bad.append(f"{t.get('id')} ({cron})")
-        self.assertEqual(bad, [], "switched on, waking a model more than once an hour to look at Taska (R594): turn it off")
+        self.assertEqual(bad, [], "switched on, waking a model at any frequency to check for work (R594): turn it off")
 
 
 if __name__ == "__main__":

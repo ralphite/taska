@@ -8,7 +8,16 @@
 # once Taska has been left alone for a minute (or Yadong clicked Restart).
 cd "$(dirname "$0")/.." || exit 1
 URL=${TASKA_URL:-http://127.0.0.1:7340}
-export PATH="$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin:$PATH"
+export PATH="$PATH:$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin"
+# A fresh zsh can reset PATH after the caller selected Node. Honor the repo
+# version in this shell as well, before running any build or test command.
+if [[ -s "$HOME/.nvm/nvm.sh" ]]; then
+  source "$HOME/.nvm/nvm.sh"
+  nvm use --silent || exit 1
+fi
+[[ "$(node -p 'process.versions.node.split(".")[0]')" == "$(cat .nvmrc)" ]] || {
+  echo "ship: select the Node version in .nvmrc first"; exit 1
+}
 npm --prefix web run check >/tmp/taska-ship-check.log 2>&1 || { echo "ship: a check failed (see /tmp/taska-ship-check.log)"; exit 1; }
 npm --prefix web run build >/tmp/taska-ship-build.log 2>&1 || { echo "ship: the page did not build (see /tmp/taska-ship-build.log)"; exit 1; }
 rsync -a --delete --delete-excluded --exclude /storybook/ web/dist/ web/live/  # Storybook is its own server

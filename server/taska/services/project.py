@@ -24,6 +24,7 @@ from ..domain.state import ProjectState
 from ..domain.vocab import Refused
 from ..infra.files import FileStore
 from .agents import AgentActivity
+from .codex_notifications import CodexNotifications
 from .news import News
 from .store import ProjectStore
 from .voice_jobs import VoiceJobs
@@ -64,6 +65,8 @@ class Project:
         self.organizing = Organizing()
         self.agents = AgentActivity(self.store.db, self.state, changed=self.news.wake, gone=lambda: self.gone)
         self.voice = VoiceJobs(self)
+        self.codex_notifications = CodexNotifications(self)
+        self.codex_notifications.start()
 
     def _warn(self, seq: int, what: str) -> None:
         print(f"taska: {self.slug}: change {seq} {what}", file=sys.stderr)
@@ -103,6 +106,7 @@ class Project:
             event.t = now_iso()
             self.store.commit(event)
             self.news.bump()
+            self.codex_notifications.on_event(event)
 
     def run(self, commands: Sequence[Tuple[int, Command]], by: str, src: Optional[str] = None, keep: bool = False,
             session: str = "") -> Tuple[List[str], List[str]]:
@@ -138,4 +142,5 @@ class Project:
     # -- the file ------------------------------------------------------------------------
 
     def close(self) -> None:
+        self.codex_notifications.close()
         self.store.close()

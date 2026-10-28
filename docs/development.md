@@ -101,7 +101,19 @@ python3 tools/install_launchd.py --label com.taska.app
 
 This only writes the plist; it never starts, stops or restarts a service. Labels stay stable so existing services
 can be updated without creating duplicates. Load or update a job through `launchctl` only during an intended
-service installation or deployment. The agent waker remains opt-in; rendering its template does not enable it.
+service installation or deployment. The polling agent waker is retired: its entry point refuses to run,
+and its template disables startup and keepalive. Do not re-enable it.
+
+`python3 tools/install_agent_guard.py` installs a command-only PreToolUse guard for local Codex and Claude Code,
+preserving existing settings and hooks. It rejects recognizable scheduled message checks at any frequency and
+Taska queue polling loops. It performs no model calls, has no timer, and does not replace the notification
+outbox's committed-event and duplicate-delivery checks. Tool hooks are a guardrail, not an OS-wide sandbox;
+other runtimes and tool paths that bypass hooks are outside their coverage. Validate actual hook interception
+after installing or changing a harness; a unit test alone does not establish runtime coverage.
+Codex requires user review and trust of new non-managed hooks through `/hooks` before execution; installing
+`hooks.json` alone does not enable enforcement. Do not edit trust records or bypass that approval. The live
+acceptance on 2026-10-28 did not intercept the harmless probe, so this hook is not yet an active Codex control.
+See [codex-notifications.md](codex-notifications.md) for the separate event-delivery acceptance gate.
 
 Register permanent service entry points in Local Hub and update the existing registration when their source or
 startup path changes. Keep data outside the source checkout in `~/.taska`.
