@@ -91,11 +91,14 @@ def post(ctx: "AppContext", req: Request, p: Project, sub: str) -> Response:
             raise ValueError("expected an object")
         if "ack" in d:
             return as_json(p.codex_notifications.acknowledge(str(d["ack"])))
+        if "hook" in d:
+            return as_json(p.codex_notifications.take_for_hook(str(d["hook"]), str(d.get("sessionId", ""))))
         if d.get("enabled") is False:
             return as_json(p.codex_notifications.disable())
         if d.get("retry") is True:
             return as_json(p.codex_notifications.retry())
-        return as_json(p.codex_notifications.bind(str(d.get("threadId", "")), str(d.get("mode", ""))))
+        return as_json(p.codex_notifications.bind(str(d.get("threadId", "")), str(d.get("mode", "")),
+                                                pilot=d.get("pilot") is True))
     if sub == "/api/commands":
         return _commands(ctx, req, p)
     if sub == "/api/words":

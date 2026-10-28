@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import copy
 import json
+from pathlib import Path
 import threading
 import time
 import uuid
@@ -36,7 +37,7 @@ class CodexNotifications:
         self.data: Dict[str, Any] = project.store.db.get(KEY) or {}
         # A crash after enqueue but before the receipt is saved is ambiguous.
         for d in self.data.get("deliveries", []):
-            if d["status"] == "sending":
+            if d["status"] in ("sending", "claiming"):
                 d.update(status="uncertain", error="Interrupted during enqueue; reconcile before resending")
 
     def start(self) -> None:
@@ -48,10 +49,10 @@ class CodexNotifications:
             self.worker.start()
         self.changed.set()  # one recovery attempt on start, never a periodic check
 
-    def bind(self, target: str, mode: str) -> Dict[str, Any]:
-        if isinstance(self.transport, CodexQueue):
+    def bind(self, target: str, mode: str, pilot: bool = False) -> Dict[str, Any]:
+        if isinstance(self.transport, CodexQueue) and not (mode == "queue-hook" and pilot):
             raise ValueError("Automatic desktop message delivery is not connected; queue-only delivery is not enabled")
-        if mode != "queue":
+        if mode not in ("queue", "queue-hook"):
             raise ValueError("this transport supports queue delivery, not steering an active turn")
         target = thread_id(target)
         with self.project.lock:
@@ -59,6 +60,7 @@ class CodexNotifications:
                 raise ValueError("this pilot is already bound to another Codex session")
             if not self.data:
                 self.data = {"threadId": target, "mode": mode, "cursor": self.project.store.count, "deliveries": []}
+            self.data["mode"] = mode
             self.data["projectPath"] = self.project.folder
             self.data["enabled"] = True
             self._save()
@@ -77,9 +79,9 @@ class CodexNotifications:
             self.changed.set()
 
     def _enabled(self) -> bool:
-        # The queue experiment is not an approved active-turn transport. A
-        # previously saved binding must not bypass the activation gate on boot.
-        if isinstance(self.transport, CodexQueue):
+        # Queue-only delivery cannot reach an active turn. An old binding must
+        # not bypass the explicit queue-hook activation gate on boot.
+        if isinstance(self.transport, CodexQueue) and self.data.get("mode") != "queue-hook":
             return False
         # A QA/backup copy of a bound database must never message a real session.
         return bool(self.data.get("enabled") and self.data.get("projectPath") == self.project.folder)
@@ -103,6 +105,47 @@ class CodexNotifications:
             result["active"] = self._enabled()
             return result
 
+    def _inbox_file(self, notification: str) -> Path:
+        return Path(self.project.folder) / ".codex-inbox" / self.data["threadId"] / (notification + ".json")
+
+    def _publish_hook(self, d: Dict[str, Any]) -> None:
+        if self.data.get("mode") != "queue-hook":
+            return
+        path = self._inbox_file(d["id"])
+        path.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
+        temporary = path.with_suffix(".tmp")
+        temporary.write_text(json.dumps({"project": self.project.slug, "id": d["id"]}))
+        temporary.chmod(0o600)
+        temporary.replace(path)
+
+    def take_for_hook(self, notification: str, session: str) -> Dict[str, str]:
+        """A normal Codex hook consumes a pushed pointer, never a timed check."""
+        with self.project.lock:
+            if not self._enabled() or session != self.data.get("threadId") or self.data.get("mode") != "queue-hook":
+                return {}
+            d = next((d for d in self.data["deliveries"] if d["id"] == notification), None)
+            if not d or d["status"] not in ("queued", "failed") or not d.get("queueId"):
+                return {}
+            d["status"] = "claiming"
+            self._save()
+        try:
+            claimed = self.transport.take(session, d["queueId"])
+        except Exception as ex:
+            with self.project.lock:
+                d.update(status="uncertain", error="Hook claim needs reconciliation: " + str(ex)[:400])
+                self._save()
+                self._report_failure(d)
+            raise
+        finally:
+            self._inbox_file(notification).unlink(missing_ok=True)
+        with self.project.lock:
+            if d["status"] != "received":
+                d["status"] = "context" if claimed else "native"
+            if claimed:
+                d["contextSubmittedAt"] = time.time()
+            self._save()
+            return {"message": self._message(d)} if claimed else {}
+
     def acknowledge(self, notification: str) -> Dict[str, Any]:
         with self.project.lock:
             for d in self.data.get("deliveries", []):
@@ -110,6 +153,7 @@ class CodexNotifications:
                     d.update(status="received", receivedAt=d.get("receivedAt") or time.time())
                     d.pop("error", None)
                     self._save()
+                    self._inbox_file(notification).unlink(missing_ok=True)
                     return copy.deepcopy(d)
             raise Refused("unknown notification")
 
@@ -133,6 +177,10 @@ class CodexNotifications:
                                                 "events": [{"seq": e.seq, **e.to_row()} for e in fresh]})
             self.data["cursor"] = p.store.count
             self._save()
+            if self._recover:
+                for d in self.data["deliveries"]:
+                    if d["status"] == "queued" and d.get("queueId"):
+                        self._publish_hook(d)
             states = ("pending", "failed") if self._recover else ("pending",)
             self._recover = False
             return [d["id"] for d in self.data["deliveries"] if d["status"] in states]
@@ -162,7 +210,7 @@ class CodexNotifications:
             rows = d.get("events") or []
             valid = bool(rows)
             consumed = {row["seq"] for other in self.data["deliveries"] if other is not d
-                        and other["status"] in ("sending", "queued", "received", "uncertain")
+                        and other["status"] in ("sending", "queued", "claiming", "context", "native", "received", "uncertain")
                         for row in other.get("events", [])}
             for row in rows:
                 seq = row.get("seq")
@@ -191,19 +239,20 @@ class CodexNotifications:
                     if d["status"] != "received":
                         d["status"] = "queued"
                     self._save()
+                    self._publish_hook(d)
             with self.project.lock:
-                if self.stopped.is_set() or not self._enabled() or d["status"] == "received":
+                if self.stopped.is_set() or not self._enabled() or d["status"] in ("claiming", "context", "native", "received"):
                     return
             self.transport.wake(target)
             with self.project.lock:
                 d["wakeRequestedAt"] = time.time()
-                if d["status"] != "received":
+                if d["status"] not in ("claiming", "context", "native", "received"):
                     d["status"] = "queued"
                 d.pop("error", None)
                 self._save()
         except Exception as ex:
             with self.project.lock:
-                if d["status"] == "received":
+                if d["status"] in ("claiming", "context", "native", "received"):
                     return
                 uncertain = isinstance(ex, DeliveryError) and ex.uncertain
                 d.update(status="uncertain" if uncertain and not d.get("queueId") else "failed", error=str(ex)[:500])

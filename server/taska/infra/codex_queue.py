@@ -8,7 +8,10 @@ from __future__ import annotations
 
 import os
 import re
+import json
+import selectors
 import subprocess
+import time
 import uuid
 from typing import List
 
@@ -40,6 +43,69 @@ class CodexQueue:
 
     def wake(self, target: str) -> None:
         self._run(["/usr/bin/open", "-g", "codex://threads/wake/" + thread_id(target)])
+
+    def take(self, target: str, queued_id: str) -> bool:
+        """Claim one queued message through the public API, without resuming its writer.
+
+        Only a confirmed deletion permits hook delivery. If the desktop already
+        consumed it, the normal queued turn owns delivery instead.
+        """
+        result = self.request("thread/queue/delete", {"threadId": thread_id(target),
+                                                     "queuedSubmissionId": queued_id})
+        return result.get("deleted") is True
+
+    def request(self, method: str, params: dict) -> dict:
+        """One bounded public app-server request; no thread/start or model calls."""
+        process = subprocess.Popen([self.binary, "app-server"], stdin=subprocess.PIPE,
+                                   stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+        assert process.stdin and process.stdout
+        selector = selectors.DefaultSelector()
+        selector.register(process.stdout, selectors.EVENT_READ)
+        buffered = b""
+
+        def send(value: dict) -> None:
+            assert process.stdin
+            process.stdin.write(json.dumps(value).encode() + b"\n")
+            process.stdin.flush()
+
+        def receive(request_id: int) -> dict:
+            nonlocal buffered
+            deadline = time.monotonic() + 15
+            while True:
+                while b"\n" in buffered:
+                    line, buffered = buffered.split(b"\n", 1)
+                    answer = json.loads(line)
+                    if answer.get("id") == request_id:
+                        if "error" in answer:
+                            raise DeliveryError(str(answer["error"])[:500])
+                        return answer["result"]
+                remaining = deadline - time.monotonic()
+                if remaining <= 0 or not selector.select(remaining):
+                    raise DeliveryError("Codex queue request timed out", uncertain=True)
+                assert process.stdout
+                chunk = os.read(process.stdout.fileno(), 65536)
+                if not chunk:
+                    raise DeliveryError("Codex queue connection closed", uncertain=True)
+                buffered += chunk
+
+        try:
+            send({"id": 1, "method": "initialize", "params": {
+                "clientInfo": {"name": "taska_notifications", "version": "1"},
+                "capabilities": {"experimentalApi": True}}})
+            receive(1)
+            send({"method": "initialized"})
+            send({"id": 2, "method": method, "params": params})
+            return receive(2)
+        finally:
+            selector.close()
+            process.terminate()
+            try:
+                process.wait(timeout=3)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait()
+            process.stdin.close()
+            process.stdout.close()
 
     @staticmethod
     def _run(args: List[str], submitting: bool = False) -> str:

@@ -80,6 +80,12 @@ class WhatAgentsAreTold(unittest.TestCase):
             self.assertRegex(self.texts[name], r"Never wait in\s+(the\s+)?foreground, poll, or set a timer", name)
         self.assertIn("never wait, poll or set a timer", self.texts["next"])
 
+    def test_codex_setup_requires_trust_reload_and_real_busy_receipt(self) -> None:
+        for name in ("agent", "skill"):
+            for phrase in ("queue-hook", "/hooks", "archive and unarchive", "SAME turn",
+                           "contextSubmittedAt", "no model call", "no polling fallback"):
+                self.assertIn(phrase, self.texts[name], name)
+
 
 class RetiredWaker(unittest.TestCase):
     def test_old_entry_point_cannot_start_models_or_wait(self) -> None:

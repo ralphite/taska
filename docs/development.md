@@ -111,8 +111,9 @@ outbox's committed-event and duplicate-delivery checks. Tool hooks are a guardra
 other runtimes and tool paths that bypass hooks are outside their coverage. Validate actual hook interception
 after installing or changing a harness; a unit test alone does not establish runtime coverage.
 Codex requires user review and trust of new non-managed hooks through `/hooks` before execution; installing
-`hooks.json` alone does not enable enforcement. Do not edit trust records or bypass that approval. The live
-acceptance on 2026-10-28 did not intercept the harmless probe, so this hook is not yet an active Codex control.
+`hooks.json` alone does not enable enforcement. Do not edit trust records or bypass that approval. After official
+trust, the live acceptance on 2026-10-28 denied the harmless idle-check probe before its HTTP request ran.
+Existing loaded sessions must reload their hook configuration; installation and trust alone do not prove this.
 See [codex-notifications.md](codex-notifications.md) for the separate event-delivery acceptance gate.
 
 Register permanent service entry points in Local Hub and update the existing registration when their source or

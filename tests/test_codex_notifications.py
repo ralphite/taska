@@ -26,6 +26,8 @@ class Transport:
         self.wakes = []
         self.sent = threading.Event()
         self.error = None
+        self.taken = []
+        self.claimable = True
 
     def enqueue(self, target, text):
         if self.error:
@@ -36,6 +38,10 @@ class Transport:
     def wake(self, target):
         self.wakes.append(target)
         self.sent.set()
+
+    def take(self, target, queued_id):
+        self.taken.append(queued_id)
+        return self.claimable
 
 
 class Notifications(unittest.TestCase):
@@ -98,6 +104,32 @@ class Notifications(unittest.TestCase):
         self.assertFalse(self.transport.sent.wait(0.05))
         self.assertEqual(len(self.transport.messages), 1)
         self.assertEqual(len(self.transport.wakes), 1)
+
+    def test_hook_claims_exact_queued_message_once_then_acknowledges_separately(self):
+        self.n.bind(TARGET, "queue-hook")
+        self.event()
+        self.assertTrue(self.transport.sent.wait(1))
+        d = self.n.status()["deliveries"][0]
+        self.assertTrue(self.n._inbox_file(d["id"]).exists())
+        self.assertEqual(self.n.take_for_hook(d["id"], "another-session"), {})
+        message = self.n.take_for_hook(d["id"], TARGET)["message"]
+        self.assertIn(d["id"], message)
+        self.assertEqual(self.transport.taken, [d["queueId"]])
+        self.assertEqual(self.n.status(d["id"])["status"], "context")
+        self.assertFalse(self.n._inbox_file(d["id"]).exists())
+        self.assertEqual(self.n.take_for_hook(d["id"], TARGET), {})
+        self.n.acknowledge(d["id"])
+        self.assertEqual(self.n.status(d["id"])["status"], "received")
+
+    def test_native_queue_consumption_prevents_duplicate_hook_delivery(self):
+        self.n.bind(TARGET, "queue-hook")
+        self.event()
+        self.assertTrue(self.transport.sent.wait(1))
+        d = self.n.status()["deliveries"][0]
+        self.transport.claimable = False
+        self.assertEqual(self.n.take_for_hook(d["id"], TARGET), {})
+        self.assertEqual(self.n.status(d["id"])["status"], "native")
+        self.assertFalse(self.n._inbox_file(d["id"]).exists())
 
     def test_final_send_gate_rejects_empty_and_agent_only_batches(self):
         self.n.data = {"enabled": True, "projectPath": self.p.folder, "threadId": TARGET,
