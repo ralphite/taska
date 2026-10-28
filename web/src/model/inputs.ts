@@ -3,8 +3,6 @@
 
 import type { Input } from './types'
 
-export type InputTone = 'moved' | 'busy' | 'quiet' | 'muted' | 'done' | 'failed' | 'agent' | 'waiting'
-
 export interface InputStanding {
   label: string
   tone: string

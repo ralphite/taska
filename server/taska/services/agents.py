@@ -1,7 +1,7 @@
 """The agents of one project as Taska sees them: who called when (and from which session), who waits for work,
 what each read, which items each session holds, and what other sessions wrote for it.
 
-Kept in the project's `kv` (agents, reads, heard), which the older version reads too. Callers hold the project lock.
+Kept in the project's `kv` (agents, reads, heard). Callers hold the project lock.
 """
 
 from __future__ import annotations
@@ -15,7 +15,7 @@ from ..domain import events as ev, rules
 from ..domain.model import Input, Item, Message
 from ..domain.state import ProjectState, ident
 from ..domain.text import first_line, seconds
-from ..domain.vocab import CLAIM_TTL, CLOSED, PEOPLE
+from ..domain.vocab import CLAIM_TTL, PEOPLE
 from ..infra.project_db import ProjectDb
 
 
@@ -265,7 +265,3 @@ class AgentActivity:
                                    for n, t in sorted(v.sessions.items(), key=lambda x: -x[1]) if t > day]
             out.append(row)
         return out
-
-
-def is_closed(it: Item) -> bool:
-    return it.status in CLOSED

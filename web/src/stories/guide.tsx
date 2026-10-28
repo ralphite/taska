@@ -5,7 +5,7 @@
 // are skipped; a part that cannot be found is said under the screen, never tapped blindly. Two ways through: you tap
 // (guided, the default) or it taps for you at a person's pace (autoplay, only in demos: R577). What the step does is
 // said under the screen, with Start again. And how loud you speak while it listens. Used by the prototypes and demos.
-import { useEffect, useLayoutEffect, useState, type RefObject } from 'react'
+import { useLayoutEffect, useState, type RefObject } from 'react'
 
 /** What to tap: a part by its role and name (as a screen reader finds it), by its words, by a CSS selector, or found
  * by a function of the screen. */
@@ -44,47 +44,6 @@ export function find(root: HTMLElement, t: Target | undefined): Element | null {
 }
 export const sel = (q: string): Target => q
 export const withText = (q: string, text: string): Target => (root) => [...root.querySelectorAll(q)].find((e) => shown(e) && e.textContent?.includes(text)) || null
-
-/** Where the guide is: the step, whether its part can be found, and what moves it on. `n` starts at 0; -1 is no guide. */
-export function useTour(steps: Step[], root: RefObject<HTMLElement | null>, o: { on?: boolean; autoplay?: boolean } = {}) {
-  const on = o.on ?? true
-  const [n, setN] = useState(on ? 0 : -1)
-  const [missing, setMissing] = useState(false)
-  const step = n >= 0 ? (steps[n] ?? null) : null
-  // a step done already (its screen shows what it should) is passed over; one whose part is not there is said
-  useEffect(() => {
-    if (!step) return
-    const look = () => {
-      const r = root.current
-      if (!r) return
-      if (step.until?.(r)) return setN((x) => (x === n ? x + 1 : x))
-      setMissing(!!step.tap && !find(r, step.tap))
-    }
-    look()
-    const t = setInterval(look, 150)
-    return () => clearInterval(t)
-  }, [step, n, root])
-  // autoplay: its part is tapped for you after a person's pause
-  useEffect(() => {
-    if (!o.autoplay || !step?.tap) return
-    const t = setTimeout(() => {
-      const el = root.current && find(root.current, step.tap)
-      if (el instanceof HTMLElement) el.click()
-    }, 1400)
-    return () => clearTimeout(t)
-  }, [o.autoplay, step, root])
-  return {
-    n,
-    step,
-    missing,
-    restart: () => setN(0),
-    /** a tap on the step's part moves on (a step with `until` waits for the screen instead) */
-    onClickCapture: (e: React.MouseEvent) => {
-      const el = root.current && step && !step.until ? find(root.current, step.tap) : null
-      if (el && el.contains(e.target as Node)) setTimeout(() => setN((x) => (x === n ? x + 1 : x)), 0)
-    },
-  }
-}
 
 /** A big mark where to tap next, spreading out (R488): on the part the step names, at once, wherever it is now. */
 export function Mark({ root, step }: { root: RefObject<HTMLElement | null>; step: Step | null }) {

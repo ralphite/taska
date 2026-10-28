@@ -8,8 +8,7 @@ import { listOf, PROJECT } from './listFixtures'
 import { modelOf } from './fixtures'
 
 export const no = () => {}
-/** The project the menus are about (the item list's), and its model. */
-export const MENU_PROJECT = PROJECT
+/** The model of the item list's project used by menus. */
 export const menuModel = () => modelOf(PROJECT)
 
 /** Where the desktop's menu opens: under a button at the right of the pane's bar (its right edge at the button's, as

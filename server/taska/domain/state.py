@@ -6,7 +6,7 @@ Only the projector writes it (applying events); everything else reads it.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Dict, List, NamedTuple, Optional, Set, Tuple, Union
+from typing import Dict, List, NamedTuple, Optional, Set, Union
 
 from .events import Event
 from .model import Doc, Input, Item, Message
@@ -86,9 +86,6 @@ class ProjectState:
     def children(self, n: int) -> List[Item]:
         return [k for k in self.items.values() if k.parent == n and k.live]
 
-    def last_seq(self) -> int:
-        return len(self.events)
-
     def event(self, seq: int) -> Event:
         return self.events[seq - 1]
 
@@ -103,8 +100,3 @@ def ident(by: object, ses: object = "") -> str:
     """An agent session as the page and agents name it, "claude-code · worker" (the agent alone without one)."""
     s = " ".join(str(ses or "").split())[:60]
     return f"{by} · {s}" if s else str(by)
-
-
-def claim_of(state: ProjectState, n: int) -> Optional[Tuple[str, float]]:
-    c = state.claims.get(n)
-    return (c.who, c.since) if c else None

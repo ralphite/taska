@@ -2,7 +2,7 @@
 // answered a question with, the versions of something you edited, the questions taken back, who read your words.
 // Pure: from the item (and an answer still on its way, when there is one).
 
-import { closed, lastAgentMessage, userWord } from './items'
+import { lastAgentMessage, userWord } from './items'
 import { hasChoices, ticks } from './markdown'
 import type { Item, Message } from './types'
 
@@ -130,6 +130,3 @@ export function talkPlan(it: Item, opts: { all: boolean; going?: string | null }
   const hidden = opts.all || first ? 0 : Math.max(0, Math.min(thread.length - 8, at < 0 ? thread.length : at))
   return { cardId, thread, first, inline: at >= 0, hidden }
 }
-
-/** Your turn is the agent's: you replied, and nothing waits on you. */
-export const agentsTurn = (it: Item) => !it.wait && it.talked && !closed(it.status)

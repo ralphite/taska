@@ -5,10 +5,9 @@ closes), and the error goes to the log."""
 from __future__ import annotations
 
 import sys
-import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
-from typing import Any, Optional, Tuple
+from typing import Any, Tuple
 
 from ..domain.vocab import Refused
 from ..infra.logs import log
@@ -101,7 +100,7 @@ class Server(ThreadingHTTPServer):
             return
         log.error(f"request from {client_address[0]} failed", exc_info=True, extra={"f": {"source": "server", "kind": "error"}})
 
-    def drain(self, wait: float = 60, jobs: Optional[Any] = None) -> None:
+    def drain(self, wait: float = 60) -> None:
         """Stop taking requests, then give the work at hand up to `wait` seconds: requests being answered and voice
         notes being worked out. A restart must not cut a transcription."""
         self.socket.close()
@@ -116,9 +115,3 @@ class Server(ThreadingHTTPServer):
         with status.idle:
             while (status.busy or transcribing()) and time.time() < end:
                 status.idle.wait(min(0.25, max(0.01, end - time.time())))
-
-
-def serve_in_thread(srv: Server) -> threading.Thread:
-    t = threading.Thread(target=srv.serve_forever, daemon=True)
-    t.start()
-    return t

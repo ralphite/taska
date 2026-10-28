@@ -1,6 +1,6 @@
 """A tiny Chrome DevTools client (standard library only): drive a headless page like a user.
 
-    import sys; sys.path.insert(0, 'scripts'); from cdp import Page
+    import sys; sys.path.insert(0, 'tools'); from cdp import Page
     p = Page(size=(1440, 900), dark=False, port=9333)
     try:
         p.go('http://127.0.0.1:7342/p/my-app/', 3)

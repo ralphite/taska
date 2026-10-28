@@ -36,7 +36,7 @@ The desktop (1024px and wider) is out of scope, but compare with it when the pho
   API on your port: `curl -s "http://127.0.0.1:<PORT>/p/my-app/do?by=claude-code" --data-binary "B03 say hello"`.
 - Drive headless Chrome with `tools/cdp.py` (read its docstring) on Chrome port <CHROME_PORT>, as a phone:
   ```python
-  import sys, time, json; sys.path.insert(0, 'scripts'); from cdp import Page
+  import sys, time, json; sys.path.insert(0, 'tools'); from cdp import Page
   p = Page(size=(390, 844), port=<CHROME_PORT>, flags=('--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'))
   p.call('Emulation.setDeviceMetricsOverride', width=390, height=844, deviceScaleFactor=2, mobile=True)
   p.call('Emulation.setTouchEmulationEnabled', enabled=True, maxTouchPoints=5)

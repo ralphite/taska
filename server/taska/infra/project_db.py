@@ -91,11 +91,6 @@ class ProjectDb:
             self._con.execute("INSERT INTO events (seq, k, t, by, data) VALUES (?, ?, ?, ?, ?)",
                               (seq, str(row.get("k", "")), row.get("t"), row.get("by"), dumps(row)))
 
-    def next_seq(self) -> int:
-        with self._lock:
-            got = self._con.execute("SELECT MAX(seq) FROM events").fetchone()[0]
-        return int(got or 0) + 1
-
     # -- the current state -------------------------------------------------------
 
     def write_state(self, rows: StateRows, seq: int, full: bool = False) -> None:

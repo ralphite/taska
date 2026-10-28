@@ -16,7 +16,6 @@ from typing import Any, Callable, Dict, List, Optional, Protocol, Tuple
 
 from ..domain import events as ev
 from ..domain.model import FileRef, Input
-from ..domain.text import squash
 from ..domain.vocab import VOICE_HOLD
 from .news import News
 
@@ -249,7 +248,3 @@ def answer(fid: str, job: Optional[Job]) -> Dict[str, Any]:
             "tr_error": (job.err if job else "no such voice note") or "",
             **{k: res[k] for k in ("tr_by", "doubts", "gated", "main_error", "asr_error", "pro_error", "times", "more", "heard")
                if k in res}}
-
-
-def squash_session(ses: str) -> str:
-    return squash(ses)[:60]
