@@ -4,13 +4,13 @@ import { expect, test, type Page } from '@playwright/test'
 import { LOOP, isDesk, open, project } from './seed'
 import { foot, pane, sideFoot } from './ui'
 
-const projects = (page: Page) => page.locator('#projBtn').or(page.getByRole('button', { name: 'Projects and settings', exact: true })).filter({ visible: true }).first()
+const projects = (page: Page) => page.getByRole('button', { name: 'Projects and settings', exact: true }).filter({ visible: true }).first()
 /** the New input page's head (the project's name over the box), and what you said under the box */
-const composeHead = (page: Page) => page.locator('#composeHead, footer:has(#composer) h1').first()
-const composeList = (page: Page) => page.locator('#composeList, section[aria-label="You said lately"]').first()
-const search = (page: Page) => page.locator('#q, input[type="search"]').filter({ visible: true }).first()
-/** the project's data, as the page reads it (the old version: api/state; the rewrite: api/view) */
-const DATA = /\/api\/(state|view)\b/
+const composeHead = (page: Page) => page.locator('footer:has(#composer) h1').first()
+const composeList = (page: Page) => page.locator('section[aria-label="You said lately"]').first()
+const search = (page: Page) => page.locator('input[type="search"]').filter({ visible: true }).first()
+/** The project's initial view model. */
+const DATA = /\/api\/view\b/
 
 for (const was of ['agents', 'T1', 'rules']) {
   test(`r623 r309: a project opens as itself from the sidebar, even after its ${was} was open (B463)`, async ({
@@ -40,7 +40,7 @@ test('r309 B324: a project opens as itself from the home table, though it has so
   await expect(page).toHaveURL(new RegExp(`${p.url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(new)?$`))
   if (isDesk(page)) await expect(composeHead(page)).toBeVisible()
   else await expect(page.locator('#list article[data-n]').first()).toBeVisible()
-  await expect(page.locator('#detailBody, [data-part="pane"] [data-item-top]').filter({ visible: true })).toHaveCount(0)
+  await expect(page.locator('[data-part="pane"] [data-item-top]').filter({ visible: true })).toHaveCount(0)
 })
 
 test('r97 r115 r295 r454: the New input page has the box in the middle and all you said below it', async ({
@@ -106,13 +106,13 @@ test("D77 #1 #2, D82 #1-3: an item's address reloaded says Loading in its place 
     await r.continue()
   })
   await page.goto(p.url + 'T4')
-  await expect(page.locator('[data-missing="loading"]').or(page.getByText('Loading T4\u2026', { exact: true })).filter({ visible: true }).first()).toHaveText('Loading T4\u2026')
+  await expect(page.getByText('Loading T4\u2026', { exact: true }).filter({ visible: true }).first()).toHaveText('Loading T4\u2026')
   hold = false
   await expect(pane(page).locator('h1')).toHaveText('Write the user docs')
   await page.unroute(DATA)
   for (const what of ['T99', 'D99']) {
     await page.goto(p.url + what)
-    await expect(page.locator('[data-missing="none"]').or(page.getByText(`${what} is not in this project`, { exact: true })).filter({ visible: true }).first()).toHaveText(
+    await expect(page.getByText(`${what} is not in this project`, { exact: true }).filter({ visible: true }).first()).toHaveText(
       `${what} is not in this project`,
     )
     await expect(page).toHaveURL(new RegExp(`/${what}$`))
@@ -127,10 +127,10 @@ test('D82 #2: the home page says when Taska is out of reach and loads by itself 
   let down = true
   await page.route('**/api/projects', (r) => (down ? r.abort('connectionrefused') : r.continue()))
   await page.goto('/')
-  // the home page's list of projects (the old version's #list), and the line over it while Taska is away
-  const list = page.locator('#list').or(page.locator('main ul').filter({ has: page.locator('li') })).first()
-  const row = page.locator(`#list a, main a[href^="/p/"]`).filter({ visible: true }).first()
-  const offline = page.locator('#offline').or(page.getByText('Taska is out of reach, retrying\u2026', { exact: true }).filter({ visible: true }))
+  // The home page's list of projects and its connection notice.
+  const list = page.locator('main ul').filter({ has: page.locator('li') }).first()
+  const row = page.locator(`main a[href^="/p/"]`).filter({ visible: true }).first()
+  const offline = page.getByText('Taska is out of reach, retrying\u2026', { exact: true }).filter({ visible: true })
   await expect(list).toContainText('Taska is out of reach, retrying\u2026')
   down = false
   await expect(row).toBeVisible({ timeout: 15000 })
@@ -151,12 +151,12 @@ test('D82 #4: a link to a project that never was says only that it is not there;
   const p = await project(request, LOOP)
   const none = 'no-such-project-' + p.name
   await page.goto(`/p/${none}/`)
-  const restore = page.locator('#goneRestore').or(page.getByRole('button', { name: 'Restore', exact: true }))
-  await expect(page.locator('#none').or(page.getByText(/^There is no project/)).first()).toContainText(`There is no project “${none}”`)
+  const restore = page.getByRole('button', { name: 'Restore', exact: true })
+  await expect(page.getByText(/^There is no project/).first()).toContainText(`There is no project “${none}”`)
   await expect(restore).toHaveCount(0)
   await request.post('/api/projects/delete', { data: { name: p.name } })
   await page.goto(p.url)
-  await expect(page.locator('#gone').or(page.locator('div').filter({ has: restore }).last()).first()).toContainText(p.name)
+  await expect(page.locator('div').filter({ has: restore }).last().first()).toContainText(p.name)
   await expect(restore.first()).toBeVisible()
   await restore.first().click()
   await expect(page).toHaveURL(new RegExp(`/p/${p.name}/`))
@@ -172,7 +172,7 @@ test("D82 #5: on the phone an item's page says when Taska is out of reach, as th
   await expect(pane(page).locator('h1')).toHaveText('Write the user docs')
   await page.route('**/api/**', (r) => r.abort())
   for (let i = 0; i < 4; i++) await page.evaluate(() => dispatchEvent(new Event('focus')))
-  await expect(page.locator('#detailView [role="status"]').or(page.locator('[data-part="pane"]').getByText(/Offline, retrying/)).filter({ visible: true }).first()).toHaveText(/Offline, retrying/, { timeout: 45000 }) // once the poll in flight ends
+  await expect(page.locator('[data-part="pane"]').getByText(/Offline, retrying/).filter({ visible: true }).first()).toHaveText(/Offline, retrying/, { timeout: 45000 }) // once the poll in flight ends
 })
 
 test('D82 #6: Activity that cannot load says so on the desktop too, not Loading for ever', async ({
@@ -181,9 +181,9 @@ test('D82 #6: Activity that cannot load says so on the desktop too, not Loading 
 }) => {
   test.skip(!isDesk(page), 'the phone said so already')
   const p = await project(request, LOOP)
-  await page.route(/\/api\/(log|activity)\b/, (r) => r.abort())
+  await page.route(/\/api\/activity\b/, (r) => r.abort())
   await open(page, p, 'log')
-  await expect(page.locator('#toast').or(page.getByText(/^Couldn't load the change log/)).first()).toContainText("Couldn't load the change log")
+  await expect(page.getByText(/^Couldn't load the change log/).first()).toContainText("Couldn't load the change log")
 })
 
 test('D82 #7: a search says what the other projects gave: searching, nothing there, or that they could not be searched', async ({
@@ -197,14 +197,14 @@ test('D82 #7: a search says what the other projects gave: searching, nothing the
     return answer === 'fail' ? r.abort() : r.continue()
   })
   await open(page, p)
-  if (!isDesk(page)) await page.locator('#searchBtn').or(page.getByRole('button', { name: 'Search', exact: true })).filter({ visible: true }).first().click()
+  if (!isDesk(page)) await page.getByRole('button', { name: 'Search', exact: true }).filter({ visible: true }).first().click()
   await search(page).fill('zqxj-one')
-  await expect(page.locator('[data-cross="searching"]').or(page.getByText('Searching the other projects\u2026', { exact: true })).filter({ visible: true }).first()).toBeVisible()
+  await expect(page.getByText('Searching the other projects\u2026', { exact: true }).filter({ visible: true }).first()).toBeVisible()
   answer = 'go'
-  await expect(page.locator('[data-cross="none"]').or(page.getByText('Not in other projects', { exact: true })).filter({ visible: true }).first()).toHaveText('Not in other projects')
+  await expect(page.getByText('Not in other projects', { exact: true }).filter({ visible: true }).first()).toHaveText('Not in other projects')
   answer = 'fail'
   await search(page).fill('zqxj-two')
-  await expect(page.locator('[data-cross="failed"]').or(page.getByText("Couldn't search the other projects", { exact: true })).filter({ visible: true }).first()).toBeVisible()
+  await expect(page.getByText("Couldn't search the other projects", { exact: true }).filter({ visible: true }).first()).toBeVisible()
 })
 
 test('D82 #9: switching to another project, its name shows at once (not its address) and the desktop sidebar keeps Documents, Activity and Deleted while its data comes', async ({
@@ -215,14 +215,14 @@ test('D82 #9: switching to another project, its name shows at once (not its addr
     b = await project(request, LOOP),
     title = b.name.replace(/-/g, ' ')
   await open(page, a)
-  await page.route((u) => u.pathname.startsWith(b.url) && /\/api\/(state|view)$/.test(u.pathname), async (r) => {
+  await page.route((u) => u.pathname.startsWith(b.url) && /\/api\/view$/.test(u.pathname), async (r) => {
     await new Promise((ok) => setTimeout(ok, 4000))
     await r.continue()
   })
   if (!isDesk(page)) await projects(page).click()
-  await page.locator(`#drawerList a[href="${b.url}"], #drawer a[href="${b.url}"]`).filter({ visible: true }).first().click()
+  await page.locator(`#drawer a[href="${b.url}"]`).filter({ visible: true }).first().click()
   await expect(page).toHaveURL(new RegExp(b.url))
-  const name = isDesk(page) ? page.locator('#projBar, nav[aria-label="This project"]').first() : page.locator('#projName').or(projects(page)).first()
+  const name = isDesk(page) ? page.locator('nav[aria-label="This project"]').first() : projects(page).first()
   await expect(name, 'before its data comes').toContainText(title, { timeout: 2000 })
   if (isDesk(page)) await expect(sideFoot(page)).toContainText('Documents', { timeout: 2000 })
 })

@@ -332,7 +332,7 @@ test("r799: a part's speak and comment buttons are never under the count of the 
     const top = await page.evaluate(
       ([x, y]) => {
         const at = document.elementFromPoint(x, y)?.closest('button')
-        return at?.matches('[data-act="page-say"], [data-part-say]') ? 'speak' : at?.matches('[data-act="page-pick"], [data-part-pick]') ? 'comment' : null
+        return at?.matches('[data-part-say]') ? 'speak' : at?.matches('[data-part-pick]') ? 'comment' : null
       },
       [b.x + b.width / 2, b.y + b.height / 2],
     )

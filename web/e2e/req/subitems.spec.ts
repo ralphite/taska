@@ -55,14 +55,14 @@ new task P2 now parent=T3 Collect the quotes
 
   // the item page lists the same subitem, marked Later, and counts it the same: 0/1
   await open(page, p, 'T1')
-  const sub = subRow(page, 2, 'Book the venue')
+  const sub = subRow(page, 'Book the venue')
   await expect(sub).toContainText('Book the venue')
   await expect(sub).toContainText('Later')
   await expect(section(page, 'Subitems')).toHaveText('Subitems \u00b7 0/1')
   // T3: its finished one is not marked Later (it is crossed out), its Later one is
   await open(page, p, 'T3')
-  await expect(subRow(page, 5, 'Collect the quotes')).toContainText('Later')
-  await expect(subRow(page, 4, 'Draft the release')).not.toContainText('Later')
+  await expect(subRow(page, 'Collect the quotes')).toContainText('Later')
+  await expect(subRow(page, 'Draft the release')).not.toContainText('Later')
   await expect(section(page, 'Subitems')).toHaveText('Subitems \u00b7 1/2')
   if (isDesk(page)) await expect(row(3)).toContainText('1/2') // the list beside it says the same
 })

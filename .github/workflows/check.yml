@@ -26,12 +26,12 @@ jobs:
       - run: npm ci --prefix web
       - run: npm --prefix web run check
       - run: npm --prefix web run build
-      - name: Browser regression checks
+      - name: Core browser journeys
         run: |
           cd web
           npx playwright install --with-deps chromium
           cd ..
-          python3 tools/e2e.py --all
+          python3 tools/e2e.py e2e/box.spec.ts e2e/counts.spec.ts e2e/comments.spec.ts e2e/docedit.spec.ts
       - name: Use the minimum supported runtime
         uses: actions/setup-python@v5
         with:

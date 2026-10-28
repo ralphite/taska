@@ -15,7 +15,7 @@ const DOC = {
 }
 const sidebar = (page: Page) => page.locator('#drawer')
 /** the phone's sheet over the page */
-const SHEET = '#overlay, [data-part="sheet"]'
+const SHEET = '[data-part="sheet"]'
 const sheet = (page: Page) => page.locator(SHEET).first()
 const width = async (page: Page, w: number) => {
   await page.setViewportSize({ width: w, height: 900 })
@@ -92,20 +92,20 @@ test('r743: once an item is in two columns it stays so: another item that would 
 })
 
 // r749: what the page is at one width: each part shown or not, and where (to 4px), whether two columns, what floats
-// each part by the old version's id or the rewrite's mark for the same part
+// Each part is located by its current page marker.
 const PARTS: [string, string][] = [
   ['drawer', '#drawer'],
   ['rail', '#rail'],
-  ['projBar', '#projBar, nav[aria-label="This project"]'],
-  ['mainHead', '#mainHead, [data-part="list-head"]'],
-  ['tabs', '#tabs, [data-part="tabs"]'],
-  ['itemsView', '#itemsView, [data-part="items"]'],
-  ['inputsView', '#inputsView, [data-part="inputs"]'],
-  ['detailView', '#detailView, [data-part="pane"]'],
-  ['itemTop', '#itemTop, [data-item-top]'],
+  ['projBar', 'nav[aria-label="This project"]'],
+  ['mainHead', '[data-part="list-head"]'],
+  ['tabs', '[data-part="tabs"]'],
+  ['itemsView', '[data-part="items"]'],
+  ['inputsView', '[data-part="inputs"]'],
+  ['detailView', '[data-part="pane"]'],
+  ['itemTop', '[data-item-top]'],
   ['itemTalk', TALK],
-  ['docBlocks', '#docBlocks, [data-doc-blocks]'],
-  ['projectView', '#projectView, [data-part="settings"]'],
+  ['docBlocks', '[data-doc-blocks]'],
+  ['projectView', '[data-part="settings"]'],
   ['foot', FOOT],
   ['composer', '#composer'],
   ['overlay', SHEET],

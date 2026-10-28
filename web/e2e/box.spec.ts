@@ -5,7 +5,7 @@ import { expect, test, type Page } from '@playwright/test'
 import { LOOP, isDesk, open, project } from './seed'
 import { FOOT, TALK, box as field, boxLine, duo, pane, recording, talk } from './ui'
 
-const fix = (page: Page) => page.locator('#fixBtn').or(page.getByRole('button', { name: 'Correct the words', exact: true })).filter({ visible: true }).first()
+const fix = (page: Page) => page.getByRole('button', { name: 'Correct the words', exact: true }).filter({ visible: true }).first()
 
 test.use({ launchOptions: { args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'] } })
 
@@ -15,7 +15,7 @@ test('a pasted link keeps the box still while you record and agents write (B481)
   const box = page.locator('#composer'),
     height = async () => Math.round((await box.boundingBox())?.height || 0)
   // on the desktop it fits the box's whole width, but not beside its buttons
-  await field(page).fill('http://localhost:8088/screenshot/2bc31034eb91e7e6ce3bd81f29dbaab7.png ')
+  await field(page).fill('https://example.test/screenshot/0123456789abcdef0123456789abcdef.png ')
   const before = await height()
   await box.getByRole('button', { name: 'Record a voice note', exact: true }).filter({ visible: true }).first().click()
   await expect(recording(page)).toBeVisible()
@@ -26,7 +26,7 @@ test('a pasted link keeps the box still while you record and agents write (B481)
     seen.add(await height())
   }
   expect([...seen]).toEqual([before])
-  await page.locator('#composer [data-act="rec-cancel"]').or(box.getByRole('button', { name: 'Discard the recording', exact: true })).first().click()
+  await box.getByRole('button', { name: 'Discard the recording', exact: true }).first().click()
 })
 
 test('what scrolls shows only around the top of the box: from its middle down the page covers it, and the end clears the box (F478)', async ({
@@ -171,7 +171,7 @@ test('T529 #24: on the desktop New input page, words selected in a voice note un
   })
   const id = said.res[0].split(' ')[1]
   await page.goto(p.url + 'new')
-  const note = page.locator(`#composeList [data-voice="${id}"], section[aria-label="You said lately"] [data-voice="${id}"]`).filter({ visible: true }).first()
+  const note = page.locator(`section[aria-label="You said lately"] [data-voice="${id}"]`).filter({ visible: true }).first()
   await expect(note).toBeVisible()
   await note.evaluate((el) => {
     const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT)

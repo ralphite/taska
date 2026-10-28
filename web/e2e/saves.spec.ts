@@ -17,8 +17,8 @@ async function addingTo(page: Page, words: string) {
   await page.keyboard.press('Shift+Enter')
   const row = page.getByText(words).first()
   await row.hover()
-  await page.locator('[data-act="input-more"]').or(page.getByRole('button', { name: /^More for / })).filter({ visible: true }).first().click()
-  await page.locator('[data-act="input-pick"][data-pick="input-append"]').or(sheetBody(page).getByRole('button', { name: /^Add more/ })).filter({ visible: true }).first().click()
+  await page.getByRole('button', { name: /^More for / }).filter({ visible: true }).first().click()
+  await sheetBody(page).getByRole('button', { name: /^Add more/ }).filter({ visible: true }).first().click()
 }
 
 test('what you add to an input goes to its own project, though you went to another while its screenshot went up (B527)', async ({
@@ -63,13 +63,13 @@ test('a change Taska refused says the words it carried and links to where it bel
   await para.locator(blockPick(page)).click()
   await page.keyboard.type('Who signs it off?')
   await page.keyboard.press('Shift+Enter')
-  await page.locator(`a[href="${p.url}T4"], [data-act="goto"]`).or(page.getByRole('button', { name: /^T0*4\b/ })).filter({ visible: true }).first().click() // elsewhere now
-  await page.locator('[data-act="failed-open"]').or(page.getByRole('button', { name: /not saved$/ })).filter({ visible: true }).first().click()
-  const link = page.locator('[data-act="failed-go"]').or(page.getByRole('link', { name: /your comment on D1/ })).first()
+  await page.locator(`a[href="${p.url}T4"]`).or(page.getByRole('button', { name: /^T0*4\b/ })).filter({ visible: true }).first().click() // elsewhere now
+  await page.getByRole('button', { name: /not saved$/ }).filter({ visible: true }).first().click()
+  const link = page.getByRole('link', { name: /your comment on D1/ }).first()
   await expect(link).toHaveText(/your comment on D1/)
   await expect(sheetBody(page)).toContainText('“Who signs it off?”')
   await link.click()
-  await expect(page.locator('#dlgBody, [role="dialog"]').filter({ visible: true })).toHaveCount(0)
+  await expect(page.locator('[role="dialog"]').filter({ visible: true })).toHaveCount(0)
   await expect(page).toHaveURL(new RegExp(p.url + 'D1'))
 })
 
@@ -109,9 +109,9 @@ test('D83 #1 (T550): your comment says Sending… beside its paragraph until Tas
   })
   let release = () => {}
   const held = new Promise<void>((ok) => (release = ok))
-  await page.route(/\/api\/(op|commands)\b/, async (route) => {
-    const o = route.request().postDataJSON() as { op?: string; commands?: { op?: string }[] } | null
-    if (o?.op !== 'dc' && !o?.commands?.some((x) => x?.op === 'dc')) return route.continue()
+  await page.route(/\/api\/commands\b/, async (route) => {
+    const o = route.request().postDataJSON() as { commands: { op: string }[] }
+    if (!o.commands.some((x) => x.op === 'dc')) return route.continue()
     await held
     await route.continue()
   })

@@ -153,12 +153,15 @@ test('r485 r497: the original words of a voice note float up when you point at i
     data: Buffer.from('not really sound'),
   })
   const f = (await up.json()) as { f: string }
+  // A sent note has already gone through transcription. Finish that step for the silent fixture before testing
+  // that opening its original words is a single read, with no request to transcribe it again.
+  await request.post(`${p.url}api/words?f=${encodeURIComponent(f.f)}`)
   await p.op({ op: 'input', text: 'About the export', files: [{ f: f.f, name: 'voice 0-07.webm', mime: 'audio/webm' }] })
   await open(page, p)
   if (!isDesk(page)) await tab(page, 'Inputs').click()
   const chip = voiceChip(page).locator('xpath=..')
   await expect(chip).toBeVisible()
-  const words = page.locator('[data-act="as-said"]').or(page.getByRole('button', { name: 'Original words', exact: true })).filter({ visible: true })
+  const words = page.getByRole('button', { name: 'Original words', exact: true }).filter({ visible: true })
   if (isDesk(page)) {
     await page.mouse.move(2, 2)
     await expect(words).toHaveCount(0)
@@ -180,10 +183,10 @@ test('r485 r497: the original words of a voice note float up when you point at i
   // B363); counted, not timed, so a busy machine does not fail it
   const asked: string[] = []
   page.on('request', (r) => {
-    if (/\/api\/(transcript|words)\b/.test(r.url())) asked.push(r.method())
+    if (/\/api\/words\b/.test(r.url())) asked.push(r.method())
   })
   await words.first().click()
   // what opens is the words' own pop-up (its title); the bar you clicked may stay while the pointer is on the note
-  await expect(page.locator('#dlgTitle').filter({ visible: true })).toHaveText('Original words', { timeout: 15000 })
+  await expect(page.getByRole('dialog', { name: 'Original words', exact: true })).toBeVisible({ timeout: 15000 })
   expect(asked).toEqual(['GET'])
 })

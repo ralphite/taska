@@ -9,7 +9,7 @@ import type { Project } from './seed'
 import { view } from './ui'
 
 /** the count on the Needs you view's chip */
-const needsCount = (page: Page) => page.locator('#list [data-views][data-v="wait"] .font-mono').or(view(page, 'Needs you').locator('.font-mono'))
+const needsCount = (page: Page) => view(page, 'Needs you').locator('.font-mono')
 
 const server = async (request: APIRequestContext, p: Project) => {
   const list = (await (await request.get('/api/projects')).json()) as { name: string; needs: number }[]
@@ -65,7 +65,7 @@ async function showsEverywhere(page: Page, p: Project, n: number) {
   if (isDesk(page))
     await expect(page.locator(`a[data-slug="${p.name}"] [title$="need you"]`), 'the sidebar').toHaveText(String(n))
   else {
-    await page.locator('#projBtn').or(page.getByRole('button', { name: 'Projects and settings', exact: true })).filter({ visible: true }).first().click()
+    await page.getByRole('button', { name: 'Projects and settings', exact: true }).filter({ visible: true }).first().click()
     // its badge alone (the title before it may end in digits too)
     const row = page.locator(`a[data-slug="${p.name}"]`).filter({ visible: true }).first()
     await expect(row.locator('span.rounded-full', { hasText: /need you$/ }), 'the project list').toHaveText(
@@ -121,6 +121,6 @@ I11 merge I3
   const list = (await (await request.get('/api/projects')).json()) as { needs: number }[]
   const sum = list.reduce((a, x) => a + x.needs, 0)
   if (isDesk(page))
-    await expect(page.locator('#sum').or(page.getByText(/ projects · /)).first()).toContainText(sum ? new RegExp(`(^|\\D)${sum} need you`) : 'nothing needs you')
+    await expect(page.getByText(/ projects · /).first()).toContainText(sum ? new RegExp(`(^|\\D)${sum} need you`) : 'nothing needs you')
   expect((await (await request.get('/api/needs')).json()).length).toBe(sum)
 })

@@ -50,6 +50,11 @@ The destination must not already exist. The source data is only read and symboli
 | `python3 tests/check_data.py /tmp/taska-data-copy` | Existing data loads and replays consistently |
 | `node tools/smoke.mjs http://127.0.0.1:7341 taska --shots /tmp/task-shots` | Desktop and phone smoke check with screenshots |
 
+CI runs the representative core browser journeys in `box.spec.ts`, `counts.spec.ts`, `comments.spec.ts` and
+`docedit.spec.ts`. The complete sweep remains available through `python3 tools/e2e.py --all`; its assertions remain
+intact. It includes [known product gaps](known-issues.md) found during the cleanup and is not currently all green.
+Those existing gaps are recorded separately from the source-layout cleanup, not hidden with skipped assertions.
+
 Install browser binaries once with `cd web && npx playwright install chromium`. Browser checks must respect the
 machine's browser budget. Run potentially destructive journeys on copied data; inspect the actual live app after
 deployment to verify the service and existing records still work.

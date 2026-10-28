@@ -24,13 +24,12 @@ test('r447 r467: the text of a document stays where it is when a comment comes, 
   const key = await para.getAttribute('data-key')
   await p.op({ op: 'dc', d: 1, key, quote: '', text: 'Who signs it off?' })
   const count = para.locator(threadCounts(page))
-  const rail = commentRail(page)
-  await expect(rail.or(count).first()).toBeVisible()
+  await expect(count).toBeVisible()
   const after = await para.boundingBox()
   expect(after?.x).toBe(before?.x)
   expect(after?.width).toBe(before?.width)
-  // on its right: the comment column, or the count beside the paragraph
-  const side = await ((await rail.count()) ? rail : count).first().boundingBox()
+  // The thread count is beside the paragraph, without shifting or narrowing its text.
+  const side = await count.boundingBox()
   const text = await para.locator('p, li').first().boundingBox()
   if (!side || !text) throw new Error('not drawn')
   expect(side.x).toBeGreaterThanOrEqual(text.x + text.width - 1)
@@ -233,35 +232,24 @@ D1 reply ¶2 An agent note to delete
   const para = docBlock(page, 'First part')
   await p.op({ op: 'dc', d: 1, key: await para.getAttribute('data-key'), quote: '', text: 'My note in the wrong place' })
   await expect.poll(async () => p.read('D1')).toContain('My note in the wrong place')
-  // the open page has both comments (it hears of the new one a moment later; later still on a slow machine)
-  const rail = commentRail(page)
+  // Both paragraphs show their comment count after the page hears of the new comment.
   await expect
     .poll(async () => {
-      if (await rail.count()) return (await rail.innerText()).match(/wrong place|agent note to delete/g)?.length ?? 0
       const ns = await threadCounts(page).allInnerTexts()
       return ns.reduce((a, t) => a + (Number(t.match(/\d+/)?.[0]) || 0), 0)
     })
     .toBe(2)
-  for (const words of ['My note in the wrong place', 'An agent note to delete']) {
-    const remove = page.getByRole('button', { name: 'Delete', exact: true })
-    const card = page.locator('.group').filter({ hasText: words }).filter({ has: remove }).last()
-    // the page shows the comment: in the comment column, or (a narrow page) behind a count beside its paragraph; wait
-    // for one of them, then open the thread if it is behind a count
-    const counts = threadCounts(page)
-    await expect(card.or(counts).first()).toBeVisible()
-    if (!(await card.isVisible()))
-      for (const c of await counts.all()) {
-        await c.click()
-        const open = await card.waitFor({ timeout: 5000 }).then(
-          () => true,
-          () => false,
-        )
-        if (open) break
-      }
+  for (const [paragraph, words] of [
+    ['First part', 'My note in the wrong place'],
+    ['Second part', 'An agent note to delete'],
+  ]) {
+    const block = docBlock(page, paragraph)
+    const card = block.locator('[data-dc]').filter({ hasText: words })
+    if (!(await card.isVisible())) await block.locator(threadCounts(page)).click()
     await expect(card).toBeVisible()
     await card.scrollIntoViewIfNeeded()
     await card.hover()
-    await card.locator(remove).click()
+    await card.getByRole('button', { name: 'Delete', exact: true }).click()
     await expect.poll(async () => p.read('D1')).not.toContain(words)
   }
 })

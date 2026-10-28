@@ -144,7 +144,7 @@ test('T529: the line under your comment on a document has even gaps between its 
   })
   await op(request, p, { op: 'dc', d: 1, para: 1, quote: '', text: 'Why not B?' })
   await open(page, p, 'T1')
-  const where = pane(page).locator('[data-act="doc-at"]').filter({ hasText: /^on D0*1$/ }).or(pane(page).getByRole('button', { name: /^on D0*1$/ }))
+  const where = pane(page).getByRole('button', { name: /^on D0*1$/ })
   await expect(where.filter({ visible: true })).toHaveCount(1)
   // each word of the line (You · on D1 · 14:05), where it starts and ends; the gaps between them
   const words = await where.filter({ visible: true }).evaluate((b) => {
@@ -198,28 +198,24 @@ test('T529: on an input moved to another project, Original words floats beside i
     mode: 'append',
     text: 'And a page on the filters, with a picture of each one and what it does to the export, in their order',
   })
-  // moved as the page moves it (the rewrite: api/move-input; the old version: api/move)
-  let answer = await request.post(`${p.url}api/move-input`, { data: { id: rid, to: q.name } })
-  if (answer.status() === 404) answer = await request.post(`${p.url}api/move`, { data: { id: rid, to: q.name } })
+  const answer = await request.post(`${p.url}api/move-input`, { data: { id: rid, to: q.name } })
   const moved = (await answer.json()) as { ok: boolean }
   expect(moved.ok).toBe(true)
   await open(page, p, 'T4')
-  // what you said there: the old version marks it [data-src], the rewrite its words [data-voice]
-  const play = page.locator('[data-act="play"]').or(page.getByRole('button', { name: /^Play the voice note/ }))
-  const mine = pane(page)
-    .locator(`[data-src="${rid}"]`)
-    .or(pane(page).locator('div').filter({ has: page.locator(`[data-voice="${rid}"]`) }).filter({ has: play }).last())
+  // The input's words and its voice note share one conversation card.
+  const play = page.getByRole('button', { name: 'Play voice 0-07.webm', exact: true })
+  const mine = pane(page).locator('div').filter({ has: page.locator(`[data-voice="${rid}"]`) }).filter({ has: play }).last()
     .filter({ visible: true })
     .first()
-  const words = mine.locator(`> div, [data-voice="${rid}"]`).first()
+  const words = mine.locator(`[data-voice="${rid}"]`)
   await expect(words).toBeVisible()
   await mine.locator(play).first().hover()
-  const bar = mine.locator('[data-act="as-said"]').or(mine.getByRole('button', { name: 'Original words', exact: true })).filter({ visible: true })
+  const bar = mine.getByRole('button', { name: 'Original words', exact: true }).filter({ visible: true })
   await expect(bar).toHaveCount(1)
   const [b, w] = [await bar.locator('xpath=..').boundingBox(), await words.boundingBox()] // the bar's dark pill
   if (!b || !w) throw new Error('not drawn')
   const apart = b.y >= w.y + w.height || b.y + b.height <= w.y || b.x >= w.x + w.width || b.x + b.width <= w.x
   expect(apart, `the bar ${JSON.stringify(b)} is clear of your words ${JSON.stringify(w)}`).toBe(true)
   await bar.click()
-  await expect(page.locator('#dlgTitle').filter({ visible: true })).toHaveText('Original words', { timeout: 15000 })
+  await expect(page.getByRole('dialog', { name: 'Original words', exact: true })).toBeVisible({ timeout: 15000 })
 })

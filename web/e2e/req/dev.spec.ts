@@ -29,7 +29,7 @@ test('r696 r727 D71: the dashboard opens on this computer and is never given thr
 }) => {
   await page.goto('/dev/dashboard')
   await expect(page.getByText('things you did')).toBeVisible()
-  await page.getByRole('button', { name: 'Today' }).click()
+  await page.locator('main > header').getByRole('button', { name: 'Today', exact: true }).click()
   await expect(page.getByText('By hour')).toBeVisible()
   const through = await request.get(`${baseURL}/dev/api/dashboard`, { headers: { 'X-Forwarded-Host': 'x.example' } })
   expect(through.status()).not.toBe(200)

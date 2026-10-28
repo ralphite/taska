@@ -2,11 +2,11 @@
 // guards: src/features/ src/pages/ src/ui/ src/app/keys.ts src/app/actions.ts src/app/docs/ src/app/page/ src/model/docs.ts src/model/docTicks.ts src/model/markdown.ts
 import { expect, test, type Page } from '@playwright/test'
 import { LOOP, isDesk, open, project } from './seed'
-import { blockPick, boxLine, commentMode, docBlock, docCard, itemMenu, menuChoice, pageCount, pane, partPick, row, talk, threadCounts, threadPop } from './ui'
+import { blockPick, boxLine, commentMode, docBlock, docCard, itemMenu, menuChoice, pageCount, pane, partPick, row, talk, threadPop } from './ui'
 
 const frameOf = (page: Page) => pane(page).frameLocator('iframe')
-const search = (page: Page) => page.locator('#q, input[type="search"]').filter({ visible: true }).first()
-const sheet = (page: Page) => page.locator('#overlay, [data-part="sheet"]').first()
+const search = (page: Page) => page.locator('input[type="search"]').filter({ visible: true }).first()
+const sheet = (page: Page) => page.locator('[data-part="sheet"]').first()
 
 test.beforeEach(({ page }) => {
   test.skip(!isDesk(page), 'desktop only')
@@ -51,22 +51,16 @@ test('r447 r503: a comment on a paragraph of a document is written in the one bo
   const para = docBlock(page, 'Second part')
   await para.hover()
   await para.locator(blockPick(page)).click()
-  await expect(page.locator('#docBlocks #composer, [data-doc-blocks] #composer')).toHaveCount(0) // the text never moves: the box stays where it is
-  await expect(page.locator('#foot #composer, footer #composer').first()).toBeVisible()
+  await expect(page.locator('[data-doc-blocks] #composer')).toHaveCount(0) // the text never moves: the box stays where it is
+  await expect(page.locator('footer #composer').first()).toBeVisible()
   await page.keyboard.type('Say who reviews it')
   await page.keyboard.press('Shift+Enter')
   await expect.poll(async () => p.read('D1')).toContain('Say who reviews it')
-  // beside the text: in the comment column when the pane is wide, else behind the count beside its paragraph (B349)
-  const rail = page.locator('aside[aria-label="Comments"]')
-  // the first comment brings the column (or the count) with the answer: wait for one of them before choosing
-  await expect(rail.or(para.locator(threadCounts(page))).first()).toBeVisible()
-  if (await rail.count()) await expect(rail).toContainText('Say who reviews it')
-  else {
-    // a comment you just posted opens beside its paragraph; otherwise its count opens it
-    if (!(await para.innerText()).includes('Say who reviews it'))
-      await para.locator(threadCounts(page)).click()
-    await expect(para).toContainText('Say who reviews it')
-  }
+  // The count beside this paragraph opens its comment in place; posting it may have opened it already.
+  const count = para.locator('button[data-thread-count]')
+  await expect(count).toBeVisible()
+  if (!(await para.innerText()).includes('Say who reviews it')) await count.click()
+  await expect(para).toContainText('Say who reviews it')
 })
 
 test('two places picked in one paragraph keep two threads; an answer goes to the one still waiting (B469)', async ({
@@ -85,7 +79,7 @@ test('two places picked in one paragraph keep two threads; an answer goes to the
   for (const quote of ['apples', 'pears']) await p.op({ op: 'dc', d: 1, para: 2, quote, text: `About ${quote}` })
   await p.doAs('D1 reply ¶2 The apples answer')
   await open(page, p, 'D1')
-  const counts = page.locator('[data-act="doc-thread"][data-key*="#"], [data-doc-blocks] button[data-thread-count*="#"]').filter({ visible: true })
+  const counts = page.locator('[data-doc-blocks] button[data-thread-count*="#"]').filter({ visible: true })
   await expect(counts).toHaveCount(2)
   await counts.first().click()
   const thread = page.locator('[data-thread]').filter({ visible: true })
@@ -101,10 +95,10 @@ test("r641: a row's buttons sit side by side, with no empty room where one does 
 }) => {
   const p = await project(request, LOOP)
   await open(page, p, '?status=all')
-  for (const it of await page.locator('#list [data-act="open"], #list article[data-n] .group.cursor-pointer').filter({ visible: true }).all()) {
+  for (const it of await page.locator('#list article[data-n] .group.cursor-pointer').filter({ visible: true }).all()) {
     await it.hover()
     const xs = await page
-      .locator('#list [data-act="swipe"], #list [data-act="reopen"], #list [data-row-acts] button')
+      .locator('#list [data-row-acts] button')
       .filter({ visible: true })
       .evaluateAll((bs) => bs.map((b) => [b.getBoundingClientRect().left, b.getBoundingClientRect().right]))
     for (let i = 1; i < xs.length; i++) expect(xs[i][0] - xs[i - 1][1]).toBeLessThan(8)
@@ -149,9 +143,9 @@ test('a web page document is the page alone: no frame or line over it, its colum
   expect(await frame.evaluate((e) => getComputedStyle(e).borderTopWidth)).toBe('0px')
   await expect(pane(page).getByText(/^on T4/)).toBeHidden()
   // B505 (#6505): the page is the column beside its item's conversation
-  const top = await page.locator('#itemTop, [data-item-top]').filter({ visible: true }).first().boundingBox(),
+  const top = await page.locator('[data-item-top]').filter({ visible: true }).first().boundingBox(),
     f = await frame.boundingBox(),
-    count = await page.locator('[data-act="doc-thread"], button[data-count]').filter({ visible: true }).first().boundingBox()
+    count = await page.locator('button[data-count]').filter({ visible: true }).first().boundingBox()
   if (!top || !f || !count) throw new Error('not drawn')
   expect(f.width).toBeGreaterThan(top.width - 100) // its column's width, not a column of text
   expect(count.x).toBeGreaterThanOrEqual(f.x)
@@ -160,7 +154,7 @@ test('a web page document is the page alone: no frame or line over it, its colum
   expect(Math.abs(f.x - top.x)).toBeLessThan(2)
   expect(Math.abs(f.y - top.y)).toBeLessThan(2)
   // the comments on the whole page sit in its top right corner
-  const whole = await page.locator('[data-act="doc-thread"][data-key="doc"], button[data-count="doc"]').filter({ visible: true }).boundingBox()
+  const whole = await page.getByRole('button', { name: '1 comment on the document', exact: true }).boundingBox()
   if (!whole) throw new Error('no whole-page comments')
   expect(whole.y).toBeGreaterThanOrEqual(f.y)
   expect(whole.x + whole.width).toBeLessThanOrEqual(f.x + f.width)
@@ -250,8 +244,8 @@ test('another document opens out of Comment mode (B500)', async ({ page, request
   await mode.click()
   await expect(mode).toHaveAttribute('aria-pressed', 'true')
   // within the page, as you go: back to the item, then its other document
-  await page.locator('[data-act="doc-close"]').or(page.getByRole('button', { name: /^Back to T0*4/ })).filter({ visible: true }).first().click()
-  await page.locator('[data-act="doc-open"][data-d="2"]').or(docCard(page, 'Other page')).filter({ visible: true }).first().click()
+  await page.getByRole('button', { name: /^Back to T0*4/ }).filter({ visible: true }).first().click()
+  await docCard(page, 'Other page').filter({ visible: true }).first().click()
   await expect(frameOf(page).getByText('Nothing to see here.')).toBeVisible()
   await expect(commentMode(page)).toHaveAttribute('aria-pressed', 'false')
 })
@@ -336,7 +330,7 @@ test('D80 #14: a comment on words since changed in the document says so in the t
   const conversation = talk(page)
   await expect(conversation).toContainText('Who signs it off?')
   await expect(conversation).toContainText('Original text changed')
-  await expect(conversation.locator('[data-act="doc-at"].line-through, button.line-through')).toHaveCount(1)
+  await expect(conversation.locator('button.line-through')).toHaveCount(1)
 })
 
 test("D81 #20: Done is one icon wherever it is offered: the item bar's is the same as its row's", async ({
@@ -350,8 +344,8 @@ test("D81 #20: Done is one icon wherever it is offered: the item bar's is the sa
       .locator('svg')
       .first()
       .evaluate((s) => s.innerHTML)
-  const bar = await svg(page.locator('#dActs [data-act="status"][data-v="done"]').or(page.locator('[data-part="pane"] > header').getByRole('button', { name: /^Done/ })).first())
-  const inRow = await svg(page.locator('#list article[data-n="1"] [data-act="swipe"][data-v="done"], #list article[data-n="1"] [data-row-acts] button[aria-label="Done"]').first())
+  const bar = await svg(page.locator('[data-part="pane"] > header').getByRole('button', { name: /^Done/ }).first())
+  const inRow = await svg(page.locator('#list article[data-n="1"] [data-row-acts] button[aria-label="Done"]').first())
   expect(bar).toBe(inRow)
 })
 
@@ -374,8 +368,8 @@ test('D77 #3: editing an item with a long description and a long talk, its next 
   })
   await open(page, p, 'T1')
   await itemMenu(page).click()
-  await page.locator('[data-act="edit"]').or(menuChoice(page, /^Edit\b/)).filter({ visible: true }).first().click()
-  const save = page.locator('[data-act="edit-save"]').or(pane(page).getByRole('button', { name: 'Save', exact: true })).filter({ visible: true }).first()
+  await menuChoice(page, /^Edit\b/).filter({ visible: true }).first().click()
+  const save = pane(page).getByRole('button', { name: 'Save', exact: true }).filter({ visible: true }).first()
   await expect(save).toBeVisible()
   const shown = await save.evaluate((e) => {
     const r = e.getBoundingClientRect(),

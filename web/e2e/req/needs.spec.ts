@@ -3,7 +3,7 @@
 // guards: src/features/list/ src/features/item/ src/app/page/sheets.ts src/ui/ src/model/items.ts src/model/words.ts src/model/project.ts src/pages/DetailContainer.tsx server/taska/domain/ server/taska/page_api/
 import { expect, test, type Locator, type Page } from '@playwright/test'
 import { isDesk, open, project } from '../seed'
-import { box, fieldChoice, pane, paneHead, row, statusChip, talk, tip, view } from '../ui'
+import { box, pane, paneHead, row, sheetBody, statusChip, talk, tip, view } from '../ui'
 
 test('r68 r326: work an agent is blocked on waits on you: in Needs you, with what it needs and Answer', async ({
   page,
@@ -66,9 +66,9 @@ for (const [kind, words] of [
     // display only: the item is still in progress, and the chip's menu ticks that
     expect((await p.read('T1')).split('\n')[0]).toMatch(/ doing /)
     await chip(page).click()
-    const doing = fieldChoice(page, 'status', 'doing')
+    const doing = sheetBody(page).getByRole('button', { name: /In progress/ })
     await expect(doing).toHaveAttribute('aria-pressed', 'true')
-    await expect(page.locator('[data-f="status"][aria-pressed="true"]')).toHaveCount(1)
+    await expect(sheetBody(page).locator('button[aria-pressed="true"]')).toHaveCount(1)
     await page.keyboard.press('Escape')
     await expect(doing).toHaveCount(0)
     // you answer: it reads its status again, on its page and its row

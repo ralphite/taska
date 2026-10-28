@@ -90,7 +90,7 @@ test("D82 #8: a picture attached to a message shows a spinner while it loads and
     await r.abort()
   })
   await open(page, p, 'T4')
-  const thumb = talk(page).locator(`[data-act="view"][data-f="${f}"]`).or(talk(page).getByRole('button', { name: 'shot.png', exact: true })).filter({ visible: true }).first()
+  const thumb = talk(page).getByRole('button', { name: 'shot.png', exact: true }).filter({ visible: true }).first()
   await expect(thumb.locator('.animate-spin')).toBeVisible()
   how = 'fail'
   await expect(thumb.locator('img')).toHaveAttribute('data-failed', '')

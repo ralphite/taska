@@ -5,10 +5,10 @@ import { expect, test } from '@playwright/test'
 import { isDesk, open, project } from './seed'
 import { needAct, sheetBody } from './ui'
 
-/** a row's own part that a click opens (the old version's [data-act="open"], the rewrite's row inside its article) */
-const HIT = (n: number | string) => `#list [data-act="open"][data-n="${n}"], #list article[data-n="${n}"] .group.cursor-pointer`
+/** The clickable content of an item row. */
+const HIT = (n: number | string) => `#list article[data-n="${n}"] .group.cursor-pointer`
 /** the buttons a row shows under the pointer */
-const ACTS = '[data-act="swipe"], [data-row-acts] button'
+const ACTS = '[data-row-acts] button'
 
 test.beforeEach(({ page }) => test.skip(!isDesk(page), 'a pointer and a keyboard: the desktop'))
 const SEED = {
@@ -121,14 +121,14 @@ test('D84 #7 #8: Settings tells the open section from the one under the pointer;
 }) => {
   const p = await project(request, SEED)
   await open(page, p, 'agents')
-  const cur = page.locator('[data-act="psec"][aria-current="page"], [data-part="settings"] a[aria-current="page"]').filter({ visible: true }).first()
-  const other = page.locator('[data-act="psec"]:not([aria-current]), [data-part="settings"] a:not([aria-current])').filter({ visible: true }).first()
+  const cur = page.locator('[data-part="settings"] a[aria-current="page"]').filter({ visible: true }).first()
+  const other = page.locator('[data-part="settings"] a:not([aria-current])').filter({ visible: true }).first()
   await other.hover()
   expect(await cur.evaluate((e) => getComputedStyle(e).backgroundColor)).not.toBe(
     await other.evaluate((e) => getComputedStyle(e).backgroundColor),
   )
   await open(page, p)
-  await expect(page.locator('[data-act="filters"]').or(page.getByRole('button', { name: 'Filters', exact: true })).filter({ visible: true }).first()).toHaveAttribute(
+  await expect(page.getByRole('button', { name: 'Filters', exact: true }).filter({ visible: true }).first()).toHaveAttribute(
     'title',
     /^Filters/,
   )

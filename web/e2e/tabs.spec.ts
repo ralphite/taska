@@ -23,9 +23,7 @@ test('many tabs in the background do not hold up the one you look at', async ({ 
   await open(page, p)
   const ms = await page.evaluate(async (url) => {
     const t = performance.now()
-    // the project as the page reads it (the rewrite: api/view; the old version: api/state)
-    const r = await fetch(url + 'api/view', { cache: 'no-store' })
-    if (r.status === 404) await fetch(url + 'api/state', { cache: 'no-store' })
+    await fetch(url + 'api/view', { cache: 'no-store' })
     return performance.now() - t
   }, p.url)
   expect(ms).toBeLessThan(3000)
@@ -37,7 +35,7 @@ test('a project opens again from what the browser kept, even with no network', a
   const p = await project(request, LOOP)
   await open(page, p)
   await page.waitForFunction(() => navigator.serviceWorker?.controller != null, null, { timeout: 15_000 })
-  await page.reload() // opened once more, now through the service worker (the old app keeps the page from then on)
+  await page.reload() // opened once more, now through the service worker
   await expect(page.locator('#list')).toContainText('Write the user docs')
   await page.waitForTimeout(2500) // the copy is put away a moment after the page draws
   await context.setOffline(true)

@@ -1,6 +1,5 @@
-// Each check gets a project of its own, filled through the agent interface (the same on the old version and on
-// the rewrite), and changed as you would from the page. The checks find things by what you see: roles, names,
-// words; so the same check runs on both versions (app/tools/e2e.py --against).
+// Each check gets a project of its own, filled through the agent interface and changed as you would from the page.
+// The checks find things by what you see: roles, names and words.
 import type { APIRequestContext, Page } from '@playwright/test'
 
 let n = 0
@@ -25,15 +24,11 @@ export interface Seed {
   /** What the agent writes after that. */
   then?: string
 }
-/** A change sent as the page sends it: the rewrite takes commands (api/commands), the old version one op (api/op). */
+/** A change sent through the page's command endpoint. */
 export async function pageOp(request: APIRequestContext, base: string, command: Record<string, unknown>) {
   const r = await request.post(`${base}api/commands`, { data: { id: `e2e-${process.pid}-${Date.now().toString(36)}-${++id}`, commands: [command] } })
-  if (r.status() !== 404) {
-    const d = (await r.json()) as { ok: boolean; results?: string[] }
-    return { ok: d.ok, res: d.results || [] }
-  }
-  const d = (await (await request.post(`${base}api/op`, { data: command })).json()) as { ok: boolean; res?: string[] }
-  return { ok: d.ok, res: d.res || [] }
+  const d = (await r.json()) as { ok: boolean; results?: string[] }
+  return { ok: d.ok, res: d.results || [] }
 }
 export async function project(request: APIRequestContext, seed: Seed = {}): Promise<Project> {
   const title = `e2e ${Date.now().toString(36)} ${++n}`
@@ -76,11 +71,11 @@ B2 done Fixed: the export now uses the active filter
 `,
 }
 export const isDesk = (page: Page) => (page.viewportSize()?.width || 0) >= 1024
-/** The page at a path of the project, once it is drawn: its list, its box, or the item or document it opens. */
+/** The page at a path of the project, once its list, box, settings or side page is drawn. */
 export async function open(page: Page, p: Project, path = '') {
   await page.goto(p.url + path)
   await drawn(page)
 }
 export async function drawn(page: Page) {
-  await page.locator('#list article[data-n], #list [data-zone], #composer textarea').filter({ visible: true }).first().waitFor()
+  await page.locator('#list article[data-n], #list [data-zone], #composer textarea, [data-part="settings"], [data-part="items"] h2').filter({ visible: true }).first().waitFor()
 }
