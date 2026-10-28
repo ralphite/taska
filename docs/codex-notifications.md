@@ -18,6 +18,14 @@ success inside Codex does not establish external access from Taska. Do not bypas
 authorization, impersonate a signed process, inject into private IPC, or patch the app.
 A desktop runtime migration or global app restart is not an approved next step.
 
+The installed desktop's public thread deep link accepts a prompt, but its handler only
+sets `prefillPrompt` and focuses the composer; it does not submit or steer. Desktop UI
+sending was explicitly approved for a one-session pilot, with an existing-draft stop
+condition. The real computer-use attempt then refused access to the Codex application
+for safety reasons. This route remains unverified and cannot be replaced with scripts
+that bypass the same restriction. Do not treat a prefilled draft as delivery. A permitted
+desktop automation interface or a supported external message interface is still required.
+
 ## What prevents idle model work
 
 - The canonical `/agent` and `/skill` text, plus installed agent skills, prohibit model
