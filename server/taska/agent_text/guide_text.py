@@ -146,7 +146,7 @@ SKILL = (
     '     scheduled checks for messages are forbidden at any frequency, including hourly or daily.\n'
     '   - No shell polling loops or repeated reads while waiting. Resume only for a real user message or a\n'
     '     confirmed new-work event. If delivery is unavailable, report it once and end the turn.\n'
-    '   - Codex: automatic updates use the verified queue-hook setup below. Do not use a second CLI writer\n'
+    '   - Codex: automatic updates use the native queue setup below. Do not use a second CLI writer\n'
     '     or a relay model. Other agents do not use this Codex-specific transport.\n'
     '5. **Need the user?** Post `B03 block <what you need>` or `B03 ask <question>`, then take the next item.\n'
     '   /next brings it back once the user replies. When the answer is a choice, list it under the question as\n'
@@ -161,35 +161,40 @@ SKILL = (
     '7. Items you create start as proposed until the user approves them. Never treat a suggestion as decided.\n'
 )
 
-CODEX_DELIVERY = """
-## Codex desktop: event delivery (validated 2026-10-28)
+CODEX_WORKERS = """
+## Codex: visible worker sessions
 
-Taska sends committed user updates to one explicitly bound existing session. While busy,
-the session receives them at its next normal tool or stop boundary; while idle, a native
-queued message starts the turn. No new update means no model call, timer or message polling.
+For Taska work, the main session creates or reuses 1-3 visible worker sessions in the
+same Codex project. These workers are ordinary sessions the user can open, not hidden
+subagents. The main session assigns work and aims to remain idle; it sends new requirements
+to the relevant worker session, steering it when it is busy.
 
-Setup once, only for a project/session the user authorized:
-1. In the Taska source checkout, run `python3 tools/install_codex_delivery_hook.py` and
-   `python3 tools/install_agent_guard.py`. Review and trust the hooks through Codex's official
-   `/hooks` flow. Installation alone is insufficient; never edit trust records or bypass review.
-2. A previously loaded session can retain its old hooks. After its work ends, use the official
-   archive and unarchive tools on that same session to reload it, preserving its history.
-   Do not restart the whole desktop app or interrupt unrelated work.
-3. POST to BASE/api/codex-notifications with JSON:
-   {"threadId":"<existing-session-UUID>","mode":"queue-hook","pilot":true}
-   Here BASE is the chosen project's local URL. Never guess or replace another session binding.
-4. Save one authorized real update while the session is working. Verify that SAME turn receives
-   it, the notification records contextSubmittedAt and received, and the native queue is empty.
-   An enqueue receipt or receipt in a later turn alone does not prove busy delivery.
+Worker sessions read Taska and write progress, questions, and results directly to Taska.
+A worker may use subagents when useful for its task.
 
-On receipt, read the saved events and immediately POST {"ack":"<notification-id>"} to the
-notification's endpoint. Receipt is not completion: apply the update within the user's scope,
-write progress to Taska, and end the turn when finished. Never call the hook endpoint manually
-to check for messages. If delivery fails, report the concrete failure once; no polling fallback.
-This integration was validated on local Codex desktop; other agents need their own transport.
+Reuse suitable worker sessions and match assignments to actual work; avoid duplicate
+execution and creating workers with no task.
 """
-AGENT += CODEX_DELIVERY.replace("{", "{{").replace("}", "}}")
-SKILL += CODEX_DELIVERY
+
+CODEX_DELIVERY = """
+## Codex desktop: event delivery
+
+Taska sends a short notice through the native Codex queue and requests desktop processing.
+An idle session starts a turn; a busy session handles the queued notice after its current
+turn ends. No delivery hook or busy/idle check is needed. No new update means no model call,
+timer or message polling. This Codex-specific transport does not change other agents.
+
+Bind the existing session authorized for this project by POSTing to BASE/api/codex-notifications:
+{"threadId":"<existing-session-UUID>"}
+Use the project's existing connection for BASE. No hook installation or reload is required.
+
+On a Taska notice, use the existing project connection to read Taska and distribute the work
+as described above. Workers write progress, questions, and results directly to Taska.
+There is no separate notification acknowledgement. When nothing needs action, end the turn.
+If delivery fails, report it once; no polling fallback or scheduled retry.
+"""
+AGENT += CODEX_WORKERS + CODEX_DELIVERY.replace("{", "{{").replace("}", "}}")
+SKILL += CODEX_WORKERS + CODEX_DELIVERY
 
 CONNECT = (
     '#!/bin/sh\n'

@@ -106,8 +106,8 @@ and its template disables startup and keepalive. Do not re-enable it.
 
 `python3 tools/install_agent_guard.py` installs a command-only PreToolUse guard for local Codex and Claude Code,
 preserving existing settings and hooks. It rejects recognizable scheduled message checks at any frequency and
-Taska queue polling loops. It performs no model calls, has no timer, and does not replace the notification
-outbox's committed-event and duplicate-delivery checks. Tool hooks are a guardrail, not an OS-wide sandbox;
+Taska queue polling loops. It performs no model calls, has no timer, and is separate from Codex event
+delivery, which requires no receiver hook. Tool hooks are a guardrail, not an OS-wide sandbox;
 other runtimes and tool paths that bypass hooks are outside their coverage. Validate actual hook interception
 after installing or changing a harness; a unit test alone does not establish runtime coverage.
 Codex requires user review and trust of new non-managed hooks through `/hooks` before execution; installing

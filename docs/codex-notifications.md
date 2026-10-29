@@ -1,91 +1,47 @@
 # Codex event delivery
 
-## Verified behavior (2026-10-28)
+A committed user update sends this short notice to the project's bound Codex session:
 
-A real Taska browser update reached an existing, busy Codex desktop session in the same
-active turn. The outbox recorded `contextSubmittedAt`, the agent acknowledged `received`,
-and the native queue was empty afterward. Later tool and stop boundaries did not repeat
-that update. This satisfies normal message processing, without forcing tool interruption.
-After deploying and restarting Taska, another real browser update also woke the idle
-session, received its acknowledgement, and left the native queue empty. Restart did not
-replay either previously acknowledged notification. The release passed 55 server tests
-and 41 frontend tests, including the empty-inbox and no-idle-work checks.
+> Taska has new messages. Please read and handle them.
 
-The first attempt reached the next turn only: the already loaded session retained its
-old hook configuration. After it became idle, official archive and unarchive operations
-reloaded that same session and its history. The next busy-session attempt passed. Trusting
-hooks on disk alone does not prove a loaded desktop session is using them.
+The runtime uses the equivalent Chinese wording. The notice contains no URL, project name,
+identity assumption, event contents, sequence number or acknowledgement request. The agent
+uses its existing Taska connection to read the work and writes progress through the normal
+Taska interface.
 
-## Setup
+## Transport
 
-1. From this checkout, run `python3 tools/install_codex_delivery_hook.py` and
-   `python3 tools/install_agent_guard.py`. Both preserve unrelated hook definitions.
-2. Review and trust new definitions in the official Codex `/hooks` flow. Never edit trust
-   records or bypass review. See the [official hook guide](https://learn.chatgpt.com/docs/hooks).
-3. Reload a previously loaded session only after it is idle, using the official archive
-   and unarchive tools. Keep the same session ID and history; no global app restart is needed.
-4. Bind only the user-authorized project and existing session with
-   `POST /p/<project>/api/codex-notifications`:
-   `{"threadId":"<session-UUID>","mode":"queue-hook","pilot":true}`.
-5. Verify an authorized real update reaches that session while busy. A queue receipt,
-   installation success, or receipt only in a later turn does not establish busy delivery.
+The event handler starts a bounded ordinary-code send outside the project lock: `codex queue`
+followed by `open -g codex://threads/wake/<thread-id>`. Codex owns the queue. An idle session
+starts processing; a busy session handles the queued message after its current turn ends.
+Taska does not inspect busy/idle state, maintain a notification outbox, deduplicate signals,
+claim notifications, request receipts, poll, or retry on a timer. Repeated signals are allowed.
+Agent writes do not trigger another notification. A send failure is reported in Taska.
 
-The canonical `/agent`, `/skill`, and installed Taska skills include these Codex-specific
-instructions. Do not apply this adapter to Claude Code or other runtimes. Do not infer
-bindings for other projects from the one-session acceptance.
+`GET /p/<project>/api/codex-notifications` reads the binding and any reported failure.
+`POST` with `{"threadId":"<existing-session-UUID>"}` explicitly binds or rebinds a session;
+`{"enabled":false}` disables sending. Existing bindings are preserved when the old delivery
+ledger is removed. Startup does not replay work. Copies of a bound database cannot send to
+the original session because the stored project path must match.
 
-## Delivery and ownership
+No delivery hook is installed or required. The old receiver file only returns an empty
+result so sessions with a cached hook command can finish safely. Its installer is removed.
+Claude Code's transport, settings and installed instructions are unchanged.
 
-The committed project journal is the outbox source. An event signals a deterministic
-worker, which queues the message through the public `codex queue` command and publishes
-a local pointer under the project data folder. The desktop wake link handles idle turns.
-No second CLI writer resumes the session, and no relay model is involved.
+## Visible worker sessions
 
-At normal PreToolUse, PostToolUse, and Stop boundaries, the trusted hook consumes pushed
-pointers for its own session. An empty inbox performs no HTTP request and emits no context.
-The hook claims the exact native queue entry with public `thread/queue/delete`:
+The Codex instructions ask the main session to create or reuse 1-3 ordinary, user-visible
+worker sessions in the same Codex project. The main session assigns work, stays available,
+and sends new requirements to the relevant worker, steering it while busy. Workers read
+and write Taska directly; the main session does not aggregate their results. A worker may
+use subagents when useful. Reuse and task-based allocation avoid idle or duplicate workers.
+This is agent guidance, not a new Taska orchestration service.
 
-- Confirmed deletion: hand the update to the active turn as hook context.
-- Already consumed by the desktop: the native turn owns delivery; emit no duplicate.
-- Uncertain claim: retain a visible failure for reconciliation; never blindly resend.
+## Evidence
 
-Each hook emits one claimed message before attempting another fallible claim. A later
-failure cannot discard an earlier successful claim. Stop continues the model only for an
-actual new update. The agent acknowledges receipt separately from completing the work.
+On 2026-10-29, a real desktop session received a native queued message while its first turn
+was busy. Once that turn completed, the next turn started automatically and acknowledged
+the test. The native queue was empty afterward and no hook pointer was used. Both the
+initial idle wake and busy-to-next-turn delivery worked through `queue + wake` alone.
 
-This is not a universal exactly-once transaction across Codex and Taska. A crash after
-queue deletion but before model context delivery can leave an unacknowledged `context`
-record. Reconcile it explicitly; do not turn missing acknowledgement into timed retries.
-
-## API
-
-The project notification endpoint supports:
-
-- `GET`: binding and delivery records; `?id=<notification-id>` reads saved events.
-- `POST {"ack":"<notification-id>"}`: receipt, not task completion.
-- `POST {"hook":"<notification-id>","sessionId":"<session-UUID>"}`: hook claim of a pushed pointer.
-  Agents must not call this to check for messages.
-- `POST {"retry":true}`: explicit retry of known pending or failed work.
-- `POST {"enabled":false}`: disable delivery.
-
-Queue-only activation remains refused. Failed deliveries create a visible Taska item.
-Already sent work is not sent again merely because receipt has not arrived. Data copies
-cannot send to the original session because the persisted project path must match.
-
-## Preventing idle model work
-
-- No timer, heartbeat, cron, model relay or repeated message query exists in this adapter.
-  The worker waits on a threading event without a timeout. Only actual events, startup
-  recovery of known work, and explicit retry signal it.
-- The final delivery boundary requires nonempty, unconsumed committed user events.
-  Agent replies, duplicate signals, fabricated batches and empty queues cannot call Codex.
-- The retired `tools/waker.py` refuses to run; its LaunchAgent remains disabled.
-- The command-only PreToolUse guard rejects recognizable scheduled message checks and
-  shell queue-polling loops. After official trust, the live Codex probe was denied before
-  its deliberately nonexistent HTTP endpoint was contacted.
-- `npm --prefix web run check` includes instruction, outbox, hook, retired-entrypoint and
-  schedule-audit regressions. There are no hourly or daily exemptions for idle model checks.
-
-Hooks are a runtime guardrail, not an OS-wide sandbox. Claude Code's guard configuration
-is installed, but its actual interception is not covered by this Codex acceptance. Other
-runtimes currently receive the rule through instructions. Do not claim universal enforcement.
+Acceptance of the full Taska-to-visible-worker workflow is recorded after deployment.

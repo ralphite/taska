@@ -80,11 +80,23 @@ class WhatAgentsAreTold(unittest.TestCase):
             self.assertRegex(self.texts[name], r"Never wait in\s+(the\s+)?foreground, poll, or set a timer", name)
         self.assertIn("never wait, poll or set a timer", self.texts["next"])
 
-    def test_codex_setup_requires_trust_reload_and_real_busy_receipt(self) -> None:
+    def test_codex_uses_visible_worker_sessions(self) -> None:
         for name in ("agent", "skill"):
-            for phrase in ("queue-hook", "/hooks", "archive and unarchive", "SAME turn",
-                           "contextSubmittedAt", "no model call", "no polling fallback"):
+            text = self.texts[name]
+            self.assertIn("## Codex: visible worker sessions", text)
+            self.assertIn("1-3 visible worker sessions", text)
+            self.assertIn("same Codex project", text)
+            self.assertIn("results directly to Taska", text)
+            self.assertIn("A worker may use subagents", text)
+
+    def test_codex_uses_native_queue_without_delivery_hooks(self) -> None:
+        for name in ("agent", "skill"):
+            for phrase in ("native Codex queue", "after its current", "No delivery hook",
+                           "no model call", "no polling fallback"):
                 self.assertIn(phrase, self.texts[name], name)
+            for retired in ("queue-hook", "install_codex_delivery_hook", "contextSubmittedAt",
+                            "notification-id", "archive and unarchive"):
+                self.assertNotIn(retired, self.texts[name], name)
 
 
 class RetiredWaker(unittest.TestCase):

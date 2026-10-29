@@ -66,7 +66,6 @@ class Project:
         self.agents = AgentActivity(self.store.db, self.state, changed=self.news.wake, gone=lambda: self.gone)
         self.voice = VoiceJobs(self)
         self.codex_notifications = CodexNotifications(self)
-        self.codex_notifications.start()
 
     def _warn(self, seq: int, what: str) -> None:
         print(f"taska: {self.slug}: change {seq} {what}", file=sys.stderr)
