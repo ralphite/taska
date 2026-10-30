@@ -104,8 +104,10 @@ can be updated without creating duplicates. Load or update a job through `launch
 service installation or deployment. The polling agent waker is retired: its entry point refuses to run,
 and its template disables startup and keepalive. Do not re-enable it.
 
-`python3 tools/install_agent_guard.py` installs a command-only PreToolUse guard for local Codex and Claude Code,
-preserving existing settings and hooks. It rejects recognizable scheduled message checks at any frequency and
+`python3 tools/install_agent_guard.py` installs a command-only PreToolUse guard for local Codex only,
+preserving existing settings and hooks. Claude Code is not guarded: Yadong allows its Taska long-poll wait
+(`/next?wait`, one background command that ends only when work arrives), and the installer removes an earlier
+Claude Code install. It rejects recognizable scheduled message checks at any frequency and
 Taska queue polling loops. It performs no model calls, has no timer, and is separate from Codex event
 delivery, which requires no receiver hook. Tool hooks are a guardrail, not an OS-wide sandbox;
 other runtimes and tool paths that bypass hooks are outside their coverage. Validate actual hook interception

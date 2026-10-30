@@ -63,5 +63,22 @@ class WorkPolicy(unittest.TestCase):
             self.assertEqual(len(installed["hooks"]["PreToolUse"]), 2)
 
 
+    def test_install_leaves_claude_code_unguarded_and_removes_an_earlier_install(self):
+        spec = importlib.util.spec_from_file_location("install_guard", ROOT / "tools/install_agent_guard.py")
+        assert spec and spec.loader
+        installer = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(installer)
+        command = "python3 " + str((ROOT / "tools/agent_work_guard.py").resolve())
+        with tempfile.TemporaryDirectory() as directory:
+            home = Path(directory)
+            path = home / ".claude/settings.json"
+            path.parent.mkdir()
+            other = {"matcher": "Bash", "hooks": [{"type": "command", "command": "existing"}]}
+            path.write_text(json.dumps({"model": "keep", "hooks": {"PreToolUse": [
+                other, {"matcher": "*", "hooks": [{"type": "command", "command": command}]}]}}))
+            self.assertEqual(installer.install(home), [str(path)])
+            self.assertEqual(json.loads(path.read_text()), {"model": "keep", "hooks": {"PreToolUse": [other]}})
+            self.assertEqual(installer.install(home), [])
+
 if __name__ == "__main__":
     unittest.main()
