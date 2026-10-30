@@ -21,6 +21,12 @@ const out = (state: string, bad = false, canUndo = false) => ({ t: { outgoing: [
 
 export const YourWords = at([mine()])
 export const WithAVoiceNote = at([mine()], { inputs: [r4({ files: [voice] })] })
+const LINK_AND_WORDS = 'http://127.0.0.1:7340/p/demo/D2\nSync it to its three subpages.'
+// B626: the voice note's words came in after it was sent; nothing was changed, so it is not marked edited
+export const WordsAndAVoiceNoteItsWordsInLater: Story = {
+  ...at([mine({ text: LINK_AND_WORDS })], { inputs: [r4({ text: LINK_AND_WORDS, files: [voice] })] }),
+  name: 'Words and a voice note, its words in after sending: not edited',
+}
 export const WithPictures = at([mine()], { inputs: [r4({ files: [shot, { ...shot, f: 'f4-shot.png' }] })] })
 export const LongCutOnTheDesktop: Story = { ...at([mine({ text: LONG }), { ...message({ id: 2 }), t: later(3) }]), name: 'Long: cut on the desktop' }
 export const SendingWithUndo: Story = { ...at([mine()], out('Sending…', false, true)), name: 'Sending, with Undo' }

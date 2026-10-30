@@ -65,7 +65,7 @@ def _words(state: ProjectState, e: ev.Event) -> None:
     if e.late:  # an agent or the organizer saw it without its words: it comes back to them updated
         inp.history.append(InputVersion(text=old, t=e.t, mode="append"))
         changed_words(inp, e)
-        show_edit(state, inp, e)
+        show_edit(state, inp, e, edited=False)  # the agents are told; you changed nothing (B626)
     else:  # nobody read it yet: its message simply shows the words now
         inp.v += 1
         show_edit(state, inp, e, mark=False)

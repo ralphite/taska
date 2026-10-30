@@ -54,10 +54,11 @@ def note_agent(state: ProjectState, e: ev.Event) -> None:
     state.first_acts.setdefault(me, {}).setdefault(e.n, e.seq)
 
 
-def show_edit(state: ProjectState, inp: Input, e: ev.Event, mark: bool = True) -> None:
+def show_edit(state: ProjectState, inp: Input, e: ev.Event, mark: bool = True, edited: bool = True) -> None:
     """An input you changed shows as its one message, with the new words, marked edited, wherever it is in a talk.
     When someone wrote there since, a short note after theirs says what changed; where the input only started an
-    item, one "rN updated" message carries the latest words."""
+    item, one "rN updated" message carries the latest words. `edited`: False when the words are not yours to have
+    changed (a voice note's words, in after it was sent: B626), so the message is not marked edited."""
     rid, head = inp.id, f"{inp.id} updated:\n"
     old = inp.history[-1].text if inp.history else ""
     for n in dict.fromkeys(inp.touched + ([inp.scope] if inp.scope else [])):
@@ -69,7 +70,8 @@ def show_edit(state: ProjectState, inp: Input, e: ev.Event, mark: bool = True) -
         if own:
             own.text = inp.text
             if mark:
-                own.edited = e.t
+                if edited:
+                    own.edited = e.t
                 if any(x.by not in (inp.by, "org") for x in th[th.index(own) + 1:]):
                     post(state, it, e, "say", edit_note(rid, old, inp.text), rid)
                     th[-1].change = True
@@ -77,7 +79,7 @@ def show_edit(state: ProjectState, inp: Input, e: ev.Event, mark: bool = True) -
         note = next((x for x in reversed(th) if x.src == rid and x.text.startswith(head)), None)
         if note:
             note.text = head + inp.text
-            if mark:
+            if mark and edited:
                 note.edited = e.t
         elif mark:
             post(state, it, e, "say", head + inp.text, rid)
