@@ -21,8 +21,8 @@ export const SeveralPicked: Story = {
   name: 'Several picked',
 }
 export const SubitemsFolded = at(active, () => ({ folded: [1] }))
-export const SubitemsInLaterOrFinished: Story = { ...at(active, () => ({})), name: 'Subitems in Later or finished' }
-export const SubitemsInLaterOrFinishedShown: Story = { ...at(active, () => ({ subMore: [1] })), name: 'Subitems in Later or finished, shown' }
+export const SubitemsInLater: Story = { ...at(active, () => ({})), name: 'Subitems in Later' }
+export const SubitemsInLaterShown: Story = { ...at(active, () => ({ subMore: [1] })), name: 'Subitems in Later, shown' }
 // F003 approved from the Needs you view: its row stays where it was, one quiet line saying so, until the list moves on
 const approved = PROJECT.map((it) => (it.n === 3 ? { ...it, status: 'open' as const } : it))
 export const ARowYouJustActedOn: Story = { ...at({ status: 'wait' }, () => ({ held: { before: PROJECT, said: { 3: 'Approved' } } }), approved), name: 'A row you just acted on' }

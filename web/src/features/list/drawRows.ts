@@ -100,7 +100,7 @@ export function drawRows(m: ProjectModel, rows: Row[], w: DrawWith): DrawnRow[] 
       case 'zone':
         return { kind: 'zone', key: 'z' + r.zone + i, zone: r.zone, label: r.label, n: r.n }
       case 'hidden-kids':
-        return { kind: 'hidden-kids', key: 'h' + r.parent, parent: r.parent, depth: r.depth, open: r.open, later: r.later, done: r.done }
+        return { kind: 'hidden-kids', key: 'h' + r.parent, parent: r.parent, depth: r.depth, open: r.open, later: r.later }
       case 'needs-more':
         return { kind: 'needs-more', key: 'needs-more', open: r.open, rest: r.rest }
       case 'archive-all':

@@ -14,7 +14,7 @@ export type DrawnRow =
   | { kind: 'needs'; key: string; it: Item; depth: number; facts: RowFacts; look: RowLook; excerpt: string }
   | { kind: 'held'; key: string; it: Item; code: string; said: string; height: number }
   | { kind: 'zone'; key: string; zone: string; label: string; n: number }
-  | { kind: 'hidden-kids'; key: string; parent: number; depth: number; open: boolean; later: number; done: number }
+  | { kind: 'hidden-kids'; key: string; parent: number; depth: number; open: boolean; later: number }
   | { kind: 'needs-more'; key: string; open: boolean; rest: number }
   | { kind: 'archive-all'; key: string; n: number }
 
@@ -149,7 +149,7 @@ export const ItemList = forwardRef<HTMLDivElement, ItemListProps>(function ItemL
               case 'zone':
                 return <Zone key={r.key} kind={r.zone} label={r.label} n={r.n} />
               case 'hidden-kids':
-                return <HiddenKidsLine key={r.key} parent={r.parent} depth={r.depth} open={r.open} later={r.later} done={r.done} onToggle={() => on.subMore(r.parent)} />
+                return <HiddenKidsLine key={r.key} parent={r.parent} depth={r.depth} open={r.open} later={r.later} onToggle={() => on.subMore(r.parent)} />
               case 'needs-more':
                 return <NeedsMoreLine key={r.key} open={r.open} rest={r.rest} onToggle={on.needsMore} />
               case 'archive-all':

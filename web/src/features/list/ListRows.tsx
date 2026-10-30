@@ -388,9 +388,8 @@ export function Zone({ kind, label, n, right }: { kind: string; label: string; n
   )
 }
 
-/** Under a parent, one line for its subitems the view hides (Later, finished); a tap shows them. */
-export function HiddenKidsLine({ parent, depth, open, later, done, onToggle }: { parent: number; depth: number; open: boolean; later: number; done: number; onToggle(): void }) {
-  const said = later && done ? `${later + done} more: ${later} in Later, ${done} finished` : later ? `${later} more in Later` : `${done} more finished`
+/** Under a parent, one line for its subitems in Later, which the view hides; a tap shows them. */
+export function HiddenKidsLine({ parent, depth, open, later, onToggle }: { parent: number; depth: number; open: boolean; later: number; onToggle(): void }) {
   return (
     <button
       data-kids-of={parent}
@@ -399,7 +398,7 @@ export function HiddenKidsLine({ parent, depth, open, later, done, onToggle }: {
       className={`flex h-11 w-full items-center gap-1.5 border-b border-zinc-100 ${pad(depth)} text-[13px] font-semibold text-zinc-500 hover:bg-zinc-50 data-pressed:bg-zinc-100 lg:h-10 dark:border-zinc-800/70 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:data-pressed:bg-zinc-900`}
     >
       <Icon n={open ? 'chevup' : 'down'} c="size-4" sw="2.25" />
-      {open ? 'Show fewer' : said}
+      {open ? 'Show fewer' : `${later} more in Later`}
     </button>
   )
 }

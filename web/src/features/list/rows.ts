@@ -15,7 +15,7 @@ export type Row =
   | { kind: 'item'; it: Item; depth: number; foldable: boolean; folded: boolean; band: string }
   | { kind: 'needs'; it: Item; depth: number }
   | { kind: 'held'; it: Item; said: string }
-  | { kind: 'hidden-kids'; parent: number; depth: number; open: boolean; later: number; done: number }
+  | { kind: 'hidden-kids'; parent: number; depth: number; open: boolean; later: number }
   | { kind: 'needs-more'; open: boolean; rest: number }
   | { kind: 'archive-all'; n: number }
 
@@ -38,7 +38,7 @@ export interface ListState {
 
 const MAX_DEPTH = 8
 
-/** The subitems the plain Active view hides (in Later, finished) under each parent it shows. */
+/** The subitems the plain Active view hides (in Later) under each parent it shows; finished ones are not listed (T622). */
 function hiddenKids(m: ProjectModel, rows: Item[], list: ListQuery, st: ListState, tab: Tab) {
   const hidden = new Map<number, Item[]>()
   const group = [...rows]
@@ -46,7 +46,7 @@ function hiddenKids(m: ProjectModel, rows: Item[], list: ListQuery, st: ListStat
   const shown = new Set(rows.map((it) => it.n))
   for (let i = 0; i < group.length; i++) {
     const p = group[i]
-    const more = workOrder((m.kids.get(p.n) || []).filter((k) => !shown.has(k.n) && (closed(k.status) || k.when === 'later')))
+    const more = workOrder((m.kids.get(p.n) || []).filter((k) => !shown.has(k.n) && !closed(k.status) && k.when === 'later'))
     if (!more.length) continue
     hidden.set(p.n, more)
     if (st.subMore.has(p.n))
@@ -76,8 +76,7 @@ function tree(group: Item[], st: ListState, opts: { band?: string; needs?: boole
     if (st.folded.has(it.n) || d >= MAX_DEPTH) return
     for (const k of group) if (k.parent === it.n) add(k, d + 1)
     if (more) {
-      const later = more.filter((k) => !closed(k.status)).length
-      out.push({ kind: 'hidden-kids', parent: it.n, depth: d + 1, open: st.subMore.has(it.n), later, done: more.length - later })
+      out.push({ kind: 'hidden-kids', parent: it.n, depth: d + 1, open: st.subMore.has(it.n), later: more.length })
     }
   }
   for (const it of group) if (!(it.parent && inGroup.has(it.parent))) add(it, 0)
