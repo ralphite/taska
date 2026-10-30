@@ -44,4 +44,10 @@ was busy. Once that turn completed, the next turn started automatically and ackn
 the test. The native queue was empty afterward and no hook pointer was used. Both the
 initial idle wake and busy-to-next-turn delivery worked through `queue + wake` alone.
 
-Acceptance of the full Taska-to-visible-worker workflow is recorded after deployment.
+After deployment on the same date, a real update through Taska's page-command endpoint
+sent exactly the short notice to the existing main session. The main session created one
+ordinary visible worker in the same Codex project and ended its turn. That worker read
+Taska and wrote its evidence directly to the task. Worker progress and final writeback did
+not start another main-session turn. Installed Claude skill and settings hashes were unchanged.
+The test card remained proposed under Taska's existing approval rules; those rules were not
+changed or bypassed. The unnecessary completion-status blocker was withdrawn by the worker.
