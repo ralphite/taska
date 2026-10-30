@@ -20,7 +20,7 @@ from ..agent_text.organizer_text import INSTRUCTIONS
 from ..domain import events as ev, rules
 from ..domain.model import Input
 from ..domain.text import hm
-from ..domain.vocab import CLOSED, Refused
+from ..domain.vocab import CLOSED, TEXT_VERBS, Refused
 from ..infra import gemini
 from .project import Project
 
@@ -97,7 +97,7 @@ class Organizer(threading.Thread):
                 p.emit(ev.Organized(src=rid, ok=False, msg=err, by="org"))
                 return
             keep = had_history or bool(re.search(r"(?im)^\s*pass\s*$", plan))
-            commands = parse(re.sub(r"(?im)^\s*pass\s*$", "", plan))
+            commands = parse(re.sub(r"(?im)^\s*pass\s*$", "", indent_strays(plan)))
             if keep:  # the input is for the coding agent: changes may be made, but it stays in the inbox
                 commands = [(no, c) for no, c in commands if isinstance(c, Refused) or c.get("op") != "ack"]
             lines, labels = p.run(commands, "org", src=rid, keep=keep)
@@ -112,6 +112,28 @@ class Organizer(threading.Thread):
                 msg += " · Some commands failed: " + "; ".join(bad)
             p.emit(ev.Organized(src=rid, ok=not bad, msg=msg, plan=plan, keep=keep, changed=bool(labels),
                                 ms=int((time.time() - t0) * 1000), by="org"))
+
+
+# a line that starts a command: new, ack, pass, or an item or document code ($ is the item made just before)
+_HEAD = re.compile(r"(?i)(new|ack|pass)\b|\$|[A-Za-z]?\d+\b")
+
+
+def indent_strays(plan: str) -> str:
+    """B623: the model sometimes writes a body or a message over several lines and leaves the later ones unindented,
+    which the command language reads as commands of their own (unknown command). A line that starts no command, after a
+    command that takes text, is that command's text."""
+    out: List[str] = []
+    takes_text = False
+    for line in plan.split("\n"):
+        if line.strip() and not line[:1].isspace() and not line.startswith(("```", "#")):
+            if _HEAD.match(line):
+                word, _, rest = line.strip().partition(" ")
+                verb = rest.split(" ", 1)[0].lower()
+                takes_text = word.lower() == "new" or verb in TEXT_VERBS or verb in ("doc", "html")
+            elif takes_text:
+                line = "  " + line
+        out.append(line)
+    return "\n".join(out)
 
 
 class Organizers:
