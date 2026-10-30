@@ -20,6 +20,8 @@ export type SheetRequest =
   | { kind: 'input-move'; id: string }
   /** put an input with another item */
   | { kind: 'input-rescope'; id: string }
+  /** what an agent reading item n gets (F568) */
+  | { kind: 'agent-card'; n: number }
   /** a voice note's words as said */
   | { kind: 'as-said'; heard: string; tr: string }
   | { kind: 'filters' }

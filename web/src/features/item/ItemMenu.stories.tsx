@@ -10,7 +10,7 @@ import { itemMenuFacts } from './itemMenuFacts'
 export default { title: 'Components/Menus and sheets/Item menu' } satisfies Meta
 type Story = StoryObj
 
-const on: ItemMenuEvents = { edit: no, copy: no, newDoc: no, addSub: no, reparent: no, later: no, archive: no, doNext: no, moveProject: no, remove: no, set: no }
+const on: ItemMenuEvents = { edit: no, copy: no, agent: no, newDoc: no, addSub: no, reparent: no, later: no, archive: no, doNext: no, moveProject: no, remove: no, set: no }
 interface Open {
   n: number
   asking?: boolean

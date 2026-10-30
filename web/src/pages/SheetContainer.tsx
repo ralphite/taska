@@ -8,7 +8,7 @@ import { Sheet } from '../ui/Sheet'
 import { usePaneRef } from '../app/panes'
 import { KeysSheet, PaletteSheet, SwitchProjectSheet } from '../features/find/FindersContainer'
 import { AsSaidSheet, InputHistorySheet, InputMenuSheet, InputMoveSheet, InputRescopeSheet } from '../features/inputs/InputSheetsContainer'
-import { ItemMenuSheet, MessageMenuSheet, MoveItemProjectSheet, MoveParentSheet, SourcesSheet } from '../features/item/ItemSheetsContainer'
+import { AgentCardSheet, ItemMenuSheet, MessageMenuSheet, MoveItemProjectSheet, MoveParentSheet, SourcesSheet } from '../features/item/ItemSheetsContainer'
 import { FiltersSheet } from '../features/list/FiltersContainer'
 import { ViewMenuSheet } from '../features/list/ViewMenuContainer'
 import { SignInSheet } from '../features/project/SignInContainer'
@@ -17,6 +17,7 @@ import { CommentMoveSheet, DocEditSheet, DocMoveSheet } from '../features/docs/D
 
 const KINDS: { [K in SheetKind]: ComponentType<{ req: Extract<SheetRequest, { kind: K }> }> } = {
   'item-menu': ItemMenuSheet,
+  'agent-card': AgentCardSheet,
   'item-move-parent': MoveParentSheet,
   'item-move-project': MoveItemProjectSheet,
   'item-sources': SourcesSheet,

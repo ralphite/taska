@@ -1,7 +1,7 @@
 // The item's sheets with the page's data: its menu (a sheet on the phone, a menu at the button on the desktop),
 // putting it under another item, moving it to another project, what it came from, and a message's menu.
 
-import { useLayoutEffect } from 'react'
+import { useEffect, useLayoutEffect, useState } from 'react'
 import type { ActionId } from '../../app/actions'
 import { useLayout, useServices, useStores, useStoreValue } from '../../app/context'
 import { useCloseSheetWhen, useFiles, useProjectModel, useProjectRoute } from '../../app/hooks'
@@ -10,7 +10,7 @@ import type { Input } from '../../model/types'
 import type { SheetRequest } from '../../stores/sheet'
 import { SheetLayout } from '../../ui/Sheet'
 import { Thumbs } from '../../ui/Files'
-import { messageMenuSheet, sourcesSheet } from './ItemSheets'
+import { agentCardSheet, messageMenuSheet, sourcesSheet } from './ItemSheets'
 import { itemMoveProjectSheet } from '../../ui/ProjectSheets'
 import { useOtherProjects } from '../../app/projectLists'
 import { itemMenuPop, itemMenuSheet, type ItemMenuEvents } from './ItemMenu'
@@ -63,6 +63,7 @@ export function ItemMenuSheet({ req }: Req<'item-menu'>) {
       run('edit')
     }),
     copy: done(() => run('copy')),
+    agent: () => app.sheets.open({ kind: 'agent-card', n }, { pop: desk, focus: false, at }),
     newDoc: done(() => run('new-doc')),
     addSub: done(() => {
       app.nav.openItem(code(n))
@@ -148,4 +149,26 @@ export function MessageMenuSheet({ req }: Req<'message-menu'>) {
     void app.items.hideMessage(it.n, req.id)
   }
   return <SheetLayout {...messageMenuSheet(hide)} />
+}
+
+/** What an agent reading the item gets: its card, read as an agent reads it (not counted as an agent's visit). */
+export function AgentCardSheet({ req }: Req<'agent-card'>) {
+  const app = useServices('api')
+  const { slug, m, it, code } = useSubject(req.n)
+  const c = it ? code(it.n) : ''
+  const key = slug + ' ' + c
+  const [got, setGot] = useState<{ key: string; text: string } | null>(null)
+  useEffect(() => {
+    if (!slug || !c) return
+    let on = true
+    app.api.card(slug, c).then(
+      (text) => on && setGot({ key, text }),
+      () => on && setGot({ key, text: 'Taska could not be reached. Try again.' }),
+    )
+    return () => {
+      on = false
+    }
+  }, [app, slug, c, key])
+  if (!m || !it) return null
+  return <SheetLayout {...agentCardSheet(c, got?.key === key ? got.text : null)} />
 }

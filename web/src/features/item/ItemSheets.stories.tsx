@@ -1,12 +1,13 @@
 // What an item came from (T591: Menus and sheets > Sheets): the page's own sheet with the inputs that made it, from
-// its chip in the item's head. A message's menu is in stories/OtherMenus.
+// its chip in the item's head; what an agent reading it gets (F568), from its menu. A message's menu is in
+// stories/OtherMenus.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frames } from '../../stories/Frames'
 import { input, item, modelOf, T } from '../../stories/fixtures'
 import { talkEnv } from '../../stories/itemFixtures'
 import { no, opened } from '../../stories/menuFixtures'
 import { Thumbs } from '../../ui/Files'
-import { sourcesSheet } from './ItemSheets'
+import { agentCardSheet, sourcesSheet } from './ItemSheets'
 
 export default { title: 'Components/Menus and sheets/Sheets' } satisfies Meta
 type Story = StoryObj
@@ -28,4 +29,23 @@ export const Sources: Story = {
       }}
     </Frames>
   ),
+}
+
+const CARD = `F012 bug P1 now open  Export keeps the filter
+src r12 r15
+body:
+The export should keep the filter I set.
+thread:
+#40 10-30 13:20 you: And the sort, please. [f4-voice_0-07.webm]
+reference: the user's own words (the inputs it came from):
+r12 10-30 12:20: in the body above
+r15 10-30 13:20: in the thread above (#40)
+`
+export const WhatAgentsSee: Story = {
+  name: 'What agents see',
+  render: () => <Frames height={420} deskWidth={900} phoneWidth={393}>{(layout) => opened(agentCardSheet('F012', CARD), layout === 'desk')}</Frames>,
+}
+export const WhatAgentsSeeLoading: Story = {
+  name: 'What agents see: loading',
+  render: () => <Frames height={220} deskWidth={900} phoneWidth={393}>{(layout) => opened(agentCardSheet('F012', null), layout === 'desk')}</Frames>,
 }

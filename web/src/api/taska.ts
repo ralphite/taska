@@ -74,6 +74,11 @@ export class TaskaApi {
     return this.http.json(P(slug) + 'words?' + q.toString(), wait ? { method: 'POST', timeout: 60000 } : {})
   }
 
+  /** An item's card, word for word what an agent reading it gets (F568); read with ui=1, so it is no agent's visit. */
+  card(slug: string, code: string): Promise<string> {
+    return this.http.text(`/p/${encodeURIComponent(slug)}/${encodeURIComponent(code)}?ui=1`)
+  }
+
   projects(): Promise<ProjectRow[]> {
     return this.http.json<ProjectRow[]>('/api/projects')
   }

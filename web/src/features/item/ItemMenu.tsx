@@ -14,6 +14,8 @@ import { STATE_ON, TYPE_TEXT } from '../../ui/tones'
 export interface ItemMenuEvents {
   edit(): void
   copy(): void
+  /** what an agent reading it gets */
+  agent(): void
   newDoc(): void
   addSub(): void
   /** `from`: the row it was chosen on (the desktop's picker opens under it) */
@@ -133,6 +135,7 @@ export function itemMenuSheet({ it, code, parentCode, asking, arm }: ItemMenuFac
         <div className="grid grid-cols-3 gap-2">
           {tile('edit', 'pencil', 'Edit', on.edit)}
           {tile('copy', 'copy', 'Copy for agent', on.copy)}
+          {tile('agent', 'bot', 'What agents see', on.agent)}
           {it.type === 'rule' ? null : (
             <>
               {tile('doc', 'docplus', 'New doc', on.newDoc)}
@@ -215,6 +218,7 @@ export function itemMenuPop({ it, code, parentCode, asking, arm, keys }: ItemMen
         <div className="-mx-1 -mt-1">
           {row('edit', 'pencil', 'Edit', keys.edit, on.edit)}
           {row('copy', 'copy', 'Copy for agent', keys.copy, on.copy)}
+          {row('agent', 'bot', 'What agents see', '', on.agent)}
           {it.type === 'rule' ? null : (
             <>
               {row('doc', 'docplus', 'New doc', keys.newDoc, on.newDoc)}
