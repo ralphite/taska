@@ -128,21 +128,6 @@ def card(rd: Reading, it: Item) -> str:
     files = _files_of(rd, it)
     if files:
         out.append("files: " + " ".join(files))
-    # the user's own words this item came from, whole (the organizer may have summed up); what is already in the
-    # talk as the user's message, or is the body, is not repeated
-    shown = {x.src for x in it.thread if x.by == "you"}
-    body_words = " ".join((it.body or "").split())
-    said = [st.inputs[r] for r in it.srcs if r in st.inputs and r not in shown and not st.inputs[r].deleted
-            and " ".join((st.inputs[r].text or "").split()) not in body_words]
-    if said:
-        out.append("the user's own words (the inputs it came from):")
-        for inp in said:
-            where = f" on {st.code(inp.scope)}" if inp.scope and inp.scope != it.n else ""
-            out.append(f"{inp.id} {hm(inp.t)}{where}:")
-            out.extend("  " + ln for ln in (inp.text or "(no words)").splitlines())
-            fs = [rd.file_ref(f.f) for f in inp.files]
-            if fs:
-                out.append("  files: " + " ".join(fs))
     docs = st.docs_of(it.n)
     if docs:
         out.append("docs: " + "; ".join(_doc_summary(d) for d in docs))
@@ -153,7 +138,35 @@ def card(rd: Reading, it: Item) -> str:
                 + (" → " + ", ".join(x.to) if x.to else "")
             edited = f" (edited {hm(x.edited)})" if x.edited else ""
             out.append(f"#{x.id} {hm(x.t)} {tag}{edited}: {x.text}" + "".join(f" [{rd.file_ref(f.f)}]" for f in x.files))
+    out.extend(_reference(rd, it))
     return "\n".join(out) + "\n"
+
+
+def _reference(rd: Reading, it: Item) -> List[str]:
+    """F568: last, every input the item came from, in time order, so an agent has the user's words in one read: the
+    words as everyone reads them (a voice note's tidied words); one line for those already in the body or the thread
+    above."""
+    st = rd.state
+    srcs = sorted((st.inputs[r] for r in it.srcs if r in st.inputs and not st.inputs[r].deleted), key=lambda i: i.t)
+    if not srcs:
+        return []
+    talk = {x.src: x.id for x in it.thread[-30:] if x.by == "you" and x.src}
+    body_words = " ".join((it.body or "").split())
+    out = ["reference: the user's own words (the inputs it came from):"]
+    for inp in srcs:
+        where = f" on {st.code(inp.scope)}" if inp.scope and inp.scope != it.n else ""
+        words = " ".join((inp.text or "").split())
+        if inp.id in talk:
+            out.append(f"{inp.id} {hm(inp.t)}{where}: in the thread above (#{talk[inp.id]})")
+        elif words and words in body_words:
+            out.append(f"{inp.id} {hm(inp.t)}{where}: in the body above")
+        else:
+            out.append(f"{inp.id} {hm(inp.t)}{where}:")
+            out.extend("  " + ln for ln in (inp.text or "(no words)").splitlines())
+            fs = [rd.file_ref(f.f) for f in inp.files]
+            if fs:
+                out.append("  files: " + " ".join(fs))
+    return out
 
 
 def _doc_summary(d: Doc) -> str:
