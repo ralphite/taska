@@ -27,9 +27,8 @@ function useSubject(id: string) {
 }
 
 export function InputMenuSheet({ req }: Req<'input-menu'>) {
-  const app = useServices('api', 'box', 'inputActions', 'sheets')
+  const app = useServices('box', 'inputActions', 'media', 'sheets')
   const stores = useStores('sheet')
-  const desk = useLayout() === 'desk'
   const { slug, m, r } = useSubject(req.id)
   const asked = useStoreValue(stores.sheet, (s) => s.asked)
   const others = useOtherProjects(slug)
@@ -43,11 +42,7 @@ export function InputMenuSheet({ req }: Req<'input-menu'>) {
       {...inputMenuSheet(facts, {
         edit: done(() => app.box.amendStart(slug, m, id, 'edit')),
         append: done(() => app.box.amendStart(slug, m, id, 'append')),
-        asSaid: (f) =>
-          void app.api
-            .words(slug, f)
-            .catch(() => app.api.words(slug, f, true))
-            .then((w) => app.sheets.open({ kind: 'as-said', heard: w.heard || '', tr: w.tr || '' }, desk ? { pop: true, focus: false } : {})),
+        asSaid: (f) => app.media.words(slug, f),
         undo: done(() => app.inputActions.undoFiling(slug, id)),
         move: () => app.sheets.open({ kind: 'input-move', id }),
         history: () => app.sheets.open({ kind: 'input-history', id }),

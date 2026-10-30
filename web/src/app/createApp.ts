@@ -301,7 +301,11 @@ export function createApp(env: AppEnv): App {
   const moves = new Moves({ api, changes, toasts, model, title, go: goUrl, refresh: (s) => session().stale(s) })
   const selection = new Selection({ ui, order: listOrder, runner, toasts, slug, model: here, open: () => openItemN(route.getState().route) })
   const itemDrag = new ItemDrag({ store: dragStore, items, moves, slug, model: here })
-  const media = new Media({ api, store: mediaStore, route, sheets, toasts, desk: env.desk })
+  const fileWords = (s: string, f: string) => {
+    for (const r of model(s)?.inputs.values() || []) for (const x of r.files) if (x.f === f) return x
+    return null
+  }
+  const media = new Media({ api, store: mediaStore, route, sheets, toasts, desk: env.desk, kept: fileWords })
   const itemEdits = new ItemEdits({ view: itemView, kept: keptEdits, route, toasts, desk: env.desk, model: here })
   const keyArm = new KeyArm()
   const answers = new Answers({ inputs, view: itemView, outbox })

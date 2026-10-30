@@ -13,6 +13,8 @@ export interface FileRef {
   mime?: string
   size?: number
   tr?: string
+  /** its words as said, word for word, when they differ from tr (F568) */
+  heard?: string
   wait?: boolean
 }
 

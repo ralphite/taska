@@ -15,6 +15,8 @@ export interface MediaDeps {
   sheets: Sheets
   toasts: Toasts
   desk(): boolean
+  /** a voice note's words kept with its input, if its input is in the project */
+  kept(slug: string, f: string): { tr?: string; heard?: string } | null
 }
 
 export class Media {
@@ -79,12 +81,13 @@ export class Media {
     return this.d.route.getState().layers.includes('viewer')
   }
 
-  /** A voice note's original words (as heard, before they were tidied), in their sheet. */
+  /** A voice note's words in their sheet, word for word and tidied (F568): the ones kept with its input; asked for
+   * only when they are not in yet. Never worked out again. */
   words(slug: string, f: string): void {
-    void this.d.api
-      .words(slug, f)
-      .catch(() => this.d.api.words(slug, f, true))
-      .then((w) => this.d.sheets.open({ kind: 'as-said', heard: w.heard || '', tr: w.tr || '' }, this.d.desk() ? { pop: true, focus: false } : {}))
-      .catch(() => {})
+    const show = (w: { heard?: string; tr?: string }) =>
+      this.d.sheets.open({ kind: 'as-said', heard: w.heard || '', tr: w.tr || '' }, this.d.desk() ? { pop: true, focus: false } : {})
+    const kept = this.d.kept(slug, f)
+    if (kept?.tr) return show(kept)
+    void this.d.api.words(slug, f).then(show, () => show({}))
   }
 }

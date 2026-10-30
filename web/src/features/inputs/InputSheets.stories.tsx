@@ -21,6 +21,8 @@ const r = input({
 })
 
 /** Before its words were tidied: as the speech model heard them. */
-export const AsSaid: Story = { name: 'Original words', render: () => <Frames height={360} deskWidth={900} phoneWidth={393}>{(layout) => opened(asSaidSheet('', 'Keep the filter, um, in the export, and, uh, the sort.'), layout === 'desk', { look: layout === 'desk' ? { pop: true, at: AT_BUTTON } : {} })}</Frames> }
+const sheetAt = (heard: string, tr: string, height = 360) => () => <Frames height={height} deskWidth={900} phoneWidth={393}>{(layout) => opened(asSaidSheet(heard, tr), layout === 'desk', { look: layout === 'desk' ? { pop: true, at: AT_BUTTON } : {} })}</Frames>
+export const AsSaid: Story = { name: 'Original words: word for word and tidied', render: sheetAt('Keep the filter, um, in the export, and, uh, the sort. The sort too.', 'Keep the filter and the sort in the export.', 440) }
+export const AsSaidNothingTidied: Story = { name: 'Original words: nothing tidied', render: sheetAt('', 'Keep the filter in the export.') }
 /** Each version, the latest first, with when and how it changed. */
 export const InputHistory: Story = { name: 'What you said: history', render: () => <Frames height={520} deskWidth={900} phoneWidth={393}>{(layout) => opened(historySheet(r, Date.parse(T)), layout === 'desk')}</Frames> }

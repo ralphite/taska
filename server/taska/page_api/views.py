@@ -21,7 +21,7 @@ View = Dict[str, Any]
 
 def file_view(f: FileRef) -> View:
     out: View = {"f": f.f, "name": f.name}
-    for k in ("mime", "size", "tr", "wait"):
+    for k in ("mime", "size", "tr", "heard", "wait"):
         v = getattr(f, k)
         if v is not None:
             out[k] = v

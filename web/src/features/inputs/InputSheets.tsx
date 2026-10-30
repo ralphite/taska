@@ -89,15 +89,27 @@ export function historySheet(r: Input, now: number): SheetParts {
   }
 }
 
-/** A voice note's words as said, before they were tidied. */
+/** A voice note's words: word for word, then tidied (what the organizer and agents get), F568. */
 export function asSaidSheet(heard: string, tr: string): SheetParts {
+  const both = !!heard && !!tr && heard !== tr
+  const part = (label: string, text: string) => (
+    <section className="mb-5">
+      <h3 className="mb-2 text-sm font-semibold">{label}</h3>
+      <p className="text-[15px] break-words whitespace-pre-wrap">{text}</p>
+    </section>
+  )
   return {
     menu: true,
     title: 'Original words',
-    body: (
+    body: both ? (
+      <>
+        {part('Word for word', heard)}
+        {part('Tidied · what agents get', tr)}
+      </>
+    ) : (
       <>
         <p className="text-[15px] break-words whitespace-pre-wrap">{heard || tr || 'No words were heard.'}</p>
-        {heard ? null : <p className="mt-3 text-sm text-zinc-500 dark:text-zinc-400">Nothing was tidied in this one: the words are as said.</p>}
+        {heard || tr ? <p className="mt-3 text-sm text-zinc-500 dark:text-zinc-400">Nothing was tidied in this one: the words are as said.</p> : null}
       </>
     ),
   }
