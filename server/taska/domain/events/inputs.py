@@ -65,13 +65,27 @@ class WordsIn(Event):
     tr: str = ""
     was: Optional[str] = None
     late: bool = False  # an agent or the organizer had the input without them
+    heard: Optional[str] = None  # the words as said, word for word, when they differ from tr (F568)
 
     def body(self) -> Row:
         row: Row = {"src": self.src, "f": self.f, "tr": self.tr}
         opt(row, "was", self.was, self.was is not None)
         row["by"] = self.by
         opt(row, "late", True, self.late)
+        opt(row, "heard", self.heard, bool(self.heard))
         return row
+
+
+@dataclass
+class WordsKept(Event):
+    """Voice notes' words as said, word for word, kept with the inputs once (F568: before, only next to the audio):
+    {input id: {file id: words}}."""
+
+    KIND: ClassVar[str] = "heard"
+    notes: Dict[str, Dict[str, str]] = field(default_factory=dict)
+
+    def body(self) -> Row:
+        return {"notes": self.notes, "by": self.by}
 
 
 @dataclass
@@ -174,7 +188,8 @@ READERS: Dict[str, Reader] = {
     "amend": lambda r: InputAmended(src=need(r, "src"), mode=need(r, "mode"), text=need(r, "text"), files=files_of(r),
                                     **common(r)),
     "tr": lambda r: WordsIn(src=need(r, "src"), f=need(r, "f"), tr=need(r, "tr"), was=r.get("was"),
-                            late=bool(r.get("late")), **common(r)),
+                            late=bool(r.get("late")), heard=r.get("heard"), **common(r)),
+    "heard": lambda r: WordsKept(notes=dict(need(r, "notes")), **common(r)),
     "undo": lambda r: FilingUndone(src=need(r, "src"), **common(r)),
     "redo": lambda r: FilingRedone(src=need(r, "src"), **common(r)),
     "del": lambda r: InputDeleted(src=need(r, "src"), ns=list(r.get("ns") or []), kept=list(r.get("kept") or []),

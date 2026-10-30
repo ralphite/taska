@@ -20,7 +20,8 @@ class FileRef:
     name: str
     mime: Optional[str] = None
     size: Optional[int] = None
-    tr: Optional[str] = None  # a voice note's words
+    tr: Optional[str] = None  # a voice note's words, tidied (what everyone reads)
+    heard: Optional[str] = None  # its words as said, word for word, when they differ from tr (F568)
     wait: Optional[bool] = None  # a voice note whose words were still to come when it was sent
 
     @classmethod
@@ -28,7 +29,7 @@ class FileRef:
         if isinstance(d, str):
             return cls(f=d, name=d.split("-", 1)[-1])
         return cls(f=str(d.get("f", "")), name=str(d.get("name", "")), mime=d.get("mime"), size=d.get("size"),
-                   tr=d.get("tr"), wait=d.get("wait"))
+                   tr=d.get("tr"), heard=d.get("heard"), wait=d.get("wait"))
 
     def to_row(self) -> Row:
         out: Row = {"f": self.f, "name": self.name}
@@ -38,12 +39,15 @@ class FileRef:
             out["size"] = self.size
         if self.tr is not None:
             out["tr"] = self.tr
+        if self.heard is not None:
+            out["heard"] = self.heard
         if self.wait is not None:
             out["wait"] = self.wait
         return out
 
-    def with_words(self, tr: str) -> FileRef:
-        return replace(self, tr=tr)
+    def with_words(self, tr: str, heard: Optional[str] = None) -> FileRef:
+        """Its words; as said too, when they differ from the tidied ones (else what was kept stays)."""
+        return replace(self, tr=tr, heard=heard if heard and heard != tr else self.heard)
 
     def with_wait(self, wait: Optional[bool]) -> FileRef:
         return replace(self, wait=wait)

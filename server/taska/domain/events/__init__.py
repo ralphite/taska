@@ -15,7 +15,7 @@ from .base import Event, Reader, Unknown, Unreadable, common
 from .docs import DOC_EVENTS, CommentAdded, CommentDeleted, CommentEdited, CommentMoved, CommentRestored, DocDeleted, \
     DocMoved, DocWritten, ThreadResolved
 from .inputs import FilingRedone, FilingUndone, InputAdded, InputAmended, InputDeleted, InputMoved, InputRescoped, \
-    InputRestored, InputsAcked, Organized, WordsIn
+    InputRestored, InputsAcked, Organized, WordsIn, WordsKept
 from .items import FieldsSet, FileTakenOff, ItemAdded, ItemMerged, ItemsArchived, ItemsDeleted, ItemsRestored, \
     MessageHidden, MessagePosted, ProjectRenamed
 
@@ -37,7 +37,7 @@ __all__ = [
     "Event", "Unknown", "Unreadable", "Row", "READERS", "DOC_EVENTS", "decode",
     "ItemAdded", "FieldsSet", "MessagePosted", "ItemMerged", "ItemsArchived", "ItemsDeleted", "ItemsRestored",
     "MessageHidden", "FileTakenOff", "ProjectRenamed",
-    "InputAdded", "InputsAcked", "InputAmended", "WordsIn", "FilingUndone", "FilingRedone", "InputDeleted",
+    "InputAdded", "InputsAcked", "InputAmended", "WordsIn", "WordsKept", "FilingUndone", "FilingRedone", "InputDeleted",
     "InputRestored", "InputMoved", "Organized", "InputRescoped",
     "DocWritten", "DocDeleted", "DocMoved", "CommentMoved", "ThreadResolved", "CommentAdded", "CommentEdited",
     "CommentDeleted", "CommentRestored",

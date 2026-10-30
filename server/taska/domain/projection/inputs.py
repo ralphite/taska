@@ -3,6 +3,8 @@ organizer's note."""
 
 from __future__ import annotations
 
+from dataclasses import replace
+
 from typing import List
 
 from .. import events as ev
@@ -55,7 +57,7 @@ def _words(state: ProjectState, e: ev.Event) -> None:
     if not inp:
         return
     old = inp.text
-    inp.files = [f.with_words(e.tr) if f.f == e.f else f for f in inp.files]
+    inp.files = [f.with_words(e.tr, e.heard) if f.f == e.f else f for f in inp.files]
     if e.was and e.was in old:  # fuller words in place of the shorter ones given first
         inp.text = old.replace(e.was, e.tr, 1)
     elif e.was:  # you changed those words: the fuller ones follow, said as such
@@ -69,6 +71,16 @@ def _words(state: ProjectState, e: ev.Event) -> None:
     else:  # nobody read it yet: its message simply shows the words now
         inp.v += 1
         show_edit(state, inp, e, mark=False)
+
+
+@reduces(ev.WordsKept)
+def _kept(state: ProjectState, e: ev.Event) -> None:
+    """Words as said, kept with their inputs (F568); nothing else changes."""
+    assert isinstance(e, ev.WordsKept)
+    for rid, notes in e.notes.items():
+        inp = state.inputs.get(rid)
+        if inp:
+            inp.files = [replace(f, heard=notes[f.f]) if f.f in notes else f for f in inp.files]
 
 
 @reduces(ev.InputDeleted)

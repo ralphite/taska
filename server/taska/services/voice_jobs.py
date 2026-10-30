@@ -100,6 +100,11 @@ class VoiceJobs:
         """The input's voice notes."""
         return [f.f for f in inp.files if os.path.splitext(f.f)[1].lower() in AUDIO_EXTS]
 
+    def said(self, fid: str, tr: str) -> Optional[str]:
+        """A note's words as said, word for word, when they differ from its tidied words (F568)."""
+        heard = str((self.kept(fid) or {}).get("heard") or "").strip()
+        return heard if heard and heard != tr else None
+
     def heard(self, fid: str, words: str) -> bool:
         """Whether the words were in what was heard in the note (its words, as first heard and as given)."""
         return words in " ".join(str(v) for k, v in (self.kept(fid) or {}).items() if k in ("tr", "heard"))
@@ -121,11 +126,11 @@ class VoiceJobs:
         out: List[FileRef] = []
         for f in files:
             if f.tr or not f.is_audio:
-                out.append(f)
+                out.append(f.with_words(f.tr, self.said(f.f, f.tr)) if f.tr and f.heard is None else f)
                 continue
             j = self.jobs.get(f.f) or self.saved_job(f.f)
             if j and j.done and j.tr:
-                f = f.with_words(j.tr)
+                f = f.with_words(j.tr, self.said(f.f, j.tr))
                 if j.tr not in text:
                     text = text.rstrip() + "\n" + j.tr if text.strip() else j.tr
             elif j and not (j.done and not j.err):  # still being worked out, or failed and may be asked for again
@@ -209,14 +214,27 @@ class VoiceJobs:
         organizer had the input: it is then organized again with them."""
         inp = self._input_with(fid)
         if inp and job.tr and not any(f.f == fid and f.tr for f in inp.files):
-            self._p.emit(ev.WordsIn(src=inp.id, f=fid, tr=job.tr, by="you", late=self._late(inp)))
+            self._p.emit(ev.WordsIn(src=inp.id, f=fid, tr=job.tr, by="you", late=self._late(inp), heard=self.said(fid, job.tr)))
         else:
             self._p.news.bump()  # an input waiting for these words goes on without them; the page hears it is done
 
     def words_more(self, fid: str, was: str, tr: str) -> None:
         inp = self._input_with(fid)
         if inp:
-            self._p.emit(ev.WordsIn(src=inp.id, f=fid, tr=tr, was=was, by="you", late=self._late(inp)))
+            self._p.emit(ev.WordsIn(src=inp.id, f=fid, tr=tr, was=was, by="you", late=self._late(inp), heard=self.said(fid, tr)))
+
+    def keep_heard(self) -> None:
+        """Once (F568): the words as said of notes worked out before, which were kept only next to the audio, go into
+        the inputs, one change for the whole project. Notes whose words as said are the tidied ones have none."""
+        notes: Dict[str, Dict[str, str]] = {}
+        for inp in self._p.state.inputs.values():
+            for f in inp.files:
+                if f.is_audio and f.tr and f.heard is None:
+                    heard = self.said(f.f, f.tr)
+                    if heard:
+                        notes.setdefault(inp.id, {})[f.f] = heard
+        if notes:
+            self._p.emit(ev.WordsKept(notes=notes, by="taska"))
 
     def to_resume(self) -> List[Tuple[str, str, Optional[int]]]:
         """Notes sent before their words were in whose transcription a restart cut off."""

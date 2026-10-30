@@ -309,6 +309,9 @@ def _said(st: ProjectState, e: ev.Event) -> "tuple[str, str]":
         return who, f"{e.src} {e.mode}: {first_line(e.text)!r}"
     if isinstance(e, ev.WordsIn):
         return who, f"{e.src} voice note words: {first_line(e.tr)!r}"
+    if isinstance(e, ev.WordsKept):
+        n = sum(len(v) for v in e.notes.values())
+        return who, f"kept the words as said of {n} voice note{'s' if n != 1 else ''}"
     if isinstance(e, ev.ItemsDeleted):
         return who, "deleted " + _codes(st, e.ns)
     if isinstance(e, ev.ItemsRestored):
