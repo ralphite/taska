@@ -42,7 +42,7 @@ test('r595 r696: what each item cost, from the line ending an agent’s done mes
   const p = await project(request, { agent: 'new task P1 now Make the export faster\n', approve: ['T1'] })
   // "<cost>: 12 min · 34,567 token (cache read 1,234,567) · 21 steps", as agents write it (I447)
   await p.doAs(
-    'T1 done Faster now.\n  成本：12 分钟 · 34,567 token（读缓存 1,234,567）· 21 步\n',
+    'T1 done Faster now.\n  \u6210\u672c\uff1a12 \u5206\u949f · 34,567 token\uff08\u8bfb\u7f13\u5b58 1,234,567\uff09· 21 \u6b65\n',
   )
   await page.goto('/dev/dashboard?days=0')
   const row = page.locator('tr', { has: page.locator(`a[href="/p/${p.name}/T1"]`) })

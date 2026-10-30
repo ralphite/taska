@@ -24,7 +24,7 @@ export function tickedBlock(block: string, i: number): string | null {
   while (a > 0 && CHOICE.test(ls[a - 1])) a--
   while (z < ls.length - 1 && CHOICE.test(ls[z + 1])) z++
   const mine = (j: number) => j >= a && j <= z
-  const isAll = (l: string) => multi && /^(全部|All\b)/i.test(l.replace(CHOICE, '').trim())
+  const isAll = (l: string) => multi && /^(\u5168\u90e8|All\b)/i.test(l.replace(CHOICE, '').trim())
   const on = !isTicked(ls[k])
   const all = isAll(ls[k])
   const next = ls.map((l, j) => (j === k || (all && mine(j)) ? mark(l, on) : !multi && mine(j) ? mark(l, false) : l))

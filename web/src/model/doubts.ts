@@ -12,7 +12,7 @@ export interface HeardFile {
 }
 
 /** The model's "(?)" taken out. */
-export const unmarked = (s: string) => s.replace(/\s*[(（][?？][)）]/g, '')
+export const unmarked = (s: string) => s.replace(/\s*[(\uff08][?\uff1f][)\uff09]/g, '')
 
 /** One place of a doubt in the draft's words: from `s` to `e`, the file and doubt it is, the two forms there. */
 export interface Spot {

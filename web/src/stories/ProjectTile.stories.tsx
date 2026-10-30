@@ -26,7 +26,7 @@ export const Sizes: Story = {
             where,
             <div className="flex flex-wrap items-center gap-2 p-3">
               {PROJECT_TONES.map((t, i) => (
-                <ProjTile key={t} title={['Shop', 'Home', '读书笔记', 'taska', 'Notes', 'Travel', 'A long name'][i % 7]} tone={t} cls={cls} />
+                <ProjTile key={t} title={['Shop', 'Home', '\u8bfb\u4e66\u7b14\u8bb0', 'taska', 'Notes', 'Travel', 'A long name'][i % 7]} tone={t} cls={cls} />
               ))}
             </div>,
           ])}
