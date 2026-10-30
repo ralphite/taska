@@ -88,6 +88,7 @@ function useDoc(slug: string, dn: number) {
     type: () => docs.type(),
     moveDoc: (from?: HTMLElement) => (desk && from ? app.sheets.openFrom(from, { kind: 'doc-move', d: dn }, { focus: false }) : app.sheets.open({ kind: 'doc-move', d: dn }, { focus: false })),
     deleteDoc: () => app.docEditor.remove(dn),
+    copyDoc: () => app.docs.copy(dn),
     circle: () => stores.docView.getState().setCircle(!v.circle),
     editDoc: () => app.docEditor.edit(dn),
     whole: () => docs.whole(),
@@ -167,7 +168,7 @@ export function DocPaneContainer({ route, dn, place, hidden, bodyRef, beside }: 
       split={!!beside}
       duo={!!beside}
       head={<DocPaneHead d={d} editing={false} />}
-      acts={<DocPaneActs web={web} inspect={v.inspect} deleting={!!asked['doc-delete ' + dn]} d={dn} on={{ inspect: () => stores.docView.getState().setInspect(!v.inspect), edit: on.editDoc, move: on.moveDoc, remove: on.deleteDoc }} />}
+      acts={<DocPaneActs web={web} inspect={v.inspect} deleting={!!asked['doc-delete ' + dn]} d={dn} on={{ inspect: () => stores.docView.getState().setInspect(!v.inspect), copy: on.copyDoc, edit: on.editDoc, move: on.moveDoc, remove: on.deleteDoc }} />}
       lead={<DocPaneNav to={side ? SIDE_NAME[side] : codeOf(m, liveN(m, d.n))} onBack={() => app.docs.close()} />}
       onBack={() => app.docs.close()}
     >

@@ -6,7 +6,7 @@ const meta: Meta = { title: "Components/Document/Reading" };
 export default meta;
 type Story = StoryObj;
 
-const on = { inspect() {}, edit() {}, move() {}, remove() {} };
+const on = { inspect() {}, copy() {}, edit() {}, move() {}, remove() {} };
 const bar = (children: React.ReactNode) => (
   <div className="flex h-14 items-center gap-1 border-b border-zinc-200 px-3 dark:border-zinc-800">
     {children}

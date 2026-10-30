@@ -1,5 +1,5 @@
 // The desktop pane's bar over a document: what it is (D4 and its title, or Editing), what can be done to it (Comment
-// mode for a web page, Edit, Move, Delete), and the way back, first and plain to see. A narrow bar (B547: a 1100 wide
+// mode for a web page, Copy, Edit, Move, Delete), and the way back, first and plain to see. A narrow bar (B547: a 1100 wide
 // window) keeps the buttons' icons and says their words under the pointer, so the title stays and nothing is cut.
 // Props only.
 
@@ -38,7 +38,7 @@ export function DocPaneHead({ d, editing }: { d: Pick<Doc, 'd' | 'title' | 'fmt'
   )
 }
 
-export function DocPaneActs({ web, inspect, deleting, d, on }: { web: boolean; inspect: boolean; deleting: boolean; d: number; on: { inspect(): void; edit(): void; move(from: HTMLElement): void; remove(): void } }) {
+export function DocPaneActs({ web, inspect, deleting, d, on }: { web: boolean; inspect: boolean; deleting: boolean; d: number; on: { inspect(): void; copy(): void; edit(): void; move(from: HTMLElement): void; remove(): void } }) {
   return (
     <>
       {web ? (
@@ -50,6 +50,7 @@ export function DocPaneActs({ web, inspect, deleting, d, on }: { web: boolean; i
           ) : null}
         </PaneBtn>
       ) : null}
+      <PaneBtn icon="copy" label="Copy" onClick={on.copy} />
       <PaneBtn icon="pencil" label="Edit" onClick={on.edit} />
       <PaneBtn icon="arrow" label="Move" onClick={(e) => on.move(e.currentTarget)} />
       <PaneBtn icon="trash" label={deleting ? `Delete D${d}?` : 'Delete'} always={deleting} onClick={on.remove} />

@@ -86,6 +86,8 @@ export interface DocEvents extends ThreadEvents {
   type(): void
   moveDoc(from?: HTMLElement): void
   deleteDoc(): void
+  /** the whole text on the clipboard */
+  copyDoc(): void
   circle(): void
   editDoc(): void
   whole(): void
@@ -243,6 +245,9 @@ export function DocView({ facts, env, on, popover, lasso, page, recTime, aim = n
             </button>{' '}
             · {facts.by} · {facts.when}
           </span>
+          <button onClick={on.copyDoc} className={phoneBtn}>
+            Copy
+          </button>
           <button onClick={() => on.moveDoc()} className={phoneBtn}>
             Move
           </button>

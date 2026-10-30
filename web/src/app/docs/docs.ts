@@ -9,6 +9,7 @@ import type { DocViewStore } from '../../stores/docView'
 import type { Fields } from '../page/fields'
 import type { Navigation } from '../page/navigation'
 import type { Toasts } from '../page/toasts'
+import { copyText } from '../page/clipboard'
 import { docHere, type DocPlace } from './shared'
 
 export interface DocsDeps extends DocPlace {
@@ -47,6 +48,12 @@ export class Docs {
     const it = doc ? h.m.byN.get(liveN(h.m, doc.n)) : undefined
     const tab: Tab = it?.archived ? 'archive' : it?.type === 'rule' ? 'rules' : 'items'
     this.d.nav.openDoc(dn, this.d.route.getState().side ? undefined : tab)
+  }
+
+  /** Its whole text, as written (Markdown, or a web page's HTML), on the clipboard (F625). */
+  copy(dn: number): void {
+    const doc = docHere(this.d)?.m.docs.find((x) => x.d === dn)
+    if (doc) void copyText(doc.md).then(() => this.d.toasts.show('Copied'))
   }
 
   /** From an item's talk to a comment in its document: the document, the comment's thread open, its passage in view. */

@@ -19,7 +19,7 @@ import { Sheet, SheetLayout } from '../ui/Sheet'
 import { PICTURE, T, item, modelOf } from './fixtures'
 
 const no = () => {}
-export const docOn: DocEvents = { ref: no, picture: no, play: no, words: no, view: no, edit: no, move: no, takeOff: no, remove: no, resolve: no, reply: no, goItem: no, toggle: no, away: no, pick: no, say: no, sayCancel: no, type: no, moveDoc: no, deleteDoc: no, circle: no, editDoc: no, whole: no, tick: no, modifyTicks: no }
+export const docOn: DocEvents = { copyDoc: no, ref: no, picture: no, play: no, words: no, view: no, edit: no, move: no, takeOff: no, remove: no, resolve: no, reply: no, goItem: no, toggle: no, away: no, pick: no, say: no, sayCancel: no, type: no, moveDoc: no, deleteDoc: no, circle: no, editDoc: no, whole: no, tick: no, modifyTicks: no }
 
 /** How you have the document open, and what is going on around it. */
 export interface DocHere {
@@ -87,7 +87,7 @@ export function docAt(d: Doc, desk: boolean, h: DocHere = {}) {
         place=""
         desk
         head={<DocPaneHead d={d} editing={false} />}
-        acts={<DocPaneActs web={web} inspect={!!h.inspect} deleting={!!asked['doc-delete ' + d.d]} d={d.d} on={{ inspect: no, edit: no, move: no, remove: no }} />}
+        acts={<DocPaneActs web={web} inspect={!!h.inspect} deleting={!!asked['doc-delete ' + d.d]} d={d.d} on={{ inspect: no, copy: no, edit: no, move: no, remove: no }} />}
         lead={<DocPaneNav to={facts.itemCode} onBack={no} />}
         onBack={no}
       >
