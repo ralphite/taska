@@ -29,7 +29,7 @@ export interface InputMenuFacts {
   undo: { tip: string } | null
   move: boolean
   history: boolean
-  /** "Put with another item (now F12)…" */
+  /** "Put with item… · now F12" */
   scope: string | null
   /** the file whose Take off waits for its second click */
   asking: string | null
@@ -52,9 +52,9 @@ export function inputMenuSheet({ r, tidy, undo, move, history, scope, asking, de
         {row('append', 'plus', 'Add more', on.append)}
         {tidy ? r.files.filter((f) => (f.mime || '').startsWith('audio/')).map((f) => row('said' + f.f, 'quote', 'Original words', () => on.asSaid(f.f))) : null}
         {undo ? row('undo', 'undo', 'Undo organizing', on.undo, undo.tip) : null}
-        {move ? row('move', 'arrow', 'Move to…', on.move, 'Sent to the wrong project?') : null}
+        {move ? row('move', 'arrow', 'Move to…', on.move) : null}
         {history ? row('history', 'history', 'History', on.history) : null}
-        {row('rescope', 'scope', scope ? `Put with another item (now ${scope})…` : 'Put with an item…', on.rescope)}
+        {row('rescope', 'scope', scope ? `Put with item… · now ${scope}` : 'Put with an item…', on.rescope)}
         {r.files.map((f: FileRef) => (
           <button key={f.f} onClick={() => on.takeOff(f.f)} className={MENU_ROW}>
             <Icon n="x" c="size-4 text-zinc-500 dark:text-zinc-400" />
@@ -108,8 +108,8 @@ export function asSaidSheet(heard: string, tr: string): SheetParts {
       </>
     ) : (
       <>
-        <p className="text-[15px] break-words whitespace-pre-wrap">{heard || tr || 'No words were heard.'}</p>
-        {heard || tr ? <p className="mt-3 text-sm text-zinc-500 dark:text-zinc-400">Nothing was tidied in this one: the words are as said.</p> : null}
+        <p className="text-[15px] break-words whitespace-pre-wrap">{heard || tr || 'No words heard'}</p>
+        {heard || tr ? <p className="mt-3 text-sm text-zinc-500 dark:text-zinc-400">Not tidied: words as said</p> : null}
       </>
     ),
   }

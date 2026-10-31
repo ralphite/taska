@@ -154,7 +154,7 @@ export function NeedsCard({ it, env, on, remodify, going = null, onCard = false 
     const keep = it.status === 'proposed' || it.status === 'review'
     return card(
       w.kind === 'block' ? 'alert' : 'ask',
-      `${msgName(w)} ${w.kind === 'block' ? 'is blocked and needs you' : 'asks you'}`,
+      `${msgName(w)} ${w.kind === 'block' ? 'is blocked' : 'asks you'}`,
       body,
       keep || choices ? (
         <>

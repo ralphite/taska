@@ -31,7 +31,7 @@ describe('what the box writes to', () => {
   test('a paragraph picked in a document: a comment on it, with an x that lets go', () => {
     const r = boxRole(m, at({ kind: 'doc', d: 12 }), true, 'taska', null, { ...nothing, sel: new Set(['p1']) }, noTicks)
     expect(r.aim?.target.key).toBe('p1')
-    expect([r.doc, r.line?.label, r.line?.right, r.send]).toEqual([12, 'Comment on D12', { kind: 'x', label: 'Cancel the comment', act: 'unpick' }, 'Comment'])
+    expect([r.doc, r.line?.label, r.line?.right, r.send]).toEqual([12, 'Comment on D12', { kind: 'x', label: 'Cancel · Esc', act: 'unpick' }, 'Comment'])
   })
 
   test('the phone’s document, nothing picked: the whole document, or a reply to its item instead', () => {

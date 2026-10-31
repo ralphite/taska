@@ -260,7 +260,7 @@ export function SaidLately({
             <input
               type="search"
               autoComplete="off"
-              placeholder="Search what you said"
+              placeholder="Search"
               value={q}
               onChange={(e) => on.query(e.target.value)}
               className="min-w-0 flex-1 bg-transparent text-sm text-zinc-900 outline-none placeholder:text-zinc-400 dark:text-zinc-100 [&::-webkit-search-cancel-button]:hidden"

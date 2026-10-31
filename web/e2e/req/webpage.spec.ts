@@ -484,7 +484,7 @@ test('r687: on the phone the line under a web page asks for a tap on a part: wor
   const p = await project(request, { ...LOOP, then: ROWS })
   await open(page, p, 'D1')
   await expect(page1(page).getByText('Write CSV')).toBeVisible()
-  await expect(page.getByText('Tap a part of the page to comment on it')).toBeVisible()
+  await expect(page.getByText('Tap a part to comment')).toBeVisible()
   await expect(page.getByText(/select text or circle/)).toHaveCount(0)
 })
 

@@ -25,7 +25,7 @@ test('r68 r326: work an agent is blocked on waits on you: in Needs you, with wha
   const body = pane(page)
   await expect(
     body
-      .getByText(/is blocked and needs you/)
+      .getByText(/is blocked$/)
       .filter({ visible: true })
       .first(),
   ).toBeVisible()

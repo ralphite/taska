@@ -41,7 +41,7 @@ export function inputRows(m: ProjectModel, a: InputRowsWith): InputFacts[] {
       else rest.push(part)
     }
     const org = !r.moved && r.org && !(r.acked && r.org.keep)
-    const told = (p: string) => p.toLowerCase() === st.label.toLowerCase() || (/^Left for your/.test(p) && /^Left for your/.test(st.label))
+    const told = (p: string) => p.toLowerCase() === st.label.toLowerCase() || (/^Left for (your )?(coding )?agent/.test(p) && /^Left for agent/.test(st.label))
     const left = rest.filter((p) => !told(p))
     const note = org && left.length ? left.join(' · ') : null
     const scope = r.scope ? m.byN.get(r.scope) : undefined

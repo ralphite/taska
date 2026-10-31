@@ -178,8 +178,7 @@ export function EmptyList({ why, status, organizerOn, onReset, onConnect, hints 
       <Empty>
         No items yet.
         <br />
-        Write your first thought below
-        {organizerOn ? ' and the organizer turns it into items' : ' and your coding agent turns it into items'}.
+        Write below; {organizerOn ? 'the organizer' : 'your agent'} turns it into items.
         <br />
         <button onClick={onConnect} className="mt-3 h-11 text-blue-600 hover:underline dark:text-blue-400">
           Connect a coding agent

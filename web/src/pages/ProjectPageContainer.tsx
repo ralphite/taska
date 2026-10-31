@@ -233,7 +233,7 @@ function PhoneLayout({ route }: { route: ProjectRoute }) {
           otherNeeds={otherNeeds}
           searching={searching}
           q={route.list.q}
-          placeholder="Search title, text or code"
+          placeholder="Search items"
           agent={agent}
           notSaved={notSaved}
           filtersSet={phoneSet.length > 0}

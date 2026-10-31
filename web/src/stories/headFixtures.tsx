@@ -61,7 +61,7 @@ export function headOf(desk: boolean, h: HeadHere = {}) {
     )
   return (
     <div className="flex flex-col">
-      <ListHead phone title="Shop" otherNeeds={!!h.otherNeeds} searching={!!h.searching} q={list.q} placeholder="Search title, text or code" agent={agent} notSaved={h.notSaved ?? 0} filtersSet={set.length > 0} filtersOpen={false} place="" on={headOn} />
+      <ListHead phone title="Shop" otherNeeds={!!h.otherNeeds} searching={!!h.searching} q={list.q} placeholder="Search items" agent={agent} notSaved={h.notSaved ?? 0} filtersSet={set.length > 0} filtersOpen={false} place="" on={headOn} />
       <PhoneTabs tabs={phoneTabs(counts, tab)} filtersSet={set.length > 0} showFilter={tab !== 'inputs'} on={{ tab: no, filters: no }} />
       <FilterStrip set={set} hidden={tab === 'inputs' || !set.length} onUnset={no} onReset={no} />
     </div>

@@ -151,7 +151,7 @@ export function Home({ facts, on, searchRef }: { facts: HomeFacts; on: HomeEvent
       </header>
       {gone ? (
         <div className="mb-3 flex items-center gap-3 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-950 ring-1 ring-amber-200 dark:bg-amber-400/10 dark:text-amber-100 dark:ring-amber-400/25">
-          <span className="min-w-0 flex-1">{gone.said || `Project “${gone.name}” deleted. Restore it, or pick another below.`}</span>
+          <span className="min-w-0 flex-1">{gone.said || `“${gone.name}” deleted.`}</span>
           <button onClick={on.restore} className="h-9 shrink-0 rounded-lg bg-white px-3 font-semibold text-amber-900 ring-1 ring-amber-300 hover:bg-amber-100 dark:bg-zinc-800 dark:text-amber-100 dark:ring-amber-400/30">
             Restore
           </button>
@@ -162,7 +162,7 @@ export function Home({ facts, on, searchRef }: { facts: HomeFacts; on: HomeEvent
       ) : null}
       {none ? (
         <div className="mb-3 flex items-center gap-3 rounded-xl bg-zinc-100 px-4 py-3 text-sm text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100">
-          <span className="min-w-0 flex-1">There is no project {`“${none}”`}. Pick one below.</span>
+          <span className="min-w-0 flex-1">No project {`“${none}”`}.</span>
           <button aria-label="Close" onClick={on.closeNone} className="grid size-9 shrink-0 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-200 dark:text-zinc-400 dark:hover:bg-zinc-700">
             {'✕'}
           </button>

@@ -149,7 +149,7 @@ test('correcting a word of a voice note names the input as the page does everywh
   await fix(page).click()
   const line = boxLine(page)
   await expect(line).toContainText('Correct “export”')
-  await expect(line).toContainText(`in #${id.slice(1)} · remembered for every project`)
+  await expect(line).toContainText(`in #${id.slice(1)} · all projects`)
   await expect(line).not.toContainText(`in ${id}`)
 })
 

@@ -41,7 +41,7 @@ function LineRight({ right, on }: { right: BoxRight; on: LineEvents }) {
         >
           Send choices
         </button>
-        {xButton('Clear the ticks', on.clearTicks, false)}
+        {xButton('Clear choices', on.clearTicks, false)}
       </>
     )
   return (
@@ -206,8 +206,8 @@ export function Composer({ line, waiting = null, lineOn, lineOnComposePage, plac
       {doubts}
       <div className="flex items-end gap-2 p-1.5 group-data-[multi]/box:flex-wrap lg:gap-0.5 lg:group-data-[compose]/app:order-first">
         <button
-          aria-label={rec ? 'Discard the recording' : 'Add images or files'}
-          title={desk ? (rec ? 'Discard · Esc' : 'Add images or files') : undefined}
+          aria-label={rec ? 'Discard the recording' : 'Add files'}
+          title={desk ? (rec ? 'Discard · Esc' : 'Add files') : undefined}
           onClick={() => (rec ? on.recCancel?.() : picker.current?.click())}
           className="grid size-11 shrink-0 place-items-center rounded-full text-zinc-500 group-data-[multi]/box:mr-auto hover:bg-zinc-100 hover:text-zinc-800 lg:m-1 lg:size-9 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
         >
@@ -252,7 +252,7 @@ export function Composer({ line, waiting = null, lineOn, lineOnComposePage, plac
         {(() => {
           // a second press where the recording started sends it; the other button stops it into the box
           const recSend = btn('Stop and send', 'Stop and send · ⇧↵', 'up', () => on.recSend?.(), 'size-5', '2')
-          const recStop = btn('Stop and put words in the box', 'Words into the box · ↵', 'check', () => on.recStop?.(), 'size-5', '2.5')
+          const recStop = btn('Stop and put words in the box', 'Stop, words into the box · ↵', 'check', () => on.recStop?.(), 'size-5', '2.5')
           const mic = (aux: boolean, cls?: string) => btn('Record a voice note', micTip, 'mic', () => on.mic(aux), cls)
           const main = rec ? (rec.from === 'main' ? recSend : recStop) : has ? btn(`${sendWord} (Shift + Enter)`, `${sendWord} · ⇧↵`, 'up', on.send, 'size-5', '2.25') : mic(false)
           const aux = rec ? (rec.from === 'main' ? recStop : recSend) : mic(true, 'size-5')
@@ -342,7 +342,7 @@ export function Feedback({ line, on }: { line: FeedbackLine | null; on: { dismis
           <>
             <Pulse />
             <span className="min-w-0 flex-1 truncate">
-              {line.uploading ? 'Uploading, then sending' : 'Sending'}
+              {line.uploading ? 'Uploading' : 'Sending'}
               {more(line.more)}: {line.text}
             </span>
             {line.canUndo ? link('Undo', on.undo) : null}
@@ -394,7 +394,7 @@ export function Feedback({ line, on }: { line: FeedbackLine | null; on: { dismis
       case 'undone':
         node = (
           <>
-            <span className="min-w-0 flex-1 truncate">Undid the changes for {line.code}</span>
+            <span className="min-w-0 flex-1 truncate">Undid filing of {line.code}</span>
             <Dismiss onClick={on.dismiss} />
           </>
         )
@@ -417,7 +417,7 @@ export function Feedback({ line, on }: { line: FeedbackLine | null; on: { dismis
         node = (
           <>
             <span className="size-2 shrink-0 rounded-full bg-zinc-400" />
-            <span className="line-clamp-2 min-w-0 flex-1 leading-snug">Sent. {line.organizer ? 'Left for your agent' : 'Waiting for your agent'}</span>
+            <span className="line-clamp-2 min-w-0 flex-1 leading-snug">Sent · {line.organizer ? 'left for agent' : 'waiting for agent'}</span>
             {line.canUndo ? link('Undo', on.undo) : null}
             {line.move ? link('Move to…', on.move) : null}
             <Dismiss onClick={on.dismiss} />

@@ -145,7 +145,7 @@ export function BlockActs({ counts, open, rec, children, on }: {
       <div ref={box} className={`absolute left-full z-10 flex-row gap-1 pl-1 ${rec ? 'flex' : 'hidden group-hover/blk:flex'}`}>
         <button
           onClick={() => on.say(at?.quote ?? null)}
-          title={rec ? 'Stop' : 'Speak a comment'}
+          title={rec ? 'Stop' : 'Voice comment'}
           className={`grid size-7 place-items-center rounded-lg shadow-sm ring-1 ${rec ? 'bg-red-600 text-white ring-red-700' : 'bg-white text-zinc-500 ring-zinc-900/10 hover:text-zinc-900 dark:bg-zinc-800 dark:text-zinc-300 dark:ring-white/10 dark:hover:text-white'}`}
         >
           <Icon n={rec ? 'stop' : 'mic'} c="size-4" />

@@ -74,7 +74,7 @@ export function boxRole(m: ProjectModel | null, route: ProjectPlace, desk: boole
   const place = route.place
   const docOf = place.kind === 'doc' ? m?.docs.find((x) => x.d === place.d) : undefined
   const open = place.kind === 'item' ? m?.byN.get(Number(/\d+/.exec(place.ref)?.[0])) : docOf && m ? m.byN.get(liveN(m, docOf.n)) : undefined
-  const files = m?.facts.organizer.on ? 'the organizer files it' : 'your agent files it'
+  const files = m?.facts.organizer.on ? 'organizer files it' : 'agent files it'
   const none = { aim: null as DocAim }
   if (mode?.kind === 'prefs') {
     const line: BoxLine = { icon: 'pencil', label: 'Edit transcription preferences', detail: '· every project', right: stop('Stop editing') }
@@ -82,12 +82,12 @@ export function boxRole(m: ProjectModel | null, route: ProjectPlace, desk: boole
   }
   if (mode?.kind === 'correct') {
     // the line says before and after as you type (shownLine adds what you typed)
-    const line: BoxLine = { icon: 'pencil', label: `Correct “${mode.wrong}”`, detail: `in ${inputCode(mode.id)} · remembered for every project`, right: stop('Stop correcting') }
+    const line: BoxLine = { icon: 'pencil', label: `Correct “${mode.wrong}”`, detail: `in ${inputCode(mode.id)} · all projects`, right: stop('Stop correcting') }
     return { ...none, scope: null, doc: null, line, placeholder: 'Write…', send: 'Save' }
   }
   if (mode?.kind === 'comment') {
     const was = oneLine(mode.was)
-    const line: BoxLine = { icon: 'pencil', label: `Edit your comment on D${mode.d}`, detail: was ? `“${was.slice(0, 120)}”` : '', right: stop('Stop editing') }
+    const line: BoxLine = { icon: 'pencil', label: `Edit comment on D${mode.d}`, detail: was ? `“${was.slice(0, 120)}”` : '', right: stop('Stop editing') }
     return { ...none, scope: null, doc: null, line, placeholder: 'Write…', send: 'Save' }
   }
   const dt = docOf && !mode ? docTarget(docOf, pick) : null
@@ -98,7 +98,7 @@ export function boxRole(m: ProjectModel | null, route: ProjectPlace, desk: boole
       icon: dt.reply ? 'reply' : 'comment',
       label: `${dt.reply ? 'Reply in' : 'Comment on'} D${docOf.d}`,
       detail: (dt.many || 0) > 1 ? `· ${dt.many} paragraphs` : dt.quote ? `“${plainQuote(dt.quote).slice(0, 120)}”` : '',
-      right: { kind: 'x', label: 'Cancel the comment', act: 'unpick' },
+      right: { kind: 'x', label: 'Cancel · Esc', act: 'unpick' },
     }
     return { aim: { d: docOf.d, target: dt }, scope: null, doc: docOf.d, line, ...(waiting ? { waiting: ticksLine(docOf.d) } : {}), placeholder: 'Write…', send: dt.reply ? 'Reply' : 'Comment' }
   }
@@ -142,14 +142,14 @@ export function boxRole(m: ProjectModel | null, route: ProjectPlace, desk: boole
 export function shownBox(role: BoxRole, a: { mode: BoxMode; text: string; key: string; recordingFor: string | null }): { line: BoxLine | null; waiting: BoxLine | null; placeholder: string; send: string; voiceComments: number } {
   const vcN = role.doc != null && !a.mode ? vcCount(a.text) : 0
   const told = vcN
-    ? { line: { icon: 'comment', label: `${plural(vcN, 'comment')} on D${role.doc} not sent`, detail: '· Send posts each beside its paragraph' } as BoxLine, placeholder: role.aim ? 'Write…' : 'Add to the comments…', send: vcN > 1 ? `Post ${vcN} comments` : 'Post the comment' }
+    ? { line: { icon: 'comment', label: `${plural(vcN, 'comment')} on D${role.doc} not sent`, detail: '' } as BoxLine, placeholder: role.aim ? 'Write…' : 'Add to the comments…', send: vcN > 1 ? `Post ${vcN} comments` : 'Post comment' }
     : role
   const right = a.mode?.kind === 'correct' ? a.text.replace(/\s+/g, ' ').trim() : ''
   const line: BoxLine | null =
     a.mode?.kind === 'correct' && told.line && right
       ? { ...told.line, label: `${told.line.label} → “${right.slice(0, 60)}”` }
       : a.recordingFor != null && a.recordingFor !== a.key
-        ? { icon: 'mic', label: `Recording for ${draftName(a.recordingFor)}`, detail: '· it goes there when you stop' }
+        ? { icon: 'mic', label: `Recording for ${draftName(a.recordingFor)}`, detail: '' }
         : told.line
   return { line, waiting: a.mode ? null : (role.waiting ?? null), placeholder: told.placeholder, send: told.send, voiceComments: vcN }
 }
@@ -190,7 +190,7 @@ export function feedbackLine(a: { m: ProjectModel | null; desk: boolean; compose
   else if (r.acked)
     line = {
       kind: 'organized',
-      msg: r.org?.msg || (r.touched.length ? 'Organized' : 'Seen by your agent, no item made'),
+      msg: r.org?.msg || (r.touched.length ? 'Organized' : 'Seen, no item made'),
       view: !!r.touched.length,
       undo: !!(r.org && r.org.ok && !r.org.undone && !r.org.keep && r.touched.length),
       move,

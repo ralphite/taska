@@ -25,12 +25,12 @@ const voiceWord = (f: DraftFile) =>
       ? 'Retrying…'
       : 'Transcribing…'
     : f.more
-      ? 'May be cut short · fuller words on the way'
+      ? 'Partial · more coming'
       : f.tr
         ? 'Transcribed'
         : f.trError
-          ? 'No transcript: the audio goes as it is'
-          : 'No words heard: the audio goes as it is'
+          ? 'No transcript · audio only'
+          : 'No words heard · audio only'
 
 export function DraftFiles({ files, url, onRemove, onView }: { files: readonly DraftFile[]; url(f: string): string; onRemove(key: string): void; onView(key: string): void }) {
   return (

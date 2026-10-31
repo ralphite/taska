@@ -73,7 +73,7 @@ export function FilterControls({ tab, list, small = false, on }: { tab: Tab; lis
       </div>
       {tab === 'items' ? (
         <div>
-          {lab('Save as a view')}
+          {lab('Save as view')}
           <div className="flex items-center gap-1.5">
             <input
               placeholder="Name"

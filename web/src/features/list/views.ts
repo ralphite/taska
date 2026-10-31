@@ -62,7 +62,7 @@ export class SavedViews {
     if (!name) return this.d.toasts.show('Name the view first', null, { error: true })
     if (list.some((v) => v.name.toLowerCase() === name.toLowerCase())) return this.d.toasts.show(`View “${name}” already exists`, null, { error: true })
     if (!now) return
-    void this.save([...list, { name, type: now.type, when: now.when, status: now.status, pri: now.pri, sort: now.sort }], `Saved the view ${name}`)
+    void this.save([...list, { name, type: now.type, when: now.when, status: now.status, pri: now.pri, sort: now.sort }], `Saved view ${name}`)
   }
 
   rename(i: number, name: string): void {
@@ -86,7 +86,7 @@ export class SavedViews {
     if (v && now)
       void this.save(
         list.map((o, j) => (j === i ? { ...o, type: now.type, when: now.when, status: now.status, pri: now.pri, sort: now.sort } : o)),
-        `${v.name} now shows these filters`,
+        `${v.name} updated`,
       )
   }
 
@@ -96,7 +96,7 @@ export class SavedViews {
     if (v)
       void this.save(
         list.filter((_, j) => j !== i),
-        `Deleted the view ${v.name}`,
+        `Deleted view ${v.name}`,
       )
   }
 }

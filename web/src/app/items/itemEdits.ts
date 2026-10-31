@@ -60,7 +60,7 @@ export class ItemEdits {
     if (n == null) return
     v.setEditing(null)
     const m = this.d.model()
-    if (m && this.d.kept.getState().edits[n]) this.d.toasts.show(`Your changes to ${codeOf(m, n)} are kept: ${this.d.desk() ? 'press I' : 'Edit'} to go on`)
+    if (m && this.d.kept.getState().edits[n]) this.d.toasts.show(`${codeOf(m, n)} edits kept · ${this.d.desk() ? 'I' : 'Edit'} to continue`)
   }
 
   subStart(n: number): void {
@@ -78,7 +78,7 @@ export class ItemEdits {
     const n = v.subFor
     if (n == null) return
     v.setSubFor(null)
-    if (this.d.kept.getState().subs[n]) this.d.toasts.show(`Your subitem title is kept: ${this.d.desk() ? '⇧A' : 'Add'} brings it back`)
+    if (this.d.kept.getState().subs[n]) this.d.toasts.show(`Subitem title kept · ${this.d.desk() ? '⇧A' : 'Add'} brings it back`)
   }
 
   subCancel(): void {

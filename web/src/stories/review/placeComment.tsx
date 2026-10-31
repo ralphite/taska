@@ -93,7 +93,7 @@ function DeskControl({ step, go }: { step: Step; go: Go }) {
     )
   return (
     <div className="flex gap-1">
-      <B icon="mic" label="Speak a comment" cls={SMALL} on={go.speak} />
+      <B icon="mic" label="Voice comment" cls={SMALL} on={go.speak} />
       <B icon="comment" label="Comment" cls={SMALL} on={go.write} />
     </div>
   )
@@ -107,7 +107,7 @@ function PhoneControl({ step, go }: { step: Step; go: Go }) {
       ) : (
         <>
           <span className="min-w-0 flex-1 pl-2 text-[13px] text-zinc-500 dark:text-zinc-400">Speak or write about it</span>
-          <B icon="mic" label="Speak a comment" cls={`${MAIN(true)} shadow-lg`} on={go.speak} big />
+          <B icon="mic" label="Voice comment" cls={`${MAIN(true)} shadow-lg`} on={go.speak} big />
           <B icon="comment" label="Comment" cls="grid size-11 shrink-0 place-items-center rounded-full text-zinc-600 ring-1 ring-zinc-300 hover:bg-zinc-100 dark:text-zinc-300 dark:ring-zinc-600 dark:hover:bg-zinc-800" on={go.write} big />
         </>
       )}

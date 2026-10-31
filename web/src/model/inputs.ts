@@ -26,21 +26,20 @@ export function standing(r: Input, organizer: { on: boolean; busy: string | null
   if (r.kind === 'answer') return { label: 'Answer', tone: TONE.muted, icon: 'check' }
   if (r.acked)
     return r.org?.keep
-      ? { label: 'Handled by your agent', tone: TONE.quiet, icon: 'check' }
+      ? { label: 'Handled by agent', tone: TONE.quiet, icon: 'check' }
       : !r.org && !r.touched.length
-        ? { label: 'Seen by your agent', tone: TONE.muted, icon: 'check' }
+        ? { label: 'Seen by agent', tone: TONE.muted, icon: 'check' }
         : { label: 'Organized', tone: TONE.done, icon: 'check' }
   if (r.org && !r.org.ok) return { label: 'Organizer failed', tone: TONE.failed, icon: 'alert' }
-  if (r.org) return { label: 'Left for your agent', tone: TONE.plain, icon: 'bot' }
-  return { label: organizer.on ? 'Queued' : 'Waiting for your agent', tone: TONE.plain, icon: 'hourglass' }
+  if (r.org) return { label: 'Left for agent', tone: TONE.plain, icon: 'bot' }
+  return { label: organizer.on ? 'Queued' : 'Waiting for agent', tone: TONE.plain, icon: 'hourglass' }
 }
 
 /** Where an input stands in a word, as the New input page's list says it. */
 export const SHORT_STANDING: Record<string, string> = {
-  'Waiting for your agent': 'For your agent',
-  'Handled by your agent': 'Handled',
-  'Seen by your agent': 'Seen',
-  'Left for your agent': 'Left for agent',
+  'Waiting for agent': 'For agent',
+  'Handled by agent': 'Handled',
+  'Seen by agent': 'Seen',
 }
 
 export const organizing = (r: Input, organizer: { on: boolean; busy: string | null }) => organizer.busy === r.id || (!r.acked && organizer.on && !r.org)

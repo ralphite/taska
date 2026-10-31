@@ -14,7 +14,7 @@ export interface OtherProject {
 
 export function itemMoveProjectSheet({ code, others }: { code: string; others: OtherProject[] }, onPick: (slug: string) => void): SheetParts {
   return {
-    title: `Move ${code} to another project`,
+    title: `Move ${code} to…`,
     body: (
       <>
         <div className="-mx-1 flex flex-col gap-0.5">
@@ -46,7 +46,7 @@ export function moveInputSheet({ code, words, others, made, byOrganizer, scope }
 }, onPick: (slug: string) => void): SheetParts {
   const list = made.join(', ')
   return {
-    title: `Move ${code} to another project`,
+    title: `Move ${code} to…`,
     body: (
       <div className="flex flex-col gap-3">
         <p className="line-clamp-3 rounded-xl bg-blue-50 px-3 py-2 text-[15px] leading-snug break-words text-zinc-900 dark:bg-blue-400/10 dark:text-zinc-100">{words}</p>

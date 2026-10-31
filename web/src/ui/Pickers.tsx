@@ -68,7 +68,7 @@ export function moveParentSheet({ it, items, kids, code, desk }: { it: Item; ite
       <Picker
         items={items}
         code={code}
-        placeholder={`Put ${code(it.n)} under…`}
+        placeholder="Find an item"
         skip={below}
         sort={(a, b) => closedLast(a, b) || a.n - b.n}
         current={it.parent}

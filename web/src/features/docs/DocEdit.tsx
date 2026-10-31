@@ -37,7 +37,7 @@ export function DocEdit({ isNew, text, hint, mic, fieldRef, on }: { isNew: boole
         autoFocus
         value={text}
         onChange={(e) => on.change(e.target.value)}
-        placeholder={'Title on the first line\n\nNotes, plans, or designs (Markdown supported)'}
+        placeholder={'Title\n\nText (Markdown)'}
         className="min-h-[40dvh] w-full flex-1 resize-none bg-transparent text-base leading-relaxed outline-none placeholder:text-zinc-400"
       />
     </div>

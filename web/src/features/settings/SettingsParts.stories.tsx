@@ -13,7 +13,7 @@ export const Parts: Story = {
     <div className="flex gap-6">
       <Frame layout="desk" width={620} height={520}>
         <div className="px-8 pt-6">
-          <Part title="Link" about="Open this on your phone to use Taska anywhere.">
+          <Part title="Link" about="Open on your phone">
             <TextBox t="https://taska.example/k/abc/p/home/" />
             <CopyBtn label="Copy link" main onCopy={() => {}} />
           </Part>

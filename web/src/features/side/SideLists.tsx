@@ -50,9 +50,7 @@ export function DocsList({ docs, open, onOpen }: { docs: DocRow[]; open: number 
   if (!docs.length)
     return (
       <Empty>
-        No documents yet.
-        <br />
-        Agents write them on items; an item&apos;s ⋯ makes one too.
+        No documents yet · item ⋯ › New document
       </Empty>
     )
   return (

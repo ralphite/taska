@@ -15,7 +15,7 @@ export function viewMenuSheet(name: string, on: { rename(): void; update(): void
     body: (
       <div className="-mx-1 flex flex-col gap-0.5">
         {row('pencil', 'Rename', on.rename)}
-        {row('save', 'Save current filters to this view', on.update)}
+        {row('save', 'Use current filters', on.update)}
         {row('trash', 'Delete', on.remove)}
       </div>
     ),

@@ -24,7 +24,6 @@ export function DraftCard({ voice, ms, files, transcribing, words, hint }: { voi
       <div className="min-w-0">
         <div className="flex h-7 items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
           <span className="font-semibold tracking-wider text-blue-700 uppercase dark:text-blue-300">Draft</span>
-          <span>· not sent</span>
           {voice ? (
             <span className="flex items-center gap-1">
               · <Icon n="mic" c="size-3.5" />
@@ -50,7 +49,7 @@ export function DraftCard({ voice, ms, files, transcribing, words, hint }: { voi
                 {hint.kind === 'check' ? (
                   <b className="font-semibold text-zinc-700 dark:text-zinc-200">{plural(hint.n, 'word')} to check</b>
                 ) : hint.kind === 'switch' ? (
-                  'Click the other version to switch before sending.'
+                  'Tap a version to use it.'
                 ) : (
                   'Select words to correct spelling. Taska remembers.'
                 )}

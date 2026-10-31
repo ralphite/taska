@@ -123,7 +123,7 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
     cancelReask: () => iv().endAnswer(),
     set: (field, v) => {
       if (field === 'archived') {
-        void app.items.change(n, 'archived', v, { note: v ? 'Find it under Archive' : '' })
+        void app.items.change(n, 'archived', v)
         if (v) app.nav.closeItem()
       } else void app.items.change(n, field, v)
     },

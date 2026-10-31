@@ -14,12 +14,12 @@ const sent = (f: Partial<Input> = {}) => input({ id: 'r12', text: 'Buy milk on t
 const org = (ok: boolean, msg: string) => ({ ok, msg, t: '', keep: false, changed: ok, undone: false })
 
 export const Sending = at({ mine: [out()], undoable: true })
-export const UploadingThenSending: Story = { ...at({ mine: [out({ text: '', files: [{ f: '', name: 'shot.png', mime: 'image/png', uploading: true }] })] }), name: 'Uploading, then sending' }
+export const UploadingThenSending: Story = { ...at({ mine: [out({ text: '', files: [{ f: '', name: 'shot.png', mime: 'image/png', uploading: true }] })] }), name: 'Uploading' }
 export const SeveralOnTheirWay = at({ mine: [out(), out({ q: 'q2', text: 'And bread' }), out({ q: 'q3', text: 'And eggs' })] })
 export const WaitingForTaska = at({ mine: [out({ state: 'failed', net: true })] })
-export const SentWaitingForYourAgent: Story = { ...at({ sent: sent() }), name: 'Sent, waiting for your agent' }
-export const SentLeftForYourAgent: Story = { ...at({ sent: sent({ org: org(true, 'Left for your coding agent') }), organizer: true }), name: 'Sent, left for your agent' }
+export const SentWaitingForYourAgent: Story = { ...at({ sent: sent() }), name: 'Sent, waiting for agent' }
+export const SentLeftForYourAgent: Story = { ...at({ sent: sent({ org: org(true, 'Left for your coding agent') }), organizer: true }), name: 'Sent, left for agent' }
 export const SentTranscribing: Story = { ...at({ sent: sent({ text: '', trWait: true }) }), name: 'Sent, transcribing' }
 export const OrganizerFailed = at({ sent: sent({ org: org(false, 'Gemini HTTP 503: overloaded') }), organizer: true })
 export const FiledByYourAgent = at({ sent: sent({ acked: true, touched: [12], org: org(true, 'Created F012') }), organizer: true })
-export const SeenByYourAgentNoItemMade: Story = { ...at({ sent: sent({ acked: true, touched: [] }) }), name: 'Seen by your agent, no item made' }
+export const SeenByYourAgentNoItemMade: Story = { ...at({ sent: sent({ acked: true, touched: [] }) }), name: 'Seen, no item made' }

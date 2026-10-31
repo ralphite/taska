@@ -213,7 +213,7 @@ export function ItemRow(props: {
     ) : isClosed && band !== 'retired' ? (
       <span key="s">{statusWord(it)}</span>
     ) : it.talked && !isClosed ? (
-      <span key="s">Your agent&apos;s turn</span>
+      <span key="s">Agent&apos;s turn</span>
     ) : null,
     it.when === 'later' && !isClosed && band !== 'later' ? (
       <Soft key="l">Later</Soft>

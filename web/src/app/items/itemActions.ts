@@ -55,7 +55,7 @@ export class ItemActions {
     this.d = deps
   }
 
-  change(n: number, f: string, v: unknown, opts: { said?: string; note?: string } = {}): Promise<boolean> {
+  change(n: number, f: string, v: unknown, opts: { said?: string } = {}): Promise<boolean> {
     const m = this.d.model()
     const it = m?.byN.get(n) as (Item & Record<string, unknown>) | undefined
     if (!m || !it || it[f] === v) return Promise.resolve(!!it)
@@ -100,7 +100,7 @@ export class ItemActions {
     const left = f === 'status' && v === 'done' ? (m.kids.get(n) || []).filter((k) => !closed(k.status)).length : 0
     const noted = f === 'status' && this.d.noteWith(n)
     this.d.toasts.show(
-      `${ref} ${words}${noted ? ', with your note' : ''}${left ? ` · ${plural(left, 'subitem')} still open` : ''}${opts.note && !noted ? `. ${opts.note}.` : ''}`,
+      `${ref} ${words}${noted ? ', with your note' : ''}${left ? ` · ${plural(left, 'subitem')} still open` : ''}`,
       undo,
     )
     const patch: ItemPatch = { n, f: { [f]: v, ...dec } as Partial<Item> }

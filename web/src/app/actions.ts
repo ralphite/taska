@@ -103,7 +103,7 @@ type Action = PageAction | ItemAction
 
 const item = <K extends Uses = never>(uses: readonly K[], a: Omit<ItemAction<K>, 'item' | 'uses'>): ItemAction<K> => ({ ...a, uses, item: true })
 const page = <K extends Uses = never>(uses: readonly K[], a: Omit<PageAction<K>, 'uses'>): PageAction<K> => ({ ...a, uses })
-const set = (w: Pick<ActionWorld, 'items'>, h: OnItem, f: string, v: unknown, o: { said?: string; note?: string } = {}) => void w.items.change(h.it.n, f, v, o)
+const set = (w: Pick<ActionWorld, 'items'>, h: OnItem, f: string, v: unknown, o: { said?: string } = {}) => void w.items.change(h.it.n, f, v, o)
 const arm = (k: 's' | 'p' | 't', hint: string) => (w: Pick<ActionWorld, 'keyArm' | 'toasts'>, h: OnItem) => {
   w.keyArm.set(k, h.it.n)
   w.toasts.show(hint)
@@ -149,7 +149,7 @@ export const ACTIONS = {
     palette: true,
     run: (w, h) => {
       const on = !h.it.archived
-      set(w, h, 'archived', on, { note: on ? 'Find it under Archive' : '' })
+      set(w, h, 'archived', on)
       if (on && h.r.place.kind === 'item') w.nav.closeItem()
     },
   }),

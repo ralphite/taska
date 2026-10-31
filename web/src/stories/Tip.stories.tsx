@@ -31,7 +31,7 @@ const one = (part: (desk: boolean) => ReactNode, find: string | ((root: HTMLElem
 const button = (row: string, words: string) => (root: HTMLElement) => [...root.querySelectorAll(`${row} button`)].find((b) => b.textContent?.includes(words))
 
 export const OnApprove: Story = { ...one(() => listOf(PROJECT, 'items', {}, true), button('[data-n="3"]', 'Approve'), { height: 520 }), name: 'On Approve, in a row that waits on you' }
-export const OnHideSidebar: Story = { ...one(() => <div className="h-full w-60">{side(false)}</div>, 'button[aria-label="Hide the sidebar"]', { height: 520 }), name: 'On Hide the sidebar' }
+export const OnHideSidebar: Story = { ...one(() => <div className="h-full w-60">{side(false)}</div>, 'button[aria-label="Hide sidebar"]', { height: 520 }), name: 'On Hide sidebar' }
 export const OnRailProject: Story = { ...one(() => <div className="h-full w-14">{rail()}</div>, '#rail a[aria-label="Home"]', { height: 520 }), name: 'On a project in the rail' }
 export const OnRailSettings: Story = { ...one(() => <div className="h-full w-14">{rail()}</div>, '#rail button[aria-label="Settings"]', { height: 520 }), name: 'On Settings in the rail' }
 export const OnFilters: Story = { ...one(() => headOf(true), 'button[aria-label="Filters"]', { width: 1100, height: 240 }), name: 'On Filters' }

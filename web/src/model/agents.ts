@@ -28,9 +28,9 @@ export function agentState(agents: readonly AgentSeen[] | undefined, work: boole
   const list = [...(agents || [])].sort((a, b) => b.t - a.t)
   const a = list.find((x) => x.waiting) || list[0]
   const name = a ? whoName(a.name) : ''
-  if (a?.waiting) return ['ok', `${name} ready`, `${name} is connected and picks up new work right away.`]
+  if (a?.waiting) return ['ok', `${name} ready`, `${name} is ready for work.`]
   if (a && now - a.t < 10 * 60e3) return ['ok', `${name} · ${agoShort(a.t, now)}`, `${name} was here ${agoLong(a.t, now)}.`]
-  const last = a ? `The last agent (${name}) was here ${agoLong(a.t, now)}.` : 'No agent connected yet.'
+  const last = a ? `The last agent (${name}) was here ${agoLong(a.t, now)}.` : 'No agent yet.'
   return work
     ? ['bad', a ? `No agent · ${agoShort(a.t, now)}` : 'No agent', `Work is waiting. ${last}`]
     : ['idle', a ? `${name} · ${agoShort(a.t, now)}` : 'No agent', `Nothing is waiting for an agent. ${last}`]

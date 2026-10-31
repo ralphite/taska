@@ -25,7 +25,7 @@ export function Doubts({ view, on }: { view: DoubtsView; on: { use(fk: string, k
     body = (
       <p className="flex min-h-8 items-center gap-1.5">
         <Alert />
-        <span className="min-w-0">{plural(view.toCheck, 'word')} may be misheard. They are marked in the draft below: pick there.</span>
+        <span className="min-w-0">{plural(view.toCheck, 'word')} may be misheard · pick below</span>
       </p>
     )
   else if (view.kind === 'phone')
@@ -33,7 +33,7 @@ export function Doubts({ view, on }: { view: DoubtsView; on: { use(fk: string, k
       <p className="flex min-h-8 items-start gap-1.5 py-1">
         <Alert />
         <span className="min-w-0">
-          {view.toCheck ? <b className="font-semibold text-zinc-800 dark:text-zinc-100">{plural(view.toCheck, 'word')} to check</b> : 'Tap the other version to switch before sending.'}
+          {view.toCheck ? <b className="font-semibold text-zinc-800 dark:text-zinc-100">{plural(view.toCheck, 'word')} to check</b> : 'Tap a version to use it.'}
           {view.showing ? null : (
             <>
               {' '}
@@ -55,7 +55,7 @@ export function Doubts({ view, on }: { view: DoubtsView; on: { use(fk: string, k
             Maybe misheard: {'“'}
             {unmarked(said)}
             {'”'}
-            {x.alt ? ` — the other model heard “${heard}”${x.also?.length ? ` (${x.also.length + 1} places)` : ''} ·` : ' — unsure'}
+            {x.alt ? ` — other model: “${heard}”${x.also?.length ? ` (${x.also.length + 1} places)` : ''} ·` : ' — unsure'}
           </span>
           {x.alt ? (
             <button onClick={() => on.use(fk, k)} className={`${LINK_BTN} -my-1 -ml-1.5 shrink-0`}>

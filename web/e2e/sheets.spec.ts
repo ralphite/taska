@@ -87,7 +87,7 @@ test('F628: the agent pill opens Agents, its guide laid out; Settings has no Age
   await page.getByRole('button', { name: 'Agents', exact: true }).filter({ visible: true }).first().click()
   const sheet = sheetBody(page)
   await expect(sheet.locator('#dlgTitle')).toHaveText('Agents')
-  await expect(sheet.getByText('Connect one more agent')).toBeVisible()
+  await expect(sheet.getByText('Connect an agent')).toBeVisible()
   await sheet.getByText('What the agent reads').click()
   await expect(sheet.getByRole('heading', { name: 'READ (plain text)' })).toBeVisible()
   await expect(sheet.locator('dt', { hasText: /^curl -s BASE\/next$/ })).toBeVisible()

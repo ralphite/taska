@@ -142,7 +142,7 @@ export function PhoneProjectsBody({ f, on }: { f: ProjectsFacts; on: ProjectsEve
               </div>
             ))}
           </div>
-          <PhNote>Deleted projects keep their data. To delete forever, tap ⋯ and confirm.</PhNote>
+          <PhNote>Delete forever: ⋯</PhNote>
         </>
       ) : null}
     </>
@@ -164,9 +164,7 @@ export function DocsBody({ docs, onOpen }: { docs: PhoneDocRow[]; onOpen(d: numb
     return (
       <Ruled>
         <Empty>
-          No documents yet.
-          <br />
-          Agents write them on items; an item&apos;s ⋯ makes one too.
+          No documents yet · item ⋯ › New document
         </Empty>
       </Ruled>
     )

@@ -172,7 +172,7 @@ function Editor({ it, kept, on }: { it: Item; kept: { title: string; body: strin
           on.editTyped({ title, body, next: e.target.value })
         }}
         aria-label="Next step"
-        placeholder="Next step (optional)"
+        placeholder="Next step"
       />
       <div className="flex justify-end gap-2">
         <button onClick={on.editCancel} className={SECOND}>
@@ -480,7 +480,7 @@ export function ItemTalk({ it, f, env, facts, on }: { it: Item; f: ItemFacts; en
 
 // ---------------------------------------------------------------- the pane's bar for an item
 
-/** The bar's head: the item's status icon (desktop), its code, and "Your agent's turn" when you replied. */
+/** The bar's head: the item's status icon (desktop), its code, and "Agent's turn" when you replied. */
 export function ItemHead({ it, code }: { it: Item; code: string }) {
   return (
     <>
@@ -489,7 +489,7 @@ export function ItemHead({ it, code }: { it: Item; code: string }) {
       </span>
       <span className={`font-mono text-sm font-bold ${TYPE_TEXT[it.type]}`}>{code}</span>
       <span className="text-[11px] font-semibold tracking-wider uppercase">
-        {!it.wait && it.talked && !closed(it.status) ? <span className="text-blue-600 dark:text-blue-400">Your agent&apos;s turn</span> : null}
+        {!it.wait && it.talked && !closed(it.status) ? <span className="text-blue-600 dark:text-blue-400">Agent&apos;s turn</span> : null}
       </span>
     </>
   )
@@ -549,7 +549,7 @@ export function ItemNav({ full, on }: { full: boolean; on: { prev(): void; next(
     <>
       <BarIcon icon="chevup" title="Previous · K" onClick={on.prev} />
       <BarIcon icon="down" title="Next · J" onClick={on.next} />
-      <BarIcon icon={full ? 'shrink' : 'open'} title={full ? 'Back to the list · Esc' : 'Full width · O'} onClick={on.full} />
+      <BarIcon icon={full ? 'shrink' : 'open'} title={full ? 'Back to list · Esc' : 'Full width · O'} onClick={on.full} />
     </>
   )
 }
@@ -578,7 +578,7 @@ export function BackTo({ label, onBack }: { label: string; onBack(): void }) {
 
 export function NoSelection({ side }: { side: 'docs' | 'log' | null }): ReactNode {
   if (side)
-    return <div className="grid h-full place-items-center p-8 text-center text-[15px] text-zinc-500 dark:text-zinc-400">{side === 'docs' ? 'Pick a document to read it here' : 'Select a line to view'}</div>
+    return <div className="grid h-full place-items-center p-8 text-center text-[15px] text-zinc-500 dark:text-zinc-400">{side === 'docs' ? 'Pick a document' : 'Select a line to view'}</div>
   return (
     <div className="grid h-full place-items-center p-8 text-center">
       <div>

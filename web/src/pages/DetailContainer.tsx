@@ -63,7 +63,7 @@ export function DetailContainer({ route, place, hidden, full = false, footRoom =
     }
     const set = (f: 'when' | 'archived' | 'status', v: string | boolean) => {
       if (f === 'archived') {
-        void app.items.change(it.n, 'archived', v, { note: v ? 'Find it under Archive' : '' })
+        void app.items.change(it.n, 'archived', v)
         if (v) back()
       } else void app.items.change(it.n, f, v)
     }

@@ -80,7 +80,7 @@ function AgentsBody({ f, onCopy, guideOpen }: { f: AgentsFacts; onCopy(text: str
         ) : null}
       </div>
       <section className="flex flex-col gap-3">
-        <h2 className="text-[15px] font-semibold">Connect one more agent</h2>
+        <h2 className="text-[15px] font-semibold">Connect an agent</h2>
         <div className="flex flex-col gap-4">
           {way(
             'terminal',

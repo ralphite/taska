@@ -179,7 +179,7 @@ export function ProjectsBody({ f, on }: { f: ProjectsFacts; on: ProjectsEvents }
       {f.gone.length ? (
         <section className="pt-8">
           <h2 className="text-[15px] font-semibold">Deleted projects</h2>
-          <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">A deleted project leaves the sidebar and stops giving work to agents. Nothing in it is lost: Restore brings it back as it was.</p>
+          <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">Hidden; agents get no work from it. Restore brings it back intact.</p>
           <ul className="mt-3 flex flex-col gap-2">
             {f.gone.map((d) => (
               <li key={d.name} className="flex items-center gap-3 rounded-xl bg-zinc-50 px-3 py-2.5 dark:bg-zinc-900">
@@ -200,7 +200,6 @@ export function ProjectsBody({ f, on }: { f: ProjectsFacts; on: ProjectsEvents }
               </li>
             ))}
           </ul>
-          <p className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">Delete forever asks for a second click. It is the only step that cannot be undone.</p>
         </section>
       ) : null}
     </>
@@ -213,7 +212,7 @@ export function PhoneBody({ link, keyText, asking, desk, on }: { link: string; k
   return (
     <>
       {link ? (
-        <Part title="Link" about="Open this on your phone to use Taska anywhere.">
+        <Part title="Link" about="Open on your phone">
           <TextBox t={link} />
           <CopyBtn label="Copy link" main onCopy={() => on.copy(link)} />
         </Part>
@@ -239,7 +238,7 @@ export function PhoneBody({ link, keyText, asking, desk, on }: { link: string; k
       </Part>
       <Setting
         title="New key"
-        about="This computer and devices on its network need no key. A new key signs out all other devices."
+        about="A new key signs out all other devices."
         control={
           <button
             onClick={on.newKey}
@@ -348,7 +347,7 @@ export function SpellingsBody({ fixes, prefs, editing, prefsSlot, on }: { fixes:
                 {prefs.default ? <span className="ml-2 text-[13px] font-normal text-zinc-400">default</span> : null}
               </>
             }
-            about="How voice notes are transcribed across all projects."
+            about="All projects"
           >
             {editing ? (
               <div className="mt-3">{prefsSlot}</div>
@@ -364,14 +363,14 @@ export function SpellingsBody({ fixes, prefs, editing, prefsSlot, on }: { fixes:
           </Part>
           <Setting
             title="Tidy voice notes"
-            about={prefs.tidy ? 'Removes fillers and repeats, joins sentences, and keeps details. Original words remain available.' : 'Written word for word.'}
+            about={prefs.tidy ? 'Drops fillers and repeats; original words kept' : 'Written word for word.'}
             control={
               <button onClick={on.toggleTidy} role="switch" aria-checked={!!prefs.tidy} className={SECOND}>
                 {prefs.tidy ? 'Turn off' : 'Turn on'}
               </button>
             }
           />
-          <Part title="Spellings" about={fixes.length ? 'Custom words and corrections for transcription.' : 'None. Add words below or correct them directly in a voice note.'}>
+          <Part title="Spellings" about={fixes.length ? undefined : 'None yet. Select wrong words in a voice note to fix them.'}>
             <div className="mt-3 flex items-center gap-1.5">
               <input
                 className={`${FIELD} h-10 py-1.5 text-sm`}
@@ -433,5 +432,5 @@ export function SpellingsBody({ fixes, prefs, editing, prefsSlot, on }: { fixes:
 // ---- Organizer
 
 export function OrganizerBody({ on, model }: { on: boolean; model: string }) {
-  return on ? <Part title="On" about={`Gemini (${model}) creates or updates items from inputs across all projects. See and undo its actions in Inputs.`} /> : <Part title="Off" about="Set GEMINI_API_KEY to turn it on" />
+  return on ? <Part title="On" about={`Gemini (${model}) files inputs into items in all projects; undo in Inputs`} /> : <Part title="Off" about="Set GEMINI_API_KEY to turn it on" />
 }

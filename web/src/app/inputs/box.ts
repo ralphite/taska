@@ -55,7 +55,7 @@ export class Box {
     d.store.subscribe((s, was) => {
       if (s.slug !== was.slug || was.shown.key !== NEW_DRAFT || s.shown.key === NEW_DRAFT || this.d.recording?.()) return
       if (!this.text(s.slug, NEW_DRAFT).trim() && !s.files[NEW_DRAFT]?.length) return
-      setTimeout(() => this.d.toasts.show('Your new input is kept, not sent', () => this.d.goDraft?.(NEW_DRAFT), { label: 'Open' }))
+      setTimeout(() => this.d.toasts.show('New input kept as draft', () => this.d.goDraft?.(NEW_DRAFT), { label: 'Open' }))
     })
   }
 
@@ -153,7 +153,7 @@ export class Box {
     st.removeFile(key, fk)
     if (!f.trAdded || !before.includes(f.trAdded)) return
     this.write(slug, key, before.replace(f.trAdded, '').replace(/\n{3,}/g, '\n\n').trim())
-    this.d.toasts.show('Removed the voice note and its words', () => {
+    this.d.toasts.show('Voice note removed', () => {
       const rest = this.d.store.getState().takeFiles(key)
       this.d.store.getState().putFiles(key, [...rest.slice(0, i), f, ...rest.slice(i)])
       this.write(slug, key, before)
@@ -329,7 +329,7 @@ export class Box {
         this.putBack(slug, key, right)
         return
       }
-      this.d.toasts.show(`Fixed ${inputCode(mode.id)}. Voice notes will use \u201c${right}\u201d`, async () => {
+      this.d.toasts.show(`Fixed ${inputCode(mode.id)} · \u201c${right}\u201d remembered`, async () => {
         // the words come back, and the spelling is forgotten (or the one before comes back)
         const now = this.d.model?.(slug)?.byId.get(mode.id)
         if (now && before != null && now.text !== before) await this.d.runner.send({ id: newId(), slug, commands: [{ op: 'amend', id: mode.id, mode: 'edit', v: now.v || 0, text: before } as never], patches: [], inputPatches: [{ id: mode.id, f: { text: before } }], said: `putting back ${inputCode(mode.id)}`, t: Date.now() })

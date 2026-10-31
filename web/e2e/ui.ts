@@ -21,7 +21,7 @@ export const threadCounts = (page: Page) => shown(page.locator(THREAD_COUNTS))
 /** The comments' own column beside a document. */
 export const commentRail = (page: Page) => page.locator('aside[aria-label="Comments"]')
 /** The buttons by the block under the pointer: speak a comment, and comment. */
-export const blockSay = (page: Page) => shown(page.getByRole('button', { name: 'Speak a comment', exact: true }))
+export const blockSay = (page: Page) => shown(page.getByRole('button', { name: 'Voice comment', exact: true }))
 export const blockPick = (page: Page) => shown(page.getByRole('button', { name: 'Comment', exact: true }))
 /** A choice in a document's form, to tick. */
 export const choice = (page: Page, words: string) => shown(docBlocks(page).locator('[role="group"] button[aria-pressed]').filter({ hasText: words })).first()

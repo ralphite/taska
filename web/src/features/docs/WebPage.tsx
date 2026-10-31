@@ -274,7 +274,7 @@ export function WebPage({ title, html, threads, held, rec = false, open, desk, i
         }}
       >
         {/* the part spoken about keeps its buttons right there; the mic pressed turns into Stop */}
-        <button data-part-say data-key={p.key} data-quote={p.text} onClick={() => on.say(p)} title={stop ? 'Stop' : 'Speak a comment'} className={stop ? 'grid size-7 place-items-center rounded-lg bg-red-600 text-white shadow-sm ring-1 ring-red-700' : btn}>
+        <button data-part-say data-key={p.key} data-quote={p.text} onClick={() => on.say(p)} title={stop ? 'Stop' : 'Voice comment'} className={stop ? 'grid size-7 place-items-center rounded-lg bg-red-600 text-white shadow-sm ring-1 ring-red-700' : btn}>
           <Icon n={stop ? 'stop' : 'mic'} c="size-4" />
         </button>
         {stop ? null : (

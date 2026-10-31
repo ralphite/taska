@@ -152,7 +152,7 @@ export class Voice {
     if (!blob || !slug || key == null) return
     if (ms < 800 || !blob.size) {
       void this.d.api.pageLog(slug, [{ kind: 'mic', level: 'warn', msg: `${ms} ms, ${blob.size} bytes`, name: blob.size ? 'short' : 'empty', where: 'stop' }]).catch(() => {})
-      return this.d.toasts.show(blob.size ? 'Too short, discarded' : 'Nothing was recorded: the microphone gave no sound. Try again, or check Settings › Apps › Safari › Microphone')
+      return this.d.toasts.show(blob.size ? 'Too short, discarded' : 'No sound from the microphone. Check Settings › Apps › Safari › Microphone')
     }
     // a voice comment: the quote first, then its words
     const label = about ? vcLabel(about.quote) : null
@@ -186,7 +186,7 @@ export class Voice {
       if (andSend && (to === 'new' || to === 'reply')) {
         this.d.send(slug, key)
         this.d.toasts.show(`Sent to ${draftName(key)}`)
-      } else this.d.toasts.show(`Voice note is in the box for ${draftName(key)}`, () => this.d.goDraft(key), { label: 'Go there' })
+      } else this.d.toasts.show(`Voice note added to ${draftName(key)}`, () => this.d.goDraft(key), { label: 'Go there' })
     } else if (andSend) this.d.send(slug, key)
     else if (this.d.desk() && !kept) this.d.fields.get('box')?.focus({ preventScroll: true })
   }

@@ -110,11 +110,11 @@ export function webFacts(d: Doc, v: Pick<DocViewState, 'threads' | 'quote'>, see
 export function editFacts(rec: { ms: number } | null, waiting: number, desk: boolean) {
   return {
     hint: rec
-      ? 'Listening. Words go at the mark; you can keep typing.'
+      ? 'Listening… words go at the mark'
       : waiting
         ? 'Transcribing\u2026'
         : desk
-          ? 'First line is the title. Esc keeps it as a draft.'
+          ? 'First line is the title · Esc keeps draft'
           : 'The first line is the title.',
     mic: { on: !!rec, text: rec ? `Stop ${clock(rec.ms)}` : 'Speak' },
   }

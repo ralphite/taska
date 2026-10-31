@@ -99,7 +99,7 @@ test('B607: replying to finished work resumes it; Accept returns when the agent 
   await box(page).fill('The sort still needs fixing.')
   await box(page).press('Shift+Enter')
   await expect.poll(async () => p.read('T1')).toMatch(/^T1 \w+ P\d \w+ doing/)
-  await expect(page.getByText("Your agent's turn", { exact: true }).filter({ visible: true }).first()).toBeVisible()
+  await expect(page.getByText("Agent's turn", { exact: true }).filter({ visible: true }).first()).toBeVisible()
   await expect(accept).toBeHidden()
   await expect(page.getByText('Skipped · you replied', { exact: true }).filter({ visible: true })).toHaveCount(0)
   await p.doAs('T1 done Fixed the sort too.\n')

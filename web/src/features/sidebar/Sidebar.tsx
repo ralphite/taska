@@ -169,8 +169,8 @@ export function Sidebar(props: SidebarProps) {
         </a>
         <button
           onClick={on.hide}
-          title="Hide the sidebar · ["
-          aria-label="Hide the sidebar"
+          title="Hide sidebar · ["
+          aria-label="Hide sidebar"
           className="ml-auto hidden size-8 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-200/70 lg:grid dark:text-zinc-400 dark:hover:bg-zinc-800"
         >
           <Icon n="panel" c="size-[18px]" />
@@ -314,7 +314,7 @@ export function Rail({ projects, composing, settingsOpen, hidden, on }: { projec
         <span className="text-blue-600 dark:text-blue-400">
           <Icon n="logo" c="size-6" sw="2.25" />
         </span>,
-        'Show the sidebar · [',
+        'Show sidebar · [',
         on.hide,
       )}
       {btn('new', <Icon n="newinput" c="size-5" />, 'New input · C', on.newInput, { 'aria-pressed': composing })}

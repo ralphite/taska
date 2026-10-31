@@ -20,6 +20,6 @@ export const ManyLines = at({ text: LINES })
 export const LongerThanTheBoxItScrolls: Story = { ...at({ text: MANY }), name: 'Longer than the box: it scrolls' }
 export const PointingAtTheMic = at({}, { hover: ['[aria-label="Record a voice note"]'] })
 export const PointingAtSend = at({ text: 'Buy milk on the way home' }, { hover: ['[data-box="main"]'] })
-export const PointingAtAdd: Story = { ...at({}, { hover: ['[aria-label="Add images or files"]'] }), name: 'Pointing at + (add pictures or files)' }
+export const PointingAtAdd: Story = { ...at({}, { hover: ['[aria-label="Add files"]'] }), name: 'Pointing at + (add pictures or files)' }
 export const WritingInItFocused: Story = { ...at({}, { focus: ['textarea'], focusWithin: ['#composer', '[data-box]'] }), name: 'Writing in it (focused)' }
 export const WritingInItWordsInIt: Story = { ...at({ text: 'Buy milk' }, { focus: ['textarea'], focusWithin: ['#composer', '[data-box]'] }), name: 'Writing in it, words in it' }

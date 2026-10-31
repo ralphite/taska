@@ -36,7 +36,7 @@ export class Moves {
           return true
         } catch (ex) {
           if (!(ex instanceof Unreachable) || i >= 20) {
-            this.d.toasts.show(`Not saved: moving ${ref} to ${this.d.title(to)} (it is back here): ${ex instanceof Unreachable ? 'Taska unreachable' : (ex as Error).message || 'Taska said no'}`, null, { error: true })
+            this.d.toasts.show(`Couldn't move ${ref} to ${this.d.title(to)}: ${ex instanceof Unreachable ? 'Taska unreachable' : (ex as Error).message || 'Taska said no'}`, null, { error: true })
             return false
           }
           await new Promise((ok) => setTimeout(ok, Math.min(30000, 1000 * 2 ** Math.min(i, 4))))

@@ -9,7 +9,7 @@ function SignInForm({ onSignIn }: { onSignIn(key: string, field: HTMLInputElemen
   const [field, setField] = useState<HTMLInputElement | null>(null)
   return (
     <div className="flex flex-col gap-3">
-      <p className="text-sm text-zinc-500 dark:text-zinc-400">From outside this computer&apos;s network, Taska asks for its key once on each device. It is in the link Settings › Use on your phone gives.</p>
+      <p className="text-sm text-zinc-500 dark:text-zinc-400">Find the key in Settings › Use on your phone.</p>
       <input
         ref={setField}
         type="password"

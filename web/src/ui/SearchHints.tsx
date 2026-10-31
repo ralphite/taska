@@ -18,7 +18,7 @@ function CrossHits({ cross, tone, onGo }: { cross: CrossFacts; tone(slug: string
   if (!list?.length)
     return (
       <p className="mt-4 px-3 text-center text-xs text-zinc-500 dark:text-zinc-400">
-        {cross.failed ? "Couldn't search the other projects" : list ? 'Not in other projects' : 'Searching the other projects…'}
+        {cross.failed ? "Couldn't search other projects" : list ? 'Not in other projects' : 'Searching other projects…'}
       </p>
     )
   return (
@@ -53,7 +53,7 @@ function CrossHits({ cross, tone, onGo }: { cross: CrossFacts; tone(slug: string
           </a>
         )
       })}
-      {list.length > 8 ? <p className="px-3 py-1 text-xs text-zinc-500 dark:text-zinc-400">and {list.length - 8} more: a longer search narrows them</p> : null}
+      {list.length > 8 ? <p className="px-3 py-1 text-xs text-zinc-500 dark:text-zinc-400">+{list.length - 8} more · refine search</p> : null}
     </div>
   )
 }

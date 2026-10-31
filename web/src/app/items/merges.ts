@@ -60,7 +60,7 @@ export class Merges {
     }
     if (to !== n && live) {
       const was = codeOf(m, n)
-      this.d.toasts.show(`${was} was merged into ${codeOf(m, to)}${moved.some(([f]) => f === was) ? '. What you wrote for it is in this box now' : ''}`)
+      this.d.toasts.show(`${was} merged into ${codeOf(m, to)}${moved.some(([f]) => f === was) ? '; your draft is here' : ''}`)
     } else if (moved.length)
       this.d.toasts.show(`${moved.map(([f, t]) => `${f} → ${t}`).join(', ')}: merged, and what you wrote went along`, () => this.d.goDraft(moved[0][1]), { label: 'Go there' })
   }

@@ -347,7 +347,7 @@ export function DocView({ facts, env, on, popover, lasso, page, recTime, aim = n
         </div>
         {!desk && facts.wholeThreads.length ? (
           <section className="mt-6 border-t border-zinc-200 pt-4 dark:border-zinc-800">
-            <div className="text-xs font-medium text-zinc-500">On the whole document</div>
+            <div className="text-xs font-medium text-zinc-500">Whole document</div>
             {facts.wholeThreads.map((s) => thread(s))}
           </section>
         ) : null}
@@ -364,7 +364,7 @@ export function DocView({ facts, env, on, popover, lasso, page, recTime, aim = n
         ) : null}
         {desk ? null : (
           <>
-            <p className="mt-6 text-center text-xs text-zinc-400">{web ? 'Tap a part of the page to comment on it' : 'Tap a paragraph, select text or circle an area to comment on it'}</p>
+            <p className="mt-6 text-center text-xs text-zinc-400">{web ? 'Tap a part to comment' : 'Tap, select or circle to comment'}</p>
             {facts.wholeButton ? (
               <button onClick={on.whole} className="mx-auto mt-1 flex h-11 items-center gap-1.5 px-3 text-sm font-semibold text-blue-600 dark:text-blue-400">
                 <Icon n="comment" c="size-4" />

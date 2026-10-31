@@ -199,12 +199,12 @@ test('D82 #7: a search says what the other projects gave: searching, nothing the
   await open(page, p)
   if (!isDesk(page)) await page.getByRole('button', { name: 'Search', exact: true }).filter({ visible: true }).first().click()
   await search(page).fill('zqxj-one')
-  await expect(page.getByText('Searching the other projects\u2026', { exact: true }).filter({ visible: true }).first()).toBeVisible()
+  await expect(page.getByText('Searching other projects\u2026', { exact: true }).filter({ visible: true }).first()).toBeVisible()
   answer = 'go'
   await expect(page.getByText('Not in other projects', { exact: true }).filter({ visible: true }).first()).toHaveText('Not in other projects')
   answer = 'fail'
   await search(page).fill('zqxj-two')
-  await expect(page.getByText("Couldn't search the other projects", { exact: true }).filter({ visible: true }).first()).toBeVisible()
+  await expect(page.getByText("Couldn't search other projects", { exact: true }).filter({ visible: true }).first()).toBeVisible()
 })
 
 test('D82 #9: switching to another project, its name shows at once (not its address) and the desktop sidebar keeps Documents, Activity and Deleted while its data comes', async ({

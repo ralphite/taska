@@ -11,7 +11,7 @@ type Story = StoryObj
 const one = (r: Input, s: Said = { organizer: true }): Story => ({ render: () => <Frames desk={false} phoneWidth={393}>{() => cardOf(r, s)}</Frames> })
 
 /** With its screenshot: no agent has read it yet (the organizer is off). */
-export const WaitingForYourAgent: Story = { ...one(ONE.waiting, {}), name: 'Waiting for your agent' }
+export const WaitingForYourAgent: Story = { ...one(ONE.waiting, {}), name: 'Waiting for agent' }
 export const VoiceNote: Story = { ...one(ONE.voice, {}), name: 'Voice note' }
 /** Said into the box's mic and sent while the speech model still works out its words. */
 export const Transcribing: Story = { ...one(ONE.transcribing), name: 'Transcribing' }
@@ -21,11 +21,11 @@ export const Organizing: Story = { ...one(ONE.organizing, { organizer: true, bus
 export const MadeAnItem: Story = { ...one(ONE.made), name: 'Made an item' }
 export const AddedToAnItem: Story = { ...one(ONE.added), name: 'Added to an item' }
 /** The organizer left it for your coding agent (its model said pass). */
-export const LeftForYourAgent: Story = { ...one(ONE.left), name: 'Left for your agent' }
+export const LeftForYourAgent: Story = { ...one(ONE.left), name: 'Left for agent' }
 /** Left for your agent, and your agent has taken it. */
-export const HandledByYourAgent: Story = { ...one(ONE.handled), name: 'Handled by your agent' }
+export const HandledByYourAgent: Story = { ...one(ONE.handled), name: 'Handled by agent' }
 /** Your agent read it and took it, with no item made. */
-export const SeenByYourAgent: Story = { ...one(ONE.seen), name: 'Seen by your agent' }
+export const SeenByYourAgent: Story = { ...one(ONE.seen), name: 'Seen by agent' }
 /** The organizer's commands failed (it named an item the project does not have): Retry. */
 export const OrganizerFailed: Story = { ...one(ONE.failed), name: 'Organizer failed' }
 /** Filed as a new bug, then Undo on the line after sending: what the organizer did is taken back. */
