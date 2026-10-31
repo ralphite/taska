@@ -69,6 +69,14 @@ def _merge(state: ProjectState, e: ev.Event) -> None:
     link(state, b.n, e.src, handled=not e.keep)
 
 
+@reduces(ev.ItemUnmerged)
+def _unmerge(state: ProjectState, e: ev.Event) -> None:
+    assert isinstance(e, ev.ItemUnmerged)
+    a, b = state.items[e.n], state.items[e.into]
+    a.merged_into, a.t1 = None, e.t
+    post(state, b, e, "progress", f"Took out {state.code(a.n)}: {a.title}", e.src)
+
+
 @reduces(ev.ItemsArchived)
 def _archive(state: ProjectState, e: ev.Event) -> None:
     assert isinstance(e, ev.ItemsArchived)

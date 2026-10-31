@@ -288,6 +288,8 @@ def _said(st: ProjectState, e: ev.Event) -> "tuple[str, str]":
         return who, f"{c(e.n)} {e.kind} {first_line(e.text)!r}"
     if isinstance(e, ev.ItemMerged):
         return who, f"{c(e.n)} merged into {c(e.into)}"
+    if isinstance(e, ev.ItemUnmerged):
+        return who, f"{c(e.n)} taken out of {c(e.into)}"
     if isinstance(e, ev.InputsAcked):
         return who, "ack " + " ".join(e.ids)
     if isinstance(e, ev.ProjectRenamed) and e.name is not None:

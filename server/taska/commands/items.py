@@ -236,6 +236,19 @@ def merge(r: Run, a: Args) -> Outcome:
     return Outcome(f"ok {code} merged into {s.code(into.n)}{r.gone_note(it)}", f"Merged {code}")
 
 
+@handles("unmerge")
+def unmerge(r: Run, a: Args) -> Outcome:
+    """A merged item back on its own (the page's way to retire old rules that were merged, keeping them)."""
+    s = r.state
+    it = item_at(s, a.get("ref", ""), r.ctx, follow=False)
+    code = s.code(it.n)
+    if it.merged_into is None:
+        raise Refused(f"{code} is not merged")
+    into = it.merged_into
+    r.emit(ev.ItemUnmerged(n=it.n, into=into, by=r.by, src=_src(r, a)))
+    return Outcome(f"ok {code} taken out of {s.code(into)}", f"Took out {code}")
+
+
 @handles("archive")
 def archive(r: Run, a: Args) -> Outcome:
     """Many items in one change: the page's "Archive N" and its Undo, any number."""

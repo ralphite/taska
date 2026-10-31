@@ -110,6 +110,21 @@ class ItemMerged(Event):
 
 
 @dataclass
+class ItemUnmerged(Event):
+    """A merged item taken back out of the one it went into (`into`), as it was, to be retired or kept."""
+
+    KIND: ClassVar[str] = "unmerge"
+    n: int = 0
+    into: int = 0
+
+    def body(self) -> Row:
+        return {"n": self.n, "into": self.into, "by": self.by, "src": self.src}
+
+    def items_touched(self) -> List[int]:
+        return [x for x in (self.n, self.into) if x]
+
+
+@dataclass
 class ItemsArchived(Event):
     """Many items archived or brought back in one change; `follow`: subitem -> the item it went along with."""
 
@@ -203,6 +218,7 @@ READERS: Dict[str, Reader] = {
                                    files=files_of(r), to=list(r.get("to") or []), keep=bool(r.get("keep")), **common(r)),
     "merge": lambda r: ItemMerged(n=need(r, "n"), into=need(r, "into"), src=r.get("src"), keep=bool(r.get("keep")),
                                   **common(r)),
+    "unmerge": lambda r: ItemUnmerged(n=need(r, "n"), into=need(r, "into"), src=r.get("src"), **common(r)),
     "arch": lambda r: ItemsArchived(ns=list(need(r, "ns")), on=bool(need(r, "on")), follow=dict(r.get("follow") or {}),
                                     **common(r)),
     "idel": lambda r: ItemsDeleted(ns=list(need(r, "ns")), **common(r)),
