@@ -11,9 +11,6 @@ type Story = StoryObj
 
 const one = (sec: SectionKey, h: SettingsHere = {}): Story => ({ render: () => <Frames deskWidth={1100} height={760}>{(layout) => settingsAt(sec, layout === 'desk', h)}</Frames> })
 
-/** Who works on Shop and whether one is around, what waits for one, who has been here, how to connect one more. */
-export const Agents: Story = { ...one('agents'), name: 'Agents' }
-export const AgentsNoneYet: Story = { ...one('agents', { agents: [] }), name: 'Agents, none yet' }
 /** Every project (this one with this page's counts), new, rename, delete; a deleted one asking to be deleted forever. */
 export const Projects: Story = { ...one('projects', { projects: { purging: ['old'] } }), name: 'Projects' }
 export const ProjectsRenaming: Story = { ...one('projects', { projects: { renaming: 'home', pErr: 'A project with that address exists' } }), name: 'Renaming a project' }

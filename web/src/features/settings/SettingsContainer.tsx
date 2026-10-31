@@ -2,21 +2,20 @@
 // index, or one section's page (Documents, Activity and Deleted are pages here too). It loads what a section shows
 // when the section opens; what you do goes to app.settings (and app.docs, app.restores for the phone's lists).
 
-import { useEffect, useMemo, type ReactNode } from 'react'
+import { useEffect, type ReactNode } from 'react'
 import { Notices } from '../../app/project/notices'
 import { useLayout, useServices, useStores, useStoreValue } from '../../app/context'
 import { usePaneRef } from '../../app/panes'
 import { useProjectModel, type ProjectRoute } from '../../app/hooks'
 import { codeOf } from '../../model/project'
-import { toneOf } from '../../ui/tones'
 import { useSideProjects } from '../../app/projectLists'
 import { DeletedBody, DocsBody, LogBody, PhoneProjectsBody } from './PhoneSections'
-import { AgentsBody, NotificationsBody, OrganizerBody, PhoneBody, PhonePushBody, ProjectsBody, SpellingsBody, type ProjectsEvents } from './Sections'
+import { NotificationsBody, OrganizerBody, PhoneBody, PhonePushBody, ProjectsBody, SpellingsBody, type ProjectsEvents } from './Sections'
 import { SECTIONS, sectionOf, type SectionKey } from './sectionList'
 import { DeskNav, PhoneIndex } from './SettingsNav'
 import { Loading } from './SettingsParts'
 import { SettingsFrame } from './SettingsFrame'
-import { agentsFacts, deletedRows, docRows, logRows, navFacts, projectsOf } from './settingsFacts'
+import { deletedRows, docRows, logRows, navFacts, projectsOf } from './settingsFacts'
 
 const standalone = () => typeof matchMedia !== 'undefined' && (matchMedia('(display-mode: standalone)').matches || (navigator as unknown as { standalone?: boolean }).standalone === true)
 
@@ -33,15 +32,13 @@ export function SettingsContainer({ route, place, prefsBox }: { route: ProjectRo
   const mode = useStoreValue(stores.box, (s) => s.mode)
   const activity = useStoreValue(stores.activity, (s) => (s.slug === route.slug ? s : null))
   const cursor = useStoreValue(stores.data, (s) => s.copies[route.slug]?.cursor ?? '')
-  const { list: side, tones } = useSideProjects(route.slug)
+  const { list: side } = useSideProjects(route.slug)
   const phoneList = !desk && route.place.kind === 'side' ? route.place.side : null
   const sec: SectionKey | null = phoneList ?? (route.place.kind === 'settings' ? sectionOf(route.place.section, desk) : null)
-  const title = m?.facts.title || route.slug
   const s = app.settings
 
   useEffect(() => {
-    // what a section shows is asked for when it opens (Agents: the guide; the projects and spellings once)
-    if (sec === 'agents') void s.loadGuide(route.slug)
+    // what a section shows is asked for when it opens (the projects and spellings once)
     if (!stores.settings.getState().fixes) void s.loadSpellings()
     if (sec === 'projects' || !stores.settings.getState().deleted) void s.loadProjects()
   }, [app, stores, s, sec, route.slug])
@@ -53,9 +50,7 @@ export function SettingsContainer({ route, place, prefsBox }: { route: ProjectRo
   const open = (k: SectionKey) => app.nav.to(href(k))
   const back = () => app.nav.settingsBack()
 
-  const agents = useMemo(() => (m ? agentsFacts(m, st.guide?.slug === route.slug ? st.guide.text : null) : null), [m, st.guide, route.slug])
-
-  const nav = navFacts(m, title, toneOf(tones, route.slug), {
+  const nav = navFacts(m, {
     notifications: desk ? app.notices.state().replace('Blocked by the browser', 'Blocked') : app.notices.sub ? 'On' : 'Off',
     projects: projects ? projects.length : '',
     spellings: st.fixes?.length || '',
@@ -78,8 +73,6 @@ export function SettingsContainer({ route, place, prefsBox }: { route: ProjectRo
   const body = (k: SectionKey): ReactNode => {
     if (!m) return <Loading />
     switch (k) {
-      case 'agents':
-        return agents ? <AgentsBody f={agents} connect={route.place.kind === 'settings' && route.place.section === 'connect'} onCopy={(t) => s.copy(t)} /> : <Loading />
       case 'projects':
         return desk ? <ProjectsBody f={projectsFacts} on={projectsOn} /> : <PhoneProjectsBody f={projectsFacts} on={projectsOn} />
       case 'phone':
@@ -145,12 +138,11 @@ export function SettingsContainer({ route, place, prefsBox }: { route: ProjectRo
     }
   }
 
-  const k = sec ?? 'agents'
+  const k = sec ?? 'projects'
   return (
     <SettingsFrame
       desk={desk}
       sec={sec}
-      title={title}
       place={place}
       prefs={mode?.kind === 'prefs'}
       paneRef={pane}

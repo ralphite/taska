@@ -16,7 +16,7 @@ export const NavLooks: Story = {
       {(['pointer', 'keys', 'pressed'] as const).map((look) => (
         <Frame key={look} layout="desk" width={560} height={480} label={look === 'keys' ? 'keys (the browser draws the ring itself)' : look}>
           <div data-look={look} className="h-full">
-            {settingsAt('agents', true)}
+            {settingsAt('projects', true)}
           </div>
         </Frame>
       ))}

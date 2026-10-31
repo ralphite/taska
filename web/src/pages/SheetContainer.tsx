@@ -9,6 +9,7 @@ import { usePaneRef } from '../app/panes'
 import { KeysSheet, PaletteSheet, SwitchProjectSheet } from '../features/find/FindersContainer'
 import { AsSaidSheet, InputHistorySheet, InputMenuSheet, InputMoveSheet, InputRescopeSheet } from '../features/inputs/InputSheetsContainer'
 import { AgentCardSheet, ItemMenuSheet, MessageMenuSheet, MoveItemProjectSheet, MoveParentSheet, SourcesSheet } from '../features/item/ItemSheetsContainer'
+import { AgentsSheet } from '../features/agents/AgentsContainer'
 import { FiltersSheet } from '../features/list/FiltersContainer'
 import { ViewMenuSheet } from '../features/list/ViewMenuContainer'
 import { SignInSheet } from '../features/project/SignInContainer'
@@ -27,6 +28,7 @@ const KINDS: { [K in SheetKind]: ComponentType<{ req: Extract<SheetRequest, { ki
   'input-move': InputMoveSheet,
   'input-rescope': InputRescopeSheet,
   'as-said': AsSaidSheet,
+  agents: AgentsSheet,
   filters: FiltersSheet,
   keys: KeysSheet,
   'switch-project': SwitchProjectSheet,

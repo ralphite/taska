@@ -1,39 +1,18 @@
-// What Settings' sections show, from the model and what the page has: Agents (whether one is around, what waits for
-// one, who was here, how to connect), Projects (this one with this page's counts), Documents, Activity and Deleted.
+// What Settings' sections show, from the model and what the page has: Projects (this one with this page's counts),
+// Documents, Activity and Deleted.
 // Pure: the container and the stories both use it.
 
 import type { ListedProject } from '../../app/sideProjects'
 import { activityRows } from '../../model/activity'
-import { agentState, agoLong } from '../../model/agents'
-import { closed, inQueue } from '../../model/items'
 import { listedDocs } from '../../model/docs'
 import type { ProjectModel } from '../../model/project'
 import { dayShort, when } from '../../model/time'
 import type { LogRow, ProjectRow } from '../../model/types'
 import type { DeletedProject } from '../../stores/settings'
-import { AGENT_NAME, inputCode, plural, whoName } from '../../model/words'
+import { inputCode, plural } from '../../model/words'
 import type { GoneInputRow, GoneThingRow, PhoneDocRow } from './PhoneSections'
-import type { AgentsFacts, ProjectsFacts } from './Sections'
+import type { ProjectsFacts } from './Sections'
 import type { NavFacts } from './SettingsNav'
-
-/** Agents: `guide` is the guide for agents, once it has come. */
-export function agentsFacts(m: ProjectModel, guide: string | null): AgentsFacts {
-  const [tone, , line] = agentState(m.facts.agents, m.facts.work, m.at)
-  const live = m.items.filter((it) => !it.mergedInto && !it.archived && it.type !== 'rule')
-  const base = m.facts.base
-  const ask = `This project tracks work in Taska. Run \`curl -s ${base}/agent\` to learn the interface, then follow \`curl -s ${base}/next\` and write your progress back to the items.`
-  return {
-    tone,
-    line,
-    queue: live.filter((it) => inQueue(it) && it.status !== 'doing' && it.when === 'now').length,
-    later: live.filter((it) => it.when === 'later' && !closed(it.status)).length,
-    seen: [...m.facts.agents].sort((a, b) => b.t - a.t).map((a) => ({ name: a.name, who: whoName(a.name), when: a.waiting ? 'waiting for work' : agoLong(a.t, m.at), known: a.name in AGENT_NAME && a.name !== 'agent' })),
-    cmd: `curl -s ${base}/connect | sh`,
-    far: m.facts.remote && m.facts.remote !== base ? `curl -s ${m.facts.remote}/connect | sh` : '',
-    ask,
-    guide,
-  }
-}
 
 /** Projects: every project (this one with this page's counts), the deleted ones, and the section's state. */
 export function projectsOf(
@@ -74,14 +53,8 @@ export const deletedRows = (m: ProjectModel): { things: GoneThingRow[]; inputs: 
 })
 
 
-/** The way through Settings: the project, whether an agent is around, and what each section's row says on its right
- * (`said`: what the page knows of notifications, projects and spellings). */
-export function navFacts(m: ProjectModel | null, title: string, tone: string, said: { notifications: string; projects: number | ''; spellings: number | '' }): NavFacts {
-  const agent = m ? agentState(m.facts.agents, m.facts.work, m.at) : null
-  return {
-    title,
-    tone,
-    agentTone: agent ? agent[0] : 'idle',
-    right: { notifications: said.notifications, agents: agent ? agent[1] : '', projects: said.projects, spellings: said.spellings, organizer: m?.facts.organizer.on ? 'On' : 'Off' },
-  }
+/** The way through Settings: what each section's row says on its right (`said`: what the page knows of
+ * notifications, projects and spellings). */
+export function navFacts(m: ProjectModel | null, said: { notifications: string; projects: number | ''; spellings: number | '' }): NavFacts {
+  return { right: { notifications: said.notifications, projects: said.projects, spellings: said.spellings, organizer: m?.facts.organizer.on ? 'On' : 'Off' } }
 }

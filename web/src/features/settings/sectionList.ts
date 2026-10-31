@@ -1,14 +1,13 @@
-// Settings' sections: each with its address, icon, name and what it is for. Agents are this project's; the rest are
-// for every project. Documents, Activity and Deleted are lists beside the items on the desktop, and pages here on the
-// phone.
+// Settings' sections: each with its address, icon, name and what it is for, all for every project. Documents,
+// Activity and Deleted are lists beside the items on the desktop, and pages here on the phone. (Agents are the agent
+// pill's sheet.)
 
 import type { Place } from '../../model/route'
 import type { IconName } from '../../ui/icon-paths'
 
-export type SectionKey = 'agents' | 'projects' | 'phone' | 'notifications' | 'spellings' | 'organizer' | 'docs' | 'log' | 'deleted'
+export type SectionKey = 'projects' | 'phone' | 'notifications' | 'spellings' | 'organizer' | 'docs' | 'log' | 'deleted'
 
-export const SECTIONS: Record<SectionKey, { path: string; icon: IconName; name: string; about: (title: string) => string }> = {
-  agents: { path: 'agents', icon: 'bot', name: 'Agents', about: (t) => `Who works on ${t}, whether they continue automatically, and how to connect more.` },
+export const SECTIONS: Record<SectionKey, { path: string; icon: IconName; name: string; about: () => string }> = {
   docs: { path: 'docs', icon: 'doc', name: 'Documents', about: () => 'Newest first. Open one with its item.' },
   log: { path: 'log', icon: 'history', name: 'Activity', about: () => 'What happened here, newest first. Undo puts back your changes.' },
   deleted: { path: 'deleted', icon: 'trash', name: 'Deleted', about: () => 'Deleted inputs, items, and documents. Restore puts them back.' },
@@ -19,15 +18,13 @@ export const SECTIONS: Record<SectionKey, { path: string; icon: IconName; name: 
   organizer: { path: 'organizer', icon: 'sparkle', name: 'Organizer', about: () => 'Turns what you say into items across all projects.' },
 }
 
-export const THIS_PROJECT: SectionKey[] = ['agents']
 export const ALL_PROJECTS: SectionKey[] = ['projects', 'phone', 'notifications', 'spellings', 'organizer']
 
-/** The section an address names ("connect" is Agents' part, "about" is Projects). */
+/** The section an address names ("about" is Projects). */
 export function sectionOf(path: string | null, desk: boolean): SectionKey | null {
-  if (path === 'connect') return 'agents'
   if (path === 'about') return 'projects'
   if (path && path in SECTIONS) return path as SectionKey
-  return desk ? 'agents' : null
+  return desk ? 'projects' : null
 }
 
 /** What the page's title calls a place of Settings: its section (the phone's Documents, Activity and Deleted are its

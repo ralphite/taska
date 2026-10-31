@@ -12,7 +12,7 @@ const search = (page: Page) => page.locator('input[type="search"]').filter({ vis
 /** The project's initial view model. */
 const DATA = /\/api\/view\b/
 
-for (const was of ['agents', 'T1', 'rules']) {
+for (const was of ['projects', 'T1', 'rules']) {
   test(`r623 r309: a project opens as itself from the sidebar, even after its ${was} was open (B463)`, async ({
     page,
     request,

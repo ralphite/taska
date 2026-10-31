@@ -14,7 +14,7 @@ const SHELL = TASKA_SHELL.map((u) => '/' + u.replace(/^\//, ''))
 // request takes a second or more); it is one page for the home page and every view of every project
 const PAGES = 'taska-pages-1'
 const PAGE_KEY = '/'
-const VIEWS = 'inputs|archive|rules|new|settings|agents|connect|phone|notifications|spellings|log|deleted|docs|about|projects|organizer|[A-Za-z]\\d+'
+const VIEWS = 'inputs|archive|rules|new|settings|phone|notifications|spellings|log|deleted|docs|about|projects|organizer|[A-Za-z]\\d+'
 const VIEW = new RegExp(`^/p/[^/]+/(${VIEWS})?$`)
 const isPage = (path: string) => path === '/' || VIEW.test(path)
 

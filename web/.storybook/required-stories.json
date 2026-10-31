@@ -3,6 +3,7 @@
  "groups": {
   "Demo/Agents": [
    "Who Is Here",
+   "Connect An Agent",
    "The Agent Asks",
    "The Agent Finishes",
    "The Agent Reads Your Reply"
@@ -113,7 +114,6 @@
    "Delete A Project Then Bring It Back"
   ],
   "Demo/Settings": [
-   "Connect An Agent",
    "Use Taska On Your Phone",
    "Notifications",
    "Teach It A Word",
@@ -212,7 +212,6 @@
   ],
   "Pages/Settings": [
    "Settings menu",
-   "Agents",
    "Projects",
    "Use on your phone",
    "Notifications",

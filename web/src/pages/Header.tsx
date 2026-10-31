@@ -113,7 +113,7 @@ export function ProjectBar({
       <div className="ml-auto flex shrink-0 items-center gap-2 pl-3">
         <NotSavedPill n={notSaved} onOpen={on.notSaved} />
         {agent ? (
-          <button onClick={on.agents} title={agent.offline ? undefined : agent.tip} className="flex rounded-full hover:brightness-95 dark:hover:brightness-125">
+          <button onClick={on.agents} aria-label="Agents" title={agent.offline ? undefined : agent.tip} className="flex rounded-full hover:brightness-95 dark:hover:brightness-125">
             <AgentPill tone={agent.tone} label={agent.label} offline={agent.offline} />
           </button>
         ) : null}

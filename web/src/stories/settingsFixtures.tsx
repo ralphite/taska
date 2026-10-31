@@ -5,14 +5,13 @@
 import type { ReactNode } from 'react'
 import { sideProjects } from '../app/sideProjects'
 import { DeletedBody, DocsBody, LogBody, PhoneProjectsBody } from '../features/settings/PhoneSections'
-import { AgentsBody, NotificationsBody, OrganizerBody, PhoneBody, PhonePushBody, ProjectsBody, SpellingsBody } from '../features/settings/Sections'
+import { NotificationsBody, OrganizerBody, PhoneBody, PhonePushBody, ProjectsBody, SpellingsBody } from '../features/settings/Sections'
 import { SettingsFrame } from '../features/settings/SettingsFrame'
 import { DeskNav, PhoneIndex } from '../features/settings/SettingsNav'
-import { agentsFacts, deletedRows, docRows, logRows, navFacts, projectsOf } from '../features/settings/settingsFacts'
+import { deletedRows, docRows, logRows, navFacts, projectsOf } from '../features/settings/settingsFacts'
 import type { SectionKey } from '../features/settings/sectionList'
 import type { AgentSeen, LogRow, ProjectRow, Spelling } from '../model/types'
 import type { DeletedProject } from '../stores/settings'
-import { PROJECT_TONES } from '../ui/tones'
 import { T, modelOf } from './fixtures'
 import { doc } from './docFixtures'
 import { PROJECT } from './listFixtures'
@@ -39,7 +38,6 @@ const FIXES: Spelling[] = [{ wrong: 'tasker', right: 'Taska' }, { wrong: 'cloud 
 
 /** How Settings is, besides where you are in it. */
 export interface SettingsHere {
-  agents?: AgentSeen[]
   /** Projects: a new one being named, one being renamed, why it was not done, a deleted one asking */
   projects?: { pNew?: boolean; pNewText?: string; pErr?: string; renaming?: string; purging?: string[]; menu?: string }
 }
@@ -60,16 +58,14 @@ export const shopWithHistory = (agents: AgentSeen[] = SEEN) =>
   }, [doc({ d: 1, n: 1, title: 'Plan: the export keeps the filter' }), doc({ d: 2, n: 3, fmt: 'html', title: 'Export options', blocks: [], whole: [], detached: [] })])
 
 export function settingsAt(sec: SectionKey | null, desk: boolean, h: SettingsHere = {}) {
-  const m = shopWithHistory(h.agents ?? SEEN)
+  const m = shopWithHistory()
   const side = sideProjects(ROWS, m, 'shop').list
-  const tone = PROJECT_TONES[1]
   const st = { deleted: GONE, pNew: !!h.projects?.pNew, pNewText: h.projects?.pNewText ?? '', pErr: h.projects?.pErr ?? '', renaming: h.projects?.renaming ?? null, pMenu: h.projects?.menu ?? null }
   const asked = Object.fromEntries((h.projects?.purging ?? []).map((n) => [`purge ${n}`, 1]))
-  const nav = navFacts(m, 'Shop', tone, { notifications: desk ? 'On' : 'Off', projects: ROWS.length, spellings: FIXES.length })
+  const nav = navFacts(m, { notifications: desk ? 'On' : 'Off', projects: ROWS.length, spellings: FIXES.length })
   const pOn = { newProject: no, create: no, rename: no, saveRename: no, remove: no, restore: no, purge: no, menu: no, open: no }
   const navOn = { open: no, back: no, keys: no, href: () => '#' }
   const bodies: Record<SectionKey, () => ReactNode> = {
-    agents: () => <AgentsBody f={agentsFacts(m, 'You work on Shop items. Ask /next what to do.')} onCopy={no} />,
     projects: () => (desk ? <ProjectsBody f={projectsOf(ROWS, side, st, asked, '~/.taska/shop/shop.db')} on={pOn} /> : <PhoneProjectsBody f={projectsOf(ROWS, side, st, asked, '')} on={pOn} />),
     phone: () => <PhoneBody link={m.facts.remote + '/'} keyText={m.facts.key} asking={false} desk={desk} on={{ copy: no, newKey: no }} />,
     notifications: () => (desk ? <NotificationsBody state="On" quiet={false} on={{ turnOn: no, quiet: no }} /> : <PhonePushBody standalone={false} onPhone={no} phoneHref="#" />),
@@ -84,10 +80,9 @@ export function settingsAt(sec: SectionKey | null, desk: boolean, h: SettingsHer
       <SettingsFrame
         desk={desk}
         sec={sec}
-        title="Shop"
         place=""
-        nav={desk ? <DeskNav current={sec ?? 'agents'} back="New input" f={nav} on={navOn} /> : sec ? null : <PhoneIndex f={nav} on={navOn} />}
-        body={bodies[sec ?? 'agents']()}
+        nav={desk ? <DeskNav current={sec ?? 'projects'} back="New input" f={nav} on={navOn} /> : sec ? null : <PhoneIndex f={nav} on={navOn} />}
+        body={bodies[sec ?? 'projects']()}
         onBack={no}
       />
     </div>

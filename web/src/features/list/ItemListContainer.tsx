@@ -131,7 +131,7 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
         status={route.list.status}
         organizerOn={!!m?.facts.organizer.on}
         onReset={() => app.nav.setList({ q: '', type: 'all', when: 'all', status: 'all', pri: 'all', sort: 'all' })}
-        onConnect={() => app.nav.to(`/p/${encodeURIComponent(route.slug)}/agents`)}
+        onConnect={() => app.sheets.open({ kind: 'agents' }, { tall: true })}
       />
     ) : null
   const saved = useStoreValue(stores.views, (s) => s)

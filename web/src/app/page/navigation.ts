@@ -115,7 +115,7 @@ export class Navigation {
       if (coming && r.place.kind === 'tab' && r.tab === 'items') this.go('items', { kind: 'new' }, r.list, false)
       if (r.place.kind === 'tab' && r.tab === 'inputs') this.go('items', { kind: 'new' }, r.list, false)
       // Settings opens on its first section: its address says so
-      if (r.place.kind === 'settings' && !r.place.section) this.go(r.tab, { kind: 'settings', section: 'agents' }, r.list, false)
+      if (r.place.kind === 'settings' && !r.place.section) this.go(r.tab, { kind: 'settings', section: 'projects' }, r.list, false)
     } else if (r.place.kind === 'new') this.go('items', { kind: 'tab' }, r.list, false)
   }
 

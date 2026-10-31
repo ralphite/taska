@@ -120,7 +120,7 @@ test('D84 #7 #8: Settings tells the open section from the one under the pointer;
   request,
 }) => {
   const p = await project(request, SEED)
-  await open(page, p, 'agents')
+  await open(page, p, 'projects')
   const cur = page.locator('[data-part="settings"] a[aria-current="page"]').filter({ visible: true }).first()
   const other = page.locator('[data-part="settings"] a:not([aria-current])').filter({ visible: true }).first()
   await other.hover()

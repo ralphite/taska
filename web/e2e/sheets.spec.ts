@@ -1,5 +1,5 @@
 // The menus and sheets: the command palette, an item's menu, Put under… and Delete's second click (T529).
-// guards: src/features/find/ src/features/item/ItemMenu.tsx src/features/item/ItemSheetsContainer.tsx src/ui/Pickers.tsx src/ui/Sheet.tsx src/app/page/sheets.ts src/app/items/
+// guards: src/features/find/ src/features/item/ItemMenu.tsx src/features/item/ItemSheetsContainer.tsx src/ui/Pickers.tsx src/ui/Sheet.tsx src/app/page/sheets.ts src/app/items/ src/features/agents/ src/model/guide.ts
 import { expect, test } from '@playwright/test'
 import { LOOP, isDesk, open, project } from './seed'
 import { itemMenu, menuChoice, pane, paletteRows, row, sheetBody, undo } from './ui'
@@ -79,4 +79,21 @@ test('T529: Put under… says Nothing matches when the search finds no item', as
   await expect(sheet.getByRole('button', { name: /^[A-Z]\d+\b/ })).toHaveCount(0)
   await expect(sheet.getByText('Nothing matches')).toBeVisible()
   await expect(sheet.getByRole('button', { name: /^No parent/ })).toBeVisible()
+})
+
+test('F628: the agent pill opens Agents, its guide laid out; Settings has no Agents', async ({ page, request }) => {
+  const p = await project(request, LOOP)
+  await open(page, p)
+  await page.getByRole('button', { name: 'Agents', exact: true }).filter({ visible: true }).first().click()
+  const sheet = sheetBody(page)
+  await expect(sheet.locator('#dlgTitle')).toHaveText('Agents')
+  await expect(sheet.getByText('Connect one more agent')).toBeVisible()
+  await sheet.getByText('What the agent reads').click()
+  await expect(sheet.getByRole('heading', { name: 'READ (plain text)' })).toBeVisible()
+  await expect(sheet.locator('dt', { hasText: /^curl -s BASE\/next$/ })).toBeVisible()
+  await expect(sheet.locator('pre', { hasText: "<<'EOF'" })).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(sheet).toBeHidden()
+  await open(page, p, 'settings')
+  await expect(page.locator('[data-part="settings"] a[href$="/agents"]')).toHaveCount(0)
 })
