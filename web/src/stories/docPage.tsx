@@ -16,7 +16,7 @@ import type { Doc, Item } from '../model/types'
 import type { NotSent } from '../model/voiceComments'
 import { PaneFrame } from '../ui/PaneFrame'
 import { Sheet, SheetLayout } from '../ui/Sheet'
-import { PICTURE, T, item, modelOf } from './fixtures'
+import { DIAGRAMS, PICTURE, T, item, modelOf } from './fixtures'
 
 const no = () => {}
 export const docOn: DocEvents = { copyDoc: no, ref: no, picture: no, play: no, words: no, view: no, edit: no, move: no, takeOff: no, remove: no, resolve: no, reply: no, goItem: no, toggle: no, away: no, pick: no, say: no, sayCancel: no, type: no, moveDoc: no, deleteDoc: no, circle: no, editDoc: no, whole: no, tick: no, modifyTicks: no }
@@ -49,7 +49,7 @@ export interface DocHere {
 
 export const envOf = (m: ReturnType<typeof modelOf>, desk: boolean): DocEnv => {
   const url = (f: string) => (/\.(png|jpe?g)$/.test(f) ? PICTURE : '#' + f)
-  return { world: { find: (c) => findRef(m, c), url, size: () => undefined }, now: Date.parse(T) + 60_000, desk, tidy: true, play: () => ({ playing: false, t: null }), url }
+  return { world: { find: (c) => findRef(m, c), url, size: () => undefined, diagram: (src, dark, id) => DIAGRAMS.draw(src, dark, id) }, now: Date.parse(T) + 60_000, desk, tidy: true, play: () => ({ playing: false, t: null }), url }
 }
 
 export function docAt(d: Doc, desk: boolean, h: DocHere = {}) {

@@ -1,12 +1,13 @@
 // Text as Taska shows it: its blocks (model/markdown) drawn as paragraphs, headings, quotes, lists, tables (cards on a
-// narrow screen), code and choices. In an open question the choices are buttons; answered, they keep their place and
+// narrow screen), code (a Mermaid block as its diagram) and choices. In an open question the choices are buttons; answered, they keep their place and
 // shape, quieter, yours ticked. A code in the words opens what it names, a picture opens the viewer. Props only.
 
-import { useLayoutEffect, useRef, type HTMLAttributes, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState, type HTMLAttributes, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react'
 import { blocks, type ListNode, type MdBlock } from '../model/markdown'
 import { Kbd } from './bits'
 import { Icon } from './Icon'
 import { clean, inlineHtml, picturesIn, type InlineWorld } from './markdown/inline'
+import { mermaidError } from './markdown/mermaid'
 
 export interface Choosing {
   /** the choices picked so far, by their number */
@@ -130,6 +131,64 @@ function Choices({ b, world, choosing, done }: { b: Extract<MdBlock, { kind: 'ch
 }
 
 /** One block of text as it shows. */
+const Code = ({ text }: { text: string }) => (
+  <pre className="overflow-x-auto rounded-lg bg-zinc-100 p-3 font-mono text-[13px] leading-relaxed wrap-anywhere whitespace-pre-wrap sm:whitespace-pre sm:[overflow-wrap:normal] lg:scrollbar-thin dark:bg-zinc-800">
+    <code>{text}</code>
+  </pre>
+)
+
+/** Whether it is drawn dark: a data-theme above it says so, else the system. */
+const darkAt = (el: Element | null) => {
+  const forced = el?.closest('[data-theme]')?.getAttribute('data-theme')
+  return forced ? forced === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches
+}
+
+/** A Mermaid block: its words until the diagram is drawn, then the diagram; words that are not a diagram say why,
+ * over the words. It is drawn again when the theme changes. */
+function Diagram({ src, draw }: { src: string; draw: NonNullable<InlineWorld['diagram']> }) {
+  const at = useRef<HTMLDivElement>(null)
+  const id = 'm' + useId().replace(/[^a-zA-Z0-9]/g, '')
+  const [dark, setDark] = useState<boolean | null>(null)
+  const [got, setGot] = useState<{ key: string; svg?: string; error?: string } | null>(null)
+  useEffect(() => {
+    const look = () => setDark(darkAt(at.current))
+    look()
+    const media = matchMedia('(prefers-color-scheme: dark)')
+    media.addEventListener('change', look)
+    const themes = new MutationObserver(look) // a data-theme set above it (Storybook's toolbar)
+    themes.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'], subtree: true })
+    return () => {
+      media.removeEventListener('change', look)
+      themes.disconnect()
+    }
+  }, [])
+  const key = `${dark}\n${src}`
+  useEffect(() => {
+    if (dark === null) return
+    let on = true
+    draw(src, dark, id).then(
+      (svg) => on && setGot({ key, svg }),
+      (e: unknown) => on && setGot({ key, error: mermaidError(e) }),
+    )
+    return () => {
+      on = false
+    }
+  }, [src, dark, id, key, draw])
+  const now = got?.key === key ? got : null
+  return (
+    <div ref={at} data-mermaid={now?.svg ? 'drawn' : now?.error ? 'failed' : 'drawing'}>
+      {now?.svg ? (
+        <div className="flex justify-center overflow-x-auto rounded-lg bg-zinc-50 p-4 lg:scrollbar-thin dark:bg-zinc-800/60 [&>svg]:h-auto [&>svg]:max-w-full" dangerouslySetInnerHTML={{ __html: now.svg }} />
+      ) : (
+        <>
+          {now?.error ? <p className="pb-1.5 text-[12.5px] whitespace-pre-wrap text-red-600 dark:text-red-400">This diagram has an error: {now.error}</p> : null}
+          <Code text={src} />
+        </>
+      )}
+    </div>
+  )
+}
+
 export function Block({ b, world, choosing, done }: { b: MdBlock; world: InlineWorld; choosing?: Choosing | null; done?: readonly string[] | null }) {
   switch (b.kind) {
     case 'para':
@@ -144,11 +203,7 @@ export function Block({ b, world, choosing, done }: { b: MdBlock; world: InlineW
         />
       )
     case 'code':
-      return (
-        <pre className="overflow-x-auto rounded-lg bg-zinc-100 p-3 font-mono text-[13px] leading-relaxed wrap-anywhere whitespace-pre-wrap sm:whitespace-pre sm:[overflow-wrap:normal] lg:scrollbar-thin dark:bg-zinc-800">
-          <code>{b.text}</code>
-        </pre>
-      )
+      return b.lang === 'mermaid' && b.text.trim() && world.diagram ? <Diagram src={b.text} draw={world.diagram} /> : <Code text={b.text} />
     case 'list': {
       const Tag = b.list.ordered ? 'ol' : 'ul'
       return <Tag className={LIST_CLS(b.list.ordered)} dangerouslySetInnerHTML={{ __html: clean(listHtml(b.list, world)) }} />

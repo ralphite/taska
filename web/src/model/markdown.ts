@@ -16,7 +16,8 @@ export type MdBlock =
   | { kind: 'quote'; text: string }
   | { kind: 'list'; list: ListNode }
   | { kind: 'table'; head: string[]; align: Align[]; rows: string[][] }
-  | { kind: 'code'; text: string }
+  /** `lang`: the word after the opening fence, lower case ('' for none); "mermaid" is drawn as a diagram */
+  | { kind: 'code'; text: string; lang: string }
   /** a run of choices; `base` is the first one's number among all the choices of the text */
   | { kind: 'choices'; multi: boolean; labels: string[]; base: number }
 
@@ -114,6 +115,12 @@ const itemsOf = (lines: string[]) =>
     return acc
   }, [])
 
+/** A fenced code block: its words without the fences, and the language its opening fence names. */
+export function codeBlock(fenced: string): MdBlock {
+  const lang = (/^\s*```[ \t]*([^\s`]*)/.exec(fenced)?.[1] || '').toLowerCase()
+  return { kind: 'code', text: fenced.replace(/^\s*```[^\n]*\n?/, '').replace(/\n?\s*```\s*$/, ''), lang }
+}
+
 /**
  * The blocks of a text. `asking`: it is a question that can be answered (or was): its choices count also when its
  * list has other points before them.
@@ -123,7 +130,7 @@ export function blocks(text: string, asking = false): MdBlock[] {
   let choices = 0
   for (const r of runs(text)) {
     if (r.kind === 'code') {
-      out.push({ kind: 'code', text: r.lines.join('\n').replace(/^\s*```[^\n]*\n?/, '').replace(/\n?\s*```\s*$/, '') })
+      out.push(codeBlock(r.lines.join('\n')))
       continue
     }
     if (r.kind === 'heading') {

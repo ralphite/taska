@@ -6,7 +6,8 @@ import { readdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import type { Plugin } from 'vite'
 
-// The service worker is built with the page, at /sw.js, with this build's files written into it (what it keeps).
+// The service worker is built with the page, at /sw.js, with this build's files written into it (what it keeps):
+// the page's own code, not the parts it loads only when needed.
 function serviceWorker(): Plugin {
   return {
     name: 'taska-sw',
@@ -15,7 +16,16 @@ function serviceWorker(): Plugin {
       const sw = Object.values(bundle).find((c) => c.type === 'chunk' && c.name === 'sw')
       if (!sw || sw.type !== 'chunk') return
       const pub = readdirSync(fileURLToPath(new URL('./public', import.meta.url)))
-      const files = [...Object.keys(bundle).filter((f) => f !== sw.fileName && /\.(js|css|html|png|svg|woff2)$/.test(f)), ...pub.filter((f) => /\.(png|svg)$/.test(f)), 'index.html']
+      // the page's own code, not what it loads only when needed (Mermaid's diagrams: large, fetched the first time)
+      const page = new Set<string>()
+      const take = (f: string) => {
+        const c = bundle[f]
+        if (page.has(f) || !c || c.type !== 'chunk') return
+        page.add(f)
+        c.imports.forEach(take)
+      }
+      Object.values(bundle).forEach((c) => c.type === 'chunk' && c.isEntry && c !== sw && take(c.fileName))
+      const files = [...Object.keys(bundle).filter((f) => f !== sw.fileName && (/\.js$/.test(f) ? page.has(f) : /\.(css|html|png|svg|woff2)$/.test(f))), ...pub.filter((f) => /\.(png|svg)$/.test(f)), 'index.html']
       sw.code = `const TASKA_SHELL=${JSON.stringify(files)};\n` + sw.code
     },
   }

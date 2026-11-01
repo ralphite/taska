@@ -14,6 +14,8 @@ export interface InlineWorld {
   url(fid: string): string
   /** a picture's width and height, when known (its place is kept before it loads) */
   size(fid: string): readonly [number, number] | undefined
+  /** a Mermaid diagram's SVG (none: Mermaid blocks show their words) */
+  diagram?(src: string, dark: boolean, id: string): Promise<string>
 }
 
 export const REF_CLS = 'cursor-pointer font-medium text-blue-600 hover:underline dark:text-blue-400'

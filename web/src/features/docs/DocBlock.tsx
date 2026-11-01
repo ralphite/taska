@@ -3,7 +3,7 @@
 // ticks one); sent and not changed since, the form keeps its look, quieter, with Submitted and Modify. Props only.
 
 import { isTicked } from '../../model/docTicks'
-import { blocks, CHOICE, listOf, type MdBlock } from '../../model/markdown'
+import { blocks, CHOICE, codeBlock, listOf, type MdBlock } from '../../model/markdown'
 import type { Block as DocPart } from '../../model/types'
 import { Icon } from '../../ui/Icon'
 import { Block } from '../../ui/Markdown'
@@ -100,7 +100,7 @@ export function asBlock(b: Pick<DocPart, 'kind' | 'text'>): MdBlock | null {
       return { kind: 'heading', level, text: b.text.replace(/^#+\s*/, '') }
     }
     case 'code':
-      return { kind: 'code', text: b.text.replace(/^\s*```[^\n]*\n?/, '').replace(/\n?\s*```\s*$/, '') }
+      return codeBlock(b.text)
     case 'quote':
       return { kind: 'quote', text: b.text.replace(/^\s*>\s?/gm, '') }
     case 'list': {

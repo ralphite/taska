@@ -18,7 +18,8 @@ describe('blocks', () => {
     expect(b.map((x) => x.kind)).toEqual(['heading', 'quote', 'code', 'table'])
     expect(b[0]).toEqual({ kind: 'heading', level: 1, text: 'Plan' })
     expect(b[1]).toEqual({ kind: 'quote', text: 'a\nb' })
-    expect(b[2]).toEqual({ kind: 'code', text: 'x = 1' })
+    expect(b[2]).toEqual({ kind: 'code', text: 'x = 1', lang: '' })
+    expect(blocks('```Mermaid\ngraph TD\n  A --> B\n```')).toEqual([{ kind: 'code', text: 'graph TD\n  A --> B', lang: 'mermaid' }])
     expect(b[3]).toEqual({ kind: 'table', head: ['A', 'B'], align: ['text-left', 'text-right'], rows: [['1', '2']] })
   })
 

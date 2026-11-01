@@ -1,10 +1,14 @@
 // Made-up data for stories: items, inputs and the facts a row or a list shows, each built from a few fields.
 
+import { Diagrams } from '../app/page/diagrams'
 import type { RowEvents, RowFacts, RowLook } from '../features/list/ListRows'
 import { project, type ProjectModel } from '../model/project'
 import type { Doc, Input, Item, Message, ProjectFacts } from '../model/types'
 
 export const T = '2026-10-23T14:30:00-07:00'
+
+/** Mermaid diagrams drawn as the page draws them (the page's own drawing, one for every story) */
+export const DIAGRAMS = new Diagrams()
 
 export function item(f: Partial<Item> & { n: number }): Item {
   return {

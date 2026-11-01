@@ -5,12 +5,12 @@ import type { TalkFacts } from '../features/item/Talk'
 import type { TalkEnv } from '../features/item/talkEnv'
 import { codeOf, findRef, type ProjectModel } from '../model/project'
 import type { Comment, Doc, Item } from '../model/types'
-import { PICTURE, T } from './fixtures'
+import { DIAGRAMS, PICTURE, T } from './fixtures'
 
 export function talkEnv(m: ProjectModel, desk: boolean, f: Partial<TalkEnv> = {}): TalkEnv {
   const url = (fid: string) => (/\.(png|jpe?g)$/.test(fid) ? PICTURE : '#' + fid)
   return {
-    world: { find: (c) => findRef(m, c), url, size: () => undefined },
+    world: { find: (c) => findRef(m, c), url, size: () => undefined, diagram: (src, dark, id) => DIAGRAMS.draw(src, dark, id) },
     now: Date.parse(T) + 60_000,
     desk,
     tidy: true,

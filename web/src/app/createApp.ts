@@ -46,6 +46,7 @@ import { KeptNotes } from './inputs/keptNotes'
 import { DocVoice } from './voice/docVoice'
 import { Dictation } from './voice/dictation'
 import { Media } from './page/media'
+import { Diagrams } from './page/diagrams'
 import { SavedViews } from '../features/list/views'
 import { createGripsStore, type GripsStore } from '../stores/grips'
 import { createDragStore, type DragStore } from '../stores/drag'
@@ -178,6 +179,8 @@ export interface App {
   docVoice: DocVoice
   dictation: Dictation
   media: Media
+  /** Mermaid diagrams in Markdown, drawn once per words and theme */
+  diagrams: Diagrams
   views: SavedViews
   itemDrag: ItemDrag
   selection: Selection
@@ -408,6 +411,7 @@ export function createApp(env: AppEnv): App {
     docVoice,
     dictation,
     media,
+    diagrams: new Diagrams(),
     views,
     itemDrag,
     selection,

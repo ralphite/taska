@@ -61,6 +61,7 @@ export function useFiles(slug: string): { play(src: string): PlayState; /** a vo
 
 /** What the Markdown of a project knows: its codes, its files' addresses, its pictures' sizes. */
 export function useItemWorld(m: ProjectModel | null, slug: string): InlineWorld {
+  const { diagrams } = useApp()
   const stores = useStores('data')
   const sizes = useStoreValue(stores.data, (s) => s.sizes[slug])
   return useMemo(
@@ -68,7 +69,8 @@ export function useItemWorld(m: ProjectModel | null, slug: string): InlineWorld 
       find: (c: string) => (m ? findRef(m, c) : null),
       url: (f: string) => `/p/${encodeURIComponent(slug)}/f/${encodeURIComponent(f)}`,
       size: (f: string) => sizes?.[f],
+      diagram: (src: string, dark: boolean, id: string) => diagrams.draw(src, dark, id),
     }),
-    [m, slug, sizes],
+    [m, slug, sizes, diagrams],
   )
 }
