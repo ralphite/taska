@@ -34,6 +34,8 @@ export interface SidebarEvents {
   newProject(): void
   hide(): void
   settings(): void
+  /** how agents get work, without spending tokens (F613) */
+  help(): void
   keys(): void
   go(href: string, e: { preventDefault(): void; metaKey: boolean; ctrlKey: boolean }): void
   undo?(): void
@@ -245,6 +247,11 @@ export function Sidebar(props: SidebarProps) {
             <span className="min-w-0 flex-1">Settings</span>
             <Icon n="right" c="size-4 shrink-0 text-zinc-300 dark:text-zinc-600" />
           </button>
+          <button onClick={on.help} className="flex min-h-12 w-full items-center gap-3 px-3.5 py-2.5 text-left text-[15px]">
+            <Icon n="info" c="size-5 shrink-0 text-zinc-500 dark:text-zinc-400" />
+            <span className="min-w-0 flex-1">Help</span>
+            <Icon n="right" c="size-4 shrink-0 text-zinc-300 dark:text-zinc-600" />
+          </button>
         </div>
       ) : null}
       {!phone && devLinks?.length ? (
@@ -287,6 +294,13 @@ export function Sidebar(props: SidebarProps) {
               <Icon n="keyboard" c="size-4" />
             </button>
           </div>
+          <button
+            onClick={on.help}
+            className="flex h-9 min-w-0 items-center gap-2.5 rounded-lg px-2.5 text-left text-sm text-zinc-600 hover:bg-zinc-200/60 dark:text-zinc-300 dark:hover:bg-zinc-800"
+          >
+            <Icon n="info" c="size-4 shrink-0 text-zinc-500 dark:text-zinc-400" sw="2" />
+            <span className="min-w-0 flex-1 truncate">Help</span>
+          </button>
         </div>
       ) : null}
     </nav>
@@ -342,6 +356,7 @@ export function Rail({ projects, composing, settingsOpen, hidden, on }: { projec
       {btn('np', <Icon n="plus" c="size-5" />, 'New project', on.newProject)}
       <div className="flex-1" />
       {btn('settings', <Icon n="gear" c="size-5" />, 'Settings · G S', on.settings, settingsOpen ? { 'aria-current': 'page' } : {})}
+      {btn('help', <Icon n="info" c="size-5" />, 'Help: how agents get work', on.help)}
       {btn('keys', <Icon n="keyboard" c="size-5" />, 'Keyboard shortcuts · ?', on.keys)}
     </nav>
   )

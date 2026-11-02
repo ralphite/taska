@@ -49,6 +49,7 @@ export function SidebarContainer({ slug, place, hidden, rail }: { slug: string; 
     },
     hide: () => stores.ui.getState().setSideHidden(!sideHidden),
     settings: () => app.nav.to(base + 'settings'),
+    help: () => app.sheets.open({ kind: 'agents-help' }),
     keys: () => app.sheets.open({ kind: 'keys' }),
     undo: () => void undo?.run(),
     order: (names, moved) => void app.projects.order(names, `${list?.find((p) => p.slug === moved)?.title || moved} moved`),
