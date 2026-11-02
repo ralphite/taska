@@ -54,7 +54,7 @@ function AgentsBody({ f, onCopy, guideOpen }: { f: AgentsFacts; onCopy(text: str
   )
   return (
     <div className="flex flex-col gap-8 px-1 pt-1 pb-2">
-      <div className="flex flex-col gap-4">
+      <div className="grid items-start gap-4 lg:grid-cols-2">
         <div className={`flex gap-3 rounded-2xl p-4 ${look[0]}`}>
           <span className={`mt-1.5 size-2.5 shrink-0 rounded-full ${look[1]}`} />
           <div>
@@ -81,19 +81,18 @@ function AgentsBody({ f, onCopy, guideOpen }: { f: AgentsFacts; onCopy(text: str
       </div>
       <section className="flex flex-col gap-3">
         <h2 className="text-[15px] font-semibold">Connect an agent</h2>
-        <div className="flex flex-col gap-4">
+        <div className="grid gap-4 lg:grid-cols-2">
           {way(
             'terminal',
             'Run a command',
             f.cmd,
             <>
-              <p className="text-zinc-500 dark:text-zinc-400">Once on each machine, in the project&apos;s folder. It installs the Taska skill for Claude Code, Codex and Antigravity.</p>
+              <p className="text-zinc-500 dark:text-zinc-400">Once per machine, in the project folder.</p>
               <code className="font-mono text-[13px] leading-relaxed break-words">{f.cmd}</code>
               {f.far ? (
                 <p className="text-zinc-500 dark:text-zinc-400">
-                  From another network, with the key:{' '}
                   <button onClick={() => onCopy(f.far)} className="font-medium text-blue-600 hover:underline dark:text-blue-400">
-                    copy that command
+                    Copy for another network
                   </button>
                 </p>
               ) : null}
@@ -104,7 +103,6 @@ function AgentsBody({ f, onCopy, guideOpen }: { f: AgentsFacts; onCopy(text: str
             'Or tell the agent',
             f.ask,
             <>
-              <p className="text-zinc-500 dark:text-zinc-400">Paste this into your coding agent, in the project&apos;s folder.</p>
               <p className="leading-relaxed break-words">{f.ask.replace(/`/g, '')}</p>
             </>,
           )}

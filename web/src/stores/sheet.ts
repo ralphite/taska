@@ -52,6 +52,8 @@ export interface SheetPlace {
   /** a menu at a spot on the desktop */
   pop?: boolean
   narrow?: boolean
+  /** wider on the desktop */
+  wide?: boolean
   tall?: boolean
   /** the focus card, above the box */
   card?: boolean

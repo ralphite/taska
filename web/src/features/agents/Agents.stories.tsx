@@ -10,7 +10,7 @@ import { agentsFacts } from './agentsFacts'
 export default { title: 'Components/Menus and sheets/Agents' } satisfies Meta
 type Story = StoryObj
 
-const sheet = (f: ReturnType<typeof agentsFacts>, open = false): Story => ({ render: () => <SheetFrames look={{ tall: true }} height={820} parts={() => agentsSheet(f, no, open)} /> })
+const sheet = (f: ReturnType<typeof agentsFacts>, open = false): Story => ({ render: () => <SheetFrames look={{ tall: true, wide: true }} height={820} parts={() => agentsSheet(f, no, open)} /> })
 
 /** One around and one that was here earlier. */
 export const Agents: Story = { ...sheet(agentsFacts(shopWithHistory(), guide('shop'))), name: 'Agents' }
