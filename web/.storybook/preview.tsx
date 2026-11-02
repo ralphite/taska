@@ -10,7 +10,7 @@ const preview: Preview = {
     // the most used first (B636): the conversation, its messages from you, then the agent's, its questions, comments
     options: {
       storySort: {
-        order: ['Components', ['Conversation', ['Message', ['From you', 'From an agent', 'Question', 'Document comment'], 'Whole conversation', 'Message parts'], '*'], '*'],
+        order: ['Components', ['Conversation', ['Message', ['From you', ['Sent', 'Not there yet', 'Voice notes', 'Pictures, files, long words', 'Changed afterwards'], 'From an agent', 'Question', 'Document comment'], 'Whole conversation', 'Message parts'], '*'], '*'],
       },
     },
   },
