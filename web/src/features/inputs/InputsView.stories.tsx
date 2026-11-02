@@ -18,3 +18,5 @@ export const InputsTabSearch: Story = { ...one({ organizer: true, q: 'coupon' })
 /** Just sent, Taska not answering yet: on its way, first. */
 export const InputsTabWithOneOnItsWay: Story = { ...one({ organizer: true, outbox: [out({ text: 'Also the sort, please.' })] }), name: 'One on its way' }
 export const InputsTabEmpty: Story = { ...one({ inputs: [] }), name: 'Empty' }
+// ---- more states (B636)
+export const SearchNothingFound: Story = { ...one({ organizer: true, q: 'zebra' }), name: 'Search, nothing found' }

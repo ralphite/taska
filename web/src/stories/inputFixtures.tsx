@@ -72,6 +72,9 @@ export interface Said {
   justSent?: string[]
   /** an edit not saved, by input */
   editDrafts?: string[]
+  /** jumped to this input (lit; `litStill`: stays lit) */
+  lit?: string
+  litStill?: boolean
 }
 
 const title = (slug: string) => ({ 'mobile-app': 'Mobile app' })[slug] ?? slug
@@ -82,7 +85,8 @@ const noInput: InputEvents = { goto() {}, more() {}, menu() {}, retry() {}, draf
 function rowsOf(s: Said) {
   const m = project(s)
   const words = searchWords(s.q ?? '')
-  const rows = inputRows(m, { words, title, opened: new Set(s.opened), drafts: {}, writing: null, lit: null, litStill: false })
+  const drafts = Object.fromEntries((s.editDrafts ?? []).map((id) => [draftKey({ kind: 'amend', mode: 'edit', id }), 'my edit']))
+  const rows = inputRows(m, { words, title, opened: new Set(s.opened), drafts, writing: null, lit: s.lit ?? null, litStill: !!s.litStill })
   return { m, words, rows }
 }
 

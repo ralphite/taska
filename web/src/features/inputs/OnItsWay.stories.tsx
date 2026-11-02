@@ -3,6 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frames } from '../../stories/Frames'
 import { out } from '../../stories/boxFixtures'
 import { inputsOf } from '../../stories/inputFixtures'
+import { PICTURE } from '../../stories/fixtures'
 
 export default { title: 'Components/Inputs/On its way' } satisfies Meta
 type Story = StoryObj
@@ -23,6 +24,15 @@ export const OnItsWay: Story = {
           ],
         })
       }
+    </Frames>
+  ),
+}
+// ---- more states (B636)
+export const OnItsWayWithAPicture: Story = {
+  name: 'On its way, with a picture',
+  render: () => (
+    <Frames desk={false} phoneWidth={393} height={420}>
+      {() => inputsOf({ organizer: true, outbox: [out({ q: 'q1', text: 'The button here', files: [{ key: 'p', f: '', name: 'shot.png', mime: 'image/png', preview: PICTURE, uploading: true }] })] })}
     </Frames>
   ),
 }
