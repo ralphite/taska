@@ -56,3 +56,16 @@ export const MovedPointerOnItsVoiceNote: Story = {
   name: 'Moved, pointer on its voice note',
   parameters: { pseudo: { hover: ['[data-voice], .group'] } },
 }
+// ---- more states (B636)
+const pdf = { f: 'f5-export.pdf', name: 'export.pdf', mime: 'application/pdf' }
+export const EditedWithItsHistory: Story = {
+  ...at([mine({ edited: later(1) })], { inputs: [r4({ history: [{ text: 'The export should keep the filter.', t: T, mode: 'edit' }] })] }),
+  name: 'Edited, with its history',
+}
+export const DetailsAddedLater: Story = {
+  ...at([mine({ text: 'The export should keep the filter I set.' }), mine({ id: 2, text: 'The export should keep the filter I set.\n\nAnd the sort.', t: later(2) })]),
+  name: 'Details added later',
+}
+export const WithAFile = at([mine()], { inputs: [r4({ files: [pdf] })] })
+export const VoiceNoteLengthUnknown: Story = { ...at([mine()], { inputs: [r4({ files: [{ ...voice, name: 'voice.webm' }] })] }), name: 'Voice note, length unknown' }
+export const VoiceNoteWordsNotTidied: Story = { ...at([mine()], { inputs: [r4({ files: [voice] })], env: { tidy: false } }), name: 'Voice note, words not tidied' }

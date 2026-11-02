@@ -3,6 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { Item, Message } from '../../model/types'
 import { Frames } from '../../stories/Frames'
 import { T, item, message } from '../../stories/fixtures'
+import { doc } from '../../stories/itemFixtures'
 import { talkOf, you, type PageOpts } from '../../stories/itemPage'
 
 export default { title: 'Components/Conversation/Message/Question' } satisfies Meta
@@ -33,3 +34,9 @@ export const NotAnsweredAskedAgainLater: Story = {
   name: 'Not answered, asked again later',
 }
 export const TakenBackByTheAgent = at([ask(), { ...message({ id: 5, kind: 'withdraw', text: 'Found it in the notes: CSV.' }), t: later(3) }])
+// ---- more states (B636)
+const FORM = doc({ d: 14, n: 12, title: 'Export formats', md: '- [ ] CSV\n- [ ] Excel', blocks: [{ key: 'c1', kind: 'list', text: '- [ ] CSV\n- [ ] Excel', comments: [] }] })
+export const PointingToADocumentYouRepliedInstead: Story = {
+  ...at([ask('Pick the formats in D14.'), said('Whichever is quicker.')], { talked: true }, { docs: [FORM] }),
+  name: 'Question pointing to a document, you replied instead',
+}

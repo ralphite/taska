@@ -33,3 +33,17 @@ export const VoiceCommentNoWordsHeard: Story = {
   ...at([comment({ id: 9, t: later(1), quote: 'keeps the filter', text: '', files: [{ f: 'f5-voice_0-03.webm', name: 'voice_0-03.webm', mime: 'audio/webm' }] })]),
   name: 'Voice comment, no words heard',
 }
+// ---- more states (B636)
+const detachedAt = (comments: Comment[]): Story => ({
+  render: () => (
+    <Frames phoneWidth={393} deskWidth={720}>
+      {(layout) => talkOf(item({ n: 12, thread: [] }), layout === 'desk', { docs: [doc({ d: 1, n: 12, title: 'Plan: the export keeps the filter', blocks: [{ key: 'k1', kind: 'para', text: 'The export keeps every filter.', comments: [] }], whole: [], detached: [{ key: 'k0', quote: 'keeps the filter', comments }] })] })}
+    </Frames>
+  ),
+})
+export const YoursBeingSent: Story = { ...at([comment({ id: -1, by: 'you', t: later(1), quote: 'keeps the filter', text: 'And the sort?' })]), name: 'Yours, being sent' }
+export const OnWordsChangedSince: Story = { ...detachedAt([comment({ id: 9, key: 'k0', t: later(1), quote: 'keeps the filter', text: 'And the sort?', by: 'you' })]), name: 'On words changed since' }
+export const APictureNoWords: Story = {
+  ...at([comment({ id: 9, by: 'you', t: later(1), quote: 'keeps the filter', text: '', files: [{ f: 'f3-shot.png', name: 'shot.png', mime: 'image/png' }] })]),
+  name: 'A picture, no words',
+}

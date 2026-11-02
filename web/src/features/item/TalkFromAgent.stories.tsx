@@ -2,7 +2,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { Item, Message } from '../../model/types'
 import { Frames } from '../../stories/Frames'
-import { T, item, message } from '../../stories/fixtures'
+import { T, input, item, message } from '../../stories/fixtures'
 import { talkOf, you, type PageOpts } from '../../stories/itemPage'
 
 export default { title: 'Components/Conversation/Message/From an agent' } satisfies Meta
@@ -36,3 +36,15 @@ export const FromCodex = at([message({ id: 2, by: 'codex', ses: 'tests', text: '
 export const FromTheOrganizer = at([message({ id: 2, by: 'org', kind: 'say', src: 'r4', text: 'Added to F012: keep the filter' })])
 export const HiddenOneLine: Story = { ...at([message({ id: 2, hidden: true })]), name: 'Hidden: one line' }
 export const HiddenShownAgain: Story = { ...at([message({ id: 2, hidden: true })], { t: { peeking: new Set([2]) } }), name: 'Hidden, shown again' }
+// ---- more states (B636)
+const pdf = { f: 'f5-report.pdf', name: 'report.pdf', mime: 'application/pdf' }
+const voiceNote = { f: 'f6-voice_0-09.webm', name: 'voice_0-09.webm', mime: 'audio/webm' }
+export const WithAVoiceNote = at([message({ id: 2, text: 'Here is what I found.', files: [voiceNote] })])
+export const WithAFile = at([message({ id: 2, text: 'The report is attached.', files: [pdf] })])
+export const FromTheOrganizerInputFromAnotherItem: Story = {
+  ...at([message({ id: 2, by: 'org', kind: 'say', src: 'r4', text: 'Added to F012: keep the filter' })], {
+    inputs: [input({ id: 'r4', text: 'Keep the filter, and the sort.', scope: 13 })],
+    others: [item({ n: 13, title: 'Export options' })],
+  }),
+  name: 'From the organizer, input from another item',
+}

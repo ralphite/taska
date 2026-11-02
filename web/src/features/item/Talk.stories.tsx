@@ -41,3 +41,17 @@ export const LongBackAndForth = whole(
   {},
   900,
 )
+// ---- more states (B636)
+export const LongBackAndForthAllShown: Story = {
+  ...whole(
+    Array.from({ length: 14 }, (_, i) => (i % 2 ? agent(i + 1, i * 3, `Step ${(i + 1) / 2} done.`) : you(i + 1, i * 3, `Then step ${i / 2 + 1}, please.`))),
+    {},
+    { f: { allTalk: true } },
+    900,
+  ),
+  name: 'Long back and forth, all shown',
+}
+export const CardOnTopProposedThenYourWords: Story = {
+  ...whole([you(1, 2, 'Can it also keep the sort?')], { status: 'proposed', by: 'claude-code', body: 'The export writes the rows the list shows.' }),
+  name: 'Card on top: proposed, then your words',
+}
