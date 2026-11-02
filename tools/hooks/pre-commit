@@ -1,0 +1,19 @@
+#!/bin/zsh
+# Quick checks before a commit (T582 #3), only for the parts it touches: the page's types, lint and architecture,
+# the server's types. Seconds, not the full suite (tools/ship.sh runs that). Installed by
+# `git config core.hooksPath tools/hooks`; skip once with `git commit --no-verify`.
+cd "$(git rev-parse --show-toplevel)" || exit 1
+staged=$(git diff --cached --name-only --diff-filter=ACMR)
+web=$(echo "$staged" | grep -E '^web/.*\.(ts|tsx|mjs|js)$' | sed 's|^web/||')
+server=$(echo "$staged" | grep -E '^(server|tests|tools)/.*\.py$')
+fail=0
+if [[ -n $web ]]; then
+  (cd web && npx tsc -b) || fail=1
+  (cd web && npx eslint ${(f)web}) || fail=1
+  (cd web && node scripts/check-architecture.mjs) > /dev/null || { (cd web && node scripts/check-architecture.mjs); fail=1; }
+fi
+if [[ -n $server ]]; then
+  (cd web && npx pyright -p ../server) > /tmp/taska-precommit-pyright.log 2>&1 || { tail -20 /tmp/taska-precommit-pyright.log; fail=1; }
+fi
+(( fail )) && echo "pre-commit: fix the above, or commit with --no-verify to skip once"
+exit $fail
