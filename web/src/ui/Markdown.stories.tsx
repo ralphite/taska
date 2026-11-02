@@ -33,7 +33,7 @@ export const Blocks: Story = {
             ['a table (cards on a phone)', rich('| Step | Who | When |\n|---|:-:|--:|\n| Read the filter | agent | now |\n| Write the rows | agent | later |')],
             ['a narrow table', rich('| Format | Size |\n|---|---|\n| CSV | small |')],
             ['code', rich('```\nconst rows = list.filter(shown)\nexport(rows)\n```')],
-            ['a Mermaid diagram', rich('```mermaid\ngraph TD\n  A[Yadong says it] --> B[Organizer files it]\n  B --> C{Agent picks it up}\n  C -->|done| D[Review]\n  C -->|question| E[Needs you]\n```')],
+            ['a Mermaid diagram', rich('```mermaid\ngraph TD\n  A[You say it] --> B[Organizer files it]\n  B --> C{Agent picks it up}\n  C -->|done| D[Review]\n  C -->|question| E[Needs you]\n```')],
             ['a Mermaid block that is not a diagram', rich('```mermaid\ngraph TD\n  A --> \n```')],
             ['a picture', rich('The screen: ![the list](f3-shot.png)')],
           ]}
