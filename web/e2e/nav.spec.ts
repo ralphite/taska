@@ -152,7 +152,7 @@ test('D82 #4: a link to a project that never was says only that it is not there;
   const none = 'no-such-project-' + p.name
   await page.goto(`/p/${none}/`)
   const restore = page.getByRole('button', { name: 'Restore', exact: true })
-  await expect(page.getByText(/^There is no project/).first()).toContainText(`There is no project “${none}”`)
+  await expect(page.getByText(/^No project/).first()).toContainText(`No project “${none}”`)
   await expect(restore).toHaveCount(0)
   await request.post('/api/projects/delete', { data: { name: p.name } })
   await page.goto(p.url)

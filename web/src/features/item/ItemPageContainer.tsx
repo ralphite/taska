@@ -7,6 +7,7 @@ import { useAway, useFiles, useItemWorld } from '../../app/hooks'
 import { newId } from '../../app/changeRunner'
 import { CHOICE } from '../../model/markdown'
 import { codeOf, docsOf, filesOf, findRef, liveN, STAND, type ProjectModel } from '../../model/project'
+import { ticksNotSent } from '../../model/docTicks'
 import { lastAgentMessage } from '../../model/items'
 import { answerOf } from '../../model/talk'
 import type { Item } from '../../model/types'
@@ -27,7 +28,8 @@ export function openItemMenu(app: Pick<App, 'sheets'>, desk: boolean, n: number,
 
 export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = false }: { it: Item; m: ProjectModel; slug: string; tab: Tab; desk: boolean; /** in two columns, its document on the left */ left?: ReactNode; bare?: boolean }) {
   const app = useServices('answers', 'box', 'docs', 'fields', 'inputs', 'itemEdits', 'items', 'nav', 'runner', 'seen', 'sheets', 'toasts')
-  const stores = useStores('box', 'grips', 'itemView', 'keptEdits', 'outbox', 'ui')
+  const stores = useStores('box', 'docTicks', 'grips', 'itemView', 'keptEdits', 'outbox', 'ui')
+  const ticks = useStoreValue(stores.docTicks, (s) => s)
   const duo = useStoreValue(stores.ui, (s) => s.duo) && desk
   const view = useStoreValue(stores.itemView, (s) => s)
   const kept = useStoreValue(stores.keptEdits, (s) => s)
@@ -83,6 +85,7 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
     files: filesOf(m, it),
     sources: it.srcs.filter((id) => m.byId.get(id)?.kind !== 'answer').length,
     docs: docsOf(m, n),
+    docWaiting: Object.fromEntries(docsOf(m, n).map((d) => [d.d, ticksNotSent(ticks, d)])),
     remodify: view.remodify === n,
     allTalk: view.talkAll.has(n),
     editing: view.editing === n,

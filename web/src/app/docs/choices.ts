@@ -3,7 +3,7 @@
 
 import { blockKeys } from '../../model/docs'
 import { tickedBlock, tickText, tickWords, ticksOf } from '../../model/docTicks'
-import { docDraft, replyDraft } from '../../model/draftTarget'
+import type { DraftKey } from '../../model/draftTarget'
 import { codeOf, liveN } from '../../model/project'
 import type { DocTicksStore } from '../../stores/docTicks'
 import type { DocViewStore } from '../../stores/docView'
@@ -50,8 +50,9 @@ export class DocChoices {
     this.d.ticks.getState().clear(dn)
   }
 
-  /** Only the choices go into the document (as it is when they get there); the item hears which you ticked. */
-  async sendTicks(slug: string, dn: number): Promise<void> {
+  /** Only the choices go into the document (as it is when they get there); the item hears which you ticked, with
+   * what the box holds (`key`: the draft the box writes now) as their note. */
+  async sendTicks(slug: string, dn: number, key: DraftKey): Promise<void> {
     const m = this.d.model(slug)
     const doc = m?.docs.find((x) => x.d === dn)
     const t = this.d.ticks.getState()
@@ -60,8 +61,8 @@ export class DocChoices {
     const sent = Object.fromEntries(ticksOf(t, doc).map(({ k, now }) => [k, now]))
     const words = tickWords(t, doc)
     if (m.byN.has(n)) {
-      // what the box holds goes along (it writes to the item on the desktop, to the document on the phone)
-      const { text: note, files } = this.d.box.take(slug, this.d.desk() ? replyDraft(codeOf(m, n)) : docDraft(dn))
+      // what the box holds goes along
+      const { text: note, files } = this.d.box.take(slug, key)
       this.d.inputs.push({ slug, text: [`Answered in D${dn}:`, ...(words.length ? words : ['nothing ticked']), ...(note ? ['', note] : [])].join('\n'), scope: codeOf(m, n), files: files.map(({ key: fk, ...f }) => ({ ...f, key: fk })), kind: 'answer' })
       if (!this.d.desk()) this.d.toasts.show(`Choices sent to ${codeOf(m, n)}`)
     }

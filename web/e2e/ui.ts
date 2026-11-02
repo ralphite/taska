@@ -46,7 +46,8 @@ export const view = (page: Page, name: string) => page.locator('#list').getByRol
 export const pane = (page: Page) => shown(page.locator('section > header ~ [data-vc-area]')).last()
 export const paneHead = (page: Page) => shown(page.locator('[data-pane-head]')).last()
 /** The item's status, the chip on its page that opens the status menu. */
-export const statusChip = (page: Page) => shown(pane(page).locator('button[title="Status · S"]')).first()
+// the page's tooltip moves a title into data-tip the first time the pointer is over it: either names the button
+export const statusChip = (page: Page) => shown(pane(page).locator('button:is([title="Status · S"], [data-tip="Status · S"])')).first()
 /** The card shown under the pointer. */
 export const tip = (page: Page) => page.locator('#tip')
 /** The buttons a row shows under the pointer (the desktop), by the row's number. */
@@ -135,7 +136,7 @@ export const needKind = (l: Locator) => l.evaluateAll((els) => els.map((e) => e.
 /** The sheet over the page, for menus and dialogs. */
 export const sheetBody = (page: Page) => page.locator('[role="dialog"]').filter({ visible: true }).first()
 /** An item's priority, the chip on its page that opens its short list. */
-export const priChip = (page: Page) => shown(pane(page).locator('button[title="Priority · P"]')).first()
+export const priChip = (page: Page) => shown(pane(page).locator('button:is([title="Priority · P"], [data-tip="Priority · P"])')).first()
 /** Taska says it runs other code than this page, as after a deploy: its answers name a newer page. */
 export const NEWS = /\/api\/(view|changes)\b/
 export const newer = (json: Record<string, unknown>) => ({ ...json, server: { ...(json.server as object), page: 'index-newer.js' } })

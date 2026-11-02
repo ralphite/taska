@@ -51,6 +51,8 @@ export interface ItemFacts {
   /** how many inputs it was made from (answers to its questions not counted) */
   sources: number
   docs: Doc[]
+  /** each document's choices ticked and not sent ("1 choice not sent"), by its number */
+  docWaiting?: Record<number, string>
   /** your decision on it is open to choose again */
   remodify: boolean
   /** the whole talk shows (Show earlier) */
@@ -385,7 +387,7 @@ export function ItemPage({ it, f, env, facts, on, talkRef, duo = false, left = n
               <section className="flex flex-col gap-2">
                 <SectionHead text="Documents" />
                 {f.docs.map((d) => (
-                  <DocCard key={d.d} d={d} now={env.now} onOpen={on.doc} />
+                  <DocCard key={d.d} d={d} now={env.now} waiting={f.docWaiting?.[d.d]} onOpen={on.doc} />
                 ))}
               </section>
             ) : null}

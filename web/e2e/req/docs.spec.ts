@@ -225,7 +225,7 @@ test("r292 r298: any comment on a document can be deleted, yours and an agent's"
   First part of the plan.
 
   Second part of the plan.
-D1 reply ¶2 An agent note to delete
+D1 reply ¶3 An agent note to delete
 `,
   })
   await open(page, p, 'D1')

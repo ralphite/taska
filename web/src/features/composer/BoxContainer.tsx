@@ -63,7 +63,7 @@ export function BoxContainer({ route, composePage, boxRef, bare = false }: { rou
         stop: () => app.box.stop(),
         unpick: () => app.docs.unpick(),
         toItem: () => app.docs.toItem(),
-        sendTicks: () => pick.d != null && void app.docChoices.sendTicks(route.slug, pick.d),
+        sendTicks: () => pick.d != null && void app.docChoices.sendTicks(route.slug, pick.d, key),
         clearTicks: () => pick.d != null && app.docChoices.clearTicks(pick.d),
       }}
       placeholder={shown.placeholder}

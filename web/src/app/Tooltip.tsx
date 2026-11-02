@@ -16,9 +16,11 @@ interface Shown {
   quick: boolean
 }
 
-/** The tip's words: the element's title becomes its data-tip, so the browser's own tooltip never starts. */
+/** The tip's words: the element's title becomes its data-tip, so the browser's own tooltip never starts. An element
+ * named only by its title (an icon button) keeps that name as its aria-label, for screen readers and keys. */
 function tipText(el: HTMLElement): string {
   if (el.title) {
+    if (!el.getAttribute('aria-label') && !el.textContent?.trim()) el.setAttribute('aria-label', el.title.split(' · ')[0])
     el.dataset.tip = el.title
     el.removeAttribute('title')
   }
