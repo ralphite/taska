@@ -18,6 +18,14 @@ export function Grip({ name, axis, place, measure, onSize, onDone, onReset }: {
 }) {
   const [drag, setDrag] = useState(false)
   const at = useRef({ from: 0, most: 0, px: 0 })
+  const dragging = useRef(false) // ended once: the release and the lost capture that follows it are one end
+  const end = () => {
+    if (!dragging.current) return
+    dragging.current = false
+    setDrag(false)
+    document.body.classList.remove('select-none', 'cursor-row-resize', 'cursor-col-resize')
+    if (at.current.px) onDone(at.current.px)
+  }
   return (
     <div
       data-grip={name}
@@ -27,6 +35,7 @@ export function Grip({ name, axis, place, measure, onSize, onDone, onReset }: {
         e.preventDefault()
         at.current = { ...measure(e.currentTarget), px: 0 }
         e.currentTarget.setPointerCapture(e.pointerId)
+        dragging.current = true
         setDrag(true)
         document.body.classList.add('select-none', axis === 'y' ? 'cursor-row-resize' : 'cursor-col-resize')
       }}
@@ -36,12 +45,11 @@ export function Grip({ name, axis, place, measure, onSize, onDone, onReset }: {
         a.px = Math.round(Math.min(a.most, Math.max(1, (axis === 'y' ? e.clientY : e.clientX) - a.from)))
         onSize(a.px)
       }}
-      onPointerUp={() => {
-        if (!drag) return
-        setDrag(false)
-        document.body.classList.remove('select-none', 'cursor-row-resize', 'cursor-col-resize')
-        if (at.current.px) onDone(at.current.px)
-      }}
+      onPointerUp={end}
+      // the release can be lost (a gesture took the pointer, it left the window): the drag ends then too, so the
+      // line never stays blue (B638)
+      onPointerCancel={end}
+      onLostPointerCapture={end}
       onDoubleClick={(e) => {
         if (onReset && !(e.target as Element).closest('button')) onReset()
       }}
