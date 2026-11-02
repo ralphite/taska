@@ -6,9 +6,14 @@ import gzip
 import hashlib
 import ipaddress
 import json
+import socket
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, List, Optional, Protocol
 from urllib.parse import parse_qs, unquote, urlsplit
+
+# this machine's own names: an address naming it (or an IP, or localhost) is not a web page's borrowed domain
+_HOSTNAME = socket.gethostname().lower().rstrip('.')
+_OWN_NAMES = {_HOSTNAME, _HOSTNAME.split('.')[0], _HOSTNAME.split('.')[0] + '.local'}
 
 Query = Dict[str, List[str]]
 ZIPPED = ("text/html", "application/json", "text/plain", "text/javascript", "text/css", "image/svg+xml",
@@ -74,16 +79,28 @@ class Request:
     def forwarded(self) -> bool:
         return bool(self.header("X-Forwarded-For") or self.header("X-Forwarded-Host"))
 
+    def known_host(self) -> bool:
+        """The address names this machine: an IP, localhost, or this machine's name. A web page that points its own
+        domain at this machine (DNS rebinding) sends its domain here, so its requests are not taken as local."""
+        h = (self.header("Host") or "localhost").split(",")[0].strip().lower()
+        h = h[1:h.index("]")] if h.startswith("[") and "]" in h else h.rsplit(":", 1)[0] if h.count(":") == 1 else h
+        h = h.rstrip(".")
+        try:
+            ipaddress.ip_address(h)
+            return True
+        except ValueError:
+            return h == "localhost" or h.endswith(".localhost") or h in _OWN_NAMES
+
     def trusted(self) -> bool:
-        """This machine or its local network. Anything forwarded by a tunnel is not."""
-        if self.forwarded:
+        """This machine or its local network, by an address naming it. Anything forwarded by a tunnel is not."""
+        if self.forwarded or not self.known_host():
             return False
         ip: Any = ipaddress.ip_address(self.client_ip)
         ip = getattr(ip, "ipv4_mapped", None) or ip
         return bool(ip.is_loopback or ip.is_private or ip.is_link_local)
 
     def on_this_machine(self) -> bool:
-        return self.client_ip in ("127.0.0.1", "::1") and not self.forwarded
+        return self.client_ip in ("127.0.0.1", "::1") and not self.forwarded and self.known_host()
 
     def wants_page(self) -> bool:
         """A person's browser opening an address, as opposed to an agent's curl: the same /p/x/B03 shows the page
