@@ -182,7 +182,7 @@ export function Palette<Id extends string>({ items, code, open, commands, onItem
           }
         }}
       />
-      <div ref={list} className="-mx-1 mt-2 flex max-h-[60dvh] flex-col gap-0.5 overflow-y-auto">
+      <div ref={list} className="-mx-1 mt-2 flex max-h-[60dvh] flex-col gap-0.5 overflow-y-auto outline-none">
         {rows.length ? (
           rows.map((r, k) => (
             <button

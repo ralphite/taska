@@ -21,7 +21,7 @@ export function commentMoveSheet(doc: Doc, current: string, onPick: (key: string
   return {
     title: 'Move comment to…',
     body: (
-      <div className="-mx-1 flex max-h-[60dvh] flex-col gap-0.5 overflow-y-auto">
+      <div className="-mx-1 flex max-h-[60dvh] flex-col gap-0.5 overflow-y-auto outline-none">
         {opt('doc', <b>Whole document</b>)}
         {/* each paragraph read as words (a table's cells, not its pipes) */}
         {doc.blocks.map((x) => opt(x.key, oneLine(plainQuote(x.text)).slice(0, 120)))}

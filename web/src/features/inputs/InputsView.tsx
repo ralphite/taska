@@ -265,7 +265,7 @@ export function InputsView({ hidden, rows, outgoing, words, world, files, hints,
       }}
       hidden={hidden}
       data-vc-area
-      className="-mb-(--foot-h) min-h-0 flex-1 overflow-y-auto overscroll-contain pb-[calc(var(--foot-h,0px)+1.5rem)]"
+      className="-mb-(--foot-h) min-h-0 flex-1 overflow-y-auto outline-none overscroll-contain pb-[calc(var(--foot-h,0px)+1.5rem)]"
     >
       {hidden ? null : outgoing.length && !words.length ? <OutboxRows list={outgoing} on={on} /> : null}
       {hidden ? null : rows.length ? (

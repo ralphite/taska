@@ -26,7 +26,7 @@ export function Picker({ items, code, placeholder, skip, sort, current, desk, ex
   return (
     <div className="flex flex-col gap-2">
       <input autoFocus={desk} className={`${FIELD} lg:h-9 lg:py-0 lg:text-sm`} placeholder={placeholder} autoComplete="off" value={q} onChange={(e) => setQ(e.target.value)} />
-      <div className="-mx-1 max-h-[55dvh] overflow-y-auto lg:max-h-80 lg:scrollbar-thin">
+      <div className="-mx-1 max-h-[55dvh] overflow-y-auto outline-none lg:max-h-80 lg:scrollbar-thin">
         {cands.length ? (
           cands.map((c) => (
             <button

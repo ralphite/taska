@@ -30,7 +30,7 @@ export function SideFrame({ side, count, scrollRef, children }: { side: Side; co
         <h2 className="text-[15px] font-semibold">{TITLE[side]}</h2>
         {count ? <span className="font-mono text-xs text-zinc-400 tabular-nums dark:text-zinc-500">{count}</span> : null}
       </div>
-      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto lg:scrollbar-thin">
+      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto outline-none lg:scrollbar-thin">
         {children}
       </div>
     </div>

@@ -197,7 +197,7 @@ export function Sidebar(props: SidebarProps) {
           <Icon n="mic" c="size-4" />
         </button>
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-2 lg:scrollbar-thin lg:pb-3 lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70">
+      <div className="min-h-0 flex-1 overflow-y-auto outline-none overscroll-contain px-2 lg:scrollbar-thin lg:pb-3 lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70">
         <div className="px-3 pb-1.5 text-xs font-semibold text-zinc-500 lg:text-[11px] lg:tracking-wider lg:uppercase dark:text-zinc-400">Projects</div>
         <div
           ref={rows}
@@ -319,7 +319,7 @@ export function Rail({ projects, composing, settingsOpen, hidden, on }: { projec
       )}
       {btn('new', <Icon n="newinput" c="size-5" />, 'New input · C', on.newInput, { 'aria-pressed': composing })}
       <div className="my-1 h-px w-8 bg-zinc-200 dark:bg-zinc-800" />
-      <div className="-my-1 flex min-h-0 [scrollbar-width:none] flex-col items-center gap-1 overflow-y-auto p-1">
+      <div className="-my-1 flex min-h-0 [scrollbar-width:none] flex-col items-center gap-1 overflow-y-auto outline-none p-1">
         {(projects || []).map((p) => (
           <a
             key={p.slug}
