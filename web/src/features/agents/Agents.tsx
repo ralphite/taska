@@ -37,27 +37,6 @@ export function agentsSheet(f: AgentsFacts, on: { copy(text: string): void; help
   return { title: 'Agents', body: <AgentsBody f={f} on={on} guideOpen={guideOpen} /> }
 }
 
-/** How a connected agent gets work without spending tokens while it waits (F613). */
-export function agentsHelpSheet(): SheetParts {
-  const point = (title: string, text: string) => (
-    <li>
-      <b className="font-semibold">{title}</b> {text}
-    </li>
-  )
-  return {
-    title: 'How agents get work',
-    body: (
-      <ul className="flex list-disc flex-col gap-3 pb-2 pl-5 text-sm leading-relaxed">
-        {point('Connected:', 'a Claude Code or Codex session that worked on this project.')}
-        {point('Codex:', 'Taska puts a notice in its own queue. An idle session starts at once; a busy one after its turn.')}
-        {point('Claude Code:', 'before ending a turn, it leaves one request in the background. Taska answers it only when there is work, and the agent goes on.')}
-        {point('No tokens while waiting:', 'no model runs until there is work.')}
-        {point('Agents must', 'end their turn when nothing is left, and never use timers, heartbeats, scheduled tasks or polling. One found is stopped and reported.')}
-      </ul>
-    ),
-  }
-}
-
 function AgentsBody({ f, on, guideOpen }: { f: AgentsFacts; on: { copy(text: string): void; help(): void }; guideOpen: boolean }) {
   const onCopy = on.copy
   const look = CARD_LOOK[f.tone]

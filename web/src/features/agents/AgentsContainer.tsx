@@ -5,11 +5,11 @@ import { useServices, useStores, useStoreValue } from '../../app/context'
 import { useProjectModel, useProjectRoute } from '../../app/hooks'
 import type { SheetRequest } from '../../stores/sheet'
 import { SheetLayout } from '../../ui/Sheet'
-import { agentsHelpSheet, agentsSheet } from './Agents'
+import { agentsSheet } from './Agents'
 import { agentsFacts } from './agentsFacts'
 
 export function AgentsSheet(_: { req: Extract<SheetRequest, { kind: 'agents' }> }) {
-  const app = useServices('settings', 'sheets')
+  const app = useServices('nav', 'settings', 'sheets')
   const stores = useStores('settings')
   const slug = useProjectRoute()?.slug ?? ''
   const m = useProjectModel(slug)
@@ -19,9 +19,5 @@ export function AgentsSheet(_: { req: Extract<SheetRequest, { kind: 'agents' }> 
   }, [app, slug])
   const f = useMemo(() => (m ? agentsFacts(m, guide) : null), [m, guide])
   if (!f) return null
-  return <SheetLayout {...agentsSheet(f, { copy: (t) => app.settings.copy(t), help: () => app.sheets.open({ kind: 'agents-help' }) })} />
-}
-
-export function AgentsHelpSheet(_: { req: Extract<SheetRequest, { kind: 'agents-help' }> }) {
-  return <SheetLayout {...agentsHelpSheet()} />
+  return <SheetLayout {...agentsSheet(f, { copy: (t) => app.settings.copy(t), help: () => app.sheets.close(() => app.nav.to(`/p/${encodeURIComponent(slug)}/help/agents`)) })} />
 }

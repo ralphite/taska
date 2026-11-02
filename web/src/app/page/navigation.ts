@@ -34,9 +34,9 @@ export class Navigation {
     })
   }
 
-  /** Settings' pages (the phone's Documents, Activity and Deleted are pages of it). */
+  /** Settings' pages (the phone's Documents, Activity and Deleted are pages of it) and Help's, left the same way. */
   private inSettings(place: Place): boolean {
-    return place.kind === 'settings' || (!this.desk() && place.kind === 'side')
+    return place.kind === 'settings' || place.kind === 'help' || (!this.desk() && place.kind === 'side')
   }
 
   /** What Settings' way back says: where it was opened from. */
@@ -49,14 +49,14 @@ export class Navigation {
   settingsBack(): void {
     const r = this.here()
     if (!r) return
-    const phoneSection = !this.desk() && (r.place.kind === 'side' || (r.place.kind === 'settings' && r.place.section))
+    const phoneSection = !this.desk() && (r.place.kind === 'side' || (r.place.kind === 'settings' && r.place.section) || (r.place.kind === 'help' && r.place.topic))
     if (phoneSection) {
       // a step taken to it is a step back; reached by its address, up to the list of sections
       if (this.settingsSteps > 0) {
         this.settingsSteps--
         return this.route.getState().backBy(1)
       }
-      return this.go('items', { kind: 'settings', section: null }, NO_FILTERS, false)
+      return this.go('items', r.place.kind === 'help' ? { kind: 'help', topic: null } : { kind: 'settings', section: null }, NO_FILTERS, false)
     }
     if (this.settingsSteps > 0) {
       const n = this.settingsSteps

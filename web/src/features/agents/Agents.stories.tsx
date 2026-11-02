@@ -4,7 +4,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { guide } from '../../stories/guideFixture'
 import { no, SheetFrames } from '../../stories/sheetFixtures'
 import { shopWithHistory } from '../../stories/settingsFixtures'
-import { agentsHelpSheet, agentsSheet } from './Agents'
+import { agentsSheet } from './Agents'
 import { agentsFacts } from './agentsFacts'
 
 export default { title: 'Components/Menus and sheets/Agents' } satisfies Meta
@@ -19,6 +19,5 @@ export const NoneYet: Story = { ...sheet(agentsFacts(shopWithHistory([]), guide(
 export const WhatTheAgentReads: Story = { ...sheet(agentsFacts(shopWithHistory(), guide('shop')), true), name: 'What the agent reads' }
 export const WhatTheAgentReadsLoading: Story = { ...sheet(agentsFacts(shopWithHistory(), null), true), name: 'What the agent reads: loading' }
 /** How a connected agent gets work without spending tokens: from How it works in Agents. */
-export const HowAgentsGetWork: Story = { name: 'How agents get work', render: () => <SheetFrames height={520} parts={() => agentsHelpSheet()} /> }
 /** Nothing waits for an agent and none has been here. */
 export const NothingWaitingNoneYet: Story = { ...sheet({ ...agentsFacts(shopWithHistory([]), guide('shop')), tone: 'idle', line: 'Nothing is waiting for an agent. No agent yet.', queue: 0, later: 0 }), name: 'Nothing waiting, none yet' }

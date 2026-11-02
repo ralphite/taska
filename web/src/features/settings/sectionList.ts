@@ -30,6 +30,7 @@ export function sectionOf(path: string | null, desk: boolean): SectionKey | null
 /** What the page's title calls a place of Settings: its section (the phone's Documents, Activity and Deleted are its
  * pages), or the phone's list of them; null: not Settings. */
 export function settingsTitle(place: Place, desk: boolean): string | null {
+  if (place.kind === 'help') return 'Help'
   if (place.kind === 'settings') {
     const k = sectionOf(place.section, desk)
     return k ? SECTIONS[k].name : 'Settings'

@@ -1,0 +1,37 @@
+// Help as the page draws it: the help centre's index, a topic open, the keys' topic, a search with what it finds and
+// with nothing found, on the desktop and the phone. The topics are Help's own.
+import type { Meta, StoryObj } from '@storybook/react-vite'
+import { keyHelp } from '../../app/actions'
+import { Frames } from '../../stories/Frames'
+import { Rich } from '../../ui/Markdown'
+import { HelpPage, KeyTable } from './HelpPage'
+import { HELP_TOPICS, searchHelp } from './topics'
+
+export default { title: 'Components/Help' } satisfies Meta
+type Story = StoryObj
+
+const WORLD = { find: () => null, url: () => '', size: () => undefined }
+const on = { open() {}, href: (k: string) => '#' + k, search() {}, back() {} }
+const help = (key: string | null, q = ''): Story => ({
+  render: () => (
+    <Frames deskWidth={1080} height={760}>
+      {(layout) => {
+        const topic = HELP_TOPICS.find((t) => t.key === key) ?? null
+        const body = topic ? (
+          <>
+            <Rich text={topic.text} world={WORLD} />
+            {topic.key === 'keys' ? <div className="mt-6"><KeyTable groups={keyHelp()} /></div> : null}
+          </>
+        ) : null
+        return <div className="flex h-full flex-col"><HelpPage desk={layout === 'desk'} topic={topic} q={q} found={searchHelp(q)} back="Items" body={body} place="" on={on} /></div>
+      }}
+    </Frames>
+  ),
+})
+
+export const Index: Story = { ...help(null), name: 'Help centre: every topic by group' }
+export const ATopic: Story = { ...help('agents'), name: 'A topic open: How agents get work' }
+export const ATopicWithATable: Story = { ...help('items'), name: 'A topic with a table: Items' }
+export const Keys: Story = { ...help('keys'), name: 'Keyboard shortcuts' }
+export const Searching: Story = { ...help(null, 'agent'), name: 'Searching: what it finds' }
+export const NothingFound: Story = { ...help(null, 'invoice'), name: 'Searching: nothing found' }

@@ -113,7 +113,7 @@ const steps = (d: 1 | -1) => (w: Pick<ActionWorld, 'nav' | 'listOrder' | 'toasts
   const m = h.m
   if (m) w.nav.step(d, w.listOrder, (k) => codeOf(m, k), (words) => w.toasts.show(words))
 }
-const stepWhy = (_: unknown, h: Here) => (lists(h) ? null : h.r.place.kind === 'settings' ? 'Press Esc to return to the list' : 'J and K move in Items, Archive and Rules')
+const stepWhy = (_: unknown, h: Here) => (lists(h) ? null : h.r.place.kind === 'settings' || h.r.place.kind === 'help' ? 'Press Esc to return to the list' : 'J and K move in Items, Archive and Rules')
 
 /** always a fresh new input, written in the box */
 function newInput(w: Pick<ActionWorld, 'box' | 'route' | 'nav' | 'fields'>): void {
@@ -281,8 +281,8 @@ function stepBack(w: BackWorld, h: Here): void {
       return w.docs.close()
     }
   }
-  if (r.place.kind === 'settings' || (!w.desk() && r.place.kind === 'side')) {
-    // Settings: a field first, then back out of it
+  if (r.place.kind === 'settings' || r.place.kind === 'help' || (!w.desk() && r.place.kind === 'side')) {
+    // Settings and Help: a field first, then back out of it
     if (typingIn(active)) return (active as HTMLElement).blur()
     if (w.boxStore.getState().mode?.kind === 'prefs') return w.box.stop()
     return w.nav.settingsBack()
@@ -306,7 +306,7 @@ function stepBack(w: BackWorld, h: Here): void {
   if (r.place.kind === 'item' && !typingIn(active)) return w.nav.closeItem()
 }
 
-const lists = (h: Here) => h.r.tab !== 'inputs' && h.r.place.kind !== 'settings' && !!h.m
+const lists = (h: Here) => h.r.tab !== 'inputs' && h.r.place.kind !== 'settings' && h.r.place.kind !== 'help' && !!h.m
 
 const byId = (id: ActionId): Action => ACTIONS[id]
 

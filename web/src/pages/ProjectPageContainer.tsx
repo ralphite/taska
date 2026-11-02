@@ -17,6 +17,7 @@ import { ItemListContainer } from '../features/list/ItemListContainer'
 import { SidebarContainer } from '../features/sidebar/SidebarContainer'
 import { useSideProjects } from '../app/projectLists'
 import { SideListContainer } from '../features/side/SideListContainer'
+import { HelpContainer } from '../features/help/HelpContainer'
 import { SettingsContainer } from '../features/settings/SettingsContainer'
 import { settingsTitle } from '../features/settings/sectionList'
 import { codeOf } from '../model/project'
@@ -66,7 +67,8 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
   const { tones } = useSideProjects(route.slug)
   const sideHidden = useStoreValue(stores.ui, (s) => s.sideHidden)
   const sideOver = useStoreValue(stores.ui, (s) => s.sideOver)
-  const settings = route.place.kind === 'settings'
+  const help = route.place.kind === 'help'
+  const settings = route.place.kind === 'settings' || help
   const full = useStoreValue(stores.route, (s) => s.full) && route.place.kind === 'item' && !settings
   const shownSide = useStoreValue(stores.route, (s) => s.side)
   // a document edited in the pane has no box under it
@@ -146,7 +148,8 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
           {shownSide ? <SideListContainer slug={route.slug} side={shownSide} /> : <ItemListContainer route={route} />}
         </section>
         <DetailContainer route={route} place={`row-span-3 row-start-2 group-data-[compose]/app:row-span-1 ${pane}`} hidden={settings} full={full} />
-        {settings ? <SettingsContainer route={route} place="col-span-2 col-start-1 row-span-5 row-start-1" prefsBox={<BoxContainer route={route} composePage={false} bare />} /> : null}
+        {help ? <HelpContainer route={route} place="col-span-2 col-start-1 row-span-5 row-start-1" /> : null}
+        {settings && !help ? <SettingsContainer route={route} place="col-span-2 col-start-1 row-span-5 row-start-1" prefsBox={<BoxContainer route={route} composePage={false} bare />} /> : null}
         {settings || full ? null : (
           // the line between the list and the pane, from under the project's bar to the bottom: one line, drawn here only
           // (B573), dragged sideways like the other lines
@@ -204,7 +207,8 @@ function PhoneLayout({ route }: { route: ProjectRoute }) {
   const backSwipe = useBackSwipe(route.place.kind === 'item' && !sheet && !drawer, () => app.actions.run('back'))
   const floating = backSwipe.pull
   // Settings' pages (Documents, Activity and Deleted are pages of it on the phone)
-  const settings = route.place.kind === 'settings' || route.place.kind === 'side'
+  const help = route.place.kind === 'help'
+  const settings = route.place.kind === 'settings' || route.place.kind === 'side' || help
   const prefsEditing = useStoreValue(stores.box, (s) => s.mode?.kind === 'prefs')
   // while the item's page is swiped back, the list shows underneath it
   const under = (!open && !settings) || !!floating
@@ -266,7 +270,8 @@ function PhoneLayout({ route }: { route: ProjectRoute }) {
         >
           <DetailContainer route={route} place="" hidden={!open} footRoom={footH} />
         </div>
-        {settings ? <SettingsContainer route={route} place="" prefsBox={null} /> : null}
+        {help ? <HelpContainer route={route} place="" /> : null}
+        {settings && !help ? <SettingsContainer route={route} place="" prefsBox={null} /> : null}
         <FootContainer route={route} composePage={false} place="" hidden={settings && !prefsEditing} onHeight={setFootH} />
       </div>
     </>

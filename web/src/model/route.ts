@@ -1,6 +1,6 @@
 // The page's addresses, read and written: / is every project; /p/<project>/ is its Items; /inputs /archive /rules a
 // tab; /B03 an item; /D4 a document; /new the New input page; /docs /log /deleted the lists beside the items (on the
-// desktop); /settings and its sections (/projects /phone ...). The list's search and filters ride along as
+// desktop); /settings and its sections (/projects /phone ...); /help and its topics (/help/agents ...). The list's search and filters ride along as
 // ?q= &type= &when= &status= &pri= &sort=. Addresses are part of the product: links and bookmarks depend on them.
 
 import type { Tab } from './words'
@@ -27,6 +27,8 @@ export type Place =
   | { kind: 'doc'; d: number }
   | { kind: 'side'; side: 'docs' | 'log' | 'deleted' }
   | { kind: 'settings'; section: string | null }
+  /** Help: its index (`topic` null), or one topic */
+  | { kind: 'help'; topic: string | null }
 
 export type Route =
   | { page: 'home'; query: URLSearchParams }
@@ -70,6 +72,7 @@ export function parseRoute(pathname: string, search: string, hash = ''): Route {
   else if (seg === 'new') place = { kind: 'new' }
   else if (seg === 'docs' || seg === 'log' || seg === 'deleted') place = { kind: 'side', side: seg }
   else if (seg === 'settings') place = { kind: 'settings', section: null }
+  else if (seg === 'help' || seg.startsWith('help/')) place = { kind: 'help', topic: seg.slice(5) || null }
   else if (Object.hasOwn(SETTINGS_PATHS, seg)) place = { kind: 'settings', section: seg }
   else if (seg === 'inputs' || seg === 'archive' || seg === 'rules') tab = seg
   return { page: 'project', slug, tab, place, list }
@@ -89,6 +92,8 @@ export function projectPath(slug: string, tab: Tab, place: Place, list: ListQuer
   switch (place.kind) {
     case 'settings':
       return base + (place.section ? SETTINGS_PATHS[place.section] : 'settings')
+    case 'help':
+      return base + 'help' + (place.topic ? '/' + encodeURIComponent(place.topic) : '')
     case 'side':
       return base + place.side
     case 'doc':

@@ -25,7 +25,6 @@ export type SheetRequest =
   /** who works on the project, how to connect one more, what they read */
   | { kind: 'agents' }
   /** how a connected agent gets work without spending tokens (F613) */
-  | { kind: 'agents-help' }
   /** a voice note's words as said */
   | { kind: 'as-said'; heard: string; tr: string }
   | { kind: 'filters' }

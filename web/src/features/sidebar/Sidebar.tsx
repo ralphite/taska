@@ -356,7 +356,7 @@ export function Rail({ projects, composing, settingsOpen, hidden, on }: { projec
       {btn('np', <Icon n="plus" c="size-5" />, 'New project', on.newProject)}
       <div className="flex-1" />
       {btn('settings', <Icon n="gear" c="size-5" />, 'Settings · G S', on.settings, settingsOpen ? { 'aria-current': 'page' } : {})}
-      {btn('help', <Icon n="info" c="size-5" />, 'Help: how agents get work', on.help)}
+      {btn('help', <Icon n="info" c="size-5" />, 'Help', on.help)}
       {btn('keys', <Icon n="keyboard" c="size-5" />, 'Keyboard shortcuts · ?', on.keys)}
     </nav>
   )
