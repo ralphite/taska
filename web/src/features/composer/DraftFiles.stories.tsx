@@ -14,3 +14,5 @@ export const TwoPictures = files([pic(1), pic(2)])
 export const APictureGoingUp = files([pic(1, false)])
 export const AFile = files([{ key: 'c', f: 'f3-report.pdf', name: 'Quarterly report.pdf', mime: 'application/pdf' }])
 export const MoreThanFitTheyScrollSideways: Story = { ...files(Array.from({ length: 9 }, (_, i) => pic(i + 1))), name: 'More than fit: they scroll sideways' }
+// ---- more states (B636)
+export const AFileGoingUp = files([{ key: 'c', f: '', name: 'Quarterly report.pdf', mime: 'application/pdf' }])

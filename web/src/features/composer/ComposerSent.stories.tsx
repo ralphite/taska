@@ -23,3 +23,10 @@ export const SentTranscribing: Story = { ...at({ sent: sent({ text: '', trWait: 
 export const OrganizerFailed = at({ sent: sent({ org: org(false, 'Gemini HTTP 503: overloaded') }), organizer: true })
 export const FiledByYourAgent = at({ sent: sent({ acked: true, touched: [12], org: org(true, 'Created F012') }), organizer: true })
 export const SeenByYourAgentNoItemMade: Story = { ...at({ sent: sent({ acked: true, touched: [] }) }), name: 'Seen, no item made' }
+// ---- more states (B636)
+export const NotSent: Story = { ...at({ mine: [out({ state: 'failed' })] }), name: 'Not sent' }
+export const MovedToAnotherProject: Story = { ...at({ sent: sent({ moved: { to: 'home', as: 'r4' } }) }), name: 'Moved to another project' }
+export const SentOrganizing: Story = { ...at({ sent: sent(), organizer: true }), name: 'Sent, organizing' }
+export const FilingUndone: Story = { ...at({ sent: sent({ org: { ...org(true, 'Created F012'), undone: true } }), organizer: true }), name: 'Filing undone' }
+export const FiledMoveTo: Story = { ...at({ sent: sent({ acked: true, touched: [12], org: org(true, 'Created F012') }), organizer: true, others: true }), name: 'Filed, Move to…' }
+export const SentUndoAndMoveTo: Story = { ...at({ sent: sent(), undoable: true, others: true }), name: 'Sent, Undo and Move to…' }

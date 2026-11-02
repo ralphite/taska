@@ -39,3 +39,12 @@ export const SaidLooks: Story = {
     </Frames>
   ),
 }
+// ---- more states (B636)
+const list = (name: string, s: Parameters<typeof saidOf>[0]): Story => ({ name, render: () => <Frames phone={false} deskWidth={1024}>{() => <div className="p-6">{saidOf(s)}</div>}</Frames> })
+const MANY = Array.from({ length: 34 }, (_, i) => ({ ...ONE.waiting, id: 'r' + (100 + i), text: `Thing ${i + 1} to do`, t: new Date(Date.parse(ONE.waiting.t) - i * 3600_000).toISOString() }))
+export const LatestInputsNothingFound = list('Latest inputs, nothing found', { q: 'zebra' })
+export const LatestInputsMoreToLoad = list('Latest inputs, more to load', { inputs: MANY })
+export const LatestInputsJustSentUndo = list('Latest inputs, just sent: Undo', { inputs: DAY, justSent: [DAY[0].id] })
+export const LatestInputsDraftOpenedOrganizing = list('Latest inputs: an edit not saved, a long one opened, organizing', { organizer: true, busy: DAY[0].id, inputs: DAY, editDrafts: [DAY[1].id], opened: [ONE.long.id] })
+export const LatestInputsNotSentSending = list('Latest inputs: not sent, and sending with Undo', { inputs: DAY, outbox: [out({ q: 'a', text: 'Buy milk on the way home', state: 'failed' }), out({ q: 'b', text: 'And bread' })], justSent: ['b'] })
+export const LatestInputsNoneYet = list('Latest inputs, none yet', { inputs: [] })

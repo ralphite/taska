@@ -6,6 +6,7 @@ import { threadKey } from '../../model/docs'
 import { scopeDraft } from '../../model/draftTarget'
 import { Frames } from '../../stories/Frames'
 import { PLAN, boxAt, type Here } from '../../stories/boxFixtures'
+import { input } from '../../stories/fixtures'
 
 export default { title: 'Components/Input box/What it writes to' } satisfies Meta
 type Story = StoryObj
@@ -27,3 +28,11 @@ export const AddingDetailsToAnInput = at({ at: 'F012', mode: { kind: 'amend', id
 export const EditingYourComment = at({ at: 'D1', mode: { kind: 'comment', d: 1, id: 9, was: 'Yes, and its name says which filter.' }, text: 'Yes, and its name says which filter.' })
 export const CorrectingAWord = at({ at: 'F012', mode: { kind: 'correct', id: 'r7', wrong: 'sort', v: 0 }, text: 'order' })
 export const RecordingForAnotherItem = at({ at: '', rec: true, recordingFor: scopeDraft('F013') })
+// ---- more states (B636)
+export const EditingTranscriptionPreferences = at({ at: '', mode: { kind: 'prefs', was: '' }, text: 'Write it as said; keep code words as they are.' })
+export const CorrectingAWordNothingTyped: Story = { ...at({ at: 'F012', mode: { kind: 'correct', id: 'r7', wrong: 'sort', v: 0 } }), name: 'Correcting a word, nothing typed' }
+export const EditingAVoiceOnlyInput: Story = {
+  ...at({ at: 'F012', mode: { kind: 'amend', id: 'r7', mode: 'append', v: 0 }, inputs: [input({ id: 'r7', text: '', files: [{ f: 'f7-voice_0-07.webm', name: 'voice_0-07.webm', mime: 'audio/webm' }] })] }),
+  name: 'Adding to a voice-only input',
+}
+export const ANewInputOrganizerOn: Story = { ...at({ at: '', organizer: true }), name: 'A new input, organizer on' }

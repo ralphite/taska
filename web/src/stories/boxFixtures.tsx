@@ -43,6 +43,10 @@ export interface Here {
   recordingFor?: string
   files?: DraftFile[]
   organizer?: boolean
+  /** the project's inputs (default: one voice note with words) */
+  inputs?: Input[]
+  /** a recording from the second mic */
+  recAux?: boolean
   composePage?: boolean
   doubts?: ReactNode
 }
@@ -51,7 +55,7 @@ export const boxProject = (inputs: Input[] = [VOICE_INPUT], organizer = false) =
   modelOf([item({ n: 12 })], inputs, { organizer: { on: organizer, model: 'gemini-flash-latest', busy: null } }, [PLAN, WEB])
 
 export function boxAt(h: Here, desk: boolean, extra: Partial<ComposerProps> = {}) {
-  const m = boxProject([VOICE_INPUT], h.organizer)
+  const m = boxProject(h.inputs ?? [VOICE_INPUT], h.organizer)
   const route = parseRoute(`/p/demo/${h.at ?? ''}`, '')
   if (route.page !== 'project') throw new Error('not a project')
   const pick = { reply: h.reply ?? null, quote: h.quote ?? null, sel: new Set(h.sel ?? []) }
@@ -75,7 +79,7 @@ export function boxAt(h: Here, desk: boolean, extra: Partial<ComposerProps> = {}
         hasFiles={files.length > 0}
         files={files.length ? <DraftFiles files={files} url={() => '#'} onRemove={() => {}} onView={() => {}} /> : undefined}
         doubts={h.doubts}
-        rec={h.rec ? REC : null}
+        rec={h.rec ? (h.recAux ? { ...REC, from: 'aux' as const } : REC) : null}
         on={{ text() {}, send() {}, attach() {}, mic() {} }}
         {...extra}
       />

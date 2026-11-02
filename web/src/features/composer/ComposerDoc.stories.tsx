@@ -35,3 +35,5 @@ export const WebPagePartPicked = at({ at: 'D2', quote: { key: 'p1', text: 'Avg. 
 export const Sent: Story = { ...at({ at: 'D1' }), name: 'Sent (a comment, a voice comment, a reply)' }
 /** Not sent (Taska said no): its words come back, with what it was on picked again (D83 #3). */
 export const NotSent = at({ ...one, text: 'Also keep the sort.' })
+// ---- more states (B636)
+export const OneVoiceCommentNotSent = at({ at: 'D1', text: '> “The export keeps the filter.”\nKeep the sort too.' })

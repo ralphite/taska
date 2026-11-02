@@ -20,6 +20,8 @@ export const Cards: Story = {
           <DraftCard voice={1} ms={14000} files={0} transcribing={false} words={<DraftWords text={HEARD_TEXT} spots={spotsIn(HEARD_TEXT, HEARD)} stretches={voiceStretches(HEARD_TEXT, HEARD)} className={DRAFT_WORDS} on={on} />} hint={{ kind: 'check', n: 1 }} />
           <DraftCard voice={2} ms={65000} files={1} transcribing words={null} hint={null} />
           <DraftCard voice={1} ms={8000} files={0} transcribing={false} words={<DraftWords text="Ship the pilot first." spots={[]} stretches={[[0, 20]]} className={DRAFT_WORDS} on={on} />} hint={{ kind: 'fix' }} />
+          <DraftCard voice={1} ms={8000} files={0} transcribing={false} words={<DraftWords text="Ship the pilot first." spots={[]} stretches={[[0, 20]]} className={DRAFT_WORDS} on={on} />} hint={{ kind: 'switch' }} />
+          <DraftCard voice={1} ms={8000} files={0} transcribing={false} words={null} hint={null} />
         </ol>
       )}
     </Frames>

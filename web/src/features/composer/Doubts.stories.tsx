@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
-import { openDoubts, pickSide, spotsIn, voiceStretches } from '../../model/doubts'
+import { openDoubts, pickSide, spotsIn, voiceStretches, type HeardFile } from '../../model/doubts'
 import { Frames } from '../../stories/Frames'
 import { HEARD, HEARD_TEXT } from '../../stories/doubtFixtures'
 import { Doubts, DraftWords, type Fixing } from './Doubts'
@@ -74,3 +74,13 @@ export const AWordOneModelWasUnsureOf: Story = { render: () => <Frames phoneWidt
 
 /** The New input page's card: a voice note's own words selected to correct them. */
 export const CorrectingItsWords: Story = { render: () => <Frames phoneWidth={393} deskWidth={640}>{() => <Picking fix />}</Frames> }
+// ---- more states (B636)
+export const RecordingFromTheSecondMic: Story = { name: 'Recording from the second mic', render: () => <Frames phoneWidth={393} deskWidth={640}>{(layout) => boxAt({ rec: true, recAux: true }, layout === 'desk')}</Frames> }
+export const MisheardWordsAllPickedPhone: Story = { name: 'Misheard words all picked (phone)', render: () => <Frames desk={false} phoneWidth={393}>{() => <Doubts view={{ kind: 'phone', toCheck: 0, showing: false }} on={quiet} />}</Frames> }
+export const MaybeMisheardWordsShownPhone: Story = { name: 'Maybe misheard, words shown (phone)', render: () => <Frames desk={false} phoneWidth={393}>{() => <Doubts view={{ kind: 'phone', toCheck: 1, showing: true }} on={quiet} />}</Frames> }
+const AGAIN = 'Move the filter to the side bar, and the side bar stays.'
+const AGAIN_HEARD: HeardFile[] = [{ key: 'v1', trAdded: AGAIN, doubts: [{ was: 'side bar', alt: 'sidebar', why: 'two models', show: ['side bar', 'sidebar'], also: [{ was: 'side bar', alt: 'sidebar' }] }] }]
+export const MisheardInSeveralPlaces: Story = {
+  name: 'Misheard in several places',
+  render: () => <Frames phone={false} deskWidth={640}>{() => <Doubts view={{ kind: 'list', lines: openDoubts(AGAIN, AGAIN_HEARD) }} on={quiet} />}</Frames>,
+}

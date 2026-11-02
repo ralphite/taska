@@ -1,6 +1,7 @@
 // What you said in a demo project, as the page works it out: the Inputs tab's rows come from the page's own inputRows
 // and outgoingRows, the New input page's list from saidRows and saidOutgoing, and the page's InputsView, InputCard and
 // SaidLately draw them. Used by the Inputs stories.
+import { draftKey } from '../model/draftTarget'
 import { InputCard, InputsView, type InputEvents } from '../features/inputs/InputsView'
 import { inputRows, outgoingRows } from '../features/inputs/inputRows'
 import { SaidLately, type SaidEvents } from '../features/composer/SaidLately'
@@ -67,6 +68,10 @@ export interface Said {
   /** how long Taska has not answered */
   away?: number
   opened?: string[]
+  /** just sent: Undo shows on these */
+  justSent?: string[]
+  /** an edit not saved, by input */
+  editDrafts?: string[]
 }
 
 const title = (slug: string) => ({ 'mobile-app': 'Mobile app' })[slug] ?? slug
@@ -104,7 +109,8 @@ const noSaid: SaidEvents = { goto() {}, more() {}, append() {}, draft() {}, menu
 export function saidOf(s: Said = {}) {
   const m = project(s)
   const words = searchWords(s.q ?? '')
-  const said = saidRows(m, { words, upTo: 30, opened: new Set(s.opened), justSent: [], drafts: {}, mode: null, title })
+  const drafts = Object.fromEntries((s.editDrafts ?? []).map((id) => [draftKey({ kind: 'amend', mode: 'edit', id }), 'my edit']))
+  const said = saidRows(m, { words, upTo: 30, opened: new Set(s.opened), justSent: (s.justSent ?? []).map((rid) => ({ rid })), drafts, mode: null, title })
   return (
     <div className="mx-auto mt-8 max-w-[42rem]">
       <SaidLately
@@ -112,7 +118,7 @@ export function saidOf(s: Said = {}) {
         total={m.inputs.length}
         q={s.q ?? ''}
         rows={said.rows}
-        outgoing={saidOutgoing(s.outbox ?? [], words, s.away ?? 0, [])}
+        outgoing={saidOutgoing(s.outbox ?? [], words, s.away ?? 0, (s.justSent ?? []).map((q) => ({ q })))}
         more={said.all.length > said.rows.length}
         words={words}
         files={thumbs('size-12')}
