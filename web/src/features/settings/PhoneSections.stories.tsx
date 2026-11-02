@@ -5,7 +5,7 @@ import type { SectionKey } from './sectionList'
 import { Frames } from '../../stories/Frames'
 import { settingsAt } from '../../stories/settingsFixtures'
 
-export default { title: 'Components/Settings' } satisfies Meta
+export default { title: 'Components/Settings/On the phone: Documents, Activity, Deleted' } satisfies Meta
 type Story = StoryObj
 
 const phone = (sec: SectionKey): Story => ({ render: () => <Frames desk={false}>{() => settingsAt(sec, false)}</Frames> })

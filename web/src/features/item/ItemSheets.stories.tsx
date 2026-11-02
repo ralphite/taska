@@ -9,7 +9,7 @@ import { no, opened } from '../../stories/menuFixtures'
 import { Thumbs } from '../../ui/Files'
 import { agentCardSheet, sourcesSheet } from './ItemSheets'
 
-export default { title: 'Components/Menus and sheets/Sheets' } satisfies Meta
+export default { title: 'Components/Menus and sheets/Sheets/An item: what it came from, what agents see' } satisfies Meta
 type Story = StoryObj
 
 const at = (min: number) => new Date(Date.parse(T) - min * 60_000).toISOString()

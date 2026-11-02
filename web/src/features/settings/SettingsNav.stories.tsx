@@ -4,7 +4,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frame } from '../../stories/Frames'
 import { settingsAt } from '../../stories/settingsFixtures'
 
-export default { title: 'Components/Settings' } satisfies Meta
+export default { title: 'Components/Settings/The page and its parts' } satisfies Meta
 type Story = StoryObj
 
 const ROW = '[aria-label="Sections of Settings"] a[href]:nth-of-type(3)'

@@ -7,7 +7,7 @@ import { input, T } from '../../stories/fixtures'
 import { AT_BUTTON, opened } from '../../stories/menuFixtures'
 import { asSaidSheet, historySheet } from './InputSheets'
 
-export default { title: 'Components/Menus and sheets/Sheets' } satisfies Meta
+export default { title: 'Components/Menus and sheets/Sheets/An input: its words and history' } satisfies Meta
 type Story = StoryObj
 
 const at = (min: number) => new Date(Date.parse(T) - min * 60_000).toISOString()

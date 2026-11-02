@@ -8,7 +8,7 @@ import { AT_BUTTON, no, opened } from '../../stories/menuFixtures'
 import { notSavedSheet } from './NotSaved'
 import { notSavedRows } from './notSavedRows'
 
-export default { title: 'Components/Menus and sheets/Sheets' } satisfies Meta
+export default { title: 'Components/Menus and sheets/Sheets/Not saved' } satisfies Meta
 type Story = StoryObj
 
 const at = (min: number) => Date.parse(T) - min * 60_000

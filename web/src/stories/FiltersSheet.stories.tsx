@@ -7,7 +7,7 @@ import { NO_FILTERS } from '../model/route'
 import { Frames } from './Frames'
 import { menuModel, no, opened, underList } from './menuFixtures'
 
-export default { title: 'Components/Menus and sheets/Sheets' } satisfies Meta
+export default { title: 'Components/Menus and sheets/Sheets/Filters' } satisfies Meta
 type Story = StoryObj
 
 export const Filters: Story = {
