@@ -3,7 +3,6 @@ with every other check (npm run check: before each ship and every night), T603 (
 
   - what Taska tells agents (/agent, /skill, and /next with nothing to do) says to end the turn, never to wait or poll
     in the foreground (the one wait: Claude Code's background command, held by Taska until there is work, 11-02);
-  - the retired polling waker cannot start an agent, even when invoked directly;
   - no recognized idle-check schedule on this Mac is switched on at any frequency (the Codex
     automations of the ChatGPT app, Claude's scheduled tasks). Skipped where those folders do not exist.
 """
@@ -98,18 +97,6 @@ class WhatAgentsAreTold(unittest.TestCase):
             for retired in ("queue-hook", "install_codex_delivery_hook", "contextSubmittedAt",
                             "notification-id", "archive and unarchive"):
                 self.assertNotIn(retired, self.texts[name], name)
-
-
-class RetiredWaker(unittest.TestCase):
-    def test_old_entry_point_cannot_start_models_or_wait(self) -> None:
-        for args in ([], ["--once"], ["--dry"]):
-            with self.subTest(args=args):
-                result = subprocess.run([sys.executable, os.path.join(ROOT, "tools", "waker.py"), *args],
-                                        capture_output=True, text=True, timeout=3,
-                                        env={**os.environ, "TASKA_URL": "http://127.0.0.1:1",
-                                             "CODEX_BIN": "/usr/bin/false", "CLAUDE_BIN": "/usr/bin/false"})
-                self.assertNotEqual(result.returncode, 0)
-                self.assertIn("retired", result.stderr.lower())
 
 
 class SchedulesOnThisMac(unittest.TestCase):

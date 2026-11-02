@@ -101,8 +101,8 @@ python3 tools/install_launchd.py --label com.taska.app
 
 This only writes the plist; it never starts, stops or restarts a service. Labels stay stable so existing services
 can be updated without creating duplicates. Load or update a job through `launchctl` only during an intended
-service installation or deployment. The polling agent waker is retired: its entry point refuses to run,
-and its template disables startup and keepalive. Do not re-enable it.
+service installation or deployment. There is no polling waker: agents hear about work through events (Codex's
+queue, Claude Code's background request).
 
 `python3 tools/install_agent_guard.py` installs a command-only PreToolUse guard for local Codex only,
 preserving existing settings and hooks. Claude Code is not guarded: Yadong allows its Taska long-poll wait
