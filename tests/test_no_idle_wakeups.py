@@ -1,7 +1,8 @@
 """R594, one of Yadong's strictest rules (10-24): nothing wakes an agent only to find there is nothing to do. Checked
 with every other check (npm run check: before each ship and every night), T603 (r868):
 
-  - what Taska tells agents (/agent, /skill, and /next with nothing to do) says to end the turn, never to wait or poll;
+  - what Taska tells agents (/agent, /skill, and /next with nothing to do) says to end the turn, never to wait or poll
+    in the foreground (the one wait: Claude Code's background command, held by Taska until there is work, 11-02);
   - the retired polling waker cannot start an agent, even when invoked directly;
   - no recognized idle-check schedule on this Mac is switched on at any frequency (the Codex
     automations of the ChatGPT app, Claude's scheduled tasks). Skipped where those folders do not exist.
@@ -72,8 +73,8 @@ class WhatAgentsAreTold(unittest.TestCase):
             for line in text.splitlines():
                 self.assertNotRegex(line, r"(?i)wait (with|for work)[^.]*next\?wait|waits and returns as soon as work arrives\. Repeat", f"{name}: {line}")
         for name in ("agent", "skill"):
-            self.assertNotIn("while o=$(curl", self.texts[name], name)
-            self.assertNotIn("/next?wait=", self.texts[name], name)
+            # the one wait: Claude Code's background command, which Taska holds until there is work (no tokens)
+            self.assertIn("run_in_background", self.texts[name], name)
             self.assertNotIn("codex exec resume", self.texts[name], name)
             self.assertNotIn("Taska wakes your session", self.texts[name], name)
             self.assertIn("at any frequency", self.texts[name], name)

@@ -58,6 +58,10 @@ def blocked_tool_call(tool: str, args: Mapping[str, Any]) -> Optional[str]:
         reads = re.search(r"\b(?:curl|wget)\b", command) and re.search(r"/next(?:[?\s'\"]|$)", command)
         waits = re.search(r"[?&]wait=(?!0(?:[&\s'\"]|$))[^&\s'\"]+", command)
         repeats = re.search(r"\b(?:while|until|for|watch)\b", command)
+        # the one wait allowed: in the background, Taska holding the request until there is work (no model runs
+        # while it waits; the session resumes when it ends with work)
+        if reads and waits and args.get("run_in_background") is True:
+            return None
         if reads and (waits or repeats):
             return IDLE_REASON
     return None

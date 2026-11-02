@@ -36,6 +36,11 @@ class WorkPolicy(unittest.TestCase):
         for command in (read.replace("by=codex", "wait=540"), "while true; do " + read + "; sleep 1; done"):
             self.assertIsNotNone(blocked_tool_call("Bash", {"command": command}))
         self.assertIsNone(blocked_tool_call("Bash", {"command": "cat <<'EOF'\nwhile true; do " + read + "; done\nEOF"}))
+        # the background wait Taska holds until there is work is allowed; a background loop without it is not
+        held = "while o=$(curl -s 'http://127.0.0.1:7340/p/demo/next?wait=540&by=claude-code'); [ -z \"$o\" ] || echo \"$o\" | grep -q 'nothing to do now'; do sleep 20; done"
+        self.assertIsNone(blocked_tool_call("Bash", {"command": held, "run_in_background": True}))
+        self.assertIsNotNone(blocked_tool_call("Bash", {"command": held}))
+        self.assertIsNotNone(blocked_tool_call("Bash", {"command": "while true; do " + read + "; sleep 1; done", "run_in_background": True}))
 
     def test_real_hook_process_returns_a_deny_decision_without_a_model(self):
         request = {"hook_event_name": "PreToolUse", "tool_name": "Bash",
