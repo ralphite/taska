@@ -10,7 +10,7 @@ const preview: Preview = {
     // the most used first (B636): the conversation, its messages from you, then the agent's, its questions, comments
     options: {
       storySort: {
-        order: ['Components', ['Conversation', ['Message', ['From you', ['Sent', 'Not there yet', 'Voice notes', 'Pictures, files, long words', 'Changed afterwards'], 'From an agent', 'Question', 'Document comment'], 'Whole conversation', 'Message parts'], 'Item list', ['Item row', ['By status', 'Pointer, keys and picking', 'Swiping on the phone', 'Subitems', 'What it shows'], '*'], '*'], '*'],
+        order: ['Components', ['Conversation', ['Message', ['From you', ['Sent', 'Not there yet', 'Voice notes', 'Pictures, files, long words', 'Changed afterwards'], 'From an agent', ['Kinds of message', 'Long messages', 'Pictures, voice, files', 'Who sent it', 'Pointer and hidden'], 'Question', 'Document comment'], 'Whole conversation', 'Message parts'], 'Item page', ['Needs-you card', ['Waiting on you', 'While you answer', 'After you decided'], '*'], 'Item list', ['Item row', ['By status', 'Pointer, keys and picking', 'Swiping on the phone', 'Subitems', 'What it shows'], '*'], '*'], '*'],
       },
     },
   },
