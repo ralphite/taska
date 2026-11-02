@@ -1,4 +1,6 @@
-// A message of yours in an item's talk, one story for each state: the page's own talk (ItemTalk) with that item's data and the inputs your words came from.
+// A message of yours in an item's talk, one story for each state, in the order you meet them: sent, on its way, what
+// can go wrong, then with a voice note or pictures, edited, moved. The page's own talk (ItemTalk) with that item's data
+// and the inputs your words came from.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { Input, Item, Message } from '../../model/types'
 import { Frames } from '../../stories/Frames'
@@ -19,30 +21,37 @@ const at = (thread: Message[], o: PageOpts = {}, f: Partial<Item> = {}): Story =
 const LONG = Array.from({ length: 12 }, (_, i) => `Line ${i + 1} of what I said, with some words to fill it.`).join('\n')
 const out = (state: string, bad = false, canUndo = false) => ({ t: { outgoing: [{ q: 'q1', text: 'Also keep the sort.', state, bad, canUndo }] } })
 
+// ---- sent and on its way
 export const YourWords = at([mine()])
+export const SendingWithUndo: Story = { ...at([mine()], out('Sending…', false, true)), name: 'Sending, with Undo' }
+/** what you just sent comes into view lit up for a moment (light blue), to show where it went */
+export const JustSentLitForAMoment: Story = { ...at([mine()], { env: { lit: 'r4' } }), name: 'Just sent: lit for a moment' }
+export const JustSentUndo: Story = { ...at([mine()], { t: { undo: (rid) => (rid === 'r4' ? 'q1' : null) } }), name: 'Just sent: Undo' }
+export const ReadByTheAgent = at([mine()], {}, { readBy: { 'claude-code': Date.parse(T) + 30_000 } })
+// ---- not there yet
+export const UploadingAPicture = at([mine()], out('Uploading…'))
+export const WaitingForTaska = at([mine()], out('Waiting for Taska…', true))
+export const NotSentRetryEdit: Story = { ...at([mine()], out('Not sent', true)), name: 'Not sent: Retry, Edit' }
+// ---- with a voice note
 export const WithAVoiceNote = at([mine()], { inputs: [r4({ files: [voice] })] })
+export const VoiceNoteBeingTranscribed = at([mine({ text: '' })], { inputs: [r4({ text: '', files: [voice], trWait: true })] })
 const LINK_AND_WORDS = 'http://127.0.0.1:7340/p/demo/D2\nSync it to its three subpages.'
 // B626: the voice note's words came in after it was sent; nothing was changed, so it is not marked edited
 export const WordsAndAVoiceNoteItsWordsInLater: Story = {
   ...at([mine({ text: LINK_AND_WORDS })], { inputs: [r4({ text: LINK_AND_WORDS, files: [voice] })] }),
   name: 'Words and a voice note, its words in after sending: not edited',
 }
+export const VoiceNotePlaying = at([mine()], { inputs: [r4({ files: [voice] })], env: { play: () => ({ playing: true, t: 4 }) } })
+export const VoiceNoteStoppedPartway = at([mine()], { inputs: [r4({ files: [voice] })], env: { play: () => ({ playing: false, t: 7 }) } })
+// ---- pictures, long words
 export const WithPictures = at([mine()], { inputs: [r4({ files: [shot, { ...shot, f: 'f4-shot.png' }] })] })
 export const LongCutOnTheDesktop: Story = { ...at([mine({ text: LONG }), { ...message({ id: 2 }), t: later(3) }]), name: 'Long: cut on the desktop' }
-export const SendingWithUndo: Story = { ...at([mine()], out('Sending…', false, true)), name: 'Sending, with Undo' }
-export const UploadingAPicture = at([mine()], out('Uploading…'))
-export const WaitingForTaska = at([mine()], out('Waiting for Taska…', true))
-export const NotSentRetryEdit: Story = { ...at([mine()], out('Not sent', true)), name: 'Not sent: Retry, Edit' }
-export const JustSentUndo: Story = { ...at([mine()], { t: { undo: (rid) => (rid === 'r4' ? 'q1' : null) } }), name: 'Just sent: Undo' }
-export const ReadByTheAgent = at([mine()], {}, { readBy: { 'claude-code': Date.parse(T) + 30_000 } })
+// ---- changed afterwards
 export const Edited = at([mine({ edited: later(1) })])
 export const EditedTheEarlierVersionAbove: Story = {
   ...at([mine({ text: 'The export should keep the filter.' }), mine({ id: 2, text: 'r4 updated:\nThe export should keep the filter and the sort.', t: later(2) })]),
   name: 'Edited: the earlier version above',
 }
-export const VoiceNotePlaying = at([mine()], { inputs: [r4({ files: [voice] })], env: { play: () => ({ playing: true, t: 4 }) } })
-export const VoiceNoteStoppedPartway = at([mine()], { inputs: [r4({ files: [voice] })], env: { play: () => ({ playing: false, t: 7 }) } })
-export const VoiceNoteBeingTranscribed = at([mine({ text: '' })], { inputs: [r4({ text: '', files: [voice], trWait: true })] })
 export const ItsInputMovedToAnotherProject = at([mine()], { inputs: [r4({ files: [voice], moved: { to: 'home', as: 'r40' } })] })
 export const MovedPointerOnItsVoiceNote: Story = {
   ...at([mine()], { inputs: [r4({ files: [voice], moved: { to: 'home', as: 'r40' } })] }),
