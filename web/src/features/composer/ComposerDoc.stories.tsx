@@ -37,3 +37,4 @@ export const Sent: Story = { ...at({ at: 'D1' }), name: 'Sent (a comment, a voic
 export const NotSent = at({ ...one, text: 'Also keep the sort.' })
 // ---- more states (B636)
 export const OneVoiceCommentNotSent = at({ at: 'D1', text: '> “The export keeps the filter.”\nKeep the sort too.' })
+export const DocumentWhoseItemIsGone: Story = { ...at({ at: 'D1', docItemGone: true }, { desk: false }), name: 'Document whose item is gone (phone)' }

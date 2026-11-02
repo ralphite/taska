@@ -49,6 +49,8 @@ export interface Holding {
   top?: ReactNode
   /** drawn at the end of the views' row (a prototype's part not built yet) */
   viewsEnd?: ReactNode
+  /** a row being dragged (`out`: off every row) */
+  dragging?: { out: boolean }
   on?: Partial<ListEvents>
 }
 
@@ -72,6 +74,7 @@ export function listOf(items: Item[], tab: Tab, q: Partial<ListQuery>, desk: boo
         loading={body.kind === 'loading'}
         desk={desk}
         openN={h.open ?? null}
+        dragging={h.dragging ?? null}
         views={h.viewsEnd ? null : views}
         ownViews={ownViews}
         rows={drawn}

@@ -28,6 +28,15 @@ function slideTo(el: HTMLElement, x: number): void {
     }, 250)
 }
 
+/** A row drawn swiped by `dx` (right: forward, its layer under it; left: the ways back), as a finger leaves it. */
+export function showSwiped(el: HTMLElement, dx: number): void {
+  const l = layer(el, 'left')
+  const r = layer(el, 'right')
+  if (l) l.hidden = dx < 0
+  if (r) r.hidden = dx > 0
+  slideTo(el, dx)
+}
+
 export function useRowSwipe(listRef: RefObject<HTMLElement | null>, enabled: boolean, opts: RowSwipe, rowsKey: unknown): void {
   const told = useRef(opts)
   useEffect(() => {
@@ -78,11 +87,7 @@ export function useRowSwipe(listRef: RefObject<HTMLElement | null>, enabled: boo
       }
       if (e.cancelable) e.preventDefault() // a sideways swipe: the list doesn't scroll under it
       w.dx = Math.max(-w.reveal - 30, Math.min(told.current.right(Number(el.dataset.swipe)) ? el.offsetWidth * 0.7 : 0, w.base + dx))
-      const l = layer(el, 'left')
-      const r = layer(el, 'right')
-      if (l) l.hidden = w.dx < 0
-      if (r) r.hidden = w.dx > 0
-      slideTo(el, w.dx)
+      showSwiped(el, w.dx)
     }
     const end = () => {
       const el = w.el

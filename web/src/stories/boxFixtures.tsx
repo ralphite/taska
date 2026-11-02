@@ -47,15 +47,17 @@ export interface Here {
   inputs?: Input[]
   /** a recording from the second mic */
   recAux?: boolean
+  /** the document's item is gone (deleted or merged away) */
+  docItemGone?: boolean
   composePage?: boolean
   doubts?: ReactNode
 }
 
-export const boxProject = (inputs: Input[] = [VOICE_INPUT], organizer = false) =>
-  modelOf([item({ n: 12 })], inputs, { organizer: { on: organizer, model: 'gemini-flash-latest', busy: null } }, [PLAN, WEB])
+export const boxProject = (inputs: Input[] = [VOICE_INPUT], organizer = false, docItemGone = false) =>
+  modelOf([item({ n: 12 })], inputs, { organizer: { on: organizer, model: 'gemini-flash-latest', busy: null } }, [docItemGone ? { ...PLAN, n: 99 } : PLAN, WEB])
 
 export function boxAt(h: Here, desk: boolean, extra: Partial<ComposerProps> = {}) {
-  const m = boxProject(h.inputs ?? [VOICE_INPUT], h.organizer)
+  const m = boxProject(h.inputs ?? [VOICE_INPUT], h.organizer, h.docItemGone)
   const route = parseRoute(`/p/demo/${h.at ?? ''}`, '')
   if (route.page !== 'project') throw new Error('not a project')
   const pick = { reply: h.reply ?? null, quote: h.quote ?? null, sel: new Set(h.sel ?? []) }

@@ -26,3 +26,5 @@ export const SubitemsInLaterShown: Story = { ...at(active, () => ({ subMore: [1]
 // F003 approved from the Needs you view: its row stays where it was, one quiet line saying so, until the list moves on
 const approved = PROJECT.map((it) => (it.n === 3 ? { ...it, status: 'open' as const } : it))
 export const ARowYouJustActedOn: Story = { ...at({ status: 'wait' }, () => ({ held: { before: PROJECT, said: { 3: 'Approved' } } }), approved), name: 'A row you just acted on' }
+// ---- more states (B636)
+export const DraggedOffEveryRow: Story = { ...at(active, () => ({ dragging: { out: true } })), name: 'Dragged off every row' }

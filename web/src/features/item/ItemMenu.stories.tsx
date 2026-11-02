@@ -17,10 +17,13 @@ interface Open {
   arm?: ItemMenuFacts['arm']
   /** the desktop's menu at the pointer (a right-click on its row), not under the ⋯ button */
   at?: { x: number; y: number }
+  /** placed in the queue by hand (Do this next) */
+  rank?: number
 }
 const menu = (o: Open, desk: boolean) => {
   const m = menuModel()
-  const facts = itemMenuFacts(m, m.byN.get(o.n)!, !!o.asking, o.arm ?? null)
+  const it = m.byN.get(o.n)!
+  const facts = itemMenuFacts(m, o.rank != null ? { ...it, rank: o.rank } : it, !!o.asking, o.arm ?? null)
   return opened(desk ? itemMenuPop(facts, on) : itemMenuSheet(facts, on), desk, { under: underList(desk), look: desk ? { pop: true, narrow: !!o.arm, at: o.at ?? (o.arm ? AT_BUTTON_NARROW : AT_BUTTON) } : {} })
 }
 const both = (o: Open): Story => ({ render: () => <Frames height={720} deskWidth={900} phoneWidth={393}>{(layout) => menu(o, layout === 'desk')}</Frames> })
@@ -52,3 +55,5 @@ export const ItemMenuKeys: Story = { ...desk({ n: 1 }, { focusVisible: [ROW] }),
 export const ItemMenuPressed: Story = { ...desk({ n: 1 }, { hover: [ROW], active: [ROW] }), name: 'A row pressed' }
 export const StatusHover: Story = { ...desk({ n: 1, arm: 's' }, { hover: ['[role="dialog"] button[data-v="open"]'] }), name: 'Status, pointer on a choice' }
 export const StatusHoverTicked: Story = { ...desk({ n: 1, arm: 's' }, { hover: ['[role="dialog"] button[aria-pressed="true"]'] }), name: 'Status, pointer on the ticked one' }
+// ---- more states (B636)
+export const ItemPlacedFirstInTheQueue: Story = { ...both({ n: 5, rank: 0 }), name: 'Item placed first in the queue' }

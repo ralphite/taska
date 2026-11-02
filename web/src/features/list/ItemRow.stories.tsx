@@ -1,9 +1,10 @@
 // An item's row in the list, one story for each state it can be in. Each is the page's own ItemRow with that state's data, on the phone and the desktop.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { Item } from '../../model/types'
-import { Frames, States } from '../../stories/Frames'
+import { After, Frames, States } from '../../stories/Frames'
 import { PICTURE, facts, item, look, message, noRowEvents } from '../../stories/fixtures'
 import { ItemRow, type RowFacts, type RowLook } from './ListRows'
+import { showSwiped } from './rowSwipe'
 
 export default { title: 'Components/Item list/Item row' } satisfies Meta
 type Story = StoryObj
@@ -91,3 +92,13 @@ const hover = { parameters: { pseudo: { hover: ['.group'] } } }
 export const PointerOnItInProgress: Story = { ...one({ it: { status: 'doing', agent } }), ...hover, name: 'Pointer on it: in progress' }
 export const PointerOnItWaitsForReview: Story = { ...one({ it: { status: 'review' } }), ...hover, name: 'Pointer on it: waits for review' }
 export const PointerOnItDone: Story = { ...one({ it: { status: 'done' } }), ...hover, name: 'Pointer on it: done' }
+// ---- the phone's swipe on a row, drawn mid-swipe by the swipe's own code (B636)
+const swiped = (r: Row, dx: number): Story => ({
+  render: () => (
+    <Frames desk={false} phoneWidth={393}>
+      {() => <After run={(root) => root.querySelectorAll<HTMLElement>('[data-swipe]').forEach((el) => showSwiped(el, dx))}>{row(r, false)}</After>}
+    </Frames>
+  ),
+})
+export const SwipingForward: Story = { ...swiped({ it: { status: 'doing', agent } }, 140), name: 'Swiping forward' }
+export const SwipingBack: Story = { ...swiped({ it: { status: 'review' } }, -160), name: 'Swiping back' }
