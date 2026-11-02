@@ -6,7 +6,7 @@ import { Frames, States } from '../../stories/Frames'
 import { out } from '../../stories/boxFixtures'
 import { DAY, ONE, saidOf } from '../../stories/inputFixtures'
 
-export default { title: 'Components/Inputs/New input page' } satisfies Meta
+export default { title: 'Components/Inputs/New input page/Latest inputs' } satisfies Meta
 type Story = StoryObj
 
 /** What you said lately, the latest first, with where each stands and what became of it; what is on its way on top. */

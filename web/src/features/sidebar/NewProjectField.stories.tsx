@@ -5,7 +5,7 @@ import { Frames } from '../../stories/Frames'
 import { side } from '../../stories/sideFixtures'
 import { NewProjectField } from './NewProjectField'
 
-export default { title: 'Components/Sidebar' } satisfies Meta
+export default { title: 'Components/Sidebar/A new project' } satisfies Meta
 type Story = StoryObj
 
 const on = { create: () => {}, cancel: () => {} }

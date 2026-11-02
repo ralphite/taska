@@ -5,7 +5,7 @@ import { Frames } from '../../stories/Frames'
 import { PROJECT_TONES } from '../../ui/tones'
 import { ComposeHead } from './ComposeHead'
 
-export default { title: 'Components/Inputs/New input page' } satisfies Meta
+export default { title: 'Components/Inputs/New input page/Project name' } satisfies Meta
 type Story = StoryObj
 
 export const ProjectHead: Story = {
