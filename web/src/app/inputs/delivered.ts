@@ -50,10 +50,5 @@ export class Delivered {
     }
     const here = o.slug === d.slug()
     if (here) d.ui.getState().setLastSent(o.quiet || o.unsent ? null : { slug: o.slug, rid, q: o.q })
-    if (!rid || o.quiet || o.unsent || !here) return
-    d.ui.getState().setJustSent(rid)
-    setTimeout(() => d.ui.getState().justSent === rid && d.ui.getState().setJustSent(null), 1500)
-    const r = d.route.getState().route
-    if (!d.desk() && r.page === 'project' && r.tab === 'inputs' && r.place.kind === 'tab') d.ui.getState().setLit(rid)
   }
 }

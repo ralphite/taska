@@ -24,8 +24,6 @@ const out = (state: string, bad = false, canUndo = false) => ({ t: { outgoing: [
 // ---- sent and on its way
 export const YourWords = at([mine()])
 export const SendingWithUndo: Story = { ...at([mine()], out('Sending…', false, true)), name: 'Sending, with Undo' }
-/** what you just sent comes into view lit up for a moment (light blue), to show where it went */
-export const JustSentLitForAMoment: Story = { ...at([mine()], { env: { lit: 'r4' } }), name: 'Just sent: lit for a moment' }
 export const JustSentUndo: Story = { ...at([mine()], { t: { undo: (rid) => (rid === 'r4' ? 'q1' : null) } }), name: 'Just sent: Undo' }
 export const ReadByTheAgent = at([mine()], {}, { readBy: { 'claude-code': Date.parse(T) + 30_000 } })
 // ---- not there yet

@@ -42,8 +42,6 @@ export interface UiState {
   /** the input you sent last from this page, for the line over the box */
   lastSent: { slug: string; rid: string; q?: string } | null
   /** what you sent, just taken in by Taska: in view where you are and lit up for a moment (an input's id) */
-  justSent: string | null
-  setJustSent(rid: string | null): void
   setLastSent(x: { slug: string; rid: string; q?: string } | null): void
   toggleFold(n: number): void
   unfold(n: number): void
@@ -96,8 +94,6 @@ export function createUiStore(kv: KeyValueStore): UiStore {
     toggleInput: (id) => set((s) => ({ openedInputs: flip(s.openedInputs, id) })),
     lastSent: null,
     setLastSent: (lastSent) => set({ lastSent }),
-    justSent: null,
-    setJustSent: (justSent) => set({ justSent }),
     toggleFold: (n) => set((s) => ({ folded: flip(s.folded, n) })),
     unfold: (n) => set((s) => (s.folded.has(n) ? { folded: flip(s.folded, n) } : s)),
     toggleSubMore: (n) => set((s) => ({ subMore: flip(s.subMore, n) })),

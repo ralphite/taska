@@ -33,7 +33,6 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
   const duo = useStoreValue(stores.ui, (s) => s.duo) && desk
   const view = useStoreValue(stores.itemView, (s) => s)
   const kept = useStoreValue(stores.keptEdits, (s) => s)
-  const justSent = useStoreValue(stores.ui, (s) => s.justSent)
   // what you sent here that you can still take back
   const takeBack = useStoreValue(stores.box, (s) => s.sent)
   const outbox = useStoreValue(stores.outbox, (s) => s.list)
@@ -66,7 +65,6 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
     play: media.play,
     url: world.url,
     opened: view.opened,
-    lit: justSent,
     latest: it.thread.filter((x) => x.by !== 'org').at(-1)?.id ?? null,
     choosing,
   }
