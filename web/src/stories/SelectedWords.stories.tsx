@@ -7,7 +7,7 @@ import { After, Frames } from './Frames'
 import { doc } from './docFixtures'
 import { docAt } from './docPage'
 
-export default { title: 'Components/Document/Commenting' } satisfies Meta
+export default { title: 'Components/Document/Commenting/Selected words' } satisfies Meta
 type Story = StoryObj
 
 /** Selects `words` in the paragraph `key`, as a drag over them would. */
