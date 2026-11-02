@@ -38,6 +38,7 @@ step() {
   echo "nightly checks $(date '+%Y-%m-%d %H:%M') at $(git -C "$ROOT" rev-parse --short HEAD)"
   step "types, architecture and regression tests" check
   step "current data loads and replays consistently" data_check
+  step "daily copy of the data (last 14 kept)" python3 "$WORK/source/tools/backup_data.py" "$DATA"
 } > "$LOG" 2>&1
 if ! grep -q '^FAILED' "$LOG"; then
   rm -f "$LAST"
