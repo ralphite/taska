@@ -40,6 +40,15 @@ const FIXES: Spelling[] = [{ wrong: 'tasker', right: 'Taska' }, { wrong: 'cloud 
 export interface SettingsHere {
   /** Projects: a new one being named, one being renamed, why it was not done, a deleted one asking */
   projects?: { pNew?: boolean; pNewText?: string; pErr?: string; renaming?: string; purging?: string[]; menu?: string }
+  /** Notifications on the desktop: how the browser has them, quiet hours */
+  notifications?: { state: 'On' | 'Off' | 'Blocked by the browser'; quiet: boolean }
+  /** the phone on its Home Screen with a push service: this phone's pushes */
+  push?: { sub: boolean; blocked: boolean; quiet: boolean }
+  /** Use on your phone: New key pressed once */
+  newKeyAsking?: boolean
+  /** Voice spellings: none yet */
+  noSpellings?: boolean
+  organizerOff?: boolean
 }
 
 /** Shop with its history: agents, documents, what was deleted, what can be undone. */
@@ -67,10 +76,17 @@ export function settingsAt(sec: SectionKey | null, desk: boolean, h: SettingsHer
   const navOn = { open: no, back: no, keys: no, href: () => '#' }
   const bodies: Record<SectionKey, () => ReactNode> = {
     projects: () => (desk ? <ProjectsBody f={projectsOf(ROWS, side, st, asked, '~/.taska/shop/shop.db')} on={pOn} /> : <PhoneProjectsBody f={projectsOf(ROWS, side, st, asked, '')} on={pOn} />),
-    phone: () => <PhoneBody link={m.facts.remote + '/'} keyText={m.facts.key} asking={false} desk={desk} on={{ copy: no, newKey: no }} />,
-    notifications: () => (desk ? <NotificationsBody state="On" quiet={false} on={{ turnOn: no, quiet: no }} /> : <PhonePushBody standalone={false} onPhone={no} phoneHref="#" />),
-    spellings: () => <SpellingsBody fixes={FIXES} prefs={{ text: 'Write it as said; keep code words as they are.', default: false, tidy: true }} editing={false} on={{ editPrefs: no, toggleTidy: no, addWord: async () => true, forget: no }} />,
-    organizer: () => <OrganizerBody on model="gemini-flash-latest" />,
+    phone: () => <PhoneBody link={m.facts.remote + '/'} keyText={m.facts.key} asking={!!h.newKeyAsking} desk={desk} on={{ copy: no, newKey: no }} />,
+    notifications: () =>
+      desk ? (
+        <NotificationsBody state={h.notifications?.state ?? 'On'} quiet={h.notifications?.quiet ?? false} on={{ turnOn: no, quiet: no }} />
+      ) : h.push ? (
+        <PhonePushBody standalone onPhone={no} phoneHref="#" push={{ ...h.push, on: { turnOn: no, turnOff: no, quiet: no } }} />
+      ) : (
+        <PhonePushBody standalone={false} onPhone={no} phoneHref="#" />
+      ),
+    spellings: () => <SpellingsBody fixes={h.noSpellings ? [] : FIXES} prefs={{ text: 'Write it as said; keep code words as they are.', default: false, tidy: true }} editing={false} on={{ editPrefs: no, toggleTidy: no, addWord: async () => true, forget: no }} />,
+    organizer: () => <OrganizerBody on={!h.organizerOff} model="gemini-flash-latest" />,
     docs: () => <DocsBody docs={docRows(m)} onOpen={no} />,
     log: () => <LogBody rows={logRows(m, LOG)} end asking={new Set()} on={{ item: no, input: no, undo: no, more: no }} />,
     deleted: () => <DeletedBody {...deletedRows(m)} on={{ restore: no, restoreInput: no }} />,

@@ -25,7 +25,7 @@ const projects = (drop?: string) => {
   const list = sideProjects(ROWS, modelOf(PROJECT, [], { title: 'Shop' }), 'shop').list
   return list && drop ? list.map((p) => (p.slug === drop ? { ...p, drop: true } : p)) : list
 }
-export const side = (phone: boolean, f: { side?: 'docs' | 'log' | 'deleted'; undo?: string; composing?: boolean; drop?: string; newProject?: ReactNode } = {}) => (
-  <Sidebar phone={phone} projects={projects(f.drop)} composing={!!f.composing} links={sideLinks('shop', f.side ?? null)} undoLabel={f.undo ?? null} devLinks={phone ? [] : DEV} newProjectField={f.newProject} place={phone ? 'h-full bg-zinc-100' : 'h-full bg-zinc-50'} on={sideOn} />
+export const side = (phone: boolean, f: { side?: 'docs' | 'log' | 'deleted'; undo?: string; composing?: boolean; drop?: string; newProject?: ReactNode; loading?: boolean } = {}) => (
+  <Sidebar phone={phone} projects={f.loading ? null : projects(f.drop)} composing={!!f.composing} links={sideLinks('shop', f.side ?? null)} undoLabel={f.undo ?? null} devLinks={phone ? [] : DEV} newProjectField={f.newProject} place={phone ? 'h-full bg-zinc-100' : 'h-full bg-zinc-50'} on={sideOn} />
 )
 export const rail = () => <Rail projects={projects()} composing settingsOpen={false} on={sideOn} />

@@ -20,3 +20,5 @@ export const WhatTheAgentReads: Story = { ...sheet(agentsFacts(shopWithHistory()
 export const WhatTheAgentReadsLoading: Story = { ...sheet(agentsFacts(shopWithHistory(), null), true), name: 'What the agent reads: loading' }
 /** How a connected agent gets work without spending tokens: from How it works in Agents. */
 export const HowAgentsGetWork: Story = { name: 'How agents get work', render: () => <SheetFrames height={520} parts={() => agentsHelpSheet()} /> }
+/** Nothing waits for an agent and none has been here. */
+export const NothingWaitingNoneYet: Story = { ...sheet({ ...agentsFacts(shopWithHistory([]), guide('shop')), tone: 'idle', line: 'Nothing is waiting for an agent. No agent yet.', queue: 0, later: 0 }), name: 'Nothing waiting, none yet' }

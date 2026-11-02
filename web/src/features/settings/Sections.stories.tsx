@@ -20,3 +20,12 @@ export const Notifications: Story = { ...one('notifications'), name: 'Notificati
 /** Words the voice gets wrong and how they are written, and how voice notes are written down. */
 export const VoiceSpellings: Story = { ...one('spellings'), name: 'Voice spellings' }
 export const Organizer: Story = { ...one('organizer'), name: 'Organizer' }
+// ---- more states (B636)
+export const NotificationsBlocked: Story = { ...one('notifications', { notifications: { state: 'Blocked by the browser', quiet: false } }), name: 'Notifications: blocked by the browser' }
+export const NotificationsOffQuietHours: Story = { ...one('notifications', { notifications: { state: 'Off', quiet: true } }), name: 'Notifications: off' }
+export const PhonePushesOnQuiet: Story = { ...one('notifications', { push: { sub: true, blocked: false, quiet: true } }), name: 'Notifications: the phone’s pushes on, quiet hours' }
+export const PhonePushesOff: Story = { ...one('notifications', { push: { sub: false, blocked: false, quiet: false } }), name: 'Notifications: the phone’s pushes off' }
+export const PhonePushesBlocked: Story = { ...one('notifications', { push: { sub: false, blocked: true, quiet: false } }), name: 'Notifications: blocked by the phone' }
+export const NewKeyAsksAgain: Story = { ...one('phone', { newKeyAsking: true }), name: 'Use on your phone: New key asks again' }
+export const VoiceSpellingsNoneYet: Story = { ...one('spellings', { noSpellings: true }), name: 'Voice spellings: none yet' }
+export const OrganizerOff: Story = { ...one('organizer', { organizerOff: true }), name: 'Organizer: off' }

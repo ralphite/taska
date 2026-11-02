@@ -79,3 +79,5 @@ export const NotListedYet: Story = {
   name: 'Not listed yet',
   render: () => <Frames phoneWidth={320} deskWidth={240} height={420}>{(layout) => <Sidebar phone={layout === 'phone'} projects={null} composing={false} links={[]} place={layout === 'phone' ? 'h-full bg-zinc-100' : 'h-full bg-zinc-50'} on={sideOn} />}</Frames>,
 }
+// ---- more states (B636)
+export const ProjectsLoading: Story = { name: 'Projects loading (phone drawer)', render: () => <Frames desk={false} phoneWidth={320} height={420}>{() => side(true, { loading: true })}</Frames> }
