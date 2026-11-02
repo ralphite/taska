@@ -6,7 +6,7 @@ import { EmptyList, ItemList, type ListEvents } from '../features/list/ItemList'
 import { drawRows, listViews } from '../features/list/drawRows'
 import { ViewBar } from '../features/list/ViewBar'
 import { heldRows, listBody } from '../features/list/rows'
-import { queueHead } from '../model/items'
+import { queueHead, type DropHow } from '../model/items'
 import { NO_FILTERS, type ListQuery } from '../model/route'
 import type { Item, SavedView } from '../model/types'
 import { searchWords } from '../model/visible'
@@ -51,6 +51,8 @@ export interface Holding {
   viewsEnd?: ReactNode
   /** a row being dragged (`out`: off every row) */
   dragging?: { out: boolean }
+  /** the row being dragged and where it would go, as the page works it out */
+  drag?: { n: number; at?: { n?: number; how: DropHow } }
   on?: Partial<ListEvents>
 }
 
@@ -65,7 +67,7 @@ export function listOf(items: Item[], tab: Tab, q: Partial<ListQuery>, desk: boo
     rows = heldRows(was.kind === 'rows' ? was.rows : [], m, tab, query, new Map(Object.entries(h.held.said).map(([n, s]) => [Number(n), s])))
   }
   const words = searchWords(query.q)
-  const drawn = drawRows(m, rows, { slug: 'demo', openN: h.open ?? null, selected: new Set(h.selected), words, desk, drafts: new Set(), head: queueHead(m.items), seen: { since: T }, drag: { n: null, at: null }, heldHeight: () => 64 })
+  const drawn = drawRows(m, rows, { slug: 'demo', openN: h.open ?? null, selected: new Set(h.selected), words, desk, drafts: new Set(), head: queueHead(m.items), seen: { since: T }, drag: { n: h.drag?.n ?? null, at: h.drag?.at ?? null }, heldHeight: () => 64 })
   const { views, ownViews } = listViews(m, tab, query, body, { list: h.saved ?? [], edit: -1 })
   const why = body.kind === 'empty' ? body.why : body.kind === 'rows' ? body.empty : undefined
   return (
@@ -74,7 +76,7 @@ export function listOf(items: Item[], tab: Tab, q: Partial<ListQuery>, desk: boo
         loading={body.kind === 'loading'}
         desk={desk}
         openN={h.open ?? null}
-        dragging={h.dragging ?? null}
+        dragging={h.dragging ?? (h.drag ? { out: h.drag.at?.how === 'out' } : null)}
         views={h.viewsEnd ? null : views}
         ownViews={ownViews}
         rows={drawn}
