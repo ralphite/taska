@@ -14,14 +14,14 @@ const report = message({ id: 6, text: 'Done: the export writes the rows the list
 const askOf = (text: string, kind: 'ask' | 'block' = 'ask', by = 'claude-code') => ({ id: 7, kind, text, by, files: [] })
 const you = message({ id: 9, by: 'you', kind: 'say', text: 'Only the filter, not the sort.' })
 
-const at = (f: Partial<Item>, o: { remodify?: boolean } = {}): Story => ({
+const at = (f: Partial<Item>, o: { remodify?: boolean; picked?: number[] } = {}): Story => ({
   render: () => (
     <Frames phoneWidth={393} deskWidth={720}>
       {(layout) => {
         const it = item({ n: 12, ...f })
         return (
           <div className="p-3">
-            <NeedsCard it={it} env={talkEnv(modelOf([it]), layout === 'desk')} on={noItemEvents} remodify={!!o.remodify} />
+            <NeedsCard it={it} env={{ ...talkEnv(modelOf([it]), layout === 'desk'), ...(o.picked ? { choosing: { picked: new Set(o.picked), pick: () => {} } } : {}) }} on={noItemEvents} remodify={!!o.remodify} />
           </div>
         )
       }}
@@ -52,4 +52,14 @@ export const ProposalYouRepliedPointerOnApprove: Story = {
   ...at(repliedOnProposal),
   name: 'Proposal, you replied, pointer on Approve',
   parameters: { pseudo: { hover: ['button'] } },
+}
+// ---- more states (B636)
+export const QuestionAChoicePicked: Story = { ...at(q('Which format should the export use?\n- ( ) CSV\n- ( ) Excel'), { picked: [0] }), name: 'Question, a choice picked' }
+export const BlockedWithAScreenshot: Story = {
+  ...at({ status: 'doing', wait: { ...askOf('The export button does nothing here.', 'block', 'codex'), files: [{ f: 'f3-shot.png', name: 'shot.png', mime: 'image/png' }] } }),
+  name: 'Blocked, with a screenshot',
+}
+export const WorkAcceptedModifyPressed: Story = {
+  ...at({ status: 'done', thread: [report], decided: { from: 'review', to: 'done', msg: 6, t: T } }, { remodify: true }),
+  name: 'Work accepted, Modify pressed',
 }

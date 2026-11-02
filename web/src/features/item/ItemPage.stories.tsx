@@ -35,3 +35,7 @@ export const Later = at({ when: 'later', thread: [said] })
 export const Archived = at({ status: 'done', archived: true, thread: [said, report] })
 export const RuleInForce = at({ type: 'rule', parent: null, title: 'Commit messages are in English', body: 'Code, commit messages and docs are in English; Chinese only to talk with Yadong.', next: '', thread: [] })
 export const RuleProposed = at({ type: 'rule', parent: null, status: 'proposed', by: 'claude-code', title: 'Screenshots go in the item', body: 'Every screenshot of a change is posted on its item, not only in the chat.', next: '', thread: [] })
+// ---- more states (B636)
+export const P0 = at({ pri: 'P0', thread: [said] })
+export const AgentsTurnYouReplied: Story = { ...at({ talked: true, thread: [said] }), name: 'Agent’s turn (you replied)' }
+export const MadeFromTwoInputs: Story = { ...at({ thread: [said], srcs: ['r4', 'r5'] }, { f: { sources: 2 } }), name: 'Made from two inputs' }
