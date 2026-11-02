@@ -1,4 +1,4 @@
-// What is still on its way, first where your inputs are listed: the page's own outgoingRows and InputsView, on the phone. The desktop lists them under You said lately.
+// What is still on its way, first where your inputs are listed: the page's own outgoingRows and InputsView, on the phone. The desktop lists them under Latest inputs.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frames } from '../../stories/Frames'
 import { out } from '../../stories/boxFixtures'

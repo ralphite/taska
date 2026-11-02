@@ -62,7 +62,7 @@ const LINKS: SideLinkInfo[] = [
 ]
 const SAID: SaidInput[] = INPUTS.map((r, i) => {
   const s = standing(r, { on: false, busy: null }, (x) => x)
-  return { r, code: '#' + r.id.slice(1), time: ['14:57', '14:10', '09:02'][i], day: i ? null : 'Today', standing: s, short: SHORT_STANDING[s.label] || s.label, scope: null, chips: [], busy: false, draft: null, canUndoSend: false, retry: null, opened: false, moved: null }
+  return { r, code: '#' + r.id.slice(1), time: ['Today 14:57', 'Today 14:10', 'Today 09:02'][i], standing: s, short: SHORT_STANDING[s.label] || s.label, scope: null, chips: [], busy: false, draft: null, canUndoSend: false, retry: null, opened: false, moved: null }
 })
 const noSaid: SaidEvents = { goto() {}, more() {}, append() {}, draft() {}, menu() {}, undoSend() {}, retry() {}, outboxRetry() {}, outboxEdit() {}, query() {}, loadMore() {}, moved() {} }
 const noDoc = () => {}
@@ -239,8 +239,8 @@ function Phone({ mic, n = -1, onNext }: { mic: boolean; n?: number; onNext?(): v
     ...mine
       .filter((x) => x.to === 'shop')
       .reverse()
-      .map((x, i) => ({ ...SAID[0], r: input({ id: 'r' + (20 + i), text: x.text }), code: '#' + (20 + i), time: 'now', day: i ? null : 'Today', standing: { ...SAID[0].standing }, short: 'Sent' })),
-    ...SAID.map((r, i) => (i === 0 && mine.some((x) => x.to === 'shop') ? { ...r, day: null } : r)),
+      .map((x, i) => ({ ...SAID[0], r: input({ id: 'r' + (20 + i), text: x.text }), code: '#' + (20 + i), time: 'now', standing: { ...SAID[0].standing }, short: 'Sent' })),
+    ...SAID,
   ]
   const to = place === 'doc' ? 'Comment D1' : inItem ? 'Reply F001' : 'New input'
   // where the box writes, as the page works it out: a new input on a list, a reply in an item, a comment in its document

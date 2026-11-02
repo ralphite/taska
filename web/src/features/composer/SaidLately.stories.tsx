@@ -11,7 +11,7 @@ type Story = StoryObj
 
 /** What you said lately, the latest first, with where each stands and what became of it; what is on its way on top. */
 export const SaidLatelyList: Story = {
-  name: 'You said lately',
+  name: 'Latest inputs',
   render: () => (
     <Frames phone={false} deskWidth={1024}>
       {() => <div className="p-6">{saidOf({ organizer: true, inputs: [...DAY, ONE.left, ONE.seen, ONE.undone], outbox: [out({ q: 'a', text: 'Buy milk on the way home', state: 'failed', net: true })] })}</div>}
@@ -23,7 +23,7 @@ const line = () => saidOf({ organizer: true, inputs: [ONE.made] })
 
 /** A line under the pointer (its time gives way to Add more and ⋯) and from the keys, side by side. */
 export const SaidLooks: Story = {
-  name: 'You said lately: pointer, keys',
+  name: 'Latest inputs: pointer, keys',
   parameters: { pseudo: { hover: ['[data-pointer] .group\\/row', '[data-pointer-goto] .group\\/row button:first-of-type'], focusWithin: ['[data-keys] .group\\/row'], focusVisible: ['[data-keys] .group\\/row button:first-of-type'] } },
   render: () => (
     <Frames phone={false} deskWidth={760}>

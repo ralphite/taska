@@ -21,9 +21,8 @@ export interface SaidChip {
 export interface SaidInput {
   r: Input
   code: string
+  /** its day and time ("Today 21:58", "Oct 29 11:29"): every row says its day */
   time: string
-  /** the day's name when this input starts a day */
-  day: string | null
   standing: InputStanding
   short: string
   scope: SaidChip | null
@@ -54,13 +53,12 @@ export function saidRows(m: ProjectModel, a: { words: readonly string[]; upTo: n
     const it = m.byN.get(n)
     return it ? { n, code: codeOf(m, n), type: it.type, title: it.title, status: shownStatus(it) } : null
   }
-  const rows: SaidInput[] = recent.map((r, k) => {
+  const rows: SaidInput[] = recent.map((r) => {
     const s = standing(r, m.facts.organizer, (slug) => slug)
     return {
       r,
       code: inputCode(r.id),
-      time: timeOf(r.t),
-      day: k === 0 || dayOf(recent[k - 1].t) !== dayOf(r.t) ? dayOf(r.t) : null,
+      time: `${dayOf(r.t)} ${timeOf(r.t)}`,
       standing: s,
       short: SHORT_STANDING[s.label] || s.label,
       scope: r.scope ? chip(r.scope) : null,

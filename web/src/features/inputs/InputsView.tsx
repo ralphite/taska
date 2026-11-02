@@ -222,7 +222,7 @@ export function OutboxRows({ list, on }: { list: OutgoingRow[]; on: Pick<InputEv
             ) : null}
           </div>
           {q.failed ? (
-            // as the New input page has them (You said lately)
+            // as the New input page has them (Latest inputs)
             <div className="mt-1 flex flex-wrap items-center gap-1">
               {q.bad ? (
                 <button onClick={on.outboxRetry} className={LINK_BTN}>

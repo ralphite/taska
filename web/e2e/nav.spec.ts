@@ -7,7 +7,7 @@ import { foot, pane, sideFoot } from './ui'
 const projects = (page: Page) => page.getByRole('button', { name: 'Projects and settings', exact: true }).filter({ visible: true }).first()
 /** the New input page's head (the project's name over the box), and what you said under the box */
 const composeHead = (page: Page) => page.locator('footer:has(#composer) h1').first()
-const composeList = (page: Page) => page.locator('section[aria-label="You said lately"]').first()
+const composeList = (page: Page) => page.locator('section[aria-label="Latest inputs"]').first()
 const search = (page: Page) => page.locator('input[type="search"]').filter({ visible: true }).first()
 /** The project's initial view model. */
 const DATA = /\/api\/view\b/

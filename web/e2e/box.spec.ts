@@ -171,7 +171,7 @@ test('T529 #24: on the desktop New input page, words selected in a voice note un
   })
   const id = said.res[0].split(' ')[1]
   await page.goto(p.url + 'new')
-  const note = page.locator(`section[aria-label="You said lately"] [data-voice="${id}"]`).filter({ visible: true }).first()
+  const note = page.locator(`section[aria-label="Latest inputs"] [data-voice="${id}"]`).filter({ visible: true }).first()
   await expect(note).toBeVisible()
   await note.evaluate((el) => {
     const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT)

@@ -46,7 +46,7 @@ export function SaidLatelyContainer({ route, boxKey, view, draft }: { route: Pro
   const mine = outbox.filter((o) => o.slug === route.slug && !o.unsent && showsOnItsWay(o))
   const url = (f: string) => `/p/${encodeURIComponent(route.slug)}/f/${encodeURIComponent(f)}`
   return (
-    <section aria-label="You said lately" data-vc-area className="mx-auto mt-8 block max-w-[42rem]">
+    <section aria-label="Latest inputs" data-vc-area className="mx-auto mt-8 block max-w-[42rem]">
       <SaidLately
         count={words.length ? said.all.length : m.inputs.length}
         total={m.inputs.length}

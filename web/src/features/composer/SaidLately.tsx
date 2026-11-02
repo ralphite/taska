@@ -1,7 +1,7 @@
-// Under New input on the desktop: everything you said, the latest first (more comes as you scroll), each with where
+// Under New input on the desktop: every input, the latest first (more comes as you scroll), each with where
 // it stands and what became of it; what is still on its way on top. A search of its own. Props only.
 
-import { Fragment, useEffect, useRef, type ReactNode } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import { voiceMark, type InputStanding } from '../../model/inputs'
 import type { SaidChip, SaidInput, SaidOutgoing } from '../../model/saidLately'
 import type { FileRef } from '../../model/types'
@@ -12,30 +12,22 @@ import { HIT, TYPE_TEXT } from '../../ui/tones'
 const SMALL_BTN =
   'flex h-7 shrink-0 items-center gap-1 rounded-lg px-2 text-[13px] font-medium text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200'
 
-/** One step of the list: what you said first; the time on the right, where its buttons take its place on hover. */
+/** One step of the list: a line with its code, where it stands and its day and time, then its words. On the
+ * desktop its buttons show over the right of that line under the pointer, taking no room otherwise. */
 export function SaidStep({ head, acts, body, foot, time }: { head: ReactNode; acts?: ReactNode; body: ReactNode; foot?: ReactNode; time?: string }) {
   return (
-    <li className="group/row -mx-3 rounded-lg border-b border-zinc-100 px-3 py-3 last:border-b-0 hover:bg-zinc-50 dark:border-zinc-800/70 dark:hover:bg-zinc-900/60">
-      <div className="flex min-w-0 items-start gap-3">
-        <div className="min-w-0 flex-1 text-[15px] leading-6 text-zinc-900 dark:text-zinc-100">{body}</div>
-        {time || acts ? (
-          <div className="grid shrink-0 justify-items-end">
-            {time ? (
-              <span className="col-start-1 row-start-1 hidden pt-0.5 font-mono text-xs text-zinc-400 tabular-nums lg:block lg:group-focus-within/row:invisible lg:group-hover/row:invisible dark:text-zinc-500">
-                {time}
-              </span>
-            ) : null}
-            {acts ? (
-              <span className="col-start-1 row-start-1 -my-0.5 flex items-center lg:invisible lg:group-focus-within/row:visible lg:group-hover/row:visible">{acts}</span>
-            ) : null}
-          </div>
+    <li className="group/row relative -mx-3 rounded-lg border-b border-zinc-100 px-3 py-3 last:border-b-0 hover:bg-zinc-50 dark:border-zinc-800/70 dark:hover:bg-zinc-900/60">
+      <div className="flex min-h-6 min-w-0 items-center gap-1.5 text-[13px] text-zinc-500 dark:text-zinc-400">
+        {head}
+        {time ? <span className="ml-auto shrink-0 tabular-nums">{time}</span> : null}
+        {acts ? (
+          <span className="flex shrink-0 items-center lg:invisible lg:absolute lg:top-2.5 lg:right-2 lg:rounded-lg lg:bg-zinc-50 lg:group-focus-within/row:visible lg:group-hover/row:visible dark:lg:bg-zinc-900">
+            {acts}
+          </span>
         ) : null}
       </div>
+      <div className="mt-1 min-w-0 text-[15px] leading-6 text-zinc-900 dark:text-zinc-100">{body}</div>
       {foot ? <div className="mt-2 flex min-w-0 flex-wrap items-center gap-1.5 empty:hidden">{foot}</div> : null}
-      <div className="mt-1.5 flex min-h-5 min-w-0 items-center gap-1.5 text-[13px] text-zinc-500 dark:text-zinc-400">
-        {head}
-        {time ? <span className="shrink-0 tabular-nums lg:hidden">· {time}</span> : null}
-      </div>
     </li>
   )
 }
@@ -80,7 +72,7 @@ function SaidRow({ x, words, files, on }: { x: SaidInput; words: string[]; files
       time={x.time}
       head={
         <>
-          <span className="shrink-0 font-mono">{x.code}</span>
+          <span className="shrink-0 font-mono font-semibold text-zinc-800 dark:text-zinc-200">{x.code}</span>
           <span className={`flex shrink-0 items-center gap-1 pr-1 pl-1.5 font-medium ${x.standing.tone}`}>
             {standingIcon(x.standing)}
             {x.short}
@@ -100,7 +92,6 @@ function SaidRow({ x, words, files, on }: { x: SaidInput; words: string[]; files
               <DraftMark small />
             </button>
           ) : null}
-          <span className="ml-auto" />
         </>
       }
       acts={
@@ -252,7 +243,7 @@ export function SaidLately({
   return (
     <div>
       <div hidden={!total && !outgoing.length} className="flex h-9 items-center gap-3">
-        <h2 className="text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">You said</h2>
+        <h2 className="text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">Inputs</h2>
         <span className="font-mono text-xs text-zinc-400 tabular-nums dark:text-zinc-500">{count || ''}</span>
         {total ? (
           <label className="ml-auto flex h-9 w-64 min-w-0 items-center gap-2 rounded-xl bg-zinc-100 pl-3 text-zinc-400 ring-blue-500/40 focus-within:bg-white focus-within:ring-2 dark:bg-zinc-800 dark:text-zinc-500 dark:focus-within:bg-zinc-900">
@@ -275,10 +266,7 @@ export function SaidLately({
             <OutboxStep key={o.q} q={o} on={on} />
           ))}
           {rows.map((x) => (
-            <Fragment key={x.r.id}>
-              {x.day ? <li className="pt-5 pb-1 text-xs font-semibold text-zinc-500 first:pt-1 dark:text-zinc-400">{x.day}</li> : null}
-              <SaidRow x={x} words={words} files={(f) => files(f, 'cl' + x.r.id)} on={on} />
-            </Fragment>
+            <SaidRow key={x.r.id} x={x} words={words} files={(f) => files(f, 'cl' + x.r.id)} on={on} />
           ))}
           {more ? (
             <li ref={end} className="flex h-16 items-center pl-9 text-sm text-zinc-400 dark:text-zinc-500">
