@@ -86,3 +86,8 @@ export const P0 = one({ it: { type: 'bug', pri: 'P0', title: 'Saving drops the l
 export const P3 = one({ it: { pri: 'P3' } })
 export const LongChineseTitle = one({ it: { title: '\u81ea\u884c\u5168\u9762\u6d4b\u8bd5\u5e76\u4fee\u590d\u7f51\u9875\u6587\u6863\u7684\u6240\u6709 bug\uff0c\u5305\u62ec\u8bc4\u8bba\u3001\u9009\u533a\u3001\u622a\u56fe\u548c\u5bfc\u51fa\uff0c\u5728\u624b\u673a\u548c\u7535\u8111\u4e0a\u90fd\u8981\u6d4b' } })
 export const LongEnglishTitle = one({ it: { title: 'Search finds the words in an item’s talk and its documents too, and says where it found them when that is not the title' } })
+// ---- more states (B636): the quick actions under the pointer, by status
+const hover = { parameters: { pseudo: { hover: ['.group'] } } }
+export const PointerOnItInProgress: Story = { ...one({ it: { status: 'doing', agent } }), ...hover, name: 'Pointer on it: in progress' }
+export const PointerOnItWaitsForReview: Story = { ...one({ it: { status: 'review' } }), ...hover, name: 'Pointer on it: waits for review' }
+export const PointerOnItDone: Story = { ...one({ it: { status: 'done' } }), ...hover, name: 'Pointer on it: done' }

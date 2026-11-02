@@ -14,3 +14,6 @@ export const PhoneStrip: Story = { name: 'Strip on the phone', render: () => <Fr
 export const DeskPanel: Story = { name: 'Panel on the desktop', render: () => <Frames phone={false} deskWidth={1100} height={460}>{() => headOf(true, { list: BUGS, filtersOpen: true })}</Frames> }
 /** Set and folded: the chips, Clear, the dot on the filters button. */
 export const FilterChipsAndDot: Story = { name: 'Chips', render: () => <Frames deskWidth={1100} phoneWidth={393} height={220}>{(layout) => headOf(layout === 'desk', { list: BUGS })}</Frames> }
+// ---- more states (B636)
+export const PanelRules: Story = { name: 'Panel: rules', render: () => <Frames phone={false} deskWidth={1100} height={460}>{() => headOf(true, { tab: 'rules', filtersOpen: true })}</Frames> }
+export const PanelArchive: Story = { name: 'Panel: archive', render: () => <Frames phone={false} deskWidth={1100} height={460}>{() => headOf(true, { tab: 'archive', filtersOpen: true })}</Frames> }

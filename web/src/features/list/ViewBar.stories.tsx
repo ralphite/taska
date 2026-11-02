@@ -35,3 +35,19 @@ export const Views: Story = {
     </Frames>
   ),
 }
+// ---- more states (B636)
+export const YourOwnViewShownBeingRenamed: Story = {
+  name: 'Your own view: shown, being renamed',
+  render: () => (
+    <Frames phoneWidth={393} deskWidth={460}>
+      {() => (
+        <States
+          items={[
+            ['Your own view shown', <ViewBar views={views('')} own={[{ name: 'Bugs first', count: 6, on: true }]} onView={() => {}} />],
+            ['Being renamed', <ViewBar views={views('')} own={[{ name: 'Bugs first', count: 6, on: true, editing: true }]} onView={() => {}} />],
+          ]}
+        />
+      )}
+    </Frames>
+  ),
+}
