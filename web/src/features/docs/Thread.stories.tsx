@@ -35,3 +35,13 @@ const toEnd = (root: HTMLElement) => {
 export const TextChanged: Story = { name: 'Its text changed', render: () => <Frames height={760} deskWidth={900} phoneWidth={393}>{(layout) => <After run={toEnd}>{docAt(PLAN, layout === 'desk')}</After>}</Frames> }
 /** Said about a paragraph, still in the box: a count of its own, opening its Not sent card. */
 export const NotSentYet: Story = { ...one({ notSent: [{ label: '1', key: 'p1', words: 'Pilot first, then the rest.', voice: 1, transcribing: false }], threads: ['p1#new'] }), name: 'Not sent yet' }
+// ---- more states (B636)
+const mapP1 = (f: (c: ReturnType<typeof comment>[]) => ReturnType<typeof comment>[]) => doc({ blocks: PLAN.blocks.map((b) => (b.key === 'p1' ? { ...b, comments: f(b.comments) } : b)) })
+const edited = mapP1((cs) => cs.map((c, i) => (i === 0 ? { ...c, edited: at(20) } : c)))
+const twoThreads = mapP1((cs) => [...cs, comment({ id: 8, key: 'p1', th: 8, quote: 'written from scratch', text: 'From scratch, really?', by: 'you', t: at(15) })])
+const wholeDoc = doc({ whole: [comment({ id: 11, key: 'doc', th: 11, text: 'Looks good as a whole.', by: 'you', t: at(25) }), comment({ id: 12, key: 'doc', th: 12, text: 'Thanks.', t: at(20) })] })
+export const EditedComment: Story = { ...one({ threads: ['p1#1'] }, edited), name: 'Edited comment' }
+export const TakingAFileOff: Story = { ...one({ threads: ['p1#1'], asked: { 'unfile 12 7 f9-filter.png': 1 } }, withFiles), name: 'Taking a file off' }
+export const NotSentYetTranscribing: Story = { ...one({ notSent: [{ label: '1', key: 'p1', words: '', voice: 1, transcribing: true }], threads: ['p1#new'] }), name: 'Not sent yet, transcribing' }
+export const WholeDocumentCommentsOpened: Story = { ...one({ threads: ['doc'] }, wholeDoc), name: 'Whole-document comments opened' }
+export const TwoThreadsOnOneParagraph: Story = { ...one({}, twoThreads), name: 'Two threads on one paragraph' }

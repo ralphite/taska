@@ -42,3 +42,5 @@ export const PointingAtListItem: Story = {
   name: 'Pointing at an item of a list',
   parameters: { pseudo: { hover: ['section[data-key="l1"]'] } },
 }
+// ---- more states (B636)
+export const DeleteAsksAgain: Story = { ...both(PLAN, { asked: { 'doc-delete 12': 1 } }), name: 'Delete asks again' }
