@@ -1,6 +1,9 @@
 """/next: what an agent should do now. New inputs first, then a document's unanswered comments, then the items the
-user replied on, then what another session wrote for it, then the queue (doing first, then by priority, oldest first;
-subitems before their parent), skipping what another session holds."""
+user replied on while an agent is in the middle of them (in progress, or its question or block answered), then what
+another session wrote for it, then the queue (doing first, then by priority, oldest first; subitems before their
+parent), skipping what another session holds. Any other item the user replied on (open, proposed) waits its turn by
+priority (B606, Yadong's choice): it comes before the queue's next item only when that one is not in progress and is
+no more urgent."""
 
 from __future__ import annotations
 
@@ -69,10 +72,12 @@ def next_work(rd: Reading, project_name: str, gone: bool, asker: Asker) -> Work:
         d = min(docs, key=lambda d: d.t1)
         return Work(f"{head}\nanswer the user's comments on D{d.d} (GET /D{d.d}):\n" + doc_text(rd, d), True)
     live = [i for i in live if i.n not in talking]  # their latest words are not in yet: they come next
-    back = sorted((i for i in live if rules.replied(i)), key=lambda i: i.t1)
+    replied = [i for i in live if rules.replied(i)]
+    back = sorted((i for i in replied if rules.in_progress(i)), key=lambda i: i.t1)
     if back:
         it = back[0]
         return Work(f"{head}\nresume {st.code(it.n)}: the user replied\n" + card(rd, it), True, given=it.n)
+    fresh = min((i for i in replied if not rules.in_progress(i)), key=lambda i: (i.pri, i.t1), default=None)
     calls = asker.calls() if asker.who else []
     if calls:  # another agent or session wrote to this one, or on the item it is on
         it, x, to_me = calls[0]
@@ -88,6 +93,8 @@ def next_work(rd: Reading, project_name: str, gone: bool, asker: Asker) -> Work:
             out.append("others are on (skip): " + " ".join(f"{st.code(i.n)} ({a})" for i, a in theirs))
             head = "\n".join(out)
             queue = [i for i in queue if all(i is not x for x, _ in theirs)]
+    if fresh and (not queue or (queue[0].status != "doing" and fresh.pri <= queue[0].pri)):
+        return Work(f"{head}\nresume {st.code(fresh.n)}: the user replied\n" + card(rd, fresh), True, given=fresh.n)
     if queue:
         it = queue[0]
         how = IDEA.format(code=st.code(it.n)) if it.type == "idea" else ""

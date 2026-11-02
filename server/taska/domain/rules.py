@@ -37,6 +37,14 @@ def waiting(state: ProjectState, it: Item) -> Optional[Message]:
     return None
 
 
+def in_progress(it: Item) -> bool:
+    """An agent is in the middle of it (B606): in progress, or its last word asked the user or said it is blocked."""
+    if it.status == "doing":
+        return True
+    last = next((x for x in reversed(it.thread) if not user_word(x) and x.by != "org"), None)
+    return bool(last and last.kind in ("ask", "block"))
+
+
 def replied(it: Item) -> bool:
     """The user wrote after an agent's last word on this item: an agent should pick it up."""
     user = False
