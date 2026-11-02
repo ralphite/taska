@@ -47,6 +47,7 @@ import { DocVoice } from './voice/docVoice'
 import { Dictation } from './voice/dictation'
 import { Media } from './page/media'
 import { Diagrams } from './page/diagrams'
+import { PageErrors } from './page/pageErrors'
 import { SavedViews } from '../features/list/views'
 import { createGripsStore, type GripsStore } from '../stores/grips'
 import { createDragStore, type DragStore } from '../stores/drag'
@@ -223,6 +224,7 @@ export function createApp(env: AppEnv): App {
   const sheetStore = createSheetStore()
 
   const slug = () => routeSlug(route.getState().route)
+  const pageErrors = new PageErrors({ api, slug })
   const models = new ProjectModels({ data, changes })
   const model = models.of
   const here = () => model(slug())
@@ -418,7 +420,7 @@ export function createApp(env: AppEnv): App {
     access,
     refreshProjects,
     stop: () => {
-      for (const s of [projects, projectSession, pictureSizes, sheets, docs, docEditor, merges, sideOver, arrival, notices]) s.stop()
+      for (const s of [projects, projectSession, pictureSizes, sheets, docs, docEditor, merges, sideOver, arrival, notices, pageErrors]) s.stop()
       unlisten()
     },
     actions,
