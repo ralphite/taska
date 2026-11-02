@@ -78,7 +78,7 @@ export interface Said {
 }
 
 const title = (slug: string) => ({ 'mobile-app': 'Mobile app' })[slug] ?? slug
-const project = (s: Said) => modelOf(ITEMS, s.inputs ?? DAY, { organizer: { on: !!s.organizer, model: 'gemini-flash-latest', busy: s.busy ?? null } })
+const project = (s: Said, items = ITEMS) => modelOf(items, s.inputs ?? DAY, { organizer: { on: !!s.organizer, model: 'gemini-flash-latest', busy: s.busy ?? null } })
 const thumbs = (size: string) => (f: FileRef[]) => <Thumbs files={f} url={(x) => (x.endsWith('.png') ? PICTURE : '#' + x)} size={size} play={() => ({ playing: false, t: null })} tidy on={{ play() {}, words() {}, view() {} }} />
 const noInput: InputEvents = { goto() {}, more() {}, menu() {}, retry() {}, draft() {}, moved() {}, ref() {}, picture() {}, outboxRetry() {}, outboxEdit() {} }
 
@@ -108,6 +108,15 @@ export function cardOf(r: Input, s: Said = {}) {
 }
 
 const noSaid: SaidEvents = { goto() {}, more() {}, append() {}, draft() {}, menu() {}, undoSend() {}, retry() {}, outboxRetry() {}, outboxEdit() {}, query() {}, loadMore() {}, moved() {} }
+
+/** The New input page's list as the page works it out (its rows and what is on its way), for prototypes that draw
+ * it their own way. */
+export function saidData(s: Said = {}, items = ITEMS) {
+  const m = project(s, items)
+  const words = searchWords(s.q ?? '')
+  const said = saidRows(m, { words, upTo: 30, opened: new Set(s.opened), justSent: (s.justSent ?? []).map((rid) => ({ rid })), drafts: {}, mode: null, title })
+  return { rows: said.rows, total: m.inputs.length, outgoing: saidOutgoing(s.outbox ?? [], words, s.away ?? 0, (s.justSent ?? []).map((q) => ({ q }))) }
+}
 
 /** What you said lately under the New input page's box (the desktop), as the page draws it. */
 export function saidOf(s: Said = {}) {
