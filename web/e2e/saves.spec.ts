@@ -45,6 +45,25 @@ test('what you add to an input goes to its own project, though you went to anoth
   await expect(page.getByText(/not saved/)).toHaveCount(0)
 })
 
+test('B637: details that are only a file still going up are saved once it is up, with no false "changed elsewhere"', async ({
+  page,
+  request,
+}) => {
+  test.skip(!isDesk(page), 'the desktop lists what you said lately beside the box')
+  const p = await project(request, LOOP)
+  await open(page, p)
+  await addingTo(page, 'Fix the drain by the door')
+  await page.route('**/api/file**', async (route) => {
+    await new Promise((r) => setTimeout(r, 2000))
+    await route.continue()
+  })
+  await fileInput(page).setInputFiles({ name: 'drain.png', mimeType: 'image/png', buffer: PNG })
+  await box(page).click()
+  await page.keyboard.press('Shift+Enter') // saved before the picture is up, with no words
+  await expect.poll(() => p.read('r1'), { timeout: 15000 }).toContain('drain.png')
+  await expect(page.getByText(/changed elsewhere|not saved/)).toHaveCount(0)
+})
+
 test('a change Taska refused says the words it carried and links to where it belongs (B527)', async ({
   page,
   request,

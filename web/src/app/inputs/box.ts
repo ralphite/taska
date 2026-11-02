@@ -49,6 +49,7 @@ export interface BoxDeps {
 export class Box {
   private readonly d: BoxDeps
   private n = 0
+  private readonly waitingUp = new Set<string>() // edits that save once their files are up
   constructor(d: BoxDeps) {
     this.d = d
     // a new input not sent stays in its draft when the box goes to write elsewhere: it says so
@@ -174,7 +175,11 @@ export class Box {
     const files = st.files[key] || []
     if (mode?.kind === 'correct') return this.correct(slug, m, mode, key)
     if (!text && !files.length) return false
-    if (mode?.kind === 'amend') return this.amend(slug, m, mode, key, text)
+    if (mode?.kind === 'amend') {
+      // a voice note or picture still going up: the save waits for it (B637), then goes by itself
+      if (files.some((f) => f.uploading)) return this.amendWhenUp(slug, mode, key)
+      return this.amend(slug, m, mode, key, text)
+    }
     this.write(slug, key, '')
     st.takeFiles(key)
     const o = this.d.inputs.push({ slug, text, scope, files: files.map(({ key: k, ...f }) => ({ ...f, key: k })) })
@@ -186,6 +191,22 @@ export class Box {
       this.d.toasts.forget(step)
       this.d.store.getState().forgetSent(o.q)
     }, UNSEND_MS)
+    return true
+  }
+
+  /** Save the edit once the box's files for it are up (the store says so when each upload ends). -> it will go */
+  private amendWhenUp(slug: string, mode: Extract<BoxMode, { kind: 'amend' }>, key: DraftKey): boolean {
+    if (this.waitingUp.has(key)) return true
+    this.waitingUp.add(key)
+    this.d.toasts.show(`Saving ${inputCode(mode.id)} once the upload ends`)
+    const stop = this.d.store.subscribe((s) => {
+      const files = s.files[key] || []
+      if (files.some((f) => f.uploading) || !this.waitingUp.has(key)) return
+      this.waitingUp.delete(key)
+      stop()
+      const text = this.text(slug, key).trim()
+      if (text || files.some((f) => f.f && !f.failed)) this.amend(slug, this.d.model?.(slug) ?? null, mode, key, text)
+    })
     return true
   }
 
@@ -224,6 +245,14 @@ export class Box {
     const r = this.d.model?.(slug)?.byId.get(mode.id)
     if (!r) return
     const code = inputCode(mode.id)
+    if ((r.v || 0) === mode.v) {
+      // refused for another reason: nothing changed elsewhere (B637), so say only that it was not saved
+      this.write(slug, key, text)
+      if (drafts.length) this.d.store.getState().putFiles(key, drafts)
+      this.d.store.getState().setMode(mode)
+      this.d.toasts.show(`${code} not saved. Text restored; save to try again`, null, { error: true, sticky: true })
+      return
+    }
     if (mode.mode === 'edit' && mode.base != null && r.text !== mode.base && r.text.startsWith(mode.base)) {
       const merged = text + r.text.slice(mode.base.length)
       const ok = await this.d.runner.send({ id: newId(), slug, commands: [{ op: 'amend', id: mode.id, mode: 'edit', v: r.v || 0, text: merged, files }], patches: [], inputPatches: [{ id: mode.id, f: { text: merged } }], said, t: Date.now() })
