@@ -1,37 +1,36 @@
-// B629: three ideas of what the list of inputs is for, to pick from (the Inputs tab on the phone, the list under New
-// input on the desktop). Each answers its own question: what did my words turn into (1), what exactly did I say (2),
-// has what I asked for been done (3). The same inputs in each (b629/inputsDemo: typed, spoken, with pictures, long;
-// made one item or two, added to one, an answer, left for an agent, handled by one, moved away, organizing, could not
-// be organized, organizing undone, being transcribed), in the same words, drawn with the page's own parts (the item's
-// status mark, the voice note's chip, the pictures). The search field works; a long input opens with More.
+// B629: the list of inputs, redrawn from the notebook version Yadong found closest (words first, no boxes or bubbles),
+// with the room cut: the Inputs tab on the phone, the list under New input on the desktop. One set of inputs covering
+// every state an input has (b629/inputsDemo), drawn with the page's own parts (the item's status mark, the voice
+// note's chip, the pictures). A long input opens with More.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import type { ReactNode } from 'react'
+import { useState } from 'react'
 import { Frames } from './Frames'
-import { ByWhatItBecame } from './b629/ByWhatItBecame'
-import { FollowUp } from './b629/FollowUp'
-import { Notebook } from './b629/Notebook'
+import { InputsList } from './b629/InputItem'
+import { ENTRIES } from './b629/inputsDemo'
 
 export default { title: 'Prototype/B629 Inputs list', parameters: { layout: 'fullscreen' } } satisfies Meta
 type Story = StoryObj
 
-const both = (draw: (desk: boolean) => ReactNode): Story => ({
-  render: () => (
-    <Frames deskWidth={900} height={852}>
-      {(layout) => <div className={layout === 'desk' ? 'h-full overflow-y-auto px-8 py-6' : 'h-full'}>{draw(layout === 'desk')}</div>}
-    </Frames>
-  ),
-})
+function List({ desk, opened = [], pointed = null, empty = false }: { desk: boolean; opened?: string[]; pointed?: string | null; empty?: boolean }) {
+  const [open, setOpen] = useState<ReadonlySet<string>>(new Set(opened))
+  const toggle = (id: string) => setOpen((s) => (s.has(id) ? new Set([...s].filter((x) => x !== id)) : new Set([...s, id])))
+  return (
+    <div className={desk ? 'h-full overflow-y-auto px-6 py-5' : 'h-full overflow-y-auto'}>
+      <InputsList list={empty ? [] : ENTRIES} desk={desk} opened={open} toggle={toggle} pointed={pointed} />
+    </div>
+  )
+}
 
-/** 1. By what it became: each item an input made or went into heads a group of those inputs; left for an agent,
- * handled by one, moved away: groups of their own; not organized yet: first. */
-export const ByWhatItBecameList: Story = { ...both((desk) => <ByWhatItBecame desk={desk} />), name: '1 By what it became' }
-/** 2. A notebook: the words first, as one document; what became of each a note in the margin. */
-export const NotebookList: Story = { ...both((desk) => <Notebook desk={desk} />), name: '2 A notebook of what I said' }
-/** 3. Has it been done: each input with a track from said, to where it went, to done. */
-export const FollowUpList: Story = { ...both((desk) => <FollowUp desk={desk} />), name: '3 Has it been done' }
+const phone = (p: Omit<Parameters<typeof List>[0], 'desk'> = {}): Story => ({ render: () => <Frames desk={false}>{() => <List desk={false} {...p} />}</Frames> })
+const desk = (p: Omit<Parameters<typeof List>[0], 'desk'> = {}): Story => ({ render: () => <Frames phone={false} deskWidth={820} height={852}>{() => <List desk {...p} />}</Frames> })
 
-/** Each version searching ("订单"), and finding nothing. */
-export const ByWhatItBecameSearch: Story = { ...both((desk) => <ByWhatItBecame desk={desk} q0="订单" />), name: '1 By what it became: searching' }
-export const NotebookSearch: Story = { ...both((desk) => <Notebook desk={desk} q0="订单" />), name: '2 A notebook: searching' }
-export const FollowUpSearch: Story = { ...both((desk) => <FollowUp desk={desk} q0="订单" />), name: '3 Has it been done: searching' }
-export const NothingFound: Story = { ...both((desk) => <Notebook desk={desk} q0="invoice" />), name: 'Nothing found (the same in each)' }
+/** The phone: each input's number and when, its words, its files, and what became of it under them. */
+export const Phone: Story = { ...phone(), name: 'Phone' }
+/** The desktop: what became of each input beside its words; Add more and ⋯ under the pointer. */
+export const Desktop: Story = { ...desk(), name: 'Desktop' }
+/** A long input opened whole (Less closes it again). */
+export const PhoneLongOpened: Story = { ...phone({ opened: ['r65'] }), name: 'Phone: a long input opened' }
+/** The pointer on #73 (its buttons show), and the long input opened. */
+export const DesktopPointed: Story = { ...desk({ pointed: 'r73', opened: ['r65'] }), name: 'Desktop: pointer on an input, a long one opened' }
+/** None yet. */
+export const NoneYet: Story = { render: () => <Frames deskWidth={820} height={300}>{(layout) => <List desk={layout === 'desk'} empty />}</Frames>, name: 'No inputs yet' }
