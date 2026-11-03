@@ -1,13 +1,19 @@
 // The helpers ItemMenu's stories share: how each draws its part.
 import type { StoryObj } from '@storybook/react-vite'
 import { Frames } from './Frames'
-import { AT_BUTTON, AT_BUTTON_NARROW, menuModel, no, opened, underList } from './menuFixtures'
+import { AT_BUTTON, AT_BUTTON_NARROW, acts, menuModel, opened, underList } from './menuFixtures'
 import { itemMenuPop, itemMenuSheet, type ItemMenuEvents, type ItemMenuFacts } from '../features/item/ItemMenu'
 import { itemMenuFacts } from '../features/item/itemMenuFacts'
 
 type Story = StoryObj
 
-export const on: ItemMenuEvents = { edit: no, copy: no, agent: no, newDoc: no, addSub: no, reparent: no, later: no, archive: no, doNext: no, moveProject: no, remove: no, set: no, field: no }
+export const on: ItemMenuEvents = acts('Item menu', ['edit', 'copy', 'agent', 'newDoc', 'addSub', 'reparent', 'later', 'archive', 'doNext', 'moveProject', 'remove', 'set', 'field'], {
+  agent: 'Sheets › An item: what agents see',
+  reparent: 'Move and pick › Put under',
+  moveProject: 'Move and pick › Item to another project',
+  remove: 'Item menu › Its submenus › Delete asks again',
+  field: 'Item menu › Its submenus › Status, Priority, Type',
+})
 export interface Open {
   n: number
   asking?: boolean

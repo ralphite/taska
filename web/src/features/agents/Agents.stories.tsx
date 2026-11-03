@@ -1,7 +1,7 @@
 // What the agent pill opens (F628): whether an agent is around, who has been here, how to connect one more. The page's own sheet with what the page's own agentsFacts makes of a demo project.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { guide } from '../../stories/guideFixture'
-import { no, SheetFrames } from '../../stories/sheetFixtures'
+import { acts, SheetFrames } from '../../stories/sheetFixtures'
 import { SEEN, shopWithHistory } from '../../stories/settingsFixtures'
 import type { AgentSeen } from '../../model/types'
 import { agentsSheet } from './Agents'
@@ -10,7 +10,7 @@ import { agentsFacts } from './agentsFacts'
 export default { title: 'Components/Around the page/Menus and sheets/Agents/Who works here' } satisfies Meta
 type Story = StoryObj
 
-const sheet = (f: ReturnType<typeof agentsFacts>, open = false): Story => ({ render: () => <SheetFrames look={{ tall: true, wide: true }} height={820} parts={() => agentsSheet(f, { copy: no, help: no }, open)} /> })
+const sheet = (f: ReturnType<typeof agentsFacts>, open = false): Story => ({ render: () => <SheetFrames look={{ tall: true, wide: true }} height={820} parts={() => agentsSheet(f, acts('Agents', ['copy', 'help'], { help: 'Help › Topics › Connect an agent' }), open)} /> })
 
 /** One around and one that was here earlier. */
 export const Agents: Story = { ...sheet(agentsFacts(shopWithHistory(), guide('shop'))), name: 'One at work, one here earlier' }

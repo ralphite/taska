@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frames, States } from '../stories/Frames'
+import { act } from '../stories/menuFixtures'
 import { Icon } from './Icon'
 import { PaneFrame } from './PaneFrame'
 
@@ -14,12 +15,12 @@ const head = (
   </span>
 )
 const acts = (
-  <button title="Done · D" className="grid size-9 place-items-center rounded-lg text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800">
+  <button title="Done · D" onClick={act('Pane: done')} className="grid size-9 place-items-center rounded-lg text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800">
     <Icon n="done" />
   </button>
 )
 const nav = (
-  <button title="Next · J" className="grid size-9 place-items-center rounded-lg text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800">
+  <button title="Next · J" onClick={act('Pane: next')} className="grid size-9 place-items-center rounded-lg text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800">
     <Icon n="down" />
   </button>
 )
@@ -33,9 +34,9 @@ export const Frame: Story = {
       {(layout) => (
         <States
           items={[
-            ['an item', <div className="flex h-44 flex-col"><PaneFrame place="" desk={layout === 'desk'} head={head} acts={acts} nav={nav} menu onBack={() => {}} onMenu={() => {}}>{body}</PaneFrame></div>],
-            ['New input', <div className="flex h-36 flex-col"><PaneFrame place="" desk={layout === 'desk'} head={<span className="flex items-center gap-2 text-sm font-semibold"><Icon n="newinput" c="size-[18px] text-blue-600 dark:text-blue-400" />New input</span>} onBack={() => {}} /></div>],
-            ['nothing open', <div className="flex h-36 flex-col"><PaneFrame place="" desk={layout === 'desk'} onBack={() => {}} /></div>],
+            ['an item', <div className="flex h-44 flex-col"><PaneFrame place="" desk={layout === 'desk'} head={head} acts={acts} nav={nav} menu onBack={act('Pane: back')} onMenu={act('Pane: menu')}>{body}</PaneFrame></div>],
+            ['New input', <div className="flex h-36 flex-col"><PaneFrame place="" desk={layout === 'desk'} head={<span className="flex items-center gap-2 text-sm font-semibold"><Icon n="newinput" c="size-[18px] text-blue-600 dark:text-blue-400" />New input</span>} onBack={act('Pane: back')} /></div>],
+            ['nothing open', <div className="flex h-36 flex-col"><PaneFrame place="" desk={layout === 'desk'} onBack={act('Pane: back')} /></div>],
           ]}
         />
       )}

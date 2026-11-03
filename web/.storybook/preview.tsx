@@ -5,8 +5,8 @@ import '../src/index.css'
 const preview: Preview = {
   parameters: {
     layout: 'fullscreen',
+    // no controls; the Actions panel logs each click on a story's menus and buttons (D115 #16: stories pass act())
     controls: { disable: true },
-    actions: { disable: true },
     // the most used first (B636): each folder's groups in the order you meet them; folders not named here follow
     // in alphabetical order
     options: {

@@ -5,7 +5,7 @@ import { inputMenuSheet } from '../features/inputs/InputSheets'
 import { inputMenuFacts } from '../features/inputs/inputSheetFacts'
 import { Frames } from './Frames'
 import { input, item, modelOf } from './fixtures'
-import { AT_BUTTON, no, opened } from './menuFixtures'
+import { AT_BUTTON, acts, opened } from './menuFixtures'
 
 export default { title: 'Components/Around the page/Menus and sheets/What you said: its menu' } satisfies Meta
 type Story = StoryObj
@@ -25,16 +25,28 @@ const said = input({
   history: [{ text: 'The export should keep it.', t: '2026-10-23T14:00:00-07:00', mode: 'edit' }],
   deletion: { go: [12], keep: [] },
 })
+const on = acts('Input menu', ['send', 'edit', 'append', 'asSaid', 'undo', 'move', 'history', 'rescope', 'takeOff', 'remove'], {
+  asSaid: 'Sheets › An input: Original words',
+  move: 'Move and pick › What you said, to another project',
+  history: 'Sheets › An input: history',
+  rescope: 'Move and pick › What you said, with another item',
+  takeOff: 'What you said: its menu › A file’s Take it off? asking',
+})
 const m = modelOf([item({ n: 4, title: 'Exports that keep what you see' }), item({ n: 12, title: 'Export keeps the filter' })], [said])
 /** What you said's ⋯: Edit, Add details, Original words, Undo what the organizer did, Move, History, Put with another
- * item, a file's Take off, Delete (and what goes with it). */
+ * item, a file's Take off, Delete (and what goes with it). Rows that open a next step:
+ * [Original words](?path=/story/components-around-the-page-menus-and-sheets-sheets-an-input-its-words-and-history--as-said),
+ * [Move to…](?path=/story/components-around-the-page-menus-and-sheets-move-and-pick--move-input),
+ * [History](?path=/story/components-around-the-page-menus-and-sheets-sheets-an-input-its-words-and-history--input-history),
+ * [Put with item…](?path=/story/components-around-the-page-menus-and-sheets-move-and-pick--pick-an-item),
+ * [Take off a file](?path=/story/components-around-the-page-menus-and-sheets-what-you-said-its-menu--input-menu-take-off-asks). */
 export const InputMenu: Story = {
-  ...both((desk) => opened(inputMenuSheet(inputMenuFacts(m, said, 2, {}, desk, true), { send: no, edit: no, append: no, asSaid: no, undo: no, move: no, history: no, rescope: no, takeOff: no, remove: no }), desk, { look: desk ? { pop: true, at: AT_BUTTON } : {} }), 720),
+  ...both((desk) => opened(inputMenuSheet(inputMenuFacts(m, said, 2, {}, desk, true), on), desk, { look: desk ? { pop: true, at: AT_BUTTON } : {} }), 720),
   name: 'Edit, Original words, Undo, Move, History, Delete',
 }
 const plain = input({ id: 'r13', acked: true, text: 'Look at why the build takes so long.' })
 const inputMenu = (r: typeof said, other: number, asked: Record<string, number> = {}, tidy = true) => (desk: boolean) =>
-  opened(inputMenuSheet(inputMenuFacts(modelOf([item({ n: 4 }), item({ n: 12 })], [r]), r, other, asked, desk, tidy), { send: no, edit: no, append: no, asSaid: no, undo: no, move: no, history: no, rescope: no, takeOff: no, remove: no }), desk, { look: desk ? { pop: true, at: AT_BUTTON } : {} })
+  opened(inputMenuSheet(inputMenuFacts(modelOf([item({ n: 4 }), item({ n: 12 })], [r]), r, other, asked, desk, tidy), on), desk, { look: desk ? { pop: true, at: AT_BUTTON } : {} })
 /** a plain typed input with no other project: no Original words, Undo, History, files or Move */
 export const InputMenuPlain: Story = { ...both(inputMenu(plain, 0), 420), name: 'Typed, nothing filed, no other project' }
 /** a file's Take off asking again */

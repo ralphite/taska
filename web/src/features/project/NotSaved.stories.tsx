@@ -4,7 +4,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { NotSaved } from '../../stores/feedback'
 import { Frames } from '../../stories/Frames'
 import { T } from '../../stories/fixtures'
-import { AT_BUTTON, no, opened } from '../../stories/menuFixtures'
+import { AT_BUTTON, acts, opened } from '../../stories/menuFixtures'
 import { notSavedSheet } from './NotSaved'
 import { notSavedRows } from './notSavedRows'
 
@@ -17,7 +17,7 @@ const LIST: NotSaved[] = [
   { sid: 'b', what: 'Reply to B003', why: 'Connection lost', at: at(32), slug: 'home', said: 'Keep the old filter' },
   { sid: 'c', what: 'Comment on D4', why: 'Connection lost', at: at(60 * 18), slug: 'taska' },
 ]
-const sheet = (list: NotSaved[], desk: boolean) => opened(notSavedSheet(notSavedRows(list, 'taska', (s) => ({ home: 'Home' })[s] ?? s, Date.parse(T)), { go: no, drop: no }) ?? { body: null }, desk, { look: desk ? { pop: true, at: AT_BUTTON } : {} })
+const sheet = (list: NotSaved[], desk: boolean) => opened(notSavedSheet(notSavedRows(list, 'taska', (s) => ({ home: 'Home' })[s] ?? s, Date.parse(T)), acts('Not saved', ['go', 'drop'])) ?? { body: null }, desk, { look: desk ? { pop: true, at: AT_BUTTON } : {} })
 
 export const List: Story = { name: 'Changes not saved', render: () => <Frames height={520} deskWidth={900} phoneWidth={393}>{(layout) => sheet(LIST, layout === 'desk')}</Frames> }
 export const One: Story = { name: 'One change not saved', render: () => <Frames height={360} deskWidth={900} phoneWidth={393}>{(layout) => sheet(LIST.slice(1, 2), layout === 'desk')}</Frames> }

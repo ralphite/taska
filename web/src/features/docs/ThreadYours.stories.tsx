@@ -2,7 +2,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frames } from '../../stories/Frames'
 import { docAt } from '../../stories/docPage'
-import { no, opened } from '../../stories/menuFixtures'
+import { acts, opened } from '../../stories/menuFixtures'
 import { PLAN, edited, one, withFiles } from '../../stories/threadFixtures'
 import { commentMenuSheet } from './DocSheets'
 
@@ -12,10 +12,11 @@ type Story = StoryObj
 /** The desktop: the pointer on your comment shows Edit, Move and Delete (an agent's: Move and Delete). */
 export const PointingAtYourComment: Story = { ...one({ threads: ['p1#1'] }), name: 'Pointing at your comment: Edit, Move, Delete', parameters: { pseudo: { hover: ['[data-thread] .group:first-of-type'] } } }
 export const EditedComment: Story = { ...one({ threads: ['p1#1'] }, edited), name: 'Edited comment' }
-/** The phone: a comment's ⋯ opens its menu (Edit on yours, Move, Delete). */
+/** The phone: a comment's ⋯ opens its menu (Edit on yours, Move, Delete). Move opens
+ * [Move and pick › Move a comment](?path=/story/components-around-the-page-menus-and-sheets-move-and-pick--move-comment). */
 export const ItsMenuOnThePhone: Story = {
   name: 'Its menu on the phone',
-  render: () => <Frames desk={false} height={760} phoneWidth={393}>{() => opened(commentMenuSheet(true, { edit: no, move: no, remove: no }), false, { under: docAt(PLAN, false, { threads: ['p1#1'] }) })}</Frames>,
+  render: () => <Frames desk={false} height={760} phoneWidth={393}>{() => opened(commentMenuSheet(true, acts('Comment menu', ['edit', 'move', 'remove'], { move: 'Move and pick › Move a comment' })), false, { under: docAt(PLAN, false, { threads: ['p1#1'] }) })}</Frames>,
 }
 /** the × on its picture pressed once: Take off? over the picture, pressed again to take it off (the desktop's × shows
  * under the pointer; the phone's always) */

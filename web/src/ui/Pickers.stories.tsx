@@ -5,7 +5,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { codeOf } from '../model/project'
 import { inputCode } from '../model/words'
 import { After, Frames, typeInto } from '../stories/Frames'
-import { AT_BUTTON, menuModel, no, opened, underList } from '../stories/menuFixtures'
+import { AT_BUTTON, act, menuModel, opened, underList } from '../stories/menuFixtures'
 import { moveParentSheet, pickSheet } from './Pickers'
 
 export default { title: 'Components/Around the page/Menus and sheets/Move and pick' } satisfies Meta
@@ -13,7 +13,7 @@ type Story = StoryObj
 
 const putUnder = (desk: boolean, n = 14) => {
   const m = menuModel()
-  return opened(moveParentSheet({ it: m.byN.get(n)!, items: m.items, kids: m.kids, code: (c) => codeOf(m, c), desk }, no), desk, { under: underList(desk), look: desk ? { pop: true, at: AT_BUTTON } : {} })
+  return opened(moveParentSheet({ it: m.byN.get(n)!, items: m.items, kids: m.kids, code: (c) => codeOf(m, c), desk }, act('Put under: pick')), desk, { under: underList(desk), look: desk ? { pop: true, at: AT_BUTTON } : {} })
 }
 const typed = (text: string) => (root: HTMLElement) => typeInto(root.querySelector<HTMLInputElement>('[role="dialog"] input'), text)
 
@@ -30,7 +30,7 @@ export const PickAnItem: Story = {
     <Frames height={640} deskWidth={900} phoneWidth={393}>
       {(layout) => {
         const m = menuModel()
-        return opened(pickSheet({ head: `Put ${inputCode('r12')} with…`, items: m.items, skip: [1], code: (n) => codeOf(m, n), desk: layout === 'desk' }, no), layout === 'desk')
+        return opened(pickSheet({ head: `Put ${inputCode('r12')} with…`, items: m.items, skip: [1], code: (n) => codeOf(m, n), desk: layout === 'desk' }, act('Put with: pick')), layout === 'desk')
       }}
     </Frames>
   ),

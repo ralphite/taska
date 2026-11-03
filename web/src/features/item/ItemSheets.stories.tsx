@@ -5,12 +5,14 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frames } from '../../stories/Frames'
 import { input, item, modelOf, T } from '../../stories/fixtures'
 import { talkEnv } from '../../stories/itemFixtures'
-import { no, opened } from '../../stories/menuFixtures'
+import { act, acts, opened } from '../../stories/menuFixtures'
 import { Thumbs } from '../../ui/Files'
 import { agentCardSheet, sourcesSheet } from './ItemSheets'
 
 export default { title: 'Components/Around the page/Menus and sheets/Sheets/An item: what it came from, what agents see' } satisfies Meta
 type Story = StoryObj
+
+const fileOn = acts('A file', ['play', 'words', 'view'])
 
 const at = (min: number) => new Date(Date.parse(T) - min * 60_000).toISOString()
 const inputs = [
@@ -25,7 +27,7 @@ export const Sources: Story = {
     <Frames height={520} deskWidth={900} phoneWidth={393}>
       {(layout) => {
         const env = talkEnv(m, layout === 'desk')
-        return opened(sourcesSheet({ code: 'F012', inputs, world: env.world, now: m.at, files: (f) => <Thumbs files={f} url={env.url} play={env.play} tidy on={{ play() {}, words() {}, view() {} }} /> }, no), layout === 'desk')
+        return opened(sourcesSheet({ code: 'F012', inputs, world: env.world, now: m.at, files: (f) => <Thumbs files={f} url={env.url} play={env.play} tidy on={fileOn} /> }, act('What an item came from: go to input')), layout === 'desk')
       }}
     </Frames>
   ),
@@ -61,7 +63,7 @@ export const SourcesFiled: Story = {
     <Frames height={520} deskWidth={900} phoneWidth={393}>
       {(layout) => {
         const env = talkEnv(mf, layout === 'desk')
-        return opened(sourcesSheet({ code: 'F012', inputs: filed, world: env.world, now: mf.at, files: (f) => <Thumbs files={f} url={env.url} play={env.play} tidy on={{ play() {}, words() {}, view() {} }} /> }, no), layout === 'desk')
+        return opened(sourcesSheet({ code: 'F012', inputs: filed, world: env.world, now: mf.at, files: (f) => <Thumbs files={f} url={env.url} play={env.play} tidy on={fileOn} /> }, act('What an item came from: go to input')), layout === 'desk')
       }}
     </Frames>
   ),

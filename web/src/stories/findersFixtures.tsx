@@ -4,7 +4,7 @@ import { paletteRows } from '../app/actions'
 import { codeOf } from '../model/project'
 import { PROJECT_TONES } from '../ui/tones'
 import { After, Frames } from './Frames'
-import { menuModel, no, opened } from './menuFixtures'
+import { act, menuModel, opened } from './menuFixtures'
 import { Palette, Switcher } from '../features/find/Finders'
 
 type Story = StoryObj
@@ -19,11 +19,11 @@ export const ROWS = [
 export const field = (root: HTMLElement) => root.querySelector<HTMLInputElement>('[role="dialog"] input')
 export const palette = (desk: boolean, open: number | null) => {
   const m = menuModel()
-  return opened({ title: 'Go to or do', body: <Palette items={m.items} code={(n) => codeOf(m, n)} open={open} commands={COMMANDS} desk={desk} onItem={no} onCommand={no} /> }, desk)
+  return opened({ title: 'Go to or do', body: <Palette items={m.items} code={(n) => codeOf(m, n)} open={open} commands={COMMANDS} desk={desk} onItem={act('Command palette: item')} onCommand={act('Command palette: command')} /> }, desk)
 }
-export const switcher = (desk: boolean) => opened({ title: 'Switch project', body: <Switcher rows={ROWS} loading={false} onOpen={no} /> }, desk)
+export const switcher = (desk: boolean) => opened({ title: 'Switch project', body: <Switcher rows={ROWS} loading={false} onOpen={act('Switch project: open')} /> }, desk)
 /** the projects not listed yet: Loading… under the field */
-export const switcherLoading = (desk: boolean) => opened({ title: 'Switch project', body: <Switcher rows={[]} loading onOpen={no} /> }, desk)
+export const switcherLoading = (desk: boolean) => opened({ title: 'Switch project', body: <Switcher rows={[]} loading onOpen={act('Switch project: open')} /> }, desk)
 export const one = (draw: (desk: boolean) => ReturnType<typeof opened>, run?: (root: HTMLElement) => void, height = 720, pseudo?: Record<string, string[]>): Story => ({
   ...(pseudo ? { parameters: { pseudo } } : {}),
   render: () => <Frames height={height} deskWidth={900} phoneWidth={393}>{(layout) => (run ? <After run={run}>{draw(layout === 'desk')}</After> : draw(layout === 'desk'))}</Frames>,
