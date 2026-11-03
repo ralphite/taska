@@ -118,5 +118,14 @@ trust, the live acceptance on 2026-10-28 denied the harmless idle-check probe be
 Existing loaded sessions must reload their hook configuration; installation and trust alone do not prove this.
 See [codex-notifications.md](codex-notifications.md) for the separate event-delivery acceptance gate.
 
+`python3 tools/install_manager_guard.py add [SESSION]` (from the main checkout, which the hook command points to)
+registers a manager session and installs `tools/manager_guard.py` as a PreToolUse hook in
+`~/.claude/settings.json`; `--harness codex` uses `~/.codex/hooks.json` instead. Without SESSION it takes the
+calling session's id (`CLAUDE_CODE_SESSION_ID`, or `CODEX_THREAD_ID` for Codex). `remove [SESSION]` unregisters
+one and `install` only installs or updates the hook, replacing an earlier hand-made `manager-guard.py` entry in
+place. Ids live in `manager-sessions.txt` under the harness's `hooks/` folder. For registered sessions only, the
+hook denies browser, computer and simulator tools, chat questions and edits outside the manager's memory and temp
+folders; every other session and the no-idle guard are untouched. The same Codex `/hooks` trust review applies.
+
 Register permanent service entry points in Local Hub and update the existing registration when their source or
 startup path changes. Keep data outside the source checkout in `~/.taska`.

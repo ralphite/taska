@@ -126,6 +126,17 @@ AGENT = (
     '      Codex: use the native send_message_to_thread tool only for authorized real work. Do not launch a relay\n'
     '      model. For automatic Taska updates, follow the Codex setup below.\n'
     '      Antigravity: workers started from its Agent Manager and reused. Not tried yet, nor how to read its tokens.\n'
+    '\n'
+    'MANAGER NEVER BLOCKS (T652)\n'
+    '      A manager does four things only: reads and writes Taska, sends messages to task sessions, checks what they\n'
+    '      hand back, and writes that back to Taska.\n'
+    "      A new manager session first registers itself: `python3 tools/install_manager_guard.py add` in Taska's\n"
+    '      folder (Codex: add --harness codex). That installs a hook that rejects at once, without a prompt, browser,\n'
+    '      computer and simulator tools, questions in chat (use `ask` on the item instead) and edits outside its own\n'
+    '      memory and temp folders; the reason says to hand the work to the task session that owns it. Task sessions\n'
+    '      are not affected.\n'
+    '      A blocked task session reports it to the manager; the manager writes it on the item for the user and\n'
+    '      never does the blocked step itself.\n'
 )
 
 SKILL = (
