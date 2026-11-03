@@ -27,6 +27,7 @@ function useSubject(id: string) {
 }
 
 export function InputMenuSheet({ req }: Req<'input-menu'>) {
+  const desk = useLayout() === 'desk'
   const app = useServices('box', 'inputActions', 'media', 'sheets')
   const stores = useStores('sheet')
   const { slug, m, r } = useSubject(req.id)
@@ -36,7 +37,7 @@ export function InputMenuSheet({ req }: Req<'input-menu'>) {
   const id = r.id
   const close = () => app.sheets.close()
   const done = (run: () => void) => () => (close(), run())
-  const facts = inputMenuFacts(m, r, others.length, asked)
+  const facts = inputMenuFacts(m, r, others.length, asked, desk)
   return (
     <SheetLayout
       {...inputMenuSheet(facts, {

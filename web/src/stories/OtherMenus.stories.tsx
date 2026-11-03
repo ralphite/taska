@@ -37,7 +37,7 @@ export const MessageMenu: Story = { ...both((desk) => opened(messageMenuSheet(no
 /** What you said's ⋯: Edit, Add details, Original words, Undo what the organizer did, Move, History, Put with another
  * item, a file's Take off, Delete (and what goes with it). */
 export const InputMenu: Story = {
-  ...both((desk) => opened(inputMenuSheet(inputMenuFacts(m, said, 2, {}), { edit: no, append: no, asSaid: no, undo: no, move: no, history: no, rescope: no, takeOff: no, remove: no }), desk, { look: desk ? { pop: true, at: AT_BUTTON } : {} }), 720),
+  ...both((desk) => opened(inputMenuSheet(inputMenuFacts(m, said, 2, {}, desk), { edit: no, append: no, asSaid: no, undo: no, move: no, history: no, rescope: no, takeOff: no, remove: no }), desk, { look: desk ? { pop: true, at: AT_BUTTON } : {} }), 720),
   name: 'What you said',
 }
 /** The sidebar's right-click on the project you are in. */
@@ -46,7 +46,7 @@ export const ProjectMenuOther: Story = { ...both((desk) => opened(projectMenuShe
 // ---- more states (T639)
 const plain = input({ id: 'r13', acked: true, text: 'Look at why the build takes so long.' })
 const inputMenu = (r: typeof said, other: number, asked: Record<string, number> = {}) => (desk: boolean) =>
-  opened(inputMenuSheet(inputMenuFacts(modelOf([item({ n: 4 }), item({ n: 12 })], [r]), r, other, asked), { edit: no, append: no, asSaid: no, undo: no, move: no, history: no, rescope: no, takeOff: no, remove: no }), desk, { look: desk ? { pop: true, at: AT_BUTTON } : {} })
+  opened(inputMenuSheet(inputMenuFacts(modelOf([item({ n: 4 }), item({ n: 12 })], [r]), r, other, asked, desk), { edit: no, append: no, asSaid: no, undo: no, move: no, history: no, rescope: no, takeOff: no, remove: no }), desk, { look: desk ? { pop: true, at: AT_BUTTON } : {} })
 /** a plain typed input with no other project: no Original words, Undo, History, files or Move */
 export const InputMenuPlain: Story = { ...both(inputMenu(plain, 0), 420), name: 'What you said: typed, nothing filed, no other project' }
 /** a file's Take off asking again */

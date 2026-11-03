@@ -24,7 +24,7 @@ export interface InputMenuEvents {
 
 export interface InputMenuFacts {
   r: Input
-  /** its voice notes' original words can be seen (their words were tidied) */
+  /** Original words for each voice note (the phone: the desktop shows them under the pointer) */
   tidy: boolean
   undo: { tip: string } | null
   move: boolean
