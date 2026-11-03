@@ -69,19 +69,19 @@ export interface Search {
 export const MISHEARD: Search = {
   words: 'where the expert loses my filter',
   marks: ['filter'],
-  found: [it(1), it(3), HOME21, it(14), it(17, 'rules'), SAID8, HOME4, DOC1],
+  found: [it(1), SAID8, DOC1, it(3), it(14), it(17, 'rules'), HOME21, HOME4],
 }
 export const RIGHT: Search = {
   words: 'where the export loses my filter',
   marks: ['export', 'filter'],
-  found: [it(1), it(3), HOME21, it(14), it(6), it(17, 'rules'), SAID8, HOME4, DOC1],
+  found: [it(1), SAID8, DOC1, it(3), it(14), it(6), it(17, 'rules'), HOME21, HOME4],
 }
 /** What you say more, the second time. */
 export const ADDED = ', only on the phone'
 export const MORE: Search = {
   words: RIGHT.words + ADDED,
   marks: ['export', 'filter', 'phone'],
-  found: [it(18), it(1), it(9), it(17, 'rules'), SAID12],
+  found: [it(18), SAID12, it(1), it(9), it(17, 'rules')],
 }
 /** What it finds for the words in the box (anything else typed: nothing). */
 export function searchOf(words: string): Search | null {

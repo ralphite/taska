@@ -8,10 +8,9 @@
 // The journeys
 // 1. Find something by saying it. Tap the magnifier: the search page opens and the box records at once. Say what to
 //    find; tap the up arrow. Taska writes your words out after you stop (nothing shows while you speak), puts them in
-//    the box and searches every project by what they mean: "Searching…", then the results, closest first; a row of
-//    kinds (All, Items, Inputs, Rules, Documents) shows only those it found. A result from another project shows that project's tile and name at the
-//    start of its last line, the same on every kind of row; no mark means the project you are in. (Not a section of
-//    their own: a section's head scrolls away, and it would push a close result to the bottom.)
+//    the box and searches every project by what they mean: "Searching…", then the results grouped by project (
+//    the one you are in first, then each other one, each under its tile and name, which stay at the top while its
+//    rows scroll), closest first in each; a row of kinds (All, Items, Inputs, Rules, Documents) filters them all.
 // 2. Say more. With the results showing, tap the mic in the box. Your words stay in the box and the results stay on
 //    the page while you speak. Tap the up arrow: what you added is put at the end of your words, lit, and it searches
 //    all of them again; the results change in place (faded while it searches, never blank).
@@ -43,10 +42,9 @@ import { spotsIn } from '../model/doubts'
 import { codeOf, type ProjectModel } from '../model/project'
 import { NO_FILTERS, parseRoute } from '../model/route'
 import type { Item } from '../model/types'
-import { Hit, ProjTile, SectionHead } from '../ui/bits'
-import { Icon, StateIcon } from '../ui/Icon'
-import { LINK_BTN, PRI_TEXT, PROJECT_TONES, TYPE_TEXT } from '../ui/tones'
-import { shownStatus } from '../model/items'
+import { Hit, ProjTile } from '../ui/bits'
+import { Icon } from '../ui/Icon'
+import { PROJECT_TONES } from '../ui/tones'
 import { Frame } from './Frames'
 import { T } from './fixtures'
 import { pageOf } from './itemPage'
@@ -260,52 +258,27 @@ const Foot = ({ keyboard = false, children }: { keyboard?: boolean; children: Re
 
 // ---------------------------------------------------------------- what it found
 
-/** Home's colour, as the sidebar gives it */
-const HOME_TONE = PROJECT_TONES[0]
 const drawWith = (words: string[]): DrawWith => ({ slug: 'shop', openN: null, selected: new Set(), words, desk: false, drafts: new Set(), head: undefined, seen: { since: T }, drag: { n: null, at: null }, heldHeight: () => 64 })
 
-/** Which project a result is in, where its row says what else it is (the start of its last line): another project's
- * tile and name, as the sidebar draws them; nothing for the project you are in. */
-const Away = () => (
-  <span className="flex items-center gap-1.5 font-semibold text-zinc-700 dark:text-zinc-200">
-    <ProjTile title={HOME.facts.title} tone={HOME_TONE} cls="size-4 rounded text-[9px]" />
-    {HOME.facts.title}
-  </span>
-)
-
-/** A row of what it found. An item or a rule of this project is the list's own row (with where the words were
- * found, when not in its title, as the list says it). Another project's item, a document or an input is a row like it, with its project
- * (when it is another) at the start of its last line. */
+/** A row of what it found: an item or a rule is the list's own row (with where the words were found, when not in
+ * its title, as the list says it); a document or an input, a row like it. Its project is its group's. */
 function FoundRow({ x, marks, onPick }: { x: Found; marks: string[]; onPick(x: Found): void }) {
   const m: ProjectModel = x.home ? HOME : SHOP
-  const one = x.code ? null : (m.byN.get(x.n) as Item)
-  if (one && !x.home) {
+  if (!x.code) {
+    const one = m.byN.get(x.n) as Item
     const w = drawWith(marks)
-    const facts = rowFacts(m, one, w)
-    return <ItemRow it={one} depth={0} band="" foldable={false} folded={false} facts={facts} look={rowLook(one, w)} on={{ ...listOn, open: () => onPick(x) }} />
+    return <ItemRow it={one} depth={0} band="" foldable={false} folded={false} facts={rowFacts(m, one, w)} look={rowLook(one, w)} on={{ ...listOn, open: () => onPick(x) }} />
   }
-  const meta = [
-    x.home ? <Away key="p" /> : null,
-    one ? (
-      one.type === 'rule' ? null : (
-        <span key="m" className={PRI_TEXT[one.pri]}>
-          {one.pri}
-        </span>
-      )
-    ) : (
-      <span key="m">{x.meta}</span>
-    ),
-  ].filter(Boolean)
   return (
     <article className="border-b border-zinc-100 dark:border-zinc-800/70">
       <button onClick={() => onPick(x)} data-found={x.key} className="flex w-full items-start gap-3 py-2.5 pr-3 pl-4 text-left">
-        {one ? <StateIcon {...shownStatus(one)} /> : <Icon n={x.kind === 'docs' ? 'doc' : 'newinput'} c="mt-px size-5 text-zinc-400 dark:text-zinc-500" />}
+        <Icon n={x.kind === 'docs' ? 'doc' : 'newinput'} c="mt-px size-5 text-zinc-400 dark:text-zinc-500" />
         <span className="min-w-0 flex-1">
           <span className="line-clamp-2 text-[15px] leading-snug font-medium">
-            <span className={`mr-1.5 font-mono text-[13px] font-bold ${one ? TYPE_TEXT[one.type] : 'text-zinc-500 dark:text-zinc-400'}`}>{one ? codeOf(m, one.n) : x.code}</span>
-            <Hit text={(one ? one.title : x.title) ?? ''} words={marks} />
+            <span className="mr-1.5 font-mono text-[13px] font-bold text-zinc-500 dark:text-zinc-400">{x.code}</span>
+            <Hit text={x.title ?? ''} words={marks} />
           </span>
-          <span className="mt-1 flex items-center gap-x-2.5 overflow-hidden text-xs font-medium whitespace-nowrap text-zinc-500 dark:text-zinc-400">{meta}</span>
+          <span className="mt-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{x.meta}</span>
         </span>
       </button>
     </article>
@@ -329,36 +302,32 @@ const Middle = ({ title, children }: { title: ReactNode; children?: ReactNode })
   </div>
 )
 
-const SHOWN = 3
+/** The projects, as the sidebar draws them: the one you are in first, then the others. */
+const GROUPS = [
+  { home: false, title: SHOP.facts.title, tone: PROJECT_TONES[1] },
+  { home: true, title: HOME.facts.title, tone: PROJECT_TONES[0] },
+]
 
-/** What it found: All, in groups (the closest few of each kind, then how many more), or one kind in full. Another
- * project's results are among the rest, in their place by how close they are; each row says its project. */
+/** What it found, by project (the one you are in first), each closest first; a kind chip shows only that kind. A
+ * project's head stays at the top while its rows scroll under it. */
 function Results({ s, kind, faded, a }: { s: Search; kind: Kind | 'all'; faded: boolean; a: Acts }) {
-  const of = (k: Kind) => s.found.filter((x) => x.kind === k)
-  const kinds = KINDS.filter(([k]) => of(k).length)
-  const rows = (list: Found[]) => list.map((x) => <FoundRow key={x.key} x={x} marks={s.marks} onPick={a.pick} />)
+  const shown = s.found.filter((x) => kind === 'all' || x.kind === kind)
   return (
     <div className={faded ? 'opacity-45 transition-opacity' : 'transition-opacity'}>
-      {kind === 'all' ? (
-        kinds.map(([k, label]) => {
-          const list = of(k)
-          return (
-            <section key={k} className="pt-2">
-              <div className="px-4">
-                <SectionHead text={label} />
-              </div>
-              {rows(list.slice(0, SHOWN))}
-              {list.length > SHOWN ? (
-                <button onClick={() => a.kind(k)} className={`${LINK_BTN} mx-2 my-1`}>
-                  Show {list.length - SHOWN} more
-                </button>
-              ) : null}
-            </section>
-          )
-        })
-      ) : (
-        <div className="pt-1">{rows(of(kind))}</div>
-      )}
+      {GROUPS.map((g) => {
+        const list = shown.filter((x) => !!x.home === g.home)
+        return list.length ? (
+          <section key={g.title}>
+            <h2 className="sticky top-0 z-20 flex h-10 items-center gap-2 border-b border-zinc-200 bg-zinc-50 px-4 text-[15px] font-semibold dark:border-zinc-800 dark:bg-zinc-900">
+              <ProjTile title={g.title} tone={g.tone} />
+              {g.title}
+            </h2>
+            {list.map((x) => (
+              <FoundRow key={x.key} x={x} marks={s.marks} onPick={a.pick} />
+            ))}
+          </section>
+        ) : null
+      })}
     </div>
   )
 }
