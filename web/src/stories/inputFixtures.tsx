@@ -30,15 +30,14 @@ export const ITEMS: Item[] = [
 /** One input in each state it can be in. */
 export const ONE = {
   waiting: input({ id: 'r23', t: at(2), text: 'The export button does nothing on the orders page.', files: [SHOT] }),
-  voice: input({ id: 'r22', t: at(6), text: 'Keep the filter, and the sort as well.', files: [VOICE] }),
+  voice: input({ id: 'r22', t: at(6), acked: true, touched: [12], text: 'Keep the filter, and the sort as well.', files: [VOICE], org: org('Noted on F012') }),
   transcribing: input({ id: 'r21', t: at(1), text: '', files: [VOICE], trWait: true }),
   organizing: input({ id: 'r20', t: at(1), text: 'The coupon box hides behind the keyboard.' }),
   made: input({ id: 'r19', t: at(20), acked: true, touched: [14], text: 'The coupon box hides behind the keyboard on the phone.', org: org('Created B014') }),
-  added: input({ id: 'r18', t: at(25), acked: true, touched: [12], text: 'It should keep the sort too, not only the filter.', org: org('Added to F012') }),
-  left: input({ id: 'r17', t: at(30), text: 'Look at why the build takes so long.', org: org('Left for your agent', { keep: true, changed: false }) }),
-  handled: input({ id: 'r16', t: at(35), acked: true, text: 'Look at why the build takes so long.', org: org('Left for your agent', { keep: true, changed: false }) }),
-  seen: input({ id: 'r15', t: at(40), acked: true, text: 'Use the staging key from the shared vault.' }),
-  failed: input({ id: 'r14', t: at(45), text: 'The coupon box is in the way.', org: org('B99 is not in this project', { ok: false, changed: false }) }),
+  added: input({ id: 'r18', t: at(25), acked: true, touched: [12], text: 'It should keep the sort too, not only the filter.', org: org('Noted on F012') }),
+  left: input({ id: 'r17', t: at(30), text: 'Look at why the build takes so long.', org: org('Left for your coding agent', { keep: true, changed: false }) }),
+  handled: input({ id: 'r16', t: at(35), acked: true, text: 'Look at why the build takes so long.', org: org('Left for your coding agent', { keep: true, changed: false }) }),
+  failed: input({ id: 'r14', t: at(45), text: 'The coupon box is in the way.', org: org('No changes needed · Some commands failed: err: B99 not found', { ok: false, changed: false }) }),
   undone: input({ id: 'r13', t: at(50), text: 'The coupon box hides behind the keyboard.', org: org('Created B015', { undone: true }) }),
   edited: input({
     id: 'r12',
@@ -46,7 +45,7 @@ export const ONE = {
     acked: true,
     touched: [12],
     text: 'The export should keep the filter and the sort I set.',
-    org: org('Added to F012'),
+    org: org('Noted on F012'),
     history: [{ text: 'The export should keep the filter I set.', t: at(55), mode: 'edit' }],
     updated: at(50),
   }),
@@ -54,7 +53,7 @@ export const ONE = {
   answer: input({ id: 'r10', t: at(65), acked: true, kind: 'answer', scope: 7, text: 'CSV and Excel.' }),
   /** a recording cancelled with Esc, kept with its words: no one's work until it is sent (B627) */
   cancelled: input({ id: 'r24', t: at(3), kind: 'cancelled', text: 'Maybe the export should keep the columns too.', files: [VOICE] }),
-  long: input({ id: 'r9', t: at(60 * 24), text: Array.from({ length: 8 }, (_, i) => `Step ${i + 1}: open the orders page, set a filter, export.`).join('\n') }),
+  long: input({ id: 'r9', t: at(60 * 24), acked: true, touched: [7], org: org('Created T007'), text: Array.from({ length: 8 }, (_, i) => `Step ${i + 1}: open the orders page, set a filter, export.`).join('\n') }),
 }
 
 /** A usual day's inputs, newest first by day: today's and yesterday's. */
@@ -62,7 +61,8 @@ export const DAY: Input[] = [ONE.waiting, ONE.voice, ONE.made, ONE.added, ONE.fa
 
 export interface Said {
   inputs?: Input[]
-  /** the organizer is on (and which input it is on now) */
+  /** the organizer is on (the default, as Taska is normally used; false: the story is the organizer off) and which
+   * input it is on now */
   organizer?: boolean
   busy?: string
   q?: string
@@ -82,7 +82,7 @@ export interface Said {
 }
 
 const title = (slug: string) => ({ 'mobile-app': 'Mobile app' })[slug] ?? slug
-const project = (s: Said, items = ITEMS) => modelOf(items, s.inputs ?? DAY, { organizer: { on: !!s.organizer, model: 'gemini-flash-latest', busy: s.busy ?? null } })
+const project = (s: Said, items = ITEMS) => modelOf(items, s.inputs ?? DAY, { organizer: { on: s.organizer ?? true, model: 'gemini-flash-latest', busy: s.busy ?? null } })
 const thumbs = (size: string) => (f: FileRef[]) => <Thumbs files={f} url={(x) => (x.endsWith('.png') ? PICTURE : '#' + x)} size={size} play={() => ({ playing: false, t: null })} tidy on={{ play() {}, words() {}, view() {} }} />
 const noInput: InputEvents = { goto() {}, more() {}, menu() {}, retry() {}, send() {}, draft() {}, moved() {}, ref() {}, picture() {}, outboxRetry() {}, outboxEdit() {}, end() {} }
 

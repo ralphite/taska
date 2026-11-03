@@ -63,8 +63,26 @@ export const PICTURE =
   'data:image/svg+xml,' +
   encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="80" height="60"><rect width="80" height="60" fill="#dbeafe"/><rect x="10" y="12" width="44" height="8" rx="2" fill="#60a5fa"/><rect x="10" y="28" width="60" height="6" rx="2" fill="#93c5fd"/><rect x="10" y="40" width="36" height="6" rx="2" fill="#93c5fd"/></svg>')
 
+/** A project's facts as Taska is normally used: the organizer on, a coding agent around and waiting for work,
+ * work waiting for it. A story of another setting says so in its name (…: organizer off). */
 export function projectFacts(f: Partial<ProjectFacts> = {}): ProjectFacts {
-  return { slug: 'taska', title: 'Taska', width: 3, file: '', organizer: { on: false, model: 'gemini-flash-latest', busy: null }, agents: [], work: false, agentsVersion: 0, undo: [], deletedInputs: [], deleted: [], base: '', key: '', remote: '', ...f }
+  return {
+    slug: 'taska',
+    title: 'Taska',
+    width: 3,
+    file: '',
+    organizer: { on: true, model: 'gemini-flash-latest', busy: null },
+    agents: [{ name: 'claude-code', t: Date.parse(T), waiting: true }],
+    work: true,
+    agentsVersion: 0,
+    undo: [],
+    deletedInputs: [],
+    deleted: [],
+    base: '',
+    key: '',
+    remote: '',
+    ...f,
+  }
 }
 
 /** A project's model made of these items and inputs, as the page would have it. */

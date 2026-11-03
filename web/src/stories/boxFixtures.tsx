@@ -42,6 +42,7 @@ export interface Here {
   /** a recording made for another draft (its key) */
   recordingFor?: string
   files?: DraftFile[]
+  /** the organizer is on (the default, as Taska is normally used); false: the story is the organizer off */
   organizer?: boolean
   /** the project's inputs (default: one voice note with words) */
   inputs?: Input[]
@@ -53,7 +54,7 @@ export interface Here {
   doubts?: ReactNode
 }
 
-export const boxProject = (inputs: Input[] = [VOICE_INPUT], organizer = false, docItemGone = false) =>
+export const boxProject = (inputs: Input[] = [VOICE_INPUT], organizer = true, docItemGone = false) =>
   modelOf([item({ n: 12 })], inputs, { organizer: { on: organizer, model: 'gemini-flash-latest', busy: null } }, [docItemGone ? { ...PLAN, n: 99 } : PLAN, WEB])
 
 export function boxAt(h: Here, desk: boolean, extra: Partial<ComposerProps> = {}) {

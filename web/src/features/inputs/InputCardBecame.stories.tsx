@@ -11,6 +11,6 @@ const note = (msg: string, f = {}) => ({ ok: true, msg, t: '', keep: false, chan
 /** Made into an item: what became of it under the words (the phone), beside them (the desktop). */
 export const MadeAnItem: Story = { ...one(ONE.made), name: 'Made an item' }
 export const AddedToAnItem: Story = { ...one(ONE.added), name: 'Added to an item' }
-export const SeveralItems: Story = { ...one(input({ id: 'r33', t: T, acked: true, touched: [12, 14, 7], text: 'Three things: the filter, the coupon box, and which formats.', org: note('Created B014; added to F012 and T007') })), name: 'Made several items' }
-export const NoteBesideItems: Story = { ...one(input({ id: 'r30', t: T, acked: true, touched: [14], text: 'The coupon box hides behind the keyboard; and should the sort stay?', org: note('Created B014 · asked about the sort') })), name: "The organizer's note beside the items" }
-export const NoteNoItems: Story = { ...one(input({ id: 'r31', t: T, acked: true, text: 'Thanks, that looks right.', org: note('Nothing to file: a thank-you', { changed: false }) })), name: "The organizer's note, no item changed" }
+export const SeveralItems: Story = { ...one(input({ id: 'r33', t: T, acked: true, touched: [12, 14, 7], text: 'Three things: the filter, the coupon box, and which formats.', org: note('Created B014 · Noted on F012 · Noted on T007') })), name: 'Made several items' }
+export const NoteBesideItems: Story = { ...one(input({ id: 'r30', t: T, acked: true, touched: [14], text: 'The coupon box hides behind the keyboard; say so in the plan too.', org: note('Created B014 · Commented on D1') })), name: "The organizer's note beside the items" }
+export const NoteNoItems: Story = { ...one(input({ id: 'r31', t: T, acked: true, text: 'Thanks, that looks right.', org: note('No changes needed', { changed: false }) })), name: "The organizer's note, no item changed" }

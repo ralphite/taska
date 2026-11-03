@@ -15,7 +15,6 @@ export const OnItsWay: Story = {
     <Frames desk={false} phoneWidth={393} height={620}>
       {() =>
         inputsOf({
-          organizer: true,
           away: 0,
           outbox: [
             out({ q: 'q1', text: 'This one Taska refused', state: 'failed', net: false, t: 1 }),
@@ -32,7 +31,7 @@ export const OnItsWayWithAPicture: Story = {
   name: 'On its way, with a picture',
   render: () => (
     <Frames desk={false} phoneWidth={393} height={420}>
-      {() => inputsOf({ organizer: true, outbox: [out({ q: 'q1', text: 'The button here', files: [{ key: 'p', f: '', name: 'shot.png', mime: 'image/png', preview: PICTURE, uploading: true }] })] })}
+      {() => inputsOf({ outbox: [out({ q: 'q1', text: 'The button here', files: [{ key: 'p', f: '', name: 'shot.png', mime: 'image/png', preview: PICTURE, uploading: true }] })] })}
     </Frames>
   ),
 }

@@ -102,7 +102,7 @@ export function listOf(items: Item[], tab: Tab, q: Partial<ListQuery>, desk: boo
             h.top
           )
         }
-        empty={why ? <EmptyList why={why} status={query.status} organizerOn={false} onReset={() => {}} onConnect={() => {}} hints={hints(0)} /> : null}
+        empty={why ? <EmptyList why={why} status={query.status} organizerOn={m.facts.organizer.on} onReset={() => {}} onConnect={() => {}} hints={hints(0)} /> : null}
         bottom={words.length && drawn.length ? <div className="flex flex-col py-4">{hints(drawn.length)}</div> : null}
         on={{ ...listOn, ...h.on }}
       />

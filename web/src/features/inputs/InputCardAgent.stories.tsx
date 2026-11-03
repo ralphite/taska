@@ -12,5 +12,5 @@ type Story = StoryObj
 export const LeftForYourAgent: Story = { ...one(ONE.left), name: 'Left for an agent' }
 /** Left for your agent, and your agent has taken it. */
 export const HandledByYourAgent: Story = { ...one(ONE.handled), name: 'Handled by an agent' }
-/** No organizer's word on it: an agent changed these items for it. */
-export const ChangedByAnAgent: Story = { ...one(input({ id: 'r32', t: T, acked: true, touched: [12], text: 'Keep the sort too.' })), name: 'Items an agent changed for it' }
+/** Left for your agent, which changed an item for it. */
+export const ChangedByAnAgent: Story = { ...one(input({ id: 'r32', t: T, acked: true, touched: [12], text: 'Keep the sort too.', org: { ok: true, msg: 'Left for your coding agent', t: '', keep: true, changed: false, undone: false } })), name: 'Items an agent changed for it' }

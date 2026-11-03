@@ -12,16 +12,16 @@ type Story = StoryObj
 const one = (s: Said): Story => ({ render: () => <Frames desk={false} phoneWidth={393} height={852}>{() => inputsOf(s)}</Frames> })
 
 /** Everything you said, by day, with where each stands and what became of it. */
-export const InputsTab: Story = { ...one({ organizer: true }), name: 'All inputs' }
+export const InputsTab: Story = { ...one({}), name: 'All inputs' }
 /** A search: the words lit where they are, and how many the other tabs have. */
-export const InputsTabSearch: Story = { ...one({ organizer: true, q: 'coupon' }), name: 'Search' }
+export const InputsTabSearch: Story = { ...one({ q: 'coupon' }), name: 'Search' }
 /** Just sent, Taska not answering yet: on its way, first. */
-export const InputsTabWithOneOnItsWay: Story = { ...one({ organizer: true, outbox: [out({ text: 'Also the sort, please.' })] }), name: 'One on its way' }
+export const InputsTabWithOneOnItsWay: Story = { ...one({ outbox: [out({ text: 'Also the sort, please.' })] }), name: 'One on its way' }
 export const InputsTabEmpty: Story = { ...one({ inputs: [] }), name: 'Empty' }
 // ---- more states (B636)
-export const SearchNothingFound: Story = { ...one({ organizer: true, q: 'zebra' }), name: 'Search, nothing found' }
+export const SearchNothingFound: Story = { ...one({ q: 'zebra' }), name: 'Search, nothing found' }
 // ---- more states (T639)
 /** the first input of a project still on its way: only its row, no "No inputs yet." */
 export const EmptyOneOnItsWay: Story = { name: 'Empty, one on its way', render: () => <Frames desk={false} phoneWidth={393} height={360}>{() => inputsOf({ inputs: [], outbox: [out({ q: 'a', text: 'Buy milk on the way home' })] })}</Frames> }
 /** a voice note being recorded into a new input: its row comes first, with how long so far (B627) */
-export const InputsTabRecording: Story = { ...one({ organizer: true, recording: '0:12' }), name: 'A voice note being recorded' }
+export const InputsTabRecording: Story = { ...one({ recording: '0:12' }), name: 'A voice note being recorded' }

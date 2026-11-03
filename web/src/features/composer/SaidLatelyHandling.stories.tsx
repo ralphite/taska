@@ -9,10 +9,10 @@ export default { title: 'Components/Inputs/New input page/Latest inputs/One on i
 type Story = StoryObj
 
 const list = (s: Parameters<typeof saidOf>[0]): Story => ({ render: () => <Frames phone={false} deskWidth={1024}>{() => <div className="p-6">{saidOf(s)}</div>}</Frames> })
-export const LatestInputsRecording: Story = { ...list({ organizer: true, inputs: DAY, recording: '0:12' }), name: 'A voice note being recorded comes first' }
+export const LatestInputsRecording: Story = { ...list({ inputs: DAY, recording: '0:12' }), name: 'A voice note being recorded comes first' }
 export const LatestInputsJustSentUndo: Story = { ...list({ inputs: DAY, justSent: [DAY[0].id] }), name: 'Just sent: Undo' }
 export const LatestInputsNotSentSending: Story = { ...list({ inputs: DAY, outbox: [out({ q: 'a', text: 'Buy milk on the way home', state: 'failed' }), out({ q: 'b', text: 'And bread' })], justSent: ['b'] }), name: 'Not sent, and sending with Undo' }
-export const LatestInputsTranscribingAndHandled: Story = { ...list({ organizer: true, inputs: [ONE.transcribing, ONE.handled, ONE.made] }), name: 'A voice note being written out, one handled by the agent' }
+export const LatestInputsTranscribingAndHandled: Story = { ...list({ inputs: [ONE.transcribing, ONE.handled, ONE.made] }), name: 'A voice note being written out, one handled by the agent' }
 /** A recording cancelled with Esc: kept, its voice note playable, sent to no one until Send. */
-export const LatestInputsCancelled: Story = { ...list({ organizer: true, inputs: [ONE.cancelled, ...DAY] }), name: 'A cancelled recording: Send' }
-export const LatestInputsDraftOpenedOrganizing: Story = { ...list({ organizer: true, busy: DAY[0].id, inputs: DAY, editDrafts: [DAY[1].id], opened: [ONE.long.id] }), name: 'Organizing, an edit not saved, a long one opened' }
+export const LatestInputsCancelled: Story = { ...list({ inputs: [ONE.cancelled, ...DAY] }), name: 'A cancelled recording: Send' }
+export const LatestInputsDraftOpenedOrganizing: Story = { ...list({ busy: DAY[0].id, inputs: DAY, editDrafts: [DAY[1].id], opened: [ONE.long.id] }), name: 'Organizing, an edit not saved, a long one opened' }

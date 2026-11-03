@@ -7,4 +7,4 @@ import { cardOf, saidRowOf, type Said } from './inputFixtures'
 
 type Story = StoryObj
 
-export const one = (r: Input, s: Said = { organizer: true }): Story => ({ render: () => <Frames deskWidth={760}>{(layout) => (layout === 'desk' ? saidRowOf(r, s) : cardOf(r, s))}</Frames> })
+export const one = (r: Input, s: Said = {}): Story => ({ render: () => <Frames deskWidth={760}>{(layout) => (layout === 'desk' ? saidRowOf(r, s) : cardOf(r, s))}</Frames> })

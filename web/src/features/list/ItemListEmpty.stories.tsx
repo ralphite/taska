@@ -14,7 +14,8 @@ export const EmptyProject: Story = { ...view('items', { status: 'all' }, []), na
 export const AnEmptyView: Story = { ...view('items', { status: 'open' }, [item({ n: 1, status: 'done', title: 'Book the flights' }), item({ n: 2, status: 'review', title: 'Plan the trip' })]), name: 'A view with nothing in it (Open)' }
 export const SmallProject: Story = { ...view('items', { status: 'all' }, [item({ n: 1, title: 'Plan the trip' }), item({ n: 2, status: 'done', title: 'Book the flights' })]), name: 'A small project' }
 
-/** Before the project's data comes; and an empty list, for each reason it can be empty. */
+/** Before the project's data comes; and an empty list, for each reason it can be empty (an empty project twice: the
+ * organizer on, then off). */
 export const LoadingAndEveryEmptyList: Story = {
   name: 'Loading, and every empty list',
   render: () => (
@@ -26,8 +27,8 @@ export const LoadingAndEveryEmptyList: Story = {
           </div>
           {(
             [
-              ['no-items', 'wait', false],
               ['no-items', 'wait', true],
+              ['no-items', 'wait', false],
               ['none', 'wait', false],
               ['no-match', 'wait', false],
               ['no-match-rules', 'wait', false],

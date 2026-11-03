@@ -8,6 +8,6 @@ type Story = StoryObj
 
 /** A long one: folded to a few lines, More opens it. */
 export const Long: Story = { ...one(ONE.long), name: 'Long' }
-export const LongOpened: Story = { ...one(ONE.long, { organizer: true, opened: ['r9'] }), name: 'Long, opened' }
+export const LongOpened: Story = { ...one(ONE.long, { opened: ['r9'] }), name: 'Long, opened' }
 // ---- more states (B636)
-export const JumpedToAnInput: Story = { ...one(ONE.made, { organizer: true, lit: ONE.made.id }), name: 'Jumped to an input' }
+export const JumpedToAnInput: Story = { ...one(ONE.made, { lit: ONE.made.id }), name: 'Jumped to an input' }

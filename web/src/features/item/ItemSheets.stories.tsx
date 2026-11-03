@@ -52,7 +52,7 @@ export const WhatAgentsSeeLoading: Story = {
 // ---- more states (T639): what the organizer made of each input, and an input that is only a voice note
 const filed = [
   input({ id: 'r12', t: at(90), acked: true, touched: [12], text: 'The export should keep the filter I set.', org: { ok: true, msg: 'Created F012', t: '', keep: false, changed: true, undone: false } }),
-  input({ id: 'r15', t: at(30), acked: true, touched: [12], text: '', files: [{ f: 'f4-voice_0-07.webm', name: 'voice_0-07.webm', mime: 'audio/webm' }], org: { ok: true, msg: 'Added to F012', t: '', keep: false, changed: true, undone: false } }),
+  input({ id: 'r15', t: at(30), acked: true, touched: [12], text: '', files: [{ f: 'f4-voice_0-07.webm', name: 'voice_0-07.webm', mime: 'audio/webm' }], org: { ok: true, msg: 'Noted on F012', t: '', keep: false, changed: true, undone: false } }),
 ]
 const mf = modelOf([item({ n: 12, srcs: ['r12', 'r15'] })], filed)
 export const SourcesFiled: Story = {
