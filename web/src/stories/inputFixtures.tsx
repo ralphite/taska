@@ -79,6 +79,10 @@ export interface Said {
   litStill?: boolean
   /** a voice note being recorded into a new input: how long so far */
   recording?: string
+  /** more being said into this input on its own line (its Voice), and how long so far */
+  adding?: { id: string; clock: string }
+  /** stopped there: on its way to these inputs */
+  addingUp?: string[]
 }
 
 const title = (slug: string) => ({ 'mobile-app': 'Mobile app' })[slug] ?? slug
@@ -123,14 +127,14 @@ export function saidRowOf(r: Input, s: Said = {}) {
   )
 }
 
-const noSaid: SaidEvents = { goto() {}, more() {}, append() {}, draft() {}, menu() {}, undoSend() {}, retry() {}, send() {}, outboxRetry() {}, outboxEdit() {}, query() {}, loadMore() {}, moved() {} }
+const noSaid: SaidEvents = { goto() {}, more() {}, append() {}, voice() {}, draft() {}, menu() {}, undoSend() {}, retry() {}, send() {}, outboxRetry() {}, outboxEdit() {}, query() {}, loadMore() {}, moved() {} }
 
 /** What you said lately under the New input page's box (the desktop), as the page draws it. */
 export function saidOf(s: Said = {}) {
   const m = project(s)
   const words = searchWords(s.q ?? '')
   const drafts = Object.fromEntries((s.editDrafts ?? []).map((id) => [draftKey({ kind: 'amend', mode: 'edit', id }), 'my edit']))
-  const said = saidRows(m, { words, upTo: 30, opened: new Set(s.opened), justSent: (s.justSent ?? []).map((rid) => ({ rid })), drafts, mode: null, title })
+  const said = saidRows(m, { words, upTo: 30, opened: new Set(s.opened), justSent: (s.justSent ?? []).map((rid) => ({ rid })), drafts, mode: null, title, adding: new Set(s.addingUp) })
   return (
     <div className="mx-auto mt-8 max-w-[42rem]">
       <SaidLately
@@ -143,6 +147,7 @@ export function saidOf(s: Said = {}) {
         words={words}
         files={thumbs('size-16')}
         recording={s.recording ?? null}
+        adding={s.adding ?? null}
         on={noSaid}
       />
     </div>

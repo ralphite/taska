@@ -1,9 +1,9 @@
 // One input as every list of inputs draws it (B629), words first, no boxes or bubbles: a line with its number and its
 // day and time (a draft of yours on it, its buttons at the end), its words (a long one: four lines fading, More), its
 // pictures and voice note, and what became of it in a line of 13px under the words, on the phone and the desktop
-// alike (F659). Its buttons: the phone's ⋯ (Add more, Edit and the rest are in it); the
-// desktop's Add more and ⋯, under the pointer only (or the keys), taking no room. Undo, just after sending, always
-// shows. What is still on its way, and a voice note being recorded, are drawn as lines of the same shape. Props only.
+// alike (F659). Its buttons: the phone's ⋯ (Add more, Edit and the rest are in it); the desktop's Comment, Voice and
+// ⋯, under the pointer only (or the keys), taking no room (F657); Voice records more to add right there, red with how
+// long so far, and shows until pressed again. Undo, just after sending, always shows. What is still on its way, and a voice note being recorded, are drawn as lines of the same shape. Props only.
 
 import type { ReactNode, Ref } from 'react'
 import { BECAME_WORD as W, type Became, type InputLine, type ItemRef } from '../model/became'
@@ -24,8 +24,10 @@ export interface InputRowEvents {
   moved(href: string): void
   /** the draft of an edit, or of more to add, written on */
   draft(id: string, mode: 'edit' | 'append'): void
-  /** the desktop's Add more (the phone has it in ⋯) */
+  /** the desktop's Comment: words to add, written in the box (the phone has Add more in ⋯) */
   append?(id: string): void
+  /** the desktop's Voice: more to add, said; pressed again while it records, it stops and is added */
+  voice?(id: string): void
   undoSend?(id: string): void
 }
 
@@ -41,6 +43,10 @@ const BTN =
 /** Undo, just after sending: blue, as every other thing to do here (not the grey of the row's buttons) */
 const UNDO =
   'flex h-7 shrink-0 items-center gap-1 rounded-md px-1.5 text-[13px] font-semibold text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10'
+/** an icon alone in the row's buttons */
+const ICON_BTN = `${BTN} w-7 justify-center px-0`
+/** recording: red, as the mic beside a document's paragraph while it records, with how long so far */
+const REC_BTN = 'flex h-7 shrink-0 items-center gap-1 rounded-md bg-red-600 px-1.5 font-mono text-[13px] font-medium text-white tabular-nums ring-1 ring-red-700 hover:bg-red-700'
 /** under the pointer only on the desktop (or while the keys are in the row) */
 const HOVER = 'lg:invisible lg:group-focus-within/row:visible lg:group-hover/row:visible'
 const BECAME = 'mt-1.5 min-w-0 text-[13px] leading-5'
@@ -169,7 +175,7 @@ function Words({ x, text, on }: { x: InputLine; text(cut: boolean): ReactNode; o
   )
 }
 
-export function InputRow({ x, words, text, files, lit = false, undo = false, rowRef, on }: {
+export function InputRow({ x, words, text, files, lit = false, undo = false, rec = null, rowRef, on }: {
   x: InputLine
   /** the searched words, marked in its number */
   words: readonly string[]
@@ -178,6 +184,8 @@ export function InputRow({ x, words, text, files, lit = false, undo = false, row
   lit?: boolean
   /** just sent: Undo */
   undo?: boolean
+  /** more to add being recorded here (Voice): how long so far */
+  rec?: string | null
   rowRef?: Ref<HTMLElement>
   on: InputRowEvents
 }) {
@@ -202,13 +210,24 @@ export function InputRow({ x, words, text, files, lit = false, undo = false, row
           <span className="-my-1.5 -mr-1.5 ml-auto flex shrink-0 items-center">
             {moved ? null : (
               <>
-                {on.append ? (
-                  <button onClick={() => on.append?.(r.id)} className={`${BTN} hidden lg:flex ${HOVER}`}>
-                    <Icon n="plus" c="size-3.5" sw="2" />
-                    Add more
+                {on.append && !rec ? (
+                  <button title="Comment" aria-label={`Comment on ${x.code}`} onClick={() => on.append?.(r.id)} className={`${ICON_BTN} hidden lg:flex ${HOVER}`}>
+                    <Icon n="comment" c="size-4" />
                   </button>
                 ) : null}
-                <button title="More" aria-label={`More for ${x.code}`} onClick={(e) => on.menu(r.id, e.currentTarget)} className={`${BTN} w-7 justify-center px-0 ${HOVER}`}>
+                {on.voice ? (
+                  rec ? (
+                    <button title="Stop" aria-label={`Stop and add to ${x.code}`} onClick={() => on.voice?.(r.id)} className={`${REC_BTN} hidden lg:flex`}>
+                      <Icon n="stop" c="size-4" />
+                      {rec}
+                    </button>
+                  ) : (
+                    <button title="Voice" aria-label={`Voice for ${x.code}`} onClick={() => on.voice?.(r.id)} className={`${ICON_BTN} hidden lg:flex ${HOVER}`}>
+                      <Icon n="mic" c="size-4" />
+                    </button>
+                  )
+                ) : null}
+                <button title="More" aria-label={`More for ${x.code}`} onClick={(e) => on.menu(r.id, e.currentTarget)} className={`${ICON_BTN} ${HOVER}`}>
                   <Icon n="more" c="size-4" />
                 </button>
               </>

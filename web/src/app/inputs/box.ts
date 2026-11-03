@@ -203,11 +203,25 @@ export class Box {
     return true
   }
 
+  /** More to add to input `id` that is not in the box (a voice note said on its own line, F657): added as Add more
+   * adds, the box left as it is; the line says it is on its way meanwhile. -> anything went */
+  appendFrom(slug: string, m: ProjectModel | null, id: string): boolean {
+    const r = m?.byId.get(id)
+    if (!r || r.moved) return false
+    const mode = { kind: 'amend', id, mode: 'append', v: r.v || 0, base: r.text } as const
+    const key = draftKey(mode)
+    const text = this.text(slug, key).trim()
+    const files = this.d.store.getState().files[key] || []
+    if (!text && !files.length) return false
+    if (files.some((f) => f.uploading)) return this.amendWhenUp(slug, mode, key, true)
+    return this.amend(slug, m, mode, key, text)
+  }
+
   /** Save the edit once the box's files for it are up (the store says so when each upload ends). -> it will go */
-  private amendWhenUp(slug: string, mode: Extract<BoxMode, { kind: 'amend' }>, key: DraftKey): boolean {
+  private amendWhenUp(slug: string, mode: Extract<BoxMode, { kind: 'amend' }>, key: DraftKey, quiet = false): boolean {
     if (this.waitingUp.has(key)) return true
     this.waitingUp.add(key)
-    this.d.toasts.show(`Saving ${inputCode(mode.id)} once the upload ends`)
+    if (!quiet) this.d.toasts.show(`Saving ${inputCode(mode.id)} once the upload ends`)
     const stop = this.d.store.subscribe((s) => {
       const files = s.files[key] || []
       if (files.some((f) => f.uploading) || !this.waitingUp.has(key)) return
@@ -224,7 +238,8 @@ export class Box {
     const st = this.d.store.getState()
     const drafts = st.takeFiles(key)
     this.write(slug, key, '')
-    st.setMode(null)
+    // the box was writing this (it may write something else by now: it goes on with that)
+    if (st.mode?.kind === 'amend' && st.mode.id === mode.id && st.mode.mode === mode.mode) st.setMode(null)
     const r = m?.byId.get(mode.id)
     const now = r ? (mode.mode === 'edit' ? text : r.text.endsWith(text) ? r.text : [r.text, text].filter(Boolean).join('\n\n')) : text
     this.d.toasts.show(mode.mode === 'edit' ? `${inputCode(mode.id)} updated` : `Added to ${inputCode(mode.id)}`)

@@ -193,3 +193,35 @@ test('T529 #24: on the desktop New input page, words selected in a voice note un
   await fix(page).click()
   await expect(boxLine(page)).toContainText('Correct \u201cexport\u201d')
 })
+
+test('F657: a line\u2019s Voice records right there and adds the note to that input as Add more does; Esc lets it go', async ({
+  page,
+  request,
+}) => {
+  test.skip(!isDesk(page), 'the New input page with its list under the box is the desktop\u2019s')
+  const p = await project(request, LOOP)
+  const said = await p.op({ op: 'input', text: 'Buy milk for the office' })
+  const id = said.res[0].split(' ')[1]
+  await page.goto(p.url + 'new')
+  const row = page.locator('section[aria-label="Latest inputs"] article').filter({ hasText: 'Buy milk for the office' })
+  await row.hover()
+  await expect(row.getByRole('button', { name: /^Comment on / })).toBeVisible()
+  // Esc: nothing is added
+  await row.getByRole('button', { name: /^Voice for / }).click()
+  await expect(row.getByRole('button', { name: /^Stop and add to / })).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(row.getByRole('button', { name: /^Stop and add to / })).toHaveCount(0)
+  // recorded and stopped there: it stays while the pointer is elsewhere, and the note lands on that input
+  await row.hover()
+  await row.getByRole('button', { name: /^Voice for / }).click()
+  const stop = row.getByRole('button', { name: /^Stop and add to / })
+  await page.mouse.move(5, 5)
+  await expect(stop).toBeVisible()
+  await expect(stop).toContainText('0:01')
+  await stop.click()
+  await expect.poll(() => p.read(id), { timeout: 15000 }).toMatch(/files: \S*voice_0-\d\d\.webm/)
+  expect((await p.read(id)).match(/voice_/g)).toHaveLength(1) // the note let go with Esc is not there
+  await expect(stop).toHaveCount(0)
+  await expect(field(page)).toHaveValue('')
+})
+

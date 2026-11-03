@@ -1,6 +1,7 @@
 // Under New input on the desktop: every input, the latest first (more comes as you scroll), each as the line every
 // list of inputs draws (its number and when, its words, its files, what became of it under them), Undo on what you
-// just sent; what is still on its way, and a voice note being recorded, on top. A search of its own. Props only.
+// just sent; what is still on its way, and a voice note being recorded, on top; more being said into one of them, on
+// its own line (F657). A search of its own. Props only.
 
 import { useEffect, useRef, type ReactNode } from 'react'
 import type { SaidInput, SaidOutgoing } from '../../model/saidLately'
@@ -13,7 +14,10 @@ export interface SaidEvents {
   goto(n: number): void
   /** a long one opened, or closed again */
   more(id: string): void
+  /** Comment: words to add to it, in the box */
   append(id: string): void
+  /** Voice: more to add to it, recorded there; again, it stops and is added */
+  voice(id: string): void
   /** the draft of an edit, or of details to add, written on */
   draft(id: string, mode: 'edit' | 'append'): void
   menu(id: string, from: HTMLElement): void
@@ -49,8 +53,8 @@ function Said({ text, words, cut }: { text: string; words: string[]; cut: boolea
 }
 
 /** One input as the list draws it: its words as they were said, the searched ones marked. */
-export function SaidRow({ x, words, files, on }: { x: SaidInput; words: string[]; files: ReactNode; on: SaidEvents }) {
-  return <InputRow x={x} words={words} undo={x.canUndoSend} text={(cut) => <Said text={x.r.text} words={words} cut={cut} />} files={files} on={on} />
+export function SaidRow({ x, words, files, rec = null, on }: { x: SaidInput; words: string[]; files: ReactNode; /** more being said into it: how long so far */ rec?: string | null; on: SaidEvents }) {
+  return <InputRow x={x} words={words} undo={x.canUndoSend} rec={rec} text={(cut) => <Said text={x.r.text} words={words} cut={cut} />} files={files} on={on} />
 }
 
 /** What can be done about one on its way: Undo just after sending, Retry when Taska said no, Edit when not sent. */
@@ -71,6 +75,7 @@ export function SaidLately({
   draft,
   files,
   recording = null,
+  adding = null,
   on,
 }: {
   /** what the heading counts */
@@ -87,6 +92,8 @@ export function SaidLately({
   files(f: FileRef[], gid: string): ReactNode
   /** a voice note being recorded into a new input: how long so far (it shows first, B627) */
   recording?: string | null
+  /** more being said into one of them (its Voice): which, and how long so far */
+  adding?: { id: string; clock: string } | null
   on: SaidEvents
 }) {
   const end = useRef<HTMLDivElement>(null)
@@ -125,7 +132,7 @@ export function SaidLately({
             <OutgoingRow key={o.q} text={o.text} state={o.state} bad={o.failed && !o.net} acts={outgoingActs(o, on)} />
           ))}
           {rows.map((x) => (
-            <SaidRow key={x.r.id} x={x} words={words} files={x.r.files.length ? files(x.r.files, 'cl' + x.r.id) : null} on={on} />
+            <SaidRow key={x.r.id} x={x} words={words} files={x.r.files.length ? files(x.r.files, 'cl' + x.r.id) : null} rec={adding?.id === x.r.id ? adding.clock : null} on={on} />
           ))}
           {more ? (
             <div ref={end} className="flex h-16 items-center text-sm text-zinc-400 dark:text-zinc-500">

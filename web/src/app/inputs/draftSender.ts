@@ -1,6 +1,6 @@
 // A draft sent from wherever you are (a voice note stopped with Send): to what it is written to. A document's box:
 // its voice comments, or a comment; the box shown now: sent as the box sends; another item's or the new input's: a
-// reply to that item, or a new input.
+// reply to that item, or a new input; more to add to an input (said on its own line), added to it as Add more adds.
 
 import { draftTarget, type DraftKey } from '../../model/draftTarget'
 import type { ProjectModel } from '../../model/project'
@@ -28,6 +28,7 @@ export class DraftSender {
     if (t.kind === 'doc') return void this.d.docVoice().send(slug, t.d, key)
     const scope = t.kind === 'reply' ? t.code : null
     if (key === this.d.boxStore.getState().shown.key) return void this.d.box.send(slug, this.d.model(slug), scope)
+    if (t.kind === 'amend' && t.mode === 'append') return void this.d.box.appendFrom(slug, this.d.model(slug), t.id)
     const { text, files } = this.d.box.take(slug, key)
     this.d.inputs.push({ slug, text, scope, files: files.map(({ key: k, ...f }) => ({ ...f, key: k })) })
   }

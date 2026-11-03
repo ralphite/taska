@@ -2,7 +2,8 @@
 // automatic gain), the note put in the draft it was started in (wherever you are when it stops), uploaded at once and
 // its words worked out in the background; they go where it was recorded in the draft when they come. Stop and send
 // sends it at once (sending waits only for the upload; its words join the input when they come). Esc on a new
-// input's note keeps it in the inputs as cancelled, sent to no one, to listen to and send later (B627).
+// input's note keeps it in the inputs as cancelled, sent to no one, to listen to and send later (B627). An input's own
+// Voice records more to add to it, and stopped there it is added as Add more adds (F657).
 
 import { Refused } from '../../api/http'
 import { canRecord, micTrouble, openMic } from './mic'
@@ -18,7 +19,7 @@ import type { Box } from '../inputs/box'
 import type { Fields } from '../page/fields'
 import { Pauses } from '../inputs/pauses'
 import type { Toasts } from '../page/toasts'
-import { draftName, draftTarget, keyOf, NEW_DRAFT, type DraftKey } from '../../model/draftTarget'
+import { draftKey, draftName, draftTarget, keyOf, NEW_DRAFT, type DraftKey } from '../../model/draftTarget'
 import type { Outgoing } from '../../model/outgoing'
 
 export interface VoiceDeps {
@@ -48,6 +49,12 @@ export interface VoiceDeps {
   pauses: Pauses
 }
 
+
+/** More to add to an input (its own Voice records into it). */
+const isAdding = (key: DraftKey) => {
+  const t = draftTarget(key)
+  return t.kind === 'amend' && t.mode === 'append'
+}
 
 /** How loud a moment of sound is, 0 to 1, from its samples as bytes (128 = silence). */
 export function levelOf(buf: Uint8Array): number {
@@ -124,6 +131,17 @@ export class Voice {
     this.tick = window.setInterval(() => this.d.store.getState().tick(Date.now() - this.t0, meter()), 100)
   }
 
+  /** An input's own Voice (F657): more to add to input `id`, recorded at once; pressed again it stops and is added
+   * there as Add more adds. One recording at a time: one going on elsewhere stops first, as its own Stop would (one
+   * for another input is added there; any other goes into its draft). */
+  async addTo(slug: string, id: string, scope: string | null): Promise<void> {
+    const key = draftKey({ kind: 'amend', mode: 'append', id })
+    const r = this.d.store.getState().rec
+    if (r && r.slug === slug && r.key === key) return this.finish(true)
+    if (r) await this.finish(isAdding(r.key) && r.key !== this.d.boxKey())
+    await this.start(slug, key, scope, 'main')
+  }
+
   private stopped(): Promise<Blob | null> {
     return new Promise((done) => {
       const rec = this.rec
@@ -174,7 +192,8 @@ export class Voice {
     if (key !== this.d.boxKey()) {
       // you moved on while recording: the note is in the box where you started it
       const to = draftTarget(key).kind
-      if (andSend && (to === 'new' || to === 'reply')) {
+      if (andSend && isAdding(key)) this.d.send(slug, key) // added to its input, which says so
+      else if (andSend && (to === 'new' || to === 'reply')) {
         this.d.send(slug, key)
         this.d.toasts.show(`Sent to ${draftName(key)}`)
       } else this.d.toasts.show(`Voice note added to ${draftName(key)}`, () => this.d.goDraft(key), { label: 'Go there' })

@@ -1,10 +1,10 @@
 // The desktop's New input page under the box, with the page's data: what you said lately (searched, a page more at
 // a time, each opened in full when asked), what is on its way, and the draft at the top of it while a voice note's
-// words are there to check.
+// words are there to check; more being said into one of them on its own line (F657), and on its way there.
 
 import { useMemo, useState, type ReactNode } from 'react'
 import { useServices, useStores, useStoreValue } from '../../app/context'
-import { NEW_DRAFT } from '../../model/draftTarget'
+import { draftTarget, NEW_DRAFT } from '../../model/draftTarget'
 import { clock } from '../../model/time'
 import { useAway, useFiles, useProjectModel, type ProjectRoute } from '../../app/hooks'
 import type { DraftKey } from '../../model/draftTarget'
@@ -33,10 +33,23 @@ export function useSaidView() {
 export type SaidView = ReturnType<typeof useSaidView>
 
 export function SaidLatelyContainer({ route, boxKey, view, draft }: { route: ProjectRoute; boxKey: DraftKey; view: SaidView; draft: ReactNode }) {
-  const app = useServices('box', 'fields', 'inputActions', 'inputs', 'nav', 'sheets')
+  const app = useServices('box', 'fields', 'inputActions', 'inputs', 'nav', 'sheets', 'voice')
   const stores = useStores('box', 'recording', 'data', 'drafts', 'outbox')
   // a voice note being recorded into a new input here: its row comes first, with how long so far (B627)
   const recording = useStoreValue(stores.recording, (st) => (st.rec && st.rec.slug === route.slug && !st.rec.about && st.rec.key === NEW_DRAFT ? clock(st.rec.ms) : null))
+  // more being said into one of them, on its own line (its Voice): "r12 0:07"
+  const adding = useStoreValue(stores.recording, (st) => {
+    const t = st.rec && st.rec.slug === route.slug ? draftTarget(st.rec.key) : null
+    return t?.kind === 'amend' && t.mode === 'append' ? `${t.id} ${clock(st.rec?.ms ?? 0)}` : null
+  })
+  // and on its way there once stopped, until Taska has it: "r12 r40"
+  const onItsWay = useStoreValue(stores.box, (st) =>
+    Object.entries(st.files)
+      .map(([k, fs]) => ({ t: draftTarget(k), fs }))
+      .filter(({ t, fs }) => t.kind === 'amend' && t.mode === 'append' && fs.some((f) => f.uploading && (f.mime || '').startsWith('audio/')))
+      .map(({ t }) => (t.kind === 'amend' ? t.id : ''))
+      .join(' '),
+  )
   const m = useProjectModel(route.slug)
   const away = useAway(route.slug)
   const outbox = useStoreValue(stores.outbox, (s) => s.list)
@@ -46,7 +59,7 @@ export function SaidLatelyContainer({ route, boxKey, view, draft }: { route: Pro
   const projects = useStoreValue(stores.data, (s) => s.projects)
   const { q, upTo, opened } = view
   const words = useMemo(() => q.trim().toLowerCase().split(/\s+/).filter(Boolean), [q])
-  const said = useMemo(() => (m ? saidRows(m, { words, upTo, opened, justSent, drafts, mode, title: (s) => projects?.find((p) => p.name === s)?.title || s }) : null), [m, words, upTo, opened, justSent, drafts, mode, projects])
+  const said = useMemo(() => (m ? saidRows(m, { words, upTo, opened, justSent, drafts, mode, title: (s) => projects?.find((p) => p.name === s)?.title || s, adding: new Set(onItsWay.split(' ')) }) : null), [m, words, upTo, opened, justSent, drafts, mode, projects, onItsWay])
   const media = useFiles(route.slug)
   if (!m || !said) return null
   const mine = outbox.filter((o) => o.slug === route.slug && !o.unsent && showsOnItsWay(o))
@@ -55,6 +68,7 @@ export function SaidLatelyContainer({ route, boxKey, view, draft }: { route: Pro
     <section aria-label="Latest inputs" data-vc-area className="mx-auto mt-8 block max-w-[48rem]">
       <SaidLately
         recording={recording}
+        adding={adding ? { id: adding.slice(0, adding.indexOf(' ')), clock: adding.slice(adding.indexOf(' ') + 1) } : null}
         count={words.length ? said.all.length : m.inputs.length}
         total={m.inputs.length}
         q={q}
@@ -68,6 +82,10 @@ export function SaidLatelyContainer({ route, boxKey, view, draft }: { route: Pro
           goto: (n) => app.nav.openItem(codeOf(m, n)),
           more: view.toggle,
           append: (id) => app.box.amendStart(route.slug, m, id, 'append'),
+          voice: (id) => {
+            const r = m.byId.get(id)
+            void app.voice.addTo(route.slug, id, r?.scope ? codeOf(m, r.scope) : null)
+          },
           draft: (id, mode) => app.box.amendStart(route.slug, m, id, mode),
           menu: (id, from) => app.sheets.openFrom(from, { kind: 'input-menu', id }, { focus: false }),
           undoSend: (k) => app.box.unsend(justSent.find((x) => x.q === k || x.rid === k)?.q ?? k),

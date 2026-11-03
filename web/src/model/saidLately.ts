@@ -22,11 +22,15 @@ export interface SaidOutgoing {
   canUndo: boolean
 }
 
-/** What you said that the search finds (`all`) and the rows shown of it (the first `upTo`). */
-export function saidRows(m: ProjectModel, a: { words: readonly string[]; upTo: number; opened: ReadonlySet<string>; justSent: readonly { rid?: string }[]; drafts: Readonly<Record<string, string>>; mode: BoxMode; title(slug: string): string }): { all: Input[]; rows: SaidInput[] } {
+/** What you said that the search finds (`all`) and the rows shown of it (the first `upTo`); `adding`: the inputs a
+ * voice note said on their own line is on its way to (F657), transcribing until Taska has it and its words. */
+export function saidRows(m: ProjectModel, a: { words: readonly string[]; upTo: number; opened: ReadonlySet<string>; justSent: readonly { rid?: string }[]; drafts: Readonly<Record<string, string>>; mode: BoxMode; title(slug: string): string; adding?: ReadonlySet<string> }): { all: Input[]; rows: SaidInput[] } {
   const all = newestFirst(m.inputs).filter((r) => inputMatch(r, a.words))
   const writing = a.mode?.kind === 'amend' ? { id: a.mode.id, mode: a.mode.mode } : null
-  const rows = all.slice(0, a.upTo).map((r) => ({ ...inputLine(m, r, { title: a.title, opened: a.opened, drafts: a.drafts, writing }), canUndoSend: a.justSent.some((x) => x.rid === r.id) }))
+  const rows = all.slice(0, a.upTo).map((r) => {
+    const x = inputLine(m, r, { title: a.title, opened: a.opened, drafts: a.drafts, writing })
+    return { ...x, ...(a.adding?.has(r.id) && x.became.k !== 'moved' ? { became: { k: 'transcribing' as const } } : {}), canUndoSend: a.justSent.some((y) => y.rid === r.id) }
+  })
   return { all, rows }
 }
 
