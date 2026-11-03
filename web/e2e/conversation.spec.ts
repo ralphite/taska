@@ -92,7 +92,7 @@ I2 ask Worth doing?
   expect(wontDo).not.toContain(tick)
 })
 
-test('D77 #10: finished work sent back with Not yet: only Not yet carries an icon (its redo arrow); Accept, not chosen, shows none, so no tick reads as chosen', async ({
+test('D77 #10 r1003 r1007: finished work sent back with Not yet keeps both buttons where they were, greyed and not to be pressed', async ({
   page,
   request,
 }) => {
@@ -103,12 +103,13 @@ test('D77 #10: finished work sent back with Not yet: only Not yet carries an ico
   })
   await op(request, p, { op: 'set', ref: 'T1', f: { status: 'open' } })
   await open(page, p, 'T1')
-  // the card's two kept buttons, each its icon (or its room), its words and its key's room
-  const kept = (label: string) =>
-    pane(page).locator('section span.lg\\:flex-none').filter({ hasText: label }).filter({ visible: true })
+  // the card keeps both buttons where they were, as they were (their icons too), greyed and not to be pressed
+  // (r1003, r1007); Not yet, what you chose, keeps its word
+  const kept = (label: string) => pane(page).getByRole('button', { name: new RegExp(`^${label}`) }).filter({ visible: true })
+  await expect(kept('Not yet')).toBeDisabled()
   await expect(kept('Not yet').locator('svg').first()).toBeVisible()
   await expect(kept('Accept')).toHaveCount(1)
-  await expect(kept('Accept').locator('svg').first()).toBeHidden()
+  await expect(kept('Accept')).toBeDisabled()
 })
 
 test('T529: two agents never share a mark, and an agent Taska has no name for is called by a name', async ({

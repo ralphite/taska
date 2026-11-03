@@ -22,7 +22,7 @@ new idea P2 now A proposal
   for (const n of [1, 2]) await p.op({ op: 'input', text: 'Let us talk first', scope: n })
   for (const code of ['T1', 'I2']) {
     await open(page, p, code)
-    await expect(page.getByText('Replied', { exact: true }).filter({ visible: true })).toBeVisible() // the answered card's one line (D106 #4.3)
+    await expect(page.getByText(/^Replied/).filter({ visible: true }).first()).toBeVisible() // where Send answer was (r1003)
   }
 })
 
@@ -100,10 +100,12 @@ test('B607: replying to finished work resumes it; Accept returns when the agent 
   await box(page).press('Shift+Enter')
   // back to open: the agent's turn (Yadong r961), no word of its own
   await expect.poll(async () => p.read('T1')).toMatch(/^T1 \w+ P\d \w+ open/)
-  await expect(accept).toBeHidden()
+  // the card keeps its buttons where they were, greyed and not to be pressed (r1003, r1007)
+  await expect(accept).toBeDisabled()
   await expect(page.getByText('Skipped · you replied', { exact: true }).filter({ visible: true })).toHaveCount(0)
   await p.doAs('T1 done Fixed the sort too.\n')
   await expect(accept).toBeVisible()
+  await expect(accept).toBeEnabled()
   await accept.click()
   await expect.poll(async () => p.read('T1')).toMatch(/^T1 \w+ P\d \w+ done/)
 })
