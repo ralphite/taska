@@ -28,4 +28,5 @@ const projects = (drop?: string) => {
 export const side = (phone: boolean, f: { side?: 'docs' | 'log' | 'deleted'; undo?: string; composing?: boolean; drop?: string; newProject?: ReactNode; loading?: boolean } = {}) => (
   <Sidebar phone={phone} projects={f.loading ? null : projects(f.drop)} composing={!!f.composing} links={sideLinks('shop', f.side ?? null)} undoLabel={f.undo ?? null} devLinks={phone ? [] : DEV} newProjectField={f.newProject} place={phone ? 'h-full bg-zinc-100' : 'h-full bg-zinc-50'} on={sideOn} />
 )
-export const rail = () => <Rail projects={projects()} composing settingsOpen={false} on={sideOn} />
+/** the sidebar folded to icons; `settings`: Settings open (its icon lit), `composing`: New input lit, `loading`: projects never listed yet */
+export const rail = (f: { settings?: boolean; composing?: boolean; loading?: boolean } = {}) => <Rail projects={f.loading ? null : projects()} composing={f.composing ?? true} settingsOpen={!!f.settings} on={sideOn} />

@@ -35,3 +35,8 @@ export const ATopicWithATable: Story = { ...help('items'), name: 'A topic with a
 export const Keys: Story = { ...help('keys'), name: 'Keyboard shortcuts' }
 export const Searching: Story = { ...help(null, 'agent'), name: 'Searching: what it finds' }
 export const NothingFound: Story = { ...help(null, 'invoice'), name: 'Searching: nothing found' }
+// ---- more states (T639)
+/** a topic in the column under the pointer, one from the keys (the browser's ring), an index card under the pointer */
+export const PointerAndKeys: Story = { ...help(null), name: 'Topics: pointer and keys', parameters: { pseudo: { hover: ['nav a:nth-of-type(2)', 'section a:first-of-type'], focusVisible: ['nav a:nth-of-type(3)'] } } }
+/** words typed while a topic is open (desktop): Search results take the topic's place, the topic stays lit in the column */
+export const SearchingFromATopic: Story = { ...help('agents', 'phone'), name: 'Searching from a topic' }

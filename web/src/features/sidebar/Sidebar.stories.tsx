@@ -47,3 +47,9 @@ export const NotListedYet: Story = {
   name: 'Not listed yet',
   render: () => <Frames phoneWidth={320} deskWidth={240} height={420}>{(layout) => <Sidebar phone={layout === 'phone'} projects={null} composing={false} links={[]} place={layout === 'phone' ? 'h-full bg-zinc-100' : 'h-full bg-zinc-50'} on={sideOn} />}</Frames>,
 }
+// ---- more states (T639)
+/** a project in the phone's drawer pressed (a finger on it) */
+export const DrawerProjectPressed: Story = {
+  name: 'Phone drawer: a project pressed',
+  render: () => <Frames desk={false} phoneWidth={320} height={560}>{() => <After run={mark('home', 'data-pressed')}>{side(true)}</After>}</Frames>,
+}

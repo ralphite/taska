@@ -23,3 +23,7 @@ export const RailLooks: Story = {
     </div>
   ),
 }
+// ---- more states (T639)
+const folded = (f: Parameters<typeof rail>[0]) => () => <div className="flex gap-6 bg-zinc-200 p-6 dark:bg-zinc-800"><Frame layout="desk" width={56} height={560}>{rail(f)}</Frame></div>
+export const RailSettingsOpen: Story = { name: 'Folded to icons: Settings open', render: folded({ settings: true, composing: false }) }
+export const RailNotListedYet: Story = { name: 'Folded to icons: not listed yet', render: folded({ loading: true }) }

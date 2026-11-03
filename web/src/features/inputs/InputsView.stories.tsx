@@ -20,3 +20,6 @@ export const InputsTabWithOneOnItsWay: Story = { ...one({ organizer: true, outbo
 export const InputsTabEmpty: Story = { ...one({ inputs: [] }), name: 'Empty' }
 // ---- more states (B636)
 export const SearchNothingFound: Story = { ...one({ organizer: true, q: 'zebra' }), name: 'Search, nothing found' }
+// ---- more states (T639)
+/** the first input of a project still on its way: only its row, no "No inputs yet." */
+export const EmptyOneOnItsWay: Story = { name: 'Empty, one on its way', render: () => <Frames desk={false} phoneWidth={393} height={360}>{() => inputsOf({ inputs: [], outbox: [out({ q: 'a', text: 'Buy milk on the way home' })] })}</Frames> }
