@@ -17,3 +17,6 @@ export const FilterChipsAndDot: Story = { name: 'Chips', render: () => <Frames d
 // ---- more states (B636)
 export const PanelRules: Story = { name: 'Panel: rules', render: () => <Frames phone={false} deskWidth={1100} height={460}>{() => headOf(true, { tab: 'rules', filtersOpen: true })}</Frames> }
 export const PanelArchive: Story = { name: 'Panel: archive', render: () => <Frames phone={false} deskWidth={1100} height={460}>{() => headOf(true, { tab: 'archive', filtersOpen: true })}</Frames> }
+// ---- more states (T639)
+/** the phone's strip on Archive with every filter set (more than fit slide sideways, Clear at the end) */
+export const PhoneStripMoreThanFit: Story = { name: 'Strip on the phone: every filter set', render: () => <Frames desk={false} phoneWidth={393} height={200}>{() => headOf(false, { tab: 'archive', list: { type: 'bug', when: 'later', status: 'done', pri: 'P1', sort: 'new' } })}</Frames> }

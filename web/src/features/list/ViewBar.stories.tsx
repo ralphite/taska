@@ -51,3 +51,22 @@ export const YourOwnViewShownBeingRenamed: Story = {
     </Frames>
   ),
 }
+// ---- more states (T639)
+/** a chip under the pointer, one from the keys (the browser's ring), and the edge arrow under the pointer */
+export const PointerAndKeys: Story = {
+  name: 'Pointer and keys',
+  parameters: { pseudo: { hover: ['[data-look="pointer"] button:nth-of-type(3)', '[data-look="arrow"] button[aria-label]'], focusVisible: ['[data-look="keys"] button:nth-of-type(2)'] } },
+  render: () => (
+    <Frames phoneWidth={393} deskWidth={460}>
+      {() => (
+        <States
+          items={[
+            ['a chip under the pointer', <div data-look="pointer"><ViewBar views={views('all')} onView={() => {}} /></div>],
+            ['a chip from the keys', <div data-look="keys"><ViewBar views={views('all')} onView={() => {}} /></div>],
+            ['the edge arrow under the pointer', <div data-look="arrow"><ViewBar views={views('all')} onView={() => {}} /></div>],
+          ]}
+        />
+      )}
+    </Frames>
+  ),
+}

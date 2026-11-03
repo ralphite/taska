@@ -1,7 +1,7 @@
 // The list's head (T591: Top bar and list head > List head): its search on the desktop, the phone's head with its
 // search, from the page's own headFacts with the item list's demo project.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { Frames, States } from '../stories/Frames'
+import { After, Frames, States } from '../stories/Frames'
 import { headOf } from '../stories/headFixtures'
 
 export default { title: 'Components/Top bar and list head/List head' } satisfies Meta
@@ -30,3 +30,11 @@ export const ListHeadLooks: Story = {
     </Frames>
   ),
 }
+// ---- more states (T639)
+/** the phone's head: its menu (the project's name) and Search pressed */
+export const PhonePressed: Story = {
+  name: 'On the phone: menu and Search pressed',
+  render: () => <Frames desk={false} phoneWidth={393} height={200}>{() => <After run={(root) => root.querySelectorAll('header button').forEach((b) => b.setAttribute('data-pressed', ''))}>{headOf(false)}</After>}</Frames>,
+}
+/** the phone's search just opened, nothing typed yet: the field and Cancel */
+export const PhoneSearchOpen: Story = { name: 'On the phone: search open, nothing typed', render: () => <Frames desk={false} phoneWidth={393} height={200}>{() => headOf(false, { searching: true })}</Frames> }

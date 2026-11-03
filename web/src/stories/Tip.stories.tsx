@@ -7,7 +7,8 @@ import { Tooltip } from '../app/Tooltip'
 import { refCard } from '../model/refCard'
 import { After, Frames } from './Frames'
 import { headOf } from './headFixtures'
-import { item, message, modelOf } from './fixtures'
+import { doc } from './docFixtures'
+import { input, item, message, modelOf } from './fixtures'
 import { talkOf } from './itemPage'
 import { listOf, PROJECT } from './listFixtures'
 import { rail, side } from './sideFixtures'
@@ -18,13 +19,13 @@ type Story = StoryObj
 const m = modelOf(PROJECT)
 /** The tooltip is drawn over the whole window, outside the frame, as the page's is (it is placed where the part is on
  * the screen). */
-const one = (part: (desk: boolean) => ReactNode, find: string | ((root: HTMLElement) => Element | null | undefined), f: { width?: number; height?: number } = {}): Story => ({
+const one = (part: (desk: boolean) => ReactNode, find: string | ((root: HTMLElement) => Element | null | undefined), f: { width?: number; height?: number; model?: typeof m } = {}): Story => ({
   render: () => (
     <>
       <Frames phone={false} deskWidth={f.width ?? 900} height={f.height ?? 360}>
         {() => <After run={(root) => (typeof find === 'string' ? root.querySelector(find) : find(root))?.dispatchEvent(new PointerEvent('pointerover', { bubbles: true, pointerType: 'mouse' }))}>{part(true)}</After>}
       </Frames>
-      <Tooltip card={(ref) => refCard(m, ref)} />
+      <Tooltip card={(ref) => refCard(f.model ?? m, ref)} />
     </>
   ),
 })
@@ -39,4 +40,17 @@ export const OnFilters: Story = { ...one(() => headOf(true), 'button[aria-label=
 export const OnCode: Story = {
   ...one(() => talkOf(item({ n: 1, thread: [message({ id: 1, text: 'The sort is in F005, the file name in F003.' })] }), true, { others: PROJECT.filter((it) => it.n !== 1) }), '[data-ref="F005"]', { height: 420 }),
   name: 'On a code: what it names',
+}
+// ---- more states (T639)
+/** the agent pill: its agents and their sessions, one line each */
+export const OnTheAgentPill: Story = { ...one(() => headOf(true), (root) => [...root.querySelectorAll('button')].find((b) => /ready|now|ago|waiting|away/i.test(b.textContent ?? '')), { width: 1100, height: 260 }), name: 'On the agent pill: its agents and sessions' }
+const mi = modelOf(PROJECT, [input({ id: 'r12', text: 'The export should keep the filter I set, and the sort.' })], {}, [doc({ d: 4, n: 1, title: 'The export plan' })])
+/** a code for something you said, and for a document: the card says who and when and its words, or the document's title */
+export const OnInputCode: Story = {
+  ...one(() => talkOf(item({ n: 1, thread: [message({ id: 1, text: 'From #12, the plan is in D4.' })] }), true, { others: PROJECT.filter((it) => it.n !== 1), inputs: mi.inputs, docs: mi.docs }), '[data-ref="#12"]', { height: 420, model: mi }),
+  name: 'On a code for something you said',
+}
+export const OnDocCode: Story = {
+  ...one(() => talkOf(item({ n: 1, thread: [message({ id: 1, text: 'From #12, the plan is in D4.' })] }), true, { others: PROJECT.filter((it) => it.n !== 1), inputs: mi.inputs, docs: mi.docs }), '[data-ref="D4"]', { height: 420, model: mi }),
+  name: 'On a document code',
 }

@@ -26,3 +26,5 @@ export const Segments: Story = {
     </Frames>
   ),
 }
+// ---- more states (T639)
+export const SegmentsPointer: Story = { name: 'The segmented choices: one under the pointer', parameters: { pseudo: { hover: ['button:nth-of-type(2)'] } }, render: () => <Frames phone={false} deskWidth={460}>{() => <div className="p-3"><SegCtl opts={typeOpts(true)} on="all" pick={no} /></div>}</Frames> }

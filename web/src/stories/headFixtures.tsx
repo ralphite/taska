@@ -37,6 +37,12 @@ export interface HeadHere {
   otherNeeds?: boolean
   /** the desktop's filters opened */
   filtersOpen?: boolean
+  /** the project's data not come yet: tabs without counts, no agent pill */
+  loading?: boolean
+  /** Settings or a side list open: no tab selected */
+  awayTab?: boolean
+  /** the phone's menu and Search pressed */
+  pressed?: boolean
 }
 
 const no = () => {}
@@ -48,13 +54,13 @@ export function headOf(desk: boolean, h: HeadHere = {}) {
   const m = modelOf(PROJECT, INPUTS, { title: 'Shop', agents: h.agents ?? AGENTS.ready, work: h.work ?? true })
   const tab = h.tab ?? 'items'
   const list = { ...NO_FILTERS, ...h.list }
-  const counts = tabCounts(m, tab, list, desk)
-  const agent = agentInfo(m, h.away ?? 0)
+  const counts = h.loading ? null : tabCounts(m, tab, list, desk)
+  const agent = h.loading ? null : agentInfo(m, h.away ?? 0)
   const set = filtersSet(tab, list)
   if (desk)
     return (
       <div className="grid grid-cols-[420px_minmax(0,1fr)]">
-        <ProjectBar title="Shop" tone={PROJECT_TONES[4]} tabs={deskTabs(counts, tab, false)} agent={agent} notSaved={h.notSaved ?? 0} place="col-span-2" on={{ tab: no, agents: no, notSaved: no }} />
+        <ProjectBar title="Shop" tone={PROJECT_TONES[4]} tabs={deskTabs(counts, tab, !!h.awayTab)} agent={agent} notSaved={h.notSaved ?? 0} place="col-span-2" on={{ tab: no, agents: no, notSaved: no }} />
         <ListHead phone={false} title="Shop" otherNeeds={false} searching={false} q={list.q} placeholder={tab === 'rules' ? 'Search rules' : 'Search items'} agent={agent} notSaved={h.notSaved ?? 0} filtersSet={set.length > 0} filtersOpen={!!h.filtersOpen} place="col-start-1" on={headOn} />
         <DeskFilters tab={tab} list={list} set={set} open={!!h.filtersOpen} place="col-start-1" hidden={!(h.filtersOpen || set.length)} on={{ ...filterOn, toggle: no }} />
       </div>

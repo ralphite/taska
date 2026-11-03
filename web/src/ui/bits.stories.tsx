@@ -19,6 +19,8 @@ export const Bits: Story = {
             ['a section head', <SectionHead text="Needs you" right={<span className="text-xs text-zinc-400">3</span>} />],
             ['an empty list', <Empty>Nothing needs you.</Empty>],
             ['a picture', <div className="size-20 p-3"><Pic src={PICTURE} alt="A screenshot" cls="size-full object-contain" /></div>],
+            ['a picture still loading', <div className="size-20 p-3"><Pic src="http://10.255.255.1/slow.png" alt="A screenshot" cls="size-full object-contain" /></div>],
+            ['a picture that could not load', <div className="size-20 p-3"><Pic src="/no-such-picture.png" alt="A screenshot" cls="size-full object-contain" /></div>],
           ]}
         />
       )}

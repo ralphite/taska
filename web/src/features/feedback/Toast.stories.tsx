@@ -29,3 +29,6 @@ export const Moved: Story = { ...one({ text: 'F012 moved to Home', error: false,
 export const Sticky: Story = { ...one({ text: 'Taska has an update', error: false, sticky: true, action: { label: 'Restart' } }), name: 'Stays until closed' }
 /** Long words: two lines at most. */
 export const Long: Story = { ...one({ text: 'F012 is done, with your note · 3 subitems still open. Their talk stays with them.', error: false, sticky: false, action: { label: 'Undo' } }), name: 'Long words' }
+// ---- more states (T639)
+export const ErrorStays: Story = { ...one({ text: '#913 not sent: Taska said no. Your words are back in the box.', error: true, sticky: true, action: null }), name: 'Error that stays until closed' }
+export const ErrorWithRetry: Story = { ...one({ text: 'Order not saved', error: true, sticky: false, action: { label: 'Retry' } }), name: 'Error with Retry' }

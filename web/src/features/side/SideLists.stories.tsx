@@ -44,3 +44,22 @@ export const DeletedPicked: Story = {
   ...page('deleted', gone.length, <DeletedList rows={gone} picked={gone[0].key} on={{ show: no, restore: no }} />, <DeletedView x={gone[0]} onRestore={no} />),
   name: 'Deleted, one picked',
 }
+// ---- more states (T639)
+const logOn = { open: no, item: no, input: no, undo: no, more: no }
+const rows = activityRows(m, LOG)
+export const DocumentsNoneYet: Story = { ...page('docs', 0, <DocsList docs={[]} open={null} onOpen={no} />), name: 'Documents: none yet' }
+export const ActivityLoading: Story = { ...page('log', 0, <ActivityList rows={null} end={false} picked={null} on={logOn} />), name: 'Activity: loading' }
+export const ActivityNothingYet: Story = { ...page('log', 0, <ActivityList rows={[]} end picked={null} on={logOn} />), name: 'Activity: no changes yet' }
+export const ActivityLoadingEarlier: Story = { ...page('log', 0, <ActivityList rows={rows} end={false} picked={null} on={logOn} />), name: 'Activity: earlier changes loading' }
+export const ActivityOnePicked: Story = { ...page('log', 0, <ActivityList rows={rows} end picked={rows[1]?.s.key ?? null} on={logOn} />), name: 'Activity, one picked' }
+/** the pointer on a row: its Undo (Activity) or Restore (Deleted) shows; hidden on the desktop until then */
+export const PointerOnARow: Story = {
+  ...page('deleted', gone.length, <DeletedList rows={gone} picked={null} on={{ show: no, restore: no }} />),
+  name: 'Pointer on a row: Restore',
+  parameters: { pseudo: { hover: ['li:first-of-type .group, li:first-of-type'] } },
+}
+export const DeletedNothing: Story = { ...page('deleted', 0, <DeletedList rows={[]} picked={null} on={{ show: no, restore: no }} />), name: 'Deleted: nothing' }
+const inputGone = gone.find((x) => x.kind === 'input')
+const docGone = gone.find((x) => x.kind === 'doc')
+export const DeletedInputPicked: Story = { ...page('deleted', gone.length, <DeletedList rows={gone} picked={inputGone?.key ?? null} on={{ show: no, restore: no }} />, inputGone ? <DeletedView x={inputGone} onRestore={no} /> : null), name: 'Deleted, an input picked' }
+export const DeletedDocumentPicked: Story = { ...page('deleted', gone.length, <DeletedList rows={gone} picked={docGone?.key ?? null} on={{ show: no, restore: no }} />, docGone ? <DeletedView x={docGone} onRestore={no} /> : null), name: 'Deleted, a document picked' }

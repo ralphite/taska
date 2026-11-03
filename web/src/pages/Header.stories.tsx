@@ -26,3 +26,6 @@ export const ProjectBarLooks: Story = {
     </Frames>
   ),
 }
+// ---- more states (T639)
+export const ProjectBarLoading: Story = { name: 'Project bar: its data not come yet', render: () => <Frames deskWidth={1100} phoneWidth={393} height={180}>{(layout) => headOf(layout === 'desk', { loading: true })}</Frames> }
+export const ProjectBarAway: Story = { name: 'Project bar: Settings or a side list open (no tab lit)', render: () => <Frames phone={false} deskWidth={1100} height={180}>{() => headOf(true, { awayTab: true })}</Frames> }
