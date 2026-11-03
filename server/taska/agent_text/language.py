@@ -159,8 +159,11 @@ def _doc_command(word: str, rest: str, cont: str) -> Command:
     if v == "html":  # the document as a web page (HTML, scripts too)
         return {"op": "doc", "d": word[1:], "title": rest2.strip(), "md": cont, "fmt": "html"}
     if v == "reply":
-        m = re.match(r"¶?(\d+)\s+(.*)", rest2.strip(), re.S)
+        m = re.match(r"¶?(\d+)(?:\.(\d+))?\s+(.*)", rest2.strip(), re.S)
         if not m:
             raise Refused(f"use: {word} reply ¶3 <text>")
-        return {"op": "dc", "d": word[1:], "para": m.group(1), "text": (m.group(2) + ("\n" + cont if cont else "")).strip()}
+        out: Command = {"op": "dc", "d": word[1:], "para": m.group(1), "text": (m.group(3) + ("\n" + cont if cont else "")).strip()}
+        if m.group(2):  # ¶3.2: the second thread on paragraph 3
+            out["pick"] = m.group(2)
+        return out
     raise Refused(f"{word}: use doc or reply")

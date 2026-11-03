@@ -27,7 +27,7 @@ GRAMMAR = (
     "  D1 doc [new title]        replace D1's Markdown with the indented lines; comments stay with unchanged paragraphs\n"
     '  B03 html [title]          new web page document on B03: the indented lines are HTML (scripts allowed), shown as a page\n'
     '  D1 html [new title]       replace D1 with the indented HTML\n'
-    '  D1 reply ¶3 <text>        answer the comments on paragraph 3 of D1\n'
+    '  D1 reply ¶3 <text>        answer the comments on paragraph 3 of D1 (¶3.2: its second thread, as /D1 names it)\n'
     '  B03 archive|unarchive     hide a done/dropped item from the default lists (reopening unarchives)\n'
     '  ack r12 r13               mark inputs handled without changing items\n'
     '  $ means the item created earlier in the same request. Refs: B03, b3, 3 are the same item.'

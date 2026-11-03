@@ -108,7 +108,22 @@ def comment(r: Run, a: Args) -> Outcome:
     if not body and not files:
         raise Refused("empty comment")
     quote = " ".join(a.text("quote").split()) or text  # what the user selected, else the paragraph
-    r.emit(ev.CommentAdded(d=d.d, key=key, quote=quote[:500], text=body, by=r.by, files=files, th=a.thread()))
+    th = a.thread()
+    if th is None and a.get("para") is not None and not d.is_page:
+        # an answer by paragraph goes into one of its threads: the one named (¶3.2), else the first the user waits on
+        mine = [c for c in d.comments if c.key == key]
+        threads = list(dict.fromkeys(c.th for c in mine))
+        pick = str(a.get("pick") or "")
+        if pick.isdigit():
+            if not 1 <= int(pick) <= len(threads):
+                raise Refused(f"¶{a.get('para')} has threads 1-{len(threads)}" if threads else f"¶{a.get('para')} has no comments")
+            th = threads[int(pick) - 1]
+        else:
+            last = {c.th: c.by for c in mine}
+            th = next((t for t in threads if last[t] == "you" and f"{key}#{t}" not in d.resolved), None)
+        if th is not None:
+            quote = next(c.quote for c in mine if c.th == th)
+    r.emit(ev.CommentAdded(d=d.d, key=key, quote=quote[:500], text=body, by=r.by, files=files, th=th))
     return Outcome(f"ok D{d.d} comment{r.gone_note(s.items.get(d.n))}", f"Commented on D{d.d}")
 
 

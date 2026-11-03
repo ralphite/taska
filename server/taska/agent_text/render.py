@@ -216,23 +216,29 @@ def doc_text(rd: Reading, d: Doc) -> str:
     blocks, detached = rules.doc_view(d)
     titled = bool(blocks) and " ".join(blocks[0].text.lstrip("#").split()) == d.title
     out = [f"D{d.d} on {st.code(d.n)}{'' if titled else ': ' + d.title}  (updated {hm(d.t1)} by {d.by}; reply with: "
-           f"D{d.d} reply ¶N <text>, ¶0 for the whole document)"]
+           f"D{d.d} reply ¶N <text>, ¶0 for the whole document, ¶N.K for thread K of ¶N)"]
     texts = [b.text for b in blocks]
     if d.is_page:  # a web page: its HTML, then each part commented on
         out[0] = (f"D{d.d} on {st.code(d.n)}: {d.title}  (a web page; updated {hm(d.t1)} by {d.by}; replace it with: "
                   f"D{d.d} html; reply with: D{d.d} reply ¶N <text>, ¶0 for the whole page)")
         out.append(textwrap.indent(d.md, "  "))
         texts = ["part of the page: " + first_line(b.text, 200) for b in blocks]
+    def mark(i: int, comments: List[Any]) -> Dict[int, str]:
+        """With more than one thread on a paragraph, each is named ¶i.k, so a reply can go into it."""
+        threads = list(dict.fromkeys(c.th for c in comments))
+        return {t: f"[¶{i}.{k}] " for k, t in enumerate(threads, 1)} if len(threads) > 1 else {}
     whole = rules.doc_whole(d)
     if whole:
         out.append("¶0 comments on the whole document:")
+        names = mark(0, whole)
         for c in whole:
-            out.append(f"   > {c.by} {hm(c.t)}: {c.text}" + "".join(f" [{rd.file_path(f.f)}]" for f in c.files))
+            out.append(f"   > {names.get(c.th, '')}{c.by} {hm(c.t)}: {c.text}" + "".join(f" [{rd.file_path(f.f)}]" for f in c.files))
     for i, (b, text) in enumerate(zip(blocks, texts), 1):
         out.append(f"¶{i} " + text.replace("\n", "\n   "))
+        names = mark(i, b.comments) if not d.is_page else {}
         for c in b.comments:
             part = "" if " ".join(c.quote.split()) == " ".join(text.split()) else f"on \"{first_line(c.quote, 120)}\": "
-            out.append(f"   > {c.by} {hm(c.t)}: {part}{c.text}" + "".join(f" [{rd.file_path(f.f)}]" for f in c.files))
+            out.append(f"   > {names.get(c.th, '')}{c.by} {hm(c.t)}: {part}{c.text}" + "".join(f" [{rd.file_path(f.f)}]" for f in c.files))
     if detached:
         out.append("comments whose paragraph was rewritten or removed:")
         for t in detached:
