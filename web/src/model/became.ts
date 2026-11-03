@@ -75,10 +75,21 @@ function readNote(msg: string, codes: Map<string, number>): { did: Map<number, s
       continue
     }
     const verb = part.replace(/\b[A-Z]\d+\b/g, '').replace(/,|\band\b/g, ' ').replace(/\s+/g, ' ').trim()
-    for (const n of named) if (!did.has(n)) did.set(n, verb ? verb[0].toUpperCase() + verb.slice(1) : '')
+    // the organizer's own word for words added to an item, said as the list says it (the approved B629 line)
+    const said = /^noted on$/i.test(verb) ? 'Added to' : verb
+    for (const n of named) if (!did.has(n)) did.set(n, said ? said[0].toUpperCase() + said.slice(1) : '')
   }
   return { did, rest }
 }
+
+/** Why the organizer could not file it, in a few words: its own reason ("B99 not found"), without its plumbing ("No
+ * changes needed", "Some commands failed:", "err:"). */
+export const shortWhy = (msg: string) =>
+  msg
+    .split(/ · /)
+    .map((p) => p.replace(/^Some commands failed:\s*/i, '').replace(/\berr:\s*/gi, '').trim())
+    .filter((p) => p && !/^No changes needed$/i.test(p))
+    .join(' · ') || msg
 
 /** What became of `r`; `title`: a project's title by its name. */
 export function becameOf(r: Input, m: ProjectModel, title: (slug: string) => string): Became {
@@ -94,7 +105,7 @@ export function becameOf(r: Input, m: ProjectModel, title: (slug: string) => str
     const it = itemRef(m, r.scope)
     if (it) return { k: 'answer', item: it }
   }
-  if (r.org && !r.org.ok) return { k: 'failed', why: r.org.msg, retry }
+  if (r.org && !r.org.ok) return { k: 'failed', why: shortWhy(r.org.msg), retry }
   // said on an item (its own box): added to it; then what the organizer or an agent did with it
   const ns = [...new Set([...(r.scope ? [r.scope] : []), ...r.touched])]
   const items = ns.map((n) => itemRef(m, n)).filter((x): x is ItemRef => !!x)

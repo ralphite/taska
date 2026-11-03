@@ -30,7 +30,7 @@ export interface InputRowEvents {
 }
 
 const ROW =
-  'group/row border-t border-zinc-100 px-4 py-2.5 transition-colors duration-700 first:border-t-0 lg:-mx-3 lg:grid lg:grid-cols-[minmax(0,1fr)_15rem] lg:items-start lg:gap-x-5 lg:px-3 lg:hover:bg-zinc-50 dark:border-zinc-800/70 dark:lg:hover:bg-zinc-900/60'
+  'group/row border-t border-zinc-100 px-4 py-2.5 transition-colors duration-700 first:border-t-0 lg:-mx-3 lg:grid lg:grid-cols-[minmax(0,1fr)_17rem] lg:items-start lg:gap-x-6 lg:px-3 lg:hover:bg-zinc-50 dark:border-zinc-800/70 dark:lg:hover:bg-zinc-900/60'
 /** gone to: lit up for a moment */
 const LIT = 'bg-blue-50 dark:bg-blue-400/10'
 const META = 'flex h-5 min-w-0 items-center gap-2 text-[13px]'
