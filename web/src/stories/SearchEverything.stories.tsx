@@ -361,7 +361,7 @@ function GuidedDesk() {
   const [n, setN] = useState(0)
   return (
     <div className="flex w-[1280px] flex-col gap-3">
-      <Frame layout="desk" width={1280} height={800} label="Search at the top of the sidebar · the yellow frame is the next tap">
+      <Frame layout="desk" width={1280} height={800} label="Search at the top of the sidebar · the yellow spot is the next tap">
         <Desk key={k} n={n} onNext={() => setN((x) => x + 1)} />
       </Frame>
       <GuideLine n={n} total={DESK_STEPS.length} say={DESK_STEPS[n]?.say} onAgain={() => (setK((x) => x + 1), setN(0))} />
@@ -434,7 +434,7 @@ function GuidedPhone() {
   const [n, setN] = useState(0)
   return (
     <div className="flex w-[393px] flex-col gap-3">
-      <Frame layout="phone" width={393} height={852} label="the magnifier where it is · the yellow frame is the next tap">
+      <Frame layout="phone" width={393} height={852} label="the magnifier where it is · the yellow spot is the next tap">
         <Phone key={k} n={n} onNext={() => setN((x) => x + 1)} />
       </Frame>
       <GuideLine n={n} total={PHONE_STEPS.length} say={PHONE_STEPS[n]?.say} onAgain={() => (setK((x) => x + 1), setN(0))} />
@@ -444,7 +444,7 @@ function GuidedPhone() {
 
 // ---------------------------------------------------------------- the stories
 
-/** Tap your way through it on the desktop, the yellow frame showing the next tap (it never plays itself). */
+/** Tap your way through it on the desktop, the yellow spot showing the next tap (it never plays itself). */
 export const Desktop: StoryObj = { name: 'Desktop: search everything', render: () => <GuidedDesk /> }
 /** The same on the phone. */
 export const Phone393: StoryObj = { name: 'Phone: search everything', render: () => <GuidedPhone /> }

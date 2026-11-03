@@ -349,7 +349,7 @@ function Guided() {
   const step = STEPS[n]
   return (
     <div className="flex w-[393px] flex-col gap-3">
-      <Frame layout="phone" width={393} height={852} label="the voice button in the middle (D75) · the yellow frame is the next tap">
+      <Frame layout="phone" width={393} height={852} label="the voice button in the middle (D75) · the yellow spot is the next tap">
         <Phone key={k} mic n={n} onNext={() => setN((x) => x + 1)} />
       </Frame>
       <GuideLine n={n} total={STEPS.length} say={step?.say} onAgain={() => (setK((x) => x + 1), setN(0))} />
@@ -357,7 +357,7 @@ function Guided() {
   )
 }
 
-/** Tap your way through it, the yellow frame showing the next tap (it never plays itself): a new input by voice, an
+/** Tap your way through it, the yellow spot showing the next tap (it never plays itself): a new input by voice, an
  * item's detail and its talk, a reply, its document and a comment on a part, Search, Projects, all you said. Any
  * other tap just does what it does. Beside it, the same with three places and no voice button (the box as now). */
 export const NewMobileLayout: StoryObj = {
