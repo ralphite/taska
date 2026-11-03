@@ -345,11 +345,9 @@ export function createApp(env: AppEnv): App {
   const notices = new Notices(env.kv, () => settingsStore.getState().set({ noticeRev: settingsStore.getState().noticeRev + 1 }), { api, toasts, data, slug, desk: env.desk, go: goUrl })
   const access = new Access({ api, sheets, toasts, refresh: () => void session().refresh() })
   const updates = new Updates({
-    api,
     toasts,
     session: env.session ?? memoryStore(),
     busy: () => recordingNow() || Object.values(boxStore.getState().files).some((fs) => fs.some((f) => f.uploading || f.transcribing)) || outbox.getState().list.some((o) => o.state === 'sending'),
-    boot: () => session().boot(),
     reload: () => location.reload(),
     mine: env.pageScript ?? '',
   })

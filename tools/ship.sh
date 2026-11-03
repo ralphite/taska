@@ -4,8 +4,8 @@
 # Every check runs first (npm run check in web: types, lint, the architecture check, the page's and
 # the server's tests), then the page is built and copied to web/live, which the service serves (a build made to
 # test something never goes live by itself). None of these opens a browser. If nobody used Taska in the last minute, it
-# restarts now. Otherwise the open pages offer "Taska has an update · Restart", and this waits: it restarts by itself
-# once Taska has been left alone for a minute (or Yadong clicked Restart).
+# restarts now. Otherwise this waits and restarts it by itself once Taska has been left alone for a minute; the open
+# pages then reload by themselves at a good moment (B654).
 cd "$(dirname "$0")/.." || exit 1
 URL=${TASKA_URL:-http://127.0.0.1:7340}
 export PATH="$PATH:$HOME/.local/bin:/opt/homebrew/bin:/usr/local/bin"
@@ -32,7 +32,7 @@ restart() {
 was=$(serving)
 if (( $(idle) >= 60 )); then restart; exit $?; fi
 touch ~/.taska/.update-ready
-echo "ship: Yadong used Taska in the last minute: the page offers Restart; restarting once Taska is left alone for a minute"
+echo "ship: Yadong used Taska in the last minute: restarting once Taska is left alone for a minute"
 while true; do
   sleep 15
   now=$(serving)
