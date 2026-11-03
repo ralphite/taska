@@ -89,6 +89,9 @@ const goneTile = (title: string) => (
   </span>
 )
 
+/** A row's buttons on the desktop: under the pointer or the keys, as a list's rows (always there on the phone). */
+const ROW_ACT = 'lg:opacity-0 lg:group-hover:opacity-100 lg:group-focus-within:opacity-100'
+
 export function ProjectsBody({ f, on }: { f: ProjectsFacts; on: ProjectsEvents }) {
   const [name, setName] = useState(f.pNewText)
   if (!f.live) return <Loading />
@@ -124,7 +127,7 @@ export function ProjectsBody({ f, on }: { f: ProjectsFacts; on: ProjectsEvents }
         {f.live.map((p) => {
           const ren = f.renaming === p.name
           return (
-            <li key={p.name} className="flex min-h-16 items-center gap-3 py-3">
+            <li key={p.name} className="group flex min-h-16 items-center gap-3 py-3">
               <ProjTile title={p.title} tone={p.tone} cls="size-8 rounded-lg text-sm" />
               <div className="min-w-0 flex-1">
                 {ren ? (
@@ -161,12 +164,13 @@ export function ProjectsBody({ f, on }: { f: ProjectsFacts; on: ProjectsEvents }
               </div>
               {ren ? null : (
                 <>
-                  {/* narrow, the buttons keep their icons and say their words under the pointer, so the name keeps room */}
-                  <button onClick={() => on.rename(p.name)} title="Rename" aria-label="Rename" className={P_BTN}>
+                  {/* under the pointer (or the keys) on the desktop, as a list's rows; narrow, the buttons keep their icons and
+                      say their words under the pointer, so the name keeps room */}
+                  <button onClick={() => on.rename(p.name)} title="Rename" aria-label="Rename" className={`${P_BTN} ${ROW_ACT}`}>
                     <Icon n="pencil" c="size-4" />
                     <span className="hidden @md/set:inline">Rename</span>
                   </button>
-                  <button onClick={() => on.remove(p.name)} title="Delete" aria-label="Delete" className={P_BTN}>
+                  <button onClick={() => on.remove(p.name)} title="Delete" aria-label="Delete" className={`${P_BTN} ${ROW_ACT}`}>
                     <Icon n="trash" c="size-4" />
                     <span className="hidden @md/set:inline">Delete</span>
                   </button>
@@ -400,7 +404,7 @@ export function SpellingsBody({ fixes, prefs, editing, prefsSlot, on }: { fixes:
       {fixes.length ? (
         <ul className="divide-y divide-zinc-200 border-y border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
           {fixes.map((c) => (
-            <li key={(c.wrong || '') + c.right} className="flex min-h-13 items-center gap-3 py-1.5 text-[15px]">
+            <li key={(c.wrong || '') + c.right} className="group flex min-h-13 items-center gap-3 py-1.5 text-[15px]">
               <span className="min-w-0 flex-1 break-words">
                 {c.wrong ? (
                   <>
@@ -414,7 +418,7 @@ export function SpellingsBody({ fixes, prefs, editing, prefsSlot, on }: { fixes:
                 onClick={() => on.forget(c)}
                 aria-label="Forget this spelling"
                 title="Forget this spelling"
-                className="grid size-11 shrink-0 place-items-center rounded-lg text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 lg:size-9 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+                className={`grid size-11 shrink-0 place-items-center rounded-lg text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 lg:size-9 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 ${ROW_ACT}`}
               >
                 <Icon n="x" c="size-4" />
               </button>

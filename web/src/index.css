@@ -35,3 +35,15 @@
     }
   }
 }
+
+/* Tailwind v4 leaves buttons the arrow: an enabled one shows the hand, as links and rows do; a disabled one says so. */
+@layer base {
+  button:not(:disabled),
+  [role='button']:not([aria-disabled='true']) {
+    cursor: pointer;
+  }
+  button:disabled,
+  [role='button'][aria-disabled='true'] {
+    cursor: not-allowed;
+  }
+}

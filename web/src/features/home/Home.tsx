@@ -97,10 +97,10 @@ function NewProject({ making, on }: { making: { error: string } | null; on: Home
             if (e.key === 'Escape') on.cancelNew()
           }}
         />
-        <button onClick={create} disabled={!title.trim()} className={`h-11 shrink-0 rounded-xl bg-zinc-900 px-4 text-[15px] font-semibold text-white dark:bg-zinc-100 dark:text-zinc-900 ${DISABLED}`}>
+        <button onClick={create} disabled={!title.trim()} className={`h-11 shrink-0 rounded-xl bg-zinc-900 px-4 text-[15px] font-semibold text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white ${DISABLED}`}>
           Create
         </button>
-        <button aria-label="Cancel" onClick={on.cancelNew} className="grid size-11 shrink-0 place-items-center rounded-xl text-zinc-500">
+        <button aria-label="Cancel" onClick={on.cancelNew} className="grid size-11 shrink-0 place-items-center rounded-xl text-zinc-500 hover:bg-zinc-200/70 hover:text-zinc-800 dark:hover:bg-zinc-800 dark:hover:text-zinc-200">
           <Icon n="x" c="size-4" sw="2" />
         </button>
       </div>

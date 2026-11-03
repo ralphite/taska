@@ -264,7 +264,7 @@ export function DraftWords({ text, spots, stretches = [], fixing = null, classNa
               tabIndex={on2 ? 0 : -1}
               title={sd === 'was' ? 'Main model' : 'Other model'}
               onClick={() => on.pick(p.fk, p.k, sd)}
-              className={`inline-flex items-center gap-1 rounded-md px-1.5 leading-6 ${on2 ? 'bg-white text-zinc-900 shadow-sm ring-1 ring-zinc-900/10 dark:bg-zinc-700 dark:text-zinc-50 dark:ring-white/10' : 'text-zinc-500 hover:bg-white/60 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-700/50 dark:hover:text-zinc-100'}`}
+              className={`inline-flex items-center gap-1 rounded-md px-1.5 leading-6 ${on2 ? 'bg-white text-zinc-900 shadow-sm ring-1 ring-zinc-900/10 dark:bg-zinc-700 dark:text-zinc-50 dark:ring-white/10' : 'text-zinc-500 hover:bg-white hover:text-zinc-900 hover:shadow-sm dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-zinc-100'}`}
             >
               {on2 && x.pick ? <Icon n="check" c="size-3.5 text-emerald-600 dark:text-emerald-400" sw="2.5" /> : null}
               {unmarked(label)}

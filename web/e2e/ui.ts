@@ -121,11 +121,11 @@ export const slowComments = (page: Page, ms: number) =>
 // ---------------------------------------------------------------- documents: comments and the editor
 /** A comment on a document, as its card. */
 export const commentCard = (page: Page, words: string) => shown(page.locator('[data-dc]').filter({ hasText: words })).first()
-/** A document's Edit (its editor opens). */
-export const docEdit = (page: Page) => shown(page.getByRole('button', { name: 'Edit', exact: true })).first()
+/** A document's Edit (its editor opens): in the pane's bar on the desktop, in its sheet on the phone (not a card's Edit). */
+export const docEdit = (page: Page) => shown(page.locator('header:has([data-pane-head]), [role="dialog"]').getByRole('button', { name: 'Edit', exact: true })).first()
 /** The editor's mic, and the line that says what it does. */
 export const docMic = (page: Page) => page.getByRole('button', { name: /^(Speak|Stop \d)/ }).first()
-export const docHint = (page: Page) => page.getByText(/^Listening\./).first()
+export const docHint = (page: Page) => page.getByText(/^Listening/).first()
 
 // ---------------------------------------------------------------- what waits on you
 /** The one action on a row that waits on you (answer, approve, accept), and which it is. */

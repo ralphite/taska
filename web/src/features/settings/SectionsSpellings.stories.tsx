@@ -6,7 +6,8 @@ export default { title: 'Components/Settings, help and parts/Settings/Voice spel
 type Story = StoryObj
 
 /** Words the voice gets wrong and how they are written, and how voice notes are written down. */
-export const VoiceSpellings: Story = { ...one('spellings'), name: 'Spellings and preferences' }
+/** the pointer on the first spelling: its Forget (the desktop shows a row's buttons under the pointer or the keys) */
+export const VoiceSpellings: Story = { ...one('spellings'), name: 'Spellings and preferences', parameters: { pseudo: { hover: ['li.group:first-of-type'] } } }
 export const VoiceSpellingsNoneYet: Story = { ...one('spellings', { noSpellings: true }), name: 'None yet' }
 // ---- more states (T639)
 export const SpellingsLoading: Story = { ...one('spellings', { spellingsLoading: true }), name: 'Loading' }

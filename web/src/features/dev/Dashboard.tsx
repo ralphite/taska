@@ -186,7 +186,7 @@ export function Dashboard({ d, err, range, onRange, rounds, now, onRounds, onRet
               key={v}
               aria-pressed={range === v}
               onClick={() => onRange(v)}
-              className="h-8 rounded-lg px-3 text-sm font-medium text-zinc-600 aria-pressed:bg-zinc-900 aria-pressed:text-white dark:text-zinc-300 dark:aria-pressed:bg-zinc-100 dark:aria-pressed:text-zinc-900"
+              className="h-8 rounded-lg px-3 text-sm font-medium text-zinc-600 hover:bg-zinc-100 aria-pressed:bg-zinc-900 aria-pressed:text-white dark:text-zinc-300 dark:hover:bg-zinc-700 dark:aria-pressed:bg-zinc-100 dark:aria-pressed:text-zinc-900"
             >
               {label}
             </button>

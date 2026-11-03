@@ -322,7 +322,7 @@ export function Composer({ line, waiting = null, lineOn, lineOnComposePage, plac
 }
 
 const Dismiss = ({ onClick }: { onClick(): void }) => (
-  <button onClick={onClick} aria-label="Dismiss" className="-my-2 grid size-11 shrink-0 place-items-center rounded-full text-zinc-400">
+  <button onClick={onClick} aria-label="Dismiss" className="-my-2 grid size-11 shrink-0 place-items-center rounded-full text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200">
     <Icon n="x" c="size-3.5" sw="2" />
   </button>
 )
@@ -332,7 +332,7 @@ const Pulse = () => <span className="size-2 shrink-0 animate-pulse rounded-full 
 /** The line above the box: what happened to what you sent last. */
 export function Feedback({ line, on }: { line: FeedbackLine | null; on: { dismiss(): void; undo(): void; retry(): void; edit(): void; view(): void; undoFiling(): void; move(): void; retryOrganizer(): void } }) {
   const link = (label: string, run: () => void) => (
-    <button onClick={run} className="-my-2 h-11 shrink-0 rounded-full px-2 font-semibold text-blue-600 dark:text-blue-400">
+    <button onClick={run} className="-my-2 h-11 shrink-0 rounded-full px-2 font-semibold text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10">
       {label}
     </button>
   )
@@ -383,7 +383,7 @@ export function Feedback({ line, on }: { line: FeedbackLine | null; on: { dismis
               Moved {line.code} to {line.to}
               {line.as ? ` as ${line.as}` : ''}
             </span>
-            <a href={line.href} className="-my-2 flex h-11 shrink-0 items-center rounded-full px-2 font-semibold text-blue-600 dark:text-blue-400">
+            <a href={line.href} className="-my-2 flex h-11 shrink-0 items-center rounded-full px-2 font-semibold text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10">
               Open
             </a>
             <Dismiss onClick={on.dismiss} />

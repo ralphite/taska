@@ -100,7 +100,8 @@ function Choices({ b, world, choosing, done }: { b: Extract<MdBlock, { kind: 'ch
         const i = b.base + k
         const on = done ? done.includes(l.trim()) : !!choosing?.picked.has(i)
         const words = <span className="min-w-0 flex-1" dangerouslySetInnerHTML={html(l, world, false)} />
-        if (done && !choosing)
+        // not to be picked (answered, or only shown): quiet, never like a form to fill
+        if (!choosing)
           return (
             <div
               key={k}
@@ -114,15 +115,14 @@ function Choices({ b, world, choosing, done }: { b: Extract<MdBlock, { kind: 'ch
         return (
           <button
             key={k}
-            disabled={!choosing}
-            {...(choosing ? { 'data-choice': i } : {})}
-            onClick={choosing ? () => choosing.pick(i, b.multi) : undefined}
+            data-choice={i}
+            onClick={() => choosing.pick(i, b.multi)}
             aria-pressed={on}
-            className={`group flex min-h-11 w-full items-center gap-3 rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-left text-[15px] leading-snug aria-pressed:border-blue-500 aria-pressed:bg-blue-50 dark:border-zinc-700 dark:bg-zinc-900 dark:aria-pressed:border-blue-400 dark:aria-pressed:bg-blue-400/10 ${choosing ? 'hover:border-zinc-300 hover:bg-zinc-50 dark:hover:border-zinc-600 dark:hover:bg-zinc-800/70' : ''}`}
+            className="group flex min-h-11 w-full items-center gap-3 rounded-xl border border-zinc-200 bg-white px-3 py-2.5 text-left text-[15px] leading-snug hover:border-zinc-300 hover:bg-zinc-50 aria-pressed:border-blue-500 aria-pressed:bg-blue-50 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:border-zinc-600 dark:hover:bg-zinc-800/70 dark:aria-pressed:border-blue-400 dark:aria-pressed:bg-blue-400/10"
           >
             <span className={`${box} border-zinc-300 group-aria-pressed:border-blue-600 group-aria-pressed:bg-blue-600 group-aria-pressed:text-white dark:border-zinc-600 dark:group-aria-pressed:border-blue-400 dark:group-aria-pressed:bg-blue-400 dark:group-aria-pressed:text-zinc-900`}>{check}</span>
             {words}
-            {choosing && i < 9 ? <Kbd k={String(i + 1)} /> : null}
+            {i < 9 ? <Kbd k={String(i + 1)} /> : null}
           </button>
         )
       })}

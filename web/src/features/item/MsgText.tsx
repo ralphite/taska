@@ -24,7 +24,7 @@ export function MsgText({ x, env, on, done = null, whole = false }: {
         <div onClick={() => on.more(x.id)} className="max-h-48 cursor-pointer overflow-hidden mask-b-from-60%">
           {rich(x.text)}
         </div>
-        <button data-more onClick={() => on.more(x.id)} className="-mb-2 flex h-9 items-center text-sm font-medium text-blue-600 dark:text-blue-400">
+        <button data-more onClick={() => on.more(x.id)} className="-mb-2 flex h-9 items-center text-sm font-medium text-blue-600 hover:underline dark:text-blue-400">
           Show all
         </button>
       </>
@@ -37,7 +37,7 @@ export function MsgText({ x, env, on, done = null, whole = false }: {
       <div onClick={() => on.more(x.id)} className="cursor-pointer">
         {body}
       </div>
-      <button data-more onClick={() => on.more(x.id)} className="-mb-2 flex h-11 items-center text-sm font-medium text-blue-600 dark:text-blue-400">
+      <button data-more onClick={() => on.more(x.id)} className="-mb-2 flex h-11 items-center text-sm font-medium text-blue-600 hover:underline dark:text-blue-400">
         {folded ? 'Show more' : 'Show less'}
       </button>
     </>

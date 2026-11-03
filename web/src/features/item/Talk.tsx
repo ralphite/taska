@@ -127,7 +127,7 @@ function MsgView({ it, x, env, on, facts, docs, code, done, ver, gone, read }: {
     const undo = src ? facts.undo(src.id) : null
     const moved = src?.moved && !ver?.old ? movedOf(src.moved, facts.title) : null
     return (
-      <div className={`group flex scroll-mb-4 flex-col items-end gap-1 rounded-2xl ${ver?.old ? 'opacity-60' : ''}`}>
+      <div className={`group group/msg flex scroll-mb-4 flex-col items-end gap-1 rounded-2xl ${ver?.old ? 'opacity-60' : ''}`}>
         {y.text ? (
           <div {...voiceMark(src)} className={YOU_BUBBLE}>
             {ver?.old ? (
@@ -199,7 +199,7 @@ function MsgView({ it, x, env, on, facts, docs, code, done, ver, gone, read }: {
             </button>
           ) : null}
           {src && !ver?.old && !src.moved ? (
-            <button aria-label={`More for ${inputCode(src.id)}`} onClick={(e) => on.inputMore(src.id, e.currentTarget)} className={`${DC_BTN} min-w-11 justify-center`}>
+            <button aria-label={`More for ${inputCode(src.id)}`} onClick={(e) => on.inputMore(src.id, e.currentTarget)} className={`${DC_BTN} min-w-11 justify-center lg:opacity-0 lg:group-hover/msg:opacity-100 lg:focus-visible:opacity-100`}>
               <Icon n="more" c="size-3.5" />
             </button>
           ) : null}
@@ -322,7 +322,7 @@ export function docNotes(docs: readonly Doc[], env: TalkEnv, on: TalkLineEvents,
     const quote = c.quote ? (
       <button
         onClick={() => on.docAt(d.d, key)}
-        className={`mb-1.5 line-clamp-3 block w-full border-l-2 pl-2 text-left text-[13px] leading-snug ${changed ? 'line-through' : ''} ${you ? 'border-white/50 text-white/85' : 'border-zinc-300 text-zinc-500 dark:border-zinc-600 dark:text-zinc-400'}`}
+        className={`mb-1.5 line-clamp-3 block w-full border-l-2 pl-2 text-left text-[13px] leading-snug hover:underline ${changed ? 'line-through' : ''} ${you ? 'border-white/50 text-white/85 hover:text-white' : 'border-zinc-300 text-zinc-500 hover:text-zinc-700 dark:border-zinc-600 dark:text-zinc-400 dark:hover:text-zinc-200'}`}
       >
         “{plainQuote(c.quote)}”
       </button>

@@ -45,7 +45,7 @@ export function DraftFiles({ files, url, onRemove, onView }: { files: readonly D
               </span>
             </div>
           ) : (f.mime || '').startsWith('image/') ? (
-            <button onClick={() => onView(f.key)} aria-label={`Look at ${f.name}`} className="block cursor-zoom-in rounded-xl">
+            <button onClick={() => onView(f.key)} aria-label={`Look at ${f.name}`} className="block cursor-zoom-in rounded-xl hover:brightness-95 dark:hover:brightness-110">
               <img src={f.preview || url(f.f || '')} alt="" className={`size-16 rounded-xl border border-zinc-200 object-cover dark:border-zinc-700 ${f.f ? '' : 'opacity-40'}`} />
             </button>
           ) : (
@@ -54,8 +54,8 @@ export function DraftFiles({ files, url, onRemove, onView }: { files: readonly D
               <FileName name={f.name} />
             </div>
           )}
-          <button onClick={() => onRemove(f.key)} aria-label={`Remove ${f.name}`} className="absolute -top-3.5 -right-3.5 grid size-11 place-items-center">
-            <span className="grid size-6 place-items-center rounded-full bg-zinc-900 text-white ring-2 ring-white dark:bg-zinc-100 dark:text-zinc-900 dark:ring-zinc-900">
+          <button onClick={() => onRemove(f.key)} aria-label={`Remove ${f.name}`} className="group/x absolute -top-3.5 -right-3.5 grid size-11 place-items-center">
+            <span className="grid size-6 place-items-center rounded-full bg-zinc-900 text-white ring-2 ring-white group-hover/x:bg-zinc-600 dark:bg-zinc-100 dark:text-zinc-900 dark:ring-zinc-900 dark:group-hover/x:bg-white">
               <Icon n="x" c="size-3.5" sw="2.5" />
             </span>
           </button>
