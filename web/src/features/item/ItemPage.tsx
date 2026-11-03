@@ -398,11 +398,12 @@ export function ItemPage({ it, f, env, facts, on, talkRef, duo = false, left = n
       </div>
       )}
       {duo ? (
-        // the line between the two columns, dragged sideways like the other lines
+        // the line between the two columns, dragged sideways like the other lines: one line to the screen's bottom,
+        // over the box's row (B638)
         <Grip
           name="duo"
           axis="x"
-          place="relative z-10 hidden w-px shrink-0 bg-zinc-200 after:absolute after:-inset-x-1.5 after:inset-y-0 lg:block dark:bg-zinc-800"
+          place="relative z-30 hidden w-px shrink-0 bg-zinc-200 after:absolute after:-inset-x-1.5 after:inset-y-0 lg:block dark:bg-zinc-800"
           measure={(el) => {
             const from = el.previousElementSibling?.getBoundingClientRect().left ?? 0
             return { from, most: innerWidth - from }

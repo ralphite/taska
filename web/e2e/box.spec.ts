@@ -98,10 +98,13 @@ test('in two columns the line between them is one line to the bottom of the scre
       footLeft: f.left,
       height: innerHeight,
       inFoot: !!hit?.closest(foot),
+      // at the bottom of the screen, beside the box, the line itself is what shows (B638: not covered by the box)
+      lineShows: !!document.elementFromPoint(g.left + g.width / 2, innerHeight - 10)?.closest('[data-grip="duo"]'),
     }
   }, FOOT)
   expect(at.lineEnd).toBeGreaterThanOrEqual(at.height - 1) // one line, top to bottom: no second piece under the box
   expect(at.footLeft).toBeGreaterThanOrEqual(at.lineRight - 1) // the box's row is the talk's column only
+  expect(at.lineShows).toBe(true)
   expect(at.inFoot).toBe(false) // the item's column runs down beside the box, free to point at and scroll
   // the talk, scrolled to its end, still ends clear above the box
   const gap = await talk(page).evaluate((e, foot) => {

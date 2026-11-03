@@ -169,7 +169,7 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
         <FootContainer
           route={route}
           composePage={compose}
-          place={`row-start-5 group-data-duo/app:ml-[calc(var(--duo-w,55%)+1px)] group-data-duo/app:after:left-1 group-data-[compose]/app:row-span-3 group-data-[compose]/app:row-start-3 ${pane}`}
+          place={`row-start-5 group-data-duo/app:ml-[var(--duo-w,55%)] group-data-duo/app:after:left-1 group-data-[compose]/app:row-span-3 group-data-[compose]/app:row-start-3 ${pane}`}
           hidden={settings || route.place.kind === 'side' || docEditing}
           onHeight={setFootH}
         />
