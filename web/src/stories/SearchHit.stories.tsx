@@ -15,9 +15,15 @@ export const Marked: Story = {
     <Frames phoneWidth={393} deskWidth={480}>
       {() => (
         <div className="flex flex-col gap-2 p-3 text-[15px]">
-          <Hit text="Export ignores the active filter" words={words} />
-          <Hit text="The exported file keeps the filters you set, and the sort." words={words} />
-          <Hit text="Nothing here matches." words={words} />
+          <p>
+            <Hit text="Export ignores the active filter" words={words} />
+          </p>
+          <p>
+            <Hit text="The exported file keeps the filters you set, and the sort." words={words} />
+          </p>
+          <p>
+            <Hit text="Nothing here matches." words={words} />
+          </p>
         </div>
       )}
     </Frames>

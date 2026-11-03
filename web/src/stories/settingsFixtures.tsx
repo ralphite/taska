@@ -86,7 +86,8 @@ export function settingsAt(sec: SectionKey | null, desk: boolean, h: SettingsHer
   const rows = h.projectsLoading ? null : ROWS
   const st = { deleted: h.noneDeleted ? [] : GONE, pNew: !!h.projects?.pNew, pNewText: h.projects?.pNewText ?? '', pErr: h.projects?.pErr ?? '', renaming: h.projects?.renaming ?? null, pMenu: h.projects?.menu ?? null }
   const asked = Object.fromEntries((h.projects?.purging ?? []).map((n) => [`purge ${n}`, 1]))
-  const nav = navFacts(m, { notifications: desk ? 'On' : 'Off', projects: ROWS.length, spellings: FIXES.length })
+  // the column says what the section shows (the desktop's state; the phone's pushes on or off)
+  const nav = navFacts(m, { notifications: desk ? (h.notifications?.state ?? 'On').replace('Blocked by the browser', 'Blocked') : h.push?.sub ? 'On' : 'Off', projects: ROWS.length, spellings: FIXES.length })
   const pOn = { newProject: no, create: no, rename: no, saveRename: no, remove: no, restore: no, purge: no, menu: no, open: no }
   const navOn = { open: no, back: no, keys: no, href: () => '#' }
   const bodies: Record<SectionKey, () => ReactNode> = {

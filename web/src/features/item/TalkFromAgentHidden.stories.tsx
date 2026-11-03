@@ -6,6 +6,6 @@ import { at } from '../../stories/talkFromAgentFixtures'
 export default { title: 'Components/Conversation/Message/From an agent/Pointer and hidden' } satisfies Meta
 type Story = StoryObj
 
-export const PointerOnIt: Story = { ...at([message({ id: 2 })]), name: 'Pointer on it: ⋯ shows', parameters: { pseudo: { hover: ['.group'] } } }
+export const PointerOnIt: Story = { ...at([message({ id: 2 })]), name: 'Pointer on it: ⋯ shows', parameters: { pseudo: { hover: ['.group\\/msg'] } } }
 export const HiddenOneLine: Story = { ...at([message({ id: 2, hidden: true })]), name: 'Hidden: one line' }
 export const HiddenShownAgain: Story = { ...at([message({ id: 2, hidden: true })], { t: { peeking: new Set([2]) } }), name: 'Hidden, shown again' }
