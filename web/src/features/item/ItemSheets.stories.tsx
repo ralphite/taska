@@ -49,3 +49,20 @@ export const WhatAgentsSeeLoading: Story = {
   name: 'What agents see: loading',
   render: () => <Frames height={220} deskWidth={900} phoneWidth={393}>{(layout) => opened(agentCardSheet('F012', null), layout === 'desk')}</Frames>,
 }
+// ---- more states (T639): what the organizer made of each input, and an input that is only a voice note
+const filed = [
+  input({ id: 'r12', t: at(90), acked: true, touched: [12], text: 'The export should keep the filter I set.', org: { ok: true, msg: 'Created F012', t: '', keep: false, changed: true, undone: false } }),
+  input({ id: 'r15', t: at(30), acked: true, touched: [12], text: '', files: [{ f: 'f4-voice_0-07.webm', name: 'voice_0-07.webm', mime: 'audio/webm' }], org: { ok: true, msg: 'Added to F012', t: '', keep: false, changed: true, undone: false } }),
+]
+const mf = modelOf([item({ n: 12, srcs: ['r12', 'r15'] })], filed)
+export const SourcesFiled: Story = {
+  name: 'What an item came from: what the organizer made of each, a voice note alone',
+  render: () => (
+    <Frames height={520} deskWidth={900} phoneWidth={393}>
+      {(layout) => {
+        const env = talkEnv(mf, layout === 'desk')
+        return opened(sourcesSheet({ code: 'F012', inputs: filed, world: env.world, now: mf.at, files: (f) => <Thumbs files={f} url={env.url} play={env.play} tidy on={{ play() {}, words() {}, view() {} }} /> }, no), layout === 'desk')
+      }}
+    </Frames>
+  ),
+}

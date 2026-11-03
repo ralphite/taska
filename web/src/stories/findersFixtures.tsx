@@ -22,6 +22,8 @@ export const palette = (desk: boolean, open: number | null) => {
   return opened({ title: 'Go to or do', body: <Palette items={m.items} code={(n) => codeOf(m, n)} open={open} commands={COMMANDS} onItem={no} onCommand={no} /> }, desk)
 }
 export const switcher = (desk: boolean) => opened({ title: 'Switch project', body: <Switcher rows={ROWS} loading={false} onOpen={no} /> }, desk)
+/** the projects not listed yet: Loading… under the field */
+export const switcherLoading = (desk: boolean) => opened({ title: 'Switch project', body: <Switcher rows={[]} loading onOpen={no} /> }, desk)
 export const one = (draw: (desk: boolean) => ReturnType<typeof opened>, run?: (root: HTMLElement) => void, height = 720, pseudo?: Record<string, string[]>): Story => ({
   ...(pseudo ? { parameters: { pseudo } } : {}),
   render: () => <Frames height={height} deskWidth={900} phoneWidth={393}>{(layout) => (run ? <After run={run}>{draw(layout === 'desk')}</After> : draw(layout === 'desk'))}</Frames>,

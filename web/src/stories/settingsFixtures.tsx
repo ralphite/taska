@@ -52,13 +52,14 @@ export interface SettingsHere {
 }
 
 /** Shop with its history: agents, documents, what was deleted, what can be undone. */
-export const shopWithHistory = (agents: AgentSeen[] = SEEN) =>
+/** the demo project with its agents; `work`: something waits for an agent; `remote`: its public address ('' none) */
+export const shopWithHistory = (agents: AgentSeen[] = SEEN, o: { work?: boolean; remote?: string } = {}) =>
   modelOf(PROJECT, [], {
     title: 'Shop',
     agents,
-    work: true,
+    work: o.work ?? true,
     base: 'http://localhost:7340/p/shop',
-    remote: 'https://taska.example/k/a1b2/p/shop',
+    remote: o.remote ?? 'https://taska.example/k/a1b2/p/shop',
     key: 'a1b2-c3d4',
     organizer: { on: true, model: 'gemini-flash-latest', busy: null },
     undo: [{ seq: 40, n: 4, f: { status: 'done' }, was: { status: 'review' }, t: at(20) }],

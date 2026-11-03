@@ -26,3 +26,5 @@ export const AsSaid: Story = { name: 'Original words: word for word and tidied',
 export const AsSaidNothingTidied: Story = { name: 'Original words: nothing tidied', render: sheetAt('', 'Keep the filter in the export.') }
 /** Each version, the latest first, with when and how it changed. */
 export const InputHistory: Story = { name: 'What you said: history', render: () => <Frames height={520} deskWidth={900} phoneWidth={393}>{(layout) => opened(historySheet(r, Date.parse(T)), layout === 'desk')}</Frames> }
+// ---- more states (T639)
+export const AsSaidNoWords: Story = { name: 'Original words: no words heard', render: sheetAt('', '') }

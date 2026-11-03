@@ -3,7 +3,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { Doc } from '../../model/types'
 import { After, Frames } from '../../stories/Frames'
-import { LONG, doc } from '../../stories/docFixtures'
+import { LONG, comment, doc } from '../../stories/docFixtures'
 import { docAt, type DocHere } from '../../stories/docPage'
 
 export default { title: 'Components/Document/Reading' } satisfies Meta
@@ -44,3 +44,12 @@ export const PointingAtListItem: Story = {
 }
 // ---- more states (B636)
 export const DeleteAsksAgain: Story = { ...both(PLAN, { asked: { 'doc-delete 12': 1 } }), name: 'Delete asks again' }
+// ---- more states (T639)
+const untitledBlocks = PLAN.blocks.slice(1)
+/** a document whose words have no title heading: its title drawn large above them */
+export const NoTitleInItsText: Story = { ...both(doc({ blocks: untitledBlocks, md: untitledBlocks.map((b) => b.text).join('\n\n') })), name: 'No title in its words' }
+/** a comment on a heading: on the phone its count sits at the heading's right edge */
+export const ACommentOnAHeading: Story = {
+  ...both(doc({ blocks: PLAN.blocks.map((b) => (b.key === 'h1' ? { ...b, comments: [comment({ id: 9, key: 'h1', th: 9, text: 'Add the dates?' })] } : b)) })),
+  name: 'A comment on a heading',
+}

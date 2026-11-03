@@ -17,3 +17,13 @@ export const Filters: Story = {
     </Frames>
   ),
 }
+// ---- more states (T639)
+const sheetOn = (tab: 'items' | 'archive' | 'rules', q = {}): Story => ({
+  render: () => <Frames desk={false} height={780} phoneWidth={393}>{() => opened(filtersSheet(filterFacts(menuModel(), tab, { ...NO_FILTERS, ...q }), { set: no, unset: no, reset: no, saveView: no, close: no }), false, { under: underList(false) })}</Frames>,
+})
+/** on Rules: no Type or Priority, the rules' own statuses, "Show N rules" */
+export const OnRules: Story = { ...sheetOn('rules'), name: 'On Rules' }
+/** on Archive: When, and the archive's statuses */
+export const OnArchive: Story = { ...sheetOn('archive'), name: 'On Archive' }
+/** nothing set: no Clear all, Show says how many items */
+export const NothingSet: Story = { ...sheetOn('items'), name: 'Nothing set' }

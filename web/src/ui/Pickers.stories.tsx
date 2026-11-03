@@ -11,9 +11,9 @@ import { moveParentSheet, pickSheet } from './Pickers'
 export default { title: 'Components/Menus and sheets/Move and pick' } satisfies Meta
 type Story = StoryObj
 
-const putUnder = (desk: boolean) => {
+const putUnder = (desk: boolean, n = 14) => {
   const m = menuModel()
-  return opened(moveParentSheet({ it: m.byN.get(14)!, items: m.items, kids: m.kids, code: (n) => codeOf(m, n), desk }, no), desk, { under: underList(desk), look: desk ? { pop: true, at: AT_BUTTON } : {} })
+  return opened(moveParentSheet({ it: m.byN.get(n)!, items: m.items, kids: m.kids, code: (c) => codeOf(m, c), desk }, no), desk, { under: underList(desk), look: desk ? { pop: true, at: AT_BUTTON } : {} })
 }
 const typed = (text: string) => (root: HTMLElement) => typeInto(root.querySelector<HTMLInputElement>('[role="dialog"] input'), text)
 
@@ -35,3 +35,6 @@ export const PickAnItem: Story = {
     </Frames>
   ),
 }
+// ---- more states (T639)
+/** Put under for an item on its own: No parent ticked, no row marked */
+export const MoveItemOnItsOwn: Story = { name: 'Put under: on its own now', render: () => <Frames height={640} deskWidth={900} phoneWidth={393}>{(layout) => putUnder(layout === 'desk', 5)}</Frames> }

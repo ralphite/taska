@@ -5,7 +5,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { blockKeys } from '../../model/docs'
 import type { Doc } from '../../model/types'
 import { Frames } from '../../stories/Frames'
-import { CHOICES, CHOICES_SENT } from '../../stories/docFixtures'
+import { CHOICES, CHOICES_SENT, doc } from '../../stories/docFixtures'
 import { message } from '../../stories/fixtures'
 import { docAt, type DocHere } from '../../stories/docPage'
 
@@ -28,3 +28,7 @@ export const Skipped: Story = {
   ...one(CHOICES, { item: { thread: [message({ id: 31, kind: 'ask', text: 'Pick the formats in D14.' }), message({ id: 32, by: 'you', kind: 'say', text: 'CSV is enough for now.' })] } }),
   name: 'Skipped: replied on the item instead',
 }
+// ---- more states (T639)
+const MIXED = doc({ d: 14, title: 'Export formats', blocks: [{ key: 'title', kind: 'heading', text: '# Export formats', comments: [] }, { key: 'm1', kind: 'list', text: 'Which should it offer?\n- [ ] CSV\n- [ ] Excel\n\nAnd when?\n- ( ) This week\n- ( ) Next week', comments: [] }], detached: [], whole: [], resolved: {} })
+/** words and choices in one paragraph: the words, then each run of choices as a form */
+export const WordsAndChoices: Story = { ...one(MIXED), name: 'Words and choices in one paragraph' }

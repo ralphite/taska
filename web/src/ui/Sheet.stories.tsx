@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { Frames } from '../stories/Frames'
+import { After, Frames } from '../stories/Frames'
 import { PRIMARY } from './tones'
 import { Sheet } from './Sheet'
 
@@ -22,4 +22,23 @@ const parts = {
 export const Frame: Story = {
   name: 'A sheet’s frame: phone and desktop',
   render: () => <Frames height={420} deskWidth={900}>{(layout) => <Sheet open look={{}} parts={parts} desk={layout === 'desk'} onClose={() => {}} />}</Frames>,
+}
+// ---- more states (T639)
+/** the desktop's menu popped with no spot (All actions by its key, Put under… by M): top right under the bar */
+export const PoppedNoSpot: Story = {
+  name: 'A desktop menu with no spot: top right under the bar',
+  render: () => <Frames phone={false} height={420} deskWidth={900}>{() => <Sheet open look={{ pop: true }} parts={{ title: 'All actions', menu: true, body: <p className="text-[15px]">Done · Later · Archive …</p> }} desk onClose={() => {}} />}</Frames>,
+}
+/** the phone's sheet dragged down by its handle, as the finger moves it (let go far enough, it closes) */
+export const DraggedDown: Story = {
+  name: 'Dragged down by its handle (phone)',
+  render: () => (
+    <Frames desk={false} height={520}>
+      {() => (
+        <After run={(root) => root.querySelector<HTMLElement>('[role="dialog"]')?.style.setProperty('transform', 'translateY(90px)')}>
+          <Sheet open look={{}} parts={parts} desk={false} onClose={() => {}} />
+        </After>
+      )}
+    </Frames>
+  ),
 }

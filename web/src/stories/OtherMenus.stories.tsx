@@ -43,3 +43,11 @@ export const InputMenu: Story = {
 /** The sidebar's right-click on the project you are in. */
 export const ProjectMenuHere: Story = { ...both((desk) => opened(projectMenuSheet({ here: true, slug: 'taska', title: 'taska', tone: PROJECT_TONES[0], open: 24 }, { open: no, settings: no, manage: no }), desk, { look: desk ? { pop: true, at: AT_POINTER(40, 120) } : {} }), 360), name: 'This project' }
 export const ProjectMenuOther: Story = { ...both((desk) => opened(projectMenuSheet({ here: false, ...home }, { open: no, settings: no, manage: no }), desk, { look: desk ? { pop: true, at: AT_POINTER(40, 160) } : {} }), 360), name: 'Another project' }
+// ---- more states (T639)
+const plain = input({ id: 'r13', acked: true, text: 'Look at why the build takes so long.' })
+const inputMenu = (r: typeof said, other: number, asked: Record<string, number> = {}) => (desk: boolean) =>
+  opened(inputMenuSheet(inputMenuFacts(modelOf([item({ n: 4 }), item({ n: 12 })], [r]), r, other, asked), { edit: no, append: no, asSaid: no, undo: no, move: no, history: no, rescope: no, takeOff: no, remove: no }), desk, { look: desk ? { pop: true, at: AT_BUTTON } : {} })
+/** a plain typed input with no other project: no Original words, Undo, History, files or Move */
+export const InputMenuPlain: Story = { ...both(inputMenu(plain, 0), 420), name: 'What you said: typed, nothing filed, no other project' }
+/** a file's Take off asking again */
+export const InputMenuTakeOffAsks: Story = { ...both(inputMenu(said, 2, { [`unfile ${said.id} ${SHOT.f}`]: 1 }), 720), name: 'What you said: Take it off?' }
