@@ -237,32 +237,34 @@ export class Box {
     return true
   }
 
-  /** Your edit was refused because the input changed in another window (another tab added to it, its voice note's
-   * words came): when that only added words after the ones you began from, they go on after yours and it is saved;
-   * otherwise your words come back in the box with what it says now, and Save puts yours in its place. */
+  /** Your edit or addition was refused: the page works it out itself instead of showing an error (B637, Yadong:
+   * show no error that can be avoided, mend what can be mended). Added words never clash: they go on after what it
+   * says now. An edit made while it changed elsewhere is saved over the newest version; the other version stays in
+   * the input's history (only words added after yours are merged in). Refused with nothing changed: tried once
+   * more; only if that fails too do your words come back in the box, with the reason. */
   private async editedElsewhere(slug: string, mode: Extract<BoxMode, { kind: 'amend' }>, key: DraftKey, text: string, files: unknown[], drafts: DraftFile[], said: string): Promise<void> {
     await this.d.refresh?.(slug)
     const r = this.d.model?.(slug)?.byId.get(mode.id)
     if (!r) return
     const code = inputCode(mode.id)
-    if ((r.v || 0) === mode.v) {
-      // refused for another reason: nothing changed elsewhere (B637), so say only that it was not saved
-      this.write(slug, key, text)
-      if (drafts.length) this.d.store.getState().putFiles(key, drafts)
-      this.d.store.getState().setMode(mode)
-      this.d.toasts.show(`${code} not saved. Text restored; save to try again`, null, { error: true, sticky: true })
-      return
-    }
-    if (mode.mode === 'edit' && mode.base != null && r.text !== mode.base && r.text.startsWith(mode.base)) {
-      const merged = text + r.text.slice(mode.base.length)
-      const ok = await this.d.runner.send({ id: newId(), slug, commands: [{ op: 'amend', id: mode.id, mode: 'edit', v: r.v || 0, text: merged, files }], patches: [], inputPatches: [{ id: mode.id, f: { text: merged } }], said, t: Date.now() })
-      if (ok) this.d.toasts.show(`${code} updated with changes from another window`)
-      return
-    }
-    this.d.store.getState().setMode({ ...mode, v: r.v || 0, base: r.text })
+    const v = r.v || 0
+    const again = (t: string) => this.d.runner.send({ id: newId(), slug, commands: [{ op: 'amend', id: mode.id, mode: mode.mode, v, text: t, files }], patches: [], inputPatches: t ? [{ id: mode.id, f: { text: mode.mode === 'edit' ? t : [r.text, t].filter(Boolean).join('\n\n') } }] : [], said, t: Date.now() })
+    if (v !== mode.v) {
+      if (mode.mode === 'append') {
+        if (await again(text)) return
+      } else {
+        const merged = mode.base != null && r.text !== mode.base && r.text.startsWith(mode.base) ? text + r.text.slice(mode.base.length) : text
+        if (await again(merged)) {
+          if (merged === text && mode.base != null && r.text !== mode.base) this.d.toasts.show(`${code} updated; the version from another window is in its history`)
+          return
+        }
+      }
+    } else if (await again(text)) return
+    // refused twice: the words come back to the box, and what it says now is on the box's line
+    this.d.store.getState().setMode({ ...mode, v, base: r.text })
     this.write(slug, key, text)
     if (drafts.length) this.d.store.getState().putFiles(key, drafts)
-    this.d.toasts.show(`${code} changed elsewhere. Text restored; save to apply`, null, { error: true, sticky: true }) // the box's line shows what it says now
+    this.d.toasts.show(`${code}: your change did not go through. Your words are back in the box; send again`, null, { error: true, sticky: true })
   }
 
   /** What did not go out yet, back in the box to change (the box must be empty). -> it came back */
@@ -313,7 +315,7 @@ export class Box {
       if (r.text.startsWith(base)) {
         this.write(slug, key, this.text(slug, key) + r.text.slice(base.length))
         this.d.toasts.show(`${inputCode(id)}: merged new text from another window`)
-      } else this.d.toasts.show(`${inputCode(id)} changed in another window since you began`, null, { error: true, sticky: true }) // the box's line shows what it says now
+      } else this.d.toasts.show(`${inputCode(id)} changed in another window since you began: sending keeps yours, the other version stays in its history`) // the box's line shows what it says now
     }
     this.editBase(slug, key, r.text)
   }

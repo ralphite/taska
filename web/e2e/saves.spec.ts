@@ -146,3 +146,20 @@ test('D83 #1 (T550): your comment says Sending… beside its paragraph until Tas
   await expect.poll(async () => p.read('D1')).toContain('Who signs it off?')
   await expect(mine).not.toContainText('Sending…')
 })
+
+test('B637: words added to an input while it changed in another window are saved after what it says now, with no error', async ({
+  page,
+  request,
+}) => {
+  test.skip(!isDesk(page), 'the desktop lists what you said lately beside the box')
+  const p = await project(request, LOOP)
+  await open(page, p)
+  await addingTo(page, 'Fix the drain by the door')
+  // meanwhile another window adds to it: its version moves on
+  await p.op({ op: 'amend', id: 'r1', mode: 'append', v: 0, text: 'From the other window.', files: [] })
+  await box(page).fill('And the gutter too.')
+  await page.keyboard.press('Shift+Enter')
+  await expect.poll(() => p.read('r1'), { timeout: 15000 }).toContain('And the gutter too.')
+  expect(await p.read('r1')).toContain('From the other window.')
+  await expect(page.getByText(/changed elsewhere|not saved|did not go through/)).toHaveCount(0)
+})
