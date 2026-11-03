@@ -8,8 +8,7 @@ import { plural } from '../../model/words'
 import { Kbd, ProjTile } from '../../ui/bits'
 import { Icon } from '../../ui/Icon'
 import { FIELD, P_BTN, PRIMARY, SECOND } from '../../ui/tones'
-import { Empty } from '../../ui/bits'
-import { CopyBtn, Loading, Part, Ruled, Setting, TextBox, Toggle } from './SettingsParts'
+import { CopyBtn, Loading, Part, Setting, TextBox, Toggle } from './SettingsParts'
 
 // ---- Projects
 
@@ -214,7 +213,7 @@ export function PhoneBody({ link, keyText, asking, desk, on }: { link: string; k
       {link ? (
         <Part title="Link" about="Open on your phone">
           <TextBox t={link} />
-          <CopyBtn label="Copy link" main onCopy={() => on.copy(link)} />
+          <CopyBtn label="Copy link" onCopy={() => on.copy(link)} />
         </Part>
       ) : (
         <Part
@@ -331,76 +330,67 @@ export interface SpellingsEvents {
 
 export function SpellingsBody({ fixes, prefs, editing, prefsSlot, on }: { fixes: Spelling[] | null; prefs: VoicePrefs | null; editing: boolean; prefsSlot?: ReactNode; on: SpellingsEvents }) {
   const [word, setWord] = useState('')
-  if (!fixes) return <Loading />
+  // the spellings and the preferences come together
+  if (!fixes || !prefs) return <Loading />
   const add = () => {
     if (!word.trim()) return
     void on.addWord(word).then((ok) => ok && setWord(''))
   }
   return (
     <>
-      {prefs ? (
-        <>
-          <Part
-            title={
-              <>
-                Transcription preferences
-                {prefs.default ? <span className="ml-2 text-[13px] font-normal text-zinc-400">default</span> : null}
-              </>
-            }
-            about="All projects"
-          >
-            {editing ? (
-              <div className="mt-3">{prefsSlot}</div>
-            ) : (
-              <>
-                <div className="mt-3 rounded-xl bg-zinc-100 px-3.5 py-3 text-[15px] leading-relaxed break-words whitespace-pre-wrap text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100">{prefs.text || ''}</div>
-                <button onClick={on.editPrefs} className={`${SECOND} mt-3`}>
-                  <Icon n="pencil" c="size-4" />
-                  Edit
-                </button>
-              </>
-            )}
-          </Part>
-          <Setting
-            title="Tidy voice notes"
-            about={prefs.tidy ? 'Drops fillers and repeats; original words kept' : 'Written word for word.'}
-            control={
-              <button onClick={on.toggleTidy} role="switch" aria-checked={!!prefs.tidy} className={SECOND}>
-                {prefs.tidy ? 'Turn off' : 'Turn on'}
-              </button>
-            }
+      <Part
+        title={
+          <>
+            Transcription preferences
+            {prefs.default ? <span className="ml-2 text-[13px] font-normal text-zinc-400">default</span> : null}
+          </>
+        }
+        about="All projects"
+      >
+        {editing ? (
+          <div className="mt-3">{prefsSlot}</div>
+        ) : (
+          <>
+            <div className="mt-3 rounded-xl bg-zinc-100 px-3.5 py-3 text-[15px] leading-relaxed break-words whitespace-pre-wrap text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100">{prefs.text || ''}</div>
+            <button onClick={on.editPrefs} className={`${SECOND} mt-3`}>
+              <Icon n="pencil" c="size-4" />
+              Edit
+            </button>
+          </>
+        )}
+      </Part>
+      <Setting
+        title="Tidy voice notes"
+        about={prefs.tidy ? 'Drops fillers and repeats; original words kept' : 'Written word for word.'}
+        control={
+          <button onClick={on.toggleTidy} role="switch" aria-checked={!!prefs.tidy} className={SECOND}>
+            {prefs.tidy ? 'Turn off' : 'Turn on'}
+          </button>
+        }
+      />
+      <Part title="Spellings" about={fixes.length ? undefined : 'None yet. Select wrong words in a voice note to fix them.'}>
+        <div className="mt-3 flex items-center gap-1.5">
+          <input
+            className={`${FIELD} h-10 py-1.5 text-sm`}
+            placeholder="Name or term (e.g. Needs you)"
+            aria-label="A word or name"
+            autoComplete="off"
+            spellCheck={false}
+            value={word}
+            onChange={(e) => setWord(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
+                e.preventDefault()
+                add()
+              }
+            }}
           />
-          <Part title="Spellings" about={fixes.length ? undefined : 'None yet. Select wrong words in a voice note to fix them.'}>
-            <div className="mt-3 flex items-center gap-1.5">
-              <input
-                className={`${FIELD} h-10 py-1.5 text-sm`}
-                placeholder="Name or term (e.g. Needs you)"
-                aria-label="A word or name"
-                autoComplete="off"
-                spellCheck={false}
-                value={word}
-                onChange={(e) => setWord(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
-                    e.preventDefault()
-                    add()
-                  }
-                }}
-              />
-              <button onClick={add} className="h-10 shrink-0 rounded-xl bg-zinc-900 px-3.5 text-sm font-semibold text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200">
-                Add
-              </button>
-            </div>
-          </Part>
-        </>
-      ) : null}
-      {!fixes.length ? (
-        prefs ? null : (
-          <Ruled>
-            <Empty>None yet. When a voice note gets words wrong, select them in the input and write the right ones: from then on every project writes them your way.</Empty>
-          </Ruled>
-        )
-      ) : (
+          <button onClick={add} className="h-10 shrink-0 rounded-xl bg-zinc-900 px-3.5 text-sm font-semibold text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200">
+            Add
+          </button>
+        </div>
+      </Part>
+      {fixes.length ? (
         <ul className="divide-y divide-zinc-200 border-y border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
           {fixes.map((c) => (
             <li key={(c.wrong || '') + c.right} className="flex min-h-13 items-center gap-3 py-1.5 text-[15px]">
@@ -424,7 +414,7 @@ export function SpellingsBody({ fixes, prefs, editing, prefsSlot, on }: { fixes:
             </li>
           ))}
         </ul>
-      )}
+      ) : null}
     </>
   )
 }

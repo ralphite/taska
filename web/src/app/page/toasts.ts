@@ -70,14 +70,6 @@ export class Toasts {
     if (step) this.store.getState().dropUndo(step.id)
   }
 
-  /** Taska said no: it is listed with why, and said once. */
-  /** Sent again (one, or every one that can be): it leaves the list; failing again, it comes back. */
-  retryNotSaved(sid?: string): void {
-    const go = this.store.getState().notSaved.filter((f) => f.retry && (sid == null || f.sid === sid)).reverse()
-    for (const f of go) this.store.getState().dropNotSaved(f.sid)
-    for (const f of go) void f.retry?.()
-  }
-
   /** A change Taska said no to: its sender answers it, or it is said in red in Taska's words (or the sender's), or it
    * is listed as not saved (what it was, where it belongs, its words). */
   changeRefused(c: PendingChange, why: string): void {
@@ -86,9 +78,10 @@ export class Toasts {
     this.notSaved({ what: changeWords(c.commands), why, slug: c.slug, go: changePlace(c.commands, c.slug), said: changeText(c.commands) })
   }
 
+  /** Taska said no: it is listed with why, and said once. */
   notSaved(f: Omit<NotSaved, 'sid' | 'at'>): void {
     const sid = Date.now().toString(36) + ++this.n
     this.store.getState().addNotSaved({ ...f, sid, at: Date.now() })
-    this.show(f.retry ? `Not saved yet: ${f.what}. Saves when Taska is back` : `Not saved: ${f.what}: ${f.why}`, null, { error: !f.retry })
+    this.show(`Not saved: ${f.what}: ${f.why}`, null, { error: true })
   }
 }

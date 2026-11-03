@@ -38,3 +38,17 @@ export const Recording: Story = {
     </Frames>
   ),
 }
+/** Words selected outside a document (an item's talk, what you said): speak about them, nothing else. */
+export const SpeakOnly: Story = {
+  name: 'Speak only (words outside a document)',
+  render: () => (
+    <Frames phoneWidth={393} deskWidth={640} height={160}>
+      {() => (
+        <div className="relative h-40">
+          <p className="pt-8 pl-14 text-[15px]">Words that were selected</p>
+          <SelectionBar at={at} recording={false} comment={false} fix={false} on={on} />
+        </div>
+      )}
+    </Frames>
+  ),
+}

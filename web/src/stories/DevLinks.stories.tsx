@@ -4,7 +4,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frames } from './Frames'
 import { side } from './sideFixtures'
 
-export default { title: 'Components/Dev' } satisfies Meta
+export default { title: 'Components/Dev/Links in the sidebar' } satisfies Meta
 type Story = StoryObj
 
-export const DevLinks: Story = { name: 'Dev links in the sidebar', render: () => <Frames phone={false} deskWidth={240} height={760}>{() => side(false)}</Frames> }
+export const DevLinks: Story = { name: 'The sidebar with its dev links', render: () => <Frames phone={false} deskWidth={240} height={760}>{() => side(false)}</Frames> }

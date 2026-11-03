@@ -194,6 +194,9 @@ export function filesOf(m: Pick<ProjectModel, 'byId'>, it: Item): FileRef[] {
   return out
 }
 
+/** How many inputs an item was made from (an answer to its question is not one): its head's "From N inputs". */
+export const sourceCount = (m: Pick<ProjectModel, 'byId'>, it: Item) => it.srcs.filter((id) => m.byId.get(id)?.kind !== 'answer').length
+
 /** An item's documents (not deleted). */
 export const docsOf = (m: Pick<ProjectModel, 'docs'>, n: number) => m.docs.filter((d) => d.n === n)
 

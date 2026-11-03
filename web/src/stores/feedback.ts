@@ -29,8 +29,6 @@ export interface NotSaved {
   /** where it belongs, to go and see it */
   go?: string
   said?: string
-  /** it goes again by itself when the server is back */
-  retry?: () => unknown
 }
 
 export interface FeedbackState {
@@ -51,7 +49,7 @@ export type FeedbackStore = StoreApi<FeedbackState>
 const FAILED_KEY = 'taska.failed'
 
 export function createFeedbackStore(kv: KeyValueStore): FeedbackStore {
-  const kept = (kv.getJson<Omit<NotSaved, 'retry'>[]>(FAILED_KEY) || []).map((f) => ({ ...f, slug: f.slug || slugOf((f as { p?: string }).p) }))
+  const kept = (kv.getJson<NotSaved[]>(FAILED_KEY) || []).map((f) => ({ ...f, slug: f.slug || slugOf((f as { p?: string }).p) }))
   const save = (list: NotSaved[]) =>
     kv.setJson(
       FAILED_KEY,

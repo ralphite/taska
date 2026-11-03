@@ -41,5 +41,6 @@ export const SaidLooks: Story = {
 const list = (s: Parameters<typeof saidOf>[0]): Story => ({ render: () => <Frames phone={false} deskWidth={1024}>{() => <div className="p-6">{saidOf(s)}</div>}</Frames> })
 const MANY = Array.from({ length: 34 }, (_, i) => ({ ...ONE.waiting, id: 'r' + (100 + i), text: `Thing ${i + 1} to do`, t: new Date(Date.parse(ONE.waiting.t) - i * 3600_000).toISOString() }))
 export const LatestInputsMoreToLoad: Story = { ...list({ inputs: MANY }), name: 'More to load' }
+export const LatestInputsFound: Story = { ...list({ q: 'coupon', inputs: DAY }), name: 'Searched: the words marked, how many found' }
 export const LatestInputsNothingFound: Story = { ...list({ q: 'zebra' }), name: 'Searched, nothing found' }
 export const LatestInputsNoneYet: Story = { ...list({ inputs: [] }), name: 'None yet' }

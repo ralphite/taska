@@ -53,9 +53,9 @@ export interface RowLook {
 const dragMarks = (look: RowLook) => (look.drag === 'dragging' ? { 'data-dragging': '' } : look.drag ? { 'data-drop': look.drag } : {})
 
 // The dark tints are opaque (the colours laid on the page's zinc-950): the row's buttons take the row's colour and
-// hide the title under them. A picked row stays blue under the pointer and while pressed.
+// hide the title under them. A picked row stays blue under the pointer.
 const ROW_TINT =
-  'data-sel:bg-blue-100 dark:data-sel:bg-[color-mix(in_oklab,var(--color-blue-400)_20%,var(--color-zinc-950))] lg:data-sel:hover:bg-blue-100 dark:lg:data-sel:hover:bg-[color-mix(in_oklab,var(--color-blue-400)_20%,var(--color-zinc-950))] lg:hover:bg-zinc-50 dark:lg:hover:bg-[color-mix(in_oklab,var(--color-zinc-900)_70%,var(--color-zinc-950))] lg:aria-[current=true]:bg-blue-50 dark:lg:aria-[current=true]:bg-[color-mix(in_oklab,var(--color-blue-400)_10%,var(--color-zinc-950))] pointer-coarse:transition-colors pointer-coarse:delay-75 data-pressed:bg-zinc-100 lg:data-pressed:bg-zinc-100 dark:data-pressed:bg-zinc-900 dark:lg:data-pressed:bg-zinc-900 data-sel:data-pressed:bg-blue-200 lg:data-sel:data-pressed:bg-blue-200 dark:data-sel:data-pressed:bg-[color-mix(in_oklab,var(--color-blue-400)_30%,var(--color-zinc-950))] dark:lg:data-sel:data-pressed:bg-[color-mix(in_oklab,var(--color-blue-400)_30%,var(--color-zinc-950))] lg:aria-[current=true]:data-pressed:bg-blue-100 dark:lg:aria-[current=true]:data-pressed:bg-[color-mix(in_oklab,var(--color-blue-400)_20%,var(--color-zinc-950))]'
+  'data-sel:bg-blue-100 dark:data-sel:bg-[color-mix(in_oklab,var(--color-blue-400)_20%,var(--color-zinc-950))] lg:data-sel:hover:bg-blue-100 dark:lg:data-sel:hover:bg-[color-mix(in_oklab,var(--color-blue-400)_20%,var(--color-zinc-950))] lg:hover:bg-zinc-50 dark:lg:hover:bg-[color-mix(in_oklab,var(--color-zinc-900)_70%,var(--color-zinc-950))] lg:aria-[current=true]:bg-blue-50 dark:lg:aria-[current=true]:bg-[color-mix(in_oklab,var(--color-blue-400)_10%,var(--color-zinc-950))] pointer-coarse:transition-colors pointer-coarse:delay-75'
 // rows out of sight are not laid out until they scroll near (a long list shows at once)
 export const ARTICLE =
   '[contain-intrinsic-size:auto_64px] [content-visibility:auto] relative border-b border-zinc-100 data-dragging:opacity-40 after:pointer-events-none after:absolute after:inset-0 after:z-10 data-[drop=before]:after:shadow-[inset_0_2px_0_0_var(--color-blue-500)] data-[drop=after]:after:shadow-[inset_0_-2px_0_0_var(--color-blue-500)] data-[drop=into]:after:bg-blue-500/10 data-[drop=into]:after:ring-2 data-[drop=into]:after:ring-blue-500 data-[drop=into]:after:ring-inset dark:border-zinc-800/70 dark:data-[drop=into]:after:bg-blue-400/15'
@@ -214,7 +214,7 @@ export function ItemRow(props: {
     ) : isClosed && band !== 'retired' ? (
       <span key="s">{statusWord(it)}</span>
     ) : null,
-    it.when === 'later' && !isClosed && band !== 'later' ? (
+    it.when === 'later' && !isClosed ? (
       <Soft key="l">Later</Soft>
     ) : facts.next ? (
       <span key="l" className="font-semibold text-zinc-700 dark:text-zinc-200">
@@ -346,7 +346,7 @@ export function HeldRow({ it, code, said, height, on }: { it: Item; code: string
       <div
         onClick={(e) => on.open(it.n, e)}
         style={height > 0 ? { minHeight: height } : undefined}
-        className="flex cursor-pointer items-center gap-3 py-2 pr-3 pl-4 text-sm text-zinc-500 hover:bg-zinc-50 data-pressed:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-900/70 dark:data-pressed:bg-zinc-900"
+        className="flex cursor-pointer items-center gap-3 py-2 pr-3 pl-4 text-sm text-zinc-500 hover:bg-zinc-50 dark:text-zinc-400 dark:hover:bg-zinc-900/70"
       >
         <StateIcon {...shownStatus(it)} />
         <span className="min-w-0 flex-1 truncate">

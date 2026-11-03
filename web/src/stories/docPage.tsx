@@ -12,6 +12,7 @@ import { WebPage } from '../features/docs/WebPage'
 import { editFacts, factsOf, webFacts } from '../features/docs/docFacts'
 import type { TickState } from '../model/docTicks'
 import { findRef } from '../model/project'
+import { clock } from '../model/time'
 import type { Doc, Item } from '../model/types'
 import type { NotSent } from '../model/voiceComments'
 import { PaneFrame } from '../ui/PaneFrame'
@@ -19,6 +20,9 @@ import { Sheet, SheetLayout } from '../ui/Sheet'
 import { DIAGRAMS, PICTURE, T, item, modelOf } from './fixtures'
 
 const no = () => {}
+/** How long a voice comment has recorded, as the page's own clock writes it. */
+const RECORDED = <>{clock(4000)}</>
+
 export const docOn: DocEvents = { copyDoc: no, ref: no, picture: no, play: no, words: no, view: no, edit: no, move: no, takeOff: no, remove: no, resolve: no, reply: no, goItem: no, toggle: no, away: no, pick: no, say: no, sayCancel: no, type: no, moveDoc: no, deleteDoc: no, circle: no, editDoc: no, whole: no, tick: no, modifyTicks: no }
 
 /** How you have the document open, and what is going on around it. */
@@ -77,12 +81,12 @@ export function docAt(d: Doc, desk: boolean, h: DocHere = {}) {
         desk={desk}
         inspect={!!h.inspect}
         renderThread={(tk, rail) => <WebThread card={w.cards[tk]} rail={rail} replying={v.reply === tk} asking={w.asking} env={env} on={docOn} />}
-        sayRow={<SayRow rec={!!h.spoken} part={w.held ? { key: w.held.key, quote: w.held.text } : undefined} on={{ say: no, cancel: no }} />}
+        sayRow={<SayRow rec={!!h.spoken} time={RECORDED} part={w.held ? { key: w.held.key, quote: w.held.text } : undefined} on={{ say: no, cancel: no }} />}
         on={{ pick: no, say: no, esc: no, toggle: no, away: no }}
       />
     )
   }
-  const view = <DocView facts={facts} env={env} on={docOn} page={page} lasso={h.circle ? <Lasso onDrawn={no} /> : null} />
+  const view = <DocView facts={facts} env={env} on={docOn} page={page} recTime={RECORDED} lasso={h.circle ? <Lasso onDrawn={no} /> : null} />
   if (h.viewOnly) return view
   return desk ? (
     <div className="flex h-full flex-col">

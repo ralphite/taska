@@ -86,7 +86,8 @@ export interface ActivityEvents extends LogEvents {
   more(): void
 }
 
-export function ActivityList({ rows, end, picked, on }: { rows: ActivityRow[] | null; end: boolean; picked: string | null; on: ActivityEvents }) {
+/** `asking`: the changes whose Undo was clicked once and waits for a second click. */
+export function ActivityList({ rows, end, picked, asking, on }: { rows: ActivityRow[] | null; end: boolean; picked: string | null; asking: ReadonlySet<number>; on: ActivityEvents }) {
   if (!rows) return <Empty>Loading…</Empty>
   if (!rows.length) return <Empty>No changes yet</Empty>
   return (
@@ -104,7 +105,7 @@ export function ActivityList({ rows, end, picked, on }: { rows: ActivityRow[] | 
           <span className="shrink-0 pt-px font-mono text-[11px] whitespace-nowrap text-zinc-400 dark:text-zinc-500">{s.time}</span>
           {undo != null ? (
             <button onClick={() => on.undo(undo)} className={`${HOVER_BTN} -my-1`}>
-              Undo
+              {asking.has(undo) ? 'Click again to undo' : 'Undo'}
             </button>
           ) : null}
         </div>

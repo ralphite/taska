@@ -8,12 +8,13 @@ import type { Input } from '../../model/types'
 import { inputCode } from '../../model/words'
 import type { InputMenuFacts } from './InputSheets'
 
-/** `desk`: the desktop shows a voice note's original words under the pointer, so its menu has no Original words (B640). */
-export function inputMenuFacts(m: ProjectModel, r: Input, otherProjects: number, asked: Readonly<Record<string, number>>, desk: boolean): InputMenuFacts {
+/** `desk`: the desktop shows a voice note's original words under the pointer, so its menu has no Original words (B640);
+ * `tidy`: voice notes' words are tidied (Settings), so the phone's menu offers them. */
+export function inputMenuFacts(m: ProjectModel, r: Input, otherProjects: number, asked: Readonly<Record<string, number>>, desk: boolean, tidy: boolean): InputMenuFacts {
   const code = (n: number) => codeOf(m, n)
   return {
     r,
-    tidy: !desk,
+    tidy: !desk && tidy,
     undo: canUndoFiling(r) ? { tip: `${inputCode(r.id)}: ${r.filing?.what || ''}` } : null,
     move: otherProjects > 0 && !organizing(r, m.facts.organizer),
     history: !!r.history?.length,

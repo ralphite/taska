@@ -4,7 +4,7 @@
 
 import type { ReactNode } from 'react'
 import { Icon } from '../../ui/Icon'
-import { PRIMARY, SECOND } from '../../ui/tones'
+import { PRIMARY } from '../../ui/tones'
 
 export const Part = ({ title, about, children }: { title: ReactNode; about?: ReactNode; children?: ReactNode }) => (
   <section className="scroll-mt-16 border-t border-zinc-200 py-6 lg:scroll-mt-6 dark:border-zinc-800">
@@ -29,9 +29,9 @@ export const TextBox = ({ t }: { t: string }) => (
   <div className="mt-3 rounded-xl bg-zinc-100 px-3.5 py-3 font-mono text-[13px] leading-relaxed break-words text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200">{t}</div>
 )
 
-export const CopyBtn = ({ label, main = false, onCopy }: { label: string; main?: boolean; onCopy(): void }) => (
-  <button onClick={onCopy} className={`${main ? PRIMARY : SECOND} mt-3`}>
-    <Icon n="copy" c={main ? 'size-4.5' : 'size-4'} />
+export const CopyBtn = ({ label, onCopy }: { label: string; onCopy(): void }) => (
+  <button onClick={onCopy} className={`${PRIMARY} mt-3`}>
+    <Icon n="copy" c="size-4.5" />
     {label}
   </button>
 )

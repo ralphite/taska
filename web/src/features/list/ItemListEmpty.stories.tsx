@@ -10,6 +10,8 @@ export default { title: 'Components/Item list/Views/Empty, small, loading' } sat
 type Story = StoryObj
 
 export const EmptyProject: Story = { ...view('items', { status: 'all' }, []), name: 'An empty project' }
+/** a view with nothing in it while the project has items: the views stay above, Nothing here. under them */
+export const AnEmptyView: Story = { ...view('items', { status: 'queued' }, [item({ n: 1, status: 'done', title: 'Book the flights' }), item({ n: 2, status: 'review', title: 'Plan the trip' })]), name: 'A view with nothing in it (Queue)' }
 export const SmallProject: Story = { ...view('items', { status: 'all' }, [item({ n: 1, title: 'Plan the trip' }), item({ n: 2, status: 'done', title: 'Book the flights' })]), name: 'A small project' }
 
 /** Before the project's data comes; and an empty list, for each reason it can be empty. */
@@ -31,8 +33,9 @@ export const LoadingAndEveryEmptyList: Story = {
               ['no-match-rules', 'wait', false],
               ['no-rules', 'wait', false],
               ['nothing-archived', 'wait', false],
-              ['empty', 'wait', false],
-              ['empty', 'closed', false],
+              ['nothing', 'wait', false],
+              ['nothing', 'closed', false],
+              ['nothing', 'all', false],
             ] as const
           ).map(([why, status, organizerOn]) => (
             <div key={why + status + organizerOn} className="flex flex-col">

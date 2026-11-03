@@ -164,6 +164,9 @@ export interface DraftWordsProps {
 }
 
 /** The draft's words with the two versions of each misheard word to pick from (left or 1, right or 2 in them). */
+/** The phone's box showing the draft's words in place of its field, to pick the misheard ones from. */
+export const BOX_WORDS_LOOK = 'col-start-1 row-start-1 max-h-48 min-h-11 overflow-y-auto outline-none px-1 py-1.5 text-[17px] leading-8 break-words whitespace-pre-wrap text-zinc-900 roomy:text-[15px] dark:text-zinc-100'
+
 export function DraftWords({ text, spots, stretches = [], fixing = null, className = '', on }: DraftWordsProps) {
   const box = useRef<HTMLDivElement>(null)
   const fix = !!on.select

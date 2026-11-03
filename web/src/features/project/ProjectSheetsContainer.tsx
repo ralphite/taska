@@ -55,10 +55,6 @@ export function NotSavedSheet() {
       app.sheets.close()
       app.nav.to(url)
     },
-    retry: (sid) => {
-      app.toasts.retryNotSaved(sid)
-      if (!stores.feedback.getState().notSaved.length) app.sheets.close()
-    },
     drop: (sid) => {
       stores.feedback.getState().dropNotSaved(sid)
       if (!stores.feedback.getState().notSaved.length) app.sheets.close()

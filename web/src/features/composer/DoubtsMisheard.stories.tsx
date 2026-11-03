@@ -1,9 +1,9 @@
 // Words that may be misheard: marked, on the New input page, the other version picked, a word one model was unsure of, in several places, on the phone, being corrected.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { openDoubts } from '../../model/doubts'
+import { openDoubts, spotsIn } from '../../model/doubts'
 import { Frames } from '../../stories/Frames'
 import { HEARD, HEARD_TEXT } from '../../stories/doubtFixtures'
-import { Doubts } from './Doubts'
+import { BOX_WORDS_LOOK, Doubts, DraftWords } from './Doubts'
 import { VOICE, boxAt } from '../../stories/boxFixtures'
 import { AGAIN, AGAIN_HEARD, Picking, quiet } from '../../stories/doubtsFixtures'
 
@@ -33,6 +33,18 @@ export const MisheardInSeveralPlaces: Story = {
   render: () => <Frames phone={false} deskWidth={640}>{() => <Doubts view={{ kind: 'list', lines: openDoubts(AGAIN, AGAIN_HEARD) }} on={quiet} />}</Frames>,
 }
 export const MisheardWordsAllPickedPhone: Story = { name: 'Misheard words all picked (phone)', render: () => <Frames desk={false} phoneWidth={393}>{() => <Doubts view={{ kind: 'phone', toCheck: 0, showing: false }} on={quiet} />}</Frames> }
-export const MaybeMisheardWordsShownPhone: Story = { name: 'Words shown (phone)', render: () => <Frames desk={false} phoneWidth={393}>{() => <Doubts view={{ kind: 'phone', toCheck: 1, showing: true }} on={quiet} />}</Frames> }
+/** The phone, Show the words pressed: the box shows its words in place of its field, the misheard ones to pick from. */
+export const MaybeMisheardWordsShownPhone: Story = {
+  name: 'Its words in the box, to pick from (phone)',
+  render: () => (
+    <Frames desk={false} phoneWidth={393}>
+      {() =>
+        boxAt({ text: HEARD_TEXT, files: HEARD.map((h) => ({ ...VOICE, ...h, tr: HEARD_TEXT })), doubts: <Doubts view={{ kind: 'phone', toCheck: 1, showing: true }} on={quiet} /> }, false, {
+          words: <DraftWords text={HEARD_TEXT} spots={spotsIn(HEARD_TEXT, HEARD)} className={BOX_WORDS_LOOK} on={{ pick: () => {}, escape: () => {}, plain: () => {} }} />,
+        })
+      }
+    </Frames>
+  ),
+}
 /** The New input page's card: a voice note's own words selected to correct them. */
 export const CorrectingItsWords: Story = { name: 'Correcting its words', render: () => <Frames phoneWidth={393} deskWidth={640}>{() => <Picking fix start="fixing" />}</Frames> }

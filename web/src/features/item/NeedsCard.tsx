@@ -103,7 +103,7 @@ export function KeepBtn({ it, quiet = false, on }: { it: Item; quiet?: boolean; 
   return null
 }
 
-export const SendAnswerBtn = ({ n, picked, cls = 'w-full', keyHint = false, on }: { n: number; picked: boolean; cls?: string; keyHint?: boolean; on: CardEvents }) => (
+export const SendAnswerBtn = ({ n, picked, cls, keyHint = false, on }: { n: number; picked: boolean; cls: string; keyHint?: boolean; on: CardEvents }) => (
   <button disabled={!picked} onClick={() => on.sendAnswer(n)} className={`${PRIMARY_BASE} ${NEED.answer.btn} ${cls}`}>
     Send answer
     {keyHint ? <Kbd k="⌘↵" /> : null}

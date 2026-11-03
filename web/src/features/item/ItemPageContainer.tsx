@@ -6,7 +6,7 @@ import { useServices, useStores, useStoreValue } from '../../app/context'
 import { useAway, useFiles, useItemWorld } from '../../app/hooks'
 import { newId } from '../../app/changeRunner'
 import { CHOICE } from '../../model/markdown'
-import { codeOf, docsOf, filesOf, findRef, liveN, STAND, type ProjectModel } from '../../model/project'
+import { codeOf, docsOf, filesOf, findRef, liveN, sourceCount, STAND, type ProjectModel } from '../../model/project'
 import { ticksNotSent } from '../../model/docTicks'
 import { lastAgentMessage } from '../../model/items'
 import { answerOf } from '../../model/talk'
@@ -81,7 +81,7 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
     parent: it.parent ? m.byN.get(it.parent) : undefined,
     kids: m.kids.get(n) || [],
     files: filesOf(m, it),
-    sources: it.srcs.filter((id) => m.byId.get(id)?.kind !== 'answer').length,
+    sources: sourceCount(m, it),
     docs: docsOf(m, n),
     docWaiting: Object.fromEntries(docsOf(m, n).map((d) => [d.d, ticksNotSent(ticks, d)])),
     remodify: view.remodify === n,

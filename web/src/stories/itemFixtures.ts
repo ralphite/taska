@@ -3,7 +3,7 @@
 import type { ItemEvents, ItemFacts } from '../features/item/ItemPage'
 import type { TalkFacts } from '../features/item/Talk'
 import type { TalkEnv } from '../features/item/talkEnv'
-import { codeOf, findRef, type ProjectModel } from '../model/project'
+import { codeOf, filesOf, findRef, sourceCount, type ProjectModel } from '../model/project'
 import type { Comment, Doc, Item } from '../model/types'
 import { DIAGRAMS, PICTURE, T } from './fixtures'
 
@@ -38,8 +38,8 @@ export function itemFacts(m: ProjectModel, it: Item, f: Partial<ItemFacts> = {})
     code: (n) => codeOf(m, n),
     parent: it.parent ? m.byN.get(it.parent) : undefined,
     kids: m.kids.get(it.n) || [],
-    files: [],
-    sources: 0,
+    files: filesOf(m, it),
+    sources: sourceCount(m, it),
     docs: m.docs.filter((d) => d.n === it.n),
     remodify: false,
     allTalk: false,

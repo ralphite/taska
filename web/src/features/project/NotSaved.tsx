@@ -14,10 +14,9 @@ export interface NotSavedRow {
   said?: string
   /** another project's: its name */
   elsewhere?: string
-  canRetry: boolean
 }
 
-export function notSavedSheet(rows: readonly NotSavedRow[], on: { go(url: string): void; retry(sid?: string): void; drop(sid?: string): void }): SheetParts | null {
+export function notSavedSheet(rows: readonly NotSavedRow[], on: { go(url: string): void; drop(sid?: string): void }): SheetParts | null {
   if (!rows.length) return null
   return {
     title: `Not saved (${rows.length})`,
@@ -49,15 +48,10 @@ export function notSavedSheet(rows: readonly NotSavedRow[], on: { go(url: string
                 {f.why} · {f.when}
               </p>
             </div>
-            {f.canRetry ? (
-              <button onClick={() => on.retry(f.sid)} className="-my-1 shrink-0 rounded-lg px-2.5 py-1 text-[13px] font-semibold text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10">
-                Retry
-              </button>
-            ) : null}
             <button
               onClick={() => on.drop(f.sid)}
-              aria-label={f.canRetry ? 'Let it go' : 'OK'}
-              title={f.canRetry ? 'Let go' : 'OK'}
+              aria-label="OK"
+              title="OK"
               className="-my-1 grid size-7 shrink-0 place-items-center rounded-lg text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 dark:text-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
             >
               <Icon n="x" c="size-4" />
@@ -69,11 +63,6 @@ export function notSavedSheet(rows: readonly NotSavedRow[], on: { go(url: string
             <button onClick={() => on.drop()} className="rounded-lg px-2.5 py-1 text-[13px] font-semibold text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800">
               Clear all
             </button>
-            {rows.filter((f) => f.canRetry).length > 1 ? (
-              <button onClick={() => on.retry()} className="rounded-lg px-2.5 py-1 text-[13px] font-semibold text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10">
-                Retry all
-              </button>
-            ) : null}
           </div>
         ) : null}
       </div>

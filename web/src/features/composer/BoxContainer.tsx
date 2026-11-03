@@ -8,7 +8,7 @@ import type { ProjectRoute } from '../../app/hooks'
 import { shownBox } from '../../model/boxFoot'
 import { clock } from '../../model/time'
 import { Composer } from './Composer'
-import { Doubts, DraftWords, type DoubtsView } from './Doubts'
+import { BOX_WORDS_LOOK, Doubts, DraftWords, type DoubtsView } from './Doubts'
 import { DraftFiles } from './DraftFiles'
 import { useBoxHere } from '../../app/inputs/boxHere'
 import { useHeard } from './heard'
@@ -51,7 +51,7 @@ export function BoxContainer({ route, composePage, boxRef, bare = false }: { rou
     <DraftWords
       text={text}
       spots={heard.spots}
-      className="col-start-1 row-start-1 max-h-48 min-h-11 overflow-y-auto outline-none px-1 py-1.5 text-[17px] leading-8 break-words whitespace-pre-wrap text-zinc-900 roomy:text-[15px] dark:text-zinc-100"
+      className={BOX_WORDS_LOOK}
       on={{ pick: pickWord, escape: () => app.fields.focus('box'), plain: () => app.voiceWords.show(false) }}
     />
   ) : null

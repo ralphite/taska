@@ -17,7 +17,7 @@ export const DeletedPicked: Story = {
 export const PointerOnARow: Story = {
   ...page('deleted', gone.length, <DeletedList rows={gone} picked={null} on={{ show: no, restore: no }} />),
   name: 'Pointer on a row: Restore',
-  parameters: { pseudo: { hover: ['li:first-of-type .group, li:first-of-type'] } },
+  parameters: { pseudo: { hover: ['.group:first-child'] } },
 }
 export const DeletedNothing: Story = { ...page('deleted', 0, <DeletedList rows={[]} picked={null} on={{ show: no, restore: no }} />), name: 'Nothing deleted' }
 export const DeletedInputPicked: Story = { ...page('deleted', gone.length, <DeletedList rows={gone} picked={inputGone?.key ?? null} on={{ show: no, restore: no }} />, inputGone ? <DeletedView x={inputGone} onRestore={no} /> : null), name: 'What you said picked' }

@@ -76,8 +76,12 @@ export const shopWithHistory = (agents: AgentSeen[] = SEEN, o: { work?: boolean;
     key: 'a1b2-c3d4',
     organizer: { on: true, model: 'gemini-flash-latest', busy: null },
     undo: [{ seq: 40, n: 4, f: { status: 'done' }, was: { status: 'review' }, t: at(20) }],
-    deleted: [{ kind: 'item', n: 9, code: 'B009', title: 'Export button too small on the phone', at: at(90) }, { kind: 'doc', d: 3, title: 'Old export notes', at: at(200), on: 'F001' }],
-    deletedInputs: [{ id: 'r6', t: at(60 * 26), at: at(120), text: 'the drawer jumps when it opens', files: 0, scope: null, items: [], kept: [] }],
+    deleted: [{ kind: 'item', n: 9, code: 'B009', title: 'Export button too small on the phone', at: at(90), more: 2 }, { kind: 'doc', d: 3, title: 'Old export notes', at: at(200), on: 'F001' }],
+    deletedInputs: [
+      { id: 'r8', t: at(60 * 3), at: at(70), text: 'The coupons page should list the expired ones too', files: 0, scope: null, items: [{ n: 15, code: 'F015', title: 'Expired coupons on the coupons page', type: 'feature' }], kept: [] },
+      { id: 'r6', t: at(60 * 26), at: at(120), text: 'the drawer jumps when it opens', files: 0, scope: null, items: [], kept: [] },
+      { id: 'r5', t: at(60 * 30), at: at(150), text: '', files: 2, scope: null, items: [], kept: [] },
+    ],
   }, [doc({ d: 1, n: 1, title: 'Plan: the export keeps the filter' }), doc({ d: 2, n: 3, fmt: 'html', title: 'Export options', blocks: [], whole: [], detached: [] })])
 
 export function settingsAt(sec: SectionKey | null, desk: boolean, h: SettingsHere = {}) {

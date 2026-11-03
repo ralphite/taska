@@ -14,10 +14,10 @@ type Story = StoryObj
 const at = (min: number) => Date.parse(T) - min * 60_000
 const LIST: NotSaved[] = [
   { sid: 'a', what: 'F012 marked done', why: 'Taska said no: it was archived', at: at(28), slug: 'taska', go: '/p/taska/F012' },
-  { sid: 'b', what: 'Reply to B003', why: 'Connection lost', at: at(32), slug: 'home', said: 'Keep the old filter', retry: no },
-  { sid: 'c', what: 'Comment on D4', why: 'Connection lost', at: at(60 * 18), slug: 'taska', retry: no },
+  { sid: 'b', what: 'Reply to B003', why: 'Connection lost', at: at(32), slug: 'home', said: 'Keep the old filter' },
+  { sid: 'c', what: 'Comment on D4', why: 'Connection lost', at: at(60 * 18), slug: 'taska' },
 ]
-const sheet = (list: NotSaved[], desk: boolean) => opened(notSavedSheet(notSavedRows(list, 'taska', (s) => ({ home: 'Home' })[s] ?? s, Date.parse(T)), { go: no, retry: no, drop: no }) ?? { body: null }, desk, { look: desk ? { pop: true, at: AT_BUTTON } : {} })
+const sheet = (list: NotSaved[], desk: boolean) => opened(notSavedSheet(notSavedRows(list, 'taska', (s) => ({ home: 'Home' })[s] ?? s, Date.parse(T)), { go: no, drop: no }) ?? { body: null }, desk, { look: desk ? { pop: true, at: AT_BUTTON } : {} })
 
 export const List: Story = { name: 'Changes not saved', render: () => <Frames height={520} deskWidth={900} phoneWidth={393}>{(layout) => sheet(LIST, layout === 'desk')}</Frames> }
 export const One: Story = { name: 'One change not saved', render: () => <Frames height={360} deskWidth={900} phoneWidth={393}>{(layout) => sheet(LIST.slice(1, 2), layout === 'desk')}</Frames> }

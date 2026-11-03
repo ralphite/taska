@@ -18,16 +18,15 @@ export const Inputs: Story = { ...on('inputs'), name: 'Inputs' }
 export const Archive: Story = { ...on('archive'), name: 'Archive' }
 export const Rules: Story = { ...on('rules'), name: 'Rules' }
 export const TabsLooks: Story = {
-  name: 'Pressed: all side by side',
-  parameters: { pseudo: { active: ['[data-look="pressed"] [role="tab"]:nth-of-type(3)'], hover: ['[data-look="pointer"] [role="tab"]:nth-of-type(3)'] } },
+  name: 'Pointer on a tab (desktop)',
+  parameters: { pseudo: { hover: ['[data-look="pointer"] [role="tab"]:nth-of-type(3)'] } },
   render: () => (
-    <Frames deskWidth={1100} phoneWidth={393}>
+    <Frames phone={false} deskWidth={1100}>
       {(layout) => (
         <States
           items={[
             ['as it is', headOf(layout === 'desk')],
             ['pointer on the last tab', <div data-look="pointer">{headOf(layout === 'desk')}</div>],
-            ['the last tab pressed', <div data-look="pressed">{headOf(layout === 'desk')}</div>],
           ]}
         />
       )}

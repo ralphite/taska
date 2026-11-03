@@ -15,7 +15,7 @@ export const Parts: Story = {
         <div className="px-8 pt-6">
           <Part title="Link" about="Open on your phone">
             <TextBox t="https://taska.example/k/abc/p/home/" />
-            <CopyBtn label="Copy link" main onCopy={() => {}} />
+            <CopyBtn label="Copy link" onCopy={() => {}} />
           </Part>
           <Setting title="Quiet 22:00–08:00" about="Your local time." control={<Toggle on label="Quiet" onToggle={() => {}} />} />
           <Loading />

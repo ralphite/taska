@@ -3,7 +3,7 @@ import type { Dash, Round } from '../../model/dashboard'
 import { Frames } from '../../stories/Frames'
 import { Dashboard } from './Dashboard'
 
-const meta: Meta = { title: 'Components/Dev' }
+const meta: Meta = { title: 'Components/Dev/Dashboard' }
 export default meta
 type Story = StoryObj
 
@@ -55,23 +55,25 @@ const d: Dash = {
 }
 
 /** A week of what you did; the panels, costs and analyses agents keep. */
-export const Week: Story = { name: 'Dashboard', render: () => <Frames phoneWidth={393} deskWidth={1200} page>{() => <Dashboard d={d} err="" range="7" onRange={() => {}} rounds="last20" now={NOW} onRounds={() => {}} />}</Frames> }
+export const Week: Story = { name: 'The last 7 days', render: () => <Frames phoneWidth={393} deskWidth={1200} page>{() => <Dashboard d={d} err="" range="7" onRange={() => {}} rounds="last20" now={NOW} onRounds={() => {}} />}</Frames> }
 
 /** Before Taska answers. */
-export const Loading: Story = { name: 'Dashboard, loading', render: () => <Frames phoneWidth={393} deskWidth={1200} page>{() => <Dashboard d={null} err="" range="7" onRange={() => {}} rounds="last20" now={NOW} onRounds={() => {}} />}</Frames> }
+export const Loading: Story = { name: 'Loading', render: () => <Frames phoneWidth={393} deskWidth={1200} page>{() => <Dashboard d={null} err="" range="7" onRange={() => {}} rounds="last20" now={NOW} onRounds={() => {}} />}</Frames> }
 // ---- more states (T639)
 const show = (dash: Dash | null, err = '', range = '7'): Story['render'] => () => <Frames phoneWidth={393} deskWidth={1200} page>{() => <Dashboard d={dash} err={err} range={range} onRange={() => {}} rounds="last20" now={NOW} onRounds={() => {}} />}</Frames>
 /** Taska answered with an error, still working it out */
-export const TaskaSaidNo: Story = { name: 'Dashboard: Taska said no', render: show(null, 'Taska answered 500') }
+export const TaskaSaidNo: Story = { name: 'Taska said no', render: show(null, 'Taska answered 500') }
+/** another range asked for and refused: the error over the numbers from before */
+export const TaskaSaidNoOverData: Story = { name: 'Taska said no, the numbers from before stay', render: show(d, 'Taska answered 500') }
 /** today, by hour: a label under every third hour */
-export const Today: Story = { name: 'Dashboard: today', render: show({ ...d, days: 1, hourly: true, span: Array.from({ length: 24 }, (_, h) => [String(h).padStart(2, '0'), [0, 0, 0, 0, 0, 0, 0, 2, 10, 30, 22, 18, 9, 14, 40, 35, 20, 12, 8, 6, 4, 2, 0, 0][h]]) }, '', '1') }
+export const Today: Story = { name: 'Today, by hour', render: show({ ...d, days: 1, hourly: true, span: Array.from({ length: 24 }, (_, h) => [String(h).padStart(2, '0'), [0, 0, 0, 0, 0, 0, 0, 2, 10, 30, 22, 18, 9, 14, 40, 35, 20, 12, 8, 6, 4, 2, 0, 0][h]]) }, '', '0') }
 /** nothing yet: every list empty, no panels, no costs, no analyses */
 export const NothingYet: Story = {
-  name: 'Dashboard: nothing yet',
+  name: 'Nothing yet',
   render: show({ ...d, actions: 0, tabs: 0, top: [], span: [], via: [], projects: [], items: [], opens: 0, opened: 0, voice: { n: 0, ends: [], median: 0, minutes: 0 }, errors: [], slow: { n: 0, timeouts: 0, median: 0, via: [], where: [] }, reloads: 0, updates: 0, costs: { ...d.costs, items: [], minutes: 0, tokens: 0, cache: 0, median_minutes: 0 }, rounds: [], panels: [], analyses: [] }),
 }
 /** rounds handed over but none says its tokens; more than 30 of them */
 export const NoTokensManyRounds: Story = {
-  name: 'Dashboard: no tokens, many rounds',
+  name: 'No tokens, many rounds',
   render: show({ ...d, rounds: Array.from({ length: 36 }, (_, i) => ({ ...ROUNDS[i % ROUNDS.length], code: `T${600 + i}`, tokens: null })) }),
 }

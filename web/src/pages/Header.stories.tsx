@@ -8,10 +8,10 @@ export default { title: 'Components/Top bar and list head/Project bar' } satisfi
 type Story = StoryObj
 
 export const ProjectBar: Story = { name: 'As it is', render: () => <Frames phone={false} deskWidth={1100} height={180}>{() => headOf(true)}</Frames> }
-/** A tab under the pointer, from the keys, pressed; the agent pill under the pointer. */
+/** A tab under the pointer and from the keys; the agent pill under the pointer. */
 export const ProjectBarLooks: Story = {
-  name: 'Pointer, keys, pressed: all side by side',
-  parameters: { pseudo: { hover: ['[data-look="pointer"] [role="tab"]:nth-of-type(2)', '[data-look="pointer"] nav > div:last-child button'], focusVisible: ['[data-look="keys"] [role="tab"]:nth-of-type(2)'], active: ['[data-look="pressed"] [role="tab"]:nth-of-type(2)'] } },
+  name: 'Pointer and keys: side by side',
+  parameters: { pseudo: { hover: ['[data-look="pointer"] [role="tab"]:nth-of-type(2)', '[data-look="pointer"] nav > div:last-child button'], focusVisible: ['[data-look="keys"] [role="tab"]:nth-of-type(2)'] } },
   render: () => (
     <Frames phone={false} deskWidth={1100}>
       {() => (
@@ -19,7 +19,6 @@ export const ProjectBarLooks: Story = {
           items={[
             ['pointer on Rules and on the agent', <div data-look="pointer">{headOf(true)}</div>],
             ['keys: Tab on Rules (the browser draws the ring itself)', <div data-look="keys">{headOf(true)}</div>],
-            ['Rules pressed', <div data-look="pressed">{headOf(true)}</div>],
           ]}
         />
       )}

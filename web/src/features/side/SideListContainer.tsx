@@ -23,12 +23,13 @@ function useRestore(slug: string, m: ProjectModel | null) {
 
 export function SideListContainer({ slug, side }: { slug: string; side: Side }) {
   const app = useServices('activity', 'docs', 'nav', 'restores', 'sheets')
-  const stores = useStores('activity', 'data', 'route', 'ui')
+  const stores = useStores('activity', 'data', 'route', 'sheet', 'ui')
   const m = useProjectModel(slug)
   const route = useStoreValue(stores.route, (s) => s.route)
   const picked = useStoreValue(stores.ui, (s) => s.sideSel)
   const rows = useStoreValue(stores.activity, (s) => (s.slug === slug ? s.rows : null))
   const end = useStoreValue(stores.activity, (s) => s.slug === slug && s.end)
+  const asked = useStoreValue(stores.sheet, (s) => s.asked)
   const cursor = useStoreValue(stores.data, (s) => s.copies[slug]?.cursor ?? '')
   useEffect(() => {
     if (side === 'log' && cursor) void app.activity.show(slug, cursor) // what changed since shows too
@@ -51,6 +52,7 @@ export function SideListContainer({ slug, side }: { slug: string; side: Side }) 
           rows={activity}
           end={end}
           picked={picked}
+          asking={new Set(Object.keys(asked).filter((x) => x.startsWith('revert ')).map((x) => Number(x.slice(7))))}
           on={{
             open: (key) => {
               const e = rows?.find((x) => '#' + x.seq === key)

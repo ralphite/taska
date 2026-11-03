@@ -9,6 +9,8 @@ type Story = StoryObj
 export const ProposalApproved: Story = { ...at(approved), name: 'Proposal approved' }
 export const ProposalApprovedPointerOnIt: Story = { ...at(approved), name: 'Proposal approved, pointer on it', parameters: { pseudo: { hover: true } } }
 export const ProposalApprovedModifyPressed: Story = { ...at(approved, { remodify: true }), name: 'Proposal approved, Modify pressed' }
+/** a proposal with no words from the agent, approved: the card says who proposed it, with only what you chose */
+export const ProposalApprovedNothingSaid: Story = { ...at({ status: 'open', by: 'claude-code', thread: [], decided: { from: 'proposed', to: 'open', msg: null, t: T } }), name: 'Proposed with nothing said, approved' }
 export const ProposalDeclined: Story = { ...at({ status: 'dropped', thread: [proposal], decided: { from: 'proposed', to: 'dropped', msg: 5, t: T } }), name: 'Proposal declined' }
 export const WorkAccepted: Story = { ...at({ status: 'done', thread: [report], decided: { from: 'review', to: 'done', msg: 6, t: T } }), name: 'Work accepted' }
 export const WorkAcceptedModifyPressed: Story = {

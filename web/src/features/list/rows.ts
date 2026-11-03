@@ -58,7 +58,7 @@ function hiddenKids(m: ProjectModel, rows: Item[], list: ListQuery, st: ListStat
   return { group, hidden }
 }
 
-function tree(group: Item[], st: ListState, opts: { band?: string; needs?: boolean; hidden?: Map<number, Item[]> }): Row[] {
+function tree(group: Item[], st: ListState, opts: { needs?: boolean; hidden?: Map<number, Item[]> }): Row[] {
   const inGroup = new Set(group.map((it) => it.n))
   const out: Row[] = []
   const add = (it: Item, d: number) => {
@@ -71,7 +71,7 @@ function tree(group: Item[], st: ListState, opts: { band?: string; needs?: boole
         depth: d,
         foldable: !!more || group.some((k) => k.parent === it.n),
         folded: st.folded.has(it.n),
-        band: opts.band || '',
+        band: '',
       })
     if (st.folded.has(it.n) || d >= MAX_DEPTH) return
     for (const k of group) if (k.parent === it.n) add(k, d + 1)

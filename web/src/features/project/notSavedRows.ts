@@ -15,5 +15,4 @@ export const notSavedRows = (list: readonly NotSaved[], here: string | null, tit
     go: f.go,
     said: f.said,
     elsewhere: here != null && f.slug !== here ? title(f.slug) : undefined,
-    canRetry: !!f.retry,
   }))

@@ -20,6 +20,8 @@ export const NoneYet: Story = { ...sheet(agentsFacts(shopWithHistory([]), guide(
 export const NothingWaitingNoneYet: Story = { ...sheet(agentsFacts(shopWithHistory([], { work: false }), guide('shop'))), name: 'Nothing waiting, none yet' }
 // ---- more states (T639): each as the page's own agentsFacts makes it of the demo project
 const gone: AgentSeen[] = [{ name: 'codex', t: SEEN[1].t, waiting: false }]
+/** an agent that finished its round minutes ago and left: green, here lately */
+export const HereLately: Story = { ...sheet(agentsFacts(shopWithHistory([{ name: 'codex', t: SEEN[0].t - 3 * 60_000, waiting: false }]), guide('shop'))), name: 'One here a few minutes ago' }
 /** work waits and the agent that was here left hours ago: the red card, and who was seen */
 export const WorkWaitsAgentLeft: Story = { ...sheet(agentsFacts(shopWithHistory(gone), guide('shop'))), name: 'Work waits, the last agent left hours ago' }
 /** nothing waits and an agent was here before: the grey card with its time, and who was seen */

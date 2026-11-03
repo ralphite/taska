@@ -18,6 +18,8 @@ const plan = doc({ d: 1, n: 12, title: 'Plan: the export keeps the filter', bloc
 export const Subitem = at({ n: 14, parent: 3, title: 'Keep the filter in the file name' }, { others: [PARENT] })
 export const SubitemsAndADocument: Story = { ...at({ title: 'Export keeps the filter you set' }, { others: KIDS, docs: [plan] }), name: 'Subitems and a document' }
 export const ASubitemInLater: Story = { ...at({ title: 'Export keeps the filter you set' }, { others: [KIDS[0], KIDS[2]] }), name: 'A subitem in Later' }
+/** a next step and no details: the Next line alone under the title */
+export const OnlyANextStep: Story = { ...at({ title: 'Export keeps the filter you set', body: '', next: 'Read the filter from the address' }), name: 'Only a next step, no details' }
 export const LongTalk: Story = { ...at({ status: 'doing', title: 'Saving drops the last word', thread: Array.from({ length: 11 }, (_, i) => message({ id: i + 1, text: `Step ${i + 1} done.` })) }, {}, 760), name: 'A long talk' }
 export const Pictures = at(
   { title: 'The export button is cut off on the phone', srcs: ['r4'], thread: [you(1, 'See the screenshots.')] },

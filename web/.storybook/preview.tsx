@@ -119,7 +119,7 @@ const preview: Preview = {
             ],
             'Help',
             'Icons and marks',
-            'Dev',
+            'Dev', ['Dashboard', 'Links in the sidebar'],
             'About this section',
           ],
           '*',
