@@ -19,7 +19,7 @@ import { Icon } from '../ui/Icon'
 /** A row of what it found: an item or a rule is the list's own row; an input or a document, a row like it. */
 export type FoundRowView =
   | { kind: 'item'; key: string; found: Found; it: Item; facts: RowFacts; look: RowLook; on: RowEvents }
-  | { kind: 'other'; key: string; found: Found; icon: 'doc' | 'newinput'; code: string; title: string; meta: string }
+  | { kind: 'other'; key: string; found: Found; icon: 'doc' | 'newinput'; code: string; title: string; meta: string; current?: boolean }
 
 export interface FoundGroupView {
   project: string
@@ -71,8 +71,10 @@ const SIDE = `${ROUND} text-zinc-500 dark:text-zinc-400`
 
 /** The box while you search: the words you said (or typed), and its buttons. Recording, writing out: what you said
  * before stays above. The main button is the mic (say it, say more); it is the up arrow while you record (stop and
- * search) and once you typed (search what you typed). The x discards a recording, or clears the words. */
-export function SearchBox({ v, on }: { v: SearchView; on: SearchEvents }) {
+ * search) and once you typed (search what you typed). The x discards a recording, or clears the words. `desk`: its
+ * buttons' tips say their keys. */
+export function SearchBox({ v, on, desk = false }: { v: SearchView; on: SearchEvents; desk?: boolean }) {
+  const tip = (t: string) => (desk ? t : undefined)
   const field = useRef<HTMLTextAreaElement>(null)
   const rec = v.phase === 'listening'
   const writing = v.phase === 'writing'
@@ -110,26 +112,26 @@ export function SearchBox({ v, on }: { v: SearchView; on: SearchEvents }) {
     )
   } else body = null
   const left = busy ? (
-    <button onClick={on.discard} aria-label={rec ? 'Discard the recording' : 'Discard what you said'} className={SIDE}>
+    <button onClick={on.discard} aria-label={rec ? 'Discard the recording' : 'Discard what you said'} title={tip('Discard')} className={SIDE}>
       <Icon n="x" c="size-6" />
     </button>
   ) : v.words ? (
-    <button onClick={on.clear} aria-label="Clear the words" className={SIDE}>
+    <button onClick={on.clear} aria-label="Clear the words" title={tip('Clear')} className={SIDE}>
       <Icon n="x" c="size-6" />
     </button>
   ) : (
     <span className="w-2 shrink-0" />
   )
   const main = rec ? (
-    <button onClick={on.stop} aria-label="Stop and search" className={MAIN}>
+    <button onClick={on.stop} aria-label="Stop and search" title={tip('Stop and search · ↵')} className={MAIN}>
       <Icon n="up" c="size-5" sw="2.25" />
     </button>
   ) : writing ? null : v.typed && v.words.trim() ? (
-    <button onClick={on.search} aria-label="Search" className={MAIN}>
+    <button onClick={on.search} aria-label="Search" title={tip('Search · ↵')} className={MAIN}>
       <Icon n="up" c="size-5" sw="2.25" />
     </button>
   ) : (
-    <button onClick={on.mic} aria-label={v.words ? 'Say more' : 'Say what to find'} className={MAIN}>
+    <button onClick={on.mic} aria-label={v.words ? 'Say more' : 'Say what to find'} title={tip(`${v.words ? 'Say more' : 'Say what to find'} · ⌥V`)} className={MAIN}>
       <Icon n="mic" c="size-6" />
     </button>
   )
@@ -159,7 +161,7 @@ export function SearchBox({ v, on }: { v: SearchView; on: SearchEvents }) {
           />
         </div>
         {v.typed && v.words.trim() && !busy ? (
-          <button onClick={on.mic} aria-label="Say more" className={SIDE}>
+          <button onClick={on.mic} aria-label="Say more" title={tip('Say more · ⌥V')} className={SIDE}>
             <Icon n="mic" c="size-6" />
           </button>
         ) : null}
@@ -169,11 +171,17 @@ export function SearchBox({ v, on }: { v: SearchView; on: SearchEvents }) {
   )
 }
 
-/** A document or an input found: a row like the list's. */
+/** A document or an input found: a row like the list's (on the desktop lit under the pointer, and blue as the keys'
+ * row, as an item's row is). */
 function OtherRow({ r, marks, onOpen }: { r: Extract<FoundRowView, { kind: 'other' }>; marks: readonly string[]; onOpen(x: Found): void }) {
   return (
     <article className="border-b border-zinc-100 dark:border-zinc-800/70">
-      <button onClick={() => onOpen(r.found)} data-found={r.key} className="flex w-full items-start gap-3 py-2.5 pr-3 pl-4 text-left">
+      <button
+        onClick={() => onOpen(r.found)}
+        data-found={r.key}
+        aria-current={r.current ? 'true' : undefined}
+        className="flex w-full items-start gap-3 py-2.5 pr-3 pl-4 text-left lg:hover:bg-zinc-50 lg:aria-[current=true]:bg-blue-50 dark:lg:hover:bg-zinc-900/70 dark:lg:aria-[current=true]:bg-blue-400/10"
+      >
         <Icon n={r.icon} c="mt-px size-5 text-zinc-400 dark:text-zinc-500" />
         <span className="min-w-0 flex-1">
           <span className="line-clamp-2 text-[15px] leading-snug font-medium">
@@ -213,7 +221,7 @@ function Results({ groups, marks, faded, onOpen }: { groups: FoundGroupView[]; m
 
 /** What it is doing, on the line over the box, where the page says what became of what you sent (so the results
  * above do not move). */
-const Status = ({ children }: { children: ReactNode }) => (
+export const Status = ({ children }: { children: ReactNode }) => (
   <p role="status" className="mb-1.5 flex min-h-7 items-center gap-2 rounded-full bg-white/95 pr-1 pl-2.5 text-[13px] text-zinc-600 dark:bg-zinc-950/95 dark:text-zinc-300">
     <span className="size-2 shrink-0 animate-pulse rounded-full bg-blue-500 dark:bg-blue-400" />
     <span className="min-w-0 flex-1 truncate">{children}</span>
@@ -228,13 +236,15 @@ const Middle = ({ title, children }: { title: ReactNode; children?: ReactNode })
   </div>
 )
 
-export function SearchPage({ v, on, hidden }: { v: SearchView; on: SearchEvents; hidden?: boolean }) {
+/** What the page shows under its kinds: what it found (faded while it searches again), or what it is doing. `desk`:
+ * the desktop's words where they differ (how to allow the microphone). */
+export function SearchBody({ v, on, desk = false }: { v: SearchView; on: SearchEvents; desk?: boolean }) {
   let body: ReactNode = null
   if (v.groups) body = <Results groups={v.groups} marks={v.marks} faded={v.phase === 'searching'} onOpen={on.open} />
   else if (v.phase === 'searching') body = <Middle title={<Icon n="spinner" c="mx-auto size-7 animate-spin text-zinc-400" sw="2" />}>Searching…</Middle>
   else if (v.phase === 'nothing') body = <Middle title="Nothing found" />
   else if (v.phase === 'unheard') body = <Middle title="Didn’t catch that" />
-  else if (v.phase === 'nomic') body = <Middle title="Microphone not allowed">Safari: aA › Website Settings › Microphone</Middle>
+  else if (v.phase === 'nomic') body = <Middle title="Microphone not allowed">{desk ? 'Chrome: the icon left of the address › Microphone' : 'Safari: aA › Website Settings › Microphone'}</Middle>
   else if (v.phase === 'offline')
     body = (
       <Middle
@@ -246,6 +256,10 @@ export function SearchPage({ v, on, hidden }: { v: SearchView; on: SearchEvents;
         }
       />
     )
+  return body
+}
+
+export function SearchPage({ v, on, hidden }: { v: SearchView; on: SearchEvents; hidden?: boolean }) {
   return (
     <div hidden={hidden} data-part="search" className="flex min-h-0 flex-1 flex-col">
       <header className="flex h-14 shrink-0 items-center gap-1 px-2">
@@ -259,7 +273,9 @@ export function SearchPage({ v, on, hidden }: { v: SearchView; on: SearchEvents;
           <ViewBar views={v.kinds} onView={on.kind} />
         </div>
       ) : null}
-      <div className="min-h-0 flex-1 overflow-y-auto pb-3">{body}</div>
+      <div className="min-h-0 flex-1 overflow-y-auto pb-3">
+        <SearchBody v={v} on={on} />
+      </div>
       <footer className={`relative z-20 shrink-0 border-t border-zinc-200 bg-zinc-50 px-3 pt-3 dark:border-transparent dark:bg-zinc-950 dark:pt-1 ${v.typed ? 'pb-2' : 'pb-[max(1.25rem,env(safe-area-inset-bottom))]'}`}>
         {v.groups && v.phase === 'searching' ? <Status>Searching…</Status> : null}
         <SearchBox v={v} on={on} />

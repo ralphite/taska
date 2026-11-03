@@ -259,6 +259,43 @@
   "Prototype/New mobile layout": [
    "New Mobile Layout"
   ],
+  "Prototype/F479 Search on the desktop/Walk through": [
+   "Walk through"
+  ],
+  "Prototype/F479 Search on the desktop/The search button": [
+   "In the sidebar",
+   "Under the pointer",
+   "Sidebar folded"
+  ],
+  "Prototype/F479 Search on the desktop/Say and search": [
+   "Listening",
+   "Transcribing",
+   "Searching",
+   "Results",
+   "One kind picked",
+   "Keys on one row, pointer on another",
+   "A result open"
+  ],
+  "Prototype/F479 Search on the desktop/Say more or change it": [
+   "Saying more",
+   "Searching again",
+   "Said more",
+   "A word may be misheard",
+   "Typing"
+  ],
+  "Prototype/F479 Search on the desktop/When it goes wrong": [
+   "Nothing found",
+   "Didn\u2019t catch that",
+   "Microphone not allowed",
+   "Can\u2019t reach Taska"
+  ],
+  "Prototype/F479 Search on the desktop/Dark and narrower": [
+   "Results, dark",
+   "Listening, dark",
+   "A word may be misheard, dark",
+   "Results, 1100 wide",
+   "The page, 1100 wide"
+  ],
   "Review/About this section": [
    "About"
   ],

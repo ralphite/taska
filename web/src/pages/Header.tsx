@@ -238,17 +238,24 @@ export function ListHead({
           Cancel
         </button>
       </div>
-      <button
-        onClick={on.filters}
-        title="Filters · F"
-        aria-label="Filters"
-        aria-expanded={filtersOpen}
-        className="relative hidden size-9 shrink-0 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-100 aria-expanded:bg-zinc-100 lg:grid dark:text-zinc-400 dark:hover:bg-zinc-800 dark:aria-expanded:bg-zinc-800"
-      >
-        <Icon n="sliders" c="size-[18px]" />
-        <FilterDot on={filtersSet} />
-      </button>
+      <FiltersButton set={filtersSet} open={filtersOpen} onClick={on.filters} />
     </header>
+  )
+}
+
+/** The desktop's Filters button: the filters' row opens under the list's head. */
+export function FiltersButton({ set, open, onClick }: { set: boolean; open: boolean; onClick(): void }) {
+  return (
+    <button
+      onClick={onClick}
+      title="Filters · F"
+      aria-label="Filters"
+      aria-expanded={open}
+      className="relative hidden size-9 shrink-0 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-100 aria-expanded:bg-zinc-100 lg:grid dark:text-zinc-400 dark:hover:bg-zinc-800 dark:aria-expanded:bg-zinc-800"
+    >
+      <Icon n="sliders" c="size-[18px]" />
+      <FilterDot on={set} />
+    </button>
   )
 }
 

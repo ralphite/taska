@@ -17,6 +17,8 @@ export interface SheetLook {
   /** the phone: over the page down to the box (its room is `footRoom`) */
   aboveComposer?: boolean
   at?: { x: number; y: number; right?: boolean; top?: number; left?: number } | null
+  /** the desktop: near the top, growing down as it fills (a search: what it finds never moves its box) */
+  top?: boolean
 }
 
 export interface SheetParts {
@@ -115,6 +117,7 @@ export function Sheet({ open, look, children, desk, footRoom = 0, focus = false,
   const oCls = [
     'fixed inset-0 z-40 flex items-end justify-center bg-black/40 pt-[max(env(safe-area-inset-top),0.75rem)] sm:items-center sm:p-6 dark:bg-black/60',
     pop ? (look.at ? 'lg:items-start lg:justify-start lg:bg-transparent dark:lg:bg-transparent' : 'lg:items-start lg:justify-end lg:bg-transparent dark:lg:bg-transparent lg:pt-[3.75rem] lg:pr-3') : '',
+    look.top && !pop ? 'lg:items-start lg:pt-[12dvh]' : '',
   ].join(' ')
   const dCls = [
     'flex max-h-[min(88dvh,100%)] w-full max-w-2xl flex-col bg-white shadow-xl transition-transform duration-150 sm:rounded-3xl dark:bg-zinc-900 dark:ring-1 dark:ring-white/10',

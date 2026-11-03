@@ -46,6 +46,8 @@ export interface SidebarEvents {
   dropProject(): void
   /** a project's menu, at the pointer (right-click, the desktop) */
   projectMenu(slug: string, x: number, y: number): void
+  /** search everything (F479, a prototype for now: without it, no button) */
+  search?(): void
 }
 
 export interface SidebarProps {
@@ -168,11 +170,21 @@ export function Sidebar(props: SidebarProps) {
           </span>
           <span className="text-xl font-semibold tracking-tight lg:text-[19px]">Taska</span>
         </a>
+        {on.search ? (
+          <button
+            onClick={on.search}
+            title="Search · /"
+            aria-label="Search"
+            className="ml-auto hidden size-8 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-200/70 hover:text-zinc-800 lg:grid dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+          >
+            <Icon n="search" c="size-[18px]" />
+          </button>
+        ) : null}
         <button
           onClick={on.hide}
           title="Hide sidebar · ["
           aria-label="Hide sidebar"
-          className="ml-auto hidden size-8 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-200/70 lg:grid dark:text-zinc-400 dark:hover:bg-zinc-800"
+          className={`${on.search ? '' : 'ml-auto'} hidden size-8 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-200/70 lg:grid dark:text-zinc-400 dark:hover:bg-zinc-800`}
         >
           <Icon n="panel" c="size-[18px]" />
         </button>
@@ -330,6 +342,7 @@ export function Rail({ projects, composing, settingsOpen, hidden, on }: { projec
         'Show sidebar · [',
         on.hide,
       )}
+      {on.search ? btn('search', <Icon n="search" c="size-5" />, 'Search · /', on.search) : null}
       {btn('new', <Icon n="newinput" c="size-5" />, 'New input · C', on.newInput, { 'aria-pressed': composing })}
       <div className="my-1 h-px w-8 bg-zinc-200 dark:bg-zinc-800" />
       <div className="-my-1 flex min-h-0 [scrollbar-width:none] flex-col items-center gap-1 overflow-y-auto outline-none p-1">
