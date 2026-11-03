@@ -5,7 +5,7 @@
 import type { ReactNode } from 'react'
 import { lastAgentMessage, userWord } from '../../model/items'
 import { hasChoices } from '../../model/markdown'
-import { answeredLast, chosenWord, decidedCard, decidedLook, decidedStill, heldMessage } from '../../model/talk'
+import { answeredLast, chosenWord, decidedCard, decidedStill, heldMessage } from '../../model/talk'
 import { when } from '../../model/time'
 import type { Item, Message } from '../../model/types'
 import { whoName } from '../../model/words'
@@ -76,28 +76,17 @@ export function NeedFrame({ icon, title, t, done = false, body, foot, hint = '',
 
 /** Approve or Accept as well as answering; decided, it says what you chose. `quiet`: you did something else, it waits
  * quietly beside it. */
-const DONE_TONE = { good: 'text-emerald-600 dark:text-emerald-400', quiet: 'text-zinc-400 dark:text-zinc-500', back: 'text-amber-600 dark:text-amber-400' }
-
-/** What you did with a card, as one line where its buttons were (D106 #4.3): its mark, what you chose, when; no
- * buttons left and the other choice gone. `change` brings the buttons back (under the pointer on the desktop). */
-function DoneLine({ icon, tone, words, t, now, change }: { icon: IconName; tone: keyof typeof DONE_TONE; words: ReactNode; t?: string; now: number; change: ReactNode }) {
-  return (
-    <p className="flex w-full min-w-0 items-center gap-1.5 text-[13px] text-zinc-500 dark:text-zinc-400">
-      <Icon n={icon} c={`size-4 shrink-0 ${DONE_TONE[tone]}`} sw="2.25" />
-      <span className="min-w-0 truncate font-medium text-zinc-700 dark:text-zinc-200">{words}</span>
-      {t ? <span className="shrink-0">· {when(t, now)}</span> : null}
-      <span className="ml-auto shrink-0">{change}</span>
-    </p>
-  )
-}
+/** A decision's button word once it is made. */
+const PAST: Record<string, string> = { Approve: 'Approved', Accept: 'Accepted', "Won't do": "Won't do", 'Not yet': 'Not yet' }
 
 export function KeepBtn({ it, quiet = false, on }: { it: Item; quiet?: boolean; on: CardEvents }) {
   if (decidedStill(it) && it.decided) {
+    // decided: the same button where it was, its word said as done, a little greyed (D106 #4.3, r1003)
     const w = chosenWord(it.decided)
     return (
-      <span className={`${DONE_PICK} font-medium`}>
+      <span className={`${SECOND} opacity-70`}>
         <Icon n={ACT_ICON[w]} c="size-4" sw="2.25" />
-        {w}
+        {PAST[w] ?? w}
       </span>
     )
   }
@@ -212,7 +201,8 @@ export function NeedsCard({ it, env, on, remodify, going = null }: {
           ))}
         />
       )
-    const look = decidedLook(dec)
+    // decided: the card keeps its look and its buttons where they were (r1003): what you chose says it is done and
+    // greys a little; the other greys more and still changes your mind with a click
     return (
       <NeedFrame
         icon={dec.from === 'proposed' ? 'propose' : 'done'}
@@ -221,20 +211,18 @@ export function NeedsCard({ it, env, on, remodify, going = null }: {
         now={env.now}
         done
         body={x ? text(x) : null}
-        foot={
-          <DoneLine
-            icon={look.icon}
-            tone={look.tone}
-            words={look.word}
-            t={dec.t || undefined}
-            now={env.now}
-            change={
-              <button onClick={() => on.modify(n)} className={MODIFY_LINK}>
-                Change
-              </button>
-            }
-          />
-        }
+        foot={pairs.map(([v, icon, label, k], i) => (
+          <button
+            key={v}
+            aria-pressed={chose(v)}
+            onClick={() => (chose(v) ? undefined : v === 'open' && dec.from === 'review' ? on.notYet(n) : on.decide(n, v as 'open' | 'dropped' | 'done'))}
+            className={`${i ? `${PRIMARY_BASE} ${tone} flex-[1.4]` : `${SECOND} flex-1`} lg:flex-none ${chose(v) ? 'cursor-default opacity-70' : 'opacity-40 hover:opacity-100'}`}
+          >
+            <Icon n={icon} c={i ? 'size-4.5' : 'size-4'} sw="2.25" />
+            {chose(v) ? (PAST[label] ?? label) : label}
+            <Kbd k={k} />
+          </button>
+        ))}
       />
     )
   }
@@ -293,9 +281,9 @@ export function NeedsCard({ it, env, on, remodify, going = null }: {
   return null
 }
 
-/** An answered question, in the card it was asked in: grey now, your picks ticked, and one line where its buttons were
- * (Answered: your picks, or Replied when you wrote instead; what you decided on its proposal after it), with Change
- * (under the pointer on the desktop) to pick again. */
+/** An answered question, in the card it was asked in, its layout as it was (r1003): your picks ticked, Send answer
+ * where it was said as Sent (Replied when you wrote instead), a little greyed, and Modify (under the pointer on the
+ * desktop) to pick again. */
 export function Answered({ it, x, done, env, on, reasking, going = '' }: {
   it: Item
   x: Message
@@ -335,26 +323,23 @@ export function Answered({ it, x, done, env, on, reasking, going = '' }: {
       now={env.now}
       going={going}
       done
+      act={
+        <button onClick={() => on.reask(it.n, x.id)} className={MODIFY_LINK}>
+          {done.length ? 'Modify' : 'Answer'}
+        </button>
+      }
       body={<Rich text={x.text} world={env.world} cls="text-zinc-600 dark:text-zinc-300" done={done} onRef={on.ref} onPicture={on.picture} />}
       foot={
         <>
-          <DoneLine
-            icon={done.length ? 'check' : 'reply'}
-            tone={done.length ? 'good' : 'quiet'}
-            words={
-              <>
-                {done.length ? `Answered: ${done.join(', ')}` : 'Replied'}
-                {last && decidedStill(it) && it.decided ? ` · ${decidedLook(it.decided).word}` : ''}
-              </>
-            }
-            now={env.now}
-            change={
-              <button onClick={() => on.reask(it.n, x.id)} className={MODIFY_LINK}>
-                Change
-              </button>
-            }
-          />
-          {last && !decidedStill(it) ? <KeepBtn it={it} quiet on={on} /> : null}
+          {last ? <KeepBtn it={it} quiet on={on} /> : null}
+          {/* Send answer where it was, said as done and a little greyed (r1003) */}
+          <span className={`${PRIMARY_BASE} ${NEED.answer.btn} flex-[1.4] opacity-70 lg:flex-none`}>
+            <Icon n={done.length ? 'check' : 'reply'} c="size-4" sw="2.25" />
+            {done.length ? 'Sent' : 'Replied'}
+            <span className="invisible">
+              <Kbd k="⌘↵" />
+            </span>
+          </span>
         </>
       }
     />

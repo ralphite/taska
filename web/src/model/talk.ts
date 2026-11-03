@@ -49,16 +49,6 @@ export function decidedCard(it: Item): { dec: NonNullable<Item['decided']>; x: M
 }
 
 /** What you chose, in the words of its button. */
-/** What you decided, said as done (the one line a decided card keeps, D106 #4.3): its word, its mark, its tone. */
-export const decidedLook = (d: NonNullable<Item['decided']>): { word: string; icon: 'check' | 'ban' | 'reopen'; tone: 'good' | 'quiet' | 'back' } =>
-  d.from === 'proposed'
-    ? d.to === 'dropped'
-      ? { word: "Won't do", icon: 'ban', tone: 'quiet' }
-      : { word: 'Approved', icon: 'check', tone: 'good' }
-    : d.to === 'done'
-      ? { word: 'Accepted', icon: 'check', tone: 'good' }
-      : { word: 'Not yet', icon: 'reopen', tone: 'back' }
-
 export const chosenWord = (d: NonNullable<Item['decided']>) =>
   d.from === 'proposed' ? (d.to === 'dropped' ? "Won't do" : 'Approve') : d.to === 'done' ? 'Accept' : 'Not yet'
 
