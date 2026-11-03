@@ -344,8 +344,9 @@ export class Box {
     this.write(slug, key, '')
     this.d.store.getState().setMode(null)
     if (typeof getSelection !== 'undefined') getSelection()?.removeAllRanges()
+    // the spelling there was before (for Undo) is asked for meanwhile: the correction goes out at once (B645)
+    const hadAsked = this.d.api.corrections().then((l) => l.find((x) => x.wrong === mode.wrong), () => undefined)
     void (async () => {
-      const had = await this.d.api.corrections().then((l) => l.find((x) => x.wrong === mode.wrong), () => undefined)
       const ok = await this.d.runner.send({
         id: newId(),
         slug,
@@ -361,6 +362,7 @@ export class Box {
         return
       }
       this.d.toasts.show(`Fixed ${inputCode(mode.id)} · \u201c${right}\u201d remembered`, async () => {
+        const had = await hadAsked
         // the words come back, and the spelling is forgotten (or the one before comes back)
         const now = this.d.model?.(slug)?.byId.get(mode.id)
         if (now && before != null && now.text !== before) await this.d.runner.send({ id: newId(), slug, commands: [{ op: 'amend', id: mode.id, mode: 'edit', v: now.v || 0, text: before } as never], patches: [], inputPatches: [{ id: mode.id, f: { text: before } }], said: `putting back ${inputCode(mode.id)}`, t: Date.now() })

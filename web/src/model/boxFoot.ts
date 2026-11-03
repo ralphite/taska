@@ -182,7 +182,7 @@ export function feedbackLine(a: { m: ProjectModel | null; desk: boolean; compose
   const org = a.m.facts.organizer
   const move = a.others && !r.scope
   let line: FeedbackLine
-  if (r.moved) line = { kind: 'moved', code: inputCode(r.id), to: r.moved.to, as: inputCode(r.moved.as), href: `/p/${encodeURIComponent(r.moved.to)}/` }
+  if (r.moved) line = { kind: 'moved', code: inputCode(r.id), to: r.moved.to, as: r.moved.as ? inputCode(r.moved.as) : '', href: `/p/${encodeURIComponent(r.moved.to)}/` }
   else if (r.trWait) line = { kind: 'transcribing' }
   else if (org.busy === r.id || (!r.acked && org.on && !r.org)) line = { kind: 'organizing' }
   else if (r.org && !r.org.ok) line = { kind: 'org-failed', msg: r.org.msg }

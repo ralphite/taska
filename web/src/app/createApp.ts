@@ -269,7 +269,7 @@ export function createApp(env: AppEnv): App {
     undoSeq: (n, f) => here()?.facts.undo.find((u) => u.n === n && f in u.f)?.seq ?? null,
     noteWith: () => false,
   })
-  const inputActions = new InputActions({ runner, toasts, api, model, refresh: (s) => session().stale(s), title, go: goUrl })
+  const inputActions = new InputActions({ runner, changes, toasts, api, model, refresh: (s) => session().stale(s), title, go: goUrl })
   // the other tabs of this browser: their drafts show here too
   const otherTabs = new OtherTabs({ kv: env.kv, drafts, box: boxStore, toasts, slug, recording: recordingNow })
   const box = new Box({ api, store: boxStore, drafts, outbox, inputs, runner, toasts, keep, recording: recordingNow, goDraft, model, kv: env.kv, sent: (s, key) => otherTabs.sent(s, key), refresh: (s) => session().refresh(s), replied: (s, scope) => delivered.replied(s, scope) })

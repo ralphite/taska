@@ -65,7 +65,7 @@ export function inputRows(m: ProjectModel, a: InputRowsWith): { rows: InputFacts
       noteBad: !r.org?.ok,
       spark: !!org && !note && shown.some((n) => did[n]),
       retry: !r.acked && m.facts.organizer.on && r.org && (!r.org.ok || r.org.undone) ? (r.org.undone ? 'Organize again' : 'Retry') : null,
-      moved: r.moved ? { href: `/p/${encodeURIComponent(r.moved.to)}/`, label: `Open ${a.title(r.moved.to)} · ${inputCode(r.moved.as)}` } : null,
+      moved: r.moved ? { href: `/p/${encodeURIComponent(r.moved.to)}/`, label: `Open ${a.title(r.moved.to)}` + (r.moved.as ? ` · ${inputCode(r.moved.as)}` : '') } : null,
       lit: a.lit === r.id ? (a.litStill ? 'still' : 'shown') : undefined,
       draft: inputDraft(r.id, a.drafts, a.writing),
       long: r.text.length > 160 || r.text.split('\n').length > 4,

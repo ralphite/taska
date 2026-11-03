@@ -354,7 +354,8 @@ export function Feedback({ line, on }: { line: FeedbackLine | null; on: { dismis
           <>
             <Icon n="arrow" c="size-4 text-zinc-500" sw="2" />
             <span className="min-w-0 flex-1 truncate">
-              Moved {line.code} to {line.to} as {line.as}
+              Moved {line.code} to {line.to}
+              {line.as ? ` as ${line.as}` : ''}
             </span>
             <a href={line.href} className="-my-2 flex h-11 shrink-0 items-center rounded-full px-2 font-semibold text-blue-600 dark:text-blue-400">
               Open

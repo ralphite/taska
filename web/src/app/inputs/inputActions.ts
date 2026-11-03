@@ -9,9 +9,10 @@ import type { DeletedInput } from '../../model/types'
 import { inputCode } from '../../model/words'
 import { newId, type ChangeRunner } from '../changeRunner'
 import type { Toasts } from '../page/toasts'
+import type { ChangesStore } from '../../stores/changes'
 
 export class InputActions {
-  private readonly d: { runner: ChangeRunner; toasts: Toasts; api: TaskaApi; model(slug: string): ProjectModel | null; refresh(slug: string): void; title(slug: string): string; go(url: string): void }
+  private readonly d: { runner: ChangeRunner; changes: ChangesStore; toasts: Toasts; api: TaskaApi; model(slug: string): ProjectModel | null; refresh(slug: string): void; title(slug: string): string; go(url: string): void }
   constructor(d: InputActions['d']) {
     this.d = d
   }
@@ -81,7 +82,10 @@ export class InputActions {
     this.d.toasts.show('File taken off')
   }
 
+  /** It shows moved at once (B645: nothing waits on Taska); its new number comes with Taska's answer. */
   async move(slug: string, id: string, to: string): Promise<boolean> {
+    const show = 'show-' + newId()
+    this.d.changes.getState().add({ id: show, slug, commands: [], patches: [], inputPatches: [{ id, f: { moved: { to, as: '' } } }], said: `moving ${inputCode(id)}`, t: Date.now(), showOnly: true })
     try {
       const r = await this.d.api.moveInput(slug, to, id)
       if (!r.ok) {
@@ -94,6 +98,8 @@ export class InputActions {
     } catch (ex) {
       this.d.toasts.show((ex as Error).message || 'Could not move it', null, { error: true })
       return false
+    } finally {
+      this.d.changes.getState().remove(show)
     }
   }
 }

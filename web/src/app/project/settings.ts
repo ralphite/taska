@@ -194,12 +194,17 @@ export class Settings {
     if (await this.spell({ wrong })) this.d.toasts.show(`Forgot “${wrong}”`, () => this.spell({ wrong, right: c.right }))
   }
 
+  /** The switch moves at once and goes back only if Taska says no (B645: nothing waits on Taska). */
   async toggleTidy(): Promise<void> {
+    const was = this.s.prefs
+    const tidy = !was?.tidy
+    if (was) this.s.set({ prefs: { ...was, tidy } })
+    this.d.toasts.show(tidy ? 'Voice notes are tidied' : 'Voice notes are kept word for word')
     try {
-      const r = await this.d.api.setTidy(!this.s.prefs?.tidy)
-      if (this.s.prefs) this.s.set({ prefs: { ...this.s.prefs, tidy: r.tidy } })
-      this.d.toasts.show(r.tidy ? 'Voice notes are tidied' : 'Voice notes are kept word for word')
+      const r = await this.d.api.setTidy(tidy)
+      if (r.tidy !== tidy && this.s.prefs) this.s.set({ prefs: { ...this.s.prefs, tidy: r.tidy } })
     } catch (ex) {
+      if (was && this.s.prefs) this.s.set({ prefs: { ...this.s.prefs, tidy: !!was.tidy } })
       this.d.toasts.show(why(ex), null, { error: true })
     }
   }
