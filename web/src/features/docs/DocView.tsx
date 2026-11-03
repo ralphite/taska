@@ -9,11 +9,15 @@ import type { Block, Doc } from '../../model/types'
 import { plural } from '../../model/words'
 import { Icon } from '../../ui/Icon'
 import { RichFrame } from '../../ui/Markdown'
+import type { SheetLook } from '../../ui/Sheet'
 import { BTN, HIT, NEEDS_PILL } from '../../ui/tones'
 import { BlockActs, type CountInfo } from './BlockActs'
 import { DocBlock } from './DocBlock'
 import { DraftCard, NewDot, Thread, type DocEnv, type ThreadEvents } from './Thread'
 import type { NotSent } from '../../model/voiceComments'
+
+/** How the phone shows a document: a sheet over the whole screen down to the box. */
+export const PHONE_DOC_LOOK: SheetLook = { full: true, aboveComposer: true }
 
 export interface ShownThread {
   t: DocThread

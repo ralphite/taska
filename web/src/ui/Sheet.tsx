@@ -12,6 +12,8 @@ export interface SheetLook {
   /** wider on the desktop, for what has a lot to show side by side */
   wide?: boolean
   tall?: boolean
+  /** the phone: the whole screen down to the box, under the status bar (a document to read) */
+  full?: boolean
   card?: boolean
   aboveComposer?: boolean
   at?: { x: number; y: number; right?: boolean; top?: number; left?: number } | null
@@ -93,7 +95,9 @@ export function Sheet({ open, look, parts, children, desk, footRoom = 0, focus =
     const d = dlg.current
     if (!o || !d || !open) return
     o.style.bottom = look.aboveComposer ? footRoom + 'px' : ''
-    d.style.height = look.tall && look.aboveComposer && !desk ? `calc(88dvh - ${footRoom}px)` : ''
+    const full = !!look.full && !desk
+    d.style.height = full ? '100%' : look.tall && look.aboveComposer && !desk ? `calc(88dvh - ${footRoom}px)` : ''
+    d.style.maxHeight = full ? '100%' : ''
     // a menu sits at the pointer, or under the button it came from, kept on screen
     const xy = look.at
     if (xy && desk) {

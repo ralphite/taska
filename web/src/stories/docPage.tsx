@@ -5,7 +5,7 @@
 import type { ReactNode } from 'react'
 import { DocEdit } from '../features/docs/DocEdit'
 import { DocPaneActs, DocPaneHead, DocPaneNav } from '../features/docs/DocPane'
-import { DocView, SayRow, type DocEvents } from '../features/docs/DocView'
+import { DocView, PHONE_DOC_LOOK, SayRow, type DocEvents } from '../features/docs/DocView'
 import { Lasso } from '../features/docs/Lasso'
 import { WebThread, type DocEnv } from '../features/docs/Thread'
 import { WebPage } from '../features/docs/WebPage'
@@ -96,7 +96,7 @@ export function docAt(d: Doc, desk: boolean, h: DocHere = {}) {
       </PaneFrame>
     </div>
   ) : (
-    <Sheet open look={{ tall: true, aboveComposer: true }} desk={false} onClose={no}>
+    <Sheet open look={PHONE_DOC_LOOK} desk={false} onClose={no}>
       <SheetLayout title={`D${d.d}`} body={view} />
     </Sheet>
   )

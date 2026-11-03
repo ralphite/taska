@@ -20,7 +20,7 @@ import { useItemWorld } from '../../app/hooks'
 import { PaneFrame } from '../../ui/PaneFrame'
 import { DocPaneActs, DocPaneHead, DocPaneNav } from './DocPane'
 import { DocEditContainer } from './DocEditContainer'
-import { DocView, SayRow, type DocEvents } from './DocView'
+import { DocView, PHONE_DOC_LOOK, SayRow, type DocEvents } from './DocView'
 import type { DocEnv } from './Thread'
 import { docDraft } from '../../model/draftTarget'
 import { clock } from '../../model/time'
@@ -191,7 +191,7 @@ export function DocSheetContainer({ slug, dn, footRoom }: { slug: string; dn: nu
   if (!m || !d || !facts) return null
   return (
     // above the box, which stays under it (what it says shows), so nothing of the document is under the box (r672)
-    <Sheet open look={{ tall: true, aboveComposer: true }} desk={false} footRoom={footRoom} onClose={() => app.docs.close()}>
+    <Sheet open look={PHONE_DOC_LOOK} desk={false} footRoom={footRoom} onClose={() => app.docs.close()}>
       <SheetLayout title={`D${d.d}`} body={<DocView facts={facts} env={env} on={on} page={page} recTime={<RecTime />} aim={v.aim} onAimed={aimed} lasso={v.circle ? <Lasso onDrawn={(keys) => app.docs.circled(keys)} /> : null} />} />
     </Sheet>
   )
