@@ -76,9 +76,12 @@ export function ItemMenuSheet({ req }: Req<'item-menu'>) {
     moveProject: () => (others.length ? app.sheets.open({ kind: 'item-move-project', n }, { focus: false }) : (close(), app.toasts.show('No other project to move to'))),
     remove: () => {
       if (!app.sheets.confirm('item-delete ' + n)) return
-      close()
       void app.items.remove(n)
-      if (route?.place.kind === 'item') app.nav.closeItem()
+      // on the phone the menu's own step in the history goes first: leaving the deleted item before that would
+      // land Back on its page again
+      app.sheets.close(() => {
+        if (route?.place.kind === 'item') app.nav.closeItem()
+      })
     },
     set: (f, v) => {
       if (arm) close()
