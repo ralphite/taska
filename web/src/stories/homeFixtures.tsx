@@ -10,7 +10,8 @@ export const now = Date.parse(T)
 export const PROJECTS: ProjectRow[] = [
   { name: 'taska', title: 'taska', open: 32, needs: 2, pos: 0, agents: [{ name: 'claude-code', t: now - 60_000, waiting: true }] },
   { name: 'home', title: 'Home', open: 13, needs: 11, pos: 1, agents: [{ name: 'codex', t: now - 3 * 3600_000, waiting: false }] },
-  { name: 'notes', title: '\u8bfb\u4e66\u7b14\u8bb0', open: 2, needs: 0, pos: 2 },
+  { name: 'notes', title: '\u8bfb\u4e66\u7b14\u8bb0', open: 2, needs: 0, pos: 2, agents: [{ name: 'claude-code', t: now - 26 * 3600_000, waiting: false }] },
+  // a project no agent has called yet: its row says No agent
   { name: 'long', title: 'A project with a very long name that does not fit anywhere at all', open: 0, needs: 0, pos: 3 },
 ]
 export const NEEDS: Need[] = [
