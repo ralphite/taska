@@ -110,7 +110,7 @@ export function ProjectsBody({ f, on }: { f: ProjectsFacts; on: ProjectsEvents }
         {f.live.map((p) => {
           const ren = f.renaming === p.name
           return (
-            <li key={p.name} className="group flex min-h-16 items-center gap-3 py-3">
+            <li key={p.name} className="group relative flex min-h-16 items-center gap-3 py-3">
               <ProjTile title={p.title} tone={p.tone} cls="size-8 rounded-lg text-sm" />
               <div className="min-w-0 flex-1">
                 {ren ? (
@@ -146,18 +146,18 @@ export function ProjectsBody({ f, on }: { f: ProjectsFacts; on: ProjectsEvents }
                 )}
               </div>
               {ren ? null : (
-                <>
-                  {/* under the pointer (or the keys) on the desktop, as a list's rows; narrow, the buttons keep their icons and
-                      say their words under the pointer, so the name keeps room */}
-                  <button onClick={() => on.rename(p.name)} title="Rename" aria-label="Rename" className={`${P_BTN} ${ROW_ACT}`}>
+                // on the desktop they float at the row's end under the pointer (or the keys), taking no room from the name;
+                // narrow, they keep their icons and say their words under the pointer
+                <span className={`flex shrink-0 items-center ${ROW_ACT} lg:absolute lg:inset-y-0 lg:right-0 lg:bg-white lg:pl-2 dark:lg:bg-zinc-950`}>
+                  <button onClick={() => on.rename(p.name)} title="Rename" aria-label="Rename" className={P_BTN}>
                     <Icon n="pencil" c="size-4" />
                     <span className="hidden @md/set:inline">Rename</span>
                   </button>
-                  <button onClick={() => on.remove(p.name)} title="Delete" aria-label="Delete" className={`${P_BTN} ${ROW_ACT}`}>
+                  <button onClick={() => on.remove(p.name)} title="Delete" aria-label="Delete" className={P_BTN}>
                     <Icon n="trash" c="size-4" />
                     <span className="hidden @md/set:inline">Delete</span>
                   </button>
-                </>
+                </span>
               )}
             </li>
           )

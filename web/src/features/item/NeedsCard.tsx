@@ -226,7 +226,10 @@ export function NeedsCard({ it, env, on, remodify, going = null }: {
           <button key={v} disabled aria-pressed={chose(v)} className={`${chose(v) ? DECIDED_ON(CHOSEN_TONE[label]) : DECIDED_OFF} ${i ? 'flex-[1.4]' : 'flex-1'} lg:flex-none`}>
             <Icon n={icon} c={i ? 'size-4.5' : 'size-4'} sw="2.25" />
             {chose(v) ? (PAST[label] ?? label) : label}
-            <Kbd k={k} />
+            {/* decided: no key does anything now, so none shows (its place kept, as on an answered card) */}
+            <span className="invisible">
+              <Kbd k={k} />
+            </span>
           </button>
         ))}
       />

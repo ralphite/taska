@@ -263,13 +263,13 @@ function Subitems({ it, f, on }: { it: Item; f: ItemFacts; on: ItemEvents }) {
               on.subTyped(e.target.value)
             }}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') add()
+              if (e.key === 'Enter' && title.trim()) add()
             }}
             className={`${FIELD} min-w-0 flex-1`}
             placeholder={`Subitem of ${f.code(it.n)}`}
             aria-label="Subitem title"
           />
-          <button onClick={add} className={PRIMARY}>
+          <button onClick={add} disabled={!title.trim()} className={PRIMARY}>
             Add
           </button>
           <button aria-label="Cancel" onClick={on.subCancel} className="grid size-11 shrink-0 place-items-center rounded-full text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800">
