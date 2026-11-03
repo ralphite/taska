@@ -25,4 +25,7 @@ const one = (fit: boolean, idx: number, count: number): Story => ({
 
 /** The second of three pictures, fit to the screen. */
 export const Fit: Story = { ...one(true, 1, 3), name: 'Fitted to the window' }
-export const Zoomed: Story = { ...one(false, 0, 1), name: 'At 100%' }
+/** The same at 100%: still which of how many it is. */
+export const Zoomed: Story = { ...one(false, 1, 3), name: 'At 100%' }
+/** One picture alone: no Previous or Next. */
+export const OnePicture: Story = { ...one(true, 0, 1), name: 'One picture' }

@@ -16,4 +16,4 @@ export const AgentsTurnYouReplied: Story = { ...at({ talked: true, thread: [said
 // ---- more states (B636)
 export const P0: Story = { ...at({ pri: 'P0', thread: [said] }), name: 'P0' }
 export const Later = at({ when: 'later', thread: [said] })
-export const MadeFromTwoInputs: Story = { ...at({ thread: [said], srcs: ['r4', 'r5'] }), name: 'Made from two inputs' }
+export const MadeFromTwoInputs: Story = { ...at({ thread: [said, { ...said, id: 2, text: 'And keep the sort too.', src: 'r5' }], srcs: ['r4', 'r5'] }), name: 'Made from two inputs' }

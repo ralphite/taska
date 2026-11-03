@@ -4,6 +4,7 @@
 
 import type { ReactNode } from 'react'
 import { minutes, ROUND_RANGES, roundFacts, roundsIn, short, type Dash, type Pair, type Round } from '../../model/dashboard'
+import { plural } from '../../model/words'
 import { SegCtl } from '../../ui/Segments'
 import { Rich } from '../../ui/Markdown'
 import type { InlineWorld } from '../../ui/markdown/inline'
@@ -282,7 +283,7 @@ export function Dashboard({ d, err, range, onRange, rounds, now, onRounds, onRet
             <Card
               title="What each item cost"
               wide
-              note={d.costs.items.length ? `${d.costs.items.length} items · ${d.costs.minutes} min · ${short(d.costs.tokens)} token · middle ${d.costs.median_minutes} min, ${short(d.costs.median_tokens)} token` : undefined}
+              note={d.costs.items.length ? `${plural(d.costs.items.length, 'item')} · ${d.costs.minutes} min · ${short(d.costs.tokens)} tokens · middle ${d.costs.median_minutes} min, ${short(d.costs.median_tokens)} tokens` : undefined}
             >
               {d.costs.items.length ? (
                 <table className="w-full table-fixed text-sm">

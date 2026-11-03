@@ -175,13 +175,19 @@ function Diagram({ src, draw }: { src: string; draw: NonNullable<InlineWorld['di
     }
   }, [src, dark, id, key, draw])
   const now = got?.key === key ? got : null
+  const errLine = now?.error ? /line (\d+)/i.exec(now.error)?.[1] : undefined
   return (
     <div ref={at} data-mermaid={now?.svg ? 'drawn' : now?.error ? 'failed' : 'drawing'}>
       {now?.svg ? (
         <div className="flex justify-center overflow-x-auto rounded-lg bg-zinc-50 p-4 lg:scrollbar-thin dark:bg-zinc-800/60 [&>svg]:h-auto [&>svg]:max-w-full" dangerouslySetInnerHTML={{ __html: now.svg }} />
       ) : (
         <>
-          {now?.error ? <p className="pb-1.5 text-[12.5px] whitespace-pre-wrap text-red-600 dark:text-red-400">This diagram has an error: {now.error}</p> : null}
+          {/* in plain words, and the line it is on; Mermaid's own words under the pointer */}
+          {now?.error ? (
+            <p title={now.error} className="pb-1.5 text-[12.5px] text-red-600 dark:text-red-400">
+              This diagram could not be drawn{errLine ? ` (line ${errLine})` : ''}
+            </p>
+          ) : null}
           <Code text={src} />
         </>
       )}

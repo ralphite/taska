@@ -306,7 +306,7 @@ export function PhonePushBody({ standalone, onPhone, phoneHref = '', push = null
   return (
     <Part
       title={standalone ? 'Notifications not supported' : 'Add Taska to the Home Screen first'}
-      about={standalone ? 'Its browser has no push service.' : 'See Use on your phone, then open Taska from the Home Screen and turn notifications on.'}
+      about={standalone ? 'This browser has no push service.' : 'See Use on your phone, then open Taska from the Home Screen and turn notifications on.'}
     >
       {standalone ? null : (
         <a
@@ -429,5 +429,5 @@ export function SpellingsBody({ fixes, prefs, editing, prefsSlot, on }: { fixes:
 // ---- Organizer
 
 export function OrganizerBody({ on, model }: { on: boolean; model: string }) {
-  return on ? <Part title="On" about={`Gemini (${model}) files inputs into items in all projects; undo in Inputs`} /> : <Part title="Off" about="Set GEMINI_API_KEY to turn it on" />
+  return on ? <Part title="On" about={`Gemini (${model}) files inputs into items in all projects; undo it on the input`} /> : <Part title="Off" about="Set GEMINI_API_KEY to turn it on" />
 }

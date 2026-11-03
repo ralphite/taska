@@ -87,13 +87,14 @@ export function Viewer({ open, name, url, idx, count, fit, on }: { open: boolean
         {open && url ? <img key={url} src={url} alt="" className={fit ? 'm-auto max-h-full max-w-full object-contain' : 'm-auto max-w-none'} /> : null}
       </div>
       <footer className="flex items-center justify-center gap-2 py-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] text-sm">
-        <button onClick={on.prev} disabled={idx === 0} className="h-11 rounded-full px-4 hover:bg-white/10">
+        {/* Previous and Next only with more than one; at either end greyed */}
+        <button onClick={on.prev} disabled={idx === 0} hidden={count < 2} className="h-11 rounded-full px-4 enabled:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40">
           Previous
         </button>
         <button onClick={on.zoom} className="h-11 rounded-full bg-white/10 px-4 hover:bg-white/20">
           {fit ? 'Zoom to 100%' : 'Fit to screen'}
         </button>
-        <button onClick={on.next} disabled={idx >= count - 1} className="h-11 rounded-full px-4 hover:bg-white/10">
+        <button onClick={on.next} disabled={idx >= count - 1} hidden={count < 2} className="h-11 rounded-full px-4 enabled:hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40">
           Next
         </button>
       </footer>
