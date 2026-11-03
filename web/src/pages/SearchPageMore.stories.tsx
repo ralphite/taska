@@ -1,9 +1,9 @@
-// F479 (r982): searching by voice on the phone, each state of saying more and changing what it heard. The journeys:
-// searchProto.tsx.
+// F479: the phone's search page (pages/SearchPage), each state of saying more and changing what it heard. The journeys:
+// stories/searchPhone.tsx.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { stateStory } from './searchProto'
+import { stateStory } from '../stories/searchPhone'
 
-export default { title: 'Prototype/F479 Search everything/Say more or change it', parameters: { layout: 'padded' } } satisfies Meta
+export default { title: 'Components/Search on the phone/Say more or change it', parameters: { layout: 'padded' } } satisfies Meta
 
 export const MaybeMisheard: StoryObj = { name: 'A word may be misheard', ...stateStory('misheard') }
 export const SayingMore: StoryObj = { name: 'Saying more', ...stateStory('sayingMore') }

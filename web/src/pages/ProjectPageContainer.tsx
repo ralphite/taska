@@ -22,6 +22,7 @@ import { SettingsContainer } from '../features/settings/SettingsContainer'
 import { settingsTitle } from '../features/settings/sectionList'
 import { codeOf } from '../model/project'
 import { InputsContainer } from '../features/inputs/InputsContainer'
+import { SearchContainer } from './SearchContainer'
 import { DeskFilters, FilterStrip } from '../features/list/Filters'
 import { filterEvents } from '../features/list/FiltersContainer'
 import { DetailContainer } from './DetailContainer'
@@ -183,7 +184,7 @@ const DRAWER_PLACE = 'fixed top-0 left-0 w-80 max-w-[85vw] bg-zinc-100 pb-[max(1
 const DRAWER_W = 'min(85vw, 320px)'
 
 function PhoneLayout({ route }: { route: ProjectRoute }) {
-  const app = useServices('actions', 'fields', 'nav', 'sheets', 'views')
+  const app = useServices('actions', 'fields', 'finder', 'nav', 'sheets', 'views')
   const stores = useStores('box', 'docView', 'route', 'sheet')
   const { title, agent, counts, notSaved, otherNeeds } = useHeadFacts(route, false)
   const layers = useStoreValue(stores.route, (s) => s.layers)
@@ -215,8 +216,11 @@ function PhoneLayout({ route }: { route: ProjectRoute }) {
   const boxMode = useStoreValue(stores.box, (s) => !!s.mode)
   const docEdit = useStoreValue(stores.docView, (s) => s.editing)
   const docNoBox = route.place.kind === 'doc' && !boxMode && !docEdit
-  // while the item's page is swiped back, the list shows underneath it
-  const under = (!open && !settings) || !!floating
+  // while the item's page is swiped back, what it was opened from shows underneath it: the list, or the search page
+  // (F479), which stays while a result is open, as you left it
+  const beneath = (!open && !settings) || !!floating
+  const under = beneath && !searching
+  const searchShown = beneath && searching
   const phoneSet = filtersSet(route.tab, route.list)
   const [footH, setFootH] = useState(0)
   const tabs = phoneTabs(counts, route.tab)
@@ -240,7 +244,7 @@ function PhoneLayout({ route }: { route: ProjectRoute }) {
           phone
           title={title}
           otherNeeds={otherNeeds}
-          searching={searching}
+          searching={false}
           q={route.list.q}
           placeholder="Search items"
           agent={agent}
@@ -254,7 +258,7 @@ function PhoneLayout({ route }: { route: ProjectRoute }) {
             menu: () => app.nav.drawer(true),
             agents: () => app.sheets.open({ kind: 'agents' }, { tall: true, wide: true }),
             notSaved: () => app.sheets.open({ kind: 'not-saved' }, { focus: false }),
-            search: (on) => app.nav.search(on),
+            search: (on) => (on ? app.finder.open() : app.nav.search(false)),
             query: (q) => app.nav.setList({ q }),
             clear: () => app.nav.setList({ q: '' }),
             firstResult: () => {},
@@ -267,6 +271,7 @@ function PhoneLayout({ route }: { route: ProjectRoute }) {
           <ItemListContainer route={route} />
         </section>
         <InputsContainer route={route} hidden={!under || route.tab !== 'inputs'} />
+        {searching ? <SearchContainer route={route} hidden={!searchShown} /> : null}
         <div
           {...backSwipe.handlers}
           hidden={!open}
@@ -277,7 +282,7 @@ function PhoneLayout({ route }: { route: ProjectRoute }) {
         </div>
         {help ? <HelpContainer route={route} place="" /> : null}
         {settings && !help ? <SettingsContainer route={route} place="" prefsBox={null} /> : null}
-        <FootContainer route={route} composePage={false} place="" hidden={(settings && !prefsEditing) || docNoBox} onHeight={setFootH} />
+        <FootContainer route={route} composePage={false} place="" hidden={(settings && !prefsEditing) || docNoBox || (searching && !open)} onHeight={setFootH} />
       </div>
     </>
   )

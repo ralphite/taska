@@ -196,8 +196,8 @@ test('D82 #7: a search says what the other projects gave: searching, nothing the
     while (answer === 'hold') await new Promise((ok) => setTimeout(ok, 100))
     return answer === 'fail' ? r.abort() : r.continue()
   })
+  test.skip(!isDesk(page), 'the phone has its own search page (F479): search.spec.ts')
   await open(page, p)
-  if (!isDesk(page)) await page.getByRole('button', { name: 'Search', exact: true }).filter({ visible: true }).first().click()
   await search(page).fill('zqxj-one')
   await expect(page.getByText('Searching other projects\u2026', { exact: true }).filter({ visible: true }).first()).toBeVisible()
   answer = 'go'

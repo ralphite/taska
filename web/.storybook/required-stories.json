@@ -231,10 +231,10 @@
   "Prototype/About this section": [
    "About"
   ],
-  "Prototype/F479 Search everything/Walk through": [
+  "Components/Search on the phone/Walk through": [
    "Say, then say more"
   ],
-  "Prototype/F479 Search everything/Say and search": [
+  "Components/Search on the phone/Say and search": [
    "Listening",
    "Writing out what you said",
    "Searching",
@@ -242,7 +242,7 @@
    "Only one kind",
    "A result open"
   ],
-  "Prototype/F479 Search everything/Say more or change it": [
+  "Components/Search on the phone/Say more or change it": [
    "A word may be misheard",
    "Saying more",
    "Searching again",
@@ -250,7 +250,7 @@
    "Typing",
    "Cleared"
   ],
-  "Prototype/F479 Search everything/When it goes wrong": [
+  "Components/Search on the phone/When it goes wrong": [
    "Nothing found",
    "Nothing heard",
    "No microphone",

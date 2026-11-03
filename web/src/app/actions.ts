@@ -14,6 +14,7 @@ import { NEW_DRAFT } from '../model/draftTarget'
 import type { BoxStore } from '../stores/box'
 import type { DocViewStore } from '../stores/docView'
 import type { FeedbackStore } from '../stores/feedback'
+import type { Finder } from './search/finder'
 import type { ItemViewStore } from '../stores/itemView'
 import type { RouteStore } from '../stores/route'
 import type { SheetStore } from '../stores/sheet'
@@ -60,6 +61,8 @@ export interface ActionWorld {
   itemView: ItemViewStore
   docView: DocViewStore
   boxStore: BoxStore
+  /** the phone's search page */
+  finder: Finder
   desk(): boolean
   model(slug: string): ProjectModel | null
 }
@@ -177,14 +180,13 @@ export const ACTIONS = {
   }),
   // the page
   'new-input': page(['box', 'route', 'nav', 'fields'], { label: 'New input', keys: 'c', palette: true, run: newInput }),
-  search: page(['desk', 'route', 'nav', 'fields'], {
+  search: page(['desk', 'route', 'nav', 'fields', 'finder'], {
     label: 'Search',
     keys: '/',
     palette: true,
     run: (w) => {
-      // the phone's search is a layer over the page
-      if (!w.desk() && !w.route.getState().layers.includes('search')) return w.nav.search(true)
-      if (!w.desk()) return w.fields.focus('search')
+      // the phone's search is a page over the page, listening at once (F479)
+      if (!w.desk()) return w.route.getState().layers.includes('search') ? undefined : w.finder.open()
       requestAnimationFrame(() => w.fields.focus('search'))
     },
   }),
@@ -234,7 +236,7 @@ export const ACTIONS = {
   }),
   keys: page(['sheets'], { label: 'Keyboard shortcuts', keys: '?', palette: true, run: (w) => w.sheets.open({ kind: 'keys' }) }),
   palette: page(['sheets'], { label: 'Go to or do', keys: 'Meta+k', run: (w) => w.sheets.open({ kind: 'palette' }, { focus: false }) }),
-  back: page(['route', 'nav', 'media', 'ui', 'sheet', 'sheets', 'selection', 'voice', 'desk', 'fields', 'boxStore', 'box', 'docs', 'docEditor', 'itemEdits', 'itemView', 'docView'], { label: 'Step back one level', keys: 'Escape', run: (w, h) => stepBack(w, h) }),
+  back: page(['finder', 'route', 'nav', 'media', 'ui', 'sheet', 'sheets', 'selection', 'voice', 'desk', 'fields', 'boxStore', 'box', 'docs', 'docEditor', 'itemEdits', 'itemView', 'docView'], { label: 'Step back one level', keys: 'Escape', run: (w, h) => stepBack(w, h) }),
   step: page(['nav', 'listOrder', 'toasts'], { label: 'Next item', keys: 'j', why: stepWhy, run: steps(1) }),
   'step-back': page(['nav', 'listOrder', 'toasts'], { label: 'Previous item', keys: 'k', why: stepWhy, run: steps(-1) }),
 } satisfies Record<string, Action>
@@ -246,7 +248,7 @@ export const ACTION_IDS = Object.keys(ACTIONS) as ActionId[]
 
 const typingIn = (el: Element | null) => /INPUT|TEXTAREA|SELECT/.test(el?.tagName || '') || !!(el as HTMLElement | null)?.isContentEditable
 
-type BackWorld = Pick<ActionWorld, 'route' | 'nav' | 'media' | 'ui' | 'sheet' | 'sheets' | 'selection' | 'voice' | 'desk' | 'fields' | 'boxStore' | 'box' | 'docs' | 'docEditor' | 'itemEdits' | 'itemView' | 'docView'>
+type BackWorld = Pick<ActionWorld, 'finder' | 'route' | 'nav' | 'media' | 'ui' | 'sheet' | 'sheets' | 'selection' | 'voice' | 'desk' | 'fields' | 'boxStore' | 'box' | 'docs' | 'docEditor' | 'itemEdits' | 'itemView' | 'docView'>
 
 /** Esc: one level back: the drawer, the sheet, a subitem being written, an edit, the search, a field, full width, the
  * search's words, the item. */
@@ -302,7 +304,8 @@ function stepBack(w: BackWorld, h: Here): void {
     if (r.place.kind === 'item' && r.tab !== 'inputs') return w.nav.closeItem()
     return
   }
-  if (layers.includes('search') && w.fields.focused('search')) return w.nav.search(false)
+  // the phone's search page: Esc leaves it (an item opened from it goes back to it, below)
+  if (layers.includes('search') && r.place.kind !== 'item' && r.place.kind !== 'doc') return w.finder.leave()
   if (r.place.kind === 'item' && !typingIn(active)) return w.nav.closeItem()
 }
 

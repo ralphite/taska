@@ -1,6 +1,7 @@
-// F479's prototype (searchProto.tsx): the demo project Shop (and Home), and what each thing you might say finds: the
-// words heard first (one word misheard), set right, then with more said.
+// The phone's search (F479): the demo project Shop (and Home), and what each thing you might say finds, in the shape
+// the server sends (/api/find): the words heard first (one word misheard), set right, then with more said.
 import type { HeardFile } from '../model/doubts'
+import type { FindAnswer, Found } from '../model/find'
 import type { Item } from '../model/types'
 import { doc } from './docFixtures'
 import { T, input, item, message, modelOf } from './fixtures'
@@ -30,66 +31,32 @@ const INPUTS = [
   input({ id: 'r8', text: 'The export should keep the filter I set.', acked: true, touched: [1] }),
 ]
 export const SHOP = modelOf(ITEMS, INPUTS, { title: 'Shop', agents: [{ name: 'claude-code', t: Date.parse(T), waiting: true }], work: true }, [D1])
-export const HOME = modelOf([item({ n: 21, title: 'Export contacts with the sort kept' })], [], { title: 'Home' })
+const H21 = item({ n: 21, title: 'Export contacts with the sort kept' })
+export const HOME = modelOf([H21], [], { title: 'Home' })
+/** The projects in the sidebar's order. */
+export const ORDER = ['shop', 'home']
 
-export type Kind = 'items' | 'inputs' | 'rules' | 'docs'
-export const KINDS: [Kind, string][] = [
-  ['items', 'Items'],
-  ['inputs', 'Inputs'],
-  ['rules', 'Rules'],
-  ['docs', 'Documents'],
-]
-/** One thing a search found: an item (or rule) of this project or another, an input, a document. */
-export interface Found {
-  kind: Kind
-  key: string
-  /** the item it is, or the one it opens (a document's item, what an input became) */
-  n: number
-  /** another project's */
-  home?: boolean
-  /** a document or an input: its code, its words, what it is */
-  code?: string
-  title?: string
-  meta?: string
-}
-const it = (n: number, kind: Kind = 'items'): Found => ({ kind, key: 'i' + n, n })
-const SAID8: Found = { kind: 'inputs', key: 'r8', n: 1, code: '#8', title: 'The export should keep the filter I set.', meta: 'Oct 23 · became F001' }
-const SAID12: Found = { kind: 'inputs', key: 'r12', n: 18, code: '#12', title: 'On my phone the export gives me every row again.', meta: 'Today 09:12 · became B018' }
-const DOC1: Found = { kind: 'docs', key: 'd1', n: 1, code: 'D1', title: D1.title, meta: 'On F001' }
-const HOME21: Found = { kind: 'items', key: 'h21', n: 21, home: true }
-const HOME4: Found = { kind: 'inputs', key: 'h4', n: 21, home: true, code: '#4', title: 'When I export contacts the order is gone', meta: 'Oct 20 · became F021' }
+const it = (n: number, kind: 'items' | 'rules' = 'items'): Found => ({ project: 'shop', kind, key: 'i' + n, n })
+const SAID8: Found = { project: 'shop', kind: 'inputs', key: 'r8', n: 1, code: '#8', title: 'The export should keep the filter I set.', t: '2026-10-23T14:10:00-07:00', became: 'F001' }
+const SAID12: Found = { project: 'shop', kind: 'inputs', key: 'r12', n: 18, code: '#12', title: 'On my phone the export gives me every row again.', t: '2026-11-02T09:12:00-08:00', became: 'B018' }
+const DOC1: Found = { project: 'shop', kind: 'docs', key: 'd1', n: 1, code: 'D1', d: 1, title: D1.title, on: 'F001' }
+// another project's item comes with what the list shows of it
+const HOME21: Found = { project: 'home', kind: 'items', key: 'i21', n: 21, item: { ...H21, code: 'F021' }, parentCode: null, kids: null }
+const HOME4: Found = { project: 'home', kind: 'inputs', key: 'r4', n: 21, code: '#4', title: 'When I export contacts the order is gone', t: '2026-10-20T19:02:00-07:00', became: 'F021' }
 
-/** What a search found for some words. */
-export interface Search {
-  words: string
-  /** the words it marks where they are found */
-  marks: string[]
-  found: Found[]
-}
-export const MISHEARD: Search = {
-  words: 'where the expert loses my filter',
-  marks: ['filter'],
-  found: [it(1), SAID8, DOC1, it(3), it(14), it(17, 'rules'), HOME21, HOME4],
-}
-export const RIGHT: Search = {
-  words: 'where the export loses my filter',
-  marks: ['export', 'filter'],
-  found: [it(1), SAID8, DOC1, it(3), it(14), it(6), it(17, 'rules'), HOME21, HOME4],
-}
+const answer = (q: string, marks: string[], found: Found[]): FindAnswer => ({ q, by: 'meaning', marks, found, titles: { shop: 'Shop', home: 'Home' } })
+export const MISHEARD = answer('where the expert loses my filter', ['filter'], [it(1), SAID8, DOC1, it(3), it(14), it(17, 'rules'), HOME21, HOME4])
+export const RIGHT = answer('where the export loses my filter', ['export', 'filter'], [it(1), SAID8, DOC1, it(3), it(14), it(6), it(17, 'rules'), HOME21, HOME4])
 /** What you say more, the second time. */
 export const ADDED = ', only on the phone'
-export const MORE: Search = {
-  words: RIGHT.words + ADDED,
-  marks: ['export', 'filter', 'phone'],
-  found: [it(18), SAID12, it(1), it(9), it(17, 'rules')],
-}
+export const MORE = answer(RIGHT.q + ADDED, ['export', 'filter', 'phone'], [it(18), SAID12, it(1), it(9), it(17, 'rules')])
 /** What it finds for the words in the box (anything else typed: nothing). */
-export function searchOf(words: string): Search | null {
+export function searchOf(words: string): FindAnswer | null {
   const w = words.toLowerCase()
-  if (w.includes('phone')) return { ...MORE, words }
-  if (w.includes('expert')) return { ...MISHEARD, words }
-  if (w.includes('export') || w.includes('filter')) return { ...RIGHT, words }
+  if (w.includes('phone')) return { ...MORE, q: words }
+  if (w.includes('expert')) return { ...MISHEARD, q: words }
+  if (w.includes('export') || w.includes('filter')) return { ...RIGHT, q: words }
   return null
 }
 /** The misheard word in the first words: the main model heard "expert", the other "export". */
-export const HEARD: HeardFile[] = [{ key: 's1', trAdded: MISHEARD.words, doubts: [{ was: 'expert', alt: 'export', why: 'two models', show: ['expert', 'export'] }] }]
+export const HEARD: HeardFile[] = [{ key: 's1', trAdded: MISHEARD.q, doubts: [{ was: 'expert', alt: 'export', why: 'two models', show: ['expert', 'export'] }] }]

@@ -16,6 +16,8 @@ import { createBoxStore, type BoxStore } from '../stores/box'
 import { createDraftsStore, type DraftsStore } from '../stores/drafts'
 import { createItemViewStore, type ItemViewStore } from '../stores/itemView'
 import { createSearchStore, type SearchStore } from '../stores/search'
+import { createFindStore, type FindStore } from '../stores/find'
+import { Finder } from './search/finder'
 import { createSheetStore, type SheetStore } from '../stores/sheet'
 import { createUiStore, type UiStore } from '../stores/ui'
 import { noCache, type CopyCache } from '../sync/cache'
@@ -113,6 +115,8 @@ export interface App {
     ui: UiStore
     itemView: ItemViewStore
     search: SearchStore
+    /** the phone's search page (F479) */
+    find: FindStore
     drafts: DraftsStore
     box: BoxStore
     sheet: SheetStore
@@ -141,6 +145,8 @@ export interface App {
   listOrder: ListOrder
   /** the list's search, in the other projects */
   crossSearch: CrossSearch
+  /** the phone's search page: listening, writing out, searching every project (F479) */
+  finder: Finder
   /** answering an agent's question by its choices */
   answers: Answers
   /** an item's editor and its subitem title: what you typed is kept */
@@ -211,6 +217,7 @@ export function createApp(env: AppEnv): App {
   const itemView = createItemViewStore(env.kv)
   const keptEdits = createKeptEditsStore(env.kv)
   const search = createSearchStore()
+  const find = createFindStore()
   const activityStore = createActivityStore()
   const docView = createDocViewStore()
   const docTicks = createDocTicksStore(env.kv)
@@ -320,7 +327,8 @@ export function createApp(env: AppEnv): App {
   const itemEdits = new ItemEdits({ view: itemView, kept: keptEdits, route, toasts, desk: env.desk, model: here })
   const keyArm = new KeyArm()
   const answers = new Answers({ inputs, view: itemView, outbox })
-  const actions = new Actions({ items, itemEdits, keyArm, answers, toasts, nav, fields, sheets, docs, docEditor, box, voice, media, selection, listOrder, route, ui, feedback, sheet: sheetStore, itemView, docView, boxStore, desk: env.desk, model })
+  const finder = new Finder({ api, store: find, slug, layer: (on) => nav.search(on), pauses: uploadPauses })
+  const actions = new Actions({ finder, items, itemEdits, keyArm, answers, toasts, nav, fields, sheets, docs, docEditor, box, voice, media, selection, listOrder, route, ui, feedback, sheet: sheetStore, itemView, docView, boxStore, desk: env.desk, model })
   const keptNotes: KeptNotes = new KeptNotes({
     vault: env.vault ?? memoryVault(),
     kv: env.kv,
@@ -388,7 +396,7 @@ export function createApp(env: AppEnv): App {
 
   const app: App = {
     api,
-    stores: { data, changes, outbox, feedback, ui, itemView, search, drafts, box: boxStore, sheet: sheetStore, route, activity: activityStore, docView, docTicks, settings: settingsStore, recording, dictation: dictationStore, media: mediaStore, views: viewsStore, grips: gripsStore, drag: dragStore, keptEdits },
+    stores: { data, changes, outbox, feedback, ui, itemView, search, find, drafts, box: boxStore, sheet: sheetStore, route, activity: activityStore, docView, docTicks, settings: settingsStore, recording, dictation: dictationStore, media: mediaStore, views: viewsStore, grips: gripsStore, drag: dragStore, keptEdits },
     toasts,
     items,
     inputs,
@@ -398,6 +406,7 @@ export function createApp(env: AppEnv): App {
     rows,
     listOrder,
     crossSearch: new CrossSearch(api, search),
+    finder,
     answers,
     itemEdits,
     fields,

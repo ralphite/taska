@@ -72,6 +72,7 @@ export class Docs {
     const doc = h.m.docs.find((x) => x.d === dn)
     if (this.d.route.getState().full) this.d.route.getState().setFull(false, true)
     this.d.view.getState().show(null)
+    if (this.d.nav.backToSearch()) return
     if (this.d.desk() && this.d.route.getState().side) return this.d.nav.closeItem()
     if (doc && h.m.byN.has(liveN(h.m, doc.n))) return this.d.nav.openItemHere(codeOf(h.m, liveN(h.m, doc.n)))
     this.d.nav.closeItem()

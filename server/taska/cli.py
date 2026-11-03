@@ -77,7 +77,7 @@ def serve(root: str, host: str, port: int, organizer: bool, public: str, log_db:
         p.voice.resume()  # before the organizer: an input waiting for its words is held for them again
         organizers.start(p)
 
-    ws = Workspace(root, public, on_open=opened, voice_fix=logs.voice_fix)
+    ws = Workspace(root, public, on_open=opened, voice_fix=logs.voice_fix, gemini=organizer)
     push = Push(ws.root)
     stop = threading.Event()
 

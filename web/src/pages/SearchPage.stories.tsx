@@ -1,9 +1,9 @@
-// F479 (r982): searching by voice on the phone, each state of saying what to find and what it found. The journeys:
-// searchProto.tsx.
+// F479: the phone's search page (pages/SearchPage), each state of saying what to find and what it found. The journeys:
+// stories/searchPhone.tsx.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { stateStory } from './searchProto'
+import { stateStory } from '../stories/searchPhone'
 
-export default { title: 'Prototype/F479 Search everything/Say and search', parameters: { layout: 'padded' } } satisfies Meta
+export default { title: 'Components/Search on the phone/Say and search', parameters: { layout: 'padded' } } satisfies Meta
 
 export const Listening: StoryObj = { name: 'Listening', ...stateStory('listening') }
 export const WritingItOut: StoryObj = { name: 'Writing out what you said', ...stateStory('writing') }

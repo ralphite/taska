@@ -1,11 +1,11 @@
-// F479 (r982): searching by voice on the phone, walked through: say what to find, fix a misheard word, say more,
-// open a result, come back, leave. What it is and every journey: searchProto.tsx.
+// F479: searching by voice on the phone, walked through: say what to find, fix a misheard word, say more, open a
+// result, come back, leave. Every journey: stories/searchPhone.tsx.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { SearchPhone } from './searchProto'
-import { TourFrame } from './tour/TourFrame'
-import { button, marked, row, type Tour } from './tour/tour'
+import { SearchPhone } from '../stories/searchPhone'
+import { TourFrame } from '../stories/tour/TourFrame'
+import { button, marked, row, type Tour } from '../stories/tour/tour'
 
-export default { title: 'Prototype/F479 Search everything/Walk through', parameters: { layout: 'padded' } } satisfies Meta
+export default { title: 'Components/Search on the phone/Walk through', parameters: { layout: 'padded' } } satisfies Meta
 
 const TOUR: Tour = {
   steps: [

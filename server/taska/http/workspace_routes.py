@@ -1,5 +1,5 @@
 """The workspace's JSON interface: the projects (list, counts, order, make, rename, delete, restore), what needs you
-everywhere, search across projects, voice spellings and preferences, list views, pushes, the key, and the server's
+everywhere, search across projects (the list's, and the phone's search page), voice spellings and preferences, list views, pushes, the key, and the server's
 health and idleness (deploys and tools read those)."""
 
 from __future__ import annotations
@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Optional
 from ..agent_text.guide_text import SKILL
 from ..infra import logs
 from ..infra.logs import voice_fix
+from ..page_api.find import find_view
 from ..services import devdash
 from .access import key_answer
 from .agent_routes import presence
@@ -42,6 +43,8 @@ def get(ctx: "AppContext", req: Request, path: str) -> Optional[Response]:
         return as_json(ws.needs())
     if path == "/api/search":
         return as_json(ws.search(req.arg("q"), req.arg("skip")))
+    if path == "/api/find":  # the phone's search (F479): every project, by meaning and by the words
+        return as_json(find_view(ws, req.arg("q"), req.arg("here")))
     if path == "/api/projects/deleted":
         return as_json(ws.deleted())
     if path == "/api/corrections":

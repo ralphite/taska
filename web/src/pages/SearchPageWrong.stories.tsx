@@ -1,8 +1,8 @@
-// F479 (r982): searching by voice on the phone, each state of something going wrong. The journeys: searchProto.tsx.
+// F479: the phone's search page (pages/SearchPage), each state of something going wrong. The journeys: stories/searchPhone.tsx.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { stateStory } from './searchProto'
+import { stateStory } from '../stories/searchPhone'
 
-export default { title: 'Prototype/F479 Search everything/When it goes wrong', parameters: { layout: 'padded' } } satisfies Meta
+export default { title: 'Components/Search on the phone/When it goes wrong', parameters: { layout: 'padded' } } satisfies Meta
 
 export const NothingFound: StoryObj = { name: 'Nothing found', ...stateStory('nothing') }
 export const NothingHeard: StoryObj = { name: 'Nothing heard', ...stateStory('unheard') }

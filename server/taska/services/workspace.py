@@ -15,13 +15,14 @@ import shutil
 import threading
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-from ..domain import rules
+from ..domain import finding, rules
 from ..domain.text import project_title, slug_of
 from ..domain.vocab import CLOSED, PROJECT_NAME, SLUG_CHARS, Refused
 from ..infra.project_db import ProjectDb
+from .meaning import Meaning
 from .moves import Moves
 from .project import Project, now_iso
-from .settings import AccessKey, ListViews, ProjectOrder, Spellings, VoicePrefs
+from .settings import AccessKey, ListViews, ProjectOrder, SearchByMeaning, Spellings, VoicePrefs
 
 Opened = Callable[[Project], None]
 
@@ -32,7 +33,7 @@ def short_slug() -> str:
 
 class Workspace:
     def __init__(self, root: str, public: str = "", on_open: Optional[Opened] = None,
-                 voice_fix: Optional[Callable[..., None]] = None):
+                 voice_fix: Optional[Callable[..., None]] = None, gemini: bool = False):
         self.root = os.path.abspath(os.path.expanduser(root))
         self.public = public.rstrip("/")  # the tunnel's address, for the phone link
         self.trash = os.path.join(self.root, ".deleted")
@@ -45,6 +46,7 @@ class Workspace:
         self.views = ListViews(self.root)
         self.voice_prefs = VoicePrefs(self.root)
         self.order = ProjectOrder(self.root)
+        self.meaning = Meaning(SearchByMeaning(self.root), allowed=gemini)  # gemini: the server may ask it (cli)
         self.moves = Moves()
         self.projects: Dict[str, Project] = {}
         for name in sorted(os.listdir(self.root)):
@@ -237,6 +239,29 @@ class Workspace:
                         out.append({"project": name, "ptitle": p.title, "kind": "input", "code": r.id, "title": r.text[:200],
                                     "t": r.t})
         return sorted(out, key=lambda x: x["t"], reverse=True)[:30]
+
+    def find(self, q: str, here: str = "") -> Tuple[str, List[Tuple[str, finding.Found]]]:
+        """F479: what `q` finds in every project, closest first, each with its project: by what it means when that is
+        on (Meaning), then by its words (what the meaning did not find after it); -> (how: "meaning" or "words", it)."""
+        names = sorted(self.projects, key=lambda x: (x != here, x))
+        words: List[Tuple[float, str, finding.Found]] = []
+        lists: List[Tuple[str, str, List[Tuple[finding.Found, str]]]] = []
+        asks = self.meaning.on()
+        for name in names:
+            p = self.projects[name]
+            with p.lock:
+                words += [(f.score, name, f) for f in finding.by_words(p.state, q)]
+                if asks:
+                    lists.append((name, p.title, finding.short_list(p.state)))
+        words.sort(key=lambda x: x[0], reverse=True)  # stable: the project you are in first when as close
+        out = [(name, f) for _, name, f in words]
+        ranked = self.meaning.rank(q, lists) if asks else None
+        if ranked is None:
+            return "words", out[:80]
+        known = {(name, f.key): f for name, _, short in lists for f, _ in short}
+        by_meaning = [(name, known[(name, key)]) for name, key in ranked if (name, key) in known]
+        seen = {(name, f.key) for name, f in by_meaning}
+        return "meaning", (by_meaning + [(name, f) for name, f in out if (name, f.key) not in seen])[:80]
 
     def close(self) -> None:
         for p in list(self.projects.values()):

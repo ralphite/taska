@@ -80,6 +80,19 @@ export class Navigation {
     this.route.getState().go(projectPath(r.slug, tab, place, list), push, push && searching ? ['search'] : undefined, from, place.kind === 'item' || place.kind === 'doc' ? tab : undefined)
   }
 
+  /** The phone's search (F479): a result opens over it (a step Back comes back to it, as you left it). */
+  fromSearch(url: string): void {
+    this.route.getState().go(url, true, ['search'])
+  }
+
+  /** On the phone, an item or a document opened from the search: its back goes back to the search. -> it did */
+  backToSearch(): boolean {
+    const r = this.here()
+    if (this.desk() || !r || (r.place.kind !== 'item' && r.place.kind !== 'doc') || !this.route.getState().layers.includes('search')) return false
+    this.route.getState().backBy(1)
+    return true
+  }
+
   /** The phone's search: open, or closed by Cancel (the search ends: its words go). */
   search(on: boolean): void {
     if (this.desk()) return
@@ -204,7 +217,7 @@ export class Navigation {
 
   closeItem(): void {
     const r = this.here()
-    if (!r) return
+    if (!r || this.backToSearch()) return
     if (this.route.getState().full) this.route.getState().setFull(false, true)
     // opened from Documents, Activity or Deleted: back to that list
     const side = this.desk() ? this.route.getState().side : null
