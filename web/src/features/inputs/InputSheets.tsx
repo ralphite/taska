@@ -8,7 +8,7 @@ import { inputCode } from '../../model/words'
 import { Icon } from '../../ui/Icon'
 import type { IconName } from '../../ui/icon-paths'
 import type { SheetParts } from '../../ui/Sheet'
-import { MENU_ROW } from '../../ui/tones'
+import { DANGER, MENU_ROW, MENU_SEP } from '../../ui/tones'
 
 export interface InputMenuEvents {
   send(): void
@@ -65,7 +65,11 @@ export function inputMenuSheet({ r, send, tidy, undo, move, history, scope, aski
             <span className="min-w-0 flex-1 truncate">{asking === f.f ? 'Take it off?' : `Take off ${f.name || 'a file'}`}</span>
           </button>
         ))}
-        {row('delete', 'trash', 'Delete', on.remove, deleteTip)}
+        <div className={MENU_SEP} />
+        <button onClick={on.remove} {...(deleteTip ? { title: deleteTip } : {})} className={`${MENU_ROW} ${DANGER} hover:bg-red-50 dark:hover:bg-red-400/10`}>
+          <Icon n="trash" c="size-4" />
+          Delete
+        </button>
       </div>
     ),
   }

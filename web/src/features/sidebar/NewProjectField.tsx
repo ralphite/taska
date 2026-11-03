@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { Icon } from '../../ui/Icon'
-import { FIELD } from '../../ui/tones'
+import { DISABLED, FIELD } from '../../ui/tones'
 
 export function NewProjectField({ error, on }: { error: string; on: { create(title: string): void; cancel(): void } }) {
   const [name, setName] = useState('')
@@ -31,7 +31,7 @@ export function NewProjectField({ error, on }: { error: string; on: { create(tit
           autoComplete="off"
           spellCheck={false}
         />
-        <button onClick={() => on.create(name)} className="h-10 shrink-0 rounded-xl bg-zinc-900 px-3 text-sm font-semibold text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200">
+        <button onClick={() => on.create(name)} disabled={!name.trim()} className={`h-10 shrink-0 rounded-xl bg-zinc-900 px-3 text-sm font-semibold text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200 ${DISABLED}`}>
           Create
         </button>
         <button onClick={on.cancel} aria-label="Cancel" className="grid size-10 shrink-0 place-items-center rounded-xl text-zinc-500 hover:bg-zinc-200/60 dark:hover:bg-zinc-800">

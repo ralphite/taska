@@ -4,6 +4,7 @@
 
 import { useLayoutEffect, useRef, type ReactNode, type RefObject } from 'react'
 import type { BoxLine, BoxRight, FeedbackLine } from '../../model/boxFoot'
+import { VC_MARK } from '../../model/voiceComments'
 import { Icon, type IconName } from '../../ui/Icon'
 import { HIT } from '../../ui/tones'
 
@@ -15,9 +16,11 @@ export interface LineEvents {
   sendTicks(): void
   clearTicks(): void
   toItem(): void
+  /** let go of the comments written in the box */
+  discard(): void
 }
 
-const NO_LINE_EVENTS: LineEvents = { stop() {}, unpick() {}, sendTicks() {}, clearTicks() {}, toItem() {} }
+const NO_LINE_EVENTS: LineEvents = { stop() {}, unpick() {}, sendTicks() {}, clearTicks() {}, toItem() {}, discard() {} }
 
 const xButton = (label: string, run: () => void, esc = true) => (
   <button
@@ -31,7 +34,7 @@ const xButton = (label: string, run: () => void, esc = true) => (
 )
 
 function LineRight({ right, on }: { right: BoxRight; on: LineEvents }) {
-  if (right.kind === 'x') return xButton(right.label, right.act === 'stop' ? on.stop : on.unpick)
+  if (right.kind === 'x') return xButton(right.label, right.act === 'stop' ? on.stop : right.act === 'discard' ? on.discard : on.unpick, right.act !== 'discard')
   if (right.kind === 'ticks')
     return (
       <>
@@ -145,6 +148,9 @@ function insertedAt(was: string, now: string): number | null {
 export function Composer({ line, waiting = null, lineOn, lineOnComposePage, placeholder, sendWord, text, desk, composePage, micTip, files, doubts, words, hasFiles = false, boxRef, fieldRef, rec = null, on }: ComposerProps) {
   const area = useRef<HTMLTextAreaElement | null>(null)
   const box = useRef<HTMLDivElement | null>(null)
+  const back = useRef<HTMLDivElement | null>(null)
+  // the quote lines of comments on a document ("> “…”") are drawn quieter, as quotes, behind the words you edit
+  const quoted = text.split('\n').some((l) => VC_MARK.test(l))
   const picker = useRef<HTMLInputElement>(null)
   const has = !!text.trim() || hasFiles
   // where you were in the words: words put in from elsewhere (a voice note's, another tab's) keep your place in
@@ -214,6 +220,23 @@ export function Composer({ line, waiting = null, lineOn, lineOnComposePage, plac
           <Icon n={rec ? 'x' : 'plus'} c="size-6 lg:size-5" />
         </button>
         <div className="grid min-w-0 flex-1 group-data-[multi]/box:order-first group-data-[multi]/box:basis-full group-data-[multi]/box:px-2 group-data-[multi]/box:pt-1">
+          {quoted && !rec && !words ? (
+            // the same words, behind the field's own (which are clear): the same font, size and wrapping, so each
+            // letter is where the field has it; it takes no room of its own and scrolls with the field
+            <div
+              ref={back}
+              aria-hidden
+              className="pointer-events-none col-start-1 row-start-1 overflow-hidden px-1 py-2.5 text-[17px] leading-6 break-words whitespace-pre-wrap [contain:size] roomy:text-[15px]"
+            >
+              {text.split('\n').map((l, i) => (
+                <span key={i}>
+                  {i ? '\n' : ''}
+                  {VC_MARK.test(l) ? <span className="rounded bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">{l}</span> : l}
+                </span>
+              ))}
+              {'\u200b'}
+            </div>
+          ) : null}
           <textarea
             ref={(el) => {
               area.current = el
@@ -223,7 +246,10 @@ export function Composer({ line, waiting = null, lineOn, lineOnComposePage, plac
             value={text}
             placeholder={placeholder}
             aria-label="Input"
-            className={`col-start-1 row-start-1 max-h-48 min-h-11 w-full min-w-0 resize-none bg-transparent px-1 py-2.5 text-[17px] leading-6 outline-none placeholder:text-zinc-400 roomy:text-[15px] lg:scrollbar-thin dark:placeholder:text-zinc-500 ${rec || words ? 'invisible' : ''}`}
+            className={`col-start-1 row-start-1 max-h-48 min-h-11 w-full min-w-0 resize-none bg-transparent px-1 py-2.5 text-[17px] leading-6 outline-none placeholder:text-zinc-400 roomy:text-[15px] lg:scrollbar-thin dark:placeholder:text-zinc-500 ${rec || words ? 'invisible' : ''} ${quoted ? 'text-transparent caret-zinc-900 selection:bg-blue-500/25 dark:caret-zinc-100' : ''}`}
+            onScroll={(e) => {
+              if (back.current) back.current.scrollTop = e.currentTarget.scrollTop
+            }}
             onChange={(e) => {
               keep(e.currentTarget)
               on.text(e.currentTarget.value)
@@ -386,8 +412,8 @@ export function Feedback({ line, on }: { line: FeedbackLine | null; on: { dismis
         node = (
           <>
             <Icon n="alert" c="size-4 text-red-600 dark:text-red-400" sw="2" />
-            <span className="line-clamp-2 min-w-0 flex-1 leading-snug text-red-600 dark:text-red-400" title={`Organizer failed: ${line.msg}`}>
-              Organizer failed: {line.msg}
+            <span className="line-clamp-2 min-w-0 flex-1 leading-snug text-red-600 dark:text-red-400" title={line.raw}>
+              Couldn’t organize: {line.msg}
             </span>
             {link('Retry', on.retryOrganizer)}
             <Dismiss onClick={on.dismiss} />

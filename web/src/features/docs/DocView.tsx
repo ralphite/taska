@@ -10,7 +10,7 @@ import { plural } from '../../model/words'
 import { Icon } from '../../ui/Icon'
 import { RichFrame } from '../../ui/Markdown'
 import type { SheetLook } from '../../ui/Sheet'
-import { BTN, HIT, NEEDS_PILL } from '../../ui/tones'
+import { BTN, BTN_DANGER, HIT, NEEDS_PILL, SEP_V } from '../../ui/tones'
 import { BlockActs, type CountInfo } from './BlockActs'
 import { DocBlock } from './DocBlock'
 import { DraftCard, NewDot, Thread, type DocEnv, type ThreadEvents } from './Thread'
@@ -258,9 +258,6 @@ export function DocView({ facts, env, on, lasso, page, recTime, aim = null, onAi
           <button onClick={() => on.moveDoc()} className={phoneBtn}>
             Move
           </button>
-          <button onClick={on.deleteDoc} className={facts.deleting ? `${phoneBtn.replace(/\S*(text|bg)-zinc-\S+/g, '')} font-semibold text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-400/10` : phoneBtn}>
-            {facts.deleting ? 'Delete?' : 'Delete'}
-          </button>
           <button
             onClick={on.circle}
             hidden={web}
@@ -271,6 +268,11 @@ export function DocView({ facts, env, on, lasso, page, recTime, aim = null, onAi
           </button>
           <button onClick={on.editDoc} className={phoneBtn}>
             Edit
+          </button>
+          {/* Delete last, after a line, red (the phone's row; the desktop's are in the pane's bar) */}
+          <span className={`${SEP_V} lg:hidden`} />
+          <button onClick={on.deleteDoc} className={`${HIT} ${BTN_DANGER} text-sm lg:hidden ${facts.deleting ? 'font-semibold' : ''}`}>
+            {facts.deleting ? 'Delete?' : 'Delete'}
           </button>
         </div>
         {facts.waiting ? (

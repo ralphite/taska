@@ -32,12 +32,17 @@ export const STATE_ON: Record<Status, string> = {
 export const PAGE_BODY = 'min-h-dvh bg-zinc-100 text-zinc-900 antialiased dark:bg-zinc-900 dark:text-zinc-100'
 
 export const HIT = 'relative after:absolute after:inset-x-0 after:-inset-y-1.5'
+/** A destructive action (Delete): red, last, after a line of its own (MENU_SEP; SEP_V in a row of buttons). */
+export const DANGER = 'text-red-600 dark:text-red-400'
+export const MENU_SEP = 'my-1 border-t border-zinc-100 dark:border-zinc-800'
+export const SEP_V = 'mx-0.5 h-4 w-px shrink-0 self-center bg-zinc-200 dark:bg-zinc-700'
 /** a row of a menu sheet */
 export const MENU_ROW = 'flex h-10 w-full items-center gap-2.5 rounded-lg px-3 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800'
 export const LINK_BTN = `${HIT} flex h-8 items-center gap-1 rounded-lg px-2 text-[13px] font-semibold text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10`
-/** A main button; disabled, it is greyed and says so under the pointer (its colour's hover stays off). */
-export const PRIMARY_BASE =
-  'inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-transparent px-4 text-[15px] font-semibold disabled:cursor-not-allowed disabled:opacity-40 disabled:filter-none'
+/** A button disabled: greyed, and it says so under the pointer (its colour's hover stays off). */
+export const DISABLED = 'disabled:cursor-not-allowed disabled:opacity-40 disabled:filter-none'
+/** A main button. */
+export const PRIMARY_BASE = `inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-transparent px-4 text-[15px] font-semibold ${DISABLED}`
 export const PRIMARY = PRIMARY_BASE + ' bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200'
 export const SECOND =
   'inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-zinc-200 bg-white px-4 text-[15px] font-medium text-zinc-700 hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200 dark:hover:bg-zinc-700'
@@ -58,8 +63,10 @@ export const MODIFY_LINK =
 export const CHIP = `${HIT} flex h-8 items-center gap-1.5 rounded-lg bg-zinc-100 px-2.5 text-[13px] hover:bg-zinc-200/70 dark:bg-zinc-800/80 dark:hover:bg-zinc-700/80`
 export const NEEDS_CARD = 'rounded-2xl border border-amber-200 bg-amber-50 dark:border-amber-400/25 dark:bg-amber-400/7'
 /** A small button in a message's line: 24px tall, 44px to tap. */
-export const DC_BTN =
-  'relative after:absolute after:inset-x-0 after:-inset-y-2.5 flex h-6 items-center gap-1 rounded-lg px-1.5 text-xs font-semibold text-zinc-500 hover:bg-blue-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-blue-400/10 dark:hover:text-zinc-200'
+const DC_BASE = 'relative after:absolute after:inset-x-0 after:-inset-y-2.5 flex h-6 items-center gap-1 rounded-lg px-1.5 text-xs font-semibold'
+export const DC_BTN = `${DC_BASE} text-zinc-500 hover:bg-blue-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-blue-400/10 dark:hover:text-zinc-200`
+/** the same, destructive (Delete) */
+export const DC_DANGER = `${DC_BASE} text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-400/10`
 
 /** Each kind of "needs you" has its own colour and icon: Accept green, Approve blue, Answer amber, Reply red. */
 export const NEED = {
@@ -170,7 +177,10 @@ export const FORWARD_NEED: Record<string, NeedKind> = { Accept: 'accept', Approv
 export const COMMENT_CARD = (by: string) => (by === 'you' ? 'rounded-xl bg-blue-100/80 px-3 py-2 dark:bg-blue-900/40' : 'rounded-xl bg-white px-3 py-2 ring-1 ring-zinc-200/80 dark:bg-zinc-900 dark:ring-zinc-800')
 export const COMMENT_WHO = (by: string) => (by === 'you' ? 'font-medium text-blue-700 dark:text-blue-300' : 'font-medium text-zinc-700 dark:text-zinc-300')
 /** A plain small button (the phone's document row). */
-export const BTN = 'rounded-lg px-2.5 py-2.5 sm:py-1.5 text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800'
+const BTN_BASE = 'rounded-lg px-2.5 py-2.5 sm:py-1.5'
+export const BTN = `${BTN_BASE} text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800`
+/** the same, destructive (Delete) */
+export const BTN_DANGER = `${BTN_BASE} text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-400/10`
 /** A small row button (Settings' Rename, Delete, Restore). */
 export const P_BTN =
   'relative after:absolute after:inset-x-0 after:-inset-y-1 inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-zinc-100'

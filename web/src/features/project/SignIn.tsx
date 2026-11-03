@@ -19,11 +19,11 @@ function SignInForm({ onSignIn }: { onSignIn(key: string, field: HTMLInputElemen
         value={key}
         onChange={(e) => setKey(e.target.value)}
         onKeyDown={(e) => {
-          if (e.key === 'Enter') onSignIn(key, field)
+          if (e.key === 'Enter' && key.trim()) onSignIn(key, field)
         }}
         className={FIELD}
       />
-      <button onClick={() => onSignIn(key, field)} className={PRIMARY}>
+      <button onClick={() => onSignIn(key, field)} disabled={!key.trim()} className={PRIMARY}>
         Sign in
       </button>
     </div>

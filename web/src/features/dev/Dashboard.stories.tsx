@@ -55,12 +55,12 @@ const d: Dash = {
 }
 
 /** A week of what you did; the panels, costs and analyses agents keep. */
-export const Week: Story = { name: 'The last 7 days', render: () => <Frames phoneWidth={393} deskWidth={1200} page>{() => <Dashboard d={d} err="" range="7" onRange={() => {}} rounds="last20" now={NOW} onRounds={() => {}} />}</Frames> }
+export const Week: Story = { name: 'The last 7 days', render: () => <Frames phoneWidth={393} deskWidth={1200} page>{() => <Dashboard d={d} err="" range="7" onRange={() => {}} rounds="last20" now={NOW} onRounds={() => {}} onRetry={() => {}} />}</Frames> }
 
 /** Before Taska answers. */
-export const Loading: Story = { name: 'Loading', render: () => <Frames phoneWidth={393} deskWidth={1200} page>{() => <Dashboard d={null} err="" range="7" onRange={() => {}} rounds="last20" now={NOW} onRounds={() => {}} />}</Frames> }
+export const Loading: Story = { name: 'Loading', render: () => <Frames phoneWidth={393} deskWidth={1200} page>{() => <Dashboard d={null} err="" range="7" onRange={() => {}} rounds="last20" now={NOW} onRounds={() => {}} onRetry={() => {}} />}</Frames> }
 // ---- more states (T639)
-const show = (dash: Dash | null, err = '', range = '7'): Story['render'] => () => <Frames phoneWidth={393} deskWidth={1200} page>{() => <Dashboard d={dash} err={err} range={range} onRange={() => {}} rounds="last20" now={NOW} onRounds={() => {}} />}</Frames>
+const show = (dash: Dash | null, err = '', range = '7'): Story['render'] => () => <Frames phoneWidth={393} deskWidth={1200} page>{() => <Dashboard d={dash} err={err} range={range} onRange={() => {}} rounds="last20" now={NOW} onRounds={() => {}} onRetry={() => {}} />}</Frames>
 /** Taska answered with an error, still working it out */
 export const TaskaSaidNo: Story = { name: 'Taska said no', render: show(null, 'Taska answered 500') }
 /** another range asked for and refused: the error over the numbers from before */

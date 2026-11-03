@@ -9,7 +9,7 @@ import { priOpts, SegCtl, typeOpts } from '../../ui/Segments'
 import { StateIcon, Icon } from '../../ui/Icon'
 import { STATE_ICON, type IconName } from '../../ui/icon-paths'
 import type { SheetParts } from '../../ui/Sheet'
-import { STATE_ON, TYPE_TEXT } from '../../ui/tones'
+import { DANGER, MENU_SEP, STATE_ON, TYPE_TEXT } from '../../ui/tones'
 
 export interface ItemMenuEvents {
   edit(): void
@@ -146,11 +146,16 @@ export function itemMenuSheet({ it, code, parentCode, asking, arm }: ItemMenuFac
           {state}
           {next}
           {tile('move', 'arrow', 'Move to…', on.moveProject)}
-          {tile('delete', 'trash', asking ? `Delete ${code}?` : 'Delete', on.remove)}
         </div>
         {type}
         {pri}
         {status}
+        <div className="border-t border-zinc-100 pt-3 dark:border-zinc-800">
+          <button onClick={on.remove} className={`flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-red-50 text-[15px] font-semibold hover:bg-red-100 dark:bg-red-400/10 dark:hover:bg-red-400/20 ${DANGER}`}>
+            <Icon n="trash" c="size-4.5" />
+            {asking ? `Delete ${code}?` : 'Delete'}
+          </button>
+        </div>
       </div>
     ),
   }
@@ -158,9 +163,9 @@ export function itemMenuSheet({ it, code, parentCode, asking, arm }: ItemMenuFac
 
 /** The desktop's menu: rows with their keys, or one field's choices. */
 export function itemMenuPop({ it, code, parentCode, asking, arm, keys }: ItemMenuFacts, on: ItemMenuEvents): SheetParts {
-  const row = (key: string, icon: IconName, label: ReactNode, k: string, run: (from: HTMLElement) => void, sub = '') => (
-    <button key={key} onClick={(e) => run(e.currentTarget)} className="flex h-9 w-full items-center gap-3 rounded-lg px-2.5 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800">
-      <Icon n={icon} c="size-[18px] text-zinc-500 dark:text-zinc-400" />
+  const row = (key: string, icon: IconName, label: ReactNode, k: string, run: (from: HTMLElement) => void, sub = '', danger = false) => (
+    <button key={key} onClick={(e) => run(e.currentTarget)} className={`flex h-9 w-full items-center gap-3 rounded-lg px-2.5 text-left text-sm ${danger ? `${DANGER} hover:bg-red-50 dark:hover:bg-red-400/10` : 'hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}>
+      <Icon n={icon} c={`size-[18px] ${danger ? '' : 'text-zinc-500 dark:text-zinc-400'}`} />
       <span className="min-w-0 flex-1 truncate">
         {label}
         {sub ? <span className="ml-2 text-xs text-zinc-400">{sub}</span> : null}
@@ -230,7 +235,8 @@ export function itemMenuPop({ it, code, parentCode, asking, arm, keys }: ItemMen
           {state}
           {next}
           {row('move', 'arrow', 'Move to project…', '', on.moveProject)}
-          {row('delete', 'trash', asking ? `Delete ${code}?` : 'Delete', '', on.remove)}
+          <div className={MENU_SEP} />
+          {row('delete', 'trash', asking ? `Delete ${code}?` : 'Delete', '', on.remove, '', true)}
         </div>
       </div>
     ),

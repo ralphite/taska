@@ -9,7 +9,7 @@ import type { Comment, FileRef } from '../../model/types'
 import { plural, whoName } from '../../model/words'
 import { Icon } from '../../ui/Icon'
 import { Rich } from '../../ui/Markdown'
-import { COMMENT_CARD, COMMENT_WHO, DC_BTN, HIT } from '../../ui/tones'
+import { COMMENT_CARD, COMMENT_WHO, DC_BTN, DC_DANGER, HIT, SEP_V } from '../../ui/tones'
 import { Thumbs, VoiceLine, type FileEvents, type PlayState } from '../../ui/Files'
 import type { InlineWorld } from '../../ui/markdown/inline'
 import type { WebCard } from './docFacts'
@@ -62,7 +62,8 @@ function CommentActs({ c, asking, on }: { c: Comment; asking: string | null; on:
             </button>
           ))
         : null}
-      <button onClick={() => on.remove(c.id)} className={DC_BTN}>
+      <span className={SEP_V} />
+      <button onClick={() => on.remove(c.id)} className={DC_DANGER}>
         <Icon n="trash" c="size-3.5" />
         Delete
       </button>

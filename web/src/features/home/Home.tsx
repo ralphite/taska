@@ -7,6 +7,7 @@ import type { SearchHit } from '../../model/types'
 import { inputCode } from '../../model/words'
 import { Icon } from '../../ui/Icon'
 import { ProjTile } from '../../ui/bits'
+import { DISABLED } from '../../ui/tones'
 
 export interface HomeRow {
   name: string
@@ -49,7 +50,7 @@ export interface HomeEvents {
   open(url: string): void
 }
 
-const GRID = 'lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_4.5rem_5.5rem_minmax(0,2.4fr)]'
+const GRID = 'lg:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)_4.5rem_5.5rem_minmax(0,2.1fr)]'
 const NOTE = 'mb-3 rounded-xl bg-zinc-100 px-4 py-3 text-sm text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100'
 
 const hitUrl = (x: SearchHit, q: string) => `/p/${encodeURIComponent(x.project)}/${x.kind === 'input' ? 'inputs?q=' + encodeURIComponent(q.trim()) : encodeURIComponent(x.code)}`
@@ -96,7 +97,7 @@ function NewProject({ making, on }: { making: { error: string } | null; on: Home
             if (e.key === 'Escape') on.cancelNew()
           }}
         />
-        <button onClick={create} className="h-11 shrink-0 rounded-xl bg-zinc-900 px-4 text-[15px] font-semibold text-white dark:bg-zinc-100 dark:text-zinc-900">
+        <button onClick={create} disabled={!title.trim()} className={`h-11 shrink-0 rounded-xl bg-zinc-900 px-4 text-[15px] font-semibold text-white dark:bg-zinc-100 dark:text-zinc-900 ${DISABLED}`}>
           Create
         </button>
         <button aria-label="Cancel" onClick={on.cancelNew} className="grid size-11 shrink-0 place-items-center rounded-xl text-zinc-500">

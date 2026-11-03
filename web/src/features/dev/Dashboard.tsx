@@ -157,9 +157,11 @@ function Stat({ n, label, sub }: { n: string | number; label: string; sub?: stri
   )
 }
 
-export function Dashboard({ d, err, range, onRange, rounds, now, onRounds }: {
+export function Dashboard({ d, err, range, onRange, rounds, now, onRounds, onRetry }: {
   d: Dash | null
+  /** what went wrong asking Taska (Retry asks again) */
   err: string
+  onRetry(): void
   range: string
   onRange(r: string): void
   /** which rounds of work to show (ROUND_RANGES), and the time it is now */
@@ -190,9 +192,16 @@ export function Dashboard({ d, err, range, onRange, rounds, now, onRounds }: {
           ))}
         </div>
       </header>
-      {err ? <p className="mb-4 text-sm text-red-600 dark:text-red-400">{err}</p> : null}
+      {err ? (
+        <p className="mb-4 flex items-center gap-3 text-sm text-red-600 dark:text-red-400">
+          {err}
+          <button onClick={onRetry} className="h-8 rounded-lg px-2.5 text-sm font-semibold text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10">
+            Retry
+          </button>
+        </p>
+      ) : null}
       {!d ? (
-        <p className={`text-sm ${MUTED}`}>Working it out…</p>
+        err ? null : <p className={`text-sm ${MUTED}`}>Working it out…</p>
       ) : (
         <>
           <div className="mb-4 grid grid-cols-2 gap-3 lg:grid-cols-5">
@@ -215,7 +224,8 @@ export function Dashboard({ d, err, range, onRange, rounds, now, onRounds }: {
           <div className="grid gap-3 lg:grid-cols-2">
             <Rounds all={d.rounds} range={rounds} now={now} onRange={onRounds} />
             <Card title={d.hourly ? 'By hour' : 'By day'} wide>
-              <div className="flex h-36 items-end gap-0.5">
+              {d.span.every(([, n]) => !n) ? <p className={`text-sm ${MUTED}`}>Nothing yet.</p> : null}
+              <div className={`flex h-36 items-end gap-0.5 ${d.span.every(([, n]) => !n) ? 'hidden' : ''}`}>
                 {d.span.map(([k, n]) => (
                   <div key={k} className="group relative flex h-full min-w-0 flex-1 flex-col justify-end" title={`${k}: ${n}`}>
                     <div className="rounded-t bg-blue-500/80 dark:bg-blue-400/70" style={{ height: `${(n / max) * 100}%` }} />
@@ -223,7 +233,7 @@ export function Dashboard({ d, err, range, onRange, rounds, now, onRounds }: {
                 ))}
               </div>
               {/* each day under its bar; by hour, every third hour */}
-              <div className={`mt-1 flex gap-0.5 text-[11px] tabular-nums ${MUTED}`}>
+              <div className={`mt-1 flex gap-0.5 text-[11px] tabular-nums ${MUTED} ${d.span.every(([, n]) => !n) ? 'hidden' : ''}`}>
                 {d.span.map(([k], i) => (
                   <span key={k} className="min-w-0 flex-1 truncate text-center">
                     {d.hourly && i % 3 ? '' : k}

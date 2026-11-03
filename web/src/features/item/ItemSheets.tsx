@@ -36,7 +36,8 @@ export function sourcesSheet({ code, inputs, world, now, files }: { code: string
                 <button onClick={() => goInput(r.id)} className="font-mono text-blue-600 hover:underline dark:text-blue-400">
                   {inputCode(r.id)}
                 </button>{' '}
-                · {when(r.t, now)} · {whoName(r.by)}
+                · {when(r.t, now)}
+                {r.by === 'you' ? '' : ` · ${whoName(r.by)}`}
               </div>
               <div className="mt-1.5 rounded-2xl rounded-tr-md bg-blue-50 px-3.5 py-2 text-[15px] leading-relaxed dark:bg-blue-400/10">
                 {r.text ? <Rich text={r.text} world={world} /> : null}

@@ -14,6 +14,8 @@ export function DashboardContainer() {
   // which rounds of work the chart shows, and when it is (now, as the page last drew it)
   const [rounds, setRounds] = useState('last20')
   const [now, setNow] = useState(0)
+  // Retry asks again
+  const [tries, setTries] = useState(0)
   useEffect(() => {
     document.title = 'Dashboard · Taska'
     let gone = false
@@ -31,6 +33,6 @@ export function DashboardContainer() {
     return () => {
       gone = true
     }
-  }, [app, range])
-  return <Dashboard d={d} err={err} range={range} onRange={setRange} rounds={rounds} now={now} onRounds={(r) => (setRounds(r), setNow(Date.now()))} />
+  }, [app, range, tries])
+  return <Dashboard d={d} err={err} range={range} onRange={setRange} rounds={rounds} now={now} onRounds={(r) => (setRounds(r), setNow(Date.now()))} onRetry={() => (setErr(''), setTries((n) => n + 1))} />
 }

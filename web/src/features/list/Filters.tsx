@@ -7,7 +7,7 @@ import type { ListKey, ListQuery } from '../../model/route'
 import { ARCHIVE_FILTER_WORD, RULE_STATUS_WORD, SORT_WORDS, STATUS_FILTER_WORD, type Tab } from '../../model/words'
 import { Icon } from '../../ui/Icon'
 import type { SheetParts } from '../../ui/Sheet'
-import { FIELD, HIT, PRIMARY } from '../../ui/tones'
+import { DISABLED, FIELD, HIT, PRIMARY } from '../../ui/tones'
 import { priOpts, SegCtl, typeOpts } from '../../ui/Segments'
 
 export interface FilterEvents {
@@ -82,7 +82,7 @@ export function FilterControls({ tab, list, small = false, on }: { tab: Tab; lis
               value={name}
               onChange={(e) => setName(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key !== 'Enter') return
+                if (e.key !== 'Enter' || !name.trim()) return
                 on.saveView(name)
                 setName('')
               }}
@@ -90,7 +90,8 @@ export function FilterControls({ tab, list, small = false, on }: { tab: Tab; lis
             />
             <button
               onClick={() => (on.saveView(name), setName(''))}
-              className="h-9 shrink-0 rounded-xl bg-zinc-900 px-3 text-sm font-semibold text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
+              disabled={!name.trim()}
+              className={`h-9 shrink-0 rounded-xl bg-zinc-900 px-3 text-sm font-semibold text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200 ${DISABLED}`}
             >
               Save
             </button>

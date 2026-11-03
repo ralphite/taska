@@ -147,7 +147,7 @@ test('T529: the line under your comment on a document has even gaps between its 
   await open(page, p, 'T1')
   const where = pane(page).getByRole('button', { name: /^on D0*1$/ })
   await expect(where.filter({ visible: true })).toHaveCount(1)
-  // each word of the line (You · on D1 · 14:05), where it starts and ends; the gaps between them
+  // each word of the line (on D1 · 14:05), where it starts and ends; the gaps between them
   const words = await where.filter({ visible: true }).evaluate((b) => {
     const line = b.parentElement as HTMLElement,
       out: { w: string; l: number; r: number }[] = [],
@@ -165,7 +165,7 @@ test('T529: the line under your comment on a document has even gaps between its 
       }
     return out
   })
-  expect(words.map((x) => x.w).slice(0, 5)).toEqual(['You', '·', 'on', 'D1', '·'])
+  expect(words.map((x) => x.w).slice(0, 3)).toEqual(['on', 'D1', '·'])
   const gaps = words.slice(1).map((x, i) => x.l - words[i].r)
   expect(Math.max(...gaps) - Math.min(...gaps), `gaps ${gaps.map((g) => g.toFixed(1)).join(', ')}`).toBeLessThan(1)
 })

@@ -20,6 +20,8 @@ export interface Command<Id extends string = string> {
   keys: string
   /** it acts on the open item (its code shows beside it) */
   item: boolean
+  /** only of use on the desktop */
+  desk?: boolean
 }
 
 export function keysSheet(groups: KeyGroups): SheetParts {
@@ -133,10 +135,12 @@ export function Switcher({ rows, loading, onOpen }: { rows: SwitchRow[]; loading
   )
 }
 
-export function Palette<Id extends string>({ items, code, open, commands, onItem, onCommand }: { items: readonly Item[]; code(n: number): string; open: number | null; commands: readonly Command<Id>[]; onItem(n: number): void; onCommand(id: Id): void }) {
+/** `desk`: the desktop's palette (its keys, and what only the desktop has); the phone's has neither. */
+export function Palette<Id extends string>({ items, code, open, commands: all, desk, onItem, onCommand }: { items: readonly Item[]; code(n: number): string; open: number | null; commands: readonly Command<Id>[]; desk: boolean; onItem(n: number): void; onCommand(id: Id): void }) {
   const [q0, setQ] = useState('')
   const q = q0.trim().toLowerCase()
   const has = (t: string) => !q || t.toLowerCase().includes(q)
+  const commands = desk ? all : all.filter((c) => !c.desk)
   const found = q
     ? items
         .filter((it) => !it.mergedInto && hay(it).includes(q))
@@ -155,7 +159,7 @@ export function Palette<Id extends string>({ items, code, open, commands, onItem
     if (r.id) onCommand(r.id)
   }
   const kbd = (x: string, j: number): ReactNode => (
-    <kbd key={j} className="grid h-5 min-w-5 place-items-center rounded-md px-1 font-sans text-[11px] font-semibold text-zinc-500 ring-1 ring-zinc-300 dark:text-zinc-400 dark:ring-zinc-600">
+    <kbd key={j} className="hidden h-5 min-w-5 place-items-center rounded-md px-1 font-sans text-[11px] font-semibold text-zinc-500 ring-1 ring-zinc-300 lg:grid dark:text-zinc-400 dark:ring-zinc-600">
       {x}
     </kbd>
   )

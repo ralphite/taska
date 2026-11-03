@@ -19,7 +19,7 @@ export const ROWS = [
 export const field = (root: HTMLElement) => root.querySelector<HTMLInputElement>('[role="dialog"] input')
 export const palette = (desk: boolean, open: number | null) => {
   const m = menuModel()
-  return opened({ title: 'Go to or do', body: <Palette items={m.items} code={(n) => codeOf(m, n)} open={open} commands={COMMANDS} onItem={no} onCommand={no} /> }, desk)
+  return opened({ title: 'Go to or do', body: <Palette items={m.items} code={(n) => codeOf(m, n)} open={open} commands={COMMANDS} desk={desk} onItem={no} onCommand={no} /> }, desk)
 }
 export const switcher = (desk: boolean) => opened({ title: 'Switch project', body: <Switcher rows={ROWS} loading={false} onOpen={no} /> }, desk)
 /** the projects not listed yet: Loading… under the field */

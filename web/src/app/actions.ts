@@ -87,6 +87,8 @@ interface PageAction<K extends Uses = Uses> {
   keys?: string
   /** in the command palette, with these words when they differ */
   palette?: string | true
+  /** only of use on the desktop (the sidebar, the keys): not in the phone's palette */
+  desk?: true
   why?(w: Pick<ActionWorld, K>, h: Here): string | null
   /** false: nothing to do after all (the key goes on as a key) */
   run(w: Pick<ActionWorld, K>, h: Here): void | boolean
@@ -99,6 +101,7 @@ interface ItemAction<K extends Uses = Uses> {
   label: string
   keys?: string
   palette?: string | true
+  desk?: true
   why?(w: Pick<ActionWorld, K>, h: OnItem): string | null
   run(w: Pick<ActionWorld, K>, h: OnItem): void | boolean
 }
@@ -226,7 +229,7 @@ export const ACTIONS = {
   rules: page(['nav'], { label: 'Rules', keys: 'g r', palette: true, run: tab('rules') }),
   'switch-project': page(['sheets'], { label: 'Switch project', keys: 'g p', palette: true, run: (w) => w.sheets.open({ kind: 'switch-project' }, { focus: false }) }),
   settings: page(['nav'], { label: 'Settings', keys: 'g s', palette: true, run: (w, h) => w.nav.to(`/p/${encodeURIComponent(h.r.slug)}/settings`) }),
-  sidebar: page(['ui'], { label: 'Toggle sidebar', keys: '[', palette: true, run: (w) => w.ui.getState().setSideHidden(!w.ui.getState().sideHidden) }),
+  sidebar: page(['ui'], { label: 'Toggle sidebar', keys: '[', palette: true, desk: true, run: (w) => w.ui.getState().setSideHidden(!w.ui.getState().sideHidden) }),
   undo: page(['feedback'], {
     label: 'Undo',
     keys: 'z',
@@ -234,7 +237,7 @@ export const ACTIONS = {
     why: (w) => (w.feedback.getState().undo.length ? null : 'Nothing of yours to undo here. Older changes are in Activity'),
     run: (w) => void w.feedback.getState().undo.at(-1)?.run(),
   }),
-  keys: page(['sheets'], { label: 'Keyboard shortcuts', keys: '?', palette: true, run: (w) => w.sheets.open({ kind: 'keys' }) }),
+  keys: page(['sheets'], { label: 'Keyboard shortcuts', keys: '?', palette: true, desk: true, run: (w) => w.sheets.open({ kind: 'keys' }) }),
   palette: page(['sheets'], { label: 'Go to or do', keys: 'Meta+k', run: (w) => w.sheets.open({ kind: 'palette' }, { focus: false }) }),
   back: page(['finder', 'route', 'nav', 'media', 'ui', 'sheet', 'sheets', 'selection', 'voice', 'desk', 'fields', 'boxStore', 'box', 'docs', 'docEditor', 'itemEdits', 'itemView', 'docView'], { label: 'Step back one level', keys: 'Escape', run: (w, h) => stepBack(w, h) }),
   step: page(['nav', 'listOrder', 'toasts'], { label: 'Next item', keys: 'j', why: stepWhy, run: steps(1) }),
@@ -408,10 +411,10 @@ export function keysShown(id: ActionId): string {
 }
 
 /** The command palette's rows: what can be done on the open item, then on the page, in the table's order. */
-export function paletteRows(item: boolean): { id: ActionId; label: string; keys: string; item: boolean }[] {
+export function paletteRows(item: boolean): { id: ActionId; label: string; keys: string; item: boolean; desk: boolean }[] {
   return ACTION_IDS.map((id) => [id, byId(id)] as const)
     .filter(([, a]) => a.palette && ('item' in a) === item)
-    .map(([id, a]) => ({ id, label: typeof a.palette === 'string' ? a.palette : a.label, keys: a.keys || '', item: 'item' in a }))
+    .map(([id, a]) => ({ id, label: typeof a.palette === 'string' ? a.palette : a.label, keys: a.keys || '', item: 'item' in a, desk: !!a.desk }))
 }
 
 /** The keys sheet (?): its groups of rows; a row made of actions shows their keys as the table has them. */

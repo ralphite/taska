@@ -82,6 +82,12 @@ export class Box {
     return { text, files }
   }
 
+  /** Let go of what the draft holds (its words and files); Undo brings them back. */
+  discard(slug: string, key: DraftKey): void {
+    const { text, files } = this.take(slug, key)
+    this.d.toasts.show('Discarded', () => this.putBack(slug, key, text, files))
+  }
+
   /** It was not saved: the words come back to the draft, before what was written since. */
   putBack(slug: string, key: DraftKey, text: string, files: DraftFile[] = []): void {
     const now = this.text(slug, key).trim()

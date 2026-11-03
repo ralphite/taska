@@ -537,8 +537,11 @@ export function ItemActs({ it, on }: { it: Item; on: Pick<ItemEvents, 'set'> }) 
       )}
       {it.archived ? (
         <BarText icon="unarchive" label="Unarchive" title="Unarchive · E" onClick={() => on.set('archived', false)} />
-      ) : (
+      ) : it.type !== 'rule' ? (
         <BarText icon="archive" label="Archive" title="Archive · E" onClick={() => on.set('archived', true)} />
+      ) : it.status === 'proposed' ? null : (
+        // a rule is retired, not archived (a proposed one is decided in its card)
+        <BarText {...(it.status === 'open' ? { icon: ACT_ICON.Retire, label: 'Retire', title: 'Retire · W' } : { icon: ACT_ICON.Reactivate, label: 'Reactivate', title: 'Reactivate · D' })} onClick={() => on.set('status', it.status === 'open' ? 'dropped' : 'open')} />
       )}
     </>
   )
@@ -565,7 +568,6 @@ export function Missing({ what, loading, away }: { what: string; loading: boolea
   )
 }
 
-/** The pane with nothing open: what to do. */
 /** The desktop's New input page, opened from an item or a document: the way back to it. */
 export function BackTo({ label, onBack }: { label: string; onBack(): void }) {
   return (
@@ -577,6 +579,7 @@ export function BackTo({ label, onBack }: { label: string; onBack(): void }) {
   )
 }
 
+/** The pane with nothing open: what to do. */
 export function NoSelection({ side }: { side: 'docs' | 'log' | null }): ReactNode {
   if (side)
     return <div className="grid h-full place-items-center p-8 text-center text-[15px] text-zinc-500 dark:text-zinc-400">{side === 'docs' ? 'Pick a document' : 'Select a line to view'}</div>

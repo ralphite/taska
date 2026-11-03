@@ -24,7 +24,8 @@ export interface AgentLine {
 }
 
 /** [tone, the pill's words, a longer sentence] */
-export function agentState(agents: readonly AgentSeen[] | undefined, work: boolean | undefined, now = Date.now()): ['ok' | 'bad' | 'idle', string, string] {
+/** `queued`: items in the queue now (the sentence never says nothing waits while some do). */
+export function agentState(agents: readonly AgentSeen[] | undefined, work: boolean | undefined, now = Date.now(), queued = 0): ['ok' | 'bad' | 'idle', string, string] {
   const list = [...(agents || [])].sort((a, b) => b.t - a.t)
   const a = list.find((x) => x.waiting) || list[0]
   const name = a ? whoName(a.name) : ''
@@ -33,7 +34,7 @@ export function agentState(agents: readonly AgentSeen[] | undefined, work: boole
   const last = a ? `The last agent (${name}) was here ${agoLong(a.t, now)}.` : 'No agent yet.'
   return work
     ? ['bad', a ? `No agent · ${agoShort(a.t, now)}` : 'No agent', `Work is waiting. ${last}`]
-    : ['idle', a ? `${name} · ${agoShort(a.t, now)}` : 'No agent', `Nothing is waiting for an agent. ${last}`]
+    : ['idle', a ? `${name} · ${agoShort(a.t, now)}` : 'No agent', `${queued ? `${queued} ${queued === 1 ? 'item waits' : 'items wait'}.` : 'Nothing is waiting for an agent.'} ${last}`]
 }
 
 export function agentLine(agents: readonly AgentSeen[] | undefined, work: boolean | undefined, now = Date.now()): AgentLine {

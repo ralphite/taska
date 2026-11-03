@@ -7,7 +7,7 @@ import type { Spelling, VoicePrefs } from '../../model/types'
 import { plural } from '../../model/words'
 import { Kbd, ProjTile } from '../../ui/bits'
 import { Icon } from '../../ui/Icon'
-import { FIELD, P_BTN, PRIMARY, SECOND } from '../../ui/tones'
+import { DISABLED, FIELD, P_BTN, PRIMARY, SECOND } from '../../ui/tones'
 import { CopyBtn, Loading, Part, Setting, TextBox, Toggle } from './SettingsParts'
 
 // ---- Projects
@@ -96,7 +96,7 @@ export function ProjectsBody({ f, on }: { f: ProjectsFacts; on: ProjectsEvents }
     <div className="flex min-w-0 flex-1 flex-col gap-1.5">
       <div className="flex items-center gap-1.5">
         <NameField value={f.pNewText} label="New project name" cls="h-10 py-1.5 text-sm" onValue={setName} onEnter={(v) => on.create(v)} onEsc={() => on.newProject(false)} />
-        <button onClick={() => on.create(name)} className="h-10 shrink-0 rounded-xl bg-zinc-900 px-3.5 text-sm font-semibold text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200">
+        <button onClick={() => on.create(name)} disabled={!name.trim()} className={`h-10 shrink-0 rounded-xl bg-zinc-900 px-3.5 text-sm font-semibold text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200 ${DISABLED}`}>
           Create
         </button>
         <button onClick={() => on.newProject(false)} aria-label="Cancel" className="grid size-10 shrink-0 place-items-center rounded-xl text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800">
@@ -392,7 +392,7 @@ export function SpellingsBody({ fixes, prefs, editing, prefsSlot, on }: { fixes:
               }
             }}
           />
-          <button onClick={add} className="h-10 shrink-0 rounded-xl bg-zinc-900 px-3.5 text-sm font-semibold text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200">
+          <button onClick={add} disabled={!word.trim()} className={`h-10 shrink-0 rounded-xl bg-zinc-900 px-3.5 text-sm font-semibold text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200 ${DISABLED}`}>
             Add
           </button>
         </div>

@@ -89,7 +89,7 @@ export function projectMenuSheet({ here, slug, title, tone, open }: { here: bool
     <button key={key} onClick={run} className="flex h-9 w-full items-center gap-3 rounded-lg px-2.5 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800">
       <Icon n={icon} c="size-[18px] text-zinc-500 dark:text-zinc-400" />
       <span className="min-w-0 flex-1 truncate">{label}</span>
-      {k ? <kbd className="grid h-5 min-w-5 place-items-center rounded-md px-1 font-sans text-[11px] font-semibold text-zinc-400 ring-1 ring-zinc-300 dark:ring-zinc-600">{k}</kbd> : null}
+      {k ? <kbd className="hidden h-5 min-w-5 place-items-center rounded-md px-1 font-sans text-[11px] font-semibold text-zinc-400 ring-1 ring-zinc-300 lg:grid dark:ring-zinc-600">{k}</kbd> : null}
     </button>
   )
   return {

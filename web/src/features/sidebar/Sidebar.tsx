@@ -198,7 +198,7 @@ export function Sidebar(props: SidebarProps) {
           <Icon n="mic" c="size-4" />
         </button>
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto outline-none overscroll-contain px-2 lg:scrollbar-thin lg:pb-3 lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70">
+      <div className="min-h-0 flex-1 overflow-y-auto outline-none overscroll-contain px-2 lg:scrollbar-thin lg:pb-6 lg:mask-b-from-[calc(100%-1.5rem)] lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70">
         <div className="px-3 pb-1.5 text-xs font-semibold text-zinc-500 lg:text-[11px] lg:tracking-wider lg:uppercase dark:text-zinc-400">Projects</div>
         <div
           ref={rows}

@@ -1,7 +1,7 @@
 // Finding by typing, with the page's data: the sheet of every key, the project switcher, and the command palette
 // (an item, or an action of the table: done once the palette has closed, as its key would).
 
-import { useServices } from '../../app/context'
+import { useLayout, useServices } from '../../app/context'
 import { useProjectModel, useProjectRoute } from '../../app/hooks'
 import { codeOf } from '../../model/project'
 import type { SheetRequest } from '../../stores/sheet'
@@ -38,6 +38,7 @@ export function PaletteSheet(_: Req<'palette'>) {
   const code = (n: number) => (m ? codeOf(m, n) : '')
   const open = route?.place.kind === 'item' && m ? (m.byN.get(Number(/\d+/.exec(route.place.ref)?.[0]))?.n ?? null) : null
   const close = () => app.sheets.close()
+  const desk = useLayout() === 'desk'
   return (
     <SheetLayout
       title="Go to or do"
@@ -48,6 +49,7 @@ export function PaletteSheet(_: Req<'palette'>) {
           open={open}
           onItem={(n) => (close(), app.nav.openItem(code(n)))}
           commands={COMMANDS}
+          desk={desk}
           onCommand={(id) => {
             close()
             ;(document.activeElement as HTMLElement | null)?.blur()

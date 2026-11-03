@@ -28,7 +28,7 @@ export function refCard(m: ProjectModel, ref: string): RefCard | null {
     const r = m.byId.get('r' + ref.slice(1))
     if (!r) return null
     const on = r.scope != null && m.byN.get(r.scope)
-    return { top: top([`Input ${inputCode(r.id)}`, r.by === 'you' ? 'You' : whoName(r.by), when(r.t, m.at), on && `on ${codeOf(m, r.scope)}`]), gist: clip(r.text || plural(r.files.length, 'file'), 220) }
+    return { top: top([`Input ${inputCode(r.id)}`, r.by !== 'you' && whoName(r.by), when(r.t, m.at), on && `on ${codeOf(m, r.scope)}`]), gist: clip(r.text || plural(r.files.length, 'file'), 220) }
   }
   if (ref[0] === 'D') {
     const d = m.docs.find((x) => x.d === Number(ref.slice(1)))

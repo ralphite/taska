@@ -138,7 +138,7 @@ function MsgView({ it, x, env, on, facts, docs, code, done, ver, gone, read }: {
         <div className="flex flex-wrap items-center justify-end gap-x-1">
           {ver?.old ? null : <VoiceLine files={src?.files || []} url={env.url} play={env.play} tidy={env.tidy} bare={!!src && !src.moved} on={on} />}
           <span className="px-1 text-[11px] text-zinc-400 dark:text-zinc-500">
-            You · {ver?.old ? 'earlier version · ' : ver?.label ? ver.label + ' · ' : ''}
+            {ver?.old ? 'earlier version · ' : ver?.label ? ver.label + ' · ' : ''}
             {when(x.t, env.now)}
             {x.edited && !ver?.old ? (
               <>
@@ -325,7 +325,7 @@ export function docNotes(docs: readonly Doc[], env: TalkEnv, on: TalkLineEvents,
             <span className="flex max-w-full min-w-0 items-center gap-0.5 px-1">
               <Icon n="comment" c="size-3 shrink-0" />
               <span className="min-w-0 truncate">
-                You · {where} · {c.id > 0 ? when(c.t, env.now) : 'Sending…'} {gone}
+                {where} · {c.id > 0 ? when(c.t, env.now) : 'Sending…'} {gone}
               </span>
             </span>
           </div>
@@ -359,7 +359,7 @@ function Pending({ list, on }: { list: Outgoing[]; on: TalkLineEvents }) {
           <div className={`${YOU_BUBBLE} break-words whitespace-pre-wrap ${q.bad ? 'opacity-70' : ''}`}>{q.text}</div>
           <div className="flex flex-wrap items-center justify-end gap-x-1">
             <span className="px-1 text-[11px] text-zinc-400 dark:text-zinc-500">
-              You · <span className={q.bad ? 'text-red-600 dark:text-red-400' : 'animate-pulse text-blue-600 dark:text-blue-400'}>{q.state}</span>
+              <span className={q.bad ? 'text-red-600 dark:text-red-400' : 'animate-pulse text-blue-600 dark:text-blue-400'}>{q.state}</span>
             </span>
             {q.bad ? (
               <>

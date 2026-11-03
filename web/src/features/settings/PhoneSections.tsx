@@ -11,7 +11,7 @@ import { P_BTN, SECOND, TYPE_TEXT } from '../../ui/tones'
 import { Empty } from '../../ui/bits'
 import { LogLine, LogMore, type LogEvents } from '../../ui/Log'
 import { NameField, type ProjectsEvents, type ProjectsFacts } from './Sections'
-import { PH_GROUP, PhLabel, PhNote, Ruled } from './SettingsParts'
+import { PH_GROUP, PhLabel, Ruled } from './SettingsParts'
 
 const PILL = 'flex h-11 shrink-0 items-center gap-1.5 rounded-xl bg-zinc-100 px-3.5 text-sm font-medium dark:bg-zinc-800'
 
@@ -142,7 +142,6 @@ export function PhoneProjectsBody({ f, on }: { f: ProjectsFacts; on: ProjectsEve
               </div>
             ))}
           </div>
-          <PhNote>Delete forever: ⋯</PhNote>
         </>
       ) : null}
     </>

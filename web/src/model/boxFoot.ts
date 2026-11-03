@@ -2,6 +2,7 @@
 // (its line on top, its placeholder, what Send says, what a comment from it goes to) and the line over the box about
 // what you sent last. Pure, so it is tested alone and the containers only connect it.
 
+import { failWhy } from './became'
 import { docTarget, type DocTarget } from './docs'
 import { ticksNotSent, type TickState } from './docTicks'
 import { draftName } from './draftTarget'
@@ -16,8 +17,9 @@ import { outgoingLine, type Outgoing } from './outgoing'
 
 /** a button at the line's right */
 export type BoxRight =
-  /** an x: stop what the box is in (`act: 'stop'`), or let go of what is picked in the document */
-  | { kind: 'x'; label: string; act: 'stop' | 'unpick' }
+  /** an x: stop what the box is in (`act: 'stop'`), let go of what is picked in the document, or let go of the
+   * comments written in the box (`act: 'discard'`, Undo brings them back) */
+  | { kind: 'x'; label: string; act: 'stop' | 'unpick' | 'discard' }
   /** choices ticked in the document: Send choices, and an x that clears them */
   | { kind: 'ticks' }
   /** the phone's document: reply to its item instead */
@@ -142,7 +144,7 @@ export function boxRole(m: ProjectModel | null, route: ProjectPlace, desk: boole
 export function shownBox(role: BoxRole, a: { mode: BoxMode; text: string; key: string; recordingFor: string | null }): { line: BoxLine | null; waiting: BoxLine | null; placeholder: string; send: string; voiceComments: number } {
   const vcN = role.doc != null && !a.mode ? vcCount(a.text) : 0
   const told = vcN
-    ? { line: { icon: 'comment', label: `${plural(vcN, 'comment')} on D${role.doc} not sent`, detail: '' } as BoxLine, placeholder: role.aim ? 'Write…' : 'Add to the comments…', send: vcN > 1 ? `Post ${vcN} comments` : 'Post comment' }
+    ? { line: { icon: 'comment', label: `${plural(vcN, 'comment')} on D${role.doc} not sent`, detail: '', right: { kind: 'x', label: vcN > 1 ? 'Discard the comments' : 'Discard the comment', act: 'discard' } } as BoxLine, placeholder: role.aim ? 'Write…' : 'Add to the comments…', send: vcN > 1 ? `Post ${vcN} comments` : 'Post comment' }
     : role
   const right = a.mode?.kind === 'correct' ? a.text.replace(/\s+/g, ' ').trim() : ''
   const line: BoxLine | null =
@@ -161,7 +163,8 @@ export type FeedbackLine =
   | { kind: 'not-sent'; text: string; more: number }
   | { kind: 'organizing' }
   | { kind: 'transcribing' }
-  | { kind: 'org-failed'; msg: string }
+  /** why in plain words; `raw`: the words as they came */
+  | { kind: 'org-failed'; msg: string; raw: string }
   | { kind: 'undone'; code: string }
   | { kind: 'organized'; msg: string; view: boolean; undo: boolean; move: boolean }
   | { kind: 'sent'; organizer: boolean; canUndo: boolean; move: boolean }
@@ -185,7 +188,7 @@ export function feedbackLine(a: { m: ProjectModel | null; desk: boolean; compose
   if (r.moved) line = { kind: 'moved', code: inputCode(r.id), to: r.moved.to, as: r.moved.as ? inputCode(r.moved.as) : '', href: `/p/${encodeURIComponent(r.moved.to)}/` }
   else if (r.trWait) line = { kind: 'transcribing' }
   else if (org.busy === r.id || (!r.acked && org.on && !r.org)) line = { kind: 'organizing' }
-  else if (r.org && !r.org.ok) line = { kind: 'org-failed', msg: r.org.msg }
+  else if (r.org && !r.org.ok) line = { kind: 'org-failed', msg: failWhy(r.org.msg), raw: r.org.msg }
   else if (r.org?.undone) line = { kind: 'undone', code: inputCode(r.id) }
   else if (r.acked)
     line = {
