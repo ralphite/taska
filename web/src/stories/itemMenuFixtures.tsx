@@ -7,7 +7,7 @@ import { itemMenuFacts } from '../features/item/itemMenuFacts'
 
 type Story = StoryObj
 
-export const on: ItemMenuEvents = { edit: no, copy: no, agent: no, newDoc: no, addSub: no, reparent: no, later: no, archive: no, doNext: no, moveProject: no, remove: no, set: no }
+export const on: ItemMenuEvents = { edit: no, copy: no, agent: no, newDoc: no, addSub: no, reparent: no, later: no, archive: no, doNext: no, moveProject: no, remove: no, set: no, field: no }
 export interface Open {
   n: number
   asking?: boolean

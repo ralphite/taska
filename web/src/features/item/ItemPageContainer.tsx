@@ -28,7 +28,8 @@ export function openItemMenu(app: Pick<App, 'sheets'>, desk: boolean, n: number,
 
 export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = false }: { it: Item; m: ProjectModel; slug: string; tab: Tab; desk: boolean; /** in two columns, its document on the left */ left?: ReactNode; bare?: boolean }) {
   const app = useServices('answers', 'box', 'docs', 'fields', 'inputs', 'itemEdits', 'items', 'nav', 'runner', 'seen', 'sheets', 'toasts')
-  const stores = useStores('box', 'docTicks', 'grips', 'itemView', 'keptEdits', 'outbox', 'ui')
+  const stores = useStores('box', 'data', 'docTicks', 'grips', 'itemView', 'keptEdits', 'outbox', 'ui')
+  const projects = useStoreValue(stores.data, (s) => s.projects)
   const ticks = useStoreValue(stores.docTicks, (s) => s)
   const duo = useStoreValue(stores.ui, (s) => s.duo) && desk
   const view = useStoreValue(stores.itemView, (s) => s)
@@ -75,6 +76,7 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
     going: answering ? { text: answering.text, state: outgoingState(answering, away) } : null,
     outgoing,
     undo: (rid) => takeBack.find((x) => x.rid === rid)?.q ?? null,
+    title: (s) => projects?.find((p) => p.name === s)?.title || s,
   }
   const f: ItemFacts = {
     code,
@@ -171,6 +173,7 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
     inputMore: (id, from) => (desk ? app.sheets.openFrom(from, { kind: 'input-menu', id }, { focus: false }) : app.sheets.open({ kind: 'input-menu', id }, { focus: false })),
     inputHistory: (id) => app.sheets.open({ kind: 'input-history', id }),
     goInput: (id) => app.nav.goInput(id, (x) => stores.ui.getState().setLit(x)),
+    moved: (href) => app.nav.to(href),
     msgMenu: (id, from) => (desk ? app.sheets.openFrom(from, { kind: 'message-menu', n, id }, { focus: false }) : app.sheets.open({ kind: 'message-menu', n, id }, { focus: false })),
     peek: (id) => iv().peek(id),
     unhide: (id) => void send([{ op: 'hide', ref, id, on: false }], `showing a message on ${ref} again`),

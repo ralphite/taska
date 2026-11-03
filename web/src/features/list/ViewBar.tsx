@@ -1,6 +1,6 @@
 // The row of views above the list: the preset views of Items (Needs you, Active, All, Archive, Open, Later,
-// Done, Won't do) and your own, each with what it would show. It scrolls sideways; an arrow on a fading edge says more is
-// there, and a click brings it in.
+// Done, Won't do) and your own, each with what it would show. It scrolls sideways; a fading edge says more is there, and
+// on the desktop an arrow on it brings that in (the phone swipes, so its edges only fade).
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Icon } from '../../ui/Icon'
@@ -66,17 +66,23 @@ export function ViewBar({
     else if (el.scrollLeft < r) el.scrollLeft = r
   }, [on])
   const go = (dir: number) => row.current?.scrollBy({ left: dir * row.current.clientWidth * 0.7, behavior: 'smooth' })
-  const arrow = (dir: number) => (
+  const arrow = (dir: number) => [
+    <span
+      key="fade"
+      aria-hidden
+      className={`pointer-events-none absolute inset-y-0 z-10 hidden w-8 from-white to-transparent phone:block dark:from-zinc-950 ${dir < 0 ? 'left-0 bg-linear-to-r' : 'right-0 bg-linear-to-l'}`}
+    />,
     <button
+      key="arrow"
       aria-label={dir < 0 ? 'Earlier views' : 'More views'}
       onClick={() => go(dir)}
-      className={`absolute inset-y-0 z-10 flex w-12 items-center from-white from-50% to-transparent dark:from-zinc-950 ${dir < 0 ? 'left-0 justify-start bg-linear-to-r pl-1' : 'right-0 justify-end bg-linear-to-l pr-1'}`}
+      className={`absolute inset-y-0 z-10 flex w-12 items-center phone:hidden from-white from-50% to-transparent dark:from-zinc-950 ${dir < 0 ? 'left-0 justify-start bg-linear-to-r pl-1' : 'right-0 justify-end bg-linear-to-l pr-1'}`}
     >
       <span className="grid size-7 place-items-center rounded-full bg-white text-zinc-600 shadow-sm ring-1 ring-zinc-900/10 hover:bg-zinc-100 hover:text-zinc-900 dark:bg-zinc-800 dark:text-zinc-300 dark:ring-white/10 dark:hover:bg-zinc-700">
         <Icon n={dir < 0 ? 'left' : 'right'} c="size-4" sw="2.25" />
       </span>
-    </button>
-  )
+    </button>,
+  ]
   return (
     <div data-views className="relative border-b border-zinc-200 dark:border-zinc-800">
       <div ref={row} onScroll={measure} className="flex h-12 [scrollbar-width:none] items-center gap-1 overflow-x-auto px-2">

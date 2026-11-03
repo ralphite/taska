@@ -69,6 +69,20 @@ test("T529: a rule's menu has no New doc, Add subitem or Put under…, on the ph
   for (const act of [/^New doc/, /^Add subitem/, /^Put under/]) await expect(menuChoice(page, act)).toHaveCount(0)
 })
 
+test("D115: the desktop's item menu has Status…, Priority… and Type…, each opening its choices", async ({ page, request }) => {
+  test.skip(!isDesk(page), "the phone's menu shows the three fields in the sheet")
+  const p = await project(request, LOOP)
+  await open(page, p, 'T4')
+  await itemMenu(page).click()
+  await menuChoice(page, /^Priority…/).click()
+  await menuChoice(page, /^P0\b/).click()
+  await expect.poll(async () => (await p.read('T4')).split('\n')[0]).toContain(' P0 ')
+  await itemMenu(page).click()
+  await menuChoice(page, /^Status…/).click()
+  await menuChoice(page, /^Done\b/).click()
+  await expect.poll(async () => (await p.read('T4')).split('\n')[0]).toMatch(/\bdone\b/i)
+})
+
 test('T529: Put under… says Nothing matches when the search finds no item', async ({ page, request }) => {
   const p = await project(request, LOOP)
   await open(page, p, 'T4')

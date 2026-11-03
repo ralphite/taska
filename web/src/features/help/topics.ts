@@ -277,12 +277,52 @@ export function topicParts(text: string): { intro: string; sections: { id: strin
 
 export const HELP_TOPICS: HelpTopic[] = HELP_GROUPS.flatMap((g) => g.topics)
 
+/** A topic the search found, and, when only its words matched, the sentence of them that matched best (shown in
+ * place of what the topic answers, so you see why it was found). */
+export interface HelpFound {
+  topic: HelpTopic
+  line: string | null
+}
+
+export const searchWordsOf = (q: string) => q.toLowerCase().split(/\s+/).filter(Boolean)
+
+/** A topic's words as plain sentences: no Markdown marks, one sentence or list line each; a section whose name is
+ * all that matched gives its name with its first sentence (a sentence says more than a name), after the rest. */
+const sentences = (text: string) => {
+  const plain = (s: string) => s.replace(/\[([^\]]*)\]\(([^)]*)\)/g, '$1').replace(/[*_`]+/g, '')
+  const said = (s: string) =>
+    plain(s)
+      .split('\n')
+      .flatMap((l) => l.split(/(?<=[.!?])\s+/))
+      .filter((l) => !/^[\s|:-]+$/.test(l))
+      .map((l) => l.replace(/^\s*([-+]|\d+\.)\s+/, '').replace(/^\s*\|\s*|\s*\|\s*$/g, '').replace(/\s*\|\s*/g, ': ').trim())
+      .filter(Boolean)
+  const { intro, sections } = topicParts(text)
+  return [...said(intro), ...sections.flatMap((x) => said(x.text)), ...sections.map((x) => `${plain(x.title)}: ${said(x.text)[0] ?? ''}`)]
+}
+
+/** The sentence with the most of the words searched for (the first of those). */
+const bestLine = (text: string, words: string[]) => {
+  let best = ''
+  let most = 0
+  for (const s of sentences(text)) {
+    const low = s.toLowerCase()
+    const k = words.filter((w) => low.includes(w)).length
+    if (k > most) [best, most] = [s, k]
+  }
+  return best || null
+}
+
 /** The topics whose name or words have every word searched for, best first (a name before words). */
-export function searchHelp(q: string): HelpTopic[] {
-  const words = q.toLowerCase().split(/\s+/).filter(Boolean)
+export function searchHelp(q: string): HelpFound[] {
+  const words = searchWordsOf(q)
   if (!words.length) return []
   const has = (s: string) => words.every((w) => s.toLowerCase().includes(w))
-  return [...HELP_TOPICS.filter((t) => has(t.title + ' ' + t.about)), ...HELP_TOPICS.filter((t) => !has(t.title + ' ' + t.about) && has(t.text))]
+  const named = HELP_TOPICS.filter((t) => has(t.title + ' ' + t.about))
+  return [
+    ...named.map((topic) => ({ topic, line: null })),
+    ...HELP_TOPICS.filter((t) => !named.includes(t) && has(t.text)).map((topic) => ({ topic, line: bestLine(topic.text, words) })),
+  ]
 }
 
 /** The topic Help shows: the one its address names; with none named, the first, as docs sites open (B650). */

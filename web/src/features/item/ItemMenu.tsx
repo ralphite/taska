@@ -1,6 +1,7 @@
 // An item's menu: on the phone a sheet of tiles (Edit, Copy for agent, New doc, Add subitem, Put under…, Later,
 // Archive, Do this next, Move to… (another project), Delete) and its type, priority and status; on the desktop a menu of rows
-// with their keys, or just one field's choices (from its chip, or S, P, T). Props only.
+// with their keys (Status…, Priority… and Type… open that field's choices), or just one field's choices (from its chip,
+// or S, P, T). Props only.
 
 import type { ReactNode } from 'react'
 import { closed, inQueue, statusChoices } from '../../model/items'
@@ -26,6 +27,8 @@ export interface ItemMenuEvents {
   moveProject(): void
   remove(): void
   set(f: 'type' | 'pri' | 'status', v: string): void
+  /** the desktop's Status…, Priority…, Type…: that field's choices, in place of the menu */
+  field(arm: 's' | 'p' | 't'): void
 }
 
 export const STAT_BTN =
@@ -75,6 +78,9 @@ export interface MenuKeys {
   reparent: string
   later: string
   archive: string
+  status: string
+  pri: string
+  type: string
 }
 
 /** The phone's sheet. */
@@ -163,9 +169,9 @@ export function itemMenuSheet({ it, code, parentCode, asking, arm }: ItemMenuFac
 
 /** The desktop's menu: rows with their keys, or one field's choices. */
 export function itemMenuPop({ it, code, parentCode, asking, arm, keys }: ItemMenuFacts, on: ItemMenuEvents): SheetParts {
-  const row = (key: string, icon: IconName, label: ReactNode, k: string, run: (from: HTMLElement) => void, sub = '', danger = false) => (
+  const row = (key: string, icon: IconName | ReactNode, label: ReactNode, k: string, run: (from: HTMLElement) => void, sub = '', danger = false) => (
     <button key={key} onClick={(e) => run(e.currentTarget)} className={`flex h-9 w-full items-center gap-3 rounded-lg px-2.5 text-left text-sm ${danger ? `${DANGER} hover:bg-red-50 dark:hover:bg-red-400/10` : 'hover:bg-zinc-100 dark:hover:bg-zinc-800'}`}>
-      <Icon n={icon} c={`size-[18px] ${danger ? '' : 'text-zinc-500 dark:text-zinc-400'}`} />
+      {typeof icon === 'string' ? <Icon n={icon as IconName} c={`size-[18px] ${danger ? '' : 'text-zinc-500 dark:text-zinc-400'}`} /> : icon}
       <span className="min-w-0 flex-1 truncate">
         {label}
         {sub ? <span className="ml-2 text-xs text-zinc-400">{sub}</span> : null}
@@ -225,6 +231,11 @@ export function itemMenuPop({ it, code, parentCode, asking, arm, keys }: ItemMen
           {row('edit', 'pencil', 'Edit', keys.edit, on.edit)}
           {row('copy', 'copy', 'Copy for agent', keys.copy, on.copy)}
           {row('agent', 'bot', 'What agents see', '', on.agent)}
+          <div className={MENU_SEP} />
+          {row('status', <StateIcon s={it.status} cls="size-[18px]" />, 'Status…', keys.status, () => on.field('s'), statusChoices(it).find(([s]) => s === it.status)?.[1] ?? '')}
+          {it.type === 'rule' ? null : row('pri', 'up', 'Priority…', keys.pri, () => on.field('p'), it.pri)}
+          {row('type', 'items', 'Type…', keys.type, () => on.field('t'), it.type[0].toUpperCase() + it.type.slice(1))}
+          <div className={MENU_SEP} />
           {it.type === 'rule' ? null : (
             <>
               {row('doc', 'docplus', 'New doc', keys.newDoc, on.newDoc)}

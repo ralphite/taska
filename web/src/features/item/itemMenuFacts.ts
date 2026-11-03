@@ -13,5 +13,5 @@ export const itemMenuFacts = (m: ProjectModel, it: Item, asking: boolean, arm: I
   parentCode: it.parent ? codeOf(m, it.parent) : null,
   asking,
   arm,
-  keys: { edit: keysShown('edit'), copy: keysShown('copy'), newDoc: keysShown('new-doc'), addSub: keysShown('add-sub'), reparent: keysShown('put-under'), later: keysShown('later'), archive: keysShown('archive') },
+  keys: { edit: keysShown('edit'), copy: keysShown('copy'), newDoc: keysShown('new-doc'), addSub: keysShown('add-sub'), reparent: keysShown('put-under'), later: keysShown('later'), archive: keysShown('archive'), status: keysShown('status'), pri: keysShown('priority'), type: keysShown('type') },
 })

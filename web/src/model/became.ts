@@ -106,10 +106,18 @@ export function serviceWhy(msg: string): string | null {
 /** Why the organizer failed, in a few plain words. */
 export const failWhy = (msg: string) => serviceWhy(msg) ?? shortWhy(msg)
 
+/** Where an input moved to: the project's title (`title`: a project's title by its name), its number there, its link. */
+export const movedOf = (moved: NonNullable<Input['moved']>, title: (slug: string) => string): Extract<Became, { k: 'moved' }> => ({
+  k: 'moved',
+  to: title(moved.to),
+  as: inputCode(moved.as),
+  href: `/p/${encodeURIComponent(moved.to)}/`,
+})
+
 /** What became of `r`; `title`: a project's title by its name. */
 export function becameOf(r: Input, m: ProjectModel, title: (slug: string) => string): Became {
   const organizer = m.facts.organizer
-  if (r.moved) return { k: 'moved', to: title(r.moved.to), as: inputCode(r.moved.as), href: `/p/${encodeURIComponent(r.moved.to)}/` }
+  if (r.moved) return movedOf(r.moved, title)
   if (canSend(r)) return { k: 'cancelled' }
   if (r.trWait) return { k: 'transcribing' }
   if (organizer.busy === r.id) return { k: 'organizing' }

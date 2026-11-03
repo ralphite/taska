@@ -21,11 +21,11 @@ export const DetailsAddedLater: Story = {
   ...at([mine({ text: 'The export should keep the filter I set.' }), mine({ id: 2, text: 'The export should keep the filter I set.\n\nAnd the sort.', t: later(2) })]),
   name: 'Details added later',
 }
-export const ItsInputMovedToAnotherProject: Story = { ...at([mine()], { inputs: [r4({ files: [voice], moved: { to: 'home', as: 'r40' } })] }), name: 'Moved to another project' }
+export const ItsInputMovedToAnotherProject: Story = { ...at([mine()], { inputs: [r4({ files: [voice], moved: { to: 'mobile-app', as: 'r4' } })] }), name: 'Moved to another project' }
 /** The desktop: the pointer on its voice note shows the words it heard (the page's own tip). */
 export const MovedPointerOnItsVoiceNote: Story = {
   ...tip(
-    () => talkOf(item({ n: 12, thread: [mine()] }), true, { inputs: [r4({ files: [{ ...voice, heard: 'the export should keep the filter i set', tr: 'The export should keep the filter I set.' }], moved: { to: 'home', as: 'r40' } })] }),
+    () => talkOf(item({ n: 12, thread: [mine()] }), true, { inputs: [r4({ files: [{ ...voice, heard: 'the export should keep the filter i set', tr: 'The export should keep the filter I set.' }], moved: { to: 'mobile-app', as: 'r4' } })] }),
     'button[aria-label^="Play"]',
     { width: 720, height: 320 },
   ),

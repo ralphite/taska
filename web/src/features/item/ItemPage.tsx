@@ -239,9 +239,9 @@ function Subitems({ it, f, on }: { it: Item; f: ItemFacts; on: ItemEvents }) {
               className={`flex w-full items-start gap-3 px-3 py-3 text-left first:rounded-t-xl last:rounded-b-xl hover:bg-zinc-50 data-pressed:bg-zinc-100 dark:hover:bg-zinc-900 dark:data-pressed:bg-zinc-800 ${closed(k.status) ? 'opacity-55' : ''}`}
             >
               <StateIcon {...shownStatus(k)} />
-              <span className={`min-w-0 flex-1 text-[15px] leading-snug ${closed(k.status) ? 'line-through' : ''}`}>
+              <span className="min-w-0 flex-1 text-[15px] leading-snug">
                 <span className={`mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[k.type]}`}>{f.code(k.n)}</span>
-                {k.title}
+                <span className={closed(k.status) ? 'line-through' : ''}>{k.title}</span>
               </span>
               {k.when === 'later' && !closed(k.status) ? (
                 <span className="mt-0.5 flex shrink-0 text-xs font-medium">
@@ -378,7 +378,7 @@ export function ItemPage({ it, f, env, facts, on, talkRef, duo = false, left = n
           {left}
         </div>
       ) : (
-      <div data-item-top className={`flex flex-col lg:shrink-0 ${duo ? 'lg:h-full lg:w-[var(--duo-w,55%)]' : f.editing ? 'lg:max-h-full' : 'lg:h-[var(--top-h,40%)]'}`}>
+      <div data-item-top className={`flex flex-col lg:shrink-0 ${duo ? 'lg:h-full lg:w-[var(--duo-w,55%)]' : f.editing ? 'lg:max-h-full' : 'lg:h-(--top-h) lg:max-h-[var(--top-h,60%)]'}`}>
         <div ref={clip} data-item-clip onScroll={(e) => e.currentTarget.toggleAttribute('data-over', overflows(e.currentTarget))} className="lg:min-h-0 lg:scrollbar-thin lg:overflow-y-auto outline-none lg:data-over:mask-b-from-[calc(100%-4rem)]">
           <div className="flex flex-col gap-6 lg:mx-auto lg:w-full lg:max-w-[46rem] lg:px-8 lg:pt-7 lg:pb-6">
             {head}
@@ -413,7 +413,7 @@ export function ItemPage({ it, f, env, facts, on, talkRef, duo = false, left = n
           onReset={() => on.duoSize(0, true)}
         />
       ) : (
-      /* the line between the item and its talk, dragged up and down anywhere you like (a double-click leaves it) */
+      /* the line between the item and its talk (above it: what the item holds, to 60%); dragged anywhere, a double-click leaves it */
       <Grip
         name="top"
         axis="y"

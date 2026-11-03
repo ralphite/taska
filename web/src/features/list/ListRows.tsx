@@ -69,11 +69,13 @@ const marks = (look: RowLook) => ({
 
 function CodeTitle({ it, code, look, struck }: { it: Item; code: string; look: RowLook; struck: boolean }) {
   return (
-    <p className={`line-clamp-2 text-[15px] leading-snug font-medium lg:line-clamp-1 ${struck ? 'line-through decoration-zinc-400' : ''}`}>
+    <p className="line-clamp-2 text-[15px] leading-snug font-medium lg:line-clamp-1">
       <span className={`mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[it.type]}`}>
         <Hit text={code} words={look.words} />
       </span>
-      <Hit text={it.title} words={look.words} />
+      <span className={struck ? 'line-through decoration-zinc-400' : ''}>
+        <Hit text={it.title} words={look.words} />
+      </span>
     </p>
   )
 }

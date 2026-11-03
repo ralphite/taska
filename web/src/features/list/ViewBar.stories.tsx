@@ -15,7 +15,8 @@ const views = (on: string, needs = 2): ViewChip[] =>
     return { value, label, count, on: value === on, dot: value === 'wait' && count > 0 }
   })
 
-/** The row of views: the one shown is dark; more views past the edge have an arrow. */
+/** The row of views: the one shown is dark; more views past the edge fade there, with an arrow on the desktop (the
+ * phone swipes). */
 export const Views: Story = {
   render: () => (
     <Frames phoneWidth={393} deskWidth={460}>
@@ -49,12 +50,13 @@ export const YourOwnViewShownBeingRenamed: Story = {
   ),
 }
 // ---- more states (T639)
-/** a chip under the pointer, one from the keys (the browser's ring), and the edge arrow under the pointer */
+/** a chip under the pointer, one from the keys (the browser's ring), and the edge arrow under the pointer: the
+ * desktop's (the phone has neither pointer nor arrows) */
 export const PointerAndKeys: Story = {
   name: 'Pointer and keys',
   parameters: { pseudo: { hover: ['[data-look="pointer"] button:nth-of-type(3)', '[data-look="arrow"] button[aria-label] > span'], focusVisible: ['[data-look="keys"] button:nth-of-type(3)'] } },
   render: () => (
-    <Frames phoneWidth={393} deskWidth={460}>
+    <Frames phone={false} deskWidth={460}>
       {() => (
         <States
           items={[

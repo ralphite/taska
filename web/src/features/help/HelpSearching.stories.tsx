@@ -5,6 +5,7 @@ import { help } from '../../stories/helpFixtures'
 export default { title: 'Components/Settings, help and parts/Help/Searching' } satisfies Meta
 type Story = StoryObj
 
+/** the words searched for are marked; a topic found by its words shows the sentence that matched, not what it answers */
 export const Searching: Story = { ...help(null, 'agent', { menu: true }), name: 'What it finds' }
 export const NothingFound: Story = { ...help(null, 'invoice', { menu: true }), name: 'Nothing found' }
 /** words typed while a topic is open: Search results take the topic's place, the topic stays marked in the column */

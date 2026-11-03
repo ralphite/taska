@@ -160,10 +160,17 @@ export function DeskFilters({ tab, list, set, open, place, hidden, on }: {
   )
 }
 
+/** The filters set, each taken off by its ×; the sort is not a filter, so it shows last, plainly, with no ×. */
 export function FilterChips({ set, onUnset }: { set: [string, ReactNode][]; onUnset(k: string): void }) {
   return (
     <>
-      {set.map(([k, label]) => (
+      {set.map(([k, label]) =>
+        k === 'sort' ? (
+          <span key={k} aria-label={`Sorted by ${String(label)}`} className="flex h-8 shrink-0 items-center gap-1 px-1 text-[13px] font-medium text-zinc-500 lg:h-7 dark:text-zinc-400">
+            <Icon n="up" c="size-3.5 rotate-180" sw="2.25" />
+            {label}
+          </span>
+        ) : (
         <button
           key={k}
           onClick={() => onUnset(k)}
@@ -172,17 +179,19 @@ export function FilterChips({ set, onUnset }: { set: [string, ReactNode][]; onUn
           {label}
           <Icon n="x" c="size-3.5" sw="2.25" />
         </button>
-      ))}
+        ),
+      )}
     </>
   )
 }
 
-/** The phone's row of the filters set, under the tabs, with Clear. */
+/** The phone's row of the filters set, under the tabs, with Clear. More than fit slide sideways under Clear, which
+ * stays at the end and fades what passes under it. */
 export function FilterStrip({ set, hidden, onUnset, onReset }: { set: [string, ReactNode][]; hidden: boolean; onUnset(k: string): void; onReset(): void }) {
   return (
-    <div hidden={hidden} className="flex h-11 shrink-0 [scrollbar-width:none] items-center gap-2 overflow-x-auto border-b border-zinc-100 px-4 lg:hidden dark:border-zinc-800/70">
+    <div hidden={hidden} className="flex h-11 shrink-0 [scrollbar-width:none] items-center gap-2 overflow-x-auto border-b border-zinc-100 pl-4 lg:hidden dark:border-zinc-800/70">
       <FilterChips set={set} onUnset={onUnset} />
-      <button onClick={onReset} className="ml-auto h-11 shrink-0 px-1 text-[13px] font-semibold text-blue-600 hover:underline dark:text-blue-400">
+      <button onClick={onReset} className="sticky right-0 ml-auto h-11 shrink-0 bg-linear-to-r from-transparent to-white to-50% pr-4 pl-12 text-[13px] font-semibold text-blue-600 dark:to-zinc-950 dark:text-blue-400">
         Clear
       </button>
     </div>

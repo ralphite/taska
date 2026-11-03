@@ -1,8 +1,9 @@
 // The desktop's item pane in two columns (the item, or its open document, on the left; its talk on the right) while
-// the pane is 1100px wide or more and the item does not fit the part above the line (where you put it, 40% by
-// default) or its talk the part below; a document shows beside its item's talk whenever the pane is that wide. Once
-// in two columns, an item stays so while it is open: a fold, a reply or another item that would fit in one never
-// takes it back to one column; a pane too narrow shows one, and the same width again shows two again.
+// the pane is 1100px wide or more and the item does not fit the part above the line (where you put it; by default
+// as tall as the item, up to 60%) or its talk the part below; a document shows beside its item's talk whenever the
+// pane is that wide. Once in two columns, an item stays so while it is open: a fold, a reply or another item that
+// would fit in one never takes it back to one column; a pane too narrow shows one, and the same width again shows
+// two again.
 
 import { useLayoutEffect, useRef } from 'react'
 
@@ -18,8 +19,9 @@ export function useTwoColumns(body: HTMLElement | null, shows: boolean, doc: boo
       const talk = body.querySelector<HTMLElement>('[data-item-talk]')
       const h = body.clientHeight
       const want = parseFloat(getComputedStyle(body).getPropertyValue('--top-h'))
-      const upper = want > 0 ? Math.min(want, h) : h * 0.4
-      const high = ((top?.firstElementChild as HTMLElement | null)?.offsetHeight || 0) > upper || ((talk?.firstElementChild as HTMLElement | null)?.offsetHeight || 0) > h - upper
+      const item = (top?.firstElementChild as HTMLElement | null)?.offsetHeight || 0
+      const upper = want > 0 ? Math.min(want, h) : Math.min(item, h * 0.6)
+      const high = item > upper || ((talk?.firstElementChild as HTMLElement | null)?.offsetHeight || 0) > h - upper
       const on = shows && body.clientWidth >= MIN && (doc || high || stuck.current)
       if (on && !doc) stuck.current = true
       set(on)

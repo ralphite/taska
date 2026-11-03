@@ -84,6 +84,7 @@ export function ItemMenuSheet({ req }: Req<'item-menu'>) {
       if (arm) close()
       void app.items.change(n, f, v)
     },
+    field: (a) => app.sheets.open({ kind: 'item-menu', n, arm: a }, { pop: true, focus: false, at, narrow: true }),
   }
   const facts = itemMenuFacts(m, it, asking, arm)
   return desk ? <SheetLayout {...itemMenuPop(facts, on)} /> : <SheetLayout {...itemMenuSheet(facts, on)} />

@@ -6,9 +6,9 @@
 // by `render`.
 
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { Kbd } from '../../ui/bits'
+import { Hit, Kbd } from '../../ui/bits'
 import { Icon } from '../../ui/Icon'
-import { HELP_GROUPS, HELP_TOPICS, topicParts, type HelpTopic } from './topics'
+import { HELP_GROUPS, HELP_TOPICS, searchWordsOf, topicParts, type HelpFound, type HelpTopic } from './topics'
 
 export interface HelpEvents {
   open(key: string): void
@@ -24,7 +24,7 @@ export function HelpPage({ desk, topic, q, found, back, menu, render, place, on 
   topic: HelpTopic
   q: string
   /** what the search finds */
-  found: HelpTopic[]
+  found: HelpFound[]
   /** where the way back goes */
   back: string
   /** the phone: its list of topics is open */
@@ -103,17 +103,22 @@ export function HelpPage({ desk, topic, q, found, back, menu, render, place, on 
       ))}
     </>
   )
+  const words = searchWordsOf(q)
   const results = found.length ? (
     <ul className="flex flex-col gap-2">
-      {found.map((t) => (
+      {found.map(({ topic: t, line }) => (
         <li key={t.key}>
           {link(
             t,
             'flex flex-col gap-0.5 rounded-xl px-4 py-3 ring-1 ring-zinc-200 hover:bg-zinc-50 dark:ring-zinc-800 dark:hover:bg-zinc-900',
             <>
               <span className="text-xs text-zinc-500 dark:text-zinc-400">{HELP_GROUPS.find((g) => g.topics.includes(t))?.name}</span>
-              <span className="text-[15px] font-medium">{t.title}</span>
-              <span className="text-[13px] text-zinc-500 dark:text-zinc-400">{t.about}</span>
+              <span className="text-[15px] font-medium">
+                <Hit text={t.title} words={words} />
+              </span>
+              <span className="line-clamp-2 text-[13px] text-zinc-500 dark:text-zinc-400">
+                <Hit text={line ?? t.about} words={words} />
+              </span>
             </>,
           )}
         </li>

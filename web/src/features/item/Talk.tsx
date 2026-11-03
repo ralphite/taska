@@ -6,6 +6,7 @@ import type { ReactNode } from 'react'
 import { oneLine } from '../../model/items'
 import { voiceMark } from '../../model/inputs'
 import { hasChoices, plainQuote } from '../../model/markdown'
+import { BECAME_WORD, movedOf } from '../../model/became'
 import { answerOf, readMark, versions, withdrawn, type Version } from '../../model/talk'
 import { when } from '../../model/time'
 import type { Comment, Doc, FileRef, Input, Item, Message } from '../../model/types'
@@ -24,6 +25,8 @@ export interface TalkLineEvents extends CardEvents {
   inputMore(id: string, from: HTMLElement): void
   inputHistory(id: string): void
   goInput(id: string): void
+  /** the project a message's input was moved to */
+  moved(href: string): void
   /** a message's menu; a hidden one shown for a moment, or again for good */
   msgMenu(id: number, from: HTMLElement): void
   peek(id: number): void
@@ -58,6 +61,8 @@ export interface TalkFacts {
   outgoing: Outgoing[]
   /** a message's Undo (what you just sent), by its input */
   undo(rid: string): string | null
+  /** a project's title by its name (where an input was moved to) */
+  title(slug: string): string
 }
 
 const YOU_BUBBLE =
@@ -120,6 +125,7 @@ function MsgView({ it, x, env, on, facts, docs, code, done, ver, gone, read }: {
   if (you && y.text && y.text.trim().split('\n').every((l) => /^\s*✓/.test(l)) && !src?.files?.length) return null // an answer's ticks show on its card
   if (you) {
     const undo = src ? facts.undo(src.id) : null
+    const moved = src?.moved && !ver?.old ? movedOf(src.moved, facts.title) : null
     return (
       <div className={`group flex scroll-mb-4 flex-col items-end gap-1 rounded-2xl ${ver?.old ? 'opacity-60' : ''}`}>
         {y.text ? (
@@ -153,6 +159,22 @@ function MsgView({ it, x, env, on, facts, docs, code, done, ver, gone, read }: {
                 ) : (
                   `edited ${when(x.edited, env.now)}`
                 )}
+              </>
+            ) : null}
+            {moved ? (
+              <>
+                {' · '}
+                <a
+                  href={moved.href}
+                  onClick={(e) => {
+                    if (e.metaKey || e.ctrlKey) return
+                    e.preventDefault()
+                    on.moved(moved.href)
+                  }}
+                  className="relative font-medium text-zinc-500 underline decoration-dotted underline-offset-2 after:absolute after:-inset-3 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-300"
+                >
+                  {BECAME_WORD.moved(moved.to)}
+                </a>
               </>
             ) : null}
             {src?.trWait ? (
