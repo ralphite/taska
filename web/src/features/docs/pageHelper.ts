@@ -54,6 +54,30 @@ export const PAGE_HELPER = String.raw`<script>(() => {
     const fill = Math.abs(h - innerHeight) <= 1 ? 1 : 0
     if (h + ',' + fill !== tall) { tall = h + ',' + fill; send({ h, fill }) }
   }
+  // T501: the words at el's top right corner, where its count goes (the strip x .. x + 44): how far below el's top
+  // its own words start, and how much room there is above it before the words of another part end (each at most 40)
+  const lines = (root, x, from, to) => {
+    const out = [], w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT), range = document.createRange()
+    for (let n, i = 0; (n = w.nextNode()) && i < 400; i++) {
+      if (!/\S/.test(n.data)) continue
+      range.selectNodeContents(n)
+      for (const b of range.getClientRects()) if (b.width > 0 && b.right > x && b.left < x + 44 && b.bottom > from && b.top < to) out.push(b)
+    }
+    return out
+  }
+  const corner = (el, r) => {
+    const x = Math.max(4, Math.min(r.right - 20, innerWidth - 48))
+    const own = lines(el, x, r.top, r.top + 40)
+    const near = new Set()
+    for (let dy = 2; dy <= 40; dy += 4)
+      for (const dx of [6, 22, 38]) {
+        const hit = r.top - dy >= 0 && document.elementFromPoint(x + dx, r.top - dy)
+        if (hit && !hit.contains(el) && !el.contains(hit)) near.add(hit)
+      }
+    let up = 40
+    for (const e of near) for (const b of lines(e, x, r.top - 40, r.top + 1)) up = Math.min(up, Math.max(0, r.top - b.bottom))
+    return { in: Math.round(Math.min(40, ...own.map((b) => Math.max(0, b.top - r.top)))), up: Math.round(up) }
+  }
   // r799: where the parts with comments are now; a part hidden or gone has no place (its count is not drawn)
   let said = ''
   const measure = () => {
@@ -61,7 +85,10 @@ export const PAGE_HELPER = String.raw`<script>(() => {
     for (const k of keys) {
       try {
         const e = document.querySelector(k.slice(2))
-        if (e && e.getClientRects().length && getComputedStyle(e).visibility !== 'hidden') out[k] = box(e.getBoundingClientRect())
+        if (e && e.getClientRects().length && getComputedStyle(e).visibility !== 'hidden') {
+          const r = e.getBoundingClientRect()
+          out[k] = Object.assign(box(r), corner(e, r))
+        }
       } catch (_) {}
     }
     const s = JSON.stringify(out)

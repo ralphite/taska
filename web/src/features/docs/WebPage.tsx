@@ -10,6 +10,9 @@ import { Icon } from '../../ui/Icon'
 import { PAGE_HELPER } from './pageHelper'
 
 type Box = { x: number; y: number; w: number; h: number }
+/** at a part's top right corner (T501, each at most 40): how far below its top its own words start, and the room above
+ * it before another part's words end */
+type Corner = { in?: number; up?: number }
 export type Part = { key: string; text: string; rect: Box }
 type XY = [number, number]
 type Spot = { top: number; left: number }
@@ -80,7 +83,7 @@ export function WebPage({ title, html, threads, held, rec = false, open, desk, i
   const [height, setHeight] = useState(480)
   const tall = useRef({ h: 0, at: 0, step: 0, n: 0, fill: false })
   const [hover, setHover] = useState<Part | null>(null)
-  const [rects, setRects] = useState<Record<string, Box>>({})
+  const [rects, setRects] = useState<Record<string, Box & Corner>>({})
   const [measured, setMeasured] = useState(false)
   // the page's width, measured with its parts: a count stays inside it
   const [width, setWidth] = useState(Infinity)
@@ -98,14 +101,17 @@ export function WebPage({ title, html, threads, held, rec = false, open, desk, i
   })
   const mode = desk ? inspect : 'tap'
   // each thread's count at its part's top right corner, half over its right edge as a badge is, so it covers little
-  // of a narrow part's words (D83 #5: all inside the corner it covered them); level with the part's top, never on the
-  // part above (r799: rows close together); kept inside the page; one that would cover another goes just under it; a
-  // part the page does not show now has none
+  // of a narrow part's words (D83 #5: all inside the corner it covered them); on the part's top edge, half above it, and
+  // higher if the part's words start right at its top, so it covers none of them (T501: a part with no room right of
+  // it); level with the part's top when another part's words sit tight above it (rows of a chart), never on that part
+  // (r799); kept inside the page; one that would cover another goes just under it; a part the page does not show now
+  // has none
   const counts: (PageThread & Spot)[] = []
   for (const t of threads.filter((x) => shown(rects[x.key])).sort((a, b) => rects[a.key].y - rects[b.key].y || rects[a.key].x - rects[b.key].x)) {
     const r = rects[t.key]
     const left = Math.max(4, Math.min(r.x + r.w - 20, width - 48))
-    let top = r.y + 4
+    const over = Math.min(r.y - 14, r.y + (r.in ?? 40) - 29)
+    let top = over >= 0 && over >= r.y - (r.up ?? 0) ? over : r.y + 4
     for (let moved = true; moved; ) {
       moved = false
       for (const c of counts)
@@ -204,7 +210,7 @@ export function WebPage({ title, html, threads, held, rec = false, open, desk, i
     }
     const got = (e: MessageEvent) => {
       if (e.source !== frame.current?.contentWindow) return
-      const m = (e.data || {}) as { h?: number; fill?: number; hover?: Part | null; at?: XY; rects?: Record<string, Box>; pick?: Part; esc?: number; ready?: number; down?: number; maybe?: Part }
+      const m = (e.data || {}) as { h?: number; fill?: number; hover?: Part | null; at?: XY; rects?: Record<string, Box & Corner>; pick?: Part; esc?: number; ready?: number; down?: number; maybe?: Part }
       const now = live.current
       if (m.ready) frame.current?.contentWindow?.postMessage({ taska: 1, ...(JSON.parse(wantNow.current) as object) }, '*')
       if (m.h) fit(m.h, !!m.fill)

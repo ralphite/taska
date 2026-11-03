@@ -3,7 +3,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { Comment } from '../../model/types'
 import { Frames } from '../../stories/Frames'
-import { WEB, WEB_PART, comment } from '../../stories/docFixtures'
+import { WEB, WEB_CORNERS, WEB_PART, comment } from '../../stories/docFixtures'
 import { docAt, type DocHere } from '../../stories/docPage'
 
 export default { title: 'Components/Document/Commenting/Web pages' } satisfies Meta
@@ -27,3 +27,6 @@ export const WebPageCommentSaving: Story = { ...one({ threads: [tk(a)] }, saving
 export const WebPageResolved: Story = { ...one({ threads: [tk(a)] }, { ...WEB, resolved: { [tk(a)]: a.t } }), name: 'A thread resolved' }
 /** A comment on a part the page no longer has. */
 export const WebPageNotOnPage: Story = { ...one({}), name: 'A comment on a part not shown now' }
+/** Counts on parts with no room right of them: on the paragraph's top edge, clear of its words; on a row of a chart
+ * touching the row above, level with its top (T501). */
+export const WebPageCountCorners: Story = { ...one({}, WEB_CORNERS), name: 'Counts with no room beside a part' }

@@ -97,3 +97,20 @@ export const WEB = doc({
   resolved: {},
 })
 export const WEB_PART = { a: part('a'), b: part('b'), c: part('c'), old: part('old') }
+/** Comments on parts with no room right of them (T501): a paragraph whose words reach its right edge, its count on its
+ * top edge clear of them; a row of a chart touching the row above, its count level with its top. */
+export const WEB_CORNERS = doc({
+  d: 16,
+  fmt: 'html',
+  title: 'Export timing',
+  md: `<!doctype html><html><body style="font:15px/1.55 system-ui;margin:0;padding:24px;color:#18181b">
+<h1 style="font-size:24px;margin:0 0 4px">Export timing</h1><p id="sub" style="margin:0 0 22px;color:#52525b;text-align:justify">Two ways to ship filtered export, what each costs, and what we recommend: both keep the columns people chose and finish well inside a second.</p>
+<div style="display:flex;flex-direction:column;gap:6px;font-size:13px"><div id="r1" style="display:flex;justify-content:space-between">Read list<span>720 ms</span></div><div id="r2" style="display:flex;justify-content:space-between">Apply filter<span>180 ms</span></div><div id="r3" style="display:flex;justify-content:space-between">Write CSV<span>410 ms</span></div></div></body></html>`,
+  blocks: [
+    { key: part('sub'), kind: 'html', text: 'Two ways to ship filtered export', comments: [comment({ id: 31, key: part('sub'), th: 31, quote: 'Two ways to ship filtered export', text: 'Which one first?', by: 'you', t: at(40) })] },
+    { key: part('r3'), kind: 'html', text: 'Write CSV 410 ms', comments: [comment({ id: 32, key: part('r3'), th: 32, quote: 'Write CSV 410 ms', text: 'Why is writing slower than reading?', by: 'you', t: at(30) })] },
+  ],
+  detached: [],
+  whole: [],
+  resolved: {},
+})

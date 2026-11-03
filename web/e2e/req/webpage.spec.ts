@@ -211,8 +211,14 @@ const ROWS = `${LOOP.then}T4 html Rows page
   <!doctype html><html><body style="margin:0;padding:24px;font:15px/1.4 sans-serif"><h1>Export plan</h1><div id="bars"><div id="r1" style="padding:2px 0">Read list 720 ms</div><div id="r2" style="padding:2px 0">Apply filter 180 ms</div><div id="r3" style="padding:2px 0">Write CSV 410 ms</div></div><p id="low" style="margin-top:320px;padding:8px">Ask again next week.</p></body></html>
 `
 const page1 = (page: Page) => page.frameLocator('iframe').first()
-/** the comment counts at the top right corner of the part `sel` of the page (its own counts, not another part's): level
- * with its top, at most half over its right edge (D83 #5) */
+/** the key Taska gives the part `sel` of these pages: the id or data-id it is named by */
+function keyOf(sel: string) {
+  const m = sel.match(/^#([\w-]+)$/) || sel.match(/^\[data-id="([\w-]+)"\]$/)
+  if (!m) throw new Error('no key for ' + sel)
+  return sel.startsWith('#') ? `h:[id='${m[1]}']` : `h:[data-id='${m[1]}']`
+}
+/** the comment counts of the part `sel` of the page, at its top right corner: on its top edge or above it, clear of
+ * its words (T501), or level with its top under a part tight above it; at most half over its right edge (D83 #5) */
 async function countsOn(page: Page, sel: string) {
   const p = await page1(page).locator(sel).boundingBox()
   if (!p) throw new Error('no part ' + sel)
@@ -222,11 +228,17 @@ async function countsOn(page: Page, sel: string) {
     .evaluateAll((bs) =>
       bs.map((b) => {
         const r = b.getBoundingClientRect()
-        return { x: r.x, y: r.y, w: r.width, n: b.textContent || '', draft: b.hasAttribute('data-draft') }
+        return { x: r.x, y: r.y, w: r.width, n: b.textContent || '', key: b.getAttribute('data-count') || '', draft: b.hasAttribute('data-draft') }
       }),
     )
+  const key = keyOf(sel)
   return all.filter(
-    (c) => c.y >= p.y - 2 && c.y <= p.y + Math.max(p.height, 28) && c.x >= p.x && c.x + c.w <= p.x + p.width + c.w / 2 + 2,
+    (c) =>
+      (c.key === key || c.key.startsWith(key + '#')) && // a thread's key is its part's, with its number once it has one
+      c.y >= p.y - 30 &&
+      c.y <= p.y + Math.max(p.height, 28) &&
+      c.x >= p.x &&
+      c.x + c.w <= p.x + p.width + c.w / 2 + 2,
   )
 }
 /** comment on a part as you do: the desktop points at it in Comment mode and presses its comment button; the phone
@@ -505,7 +517,67 @@ test("D83 #5 (r767 r774): a comment's count sits on its part's corner, half over
   const part = await page.frameLocator('iframe').first().locator('#t1').boundingBox(),
     c = await count.boundingBox()
   if (!part || !c) throw new Error('not drawn')
-  expect(c.y).toBeGreaterThanOrEqual(part.y - 2) // level with the part's top
+  expect(c.y).toBeLessThan(part.y) // on its top edge (T501)
+  expect(c.y + c.height).toBeGreaterThanOrEqual(part.y - 2)
   expect(c.x + c.width).toBeGreaterThan(part.x + part.width) // half over its right edge
   expect(c.x).toBeGreaterThan(part.x + part.width - c.width) // covering only its corner
+  expect(await covered(page, c, '#t1')).toBe(false)
+})
+
+/** where the words of the part `sel` of the page are, on the page */
+async function wordsOf(page: Page, sel: string) {
+  const f = await page.locator('iframe').first().boundingBox()
+  if (!f) throw new Error('no page')
+  const rs = await page1(page)
+    .locator(sel)
+    .evaluate((el) => {
+      const out: { x: number; y: number; w: number; h: number }[] = []
+      const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT)
+      const range = document.createRange()
+      for (let n = w.nextNode(); n; n = w.nextNode()) {
+        range.selectNodeContents(n)
+        for (const b of range.getClientRects()) if (b.width > 0 && /\S/.test(n.textContent || '')) out.push({ x: b.x, y: b.y, w: b.width, h: b.height })
+      }
+      return out
+    })
+  return rs.map((r) => ({ ...r, x: r.x + f.x, y: r.y + f.y }))
+}
+/** whether the box c covers any of the words of the part `sel` */
+async function covered(page: Page, c: { x: number; y: number; width: number; height: number }, sel: string) {
+  return (await wordsOf(page, sel)).some((w) => c.x < w.x + w.w && w.x < c.x + c.width && c.y < w.y + w.h && w.y < c.y + c.height)
+}
+
+// a paragraph whose words reach its right edge, right under a short title, and rows of a chart touching (as in D56)
+const WIDE = `${LOOP.then}T4 html Wide page
+  <!doctype html><html><body style="margin:0;padding:16px;font:15px/1.5 sans-serif"><h1 id="title" style="margin:0 0 4px;font-size:24px">Export plan</h1><p id="sub" style="margin:0 0 22px;text-align:justify">Two ways to ship filtered export, what each costs, and what we recommend. Both keep the columns people chose, both write the rows in the order shown, and both finish well inside a second for a list of ten thousand rows.</p><div id="bars"><div id="r1" style="display:flex;justify-content:space-between;padding:1px 0">Read list<span>720 ms</span></div><div id="r2" style="display:flex;justify-content:space-between;padding:1px 0">Apply filter<span>180 ms</span></div></div></body></html>
+`
+test("T501: a part with no room right of it has its count on its top edge, clear of its words; rows touching keep theirs level with their top", async ({
+  page,
+  request,
+}) => {
+  const p = await project(request, { ...LOOP, then: WIDE })
+  await p.op({ op: 'dc', d: 1, key: "h:[id='sub']", quote: 'Two ways', text: 'Which one?' })
+  await p.op({ op: 'dc', d: 1, key: "h:[id='r2']", quote: 'Apply filter 180 ms', text: 'Why so fast?' })
+  await open(page, p, 'D1')
+  for (const [sel, key] of [
+    ['#sub', "h:[id='sub']"],
+    ['#r2', "h:[id='r2']"],
+  ] as const) {
+    await expect(pageCount(page, key)).toBeVisible()
+    await expect.poll(() => countsOn(page, sel).then((c) => c.length)).toBe(1)
+  }
+  const part = await page1(page).locator('#sub').boundingBox(),
+    c = await pageCount(page, "h:[id='sub']").boundingBox()
+  if (!part || !c) throw new Error('not drawn')
+  // the paragraph's words reach its right edge: its count is above them, over the title's empty end, not its words
+  expect(c.x + c.width).toBeGreaterThan(part.x + part.width - 10)
+  expect(c.y).toBeLessThan(part.y)
+  expect(await covered(page, c, '#sub')).toBe(false)
+  expect(await covered(page, c, '#title')).toBe(false)
+  // a row under another one: its count stays level with its top, never over the row above
+  const row = await page1(page).locator('#r2').boundingBox(),
+    rc = await pageCount(page, "h:[id='r2']").boundingBox()
+  if (!row || !rc) throw new Error('not drawn')
+  expect(rc.y).toBeGreaterThanOrEqual(row.y - 2)
+  expect(await covered(page, rc, '#r1')).toBe(false)
 })
