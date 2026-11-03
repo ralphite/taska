@@ -362,11 +362,11 @@ export function HeldRow({ it, code, said, height, on }: { it: Item; code: string
   )
 }
 
-/** A group head: Needs you (amber), the rules' groups (active, retired). */
+/** A group head: Needs you (its rows' mark, smaller), the rules' groups (active, retired). */
 export function Zone({ kind, label, n }: { kind: ZoneKind; label: string; n: number }) {
   const needs = kind === 'needs'
   const mark = needs ? (
-    <span className="size-2 shrink-0 rounded-full bg-amber-500 ring-3 ring-amber-500/20 dark:bg-amber-400" />
+    <StateIcon s="wait" cls="size-4" />
   ) : kind === 'rules' ? (
     <span className="mx-1 size-2 shrink-0 rounded-full bg-zinc-400 dark:bg-zinc-500" />
   ) : (

@@ -2,8 +2,8 @@
 // still coming.
 
 import { useState, type ReactNode } from 'react'
-import { AVATAR_LETTER } from '../model/words'
-import { Icon, type IconName } from './Icon'
+import { AVATAR_LETTER, plural } from '../model/words'
+import { Icon, StateIcon, type IconName } from './Icon'
 
 const BONE = 'rounded-md bg-zinc-200 dark:bg-zinc-800'
 const WIDE = ['w-3/4', 'w-1/2', 'w-2/3', 'w-5/12', 'w-7/12']
@@ -92,6 +92,15 @@ export const Count = ({ icon, n, label }: { icon: IconName; n: ReactNode; label:
   <span className="flex items-center gap-1" title={label}>
     <Icon n={icon} c="size-3.5" />
     {n}
+  </span>
+)
+
+/** How many items need you: the Needs you status mark (the rows' own drawing, smaller) and the number, with "need
+ * you" after it when said. */
+export const NeedsCount = ({ n, said = false, cls = 'text-xs' }: { n: number; said?: boolean; cls?: string }) => (
+  <span data-needs title={`${plural(n, 'item')} ${n === 1 ? 'needs' : 'need'} you`} className={`flex shrink-0 items-center gap-1 font-semibold text-amber-900 tabular-nums dark:text-amber-200 ${cls}`}>
+    <StateIcon s="wait" cls="size-3.5" />
+    {said ? `${n} ${n === 1 ? 'needs' : 'need'} you` : n}
   </span>
 )
 

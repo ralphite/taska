@@ -33,7 +33,7 @@ export interface HeadHere {
   notSaved?: number
   /** the phone's search is open */
   searching?: boolean
-  /** another project needs you (a dot on the phone's menu) */
+  /** another project needs you (the Needs you mark on the phone's menu) */
   otherNeeds?: boolean
   /** the desktop's filters opened */
   filtersOpen?: boolean

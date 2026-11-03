@@ -7,7 +7,7 @@ import { headOf } from '../stories/headFixtures'
 export default { title: 'Components/Around the page/Top bar and list head/List head' } satisfies Meta
 type Story = StoryObj
 
-/** The desktop's search under the bar (/ goes there); the phone's head: the menu with the project's name (a dot when
+/** The desktop's search under the bar (/ goes there); the phone's head: the menu with the project's name (the Needs you mark when
  * another project needs you), the agent, Search. */
 export const ListHead: Story = { name: 'Search box', render: () => <Frames deskWidth={1100} phoneWidth={393} height={200}>{(layout) => headOf(layout === 'desk', { otherNeeds: true })}</Frames> }
 /** Words in the search: each tab says how many it matches, Clear. */

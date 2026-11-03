@@ -12,7 +12,7 @@ const COUNTS: Record<string, number> = { all: 25, every: 197, archive: 281, open
 const views = (on: string, needs = 2): ViewChip[] =>
   VIEWS.map(([value, label]) => {
     const count = value === 'wait' ? needs : (COUNTS[value] ?? 0)
-    return { value, label, count, on: value === on, dot: value === 'wait' && count > 0 }
+    return { value, label, count, on: value === on, needs: value === 'wait' && count > 0 }
   })
 
 /** The row of views: the one shown is dark; more views past the edge fade there, with an arrow on the desktop (the

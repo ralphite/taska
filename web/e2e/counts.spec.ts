@@ -45,7 +45,7 @@ T6 ask Anything else?
   await p.op({ op: 'set', ref: 'T4', f: { archived: true } })
   await p.op({ op: 'set', ref: 'T6', f: { status: 'done' } })
   await open(page, p)
-  const badge = page.locator(`a[data-slug="${p.name}"] [title$="need you"]`),
+  const badge = page.locator(`a[data-slug="${p.name}"] [data-needs]`),
     view = needsCount(page)
   // T1 asks, I2 is proposed, T3 is in review, the rule R5 asks: 4
   await expect(view).toHaveText('4')
@@ -63,13 +63,13 @@ T6 ask Anything else?
 async function showsEverywhere(page: Page, p: Project, n: number) {
   await expect(needsCount(page), 'the Needs you view').toHaveText(String(n))
   if (isDesk(page))
-    await expect(page.locator(`a[data-slug="${p.name}"] [title$="need you"]`), 'the sidebar').toHaveText(String(n))
+    await expect(page.locator(`a[data-slug="${p.name}"] [data-needs]`), 'the sidebar').toHaveText(String(n))
   else {
     await page.getByRole('button', { name: 'Projects and settings', exact: true }).filter({ visible: true }).first().click()
     // its badge alone (the title before it may end in digits too)
     const row = page.locator(`a[data-slug="${p.name}"]`).filter({ visible: true }).first()
-    await expect(row.locator('span.rounded-full', { hasText: /need you$/ }), 'the project list').toHaveText(
-      `${n} need you`,
+    await expect(row.locator('[data-needs]'), 'the project list').toHaveText(
+      `${n} ${n === 1 ? 'needs' : 'need'} you`,
     )
     await page.keyboard.press('Escape')
   }
@@ -117,7 +117,7 @@ I11 merge I3
   // the home table: this project's number, and the total is the sum of the rows
   await page.goto('/')
   const row = page.locator(`a[href="${p.url}"]`).filter({ visible: true }).first()
-  await expect(row.locator('.rounded-full').filter({ hasText: /^\d+$/ })).toHaveText('6')
+  await expect(row.locator('[data-needs]')).toHaveText('6')
   const list = (await (await request.get('/api/projects')).json()) as { needs: number }[]
   const sum = list.reduce((a, x) => a + x.needs, 0)
   if (isDesk(page))

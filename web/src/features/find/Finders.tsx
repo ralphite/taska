@@ -5,7 +5,7 @@ import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { closed, shownStatus } from '../../model/items'
 import type { Item } from '../../model/types'
 import { hay } from '../../model/visible'
-import { ProjTile, Skeleton } from '../../ui/bits'
+import { NeedsCount, ProjTile, Skeleton } from '../../ui/bits'
 import { StateIcon } from '../../ui/Icon'
 import type { SheetParts } from '../../ui/Sheet'
 import { FIELD, TYPE_TEXT } from '../../ui/tones'
@@ -124,7 +124,7 @@ export function Switcher({ rows, loading, onOpen }: { rows: SwitchRow[]; loading
               <ProjTile title={p.title} tone={p.tone} cls="size-6 rounded-md text-xs" />
               <span className={`min-w-0 flex-1 truncate ${p.here ? 'font-semibold' : ''}`}>{p.title}</span>
               {p.here ? <span className="text-xs text-zinc-400">this one</span> : null}
-              {p.needs ? <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900 dark:bg-amber-400/15 dark:text-amber-200">{p.needs} need you</span> : null}
+              {p.needs ? <NeedsCount n={p.needs} said /> : null}
             </a>
           ))
         ) : (

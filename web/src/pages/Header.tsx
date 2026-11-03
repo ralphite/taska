@@ -7,7 +7,7 @@ import { flushSync } from 'react-dom'
 import type { AgentTone } from '../model/agents'
 import { TAB_WORD, type Tab } from '../model/words'
 import { ProjTile } from '../ui/bits'
-import { Icon } from '../ui/Icon'
+import { Icon, StateIcon } from '../ui/Icon'
 
 const PILL: Record<AgentTone, [string, string]> = {
   ready: [
@@ -183,11 +183,9 @@ export function ListHead({
         <button onClick={on.menu} aria-label="Projects and settings" className="flex h-12 min-w-0 flex-1 items-center gap-2.5 rounded-xl px-2.5 text-left data-pressed:bg-zinc-100 dark:data-pressed:bg-zinc-800">
           <span className="relative text-zinc-700 dark:text-zinc-300">
             <Icon n="menu" c="size-6" />
-            <span
-              hidden={!otherNeeds}
-              title="Another project needs you"
-              className="absolute -top-0.5 -right-0.5 size-2.5 rounded-full bg-amber-500 ring-2 ring-white dark:bg-amber-400 dark:ring-zinc-950"
-            />
+            <span hidden={!otherNeeds} title="Another project needs you" className="absolute -top-1 -right-1 rounded-full bg-white dark:bg-zinc-950">
+              <StateIcon s="wait" cls="size-3" />
+            </span>
           </span>
           <span className="truncate text-[19px] font-semibold tracking-tight">{title}</span>
         </button>

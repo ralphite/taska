@@ -3,7 +3,7 @@
 // on the desktop an arrow on it brings that in (the phone swipes, so its edges only fade).
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
-import { Icon } from '../../ui/Icon'
+import { Icon, StateIcon } from '../../ui/Icon'
 import type { ViewChip } from './rows'
 
 export const CHIP =
@@ -88,7 +88,7 @@ export function ViewBar({
       <div ref={row} onScroll={measure} className="flex h-12 [scrollbar-width:none] items-center gap-1 overflow-x-auto px-2">
         {views.map((v) => (
           <button key={v.value} ref={v.on ? shown : undefined} aria-pressed={v.on} onClick={() => onView(v.value)} className={CHIP}>
-            {v.dot ? <span className="size-2 rounded-full bg-amber-500 dark:bg-amber-400" /> : null}
+            {v.needs ? <StateIcon s="wait" cls="size-3.5" /> : null}
             {v.label}
             <span className="font-mono text-[11px] tabular-nums opacity-60">{v.count}</span>
           </button>

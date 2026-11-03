@@ -17,9 +17,11 @@ export function Icon({ n, c = 'size-5', sw = '1.75' }: { n: IconName; c?: string
   )
 }
 
-/** A status's round icon (or "wait": an agent's question waits on you), with its name for screen readers. */
+/** A status's round icon (or "wait": an agent's question waits on you), with its name for screen readers; without a
+ * name it is only a picture beside words that say it (hidden from screen readers). */
 export function StateIcon({ s, label, cls = 'mt-px size-5', tone }: { s: string; label?: string; cls?: string; tone?: string }) {
   const [path, t] = STATE_ICON[s] || STATE_ICON.open
+  const named = label ? { role: 'img', 'aria-label': label } : { 'aria-hidden': true }
   return (
     <svg
       className={`${cls} shrink-0 ${tone ?? t}`}
@@ -29,9 +31,8 @@ export function StateIcon({ s, label, cls = 'mt-px size-5', tone }: { s: string;
       strokeWidth="2"
       strokeLinecap="round"
       strokeLinejoin="round"
-      role="img"
-      aria-label={label}
-      dangerouslySetInnerHTML={{ __html: `<title>${escapeHtml(label ?? '')}</title>${path}` }}
+      {...named}
+      dangerouslySetInnerHTML={{ __html: label ? `<title>${escapeHtml(label)}</title>${path}` : path }}
     />
   )
 }

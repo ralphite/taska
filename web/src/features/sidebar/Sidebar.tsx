@@ -4,9 +4,8 @@
 
 import { useRef, type ReactNode, type Ref } from 'react'
 import { useOrderDrag } from './orderDrag'
-import { plural } from '../../model/words'
-import { Kbd, ProjTile, Skeleton } from '../../ui/bits'
-import { Icon, type IconName } from '../../ui/Icon'
+import { Kbd, NeedsCount, ProjTile, Skeleton } from '../../ui/bits'
+import { Icon, StateIcon, type IconName } from '../../ui/Icon'
 
 export interface SideProject {
   slug: string
@@ -86,11 +85,7 @@ export function ProjectRows({ phone, projects, on }: { phone: boolean; projects:
             <span className="min-w-0 flex-1">
               <span className="flex items-center gap-2">
                 <span className="min-w-0 flex-1 truncate text-[17px] font-medium group-aria-[current=page]:font-semibold">{p.title}</span>
-                {p.needs ? (
-                  <span className="shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900 dark:bg-amber-400/15 dark:text-amber-200">
-                    {p.needs} need you
-                  </span>
-                ) : null}
+                {p.needs ? <NeedsCount n={p.needs} said /> : null}
               </span>
               <span className="mt-0.5 block text-xs text-zinc-500 dark:text-zinc-400">{p.open} open</span>
             </span>
@@ -113,14 +108,7 @@ export function ProjectRows({ phone, projects, on }: { phone: boolean; projects:
             <span className="min-w-0 flex-1">
               <span className="flex items-center gap-1.5">
                 <span className={`min-w-0 flex-1 truncate text-sm ${p.current ? 'font-semibold' : 'font-medium'}`}>{p.title}</span>
-                {p.needs ? (
-                  <span
-                    title={`${plural(p.needs, 'item')} need you`}
-                    className="grid h-5 min-w-5 shrink-0 place-items-center rounded-full bg-amber-100 px-1 text-[11px] font-bold text-amber-900 dark:bg-amber-400/15 dark:text-amber-200"
-                  >
-                    {p.needs}
-                  </span>
-                ) : null}
+                {p.needs ? <NeedsCount n={p.needs} cls="text-[11px]" /> : null}
               </span>
               <span className="block text-[11px] text-zinc-500 dark:text-zinc-400">{p.open} open</span>
             </span>
@@ -358,7 +346,8 @@ export function Rail({ projects, composing, settingsOpen, hidden, on }: { projec
           >
             <ProjTile title={p.title} tone={p.tone} cls="size-7 rounded-lg text-xs" />
             {p.needs ? (
-              <span className="absolute -top-0.5 -right-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-amber-500 px-1 text-[10px] font-bold text-white dark:bg-amber-400 dark:text-amber-950">
+              <span className="absolute -top-1 -right-1 flex h-4 items-center gap-px rounded-full bg-white pr-1 pl-0.5 text-[10px] font-bold text-amber-900 tabular-nums ring-1 ring-zinc-900/10 dark:bg-zinc-900 dark:text-amber-200 dark:ring-white/15">
+                <StateIcon s="wait" cls="size-3" />
                 {p.needs}
               </span>
             ) : null}

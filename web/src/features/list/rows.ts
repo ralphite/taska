@@ -171,7 +171,8 @@ export interface ViewChip {
   label: string
   count: number
   on: boolean
-  dot: boolean
+  /** shows the Needs you mark: the Needs you view, with something waiting */
+  needs: boolean
 }
 
 /** The views' row: each view with what it would show now (the search and filters set count too). */
@@ -179,10 +180,10 @@ export function viewChips(m: ProjectModel, tab: Tab, list: ListQuery): ViewChip[
   return VIEWS.map(([value, label]) => {
     if (value === 'archive') {
       const n = visible(m.items, 'archive', tab === 'archive' ? list : { ...list, status: 'all' }).length
-      return { value, label, count: n, on: tab === 'archive', dot: false }
+      return { value, label, count: n, on: tab === 'archive', needs: false }
     }
     const asItems = tab !== 'items' ? { q: list.q, type: 'all', when: 'all', status: value, pri: 'all', sort: 'all' } : { ...list, status: value }
     const n = visible(m.items, 'items', asItems).length
-    return { value, label, count: n, on: tab === 'items' && list.status === value, dot: value === 'wait' && n > 0 }
+    return { value, label, count: n, on: tab === 'items' && list.status === value, needs: value === 'wait' && n > 0 }
   })
 }

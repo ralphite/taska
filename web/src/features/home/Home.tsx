@@ -6,7 +6,7 @@ import { useState, type MouseEvent, type Ref } from 'react'
 import type { SearchHit } from '../../model/types'
 import { inputCode } from '../../model/words'
 import { Icon } from '../../ui/Icon'
-import { ProjTile, Skeleton } from '../../ui/bits'
+import { NeedsCount, ProjTile, Skeleton } from '../../ui/bits'
 import { DISABLED } from '../../ui/tones'
 
 export interface HomeRow {
@@ -235,7 +235,7 @@ export function Home({ facts, on, searchRef }: { facts: HomeFacts; on: HomeEvent
                     <span className="hidden tabular-nums lg:block">{p.open}</span>
                     <span className="ml-auto shrink-0 lg:ml-0">
                       {p.needs ? (
-                        <span className="rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900 dark:bg-amber-400/15 dark:text-amber-200">{p.needs}</span>
+                        <NeedsCount n={p.needs} />
                       ) : (
                         <span className="hidden text-zinc-300 lg:inline dark:text-zinc-600">—</span>
                       )}

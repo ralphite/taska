@@ -72,7 +72,7 @@ export function searchView(s: SearchNow, p: SearchPlace): SearchView {
     doubts: toCheck ? { spots: spotsIn(s.words, s.heard), toCheck } : null,
     rec: s.phase === 'listening' ? { time: clock(s.ms), levels: s.levels } : null,
     kinds: a
-      ? [{ value: 'all', label: 'All', count: a.found.length, on: s.kind === 'all', dot: false }, ...foundKinds(a).map(([k, label, n]) => ({ value: k, label, count: n, on: s.kind === k, dot: false }))]
+      ? [{ value: 'all', label: 'All', count: a.found.length, on: s.kind === 'all', needs: false }, ...foundKinds(a).map(([k, label, n]) => ({ value: k, label, count: n, on: s.kind === k, needs: false }))]
       : null,
     groups: a ? foundGroups(a, p.here, p.order, s.kind).map((g) => ({ project: g.project, title: g.project === p.here && p.m ? p.m.facts.title : g.title, tone: p.tone(g.project), rows: g.rows.flatMap(row) })) : null,
     marks,
