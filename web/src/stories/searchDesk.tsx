@@ -407,7 +407,7 @@ export function SearchModal({ f, set, onOpen, onClose }: { f: Desk; set(p: Parti
     if (e.key === 'Enter' && !e.metaKey && !e.ctrlKey) return (stop(), open(lit))
   }
   const kinds = a
-    ? [{ value: 'all', label: 'All', count: narrowed.length, on: f.kind === 'all', dot: false }, ...FIND_KINDS.map(([k, label]) => ({ value: k, label, count: narrowed.filter((x) => x.kind === k).length, on: f.kind === k, dot: false })).filter((c) => c.count || c.on)]
+    ? [{ value: 'all', label: 'All', count: narrowed.length, on: f.kind === 'all', needs: false }, ...FIND_KINDS.map(([k, label]) => ({ value: k, label, count: narrowed.filter((x) => x.kind === k).length, on: f.kind === k, needs: false })).filter((c) => c.count || c.on)]
     : null
   const listRows = (
     <div ref={list} className={`flex flex-col gap-0.5 p-1.5 transition-opacity ${faded ? 'opacity-45' : ''}`}>
