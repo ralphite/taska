@@ -8,4 +8,4 @@ import { docAt } from '../../stories/docPage'
 export default { title: 'Components/Document/Commenting/Circle to select' } satisfies Meta
 type Story = StoryObj
 
-export const CircleToSelect: Story = { name: 'Circle to select', render: () => <Frames height={760} deskWidth={900} phoneWidth={393}>{(layout) => docAt(doc(), layout === 'desk', { circle: true })}</Frames> }
+export const CircleToSelect: Story = { name: 'Circling paragraphs to pick them', render: () => <Frames height={760} deskWidth={900} phoneWidth={393}>{(layout) => docAt(doc(), layout === 'desk', { circle: true })}</Frames> }

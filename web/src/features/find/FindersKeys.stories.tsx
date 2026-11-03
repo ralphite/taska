@@ -9,4 +9,4 @@ export default { title: 'Components/Menus and sheets/Sheets/Keyboard shortcuts' 
 type Story = StoryObj
 
 /** ?: every key. */
-export const Keys: Story = { ...one((desk) => opened(keysSheet(keyHelp()), desk), undefined, 900), name: 'Keyboard shortcuts' }
+export const Keys: Story = { ...one((desk) => opened(keysSheet(keyHelp()), desk), undefined, 900), name: 'Every shortcut' }

@@ -13,7 +13,7 @@ const PLAN = doc()
 const one = (isNew: boolean, f: Parameters<typeof editAt>[3] = {}): Story => ({ render: () => <Frames height={560} deskWidth={900} phoneWidth={393}>{(layout) => editAt(isNew ? null : PLAN, isNew ? '' : noteText(PLAN), layout === 'desk', f)}</Frames> })
 
 /** Its text, the first line its title, with Speak, Discard and Save. */
-export const Editing: Story = { ...one(false), name: 'Editor' }
+export const Editing: Story = { ...one(false), name: 'Editing a document' }
 export const NewDocument: Story = { ...one(true), name: 'New document' }
 /** Speak pressed: words go where the caret is, and typing goes on. */
 export const Listening: Story = { ...one(false, { rec: { ms: 7000 } }), name: 'Speaking into it' }

@@ -24,5 +24,5 @@ const one = (fit: boolean, idx: number, count: number): Story => ({
 })
 
 /** The second of three pictures, fit to the screen. */
-export const Fit: Story = { ...one(true, 1, 3), name: 'Picture viewer' }
+export const Fit: Story = { ...one(true, 1, 3), name: 'Fitted to the window' }
 export const Zoomed: Story = { ...one(false, 0, 1), name: 'At 100%' }

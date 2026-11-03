@@ -13,6 +13,7 @@ const on = { pick: () => {}, escape: () => {}, select: () => {} }
 
 /** On the New input page: words to check; a voice note still being transcribed; words to correct. */
 export const Cards: Story = {
+  name: 'Words to check, being written out, to correct',
   render: () => (
     <Frames phone={false} deskWidth={720}>
       {() => (
