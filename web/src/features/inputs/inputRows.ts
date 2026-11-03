@@ -20,12 +20,17 @@ export interface InputRowsWith {
   writing: Parameters<typeof inputDraft>[2]
   lit: string | null
   litStill: boolean
+  /** how many to draw, newest first (more come as the list scrolls to its end, B645); the one gone to is always
+   * among them */
+  upTo: number
 }
 
-export function inputRows(m: ProjectModel, a: InputRowsWith): InputFacts[] {
-  const list = newestFirst(m.inputs).filter((r) => inputMatch(r, a.words))
+/** The rows drawn, and how many inputs match in all. */
+export function inputRows(m: ProjectModel, a: InputRowsWith): { rows: InputFacts[]; total: number } {
+  const all = newestFirst(m.inputs).filter((r) => inputMatch(r, a.words))
+  const list = all.slice(0, Math.max(a.upTo, all.findIndex((r) => r.id === a.lit) + 1 + 10))
   let day = ''
-  return list.map((r): InputFacts => {
+  const rows = list.map((r): InputFacts => {
     const d = dayOf(r.t, new Date(m.at))
     const startsDay = d !== day
     day = d
@@ -67,6 +72,7 @@ export function inputRows(m: ProjectModel, a: InputRowsWith): InputFacts[] {
       opened: a.opened.has(r.id),
     }
   })
+  return { rows, total: all.length }
 }
 
 /** What this project's outbox still has on its way, the latest first, and where each is (`away`: how long Taska has

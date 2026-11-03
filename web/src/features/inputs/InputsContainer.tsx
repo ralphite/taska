@@ -1,7 +1,7 @@
 // The phone's Inputs tab with the page's data: each input with where it stands and what became of it, newest first
 // by day, and what is still on its way.
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useServices, useStores, useStoreValue } from '../../app/context'
 import { NEW_DRAFT } from '../../model/draftTarget'
 import { clock } from '../../model/time'
@@ -14,6 +14,9 @@ import { Thumbs } from '../../ui/Files'
 import { useBoxHere } from '../../app/inputs/boxHere'
 import { InputsView, type InputFacts } from './InputsView'
 import { inputRows, outgoingRows } from './inputRows'
+
+/** how many inputs are drawn at first, and how many more each time the list nears its end */
+const PAGE = 40
 
 export function InputsContainer({ route, hidden }: { route: ProjectRoute; hidden: boolean }) {
   const app = useServices('box', 'docs', 'fields', 'inputActions', 'inputs', 'nav', 'sheets')
@@ -35,21 +38,28 @@ export function InputsContainer({ route, hidden }: { route: ProjectRoute; hidden
   const { key: boxKey } = useBoxHere(route)
   const lit = useStoreValue(stores.ui, (s) => s.lit)
   const litStill = useStoreValue(stores.ui, (s) => s.litStill)
-  const rows: InputFacts[] = useMemo(() => {
-    if (!m || hidden) return []
+  // a screenful and more at first, then more as the list scrolls to its end: opening the tab never waits on drawing
+  // every input (B645)
+  const [upTo, setUpTo] = useState(PAGE)
+  const { rows, total }: { rows: InputFacts[]; total: number } = useMemo(() => {
+    if (!m || hidden) return { rows: [], total: 0 }
     const title = (slug: string) => projects?.find((p) => p.name === slug)?.title || slug
-    return inputRows(m, { words, title, opened, drafts: draftWords || stores.drafts.getState().of(route.slug), writing, lit, litStill })
-  }, [m, hidden, words, projects, opened, draftWords, stores, route.slug, writing, lit, litStill])
+    return inputRows(m, { words, title, opened, drafts: draftWords || stores.drafts.getState().of(route.slug), writing, lit, litStill, upTo })
+  }, [m, hidden, words, projects, opened, draftWords, stores, route.slug, writing, lit, litStill, upTo])
+  // an input gone to further down is drawn with those above it, and stays drawn once it is no longer lit (React's
+  // adjust-state-while-rendering pattern)
+  if (rows.length > upTo) setUpTo(rows.length)
   const outgoing = outgoingRows(outbox, route.slug, away)
   return (
     <InputsView
       recording={recording}
       hidden={hidden}
       rows={rows}
+      more={total > rows.length}
       outgoing={outgoing}
       words={words}
       world={world}
-      hints={hints(rows.length)}
+      hints={hints(total)}
       files={(f) => <Thumbs files={f} url={world.url} size="size-11" play={media.play} tidy={media.tidy} on={media.on} />}
       on={{
         goto: (n) => m && app.nav.openItem(codeOf(m, n), 'items'),
@@ -67,6 +77,7 @@ export function InputsContainer({ route, hidden }: { route: ProjectRoute; hidden
         picture: (f, all) => media.on.view(f, all),
         outboxRetry: () => void app.inputs.flush(),
         outboxEdit: () => app.box.editOutgoing(route.slug, boxKey) && app.fields.focus('box'),
+        end: () => setUpTo((n) => n + PAGE),
       }}
     />
   )

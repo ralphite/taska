@@ -1,7 +1,7 @@
 // The phone's Inputs tab: everything you said, newest first by day, each with what became of it (the items it made
 // or changed, the organizer's note) and what you can do about it; what is still on its way on top. Props only.
 
-import { useRef, type ReactNode } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import { voiceMark, type InputStanding } from '../../model/inputs'
 import { LIT, useLitRow } from './litRow'
 import type { FileRef, Input, ItemType } from '../../model/types'
@@ -68,6 +68,8 @@ export interface InputEvents {
   /** what is on its way and was not sent: send it again, or take it back into the box */
   outboxRetry(): void
   outboxEdit(): void
+  /** the list scrolled to its last drawn rows: draw more */
+  end(): void
 }
 
 const dot = (cls: string) => <span className={`size-1.5 animate-pulse rounded-full ${cls}`} />
@@ -242,9 +244,11 @@ export function OutboxRows({ list, on }: { list: OutgoingRow[]; on: Pick<InputEv
   )
 }
 
-export function InputsView({ hidden, rows, outgoing, words, world, files, hints, recording = null, on }: {
+export function InputsView({ hidden, rows, more, outgoing, words, world, files, hints, recording = null, on }: {
   hidden: boolean
   rows: InputFacts[]
+  /** older inputs not drawn yet: they come when the list nears its end */
+  more: boolean
   outgoing: OutgoingRow[]
   /** a voice note being recorded into a new input: how long so far (it shows first, B627) */
   recording?: string | null
@@ -257,6 +261,18 @@ export function InputsView({ hidden, rows, outgoing, words, world, files, hints,
 }) {
   const ref = useRef<HTMLElement | null>(null)
   useMarks(ref, words)
+  const end = useRef<HTMLDivElement | null>(null)
+  const told = useRef(on.end)
+  useEffect(() => {
+    told.current = on.end
+  })
+  useEffect(() => {
+    const e = end.current
+    if (!e || !more || hidden) return
+    const o = new IntersectionObserver((seen) => seen.some((x) => x.isIntersecting) && told.current(), { root: ref.current, rootMargin: '0px 0px 800px 0px' })
+    o.observe(e)
+    return () => o.disconnect()
+  }, [more, hidden, rows.length])
   return (
     <section
       data-part="inputs"
@@ -284,6 +300,7 @@ export function InputsView({ hidden, rows, outgoing, words, world, files, hints,
               <InputCard x={x} words={words} world={world} files={files} on={on} />
             </div>
           ))}
+          {more ? <div ref={end} aria-hidden className="h-24" /> : null}
           {words.length ? <div className="flex flex-col py-4">{hints}</div> : null}
         </>
       ) : outgoing.length || recording ? null : (

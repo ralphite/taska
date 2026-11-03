@@ -82,23 +82,23 @@ export interface Said {
 const title = (slug: string) => ({ 'mobile-app': 'Mobile app' })[slug] ?? slug
 const project = (s: Said, items = ITEMS) => modelOf(items, s.inputs ?? DAY, { organizer: { on: !!s.organizer, model: 'gemini-flash-latest', busy: s.busy ?? null } })
 const thumbs = (size: string) => (f: FileRef[]) => <Thumbs files={f} url={(x) => (x.endsWith('.png') ? PICTURE : '#' + x)} size={size} play={() => ({ playing: false, t: null })} tidy on={{ play() {}, words() {}, view() {} }} />
-const noInput: InputEvents = { goto() {}, more() {}, menu() {}, retry() {}, draft() {}, moved() {}, ref() {}, picture() {}, outboxRetry() {}, outboxEdit() {} }
+const noInput: InputEvents = { goto() {}, more() {}, menu() {}, retry() {}, draft() {}, moved() {}, ref() {}, picture() {}, outboxRetry() {}, outboxEdit() {}, end() {} }
 
 function rowsOf(s: Said) {
   const m = project(s)
   const words = searchWords(s.q ?? '')
   const drafts = Object.fromEntries((s.editDrafts ?? []).map((id) => [draftKey({ kind: 'amend', mode: 'edit', id }), 'my edit']))
-  const rows = inputRows(m, { words, title, opened: new Set(s.opened), drafts, writing: null, lit: s.lit ?? null, litStill: !!s.litStill })
-  return { m, words, rows }
+  const { rows, total } = inputRows(m, { words, title, opened: new Set(s.opened), drafts, writing: null, lit: s.lit ?? null, litStill: !!s.litStill, upTo: 40 })
+  return { m, words, rows, total }
 }
 
 /** The phone's Inputs tab as the page draws it. */
 export function inputsOf(s: Said = {}) {
-  const { m, words, rows } = rowsOf(s)
-  const hints = words.length ? <SearchHints other={otherTabs(m, words, 'inputs', rows.length)} cross={{ list: [], failed: false, q: words.join(' ') }} tone={() => PROJECT_TONES[1]} onShow={() => {}} onGo={() => {}} /> : null
+  const { m, words, rows, total } = rowsOf(s)
+  const hints = words.length ? <SearchHints other={otherTabs(m, words, 'inputs', total)} cross={{ list: [], failed: false, q: words.join(' ') }} tone={() => PROJECT_TONES[1]} onShow={() => {}} onGo={() => {}} /> : null
   return (
     <div className="flex h-full flex-col">
-      <InputsView hidden={false} rows={rows} outgoing={outgoingRows(s.outbox ?? [], 'demo', s.away ?? 0)} words={words} world={talkEnv(m, false).world} hints={hints} files={thumbs('size-11')} recording={s.recording ?? null} on={noInput} />
+      <InputsView hidden={false} rows={rows} more={total > rows.length} outgoing={outgoingRows(s.outbox ?? [], 'demo', s.away ?? 0)} words={words} world={talkEnv(m, false).world} hints={hints} files={thumbs('size-11')} recording={s.recording ?? null} on={noInput} />
     </div>
   )
 }
