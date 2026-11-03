@@ -12,7 +12,7 @@ import { notSavedRows } from './notSavedRows'
 import { projectMenuSheet } from '../../ui/ProjectSheets'
 
 export function ProjectMenuSheet({ req }: { req: Extract<SheetRequest, { kind: 'project-menu' }> }) {
-  const app = useServices('nav', 'sheets')
+  const app = useServices('nav', 'settings', 'sheets')
   const stores = useStores('data')
   const route = useProjectRoute()
   const here = route?.slug === req.slug
@@ -34,7 +34,9 @@ export function ProjectMenuSheet({ req }: { req: Extract<SheetRequest, { kind: '
         {
           open: done(() => app.nav.to(`/p/${encodeURIComponent(req.slug)}/`)),
           settings: done(() => app.nav.to(`/p/${encodeURIComponent(req.slug)}/settings`)),
-          manage: done(() => app.nav.to(base + 'projects')),
+          // renamed where projects are named (Settings › Projects); deleted at once, Undo brings it back
+          rename: done(() => (app.nav.to(base + 'projects'), app.settings.rename(req.slug))),
+          remove: done(() => void app.settings.remove(req.slug, route?.slug ?? '')),
         },
       )}
     />

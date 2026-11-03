@@ -7,6 +7,7 @@ import type { Spelling, VoicePrefs } from '../../model/types'
 import { plural } from '../../model/words'
 import { Kbd, ProjTile } from '../../ui/bits'
 import { Icon } from '../../ui/Icon'
+import { NewProjectForm } from '../../ui/NewProjectForm'
 import { DISABLED, FIELD, P_BTN, PRIMARY, SECOND } from '../../ui/tones'
 import { CopyBtn, Loading, Part, Setting, TextBox, Toggle } from './SettingsParts'
 
@@ -93,27 +94,9 @@ const goneTile = (title: string) => (
 const ROW_ACT = 'lg:opacity-0 lg:group-hover:opacity-100 lg:group-focus-within:opacity-100'
 
 export function ProjectsBody({ f, on }: { f: ProjectsFacts; on: ProjectsEvents }) {
-  const [name, setName] = useState(f.pNewText)
   if (!f.live) return <Loading />
   const add = f.pNew ? (
-    <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-      <div className="flex items-center gap-1.5">
-        <NameField value={f.pNewText} label="New project name" cls="h-10 py-1.5 text-sm" onValue={setName} onEnter={(v) => on.create(v)} onEsc={() => on.newProject(false)} />
-        <button onClick={() => on.create(name)} disabled={!name.trim()} className={`h-10 shrink-0 rounded-xl bg-zinc-900 px-3.5 text-sm font-semibold text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200 ${DISABLED}`}>
-          Create
-        </button>
-        <button onClick={() => on.newProject(false)} aria-label="Cancel" className="grid size-10 shrink-0 place-items-center rounded-xl text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800">
-          <Icon n="x" c="size-4" />
-        </button>
-      </div>
-      {f.pErr ? (
-        <p className="px-1 text-xs text-red-600 dark:text-red-400">{f.pErr}</p>
-      ) : (
-        <p className="px-1 text-xs text-zinc-500 dark:text-zinc-400">
-          <Kbd k="↵" /> create and open it · <Kbd k="Esc" /> cancel
-        </p>
-      )}
-    </div>
+    <NewProjectForm value={f.pNewText} error={f.pErr} onCreate={on.create} onCancel={() => on.newProject(false)} />
   ) : (
     <button onClick={() => on.newProject(true)} className={`${SECOND} shrink-0`}>
       <Icon n="plus" c="size-4" sw="2" />
@@ -291,14 +274,14 @@ export function PhonePushBody({ standalone, onPhone, phoneHref = '', push = null
       <>
         <Setting
           title={push.blocked ? 'Blocked by the phone' : push.sub ? 'On' : 'Off'}
-          about="Alerts when something needs you, even with Taska closed."
+          about={push.blocked ? "Allow notifications for Taska in the phone's Settings." : 'Alerts when something needs you, even with Taska closed.'}
           control={
             push.sub ? (
               <button onClick={push.on.turnOff} className={SECOND}>
                 Turn off
               </button>
-            ) : (
-              <button onClick={push.on.turnOn} disabled={push.blocked} className={PRIMARY}>
+            ) : push.blocked ? null : (
+              <button onClick={push.on.turnOn} className={PRIMARY}>
                 Turn on
               </button>
             )

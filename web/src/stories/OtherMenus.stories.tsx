@@ -13,7 +13,7 @@ type Story = StoryObj
 
 const both = (draw: (desk: boolean) => ReturnType<typeof opened>, height = 480): Story => ({ render: () => <Frames height={height} deskWidth={900} phoneWidth={393}>{(layout) => draw(layout === 'desk')}</Frames> })
 const home = { slug: 'home', title: 'Home', tone: PROJECT_TONES[1], open: 13 }
-const projectOn = acts('Project menu', ['open', 'settings', 'manage'])
+const projectOn = acts('Project menu', ['open', 'settings', 'rename', 'remove'])
 
 /** A message's ⋯: hide it from the talk. */
 export const MessageMenu: Story = { ...both((desk) => opened(messageMenuSheet(act('Message menu: hide')), desk, { look: desk ? { pop: true, at: AT_BUTTON } : {} }), 320), name: 'Message' }

@@ -85,7 +85,8 @@ function linked(m: World, text: string): LogPart[] {
 export function logSentence(m: World, e: LogRow): LogSentence {
   return {
     key: '#' + e.seq,
-    who: whoName(e.who),
+    // your own changes need no name (single user)
+    who: e.who === 'you' ? '' : whoName(e.who),
     session: e.ses || '',
     parts: linked(m, said(m, e.what)),
     time: `${e.t.slice(5, 10)} ${e.t.slice(11, 16)}`,

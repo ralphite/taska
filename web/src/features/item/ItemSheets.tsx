@@ -60,7 +60,7 @@ export function sourcesSheet({ code, inputs, world, now, files }: { code: string
   }
 }
 
-/** A message's menu: hide it (it folds to one line). */
+/** A message's menu: Hide (it folds to one line). */
 export function messageMenuSheet(onHide: () => void): SheetParts {
   return {
     menu: true,
@@ -69,7 +69,7 @@ export function messageMenuSheet(onHide: () => void): SheetParts {
       <div className="-mx-1 flex flex-col gap-0.5">
         <button onClick={onHide} className={MENU_ROW}>
           <Icon n="shrink" c="size-4 text-zinc-500 dark:text-zinc-400" />
-          Hide (folds to one line)
+          Hide
         </button>
       </div>
     ),

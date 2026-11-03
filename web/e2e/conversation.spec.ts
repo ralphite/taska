@@ -84,10 +84,11 @@ I2 ask Worth doing?
       .evaluate((s) => s.innerHTML)
   }
   const tick = 'M20 6 9 17l-5-5'
-  const notYet = await icon('T1', 'Not yet')
+  // said in the past tense once chosen (R3-4 #1): Sent back, Declined
+  const notYet = await icon('T1', 'Sent back')
   expect(notYet).toContain('M3 3v5h5') // the reopen arrow, as on its button
   expect(notYet).not.toContain(tick)
-  const wontDo = await icon('I2', "Won't do")
+  const wontDo = await icon('I2', 'Declined')
   expect(wontDo).toContain('m4.9 4.9 14.2 14.2') // the ban sign, as on its button
   expect(wontDo).not.toContain(tick)
 })
@@ -104,10 +105,10 @@ test('D77 #10 r1003 r1007: finished work sent back with Not yet keeps both butto
   await op(request, p, { op: 'set', ref: 'T1', f: { status: 'open' } })
   await open(page, p, 'T1')
   // the card keeps both buttons where they were, as they were (their icons too), greyed and not to be pressed
-  // (r1003, r1007); Not yet, what you chose, keeps its word
+  // (r1003, r1007); Not yet, what you chose, said as done: Sent back (R3-4 #1)
   const kept = (label: string) => pane(page).getByRole('button', { name: new RegExp(`^${label}`) }).filter({ visible: true })
-  await expect(kept('Not yet')).toBeDisabled()
-  await expect(kept('Not yet').locator('svg').first()).toBeVisible()
+  await expect(kept('Sent back')).toBeDisabled()
+  await expect(kept('Sent back').locator('svg').first()).toBeVisible()
   await expect(kept('Accept')).toHaveCount(1)
   await expect(kept('Accept')).toBeDisabled()
 })

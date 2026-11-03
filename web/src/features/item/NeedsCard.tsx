@@ -79,7 +79,7 @@ export function NeedFrame({ icon, title, t, done = false, body, foot, hint = '',
 }
 
 /** A decision's button word once it is made. */
-const PAST: Record<string, string> = { Approve: 'Approved', Accept: 'Accepted', "Won't do": "Won't do", 'Not yet': 'Not yet' }
+const PAST: Record<string, string> = { Approve: 'Approved', Accept: 'Accepted', "Won't do": 'Declined', 'Not yet': 'Sent back' }
 
 /** Approve or Accept as well as answering (a button like any other while it can be pressed); decided, it says what you
  * chose. */

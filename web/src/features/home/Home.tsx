@@ -2,12 +2,12 @@
 // project made in place; a deleted project's old link says so (Restore), and so does a project that never was.
 // Props only.
 
-import { useState, type MouseEvent, type Ref } from 'react'
+import type { MouseEvent, Ref } from 'react'
 import type { SearchHit } from '../../model/types'
 import { inputCode } from '../../model/words'
 import { Icon } from '../../ui/Icon'
+import { NewProjectForm } from '../../ui/NewProjectForm'
 import { Hit, NeedsCount, ProjTile, Skeleton } from '../../ui/bits'
-import { DISABLED } from '../../ui/tones'
 
 export interface HomeRow {
   name: string
@@ -69,9 +69,6 @@ function AgentCell({ agent }: { agent: HomeRow['agent'] }) {
 }
 
 function NewProject({ making, on }: { making: { error: string } | null; on: HomeEvents }) {
-  const [title, setTitle] = useState('')
-  const [field, setField] = useState<HTMLInputElement | null>(null)
-  const create = () => (title.trim() ? on.create(title.trim()) : field?.focus()) // any name: spaces, Chinese, emoji
   if (!making)
     return (
       <button onClick={on.startNew} className="mt-1 flex h-12 w-full items-center gap-3 rounded-2xl px-3 text-[15px] font-medium text-blue-600 dark:text-blue-400">
@@ -79,39 +76,10 @@ function NewProject({ making, on }: { making: { error: string } | null; on: Home
         New project
       </button>
     )
+  // any name: spaces, Chinese, emoji
   return (
     <div className="mt-1 px-1">
-      <div className="flex items-center gap-1.5">
-        <input
-          ref={setField}
-          autoFocus
-          className="h-11 w-full min-w-0 flex-1 rounded-xl border border-zinc-200 bg-white px-3 text-base outline-none focus:border-zinc-400 dark:border-zinc-700 dark:bg-zinc-950"
-          placeholder="Project name"
-          aria-label="New project name"
-          autoComplete="off"
-          spellCheck={false}
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
-              e.preventDefault()
-              create()
-            }
-            if (e.key === 'Escape') on.cancelNew()
-          }}
-        />
-        <button onClick={create} disabled={!title.trim()} className={`h-11 shrink-0 rounded-xl bg-zinc-900 px-4 text-[15px] font-semibold text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white ${DISABLED}`}>
-          Create
-        </button>
-        <button aria-label="Cancel" onClick={on.cancelNew} className="grid size-11 shrink-0 place-items-center rounded-xl text-zinc-500 hover:bg-zinc-200/70 hover:text-zinc-800 dark:hover:bg-zinc-800 dark:hover:text-zinc-200">
-          <Icon n="x" c="size-4" sw="2" />
-        </button>
-      </div>
-      {making.error ? (
-        <p role="alert" className="px-2 pt-1.5 text-[13px] text-red-600 dark:text-red-400">
-          {making.error}
-        </p>
-      ) : null}
+      <NewProjectForm error={making.error} onCreate={on.create} onCancel={on.cancelNew} />
     </div>
   )
 }

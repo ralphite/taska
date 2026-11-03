@@ -104,8 +104,9 @@ export function ActivityList({ rows, end, picked, asking, on }: { rows: Activity
           </span>
           <span className="shrink-0 pt-px font-mono text-[11px] whitespace-nowrap text-zinc-400 dark:text-zinc-500">{s.time}</span>
           {undo != null ? (
-            <button onClick={() => on.undo(undo)} className={`${HOVER_BTN} -my-1`}>
-              {asking.has(undo) ? 'Click again to undo' : 'Undo'}
+            // on the desktop over the time, under the pointer (or while it asks), so it takes no room of its own
+            <button onClick={() => on.undo(undo)} className={`${HOVER_BTN} -my-1 lg:absolute lg:top-2 lg:right-2 lg:my-0 lg:min-w-28 lg:bg-zinc-50 lg:text-right dark:lg:bg-zinc-900 ${asking.has(undo) ? 'lg:opacity-100' : ''}`}>
+              {asking.has(undo) ? 'Undo?' : 'Undo'}
             </button>
           ) : null}
         </div>

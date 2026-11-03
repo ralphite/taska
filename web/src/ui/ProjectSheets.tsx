@@ -3,6 +3,7 @@
 import { Icon } from './Icon'
 import type { IconName } from './icon-paths'
 import { ProjTile } from './bits'
+import { DANGER, MENU_SEP } from './tones'
 import type { SheetParts } from './Sheet'
 
 export interface OtherProject {
@@ -80,7 +81,8 @@ export function moveInputSheet({ code, words, others, made, byOrganizer, scope }
 export interface ProjectMenuEvents {
   open(): void
   settings(): void
-  manage(): void
+  rename(): void
+  remove(): void
 }
 
 /** A project's menu: opened from its own name above it, it does not say that name again. */
@@ -110,8 +112,12 @@ export function projectMenuSheet({ here, slug, title, tone, open }: { here: bool
       <div className="-mx-1 flex flex-col">
         {here ? null : row('open', 'arrow', 'Open', on.open)}
         {row('settings', 'gear', 'Project settings', on.settings, here ? 'G S' : '')}
-        <div className="my-1.5 border-t border-zinc-100 dark:border-zinc-800" />
-        {row('manage', 'pencil', 'Rename or delete…', on.manage)}
+        {row('rename', 'pencil', 'Rename…', on.rename)}
+        <div className={MENU_SEP} />
+        <button key="remove" onClick={on.remove} className={`flex h-9 w-full items-center gap-3 rounded-lg px-2.5 text-left text-sm hover:bg-red-50 dark:hover:bg-red-400/10 ${DANGER}`}>
+          <Icon n="trash" c="size-[18px]" />
+          <span className="min-w-0 flex-1 truncate">Delete</span>
+        </button>
       </div>
     ),
   }

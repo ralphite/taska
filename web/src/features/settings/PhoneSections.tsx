@@ -7,6 +7,7 @@ import type { ItemType } from '../../model/types'
 import { plural } from '../../model/words'
 import { ProjTile, Skeleton } from '../../ui/bits'
 import { Icon } from '../../ui/Icon'
+import { NewProjectForm } from '../../ui/NewProjectForm'
 import { P_BTN, SECOND, TYPE_TEXT } from '../../ui/tones'
 import { Empty } from '../../ui/bits'
 import { LogLine, LogMore, type LogEvents } from '../../ui/Log'
@@ -16,7 +17,6 @@ import { PH_GROUP, PhLabel, Ruled } from './SettingsParts'
 const PILL = 'flex h-11 shrink-0 items-center gap-1.5 rounded-xl bg-zinc-100 px-3.5 text-sm font-medium dark:bg-zinc-800'
 
 export function PhoneProjectsBody({ f, on }: { f: ProjectsFacts; on: ProjectsEvents }) {
-  const [name, setName] = useState(f.pNewText)
   const [rename, setRename] = useState('')
   if (!f.live) return <Skeleton shape="tile" cls="px-2 py-3" />
   const more = (key: string, title: string) => (
@@ -44,9 +44,7 @@ export function PhoneProjectsBody({ f, on }: { f: ProjectsFacts; on: ProjectsEve
       <div className={`${PH_GROUP} mt-4`}>
         {f.pNew ? (
           <div className="px-3.5 py-3">
-            <NameField value={f.pNewText} label="New project name" cls="h-11 py-2" onValue={setName} onEnter={(v) => on.create(v)} onEsc={() => on.newProject(false)} />
-            {two(() => on.create(name), 'Create', () => on.newProject(false))}
-            <p className={`mt-2 text-xs leading-snug ${f.pErr ? 'text-red-600 dark:text-red-400' : 'text-zinc-500 dark:text-zinc-400'}`}>{f.pErr || ''}</p>
+            <NewProjectForm value={f.pNewText} error={f.pErr} onCreate={on.create} onCancel={() => on.newProject(false)} />
           </div>
         ) : (
           <button onClick={() => on.newProject(true)} className="flex min-h-12 w-full items-center gap-3 px-3.5 py-2.5 text-left text-[15px] font-medium text-blue-600 dark:text-blue-400">

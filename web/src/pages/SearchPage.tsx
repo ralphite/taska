@@ -128,7 +128,7 @@ export function SearchBox({ v, on }: { v: SearchView; on: SearchEvents }) {
     <button onClick={on.search} aria-label="Search" className={MAIN}>
       <Icon n="up" c="size-5" sw="2.25" />
     </button>
-  ) : (
+  ) : v.phase === 'nomic' ? null : (
     <button onClick={on.mic} aria-label={v.words ? 'Say more' : 'Say what to find'} className={MAIN}>
       <Icon n="mic" c="size-6" />
     </button>
@@ -158,7 +158,7 @@ export function SearchBox({ v, on }: { v: SearchView; on: SearchEvents }) {
             className="field-sizing-content max-h-48 min-h-11 w-full min-w-0 resize-none bg-transparent px-1 py-2.5 text-[17px] leading-6 outline-none placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
           />
         </div>
-        {v.typed && v.words.trim() && !busy ? (
+        {v.typed && v.words.trim() && !busy && v.phase !== 'nomic' ? (
           <button onClick={on.mic} aria-label="Say more" className={SIDE}>
             <Icon n="mic" c="size-6" />
           </button>
@@ -243,7 +243,7 @@ export function SearchBody({ v, on, desk = false }: { v: SearchView; on: SearchE
         title={
           <span className="flex items-center justify-center gap-2">
             <Icon n="spinner" c="size-4 animate-spin text-zinc-400" sw="2" />
-            Can’t reach Taska
+            Taska is out of reach, retrying…
           </span>
         }
       />
