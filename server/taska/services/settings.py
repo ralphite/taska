@@ -6,8 +6,8 @@
     voice-prefs.txt      how voice notes are written down (absent: the default)
     voice-tidy-off       present: voice notes are not tidied
     project-order.json   the order you dragged the projects into
-    search-by-meaning-off  present: search goes by the words alone; absent (the default): it also asks Gemini
-                         what the words mean, one question per search (with a key set)
+    search-by-meaning-off  present: search goes by the words alone; absent (the default): it also finds by what
+                         the words mean, with Gemini embeddings (with a key set; kept in meaning.db)
 """
 
 from __future__ import annotations
@@ -188,8 +188,8 @@ class VoicePrefs:
 
 
 class SearchByMeaning:
-    """Whether search asks Gemini what the words mean (F479, D58): on unless the file `search-by-meaning-off` is
-    there."""
+    """Whether search also finds by what the words mean (F479, with embeddings): on unless the file
+    `search-by-meaning-off` is there."""
 
     def __init__(self, root: str):
         self._path = os.path.join(root, "search-by-meaning-off")

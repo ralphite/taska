@@ -1,8 +1,10 @@
-"""Talking to Gemini (the organizer, and voice notes into words). A question (Question) becomes one generateContent
-request; the client (Gemini) sends it over HTTPS with the standard library and decides, attempt by attempt, whether
-to try again (busy, cut off) or to ask without the thinking switch a model does not have. Only what is sent here
-leaves the machine, and only when a key is set. Every request is one entry in the log: what was sent (audio and
-pictures by size only), the reply, how long it took, the tokens, and who asked."""
+"""Talking to Gemini (the organizer, voice notes into words, and search by meaning). A question (Question) becomes one
+generateContent request; texts to find by meaning become embeddings (`embed`, batchEmbedContents, at most EMBED_BATCH
+texts a request). The client (Gemini) sends over HTTPS with the standard library and decides, attempt by attempt,
+whether to try again (busy, cut off) or to ask without the thinking switch a model does not have. Only what is sent
+here leaves the machine, and only when a key is set. Every request is one entry in the log: what was sent (audio and
+pictures by size only; texts to embed by their count and length only), the reply (embeddings by their count only),
+how long it took, the tokens, and who asked."""
 
 from __future__ import annotations
 
@@ -23,6 +25,11 @@ Json = Dict[str, Any]
 KEY_VARS = ("GEMINI_API_KEY", "GOOGLE_API_KEY", "GOOGLE_GENERATIVE_AI_API_KEY")
 MODEL = os.environ.get("TASKA_MODEL", "gemini-flash-latest")
 ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+EMBED_MODEL = "gemini-embedding-001"
+EMBED_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/{model}:batchEmbedContents"
+EMBED_DIMS = 768
+EMBED_BATCH = 100  # texts in one request
+DOCUMENT, QUERY = "RETRIEVAL_DOCUMENT", "RETRIEVAL_QUERY"  # what is searched, what searches it
 ATTEMPTS = 3
 BUSY = frozenset((429, 500, 502, 503, 504))
 
@@ -124,40 +131,62 @@ class Gemini:
     pause: Callable[[float], None] = time.sleep
     clock: Callable[[], float] = field(default=time.monotonic)
 
-    def ask(self, who: str, q: Question, timeout: float = 120, model: Optional[str] = None,
-            attempts: int = ATTEMPTS) -> str:
-        return q.answer(self.generate(who, model or self.model, q.body(), timeout, attempts))
+    def ask(self, who: str, q: Question, timeout: float = 120, model: Optional[str] = None) -> str:
+        return q.answer(self.generate(who, model or self.model, q.body(), timeout))
 
-    def generate(self, who: str, model: str, body: Json, timeout: float = 120, attempts: int = ATTEMPTS) -> Json:
-        """One question -> the reply, after as many attempts as it takes (at most `attempts`)."""
-        for attempt in range(attempts):
+    def generate(self, who: str, model: str, body: Json, timeout: float = 120) -> Json:
+        """One question -> the reply, after as many attempts as it takes (at most ATTEMPTS)."""
+        return self._send(who, model, ENDPOINT.format(model=model), body, timeout)
+
+    def embed(self, who: str, texts: List[str], task: str, timeout: float = 30) -> List[List[float]]:
+        """Each text's embedding (EMBED_DIMS numbers, in its order), EMBED_BATCH texts a request; `task`: DOCUMENT for
+        what is searched, QUERY for what searches it."""
+        out: List[List[float]] = []
+        for i in range(0, len(texts), EMBED_BATCH):
+            chunk = texts[i: i + EMBED_BATCH]
+            body = {"requests": [{"model": f"models/{EMBED_MODEL}", "content": {"parts": [{"text": t}]},
+                                  "taskType": task, "outputDimensionality": EMBED_DIMS} for t in chunk]}
+            seen = {"texts": len(chunk), "chars": sum(len(t) for t in chunk), "taskType": task,
+                    "outputDimensionality": EMBED_DIMS}
+            reply = self._send(who, EMBED_MODEL, EMBED_ENDPOINT.format(model=EMBED_MODEL), body, timeout, seen)
+            got = [e.get("values") for e in reply.get("embeddings") or []]
+            if len(got) != len(chunk) or not all(isinstance(v, list) and len(v) == EMBED_DIMS for v in got):
+                raise Refused("Gemini answered the embeddings in an unexpected format")
+            out += got
+        return out
+
+    def _send(self, who: str, model: str, url: str, body: Json, timeout: float, seen: Optional[Json] = None) -> Json:
+        """One request -> its reply, after as many attempts as it takes (at most ATTEMPTS); `seen`: what the log
+        keeps of what was sent and of the reply's size, instead of both."""
+        for attempt in range(ATTEMPTS):
             t0 = self.clock()
             try:
-                reply = self.post(ENDPOINT.format(model=model), json.dumps(body).encode(),
+                reply = self.post(url, json.dumps(body).encode(),
                                   {"x-goog-api-key": self.key() or "", "Content-Type": "application/json"}, timeout)
             except Failed as fail:
-                _logged(who, model, body, int((self.clock() - t0) * 1000), status=fail.status,
+                _logged(who, model, seen or body, int((self.clock() - t0) * 1000), status=fail.status,
                         error=fail.detail[:4000] if fail.status else fail.detail)
-                wait = self._again(fail, body, attempt, attempts)
+                wait = self._again(fail, body, attempt)
                 if wait is None:
                     raise Refused(f"Gemini HTTP {fail.status}: {first_line(fail.detail, 160)}" if fail.status
                                   else f"Gemini unreachable: {fail.detail}")
                 if wait:
                     self.pause(wait)
                 continue
-            _logged(who, model, body, int((self.clock() - t0) * 1000), reply=reply)
+            _logged(who, model, seen or body, int((self.clock() - t0) * 1000),
+                    reply={"embeddings": len(reply.get("embeddings") or [])} if seen else reply)
             return reply
         raise Refused("Gemini failed")
 
     @staticmethod
-    def _again(fail: Failed, body: Json, attempt: int, attempts: int = ATTEMPTS) -> Optional[float]:
+    def _again(fail: Failed, body: Json, attempt: int) -> Optional[float]:
         """How long to wait before the next attempt (0: at once); None: no more attempts. A model without a
         thinking switch is asked again at once without it; busy or cut off, after a pause."""
         config = body.get("generationConfig") or {}
         if fail.status == 400 and "hinking" in fail.detail and "thinkingConfig" in config:
             del config["thinkingConfig"]
             return 0
-        if attempt >= attempts - 1:
+        if attempt >= ATTEMPTS - 1:
             return None
         if fail.status is None:
             return 2
@@ -168,6 +197,11 @@ client = Gemini()
 
 
 def ask(who: str, system: str, parts: List[Json], think: int = 0, temperature: float = 0.2, timeout: float = 120,
-        answer_in: Optional[Tuple[str, str]] = None, model: Optional[str] = None, attempts: int = ATTEMPTS) -> str:
+        answer_in: Optional[Tuple[str, str]] = None, model: Optional[str] = None) -> str:
     """Ask with the server's one client (the organizer's and voice's way in)."""
-    return client.ask(who, Question(system, parts, think, temperature, answer_in), timeout, model, attempts)
+    return client.ask(who, Question(system, parts, think, temperature, answer_in), timeout, model)
+
+
+def embed(who: str, texts: List[str], task: str, timeout: float = 30) -> List[List[float]]:
+    """Embed with the server's one client (search by meaning's way in)."""
+    return client.embed(who, texts, task, timeout)

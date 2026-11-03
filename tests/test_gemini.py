@@ -8,7 +8,8 @@ import unittest
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", "server"))
 
 from taska.domain.vocab import Refused  # noqa: E402
-from taska.infra.gemini import Failed, Gemini, Question  # noqa: E402
+from taska.infra.gemini import (DOCUMENT, EMBED_BATCH, EMBED_DIMS, EMBED_MODEL, QUERY, Failed, Gemini,  # noqa: E402
+                                Question)
 
 REPLY = {"candidates": [{"content": {"parts": [{"text": "thinking...", "thought": True}, {"text": " Hello "}]}}],
          "usageMetadata": {"promptTokenCount": 3}}
@@ -57,14 +58,6 @@ class GeminiTest(unittest.TestCase):
         self.assertNotIn("thinkingConfig", fake.sent[1][1]["generationConfig"])
         self.assertEqual(waits, [])
 
-    def test_a_caller_can_limit_the_attempts(self):
-        fake = Fake(Failed(None, "timed out"), Failed(None, "timed out"), REPLY)
-        g, waits = client(fake)
-        with self.assertRaises(Refused):
-            g.ask("search", Question("", []), attempts=2)
-        self.assertEqual(len(fake.sent), 2)
-        self.assertEqual(waits, [2])
-
     def test_busy_then_answers(self):
         g, waits = client(Fake(Failed(503, "busy"), Failed(None, "reset"), REPLY))
         self.assertEqual(g.ask("voice", Question("", [])), "Hello")
@@ -77,6 +70,30 @@ class GeminiTest(unittest.TestCase):
         g, _ = client(Fake(Failed(403, "no key")))
         with self.assertRaisesRegex(Refused, "Gemini HTTP 403"):
             g.ask("voice", Question("", []))
+
+    def test_embeds_in_batches_and_logs_sizes_only(self):
+        texts = ["secret line %d" % i for i in range(EMBED_BATCH + 20)]
+
+        def vectors(n):
+            return {"embeddings": [{"values": [0.5] * EMBED_DIMS} for _ in range(n)]}
+
+        fake = Fake(Failed(503, "busy"), vectors(EMBED_BATCH), vectors(20))
+        g, waits = client(fake)
+        with self.assertLogs("taska", "INFO") as logged:
+            got = g.embed("search", texts, DOCUMENT)
+        self.assertEqual((len(got), waits), (len(texts), [2]))
+        url, body, _ = fake.sent[1]
+        self.assertTrue(url.endswith(f"/models/{EMBED_MODEL}:batchEmbedContents"))
+        self.assertEqual(len(body["requests"]), EMBED_BATCH)
+        self.assertEqual(body["requests"][0]["taskType"], "RETRIEVAL_DOCUMENT")
+        self.assertEqual(body["requests"][0]["outputDimensionality"], EMBED_DIMS)
+        self.assertEqual(len(fake.sent[2][1]["requests"]), 20)
+        kept = repr([r.__dict__.get("f") for r in logged.records])
+        self.assertNotIn("secret line", kept)
+        self.assertIn("'texts': 20", kept)
+        g, _ = client(Fake({"embeddings": []}))
+        with self.assertRaisesRegex(Refused, "unexpected format"):
+            g.embed("search", ["a"], QUERY)
 
 
 if __name__ == "__main__":

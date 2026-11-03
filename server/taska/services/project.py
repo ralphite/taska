@@ -39,6 +39,8 @@ class Shared(Protocol):
 
     def input_moving(self, slug: str, rid: str) -> bool: ...
 
+    def changed(self, slug: str) -> None: ...
+
 
 def now_iso() -> str:
     return datetime.now().astimezone().isoformat(timespec="seconds")
@@ -106,6 +108,8 @@ class Project:
             self.store.commit(event)
             self.news.bump()
             self.codex_notifications.on_event(event)
+            if self.shared:
+                self.shared.changed(self.slug)  # what is found by meaning catches up soon
 
     def blocks_to_asks(self) -> None:
         """Once (T646): an agent waits on the user only by asking; its earlier blocks become asks, one change for the

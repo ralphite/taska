@@ -46,7 +46,8 @@ class Workspace:
         self.views = ListViews(self.root)
         self.voice_prefs = VoicePrefs(self.root)
         self.order = ProjectOrder(self.root)
-        self.meaning = Meaning(SearchByMeaning(self.root), allowed=gemini)  # gemini: the server may ask it (cli)
+        self.meaning = Meaning(SearchByMeaning(self.root), allowed=gemini,  # gemini: the server may ask it (cli)
+                               path=os.path.join(self.root, "meaning.db"), lists=self.short_lists)
         self.moves = Moves()
         self.projects: Dict[str, Project] = {}
         for name in sorted(os.listdir(self.root)):
@@ -54,6 +55,7 @@ class Workspace:
                 self._open(name)
         if not self.projects:
             self.add("default")
+        self.meaning.soon()  # the lines' embeddings, before the first search asks for them
 
     # -- what projects share (services.project.Shared) -------------------------------------
 
@@ -66,6 +68,9 @@ class Workspace:
 
     def input_moving(self, slug: str, rid: str) -> bool:
         return self.moves.moving(slug, rid)
+
+    def changed(self, slug: str) -> None:
+        self.meaning.soon()
 
     # -- opening and changing projects ---------------------------------------------------------
 
@@ -243,16 +248,13 @@ class Workspace:
     def find(self, q: str, here: str = "") -> Tuple[str, List[Tuple[str, finding.Found]]]:
         """F479: what `q` finds in every project, closest first, each with its project: by what it means when that is
         on (Meaning), then by its words (what the meaning did not find after it); -> (how: "meaning" or "words", it)."""
-        names = sorted(self.projects, key=lambda x: (x != here, x))
         words: List[Tuple[float, str, finding.Found]] = []
-        lists: List[Tuple[str, str, List[Tuple[finding.Found, str]]]] = []
-        asks = self.meaning.on()
-        for name in names:
+        for name in self._here_first(here):
             p = self.projects[name]
             with p.lock:
                 words += [(f.score, name, f) for f in finding.by_words(p.state, q)]
-                if asks:
-                    lists.append((name, p.title, finding.short_list(p.state)))
+        asks = self.meaning.on()
+        lists = self.short_lists(here) if asks else []
         words.sort(key=lambda x: x[0], reverse=True)  # stable: the project you are in first when as close
         out = [(name, f) for _, name, f in words]
         ranked = self.meaning.rank(q, lists) if asks else None
@@ -263,6 +265,20 @@ class Workspace:
         seen = {(name, f.key) for name, f in by_meaning}
         return "meaning", (by_meaning + [(name, f) for name, f in out if (name, f.key) not in seen])[:80]
 
+    def short_lists(self, here: str = "") -> List[Tuple[str, str, List[Tuple[finding.Found, str]]]]:
+        """Every project's short list (finding.short_list) as it is now, with its name and title, `here` first."""
+        out: List[Tuple[str, str, List[Tuple[finding.Found, str]]]] = []
+        for name in self._here_first(here):
+            p = self.projects.get(name)
+            if p is not None:
+                with p.lock:
+                    out.append((name, p.title, finding.short_list(p.state)))
+        return out
+
+    def _here_first(self, here: str) -> List[str]:
+        return sorted(self.projects, key=lambda x: (x != here, x))
+
     def close(self) -> None:
+        self.meaning.close()
         for p in list(self.projects.values()):
             p.close()
