@@ -55,7 +55,7 @@ const preview: Preview = {
                 'By status',
                 [
                   'Still to do',
-                  ['Open', 'Next in the queue', 'Open, you replied', 'In progress', 'In progress, agent quiet', 'In progress: an agent at work, one gone quiet', 'Waits for review', 'Later'],
+                  ['Open', 'Next in the queue', 'Open, you replied', 'In progress', 'In progress: the agent at work, its name in the tip', 'Waits for review', 'Later'],
                   'Finished, and rules',
                 ],
                 'Pointer, keys and picking', ['Pointer on it', 'Open, picked, dragged'],
