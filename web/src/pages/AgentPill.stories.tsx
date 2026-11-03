@@ -11,8 +11,8 @@ type Story = StoryObj
 
 const one = (h: HeadHere): Story => ({ render: () => <Frames deskWidth={1100} phoneWidth={393} height={200}>{(layout) => headOf(layout === 'desk', h)}</Frames> })
 
-/** An agent connected, picking up work. */
-export const PillWorking: Story = { ...one({ agents: AGENTS.ready }), name: 'At work' }
+/** An agent connected, waiting for work. */
+export const PillWorking: Story = { ...one({ agents: AGENTS.ready }), name: 'Ready for work' }
 /** Here lately. */
 export const PillRecent: Story = { ...one({ agents: AGENTS.recent }), name: 'Here lately' }
 /** Work waits, the last agent left 2 hours ago. */

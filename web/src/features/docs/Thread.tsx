@@ -56,7 +56,7 @@ function CommentActs({ c, asking, on }: { c: Comment; asking: string | null; on:
       </button>
       {c.by === 'you'
         ? (c.files || []).map((f) => (
-            <button key={f.f} onClick={() => on.takeOff(c.id, f.f)} title={`Take off ${f.name || 'the file'}`} className={DC_BTN}>
+            <button key={f.f} onClick={() => on.takeOff(c.id, f.f)} title={`Take off ${f.name || 'the file'}`} className={asking === `${c.id} ${f.f}` ? DC_DANGER : DC_BTN}>
               <Icon n="x" c="size-3.5" />
               {asking === `${c.id} ${f.f}` ? 'Take it off?' : 'File'}
             </button>

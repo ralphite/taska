@@ -8,4 +8,5 @@ import { docAt } from '../../stories/docPage'
 export default { title: 'Components/Document/Commenting/Circle to select' } satisfies Meta
 type Story = StoryObj
 
-export const CircleToSelect: Story = { name: 'Circling paragraphs to pick them', render: () => <Frames height={760} deskWidth={900} phoneWidth={393}>{(layout) => docAt(doc(), layout === 'desk', { circle: true })}</Frames> }
+/** The phone's Mark an area (the desktop picks with the pointer and has no such mode). */
+export const CircleToSelect: Story = { name: 'Circling paragraphs to pick them', render: () => <Frames desk={false} height={760} phoneWidth={393}>{() => docAt(doc(), false, { circle: true })}</Frames> }

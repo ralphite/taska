@@ -7,6 +7,7 @@ import { ItemActs, ItemHead, ItemNav, ItemPage, ItemTalk } from '../features/ite
 import type { TalkFacts } from '../features/item/Talk'
 import type { TalkEnv } from '../features/item/talkEnv'
 import type { Doc, Input, Item } from '../model/types'
+import { latestMessage } from '../model/talk'
 import { PaneFrame } from '../ui/PaneFrame'
 import { item, message } from './fixtures'
 import { itemFacts, noItemEvents, talkEnv, talkFacts } from './itemFixtures'
@@ -48,7 +49,7 @@ export function pageOf(it: Item, desk: boolean, o: PageOpts = {}) {
   const m = modelOf([...(o.others ?? []), it], o.inputs ?? [], {}, o.docs ?? [])
   const facts = itemFacts(m, it, o.f)
   const no = () => {}
-  const page = <ItemPage it={it} f={facts} env={talkEnv(m, desk)} facts={talkFacts(m, o.t)} on={noItemEvents} duo={o.duo} left={o.left} bare={o.bare} />
+  const page = <ItemPage it={it} f={facts} env={talkEnv(m, desk, { latest: latestMessage(it), ...o.env })} facts={talkFacts(m, o.t)} on={noItemEvents} duo={o.duo} left={o.left} bare={o.bare} />
   if (o.doc)
     return (
       <div className="flex h-full flex-col">
@@ -91,7 +92,7 @@ export function talkOf(it: Item, desk: boolean, o: PageOpts = {}) {
   const m = modelOf([...(o.others ?? []), it], o.inputs ?? [], {}, o.docs ?? [])
   return (
     <div className="flex flex-col gap-6 p-4">
-      <ItemTalk it={it} f={itemFacts(m, it, o.f)} env={talkEnv(m, desk, o.env)} facts={talkFacts(m, o.t)} on={noItemEvents} />
+      <ItemTalk it={it} f={itemFacts(m, it, o.f)} env={talkEnv(m, desk, { latest: latestMessage(it), ...o.env })} facts={talkFacts(m, o.t)} on={noItemEvents} />
     </div>
   )
 }

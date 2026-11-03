@@ -9,7 +9,7 @@ import { hasChoices, plainQuote } from '../../model/markdown'
 import { answerOf, readMark, versions, withdrawn, type Version } from '../../model/talk'
 import { when } from '../../model/time'
 import type { Comment, Doc, FileRef, Input, Item, Message } from '../../model/types'
-import { KIND_WORD, inputCode, plural, whoName } from '../../model/words'
+import { KIND_WORD, inputCode, whoName } from '../../model/words'
 import { Avatar } from '../../ui/bits'
 import { Icon } from '../../ui/Icon'
 import { Rich } from '../../ui/Markdown'
@@ -305,21 +305,21 @@ export function docNotes(docs: readonly Doc[], env: TalkEnv, on: TalkLineEvents,
         “{plainQuote(c.quote)}”
       </button>
     ) : null
-    const words = c.text.trim() ? (
-      <Rich text={c.text} world={env.world} onRef={on.ref} onPicture={on.picture} />
-    ) : c.files?.some(isAudio) ? (
-      'Voice note'
-    ) : (
-      plural(c.files?.length || 0, 'file')
-    )
+    const words = c.text.trim() ? <Rich text={c.text} world={env.world} onRef={on.ref} onPicture={on.picture} /> : c.files?.some(isAudio) ? 'Voice note' : null
+    // its pictures and files as a message's: thumbnails to open (yours under the bubble, an agent's in its card)
+    const pics = (c.files || []).filter((f) => !isAudio(f))
+    const strip = (cls: string) => (pics.length ? <FileRows files={pics} url={env.url} play={env.play} tidy={env.tidy} on={on} cls={cls} /> : null)
     return {
       t: c.t,
       node: you ? (
         <div key={`dn${d.d}-${c.id}`} className="flex flex-col items-end gap-1">
-          <div className={YOU_BUBBLE}>
-            {quote}
-            {words}
-          </div>
+          {quote || words ? (
+            <div className={YOU_BUBBLE}>
+              {quote}
+              {words}
+            </div>
+          ) : null}
+          {strip('items-end max-w-full [&>div]:max-w-full')}
           <div className="flex max-w-full flex-wrap items-center justify-end gap-x-1 text-[11px] text-zinc-400 dark:text-zinc-500">
             <VoiceLine files={c.files || []} url={env.url} play={env.play} tidy={env.tidy} bare on={on} />
             <span className="flex max-w-full min-w-0 items-center gap-0.5 px-1">
@@ -343,6 +343,7 @@ export function docNotes(docs: readonly Doc[], env: TalkEnv, on: TalkLineEvents,
           <div className="w-full rounded-2xl rounded-tl-md border border-zinc-200 bg-zinc-50 px-4 py-3 text-[15px] leading-relaxed text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200">
             {quote}
             {words}
+            {strip(words ? 'mt-3' : '')}
           </div>
         </div>
       ),

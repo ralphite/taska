@@ -9,7 +9,7 @@ import { CHOICE } from '../../model/markdown'
 import { codeOf, docsOf, filesOf, findRef, liveN, sourceCount, STAND, type ProjectModel } from '../../model/project'
 import { ticksNotSent } from '../../model/docTicks'
 import { lastAgentMessage } from '../../model/items'
-import { answerOf } from '../../model/talk'
+import { answerOf, latestMessage } from '../../model/talk'
 import type { Item } from '../../model/types'
 import { inTab, tabOf } from '../../model/visible'
 import type { Tab } from '../../model/words'
@@ -65,7 +65,7 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
     play: media.play,
     url: world.url,
     opened: view.opened,
-    latest: it.thread.filter((x) => x.by !== 'org').at(-1)?.id ?? null,
+    latest: latestMessage(it),
     choosing,
   }
   const facts: TalkFacts = {

@@ -7,6 +7,9 @@ import { hasChoices, ticks } from './markdown'
 import type { Item, Message } from './types'
 
 /** The message the card that waits on you shows: the question, or the agent's report or proposal. */
+/** The item's latest message from anyone but the organizer: what you came to read, shown whole. */
+export const latestMessage = (it: Item): number | null => it.thread.filter((x) => x.by !== 'org').at(-1)?.id ?? null
+
 export const cardMessage = (it: Item): Message | null =>
   it.wait
     ? it.thread.find((x) => x.id === it.wait?.id) || ({ ...it.wait, t: '', src: null } as Message)

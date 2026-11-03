@@ -2,14 +2,15 @@
 // under the pointer, and being dragged (blue). Drag it to resize; a double-click puts it back.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { After, Frame, States } from '../stories/Frames'
-import { item } from '../stories/fixtures'
+import { it } from '../stories/itemPageLayoutFixtures'
 import { pageOf } from '../stories/itemPage'
 
 const meta: Meta = { title: 'Components/Item page/Layout' }
 export default meta
 type Story = StoryObj
 
-const page = () => pageOf(item({ n: 12, title: 'Export keeps the filter you set', body: 'The export should write the rows the list shows.' }), true, { duo: true })
+// an item with its talk, so the column beside it is the talk
+const page = () => pageOf(it(), true, { duo: true })
 
 /** A pane's edge: as it is, pointed at, dragged. */
 export const Edge: Story = {
@@ -20,7 +21,8 @@ export const Edge: Story = {
       items={[
         ['as it is', <Frame layout="desk" width={1100} height={320}>{page()}</Frame>],
         ['pointer on it', <div data-look="pointer"><Frame layout="desk" width={1100} height={320}>{page()}</Frame></div>],
-        ['being dragged', <Frame layout="desk" width={1100} height={320}><After run={(root) => root.querySelector('[data-grip="duo"]')?.setAttribute('data-drag', '')}>{page()}</After></Frame>],
+        // dragged to the left: the line where the pointer has it, the columns as wide as it says
+        ['being dragged', <Frame layout="desk" width={1100} height={320}><After run={(root) => { root.querySelector('[data-grip="duo"]')?.setAttribute('data-drag', ''); root.querySelector<HTMLElement>('[data-part="pane"]')?.style.setProperty('--duo-w', '40%') }}>{page()}</After></Frame>],
       ]}
     />
   ),

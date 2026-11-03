@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { Frames, States } from '../../stories/Frames'
+import { After, Frames, States } from '../../stories/Frames'
 import { VIEWS, type ViewChip } from './rows'
 import { ViewBar } from './ViewBar'
 
@@ -25,7 +25,7 @@ export const Views: Story = {
             ['Active', <ViewBar views={views('all')} onView={() => {}} />],
             ['Needs you, nothing waiting', <ViewBar views={views('wait', 0)} onView={() => {}} />],
             ['Won’t do (scrolled to it)', <ViewBar views={views('dropped')} onView={() => {}} />],
-            ['with your own views', <ViewBar views={views('every')} own={[{ name: 'Bugs now', count: 6, on: false }, { name: 'P0', count: 1, on: false }]} onView={() => {}} />],
+            ['with your own views (slid to the end)', <After run={(r) => r.querySelectorAll('[data-views] > div').forEach((el) => (el.scrollLeft = el.scrollWidth))}><ViewBar views={views('every')} own={[{ name: 'Bugs now', count: 6, on: false }, { name: 'P0', count: 1, on: false }]} onView={() => {}} /></After>],
           ]}
         />
       )}
@@ -52,7 +52,7 @@ export const YourOwnViewShownBeingRenamed: Story = {
 /** a chip under the pointer, one from the keys (the browser's ring), and the edge arrow under the pointer */
 export const PointerAndKeys: Story = {
   name: 'Pointer and keys',
-  parameters: { pseudo: { hover: ['[data-look="pointer"] button:nth-of-type(3)', '[data-look="arrow"] button[aria-label]'], focusVisible: ['[data-look="keys"] button:nth-of-type(2)'] } },
+  parameters: { pseudo: { hover: ['[data-look="pointer"] button:nth-of-type(3)', '[data-look="arrow"] button[aria-label] > span'], focusVisible: ['[data-look="keys"] button:nth-of-type(3)'] } },
   render: () => (
     <Frames phoneWidth={393} deskWidth={460}>
       {() => (

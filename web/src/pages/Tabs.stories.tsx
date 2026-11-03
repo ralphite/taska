@@ -14,8 +14,6 @@ const on = (tab: Tab): Story => ({ render: () => <Frames deskWidth={1100} phoneW
 export const Items: Story = { ...on('items'), name: 'Items' }
 /** The phone's Inputs: its count is what waits for an agent. */
 export const Inputs: Story = { ...on('inputs'), name: 'Inputs' }
-/** Archive: Items stays lit (it is a view of Items). */
-export const Archive: Story = { ...on('archive'), name: 'Archive' }
 export const Rules: Story = { ...on('rules'), name: 'Rules' }
 export const TabsLooks: Story = {
   name: 'Pointer on a tab (desktop)',

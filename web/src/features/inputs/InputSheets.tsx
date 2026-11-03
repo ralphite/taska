@@ -60,8 +60,8 @@ export function inputMenuSheet({ r, send, tidy, undo, move, history, scope, aski
         {history ? row('history', 'history', 'History', on.history) : null}
         {send ? null : row('rescope', 'scope', scope ? `Put with item… · now ${scope}` : 'Put with an item…', on.rescope)}
         {r.files.map((f: FileRef) => (
-          <button key={f.f} onClick={() => on.takeOff(f.f)} className={MENU_ROW}>
-            <Icon n="x" c="size-4 text-zinc-500 dark:text-zinc-400" />
+          <button key={f.f} onClick={() => on.takeOff(f.f)} className={`${MENU_ROW} ${asking === f.f ? DANGER : ''}`}>
+            <Icon n="x" c={`size-4 ${asking === f.f ? '' : 'text-zinc-500 dark:text-zinc-400'}`} />
             <span className="min-w-0 flex-1 truncate">{asking === f.f ? 'Take it off?' : `Take off ${f.name || 'a file'}`}</span>
           </button>
         ))}

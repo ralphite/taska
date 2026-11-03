@@ -16,8 +16,9 @@ const at = (q: Partial<ListQuery>, h: (desk: boolean) => Holding, items = PROJEC
 const active = { status: 'all' }
 
 export const OneOpen: Story = { ...at(active, () => ({ open: 5 })), name: 'One item open' }
+/** The desktop (⌘ or ⇧ click; the phone picks none). */
 export const SeveralPicked: Story = {
-  ...at(active, (desk) => ({ selected: [5, 6, 2], top: desk ? <SelBar n={3} on={{ set() {}, clear() {} }} /> : undefined })),
+  render: () => <Frames phone={false} deskWidth={460} height={700}>{() => listOf(PROJECT, 'items', active, true, { selected: [5, 6, 2], top: <SelBar n={3} on={{ set() {}, clear() {} }} /> })}</Frames>,
   name: 'Several picked',
 }
 export const SubitemsFolded: Story = { ...at(active, () => ({ folded: [1] })), name: 'Subitems folded' }

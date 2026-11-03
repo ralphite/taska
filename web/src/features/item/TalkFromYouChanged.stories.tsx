@@ -1,6 +1,9 @@
 // Your message changed afterwards: edited (its history, the earlier version), details added, its input moved.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { T, at, later, mine, r4, voice } from '../../stories/fromYouFixtures'
+import { item } from '../../stories/fixtures'
+import { talkOf } from '../../stories/itemPage'
+import { one as tip } from '../../stories/tipFixtures'
 
 export default { title: 'Components/Conversation/Message/From you/Changed afterwards' } satisfies Meta
 type Story = StoryObj
@@ -19,8 +22,12 @@ export const DetailsAddedLater: Story = {
   name: 'Details added later',
 }
 export const ItsInputMovedToAnotherProject: Story = { ...at([mine()], { inputs: [r4({ files: [voice], moved: { to: 'home', as: 'r40' } })] }), name: 'Moved to another project' }
+/** The desktop: the pointer on its voice note shows the words it heard (the page's own tip). */
 export const MovedPointerOnItsVoiceNote: Story = {
-  ...at([mine()], { inputs: [r4({ files: [voice], moved: { to: 'home', as: 'r40' } })] }),
+  ...tip(
+    () => talkOf(item({ n: 12, thread: [mine()] }), true, { inputs: [r4({ files: [{ ...voice, heard: 'the export should keep the filter i set', tr: 'The export should keep the filter I set.' }], moved: { to: 'home', as: 'r40' } })] }),
+    'button[aria-label^="Play"]',
+    { width: 720, height: 320 },
+  ),
   name: 'Moved, pointer on its voice note',
-  parameters: { pseudo: { hover: ['[data-voice], .group'] } },
 }

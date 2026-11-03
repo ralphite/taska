@@ -11,7 +11,8 @@ export const InProgressWithItsTalk: Story = {
   ...at({ status: 'doing', agent: { by: 'claude-code', t: T }, thread: [said, message({ id: 2, text: 'Reproduced it: the export reads the list before the filter.' }), message({ id: 3, text: 'Fixed the order; testing with three filters now.' })] }),
   name: 'In progress, with its talk',
 }
-export const AgentsTurnYouReplied: Story = { ...at({ talked: true, thread: [said] }), name: 'Open, you replied' }
+/** the agent asked in words, you replied: its turn */
+export const AgentsTurnYouReplied: Story = { ...at({ talked: true, thread: [said, message({ id: 2, text: 'Should the export keep the sort too?' }), { ...said, id: 3, text: 'Yes, the sort too.' }] }), name: 'Open, you replied' }
 // ---- more states (B636)
 export const P0: Story = { ...at({ pri: 'P0', thread: [said] }), name: 'P0' }
 export const Later = at({ when: 'later', thread: [said] })

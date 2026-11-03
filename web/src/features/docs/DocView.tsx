@@ -209,11 +209,11 @@ export function DocView({ facts, env, on, lasso, page, recTime, aim = null, onAi
     onAimed?.()
   }, [aim, onAimed])
   useLayoutEffect(() => {
-    // on the phone the one item of a list you picked is marked, not the whole list
+    // the one item of a list you picked is marked, not the whole list
     const el = root.current
     if (!el) return
     for (const li of el.querySelectorAll('li[data-q]')) li.removeAttribute('data-q')
-    const r = desk ? null : rows.find((x) => x.quote)
+    const r = rows.find((x) => x.quote)
     if (!r) return
     const li = [...el.querySelectorAll<HTMLElement>(`section[data-key="${CSS.escape(r.b.key)}"] li`)].find((l) => l.innerText.trim() === r.quote)
     li?.setAttribute('data-q', '')
@@ -301,7 +301,7 @@ export function DocView({ facts, env, on, lasso, page, recTime, aim = null, onAi
                   const li = desk ? null : t.closest<HTMLElement>('li')
                   on.pick(r.b.key, li ? li.innerText.trim().slice(0, 500) : null, 'tap')
                 }}
-                {...(r.picked ? { 'data-picked': '' } : {})}
+                {...(r.picked || r.speaking ? { 'data-picked': '' } : {})}
                 className="group/blk relative -mx-2 rounded-lg px-2 py-1 transition-colors hover:bg-zinc-50 has-[li[data-hov]]:bg-transparent data-picked:bg-amber-50 data-picked:ring-2 data-picked:ring-amber-300 lg:cursor-text lg:after:absolute lg:after:inset-y-0 lg:after:left-full lg:after:w-18 dark:hover:bg-zinc-800/50 dark:data-picked:bg-amber-950/40 dark:data-picked:ring-amber-600 lg:[&_li[data-hov]]:rounded-md lg:[&_li[data-hov]]:bg-zinc-100 dark:lg:[&_li[data-hov]]:bg-zinc-800/70 [&_li[data-q]]:-mx-1 [&_li[data-q]]:rounded-md [&_li[data-q]]:bg-amber-50 [&_li[data-q]]:px-1 [&_li[data-q]]:ring-2 [&_li[data-q]]:ring-amber-300 dark:[&_li[data-q]]:bg-amber-950/40 dark:[&_li[data-q]]:ring-amber-600"
               >
                 <div className="relative flex flex-col gap-1 lg:flex-row lg:items-start lg:gap-2">

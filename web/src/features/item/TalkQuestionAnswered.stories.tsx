@@ -7,7 +7,7 @@ export default { title: 'Components/Conversation/Message/Question/Answered' } sa
 type Story = StoryObj
 
 export const Answered = at(answered)
-export const AnsweredPointerOnItModify: Story = { ...at(answered), name: 'Pointer on it: Edit', parameters: { pseudo: { hover: ['.group'] } } }
+export const AnsweredPointerOnItModify: Story = { ...at(answered), name: 'Pointer on it: Edit', parameters: { pseudo: { hover: ['.group\\/form'] } } }
 export const ChecklistAnswered: Story = { ...at([ask(CHECKS), said('✓ CSV\n✓ JSON')]), name: 'A checklist answered' }
 export const NoChoicesAnsweredByYourWords: Story = { ...at([ask('Should the old export stay for a while?'), said('A week, then remove it.')]), name: 'No choices, answered by your words' }
 export const AnsweredApproveBesideIt: Story = { ...at(answered, { status: 'proposed', by: 'claude-code' }), name: 'Approve beside it' }

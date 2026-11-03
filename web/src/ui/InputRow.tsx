@@ -190,7 +190,10 @@ export function InputRow({ x, words, text, files, lit = false, undo = false, row
           <span className="shrink-0 font-mono text-sm font-bold text-zinc-900 dark:text-zinc-100">
             <Hit text={x.code} words={words} />
           </span>
-          <span className={`shrink-0 whitespace-nowrap tabular-nums ${MUTED}`}>{x.when}</span>
+          <span className={`shrink-0 whitespace-nowrap tabular-nums ${MUTED}`}>
+            {x.when}
+            {r.history?.some((h) => h.mode === 'edit') ? ' · edited' : ''}
+          </span>
           {x.draft ? (
             <button onClick={() => on.draft(r.id, x.draft as 'edit')} className={`${HIT} shrink-0 text-xs`}>
               <DraftMark small />

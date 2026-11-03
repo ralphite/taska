@@ -63,7 +63,7 @@ export const MODIFY_LINK =
 export const CHIP = `${HIT} flex h-8 items-center gap-1.5 rounded-lg bg-zinc-100 px-2.5 text-[13px] hover:bg-zinc-200/70 dark:bg-zinc-800/80 dark:hover:bg-zinc-700/80`
 export const NEEDS_CARD = 'rounded-2xl border border-amber-200 bg-amber-50 dark:border-amber-400/25 dark:bg-amber-400/7'
 /** A small button in a message's line: 24px tall, 44px to tap. */
-const DC_BASE = 'relative after:absolute after:inset-x-0 after:-inset-y-2.5 flex h-6 items-center gap-1 rounded-lg px-1.5 text-xs font-semibold'
+const DC_BASE = 'relative after:absolute after:inset-x-0 after:-inset-y-2.5 flex h-6 shrink-0 items-center gap-1 whitespace-nowrap rounded-lg px-1.5 text-xs font-semibold'
 export const DC_BTN = `${DC_BASE} text-zinc-500 hover:bg-blue-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-blue-400/10 dark:hover:text-zinc-200`
 /** the same, destructive (Delete) */
 export const DC_DANGER = `${DC_BASE} text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-400/10`

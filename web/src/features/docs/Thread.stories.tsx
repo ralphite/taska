@@ -13,7 +13,9 @@ export const ThreadOpened: Story = { ...one({ threads: ['p1#1'] }), name: 'Opene
 export const NewReply: Story = { ...one({ threads: ['p1#1'], seen: { since: at(30) } }), name: 'Answered by an agent' }
 /** Resolved, its count quieter; opened again it says Reopen. */
 export const ResolvedOpened: Story = { ...one({ threads: ['t1#4'] }), name: 'Resolved, opened again' }
-export const TextChanged: Story = { name: 'Its text changed', render: () => <Frames height={760} deskWidth={900} phoneWidth={393}>{(layout) => <After run={toEnd}>{docAt(PLAN, layout === 'desk')}</After>}</Frames> }
+/** The phone's sheet, at its end: under Original text changed, the old words struck through. On the desktop these
+ * comments are in the item's talk beside it (Conversation › Document comment › On words changed since). */
+export const TextChanged: Story = { name: 'Its text changed', render: () => <Frames desk={false} height={760} phoneWidth={393}>{() => <After run={toEnd}>{docAt(PLAN, false)}</After>}</Frames> }
 export const TwoThreadsOnOneParagraph: Story = { ...one({}, twoThreads), name: 'Two threads on one paragraph' }
 export const WholeDocumentCommentsOpened: Story = { ...one({ threads: ['doc'] }, wholeDoc), name: 'Whole-document comments opened' }
 export const CommentWithFiles: Story = { ...one({ threads: ['p1#1'] }, withFiles), name: 'With a picture and a voice note' }

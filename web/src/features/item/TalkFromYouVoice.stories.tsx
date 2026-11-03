@@ -1,5 +1,5 @@
 // Your message with a voice note: as sent, its words still being worked out or coming in after, playing, and the
-// rarer ones (length unknown, words not tidied).
+// rarer one (length unknown).
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { at, mine, r4, voice } from '../../stories/fromYouFixtures'
 
@@ -14,7 +14,6 @@ export const WordsAndAVoiceNoteItsWordsInLater: Story = {
   ...at([mine({ text: LINK_AND_WORDS })], { inputs: [r4({ text: LINK_AND_WORDS, files: [voice] })] }),
   name: 'Words and a voice note, its words in after sending: not edited',
 }
-export const VoiceNotePlaying: Story = { ...at([mine()], { inputs: [r4({ files: [voice] })], env: { play: () => ({ playing: true, t: 4 }) } }), name: 'Its voice note playing' }
-export const VoiceNoteStoppedPartway: Story = { ...at([mine()], { inputs: [r4({ files: [voice] })], env: { play: () => ({ playing: false, t: 7 }) } }), name: 'Its voice note stopped partway' }
+export const VoiceNotePlaying: Story = { ...at([mine()], { inputs: [r4({ files: [voice] })], env: { play: () => ({ playing: true, t: 4000 }) } }), name: 'Its voice note playing' }
+export const VoiceNoteStoppedPartway: Story = { ...at([mine()], { inputs: [r4({ files: [voice] })], env: { play: () => ({ playing: false, t: 7000 }) } }), name: 'Its voice note stopped partway' }
 export const VoiceNoteLengthUnknown: Story = { ...at([mine()], { inputs: [r4({ files: [{ ...voice, name: 'voice.webm' }] })] }), name: 'Voice note, length unknown' }
-export const VoiceNoteWordsNotTidied: Story = { ...at([mine()], { inputs: [r4({ files: [voice] })], env: { tidy: false } }), name: 'Voice note, words not tidied' }

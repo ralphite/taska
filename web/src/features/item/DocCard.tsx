@@ -19,7 +19,8 @@ export function DocCard({ d, now, waiting = '', onOpen }: { d: Doc; now: number;
         <span className="block truncate text-[15px] font-medium">{d.title}</span>
         <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-zinc-500 dark:text-zinc-400">
           <span className="min-w-0 truncate">
-            D{d.d} · {plural(commentCount(d), 'comment')} · {when(d.t1, now)}
+            {/* no comments: nothing said of them */}
+            {[`D${d.d}`, commentCount(d) ? plural(commentCount(d), 'comment') : '', when(d.t1, now)].filter(Boolean).join(' · ')}
           </span>
           {waiting ? <span className={`${NEEDS_PILL} -my-0.5`}>{waiting}</span> : null}
         </span>
