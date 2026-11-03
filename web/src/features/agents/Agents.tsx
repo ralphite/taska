@@ -5,7 +5,7 @@
 import type { ReactNode } from 'react'
 import { guideParts, type GuidePart } from '../../model/guide'
 import { plural } from '../../model/words'
-import { Avatar } from '../../ui/bits'
+import { Avatar, Skeleton } from '../../ui/bits'
 import { Icon } from '../../ui/Icon'
 import type { IconName } from '../../ui/icon-paths'
 import type { SheetParts } from '../../ui/Sheet'
@@ -120,7 +120,7 @@ function AgentsBody({ f, on, guideOpen }: { f: AgentsFacts; on: { copy(text: str
           <Icon n="right" c="size-4 text-zinc-400 transition-transform group-open:rotate-90" />
           What the agent reads
         </summary>
-        {f.guide ? <Guide text={f.guide} /> : <p className="pb-4 text-sm text-zinc-500 dark:text-zinc-400">Loading…</p>}
+        {f.guide ? <Guide text={f.guide} /> : <Skeleton shape="text" n={4} cls="pb-4" />}
       </details>
     </div>
   )

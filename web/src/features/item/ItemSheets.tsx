@@ -10,13 +10,14 @@ import { Rich } from '../../ui/Markdown'
 import type { InlineWorld } from '../../ui/markdown/inline'
 import type { SheetParts } from '../../ui/Sheet'
 import { MENU_ROW } from '../../ui/tones'
+import { Skeleton } from '../../ui/bits'
 
 /** What an agent reading the item gets, word for word (F568); null while it comes. */
 export function agentCardSheet(code: string, text: string | null): SheetParts {
   return {
     title: `What agents see · ${code}`,
     body: text === null ? (
-      <p className="text-sm text-zinc-500 dark:text-zinc-400">Loading…</p>
+      <Skeleton shape="text" n={6} />
     ) : (
       <pre className="font-mono text-[12.5px] leading-5 break-words whitespace-pre-wrap text-zinc-700 dark:text-zinc-300">{text}</pre>
     ),

@@ -156,6 +156,8 @@ export function Composer({ line, waiting = null, lineOn, lineOnComposePage, plac
   // where you were in the words: words put in from elsewhere (a voice note's, another tab's) keep your place in
   // yours, as typing there would
   const mine = useRef({ text, start: text.length, end: text.length })
+  // words longer than the box fade at its bottom while more of them is below
+  const more = (t: HTMLTextAreaElement) => t.toggleAttribute('data-more', t.scrollTop + t.clientHeight < t.scrollHeight - 2)
   const keep = (t: HTMLTextAreaElement) => {
     mine.current = { text: t.value, start: t.selectionStart, end: t.selectionEnd }
   }
@@ -175,18 +177,20 @@ export function Composer({ line, waiting = null, lineOn, lineOnComposePage, plac
     const t = area.current
     const b = box.current
     if (!t || !b) return
-    // empty is one line; past one line (measured beside the buttons) the words take the box's whole width
+    // empty is one line; past one line (measured beside the buttons) the words take the box's whole width and the
+    // buttons go to a row under them, on the phone as on the desktop
     b.removeAttribute('data-multi')
     t.style.height = ''
     if (t.value) {
       t.style.height = 'auto'
       t.style.height = Math.min(t.scrollHeight, desk && composePage ? 320 : 192) + 'px'
     }
-    if (desk && !!t.value && (t.value.includes('\n') || t.scrollHeight > 52)) {
+    if (t.value && (t.value.includes('\n') || t.scrollHeight > 52)) {
       b.setAttribute('data-multi', '')
       t.style.height = 'auto'
       t.style.height = Math.min(t.scrollHeight, 192) + 'px'
     }
+    more(t)
   })
   return (
     <div
@@ -219,7 +223,7 @@ export function Composer({ line, waiting = null, lineOn, lineOnComposePage, plac
         >
           <Icon n={rec ? 'x' : 'plus'} c="size-6 lg:size-5" />
         </button>
-        <div className="grid min-w-0 flex-1 group-data-[multi]/box:order-first group-data-[multi]/box:basis-full group-data-[multi]/box:px-2 group-data-[multi]/box:pt-1">
+        <div className="grid min-w-0 flex-1 has-[textarea[data-more]]:mask-b-from-[calc(100%-1.5rem)] group-data-[multi]/box:order-first group-data-[multi]/box:basis-full group-data-[multi]/box:px-2 group-data-[multi]/box:pt-1">
           {quoted && !rec && !words ? (
             // the same words, behind the field's own (which are clear): the same font, size and wrapping, so each
             // letter is where the field has it; it takes no room of its own and scrolls with the field
@@ -249,6 +253,7 @@ export function Composer({ line, waiting = null, lineOn, lineOnComposePage, plac
             className={`col-start-1 row-start-1 max-h-48 min-h-11 w-full min-w-0 resize-none bg-transparent px-1 py-2.5 text-[17px] leading-6 outline-none placeholder:text-zinc-400 roomy:text-[15px] lg:scrollbar-thin dark:placeholder:text-zinc-500 ${rec || words ? 'invisible' : ''} ${quoted ? 'text-transparent caret-zinc-900 selection:bg-blue-500/25 dark:caret-zinc-100' : ''}`}
             onScroll={(e) => {
               if (back.current) back.current.scrollTop = e.currentTarget.scrollTop
+              more(e.currentTarget)
             }}
             onChange={(e) => {
               keep(e.currentTarget)

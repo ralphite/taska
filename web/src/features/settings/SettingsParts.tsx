@@ -5,6 +5,7 @@
 import type { ReactNode } from 'react'
 import { Icon } from '../../ui/Icon'
 import { PRIMARY } from '../../ui/tones'
+import { Skeleton } from '../../ui/bits'
 
 export const Part = ({ title, about, children }: { title: ReactNode; about?: ReactNode; children?: ReactNode }) => (
   <section className="scroll-mt-16 border-t border-zinc-200 py-6 lg:scroll-mt-6 dark:border-zinc-800">
@@ -40,7 +41,7 @@ export const Ruled = ({ children }: { children: ReactNode }) => <div className="
 
 export const Loading = () => (
   <Ruled>
-    <p className="py-6 text-sm text-zinc-400">Loading…</p>
+    <Skeleton shape="text" cls="py-4" />
   </Ruled>
 )
 

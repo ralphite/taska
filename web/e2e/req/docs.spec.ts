@@ -248,8 +248,14 @@ D1 reply ¶3 An agent note to delete
     if (!(await card.isVisible())) await block.locator(threadCounts(page)).click()
     await expect(card).toBeVisible()
     await card.scrollIntoViewIfNeeded()
-    await card.hover()
-    await card.getByRole('button', { name: 'Delete', exact: true }).click()
+    if (isDesk(page)) {
+      await card.hover()
+      await card.getByRole('button', { name: 'Delete', exact: true }).click()
+    } else {
+      // D115 #4: the phone's comment has one ⋯, its menu (the sheet over the document's) holds Delete
+      await card.getByRole('button', { name: 'Comment actions', exact: true }).click()
+      await page.locator('[role="dialog"]').filter({ visible: true }).last().getByRole('button', { name: 'Delete', exact: true }).click()
+    }
     await expect.poll(async () => p.read('D1')).not.toContain(words)
   }
 })

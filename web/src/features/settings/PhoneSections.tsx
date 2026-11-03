@@ -5,7 +5,7 @@ import { useState, type ReactNode } from 'react'
 import type { LogSentence } from '../../model/activity'
 import type { ItemType } from '../../model/types'
 import { plural } from '../../model/words'
-import { ProjTile } from '../../ui/bits'
+import { ProjTile, Skeleton } from '../../ui/bits'
 import { Icon } from '../../ui/Icon'
 import { P_BTN, SECOND, TYPE_TEXT } from '../../ui/tones'
 import { Empty } from '../../ui/bits'
@@ -18,7 +18,7 @@ const PILL = 'flex h-11 shrink-0 items-center gap-1.5 rounded-xl bg-zinc-100 px-
 export function PhoneProjectsBody({ f, on }: { f: ProjectsFacts; on: ProjectsEvents }) {
   const [name, setName] = useState(f.pNewText)
   const [rename, setRename] = useState('')
-  if (!f.live) return <p className="px-5 py-6 text-sm text-zinc-400">Loading…</p>
+  if (!f.live) return <Skeleton shape="tile" cls="px-2 py-3" />
   const more = (key: string, title: string) => (
     <button
       onClick={() => on.menu(key)}
@@ -192,7 +192,7 @@ export function LogBody({ rows, end, asking, on }: { rows: { s: LogSentence; und
   if (!rows)
     return (
       <Ruled>
-        <p className="py-6 text-sm text-zinc-400">Loading…</p>
+        <Skeleton shape="text" cls="py-4" />
       </Ruled>
     )
   if (!rows.length)

@@ -7,7 +7,7 @@ import { codeOf, liveN } from '../../model/project'
 import type { SheetRequest } from '../../stores/sheet'
 import { SheetLayout } from '../../ui/Sheet'
 import { pickSheet } from '../../ui/Pickers'
-import { commentMoveSheet } from './DocSheets'
+import { commentMenuSheet, commentMoveSheet } from './DocSheets'
 import { DocEditContainer } from './DocEditContainer'
 
 type Req<K extends SheetRequest['kind']> = { req: Extract<SheetRequest, { kind: K }> }
@@ -47,6 +47,25 @@ export function CommentMoveSheet({ req }: Req<'comment-move'>) {
       {...commentMoveSheet(d, c.key, (key) => {
         app.sheets.close()
         if (key !== c.key) void app.docComments.moveComment(d.d, c.id, key, c.key)
+      })}
+    />
+  )
+}
+
+/** The phone's menu of a comment: Edit (yours), Move (its own sheet), Delete (Undo puts it back). */
+export function CommentMenuSheet({ req }: Req<'comment-menu'>) {
+  const app = useServices('docComments', 'sheets')
+  const slug = useProjectRoute()?.slug ?? ''
+  const { m, d } = useDocOf(req.d)
+  const c = d ? allComments(d).find((x) => x.id === req.id) : undefined
+  useCloseSheetWhen(!!d && !c)
+  if (!m || !d || !c) return null
+  return (
+    <SheetLayout
+      {...commentMenuSheet(c.by === 'you', {
+        edit: () => app.sheets.close(() => app.docComments.editComment(slug, d.d, c.id)),
+        move: () => app.sheets.open({ kind: 'comment-move', d: d.d, id: c.id }, { focus: false }),
+        remove: () => app.sheets.close(() => app.docComments.deleteComment(d.d, c.id)),
       })}
     />
   )

@@ -5,7 +5,7 @@ import { useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { closed, shownStatus } from '../../model/items'
 import type { Item } from '../../model/types'
 import { hay } from '../../model/visible'
-import { ProjTile } from '../../ui/bits'
+import { ProjTile, Skeleton } from '../../ui/bits'
 import { StateIcon } from '../../ui/Icon'
 import type { SheetParts } from '../../ui/Sheet'
 import { FIELD, TYPE_TEXT } from '../../ui/tones'
@@ -128,7 +128,7 @@ export function Switcher({ rows, loading, onOpen }: { rows: SwitchRow[]; loading
             </a>
           ))
         ) : (
-          <p className="px-3 py-2 text-sm text-zinc-500">{loading ? 'Loading…' : 'No project matches'}</p>
+          loading ? <Skeleton shape="tile" /> : <p className="px-3 py-2 text-sm text-zinc-500">No project matches</p>
         )}
       </div>
     </>

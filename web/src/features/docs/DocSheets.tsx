@@ -1,10 +1,39 @@
-// A document's sheets: where in it a comment goes (the whole document, or one of its paragraphs). Props only.
+// A document's sheets: a comment's menu on the phone, and where in its document a comment goes (the whole document,
+// or one of its paragraphs). Props only.
 
 import type { ReactNode } from 'react'
 import { oneLine } from '../../model/items'
 import { plainQuote } from '../../model/markdown'
 import type { Doc } from '../../model/types'
+import { Icon } from '../../ui/Icon'
 import type { SheetParts } from '../../ui/Sheet'
+import { DANGER, MENU_ROW } from '../../ui/tones'
+
+/** The phone's menu of a comment: Edit (yours), Move, Delete. */
+export function commentMenuSheet(yours: boolean, on: { edit(): void; move(): void; remove(): void }): SheetParts {
+  return {
+    menu: true,
+    title: 'Comment',
+    body: (
+      <div className="-mx-1 flex flex-col gap-0.5">
+        {yours ? (
+          <button onClick={on.edit} className={`${MENU_ROW} h-11`}>
+            <Icon n="pencil" c="size-4 text-zinc-500 dark:text-zinc-400" />
+            Edit
+          </button>
+        ) : null}
+        <button onClick={on.move} className={`${MENU_ROW} h-11`}>
+          <Icon n="arrow" c="size-4 text-zinc-500 dark:text-zinc-400" />
+          Move
+        </button>
+        <button onClick={on.remove} className={`${MENU_ROW} h-11 ${DANGER}`}>
+          <Icon n="trash" c="size-4" />
+          Delete
+        </button>
+      </div>
+    ),
+  }
+}
 
 /** Where in its document a comment goes: the whole document, or one of its paragraphs. */
 export function commentMoveSheet(doc: Doc, current: string, onPick: (key: string) => void): SheetParts {

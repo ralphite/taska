@@ -77,6 +77,7 @@ function useDoc(slug: string, dn: number) {
     move: (id) => app.sheets.open({ kind: 'comment-move', d: dn, id }, { focus: false }),
     takeOff: (id, f) => app.docComments.takeOff(dn, id, f),
     remove: (id) => app.docComments.deleteComment(dn, id),
+    menu: (id) => app.sheets.open({ kind: 'comment-menu', d: dn, id }, { focus: false }),
     resolve: (tk, on2) => app.docComments.resolve(dn, tk, on2),
     reply: (tk) => docs.reply(tk),
     goItem: () => m && d && app.nav.openItem(codeOf(m, liveN(m, d.n))),

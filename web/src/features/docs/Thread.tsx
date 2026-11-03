@@ -1,6 +1,7 @@
-// A comment thread of a document: its comments (yours can be edited; any can be moved or deleted; a file of yours
-// taken off), the words it quotes when they are not the whole paragraph, Resolve or Reopen, and Reply. A comment not
-// sent yet shows where it will go. Props only.
+// A comment thread of a document: its comments (yours can be edited; any can be moved or deleted: on the desktop with
+// buttons under the pointer, on the phone from its ⋯; a file of yours taken off with the × on it), the words it quotes
+// when they are not the whole paragraph (once, over the comments that quote the same), Resolve or Reopen, and Reply. A
+// comment not sent yet shows where it will go. Props only.
 
 import { plainQuote } from '../../model/markdown'
 import { sameText, type Thread as DocThread } from '../../model/docs'
@@ -31,6 +32,8 @@ export interface ThreadEvents extends FileEvents {
   move(id: number): void
   takeOff(id: number, f: string): void
   remove(id: number): void
+  /** the phone's ⋯ of a comment: its menu (Edit, Move, Delete) */
+  menu(id: number): void
   resolve(tk: string, on: boolean): void
   reply(tk: string): void
 }
@@ -39,7 +42,13 @@ const isAudio = (f: FileRef) => (f.mime || '').startsWith('audio/')
 
 export const NewDot = () => <span className="ml-0.5 size-1.5 rounded-full bg-blue-600 dark:bg-blue-400" title="New from an agent" />
 
-function CommentActs({ c, asking, on }: { c: Comment; asking: string | null; on: ThreadEvents }) {
+function CommentActs({ c, desk, on }: { c: Comment; desk: boolean; on: ThreadEvents }) {
+  if (!desk)
+    return (
+      <button aria-label="Comment actions" onClick={() => on.menu(c.id)} className={`${DC_BTN} -mr-1.5 ml-auto min-w-11 justify-center`}>
+        <Icon n="more" c="size-4" />
+      </button>
+    )
   return (
     // on the desktop they float at the end of the line with who wrote it while you point at it, taking no line of
     // their own, and not over the card's top corner, where the words it quotes are
@@ -54,20 +63,63 @@ function CommentActs({ c, asking, on }: { c: Comment; asking: string | null; on:
         <Icon n="arrow" c="size-3.5" />
         Move
       </button>
-      {c.by === 'you'
-        ? (c.files || []).map((f) => (
-            <button key={f.f} onClick={() => on.takeOff(c.id, f.f)} title={`Take off ${f.name || 'the file'}`} className={asking === `${c.id} ${f.f}` ? DC_DANGER : DC_BTN}>
-              <Icon n="x" c="size-3.5" />
-              {asking === `${c.id} ${f.f}` ? 'Take it off?' : 'File'}
-            </button>
-          ))
-        : null}
       <span className={SEP_V} />
       <button onClick={() => on.remove(c.id)} className={DC_DANGER}>
         <Icon n="trash" c="size-3.5" />
         Delete
       </button>
     </div>
+  )
+}
+
+/** A comment's pictures, files and voice notes; on yours each has its × (the desktop's under the pointer), pressed
+ * twice to take it off. */
+function CommentFiles({ c, asking, env, on }: { c: Comment; asking: string | null; env: DocEnv; on: ThreadEvents }) {
+  const files = c.files || []
+  const shown = files.filter((f) => !isAudio(f))
+  const mine = c.by === 'you' && c.id > 0
+  const ask = (f: FileRef) => asking === `${c.id} ${f.f}`
+  const tip = (f: FileRef) => `Take off ${f.name || 'the file'}`
+  const off = (f: FileRef) => () => on.takeOff(c.id, f.f)
+  const thumbs = (fs: FileRef[]) => <Thumbs files={fs} url={env.url} size="size-11" play={env.play} tidy={env.tidy} on={on} />
+  return (
+    <>
+      {shown.length ? (
+        <div className="mt-1.5 flex gap-2 overflow-x-auto">
+          {mine
+            ? shown.map((f) => (
+                <span key={f.f} className="relative flex shrink-0">
+                  {thumbs([f])}
+                  {ask(f) ? (
+                    <button onClick={off(f)} title={tip(f)} className="absolute inset-0 grid place-items-center rounded-lg bg-red-600/90 text-center text-[11px] leading-tight font-semibold text-white">
+                      Take off?
+                    </button>
+                  ) : (
+                    <button
+                      onClick={off(f)}
+                      title={tip(f)}
+                      aria-label={tip(f)}
+                      className={`absolute top-0.5 right-0.5 grid size-5 place-items-center rounded-full bg-zinc-900/70 text-white after:absolute after:-inset-2 lg:invisible lg:group-hover:visible lg:focus-visible:visible`}
+                    >
+                      <Icon n="x" c="size-3" sw="2.5" />
+                    </button>
+                  )}
+                </span>
+              ))
+            : thumbs(shown)}
+        </div>
+      ) : null}
+      {files.filter(isAudio).map((f) => (
+        <div key={f.f} className="flex items-center">
+          <VoiceLine files={[f]} url={env.url} play={env.play} tidy={env.tidy} on={on} />
+          {mine ? (
+            <button onClick={off(f)} title={tip(f)} aria-label={tip(f)} className={`${ask(f) ? DC_DANGER : DC_BTN} ${ask(f) ? '' : 'lg:invisible lg:group-hover:visible lg:focus-visible:visible'}`}>
+              {ask(f) ? 'Take off?' : <Icon n="x" c="size-3.5" />}
+            </button>
+          ) : null}
+        </div>
+      ))}
+    </>
   )
 }
 
@@ -93,9 +145,12 @@ export function Thread({ t, blockText, rail = false, isNew, done, replying, aski
           New
         </div>
       ) : null}
-      {t.comments.map((c) => (
+      {t.comments.map((c, i) => (
         <div key={c.id} data-dc={c.id} className={`group relative text-sm ${COMMENT_CARD(c.by)}`}>
-          {blockText !== undefined && plainQuote(c.quote).trim() && !sameText(c.quote, blockText) ? <div className="mb-0.5 line-clamp-2 text-xs text-zinc-500 dark:text-zinc-300">“{plainQuote(c.quote)}”</div> : null}
+          {/* the words it quotes, once: not again over a comment that quotes the same as the one before */}
+          {blockText !== undefined && plainQuote(c.quote).trim() && !sameText(c.quote, blockText) && !(i > 0 && sameText(c.quote, t.comments[i - 1].quote)) ? (
+            <div className="mb-0.5 line-clamp-2 text-xs text-zinc-500 dark:text-zinc-300">“{plainQuote(c.quote)}”</div>
+          ) : null}
           <div className="flex min-h-6 flex-wrap items-center gap-1 lg:relative">
             <span className={COMMENT_WHO(c.by)}>{whoName(c.by)}</span>{' '}
             <span className="text-xs text-zinc-400">
@@ -104,15 +159,10 @@ export function Thread({ t, blockText, rail = false, isNew, done, replying, aski
               {c.edited ? ` · edited ${when(c.edited, env.now)}` : ''}
             </span>
             {/* a comment shown while it is being saved has nothing to edit or delete yet */}
-            {c.id > 0 ? <CommentActs c={c} asking={asking} on={on} /> : null}
+            {c.id > 0 ? <CommentActs c={c} desk={env.desk} on={on} /> : null}
           </div>
           <Rich text={c.text} world={env.world} onRef={on.ref} onPicture={on.picture} />
-          {c.files?.some((f) => !isAudio(f)) ? (
-            <div className="mt-1.5 flex gap-2 overflow-x-auto">
-              <Thumbs files={c.files.filter((f) => !isAudio(f))} url={env.url} size="size-11" play={env.play} tidy={env.tidy} on={on} />
-            </div>
-          ) : null}
-          <VoiceLine files={c.files || []} url={env.url} play={env.play} tidy={env.tidy} on={on} />
+          <CommentFiles c={c} asking={asking} env={env} on={on} />
         </div>
       ))}
       <button

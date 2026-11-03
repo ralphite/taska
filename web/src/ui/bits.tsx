@@ -1,8 +1,41 @@
-// The small parts every screen uses: key caps, project tiles, avatars, search marks, counts, section heads.
+// The small parts every screen uses: key caps, project tiles, avatars, search marks, counts, section heads, what is
+// still coming.
 
 import { useState, type ReactNode } from 'react'
 import { AVATAR_LETTER } from '../model/words'
 import { Icon, type IconName } from './Icon'
+
+const BONE = 'rounded-md bg-zinc-200 dark:bg-zinc-800'
+const WIDE = ['w-3/4', 'w-1/2', 'w-2/3', 'w-5/12', 'w-7/12']
+
+/** What is still coming, as pale rows shaped like it, so nothing jumps when it comes: a list's items (a mark and two
+ * lines), rows with a tile (projects), or lines of words. Read out as Loading. */
+export function Skeleton({ shape, n = 3, cls = '' }: { shape: 'item' | 'tile' | 'text'; n?: number; cls?: string }) {
+  return (
+    <div role="status" aria-label="Loading" className={`animate-pulse ${cls}`}>
+      {Array.from({ length: n }, (_, i) =>
+        shape === 'item' ? (
+          <div key={i} className="flex h-16 items-start gap-3 border-b border-zinc-100 py-2.5 pr-3 pl-4 dark:border-zinc-800/70">
+            <span className={`mt-0.5 size-5 shrink-0 ${BONE} rounded-full`} />
+            <span className="flex min-w-0 flex-1 flex-col gap-2.5 pt-1">
+              <span className={`h-3.5 ${BONE} ${WIDE[i % WIDE.length]}`} />
+              <span className={`h-3 w-16 ${BONE}`} />
+            </span>
+          </div>
+        ) : shape === 'tile' ? (
+          <div key={i} className="flex h-11 items-center gap-3 px-3">
+            <span className={`size-6 shrink-0 ${BONE}`} />
+            <span className={`h-3.5 ${BONE} ${WIDE[i % WIDE.length]}`} />
+          </div>
+        ) : (
+          <div key={i} className="flex h-6 items-center">
+            <span className={`h-3.5 ${BONE} ${i === n - 1 ? 'w-2/5' : i % 2 ? 'w-11/12' : 'w-full'}`} />
+          </div>
+        ),
+      )}
+    </div>
+  )
+}
 
 /** A key cap, shown on the desktop only. */
 export function Kbd({ k }: { k: string }) {

@@ -14,7 +14,7 @@ import { FiltersSheet } from '../features/list/FiltersContainer'
 import { ViewMenuSheet } from '../features/list/ViewMenuContainer'
 import { SignInSheet } from '../features/project/SignInContainer'
 import { NotSavedSheet, ProjectMenuSheet } from '../features/project/ProjectSheetsContainer'
-import { CommentMoveSheet, DocEditSheet, DocMoveSheet } from '../features/docs/DocSheetsContainer'
+import { CommentMenuSheet, CommentMoveSheet, DocEditSheet, DocMoveSheet } from '../features/docs/DocSheetsContainer'
 
 const KINDS: { [K in SheetKind]: ComponentType<{ req: Extract<SheetRequest, { kind: K }> }> } = {
   'item-menu': ItemMenuSheet,
@@ -35,6 +35,7 @@ const KINDS: { [K in SheetKind]: ComponentType<{ req: Extract<SheetRequest, { ki
   palette: PaletteSheet,
   'doc-move': DocMoveSheet,
   'comment-move': CommentMoveSheet,
+  'comment-menu': CommentMenuSheet,
   'doc-edit': DocEditSheet,
   'view-menu': ViewMenuSheet,
   'sign-in': SignInSheet,

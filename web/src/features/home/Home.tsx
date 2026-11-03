@@ -6,7 +6,7 @@ import { useState, type MouseEvent, type Ref } from 'react'
 import type { SearchHit } from '../../model/types'
 import { inputCode } from '../../model/words'
 import { Icon } from '../../ui/Icon'
-import { ProjTile } from '../../ui/bits'
+import { ProjTile, Skeleton } from '../../ui/bits'
 import { DISABLED } from '../../ui/tones'
 
 export interface HomeRow {
@@ -203,7 +203,7 @@ export function Home({ facts, on, searchRef }: { facts: HomeFacts; on: HomeEvent
         </div>
         <ul>
           {!rows ? (
-            <li className="px-4 py-3 text-sm text-zinc-500">{away ? 'Taska is out of reach, retrying…' : 'Loading…'}</li>
+            <li className={away ? 'px-4 py-3 text-sm text-zinc-500' : ''}>{away ? 'Taska is out of reach, retrying…' : <Skeleton shape="tile" cls="px-1 py-1.5" />}</li>
           ) : !rows.length ? (
             <li className="px-4 py-3 text-sm text-zinc-500">No projects yet.</li>
           ) : (

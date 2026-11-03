@@ -6,7 +6,7 @@ import type { LogSentence } from '../../model/activity'
 import { plural } from '../../model/words'
 import { Icon } from '../../ui/Icon'
 import { PRIMARY } from '../../ui/tones'
-import { Empty } from '../../ui/bits'
+import { Empty, Skeleton } from '../../ui/bits'
 import { LogLine, LogMore, type LogEvents } from '../../ui/Log'
 
 export type Side = 'docs' | 'log' | 'deleted'
@@ -88,7 +88,7 @@ export interface ActivityEvents extends LogEvents {
 
 /** `asking`: the changes whose Undo was clicked once and waits for a second click. */
 export function ActivityList({ rows, end, picked, asking, on }: { rows: ActivityRow[] | null; end: boolean; picked: string | null; asking: ReadonlySet<number>; on: ActivityEvents }) {
-  if (!rows) return <Empty>Loading…</Empty>
+  if (!rows) return <Skeleton shape="text" n={4} cls="px-4 py-3" />
   if (!rows.length) return <Empty>No changes yet</Empty>
   return (
     <>
