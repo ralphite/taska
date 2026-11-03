@@ -113,7 +113,7 @@ export function KeepBtn({ it, on }: { it: Item; on: CardEvents }) {
 }
 
 export const SendAnswerBtn = ({ n, picked, cls, keyHint = false, on }: { n: number; picked: boolean; cls: string; keyHint?: boolean; on: CardEvents }) => (
-  <button disabled={!picked} onClick={() => on.sendAnswer(n)} className={`${PRIMARY_BASE} ${NEED.answer.btn} ${cls}`}>
+  <button disabled={!picked} onClick={() => on.sendAnswer(n)} className={`${PRIMARY_BASE} ${NEED.answer.btn} whitespace-nowrap ${cls}`}>
     Send answer
     {keyHint ? <Kbd k="⌘↵" /> : null}
   </button>
@@ -309,12 +309,15 @@ export function Answered({ it, x, done, env, on, reasking, going = '' }: {
         title={`${msgName(x)} asks you`}
         t={x.t}
         now={env.now}
+        // Cancel in the head, as when a decision is changed: the buttons keep one line on the phone
+        act={
+          <button onClick={on.cancelReask} className={MODIFY_LINK.replace(/lg:opacity-0\S*|lg:group-hover\S*/g, '')}>
+            Cancel
+          </button>
+        }
         body={<Rich text={x.text} world={env.world} cls="text-zinc-900 dark:text-zinc-100" choosing={env.choosing} onRef={on.ref} onPicture={on.picture} />}
         foot={
           <>
-            <button onClick={on.cancelReask} className={`${SECOND} flex-1 lg:flex-none`}>
-              Cancel
-            </button>
             {last ? <KeepBtn it={it} on={on} /> : null}
             <SendAnswerBtn n={it.n} picked={!!env.choosing?.picked.size} cls="flex-[1.4] lg:flex-none" keyHint on={on} />
           </>

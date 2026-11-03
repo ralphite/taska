@@ -176,11 +176,12 @@ export function VoiceLine({ files, url, play, tidy, bare = false, on }: { files:
               onClick={(e) => (e.stopPropagation(), on.play(src))}
               className={`${HIT} flex h-7 items-center gap-1 rounded-full px-1.5 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200`}
             >
-              <span>
-                <Icon n={p.playing ? 'pausefill' : 'play'} c="size-3.5" />
-              </span>
+              {/* the time grows to the left: the button stays where it was pressed */}
               <span className="font-mono tabular-nums">
                 <VoiceTime total={voiceLength(f)} play={p} />
+              </span>
+              <span>
+                <Icon n={p.playing ? 'pausefill' : 'play'} c="size-3.5" />
               </span>
             </button>
             {words ? (

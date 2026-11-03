@@ -47,7 +47,8 @@ T1 ask Pick one in D1 (the colour plan).
   await open(page, p, 'D1')
   await expect(page.getByText('Skipped · you replied on T1').filter({ visible: true })).toBeVisible()
   await open(page, p, 'T1')
-  await expect(page.getByText('Skipped', { exact: true }).filter({ visible: true })).toBeVisible()
+  // the question's head says it as the cards do (R3-1 #3)
+  await expect(page.getByText('Skipped · you replied', { exact: true }).filter({ visible: true })).toBeVisible()
 })
 
 /** How light a colour is, 0 (black) to 1 (white); a see-through colour counts as none: -1. */

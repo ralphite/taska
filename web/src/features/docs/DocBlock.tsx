@@ -1,6 +1,6 @@
 // One paragraph of a document, drawn as what the document says it is (a heading, a list, a quote, code, a table, or
 // words); its first paragraph, when it is the title, as the title. Its choices are a form filled in place (a tap
-// ticks one); sent and not changed since, the form keeps its look, quieter, with Submitted and Modify. Props only.
+// ticks one); sent and not changed since, the form keeps its look, quieter, with Sent and Modify. Props only.
 
 import { isTicked } from '../../model/docTicks'
 import { blocks, CHOICE, codeBlock, listOf, type MdBlock } from '../../model/markdown'
@@ -48,7 +48,7 @@ function TickForm({ lines, from, foot, t, world }: { lines: string[]; from: numb
       })}
       {t.sent && foot ? (
         <p className="flex h-7 items-center gap-2 text-xs font-medium text-zinc-500 dark:text-zinc-400">
-          Submitted
+          Sent
           <button
             onClick={(e) => (e.stopPropagation(), t.modify())}
             className="rounded-md px-1.5 py-0.5 font-semibold text-blue-600 hover:bg-blue-50 lg:opacity-0 lg:group-hover/form:opacity-100 lg:focus-visible:opacity-100 dark:text-blue-400 dark:hover:bg-blue-400/10"
@@ -68,7 +68,7 @@ const hasChoices = (b: Pick<DocPart, 'kind' | 'text'>) => (b.kind === 'list' || 
 function Ticks({ b, t, world }: { b: Pick<DocPart, 'kind' | 'text'>; t: Ticking; world: InlineWorld }) {
   const ls = b.text.split('\n').filter((l) => l.trim())
   if (ls.every((l) => CHOICE.test(l))) return <TickForm lines={ls} from={0} foot t={t} world={world} />
-  // choices right under some words: the words as they are, the choices a form (Submitted once, under the last one)
+  // choices right under some words: the words as they are, the choices a form (Sent once, under the last one)
   const last = ls.map((l) => CHOICE.test(l)).lastIndexOf(true)
   const runs: { choice: boolean; lines: string[]; from: number; end: number }[] = []
   let at = 0

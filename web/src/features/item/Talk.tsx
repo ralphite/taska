@@ -46,6 +46,8 @@ export interface Outgoing {
   bad: boolean
   /** you just sent it: Undo takes it back */
   canUndo: boolean
+  /** its pictures, as they were picked (shown while they go up) */
+  previews?: string[]
 }
 
 export interface TalkFacts {
@@ -97,7 +99,14 @@ function FromInput({ r, n, code, on }: { r: Input | undefined; n: number; code(n
       <button onClick={() => on.goInput(r.id)} className="font-mono text-blue-600 hover:underline dark:text-blue-400">
         {inputCode(r.id)}
       </button>
-      {there ? ` on ${there}` : ''}
+      {there ? (
+        <>
+          {' on '}
+          <button onClick={() => on.ref(there)} className="font-mono text-blue-600 hover:underline dark:text-blue-400">
+            {there}
+          </button>
+        </>
+      ) : null}
     </span>
   )
 }
@@ -199,7 +208,7 @@ function MsgView({ it, x, env, on, facts, docs, code, done, ver, gone, read }: {
             </button>
           ) : null}
           {src && !ver?.old && !src.moved ? (
-            <button aria-label={`More for ${inputCode(src.id)}`} onClick={(e) => on.inputMore(src.id, e.currentTarget)} className={`${DC_BTN} min-w-11 justify-center lg:opacity-0 lg:group-hover/msg:opacity-100 lg:focus-visible:opacity-100`}>
+            <button aria-label={`More for ${inputCode(src.id)}`} onClick={(e) => on.inputMore(src.id, e.currentTarget)} className={`${DC_BTN} min-w-11 justify-center lg:order-first lg:opacity-0 lg:group-hover/msg:opacity-100 lg:focus-visible:opacity-100`}>
               <Icon n="more" c="size-3.5" />
             </button>
           ) : null}
@@ -265,25 +274,25 @@ function MsgView({ it, x, env, on, facts, docs, code, done, ver, gone, read }: {
         <>
           {x.by === 'org' && x.src ? <FromInput r={facts.inputs.get(x.src)} n={it.n} code={code} on={on} /> : null}
           {done ? (
-            <span className="flex items-center gap-0.5 rounded bg-zinc-100 px-1.5 py-0.5 text-[10px] font-semibold tracking-wider text-zinc-600 uppercase dark:bg-zinc-800 dark:text-zinc-300">
-              <Icon n={pickInDoc(x, docs) ? 'reply' : 'check'} c="size-3" sw="3" />
-              {pickInDoc(x, docs) ? 'Skipped' : 'Submitted'}
+            // answered by your words: as the cards say it (Replied; Skipped where the choices were in a document)
+            <span className="flex items-center gap-0.5 text-xs font-medium text-zinc-500 dark:text-zinc-400">
+              <Icon n="reply" c="size-3" sw="2.5" />
+              {pickInDoc(x, docs) ? 'Skipped · you replied' : 'Replied'}
             </span>
           ) : (
             <KindTag x={x} />
           )}
           {/* the time and the message's More go together, so More is never alone on a line */}
-          <span className="flex items-center gap-2">
-            {when(x.t, env.now)}
+          <span className="-ml-1 flex items-center gap-2">
+            · {when(x.t, env.now)}
             {x.hidden ? (
-              <button onClick={() => on.unhide(x.id)} className={DC_BTN}>
-                Show again
+              <button onClick={() => on.unhide(x.id)} className={DC_LINK}>
+                Unhide
               </button>
-            ) : (
-              <button aria-label="More for this message" onClick={(e) => on.msgMenu(x.id, e.currentTarget)} className={`${DC_BTN} min-w-9 justify-center lg:opacity-0 lg:group-hover/msg:opacity-100 lg:focus-visible:opacity-100`}>
-                <Icon n="more" c="size-3.5" />
-              </button>
-            )}
+            ) : null}
+            <button aria-label="More for this message" onClick={(e) => on.msgMenu(x.id, e.currentTarget)} className={`${DC_BTN} min-w-9 justify-center lg:opacity-0 lg:group-hover/msg:opacity-100 lg:focus-visible:opacity-100`}>
+              <Icon n="more" c="size-3.5" />
+            </button>
           </span>
         </>,
       )}
@@ -298,6 +307,15 @@ function MsgView({ it, x, env, on, facts, docs, code, done, ver, gone, read }: {
 export interface Note {
   t: string
   node: ReactNode
+}
+
+/** What a comment quoting no words is on: the start of its part, a table by its columns. */
+function partStart(d: Doc, key: string): string {
+  const b = d.blocks.find((x) => x.key === key)
+  if (!b) return ''
+  if (b.kind === 'table') return `Table: ${b.text.split('\n')[0].split('|').map((s) => s.trim()).filter(Boolean).join(' · ')}`
+  const words = plainQuote(b.text).replace(/\s+/g, ' ').trim()
+  return `“${words.length > 120 ? words.slice(0, 120) + '…' : words}”`
 }
 
 /** The comments on the item's documents, as messages, in time (from `from` on). */
@@ -319,12 +337,13 @@ export function docNotes(docs: readonly Doc[], env: TalkEnv, on: TalkLineEvents,
         on <span className="font-mono">D{d.d}</span>
       </button>
     )
-    const quote = c.quote ? (
+    const about = c.quote ? `“${plainQuote(c.quote)}”` : key !== 'doc' ? partStart(d, key) : ''
+    const quote = about ? (
       <button
         onClick={() => on.docAt(d.d, key)}
         className={`mb-1.5 line-clamp-3 block w-full border-l-2 pl-2 text-left text-[13px] leading-snug hover:underline ${changed ? 'line-through' : ''} ${you ? 'border-white/50 text-white/85 hover:text-white' : 'border-zinc-300 text-zinc-500 hover:text-zinc-700 dark:border-zinc-600 dark:text-zinc-400 dark:hover:text-zinc-200'}`}
       >
-        “{plainQuote(c.quote)}”
+        {about}
       </button>
     ) : null
     const words = c.text.trim() ? <Rich text={c.text} world={env.world} onRef={on.ref} onPicture={on.picture} /> : c.files?.some(isAudio) ? 'Voice note' : null
@@ -359,7 +378,7 @@ export function docNotes(docs: readonly Doc[], env: TalkEnv, on: TalkLineEvents,
             <span className="shrink-0 text-xs font-semibold text-zinc-700 dark:text-zinc-300">{whoName(c.by)}</span>
             <Icon n="comment" c="size-3 shrink-0" />
             {where}
-            <span className="shrink-0">{when(c.t, env.now)}</span>
+            <span className="-ml-1 shrink-0">· {when(c.t, env.now)}</span>
             {gone}
           </div>
           <div className="w-full rounded-2xl rounded-tl-md border border-zinc-200 bg-zinc-50 px-4 py-3 text-[15px] leading-relaxed text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200">
@@ -379,7 +398,14 @@ function Pending({ list, on }: { list: Outgoing[]; on: TalkLineEvents }) {
     <>
       {list.map((q) => (
         <div key={q.q} className="flex flex-col items-end gap-1">
-          <div className={`${YOU_BUBBLE} break-words whitespace-pre-wrap ${q.bad ? 'opacity-70' : ''}`}>{q.text}</div>
+          {q.text ? <div className={`${YOU_BUBBLE} break-words whitespace-pre-wrap ${q.bad ? 'opacity-70' : ''}`}>{q.text}</div> : null}
+          {q.previews?.length ? (
+            <div className={`flex max-w-full flex-wrap justify-end gap-2 ${q.bad ? 'opacity-70' : ''}`}>
+              {q.previews.map((src, i) => (
+                <img key={i} src={src} alt="" className="size-20 rounded-lg border border-zinc-200 bg-zinc-50 object-cover dark:border-zinc-700 dark:bg-zinc-900" />
+              ))}
+            </div>
+          ) : null}
           <div className="flex flex-wrap items-center justify-end gap-x-1">
             <span className="px-1 text-[11px] text-zinc-400 dark:text-zinc-500">
               <span className={q.bad ? 'text-red-600 dark:text-red-400' : 'animate-pulse text-blue-600 dark:text-blue-400'}>{q.state}</span>

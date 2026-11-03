@@ -55,7 +55,10 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
   const answering = mine.filter((o) => o.kind === 'answer').at(-1)
   const outgoing: Outgoing[] = mine
     .filter((o) => !(o.kind === 'answer' && !o.files.length))
-    .map((o) => ({ q: o.q, text: o.text || outgoingLine(o), state: outgoingState(o, away), bad: o.state === 'failed' && !o.net, canUndo: takeBack.some((x) => x.q === o.q) }))
+    .map((o) => {
+      const previews = o.files.flatMap((f) => (f.preview ? [f.preview] : []))
+      return { q: o.q, text: o.text || (previews.length ? '' : outgoingLine(o)), state: outgoingState(o, away), bad: o.state === 'failed' && !o.net, canUndo: takeBack.some((x) => x.q === o.q), previews }
+    })
 
   const media = useFiles(slug)
   const env: TalkEnv = {

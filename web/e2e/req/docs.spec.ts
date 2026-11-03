@@ -98,7 +98,7 @@ test("r524: choices in a document are ticked on the page and wait; the box's lin
   expect(await p.read('D1')).not.toMatch(/\[x\] Pears/i)
 })
 
-test('r420: a sent form is greyed and Submitted, plainly showing what was picked; Modify makes it a form again', async ({
+test('r420: a sent form is greyed and says Sent (R3-1 #3: one word for an answer), plainly showing what was picked; Modify makes it a form again', async ({
   page,
   request,
 }) => {
@@ -114,7 +114,7 @@ test('r420: a sent form is greyed and Submitted, plainly showing what was picked
   await sendChoices(page).click()
   await expect.poll(() => p.read('D1')).toMatch(/\(x\) Apples/i)
   const sent = form(page, 'Pears')
-  await expect(sent).toContainText('Submitted')
+  await expect(sent).toContainText('Sent')
   await expect(sent.getByRole('button', { name: /Apples|Pears/ })).toHaveCount(0) // not clickable: sent
   const row = (f: string) => sent.locator('[aria-pressed]').filter({ hasText: f })
   await expect(row('Apples')).toHaveAttribute('aria-pressed', 'true')
