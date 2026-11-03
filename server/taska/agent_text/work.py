@@ -100,5 +100,11 @@ def next_work(rd: Reading, project_name: str, gone: bool, asker: Asker) -> Work:
         how = IDEA.format(code=st.code(it.n)) if it.type == "idea" else ""
         return Work(f"{head}\nnext {st.code(it.n)} ({len(queue)} in queue: doing first, then P0→P3, oldest first){how}\n"
                     + card(rd, it), True, given=it.n, claim=(it.n, me) if me else None)
-    return Work(f"{head}\nnothing to do now. End your turn (Claude Code: with the background wait from /agent running; never wait, poll or set a timer in the foreground).\n",
-                False)
+    end = "nothing to do now. End your turn (Claude Code: with the background wait from /agent running; never wait, poll or set a timer in the foreground)."
+    if asker.who and asker.who.startswith("claude"):
+        # the command itself, so a session that read the guide long ago keeps listening without spending tokens (T633)
+        who = asker.who + (f"&session={asker.session}" if asker.session else "")
+        end += ("\nClaude Code: before ending the turn, start this with Bash run_in_background (it costs no tokens; Taska "
+                "answers it only when there is work, and that wakes you):\n"
+                f"  while o=$(curl -s \"BASE/next?wait=540&by={who}\"); [ -z \"$o\" ] || echo \"$o\" | grep -q 'nothing to do now'; do sleep 20; done; echo \"$o\"")
+    return Work(f"{head}\n{end}\n", False)
