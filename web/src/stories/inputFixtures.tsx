@@ -75,6 +75,8 @@ export interface Said {
   /** jumped to this input (lit; `litStill`: stays lit) */
   lit?: string
   litStill?: boolean
+  /** a voice note being recorded into a new input: how long so far */
+  recording?: string
 }
 
 const title = (slug: string) => ({ 'mobile-app': 'Mobile app' })[slug] ?? slug
@@ -96,7 +98,7 @@ export function inputsOf(s: Said = {}) {
   const hints = words.length ? <SearchHints other={otherTabs(m, words, 'inputs', rows.length)} cross={{ list: [], failed: false, q: words.join(' ') }} tone={() => PROJECT_TONES[1]} onShow={() => {}} onGo={() => {}} /> : null
   return (
     <div className="flex h-full flex-col">
-      <InputsView hidden={false} rows={rows} outgoing={outgoingRows(s.outbox ?? [], 'demo', s.away ?? 0)} words={words} world={talkEnv(m, false).world} hints={hints} files={thumbs('size-11')} on={noInput} />
+      <InputsView hidden={false} rows={rows} outgoing={outgoingRows(s.outbox ?? [], 'demo', s.away ?? 0)} words={words} world={talkEnv(m, false).world} hints={hints} files={thumbs('size-11')} recording={s.recording ?? null} on={noInput} />
     </div>
   )
 }
@@ -135,6 +137,7 @@ export function saidOf(s: Said = {}) {
         more={said.all.length > said.rows.length}
         words={words}
         files={thumbs('size-12')}
+        recording={s.recording ?? null}
         on={noSaid}
       />
     </div>

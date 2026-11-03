@@ -3,6 +3,8 @@
 
 import { useMemo } from 'react'
 import { useServices, useStores, useStoreValue } from '../../app/context'
+import { NEW_DRAFT } from '../../model/draftTarget'
+import { clock } from '../../model/time'
 import { useAway, useFiles, useProjectModel, type ProjectRoute } from '../../app/hooks'
 import { codeOf, findRef, type ProjectModel } from '../../model/project'
 import { searchWords } from '../../model/visible'
@@ -15,7 +17,9 @@ import { inputRows, outgoingRows } from './inputRows'
 
 export function InputsContainer({ route, hidden }: { route: ProjectRoute; hidden: boolean }) {
   const app = useServices('box', 'docs', 'fields', 'inputActions', 'inputs', 'nav', 'sheets')
-  const stores = useStores('box', 'data', 'drafts', 'outbox', 'ui')
+  const stores = useStores('box', 'recording', 'data', 'drafts', 'outbox', 'ui')
+  // a voice note being recorded into a new input here: its row comes first, with how long so far (B627)
+  const recording = useStoreValue(stores.recording, (st) => (st.rec && st.rec.slug === route.slug && !st.rec.about && st.rec.key === NEW_DRAFT ? clock(st.rec.ms) : null))
   const m = useProjectModel(route.slug)
   const away = useAway(route.slug)
   const outbox = useStoreValue(stores.outbox, (s) => s.list)
@@ -39,6 +43,7 @@ export function InputsContainer({ route, hidden }: { route: ProjectRoute; hidden
   const outgoing = outgoingRows(outbox, route.slug, away)
   return (
     <InputsView
+      recording={recording}
       hidden={hidden}
       rows={rows}
       outgoing={outgoing}

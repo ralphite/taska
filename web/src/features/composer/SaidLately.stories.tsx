@@ -50,3 +50,4 @@ export const LatestInputsNotSentSending = list('Latest inputs: not sent, and sen
 export const LatestInputsNoneYet = list('Latest inputs, none yet', { inputs: [] })
 // ---- more states (T639)
 export const LatestInputsTranscribingAndHandled = list('Latest inputs: a voice note being written out, one handled by the agent', { organizer: true, inputs: [ONE.transcribing, ONE.handled, ONE.made] })
+export const LatestInputsRecording = list('Latest inputs: a voice note being recorded comes first', { organizer: true, inputs: DAY, recording: '0:12' })

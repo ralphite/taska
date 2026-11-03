@@ -242,10 +242,12 @@ export function OutboxRows({ list, on }: { list: OutgoingRow[]; on: Pick<InputEv
   )
 }
 
-export function InputsView({ hidden, rows, outgoing, words, world, files, hints, viewRef, on }: {
+export function InputsView({ hidden, rows, outgoing, words, world, files, hints, viewRef, recording = null, on }: {
   hidden: boolean
   rows: InputFacts[]
   outgoing: OutgoingRow[]
+  /** a voice note being recorded into a new input: how long so far (it shows first, B627) */
+  recording?: string | null
   words: readonly string[]
   world: InlineWorld
   files(f: FileRef[]): ReactNode
@@ -267,6 +269,16 @@ export function InputsView({ hidden, rows, outgoing, words, world, files, hints,
       data-vc-area
       className="-mb-(--foot-h) min-h-0 flex-1 overflow-y-auto outline-none overscroll-contain pb-[calc(var(--foot-h,0px)+1.5rem)]"
     >
+      {hidden || !recording || words.length ? null : (
+        <article className="border-b border-zinc-100 px-4 py-2 dark:border-zinc-800/70">
+          <div className="flex min-h-5 items-center gap-2 text-xs font-medium text-red-600 dark:text-red-400">
+            {dot('bg-red-500 dark:bg-red-400')}
+            Recording
+            <span className="font-mono tabular-nums">{recording}</span>
+          </div>
+          <div className="mt-1.5 text-[15px] text-zinc-400 italic dark:text-zinc-500">Voice note</div>
+        </article>
+      )}
       {hidden ? null : outgoing.length && !words.length ? <OutboxRows list={outgoing} on={on} /> : null}
       {hidden ? null : rows.length ? (
         <>
@@ -278,7 +290,7 @@ export function InputsView({ hidden, rows, outgoing, words, world, files, hints,
           ))}
           {words.length ? <div className="flex flex-col py-4">{hints}</div> : null}
         </>
-      ) : outgoing.length ? null : (
+      ) : outgoing.length || recording ? null : (
         <Empty>
           {words.length ? 'No matching inputs' : 'No inputs yet.'}
           {words.length ? <span className="mt-3 flex flex-col">{hints}</span> : null}

@@ -217,6 +217,7 @@ export function SaidLately({
   words,
   draft,
   files,
+  recording = null,
   on,
 }: {
   /** what the heading counts */
@@ -231,6 +232,8 @@ export function SaidLately({
   words: string[]
   draft?: ReactNode
   files(f: FileRef[], gid: string): ReactNode
+  /** a voice note being recorded into a new input: how long so far (it shows first, B627) */
+  recording?: string | null
   on: SaidEvents
 }) {
   const end = useRef<HTMLLIElement>(null)
@@ -241,10 +244,10 @@ export function SaidLately({
     io.observe(el)
     return () => io.disconnect()
   }, [more, rows.length, on])
-  const n = outgoing.length + rows.length
+  const n = outgoing.length + rows.length + (recording ? 1 : 0)
   return (
     <div>
-      <div hidden={!total && !outgoing.length} className="flex h-9 items-center gap-3">
+      <div hidden={!total && !outgoing.length && !recording} className="flex h-9 items-center gap-3">
         <h2 className="text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">Inputs</h2>
         <span className="font-mono text-xs text-zinc-400 tabular-nums dark:text-zinc-500">{count || ''}</span>
         {total ? (
@@ -264,6 +267,18 @@ export function SaidLately({
       <ol>{draft}</ol>
       {n ? (
         <ol className="mt-4">
+          {recording ? (
+            <SaidStep
+              time={recording}
+              head={
+                <span className="flex items-center gap-1.5 font-medium text-red-600 dark:text-red-400">
+                  <span className="size-1.5 animate-pulse rounded-full bg-current" />
+                  Recording
+                </span>
+              }
+              body={<span className="text-zinc-400 italic dark:text-zinc-500">Voice note</span>}
+            />
+          ) : null}
           {outgoing.map((o) => (
             <OutboxStep key={o.q} q={o} on={on} />
           ))}

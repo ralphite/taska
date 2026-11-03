@@ -23,3 +23,5 @@ export const SearchNothingFound: Story = { ...one({ organizer: true, q: 'zebra' 
 // ---- more states (T639)
 /** the first input of a project still on its way: only its row, no "No inputs yet." */
 export const EmptyOneOnItsWay: Story = { name: 'Empty, one on its way', render: () => <Frames desk={false} phoneWidth={393} height={360}>{() => inputsOf({ inputs: [], outbox: [out({ q: 'a', text: 'Buy milk on the way home' })] })}</Frames> }
+/** a voice note being recorded into a new input: its row comes first, with how long so far (B627) */
+export const InputsTabRecording: Story = { ...one({ organizer: true, recording: '0:12' }), name: 'A voice note being recorded' }
