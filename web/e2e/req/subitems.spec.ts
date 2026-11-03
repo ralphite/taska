@@ -32,7 +32,10 @@ new task P2 now parent=T3 Collect the quotes
   await expect(row(2)).toHaveCount(0)
   await expect(fold(page, 1)).toBeVisible()
   await expect(line(1)).toHaveText('1 more in Later')
-  await expect(line(3)).toHaveText('2 more: 1 in Later, 1 finished')
+  // T622: a finished subitem is not listed under its parent in Active (no "finished" on the line); it still counts in
+  // its parent's 1/2, here and on the item page below
+  await expect(line(3)).toHaveText('1 more in Later')
+  await expect(row(3)).toContainText('1/2')
   // the line is a tap target of its own: 44 px on the phone, 40 on the desktop
   const box = await line(1).boundingBox()
   expect(Math.round(box?.height || 0)).toBe(isDesk(page) ? 40 : 44)
