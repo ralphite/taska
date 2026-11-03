@@ -84,7 +84,7 @@ export function KeepBtn({ it, quiet = false, on }: { it: Item; quiet?: boolean; 
     // decided: the same button where it was, its word said as done, a little greyed (D106 #4.3, r1003)
     const w = chosenWord(it.decided)
     return (
-      <span className={`${SECOND} opacity-70`}>
+      <span aria-disabled className={`${SECOND} cursor-not-allowed opacity-70 hover:bg-white dark:hover:bg-zinc-800`}>
         <Icon n={ACT_ICON[w]} c="size-4" sw="2.25" />
         {PAST[w] ?? w}
       </span>
@@ -201,8 +201,9 @@ export function NeedsCard({ it, env, on, remodify, going = null }: {
           ))}
         />
       )
-    // decided: the card keeps its look and its buttons where they were (r1003): what you chose says it is done and
-    // greys a little; the other greys more and still changes your mind with a click
+    // decided: the card keeps its look and its buttons where they were (r1003), done like a sent form (r1007): both
+    // greyed and disabled (the not-allowed cursor, no hover, out of the keys), what you chose said as done; Edit, under
+    // the pointer on the desktop, opens them again
     return (
       <NeedFrame
         icon={dec.from === 'proposed' ? 'propose' : 'done'}
@@ -210,18 +211,24 @@ export function NeedsCard({ it, env, on, remodify, going = null }: {
         t={x?.t}
         now={env.now}
         done
+        act={
+          <button onClick={() => on.modify(n)} className={MODIFY_LINK}>
+            Edit
+          </button>
+        }
         body={x ? text(x) : null}
         foot={pairs.map(([v, icon, label, k], i) => (
-          <button
-            key={v}
-            aria-pressed={chose(v)}
-            onClick={() => (chose(v) ? undefined : v === 'open' && dec.from === 'review' ? on.notYet(n) : on.decide(n, v as 'open' | 'dropped' | 'done'))}
-            className={`${i ? `${PRIMARY_BASE} ${tone} flex-[1.4]` : `${SECOND} flex-1`} lg:flex-none ${chose(v) ? 'cursor-default opacity-70' : 'opacity-40 hover:opacity-100'}`}
-          >
-            <Icon n={icon} c={i ? 'size-4.5' : 'size-4'} sw="2.25" />
-            {chose(v) ? (PAST[label] ?? label) : label}
-            <Kbd k={k} />
-          </button>
+          <span key={v} className={`flex cursor-not-allowed ${i ? 'flex-[1.4]' : 'flex-1'} lg:flex-none`}>
+            <button
+              disabled
+              aria-pressed={chose(v)}
+              className={`${i ? `${PRIMARY_BASE} ${tone}` : SECOND} pointer-events-none w-full ${chose(v) ? 'opacity-70' : 'opacity-40'}`}
+            >
+              <Icon n={icon} c={i ? 'size-4.5' : 'size-4'} sw="2.25" />
+              {chose(v) ? (PAST[label] ?? label) : label}
+              <Kbd k={k} />
+            </button>
+          </span>
         ))}
       />
     )
@@ -282,8 +289,8 @@ export function NeedsCard({ it, env, on, remodify, going = null }: {
 }
 
 /** An answered question, in the card it was asked in, its layout as it was (r1003): your picks ticked, Send answer
- * where it was said as Sent (Replied when you wrote instead), a little greyed, and Modify (under the pointer on the
- * desktop) to pick again. */
+ * where it was said as Sent (Replied when you wrote instead), greyed and not to be clicked, and Edit (under the
+ * pointer on the desktop) to pick again (r1007). */
 export function Answered({ it, x, done, env, on, reasking, going = '' }: {
   it: Item
   x: Message
@@ -325,7 +332,7 @@ export function Answered({ it, x, done, env, on, reasking, going = '' }: {
       done
       act={
         <button onClick={() => on.reask(it.n, x.id)} className={MODIFY_LINK}>
-          {done.length ? 'Modify' : 'Answer'}
+          Edit
         </button>
       }
       body={<Rich text={x.text} world={env.world} cls="text-zinc-600 dark:text-zinc-300" done={done} onRef={on.ref} onPicture={on.picture} />}
@@ -333,7 +340,7 @@ export function Answered({ it, x, done, env, on, reasking, going = '' }: {
         <>
           {last ? <KeepBtn it={it} quiet on={on} /> : null}
           {/* Send answer where it was, said as done and a little greyed (r1003) */}
-          <span className={`${PRIMARY_BASE} ${NEED.answer.btn} flex-[1.4] opacity-70 lg:flex-none`}>
+          <span aria-disabled className={`${PRIMARY_BASE} ${NEED.answer.btn} flex-[1.4] cursor-not-allowed opacity-70 hover:brightness-100 lg:flex-none dark:hover:brightness-100`}>
             <Icon n={done.length ? 'check' : 'reply'} c="size-4" sw="2.25" />
             {done.length ? 'Sent' : 'Replied'}
             <span className="invisible">
