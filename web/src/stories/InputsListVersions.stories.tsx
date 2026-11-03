@@ -21,19 +21,19 @@ const org = (msg: string, f: Partial<OrgNote> = {}): OrgNote => ({ ok: true, msg
 const voice = (d: string): FileRef => ({ f: `f9-voice_${d}.webm`, name: `voice_${d}.webm`, mime: 'audio/webm' })
 const SHOT: FileRef = { f: 'f8-photo.png', name: 'photo.png', mime: 'image/png' }
 const ITEMS = [
-  item({ n: 38, type: 'task', title: '雨水管滴水声太大，怎么处理' }),
-  item({ n: 25, type: 'task', status: 'doing', title: '秋叶路线：两日游的天气和路况' }),
+  item({ n: 38, type: 'task', title: '导出的文件丢了筛选条件' }),
+  item({ n: 25, type: 'task', status: 'doing', title: '订单页加载太慢' }),
   item({ n: 14, type: 'bug', pri: 'P1', title: 'Coupon box hidden behind the keyboard' }),
-  item({ n: 37, type: 'task', status: 'done', title: '天花板不平整的修补办法' }),
+  item({ n: 37, type: 'task', status: 'done', title: '设置页的开关对不齐' }),
   item({ n: 7, type: 'task', title: 'Which formats should the export offer?' }),
 ]
 const INPUTS: Input[] = [
   input({ id: 'r71', t: ago(1), text: '', files: [voice('0-12')], trWait: true }),
-  input({ id: 'r70', t: ago(4), acked: true, touched: [38], files: [voice('0-28')], text: '下雨的时候，屋顶的水从 gutter 流到 downspout，滴水的声音特别大，两层楼都听得到。通常这个要怎么解决？', org: org('Created T038') }),
-  input({ id: 'r69', t: ago(160), acked: true, touched: [25], files: [voice('0-16')], text: '我们再做一次调研，打算明天去走这条路线。按最新的天气把所有内容更新一下。', org: org('Added to T025') }),
+  input({ id: 'r70', t: ago(4), acked: true, touched: [38], files: [voice('0-28')], text: '我在订单页设了筛选再导出，导出来的 CSV 里还是全部订单，筛选条件没有带过去。应该只导出我筛出来的那些。', org: org('Created T038') }),
+  input({ id: 'r69', t: ago(160), acked: true, touched: [25], files: [voice('0-16')], text: '订单页打开要等好几秒，特别是订单多的时候。看看能不能先显示前面一部分。', org: org('Added to T025') }),
   input({ id: 'r68', t: ago(300), acked: true, touched: [14], files: [SHOT], text: 'The coupon box hides behind the keyboard on the phone.', org: org('Created B014') }),
   input({ id: 'r67', t: ago(420), text: 'Look at why the build takes so long.', org: org('Left for your agent', { keep: true, changed: false }) }),
-  input({ id: 'r66', t: ago(60 * 24 + 30), acked: true, touched: [37], files: [SHOT, voice('0-10')], text: '这种天花板不平整，是怎么修补的？', org: org('Created T037') }),
+  input({ id: 'r66', t: ago(60 * 24 + 30), acked: true, touched: [37], files: [SHOT, voice('0-10')], text: '设置页里这几个开关没对齐，看截图。', org: org('Created T037') }),
   input({ id: 'r65', t: ago(60 * 24 + 90), acked: true, kind: 'answer', scope: 7, text: 'CSV and Excel.' }),
   input({ id: 'r64', t: ago(60 * 24 + 200), text: 'The coupon box is in the way.', org: org('B99 is not in this project', { ok: false, changed: false }) }),
   input({ id: 'r63', t: ago(60 * 72), acked: true, text: 'The app icon looks blurry on the home screen.', moved: { to: 'mobile-app', as: 'r4' } }),
