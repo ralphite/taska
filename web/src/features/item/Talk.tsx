@@ -14,7 +14,7 @@ import { KIND_WORD, inputCode, whoName } from '../../model/words'
 import { Avatar } from '../../ui/bits'
 import { Icon } from '../../ui/Icon'
 import { Rich } from '../../ui/Markdown'
-import { DC_BTN } from '../../ui/tones'
+import { BUSY, DC_BTN, DC_LINK } from '../../ui/tones'
 import { FileRows, VoiceLine, isAudio } from '../../ui/Files'
 import { MsgText } from './MsgText'
 import { Answered, type CardEvents } from './NeedsCard'
@@ -194,7 +194,7 @@ function MsgView({ it, x, env, on, facts, docs, code, done, ver, gone, read }: {
             ) : null}
           </span>
           {undo && !ver?.old ? (
-            <button onClick={() => on.unsend(undo)} className={DC_BTN}>
+            <button onClick={() => on.unsend(undo)} className={DC_LINK}>
               Undo
             </button>
           ) : null}
@@ -347,7 +347,7 @@ export function docNotes(docs: readonly Doc[], env: TalkEnv, on: TalkLineEvents,
             <span className="flex max-w-full min-w-0 items-center gap-0.5 px-1">
               <Icon n="comment" c="size-3 shrink-0" />
               <span className="min-w-0 truncate">
-                {where} · {c.id > 0 ? when(c.t, env.now) : 'Sending…'} {gone}
+                {where} · {c.id > 0 ? when(c.t, env.now) : <span className={BUSY}>Sending…</span>} {gone}
               </span>
             </span>
           </div>
@@ -386,15 +386,15 @@ function Pending({ list, on }: { list: Outgoing[]; on: TalkLineEvents }) {
             </span>
             {q.bad ? (
               <>
-                <button onClick={on.outboxRetry} className={DC_BTN}>
+                <button onClick={on.outboxRetry} className={DC_LINK}>
                   Retry
                 </button>
-                <button onClick={on.outboxEdit} className={DC_BTN}>
+                <button onClick={on.outboxEdit} className={DC_LINK}>
                   Edit
                 </button>
               </>
             ) : q.canUndo ? (
-              <button onClick={() => on.unsend(q.q)} className={DC_BTN}>
+              <button onClick={() => on.unsend(q.q)} className={DC_LINK}>
                 Undo
               </button>
             ) : null}

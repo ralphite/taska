@@ -189,7 +189,7 @@ export function Home({ facts, on, searchRef }: { facts: HomeFacts; on: HomeEvent
               </a>
             ))
           ) : (
-            <p className="px-4 py-3 text-sm text-zinc-500">Nothing found</p>
+            <p className="px-4 py-3 text-sm text-zinc-500">No matches for “{q.trim()}”</p>
           )}
         </div>
       ) : null}

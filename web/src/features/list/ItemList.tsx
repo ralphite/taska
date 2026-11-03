@@ -196,5 +196,5 @@ export function EmptyList({ why, status, organizerOn, onReset, onConnect, hints 
         </button>
       </Empty>
     )
-  return <Empty>{status === 'wait' ? 'Nothing needs you.' : status === 'done' ? 'Nothing done yet.' : status === 'dropped' ? "Nothing marked won't do." : 'Nothing here.'}</Empty>
+  return <Empty>{status === 'wait' ? 'Nothing needs you' : status === 'done' ? 'Nothing done yet' : status === 'dropped' ? "Nothing marked won't do" : 'Nothing here'}</Empty>
 }

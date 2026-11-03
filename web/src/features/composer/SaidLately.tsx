@@ -134,7 +134,7 @@ export function SaidLately({
           ) : null}
         </div>
       ) : (
-        <p className="mt-3 text-sm text-zinc-400 dark:text-zinc-500">{words.length ? `No matches for “${q.trim()}”.` : null}</p>
+        <p className="mt-3 text-sm text-zinc-400 dark:text-zinc-500">{words.length ? `No matches for “${q.trim()}”` : null}</p>
       )}
     </div>
   )

@@ -41,6 +41,8 @@ export const MENU_ROW = 'flex h-10 w-full items-center gap-2.5 rounded-lg px-3 t
 export const LINK_BTN = `${HIT} flex h-8 items-center gap-1 rounded-lg px-2 text-[13px] font-semibold text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10`
 /** A button disabled: greyed, and it says so under the pointer (its colour's hover stays off). */
 export const DISABLED = 'disabled:cursor-not-allowed disabled:opacity-40 disabled:filter-none'
+/** Words for what is under way (Sending…, Transcribing…): blue, pulsing, wherever they are. */
+export const BUSY = 'animate-pulse text-blue-600 dark:text-blue-400'
 /** A main button. */
 export const PRIMARY_BASE = `inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-transparent px-4 text-[15px] font-semibold ${DISABLED}`
 export const PRIMARY = PRIMARY_BASE + ' bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200'
@@ -51,13 +53,20 @@ export const FIELD =
 export const NEEDS_PILL =
   'shrink-0 rounded-full bg-amber-100 px-2 py-0.5 text-xs font-semibold text-amber-900 dark:bg-amber-400/15 dark:text-amber-200'
 
-/** A button of a card you already answered, kept where it was: the one you chose ticked, the other quieter; each keeps
- * the weight (so the size) of the button it was. */
-const DONE_BASE = 'pointer-events-none inline-flex h-11 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border px-4 text-[15px]'
-export const DONE_PICK = DONE_BASE + ' border-transparent bg-zinc-200 text-zinc-700 dark:bg-zinc-700/70 dark:text-zinc-200'
-/** What you did not choose, still a button: quiet like the other, and itself again under the pointer. */
-export const DONE_OTHER_BTN =
-  'inline-flex h-11 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-zinc-200 px-4 text-[15px] font-medium text-zinc-400 hover:border-zinc-300 hover:bg-white hover:text-zinc-700 dark:border-zinc-800 dark:text-zinc-500 dark:hover:border-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200'
+/** The buttons of a card once decided or answered, kept where they were and all disabled (the not-allowed pointer, no
+ * hover): the one chosen in its colour, a little greyed, the same on every such card; the others grey outlines. */
+const DECIDED_BASE = 'inline-flex h-11 cursor-not-allowed items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border px-4 text-[15px]'
+export const DECIDED_ON = (tone: string) => `${DECIDED_BASE} border-transparent font-semibold opacity-70 ${tone}`
+export const DECIDED_OFF = `${DECIDED_BASE} border-zinc-200 font-medium text-zinc-400 dark:border-zinc-800 dark:text-zinc-500`
+/** Each choice's colour, chosen (no hover: it cannot be pressed). */
+export const CHOSEN_TONE: Record<string, string> = {
+  Approve: 'bg-blue-600 text-white dark:bg-blue-500 dark:text-blue-950',
+  Accept: 'bg-emerald-600 text-white dark:bg-emerald-500 dark:text-emerald-950',
+  Answer: 'bg-amber-500 text-amber-950 dark:bg-amber-400 dark:text-amber-950',
+  "Won't do": 'bg-red-600 text-white dark:bg-red-500 dark:text-red-950',
+  'Not yet': 'bg-zinc-600 text-white dark:bg-zinc-500 dark:text-zinc-950',
+  Reply: 'bg-zinc-600 text-white dark:bg-zinc-500 dark:text-zinc-950',
+}
 export const MODIFY_LINK =
   '-my-2 h-9 shrink-0 rounded-lg px-2.5 text-sm font-semibold text-blue-600 hover:bg-blue-50 lg:opacity-0 lg:group-hover/form:opacity-100 lg:focus-visible:opacity-100 dark:text-blue-400 dark:hover:bg-blue-400/10'
 export const CHIP = `${HIT} flex h-8 items-center gap-1.5 rounded-lg bg-zinc-100 px-2.5 text-[13px] hover:bg-zinc-200/70 dark:bg-zinc-800/80 dark:hover:bg-zinc-700/80`
@@ -65,6 +74,8 @@ export const NEEDS_CARD = 'rounded-2xl border border-amber-200 bg-amber-50 dark:
 /** A small button in a message's line: 24px tall, 44px to tap. */
 const DC_BASE = 'relative after:absolute after:inset-x-0 after:-inset-y-2.5 flex h-6 shrink-0 items-center gap-1 whitespace-nowrap rounded-lg px-1.5 text-xs font-semibold'
 export const DC_BTN = `${DC_BASE} text-zinc-500 hover:bg-blue-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-blue-400/10 dark:hover:text-zinc-200`
+/** the same, an action said in words (Undo, Retry, Edit): blue, as such links are everywhere */
+export const DC_LINK = `${DC_BASE} text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10`
 /** the same, destructive (Delete) */
 export const DC_DANGER = `${DC_BASE} text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-400/10`
 

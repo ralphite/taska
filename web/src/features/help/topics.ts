@@ -120,12 +120,15 @@ Each item has a code: its type's letter and a number, such as **F12** or **B3**.
 
 | Status | Means |
 | --- | --- |
-| Proposed | An agent suggests it; it waits for your approval |
-| Open | Approved, not started |
-| In progress | An agent is working on it now |
-| In review | The agent finished; it waits for you to accept |
-| Done | You accepted it |
-| Won't do | You decided against it |
+| {status:proposed} Proposed | An agent suggests it; it waits for your approval |
+| {status:open} Open | Approved, not started |
+| {status:doing} In progress | An agent is working on it now |
+| {status:review} In review | The agent finished; it waits for you to accept |
+| {status:done} Done | You accepted it |
+| {status:dropped} Won't do | You decided against it |
+| {status:wait} Needs you | An agent asked you something |
+
+A rule is **Active** {status:open} while agents follow it and **Retired** {status:dropped} once they no longer do.
 
 ## Priority, Now and Later
 
@@ -286,10 +289,13 @@ export interface HelpFound {
 
 export const searchWordsOf = (q: string) => q.toLowerCase().split(/\s+/).filter(Boolean)
 
+/** A status's icon in the words ({status:doing}) is no word to find. */
+const noIcons = (s: string) => s.replace(/\{status:\w+\}\s?/g, '')
+
 /** A topic's words as plain sentences: no Markdown marks, one sentence or list line each; a section whose name is
  * all that matched gives its name with its first sentence (a sentence says more than a name), after the rest. */
 const sentences = (text: string) => {
-  const plain = (s: string) => s.replace(/\[([^\]]*)\]\(([^)]*)\)/g, '$1').replace(/[*_`]+/g, '')
+  const plain = (s: string) => noIcons(s).replace(/\[([^\]]*)\]\(([^)]*)\)/g, '$1').replace(/[*_`]+/g, '')
   const said = (s: string) =>
     plain(s)
       .split('\n')
@@ -321,7 +327,7 @@ export function searchHelp(q: string): HelpFound[] {
   const named = HELP_TOPICS.filter((t) => has(t.title + ' ' + t.about))
   return [
     ...named.map((topic) => ({ topic, line: null })),
-    ...HELP_TOPICS.filter((t) => !named.includes(t) && has(t.text)).map((topic) => ({ topic, line: bestLine(topic.text, words) })),
+    ...HELP_TOPICS.filter((t) => !named.includes(t) && has(noIcons(t.text))).map((topic) => ({ topic, line: bestLine(topic.text, words) })),
   ]
 }
 

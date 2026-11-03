@@ -4,13 +4,15 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { ReactNode } from 'react'
 import type { Became, ItemRef } from '../model/became'
+import type { Status } from '../model/types'
+import { STATUS_WORD } from '../model/words'
 import { Frames, States } from '../stories/Frames'
 import { BecameLine, OutgoingRow, RecordingRow } from './InputRow'
 
 export default { title: 'Components/Inputs/Input card/Every state of a line' } satisfies Meta
 type Story = StoryObj
 
-const it = (n: number, code: string, title: string, s = 'open', type: ItemRef['type'] = 'bug'): ItemRef => ({ n, code, type, title, status: { s, label: s } })
+const it = (n: number, code: string, title: string, s: Status = 'open', type: ItemRef['type'] = 'bug'): ItemRef => ({ n, code, type, title, status: { s, label: STATUS_WORD[s] } })
 const B014 = it(14, 'B014', 'Coupon box hidden behind the keyboard')
 const F012 = it(12, 'F012', 'Export keeps the filter you set', 'doing', 'feature')
 const T007 = it(7, 'T007', 'Which formats should the export offer?', 'open', 'task')

@@ -198,7 +198,7 @@ export function LogBody({ rows, end, asking, on }: { rows: { s: LogSentence; und
   if (!rows.length)
     return (
       <Ruled>
-        <Empty>Nothing has changed yet.</Empty>
+        <Empty>No changes yet</Empty>
       </Ruled>
     )
   return (

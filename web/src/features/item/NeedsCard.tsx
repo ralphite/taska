@@ -13,7 +13,7 @@ import { Kbd } from '../../ui/bits'
 import { Icon } from '../../ui/Icon'
 import type { IconName } from '../../ui/icon-paths'
 import { Rich } from '../../ui/Markdown'
-import { ACT_ICON, DONE_OTHER_BTN, DONE_PICK, MODIFY_LINK, NEED, NEEDS_CARD, PRIMARY_BASE, SECOND } from '../../ui/tones'
+import { ACT_ICON, CHOSEN_TONE, DECIDED_OFF, DECIDED_ON, MODIFY_LINK, NEED, NEEDS_CARD, PRIMARY_BASE, SECOND } from '../../ui/tones'
 import { Thumbs } from '../../ui/Files'
 import { MsgText } from './MsgText'
 import type { TalkEnv, TalkEvents } from './talkEnv'
@@ -61,10 +61,14 @@ export function NeedFrame({ icon, title, t, done = false, body, foot, hint = '',
       </div>
       {body ? <div className="space-y-2 px-4 pt-2 text-[15px] leading-relaxed text-zinc-800 lg:px-5 lg:pl-12 dark:text-zinc-200">{body}</div> : null}
       {foot ? (
-        <div className="flex min-h-[4.25rem] items-center gap-2.5 p-3 pt-3.5 lg:justify-end lg:px-5 lg:pb-4">
-          {hint ? <p className="mr-auto hidden text-xs text-amber-700/80 xl:block dark:text-amber-300/70">{hint}</p> : null}
-          {foot}
-        </div>
+        <>
+          {/* the phone: how to answer on a line of its own, over the buttons */}
+          {hint ? <p className="px-4 pt-2 text-xs text-amber-700/80 lg:hidden dark:text-amber-300/70">{hint}</p> : null}
+          <div className="flex min-h-[4.25rem] items-center gap-2.5 p-3 pt-3.5 lg:justify-end lg:px-5 lg:pb-4">
+            {hint ? <p className="mr-auto hidden text-xs text-amber-700/80 lg:block dark:text-amber-300/70">{hint}</p> : null}
+            {foot}
+          </div>
+        </>
       ) : hint ? (
         <p className="px-4 pt-2 pb-3.5 text-xs text-amber-700/80 lg:px-5 lg:pl-12 dark:text-amber-300/70">{hint}</p>
       ) : (
@@ -74,32 +78,33 @@ export function NeedFrame({ icon, title, t, done = false, body, foot, hint = '',
   )
 }
 
-/** Approve or Accept as well as answering; decided, it says what you chose. `quiet`: you did something else, it waits
- * quietly beside it. */
 /** A decision's button word once it is made. */
 const PAST: Record<string, string> = { Approve: 'Approved', Accept: 'Accepted', "Won't do": "Won't do", 'Not yet': 'Not yet' }
 
-export function KeepBtn({ it, quiet = false, on }: { it: Item; quiet?: boolean; on: CardEvents }) {
+/** Approve or Accept as well as answering (a button like any other while it can be pressed); decided, it says what you
+ * chose. */
+export function KeepBtn({ it, on }: { it: Item; on: CardEvents }) {
   if (decidedStill(it) && it.decided) {
-    // decided: the same button where it was, its word said as done, a little greyed (D106 #4.3, r1003)
+    // decided: the same button where it was, disabled, its word said as done in its colour (D106 #4.3, r1003)
     const w = chosenWord(it.decided)
     return (
-      <span aria-disabled className={`${SECOND} cursor-not-allowed opacity-70 hover:bg-white dark:hover:bg-zinc-800`}>
+      <button disabled aria-pressed className={DECIDED_ON(CHOSEN_TONE[w] ?? CHOSEN_TONE.Reply)}>
         <Icon n={ACT_ICON[w]} c="size-4" sw="2.25" />
         {PAST[w] ?? w}
-      </span>
+      </button>
     )
   }
+  // still to be pressed beside an answered question: a button like any other
   if (it.status === 'proposed')
     return (
-      <button onClick={() => on.decide(it.n, 'open')} className={quiet ? DONE_OTHER_BTN : SECOND}>
+      <button onClick={() => on.decide(it.n, 'open')} className={SECOND}>
         <Icon n="thumb" c="size-4" />
         Approve
       </button>
     )
   if (it.status === 'review')
     return (
-      <button onClick={() => on.decide(it.n, 'done')} className={quiet ? DONE_OTHER_BTN : SECOND}>
+      <button onClick={() => on.decide(it.n, 'done')} className={SECOND}>
         <Icon n="check" c="size-4" sw="2.25" />
         Accept
       </button>
@@ -218,17 +223,11 @@ export function NeedsCard({ it, env, on, remodify, going = null }: {
         }
         body={x ? text(x) : null}
         foot={pairs.map(([v, icon, label, k], i) => (
-          <span key={v} className={`flex cursor-not-allowed ${i ? 'flex-[1.4]' : 'flex-1'} lg:flex-none`}>
-            <button
-              disabled
-              aria-pressed={chose(v)}
-              className={`${i ? `${PRIMARY_BASE} ${tone}` : SECOND} pointer-events-none w-full ${chose(v) ? 'opacity-70' : 'opacity-40'}`}
-            >
-              <Icon n={icon} c={i ? 'size-4.5' : 'size-4'} sw="2.25" />
-              {chose(v) ? (PAST[label] ?? label) : label}
-              <Kbd k={k} />
-            </button>
-          </span>
+          <button key={v} disabled aria-pressed={chose(v)} className={`${chose(v) ? DECIDED_ON(CHOSEN_TONE[label]) : DECIDED_OFF} ${i ? 'flex-[1.4]' : 'flex-1'} lg:flex-none`}>
+            <Icon n={icon} c={i ? 'size-4.5' : 'size-4'} sw="2.25" />
+            {chose(v) ? (PAST[label] ?? label) : label}
+            <Kbd k={k} />
+          </button>
         ))}
       />
     )
@@ -241,12 +240,12 @@ export function NeedsCard({ it, env, on, remodify, going = null }: {
       `${name} ${it.status === 'proposed' ? 'proposed this' : 'finished this'}`,
       m ? text(m) : null,
       <>
-        {/* what you did (you replied) stands out; Approve / Accept waits quietly */}
-        <span className={`${DONE_PICK} flex-1 font-semibold lg:flex-none`}>
+        {/* what you did (you replied), done; Approve / Accept still to be pressed */}
+        <button disabled aria-pressed className={`${DECIDED_ON(CHOSEN_TONE.Reply)} flex-1 lg:flex-none`}>
           <Icon n="reply" c="size-4" sw="2.25" />
           Skipped · you replied
-        </span>
-        <KeepBtn it={it} quiet on={on} />
+        </button>
+        <KeepBtn it={it} on={on} />
       </>,
     )
   if (it.status === 'proposed')
@@ -338,7 +337,7 @@ export function Answered({ it, x, done, env, on, reasking, going = '' }: {
       body={<Rich text={x.text} world={env.world} cls="text-zinc-600 dark:text-zinc-300" done={done} onRef={on.ref} onPicture={on.picture} />}
       foot={
         <>
-          {last ? <KeepBtn it={it} quiet on={on} /> : null}
+          {last ? <KeepBtn it={it} on={on} /> : null}
           {/* Send answer where it was: on its way still Send answer, not to be clicked; Taska has it, said as done and a
               little greyed (r1003) */}
           {going ? (
@@ -349,13 +348,13 @@ export function Answered({ it, x, done, env, on, reasking, going = '' }: {
               </span>
             </button>
           ) : (
-            <span aria-disabled className={`${PRIMARY_BASE} ${NEED.answer.btn} flex-[1.4] cursor-not-allowed opacity-70 hover:brightness-100 lg:flex-none dark:hover:brightness-100`}>
+            <button disabled aria-pressed className={`${DECIDED_ON(CHOSEN_TONE.Answer)} flex-[1.4] lg:flex-none`}>
               <Icon n={done.length ? 'check' : 'reply'} c="size-4" sw="2.25" />
               {done.length ? 'Sent' : 'Replied'}
               <span className="invisible">
                 <Kbd k="⌘↵" />
               </span>
-            </span>
+            </button>
           )}
         </>
       }

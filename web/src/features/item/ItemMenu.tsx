@@ -98,7 +98,7 @@ export function itemMenuSheet({ it, code, parentCode, asking, arm }: ItemMenuFac
       </span>
     </button>
   )
-  const next = inQueue(it) && it.when === 'now' && it.status !== 'doing' ? tile('next', it.rank == null ? 'totop' : 'undo', it.rank == null ? 'Do this next' : 'Back in order', on.doNext, it.rank == null ? `first of the ${it.pri}s` : '') : null
+  const next = inQueue(it) && it.when === 'now' && it.status !== 'doing' ? tile('next', it.rank == null ? 'totop' : 'undo', it.rank == null ? 'Do this next' : 'Back in order', on.doNext, it.rank == null ? `first ${it.pri} in queue` : 'where it was, by age') : null
   const state = it.archived
     ? [tile('unarchive', 'unarchive', 'Unarchive', () => on.archive(false))]
     : closed(it.status)
@@ -146,7 +146,7 @@ export function itemMenuSheet({ it, code, parentCode, asking, arm }: ItemMenuFac
             <>
               {tile('doc', 'docplus', 'New doc', on.newDoc)}
               {tile('sub', 'listplus', 'Add subitem', on.addSub)}
-              {tile('reparent', 'indent', 'Put under…', () => on.reparent(), parentCode ? `now under ${parentCode}` : '')}
+              {tile('reparent', 'indent', 'Put under…', () => on.reparent(), parentCode ? `now under ${parentCode}` : 'stands on its own')}
             </>
           )}
           {state}
@@ -209,7 +209,7 @@ export function itemMenuPop({ it, code, parentCode, asking, arm, keys }: ItemMen
               className="flex h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-sm hover:bg-zinc-100 aria-pressed:font-semibold dark:hover:bg-zinc-800"
             >
               <span className="min-w-0 flex-1 truncate">{l}</span>
-              {cur === v ? <Icon n="check" c="size-4 text-blue-600 dark:text-blue-400" sw="2.5" /> : <kbd className="font-sans text-[11px] font-semibold text-zinc-400">{k}</kbd>}
+              {cur === v ? <Icon n="check" c="size-4 text-blue-600 dark:text-blue-400" sw="2.5" /> : <kbd className="grid h-5 min-w-5 place-items-center rounded-md px-1 font-sans text-[11px] font-semibold text-zinc-400 ring-1 ring-zinc-300 dark:ring-zinc-600">{k}</kbd>}
             </button>
           ))}
         </div>

@@ -2,7 +2,7 @@
 // guards: src/features/item/ src/features/docs/ src/ui/Markdown.tsx src/app/actions.ts src/app/docs/ src/model/docTicks.ts server/
 import { expect, test } from '@playwright/test'
 import type { Locator } from '@playwright/test'
-import { isDesk, open, project } from './seed'
+import { open, project } from './seed'
 import { box } from './ui'
 
 test('r637 r140 r349: a question and a proposal answered by a reply show Skipped (B471)', async ({
@@ -61,7 +61,7 @@ const look = (l: Locator) =>
     return { bg: s.backgroundColor, fg: s.color }
   })
 
-test('r662: a reply leaves a proposal skipped; Approve waits quietly, a button again under the pointer (B485)', async ({
+test('r662: a reply leaves a proposal skipped, done and not to be pressed; Approve stays a button like any other (B485, F1 #3)', async ({
   page,
   request,
 }) => {
@@ -74,16 +74,10 @@ test('r662: a reply leaves a proposal skipped; Approve waits quietly, a button a
   const approve = page.getByRole('button', { name: /^Approve/ }).filter({ visible: true, hasText: 'Approve' }).first()
   await expect(skipped).toBeVisible()
   await expect(approve).toBeVisible()
-  await page.mouse.move(2, 2)
-  const s = await look(skipped),
-    b = await look(approve)
-  expect(light(s.bg), 'Skipped is filled, as a pick is').toBeGreaterThanOrEqual(0)
-  expect(light(b.bg), 'Approve has no fill').toBe(-1)
-  expect(light(b.fg), 'Approve is quieter than Skipped').toBeGreaterThan(light(s.fg))
-  if (isDesk(page)) {
-    await approve.hover()
-    await expect.poll(async () => light((await look(approve)).fg)).toBeLessThan(light(b.fg))
-  }
+  // what you did is done: filled, as a pick is, and not to be pressed; Approve can still be pressed, and looks it
+  expect(light((await look(skipped)).bg), 'Skipped is filled, as a pick is').toBeGreaterThanOrEqual(0)
+  await expect(page.getByRole('button', { name: /Skipped · you replied/ }).filter({ visible: true }).first()).toBeDisabled()
+  await expect(approve).toBeEnabled()
   await approve.click()
   await expect.poll(async () => p.read('I1')).toMatch(/^I1 \w+ P\d \w+ open/)
 

@@ -125,7 +125,7 @@ export function HelpPage({ desk, topic, q, found, back, menu, render, place, on 
       ))}
     </ul>
   ) : (
-    <p className="text-[15px] text-zinc-500 dark:text-zinc-400">Nothing in Help matches “{q.trim()}”.</p>
+    <p className="text-[15px] text-zinc-500 dark:text-zinc-400">No matches for “{q.trim()}”</p>
   )
   const pager =
     prev || next ? (

@@ -6,6 +6,7 @@ import { clock } from '../../model/time'
 import { plural } from '../../model/words'
 import { Kbd } from '../../ui/bits'
 import { Icon } from '../../ui/Icon'
+import { BUSY } from '../../ui/tones'
 
 export type DraftHint =
   /** misheard words not picked yet */
@@ -38,7 +39,7 @@ export function DraftCard({ voice, ms, files, transcribing, words, hint }: { voi
         </div>
         {words ?? (
           <div className={DRAFT_WORDS}>
-            <span className="text-zinc-400 dark:text-zinc-500">{transcribing ? 'Transcribing…' : 'No words yet'}</span>
+            <span className={transcribing ? BUSY : 'text-zinc-400 dark:text-zinc-500'}>{transcribing ? 'Transcribing…' : 'No words yet'}</span>
           </div>
         )}
         {hint ? (

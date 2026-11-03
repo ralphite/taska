@@ -345,7 +345,7 @@ export function Feedback({ line, on }: { line: FeedbackLine | null; on: { dismis
           <>
             <Pulse />
             <span className="min-w-0 flex-1 truncate">
-              Waiting for Taska{more(line.more)}: {line.text}
+              Waiting for Taska{more(line.more)} · {line.text}
             </span>
             {link('Edit', on.edit)}
           </>
@@ -356,7 +356,7 @@ export function Feedback({ line, on }: { line: FeedbackLine | null; on: { dismis
           <>
             <Icon n="alert" c="size-4 text-red-600 dark:text-red-400" sw="2" />
             <span className="min-w-0 flex-1 truncate text-red-600 dark:text-red-400">
-              Not sent{more(line.more)}: {line.text}
+              Not sent{more(line.more)} · {line.text}
             </span>
             {link('Retry', on.retry)}
             {link('Edit', on.edit)}
@@ -369,7 +369,7 @@ export function Feedback({ line, on }: { line: FeedbackLine | null; on: { dismis
             <Pulse />
             <span className="min-w-0 flex-1 truncate">
               {line.uploading ? 'Uploading' : 'Sending'}
-              {more(line.more)}: {line.text}
+              {more(line.more)} · {line.text}
             </span>
             {line.canUndo ? link('Undo', on.undo) : null}
           </>
@@ -394,7 +394,7 @@ export function Feedback({ line, on }: { line: FeedbackLine | null; on: { dismis
         node = (
           <>
             <Pulse />
-            <span className="min-w-0 flex-1 truncate">Sent. Transcribing…</span>
+            <span className="min-w-0 flex-1 truncate">Sent · transcribing…</span>
             <Dismiss onClick={on.dismiss} />
           </>
         )
@@ -403,7 +403,7 @@ export function Feedback({ line, on }: { line: FeedbackLine | null; on: { dismis
         node = (
           <>
             <Pulse />
-            <span className="min-w-0 flex-1 truncate">Sent, organizing…</span>
+            <span className="min-w-0 flex-1 truncate">Sent · organizing…</span>
             <Dismiss onClick={on.dismiss} />
           </>
         )
@@ -423,6 +423,7 @@ export function Feedback({ line, on }: { line: FeedbackLine | null; on: { dismis
       case 'undone':
         node = (
           <>
+            <Icon n="undo" c="size-4 text-zinc-500" sw="2" />
             <span className="min-w-0 flex-1 truncate">Undid filing of {line.code}</span>
             <Dismiss onClick={on.dismiss} />
           </>

@@ -4,6 +4,7 @@
 // come from the caller.
 
 import DOMPurify from 'dompurify'
+import { STATE_ICON } from '../icon-paths'
 
 export type RefTarget = { kind: 'item'; n: number } | { kind: 'doc'; d: number } | { kind: 'input'; id: string }
 
@@ -60,6 +61,10 @@ export function inlineHtml(s: string, world: InlineWorld, refs = true): string {
         const to = refs ? world.find(c) : null
         return keep(to ? `<span role="link" tabindex="0" data-ref="${c}" class="${REF_CLS}">${emph(t)}</span>` : emph(t))
       })
+      // a status's icon, as the list draws it ({status:doing}; Help's words)
+      .replace(/\{status:(\w+)\}/g, (m, s: string) =>
+        STATE_ICON[s] ? keep(`<svg class="inline-block size-4 align-[-3px] ${STATE_ICON[s][1]}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${STATE_ICON[s][0]}</svg>`) : m,
+      )
       // a code, not inside a web address
       .replace(/(^|[^\w/=&?.#-])([FBITRD]\d{1,5}|r\d{1,6}|#\d{1,6})(?!\w)/g, (m, pre: string, c: string) => {
         const l = refs ? refHtml(c, world.find(c)) : null
