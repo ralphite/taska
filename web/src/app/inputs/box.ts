@@ -16,6 +16,7 @@ import type { OutboxStore } from '../../stores/outbox'
 import type { KeyValueStore } from '../../stores/storage'
 import { newId, type ChangeRunner } from '../changeRunner'
 import type { InputSender } from './inputSender'
+import { Pauses } from './pauses'
 import type { Toasts } from '../page/toasts'
 
 const UNSEND_MS = 10000
@@ -44,6 +45,8 @@ export interface BoxDeps {
   sent?(slug: string, key: DraftKey): void
   /** a reply to the item open on the desktop: its talk goes to its end, where the reply shows */
   replied?(slug: string, scope: string): void
+  /** the pauses between upload tries, which end at once when Taska may be back */
+  pauses?: Pauses
 }
 
 export class Box {
@@ -133,7 +136,7 @@ export class Box {
       const inOutbox = this.d.outbox.getState().list.some((o) => o.files.some((f) => f.key === fk))
       if (!key && !inOutbox) return // taken off the draft meanwhile
       if (!(ex instanceof Refused)) {
-        await new Promise((ok) => setTimeout(ok, Math.min(30000, 2000 * 2 ** Math.min(tries, 4))))
+        await (this.d.pauses ?? new Pauses()).wait(Pauses.after(tries))
         return this.upload(slug, fk, file, name, tries + 1)
       }
       if (key) st.removeFile(keyOf(key), fk)

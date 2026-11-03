@@ -16,6 +16,7 @@ import type { OutboxStore } from '../../stores/outbox'
 import type { RecordingStore } from '../../stores/recording'
 import type { Box } from '../inputs/box'
 import type { Fields } from '../page/fields'
+import { Pauses } from '../inputs/pauses'
 import type { Toasts } from '../page/toasts'
 import { draftName, draftTarget, keyOf, NEW_DRAFT, type DraftKey } from '../../model/draftTarget'
 import type { Outgoing } from '../../model/outgoing'
@@ -43,6 +44,8 @@ export interface VoiceDeps {
   goDraft(key: DraftKey): void
   /** a voice comment stopped: what it is about is what the box comments on now (a document's passage) */
   about?(a: NonNullable<Recording['about']>): void
+  /** the pauses between tries, which end at once when Taska may be back */
+  pauses: Pauses
 }
 
 
@@ -52,8 +55,6 @@ export function levelOf(buf: Uint8Array): number {
   for (const v of buf) sum += (v - 128) ** 2
   return Math.min(1, Math.sqrt(sum / buf.length) / 40)
 }
-
-const wait = (ms: number) => new Promise((ok) => setTimeout(ok, ms))
 
 export class Voice {
   private readonly d: VoiceDeps
@@ -224,9 +225,16 @@ export class Voice {
     this.d.outbox.getState().updateFile(fk, p)
   }
 
-  /** Up to Taska, then its words, tried again with growing pauses while Taska can't be reached (`cancelled`: a
-   * note kept as cancelled, B627). */
+  /** Still in a draft or on its way (not taken off meanwhile). */
+  private wanted(fk: string): boolean {
+    return !!this.draftOf(fk) || this.d.outbox.getState().list.some((o) => o.files.some((x) => x.key === fk))
+  }
+
+  /** Up to Taska, then its words: tried again with growing pauses for as long as Taska can't be reached (it is kept
+   * in this browser meanwhile, r512), at once when the network is back; refused, it says so (`cancelled`: a note
+   * kept as cancelled, B627). */
   private async hear(slug: string, key: DraftKey, f: DraftFile, blob: Blob, scope: string | null, cancelled = false): Promise<void> {
+    const wait = (n: number) => this.d.pauses.wait(Pauses.after(n))
     let fid = f.f
     for (let n = 0; !fid; n++) {
       try {
@@ -235,12 +243,13 @@ export class Voice {
         this.patch(f.key, { f: up.f, size: up.size, uploading: false, failed: false })
         this.d.flush()
       } catch (ex) {
-        if (n >= 6 || ex instanceof Refused) {
+        if (!this.wanted(f.key)) return // taken off its draft meanwhile
+        if (ex instanceof Refused) {
           this.patch(f.key, { uploading: false, failed: true, transcribing: false })
           this.d.flush()
           return this.d.toasts.show('Recording upload failed')
         }
-        await wait(Math.min(30000, 2000 * 2 ** Math.min(n, 4)))
+        await wait(n)
       }
     }
     let d: Awaited<ReturnType<TaskaApi['words']>> | null = null
@@ -250,12 +259,12 @@ export class Voice {
         if (!d.done && ++waits < 20) continue // still working: the server answers after 45 s for another ask
         if (d.done && d.tr_error && ++tries < 4) {
           // the models had trouble: a few more tries, with growing pauses
-          await wait(Math.min(30000, 2000 * 2 ** Math.min(n, 4)))
+          await wait(n)
           continue
         }
         break
       } catch {
-        await wait(Math.min(30000, 2000 * 2 ** Math.min(n, 4)))
+        await wait(n)
       }
     }
     const tr = d?.tr || ''
@@ -283,7 +292,7 @@ export class Voice {
       try {
         d = await this.d.api.words(slug, fid, true, { more: true })
       } catch {
-        await wait(Math.min(30000, 2000 * 2 ** Math.min(n, 4)))
+        await this.d.pauses.wait(Pauses.after(n))
         continue
       }
       if (d.more) continue

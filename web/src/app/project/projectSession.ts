@@ -105,6 +105,9 @@ export class ProjectSession {
     void f.pictureSizes.load(slug)
     f.box.getState().show(slug)
     f.keptNotes.reset()
+    // what was sent from this browser and Taska did not have yet goes on at once, Taska reached or not (offline
+    // after a reload, r512); what was in the drafts comes back with Taska's copy
+    void f.keptNotes.restore(slug, null, true)
     f.notices.fresh()
     f.drafts.getState().reload(slug)
     this.sync = new ProjectSync(

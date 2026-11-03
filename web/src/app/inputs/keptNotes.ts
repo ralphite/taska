@@ -46,6 +46,10 @@ export class KeptNotes {
   private queued = false
   private slug = ''
   private restored = ''
+  private restoredSent = ''
+  private restoring: Promise<void> = Promise.resolve()
+  /** notes another page holds, taken here when it lets go */
+  private readonly awaited = new Set<string>()
   private n = 0
   constructor(d: KeptNotesDeps) {
     this.d = d
@@ -139,8 +143,8 @@ export class KeptNotes {
       if (!live.has(rid)) {
         this.known.delete(rid)
         this.blobs.delete(rid)
-        this.release(rid)
         await this.d.vault.del(rid) // sent, or removed from its draft: this browser lets it go
+        this.release(rid) // only then: a page waiting for it finds it gone
       }
   }
 
@@ -169,27 +173,58 @@ export class KeptNotes {
     return NEW_DRAFT
   }
 
-  /** The project opened: what this browser kept that did not go out comes back. */
-  async restore(slug: string, m: ProjectModel): Promise<void> {
-    if (this.restored === slug) return
-    this.restored = slug
+  /** The project opened: what this browser kept that did not go out comes back. `sentOnly` (at once as it opens,
+   * Taska not reached yet, as offline after a reload; no model needed): only what was sent goes on, under its own
+   * id, so it keeps trying and goes the moment Taska can be reached (r512); what was in the drafts comes back with
+   * Taska's copy (`m`). One restore at a time, so none is taken twice. */
+  restore(slug: string, m: ProjectModel | null, sentOnly = false, only?: string): Promise<void> {
+    const next = this.restoring.then(() => this.restoreNow(slug, m, sentOnly, only))
+    this.restoring = next.catch(() => {})
+    return next
+  }
+
+  /** `only`: that one note, which another page held (a page just left, or another tab) and has let go of now. */
+  private async restoreNow(slug: string, m: ProjectModel | null, sentOnly: boolean, only?: string): Promise<void> {
+    if (!m) sentOnly = true
+    if (only) {
+      if (this.restoredSent !== slug) return // another project is open now: it comes back when this one opens
+      sentOnly ||= this.restored !== slug
+    } else {
+      if (this.restored === slug || (sentOnly && this.restoredSent === slug)) return
+      this.restoredSent = slug
+      if (!sentOnly) this.restored = slug
+    }
     const box = this.d.box.getState()
     const out = this.d.outbox.getState().list
     const here = new Set([...Object.values(box.files).flat(), ...out.flatMap((o) => o.files)].map((f) => f.rid).filter(Boolean))
     const going = new Set(out.flatMap((o) => o.files.map((x) => x.f)).filter(Boolean))
     const goingQ = new Set(out.map((o) => o.q))
-    const sent = new Set(m.inputs.flatMap((r) => r.files.map((x) => x.f)))
+    const sent = new Set(m?.inputs.flatMap((r) => r.files.map((x) => x.f)))
     const resend = new Map<string, { slug: string; text: string; scope: string | null; t: number; files: DraftFile[]; kind?: 'cancelled' }>()
     const back: { key: DraftKey; f: DraftFile }[] = []
     for (const r of (await this.d.vault.all()).sort((a, b) => a.t - b.t)) {
-      if ((r.project !== slug && !r.job) || here.has(r.id)) continue
+      if ((only && r.id !== only) || (r.project !== slug && !r.job) || (sentOnly && !r.job) || here.has(r.id)) continue
       if ((r.f && going.has(r.f)) || (r.job && goingQ.has(r.job.id))) continue // on its way already
       if (r.project === slug && r.f && sent.has(r.f)) {
         void this.d.vault.del(r.id) // it went out already
         continue
       }
       const l = locks()
-      if (l && !(await l.request('taska-voice-' + r.id, { ifAvailable: true }, (x) => !!x))) continue // another tab has it
+      if (l && !(await l.request('taska-voice-' + r.id, { ifAvailable: true }, (x) => !!x))) {
+        // another page has it (another tab, or this tab's page before a reload, which lets go a moment later): it
+        // is taken here once that page lets go of it, if it is still kept then
+        if (!this.awaited.has(r.id)) {
+          this.awaited.add(r.id)
+          void l
+            .request('taska-voice-' + r.id, () => {})
+            .then(() => {
+              this.awaited.delete(r.id)
+              return this.restore(slug, m, true, r.id)
+            })
+            .catch(() => this.awaited.delete(r.id))
+        }
+        continue
+      }
       const blob = new Blob([r.data], { type: r.mime })
       const image = r.plain && r.mime.startsWith('image/')
       const f: DraftFile = {
@@ -218,6 +253,7 @@ export class KeptNotes {
         resend.set(r.job.id, j)
         continue
       }
+      if (!m) continue // a draft's note: it comes back with Taska's copy
       const key = this.keyFor(m, r.key)
       back.push({ key, f })
     }
@@ -248,6 +284,6 @@ export class KeptNotes {
 
   /** A project opens again: what it kept can come back. */
   reset(): void {
-    this.restored = ''
+    this.restored = this.restoredSent = ''
   }
 }

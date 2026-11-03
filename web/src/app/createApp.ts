@@ -43,6 +43,8 @@ import { Notices } from './project/notices'
 import { Voice } from './voice/voice'
 import { VoiceWords } from '../features/composer/voiceWords'
 import { KeptNotes } from './inputs/keptNotes'
+import { Pauses } from './inputs/pauses'
+import { LeaveGuard } from './page/leaveGuard'
 import { DocVoice } from './voice/docVoice'
 import { Dictation } from './voice/dictation'
 import { Media } from './page/media'
@@ -231,6 +233,8 @@ export function createApp(env: AppEnv): App {
   const title = (s: string) => data.getState().projects?.find((p) => p.name === s)?.title || s
   const goUrl = (url: string) => route.getState().go(url, true)
   const recordingNow = () => !!recording.getState().rec
+  // the pauses between tries of voice notes and files going up: they end at once when Taska may be back
+  const uploadPauses = new Pauses()
   // the project open in the page (made last: what it needs is made below)
   const session = (): ProjectSession => projectSession
   const keep = (blob: Blob) => keptNotes.keep(blob)
@@ -272,7 +276,7 @@ export function createApp(env: AppEnv): App {
   const inputActions = new InputActions({ runner, changes, toasts, api, model, refresh: (s) => session().stale(s), title, go: goUrl })
   // the other tabs of this browser: their drafts show here too
   const otherTabs = new OtherTabs({ kv: env.kv, drafts, box: boxStore, toasts, slug, recording: recordingNow })
-  const box = new Box({ api, store: boxStore, drafts, outbox, inputs, runner, toasts, keep, recording: recordingNow, goDraft, model, kv: env.kv, sent: (s, key) => otherTabs.sent(s, key), refresh: (s) => session().refresh(s), replied: (s, scope) => delivered.replied(s, scope) })
+  const box = new Box({ api, store: boxStore, drafts, outbox, inputs, runner, toasts, keep, recording: recordingNow, goDraft, model, kv: env.kv, sent: (s, key) => otherTabs.sent(s, key), refresh: (s) => session().refresh(s), replied: (s, scope) => delivered.replied(s, scope), pauses: uploadPauses })
   const activity = new Activity({ api, store: activityStore, toasts })
   const restores = new Restores({ runner, toasts, inputs: inputActions, model })
   const docs = new Docs({ route, model, view: docView, nav, fields, toasts, desk: env.desk, leaveEditor: () => docEditor.keep() })
@@ -300,6 +304,7 @@ export function createApp(env: AppEnv): App {
     keep,
     goDraft,
     about: (a) => docVoice.about(a.d, a.key, a.quote),
+    pauses: uploadPauses,
   })
   const docVoice = new DocVoice({ voice, docs, comments: docComments, box, boxStore, recording, view: docView, runner, changes, toasts, model, desk: env.desk, reply: (s, key, scope) => void box.send(s, model(s), scope, key) })
   const dictation: Dictation = new Dictation({ api, store: dictationStore, view: docView, route, editor: docEditor, fields, toasts, model, recording: recordingNow })
@@ -334,6 +339,8 @@ export function createApp(env: AppEnv): App {
   // a merged item gives way to the one it went into; what you wrote for it goes along
   const merges = new Merges({ route, data, drafts, box: boxStore, toasts, model, showItem: (code, tab) => nav.openItemHere(code, tab), goDraft })
   const sideOver = new SideOver(route, ui)
+  // leaving while a voice note or dictation records asks first
+  const leaveGuard = new LeaveGuard(() => recordingNow() || !!dictationStore.getState().rec)
   const arrival = new Arrival({ route, fields, data, model, desk: env.desk, session: env.session ?? memoryStore() })
   const notices = new Notices(env.kv, () => settingsStore.getState().set({ noticeRev: settingsStore.getState().noticeRev + 1 }), { api, toasts, data, slug, desk: env.desk, go: goUrl })
   const access = new Access({ api, sheets, toasts, refresh: () => void session().refresh() })
@@ -356,13 +363,18 @@ export function createApp(env: AppEnv): App {
     fresh: { ui, itemView, keptEdits, docTicks, box: boxStore, drafts, pictureSizes, keptNotes, notices },
     server: (v) => updates.seen(v),
     back: {
-      window: () => inputs.back(),
+      window: () => {
+        uploadPauses.wake()
+        inputs.back()
+      },
       reached: () => {
+        uploadPauses.wake()
         runner.back()
         inputs.back()
         activity.back()
       },
       online: () => {
+        uploadPauses.wake()
         inputs.back()
         runner.back()
       },
@@ -421,7 +433,7 @@ export function createApp(env: AppEnv): App {
     access,
     refreshProjects,
     stop: () => {
-      for (const s of [projects, projectSession, pictureSizes, sheets, docs, docEditor, merges, sideOver, arrival, notices, pageErrors]) s.stop()
+      for (const s of [projects, projectSession, pictureSizes, sheets, docs, docEditor, merges, sideOver, arrival, notices, pageErrors, leaveGuard]) s.stop()
       unlisten()
     },
     actions,
