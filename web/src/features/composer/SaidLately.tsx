@@ -1,5 +1,5 @@
 // Under New input on the desktop: every input, the latest first (more comes as you scroll), each as the line every
-// list of inputs draws (its number and when, its words, its files, what became of it beside them), Undo on what you
+// list of inputs draws (its number and when, its words, its files, what became of it under them), Undo on what you
 // just sent; what is still on its way, and a voice note being recorded, on top. A search of its own. Props only.
 
 import { useEffect, useRef, type ReactNode } from 'react'

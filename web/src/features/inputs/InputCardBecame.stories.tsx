@@ -8,7 +8,7 @@ export default { title: 'Components/Inputs/Input card/What it became/Filed by th
 type Story = StoryObj
 
 const note = (msg: string, f = {}) => ({ ok: true, msg, t: '', keep: false, changed: true, undone: false, ...f })
-/** Made into an item: what became of it under the words (the phone), beside them (the desktop). */
+/** Made into an item: what became of it under the words. */
 export const MadeAnItem: Story = { ...one(ONE.made), name: 'Made an item' }
 export const AddedToAnItem: Story = { ...one(ONE.added), name: 'Added to an item' }
 export const SeveralItems: Story = { ...one(input({ id: 'r33', t: T, acked: true, touched: [12, 14, 7], text: 'Three things: the filter, the coupon box, and which formats.', org: note('Created B014 · Noted on F012 · Noted on T007') })), name: 'Made several items' }

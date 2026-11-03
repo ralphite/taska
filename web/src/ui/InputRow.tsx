@@ -1,7 +1,7 @@
 // One input as every list of inputs draws it (B629), words first, no boxes or bubbles: a line with its number and its
 // day and time (a draft of yours on it, its buttons at the end), its words (a long one: four lines fading, More), its
-// pictures and voice note, and what became of it in a line of 13px: under the words on the phone, in a column of
-// its own beside them on the desktop. Its buttons: the phone's ⋯ (Add more, Edit and the rest are in it); the
+// pictures and voice note, and what became of it in a line of 13px under the words, on the phone and the desktop
+// alike (F659). Its buttons: the phone's ⋯ (Add more, Edit and the rest are in it); the
 // desktop's Add more and ⋯, under the pointer only (or the keys), taking no room. Undo, just after sending, always
 // shows. What is still on its way, and a voice note being recorded, are drawn as lines of the same shape. Props only.
 
@@ -30,7 +30,7 @@ export interface InputRowEvents {
 }
 
 const ROW =
-  'group/row border-t border-zinc-100 px-4 py-2.5 transition-colors duration-700 first:border-t-0 lg:-mx-3 lg:grid lg:grid-cols-[minmax(0,1fr)_17rem] lg:items-start lg:gap-x-6 lg:px-3 lg:hover:bg-zinc-50 dark:border-zinc-800/70 dark:lg:hover:bg-zinc-900/60'
+  'group/row border-t border-zinc-100 px-4 py-2.5 transition-colors duration-700 first:border-t-0 lg:-mx-3 lg:px-3 lg:hover:bg-zinc-50 dark:border-zinc-800/70 dark:lg:hover:bg-zinc-900/60'
 /** gone to: lit up for a moment */
 const LIT = 'bg-blue-50 dark:bg-blue-400/10'
 const META = 'flex h-5 min-w-0 items-center gap-2 text-[13px]'
@@ -43,7 +43,7 @@ const UNDO =
   'flex h-7 shrink-0 items-center gap-1 rounded-md px-1.5 text-[13px] font-semibold text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10'
 /** under the pointer only on the desktop (or while the keys are in the row) */
 const HOVER = 'lg:invisible lg:group-focus-within/row:visible lg:group-hover/row:visible'
-const BECAME = 'mt-1.5 min-w-0 text-[13px] leading-5 lg:mt-0'
+const BECAME = 'mt-1.5 min-w-0 text-[13px] leading-5'
 
 /** An item: its status mark, code and title; the title wraps, it is never cut. */
 function ItemLink({ it, on }: { it: ItemRef; on: Pick<InputRowEvents, 'goto'> }) {
