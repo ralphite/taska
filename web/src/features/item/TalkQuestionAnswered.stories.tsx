@@ -8,7 +8,7 @@ type Story = StoryObj
 
 export const Answered = at(answered)
 export const AnsweredPointerOnItModify: Story = { ...at(answered), name: 'Answered, pointer on it: Modify', parameters: { pseudo: { hover: ['.group'] } } }
-export const ChecklistAnswered = at([ask(CHECKS), said('✓ CSV\n✓ JSON')])
+export const ChecklistAnswered: Story = { ...at([ask(CHECKS), said('✓ CSV\n✓ JSON')]), name: 'A checklist answered' }
 export const NoChoicesAnsweredByYourWords: Story = { ...at([ask('Should the old export stay for a while?'), said('A week, then remove it.')]), name: 'No choices, answered by your words' }
 export const AnsweredApproveBesideIt: Story = { ...at(answered, { status: 'proposed', by: 'claude-code' }), name: 'Answered, Approve beside it' }
 export const AnsweredPointerOnApprove: Story = { ...at(answered, { status: 'proposed', by: 'claude-code' }), name: 'Answered, pointer on Approve', parameters: { pseudo: { hover: ['button'] } } }

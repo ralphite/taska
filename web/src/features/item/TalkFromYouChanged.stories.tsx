@@ -18,7 +18,7 @@ export const DetailsAddedLater: Story = {
   ...at([mine({ text: 'The export should keep the filter I set.' }), mine({ id: 2, text: 'The export should keep the filter I set.\n\nAnd the sort.', t: later(2) })]),
   name: 'Details added later',
 }
-export const ItsInputMovedToAnotherProject = at([mine()], { inputs: [r4({ files: [voice], moved: { to: 'home', as: 'r40' } })] })
+export const ItsInputMovedToAnotherProject: Story = { ...at([mine()], { inputs: [r4({ files: [voice], moved: { to: 'home', as: 'r40' } })] }), name: 'Moved to another project' }
 export const MovedPointerOnItsVoiceNote: Story = {
   ...at([mine()], { inputs: [r4({ files: [voice], moved: { to: 'home', as: 'r40' } })] }),
   name: 'Moved, pointer on its voice note',

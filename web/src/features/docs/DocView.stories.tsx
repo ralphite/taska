@@ -1,5 +1,5 @@
-// A document as it is read, one story for each state: the
-// page's own facts (factsOf) and DocView with a demo document, in the desktop's pane and the phone's sheet.
+// A document as it is read: the page's own facts (factsOf) and DocView with a demo document, in the desktop's pane and
+// the phone's sheet. The pointer on its parts and its bar are in DocViewPointer.stories.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { Doc } from '../../model/types'
 import { After, Frames } from '../../stories/Frames'
@@ -11,13 +11,6 @@ type Story = StoryObj
 
 const PLAN = doc()
 const both = (d: Doc, h: DocHere = {}, height = 900): Story => ({ render: () => <Frames height={height} deskWidth={900} phoneWidth={393}>{(layout) => docAt(d, layout === 'desk', h)}</Frames> })
-const desk = (d: Doc, run: (root: HTMLElement) => void, height = 700): Story => ({
-  render: () => (
-    <Frames phone={false} height={height} deskWidth={900}>
-      {() => <After run={run}>{docAt(d, true)}</After>}
-    </Frames>
-  ),
-})
 
 /** Its title, words, a heading, a list, a quote, code and a table; each commented paragraph shows its count (beside
  * the text on the desktop, a chip on the phone), the words a thread quotes marked; the comments on the whole document
@@ -30,21 +23,6 @@ export const ContentsOpen: Story = {
   name: 'Contents opened',
   render: () => <Frames height={900} deskWidth={900} phoneWidth={393}>{(layout) => <After run={(r) => r.querySelector('details')?.setAttribute('open', '')}>{docAt(LONG, layout === 'desk')}</After>}</Frames>,
 }
-/** The desktop: the pointer on a paragraph lights it, and its speak and comment buttons show beside it. */
-export const PointingAtParagraph: Story = {
-  ...desk(PLAN, () => {}),
-  name: 'Pointing at a paragraph',
-  parameters: { pseudo: { hover: ['section[data-key="p1"]'] } },
-}
-/** The desktop: in a list each item is its own place to comment on; the pointer on one puts the buttons beside it. */
-export const PointingAtListItem: Story = {
-  ...desk(PLAN, (r) => r.querySelectorAll('section[data-key="l1"] li')[1]?.dispatchEvent(new MouseEvent('mousemove', { bubbles: true }))),
-  name: 'Pointing at an item of a list',
-  parameters: { pseudo: { hover: ['section[data-key="l1"]'] } },
-}
-// ---- more states (B636)
-export const DeleteAsksAgain: Story = { ...both(PLAN, { asked: { 'doc-delete 12': 1 } }), name: 'Delete asks again' }
-// ---- more states (T639)
 const untitledBlocks = PLAN.blocks.slice(1)
 /** a document whose words have no title heading: its title drawn large above them */
 export const NoTitleInItsText: Story = { ...both(doc({ blocks: untitledBlocks, md: untitledBlocks.map((b) => b.text).join('\n\n') })), name: 'No title in its words' }

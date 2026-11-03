@@ -11,6 +11,7 @@ export default { title: 'Components/Input box/Voice/Maybe misheard' } satisfies 
 type Story = StoryObj
 
 export const MaybeMisheard: Story = {
+  name: 'Maybe misheard',
   render: () => (
     <Frames phoneWidth={393} deskWidth={640}>
       {(layout) => boxAt({ text: HEARD_TEXT, files: HEARD.map((h) => ({ ...VOICE, ...h, tr: HEARD_TEXT })), doubts: <Doubts view={layout === 'desk' ? { kind: 'list', lines: openDoubts(HEARD_TEXT, HEARD) } : { kind: 'phone', toCheck: 1, showing: false }} on={quiet} /> }, layout === 'desk')}
@@ -25,7 +26,7 @@ export const MaybeMisheardOnTheNewInputPage: Story = {
 export const MaybeMisheardTheOtherVersionPicked: Story = { name: 'Maybe misheard, the other version picked', render: () => <Frames phoneWidth={393} deskWidth={640}>{() => <Picking fix={false} start="picked" />}</Frames> }
 
 /** A word one model was unsure of: underlined in the words. */
-export const AWordOneModelWasUnsureOf: Story = { render: () => <Frames phoneWidth={393} deskWidth={640}>{() => <Picking fix={false} />}</Frames> }
+export const AWordOneModelWasUnsureOf: Story = { name: 'A word one model was unsure of', render: () => <Frames phoneWidth={393} deskWidth={640}>{() => <Picking fix={false} />}</Frames> }
 
 export const MisheardInSeveralPlaces: Story = {
   name: 'Misheard in several places',
@@ -34,4 +35,4 @@ export const MisheardInSeveralPlaces: Story = {
 export const MisheardWordsAllPickedPhone: Story = { name: 'Misheard words all picked (phone)', render: () => <Frames desk={false} phoneWidth={393}>{() => <Doubts view={{ kind: 'phone', toCheck: 0, showing: false }} on={quiet} />}</Frames> }
 export const MaybeMisheardWordsShownPhone: Story = { name: 'Maybe misheard, words shown (phone)', render: () => <Frames desk={false} phoneWidth={393}>{() => <Doubts view={{ kind: 'phone', toCheck: 1, showing: true }} on={quiet} />}</Frames> }
 /** The New input page's card: a voice note's own words selected to correct them. */
-export const CorrectingItsWords: Story = { render: () => <Frames phoneWidth={393} deskWidth={640}>{() => <Picking fix start="fixing" />}</Frames> }
+export const CorrectingItsWords: Story = { name: 'Correcting its words', render: () => <Frames phoneWidth={393} deskWidth={640}>{() => <Picking fix start="fixing" />}</Frames> }

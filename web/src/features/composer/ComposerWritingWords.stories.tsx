@@ -6,8 +6,8 @@ export default { title: 'Components/Input box/Writing/Words in it' } satisfies M
 type Story = StoryObj
 
 export const Empty = at()
-export const AFewWords = at({ text: 'Buy milk on the way home' })
-export const ManyLines = at({ text: LINES })
+export const AFewWords: Story = { ...at({ text: 'Buy milk on the way home' }), name: 'A few words' }
+export const ManyLines: Story = { ...at({ text: LINES }), name: 'Many lines' }
 export const LongerThanTheBoxItScrolls: Story = { ...at({ text: MANY }), name: 'Longer than the box: it scrolls' }
 export const WritingInItFocused: Story = { ...at({}, { focus: ['textarea'], focusWithin: ['#composer', '[data-box]'] }), name: 'Writing in it (focused)' }
 export const WritingInItWordsInIt: Story = { ...at({ text: 'Buy milk' }, { focus: ['textarea'], focusWithin: ['#composer', '[data-box]'] }), name: 'Writing in it, words in it' }

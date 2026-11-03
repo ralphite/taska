@@ -34,13 +34,13 @@ export const EveryMessageWithDocumentComments: Story = {
   ),
   name: 'Every message, with document comments',
 }
-export const WithTheCardThatAsksYou = whole([you(1, 0, 'The export should keep the filter I set.'), agent(2, 3, 'Reproduced it.'), agent(3, 5, 'Which format?\n- ( ) CSV\n- ( ) Excel', { kind: 'ask' })], { wait: { id: 3, kind: 'ask', text: 'Which format?\n- ( ) CSV\n- ( ) Excel', by: 'claude-code', files: [] } })
-export const LongBackAndForth = whole(
+export const WithTheCardThatAsksYou: Story = { ...whole([you(1, 0, 'The export should keep the filter I set.'), agent(2, 3, 'Reproduced it.'), agent(3, 5, 'Which format?\n- ( ) CSV\n- ( ) Excel', { kind: 'ask' })], { wait: { id: 3, kind: 'ask', text: 'Which format?\n- ( ) CSV\n- ( ) Excel', by: 'claude-code', files: [] } }), name: 'With the card that asks you' }
+export const LongBackAndForth: Story = { ...whole(
   Array.from({ length: 14 }, (_, i) => (i % 2 ? agent(i + 1, i * 3, `Step ${(i + 1) / 2} done.`) : you(i + 1, i * 3, `Then step ${i / 2 + 1}, please.`))),
   {},
   {},
   900,
-)
+), name: 'Long back and forth' }
 // ---- more states (B636)
 export const LongBackAndForthAllShown: Story = {
   ...whole(

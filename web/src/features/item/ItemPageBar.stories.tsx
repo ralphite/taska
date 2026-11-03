@@ -1,0 +1,40 @@
+// The bar over an item's pane: its buttons under the pointer, from the keys and pressed; the way back to an item; no bar
+// beside a side list; the phone's Back and ⋯ pressed.
+import type { Meta, StoryObj } from '@storybook/react-vite'
+import { After, Frame, Frames } from '../../stories/Frames'
+import { PARENT, pageOf } from '../../stories/itemPage'
+import { frame, it, newInputHead } from '../../stories/itemPageLayoutFixtures'
+import { BackTo, NoSelection } from './ItemPage'
+
+export default { title: 'Components/Item page/Its bar' } satisfies Meta
+type Story = StoryObj
+
+export const PointerKeysPressed: Story = {
+  name: 'Its buttons: pointer, keys, pressed',
+  parameters: { pseudo: { hover: ['[data-look="pointer"] header button'], focusVisible: ['[data-look="keys"] header button'], active: ['[data-look="pressed"] header button'] } },
+  render: () => (
+    <div className="flex flex-wrap gap-6">
+      {(['pointer', 'keys', 'pressed'] as const).map((look) => (
+        <div key={look} data-look={look}>
+          <Frame layout="desk" width={900} height={180} label={look === 'keys' ? 'keys (focused)' : look === 'pointer' ? 'under the pointer' : 'pressed'}>
+            {pageOf(it(), true, { others: [PARENT] })}
+          </Frame>
+        </div>
+      ))}
+    </div>
+  ),
+}
+/** the phone's Back and ⋯ pressed */
+export const PhonePressed: Story = {
+  name: 'Back and ⋯ pressed (phone)',
+  render: () => (
+    <Frames desk={false} phoneWidth={393}>
+      {() => <After run={(root) => root.querySelectorAll('header button').forEach((b) => b.setAttribute('data-pressed', ''))}>{frame({ head: <span className="font-mono text-sm font-bold">F012</span>, menu: true, onMenu: () => {} }, false)}</After>}
+    </Frames>
+  ),
+}
+export const BackToAnItem: Story = { name: 'Back to an item', render: () => <Frames phoneWidth={393} deskWidth={720} height={260}>{() => <BackTo label="F012" onBack={() => {}} />}</Frames> }
+/** New input opened from an item: its bar says New input and, at its end, the way back to that item */
+export const NewInputFromAnItem: Story = { name: 'New input, opened from an item: Back to F012', render: () => <Frames phone={false} deskWidth={720}>{() => frame({ head: newInputHead, nav: <BackTo label="F012" onBack={() => {}} /> }, true)}</Frames> }
+/** a side list open on the desktop and nothing picked: the pane has no bar */
+export const NoBarBesideASideList: Story = { name: 'Beside a side list: no bar', render: () => <Frames phone={false} deskWidth={720}>{() => frame({ bar: false }, true, <NoSelection side="docs" />)}</Frames> }

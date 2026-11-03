@@ -10,4 +10,4 @@ export default { title: 'Components/Document/Reading' } satisfies Meta
 type Story = StoryObj
 
 /** Each thread's count in its part's corner. */
-export const WebPage: Story = { name: 'Web page', render: () => <Frames height={640} deskWidth={900} phoneWidth={393}>{(layout) => docAt(WEB, layout === 'desk')}</Frames> }
+export const WebPage: Story = { name: 'A web page', render: () => <Frames height={640} deskWidth={900} phoneWidth={393}>{(layout) => docAt(WEB, layout === 'desk')}</Frames> }

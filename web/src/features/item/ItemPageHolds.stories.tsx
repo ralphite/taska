@@ -16,12 +16,12 @@ const at = (f: Partial<Item>, o: PageOpts = {}, height = 820): Story => ({
 const plan = doc({ d: 1, n: 12, title: 'Plan: the export keeps the filter', blocks: [{ key: 'k1', kind: 'para', text: 'Read the filter first.', comments: [comment({ id: 9 })] }] })
 
 export const Subitem = at({ n: 14, parent: 3, title: 'Keep the filter in the file name' }, { others: [PARENT] })
-export const SubitemsAndADocument = at({ title: 'Export keeps the filter you set' }, { others: KIDS, docs: [plan] })
-export const ASubitemInLater = at({ title: 'Export keeps the filter you set' }, { others: [KIDS[0], KIDS[2]] })
-export const LongTalk = at({ status: 'doing', title: 'Saving drops the last word', thread: Array.from({ length: 11 }, (_, i) => message({ id: i + 1, text: `Step ${i + 1} done.` })) }, {}, 760)
+export const SubitemsAndADocument: Story = { ...at({ title: 'Export keeps the filter you set' }, { others: KIDS, docs: [plan] }), name: 'Subitems and a document' }
+export const ASubitemInLater: Story = { ...at({ title: 'Export keeps the filter you set' }, { others: [KIDS[0], KIDS[2]] }), name: 'A subitem in Later' }
+export const LongTalk: Story = { ...at({ status: 'doing', title: 'Saving drops the last word', thread: Array.from({ length: 11 }, (_, i) => message({ id: i + 1, text: `Step ${i + 1} done.` })) }, {}, 760), name: 'A long talk' }
 export const Pictures = at(
   { title: 'The export button is cut off on the phone', srcs: ['r4'], thread: [you(1, 'See the screenshots.')] },
   { inputs: [input({ id: 'r4', text: 'The export button is cut off', files: [{ f: 'f1-shot.png', name: 'shot.png', mime: 'image/png' }, { f: 'f2-shot.png', name: 'shot2.png', mime: 'image/png' }] })], f: { files: [{ f: 'f1-shot.png', name: 'shot.png', mime: 'image/png' }, { f: 'f2-shot.png', name: 'shot2.png', mime: 'image/png' }] } },
 )
-export const QuestionTakenBack = at({ thread: [you(1, 'The export should keep the filter.'), message({ id: 2, kind: 'ask', text: 'Keep the old export for a while?' }), message({ id: 3, kind: 'withdraw', text: 'Found it in the notes: no.' })] })
-export const ProposalDecided = at({ status: 'open', thread: [message({ id: 5, kind: 'propose', text: 'Keep the filter in the export, and its name in the file name.' })], decided: { from: 'proposed', to: 'open', msg: 5, t: T } })
+export const QuestionTakenBack: Story = { ...at({ thread: [you(1, 'The export should keep the filter.'), message({ id: 2, kind: 'ask', text: 'Keep the old export for a while?' }), message({ id: 3, kind: 'withdraw', text: 'Found it in the notes: no.' })] }), name: 'A question taken back' }
+export const ProposalDecided: Story = { ...at({ status: 'open', thread: [message({ id: 5, kind: 'propose', text: 'Keep the filter in the export, and its name in the file name.' })], decided: { from: 'proposed', to: 'open', msg: 5, t: T } }), name: 'A proposal decided' }

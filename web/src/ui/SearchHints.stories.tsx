@@ -4,7 +4,7 @@ import { T } from '../stories/fixtures'
 import { PROJECT_TONES } from './tones'
 import { SearchHints } from './SearchHints'
 
-const meta: Meta = { title: 'Components/Item list/Search hints' }
+const meta: Meta = { title: 'Components/Item list/Search and filters' }
 export default meta
 type Story = StoryObj
 
@@ -21,6 +21,7 @@ const hints = (p: Partial<Parameters<typeof SearchHints>[0]>) => (
 
 /** Under a search: matches in the other tabs, and the other projects (searching, none, could not search, found). */
 export const Hints: Story = {
+  name: 'Hints as you type',
   render: () => (
     <Frames phoneWidth={393} deskWidth={460}>
       {() => (
@@ -40,6 +41,6 @@ export const Hints: Story = {
 // ---- more states (T639)
 const many = Array.from({ length: 30 }, (_, i) => ({ project: i % 2 ? 'home' : 'lumina', ptitle: i % 2 ? 'Home' : 'lumina', kind: 'item' as const, code: `T${i + 10}`, title: `Export step ${i + 1}`, status: (i === 1 ? 'dropped' : 'open') as 'open', archived: i === 2, t: T }))
 /** many found: the first eight, "+N more · refine search", 30 shown as 30+; one archived, one won't do */
-export const ManyFound: Story = { name: 'Many found, one archived, one won’t do', render: () => <Frames phoneWidth={393} deskWidth={460}>{() => hints({ cross: { q: 'export', list: many, failed: false } })}</Frames> }
+export const ManyFound: Story = { name: 'Hints: many found, one archived, one won’t do', render: () => <Frames phoneWidth={393} deskWidth={460}>{() => hints({ cross: { q: 'export', list: many, failed: false } })}</Frames> }
 /** under a list: other tabs and other projects together */
-export const TabsAndProjects: Story = { name: 'Other tabs and other projects together', render: () => <Frames phoneWidth={393} deskWidth={460}>{() => hints({ other: [['inputs', 3]], cross: { q: 'voice', list: hits, failed: false } })}</Frames> }
+export const TabsAndProjects: Story = { name: 'Hints: other tabs and other projects together', render: () => <Frames phoneWidth={393} deskWidth={460}>{() => hints({ other: [['inputs', 3]], cross: { q: 'voice', list: hits, failed: false } })}</Frames> }

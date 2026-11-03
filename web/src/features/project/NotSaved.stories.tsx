@@ -8,7 +8,7 @@ import { AT_BUTTON, no, opened } from '../../stories/menuFixtures'
 import { notSavedSheet } from './NotSaved'
 import { notSavedRows } from './notSavedRows'
 
-export default { title: 'Components/Menus and sheets/Sheets/Not saved' } satisfies Meta
+export default { title: 'Components/Menus and sheets/Sheets/Not saved, sign in' } satisfies Meta
 type Story = StoryObj
 
 const at = (min: number) => Date.parse(T) - min * 60_000
@@ -19,5 +19,5 @@ const LIST: NotSaved[] = [
 ]
 const sheet = (list: NotSaved[], desk: boolean) => opened(notSavedSheet(notSavedRows(list, 'taska', (s) => ({ home: 'Home' })[s] ?? s, Date.parse(T)), { go: no, retry: no, drop: no }) ?? { body: null }, desk, { look: desk ? { pop: true, at: AT_BUTTON } : {} })
 
-export const List: Story = { name: 'Not saved', render: () => <Frames height={520} deskWidth={900} phoneWidth={393}>{(layout) => sheet(LIST, layout === 'desk')}</Frames> }
-export const One: Story = { name: 'Not saved: one change', render: () => <Frames height={360} deskWidth={900} phoneWidth={393}>{(layout) => sheet(LIST.slice(1, 2), layout === 'desk')}</Frames> }
+export const List: Story = { name: 'Changes not saved', render: () => <Frames height={520} deskWidth={900} phoneWidth={393}>{(layout) => sheet(LIST, layout === 'desk')}</Frames> }
+export const One: Story = { name: 'One change not saved', render: () => <Frames height={360} deskWidth={900} phoneWidth={393}>{(layout) => sheet(LIST.slice(1, 2), layout === 'desk')}</Frames> }

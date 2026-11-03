@@ -7,7 +7,7 @@ import { Frames } from '../../stories/Frames'
 import { PROJECT, listOf, type Holding } from '../../stories/listFixtures'
 import { SelBar } from './SelBar'
 
-export default { title: 'Components/Item list/Picking' } satisfies Meta
+export default { title: 'Components/Item list/Picked, folded, just acted on' } satisfies Meta
 type Story = StoryObj
 
 const at = (q: Partial<ListQuery>, h: (desk: boolean) => Holding, items = PROJECT): Story => ({
@@ -20,7 +20,7 @@ export const SeveralPicked: Story = {
   ...at(active, (desk) => ({ selected: [5, 6, 2], top: desk ? <SelBar n={3} on={{ set() {}, clear() {} }} /> : undefined })),
   name: 'Several picked',
 }
-export const SubitemsFolded = at(active, () => ({ folded: [1] }))
+export const SubitemsFolded: Story = { ...at(active, () => ({ folded: [1] })), name: 'Subitems folded' }
 export const SubitemsInLater: Story = { ...at(active, () => ({})), name: 'Subitems in Later' }
 export const SubitemsInLaterShown: Story = { ...at(active, () => ({ subMore: [1] })), name: 'Subitems in Later, shown' }
 // F003 approved from the Needs you view: its row stays where it was, one quiet line saying so, until the list moves on

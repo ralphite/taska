@@ -4,7 +4,7 @@ import { PICTURE } from '../stories/fixtures'
 import type { FileRef } from '../model/types'
 import { Thumbs, VoiceChip, type PlayState } from './Files'
 
-const meta: Meta = { title: 'Components/Conversation/Message parts' }
+const meta: Meta = { title: 'Components/Conversation/Message parts/Voice notes, pictures, files' }
 export default meta
 type Story = StoryObj
 

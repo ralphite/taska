@@ -5,7 +5,7 @@ import { After, Frame, States } from '../stories/Frames'
 import { item } from '../stories/fixtures'
 import { pageOf } from '../stories/itemPage'
 
-const meta: Meta = { title: 'Components/Item page/Layout and editing' }
+const meta: Meta = { title: 'Components/Item page/Layout' }
 export default meta
 type Story = StoryObj
 
@@ -13,7 +13,7 @@ const page = () => pageOf(item({ n: 12, title: 'Export keeps the filter you set'
 
 /** A pane's edge: as it is, pointed at, dragged. */
 export const Edge: Story = {
-  name: 'The line between panes: as it is, pointer, dragged',
+  name: 'The line between the columns: as it is, pointer, dragged',
   parameters: { pseudo: { hover: ['[data-look="pointer"] [data-grip="duo"]'] } },
   render: () => (
     <States

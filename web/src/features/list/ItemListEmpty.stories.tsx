@@ -9,8 +9,8 @@ import { view } from '../../stories/itemListFixtures'
 export default { title: 'Components/Item list/Views/Empty, small, loading' } satisfies Meta
 type Story = StoryObj
 
-export const EmptyProject = view('items', { status: 'all' }, [])
-export const SmallProject = view('items', { status: 'all' }, [item({ n: 1, title: 'Plan the trip' }), item({ n: 2, status: 'done', title: 'Book the flights' })])
+export const EmptyProject: Story = { ...view('items', { status: 'all' }, []), name: 'An empty project' }
+export const SmallProject: Story = { ...view('items', { status: 'all' }, [item({ n: 1, title: 'Plan the trip' }), item({ n: 2, status: 'done', title: 'Book the flights' })]), name: 'A small project' }
 
 /** Before the project's data comes; and an empty list, for each reason it can be empty. */
 export const LoadingAndEveryEmptyList: Story = {

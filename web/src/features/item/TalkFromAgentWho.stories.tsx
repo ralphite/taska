@@ -6,8 +6,8 @@ import { at } from '../../stories/talkFromAgentFixtures'
 export default { title: 'Components/Conversation/Message/From an agent/Who sent it' } satisfies Meta
 type Story = StoryObj
 
-export const FromCodex = at([message({ id: 2, by: 'codex', ses: 'tests', text: 'The export tests pass with three filters.' })])
-export const FromTheOrganizer = at([message({ id: 2, by: 'org', kind: 'say', src: 'r4', text: 'Added to F012: keep the filter' })])
+export const FromCodex: Story = { ...at([message({ id: 2, by: 'codex', ses: 'tests', text: 'The export tests pass with three filters.' })]), name: 'From Codex' }
+export const FromTheOrganizer: Story = { ...at([message({ id: 2, by: 'org', kind: 'say', src: 'r4', text: 'Added to F012: keep the filter' })]), name: 'From the organizer' }
 export const FromTheOrganizerInputFromAnotherItem: Story = {
   ...at([message({ id: 2, by: 'org', kind: 'say', src: 'r4', text: 'Added to F012: keep the filter' })], {
     inputs: [input({ id: 'r4', text: 'Keep the filter, and the sort.', scope: 13 })],

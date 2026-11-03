@@ -28,7 +28,7 @@ export const HomeLooks: Story = {
 export const Loading: Story = { render: () => shown({ rows: null }, 260) }
 
 /** No projects yet. */
-export const NoProjects: Story = { render: () => shown({ rows: [], needs: 0 }, 260) }
+export const NoProjects: Story = { name: 'No projects', render: () => shown({ rows: [], needs: 0 }, 260) }
 // ---- more states (T639)
 /** the search box focused (a click on it, or ⌘K): its blue ring */
 export const SearchFocused: Story = { name: 'Search box: focused', parameters: { pseudo: { focusWithin: ['label:has(input)'] } }, render: () => shown({}) }

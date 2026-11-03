@@ -4,7 +4,7 @@ import { item, modelOf } from '../stories/fixtures'
 import { talkEnv } from '../stories/itemFixtures'
 import { Rich } from './Markdown'
 
-const meta: Meta = { title: 'Components/Conversation/Message parts' }
+const meta: Meta = { title: 'Components/Conversation/Message parts/Words' }
 export default meta
 type Story = StoryObj
 
@@ -20,7 +20,7 @@ const QUESTION = 'Which format should the export use?\n\n- ( ) CSV\n- ( ) Excel\
 
 /** Text as Taska shows it: words, lists, quotes, code, tables, codes that open what they name, choices. */
 export const Blocks: Story = {
-  name: 'Markdown: every kind of block',
+  name: 'Every kind of block',
   render: () => (
     <Frames phoneWidth={393} deskWidth={640}>
       {() => (
@@ -45,7 +45,7 @@ export const Blocks: Story = {
 
 /** A question's choices: shown only, open to pick (one picked), answered (yours ticked). */
 export const Choices: Story = {
-  name: 'Markdown: choices to tick',
+  name: 'Choices to tick',
   render: () => (
     <Frames phoneWidth={393} deskWidth={640}>
       {() => (
@@ -68,7 +68,7 @@ const gone = { ...world, url: () => '/no-such-file.png' }
 const slow = { ...world, url: () => 'http://10.255.255.1/slow.png' }
 /** a picture still loading, one that could not load, one from a web address, a diagram still being drawn */
 export const OnTheirWay: Story = {
-  name: 'Markdown: pictures and diagrams on their way or failed',
+  name: 'Pictures and diagrams on their way or failed',
   render: () => (
     <Frames phoneWidth={393} deskWidth={640}>
       {() => (
@@ -86,7 +86,7 @@ export const OnTheirWay: Story = {
 }
 /** pick-any answered (square boxes, several ticked), and an open choice under the pointer */
 export const ChoicesMore: Story = {
-  name: 'Markdown: choices, more',
+  name: 'Choices, more',
   parameters: { pseudo: { hover: ['[data-look="pointer"] [data-choice="1"]'] } },
   render: () => (
     <Frames phoneWidth={393} deskWidth={640}>

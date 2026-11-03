@@ -5,8 +5,8 @@ import { LONG, at, later, message, mine, pdf, r4, shot } from '../../stories/fro
 export default { title: 'Components/Conversation/Message/From you/Pictures, files, long words' } satisfies Meta
 type Story = StoryObj
 
-export const WithPictures = at([mine()], { inputs: [r4({ files: [shot, { ...shot, f: 'f4-shot.png' }] })] })
-export const WithAFile = at([mine()], { inputs: [r4({ files: [pdf] })] })
+export const WithPictures: Story = { ...at([mine()], { inputs: [r4({ files: [shot, { ...shot, f: 'f4-shot.png' }] })] }), name: 'With pictures' }
+export const WithAFile: Story = { ...at([mine()], { inputs: [r4({ files: [pdf] })] }), name: 'With a file' }
 export const LongCutOnTheDesktop: Story = { ...at([mine({ text: LONG }), { ...message({ id: 2 }), t: later(3) }]), name: 'Long: cut on the desktop' }
 // ---- more states (T639)
 /** pictures and a file with no words: no bubble, the pictures and the line under them */

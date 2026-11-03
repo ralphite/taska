@@ -34,7 +34,7 @@ const at = (q: Partial<ListQuery>): Story => ({
 })
 
 export const Search = at({ q: 'export' })
-export const NothingFound = at({ q: 'zebra' })
+export const NothingFound: Story = { ...at({ q: 'zebra' }), name: 'Nothing found' }
 export const Filtered: Story = { ...at({ type: 'bug', pri: 'P0' }), name: 'Filtered: bugs, P0' }
 // ---- more states (T639): what a search finds elsewhere, under the rows and with nothing here
 const elsewhere = { q: 'export', failed: false, list: [{ project: 'home', ptitle: 'Home', kind: 'item' as const, code: 'T07', title: 'Export the photos to the drive', status: 'open' as const, archived: false, t: T }] }

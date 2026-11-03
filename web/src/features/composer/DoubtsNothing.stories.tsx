@@ -1,9 +1,9 @@
 // A voice note that may be cut short, with no words heard, or with no transcript.
-import type { Meta } from '@storybook/react-vite'
+import type { Meta, StoryObj } from '@storybook/react-vite'
 import { voice } from '../../stories/doubtsFixtures'
 
 export default { title: 'Components/Input box/Voice/Cut short or nothing heard' } satisfies Meta
 
-export const MayBeCutShort = voice({ tr: 'Keep the sort', more: true }, 'Keep the sort')
-export const NoWordsHeard = voice({ tr: '' })
-export const NoTranscript = voice({ tr: '', trError: 'Gemini HTTP 503' })
+export const MayBeCutShort: StoryObj = { ...voice({ tr: 'Keep the sort', more: true }, 'Keep the sort'), name: 'May be cut short' }
+export const NoWordsHeard: StoryObj = { ...voice({ tr: '' }), name: 'No words heard' }
+export const NoTranscript: StoryObj = { ...voice({ tr: '', trError: 'Gemini HTTP 503' }), name: 'Writing it out failed' }

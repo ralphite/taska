@@ -3,7 +3,7 @@ import type { LogSentence } from '../model/activity'
 import { Frames, States } from '../stories/Frames'
 import { LogLine, LogMore } from './Log'
 
-const meta: Meta = { title: 'Components/Side lists' }
+const meta: Meta = { title: 'Components/Side lists/Activity' }
 export default meta
 type Story = StoryObj
 
@@ -12,6 +12,7 @@ const s = (who: string, parts: LogSentence['parts'], session = ''): LogSentence 
 
 /** A change as a sentence (its codes are links), with an agent's session, with its time; the end of what is loaded. */
 export const Lines: Story = {
+  name: 'Each kind of line',
   render: () => (
     <Frames phoneWidth={393} deskWidth={520} height={250}>
       {() => (

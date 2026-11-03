@@ -6,11 +6,12 @@ import { message, modelOf } from '../../stories/fixtures'
 import { noItemEvents, talkEnv } from '../../stories/itemFixtures'
 import { MsgText } from './MsgText'
 
-export default { title: 'Components/Conversation/Message parts' } satisfies Meta
+export default { title: 'Components/Conversation/Message parts/Words' } satisfies Meta
 type Story = StoryObj
 
 const MD = '**Result**: the export keeps the filter.\n\n- with the filter\n- with the sort\n\n`npm run check` passes; see [the plan](#D1) and F014.\n\n> The old export stays a week.'
 
 export const Markdown: Story = {
+  name: 'A message’s words: Markdown, codes, links',
   render: () => <Frames phoneWidth={393} deskWidth={640}>{(layout) => <div className="p-3 text-[15px]"><MsgText x={message({ id: 1, text: MD })} env={talkEnv(modelOf([]), layout === 'desk')} on={noItemEvents} /></div>}</Frames>,
 }

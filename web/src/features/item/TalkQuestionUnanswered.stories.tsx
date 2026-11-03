@@ -15,4 +15,4 @@ export const NotAnsweredAskedAgainLater: Story = {
   ...at([ask(ASK, 4), { ...message({ id: 6, kind: 'ask', text: 'Still: which format?\n- ( ) CSV\n- ( ) Excel' }), t: later(30) }], waits('Still: which format?\n- ( ) CSV\n- ( ) Excel', 6)),
   name: 'Not answered, asked again later',
 }
-export const TakenBackByTheAgent = at([ask(), { ...message({ id: 5, kind: 'withdraw', text: 'Found it in the notes: CSV.' }), t: later(3) }])
+export const TakenBackByTheAgent: Story = { ...at([ask(), { ...message({ id: 5, kind: 'withdraw', text: 'Found it in the notes: CSV.' }), t: later(3) }]), name: 'Taken back by the agent' }

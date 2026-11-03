@@ -13,6 +13,6 @@ export const InProgressWithItsTalk: Story = {
 }
 export const AgentsTurnYouReplied: Story = { ...at({ talked: true, thread: [said] }), name: 'Open, you replied' }
 // ---- more states (B636)
-export const P0 = at({ pri: 'P0', thread: [said] })
+export const P0: Story = { ...at({ pri: 'P0', thread: [said] }), name: 'P0' }
 export const Later = at({ when: 'later', thread: [said] })
 export const MadeFromTwoInputs: Story = { ...at({ thread: [said], srcs: ['r4', 'r5'] }, { f: { sources: 2 } }), name: 'Made from two inputs' }

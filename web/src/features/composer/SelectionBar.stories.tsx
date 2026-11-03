@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frames } from '../../stories/Frames'
 import { SelectionBar } from './SelectionBar'
 
-const meta: Meta = { title: 'Components/Input box/Selection bar' }
+const meta: Meta = { title: 'Components/Input box/Bar over selected words' }
 export default meta
 type Story = StoryObj
 
@@ -11,6 +11,7 @@ const on = { mic: () => {}, comment: () => {}, fix: () => {} }
 
 /** Under selected words: speak about them; a document's words can be commented on, a voice note's corrected. */
 export const Bar: Story = {
+  name: 'Speak or comment',
   render: () => (
     <Frames phoneWidth={393} deskWidth={640} height={160}>
       {() => (
@@ -25,6 +26,7 @@ export const Bar: Story = {
 
 /** Recording a comment about them: the same button stops it. With Correct, for a voice note's words. */
 export const Recording: Story = {
+  name: 'Recording; Correct on a voice note’s words',
   render: () => (
     <Frames phoneWidth={393} deskWidth={640} height={160}>
       {() => (

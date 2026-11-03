@@ -5,7 +5,7 @@ import { Frames } from '../../stories/Frames'
 import { T, item } from '../../stories/fixtures'
 import { listOf } from '../../stories/listFixtures'
 
-export default { title: 'Components/Item list/Agent mark' } satisfies Meta
+export default { title: 'Components/Item list/Item row/By status/Still to do' } satisfies Meta
 
 const hoursAgo = (h: number) => new Date(Date.parse(T) - h * 3600e3).toISOString()
 const items = [
@@ -14,6 +14,6 @@ const items = [
 ]
 
 export const AtWork: StoryObj = {
-  name: 'At work',
+  name: 'In progress: the agent at work, its name in the tip',
   render: () => <Frames phoneWidth={393} deskWidth={460} height={220}>{(layout) => listOf(items, 'items', { status: 'all' }, layout === 'desk')}</Frames>,
 }

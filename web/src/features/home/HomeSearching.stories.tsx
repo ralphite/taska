@@ -9,4 +9,4 @@ type Story = StoryObj
 export const Searching: Story = { render: () => shown({ q: 'rewrite', hits }) }
 
 /** The search found nothing. */
-export const NothingFound: Story = { render: () => shown({ q: 'zebra', hits: [] }, 420) }
+export const NothingFound: Story = { name: 'Nothing found', render: () => shown({ q: 'zebra', hits: [] }, 420) }

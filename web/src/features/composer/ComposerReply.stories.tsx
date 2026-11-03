@@ -6,6 +6,6 @@ import { at, words } from '../../stories/composerFixtures'
 export default { title: 'Components/Input box/What it writes to/A reply to an item' } satisfies Meta
 type Story = StoryObj
 
-export const AReplyToAnItem = at({ at: 'F012' })
+export const AReplyToAnItem: Story = { ...at({ at: 'F012' }), name: 'A reply to an item' }
 export const AReplyToAnItemWithWords: Story = { ...at({ at: 'F012', text: words }), name: 'A reply to an item, with words' }
-export const RecordingForAnotherItem = at({ at: '', rec: true, recordingFor: scopeDraft('F013') })
+export const RecordingForAnotherItem: Story = { ...at({ at: '', rec: true, recordingFor: scopeDraft('F013') }), name: 'Recording for another item' }

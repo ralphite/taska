@@ -1,55 +1,18 @@
-// An item's page as you lay it out and edit it: editing,
-// adding a subitem, full width, two columns, the line between the item and its talk, a reply on its way, the bar's
-// buttons under the pointer, focused and pressed. The page's own pane and ItemPage.
+// An item's page as you lay it out: full width, two columns (a document or a web page on the left), the lines between
+// its parts that you drag. The page's own pane and ItemPage.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import type { Item } from '../../model/types'
-import { Frame, Frames } from '../../stories/Frames'
 import { WEB, doc } from '../../stories/docFixtures'
 import { docAt } from '../../stories/docPage'
-import { item, message } from '../../stories/fixtures'
-import { KIDS, PARENT, pageOf, you, type PageOpts } from '../../stories/itemPage'
+import { at, desk } from '../../stories/itemPageLayoutFixtures'
 
-export default { title: 'Components/Item page/Layout and editing' } satisfies Meta
+export default { title: 'Components/Item page/Layout' } satisfies Meta
 type Story = StoryObj
 
-const it = (f: Partial<Item> = {}) =>
-  item({ n: 12, parent: 3, pri: 'P1', body: 'The export writes **every** row; it should write the rows the list shows.', next: 'Read the filter from the address', thread: [you(1, 'The export should keep the filter I set.'), message({ id: 2, text: 'Reproduced it: the export reads the list before the filter.' })], ...f })
-const at = (o: PageOpts, height = 760, f: Partial<Item> = {}): Story => ({
-  render: () => <Frames phoneWidth={393} deskWidth={900} height={height}>{(layout) => pageOf(it(f), layout === 'desk', { others: [PARENT, ...KIDS], ...o })}</Frames>,
-})
-const desk = (o: PageOpts, width: number): Story => ({
-  render: () => (
-    <Frame layout="desk" width={width} height={720} label="desktop">
-      {pageOf(it(), true, { others: [PARENT, ...KIDS], ...o })}
-    </Frame>
-  ),
-})
-
-export const Editing = at({ f: { editing: true } })
-export const AddingASubitem = at({ f: { addingSub: true } })
-export const FullWidth = desk({ full: true }, 1400)
-export const TwoColumns = desk({ duo: true }, 1400)
-export const LinePointerOnIt: Story = { ...at({}), name: 'Line, pointer on it', parameters: { pseudo: { hover: ['[data-grip="top"]'] } } }
-export const YourReplyOnItsWay = at({ t: { outgoing: [{ q: 'q1', text: 'Also keep the sort.', state: 'Sending…', bad: false, canUndo: true }] } })
-export const PointerKeysPressed: Story = {
-  name: 'Pointer, keys, pressed: all side by side',
-  parameters: { pseudo: { hover: ['[data-look="pointer"] header button'], focusVisible: ['[data-look="keys"] header button'], active: ['[data-look="pressed"] header button'] } },
-  render: () => (
-    <div className="flex flex-wrap gap-6">
-      {(['pointer', 'keys', 'pressed'] as const).map((look) => (
-        <div key={look} data-look={look}>
-          <Frame layout="desk" width={900} height={180} label={look === 'keys' ? 'keys (focused)' : look === 'pointer' ? 'under the pointer' : 'pressed'}>
-            {pageOf(it(), true, { others: [PARENT] })}
-          </Frame>
-        </div>
-      ))}
-    </div>
-  ),
-}
-// ---- more states (T639)
+export const FullWidth: Story = { ...desk({ full: true }, 1400), name: 'Full width' }
+export const TwoColumns: Story = { ...desk({ duo: true }, 1400), name: 'Two columns: the item, its talk beside it' }
 /** two columns with a document opened: the document on the left, its item's talk on the right */
 export const TwoColumnsDocumentLeft: Story = { ...desk({ duo: true, left: docAt(doc(), true, { viewOnly: true }) }, 1400), name: 'Two columns: a document on the left' }
 /** the same with a web page: no margins around it */
 export const TwoColumnsWebPageLeft: Story = { ...desk({ duo: true, bare: true, left: docAt(WEB, true, { viewOnly: true }) }, 1400), name: 'Two columns: a web page on the left' }
-/** adding the first subitem of an item with none: the Subitems head with no count, only the field */
-export const AddingTheFirstSubitem: Story = { ...at({ others: [PARENT], f: { addingSub: true } }), name: 'Adding the first subitem' }
+/** the line between the item and its talk under the pointer: drag it up or down */
+export const LinePointerOnIt: Story = { ...at({}), name: 'The line above its talk: pointer on it', parameters: { pseudo: { hover: ['[data-grip="top"]'] } } }

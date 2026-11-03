@@ -7,10 +7,11 @@ import { NO_FILTERS } from '../model/route'
 import { Frames } from './Frames'
 import { menuModel, no, opened, underList } from './menuFixtures'
 
-export default { title: 'Components/Menus and sheets/Sheets/Filters' } satisfies Meta
+export default { title: 'Components/Menus and sheets/Sheets/Filters on the phone' } satisfies Meta
 type Story = StoryObj
 
 export const Filters: Story = {
+  name: 'Bugs of P1, newest first',
   render: () => (
     <Frames desk={false} height={780} phoneWidth={393}>
       {() => opened(filtersSheet(filterFacts(menuModel(), 'items', { ...NO_FILTERS, type: 'bug', pri: 'P1', sort: 'new' }), { set: no, unset: no, reset: no, saveView: no, close: no }), false, { under: underList(false) })}

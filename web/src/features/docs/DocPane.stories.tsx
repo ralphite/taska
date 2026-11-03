@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Frame } from "../../stories/Frames";
 import { DocPaneActs, DocPaneHead, DocPaneNav } from "./DocPane";
 
-const meta: Meta = { title: "Components/Document/Reading" };
+const meta: Meta = { title: "Components/Document/Its bar, the pointer on it" };
 export default meta;
 type Story = StoryObj;
 
