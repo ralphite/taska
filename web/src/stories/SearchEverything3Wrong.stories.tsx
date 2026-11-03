@@ -4,7 +4,7 @@ import { stateStory } from './searchProto'
 
 export default { title: 'Prototype/F479 Search everything/When it goes wrong', parameters: { layout: 'padded' } } satisfies Meta
 
-export const NothingFound: StoryObj = { name: 'Nothing found', ...stateStory('nothing', 'nothing in any project') }
-export const NothingHeard: StoryObj = { name: 'Nothing heard', ...stateStory('unheard', 'stopped, but no words in it') }
-export const NoMicrophone: StoryObj = { name: 'No microphone', ...stateStory('nomic', 'the microphone not allowed: type instead') }
-export const OutOfReach: StoryObj = { name: 'Taska out of reach', ...stateStory('offline', 'it keeps trying; the words stay') }
+export const NothingFound: StoryObj = { name: 'Nothing found', ...stateStory('nothing') }
+export const NothingHeard: StoryObj = { name: 'Nothing heard', ...stateStory('unheard') }
+export const NoMicrophone: StoryObj = { name: 'No microphone', ...stateStory('nomic') }
+export const OutOfReach: StoryObj = { name: 'Taska out of reach', ...stateStory('offline') }

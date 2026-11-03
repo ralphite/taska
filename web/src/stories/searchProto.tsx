@@ -8,9 +8,8 @@
 // The journeys
 // 1. Find something by saying it. Tap the magnifier: the search page opens and the box records at once. Say what to
 //    find; tap the up arrow. Taska writes your words out after you stop (nothing shows while you speak), puts them in
-//    the box and searches every project: first by the words (at once), then by what they mean (a few seconds). The
-//    closest come first, each with a line saying why it is there; a row of kinds (All, Items, Inputs, Rules,
-//    Documents) shows only those it found. A result from another project shows that project's tile and name at the
+//    the box and searches every project by what they mean: "Searching…", then the results, closest first; a row of
+//    kinds (All, Items, Inputs, Rules, Documents) shows only those it found. A result from another project shows that project's tile and name at the
 //    start of its last line, the same on every kind of row; no mark means the project you are in. (Not a section of
 //    their own: a section's head scrolls away, and it would push a close result to the bottom.)
 // 2. Say more. With the results showing, tap the mic in the box. Your words stay in the box and the results stay on
@@ -23,12 +22,11 @@
 //    once). Back: the same search, as you left it. (A document opens over its item, an input opens what it became.)
 // 6. Leave. The back arrow at the top: back to the list where you were; the next search starts afresh.
 //
-// The states: listening; writing out your words; searching; found by the words while it looks by meaning; found
-// (All, or one kind); a result open; a word that may be misheard; saying more with the results showing; searching
+// The states: listening; writing out your words; searching; found (All, or one kind); a result open; a word that may be misheard; saying more with the results showing; searching
 // again; typing; nothing found; nothing heard; no microphone (type instead); Taska out of reach (it keeps trying).
 //
-// Drawn here because they are not built: the search page (its head, its status line, the rows for documents and
-// inputs) and the box in its search role. The rest is the page's own: the list's head, tabs and rows (items and rules
+// Words on the screen are as few as will do (#8722: nothing verbose). Drawn here because they are not built: the
+// search page (its head, its status line, the rows for documents and inputs) and the box in its search role. The rest is the page's own: the list's head, tabs and rows (items and rules
 // are the list's ItemRow), the views' row (for the kinds), the recording bar, the misheard words and their two
 // versions, the item page and the box under it, with the demo project Shop (searchFixtures.ts: what each thing you
 // might say finds). Nothing here changes Taska itself.
@@ -54,7 +52,7 @@ import { find, type Step } from './guide'
 import { T } from './fixtures'
 import { pageOf } from './itemPage'
 import { listOf, listOn } from './listFixtures'
-import { ADDED, D1, HEARD, HOME, ITEMS, KINDS, MISHEARD, MORE, RIGHT, SHOP, byWordsOf, searchOf, type Found, type Kind, type Search } from './searchFixtures'
+import { ADDED, D1, HEARD, HOME, ITEMS, KINDS, MISHEARD, MORE, RIGHT, SHOP, searchOf, type Found, type Kind, type Search } from './searchFixtures'
 
 // ---------------------------------------------------------------- where you are, and what the search is doing
 
@@ -66,8 +64,6 @@ export type Phase =
   | 'writing'
   /** searching: the first time (nothing yet), or again (the results before it, faded) */
   | 'searching'
-  /** found by the words; looking by meaning too */
-  | 'meaning'
   | 'found'
   | 'nothing'
   /** you stopped, but there were no words in it */
@@ -99,7 +95,6 @@ export const AT: Record<string, Partial<Flow>> = {
   listening: { at: 'search', phase: 'listening' },
   writing: { at: 'search', phase: 'writing' },
   searching: { at: 'search', phase: 'searching', words: RIGHT.words },
-  meaning: { at: 'search', phase: 'meaning', words: RIGHT.words, search: byWordsOf(RIGHT) },
   found: { at: 'search', phase: 'found', words: RIGHT.words, search: RIGHT },
   oneKind: { at: 'search', phase: 'found', words: RIGHT.words, search: RIGHT, kind: 'items' },
   open: { at: 'open', phase: 'found', words: MORE.words, search: MORE, open: MORE.found[0] },
@@ -115,9 +110,9 @@ export const AT: Record<string, Partial<Flow>> = {
   offline: { at: 'search', phase: 'offline', words: RIGHT.words },
 }
 
-const WAIT = { writing: 1300, searching: 1200, meaning: 1500 }
+const WAIT = { writing: 1300, searching: 1400 }
 
-/** The search as it goes: tap, speak, stop, the words written out, the search by words and then by meaning. */
+/** The search as it goes: tap, speak, stop, the words written out, the search. */
 function useFlow(start: Partial<Flow>, still: boolean) {
   const [f, setF] = useState<Flow>({ ...START, ...start })
   const set = (p: Partial<Flow>) => setF((x) => ({ ...x, ...p }))
@@ -139,14 +134,7 @@ function useFlow(start: Partial<Flow>, still: boolean) {
         const more = x.words.includes('phone') ? ', in the last week' : ADDED
         return { ...x, phase: 'searching', words: x.words + more, added: more, doubt: false }
       })
-    if (f.phase === 'searching')
-      return after(WAIT.searching, (x) => {
-        // the first time it shows what the words find, then what they mean; again, the results change in place
-        const s = searchOf(x.words)
-        if (!x.search && s) return { ...x, phase: 'meaning', search: byWordsOf(s) }
-        return done(x)
-      })
-    if (f.phase === 'meaning') return after(WAIT.meaning, done)
+    if (f.phase === 'searching') return after(WAIT.searching, done)
   }, [f.phase, still])
   const searchNow = () => set({ phase: 'searching', typed: false, kind: 'all' })
   return {
@@ -214,7 +202,7 @@ function SearchBox({ f, a }: { f: Flow; a: Acts }) {
         rows={1}
         value={f.words}
         aria-label="What to find"
-        placeholder={f.phase === 'nomic' ? 'Type what to find' : 'Say or type what to find'}
+        placeholder={f.phase === 'nomic' ? 'Type' : 'Say or type'}
         onChange={(e) => a.type(e.currentTarget.value)}
         onKeyDown={(e) => {
           if (e.key !== 'Enter' || e.nativeEvent.isComposing) return
@@ -286,16 +274,16 @@ const Away = () => (
   </span>
 )
 
-/** A row of what it found. An item or a rule of this project is the list's own row (its why where the list says
- * where the words were found). Another project's item, a document or an input is a row like it, with its project
+/** A row of what it found. An item or a rule of this project is the list's own row (with where the words were
+ * found, when not in its title, as the list says it). Another project's item, a document or an input is a row like it, with its project
  * (when it is another) at the start of its last line. */
-function FoundRow({ x, marks, byWords, onPick }: { x: Found; marks: string[]; byWords: boolean; onPick(x: Found): void }) {
+function FoundRow({ x, marks, onPick }: { x: Found; marks: string[]; onPick(x: Found): void }) {
   const m: ProjectModel = x.home ? HOME : SHOP
   const one = x.code ? null : (m.byN.get(x.n) as Item)
   if (one && !x.home) {
     const w = drawWith(marks)
     const facts = rowFacts(m, one, w)
-    return <ItemRow it={one} depth={0} band="" foldable={false} folded={false} facts={byWords ? facts : { ...facts, hitLine: x.why }} look={rowLook(one, w)} on={{ ...listOn, open: () => onPick(x) }} />
+    return <ItemRow it={one} depth={0} band="" foldable={false} folded={false} facts={facts} look={rowLook(one, w)} on={{ ...listOn, open: () => onPick(x) }} />
   }
   const meta = [
     x.home ? <Away key="p" /> : null,
@@ -318,11 +306,6 @@ function FoundRow({ x, marks, byWords, onPick }: { x: Found; marks: string[]; by
             <span className={`mr-1.5 font-mono text-[13px] font-bold ${one ? TYPE_TEXT[one.type] : 'text-zinc-500 dark:text-zinc-400'}`}>{one ? codeOf(m, one.n) : x.code}</span>
             <Hit text={(one ? one.title : x.title) ?? ''} words={marks} />
           </span>
-          {byWords ? null : (
-            <span className="mt-0.5 line-clamp-1 text-[13px] text-zinc-500 dark:text-zinc-400">
-              <Hit text={x.why} words={marks} />
-            </span>
-          )}
           <span className="mt-1 flex items-center gap-x-2.5 overflow-hidden text-xs font-medium whitespace-nowrap text-zinc-500 dark:text-zinc-400">{meta}</span>
         </span>
       </button>
@@ -354,7 +337,7 @@ const SHOWN = 3
 function Results({ s, kind, faded, a }: { s: Search; kind: Kind | 'all'; faded: boolean; a: Acts }) {
   const of = (k: Kind) => s.found.filter((x) => x.kind === k)
   const kinds = KINDS.filter(([k]) => of(k).length)
-  const rows = (list: Found[]) => list.map((x) => <FoundRow key={x.key} x={x} marks={s.marks} byWords={!!s.byWords} onPick={a.pick} />)
+  const rows = (list: Found[]) => list.map((x) => <FoundRow key={x.key} x={x} marks={s.marks} onPick={a.pick} />)
   return (
     <div className={faded ? 'opacity-45 transition-opacity' : 'transition-opacity'}>
       {kind === 'all' ? (
@@ -386,7 +369,7 @@ function Results({ s, kind, faded, a }: { s: Search; kind: Kind | 'all'; faded: 
 function SearchPage({ f, a }: { f: Flow; a: Acts }) {
   const s = f.search
   const counts = s ? KINDS.map(([k, label]) => [k, label, s.found.filter((x) => x.kind === k).length] as const).filter(([, , n]) => n) : []
-  const status = !s ? null : f.phase === 'listening' ? 'Say what to add · it joins your words' : f.phase === 'meaning' ? 'Found by the words · looking by meaning too…' : f.phase === 'searching' ? (f.added ? 'Searching again with what you added…' : 'Searching again…') : null
+  const status = s && f.phase === 'searching' ? 'Searching…' : null
   let body: ReactNode
   if (s) body = <Results s={s} kind={f.kind} faded={f.phase === 'searching'} a={a} />
   else if (f.phase === 'searching')
@@ -394,21 +377,19 @@ function SearchPage({ f, a }: { f: Flow; a: Acts }) {
       <Middle title={<Icon n="spinner" c="mx-auto size-7 animate-spin text-zinc-400" sw="2" />}>Searching…</Middle>
     )
   else if (f.phase === 'writing') body = null
-  else if (f.phase === 'nothing') body = <Middle title="Nothing found">Not in any project, by the words or by what they mean. Say more about it, or clear the words and say it another way.</Middle>
-  else if (f.phase === 'unheard') body = <Middle title="Didn’t catch anything">Tap the mic and say it again, a little nearer the phone. Or type it.</Middle>
+  else if (f.phase === 'nothing') body = <Middle title="Nothing found" />
+  else if (f.phase === 'unheard') body = <Middle title="Didn’t catch that" />
   else if (f.phase === 'nomic')
     body = (
-      <Middle title="Taska can’t use the microphone">
-        Allow it in Safari: aA by the address, Website Settings, Microphone. Until then, type what to find.
+      <Middle title="Microphone not allowed">
+        Safari: aA › Website Settings › Microphone
       </Middle>
     )
   else if (f.phase === 'offline')
     body = (
-      <Middle title={<span className="flex items-center justify-center gap-2"><Icon n="spinner" c="size-4 animate-spin text-zinc-400" sw="2" />Can’t reach Taska</span>}>
-        Trying again: it searches as soon as Taska answers. Your words stay in the box.
-      </Middle>
+      <Middle title={<span className="flex items-center justify-center gap-2"><Icon n="spinner" c="size-4 animate-spin text-zinc-400" sw="2" />Can’t reach Taska</span>} />
     )
-  else body = <Middle title="Say what to find">Items, inputs, rules and documents, in all your projects. Say it in your own words; it finds by what they mean.</Middle>
+  else body = null
   return (
     <div className="flex h-full flex-col">
       <header className="flex h-14 shrink-0 items-center gap-1 px-2">
@@ -513,9 +494,9 @@ export function SearchPhone({ start = {}, still = false, step = null, onNext }: 
 }
 
 /** A state's story: the phone, opened on that state, staying in it. */
-export const stateStory = (at: keyof typeof AT, note: string) => ({
+export const stateStory = (at: keyof typeof AT) => ({
   render: () => (
-    <Frame layout="phone" label={note}>
+    <Frame layout="phone">
       <SearchPhone start={AT[at]} still />
     </Frame>
   ),
