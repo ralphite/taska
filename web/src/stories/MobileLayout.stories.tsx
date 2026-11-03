@@ -5,7 +5,7 @@
 // What is not built yet is drawn here: the bar, the top line with only the project and its agent, the line saying
 // where the words go, the line after sending, the listening panel. Every page in between is the page's own component
 // with the demo project's data. Nothing here changes Taska itself.
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Composer } from '../features/composer/Composer'
 import { SaidLately, type SaidEvents } from '../features/composer/SaidLately'
@@ -23,7 +23,9 @@ import { Icon } from '../ui/Icon'
 import type { IconName } from '../ui/icon-paths'
 import { PROJECT_TONES } from '../ui/tones'
 import { Frame } from './Frames'
-import { GuideLine, Level, Mark, find, sel, withText, type Step } from './guide'
+import { Level } from './tour/Level'
+import { TourFrame } from './tour/TourFrame'
+import { button, marked, row, type Tour } from './tour/tour'
 import { doc } from './docFixtures'
 import { T, input, message, modelOf } from './fixtures'
 import { itemFacts, noItemEvents, talkEnv, talkFacts } from './itemFixtures'
@@ -175,31 +177,35 @@ function Listening({ onDone, onCancel }: { onDone(): void; onCancel(): void }) {
   )
 }
 
-// ---------------------------------------------------------------- the guide: where to tap next (R488, B524)
+// ---------------------------------------------------------------- the tour: where to tap next (R488, B524, F566)
 
-const STEPS: Step[] = [
-  { say: 'The voice button says where it goes (New input). Tap it: it records at once', tap: sel('[aria-label="Say something"]') },
-  { say: 'Tap ✓: the recording stops and its words go into the box, to change or add to', tap: sel('[aria-label="Stop and put words in the box"]') },
-  { say: 'Tap ↑: it goes; a line says where, with See', tap: sel('#composer [data-box="main"], [data-box="main"]') },
-  { say: 'Tap See: your input is at the top of all you said in Shop', tap: withText('button', 'See') },
-  { say: 'Tap Items: back to the list', tap: sel('[data-tab="Items"]') },
-  { say: 'Tap F001: the item opens, its detail under Items; the voice button now says Reply F001', tap: sel('[data-n="1"]') },
-  { say: 'Tap Comments: the same item’s talk (the switch on top says so)', tap: sel('[data-tab="Comments"]') },
-  { say: 'Tap the voice button: it replies to F001', tap: sel('[aria-label="Say something"]') },
-  { say: 'Tap ↑: the reply goes, and shows at the end of the talk', tap: sel('[aria-label="Stop and send"]') },
-  { say: 'Tap All in Shop: the same tab, widened to the whole project; F001 stays open', tap: withText('button', 'All in Shop') },
-  { say: 'Tap Items: back to F001’s detail', tap: sel('[data-tab="Items"]') },
-  { say: 'Tap its document D1: a level inside the item', tap: withText('button', 'Plan: the export keeps the filter') },
-  { say: 'Tap a part of it: only picked; the voice button now says Comment', tap: sel('[data-key="p1"]') },
-  { say: 'Tap the voice button: it comments on that part', tap: sel('[aria-label="Say something"]') },
-  { say: 'Tap ↑: the comment goes, on that part', tap: sel('[aria-label="Stop and send"]') },
-  { say: 'Tap See: the comment is in F001’s talk, with the part it is on', tap: withText('button', 'See') },
-  { say: 'Tap Search: it listens at once', tap: sel('[data-tab="Search"]') },
-  { say: 'Tap Find: what it found in Shop', tap: withText('button', 'Find') },
-  { say: 'Tap Projects: every project, and Documents, Activity, Deleted, Settings', tap: sel('[data-tab="Projects"]') },
-]
+const ITEMS_TAB = marked('tab', 'Items', { label: 'Items' })
+const MIC = button('Say something')
+const TOUR: Tour = {
+  steps: [
+    { say: 'Tap the mic.', target: MIC },
+    { say: 'Tap ✓.', target: button('Stop and put words in the box') },
+    { say: 'Tap ↑.', target: marked('box', 'main', { label: '↑' }) },
+    { say: 'Tap See.', target: button('See') },
+    { say: 'Tap Items.', target: ITEMS_TAB },
+    { say: 'Tap F001.', target: row(1) },
+    { say: 'Tap Comments.', target: marked('tab', 'Comments', { label: 'Comments' }) },
+    { say: 'Tap the mic to reply.', target: MIC },
+    { say: 'Tap ↑.', target: button('Stop and send') },
+    { say: 'Tap All in Shop.', target: button('All in Shop') },
+    { say: 'Tap Items.', target: ITEMS_TAB },
+    { say: 'Tap D1.', target: button(/Plan: the export keeps the filter/, { label: 'D1' }) },
+    { say: 'Tap a paragraph.', target: marked('key', 'p1', { label: 'The paragraph' }) },
+    { say: 'Tap the mic to comment.', target: MIC },
+    { say: 'Tap ↑.', target: button('Stop and send') },
+    { say: 'Tap See.', target: button('See') },
+    { say: 'Tap Search.', target: marked('tab', 'Search', { label: 'Search' }) },
+    { say: 'Tap Find.', target: button('Find') },
+    { say: 'Tap Projects.', target: marked('tab', 'Projects', { label: 'Projects' }) },
+  ],
+}
 
-function Phone({ mic, n = -1, onNext }: { mic: boolean; n?: number; onNext?(): void }) {
+function Phone({ mic }: { mic: boolean }) {
   const [place, setPlace] = useState<Place>('items')
   const [rec, setRec] = useState(false)
   const [text, setText] = useState('')
@@ -210,8 +216,6 @@ function Phone({ mic, n = -1, onNext }: { mic: boolean; n?: number; onNext?(): v
   const [open, setOpen] = useState(false)
   // what was sent here, so it shows where it went (the prototype has no server)
   const [mine, setMine] = useState<{ to: 'shop' | 'item'; text: string }[]>([])
-  const root = useRef<HTMLDivElement>(null)
-  const step = n >= 0 ? (STEPS[n] ?? null) : null
   useEffect(() => {
     if (!sent) return
     const t = setTimeout(() => setSent(null), 8000)
@@ -298,10 +302,12 @@ function Phone({ mic, n = -1, onNext }: { mic: boolean; n?: number; onNext?(): v
     )
   } else if (place === 'doc') {
     top = <Top back code="D1" sub="in F001" onBack={() => go('detail')} />
-    const look = { threads: new Set<string>(), sel: new Set(sel ? [sel] : []), quote: null, reply: null, circle: false, typing: false }
+    // a part picked is commented on through the box (the bar's voice button), so the document's own floating voice
+    // button (B643) stays away: as when you type into the box
+    const look = { threads: new Set<string>(), sel: new Set(sel ? [sel] : []), quote: null, reply: null, circle: false, typing: !!sel }
     body = (
       <div className="px-4 pt-2 pb-6">
-        <DocView facts={factsOf(M, D1, look, { since: T }, false, {}, { key: sel, bar: true }, { mine: {}, going: {}, open: new Set() })} env={docEnv} on={docOn} />
+        <DocView facts={factsOf(M, D1, look, { since: T }, false, {}, null, { mine: {}, going: {}, open: new Set() })} env={docEnv} on={docOn} />
       </div>
     )
   } else if (place === 'inputs') {
@@ -323,36 +329,15 @@ function Phone({ mic, n = -1, onNext }: { mic: boolean; n?: number; onNext?(): v
     top = <Top back={false} code="Shop" sub={found ? 'Searched for “export filter”' : ''} onBack={() => {}} />
     body = found ? listOf(ITEMS, 'items', { q: 'export filter' }, false, { on: { open: (n) => n === 1 && go('detail') } }) : <Listening onDone={() => setFound(true)} onCancel={() => go('items')} />
   }
-  // a tap on what the step names moves the guide on (any other tap just does what it does)
-  const next = (e: React.MouseEvent) => {
-    const el = root.current && step ? find(root.current, step.tap) : null
-    if (el && el.contains(e.target as Node)) setTimeout(() => onNext?.(), 0)
-  }
   // without the voice button the box is always there, as it is now
   const boxShown = mic ? rec || !!text : place !== 'projects'
   return (
-    <div ref={root} onClickCapture={next} className="relative flex h-full flex-col">
+    <div className="relative flex h-full flex-col">
       {top}
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">{body}</div>
       {sent ? <Sent said={sent} onSee={see} /> : null}
       {boxShown ? box : null}
       {mic && boxShown ? null : <Bar on={TAB_OF[place]} count={open ? thread.length : 0} mic={mic} to={to} onTap={tap} />}
-      <Mark root={root} step={step} />
-    </div>
-  )
-}
-
-/** One phone, its guide from the start again when Start again is tapped. */
-function Guided() {
-  const [k, setK] = useState(0)
-  const [n, setN] = useState(0)
-  const step = STEPS[n]
-  return (
-    <div className="flex w-[393px] flex-col gap-3">
-      <Frame layout="phone" width={393} height={852} label="the voice button in the middle (D75) · the yellow spot is the next tap">
-        <Phone key={k} mic n={n} onNext={() => setN((x) => x + 1)} />
-      </Frame>
-      <GuideLine n={n} total={STEPS.length} say={step?.say} onAgain={() => (setK((x) => x + 1), setN(0))} />
     </div>
   )
 }
@@ -363,8 +348,10 @@ function Guided() {
 export const NewMobileLayout: StoryObj = {
   render: () => (
     <div className="flex flex-wrap items-start gap-10">
-      <Guided />
-      <Frame layout="phone" width={393} height={852} label="three places, no voice button: the box as it is now">
+      <TourFrame layout="phone" tour={TOUR} width={393} height={852} label="voice button in the middle">
+        <Phone mic />
+      </TourFrame>
+      <Frame layout="phone" width={393} height={852} label="no voice button">
         <Phone mic={false} />
       </Frame>
     </div>

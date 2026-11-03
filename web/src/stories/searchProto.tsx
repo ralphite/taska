@@ -30,7 +30,7 @@
 // are the list's ItemRow), the views' row (for the kinds), the recording bar, the misheard words and their two
 // versions, the item page and the box under it, with the demo project Shop (searchFixtures.ts: what each thing you
 // might say finds). Nothing here changes Taska itself.
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Composer, RecBar } from '../features/composer/Composer'
 import { BOX_WORDS_LOOK, Doubts, DraftWords } from '../features/composer/Doubts'
 import { ItemRow } from '../features/list/ListRows'
@@ -48,7 +48,6 @@ import { Icon, StateIcon } from '../ui/Icon'
 import { LINK_BTN, PRI_TEXT, PROJECT_TONES, TYPE_TEXT } from '../ui/tones'
 import { shownStatus } from '../model/items'
 import { Frame } from './Frames'
-import { find, type Step } from './guide'
 import { T } from './fixtures'
 import { pageOf } from './itemPage'
 import { listOf, listOn } from './listFixtures'
@@ -478,16 +477,11 @@ function OpenPage({ x, onBack }: { x: Found; onBack(): void }) {
 // ---------------------------------------------------------------- the phone
 
 /** The phone through the search, from the state `start` names; `still`: it stays in that state (a state's story). */
-export function SearchPhone({ start = {}, still = false, step = null, onNext }: { start?: Partial<Flow>; still?: boolean; step?: Step | null; onNext?(): void }) {
+export function SearchPhone({ start = {}, still = false }: { start?: Partial<Flow>; still?: boolean }) {
   const a = useFlow(start, still)
-  const root = useRef<HTMLDivElement>(null)
-  const next = (e: React.MouseEvent) => {
-    const el = root.current && step ? find(root.current, step.tap) : null
-    if (el && el.contains(e.target as Node)) setTimeout(() => onNext?.(), 0)
-  }
   const { f } = a
   return (
-    <div ref={root} onClickCapture={next} className="relative h-full">
+    <div className="relative h-full">
       {f.at === 'list' ? <ListPage onSearch={a.open} /> : f.at === 'open' && f.open ? <OpenPage x={f.open} onBack={a.back} /> : <SearchPage f={f} a={a} />}
     </div>
   )
