@@ -418,7 +418,9 @@ test('r672: a page as tall as its window (an app) fills what the pane shows, and
   if (!one || !two) throw new Error('not drawn')
   expect(two.height).toBe(one.height)
   // the app's footer is at the bottom of what the pane shows, in view: above the input box when the box is under it
-  const strip = await foot(page).filter({ visible: true }).boundingBox()
+  // (the desktop's; the phone has no box over a document, B643)
+  const under = foot(page).filter({ visible: true })
+  const strip = (await under.count()) ? await under.boundingBox() : null
   let end = page.viewportSize()?.height || 0
   if (strip && strip.y > one.y && strip.x < one.x + one.width && strip.x + strip.width > one.x) end = Math.min(end, strip.y)
   expect(one.y + one.height).toBeLessThanOrEqual(end + 1)

@@ -78,7 +78,7 @@ export function WebPage({ title, html, threads, held, rec = false, open, desk, i
   const pop = useRef<HTMLDivElement>(null)
   const root = useRef<HTMLDivElement>(null)
   const [height, setHeight] = useState(480)
-  const tall = useRef({ h: 0, at: 0, step: 0, n: 0 })
+  const tall = useRef({ h: 0, at: 0, step: 0, n: 0, fill: false })
   const [hover, setHover] = useState<Part | null>(null)
   const [rects, setRects] = useState<Record<string, Box>>({})
   const [measured, setMeasured] = useState(false)
@@ -132,8 +132,9 @@ export function WebPage({ title, html, threads, held, rec = false, open, desk, i
   const shownH = useRef(0)
   useLayoutEffect(() => {
     // before the page says how tall it is, it has what the pane shows below its top, down to the box (the pane reaches
-    // under the box, kept clear by its padding: r672); a page as tall as that (an app, which follows its window) keeps
-    // filling it when the pane changes (the phone's sheet takes its place above the box after this)
+    // under the box, kept clear by its padding: r672); a page as tall as its window (an app, which follows it) keeps
+    // filling it when the pane changes (the phone's sheet takes its full height after this); one that said it has a
+    // height of its own keeps that
     const f = frame.current
     const pane = f?.closest('.overflow-y-auto')
     if (!f || !pane) return
@@ -142,7 +143,7 @@ export function WebPage({ title, html, threads, held, rec = false, open, desk, i
       const under = parseFloat(getComputedStyle(pane).paddingBottom) || 0
       const h = Math.round(Math.min(pane.getBoundingClientRect().bottom - under, innerHeight) - top.top)
       const t = tall.current
-      if (h <= 240 || h === shownH.current || (t.h && Math.abs(t.h - shownH.current) > 2)) return
+      if (h <= 240 || h === shownH.current || (t.h && !t.fill)) return
       shownH.current = h
       t.h = 0
       setHeight(h)
@@ -180,10 +181,17 @@ export function WebPage({ title, html, threads, held, rec = false, open, desk, i
         setHover(null)
       }, 150)
     }
-    // the frame takes the page's height; a page that grows by the same step each time its frame does (its height
-    // follows its window's) stops growing it after three such steps in quick succession
-    const fit = (h: number) => {
+    // the frame takes the page's height; a page as tall as its window (an app) follows its frame, which the pane
+    // sizes (r672: its height in an earlier frame, heard after the pane grew, no longer shrinks it back); a page that
+    // grows by the same step each time its frame does (a little taller than its window) stops growing it after three
+    // such steps in quick succession
+    const fit = (h: number, fill: boolean) => {
       const t = tall.current
+      t.fill = fill
+      if (fill) {
+        t.h = h
+        return
+      }
       const now = performance.now()
       const step = h - t.h
       if (t.h && Math.abs(step) < 1) return
@@ -196,10 +204,10 @@ export function WebPage({ title, html, threads, held, rec = false, open, desk, i
     }
     const got = (e: MessageEvent) => {
       if (e.source !== frame.current?.contentWindow) return
-      const m = (e.data || {}) as { h?: number; hover?: Part | null; at?: XY; rects?: Record<string, Box>; pick?: Part; esc?: number; ready?: number; down?: number; maybe?: Part }
+      const m = (e.data || {}) as { h?: number; fill?: number; hover?: Part | null; at?: XY; rects?: Record<string, Box>; pick?: Part; esc?: number; ready?: number; down?: number; maybe?: Part }
       const now = live.current
       if (m.ready) frame.current?.contentWindow?.postMessage({ taska: 1, ...(JSON.parse(wantNow.current) as object) }, '*')
-      if (m.h) fit(m.h)
+      if (m.h) fit(m.h, !!m.fill)
       if ('hover' in m) hoverAt(m.hover || null, m.at)
       if (m.rects) {
         setRects(m.rects)

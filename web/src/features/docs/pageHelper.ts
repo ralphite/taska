@@ -46,12 +46,13 @@ export const PAGE_HELPER = String.raw`<script>(() => {
   }
   const info = (el) => ({ key: keyOf(el), text: (el.innerText || '').trim().slice(0, 500), rect: box(el.getBoundingClientRect()) })
   // r672: the page's height, not its window's: a page as tall as its window (100vh, as apps are) keeps the height it
-  // was given, instead of growing with its frame without end
-  let tall = 0
+  // was given, instead of growing with its frame without end; it says so (fill), as it is when it measures
+  let tall = ''
   const size = () => {
     const e = document.documentElement
     const h = e.scrollHeight > e.clientHeight + 1 ? e.scrollHeight : Math.ceil(e.getBoundingClientRect().height)
-    if (h !== tall) send({ h: (tall = h) })
+    const fill = Math.abs(h - innerHeight) <= 1 ? 1 : 0
+    if (h + ',' + fill !== tall) { tall = h + ',' + fill; send({ h, fill }) }
   }
   // r799: where the parts with comments are now; a part hidden or gone has no place (its count is not drawn)
   let said = ''
