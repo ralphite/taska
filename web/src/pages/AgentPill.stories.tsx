@@ -3,6 +3,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frames } from '../stories/Frames'
 import { AGENTS, headOf, type HeadHere } from '../stories/headFixtures'
+import { PaneFrame } from '../ui/PaneFrame'
+import { OfflinePill } from './Header'
 
 export default { title: 'Components/Around the page/Top bar and list head/Agent pill' } satisfies Meta
 type Story = StoryObj
@@ -21,3 +23,18 @@ export const PillIdle: Story = { ...one({ agents: AGENTS.none, work: false }), n
 export const PillOffline: Story = { ...one({ away: 2 }), name: 'Offline' }
 /** Two changes could not be saved: their count opens them. */
 export const NotSaved: Story = { ...one({ notSaved: 2 }), name: 'Not saved count' }
+/** On the phone an item's page covers the list's head, so it says Offline, retrying under its own bar (D82 #5). */
+export const OfflineOnPhoneItem: Story = {
+  name: 'Offline, on the phone over an item',
+  render: () => (
+    <Frames desk={false} phoneWidth={393} height={220}>
+      {() => (
+        <div className="flex h-44 flex-col">
+          <PaneFrame place="" desk={false} head={<span className="font-mono text-sm font-bold">F012</span>} menu notice={<OfflinePill />} onBack={() => {}} onMenu={() => {}}>
+            <p className="px-4 py-4 text-[15px]">Export ignores the active filter</p>
+          </PaneFrame>
+        </div>
+      )}
+    </Frames>
+  ),
+}

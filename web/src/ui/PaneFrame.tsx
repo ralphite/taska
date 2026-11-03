@@ -19,6 +19,7 @@ export function PaneFrame({
   lead,
   bodyRef,
   duo = false,
+  notice,
   children,
 }: {
   place: string
@@ -42,6 +43,8 @@ export function PaneFrame({
   bodyRef?: (el: HTMLElement | null) => void
   /** two columns: the talk ends clear above the box, the body does not run on under it */
   duo?: boolean
+  /** the phone's line under the bar (Offline, retrying while Taska is out of reach) */
+  notice?: ReactNode
   children?: ReactNode
 }) {
   return (
@@ -68,6 +71,7 @@ export function PaneFrame({
         </button>
         <div className={`hidden items-center gap-0.5 border-l border-zinc-200 pl-2 lg:ml-1.5 dark:border-zinc-800 ${lead ? '' : 'lg:flex'}`}>{desk && !lead ? nav : null}</div>
       </header>
+      {notice ? <div className="flex shrink-0 justify-center border-b border-zinc-100 py-1.5 lg:hidden dark:border-zinc-800/70">{notice}</div> : null}
       <div
         ref={bodyRef}
         {...(split ? { 'data-split': '' } : {})}

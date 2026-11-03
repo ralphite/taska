@@ -11,6 +11,7 @@ import { Icon } from '../ui/Icon'
 import { BackTo, ItemActs, ItemHead, ItemNav, Missing, NoSelection } from '../features/item/ItemPage'
 import { ItemPageContainer, openItemMenu } from '../features/item/ItemPageContainer'
 import { PaneFrame } from '../ui/PaneFrame'
+import { OfflinePill } from './Header'
 import { DeletedPickContainer } from '../features/side/SideListContainer'
 import { DocPaneContainer, DocSheetContainer } from '../features/docs/DocContainer'
 
@@ -36,7 +37,9 @@ export function DetailContainer({ route, place, hidden, full = false, footRoom =
   const editingDoc = useStoreValue(stores.docView, (s) => s.editing)
   const docIt = doc && m ? m.byN.get(liveN(m, doc.n)) : undefined
   useTwoColumns(desk && !hidden ? body : null, desk && !compose && (!!it || (!!doc && !editingDoc && !!docIt)), !!doc && !editingDoc, (on) => stores.ui.getState().setDuo(on))
-  if (dn != null && desk) {
+  // a document the address names: on the desktop in the pane; on the phone, while it loads or when it is not in the
+  // project, in the pane too (one that is there opens over its item, below)
+  if (dn != null && (desk || !doc)) {
     if (doc)
       return (
         <DocPaneContainer
@@ -80,6 +83,7 @@ export function DetailContainer({ route, place, hidden, full = false, footRoom =
         acts={<ItemActs it={it} on={{ set }} />}
         nav={<ItemNav full={full} on={nav} />}
         menu
+        notice={!desk && away >= 2 ? <OfflinePill /> : null}
         onBack={back}
         onMenu={(from) => openItemMenu(app, desk, it.n, null, from)}
       >
