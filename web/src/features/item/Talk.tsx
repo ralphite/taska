@@ -136,7 +136,7 @@ function MsgView({ it, x, env, on, facts, docs, code, done, ver, gone, read }: {
         {ver?.old ? null : strip(src?.files?.filter((f) => !isAudio(f)))}
         {/* one line under what you wrote: the voice note, who and when, and ⋯ with Edit, Add more and the rest */}
         <div className="flex flex-wrap items-center justify-end gap-x-1">
-          {ver?.old ? null : <VoiceLine files={src?.files || []} url={env.url} play={env.play} tidy={env.tidy} bare={!!src && !src.moved} beside on={on} />}
+          {ver?.old ? null : <VoiceLine files={src?.files || []} url={env.url} play={env.play} tidy={env.tidy} bare={!!src && !src.moved} on={on} />}
           <span className="px-1 text-[11px] text-zinc-400 dark:text-zinc-500">
             You · {ver?.old ? 'earlier version · ' : ver?.label ? ver.label + ' · ' : ''}
             {when(x.t, env.now)}

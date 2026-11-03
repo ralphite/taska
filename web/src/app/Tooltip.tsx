@@ -1,18 +1,21 @@
 // One tooltip for the whole page, in the page's own look, for anything with a title (or data-tip, or an icon button's
 // label): after half a second under a fine pointer, at once when you move from one to the next, beside the sidebar's
 // buttons, under the heads' buttons, above the rest. A key at the end of the words ("Done · D") shows as a key cap. A
-// code in some words (data-ref) shows a card about what it names instead.
+// code in some words (data-ref) shows a card about what it names instead; a voice note's play button (data-heard) shows
+// its original words: word for word, and tidied (what agents get) when they differ (B640).
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { RefCard } from '../model/refCard'
 
-const TARGET = '[data-ref], [data-tip], [title], button[aria-label], a[aria-label]'
+const TARGET = '[data-ref], [data-heard], [data-tip], [title], button[aria-label], a[aria-label]'
 
 interface Shown {
   el: HTMLElement
   text: string
   key: string
   card: RefCard | null
+  /** a voice note's words: as said, and tidied */
+  said: { heard: string; tidied: string } | null
   quick: boolean
 }
 
@@ -34,6 +37,25 @@ function split(text: string): { text: string; key: string } {
   return { text: parts.join(' · '), key }
 }
 
+/** A voice note's words: word for word, then tidied (what the organizer and agents get), as its sheet shows them on
+ * the phone (F568). */
+function SaidWords({ heard, tidied }: { heard: string; tidied: string }) {
+  const part = (label: string, text: string) => (
+    <div>
+      <div className="text-[11px] font-medium opacity-70">{label}</div>
+      <p className="mt-0.5 break-words whitespace-pre-wrap">{text}</p>
+    </div>
+  )
+  if (heard && tidied && heard !== tidied)
+    return (
+      <span className="flex flex-col gap-3">
+        {part('Word for word', heard)}
+        {part('Tidied · what agents get', tidied)}
+      </span>
+    )
+  return <span>{part('Not tidied: words as said', heard || tidied || 'No words heard')}</span>
+}
+
 /** `card`: what a code names, as its card (read when it shows). */
 export function Tooltip({ card }: { card(ref: string): RefCard | null }) {
   const [shown, setShown] = useState<Shown | null>(null)
@@ -52,11 +74,12 @@ export function Tooltip({ card }: { card(ref: string): RefCard | null }) {
     let hush: Element | null = null
     const show = (el: HTMLElement, quick: boolean) => {
       const c = el.dataset.ref ? told.current(el.dataset.ref) : null
-      const words = c ? '' : tipText(el)
-      if ((!c && !words) || !el.isConnected) return
+      const said = el.dataset.heard !== undefined ? { heard: el.dataset.heard, tidied: el.dataset.tidied ?? '' } : null
+      const words = c || said ? '' : tipText(el)
+      if ((!c && !said && !words) || !el.isConnected) return
       current = el
       el.setAttribute('aria-describedby', 'tip')
-      setShown({ el, ...split(words), card: c, quick })
+      setShown({ el, ...split(words), card: c, said, quick })
     }
     const hide = () => {
       clearTimeout(timer)
@@ -109,12 +132,14 @@ export function Tooltip({ card }: { card(ref: string): RefCard | null }) {
       }
     }
     const key = () => hide()
+    // a long voice note's words scroll inside the tip: that does not close it
+    const scroll = (e: Event) => !tip.current?.contains(e.target as Node) && hide()
     document.addEventListener('pointerover', over)
     document.addEventListener('pointerout', out)
     document.addEventListener('focusin', focus)
     document.addEventListener('focusout', hide)
     document.addEventListener('pointerdown', down, true)
-    document.addEventListener('scroll', hide, true)
+    document.addEventListener('scroll', scroll, true)
     document.addEventListener('keydown', key, true)
     addEventListener('resize', hide)
     return () => {
@@ -123,7 +148,7 @@ export function Tooltip({ card }: { card(ref: string): RefCard | null }) {
       document.removeEventListener('focusin', focus)
       document.removeEventListener('focusout', hide)
       document.removeEventListener('pointerdown', down, true)
-      document.removeEventListener('scroll', hide, true)
+      document.removeEventListener('scroll', scroll, true)
       document.removeEventListener('keydown', key, true)
       removeEventListener('resize', hide)
     }
@@ -180,9 +205,12 @@ export function Tooltip({ card }: { card(ref: string): RefCard | null }) {
       hidden={!shown}
       data-on={on ? '' : undefined}
       data-card={shown?.card ? '' : undefined}
-      className="pointer-events-auto fixed top-0 left-0 z-[80] max-w-[260px] rounded-lg bg-zinc-900 px-2 py-1.5 text-[13px] leading-snug text-white opacity-0 shadow-lg shadow-black/20 transition-[opacity,translate] duration-[120ms] data-[card]:w-80 data-[card]:max-w-80 data-[card]:px-3 data-[card]:py-2.5 data-[on]:opacity-100 motion-reduce:transition-none dark:bg-zinc-100 dark:text-zinc-900"
+      data-said={shown?.said ? '' : undefined}
+      className="pointer-events-auto fixed top-0 left-0 z-[80] max-w-[260px] rounded-lg bg-zinc-900 px-2 py-1.5 text-[13px] leading-snug text-white opacity-0 shadow-lg shadow-black/20 transition-[opacity,translate] duration-[120ms] data-[card]:w-80 data-[card]:max-w-80 data-[card]:px-3 data-[card]:py-2.5 data-[said]:max-h-[60dvh] data-[said]:w-96 data-[said]:max-w-[calc(100vw-1rem)] data-[said]:overflow-y-auto data-[said]:px-3 data-[said]:py-2.5 data-[on]:opacity-100 motion-reduce:transition-none dark:bg-zinc-100 dark:text-zinc-900"
     >
-      {shown?.card ? (
+      {shown?.said ? (
+        <SaidWords {...shown.said} />
+      ) : shown?.card ? (
         <span>
           <div className="text-[11px] font-medium opacity-70">{shown.card.top}</div>
           {shown.card.name ? <div className="mt-0.5 font-semibold">{shown.card.name}</div> : null}

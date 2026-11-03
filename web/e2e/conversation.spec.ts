@@ -1,5 +1,5 @@
 // An item's conversation, where the Storybook review found it wrong (T529): message headers, a kept decision, agents'
-// marks and names, the line under a comment on a document, and Original words over a moved input.
+// marks and names, the line under a comment on a document, and the original words of a moved input's voice note.
 // guards: src/features/item/ src/ui/bits.tsx src/ui/Files.tsx src/model/agents.ts src/model/talk.ts
 import { expect, test } from '@playwright/test'
 import type { APIRequestContext, Locator } from '@playwright/test'
@@ -169,7 +169,7 @@ test('T529: the line under your comment on a document has even gaps between its 
   expect(Math.max(...gaps) - Math.min(...gaps), `gaps ${gaps.map((g) => g.toFixed(1)).join(', ')}`).toBeLessThan(1)
 })
 
-test('T529: on an input moved to another project, Original words floats beside its voice note, over none of your words', async ({
+test('T529 B640: on an input moved to another project, its voice note\'s original words show beside it under the pointer, over none of your words', async ({
   page,
   request,
 }) => {
@@ -210,12 +210,10 @@ test('T529: on an input moved to another project, Original words floats beside i
   const words = mine.locator(`[data-voice="${rid}"]`)
   await expect(words).toBeVisible()
   await mine.locator(play).first().hover()
-  const bar = mine.getByRole('button', { name: 'Original words', exact: true }).filter({ visible: true })
-  await expect(bar).toHaveCount(1)
-  const [b, w] = [await bar.locator('xpath=..').boundingBox(), await words.boundingBox()] // the bar's dark pill
+  const tip = page.locator('#tip[data-said]')
+  await expect(tip).toBeVisible()
+  const [b, w] = [await tip.boundingBox(), await words.boundingBox()]
   if (!b || !w) throw new Error('not drawn')
   const apart = b.y >= w.y + w.height || b.y + b.height <= w.y || b.x >= w.x + w.width || b.x + b.width <= w.x
-  expect(apart, `the bar ${JSON.stringify(b)} is clear of your words ${JSON.stringify(w)}`).toBe(true)
-  await bar.click()
-  await expect(page.getByRole('dialog', { name: 'Original words', exact: true })).toBeVisible({ timeout: 15000 })
+  expect(apart, `the words ${JSON.stringify(b)} are clear of yours ${JSON.stringify(w)}`).toBe(true)
 })

@@ -34,30 +34,18 @@ function VoiceTime({ total, play }: { total: number | null; play: PlayState }) {
   return <>{total !== null ? clock(total) : play.t !== null ? clock(play.t) : 'Play'}</>
 }
 
-/** Pointing at a voice note floats this bar above it, as a selection does, with its original words. `beside`: under
- * your words, to the note's left, in the line's empty room. */
-function WordsBar({ f, beside = false, onWords }: { f: string; beside?: boolean; onWords(f: string): void }) {
-  return (
-    <span className={`absolute z-20 hidden lg:group-focus-within/voice:block lg:group-hover/voice:block ${beside ? 'top-0 right-full pr-1.5' : 'bottom-full left-0 pb-1.5'}`}>
-      <span className="flex rounded-full bg-zinc-900 p-1 shadow-lg ring-1 ring-black/10 dark:bg-zinc-100 dark:ring-white/10">
-        <button
-          onClick={(e) => (e.stopPropagation(), onWords(f))}
-          className="flex h-8 items-center gap-1.5 rounded-full pr-3 pl-2.5 text-[13px] font-semibold whitespace-nowrap text-white hover:bg-white/15 dark:text-zinc-900 dark:hover:bg-zinc-900/10"
-        >
-          <Icon n="quote" c="size-4" />
-          Original words
-        </button>
-      </span>
-    </span>
-  )
-}
+/** On the desktop, pointing at a voice note's play button shows its original words in the page's tooltip (they are
+ * here already: nothing to click, B640). Its word-for-word words and the tidied ones go to the tooltip as data; the
+ * tip goes under the note, clear of the words written above it (above only when there is no room below). */
+const saidTip = (f: FileRef, tidy: boolean) => (tidy ? { 'data-heard': f.heard ?? '', 'data-tidied': f.tr ?? '', 'data-tip-side': 'bottom' } : {})
 
 export function VoiceChip({ f, src, play, tidy, onPlay, onWords }: { f: FileRef; src: string; play: PlayState; tidy: boolean; onPlay(src: string): void; onWords(f: string): void }) {
   const total = voiceLength(f)
   return (
-    <span className="group/voice relative flex h-9 shrink-0 items-center self-end rounded-full border border-zinc-200 pl-1 text-[13px] text-zinc-600 dark:border-zinc-700 dark:text-zinc-300">
+    <span className="flex h-9 shrink-0 items-center self-end rounded-full border border-zinc-200 pl-1 text-[13px] text-zinc-600 dark:border-zinc-700 dark:text-zinc-300">
       <button
         aria-label={`Play the voice note${total ? `, ${clock(total)}` : ''}`}
+        {...saidTip(f, tidy)}
         onClick={(e) => (e.stopPropagation(), onPlay(src))}
         className={`${HIT} flex h-full items-center gap-2 rounded-full pr-3 hover:text-zinc-900 dark:hover:text-white`}
       >
@@ -77,7 +65,6 @@ export function VoiceChip({ f, src, play, tidy, onPlay, onWords }: { f: FileRef;
           <Icon n="quote" c="size-4" />
         </button>
       ) : null}
-      {tidy ? <WordsBar f={f.f} onWords={onWords} /> : null}
     </span>
   )
 }
@@ -160,9 +147,9 @@ export function FileRows({ files, cls = '', ...rest }: { files: FileRef[]; cls?:
   )
 }
 
-/** Your voice note under your words: one small line: play, its length, the original words. `bare`: its original
- * words are in the message's menu instead. */
-export function VoiceLine({ files, url, play, tidy, bare = false, beside = false, on }: { files: FileRef[]; url(f: string): string; play(src: string): PlayState; tidy: boolean; bare?: boolean; beside?: boolean; on: FileEvents }) {
+/** Your voice note under your words: one small line: play, its length, the original words (the phone's button; on
+ * the desktop, pointing at play shows them). `bare`: the phone has them in the message's menu instead. */
+export function VoiceLine({ files, url, play, tidy, bare = false, on }: { files: FileRef[]; url(f: string): string; play(src: string): PlayState; tidy: boolean; bare?: boolean; on: FileEvents }) {
   const words = tidy && !bare
   return (
     <>
@@ -170,9 +157,10 @@ export function VoiceLine({ files, url, play, tidy, bare = false, beside = false
         const src = url(f.f)
         const p = play(src)
         return (
-          <span key={f.f} className="group/voice relative flex items-center gap-1 px-1 text-[11px] text-zinc-400 dark:text-zinc-500">
+          <span key={f.f} className="flex items-center gap-1 px-1 text-[11px] text-zinc-400 dark:text-zinc-500">
             <button
               aria-label={`Play ${f.name}`}
+              {...saidTip(f, tidy)}
               onClick={(e) => (e.stopPropagation(), on.play(src))}
               className={`${HIT} flex h-7 items-center gap-1 rounded-full px-1.5 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200`}
             >
@@ -192,7 +180,6 @@ export function VoiceLine({ files, url, play, tidy, bare = false, beside = false
                 >
                   Original words
                 </button>
-                <WordsBar f={f.f} beside={beside} onWords={on.words} />
               </>
             ) : null}
           </span>

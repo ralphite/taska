@@ -143,7 +143,7 @@ test('r512 B538: a voice note that waited offline a while goes within seconds of
   await expect.poll(() => voices(p), { timeout: 10000 }).toBe(before + 1)
 })
 
-test('r485 r497: the original words of a voice note float up when you point at it, and are not shown otherwise', async ({
+test('r485 r497 B640: pointing at a voice note shows its original words at once, beside it; the phone opens them from its icon', async ({
   page,
   request,
 }) => {
@@ -159,34 +159,39 @@ test('r485 r497: the original words of a voice note float up when you point at i
   await p.op({ op: 'input', text: 'About the export', files: [{ f: f.f, name: 'voice 0-07.webm', mime: 'audio/webm' }] })
   await open(page, p)
   if (!isDesk(page)) await tab(page, 'Inputs').click()
-  const chip = voiceChip(page).locator('xpath=..')
+  const play = voiceChip(page)
+  const chip = play.locator('xpath=..')
   await expect(chip).toBeVisible()
   const words = page.getByRole('button', { name: 'Original words', exact: true }).filter({ visible: true })
-  if (isDesk(page)) {
-    await page.mouse.move(2, 2)
-    await expect(words).toHaveCount(0)
-    await expect(page.getByText('Original words', { exact: true }).filter({ visible: true })).toHaveCount(0)
-    await chip.hover()
-    await expect(words).toHaveCount(1)
-    const [w, c] = [await words.boundingBox(), await chip.boundingBox()]
-    if (!w || !c) throw new Error('not drawn')
-    expect(w.y + w.height).toBeLessThanOrEqual(c.y + 1) // above the note, as over a selection
-  } else {
-    // the phone, with no pointing: a small icon at the end of the note, no words in a line of their own
-    await expect(words).toHaveCount(1)
-    const [w, c] = [await words.boundingBox(), await chip.boundingBox()]
-    if (!w || !c) throw new Error('not drawn')
-    expect(w.x + w.width).toBeLessThanOrEqual(c.x + c.width + 1)
-    expect(w.y).toBeGreaterThanOrEqual(c.y - 1)
-  }
-  // they open from one question to Taska, not a second try that writes the note down again (that took seconds, r485,
-  // B363); counted, not timed, so a busy machine does not fail it
+  // their words are already on the page: nothing asks Taska for them (counted, not timed)
   const asked: string[] = []
   page.on('request', (r) => {
     if (/\/api\/words\b/.test(r.url())) asked.push(r.method())
   })
+  if (isDesk(page)) {
+    // no button to press: pointing at play shows them in the page's tip, beside the note
+    await page.mouse.move(2, 2)
+    await expect(page.locator('#tip')).toBeHidden()
+    await play.hover()
+    const tip = page.locator('#tip')
+    await expect(tip).toBeVisible()
+    await expect(tip).toHaveAttribute('data-said', '')
+    await expect(words).toHaveCount(0)
+    const [t, c] = [await tip.boundingBox(), await chip.boundingBox()]
+    if (!t || !c) throw new Error('not drawn')
+    expect(t.y + t.height <= c.y + 1 || t.y >= c.y + c.height - 1, 'above or below the note, not over it').toBe(true)
+    expect(asked).toEqual([])
+    return
+  }
+  // the phone, with no pointing: a small icon at the end of the note, no words in a line of their own
+  await expect(words).toHaveCount(1)
+  const [w, c] = [await words.boundingBox(), await chip.boundingBox()]
+  if (!w || !c) throw new Error('not drawn')
+  expect(w.x + w.width).toBeLessThanOrEqual(c.x + c.width + 1)
+  expect(w.y).toBeGreaterThanOrEqual(c.y - 1)
+  // they open from one question to Taska at most, not a second try that writes the note down again (that took
+  // seconds, r485, B363)
   await words.first().click()
-  // what opens is the words' own pop-up (its title); the bar you clicked may stay while the pointer is on the note
   await expect(page.getByRole('dialog', { name: 'Original words', exact: true })).toBeVisible({ timeout: 15000 })
-  expect(asked).toEqual(['GET'])
+  expect(asked.length).toBeLessThanOrEqual(1)
 })

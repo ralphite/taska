@@ -65,5 +65,3 @@ export const MoreThanThree: Story = {
     </Frames>
   ),
 }
-/** the pointer on a voice note on the desktop: Original words floats above it */
-export const VoicePointer: Story = { name: 'Voice note, pointer on it (desktop)', parameters: { pseudo: { hover: ['.group\\/voice'] } }, render: () => <Frames phone={false} deskWidth={480}>{() => <div className="pt-12">{chip(voice, { playing: false, t: null }, true)}</div>}</Frames> }

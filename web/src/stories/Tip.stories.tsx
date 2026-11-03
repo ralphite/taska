@@ -50,6 +50,19 @@ export const OnInputCode: Story = {
   ...one(() => talkOf(item({ n: 1, thread: [message({ id: 1, text: 'From #12, the plan is in D4.' })] }), true, { others: PROJECT.filter((it) => it.n !== 1), inputs: mi.inputs, docs: mi.docs }), '[data-ref="#12"]', { height: 420, model: mi }),
   name: 'On a code for something you said',
 }
+/** a voice note whose words were tidied: its original words, word for word and tidied, without a click (B640) */
+export const OnVoiceNote: Story = {
+  ...one(
+    () =>
+      talkOf(item({ n: 12, thread: [message({ id: 1, by: 'you', kind: 'say', text: 'Move Settings out into its own dialog; the instructions show as Markdown, in Chinese.', src: 'r4' })] }), true, {
+        others: PROJECT.filter((it) => it.n !== 12),
+        inputs: [input({ id: 'r4', text: 'Move Settings out into its own dialog; the instructions show as Markdown, in Chinese.', files: [{ f: 'f2-voice_0-26.webm', name: 'voice_0-26.webm', mime: 'audio/webm', tr: 'Move Settings out into its own dialog; the instructions show as Markdown, in Chinese.', heard: 'So this, we move this Settings dialog, it should be, Settings should be its own dialog, the one that opens from the agent status at the top right, and put it there. And the instructions should be the Markdown drawn, not raw, and in Chinese.' }] })],
+      }),
+    '[data-heard]',
+    { height: 520 },
+  ),
+  name: 'On a voice note: its original words',
+}
 export const OnDocCode: Story = {
   ...one(() => talkOf(item({ n: 1, thread: [message({ id: 1, text: 'From #12, the plan is in D4.' })] }), true, { others: PROJECT.filter((it) => it.n !== 1), inputs: mi.inputs, docs: mi.docs }), '[data-ref="D4"]', { height: 420, model: mi }),
   name: 'On a document code',
