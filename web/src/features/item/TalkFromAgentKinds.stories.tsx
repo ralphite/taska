@@ -1,4 +1,4 @@
-// An agent's message by what it is: progress, a reply, a note to another session, a finished report, a proposal, a decision, blocked.
+// An agent's message by what it is: progress, a reply, a note to another session, a finished report, a proposal, a decision, a question.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { message } from '../../stories/fixtures'
 import { you } from '../../stories/itemPage'
@@ -17,4 +17,4 @@ export const FinishedReport: Story = { ...at(
 ), name: 'Finished: its report' }
 export const Proposal = at([message({ id: 2, kind: 'propose', text: 'Put the filter in the file name.' }), { ...message({ id: 3, text: 'Started on it.' }), t: later(3) }])
 export const Decision = at([message({ id: 2, kind: 'decide', text: 'CSV it is; Excel later (F016).' })])
-export const BlockedAnsweredSince: Story = { ...at([message({ id: 2, kind: 'block', text: 'I need the API key for staging.' }), { ...you(3, 'It is in the vault, under staging.'), t: later(4) }]), name: 'Blocked (answered since)' }
+export const QuestionAnsweredSince: Story = { ...at([message({ id: 2, kind: 'ask', text: 'I need the API key for staging. Where is it?' }), { ...you(3, 'It is in the vault, under staging.'), t: later(4) }]), name: 'A question (answered since)' }

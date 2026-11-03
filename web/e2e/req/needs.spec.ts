@@ -5,14 +5,14 @@ import { expect, test, type Locator, type Page } from '@playwright/test'
 import { isDesk, open, project } from '../seed'
 import { box, pane, paneHead, row, sheetBody, statusChip, talk, tip, view } from '../ui'
 
-test('r68 r326: work an agent is blocked on waits on you: in Needs you, with what it needs and Answer', async ({
+test('r68 r326 T646: work an agent is stuck on asks you for what it needs: in Needs you, with what it needs and Answer', async ({
   page,
   request,
 }) => {
   const p = await project(request, {
     agent: 'new task P1 now Ship the export\nnew task P2 now Still going\n',
     approve: ['T1', 'T2'],
-    then: 'T1 doing\nT2 doing\nT1 block I need the export key\n',
+    then: 'T1 doing\nT2 doing\nT1 ask I need the export key\n',
   })
   await open(page, p)
   await view(page, 'Needs you').click()
@@ -25,7 +25,7 @@ test('r68 r326: work an agent is blocked on waits on you: in Needs you, with wha
   const body = pane(page)
   await expect(
     body
-      .getByText(/is blocked$/)
+      .getByText(/asks you$/)
       .filter({ visible: true })
       .first(),
   ).toBeVisible()
@@ -38,11 +38,8 @@ const said = (l: Locator) =>
 const rowIcons = (page: Page) => row(page, 'Ship the export').locator('svg[role="img"]')
 const chip = statusChip
 
-for (const [kind, words] of [
-  ['block', 'I need the export key'],
-  ['ask', 'Which export key should I use?'],
-] as const)
-  test(`r326 R055: an item in progress whose agent ${kind === 'block' ? 'is blocked' : 'asks'} reads Needs you, not In progress, on its row and its page; its status stays In progress, and it reads that again once you answer (B535)`, async ({
+for (const [kind, words] of [['ask', 'Which export key should I use?']] as const)
+  test(`r326 R055: an item in progress whose agent asks reads Needs you, not In progress, on its row and its page; its status stays In progress, and it reads that again once you answer (B535)`, async ({
     page,
     request,
   }) => {
@@ -81,11 +78,8 @@ for (const [kind, words] of [
     await expect.poll(() => said(rowIcons(page)), 'the row once answered').toEqual(['In progress | In progress'])
   })
 
-for (const [kind, words] of [
-  ['block', 'I need the export key'],
-  ['ask', 'Which export key should I use?'],
-] as const)
-  test(`r781: an item whose agent ${kind === 'block' ? 'is blocked' : 'asks'} says so once: its status reads Needs you, and the line above it has only its code, no ${kind === 'block' ? 'Blocked' : 'Asks you'} (B555)`, async ({
+for (const [kind, words] of [['ask', 'Which export key should I use?']] as const)
+  test(`r781: an item whose agent asks says so once: its status reads Needs you, and the line above it has only its code, no Asks you (B555)`, async ({
     page,
     request,
   }) => {
@@ -118,7 +112,7 @@ test('r802: in a list sorted another way (Filters › Sort) what waits on you is
   }
 })
 
-test("r802: the card an item's code shows under the pointer says its status in one word, as its row and its page do: Needs you for a blocked item, not In progress and Needs you (B555)", async ({
+test("r802: the card an item's code shows under the pointer says its status in one word, as its row and its page do: Needs you for an item whose agent asks, not In progress and Needs you (B555)", async ({
   page,
   request,
 }) => {
@@ -126,7 +120,7 @@ test("r802: the card an item's code shows under the pointer says its status in o
   const p = await project(request, {
     agent: 'new task P1 now Ship the export\nnew task P2 now Write the notes\n',
     approve: ['T1', 'T2'],
-    then: 'T1 doing\nT1 block I need the export key\nT2 progress Waiting for T1 before the notes.\n',
+    then: 'T1 doing\nT1 ask I need the export key\nT2 progress Waiting for T1 before the notes.\n',
   })
   await open(page, p, 'T2')
   await talk(page).locator('[data-ref="T1"]').first().hover()

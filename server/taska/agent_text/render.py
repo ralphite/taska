@@ -36,7 +36,7 @@ def line(st: ProjectState, it: Item) -> str:
     out = f"{st.code(it.n)} {it.pri} {it.when} {it.status} {it.title}"
     w = rules.waiting(st, it)
     if w:
-        out += " !" if w.kind == "block" else " ?"
+        out += " ?"
     elif rules.replied(it):
         out += " <"
     if it.parent:
@@ -120,7 +120,7 @@ def card(rd: Reading, it: Item) -> str:
             out.append("  docs: " + "; ".join(f"D{d.d} {d.title}" for d in pdocs))
     w = rules.waiting(st, it)
     if w:
-        out.append(f"{'! blocked' if w.kind == 'block' else '? asked'}, waiting on the user: " + w.text)
+        out.append("? asked, waiting on the user: " + w.text)
     elif rules.replied(it):
         out.append("< the user replied after the agent's last message (see thread)")
     if it.body:
@@ -272,6 +272,12 @@ def _codes(st: ProjectState, ns: Sequence[int]) -> str:
     return " ".join(st.code(n) for n in ns)
 
 
+def _kind_now(st: ProjectState, e: ev.MessagePosted) -> str:
+    """What the message is now: an earlier block is an ask (T646)."""
+    it = st.items.get(e.n)
+    return next((x.kind for x in it.thread if x.id == e.seq), e.kind) if it else e.kind
+
+
 def _said(st: ProjectState, e: ev.Event) -> "tuple[str, str]":
     """Who made a change and what it was, in the log's words."""
     who = e.by
@@ -285,7 +291,7 @@ def _said(st: ProjectState, e: ev.Event) -> "tuple[str, str]":
         return who, (f"{c(e.n)} " + ", ".join(f"{a} {first_line(e.was.get(a, ''), 24)}→{first_line(b, 24)}" for a, b in f.items())
                      + (f" (undo #{e.undo_of})" if e.undo_of else ""))
     if isinstance(e, ev.MessagePosted):
-        return who, f"{c(e.n)} {e.kind} {first_line(e.text)!r}"
+        return who, f"{c(e.n)} {_kind_now(st, e)} {first_line(e.text)!r}"
     if isinstance(e, ev.ItemMerged):
         return who, f"{c(e.n)} merged into {c(e.into)}"
     if isinstance(e, ev.ItemUnmerged):
@@ -324,6 +330,8 @@ def _said(st: ProjectState, e: ev.Event) -> "tuple[str, str]":
         return who, f"{e.src} {e.mode}: {first_line(e.text)!r}"
     if isinstance(e, ev.WordsIn):
         return who, f"{e.src} voice note words: {first_line(e.tr)!r}"
+    if isinstance(e, ev.BlocksAsked):
+        return who, "made 1 earlier block an ask" if len(e.ids) == 1 else f"made {len(e.ids)} earlier blocks asks"
     if isinstance(e, ev.WordsKept):
         n = sum(len(v) for v in e.notes.values())
         return who, f"kept the words as said of {n} voice note{'s' if n != 1 else ''}"

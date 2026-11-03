@@ -111,7 +111,7 @@ export class Notices {
     const first = events[0]
     const labels = events.map((e) =>
       e.code
-        ? `${e.code} ${e.kind === 'ask' ? 'asks' : e.kind === 'block' ? 'is blocked' : e.kind === 'review' ? 'is ready to accept' : 'needs approval'} in ${e.title}`
+        ? `${e.code} ${e.kind === 'ask' ? 'asks' : e.kind === 'review' ? 'is ready to accept' : 'needs approval'} in ${e.title}`
         : `${plural(e.count, 'new thing')} need${e.count === 1 ? 's' : ''} you in ${e.title}`,
     )
     try {

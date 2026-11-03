@@ -5,7 +5,7 @@
 
 Plain code polls every 30 seconds and prints a line only when the manager has to act (I447: checks cost no
 tokens, only a real event wakes the manager):
-  ITEM     the item named in <assigned-file> (the last one handed out) is finished, or the worker asked or blocked on it
+  ITEM     the item named in <assigned-file> (the last one handed out) is finished, or the worker asked on it
   STALE    silent stale_minutes in the middle of a turn: stuck on a prompt or a hung command
   QUIET    its turn ended quiet_minutes ago and none of its background commands runs: it is out of work or never reported
 <assigned-file> holds "<code> <taska base url>", written by the manager when it hands out an item.
@@ -42,7 +42,7 @@ def busy(path):
 
 
 def item_row(assigned):
-    """The item's line in /items: 'F432 P1 now doing title ?' (status 4th, a trailing ?/! = asked/blocked)."""
+    """The item's line in /items: 'F432 P1 now doing title ?' (status 4th, a trailing ? = asked)."""
     try:
         code, base = open(assigned).read().split()[:2]
     except (OSError, ValueError):
@@ -79,7 +79,7 @@ def main():
         quiet = (time.time() - mtime) / 60
         parts = row.split() if row else []
         doing = len(parts) > 3 and parts[3] == 'doing'
-        waits = bool(parts) and parts[-1] in ('?', '!')
+        waits = bool(parts) and parts[-1] == '?'
         events = []
         if code and row and (parts[3] in ('review', 'done', 'dropped') or waits):
             events.append(f'ITEM {row[:150]}')

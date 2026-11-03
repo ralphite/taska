@@ -114,6 +114,17 @@ def _hide(state: ProjectState, e: ev.Event) -> None:
             x.hidden = bool(e.on)
 
 
+@reduces(ev.BlocksAsked)
+def _asked(state: ProjectState, e: ev.Event) -> None:
+    """The agents' earlier blocks are asks (T646); nothing else changes."""
+    assert isinstance(e, ev.BlocksAsked)
+    ids = set(e.ids)
+    for it in state.items.values():
+        for x in it.thread:
+            if x.id in ids:
+                x.kind = "ask"
+
+
 @reduces(ev.ProjectRenamed)
 def _rename(state: ProjectState, e: ev.Event) -> None:
     assert isinstance(e, ev.ProjectRenamed)

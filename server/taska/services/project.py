@@ -107,6 +107,14 @@ class Project:
             self.news.bump()
             self.codex_notifications.on_event(event)
 
+    def blocks_to_asks(self) -> None:
+        """Once (T646): an agent waits on the user only by asking; its earlier blocks become asks, one change for the
+        whole project."""
+        with self.lock:
+            ids = [x.id for it in self.state.items.values() for x in it.thread if x.kind == "block"]
+            if ids:
+                self.emit(ev.BlocksAsked(ids=ids, by="taska"))
+
     def run(self, commands: Sequence[Tuple[int, Command]], by: str, src: Optional[str] = None, keep: bool = False,
             session: str = "") -> Tuple[List[str], List[str]]:
         with self.lock:

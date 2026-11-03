@@ -39,7 +39,7 @@ const preview: Preview = {
             ],
             'Item page',
             [
-              'Needs-you card', ['A question', 'Blocked', 'To approve or accept', 'While you answer', 'After you decided'],
+              'Needs-you card', ['A question', 'To approve or accept', 'While you answer', 'After you decided'],
               'By item status', ['Waiting on you', 'Being worked on', 'Finished', 'Rules'],
               'By what it holds',
               'Editing and replying',

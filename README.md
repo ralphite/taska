@@ -55,8 +55,8 @@ waiting on you: a question to answer, a plan to approve, finished work to accept
 ### What Taska is for
 
 Taska is a productivity tool for people who build with coding agents. It is where you and your agents talk about
-the work itself: what to do, what was done, what is blocked, and what needs a decision. You manage the work; the
-agents do it.
+the work itself: what to do, what was done, and what an agent needs from you (an answer or a decision). You
+manage the work; the agents do it.
 
 Every change to Taska is measured against one goal: **you get more done with less effort.** That means:
 

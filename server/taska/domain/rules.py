@@ -26,19 +26,19 @@ def user_word(x: Message) -> bool:
 
 
 def waiting(state: ProjectState, it: Item) -> Optional[Message]:
-    """The open question (ask) or block an agent posted that the user has not answered yet. Whatever the user says
+    """The open question (ask) an agent posted that the user has not answered yet. Whatever the user says
     after it answers it, and so does a comment of theirs on one of the item's documents."""
     for x in reversed(it.thread):
         if user_word(x) or x.kind == "withdraw":
             return None
-        if x.kind in ("ask", "block"):
+        if x.kind == "ask":
             said = (c.t for d in state.docs.values() if d.n == it.n and not d.deleted for c in d.comments if c.by == "you")
             return None if any(t > x.t for t in said) else x
     return None
 
 
 def in_progress(it: Item) -> bool:
-    """An agent is working on it now (B606, r942): in progress. One that asked the user or is blocked is not."""
+    """An agent is working on it now (B606, r942): in progress. One that asked the user is not."""
     return it.status == "doing"
 
 
@@ -77,8 +77,9 @@ def talked(state: ProjectState, it: Item) -> bool:
 
 
 def needs_you(state: ProjectState, it: Item) -> bool:
-    """On the user's list of what needs them: an agent asks or is blocked, or it waits for approval or acceptance
-    and the user has not replied since."""
+    """On the user's list of what needs them, exactly while a form waits on them (T646): an agent's question to
+    answer, a proposal to approve or decline, finished work to accept or send back, the last two until the user
+    replies there."""
     return bool(waiting(state, it)) or (it.status in ("proposed", "review") and not talked(state, it))
 
 

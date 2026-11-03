@@ -90,7 +90,7 @@ export function versions(thread: readonly Message[]): Map<number, Version> {
   return out
 }
 
-/** The questions and blocks an agent took back (a withdraw after them, nothing of yours in between). */
+/** The questions an agent took back (a withdraw after them, nothing of yours in between). */
 export function withdrawn(thread: readonly Message[]): Set<number> {
   const gone = new Set<number>()
   thread.forEach((x, i) => {
@@ -98,7 +98,7 @@ export function withdrawn(thread: readonly Message[]): Set<number> {
     const q = thread
       .slice(0, i)
       .reverse()
-      .find((y) => y.kind === 'ask' || y.kind === 'block' || userWord(y))
+      .find((y) => y.kind === 'ask' || userWord(y))
     if (q && !userWord(q)) gone.add(q.id)
   })
   return gone

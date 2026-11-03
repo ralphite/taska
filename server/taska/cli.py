@@ -73,6 +73,7 @@ def serve(root: str, host: str, port: int, organizer: bool, public: str, log_db:
         p.voice.set_transcriber(transcriber_for(p, lambda: ws))
         with p.lock:
             p.voice.keep_heard()  # F568, once: words as said kept with their inputs
+        p.blocks_to_asks()  # T646, once: the agents' earlier blocks are asks
         p.voice.resume()  # before the organizer: an input waiting for its words is held for them again
         organizers.start(p)
 

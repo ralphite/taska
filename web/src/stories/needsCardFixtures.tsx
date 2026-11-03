@@ -10,7 +10,7 @@ type Story = StoryObj
 
 export const proposal = message({ id: 5, kind: 'propose', text: 'Keep the filter in the export: the rows the list shows, and the filter in the file name.' })
 export const report = message({ id: 6, text: 'Done: the export writes the rows the list shows. Tested with three filters.' })
-export const askOf = (text: string, kind: 'ask' | 'block' = 'ask', by = 'claude-code') => ({ id: 7, kind, text, by, files: [] })
+export const askOf = (text: string, by = 'claude-code') => ({ id: 7, kind: 'ask' as const, text, by, files: [] })
 export const you = message({ id: 9, by: 'you', kind: 'say', text: 'Only the filter, not the sort.' })
 
 export const at = (f: Partial<Item>, o: { remodify?: boolean; picked?: number[] } = {}): Story => ({

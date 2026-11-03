@@ -12,7 +12,7 @@ from ..domain.history import followed, last_archive, status_set_by
 from ..domain.model import FileRef, Item
 from ..domain.rules import RefContext, descendants, item_at, open_kids, replied
 from ..domain.state import ProjectState
-from ..domain.vocab import CLOSED, LETTER, MAX_TEXT, MESSAGE_KINDS, PEOPLE, PRIORITIES, STATUSES, WHENS, Refused
+from ..domain.vocab import ASK_WORDS, CLOSED, LETTER, MAX_TEXT, MESSAGE_KINDS, PEOPLE, PRIORITIES, STATUSES, WHENS, Refused
 from .base import Args, Outcome, Run, handles
 
 _NONE_WORDS = ("", "-", "none", "null")
@@ -189,6 +189,7 @@ def say(r: Run, a: Args) -> Outcome:
     it = item_at(s, a.get("ref", ""), r.ctx)
     code = s.code(it.n)
     kind = a.get("kind", "say")
+    kind = "ask" if kind in ASK_WORDS else kind  # stuck: an ask for what it needs (T646)
     if kind not in MESSAGE_KINDS:
         raise Refused(f"kind must be one of {'/'.join(MESSAGE_KINDS)}")
     text = str(a.get("text", "")).strip()[:MAX_TEXT]
@@ -210,7 +211,7 @@ def say(r: Run, a: Args) -> Outcome:
     if unknown:
         sent += (f" ({', '.join(unknown)}: no session by that name has called Taska yet; it hears this once it calls "
                  "with session=<that name>)")
-    label = {"ask": "Asked on ", "block": "Blocked on ", "decide": "Decided on "}.get(kind, "Noted on ") + code
+    label = {"ask": "Asked on ", "decide": "Decided on "}.get(kind, "Noted on ") + code
     return Outcome(f"ok {code} {kind}{sent}{r.gone_note(it)}", label)
 
 

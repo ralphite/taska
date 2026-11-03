@@ -84,7 +84,6 @@
    "Answer With A Few Words",
    "Answer A Checklist",
    "Change An Answer",
-   "Unblock The Agent",
    "Answer By Voice"
   ],
   "Demo/New input": [
@@ -172,7 +171,6 @@
   ],
   "Pages/Item page/By item status": [
    "In progress, with its talk",
-   "Blocked",
    "Question",
    "Checklist question",
    "Proposed",

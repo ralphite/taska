@@ -82,7 +82,7 @@ test('r659 R483: one number everywhere, on the desktop and the phone, the home t
   page,
   request,
 }) => {
-  // what counts: an ask (T1), a block (T2), a proposal (I3), finished work (T4), a rule asked about (R5), a subitem
+  // what counts: an ask (T1), an ask for what a stuck agent needs (B2), a proposal (I3), finished work (T4), a rule asked about (R5), a subitem
   // asking under an item still open (T7); what does not: a proposal you replied on (I8), an ask you answered (T9), an
   // ask on dropped work (T10), a proposal merged away (I11 into I3)
   const p = await project(request, {
@@ -100,7 +100,7 @@ new idea P2 now The same proposal again
 `,
     approve: ['T1', 'B2', 'T4', 'R5', 'T6', 'T7', 'T9', 'T10'],
     then: `T1 ask Which format?
-B2 block I need the export key
+B2 ask I need the export key
 T4 done Works now.
 R5 ask Does this cover documents too?
 T7 ask Which venue?

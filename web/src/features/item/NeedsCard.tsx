@@ -138,8 +138,8 @@ export function NeedsCard({ it, env, on, remodify, going = null }: {
   )
   if (it.wait) {
     const w = it.wait
-    const choices = w.kind === 'ask' && hasChoices(w.text)
-    const asking = w.kind === 'ask' && env.choosing ? env.choosing : null
+    const choices = hasChoices(w.text)
+    const asking = env.choosing
     const body = (
       <>
         <Rich text={w.text} world={env.world} cls="text-zinc-900 dark:text-zinc-100" choosing={asking} onRef={on.ref} onPicture={on.picture} />
@@ -152,8 +152,8 @@ export function NeedsCard({ it, env, on, remodify, going = null }: {
     )
     const keep = it.status === 'proposed' || it.status === 'review'
     return card(
-      w.kind === 'block' ? 'alert' : 'ask',
-      `${msgName(w)} ${w.kind === 'block' ? 'is blocked' : 'asks you'}`,
+      'ask',
+      `${msgName(w)} asks you`,
       body,
       keep || choices ? (
         <>

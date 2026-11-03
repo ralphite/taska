@@ -5,7 +5,7 @@ export type ItemType = 'feature' | 'bug' | 'idea' | 'task' | 'rule'
 export type Status = 'proposed' | 'open' | 'doing' | 'review' | 'done' | 'dropped'
 export type Pri = 'P0' | 'P1' | 'P2' | 'P3'
 export type When = 'now' | 'later'
-export type Kind = 'say' | 'ask' | 'block' | 'withdraw' | 'propose' | 'decide' | 'progress'
+export type Kind = 'say' | 'ask' | 'withdraw' | 'propose' | 'decide' | 'progress'
 
 export interface FileRef {
   f: string
@@ -35,7 +35,7 @@ export interface Message {
 
 export interface Wait {
   id: number
-  kind: 'ask' | 'block'
+  kind: 'ask'
   text: string
   by: string
   ses?: string | null

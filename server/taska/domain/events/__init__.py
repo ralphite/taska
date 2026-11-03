@@ -16,7 +16,7 @@ from .docs import DOC_EVENTS, CommentAdded, CommentDeleted, CommentEdited, Comme
     DocMoved, DocWritten, ThreadResolved
 from .inputs import FilingRedone, FilingUndone, InputAdded, InputAmended, InputDeleted, InputMoved, InputRescoped, \
     InputRestored, InputsAcked, Organized, WordsIn, WordsKept
-from .items import FieldsSet, FileTakenOff, ItemAdded, ItemMerged, ItemUnmerged, ItemsArchived, ItemsDeleted, ItemsRestored, \
+from .items import BlocksAsked, FieldsSet, FileTakenOff, ItemAdded, ItemMerged, ItemUnmerged, ItemsArchived, ItemsDeleted, ItemsRestored, \
     MessageHidden, MessagePosted, ProjectRenamed
 
 READERS: Dict[str, Reader] = {**inputs.READERS, **items.READERS, **docs.READERS}
@@ -36,7 +36,7 @@ def decode(row: Row) -> Event:
 __all__ = [
     "Event", "Unknown", "Unreadable", "Row", "READERS", "DOC_EVENTS", "decode",
     "ItemAdded", "FieldsSet", "MessagePosted", "ItemMerged", "ItemUnmerged", "ItemsArchived", "ItemsDeleted", "ItemsRestored",
-    "MessageHidden", "FileTakenOff", "ProjectRenamed",
+    "MessageHidden", "BlocksAsked", "FileTakenOff", "ProjectRenamed",
     "InputAdded", "InputsAcked", "InputAmended", "WordsIn", "WordsKept", "FilingUndone", "FilingRedone", "InputDeleted",
     "InputRestored", "InputMoved", "Organized", "InputRescoped",
     "DocWritten", "DocDeleted", "DocMoved", "CommentMoved", "ThreadResolved", "CommentAdded", "CommentEdited",

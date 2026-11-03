@@ -20,7 +20,6 @@ export const WHEN_WORD: Record<When, string> = { now: 'Now', later: 'Later' }
 /** A message's kind, where it says something (progress, most messages, has no tag). */
 export const KIND_WORD: Record<string, string> = {
   ask: 'Question',
-  block: 'Blocked',
   withdraw: 'Withdrawn',
   propose: 'Proposal',
   decide: 'Decision',

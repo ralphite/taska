@@ -96,7 +96,7 @@ interface Need {
   title: string
   kind: string
 }
-const WORDS: Record<string, string> = { ask: 'asks you', block: 'is blocked', proposed: 'waits for approval', review: 'is ready to accept' }
+const WORDS: Record<string, string> = { ask: 'asks you', proposed: 'waits for approval', review: 'is ready to accept' }
 
 self.addEventListener('push', (e) => {
   e.waitUntil(

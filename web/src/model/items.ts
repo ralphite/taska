@@ -7,8 +7,9 @@ import { PLACE_WORD, RULE_STATUS_WORD, STATUS_WORD } from './words'
 
 export const closed = (s: Status | string) => s === 'done' || s === 'dropped'
 
-/** Waits on the user: an agent asks or is blocked, or it waits for approval or acceptance and the user has not
- * replied since. Archived items are off the list, so off the counts too. */
+/** Waits on the user, exactly while a form waits on them (T646): an agent's question to answer, a proposal to
+ * approve or decline, finished work to accept or send back, the last two until the user replies there. Archived
+ * items are off the list, so off the counts too. */
 export const needsYou = (it: Item) =>
   !it.mergedInto &&
   !it.archived &&
@@ -24,7 +25,7 @@ export const statusChoices = (it: Item): [string, string][] =>
 export const statusWord = (it: Item) =>
   (it.type === 'rule' ? RULE_STATUS_WORD[it.status] : STATUS_WORD[it.status]) || STATUS_WORD[it.status]
 
-/** An item's status as the page shows it: "Needs you" while an agent's question or block waits on you. */
+/** An item's status as the page shows it: "Needs you" while an agent's question waits on you. */
 export const shownStatus = (it: Item): { s: string; label: string } =>
   asksYou(it) ? { s: 'wait', label: PLACE_WORD.wait } : { s: it.status, label: statusWord(it) }
 

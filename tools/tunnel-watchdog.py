@@ -130,14 +130,14 @@ BACK = "\u624b\u673a\u94fe\u63a5\u53c8\u80fd\u6253\u5f00\u4e86\uff08%s\uff09\u30
 
 
 def tell(state: Dict[str, Any], why: str) -> None:
-    """Open the outage's bug once and block on it (the block is pushed to the phone)."""
+    """Open the outage's bug once and ask Yadong for what it needs there (the ask is pushed to the phone)."""
     if state.get("code"):
         return
     out = taska("new bug P0 now %s\n  %s\n" % (TITLE, why))
     m = re.search(r"^ok ([A-Z]\d+) new", out, re.M)
     if m:
         state["code"] = m.group(1)
-        taska("%s block %s\n" % (m.group(1), why))
+        taska("%s ask %s\n" % (m.group(1), why))
         save_state(state)
 
 

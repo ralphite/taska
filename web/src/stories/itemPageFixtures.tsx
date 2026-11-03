@@ -13,5 +13,5 @@ export const at = (f: Partial<Item>, o: PageOpts = {}, height = 820): Story => (
   render: () => <Frames phoneWidth={393} deskWidth={900} height={height}>{(layout) => pageOf(base(f), layout === 'desk', { others: [PARENT], ...o })}</Frames>,
 })
 export const said = you(1, 'The export should keep the filter I set.')
-export const ask = (id: number, text: string, kind: 'ask' | 'block' = 'ask'): Partial<Item> => ({ wait: { id, kind, text, by: 'claude-code', files: [] }, thread: [said, message({ id, kind, text })] })
+export const ask = (id: number, text: string): Partial<Item> => ({ wait: { id, kind: 'ask', text, by: 'claude-code', files: [] }, thread: [said, message({ id, kind: 'ask', text })] })
 export const report = message({ id: 6, text: 'Done: the export writes the rows the list shows. Tested with three filters.' })

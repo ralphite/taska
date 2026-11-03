@@ -94,6 +94,18 @@ class MessagePosted(Event):
 
 
 @dataclass
+class BlocksAsked(Event):
+    """Once (T646): the agents' earlier blocks are asks, the one way an agent waits on the user; `ids`: those
+    messages (the change numbers that wrote them)."""
+
+    KIND: ClassVar[str] = "asked"
+    ids: List[int] = field(default_factory=list)
+
+    def body(self) -> Row:
+        return {"ids": list(self.ids), "by": self.by}
+
+
+@dataclass
 class ItemMerged(Event):
     KIND: ClassVar[str] = "merge"
     n: int = 0
@@ -216,6 +228,7 @@ READERS: Dict[str, Reader] = {
                                **common(r)),
     "say": lambda r: MessagePosted(n=need(r, "n"), kind=need(r, "kind"), text=need(r, "text"), src=r.get("src"),
                                    files=files_of(r), to=list(r.get("to") or []), keep=bool(r.get("keep")), **common(r)),
+    "asked": lambda r: BlocksAsked(ids=list(need(r, "ids")), **common(r)),
     "merge": lambda r: ItemMerged(n=need(r, "n"), into=need(r, "into"), src=r.get("src"), keep=bool(r.get("keep")),
                                   **common(r)),
     "unmerge": lambda r: ItemUnmerged(n=need(r, "n"), into=need(r, "into"), src=r.get("src"), **common(r)),

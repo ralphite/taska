@@ -23,9 +23,13 @@ stateDiagram-v2
 
 | Item | Shown as | Who acts |
 |---|---|---|
-| the agent's last word is an `ask` or a `block` (its status stays as it is) | Needs you | the user |
+| the agent's last word is an `ask` (its status stays as it is) | Needs you | the user |
 | the user wrote after the agent's last word | Open (it is the agent's turn) | an agent, by priority |
 | neither | Open | an agent, by priority |
+
+An item needs you exactly while a form waits on you (T646): an agent's question (choices to pick, or a reply), a
+proposal (Approve or Won't do) or finished work (Accept or Not yet), the last two until you reply there. An agent
+that is stuck asks for what it needs: asking is the only way it waits on you (its old word `block` lands as an ask).
 
 `when` (now or later) and `archived` are separate from the status.
 

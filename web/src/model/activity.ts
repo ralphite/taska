@@ -23,7 +23,6 @@ const FLD = 'status|when|pri|type|archived|parent|title|body|next'
 const SAYS: Record<string, string> = {
   say: 'said',
   ask: 'asked',
-  block: 'is blocked:',
   propose: 'proposed',
   progress: 'progress:',
   decide: 'decided',

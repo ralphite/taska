@@ -17,9 +17,12 @@ CLOSED = ("done", "dropped")
 DECISIONS = {"proposed": ("open", "dropped"), "review": ("done", "open")}
 # "you" is the user; the organizer writes down what the user said, so it acts for the user
 PEOPLE = ("you", "org")
-MESSAGE_KINDS = ("say", "ask", "block", "withdraw", "propose", "decide", "progress")
+MESSAGE_KINDS = ("say", "ask", "withdraw", "propose", "decide", "progress")
+# an agent that is stuck asks for what it needs (T646): the one way it waits on the user. Its old word, block, is
+# still read and lands as an ask
+ASK_WORDS = ("block",)
 WORK_TYPES = ("bug", "feature", "task", "idea")  # what /next hands out
-TEXT_VERBS = MESSAGE_KINDS + ("title", "body", "next")
+TEXT_VERBS = MESSAGE_KINDS + ASK_WORDS + ("title", "body", "next")
 USER_KINDS = ("say", "decide", "propose")  # what the organizer files from an input: the user's words, decision, idea
 DOC_KEY = "doc"  # the comment thread on a document as a whole; a paragraph's key is 10 hex digits
 

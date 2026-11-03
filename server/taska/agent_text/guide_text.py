@@ -11,9 +11,9 @@ GRAMMAR = (
     "  B03 P1 later doing        set priority / when / status / type, any mix (status: open|doing|done|drop; drop = won't do)\n"
     '  B03 done <text>           words after the fields (and indented lines) are posted as progress, e.g. the done report\n'
     '  B03 title|body|next <text>      replace that field (body may continue on indented lines)\n'
-    '  B03 say|ask|block|propose|decide|progress <text>     add to the thread: ask = question for the user,\n'
-    '                                  block = you are stuck and need the user (say what you need),\n'
-    '                                  withdraw = take back your open ask/block (say why),\n'
+    '  B03 say|ask|propose|decide|progress <text>     add to the thread: ask = question for the user, also when\n'
+    '                                  you are stuck and need something from them (say what you need),\n'
+    '                                  withdraw = take back your open ask (say why),\n'
     '                                  propose = suggestion (not decided), decide = decision made\n'
     '  B03 say @worker <text>    to another agent session (its session= name): it gets B03 on its next /next or /do reply\n'
     '  B03 merge F01             merge B03 into F01 (use only for clear duplicates)\n'
@@ -41,7 +41,7 @@ AGENT = (
     '  curl -s BASE/next         what to do now: the inbox first, items the user replied on, then the next item  <- start here\n'
     '  curl -s BASE/inbox        unprocessed user inputs: raw text, scoped item, files\n'
     '  curl -s BASE/items        open items, one line each: code pri when status title [flag] [^parent]\n'
-    '                            flag: ? you asked / ! you are blocked (both wait on the user) / < the user replied\n'
+    '                            flag: ? you asked (waits on the user) / < the user replied\n'
     '                            filters: ?q=word&type=bug&pri=P0&when=now&status=all|open|doing|done|dropped&wait=1&reply=1&archived=1|all&limit=60\n'
     '  curl -s BASE/B03          full card: fields, body, thread, files (image/audio paths are readable from disk)\n'
     '  curl -s BASE/rules        project rules: standing instructions; follow those that apply to what you do\n'
@@ -62,7 +62,7 @@ AGENT = (
     'LOOP  doing means you are working on it now. Mark an item doing when you start; when you hand back a result, set it\n'
     '      done (the user reviews it) or ask what you need: never leave a result\n'
     '      sitting in doing (T646). If you stop working on it, set it back to open. Keep going: take /next, mark it doing, do the work, write progress and set done, then GET /next\n'
-    "      again. Don't stop to chat. If you are stuck or need a decision, post `B03 block <what you need>` and\n"
+    "      again. Don't stop to chat. If you are stuck or need a decision, post `B03 ask <what you need>` and\n"
     '      move on; /next brings the item back once the user replies. Nothing to do: end your turn. Never wait in\n'
     '      the foreground, poll, or set a timer or scheduled task (heartbeat, cron, automation) to look at Taska:\n'
     '      never wake a model just to check for messages, at any frequency. No foreground polling loops either.\n'
@@ -96,7 +96,7 @@ AGENT = (
     '      about it on hover. A code alone means little to the user: the first time a message names one, add a few\n'
     '      words on what it is, e.g. "D2 (the release plan)".\n'
     "RULES Reuse existing items (/items?q=) instead of duplicating. Keep the user's wording. Never turn a\n"
-    '      suggestion into a decision: use propose/ask/block and wait. Commands with src=rN (or ack rN) mark that\n'
+    '      suggestion into a decision: use propose/ask and wait. Commands with src=rN (or ack rN) mark that\n'
     '      input handled; if an input is a question for you, answer it in the related item (or tell the user) and ack it.\n'
     'ASK   Ask only when a wrong guess would do damage that is hard to undo: spending money, sending something to\n'
     "      someone, deleting, or a choice of scope or design that is the user's to make. Otherwise take the most\n"
@@ -107,7 +107,7 @@ AGENT = (
     '      A manager session hands items to one long-lived worker session; it never edits code itself.\n'
     '      Manager: picks items from /next and the threads, claims them for the worker with /next?by=<worker>, sends the\n'
     '      worker a short list in priority order (small ones first), sleeps until an event below, and puts what needs\n'
-    '      the user on the item. Worker: does the list in order and writes progress/done/ask/block on each item itself\n'
+    '      the user on the item. Worker: does the list in order and writes progress/done/ask on each item itself\n'
     '      (&session=worker); never polls Taska, never waits on the user, keeps working while a background command\n'
     '      runs, says on the item before a step longer than 15 minutes, and ends every turn with a message there.\n'
     '      Never stuck: the worker runs where nothing prompts for approval (a refused command is refused; it takes\n'
@@ -155,7 +155,7 @@ SKILL = (
     '     Others: if delivery is unavailable, report it once and end the turn.\n'
     '   - Codex: automatic updates use the native queue setup below. Do not use a second CLI writer\n'
     '     or a relay model. Other agents do not use this Codex-specific transport.\n'
-    '5. **Need the user?** Post `B03 block <what you need>` or `B03 ask <question>`, then take the next item.\n'
+    '5. **Need the user?** Post `B03 ask <what you need or your question>`, then take the next item.\n'
     '   /next brings it back once the user replies. When the answer is a choice, list it under the question as\n'
     '   indented `- ( ) option` lines (pick one) or `- [ ] option` lines (pick any): the user taps instead of typing.\n'
     '6. **The user reads Taska only**, usually on a phone, never your terminal or chat. Whatever they should see goes\n'
