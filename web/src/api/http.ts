@@ -34,6 +34,22 @@ export class Refused extends Error {
   }
 }
 
+/** Asks until Taska answers (T424): out of reach, it waits (1 s, then longer, at most 10 s) and asks again, saying so
+ * once (`waiting`); a refusal, or any other failure, comes back at once. */
+export async function untilAnswered<T>(ask: () => Promise<T>, waiting?: () => void): Promise<T> {
+  let told = false
+  for (let wait = 1000; ; wait = Math.min(wait * 2, 10000)) {
+    try {
+      return await ask()
+    } catch (ex) {
+      if (!(ex instanceof Unreachable)) throw ex
+      if (!told) waiting?.()
+      told = true
+      await new Promise((ok) => setTimeout(ok, wait))
+    }
+  }
+}
+
 /** The request was stopped on purpose (the page moved on). */
 export class Abandoned extends Error {}
 

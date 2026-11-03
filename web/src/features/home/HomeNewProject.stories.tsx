@@ -8,4 +8,4 @@ type Story = StoryObj
 
 /** A new project's name being typed, and why it was not made. */
 export const NewProject: Story = { name: 'Naming a new project', render: () => shown({ making: { error: '' } }, 420) }
-export const NotCreated: Story = { name: 'Not made: why', render: () => <After run={(r) => r.querySelectorAll<HTMLInputElement>('input[aria-label="New project name"]').forEach((f) => typeInto(f, 'Garden'))}>{shown({ making: { error: 'Connection lost; try again' } }, 420)}</After> }
+export const NotCreated: Story = { name: 'Not made: why', render: () => <After run={(r) => r.querySelectorAll<HTMLInputElement>('input[aria-label="New project name"]').forEach((f) => typeInto(f, 'Garden'))}>{shown({ making: { error: 'A project of that name exists' } }, 420)}</After> }

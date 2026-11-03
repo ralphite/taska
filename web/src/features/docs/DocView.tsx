@@ -266,7 +266,7 @@ export function DocView({ facts, env, on, lasso, page, recTime, aim = null, onAi
             aria-pressed={facts.circle}
             className={`${phoneBtn} aria-pressed:bg-amber-100 aria-pressed:text-amber-900 dark:aria-pressed:bg-amber-900/60 dark:aria-pressed:text-amber-100`}
           >
-            {facts.circle ? 'Draw around it…' : 'Mark an area'}
+            {facts.circle ? 'Done' : 'Mark an area'}
           </button>
           <button onClick={on.editDoc} className={phoneBtn}>
             Edit

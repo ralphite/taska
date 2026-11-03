@@ -2,7 +2,7 @@
 // reach on the home page, asked again by itself, more slowly each time, until it answers. Made, renamed, deleted and
 // restored by name.
 
-import { Refused } from '../../api/http'
+import { Refused, untilAnswered } from '../../api/http'
 import type { TaskaApi } from '../../api/taska'
 import type { KeyValueStore } from '../../stores/storage'
 import type { DataStore } from '../../stores/data'
@@ -84,29 +84,30 @@ export class Projects {
   }
 
   create(title: string): Promise<Made> {
-    return this.done(this.d.api.createProject(title), 'Not created')
+    return this.done(() => this.d.api.createProject(title), 'Not created')
   }
 
   restore(name: string): Promise<Made> {
-    return this.done(this.d.api.restoreProject(name), 'Not restored')
+    return this.done(() => this.d.api.restoreProject(name), 'Not restored')
   }
 
   rename(name: string, title: string): Promise<Made> {
-    return this.done(this.d.api.renameProject(name, title), 'Not renamed')
+    return this.done(() => this.d.api.renameProject(name, title), 'Not renamed')
   }
 
   remove(name: string): Promise<Made> {
-    return this.done(this.d.api.deleteProject(name), 'Not deleted')
+    return this.done(() => this.d.api.deleteProject(name), 'Not deleted')
   }
 
-  private async done(asked: Promise<{ ok: boolean; name: string; title?: string }>, no: string): Promise<Made> {
+  /** Asked until Taska answers (out of reach, it waits and asks again); only a refusal comes back as why. */
+  private async done(ask: () => Promise<{ ok: boolean; name: string; title?: string }>, no: string): Promise<Made> {
     try {
-      const d = await asked
+      const d = await untilAnswered(ask, () => this.d.toasts?.show('Waiting for Taska…'))
       if (!d.ok) return { error: no }
       void this.refresh()
       return { name: d.name, title: d.title || d.name }
     } catch (ex) {
-      return { error: ex instanceof Refused ? ex.message || no : 'Connection lost; try again' }
+      return { error: ex instanceof Refused ? ex.message || no : no }
     }
   }
 

@@ -11,8 +11,6 @@ import { BUSY } from '../../ui/tones'
 export type DraftHint =
   /** misheard words not picked yet */
   | { kind: 'check'; n: number }
-  /** all picked: the other one can still be had */
-  | { kind: 'switch' }
   /** a voice note's words are in it: they can be corrected */
   | { kind: 'fix' }
   | null
@@ -32,10 +30,13 @@ export function DraftCard({ voice, ms, files, transcribing, words, hint }: { voi
             </span>
           ) : null}
           {files ? <span>· {plural(files, 'file')}</span> : null}
-          <span className="ml-auto flex items-center gap-1 text-zinc-400 dark:text-zinc-500">
-            <Kbd k="⇧↵" />
-            <span>send</span>
-          </span>
+          {/* Send only with words to send */}
+          {words && !transcribing ? (
+            <span className="ml-auto flex items-center gap-1 text-zinc-400 dark:text-zinc-500">
+              <Kbd k="⇧↵" />
+              <span>send</span>
+            </span>
+          ) : null}
         </div>
         {words ?? (
           <div className={DRAFT_WORDS}>
@@ -49,8 +50,6 @@ export function DraftCard({ voice, ms, files, transcribing, words, hint }: { voi
               <span>
                 {hint.kind === 'check' ? (
                   <b className="font-semibold text-zinc-700 dark:text-zinc-200">{plural(hint.n, 'word')} to check</b>
-                ) : hint.kind === 'switch' ? (
-                  'Pick a version to use it.'
                 ) : (
                   'Select words to correct spelling. Taska remembers.'
                 )}

@@ -46,9 +46,9 @@ describe('what the box writes to', () => {
     expect([amend.line?.label, amend.line?.detail, amend.line?.right]).toEqual(['Add details to #7', '“Keep the filter”', { kind: 'x', label: 'Stop adding details', act: 'stop' }])
   })
 
-  test('with what it holds: a correction says before and after; a recording for another draft says where it goes', () => {
+  test('with what it holds: a correction says the word (what it becomes is in the box); a recording for another draft says where it goes', () => {
     const role = boxRole(m, at({ kind: 'tab' }), true, 'taska', { kind: 'correct', id: 'r7', wrong: 'filtre', v: 1 }, nothing, noTicks)
-    expect(shownBox(role, { mode: { kind: 'correct', id: 'r7', wrong: 'filtre', v: 1 }, text: 'filter', key: 'correct r7', recordingFor: null }).line?.label).toBe('Correct “filtre” → “filter”')
+    expect(shownBox(role, { mode: { kind: 'correct', id: 'r7', wrong: 'filtre', v: 1 }, text: 'filter', key: 'correct r7', recordingFor: null }).line?.label).toBe('Correct “filtre”')
     const plain = boxRole(m, at({ kind: 'tab' }), true, 'taska', null, nothing, noTicks)
     expect(shownBox(plain, { mode: null, text: '', key: 'new', recordingFor: code }).line?.label).toBe(`Recording for ${code}`)
   })

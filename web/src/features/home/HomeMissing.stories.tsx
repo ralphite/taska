@@ -9,7 +9,7 @@ type Story = StoryObj
 export const DeletedProject: Story = { name: 'A deleted project', render: () => shown({ gone: { name: 'shop', said: '' } }, 420) }
 
 /** Restore did not work: why. */
-export const NotRestored: Story = { name: 'Not restored', render: () => shown({ gone: { name: 'shop', said: 'Connection lost; try again' } }, 420) }
+export const NotRestored: Story = { name: 'Not restored', render: () => shown({ gone: { name: 'shop', said: 'Not restored: its folder is gone' } }, 420) }
 
 /** A link to a project that never was. */
 export const NoSuchProject: Story = { name: 'No such project', render: () => shown({ none: 'shpo' }, 420) }

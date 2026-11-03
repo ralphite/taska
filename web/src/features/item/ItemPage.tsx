@@ -74,7 +74,7 @@ function Chips({ it, f, on }: { it: Item; f: ItemFacts; on: ItemEvents }) {
       <button
         title="Status · S"
         onClick={(e) => on.menu('s', e.currentTarget)}
-        className={`${CHIP} min-w-32 shrink-0 ${shown.s === 'wait' ? `font-semibold ${NEED.answer.text}` : 'text-zinc-700 dark:text-zinc-200'}`}
+        className={`${CHIP} shrink-0 lg:min-w-32 ${shown.s === 'wait' ? `font-semibold ${NEED.answer.text}` : 'text-zinc-700 dark:text-zinc-200'}`}
       >
         <StateIcon {...shown} cls="size-3.5" />
         {shown.label}

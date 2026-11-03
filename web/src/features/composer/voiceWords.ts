@@ -3,7 +3,7 @@
 // which Taska remembers for every voice note after (Undo forgets it again).
 
 import { fixIn, pickSide, unpicked, type HeardFile } from '../../model/doubts'
-import { Refused } from '../../api/http'
+import { Refused, untilAnswered } from '../../api/http'
 import type { TaskaApi } from '../../api/taska'
 import type { BoxStore } from '../../stores/box'
 import type { Box } from '../../app/inputs/box'
@@ -73,9 +73,9 @@ export class VoiceWords {
     const file = files.find((f) => r.files.some((x) => x.key === f.key))?.f || ''
     try {
       // the server keeps the fix for the developers too, with where it was heard
-      await this.d.api.setCorrection({ wrong: at.wrong, right, project: slug, item: item || '', file })
+      await untilAnswered(() => this.d.api.setCorrection({ wrong: at.wrong, right, project: slug, item: item || '', file }), () => this.d.toasts.show('Waiting for Taska…'))
     } catch (ex) {
-      return this.d.toasts.show(ex instanceof Refused ? ex.message || 'Not saved' : 'Connection lost; try again', null, { error: true }) // the draft keeps your words
+      return this.d.toasts.show(ex instanceof Refused ? ex.message || 'Not saved' : 'Not saved', null, { error: true }) // refused: the draft keeps your words
     }
     this.d.toasts.show(`Remembered: “${at.wrong}” → “${right}”`, async () => {
       const cur = this.d.box.text(slug, key)

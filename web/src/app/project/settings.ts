@@ -2,7 +2,7 @@
 // projects) and changes it: projects made, renamed, deleted, restored or deleted for good; spellings added and
 // forgotten (with Undo); voice notes tidied or not; the transcription preferences edited in the box; a new key.
 
-import { Refused } from '../../api/http'
+import { Refused, untilAnswered } from '../../api/http'
 import type { TaskaApi } from '../../api/taska'
 import type { Spelling } from '../../model/types'
 import type { BoxStore } from '../../stores/box'
@@ -31,12 +31,17 @@ export interface SettingsDeps {
   refresh(slug: string): void
 }
 
-const why = (ex: unknown, no = 'Not saved') => (ex instanceof Refused ? ex.message || no : 'Connection lost; try again')
+const why = (ex: unknown, no = 'Not saved') => (ex instanceof Refused ? ex.message || no : no)
 
 export class Settings {
   private readonly d: SettingsDeps
   constructor(d: SettingsDeps) {
     this.d = d
+  }
+
+  /** A change asked until Taska answers (T424); out of reach, it says so once and asks again. */
+  private asked<T>(ask: () => Promise<T>): Promise<T> {
+    return untilAnswered(ask, () => this.d.toasts.show('Waiting for Taska…'))
   }
 
   private get s() {
@@ -151,7 +156,7 @@ export class Settings {
   async purge(slug: string): Promise<void> {
     if (!this.d.sheets.confirm('purge ' + slug)) return
     try {
-      await this.d.api.purgeProject(slug)
+      await this.asked(() => this.d.api.purgeProject(slug))
       this.s.set({ pMenu: null })
       await this.loadProjects()
       this.d.toasts.show('Deleted for good')
@@ -168,7 +173,7 @@ export class Settings {
 
   private async spell(body: { wrong?: string; right?: string; forget?: boolean }): Promise<boolean> {
     try {
-      const d = await this.d.api.setCorrection(body)
+      const d = await this.asked(() => this.d.api.setCorrection(body))
       this.s.set({ fixes: d.corrections })
       return true
     } catch (ex) {
@@ -201,7 +206,7 @@ export class Settings {
     if (was) this.s.set({ prefs: { ...was, tidy } })
     this.d.toasts.show(tidy ? 'Voice notes are tidied' : 'Voice notes are kept word for word')
     try {
-      const r = await this.d.api.setTidy(tidy)
+      const r = await this.asked(() => this.d.api.setTidy(tidy))
       if (r.tidy !== tidy && this.s.prefs) this.s.set({ prefs: { ...this.s.prefs, tidy: r.tidy } })
     } catch (ex) {
       if (was && this.s.prefs) this.s.set({ prefs: { ...this.s.prefs, tidy: !!was.tidy } })
@@ -224,7 +229,7 @@ export class Settings {
     const was = mode?.kind === 'prefs' ? mode.was : ''
     if (!text) return this.d.toasts.show('Enter transcription rules, or press Esc to cancel')
     try {
-      const d = await this.d.api.setVoicePrefs(text)
+      const d = await this.asked(() => this.d.api.setVoicePrefs(text))
       this.s.set({ prefs: d })
       this.d.boxStore.getState().setMode(null)
       this.d.box.take(slug, PREFS_DRAFT)
@@ -232,8 +237,8 @@ export class Settings {
         const back = await this.d.api.setVoicePrefs(was)
         this.s.set({ prefs: back })
       })
-    } catch {
-      this.d.toasts.show('Connection lost. Your words are still in the box; try again.', null, { error: true })
+    } catch (ex) {
+      this.d.toasts.show(why(ex), null, { error: true }) // refused: the words stay in the box
     }
   }
 
@@ -242,7 +247,7 @@ export class Settings {
   async newKey(slug: string): Promise<void> {
     if (!this.d.sheets.confirm('new-key')) return
     try {
-      await this.d.api.newKey()
+      await this.asked(() => this.d.api.newKey())
     } catch (ex) {
       return this.d.toasts.show(why(ex), null, { error: true })
     }

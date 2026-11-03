@@ -2,7 +2,7 @@
 // after Active, All… in the view row and is the same in every project. Saved, renamed, given the filters shown now
 // or deleted: it changes at once and Taska keeps it, with Undo.
 
-import { Refused } from '../../api/http'
+import { Refused, untilAnswered } from '../../api/http'
 import type { TaskaApi } from '../../api/taska'
 import type { ListQuery } from '../../model/route'
 import type { SavedView } from '../../model/types'
@@ -39,12 +39,12 @@ export class SavedViews {
     const was = [...this.d.store.getState().list]
     this.d.store.getState().set(list)
     try {
-      const d = await this.d.api.setViews(list)
+      const d = await untilAnswered(() => this.d.api.setViews(list), () => this.d.toasts.show('Waiting for Taska…'))
       this.d.store.getState().set(d.views || list)
       this.d.toasts.show(said, undo ? () => this.save(was, 'Put back', false) : null)
     } catch (ex) {
       this.d.store.getState().set(was)
-      this.d.toasts.show(`View not saved: ${ex instanceof Refused ? ex.message || 'Not saved' : 'Connection lost; try again'}`, null, { error: true })
+      this.d.toasts.show(`View not saved: ${ex instanceof Refused ? ex.message || 'Not saved' : 'Not saved'}`, null, { error: true })
     }
   }
 

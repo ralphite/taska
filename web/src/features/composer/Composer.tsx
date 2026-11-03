@@ -235,7 +235,14 @@ export function Composer({ line, waiting = null, lineOn, lineOnComposePage, plac
               {text.split('\n').map((l, i) => (
                 <span key={i}>
                   {i ? '\n' : ''}
-                  {VC_MARK.test(l) ? <span className="rounded bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">{l}</span> : l}
+                  {VC_MARK.test(l) ? (
+                    <>
+                      <span className="text-transparent">{l.slice(0, 2)}</span>
+                      <span className="rounded bg-zinc-100 text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">{l.slice(2)}</span>
+                    </>
+                  ) : (
+                    l
+                  )}
                 </span>
               ))}
               {'\u200b'}

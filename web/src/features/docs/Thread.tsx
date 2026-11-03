@@ -88,11 +88,12 @@ function CommentFiles({ c, asking, env, on }: { c: Comment; asking: string | nul
         <div className="mt-1.5 flex gap-2 overflow-x-auto">
           {mine
             ? shown.map((f) => (
-                <span key={f.f} className="relative flex shrink-0">
+                <span key={f.f} className="relative flex shrink-0 flex-col items-start gap-1">
                   {thumbs([f])}
+                  {/* asking again: its words on one line under the picture, red */}
                   {ask(f) ? (
-                    <button onClick={off(f)} title={tip(f)} className="absolute inset-0 grid place-items-center rounded-lg bg-red-600/90 text-center text-[11px] leading-tight font-semibold text-white">
-                      Take off?
+                    <button onClick={off(f)} title={tip(f)} className={DC_DANGER}>
+                      Remove?
                     </button>
                   ) : (
                     <button
@@ -114,7 +115,7 @@ function CommentFiles({ c, asking, env, on }: { c: Comment; asking: string | nul
           <VoiceLine files={[f]} url={env.url} play={env.play} tidy={env.tidy} on={on} />
           {mine ? (
             <button onClick={off(f)} title={tip(f)} aria-label={tip(f)} className={`${ask(f) ? DC_DANGER : DC_BTN} ${ask(f) ? '' : 'lg:invisible lg:group-hover:visible lg:focus-visible:visible'}`}>
-              {ask(f) ? 'Take off?' : <Icon n="x" c="size-3.5" />}
+              {ask(f) ? 'Remove?' : <Icon n="x" c="size-3.5" />}
             </button>
           ) : null}
         </div>
@@ -152,7 +153,7 @@ export function Thread({ t, blockText, rail = false, isNew, done, replying, aski
             <div className="mb-0.5 line-clamp-2 text-xs text-zinc-500 dark:text-zinc-300">“{plainQuote(c.quote)}”</div>
           ) : null}
           <div className="flex min-h-6 flex-wrap items-center gap-1 lg:relative">
-            <span className={COMMENT_WHO(c.by)}>{whoName(c.by)}</span>{' '}
+            {c.by === 'you' ? null : <span className={COMMENT_WHO(c.by)}>{whoName(c.by)}</span>}{' '}
             <span className="text-xs text-zinc-400">
               {/* shown while it is being saved (D83 #1): it says so, as what you send in the talk does */}
               {c.id > 0 ? when(c.t, env.now) : <span className={BUSY}>Sending…</span>}

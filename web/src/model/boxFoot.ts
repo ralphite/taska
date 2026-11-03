@@ -3,7 +3,7 @@
 // what you sent last. Pure, so it is tested alone and the containers only connect it.
 
 import { failWhy } from './became'
-import { docTarget, type DocTarget } from './docs'
+import { allComments, docTarget, type DocTarget } from './docs'
 import { ticksNotSent, type TickState } from './docTicks'
 import { draftName } from './draftTarget'
 import { oneLine } from './items'
@@ -79,7 +79,7 @@ export function boxRole(m: ProjectModel | null, route: ProjectPlace, desk: boole
   const files = m?.facts.organizer.on ? 'organizer files it' : 'agent files it'
   const none = { aim: null as DocAim }
   if (mode?.kind === 'prefs') {
-    const line: BoxLine = { icon: 'pencil', label: 'Edit transcription preferences', detail: '· every project', right: stop('Stop editing') }
+    const line: BoxLine = { icon: 'pencil', label: 'Edit transcription preferences', detail: '· all projects', right: stop('Stop editing') }
     return { ...none, scope: null, doc: null, line, placeholder: 'How should voice notes be transcribed?', send: 'Save' }
   }
   if (mode?.kind === 'correct') {
@@ -88,8 +88,11 @@ export function boxRole(m: ProjectModel | null, route: ProjectPlace, desk: boole
     return { ...none, scope: null, doc: null, line, placeholder: 'Write…', send: 'Save' }
   }
   if (mode?.kind === 'comment') {
-    const was = oneLine(mode.was)
-    const line: BoxLine = { icon: 'pencil', label: `Edit comment on D${mode.d}`, detail: was ? `“${was.slice(0, 120)}”` : '', right: stop('Stop editing') }
+    // what it is about (its words are in the box)
+    const dc = m?.docs.find((x) => x.d === mode.d)
+    const cm = dc ? allComments(dc).find((c) => c.id === mode.id) : undefined
+    const about = oneLine(plainQuote(cm?.quote || (cm && dc?.blocks.find((b) => b.key === cm.key)?.text) || ''))
+    const line: BoxLine = { icon: 'pencil', label: `Edit comment on D${mode.d}`, detail: about ? `“${about.slice(0, 120)}”` : '', right: stop('Stop editing') }
     return { ...none, scope: null, doc: null, line, placeholder: 'Write…', send: 'Save' }
   }
   const dt = docOf && !mode ? docTarget(docOf, pick) : null
@@ -127,7 +130,8 @@ export function boxRole(m: ProjectModel | null, route: ProjectPlace, desk: boole
     const line: BoxLine = {
       icon: edit ? 'pencil' : 'plus',
       label: `${edit ? 'Edit' : 'Add details to'} ${inputCode(mode.id)}`,
-      detail: said ? `“${said.slice(0, 120)}”` : `· ${voice ? 'a voice note' : plural(r.files.length, 'file')}`,
+      // editing: its words are in the box; adding to it: what it said
+      detail: edit ? '' : said ? `“${said.slice(0, 120)}”` : `· ${voice ? 'a voice note' : plural(r.files.length, 'file')}`,
       right: stop(edit ? 'Stop editing' : 'Stop adding details'),
     }
     return { ...none, scope: open && m ? codeOf(m, open.n) : null, doc: null, line, placeholder: 'Write…', send: 'Save' }
@@ -146,11 +150,8 @@ export function shownBox(role: BoxRole, a: { mode: BoxMode; text: string; key: s
   const told = vcN
     ? { line: { icon: 'comment', label: `${plural(vcN, 'comment')} on D${role.doc} not sent`, detail: '', right: { kind: 'x', label: vcN > 1 ? 'Discard the comments' : 'Discard the comment', act: 'discard' } } as BoxLine, placeholder: role.aim ? 'Write…' : 'Add to the comments…', send: vcN > 1 ? `Post ${vcN} comments` : 'Post comment' }
     : role
-  const right = a.mode?.kind === 'correct' ? a.text.replace(/\s+/g, ' ').trim() : ''
   const line: BoxLine | null =
-    a.mode?.kind === 'correct' && told.line && right
-      ? { ...told.line, label: `${told.line.label} → “${right.slice(0, 60)}”` }
-      : a.recordingFor != null && a.recordingFor !== a.key
+    a.recordingFor != null && a.recordingFor !== a.key
         ? { icon: 'mic', label: `Recording for ${draftName(a.recordingFor)}`, detail: '' }
         : told.line
   return { line, waiting: a.mode ? null : (role.waiting ?? null), placeholder: told.placeholder, send: told.send, voiceComments: vcN }
