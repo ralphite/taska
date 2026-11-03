@@ -161,13 +161,14 @@ export function ProjectsBody({ f, on }: { f: ProjectsFacts; on: ProjectsEvents }
               </div>
               {ren ? null : (
                 <>
-                  <button onClick={() => on.rename(p.name)} className={P_BTN}>
+                  {/* narrow, the buttons keep their icons and say their words under the pointer, so the name keeps room */}
+                  <button onClick={() => on.rename(p.name)} title="Rename" aria-label="Rename" className={P_BTN}>
                     <Icon n="pencil" c="size-4" />
-                    Rename
+                    <span className="hidden @md/set:inline">Rename</span>
                   </button>
-                  <button onClick={() => on.remove(p.name)} className={P_BTN}>
+                  <button onClick={() => on.remove(p.name)} title="Delete" aria-label="Delete" className={P_BTN}>
                     <Icon n="trash" c="size-4" />
-                    Delete
+                    <span className="hidden @md/set:inline">Delete</span>
                   </button>
                 </>
               )}
@@ -253,18 +254,24 @@ export function PhoneBody({ link, keyText, asking, desk, on }: { link: string; k
 
 // ---- Notifications (the desktop's; the phone's are pushes)
 
-export function NotificationsBody({ state, quiet, on }: { state: 'On' | 'Off' | 'Blocked by the browser'; quiet: boolean; on: { turnOn(): void; quiet(): void } }) {
+/** On: Turn off is Taska's own (a page cannot take back the browser's permission), as the phone's. Blocked: the page
+ * cannot ask again, so no button, only where to allow them. */
+export function NotificationsBody({ state, quiet, on }: { state: 'On' | 'Off' | 'Blocked by the browser'; quiet: boolean; on: { turnOn(): void; turnOff(): void; quiet(): void } }) {
   return (
     <>
       <Setting
         title={state}
-        about="For this browser."
+        about={state === 'Blocked by the browser' ? "Allow notifications in the browser's site settings." : 'For this browser.'}
         control={
-          state === 'On' ? null : (
-            <button onClick={on.turnOn} disabled={state === 'Blocked by the browser'} className={PRIMARY}>
+          state === 'On' ? (
+            <button onClick={on.turnOff} className={SECOND}>
+              Turn off
+            </button>
+          ) : state === 'Off' ? (
+            <button onClick={on.turnOn} className={PRIMARY}>
               Turn on
             </button>
-          )
+          ) : null
         }
       />
       {state === 'On' ? <Setting title="Quiet 22:00–08:00" about="Your local time." control={<Toggle on={quiet} label="Quiet 22:00–08:00" onToggle={on.quiet} />} /> : null}

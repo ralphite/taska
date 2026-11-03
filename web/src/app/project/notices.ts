@@ -86,6 +86,12 @@ export class Notices {
     this.changed()
   }
 
+  /** Off in this browser: Taska stops showing them (the browser's permission stays; a page cannot take it back). */
+  turnOff(): void {
+    this.kv.setJson('taska.notifications.on', false)
+    this.changed()
+  }
+
   private quietNow(): boolean {
     const h = new Date().getHours()
     return this.quiet() && (h >= 22 || h < 8)

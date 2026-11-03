@@ -94,7 +94,7 @@ export function docAt(d: Doc, desk: boolean, h: DocHere = {}) {
         place=""
         desk
         head={<DocPaneHead d={d} editing={false} />}
-        acts={<DocPaneActs web={web} inspect={!!h.inspect} deleting={!!asked['doc-delete ' + d.d]} d={d.d} on={{ inspect: no, copy: no, edit: no, move: no, remove: no }} />}
+        acts={<DocPaneActs web={web} inspect={!!h.inspect} deleting={!!asked['doc-delete ' + d.d]} on={{ inspect: no, copy: no, edit: no, move: no, remove: no }} />}
         lead={<DocPaneNav to={facts.itemCode} onBack={no} />}
         onBack={no}
       >

@@ -55,6 +55,11 @@ export function inlineHtml(s: string, world: InlineWorld, refs = true): string {
       .replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g, (_, t: string, url: string) =>
         keep(`<a href="${url}" target="_blank" rel="noopener" class="text-blue-600 underline underline-offset-2 dark:text-blue-400">${emph(t)}</a>`),
       )
+      // a link to what a Taska code names ([the plan](#D1), [the plan](D1)): its words open it; naming nothing, the words
+      .replace(/\[([^\]]+)\]\(#?([FBITRD]\d{1,5}|r\d{1,6}|#\d{1,6})\)/g, (_, t: string, c: string) => {
+        const to = refs ? world.find(c) : null
+        return keep(to ? `<span role="link" tabindex="0" data-ref="${c}" class="${REF_CLS}">${emph(t)}</span>` : emph(t))
+      })
       // a code, not inside a web address
       .replace(/(^|[^\w/=&?.#-])([FBITRD]\d{1,5}|r\d{1,6}|#\d{1,6})(?!\w)/g, (m, pre: string, c: string) => {
         const l = refs ? refHtml(c, world.find(c)) : null

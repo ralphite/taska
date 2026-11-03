@@ -237,7 +237,12 @@ export function DocView({ facts, env, on, lasso, page, recTime, aim = null, onAi
                 <Icon n="comment" c="size-3.5" />
                 {plural(facts.whole.n, 'comment')} on the document
               </button>
-              {facts.whole.open ? <div className="absolute top-full right-0 z-20 mt-1 w-80 text-sm">{thread(facts.whole.open, undefined, true)}</div> : null}
+              {/* opened, its thread takes its own line under the bar, at the right: it moves the words down, never covers them */}
+              {facts.whole.open ? (
+                <div className="order-last flex basis-full justify-end pt-1">
+                  <div className="w-80 max-w-full text-sm">{thread(facts.whole.open, undefined, true)}</div>
+                </div>
+              ) : null}
             </>
           ) : null}
           <span hidden={web} className="min-w-0 flex-1 basis-full truncate lg:basis-auto">
@@ -253,8 +258,8 @@ export function DocView({ facts, env, on, lasso, page, recTime, aim = null, onAi
           <button onClick={() => on.moveDoc()} className={phoneBtn}>
             Move
           </button>
-          <button onClick={on.deleteDoc} className={phoneBtn}>
-            {facts.deleting ? `Delete D${d.d}?` : 'Delete'}
+          <button onClick={on.deleteDoc} className={facts.deleting ? `${phoneBtn.replace(/\S*(text|bg)-zinc-\S+/g, '')} font-semibold text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-400/10` : phoneBtn}>
+            {facts.deleting ? 'Delete?' : 'Delete'}
           </button>
           <button
             onClick={on.circle}

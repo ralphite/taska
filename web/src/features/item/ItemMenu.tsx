@@ -1,5 +1,5 @@
 // An item's menu: on the phone a sheet of tiles (Edit, Copy for agent, New doc, Add subitem, Put under…, Later,
-// Archive, Do this next, Move to project…, Delete) and its type, priority and status; on the desktop a menu of rows
+// Archive, Do this next, Move to… (another project), Delete) and its type, priority and status; on the desktop a menu of rows
 // with their keys, or just one field's choices (from its chip, or S, P, T). Props only.
 
 import type { ReactNode } from 'react'
@@ -145,7 +145,7 @@ export function itemMenuSheet({ it, code, parentCode, asking, arm }: ItemMenuFac
           )}
           {state}
           {next}
-          {tile('move', 'arrow', 'Move to project…', on.moveProject)}
+          {tile('move', 'arrow', 'Move to…', on.moveProject)}
           {tile('delete', 'trash', asking ? `Delete ${code}?` : 'Delete', on.remove)}
         </div>
         {type}

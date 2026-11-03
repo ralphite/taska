@@ -99,7 +99,7 @@ export function settingsAt(sec: SectionKey | null, desk: boolean, h: SettingsHer
     phone: () => <PhoneBody link={h.noRemote ? '' : m.facts.remote + '/'} keyText={m.facts.key} asking={!!h.newKeyAsking} desk={desk} on={{ copy: no, newKey: no }} />,
     notifications: () =>
       desk ? (
-        <NotificationsBody state={h.notifications?.state ?? 'On'} quiet={h.notifications?.quiet ?? false} on={{ turnOn: no, quiet: no }} />
+        <NotificationsBody state={h.notifications?.state ?? 'On'} quiet={h.notifications?.quiet ?? false} on={{ turnOn: no, turnOff: no, quiet: no }} />
       ) : h.pushLoading ? (
         <Loading />
       ) : h.pushUnsupported ? (

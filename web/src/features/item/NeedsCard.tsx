@@ -317,7 +317,7 @@ export function Answered({ it, x, done, env, on, reasking, going = '' }: {
               Cancel
             </button>
             {last ? <KeepBtn it={it} on={on} /> : null}
-            <SendAnswerBtn n={it.n} picked={!!env.choosing?.picked.size} cls="flex-[1.4] lg:flex-none" on={on} />
+            <SendAnswerBtn n={it.n} picked={!!env.choosing?.picked.size} cls="flex-[1.4] lg:flex-none" keyHint on={on} />
           </>
         }
       />
@@ -339,14 +339,24 @@ export function Answered({ it, x, done, env, on, reasking, going = '' }: {
       foot={
         <>
           {last ? <KeepBtn it={it} quiet on={on} /> : null}
-          {/* Send answer where it was, said as done and a little greyed (r1003) */}
-          <span aria-disabled className={`${PRIMARY_BASE} ${NEED.answer.btn} flex-[1.4] cursor-not-allowed opacity-70 hover:brightness-100 lg:flex-none dark:hover:brightness-100`}>
-            <Icon n={done.length ? 'check' : 'reply'} c="size-4" sw="2.25" />
-            {done.length ? 'Sent' : 'Replied'}
-            <span className="invisible">
-              <Kbd k="⌘↵" />
+          {/* Send answer where it was: on its way still Send answer, not to be clicked; Taska has it, said as done and a
+              little greyed (r1003) */}
+          {going ? (
+            <button disabled className={`${PRIMARY_BASE} ${NEED.answer.btn} flex-[1.4] lg:flex-none`}>
+              Send answer
+              <span className="invisible">
+                <Kbd k="⌘↵" />
+              </span>
+            </button>
+          ) : (
+            <span aria-disabled className={`${PRIMARY_BASE} ${NEED.answer.btn} flex-[1.4] cursor-not-allowed opacity-70 hover:brightness-100 lg:flex-none dark:hover:brightness-100`}>
+              <Icon n={done.length ? 'check' : 'reply'} c="size-4" sw="2.25" />
+              {done.length ? 'Sent' : 'Replied'}
+              <span className="invisible">
+                <Kbd k="⌘↵" />
+              </span>
             </span>
-          </span>
+          )}
         </>
       }
     />

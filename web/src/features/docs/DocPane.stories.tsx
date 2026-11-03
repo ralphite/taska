@@ -34,7 +34,6 @@ const bars = (width: number) => (
           web={false}
           inspect={false}
           deleting={false}
-          d={12}
           on={on}
         />
       </>,
@@ -47,7 +46,7 @@ const bars = (width: number) => (
           editing={false}
         />
         <span className="flex-1" />
-        <DocPaneActs web inspect deleting d={13} on={on} />
+        <DocPaneActs web inspect deleting on={on} />
       </>,
     )}
     {bar(

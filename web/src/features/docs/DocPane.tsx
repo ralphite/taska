@@ -12,17 +12,18 @@ import type { IconName } from '../../ui/icon-paths'
 // words shown only when the bar has room (the pane's header is the container "bar")
 const WIDE = 'hidden @2xl/bar:inline'
 
-/** A button of the bar: its icon, and its words when the bar has room (`always`: a question it asks, as Delete D4?). */
-const PaneBtn = ({ pressed, icon, label, always = false, onClick, children }: { pressed?: boolean; icon: IconName; label: string; always?: boolean; onClick(e: MouseEvent<HTMLButtonElement>): void; children?: ReactNode }) => (
+/** A button of the bar: its icon, and its words when the bar has room (`ask`: a destructive question it asks, as
+ * Delete?: always in words, in red). */
+const PaneBtn = ({ pressed, icon, label, ask = false, onClick, children }: { pressed?: boolean; icon: IconName; label: string; ask?: boolean; onClick(e: MouseEvent<HTMLButtonElement>): void; children?: ReactNode }) => (
   <button
     onClick={onClick}
     title={label}
     aria-label={label}
     {...(pressed === undefined ? {} : { 'aria-pressed': pressed })}
-    className="flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-sm text-zinc-600 hover:bg-zinc-100 aria-pressed:bg-amber-100 aria-pressed:text-amber-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:aria-pressed:bg-amber-900/60 dark:aria-pressed:text-amber-100"
+    className={`flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-sm aria-pressed:bg-amber-100 aria-pressed:text-amber-900 dark:aria-pressed:bg-amber-900/60 dark:aria-pressed:text-amber-100 ${ask ? 'bg-red-50 font-semibold text-red-600 hover:bg-red-100 dark:bg-red-400/10 dark:text-red-400 dark:hover:bg-red-400/20' : 'text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800'}`}
   >
     <Icon n={icon} c="size-4" />
-    <span className={always ? '' : WIDE}>{label}</span>
+    <span className={ask ? '' : WIDE}>{label}</span>
     {children}
   </button>
 )
@@ -38,7 +39,7 @@ export function DocPaneHead({ d, editing }: { d: Pick<Doc, 'd' | 'title' | 'fmt'
   )
 }
 
-export function DocPaneActs({ web, inspect, deleting, d, on }: { web: boolean; inspect: boolean; deleting: boolean; d: number; on: { inspect(): void; copy(): void; edit(): void; move(from: HTMLElement): void; remove(): void } }) {
+export function DocPaneActs({ web, inspect, deleting, on }: { web: boolean; inspect: boolean; deleting: boolean; on: { inspect(): void; copy(): void; edit(): void; move(from: HTMLElement): void; remove(): void } }) {
   return (
     <>
       {web ? (
@@ -53,7 +54,7 @@ export function DocPaneActs({ web, inspect, deleting, d, on }: { web: boolean; i
       <PaneBtn icon="copy" label="Copy" onClick={on.copy} />
       <PaneBtn icon="pencil" label="Edit" onClick={on.edit} />
       <PaneBtn icon="arrow" label="Move" onClick={(e) => on.move(e.currentTarget)} />
-      <PaneBtn icon="trash" label={deleting ? `Delete D${d}?` : 'Delete'} always={deleting} onClick={on.remove} />
+      <PaneBtn icon="trash" label={deleting ? 'Delete?' : 'Delete'} ask={deleting} onClick={on.remove} />
     </>
   )
 }

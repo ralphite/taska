@@ -1,6 +1,7 @@
 // An item open in its pane, as the page draws it: the pane's bar (the item's code and status, its actions, Previous
 // and Next) and the page's own ItemPage, with a demo project around it. Used by the item page's stories.
 import type { ReactNode } from 'react'
+import { DocPaneActs, DocPaneHead, DocPaneNav } from '../features/docs/DocPane'
 import type { ItemFacts } from '../features/item/ItemPage'
 import { ItemActs, ItemHead, ItemNav, ItemPage, ItemTalk } from '../features/item/ItemPage'
 import type { TalkFacts } from '../features/item/Talk'
@@ -38,11 +39,33 @@ export interface PageOpts {
   /** the desktop's two columns with a document on the left instead of the item (`bare`: a web page, no margins) */
   left?: ReactNode
   bare?: boolean
+  /** the document on the left: the pane is the document's, its bar the document's (the way back to its item, Copy,
+   * Edit, Move, Delete), as the page draws it */
+  doc?: Doc
 }
 
 export function pageOf(it: Item, desk: boolean, o: PageOpts = {}) {
   const m = modelOf([...(o.others ?? []), it], o.inputs ?? [], {}, o.docs ?? [])
   const facts = itemFacts(m, it, o.f)
+  const no = () => {}
+  const page = <ItemPage it={it} f={facts} env={talkEnv(m, desk)} facts={talkFacts(m, o.t)} on={noItemEvents} duo={o.duo} left={o.left} bare={o.bare} />
+  if (o.doc)
+    return (
+      <div className="flex h-full flex-col">
+        <PaneFrame
+          place=""
+          desk={desk}
+          split
+          duo
+          head={<DocPaneHead d={o.doc} editing={false} />}
+          acts={<DocPaneActs web={o.doc.fmt === 'html'} inspect={false} deleting={false} on={{ inspect: no, copy: no, edit: no, move: no, remove: no }} />}
+          lead={<DocPaneNav to={facts.code(it.n)} onBack={no} />}
+          onBack={no}
+        >
+          {page}
+        </PaneFrame>
+      </div>
+    )
   return (
     <div className="flex h-full flex-col">
       <PaneFrame
@@ -56,7 +79,7 @@ export function pageOf(it: Item, desk: boolean, o: PageOpts = {}) {
         nav={<ItemNav full={!!o.full} on={{ prev: () => {}, next: () => {}, full: () => {} }} />}
         onBack={o.onBack ?? (() => {})}
       >
-        <ItemPage it={it} f={facts} env={talkEnv(m, desk)} facts={talkFacts(m, o.t)} on={noItemEvents} duo={o.duo} left={o.left} bare={o.bare} />
+        {page}
       </PaneFrame>
     </div>
   )

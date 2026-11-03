@@ -79,7 +79,7 @@ export function SettingsContainer({ route, place, prefsBox }: { route: ProjectRo
         return <PhoneBody link={m.facts.remote ? m.facts.remote + '/' : ''} keyText={m.facts.key} asking={!!asked['new-key']} desk={desk} on={{ copy: (t) => s.copy(t), newKey: () => void s.newKey(route.slug) }} />
       case 'notifications':
         return desk ? (
-          <NotificationsBody state={app.notices.state()} quiet={app.notices.quiet()} on={{ turnOn: () => void app.notices.turnOn(), quiet: () => app.notices.setQuiet(!app.notices.quiet()) }} />
+          <NotificationsBody state={app.notices.state()} quiet={app.notices.quiet()} on={{ turnOn: () => void app.notices.turnOn(), turnOff: () => app.notices.turnOff(), quiet: () => app.notices.setQuiet(!app.notices.quiet()) }} />
         ) : (
           (() => {
             // on the Home Screen with a push service: this phone's pushes (asked once)

@@ -47,7 +47,8 @@ export function SettingsFrame({ desk, sec, place, prefs = false, paneRef, nav, b
             </>
           ) : null
         ) : (
-          <div className="mx-auto w-full max-w-[46rem] px-8 pt-9 pb-16">
+          // a container ("set"): a narrow section keeps its rows' buttons as icons (their words under the pointer)
+          <div className="@container/set mx-auto w-full max-w-[46rem] px-8 pt-9 pb-16">
             <header className="pb-6">
               <h1 className="text-[22px] leading-tight font-semibold tracking-tight">{SECTIONS[k].name}</h1>
               <p className="mt-2 text-[15px] leading-relaxed text-zinc-500 dark:text-zinc-400">{SECTIONS[k].about()}</p>
