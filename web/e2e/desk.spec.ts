@@ -1,5 +1,6 @@
 // The desktop's keys and panes (D20 section 4.3), and documents with comments in place (section 2.5).
 // guards: src/features/ src/pages/ src/ui/ src/app/keys.ts src/app/actions.ts src/app/docs/ src/app/page/ src/model/docs.ts src/model/docTicks.ts src/model/markdown.ts
+import { createHash } from 'node:crypto'
 import { expect, test, type Page } from '@playwright/test'
 import { LOOP, isDesk, open, project } from './seed'
 import { blockPick, boxLine, commentMode, docBlock, docCard, itemMenu, menuChoice, pageCount, pane, partPick, row, talk, threadPop } from './ui'
@@ -76,7 +77,10 @@ test('two places picked in one paragraph keep two threads; an answer goes to the
   - item two is about pears
 `,
   })
-  for (const quote of ['apples', 'pears']) await p.op({ op: 'dc', d: 1, para: 2, quote, text: `About ${quote}` })
+  // each selection is posted by the paragraph's key, as the page does (by paragraph number alone, a comment is an
+  // answer and joins the thread waiting on the user)
+  const key = createHash('sha1').update('- item one is about apples - item two is about pears').digest('hex').slice(0, 10)
+  for (const quote of ['apples', 'pears']) await p.op({ op: 'dc', d: 1, key, quote, text: `About ${quote}` })
   await p.doAs('D1 reply ¶2 The apples answer')
   await open(page, p, 'D1')
   const counts = page.locator('[data-doc-blocks] button[data-thread-count*="#"]').filter({ visible: true })
