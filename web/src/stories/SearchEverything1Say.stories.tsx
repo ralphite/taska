@@ -7,7 +7,7 @@ export default { title: 'Prototype/F479 Search everything/Say and search', param
 
 export const Listening: StoryObj = { name: 'Listening', ...stateStory('listening', 'the magnifier tapped: recording at once, in the box') }
 export const WritingItOut: StoryObj = { name: 'Writing out what you said', ...stateStory('writing', '↑ tapped: Taska writes the words out') }
-export const Searching: StoryObj = { name: 'Searching', ...stateStory('searching', 'the words in the box, searching every project') }
+export const Searching: StoryObj = { name: 'Searching', ...stateStory('searching', 'the words in the box, searching') }
 export const ByMeaningToo: StoryObj = { name: 'Found by the words, looking by meaning', ...stateStory('meaning', 'what the words find, at once; by meaning a moment later') }
 export const Found: StoryObj = { name: 'Found', ...stateStory('found', 'the closest first, by kind, each with why') }
 export const OneKind: StoryObj = { name: 'Only one kind', ...stateStory('oneKind', 'Items tapped: only items, all of them') }

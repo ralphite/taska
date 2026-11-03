@@ -59,7 +59,8 @@ const it = (n: number, why: string, byWords = false, kind: Kind = 'items'): Foun
 const SAID8: Found = { kind: 'inputs', key: 'r8', n: 1, code: '#8', title: 'The export should keep the filter I set.', meta: 'Oct 23 · became F001', why: 'When you asked for the export to keep it', byWords: true }
 const SAID12: Found = { kind: 'inputs', key: 'r12', n: 18, code: '#12', title: 'On my phone the export gives me every row again.', meta: 'Today 09:12 · became B018', why: 'The same, said of the export on the phone' }
 const DOC1: Found = { kind: 'docs', key: 'd1', n: 1, code: 'D1', title: D1.title, meta: 'On F001', why: 'The plan for making the export keep the filter' }
-const HOME21: Found = { kind: 'items', key: 'h21', n: 21, home: true, why: 'The same trouble in Home: its export drops the sort' }
+const HOME21: Found = { kind: 'items', key: 'h21', n: 21, home: true, why: 'The same trouble: its export drops the sort', byWords: true }
+const HOME4: Found = { kind: 'inputs', key: 'h4', n: 21, home: true, code: '#4', title: 'When I export contacts the order is gone', meta: 'Oct 20 · became F021', why: 'The same trouble, said of the contacts', byWords: true }
 
 /** What a search found for some words. */
 export interface Search {
@@ -75,12 +76,12 @@ export const byWordsOf = (s: Search): Search => ({ ...s, byWords: true, found: s
 export const MISHEARD: Search = {
   words: 'where the expert loses my filter',
   marks: ['filter'],
-  found: [it(1, 'What you described: the export drops the filter you set', true), it(3, 'The filter, kept in what the export writes', true), it(14, 'Part of F001: where the export gets the filter from', true), it(17, 'What every export writes', false, 'rules'), SAID8, DOC1, HOME21],
+  found: [it(1, 'What you described: the export drops the filter you set', true), it(3, 'The filter, kept in what the export writes', true), HOME21, it(14, 'Part of F001: where the export gets the filter from', true), it(17, 'What every export writes', false, 'rules'), SAID8, HOME4, DOC1],
 }
 export const RIGHT: Search = {
   words: 'where the export loses my filter',
   marks: ['export', 'filter'],
-  found: [it(1, 'What you described: the export drops the filter you set', true), it(3, 'The filter, kept in what the export writes', true), it(14, 'Part of F001: where the export gets the filter from', true), it(6, 'Another export: it will need the filter too', true), it(17, 'What every export writes', false, 'rules'), SAID8, DOC1, HOME21],
+  found: [it(1, 'What you described: the export drops the filter you set', true), it(3, 'The filter, kept in what the export writes', true), HOME21, it(14, 'Part of F001: where the export gets the filter from', true), it(6, 'Another export: it will need the filter too', true), it(17, 'What every export writes', false, 'rules'), SAID8, HOME4, DOC1],
 }
 /** What you say more, the second time. */
 export const ADDED = ', only on the phone'

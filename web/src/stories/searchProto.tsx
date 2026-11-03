@@ -10,7 +10,9 @@
 //    find; tap the up arrow. Taska writes your words out after you stop (nothing shows while you speak), puts them in
 //    the box and searches every project: first by the words (at once), then by what they mean (a few seconds). The
 //    closest come first, each with a line saying why it is there; a row of kinds (All, Items, Inputs, Rules,
-//    Documents) shows only those it found.
+//    Documents) shows only those it found. A result from another project shows that project's tile and name at the
+//    start of its last line, the same on every kind of row; no mark means the project you are in. (Not a section of
+//    their own: a section's head scrolls away, and it would push a close result to the bottom.)
 // 2. Say more. With the results showing, tap the mic in the box. Your words stay in the box and the results stay on
 //    the page while you speak. Tap the up arrow: what you added is put at the end of your words, lit, and it searches
 //    all of them again; the results change in place (faded while it searches, never blank).
@@ -44,8 +46,9 @@ import { codeOf, type ProjectModel } from '../model/project'
 import { NO_FILTERS, parseRoute } from '../model/route'
 import type { Item } from '../model/types'
 import { Hit, ProjTile, SectionHead } from '../ui/bits'
-import { Icon } from '../ui/Icon'
-import { LINK_BTN, PROJECT_TONES } from '../ui/tones'
+import { Icon, StateIcon } from '../ui/Icon'
+import { LINK_BTN, PRI_TEXT, PROJECT_TONES, TYPE_TEXT } from '../ui/tones'
+import { shownStatus } from '../model/items'
 import { Frame } from './Frames'
 import { find, type Step } from './guide'
 import { T } from './fixtures'
@@ -270,33 +273,57 @@ const Foot = ({ keyboard = false, children }: { keyboard?: boolean; children: Re
 
 // ---------------------------------------------------------------- what it found
 
+/** Home's colour, as the sidebar gives it */
+const HOME_TONE = PROJECT_TONES[0]
 const drawWith = (words: string[]): DrawWith => ({ slug: 'shop', openN: null, selected: new Set(), words, desk: false, drafts: new Set(), head: undefined, seen: { since: T }, drag: { n: null, at: null }, heldHeight: () => 64 })
 
-/** A row of what it found: an item or a rule is the list's own row (its why where the list says where the words were
- * found); a document or an input, a row like it. */
+/** Which project a result is in, where its row says what else it is (the start of its last line): another project's
+ * tile and name, as the sidebar draws them; nothing for the project you are in. */
+const Away = () => (
+  <span className="flex items-center gap-1.5 font-semibold text-zinc-700 dark:text-zinc-200">
+    <ProjTile title={HOME.facts.title} tone={HOME_TONE} cls="size-4 rounded text-[9px]" />
+    {HOME.facts.title}
+  </span>
+)
+
+/** A row of what it found. An item or a rule of this project is the list's own row (its why where the list says
+ * where the words were found). Another project's item, a document or an input is a row like it, with its project
+ * (when it is another) at the start of its last line. */
 function FoundRow({ x, marks, byWords, onPick }: { x: Found; marks: string[]; byWords: boolean; onPick(x: Found): void }) {
-  if (!x.code) {
-    const m: ProjectModel = x.home ? HOME : SHOP
-    const one = m.byN.get(x.n) as Item
+  const m: ProjectModel = x.home ? HOME : SHOP
+  const one = x.code ? null : (m.byN.get(x.n) as Item)
+  if (one && !x.home) {
     const w = drawWith(marks)
     const facts = rowFacts(m, one, w)
     return <ItemRow it={one} depth={0} band="" foldable={false} folded={false} facts={byWords ? facts : { ...facts, hitLine: x.why }} look={rowLook(one, w)} on={{ ...listOn, open: () => onPick(x) }} />
   }
+  const meta = [
+    x.home ? <Away key="p" /> : null,
+    one ? (
+      one.type === 'rule' ? null : (
+        <span key="m" className={PRI_TEXT[one.pri]}>
+          {one.pri}
+        </span>
+      )
+    ) : (
+      <span key="m">{x.meta}</span>
+    ),
+  ].filter(Boolean)
   return (
     <article className="border-b border-zinc-100 dark:border-zinc-800/70">
       <button onClick={() => onPick(x)} data-found={x.key} className="flex w-full items-start gap-3 py-2.5 pr-3 pl-4 text-left">
-        <Icon n={x.kind === 'docs' ? 'doc' : 'newinput'} c="mt-px size-5 text-zinc-400 dark:text-zinc-500" />
+        {one ? <StateIcon {...shownStatus(one)} /> : <Icon n={x.kind === 'docs' ? 'doc' : 'newinput'} c="mt-px size-5 text-zinc-400 dark:text-zinc-500" />}
         <span className="min-w-0 flex-1">
           <span className="line-clamp-2 text-[15px] leading-snug font-medium">
-            <span className="mr-1.5 font-mono text-[13px] font-bold text-zinc-500 dark:text-zinc-400">{x.code}</span>
-            <Hit text={x.title ?? ''} words={marks} />
+            <span className={`mr-1.5 font-mono text-[13px] font-bold ${one ? TYPE_TEXT[one.type] : 'text-zinc-500 dark:text-zinc-400'}`}>{one ? codeOf(m, one.n) : x.code}</span>
+            <Hit text={(one ? one.title : x.title) ?? ''} words={marks} />
           </span>
           {byWords ? null : (
             <span className="mt-0.5 line-clamp-1 text-[13px] text-zinc-500 dark:text-zinc-400">
               <Hit text={x.why} words={marks} />
             </span>
           )}
-          <span className="mt-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">{x.meta}</span>
+          <span className="mt-1 flex items-center gap-x-2.5 overflow-hidden text-xs font-medium whitespace-nowrap text-zinc-500 dark:text-zinc-400">{meta}</span>
         </span>
       </button>
     </article>
@@ -322,11 +349,10 @@ const Middle = ({ title, children }: { title: ReactNode; children?: ReactNode })
 
 const SHOWN = 3
 
-/** What it found: All, in groups (the closest few of each kind, then how many more), or one kind in full. */
+/** What it found: All, in groups (the closest few of each kind, then how many more), or one kind in full. Another
+ * project's results are among the rest, in their place by how close they are; each row says its project. */
 function Results({ s, kind, faded, a }: { s: Search; kind: Kind | 'all'; faded: boolean; a: Acts }) {
-  const here = s.found.filter((x) => !x.home)
-  const away = s.found.filter((x) => x.home)
-  const of = (k: Kind) => here.filter((x) => x.kind === k)
+  const of = (k: Kind) => s.found.filter((x) => x.kind === k)
   const kinds = KINDS.filter(([k]) => of(k).length)
   const rows = (list: Found[]) => list.map((x) => <FoundRow key={x.key} x={x} marks={s.marks} byWords={!!s.byWords} onPick={a.pick} />)
   return (
@@ -351,15 +377,6 @@ function Results({ s, kind, faded, a }: { s: Search; kind: Kind | 'all'; faded: 
       ) : (
         <div className="pt-1">{rows(of(kind))}</div>
       )}
-      {away.length && (kind === 'all' || away.some((x) => x.kind === kind)) ? (
-        <section className="pt-3">
-          <div className="flex items-center gap-2 px-4">
-            <ProjTile title="Home" tone={PROJECT_TONES[0]} cls="size-4 rounded text-[9px]" />
-            <SectionHead text="In Home" />
-          </div>
-          {rows(away.filter((x) => kind === 'all' || x.kind === kind))}
-        </section>
-      ) : null}
     </div>
   )
 }
@@ -374,7 +391,7 @@ function SearchPage({ f, a }: { f: Flow; a: Acts }) {
   if (s) body = <Results s={s} kind={f.kind} faded={f.phase === 'searching'} a={a} />
   else if (f.phase === 'searching')
     body = (
-      <Middle title={<Icon n="spinner" c="mx-auto size-7 animate-spin text-zinc-400" sw="2" />}>Searching every project…</Middle>
+      <Middle title={<Icon n="spinner" c="mx-auto size-7 animate-spin text-zinc-400" sw="2" />}>Searching…</Middle>
     )
   else if (f.phase === 'writing') body = null
   else if (f.phase === 'nothing') body = <Middle title="Nothing found">Not in any project, by the words or by what they mean. Say more about it, or clear the words and say it another way.</Middle>
@@ -391,7 +408,7 @@ function SearchPage({ f, a }: { f: Flow; a: Acts }) {
         Trying again: it searches as soon as Taska answers. Your words stay in the box.
       </Middle>
     )
-  else body = <Middle title="Say what to find">In every project: items, inputs, rules and documents. Say it in your own words; it finds by what they mean.</Middle>
+  else body = <Middle title="Say what to find">Items, inputs, rules and documents, in all your projects. Say it in your own words; it finds by what they mean.</Middle>
   return (
     <div className="flex h-full flex-col">
       <header className="flex h-14 shrink-0 items-center gap-1 px-2">
@@ -399,7 +416,6 @@ function SearchPage({ f, a }: { f: Flow; a: Acts }) {
           <Icon n="left" c="size-6" />
         </button>
         <span className="flex-1 truncate text-[19px] font-semibold tracking-tight">Search</span>
-        <span className="pr-3 text-[13px] text-zinc-500 dark:text-zinc-400">Every project</span>
       </header>
       {s ? (
         <div className="shrink-0">

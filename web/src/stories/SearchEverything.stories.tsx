@@ -25,7 +25,7 @@ const Journeys = () => (
     <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">How searching by voice goes</h2>
     <p>While you search, the box at the bottom (the one you always speak into) is the search box: what you said is its words, what it found is the page above. Saying more is what the box always does.</p>
     <ol className="flex list-decimal flex-col gap-2 pl-5">
-      <li><b>Say it.</b> The magnifier opens search and records at once. ↑ stops; your words come in the box once Taska has written them out; it searches every project, by the words, then by what they mean. The closest come first, each with why.</li>
+      <li><b>Say it.</b> The magnifier opens search and records at once. ↑ stops; your words come in the box once Taska has written them out; it searches all your projects, by the words, then by what they mean. The closest come first, each with why. A result with no mark is in this project; one from another project shows that project’s tile and name.</li>
       <li><b>Say more.</b> With the results there, tap the mic. Your words and the results stay while you speak; ↑ adds what you said to the end of your words (lit) and searches all of them again. The results change in place.</li>
       <li><b>Fix what it heard.</b> A word heard two ways shows both in the box: tap the right one. Or tap the words and type; ↑ searches.</li>
       <li><b>Start over.</b> The x beside the words clears them and the results.</li>
