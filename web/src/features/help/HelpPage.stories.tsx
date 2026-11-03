@@ -7,12 +7,11 @@ export default { title: 'Components/Settings, help and parts/Help/Topics' } sati
 type Story = StoryObj
 
 export const Index: Story = { ...help(null), name: 'Opened: the first topic' }
-export const ATopic: Story = { ...help('agents'), name: 'A topic open: How agents get work' }
+export const ATopic: Story = { ...help('connect'), name: 'A topic open: Connect an agent' }
 export const ATopicWithATable: Story = { ...help('items'), name: 'A topic with tables: Items' }
-export const Keys: Story = { ...help('keys'), name: 'Keyboard shortcuts' }
 /** a desktop window too narrow for On this page: the topic and the column only */
 export const Narrower: Story = { ...help('items', '', { deskWidth: 1080 }), name: 'A narrower window: no On this page' }
 /** the phone's Topics: every topic in its group, the search above them */
-export const PhoneTopics: Story = { ...help('agents', '', { menu: true }), name: 'The phone: Topics open' }
+export const PhoneTopics: Story = { ...help('connect', '', { menu: true }), name: 'The phone: Topics open' }
 /** a topic in the column under the pointer, one from the keys (the browser's ring) */
 export const PointerAndKeys: Story = { ...help(null), name: 'The topics: pointer and keys', parameters: { pseudo: { hover: ['nav li:nth-of-type(2) a'], focusVisible: ['nav li:nth-of-type(3) a'] } } }

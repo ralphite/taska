@@ -19,5 +19,5 @@ export function AgentsSheet(_: { req: Extract<SheetRequest, { kind: 'agents' }> 
   }, [app, slug])
   const f = useMemo(() => (m ? agentsFacts(m, guide) : null), [m, guide])
   if (!f) return null
-  return <SheetLayout {...agentsSheet(f, { copy: (t) => app.settings.copy(t), help: () => app.sheets.close(() => app.nav.to(`/p/${encodeURIComponent(slug)}/help/agents`)) })} />
+  return <SheetLayout {...agentsSheet(f, { copy: (t) => app.settings.copy(t), help: () => app.sheets.close(() => app.nav.to(`/p/${encodeURIComponent(slug)}/help/connect`)) })} />
 }

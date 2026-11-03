@@ -8,4 +8,4 @@ type Story = StoryObj
 export const Searching: Story = { ...help(null, 'agent', { menu: true }), name: 'What it finds' }
 export const NothingFound: Story = { ...help(null, 'invoice', { menu: true }), name: 'Nothing found' }
 /** words typed while a topic is open: Search results take the topic's place, the topic stays marked in the column */
-export const SearchingFromATopic: Story = { ...help('agents', 'phone', { menu: true }), name: 'Searching from a topic' }
+export const SearchingFromATopic: Story = { ...help('connect', 'phone', { menu: true }), name: 'Searching from a topic' }

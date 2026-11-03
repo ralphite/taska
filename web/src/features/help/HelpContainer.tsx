@@ -3,11 +3,10 @@
 
 import { useState } from 'react'
 import { useLayout, useServices } from '../../app/context'
-import { keyHelp } from '../../app/actions'
 import type { ProjectRoute } from '../../app/hooks'
 import { Rich } from '../../ui/Markdown'
 import type { InlineWorld } from '../../ui/markdown/inline'
-import { HelpPage, KeyTable } from './HelpPage'
+import { HelpPage } from './HelpPage'
 import { searchHelp, shownTopic } from './topics'
 
 /** Help's words name no item and hold no file. */
@@ -31,7 +30,6 @@ export function HelpContainer({ route, place }: { route: ProjectRoute; place: st
       menu={menu}
       place={place}
       render={(text) => <Rich text={text} world={WORLD} />}
-      extra={topic.key === 'keys' ? <KeyTable groups={keyHelp()} /> : null}
       on={{
         open: (k) => {
           setQ('')

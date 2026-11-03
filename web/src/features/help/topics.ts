@@ -1,5 +1,6 @@
 // Help's topics: what Taska is and how each part of it works, in groups as docs sites have them. Each topic has its
-// address (/help/<key>), its name, a line on what it answers, and its words in Markdown, in "## " sections. Keyboard shortcuts are
+// address (/help/<key>), its name, a line on what it answers, and its words in Markdown, in "## " sections. Help says
+// only what the page does not already show: no list of keys (? shows them), no inner workings of agents. Keyboard shortcuts are
 // drawn from the page's own list of keys, so its words here only lead into them.
 
 export interface HelpTopic {
@@ -52,7 +53,7 @@ The sidebar lists your projects, each with how many things need you. **Documents
 
 ## Write a new input
 
-Press **New input** (or **C**) and write as you would to a person: one thing or many, in any language. Paste or drop pictures and files, or use the paper clip.
+Press **New input** and write as you would to a person: one thing or many, in any language. Paste or drop pictures and files, or use the paper clip.
 
 ## Speak instead
 
@@ -68,6 +69,29 @@ The organizer reads each input and turns it into items: new ones, or words added
 ## Reply on an item
 
 On an item, the box under it replies there: an answer to a question, more detail, or a change of mind. The connected agent sees it at once.`,
+      },
+      {
+        key: 'connect',
+        title: 'Connect an agent',
+        about: 'Let Claude Code or Codex work on this project.',
+        text: `## Open Agents
+
+Click the agent status at the top right. **Agents** shows whether an agent is here, what is waiting for one, and the ways to connect one.
+
+## Two ways to connect
+
+1. **Run a command** once per machine, in the project's folder.
+2. **Tell the agent** the words shown there.
+
+An agent that has worked on the project in the last few days counts as connected.
+
+## When agents start
+
+When you write, Taska tells the connected agent at once. An agent waiting for work spends no tokens.
+
+## What the agent reads
+
+**What the agent reads**, at the foot of Agents, shows the guide it follows, word for word.`,
       },
     ],
   },
@@ -141,7 +165,7 @@ The views over the list are **Needs you**, **Active**, **All**, **Archive**, **O
 
 ## Search
 
-**/** searches titles, conversations and documents. **⌘K** goes straight to an item by its code, or to anything you can do.
+Search looks through titles, conversations and documents. The command palette goes straight to an item by its code, or to anything you can do.
 
 ## Order the queue
 
@@ -149,7 +173,7 @@ On the desktop, drag a row over the top or bottom edge of another row to put it 
 
 ## Act on many at once
 
-⌘-click or ⇧-click rows, then act on all of them together.
+Pick several rows, then act on all of them together.
 
 ## Order your projects
 
@@ -164,10 +188,6 @@ Drag projects in the sidebar into your own order. On the phone, hold one still f
 ## Comment on a document
 
 Select words, or point at a paragraph, to comment on it. The agent answers in the comment's thread.
-
-## What a document can show
-
-Headings, lists, tables, code and Mermaid diagrams.
 
 ## Find documents
 
@@ -195,7 +215,7 @@ An agent may **propose** a rule: it waits for your approval like any proposal. A
         about: 'Undo a change, look through Activity, and restore from Deleted.',
         text: `## Undo
 
-**Undo** (**Z**, or the Undo button that appears after a change) puts back what you just did.
+**Undo**, the button that appears after a change, puts back what you just did.
 
 ## Activity
 
@@ -204,48 +224,6 @@ An agent may **propose** a rule: it waits for your approval like any proposal. A
 ## Deleted
 
 **Deleted** keeps the inputs, items and documents you deleted. Restore them from there.`,
-      },
-    ],
-  },
-  {
-    name: 'Agents',
-    topics: [
-      {
-        key: 'connect',
-        title: 'Connect an agent',
-        about: 'Let Claude Code or Codex work on this project.',
-        text: `## Open Agents
-
-Click the agent status at the top right. **Agents** shows whether an agent is here, what is waiting for one, and the ways to connect one.
-
-## Two ways to connect
-
-1. **Run a command** once per machine, in the project's folder.
-2. **Tell the agent** the words shown there.
-
-An agent that has worked on the project in the last few days counts as connected.
-
-## What the agent reads
-
-**What the agent reads**, at the foot of Agents, shows the guide it follows, word for word.`,
-      },
-      {
-        key: 'agents',
-        title: 'How agents get work',
-        about: 'Agents are told at once, and spend no tokens while they wait.',
-        text: `When you write, Taska tells the connected agent at once, and waiting costs no tokens.
-
-## Codex
-
-Taska puts a notice in the session's own queue. An idle session starts at once; a busy one after its current turn.
-
-## Claude Code
-
-Before ending a turn, the session leaves one request waiting in the background. Taska answers it only when there is work, and the agent goes on.
-
-## No tokens while waiting
-
-No model runs until there is work. Agents end their turn when nothing is left, and never use timers, heartbeats, scheduled tasks or polling. An agent found doing so is stopped and reported.`,
       },
     ],
   },
@@ -279,12 +257,6 @@ No model runs until there is work. Agents end their turn when nothing is left, a
 ## On the phone
 
 Notifications work once Taska is on the Home Screen. Turn them on from Taska opened there.`,
-      },
-      {
-        key: 'keys',
-        title: 'Keyboard shortcuts',
-        about: 'Almost everything has a key on the desktop.',
-        text: 'Press **?** anywhere to see every key over the page.',
       },
     ],
   },

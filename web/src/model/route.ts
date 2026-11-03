@@ -1,6 +1,6 @@
 // The page's addresses, read and written: / is every project; /p/<project>/ is its Items; /inputs /archive /rules a
 // tab; /B03 an item; /D4 a document; /new the New input page; /docs /log /deleted the lists beside the items (on the
-// desktop); /settings and its sections (/projects /phone ...); /help and its topics (/help/agents ...). The list's search and filters ride along as
+// desktop); /settings and its sections (/projects /phone ...); /help and its topics (/help/connect ...). The list's search and filters ride along as
 // ?q= &type= &when= &status= &pri= &sort=. Addresses are part of the product: links and bookmarks depend on them.
 
 import type { Tab } from './words'

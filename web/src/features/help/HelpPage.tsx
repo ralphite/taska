@@ -19,7 +19,7 @@ export interface HelpEvents {
   menu(open: boolean): void
 }
 
-export function HelpPage({ desk, topic, q, found, back, menu, render, extra, place, on }: {
+export function HelpPage({ desk, topic, q, found, back, menu, render, place, on }: {
   desk: boolean
   topic: HelpTopic
   q: string
@@ -31,8 +31,6 @@ export function HelpPage({ desk, topic, q, found, back, menu, render, extra, pla
   menu: boolean
   /** Markdown, drawn */
   render(text: string): ReactNode
-  /** drawn after the topic's words (the keys' topic: the page's keys) */
-  extra: ReactNode
   place: string
   on: HelpEvents
 }) {
@@ -174,7 +172,6 @@ export function HelpPage({ desk, topic, q, found, back, menu, render, extra, pla
           <div className="mt-3">{render(s.text)}</div>
         </section>
       ))}
-      {extra ? <div className="mt-8">{extra}</div> : null}
       {pager}
     </article>
   )
@@ -256,26 +253,5 @@ export function HelpPage({ desk, topic, q, found, back, menu, render, extra, pla
         </div>
       </div>
     </section>
-  )
-}
-
-/** The page's keys, as the keys sheet has them, in a topic. */
-export function KeyTable({ groups }: { groups: [string, [string, string][]][] }) {
-  return (
-    <div className="flex flex-col gap-6">
-      {groups.map(([name, rows]) => (
-        <section key={name}>
-          <h2 className="pb-2 text-base font-semibold">{name}</h2>
-          <dl className="divide-y divide-zinc-100 rounded-xl ring-1 ring-zinc-200 dark:divide-zinc-800 dark:ring-zinc-800">
-            {rows.map(([k, t]) => (
-              <div key={k + t} className="flex items-baseline gap-4 px-4 py-2 text-sm">
-                <dt className="w-40 shrink-0 font-mono text-[13px] text-zinc-700 dark:text-zinc-300">{k}</dt>
-                <dd className="text-zinc-600 dark:text-zinc-400">{t}</dd>
-              </div>
-            ))}
-          </dl>
-        </section>
-      ))}
-    </div>
   )
 }
