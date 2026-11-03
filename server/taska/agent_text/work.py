@@ -1,9 +1,9 @@
 """/next: what an agent should do now. New inputs first, then a document's unanswered comments, then the items the
-user replied on while an agent is in the middle of them (in progress, or its question or block answered), then what
-another session wrote for it, then the queue (doing first, then by priority, oldest first; subitems before their
-parent), skipping what another session holds. Any other item the user replied on (open, proposed) waits its turn by
-priority (B606, Yadong's choice): it comes before the queue's next item only when that one is not in progress and is
-no more urgent."""
+user replied on while an agent is working on them (in progress), then what another session wrote for it, then the
+queue (doing first, then by priority, oldest first; subitems before their parent), skipping what another session
+holds. Any other item the user replied on (open, proposed, a question answered) waits its turn by priority (B606,
+Yadong's choice): it comes before the queue's next item only when that one is not in progress and is no more
+urgent."""
 
 from __future__ import annotations
 

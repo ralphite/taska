@@ -1,5 +1,6 @@
-"""B606 (Yadong's choice, #8331): /next puts an item Yadong replied on first while an agent is in the middle of it;
-on work not begun his reply waits its turn by priority, so a P2 he wrote on does not jump ahead of a P0."""
+"""B606 (Yadong's choice, #8331): /next puts an item Yadong replied on first while an agent is working on it (in
+progress); otherwise his reply waits its turn by priority, so a P2 he wrote on does not jump ahead of a P0. In progress
+means an agent is working on it now (r942): an agent that asks or is blocked leaves it, back to open."""
 
 from __future__ import annotations
 
@@ -77,10 +78,13 @@ class NextOrder(unittest.TestCase):
         self.page({"op": "say", "ref": low, "text": "Darker, please."})
         self.assertIn(f"resume {low}: the user replied", self.next())  # begun: his reply comes before the new P0
         self.assertNotIn(f"next {other}", self.next())
-        self.do(f"{low} progress Done the grey.\n{other} ask Keep the old export as well?\n")
+        self.do(f"{other} doing\n{other} ask Keep the old export as well?\n")
+        self.assertIn("open", self.status(other))  # asking: no one is working on it now
         self.page({"op": "say", "ref": other, "text": "No."})
         self.page({"op": "say", "ref": low, "text": "Thanks."})
-        self.assertIn(f"resume {other}: the user replied", self.next())  # an answered question goes on first too (older reply first)
+        self.assertIn(f"resume {low}: the user replied", self.next())  # in progress: first, though answered later
+        self.do(f"{low} done\n")
+        self.assertIn(f"resume {other}: the user replied", self.next())  # the answered P0 by its priority
 
 
 if __name__ == "__main__":
