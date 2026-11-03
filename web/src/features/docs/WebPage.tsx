@@ -58,7 +58,7 @@ function inside(p: XY, a: XY, b: XY, c: XY) {
   return !((d1 < 0 || d2 < 0 || d3 < 0) && (d1 > 0 || d2 > 0 || d3 > 0))
 }
 
-export function WebPage({ title, html, threads, held, rec = false, open, desk, inspect, renderThread, sayRow, on }: {
+export function WebPage({ title, html, threads, held, rec = false, open, desk, inspect, renderThread, on }: {
   title: string
   html: string
   threads: PageThread[]
@@ -73,8 +73,6 @@ export function WebPage({ title, html, threads, held, rec = false, open, desk, i
   inspect: boolean
   /** a thread's comments (`rail`: a card over the page) */
   renderThread(tk: string, rail: boolean): ReactNode
-  /** the phone's row to speak or type, under the part picked */
-  sayRow?: ReactNode
   on: WebPageEvents
 }) {
   const frame = useRef<HTMLIFrameElement>(null)
@@ -347,12 +345,6 @@ export function WebPage({ title, html, threads, held, rec = false, open, desk, i
           style={{ top: rects[opened.key].y + rects[opened.key].h + 8, ...(desk ? { left: Math.max(0, rects[opened.key].x + rects[opened.key].w - 320) } : {}) }}
         >
           {renderThread(opened.tk, true)}
-        </div>
-      ) : null}
-      {!desk && held && rects[held.key] ? (
-        // on the phone a tap picks the part; under it, the same speak and type buttons as under a paragraph
-        <div className="absolute inset-x-0 z-10 mx-1 rounded-xl bg-white p-1.5 pr-3 shadow-sm ring-1 ring-zinc-900/10 dark:bg-zinc-900 dark:ring-white/10" style={{ top: rects[held.key].y + rects[held.key].h + 10 }}>
-          {sayRow}
         </div>
       ) : null}
     </div>

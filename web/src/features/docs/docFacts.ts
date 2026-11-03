@@ -14,7 +14,7 @@ import type { NotSent } from '../../model/voiceComments'
 
 export type DocLook = Pick<DocViewState, 'threads' | 'sel' | 'quote' | 'reply' | 'circle' | 'typing'>
 
-export function factsOf(m: ProjectModel, d: Doc, v: DocLook, seen: Readonly<Record<string, string>>, desk: boolean, asked: Readonly<Record<string, number>>, speaking: { key: string | null; bar: boolean } | null, ticks: TickState, notSent: readonly NotSent[] = []): DocFacts {
+export function factsOf(m: ProjectModel, d: Doc, v: DocLook, seen: Readonly<Record<string, string>>, desk: boolean, asked: Readonly<Record<string, number>>, speaking: { key: string | null; bar: boolean; quote?: string } | null, ticks: TickState, notSent: readonly NotSent[] = []): DocFacts {
   const shown = (t: ReturnType<typeof threadsOf>[number], key: string): ShownThread => ({ t, isNew: threadNew(seen, d, key, t.comments), done: resolved(d, t.tk) })
   const isOpen = (tk: string, key: string) => v.threads.has(tk) || v.threads.has(key)
   const tks = blockKeys(d)
@@ -22,6 +22,7 @@ export function factsOf(m: ProjectModel, d: Doc, v: DocLook, seen: Readonly<Reco
   const isTitled = titled(d)
   const it = m.byN.get(liveN(m, d.n))
   const skip = skipped(d, it)
+  const web = d.fmt === 'html'
   const rows = d.blocks.map((b, i) => {
     const threads = threadsOf(b.comments)
     // voice comments on it not sent yet: a count of their own, opening their Not sent cards
@@ -46,7 +47,7 @@ export function factsOf(m: ProjectModel, d: Doc, v: DocLook, seen: Readonly<Reco
       quote: v.quote?.key === b.key ? v.quote.text : null,
       skipped: skip,
       // recording: the row stays under the paragraph its own mic speaks about; else under the one picked
-      say: !desk && !v.typing && (speaking ? !speaking.bar && speaking.key === b.key : v.sel.has(b.key) || v.quote?.key === b.key),
+      say: !web && !desk && !v.typing && (speaking ? !speaking.bar && speaking.key === b.key : v.sel.has(b.key) || v.quote?.key === b.key),
       speaking: speaking?.key === b.key,
     }
   })
@@ -69,6 +70,18 @@ export function factsOf(m: ProjectModel, d: Doc, v: DocLook, seen: Readonly<Reco
     asking: Object.keys(asked).find((k) => k.startsWith(`unfile ${d.d} `))?.slice(`unfile ${d.d} `.length) ?? null,
     wholeButton: !(v.typing && !v.sel.size && !v.quote && !v.reply),
     recording: speaking != null,
+    // a web page's part, for the same button (its parts are not paragraphs): the one its mic records about, else the
+    // one picked
+    sayPart:
+      web && !desk && !v.typing
+        ? speaking
+          ? !speaking.bar && speaking.key?.startsWith('h:')
+            ? { key: speaking.key, quote: speaking.quote ?? '' }
+            : null
+          : v.quote?.key.startsWith('h:')
+            ? { key: v.quote.key, quote: v.quote.text }
+            : null
+        : null,
   }
 }
 

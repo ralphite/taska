@@ -77,6 +77,8 @@ export interface DocFacts {
   /** the phone shows Comment on the whole document */
   wholeButton: boolean
   recording: boolean
+  /** the phone's: the part of a web page its voice button speaks about */
+  sayPart: { key: string; quote: string } | null
 }
 
 export interface DocEvents extends ThreadEvents {
@@ -382,10 +384,17 @@ export function DocView({ facts, env, on, lasso, page, recTime, aim = null, onAi
         {desk
           ? null
           : (() => {
-              // the phone's one voice button, floating while a part is picked or while it records (B643)
+              // the phone's one voice button, floating while a part is picked or while it records (B643): a paragraph
+              // or a part of a web page alike
               const picked = rows.find((r) => r.say)
-              return picked || facts.recording ? (
-                <SayRow rec={facts.recording} time={recTime} part={picked ? { key: picked.b.key, quote: picked.quote ?? '' } : undefined} on={{ say: () => (picked ? on.say(picked.b.key, picked.quote) : on.say('doc', null)), cancel: on.sayCancel }} />
+              const part = facts.sayPart
+              return part || picked || facts.recording ? (
+                <SayRow
+                  rec={facts.recording}
+                  time={recTime}
+                  part={part ?? (picked ? { key: picked.b.key, quote: picked.quote ?? '' } : undefined)}
+                  on={{ say: () => (part ? on.say(part.key, part.quote) : picked ? on.say(picked.b.key, picked.quote) : on.say('doc', null)), cancel: on.sayCancel }}
+                />
               ) : null
             })()}
         {desk ? null : (

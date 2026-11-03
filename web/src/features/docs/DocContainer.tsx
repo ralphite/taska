@@ -20,7 +20,7 @@ import { useItemWorld } from '../../app/hooks'
 import { PaneFrame } from '../../ui/PaneFrame'
 import { DocPaneActs, DocPaneHead, DocPaneNav } from './DocPane'
 import { DocEditContainer } from './DocEditContainer'
-import { DocView, PHONE_DOC_LOOK, SayRow, type DocEvents } from './DocView'
+import { DocView, PHONE_DOC_LOOK, type DocEvents } from './DocView'
 import type { DocEnv } from './Thread'
 import { docDraft } from '../../model/draftTarget'
 import { clock } from '../../model/time'
@@ -48,8 +48,8 @@ function useDoc(slug: string, dn: number) {
   const seen = app.seen.of(slug)
   // the paragraph whose own mic records a comment about it
   // (read as one word, so the document is not drawn again at every moment of sound)
-  const said = useStoreValue(stores.recording, (s) => (s.rec ? JSON.stringify({ key: s.rec.about?.d === dn ? s.rec.about.key : null, bar: !!s.rec.about?.bar }) : ''))
-  const speaking = useMemo(() => (said ? (JSON.parse(said) as { key: string | null; bar: boolean }) : null), [said])
+  const said = useStoreValue(stores.recording, (s) => (s.rec ? JSON.stringify({ key: s.rec.about?.d === dn ? s.rec.about.key : null, bar: !!s.rec.about?.bar, quote: s.rec.about?.quote ?? '' }) : ''))
+  const speaking = useMemo(() => (said ? (JSON.parse(said) as { key: string | null; bar: boolean; quote: string }) : null), [said])
   // voice comments in the box not sent yet show where they will go
   const draft = useStoreValue(stores.drafts, (s) => s.bySlug[slug]?.[docDraft(dn)] ?? '')
   const draftFiles = useStoreValue(stores.box, (s) => s.files[docDraft(dn)])
@@ -84,7 +84,8 @@ function useDoc(slug: string, dn: number) {
     toggle: (tk) => docs.toggle(tk),
     away: (tk) => docs.away(tk),
     pick: (key, quote, by) => docs.pick(key, quote, by),
-    say: (key, quote) => void app.docVoice.say(slug, dn, key, quote ?? d?.blocks.find((b) => b.key === key)?.text ?? ''),
+    // a part of a web page posts when stopped on the phone, as its own mic did
+    say: (key, quote) => void app.docVoice.say(slug, dn, key, quote ?? d?.blocks.find((b) => b.key === key)?.text ?? '', key.startsWith('h:')),
     sayCancel: () => void app.voice.cancel(),
     type: () => docs.type(),
     moveDoc: (from?: HTMLElement) => (desk && from ? app.sheets.openFrom(from, { kind: 'doc-move', d: dn }, { focus: false }) : app.sheets.open({ kind: 'doc-move', d: dn }, { focus: false })),
@@ -128,7 +129,6 @@ function WebPageContainer({ slug, d, v, seen, env, on, waiting }: { slug: string
       desk={env.desk}
       inspect={v.inspect}
       renderThread={(tk, rail) => <WebThread card={w.cards[tk]} rail={rail} replying={v.reply === tk} asking={w.asking} env={env} on={on} />}
-      sayRow={<SayRow rec={rec} time={<RecTime />} part={held ? { key: held.key, quote: held.text } : undefined} on={{ say: () => held && void app.docVoice.say(slug, d.d, held.key, held.text, true), cancel: () => void app.voice.cancel()}} />}
       on={{
         pick: (p) => {
           stores.docView.getState().pick({ quote: p, sel: new Set(), reply: null })

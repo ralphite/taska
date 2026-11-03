@@ -401,7 +401,7 @@ test('r799 r685: a spoken comment is on its part at once; on the phone the stop 
   await expect
     .poll(() => countsOn(page, '#r3').then((c) => c.filter((x) => !x.draft).length), { timeout: 2500 })
     .toBe(1)
-  await expect(box(page)).toHaveValue('')
+  if (isDesk(page)) await expect(box(page)).toHaveValue('') // the phone has no box over a document (B643)
   await expect
     .poll(async () => (await p.read('D1')).includes('part of the page: Write CSV'), { timeout: 60000 })
     .toBe(true)

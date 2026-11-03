@@ -5,7 +5,7 @@
 import type { ReactNode } from 'react'
 import { DocEdit } from '../features/docs/DocEdit'
 import { DocPaneActs, DocPaneHead, DocPaneNav } from '../features/docs/DocPane'
-import { DocView, PHONE_DOC_LOOK, SayRow, type DocEvents } from '../features/docs/DocView'
+import { DocView, PHONE_DOC_LOOK, type DocEvents } from '../features/docs/DocView'
 import { Lasso } from '../features/docs/Lasso'
 import { WebThread, type DocEnv } from '../features/docs/Thread'
 import { WebPage } from '../features/docs/WebPage'
@@ -65,7 +65,8 @@ export function docAt(d: Doc, desk: boolean, h: DocHere = {}) {
   const seen = h.seen ?? { since: T }
   const asked = h.asked ?? {}
   const env = envOf(m, desk)
-  const facts = factsOf(m, d, v, seen, desk, asked, h.speaking ?? null, ticks, h.notSent ?? [])
+  // a web page's part spoken about records as a paragraph does: the phone's one voice button is Stop
+  const facts = factsOf(m, d, v, seen, desk, asked, h.speaking ?? (h.spoken ? { key: h.spoken.key, bar: false, quote: h.spoken.text } : null), ticks, h.notSent ?? [])
   const web = d.fmt === 'html'
   let page: ReactNode = null
   if (web) {
@@ -81,7 +82,6 @@ export function docAt(d: Doc, desk: boolean, h: DocHere = {}) {
         desk={desk}
         inspect={!!h.inspect}
         renderThread={(tk, rail) => <WebThread card={w.cards[tk]} rail={rail} replying={v.reply === tk} asking={w.asking} env={env} on={docOn} />}
-        sayRow={<SayRow rec={!!h.spoken} time={RECORDED} part={w.held ? { key: w.held.key, quote: w.held.text } : undefined} on={{ say: no, cancel: no }} />}
         on={{ pick: no, say: no, esc: no, toggle: no, away: no }}
       />
     )
