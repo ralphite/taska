@@ -20,6 +20,9 @@ from .settings import SearchByMeaning
 
 MOST_LINES = 2500  # the short list stops here, the project you are in first
 MOST = 30
+# The page waits 60 s for an answer (api/taska.ts): two tries of at most this long, and a pause, fit well inside it.
+# A slow model then falls back to the words at once instead of the page giving up and asking again.
+ASK_SECONDS = 22
 
 INSTRUCTIONS = """You find things in a task tracker by what the user means. The user said (or typed) what to find, \
 often by voice, maybe with words misheard or in another language. Each line of the list is one thing: an item, a \
@@ -63,7 +66,7 @@ class Meaning:
         try:
             answer = self._ask("search", INSTRUCTIONS, [{"text": f"The user said: {said}\n\n" + "\n".join(text)}],
                                answer_in=("lines", "the line numbers, closest first, separated by commas"),
-                               timeout=30)
+                               timeout=ASK_SECONDS, attempts=2)
         except Refused as ex:
             log.warning(f"search by meaning failed: {ex}")
             return None

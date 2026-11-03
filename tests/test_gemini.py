@@ -57,6 +57,14 @@ class GeminiTest(unittest.TestCase):
         self.assertNotIn("thinkingConfig", fake.sent[1][1]["generationConfig"])
         self.assertEqual(waits, [])
 
+    def test_a_caller_can_limit_the_attempts(self):
+        fake = Fake(Failed(None, "timed out"), Failed(None, "timed out"), REPLY)
+        g, waits = client(fake)
+        with self.assertRaises(Refused):
+            g.ask("search", Question("", []), attempts=2)
+        self.assertEqual(len(fake.sent), 2)
+        self.assertEqual(waits, [2])
+
     def test_busy_then_answers(self):
         g, waits = client(Fake(Failed(503, "busy"), Failed(None, "reset"), REPLY))
         self.assertEqual(g.ask("voice", Question("", [])), "Hello")

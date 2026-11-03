@@ -124,12 +124,13 @@ class Gemini:
     pause: Callable[[float], None] = time.sleep
     clock: Callable[[], float] = field(default=time.monotonic)
 
-    def ask(self, who: str, q: Question, timeout: float = 120, model: Optional[str] = None) -> str:
-        return q.answer(self.generate(who, model or self.model, q.body(), timeout))
+    def ask(self, who: str, q: Question, timeout: float = 120, model: Optional[str] = None,
+            attempts: int = ATTEMPTS) -> str:
+        return q.answer(self.generate(who, model or self.model, q.body(), timeout, attempts))
 
-    def generate(self, who: str, model: str, body: Json, timeout: float = 120) -> Json:
-        """One question -> the reply, after as many attempts as it takes (at most ATTEMPTS)."""
-        for attempt in range(ATTEMPTS):
+    def generate(self, who: str, model: str, body: Json, timeout: float = 120, attempts: int = ATTEMPTS) -> Json:
+        """One question -> the reply, after as many attempts as it takes (at most `attempts`)."""
+        for attempt in range(attempts):
             t0 = self.clock()
             try:
                 reply = self.post(ENDPOINT.format(model=model), json.dumps(body).encode(),
@@ -137,7 +138,7 @@ class Gemini:
             except Failed as fail:
                 _logged(who, model, body, int((self.clock() - t0) * 1000), status=fail.status,
                         error=fail.detail[:4000] if fail.status else fail.detail)
-                wait = self._again(fail, body, attempt)
+                wait = self._again(fail, body, attempt, attempts)
                 if wait is None:
                     raise Refused(f"Gemini HTTP {fail.status}: {first_line(fail.detail, 160)}" if fail.status
                                   else f"Gemini unreachable: {fail.detail}")
@@ -149,14 +150,14 @@ class Gemini:
         raise Refused("Gemini failed")
 
     @staticmethod
-    def _again(fail: Failed, body: Json, attempt: int) -> Optional[float]:
+    def _again(fail: Failed, body: Json, attempt: int, attempts: int = ATTEMPTS) -> Optional[float]:
         """How long to wait before the next attempt (0: at once); None: no more attempts. A model without a
         thinking switch is asked again at once without it; busy or cut off, after a pause."""
         config = body.get("generationConfig") or {}
         if fail.status == 400 and "hinking" in fail.detail and "thinkingConfig" in config:
             del config["thinkingConfig"]
             return 0
-        if attempt >= ATTEMPTS - 1:
+        if attempt >= attempts - 1:
             return None
         if fail.status is None:
             return 2
@@ -167,6 +168,6 @@ client = Gemini()
 
 
 def ask(who: str, system: str, parts: List[Json], think: int = 0, temperature: float = 0.2, timeout: float = 120,
-        answer_in: Optional[Tuple[str, str]] = None, model: Optional[str] = None) -> str:
+        answer_in: Optional[Tuple[str, str]] = None, model: Optional[str] = None, attempts: int = ATTEMPTS) -> str:
     """Ask with the server's one client (the organizer's and voice's way in)."""
-    return client.ask(who, Question(system, parts, think, temperature, answer_in), timeout, model)
+    return client.ask(who, Question(system, parts, think, temperature, answer_in), timeout, model, attempts)

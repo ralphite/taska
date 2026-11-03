@@ -120,7 +120,7 @@ export class TaskaApi {
   /** The phone's search (F479): what the words find in every project, by meaning and by the words; `here`: the
    * project you are in. */
   find(q: string, here: string): Promise<FindAnswer> {
-    return this.http.json<FindAnswer>(`/api/find?q=${encodeURIComponent(q)}&here=${encodeURIComponent(here)}`, { timeout: 45000 })
+    return this.http.json<FindAnswer>(`/api/find?q=${encodeURIComponent(q)}&here=${encodeURIComponent(here)}`, { timeout: 60000 })
   }
 
   search(q: string, skip: string): Promise<SearchHit[]> {
