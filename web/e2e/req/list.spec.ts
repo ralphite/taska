@@ -30,14 +30,15 @@ test('r83 r133: a row opens wherever it is clicked, not only on its title', asyn
   await expect(page).toHaveURL(/\/T0*4(\?|$)/)
 })
 
-test('r355 r397 r399 r663: the views read Needs you, Active, All, Archive, Queue, Later, Finished; a project opens on Active', async ({
+test("r355 r397 r399 r663 D110: the views read Needs you, Active, All, Archive, Open, Later, Done, Won't do; a project opens on Active", async ({
   page,
   request,
 }) => {
   const p = await project(request, LOOP)
   await open(page, p)
   const names = (await views(page).allInnerTexts()).map((t) => t.replace(/\d+/g, '').trim())
-  expect(names).toEqual(['Needs you', 'Active', 'All', 'Archive', 'Queue', 'Later', 'Finished'])
+  // D110: Open, Done and Won't do in place of Queue and Finished
+  expect(names).toEqual(['Needs you', 'Active', 'All', 'Archive', 'Open', 'Later', 'Done', "Won't do"])
   await expect(view(page, 'Active')).toHaveAttribute('aria-pressed', 'true')
 })
 
