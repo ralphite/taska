@@ -13,15 +13,16 @@ const SMALL_BTN =
   'flex h-7 shrink-0 items-center gap-1 rounded-lg px-2 text-[13px] font-medium text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200'
 
 /** One step of the list: a line with its code, where it stands and its day and time, then its words. On the
- * desktop its buttons show over the right of that line under the pointer, taking no room otherwise. */
-export function SaidStep({ head, acts, body, foot, time }: { head: ReactNode; acts?: ReactNode; body: ReactNode; foot?: ReactNode; time?: string }) {
+ * desktop its buttons show over the right of that line under the pointer, taking no room otherwise; `actsShown`:
+ * always, as for what Taska refused (it needs you). */
+export function SaidStep({ head, acts, body, foot, time, actsShown = false }: { head: ReactNode; acts?: ReactNode; body: ReactNode; foot?: ReactNode; time?: string; actsShown?: boolean }) {
   return (
     <li className="group/row relative -mx-3 rounded-lg border-b border-zinc-100 px-3 py-3 last:border-b-0 hover:bg-zinc-50 dark:border-zinc-800/70 dark:hover:bg-zinc-900/60">
       <div className="flex min-h-6 min-w-0 items-center gap-1.5 text-[13px] text-zinc-500 dark:text-zinc-400">
         {head}
         {time ? <span className="ml-auto shrink-0 tabular-nums">{time}</span> : null}
         {acts ? (
-          <span className="flex shrink-0 items-center lg:invisible lg:absolute lg:top-2.5 lg:right-2 lg:rounded-lg lg:bg-zinc-50 lg:group-focus-within/row:visible lg:group-hover/row:visible dark:lg:bg-zinc-900">
+          <span className={`flex shrink-0 items-center ${actsShown ? '' : 'lg:invisible lg:absolute lg:top-2.5 lg:right-2 lg:rounded-lg lg:bg-zinc-50 lg:group-focus-within/row:visible lg:group-hover/row:visible dark:lg:bg-zinc-900'}`}>
             {acts}
           </span>
         ) : null}
@@ -166,6 +167,7 @@ function OutboxStep({ q, on }: { q: SaidOutgoing; on: SaidEvents }) {
   const bad = q.failed && !q.net
   return (
     <SaidStep
+      actsShown={bad}
       head={
         <>
           <span>Just now</span>

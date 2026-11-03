@@ -279,6 +279,8 @@ export function DocView({ facts, env, on, popover, lasso, page, recTime, aim = n
             const lv = (r.b.text.match(/^#+/) || ['#'])[0].length
             // the phone's count has the comments not sent yet too (the desktop's are BlockActs')
             const n = r.b.comments.length + r.drafts.length
+            // every thread on it resolved: a quiet mark, as the desktop's
+            const done = r.counts.length > 0 && r.counts.every((c) => c.done)
             return (
               <section
                 key={r.tk}
@@ -301,9 +303,9 @@ export function DocView({ facts, env, on, popover, lasso, page, recTime, aim = n
                     <button
                       onClick={() => on.toggle(r.b.key)}
                       aria-label={plural(n, 'comment')}
-                      className={`${r.b.kind === 'heading' ? `absolute right-0 lg:relative lg:top-0 ${r.title ? 'top-0.5' : lv <= 2 ? 'top-2.5' : 'top-1'}` : 'relative self-end'} flex h-6 shrink-0 items-center gap-1 rounded-md bg-amber-100 px-1.5 text-xs font-medium text-amber-900 after:absolute after:-inset-2.5 hover:bg-amber-200 lg:mt-0.5 lg:hidden lg:self-start dark:bg-amber-900/60 dark:text-amber-100 dark:hover:bg-amber-900`}
+                      className={`${r.b.kind === 'heading' ? `absolute right-0 lg:relative lg:top-0 ${r.title ? 'top-0.5' : lv <= 2 ? 'top-2.5' : 'top-1'}` : 'relative self-end'} flex h-6 shrink-0 items-center gap-1 rounded-md px-1.5 text-xs font-medium after:absolute after:-inset-2.5 lg:mt-0.5 lg:hidden lg:self-start ${done ? 'bg-zinc-100 text-zinc-500 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700' : 'bg-amber-100 text-amber-900 hover:bg-amber-200 dark:bg-amber-900/60 dark:text-amber-100 dark:hover:bg-amber-900'}`}
                     >
-                      <Icon n="comment" c="size-3.5" />
+                      <Icon n={done ? 'check' : 'comment'} c="size-3.5" />
                       {n}
                       {r.isNew ? <NewDot /> : null}
                     </button>

@@ -238,13 +238,13 @@ export function PhoneBody({ link, keyText, asking, desk, on }: { link: string; k
       </Part>
       <Setting
         title="New key"
-        about="A new key signs out all other devices."
+        about={asking ? 'A new key signs out all other devices: each needs the new link or key.' : 'A new key signs out all other devices.'}
         control={
           <button
             onClick={on.newKey}
             className="inline-flex h-11 shrink-0 items-center justify-center rounded-xl border border-zinc-200 bg-white px-4 text-[15px] font-semibold text-red-600 hover:bg-red-50 dark:border-zinc-700 dark:bg-zinc-800 dark:text-red-400 dark:hover:bg-red-400/10"
           >
-            {asking ? `${desk ? 'Click' : 'Tap'} again: other devices will need the new link` : 'New key'}
+            {asking ? `${desk ? 'Click' : 'Tap'} again to confirm` : 'New key'}
           </button>
         }
       />

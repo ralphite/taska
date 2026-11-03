@@ -15,8 +15,8 @@ export const Part = ({ title, about, children, id }: { title: ReactNode; about?:
 )
 
 export const Setting = ({ title, about, control }: { title: ReactNode; about: ReactNode; control: ReactNode }) => (
-  <section className="flex items-center gap-6 border-t border-zinc-200 py-6 dark:border-zinc-800">
-    <div className="min-w-0 flex-1">
+  <section className="flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-zinc-200 py-6 dark:border-zinc-800">
+    <div className="min-w-0 flex-1 basis-48">
       <h2 className="text-[15px] font-semibold">{title}</h2>
       <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">{about}</p>
     </div>

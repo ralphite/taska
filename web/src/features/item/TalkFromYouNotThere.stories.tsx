@@ -6,5 +6,5 @@ export default { title: 'Components/Conversation/Message/From you/Not there yet'
 type Story = StoryObj
 
 export const UploadingAPicture = at([mine()], out('Uploading…'))
-export const WaitingForTaska = at([mine()], out('Waiting for Taska…', true))
-export const NotSentRetryEdit: Story = { ...at([mine()], out('Not sent', true)), name: 'Not sent: Retry, Edit' }
+export const WaitingForTaska = at([mine()], out('Waiting for Taska…'))
+export const NotSentRetryEdit: Story = { ...at([mine()], out('Not sent')), name: 'Not sent: Retry, Edit' }
