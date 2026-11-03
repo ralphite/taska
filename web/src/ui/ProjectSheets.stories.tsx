@@ -8,7 +8,7 @@ import { no, opened } from '../stories/menuFixtures'
 import { itemMoveProjectSheet, moveInputSheet } from './ProjectSheets'
 import { PROJECT_TONES } from './tones'
 
-export default { title: 'Components/Menus and sheets/Move and pick' } satisfies Meta
+export default { title: 'Components/Around the page/Menus and sheets/Move and pick' } satisfies Meta
 type Story = StoryObj
 
 const OTHERS = [

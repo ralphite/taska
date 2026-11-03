@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { DeletedList, DeletedView } from './SideLists'
 import { docGone, gone, inputGone, no, page } from '../../stories/sideListsFixtures'
 
-export default { title: 'Components/Side lists/Deleted' } satisfies Meta
+export default { title: 'Components/Around the page/Side lists/Deleted' } satisfies Meta
 type Story = StoryObj
 
 /** Everything deleted, the latest first: an item, what you said, a document. */

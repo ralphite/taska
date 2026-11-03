@@ -5,7 +5,7 @@ import { Frames } from '../../stories/Frames'
 import { AT_POINTER, no, opened, underList } from '../../stories/menuFixtures'
 import { viewMenuSheet } from './ViewMenu'
 
-export default { title: 'Components/Menus and sheets/Other menus' } satisfies Meta
+export default { title: 'Components/Around the page/Menus and sheets/Other menus' } satisfies Meta
 type Story = StoryObj
 
 export const ViewMenu: Story = {

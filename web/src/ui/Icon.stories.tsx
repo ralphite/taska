@@ -3,7 +3,7 @@ import { Frames } from '../stories/Frames'
 import { Icon } from './Icon'
 import { ICON, type IconName } from './icon-paths'
 
-const meta: Meta = { title: 'Components/Icons and marks/Icons' }
+const meta: Meta = { title: 'Components/Settings, help and parts/Icons and marks/Icons' }
 export default meta
 type Story = StoryObj
 

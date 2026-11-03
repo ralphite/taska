@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { press, typeInto } from '../../stories/Frames'
 import { field, one, palette } from '../../stories/findersFixtures'
 
-export default { title: 'Components/Menus and sheets/Sheets/Command palette' } satisfies Meta
+export default { title: 'Components/Around the page/Menus and sheets/Sheets/Command palette' } satisfies Meta
 type Story = StoryObj
 
 /** Cmd-K with no item open: the page's commands. */

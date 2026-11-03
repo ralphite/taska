@@ -5,7 +5,7 @@ import { ProjTile } from '../ui/bits'
 import { PROJECT_TONES } from '../ui/tones'
 import { Frames, States } from './Frames'
 
-export default { title: 'Components/Icons and marks/Project tile' } satisfies Meta
+export default { title: 'Components/Settings, help and parts/Icons and marks/Project tile' } satisfies Meta
 type Story = StoryObj
 
 const SIZES: [string, string][] = [

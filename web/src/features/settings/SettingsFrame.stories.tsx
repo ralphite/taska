@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frames } from '../../stories/Frames'
 import { settingsAt } from '../../stories/settingsFixtures'
 
-export default { title: 'Components/Settings/The page and its parts' } satisfies Meta
+export default { title: 'Components/Settings, help and parts/Settings/The page and its parts' } satisfies Meta
 type Story = StoryObj
 
 export const SettingsIndex: Story = { name: 'Settings list on the phone', render: () => <Frames desk={false}>{() => settingsAt(null, false)}</Frames> }

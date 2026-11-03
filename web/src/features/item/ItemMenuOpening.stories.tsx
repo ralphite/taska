@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { AT_POINTER } from '../../stories/menuFixtures'
 import { ROW, desk } from '../../stories/itemMenuFixtures'
 
-export default { title: 'Components/Menus and sheets/Item menu/Opening it' } satisfies Meta
+export default { title: 'Components/Around the page/Menus and sheets/Item menu/Opening it' } satisfies Meta
 type Story = StoryObj
 
 /** The desktop: a right-click on a row opens it at the pointer. */

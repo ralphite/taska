@@ -3,7 +3,7 @@ import { After, Frames } from '../stories/Frames'
 import { PRIMARY } from './tones'
 import { Sheet, SheetLayout } from './Sheet'
 
-const meta: Meta = { title: 'Components/Menus and sheets/Sheets/The sheet itself' }
+const meta: Meta = { title: 'Components/Around the page/Menus and sheets/Sheets/The sheet itself' }
 export default meta
 type Story = StoryObj
 

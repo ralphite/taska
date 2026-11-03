@@ -3,7 +3,7 @@ import type { LogSentence } from '../model/activity'
 import { Frames, States } from '../stories/Frames'
 import { LogLine, LogMore } from './Log'
 
-const meta: Meta = { title: 'Components/Side lists/Activity' }
+const meta: Meta = { title: 'Components/Around the page/Side lists/Activity' }
 export default meta
 type Story = StoryObj
 

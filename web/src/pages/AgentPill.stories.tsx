@@ -4,7 +4,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frames } from '../stories/Frames'
 import { AGENTS, headOf, type HeadHere } from '../stories/headFixtures'
 
-export default { title: 'Components/Top bar and list head/Agent pill' } satisfies Meta
+export default { title: 'Components/Around the page/Top bar and list head/Agent pill' } satisfies Meta
 type Story = StoryObj
 
 const one = (h: HeadHere): Story => ({ render: () => <Frames deskWidth={1100} phoneWidth={393} height={200}>{(layout) => headOf(layout === 'desk', h)}</Frames> })

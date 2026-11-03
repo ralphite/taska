@@ -2,7 +2,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { help } from '../../stories/helpFixtures'
 
-export default { title: 'Components/Help/Searching' } satisfies Meta
+export default { title: 'Components/Settings, help and parts/Help/Searching' } satisfies Meta
 type Story = StoryObj
 
 export const Searching: Story = { ...help(null, 'agent', { menu: true }), name: 'What it finds' }

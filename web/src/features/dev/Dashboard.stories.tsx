@@ -3,7 +3,7 @@ import type { Dash, Round } from '../../model/dashboard'
 import { Frames } from '../../stories/Frames'
 import { Dashboard } from './Dashboard'
 
-const meta: Meta = { title: 'Components/Dev/Dashboard' }
+const meta: Meta = { title: 'Components/Settings, help and parts/Dev/Dashboard' }
 export default meta
 type Story = StoryObj
 

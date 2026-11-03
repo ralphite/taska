@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frame } from '../../stories/Frames'
 import { rail } from '../../stories/sideFixtures'
 
-export default { title: 'Components/Sidebar/Folded to icons' } satisfies Meta
+export default { title: 'Components/Around the page/Sidebar/Folded to icons' } satisfies Meta
 type Story = StoryObj
 
 export const RailFolded: Story = { name: 'As it is', render: () => <div className="flex gap-6 bg-zinc-200 p-6 dark:bg-zinc-800"><Frame layout="desk" width={56} height={560}>{rail()}</Frame></div> }

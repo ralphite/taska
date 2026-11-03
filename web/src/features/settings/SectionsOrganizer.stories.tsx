@@ -2,7 +2,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { one } from '../../stories/sectionsFixtures'
 
-export default { title: 'Components/Settings/Organizer' } satisfies Meta
+export default { title: 'Components/Settings, help and parts/Settings/Organizer' } satisfies Meta
 type Story = StoryObj
 
 export const Organizer: Story = { ...one('organizer'), name: 'On' }

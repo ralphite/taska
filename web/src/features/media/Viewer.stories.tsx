@@ -6,7 +6,7 @@ import { PICTURE } from '../../stories/fixtures'
 import { listOf, PROJECT } from '../../stories/listFixtures'
 import { Viewer } from './Viewer'
 
-export default { title: 'Components/Floating/Picture viewer' } satisfies Meta
+export default { title: 'Components/Around the page/Floating/Picture viewer' } satisfies Meta
 type Story = StoryObj
 
 const on = { close: () => {}, prev: () => {}, next: () => {}, zoom: () => {} }

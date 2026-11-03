@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frame } from '../../stories/Frames'
 import { CopyBtn, Loading, Part, PhHead, PhLabel, PhNote, PH_GROUP, Setting, TextBox, Toggle } from './SettingsParts'
 
-const meta: Meta = { title: 'Components/Settings/The page and its parts' }
+const meta: Meta = { title: 'Components/Settings, help and parts/Settings/The page and its parts' }
 export default meta
 type Story = StoryObj
 

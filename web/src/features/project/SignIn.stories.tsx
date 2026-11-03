@@ -4,7 +4,7 @@ import { Frames } from '../../stories/Frames'
 import { opened } from '../../stories/menuFixtures'
 import { signInSheet } from './SignIn'
 
-export default { title: 'Components/Menus and sheets/Sheets/Not saved, sign in' } satisfies Meta
+export default { title: 'Components/Around the page/Menus and sheets/Sheets/Not saved, sign in' } satisfies Meta
 type Story = StoryObj
 
 export const SignIn: Story = { name: 'Sign in', render: () => <Frames height={360} deskWidth={900} phoneWidth={393}>{(layout) => opened(signInSheet(() => {}), layout === 'desk')}</Frames> }

@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frames, States } from '../stories/Frames'
 import { priOpts, SegCtl, typeOpts } from './Segments'
 
-const meta: Meta = { title: 'Components/Top bar and list head/Filters' }
+const meta: Meta = { title: 'Components/Around the page/Top bar and list head/Filters' }
 export default meta
 type Story = StoryObj
 

@@ -7,7 +7,7 @@ import { Frames } from './Frames'
 import { input, item, modelOf } from './fixtures'
 import { AT_BUTTON, no, opened } from './menuFixtures'
 
-export default { title: 'Components/Menus and sheets/What you said: its menu' } satisfies Meta
+export default { title: 'Components/Around the page/Menus and sheets/What you said: its menu' } satisfies Meta
 type Story = StoryObj
 
 const both = (draw: (desk: boolean) => ReturnType<typeof opened>, height = 480): Story => ({ render: () => <Frames height={height} deskWidth={900} phoneWidth={393}>{(layout) => draw(layout === 'desk')}</Frames> })

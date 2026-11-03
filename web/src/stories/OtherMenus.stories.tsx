@@ -8,7 +8,7 @@ import { PROJECT_TONES } from '../ui/tones'
 import { Frames } from './Frames'
 import { AT_BUTTON, AT_POINTER, no, opened } from './menuFixtures'
 
-export default { title: 'Components/Menus and sheets/Other menus' } satisfies Meta
+export default { title: 'Components/Around the page/Menus and sheets/Other menus' } satisfies Meta
 type Story = StoryObj
 
 const both = (draw: (desk: boolean) => ReturnType<typeof opened>, height = 480): Story => ({ render: () => <Frames height={height} deskWidth={900} phoneWidth={393}>{(layout) => draw(layout === 'desk')}</Frames> })

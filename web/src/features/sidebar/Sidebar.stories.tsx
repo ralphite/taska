@@ -5,7 +5,7 @@ import { side, sideOn } from '../../stories/sideFixtures'
 import { Sidebar } from './Sidebar'
 import { mark } from '../../stories/sidebarFixtures'
 
-export default { title: 'Components/Sidebar/The sidebar' } satisfies Meta
+export default { title: 'Components/Around the page/Sidebar/The sidebar' } satisfies Meta
 type Story = StoryObj
 
 /** The desktop's sidebar (New input lit while you write one) and the phone's drawer: the projects in your order, each

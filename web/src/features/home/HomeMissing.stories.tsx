@@ -2,7 +2,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { shown } from '../../stories/homeFixtures'
 
-export default { title: 'Components/Home page/Deleted or missing projects' } satisfies Meta
+export default { title: 'Components/Around the page/Home page/Deleted or missing projects' } satisfies Meta
 type Story = StoryObj
 
 /** A deleted project's old link: it says so, with Restore. */

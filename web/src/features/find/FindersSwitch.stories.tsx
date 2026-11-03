@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { press, typeInto } from '../../stories/Frames'
 import { field, one, switcher, switcherLoading } from '../../stories/findersFixtures'
 
-export default { title: 'Components/Menus and sheets/Sheets/Switch project' } satisfies Meta
+export default { title: 'Components/Around the page/Menus and sheets/Sheets/Switch project' } satisfies Meta
 type Story = StoryObj
 
 /** G P: the projects in your order, the keys' row on the first that is not this one. */

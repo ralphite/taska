@@ -2,7 +2,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { one } from '../../stories/sectionsFixtures'
 
-export default { title: 'Components/Settings/Projects' } satisfies Meta
+export default { title: 'Components/Settings, help and parts/Settings/Projects' } satisfies Meta
 type Story = StoryObj
 
 /** Every project (this one with this page's counts), new, rename, delete; a deleted one asking to be deleted forever. */

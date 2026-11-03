@@ -5,7 +5,7 @@ import { keyHelp } from '../app/actions'
 import { Kbd } from '../ui/bits'
 import { Frames } from './Frames'
 
-export default { title: 'Components/Icons and marks/Keys' } satisfies Meta
+export default { title: 'Components/Settings, help and parts/Icons and marks/Keys' } satisfies Meta
 type Story = StoryObj
 
 const keys = [...new Set(keyHelp().flatMap(([, rows]) => rows.flatMap(([k]) => k.split(/\s+/))))].filter((k) => k && !/^[a-z]/.test(k) && !/^(Hover|Right-click|Click|Drag)$/.test(k)) // the keys, not the words around them

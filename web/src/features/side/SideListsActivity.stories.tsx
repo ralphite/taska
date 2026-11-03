@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { ActivityList } from './SideLists'
 import { logOn, page, rows } from '../../stories/sideListsFixtures'
 
-export default { title: 'Components/Side lists/Activity' } satisfies Meta
+export default { title: 'Components/Around the page/Side lists/Activity' } satisfies Meta
 type Story = StoryObj
 
 const none = new Set<number>()

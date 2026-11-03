@@ -3,7 +3,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { help } from '../../stories/helpFixtures'
 
-export default { title: 'Components/Help/Topics' } satisfies Meta
+export default { title: 'Components/Settings, help and parts/Help/Topics' } satisfies Meta
 type Story = StoryObj
 
 export const Index: Story = { ...help(null), name: 'Opened: the first topic' }

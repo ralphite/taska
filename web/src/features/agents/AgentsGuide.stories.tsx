@@ -6,7 +6,7 @@ import { shopWithHistory } from '../../stories/settingsFixtures'
 import { agentsSheet } from './Agents'
 import { agentsFacts } from './agentsFacts'
 
-export default { title: 'Components/Menus and sheets/Agents/What an agent reads' } satisfies Meta
+export default { title: 'Components/Around the page/Menus and sheets/Agents/What an agent reads' } satisfies Meta
 type Story = StoryObj
 
 const sheet = (f: ReturnType<typeof agentsFacts>, open = false): Story => ({ render: () => <SheetFrames look={{ tall: true, wide: true }} height={820} parts={() => agentsSheet(f, { copy: no, help: no }, open)} /> })

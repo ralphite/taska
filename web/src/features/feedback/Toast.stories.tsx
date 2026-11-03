@@ -5,7 +5,7 @@ import { Frames } from '../../stories/Frames'
 import { listOf, PROJECT } from '../../stories/listFixtures'
 import { Toast, type ToastView } from './Toast'
 
-export default { title: 'Components/Floating/Toast' } satisfies Meta
+export default { title: 'Components/Around the page/Floating/Toast' } satisfies Meta
 type Story = StoryObj
 
 const one = (t: ToastView): Story => ({

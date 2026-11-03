@@ -5,7 +5,7 @@ import { searchWords } from '../model/visible'
 import { Hit } from '../ui/bits'
 import { Frames } from './Frames'
 
-export default { title: 'Components/Icons and marks/Search hit' } satisfies Meta
+export default { title: 'Components/Settings, help and parts/Icons and marks/Search hit' } satisfies Meta
 type Story = StoryObj
 
 const words = searchWords('export filter')

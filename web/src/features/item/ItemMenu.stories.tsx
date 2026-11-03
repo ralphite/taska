@@ -2,7 +2,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { both } from '../../stories/itemMenuFixtures'
 
-export default { title: 'Components/Menus and sheets/Item menu/By item' } satisfies Meta
+export default { title: 'Components/Around the page/Menus and sheets/Item menu/By item' } satisfies Meta
 type Story = StoryObj
 
 /** In progress, with its subitems: every action, then its type, priority and status (the phone); rows with their keys

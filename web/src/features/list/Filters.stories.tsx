@@ -5,7 +5,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frames } from '../../stories/Frames'
 import { headOf } from '../../stories/headFixtures'
 
-export default { title: 'Components/Top bar and list head/Filters' } satisfies Meta
+export default { title: 'Components/Around the page/Top bar and list head/Filters' } satisfies Meta
 type Story = StoryObj
 
 const BUGS = { type: 'bug', pri: 'P0', sort: 'new' }

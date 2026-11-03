@@ -4,7 +4,7 @@ import { listedDocs } from '../../model/docs'
 import { DocsList } from './SideLists'
 import { m, no, page } from '../../stories/sideListsFixtures'
 
-export default { title: 'Components/Side lists/Documents' } satisfies Meta
+export default { title: 'Components/Around the page/Side lists/Documents' } satisfies Meta
 type Story = StoryObj
 
 /** Every document, the newest first, each with its item and its comments; the one open beside the list lit. */

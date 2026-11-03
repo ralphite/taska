@@ -2,7 +2,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { both, desk } from '../../stories/itemMenuFixtures'
 
-export default { title: 'Components/Menus and sheets/Item menu/Its submenus' } satisfies Meta
+export default { title: 'Components/Around the page/Menus and sheets/Item menu/Its submenus' } satisfies Meta
 type Story = StoryObj
 
 /** One field's choices only, from its chip (or S, P, T). */

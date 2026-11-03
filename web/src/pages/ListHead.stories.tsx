@@ -4,7 +4,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { After, Frames, States } from '../stories/Frames'
 import { headOf } from '../stories/headFixtures'
 
-export default { title: 'Components/Top bar and list head/List head' } satisfies Meta
+export default { title: 'Components/Around the page/Top bar and list head/List head' } satisfies Meta
 type Story = StoryObj
 
 /** The desktop's search under the bar (/ goes there); the phone's head: the menu with the project's name (a dot when

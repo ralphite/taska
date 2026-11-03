@@ -5,7 +5,7 @@ import { Frames } from '../../stories/Frames'
 import { one } from '../../stories/sectionsFixtures'
 import { settingsAt, type SettingsHere } from '../../stories/settingsFixtures'
 
-export default { title: 'Components/Settings/Notifications/On the phone' } satisfies Meta
+export default { title: 'Components/Settings, help and parts/Settings/Notifications/On the phone' } satisfies Meta
 type Story = StoryObj
 
 const phoneOnly = (h: SettingsHere): Story => ({ render: () => <Frames desk={false}>{() => settingsAt('notifications', false, h)}</Frames> })
