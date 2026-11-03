@@ -65,7 +65,7 @@ export function SaidLatelyContainer({ route, boxKey, view, draft }: { route: Pro
   const mine = outbox.filter((o) => o.slug === route.slug && !o.unsent && showsOnItsWay(o))
   const url = (f: string) => `/p/${encodeURIComponent(route.slug)}/f/${encodeURIComponent(f)}`
   return (
-    <section aria-label="Latest inputs" data-vc-area className="mx-auto mt-8 block max-w-[48rem]">
+    <section aria-label="Latest inputs" data-vc-area className="mx-auto mt-8 block max-w-[42rem]">
       <SaidLately
         recording={recording}
         adding={adding ? { id: adding.slice(0, adding.indexOf(' ')), clock: adding.slice(adding.indexOf(' ') + 1) } : null}
