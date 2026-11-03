@@ -8,3 +8,8 @@ type Story = StoryObj
 /** Words the voice gets wrong and how they are written, and how voice notes are written down. */
 export const VoiceSpellings: Story = { ...one('spellings'), name: 'Voice spellings' }
 export const VoiceSpellingsNoneYet: Story = { ...one('spellings', { noSpellings: true }), name: 'Voice spellings: none yet' }
+// ---- more states (T639)
+export const SpellingsLoading: Story = { ...one('spellings', { spellingsLoading: true }), name: 'Voice spellings: loading' }
+export const PreferencesBeingEdited: Story = { ...one('spellings', { prefs: { editing: true } }), name: 'Voice spellings: the preferences being edited' }
+export const TidyOff: Story = { ...one('spellings', { prefs: { tidyOff: true } }), name: 'Voice spellings: tidy off' }
+export const DefaultPreferences: Story = { ...one('spellings', { prefs: { isDefault: true } }), name: 'Voice spellings: default preferences' }

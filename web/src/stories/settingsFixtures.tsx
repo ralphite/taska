@@ -5,6 +5,8 @@
 import type { ReactNode } from 'react'
 import { sideProjects } from '../app/sideProjects'
 import { DeletedBody, DocsBody, LogBody, PhoneProjectsBody } from '../features/settings/PhoneSections'
+import { Loading } from '../features/settings/SettingsParts'
+import { boxAt } from './boxFixtures'
 import { NotificationsBody, OrganizerBody, PhoneBody, PhonePushBody, ProjectsBody, SpellingsBody } from '../features/settings/Sections'
 import { SettingsFrame } from '../features/settings/SettingsFrame'
 import { DeskNav, PhoneIndex } from '../features/settings/SettingsNav'
@@ -49,6 +51,17 @@ export interface SettingsHere {
   /** Voice spellings: none yet */
   noSpellings?: boolean
   organizerOff?: boolean
+  /** each list still to load, or with nothing in it (T639) */
+  projectsLoading?: boolean
+  noneDeleted?: boolean
+  noRemote?: boolean
+  pushLoading?: boolean
+  pushUnsupported?: boolean
+  spellingsLoading?: boolean
+  prefs?: { editing?: boolean; tidyOff?: boolean; isDefault?: boolean }
+  noDocs?: boolean
+  log?: 'loading' | 'empty' | 'asking' | 'more'
+  nothingDeleted?: boolean
 }
 
 /** Shop with its history: agents, documents, what was deleted, what can be undone. */
@@ -70,27 +83,44 @@ export const shopWithHistory = (agents: AgentSeen[] = SEEN, o: { work?: boolean;
 export function settingsAt(sec: SectionKey | null, desk: boolean, h: SettingsHere = {}) {
   const m = shopWithHistory()
   const side = sideProjects(ROWS, m, 'shop').list
-  const st = { deleted: GONE, pNew: !!h.projects?.pNew, pNewText: h.projects?.pNewText ?? '', pErr: h.projects?.pErr ?? '', renaming: h.projects?.renaming ?? null, pMenu: h.projects?.menu ?? null }
+  const rows = h.projectsLoading ? null : ROWS
+  const st = { deleted: h.noneDeleted ? [] : GONE, pNew: !!h.projects?.pNew, pNewText: h.projects?.pNewText ?? '', pErr: h.projects?.pErr ?? '', renaming: h.projects?.renaming ?? null, pMenu: h.projects?.menu ?? null }
   const asked = Object.fromEntries((h.projects?.purging ?? []).map((n) => [`purge ${n}`, 1]))
   const nav = navFacts(m, { notifications: desk ? 'On' : 'Off', projects: ROWS.length, spellings: FIXES.length })
   const pOn = { newProject: no, create: no, rename: no, saveRename: no, remove: no, restore: no, purge: no, menu: no, open: no }
   const navOn = { open: no, back: no, keys: no, href: () => '#' }
   const bodies: Record<SectionKey, () => ReactNode> = {
-    projects: () => (desk ? <ProjectsBody f={projectsOf(ROWS, side, st, asked, '~/.taska/shop/shop.db')} on={pOn} /> : <PhoneProjectsBody f={projectsOf(ROWS, side, st, asked, '')} on={pOn} />),
-    phone: () => <PhoneBody link={m.facts.remote + '/'} keyText={m.facts.key} asking={!!h.newKeyAsking} desk={desk} on={{ copy: no, newKey: no }} />,
+    projects: () => (desk ? <ProjectsBody f={projectsOf(rows, side, st, asked, '~/.taska/shop/shop.db')} on={pOn} /> : <PhoneProjectsBody f={projectsOf(rows, side, st, asked, '')} on={pOn} />),
+    phone: () => <PhoneBody link={h.noRemote ? '' : m.facts.remote + '/'} keyText={m.facts.key} asking={!!h.newKeyAsking} desk={desk} on={{ copy: no, newKey: no }} />,
     notifications: () =>
       desk ? (
         <NotificationsBody state={h.notifications?.state ?? 'On'} quiet={h.notifications?.quiet ?? false} on={{ turnOn: no, quiet: no }} />
+      ) : h.pushLoading ? (
+        <Loading />
+      ) : h.pushUnsupported ? (
+        <PhonePushBody standalone onPhone={no} phoneHref="#" />
       ) : h.push ? (
         <PhonePushBody standalone onPhone={no} phoneHref="#" push={{ ...h.push, on: { turnOn: no, turnOff: no, quiet: no } }} />
       ) : (
         <PhonePushBody standalone={false} onPhone={no} phoneHref="#" />
       ),
-    spellings: () => <SpellingsBody fixes={h.noSpellings ? [] : FIXES} prefs={{ text: 'Write it as said; keep code words as they are.', default: false, tidy: true }} editing={false} on={{ editPrefs: no, toggleTidy: no, addWord: async () => true, forget: no }} />,
+    spellings: () => (
+      <SpellingsBody
+        fixes={h.spellingsLoading ? null : h.noSpellings ? [] : FIXES}
+        prefs={{ text: h.prefs?.isDefault ? 'Write it as said.' : 'Write it as said; keep code words as they are.', default: !!h.prefs?.isDefault, tidy: !h.prefs?.tidyOff }}
+        editing={!!h.prefs?.editing}
+        prefsSlot={h.prefs?.editing && desk ? boxAt({ mode: { kind: 'prefs', was: 'Write it as said; keep code words as they are.' }, text: 'Write it as said; keep code words as they are.' }, true) : undefined}
+        on={{ editPrefs: no, toggleTidy: no, addWord: async () => true, forget: no }}
+      />
+    ),
     organizer: () => <OrganizerBody on={!h.organizerOff} model="gemini-flash-latest" />,
-    docs: () => <DocsBody docs={docRows(m)} onOpen={no} />,
-    log: () => <LogBody rows={logRows(m, LOG)} end asking={new Set()} on={{ item: no, input: no, undo: no, more: no }} />,
-    deleted: () => <DeletedBody {...deletedRows(m)} on={{ restore: no, restoreInput: no }} />,
+    docs: () => <DocsBody docs={h.noDocs ? [] : docRows(m)} onOpen={no} />,
+    log: () => {
+      const rows = h.log === 'loading' ? null : h.log === 'empty' ? [] : logRows(m, LOG)
+      const asking = new Set(h.log === 'asking' && rows?.length ? [rows.find((x) => x.undo != null)?.undo ?? -1] : [])
+      return <LogBody rows={rows} end={h.log !== 'more'} asking={asking} on={{ item: no, input: no, undo: no, more: no }} />
+    },
+    deleted: () => <DeletedBody {...(h.nothingDeleted ? { things: [], inputs: [] } : deletedRows(m))} on={{ restore: no, restoreInput: no }} />,
   }
   return (
     <div className="flex h-full flex-col">
@@ -99,6 +129,7 @@ export function settingsAt(sec: SectionKey | null, desk: boolean, h: SettingsHer
         sec={sec}
         place=""
         nav={desk ? <DeskNav current={sec ?? 'projects'} back="New input" f={nav} on={navOn} /> : sec ? null : <PhoneIndex f={nav} on={navOn} />}
+        prefs={!!h.prefs?.editing && desk}
         body={bodies[sec ?? 'projects']()}
         onBack={no}
       />
