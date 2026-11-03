@@ -11,6 +11,7 @@ const on = noRowEvents
 
 /** The quiet line a row becomes while the list holds still, and the list's other lines. */
 export const Lines: Story = {
+  name: 'Held rows, group heads, hidden subitems, show more, archive them',
   render: () => (
     <Frames phoneWidth={393} deskWidth={460}>
       {() => (

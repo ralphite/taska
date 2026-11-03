@@ -10,6 +10,6 @@ type Story = StoryObj
 
 const on = { create: () => {}, cancel: () => {} }
 
-export const NewProject: Story = { name: 'New project: naming it', render: () => <Frames phoneWidth={320} deskWidth={240} height={760}>{(layout) => side(layout === 'phone', { newProject: <NewProjectField error="" on={on} /> })}</Frames> }
-export const NewProjectNotMade: Story = { name: 'New project: not made', render: () => <Frames phoneWidth={320} deskWidth={240} height={760}>{(layout) => side(layout === 'phone', { newProject: <NewProjectField error="A project of that name exists" on={on} /> })}</Frames> }
-export const NewProjectOffline: Story = { name: 'New project: connection lost', render: () => <Frames phoneWidth={320} deskWidth={240} height={760}>{(layout) => side(layout === 'phone', { newProject: <NewProjectField error="Connection lost; try again" on={on} /> })}</Frames> }
+export const NewProject: Story = { name: 'Naming it', render: () => <Frames phoneWidth={320} deskWidth={240} height={760}>{(layout) => side(layout === 'phone', { newProject: <NewProjectField error="" on={on} /> })}</Frames> }
+export const NewProjectNotMade: Story = { name: 'Not made', render: () => <Frames phoneWidth={320} deskWidth={240} height={760}>{(layout) => side(layout === 'phone', { newProject: <NewProjectField error="A project of that name exists" on={on} /> })}</Frames> }
+export const NewProjectOffline: Story = { name: 'Connection lost', render: () => <Frames phoneWidth={320} deskWidth={240} height={760}>{(layout) => side(layout === 'phone', { newProject: <NewProjectField error="Connection lost; try again" on={on} /> })}</Frames> }

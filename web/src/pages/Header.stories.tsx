@@ -7,7 +7,7 @@ import { headOf } from '../stories/headFixtures'
 export default { title: 'Components/Top bar and list head/Project bar' } satisfies Meta
 type Story = StoryObj
 
-export const ProjectBar: Story = { name: 'Project bar', render: () => <Frames phone={false} deskWidth={1100} height={180}>{() => headOf(true)}</Frames> }
+export const ProjectBar: Story = { name: 'As it is', render: () => <Frames phone={false} deskWidth={1100} height={180}>{() => headOf(true)}</Frames> }
 /** A tab under the pointer, from the keys, pressed; the agent pill under the pointer. */
 export const ProjectBarLooks: Story = {
   name: 'Pointer, keys, pressed: all side by side',
@@ -27,5 +27,5 @@ export const ProjectBarLooks: Story = {
   ),
 }
 // ---- more states (T639)
-export const ProjectBarLoading: Story = { name: 'Project bar: its data not come yet', render: () => <Frames deskWidth={1100} phoneWidth={393} height={180}>{(layout) => headOf(layout === 'desk', { loading: true })}</Frames> }
-export const ProjectBarAway: Story = { name: 'Project bar: Settings or a side list open (no tab lit)', render: () => <Frames phone={false} deskWidth={1100} height={180}>{() => headOf(true, { awayTab: true })}</Frames> }
+export const ProjectBarLoading: Story = { name: 'Its data not come yet', render: () => <Frames deskWidth={1100} phoneWidth={393} height={180}>{(layout) => headOf(layout === 'desk', { loading: true })}</Frames> }
+export const ProjectBarAway: Story = { name: 'Settings or a side list open (no tab lit)', render: () => <Frames phone={false} deskWidth={1100} height={180}>{() => headOf(true, { awayTab: true })}</Frames> }

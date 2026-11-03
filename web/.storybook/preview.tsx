@@ -52,7 +52,12 @@ const preview: Preview = {
             [
               'Item row',
               [
-                'By status', ['Still to do', 'Finished, and rules'],
+                'By status',
+                [
+                  'Still to do',
+                  ['Open', 'Next in the queue', 'Open, you replied', 'In progress', 'In progress, agent quiet', 'In progress: an agent at work, one gone quiet', 'Waits for review', 'Later'],
+                  'Finished, and rules',
+                ],
                 'Pointer, keys and picking', ['Pointer on it', 'Open, picked, dragged'],
                 'Swiping on the phone', ['Forward', 'Back', 'Rules and archived rows'],
                 'Subitems',

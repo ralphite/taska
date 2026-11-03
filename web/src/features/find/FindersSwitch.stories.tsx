@@ -7,8 +7,8 @@ export default { title: 'Components/Menus and sheets/Sheets/Switch project' } sa
 type Story = StoryObj
 
 /** G P: the projects in your order, the keys' row on the first that is not this one. */
-export const Switch: Story = { ...one(switcher, undefined, 420), name: 'Switch project' }
-export const SwitchNothing: Story = { ...one(switcher, (r) => typeInto(field(r), 'invoices'), 300), name: 'Switch project: nothing matches' }
-export const SwitchLooks: Story = { ...one(switcher, (r) => press(field(r), 'ArrowDown'), 420, { hover: ['[role="dialog"] a:nth-of-type(4)'] }), name: 'Switch project: keys on one, pointer on another' }
+export const Switch: Story = { ...one(switcher, undefined, 420), name: 'Every project' }
+export const SwitchNothing: Story = { ...one(switcher, (r) => typeInto(field(r), 'invoices'), 300), name: 'Nothing matches' }
+export const SwitchLooks: Story = { ...one(switcher, (r) => press(field(r), 'ArrowDown'), 420, { hover: ['[role="dialog"] a:nth-of-type(4)'] }), name: 'Keys on one, pointer on another' }
 // ---- more states (T639)
-export const SwitchLoading: Story = { ...one(switcherLoading, undefined, 300), name: 'Switch project: loading' }
+export const SwitchLoading: Story = { ...one(switcherLoading, undefined, 300), name: 'Loading' }

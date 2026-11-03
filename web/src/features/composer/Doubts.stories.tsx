@@ -8,6 +8,6 @@ export default { title: 'Components/Input box/Voice/Recording' } satisfies Meta
 type Story = StoryObj
 
 export const Recording = recording()
-export const RecordingPointingAtTheCheck: Story = { ...recording({ hover: ['[aria-label="Stop and put words in the box"]'] }), name: 'Recording, pointing at the check' }
+export const RecordingPointingAtTheCheck: Story = { ...recording({ hover: ['[aria-label="Stop and put words in the box"]'] }), name: 'Pointing at the check' }
 // ---- more states (B636)
-export const RecordingFromTheSecondMic: Story = { name: 'Recording from the second mic', render: () => <Frames phoneWidth={393} deskWidth={640}>{(layout) => boxAt({ rec: true, recAux: true }, layout === 'desk')}</Frames> }
+export const RecordingFromTheSecondMic: Story = { name: 'From the second mic', render: () => <Frames phoneWidth={393} deskWidth={640}>{(layout) => boxAt({ rec: true, recAux: true }, layout === 'desk')}</Frames> }
