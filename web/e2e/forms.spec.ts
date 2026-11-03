@@ -20,10 +20,12 @@ new idea P2 now A proposal
 `,
   })
   for (const n of [1, 2]) await p.op({ op: 'input', text: 'Let us talk first', scope: n })
-  for (const code of ['T1', 'I2']) {
-    await open(page, p, code)
-    await expect(page.getByText(/^Replied/).filter({ visible: true }).first()).toBeVisible() // where Send answer was (r1003)
-  }
+  // a question answered by a reply: Replied where Send answer was (r1003)
+  await open(page, p, 'T1')
+  await expect(page.getByText(/^Replied/).filter({ visible: true }).first()).toBeVisible()
+  // a proposal you replied on is not decided yet: Skipped, with Approve still there to press
+  await open(page, p, 'I2')
+  await expect(page.getByText('Skipped · you replied').filter({ visible: true })).toBeVisible()
 })
 
 test('choices in a document you were sent to, answered by a reply on the item, show Skipped (T472)', async ({
