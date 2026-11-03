@@ -1,5 +1,5 @@
-// Help's topics: what Taska is and how each part of it works, in groups as a help centre has them. Each topic has its
-// address (/help/<key>), its name, one line on what it answers, and its words in Markdown. Keyboard shortcuts are
+// Help's topics: what Taska is and how each part of it works, in groups as docs sites have them. Each topic has its
+// address (/help/<key>), its name, a line on what it answers, and its words in Markdown, in "## " sections. Keyboard shortcuts are
 // drawn from the page's own list of keys, so its words here only lead into them.
 
 export interface HelpTopic {
@@ -21,29 +21,53 @@ export const HELP_GROUPS: HelpGroup[] = [
       {
         key: 'start',
         title: 'What Taska is',
-        about: 'Hand work to coding agents and keep track of it',
-        text: `Taska keeps the work you hand to coding agents such as Claude Code and Codex. You say what you want, typed or by voice; it becomes **items**; agents take them one by one and write back on them; you answer their questions, approve what they propose and accept what they finish.
+        about: 'Hand work to coding agents by writing or speaking, and keep track of every piece of it.',
+        text: `Taska is a task list you share with coding agents such as Claude Code and Codex. You say what you want; agents do the work and write back; you decide what is finished.
 
-Each project has:
+## How it works
 
-- **Items**: the work, with what needs you at the top.
-- **Inputs**: everything you said, as you said it, and the items each became.
-- **Archive**: finished items you put away.
-- **Rules**: how agents work in this project.
+1. **You say what you want**, typed or as a voice note, in any language.
+2. **It becomes items.** The organizer turns what you said into items, or adds it to the item it is about.
+3. **Agents work through the items** by priority and write back on each one: progress, questions, proposals.
+4. **You decide.** Answer their questions, approve what they propose and accept what they finish.
 
-The sidebar lists your projects with what needs you in each. Documents, Activity, Deleted, Settings and Help are at its foot.`,
+## What a project holds
+
+| Tab | What it holds |
+| --- | --- |
+| Items | The work, with what needs you at the top |
+| Inputs | Everything you said, as you said it, and what each became |
+| Archive | Finished items you put away |
+| Rules | How agents work in this project |
+
+## Finding your way
+
+The sidebar lists your projects, each with how many things need you. **Documents**, **Activity**, **Deleted**, **Settings** and **Help** are at its foot.`,
       },
       {
         key: 'inputs',
         title: 'Writing and speaking',
-        about: 'New inputs, voice notes, files and replies',
-        text: `**New input** (or **C**) opens the box. Write as you would to a person: one thing or many, in any language. Add pictures or files by pasting, dropping or the paper clip.
+        about: 'New inputs, voice notes, files, and replies on an item.',
+        text: `Everything you tell Taska starts as an input: a few words, a voice note, a picture, or all of them together.
 
-**Voice**: the microphone records a voice note; Taska writes out what you said and keeps the recording. **Voice spellings** in Settings teach it words it gets wrong.
+## Write a new input
 
-**The organizer** reads each input and turns it into items: new ones, or words added to the item it is about. Every input keeps a link to what it became, under Inputs.
+Press **New input** (or **C**) and write as you would to a person: one thing or many, in any language. Paste or drop pictures and files, or use the paper clip.
 
-**On an item**, the box under it replies there: an answer to a question, more detail, or a change of mind. The connected agent sees it at once.`,
+## Speak instead
+
+The microphone records a voice note. Taska writes out what you said and keeps the recording, so the original words are always there to check.
+
+- On the desktop, point at a voice note's play button to see its original words.
+- **Settings › Voice spellings** teaches Taska words it gets wrong.
+
+## What happens next
+
+The organizer reads each input and turns it into items: new ones, or words added to the item it is about. Every input keeps a link to what it became, under **Inputs**.
+
+## Reply on an item
+
+On an item, the box under it replies there: an answer to a question, more detail, or a change of mind. The connected agent sees it at once.`,
       },
     ],
   },
@@ -53,8 +77,12 @@ The sidebar lists your projects with what needs you in each. Documents, Activity
       {
         key: 'items',
         title: 'Items',
-        about: 'Types, statuses, priority, Now and Later, subitems',
-        text: `Each item has a code: its type's letter and a number.
+        about: 'Codes, types, statuses, priority, Now and Later, and subitems.',
+        text: `An item is one piece of work: a feature, a bug, an idea, a task or a rule.
+
+## Codes
+
+Each item has a code: its type's letter and a number, such as **F12** or **B3**. Agents and you use codes to point at items.
 
 | Letter | Type |
 | --- | --- |
@@ -64,65 +92,118 @@ The sidebar lists your projects with what needs you in each. Documents, Activity
 | T | Task |
 | R | Rule |
 
-**Status**: *Proposed* (an agent suggests it; it waits for your approval), *Open*, *In progress*, *In review* (done by the agent; it waits for you to accept), *Done* and *Won't do*.
+## Statuses
 
-**Priority**: P0 is the most urgent, P3 the least. **Now** items are in the queue agents take work from; **Later** ones wait until you move them back.
+| Status | Means |
+| --- | --- |
+| Proposed | An agent suggests it; it waits for your approval |
+| Open | Approved, not started |
+| In progress | An agent is working on it now |
+| In review | The agent finished; it waits for you to accept |
+| Done | You accepted it |
+| Won't do | You decided against it |
 
-**Subitems**: an item can sit under another one. Drag a row onto the middle of another row, or use **Put under…** in its menu.`,
+## Priority, Now and Later
+
+P0 is the most urgent and P3 the least. **Now** items are the queue agents take work from; **Later** items wait until you move them back.
+
+## Subitems
+
+An item can sit under another one. Drag a row onto the middle of another row, or choose **Put under…** in its menu.`,
       },
       {
         key: 'needs-you',
         title: 'What needs you',
-        about: 'Questions, proposals and finished work waiting on you',
-        text: `An item needs you when an agent asked a question, proposed something, or finished work for you to check. These are at the top of Items and in the **Needs you** view, and the sidebar counts them for each project.
+        about: 'Questions, proposals and finished work waiting for your answer.',
+        text: `An item needs you when an agent asked a question, proposed something, or finished work for you to check. These come first in **Items**, in the **Needs you** view, and in each project's count in the sidebar.
 
-- **Answer** a question: pick a choice or write a reply.
-- **Approve** a proposal, or say *Won't do*.
-- **Accept** finished work, or say **Not yet** and what is still wrong: it goes back to the agent.
+## Answer, approve, accept
 
-On the phone, swipe a row right for its next step; swipe left for the others.`,
+| The agent… | You can |
+| --- | --- |
+| asked a question | Pick a choice, or write a reply |
+| proposed something | **Approve**, or say **Won't do** |
+| finished work | **Accept**, or say **Not yet** and what is still wrong |
+
+**Not yet** sends the item back to the agent.
+
+## On the phone
+
+Swipe a row right for its next step, or left for the other actions.`,
       },
       {
         key: 'lists',
         title: 'Lists, views and search',
-        about: 'Find items, order the queue, act on many at once',
-        text: `**Views** over the list: Needs you, Active, All, Archive, Open, Later, Done and Won't do. **Filters** narrow by type, priority and more; save a set of filters as your own view.
+        about: 'Find items, order the queue, and act on many at once.',
+        text: `## Views and filters
 
-**Search** (**/**) finds words in titles, in the talk and in documents. **⌘K** goes straight to an item by its code, or to anything you can do.
+The views over the list are **Needs you**, **Active**, **All**, **Archive**, **Open**, **Later**, **Done** and **Won't do**. **Filters** narrow the list by type, priority and more; save a set of filters as your own view.
 
-**Ordering the queue**: on the desktop, drag a row over the top or bottom of another row in the queue to put it before or after. Drag a subitem off every row to take it out from under its parent. Drag a row onto a project in the sidebar to move it there.
+## Search
 
-**Many at once**: ⌘-click or ⇧-click rows, then act on all of them together.
+**/** searches titles, conversations and documents. **⌘K** goes straight to an item by its code, or to anything you can do.
 
-**Projects**: drag them in the sidebar into your own order (on the phone, hold one still first).`,
+## Order the queue
+
+On the desktop, drag a row over the top or bottom edge of another row to put it before or after. Drag a subitem off every row to take it out from under its parent. Drag a row onto a project in the sidebar to move it there.
+
+## Act on many at once
+
+⌘-click or ⇧-click rows, then act on all of them together.
+
+## Order your projects
+
+Drag projects in the sidebar into your own order. On the phone, hold one still first.`,
       },
       {
         key: 'documents',
         title: 'Documents',
-        about: 'Plans and write-ups that belong to an item',
-        text: `A document (code **D** and a number) holds a longer plan or write-up for an item: an agent's proposal, a design, notes. It opens beside its item.
+        about: 'Longer plans and write-ups that belong to an item.',
+        text: `A document (code **D** and a number) holds a longer plan or write-up for an item: an agent's proposal, a design, or notes. It opens beside its item.
 
-Select words or point at a paragraph to **comment** on it; the agent answers in the comment's thread. Documents show tables, code and Mermaid diagrams.
+## Comment on a document
+
+Select words, or point at a paragraph, to comment on it. The agent answers in the comment's thread.
+
+## What a document can show
+
+Headings, lists, tables, code and Mermaid diagrams.
+
+## Find documents
 
 **Documents** in the sidebar lists every document in the project.`,
       },
       {
         key: 'rules',
         title: 'Rules',
-        about: 'How agents work in this project',
-        text: `Rules tell agents how to work in this project; every agent reads them before it starts. Keep them few, each about one area, and each saying when it applies.
+        about: 'Standing instructions every agent follows in this project.',
+        text: `Rules tell agents how to work in this project. Every agent reads them before it starts.
 
-An agent may **propose** a rule: it waits for your approval like any proposal. A rule no longer wanted is **retired**: it stays under Rules with its history.`,
+## Writing good rules
+
+- Keep them few.
+- Make each one about one area.
+- Say when it applies.
+
+## Proposed and retired rules
+
+An agent may **propose** a rule: it waits for your approval like any proposal. A rule you no longer want is **retired**: it stays under **Rules** with its history.`,
       },
       {
         key: 'undo',
         title: 'Undo and getting things back',
-        about: 'Undo, Activity and Deleted',
-        text: `**Undo** (**Z**, or the Undo button that appears after a change) puts back what you just did.
+        about: 'Undo a change, look through Activity, and restore from Deleted.',
+        text: `## Undo
 
-**Activity** lists every change in the project, yours and the agents'; undo an older change of yours from there.
+**Undo** (**Z**, or the Undo button that appears after a change) puts back what you just did.
 
-**Deleted** keeps inputs, items and documents you deleted; restore them from there.`,
+## Activity
+
+**Activity** lists every change in the project, yours and the agents'. Undo an older change of yours from there.
+
+## Deleted
+
+**Deleted** keeps the inputs, items and documents you deleted. Restore them from there.`,
       },
     ],
   },
@@ -132,25 +213,39 @@ An agent may **propose** a rule: it waits for your approval like any proposal. A
       {
         key: 'connect',
         title: 'Connect an agent',
-        about: 'Let Claude Code or Codex work on this project',
-        text: `Click the agent's status at the top right to open **Agents**: whether an agent is here, what waits for one, and the ways to connect one.
+        about: 'Let Claude Code or Codex work on this project.',
+        text: `## Open Agents
 
-- **Run a command** once per machine, in the project's folder, or
-- **Tell the agent** the words shown there.
+Click the agent status at the top right. **Agents** shows whether an agent is here, what is waiting for one, and the ways to connect one.
 
-An agent that has worked on the project in the last days counts as connected. **What the agent reads** at the foot of Agents shows the guide it follows, word for word.`,
+## Two ways to connect
+
+1. **Run a command** once per machine, in the project's folder.
+2. **Tell the agent** the words shown there.
+
+An agent that has worked on the project in the last few days counts as connected.
+
+## What the agent reads
+
+**What the agent reads**, at the foot of Agents, shows the guide it follows, word for word.`,
       },
       {
         key: 'agents',
         title: 'How agents get work',
-        about: 'Told at once, with no tokens spent while they wait',
+        about: 'Agents are told at once, and spend no tokens while they wait.',
         text: `When you write, Taska tells the connected agent at once, and waiting costs no tokens.
 
-- **Codex**: Taska puts a notice in the session's own queue. An idle session starts at once; a busy one after its turn.
-- **Claude Code**: before ending a turn, the session leaves one request waiting in the background. Taska answers it only when there is work, and the agent goes on.
-- **No tokens while waiting**: no model runs until there is work.
+## Codex
 
-Agents must end their turn when nothing is left, and never use timers, heartbeats, scheduled tasks or polling. One found doing so is stopped and reported.`,
+Taska puts a notice in the session's own queue. An idle session starts at once; a busy one after its current turn.
+
+## Claude Code
+
+Before ending a turn, the session leaves one request waiting in the background. Taska answers it only when there is work, and the agent goes on.
+
+## No tokens while waiting
+
+No model runs until there is work. Agents end their turn when nothing is left, and never use timers, heartbeats, scheduled tasks or polling. An agent found doing so is stopped and reported.`,
       },
     ],
   },
@@ -160,28 +255,53 @@ Agents must end their turn when nothing is left, and never use timers, heartbeat
       {
         key: 'phone',
         title: 'Use on your phone',
-        about: 'Open Taska away from this computer',
-        text: `**Settings › Use on your phone** gives a link and a key. Open the link on the phone, enter the key once, then use **Share › Add to Home Screen** so Taska opens like an app.
+        about: 'Open Taska on your phone, like an app.',
+        text: `## Set it up
 
-On the phone, the sidebar is a drawer from the left; swipe rows to act on them; record voice notes from the box at the bottom.`,
+1. Open **Settings › Use on your phone** on the computer. It shows a link and a key.
+2. Open the link on the phone and enter the key once.
+3. Choose **Share › Add to Home Screen**, so Taska opens like an app.
+
+## On the phone
+
+- The sidebar is a drawer from the left.
+- Swipe rows to act on them.
+- Record voice notes from the box at the bottom.`,
       },
       {
         key: 'notifications',
         title: 'Notifications',
-        about: 'Alerts when something needs you',
-        text: `**Settings › Notifications** turns on alerts when an item starts to need you. Quiet hours hold them back while you do not want to be disturbed.
+        about: 'Alerts when something starts to need you.',
+        text: `## Turn them on
 
-On the phone, notifications work once Taska is on the Home Screen; turn them on from Taska opened there.`,
+**Settings › Notifications** turns on alerts when an item starts to need you. **Quiet hours** hold them back while you do not want to be disturbed.
+
+## On the phone
+
+Notifications work once Taska is on the Home Screen. Turn them on from Taska opened there.`,
       },
       {
         key: 'keys',
         title: 'Keyboard shortcuts',
-        about: 'Every key, on the desktop',
-        text: 'On the desktop almost everything has a key. Press **?** anywhere to see them over the page.',
+        about: 'Almost everything has a key on the desktop.',
+        text: 'Press **?** anywhere to see every key over the page.',
       },
     ],
   },
 ]
+
+/** A topic's words in parts, as docs sites lay them out: what comes before its first section, then each "## " section
+ * with an id for its link (the page's On this page list). */
+export function topicParts(text: string): { intro: string; sections: { id: string; title: string; text: string }[] } {
+  const [intro, ...rest] = text.split(/^## /m)
+  return {
+    intro: intro.trim(),
+    sections: rest.map((part) => {
+      const [title, ...lines] = part.split('\n')
+      return { id: title.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''), title: title.trim(), text: lines.join('\n').trim() }
+    }),
+  }
+}
 
 export const HELP_TOPICS: HelpTopic[] = HELP_GROUPS.flatMap((g) => g.topics)
 
@@ -193,6 +313,5 @@ export function searchHelp(q: string): HelpTopic[] {
   return [...HELP_TOPICS.filter((t) => has(t.title + ' ' + t.about)), ...HELP_TOPICS.filter((t) => !has(t.title + ' ' + t.about) && has(t.text))]
 }
 
-/** The topic Help shows: the one its address names; with none named, the desktop opens the first, as a docs site
- * does (the phone shows its index of topics instead, B650). */
-export const shownTopic = (key: string | null, desk: boolean): HelpTopic | null => HELP_TOPICS.find((t) => t.key === key) ?? (desk ? HELP_TOPICS[0] : null)
+/** The topic Help shows: the one its address names; with none named, the first, as docs sites open (B650). */
+export const shownTopic = (key: string | null): HelpTopic => HELP_TOPICS.find((t) => t.key === key) ?? HELP_TOPICS[0]

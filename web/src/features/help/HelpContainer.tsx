@@ -17,8 +17,9 @@ export function HelpContainer({ route, place }: { route: ProjectRoute; place: st
   const app = useServices('nav')
   const desk = useLayout() === 'desk'
   const [q, setQ] = useState('')
+  const [menu, setMenu] = useState(false)
   const key = route.place.kind === 'help' ? route.place.topic : null
-  const topic = shownTopic(key, desk)
+  const topic = shownTopic(key)
   const href = (k: string) => `/p/${encodeURIComponent(route.slug)}/help/${k}`
   return (
     <HelpPage
@@ -27,23 +28,20 @@ export function HelpContainer({ route, place }: { route: ProjectRoute; place: st
       q={q}
       found={searchHelp(q)}
       back={app.nav.cameFromLabel()}
+      menu={menu}
       place={place}
-      body={
-        topic ? (
-          <>
-            <Rich text={topic.text} world={WORLD} />
-            {topic.key === 'keys' ? <div className="mt-6"><KeyTable groups={keyHelp()} /></div> : null}
-          </>
-        ) : null
-      }
+      render={(text) => <Rich text={text} world={WORLD} />}
+      extra={topic.key === 'keys' ? <KeyTable groups={keyHelp()} /> : null}
       on={{
         open: (k) => {
           setQ('')
+          setMenu(false)
           app.nav.to(href(k))
         },
         href,
         search: setQ,
         back: () => app.nav.settingsBack(),
+        menu: setMenu,
       }}
     />
   )
