@@ -8,7 +8,7 @@ import type { ProjectRoute } from '../../app/hooks'
 import { Rich } from '../../ui/Markdown'
 import type { InlineWorld } from '../../ui/markdown/inline'
 import { HelpPage, KeyTable } from './HelpPage'
-import { HELP_TOPICS, searchHelp } from './topics'
+import { searchHelp, shownTopic } from './topics'
 
 /** Help's words name no item and hold no file. */
 const WORLD: InlineWorld = { find: () => null, url: () => '', size: () => undefined }
@@ -18,7 +18,7 @@ export function HelpContainer({ route, place }: { route: ProjectRoute; place: st
   const desk = useLayout() === 'desk'
   const [q, setQ] = useState('')
   const key = route.place.kind === 'help' ? route.place.topic : null
-  const topic = HELP_TOPICS.find((t) => t.key === key) ?? null
+  const topic = shownTopic(key, desk)
   const href = (k: string) => `/p/${encodeURIComponent(route.slug)}/help/${k}`
   return (
     <HelpPage

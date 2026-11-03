@@ -1,11 +1,11 @@
-// Help as the page draws it: the help centre's index, a topic open, the keys' topic, a search with what it finds and
+// Help as the page draws it: opened (the first topic on the desktop, the index on the phone), a topic open, the keys' topic, a search with what it finds and
 // with nothing found, on the desktop and the phone. The topics are Help's own.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { keyHelp } from '../../app/actions'
 import { Frames } from '../../stories/Frames'
 import { Rich } from '../../ui/Markdown'
 import { HelpPage, KeyTable } from './HelpPage'
-import { HELP_TOPICS, searchHelp } from './topics'
+import { searchHelp, shownTopic } from './topics'
 
 export default { title: 'Components/Help' } satisfies Meta
 type Story = StoryObj
@@ -16,7 +16,7 @@ const help = (key: string | null, q = ''): Story => ({
   render: () => (
     <Frames deskWidth={1080} height={760}>
       {(layout) => {
-        const topic = HELP_TOPICS.find((t) => t.key === key) ?? null
+        const topic = shownTopic(key, layout === 'desk')
         const body = topic ? (
           <>
             <Rich text={topic.text} world={WORLD} />
@@ -29,7 +29,7 @@ const help = (key: string | null, q = ''): Story => ({
   ),
 })
 
-export const Index: Story = { ...help(null), name: 'Help centre: every topic by group' }
+export const Index: Story = { ...help(null), name: 'Opened: the first topic (the phone: every topic by group)' }
 export const ATopic: Story = { ...help('agents'), name: 'A topic open: How agents get work' }
 export const ATopicWithATable: Story = { ...help('items'), name: 'A topic with a table: Items' }
 export const Keys: Story = { ...help('keys'), name: 'Keyboard shortcuts' }

@@ -192,3 +192,7 @@ export function searchHelp(q: string): HelpTopic[] {
   const has = (s: string) => words.every((w) => s.toLowerCase().includes(w))
   return [...HELP_TOPICS.filter((t) => has(t.title + ' ' + t.about)), ...HELP_TOPICS.filter((t) => !has(t.title + ' ' + t.about) && has(t.text))]
 }
+
+/** The topic Help shows: the one its address names; with none named, the desktop opens the first, as a docs site
+ * does (the phone shows its index of topics instead, B650). */
+export const shownTopic = (key: string | null, desk: boolean): HelpTopic | null => HELP_TOPICS.find((t) => t.key === key) ?? (desk ? HELP_TOPICS[0] : null)
