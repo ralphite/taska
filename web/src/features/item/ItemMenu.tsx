@@ -92,7 +92,7 @@ export function itemMenuSheet({ it, code, parentCode, asking, arm }: ItemMenuFac
       </span>
     </button>
   )
-  const next = inQueue(it) && it.when === 'now' ? tile('next', it.rank == null ? 'totop' : 'undo', it.rank == null ? 'Do this next' : 'Back in order', on.doNext, it.rank == null ? `first of the ${it.pri}s` : '') : null
+  const next = inQueue(it) && it.when === 'now' && it.status !== 'doing' ? tile('next', it.rank == null ? 'totop' : 'undo', it.rank == null ? 'Do this next' : 'Back in order', on.doNext, it.rank == null ? `first of the ${it.pri}s` : '') : null
   const state = it.archived
     ? [tile('unarchive', 'unarchive', 'Unarchive', () => on.archive(false))]
     : closed(it.status)
@@ -205,7 +205,8 @@ export function itemMenuPop({ it, code, parentCode, asking, arm, keys }: ItemMen
       ),
     }
   }
-  const next = inQueue(it) && it.when === 'now' ? row('next', it.rank == null ? 'totop' : 'undo', it.rank == null ? 'Do this next' : 'Back in order', '', on.doNext, it.rank == null ? `first ${it.pri} in queue` : 'where it was, by age') : null
+  // in progress it is first already: nothing to move
+  const next = inQueue(it) && it.when === 'now' && it.status !== 'doing' ? row('next', it.rank == null ? 'totop' : 'undo', it.rank == null ? 'Do this next' : 'Back in order', '', on.doNext, it.rank == null ? `first ${it.pri} in queue` : 'where it was, by age') : null
   const state = it.archived
     ? [row('unarchive', 'unarchive', 'Unarchive', keys.archive, () => on.archive(false))]
     : closed(it.status)

@@ -149,10 +149,12 @@ function SwipeLayers({ it, openKids, on, children }: { it: Item; openKids: numbe
         {fwd ? (
           <>
             <Icon n={ACT_ICON[fwd[2]]} c="size-5" />
-            {fwd[2]}
+            <span className="flex flex-col leading-tight">
+              {fwd[2]}
+              {left ? <span className="text-xs font-normal">{left} open</span> : null}
+            </span>
           </>
         ) : null}
-        {left ? <span className="font-normal">· {plural(left, 'subitem')} still open</span> : null}
       </div>
       <div data-swipe-right hidden className="absolute inset-y-0 right-0 flex">
         {back.map(([f, v, label], i) => (

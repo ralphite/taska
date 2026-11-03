@@ -8,7 +8,6 @@ import { Missing, NoSelection } from './ItemPage'
 export default { title: 'Components/Item page/Loading and empty' } satisfies Meta
 type Story = StoryObj
 
-const pane = (node: React.ReactNode): Story => ({ render: () => <Frames phoneWidth={393} deskWidth={720} height={260}>{() => node}</Frames> })
 /** An item the address names, not here (yet): in the pane as the page draws it, its bar with the code (and Back on
  * the phone). */
 const missing = (what: string, loading: boolean, away: boolean): Story => ({
@@ -28,6 +27,8 @@ const missing = (what: string, loading: boolean, away: boolean): Story => ({
 export const LoadingAfterAReload: Story = { ...missing('F012', true, false), name: 'Loading (after a reload)' }
 export const TaskaOutOfReach: Story = { ...missing('F012', true, true), name: 'Taska out of reach' }
 export const NotInThisProject: Story = { ...missing('F099', false, false), name: 'Not in this project' }
-export const NothingPicked: Story = { ...pane(<NoSelection side={null} />), name: 'Nothing picked' }
-export const NothingPickedDocuments: Story = { ...pane(<NoSelection side="docs" />), name: 'Nothing picked: documents' }
-export const NothingPickedActivity: Story = { ...pane(<NoSelection side="log" />), name: 'Nothing picked: activity' }
+/** Nothing picked: the desktop's pane beside the list (on the phone the list shows instead). */
+const deskPane = (node: React.ReactNode): Story => ({ render: () => <Frames phone={false} deskWidth={720} height={260}>{() => node}</Frames> })
+export const NothingPicked: Story = { ...deskPane(<NoSelection side={null} />), name: 'Nothing picked' }
+export const NothingPickedDocuments: Story = { ...deskPane(<NoSelection side="docs" />), name: 'Nothing picked: documents' }
+export const NothingPickedActivity: Story = { ...deskPane(<NoSelection side="log" />), name: 'Nothing picked: activity' }

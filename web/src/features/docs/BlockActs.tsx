@@ -11,6 +11,8 @@ export interface CountInfo {
   done: boolean
   /** the words its thread quotes (where its count sits) */
   quote: string
+  /** comments not sent yet (dashed, as their Not sent card) */
+  draft?: boolean
 }
 
 export interface BlockActsEvents {
@@ -127,9 +129,11 @@ export function BlockActs({ counts, open, rec, children, on }: {
           }}
           onClick={() => on.toggle(c.tk)}
           className={`absolute left-[calc(100%+0.25rem)] z-10 flex h-7 min-w-7 items-center justify-center gap-0.5 rounded-lg px-1.5 text-xs font-semibold ${
-            c.done
-              ? 'bg-zinc-100 text-zinc-500 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700'
-              : 'bg-amber-100 text-amber-900 hover:bg-amber-200 dark:bg-amber-900/60 dark:text-amber-100 dark:hover:bg-amber-800/70'
+            c.draft
+              ? 'border border-dashed border-amber-400 bg-amber-50 text-amber-900 hover:bg-amber-100 dark:border-amber-500/60 dark:bg-amber-400/10 dark:text-amber-100 dark:hover:bg-amber-400/20'
+              : c.done
+                ? 'bg-zinc-100 text-zinc-500 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700'
+                : 'bg-amber-100 text-amber-900 hover:bg-amber-200 dark:bg-amber-900/60 dark:text-amber-100 dark:hover:bg-amber-800/70'
           }`}
         >
           {c.done ? <Icon n="check" c="size-3.5" /> : null}
@@ -137,7 +141,8 @@ export function BlockActs({ counts, open, rec, children, on }: {
         </button>
       ))}
       {open && children ? (
-        <div ref={pop} className="absolute -right-10 z-20 flex w-80 max-w-full flex-col gap-2 text-sm shadow-xl">
+        // over the text, ending at its edge: the counts beside the text stay in sight
+        <div ref={pop} className="absolute right-0 z-20 flex w-80 max-w-full flex-col gap-2 text-sm shadow-xl">
           {children}
         </div>
       ) : null}

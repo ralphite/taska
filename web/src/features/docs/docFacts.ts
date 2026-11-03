@@ -36,7 +36,7 @@ export function factsOf(m: ProjectModel, d: Doc, v: DocLook, seen: Readonly<Reco
       text: i === 0 && first != null ? first : now,
       sent: now === b.text && TICKED_LINE.test(b.text) && !ticks.open.has(`${d.d} ${tks[i]}`),
       title: i === 0 && isTitled,
-      counts: [...threads.map((t) => ({ tk: t.tk, n: t.comments.length, done: resolved(d, t.tk), quote: t.quote })), ...(drafts.length ? [{ tk: newKey, n: drafts.length, done: false, quote: '' }] : [])],
+      counts: [...threads.map((t) => ({ tk: t.tk, n: t.comments.length, done: resolved(d, t.tk), quote: t.quote })), ...(drafts.length ? [{ tk: newKey, n: drafts.length, done: false, quote: '', draft: true }] : [])],
       drafts,
       draftsShown: !desk && drafts.length > 0 && isOpen(newKey, b.key),
       open,

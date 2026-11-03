@@ -2,6 +2,7 @@
 // faded until it is up; each with a way to take it out. Props only.
 
 import { clock } from '../../model/time'
+import { FileName } from '../../ui/Files'
 import { Icon } from '../../ui/Icon'
 
 export interface DraftFile {
@@ -48,9 +49,9 @@ export function DraftFiles({ files, url, onRemove, onView }: { files: readonly D
               <img src={f.preview || url(f.f || '')} alt="" className={`size-16 rounded-xl border border-zinc-200 object-cover dark:border-zinc-700 ${f.f ? '' : 'opacity-40'}`} />
             </button>
           ) : (
-            <div className={`flex h-16 w-28 items-center gap-1 rounded-xl border border-zinc-200 px-2 text-xs dark:border-zinc-700 ${f.f ? '' : 'opacity-40'}`}>
-              <Icon n="file" c="size-4" />
-              <span className="line-clamp-2 break-all">{f.name}</span>
+            <div className={`flex h-16 w-36 items-center gap-1.5 rounded-xl border border-zinc-200 px-2.5 text-xs dark:border-zinc-700 ${f.f ? '' : 'opacity-40'}`}>
+              <Icon n="file" c="size-4 shrink-0" />
+              <FileName name={f.name} />
             </div>
           )}
           <button onClick={() => onRemove(f.key)} aria-label={`Remove ${f.name}`} className="absolute -top-3.5 -right-3.5 grid size-11 place-items-center">

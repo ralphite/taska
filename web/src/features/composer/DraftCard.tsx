@@ -49,7 +49,7 @@ export function DraftCard({ voice, ms, files, transcribing, words, hint }: { voi
                 {hint.kind === 'check' ? (
                   <b className="font-semibold text-zinc-700 dark:text-zinc-200">{plural(hint.n, 'word')} to check</b>
                 ) : hint.kind === 'switch' ? (
-                  'Tap a version to use it.'
+                  'Pick a version to use it.'
                 ) : (
                   'Select words to correct spelling. Taska remembers.'
                 )}

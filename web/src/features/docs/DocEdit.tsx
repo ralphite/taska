@@ -28,7 +28,8 @@ export function DocEdit({ isNew, text, hint, mic, fieldRef, on }: { isNew: boole
         <button onClick={on.discard} className="h-11 shrink-0 rounded-xl px-3 text-sm font-semibold text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800">
           Discard
         </button>
-        <button onClick={on.save} className={PRIMARY}>
+        {/* a new document with no words yet: nothing to create (the words of a recording still coming go in first) */}
+        <button onClick={on.save} disabled={isNew && !text.trim() && !mic.on} className={PRIMARY}>
           {isNew ? 'Create' : 'Save'}
         </button>
       </div>

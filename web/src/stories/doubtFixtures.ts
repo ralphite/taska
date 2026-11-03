@@ -3,6 +3,9 @@
 import type { HeardFile } from '../model/doubts'
 
 export const HEARD_TEXT = 'Move the filter to the side bar and keep the old colours (?) for now.'
+/** The same doubt decided: its other version picked, the two still there to switch between. */
+export const PICKED_TEXT = 'Move the filter to the sidebar.'
+export const PICKED: HeardFile[] = [{ key: 'v2', trAdded: PICKED_TEXT, doubts: [{ was: 'side bar', alt: 'sidebar', why: 'two models', show: ['side bar', 'sidebar'], pick: 'alt' }] }]
 export const HEARD: HeardFile[] = [
   {
     key: 'v1',

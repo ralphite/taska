@@ -33,7 +33,7 @@ export function Doubts({ view, on }: { view: DoubtsView; on: { use(fk: string, k
       <p className="flex min-h-8 items-start gap-1.5 py-1">
         <Alert />
         <span className="min-w-0">
-          {view.toCheck ? <b className="font-semibold text-zinc-800 dark:text-zinc-100">{plural(view.toCheck, 'word')} to check</b> : 'Tap a version to use it.'}
+          {view.toCheck ? <b className="font-semibold text-zinc-800 dark:text-zinc-100">{plural(view.toCheck, 'word')} to check</b> : 'Pick a version to use it.'}
           {view.showing ? null : (
             <>
               {' '}

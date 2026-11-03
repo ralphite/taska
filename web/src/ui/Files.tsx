@@ -119,11 +119,23 @@ export function Thumbs({
             className="flex h-11 max-w-56 shrink-0 items-center gap-1.5 self-end rounded-xl border border-zinc-200 px-3 text-xs text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
           >
             <Icon n="file" c="size-4" />
-            <span className="truncate">{f.name}</span>
+            <FileName name={f.name} />
           </a>
         )
       })}
     </>
+  )
+}
+
+/** A file's name on one line; too long, it is cut in the middle, so its end and its kind stay (Quarter…port.pdf). */
+export function FileName({ name }: { name: string }) {
+  const dot = name.lastIndexOf('.')
+  const keep = Math.min(name.length, (dot > 0 ? name.length - dot : 0) + 4)
+  return (
+    <span title={name} className="flex min-w-0 whitespace-pre">
+      <span className="truncate">{name.slice(0, name.length - keep)}</span>
+      <span className="shrink-0">{name.slice(name.length - keep)}</span>
+    </span>
   )
 }
 

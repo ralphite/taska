@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frames, States } from '../stories/Frames'
 import { PICTURE } from '../stories/fixtures'
 import type { FileRef } from '../model/types'
-import { Thumbs, VoiceChip, type PlayState } from './Files'
+import { FileRows, Thumbs, VoiceChip, type PlayState } from './Files'
 
 const meta: Meta = { title: 'Components/Conversation/Message parts/Voice notes, pictures, files' }
 export default meta
@@ -62,7 +62,7 @@ export const MoreThanThree: Story = {
   name: 'More than three pictures and files',
   render: () => (
     <Frames phoneWidth={393} deskWidth={480}>
-      {() => <div className="flex p-3"><Thumbs files={many} url={(f) => (f.endsWith('.pdf') ? '#' : PICTURE)} play={() => ({ playing: false, t: null })} tidy on={{ play() {}, words() {}, view() {} }} /></div>}
+      {() => <div className="p-3"><FileRows files={many} url={(f) => (f.endsWith('.pdf') ? '#' : PICTURE)} play={() => ({ playing: false, t: null })} tidy on={{ play() {}, words() {}, view() {} }} /></div>}
     </Frames>
   ),
 }
