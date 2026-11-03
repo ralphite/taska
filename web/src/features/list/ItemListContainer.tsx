@@ -102,7 +102,7 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
       else if (action === 'accept') void app.items.change(n, 'status', 'done')
       else app.nav.openItem(codeOf(m as ProjectModel, n))
     },
-    reopen: (n) => void app.items.change(n, 'status', 'doing'),
+    reopen: (n) => void app.items.change(n, 'status', 'open'),
     fold: (n) => stores.ui.getState().toggleFold(n),
     goto: (n) => app.nav.openItem(codeOf(m as ProjectModel, n)),
     picture: (_group, f) => app.media.view(route.slug, [f], f),

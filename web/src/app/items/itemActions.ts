@@ -12,7 +12,7 @@ import type { ChangeRunner } from '../changeRunner'
 import { newId } from '../changeRunner'
 import type { Toasts } from '../page/toasts'
 
-const DECISIONS: Record<string, string[]> = { proposed: ['open', 'dropped'], review: ['done', 'doing'] }
+const DECISIONS: Record<string, string[]> = { proposed: ['open', 'dropped'], review: ['done', 'open'] }
 
 export interface ItemActionsDeps {
   slug(): string

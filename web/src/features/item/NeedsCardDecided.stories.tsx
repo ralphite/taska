@@ -15,4 +15,4 @@ export const WorkAcceptedModifyPressed: Story = {
   ...at({ status: 'done', thread: [report], decided: { from: 'review', to: 'done', msg: 6, t: T } }, { remodify: true }),
   name: 'Work accepted, Modify pressed',
 }
-export const WorkSentBack: Story = { ...at({ status: 'doing', thread: [report], decided: { from: 'review', to: 'doing', msg: 6, t: T } }), name: 'Work sent back (Not yet)' }
+export const WorkSentBack: Story = { ...at({ status: 'open', thread: [report], decided: { from: 'review', to: 'open', msg: 6, t: T } }), name: 'Work sent back (Not yet)' }

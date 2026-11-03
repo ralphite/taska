@@ -116,7 +116,7 @@ const PROPOSED: readonly Pair[] = [
   ['open', 'thumb', 'Approve', 'A'],
 ]
 const FINISHED: readonly Pair[] = [
-  ['doing', 'reopen', 'Not yet', 'N'],
+  ['open', 'reopen', 'Not yet', 'N'],
   ['done', 'check', 'Accept', 'A'],
 ]
 
@@ -188,7 +188,7 @@ export function NeedsCard({ it, env, on, remodify, going = null }: {
           foot={pairs.map(([v, icon, label, k], i) => (
             <button
               key={v}
-              onClick={() => (chose(v) ? on.cancelModify() : v === 'doing' ? on.notYet(n) : on.decide(n, v as 'open' | 'dropped' | 'done'))}
+              onClick={() => (chose(v) ? on.cancelModify() : v === 'open' && dec.from === 'review' ? on.notYet(n) : on.decide(n, v as 'open' | 'dropped' | 'done'))}
               className={`${i ? `${PRIMARY_BASE} ${tone} flex-[1.4]` : `${SECOND} flex-1`} lg:flex-none`}
             >
               <Icon n={icon} c={i ? 'size-4.5' : 'size-4'} sw="2.25" />

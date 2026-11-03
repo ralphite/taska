@@ -72,7 +72,7 @@ I2 ask Worth doing?
   // answered, then decided: Not yet on the finished work, Won't do on the proposal
   await op(request, p, { op: 'input', text: '✓ Next week', scope: 1 })
   await op(request, p, { op: 'input', text: '✓ No', scope: 2 })
-  await op(request, p, { op: 'set', ref: 'T1', f: { status: 'doing' } })
+  await op(request, p, { op: 'set', ref: 'T1', f: { status: 'open' } })
   await op(request, p, { op: 'set', ref: 'I2', f: { status: 'dropped' } })
   const icon = async (code: string, label: string) => {
     await open(page, p, code)
@@ -101,7 +101,7 @@ test('D77 #10: finished work sent back with Not yet: only Not yet carries an ico
     approve: ['T1'],
     then: 'T1 done Finished: it works.\n',
   })
-  await op(request, p, { op: 'set', ref: 'T1', f: { status: 'doing' } })
+  await op(request, p, { op: 'set', ref: 'T1', f: { status: 'open' } })
   await open(page, p, 'T1')
   // the card's two kept buttons, each its icon (or its room), its words and its key's room
   const kept = (label: string) =>

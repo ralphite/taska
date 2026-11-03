@@ -14,7 +14,7 @@ WHENS = ("now", "later")
 STATUSES = ("proposed", "open", "doing", "review", "done", "dropped")
 CLOSED = ("done", "dropped")
 # the two choices of a proposal (approve, won't do) and of finished work (accept, not yet)
-DECISIONS = {"proposed": ("open", "dropped"), "review": ("done", "doing")}
+DECISIONS = {"proposed": ("open", "dropped"), "review": ("done", "open")}
 # "you" is the user; the organizer writes down what the user said, so it acts for the user
 PEOPLE = ("you", "org")
 MESSAGE_KINDS = ("say", "ask", "block", "withdraw", "propose", "decide", "progress")

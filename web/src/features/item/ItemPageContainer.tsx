@@ -106,7 +106,7 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
     },
     notYet: (k) => {
       iv().setRemodify(null)
-      void app.items.change(k, 'status', 'doing', { said: 'is back in progress' })
+      void app.items.change(k, 'status', 'open', { said: 'is back to open' })
     },
     modify: (k) => {
       iv().setRemodify(k)
