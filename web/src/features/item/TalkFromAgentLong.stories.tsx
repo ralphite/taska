@@ -10,3 +10,7 @@ export const LongCutShowAll: Story = { ...at(after(message({ id: 2, text: LONG }
 export const LongPressedToOpen: Story = { ...at(after(message({ id: 2, text: LONG }))), name: 'Long: pressed to open', parameters: { pseudo: { active: ['button[data-more]'] } } }
 export const LongOpenedShowLess: Story = { ...at(after(message({ id: 2, text: LONG })), { env: { opened: new Set([2]) } }), name: 'Long: opened, Show less' }
 export const LatestMessageWhole: Story = { ...at([message({ id: 2, text: LONG })]), name: 'Latest message: whole however long' }
+// ---- more states (T639)
+const VERY_LONG = Array.from({ length: 60 }, (_, i) => `Line ${i + 1}: what the agent did, and why, in a few words.`).join('\n')
+/** the latest message is shown whole up to 50 lines; past that it is cut after all */
+export const LatestMessagePast50Lines: Story = { ...at([message({ id: 2, text: VERY_LONG })]), name: 'Latest message past 50 lines: cut after all' }

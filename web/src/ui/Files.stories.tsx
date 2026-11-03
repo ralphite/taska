@@ -54,3 +54,16 @@ export const Together: Story = {
     </Frames>
   ),
 }
+// ---- more states (T639)
+const many: FileRef[] = [picture, { ...picture, f: 'f8-a.png' }, { ...picture, f: 'f9-b.png' }, pdf, { ...picture, f: 'f10-c.png' }]
+/** more than three: the row fades at its right edge and slides sideways */
+export const MoreThanThree: Story = {
+  name: 'More than three pictures and files',
+  render: () => (
+    <Frames phoneWidth={393} deskWidth={480}>
+      {() => <div className="flex p-3"><Thumbs files={many} url={(f) => (f.endsWith('.pdf') ? '#' : PICTURE)} play={() => ({ playing: false, t: null })} tidy={false} on={{ play() {}, words() {}, view() {} }} /></div>}
+    </Frames>
+  ),
+}
+/** the pointer on a voice note on the desktop: Original words floats above it */
+export const VoicePointer: Story = { name: 'Voice note, pointer on it (desktop)', parameters: { pseudo: { hover: ['.group\\/voice'] } }, render: () => <Frames phone={false} deskWidth={480}>{() => <div className="pt-12">{chip(voice, { playing: false, t: null }, true)}</div>}</Frames> }

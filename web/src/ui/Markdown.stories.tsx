@@ -62,3 +62,42 @@ export const Choices: Story = {
     </Frames>
   ),
 }
+// ---- more states (T639): pictures and diagrams on their way or failed, choices picked any way
+const drawing = { ...world, diagram: () => new Promise<string>(() => {}) }
+const gone = { ...world, url: () => '/no-such-file.png' }
+const slow = { ...world, url: () => 'http://10.255.255.1/slow.png' }
+/** a picture still loading, one that could not load, one from a web address, a diagram still being drawn */
+export const OnTheirWay: Story = {
+  name: 'Markdown: pictures and diagrams on their way or failed',
+  render: () => (
+    <Frames phoneWidth={393} deskWidth={640}>
+      {() => (
+        <States
+          items={[
+            ['a picture still loading', rich('The screen: ![the list](f3-shot.png)', { world: slow })],
+            ['a picture that could not load', rich('The screen: ![the list](f3-shot.png)', { world: gone })],
+            ['a picture from a web address (opens the address)', rich(`The icon: ![icon](${location.origin}/icon-192.png)`)],
+            ['a diagram still being drawn: its words meanwhile', rich('```mermaid\ngraph TD\n  A[You say it] --> B[Organizer files it]\n```', { world: drawing })],
+          ]}
+        />
+      )}
+    </Frames>
+  ),
+}
+/** pick-any answered (square boxes, several ticked), and an open choice under the pointer */
+export const ChoicesMore: Story = {
+  name: 'Markdown: choices, more',
+  parameters: { pseudo: { hover: ['[data-look="pointer"] [data-choice="1"]'] } },
+  render: () => (
+    <Frames phoneWidth={393} deskWidth={640}>
+      {() => (
+        <States
+          items={[
+            ['pick any, answered', rich('Which should it keep?\n\n- [ ] The filter\n- [ ] The sort\n- [ ] The columns', { done: ['The filter', 'The columns'] })],
+            ['open, a choice under the pointer', <div data-look="pointer">{rich(QUESTION, { choosing: { picked: new Set(), pick: () => {} } })}</div>],
+          ]}
+        />
+      )}
+    </Frames>
+  ),
+}
