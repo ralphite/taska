@@ -1,25 +1,27 @@
+// The line between panes, as the page draws it: the desktop's two columns of an item, the line between them as it is,
+// under the pointer, and being dragged (blue). Drag it to resize; a double-click puts it back.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { useState } from 'react'
-import { Frames } from '../stories/Frames'
-import { Grip } from './Grip'
+import { After, Frame, States } from '../stories/Frames'
+import { item } from '../stories/fixtures'
+import { pageOf } from '../stories/itemPage'
 
 const meta: Meta = { title: 'Components/Item page/Layout and editing' }
 export default meta
 type Story = StoryObj
 
-function Panes() {
-  const [w, setW] = useState(160)
-  return (
-    <div className="flex h-40 border border-zinc-200 dark:border-zinc-800">
-      <div style={{ width: w }} className="relative shrink-0 border-r border-zinc-200 bg-zinc-50 p-2 text-xs dark:border-zinc-800 dark:bg-zinc-900">
-        {w}px
-        <Grip name="side" axis="x" place="absolute inset-y-0 right-0 z-10 w-3 translate-x-1/2" measure={(el) => ({ from: el.parentElement?.getBoundingClientRect().left ?? 0, most: 400 })} onSize={setW} onDone={setW} onReset={() => setW(160)} />
-      </div>
-      <div className="p-2 text-xs">Drag the line; a double-click puts it back</div>
-    </div>
-  )
-}
+const page = () => pageOf(item({ n: 12, title: 'Export keeps the filter you set', body: 'The export should write the rows the list shows.' }), true, { duo: true })
 
-/** A pane's edge: pointed at or dragged, the line turns blue. */
+/** A pane's edge: as it is, pointed at, dragged. */
 export const Edge: Story = {
-  name: 'The line between panes: pointer, dragged', render: () => <Frames phone={false} deskWidth={640}>{() => <Panes />}</Frames> }
+  name: 'The line between panes: as it is, pointer, dragged',
+  parameters: { pseudo: { hover: ['[data-look="pointer"] [data-grip="duo"]'] } },
+  render: () => (
+    <States
+      items={[
+        ['as it is', <Frame layout="desk" width={1100} height={320}>{page()}</Frame>],
+        ['pointer on it', <div data-look="pointer"><Frame layout="desk" width={1100} height={320}>{page()}</Frame></div>],
+        ['being dragged', <Frame layout="desk" width={1100} height={320}><After run={(root) => root.querySelector('[data-grip="duo"]')?.setAttribute('data-drag', '')}>{page()}</After></Frame>],
+      ]}
+    />
+  ),
+}

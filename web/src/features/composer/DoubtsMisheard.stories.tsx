@@ -22,7 +22,7 @@ export const MaybeMisheardOnTheNewInputPage: Story = {
   render: () => <Frames phone={false} deskWidth={640}>{() => <Doubts view={{ kind: 'card', toCheck: 1 }} on={quiet} />}</Frames>,
 }
 /** The words with the two versions to pick from (click, or left/right in them): pick the other version. */
-export const MaybeMisheardTheOtherVersionPicked: Story = { name: 'Maybe misheard, the other version picked', render: () => <Frames phoneWidth={393} deskWidth={640}>{() => <Picking fix={false} />}</Frames> }
+export const MaybeMisheardTheOtherVersionPicked: Story = { name: 'Maybe misheard, the other version picked', render: () => <Frames phoneWidth={393} deskWidth={640}>{() => <Picking fix={false} start="picked" />}</Frames> }
 
 /** A word one model was unsure of: underlined in the words. */
 export const AWordOneModelWasUnsureOf: Story = { render: () => <Frames phoneWidth={393} deskWidth={640}>{() => <Picking fix={false} />}</Frames> }
@@ -34,4 +34,4 @@ export const MisheardInSeveralPlaces: Story = {
 export const MisheardWordsAllPickedPhone: Story = { name: 'Misheard words all picked (phone)', render: () => <Frames desk={false} phoneWidth={393}>{() => <Doubts view={{ kind: 'phone', toCheck: 0, showing: false }} on={quiet} />}</Frames> }
 export const MaybeMisheardWordsShownPhone: Story = { name: 'Maybe misheard, words shown (phone)', render: () => <Frames desk={false} phoneWidth={393}>{() => <Doubts view={{ kind: 'phone', toCheck: 1, showing: true }} on={quiet} />}</Frames> }
 /** The New input page's card: a voice note's own words selected to correct them. */
-export const CorrectingItsWords: Story = { render: () => <Frames phoneWidth={393} deskWidth={640}>{() => <Picking fix />}</Frames> }
+export const CorrectingItsWords: Story = { render: () => <Frames phoneWidth={393} deskWidth={640}>{() => <Picking fix start="fixing" />}</Frames> }

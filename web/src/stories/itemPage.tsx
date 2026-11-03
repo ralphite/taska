@@ -1,5 +1,6 @@
 // An item open in its pane, as the page draws it: the pane's bar (the item's code and status, its actions, Previous
 // and Next) and the page's own ItemPage, with a demo project around it. Used by the item page's stories.
+import type { ReactNode } from 'react'
 import type { ItemFacts } from '../features/item/ItemPage'
 import { ItemActs, ItemHead, ItemNav, ItemPage, ItemTalk } from '../features/item/ItemPage'
 import type { TalkFacts } from '../features/item/Talk'
@@ -34,6 +35,9 @@ export interface PageOpts {
   env?: Partial<TalkEnv>
   /** the pane's back (a prototype's way back) */
   onBack?(): void
+  /** the desktop's two columns with a document on the left instead of the item (`bare`: a web page, no margins) */
+  left?: ReactNode
+  bare?: boolean
 }
 
 export function pageOf(it: Item, desk: boolean, o: PageOpts = {}) {
@@ -52,7 +56,7 @@ export function pageOf(it: Item, desk: boolean, o: PageOpts = {}) {
         nav={<ItemNav full={!!o.full} on={{ prev: () => {}, next: () => {}, full: () => {} }} />}
         onBack={o.onBack ?? (() => {})}
       >
-        <ItemPage it={it} f={facts} env={talkEnv(m, desk)} facts={talkFacts(m, o.t)} on={noItemEvents} duo={o.duo} />
+        <ItemPage it={it} f={facts} env={talkEnv(m, desk)} facts={talkFacts(m, o.t)} on={noItemEvents} duo={o.duo} left={o.left} bare={o.bare} />
       </PaneFrame>
     </div>
   )

@@ -4,6 +4,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { Item } from '../../model/types'
 import { Frame, Frames } from '../../stories/Frames'
+import { WEB, doc } from '../../stories/docFixtures'
+import { docAt } from '../../stories/docPage'
 import { item, message } from '../../stories/fixtures'
 import { KIDS, PARENT, pageOf, you, type PageOpts } from '../../stories/itemPage'
 
@@ -44,3 +46,10 @@ export const PointerKeysPressed: Story = {
     </div>
   ),
 }
+// ---- more states (T639)
+/** two columns with a document opened: the document on the left, its item's talk on the right */
+export const TwoColumnsDocumentLeft: Story = { ...desk({ duo: true, left: docAt(doc(), true, { viewOnly: true }) }, 1400), name: 'Two columns: a document on the left' }
+/** the same with a web page: no margins around it */
+export const TwoColumnsWebPageLeft: Story = { ...desk({ duo: true, bare: true, left: docAt(WEB, true, { viewOnly: true }) }, 1400), name: 'Two columns: a web page on the left' }
+/** adding the first subitem of an item with none: the Subitems head with no count, only the field */
+export const AddingTheFirstSubitem: Story = { ...at({ others: [PARENT], f: { addingSub: true } }), name: 'Adding the first subitem' }

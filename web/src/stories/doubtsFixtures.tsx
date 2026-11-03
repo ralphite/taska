@@ -21,10 +21,15 @@ export const recording = (pseudo?: Record<string, string[]>): Story => ({
   ...(pseudo ? { parameters: { pseudo } } : {}),
 })
 
-export function Picking({ fix }: { fix: boolean }) {
-  const [text, setText] = useState(HEARD_TEXT)
-  const [files, setFiles] = useState(HEARD)
-  const [fixing, setFixing] = useState<Fixing | null>(null)
+/** The draft's words with its misheard words to pick from; `start`: as it is after the other version of the first
+ * was picked, or with the field correcting its first misheard words (each story opens on the state it names). */
+export function Picking({ fix, start }: { fix: boolean; start?: 'picked' | 'fixing' }) {
+  const first = start === 'picked' ? pickSide(HEARD_TEXT, HEARD[0], 0, 'alt') : null
+  const [text, setText] = useState(first ? first.text : HEARD_TEXT)
+  const [files, setFiles] = useState(first ? [{ ...HEARD[0], trAdded: first.trAdded, doubts: first.doubts }] : HEARD)
+  const was = HEARD[0].doubts?.[0]?.was ?? ''
+  const at = HEARD_TEXT.indexOf(was)
+  const [fixing, setFixing] = useState<Fixing | null>(start === 'fixing' && at >= 0 ? { s: at, e: at + was.length, wrong: was } : null)
   return (
     <DraftWords
       text={text}

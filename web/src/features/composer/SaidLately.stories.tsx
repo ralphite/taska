@@ -48,3 +48,5 @@ export const LatestInputsJustSentUndo = list('Latest inputs, just sent: Undo', {
 export const LatestInputsDraftOpenedOrganizing = list('Latest inputs: an edit not saved, a long one opened, organizing', { organizer: true, busy: DAY[0].id, inputs: DAY, editDrafts: [DAY[1].id], opened: [ONE.long.id] })
 export const LatestInputsNotSentSending = list('Latest inputs: not sent, and sending with Undo', { inputs: DAY, outbox: [out({ q: 'a', text: 'Buy milk on the way home', state: 'failed' }), out({ q: 'b', text: 'And bread' })], justSent: ['b'] })
 export const LatestInputsNoneYet = list('Latest inputs, none yet', { inputs: [] })
+// ---- more states (T639)
+export const LatestInputsTranscribingAndHandled = list('Latest inputs: a voice note being written out, one handled by the agent', { organizer: true, inputs: [ONE.transcribing, ONE.handled, ONE.made] })

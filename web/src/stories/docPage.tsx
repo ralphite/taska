@@ -45,6 +45,8 @@ export interface DocHere {
   seen?: Record<string, string>
   /** the document's item (its talk says whether you replied there instead of picking) */
   item?: Partial<Item>
+  /** only the document's words, for a column beside its item's talk (as the desktop's two columns show it) */
+  viewOnly?: boolean
 }
 
 export const envOf = (m: ReturnType<typeof modelOf>, desk: boolean): DocEnv => {
@@ -81,6 +83,7 @@ export function docAt(d: Doc, desk: boolean, h: DocHere = {}) {
     )
   }
   const view = <DocView facts={facts} env={env} on={docOn} page={page} lasso={h.circle ? <Lasso onDrawn={no} /> : null} />
+  if (h.viewOnly) return view
   return desk ? (
     <div className="flex h-full flex-col">
       <PaneFrame
