@@ -231,12 +231,31 @@
   "Prototype/About this section": [
    "About"
   ],
-  "Prototype/F479 Search everything": [
-   "Desktop: search everything",
-   "Phone: search everything",
-   "Every state: desktop",
-   "Every state: phone",
-   "Filters at the end of the views"
+  "Prototype/F479 Search everything/Walk through": [
+   "Say, then say more"
+  ],
+  "Prototype/F479 Search everything/Say and search": [
+   "Listening",
+   "Writing out what you said",
+   "Searching",
+   "Found by the words, looking by meaning",
+   "Found",
+   "Only one kind",
+   "A result open"
+  ],
+  "Prototype/F479 Search everything/Say more or change it": [
+   "A word may be misheard",
+   "Saying more",
+   "Searching again",
+   "Found again",
+   "Typing",
+   "Cleared"
+  ],
+  "Prototype/F479 Search everything/When it goes wrong": [
+   "Nothing found",
+   "Nothing heard",
+   "No microphone",
+   "Taska out of reach"
   ],
   "Prototype/New mobile layout": [
    "New Mobile Layout"

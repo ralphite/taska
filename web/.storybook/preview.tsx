@@ -135,6 +135,7 @@ const preview: Preview = {
               'About this section',
             ],
           ],
+          'Prototype', ['About this section', 'F479 Search everything', ['Walk through', 'Say and search', 'Say more or change it', 'When it goes wrong']],
           '*',
         ],
       },
