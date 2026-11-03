@@ -49,7 +49,6 @@ export const NEEDS_PILL =
  * the weight (so the size) of the button it was. */
 const DONE_BASE = 'pointer-events-none inline-flex h-11 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border px-4 text-[15px]'
 export const DONE_PICK = DONE_BASE + ' border-transparent bg-zinc-200 text-zinc-700 dark:bg-zinc-700/70 dark:text-zinc-200'
-export const DONE_OTHER = DONE_BASE + ' border-zinc-200 text-zinc-400 dark:border-zinc-800 dark:text-zinc-500'
 /** What you did not choose, still a button: quiet like the other, and itself again under the pointer. */
 export const DONE_OTHER_BTN =
   'inline-flex h-11 items-center justify-center gap-1.5 whitespace-nowrap rounded-xl border border-zinc-200 px-4 text-[15px] font-medium text-zinc-400 hover:border-zinc-300 hover:bg-white hover:text-zinc-700 dark:border-zinc-800 dark:text-zinc-500 dark:hover:border-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200'

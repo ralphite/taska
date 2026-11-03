@@ -22,7 +22,7 @@ new idea P2 now A proposal
   for (const n of [1, 2]) await p.op({ op: 'input', text: 'Let us talk first', scope: n })
   for (const code of ['T1', 'I2']) {
     await open(page, p, code)
-    await expect(page.getByText('Skipped · you replied').filter({ visible: true })).toBeVisible()
+    await expect(page.getByText('Replied', { exact: true }).filter({ visible: true })).toBeVisible() // the answered card's one line (D106 #4.3)
   }
 })
 
