@@ -177,3 +177,7 @@ export const inputLine = (m: ProjectModel, r: Input, a: InputLineWith): InputLin
   long: isLong(r.text),
   opened: a.opened.has(r.id),
 })
+
+/** A line's `when` in its two parts: its day ("Today", "Oct 21") and its time ("14:28"), for a list that says each day
+ * once over its lines (a prototype, T661). */
+export const whenParts = (when: string) => ({ day: when.slice(0, -6), time: when.slice(-5) })
