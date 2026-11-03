@@ -20,7 +20,9 @@ mkdir "$WORK/source"
 # An archive is isolated from builds and uncommitted work in the checkout.
 git -C "$ROOT" archive HEAD | tar -x -C "$WORK/source" || exit 1
 ln -s "$ROOT/web/node_modules" "$WORK/source/web/node_modules"
-check() { npm --prefix "$WORK/source/web" run check; }
+check() { NO_COLOR=1 FORCE_COLOR=0 npm --prefix "$WORK/source/web" run check; }
+# what a failed step says, readable on a phone: no colour codes, the lines that name the errors (else its last lines)
+plain() { sed -E $'s/\x1b\\[[0-9;]*[A-Za-z]//g' "$1"; }
 data_check() {
   python3 "$WORK/source/tools/copy_data.py" "$DATA" "$WORK/data" &&
     python3 "$WORK/source/tests/check_data.py" "$WORK/data"
@@ -31,12 +33,13 @@ step() {
     echo "passed: $name: $(tail -1 "$WORK/step.out")"
   else
     echo "FAILED: $name"
-    tail -12 "$WORK/step.out" | sed 's/^/    /'
+    plain "$WORK/step.out" > "$WORK/step.txt"
+    { grep -E 'error TS|[0-9]+:[0-9]+ +error|FAIL |Error:|Unhandled|AssertionError|Errors +[0-9]+ error|Test Files .*failed|Tests .*failed|break\(s\)|^ERROR' "$WORK/step.txt" || tail -6 "$WORK/step.txt"; } | sed 's/^ *//' | awk '!seen[$0]++' | head -8 | cut -c1-160 | sed 's/^/    /'
   fi
 }
 {
   echo "nightly checks $(date '+%Y-%m-%d %H:%M') at $(git -C "$ROOT" rev-parse --short HEAD)"
-  step "types, architecture and regression tests" check
+  step "code checks (types, lint, architecture rules, unit tests)" check
   step "current data loads and replays consistently" data_check
   step "daily copy of the data (last 14 kept)" python3 "$WORK/source/tools/backup_data.py" "$DATA"
 } > "$LOG" 2>&1
@@ -51,9 +54,9 @@ post() { curl -s -m 10 -X POST "$URL/p/taska/do?by=nightly&session=checks" --dat
 body=$(print -r -- "$what" | sed 's/^/  /')
 if [[ -f "$LAST" && "$(cut -d' ' -f2 "$LAST")" == "$sig" ]]; then
   code=$(cut -d' ' -f1 "$LAST")
-  printf '%s say Failed again tonight (%s); details are in .logs/nightly-checks.log\n' "$code" "$(date '+%m-%d')" | post
+  printf '%s say Failed again tonight (%s), the same way.\n' "$code" "$(date '+%m-%d')" | post
 else
-  out=$(printf 'new bug P1 now The nightly checks failed (%s)\n  Details (.logs/nightly-checks.log):\n%s\n' "$(date '+%m-%d')" "$body" | post)
+  out=$(printf 'new bug P1 now The nightly checks failed (%s)\n  Every night at 03:30: the code checks (types, lint, architecture rules, unit tests) on the committed code, loading a copy of the data, and the daily backup. What failed, and the lines that say why:\n%s\n' "$(date '+%m-%d')" "$body" | post)
   code=$(print -r -- "$out" | sed -n 's/^ok \([A-Z][0-9]*\) new.*/\1/p' | head -1)
   [[ -n "$code" ]] && echo "$code $sig" > "$LAST"
 fi
