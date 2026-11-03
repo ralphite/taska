@@ -10,7 +10,7 @@ import { plural } from '../../model/words'
 import { Icon } from '../../ui/Icon'
 import { RichFrame } from '../../ui/Markdown'
 import type { SheetLook } from '../../ui/Sheet'
-import { BTN, BTN_DANGER, HIT, NEEDS_PILL, SEP_V } from '../../ui/tones'
+import { BTN, BTN_DANGER, HIT, NEEDS_PILL, PRIMARY, SEP_V } from '../../ui/tones'
 import { BlockActs, type CountInfo } from './BlockActs'
 import { DocBlock } from './DocBlock'
 import { DraftCard, NewDot, Thread, type DocEnv, type ThreadEvents } from './Thread'
@@ -97,6 +97,8 @@ export interface DocEvents extends ThreadEvents {
   whole(): void
   tick(tk: string, i: number): void
   modifyTicks(tk: string): void
+  /** the phone's Send choices, in the document's own line (it has no box over a document, B643) */
+  sendTicks(): void
 }
 
 const TICKED_LINE = /^\s*[-*+]\s+[([][xX][)\]]/m
@@ -276,8 +278,14 @@ export function DocView({ facts, env, on, lasso, page, recTime, aim = null, onAi
           </button>
         </div>
         {facts.waiting ? (
-          <div className="mt-3 flex">
+          // the phone sends them from here, having no box over a document (B643); the desktop's box line has Send choices
+          <div className="mt-3 flex items-center gap-2">
             <span className={NEEDS_PILL}>{facts.waiting}</span>
+            {desk ? null : (
+              <button onClick={on.sendTicks} className={`${PRIMARY} ml-auto`}>
+                Send choices
+              </button>
+            )}
           </div>
         ) : null}
         {facts.showTitle ? <div className="mt-3 text-2xl leading-tight font-bold tracking-tight">{d.title}</div> : null}

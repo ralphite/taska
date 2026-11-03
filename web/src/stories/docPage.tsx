@@ -23,7 +23,7 @@ const no = () => {}
 /** How long a voice comment has recorded, as the page's own clock writes it. */
 const RECORDED = <>{clock(4000)}</>
 
-export const docOn: DocEvents = { copyDoc: no, ref: no, picture: no, play: no, words: no, view: no, edit: no, move: no, takeOff: no, remove: no, menu: no, resolve: no, reply: no, goItem: no, toggle: no, away: no, pick: no, say: no, sayCancel: no, type: no, moveDoc: no, deleteDoc: no, circle: no, editDoc: no, whole: no, tick: no, modifyTicks: no }
+export const docOn: DocEvents = { copyDoc: no, ref: no, picture: no, play: no, words: no, view: no, edit: no, move: no, takeOff: no, remove: no, menu: no, resolve: no, reply: no, goItem: no, toggle: no, away: no, pick: no, say: no, sayCancel: no, type: no, moveDoc: no, deleteDoc: no, circle: no, editDoc: no, whole: no, tick: no, modifyTicks: no, sendTicks: no }
 
 /** How you have the document open, and what is going on around it. */
 export interface DocHere {

@@ -16,7 +16,8 @@ const [, , formats] = blockKeys(CHOICES)
 const one = (d: Doc, h: DocHere = {}): Story => ({ render: () => <Frames height={620} deskWidth={900} phoneWidth={393}>{(layout) => docAt(d, layout === 'desk', h)}</Frames> })
 
 export const Checklist: Story = { ...one(CHOICES), name: 'Nothing ticked' }
-/** Ticked here and not sent: how many wait, over the text. */
+/** Ticked here and not sent: how many wait, over the text; the phone sends them with that line's Send choices (it has
+ * no box over a document, B643), the desktop with the box's line. */
 export const TickedNotSent: Story = { ...one(CHOICES, { ticks: { mine: { 14: { [formats]: '- [x] CSV\n- [ ] Excel\n- [x] JSON' } } } }), name: 'Ticked, not sent yet' }
 /** Sent and not changed since: quieter, with Submitted (Modify shows under the pointer on the desktop). */
 export const Sent: Story = { ...one(CHOICES_SENT), name: 'Sent' }

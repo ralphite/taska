@@ -38,7 +38,7 @@ export class DocChoices {
     const next = b ? tickedBlock(tickText(t, dn, k, b.text), i) : null
     if (!b || next == null) return this.d.toasts.show('Document changed; open it again', null, { error: true })
     t.set(dn, k, next === b.text ? null : next)
-    if (!this.d.desk()) this.d.view.getState().setTyping(true) // the phone: the box comes under the document, with Send choices
+    // the phone sends them from the document's own line (no box over a document, B643): its voice buttons stay
   }
 
   /** A sent form made a form again, to change and send again. */

@@ -1,16 +1,17 @@
 // Yadong's requirements on documents (D29, "Documents"; T475, D45): each check is named by the codes of his inputs, so
 // a change that breaks one is stopped before it ships with his own words.
 // guards: src/features/docs/ src/features/composer/ src/features/item/ src/app/docs/ src/model/docs.ts src/model/boxFoot.ts src/pages/DetailContainer.tsx src/pages/ProjectPageContainer.tsx src/ui/PaneFrame.tsx
-import { expect, test } from '@playwright/test'
+import { expect, test, type Page } from '@playwright/test'
 import { LOOP, isDesk, open, project } from '../seed'
-import { blockPick, blockSay, box, boxAux, boxLine, boxMain, choice, commentRail, docBlock, docBlocks, docCard, duo, form, sayCancel, sendChoices, talk, threadCounts } from '../ui'
+import { blockPick, blockSay, box, boxAux, boxLine, boxMain, choice, commentRail, docBlock, docBlocks, docCard, duo, form, partSay, sayCancel, sendChoices, talk, threadCounts } from '../ui'
 
 // a microphone that hears a tone, so a spoken comment records as it does for him (the phone's, B643)
 test.use({ launchOptions: { args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'] } })
 
-/** Ticked choices are sent with the box's Send choices; the phone's document has had no box since B643 (r955), so
- * it has no way to send them yet: these checks wait for that (D115 follow-up). */
-const NO_PHONE_SEND = "the phone's document has no box, so no Send choices, since B643"
+/** How many choices wait, where it is said: the box's line on the desktop, the document's own line on the phone
+ * (no box over a document, B643), which has Send choices too. */
+const waitSays = async (page: Page, words: string) =>
+  isDesk(page) ? expect(boxLine(page)).toContainText(words) : expect(page.getByText(words, { exact: true }).filter({ visible: true }).first()).toBeVisible()
 
 test('r447 r467: the text of a document stays where it is when a comment comes, the comment beside it', async ({
   page,
@@ -79,7 +80,6 @@ test("r524: choices in a document are ticked on the page and wait; the box's lin
   page,
   request,
 }) => {
-  test.fixme(!isDesk(page), NO_PHONE_SEND)
   const p = await project(request, {
     ...LOOP,
     then: `${LOOP.then}T4 doc Pick the fruit
@@ -90,7 +90,7 @@ test("r524: choices in a document are ticked on the page and wait; the box's lin
   })
   await open(page, p, 'D1')
   for (const f of ['Apples', 'Plums']) await choice(page, f).click()
-  await expect(boxLine(page)).toContainText('2 choices not sent')
+  await waitSays(page, '2 choices not sent')
   expect(await p.read('D1')).not.toMatch(/\[x\] Apples/i) // waiting on the page, not sent one by one
   await sendChoices(page).click() // B524 (r736): the line's own button, not the box's
   await expect.poll(() => p.read('D1')).toMatch(/\[x\] Apples/i)
@@ -102,7 +102,6 @@ test('r420: a sent form is greyed and Submitted, plainly showing what was picked
   page,
   request,
 }) => {
-  test.fixme(!isDesk(page), NO_PHONE_SEND)
   const p = await project(request, {
     ...LOOP,
     then: `${LOOP.then}T4 doc Pick the fruit
@@ -136,7 +135,6 @@ test("r736 r722: ticks wait, the box's mic stays the mic; Send choices is in the
   page,
   request,
 }) => {
-  test.fixme(!isDesk(page), NO_PHONE_SEND)
   const p = await project(request, {
     ...LOOP,
     then: `${LOOP.then}T4 doc Pick the fruit
@@ -145,20 +143,27 @@ test("r736 r722: ticks wait, the box's mic stays the mic; Send choices is in the
 `,
   })
   await open(page, p, 'D1')
-  const main = boxMain(page),
-    line = boxLine(page)
-  const at = async () => (await main.isVisible()) && (await main.boundingBox())
-  const before = await at()
-  await choice(page, 'Apples').click()
-  // the box's round button is still the mic, where it was (B524: reaching for it sent the choices)
-  await expect(line).toContainText('1 choice not sent')
-  await expect(main).toBeVisible()
-  await expect(main).toHaveAccessibleName('Record a voice note')
-  await expect(boxAux(page)).toBeHidden() // the mic did not move aside
-  if (before) expect(await main.boundingBox()).toEqual(before)
-  // Send choices is a button of its own, in the line that says how many wait
+  if (isDesk(page)) {
+    const main = boxMain(page),
+      line = boxLine(page)
+    const at = async () => (await main.isVisible()) && (await main.boundingBox())
+    const before = await at()
+    await choice(page, 'Apples').click()
+    // the box's round button is still the mic, where it was (B524: reaching for it sent the choices)
+    await expect(line).toContainText('1 choice not sent')
+    await expect(main).toBeVisible()
+    await expect(main).toHaveAccessibleName('Record a voice note')
+    await expect(boxAux(page)).toBeHidden() // the mic did not move aside
+    if (before) expect(await main.boundingBox()).toEqual(before)
+  } else {
+    // the phone: no box comes over the document (B643); its own line has Send choices
+    await choice(page, 'Apples').click()
+    await expect(page.locator('#composer')).toBeHidden()
+  }
+  // Send choices is a button of its own, in the line that says how many wait (the box's; the phone's document's)
   await expect(sendChoices(page)).toBeVisible()
   await expect(sendChoices(page)).toHaveText('Send choices')
+  await expect(page.getByRole('button', { name: 'Send choices', exact: true }).filter({ visible: true })).toHaveCount(1) // one, never two
   // the document says it at its top, over its text
   const doc = docBlocks(page).locator('xpath=..')
   const top = doc.getByText('1 choice not sent', { exact: true })
@@ -188,7 +193,8 @@ test('r736 #6754: what is written in the box goes with Send choices as their not
   page,
   request,
 }) => {
-  test.fixme(!isDesk(page), NO_PHONE_SEND)
+  // the note is what the box holds; the phone has no box over a document (B643), its choices go without one (r524)
+  test.skip(!isDesk(page), 'the phone has no box over a document to write a note in (B643)')
   const p = await project(request, {
     ...LOOP,
     then: `${LOOP.then}T4 doc Pick the fruit
@@ -365,7 +371,6 @@ test('D83 #4 (r767 r774): choices ticked and then a paragraph picked: the box sa
   page,
   request,
 }) => {
-  test.fixme(!isDesk(page), NO_PHONE_SEND)
   const p = await project(request, {
     ...LOOP,
     then: `${LOOP.then}T4 doc Pick the fruit
@@ -383,10 +388,19 @@ test('D83 #4 (r767 r774): choices ticked and then a paragraph picked: the box sa
     await para.hover()
     await blockPick(page).click()
   } else await para.click()
-  const composer = page.locator('#composer')
-  await expect(composer).toContainText('Comment on D1')
-  await expect(composer).toContainText('1 choice not sent')
-  await composer.getByRole('button', { name: 'Send choices' }).click()
+  if (isDesk(page)) {
+    const composer = page.locator('#composer')
+    await expect(composer).toContainText('Comment on D1')
+    await expect(composer).toContainText('1 choice not sent')
+    await composer.getByRole('button', { name: 'Send choices' }).click()
+    await expect.poll(() => p.read('D1')).toMatch(/\[x\] Apples/i)
+    await expect(composer).toContainText('Comment on D1') // the paragraph is still what a comment goes to
+    return
+  }
+  // the phone (no box, B643): the paragraph's voice button floats, the document's line has Send choices
+  await expect(partSay(page)).toHaveCount(1)
+  await waitSays(page, '1 choice not sent')
+  await sendChoices(page).click()
   await expect.poll(() => p.read('D1')).toMatch(/\[x\] Apples/i)
-  await expect(composer).toContainText('Comment on D1') // the paragraph is still what a comment goes to
+  await expect(partSay(page)).toHaveCount(1) // the paragraph is still what a comment goes to
 })

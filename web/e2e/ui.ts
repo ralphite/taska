@@ -28,7 +28,8 @@ export const choice = (page: Page, words: string) => shown(docBlocks(page).locat
 /** A document's form (its choices), by one of them. */
 export const form = (page: Page, words: string) => shown(docBlocks(page).locator('[role="group"]').filter({ hasText: words })).first()
 /** The line over the box's Send choices. */
-export const sendChoices = (page: Page) => boxLine(page).getByRole('button', { name: 'Send choices' })
+/** Send choices: the box line's on the desktop, the document's own line on the phone (no box over it, B643). */
+export const sendChoices = (page: Page) => shown(page.getByRole('button', { name: 'Send choices', exact: true })).first()
 /** A document's card on its item's page. */
 export const docCard = (page: Page, title: string) =>
   shown(page.getByRole('button', { name: new RegExp('^' + title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\s+D\\d+\\s+·') }))

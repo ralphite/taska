@@ -36,7 +36,7 @@ function RecTime() {
 
 /** The document's view, with what it does. */
 function useDoc(slug: string, dn: number) {
-  const app = useServices('docChoices', 'docComments', 'docEditor', 'docVoice', 'docs', 'nav', 'seen', 'sheets', 'voice')
+  const app = useServices('box', 'docChoices', 'docComments', 'docEditor', 'docVoice', 'docs', 'nav', 'seen', 'sheets', 'voice')
   const stores = useStores('box', 'docTicks', 'docView', 'drafts', 'recording', 'sheet', 'ui')
   const desk = useLayout() === 'desk'
   const m = useProjectModel(slug)
@@ -96,6 +96,8 @@ function useDoc(slug: string, dn: number) {
     whole: () => (desk ? docs.whole() : void app.docVoice.say(slug, dn, 'doc', '')),
     tick: (tk, i) => app.docChoices.tick(dn, tk, i),
     modifyTicks: (tk) => app.docChoices.modifyTicks(dn, tk),
+    // the box line's Send choices, from the document's own line (the phone's): the draft the box would write now
+    sendTicks: () => void app.docChoices.sendTicks(slug, dn, app.box.key(null, undefined, dn)),
   }
   const page = d?.fmt === 'html' && m ? <WebPageContainer slug={slug} d={d} v={v} seen={seen} env={env} on={on} waiting={waiting} /> : null
   const aimed = useCallback(() => stores.docView.getState().setAim(null), [stores])
