@@ -24,7 +24,7 @@ const statuses = (type: Item['type']) => statusChoices(item({ n: 1, type, status
 
 export const ItemStatuses: Story = {
   name: 'Every item status',
-  render: () => <Frames phoneWidth={393} deskWidth={360}>{() => <div className="py-2">{[...statuses('feature').map(row), row(item({ n: 9, status: 'doing', ...ask }))]}</div>}</Frames>,
+  render: () => <Frames phoneWidth={393} deskWidth={360}>{() => <div className="py-2">{[...statuses('feature').map(row), row(item({ n: 9, status: 'open', ...ask }))]}</div>}</Frames>,
 }
 export const RuleStatuses: Story = {
   name: 'Every rule status',

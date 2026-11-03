@@ -8,9 +8,9 @@ type Story = StoryObj
 
 export const Question = at(q('Which format should the export use?\n- ( ) CSV\n- ( ) Excel'))
 export const ChecklistQuestion = at(q('Which formats should the export offer?\n- [ ] CSV\n- [ ] Excel\n- [ ] JSON'))
-export const Blocked = at({ status: 'doing', wait: askOf('I need the API key for staging.', 'block', 'codex') })
+export const Blocked = at({ status: 'open', wait: askOf('I need the API key for staging.', 'block', 'codex') })
 export const BlockedWithAScreenshot: Story = {
-  ...at({ status: 'doing', wait: { ...askOf('The export button does nothing here.', 'block', 'codex'), files: [{ f: 'f3-shot.png', name: 'shot.png', mime: 'image/png' }] } }),
+  ...at({ status: 'open', wait: { ...askOf('The export button does nothing here.', 'block', 'codex'), files: [{ f: 'f3-shot.png', name: 'shot.png', mime: 'image/png' }] } }),
   name: 'Blocked, with a screenshot',
 }
 export const Proposal = at({ status: 'proposed', thread: [proposal] })
@@ -18,3 +18,15 @@ export const ProposedNothingSaid: Story = { ...at({ status: 'proposed', by: 'cla
 export const QuestionOnAProposal = at({ status: 'proposed', ...q('Which format should the export use?\n- ( ) CSV\n- ( ) Excel') })
 export const RuleProposed = at({ type: 'rule', status: 'proposed', title: 'Screenshots go in the item', thread: [message({ id: 5, kind: 'propose', text: 'Every screenshot of a change is posted on its item.' })] })
 export const WaitsForReview = at({ status: 'review', thread: [report] })
+// ---- more states (T639)
+/** a question with nothing to tick: the question alone, answered in the box under it */
+export const OpenQuestion: Story = { ...at(q('How should the export name its files?')), name: 'A question with nothing to tick' }
+/** finished work with a question waiting: Accept beside Send answer, in one card */
+export const QuestionOnFinishedWork: Story = {
+  ...at({ status: 'review', thread: [report, message({ id: 7, kind: 'ask', text: 'Should the file name carry the date too?\n- ( ) Yes\n- ( ) No' })], wait: askOf('Should the file name carry the date too?\n- ( ) Yes\n- ( ) No') }),
+  name: 'A question on finished work',
+}
+/** a proposal the agent is blocked on: Approve only, with "Answer below" beside it on a wide screen */
+export const BlockedWhileProposed: Story = { ...at({ status: 'proposed', thread: [proposal], wait: askOf('Which page should it start from?', 'block') }), name: 'Blocked on a proposal' }
+/** finished work the agent is blocked on: Accept only */
+export const BlockedWhileInReview: Story = { ...at({ status: 'review', thread: [report], wait: askOf('I cannot reach staging to check it there.', 'block', 'codex') }), name: 'Blocked on finished work' }

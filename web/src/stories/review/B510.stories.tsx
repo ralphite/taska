@@ -51,8 +51,8 @@ export const NowOneCard: Story = {
 export const Option1AskFirstThenFinish: Story = {
   render: () =>
     cases([
-      ['asked before finishing: only the question', item({ n: 3, status: 'doing', thread: [fixing, ask(2, 1)], wait: waits(ask(2, 1)) })],
+      ['asked before finishing: only the question', item({ n: 3, status: 'open', thread: [fixing, ask(2, 1)], wait: waits(ask(2, 1)) })],
       ['answered, then finished: its own card under the answer', item({ n: 3, status: 'review', thread: [fixing, ask(2, 1), you(3, 2, '✓ CSV', 'r1'), report(4, 5)] })],
-      ['finished, done taken back, then asked: only the question', item({ n: 3, status: 'doing', thread: [report(1, 0), ask(2, 1)], wait: waits(ask(2, 1)) })],
+      ['finished, done taken back, then asked: only the question', item({ n: 3, status: 'open', thread: [report(1, 0), ask(2, 1)], wait: waits(ask(2, 1)) })],
     ]),
 }
