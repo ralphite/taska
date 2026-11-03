@@ -6,10 +6,14 @@ import { SEEN, shopWithHistory } from '../../stories/settingsFixtures'
 import type { AgentSeen } from '../../model/types'
 import { agentsSheet } from './Agents'
 import { agentsFacts } from './agentsFacts'
+import { inQueue } from '../../model/items'
+import { PROJECT } from '../../stories/listFixtures'
 
 export default { title: 'Components/Around the page/Menus and sheets/Agents/Who works here' } satisfies Meta
 type Story = StoryObj
 
+/** the project with nothing in its queue now (what waits is for later, or in progress) */
+const IDLE = PROJECT.filter((it) => !(inQueue(it) && it.when === 'now' && it.status !== 'doing'))
 const sheet = (f: ReturnType<typeof agentsFacts>, open = false): Story => ({ render: () => <SheetFrames look={{ tall: true, wide: true }} height={820} parts={() => agentsSheet(f, acts('Agents', ['copy', 'help'], { help: 'Help › Topics › Connect an agent' }), open)} /> })
 
 /** One around and one that was here earlier. */
@@ -17,7 +21,7 @@ export const Agents: Story = { ...sheet(agentsFacts(shopWithHistory(), guide('sh
 export const NoneYet: Story = { ...sheet(agentsFacts(shopWithHistory([]), guide('shop'))), name: 'None yet' }
 /** How a connected agent gets work without spending tokens: from How it works in Agents. */
 /** Nothing waits for an agent and none has been here. */
-export const NothingWaitingNoneYet: Story = { ...sheet(agentsFacts(shopWithHistory([], { work: false }), guide('shop'))), name: 'Nothing waiting, none yet' }
+export const NothingWaitingNoneYet: Story = { ...sheet(agentsFacts(shopWithHistory([], { work: false, items: IDLE }), guide('shop'))), name: 'Nothing waiting, none yet' }
 // ---- more states (T639): each as the page's own agentsFacts makes it of the demo project
 const gone: AgentSeen[] = [{ name: 'codex', t: SEEN[1].t, waiting: false }]
 /** an agent that finished its round minutes ago and left: green, here lately */
@@ -25,7 +29,7 @@ export const HereLately: Story = { ...sheet(agentsFacts(shopWithHistory([{ name:
 /** work waits and the agent that was here left hours ago: the red card, and who was seen */
 export const WorkWaitsAgentLeft: Story = { ...sheet(agentsFacts(shopWithHistory(gone), guide('shop'))), name: 'Work waits, the last agent left hours ago' }
 /** nothing waits and an agent was here before: the grey card with its time, and who was seen */
-export const NothingWaitingAgentWasHere: Story = { ...sheet(agentsFacts(shopWithHistory(gone, { work: false }), guide('shop'))), name: 'Nothing waiting, an agent was here' }
+export const NothingWaitingAgentWasHere: Story = { ...sheet(agentsFacts(shopWithHistory(gone, { work: false, items: IDLE }), guide('shop'))), name: 'Nothing waiting, an agent was here' }
 /** an agent Taska does not know by name: dimmed in Seen in this project */
 export const SeenAnUnknownAgent: Story = { ...sheet(agentsFacts(shopWithHistory([...SEEN, { name: 'helper-bot', t: SEEN[1].t, waiting: false }]), guide('shop'))), name: 'Seen: an agent Taska does not know' }
 /** no public address: no Copy for another network under the command */

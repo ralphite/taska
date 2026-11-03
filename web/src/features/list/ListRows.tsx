@@ -255,7 +255,7 @@ export function ItemRow(props: {
             </div>
           ) : null}
         </div>
-        {it.type === 'rule' ? null : <RowActs it={it} needs={false} on={on} />}
+        <RowActs it={it} needs={false} on={on} />
         {facts.image ? (
           <button
             aria-label="View image"
@@ -324,7 +324,7 @@ export function NeedsRow({ it, depth, facts, look, excerpt, on, rowRef }: { it: 
             </span>
           </div>
         </div>
-        {it.type === 'rule' ? null : <RowActs it={it} needs on={on} />}
+        <RowActs it={it} needs on={on} />
         <button
           data-need={v}
           title={`${label} · A`}

@@ -6,7 +6,7 @@ import { useState, type MouseEvent, type Ref } from 'react'
 import type { SearchHit } from '../../model/types'
 import { inputCode } from '../../model/words'
 import { Icon } from '../../ui/Icon'
-import { NeedsCount, ProjTile, Skeleton } from '../../ui/bits'
+import { Hit, NeedsCount, ProjTile, Skeleton } from '../../ui/bits'
 import { DISABLED } from '../../ui/tones'
 
 export interface HomeRow {
@@ -52,6 +52,9 @@ export interface HomeEvents {
 
 const GRID = 'lg:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)_4.5rem_5.5rem_minmax(0,2.1fr)]'
 const NOTE = 'mb-3 rounded-xl bg-zinc-100 px-4 py-3 text-sm text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100'
+/** A notice about the link you came by (a deleted project, none of that name): one bar, its × at its end. */
+const NOTICE = 'mb-3 flex items-center gap-3 rounded-xl bg-amber-50 px-4 py-2 text-sm text-amber-950 ring-1 ring-amber-200 dark:bg-amber-400/10 dark:text-amber-100 dark:ring-amber-400/25'
+const NOTICE_X = 'grid size-9 shrink-0 place-items-center rounded-lg text-amber-800 hover:bg-amber-100 dark:text-amber-200 dark:hover:bg-amber-400/15'
 
 const hitUrl = (x: SearchHit, q: string) => `/p/${encodeURIComponent(x.project)}/${x.kind === 'input' ? 'inputs?q=' + encodeURIComponent(q.trim()) : encodeURIComponent(x.code)}`
 const hitWhere = (x: SearchHit) => (x.kind === 'input' ? ' · what you said' : x.archived ? ' · archived' : x.status === 'done' ? ' · done' : x.status === 'dropped' ? " · won't do" : '')
@@ -151,21 +154,24 @@ export function Home({ facts, on, searchRef }: { facts: HomeFacts; on: HomeEvent
         </label>
       </header>
       {gone ? (
-        <div className="mb-3 flex items-center gap-3 rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-950 ring-1 ring-amber-200 dark:bg-amber-400/10 dark:text-amber-100 dark:ring-amber-400/25">
-          <span className="min-w-0 flex-1">{gone.said || `“${gone.name}” deleted.`}</span>
-          <button onClick={on.restore} className="h-9 shrink-0 rounded-lg bg-white px-3 font-semibold text-amber-900 ring-1 ring-amber-300 hover:bg-amber-100 dark:bg-zinc-800 dark:text-amber-100 dark:ring-amber-400/30">
-            Restore
-          </button>
-          <button aria-label="Close" onClick={on.closeGone} className="grid size-9 shrink-0 place-items-center rounded-lg text-amber-800 hover:bg-amber-100 dark:text-amber-200 dark:hover:bg-amber-400/15">
-            {'✕'}
+        <div className={NOTICE}>
+          <span className="min-w-0 flex-1">{gone.said || `“${gone.name}” deleted`}</span>
+          {/* refused (its reason said): Restore again would not help */}
+          {gone.said ? null : (
+            <button onClick={on.restore} className="h-9 shrink-0 rounded-lg bg-white px-3 font-semibold text-amber-900 ring-1 ring-amber-300 hover:bg-amber-100 dark:bg-zinc-800 dark:text-amber-100 dark:ring-amber-400/30">
+              Restore
+            </button>
+          )}
+          <button aria-label="Close" onClick={on.closeGone} className={NOTICE_X}>
+            <Icon n="x" c="size-4" />
           </button>
         </div>
       ) : null}
       {none ? (
-        <div className="mb-3 flex items-center gap-3 rounded-xl bg-zinc-100 px-4 py-3 text-sm text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100">
-          <span className="min-w-0 flex-1">No project {`“${none}”`}.</span>
-          <button aria-label="Close" onClick={on.closeNone} className="grid size-9 shrink-0 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-200 dark:text-zinc-400 dark:hover:bg-zinc-700">
-            {'✕'}
+        <div className={NOTICE}>
+          <span className="min-w-0 flex-1">No project {`“${none}”`}</span>
+          <button aria-label="Close" onClick={on.closeNone} className={NOTICE_X}>
+            <Icon n="x" c="size-4" />
           </button>
         </div>
       ) : null}
@@ -181,7 +187,9 @@ export function Home({ facts, on, searchRef }: { facts: HomeFacts; on: HomeEvent
                 className="flex items-center gap-2.5 border-b border-zinc-100 px-4 py-2.5 text-sm last:border-b-0 hover:bg-zinc-50 dark:border-zinc-700/60 dark:hover:bg-zinc-700/40"
               >
                 <span className="font-mono text-xs font-bold text-zinc-500 dark:text-zinc-400">{inputCode(x.code)}</span>
-                <span className="min-w-0 flex-1 truncate">{x.title}</span>
+                <span className="min-w-0 flex-1 truncate">
+                  <Hit text={x.title} words={q.toLowerCase().split(/\s+/).filter(Boolean)} />
+                </span>
                 <span className="shrink-0 text-xs text-zinc-500 dark:text-zinc-400">
                   {x.ptitle || x.project}
                   {hitWhere(x)}

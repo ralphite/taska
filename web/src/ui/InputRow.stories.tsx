@@ -3,7 +3,7 @@
 // Input card, Inputs tab, New input page.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { ReactNode } from 'react'
-import type { Became, ItemRef } from '../model/became'
+import { failWhy, type Became, type ItemRef } from '../model/became'
 import type { Status } from '../model/types'
 import { STATUS_WORD } from '../model/words'
 import { Frames, States } from '../stories/Frames'
@@ -16,6 +16,8 @@ const it = (n: number, code: string, title: string, s: Status = 'open', type: It
 const B014 = it(14, 'B014', 'Coupon box hidden behind the keyboard')
 const F012 = it(12, 'F012', 'Export keeps the filter you set', 'doing', 'feature')
 const T007 = it(7, 'T007', 'Which formats should the export offer?', 'open', 'task')
+/** what the organizer said when it failed, as Taska keeps it (the line says it as failWhy does) */
+const FAILED = 'No changes needed · Some commands failed: err: B99 not found'
 const BECAME: [string, Became][] = [
   ['made an item', { k: 'filed', items: [{ did: 'Created', item: B014 }], note: null }],
   ['made two, added to one', { k: 'filed', items: [{ did: 'Created', item: B014 }, { did: 'Created', item: it(43, 'F043', 'Close the keyboard by tapping outside it', 'open', 'feature') }, { did: 'Added to', item: F012 }], note: null }],
@@ -27,8 +29,8 @@ const BECAME: [string, Became][] = [
   ['transcribing', { k: 'transcribing' }],
   ['organizing', { k: 'organizing' }],
   ['waiting to be organized', { k: 'queued' }],
-  ['couldn’t organize: Try again', { k: 'failed', why: 'No changes needed · Some commands failed: err: B99 not found', retry: true }],
-  ['couldn’t organize, the organizer off', { k: 'failed', why: 'No changes needed · Some commands failed: err: B99 not found', retry: false }],
+  ['couldn’t organize: Try again', { k: 'failed', why: failWhy(FAILED), retry: true }],
+  ['couldn’t organize, the organizer off', { k: 'failed', why: failWhy(FAILED), retry: false }],
   ['organizing undone: Organize again', { k: 'undone', retry: true }],
   ['a cancelled recording: Send', { k: 'cancelled' }],
   ['left for an agent', { k: 'agent' }],

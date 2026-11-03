@@ -40,7 +40,10 @@ export function DocPaneHead({ d, editing }: { d: Pick<Doc, 'd' | 'title' | 'fmt'
   )
 }
 
+/** Delete asking again, the other buttons step aside (Delete stays where it was, at the end): a narrow bar keeps the
+ * document's name in sight while you decide. */
 export function DocPaneActs({ web, inspect, deleting, on }: { web: boolean; inspect: boolean; deleting: boolean; on: { inspect(): void; copy(): void; edit(): void; move(from: HTMLElement): void; remove(): void } }) {
+  if (deleting) return <PaneBtn icon="trash" label="Delete?" ask danger onClick={on.remove} />
   return (
     <>
       {web ? (
@@ -56,7 +59,7 @@ export function DocPaneActs({ web, inspect, deleting, on }: { web: boolean; insp
       <PaneBtn icon="pencil" label="Edit" onClick={on.edit} />
       <PaneBtn icon="arrow" label="Move" onClick={(e) => on.move(e.currentTarget)} />
       <span className={SEP_V} />
-      <PaneBtn icon="trash" label={deleting ? 'Delete?' : 'Delete'} ask={deleting} danger onClick={on.remove} />
+      <PaneBtn icon="trash" label="Delete" danger onClick={on.remove} />
     </>
   )
 }

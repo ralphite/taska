@@ -20,6 +20,5 @@ export const ParagraphPicked: Story = { ...one({ sel: ['p1'] }), name: 'Paragrap
 export const Replying: Story = { ...one({ threads: ['p1#1'], reply: 'p1#1' }), name: 'Replying in a thread' }
 export const ResolvedThread: Story = { ...one({ threads: ['p1#1'] }, { ...PLAN, resolved: { 'p1#1': PLAN.t1 } }), name: 'Thread resolved' }
 // ---- more states (B636)
-export const ParagraphPickedSpeaking: Story = { ...one({ sel: ['p1'], speaking: { key: 'p1', bar: false } }), name: 'Paragraph picked, speaking' }
 export const SpeakingAboutAParagraph: Story = { ...one({ speaking: { key: 'p1', bar: false } }), name: 'Speaking about a paragraph' }
 export const AnItemOfAListPicked: Story = { ...one({ quote: { key: 'l1', text: 'Write the goals' } }), name: 'An item of a list picked' }

@@ -5,8 +5,8 @@
 import type { Command } from '../../api/taska'
 import { closed, ranksFor } from '../../model/items'
 import { codeOf, type ItemPatch, type ProjectModel } from '../../model/project'
-import type { Item } from '../../model/types'
-import { DID, LETTER, plural } from '../../model/words'
+import type { Item, Status } from '../../model/types'
+import { DID, LETTER, STATUS_WORD, plural } from '../../model/words'
 import type { UiStore } from '../../stores/ui'
 import type { ChangeRunner } from '../changeRunner'
 import { newId } from '../changeRunner'
@@ -44,6 +44,13 @@ export function saidOf(m: ProjectModel, f: string, v: unknown, before: unknown, 
   if (f === 'parent') return v ? `is now under ${codeOf(m, v as number)}` : 'stands on its own'
   if (f === 'rank') return v == null ? 'is back in order' : 'goes next in its priority'
   return DID[String(v)]
+}
+
+/** What a row you just changed says where it stays a moment: a few words, done (Approved, Won't do, Moved to Later),
+ * not the toast's sentence. */
+export function heldWord(f: string, v: unknown, said: string): string {
+  const w = f === 'status' && /^is /.test(said) && STATUS_WORD[v as Status] ? STATUS_WORD[v as Status] : said.replace(/^is (now )?/, '')
+  return w.replace(/^./, (c) => c.toUpperCase())
 }
 
 /** A field's value as the server takes it: a parent goes as an item reference. */
@@ -94,7 +101,7 @@ export class ItemActions {
       )
     })
     if (n !== this.d.openItem() || this.d.desk()) {
-      this.d.ui.getState().hold(n, { said: words.replace(/^./, (c) => c.toUpperCase()), f, v, height: this.d.rowHeight(n) }, this.d.listKey())
+      this.d.ui.getState().hold(n, { said: heldWord(f, v, words), f, v, height: this.d.rowHeight(n) }, this.d.listKey())
       this.d.held()
     }
     const left = f === 'status' && v === 'done' ? (m.kids.get(n) || []).filter((k) => !closed(k.status)).length : 0

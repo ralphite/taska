@@ -152,7 +152,6 @@ export const ACT_TONE: Record<string, string> = {
   Done: 'text-emerald-600 dark:text-emerald-400',
   Accept: 'text-emerald-600 dark:text-emerald-400',
   Approve: 'text-blue-600 dark:text-blue-400',
-  Archive: 'text-emerald-600 dark:text-emerald-400',
   Start: 'text-blue-600 dark:text-blue-400',
   "Won't do": 'text-red-600 dark:text-red-400',
   Retire: 'text-red-600 dark:text-red-400',
@@ -160,11 +159,11 @@ export const ACT_TONE: Record<string, string> = {
 }
 export const ACT_ICON: Record<string, import('./icon-paths').IconName> = {
   Approve: 'thumb',
-  Accept: 'check',
+  Accept: 'done',
   Done: 'done',
   Archive: 'archive',
   Later: 'clock',
-  'Back to now': 'clock',
+  'Back to now': 'up',
   "Won't do": 'ban',
   'Not yet': 'reopen',
   Pause: 'pause',
@@ -180,6 +179,7 @@ export const ACT_ICON: Record<string, import('./icon-paths').IconName> = {
 export const ACT_BG: Record<string, string> = {
   Start: 'bg-blue-600 dark:bg-blue-500',
   "Won't do": 'bg-red-600 dark:bg-red-500',
+  Retire: 'bg-red-600 dark:bg-red-500',
   Done: 'bg-emerald-600 dark:bg-emerald-500',
 }
 export const FORWARD_NEED: Record<string, NeedKind> = { Accept: 'accept', Approve: 'approve', Answer: 'answer', Reply: 'reply' }

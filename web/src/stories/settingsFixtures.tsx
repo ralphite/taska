@@ -12,7 +12,7 @@ import { SettingsFrame } from '../features/settings/SettingsFrame'
 import { DeskNav, PhoneIndex } from '../features/settings/SettingsNav'
 import { deletedRows, docRows, logRows, navFacts, projectsOf } from '../features/settings/settingsFacts'
 import type { SectionKey } from '../features/settings/sectionList'
-import type { AgentSeen, LogRow, ProjectRow, Spelling } from '../model/types'
+import type { AgentSeen, Item, LogRow, ProjectRow, Spelling } from '../model/types'
 import type { DeletedProject } from '../stores/settings'
 import { T, modelOf } from './fixtures'
 import { doc } from './docFixtures'
@@ -66,8 +66,8 @@ export interface SettingsHere {
 
 /** Shop with its history: agents, documents, what was deleted, what can be undone. */
 /** the demo project with its agents; `work`: something waits for an agent; `remote`: its public address ('' none) */
-export const shopWithHistory = (agents: AgentSeen[] = SEEN, o: { work?: boolean; remote?: string } = {}) =>
-  modelOf(PROJECT, [], {
+export const shopWithHistory = (agents: AgentSeen[] = SEEN, o: { work?: boolean; remote?: string; items?: Item[] } = {}) =>
+  modelOf(o.items ?? PROJECT, [], {
     title: 'Shop',
     agents,
     work: o.work ?? true,
