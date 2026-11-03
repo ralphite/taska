@@ -1,6 +1,6 @@
 // Settings' Projects: the list of projects, and renaming one.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { one } from '../../stories/sectionsFixtures'
+import { one, onPhone } from '../../stories/sectionsFixtures'
 
 export default { title: 'Components/Settings, help and parts/Settings/Projects' } satisfies Meta
 type Story = StoryObj
@@ -11,7 +11,7 @@ export const ProjectsRenaming: Story = { ...one('projects', { projects: { renami
 // ---- more states (T639)
 export const NewProjectNaming: Story = { ...one('projects', { projects: { pNew: true, pNewText: 'Garden' } }), name: 'New project: naming it' }
 export const NewProjectNotMade: Story = { ...one('projects', { projects: { pNew: true, pNewText: 'Shop', pErr: 'A project with that address exists' } }), name: 'New project: not made' }
-export const PhoneProjectMenuOpen: Story = { ...one('projects', { projects: { menu: 'home' } }), name: "On the phone: a project's ⋯ open" }
-export const PhoneDeletedProjectPurging: Story = { ...one('projects', { projects: { menu: 'old', purging: ['old'] } }), name: "On the phone: a deleted project's Delete forever asks again" }
+export const PhoneProjectMenuOpen: Story = { ...onPhone('projects', { projects: { menu: 'home' } }), name: "On the phone: a project's ⋯ open" }
+export const PhoneDeletedProjectPurging: Story = { ...onPhone('projects', { projects: { menu: 'gone:old', purging: ['old'] } }), name: "On the phone: a deleted project's Delete forever asks again" }
 export const ProjectsLoading: Story = { ...one('projects', { projectsLoading: true }), name: 'Loading' }
 export const ProjectsNoneDeleted: Story = { ...one('projects', { noneDeleted: true }), name: 'None deleted' }
