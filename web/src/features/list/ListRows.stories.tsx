@@ -21,7 +21,6 @@ export const Lines: Story = {
             ['zone: needs you', <Zone kind="needs" label="Needs you" n={3} />],
             ['zone: rules', <Zone kind="rules" label="Active" n={12} />],
             ['zone: retired', <Zone kind="retired" label="Retired" n={2} />],
-            ['zone: later', <Zone kind="later" label="Later" n={5} />],
             ['hidden subitems: in Later', <HiddenKidsLine parent={1} depth={1} open={false} later={2} onToggle={() => {}} />],
             ['hidden subitems: shown', <HiddenKidsLine parent={1} depth={1} open later={2} onToggle={() => {}} />],
             ['needs you: show more', <NeedsMoreLine open={false} rest={4} onToggle={() => {}} />],

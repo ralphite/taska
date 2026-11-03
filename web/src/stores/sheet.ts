@@ -56,9 +56,6 @@ export interface SheetPlace {
   /** wider on the desktop */
   wide?: boolean
   tall?: boolean
-  /** the focus card, above the box */
-  card?: boolean
-  aboveComposer?: boolean
   /** its first button takes the focus */
   focus?: boolean
   /** where a desktop menu sits: at the pointer, or under the button it came from (its right edge on the button's) */

@@ -9,7 +9,7 @@ import type { ProjectRow } from '../model/types'
 import { modelOf } from './fixtures'
 import { PROJECT } from './listFixtures'
 
-export const sideOn: SidebarEvents = { newInput() {}, newVoice() {}, newProject() {}, hide() {}, settings() {}, help() {}, keys() {}, go: (_, e) => e.preventDefault(), undo() {} }
+export const sideOn: SidebarEvents = { newInput() {}, newVoice() {}, newProject() {}, hide() {}, settings() {}, help() {}, keys() {}, go: (_, e) => e.preventDefault(), undo() {}, order() {}, dragProject: () => false, dropProject() {}, projectMenu() {} }
 /** The projects as Taska last listed them, in your order. */
 const ROWS: ProjectRow[] = [
   { name: 'home', title: 'Home', open: 13, needs: 11, pos: 0 },

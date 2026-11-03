@@ -6,11 +6,10 @@ import type { Message } from '../../model/types'
 import { Rich } from '../../ui/Markdown'
 import type { TalkEnv, TalkEvents } from './talkEnv'
 
-export function MsgText({ x, env, on, choosing = null, done = null, whole = false }: {
+export function MsgText({ x, env, on, done = null, whole = false }: {
   x: Message
   env: TalkEnv
   on: TalkEvents
-  choosing?: TalkEnv['choosing']
   done?: readonly string[] | null
   whole?: boolean
 }) {
@@ -18,7 +17,7 @@ export function MsgText({ x, env, on, choosing = null, done = null, whole = fals
   const lines = x.text.trim().split('\n').length
   const long = (x.by !== 'you' || env.desk) && x.kind !== 'ask' && (latest ? lines > 50 : x.text.length > 240 || lines > 3)
   const open = env.opened.has(x.id)
-  const rich = (text: string) => <Rich text={text} world={env.world} choosing={choosing} done={done} onRef={on.ref} onPicture={on.picture} />
+  const rich = (text: string) => <Rich text={text} world={env.world} done={done} onRef={on.ref} onPicture={on.picture} />
   if (long && env.desk && !open)
     return (
       <>

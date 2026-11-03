@@ -6,8 +6,8 @@ import type { ReactNode } from 'react'
 import { Icon } from '../../ui/Icon'
 import { PRIMARY, SECOND } from '../../ui/tones'
 
-export const Part = ({ title, about, children, id }: { title: ReactNode; about?: ReactNode; children?: ReactNode; id?: string }) => (
-  <section {...(id ? { id } : {})} className="scroll-mt-16 border-t border-zinc-200 py-6 lg:scroll-mt-6 dark:border-zinc-800">
+export const Part = ({ title, about, children }: { title: ReactNode; about?: ReactNode; children?: ReactNode }) => (
+  <section className="scroll-mt-16 border-t border-zinc-200 py-6 lg:scroll-mt-6 dark:border-zinc-800">
     <h2 className="text-[15px] font-semibold">{title}</h2>
     {about ? <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">{about}</p> : null}
     {children}
@@ -25,8 +25,8 @@ export const Setting = ({ title, about, control }: { title: ReactNode; about: Re
 )
 
 /** Text to copy: no word cut in two, no backticks shown. */
-export const TextBox = ({ t, mono = true }: { t: string; mono?: boolean }) => (
-  <div className={`mt-3 rounded-xl bg-zinc-100 px-3.5 py-3 leading-relaxed text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200 ${mono ? 'font-mono text-[13px] break-words' : 'text-sm break-words'}`}>{mono ? t : t.replace(/`/g, '')}</div>
+export const TextBox = ({ t }: { t: string }) => (
+  <div className="mt-3 rounded-xl bg-zinc-100 px-3.5 py-3 font-mono text-[13px] leading-relaxed break-words text-zinc-800 dark:bg-zinc-800 dark:text-zinc-200">{t}</div>
 )
 
 export const CopyBtn = ({ label, main = false, onCopy }: { label: string; main?: boolean; onCopy(): void }) => (

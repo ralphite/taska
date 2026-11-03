@@ -5,7 +5,7 @@ import { forwardRef, type ReactNode, useLayoutEffect, useRef } from 'react'
 import type { Item } from '../../model/types'
 import { Empty } from '../../ui/bits'
 import { ArchiveAllLine, HeldRow, HiddenKidsLine, ItemRow, NeedsMoreLine, NeedsRow, Zone, type RowEvents, type RowFacts, type RowLook } from './ListRows'
-import type { ViewChip } from './rows'
+import type { ViewChip, ZoneKind } from './rows'
 import { ViewBar, type OwnViewChip } from './ViewBar'
 import { useRowSwipe, type RowSwipe } from './rowSwipe'
 
@@ -13,7 +13,7 @@ export type DrawnRow =
   | { kind: 'item'; key: string; it: Item; depth: number; band: string; foldable: boolean; folded: boolean; facts: RowFacts; look: RowLook }
   | { kind: 'needs'; key: string; it: Item; depth: number; facts: RowFacts; look: RowLook; excerpt: string }
   | { kind: 'held'; key: string; it: Item; code: string; said: string; height: number }
-  | { kind: 'zone'; key: string; zone: string; label: string; n: number }
+  | { kind: 'zone'; key: string; zone: ZoneKind; label: string; n: number }
   | { kind: 'hidden-kids'; key: string; parent: number; depth: number; open: boolean; later: number }
   | { kind: 'needs-more'; key: string; open: boolean; rest: number }
   | { kind: 'archive-all'; key: string; n: number }
@@ -48,7 +48,6 @@ export interface ItemListProps {
   bottom?: ReactNode
   on: ListEvents
   /** room for the box over the list's end on the phone */
-  onScroll?(top: number): void
   /** each item row's element, for its height */
   rowRef?(n: number): (el: HTMLElement | null) => void
   /** an item is being dragged (its rows are marked through their look): off every row it stands on its own */
@@ -68,7 +67,7 @@ export interface ItemListProps {
 const NO_SWIPE: RowSwipe = { right: () => null, blocked: () => true }
 
 export const ItemList = forwardRef<HTMLDivElement, ItemListProps>(function ItemList(props, ref) {
-  const { loading, views, ownViews, rows, empty, top, bottom, on, onScroll, rowRef, dragging = null, desk = false, swipe, openN = null, itemShown = false, listKey = '' } = props
+  const { loading, views, ownViews, rows, empty, top, bottom, on, rowRef, dragging = null, desk = false, swipe, openN = null, itemShown = false, listKey = '' } = props
   const own = useRef<HTMLDivElement | null>(null)
   const wasOpen = useRef<{ n: number | null; list: string; loading: boolean } | null>(null)
   /** the page opened at an item: its row comes into view the first time it shows, in whichever list it is */
@@ -103,7 +102,6 @@ export const ItemList = forwardRef<HTMLDivElement, ItemListProps>(function ItemL
         else if (ref) ref.current = el
       }}
       {...(dragging?.out ? { 'data-drop-out': '' } : {})}
-      onScroll={(e) => onScroll?.(e.currentTarget.scrollTop)}
       onPointerDown={(e) => {
         // only a mouse drags a row (a finger scrolls and swipes)
         const a = rowOf(e.target)

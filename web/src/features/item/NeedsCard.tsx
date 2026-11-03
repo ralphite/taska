@@ -120,7 +120,7 @@ const FINISHED: readonly Pair[] = [
   ['done', 'check', 'Accept', 'A'],
 ]
 
-export function NeedsCard({ it, env, on, remodify, going = null, onCard = false }: {
+export function NeedsCard({ it, env, on, remodify, going = null }: {
   it: Item
   env: TalkEnv
   on: CardEvents
@@ -128,7 +128,6 @@ export function NeedsCard({ it, env, on, remodify, going = null, onCard = false 
   remodify: boolean
   /** an answer to its question on its way: its words */
   going?: string | null
-  onCard?: boolean
 }) {
   const n = it.n
   const m = heldMessage(it)
@@ -159,7 +158,7 @@ export function NeedsCard({ it, env, on, remodify, going = null, onCard = false 
       keep || choices ? (
         <>
           <KeepBtn it={it} on={on} />
-          {choices ? <SendAnswerBtn n={n} picked={!!asking?.picked.size} cls={onCard ? 'flex-1' : 'flex-[1.4] lg:flex-none'} keyHint on={on} /> : null}
+          {choices ? <SendAnswerBtn n={n} picked={!!asking?.picked.size} cls="flex-[1.4] lg:flex-none" keyHint on={on} /> : null}
         </>
       ) : null,
       choices ? '' : '↓ Answer below',

@@ -23,14 +23,14 @@ const onRow = (run: () => void) => (e: MouseEvent) => {
 }
 
 /** The list's head and its scroller. */
-export function SideFrame({ side, count, scrollRef, children }: { side: Side; count: number; scrollRef?: (el: HTMLDivElement | null) => void; children: ReactNode }) {
+export function SideFrame({ side, count, children }: { side: Side; count: number; children: ReactNode }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex h-12 shrink-0 items-center gap-2 border-b border-zinc-200 px-4 dark:border-zinc-800">
         <h2 className="text-[15px] font-semibold">{TITLE[side]}</h2>
         {count ? <span className="font-mono text-xs text-zinc-400 tabular-nums dark:text-zinc-500">{count}</span> : null}
       </div>
-      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto outline-none lg:scrollbar-thin">
+      <div className="min-h-0 flex-1 overflow-y-auto outline-none lg:scrollbar-thin">
         {children}
       </div>
     </div>

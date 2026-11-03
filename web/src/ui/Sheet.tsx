@@ -14,7 +14,7 @@ export interface SheetLook {
   tall?: boolean
   /** the phone: the whole screen down to the box, under the status bar (a document to read) */
   full?: boolean
-  card?: boolean
+  /** the phone: over the page down to the box (its room is `footRoom`) */
   aboveComposer?: boolean
   at?: { x: number; y: number; right?: boolean; top?: number; left?: number } | null
 }
@@ -70,11 +70,10 @@ export function SheetLayout({ menu, title, head, extra, sub, foot, body }: Sheet
   )
 }
 
-export function Sheet({ open, look, parts, children, desk, footRoom = 0, focus = false, bodyRef, footRef, onClose }: {
+export function Sheet({ open, look, children, desk, footRoom = 0, focus = false, bodyRef, footRef, onClose }: {
   open: boolean
   look: SheetLook
-  /** what it holds, as parts (or as `children` that lay themselves out with SheetLayout) */
-  parts?: SheetParts | null
+  /** what it holds, laid out with SheetLayout */
   children?: ReactNode
   desk: boolean
   /** room the box takes at the bottom, for a sheet above it */
@@ -96,7 +95,7 @@ export function Sheet({ open, look, parts, children, desk, footRoom = 0, focus =
     if (!o || !d || !open) return
     o.style.bottom = look.aboveComposer ? footRoom + 'px' : ''
     const full = !!look.full && !desk
-    d.style.height = full ? '100%' : look.tall && look.aboveComposer && !desk ? `calc(88dvh - ${footRoom}px)` : ''
+    d.style.height = full ? '100%' : ''
     d.style.maxHeight = full ? '100%' : ''
     // a menu sits at the pointer, or under the button it came from, kept on screen
     const xy = look.at
@@ -111,22 +110,17 @@ export function Sheet({ open, look, parts, children, desk, footRoom = 0, focus =
     // no ring on opening
     if (open && focus && desk) close.current?.focus({ preventScroll: true, focusVisible: false } as FocusOptions)
   }, [open, focus, desk])
-  if (!open || !(parts || children)) return <div ref={overlay} hidden />
-  const card = !!look.card
+  if (!open || !children) return <div ref={overlay} hidden />
   const pop = !!look.pop && desk
-  const flush = card && !!look.aboveComposer
   const oCls = [
     'fixed inset-0 z-40 flex items-end justify-center bg-black/40 pt-[max(env(safe-area-inset-top),0.75rem)] sm:items-center sm:p-6 dark:bg-black/60',
-    card ? 'px-2' : '',
-    card && !flush ? 'pb-2' : '',
     pop ? (look.at ? 'lg:items-start lg:justify-start lg:bg-transparent dark:lg:bg-transparent' : 'lg:items-start lg:justify-end lg:bg-transparent dark:lg:bg-transparent lg:pt-[3.75rem] lg:pr-3') : '',
   ].join(' ')
   const dCls = [
     'flex max-h-[min(88dvh,100%)] w-full max-w-2xl flex-col bg-white shadow-xl transition-transform duration-150 sm:rounded-3xl dark:bg-zinc-900 dark:ring-1 dark:ring-white/10',
     look.tall ? 'h-[88dvh] sm:h-[85dvh]' : '',
     look.wide ? 'lg:max-w-5xl' : '',
-    card ? 'shadow-2xl overflow-hidden max-h-[92%]' : 'max-h-[88dvh]',
-    card && !flush ? 'rounded-3xl' : 'rounded-t-3xl',
+    'max-h-[88dvh] rounded-t-3xl',
     pop ? `${look.narrow ? 'lg:w-56' : 'lg:w-[24rem]'} lg:max-h-[80dvh] lg:rounded-2xl lg:ring-1 lg:ring-zinc-900/10 dark:lg:ring-white/10` : '',
   ].join(' ')
   const dragEnd = () => {
@@ -141,7 +135,6 @@ export function Sheet({ open, look, parts, children, desk, footRoom = 0, focus =
     <div
       ref={overlay}
       data-part="sheet"
-      data-card={card ? '1' : ''}
       data-above={look.aboveComposer ? '1' : ''}
       className={oCls}
       onClick={(e) => {
@@ -172,7 +165,7 @@ export function Sheet({ open, look, parts, children, desk, footRoom = 0, focus =
         <div data-handle className="flex shrink-0 touch-none justify-center pt-2 sm:hidden">
           <span className="h-1 w-10 rounded-full bg-zinc-300 dark:bg-zinc-600" />
         </div>
-        <Frame.Provider value={{ pop, onClose, close, bodyRef, footRef }}>{parts ? <SheetLayout {...parts} /> : children}</Frame.Provider>
+        <Frame.Provider value={{ pop, onClose, close, bodyRef, footRef }}>{children}</Frame.Provider>
       </section>
     </div>
   )

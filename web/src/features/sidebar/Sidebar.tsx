@@ -38,14 +38,14 @@ export interface SidebarEvents {
   help(): void
   keys(): void
   go(href: string, e: { preventDefault(): void; metaKey: boolean; ctrlKey: boolean }): void
-  undo?(): void
+  undo(): void
   /** the projects dragged into this order (`moved`: the one you held) */
-  order?(names: string[], moved: string): void
+  order(names: string[], moved: string): void
   /** an item from the list dragged over a project (null: off them); -> it can go there */
-  dragProject?(slug: string | null): boolean
-  dropProject?(): void
+  dragProject(slug: string | null): boolean
+  dropProject(): void
   /** a project's menu, at the pointer (right-click, the desktop) */
-  projectMenu?(slug: string, x: number, y: number): void
+  projectMenu(slug: string, x: number, y: number): void
 }
 
 export interface SidebarProps {
@@ -100,7 +100,6 @@ export function ProjectRows({ phone, projects, on }: { phone: boolean; projects:
             data-slug={p.slug}
             {...(p.drop ? { 'data-drop': '' } : {})}
             onContextMenu={(e) => {
-              if (!on.projectMenu) return
               e.preventDefault()
               on.projectMenu(p.slug, e.clientX, e.clientY)
             }}
@@ -153,7 +152,7 @@ function SideLink({ link, phone, on }: { link: SideLinkInfo; phone: boolean; on:
 export function Sidebar(props: SidebarProps) {
   const { phone, projects, composing, links, undoLabel, devLinks, place, hidden, newProjectField, edge, footRef, on } = props
   const rows = useRef<HTMLDivElement>(null)
-  useOrderDrag(rows, (names, moved) => on.order?.(names, moved))
+  useOrderDrag(rows, (names, moved) => on.order(names, moved))
   return (
     <nav id="drawer" data-tip-side="right" hidden={hidden} aria-label="Projects" className={`flex h-full flex-col pt-[env(safe-area-inset-top)] dark:bg-zinc-900 ${place}`}>
       {edge}
@@ -207,16 +206,16 @@ export function Sidebar(props: SidebarProps) {
           onDragOver={(e) => {
             // an item dragged from the list onto another project moves there
             const a = (e.target as Element).closest<HTMLElement>('a[data-slug]')
-            if (!on.dragProject?.(a?.dataset.slug ?? null)) return
+            if (!on.dragProject(a?.dataset.slug ?? null)) return
             e.preventDefault()
             e.dataTransfer.dropEffect = 'move'
           }}
           onDragLeave={(e) => {
-            if (!e.currentTarget.contains(e.relatedTarget as Node | null)) on.dragProject?.(null)
+            if (!e.currentTarget.contains(e.relatedTarget as Node | null)) on.dragProject(null)
           }}
           onDrop={(e) => {
             e.preventDefault()
-            on.dropProject?.()
+            on.dropProject()
           }}
         >
           <ProjectRows phone={phone} projects={projects} on={on} />

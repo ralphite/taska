@@ -14,10 +14,10 @@ export function ToastContainer() {
   const panes = usePanes()
   const t = useStoreValue(stores.feedback, (s) => s.toast)
   const onPage = useStoreValue(stores.route, (s) => s.route.page === 'project' && s.route.place.kind === 'settings')
-  // the phone: what is open over the page (the drawer, a sheet, a card) the toast keeps clear of
+  // the phone: what is open over the page (the drawer, a sheet) the toast keeps clear of
   const drawer = useStoreValue(stores.route, (s) => s.layers.includes('drawer'))
   const docOver = useStoreValue(stores.route, (s) => s.route.page === 'project' && s.route.place.kind === 'doc') && layout === 'phone'
-  const sheet = useStoreValue(stores.sheet, (s) => (s.spec ? (s.spec.card ? 'card' : 'sheet') : null))
+  const sheet = useStoreValue(stores.sheet, (s) => (s.spec ? 'sheet' : null))
   const over = sheet ?? (docOver ? 'sheet' : null)
   // the panes change their place (full width, the sidebar folded): it goes over the pane again
   const full = useStoreValue(stores.route, (s) => s.full)
@@ -47,7 +47,7 @@ export function ToastContainer() {
     } else {
       // just above what you act on (the box, the drawer's foot, a sheet's foot), never on it; else near the top
       setCentered(false)
-      const bar = drawer ? panes.get('drawerFoot') : !over ? (foot && !foot.hidden ? foot : null) : over === 'card' ? null : panes.get('sheetFoot')
+      const bar = drawer ? panes.get('drawerFoot') : !over ? (foot && !foot.hidden ? foot : null) : panes.get('sheetFoot')
       setStyle(bar && bar.offsetHeight ? { bottom: `${Math.round(innerHeight - bar.getBoundingClientRect().top + 8)}px` } : over ? { top: 'calc(env(safe-area-inset-top) + 0.75rem)', bottom: 'auto' } : undefined)
     }
   }, [t, layout, panes, onPage, moved, drawer, over, full, folded])

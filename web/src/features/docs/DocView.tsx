@@ -181,7 +181,7 @@ function Outline({ heads, onJump }: { heads: DocFacts['outline']; onJump(key: st
   )
 }
 
-export function DocView({ facts, env, on, popover, lasso, page, recTime, aim = null, onAimed }: {
+export function DocView({ facts, env, on, lasso, page, recTime, aim = null, onAimed }: {
   facts: DocFacts
   env: DocEnv
   on: DocEvents
@@ -189,7 +189,6 @@ export function DocView({ facts, env, on, popover, lasso, page, recTime, aim = n
   aim?: string | null
   onAimed?(): void
   /** the drafts not sent yet, beside a paragraph (the desktop) */
-  popover?(row: DocRow): ReactNode
   /** drawing around an area */
   lasso?: ReactNode
   /** a web page's own view (WebPage) */
@@ -339,7 +338,6 @@ export function DocView({ facts, env, on, popover, lasso, page, recTime, aim = n
                       <>
                         {r.threads.filter((s) => s.t.tk === r.open).map((s) => thread(s, r.b.text, true))}
                         {r.open === `${r.b.key}#new` ? r.drafts.map((x) => <DraftCard key={x.label} words={x.words} voice={x.voice} transcribing={x.transcribing} />) : null}
-                        {popover?.(r)}
                       </>
                     ) : null}
                   </BlockActs>

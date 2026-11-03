@@ -1,6 +1,6 @@
-// The card while you answer: a choice picked, you replied on a proposal or on finished work.
+// The card while you answer: a choice picked, you replied on a proposal or commented on finished work's document.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { at, q, repliedOnProposal, report, you } from '../../stories/needsCardFixtures'
+import { at, q, repliedOnProposal, report } from '../../stories/needsCardFixtures'
 
 export default { title: 'Components/Item page/Needs-you card/While you answer' } satisfies Meta
 type Story = StoryObj
@@ -13,4 +13,5 @@ export const ProposalYouRepliedPointerOnApprove: Story = {
   name: 'Proposal, you replied, pointer on Approve',
   parameters: { pseudo: { hover: ['button'] } },
 }
-export const FinishedYouReplied: Story = { ...at({ status: 'review', talked: true, thread: [report, you] }), name: 'Finished, you replied' }
+/** Words on an item in review set it back to open (B606); a comment on one of its documents still answers it here. */
+export const FinishedYouCommented: Story = { ...at({ status: 'review', talked: true, thread: [report] }), name: 'Finished, you commented on its document' }

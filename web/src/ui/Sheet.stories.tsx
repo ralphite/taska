@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { After, Frames } from '../stories/Frames'
 import { PRIMARY } from './tones'
-import { Sheet } from './Sheet'
+import { Sheet, SheetLayout } from './Sheet'
 
 const meta: Meta = { title: 'Components/Menus and sheets/Sheets/The sheet itself' }
 export default meta
@@ -21,13 +21,13 @@ const parts = {
 /** A sheet from the bottom on the phone, a dialog on the desktop: title, line under it, body, foot. */
 export const Frame: Story = {
   name: 'A sheet’s frame: phone and desktop',
-  render: () => <Frames height={420} deskWidth={900}>{(layout) => <Sheet open look={{}} parts={parts} desk={layout === 'desk'} onClose={() => {}} />}</Frames>,
+  render: () => <Frames height={420} deskWidth={900}>{(layout) => <Sheet open look={{}} desk={layout === 'desk'} onClose={() => {}}><SheetLayout {...parts} /></Sheet>}</Frames>,
 }
 // ---- more states (T639)
 /** the desktop's menu popped with no spot (All actions by its key, Put under… by M): top right under the bar */
 export const PoppedNoSpot: Story = {
   name: 'A desktop menu with no spot: top right under the bar',
-  render: () => <Frames phone={false} height={420} deskWidth={900}>{() => <Sheet open look={{ pop: true }} parts={{ title: 'All actions', menu: true, body: <p className="text-[15px]">Done · Later · Archive …</p> }} desk onClose={() => {}} />}</Frames>,
+  render: () => <Frames phone={false} height={420} deskWidth={900}>{() => <Sheet open look={{ pop: true }} desk onClose={() => {}}><SheetLayout title="All actions" menu body={<p className="text-[15px]">Done · Later · Archive …</p>} /></Sheet>}</Frames>,
 }
 /** the phone's sheet dragged down by its handle, as the finger moves it (let go far enough, it closes) */
 export const DraggedDown: Story = {
@@ -36,7 +36,7 @@ export const DraggedDown: Story = {
     <Frames desk={false} height={520}>
       {() => (
         <After run={(root) => root.querySelector<HTMLElement>('[role="dialog"]')?.style.setProperty('transform', 'translateY(90px)')}>
-          <Sheet open look={{}} parts={parts} desk={false} onClose={() => {}} />
+          <Sheet open look={{}} desk={false} onClose={() => {}}><SheetLayout {...parts} /></Sheet>
         </After>
       )}
     </Frames>

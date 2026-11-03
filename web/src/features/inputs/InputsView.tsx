@@ -242,7 +242,7 @@ export function OutboxRows({ list, on }: { list: OutgoingRow[]; on: Pick<InputEv
   )
 }
 
-export function InputsView({ hidden, rows, outgoing, words, world, files, hints, viewRef, recording = null, on }: {
+export function InputsView({ hidden, rows, outgoing, words, world, files, hints, recording = null, on }: {
   hidden: boolean
   rows: InputFacts[]
   outgoing: OutgoingRow[]
@@ -253,7 +253,6 @@ export function InputsView({ hidden, rows, outgoing, words, world, files, hints,
   files(f: FileRef[]): ReactNode
   /** under a search: the other tabs' and projects' matches */
   hints: ReactNode
-  viewRef?: (el: HTMLElement | null) => void
   on: InputEvents
 }) {
   const ref = useRef<HTMLElement | null>(null)
@@ -261,10 +260,7 @@ export function InputsView({ hidden, rows, outgoing, words, world, files, hints,
   return (
     <section
       data-part="inputs"
-      ref={(el) => {
-        ref.current = el
-        viewRef?.(el)
-      }}
+      ref={ref}
       hidden={hidden}
       data-vc-area
       className="-mb-(--foot-h) min-h-0 flex-1 overflow-y-auto outline-none overscroll-contain pb-[calc(var(--foot-h,0px)+1.5rem)]"

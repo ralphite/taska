@@ -29,7 +29,7 @@ function Card({ title, children, wide = false, note, cls = '' }: { title: string
 }
 
 /** A list of names with a bar each, the longest the largest. */
-function Bars({ rows, unit = '' }: { rows: Pair[]; unit?: string }) {
+function Bars({ rows }: { rows: Pair[] }) {
   const max = Math.max(1, ...rows.map((r) => r[1]))
   if (!rows.length) return <p className={`text-sm ${MUTED}`}>Nothing yet.</p>
   return (
@@ -44,7 +44,6 @@ function Bars({ rows, unit = '' }: { rows: Pair[]; unit?: string }) {
           </span>
           <span className={`text-right tabular-nums ${MUTED}`}>
             {n.toLocaleString()}
-            {unit}
           </span>
         </li>
       ))}

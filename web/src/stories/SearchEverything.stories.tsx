@@ -18,7 +18,7 @@ import { NO_FILTERS } from '../model/route'
 import type { Item } from '../model/types'
 import { ProjTile, Hit } from '../ui/bits'
 import { Icon, StateIcon } from '../ui/Icon'
-import { Sheet } from '../ui/Sheet'
+import { Sheet, SheetLayout } from '../ui/Sheet'
 import { PROJECT_TONES, TYPE_TEXT } from '../ui/tones'
 import { Frame, States } from './Frames'
 import { GuideLine, Level, Mark, find, sel, type Step } from './guide'
@@ -349,7 +349,7 @@ function Desk({ n = -1, onNext }: { n?: number; onNext?(): void }) {
         </div>
       ) : null}
       {s.state ? (
-        <Sheet open look={{}} desk parts={{ title: 'Search', body: <SearchBody state={s.state} kind={s.kind} onKind={s.setKind} onDone={s.done} onAgain={s.again} onPick={pick} onCancel={s.close} /> }} onClose={s.close} />
+        <Sheet open look={{}} desk onClose={s.close}><SheetLayout title="Search" body={<SearchBody state={s.state} kind={s.kind} onKind={s.setKind} onDone={s.done} onAgain={s.again} onPick={pick} onCancel={s.close} />} /></Sheet>
       ) : null}
       <Mark root={root} step={step} />
     </div>
@@ -417,8 +417,8 @@ function Phone({ n = -1, onNext }: { n?: number; onNext?(): void }) {
       <div className="flex h-full flex-col">
         <ListHead phone title="Shop" otherNeeds={false} searching={false} q="" placeholder="" agent={agentInfo(M, 0)} notSaved={0} filtersSet={false} filtersOpen={false} place="" on={{ menu() {}, agents() {}, notSaved() {}, search: () => s.open(), query() {}, clear() {}, firstResult() {}, filters() {} }} />
         <div className="flex min-h-0 flex-1 flex-col">{listOf(ITEMS, 'items', {}, false, { viewsEnd: <FilterIcon on={filters} set={false} onTap={() => setFilters(true)} />, top: null })}</div>
-        {s.state ? <Sheet open look={{}} desk={false} parts={{ title: 'Search', body }} onClose={s.close} /> : null}
-        {filters ? <Sheet open look={{}} desk={false} parts={filtersSheet(filterFacts(M, 'items', { ...NO_FILTERS }), { set() {}, unset() {}, reset() {}, saveView() {}, close: () => setFilters(false) })} onClose={() => setFilters(false)} /> : null}
+        {s.state ? <Sheet open look={{}} desk={false} onClose={s.close}><SheetLayout title="Search" body={body} /></Sheet> : null}
+        {filters ? <Sheet open look={{}} desk={false} onClose={() => setFilters(false)}><SheetLayout {...filtersSheet(filterFacts(M, 'items', { ...NO_FILTERS }), { set() {}, unset() {}, reset() {}, saveView() {}, close: () => setFilters(false) })} /></Sheet> : null}
       </div>
     )
   return (
@@ -472,7 +472,7 @@ export const StatesDesktop: StoryObj = {
     <div className="flex flex-wrap gap-6">
       {STATES.map(([label, state, kind]) => (
         <Frame key={label} layout="desk" width={760} height={state === 'found' ? 620 : 440} label={label}>
-          <Sheet open look={{}} desk parts={{ title: 'Search', body: body(state, kind) }} onClose={none} />
+          <Sheet open look={{}} desk onClose={none}><SheetLayout title="Search" body={body(state, kind)} /></Sheet>
         </Frame>
       ))}
     </div>
@@ -488,7 +488,7 @@ export const StatesPhone: StoryObj = {
           {state === 'found' || state === 'none' ? (
             <ResultsPage onClose={none}>{body(state, kind)}</ResultsPage>
           ) : (
-            <Sheet open look={{}} desk={false} parts={{ title: 'Search', body: body(state, kind) }} onClose={none} />
+            <Sheet open look={{}} desk={false} onClose={none}><SheetLayout title="Search" body={body(state, kind)} /></Sheet>
           )}
         </Frame>
       ))}
@@ -517,7 +517,7 @@ export const Filters: StoryObj = {
           <Frame layout="phone" width={393} height={760}>
             <div className="relative flex h-full flex-col">
               {listOf(ITEMS, 'items', {}, false, { viewsEnd: <FilterIcon on={false} set={false} onTap={none} />, top: null })}
-              <Sheet open look={{}} desk={false} parts={filtersSheet(filterFacts(M, 'items', NO_FILTERS), { set: none, unset: none, reset: none, saveView: none, close: none })} onClose={none} />
+              <Sheet open look={{}} desk={false} onClose={none}><SheetLayout {...filtersSheet(filterFacts(M, 'items', NO_FILTERS), { set: none, unset: none, reset: none, saveView: none, close: none })} /></Sheet>
             </div>
           </Frame>,
         ],

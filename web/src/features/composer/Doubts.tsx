@@ -9,7 +9,7 @@ import { plural } from '../../model/words'
 import { Icon } from '../../ui/Icon'
 import { LINK_BTN } from '../../ui/tones'
 
-const Alert = ({ cls = '' }: { cls?: string }) => <Icon n="alert" c={`size-3.5 shrink-0 text-amber-600 dark:text-amber-400 ${cls}`} sw="2" />
+const Alert = () => <Icon n="alert" c="size-3.5 shrink-0 text-amber-600 dark:text-amber-400" sw="2" />
 
 export type DoubtsView =
   /** the desktop: each one, with the other model's words to use instead */

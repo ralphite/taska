@@ -318,7 +318,7 @@ function Phone({ mic, n = -1, onNext }: { mic: boolean; n?: number; onNext?(): v
     )
   } else if (place === 'projects') {
     top = null
-    body = <Sidebar phone projects={PROJECTS} composing={false} links={LINKS} place="h-full bg-zinc-100" on={{ newInput() {}, newVoice() {}, newProject() {}, hide() {}, settings() {}, help() {}, keys() {}, go: (_, e) => (e.preventDefault(), go('items')), undo() {} }} />
+    body = <Sidebar phone projects={PROJECTS} composing={false} links={LINKS} place="h-full bg-zinc-100" on={{ newInput() {}, newVoice() {}, newProject() {}, hide() {}, settings() {}, help() {}, keys() {}, go: (_, e) => (e.preventDefault(), go('items')), undo() {}, order() {}, dragProject: () => false, dropProject() {}, projectMenu() {} }} />
   } else {
     top = <Top back={false} code="Shop" sub={found ? 'Searched for “export filter”' : ''} onBack={() => {}} />
     body = found ? listOf(ITEMS, 'items', { q: 'export filter' }, false, { on: { open: (n) => n === 1 && go('detail') } }) : <Listening onDone={() => setFound(true)} onCancel={() => go('items')} />

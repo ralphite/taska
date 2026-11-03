@@ -3,7 +3,7 @@
 // parts (itemMenuSheet, moveParentSheet, inputMenuSheet, ...) from the page's own facts, with the item list's demo
 // project. Used by the stories of menus and sheets.
 import type { ReactNode } from 'react'
-import { Sheet, type SheetLook, type SheetParts } from '../ui/Sheet'
+import { Sheet, SheetLayout, type SheetLook, type SheetParts } from '../ui/Sheet'
 import { listOf, PROJECT } from './listFixtures'
 import { modelOf } from './fixtures'
 
@@ -24,7 +24,7 @@ export function opened(parts: SheetParts, desk: boolean, o: { under?: ReactNode;
   return (
     <div className="relative h-full">
       {o.under}
-      <Sheet open look={o.look ?? {}} parts={parts} desk={desk} onClose={no} />
+      <Sheet open look={o.look ?? {}} desk={desk} onClose={no}><SheetLayout {...parts} /></Sheet>
     </div>
   )
 }

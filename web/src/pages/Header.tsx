@@ -249,11 +249,10 @@ export const FilterDot = ({ on }: { on: boolean }) =>
   on ? <span className="absolute top-2 right-2 size-2 rounded-full bg-blue-600 ring-2 ring-white dark:bg-blue-400 dark:ring-zinc-950" /> : null
 
 /** The phone's tabs. From 400 px the four fit with their counts; narrower, only the open one keeps its count. */
-export function PhoneTabs({ tabs, filtersSet, showFilter, pendingTitle, hidden, on }: {
+export function PhoneTabs({ tabs, filtersSet, showFilter, hidden, on }: {
   tabs: TabInfo[]
   filtersSet: boolean
   showFilter: boolean
-  pendingTitle?: string
   hidden?: boolean
   on: { tab(t: Tab): void; filters(): void }
 }) {
@@ -270,7 +269,6 @@ export function PhoneTabs({ tabs, filtersSet, showFilter, pendingTitle, hidden, 
           >
             {TAB_WORD[t.tab]}
             <span
-              title={t.tab === 'inputs' ? pendingTitle : undefined}
               className="rounded-full px-1.5 py-px font-mono text-[11px] font-medium text-zinc-400 tabular-nums group-aria-selected:bg-zinc-900/7 group-aria-selected:text-zinc-600 group-aria-[selected=false]:px-0.5 empty:hidden wide-phone:group-aria-[selected=false]:px-1 dark:text-zinc-500 dark:group-aria-selected:bg-white/10 dark:group-aria-selected:text-zinc-300"
             >
               {t.count}

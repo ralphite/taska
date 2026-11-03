@@ -6,5 +6,4 @@ export default { title: 'Components/Input box/Voice/Writing it out' } satisfies 
 type Story = StoryObj
 
 export const Transcribing = voice({ tr: '', transcribing: true })
-export const TranscribingTryingAgain: Story = { ...voice({ tr: '', transcribing: true, retrying: true }), name: 'Transcribing, trying again' }
 export const TranscribedItsWordsInTheBox: Story = { ...voice({ tr: 'Keep the sort too.' }, 'Keep the sort too.'), name: 'Transcribed, its words in the box' }

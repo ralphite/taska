@@ -14,16 +14,12 @@ export interface DraftFile {
   ms?: number
   tr?: string
   transcribing?: boolean
-  retrying?: boolean
   more?: boolean
   trError?: string
 }
 
 const voiceWord = (f: DraftFile) =>
-  f.transcribing
-    ? f.retrying
-      ? 'Retrying…'
-      : 'Transcribing…'
+  f.transcribing ? 'Transcribing…'
     : f.more
       ? 'Partial · more coming'
       : f.tr

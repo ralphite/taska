@@ -8,11 +8,11 @@ import { plural } from '../../model/words'
 import { Icon } from '../../ui/Icon'
 import { NEEDS_PILL } from '../../ui/tones'
 
-export function DocCard({ d, now, waiting = '', cls = '', onOpen }: { d: Doc; now: number; waiting?: string; cls?: string; onOpen(d: number): void }) {
+export function DocCard({ d, now, waiting = '', onOpen }: { d: Doc; now: number; waiting?: string; onOpen(d: number): void }) {
   return (
     <button
       onClick={() => onOpen(d.d)}
-      className={`flex w-full items-center gap-3 rounded-xl border border-zinc-200 px-3 py-2.5 text-left hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-900 ${cls}`}
+      className={`flex w-full items-center gap-3 rounded-xl border border-zinc-200 px-3 py-2.5 text-left hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-900`}
     >
       <Icon n={d.fmt === 'html' ? 'web' : 'doc'} c="size-5 text-zinc-500 dark:text-zinc-400" />
       <span className="min-w-0 flex-1">

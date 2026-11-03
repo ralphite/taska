@@ -6,6 +6,7 @@ import type { ReactNode, Ref } from 'react'
 import { deskSlots, forward, backward, ACT_KEY, type Slot } from '../../model/actions'
 import { closed, rowAction, shownStatus, statusWord } from '../../model/items'
 import type { Item } from '../../model/types'
+import type { ZoneKind } from './rows'
 import { plural, whoName } from '../../model/words'
 import { Avatar, Count, DraftMark, Hit, Pic, Soft } from '../../ui/bits'
 import { Icon, StateIcon } from '../../ui/Icon'
@@ -357,19 +358,15 @@ export function HeldRow({ it, code, said, height, on }: { it: Item; code: string
   )
 }
 
-const ZONE_STATE: Record<string, string> = { queue: 'doing', done: 'done', retired: 'dropped', archived: 'done' }
-
-/** A group head: Needs you (amber), the agents' queue, Later, finished work, the rules' groups. */
-export function Zone({ kind, label, n, right }: { kind: string; label: string; n: number; right?: ReactNode }) {
+/** A group head: Needs you (amber), the rules' groups (active, retired). */
+export function Zone({ kind, label, n }: { kind: ZoneKind; label: string; n: number }) {
   const needs = kind === 'needs'
   const mark = needs ? (
     <span className="size-2 shrink-0 rounded-full bg-amber-500 ring-3 ring-amber-500/20 dark:bg-amber-400" />
   ) : kind === 'rules' ? (
     <span className="mx-1 size-2 shrink-0 rounded-full bg-zinc-400 dark:bg-zinc-500" />
-  ) : kind === 'later' ? (
-    <Icon n="clock" c="size-4 text-zinc-500 dark:text-zinc-400" sw="2" />
   ) : (
-    <StateIcon s={ZONE_STATE[kind]} label={label} cls="size-4" />
+    <StateIcon s="dropped" label={label} cls="size-4" />
   )
   return (
     <div data-zone={kind} className="flex h-9 items-center gap-2 border-y border-zinc-200 bg-zinc-100 pr-1 pl-4 dark:border-zinc-700/70 dark:bg-zinc-800">
@@ -381,7 +378,6 @@ export function Zone({ kind, label, n, right }: { kind: string; label: string; n
       >
         {n}
       </span>
-      {right}
     </div>
   )
 }

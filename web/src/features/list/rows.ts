@@ -8,7 +8,7 @@ import type { Item } from '../../model/types'
 import { filtered, searchWords, visible } from '../../model/visible'
 import { NEEDS_SHOWN, type Tab } from '../../model/words'
 
-export type ZoneKind = 'needs' | 'queue' | 'later' | 'done' | 'rules' | 'retired' | 'archived'
+export type ZoneKind = 'needs' | 'rules' | 'retired'
 
 export type Row =
   | { kind: 'zone'; zone: ZoneKind; label: string; n: number }
