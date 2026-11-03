@@ -40,9 +40,11 @@ export function find(root: HTMLElement, t: Target | undefined): Element | null {
 export const sel = (q: string): Target => q
 export const withText = (q: string, text: string): Target => (root) => [...root.querySelectorAll(q)].find((e) => shown(e) && e.textContent?.includes(text)) || null
 
-/** A big mark where to tap next, spreading out (R488): on the part the step names, at once, wherever it is now. */
+/** Where to tap next, drawn so it is plainly not part of Taska (F566, r970): the screen dims, the part the step names
+ * stays lit inside a thick yellow frame (a colour Taska itself never uses) with a yellow "Tap here" beside it. It is
+ * there at once and follows the part wherever it goes; clicks pass through it. */
 export function Mark({ root, step }: { root: RefObject<HTMLElement | null>; step: Step | null }) {
-  const [at, setAt] = useState<{ x: number; y: number } | null>(null)
+  const [at, setAt] = useState<{ x: number; y: number; w: number; h: number; side: 'right' | 'below' | 'above' } | null>(null)
   useLayoutEffect(() => {
     let raf = 0
     const follow = () => {
@@ -52,9 +54,12 @@ export function Mark({ root, step }: { root: RefObject<HTMLElement | null>; step
       else {
         const a = r.getBoundingClientRect()
         const b = el.getBoundingClientRect()
-        const x = b.left - a.left + b.width / 2
-        const y = b.top - a.top + b.height / 2
-        setAt((p) => (p && Math.abs(p.x - x) < 0.5 && Math.abs(p.y - y) < 0.5 ? p : { x, y }))
+        const x = b.left - a.left - 6
+        const w = b.width + 12
+        // the label goes beside the part when there is room, else under it (over it near the bottom)
+        const side = x + w + 110 < a.width ? 'right' : b.top - a.top < a.height / 2 ? 'below' : 'above'
+        const n = { x, y: b.top - a.top - 6, w, h: b.height + 12, side } as const
+        setAt((p) => (p && p.side === n.side && Math.abs(p.x - n.x) < 0.5 && Math.abs(p.y - n.y) < 0.5 && Math.abs(p.w - n.w) < 0.5 && Math.abs(p.h - n.h) < 0.5 ? p : n))
       }
       raf = requestAnimationFrame(follow)
     }
@@ -62,9 +67,16 @@ export function Mark({ root, step }: { root: RefObject<HTMLElement | null>; step
     return () => cancelAnimationFrame(raf)
   }, [root, step])
   return at ? (
-    <span className="pointer-events-none absolute z-40 size-14 -translate-x-1/2 -translate-y-1/2" style={{ left: at.x, top: at.y }}>
-      <span className="absolute inset-0 animate-ping rounded-full bg-blue-500/30" />
-      <span className="absolute inset-0 rounded-full border-4 border-blue-500" />
+    <span data-guide-mark className="pointer-events-none absolute inset-0 z-40 overflow-hidden">
+      <span className="absolute rounded-xl shadow-[0_0_0_9999px_rgb(0_0_0/0.5)] ring-4 ring-yellow-300" style={{ left: at.x, top: at.y, width: at.w, height: at.h }}>
+        <span className="absolute -inset-1.5 animate-pulse rounded-2xl ring-4 ring-yellow-300/60" />
+      </span>
+      <span
+        className="absolute rounded-full bg-yellow-300 px-3 py-1 text-sm font-bold whitespace-nowrap text-black shadow-lg"
+        style={at.side === 'right' ? { left: at.x + at.w + 10, top: at.y + at.h / 2 - 14 } : { left: Math.max(8, at.x + at.w / 2 - 44), top: at.side === 'below' ? at.y + at.h + 10 : at.y - 40 }}
+      >
+        Tap here
+      </span>
     </span>
   ) : null
 }
