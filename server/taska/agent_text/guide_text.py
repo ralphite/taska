@@ -59,8 +59,9 @@ AGENT = (
     '  EOF\n'
     '\n'
     'Now: {rules}\n'
-    'LOOP  doing means work has started (not that you are on it this second). Mark an item doing when you start;\n'
-    '      if you drop that work, set it back to open. Keep going: take /next, mark it doing, do the work, write progress and set done, then GET /next\n'
+    'LOOP  doing means an agent is working on it. Mark an item doing when you start; when you hand back a result, set it\n'
+    '      done (the user reviews it) or ask what you need: never leave a result sitting in doing (T646). If you drop\n'
+    '      that work, set it back to open. Keep going: take /next, mark it doing, do the work, write progress and set done, then GET /next\n'
     "      again. Don't stop to chat. If you are stuck or need a decision, post `B03 block <what you need>` and\n"
     '      move on; /next brings the item back once the user replies. Nothing to do: end your turn. Never wait in\n'
     '      the foreground, poll, or set a timer or scheduled task (heartbeat, cron, automation) to look at Taska:\n'

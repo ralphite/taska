@@ -13,6 +13,8 @@ taska/
   tools/               development, packaging, deployment and service tools
 ```
 
+What an item's status means and who moves it: [item-states.md](item-states.md).
+
 ## Backend: layers and the direction of their imports
 
 ```
