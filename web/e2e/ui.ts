@@ -109,7 +109,6 @@ export const pageCount = (page: Page, key: string) =>
 export const commentMode = (page: Page) =>
   page.locator('[data-part="pane"] > header').getByRole('button', { name: /^Comment/ })
 /** Under a part picked on the phone: type instead, or cancel the recording. */
-export const typeInstead = (page: Page) => shown(page.getByRole('button', { name: 'Type instead', exact: true }))
 export const sayCancel = (page: Page) => shown(page.getByRole('button', { name: 'Cancel', exact: true }))
 /** Taska answering a comment slowly: what the page sends with one waits this long first. */
 export const slowComments = (page: Page, ms: number) =>

@@ -8,7 +8,6 @@ type Story = StoryObj
 /** Nothing picked: the desktop replies on the document's item; the phone comments on the whole document. */
 export const NothingPicked = at({ at: 'D1' })
 /** The phone, nothing picked: a comment on the whole document (Reply to its item instead). */
-export const WholeDocument = at({ at: 'D1' }, { desk: false })
 export const OnePicked = at(one)
 export const OnePickedWordsInIt: Story = { ...at({ ...one, text: 'Also keep the sort.' }), name: 'One picked, typing' }
 export const SeveralPicked = at({ at: 'D1', sel: ['k1', 'k2'] })

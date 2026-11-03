@@ -91,7 +91,8 @@ function useDoc(slug: string, dn: number) {
     copyDoc: () => app.docs.copy(dn),
     circle: () => stores.docView.getState().setCircle(!v.circle),
     editDoc: () => app.docEditor.edit(dn),
-    whole: () => docs.whole(),
+    // the phone has no box over a document (B643): a comment on the whole of it is spoken
+    whole: () => (desk ? docs.whole() : void app.docVoice.say(slug, dn, 'doc', '')),
     tick: (tk, i) => app.docChoices.tick(dn, tk, i),
     modifyTicks: (tk) => app.docChoices.modifyTicks(dn, tk),
   }
@@ -124,7 +125,7 @@ function WebPageContainer({ slug, d, v, seen, env, on, waiting }: { slug: string
       desk={env.desk}
       inspect={v.inspect}
       renderThread={(tk, rail) => <WebThread card={w.cards[tk]} rail={rail} replying={v.reply === tk} asking={w.asking} env={env} on={on} />}
-      sayRow={<SayRow rec={rec} time={<RecTime />} part={held ? { key: held.key, quote: held.text } : undefined} on={{ say: () => held && void app.docVoice.say(slug, d.d, held.key, held.text, true), cancel: () => void app.voice.cancel(), type: () => app.docs.type() }} />}
+      sayRow={<SayRow rec={rec} time={<RecTime />} part={held ? { key: held.key, quote: held.text } : undefined} on={{ say: () => held && void app.docVoice.say(slug, d.d, held.key, held.text, true), cancel: () => void app.voice.cancel()}} />}
       on={{
         pick: (p) => {
           stores.docView.getState().pick({ quote: p, sel: new Set(), reply: null })

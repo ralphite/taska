@@ -75,7 +75,7 @@ export function docAt(d: Doc, desk: boolean, h: DocHere = {}) {
         desk={desk}
         inspect={!!h.inspect}
         renderThread={(tk, rail) => <WebThread card={w.cards[tk]} rail={rail} replying={v.reply === tk} asking={w.asking} env={env} on={docOn} />}
-        sayRow={<SayRow rec={!!h.spoken} part={w.held ? { key: w.held.key, quote: w.held.text } : undefined} on={{ say: no, cancel: no, type: no }} />}
+        sayRow={<SayRow rec={!!h.spoken} part={w.held ? { key: w.held.key, quote: w.held.text } : undefined} on={{ say: no, cancel: no }} />}
         on={{ pick: no, say: no, esc: no, toggle: no, away: no }}
       />
     )

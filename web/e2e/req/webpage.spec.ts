@@ -7,7 +7,6 @@ import {
   PAGE_COUNTS,
   box,
   boxLine,
-  boxMain,
   commentMode,
   foot,
   pageCount,
@@ -20,7 +19,6 @@ import {
   sayCancel,
   slowComments,
   threadPop,
-  typeInstead,
 } from '../ui'
 
 // a microphone that hears a tone, so recording runs as it does for him
@@ -232,7 +230,8 @@ async function countsOn(page: Page, sel: string) {
   )
 }
 /** comment on a part as you do: the desktop points at it in Comment mode and presses its comment button; the phone
- * taps it and Aa (a tap that only closes open comments first, B503) */
+ * taps it and speaks through its floating voice button (it has no box over a document, B643 r955; a tap that only
+ * closes open comments first, B503) */
 async function commentOn(page: Page, sel: string, words: string) {
   if (isDesk(page)) {
     const r = await page1(page).locator(sel).boundingBox()
@@ -252,9 +251,10 @@ async function commentOn(page: Page, sel: string, words: string) {
   }
   if (await threadPop(page).count()) await page1(page).locator(sel).click()
   await page1(page).locator(sel).click()
-  await typeInstead(page).click()
-  await box(page).fill(words)
-  await boxMain(page).click()
+  await partSay(page).click()
+  await expect(partStop(page)).toHaveCount(1)
+  await page.waitForTimeout(1200)
+  await partStop(page).click() // tap again: posted
 }
 /** close the comments open in the page: a click on the document's name over it (desktop), a tap in the page (phone:
  * it only closes them, B503) */
@@ -282,7 +282,8 @@ test('r799: a comment made from a part lands on that part at once, beside it, wh
   await expect.poll(() => countsOn(page, '#r1').then((c) => c.length), { timeout: 1500 }).toBe(1)
   expect(await countsOn(page, '#low')).toHaveLength(1)
   // and after a reload, the same
-  await expect.poll(async () => (await p.read('D1')).match(/part of the page/g)?.length ?? 0).toBe(2)
+  // a spoken comment (the phone's) is saved once its words are written out
+  await expect.poll(async () => (await p.read('D1')).match(/part of the page/g)?.length ?? 0, { timeout: 60000 }).toBe(2)
   await page.reload()
   await expect(page1(page).getByText('Write CSV')).toBeVisible()
   await expect.poll(() => countsOn(page, '#r1').then((c) => c.length)).toBe(1)
@@ -293,6 +294,8 @@ test('r799: a second comment on a part joins its count while it is saved: no sec
   page,
   request,
 }) => {
+  // typed while it is saved: the desktop's (the phone speaks its comments, B643; their count is the voice test's)
+  test.skip(!isDesk(page), 'the phone has no box over a document')
   const p = await project(request, { ...LOOP, then: ROWS })
   await p.op({ op: 'dc', d: 1, key: "h:[id='r2']", quote: 'Apply filter 180 ms', text: 'Why 180?' })
   // Taska takes its time to answer
@@ -377,7 +380,6 @@ test('r799 r685: a spoken comment is on its part at once; on the phone the stop 
     await page.keyboard.press('Shift+Enter')
   } else {
     await page1(page).locator('#r3').click()
-    await typeInstead(page).click() // the box is open too
     await partSay(page).click()
     await expect(stop).toHaveCount(1)
     await page.waitForTimeout(1200)
@@ -457,7 +459,8 @@ test("r672 r799: a comment stays with its part when the page's own script moves 
   await expect(page.locator(PAGE_COUNTS).filter({ visible: true })).toHaveCount(0)
   // and it can still be read: under the page (a desktop wide enough has it in the conversation beside instead)
   await expect(page.getByText('Not on the page now')).toBeVisible()
-  await expect(page.getByText('Who draws it?').filter({ visible: true }).first()).toBeVisible()
+  // the desktop typed its words; the phone spoke them (B643)
+  if (isDesk(page)) await expect(page.getByText('Who draws it?').filter({ visible: true }).first()).toBeVisible()
 })
 
 test('r562: a resolved thread on a web page looks done, as beside a paragraph (B12)', async ({ page, request }) => {

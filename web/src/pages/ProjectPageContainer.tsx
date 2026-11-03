@@ -184,7 +184,7 @@ const DRAWER_W = 'min(85vw, 320px)'
 
 function PhoneLayout({ route }: { route: ProjectRoute }) {
   const app = useServices('actions', 'fields', 'nav', 'sheets', 'views')
-  const stores = useStores('box', 'route', 'sheet')
+  const stores = useStores('box', 'docView', 'route', 'sheet')
   const { title, agent, counts, notSaved, otherNeeds } = useHeadFacts(route, false)
   const layers = useStoreValue(stores.route, (s) => s.layers)
   const searching = layers.includes('search')
@@ -210,6 +210,11 @@ function PhoneLayout({ route }: { route: ProjectRoute }) {
   const help = route.place.kind === 'help'
   const settings = route.place.kind === 'settings' || route.place.kind === 'side' || help
   const prefsEditing = useStoreValue(stores.box, (s) => s.mode?.kind === 'prefs')
+  // a document on the phone has no box (B643): its voice button floats over it; the box comes only to edit something
+  // (a comment of yours, or the document, whose editor speaks through it)
+  const boxMode = useStoreValue(stores.box, (s) => !!s.mode)
+  const docEdit = useStoreValue(stores.docView, (s) => s.editing)
+  const docNoBox = route.place.kind === 'doc' && !boxMode && !docEdit
   // while the item's page is swiped back, the list shows underneath it
   const under = (!open && !settings) || !!floating
   const phoneSet = filtersSet(route.tab, route.list)
@@ -272,7 +277,7 @@ function PhoneLayout({ route }: { route: ProjectRoute }) {
         </div>
         {help ? <HelpContainer route={route} place="" /> : null}
         {settings && !help ? <SettingsContainer route={route} place="" prefsBox={null} /> : null}
-        <FootContainer route={route} composePage={false} place="" hidden={settings && !prefsEditing} onHeight={setFootH} />
+        <FootContainer route={route} composePage={false} place="" hidden={(settings && !prefsEditing) || docNoBox} onHeight={setFootH} />
       </div>
     </>
   )

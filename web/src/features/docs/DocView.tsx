@@ -132,32 +132,31 @@ function useMarkQuotes(root: React.RefObject<HTMLDivElement | null>, rows: DocRo
 }
 
 /** On the phone, under the paragraph you tapped: speak (the same button stops and posts), or type. */
-export function SayRow({ rec, part, time, on }: { rec: boolean; part?: { key: string; quote: string }; /** how long it has recorded */ time?: ReactNode; on: { say(): void; cancel(): void; type(): void } }) {
+/** The phone's voice comment: one round button floating over the bottom right of the document while a part is picked
+ * (or the whole document), so nothing on the page moves (B643); while it records, the time and Cancel beside it. */
+export function SayRow({ rec, part, time, on }: { rec: boolean; part?: { key: string; quote: string }; /** how long it has recorded */ time?: ReactNode; on: { say(): void; cancel(): void } }) {
   const marks = part ? { 'data-part-say': '', 'data-key': part.key, 'data-quote': part.quote } : {}
-  return rec ? (
-    <div className="mt-2 flex items-center gap-2">
-      <button {...marks} onClick={on.say} aria-label="Stop and post the comment" className="grid size-12 shrink-0 place-items-center rounded-full bg-red-600 text-white shadow-lg">
-        <Icon n="stop" c="size-5" />
-      </button>
-      {time ? (
-        <span data-rec-time className="font-mono text-[13px] text-red-600 tabular-nums dark:text-red-400">
-          {time}
-        </span>
-      ) : null}
-      <span className="text-[13px] text-zinc-500 dark:text-zinc-400">· tap to post</span>
-      <button onClick={on.cancel} className="ml-auto h-10 rounded-full px-3 text-sm font-semibold text-zinc-600 ring-1 ring-zinc-300 dark:text-zinc-300 dark:ring-zinc-600">
-        Cancel
-      </button>
-    </div>
-  ) : (
-    <div className="mt-2 flex items-center gap-2">
-      <button {...marks} onClick={on.say} aria-label="Dictate comment" className="grid size-12 shrink-0 place-items-center rounded-full bg-zinc-900 text-white shadow-lg dark:bg-zinc-100 dark:text-zinc-900">
-        <Icon n="mic" c="size-5" />
-      </button>
-      <span className="text-[13px] text-zinc-500 dark:text-zinc-400">Tap to speak, tap again to post</span>
-      <button onClick={on.type} aria-label="Type instead" className="ml-auto h-10 rounded-full px-3 text-sm font-semibold text-zinc-600 ring-1 ring-zinc-300 dark:text-zinc-300 dark:ring-zinc-600">
-        Aa
-      </button>
+  return (
+    <div className="fixed right-4 bottom-[max(1.25rem,env(safe-area-inset-bottom))] z-40 flex items-center gap-2">
+      {rec ? (
+        <>
+          <button onClick={on.cancel} className="h-10 rounded-full bg-white px-3 text-sm font-semibold text-zinc-600 shadow-md ring-1 ring-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:ring-zinc-700">
+            Cancel
+          </button>
+          {time ? (
+            <span data-rec-time className="rounded-full bg-white px-2.5 py-1 font-mono text-[13px] text-red-600 tabular-nums shadow-md dark:bg-zinc-800 dark:text-red-400">
+              {time}
+            </span>
+          ) : null}
+          <button {...marks} onClick={on.say} aria-label="Stop and post the comment" className="grid size-14 shrink-0 place-items-center rounded-full bg-red-600 text-white shadow-lg">
+            <Icon n="stop" c="size-6" />
+          </button>
+        </>
+      ) : (
+        <button {...marks} onClick={on.say} aria-label="Speak a comment" className="grid size-14 shrink-0 place-items-center rounded-full bg-zinc-900 text-white shadow-lg dark:bg-zinc-100 dark:text-zinc-900">
+          <Icon n="mic" c="size-6" />
+        </button>
+      )}
     </div>
   )
 }
@@ -321,7 +320,6 @@ export function DocView({ facts, env, on, popover, lasso, page, recTime, aim = n
                     Skipped · you replied on {facts.itemCode}
                   </div>
                 ) : null}
-                {r.say ? <SayRow rec={facts.recording} time={recTime} on={{ say: () => on.say(r.b.key, r.quote), cancel: on.sayCancel, type: on.type }} /> : null}
                 {desk ? null : r.threads.map((s) => thread(s, r.b.text))}
                 {r.draftsShown ? (
                   <div className="mt-2 space-y-2">
@@ -368,12 +366,21 @@ export function DocView({ facts, env, on, popover, lasso, page, recTime, aim = n
             ))}
           </div>
         ) : null}
+        {desk
+          ? null
+          : (() => {
+              // the phone's one voice button, floating while a part is picked or while it records (B643)
+              const picked = rows.find((r) => r.say)
+              return picked || facts.recording ? (
+                <SayRow rec={facts.recording} time={recTime} part={picked ? { key: picked.b.key, quote: picked.quote ?? '' } : undefined} on={{ say: () => (picked ? on.say(picked.b.key, picked.quote) : on.say('doc', null)), cancel: on.sayCancel }} />
+              ) : null
+            })()}
         {desk ? null : (
           <>
             <p className="mt-6 text-center text-xs text-zinc-400">{web ? 'Tap a part to comment' : 'Tap, select or circle to comment'}</p>
             {facts.wholeButton ? (
               <button onClick={on.whole} className="mx-auto mt-1 flex h-11 items-center gap-1.5 px-3 text-sm font-semibold text-blue-600 dark:text-blue-400">
-                <Icon n="comment" c="size-4" />
+                <Icon n="mic" c="size-4" />
                 Comment on the whole document
               </button>
             ) : null}
