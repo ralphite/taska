@@ -1,7 +1,7 @@
 // Under the pointer, open, picked, dragged and where a dragged row would go, together.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frames, States } from '../../stories/Frames'
-import { question, row } from '../../stories/needsYouRowFixtures'
+import { one, question, row } from '../../stories/needsYouRowFixtures'
 
 export default { title: 'Components/Item list/Needs-you row/Pointer, keys and picking' } satisfies Meta
 type Story = StoryObj
@@ -28,4 +28,14 @@ export const Together: Story = {
       }}
     </Frames>
   ),
+}
+// ---- more states (T639): the pointer on each kind of need, and the pill from the keys
+const proposed = { it: { status: 'proposed' as const, by: 'claude-code' }, excerpt: 'Keep the filter in the export file name' }
+const review = { it: { status: 'review' as const }, excerpt: 'Done: the export writes the rows the list shows.' }
+export const PointerOnAProposal: Story = { ...one(proposed), parameters: { pseudo: { hover: ['.group'] } }, name: "Pointer on a proposal: Won't do, Later" }
+export const PointerOnFinishedWork: Story = { ...one(review), parameters: { pseudo: { hover: ['.group'] } }, name: 'Pointer on finished work: Not yet, Later' }
+export const PillFromTheKeys: Story = {
+  ...one(question),
+  parameters: { pseudo: { hover: ['[data-need]'], focusVisible: ['[data-need]'] } },
+  name: 'Its pill under the pointer and from the keys',
 }

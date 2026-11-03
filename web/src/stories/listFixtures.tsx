@@ -9,7 +9,9 @@ import { heldRows, listBody } from '../features/list/rows'
 import { queueHead, type DropHow } from '../model/items'
 import { NO_FILTERS, type ListQuery } from '../model/route'
 import type { Item, SavedView } from '../model/types'
-import { searchWords } from '../model/visible'
+import { otherTabs, searchWords } from '../model/visible'
+import { SearchHints, type CrossFacts } from '../ui/SearchHints'
+import { PROJECT_TONES } from '../ui/tones'
 import type { Tab } from '../model/words'
 import { T, item, message, noRowEvents, modelOf } from './fixtures'
 
@@ -51,6 +53,8 @@ export interface Holding {
   viewsEnd?: ReactNode
   /** a row being dragged (`out`: off every row) */
   dragging?: { out: boolean }
+  /** what a search finds in other projects (the hints under the list and in its empty line) */
+  cross?: CrossFacts
   /** the row being dragged and where it would go, as the page works it out */
   drag?: { n: number; at?: { n?: number; how: DropHow } }
   on?: Partial<ListEvents>
@@ -70,6 +74,9 @@ export function listOf(items: Item[], tab: Tab, q: Partial<ListQuery>, desk: boo
   const drawn = drawRows(m, rows, { slug: 'demo', openN: h.open ?? null, selected: new Set(h.selected), words, desk, drafts: new Set(), head: queueHead(m.items), seen: { since: T }, drag: { n: h.drag?.n ?? null, at: h.drag?.at ?? null }, heldHeight: () => 64 })
   const { views, ownViews } = listViews(m, tab, query, body, { list: h.saved ?? [], edit: -1 })
   const why = body.kind === 'empty' ? body.why : body.kind === 'rows' ? body.empty : undefined
+  // a search says where else its words are, as the page does: under the rows, or in the empty line
+  const hints = (shown: number) =>
+    words.length ? <SearchHints other={otherTabs(m, words, tab, shown)} cross={h.cross ?? { list: [], failed: false, q: query.q }} tone={() => PROJECT_TONES[1]} onShow={() => {}} onGo={() => {}} /> : null
   return (
     <div className="flex h-full flex-col">
       <ItemList
@@ -95,7 +102,8 @@ export function listOf(items: Item[], tab: Tab, q: Partial<ListQuery>, desk: boo
             h.top
           )
         }
-        empty={why ? <EmptyList why={why} status={query.status} organizerOn={false} onReset={() => {}} onConnect={() => {}} /> : null}
+        empty={why ? <EmptyList why={why} status={query.status} organizerOn={false} onReset={() => {}} onConnect={() => {}} hints={hints(0)} /> : null}
+        bottom={words.length && drawn.length ? <div className="flex flex-col py-4">{hints(drawn.length)}</div> : null}
         on={{ ...listOn, ...h.on }}
       />
     </div>

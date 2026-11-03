@@ -39,3 +39,6 @@ export const PointerOnItWaitsForReview: Story = { ...one({ it: { status: 'review
 export const PointerOnItDone: Story = { ...one({ it: { status: 'done' } }), ...hover, name: 'Pointer on it: done' }
 export const OpenInThePane = one({ l: { current: true } })
 export const Picked = one({ l: { selected: true } })
+// ---- more states (T639)
+export const PointerOnItArchived: Story = { ...one({ it: { status: 'done', archived: true } }), ...hover, name: 'Pointer on it: archived (Unarchive)' }
+export const PointerOnItLater: Story = { ...one({ it: { when: 'later' } }), ...hover, name: 'Pointer on it: later (Back to now)' }
