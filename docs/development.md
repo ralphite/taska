@@ -60,7 +60,8 @@ machine's browser budget. Run potentially destructive journeys on copied data; i
 deployment to verify the service and existing records still work.
 
 `tools/nightly-checks.sh [data root]` checks the latest committed source in an isolated temporary checkout and a
-backup of the data (default `~/.taska`). It runs ordinary code, never a model. It reports test failures to Taska.
+backup of the data (default `~/.taska`). It runs ordinary code, never a model. It reports test failures to Taska. Its launchd job runs at standard
+priority: as a background job macOS throttled it enough that the unit tests' workers timed out starting (B660).
 
 ## Storybook
 
