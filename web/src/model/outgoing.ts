@@ -21,7 +21,8 @@ export interface Outgoing {
   text: string
   /** the item it replies on (its code), or null for a new input */
   scope: string | null
-  kind?: 'answer'
+  /** cancelled: a recording cancelled with Esc, kept in the inputs without being sent (B627) */
+  kind?: 'answer' | 'cancelled'
   files: OutFile[]
   t: number
   state: 'waiting' | 'sending' | 'failed'
@@ -41,8 +42,9 @@ export interface Outgoing {
 export const showsOnItsWay = (o: Pick<Outgoing, 'back' | 'files'>) => !(o.back && o.files.some((f) => f.uploading))
 
 /** The first line of what you sent, as the lists show it while it is on its way. */
-export const outgoingLine = (o: Pick<Outgoing, 'text' | 'files'>) =>
+export const outgoingLine = (o: Pick<Outgoing, 'text' | 'files'> & Pick<Partial<Outgoing>, 'kind'>) =>
   o.text.split('\n')[0] ||
+  (o.kind === 'cancelled' ? 'Cancelled voice note' : '') ||
   (o.files.some((f) => (f.mime || '').startsWith('audio/')) ? 'Voice note' : `${o.files.length} file${o.files.length === 1 ? '' : 's'}`)
 
 /** Where it is, in a few words: on its way, waiting for Taska (away), uploading its files, or not sent. */

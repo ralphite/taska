@@ -178,7 +178,8 @@ def input_card(rd: Reading, inp: Input) -> str:
     st = rd.state
     scope = f" →{st.code(inp.scope)} {st.items[inp.scope].title}" if inp.scope else ""
     head = f"{inp.id} {hm(inp.t)} {inp.by}{scope}" + ("" if not inp.acked else " [handled]") \
-        + (" [deleted by the user]" if inp.deleted else "")
+        + (" [deleted by the user]" if inp.deleted else "") \
+        + (" [cancelled: not sent, not to handle]" if inp.kind == "cancelled" else "")
     out = [head]
     if inp.text:
         out.append(textwrap.indent(inp.text, "  "))
@@ -349,6 +350,8 @@ def _said(st: ProjectState, e: ev.Event) -> "tuple[str, str]":
         return who, f"took {e.f} off " + (f"a comment on D{e.d}" if e.d else str(e.src))
     if isinstance(e, ev.MessageHidden):
         return who, f"{'hid' if e.on else 'showed'} a message on {c(e.n)}"
+    if isinstance(e, ev.InputSent):
+        return who, f"{e.src} sent (it was a cancelled recording)"
     if isinstance(e, ev.InputRescoped):
         return who, f"{e.src} now goes with {c(e.to)}"
     if not isinstance(e, ev.Organized) and e.src is None:  # a kind with no display text: show its stored identity

@@ -16,7 +16,8 @@ followed by `open -g codex://threads/wake/<thread-id>`. Codex owns the queue. An
 starts processing; a busy session handles the queued message after its current turn ends.
 Taska does not inspect busy/idle state, maintain a notification outbox, deduplicate signals,
 claim notifications, request receipts, poll, or retry on a timer. Repeated signals are allowed.
-Agent writes do not trigger another notification. A send failure is reported in Taska.
+Agent writes do not trigger another notification, nor does a recording kept as cancelled (or its words)
+until the user sends it. A send failure is reported in Taska.
 
 `GET /p/<project>/api/codex-notifications` reads the binding and any reported failure.
 `POST` with `{"threadId":"<existing-session-UUID>"}` explicitly binds or rebinds a session;

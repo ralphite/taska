@@ -6,7 +6,7 @@ import type { Input } from './types'
 export interface InputStanding {
   label: string
   tone: string
-  icon: 'arrow' | 'dot' | 'undo' | 'check' | 'alert' | 'bot' | 'hourglass'
+  icon: 'arrow' | 'dot' | 'undo' | 'check' | 'alert' | 'bot' | 'hourglass' | 'micoff'
 }
 
 const TONE = {
@@ -20,6 +20,7 @@ const TONE = {
 
 export function standing(r: Input, organizer: { on: boolean; busy: string | null }, projectTitle: (slug: string) => string): InputStanding {
   if (r.moved) return { label: `Moved to ${projectTitle(r.moved.to)}`, tone: TONE.muted, icon: 'arrow' }
+  if (r.kind === 'cancelled') return { label: 'Cancelled', tone: TONE.muted, icon: 'micoff' } // kept, not sent: no one's work (B627)
   if (r.trWait) return { label: 'Transcribing…', tone: TONE.busy, icon: 'dot' }
   if (organizer.busy === r.id) return { label: 'Organizing…', tone: TONE.busy, icon: 'dot' }
   if (r.org?.undone) return { label: 'Undone', tone: TONE.muted, icon: 'undo' }
@@ -42,7 +43,10 @@ export const SHORT_STANDING: Record<string, string> = {
   'Seen by agent': 'Seen',
 }
 
-export const organizing = (r: Input, organizer: { on: boolean; busy: string | null }) => organizer.busy === r.id || (!r.acked && organizer.on && !r.org)
+export const organizing = (r: Input, organizer: { on: boolean; busy: string | null }) => organizer.busy === r.id || (!r.acked && organizer.on && !r.org && r.kind !== 'cancelled')
+
+/** A recording cancelled with Esc, kept in the inputs: it can be sent after all (B627). */
+export const canSend = (r: Input) => r.kind === 'cancelled' && !r.moved
 
 export const canUndoFiling = (r: Input) =>
   !!r.org && r.org.ok && !r.org.undone && !!r.touched.length && (!r.org.keep || (!!r.history?.length && !!r.org.changed)) && !!r.filing?.can

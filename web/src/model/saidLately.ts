@@ -1,7 +1,7 @@
 // What the desktop's New input page lists under the box: what you said lately, newest first, by day (each with what
 // became of it, the items it made, a draft of yours on it), and what is on its way.
 
-import { dayOf, newestFirst, organizing, SHORT_STANDING, standing, timeOf, type InputStanding } from './inputs'
+import { canSend, dayOf, newestFirst, organizing, SHORT_STANDING, standing, timeOf, type InputStanding } from './inputs'
 import { shownStatus } from './items'
 import type { BoxMode } from './boxFoot'
 import { outgoingLine, outgoingState, type Outgoing } from './outgoing'
@@ -31,6 +31,8 @@ export interface SaidInput {
   draft: 'edit' | 'append' | null
   canUndoSend: boolean
   retry: string | null
+  /** a recording kept as cancelled: Send sends it after all (B627) */
+  send: boolean
   opened: boolean
   /** moved to another project: the way there ("Open taska · #474") */
   moved: { href: string; label: string } | null
@@ -67,6 +69,7 @@ export function saidRows(m: ProjectModel, a: { words: readonly string[]; upTo: n
       draft: inputDraft(r.id, a.drafts, a.mode?.kind === 'amend' ? { id: a.mode.id, mode: a.mode.mode } : null),
       canUndoSend: a.justSent.some((x) => x.rid === r.id),
       retry: !r.acked && m.facts.organizer.on && r.org && (!r.org.ok || r.org.undone) ? (r.org.undone ? 'Organize again' : 'Retry') : null,
+      send: canSend(r),
       opened: a.opened.has(r.id),
       moved: r.moved ? { href: `/p/${encodeURIComponent(r.moved.to)}/`, label: `Open ${a.title(r.moved.to)} · ${inputCode(r.moved.as)}` } : null,
     }

@@ -20,6 +20,8 @@ def _input(state: ProjectState, e: ev.Event) -> None:
     inp = Input(id=e.id, t=e.t, by=e.by, text=e.text, scope=e.scope, files=list(e.files), seq=e.seq)
     if e.kind == "answer":  # a form you sent: in its item's talk as it is, nothing more to do
         inp.kind, inp.acked = "answer", True
+    elif e.kind == "cancelled":  # a recording you cancelled: kept to listen to and send later, not work (B627)
+        inp.kind = "cancelled"
     state.inputs[inp.id] = inp
     state.max_input = max(state.max_input, inp.number)
     if e.q:
@@ -141,6 +143,14 @@ def _move_input(state: ProjectState, e: ev.Event) -> None:
         it.thread = [x for x in it.thread if x.id != inp.seq]
         if inp.id in it.srcs and inp.id not in [x.src for x in it.thread]:
             it.srcs.remove(inp.id)
+
+
+@reduces(ev.InputSent)
+def _sent(state: ProjectState, e: ev.Event) -> None:
+    """A cancelled input sent after all: a new input like any other."""
+    inp = state.inputs.get(str(e.src))
+    if inp and inp.kind == "cancelled":
+        inp.kind = None
 
 
 @reduces(ev.InputRescoped)

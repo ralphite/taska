@@ -50,12 +50,14 @@ class CodexNotifications:
                     and self.data.get("projectPath") == self.project.folder)
 
     def eligible(self, event: ev.Event) -> bool:
+        if isinstance(event, ev.InputAdded) and event.kind == "cancelled":
+            return False  # a cancelled recording is kept, not sent (B627); sending it later is the update
+        inp = self.project.state.inputs.get(event.src or "") if isinstance(event, ev.WordsIn) else None
+        if inp is not None and inp.kind == "cancelled":
+            return False
         if event.by == "you":
             return True
-        if isinstance(event, ev.WordsIn):
-            inp = self.project.state.inputs.get(event.src or "")
-            return inp is not None and inp.by == "you"
-        return False
+        return inp is not None and inp.by == "you"
 
     def on_event(self, event: ev.Event) -> None:
         """Called after Project.emit commits an event; never called on a timer."""

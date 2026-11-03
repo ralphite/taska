@@ -99,7 +99,8 @@ flowchart LR
 - **Voice in, words out.** Voice notes are transcribed with your project's own terms, so names, paths and
   commands come out right. A second, speech-only model listens too: it catches notes where nobody spoke, steps in
   when the first one fails, and words the two hear differently are pointed out before you send. A recording stays
-  in your browser until it is sent, so a restart or a lost connection never loses it.
+  in your browser until it is sent, so a restart or a lost connection never loses it. Cancel a new input's
+  recording with Esc and it is kept in Inputs as cancelled, sent to no one, to listen to and send later.
 - **Answers in one tap.** Agents can ask multiple-choice questions, and you answer with a tap.
 - **The whole story of an item.** Its description, subitems, screenshots and documents, and the conversation
   with your agents: yours on the right, theirs on the left. Long reports fold to their first line.

@@ -62,9 +62,9 @@ const LINKS: SideLinkInfo[] = [
 ]
 const SAID: SaidInput[] = INPUTS.map((r, i) => {
   const s = standing(r, { on: false, busy: null }, (x) => x)
-  return { r, code: '#' + r.id.slice(1), time: ['Today 14:57', 'Today 14:10', 'Today 09:02'][i], standing: s, short: SHORT_STANDING[s.label] || s.label, scope: null, chips: [], busy: false, draft: null, canUndoSend: false, retry: null, opened: false, moved: null }
+  return { r, code: '#' + r.id.slice(1), time: ['Today 14:57', 'Today 14:10', 'Today 09:02'][i], standing: s, short: SHORT_STANDING[s.label] || s.label, scope: null, chips: [], busy: false, draft: null, canUndoSend: false, retry: null, send: false, opened: false, moved: null }
 })
-const noSaid: SaidEvents = { goto() {}, more() {}, append() {}, draft() {}, menu() {}, undoSend() {}, retry() {}, outboxRetry() {}, outboxEdit() {}, query() {}, loadMore() {}, moved() {} }
+const noSaid: SaidEvents = { goto() {}, more() {}, append() {}, draft() {}, menu() {}, undoSend() {}, retry() {}, send() {}, outboxRetry() {}, outboxEdit() {}, query() {}, loadMore() {}, moved() {} }
 const noDoc = () => {}
 
 // ---------------------------------------------------------------- the parts not built yet

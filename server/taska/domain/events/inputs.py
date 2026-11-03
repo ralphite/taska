@@ -20,7 +20,7 @@ class InputAdded(Event):
     scope: Optional[int] = None
     files: List[FileRef] = field(default_factory=list)
     q: str = ""  # the page's id for it, so one sent again goes in once
-    kind: Optional[str] = None  # "answer": a form you sent on its item
+    kind: Optional[str] = None  # "answer": a form you sent on its item; "cancelled": a recording you cancelled (B627)
 
     def body(self) -> Row:
         row: Row = {"id": self.id, "by": self.by, "text": self.text, "scope": self.scope, "files": files_row(self.files)}
@@ -171,6 +171,16 @@ class Organized(Event):
 
 
 @dataclass
+class InputSent(Event):
+    """A cancelled input sent after all (B627): from now on it is an ordinary new input."""
+
+    KIND: ClassVar[str] = "send"
+
+    def body(self) -> Row:
+        return {"src": self.src, "by": self.by}
+
+
+@dataclass
 class InputRescoped(Event):
     """What you said goes with another item."""
 
@@ -199,5 +209,6 @@ READERS: Dict[str, Reader] = {
     "org": lambda r: Organized(src=need(r, "src"), ok=bool(r.get("ok")), msg=r.get("msg", ""), plan=r.get("plan"),
                                keep=r.get("keep"), changed=r.get("changed"), ms=r.get("ms"), retry=bool(r.get("retry")),
                                **common(r)),
+    "send": lambda r: InputSent(src=need(r, "src"), **common(r)),
     "rescope": lambda r: InputRescoped(src=need(r, "src"), to=need(r, "to"), **common(r)),
 }

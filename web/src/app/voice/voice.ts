@@ -1,7 +1,8 @@
 // Voice notes in the box: recording (the microphone as it hears, untouched: no echo cancelling, noise suppression or
 // automatic gain), the note put in the draft it was started in (wherever you are when it stops), uploaded at once and
 // its words worked out in the background; they go where it was recorded in the draft when they come. Stop and send
-// sends it at once (sending waits only for the upload; its words join the input when they come).
+// sends it at once (sending waits only for the upload; its words join the input when they come). Esc on a new
+// input's note keeps it in the inputs as cancelled, sent to no one, to listen to and send later (B627).
 
 import { Refused } from '../../api/http'
 import { canRecord, micTrouble, openMic } from './mic'
@@ -16,7 +17,8 @@ import type { RecordingStore } from '../../stores/recording'
 import type { Box } from '../inputs/box'
 import type { Fields } from '../page/fields'
 import type { Toasts } from '../page/toasts'
-import { draftName, draftTarget, keyOf, type DraftKey } from '../../model/draftTarget'
+import { draftName, draftTarget, keyOf, NEW_DRAFT, type DraftKey } from '../../model/draftTarget'
+import type { Outgoing } from '../../model/outgoing'
 
 export interface VoiceDeps {
   api: TaskaApi
@@ -33,6 +35,8 @@ export interface VoiceDeps {
   boxKey(): string
   /** what waits to be sent goes now (a file it waited for is up) */
   flush(): void
+  /** into the outbox: it goes once its files are up, and a reload never loses it */
+  push(o: Pick<Outgoing, 'slug' | 'text' | 'scope' | 'files' | 'kind' | 'quiet'>): void
   /** kept in this browser with its audio until Taska has it: its id there */
   keep(blob: Blob): string
   /** to the box a draft belongs to */
@@ -163,21 +167,7 @@ export class Voice {
       this.d.about?.(about)
       if (typeof getSelection !== 'undefined') getSelection()?.removeAllRanges()
     }
-    const ext = blob.type.includes('mp4') ? 'm4a' : blob.type.includes('ogg') ? 'ogg' : 'webm'
-    const f: DraftFile = {
-      key: `voice-${Date.now().toString(36)}-${++this.n}`,
-      f: '',
-      name: `voice ${clock(ms).replace(':', '-')}.${ext}`,
-      mime: blob.type || 'audio/webm',
-      size: blob.size,
-      ms,
-      uploading: true,
-      transcribing: true,
-      at: this.d.box.text(slug, key).length,
-      t: Date.now(),
-      rid: this.d.keep(blob),
-      ...(label ? { vc: label } : {}),
-    }
+    const f = this.noteFile(blob, ms, this.d.box.text(slug, key).length, label)
     this.d.boxStore.getState().addFile(key, f)
     void this.hear(slug, key, f, blob, scope)
     if (key !== this.d.boxKey()) {
@@ -191,13 +181,42 @@ export class Voice {
     else if (this.d.desk() && !kept) this.d.fields.get('box')?.focus({ preventScroll: true })
   }
 
-  /** Discard it; Undo brings it back for a few seconds. */
+  /** Esc. A new input's note of a second or more is kept in the inputs as cancelled, sent to no one (B627); any other
+   * is discarded, and Undo brings it back for a few seconds. */
   async cancel(): Promise<void> {
     const r = this.d.store.getState().rec
     const ms = Date.now() - this.t0
     const blob = await this.stopped()
     if (!r || !blob || ms < 800 || !blob.size) return
+    if (r.key === NEW_DRAFT && !r.about && ms >= 1000) return this.keepCancelled(r.slug, blob, ms)
     this.d.toasts.show('Recording discarded', () => this.finish(false, { blob, ms, slug: r.slug, key: r.key, scope: r.scope, about: r.about ?? null }))
+  }
+
+  /** A cancelled note goes up and gets its words as a sent one does, and into the inputs marked cancelled, through
+   * the outbox (kept in this browser until Taska has it); the box stays as it was. */
+  private keepCancelled(slug: string, blob: Blob, ms: number): void {
+    const f = this.noteFile(blob, ms, 0)
+    this.d.push({ slug, text: '', scope: null, kind: 'cancelled', quiet: true, files: [f] })
+    void this.hear(slug, NEW_DRAFT, f, blob, null, true)
+    this.d.toasts.show('Recording cancelled · kept in Inputs')
+  }
+
+  private noteFile(blob: Blob, ms: number, at: number, label: string | null = null): DraftFile {
+    const ext = blob.type.includes('mp4') ? 'm4a' : blob.type.includes('ogg') ? 'ogg' : 'webm'
+    return {
+      key: `voice-${Date.now().toString(36)}-${++this.n}`,
+      f: '',
+      name: `voice ${clock(ms).replace(':', '-')}.${ext}`,
+      mime: blob.type || 'audio/webm',
+      size: blob.size,
+      ms,
+      uploading: true,
+      transcribing: true,
+      at,
+      t: Date.now(),
+      rid: this.d.keep(blob),
+      ...(label ? { vc: label } : {}),
+    }
   }
 
   private patch(fk: string, p: Partial<DraftFile>): void {
@@ -205,8 +224,9 @@ export class Voice {
     this.d.outbox.getState().updateFile(fk, p)
   }
 
-  /** Up to Taska, then its words, tried again with growing pauses while Taska can't be reached. */
-  private async hear(slug: string, key: DraftKey, f: DraftFile, blob: Blob, scope: string | null): Promise<void> {
+  /** Up to Taska, then its words, tried again with growing pauses while Taska can't be reached (`cancelled`: a
+   * note kept as cancelled, B627). */
+  private async hear(slug: string, key: DraftKey, f: DraftFile, blob: Blob, scope: string | null, cancelled = false): Promise<void> {
     let fid = f.f
     for (let n = 0; !fid; n++) {
       try {
@@ -241,8 +261,10 @@ export class Voice {
     const tr = d?.tr || ''
     const err = d?.tr_error || (d?.done ? '' : 'no answer')
     this.patch(f.key, { transcribing: false, tr, doubts: d?.doubts || [], more: !!d?.more, trError: err })
-    if (!this.d.desk() && d?.doubts?.some((x) => x.alt)) this.d.boxStore.getState().setShowWords(true) // the words to check show in the box on the phone
-    this.place(slug, key, f.key, tr, err)
+    if (!cancelled && !this.d.desk() && d?.doubts?.some((x) => x.alt)) this.d.boxStore.getState().setShowWords(true) // the words to check show in the box on the phone
+    if (cancelled) {
+      if (!tr) this.d.toasts.show(err ? 'Transcription failed. The cancelled recording is kept as is' : 'No words heard. The cancelled recording is kept as is')
+    } else this.place(slug, key, f.key, tr, err)
     if (d?.more) void this.hearMore(slug, f.key, fid)
   }
 

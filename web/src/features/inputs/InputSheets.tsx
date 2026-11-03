@@ -1,4 +1,4 @@
-// Sheets about what you said: an input's menu (Edit, Add more, its original words, Undo organizing, Move to…,
+// Sheets about what you said: an input's menu (Send, for a recording kept as cancelled; Edit, Add more, its original words, Undo organizing, Move to…,
 // History, Put with an item…, Take off a file, Delete), its versions, a voice note's original words. Props only.
 
 import type { ReactNode } from 'react'
@@ -11,6 +11,7 @@ import type { SheetParts } from '../../ui/Sheet'
 import { MENU_ROW } from '../../ui/tones'
 
 export interface InputMenuEvents {
+  send(): void
   edit(): void
   append(): void
   asSaid(f: string): void
@@ -24,6 +25,8 @@ export interface InputMenuEvents {
 
 export interface InputMenuFacts {
   r: Input
+  /** a recording kept as cancelled: Send sends it after all, and it is put with no item until then (B627) */
+  send: boolean
   /** Original words for each voice note (the phone: the desktop shows them under the pointer) */
   tidy: boolean
   undo: { tip: string } | null
@@ -36,7 +39,7 @@ export interface InputMenuFacts {
   deleteTip: string
 }
 
-export function inputMenuSheet({ r, tidy, undo, move, history, scope, asking, deleteTip }: InputMenuFacts, on: InputMenuEvents): SheetParts {
+export function inputMenuSheet({ r, send, tidy, undo, move, history, scope, asking, deleteTip }: InputMenuFacts, on: InputMenuEvents): SheetParts {
   const row = (key: string, icon: IconName, label: ReactNode, run: () => void, tip = '') => (
     <button key={key} onClick={run} {...(tip ? { title: tip } : {})} className={MENU_ROW}>
       <Icon n={icon} c="size-4 text-zinc-500 dark:text-zinc-400" />
@@ -48,13 +51,14 @@ export function inputMenuSheet({ r, tidy, undo, move, history, scope, asking, de
     title: inputCode(r.id),
     body: (
       <div className="-mx-1 flex flex-col gap-0.5">
+        {send ? row('send', 'up', 'Send', on.send) : null}
         {row('edit', 'pencil', 'Edit', on.edit)}
         {row('append', 'plus', 'Add more', on.append)}
         {tidy ? r.files.filter((f) => (f.mime || '').startsWith('audio/')).map((f) => row('said' + f.f, 'quote', 'Original words', () => on.asSaid(f.f))) : null}
         {undo ? row('undo', 'undo', 'Undo organizing', on.undo, undo.tip) : null}
         {move ? row('move', 'arrow', 'Move to…', on.move) : null}
         {history ? row('history', 'history', 'History', on.history) : null}
-        {row('rescope', 'scope', scope ? `Put with item… · now ${scope}` : 'Put with an item…', on.rescope)}
+        {send ? null : row('rescope', 'scope', scope ? `Put with item… · now ${scope}` : 'Put with an item…', on.rescope)}
         {r.files.map((f: FileRef) => (
           <button key={f.f} onClick={() => on.takeOff(f.f)} className={MENU_ROW}>
             <Icon n="x" c="size-4 text-zinc-500 dark:text-zinc-400" />

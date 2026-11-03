@@ -296,6 +296,7 @@ export function createApp(env: AppEnv): App {
     send: (s, key) => draftSender.send(s, key),
     boxKey: () => boxStore.getState().shown.key,
     flush: () => void inputs.flush(),
+    push: (o) => void inputs.push(o),
     keep,
     goDraft,
     about: (a) => docVoice.about(a.d, a.key, a.quote),

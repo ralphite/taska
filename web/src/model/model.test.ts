@@ -8,6 +8,7 @@ import { merge, patched, project } from './project'
 import { NO_FILTERS, parseRoute, projectPath } from './route'
 import type { ViewAnswer } from './types'
 import { visible } from './visible'
+import { canSend, organizing, standing } from './inputs'
 
 const answer = (a: Partial<ViewAnswer>): ViewAnswer => ({ cursor: 'c1', full: false, items: [], inputs: [], docs: [], project: projectFacts(), server: { page: '', update: false }, ...a })
 
@@ -93,5 +94,25 @@ describe('which items a list shows', () => {
 
   test('the search finds words in the title and in the talk', () => {
     expect(ns('items', { q: 'export', status: 'every' })).toEqual([1, 5])
+  })
+})
+
+describe('a recording cancelled with Esc, kept in the inputs (B627)', () => {
+  const organizer = { on: true, busy: null }
+  const kept = { t: '', by: 'you', text: 'Keep the columns too', scope: null, files: [], acked: false, touched: [], org: null, seq: 1, v: 0, id: 'r4', kind: 'cancelled' as const }
+
+  test('it stands as cancelled, is no one’s work, and can be sent', () => {
+    expect(standing(kept, organizer, (s) => s)).toMatchObject({ label: 'Cancelled', icon: 'micoff' })
+    expect(organizing(kept, organizer)).toBe(false)
+    expect(canSend(kept)).toBe(true)
+    expect(canSend({ ...kept, moved: { to: 'other', as: 'r1' } })).toBe(false)
+  })
+
+  test('Send shows it sent at once: an ordinary new input, waiting for the organizer', () => {
+    const copy = { cursor: '', items: new Map(), inputs: new Map([[kept.id, kept]]), docs: new Map(), facts: projectFacts(), server: { page: '', update: false }, at: 0 }
+    const sent = project(copy, [], 0, [{ id: kept.id, f: { kind: undefined } }]).byId.get(kept.id)!
+    expect(canSend(sent)).toBe(false)
+    expect(standing(sent, organizer, (s) => s).label).toBe('Queued')
+    expect(organizing(sent, organizer)).toBe(true)
   })
 })

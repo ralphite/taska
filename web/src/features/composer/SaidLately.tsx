@@ -42,6 +42,8 @@ export interface SaidEvents {
   menu(id: string, from: HTMLElement): void
   undoSend(key: string): void
   retry(id: string): void
+  /** a recording kept as cancelled, sent after all */
+  send(id: string): void
   /** to the project it was moved to */
   moved(href: string): void
   outboxRetry(): void
@@ -148,6 +150,13 @@ function SaidRow({ x, words, files, on }: { x: SaidInput; words: string[]; files
                 <Icon n="arrow" c="size-3.5" sw="2" />
                 <span className="truncate">{x.moved.label}</span>
               </a>
+            </span>
+          ) : x.send ? (
+            <span className="-ml-2 flex items-center gap-1.5">
+              <button onClick={() => on.send(r.id)} className={`${SMALL_BTN} text-blue-600 dark:text-blue-400`}>
+                <Icon n="up" c="size-3.5" sw="2" />
+                Send
+              </button>
             </span>
           ) : x.retry ? (
             <span className={`flex items-center gap-1.5 ${x.chips.length || x.busy ? '' : '-ml-2'}`}>

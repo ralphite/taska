@@ -24,7 +24,7 @@ export interface KeptNote {
   /** its words as put in the draft */
   added: string | null
   /** sent: the input it goes with, which goes again after a reload */
-  job: { id: string; text: string } | null
+  job: { id: string; text: string; kind?: 'cancelled' } | null
   vc: string | null
   /** a picture or another file: no words to wait for */
   plain?: boolean

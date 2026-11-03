@@ -90,7 +90,8 @@ export interface Input {
   org: OrgNote | null
   seq: number
   v: number
-  kind?: 'answer'
+  /** answer: a form sent on its item; cancelled: a recording cancelled with Esc, kept, not sent (B627) */
+  kind?: 'answer' | 'cancelled'
   history?: { text: string; t: string; mode: string }[]
   updated?: string
   moved?: { to: string; as: string }

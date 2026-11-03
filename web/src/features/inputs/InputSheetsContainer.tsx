@@ -42,6 +42,7 @@ export function InputMenuSheet({ req }: Req<'input-menu'>) {
   return (
     <SheetLayout
       {...inputMenuSheet(facts, {
+        send: done(() => app.inputActions.sendCancelled(slug, id)),
         edit: done(() => app.box.amendStart(slug, m, id, 'edit')),
         append: done(() => app.box.amendStart(slug, m, id, 'append')),
         asSaid: (f) => app.media.words(slug, f),

@@ -52,6 +52,8 @@ export const ONE = {
   }),
   moved: input({ id: 'r11', t: at(60), acked: true, text: 'The app icon looks blurry on the home screen.', moved: { to: 'mobile-app', as: 'r4' } }),
   answer: input({ id: 'r10', t: at(65), acked: true, kind: 'answer', scope: 7, text: 'CSV and Excel.' }),
+  /** a recording cancelled with Esc, kept with its words: no one's work until it is sent (B627) */
+  cancelled: input({ id: 'r24', t: at(3), kind: 'cancelled', text: 'Maybe the export should keep the columns too.', files: [VOICE] }),
   long: input({ id: 'r9', t: at(60 * 24), text: Array.from({ length: 8 }, (_, i) => `Step ${i + 1}: open the orders page, set a filter, export.`).join('\n') }),
 }
 
@@ -82,7 +84,7 @@ export interface Said {
 const title = (slug: string) => ({ 'mobile-app': 'Mobile app' })[slug] ?? slug
 const project = (s: Said, items = ITEMS) => modelOf(items, s.inputs ?? DAY, { organizer: { on: !!s.organizer, model: 'gemini-flash-latest', busy: s.busy ?? null } })
 const thumbs = (size: string) => (f: FileRef[]) => <Thumbs files={f} url={(x) => (x.endsWith('.png') ? PICTURE : '#' + x)} size={size} play={() => ({ playing: false, t: null })} tidy on={{ play() {}, words() {}, view() {} }} />
-const noInput: InputEvents = { goto() {}, more() {}, menu() {}, retry() {}, draft() {}, moved() {}, ref() {}, picture() {}, outboxRetry() {}, outboxEdit() {}, end() {} }
+const noInput: InputEvents = { goto() {}, more() {}, menu() {}, retry() {}, send() {}, draft() {}, moved() {}, ref() {}, picture() {}, outboxRetry() {}, outboxEdit() {}, end() {} }
 
 function rowsOf(s: Said) {
   const m = project(s)
@@ -109,7 +111,7 @@ export function cardOf(r: Input, s: Said = {}) {
   return <InputCard x={{ ...rows[0], day: null }} words={[]} world={talkEnv(m, false).world} files={thumbs('size-11')} on={noInput} />
 }
 
-const noSaid: SaidEvents = { goto() {}, more() {}, append() {}, draft() {}, menu() {}, undoSend() {}, retry() {}, outboxRetry() {}, outboxEdit() {}, query() {}, loadMore() {}, moved() {} }
+const noSaid: SaidEvents = { goto() {}, more() {}, append() {}, draft() {}, menu() {}, undoSend() {}, retry() {}, send() {}, outboxRetry() {}, outboxEdit() {}, query() {}, loadMore() {}, moved() {} }
 
 /** The New input page's list as the page works it out (its rows and what is on its way), for prototypes that draw
  * it their own way. */

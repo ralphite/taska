@@ -26,6 +26,7 @@ export function changeWords(cmds: readonly unknown[]): string {
     dcres: `${on ? 'reopening' : 'resolving'} a comment on D${String(x.d)}`,
     dcdel: `deleting a comment on D${String(x.d)}`,
     dcundel: `restoring a comment on D${String(x.d)}`,
+    send: `sending input ${inputCode(String(x.id))}`,
     rescope: `filing input ${inputCode(String(x.id))} under ${String(x.to)}`,
     dc: `your comment on D${String(x.d)}`,
     dcedit: `editing your comment on D${String(x.d)}`,

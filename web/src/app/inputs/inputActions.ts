@@ -1,6 +1,6 @@
 // What you do to something you said: organize it again (after the organizer failed, or after you undid what it
 // filed), take back what it filed (and put it back), put it with another item, take a file off it, delete it (and
-// restore it), move it to another project. Each shows at once and goes out as a change, sent again until Taska has
+// restore it), move it to another project, send a recording kept as cancelled. Each shows at once and goes out as a change, sent again until Taska has
 // it; a toast says what happened, with Undo where there is one.
 
 import type { TaskaApi } from '../../api/taska'
@@ -74,6 +74,12 @@ export class InputActions {
         })
       : null
     this.d.toasts.show(`${inputCode(id)} now goes with ${to}`, undo)
+  }
+
+  /** A recording kept as cancelled goes to the organizer and the agents after all; it shows sent at once (B645). */
+  sendCancelled(slug: string, id: string): void {
+    void this.send(slug, { op: 'send', id }, `sending ${inputCode(id)}`, [{ id, f: { kind: undefined } }])
+    this.d.toasts.show(`Sent ${inputCode(id)}`)
   }
 
   takeOff(slug: string, id: string, f: string): void {

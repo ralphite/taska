@@ -2,7 +2,7 @@
 // where it moved), newest first by day, and what is still on its way, the latest first. Pure: the container and the
 // stories draw the same rows from the same data.
 
-import { dayOf, newestFirst, standing } from '../../model/inputs'
+import { canSend, dayOf, newestFirst, standing } from '../../model/inputs'
 import { codeOf, inputDraft, type ProjectModel } from '../../model/project'
 import { when } from '../../model/time'
 import { inputMatch } from '../../model/visible'
@@ -65,6 +65,7 @@ export function inputRows(m: ProjectModel, a: InputRowsWith): { rows: InputFacts
       noteBad: !r.org?.ok,
       spark: !!org && !note && shown.some((n) => did[n]),
       retry: !r.acked && m.facts.organizer.on && r.org && (!r.org.ok || r.org.undone) ? (r.org.undone ? 'Organize again' : 'Retry') : null,
+      send: canSend(r),
       moved: r.moved ? { href: `/p/${encodeURIComponent(r.moved.to)}/`, label: `Open ${a.title(r.moved.to)}` + (r.moved.as ? ` · ${inputCode(r.moved.as)}` : '') } : null,
       lit: a.lit === r.id ? (a.litStill ? 'still' : 'shown') : undefined,
       draft: inputDraft(r.id, a.drafts, a.writing),

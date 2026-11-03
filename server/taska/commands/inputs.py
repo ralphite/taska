@@ -1,5 +1,5 @@
 """Commands on what you said: a new input or a reply, fixing or adding to one, marking inputs handled, deleting and
-restoring one, moving one to another item, taking a file off one."""
+restoring one, moving one to another item, taking a file off one, sending a cancelled recording after all."""
 
 from __future__ import annotations
 
@@ -39,14 +39,38 @@ def new_input(r: Run, a: Args) -> Outcome:
     scope = item_at(s, a.get("scope")).n if a.get("scope") else None  # a merged item's replies go where it went
     rid = f"r{s.max_input + 1}"
     answer = a.get("kind") == "answer" and scope is not None  # a form you sent: it goes to its item as it is
+    cancelled = a.get("kind") == "cancelled"  # a recording you cancelled: kept, not sent to anyone (B627)
+    if cancelled and scope is not None:
+        raise Refused("only a new input can be kept as cancelled")
     r.emit(ev.InputAdded(id=rid, by=r.by, text=text, scope=scope, files=files, q=q,
-                                 kind="answer" if answer else None))
+                         kind="answer" if answer else "cancelled" if cancelled else None))
+    if cancelled:
+        return Outcome(f"ok {rid} kept as cancelled", "Kept in Inputs")
     # words on an item that waits for review, not Accept, take it back to open (Yadong r961: open is the agent's turn;
     # in progress only while an agent works on it)
     it = s.items.get(scope) if scope is not None else None
     if it is not None and it.status == "review" and r.by == "you":
         r.emit(ev.FieldsSet(n=it.n, by=r.by, f={"status": "open"}, was={"status": "review"}, src=rid))
     return Outcome(f"ok {rid}", "Received")
+
+
+@handles("send")
+def send(r: Run, a: Args) -> Outcome:
+    """A cancelled recording sent after all (B627): the organizer and the agents get it as a new input."""
+    rid = a.text("id")
+    inp = r.state.inputs.get(rid)
+    if not inp:
+        raise Refused(f"unknown input {rid}")
+    if r.by not in PEOPLE:
+        raise Refused("only the user sends a cancelled input")
+    if inp.kind != "cancelled":
+        raise Refused(f"{rid} was sent already")
+    if inp.deleted:
+        raise Refused(f"{rid} is deleted; restore it first (Settings, Deleted)")
+    if inp.moved or r.project.is_moving(rid):
+        raise Refused(f"{rid} has moved to another project; send it there")
+    r.emit(ev.InputSent(src=rid, by=r.by))
+    return Outcome(f"ok {rid} sent", "Sent")
 
 
 @handles("correct")
@@ -140,6 +164,8 @@ def rescope(r: Run, a: Args) -> Outcome:
     inp = s.inputs.get(a.text("id"))
     if not inp:
         raise Refused("no such input")
+    if inp.kind == "cancelled":
+        raise Refused(f"{inp.id} was not sent; send it first")
     it = item_at(s, a.get("to"), r.ctx)
     r.emit(ev.InputRescoped(src=inp.id, to=it.n, by=r.by))
     return Outcome(f"ok {inp.id} now goes with {s.code(it.n)}", f"Moved {inp.id} to {s.code(it.n)}")

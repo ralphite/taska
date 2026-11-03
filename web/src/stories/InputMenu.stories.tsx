@@ -29,15 +29,17 @@ const m = modelOf([item({ n: 4, title: 'Exports that keep what you see' }), item
 /** What you said's ⋯: Edit, Add details, Original words, Undo what the organizer did, Move, History, Put with another
  * item, a file's Take off, Delete (and what goes with it). */
 export const InputMenu: Story = {
-  ...both((desk) => opened(inputMenuSheet(inputMenuFacts(m, said, 2, {}, desk, true), { edit: no, append: no, asSaid: no, undo: no, move: no, history: no, rescope: no, takeOff: no, remove: no }), desk, { look: desk ? { pop: true, at: AT_BUTTON } : {} }), 720),
+  ...both((desk) => opened(inputMenuSheet(inputMenuFacts(m, said, 2, {}, desk, true), { send: no, edit: no, append: no, asSaid: no, undo: no, move: no, history: no, rescope: no, takeOff: no, remove: no }), desk, { look: desk ? { pop: true, at: AT_BUTTON } : {} }), 720),
   name: 'Edit, Original words, Undo, Move, History, Delete',
 }
 const plain = input({ id: 'r13', acked: true, text: 'Look at why the build takes so long.' })
 const inputMenu = (r: typeof said, other: number, asked: Record<string, number> = {}, tidy = true) => (desk: boolean) =>
-  opened(inputMenuSheet(inputMenuFacts(modelOf([item({ n: 4 }), item({ n: 12 })], [r]), r, other, asked, desk, tidy), { edit: no, append: no, asSaid: no, undo: no, move: no, history: no, rescope: no, takeOff: no, remove: no }), desk, { look: desk ? { pop: true, at: AT_BUTTON } : {} })
+  opened(inputMenuSheet(inputMenuFacts(modelOf([item({ n: 4 }), item({ n: 12 })], [r]), r, other, asked, desk, tidy), { send: no, edit: no, append: no, asSaid: no, undo: no, move: no, history: no, rescope: no, takeOff: no, remove: no }), desk, { look: desk ? { pop: true, at: AT_BUTTON } : {} })
 /** a plain typed input with no other project: no Original words, Undo, History, files or Move */
 export const InputMenuPlain: Story = { ...both(inputMenu(plain, 0), 420), name: 'Typed, nothing filed, no other project' }
 /** a file's Take off asking again */
 export const InputMenuTakeOffAsks: Story = { ...both(inputMenu(said, 2, { [`unfile ${said.id} ${SHOT.f}`]: 1 }), 720), name: 'A file’s Take it off? asking' }
+/** a recording cancelled with Esc (B627): Send first; it goes with no item until it is sent */
+export const InputMenuCancelled: Story = { ...both(inputMenu(input({ id: 'r24', kind: 'cancelled', text: 'Maybe the export should keep the columns too.', files: [VOICE] }), 2), 560), name: 'A cancelled recording: Send' }
 /** voice notes not tidied (Settings): the phone's menu has no Original words either */
 export const InputMenuTidyOff: Story = { ...both(inputMenu(said, 2, {}, false), 720), name: 'Voice notes not tidied' }

@@ -84,8 +84,8 @@ def needs_you(state: ProjectState, it: Item) -> bool:
 
 
 def pending(state: ProjectState) -> List[Input]:
-    """Inputs not handled yet."""
-    return [i for i in state.inputs.values() if not i.acked and not i.deleted]
+    """Inputs not handled yet. A cancelled recording kept in the inputs (B627) is no one's work until it is sent."""
+    return [i for i in state.inputs.values() if not i.acked and not i.deleted and i.kind != "cancelled"]
 
 
 def for_agent(state: ProjectState, organizer_on: bool, held: Held) -> List[Input]:

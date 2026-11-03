@@ -24,7 +24,7 @@ interface Kept {
   text?: string
   scope?: string | null
   t?: number
-  kind?: 'answer'
+  kind?: 'answer' | 'cancelled'
   files?: FileRef[]
 }
 

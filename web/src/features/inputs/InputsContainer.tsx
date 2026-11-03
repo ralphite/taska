@@ -66,6 +66,7 @@ export function InputsContainer({ route, hidden }: { route: ProjectRoute; hidden
         more: (id) => stores.ui.getState().toggleInput(id),
         menu: (id) => app.sheets.open({ kind: 'input-menu', id }, { focus: false }),
         retry: (id) => app.inputActions.organizeAgain(route.slug, id),
+        send: (id) => app.inputActions.sendCancelled(route.slug, id),
         draft: (id, mode) => app.box.amendStart(route.slug, m, id, mode),
         moved: (href) => app.nav.to(href),
         ref: (c) => {

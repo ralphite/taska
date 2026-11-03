@@ -70,6 +70,7 @@ export function SaidLatelyContainer({ route, boxKey, view, draft }: { route: Pro
           menu: (id, from) => app.sheets.openFrom(from, { kind: 'input-menu', id }, { focus: false }),
           undoSend: (k) => app.box.unsend(justSent.find((x) => x.q === k || x.rid === k)?.q ?? k),
           retry: (id) => app.inputActions.organizeAgain(route.slug, id),
+          send: (id) => app.inputActions.sendCancelled(route.slug, id),
           outboxRetry: () => void app.inputs.flush(),
           outboxEdit: () => app.box.editOutgoing(route.slug, boxKey) && app.fields.focus('box'),
           query: view.query,

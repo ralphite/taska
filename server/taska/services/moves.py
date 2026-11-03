@@ -48,7 +48,7 @@ class Moves:
                 raise Refused(f"{rid} is being organized right now; try again in a moment")
             self._leaving(here.slug, rid, True)
             blobs: List[Tuple[FileRef, bytes]] = [(f, here.files.read(f.f)) for f in inp.files]
-            text = inp.text
+            text, cancelled = inp.text, inp.kind == "cancelled"
         try:
             files: List[FileRef] = []
             for f, blob in blobs:  # the other project keeps its own copies
@@ -65,7 +65,10 @@ class Moves:
                     with there.lock:
                         there.voice.jobs[copy.f] = job
                     there.voice.hold_timer(job)
-            lines, _ = there.run([(0, {"op": "input", "text": text, "files": [x.to_row() for x in files]})], "you")
+            cmd: Dict[str, Any] = {"op": "input", "text": text, "files": [x.to_row() for x in files]}
+            if cancelled:  # a cancelled recording stays one there (B627)
+                cmd["kind"] = "cancelled"
+            lines, _ = there.run([(0, cmd)], "you")
             if not lines[0].startswith("ok"):
                 raise Refused(lines[0])
             new = lines[0].split()[-1]

@@ -38,6 +38,8 @@ export interface InputFacts {
   /** a mark beside the chips when the note is all in them */
   spark: boolean
   retry: string | null
+  /** a recording kept as cancelled: Send sends it after all (B627) */
+  send: boolean
   moved: { href: string; label: string } | null
   draft: 'edit' | 'append' | null
   long: boolean
@@ -61,6 +63,8 @@ export interface InputEvents {
   more(id: string): void
   menu(id: string): void
   retry(id: string): void
+  /** a recording kept as cancelled, sent after all */
+  send(id: string): void
   draft(id: string, mode: 'edit' | 'append'): void
   moved(href: string): void
   ref(code: string): void
@@ -107,7 +111,7 @@ export function InputCard({ x, words, world, files, on }: { x: InputFacts; words
     <article ref={litRef} className={`border-b border-zinc-100 px-4 py-2 transition-colors duration-700 dark:border-zinc-800/70 ${x.lit ? LIT : ''}`}>
       <div className="min-w-0">
         <div className="flex min-h-5 items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
-          {r.acked ? null : <span title="Not handled yet" className="size-2 shrink-0 rounded-full bg-blue-500 dark:bg-blue-400" />}
+          {r.acked || r.kind === 'cancelled' ? null : <span title="Not handled yet" className="size-2 shrink-0 rounded-full bg-blue-500 dark:bg-blue-400" />}
           <span className="shrink-0 font-mono">
             <Hit text={x.code} words={words} />
           </span>
@@ -188,6 +192,14 @@ export function InputCard({ x, words, world, files, on }: { x: InputFacts; words
             ) : null}
           </>
         )}
+        {x.send ? (
+          <div className="mt-1 flex flex-wrap items-center gap-1">
+            <button onClick={() => on.send(r.id)} className={LINK_BTN}>
+              <Icon n="up" c="size-3.5" sw="2" />
+              Send
+            </button>
+          </div>
+        ) : null}
         {/* what failed is said first, then what to do about it */}
         {x.retry && !x.moved ? (
           <div className="mt-1 flex flex-wrap items-center gap-1">

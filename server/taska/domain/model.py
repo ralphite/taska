@@ -246,7 +246,7 @@ class Input:
     acked: bool = False  # handled
     touched: List[int] = field(default_factory=list)  # the items it made or changed
     org: Optional[OrgNote] = None
-    kind: Optional[str] = None  # "answer": a form sent on its item, filed as it is
+    kind: Optional[str] = None  # "answer": a form sent on its item, filed as it is; "cancelled": not sent (B627)
     history: List[InputVersion] = field(default_factory=list)
     v: int = 0  # bumps on every change of its words
     edit_seq: int = 0
