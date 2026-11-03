@@ -21,12 +21,14 @@ import { useHeard } from './heard'
 const STEP = 30
 const EMPTY: Record<string, string> = {}
 
-/** What the list shows: its search, how many rows, which are opened in full (kept while the page shows other places). */
+/** What the list shows: its search, how many rows, which are opened in full, More and Less (kept while the page shows
+ * other places). */
 export function useSaidView() {
   const [q, setQ] = useState('')
   const [upTo, setUpTo] = useState(STEP)
   const [opened, setOpened] = useState<ReadonlySet<string>>(new Set())
-  return { q, upTo, opened, query: (v: string) => (setQ(v), setUpTo(STEP)), more: () => setUpTo((u) => u + STEP), open: (id: string) => setOpened((s) => new Set(s).add(id)) }
+  const toggle = (id: string) => setOpened((s) => (s.has(id) ? new Set([...s].filter((x) => x !== id)) : new Set(s).add(id)))
+  return { q, upTo, opened, query: (v: string) => (setQ(v), setUpTo(STEP)), more: () => setUpTo((u) => u + STEP), toggle }
 }
 export type SaidView = ReturnType<typeof useSaidView>
 
@@ -61,10 +63,10 @@ export function SaidLatelyContainer({ route, boxKey, view, draft }: { route: Pro
         more={said.all.length > said.rows.length}
         words={words}
         draft={draft}
-        files={(f) => <Thumbs files={f} url={url} size="size-12" play={media.play} tidy={media.tidy} on={media.on} />}
+        files={(f) => <Thumbs files={f} url={url} size="size-16" play={media.play} tidy={media.tidy} on={media.on} />}
         on={{
           goto: (n) => app.nav.openItem(codeOf(m, n)),
-          more: view.open,
+          more: view.toggle,
           append: (id) => app.box.amendStart(route.slug, m, id, 'append'),
           draft: (id, mode) => app.box.amendStart(route.slug, m, id, mode),
           menu: (id, from) => app.sheets.openFrom(from, { kind: 'input-menu', id }, { focus: false }),

@@ -1,4 +1,4 @@
-// An input on its way: a voice note, being written out, being organized, waiting for an agent.
+// An input on its way: a voice note, being transcribed, being organized, waiting for an agent.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { ONE } from '../../stories/inputFixtures'
 import { one } from '../../stories/inputCardFixtures'
@@ -12,4 +12,4 @@ export const Transcribing: Story = { ...one(ONE.transcribing), name: 'Transcribi
 /** The organizer is working on it now. */
 export const Organizing: Story = { ...one(ONE.organizing, { organizer: true, busy: 'r20' }), name: 'Organizing' }
 /** With its screenshot: no agent has read it yet (the organizer is off). */
-export const WaitingForYourAgent: Story = { ...one(ONE.waiting, {}), name: 'Waiting for agent' }
+export const WaitingForYourAgent: Story = { ...one(ONE.waiting, {}), name: 'Waiting for an agent' }

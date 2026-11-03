@@ -1,5 +1,5 @@
-// The phone's Inputs tab with the page's data: each input with where it stands and what became of it, newest first
-// by day, and what is still on its way.
+// The phone's Inputs tab with the page's data: each input with what became of it, newest first, and what is still on
+// its way.
 
 import { useMemo, useState } from 'react'
 import { useServices, useStores, useStoreValue } from '../../app/context'
@@ -60,7 +60,7 @@ export function InputsContainer({ route, hidden }: { route: ProjectRoute; hidden
       words={words}
       world={world}
       hints={hints(total)}
-      files={(f) => <Thumbs files={f} url={world.url} size="size-11" play={media.play} tidy={media.tidy} on={media.on} />}
+      files={(f) => <Thumbs files={f} url={world.url} size="size-14" play={media.play} tidy={media.tidy} on={media.on} />}
       on={{
         goto: (n) => m && app.nav.openItem(codeOf(m, n), 'items'),
         more: (id) => stores.ui.getState().toggleInput(id),

@@ -4,7 +4,7 @@
 import { draftKey } from '../model/draftTarget'
 import { InputCard, InputsView, type InputEvents } from '../features/inputs/InputsView'
 import { inputRows, outgoingRows } from '../features/inputs/inputRows'
-import { SaidLately, type SaidEvents } from '../features/composer/SaidLately'
+import { SaidLately, SaidRow, type SaidEvents } from '../features/composer/SaidLately'
 import type { Outgoing } from '../model/outgoing'
 import { saidOutgoing, saidRows } from '../model/saidLately'
 import type { FileRef, Input, Item, OrgNote } from '../model/types'
@@ -100,7 +100,7 @@ export function inputsOf(s: Said = {}) {
   const hints = words.length ? <SearchHints other={otherTabs(m, words, 'inputs', total)} cross={{ list: [], failed: false, q: words.join(' ') }} tone={() => PROJECT_TONES[1]} onShow={() => {}} onGo={() => {}} /> : null
   return (
     <div className="flex h-full flex-col">
-      <InputsView hidden={false} rows={rows} more={total > rows.length} outgoing={outgoingRows(s.outbox ?? [], 'demo', s.away ?? 0)} words={words} world={talkEnv(m, false).world} hints={hints} files={thumbs('size-11')} recording={s.recording ?? null} on={noInput} />
+      <InputsView hidden={false} rows={rows} more={total > rows.length} outgoing={outgoingRows(s.outbox ?? [], 'demo', s.away ?? 0)} words={words} world={talkEnv(m, false).world} hints={hints} files={thumbs('size-14')} recording={s.recording ?? null} on={noInput} />
     </div>
   )
 }
@@ -108,19 +108,22 @@ export function inputsOf(s: Said = {}) {
 /** One input as a row of the phone's Inputs tab draws it. */
 export function cardOf(r: Input, s: Said = {}) {
   const { m, rows } = rowsOf({ ...s, inputs: [r] })
-  return <InputCard x={{ ...rows[0], day: null }} words={[]} world={talkEnv(m, false).world} files={thumbs('size-11')} on={noInput} />
+  return <InputCard x={rows[0]} words={[]} world={talkEnv(m, false).world} files={thumbs('size-14')} on={noInput} />
+}
+
+/** One input as a row of the New input page's list draws it (the desktop). */
+export function saidRowOf(r: Input, s: Said = {}) {
+  const m = project({ ...s, inputs: [r] })
+  const drafts = Object.fromEntries((s.editDrafts ?? []).map((id) => [draftKey({ kind: 'amend', mode: 'edit', id }), 'my edit']))
+  const x = saidRows(m, { words: [], upTo: 1, opened: new Set(s.opened), justSent: (s.justSent ?? []).map((rid) => ({ rid })), drafts, mode: null, title }).rows[0]
+  return (
+    <div className="px-6 py-3">
+      <SaidRow x={x} words={[]} files={r.files.length ? thumbs('size-16')(r.files) : null} on={noSaid} />
+    </div>
+  )
 }
 
 const noSaid: SaidEvents = { goto() {}, more() {}, append() {}, draft() {}, menu() {}, undoSend() {}, retry() {}, send() {}, outboxRetry() {}, outboxEdit() {}, query() {}, loadMore() {}, moved() {} }
-
-/** The New input page's list as the page works it out (its rows and what is on its way), for prototypes that draw
- * it their own way. */
-export function saidData(s: Said = {}, items = ITEMS) {
-  const m = project(s, items)
-  const words = searchWords(s.q ?? '')
-  const said = saidRows(m, { words, upTo: 30, opened: new Set(s.opened), justSent: (s.justSent ?? []).map((rid) => ({ rid })), drafts: {}, mode: null, title })
-  return { rows: said.rows, total: m.inputs.length, outgoing: saidOutgoing(s.outbox ?? [], words, s.away ?? 0, (s.justSent ?? []).map((q) => ({ q }))) }
-}
 
 /** What you said lately under the New input page's box (the desktop), as the page draws it. */
 export function saidOf(s: Said = {}) {
@@ -138,7 +141,7 @@ export function saidOf(s: Said = {}) {
         outgoing={saidOutgoing(s.outbox ?? [], words, s.away ?? 0, (s.justSent ?? []).map((q) => ({ q })))}
         more={said.all.length > said.rows.length}
         words={words}
-        files={thumbs('size-12')}
+        files={thumbs('size-16')}
         recording={s.recording ?? null}
         on={noSaid}
       />

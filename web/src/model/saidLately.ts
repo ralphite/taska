@@ -1,41 +1,16 @@
-// What the desktop's New input page lists under the box: what you said lately, newest first, by day (each with what
-// became of it, the items it made, a draft of yours on it), and what is on its way.
+// What the desktop's New input page lists under the box: what you said lately, newest first, each as the line every
+// list of inputs draws (model/became), Undo on what you just sent; and what is on its way.
 
-import { canSend, dayOf, newestFirst, organizing, SHORT_STANDING, standing, timeOf, type InputStanding } from './inputs'
-import { shownStatus } from './items'
 import type { BoxMode } from './boxFoot'
+import { inputLine, type InputLine } from './became'
+import { newestFirst } from './inputs'
 import { outgoingLine, outgoingState, type Outgoing } from './outgoing'
-import { codeOf, inputDraft, type ProjectModel } from './project'
-import type { Input, ItemType } from './types'
+import type { ProjectModel } from './project'
+import type { Input } from './types'
 import { inputMatch } from './visible'
-import { inputCode } from './words'
 
-export interface SaidChip {
-  n: number
-  code: string
-  type: ItemType
-  title: string
-  status: { s: string; label: string }
-}
-
-export interface SaidInput {
-  r: Input
-  code: string
-  /** its day and time ("Today 21:58", "Oct 29 11:29"): every row says its day */
-  time: string
-  standing: InputStanding
-  short: string
-  scope: SaidChip | null
-  chips: SaidChip[]
-  busy: boolean
-  draft: 'edit' | 'append' | null
+export interface SaidInput extends InputLine {
   canUndoSend: boolean
-  retry: string | null
-  /** a recording kept as cancelled: Send sends it after all (B627) */
-  send: boolean
-  opened: boolean
-  /** moved to another project: the way there ("Open taska · #474") */
-  moved: { href: string; label: string } | null
 }
 
 export interface SaidOutgoing {
@@ -50,30 +25,8 @@ export interface SaidOutgoing {
 /** What you said that the search finds (`all`) and the rows shown of it (the first `upTo`). */
 export function saidRows(m: ProjectModel, a: { words: readonly string[]; upTo: number; opened: ReadonlySet<string>; justSent: readonly { rid?: string }[]; drafts: Readonly<Record<string, string>>; mode: BoxMode; title(slug: string): string }): { all: Input[]; rows: SaidInput[] } {
   const all = newestFirst(m.inputs).filter((r) => inputMatch(r, a.words))
-  const recent = all.slice(0, a.upTo)
-  const chip = (n: number): SaidChip | null => {
-    const it = m.byN.get(n)
-    return it ? { n, code: codeOf(m, n), type: it.type, title: it.title, status: shownStatus(it) } : null
-  }
-  const rows: SaidInput[] = recent.map((r) => {
-    const s = standing(r, m.facts.organizer, (slug) => slug)
-    return {
-      r,
-      code: inputCode(r.id),
-      time: `${dayOf(r.t)} ${timeOf(r.t)}`,
-      standing: s,
-      short: SHORT_STANDING[s.label] || s.label,
-      scope: r.scope ? chip(r.scope) : null,
-      chips: r.moved ? [] : (r.touched.filter((n) => m.byN.has(n) && n !== r.scope).map(chip).filter(Boolean) as SaidChip[]),
-      busy: organizing(r, m.facts.organizer),
-      draft: inputDraft(r.id, a.drafts, a.mode?.kind === 'amend' ? { id: a.mode.id, mode: a.mode.mode } : null),
-      canUndoSend: a.justSent.some((x) => x.rid === r.id),
-      retry: !r.acked && m.facts.organizer.on && r.org && (!r.org.ok || r.org.undone) ? (r.org.undone ? 'Organize again' : 'Retry') : null,
-      send: canSend(r),
-      opened: a.opened.has(r.id),
-      moved: r.moved ? { href: `/p/${encodeURIComponent(r.moved.to)}/`, label: `Open ${a.title(r.moved.to)} · ${inputCode(r.moved.as)}` } : null,
-    }
-  })
+  const writing = a.mode?.kind === 'amend' ? { id: a.mode.id, mode: a.mode.mode } : null
+  const rows = all.slice(0, a.upTo).map((r) => ({ ...inputLine(m, r, { title: a.title, opened: a.opened, drafts: a.drafts, writing }), canUndoSend: a.justSent.some((x) => x.rid === r.id) }))
   return { all, rows }
 }
 

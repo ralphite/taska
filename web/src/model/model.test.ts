@@ -2,13 +2,14 @@
 // list shows.
 
 import { describe, expect, it as test } from 'vitest'
-import { item, message, projectFacts } from '../stories/fixtures'
+import { input, item, message, modelOf, projectFacts } from '../stories/fixtures'
 import { needsYou, queueHead, queueOrder } from './items'
 import { merge, patched, project } from './project'
 import { NO_FILTERS, parseRoute, projectPath } from './route'
 import type { ViewAnswer } from './types'
 import { visible } from './visible'
-import { canSend, organizing, standing } from './inputs'
+import { becameOf } from './became'
+import { canSend, organizing } from './inputs'
 
 const answer = (a: Partial<ViewAnswer>): ViewAnswer => ({ cursor: 'c1', full: false, items: [], inputs: [], docs: [], project: projectFacts(), server: { page: '', update: false }, ...a })
 
@@ -102,7 +103,8 @@ describe('a recording cancelled with Esc, kept in the inputs (B627)', () => {
   const kept = { t: '', by: 'you', text: 'Keep the columns too', scope: null, files: [], acked: false, touched: [], org: null, seq: 1, v: 0, id: 'r4', kind: 'cancelled' as const }
 
   test('it stands as cancelled, is no one’s work, and can be sent', () => {
-    expect(standing(kept, organizer, (s) => s)).toMatchObject({ label: 'Cancelled', icon: 'micoff' })
+    const m = project({ cursor: '', items: new Map(), inputs: new Map([[kept.id, kept]]), docs: new Map(), facts: projectFacts({ organizer: { ...organizer, model: '' } }), server: { page: '', update: false }, at: 0 })
+    expect(becameOf(kept, m, (s) => s)).toEqual({ k: 'cancelled' })
     expect(organizing(kept, organizer)).toBe(false)
     expect(canSend(kept)).toBe(true)
     expect(canSend({ ...kept, moved: { to: 'other', as: 'r1' } })).toBe(false)
@@ -112,7 +114,28 @@ describe('a recording cancelled with Esc, kept in the inputs (B627)', () => {
     const copy = { cursor: '', items: new Map(), inputs: new Map([[kept.id, kept]]), docs: new Map(), facts: projectFacts(), server: { page: '', update: false }, at: 0 }
     const sent = project(copy, [], 0, [{ id: kept.id, f: { kind: undefined } }]).byId.get(kept.id)!
     expect(canSend(sent)).toBe(false)
-    expect(standing(sent, organizer, (s) => s).label).toBe('Queued')
+    expect(becameOf(sent, project({ ...copy, facts: projectFacts({ organizer: { ...organizer, model: '' } }) }), (s) => s)).toEqual({ k: 'queued' })
     expect(organizing(sent, organizer)).toBe(true)
+  })
+})
+
+describe('what became of an input, in one set of words (B629)', () => {
+  const m = modelOf([item({ n: 14, type: 'bug' }), item({ n: 12 }), item({ n: 7, type: 'task' })], [], { organizer: { on: true, model: '', busy: null } })
+  const org = (msg: string, f = {}) => ({ ok: true, msg, t: '', keep: false, changed: true, undone: false, ...f })
+  const of = (f: Parameters<typeof input>[0]) => becameOf(input(f), m, (s) => (s === 'mobile-app' ? 'Mobile app' : s))
+
+  test('the organizer’s note says what was done to each item, and what else it says stays as a note', () => {
+    const b = of({ id: 'r1', acked: true, touched: [14, 12, 7], org: org('Created B014; added to F012 and T007 · asked about the sort') })
+    expect(b).toMatchObject({ k: 'filed', note: 'asked about the sort' })
+    expect(b.k === 'filed' && b.items.map((x) => [x.item.code, x.did])).toEqual([['B014', 'Created'], ['F012', 'Added to'], ['T007', 'Added to']])
+  })
+
+  test('where one stands when no item came of it', () => {
+    expect(of({ id: 'r2', org: org('B99 is not in this project', { ok: false }) })).toEqual({ k: 'failed', why: 'B99 is not in this project', retry: true })
+    expect(of({ id: 'r3', org: org('Left for your agent', { keep: true }) })).toEqual({ k: 'agent' })
+    expect(of({ id: 'r4', acked: true, org: org('Left for your agent', { keep: true }) })).toEqual({ k: 'handled' })
+    expect(of({ id: 'r5', acked: true, org: org('Nothing to file: a thank-you') })).toEqual({ k: 'note', text: 'Nothing to file: a thank-you' })
+    expect(of({ id: 'r6', acked: true, kind: 'answer', scope: 7 })).toMatchObject({ k: 'answer', item: { code: 'T007' } })
+    expect(of({ id: 'r7', acked: true, moved: { to: 'mobile-app', as: 'r4' } })).toEqual({ k: 'moved', to: 'Mobile app', as: '#4', href: '/p/mobile-app/' })
   })
 })

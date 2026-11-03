@@ -20,7 +20,8 @@ export const SaidLatelyList: Story = {
 
 const line = () => saidOf({ organizer: true, inputs: [ONE.made] })
 
-/** A line under the pointer (its time gives way to Add more and ⋯) and from the keys, side by side. */
+/** A line under the pointer (Add more and ⋯ show at the end of its first line, taking no room before) and from the
+ * keys, side by side. */
 export const SaidLooks: Story = {
   name: 'A line: pointer, keys',
   parameters: { pseudo: { hover: ['[data-pointer] .group\\/row', '[data-pointer-goto] .group\\/row button:first-of-type'], focusWithin: ['[data-keys] .group\\/row'], focusVisible: ['[data-keys] .group\\/row button:first-of-type'] } },

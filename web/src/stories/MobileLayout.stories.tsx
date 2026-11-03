@@ -14,7 +14,6 @@ import { DocView, type DocEvents } from '../features/docs/DocView'
 import { ItemPage, ItemTalk } from '../features/item/ItemPage'
 import { Sidebar, type SideLinkInfo, type SideProject } from '../features/sidebar/Sidebar'
 import { boxRole, shownBox, type BoxLine } from '../model/boxFoot'
-import { SHORT_STANDING, standing } from '../model/inputs'
 import { findRef } from '../model/project'
 import { parseRoute } from '../model/route'
 import type { Input } from '../model/types'
@@ -62,10 +61,7 @@ const LINKS: SideLinkInfo[] = [
   { key: 'log', label: 'Activity', icon: 'history', href: '#', current: false },
   { key: 'deleted', label: 'Deleted', icon: 'trash', href: '#', current: false },
 ]
-const SAID: SaidInput[] = INPUTS.map((r, i) => {
-  const s = standing(r, { on: false, busy: null }, (x) => x)
-  return { r, code: '#' + r.id.slice(1), time: ['Today 14:57', 'Today 14:10', 'Today 09:02'][i], standing: s, short: SHORT_STANDING[s.label] || s.label, scope: null, chips: [], busy: false, draft: null, canUndoSend: false, retry: null, send: false, opened: false, moved: null }
-})
+const SAID: SaidInput[] = INPUTS.map((r, i) => ({ r, code: '#' + r.id.slice(1), when: ['Today 14:57', 'Today 14:10', 'Today 09:02'][i], became: { k: 'waiting' }, draft: null, long: false, opened: false, canUndoSend: false }))
 const noSaid: SaidEvents = { goto() {}, more() {}, append() {}, draft() {}, menu() {}, undoSend() {}, retry() {}, send() {}, outboxRetry() {}, outboxEdit() {}, query() {}, loadMore() {}, moved() {} }
 const noDoc = () => {}
 
@@ -243,7 +239,7 @@ function Phone({ mic }: { mic: boolean }) {
     ...mine
       .filter((x) => x.to === 'shop')
       .reverse()
-      .map((x, i) => ({ ...SAID[0], r: input({ id: 'r' + (20 + i), text: x.text }), code: '#' + (20 + i), time: 'now', standing: { ...SAID[0].standing }, short: 'Sent' })),
+      .map((x, i) => ({ ...SAID[0], r: input({ id: 'r' + (20 + i), text: x.text }), code: '#' + (20 + i), when: 'Today 15:02' })),
     ...SAID,
   ]
   const to = place === 'doc' ? 'Comment D1' : inItem ? 'Reply F001' : 'New input'
