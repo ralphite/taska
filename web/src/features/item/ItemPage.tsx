@@ -483,7 +483,8 @@ export function ItemTalk({ it, f, env, facts, on }: { it: Item; f: ItemFacts; en
 
 // ---------------------------------------------------------------- the pane's bar for an item
 
-/** The bar's head: the item's status icon (desktop), its code, and "Agent's turn" when you replied. */
+/** The bar's head: the item's status icon (desktop) and its code. (Open says it is the agent's turn: no word of its
+ * own, Yadong r961.) */
 export function ItemHead({ it, code }: { it: Item; code: string }) {
   return (
     <>
@@ -491,9 +492,6 @@ export function ItemHead({ it, code }: { it: Item; code: string }) {
         <StateIcon {...shownStatus(it)} cls="size-[18px]" />
       </span>
       <span className={`font-mono text-sm font-bold ${TYPE_TEXT[it.type]}`}>{code}</span>
-      <span className="text-[11px] font-semibold tracking-wider uppercase">
-        {!it.wait && it.talked && !closed(it.status) ? <span className="text-blue-600 dark:text-blue-400">Agent&apos;s turn</span> : null}
-      </span>
     </>
   )
 }

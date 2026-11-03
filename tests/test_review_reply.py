@@ -56,7 +56,7 @@ class ReplyOnAnItemInReview(unittest.TestCase):
     def status(self, code: str) -> str:
         return urllib.request.urlopen(self.p + f"/{code}?ui=1", timeout=10).read().decode().split("\n", 1)[0]
 
-    def test_yadongs_words_take_it_back_to_in_progress(self) -> None:
+    def test_yadongs_words_take_it_back_to_open(self) -> None:
         code = self.do("new task P1 now Export keeps the filter\n").split()[1]
         self.page({"op": "set", "ref": code, "f": {"status": "open"}})  # Yadong approves it
         self.do(f"{code} doing\n")
@@ -65,7 +65,7 @@ class ReplyOnAnItemInReview(unittest.TestCase):
         self.do(f"{code} progress Handed over.\n")  # an agent's words leave it waiting for review
         self.assertIn("review", self.status(code))
         self.page({"op": "input", "text": "The sort is lost too.", "scope": code})
-        self.assertIn("doing", self.status(code))
+        self.assertIn("open", self.status(code))
 
 
 if __name__ == "__main__":

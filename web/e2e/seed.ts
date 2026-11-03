@@ -77,5 +77,6 @@ export async function open(page: Page, p: Project, path = '') {
   await drawn(page)
 }
 export async function drawn(page: Page) {
-  await page.locator('#list article[data-n], #list [data-zone], #composer textarea, [data-part="settings"], [data-part="items"] h2').filter({ visible: true }).first().waitFor()
+  // a document on the phone has no box over it (B643): its words say it is drawn
+  await page.locator('#list article[data-n], #list [data-zone], #composer textarea, [data-part="settings"], [data-part="help"], [data-part="items"] h2, [data-doc-blocks] section').filter({ visible: true }).first().waitFor()
 }
