@@ -1,13 +1,18 @@
-// F479 on the desktop, a prototype: each state of something going wrong, in the dialog; then the results in dark and
-// on a narrower desktop. The journeys: stories/searchDesk.tsx.
+// F479 on the desktop, a prototype: each state of something going wrong (the phone's words), then the modal in dark
+// and on a narrower desktop. The journeys: stories/searchDesk.tsx.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { deskStory } from './searchDesk'
 
-export default { title: 'Prototype/F479 Search on the desktop/When it goes wrong' } satisfies Meta
+export default { title: 'Prototype/F479 Search on the desktop/When it goes wrong, dark, narrower' } satisfies Meta
 
 export const NothingFound: StoryObj = { name: 'Nothing found', ...deskStory('nothing') }
 export const DidntCatchThat: StoryObj = { name: 'Didn’t catch that', ...deskStory('unheard') }
-/** The box takes typing instead. */
+/** The field takes typing instead. */
 export const MicrophoneNotAllowed: StoryObj = { name: 'Microphone not allowed', ...deskStory('nomic') }
-/** It keeps trying and searches by itself once Taska answers. */
+/** It keeps trying, and searches by itself once Taska answers. */
 export const CantReachTaska: StoryObj = { name: 'Can’t reach Taska', ...deskStory('offline') }
+export const ResultsDark: StoryObj = { name: 'Results, dark', globals: { theme: 'dark' }, ...deskStory('found') }
+export const MisheardDark: StoryObj = { name: 'A word may be misheard, dark', globals: { theme: 'dark' }, ...deskStory('misheard') }
+export const RecentDark: StoryObj = { name: 'Recent, dark', globals: { theme: 'dark' }, ...deskStory('recent') }
+export const Results1100: StoryObj = { name: 'Results, 1100 wide', ...deskStory('found', { width: 1100 }) }
+export const Page1100: StoryObj = { name: 'The page, 1100 wide', ...deskStory('closed', { width: 1100 }) }

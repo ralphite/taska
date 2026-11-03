@@ -78,7 +78,7 @@ const placeFor = (onOpen: (x: Found) => void): SearchPlace => ({ ...PLACE, on: (
 const WAIT = { writing: 1300, searching: 1400 }
 
 /** The search as it goes, as the Finder takes it: tap, speak, stop, the words written out, the search. */
-export function useFlow(start: Partial<Flow>, still: boolean) {
+function useFlow(start: Partial<Flow>, still: boolean) {
   const [f, setF] = useState<Flow>({ ...START, ...start })
   const set = (p: Partial<Flow>) => setF((x) => ({ ...x, ...p }))
   useEffect(() => {
@@ -119,7 +119,7 @@ export function useFlow(start: Partial<Flow>, still: boolean) {
     kind: (k) => set({ kind: k as Flow['kind'] }),
     open: (x) => set({ at: 'open', open: x }),
   }
-  return { f, on, set, openSearch: () => setF({ ...START, at: 'search', phase: 'listening' }), back: () => set({ at: 'search', open: null }) }
+  return { f, on, openSearch: () => setF({ ...START, at: 'search', phase: 'listening' }), back: () => set({ at: 'search', open: null }) }
 }
 
 // ---------------------------------------------------------------- the page around it, as it is

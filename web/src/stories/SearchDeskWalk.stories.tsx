@@ -1,4 +1,4 @@
-// F479 on the desktop, a prototype: walked through, then the decisions it shows, each with the words it follows. Every
+// F479 on the desktop, a prototype: walked through, then the decisions it shows, each with what it follows. Every
 // journey: stories/searchDesk.tsx.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { SearchDesk, Tips } from './searchDesk'
@@ -8,38 +8,44 @@ import { button, gone, marked, role, shows, type Tour } from './tour/tour'
 export default { title: 'Prototype/F479 Search on the desktop/Walk through' } satisfies Meta
 
 const STOP = button('Stop and search')
+const DIALOG = role('dialog')
+const CHIPS = marked('chips', undefined, { label: 'The filters' })
 const TOUR: Tour = {
   steps: [
-    { say: 'Click Search (or press /).', target: button('Search') },
-    { say: 'Say “where the export loses my filter”, then ↵ (or ↑).', target: STOP, until: gone(STOP) },
+    { say: 'Click Search (or press ⌘K).', target: button('Search'), until: shows(DIALOG) },
+    { say: 'Type “export filter”.', target: role('textbox', 'What to find'), until: shows(marked('found', undefined, { label: 'Results' })), wait: 20000 },
+    { say: 'Press ↓ (or point at #8): the preview follows.', target: marked('found', 'shop/r8', { label: '#8' }), until: shows(marked('preview', 'inputs', { label: 'The preview' })), wait: 300 },
+    { say: 'Click Items.', target: button(/^Items/, { within: CHIPS, label: 'Items' }) },
+    { say: 'Press ↓ then ↵ to open F003 (or click it).', target: marked('found', 'shop/i3', { label: 'F003' }), until: gone(DIALOG), wait: 300 },
+    { say: 'Search again: the same words, selected.', target: button('Search'), until: shows(DIALOG) },
+    { say: 'Click the mic (or ⌥V) to say it instead.', target: button('Speak'), until: shows(STOP) },
+    { say: 'Say “where the export loses my filter”, then ↵.', target: STOP, until: gone(STOP) },
     { say: 'Click the right word.', target: marked('side', 'alt', { label: 'The other word' }), wait: 5000 },
-    { say: 'To add more, click the mic (or ⌥V).', target: button('Say more'), until: shows(STOP) },
+    { say: 'To add more, click the mic (or ⌥V).', target: button('Speak'), until: shows(STOP), wait: 5000 },
     { say: 'Say “only on the phone”, then ↵.', target: STOP, until: gone(STOP) },
-    { say: '↵ opens the blue row, B018 (or click it; ↑↓ move the blue).', target: marked('n', 18, { label: 'B018' }), until: shows(button('Back to Search')), wait: 5000 },
-    { say: 'Back to the same results (or Esc).', target: button('Back to Search'), until: shows(role('dialog')), wait: 300 },
-    { say: 'Esc closes it (or the x, or a click outside).', target: button('Close'), until: gone(role('dialog')), wait: 300 },
+    { say: 'Esc closes it (or a click outside).', until: gone(DIALOG), wait: 300 },
   ],
 }
 
-/** Each desktop choice in one line, and the words it follows. */
+/** Each desktop choice in one line, and what it follows. */
 const DECISIONS: [string, string][] = [
-  ['Search is a magnifier in the sidebar’s head, left of Hide sidebar; folded, it is under the logo in the rail.', 'r796'],
-  ['A click on it, or /, opens a dialog in the command palette’s sheet, 672 px wide, near the top; it grows down as results come, so its box never moves.', 'r769; the palette’s look'],
-  ['It records at once. No words while you speak: the time and the level only.', 'r655, r797'],
-  ['↵ or ↑ stops: Transcribing…, Searching…, then the results, in one step, by meaning.', 'the phone’s design'],
-  ['The box is on top, as the palette’s field is; the kinds under it filter every project’s group; this project first.', 'the palette’s look; the phone’s design'],
-  ['Typing: click the words, or just type. While it records, the first key drops the recording and the box takes the keys; ↵ searches.', '“Say or type”'],
-  ['Say more: the mic in the box, or ⌥V (the box’s voice key everywhere); ↵ stops; what you added is lit at the end.', 'the phone’s design'],
-  ['↑↓ walk every result, across projects (blue); the pointer lights another (grey); ↵ opens. An item’s actions show only under the pointer.', 'desktop practice'],
-  ['A result opens in its project’s pane and the dialog goes; Back to Search (or Esc) brings back the same results.', 'the phone’s Back'],
-  ['Esc, the x or a click outside closes it; the next search starts afresh, listening.', 'the phone’s design'],
-  ['The list’s search box goes: its filter is an icon at the end of the views’ row, with no row above the views.', 'r796'],
-  ['The home page’s search box goes too: a Search button in its head, and /, open this dialog.', 'r769'],
-  ['⌘K stays Go to or do (commands, an item by its code); finding by meaning is this dialog’s.', 'recommended'],
+  ['Search is a row at the top of the sidebar, above New input, with ⌘K beside it: a row with its key does not fit in the head beside Hide sidebar. Folded, a magnifier under the logo.', 'Notion; r796: not under New input'],
+  ['⌘K (or /) opens it anywhere and closes it again; ⌘K’s commands come in it as Actions when the words name one (Done F001, Settings).', 'Notion: ⌘K is search'],
+  ['A modal in the top third over the dimmed page, 832 px wide (the list, and the preview beside it), its height fixed so nothing jumps.', 'Notion'],
+  ['Its top is a large field with the focus: typing is the default. Nothing typed: Recent.', 'Notion; “Say or type”'],
+  ['Results come as you type (a pause first), best first, the words found lit; the spinner sits in the field while it searches again.', 'Notion; the phone: by meaning'],
+  ['One list, best first; each row shows its project (and the item it is on) as a path. Grouping by project would put a weaker match in this project above a better one elsewhere; the Project filter narrows instead.', 'Notion’s page path'],
+  ['Under the field: the kinds with their counts, then Project and Status (Open, Finished).', 'Notion’s filters'],
+  ['The highlighted row’s preview on the right, read only, drawn by the page that opens it (an item, a document, an input).', 'Notion’s preview'],
+  ['↑↓ or the pointer move the highlight; ↵ opens in its project’s pane; ⌘↵ in a new tab; Esc closes. The keys are in the foot.', 'Notion'],
+  ['The mic at the field’s end (or ⌥V): it records, the time and level only; ↵ stops; Transcribing…, then the results. While it records, a key drops the recording and types.', 'the phone; r797'],
+  ['What you say goes where typing would: over the words if all are selected, else after them (lit). A word heard two ways: click the right one.', 'the phone'],
+  ['⌘K again: the last words, selected, with what they found (type to start over).', 'Notion; the phone’s Back'],
+  ['The list keeps no search box: its filter is an icon at the end of the views’ row. The home page’s box goes too: ⌘K opens this there.', 'r796, r769'],
 ]
 
-/** Click your way through it (it never plays itself; the yellow spot is the next click): say, fix a word, say more,
- * open a result, come back, close. Under it, the desktop's choices, each with the words it follows. */
+/** Click your way through it (it never plays itself; the yellow spot is the next click or key): type, preview, a kind,
+ * open, search again, say it, fix a word, say more, close. Under it, the desktop's choices. */
 export const WalkThrough: StoryObj = {
   name: 'Walk through',
   render: () => (

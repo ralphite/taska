@@ -37,8 +37,6 @@ export interface PageOpts {
   env?: Partial<TalkEnv>
   /** the pane's back (a prototype's way back) */
   onBack?(): void
-  /** the desktop's way back, first in the pane's bar (a prototype's: back to a search) */
-  lead?: ReactNode
   /** the desktop's two columns with a document on the left instead of the item (`bare`: a web page, no margins) */
   left?: ReactNode
   bare?: boolean
@@ -80,7 +78,6 @@ export function pageOf(it: Item, desk: boolean, o: PageOpts = {}) {
         head={<ItemHead it={it} code={facts.code(it.n)} />}
         acts={<ItemActs it={it} on={noItemEvents} />}
         nav={<ItemNav full={!!o.full} on={{ prev: () => {}, next: () => {}, full: () => {} }} />}
-        lead={o.lead}
         onBack={o.onBack ?? (() => {})}
       >
         {page}

@@ -17,8 +17,9 @@ export interface SheetLook {
   /** the phone: over the page down to the box (its room is `footRoom`) */
   aboveComposer?: boolean
   at?: { x: number; y: number; right?: boolean; top?: number; left?: number } | null
-  /** the desktop: near the top, growing down as it fills (a search: what it finds never moves its box) */
-  top?: boolean
+  /** the desktop: a search, in the top third, wide enough for its results and a preview beside them, its height fixed
+   * so what it finds never moves its field */
+  search?: boolean
 }
 
 export interface SheetParts {
@@ -117,12 +118,13 @@ export function Sheet({ open, look, children, desk, footRoom = 0, focus = false,
   const oCls = [
     'fixed inset-0 z-40 flex items-end justify-center bg-black/40 pt-[max(env(safe-area-inset-top),0.75rem)] sm:items-center sm:p-6 dark:bg-black/60',
     pop ? (look.at ? 'lg:items-start lg:justify-start lg:bg-transparent dark:lg:bg-transparent' : 'lg:items-start lg:justify-end lg:bg-transparent dark:lg:bg-transparent lg:pt-[3.75rem] lg:pr-3') : '',
-    look.top && !pop ? 'lg:items-start lg:pt-[12dvh]' : '',
+    look.search && !pop ? 'lg:items-start lg:pt-[12dvh]' : '',
   ].join(' ')
   const dCls = [
     'flex max-h-[min(88dvh,100%)] w-full max-w-2xl flex-col bg-white shadow-xl transition-transform duration-150 sm:rounded-3xl dark:bg-zinc-900 dark:ring-1 dark:ring-white/10',
     look.tall ? 'h-[88dvh] sm:h-[85dvh]' : '',
     look.wide ? 'lg:max-w-5xl' : '',
+    look.search && !look.pop ? 'overflow-hidden lg:h-[min(36rem,76dvh)] lg:max-w-[52rem]' : '',
     'max-h-[88dvh] rounded-t-3xl',
     pop ? `${look.narrow ? 'lg:w-56' : 'lg:w-[24rem]'} lg:max-h-[80dvh] lg:rounded-2xl lg:ring-1 lg:ring-zinc-900/10 dark:lg:ring-white/10` : '',
   ].join(' ')

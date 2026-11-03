@@ -6,7 +6,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { Icon } from '../../ui/Icon'
 import type { ViewChip } from './rows'
 
-const CHIP =
+export const CHIP =
   'flex h-8 shrink-0 items-center gap-1 rounded-full bg-zinc-100 px-2 text-[13px] font-medium text-zinc-700 outline-offset-2 outline-blue-500 hover:bg-zinc-200 focus-visible:outline-2 aria-pressed:bg-zinc-900 aria-pressed:text-white dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700 dark:aria-pressed:bg-zinc-100 dark:aria-pressed:text-zinc-900'
 
 export interface OwnViewChip {

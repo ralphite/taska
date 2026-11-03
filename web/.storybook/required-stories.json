@@ -262,37 +262,42 @@
   "Prototype/F479 Search on the desktop/Walk through": [
    "Walk through"
   ],
-  "Prototype/F479 Search on the desktop/The search button": [
-   "In the sidebar",
-   "Under the pointer",
-   "Sidebar folded"
+  "Prototype/F479 Search on the desktop/Type and find": [
+   "Search in the sidebar",
+   "Search under the pointer",
+   "Sidebar folded",
+   "Opened: Recent",
+   "Searching as you type",
+   "Typing on",
+   "Results",
+   "An input highlighted",
+   "A document highlighted",
+   "A result open",
+   "Opened again"
   ],
-  "Prototype/F479 Search on the desktop/Say and search": [
+  "Prototype/F479 Search on the desktop/Filters and actions": [
+   "One kind",
+   "Project: its menu",
+   "In one project",
+   "Status: open",
+   "Results and an action",
+   "Only an action"
+  ],
+  "Prototype/F479 Search on the desktop/Say it": [
    "Listening",
    "Transcribing",
-   "Searching",
-   "Results",
-   "One kind picked",
-   "Keys on one row, pointer on another",
-   "A result open"
-  ],
-  "Prototype/F479 Search on the desktop/Say more or change it": [
-   "Saying more",
-   "Searching again",
-   "Said more",
    "A word may be misheard",
-   "Typing"
+   "Saying more",
+   "Said more"
   ],
-  "Prototype/F479 Search on the desktop/When it goes wrong": [
+  "Prototype/F479 Search on the desktop/When it goes wrong, dark, narrower": [
    "Nothing found",
    "Didn\u2019t catch that",
    "Microphone not allowed",
-   "Can\u2019t reach Taska"
-  ],
-  "Prototype/F479 Search on the desktop/Dark and narrower": [
+   "Can\u2019t reach Taska",
    "Results, dark",
-   "Listening, dark",
    "A word may be misheard, dark",
+   "Recent, dark",
    "Results, 1100 wide",
    "The page, 1100 wide"
   ],

@@ -29,8 +29,6 @@ export interface SearchPlace {
   on(x: Found): RowEvents
   /** the time the page tells times against (ms): the model's */
   now: number
-  /** the desktop: its rows (the pointer lights a row, an item's actions show on it) */
-  desk?: boolean
 }
 
 /** A row of another project's item: what the list would show, from what the search sent. */
@@ -54,7 +52,7 @@ function otherFacts(x: Found, words: string[]): RowFacts {
 export function searchView(s: SearchNow, p: SearchPlace): SearchView {
   const a = s.answer
   const marks = a?.marks ?? []
-  const w: DrawWith = { slug: p.here, openN: null, selected: new Set(), words: marks, desk: !!p.desk, drafts: p.drafts, head: undefined, seen: p.seen, drag: { n: null, at: null }, heldHeight: () => 0 }
+  const w: DrawWith = { slug: p.here, openN: null, selected: new Set(), words: marks, desk: false, drafts: p.drafts, head: undefined, seen: p.seen, drag: { n: null, at: null }, heldHeight: () => 0 }
   const row = (x: Found): FoundRowView[] => {
     if (x.kind === 'items' || x.kind === 'rules') {
       const mine = x.project === p.here && p.m && x.n != null ? p.m.byN.get(x.n) : undefined
