@@ -35,19 +35,11 @@ export const AGENT_NAME: Record<string, string> = {
 /** An agent's mark: one letter of its own (A is any agent's). */
 export const AVATAR_LETTER: Record<string, string> = { 'claude-code': 'C', codex: 'X', antigravity: 'V', org: 'O', agent: 'A' }
 
-/** Quiet longer than this, another agent may take the item (the server's hold on an item). */
-export const QUIET_MS = 30 * 60 * 1000
 
-/** The five places an item can be: it needs you, an agent is on it, it waits in the queue, later, finished. */
-export const PLACE_WORD: Record<string, string> = {
-  wait: 'Needs you',
-  doing: 'In progress',
-  queued: 'Queued',
-  later: 'Later',
-  closed: 'Finished',
-}
-/** The five places an item can be, as the Status filter offers them. */
-export const STATUS_FILTER_WORD: Record<string, string> = { wait: 'Needs you', doing: 'In progress', queued: 'Queued', later: 'Later', closed: 'Finished' }
+/** What needs you, by its own name: an agent asks, or something waits for your approval or acceptance. */
+export const PLACE_WORD: Record<string, string> = { wait: 'Needs you' }
+/** The Status filter: what needs you, then the statuses by their own names (Open: now, not in progress; Later). */
+export const STATUS_FILTER_WORD: Record<string, string> = { wait: 'Needs you', open: 'Open', doing: 'In progress', later: 'Later', done: 'Done', dropped: "Won't do" }
 export const ARCHIVE_FILTER_WORD: Record<string, string> = { done: 'Done', dropped: "Won't do", active: 'Not finished' }
 export const SORT_WORDS: [string, string][] = [
   ['all', 'Priority'],

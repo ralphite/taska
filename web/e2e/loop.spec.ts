@@ -8,7 +8,7 @@ test('what needs you comes first, each with its one action', async ({ page, requ
   const p = await project(request, LOOP)
   await open(page, p)
   const names = (await views(page).allInnerTexts()).map((t) => t.replace(/\d+/g, '').trim()).filter((t) => t !== 'Archive')
-  expect(names).toEqual(['Needs you', 'Active', 'All', 'Queue', 'Later', 'Finished']) // F486: Needs you first (Archive, a tab, sits after All)
+  expect(names).toEqual(['Needs you', 'Active', 'All', 'Open', 'Later', 'Done', "Won't do"]) // F486: Needs you first (Archive, a tab, sits after All)
   const needs = needActs(page)
   await expect(needs).toHaveCount(3)
   const kinds = (await needKind(needs)).sort()

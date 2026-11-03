@@ -60,7 +60,7 @@ AGENT = (
     '\n'
     'Now: {rules}\n'
     'LOOP  doing means you are working on it now. Mark an item doing when you start; when you hand back a result, set it\n'
-    '      done (the user reviews it) or ask what you need (asking or a block sets it back to open): never leave a result\n'
+    '      done (the user reviews it) or ask what you need: never leave a result\n'
     '      sitting in doing (T646). If you stop working on it, set it back to open. Keep going: take /next, mark it doing, do the work, write progress and set done, then GET /next\n'
     "      again. Don't stop to chat. If you are stuck or need a decision, post `B03 block <what you need>` and\n"
     '      move on; /next brings the item back once the user replies. Nothing to do: end your turn. Never wait in\n'

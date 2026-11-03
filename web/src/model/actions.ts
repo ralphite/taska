@@ -102,7 +102,7 @@ export function backward(it: Item): Slot[] {
     return it.status === 'proposed' ? [drop] : it.status === 'open' ? [['status', 'dropped', 'Retire']] : [['status', 'open', 'Reactivate']]
   if (it.archived) return [['archived', 'false', 'Unarchive']]
   if (it.status === 'proposed') return [drop, later]
-  if (it.status === 'review') return [later, ['status', 'doing', 'Not yet']]
+  if (it.status === 'review') return [later, ['status', 'open', 'Not yet']]
   if (closed(it.status)) return [['status', 'open', 'Reopen']]
   return [drop, later, ...done]
 }

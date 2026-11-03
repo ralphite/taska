@@ -1,5 +1,5 @@
-// The mark of the agent on an item's row: an agent at work
-// on it now, and one gone quiet (its last word long ago), as the page's own steps work it out.
+// The mark of the agent on an item's row: the agent working on it now (its name and session in the tip), as the
+// page's own steps work it out.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frames } from '../../stories/Frames'
 import { T, item } from '../../stories/fixtures'
@@ -13,7 +13,7 @@ const items = [
   item({ n: 2, status: 'doing', title: 'Search finds words in the talk', agent: { by: 'codex', t: hoursAgo(3) } }),
 ]
 
-export const AtWorkAndQuiet: StoryObj = {
-  name: 'At work and quiet',
+export const AtWork: StoryObj = {
+  name: 'At work',
   render: () => <Frames phoneWidth={393} deskWidth={460} height={220}>{(layout) => listOf(items, 'items', { status: 'all' }, layout === 'desk')}</Frames>,
 }

@@ -206,10 +206,6 @@ def say(r: Run, a: Args) -> Outcome:
     to, unknown = r.project.mentions(text) if not r.person else ([], [])
     to = [x for x in to if not r.session or _key(x) != _key(r.session)]  # not to itself
     r.emit(ev.MessagePosted(n=it.n, by=r.by, kind=kind, text=text, src=src, files=files, to=to, keep=r.keep()))
-    # in progress means an agent is working on it now (Yadong, r942): one that asks or is blocked waits on the user,
-    # so the item leaves in progress
-    if kind in ("ask", "block") and it.status == "doing" and not r.person:
-        r.emit(ev.FieldsSet(n=it.n, by=r.by, f={"status": "open"}, was={"status": "doing"}, src=src))
     sent = (" → " + ", ".join(to)) if to else ""
     if unknown:
         sent += (f" ({', '.join(unknown)}: no session by that name has called Taska yet; it hears this once it calls "

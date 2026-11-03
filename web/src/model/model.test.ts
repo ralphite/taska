@@ -85,7 +85,8 @@ describe('which items a list shows', () => {
 
   test('Items shows open work now; the archive and the rules have their own tabs', () => {
     expect(ns('items', {})).toEqual([1, 5])
-    expect(ns('items', { status: 'closed' })).toEqual([2])
+    expect(ns('items', { status: 'done' })).toEqual([2])
+    expect(ns('items', { status: 'open' })).toEqual([1, 5])
     expect(ns('archive', {})).toEqual([4])
     expect(ns('rules', {})).toEqual([3])
   })

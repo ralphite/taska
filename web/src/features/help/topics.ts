@@ -86,7 +86,7 @@ On the phone, swipe a row right for its next step; swipe left for the others.`,
         key: 'lists',
         title: 'Lists, views and search',
         about: 'Find items, order the queue, act on many at once',
-        text: `**Views** over the list: Needs you, Active, All, Queue, Later and Finished. **Filters** narrow by type, priority and more; save a set of filters as your own view.
+        text: `**Views** over the list: Needs you, Active, All, Archive, Open, Later, Done and Won't do. **Filters** narrow by type, priority and more; save a set of filters as your own view.
 
 **Search** (**/**) finds words in titles, in the talk and in documents. **⌘K** goes straight to an item by its code, or to anything you can do.
 

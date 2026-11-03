@@ -24,7 +24,7 @@ export interface RowFacts {
   draft: boolean
   next: boolean
   unread: boolean
-  worker: { by: string; tip: string; quiet: boolean } | null
+  worker: { by: string; tip: string } | null
   /** where the searched words were found, when not in the title */
   hitLine: string | null
 }
@@ -86,13 +86,13 @@ function HitLine({ text, words }: { text: string | null; words: readonly string[
   ) : null
 }
 
-/** The agent working on an item in progress; amber once it has gone quiet. */
+/** The agent working on an item in progress. */
 function WorkerMark({ worker }: { worker: NonNullable<RowFacts['worker']> }) {
   return (
     <span
       aria-label={worker.tip}
       title={worker.tip}
-      className={`inline-flex shrink-0 rounded-md ${worker.quiet ? 'ring-2 ring-amber-400 dark:ring-amber-500' : ''}`}
+      className="inline-flex shrink-0 rounded-md"
     >
       <Avatar by={worker.by} />
     </span>
@@ -422,7 +422,4 @@ export function ArchiveAllLine({ n, onArchive }: { n: number; onArchive(): void 
   )
 }
 
-export const workerTip = (by: string, ses: string, quiet: boolean, ago: string) => {
-  const who = whoName(by) + (ses ? ` · ${ses}` : '')
-  return quiet ? `${who} · quiet ${ago}` : `${who} is on it`
-}
+export const workerTip = (by: string, ses: string) => `${whoName(by) + (ses ? ` · ${ses}` : '')} is on it`

@@ -8,8 +8,7 @@ type Story = StoryObj
 
 export const Open = one({})
 export const NextInTheQueue = one({ f: { next: true } })
-export const InProgress = one({ it: { status: 'doing', agent }, f: { worker: { by: 'claude-code', tip: 'Claude Code is on it', quiet: false }, talk: 4 } })
-export const InProgressAgentQuiet: Story = { ...one({ it: { status: 'doing' }, f: { worker: { by: 'codex', tip: 'Codex · quiet 2h', quiet: true } } }), name: 'In progress, agent quiet' }
+export const InProgress = one({ it: { status: 'doing', agent }, f: { worker: { by: 'claude-code', tip: 'Claude Code is on it' }, talk: 4 } })
 export const WaitsForReview = one({ it: { status: 'review' } })
 export const YourAgentsTurn: Story = { ...one({ it: { talked: true, thread: [message({ id: 3, by: 'you', kind: 'say' })] }, f: { talk: 1 } }), name: 'Open, you replied' }
 export const Done = one({ it: { status: 'done' } })

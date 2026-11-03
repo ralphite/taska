@@ -140,7 +140,7 @@ export const ACTIONS = {
     },
   }),
   reply: item(['fields'], { label: 'Reply', keys: 'r', palette: true, run: (w) => w.fields.focus('box') }),
-  'not-yet': item(['items'], { label: 'Not yet', keys: 'n', palette: true, why: (_, h) => whyNot.notYet(h.it), run: (w, h) => set(w, h, 'status', 'doing', { said: 'is back in progress' }) }),
+  'not-yet': item(['items'], { label: 'Not yet', keys: 'n', palette: true, why: (_, h) => whyNot.notYet(h.it), run: (w, h) => set(w, h, 'status', 'open', { said: 'is back to open' }) }),
   done: item(['items'], { label: 'Done', keys: 'd', palette: true, why: (_, h) => whyNot.done(h.it, h.code), run: (w, h) => set(w, h, 'status', doneTo(h.it)) }),
   later: item(['items'], { label: 'Later', keys: 'l', palette: 'Later or back to now', why: (_, h) => whyNot.later(h.it), run: (w, h) => set(w, h, 'when', h.it.when === 'now' ? 'later' : 'now') }),
   archive: item(['items', 'nav'], {

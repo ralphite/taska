@@ -40,7 +40,7 @@ export const talk = (page: Page) => page.locator('[data-item-talk]')
 /** The list's rows (each item's row), shown. */
 export const rows = (page: Page) => shown(page.locator('#list article[data-n]'))
 export const row = (page: Page, words: string) => rows(page).filter({ hasText: words })
-/** One of the views over the list (Active, Needs you, Finished...), by its name. */
+/** One of the views over the list (Active, Needs you, Done...), by its name. */
 export const view = (page: Page, name: string) => page.locator('#list').getByRole('button', { name: new RegExp('^' + name) }).first()
 /** The item (or document) open in its pane: its body, and the words of the line above it. */
 export const pane = (page: Page) => shown(page.locator('section > header ~ [data-vc-area]')).last()

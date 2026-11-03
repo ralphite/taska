@@ -2,13 +2,12 @@
 // talk, draft, whether it is next, new from an agent, who works on it, where a searched word was found) and how it
 // looks (open in the pane, picked, dragged). Pure: the container and the stories draw the same rows from the same data.
 
-import { agoShort } from '../../model/agents'
 import { closed, excerpt, lastAgentMessage, type DropHow } from '../../model/items'
 import { codeOf, filesOf, type ProjectModel } from '../../model/project'
 import type { Item, SavedView } from '../../model/types'
 import { showsView, visible } from '../../model/visible'
 import type { ListQuery } from '../../model/route'
-import { QUIET_MS, type Tab } from '../../model/words'
+import type { Tab } from '../../model/words'
 import { unreadSince, type SeenMap } from '../../stores/seen'
 import type { DrawnRow } from './ItemList'
 import { workerTip, type RowFacts, type RowLook } from './ListRows'
@@ -53,11 +52,9 @@ export function rowFacts(m: ProjectModel, it: Item, w: DrawWith): RowFacts {
   const a = it.agent
   let worker: RowFacts['worker'] = null
   if (a) {
-    const t = new Date(a.t).getTime()
-    const quiet = m.at - t > QUIET_MS
     const only = (m.facts.agents.find((x) => x.name === a.by)?.sessions || []).filter((x) => m.at - x.t < 3600e3)
     const ses = a.ses || (only.length === 1 ? only[0].name : '')
-    worker = { by: a.by, quiet, tip: workerTip(a.by, ses, quiet, agoShort(t, m.at)) }
+    worker = { by: a.by, tip: workerTip(a.by, ses) }
   }
   return {
     code,

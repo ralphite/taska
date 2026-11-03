@@ -122,10 +122,10 @@ export function listBody(m: ProjectModel | null, tab: Tab, list: ListQuery, st: 
   if (none) return { kind: 'empty', why: 'no-items', status: list.status }
   if (tab === 'items' && list.sort === 'all') {
     const ordered =
-      list.status === 'closed' ? [...rows].sort(latestFirst) : list.status === 'wait' ? [...rows].sort(needsOrder) : workOrder(rows)
+      list.status === 'done' || list.status === 'dropped' ? [...rows].sort(latestFirst) : list.status === 'wait' ? [...rows].sort(needsOrder) : workOrder(rows)
     const { group, hidden } = hiddenKids(m, ordered, list, st, tab)
     const out: Row[] = []
-    if (list.status === 'closed' && ordered.some((it) => !it.archived && closed(it.status)))
+    if ((list.status === 'done' || list.status === 'dropped') && ordered.some((it) => !it.archived && closed(it.status)))
       out.push({ kind: 'archive-all', n: ordered.filter((it) => !it.archived && closed(it.status)).length })
     if (!ordered.length) {
       const why = searchWords(list.q).length || list.type !== 'all' || list.pri !== 'all' ? 'no-match' : 'nothing'
@@ -160,9 +160,10 @@ export const VIEWS: [string, string][] = [
   ['all', 'Active'],
   ['every', 'All'],
   ['archive', 'Archive'],
-  ['queued', 'Queue'],
+  ['open', 'Open'],
   ['later', 'Later'],
-  ['closed', 'Finished'],
+  ['done', 'Done'],
+  ['dropped', "Won't do"],
 ]
 
 export interface ViewChip {

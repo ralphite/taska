@@ -1,5 +1,5 @@
-// The row of views above the list: the preset views of Items (Needs you, Active, All, Archive, Queue, Later,
-// Finished) and your own, each with what it would show. It scrolls sideways; an arrow on a fading edge says more is
+// The row of views above the list: the preset views of Items (Needs you, Active, All, Archive, Open, Later,
+// Done, Won't do) and your own, each with what it would show. It scrolls sideways; an arrow on a fading edge says more is
 // there, and a click brings it in.
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'

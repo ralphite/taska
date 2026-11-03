@@ -1,7 +1,7 @@
 // Which items a list shows: by tab, by the preset view (on Items the status is a view, not a filter), by the filters
 // and the search, in the list's order. Pure: from the project and the list's settings.
 
-import { closed, inQueue, needsYou } from './items'
+import { closed, needsYou } from './items'
 import type { ProjectModel } from './project'
 import type { ListKey, ListQuery } from './route'
 import type { Input, Item } from './types'
@@ -47,9 +47,8 @@ function statusOk(it: Item, tab: Tab, list: ListQuery): boolean {
   if (s === 'every') return true
   if (s === 'all') return statusIsView(tab, list) ? !closed(it.status) && it.when === 'now' : true
   if (s === 'active') return !closed(it.status)
-  if (s === 'closed') return closed(it.status)
   if (s === 'wait') return needsYou(it)
-  if (s === 'queued') return inQueue(it) && it.status !== 'doing' && it.when === 'now'
+  if (s === 'open') return it.status === 'open' && it.when === 'now'
   if (s === 'later') return it.when === 'later' && !closed(it.status)
   return it.status === s
 }
