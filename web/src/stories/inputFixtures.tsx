@@ -15,6 +15,12 @@ import { RecBar } from '../ui/PlaceVoice'
 import { PROJECT_TONES } from '../ui/tones'
 import { PICTURE, T, input, item, modelOf } from './fixtures'
 import { talkEnv } from './itemFixtures'
+import type { ProjectModel } from '../model/project'
+import { act, acts } from './acts'
+import { useMedia, usePop } from './liveParts'
+import { useState } from 'react'
+import { inputMenuSheet } from '../features/inputs/InputSheets'
+import { inputMenuFacts } from '../features/inputs/inputSheetFacts'
 
 const at = (min: number) => new Date(Date.parse(T) - min * 60_000).toISOString()
 const org = (msg: string, f: Partial<OrgNote> = {}): OrgNote => ({ ok: true, msg, t: '', keep: false, changed: true, undone: false, ...f })
@@ -89,64 +95,134 @@ export interface Said {
 
 const title = (slug: string) => ({ 'mobile-app': 'Mobile app' })[slug] ?? slug
 const project = (s: Said, items = ITEMS) => modelOf(items, s.inputs ?? DAY, { organizer: { on: s.organizer ?? true, model: 'gemini-flash-latest', busy: s.busy ?? null } })
-const chips = (f: FileRef[]) => <FileChips files={f} url={(x) => (x.endsWith('.png') ? PICTURE : '#' + x)} play={() => ({ playing: false, t: null })} tidy on={{ play() {}, words() {}, view() {} }} />
-const noInput: InputEvents = { goto() {}, more() {}, menu() {}, retry() {}, send() {}, draft() {}, moved() {}, ref() {}, picture() {}, outboxRetry() {}, outboxEdit() {}, end() {} }
+const fileUrl = (x: string) => (x.endsWith('.png') ? PICTURE : '#' + x)
+const inputActs = acts('Input', ['goto', 'retry', 'send', 'draft', 'moved', 'ref', 'outboxRetry', 'outboxEdit', 'end', 'append', 'undoSend', 'loadMore'] as const, { append: 'Input box › What it writes to › Changing what you said', draft: 'Input box › What it writes to › Changing what you said' })
+const menuActs = acts('Input menu', ['send', 'edit', 'append', 'asSaid', 'undo', 'move', 'history', 'rescope', 'takeOff', 'remove'] as const, {
+  move: 'Move and pick › Input to another project',
+  history: 'Sheets › An input: its words and history',
+  edit: 'Input box › What it writes to › Changing what you said',
+  append: 'Input box › What it writes to › Changing what you said',
+})
 
-function rowsOf(s: Said) {
+/** What the page holds around inputs (T662): a long one opened (More, Less), its menu from ⋯ (the page's own
+ * inputMenuSheet: Take off asks again), Voice recording more for one (its strip; again or ✕ stops it),
+ * voice notes playing and pictures opening. What needs Taska (Retry, Send, Undo, Move) shows in the Actions panel. */
+export function useInputs(m: ProjectModel, desk: boolean, s: Pick<Said, 'opened' | 'adding'>) {
+  const [opened, setOpened] = useState(() => new Set(s.opened))
+  const [adding, setAdding] = useState(s.adding ?? null)
+  const media = useMedia(fileUrl)
+  const menu = usePop<{ id: string; asked: Record<string, number> }>(desk)
+  const more = (id: string) => {
+    const next = new Set(opened)
+    if (!next.delete(id)) next.add(id)
+    setOpened(next)
+  }
+  const chips = (f: FileRef[]) => <FileChips files={f} url={fileUrl} play={media.play} tidy on={media.on} />
+  const openMenu = (id: string, from?: HTMLElement) => menu.open({ id, asked: {} }, from, desk ? { at: undefined } : {})
+  const done = (run: () => void) => () => (menu.close(), run())
+  const menuNode = menu.draw(({ id, asked }) => {
+    const r = m.byId.get(id)!
+    const ask = (key: string, run: () => void) => (asked[key] ? (menu.close(), run()) : menu.change({ id, asked: { ...asked, [key]: 1 } }))
+    return inputMenuSheet(inputMenuFacts(m, r, 2, asked, desk, true), {
+      send: done(() => menuActs.send(id)),
+      edit: done(() => menuActs.edit(id)),
+      append: done(() => menuActs.append(id)),
+      asSaid: menuActs.asSaid,
+      undo: done(() => menuActs.undo(id)),
+      move: done(() => menuActs.move(id)),
+      history: done(() => menuActs.history(id)),
+      rescope: done(() => menuActs.rescope(id)),
+      takeOff: (f) => ask(`unfile ${id} ${f}`, () => menuActs.takeOff(f)),
+      remove: done(() => menuActs.remove(id)),
+    })
+  })
+  const node = (
+    <>
+      {menuNode}
+      {media.node}
+    </>
+  )
+  const inputOn: InputEvents = { ...inputActs, more, menu: (id) => openMenu(id), picture: (f, all) => media.on.view(f, all) }
+  const saidOn: SaidEvents = {
+    ...inputActs,
+    more,
+    menu: (id, from) => openMenu(id, from),
+    // Voice on a row records more for it (its strip); again it stops and is added (Taska), ✕ lets it go
+    voice: (id) => (adding?.id === id ? (setAdding(null), inputActs.append(id)) : setAdding({ id, clock: '0:00' })),
+    discard: () => setAdding(null),
+  }
+  return { opened, adding, chips, inputOn, saidOn, node }
+}
+
+function rowsOf(s: Said, opened: ReadonlySet<string>) {
   const m = project(s)
   const words = searchWords(s.q ?? '')
   const drafts = Object.fromEntries((s.editDrafts ?? []).map((id) => [draftKey({ kind: 'amend', mode: 'edit', id }), 'my edit']))
-  const { rows, total } = inputRows(m, { words, title, opened: new Set(s.opened), drafts, writing: null, lit: s.lit ?? null, litStill: !!s.litStill, upTo: 40 })
+  const { rows, total } = inputRows(m, { words, title, opened, drafts, writing: null, lit: s.lit ?? null, litStill: !!s.litStill, upTo: 40 })
   return { m, words, rows, total }
 }
 
 /** The phone's Inputs tab as the page draws it. */
-export function inputsOf(s: Said = {}) {
-  const { m, words, rows, total } = rowsOf(s)
-  const hints = words.length ? <SearchHints other={otherTabs(m, words, 'inputs', total)} cross={{ list: [], failed: false, q: words.join(' ') }} tone={() => PROJECT_TONES[1]} onShow={() => {}} onGo={() => {}} /> : null
+export const inputsOf = (s: Said = {}) => <LiveInputs s={s} />
+function LiveInputs({ s }: { s: Said }) {
+  const live = useInputs(project(s), false, s)
+  const { m, words, rows, total } = rowsOf(s, live.opened)
+  const hints = words.length ? <SearchHints other={otherTabs(m, words, 'inputs', total)} cross={{ list: [], failed: false, q: words.join(' ') }} tone={() => PROJECT_TONES[1]} onShow={act('Search hints: show')} onGo={act('Search hints: go')} /> : null
   return (
     <div className="flex h-full flex-col">
-      <InputsView hidden={false} rows={rows} more={total > rows.length} outgoing={outgoingRows(s.outbox ?? [], 'demo', s.away ?? 0)} words={words} world={talkEnv(m, false).world} hints={hints} files={chips} recording={s.recording ?? null} on={noInput} />
+      <InputsView hidden={false} rows={rows} more={total > rows.length} outgoing={outgoingRows(s.outbox ?? [], 'demo', s.away ?? 0)} words={words} world={talkEnv(m, false).world} hints={hints} files={live.chips} recording={s.recording ?? null} on={live.inputOn} />
+      {live.node}
     </div>
   )
 }
 
 /** One input as a row of the phone's Inputs tab draws it. */
-export function cardOf(r: Input, s: Said = {}) {
-  const { m, rows } = rowsOf({ ...s, inputs: [r] })
-  return <InputCard x={rows[0]} words={[]} world={talkEnv(m, false).world} files={chips} on={noInput} />
+export const cardOf = (r: Input, s: Said = {}) => <LiveCard r={r} s={s} />
+function LiveCard({ r, s }: { r: Input; s: Said }) {
+  const live = useInputs(project({ ...s, inputs: [r] }), false, s)
+  const { m, rows } = rowsOf({ ...s, inputs: [r] }, live.opened)
+  return (
+    <>
+      <InputCard x={rows[0]} words={[]} world={talkEnv(m, false).world} files={live.chips} on={live.inputOn} />
+      {live.node}
+    </>
+  )
 }
 
 /** One input as a row of the New input page's list draws it (the desktop). */
-export function saidRowOf(r: Input, s: Said = {}) {
+export const saidRowOf = (r: Input, s: Said = {}) => <LiveSaidRow r={r} s={s} />
+function LiveSaidRow({ r, s }: { r: Input; s: Said }) {
   const m = project({ ...s, inputs: [r] })
+  const live = useInputs(m, true, s)
   const drafts = Object.fromEntries((s.editDrafts ?? []).map((id) => [draftKey({ kind: 'amend', mode: 'edit', id }), 'my edit']))
-  const x = saidRows(m, { words: [], upTo: 1, opened: new Set(s.opened), justSent: (s.justSent ?? []).map((rid) => ({ rid })), drafts, mode: null, title }).rows[0]
+  const x = saidRows(m, { words: [], upTo: 1, opened: live.opened, justSent: (s.justSent ?? []).map((rid) => ({ rid })), drafts, mode: null, title }).rows[0]
   return (
     <div className="px-6 py-3">
-      <SaidRow x={x} files={r.files.length ? chips(r.files) : null} on={noSaid} />
+      <SaidRow x={x} files={r.files.length ? live.chips(r.files) : null} on={live.saidOn} />
+      {live.node}
     </div>
   )
 }
 
-const noSaid: SaidEvents = { goto() {}, more() {}, append() {}, voice() {}, draft() {}, menu() {}, undoSend() {}, retry() {}, send() {}, outboxRetry() {}, outboxEdit() {}, discard() {}, loadMore() {}, moved() {} }
-
 /** What you said lately under the New input page's box (the desktop), as the page draws it. */
-export function saidOf(s: Said = {}) {
+export const saidOf = (s: Said = {}) => <LiveSaid s={s} />
+function LiveSaid({ s }: { s: Said }) {
   const m = project(s)
+  const live = useInputs(m, true, s)
   const drafts = Object.fromEntries((s.editDrafts ?? []).map((id) => [draftKey({ kind: 'amend', mode: 'edit', id }), 'my edit']))
-  const said = saidRows(m, { words: [], upTo: 30, opened: new Set(s.opened), justSent: (s.justSent ?? []).map((rid) => ({ rid })), drafts, mode: null, title, adding: new Set(s.addingUp) })
+  const said = saidRows(m, { words: [], upTo: 30, opened: live.opened, justSent: (s.justSent ?? []).map((rid) => ({ rid })), drafts, mode: null, title, adding: new Set(s.addingUp) })
   return (
     <div className="mx-auto mt-8 max-w-[42rem]">
       <SaidLately
         rows={said.rows}
         outgoing={saidOutgoing(s.outbox ?? [], [], s.away ?? 0, (s.justSent ?? []).map((q) => ({ q })))}
         more={said.all.length > said.rows.length}
-        files={chips}
+        files={live.chips}
         recording={s.recording ?? null}
-        adding={s.adding ? { id: s.adding.id, meter: <RecBar time={s.adding.clock} levels={[0.3, 0.75, 0.5, 0.95, 0.4, 0.65]} /> } : null}
-        on={noSaid}
+        adding={live.adding ? { id: live.adding.id, meter: <RecBar time={live.adding.clock} levels={[0.3, 0.75, 0.5, 0.95, 0.4, 0.65]} /> } : null}
+        on={live.saidOn}
       />
+      {live.node}
     </div>
   )
 }

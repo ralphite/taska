@@ -5,25 +5,25 @@
 // their rows from saidRows and inputRows.
 import { sideProjects } from '../app/sideProjects'
 import { ComposeHead } from '../features/composer/ComposeHead'
-import { DraftWords } from '../features/composer/Doubts'
 import { DraftCard, DRAFT_WORDS } from '../features/composer/DraftCard'
-import { SaidLately, type SaidEvents } from '../features/composer/SaidLately'
-import { InputsView, type InputEvents } from '../features/inputs/InputsView'
+import { SaidLately } from '../features/composer/SaidLately'
+import { InputsView } from '../features/inputs/InputsView'
 import { inputRows, outgoingRows } from '../features/inputs/inputRows'
 import { Sidebar } from '../features/sidebar/Sidebar'
 import { SIDE_KEYS, sideLinks } from '../features/sidebar/sideLinks'
-import { spotsIn, voiceStretches, type HeardFile } from '../model/doubts'
+import type { HeardFile } from '../model/doubts'
 import { draftKey } from '../model/draftTarget'
 import { saidOutgoing, saidRows } from '../model/saidLately'
 import type { FileRef, Input, OrgNote, ProjectRow } from '../model/types'
-import { FileChips } from '../ui/Files'
 import { RecBar } from '../ui/PlaceVoice'
 import { toneOf } from '../ui/tones'
 import { boxAt, out } from './boxFixtures'
-import { PICTURE, T, input, item, modelOf } from './fixtures'
+import { T, input, item, modelOf } from './fixtures'
 import { Frame, PHONE } from './Frames'
 import { talkEnv } from './itemFixtures'
 import { sideOn } from './sideFixtures'
+import { LiveWords } from './doubtsFixtures'
+import { useInputs } from './inputFixtures'
 
 // ---------------------------------------------------------------- the data
 
@@ -117,10 +117,6 @@ const DRAFT_HEARD: HeardFile[] = [
 
 // ---------------------------------------------------------------- the parts
 
-const noSaid: SaidEvents = { goto() {}, more() {}, append() {}, voice() {}, draft() {}, menu() {}, undoSend() {}, retry() {}, send() {}, outboxRetry() {}, outboxEdit() {}, discard() {}, loadMore() {}, moved() {} }
-const noInput: InputEvents = { goto() {}, more() {}, menu() {}, retry() {}, send() {}, draft() {}, moved() {}, ref() {}, picture() {}, outboxRetry() {}, outboxEdit() {}, end() {} }
-const url = (f: string) => (f.endsWith('.png') ? PICTURE : '#' + f)
-const chips = (f: FileRef[]) => <FileChips files={f} url={url} play={() => ({ playing: false, t: null })} tidy on={{ play() {}, words() {}, view() {} }} />
 const draftCard = (
   <DraftCard
     voice={1}
@@ -128,16 +124,19 @@ const draftCard = (
     files={0}
     transcribing={false}
     hint={{ kind: 'check', n: 2 }}
-    words={<DraftWords text={DRAFT_TEXT} spots={spotsIn(DRAFT_TEXT, DRAFT_HEARD)} stretches={voiceStretches(DRAFT_TEXT, DRAFT_HEARD)} className={DRAFT_WORDS} on={{ pick() {}, escape() {}, select() {} }} />}
+    words={<LiveWords text={DRAFT_TEXT} heard={DRAFT_HEARD} className={DRAFT_WORDS} />}
   />
 )
 
-/** What you said lately under the box, as the desktop's page draws it. */
+/** What you said lately under the box, as the desktop's page draws it, with what the page holds for it (useInputs:
+ * More, ⋯ menus, Voice on a row, voice notes and pictures). */
 function DeskList() {
-  const said = saidRows(M, { words: [], upTo: 30, opened: new Set(), justSent: [{ rid: 'r1029' }], drafts: DRAFTS, mode: null, title })
+  const live = useInputs(M, true, { adding: { id: 'r1023', clock: '0:11' } })
+  const said = saidRows(M, { words: [], upTo: 30, opened: live.opened, justSent: [{ rid: 'r1029' }], drafts: DRAFTS, mode: null, title })
   return (
     <section aria-label="Latest inputs" className="mx-auto mt-8 block max-w-[42rem]">
-      <SaidLately recording="0:07" adding={{ id: 'r1023', meter: <RecBar time="0:11" levels={[0.3, 0.75, 0.5, 0.95, 0.4, 0.65]} /> }} rows={said.rows} outgoing={saidOutgoing(OUTBOX, [], 0, JUST_SENT)} more draft={draftCard} files={chips} on={noSaid} />
+      <SaidLately recording="0:07" adding={live.adding ? { id: live.adding.id, meter: <RecBar time={live.adding.clock} levels={[0.3, 0.75, 0.5, 0.95, 0.4, 0.65]} /> } : null} rows={said.rows} outgoing={saidOutgoing(OUTBOX, [], 0, JUST_SENT)} more draft={draftCard} files={live.chips} on={live.saidOn} />
+      {live.node}
     </section>
   )
 }
@@ -156,7 +155,7 @@ export function DeskPage() {
     <Frame layout="desk" width={1440}>
       <div data-compose className="group/app flex min-h-full bg-zinc-50 dark:bg-zinc-950">
         <div className="w-60 shrink-0 border-r border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900">
-          <Sidebar phone={false} keys={SIDE_KEYS} projects={SIDE.list} composing links={sideLinks('taska', null)} place="" on={{ ...sideOn, search() {} }} />
+          <Sidebar phone={false} keys={SIDE_KEYS} projects={SIDE.list} composing links={sideLinks('taska', null)} place="" on={sideOn} />
         </div>
         <div className="min-w-0 flex-1 px-8 pt-12 pb-16">
           <ComposeHead title="taska" tone={toneOf(SIDE.tones, 'taska')} />
@@ -170,13 +169,15 @@ export function DeskPage() {
 
 /** The phone at 393: its Inputs tab, the box at its foot. */
 export function PhonePage() {
-  const { rows, total } = inputRows(M, { words: [], title, opened: new Set(), drafts: DRAFTS, writing: null, lit: null, litStill: false, upTo: 40 })
+  const live = useInputs(M, false, {})
+  const { rows, total } = inputRows(M, { words: [], title, opened: live.opened, drafts: DRAFTS, writing: null, lit: null, litStill: false, upTo: 40 })
   return (
     <Frame layout="phone" width={PHONE.width}>
       <div className="flex h-full flex-col bg-zinc-50 dark:bg-zinc-950">
         <div data-phone-list className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-          <InputsView hidden={false} rows={rows} more={total > rows.length} outgoing={outgoingRows(OUTBOX, 'taska', 0)} words={[]} world={talkEnv(M, false).world} hints={null} files={chips} recording="0:07" on={noInput} />
+          <InputsView hidden={false} rows={rows} more={total > rows.length} outgoing={outgoingRows(OUTBOX, 'taska', 0)} words={[]} world={talkEnv(M, false).world} hints={null} files={live.chips} recording="0:07" on={live.inputOn} />
         </div>
+        {live.node}
         <div className="shrink-0 border-t border-zinc-200 dark:border-zinc-800">{boxAt({ at: '' }, false, { placeholder: 'Write to taska…' })}</div>
       </div>
     </Frame>
