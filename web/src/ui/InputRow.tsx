@@ -54,7 +54,7 @@ const QUIET = `${GREY} font-medium text-zinc-500 dark:text-zinc-400`
 const BUSY = 'border-blue-200/80 bg-blue-50/80 py-1 font-medium text-blue-700 dark:border-blue-900/50 dark:bg-blue-950/30 dark:text-blue-300'
 const FAILED = 'border-red-200/80 bg-red-50/70 font-medium text-red-700 dark:border-red-900/50 dark:bg-red-950/25 dark:text-red-400'
 const DONE = 'gap-1.5 border-emerald-200/80 bg-emerald-50/80 font-medium text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300'
-const DID = 'font-medium text-zinc-500 dark:text-zinc-400'
+const DID = 'shrink-0 whitespace-nowrap font-medium text-zinc-500 dark:text-zinc-400'
 
 /** An item: its status mark, code and title (cut to fit). */
 function ItemLink({ it, narrow, on }: { it: ItemRef; narrow: boolean; on: Pick<InputRowEvents, 'goto'> }) {
