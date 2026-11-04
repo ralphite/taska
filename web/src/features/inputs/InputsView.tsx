@@ -48,8 +48,6 @@ export interface InputEvents {
   outboxEdit(): void
   /** the list scrolled to its last drawn rows: draw more */
   end(): void
-  /** the voice note being recorded into a new input: let it go (Esc) */
-  discard?(): void
 }
 
 /** One input: the line every list of inputs draws, its words drawn as Markdown (references and pictures in them work),
@@ -127,9 +125,9 @@ export function InputsView({ hidden, rows, more, outgoing, words, world, files, 
       data-vc-area
       className="-mb-(--foot-h) min-h-0 flex-1 overflow-y-auto outline-none overscroll-contain pb-[calc(var(--foot-h,0px)+1.5rem)]"
     >
+      {hidden || !recording || words.length ? null : <RecordingRow clock={recording} />}
       {hidden ? null : (
         <div className="mb-6 space-y-2 px-4 pt-4 empty:hidden">
-          {!recording || words.length ? null : <RecordingRow clock={recording} onDiscard={on.discard} />}
           {outgoing.length && !words.length ? <OutboxRows list={outgoing} on={on} /> : null}
         </div>
       )}

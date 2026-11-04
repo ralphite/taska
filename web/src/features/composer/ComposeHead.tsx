@@ -1,12 +1,14 @@
-// Over the New input page on the desktop: the project's tile and name, at the column's left edge (T661). Props only.
+// Over the New input page on the desktop: the project's tile and name. Props only.
 
 import { ProjTile } from '../../ui/bits'
 
 export function ComposeHead({ title, tone }: { title: string; tone: string }) {
   return (
-    <div className="mx-auto mb-5 flex max-w-[660px] items-center gap-2.5 select-none">
-      <ProjTile title={title} tone={tone} cls="size-7 rounded text-xs shadow-xs" />
-      <h1 className="text-base font-bold tracking-tight text-zinc-900 dark:text-zinc-100">{title}</h1>
+    <div className="mx-auto mb-6 flex max-w-[42rem] flex-col items-center text-center">
+      <div className="flex items-center gap-3">
+        <ProjTile title={title} tone={tone} cls="size-11 rounded-xl text-xl shadow-sm" />
+        <h1 className="text-[28px] leading-none font-semibold tracking-tight">{title}</h1>
+      </div>
     </div>
   )
 }

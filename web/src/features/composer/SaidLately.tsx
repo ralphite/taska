@@ -112,12 +112,14 @@ export function SaidLately({ rows, outgoing, more, draft, files, recording = nul
   return (
     <div>
       {/* empty (nothing recording, on its way or to check): no room taken */}
-      <div className="mb-6 space-y-2 empty:hidden">
-        {recording ? <RecordingRow clock={recording} onDiscard={on.discard} /> : null}
+      {/* the draft and a voice note being recorded, as the page had them over the list before T661 (r1051) */}
+      <ol>{draft}</ol>
+      {recording ? <RecordingRow clock={recording} /> : null}
+      {/* what is on its way; empty, no room taken */}
+      <div className="mt-3 mb-6 space-y-2 empty:hidden">
         {outgoing.map((o) => (
           <OutgoingRow key={o.q} text={o.text} state={o.state} bad={o.failed && !o.net} waiting={o.waiting} acts={outgoingActs(o, on)} />
         ))}
-        {draft}
       </div>
       {rows.length ? (
         <div className={INPUT_LIST}>

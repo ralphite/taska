@@ -66,7 +66,7 @@ export function SaidLatelyContainer({ route, boxKey, view, draft }: { route: Pro
   const mine = outbox.filter((o) => o.slug === route.slug && !o.unsent && showsOnItsWay(o))
   const url = (f: string) => `/p/${encodeURIComponent(route.slug)}/f/${encodeURIComponent(f)}`
   return (
-    <section aria-label="Latest inputs" data-vc-area className="mx-auto mt-5 block max-w-[660px]">
+    <section aria-label="Latest inputs" data-vc-area className="mx-auto mt-8 block max-w-[42rem]">
       <SaidLately
         recording={recording}
         adding={adding ? { id: adding, meter: <RecMeter n={PLACE_LEVELS.desk} /> } : null}
@@ -106,9 +106,8 @@ export function SaidLatelyContainer({ route, boxKey, view, draft }: { route: Pro
 /** The draft at the top of what you said, while a voice note's words are there to check: its words, which ones may
  * be misheard (a tap picks another version), and a correction of words you select. */
 export function DraftCardContainer({ route, boxKey, scope, fixing, setFixing }: { route: ProjectRoute; boxKey: DraftKey; scope: string | null; fixing: Fixing | null; setFixing(f: Fixing | null): void }) {
-  const app = useServices('box', 'fields', 'toasts', 'voiceWords')
+  const app = useServices('fields', 'toasts', 'voiceWords')
   const stores = useStores('box', 'drafts')
-  const m = useProjectModel(route.slug)
   const text = useStoreValue(stores.drafts, (s) => s.bySlug[route.slug]?.[boxKey]) ?? ''
   const draftFiles = useStoreValue(stores.box, (s) => s.files[boxKey])
   const heard = useHeard(text, draftFiles)
@@ -125,7 +124,6 @@ export function DraftCardContainer({ route, boxKey, scope, fixing, setFixing }: 
       stretches={voiceStretches(text, files)}
       fixing={fixing}
       className={DRAFT_WORDS}
-      look="card"
       on={{
         pick: (fk, k, side) => void app.voiceWords.pick(route.slug, boxKey, fk, k, side),
         escape: () => app.fields.focus('box'),
@@ -142,5 +140,5 @@ export function DraftCardContainer({ route, boxKey, scope, fixing, setFixing }: 
       }}
     />
   ) : null
-  return <DraftCard voice={voice.length} ms={voice.reduce((a, f) => a + (f.ms || 0), 0)} files={files.length - voice.length} transcribing={files.some((f) => f.transcribing)} words={words} hint={hint} onSend={() => void app.box.send(route.slug, m, scope, boxKey)} />
+  return <DraftCard voice={voice.length} ms={voice.reduce((a, f) => a + (f.ms || 0), 0)} files={files.length - voice.length} transcribing={files.some((f) => f.transcribing)} words={words} hint={hint} />
 }

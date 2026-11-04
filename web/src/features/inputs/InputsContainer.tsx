@@ -19,7 +19,7 @@ import { inputRows, outgoingRows } from './inputRows'
 const PAGE = 40
 
 export function InputsContainer({ route, hidden }: { route: ProjectRoute; hidden: boolean }) {
-  const app = useServices('box', 'docs', 'fields', 'inputActions', 'inputs', 'nav', 'sheets', 'voice')
+  const app = useServices('box', 'docs', 'fields', 'inputActions', 'inputs', 'nav', 'sheets')
   const stores = useStores('box', 'recording', 'data', 'drafts', 'outbox', 'ui')
   // a voice note being recorded into a new input here: its row comes first, with how long so far (B627)
   const recording = useStoreValue(stores.recording, (st) => (st.rec && st.rec.slug === route.slug && !st.rec.about && st.rec.key === NEW_DRAFT ? clock(st.rec.ms) : null))
@@ -78,7 +78,6 @@ export function InputsContainer({ route, hidden }: { route: ProjectRoute; hidden
         picture: (f, all) => media.on.view(f, all),
         outboxRetry: () => void app.inputs.flush(),
         outboxEdit: () => app.box.editOutgoing(route.slug, boxKey) && app.fields.focus('box'),
-        discard: () => void app.voice.cancel(),
         end: () => setUpTo((n) => n + PAGE),
       }}
     />

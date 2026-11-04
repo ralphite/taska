@@ -342,27 +342,15 @@ export function OutgoingRow({ text, state, bad, waiting, scope = null, previews 
   )
 }
 
-/** A voice note being recorded into a new input: first, with how long so far (B627), and Esc to discard it. */
-export function RecordingRow({ clock, onDiscard }: { clock: string; onDiscard?(): void }) {
+/** A voice note being recorded into a new input: first, with how long so far (B627); drawn as before T661 (r1051). */
+export function RecordingRow({ clock }: { clock: string }) {
   return (
-    <div role="status" className="flex items-center justify-between rounded-xl border border-red-200 bg-red-500/[0.08] px-3.5 py-2 text-xs text-red-700 dark:border-red-900/60 dark:bg-red-500/15 dark:text-red-300">
-      <div className="flex items-center gap-2">
-        <span className="size-2 animate-ping rounded-full bg-red-600" />
-        <span className="font-medium">Recording</span>
-        <span aria-hidden className="ml-1 flex h-3 items-center gap-0.5 opacity-75">
-          {['h-1.5', 'h-3', 'h-2', 'h-3.5'].map((h, i) => (
-            <span key={i} className={`w-0.5 ${h} animate-pulse rounded-full bg-red-600 dark:bg-red-400`} style={{ animationDelay: `${[0, 80, 160, 40][i]}ms` }} />
-          ))}
-        </span>
+    <article className="border-zinc-100 px-4 py-2.5 lg:-mx-3 lg:px-3 dark:border-zinc-800/70">
+      <div className="flex h-5 min-w-0 items-center gap-2 text-[13px] font-medium text-red-600 dark:text-red-400">
+        <span className="size-1.5 animate-pulse rounded-full bg-current" />
+        Recording
+        <span className="font-mono tabular-nums">{clock}</span>
       </div>
-      <div className="flex items-center gap-3">
-        <span className="font-mono font-semibold tabular-nums">{clock}</span>
-        {onDiscard ? (
-          <button onClick={onDiscard} aria-label="Discard the recording" title="Discard · Esc" className="font-mono text-[11px] text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200">
-            Esc
-          </button>
-        ) : null}
-      </div>
-    </div>
+    </article>
   )
 }

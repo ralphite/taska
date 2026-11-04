@@ -137,7 +137,7 @@ export function saidOf(s: Said = {}) {
   const drafts = Object.fromEntries((s.editDrafts ?? []).map((id) => [draftKey({ kind: 'amend', mode: 'edit', id }), 'my edit']))
   const said = saidRows(m, { words: [], upTo: 30, opened: new Set(s.opened), justSent: (s.justSent ?? []).map((rid) => ({ rid })), drafts, mode: null, title, adding: new Set(s.addingUp) })
   return (
-    <div className="mx-auto mt-5 max-w-[660px]">
+    <div className="mx-auto mt-8 max-w-[42rem]">
       <SaidLately
         rows={said.rows}
         outgoing={saidOutgoing(s.outbox ?? [], [], s.away ?? 0, (s.justSent ?? []).map((q) => ({ q })))}

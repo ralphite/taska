@@ -31,7 +31,7 @@ export const MaybeMisheardOnTheNewInputPage: Story = {
         <>
           {boxAt({ text: HEARD_TEXT, files: HEARD.map((h) => ({ ...VOICE, ...h, tr: HEARD_TEXT })), composePage: true, doubts: <Doubts view={{ kind: 'card', toCheck: 1 }} on={quiet} /> }, true)}
           <div className="px-3 pb-3">
-            <DraftCard voice={1} ms={14000} files={0} transcribing={false} words={<DraftWords text={HEARD_TEXT} spots={spotsIn(HEARD_TEXT, HEARD)} stretches={voiceStretches(HEARD_TEXT, HEARD)} className={DRAFT_WORDS} look="card" on={{ pick: () => {}, escape: () => {}, select: () => {} }} />} hint={{ kind: 'check', n: 1 }} onSend={() => {}} />
+            <DraftCard voice={1} ms={14000} files={0} transcribing={false} words={<DraftWords text={HEARD_TEXT} spots={spotsIn(HEARD_TEXT, HEARD)} stretches={voiceStretches(HEARD_TEXT, HEARD)} className={DRAFT_WORDS} on={{ pick: () => {}, escape: () => {}, select: () => {} }} />} hint={{ kind: 'check', n: 1 }} />
           </div>
         </>
       )}

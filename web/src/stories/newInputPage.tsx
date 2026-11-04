@@ -118,7 +118,7 @@ const DRAFT_HEARD: HeardFile[] = [
 // ---------------------------------------------------------------- the parts
 
 const noSaid: SaidEvents = { goto() {}, more() {}, append() {}, voice() {}, draft() {}, menu() {}, undoSend() {}, retry() {}, send() {}, outboxRetry() {}, outboxEdit() {}, discard() {}, loadMore() {}, moved() {} }
-const noInput: InputEvents = { goto() {}, more() {}, menu() {}, retry() {}, send() {}, draft() {}, moved() {}, ref() {}, picture() {}, outboxRetry() {}, outboxEdit() {}, end() {}, discard() {} }
+const noInput: InputEvents = { goto() {}, more() {}, menu() {}, retry() {}, send() {}, draft() {}, moved() {}, ref() {}, picture() {}, outboxRetry() {}, outboxEdit() {}, end() {} }
 const url = (f: string) => (f.endsWith('.png') ? PICTURE : '#' + f)
 const chips = (f: FileRef[]) => <FileChips files={f} url={url} play={() => ({ playing: false, t: null })} tidy on={{ play() {}, words() {}, view() {} }} />
 const draftCard = (
@@ -128,8 +128,7 @@ const draftCard = (
     files={0}
     transcribing={false}
     hint={{ kind: 'check', n: 2 }}
-    onSend={() => {}}
-    words={<DraftWords text={DRAFT_TEXT} spots={spotsIn(DRAFT_TEXT, DRAFT_HEARD)} stretches={voiceStretches(DRAFT_TEXT, DRAFT_HEARD)} className={DRAFT_WORDS} look="card" on={{ pick() {}, escape() {}, select() {} }} />}
+    words={<DraftWords text={DRAFT_TEXT} spots={spotsIn(DRAFT_TEXT, DRAFT_HEARD)} stretches={voiceStretches(DRAFT_TEXT, DRAFT_HEARD)} className={DRAFT_WORDS} on={{ pick() {}, escape() {}, select() {} }} />}
   />
 )
 
@@ -137,7 +136,7 @@ const draftCard = (
 function DeskList() {
   const said = saidRows(M, { words: [], upTo: 30, opened: new Set(), justSent: [{ rid: 'r1029' }], drafts: DRAFTS, mode: null, title })
   return (
-    <section aria-label="Latest inputs" className="mx-auto mt-5 block max-w-[660px]">
+    <section aria-label="Latest inputs" className="mx-auto mt-8 block max-w-[42rem]">
       <SaidLately recording="0:07" adding={{ id: 'r1023', meter: <RecBar time="0:11" levels={[0.3, 0.75, 0.5, 0.95, 0.4, 0.65]} /> }} rows={said.rows} outgoing={saidOutgoing(OUTBOX, [], 0, JUST_SENT)} more draft={draftCard} files={chips} on={noSaid} />
     </section>
   )
@@ -159,7 +158,7 @@ export function DeskPage() {
         <div className="w-60 shrink-0 border-r border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900">
           <Sidebar phone={false} keys={SIDE_KEYS} projects={SIDE.list} composing links={sideLinks('taska', null)} place="" on={{ ...sideOn, search() {} }} />
         </div>
-        <div className="min-w-0 flex-1 px-8 pt-8 pb-16">
+        <div className="min-w-0 flex-1 px-8 pt-12 pb-16">
           <ComposeHead title="taska" tone={toneOf(SIDE.tones, 'taska')} />
           <div className="[&>div]:bg-transparent [&>div]:p-0">{boxAt({ at: 'new', composePage: true }, true, { placeholder: 'Write to taska…' })}</div>
           <DeskList />
