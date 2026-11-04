@@ -45,7 +45,7 @@ export interface SidebarEvents {
   dropProject(): void
   /** a project's menu, at the pointer (right-click, the desktop) */
   projectMenu(slug: string, x: number, y: number): void
-  /** search everything (F479, a prototype for now: without it, no Search row) */
+  /** search everything (F479, a prototype for now: without it, no Search button) */
   search?(): void
 }
 
@@ -171,6 +171,16 @@ export function Sidebar(props: SidebarProps) {
           </span>
           <span className="text-xl font-semibold tracking-tight lg:text-[19px]">Taska</span>
         </a>
+        {on.search ? (
+          <button
+            onClick={on.search}
+            title={`Search · ${keys.search}`}
+            aria-label="Search"
+            className="hidden size-8 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-200/70 hover:text-zinc-800 lg:grid dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+          >
+            <Icon n="search" c="size-[18px]" />
+          </button>
+        ) : null}
         <button
           onClick={on.hide}
           title={`Hide sidebar · ${keys.sidebar}`}
@@ -180,16 +190,6 @@ export function Sidebar(props: SidebarProps) {
           <Icon n="panel" c="size-[18px]" />
         </button>
       </div>
-      {on.search ? (
-        <button
-          onClick={on.search}
-          className="mx-2.5 mb-1 hidden h-8 shrink-0 items-center gap-2.5 rounded-lg px-2.5 text-sm text-zinc-600 hover:bg-zinc-200/60 lg:flex dark:text-zinc-300 dark:hover:bg-zinc-800"
-        >
-          <Icon n="search" c="size-4 shrink-0 text-zinc-500 dark:text-zinc-400" sw="2" />
-          <span className="min-w-0 flex-1 truncate text-left">Search</span>
-          <Kbd k={keys.search} />
-        </button>
-      ) : null}
       <div className="group/ni relative mx-2.5 mb-3 hidden shrink-0 lg:block">
         <button
           onClick={on.newInput}

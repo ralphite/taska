@@ -1,5 +1,5 @@
 // F479 on the desktop, a prototype: the page around the search (stories/searchDesk.tsx), each part the page's own
-// component with the demo projects Shop and Home (searchFixtures.ts): the sidebar with its Search row (or the rail
+// component with the demo projects Shop and Home (searchFixtures.ts): the sidebar with its Search button (or the rail
 // with its magnifier), the project's bar, the list with no search box over it (its filter at the end of the views'
 // row, r796), the item open in its pane, the box under it; and the preview of what the search found, drawn by the
 // pages that show it (an item's page, a document, an input as the New input page lists it).

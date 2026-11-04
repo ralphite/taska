@@ -29,9 +29,9 @@ const TOUR: Tour = {
 
 /** Each desktop choice in one line, and what it follows. */
 const DECISIONS: [string, string][] = [
-  ['Search is a row at the top of the sidebar, above New input, with ⌘K beside it: a row with its key does not fit in the head beside Hide sidebar. Folded, a magnifier under the logo.', 'Notion; r796: not under New input'],
+  ['Search is a magnifier right of the Taska logo in the sidebar’s head (its tip: Search · ⌘K). Folded, a magnifier under the logo.', 'F479, 11-04'],
   ["⌘K (or /) opens it anywhere and closes it again; ⌘K's commands come in it as Actions when the words name one (Done F001, Settings).", 'Notion: ⌘K is search'],
-  ['A modal in the top third over the dimmed page, 832 px wide (the list, and the preview beside it), its height fixed so nothing jumps.', 'Notion'],
+  ['A wide modal in the top third over the dimmed page: min(72rem, 92% of the window), about 1150 px at 1440, so the list and the preview both have room; its height fixed so nothing jumps.', 'F479, 11-04'],
   ['Its top is a large field with the focus: typing is the default. Nothing typed: Recent.', 'Notion; “Say or type”'],
   ['Results come as you type (a pause first), best first, the words found lit; the spinner sits in the field while it searches again.', 'Notion; the phone: by meaning'],
   ['One list, best first; each row shows its project (and the item it is on) as a path. Grouping by project would put a weaker match in this project above a better one elsewhere; the Project filter narrows instead.', "Notion's page path"],

@@ -1,4 +1,4 @@
-// F479 on the desktop, a prototype: the Search row in the sidebar, and each state of finding by typing. The journeys:
+// F479 on the desktop, a prototype: the Search button in the sidebar's head, and each state of finding by typing. The journeys:
 // stories/searchDesk.tsx.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { After } from './Frames'
@@ -6,15 +6,15 @@ import { DeskFrame, SearchDesk, deskStory } from './searchDesk'
 
 export default { title: 'Prototype/F479 Search on the desktop/Type and find' } satisfies Meta
 
-/** The page before the search: Search at the top of the sidebar (⌘K); no search box over the list. */
+/** The page before the search: the magnifier right of the logo (⌘K); no search box over the list. */
 export const InTheSidebar: StoryObj = { name: 'Search in the sidebar', ...deskStory('closed') }
-/** The pointer on it, with its tip. */
+/** The pointer on it, with its tip (Search · ⌘K). */
 export const UnderThePointer: StoryObj = {
   name: 'Search under the pointer',
-  parameters: { pseudo: { hover: ['#drawer > button'] } },
+  parameters: { pseudo: { hover: ['#drawer button[aria-label="Search"]'] } },
   render: () => (
     <DeskFrame>
-      <After run={(root) => root.querySelector('#drawer > button')?.dispatchEvent(new PointerEvent('pointerover', { bubbles: true, pointerType: 'mouse' }))}>
+      <After run={(root) => root.querySelector('#drawer button[aria-label="Search"]')?.dispatchEvent(new PointerEvent('pointerover', { bubbles: true, pointerType: 'mouse' }))}>
         <SearchDesk still />
       </After>
     </DeskFrame>

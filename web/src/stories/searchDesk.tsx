@@ -1,5 +1,5 @@
 // F479 on the desktop, a prototype (nothing here changes Taska), the search as desktop apps have it (Notion's): a
-// Search row at the top of the sidebar, and ⌘K (or /) anywhere, open a modal in the top third over the dimmed page.
+// Search button right of the sidebar's logo, and ⌘K (or /) anywhere, open a wide modal in the top third over the page.
 // Its top is a large field, focused: you type, and what it finds comes as you type, best first, each row with its
 // project as a path. The mic at the field's end records (no words while you speak, r797), then Transcribing…, then
 // the results, as on the phone. Under the field, the kinds and the Project and Status filters; beside the list, the
@@ -478,7 +478,7 @@ export function SearchModal({ f, set, onOpen, onClose }: { f: Desk; set(p: Parti
             <div className="flex min-w-0 flex-1 flex-col justify-center">{middle ? <SearchBody v={mid} on={noSearch} desk /> : null}</div>
           ) : (
             <>
-              <div className={`overflow-y-auto lg:scrollbar-thin ${hasPreview ? 'w-[23rem] shrink-0' : 'flex-1'}`}>{listRows}</div>
+              <div className={`overflow-y-auto lg:scrollbar-thin ${hasPreview ? 'w-[clamp(22rem,40%,30rem)] shrink-0' : 'flex-1'}`}>{listRows}</div>
               <div hidden={!hasPreview} data-preview={lit && 'found' in lit ? lit.found.kind : ''} className="relative min-w-0 flex-1 overflow-hidden border-l border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
                 <div className={`pointer-events-none origin-top-left transition-opacity ${faded ? 'opacity-45' : ''}`}>{lit && 'found' in lit ? previewOf(lit.found) : null}</div>
                 <div className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-linear-to-t from-white dark:from-zinc-950" />
