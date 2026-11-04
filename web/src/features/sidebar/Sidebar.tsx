@@ -98,7 +98,7 @@ export function ProjectRows({ phone, projects, on }: { phone: boolean; projects:
             <span className="min-w-0 flex-1">
               <span className="flex items-center gap-2">
                 <span className="min-w-0 flex-1 truncate text-[17px] font-medium group-aria-[current=page]:font-semibold">{p.title}</span>
-                {p.needs ? <NeedsCount n={p.needs} said /> : null}
+                {p.needs ? <NeedsCount n={p.needs} /> : null}
               </span>
               <span className="mt-0.5 block text-xs text-zinc-500 dark:text-zinc-400">{p.open} open</span>
             </span>
@@ -121,7 +121,7 @@ export function ProjectRows({ phone, projects, on }: { phone: boolean; projects:
             <span className="min-w-0 flex-1">
               <span className="flex items-center gap-1.5">
                 <span className={`min-w-0 flex-1 truncate text-sm ${p.current ? 'font-semibold' : 'font-medium'}`}>{p.title}</span>
-                {p.needs ? <NeedsCount n={p.needs} cls="text-[11px]" /> : null}
+                {p.needs ? <NeedsCount n={p.needs} /> : null}
               </span>
               <span className="block text-[11px] text-zinc-500 dark:text-zinc-400">{p.open} open</span>
             </span>
@@ -254,14 +254,14 @@ export function Sidebar(props: SidebarProps) {
           {links.map((l) => (
             <SideLink key={l.key} link={l} phone on={on} />
           ))}
-          <button onClick={on.settings} className="flex min-h-12 w-full items-center gap-3 px-3.5 py-2.5 text-left text-[15px]">
-            <Icon n="gear" c="size-5 shrink-0 text-zinc-500 dark:text-zinc-400" />
-            <span className="min-w-0 flex-1">Settings</span>
-            <Icon n="right" c="size-4 shrink-0 text-zinc-300 dark:text-zinc-600" />
-          </button>
           <button onClick={on.help} className="flex min-h-12 w-full items-center gap-3 px-3.5 py-2.5 text-left text-[15px]">
             <Icon n="info" c="size-5 shrink-0 text-zinc-500 dark:text-zinc-400" />
             <span className="min-w-0 flex-1">Help</span>
+            <Icon n="right" c="size-4 shrink-0 text-zinc-300 dark:text-zinc-600" />
+          </button>
+          <button onClick={on.settings} className="flex min-h-12 w-full items-center gap-3 px-3.5 py-2.5 text-left text-[15px]">
+            <Icon n="gear" c="size-5 shrink-0 text-zinc-500 dark:text-zinc-400" />
+            <span className="min-w-0 flex-1">Settings</span>
             <Icon n="right" c="size-4 shrink-0 text-zinc-300 dark:text-zinc-600" />
           </button>
         </div>
@@ -288,6 +288,13 @@ export function Sidebar(props: SidebarProps) {
           {links.map((l) => (
             <SideLink key={l.key} link={l} phone={false} on={on} />
           ))}
+          <button
+            onClick={on.help}
+            className="flex h-9 min-w-0 items-center gap-2.5 rounded-lg px-2.5 text-left text-sm text-zinc-600 hover:bg-zinc-200/60 dark:text-zinc-300 dark:hover:bg-zinc-800"
+          >
+            <Icon n="info" c="size-4 shrink-0 text-zinc-500 dark:text-zinc-400" sw="2" />
+            <span className="min-w-0 flex-1 truncate">Help</span>
+          </button>
           <div className="flex items-center gap-0.5">
             <button
               onClick={on.settings}
@@ -306,13 +313,6 @@ export function Sidebar(props: SidebarProps) {
               <Icon n="keyboard" c="size-4" />
             </button>
           </div>
-          <button
-            onClick={on.help}
-            className="flex h-9 min-w-0 items-center gap-2.5 rounded-lg px-2.5 text-left text-sm text-zinc-600 hover:bg-zinc-200/60 dark:text-zinc-300 dark:hover:bg-zinc-800"
-          >
-            <Icon n="info" c="size-4 shrink-0 text-zinc-500 dark:text-zinc-400" sw="2" />
-            <span className="min-w-0 flex-1 truncate">Help</span>
-          </button>
         </div>
       ) : null}
     </nav>
@@ -384,8 +384,8 @@ export function Rail({ keys, projects, links, composing, settingsOpen, hidden, o
         </a>
       ))}
       {links.length ? <div className="my-1 h-px w-8 bg-zinc-200 dark:bg-zinc-800" /> : null}
-      {btn('settings', <Icon n="gear" c="size-5" />, `Settings · ${keys.settings}`, on.settings, settingsOpen ? { 'aria-current': 'page' } : {})}
       {btn('help', <Icon n="info" c="size-5" />, 'Help', on.help)}
+      {btn('settings', <Icon n="gear" c="size-5" />, `Settings · ${keys.settings}`, on.settings, settingsOpen ? { 'aria-current': 'page' } : {})}
       {btn('keys', <Icon n="keyboard" c="size-5" />, `Keyboard shortcuts · ${keys.keys}`, on.keys)}
     </nav>
   )

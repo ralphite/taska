@@ -101,7 +101,7 @@ export function Switcher({ rows, loading, onOpen }: { rows: SwitchRow[]; loading
               <ProjTile title={p.title} tone={p.tone} cls="size-6 rounded-md text-xs" />
               <span className={`min-w-0 flex-1 truncate ${p.here ? 'font-semibold' : ''}`}>{p.title}</span>
               {p.here ? <span className={`text-xs ${MUTED}`}>this one</span> : null}
-              {p.needs ? <NeedsCount n={p.needs} said /> : null}
+              {p.needs ? <NeedsCount n={p.needs} /> : null}
             </a>
           ))
         ) : (

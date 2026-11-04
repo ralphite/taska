@@ -96,14 +96,16 @@ export const Count = ({ icon, n, label }: { icon: IconName; n: ReactNode; label:
   </span>
 )
 
-/** How many items need you: the Needs you status mark (the rows' own drawing, smaller) and the number, with "need
- * you" after it when said. */
-export const NeedsCount = ({ n, said = false, cls = 'text-xs' }: { n: number; said?: boolean; cls?: string }) => (
-  <span data-needs title={`${plural(n, 'item')} ${n === 1 ? 'needs' : 'need'} you`} className={`flex shrink-0 items-center gap-1 font-semibold text-amber-900 tabular-nums dark:text-amber-200 ${cls}`}>
-    <StateIcon s="wait" cls="size-3.5" />
-    {said ? `${n} ${n === 1 ? 'needs' : 'need'} you` : n}
-  </span>
-)
+/** Items need you here: the Needs you status mark alone (the rows' own drawing, smaller); how many is in its tip
+ * (B664: the mark says it, no number or words beside it). */
+export const NeedsCount = ({ n }: { n: number }) => {
+  const said = `${plural(n, 'item')} ${n === 1 ? 'needs' : 'need'} you`
+  return (
+    <span data-needs title={said} aria-label={said} className="flex shrink-0 items-center">
+      <StateIcon s="wait" cls="size-3.5" />
+    </span>
+  )
+}
 
 export const DraftMark = ({ small = false }: { small?: boolean }) => (
   <span data-draft className="inline-flex shrink-0 items-center gap-1 font-semibold text-blue-600 dark:text-blue-400">
