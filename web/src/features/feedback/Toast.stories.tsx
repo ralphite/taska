@@ -1,13 +1,16 @@
 // What just happened (T591: Floating > Toast): the page's own Toast over the item list, as the page places it: above
 // the box over the pane you acted in on the desktop, above the box on the phone.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { Frames } from '../../stories/Frames'
+import { Frames, Hold } from '../../stories/Frames'
+import { act } from '../../stories/acts'
 import { listOf, PROJECT } from '../../stories/listFixtures'
 import { CANT_RECORD, MUTED_BY_PHONE, TOO_SHORT, cancelledKept, micTrouble, noSound } from '../../model/micWords'
 import { Toast, type ToastView } from './Toast'
 
 export default { title: 'Components/Around the page/Floating/Toast' } satisfies Meta
 type Story = StoryObj
+
+const toastAction = act('Toast: its button')
 
 /** `t`: the toast, or the desktop's and the phone's */
 const one = (t: ToastView | ((desk: boolean) => ToastView)): Story => ({
@@ -16,7 +19,14 @@ const one = (t: ToastView | ((desk: boolean) => ToastView)): Story => ({
       {(layout) => (
         <div className="relative h-full">
           {listOf(PROJECT, 'items', {}, layout === 'desk')}
-          <Toast toast={typeof t === 'function' ? t(layout === 'desk') : t} place={layout === 'desk' ? '-translate-x-1/2' : 'inset-x-0 mx-auto'} style={layout === 'desk' ? { left: '50%', bottom: '20px' } : { bottom: '24px' }} onAction={() => {}} onClose={() => {}} />
+          {/* × closes it; its button (Undo, Open, Reload, Retry) needs Taska or the page: the Actions panel, and it goes */}
+          <Hold<boolean> start>
+            {(shown, set) =>
+              shown ? (
+                <Toast toast={typeof t === 'function' ? t(layout === 'desk') : t} place={layout === 'desk' ? '-translate-x-1/2' : 'inset-x-0 mx-auto'} style={layout === 'desk' ? { left: '50%', bottom: '20px' } : { bottom: '24px' }} onAction={() => (toastAction(), set(false))} onClose={() => set(false)} />
+              ) : null
+            }
+          </Hold>
         </div>
       )}
     </Frames>

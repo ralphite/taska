@@ -2,10 +2,12 @@
 import type { Need, ProjectRow, SearchHit } from '../model/types'
 import { Frames } from './Frames'
 import { T } from './fixtures'
+import { useState } from 'react'
 import { Home, type HomeEvents, type HomeFacts } from '../features/home/Home'
+import { acts } from './acts'
 import { homeRows } from '../features/home/homeRows'
 
-export const on: HomeEvents = { query() {}, search() {}, restore() {}, closeGone() {}, closeNone() {}, startNew() {}, cancelNew() {}, create() {}, open() {} }
+export const on: HomeEvents = { ...acts('Home', ['search', 'restore', 'create', 'open'] as const, { search: 'Search on the desktop' }), query() {}, closeGone() {}, closeNone() {}, startNew() {}, cancelNew() {} }
 export const now = Date.parse(T)
 export const PROJECTS: ProjectRow[] = [
   { name: 'taska', title: 'taska', open: 32, needs: 2, pos: 0, agents: [{ name: 'claude-code', t: now - 60_000, waiting: true }] },
@@ -28,8 +30,20 @@ export const hits: SearchHit[] = [
   { project: 'taska', ptitle: 'taska', kind: 'input', code: 'r315', title: 'the rewrite should keep every word the agents read', t: '' },
 ]
 
+/** The home page with what the page's HomeContainer holds: the phone's search typed, New project named and
+ * cancelled, a deleted or missing project's note closed (T662). Searching every project, Create, Restore and opening a
+ * project need Taska or the rest of the page: the Actions panel. */
+function LiveHome({ f }: { f: HomeFacts }) {
+  const [q, setQ] = useState(f.q)
+  const [making, setMaking] = useState(f.making)
+  const [gone, setGone] = useState(f.gone)
+  const [none, setNone] = useState(f.none)
+  const live: HomeEvents = { ...on, query: setQ, startNew: () => setMaking({ error: '' }), cancelNew: () => setMaking(null), closeGone: () => setGone(null), closeNone: () => setNone(null) }
+  return <Home facts={{ ...f, q, making, gone, none }} on={live} />
+}
+
 export const shown = (f: Partial<HomeFacts>, height = 620) => (
   <Frames phoneWidth={393} deskWidth={1100} height={height} page>
-    {() => <Home facts={{ ...facts, ...f }} on={on} />}
+    {() => <LiveHome f={{ ...facts, ...f }} />}
   </Frames>
 )
