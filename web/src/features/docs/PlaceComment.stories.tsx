@@ -1,8 +1,9 @@
 // Commenting on a place picked in a page (B498, approved r1047): a Markdown paragraph, words selected or a part of a
 // web page, on the desktop and the phone. Picked, it has two buttons beside it (on the phone a row under it): Voice
 // and Comment. Voice turns them, where they are, into a small recording strip: ✕ at the far left cancels, Voice
-// becomes ✓ (stop: on the desktop its words go into the box below, at this place; on the phone, which has no box over
-// a document, it is sent), Comment becomes ↑ (sent at once). Comment writes in the box below, at this place. Each
+// becomes ✓. On the desktop ✓ stops it and its words go into the box below, at this place, and Comment becomes ↑
+// (sent at once); on the phone, which has no box over a document, ✓ sends it and there is no ↑ (r1062). Comment
+// writes in the box below, at this place. Each
 // story: the steps one under another (light or dark is the toolbar's), drawn by the page's own components.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { PlaceStep, type Kind, type Step } from '../../stories/placeComment'
@@ -22,7 +23,7 @@ const STEPS: { step: Step; title: string; note(desk: boolean): string; phone?: b
     note: (desk) =>
       desk
         ? 'Speak became ✓ (stop; the words go into the box below, at this place), comment became ↑ (send at once), ✕ at the far left cancels (Esc too). The box below stays as it was.'
-        : 'Speak became ✓ and comment ↑: either sends it (the phone has no box over a document); ✕ at the far left cancels.',
+        : 'Speak became ✓, which sends it (the phone has no box over a document); ✕ at the far left cancels. No ↑.',
   },
   {
     step: 'checked',
@@ -32,7 +33,7 @@ const STEPS: { step: Step; title: string; note(desk: boolean): string; phone?: b
   },
   {
     step: 'sent',
-    title: '4 · After ↑ (on the phone ✓ too): sent, and on the place at once',
+    title: '4 · After ↑ (on the phone ✓): sent, and on the place at once',
     note: () => 'Its count is on the place and the comment opens there at once.',
   },
   {

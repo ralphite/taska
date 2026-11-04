@@ -231,10 +231,10 @@ test('r280 B340 B643: on the phone a comment needs no place picked: it is on the
   // B643 (r955): no box over a document on the phone; nothing picked, its comment is on the whole of it, spoken
   await expect(page.locator('#composer')).toBeHidden()
   await page.getByRole('button', { name: 'Comment on the whole document', exact: true }).click()
-  // recording (B498): its button is the recording strip: ✕, the time, ✓ and ↑, which post it
+  // recording (B498): its button is the recording strip: ✕, the time and ✓, which posts it; no ↑ (r1062)
   await expect(placeRec(page)).toHaveCount(1)
   await expect(sayCheck(page)).toHaveCount(1)
-  await expect(saySend(page)).toHaveCount(1)
+  await expect(saySend(page)).toHaveCount(0)
   await sayCancel(page).click()
   await expect(placeRec(page)).toHaveCount(0)
 })
@@ -455,7 +455,7 @@ test('B498 r1047: on the desktop Voice beside a paragraph becomes its recording 
   await expect(second.locator('[data-thread-count]')).toHaveCount(1)
 })
 
-test('B498 r1047: on the phone the row under a paragraph picked speaks (✓ sends: no box over a document) or opens the box to write', async ({
+test('B498 r1047 r1062: on the phone the row under a paragraph picked speaks (✕ and ✓, which sends: no box over a document) or opens the box to write', async ({
   page,
   request,
 }) => {
@@ -467,7 +467,9 @@ test('B498 r1047: on the phone the row under a paragraph picked speaks (✓ send
   await partSay(page).click()
   await expect(placeRec(page)).toContainText(/0:0[1-9]/, { timeout: 15000 })
   await expect(page.locator('#composer')).toBeHidden()
-  await sayCheck(page).click() // ✓ sends it
+  // r1062: only ✕ and ✓; ✓ sends it
+  await expect(saySend(page)).toHaveCount(0)
+  await sayCheck(page).click()
   await expect(placeRec(page)).toHaveCount(0)
   await expect(threadCounts(page)).toHaveCount(1, { timeout: 2500 })
   await expect(page.locator('#composer')).toBeHidden()

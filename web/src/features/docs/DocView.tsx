@@ -314,7 +314,7 @@ export function DocView({ facts, env, on, lasso, page, meter, aim = null, onAime
                       rec={r.speaking}
                       meter={meter}
                       say={{ 'data-part-say': '', 'data-key': r.b.key, 'data-quote': r.quote ?? '' }}
-                      on={{ say: () => on.say(r.b.key, r.quote), comment: on.type, cancel: on.sayCancel, check: on.sayCheck, send: on.saySend }}
+                      on={{ say: () => on.say(r.b.key, r.quote), comment: on.type, cancel: on.sayCancel, check: on.sayCheck }}
                     />
                   </div>
                 ) : null}
@@ -377,7 +377,7 @@ export function DocView({ facts, env, on, lasso, page, meter, aim = null, onAime
             {facts.wholeRec ? (
               // speaking about the whole document: its button is the recording strip (B498)
               <div className="mx-auto mt-1 w-full max-w-sm">
-                <PlaceVoiceRow rec meter={meter} on={{ say: on.whole, comment: on.type, cancel: on.sayCancel, check: on.sayCheck, send: on.saySend }} />
+                <PlaceVoiceRow rec meter={meter} on={{ say: on.whole, comment: on.type, cancel: on.sayCancel, check: on.sayCheck }} />
               </div>
             ) : facts.wholeButton ? (
               <button onClick={on.whole} className="mx-auto mt-1 flex h-11 items-center gap-1.5 px-3 text-sm font-semibold text-blue-600 dark:text-blue-400">

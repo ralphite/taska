@@ -1,5 +1,6 @@
 // The control on a place picked to comment on (B498), alone: Voice and Comment; speaking, the recording strip (✕, the
-// time and level, ✓, ↑). The desktop's beside the place, the phone's a row under it. Where each sits on a page:
+// time and level, ✓, and on the desktop ↑; the phone's ✓ sends, r1062). The desktop's beside the place, the phone's a
+// row under it. Where each sits on a page:
 // Document › Commenting › Voice and words on a place.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { ReactNode } from 'react'
@@ -12,7 +13,7 @@ export default { title: 'Components/Document/Commenting/The control on a place' 
 type Story = StoryObj
 
 const acted = acts('Place', ['comment', 'check', 'send'] as const)
-/** Voice starts its recording strip; its x stops it, its check and arrow hand it on (the Actions panel) */
+/** Voice starts its recording strip; its x stops it, its check (and the desktop's arrow) hand it on (the Actions panel) */
 const live = (rec: boolean, draw: (rec: boolean, on: { say(): void; comment(): void; cancel(): void; check(): void; send(): void }) => ReactNode) => (
   <Hold start={rec}>{(r, set) => draw(r, { say: () => set(true), comment: acted.comment, cancel: () => set(false), check: () => (set(false), acted.check()), send: () => (set(false), acted.send()) })}</Hold>
 )

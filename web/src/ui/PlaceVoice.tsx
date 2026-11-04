@@ -1,8 +1,9 @@
 // One way to comment on a place picked in a page (a paragraph, words selected, a part of a web page; B498): two
 // buttons beside it, Voice and Comment. Voice turns them, where they are, into a small recording strip: ✕ at the far
-// left cancels, the time and the level run, Voice becomes ✓ (stop: on the desktop the words go into the box below,
-// at this place; on the phone, which has no box over a document, it is sent) and Comment becomes ↑ (send at once).
-// Where ✓ already adds (an input's row, T661) there is no ↑, and its room stays empty, so ✓ is still where Voice was.
+// left cancels, the time and the level run, Voice becomes ✓. On the desktop ✓ stops it and its words go into the box
+// below, at this place, and Comment becomes ↑ (send at once). Where ✓ already adds (an input's row, T661) there is
+// no ↑. On the phone, which has no box over a document, ✓ sends it, so there is no ↑ either (r1062). With no ↑ its
+// room stays empty, so ✓ is still where Voice was.
 // Also the recording's time and level as the box shows them (RecBar). Props only.
 
 import type { ReactNode } from 'react'
@@ -61,7 +62,7 @@ function B({ icon, label, tip, cls, on, big, sw, marks }: { icon: IconName; labe
   )
 }
 
-/** Speaking: ✕ · the time and level · ✓ · ↑, where the two buttons were. */
+/** Speaking: ✕ · the time and level · ✓ · ↑ (the desktop's), where the two buttons were. */
 function Strip({ phone, meter, marks, check, on }: { phone: boolean; meter: ReactNode; marks?: Marks; check?: string; on: PlaceVoiceEvents }) {
   return (
     <>
@@ -69,7 +70,8 @@ function Strip({ phone, meter, marks, check, on }: { phone: boolean; meter: Reac
       <span data-rec-time className={`flex items-center gap-1.5 ${phone ? 'min-w-0 flex-1' : 'w-28'}`}>
         {meter}
       </span>
-      <B icon="check" label={check ?? (phone ? 'Stop and post' : 'Stop: the words go into the box below')} cls={PLAIN(phone)} on={on.check} big={phone} sw="2.5" marks={marks} />
+      {/* the phone's ✓ sends: the dark round button Voice was */}
+      <B icon="check" label={check ?? (phone ? 'Stop and post' : 'Stop: the words go into the box below')} cls={phone ? MAIN(true) : PLAIN(false)} on={on.check} big={phone} sw="2.5" marks={marks} />
       {on.send ? <B icon="up" label="Stop and send" cls={MAIN(phone)} on={on.send} big={phone} sw="2.25" /> : null}
     </>
   )
@@ -93,12 +95,13 @@ export function PlaceVoice({ rec, meter, say, comment, labels = {}, on }: { rec:
   )
 }
 
-/** The phone's: a row under the place, made for a thumb; the same rules. */
-export function PlaceVoiceRow({ rec, meter, say, comment, on }: { rec: boolean; meter?: ReactNode; say?: Marks; comment?: Marks; on: PlaceVoiceEvents }) {
+/** The phone's: a row under the place, made for a thumb; speaking, ✕ and ✓, which sends (no ↑, r1062). */
+export function PlaceVoiceRow({ rec, meter, say, comment, on }: { rec: boolean; meter?: ReactNode; say?: Marks; comment?: Marks; on: Omit<PlaceVoiceEvents, 'send'> }) {
   return (
-    <div {...(rec ? { 'data-place-rec': '', role: 'status', 'aria-label': 'Recording' } : {})} className="flex h-12 items-center gap-2">
+    // speaking, Comment's room (and the gap before it) stays empty, so ✓ is where Voice was
+    <div {...(rec ? { 'data-place-rec': '', role: 'status', 'aria-label': 'Recording' } : {})} className={`flex h-12 items-center gap-2 ${rec ? 'pr-13' : ''}`}>
       {rec ? (
-        <Strip phone meter={meter} marks={say} on={on} />
+        <Strip phone meter={meter} marks={say} on={{ ...on, send: undefined }} />
       ) : (
         <>
           <span className="min-w-0 flex-1 pl-2 text-[13px] text-zinc-500 dark:text-zinc-400">Speak or write about it</span>

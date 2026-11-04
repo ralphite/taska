@@ -110,8 +110,8 @@ export const pageCount = (page: Page, key: string) =>
 /** Comment mode (the desktop): a click on the page picks a part instead of working it. */
 export const commentMode = (page: Page) =>
   page.locator('[data-part="pane"] > header').getByRole('button', { name: /^Comment/ })
-/** A place's recording strip (B498): ✕ cancels, ✓ stops (the desktop's words into the box, the phone's posted), ↑
- * sends at once. */
+/** A place's recording strip (B498): ✕ cancels, ✓ stops (the desktop's words into the box, the phone's posted), the
+ * desktop's ↑ sends at once (the phone has none, r1062). */
 export const placeRec = (page: Page) => shown(page.locator('[data-place-rec]'))
 export const sayCancel = (page: Page) => placeRec(page).getByRole('button', { name: 'Cancel', exact: true })
 export const sayCheck = (page: Page) => placeRec(page).getByRole('button', { name: /^Stop(:| and post)/ })

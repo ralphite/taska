@@ -1,5 +1,5 @@
 // The bar on selected words: speak a comment about them (the bar becomes its recording strip, where it is: ✕, ✓ and
-// ↑, as on any place picked to comment on, B498), comment on them (a document's words), correct them (a voice note's
+// on the desktop ↑, as on any place picked to comment on, B498), comment on them (a document's words), correct them (a voice note's
 // words). It sits under the words, or over them when there is no room below; a
 // press on it keeps the selection. Props only.
 
@@ -40,11 +40,12 @@ export function SelectionBar({ at, recording, desk = true, meter, comment, fix, 
   })
   const keep = { onPointerDown: (e: { preventDefault(): void }) => e.preventDefault(), onMouseDown: (e: { preventDefault(): void }) => e.preventDefault() }
   if (recording) {
-    const strip = { cancel: on.cancel, check: on.check, send: on.send, say: on.mic, comment: on.comment }
+    // the phone's has no ↑: its ✓ sends (r1062)
+    const strip = { cancel: on.cancel, check: on.check, say: on.mic, comment: on.comment }
     return (
       <div ref={ref} hidden={!at} aria-label="On the selected text" data-selection-bar {...keep} className="fixed z-[65]">
         {desk ? (
-          <PlaceVoice rec meter={meter} on={strip} />
+          <PlaceVoice rec meter={meter} on={{ ...strip, send: on.send }} />
         ) : (
           <div className="w-[min(22rem,calc(100vw-1rem))] rounded-full bg-white px-1 shadow-lg ring-1 ring-zinc-900/10 dark:bg-zinc-800 dark:ring-white/10">
             <PlaceVoiceRow rec meter={meter} on={strip} />

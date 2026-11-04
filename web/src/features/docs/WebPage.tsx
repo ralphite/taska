@@ -273,7 +273,8 @@ export function WebPage({ title, html, threads, held, rec = false, meter, open, 
   // the part a comment is on is outlined while its count is under the pointer and while it is open
   const amber = [...new Set([lit, openKey])].filter((k): k is string => !!k && k !== held?.key && !!rects[k])
   const marks = (p: { key: string; text: string }) => ({ say: { 'data-part-say': '', 'data-key': p.key, 'data-quote': p.text }, comment: { 'data-part-pick': '', 'data-key': p.key, 'data-quote': p.text } })
-  const voiceOn = (p: { key: string; text: string }) => ({ say: () => on.say(p), comment: () => on.comment(p), cancel: on.cancel, check: on.check, send: on.send })
+  // the phone's strip has no ↑: its ✓ sends (r1062)
+  const voiceOn = (p: { key: string; text: string }) => ({ say: () => on.say(p), comment: () => on.comment(p), cancel: on.cancel, check: on.check })
   const buttons = (p: { key: string; text: string }, r: Box, hovering: boolean) => {
     const at = btnsAt(r, counts)
     return (
@@ -298,7 +299,7 @@ export function WebPage({ title, html, threads, held, rec = false, meter, open, 
       >
         {/* the part spoken about keeps its buttons right there; speaking, they are its recording strip, which ends
             where they end (B498) */}
-        <PlaceVoice rec={rec && !hovering} meter={meter} {...marks(p)} on={voiceOn(p)} />
+        <PlaceVoice rec={rec && !hovering} meter={meter} {...marks(p)} on={{ ...voiceOn(p), send: on.send }} />
       </div>
     )
   }
