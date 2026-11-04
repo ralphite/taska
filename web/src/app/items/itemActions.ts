@@ -5,6 +5,7 @@
 import type { Command } from '../../api/taska'
 import { closed, ranksFor } from '../../model/items'
 import { codeOf, type ItemPatch, type ProjectModel } from '../../model/project'
+import { decidedWord } from '../../model/talk'
 import type { Item, Status } from '../../model/types'
 import { DID, LETTER, STATUS_WORD, plural } from '../../model/words'
 import type { UiStore } from '../../stores/ui'
@@ -101,7 +102,9 @@ export class ItemActions {
       )
     })
     if (n !== this.d.openItem() || this.d.desk()) {
-      this.d.ui.getState().hold(n, { said: heldWord(f, v, words), f, v, height: this.d.rowHeight(n) }, this.d.listKey())
+      // a decision is said as on its card: Approved, Accepted, Declined, Sent back (D115 #8)
+      const said = dec.decided ? decidedWord(dec.decided) : heldWord(f, v, words)
+      this.d.ui.getState().hold(n, { said, f, v, height: this.d.rowHeight(n) }, this.d.listKey())
       this.d.held()
     }
     const left = f === 'status' && v === 'done' ? (m.kids.get(n) || []).filter((k) => !closed(k.status)).length : 0

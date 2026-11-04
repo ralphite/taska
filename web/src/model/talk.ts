@@ -55,6 +55,12 @@ export function decidedCard(it: Item): { dec: NonNullable<Item['decided']>; x: M
 export const chosenWord = (d: NonNullable<Item['decided']>) =>
   d.from === 'proposed' ? (d.to === 'dropped' ? "Won't do" : 'Approve') : d.to === 'done' ? 'Accept' : 'Not yet'
 
+/** A decision's button word once it is made: said so on the decided card and on the row you just decided on (D115 #8). */
+export const PAST: Record<string, string> = { Approve: 'Approved', Accept: 'Accepted', "Won't do": 'Declined', 'Not yet': 'Sent back' }
+
+/** What you chose, said as done: Approved, Accepted, Declined, Sent back. */
+export const decidedWord = (d: NonNullable<Item['decided']>) => PAST[chosenWord(d)]
+
 /** Your decision still shows on the item (the agent has not spoken since). */
 export const decidedStill = (it: Item) =>
   !!it.decided &&

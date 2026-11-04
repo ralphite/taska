@@ -3,7 +3,7 @@
 // guards: src/features/list/ src/features/item/ src/app/page/sheets.ts src/ui/ src/model/items.ts src/model/words.ts src/model/project.ts src/pages/DetailContainer.tsx server/taska/domain/ server/taska/page_api/
 import { expect, test, type Locator, type Page } from '@playwright/test'
 import { isDesk, open, project } from '../seed'
-import { box, pane, paneHead, row, sheetBody, statusChip, talk, tip, view } from '../ui'
+import { box, pane, paneHead, row, rowActs, sheetBody, statusChip, talk, tip, view } from '../ui'
 
 test('r68 r326 T646: work an agent is stuck on asks you for what it needs: in Needs you, with what it needs and Answer', async ({
   page,
@@ -126,5 +126,27 @@ test("r802: the card an item's code shows under the pointer says its status in o
   await talk(page).locator('[data-ref="T1"]').first().hover()
   await expect(tip(page)).toContainText('Needs you')
   await expect(tip(page)).not.toContainText('In progress')
+})
+
+test('D115 #8: a proposal you decline and work you send back from the list say so on their rows as their cards do: Declined, Sent back', async ({
+  page,
+  request,
+}) => {
+  test.skip(!isDesk(page), "the desktop's row buttons under the pointer")
+  const p = await project(request, {
+    agent: 'new task P2 now Some work\nnew idea P2 now A proposal\n',
+    approve: ['T1'],
+    then: 'T1 done Finished: it works.\n',
+  })
+  await open(page, p)
+  await view(page, 'Needs you').click()
+  for (const [n, title, button, word] of [
+    ['2', 'A proposal', "Won't do", 'Declined'],
+    ['1', 'Some work', 'Not yet', 'Sent back'],
+  ]) {
+    await row(page, title).first().hover()
+    await rowActs(page, n).and(page.getByRole('button', { name: button, exact: true })).click()
+    await expect(page.locator(`#list article[data-n="${n}"]`)).toContainText(word) // the held row: its code and the word
+  }
 })
 

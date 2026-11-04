@@ -26,5 +26,11 @@ export const SubitemsInLaterShown: Story = { ...at(active, () => ({ subMore: [1]
 // F003 approved from the Needs you view: its row stays where it was, one quiet line saying so, until the list moves on
 const approved = PROJECT.map((it) => (it.n === 3 ? { ...it, status: 'open' as const } : it))
 export const ARowYouJustActedOn: Story = { ...at({ status: 'wait' }, () => ({ held: { before: PROJECT, said: { 3: 'Approved' } } }), approved), name: 'A row you just acted on' }
+// F003 declined (Won't do) and T004 sent back (Not yet): said as the decided card says them (D115 #8)
+const declined = PROJECT.map((it) => (it.n === 3 ? { ...it, status: 'dropped' as const } : it.n === 4 ? { ...it, status: 'open' as const } : it))
+export const RowsYouJustDeclinedAndSentBack: Story = {
+  ...at({ status: 'wait' }, () => ({ held: { before: PROJECT, said: { 3: 'Declined', 4: 'Sent back' } } }), declined),
+  name: 'Rows you just declined and sent back',
+}
 // ---- more states (B636)
 export const DraggedOffEveryRow: Story = { ...at(active, () => ({ dragging: { out: true } })), name: 'Dragged off every row' }

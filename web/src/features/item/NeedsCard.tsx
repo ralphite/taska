@@ -5,7 +5,7 @@
 import type { ReactNode } from 'react'
 import { lastAgentMessage, userWord } from '../../model/items'
 import { hasChoices } from '../../model/markdown'
-import { answeredLast, chosenWord, decidedCard, decidedStill, heldMessage } from '../../model/talk'
+import { answeredLast, chosenWord, decidedCard, decidedStill, heldMessage, PAST } from '../../model/talk'
 import { when } from '../../model/time'
 import type { Item, Message } from '../../model/types'
 import { whoName } from '../../model/words'
@@ -78,8 +78,6 @@ export function NeedFrame({ icon, title, t, done = false, body, foot, hint = '',
   )
 }
 
-/** A decision's button word once it is made. */
-const PAST: Record<string, string> = { Approve: 'Approved', Accept: 'Accepted', "Won't do": 'Declined', 'Not yet': 'Sent back' }
 
 /** A decision button's word, as wide as the widest it can say (to decide, decided; bold), stacked unseen in one cell:
  * the button keeps its width and place when you decide (r1003). */
