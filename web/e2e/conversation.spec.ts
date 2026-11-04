@@ -44,13 +44,18 @@ test('T529: on the phone a message header wraps between its parts, never inside 
   const p = await project(request, { agent: 'new task P2 now Ship the export\n', approve: ['T1'] })
   await doAs(request, p, 'claude-code', 'T1 decide @manager CSV first, JSON next week\n', 'worker')
   await open(page, p, 'T1')
-  const head = message(page, 'CSV first').locator('> div').first()
+  // the header's words are in its first part; More stands apart at its end (D115 #4)
+  const head = message(page, 'CSV first').locator('> div').first().locator('> div').first()
   await expect(head).toContainText('Claude Code')
   await expect(head).toContainText('worker')
   await expect(head).toContainText('manager')
   const parts = await linesOf(head.locator('> span').filter({ hasText: /\S/ }))
   expect(parts.map((x) => x.text)).toEqual(expect.arrayContaining(['Claude Code', '· worker', '→ manager']))
   for (const x of parts) expect(x, `"${x.text}" stays on one line`).toMatchObject({ lines: 1 })
+  // its More is pinned at the header's right end, over the bubble's edge, wherever the words end (D115 #4)
+  const more = await message(page, 'CSV first').getByRole('button', { name: 'More for this message' }).boundingBox()
+  const bubble = await message(page, 'CSV first').locator('> div').nth(1).boundingBox()
+  expect(Math.abs(more!.x + more!.width - (bubble!.x + bubble!.width))).toBeLessThan(8)
 })
 
 test("T529: a decision kept on an answered question's card shows that choice's own icon, not a tick", async ({
@@ -124,7 +129,7 @@ test('T529: two agents never share a mark, and an agent Taska has no name for is
   await doAs(request, p, 'gemini', 'T1 say Gemini looked at it\n')
   await open(page, p, 'T1')
   const who = async (words: string) => {
-    const head = message(page, words).locator('> div').first()
+    const head = message(page, words).locator('> div').first().locator('> div').first()
     return {
       mark: ((await head.locator('> span').nth(0).textContent()) || '').trim(),
       name: ((await head.locator('> span').nth(1).textContent()) || '').trim(),

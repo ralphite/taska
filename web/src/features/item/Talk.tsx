@@ -226,13 +226,18 @@ function MsgView({ it, x, env, on, facts, docs, code, done, ver, gone, read }: {
         </div>
       </div>
     )
-  const head = (tag: ReactNode) => (
-    <div className={`flex flex-wrap items-center gap-x-2 gap-y-0.5 px-1 text-[11px] whitespace-nowrap ${MUTED}`}>
-      <Avatar by={x.by} />
-      <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">{whoName(x.by)}</span>
-      {x.ses ? <span className="-ml-1 text-xs text-zinc-500 dark:text-zinc-400">· {x.ses}</span> : null}
-      {x.to?.length ? <span className="text-xs text-zinc-500 dark:text-zinc-400">→ {x.to.join(', ')}</span> : null}
-      {tag}
+  // on the phone the message's More sits at the header's far right, where your own messages and the question cards
+  // have theirs; the time stays beside the name (D115 #4)
+  const head = (tag: ReactNode, end?: ReactNode) => (
+    <div className={`flex items-center gap-2 self-stretch px-1 text-[11px] ${MUTED}`}>
+      <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 whitespace-nowrap phone:flex-1">
+        <Avatar by={x.by} />
+        <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">{whoName(x.by)}</span>
+        {x.ses ? <span className="-ml-1 text-xs text-zinc-500 dark:text-zinc-400">· {x.ses}</span> : null}
+        {x.to?.length ? <span className="text-xs text-zinc-500 dark:text-zinc-400">→ {x.to.join(', ')}</span> : null}
+        {tag}
+      </div>
+      {end}
     </div>
   )
   if (gone)
@@ -282,7 +287,6 @@ function MsgView({ it, x, env, on, facts, docs, code, done, ver, gone, read }: {
           ) : (
             <KindTag x={x} />
           )}
-          {/* the time and the message's More go together, so More is never alone on a line */}
           <span className="-ml-1 flex items-center gap-2">
             · {when(x.t, env.now)}
             {x.hidden ? (
@@ -290,11 +294,11 @@ function MsgView({ it, x, env, on, facts, docs, code, done, ver, gone, read }: {
                 Unhide
               </button>
             ) : null}
-            <button aria-label="More for this message" onClick={(e) => on.msgMenu(x.id, e.currentTarget)} className={`${DC_BTN} min-w-9 justify-center lg:opacity-0 lg:group-hover/msg:opacity-100 lg:focus-visible:opacity-100`}>
-              <Icon n="more" c="size-3.5" />
-            </button>
           </span>
         </>,
+        <button aria-label="More for this message" onClick={(e) => on.msgMenu(x.id, e.currentTarget)} className={`${DC_BTN} min-w-9 shrink-0 justify-center lg:opacity-0 lg:group-hover/msg:opacity-100 lg:focus-visible:opacity-100`}>
+          <Icon n="more" c="size-3.5" />
+        </button>,
       )}
       <div className="w-full rounded-2xl rounded-tl-md border border-zinc-200 bg-zinc-50 px-4 py-3 text-[15px] leading-relaxed text-zinc-800 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-200">
         <MsgText x={x} env={env} on={on} done={done} />
