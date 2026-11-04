@@ -225,3 +225,39 @@ test('T529 B640: on an input moved to another project, its voice note\'s origina
   const apart = b.y >= w.y + w.height || b.y + b.height <= w.y || b.x >= w.x + w.width || b.x + b.width <= w.x
   expect(apart, `the words ${JSON.stringify(b)} are clear of yours ${JSON.stringify(w)}`).toBe(true)
 })
+
+test('D115 #5: while a new answer is on its way the card shows no Edit; it is back once Taska has the answer', async ({
+  page,
+  request,
+}) => {
+  const p = await project(request, {
+    agent: 'new task P2 now Some work\n',
+    approve: ['T1'],
+    then: `T1 ask Which format?
+  - ( ) CSV
+  - ( ) Excel
+`,
+  })
+  await op(request, p, { op: 'input', text: '✓ CSV', scope: 1 })
+  let release = () => {}
+  const held = new Promise<void>((ok) => (release = ok))
+  await page.route(/\/api\/commands\b/, async (route) => {
+    const o = route.request().postDataJSON() as { commands: { op: string }[] }
+    if (!o.commands.some((x) => x.op === 'input')) return route.continue()
+    await held
+    await route.continue()
+  })
+  await open(page, p, 'T1')
+  const card = pane(page).locator('section').filter({ hasText: 'asks you' }).filter({ visible: true }).first()
+  const edit = card.getByRole('button', { name: 'Edit', exact: true })
+  await card.hover()
+  await edit.click()
+  await card.getByRole('button', { name: /Excel/ }).first().click()
+  await card.getByRole('button', { name: /^Send answer/ }).click()
+  await expect(card).toContainText('Sending…')
+  await expect(edit).toHaveCount(0)
+  release()
+  await expect(card).not.toContainText('Sending…')
+  await card.hover()
+  await expect(edit).toBeVisible()
+})

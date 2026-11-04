@@ -352,10 +352,13 @@ export function Answered({ it, x, done, env, on, reasking, going = '' }: {
       now={env.now}
       going={going}
       done
+      // no Edit while the new answer is on its way: it comes back once Taska has it (D115 #5)
       act={
-        <button onClick={() => on.reask(it.n, x.id)} className={MODIFY_LINK}>
-          Edit
-        </button>
+        going ? null : (
+          <button onClick={() => on.reask(it.n, x.id)} className={MODIFY_LINK}>
+            Edit
+          </button>
+        )
       }
       body={<Rich text={x.text} world={env.world} cls="text-zinc-600 dark:text-zinc-300" done={done} onRef={on.ref} onPicture={on.picture} />}
       foot={
