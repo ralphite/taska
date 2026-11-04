@@ -43,7 +43,7 @@ export function PaneFrame({
   bodyRef?: (el: HTMLElement | null) => void
   /** two columns: the talk ends clear above the box, the body does not run on under it */
   duo?: boolean
-  /** the phone's line under the bar (Offline, retrying while Taska is out of reach) */
+  /** the phone's line under the bar (Out of reach, retrying while Taska does not answer) */
   notice?: ReactNode
   children?: ReactNode
 }) {

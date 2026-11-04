@@ -23,7 +23,7 @@ const PILL: Record<AgentTone, [string, string]> = {
   bad: ['bg-red-50 text-red-700 ring-red-600/20 dark:bg-red-400/10 dark:text-red-300 dark:ring-red-400/25', 'bg-red-500 dark:bg-red-400'],
 }
 
-/** "Offline, retrying…" while the server is away: in the agent pill's place, and on the phone over an item's page. */
+/** "Out of reach, retrying…" while the server is away: in the agent pill's place, and on the phone over an item's page. */
 export function OfflinePill() {
   return (
     <span
@@ -31,12 +31,12 @@ export function OfflinePill() {
       className="flex h-8 items-center gap-2 rounded-full bg-zinc-100 px-3 text-[13px] font-medium text-zinc-600 ring-1 ring-zinc-900/5 ring-inset dark:bg-zinc-800/80 dark:text-zinc-300 dark:ring-white/5"
     >
       <Icon n="spinner" c="size-3.5 animate-spin" sw="2.25" />
-      Offline, retrying…
+      Out of reach, retrying…
     </span>
   )
 }
 
-/** Whether an agent is around; "Offline, retrying…" while the server is away. */
+/** Whether an agent is around; "Out of reach, retrying…" while the server is away. */
 export function AgentPill({ tone, label, offline }: { tone: AgentTone; label: string; offline: boolean }) {
   return offline ? (
     <OfflinePill />

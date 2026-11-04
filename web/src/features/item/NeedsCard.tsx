@@ -81,6 +81,23 @@ export function NeedFrame({ icon, title, t, done = false, body, foot, hint = '',
 /** A decision's button word once it is made. */
 const PAST: Record<string, string> = { Approve: 'Approved', Accept: 'Accepted', "Won't do": 'Declined', 'Not yet': 'Sent back' }
 
+/** A decision button's word, as wide as the widest it can say (to decide, decided; bold), stacked unseen in one cell:
+ * the button keeps its width and place when you decide (r1003). */
+const Word = ({ shown, all }: { shown: string; all: readonly string[] }) => (
+  <span className="grid justify-items-center">
+    <span className="col-start-1 row-start-1">{shown}</span>
+    {all.map((w) => (
+      <span key={w} aria-hidden className="invisible col-start-1 row-start-1 font-semibold">
+        {w}
+      </span>
+    ))}
+  </span>
+)
+/** a choice's words: now and done */
+const both = (label: string) => [label, PAST[label] ?? label]
+/** Approve or Accept beside an answered question: its words, and what deciding may make it say */
+const KEEP_WORDS: Record<string, readonly string[]> = { proposed: ['Approve', 'Approved', 'Declined'], review: ['Accept', 'Accepted', 'Sent back'] }
+
 /** Approve or Accept as well as answering (a button like any other while it can be pressed); decided, it says what you
  * chose. */
 export function KeepBtn({ it, on }: { it: Item; on: CardEvents }) {
@@ -90,7 +107,7 @@ export function KeepBtn({ it, on }: { it: Item; on: CardEvents }) {
     return (
       <button disabled aria-pressed className={DECIDED_ON(CHOSEN_TONE[w] ?? CHOSEN_TONE.Reply)}>
         <Icon n={ACT_ICON[w]} c="size-4" sw="2.25" />
-        {PAST[w] ?? w}
+        <Word shown={PAST[w] ?? w} all={KEEP_WORDS[it.decided.from] ?? [PAST[w] ?? w]} />
       </button>
     )
   }
@@ -99,14 +116,14 @@ export function KeepBtn({ it, on }: { it: Item; on: CardEvents }) {
     return (
       <button onClick={() => on.decide(it.n, 'open')} className={SECOND}>
         <Icon n="thumb" c="size-4" />
-        Approve
+        <Word shown="Approve" all={KEEP_WORDS.proposed} />
       </button>
     )
   if (it.status === 'review')
     return (
       <button onClick={() => on.decide(it.n, 'done')} className={SECOND}>
         <Icon n="check" c="size-4" sw="2.25" />
-        Accept
+        <Word shown="Accept" all={KEEP_WORDS.review} />
       </button>
     )
   return null
@@ -200,7 +217,7 @@ export function NeedsCard({ it, env, on, remodify, going = null }: {
               className={`${i ? `${PRIMARY_BASE} ${tone} flex-[1.4]` : `${SECOND} flex-1`} lg:flex-none`}
             >
               <Icon n={icon} c={i ? 'size-4.5' : 'size-4'} sw="2.25" />
-              {label}
+              <Word shown={label} all={both(label)} />
               <Kbd k={k} />
             </button>
           ))}
@@ -225,7 +242,7 @@ export function NeedsCard({ it, env, on, remodify, going = null }: {
         foot={pairs.map(([v, icon, label, k], i) => (
           <button key={v} disabled aria-pressed={chose(v)} className={`${chose(v) ? DECIDED_ON(CHOSEN_TONE[label]) : DECIDED_OFF} ${i ? 'flex-[1.4]' : 'flex-1'} lg:flex-none`}>
             <Icon n={icon} c={i ? 'size-4.5' : 'size-4'} sw="2.25" />
-            {chose(v) ? (PAST[label] ?? label) : label}
+            <Word shown={chose(v) ? (PAST[label] ?? label) : label} all={both(label)} />
             {/* decided: no key does anything now, so none shows (its place kept, as on an answered card) */}
             <span className="invisible">
               <Kbd k={k} />
@@ -259,12 +276,12 @@ export function NeedsCard({ it, env, on, remodify, going = null }: {
       <>
         <button onClick={() => on.decide(n, 'dropped')} className={`${SECOND} flex-1 lg:flex-none`}>
           <Icon n="ban" c="size-4" />
-          Won&apos;t do
+          <Word shown="Won't do" all={both("Won't do")} />
           <Kbd k="W" />
         </button>
         <button onClick={() => on.decide(n, 'open')} className={`${PRIMARY_BASE} ${NEED.approve.btn} flex-[1.4] lg:flex-none`}>
           <Icon n="thumb" c="size-4.5" />
-          Approve
+          <Word shown="Approve" all={both("Approve")} />
           <Kbd k="A" />
         </button>
       </>,
@@ -277,12 +294,12 @@ export function NeedsCard({ it, env, on, remodify, going = null }: {
       <>
         <button onClick={() => on.notYet(n)} className={`${SECOND} flex-1 lg:flex-none`}>
           <Icon n="reopen" c="size-4" />
-          Not yet
+          <Word shown="Not yet" all={both("Not yet")} />
           <Kbd k="N" />
         </button>
         <button onClick={() => on.decide(n, 'done')} className={`${PRIMARY_BASE} ${NEED.accept.btn} flex-[1.4] lg:flex-none`}>
           <Icon n="check" c="size-4.5" sw="2.25" />
-          Accept
+          <Word shown="Accept" all={both("Accept")} />
           <Kbd k="A" />
         </button>
       </>,

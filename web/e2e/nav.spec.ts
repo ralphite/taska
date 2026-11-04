@@ -172,7 +172,7 @@ test("D82 #5: on the phone an item's page says when Taska is out of reach, as th
   await expect(pane(page).locator('h1')).toHaveText('Write the user docs')
   await page.route('**/api/**', (r) => r.abort())
   for (let i = 0; i < 4; i++) await page.evaluate(() => dispatchEvent(new Event('focus')))
-  await expect(page.locator('[data-part="pane"]').getByText(/Offline, retrying/).filter({ visible: true }).first()).toHaveText(/Offline, retrying/, { timeout: 45000 }) // once the poll in flight ends
+  await expect(page.locator('[data-part="pane"]').getByText(/Out of reach, retrying/).filter({ visible: true }).first()).toHaveText(/Out of reach, retrying/, { timeout: 45000 }) // once the poll in flight ends
 })
 
 test('D82 #6: Activity that cannot load says so on the desktop too, not Loading for ever', async ({

@@ -357,7 +357,7 @@ export function Feedback({ line, on }: { line: FeedbackLine | null; on: { dismis
           <>
             <Pulse />
             <span className="min-w-0 flex-1 truncate">
-              Waiting for Taska{more(line.more)} · {line.text}
+              Waiting for Taska…{more(line.more)} · {line.text}
             </span>
             {link('Edit', on.edit)}
           </>

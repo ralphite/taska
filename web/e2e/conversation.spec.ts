@@ -76,7 +76,8 @@ I2 ask Worth doing?
   await op(request, p, { op: 'set', ref: 'I2', f: { status: 'dropped' } })
   const icon = async (code: string, label: string) => {
     await open(page, p, code)
-    const kept = pane(page).locator('section button:disabled').filter({ hasText: new RegExp(`^${label}$`) })
+    // by its name (its button holds its other words unseen, to keep its width: R4-2 #1)
+    const kept = pane(page).getByRole('button', { name: label, exact: true, disabled: true })
     await expect(kept.filter({ visible: true })).toHaveCount(1)
     return kept
       .filter({ visible: true })
