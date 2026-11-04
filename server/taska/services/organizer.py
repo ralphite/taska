@@ -12,7 +12,7 @@ import re
 import sys
 import threading
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from ..agent_text import render
 from ..agent_text.language import parse
@@ -45,9 +45,24 @@ def context(p: Project, inp: Input) -> str:
 
 
 class Organizer(threading.Thread):
-    def __init__(self, project: Project):
+    def __init__(self, project: Project, clock: Any = time.time):
         super().__init__(daemon=True)
         self.p = project
+        self.clock = clock
+        self.later: Dict[str, Tuple[float, int]] = {}  # an input the service could not take yet: when to ask again, tries
+
+    def due(self, inp: Input) -> bool:
+        """An input to organize now: not organized yet, or failed only because the service was busy, slow or out of
+        reach (T424: Taska asks again by itself; the user never has to press Try again), and not waiting to be asked
+        again."""
+        if inp.org and (inp.org.ok or inp.org.undone or not transient(inp.org.msg)):
+            return False
+        return self.later.get(inp.id, (0.0, 0))[0] <= self.clock()
+
+    def nap(self) -> float:
+        """How long to wait for news: until the next input is to be asked again, at most 30 s."""
+        now = self.clock()
+        return max(1.0, min([30.0] + [until - now for until, _ in self.later.values() if until > now]))
 
     def run(self) -> None:
         p = self.p
@@ -56,10 +71,10 @@ class Organizer(threading.Thread):
                 while True:
                     if p.gone:  # the project was deleted: its organizer stops; restoring it starts a new one
                         return
-                    todo = [i for i in rules.pending(p.state) if not i.org and not p.held(i)]
+                    todo = [i for i in rules.pending(p.state) if self.due(i) and not p.held(i)]
                     if todo:
                         break
-                    p.news.wait(timeout=30)
+                    p.news.wait(timeout=self.nap())
                 inp = min(todo, key=lambda i: i.number)
                 p.organizing.busy = inp.id
                 p.news.bump()
@@ -94,8 +109,14 @@ class Organizer(threading.Thread):
             if err:
                 print(f"[organizer] {time.strftime('%Y-%m-%d %H:%M:%S')} {p.slug} {rid} failed: {err[:300]}",
                       file=sys.stderr, flush=True)
+                if transient(err):  # asked again later, longer each time (up to 10 min); the input stays waiting
+                    tries = self.later.get(rid, (0.0, 0))[1] + 1
+                    self.later[rid] = (self.clock() + min(600, 15 * 2 ** (tries - 1)), tries)
+                    p.news.bump()
+                    return
                 p.emit(ev.Organized(src=rid, ok=False, msg=err, by="org"))
                 return
+            self.later.pop(rid, None)
             keep = had_history or bool(re.search(r"(?im)^\s*pass\s*$", plan))
             commands = parse(re.sub(r"(?im)^\s*pass\s*$", "", indent_strays(plan)))
             if keep:  # the input is for the coding agent: changes may be made, but it stays in the inbox
@@ -112,6 +133,15 @@ class Organizer(threading.Thread):
                 msg += " · Some commands failed: " + "; ".join(bad)
             p.emit(ev.Organized(src=rid, ok=not bad, msg=msg, plan=plan, keep=keep, changed=bool(labels),
                                 ms=int((time.time() - t0) * 1000), by="org"))
+
+
+_TRANSIENT = re.compile(r"(?i)\b(429|5\d\d)\b|rate.?limit|quota|exhausted|overload|unavailable|high demand|"
+                        r"unreachable|timed? ?out|timeout|deadline|connection|reset|network|temporar")
+
+
+def transient(msg: str) -> bool:
+    """A failure that goes away by itself: the service busy, slow or out of reach (not a refused key or request)."""
+    return bool(_TRANSIENT.search(msg or "")) and not re.search(r"(?i)\b(401|403)\b|api.?key|unauthori", msg or "")
 
 
 # a line that starts a command: new, ack, pass, or an item or document code ($ is the item made just before)
