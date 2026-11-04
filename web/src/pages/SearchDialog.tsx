@@ -1,8 +1,9 @@
-// The desktop's search (F479), the way desktop apps have it: a wide dialog in the top third whose top is a large
+// The desktop's search (F479), the way desktop apps have it: a dialog over nearly the whole window whose top is a large
 // field with the focus (typing is the default; the mic at its end records, with the time and the level only, then
 // Transcribing…, as the phone does); under it the kinds and the Project and Status filters; then one list, best
 // first, each row with its project as a path (nothing typed: Recent; words that name an action: Actions), the
-// highlighted row's preview beside it, and the keys at the foot. Props only; it sits in the page's sheet.
+// highlighted row's preview beside it (each scrolls only when it holds more than the room), and the keys at the foot.
+// Props only; it sits in the page's sheet.
 
 import { useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode, type RefObject } from 'react'
 import { RecBar } from '../ui/PlaceVoice'
@@ -192,6 +193,7 @@ export function SearchDialog({ v, preview, menuAt = null, on }: { v: SearchDialo
   const root = useRef<HTMLDivElement>(null)
   const field = useRef<HTMLInputElement>(null)
   const list = useRef<HTMLDivElement>(null)
+  const look = useRef<HTMLDivElement>(null)
   const [menu, setMenu] = useState(menuAt)
   const rows = [...v.recent, ...v.results, ...v.actions]
   const busy = v.phase === 'listening' || v.phase === 'writing'
@@ -209,6 +211,10 @@ export function SearchDialog({ v, preview, menuAt = null, on }: { v: SearchDialo
   useLayoutEffect(() => {
     list.current?.querySelector('[aria-selected="true"]')?.scrollIntoView({ block: 'nearest' })
   }, [v.sel])
+  // another row's preview starts at its top
+  useLayoutEffect(() => {
+    if (look.current) look.current.scrollTop = 0
+  }, [v.sel, v.words])
   const open = (l: (typeof rows)[number] | null, tab: boolean) => {
     if (!l) return
     if (isFound(l)) on.open(l.found, tab)
@@ -298,7 +304,7 @@ export function SearchDialog({ v, preview, menuAt = null, on }: { v: SearchDialo
           <div className="flex min-w-0 flex-1 flex-col justify-center">{v.middle ? <SearchBody v={mid} on={noSearch} desk /> : null}</div>
         ) : (
           <>
-            <div className={`overflow-y-auto lg:scrollbar-thin ${hasPreview ? 'w-[clamp(22rem,40%,30rem)] shrink-0' : 'flex-1'}`}>
+            <div className={`overflow-y-auto lg:scrollbar-thin ${hasPreview ? 'w-[max(22rem,40%)] shrink-0' : 'flex-1'}`}>
               <div ref={list} className={`flex flex-col gap-0.5 p-1.5 transition-opacity ${v.faded ? 'opacity-45' : ''}`}>
                 {v.recent.length ? <p className={LABEL}>Recent</p> : null}
                 {[...v.recent, ...v.results].map((l, i) => (
@@ -311,11 +317,11 @@ export function SearchDialog({ v, preview, menuAt = null, on }: { v: SearchDialo
                 })}
               </div>
             </div>
-            <div hidden={!hasPreview} data-preview={isFound(v.lit) ? v.lit.found.kind : ''} className="relative min-w-0 flex-1 overflow-hidden border-l border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
+            {/* only a look: nothing in it is reached, but the wheel scrolls what does not fit */}
+            <div ref={look} hidden={!hasPreview} data-preview={isFound(v.lit) ? v.lit.found.kind : ''} className="min-w-0 flex-1 overflow-y-auto border-l border-zinc-200 bg-white lg:scrollbar-thin dark:border-zinc-800 dark:bg-zinc-950">
               <div inert className={`transition-opacity ${v.faded ? 'opacity-45' : ''}`}>
                 {preview}
               </div>
-              <div className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-linear-to-t from-white dark:from-zinc-950" />
             </div>
           </>
         )}
