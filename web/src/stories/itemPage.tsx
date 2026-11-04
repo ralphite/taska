@@ -94,7 +94,7 @@ function LiveItem({ it, desk, o, talkOnly = false }: { it: Item; desk: boolean; 
   const media = useMedia(e0.url)
   const menu = usePop<{ arm: ItemMenuFacts['arm']; asking: boolean } | { msg: number }>(desk)
   const facts = { ...start, remodify, allTalk, editing, addingSub }
-  const env = { ...e0, play: o.env?.play ?? media.play, opened, choosing: e0.choosing && { picked, pick: (i: number, multi: boolean) => setPicked(multi ? toggle(picked, i) : new Set([i])) } }
+  const env = { ...e0, play: o.env?.play && !media.touched ? o.env.play : media.play, opened, choosing: e0.choosing && { picked, pick: (i: number, multi: boolean) => setPicked(multi ? toggle(picked, i) : new Set([i])) } }
   const tf = { ...t0, reask, peeking }
   const openMenu = (arm: ItemMenuFacts['arm'], from: Element | null) => menu.open({ arm, asking: false }, from, desk ? { narrow: !!arm } : {})
   const on: ItemEvents = {

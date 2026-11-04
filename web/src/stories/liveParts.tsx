@@ -40,11 +40,14 @@ export function usePop<T>(desk: boolean) {
 }
 
 /** The page's player and picture viewer: a voice note plays (its time runs) and pauses, a picture opens over the
- * page, fitted or at 100%, and steps through the others it came with. `url` is where a file is. */
-export function useMedia(url: (f: string) => string) {
-  const [player, setPlayer] = useState<{ src: string; playing: boolean; t: number } | null>(null)
+ * page, fitted or at 100%, and steps through the others it came with. `url` is where a file is; `start`: a note
+ * already playing or paused partway. */
+export function useMedia(url: (f: string) => string, start: { src: string; playing: boolean; t: number | null } | null = null) {
+  const [player, setPlayer] = useState<{ src: string; playing: boolean; t: number } | null>(start && { ...start, t: start.t ?? 0 })
   const [viewer, setViewer] = useState<{ group: readonly string[]; idx: number; fit: boolean } | null>(null)
-  const playing = !!player?.playing
+  // its time runs once you press play (a story that starts it playing holds still until then)
+  const [touched, setTouched] = useState(false)
+  const playing = !!player?.playing && touched
   useEffect(() => {
     if (!playing) return
     const id = setInterval(() => setPlayer((p) => (p && p.playing ? { ...p, t: p.t + 250 } : p)), 250)
@@ -52,7 +55,10 @@ export function useMedia(url: (f: string) => string) {
   }, [playing])
   const play = (src: string): PlayState => (player?.src === src ? { playing: player.playing, t: player.t } : { playing: false, t: null })
   const on = {
-    play: (src: string) => setPlayer((p) => (p?.src === src ? { ...p, playing: !p.playing } : { src, playing: true, t: 0 })),
+    play: (src: string) => {
+      setTouched(true)
+      setPlayer((p) => (p?.src === src ? { ...p, playing: !p.playing } : { src, playing: true, t: 0 }))
+    },
     words: act('Voice note: its words → Message parts › Voice notes, pictures, files'),
     view: (f: string, all: readonly string[]) => setViewer({ group: all.length ? all : [f], idx: Math.max(0, all.indexOf(f)), fit: true }),
   }
@@ -73,5 +79,5 @@ export function useMedia(url: (f: string) => string) {
       }}
     />
   ) : null
-  return { play, on, node }
+  return { play, on, node, touched }
 }

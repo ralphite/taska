@@ -1,4 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import type { ReactNode } from 'react'
+import { useMedia } from '../stories/liveParts'
 import { Frames, States } from '../stories/Frames'
 import { PICTURE } from '../stories/fixtures'
 import type { FileRef } from '../model/types'
@@ -12,11 +14,26 @@ const voice: FileRef = { f: 'f3-voice_1-05.webm', name: 'voice_1-05.webm', mime:
 const unnamed: FileRef = { f: 'f4-note.webm', name: 'note.webm', mime: 'audio/webm' }
 const picture: FileRef = { f: 'f5-shot.png', name: 'shot.png', mime: 'image/png' }
 const pdf: FileRef = { f: 'f6-report.pdf', name: 'Quarterly report with a long name.pdf', mime: 'application/pdf' }
+/** a voice note that plays and pauses from where it is (the page's player) */
+function LiveChip({ f, start, tidy }: { f: FileRef; start: PlayState; tidy: boolean }) {
+  const media = useMedia(() => '#', start.t == null && !start.playing ? null : { src: f.f, ...start })
+  return <VoiceChip f={f} src={f.f} play={media.play(f.f)} tidy={tidy} onPlay={() => media.on.play(f.f)} onWords={() => media.on.words(f.f)} />
+}
 const chip = (f: FileRef, play: PlayState, tidy = true) => (
   <div className="flex p-3">
-    <VoiceChip f={f} src="#" play={play} tidy={tidy} onPlay={() => {}} onWords={() => {}} />
+    <LiveChip f={f} start={play} tidy={tidy} />
   </div>
 )
+/** pictures and files with the page's player and viewer: a voice note plays, a picture opens */
+function LiveFiles({ url, children }: { url: (f: string) => string; children: (media: ReturnType<typeof useMedia>) => ReactNode }) {
+  const media = useMedia(url)
+  return (
+    <>
+      {children(media)}
+      {media.node}
+    </>
+  )
+}
 
 /** A voice note, its words tidied as Taska normally has it (the phone: its original words): its length; playing, how
  * far; paused partway; and with tidying off in Settings (no original words). */
@@ -47,8 +64,8 @@ export const Together: Story = {
       {() => (
         <States
           items={[
-            ['all three', <div className="flex flex-wrap items-end gap-2 p-3"><Thumbs files={[voice, picture, pdf]} url={(f) => (f === picture.f ? PICTURE : '#')} play={() => ({ playing: false, t: null })} tidy on={{ play() {}, words() {}, view() {} }} /></div>],
-            ['small pictures', <div className="flex flex-wrap items-end gap-2 p-3"><Thumbs files={[picture, { ...picture, f: 'f7-shot.png' }]} url={() => PICTURE} size="size-12" play={() => ({ playing: false, t: null })} tidy on={{ play() {}, words() {}, view() {} }} /></div>],
+            ['all three', <div className="flex flex-wrap items-end gap-2 p-3"><LiveFiles url={(f) => (f === picture.f ? PICTURE : '#')}>{(media) => <Thumbs files={[voice, picture, pdf]} url={(f) => (f === picture.f ? PICTURE : '#')} play={media.play} tidy on={media.on} />}</LiveFiles></div>],
+            ['small pictures', <div className="flex flex-wrap items-end gap-2 p-3"><LiveFiles url={() => PICTURE}>{(media) => <Thumbs files={[picture, { ...picture, f: 'f7-shot.png' }]} url={() => PICTURE} size="size-12" play={media.play} tidy on={media.on} />}</LiveFiles></div>],
           ]}
         />
       )}
@@ -62,7 +79,7 @@ export const MoreThanThree: Story = {
   name: 'More than three pictures and files',
   render: () => (
     <Frames phoneWidth={393} deskWidth={480}>
-      {() => <div className="p-3"><FileRows files={many} url={(f) => (f.endsWith('.pdf') ? '#' : PICTURE)} play={() => ({ playing: false, t: null })} tidy on={{ play() {}, words() {}, view() {} }} /></div>}
+      {() => <div className="p-3"><LiveFiles url={(f) => (f.endsWith('.pdf') ? '#' : PICTURE)}>{(media) => <FileRows files={many} url={(f) => (f.endsWith('.pdf') ? '#' : PICTURE)} play={media.play} tidy on={media.on} />}</LiveFiles></div>}
     </Frames>
   ),
 }

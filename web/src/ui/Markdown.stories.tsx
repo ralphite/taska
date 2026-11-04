@@ -1,4 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { useState } from 'react'
+import { act } from '../stories/acts'
+import { useMedia } from '../stories/liveParts'
 import { Frames, States } from '../stories/Frames'
 import { item, modelOf } from '../stories/fixtures'
 import { talkEnv } from '../stories/itemFixtures'
@@ -10,11 +13,25 @@ type Story = StoryObj
 
 const m = modelOf([item({ n: 12 }), item({ n: 3, type: 'bug', code: 'B003' })])
 const world = talkEnv(m, true).world
-const rich = (text: string, extra: Partial<Parameters<typeof Rich>[0]> = {}) => (
-  <div className="p-3 text-[15px] text-zinc-800 dark:text-zinc-200">
-    <Rich text={text} world={world} {...extra} />
-  </div>
-)
+/** words as a message draws them: its choices pick (one, or any), a code opens what it names (the Actions panel), a
+ * picture opens in the page's viewer */
+function LiveRich({ text, extra }: { text: string; extra: Partial<Parameters<typeof Rich>[0]> }) {
+  const [picked, setPicked] = useState<ReadonlySet<number>>(extra.choosing?.picked ?? new Set())
+  const media = useMedia(world.url)
+  const pick = (i: number, multi: boolean) => {
+    const next = new Set(multi ? picked : [])
+    if (multi && next.has(i)) next.delete(i)
+    else next.add(i)
+    setPicked(next)
+  }
+  return (
+    <div className="p-3 text-[15px] text-zinc-800 dark:text-zinc-200">
+      <Rich text={text} world={world} onRef={act('Words: open the code')} onPicture={(f, all) => media.on.view(f, all)} {...extra} choosing={extra.choosing ? { picked, pick } : null} />
+      {media.node}
+    </div>
+  )
+}
+const rich = (text: string, extra: Partial<Parameters<typeof Rich>[0]> = {}) => <LiveRich text={text} extra={extra} />
 
 const QUESTION = 'Which format should the export use?\n\n- ( ) CSV\n- ( ) Excel\n- ( ) **Both**, one file each'
 
