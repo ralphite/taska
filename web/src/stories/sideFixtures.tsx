@@ -14,7 +14,7 @@ import { gripVars } from '../stores/grips'
 import { Grip } from '../ui/Grip'
 import { modelOf } from './fixtures'
 import { PROJECT } from './listFixtures'
-import { act, acts } from './menuFixtures'
+import { act, acts } from './acts'
 
 const sideActs = acts('Sidebar', ['newInput', 'newVoice', 'newProject', 'hide', 'settings', 'help', 'keys', 'undo', 'order', 'dropProject', 'projectMenu', 'search', 'create'] as const, { keys: 'Keyboard shortcuts', search: 'Search on the desktop' })
 const goAct = act('Sidebar: go')

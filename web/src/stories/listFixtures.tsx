@@ -15,7 +15,7 @@ import { SearchHints, type CrossFacts } from '../ui/SearchHints'
 import { PROJECT_TONES } from '../ui/tones'
 import type { Tab } from '../model/words'
 import { T, item, message, noRowEvents, modelOf } from './fixtures'
-import { act, acts } from './menuFixtures'
+import { act, acts } from './acts'
 
 export const listOn: ListEvents = {
   ...noRowEvents,
