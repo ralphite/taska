@@ -1,5 +1,6 @@
 // The helpers ItemRow's stories share: how each draws its part.
 import type { StoryObj } from '@storybook/react-vite'
+import { useState } from 'react'
 import type { Item } from '../model/types'
 import { After, Frames } from './Frames'
 import { facts, item, look, noRowEvents } from './fixtures'
@@ -17,18 +18,19 @@ export interface Row {
   folded?: boolean
 }
 
-export const row = (r: Row, desk: boolean) => (
-  <ItemRow
-    it={item({ n: 12, ...r.it })}
-    depth={r.depth ?? 0}
-    band=""
-    foldable={r.foldable ?? false}
-    folded={r.folded ?? false}
-    facts={facts(r.f)}
-    look={look(desk, r.l)}
-    on={noRowEvents}
-  />
-)
+/** A row with what the page holds for it: its fold (a parent's subitems shown or hidden) and, on the desktop, Cmd- or
+ * Shift-click picking it; opening it and its quick actions need the rest of the page (the Actions panel). */
+function LiveRow({ r, desk }: { r: Row; desk: boolean }) {
+  const [folded, setFolded] = useState(r.folded ?? false)
+  const [selected, setSelected] = useState(r.l?.selected ?? false)
+  const on = {
+    ...noRowEvents,
+    fold: () => setFolded(!folded),
+    open: (n: number, how?: { metaKey: boolean; ctrlKey: boolean; shiftKey: boolean }) => (desk && how && (how.metaKey || how.ctrlKey || how.shiftKey) ? setSelected(!selected) : noRowEvents.open(n, how)),
+  }
+  return <ItemRow it={item({ n: 12, ...r.it })} depth={r.depth ?? 0} band="" foldable={r.foldable ?? false} folded={folded} facts={facts(r.f)} look={look(desk, { ...r.l, selected })} on={on} />
+}
+export const row = (r: Row, desk: boolean) => <LiveRow r={r} desk={desk} />
 export const one = (r: Row): Story => ({ render: () => <Frames phoneWidth={393} deskWidth={460}>{(layout) => row(r, layout === 'desk')}</Frames> })
 
 export const agent = { by: 'claude-code', t: '2026-10-23T14:30:00-07:00' }

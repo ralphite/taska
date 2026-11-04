@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { Frames, States } from '../../stories/Frames'
+import { Frames, Hold, States } from '../../stories/Frames'
+import { act } from '../../stories/menuFixtures'
 import { item, noRowEvents } from '../../stories/fixtures'
 import { ArchiveAllLine, HeldRow, HiddenKidsLine, NeedsMoreLine, Zone } from './ListRows'
 
@@ -22,11 +23,11 @@ export const Lines: Story = {
             ['zone: needs you', <Zone kind="needs" label="Needs you" n={3} />],
             ['zone: rules', <Zone kind="rules" label="Active" n={12} />],
             ['zone: retired', <Zone kind="retired" label="Retired" n={2} />],
-            ['hidden subitems: in Later', <HiddenKidsLine parent={1} depth={1} open={false} later={2} onToggle={() => {}} />],
-            ['hidden subitems: shown', <HiddenKidsLine parent={1} depth={1} open later={2} onToggle={() => {}} />],
-            ['needs you: show more', <NeedsMoreLine open={false} rest={4} onToggle={() => {}} />],
-            ['needs you: show fewer', <NeedsMoreLine open rest={4} onToggle={() => {}} />],
-            ['finished: archive them', <ArchiveAllLine n={7} onArchive={() => {}} />],
+            ['hidden subitems: in Later', <Hold start={false}>{(open, set) => <HiddenKidsLine parent={1} depth={1} open={open} later={2} onToggle={() => set(!open)} />}</Hold>],
+            ['hidden subitems: shown', <Hold<boolean> start>{(open, set) => <HiddenKidsLine parent={1} depth={1} open={open} later={2} onToggle={() => set(!open)} />}</Hold>],
+            ['needs you: show more', <Hold start={false}>{(open, set) => <NeedsMoreLine open={open} rest={4} onToggle={() => set(!open)} />}</Hold>],
+            ['needs you: show fewer', <Hold<boolean> start>{(open, set) => <NeedsMoreLine open={open} rest={4} onToggle={() => set(!open)} />}</Hold>],
+            ['finished: archive them', <ArchiveAllLine n={7} onArchive={act('List: archive all')} />],
           ]}
         />
       )}

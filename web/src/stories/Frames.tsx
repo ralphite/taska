@@ -91,6 +91,14 @@ export function States({ items }: { items: [string, ReactNode][] }) {
   )
 }
 
+/** A part with the small state the page holds for it (T662: what works on the page works in its story): it starts at
+ * `start`, and `children` draws the part from it and changes it as the page would (a view chip picks its view, a
+ * fold folds, a tab opens). */
+export function Hold<T>({ start, children }: { start: T; children(value: T, set: (value: T) => void): ReactNode }) {
+  const [value, set] = useState(start)
+  return <>{children(value, set)}</>
+}
+
 /** Something done to the page once it is drawn, as you would have done it: a pointer over a part (its mousemove),
  * the contents opened, words selected, words typed into a field, a key pressed in it. */
 export function After({ run, children }: { run(root: HTMLElement): void; children: ReactNode }) {

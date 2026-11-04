@@ -5,32 +5,12 @@ import type { ListQuery } from '../../model/route'
 import { Frames } from '../../stories/Frames'
 import { T } from '../../stories/fixtures'
 import { PROJECT, listOf } from '../../stories/listFixtures'
-import { DeskFilters, FilterStrip } from './Filters'
-import { NO_FILTERS } from '../../model/route'
-import { filtersSet } from '../../model/visible'
 
 export default { title: 'Components/Item list/Search and filters' } satisfies Meta
 type Story = StoryObj
 
-const no = () => {}
 const at = (q: Partial<ListQuery>): Story => ({
-  render: () => (
-    <Frames phoneWidth={393} deskWidth={460} height={620}>
-      {(layout) => {
-        const list = { ...NO_FILTERS, ...q }
-        const set = filtersSet('items', list)
-        return listOf(PROJECT, 'items', q, layout === 'desk', {
-          top: set.length ? (
-            layout === 'desk' ? (
-              <DeskFilters tab="items" list={list} set={set} open={false} place="" hidden={false} on={{ set: no, unset: no, reset: no, saveView: no, toggle: no }} />
-            ) : (
-              <FilterStrip set={set} hidden={false} onUnset={no} onReset={no} />
-            )
-          ) : undefined,
-        })
-      }}
-    </Frames>
-  ),
+  render: () => <Frames phoneWidth={393} deskWidth={460} height={620}>{(layout) => listOf(PROJECT, 'items', q, layout === 'desk', { filters: true })}</Frames>,
 })
 
 export const Search = at({ q: 'export' })

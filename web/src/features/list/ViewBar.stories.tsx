@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { After, Frames, States } from '../../stories/Frames'
+import { After, Frames, Hold, States } from '../../stories/Frames'
+import { act } from '../../stories/menuFixtures'
 import { VIEWS, type ViewChip } from './rows'
 import { ViewBar } from './ViewBar'
 
@@ -15,6 +16,25 @@ const views = (on: string, needs = 2): ViewChip[] =>
     return { value, label, count, on: value === on, needs: value === 'wait' && count > 0 }
   })
 
+type Own = { name: string; count: number; on: boolean; editing?: boolean }
+/** The bar with the view it shows: a chip shows its view, one of your own views shows it (the page's nav.view and
+ * views.show); its menu and renaming show in the Actions panel. */
+const bar = (on: string, o: { needs?: number; own?: Own[] } = {}) => (
+  <Hold start={{ on, own: o.own?.findIndex((v) => v.on) ?? -1 }}>
+    {(v, set) => (
+      <ViewBar
+        views={views(v.own >= 0 ? '' : v.on, o.needs)}
+        own={o.own?.map((x, i) => ({ ...x, on: i === v.own }))}
+        onView={(value) => set({ on: value, own: -1 })}
+        onOwn={(i) => set({ on: '', own: i })}
+        onOwnMenu={act('Views: own view menu')}
+        onRename={act('Views: rename')}
+        onRenameStop={act('Views: rename stop')}
+      />
+    )}
+  </Hold>
+)
+
 /** The row of views: the one shown is dark; more views past the edge fade there, with an arrow on the desktop (the
  * phone swipes). */
 export const Views: Story = {
@@ -23,10 +43,10 @@ export const Views: Story = {
       {() => (
         <States
           items={[
-            ['Active', <ViewBar views={views('all')} onView={() => {}} />],
-            ['Needs you, nothing waiting', <ViewBar views={views('wait', 0)} onView={() => {}} />],
-            ["Won't do (scrolled to it)", <ViewBar views={views('dropped')} onView={() => {}} />],
-            ['with your own views (slid to the end)', <After run={(r) => r.querySelectorAll('[data-views] > div').forEach((el) => (el.scrollLeft = el.scrollWidth))}><ViewBar views={views('every')} own={[{ name: 'Bugs now', count: 6, on: false }, { name: 'P0', count: 1, on: false }]} onView={() => {}} /></After>],
+            ['Active', bar('all')],
+            ['Needs you, nothing waiting', bar('wait', { needs: 0 })],
+            ["Won't do (scrolled to it)", bar('dropped')],
+            ['with your own views (slid to the end)', <After run={(r) => r.querySelectorAll('[data-views] > div').forEach((el) => (el.scrollLeft = el.scrollWidth))}>{bar('every', { own: [{ name: 'Bugs now', count: 6, on: false }, { name: 'P0', count: 1, on: false }] })}</After>],
           ]}
         />
       )}
@@ -41,8 +61,8 @@ export const YourOwnViewShownBeingRenamed: Story = {
       {() => (
         <States
           items={[
-            ['Your own view shown', <ViewBar views={views('')} own={[{ name: 'Bugs first', count: 6, on: true }]} onView={() => {}} />],
-            ['Being renamed', <ViewBar views={views('')} own={[{ name: 'Bugs first', count: 6, on: true, editing: true }]} onView={() => {}} />],
+            ['Your own view shown', bar('', { own: [{ name: 'Bugs first', count: 6, on: true }] })],
+            ['Being renamed', bar('', { own: [{ name: 'Bugs first', count: 6, on: true, editing: true }] })],
           ]}
         />
       )}
@@ -60,9 +80,9 @@ export const PointerAndKeys: Story = {
       {() => (
         <States
           items={[
-            ['a chip under the pointer', <div data-look="pointer"><ViewBar views={views('all')} onView={() => {}} /></div>],
-            ['a chip from the keys', <div data-look="keys"><ViewBar views={views('all')} onView={() => {}} /></div>],
-            ['the edge arrow under the pointer', <div data-look="arrow"><ViewBar views={views('all')} onView={() => {}} /></div>],
+            ['a chip under the pointer', <div data-look="pointer">{bar('all')}</div>],
+            ['a chip from the keys', <div data-look="keys">{bar('all')}</div>],
+            ['the edge arrow under the pointer', <div data-look="arrow">{bar('all')}</div>],
           ]}
         />
       )}

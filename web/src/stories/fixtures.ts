@@ -1,5 +1,6 @@
 // Made-up data for stories: items, inputs and the facts a row or a list shows, each built from a few fields.
 
+import { fn } from 'storybook/test'
 import { Diagrams } from '../app/page/diagrams'
 import type { RowEvents, RowFacts, RowLook } from '../features/list/ListRows'
 import { project, type ProjectModel } from '../model/project'
@@ -48,14 +49,16 @@ export function facts(f: Partial<RowFacts> = {}): RowFacts {
 
 export const look = (desk: boolean, f: Partial<RowLook> = {}): RowLook => ({ current: false, selected: false, words: [], desk, ...f })
 
+/** A row's handlers: each shows in Storybook's Actions panel (opening an item, changing one needs the rest of the
+ * page). */
 export const noRowEvents: RowEvents = {
-  open: () => {},
-  act: () => {},
-  need: () => {},
-  reopen: () => {},
-  fold: () => {},
-  goto: () => {},
-  picture: () => {},
+  open: fn().mockName('Row: open'),
+  act: fn().mockName('Row: act'),
+  need: fn().mockName('Row: need'),
+  reopen: fn().mockName('Row: reopen'),
+  fold: fn().mockName('Row: fold'),
+  goto: fn().mockName('Row: goto'),
+  picture: fn().mockName('Row: picture'),
 }
 
 /** A small picture, drawn here, for a row's thumbnail. */

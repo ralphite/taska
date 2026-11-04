@@ -5,7 +5,6 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { ListQuery } from '../../model/route'
 import { Frames } from '../../stories/Frames'
 import { PROJECT, listOf, type Holding } from '../../stories/listFixtures'
-import { SelBar } from './SelBar'
 
 export default { title: 'Components/Item list/Picked, folded, just acted on' } satisfies Meta
 type Story = StoryObj
@@ -18,7 +17,7 @@ const active = { status: 'all' }
 export const OneOpen: Story = { ...at(active, () => ({ open: 5 })), name: 'One item open' }
 /** The desktop (⌘ or ⇧ click; the phone picks none). */
 export const SeveralPicked: Story = {
-  render: () => <Frames phone={false} deskWidth={460} height={700}>{() => listOf(PROJECT, 'items', active, true, { selected: [5, 6, 2], top: <SelBar n={3} on={{ set() {}, clear() {} }} /> })}</Frames>,
+  render: () => <Frames phone={false} deskWidth={460} height={700}>{() => listOf(PROJECT, 'items', active, true, { selected: [5, 6, 2] })}</Frames>,
   name: 'Several picked',
 }
 export const SubitemsFolded: Story = { ...at(active, () => ({ folded: [1] })), name: 'Subitems folded' }

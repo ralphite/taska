@@ -3,6 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frames } from '../../stories/Frames'
 import { item } from '../../stories/fixtures'
 import { listOn } from '../../stories/listFixtures'
+import { act } from '../../stories/menuFixtures'
 import { EmptyList, ItemList } from './ItemList'
 import { view } from '../../stories/itemListFixtures'
 
@@ -41,7 +42,7 @@ export const LoadingAndEveryEmptyList: Story = {
             ] as const
           ).map(([why, status, organizerOn]) => (
             <div key={why + status + organizerOn} className="flex flex-col">
-              <ItemList loading={false} views={null} rows={[]} on={listOn} empty={<EmptyList why={why} status={status} organizerOn={organizerOn} onReset={() => {}} onConnect={() => {}} />} />
+              <ItemList loading={false} views={null} rows={[]} on={listOn} empty={<EmptyList why={why} status={status} organizerOn={organizerOn} onReset={act('List: clear search and filters')} onConnect={act('List: connect an agent → Agents › Who works here')} />} />
             </div>
           ))}
         </div>
