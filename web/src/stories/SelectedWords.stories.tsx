@@ -6,6 +6,9 @@ import { SelectionBar, type Box } from '../features/composer/SelectionBar'
 import { After, Frames } from './Frames'
 import { doc } from './docFixtures'
 import { docAt, recMeter } from './docPage'
+import { acts } from './acts'
+
+const bar = acts('Selection bar', ['comment', 'fix', 'check', 'send'] as const)
 
 export default { title: 'Components/Document/Commenting/Selected words' } satisfies Meta
 type Story = StoryObj
@@ -28,8 +31,10 @@ function select(root: HTMLElement, key: string, words: string): Range | null {
   return null
 }
 
-function Selected({ desk, recording }: { desk: boolean; recording: boolean }) {
+function Selected({ desk, recording: start }: { desk: boolean; recording: boolean }) {
   const [at, setAt] = useState<Box | null>(null)
+  // the mic records a comment about the words (the bar is its strip); ✕ stops it, ✓ and ↑ hand it on (Actions)
+  const [recording, setRecording] = useState(start)
   return (
     <>
       <After
@@ -41,7 +46,7 @@ function Selected({ desk, recording }: { desk: boolean; recording: boolean }) {
       >
         {docAt(doc(), desk)}
       </After>
-      <SelectionBar at={at} recording={recording} desk={desk} meter={recMeter(desk)} comment fix={false} on={{ mic() {}, comment() {}, fix() {}, cancel() {}, check() {}, send() {} }} />
+      <SelectionBar at={at} recording={recording} desk={desk} meter={recMeter(desk)} comment fix={false} on={{ mic: () => setRecording(!recording), comment: bar.comment, fix: bar.fix, cancel: () => setRecording(false), check: () => (setRecording(false), bar.check()), send: () => (setRecording(false), bar.send()) }} />
     </>
   )
 }

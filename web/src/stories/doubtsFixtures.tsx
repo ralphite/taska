@@ -9,8 +9,6 @@ import { VOICE, boxAt } from './boxFixtures'
 
 type Story = StoryObj
 
-export const quiet = { use: () => {}, show: () => {} }
-
 // the box with a voice note in it, as the page works it out on a list (a new input)
 export const voice = (f: Partial<typeof VOICE>, text = '', pseudo?: Record<string, string[]>): Story => ({
   render: () => <Frames phoneWidth={393} deskWidth={640}>{(layout) => boxAt({ text, files: [{ ...VOICE, ...f }] }, layout === 'desk')}</Frames>,
@@ -46,6 +44,32 @@ export function Picking({ fix, start, heard = HEARD }: { fix: boolean; start?: '
         },
         escape: () => {},
         ...(fix ? { select: (s: number, e: number) => setFixing({ s, e, wrong: text.slice(s, e) }), fixSave: () => setFixing(null), fixStop: () => setFixing(null) } : {}),
+      }}
+    />
+  )
+}
+
+/** A draft's words to pick from, as the New input page's card has them: a version picked swaps the words (the
+ * model's pickSide, as voiceWords.pick does). */
+export function LiveWords({ text: start, heard, className, stretches = true }: { text: string; heard: HeardFile[]; className: string; stretches?: boolean }) {
+  const [text, setText] = useState(start)
+  const [files, setFiles] = useState(heard)
+  return (
+    <DraftWords
+      text={text}
+      spots={spotsIn(text, files)}
+      stretches={stretches ? voiceStretches(text, files) : undefined}
+      className={className}
+      on={{
+        pick: (fk, k, side) => {
+          const f = files.find((x) => x.key === fk)
+          if (!f) return
+          const r = pickSide(text, f, k, side)
+          if (r.changed) setText(r.text)
+          setFiles(files.map((x) => (x.key === fk ? { ...x, doubts: r.doubts, trAdded: r.trAdded } : x)))
+        },
+        escape: () => {},
+        select: () => {},
       }}
     />
   )

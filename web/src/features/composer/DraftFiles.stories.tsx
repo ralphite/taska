@@ -1,4 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { useState } from 'react'
+import { useMedia } from '../../stories/liveParts'
 import { Frames } from '../../stories/Frames'
 import { PICTURE } from '../../stories/fixtures'
 import { DraftFiles, type DraftFile } from './DraftFiles'
@@ -7,7 +9,19 @@ const meta: Meta = { title: 'Components/Input box/Pictures and files' }
 export default meta
 type Story = StoryObj
 
-const files = (list: DraftFile[]): Story => ({ render: () => <Frames phoneWidth={393} deskWidth={640}>{() => <DraftFiles files={list} url={() => PICTURE} onRemove={() => {}} onView={() => {}} />}</Frames> })
+/** the draft's files as the page's box keeps them: x takes one off, a picture opens in the page's viewer */
+function LiveFiles({ start }: { start: DraftFile[] }) {
+  const [list, setList] = useState(start)
+  const media = useMedia(() => PICTURE)
+  const pics = list.filter((f) => f.f && (f.mime || '').startsWith('image/')).map((f) => f.f)
+  return (
+    <>
+      <DraftFiles files={list} url={() => PICTURE} onRemove={(k) => setList(list.filter((f) => f.key !== k))} onView={(k) => media.on.view(list.find((f) => f.key === k)?.f || '', pics)} />
+      {media.node}
+    </>
+  )
+}
+const files = (list: DraftFile[]): Story => ({ render: () => <Frames phoneWidth={393} deskWidth={640}>{() => <LiveFiles start={list} />}</Frames> })
 const pic = (n: number, up = true): DraftFile => ({ key: 'p' + n, f: up ? `f${n}-shot.png` : '', name: 'shot.png', mime: 'image/png', preview: PICTURE })
 
 export const TwoPictures: Story = { ...files([pic(1), pic(2)]), name: 'Two pictures' }
