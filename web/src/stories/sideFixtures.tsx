@@ -4,7 +4,7 @@
 import type { ReactNode } from 'react'
 import { sideProjects } from '../app/sideProjects'
 import { Rail, Sidebar, type SidebarEvents } from '../features/sidebar/Sidebar'
-import { sideLinks } from '../features/sidebar/sideLinks'
+import { SIDE_KEYS, sideLinks } from '../features/sidebar/sideLinks'
 import type { ProjectRow } from '../model/types'
 import { modelOf } from './fixtures'
 import { PROJECT } from './listFixtures'
@@ -26,7 +26,7 @@ const projects = (drop?: string) => {
   return list && drop ? list.map((p) => (p.slug === drop ? { ...p, drop: true } : p)) : list
 }
 export const side = (phone: boolean, f: { side?: 'docs' | 'log' | 'deleted'; undo?: string; composing?: boolean; drop?: string; newProject?: ReactNode; loading?: boolean } = {}) => (
-  <Sidebar phone={phone} projects={f.loading ? null : projects(f.drop)} composing={!!f.composing} links={sideLinks('shop', f.side ?? null)} undoLabel={f.undo ?? null} devLinks={phone ? [] : DEV} newProjectField={f.newProject} place={phone ? 'h-full bg-zinc-100' : 'h-full bg-zinc-50'} on={sideOn} />
+  <Sidebar phone={phone} keys={SIDE_KEYS} projects={f.loading ? null : projects(f.drop)} composing={!!f.composing} links={sideLinks('shop', f.side ?? null)} undoLabel={f.undo ?? null} devLinks={phone ? [] : DEV} newProjectField={f.newProject} place={phone ? 'h-full bg-zinc-100' : 'h-full bg-zinc-50'} on={sideOn} />
 )
 /** the sidebar folded to icons; `settings`: Settings open (its icon lit), `composing`: New input lit, `loading`: projects never listed yet */
-export const rail = (f: { settings?: boolean; composing?: boolean; loading?: boolean } = {}) => <Rail projects={f.loading ? null : projects()} composing={f.composing ?? true} settingsOpen={!!f.settings} on={sideOn} />
+export const rail = (f: { settings?: boolean; composing?: boolean; loading?: boolean } = {}) => <Rail keys={SIDE_KEYS} projects={f.loading ? null : projects()} composing={f.composing ?? true} settingsOpen={!!f.settings} on={sideOn} />

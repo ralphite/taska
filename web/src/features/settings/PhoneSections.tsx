@@ -161,7 +161,7 @@ export function DocsBody({ docs, onOpen }: { docs: PhoneDocRow[]; onOpen(d: numb
     return (
       <Ruled>
         <Empty>
-          No documents yet · item ⋯ › New document
+          No documents yet · item ⋯ › New doc
         </Empty>
       </Ruled>
     )

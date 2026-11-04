@@ -10,7 +10,7 @@ import { SaidLately, SaidRow, type SaidEvents } from '../features/composer/SaidL
 import { DocPaneNav } from '../features/docs/DocPane'
 import { asSaidSheet, historySheet, inputMenuSheet } from '../features/inputs/InputSheets'
 import { Sidebar } from '../features/sidebar/Sidebar'
-import { sideLinks } from '../features/sidebar/sideLinks'
+import { SIDE_KEYS, sideLinks } from '../features/sidebar/sideLinks'
 import { draftKey } from '../model/draftTarget'
 import { saidOutgoing, saidRows, type SaidInput } from '../model/saidLately'
 import type { FileRef, Input, OrgNote, ProjectRow } from '../model/types'
@@ -157,7 +157,7 @@ export function DeskPage({ children, wide = false }: { children: ReactNode; /** 
   return (
     <div className="flex min-h-full">
       <div className="w-60 shrink-0 border-r border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900">
-      <Sidebar phone={false} projects={SIDE.list} composing links={sideLinks('taska', null)} place="" on={{ ...sideOn, search() {} }} />
+      <Sidebar phone={false} keys={SIDE_KEYS} projects={SIDE.list} composing links={sideLinks('taska', null)} place="" on={{ ...sideOn, search() {} }} />
       </div>
       <div data-compose className="group/app min-w-0 flex-1 bg-zinc-50 px-8 pt-12 pb-16 dark:bg-zinc-950">
         <div className={wide ? 'mx-auto max-w-[70rem]' : ''}>

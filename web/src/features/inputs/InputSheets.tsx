@@ -32,7 +32,7 @@ export interface InputMenuFacts {
   undo: { tip: string } | null
   move: boolean
   history: boolean
-  /** "Put with item… · now F12" */
+  /** "Put with an item… · now F12" */
   scope: string | null
   /** the file whose Take off waits for its second click */
   asking: string | null
@@ -58,7 +58,7 @@ export function inputMenuSheet({ r, send, tidy, undo, move, history, scope, aski
         {undo ? row('undo', 'undo', 'Undo organizing', on.undo, undo.tip) : null}
         {move ? row('move', 'arrow', 'Move to…', on.move) : null}
         {history ? row('history', 'history', 'History', on.history) : null}
-        {send ? null : row('rescope', 'scope', scope ? `Put with item… · now ${scope}` : 'Put with an item…', on.rescope)}
+        {send ? null : row('rescope', 'scope', scope ? `Put with an item… · now ${scope}` : 'Put with an item…', on.rescope)}
         {r.files.map((f: FileRef) => (
           <button key={f.f} onClick={() => on.takeOff(f.f)} className={`${MENU_ROW} ${asking === f.f ? DANGER : ''}`}>
             <Icon n="x" c={`size-4 ${asking === f.f ? '' : 'text-zinc-500 dark:text-zinc-400'}`} />

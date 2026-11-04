@@ -414,7 +414,7 @@ export function keysShown(id: ActionId): string {
 export function paletteRows(item: boolean): { id: ActionId; label: string; keys: string; item: boolean; desk: boolean }[] {
   return ACTION_IDS.map((id) => [id, byId(id)] as const)
     .filter(([, a]) => a.palette && ('item' in a) === item)
-    .map(([id, a]) => ({ id, label: typeof a.palette === 'string' ? a.palette : a.label, keys: a.keys || '', item: 'item' in a, desk: !!a.desk }))
+    .map(([id, a]) => ({ id, label: typeof a.palette === 'string' ? a.palette : a.label, keys: keysShown(id), item: 'item' in a, desk: !!a.desk }))
 }
 
 /** The keys sheet (?): its groups of rows; a row made of actions shows their keys as the table has them. */

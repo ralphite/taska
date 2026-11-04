@@ -8,7 +8,7 @@ import { LOOP, isDesk, open, project } from './seed'
 const searchPage = (page: Page) => page.locator('[data-part="search"]').filter({ visible: true })
 
 test('the phone: say or type what to find, open a result, come back to the same search, leave', async ({ page, request }) => {
-  test.skip(isDesk(page), 'phone only: the desktop keeps the list’s search')
+  test.skip(isDesk(page), "phone only: the desktop keeps the list's search")
   const p = await project(request, LOOP)
   const other = await project(request, { agent: 'new task P2 now Export the invoices with the filter\n' })
   await open(page, p)

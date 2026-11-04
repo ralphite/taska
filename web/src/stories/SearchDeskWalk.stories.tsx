@@ -30,18 +30,18 @@ const TOUR: Tour = {
 /** Each desktop choice in one line, and what it follows. */
 const DECISIONS: [string, string][] = [
   ['Search is a row at the top of the sidebar, above New input, with ⌘K beside it: a row with its key does not fit in the head beside Hide sidebar. Folded, a magnifier under the logo.', 'Notion; r796: not under New input'],
-  ['⌘K (or /) opens it anywhere and closes it again; ⌘K’s commands come in it as Actions when the words name one (Done F001, Settings).', 'Notion: ⌘K is search'],
+  ["⌘K (or /) opens it anywhere and closes it again; ⌘K's commands come in it as Actions when the words name one (Done F001, Settings).", 'Notion: ⌘K is search'],
   ['A modal in the top third over the dimmed page, 832 px wide (the list, and the preview beside it), its height fixed so nothing jumps.', 'Notion'],
   ['Its top is a large field with the focus: typing is the default. Nothing typed: Recent.', 'Notion; “Say or type”'],
   ['Results come as you type (a pause first), best first, the words found lit; the spinner sits in the field while it searches again.', 'Notion; the phone: by meaning'],
-  ['One list, best first; each row shows its project (and the item it is on) as a path. Grouping by project would put a weaker match in this project above a better one elsewhere; the Project filter narrows instead.', 'Notion’s page path'],
-  ['Under the field: the kinds with their counts, then Project and Status (Open, Finished).', 'Notion’s filters'],
-  ['The highlighted row’s preview on the right, read only, drawn by the page that opens it (an item, a document, an input).', 'Notion’s preview'],
-  ['↑↓ or the pointer move the highlight; ↵ opens in its project’s pane; ⌘↵ in a new tab; Esc closes. The keys are in the foot.', 'Notion'],
-  ['The mic at the field’s end (or ⌥V): it records, the time and level only; ↵ stops; Transcribing…, then the results. While it records, a key drops the recording and types.', 'the phone; r797'],
+  ['One list, best first; each row shows its project (and the item it is on) as a path. Grouping by project would put a weaker match in this project above a better one elsewhere; the Project filter narrows instead.', "Notion's page path"],
+  ['Under the field: the kinds with their counts, then Project and Status (Open, Finished).', "Notion's filters"],
+  ["The highlighted row's preview on the right, read only, drawn by the page that opens it (an item, a document, an input).", "Notion's preview"],
+  ["↑↓ or the pointer move the highlight; ↵ opens in its project's pane; ⌘↵ in a new tab; Esc closes. The keys are in the foot.", 'Notion'],
+  ["The mic at the field's end (or ⌥V): it records, the time and level only; ↵ stops; Transcribing…, then the results. While it records, a key drops the recording and types.", 'the phone; r797'],
   ['What you say goes where typing would: over the words if all are selected, else after them (lit). A word heard two ways: click the right one.', 'the phone'],
-  ['⌘K again: the last words, selected, with what they found (type to start over).', 'Notion; the phone’s Back'],
-  ['The list keeps no search box: its filter is an icon at the end of the views’ row. The home page’s box goes too: ⌘K opens this there.', 'r796, r769'],
+  ['⌘K again: the last words, selected, with what they found (type to start over).', "Notion; the phone's Back"],
+  ["The list keeps no search box: its filter is an icon at the end of the views’ row. The home page's box goes too: ⌘K opens this there.", 'r796, r769'],
 ]
 
 /** Click your way through it (it never plays itself; the yellow spot is the next click or key): type, preview, a kind,
@@ -54,7 +54,7 @@ export const WalkThrough: StoryObj = {
         <SearchDesk />
       </TourFrame>
       <section className="max-w-3xl text-sm text-zinc-700 dark:text-zinc-300">
-        <h2 className="mb-2 text-[15px] font-semibold text-zinc-900 dark:text-zinc-100">The desktop’s choices</h2>
+        <h2 className="mb-2 text-[15px] font-semibold text-zinc-900 dark:text-zinc-100">The desktop&apos;s choices</h2>
         <ol className="flex list-decimal flex-col gap-1 pl-5">
           {DECISIONS.map(([what, why]) => (
             <li key={what}>

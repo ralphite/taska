@@ -9,7 +9,7 @@ export default { title: 'Components/Inputs/New input page/Project name' } satisf
 type Story = StoryObj
 
 export const ProjectHead: Story = {
-  name: 'The project’s name over the box',
+  name: "The project's name over the box",
   render: () => (
     <Frames phone={false} deskWidth={1024}>
       {() => (

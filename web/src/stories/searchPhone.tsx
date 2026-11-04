@@ -181,7 +181,7 @@ function OpenPage({ x, onBack }: { x: Found; onBack(): void }) {
 /** Where the phone's own keyboard is while you type: not Taska's, drawn so the page shows what is left above it. */
 const Keyboard = () => (
   <div aria-hidden className="grid h-[17rem] shrink-0 place-items-center bg-zinc-300 text-sm text-zinc-500 dark:bg-zinc-800 dark:text-zinc-400">
-    the phone’s keyboard
+    the phone&apos;s keyboard
   </div>
 )
 

@@ -11,6 +11,7 @@ import type { RouteStore } from '../../stores/route'
 import type { DocEditor } from '../docs/editor'
 import type { Fields } from '../page/fields'
 import { canRecord, micTrouble, openMic } from './mic'
+import { CANT_RECORD } from '../../model/micWords'
 import type { Toasts } from '../page/toasts'
 import { noteText } from '../../model/docs'
 
@@ -26,6 +27,8 @@ export interface DictationDeps {
   model(slug: string): ProjectModel | null
   /** a voice note is being recorded for the box */
   recording(): boolean
+  /** the desktop's layout (how to allow the microphone differs) */
+  desk(): boolean
 }
 
 const wait = (ms: number) => new Promise((ok) => setTimeout(ok, ms))
@@ -80,12 +83,12 @@ export class Dictation {
     const slug = this.slug()
     if (this.live || !slug || !this.editing(slug)) return
     if (this.d.recording()) return this.d.toasts.show('Stop the current recording first')
-    if (!canRecord()) return this.d.toasts.show('This browser cannot record here')
+    if (!canRecord()) return this.d.toasts.show(CANT_RECORD)
     let stream: MediaStream
     try {
       stream = await openMic()
     } catch (e) {
-      return this.d.toasts.show(micTrouble(e), null, { error: true })
+      return this.d.toasts.show(micTrouble(e, this.d.desk()), null, { error: true })
     }
     const at = this.editing(slug)
     const t = this.d.fields.get('doc') as HTMLTextAreaElement | null

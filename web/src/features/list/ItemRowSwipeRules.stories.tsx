@@ -7,7 +7,7 @@ export default { title: 'Components/Item list/Item row/Swiping on the phone/Rule
 type Story = StoryObj
 
 export const ProposedRuleForward: Story = { ...swiped({ it: { type: 'rule', status: 'proposed', by: 'claude-code', title: 'Screenshots go in the item' } }, 140), name: 'A proposed rule forward: Approve' }
-export const ProposedRuleBack: Story = { ...swiped({ it: { type: 'rule', status: 'proposed', by: 'claude-code', title: 'Screenshots go in the item' } }, -160), name: 'A proposed rule back: Won’t do' }
+export const ProposedRuleBack: Story = { ...swiped({ it: { type: 'rule', status: 'proposed', by: 'claude-code', title: 'Screenshots go in the item' } }, -160), name: "A proposed rule back: Won't do" }
 export const RuleBack: Story = { ...swiped({ it: { type: 'rule', title: 'Commit messages are in English' } }, -160), name: 'An active rule back: Retire' }
 export const RetiredRuleBack: Story = { ...swiped({ it: { type: 'rule', status: 'dropped', title: 'Screenshots go in the chat' } }, -160), name: 'A retired rule back: Reactivate' }
 export const RetiredRuleForward: Story = { ...swiped({ it: { type: 'rule', status: 'dropped', title: 'Screenshots go in the chat' } }, 140), name: 'A retired rule forward: Archive' }

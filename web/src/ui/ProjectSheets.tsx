@@ -86,7 +86,7 @@ export interface ProjectMenuEvents {
 }
 
 /** A project's menu: opened from its own name above it, it does not say that name again. */
-export function projectMenuSheet({ here, slug, title, tone, open }: { here: boolean; slug: string; title: string; tone: string; open: number | string }, on: ProjectMenuEvents): SheetParts {
+export function projectMenuSheet({ here, slug, title, tone, open, settingsKeys }: { here: boolean; slug: string; title: string; tone: string; open: number | string; settingsKeys: string }, on: ProjectMenuEvents): SheetParts {
   const row = (key: string, icon: IconName, label: string, run: () => void, k = '') => (
     <button key={key} onClick={run} className="flex h-9 w-full items-center gap-3 rounded-lg px-2.5 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800">
       <Icon n={icon} c="size-[18px] text-zinc-500 dark:text-zinc-400" />
@@ -111,7 +111,7 @@ export function projectMenuSheet({ here, slug, title, tone, open }: { here: bool
     body: (
       <div className="-mx-1 flex flex-col">
         {here ? null : row('open', 'arrow', 'Open', on.open)}
-        {row('settings', 'gear', 'Project settings', on.settings, here ? 'G S' : '')}
+        {row('settings', 'gear', 'Project settings', on.settings, here ? settingsKeys : '')}
         {row('rename', 'pencil', 'Rename…', on.rename)}
         <div className={MENU_SEP} />
         <button key="remove" onClick={on.remove} className={`flex h-9 w-full items-center gap-3 rounded-lg px-2.5 text-left text-sm hover:bg-red-50 dark:hover:bg-red-400/10 ${DANGER}`}>

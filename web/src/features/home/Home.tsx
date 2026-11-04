@@ -4,7 +4,7 @@
 
 import type { MouseEvent, Ref } from 'react'
 import type { SearchHit } from '../../model/types'
-import { inputCode } from '../../model/words'
+import { hitWhere, inputCode } from '../../model/words'
 import { Icon } from '../../ui/Icon'
 import { NewProjectForm } from '../../ui/NewProjectForm'
 import { Hit, NeedsCount, ProjTile, Skeleton } from '../../ui/bits'
@@ -58,7 +58,6 @@ const NOTICE = 'mb-3 flex items-center gap-3 rounded-xl bg-amber-50 px-4 py-2 te
 const NOTICE_X = 'relative grid size-9 shrink-0 place-items-center rounded-lg after:absolute after:-inset-1 text-amber-800 hover:bg-amber-100 dark:text-amber-200 dark:hover:bg-amber-400/15'
 
 const hitUrl = (x: SearchHit, q: string) => `/p/${encodeURIComponent(x.project)}/${x.kind === 'input' ? 'inputs?q=' + encodeURIComponent(q.trim()) : encodeURIComponent(x.code)}`
-const hitWhere = (x: SearchHit) => (x.kind === 'input' ? ' · what you said' : x.archived ? ' · archived' : x.status === 'done' ? ' · done' : x.status === 'dropped' ? " · won't do" : '')
 
 function AgentCell({ agent }: { agent: HomeRow['agent'] }) {
   return (

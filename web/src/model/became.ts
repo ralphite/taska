@@ -44,7 +44,7 @@ export const BECAME_WORD = {
   transcribing: 'Transcribing…',
   organizing: 'Organizing…',
   queued: 'Waiting to be organized',
-  failed: 'Couldn’t organize',
+  failed: "Couldn't organize",
   undone: 'Organizing undone',
   cancelled: 'Cancelled',
   agent: 'Left for an agent',

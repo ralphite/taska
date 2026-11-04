@@ -18,7 +18,7 @@ export const Lines: Story = {
         <States
           items={[
             ['held: approved', <HeldRow it={item({ n: 12, status: 'open' })} code="F012" said="Approved" height={64} on={on} />],
-            ['held: marked won’t do', <HeldRow it={item({ n: 12, status: 'dropped' })} code="F012" said="Won't do" height={64} on={on} />],
+            ["held: marked won't do", <HeldRow it={item({ n: 12, status: 'dropped' })} code="F012" said="Won't do" height={64} on={on} />],
             ['zone: needs you', <Zone kind="needs" label="Needs you" n={3} />],
             ['zone: rules', <Zone kind="rules" label="Active" n={12} />],
             ['zone: retired', <Zone kind="retired" label="Retired" n={2} />],

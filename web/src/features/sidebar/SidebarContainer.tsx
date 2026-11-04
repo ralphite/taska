@@ -6,7 +6,7 @@ import { useLayout, useServices, useStores, useStoreValue } from '../../app/cont
 import { useSideProjects } from '../../app/projectLists'
 import { usePaneRef } from '../../app/panes'
 import { Rail, Sidebar, type SidebarEvents } from './Sidebar'
-import { sideLinks } from './sideLinks'
+import { SIDE_KEYS, sideLinks } from './sideLinks'
 import { NEW_DRAFT } from '../../model/draftTarget'
 
 const DEV_LINKS = [
@@ -65,9 +65,10 @@ export function SidebarContainer({ slug, place, hidden, rail }: { slug: string; 
     },
   }
   const dev = typeof location !== 'undefined' && /^(localhost|127(\.\d{1,3}){3}|\[::1\])$/.test(location.hostname)
-  if (rail) return <Rail projects={list} composing={composing && layout === 'desk'} settingsOpen={route.page === 'project' && route.place.kind === 'settings'} hidden={hidden} on={on} />
+  if (rail) return <Rail keys={SIDE_KEYS} projects={list} composing={composing && layout === 'desk'} settingsOpen={route.page === 'project' && route.place.kind === 'settings'} hidden={hidden} on={on} />
   return (
     <Sidebar
+      keys={SIDE_KEYS}
       footRef={drawerFoot}
       phone={layout === 'phone'}
       projects={list}

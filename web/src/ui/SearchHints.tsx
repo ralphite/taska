@@ -1,9 +1,8 @@
 // Under a search: how many it matches in the other tabs (with a way there), and what the other projects have: the
 // search there says it is searching, that it found nothing there, or that it could not search. Props only.
 
-import { closed } from '../model/items'
 import type { SearchHit } from '../model/types'
-import { STATUS_WORD, TAB_WORD, type Tab } from '../model/words'
+import { hitWhere, TAB_WORD, type Tab } from '../model/words'
 import { ProjTile } from './bits'
 import { LINK_BTN } from './tones'
 
@@ -47,7 +46,7 @@ function CrossHits({ cross, tone, onGo }: { cross: CrossFacts; tone(slug: string
               </span>
               <span className="block truncate text-xs text-zinc-500 dark:text-zinc-400">
                 {x.ptitle || x.project}
-                {x.kind === 'input' ? ' · what you said' : x.archived ? ' · archived' : closed(x.status || '') ? ` · ${STATUS_WORD[x.status as 'done'] || x.status}` : ''}
+                {hitWhere(x)}
               </span>
             </span>
           </a>

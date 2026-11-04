@@ -25,7 +25,7 @@ export const Views: Story = {
           items={[
             ['Active', <ViewBar views={views('all')} onView={() => {}} />],
             ['Needs you, nothing waiting', <ViewBar views={views('wait', 0)} onView={() => {}} />],
-            ['Won’t do (scrolled to it)', <ViewBar views={views('dropped')} onView={() => {}} />],
+            ["Won't do (scrolled to it)", <ViewBar views={views('dropped')} onView={() => {}} />],
             ['with your own views (slid to the end)', <After run={(r) => r.querySelectorAll('[data-views] > div').forEach((el) => (el.scrollLeft = el.scrollWidth))}><ViewBar views={views('every')} own={[{ name: 'Bugs now', count: 6, on: false }, { name: 'P0', count: 1, on: false }]} onView={() => {}} /></After>],
           ]}
         />

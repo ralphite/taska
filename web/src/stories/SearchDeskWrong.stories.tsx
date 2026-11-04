@@ -6,11 +6,11 @@ import { deskStory } from './searchDesk'
 export default { title: 'Prototype/F479 Search on the desktop/When it goes wrong, dark, narrower' } satisfies Meta
 
 export const NothingFound: StoryObj = { name: 'Nothing found', ...deskStory('nothing') }
-export const DidntCatchThat: StoryObj = { name: 'Didn’t catch that', ...deskStory('unheard') }
+export const DidntCatchThat: StoryObj = { name: "Didn't catch that", ...deskStory('unheard') }
 /** The field takes typing instead. */
 export const MicrophoneNotAllowed: StoryObj = { name: 'Microphone not allowed', ...deskStory('nomic') }
 /** It keeps trying, and searches by itself once Taska answers. */
-export const CantReachTaska: StoryObj = { name: 'Can’t reach Taska', ...deskStory('offline') }
+export const CantReachTaska: StoryObj = { name: "Can't reach Taska", ...deskStory('offline') }
 export const ResultsDark: StoryObj = { name: 'Results, dark', globals: { theme: 'dark' }, ...deskStory('found') }
 export const MisheardDark: StoryObj = { name: 'A word may be misheard, dark', globals: { theme: 'dark' }, ...deskStory('misheard') }
 export const RecentDark: StoryObj = { name: 'Recent, dark', globals: { theme: 'dark' }, ...deskStory('recent') }

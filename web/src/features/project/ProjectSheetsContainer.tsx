@@ -1,5 +1,6 @@
 // The project's menu (from the sidebar) and the list of what was not saved, with what they do.
 
+import { keysShown } from '../../app/actions'
 import { useServices, useStores, useStoreValue } from '../../app/context'
 import { useProjectModel, useProjectRoute } from '../../app/hooks'
 import { openCount } from '../../model/visible'
@@ -30,7 +31,7 @@ export function ProjectMenuSheet({ req }: { req: Extract<SheetRequest, { kind: '
   return (
     <SheetLayout
       {...projectMenuSheet(
-        { here, slug: req.slug, title, tone: toneOf(tones, req.slug), open },
+        { here, slug: req.slug, title, tone: toneOf(tones, req.slug), open, settingsKeys: keysShown('settings') },
         {
           open: done(() => app.nav.to(`/p/${encodeURIComponent(req.slug)}/`)),
           settings: done(() => app.nav.to(`/p/${encodeURIComponent(req.slug)}/settings`)),

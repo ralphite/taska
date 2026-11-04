@@ -35,7 +35,7 @@ function page() {
   return { store, box, sender, sent, pushed, toasts, note }
 }
 
-describe('more said on an input’s own line', () => {
+describe("more said on an input's own line", () => {
   it('is added to that input, not sent as a new one, and the box goes on with what it writes', async () => {
     const a = page()
     a.store.getState().setMode({ kind: 'amend', id: 'r30', mode: 'edit', v: 0, base: '' })

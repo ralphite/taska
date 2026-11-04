@@ -13,7 +13,7 @@ import { canSend, organizing } from './inputs'
 
 const answer = (a: Partial<ViewAnswer>): ViewAnswer => ({ cursor: 'c1', full: false, items: [], inputs: [], docs: [], project: projectFacts(), server: { page: '', update: false }, ...a })
 
-describe('the copy of the server’s data', () => {
+describe("the copy of the server's data", () => {
   test('a full answer replaces it, a delta changes and removes, a same answer keeps it', () => {
     const full = merge(null, answer({ full: true, items: [item({ n: 1 }), item({ n: 2 })] }), 1)
     expect([...full.items.keys()]).toEqual([1, 2])
@@ -38,7 +38,7 @@ describe('the copy of the server’s data', () => {
 })
 
 describe('the address', () => {
-  test('places and the list’s settings read back the way they were written', () => {
+  test("places and the list's settings read back the way they were written", () => {
     const list = { ...NO_FILTERS, q: 'export', status: 'wait' }
     for (const place of [{ kind: 'tab' }, { kind: 'item', ref: 'F12' }, { kind: 'doc', d: 3 }, { kind: 'new' }] as const) {
       const path = projectPath('taska', 'items', place, list)
@@ -102,7 +102,7 @@ describe('a recording cancelled with Esc, kept in the inputs (B627)', () => {
   const organizer = { on: true, busy: null }
   const kept = { t: '', by: 'you', text: 'Keep the columns too', scope: null, files: [], acked: false, touched: [], org: null, seq: 1, v: 0, id: 'r4', kind: 'cancelled' as const }
 
-  test('it stands as cancelled, is no one’s work, and can be sent', () => {
+  test("it stands as cancelled, is no one's work, and can be sent", () => {
     const m = project({ cursor: '', items: new Map(), inputs: new Map([[kept.id, kept]]), docs: new Map(), facts: projectFacts({ organizer: { ...organizer, model: '' } }), server: { page: '', update: false }, at: 0 })
     expect(becameOf(kept, m, (s) => s)).toEqual({ k: 'cancelled' })
     expect(organizing(kept, organizer)).toBe(false)
@@ -124,7 +124,7 @@ describe('what became of an input, in one set of words (B629)', () => {
   const org = (msg: string, f = {}) => ({ ok: true, msg, t: '', keep: false, changed: true, undone: false, ...f })
   const of = (f: Parameters<typeof input>[0]) => becameOf(input(f), m, (s) => (s === 'mobile-app' ? 'Mobile app' : s))
 
-  test('the organizer’s note says what was done to each item, and what else it says stays as a note', () => {
+  test("the organizer's note says what was done to each item, and what else it says stays as a note", () => {
     const b = of({ id: 'r1', acked: true, touched: [14, 12, 7], org: org('Created B014; added to F012 and T007 · asked about the sort') })
     expect(b).toMatchObject({ k: 'filed', note: 'asked about the sort' })
     expect(b.k === 'filed' && b.items.map((x) => [x.item.code, x.did])).toEqual([['B014', 'Created'], ['F012', 'Added to'], ['T007', 'Added to']])

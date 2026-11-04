@@ -425,7 +425,7 @@ export function Feedback({ line, on }: { line: FeedbackLine | null; on: { dismis
           <>
             <Icon n="alert" c="size-4 text-red-600 dark:text-red-400" sw="2" />
             <span className="line-clamp-2 min-w-0 flex-1 leading-snug text-red-600 dark:text-red-400" title={line.raw}>
-              Couldn’t organize: {line.msg}
+              Couldn&apos;t organize: {line.msg}
             </span>
             {link('Retry', on.retryOrganizer)}
             <Dismiss onClick={on.dismiss} />

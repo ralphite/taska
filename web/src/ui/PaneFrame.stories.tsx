@@ -28,7 +28,7 @@ const body = <p className="px-8 py-4 text-[15px]">The item's page goes here.</p>
 
 /** The pane's bar and body: with its head, actions and the way to the next item; the New input page's head; empty. */
 export const Frame: Story = {
-  name: 'The pane’s frame: an item, New input, nothing open',
+  name: "The pane's frame: an item, New input, nothing open",
   render: () => (
     <Frames phoneWidth={393} deskWidth={900} height={560}>
       {(layout) => (

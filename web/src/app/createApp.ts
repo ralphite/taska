@@ -314,7 +314,7 @@ export function createApp(env: AppEnv): App {
     pauses: uploadPauses,
   })
   const docVoice = new DocVoice({ voice, docs, comments: docComments, box, boxStore, recording, view: docView, runner, changes, toasts, model, desk: env.desk, reply: (s, key, scope) => void box.send(s, model(s), scope, key) })
-  const dictation: Dictation = new Dictation({ api, store: dictationStore, view: docView, route, editor: docEditor, fields, toasts, model, recording: recordingNow })
+  const dictation: Dictation = new Dictation({ api, store: dictationStore, view: docView, route, editor: docEditor, fields, toasts, model, recording: recordingNow, desk: env.desk })
   const views = new SavedViews({ api, store: viewsStore, nav, toasts, list: () => { const r = route.getState().route; return r.page === 'project' ? r.list : null } })
   const moves = new Moves({ api, changes, toasts, model, title, go: goUrl, refresh: (s) => session().stale(s) })
   const selection = new Selection({ ui, order: listOrder, runner, toasts, slug, model: here, open: () => openItemN(route.getState().route) })

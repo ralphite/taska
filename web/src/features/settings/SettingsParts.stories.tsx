@@ -8,7 +8,7 @@ type Story = StoryObj
 
 /** A part with text to copy, a setting with a switch, Loading; and the phone's head, label, group and note. */
 export const Parts: Story = {
-  name: 'Its parts: a part to copy from, a setting with a switch, the phone’s head and rows',
+  name: "Its parts: a part to copy from, a setting with a switch, the phone's head and rows",
   render: () => (
     <div className="flex gap-6">
       <Frame layout="desk" width={620} height={520}>

@@ -8,7 +8,7 @@ import { sideProjects } from '../app/sideProjects'
 import { Composer } from '../features/composer/Composer'
 import { ItemPage } from '../features/item/ItemPage'
 import { Rail, Sidebar, type SidebarEvents } from '../features/sidebar/Sidebar'
-import { sideLinks } from '../features/sidebar/sideLinks'
+import { SIDE_KEYS, sideLinks } from '../features/sidebar/sideLinks'
 import { boxRole, shownBox } from '../model/boxFoot'
 import type { Found } from '../model/find'
 import { codeOf, type ProjectModel } from '../model/project'
@@ -88,9 +88,9 @@ export function DeskPage({ slug, n, rail, onSearch }: { slug: string; n: number;
   return (
     <div className="flex h-full">
       {rail ? (
-        <Rail projects={projects} composing={false} settingsOpen={false} on={sOn} />
+        <Rail keys={SIDE_KEYS} projects={projects} composing={false} settingsOpen={false} on={sOn} />
       ) : (
-        <Sidebar phone={false} projects={projects} composing={false} links={sideLinks(slug, null)} place="w-60 shrink-0 border-r border-zinc-200 bg-zinc-50 dark:border-zinc-800" on={sOn} />
+        <Sidebar phone={false} keys={SIDE_KEYS} projects={projects} composing={false} links={sideLinks(slug, null)} place="w-60 shrink-0 border-r border-zinc-200 bg-zinc-50 dark:border-zinc-800" on={sOn} />
       )}
       <div className="grid h-full min-w-0 flex-1 grid-cols-[360px_minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)] bg-white wide:grid-cols-[420px_minmax(0,1fr)] dark:bg-zinc-950">
         <ProjectBar

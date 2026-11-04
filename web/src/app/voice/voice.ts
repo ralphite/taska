@@ -7,6 +7,7 @@
 
 import { Refused } from '../../api/http'
 import { canRecord, micTrouble, openMic } from './mic'
+import { CANT_RECORD, cancelledKept, noSound } from '../../model/micWords'
 import { clock } from '../../model/time'
 import { vcLabel, vcLineEnd, withQuote } from '../../model/voiceComments'
 import type { Recording } from '../../stores/recording'
@@ -90,13 +91,13 @@ export class Voice {
   private why(slug: string, e: unknown): string {
     const name = (e as Error)?.name || ''
     void this.d.api.pageLog(slug, [{ kind: 'mic', level: 'warn', msg: String((e as Error)?.message || e || ''), name, where: 'start', secure: String(window.isSecureContext), ua: navigator.userAgent }]).catch(() => {})
-    return micTrouble(e)
+    return micTrouble(e, this.d.desk())
   }
 
   /** Record a voice note for draft `key` (it belongs where it was started, whatever is open when it stops). */
   async start(slug: string, key: DraftKey, scope: string | null, from: 'main' | 'aux', about: Recording['about'] = null): Promise<void> {
     if (this.rec) return
-    if (!this.can()) return this.d.toasts.show('This browser can’t record voice notes')
+    if (!this.can()) return this.d.toasts.show(CANT_RECORD)
     const box = this.d.fields.get('box')
     this.typing = !!box && box === box.ownerDocument.activeElement
     try {
@@ -175,7 +176,7 @@ export class Voice {
     if (!blob || !slug || key == null) return
     if (ms < 800 || !blob.size) {
       void this.d.api.pageLog(slug, [{ kind: 'mic', level: 'warn', msg: `${ms} ms, ${blob.size} bytes`, name: blob.size ? 'short' : 'empty', where: 'stop' }]).catch(() => {})
-      return this.d.toasts.show(blob.size ? 'Too short, discarded' : 'No sound from the microphone. Check Settings › Apps › Safari › Microphone')
+      return this.d.toasts.show(blob.size ? 'Too short, discarded' : noSound(this.d.desk()))
     }
     // a voice comment: the quote first, then its words
     const label = about ? vcLabel(about.quote) : null
@@ -218,7 +219,7 @@ export class Voice {
     const f = this.noteFile(blob, ms, 0)
     this.d.push({ slug, text: '', scope: null, kind: 'cancelled', quiet: true, files: [f] })
     void this.hear(slug, NEW_DRAFT, f, blob, null, true)
-    this.d.toasts.show('Recording cancelled · kept in Inputs')
+    this.d.toasts.show(cancelledKept(this.d.desk()))
   }
 
   private noteFile(blob: Blob, ms: number, at: number, label: string | null = null): DraftFile {

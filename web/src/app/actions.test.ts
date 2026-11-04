@@ -32,7 +32,7 @@ describe('the table of actions', () => {
   })
 
   it('lists the palette in its order', () => {
-    expect(paletteRows(true).map((r) => r.keys)).toEqual(['a', 'r', 'n', 'd', 'l', 'e', 'w', 'i', 's', 'p', 't', 'm', 'A', 'D', 'C', 'o'])
-    expect(paletteRows(false).map((r) => r.keys)).toEqual(['c', '/', 'f', 'V', 'g i', 'g n', 'g a', 'g r', 'g p', 'g s', '[', 'z', '?'])
+    expect(paletteRows(true).map((r) => r.keys)).toEqual(['A', 'R', 'N', 'D', 'L', 'E', 'W', 'I', 'S', 'P', 'T', 'M', '⇧A', '⇧D', '⇧C', 'O'])
+    expect(paletteRows(false).map((r) => r.keys)).toEqual(['C', '/', 'F', '⇧V', 'G I', 'G N', 'G A', 'G R', 'G P', 'G S', '[', 'Z', '?'])
   })
 })

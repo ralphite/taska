@@ -3,6 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { After, Frame, Frames } from '../../stories/Frames'
 import { side, sideOn } from '../../stories/sideFixtures'
 import { Sidebar } from './Sidebar'
+import { SIDE_KEYS } from './sideLinks'
 import { mark } from '../../stories/sidebarFixtures'
 
 export default { title: 'Components/Around the page/Sidebar/The sidebar' } satisfies Meta
@@ -45,7 +46,7 @@ export const ProjectsLoading: Story = { name: 'Projects loading (phone drawer)',
 /** Before the projects were ever listed in this browser. */
 export const NotListedYet: Story = {
   name: 'Not listed yet',
-  render: () => <Frames phoneWidth={320} deskWidth={240} height={420}>{(layout) => <Sidebar phone={layout === 'phone'} projects={null} composing={false} links={[]} place={layout === 'phone' ? 'h-full bg-zinc-100' : 'h-full bg-zinc-50'} on={sideOn} />}</Frames>,
+  render: () => <Frames phoneWidth={320} deskWidth={240} height={420}>{(layout) => <Sidebar phone={layout === 'phone'} keys={SIDE_KEYS} projects={null} composing={false} links={[]} place={layout === 'phone' ? 'h-full bg-zinc-100' : 'h-full bg-zinc-50'} on={sideOn} />}</Frames>,
 }
 // ---- more states (T639)
 /** a project in the phone's drawer pressed (a finger on it) */

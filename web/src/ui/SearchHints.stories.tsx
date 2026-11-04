@@ -41,6 +41,6 @@ export const Hints: Story = {
 // ---- more states (T639)
 const many = Array.from({ length: 30 }, (_, i) => ({ project: i % 2 ? 'home' : 'lumina', ptitle: i % 2 ? 'Home' : 'lumina', kind: 'item' as const, code: `T${i + 10}`, title: `Export step ${i + 1}`, status: (i === 1 ? 'dropped' : 'open') as 'open', archived: i === 2, t: T }))
 /** many found: the first eight, "+N more · refine search", 30 shown as 30+; one archived, one won't do */
-export const ManyFound: Story = { name: 'Hints: many found, one archived, one won’t do', render: () => <Frames phoneWidth={393} deskWidth={460}>{() => hints({ cross: { q: 'export', list: many, failed: false } })}</Frames> }
+export const ManyFound: Story = { name: "Hints: many found, one archived, one won't do", render: () => <Frames phoneWidth={393} deskWidth={460}>{() => hints({ cross: { q: 'export', list: many, failed: false } })}</Frames> }
 /** under a list: other tabs and other projects together */
 export const TabsAndProjects: Story = { name: 'Hints: other tabs and other projects together', render: () => <Frames phoneWidth={393} deskWidth={460}>{() => hints({ other: [['inputs', 3]], cross: { q: 'voice', list: hits, failed: false } })}</Frames> }

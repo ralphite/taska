@@ -34,7 +34,7 @@ describe('what the box writes to', () => {
     expect([r.doc, r.line?.label, r.line?.right, r.send]).toEqual([12, 'Comment on D12', { kind: 'x', label: 'Cancel · Esc', act: 'unpick' }, 'Comment'])
   })
 
-  test('the phone’s document, nothing picked: the whole document, or a reply to its item instead', () => {
+  test("the phone's document, nothing picked: the whole document, or a reply to its item instead", () => {
     const r = boxRole(m, at({ kind: 'doc', d: 12 }), false, 'taska', null, nothing, noTicks)
     expect([r.aim?.target.key, r.line?.detail, r.line?.right]).toEqual(['doc', '· or tap a part', { kind: 'to-item', code }])
   })

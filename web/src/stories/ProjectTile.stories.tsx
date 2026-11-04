@@ -10,10 +10,10 @@ type Story = StoryObj
 
 const SIZES: [string, string][] = [
   ['in a search result', 'size-4 rounded text-[9px]'],
-  ['in the sidebar’s list, the menus (the default)', 'size-5 rounded-md text-[11px]'],
-  ['in the project’s bar, the desktop’s sidebar', 'size-6 rounded-md text-xs'],
+  ["in the sidebar's list, the menus (the default)", 'size-5 rounded-md text-[11px]'],
+  ["in the project's bar, the desktop's sidebar", 'size-6 rounded-md text-xs'],
   ['in the switcher, the rail', 'size-7 rounded-lg text-xs'],
-  ['in the phone’s drawer and Settings', 'size-8 rounded-lg text-sm'],
+  ["in the phone's drawer and Settings", 'size-8 rounded-lg text-sm'],
   ['over the New input page', 'size-11 rounded-xl text-xl shadow-sm'],
 ]
 export const Sizes: Story = {

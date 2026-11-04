@@ -3,18 +3,20 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frames } from '../../stories/Frames'
 import { listOf, PROJECT } from '../../stories/listFixtures'
+import { CANT_RECORD, cancelledKept, micTrouble, noSound } from '../../model/micWords'
 import { Toast, type ToastView } from './Toast'
 
 export default { title: 'Components/Around the page/Floating/Toast' } satisfies Meta
 type Story = StoryObj
 
-const one = (t: ToastView): Story => ({
+/** `t`: the toast, or the desktop's and the phone's */
+const one = (t: ToastView | ((desk: boolean) => ToastView)): Story => ({
   render: () => (
     <Frames phoneWidth={393} deskWidth={900} height={420}>
       {(layout) => (
         <div className="relative h-full">
           {listOf(PROJECT, 'items', {}, layout === 'desk')}
-          <Toast toast={t} place={layout === 'desk' ? '-translate-x-1/2' : 'inset-x-0 mx-auto'} style={layout === 'desk' ? { left: '50%', bottom: '20px' } : { bottom: '24px' }} onAction={() => {}} onClose={() => {}} />
+          <Toast toast={typeof t === 'function' ? t(layout === 'desk') : t} place={layout === 'desk' ? '-translate-x-1/2' : 'inset-x-0 mx-auto'} style={layout === 'desk' ? { left: '50%', bottom: '20px' } : { bottom: '24px' }} onAction={() => {}} onClose={() => {}} />
         </div>
       )}
     </Frames>
@@ -32,3 +34,10 @@ export const Long: Story = { ...one({ text: 'F012 is done, with your note · 3 s
 // ---- more states (T639)
 export const ErrorStays: Story = { ...one({ text: '#12: your change did not go through. Your words are back in the box; send again', error: true, sticky: true, action: null }), name: 'Error that stays until closed' }
 export const ErrorWithRetry: Story = { ...one({ text: 'Order not saved', error: true, sticky: false, action: { label: 'Retry' } }), name: 'Error with Retry' }
+// ---- the microphone's (R4-3): the desktop's way to allow it and the phone's
+const mic = (text: (desk: boolean) => string, error = false): Story => one((desk) => ({ text: text(desk), error, sticky: false, action: null }))
+export const MicNotAllowed: Story = { ...mic((desk) => micTrouble('NotAllowedError', desk, true), true), name: 'Microphone not allowed' }
+export const MicBusy: Story = { ...mic((desk) => micTrouble('NotReadableError', desk, true), true), name: 'Microphone busy' }
+export const NoSound: Story = { ...mic(noSound), name: 'No sound from the microphone' }
+export const CantRecord: Story = { ...mic(() => CANT_RECORD), name: "This browser can't record" }
+export const RecordingCancelled: Story = { ...mic(cancelledKept), name: 'Recording cancelled, kept' }

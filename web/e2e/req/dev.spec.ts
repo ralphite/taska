@@ -9,7 +9,7 @@ test('r696 r727: the links for making Taska are a section of their own above the
   page,
   request,
 }) => {
-  test.skip(!isDesk(page), 'the sidebar foot is the desktop’s')
+  test.skip(!isDesk(page), "the sidebar foot is the desktop's")
   const p = await project(request, LOOP)
   await open(page, p)
   const dev = devLinks(page)
@@ -35,7 +35,7 @@ test('r696 r727 D71: the dashboard opens on this computer and is never given thr
   expect(through.status()).not.toBe(200)
 })
 
-test('r595 r696: what each item cost, from the line ending an agent’s done message, is on the dashboard', async ({
+test("r595 r696: what each item cost, from the line ending an agent's done message, is on the dashboard", async ({
   page,
   request,
 }) => {

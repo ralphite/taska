@@ -6,6 +6,6 @@ export default { title: 'Components/Item list/Item row/By status/Finished, and r
 type Story = StoryObj
 
 export const Done = one({ it: { status: 'done' } })
-export const WontDo: Story = { ...one({ it: { status: 'dropped' } }), name: 'Won’t do' }
+export const WontDo: Story = { ...one({ it: { status: 'dropped' } }), name: "Won't do" }
 export const Archived = one({ it: { status: 'done', archived: true } })
 export const Rule = one({ it: { type: 'rule', title: 'Commit messages are in English' }, f: { code: 'R012' } })

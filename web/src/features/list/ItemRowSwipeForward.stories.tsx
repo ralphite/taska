@@ -12,4 +12,4 @@ export const ForwardAnswer: Story = { ...swiped({ it: { wait: askOf('Which forma
 export const ForwardApprove: Story = { ...swiped({ it: { status: 'proposed', by: 'claude-code' } }, 140), name: 'A proposal: Approve' }
 export const ForwardAccept: Story = { ...swiped({ it: { status: 'review' } }, 140), name: 'Finished work: Accept' }
 export const ForwardSubitemsOpen: Story = { ...swiped({ it: { status: 'doing', agent }, f: { kids: { done: 1, all: 3 }, openKids: 2 }, foldable: true }, 140), name: 'Done, with subitems still open' }
-export const FinishedForward: Story = { ...swiped({ it: { status: 'done' } }, 140), name: 'Done or won’t do: Archive' }
+export const FinishedForward: Story = { ...swiped({ it: { status: 'done' } }, 140), name: "Done or won't do: Archive" }

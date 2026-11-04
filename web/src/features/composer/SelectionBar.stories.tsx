@@ -26,7 +26,7 @@ export const Bar: Story = {
 
 /** Recording a comment about them: the same button stops it. With Correct, for a voice note's words. */
 export const Recording: Story = {
-  name: 'Recording; Correct on a voice note’s words',
+  name: "Recording; Correct on a voice note's words",
   render: () => (
     <Frames phoneWidth={393} deskWidth={640} height={160}>
       {() => (

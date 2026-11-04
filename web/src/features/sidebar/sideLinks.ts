@@ -1,7 +1,11 @@
 // The sidebar's links under the projects: Documents, Activity and Deleted of this project, the one whose list shows
-// beside the pane lit (while what you opened from it shows too). Pure: the container and the stories both use it.
+// beside the pane lit (while what you opened from it shows too); and the keys it shows, from the actions' table.
+// Pure: the container and the stories both use it.
 
-import type { SideLinkInfo } from './Sidebar'
+import { keysShown } from '../../app/actions'
+import type { SideKeys, SideLinkInfo } from './Sidebar'
+
+export const SIDE_KEYS: SideKeys = { search: keysShown('palette'), newInput: keysShown('new-input'), voice: keysShown('voice'), settings: keysShown('settings'), sidebar: keysShown('sidebar'), keys: keysShown('keys') }
 
 export function sideLinks(slug: string, side: 'docs' | 'log' | 'deleted' | null): SideLinkInfo[] {
   const base = `/p/${encodeURIComponent(slug)}/`

@@ -3,6 +3,7 @@
 // phone. Your views' menu is in ViewMenu.stories; what you said's menu in InputMenu.stories.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { messageMenuSheet } from '../features/item/ItemSheets'
+import { keysShown } from '../app/actions'
 import { projectMenuSheet } from '../ui/ProjectSheets'
 import { PROJECT_TONES } from '../ui/tones'
 import { Frames } from './Frames'
@@ -18,5 +19,5 @@ const projectOn = acts('Project menu', ['open', 'settings', 'rename', 'remove'])
 /** A message's ⋯: hide it from the talk. */
 export const MessageMenu: Story = { ...both((desk) => opened(messageMenuSheet(act('Message menu: hide')), desk, { look: desk ? { pop: true, at: AT_BUTTON } : {} }), 320), name: 'Message' }
 /** The sidebar's right-click on the project you are in. */
-export const ProjectMenuHere: Story = { ...both((desk) => opened(projectMenuSheet({ here: true, slug: 'taska', title: 'taska', tone: PROJECT_TONES[0], open: 24 }, projectOn), desk, { look: desk ? { pop: true, at: AT_POINTER(40, 120) } : {} }), 360), name: 'This project' }
-export const ProjectMenuOther: Story = { ...both((desk) => opened(projectMenuSheet({ here: false, ...home }, projectOn), desk, { look: desk ? { pop: true, at: AT_POINTER(40, 160) } : {} }), 360), name: 'Another project' }
+export const ProjectMenuHere: Story = { ...both((desk) => opened(projectMenuSheet({ here: true, slug: 'taska', title: 'taska', tone: PROJECT_TONES[0], open: 24, settingsKeys: keysShown('settings') }, projectOn), desk, { look: desk ? { pop: true, at: AT_POINTER(40, 120) } : {} }), 360), name: 'This project' }
+export const ProjectMenuOther: Story = { ...both((desk) => opened(projectMenuSheet({ here: false, ...home, settingsKeys: keysShown('settings') }, projectOn), desk, { look: desk ? { pop: true, at: AT_POINTER(40, 160) } : {} }), 360), name: 'Another project' }

@@ -58,7 +58,7 @@ const bars = (width: number) => (
   </Frame>
 );
 export const Bars: Story = {
-  name: "The pane’s bar: a document, a web page, being edited",
+  name: "The pane's bar: a document, a web page, being edited",
   render: () => (
     <div className="flex flex-wrap items-start gap-6 bg-zinc-200 p-6 dark:bg-zinc-800">
       {bars(900)}

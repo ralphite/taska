@@ -21,7 +21,7 @@ const parts = {
 
 /** A sheet from the bottom on the phone, a dialog on the desktop: title, line under it, body, foot. */
 export const Frame: Story = {
-  name: 'A sheet’s frame: phone and desktop',
+  name: "A sheet's frame: phone and desktop",
   render: () => <Frames height={420} deskWidth={900}>{(layout) => <Sheet open look={{}} desk={layout === 'desk'} onClose={act('Sheet: close')}><SheetLayout {...parts} /></Sheet>}</Frames>,
 }
 // ---- more states (T639)

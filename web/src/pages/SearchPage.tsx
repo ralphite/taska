@@ -11,6 +11,7 @@ import { ItemRow, type RowEvents, type RowFacts, type RowLook } from '../feature
 import { ViewBar } from '../features/list/ViewBar'
 import type { ViewChip } from '../features/list/rows'
 import type { Spot } from '../model/doubts'
+import { micAllow } from '../model/micWords'
 import type { FindPhase, Found } from '../model/find'
 import type { Item } from '../model/types'
 import { Hit, ProjTile } from '../ui/bits'
@@ -235,8 +236,8 @@ export function SearchBody({ v, on, desk = false }: { v: SearchView; on: SearchE
   if (v.groups) body = <Results groups={v.groups} marks={v.marks} faded={v.phase === 'searching'} onOpen={on.open} />
   else if (v.phase === 'searching') body = <Middle title={<Icon n="spinner" c="mx-auto size-7 animate-spin text-zinc-400" sw="2" />}>Searching…</Middle>
   else if (v.phase === 'nothing') body = <Middle title="Nothing found" />
-  else if (v.phase === 'unheard') body = <Middle title="Didn’t catch that" />
-  else if (v.phase === 'nomic') body = <Middle title="Microphone not allowed">{desk ? 'Chrome: the icon left of the address › Microphone' : 'Safari: aA › Website Settings › Microphone'}</Middle>
+  else if (v.phase === 'unheard') body = <Middle title="Didn't catch that" />
+  else if (v.phase === 'nomic') body = <Middle title="Microphone not allowed">{micAllow(desk)}</Middle>
   else if (v.phase === 'offline')
     body = (
       <Middle

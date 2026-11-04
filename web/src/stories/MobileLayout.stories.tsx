@@ -13,6 +13,7 @@ import { factsOf } from '../features/docs/docFacts'
 import { DocView, type DocEvents } from '../features/docs/DocView'
 import { ItemPage, ItemTalk } from '../features/item/ItemPage'
 import { Sidebar, type SideLinkInfo, type SideProject } from '../features/sidebar/Sidebar'
+import { SIDE_KEYS } from '../features/sidebar/sideLinks'
 import { boxRole, shownBox, type BoxLine } from '../model/boxFoot'
 import { findRef } from '../model/project'
 import { parseRoute } from '../model/route'
@@ -320,7 +321,7 @@ function Phone({ mic }: { mic: boolean }) {
     )
   } else if (place === 'projects') {
     top = null
-    body = <Sidebar phone projects={PROJECTS} composing={false} links={LINKS} place="h-full bg-zinc-100" on={{ newInput() {}, newVoice() {}, newProject() {}, hide() {}, settings() {}, help() {}, keys() {}, go: (_, e) => (e.preventDefault(), go('items')), undo() {}, order() {}, dragProject: () => false, dropProject() {}, projectMenu() {} }} />
+    body = <Sidebar phone keys={SIDE_KEYS} projects={PROJECTS} composing={false} links={LINKS} place="h-full bg-zinc-100" on={{ newInput() {}, newVoice() {}, newProject() {}, hide() {}, settings() {}, help() {}, keys() {}, go: (_, e) => (e.preventDefault(), go('items')), undo() {}, order() {}, dragProject: () => false, dropProject() {}, projectMenu() {} }} />
   } else {
     top = <Top back={false} code="Shop" sub={found ? 'Searched for “export filter”' : ''} onBack={() => {}} />
     body = found ? listOf(ITEMS, 'items', { q: 'export filter' }, false, { on: { open: (n) => n === 1 && go('detail') } }) : <Listening onDone={() => setFound(true)} onCancel={() => go('items')} />

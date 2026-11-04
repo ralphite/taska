@@ -49,8 +49,19 @@ export interface SidebarEvents {
   search?(): void
 }
 
+/** the keys its buttons show (the actions' table has them) */
+export interface SideKeys {
+  search: string
+  newInput: string
+  voice: string
+  settings: string
+  sidebar: string
+  keys: string
+}
+
 export interface SidebarProps {
   phone: boolean
+  keys: SideKeys
   /** the phone's card at the drawer's foot (the toast sits above it) */
   footRef?: Ref<HTMLDivElement>
   /** null: never listed in this browser yet */
@@ -140,7 +151,7 @@ function SideLink({ link, phone, on }: { link: SideLinkInfo; phone: boolean; on:
 }
 
 export function Sidebar(props: SidebarProps) {
-  const { phone, projects, composing, links, undoLabel, devLinks, place, hidden, newProjectField, edge, footRef, on } = props
+  const { phone, keys, projects, composing, links, undoLabel, devLinks, place, hidden, newProjectField, edge, footRef, on } = props
   const rows = useRef<HTMLDivElement>(null)
   useOrderDrag(rows, (names, moved) => on.order(names, moved))
   return (
@@ -160,7 +171,7 @@ export function Sidebar(props: SidebarProps) {
         </a>
         <button
           onClick={on.hide}
-          title="Hide sidebar · ["
+          title={`Hide sidebar · ${keys.sidebar}`}
           aria-label="Hide sidebar"
           className="ml-auto hidden size-8 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-200/70 lg:grid dark:text-zinc-400 dark:hover:bg-zinc-800"
         >
@@ -174,7 +185,7 @@ export function Sidebar(props: SidebarProps) {
         >
           <Icon n="search" c="size-4 shrink-0 text-zinc-500 dark:text-zinc-400" sw="2" />
           <span className="min-w-0 flex-1 truncate text-left">Search</span>
-          <Kbd k="⌘K" />
+          <Kbd k={keys.search} />
         </button>
       ) : null}
       <div className="group/ni relative mx-2.5 mb-3 hidden shrink-0 lg:block">
@@ -186,12 +197,12 @@ export function Sidebar(props: SidebarProps) {
           <Icon n="newinput" c="size-4" />
           <span className="flex-1 text-left">New input</span>
           <span className="group-hover/ni:invisible">
-            <Kbd k="C" />
+            <Kbd k={keys.newInput} />
           </span>
         </button>
         <button
           onClick={on.newVoice}
-          title="New input by voice · ⇧V"
+          title={`New input by voice · ${keys.voice}`}
           aria-label="New input by voice"
           className="absolute inset-y-1 right-1 hidden w-9 place-items-center rounded-lg text-zinc-600 group-hover/ni:grid hover:bg-zinc-200/70 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-700 dark:hover:text-white"
         >
@@ -282,11 +293,11 @@ export function Sidebar(props: SidebarProps) {
             >
               <Icon n="gear" c="size-4 shrink-0 text-zinc-500 dark:text-zinc-400" sw="2" />
               <span className="min-w-0 flex-1 truncate">Settings</span>
-              <Kbd k="G S" />
+              <Kbd k={keys.settings} />
             </button>
             <button
               onClick={on.keys}
-              title="Keyboard shortcuts · ?"
+              title={`Keyboard shortcuts · ${keys.keys}`}
               aria-label="Keyboard shortcuts"
               className="grid size-9 shrink-0 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-200/60 dark:text-zinc-400 dark:hover:bg-zinc-800"
             >
@@ -307,7 +318,7 @@ export function Sidebar(props: SidebarProps) {
 }
 
 /** The sidebar folded: a narrow rail of the same. */
-export function Rail({ projects, composing, settingsOpen, hidden, on }: { projects: SideProject[] | null; composing: boolean; settingsOpen: boolean; hidden?: boolean; on: SidebarEvents }) {
+export function Rail({ keys, projects, composing, settingsOpen, hidden, on }: { keys: SideKeys; projects: SideProject[] | null; composing: boolean; settingsOpen: boolean; hidden?: boolean; on: SidebarEvents }) {
   const btn = (key: string, inner: ReactNode, title: string, onClick: () => void, attrs: Record<string, unknown> = {}) => (
     <button
       key={key}
@@ -327,11 +338,11 @@ export function Rail({ projects, composing, settingsOpen, hidden, on }: { projec
         <span className="text-blue-600 dark:text-blue-400">
           <Icon n="logo" c="size-6" sw="2.25" />
         </span>,
-        'Show sidebar · [',
+        `Show sidebar · ${keys.sidebar}`,
         on.hide,
       )}
-      {on.search ? btn('search', <Icon n="search" c="size-5" />, 'Search · ⌘K', on.search) : null}
-      {btn('new', <Icon n="newinput" c="size-5" />, 'New input · C', on.newInput, { 'aria-pressed': composing })}
+      {on.search ? btn('search', <Icon n="search" c="size-5" />, `Search · ${keys.search}`, on.search) : null}
+      {btn('new', <Icon n="newinput" c="size-5" />, `New input · ${keys.newInput}`, on.newInput, { 'aria-pressed': composing })}
       <div className="my-1 h-px w-8 bg-zinc-200 dark:bg-zinc-800" />
       <div className="-my-1 flex min-h-0 [scrollbar-width:none] flex-col items-center gap-1 overflow-y-auto outline-none p-1">
         {(projects || []).map((p) => (
@@ -356,9 +367,9 @@ export function Rail({ projects, composing, settingsOpen, hidden, on }: { projec
       </div>
       {btn('np', <Icon n="plus" c="size-5" />, 'New project', on.newProject)}
       <div className="flex-1" />
-      {btn('settings', <Icon n="gear" c="size-5" />, 'Settings · G S', on.settings, settingsOpen ? { 'aria-current': 'page' } : {})}
+      {btn('settings', <Icon n="gear" c="size-5" />, `Settings · ${keys.settings}`, on.settings, settingsOpen ? { 'aria-current': 'page' } : {})}
       {btn('help', <Icon n="info" c="size-5" />, 'Help', on.help)}
-      {btn('keys', <Icon n="keyboard" c="size-5" />, 'Keyboard shortcuts · ?', on.keys)}
+      {btn('keys', <Icon n="keyboard" c="size-5" />, `Keyboard shortcuts · ${keys.keys}`, on.keys)}
     </nav>
   )
 }

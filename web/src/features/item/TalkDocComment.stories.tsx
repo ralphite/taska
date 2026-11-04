@@ -25,7 +25,7 @@ const at = (comments: Comment[], key = 'k1', text = 'The export keeps the filter
 export const YoursWithWhatItIsAbout: Story = { ...at([comment({ id: 9, t: later(1), quote: 'keeps the filter', text: 'And the sort too?' })]), name: 'Yours, with what it is about' }
 export const AnAgentsAnswer: Story = {
   ...at([comment({ id: 9, t: later(1), quote: 'keeps the filter', text: 'And the sort too?' }), comment({ id: 10, th: 9, by: 'claude-code', t: later(3), quote: '', text: 'Yes: added to the plan.' })]),
-  name: 'An agent’s answer',
+  name: "An agent's answer",
 }
 export const OnTheWholeDocument: Story = { ...at([comment({ id: 9, key: 'doc', t: later(1), quote: '', text: 'Looks good as a whole.' })], 'doc'), name: 'On the whole document' }
 export const AboutATable: Story = { ...at([comment({ id: 9, key: 't1', t: later(1), quote: '', text: 'Who signs it off?' })], 't1', TABLE), name: 'About a table' }

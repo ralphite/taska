@@ -139,7 +139,7 @@ function Rounds({ all, range, now, onRange }: { all: Round[]; range: string; now
         </p>
         {withTokens.length ? (
           <>
-            <RoundBars rows={withTokens.slice(0, SHOWN)} value={(r) => r.tokens ?? 0} label={(r) => `${short(r.tokens ?? 0)} token`} />
+            <RoundBars rows={withTokens.slice(0, SHOWN)} value={(r) => r.tokens ?? 0} label={(r) => `${short(r.tokens ?? 0)} tokens`} />
             {more(withTokens.length)}
           </>
         ) : null}
