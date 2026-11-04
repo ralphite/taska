@@ -1,6 +1,7 @@
 // Whether an agent is around (T591: Top bar and list head > Agent pill): the pill in the desktop's bar and the phone's
 // head, from the page's own agentInfo with what Taska last heard of the agents; and the count of changes not saved.
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { act } from '../stories/acts'
 import { Frames } from '../stories/Frames'
 import { AGENTS, headOf, type HeadHere } from '../stories/headFixtures'
 import { PaneFrame } from '../ui/PaneFrame'
@@ -30,7 +31,7 @@ export const OfflineOnPhoneItem: Story = {
     <Frames desk={false} phoneWidth={393} height={220}>
       {() => (
         <div className="flex h-44 flex-col">
-          <PaneFrame place="" desk={false} head={<span className="font-mono text-sm font-bold">F012</span>} menu notice={<OfflinePill />} onBack={() => {}} onMenu={() => {}}>
+          <PaneFrame place="" desk={false} head={<span className="font-mono text-sm font-bold">F012</span>} menu notice={<OfflinePill />} onBack={act('Pane: back')} onMenu={act('Pane: menu → Menus and sheets › Item menu')}>
             <p className="px-4 py-4 text-[15px]">Export ignores the active filter</p>
           </PaneFrame>
         </div>

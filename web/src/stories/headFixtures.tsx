@@ -2,16 +2,18 @@
 // filters' row under it; on the phone the head (menu and name, agent, search) and the
 // tabs, with the row of filters set. What it says comes from the page's own headFacts (tabCounts, agentInfo, deskTabs,
 // phoneTabs) and filtersSet, with the item list's demo project. Used by the stories of the top bar and the list head.
-import { DeskFilters, FilterStrip } from '../features/list/Filters'
+import { useState } from 'react'
+import { DeskFilters, FilterStrip, type FilterEvents } from '../features/list/Filters'
 import { ListHead, PhoneTabs, ProjectBar } from '../pages/Header'
 import { agentInfo, deskTabs, phoneTabs, tabCounts } from '../pages/headFacts'
-import { NO_FILTERS, type ListQuery } from '../model/route'
+import { NO_FILTERS, type ListKey, type ListQuery } from '../model/route'
 import type { AgentSeen } from '../model/types'
 import { filtersSet } from '../model/visible'
 import type { Tab } from '../model/words'
 import { PROJECT_TONES } from '../ui/tones'
 import { T, input, modelOf } from './fixtures'
 import { PROJECT } from './listFixtures'
+import { acts } from './acts'
 
 const now = Date.parse(T)
 /** Agents as Taska last heard of them. */
@@ -45,30 +47,65 @@ export interface HeadHere {
   pressed?: boolean
 }
 
-const no = () => {}
-const headOn = { menu: no, agents: no, notSaved: no, search: no, query: no, clear: no }
-const filterOn = { set: no, unset: no, reset: no, saveView: no }
 const INPUTS = [input({ id: 'r3' }), input({ id: 'r2' }), input({ id: 'r1', acked: true })]
+const on = acts('Head', ['menu', 'agents', 'notSaved', 'search', 'filters', 'saveView'] as const, { agents: 'Agents › Who works here', notSaved: 'Sheets › Not saved, sign in', search: 'Search on the phone', filters: 'Sheets › Filters on the phone' })
 
-export function headOf(desk: boolean, h: HeadHere = {}) {
+/** The head with what the page holds for it (the route's tab and filters, the phone's search, the desktop's filters
+ * open): a tab opens, the filters set and take off, the phone's search types and clears (T662). The agents, Not saved,
+ * the phone's menu and its Search and Filters sheets show in the Actions panel. */
+export const headOf = (desk: boolean, h: HeadHere = {}) => <LiveHead desk={desk} h={h} />
+
+function LiveHead({ desk, h }: { desk: boolean; h: HeadHere }) {
   const m = modelOf(PROJECT, INPUTS, { title: 'Shop', agents: h.agents ?? AGENTS.ready, work: h.work ?? true })
-  const tab = h.tab ?? 'items'
-  const list = { ...NO_FILTERS, ...h.list }
+  const [tab, setTab] = useState<Tab>(h.tab ?? 'items')
+  const [awayTab, setAwayTab] = useState(!!h.awayTab)
+  const [list, setList] = useState<ListQuery>({ ...NO_FILTERS, ...h.list })
+  const [filtersOpen, setFiltersOpen] = useState(!!h.filtersOpen)
+  const [searching, setSearching] = useState(!!h.searching)
   const counts = h.loading ? null : tabCounts(m, tab, list, desk)
   const agent = h.loading ? null : agentInfo(m, h.away ?? 0)
   const set = filtersSet(tab, list)
+  const toTab = (t: Tab) => {
+    setTab(t)
+    setAwayTab(false)
+  }
+  // the page's filterEvents (nav.setList)
+  const filterOn: FilterEvents = {
+    set: (k, v) => setList({ ...list, [k]: v }),
+    unset: (k) => setList({ ...list, [k]: NO_FILTERS[k] }),
+    reset: () => setList({ ...list, q: '', type: 'all', when: 'all', status: 'all', pri: 'all', sort: 'all' }),
+    saveView: on.saveView,
+  }
   if (desk)
     return (
       <div className="grid grid-cols-[420px_minmax(0,1fr)]">
-        <ProjectBar title="Shop" tone={PROJECT_TONES[4]} tabs={deskTabs(counts, tab, !!h.awayTab)} agent={agent} notSaved={h.notSaved ?? 0} place="col-span-2" on={{ tab: no, agents: no, notSaved: no }} />
-        <DeskFilters tab={tab} list={list} set={set} open={!!h.filtersOpen} place="col-start-1" hidden={!(h.filtersOpen || set.length)} on={{ ...filterOn, toggle: no }} />
+        <ProjectBar title="Shop" tone={PROJECT_TONES[4]} tabs={deskTabs(counts, tab, awayTab)} agent={agent} notSaved={h.notSaved ?? 0} place="col-span-2" on={{ tab: toTab, agents: on.agents, notSaved: on.notSaved }} />
+        <DeskFilters tab={tab} list={list} set={set} open={filtersOpen} place="col-start-1" hidden={!(filtersOpen || set.length)} on={{ ...filterOn, toggle: () => setFiltersOpen(!filtersOpen) }} />
       </div>
     )
   return (
     <div className="flex flex-col">
-      <ListHead title="Shop" otherNeeds={!!h.otherNeeds} searching={!!h.searching} q={list.q} placeholder="Search items" agent={agent} notSaved={h.notSaved ?? 0} place="" on={headOn} />
-      <PhoneTabs tabs={phoneTabs(counts, tab)} filtersSet={set.length > 0} showFilter={tab !== 'inputs'} on={{ tab: no, filters: no }} />
-      <FilterStrip set={set} hidden={tab === 'inputs' || !set.length} onUnset={no} onReset={no} />
+      <ListHead
+        title="Shop"
+        otherNeeds={!!h.otherNeeds}
+        searching={searching}
+        q={list.q}
+        placeholder="Search items"
+        agent={agent}
+        notSaved={h.notSaved ?? 0}
+        place=""
+        on={{
+          menu: on.menu,
+          agents: on.agents,
+          notSaved: on.notSaved,
+          // Search opens the phone's search (its own stories); off, the head's search closes and its words go
+          search: (open) => (open ? on.search() : (setSearching(false), setList({ ...list, q: '' }))),
+          query: (q) => setList({ ...list, q }),
+          clear: () => setList({ ...list, q: '' }),
+        }}
+      />
+      <PhoneTabs tabs={phoneTabs(counts, tab)} filtersSet={set.length > 0} showFilter={tab !== 'inputs'} on={{ tab: toTab, filters: on.filters }} />
+      <FilterStrip set={set} hidden={tab === 'inputs' || !set.length} onUnset={(k) => filterOn.unset(k as ListKey)} onReset={filterOn.reset} />
     </div>
   )
 }
