@@ -2,7 +2,8 @@
 // label): after half a second under a fine pointer, at once when you move from one to the next, beside the sidebar's
 // buttons, under the heads' buttons, above the rest. A key at the end of the words ("Done · D") shows as a key cap. A
 // code in some words (data-ref) shows a card about what it names instead; a voice note's play button (data-heard) shows
-// its original words: word for word, and tidied (what agents get) when they differ (B640).
+// its original words: word for word, and tidied (what agents get) when they differ (B640). It shows and hides at
+// once, where it belongs: no fade, no movement (B665).
 
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { RefCard } from '../model/refCard'
@@ -16,7 +17,6 @@ interface Shown {
   card: RefCard | null
   /** a voice note's words: as said, and tidied */
   said: { heard: string; tidied: string } | null
-  quick: boolean
 }
 
 /** The tip's words: the element's title becomes its data-tip, so the browser's own tooltip never starts. An element
@@ -59,7 +59,6 @@ function SaidWords({ heard, tidied }: { heard: string; tidied: string }) {
 /** `card`: what a code names, as its card (read when it shows). */
 export function Tooltip({ card }: { card(ref: string): RefCard | null }) {
   const [shown, setShown] = useState<Shown | null>(null)
-  const [on, setOn] = useState(false)
   const tip = useRef<HTMLDivElement>(null)
   const arrow = useRef<HTMLSpanElement>(null)
   const told = useRef(card)
@@ -72,14 +71,14 @@ export function Tooltip({ card }: { card(ref: string): RefCard | null }) {
     let current: HTMLElement | null = null
     let closedAt = 0
     let hush: Element | null = null
-    const show = (el: HTMLElement, quick: boolean) => {
+    const show = (el: HTMLElement) => {
       const c = el.dataset.ref ? told.current(el.dataset.ref) : null
       const said = el.dataset.heard !== undefined ? { heard: el.dataset.heard, tidied: el.dataset.tidied ?? '' } : null
       const words = c || said ? '' : tipText(el)
       if ((!c && !said && !words) || !el.isConnected) return
       current = el
       el.setAttribute('aria-describedby', 'tip')
-      setShown({ el, ...split(words), card: c, said, quick })
+      setShown({ el, ...split(words), card: c, said })
     }
     const hide = () => {
       clearTimeout(timer)
@@ -108,8 +107,8 @@ export function Tooltip({ card }: { card(ref: string): RefCard | null }) {
       clearTimeout(timer)
       if (quick) {
         hide()
-        show(el, true)
-      } else timer = window.setTimeout(() => show(el, false), 500)
+        show(el)
+      } else timer = window.setTimeout(() => show(el), 500)
     }
     const out = (e: PointerEvent) => {
       const to = e.relatedTarget as Element | null
@@ -122,7 +121,7 @@ export function Tooltip({ card }: { card(ref: string): RefCard | null }) {
       const el = target(e.target)
       if (fine.matches && el && (e.target as Element).matches(':focus-visible')) {
         hide()
-        show(el, true)
+        show(el)
       }
     }
     const down = (e: PointerEvent) => {
@@ -156,11 +155,8 @@ export function Tooltip({ card }: { card(ref: string): RefCard | null }) {
   useLayoutEffect(() => {
     const t = tip.current
     const a = arrow.current
-    // measured, then placed and faded in before the browser paints (React's useLayoutEffect measuring pattern)
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setOn(false)
+    // measured and placed before the browser paints, so it appears where it belongs (B665: nothing flies in)
     if (!t || !a || !shown) return
-    t.style.transition = shown.quick ? 'none' : ''
     const r = shown.el.getBoundingClientRect()
     const w = t.offsetWidth
     const h = t.offsetHeight
@@ -194,8 +190,6 @@ export function Tooltip({ card }: { card(ref: string): RefCard | null }) {
             ? { top: ay + 'px', left: '-4px' }
             : { top: ay + 'px', left: w - 4 + 'px' },
     )
-    const f = requestAnimationFrame(() => setOn(true))
-    return () => cancelAnimationFrame(f)
   }, [shown])
   return (
     <div
@@ -203,10 +197,9 @@ export function Tooltip({ card }: { card(ref: string): RefCard | null }) {
       ref={tip}
       role="tooltip"
       hidden={!shown}
-      data-on={on ? '' : undefined}
       data-card={shown?.card ? '' : undefined}
       data-said={shown?.said ? '' : undefined}
-      className="pointer-events-auto fixed top-0 left-0 z-[80] max-w-[260px] rounded-lg bg-zinc-900 px-2 py-1.5 text-[13px] leading-snug text-white opacity-0 shadow-lg shadow-black/20 transition-[opacity,translate] duration-[120ms] data-[card]:w-80 data-[card]:max-w-80 data-[card]:px-3 data-[card]:py-2.5 data-[said]:max-h-[60dvh] data-[said]:w-96 data-[said]:max-w-[calc(100vw-1rem)] data-[said]:overflow-y-auto data-[said]:px-3 data-[said]:py-2.5 data-[on]:opacity-100 motion-reduce:transition-none dark:bg-zinc-100 dark:text-zinc-900"
+      className="pointer-events-auto fixed top-0 left-0 z-[80] max-w-[260px] rounded-lg bg-zinc-900 px-2 py-1.5 text-[13px] leading-snug text-white shadow-lg shadow-black/20 data-[card]:w-80 data-[card]:max-w-80 data-[card]:px-3 data-[card]:py-2.5 data-[said]:max-h-[60dvh] data-[said]:w-96 data-[said]:max-w-[calc(100vw-1rem)] data-[said]:overflow-y-auto data-[said]:px-3 data-[said]:py-2.5 dark:bg-zinc-100 dark:text-zinc-900"
     >
       {shown?.said ? (
         <SaidWords {...shown.said} />
