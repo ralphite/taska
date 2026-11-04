@@ -38,6 +38,7 @@ export const ONE = {
   left: input({ id: 'r17', t: at(30), text: 'Look at why the build takes so long.', org: org('Left for your coding agent', { keep: true, changed: false }) }),
   handled: input({ id: 'r16', t: at(35), acked: true, text: 'Look at why the build takes so long.', org: org('Left for your coding agent', { keep: true, changed: false }) }),
   failed: input({ id: 'r14', t: at(45), text: 'The coupon box is in the way.', org: org('No changes needed · Some commands failed: err: B99 not found', { ok: false, changed: false }) }),
+  keyRefused: input({ id: 'r14', t: at(45), text: 'The coupon box is in the way.', org: org('Gemini HTTP 401: API key not valid', { ok: false, changed: false }) }),
   undone: input({ id: 'r13', t: at(50), text: 'The coupon box hides behind the keyboard.', org: org('Created B015', { undone: true }) }),
   edited: input({
     id: 'r12',

@@ -16,3 +16,10 @@ describe('links', () => {
     expect(inlineHtml('see [the plan](#D9)', world)).toBe('see the plan')
   })
 })
+
+describe('pictures', () => {
+  test('a picture without words is named by its file, so its button has a name', () => {
+    expect(inlineHtml('![](shots/after.png)', world)).toContain('alt="after.png"')
+    expect(inlineHtml('![the list](shots/after.png)', world)).toContain('alt="the list"')
+  })
+})

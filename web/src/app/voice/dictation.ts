@@ -11,7 +11,7 @@ import type { RouteStore } from '../../stores/route'
 import type { DocEditor } from '../docs/editor'
 import type { Fields } from '../page/fields'
 import { canRecord, micTrouble, openMic } from './mic'
-import { CANT_RECORD } from '../../model/micWords'
+import { CANT_RECORD, TOO_SHORT } from '../../model/micWords'
 import type { Toasts } from '../page/toasts'
 import { noteText } from '../../model/docs'
 
@@ -128,7 +128,7 @@ export class Dictation {
         const blob = new Blob(r.chunks, { type: r.rec.mimeType || 'audio/webm' })
         if (note.ms < 800 || !blob.size) {
           this.put(r.slug, note, '')
-          return this.d.toasts.show('Too short, discarded')
+          return this.d.toasts.show(TOO_SHORT)
         }
         this.notes.push(note)
         this.d.store.getState().wait(note.mark, note.key)

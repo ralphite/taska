@@ -7,7 +7,7 @@
 
 import { Refused } from '../../api/http'
 import { canRecord, micTrouble, openMic } from './mic'
-import { CANT_RECORD, cancelledKept, noSound } from '../../model/micWords'
+import { CANT_RECORD, MUTED_BY_PHONE, TOO_SHORT, cancelledKept, noSound } from '../../model/micWords'
 import { clock } from '../../model/time'
 import { vcLabel, vcLineEnd, withQuote } from '../../model/voiceComments'
 import type { Recording } from '../../stores/recording'
@@ -149,7 +149,7 @@ export class Voice {
       if (!rec) return done(null)
       rec.onstop = () => done(new Blob(this.chunks, { type: rec.mimeType || 'audio/webm' }))
       rec.stop()
-      if (this.muted) this.d.toasts.show("Phone muted the microphone; later speech wasn't recorded", null, { error: true })
+      if (this.muted) this.d.toasts.show(MUTED_BY_PHONE, null, { error: true })
       clearInterval(this.tick)
       this.stream?.getTracks().forEach((t) => t.stop())
       this.stream = null
@@ -176,7 +176,7 @@ export class Voice {
     if (!blob || !slug || key == null) return
     if (ms < 800 || !blob.size) {
       void this.d.api.pageLog(slug, [{ kind: 'mic', level: 'warn', msg: `${ms} ms, ${blob.size} bytes`, name: blob.size ? 'short' : 'empty', where: 'stop' }]).catch(() => {})
-      return this.d.toasts.show(blob.size ? 'Too short, discarded' : noSound(this.d.desk()))
+      return this.d.toasts.show(blob.size ? TOO_SHORT : noSound(this.d.desk()))
     }
     // a voice comment: the quote first, then its words
     const label = about ? vcLabel(about.quote) : null

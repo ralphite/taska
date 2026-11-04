@@ -17,6 +17,12 @@ export function micTrouble(name: string, desk: boolean, secure: boolean): string
   return `The microphone did not start (${name || 'unknown error'}) · try again`
 }
 
+/** The phone took the microphone away mid-recording (a call, Siri): what came after was not recorded. */
+export const MUTED_BY_PHONE = "Phone muted the microphone; later speech wasn't recorded"
+
+/** A recording under a second: not kept. */
+export const TOO_SHORT = 'Too short, discarded'
+
 /** A recording that heard nothing at all. */
 export const noSound = (desk: boolean) => `No sound from the microphone · check ${desk ? 'System Settings › Privacy & Security › Microphone' : 'Settings › Apps › Safari › Microphone'}`
 

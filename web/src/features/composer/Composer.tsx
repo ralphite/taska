@@ -427,7 +427,7 @@ export function Feedback({ line, on }: { line: FeedbackLine | null; on: { dismis
             <span className="line-clamp-2 min-w-0 flex-1 leading-snug text-red-600 dark:text-red-400" title={line.raw}>
               Couldn&apos;t organize: {line.msg}
             </span>
-            {link('Retry', on.retryOrganizer)}
+            {line.retry ? link('Retry', on.retryOrganizer) : null}
             <Dismiss onClick={on.dismiss} />
           </>
         )

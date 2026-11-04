@@ -196,7 +196,7 @@ export function Home({ facts, on, searchRef }: { facts: HomeFacts; on: HomeEvent
                   <a
                     href={`/p/${encodeURIComponent(p.name)}/`}
                     onClick={follow}
-                    className={`flex items-center gap-3 px-3 py-2.5 hover:bg-zinc-100 active:bg-zinc-200/70 lg:grid ${GRID} lg:px-4 lg:py-3 lg:text-[13px] dark:hover:bg-zinc-700/60`}
+                    className={`flex items-center gap-3 px-3 py-2.5 hover:bg-zinc-100 active:bg-zinc-200/70 lg:grid ${GRID} lg:px-4 lg:py-3 lg:text-[13px] dark:hover:bg-zinc-700/60 dark:active:bg-zinc-700`}
                   >
                     <span className="flex min-w-0 items-center gap-2.5">
                       <ProjTile title={p.title || p.name} tone={p.tone} cls="size-8 rounded-lg text-sm lg:size-6 lg:rounded-md lg:text-xs" />

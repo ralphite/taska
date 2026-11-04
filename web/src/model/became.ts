@@ -91,11 +91,14 @@ export const shortWhy = (msg: string) =>
     .filter((p) => p && !/^No changes needed$/i.test(p))
     .join(' · ') || msg
 
-/** A failure of the service behind the organizer in plain words (busy, too slow, out of reach, its key); null when the
- * words are Taska's own, plain already. */
+/** The organizer's service refused its key: trying again fails the same way until the key is fixed on the server. */
+export const keyRefused = (msg: string) => /\b(401|403)\b|api.?key|unauthori[sz]ed|permission denied/.test(msg.toLowerCase())
+
+/** A failure of the service behind the organizer in plain words (busy, too slow, out of reach, its key and where to
+ * fix it); null when the words are Taska's own, plain already. */
 export function serviceWhy(msg: string): string | null {
   const m = msg.toLowerCase()
-  if (/\b(401|403)\b|api.?key|unauthori[sz]ed|permission denied/.test(m)) return 'key not accepted'
+  if (keyRefused(msg)) return 'Gemini key not accepted · check GEMINI_API_KEY on the server'
   if (/\b429\b|rate.?limit|quota|resource.?exhausted/.test(m)) return 'busy for now'
   if (/\b5\d\d\b|overload|unavailable|internal error/.test(m)) return 'busy'
   if (/timed? ?out|deadline/.test(m)) return 'too slow'
@@ -128,7 +131,7 @@ export function becameOf(r: Input, m: ProjectModel, title: (slug: string) => str
     const it = itemRef(m, r.scope)
     if (it) return { k: 'answer', item: it }
   }
-  if (r.org && !r.org.ok) return { k: 'failed', why: failWhy(r.org.msg), retry }
+  if (r.org && !r.org.ok) return { k: 'failed', why: failWhy(r.org.msg), retry: retry && !keyRefused(r.org.msg) }
   // said on an item (its own box): added to it; then what the organizer or an agent did with it
   const ns = [...new Set([...(r.scope ? [r.scope] : []), ...r.touched])]
   const items = ns.map((n) => itemRef(m, n)).filter((x): x is ItemRef => !!x)

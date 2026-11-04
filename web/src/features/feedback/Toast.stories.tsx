@@ -3,7 +3,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frames } from '../../stories/Frames'
 import { listOf, PROJECT } from '../../stories/listFixtures'
-import { CANT_RECORD, cancelledKept, micTrouble, noSound } from '../../model/micWords'
+import { CANT_RECORD, MUTED_BY_PHONE, TOO_SHORT, cancelledKept, micTrouble, noSound } from '../../model/micWords'
 import { Toast, type ToastView } from './Toast'
 
 export default { title: 'Components/Around the page/Floating/Toast' } satisfies Meta
@@ -38,6 +38,10 @@ export const ErrorWithRetry: Story = { ...one({ text: 'Order not saved', error: 
 const mic = (text: (desk: boolean) => string, error = false): Story => one((desk) => ({ text: text(desk), error, sticky: false, action: null }))
 export const MicNotAllowed: Story = { ...mic((desk) => micTrouble('NotAllowedError', desk, true), true), name: 'Microphone not allowed' }
 export const MicBusy: Story = { ...mic((desk) => micTrouble('NotReadableError', desk, true), true), name: 'Microphone busy' }
+export const MicNoHttps: Story = { ...mic((desk) => micTrouble('', desk, false), true), name: 'Microphone needs HTTPS' }
+export const NoMicrophone: Story = { ...mic((desk) => micTrouble('NotFoundError', desk, true), true), name: 'No microphone found' }
+export const MutedByPhone: Story = { ...mic(() => MUTED_BY_PHONE, true), name: 'Phone muted the microphone' }
+export const TooShort: Story = { ...mic(() => TOO_SHORT), name: 'Too short, discarded' }
 export const NoSound: Story = { ...mic(noSound), name: 'No sound from the microphone' }
 export const CantRecord: Story = { ...mic(() => CANT_RECORD), name: "This browser can't record" }
 export const RecordingCancelled: Story = { ...mic(cancelledKept), name: 'Recording cancelled, kept' }

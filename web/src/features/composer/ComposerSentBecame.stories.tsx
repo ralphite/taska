@@ -13,5 +13,7 @@ export const LeftThenFiled: Story = { ...at({ sent: sent({ acked: true, touched:
 export const SeenByYourAgentNoItemMade: Story = { ...at({ sent: sent({ acked: true, touched: [] }), organizer: false }), name: 'Seen, no item made: organizer off' }
 export const MovedToAnotherProject: Story = { ...at({ sent: sent({ moved: { to: 'home', as: 'r4' } }) }), name: 'Moved to another project' }
 export const OrganizerFailed: Story = { ...at({ sent: sent({ org: org(false, 'Gemini HTTP 503: overloaded') }) }), name: 'The organizer failed' }
+/** its key refused: where to fix it, no Retry (it would fail the same way) */
+export const OrganizerKeyRefused: Story = { ...at({ sent: sent({ org: org(false, 'Gemini HTTP 401: API key not valid') }) }), name: "The organizer's key not accepted" }
 /** an agent filed it, the organizer off: Organized, View, no Undo */
 export const FiledByAnAgent: Story = { ...at({ sent: sent({ acked: true, touched: [12] }), organizer: false }), name: 'Filed by an agent: organizer off' }

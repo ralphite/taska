@@ -27,7 +27,9 @@ export const esc = (s: unknown) =>
 const refHtml = (c: string, to: RefTarget | null): string | null =>
   to ? `<span role="link" tabindex="0" data-ref="${c}" class="${REF_CLS}">${c}</span>` : null
 
-function pictureHtml(alt: string, src: string, world: InlineWorld): string {
+function pictureHtml(said: string, src: string, world: InlineWorld): string {
+  // `![](shot.png)`: the picture (and the button it is in) named by its file, not nameless to a screen reader
+  const alt = said || src.split(/[?#]/)[0].split('/').pop() || 'picture'
   if (/^https?:\/\//.test(src))
     return `<a href="${src}" target="_blank" rel="noopener"><img src="${src}" alt="${alt}" loading="lazy" class="my-1 max-h-96 max-w-full rounded-lg border border-zinc-200 dark:border-zinc-700"></a>`
   // its size known, the picture's place is kept before it loads (as tall as 24rem at most); while it loads a spinner
