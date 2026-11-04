@@ -43,7 +43,7 @@ describe('what the box writes to', () => {
     const prefs = boxRole(m, at({ kind: 'tab' }), true, 'taska', { kind: 'prefs', was: '' }, nothing, noTicks)
     expect([prefs.line?.label, prefs.line?.right, prefs.send]).toEqual(['Edit transcription preferences', { kind: 'x', label: 'Stop editing', act: 'stop' }, 'Save'])
     const amend = boxRole(m, at({ kind: 'tab' }), true, 'taska', { kind: 'amend', id: 'r7', mode: 'append', v: 1 }, nothing, noTicks)
-    expect([amend.line?.label, amend.line?.detail, amend.line?.right]).toEqual(['Add details to #7', '“Keep the filter”', { kind: 'x', label: 'Stop adding details', act: 'stop' }])
+    expect([amend.line?.label, amend.line?.detail, amend.line?.right]).toEqual(['Add to #7', '“Keep the filter”', { kind: 'x', label: 'Stop adding', act: 'stop' }])
   })
 
   test('with what it holds: a correction says the word (what it becomes is in the box); a recording for another draft says where it goes', () => {

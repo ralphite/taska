@@ -17,6 +17,7 @@ import { draftKey } from '../model/draftTarget'
 import { saidOutgoing, saidRows } from '../model/saidLately'
 import type { FileRef, Input, OrgNote, ProjectRow } from '../model/types'
 import { FileChips } from '../ui/Files'
+import { RecBar } from '../ui/PlaceVoice'
 import { toneOf } from '../ui/tones'
 import { boxAt, out } from './boxFixtures'
 import { PICTURE, T, input, item, modelOf } from './fixtures'
@@ -137,7 +138,7 @@ function DeskList() {
   const said = saidRows(M, { words: [], upTo: 30, opened: new Set(), justSent: [{ rid: 'r1029' }], drafts: DRAFTS, mode: null, title })
   return (
     <section aria-label="Latest inputs" className="mx-auto mt-5 block max-w-[660px]">
-      <SaidLately recording="0:07" adding={{ id: 'r1023', clock: '0:11' }} rows={said.rows} outgoing={saidOutgoing(OUTBOX, [], 0, JUST_SENT)} more draft={draftCard} files={chips} on={noSaid} />
+      <SaidLately recording="0:07" adding={{ id: 'r1023', meter: <RecBar time="0:11" levels={[0.3, 0.75, 0.5, 0.95, 0.4, 0.65]} /> }} rows={said.rows} outgoing={saidOutgoing(OUTBOX, [], 0, JUST_SENT)} more draft={draftCard} files={chips} on={noSaid} />
     </section>
   )
 }

@@ -206,6 +206,12 @@ test('F657: a line\u2019s Voice records right there and adds the note to that in
   const row = page.locator('section[aria-label="Latest inputs"] article').filter({ hasText: 'Buy milk for the office' })
   await row.hover()
   await expect(row.getByRole('button', { name: /^Comment on / })).toBeVisible()
+  // T661 r1050: Comment puts the cursor in the box at the top, adding to that input
+  await row.getByRole('button', { name: /^Comment on / }).click()
+  await expect(field(page)).toBeFocused()
+  await expect(boxLine(page)).toContainText(`Add to #${id.slice(1)}`)
+  await page.keyboard.press('Escape')
+  await row.hover()
   // Esc: nothing is added
   await row.getByRole('button', { name: /^Voice for / }).click()
   await expect(row.getByRole('button', { name: /^Stop and add to / })).toBeVisible()
@@ -213,11 +219,18 @@ test('F657: a line\u2019s Voice records right there and adds the note to that in
   await expect(row.getByRole('button', { name: /^Stop and add to / })).toHaveCount(0)
   // recorded and stopped there: it stays while the pointer is elsewhere, and the note lands on that input
   await row.hover()
-  await row.getByRole('button', { name: /^Voice for / }).click()
+  const voice = row.getByRole('button', { name: /^Voice for / })
+  const at = await voice.boundingBox()
+  await voice.click()
   const stop = row.getByRole('button', { name: /^Stop and add to / })
+  // B498's strip in place: ✓ under the pointer where Voice was, so the same spot stops it
+  const was = await stop.boundingBox()
+  if (!at || !was) throw new Error('not drawn')
+  const [x, y] = [at.x + at.width / 2, at.y + at.height / 2]
+  expect(x >= was.x && x <= was.x + was.width && y >= was.y && y <= was.y + was.height, '✓ where Voice was').toBe(true)
   await page.mouse.move(5, 5)
   await expect(stop).toBeVisible()
-  await expect(stop).toContainText('0:01')
+  await expect(row.getByRole('status', { name: 'Recording' })).toContainText('0:01')
   await stop.click()
   await expect.poll(() => p.read(id), { timeout: 15000 }).toMatch(/files: \S*voice_0-\d\d\.webm/)
   expect((await p.read(id)).match(/voice_/g)).toHaveLength(1) // the note let go with Esc is not there

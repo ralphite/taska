@@ -29,7 +29,7 @@ export interface SaidEvents {
   moved(href: string): void
   outboxRetry(): void
   outboxEdit(): void
-  /** the voice note being recorded into a new input: let it go (Esc) */
+  /** the voice note being recorded here (a new input, or more for one): let it go (✕, Esc) */
   discard(): void
   loadMore(): void
 }
@@ -74,8 +74,8 @@ function Said({ text, cut }: { text: string; cut: boolean }) {
 export function SaidRow({ x, files, rec = null, on }: {
   x: SaidInput
   files: ReactNode
-  /** more being said into it: how long so far */
-  rec?: string | null
+  /** more being said into it: its time and level */
+  rec?: ReactNode | null
   on: SaidEvents
 }) {
   return <InputRow x={x} words={[]} undo={x.canUndoSend} rec={rec} text={(cut) => <Said text={x.r.text} cut={cut} />} files={files} on={on} />
@@ -97,8 +97,8 @@ export function SaidLately({ rows, outgoing, more, draft, files, recording = nul
   files(f: FileRef[], gid: string): ReactNode
   /** a voice note being recorded into a new input: how long so far (it shows first, B627) */
   recording?: string | null
-  /** more being said into one of them (its Voice): which, and how long so far */
-  adding?: { id: string; clock: string } | null
+  /** more being said into one of them (its Voice): which, and its time and level */
+  adding?: { id: string; meter: ReactNode } | null
   on: SaidEvents
 }) {
   const end = useRef<HTMLDivElement>(null)
@@ -122,14 +122,13 @@ export function SaidLately({ rows, outgoing, more, draft, files, recording = nul
       {rows.length ? (
         <div className={INPUT_LIST}>
           {rows.map((x) => (
-            <SaidRow key={x.r.id} x={x} files={x.r.files.length ? files(x.r.files, 'cl' + x.r.id) : null} rec={adding?.id === x.r.id ? adding.clock : null} on={on} />
+            <SaidRow key={x.r.id} x={x} files={x.r.files.length ? files(x.r.files, 'cl' + x.r.id) : null} rec={adding?.id === x.r.id ? adding.meter : null} on={on} />
           ))}
         </div>
       ) : null}
       {more ? (
-        <div ref={end} className="flex items-center justify-center gap-2 py-12 font-mono text-xs text-zinc-400 dark:text-zinc-600">
+        <div ref={end} role="status" aria-label="Loading more" className="flex items-center justify-center py-12 text-zinc-400 dark:text-zinc-600">
           <Spinner c="size-3.5" />
-          Loading more…
         </div>
       ) : null}
     </div>

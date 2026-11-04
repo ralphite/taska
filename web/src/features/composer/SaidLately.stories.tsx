@@ -20,7 +20,7 @@ export const SaidLatelyList: Story = {
 
 const line = () => saidOf({ inputs: [ONE.made] })
 
-/** A row under the pointer (Comment, Voice and ⋯ fade in at the end of its first line) and from the keys, side by
+/** A row under the pointer (a shade darker; Voice, Comment and ⋯ fade in at the end of its first line) and from the keys, side by
  * side. */
 export const SaidLooks: Story = {
   name: 'A line: pointer, keys',
@@ -31,17 +31,17 @@ export const SaidLooks: Story = {
         <States
           items={[
             ['as it is', line()],
-            ['pointer on a line: Comment, Voice and ⋯ show', <div data-pointer>{line()}</div>],
-            ['keys: Tab on its item (Comment, Voice and ⋯ show; the browser draws the ring itself)', <div data-keys>{line()}</div>],
+            ['pointer on a line: Voice, Comment and ⋯ show', <div data-pointer>{line()}</div>],
+            ['keys: Tab on its item (Voice, Comment and ⋯ show; the browser draws the ring itself)', <div data-keys>{line()}</div>],
           ]}
         />
       )}
     </Frames>
   ),
 }
-/** Voice on a line (F657): pressed, it records right there, red with how long so far, and stays while the pointer is
- * elsewhere; pressed again it stops: transcribing on that line until its words are in, then they are added at the end
- * as Add more adds them. */
+/** Voice on a line (F657): pressed, it turns into the recording strip right there (B498's: ✕, the time and level, ✓
+ * where Voice was), which stays while the pointer is elsewhere; ✓ stops it: transcribing on that line until its words
+ * are in, then they are added at the end as Add more adds them. */
 export const SaidVoice: Story = {
   name: 'A line: Voice recording, then added',
   render: () => (
@@ -49,7 +49,7 @@ export const SaidVoice: Story = {
       {() => (
         <States
           items={[
-            ['recording (the pointer elsewhere): Stop with how long so far', saidOf({ inputs: [ONE.made], adding: { id: ONE.made.id, clock: '0:07' } })],
+            ['recording (the pointer elsewhere): ✕, the time and level, ✓', saidOf({ inputs: [ONE.made], adding: { id: ONE.made.id, clock: '0:07' } })],
             ['stopped: transcribing', saidOf({ inputs: [ONE.made], addingUp: [ONE.made.id] })],
             ['its words added at the end, with the voice note', saidOf({ inputs: [{ ...ONE.made, text: `${ONE.made.text}\n\nAnd on the tablet too.`, files: [VOICE] }] })],
           ]}

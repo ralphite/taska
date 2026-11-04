@@ -48,7 +48,7 @@ export function BoxContainer({ route, composePage, boxRef, bare = false }: { rou
   const pickWord = (fk: string, k: number, side: 'was' | 'alt') => void app.voiceWords.pick(route.slug, key, fk, k, side)
   const viewWords = !desk && heard.pickable && showWords && !rec
   const doubtsView: DoubtsView | null =
-    desk && composePage ? (heard.altOpen ? { kind: 'card', toCheck: heard.altOpen } : null) : !desk ? (heard.pickable ? { kind: 'phone', toCheck: heard.altOpen, showing: viewWords } : null) : heard.open.length ? { kind: 'list', lines: heard.open } : null
+    desk && composePage ? null /* the draft card under the box says how many to check */ : !desk ? (heard.pickable ? { kind: 'phone', toCheck: heard.altOpen, showing: viewWords } : null) : heard.open.length ? { kind: 'list', lines: heard.open } : null
   const doubts = doubtsView ? <Doubts view={doubtsView} on={{ use: (fk, k) => app.voiceWords.use(route.slug, key, fk, k), show: () => app.voiceWords.show(true) }} /> : null
   const phoneWords = viewWords ? (
     <DraftWords

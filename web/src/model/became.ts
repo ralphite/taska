@@ -44,19 +44,19 @@ export type Became =
 export const BECAME_WORD = {
   transcribing: 'Transcribing…',
   organizing: 'Organizing…',
-  queued: 'Waiting to be organized',
+  queued: 'Queued',
   failed: "Couldn't organize",
-  undone: 'Organizing undone',
+  undone: 'Undone',
   cancelled: 'Cancelled',
-  agent: 'Left for an agent',
-  waiting: 'Waiting for an agent',
-  handled: 'Handled by an agent',
+  agent: 'For an agent',
+  waiting: 'For an agent',
+  handled: 'Handled',
   answer: 'Answer to',
-  tryAgain: 'Try again',
-  organizeAgain: 'Organize again',
+  tryAgain: 'Retry',
+  organizeAgain: 'Organize',
   send: 'Send',
   moved: (to: string) => `Moved to ${to}`,
-  open: (as: string) => `Open ${as} there`,
+  open: (as: string) => as,
 }
 
 export const itemRef = (m: ProjectModel, n: number): ItemRef | null => {

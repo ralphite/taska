@@ -125,14 +125,13 @@ export function boxRole(m: ProjectModel | null, route: ProjectPlace, desk: boole
   if (mode?.kind === 'amend' && m?.byId.has(mode.id)) {
     const r = m.byId.get(mode.id) as Input
     const edit = mode.mode === 'edit'
-    const voice = r.files.some((f) => (f.mime || '').startsWith('audio/'))
     const said = oneLine(r.text)
     const line: BoxLine = {
       icon: edit ? 'pencil' : 'plus',
-      label: `${edit ? 'Edit' : 'Add details to'} ${inputCode(mode.id)}`,
+      label: `${edit ? 'Edit' : 'Add to'} ${inputCode(mode.id)}`,
       // editing: its words are in the box; adding to it: what it said
-      detail: edit ? '' : said ? `“${said.slice(0, 120)}”` : `· ${voice ? 'a voice note' : plural(r.files.length, 'file')}`,
-      right: stop(edit ? 'Stop editing' : 'Stop adding details'),
+      detail: edit ? '' : said ? `“${said.slice(0, 120)}”` : '',
+      right: stop(edit ? 'Stop editing' : 'Stop adding'),
     }
     return { ...none, scope: open && m ? codeOf(m, open.n) : null, doc: null, line, placeholder: 'Write…', send: 'Save' }
   }

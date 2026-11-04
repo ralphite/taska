@@ -12,7 +12,9 @@ import { fixRange, voiceStretches } from '../../model/doubts'
 import { codeOf } from '../../model/project'
 import { saidOutgoing, saidRows } from '../../model/saidLately'
 import { showsOnItsWay } from '../../model/outgoing'
+import { RecMeter } from '../../app/RecMeter'
 import { FileChips } from '../../ui/Files'
+import { PLACE_LEVELS } from '../../ui/PlaceVoice'
 import { DraftWords, type Fixing } from './Doubts'
 import { DraftCard, DRAFT_WORDS, type DraftHint } from './DraftCard'
 import { SaidLately } from './SaidLately'
@@ -37,10 +39,10 @@ export function SaidLatelyContainer({ route, boxKey, view, draft }: { route: Pro
   const stores = useStores('box', 'recording', 'data', 'drafts', 'outbox')
   // a voice note being recorded into a new input here: its row comes first, with how long so far (B627)
   const recording = useStoreValue(stores.recording, (st) => (st.rec && st.rec.slug === route.slug && !st.rec.about && st.rec.key === NEW_DRAFT ? clock(st.rec.ms) : null))
-  // more being said into one of them, on its own line (its Voice): "r12 0:07"
+  // more being said into one of them, on its line (its Voice): which
   const adding = useStoreValue(stores.recording, (st) => {
     const t = st.rec && st.rec.slug === route.slug ? draftTarget(st.rec.key) : null
-    return t?.kind === 'amend' && t.mode === 'append' ? `${t.id} ${clock(st.rec?.ms ?? 0)}` : null
+    return t?.kind === 'amend' && t.mode === 'append' ? t.id : null
   })
   // and on its way there once stopped, until Taska has it: "r12 r40"
   const onItsWay = useStoreValue(stores.box, (st) =>
@@ -67,7 +69,7 @@ export function SaidLatelyContainer({ route, boxKey, view, draft }: { route: Pro
     <section aria-label="Latest inputs" data-vc-area className="mx-auto mt-5 block max-w-[660px]">
       <SaidLately
         recording={recording}
-        adding={adding ? { id: adding.slice(0, adding.indexOf(' ')), clock: adding.slice(adding.indexOf(' ') + 1) } : null}
+        adding={adding ? { id: adding, meter: <RecMeter n={PLACE_LEVELS.desk} /> } : null}
         rows={said.rows}
         outgoing={saidOutgoing(mine, NO_WORDS, away, justSent)}
         more={said.all.length > said.rows.length}
@@ -76,7 +78,11 @@ export function SaidLatelyContainer({ route, boxKey, view, draft }: { route: Pro
         on={{
           goto: (n) => app.nav.openItem(codeOf(m, n)),
           more: view.toggle,
-          append: (id) => app.box.amendStart(route.slug, m, id, 'append'),
+          // Comment: the box at the top takes it, the cursor in it
+          append: (id) => {
+            app.box.amendStart(route.slug, m, id, 'append')
+            requestAnimationFrame(() => app.fields.focus('box'))
+          },
           voice: (id) => {
             const r = m.byId.get(id)
             void app.voice.addTo(route.slug, id, r?.scope ? codeOf(m, r.scope) : null)

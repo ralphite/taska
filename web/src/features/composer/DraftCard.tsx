@@ -4,7 +4,6 @@
 
 import type { ReactNode } from 'react'
 import { clock } from '../../model/time'
-import { plural } from '../../model/words'
 import { Icon } from '../../ui/Icon'
 import { BUSY, MUTED } from '../../ui/tones'
 
@@ -36,29 +35,33 @@ export function DraftCard({ voice, ms, files, transcribing, words, hint, onSend 
           {voice ? (
             <span className="flex items-center gap-1 font-mono text-[11px] whitespace-nowrap text-zinc-500 dark:text-zinc-400">
               <Icon n="mic" c="size-3" sw="2" />
-              {clock(ms)} voice note{voice > 1 ? 's' : ''}
+              {clock(ms)}
             </span>
           ) : null}
-          {files ? <span className="font-mono text-[11px] whitespace-nowrap text-zinc-500 dark:text-zinc-400">{plural(files, 'file')}</span> : null}
+          {files ? (
+            <span className="flex items-center gap-1 font-mono text-[11px] whitespace-nowrap text-zinc-500 dark:text-zinc-400">
+              <Icon n="file" c="size-3" sw="2" />
+              {files}
+            </span>
+          ) : null}
         </div>
         <div className="flex min-w-0 items-center gap-2.5">
           {hint?.kind === 'check' ? (
-            <span className="text-xs font-medium whitespace-nowrap text-amber-800 dark:text-amber-300">{plural(hint.n, 'word')} to check</span>
+            <span className="text-xs font-medium whitespace-nowrap text-amber-800 dark:text-amber-300">{hint.n} to check</span>
           ) : hint?.kind === 'fix' ? (
-            <span className={`truncate ${MUTED}`}>Select words to correct spelling. Taska remembers.</span>
+            <span className={`truncate ${MUTED}`}>Select to correct</span>
           ) : null}
           {/* Send only with words to send */}
           {words && !transcribing ? (
-            <button onClick={onSend} title="Send · ⇧↵" className="flex shrink-0 items-center gap-1 rounded-lg bg-amber-600 px-2.5 py-1 text-xs font-medium text-white shadow-2xs transition-colors hover:bg-amber-500">
-              <span>send</span>
-              <kbd className="font-mono text-[9px] opacity-80">⇧↵</kbd>
+            <button onClick={onSend} aria-label="Send" title="Send · ⇧↵" className="grid size-7 shrink-0 place-items-center rounded-lg bg-amber-600 text-white shadow-2xs transition-colors hover:bg-amber-500">
+              <Icon n="up" c="size-4" sw="2.25" />
             </button>
           ) : null}
         </div>
       </div>
       {words ?? (
         <div className={DRAFT_WORDS}>
-          <span className={transcribing ? BUSY : MUTED}>{transcribing ? 'Transcribing…' : 'No words yet'}</span>
+          <span className={transcribing ? BUSY : MUTED}>{transcribing ? 'Transcribing…' : 'No words'}</span>
         </div>
       )}
     </section>

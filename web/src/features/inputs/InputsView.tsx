@@ -135,7 +135,7 @@ export function InputsView({ hidden, rows, more, outgoing, words, world, files, 
       )}
       {hidden ? null : rows.length ? (
         <>
-          <div className={`${INPUT_LIST} px-4`}>
+          <div className={INPUT_LIST}>
             {rows.map((x) => (
               <InputCard key={x.r.id} x={x} words={words} world={world} files={files} on={on} />
             ))}
@@ -145,7 +145,7 @@ export function InputsView({ hidden, rows, more, outgoing, words, world, files, 
         </>
       ) : outgoing.length || recording ? null : (
         <Empty>
-          {words.length ? noMatches(words.join(' ')) : 'No inputs yet'}
+          {words.length ? noMatches(words.join(' ')) : 'No inputs'}
           {words.length ? <span className="mt-3 flex flex-col">{hints}</span> : null}
         </Empty>
       )}

@@ -11,6 +11,7 @@ import type { FileRef, Input, Item, OrgNote } from '../model/types'
 import { otherTabs, searchWords } from '../model/visible'
 import { SearchHints } from '../ui/SearchHints'
 import { FileChips } from '../ui/Files'
+import { RecBar } from '../ui/PlaceVoice'
 import { PROJECT_TONES } from '../ui/tones'
 import { PICTURE, T, input, item, modelOf } from './fixtures'
 import { talkEnv } from './itemFixtures'
@@ -143,7 +144,7 @@ export function saidOf(s: Said = {}) {
         more={said.all.length > said.rows.length}
         files={chips}
         recording={s.recording ?? null}
-        adding={s.adding ?? null}
+        adding={s.adding ? { id: s.adding.id, meter: <RecBar time={s.adding.clock} levels={[0.3, 0.75, 0.5, 0.95, 0.4, 0.65]} /> } : null}
         on={noSaid}
       />
     </div>

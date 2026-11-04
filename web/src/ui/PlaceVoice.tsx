@@ -2,6 +2,7 @@
 // buttons beside it, Voice and Comment. Voice turns them, where they are, into a small recording strip: ✕ at the far
 // left cancels, the time and the level run, Voice becomes ✓ (stop: on the desktop the words go into the box below,
 // at this place; on the phone, which has no box over a document, it is sent) and Comment becomes ↑ (send at once).
+// Where ✓ already adds (an input's row, T661) there is no ↑, and its room stays empty, so ✓ is still where Voice was.
 // Also the recording's time and level as the box shows them (RecBar). Props only.
 
 import type { ReactNode } from 'react'
@@ -28,15 +29,23 @@ export interface PlaceVoiceEvents {
   cancel(): void
   /** ✓ */
   check(): void
-  /** ↑ */
-  send(): void
+  /** ↑ (none: ✓ is all, as on an input's row) */
+  send?(): void
+}
+
+/** What the buttons say (their tips), where a place says it its own way: an input's row, "Comment on #12". */
+export interface PlaceVoiceLabels {
+  say?: string
+  comment?: string
+  check?: string
 }
 
 /** How many moments of the level the strip shows. */
 export const PLACE_LEVELS = { desk: 6, phone: 12 } as const
 
-// the page's small buttons beside a part
-const SMALL = 'grid size-7 shrink-0 place-items-center rounded-lg bg-white text-zinc-500 shadow-sm ring-1 ring-zinc-900/10 hover:text-zinc-900 dark:bg-zinc-800 dark:text-zinc-300 dark:ring-white/10 dark:hover:text-white'
+// the page's small buttons beside a part (and beside them, a part's own ⋯)
+export const PLACE_BUTTON =
+  'grid size-7 shrink-0 place-items-center rounded-lg bg-white text-zinc-500 shadow-sm ring-1 ring-zinc-900/10 hover:text-zinc-900 dark:bg-zinc-800 dark:text-zinc-300 dark:ring-white/10 dark:hover:text-white'
 // the input box's buttons: plain, and the round dark one
 const PLAIN = (phone: boolean) => `grid shrink-0 place-items-center rounded-full text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100 ${phone ? 'size-11' : 'size-8'}`
 const MAIN = (phone: boolean) => `grid shrink-0 place-items-center rounded-full bg-zinc-900 text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white ${phone ? 'size-11' : 'size-8'}`
@@ -53,32 +62,33 @@ function B({ icon, label, tip, cls, on, big, sw, marks }: { icon: IconName; labe
 }
 
 /** Speaking: ✕ · the time and level · ✓ · ↑, where the two buttons were. */
-function Strip({ phone, meter, marks, on }: { phone: boolean; meter: ReactNode; marks?: Marks; on: PlaceVoiceEvents }) {
+function Strip({ phone, meter, marks, check, on }: { phone: boolean; meter: ReactNode; marks?: Marks; check?: string; on: PlaceVoiceEvents }) {
   return (
     <>
       <B icon="x" label="Cancel" tip={phone ? 'Cancel' : 'Cancel · Esc'} cls={PLAIN(phone)} on={on.cancel} big={phone} />
       <span data-rec-time className={`flex items-center gap-1.5 ${phone ? 'min-w-0 flex-1' : 'w-28'}`}>
         {meter}
       </span>
-      <B icon="check" label={phone ? 'Stop and post' : 'Stop: the words go into the box below'} cls={PLAIN(phone)} on={on.check} big={phone} sw="2.5" marks={marks} />
-      <B icon="up" label="Stop and send" cls={MAIN(phone)} on={on.send} big={phone} sw="2.25" />
+      <B icon="check" label={check ?? (phone ? 'Stop and post' : 'Stop: the words go into the box below')} cls={PLAIN(phone)} on={on.check} big={phone} sw="2.5" marks={marks} />
+      {on.send ? <B icon="up" label="Stop and send" cls={MAIN(phone)} on={on.send} big={phone} sw="2.25" /> : null}
     </>
   )
 }
 
 /** The desktop's: two small buttons beside the place; speaking, the strip (it ends where they end). `say` and
  * `comment`: marks on those buttons (a web page's part names itself on them); `say`'s go on ✓ while it records. */
-export function PlaceVoice({ rec, meter, say, comment, on }: { rec: boolean; meter?: ReactNode; say?: Marks; comment?: Marks; on: PlaceVoiceEvents }) {
+export function PlaceVoice({ rec, meter, say, comment, labels = {}, on }: { rec: boolean; meter?: ReactNode; say?: Marks; comment?: Marks; labels?: PlaceVoiceLabels; on: PlaceVoiceEvents }) {
   if (rec)
     return (
-      <div data-place-rec role="status" aria-label="Recording" className="flex h-9 items-center gap-1 rounded-full bg-white p-0.5 shadow-sm ring-1 ring-zinc-900/10 dark:bg-zinc-800 dark:ring-white/10">
-        <Strip phone={false} meter={meter} marks={say} on={on} />
+      // no ↑: its room (and the gap before it) kept outside the strip, so ✓ is where Voice was
+      <div data-place-rec role="status" aria-label="Recording" className={`flex h-9 items-center gap-1 rounded-full bg-white p-0.5 shadow-sm ring-1 ring-zinc-900/10 dark:bg-zinc-800 dark:ring-white/10 ${on.send ? '' : 'mr-9'}`}>
+        <Strip phone={false} meter={meter} marks={say} check={labels.check} on={on} />
       </div>
     )
   return (
     <div className="flex gap-1">
-      <B icon="mic" label="Voice comment" cls={SMALL} on={on.say} marks={say} />
-      <B icon="comment" label="Comment" cls={SMALL} on={on.comment} marks={comment} />
+      <B icon="mic" label={labels.say ?? 'Voice comment'} cls={PLACE_BUTTON} on={on.say} marks={say} />
+      <B icon="comment" label={labels.comment ?? 'Comment'} cls={PLACE_BUTTON} on={on.comment} marks={comment} />
     </div>
   )
 }

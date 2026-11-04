@@ -1,16 +1,18 @@
 // One input as every list of inputs draws it (T661, the approved "Anchored Stream"): a line with its number and its
 // day and time (edited, a draft of yours on it), its buttons at the end; its words (a long one: four lines, More); its
-// voice notes, pictures and files as chips; and what became of it on a shelf of its own under them. Its buttons: the
-// phone's ⋯ (Add more, Edit and the rest are in it); the desktop's Comment, Voice and ⋯, under the pointer only (or
-// the keys); Voice records more to add right there, red with how long so far, and shows until pressed again. Undo,
-// just after sending, always shows. What is still on its way, and a voice note being recorded, are lines of their own
-// over the list. Props only.
+// voice notes, pictures and files as chips; and what became of it on a shelf of its own under them. A hairline
+// between rows; under the pointer a row is a shade darker, as the item list's are. Its buttons: the phone's ⋯ (Add
+// more, Edit and the rest are in it); the desktop's Voice, Comment and ⋯ as the page's other places have them
+// (PlaceVoice, B498), under the pointer only (or the keys); Voice turns them into the recording strip right there, its
+// ✓ where Voice was, which stops and adds the note to this input. Undo, just after sending, always shows. What is
+// still on its way, and a voice note being recorded, are lines of their own over the list. Props only.
 
 import type { ReactNode, Ref } from 'react'
 import { BECAME_WORD as W, type Became, type InputLine, type ItemRef } from '../model/became'
 import { voiceMark } from '../model/inputs'
 import { Hit } from './bits'
 import { Icon, Spinner, StateIcon } from './Icon'
+import { PLACE_BUTTON, PlaceVoice } from './PlaceVoice'
 import { TYPE_TEXT } from './tones'
 
 export interface InputRowEvents {
@@ -27,22 +29,23 @@ export interface InputRowEvents {
   draft(id: string, mode: 'edit' | 'append'): void
   /** the desktop's Comment: words to add, written in the box (the phone has Add more in ⋯) */
   append?(id: string): void
-  /** the desktop's Voice: more to add, said; pressed again while it records, it stops and is added */
+  /** the desktop's Voice: more to add, said; its ✓ (pressed again) stops it and it is added */
   voice?(id: string): void
+  /** the recording here let go (its ✕, or Esc) */
+  discard?(): void
   undoSend?(id: string): void
 }
 
-/** The rows of a list: a faint line between them. */
+/** The rows of a list: a hairline between them, across the whole row. */
 export const INPUT_LIST = 'divide-y divide-zinc-200/80 dark:divide-zinc-800/80'
-/** A row: more room under it than over it, so what it became stays with it and apart from the next one's line. */
-const ROW = 'group/row -mx-2 rounded-xl px-2 pt-4 pb-5 transition-colors duration-700 focus-within:bg-zinc-100/60 dark:focus-within:bg-zinc-900/40'
+/** A row: more room under it than over it, so what it became stays with it and apart from the next one's line. Under
+ * the pointer (or the keys) a shade darker than the page, as the item list's rows (dark: the same tone as theirs). */
+const ROW =
+  'group/row px-4 pt-4 pb-5 transition-colors lg:-mx-3 lg:px-3 lg:hover:bg-zinc-100 lg:focus-within:bg-zinc-100 dark:lg:hover:bg-[color-mix(in_oklab,var(--color-zinc-900)_70%,var(--color-zinc-950))] dark:lg:focus-within:bg-[color-mix(in_oklab,var(--color-zinc-900)_70%,var(--color-zinc-950))]'
 /** gone to: lit up for a moment */
 const LIT = 'bg-blue-50 dark:bg-blue-400/10'
-/** the desktop's Comment and Voice */
-const ACT = 'hidden rounded px-2 py-0.5 text-xs text-zinc-600 hover:bg-zinc-200/60 hover:text-zinc-900 lg:block dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100'
-/** ⋯: 44px on the phone, small on the desktop */
-const MORE =
-  'flex size-11 items-center justify-center text-zinc-400 active:text-zinc-800 lg:size-6 lg:rounded lg:text-zinc-500 lg:hover:bg-zinc-200/60 dark:active:text-zinc-200 dark:lg:hover:bg-zinc-800'
+/** ⋯ on the phone: 44px */
+const MORE = '-mr-2 flex size-11 items-center justify-center text-zinc-400 active:text-zinc-800 dark:active:text-zinc-200'
 /** under the pointer only on the desktop (or while the keys are in the row); always on the phone */
 const HOVER = 'lg:opacity-0 lg:transition-opacity lg:group-focus-within/row:opacity-100 lg:group-hover/row:opacity-100'
 const LINK = 'text-blue-600 hover:underline dark:text-blue-400'
@@ -207,39 +210,30 @@ function Words({ x, text, on }: { x: InputLine; text(cut: boolean): ReactNode; o
   )
 }
 
-/** Its buttons: Voice recording (red, Stop with how long so far), then Comment and Voice on the desktop, and ⋯. */
-function RowButtons({ x, rec, on }: { x: InputLine; rec: string | null; on: InputRowEvents }) {
+/** Its buttons: on the desktop Voice and Comment as the page's other places have them (PlaceVoice; recording, its
+ * strip: ✕, the time and level, ✓ where Voice was), and ⋯ beside them; on the phone ⋯ alone. */
+function RowButtons({ x, rec, on }: { x: InputLine; rec: ReactNode | null; on: InputRowEvents }) {
   const r = x.r
   if (x.became.k === 'moved') return null
+  const more = (cls: string) => (
+    <button title="More" aria-label={`More for ${x.code}`} onClick={(e) => on.menu(r.id, e.currentTarget)} className={cls}>
+      <Icon n="more" c="size-4" sw="2" />
+    </button>
+  )
   return (
     <>
-      {rec && on.voice ? (
-        <button
-          title="Stop"
-          aria-label={`Stop and add to ${x.code}`}
-          onClick={() => on.voice?.(r.id)}
-          className="hidden items-center gap-1 rounded-full bg-red-600 px-2.5 py-0.5 font-mono text-xs font-medium text-white tabular-nums shadow-2xs hover:bg-red-700 lg:inline-flex"
-        >
-          <span className="size-1.5 animate-pulse rounded-full bg-white" />
-          <span>{rec}</span>
-          <span className="ml-0.5 font-sans text-[10px] font-bold uppercase">Stop</span>
-        </button>
-      ) : null}
-      <span className={`-mr-2 flex items-center gap-1 lg:mr-0 ${rec ? '' : HOVER}`}>
-        {on.append ? (
-          <button aria-label={`Comment on ${x.code}`} onClick={() => on.append?.(r.id)} className={ACT}>
-            Comment
-          </button>
+      <span className={`hidden items-center gap-1 lg:flex ${rec ? '' : HOVER}`}>
+        {on.voice && on.append ? (
+          <PlaceVoice
+            rec={!!rec}
+            meter={rec}
+            labels={{ say: `Voice for ${x.code}`, comment: `Comment on ${x.code}`, check: `Stop and add to ${x.code}` }}
+            on={{ say: () => on.voice?.(r.id), comment: () => on.append?.(r.id), check: () => on.voice?.(r.id), cancel: () => on.discard?.() }}
+          />
         ) : null}
-        {on.voice && !rec ? (
-          <button aria-label={`Voice for ${x.code}`} onClick={() => on.voice?.(r.id)} className={ACT}>
-            Voice
-          </button>
-        ) : null}
-        <button title="More" aria-label={`More for ${x.code}`} onClick={(e) => on.menu(r.id, e.currentTarget)} className={MORE}>
-          <Icon n="more" c="size-4" sw="2" />
-        </button>
+        {more(PLACE_BUTTON)}
       </span>
+      <span className="lg:hidden">{more(MORE)}</span>
     </>
   )
 }
@@ -254,8 +248,8 @@ export function InputRow({ x, words, text, files, lit = false, undo = false, rec
   lit?: boolean
   /** just sent: Undo */
   undo?: boolean
-  /** more to add being recorded here (Voice): how long so far */
-  rec?: string | null
+  /** more to add being recorded here (Voice): its time and level */
+  rec?: ReactNode | null
   rowRef?: Ref<HTMLElement>
   on: InputRowEvents
 }) {
@@ -354,7 +348,7 @@ export function RecordingRow({ clock, onDiscard }: { clock: string; onDiscard?()
     <div role="status" className="flex items-center justify-between rounded-xl border border-red-200 bg-red-500/[0.08] px-3.5 py-2 text-xs text-red-700 dark:border-red-900/60 dark:bg-red-500/15 dark:text-red-300">
       <div className="flex items-center gap-2">
         <span className="size-2 animate-ping rounded-full bg-red-600" />
-        <span className="font-medium">Recording new input…</span>
+        <span className="font-medium">Recording</span>
         <span aria-hidden className="ml-1 flex h-3 items-center gap-0.5 opacity-75">
           {['h-1.5', 'h-3', 'h-2', 'h-3.5'].map((h, i) => (
             <span key={i} className={`w-0.5 ${h} animate-pulse rounded-full bg-red-600 dark:bg-red-400`} style={{ animationDelay: `${[0, 80, 160, 40][i]}ms` }} />

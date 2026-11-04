@@ -13,7 +13,7 @@ const pad = (node: ReactNode) => <div className="bg-zinc-200 p-6 dark:bg-zinc-80
  * check; then every input with what became of it, the one just sent with Undo, one being added to by voice. */
 export const Desktop: Story = { name: 'Desktop', render: () => pad(<DeskPage />) }
 
-/** Under the pointer: a row's Comment, Voice and ⋯ fade in at the end of its first line. */
+/** Under the pointer: a row a shade darker, its Voice, Comment and ⋯ at the end of its first line. */
 export const UnderThePointer: Story = {
   name: 'Under the pointer',
   parameters: { pseudo: { hover: ['article:has([aria-label="More for #1026"])'] } },
