@@ -5,7 +5,7 @@
 import { useRef, type ReactNode, type Ref } from 'react'
 import { useOrderDrag } from './orderDrag'
 import { Kbd, NeedsCount, ProjTile, Skeleton } from '../../ui/bits'
-import { Icon, StateIcon, type IconName } from '../../ui/Icon'
+import { Icon, type IconName } from '../../ui/Icon'
 
 export interface SideProject {
   slug: string
@@ -359,9 +359,8 @@ export function Rail({ keys, projects, links, composing, settingsOpen, hidden, o
           >
             <ProjTile title={p.title} tone={p.tone} cls="size-7 rounded-lg text-xs" />
             {p.needs ? (
-              <span className="absolute -top-1 -right-1 flex h-4 items-center gap-px rounded-full bg-white pr-1 pl-0.5 text-[10px] font-bold text-amber-900 tabular-nums ring-1 ring-zinc-900/10 dark:bg-zinc-900 dark:text-amber-200 dark:ring-white/15">
-                <StateIcon s="wait" cls="size-3" />
-                {p.needs}
+              <span className="absolute -top-0.5 -right-0.5 grid size-4 place-items-center rounded-full bg-white ring-1 ring-zinc-900/10 dark:bg-zinc-900 dark:ring-white/15">
+                <NeedsCount n={p.needs} />
               </span>
             ) : null}
           </a>
