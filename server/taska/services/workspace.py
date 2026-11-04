@@ -17,6 +17,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from ..domain import finding, rules
 from ..domain.text import project_title, slug_of
+from ..domain.state import ProjectState
 from ..domain.vocab import CLOSED, PROJECT_NAME, SLUG_CHARS, Refused
 from ..infra.project_db import ProjectDb
 from .meaning import Meaning
@@ -29,6 +30,18 @@ Opened = Callable[[Project], None]
 
 def short_slug() -> str:
     return "p-" + "".join(secrets.choice(SLUG_CHARS) for _ in range(4))  # p-7k2m
+
+
+def tally(st: ProjectState) -> Dict[str, int]:
+    """A project's counts, as its page counts them: what needs you (archived is not on the page's list, so not here);
+    what Items holds, open and finished (done or dropped), rules an agent proposed or that wait on you included; its
+    inputs and documents (F667: the sidebar's card)."""
+    needs = {i.n for i in st.live_items() if i.status not in CLOSED and not i.archived and rules.needs_you(st, i)}
+    listed = [i for i in st.live_items() if not i.archived and (i.type != "rule" or i.status == "proposed" or i.n in needs)]
+    closed = sum(1 for i in listed if i.status in CLOSED)
+    docs = sum(1 for d in st.docs.values() if not d.deleted and not (d.n in st.items and st.items[d.n].deleted))
+    return {"open": len(listed) - closed, "needs": len(needs), "closed": closed,
+            "inputs": sum(1 for r in st.inputs.values() if not r.deleted), "docs": docs}
 
 
 class Workspace:
@@ -190,14 +203,7 @@ class Workspace:
         out: List[Dict[str, Any]] = []
         for name, p in sorted(self.projects.items()):
             with p.lock:
-                st = p.state
-                live = [i for i in st.live_items() if i.status not in CLOSED]
-                # what needs you, as the page counts it: archived is not on the page's list, so not here
-                needs = {i.n for i in live if not i.archived and rules.needs_you(st, i)}
-                # "open" as the project's page counts it: what Items holds that isn't finished, rules an agent
-                # proposed or that wait on you included
-                open_ = sum(1 for i in live if not i.archived and (i.type != "rule" or i.status == "proposed" or i.n in needs))
-                row: Dict[str, Any] = {"name": name, "title": p.title, "open": open_, "needs": len(needs), **presence(p),
+                row: Dict[str, Any] = {"name": name, "title": p.title, **tally(p.state), **presence(p),
                                        "t": int(p.store.changed_at() * 1000)}
                 pos = self.order.position(name)
                 if pos is not None:

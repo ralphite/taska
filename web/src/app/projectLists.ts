@@ -13,8 +13,9 @@ export type { ListedProject }
 export function useSideProjects(slug: string): { list: ListedProject[] | null; tones: Map<string, string> } {
   const stores = useStores('data')
   const rows = useStoreValue(stores.data, (s) => s.projects)
+  const at = useStoreValue(stores.data, (s) => s.listedAt)
   const m = useProjectModel(slug)
-  return useMemo(() => sideProjects(rows, m, slug), [rows, m, slug])
+  return useMemo(() => sideProjects(rows, m, slug, at), [rows, m, slug, at])
 }
 
 /** The other projects, to move something to: by name, with their colour and open count. */

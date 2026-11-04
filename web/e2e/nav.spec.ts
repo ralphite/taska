@@ -227,3 +227,33 @@ test('D82 #9: switching to another project, its name shows at once (not its addr
   await expect(name, 'before its data comes').toContainText(title, { timeout: 2000 })
   if (isDesk(page)) await expect(sideFoot(page)).toContainText('Documents', { timeout: 2000 })
 })
+
+test('r1057 F667: on the desktop a project in the sidebar shows its card at once while the pointer is on it, and it goes when the pointer leaves or presses', async ({
+  page,
+  request,
+}) => {
+  test.skip(!isDesk(page), 'the card is the desktop sidebar’s (a phone has no pointer)')
+  const p = await project(request, LOOP),
+    here = await project(request)
+  await p.op({ op: 'set', ref: 'T5', f: { status: 'done' } })
+  await open(page, here)
+  const row = page.locator(`#drawer a[data-slug="${p.name}"]`),
+    card = page.locator('[data-project-card]')
+  // the list scrolled to it first (scrolling the list puts the card away)
+  await row.scrollIntoViewIfNeeded()
+  await row.hover()
+  // T1 (asks), B2 (in review), I3 (proposed), T4 open, T5 done
+  await expect(card).toBeVisible({ timeout: 1000 })
+  await expect(card).toContainText(p.title)
+  await expect(card.locator('[data-card-open]')).toHaveText('4 open')
+  await expect(card.locator('[data-card-closed]')).toHaveText('1 closed · 5 items')
+  await expect(card).toContainText('3 need you')
+  await page.mouse.move(700, 400)
+  await expect(card).toBeHidden()
+  // it takes no clicks: the row under it opens its project
+  await row.hover()
+  await expect(card).toBeVisible()
+  await row.click()
+  await expect(card).toBeHidden()
+  await expect(page).toHaveURL(new RegExp(p.url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
+})

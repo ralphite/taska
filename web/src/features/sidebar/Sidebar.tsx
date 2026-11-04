@@ -1,9 +1,12 @@
 // The projects: on the desktop the sidebar (or the narrow rail when you fold it), on the phone the drawer. Each
 // project with how many things need you there and how many are open; New input, New project; at the foot the
-// project's Documents, Activity, Deleted, and Settings. Props only.
+// project's Documents, Activity, Deleted, and Settings; on the desktop a project's card beside it while the pointer is
+// on it (F667). Props only.
 
 import { useRef, type ReactNode, type Ref } from 'react'
+import type { ProjectCardFacts } from '../../model/projects'
 import { useOrderDrag } from './orderDrag'
+import { FloatingProjectCard, useProjectCard } from './ProjectCard'
 import { Kbd, NeedsCount, ProjTile, Skeleton } from '../../ui/bits'
 import { Icon, type IconName } from '../../ui/Icon'
 
@@ -17,6 +20,8 @@ export interface SideProject {
   href: string
   /** an item dragged from the list would move here */
   drop?: boolean
+  /** what its card under the pointer says */
+  card: ProjectCardFacts
 }
 
 export interface SideLinkInfo {
@@ -87,7 +92,15 @@ const PHONE_ROW =
 const DESK_ROW =
   'flex items-center gap-2.5 rounded-xl px-2.5 py-2 select-none [-webkit-touch-callout:none] hover:bg-zinc-200/60 aria-[current=page]:bg-blue-100 aria-[current=page]:ring-1 aria-[current=page]:ring-blue-200 aria-[current=page]:hover:bg-blue-100 data-dragging:bg-zinc-200/70 data-dragging:ring-0 data-drop:bg-blue-100 data-drop:ring-2 data-drop:ring-blue-500 data-pressed:bg-zinc-200/80 dark:hover:bg-zinc-800 dark:aria-[current=page]:bg-blue-400/15 dark:aria-[current=page]:ring-blue-400/30 dark:aria-[current=page]:hover:bg-blue-400/20 dark:data-dragging:bg-zinc-800/70 dark:data-drop:bg-blue-400/15 dark:data-drop:ring-blue-400 dark:data-pressed:bg-zinc-800 data-dragging:[&>*]:invisible'
 
-export function ProjectRows({ phone, projects, on }: { phone: boolean; projects: SideProject[] | null; on: SidebarEvents }) {
+type CardOn = ReturnType<typeof useProjectCard>
+
+/** the card of the project under the pointer, if it is still listed */
+function HoverCard({ hover, projects }: { hover: CardOn; projects: SideProject[] | null }) {
+  const p = hover.hovered && projects?.find((x) => x.slug === hover.hovered?.slug)
+  return p && hover.hovered ? <FloatingProjectCard at={hover.hovered} title={p.title} tone={p.tone} card={p.card} /> : null
+}
+
+function ProjectRows({ phone, projects, hover, on }: { phone: boolean; projects: SideProject[] | null; hover: CardOn; on: SidebarEvents }) {
   if (!projects) return phone ? <Skeleton shape="tile" cls="py-1.5" /> : null
   return (
     <>
@@ -109,6 +122,7 @@ export function ProjectRows({ phone, projects, on }: { phone: boolean; projects:
             href={p.href}
             data-slug={p.slug}
             {...(p.drop ? { 'data-drop': '' } : {})}
+            {...hover.rowProps(p.slug)}
             onContextMenu={(e) => {
               e.preventDefault()
               on.projectMenu(p.slug, e.clientX, e.clientY)
@@ -155,9 +169,11 @@ function SideLink({ link, phone, on }: { link: SideLinkInfo; phone: boolean; on:
 export function Sidebar(props: SidebarProps) {
   const { phone, keys, projects, composing, links, undoLabel, devLinks, place, hidden, newProjectField, edge, footRef, on } = props
   const rows = useRef<HTMLDivElement>(null)
+  const nav = useRef<HTMLElement>(null)
+  const hover = useProjectCard(nav, phone || !!hidden)
   useOrderDrag(rows, (names, moved) => on.order(names, moved))
   return (
-    <nav id="drawer" data-tip-side="right" hidden={hidden} aria-label="Projects" className={`flex h-full flex-col pt-[env(safe-area-inset-top)] dark:bg-zinc-900 ${place}`}>
+    <nav ref={nav} id="drawer" data-tip-side="right" hidden={hidden} aria-label="Projects" className={`flex h-full flex-col pt-[env(safe-area-inset-top)] dark:bg-zinc-900 ${place}`}>
       {edge}
       <div className="flex h-14 shrink-0 items-center gap-2 px-5 lg:pr-2 lg:pl-4">
         <a
@@ -211,11 +227,12 @@ export function Sidebar(props: SidebarProps) {
           <Icon n="mic" c="size-4" />
         </button>
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto outline-none overscroll-contain px-2 lg:scrollbar-thin lg:pb-6 lg:mask-b-from-[calc(100%-1.5rem)] lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70">
+      <div onScroll={hover.hide} className="min-h-0 flex-1 overflow-y-auto outline-none overscroll-contain px-2 lg:scrollbar-thin lg:pb-6 lg:mask-b-from-[calc(100%-1.5rem)] lg:hover:scrollbar-thumb-zinc-500/80 dark:lg:hover:scrollbar-thumb-zinc-400/70">
         <div className="px-3 pb-1.5 text-xs font-semibold text-zinc-500 lg:text-[11px] lg:tracking-wider lg:uppercase dark:text-zinc-400">Projects</div>
         <div
           ref={rows}
           className="flex flex-col gap-0.5"
+          onDragEnter={hover.hide}
           onDragOver={(e) => {
             // an item dragged from the list onto another project moves there
             const a = (e.target as Element).closest<HTMLElement>('a[data-slug]')
@@ -231,8 +248,9 @@ export function Sidebar(props: SidebarProps) {
             on.dropProject()
           }}
         >
-          <ProjectRows phone={phone} projects={projects} on={on} />
+          <ProjectRows phone={phone} projects={projects} hover={hover} on={on} />
         </div>
+        <HoverCard hover={hover} projects={projects} />
         {newProjectField ?? (
           <button
             onClick={on.newProject}
@@ -321,6 +339,8 @@ export function Sidebar(props: SidebarProps) {
 
 /** The sidebar folded: a narrow rail of the same. */
 export function Rail({ keys, projects, links, composing, settingsOpen, hidden, on }: { keys: SideKeys; projects: SideProject[] | null; links: SideLinkInfo[]; composing: boolean; settingsOpen: boolean; hidden?: boolean; on: SidebarEvents }) {
+  const nav = useRef<HTMLElement>(null)
+  const hover = useProjectCard(nav, !!hidden)
   const btn = (key: string, inner: ReactNode, title: string, onClick: () => void, attrs: Record<string, unknown> = {}) => (
     <button
       key={key}
@@ -334,7 +354,7 @@ export function Rail({ keys, projects, links, composing, settingsOpen, hidden, o
     </button>
   )
   return (
-    <nav id="rail" data-tip-side="right" hidden={hidden} aria-label="Projects" className="z-30 flex h-full w-14 shrink-0 flex-col items-center gap-1 border-r border-zinc-200 bg-zinc-50 py-2 dark:border-zinc-800 dark:bg-zinc-900">
+    <nav ref={nav} id="rail" data-tip-side="right" hidden={hidden} aria-label="Projects" className="z-30 flex h-full w-14 shrink-0 flex-col items-center gap-1 border-r border-zinc-200 bg-zinc-50 py-2 dark:border-zinc-800 dark:bg-zinc-900">
       {btn(
         'side',
         <span className="text-blue-600 dark:text-blue-400">
@@ -346,14 +366,14 @@ export function Rail({ keys, projects, links, composing, settingsOpen, hidden, o
       {btn('search', <Icon n="search" c="size-5" />, `Search · ${keys.search}`, on.search)}
       {btn('new', <Icon n="newinput" c="size-5" />, `New input · ${keys.newInput}`, on.newInput, { 'aria-pressed': composing })}
       <div className="my-1 h-px w-8 bg-zinc-200 dark:bg-zinc-800" />
-      <div className="-my-1 flex min-h-0 [scrollbar-width:none] flex-col items-center gap-1 overflow-y-auto outline-none p-1">
+      <div onScroll={hover.hide} className="-my-1 flex min-h-0 [scrollbar-width:none] flex-col items-center gap-1 overflow-y-auto outline-none p-1">
         {(projects || []).map((p) => (
           <a
             key={p.slug}
             href={p.href}
+            {...hover.rowProps(p.slug)}
             aria-current={p.current ? 'page' : undefined}
             onClick={(e) => (p.current ? (e.preventDefault(), on.newInput()) : on.go(p.href, e))}
-            title={p.title}
             aria-label={p.title}
             className="relative grid size-10 place-items-center rounded-xl hover:bg-zinc-200/60 aria-[current=page]:bg-blue-100 aria-[current=page]:ring-1 aria-[current=page]:ring-blue-300 dark:hover:bg-zinc-800 dark:aria-[current=page]:bg-blue-400/20 dark:aria-[current=page]:ring-blue-400/40"
           >
@@ -366,6 +386,7 @@ export function Rail({ keys, projects, links, composing, settingsOpen, hidden, o
           </a>
         ))}
       </div>
+      <HoverCard hover={hover} projects={projects} />
       {btn('np', <Icon n="plus" c="size-5" />, 'New project', on.newProject)}
       <div className="flex-1" />
       {/* this project's Documents, Activity and Deleted, as the sidebar's foot has them */}

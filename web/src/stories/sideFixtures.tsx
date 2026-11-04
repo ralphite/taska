@@ -12,26 +12,30 @@ import { SIDE_KEYS, sideLinks } from '../features/sidebar/sideLinks'
 import type { ProjectRow } from '../model/types'
 import { gripVars } from '../stores/grips'
 import { Grip } from '../ui/Grip'
-import { modelOf } from './fixtures'
+import { T, modelOf } from './fixtures'
 import { PROJECT } from './listFixtures'
 import { act, acts } from './acts'
 
 const sideActs = acts('Sidebar', ['newInput', 'newVoice', 'newProject', 'hide', 'settings', 'help', 'keys', 'undo', 'order', 'dropProject', 'projectMenu', 'search', 'create'] as const, { keys: 'Keyboard shortcuts', search: 'Search on the desktop' })
 const goAct = act('Sidebar: go')
 export const sideOn: SidebarEvents = { ...sideActs, go: (href, e) => (e.preventDefault(), goAct(href)), dragProject: () => false }
-/** The projects as Taska last listed them, in your order. */
+/** when the projects were listed */
+const AT = Date.parse(T)
+const ago = (min: number) => AT - min * 60e3
+/** The projects as Taska last listed them, in your order: Home busy (Codex was here two hours ago, work waits), the
+ * notes quiet for a week, the long one with nothing open. */
 const ROWS: ProjectRow[] = [
-  { name: 'home', title: 'Home', open: 13, needs: 11, pos: 0 },
-  { name: 'shop', title: 'Shop', open: 0, needs: 0, pos: 1 },
-  { name: 'notes', title: '\u8bfb\u4e66\u7b14\u8bb0', open: 2, needs: 1, pos: 2 },
-  { name: 'long', title: 'A project with a very long name that does not fit', open: 0, needs: 0, pos: 3 },
+  { name: 'home', title: 'Home', open: 13, needs: 11, closed: 42, inputs: 120, docs: 6, agents: [{ name: 'codex', t: ago(120), waiting: false }], work: true, t: ago(25), pos: 0 },
+  { name: 'shop', title: 'Shop', open: 0, needs: 0, t: ago(3 * 1440), pos: 1 },
+  { name: 'notes', title: '\u8bfb\u4e66\u7b14\u8bb0', open: 2, needs: 1, closed: 5, inputs: 9, docs: 0, t: ago(7 * 1440), pos: 2 },
+  { name: 'long', title: 'A project with a very long name that does not fit', open: 0, needs: 0, closed: 4, inputs: 3, docs: 1, agents: [{ name: 'claude-code', t: ago(30 * 1440), waiting: false }], t: ago(30 * 1440), pos: 3 },
 ]
 const DEV = [
   { label: 'Storybook', href: '#', icon: 'book' as const },
   { label: 'Dashboard', href: '#', icon: 'chart' as const },
 ]
 const projects = (drop?: string) => {
-  const list = sideProjects(ROWS, modelOf(PROJECT, [], { title: 'Shop' }), 'shop').list
+  const list = sideProjects(ROWS, modelOf(PROJECT, [], { title: 'Shop' }), 'shop', AT).list
   return list && drop ? list.map((p) => (p.slug === drop ? { ...p, drop: true } : p)) : list
 }
 type SideFacts = { side?: 'docs' | 'log' | 'deleted'; undo?: string; composing?: boolean; drop?: string; naming?: string; loading?: boolean; settings?: boolean; noLinks?: boolean }
@@ -99,3 +103,8 @@ function LiveSidebar({ phone, f, folded = false }: { phone: boolean; f: SideFact
 export const side = (phone: boolean, f: SideFacts = {}) => <LiveSidebar phone={phone} f={f} />
 /** the sidebar folded to icons; `settings`: Settings open (its icon lit), `composing`: New input lit, `loading`: projects never listed yet. Show sidebar unfolds it. */
 export const rail = (f: Omit<SideFacts, 'undo' | 'drop' | 'naming'> = {}) => <LiveSidebar phone={false} folded f={f} />
+/** A mouse comes onto a project (its row in the sidebar, or its icon on the rail, by its name), as the page hears it. */
+export const pointTo = (title: string) => (root: HTMLElement) => {
+  const a = [...root.querySelectorAll<HTMLElement>('nav a')].find((x) => x.getAttribute('aria-label') === title || x.dataset.slug === title)
+  a?.dispatchEvent(new PointerEvent('pointerover', { bubbles: true, pointerType: 'mouse' }))
+}

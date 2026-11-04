@@ -264,6 +264,10 @@ export interface ProjectRow {
   title: string
   open: number
   needs: number
+  /** done or dropped on Items (F667: a list kept from before may not have these) */
+  closed?: number
+  inputs?: number
+  docs?: number
   agents?: AgentSeen[]
   work?: boolean
   t?: number

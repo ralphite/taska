@@ -16,6 +16,7 @@ import { Sidebar, type SideLinkInfo, type SideProject } from '../features/sideba
 import { SIDE_KEYS } from '../features/sidebar/sideLinks'
 import { boxRole, shownBox, type BoxLine } from '../model/boxFoot'
 import { findRef } from '../model/project'
+import { projectCard } from '../model/projects'
 import { parseRoute } from '../model/route'
 import type { Input } from '../model/types'
 import type { SaidInput } from '../model/saidLately'
@@ -53,9 +54,9 @@ const INPUTS: Input[] = [
 ]
 const M = modelOf(ITEMS, INPUTS, { title: 'Shop' }, [D1])
 const PROJECTS: SideProject[] = [
-  { slug: 'shop', title: 'Shop', tone: PROJECT_TONES[1], needs: 4, open: 9, current: true, href: '#' },
-  { slug: 'home', title: 'Home', tone: PROJECT_TONES[0], needs: 2, open: 13, current: false, href: '#' },
-  { slug: 'taska', title: 'taska', tone: PROJECT_TONES[4], needs: 0, open: 32, current: false, href: '#' },
+  { slug: 'shop', title: 'Shop', tone: PROJECT_TONES[1], needs: 4, open: 9, current: true, href: '#', card: projectCard({ needs: 4, open: 9 }, 0) },
+  { slug: 'home', title: 'Home', tone: PROJECT_TONES[0], needs: 2, open: 13, current: false, href: '#', card: projectCard({ needs: 2, open: 13 }, 0) },
+  { slug: 'taska', title: 'taska', tone: PROJECT_TONES[4], needs: 0, open: 32, current: false, href: '#', card: projectCard({ needs: 0, open: 32 }, 0) },
 ]
 const LINKS: SideLinkInfo[] = [
   { key: 'docs', label: 'Documents', icon: 'doc', href: '#', current: false },
