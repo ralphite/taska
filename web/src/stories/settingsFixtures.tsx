@@ -2,12 +2,12 @@
 // index or one section's page), the way through (DeskNav, PhoneIndex) and each section's own body, with what they
 // show worked out by the page's own settingsFacts from a demo project (Shop: the item list's) and what the page has
 // of the other projects. Used by Settings' stories.
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import { sideProjects } from '../app/sideProjects'
 import { DeletedBody, DocsBody, LogBody, PhoneProjectsBody } from '../features/settings/PhoneSections'
 import { Loading } from '../features/settings/SettingsParts'
 import { boxAt } from './boxFixtures'
-import { NotificationsBody, OrganizerBody, PhoneBody, PhonePushBody, ProjectsBody, SpellingsBody } from '../features/settings/Sections'
+import { NotificationsBody, OrganizerBody, PhoneBody, PhonePushBody, ProjectsBody, SpellingsBody, type ProjectsEvents } from '../features/settings/Sections'
 import { SettingsFrame } from '../features/settings/SettingsFrame'
 import { DeskNav, PhoneIndex } from '../features/settings/SettingsNav'
 import { deletedRows, docRows, logRows, navFacts, projectsOf } from '../features/settings/settingsFacts'
@@ -17,8 +17,8 @@ import type { DeletedProject } from '../stores/settings'
 import { T, modelOf } from './fixtures'
 import { doc } from './docFixtures'
 import { PROJECT } from './listFixtures'
+import { acts } from './acts'
 
-const no = () => {}
 const now = Date.parse(T)
 const at = (min: number) => new Date(now - min * 60_000).toISOString()
 export const SEEN: AgentSeen[] = [
@@ -86,50 +86,80 @@ export const shopWithHistory = (agents: AgentSeen[] = SEEN, o: { work?: boolean;
     ],
   }, [doc({ d: 1, n: 1, title: 'Plan: the export keeps the filter' }), doc({ d: 2, n: 3, fmt: 'html', title: 'Export options', blocks: [], whole: [], detached: [] })])
 
-export function settingsAt(sec: SectionKey | null, desk: boolean, h: SettingsHere = {}) {
+export const settingsAt = (sec: SectionKey | null, desk: boolean, h: SettingsHere = {}) => <LiveSettings sec={sec} desk={desk} h={h} />
+
+const setActs = acts('Settings', ['create', 'saveRename', 'remove', 'restore', 'purge', 'open', 'leave', 'keys', 'copy', 'newKey', 'addWord', 'forget', 'openDoc', 'item', 'input', 'undo', 'more', 'restoreThing', 'restoreInput', 'onPhone'] as const, { keys: 'Sheets › Keyboard shortcuts', openDoc: 'Document › Reading' })
+
+/** Settings with what the page holds for it (the route's section, stores.settings: a project being named, renamed or
+ * its menu open, what asks again; the notifications' and spellings' switches): a section opens (the phone's back goes
+ * to its index), New project and Rename open their fields and Esc closes them, a project's ⋯ opens its menu, Delete
+ * for good, New key and Undo ask again, the switches switch, Edit opens the transcription preferences (T662). What
+ * needs Taska shows in the Actions panel. */
+function LiveSettings({ sec: start, desk, h }: { sec: SectionKey | null; desk: boolean; h: SettingsHere }) {
+  const [sec, setSec] = useState(start)
+  const [p, setP] = useState({ pNew: !!h.projects?.pNew, pNewText: h.projects?.pNewText ?? '', pErr: h.projects?.pErr ?? '', renaming: h.projects?.renaming ?? null, pMenu: h.projects?.menu ?? null })
+  const [asked, setAsked] = useState<Record<string, number>>(() => ({ ...Object.fromEntries((h.projects?.purging ?? []).map((n) => [`purge ${n}`, 1])), ...(h.newKeyAsking ? { 'new-key': 1 } : {}) }))
+  const [notices, setNotices] = useState(h.notifications ?? { state: 'On' as const, quiet: false })
+  const [push, setPush] = useState(h.push ?? null)
+  const [editing, setEditing] = useState(!!h.prefs?.editing)
+  const [tidy, setTidy] = useState(!h.prefs?.tidyOff)
+  const [logAsking, setLogAsking] = useState<ReadonlySet<number> | null>(null)
   // what the column says comes from the same data as the section, as on the page
   const shop = shopWithHistory()
   const m = h.organizerOff ? { ...shop, facts: { ...shop.facts, organizer: { ...shop.facts.organizer, on: false } } } : shop
   const side = sideProjects(ROWS, m, 'shop').list
   const rows = h.projectsLoading ? null : ROWS
-  const st = { deleted: h.noneDeleted ? [] : GONE, pNew: !!h.projects?.pNew, pNewText: h.projects?.pNewText ?? '', pErr: h.projects?.pErr ?? '', renaming: h.projects?.renaming ?? null, pMenu: h.projects?.menu ?? null }
-  const asked = Object.fromEntries((h.projects?.purging ?? []).map((n) => [`purge ${n}`, 1]))
+  const st = { deleted: h.noneDeleted ? [] : GONE, ...p }
+  const ask = (key: string, run: () => void) => (asked[key] ? run() : setAsked({ ...asked, [key]: 1 }))
   // the column says what the section shows (the desktop's state; the phone's pushes on or off)
-  const nav = navFacts(m, { notifications: desk ? (h.notifications?.state ?? 'On').replace('Blocked by the browser', 'Blocked') : h.push?.sub ? 'On' : 'Off', projects: ROWS.length, spellings: h.spellingsLoading || h.noSpellings ? '' : FIXES.length })
-  const pOn = { newProject: no, create: no, rename: no, saveRename: no, remove: no, restore: no, purge: no, menu: no, open: no }
-  const navOn = { open: no, back: no, keys: no, href: () => '#' }
+  const nav = navFacts(m, { notifications: desk ? notices.state.replace('Blocked by the browser', 'Blocked') : push?.sub ? 'On' : 'Off', projects: ROWS.length, spellings: h.spellingsLoading || h.noSpellings ? '' : FIXES.length })
+  const pOn: ProjectsEvents = {
+    newProject: (on) => setP({ ...p, pNew: on, pNewText: on ? p.pNewText : '', pErr: '', renaming: null, pMenu: null }),
+    create: (t) => (setActs.create(t), setP({ ...p, pNew: false })),
+    rename: (slug) => setP({ ...p, renaming: slug, pMenu: null }),
+    saveRename: (slug, t, was) => (setActs.saveRename(slug, t, was), setP({ ...p, renaming: null })),
+    remove: (slug) => (setActs.remove(slug), setP({ ...p, pMenu: null })),
+    restore: setActs.restore,
+    purge: (slug) => ask(`purge ${slug}`, () => setActs.purge(slug)),
+    menu: (k) => setP({ ...p, pMenu: p.pMenu === k ? null : k, renaming: null }),
+    open: setActs.open,
+  }
+  // the page's nav: a section opens; the phone's back goes to the index, the desktop's leaves Settings
+  const back = () => (!desk && sec ? setSec(null) : setActs.leave())
+  const navOn = { open: setSec, back, keys: setActs.keys, href: () => '#' }
+  const toggles = (set: (on: boolean) => void) => ({ turnOn: () => set(true), turnOff: () => set(false) })
   const bodies: Record<SectionKey, () => ReactNode> = {
     projects: () => (desk ? <ProjectsBody f={projectsOf(rows, side, st, asked, '~/.taska/shop/shop.db')} on={pOn} /> : <PhoneProjectsBody f={projectsOf(rows, side, st, asked, '')} on={pOn} />),
-    phone: () => <PhoneBody link={h.noRemote ? '' : m.facts.remote + '/'} lan={h.noRemote && !h.noLan ? 'http://192.168.1.20:7340/p/shop/' : ''} keyText={m.facts.key} asking={!!h.newKeyAsking} desk={desk} on={{ copy: no, newKey: no }} />,
+    phone: () => <PhoneBody link={h.noRemote ? '' : m.facts.remote + '/'} lan={h.noRemote && !h.noLan ? 'http://192.168.1.20:7340/p/shop/' : ''} keyText={m.facts.key} asking={!!asked['new-key']} desk={desk} on={{ copy: setActs.copy, newKey: () => ask('new-key', setActs.newKey) }} />,
     notifications: () =>
       desk ? (
-        <NotificationsBody state={h.notifications?.state ?? 'On'} quiet={h.notifications?.quiet ?? false} on={{ turnOn: no, turnOff: no, quiet: no }} />
+        <NotificationsBody state={notices.state} quiet={notices.quiet} on={{ ...toggles((on) => setNotices({ ...notices, state: on ? 'On' : 'Off' })), quiet: () => setNotices({ ...notices, quiet: !notices.quiet }) }} />
       ) : h.pushLoading ? (
         <Loading />
       ) : h.pushUnsupported ? (
-        <PhonePushBody standalone onPhone={no} phoneHref="#" />
-      ) : h.push ? (
-        <PhonePushBody standalone onPhone={no} phoneHref="#" push={{ ...h.push, on: { turnOn: no, turnOff: no, quiet: no } }} />
+        <PhonePushBody standalone onPhone={setActs.onPhone} phoneHref="#" />
+      ) : push ? (
+        <PhonePushBody standalone onPhone={setActs.onPhone} phoneHref="#" push={{ ...push, on: { ...toggles((on) => setPush({ ...push, sub: on })), quiet: () => setPush({ ...push, quiet: !push.quiet }) } }} />
       ) : (
-        <PhonePushBody standalone={false} onPhone={no} phoneHref="#" />
+        <PhonePushBody standalone={false} onPhone={setActs.onPhone} phoneHref="#" />
       ),
     spellings: () => (
       <SpellingsBody
         fixes={h.spellingsLoading ? null : h.noSpellings ? [] : FIXES}
-        prefs={{ text: h.prefs?.isDefault ? 'Write it as said.' : 'Write it as said; keep code words as they are.', default: !!h.prefs?.isDefault, tidy: !h.prefs?.tidyOff }}
-        editing={!!h.prefs?.editing}
-        prefsSlot={h.prefs?.editing && desk ? boxAt({ mode: { kind: 'prefs', was: 'Write it as said; keep code words as they are.' }, text: 'Write it as said; keep code words as they are.' }, true) : undefined}
-        on={{ editPrefs: no, toggleTidy: no, addWord: async () => true, forget: no }}
+        prefs={{ text: h.prefs?.isDefault ? 'Write it as said.' : 'Write it as said; keep code words as they are.', default: !!h.prefs?.isDefault, tidy }}
+        editing={editing}
+        prefsSlot={editing && desk ? boxAt({ mode: { kind: 'prefs', was: 'Write it as said; keep code words as they are.' }, text: 'Write it as said; keep code words as they are.' }, true) : undefined}
+        on={{ editPrefs: () => setEditing(!editing), toggleTidy: () => setTidy(!tidy), addWord: async (w) => (setActs.addWord(w), true), forget: setActs.forget }}
       />
     ),
     organizer: () => <OrganizerBody on={!h.organizerOff} model="gemini-flash-latest" />,
-    docs: () => <DocsBody docs={h.noDocs ? [] : docRows(m)} onOpen={no} />,
+    docs: () => <DocsBody docs={h.noDocs ? [] : docRows(m)} onOpen={setActs.openDoc} />,
     log: () => {
       const rows = h.log === 'loading' ? null : h.log === 'empty' ? [] : logRows(m, LOG)
-      const asking = new Set(h.log === 'asking' && rows?.length ? [rows.find((x) => x.undo != null)?.undo ?? -1] : [])
-      return <LogBody rows={rows} end={h.log !== 'more'} asking={asking} on={{ item: no, input: no, undo: no, more: no }} />
+      const asking = logAsking ?? new Set(h.log === 'asking' && rows?.length ? [rows.find((x) => x.undo != null)?.undo ?? -1] : [])
+      return <LogBody rows={rows} end={h.log !== 'more'} asking={asking} on={{ item: setActs.item, input: setActs.input, undo: (seq) => (asking.has(seq) ? setActs.undo(seq) : setLogAsking(new Set([...asking, seq]))), more: setActs.more }} />
     },
-    deleted: () => <DeletedBody {...(h.nothingDeleted ? { things: [], inputs: [] } : deletedRows(m))} on={{ restore: no, restoreInput: no }} />,
+    deleted: () => <DeletedBody {...(h.nothingDeleted ? { things: [], inputs: [] } : deletedRows(m))} on={{ restore: setActs.restoreThing, restoreInput: setActs.restoreInput }} />,
   }
   return (
     <div className="flex h-full flex-col">
@@ -138,9 +168,9 @@ export function settingsAt(sec: SectionKey | null, desk: boolean, h: SettingsHer
         sec={sec}
         place=""
         nav={desk ? <DeskNav current={sec ?? 'projects'} back="New input" f={nav} on={navOn} /> : sec ? null : <PhoneIndex f={nav} on={navOn} />}
-        prefs={!!h.prefs?.editing && desk}
+        prefs={editing && desk}
         body={bodies[sec ?? 'projects']()}
-        onBack={no}
+        onBack={back}
       />
     </div>
   )

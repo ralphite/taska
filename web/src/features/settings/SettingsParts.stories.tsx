@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { Frame } from '../../stories/Frames'
+import { Frame, Hold } from '../../stories/Frames'
+import { act } from '../../stories/acts'
 import { CopyBtn, Loading, Part, PhHead, PhLabel, PhNote, PH_GROUP, Setting, TextBox, Toggle } from './SettingsParts'
 
 const meta: Meta = { title: 'Components/Settings, help and parts/Settings/The page and its parts' }
@@ -15,15 +16,15 @@ export const Parts: Story = {
         <div className="px-8 pt-6">
           <Part title="Link" about="Open on your phone">
             <TextBox t="https://taska.example/k/abc/p/home/" />
-            <CopyBtn label="Copy link" onCopy={() => {}} />
+            <CopyBtn label="Copy link" onCopy={act('Settings: copy')} />
           </Part>
-          <Setting title="Quiet 22:00–08:00" about="Your local time." control={<Toggle on label="Quiet" onToggle={() => {}} />} />
+          <Setting title="Quiet 22:00–08:00" about="Your local time." control={<Hold<boolean> start>{(on, set) => <Toggle on={on} label="Quiet" onToggle={() => set(!on)} />}</Hold>} />
           <Loading />
         </div>
       </Frame>
       <Frame layout="phone" width={393} height={420}>
         <div className="h-full bg-zinc-100 dark:bg-zinc-950">
-          <PhHead title="Settings" onBack={() => {}} />
+          <PhHead title="Settings" onBack={act('Settings: back')} />
           <PhLabel>All projects</PhLabel>
           <div className={PH_GROUP}>
             <div className="min-h-12 px-3.5 py-2.5 text-[15px]">Projects</div>

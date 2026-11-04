@@ -1,6 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import type { Dash, Round } from '../../model/dashboard'
 import { Frames } from '../../stories/Frames'
+import { useState } from 'react'
+import { act } from '../../stories/acts'
 import { Dashboard } from './Dashboard'
 
 const meta: Meta = { title: 'Components/Settings, help and parts/Dev/Dashboard' }
@@ -54,13 +56,22 @@ const d: Dash = {
   analyses: [{ name: '2026-10-22-speed.md', date: '2026-10-22', title: 'Where the time goes', md: 'Mostly waiting for the tunnel.' }],
 }
 
+/** The dashboard as the page holds it: a range and the rounds shown pick (asking Taska for that range's numbers is the
+ * page's: the Actions panel), Retry asks again (Actions). */
+function LiveDash({ d, err, range: r0 }: { d: Dash | null; err: string; range: string }) {
+  const [range, setRange] = useState(r0)
+  const [rounds, setRounds] = useState('last20')
+  return <Dashboard d={d} err={err} range={range} onRange={(r) => (setRange(r), askRange(r))} rounds={rounds} now={NOW} onRounds={setRounds} onRetry={act('Dashboard: retry')} />
+}
+const askRange = act('Dashboard: ask Taska for the range')
+
 /** A week of what you did; the panels, costs and analyses agents keep. */
-export const Week: Story = { name: 'The last 7 days', render: () => <Frames phoneWidth={393} deskWidth={1200} page>{() => <Dashboard d={d} err="" range="7" onRange={() => {}} rounds="last20" now={NOW} onRounds={() => {}} onRetry={() => {}} />}</Frames> }
+export const Week: Story = { name: 'The last 7 days', render: () => <Frames phoneWidth={393} deskWidth={1200} page>{() => <LiveDash d={d} err="" range="7" />}</Frames> }
 
 /** Before Taska answers. */
-export const Loading: Story = { name: 'Loading', render: () => <Frames phoneWidth={393} deskWidth={1200} page>{() => <Dashboard d={null} err="" range="7" onRange={() => {}} rounds="last20" now={NOW} onRounds={() => {}} onRetry={() => {}} />}</Frames> }
+export const Loading: Story = { name: 'Loading', render: () => <Frames phoneWidth={393} deskWidth={1200} page>{() => <LiveDash d={null} err="" range="7" />}</Frames> }
 // ---- more states (T639)
-const show = (dash: Dash | null, err = '', range = '7'): Story['render'] => () => <Frames phoneWidth={393} deskWidth={1200} page>{() => <Dashboard d={dash} err={err} range={range} onRange={() => {}} rounds="last20" now={NOW} onRounds={() => {}} onRetry={() => {}} />}</Frames>
+const show = (dash: Dash | null, err = '', range = '7'): Story['render'] => () => <Frames phoneWidth={393} deskWidth={1200} page>{() => <LiveDash d={dash} err={err} range={range} />}</Frames>
 /** Taska answered with an error, still working it out */
 export const TaskaSaidNo: Story = { name: 'Taska said no', render: show(null, 'Taska answered 500') }
 /** another range asked for and refused: the error over the numbers from before */
