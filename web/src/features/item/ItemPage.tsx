@@ -3,7 +3,8 @@
 // on its own, with a line between them; the talk opens at its latest message. The phone has one page. Props only.
 
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
-import { canDone, closed, shownStatus } from '../../model/items'
+import { ACT_KEY, deskSlots, type Slot } from '../../model/actions'
+import { closed, needsYou, shownStatus } from '../../model/items'
 import { talkPlan } from '../../model/talk'
 import type { Doc, FileRef, Item } from '../../model/types'
 import { Kbd, SectionHead, Soft } from '../../ui/bits'
@@ -522,27 +523,22 @@ function BarIcon({ icon, title, onClick }: { icon: IconName; title: string; onCl
   )
 }
 
-/** The actions you use, with their words: only what applies, side by side. */
+/** The actions you use, with their words: the list row's, in its order (D115 #11): Done, Won't do, Later on what is
+ * not finished; Archive and Reopen once it is done or won't be. What waits on you is decided in its card, as on its
+ * row in Needs you. */
 export function ItemActs({ it, on }: { it: Item; on: Pick<ItemEvents, 'set'> }) {
+  const slots = deskSlots(it, needsYou(it)).filter((a): a is Slot => a !== null)
   return (
     <>
-      {it.type === 'rule' || !canDone(it) ? null : <BarText icon={ACT_ICON.Done} label="Done" title="Done · D" onClick={() => on.set('status', 'done')} />}
-      {it.type === 'rule' || it.archived || closed(it.status) ? null : (
+      {slots.map(([f, v, label]) => (
         <BarText
-          icon="clock"
-          label={it.when === 'now' ? 'Later' : 'Back to now'}
-          title={it.when === 'now' ? 'Later · L' : 'Back to now · L'}
-          onClick={() => on.set('when', it.when === 'now' ? 'later' : 'now')}
+          key={label}
+          icon={ACT_ICON[label]}
+          label={label}
+          title={ACT_KEY[label] ? `${label} · ${ACT_KEY[label]}` : label}
+          onClick={() => (f === 'reopen' ? on.set('status', 'open') : on.set(f as 'when' | 'archived' | 'status', f === 'archived' ? v === 'true' : v))}
         />
-      )}
-      {it.archived ? (
-        <BarText icon="unarchive" label="Unarchive" title="Unarchive · E" onClick={() => on.set('archived', false)} />
-      ) : it.type !== 'rule' ? (
-        <BarText icon="archive" label="Archive" title="Archive · E" onClick={() => on.set('archived', true)} />
-      ) : it.status === 'proposed' ? null : (
-        // a rule is retired, not archived (a proposed one is decided in its card)
-        <BarText {...(it.status === 'open' ? { icon: ACT_ICON.Retire, label: 'Retire', title: 'Retire · W' } : { icon: ACT_ICON.Reactivate, label: 'Reactivate', title: 'Reactivate · D' })} onClick={() => on.set('status', it.status === 'open' ? 'dropped' : 'open')} />
-      )}
+      ))}
     </>
   )
 }

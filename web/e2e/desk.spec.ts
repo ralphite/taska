@@ -92,6 +92,19 @@ test('two places picked in one paragraph keep two threads; an answer goes to the
   await expect(thread).not.toContainText('About pears')
 })
 
+test("D115 #11: an open item's bar has its row's buttons, Done, Won't do, Later; Archive only once it is done", async ({ page, request }) => {
+  const p = await project(request, LOOP)
+  await open(page, p)
+  await row(page, 'Write the user docs').click()
+  const bar = page.locator('header:has([data-pane-head])').filter({ visible: true }).last()
+  const words = () => bar.getByRole('button').filter({ visible: true }).allInnerTexts()
+  await expect.poll(words).toEqual(expect.arrayContaining(['Done', "Won't do", 'Later']))
+  expect(await words()).not.toContain('Archive')
+  await bar.getByRole('button', { name: 'Done', exact: true }).click()
+  await expect.poll(words).toEqual(expect.arrayContaining(['Archive', 'Reopen']))
+  expect(await words()).not.toContain("Won't do")
+})
+
 test("r641: a row's buttons sit side by side, with no empty room where one does not apply (T475)", async ({
   page,
   request,
