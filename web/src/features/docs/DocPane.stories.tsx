@@ -1,12 +1,14 @@
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { Frame } from "../../stories/Frames";
+import { act, acts } from "../../stories/acts";
 import { DocPaneActs, DocPaneHead, DocPaneNav } from "./DocPane";
 
 const meta: Meta = { title: "Components/Document/Its bar, the pointer on it" };
 export default meta;
 type Story = StoryObj;
 
-const on = { inspect() {}, copy() {}, edit() {}, move() {}, remove() {} };
+// what its buttons do needs the page (Comment mode, the editor, the move sheet, Taska): the Actions panel
+const on = acts("Document pane", ["inspect", "copy", "edit", "move", "remove"] as const);
 const bar = (children: React.ReactNode) => (
   <div className="flex h-14 items-center gap-1 border-b border-zinc-200 px-3 dark:border-zinc-800">
     {children}
@@ -24,7 +26,7 @@ const bars = (width: number) => (
   >
     {bar(
       <>
-        <DocPaneNav to="F012" onBack={() => {}} />
+        <DocPaneNav to="F012" onBack={act("Document pane: back")} />
         <DocPaneHead
           d={{ d: 12, title: "The rewrite plan", fmt: "md" }}
           editing={false}
@@ -40,7 +42,7 @@ const bars = (width: number) => (
     )}
     {bar(
       <>
-        <DocPaneNav to="Documents" onBack={() => {}} />
+        <DocPaneNav to="Documents" onBack={act("Document pane: back")} />
         <DocPaneHead
           d={{ d: 13, title: "How the old page looks", fmt: "html" }}
           editing={false}
