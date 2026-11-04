@@ -10,7 +10,7 @@ import { saidOutgoing, saidRows } from '../model/saidLately'
 import type { FileRef, Input, Item, OrgNote } from '../model/types'
 import { otherTabs, searchWords } from '../model/visible'
 import { SearchHints } from '../ui/SearchHints'
-import { Thumbs } from '../ui/Files'
+import { FileChips } from '../ui/Files'
 import { PROJECT_TONES } from '../ui/tones'
 import { PICTURE, T, input, item, modelOf } from './fixtures'
 import { talkEnv } from './itemFixtures'
@@ -88,7 +88,7 @@ export interface Said {
 
 const title = (slug: string) => ({ 'mobile-app': 'Mobile app' })[slug] ?? slug
 const project = (s: Said, items = ITEMS) => modelOf(items, s.inputs ?? DAY, { organizer: { on: s.organizer ?? true, model: 'gemini-flash-latest', busy: s.busy ?? null } })
-const thumbs = (size: string) => (f: FileRef[]) => <Thumbs files={f} url={(x) => (x.endsWith('.png') ? PICTURE : '#' + x)} size={size} play={() => ({ playing: false, t: null })} tidy on={{ play() {}, words() {}, view() {} }} />
+const chips = (f: FileRef[]) => <FileChips files={f} url={(x) => (x.endsWith('.png') ? PICTURE : '#' + x)} play={() => ({ playing: false, t: null })} tidy on={{ play() {}, words() {}, view() {} }} />
 const noInput: InputEvents = { goto() {}, more() {}, menu() {}, retry() {}, send() {}, draft() {}, moved() {}, ref() {}, picture() {}, outboxRetry() {}, outboxEdit() {}, end() {} }
 
 function rowsOf(s: Said) {
@@ -105,7 +105,7 @@ export function inputsOf(s: Said = {}) {
   const hints = words.length ? <SearchHints other={otherTabs(m, words, 'inputs', total)} cross={{ list: [], failed: false, q: words.join(' ') }} tone={() => PROJECT_TONES[1]} onShow={() => {}} onGo={() => {}} /> : null
   return (
     <div className="flex h-full flex-col">
-      <InputsView hidden={false} rows={rows} more={total > rows.length} outgoing={outgoingRows(s.outbox ?? [], 'demo', s.away ?? 0)} words={words} world={talkEnv(m, false).world} hints={hints} files={thumbs('size-14')} recording={s.recording ?? null} on={noInput} />
+      <InputsView hidden={false} rows={rows} more={total > rows.length} outgoing={outgoingRows(s.outbox ?? [], 'demo', s.away ?? 0)} words={words} world={talkEnv(m, false).world} hints={hints} files={chips} recording={s.recording ?? null} on={noInput} />
     </div>
   )
 }
@@ -113,7 +113,7 @@ export function inputsOf(s: Said = {}) {
 /** One input as a row of the phone's Inputs tab draws it. */
 export function cardOf(r: Input, s: Said = {}) {
   const { m, rows } = rowsOf({ ...s, inputs: [r] })
-  return <InputCard x={rows[0]} words={[]} world={talkEnv(m, false).world} files={thumbs('size-14')} on={noInput} />
+  return <InputCard x={rows[0]} words={[]} world={talkEnv(m, false).world} files={chips} on={noInput} />
 }
 
 /** One input as a row of the New input page's list draws it (the desktop). */
@@ -123,30 +123,25 @@ export function saidRowOf(r: Input, s: Said = {}) {
   const x = saidRows(m, { words: [], upTo: 1, opened: new Set(s.opened), justSent: (s.justSent ?? []).map((rid) => ({ rid })), drafts, mode: null, title }).rows[0]
   return (
     <div className="px-6 py-3">
-      <SaidRow x={x} words={[]} files={r.files.length ? thumbs('size-16')(r.files) : null} on={noSaid} />
+      <SaidRow x={x} files={r.files.length ? chips(r.files) : null} on={noSaid} />
     </div>
   )
 }
 
-const noSaid: SaidEvents = { goto() {}, more() {}, append() {}, voice() {}, draft() {}, menu() {}, undoSend() {}, retry() {}, send() {}, outboxRetry() {}, outboxEdit() {}, query() {}, loadMore() {}, moved() {} }
+const noSaid: SaidEvents = { goto() {}, more() {}, append() {}, voice() {}, draft() {}, menu() {}, undoSend() {}, retry() {}, send() {}, outboxRetry() {}, outboxEdit() {}, discard() {}, loadMore() {}, moved() {} }
 
 /** What you said lately under the New input page's box (the desktop), as the page draws it. */
 export function saidOf(s: Said = {}) {
   const m = project(s)
-  const words = searchWords(s.q ?? '')
   const drafts = Object.fromEntries((s.editDrafts ?? []).map((id) => [draftKey({ kind: 'amend', mode: 'edit', id }), 'my edit']))
-  const said = saidRows(m, { words, upTo: 30, opened: new Set(s.opened), justSent: (s.justSent ?? []).map((rid) => ({ rid })), drafts, mode: null, title, adding: new Set(s.addingUp) })
+  const said = saidRows(m, { words: [], upTo: 30, opened: new Set(s.opened), justSent: (s.justSent ?? []).map((rid) => ({ rid })), drafts, mode: null, title, adding: new Set(s.addingUp) })
   return (
-    <div className="mx-auto mt-8 max-w-[42rem]">
+    <div className="mx-auto mt-5 max-w-[660px]">
       <SaidLately
-        count={words.length ? said.all.length : m.inputs.length}
-        total={m.inputs.length}
-        q={s.q ?? ''}
         rows={said.rows}
-        outgoing={saidOutgoing(s.outbox ?? [], words, s.away ?? 0, (s.justSent ?? []).map((q) => ({ q })))}
+        outgoing={saidOutgoing(s.outbox ?? [], [], s.away ?? 0, (s.justSent ?? []).map((q) => ({ q })))}
         more={said.all.length > said.rows.length}
-        words={words}
-        files={thumbs('size-16')}
+        files={chips}
         recording={s.recording ?? null}
         adding={s.adding ?? null}
         on={noSaid}

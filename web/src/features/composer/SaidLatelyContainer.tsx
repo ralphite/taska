@@ -1,6 +1,6 @@
-// The desktop's New input page under the box, with the page's data: what you said lately (searched, a page more at
-// a time, each opened in full when asked), what is on its way, and the draft at the top of it while a voice note's
-// words are there to check; more being said into one of them on its own line (F657), and on its way there.
+// The desktop's New input page under the box, with the page's data: what you said lately (a page more at a time, each
+// opened in full when asked), what is on its way, and the draft over it while a voice note's words are there to check;
+// more being said into one of them on its line (F657), and on its way there.
 
 import { useMemo, useState, type ReactNode } from 'react'
 import { useServices, useStores, useStoreValue } from '../../app/context'
@@ -12,7 +12,7 @@ import { fixRange, voiceStretches } from '../../model/doubts'
 import { codeOf } from '../../model/project'
 import { saidOutgoing, saidRows } from '../../model/saidLately'
 import { showsOnItsWay } from '../../model/outgoing'
-import { Thumbs } from '../../ui/Files'
+import { FileChips } from '../../ui/Files'
 import { DraftWords, type Fixing } from './Doubts'
 import { DraftCard, DRAFT_WORDS, type DraftHint } from './DraftCard'
 import { SaidLately } from './SaidLately'
@@ -20,15 +20,15 @@ import { useHeard } from './heard'
 
 const STEP = 30
 const EMPTY: Record<string, string> = {}
+const NO_WORDS: string[] = []
 
-/** What the list shows: its search, how many rows, which are opened in full, More and Less (kept while the page shows
- * other places). */
+/** What the list shows: how many rows, which are opened in full, More and Less (kept while the page shows other
+ * places). */
 export function useSaidView() {
-  const [q, setQ] = useState('')
   const [upTo, setUpTo] = useState(STEP)
   const [opened, setOpened] = useState<ReadonlySet<string>>(new Set())
   const toggle = (id: string) => setOpened((s) => (s.has(id) ? new Set([...s].filter((x) => x !== id)) : new Set(s).add(id)))
-  return { q, upTo, opened, query: (v: string) => (setQ(v), setUpTo(STEP)), more: () => setUpTo((u) => u + STEP), toggle }
+  return { upTo, opened, more: () => setUpTo((u) => u + STEP), toggle }
 }
 export type SaidView = ReturnType<typeof useSaidView>
 
@@ -57,27 +57,22 @@ export function SaidLatelyContainer({ route, boxKey, view, draft }: { route: Pro
   const mode = useStoreValue(stores.box, (s) => s.mode)
   const justSent = useStoreValue(stores.box, (s) => s.sent)
   const projects = useStoreValue(stores.data, (s) => s.projects)
-  const { q, upTo, opened } = view
-  const words = useMemo(() => q.trim().toLowerCase().split(/\s+/).filter(Boolean), [q])
-  const said = useMemo(() => (m ? saidRows(m, { words, upTo, opened, justSent, drafts, mode, title: (s) => projects?.find((p) => p.name === s)?.title || s, adding: new Set(onItsWay.split(' ')) }) : null), [m, words, upTo, opened, justSent, drafts, mode, projects, onItsWay])
+  const { upTo, opened } = view
+  const said = useMemo(() => (m ? saidRows(m, { words: NO_WORDS, upTo, opened, justSent, drafts, mode, title: (s) => projects?.find((p) => p.name === s)?.title || s, adding: new Set(onItsWay.split(' ')) }) : null), [m, upTo, opened, justSent, drafts, mode, projects, onItsWay])
   const media = useFiles(route.slug)
   if (!m || !said) return null
   const mine = outbox.filter((o) => o.slug === route.slug && !o.unsent && showsOnItsWay(o))
   const url = (f: string) => `/p/${encodeURIComponent(route.slug)}/f/${encodeURIComponent(f)}`
   return (
-    <section aria-label="Latest inputs" data-vc-area className="mx-auto mt-8 block max-w-[42rem]">
+    <section aria-label="Latest inputs" data-vc-area className="mx-auto mt-5 block max-w-[660px]">
       <SaidLately
         recording={recording}
         adding={adding ? { id: adding.slice(0, adding.indexOf(' ')), clock: adding.slice(adding.indexOf(' ') + 1) } : null}
-        count={words.length ? said.all.length : m.inputs.length}
-        total={m.inputs.length}
-        q={q}
         rows={said.rows}
-        outgoing={saidOutgoing(mine, words, away, justSent)}
+        outgoing={saidOutgoing(mine, NO_WORDS, away, justSent)}
         more={said.all.length > said.rows.length}
-        words={words}
         draft={draft}
-        files={(f) => <Thumbs files={f} url={url} size="size-16" play={media.play} tidy={media.tidy} on={media.on} />}
+        files={(f) => <FileChips files={f} url={url} play={media.play} tidy={media.tidy} on={media.on} />}
         on={{
           goto: (n) => app.nav.openItem(codeOf(m, n)),
           more: view.toggle,
@@ -93,7 +88,7 @@ export function SaidLatelyContainer({ route, boxKey, view, draft }: { route: Pro
           send: (id) => app.inputActions.sendCancelled(route.slug, id),
           outboxRetry: () => void app.inputs.flush(),
           outboxEdit: () => app.box.editOutgoing(route.slug, boxKey) && app.fields.focus('box'),
-          query: view.query,
+          discard: () => void app.voice.cancel(),
           loadMore: view.more,
           moved: (href) => app.nav.to(href),
         }}
@@ -105,8 +100,9 @@ export function SaidLatelyContainer({ route, boxKey, view, draft }: { route: Pro
 /** The draft at the top of what you said, while a voice note's words are there to check: its words, which ones may
  * be misheard (a tap picks another version), and a correction of words you select. */
 export function DraftCardContainer({ route, boxKey, scope, fixing, setFixing }: { route: ProjectRoute; boxKey: DraftKey; scope: string | null; fixing: Fixing | null; setFixing(f: Fixing | null): void }) {
-  const app = useServices('fields', 'toasts', 'voiceWords')
+  const app = useServices('box', 'fields', 'toasts', 'voiceWords')
   const stores = useStores('box', 'drafts')
+  const m = useProjectModel(route.slug)
   const text = useStoreValue(stores.drafts, (s) => s.bySlug[route.slug]?.[boxKey]) ?? ''
   const draftFiles = useStoreValue(stores.box, (s) => s.files[boxKey])
   const heard = useHeard(text, draftFiles)
@@ -123,6 +119,7 @@ export function DraftCardContainer({ route, boxKey, scope, fixing, setFixing }: 
       stretches={voiceStretches(text, files)}
       fixing={fixing}
       className={DRAFT_WORDS}
+      look="card"
       on={{
         pick: (fk, k, side) => void app.voiceWords.pick(route.slug, boxKey, fk, k, side),
         escape: () => app.fields.focus('box'),
@@ -139,5 +136,5 @@ export function DraftCardContainer({ route, boxKey, scope, fixing, setFixing }: 
       }}
     />
   ) : null
-  return <DraftCard voice={voice.length} ms={voice.reduce((a, f) => a + (f.ms || 0), 0)} files={files.length - voice.length} transcribing={files.some((f) => f.transcribing)} words={words} hint={hint} />
+  return <DraftCard voice={voice.length} ms={voice.reduce((a, f) => a + (f.ms || 0), 0)} files={files.length - voice.length} transcribing={files.some((f) => f.transcribing)} words={words} hint={hint} onSend={() => void app.box.send(route.slug, m, scope, boxKey)} />
 }

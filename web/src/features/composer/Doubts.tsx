@@ -150,6 +150,9 @@ export interface DraftWordsProps {
   stretches?: readonly (readonly [number, number])[]
   fixing?: Fixing | null
   className?: string
+  /** the New input page's draft card (T661): the two versions on white in an amber edge, the picked one amber; an
+   * unsure word amber, underlined with dots */
+  look?: 'card'
   on: {
     pick(fk: string, k: number, side: 'was' | 'alt'): void
     /** Esc in the versions: back to the box */
@@ -167,14 +170,19 @@ export interface DraftWordsProps {
 /** The phone's box showing the draft's words in place of its field, to pick the misheard ones from. */
 export const BOX_WORDS_LOOK = 'col-start-1 row-start-1 max-h-48 min-h-11 overflow-y-auto outline-none px-1 py-1.5 text-[17px] leading-8 break-words whitespace-pre-wrap text-zinc-900 roomy:text-[15px] dark:text-zinc-100'
 
-export function DraftWords({ text, spots, stretches = [], fixing = null, className = '', on }: DraftWordsProps) {
+export function DraftWords({ text, spots, stretches = [], fixing = null, className = '', look, on }: DraftWordsProps) {
+  const card = look === 'card'
   const box = useRef<HTMLDivElement>(null)
   const fix = !!on.select
   const field = (key: string) => (fixing ? <FixField key={key} wrong={fixing.wrong} on={{ save: (r) => on.fixSave?.(r), stop: () => on.fixStop?.() }} /> : null)
   // a stretch of words, with the field in it when it is the one being corrected
   const run = (a: number, b: number, v: boolean, key: string, extra?: { unsure: boolean }) => {
     const unsure = extra?.unsure
-    const cls = unsure ? `underline decoration-amber-500 decoration-dotted decoration-2 underline-offset-4 ${fix ? 'cursor-text' : ''}` : undefined
+    const cls = unsure
+      ? card
+        ? `mx-0.5 rounded border-b-2 border-dotted border-amber-500 bg-amber-200/40 px-1 font-medium text-amber-950 dark:border-amber-400 dark:bg-amber-900/50 dark:text-amber-200 ${fix ? 'cursor-text' : ''}`
+        : `underline decoration-amber-500 decoration-dotted decoration-2 underline-offset-4 ${fix ? 'cursor-text' : ''}`
+      : undefined
     const props = { 'data-o': a, ...(v && fix ? { 'data-v': '' } : {}), ...(unsure && fix ? { 'data-unsure': '' } : {}) }
     if (fixing && fixing.s >= a && fixing.e <= b)
       return (
@@ -264,7 +272,11 @@ export function DraftWords({ text, spots, stretches = [], fixing = null, classNa
               tabIndex={on2 ? 0 : -1}
               title={sd === 'was' ? 'Main model' : 'Other model'}
               onClick={() => on.pick(p.fk, p.k, sd)}
-              className={`inline-flex items-center gap-1 rounded-md px-1.5 leading-6 ${on2 ? 'bg-white text-zinc-900 shadow-sm ring-1 ring-zinc-900/10 dark:bg-zinc-700 dark:text-zinc-50 dark:ring-white/10' : 'text-zinc-500 hover:bg-white hover:text-zinc-900 hover:shadow-sm dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-zinc-100'}`}
+              className={
+                card
+                  ? `inline-flex items-center gap-1 rounded px-1.5 ${on2 ? 'bg-amber-100 font-semibold text-zinc-900 dark:bg-amber-900/60 dark:text-zinc-100' : 'text-zinc-400 transition-colors hover:text-zinc-700 dark:hover:text-zinc-200'}`
+                  : `inline-flex items-center gap-1 rounded-md px-1.5 leading-6 ${on2 ? 'bg-white text-zinc-900 shadow-sm ring-1 ring-zinc-900/10 dark:bg-zinc-700 dark:text-zinc-50 dark:ring-white/10' : 'text-zinc-500 hover:bg-white hover:text-zinc-900 hover:shadow-sm dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-zinc-100'}`
+              }
             >
               {on2 && x.pick ? <Icon n="check" c="size-3.5 text-emerald-600 dark:text-emerald-400" sw="2.5" /> : null}
               {unmarked(label)}
@@ -278,9 +290,18 @@ export function DraftWords({ text, spots, stretches = [], fixing = null, classNa
               data-tog
               role="group"
               aria-label="Maybe misheard: two versions"
-              className={`mx-0.5 inline-flex items-center gap-px rounded-lg p-0.5 align-baseline whitespace-nowrap ring-1 ${x.pick ? 'bg-zinc-100 ring-zinc-200 dark:bg-zinc-800 dark:ring-zinc-700' : 'bg-amber-100/80 ring-amber-300 dark:bg-amber-400/15 dark:ring-amber-400/40'}`}
+              className={
+                card
+                  ? `mx-0.5 inline-flex items-center rounded border bg-white p-0.5 align-baseline text-xs whitespace-nowrap shadow-2xs dark:bg-zinc-900 ${x.pick ? 'border-zinc-200 dark:border-zinc-700' : 'border-amber-300 dark:border-amber-700'}`
+                  : `mx-0.5 inline-flex items-center gap-px rounded-lg p-0.5 align-baseline whitespace-nowrap ring-1 ${x.pick ? 'bg-zinc-100 ring-zinc-200 dark:bg-zinc-800 dark:ring-zinc-700' : 'bg-amber-100/80 ring-amber-300 dark:bg-amber-400/15 dark:ring-amber-400/40'}`
+              }
             >
               {btn('was', c0)}
+              {card ? (
+                <span aria-hidden className="px-0.5 text-[10px] text-zinc-300 dark:text-zinc-600">
+                  |
+                </span>
+              ) : null}
               {btn('alt', c1)}
             </span>
             {post ? run(p.e - post.length, p.e, inV(p.e - post.length), `t${j}b`) : null}

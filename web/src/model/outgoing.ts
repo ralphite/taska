@@ -47,6 +47,9 @@ export const outgoingLine = (o: Pick<Outgoing, 'text' | 'files'> & Pick<Partial<
   (o.kind === 'cancelled' ? 'Cancelled voice note' : '') ||
   (o.files.some((f) => (f.mime || '').startsWith('audio/')) ? 'Voice note' : `${o.files.length} file${o.files.length === 1 ? '' : 's'}`)
 
+/** Taska is out of reach (its connection lost, or no answer for a while): it waits to be sent. */
+export const outgoingWaits = (o: Pick<Outgoing, 'state' | 'net'>, away: number) => (o.state === 'failed' ? !!o.net : away >= 2)
+
 /** Where it is, in a few words: on its way, waiting for Taska (away), uploading its files, or not sent. */
 export const outgoingState = (o: Outgoing, away: number) =>
-  o.state === 'failed' && !o.net ? 'Not sent' : o.state === 'failed' || away >= 2 ? 'Waiting for Taska…' : o.files.some((f) => f.uploading) ? 'Uploading…' : 'Sending…'
+  o.state === 'failed' && !o.net ? 'Not sent' : outgoingWaits(o, away) ? 'Waiting for Taska…' : o.files.some((f) => f.uploading) ? 'Uploading…' : 'Sending…'

@@ -67,6 +67,7 @@ export const ICON = {
   start: '<circle cx="12" cy="12" r="10"/><path d="M10 8.5v7l5.5-3.5z" fill="currentColor"/>',
   pause: '<circle cx="12" cy="12" r="10"/><path d="M10 15V9"/><path d="M14 15V9"/>',
   spinner: '<path d="M21 12a9 9 0 1 1-6.219-8.56"/>',
+  bolt: '<path d="M13 10V3L4 14h7v7l9-11h-7z"/>',
   mic: '<path d="M12 19v3"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><rect x="9" y="2" width="6" height="13" rx="3"/>',
   // a recording cancelled, kept in the inputs (B627)
   micoff:

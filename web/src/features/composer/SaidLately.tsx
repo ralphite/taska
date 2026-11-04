@@ -1,17 +1,14 @@
-// Under New input on the desktop: every input, the latest first (more comes as you scroll), each as the line every
-// list of inputs draws (its number and when, its words, its files, what became of it under them), Undo on what you
-// just sent; what is still on its way, and a voice note being recorded, on top; more being said into one of them, on
-// its own line (F657). A search of its own. Props only.
+// Under New input on the desktop (T661, the approved "Anchored Stream"): a voice note being recorded, what is still on
+// its way and the draft to check, as lines of their own; then every input, the latest first (more comes as you
+// scroll), each as the row every list of inputs draws (its number and when, its words, its files, what became of it
+// on a shelf under them), Undo on what you just sent; more being said into one of them, on its line (F657). Search is
+// the sidebar's (F479). Props only.
 
 import { useEffect, useRef, type ReactNode } from 'react'
 import type { SaidInput, SaidOutgoing } from '../../model/saidLately'
 import type { FileRef } from '../../model/types'
-import { Hit } from '../../ui/bits'
-import { isAudio } from '../../ui/Files'
-import { Icon } from '../../ui/Icon'
-import { DayHead, InputRow, OutgoingRow, RecordingRow, type InputLook, type OutgoingAct } from '../../ui/InputRow'
-import { MUTED } from '../../ui/tones'
-import { noMatches } from '../../model/words'
+import { Spinner } from '../../ui/Icon'
+import { INPUT_LIST, InputRow, OutgoingRow, RecordingRow, type OutgoingAct } from '../../ui/InputRow'
 
 export interface SaidEvents {
   goto(n: number): void
@@ -32,49 +29,57 @@ export interface SaidEvents {
   moved(href: string): void
   outboxRetry(): void
   outboxEdit(): void
-  query(q: string): void
+  /** the voice note being recorded into a new input: let it go (Esc) */
+  discard(): void
   loadMore(): void
-  /** a prototype's compact rows (T661): one picked, shown whole beside the list */
-  pick?(id: string): void
 }
 
-/** Its words with the searched ones marked: closed up when cut short; opened, its paragraphs a third of a line apart. */
-function Said({ text, words, cut }: { text: string; words: string[]; cut: boolean }) {
+/** Words with their web addresses as links (mono, blue), as the row draws them. */
+function Linked({ text }: { text: string }) {
+  return (
+    <>
+      {text.split(/(https?:\/\/[^\s]+)/).map((part, i) =>
+        i % 2 ? (
+          <a key={i} href={part} target="_blank" rel="noopener" onClick={(e) => e.stopPropagation()} className="font-mono text-xs break-all text-blue-600 hover:underline dark:text-blue-400">
+            {part}
+          </a>
+        ) : (
+          part
+        ),
+      )}
+    </>
+  )
+}
+
+/** Its words: closed up when cut short; opened, its paragraphs a third of a line apart. */
+function Said({ text, cut }: { text: string; cut: boolean }) {
   if (cut)
     return (
       <p className="break-words whitespace-pre-line">
-        <Hit text={text.replace(/\n{2,}/g, '\n')} words={words} />
+        <Linked text={text.replace(/\n{2,}/g, '\n')} />
       </p>
     )
   return (
     <>
       {text.split(/\n{2,}/).map((para, i) => (
         <p key={i} className={`break-words whitespace-pre-line ${i ? 'mt-2' : ''}`}>
-          <Hit text={para} words={words} />
+          <Linked text={para} />
         </p>
       ))}
     </>
   )
 }
 
-/** One input as the list draws it: its words as they were said, the searched ones marked. */
-export function SaidRow({ x, words, files, rec = null, look, voice, lit = false, on }: {
+/** One input as the list draws it. */
+export function SaidRow({ x, files, rec = null, on }: {
   x: SaidInput
-  words: string[]
   files: ReactNode
   /** more being said into it: how long so far */
   rec?: string | null
-  /** a prototype's look (T661) */
-  look?: InputLook
-  voice?: ReactNode
-  lit?: boolean
   on: SaidEvents
 }) {
-  return <InputRow x={x} words={words} undo={x.canUndoSend} rec={rec} look={look} voice={voice} lit={lit} text={(cut) => <Said text={x.r.text} words={words} cut={cut} />} files={files} on={on} />
+  return <InputRow x={x} words={[]} undo={x.canUndoSend} rec={rec} text={(cut) => <Said text={x.r.text} cut={cut} />} files={files} on={on} />
 }
-
-/** the day's name a line says for today (model/inputs dayOf) */
-const TODAY = 'Today'
 
 /** What can be done about one on its way: Undo just after sending, Retry when Taska said no, Edit when not sent. */
 const outgoingActs = (q: SaidOutgoing, on: SaidEvents): OutgoingAct[] => [
@@ -83,48 +88,17 @@ const outgoingActs = (q: SaidOutgoing, on: SaidEvents): OutgoingAct[] => [
   ...(q.failed ? [{ label: 'Edit', run: on.outboxEdit }] : []),
 ]
 
-export function SaidLately({
-  count,
-  total,
-  q,
-  rows,
-  outgoing,
-  more,
-  words,
-  draft,
-  files,
-  recording = null,
-  adding = null,
-  look,
-  head = true,
-  voice,
-  picked = null,
-  on,
-}: {
-  /** what the heading counts */
-  count: number
-  /** how many inputs the project has (none: no heading) */
-  total: number
-  q: string
+export function SaidLately({ rows, outgoing, more, draft, files, recording = null, adding = null, on }: {
   rows: SaidInput[]
   outgoing: SaidOutgoing[]
   /** more rows to load as you scroll */
   more: boolean
-  words: string[]
   draft?: ReactNode
   files(f: FileRef[], gid: string): ReactNode
   /** a voice note being recorded into a new input: how long so far (it shows first, B627) */
   recording?: string | null
   /** more being said into one of them (its Voice): which, and how long so far */
   adding?: { id: string; clock: string } | null
-  /** a prototype's look (T661): the rows in it, under the name of each day */
-  look?: InputLook
-  /** the heading with how many and the list's search (a prototype, T661: none, the search being the sidebar's) */
-  head?: boolean
-  /** a prototype's look (T661): voice notes drawn in a row's first line, the other files under its words */
-  voice?(f: FileRef[], gid: string): ReactNode
-  /** a prototype's compact rows (T661): the one shown whole beside the list */
-  picked?: string | null
   on: SaidEvents
 }) {
   const end = useRef<HTMLDivElement>(null)
@@ -135,97 +109,29 @@ export function SaidLately({
     io.observe(el)
     return () => io.disconnect()
   }, [more, rows.length, on])
-  const n = outgoing.length + rows.length + (recording ? 1 : 0)
-  const row = (x: SaidInput) => {
-    const fs = voice ? x.r.files.filter((f) => !isAudio(f)) : x.r.files
-    const vs = voice ? x.r.files.filter(isAudio) : []
-    return (
-      <SaidRow
-        key={x.r.id}
-        x={x}
-        words={words}
-        files={fs.length ? files(fs, 'cl' + x.r.id) : null}
-        voice={vs.length ? voice?.(vs, 'cv' + x.r.id) : null}
-        rec={adding?.id === x.r.id ? adding.clock : null}
-        look={look}
-        lit={!!picked && picked === x.r.id}
-        on={on}
-      />
-    )
-  }
-  // a prototype's look: the rows under the name of each day, in order
-  const days = look
-    ? rows.reduce<{ day: string; rows: SaidInput[] }[]>((ds, x) => {
-        const day = x.day
-        const last = ds[ds.length - 1]
-        if (last?.day === day) last.rows.push(x)
-        else ds.push({ day, rows: [x] })
-        return ds
-      }, [])
-    : null
-  const lead = !!recording || outgoing.length > 0
-  const leadRows = (
-    <>
-      {recording ? <RecordingRow clock={recording} look={look} /> : null}
-      {outgoing.map((o) => (
-        <OutgoingRow key={o.q} text={o.text} state={o.state} bad={o.failed && !o.net} acts={outgoingActs(o, on)} look={look} />
-      ))}
-    </>
-  )
   return (
     <div>
-      <div hidden={!head || (!total && !outgoing.length && !recording)} className="flex h-9 items-center gap-3">
-        <h2 className="text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">Inputs</h2>
-        <span className={`font-mono text-xs tabular-nums ${MUTED}`}>{count || ''}</span>
-        {total ? (
-          <label className={`ml-auto flex h-9 w-64 min-w-0 items-center gap-2 rounded-xl bg-zinc-100 pl-3 ring-blue-500/40 focus-within:bg-white focus-within:ring-2 dark:bg-zinc-800 dark:focus-within:bg-zinc-900 ${MUTED}`}>
-            <Icon n="search" c="size-4" />
-            <input
-              type="search"
-              autoComplete="off"
-              placeholder="Search"
-              value={q}
-              onChange={(e) => on.query(e.target.value)}
-              className="min-w-0 flex-1 bg-transparent text-sm text-zinc-900 outline-none placeholder:text-zinc-500 dark:placeholder:text-zinc-400 dark:text-zinc-100 [&::-webkit-search-cancel-button]:hidden"
-            />
-          </label>
-        ) : null}
+      {/* empty (nothing recording, on its way or to check): no room taken */}
+      <div className="mb-6 space-y-2 empty:hidden">
+        {recording ? <RecordingRow clock={recording} onDiscard={on.discard} /> : null}
+        {outgoing.map((o) => (
+          <OutgoingRow key={o.q} text={o.text} state={o.state} bad={o.failed && !o.net} waiting={o.waiting} acts={outgoingActs(o, on)} />
+        ))}
+        {draft}
       </div>
-      <ol>{draft}</ol>
-      {n ? (
-        <div className={head ? 'mt-3' : ''}>
-          {days && look ? (
-            <>
-              {/* what is on its way is today's: under Today */}
-              {lead && days[0]?.day !== TODAY ? (
-                <section aria-label={TODAY}>
-                  <DayHead day={TODAY} look={look} first />
-                  {leadRows}
-                </section>
-              ) : null}
-              {days.map((d, i) => (
-                <section key={d.day} aria-label={d.day}>
-                  <DayHead day={d.day} look={look} first={!i && !(lead && d.day !== TODAY)} />
-                  {!i && lead && d.day === TODAY ? leadRows : null}
-                  {d.rows.map(row)}
-                </section>
-              ))}
-            </>
-          ) : (
-            <>
-              {leadRows}
-              {rows.map(row)}
-            </>
-          )}
-          {more ? (
-            <div ref={end} className={`flex h-16 items-center text-sm ${MUTED}`}>
-              Loading more…
-            </div>
-          ) : null}
+      {rows.length ? (
+        <div className={INPUT_LIST}>
+          {rows.map((x) => (
+            <SaidRow key={x.r.id} x={x} files={x.r.files.length ? files(x.r.files, 'cl' + x.r.id) : null} rec={adding?.id === x.r.id ? adding.clock : null} on={on} />
+          ))}
         </div>
-      ) : (
-        <p className={`mt-3 text-sm ${MUTED}`}>{words.length ? noMatches(q) : null}</p>
-      )}
+      ) : null}
+      {more ? (
+        <div ref={end} className="flex items-center justify-center gap-2 py-12 font-mono text-xs text-zinc-400 dark:text-zinc-600">
+          <Spinner c="size-3.5" />
+          Loading more…
+        </div>
+      ) : null}
     </div>
   )
 }

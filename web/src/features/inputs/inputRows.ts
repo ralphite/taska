@@ -6,7 +6,7 @@ import { inputLine, type InputLineWith } from '../../model/became'
 import { newestFirst } from '../../model/inputs'
 import type { ProjectModel } from '../../model/project'
 import { inputMatch } from '../../model/visible'
-import { outgoingLine, outgoingState, showsOnItsWay, type Outgoing } from '../../model/outgoing'
+import { outgoingLine, outgoingState, outgoingWaits, showsOnItsWay, type Outgoing } from '../../model/outgoing'
 import type { InputFacts, OutgoingRow } from './InputsView'
 
 /** What the rows are drawn with besides the project. */
@@ -33,4 +33,4 @@ export const outgoingRows = (outbox: readonly Outgoing[], slug: string, away: nu
   outbox
     .filter((o) => o.slug === slug && showsOnItsWay(o))
     .reverse()
-    .map((o) => ({ q: o.q, text: o.text || outgoingLine(o), state: outgoingState(o, away), bad: o.state === 'failed' && !o.net, failed: o.state === 'failed', scope: o.scope, previews: o.files.flatMap((f) => (f.preview ? [f.preview] : [])) }))
+    .map((o) => ({ q: o.q, text: o.text || outgoingLine(o), state: outgoingState(o, away), bad: o.state === 'failed' && !o.net, waiting: outgoingWaits(o, away), failed: o.state === 'failed', scope: o.scope, previews: o.files.flatMap((f) => (f.preview ? [f.preview] : [])) }))

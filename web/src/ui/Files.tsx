@@ -127,6 +127,78 @@ export function Thumbs({
   )
 }
 
+/** A file's size as a list says it: 34 KB, 1.2 MB. */
+export const sizeWord = (n: number) => (n < 1024 ? `${n} B` : n < 1024 * 1024 ? `${Math.round(n / 1024)} KB` : `${(n / 1024 / 1024).toFixed(1)} MB`)
+
+const CHIP =
+  'inline-flex max-w-full min-w-0 items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-100/90 p-1.5 pr-3 shadow-2xs transition-colors hover:bg-zinc-200/80 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:bg-zinc-800'
+
+/** An input's files as the lists of inputs draw them (T661): a voice note a pill (play and its length; on the
+ * desktop, pointing at it shows its original words), a picture a chip with a small view of it, its name and size,
+ * any other file a chip with its mark, name and size. */
+export function FileChips({ files, url, play, tidy, on }: { files: FileRef[]; url(f: string): string; play(src: string): PlayState; tidy: boolean; on: FileEvents }) {
+  const pictures = files.filter(isImage).map((f) => f.f)
+  const label = (f: FileRef) => (
+    <span className="min-w-0 text-left font-mono">
+      <span className="block truncate text-xs font-medium text-zinc-800 dark:text-zinc-200">{f.name}</span>
+      {f.size ? <span className="block text-[10px] text-zinc-400">{sizeWord(f.size)}</span> : null}
+    </span>
+  )
+  return (
+    <>
+      {files.map((f) => {
+        if (isAudio(f)) {
+          const src = url(f.f)
+          const total = voiceLength(f)
+          const p = play(src)
+          return (
+            <span key={f.f} className="inline-flex items-center rounded-full border border-zinc-200/80 bg-zinc-100 font-mono text-xs text-zinc-700 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-300">
+              <button
+                aria-label={`Play the voice note${total ? `, ${clock(total)}` : ''}`}
+                {...saidTip(f, tidy)}
+                onClick={(e) => (e.stopPropagation(), on.play(src))}
+                className="inline-flex items-center gap-2 rounded-full px-2.5 py-1 transition-colors hover:bg-zinc-200/80 dark:hover:bg-zinc-800"
+              >
+                <Icon n={p.playing ? 'pausefill' : 'play'} c="size-3 text-zinc-900 dark:text-zinc-100" />
+                <span className="tabular-nums">
+                  <VoiceTime total={total} play={p} />
+                </span>
+              </button>
+              {/* the phone has no pointing: its original words open from a small mark at the note's end (B640) */}
+              {tidy ? (
+                <button
+                  aria-label="Original words"
+                  onClick={(e) => (e.stopPropagation(), on.words(f.f))}
+                  className="relative mr-1 -ml-1.5 grid size-5 place-items-center rounded-full text-zinc-500 after:absolute after:-inset-3 hover:bg-zinc-200/80 lg:hidden dark:text-zinc-400 dark:hover:bg-zinc-800"
+                >
+                  <Icon n="quote" c="size-3" />
+                </button>
+              ) : null}
+            </span>
+          )
+        }
+        if (isImage(f))
+          return (
+            <button key={f.f} title={f.name} onClick={(e) => (e.stopPropagation(), on.view(f.f, pictures))} className={CHIP}>
+              <span className="h-8 w-11 shrink-0 overflow-hidden rounded border border-zinc-300 bg-zinc-200 dark:border-zinc-700 dark:bg-zinc-800">
+                <Pic src={url(f.f)} alt={f.name} cls="size-full object-cover" />
+              </span>
+              {label(f)}
+            </button>
+          )
+        return (
+          <a key={f.f} href={url(f.f)} target="_blank" rel="noopener" title={f.name} className={`${CHIP} gap-2.5`}>
+            <span className="grid size-8 shrink-0 place-items-center rounded border border-teal-200 bg-teal-50 text-teal-700 dark:border-teal-900 dark:bg-teal-950/80 dark:text-teal-400">
+              <Icon n="file" c="size-4" sw="2" />
+            </span>
+            {label(f)}
+          </a>
+        )
+      })}
+    </>
+  )
+}
+
 /** A file's name on one line; too long, it is cut in the middle, so its end and its kind stay (Quarter…port.pdf). */
 export function FileName({ name }: { name: string }) {
   const dot = name.lastIndexOf('.')

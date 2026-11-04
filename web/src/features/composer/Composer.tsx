@@ -201,7 +201,7 @@ export function Composer({ line, waiting = null, lineOn, lineOnComposePage, plac
         if (boxRef) boxRef.current = el
       }}
       id="composer"
-      className="group/box flex flex-col rounded-4xl border border-zinc-200 bg-white shadow-sm focus-within:border-zinc-300 lg:mx-auto lg:max-w-[42rem] dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-none dark:focus-within:border-zinc-700"
+      className="group/box flex flex-col rounded-4xl border border-zinc-200 bg-white shadow-sm focus-within:border-zinc-300 lg:mx-auto lg:max-w-[42rem] dark:border-zinc-800 dark:bg-zinc-900 dark:shadow-none dark:focus-within:border-zinc-700 lg:group-data-[compose]/app:max-w-[660px] lg:group-data-[compose]/app:rounded-2xl lg:group-data-[compose]/app:border-zinc-200/90 dark:lg:group-data-[compose]/app:border-zinc-800 lg:group-data-[compose]/app:shadow-xs lg:group-data-[compose]/app:focus-within:border-zinc-400 lg:group-data-[compose]/app:focus-within:ring-2 lg:group-data-[compose]/app:focus-within:ring-zinc-400/10 dark:lg:group-data-[compose]/app:focus-within:border-zinc-600"
     >
       {waiting ? (
         <div className={`@container flex h-8 items-center gap-1.5 pt-1 pr-1.5 pl-4 text-[13px] text-zinc-500 dark:text-zinc-400 ${lineOnComposePage ? '' : 'lg:group-data-[compose]/app:hidden'}`}>
@@ -216,15 +216,15 @@ export function Composer({ line, waiting = null, lineOn, lineOnComposePage, plac
       </div>
       {files}
       {doubts}
-      <div className={`flex items-end gap-2 p-1.5 group-data-[multi]/box:flex-wrap lg:gap-0.5 lg:group-data-[compose]/app:order-first ${attach || rec ? '' : 'pl-3.5 group-data-[multi]/box:justify-end group-data-[multi]/box:pl-1.5'}`}>
+      <div className={`flex items-end gap-2 p-1.5 group-data-[multi]/box:flex-wrap lg:gap-0.5 lg:group-data-[compose]/app:order-first lg:group-data-[compose]/app:gap-1.5 ${attach || rec ? '' : 'pl-3.5 group-data-[multi]/box:justify-end group-data-[multi]/box:pl-1.5'}`}>
         <button
           hidden={!rec && !attach}
           aria-label={rec ? 'Discard the recording' : 'Add files'}
           title={desk ? (rec ? 'Discard · Esc' : 'Add files') : undefined}
           onClick={() => (rec ? on.recCancel?.() : picker.current?.click())}
-          className="grid size-11 shrink-0 place-items-center rounded-full text-zinc-500 group-data-[multi]/box:mr-auto hover:bg-zinc-100 hover:text-zinc-800 lg:m-1 lg:size-9 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+          className="grid size-11 shrink-0 place-items-center rounded-full text-zinc-500 group-data-[multi]/box:mr-auto hover:bg-zinc-100 hover:text-zinc-800 lg:m-1 lg:size-9 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100 lg:group-data-[compose]/app:m-0 lg:group-data-[compose]/app:text-zinc-400"
         >
-          <Icon n={rec ? 'x' : 'plus'} c="size-6 lg:size-5" />
+          <Icon n={rec ? 'x' : 'plus'} c="size-6 lg:size-5 lg:group-data-[compose]/app:size-4" />
         </button>
         <div className="grid min-w-0 flex-1 has-[textarea[data-more]]:mask-b-from-[calc(100%-1.5rem)] group-data-[multi]/box:order-first group-data-[multi]/box:basis-full group-data-[multi]/box:px-2 group-data-[multi]/box:pt-1">
           {quoted && !rec && !words ? (
@@ -233,7 +233,7 @@ export function Composer({ line, waiting = null, lineOn, lineOnComposePage, plac
             <div
               ref={back}
               aria-hidden
-              className="pointer-events-none col-start-1 row-start-1 overflow-hidden px-1 py-2.5 text-[17px] leading-6 break-words whitespace-pre-wrap [contain:size] roomy:text-[15px]"
+              className="pointer-events-none col-start-1 row-start-1 overflow-hidden px-1 py-2.5 text-[17px] leading-6 break-words whitespace-pre-wrap [contain:size] roomy:text-[15px] lg:group-data-[compose]/app:px-2 lg:group-data-[compose]/app:py-1.5 lg:group-data-[compose]/app:text-sm"
             >
               {text.split('\n').map((l, i) => (
                 <span key={i}>
@@ -260,7 +260,7 @@ export function Composer({ line, waiting = null, lineOn, lineOnComposePage, plac
             value={text}
             placeholder={placeholder}
             aria-label="Input"
-            className={`col-start-1 row-start-1 max-h-48 min-h-11 w-full min-w-0 resize-none bg-transparent px-1 py-2.5 text-[17px] leading-6 outline-none placeholder:text-zinc-500 dark:placeholder:text-zinc-400 roomy:text-[15px] lg:scrollbar-thin ${rec || words ? 'invisible' : ''} ${quoted ? 'text-transparent caret-zinc-900 selection:bg-blue-500/25 dark:caret-zinc-100' : ''}`}
+            className={`col-start-1 row-start-1 max-h-48 min-h-11 w-full min-w-0 resize-none bg-transparent px-1 py-2.5 text-[17px] leading-6 outline-none placeholder:text-zinc-500 dark:placeholder:text-zinc-400 roomy:text-[15px] lg:scrollbar-thin lg:group-data-[compose]/app:min-h-9 lg:group-data-[compose]/app:px-2 lg:group-data-[compose]/app:py-1.5 lg:group-data-[compose]/app:text-sm lg:group-data-[compose]/app:placeholder:text-zinc-400 dark:lg:group-data-[compose]/app:placeholder:text-zinc-500 ${rec || words ? 'invisible' : ''} ${quoted ? 'text-transparent caret-zinc-900 selection:bg-blue-500/25 dark:caret-zinc-100' : ''}`}
             onScroll={(e) => {
               if (back.current) back.current.scrollTop = e.currentTarget.scrollTop
               more(e.currentTarget)
@@ -305,18 +305,18 @@ export function Composer({ line, waiting = null, lineOn, lineOnComposePage, plac
                 title={desk ? aux.tip : undefined}
                 hidden={!(rec || has)}
                 onClick={aux.run}
-                className="mr-4 grid size-11 shrink-0 place-items-center rounded-full text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 lg:m-1 lg:mr-0 lg:size-9 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+                className="mr-4 grid size-11 shrink-0 place-items-center rounded-full text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 lg:m-1 lg:mr-0 lg:size-9 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100 lg:group-data-[compose]/app:m-0"
               >
-                <Icon n={aux.icon} c={aux.iconCls} sw={aux.sw} />
+                <Icon n={aux.icon} c={`${aux.iconCls} lg:group-data-[compose]/app:size-4`} sw={aux.sw} />
               </button>
               <button
                 data-box="main"
                 aria-label={main.label}
                 title={desk ? main.tip : undefined}
                 onClick={main.run}
-                className="grid size-11 shrink-0 place-items-center rounded-full bg-zinc-900 text-white disabled:opacity-25 lg:m-1 lg:size-9 lg:hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:lg:hover:bg-white"
+                className="grid size-11 shrink-0 place-items-center rounded-full bg-zinc-900 text-white disabled:opacity-25 lg:m-1 lg:size-9 lg:hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:lg:hover:bg-white lg:group-data-[compose]/app:m-0 lg:group-data-[compose]/app:shadow-xs"
               >
-                <Icon n={main.icon} c={main.iconCls} sw={main.sw} />
+                <Icon n={main.icon} c={`${main.iconCls} lg:group-data-[compose]/app:size-4`} sw={main.sw} />
               </button>
             </>
           )

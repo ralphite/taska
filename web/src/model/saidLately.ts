@@ -4,7 +4,7 @@
 import type { BoxMode } from './boxFoot'
 import { inputLine, type InputLine } from './became'
 import { newestFirst } from './inputs'
-import { outgoingLine, outgoingState, type Outgoing } from './outgoing'
+import { outgoingLine, outgoingState, outgoingWaits, type Outgoing } from './outgoing'
 import type { ProjectModel } from './project'
 import type { Input } from './types'
 import { inputMatch } from './visible'
@@ -19,6 +19,8 @@ export interface SaidOutgoing {
   state: string
   failed: boolean
   net: boolean
+  /** Taska is out of reach: it waits */
+  waiting: boolean
   canUndo: boolean
 }
 
@@ -36,4 +38,4 @@ export function saidRows(m: ProjectModel, a: { words: readonly string[]; upTo: n
 
 /** What is on its way, oldest last (none while searching). */
 export const saidOutgoing = (mine: readonly Outgoing[], words: readonly string[], away: number, justSent: readonly { q: string }[]): SaidOutgoing[] =>
-  words.length ? [] : [...mine].reverse().map((o) => ({ q: o.q, text: o.text || outgoingLine(o), state: outgoingState(o, away), failed: o.state === 'failed', net: !!o.net, canUndo: justSent.some((x) => x.q === o.q) }))
+  words.length ? [] : [...mine].reverse().map((o) => ({ q: o.q, text: o.text || outgoingLine(o), state: outgoingState(o, away), failed: o.state === 'failed', net: !!o.net, waiting: outgoingWaits(o, away), canUndo: justSent.some((x) => x.q === o.q) }))

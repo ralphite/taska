@@ -1,16 +1,17 @@
-// One input as every list of inputs draws it (B629), words first, no boxes or bubbles: a line with its number and its
-// day and time (a draft of yours on it, its buttons at the end), its words (a long one: four lines fading, More), its
-// pictures and voice note, and what became of it in a line of 13px under the words, on the phone and the desktop
-// alike (F659). Its buttons: the phone's ⋯ (Add more, Edit and the rest are in it); the desktop's Comment, Voice and
-// ⋯, under the pointer only (or the keys), taking no room (F657); Voice records more to add right there, red with how
-// long so far, and shows until pressed again. Undo, just after sending, always shows. What is still on its way, and a voice note being recorded, are drawn as lines of the same shape. Props only.
+// One input as every list of inputs draws it (T661, the approved "Anchored Stream"): a line with its number and its
+// day and time (edited, a draft of yours on it), its buttons at the end; its words (a long one: four lines, More); its
+// voice notes, pictures and files as chips; and what became of it on a shelf of its own under them. Its buttons: the
+// phone's ⋯ (Add more, Edit and the rest are in it); the desktop's Comment, Voice and ⋯, under the pointer only (or
+// the keys); Voice records more to add right there, red with how long so far, and shows until pressed again. Undo,
+// just after sending, always shows. What is still on its way, and a voice note being recorded, are lines of their own
+// over the list. Props only.
 
 import type { ReactNode, Ref } from 'react'
 import { BECAME_WORD as W, type Became, type InputLine, type ItemRef } from '../model/became'
 import { voiceMark } from '../model/inputs'
-import { DraftMark, Hit } from './bits'
-import { Icon, StateIcon } from './Icon'
-import { HIT, MUTED, TYPE_TEXT } from './tones'
+import { Hit } from './bits'
+import { Icon, Spinner, StateIcon } from './Icon'
+import { TYPE_TEXT } from './tones'
 
 export interface InputRowEvents {
   goto(n: number): void
@@ -29,158 +30,176 @@ export interface InputRowEvents {
   /** the desktop's Voice: more to add, said; pressed again while it records, it stops and is added */
   voice?(id: string): void
   undoSend?(id: string): void
-  /** a prototype's compact row (T661): picked, to be shown whole beside the list */
-  pick?(id: string): void
 }
 
-const ROW =
-  'group/row border-t border-zinc-100 px-4 py-2.5 transition-colors duration-700 first:border-t-0 lg:-mx-3 lg:px-3 lg:hover:bg-zinc-50 dark:border-zinc-800/70 dark:lg:hover:bg-zinc-900/60'
-/** a prototype's row (T661): under the pointer a shade darker than the New input page's own grey */
-const ROW_QUIET = ROW.replace('lg:hover:bg-zinc-50', 'lg:hover:bg-zinc-100/70').replace('dark:lg:hover:bg-zinc-900/60', 'dark:lg:hover:bg-zinc-900')
+/** The rows of a list: a faint line between them. */
+export const INPUT_LIST = 'divide-y divide-zinc-200/80 dark:divide-zinc-800/80'
+/** A row: more room under it than over it, so what it became stays with it and apart from the next one's line. */
+const ROW = 'group/row -mx-2 rounded-xl px-2 pt-4 pb-5 transition-colors duration-700 focus-within:bg-zinc-100/60 dark:focus-within:bg-zinc-900/40'
 /** gone to: lit up for a moment */
 const LIT = 'bg-blue-50 dark:bg-blue-400/10'
-const META = 'flex h-5 min-w-0 items-center gap-2 text-[13px]'
-const LINK = 'relative shrink-0 font-semibold text-blue-600 after:absolute after:inset-x-0 after:-inset-y-3 hover:underline dark:text-blue-400'
-const BTN =
-  'relative flex h-7 shrink-0 items-center gap-1 rounded-md px-1.5 after:absolute after:-inset-2 text-[13px] font-medium text-zinc-500 hover:bg-zinc-200/60 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200'
-/** Undo, just after sending: blue, as every other thing to do here (not the grey of the row's buttons) */
-const UNDO =
-  'flex h-7 shrink-0 items-center gap-1 rounded-md px-1.5 text-[13px] font-semibold text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10'
-/** an icon alone in the row's buttons */
-const ICON_BTN = `${BTN} w-7 justify-center px-0`
-/** recording: red, as the mic beside a document's paragraph while it records, with how long so far */
-const REC_BTN = 'flex h-7 shrink-0 items-center gap-1 rounded-md bg-red-600 px-1.5 font-mono text-[13px] font-medium text-white tabular-nums ring-1 ring-red-700 hover:bg-red-700'
-/** under the pointer only on the desktop (or while the keys are in the row) */
-const HOVER = 'lg:invisible lg:group-focus-within/row:visible lg:group-hover/row:visible'
-const BECAME = 'mt-1.5 min-w-0 text-[13px] leading-5'
+/** the desktop's Comment and Voice */
+const ACT = 'hidden rounded px-2 py-0.5 text-xs text-zinc-600 hover:bg-zinc-200/60 hover:text-zinc-900 lg:block dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100'
+/** ⋯: 44px on the phone, small on the desktop */
+const MORE =
+  'flex size-11 items-center justify-center text-zinc-400 active:text-zinc-800 lg:size-6 lg:rounded lg:text-zinc-500 lg:hover:bg-zinc-200/60 dark:active:text-zinc-200 dark:lg:hover:bg-zinc-800'
+/** under the pointer only on the desktop (or while the keys are in the row); always on the phone */
+const HOVER = 'lg:opacity-0 lg:transition-opacity lg:group-focus-within/row:opacity-100 lg:group-hover/row:opacity-100'
+const LINK = 'text-blue-600 hover:underline dark:text-blue-400'
 
-/** An item: its status mark, code and title; the title wraps, it is never cut. A prototype's looks (T661): `chip`, on a
- * tint of its own; `oneLine`, its title cut to one line (a list whose detail shows it whole). */
-function ItemLink({ it, chip = false, oneLine = false, on }: { it: ItemRef; chip?: boolean; oneLine?: boolean; on: Pick<InputRowEvents, 'goto'> }) {
-  const look = chip ? 'justify-self-start rounded-md bg-zinc-100 px-1.5 py-px hover:bg-zinc-200/80 dark:bg-zinc-800 dark:hover:bg-zinc-700' : 'hover:underline'
+/** What became of it: a shelf under the words, tinted for where it stands. */
+const SHELF = 'inline-flex max-w-full min-w-0 items-center gap-2 rounded-lg border px-2.5 py-1.5 text-xs'
+const GREY = 'border-zinc-200/70 bg-zinc-100/80 dark:border-zinc-800 dark:bg-zinc-900/70'
+const QUIET = `${GREY} font-medium text-zinc-500 dark:text-zinc-400`
+const BUSY = 'border-blue-200/80 bg-blue-50/80 py-1 font-medium text-blue-700 dark:border-blue-900/50 dark:bg-blue-950/30 dark:text-blue-300'
+const FAILED = 'border-red-200/80 bg-red-50/70 font-medium text-red-700 dark:border-red-900/50 dark:bg-red-950/25 dark:text-red-400'
+const DONE = 'gap-1.5 border-emerald-200/80 bg-emerald-50/80 font-medium text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-300'
+const DID = 'font-medium text-zinc-500 dark:text-zinc-400'
+
+/** An item: its status mark, code and title (cut to fit). */
+function ItemLink({ it, narrow, on }: { it: ItemRef; narrow: boolean; on: Pick<InputRowEvents, 'goto'> }) {
   return (
-    <button onClick={() => on.goto(it.n)} className={`${HIT} flex min-w-0 items-start gap-1.5 text-left ${look} ${oneLine ? 'max-w-full' : ''}`}>
-      <StateIcon {...it.status} cls={chip ? 'mt-[3px] size-3.5 shrink-0' : 'mt-0.5 size-4 shrink-0'} />
-      <span className={oneLine ? 'min-w-0 truncate' : 'min-w-0'}>
-        <span className={`mr-1 font-mono text-xs font-bold ${TYPE_TEXT[it.type]}`}>{it.code}</span>
-        <span className="text-zinc-800 dark:text-zinc-200">{it.title}</span>
-      </span>
+    <button onClick={() => on.goto(it.n)} title={it.title} className="inline-flex min-w-0 items-center gap-1.5 text-left text-zinc-800 hover:underline dark:text-zinc-200">
+      <StateIcon {...it.status} cls="size-4 shrink-0" />
+      <span className={`font-mono font-bold ${TYPE_TEXT[it.type]}`}>{it.code}</span>
+      <span className={`truncate ${narrow ? 'max-w-[150px] sm:max-w-[180px]' : 'max-w-[260px] sm:max-w-[420px]'}`}>{it.title}</span>
     </button>
   )
 }
 
 const say = (s: string) => s[0].toUpperCase() + s.slice(1)
+const Dot = () => <span>·</span>
 
 /** What became of it, the same words in every list: the items with what was done to each (said once over the items
- * it was done to) and the organizer's note; or where it stands, in its colour (blue while Taska is on it, red when it
- * failed, green when done), with what can be done now. Every line starts with words at the same left edge. */
-export function BecameLine({ b, id, chips = false, oneLine = false, on }: {
-  b: Became
-  id: string
-  /** a prototype's look (T661): each item on a tint of its own */
-  chips?: boolean
-  /** a prototype's look (T661): each item's title on one line */
-  oneLine?: boolean
-  on: Pick<InputRowEvents, 'goto' | 'retry' | 'send' | 'moved'>
-}) {
+ * it was done to) and the organizer's note; or where it stands, in its tint (blue while Taska is on it, red when it
+ * failed, green when an agent handled it), with what can be done now. */
+export function BecameLine({ b, id, on }: { b: Became; id: string; on: Pick<InputRowEvents, 'goto' | 'retry' | 'send' | 'moved'> }) {
   if (b.k === 'filed' || b.k === 'answer') {
     const rows = b.k === 'filed' ? b.items : [{ did: W.answer, item: b.item }]
     const note = b.k === 'filed' ? b.note : null
+    if (rows.length === 1 && !note)
+      return (
+        <div className={`${SHELF} ${GREY}`}>
+          {rows[0].did ? <span className={DID}>{rows[0].did}</span> : null}
+          <ItemLink it={rows[0].item} narrow={false} on={on} />
+        </div>
+      )
+    const sep = <span className="hidden text-zinc-300 sm:inline dark:text-zinc-700">·</span>
     return (
-      <div className={`grid grid-cols-[auto_minmax(0,1fr)] content-start items-start gap-x-1.5 ${chips ? 'gap-y-1' : ''}`}>
+      <div className={`${SHELF} ${GREY} flex-wrap gap-x-3 gap-y-1.5`}>
         {rows.map(({ did, item }, i) => (
-          <div key={item.n} className="contents">
-            <span className={`whitespace-nowrap ${MUTED} ${chips ? 'py-px' : ''}`}>{i && rows[i - 1].did === did ? '' : did}</span>
-            <ItemLink it={item} chip={chips} oneLine={oneLine} on={on} />
-          </div>
+          <span key={item.n} className="contents">
+            {i ? sep : null}
+            <span className="flex min-w-0 items-center gap-1.5">
+              {did && !(i && rows[i - 1].did === did) ? <span className={DID}>{did}</span> : null}
+              <ItemLink it={item} narrow={rows.length > 1} on={on} />
+            </span>
+          </span>
         ))}
-        {note ? <span className={`col-span-2 ${MUTED}`}>{say(note)}</span> : null}
+        {note ? (
+          <>
+            {sep}
+            <span className={DID}>{say(note)}</span>
+          </>
+        ) : null}
       </div>
     )
   }
-  const line = (text: ReactNode, tone: string, after?: ReactNode) => (
-    <div className="flex flex-wrap items-start gap-x-2">
-      <span className={`min-w-0 font-medium ${tone}`}>{text}</span>
-      {after}
-    </div>
-  )
-  const busy = 'text-blue-600 dark:text-blue-400'
-  const quiet = 'text-zinc-600 dark:text-zinc-300'
   switch (b.k) {
     case 'transcribing':
     case 'organizing':
-      return line(W[b.k], busy)
+      return (
+        <div className={`${SHELF} ${BUSY}`}>
+          <Spinner c="size-3 text-blue-600 dark:text-blue-400" />
+          <span>{W[b.k]}</span>
+        </div>
+      )
+    case 'queued':
+      return <div className={`${SHELF} ${BUSY}`}>{W.queued}</div>
     case 'failed':
-      return line(
-        W.failed,
-        'text-red-600 dark:text-red-400',
-        <>
-          <span className={MUTED}>{b.why}</span>
+      return (
+        <div className={`${SHELF} ${FAILED} flex-wrap`}>
+          <span>
+            {W.failed} · {b.why}
+          </span>
           {b.retry ? (
-            <button onClick={() => on.retry(id)} className={LINK}>
-              {W.tryAgain}
-            </button>
+            <>
+              <Dot />
+              <button onClick={() => on.retry(id)} className="font-semibold underline hover:text-red-900 dark:hover:text-red-200">
+                {W.tryAgain}
+              </button>
+            </>
           ) : null}
-        </>,
+        </div>
       )
     case 'undone':
-      return line(
-        W.undone,
-        quiet,
-        b.retry ? (
-          <button onClick={() => on.retry(id)} className={LINK}>
-            {W.organizeAgain}
-          </button>
-        ) : null,
+      return (
+        <div className={`${SHELF} ${QUIET}`}>
+          <span>{W.undone}</span>
+          {b.retry ? (
+            <>
+              <Dot />
+              <button onClick={() => on.retry(id)} className={LINK}>
+                {W.organizeAgain}
+              </button>
+            </>
+          ) : null}
+        </div>
       )
     case 'cancelled':
-      return line(
-        W.cancelled,
-        quiet,
-        <button onClick={() => on.send(id)} className={LINK}>
-          {W.send}
-        </button>,
+      return (
+        <div className={`${SHELF} ${QUIET}`}>
+          <span>{W.cancelled}</span>
+          <Dot />
+          <button onClick={() => on.send(id)} className={`${LINK} font-semibold`}>
+            {W.send}
+          </button>
+        </div>
       )
     case 'note':
-      return <div className={MUTED}>{say(b.text)}</div>
-    case 'queued':
-      return line(W.queued, quiet)
+      return <div className={`${SHELF} ${QUIET}`}>{say(b.text)}</div>
     case 'agent':
-      return line(W.agent, quiet)
     case 'waiting':
-      return line(W.waiting, quiet)
+      return <div className={`${SHELF} ${QUIET} gap-1.5`}>{W[b.k]}</div>
     case 'handled':
-      return line(W.handled, 'text-emerald-700 dark:text-emerald-400')
+      return (
+        <div className={`${SHELF} ${DONE}`}>
+          <Icon n="bolt" c="size-3.5 text-emerald-600 dark:text-emerald-400" sw="2" />
+          <span>{W.handled}</span>
+        </div>
+      )
     default:
-      return line(
-        W.moved(b.to),
-        quiet,
-        <a
-          href={b.href}
-          onClick={(e) => {
-            if (e.metaKey || e.ctrlKey) return
-            e.preventDefault()
-            on.moved(b.href)
-          }}
-          className={LINK}
-        >
-          {W.open(b.as)}
-        </a>,
+      return (
+        <div className={`${SHELF} ${GREY} text-zinc-500 dark:text-zinc-400`}>
+          <span>{W.moved(b.to)}</span>
+          <Dot />
+          <a
+            href={b.href}
+            onClick={(e) => {
+              if (e.metaKey || e.ctrlKey) return
+              e.preventDefault()
+              on.moved(b.href)
+            }}
+            className={`${LINK} font-medium`}
+          >
+            {W.open(b.as)}
+          </a>
+        </div>
       )
   }
 }
 
-/** Its words: a long one shows four lines, the last fading (no ellipsis: after a full stop it reads "..."), with
- * More; opened, all of it, with Less. `text(cut)`: its words drawn, closed up when cut short. */
+/** Its words: a long one shows four lines with More; opened, all of it, with Less. `text(cut)`: its words drawn,
+ * closed up when cut short. */
 function Words({ x, text, on }: { x: InputLine; text(cut: boolean): ReactNode; on: Pick<InputRowEvents, 'more'> }) {
   const cut = x.long && !x.opened
   return (
-    <div data-hit-html {...voiceMark(x.r)} className="mt-0.5 text-[15px] leading-6 text-zinc-900 dark:text-zinc-100">
-      <div onClick={cut ? () => on.more(x.r.id) : undefined} className={cut ? 'max-h-24 cursor-pointer overflow-hidden [mask-image:linear-gradient(to_bottom,black_60%,transparent)]' : ''}>
+    <div data-hit-html {...voiceMark(x.r)} className="text-[15px] leading-[1.6] text-zinc-900 dark:text-zinc-100">
+      <div onClick={cut ? () => on.more(x.r.id) : undefined} className={cut ? 'line-clamp-4 cursor-pointer' : ''}>
         {text(cut)}
       </div>
       {x.long ? (
-        <button onClick={() => on.more(x.r.id)} className={`${LINK} text-[13px] leading-6`}>
+        <button onClick={() => on.more(x.r.id)} className="mt-1 text-xs font-medium text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100">
           {x.opened ? 'Less' : 'More'}
         </button>
       ) : null}
@@ -188,95 +207,49 @@ function Words({ x, text, on }: { x: InputLine; text(cut: boolean): ReactNode; o
   )
 }
 
-/** A prototype's look of a row (T661); none: the page's own. `quiet`: the list says each day once over its rows, so its
- * first line is its time, its number quieter and its voice notes; `rail`: its time and number in a column beside a
- * line through the day, with a dot in the colour of where it stands (grey when done, blue while Taska is on it, red or
- * amber when it needs you), what it became as chips, its buttons floating over its corner under the pointer;
- * `compact`: its time, two lines of its words and one of what it became, picked to be shown whole beside the list. */
-export type InputLook = 'quiet' | 'rail' | 'compact'
-
-/** where it stands, as the rail's dot: quiet when done, blue while Taska is on it, red or amber when it needs you */
-const DOT: Record<Became['k'], string> = {
-  filed: 'bg-zinc-300 dark:bg-zinc-600',
-  answer: 'bg-zinc-300 dark:bg-zinc-600',
-  handled: 'bg-zinc-300 dark:bg-zinc-600',
-  note: 'bg-zinc-300 dark:bg-zinc-600',
-  agent: 'bg-zinc-300 dark:bg-zinc-600',
-  waiting: 'bg-zinc-300 dark:bg-zinc-600',
-  moved: 'bg-zinc-300 dark:bg-zinc-600',
-  transcribing: 'animate-pulse bg-blue-500',
-  organizing: 'animate-pulse bg-blue-500',
-  queued: 'bg-blue-400',
-  failed: 'bg-red-500',
-  undone: 'bg-amber-500',
-  cancelled: 'bg-amber-500',
-}
-const RAIL_ROW = 'group/row grid grid-cols-[3rem_1.25rem_minmax(0,1fr)] transition-colors duration-700 lg:-mx-3 lg:rounded-lg lg:pr-3 lg:hover:bg-zinc-100/70 dark:lg:hover:bg-zinc-900'
-const GUTTER = 'py-2.5 text-right'
-const GUTTER_TIME = `mt-0.5 text-[13px] leading-6 tabular-nums ${MUTED}`
-const GUTTER_SMALL = `font-mono text-[11px] leading-4 ${MUTED}`
-
-/** The day's line through a rail row, with the row's dot by its first line. */
-function RailDot({ dot }: { dot: string }) {
-  return (
-    <div className="relative">
-      <span className="absolute inset-y-0 left-1/2 w-px -translate-x-1/2 bg-zinc-200 dark:bg-zinc-800" />
-      <span className={`absolute top-5 left-1/2 size-2 -translate-x-1/2 rounded-full ${dot}`} />
-    </div>
-  )
-}
-
-/** A day over its rows, in a prototype's look (T661): its name, on the rail as a ring. */
-export function DayHead({ day, look, first }: { day: string; look: InputLook; first: boolean }) {
-  if (look === 'rail')
-    return (
-      <h3 className="grid grid-cols-[3rem_1.25rem_minmax(0,1fr)] lg:-mx-3 lg:pr-3">
-        <span />
-        <span className="relative">
-          <span className={`absolute bottom-0 left-1/2 w-px -translate-x-1/2 bg-zinc-200 dark:bg-zinc-800 ${first ? 'top-[18px]' : 'top-0'}`} />
-          <span className="absolute top-[13px] left-1/2 size-2.5 -translate-x-1/2 rounded-full border-2 border-zinc-400 bg-zinc-50 dark:border-zinc-500 dark:bg-zinc-950" />
-        </span>
-        <span className={`pl-1 text-[13px] leading-5 font-semibold text-zinc-900 dark:text-zinc-100 ${first ? 'py-2' : 'pt-5 pb-2'}`}>{day}</span>
-      </h3>
-    )
-  return <h3 className={`px-4 pb-1.5 [&+article]:border-t-0 text-[13px] leading-5 font-semibold text-zinc-900 lg:px-0 dark:text-zinc-100 ${first ? 'pt-1' : 'pt-6'}`}>{day}</h3>
-}
-
-/** Its buttons: the desktop's Comment and Voice (Stop with how long so far while it records), and ⋯. */
+/** Its buttons: Voice recording (red, Stop with how long so far), then Comment and Voice on the desktop, and ⋯. */
 function RowButtons({ x, rec, on }: { x: InputLine; rec: string | null; on: InputRowEvents }) {
   const r = x.r
   if (x.became.k === 'moved') return null
   return (
     <>
-      {on.append && !rec ? (
-        <button title="Comment" aria-label={`Comment on ${x.code}`} onClick={() => on.append?.(r.id)} className={`${ICON_BTN} hidden lg:flex ${HOVER}`}>
-          <Icon n="comment" c="size-4" />
+      {rec && on.voice ? (
+        <button
+          title="Stop"
+          aria-label={`Stop and add to ${x.code}`}
+          onClick={() => on.voice?.(r.id)}
+          className="hidden items-center gap-1 rounded-full bg-red-600 px-2.5 py-0.5 font-mono text-xs font-medium text-white tabular-nums shadow-2xs hover:bg-red-700 lg:inline-flex"
+        >
+          <span className="size-1.5 animate-pulse rounded-full bg-white" />
+          <span>{rec}</span>
+          <span className="ml-0.5 font-sans text-[10px] font-bold uppercase">Stop</span>
         </button>
       ) : null}
-      {on.voice ? (
-        rec ? (
-          <button title="Stop" aria-label={`Stop and add to ${x.code}`} onClick={() => on.voice?.(r.id)} className={`${REC_BTN} hidden lg:flex`}>
-            <Icon n="stop" c="size-4" />
-            {rec}
+      <span className={`-mr-2 flex items-center gap-1 lg:mr-0 ${rec ? '' : HOVER}`}>
+        {on.append ? (
+          <button aria-label={`Comment on ${x.code}`} onClick={() => on.append?.(r.id)} className={ACT}>
+            Comment
           </button>
-        ) : (
-          <button title="Voice" aria-label={`Voice for ${x.code}`} onClick={() => on.voice?.(r.id)} className={`${ICON_BTN} hidden lg:flex ${HOVER}`}>
-            <Icon n="mic" c="size-4" />
+        ) : null}
+        {on.voice && !rec ? (
+          <button aria-label={`Voice for ${x.code}`} onClick={() => on.voice?.(r.id)} className={ACT}>
+            Voice
           </button>
-        )
-      ) : null}
-      <button title="More" aria-label={`More for ${x.code}`} onClick={(e) => on.menu(r.id, e.currentTarget)} className={`${ICON_BTN} ${HOVER}`}>
-        <Icon n="more" c="size-4" />
-      </button>
+        ) : null}
+        <button title="More" aria-label={`More for ${x.code}`} onClick={(e) => on.menu(r.id, e.currentTarget)} className={MORE}>
+          <Icon n="more" c="size-4" sw="2" />
+        </button>
+      </span>
     </>
   )
 }
 
-export function InputRow({ x, words, text, files, lit = false, undo = false, rec = null, rowRef, look, voice = null, on }: {
+export function InputRow({ x, words, text, files, lit = false, undo = false, rec = null, rowRef, on }: {
   x: InputLine
   /** the searched words, marked in its number */
   words: readonly string[]
   text(cut: boolean): ReactNode
+  /** its voice notes, pictures and files */
   files: ReactNode
   lit?: boolean
   /** just sent: Undo */
@@ -284,108 +257,46 @@ export function InputRow({ x, words, text, files, lit = false, undo = false, rec
   /** more to add being recorded here (Voice): how long so far */
   rec?: string | null
   rowRef?: Ref<HTMLElement>
-  /** a prototype's look (T661); none: the page's own */
-  look?: InputLook
-  /** a prototype's look: its voice notes in its first line (quiet, compact) or at the end of what it became (rail),
-   * `files` holding the rest */
-  voice?: ReactNode
   on: InputRowEvents
 }) {
   const r = x.r
-  const edited = r.history?.some((h) => h.mode === 'edit') ? ' · edited' : ''
-  const draft = x.draft ? (
-    <button onClick={() => on.draft(r.id, x.draft as 'edit')} className={`${HIT} shrink-0 text-xs`}>
-      <DraftMark small />
-    </button>
-  ) : null
-  const undoButton =
-    undo && on.undoSend ? (
-      <button onClick={() => on.undoSend?.(r.id)} className={UNDO}>
-        <Icon n="undo" c="size-3.5" sw="2" />
-        Undo
-      </button>
-    ) : null
-  const filesRow = files ? <div className={`flex flex-wrap items-end gap-2 ${r.text ? 'mt-1.5' : 'mt-1'}`}>{files}</div> : null
-  const { time } = x
-  if (look === 'rail')
-    return (
-      <article ref={rowRef} className={`${RAIL_ROW} ${lit ? LIT : ''}`}>
-        <div className={GUTTER}>
-          <div className={GUTTER_TIME}>{time}</div>
-          <div className={GUTTER_SMALL}>
-            <Hit text={x.code} words={words} />
-          </div>
-          {edited ? <div className={GUTTER_SMALL}>edited</div> : null}
-        </div>
-        <RailDot dot={DOT[x.became.k]} />
-        <div className="relative min-w-0 py-2.5 pl-1">
-          <span
-            className={`flex items-center phone:float-right phone:-mt-0.5 phone:-mr-1.5 phone:ml-2 lg:absolute lg:-top-4 lg:right-0 lg:z-10 lg:rounded-lg lg:border lg:border-zinc-200 lg:bg-white lg:p-0.5 lg:shadow-sm dark:lg:border-zinc-700 dark:lg:bg-zinc-900 ${rec ? '' : HOVER} ${x.became.k === 'moved' ? 'hidden' : ''}`}
-          >
-            <RowButtons x={x} rec={rec} on={on} />
-          </span>
-          {r.text ? <Words x={x} text={text} on={on} /> : null}
-          {filesRow}
-          <div className={`${BECAME} flex items-start gap-x-2`}>
-            <div className="flex min-w-0 flex-1 flex-wrap items-start gap-x-2 gap-y-1">
-              <BecameLine b={x.became} id={r.id} chips on={on} />
-              {draft ? <span className="flex h-[22px] items-center">{draft}</span> : null}
-              {undoButton ? <span className="-my-[3px] -ml-1.5 flex">{undoButton}</span> : null}
-            </div>
-            {voice ? <span className="-my-[3px] -mr-1 flex shrink-0 items-center">{voice}</span> : null}
-          </div>
-        </div>
-      </article>
-    )
-  const quiet = look === 'quiet' || look === 'compact'
-  const compact = look === 'compact'
+  const edited = r.history?.some((h) => h.mode === 'edit')
+  const voiceOnly = r.files.every((f) => (f.mime || '').startsWith('audio/'))
   return (
-    <article ref={rowRef} onClick={compact && on.pick ? () => on.pick?.(r.id) : undefined} className={`${quiet ? ROW_QUIET : ROW} ${lit ? LIT : ''} ${compact ? 'cursor-pointer' : ''}`}>
-      <div className="min-w-0">
-        <div className={META}>
-          {quiet ? (
-            <>
-              <span className={`shrink-0 whitespace-nowrap tabular-nums ${MUTED}`}>
-                {time}
-                {edited}
-              </span>
-              <span className={`shrink-0 font-mono text-xs ${MUTED}`}>
-                <Hit text={x.code} words={words} />
-              </span>
-              {voice ? <span className="-my-1.5 -ml-1.5 flex shrink-0 items-center">{voice}</span> : null}
-            </>
-          ) : (
-            <>
-              <span className="shrink-0 font-mono text-sm font-bold text-zinc-900 dark:text-zinc-100">
-                <Hit text={x.code} words={words} />
-              </span>
-              <span className={`shrink-0 whitespace-nowrap tabular-nums ${MUTED}`}>
-                {x.when}
-                {edited}
-              </span>
-            </>
-          )}
-          {draft}
-          <span className="-my-1.5 -mr-1.5 ml-auto flex shrink-0 items-center">
-            {compact ? null : <RowButtons x={x} rec={rec} on={on} />}
-            {/* last, where ⋯ is, so it does not float mid-line while the pointer is elsewhere */}
-            {undoButton}
+    <article ref={rowRef} className={`${ROW} ${lit ? LIT : ''}`}>
+      <header className={`mb-1.5 flex items-center justify-between gap-2 ${x.draft || rec ? 'h-6' : 'h-5'}`}>
+        <div className="flex min-w-0 items-center gap-1.5 font-mono text-[11px] whitespace-nowrap text-zinc-400 dark:text-zinc-500">
+          <span className="font-medium text-zinc-600 dark:text-zinc-400">
+            <Hit text={x.code} words={words} />
           </span>
+          <span>
+            {x.day} {x.time}
+          </span>
+          {edited ? <span className="italic">· edited</span> : null}
+          {x.draft ? (
+            <button
+              data-draft
+              onClick={() => on.draft(r.id, x.draft as 'edit')}
+              className="rounded bg-amber-100 px-1 font-sans text-[10px] font-semibold text-amber-800 hover:bg-amber-200 dark:bg-amber-950 dark:text-amber-300 dark:hover:bg-amber-900"
+            >
+              Draft
+            </button>
+          ) : null}
         </div>
-        {r.text ? (
-          compact ? (
-            <div {...voiceMark(r)} className="mt-0.5 line-clamp-2 text-[15px] leading-6 text-zinc-900 dark:text-zinc-100">
-              {text(true)}
-            </div>
-          ) : (
-            <Words x={x} text={text} on={on} />
-          )
-        ) : null}
-        {filesRow}
-      </div>
-      <div className={BECAME}>
-        <BecameLine b={x.became} id={r.id} oneLine={compact} on={on} />
-      </div>
+        <div className="flex shrink-0 items-center gap-1.5">
+          {undo && on.undoSend ? (
+            <button onClick={() => on.undoSend?.(r.id)} className="px-1 py-0.5 text-xs font-semibold text-blue-600 hover:underline dark:text-blue-400">
+              Undo
+            </button>
+          ) : null}
+          <RowButtons x={x} rec={rec} on={on} />
+        </div>
+      </header>
+      {r.text ? <Words x={x} text={text} on={on} /> : null}
+      {files ? <div className={`flex flex-wrap items-center gap-2 ${!r.text ? 'my-1.5' : voiceOnly ? 'mt-2' : 'mt-2.5'}`}>{files}</div> : null}
+      <footer className="mt-2.5">
+        <BecameLine b={x.became} id={r.id} on={on} />
+      </footer>
     </article>
   )
 }
@@ -395,83 +306,69 @@ export interface OutgoingAct {
   run(): void
 }
 
-/** What is still on its way, as an input's line: Just now (and the item it is said on), its words and pictures; where
- * it is in the place of what became of it (blue on its way, red when Taska said no), with what can be done. */
-export function OutgoingRow({ text, state, bad, scope = null, previews = [], acts, look }: { text: string; state: string; bad: boolean; scope?: string | null; previews?: string[]; acts: OutgoingAct[]; /** a prototype's look (T661) */ look?: InputLook }) {
-  if (look === 'rail')
-    return (
-      <article className={RAIL_ROW}>
-        <div className={GUTTER}>
-          <div className={GUTTER_TIME}>Now</div>
-        </div>
-        <RailDot dot={bad ? 'bg-red-500' : 'animate-pulse bg-blue-500'} />
-        <div className="min-w-0 py-2.5 pl-1">
-          <p className="mt-0.5 line-clamp-4 text-[15px] leading-6 break-words whitespace-pre-wrap text-zinc-900/70 dark:text-zinc-100/70">{text}</p>
-          <div className={`${BECAME} flex flex-wrap items-start gap-x-2`}>
-            <span className={`font-medium ${bad ? 'text-red-600 dark:text-red-400' : 'text-blue-600 dark:text-blue-400'}`}>{state}</span>
-            {acts.map((a) => (
-              <button key={a.label} onClick={a.run} className={LINK}>
-                {a.label}
-              </button>
-            ))}
-          </div>
-        </div>
-      </article>
-    )
+/** What is still on its way, as a line over the list: its words on one line, where it is (blue on its way, amber
+ * waiting for Taska, red when Taska said no) and what can be done. */
+export function OutgoingRow({ text, state, bad, waiting, scope = null, previews = [], acts }: {
+  text: string
+  state: string
+  /** Taska said no */
+  bad: boolean
+  /** Taska is out of reach: it waits */
+  waiting: boolean
+  scope?: string | null
+  previews?: string[]
+  acts: OutgoingAct[]
+}) {
+  const tone = bad
+    ? { box: 'border-red-200/80 bg-red-50/70 dark:border-red-900/40 dark:bg-red-950/25', state: 'text-red-700 dark:text-red-400', act: 'font-semibold text-red-800 hover:underline dark:text-red-300' }
+    : waiting
+      ? { box: 'border-amber-200/80 bg-amber-50/70 dark:border-amber-900/40 dark:bg-amber-950/25', state: 'text-amber-700 dark:text-amber-400', act: 'font-semibold text-amber-800 hover:underline dark:text-amber-300' }
+      : { box: 'border-blue-200/80 bg-blue-50/70 dark:border-blue-900/40 dark:bg-blue-950/25', state: 'text-blue-600 dark:text-blue-400', act: 'font-medium text-zinc-500 underline underline-offset-2 hover:text-zinc-900 dark:hover:text-zinc-100' }
   return (
-    <article className={ROW}>
-      <div className="min-w-0">
-        <div className={META}>
-          <span className={`whitespace-nowrap ${MUTED}`}>Just now</span>
-          {scope ? (
-            <>
-              <span className="text-zinc-300 dark:text-zinc-600">·</span>
-              <span className={`min-w-0 truncate ${MUTED}`}>on {scope}</span>
-            </>
-          ) : null}
-        </div>
-        <p className="mt-0.5 line-clamp-4 text-[15px] leading-6 break-words whitespace-pre-wrap text-zinc-900/70 dark:text-zinc-100/70">{text}</p>
-        {previews.length ? (
-          <div className="mt-1.5 flex flex-wrap gap-2">
-            {previews.map((src, i) => (
-              <img key={i} src={src} alt="" className="size-14 rounded-lg border border-zinc-200 object-cover lg:size-16 dark:border-zinc-700" />
-            ))}
-          </div>
-        ) : null}
+    <div role="status" className={`flex items-center justify-between gap-3 rounded-xl border px-3.5 py-2 text-xs ${tone.box}`}>
+      <div className="flex min-w-0 items-center gap-2">
+        {previews.map((src, i) => (
+          <img key={i} src={src} alt="" className="size-5 shrink-0 rounded border border-zinc-200 object-cover dark:border-zinc-700" />
+        ))}
+        <p className="min-w-0 truncate text-zinc-800 dark:text-zinc-200">{text}</p>
+        {scope ? <span className="shrink-0 text-zinc-500 dark:text-zinc-400">on {scope}</span> : null}
       </div>
-      <div className={`${BECAME} flex flex-wrap items-start gap-x-2`}>
-        <span className={`font-medium ${bad ? 'text-red-600 dark:text-red-400' : 'text-blue-600 dark:text-blue-400'}`}>{state}</span>
+      <div className="flex shrink-0 items-center gap-2.5">
+        <span className={`flex items-center gap-1 font-medium ${tone.state}`}>
+          {bad || waiting ? <Icon n="alert" c="size-3" sw="2" /> : <Spinner c="size-3" />}
+          {state}
+        </span>
         {acts.map((a) => (
-          <button key={a.label} onClick={a.run} className={LINK}>
+          <button key={a.label} onClick={a.run} className={`transition-colors ${tone.act}`}>
             {a.label}
           </button>
         ))}
       </div>
-    </article>
+    </div>
   )
 }
 
-/** A voice note being recorded into a new input: first, with how long so far (B627). */
-export function RecordingRow({ clock, look }: { clock: string; /** a prototype's look (T661) */ look?: InputLook }) {
-  if (look === 'rail')
-    return (
-      <article className={RAIL_ROW}>
-        <div className={GUTTER}>
-          <div className="mt-0.5 font-mono text-[13px] leading-6 text-red-600 tabular-nums dark:text-red-400">{clock}</div>
-        </div>
-        <RailDot dot="animate-pulse bg-red-500" />
-        <div className="py-2.5 pl-1">
-          <div className="mt-0.5 text-[13px] leading-6 font-medium text-red-600 dark:text-red-400">Recording</div>
-        </div>
-      </article>
-    )
+/** A voice note being recorded into a new input: first, with how long so far (B627), and Esc to discard it. */
+export function RecordingRow({ clock, onDiscard }: { clock: string; onDiscard?(): void }) {
   return (
-    <article className={ROW}>
-      <div className={`${META} font-medium text-red-600 dark:text-red-400`}>
-        <span className="size-1.5 animate-pulse rounded-full bg-current" />
-        Recording
-        <span className="font-mono tabular-nums">{clock}</span>
+    <div role="status" className="flex items-center justify-between rounded-xl border border-red-200 bg-red-500/[0.08] px-3.5 py-2 text-xs text-red-700 dark:border-red-900/60 dark:bg-red-500/15 dark:text-red-300">
+      <div className="flex items-center gap-2">
+        <span className="size-2 animate-ping rounded-full bg-red-600" />
+        <span className="font-medium">Recording new input…</span>
+        <span aria-hidden className="ml-1 flex h-3 items-center gap-0.5 opacity-75">
+          {['h-1.5', 'h-3', 'h-2', 'h-3.5'].map((h, i) => (
+            <span key={i} className={`w-0.5 ${h} animate-pulse rounded-full bg-red-600 dark:bg-red-400`} style={{ animationDelay: `${[0, 80, 160, 40][i]}ms` }} />
+          ))}
+        </span>
       </div>
-    </article>
+      <div className="flex items-center gap-3">
+        <span className="font-mono font-semibold tabular-nums">{clock}</span>
+        {onDiscard ? (
+          <button onClick={onDiscard} aria-label="Discard the recording" title="Discard · Esc" className="font-mono text-[11px] text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200">
+            Esc
+          </button>
+        ) : null}
+      </div>
+    </div>
   )
 }

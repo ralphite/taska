@@ -10,7 +10,7 @@ import { codeOf, findRef, type ProjectModel } from '../../model/project'
 import { searchWords } from '../../model/visible'
 import { useItemWorld } from '../../app/hooks'
 import { useSearchHints } from '../../app/searchHints'
-import { Thumbs } from '../../ui/Files'
+import { FileChips } from '../../ui/Files'
 import { useBoxHere } from '../../app/inputs/boxHere'
 import { InputsView, type InputFacts } from './InputsView'
 import { inputRows, outgoingRows } from './inputRows'
@@ -19,7 +19,7 @@ import { inputRows, outgoingRows } from './inputRows'
 const PAGE = 40
 
 export function InputsContainer({ route, hidden }: { route: ProjectRoute; hidden: boolean }) {
-  const app = useServices('box', 'docs', 'fields', 'inputActions', 'inputs', 'nav', 'sheets')
+  const app = useServices('box', 'docs', 'fields', 'inputActions', 'inputs', 'nav', 'sheets', 'voice')
   const stores = useStores('box', 'recording', 'data', 'drafts', 'outbox', 'ui')
   // a voice note being recorded into a new input here: its row comes first, with how long so far (B627)
   const recording = useStoreValue(stores.recording, (st) => (st.rec && st.rec.slug === route.slug && !st.rec.about && st.rec.key === NEW_DRAFT ? clock(st.rec.ms) : null))
@@ -60,7 +60,7 @@ export function InputsContainer({ route, hidden }: { route: ProjectRoute; hidden
       words={words}
       world={world}
       hints={hints(total)}
-      files={(f) => <Thumbs files={f} url={world.url} size="size-14" play={media.play} tidy={media.tidy} on={media.on} />}
+      files={(f) => <FileChips files={f} url={world.url} play={media.play} tidy={media.tidy} on={media.on} />}
       on={{
         goto: (n) => m && app.nav.openItem(codeOf(m, n), 'items'),
         more: (id) => stores.ui.getState().toggleInput(id),
@@ -78,6 +78,7 @@ export function InputsContainer({ route, hidden }: { route: ProjectRoute; hidden
         picture: (f, all) => media.on.view(f, all),
         outboxRetry: () => void app.inputs.flush(),
         outboxEdit: () => app.box.editOutgoing(route.slug, boxKey) && app.fields.focus('box'),
+        discard: () => void app.voice.cancel(),
         end: () => setUpTo((n) => n + PAGE),
       }}
     />

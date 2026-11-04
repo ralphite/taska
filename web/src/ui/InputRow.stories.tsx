@@ -67,10 +67,12 @@ export const OnItsWayAndRecording: Story = {
     <Frames deskWidth={760} height={420}>
       {() => (
         <div className="lg:px-6 lg:py-3">
-          <RecordingRow clock="0:12" />
-          <OutgoingRow text="Also the sort, please." state="Sending…" bad={false} scope="F012" acts={[{ label: 'Undo', run: noop }]} />
-          <OutgoingRow text="Buy milk on the way home" state="Waiting for Taska…" bad={false} acts={[{ label: 'Edit', run: noop }]} />
-          <OutgoingRow text="This one Taska refused" state="Not sent" bad acts={[{ label: 'Retry', run: noop }, { label: 'Edit', run: noop }]} />
+          <div className="space-y-2 px-4 py-3 lg:px-0">
+            <RecordingRow clock="0:12" onDiscard={noop} />
+            <OutgoingRow text="Also the sort, please." state="Sending…" bad={false} waiting={false} scope="F012" acts={[{ label: 'Undo', run: noop }]} />
+            <OutgoingRow text="Buy milk on the way home" state="Waiting for Taska…" bad={false} waiting acts={[{ label: 'Edit', run: noop }]} />
+            <OutgoingRow text="This one Taska refused" state="Not sent" bad waiting={false} acts={[{ label: 'Retry', run: noop }, { label: 'Edit', run: noop }]} />
+          </div>
         </div>
       )}
     </Frames>

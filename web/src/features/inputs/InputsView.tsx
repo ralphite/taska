@@ -1,12 +1,13 @@
-// The phone's Inputs tab: everything you said, newest first, each as the line every list of inputs draws (its number
-// and when, its words, its files, what became of it); what is still on its way on top. Props only.
+// The phone's Inputs tab: everything you said, newest first, each as the row every list of inputs draws (its number
+// and when, its words, its files, what became of it on a shelf under them); a voice note being recorded and what is
+// still on its way as lines of their own on top. Props only.
 
 import { useEffect, useRef, type ReactNode } from 'react'
 import type { InputLine } from '../../model/became'
 import { useLitRow } from './litRow'
 import type { FileRef } from '../../model/types'
 import { Empty } from '../../ui/bits'
-import { InputRow, OutgoingRow as OutgoingLine, RecordingRow } from '../../ui/InputRow'
+import { INPUT_LIST, InputRow, OutgoingRow as OutgoingLine, RecordingRow } from '../../ui/InputRow'
 import { Rich } from '../../ui/Markdown'
 import type { InlineWorld } from '../../ui/markdown/inline'
 import { useMarks } from '../../ui/marks'
@@ -23,6 +24,8 @@ export interface OutgoingRow {
   state: string
   /** Taska said no (not only a lost connection): it can be sent again */
   bad: boolean
+  /** Taska is out of reach: it waits */
+  waiting: boolean
   /** not sent: it can be taken back into the box */
   failed: boolean
   scope: string | null
@@ -45,6 +48,8 @@ export interface InputEvents {
   outboxEdit(): void
   /** the list scrolled to its last drawn rows: draw more */
   end(): void
+  /** the voice note being recorded into a new input: let it go (Esc) */
+  discard?(): void
 }
 
 /** One input: the line every list of inputs draws, its words drawn as Markdown (references and pictures in them work),
@@ -75,6 +80,7 @@ export function OutboxRows({ list, on }: { list: OutgoingRow[]; on: Pick<InputEv
           text={q.text}
           state={q.state}
           bad={q.bad}
+          waiting={q.waiting}
           scope={q.scope}
           previews={q.previews}
           acts={[...(q.bad ? [{ label: 'Retry', run: on.outboxRetry }] : []), ...(q.failed ? [{ label: 'Edit', run: on.outboxEdit }] : [])]}
@@ -121,13 +127,19 @@ export function InputsView({ hidden, rows, more, outgoing, words, world, files, 
       data-vc-area
       className="-mb-(--foot-h) min-h-0 flex-1 overflow-y-auto outline-none overscroll-contain pb-[calc(var(--foot-h,0px)+1.5rem)]"
     >
-      {hidden || !recording || words.length ? null : <RecordingRow clock={recording} />}
-      {hidden ? null : outgoing.length && !words.length ? <OutboxRows list={outgoing} on={on} /> : null}
+      {hidden ? null : (
+        <div className="mb-6 space-y-2 px-4 pt-4 empty:hidden">
+          {!recording || words.length ? null : <RecordingRow clock={recording} onDiscard={on.discard} />}
+          {outgoing.length && !words.length ? <OutboxRows list={outgoing} on={on} /> : null}
+        </div>
+      )}
       {hidden ? null : rows.length ? (
         <>
-          {rows.map((x) => (
-            <InputCard key={x.r.id} x={x} words={words} world={world} files={files} on={on} />
-          ))}
+          <div className={`${INPUT_LIST} px-4`}>
+            {rows.map((x) => (
+              <InputCard key={x.r.id} x={x} words={words} world={world} files={files} on={on} />
+            ))}
+          </div>
           {more ? <div ref={end} aria-hidden className="h-24" /> : null}
           {words.length ? <div className="flex flex-col py-4">{hints}</div> : null}
         </>

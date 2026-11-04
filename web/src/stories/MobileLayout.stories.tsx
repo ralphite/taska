@@ -63,7 +63,7 @@ const LINKS: SideLinkInfo[] = [
   { key: 'deleted', label: 'Deleted', icon: 'trash', href: '#', current: false },
 ]
 const SAID: SaidInput[] = INPUTS.map((r, i) => ({ r, code: '#' + r.id.slice(1), when: ['14:57', '14:10', '09:02'][i], day: 'Today', time: ['14:57', '14:10', '09:02'][i], became: { k: 'waiting' }, draft: null, long: false, opened: false, canUndoSend: false }))
-const noSaid: SaidEvents = { goto() {}, more() {}, append() {}, voice() {}, draft() {}, menu() {}, undoSend() {}, retry() {}, send() {}, outboxRetry() {}, outboxEdit() {}, query() {}, loadMore() {}, moved() {} }
+const noSaid: SaidEvents = { goto() {}, more() {}, append() {}, voice() {}, draft() {}, menu() {}, undoSend() {}, retry() {}, send() {}, outboxRetry() {}, outboxEdit() {}, discard() {}, loadMore() {}, moved() {} }
 const noDoc = () => {}
 
 // ---------------------------------------------------------------- the parts not built yet
@@ -316,7 +316,7 @@ function Phone({ mic }: { mic: boolean }) {
             <Scope item={false} onItem={() => go('comments')} onAll={() => {}} />
           </div>
         ) : null}
-        <SaidLately count={said.length} total={said.length} q="" words={[]} more={false} outgoing={[]} rows={said} files={() => null} on={noSaid} />
+        <SaidLately more={false} outgoing={[]} rows={said} files={() => null} on={noSaid} />
       </div>
     )
   } else if (place === 'projects') {

@@ -20,8 +20,8 @@ export const SaidLatelyList: Story = {
 
 const line = () => saidOf({ inputs: [ONE.made] })
 
-/** A line under the pointer (Comment, Voice and ⋯ show at the end of its first line, taking no room before) and from
- * the keys, side by side. */
+/** A row under the pointer (Comment, Voice and ⋯ fade in at the end of its first line) and from the keys, side by
+ * side. */
 export const SaidLooks: Story = {
   name: 'A line: pointer, keys',
   parameters: { pseudo: { hover: ['[data-pointer] .group\\/row', '[data-pointer-goto] .group\\/row button:first-of-type'], focusWithin: ['[data-keys] .group\\/row'], focusVisible: ['[data-keys] .group\\/row button:first-of-type'] } },
@@ -62,6 +62,4 @@ export const SaidVoice: Story = {
 const list = (s: Parameters<typeof saidOf>[0]): Story => ({ render: () => <Frames phone={false} deskWidth={1024}>{() => <div className="p-6">{saidOf(s)}</div>}</Frames> })
 const MANY = Array.from({ length: 34 }, (_, i) => ({ ...ONE.added, id: 'r' + (100 + i), text: `Thing ${i + 1} to do`, t: new Date(Date.parse(ONE.waiting.t) - i * 3600_000).toISOString() }))
 export const LatestInputsMoreToLoad: Story = { ...list({ inputs: MANY }), name: 'More to load' }
-export const LatestInputsFound: Story = { ...list({ q: 'coupon', inputs: DAY }), name: 'Searched: the words marked, how many found' }
-export const LatestInputsNothingFound: Story = { ...list({ q: 'zebra' }), name: 'Searched, nothing found' }
 export const LatestInputsNoneYet: Story = { ...list({ inputs: [] }), name: 'None yet' }

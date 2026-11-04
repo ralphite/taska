@@ -74,7 +74,7 @@ const preview: Preview = {
             ],
             'Inputs',
             [
-              'New input page', ['Latest inputs', ['The list', 'One on its way or being handled'], 'Project name'],
+              'New input page', ['The whole page', 'Latest inputs', ['The list', 'One on its way or being handled'], 'Project name'],
               'Inputs tab',
               'Input card',
               ['Being handled', 'What it became', ['Filed by the organizer', 'Left for an agent', 'An answer, or moved away'], 'Failed, undone, edited', 'Long, and jumped to'],

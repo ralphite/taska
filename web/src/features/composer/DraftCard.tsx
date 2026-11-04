@@ -1,10 +1,10 @@
-// The New input page (desktop): what is in the box shows at the top of "You said" as a Draft card, lined up with the
-// inputs under it, while a voice note's words are there to check or pick from. Props only.
+// The New input page (desktop): what is in the box shows over the inputs as a Draft card (T661), while a voice note's
+// words are there to check or pick from: Draft, how long the voice note is, how many words to check, send; the words
+// under a line. Props only.
 
 import type { ReactNode } from 'react'
 import { clock } from '../../model/time'
 import { plural } from '../../model/words'
-import { Kbd } from '../../ui/bits'
 import { Icon } from '../../ui/Icon'
 import { BUSY, MUTED } from '../../ui/tones'
 
@@ -15,49 +15,52 @@ export type DraftHint =
   | { kind: 'fix' }
   | null
 
-export const DRAFT_WORDS = 'mt-1 w-full rounded-2xl rounded-tl-md border border-dashed border-blue-300 bg-blue-50/60 px-4 py-2.5 text-[15px] leading-8 break-words whitespace-pre-wrap text-zinc-900 dark:border-blue-400/40 dark:bg-blue-400/5 dark:text-zinc-100'
+export const DRAFT_WORDS = 'text-[14.5px] leading-relaxed break-words whitespace-pre-wrap text-zinc-900 dark:text-zinc-100'
 
-export function DraftCard({ voice, ms, files, transcribing, words, hint }: { voice: number; ms: number; files: number; transcribing: boolean; /** the words, with the versions to pick from; none yet: null */ words: ReactNode; hint: DraftHint }) {
+export function DraftCard({ voice, ms, files, transcribing, words, hint, onSend }: {
+  voice: number
+  ms: number
+  files: number
+  transcribing: boolean
+  /** the words, with the versions to pick from; none yet: null */
+  words: ReactNode
+  hint: DraftHint
+  /** sends it, as the box's Send (⇧↵) */
+  onSend(): void
+}) {
   return (
-    <li className="group/row relative border-b border-zinc-100 py-3 dark:border-zinc-800/70">
-      <div className="min-w-0">
-        <div className="flex h-7 items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
-          <span className="font-semibold tracking-wider text-blue-700 uppercase dark:text-blue-300">Draft</span>
+    <section aria-label="Draft" className="rounded-2xl border border-amber-300 bg-amber-50/80 p-3.5 shadow-2xs dark:border-amber-700/60 dark:bg-amber-950/30">
+      <div className="mb-2 flex items-center justify-between gap-3 border-b border-amber-200/80 pb-2 text-xs dark:border-amber-800/60">
+        <div className="flex min-w-0 items-center gap-2">
+          <span className="rounded bg-amber-200/90 px-1.5 py-0.5 text-[10px] font-bold tracking-wide text-amber-900 uppercase dark:bg-amber-900/80 dark:text-amber-200">Draft</span>
           {voice ? (
-            <span className="flex items-center gap-1">
-              · <Icon n="mic" c="size-3.5" />
-              <span className="font-mono tabular-nums">{clock(ms)}</span> voice note{voice > 1 ? 's' : ''}
+            <span className="flex items-center gap-1 font-mono text-[11px] whitespace-nowrap text-zinc-500 dark:text-zinc-400">
+              <Icon n="mic" c="size-3" sw="2" />
+              {clock(ms)} voice note{voice > 1 ? 's' : ''}
             </span>
           ) : null}
-          {files ? <span>· {plural(files, 'file')}</span> : null}
+          {files ? <span className="font-mono text-[11px] whitespace-nowrap text-zinc-500 dark:text-zinc-400">{plural(files, 'file')}</span> : null}
+        </div>
+        <div className="flex min-w-0 items-center gap-2.5">
+          {hint?.kind === 'check' ? (
+            <span className="text-xs font-medium whitespace-nowrap text-amber-800 dark:text-amber-300">{plural(hint.n, 'word')} to check</span>
+          ) : hint?.kind === 'fix' ? (
+            <span className={`truncate ${MUTED}`}>Select words to correct spelling. Taska remembers.</span>
+          ) : null}
           {/* Send only with words to send */}
           {words && !transcribing ? (
-            <span className={`ml-auto flex items-center gap-1 ${MUTED}`}>
-              <Kbd k="⇧↵" />
+            <button onClick={onSend} title="Send · ⇧↵" className="flex shrink-0 items-center gap-1 rounded-lg bg-amber-600 px-2.5 py-1 text-xs font-medium text-white shadow-2xs transition-colors hover:bg-amber-500">
               <span>send</span>
-            </span>
+              <kbd className="font-mono text-[9px] opacity-80">⇧↵</kbd>
+            </button>
           ) : null}
         </div>
-        {words ?? (
-          <div className={DRAFT_WORDS}>
-            <span className={transcribing ? BUSY : `${MUTED}`}>{transcribing ? 'Transcribing…' : 'No words yet'}</span>
-          </div>
-        )}
-        {hint ? (
-          <div className="mt-2 text-[13px] leading-snug text-zinc-500 dark:text-zinc-400">
-            <p className="flex items-start gap-1.5">
-              {hint.kind === 'check' ? <Icon n="alert" c="mt-px size-3.5 shrink-0 text-amber-600 dark:text-amber-400" sw="2" /> : <Icon n="pencil" c="mt-px size-3.5 shrink-0" />}
-              <span>
-                {hint.kind === 'check' ? (
-                  <b className="font-semibold text-zinc-700 dark:text-zinc-200">{plural(hint.n, 'word')} to check</b>
-                ) : (
-                  'Select words to correct spelling. Taska remembers.'
-                )}
-              </span>
-            </p>
-          </div>
-        ) : null}
       </div>
-    </li>
+      {words ?? (
+        <div className={DRAFT_WORDS}>
+          <span className={transcribing ? BUSY : MUTED}>{transcribing ? 'Transcribing…' : 'No words yet'}</span>
+        </div>
+      )}
+    </section>
   )
 }
