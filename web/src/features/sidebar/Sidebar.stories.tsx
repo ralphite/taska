@@ -8,7 +8,8 @@ export default { title: 'Components/Around the page/Sidebar/The sidebar' } satis
 type Story = StoryObj
 
 /** The desktop's sidebar (New input lit while you write one) and the phone's drawer: the projects in your order, each
- * with what needs you and how many are open; Documents, Activity, Deleted; the foot. On the desktop Hide sidebar folds
+ * with the Needs you mark when something there needs you (how many in its tip) and how many are open; Documents,
+ * Activity, Deleted; the foot, Help above Settings. On the desktop Hide sidebar folds
  * it to the rail (Show sidebar unfolds it) and its right edge drags it wider or narrower (a double-click puts it back);
  * New project names one. What needs the rest of the page (a project, Settings, Search) shows in the Actions panel. */
 export const Projects: Story = { name: 'Sidebar and phone drawer', render: () => <Frames phoneWidth={320} deskWidth={240} height={760}>{(layout) => side(layout === 'phone', { composing: true })}</Frames> }

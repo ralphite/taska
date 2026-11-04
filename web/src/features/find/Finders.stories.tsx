@@ -7,6 +7,7 @@ export default { title: 'Components/Around the page/Menus and sheets/Sheets/Swit
 type Story = StoryObj
 
 /** G P: the projects in your order, the keys' row on the first that is not this one. */
+/** Every project, this one said so; the Needs you mark beside one that needs you (how many in its tip). */
 export const Switch: Story = { ...one(switcher, undefined, 420), name: 'Every project' }
 export const SwitchNothing: Story = { ...one(switcher, (r) => typeInto(field(r), 'invoices'), 300), name: 'Nothing matches' }
 /** the keys' row on Home (the first that is not this one), the pointer on todos */

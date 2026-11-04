@@ -5,7 +5,8 @@ import { shown } from '../../stories/homeFixtures'
 export default { title: 'Components/Around the page/Home page/Your projects' } satisfies Meta
 type Story = StoryObj
 
-/** Every project with its agent, open count, what needs you and the first of it. */
+/** Every project with its agent, open count, the Needs you mark when something needs you (how many in its tip) and the
+ * first of it. */
 export const Projects: Story = { name: 'Every project', render: () => shown({}) }
 
 /** A project under the pointer, pressed, from the keys, side by side. */

@@ -1,4 +1,5 @@
-// What needs you is one number wherever it is shown: the project's badge in the sidebar, the Needs you view (its chip
+// What needs you is one number wherever it is shown: the project's Needs you mark in the sidebar (its number in its
+// label, B664), the Needs you view (its chip
 // and its rows), the home table and its total, the phone's project list, and what the server tells the other pages
 // (B482, R483: "this inconsistency must never happen").
 // guards: src/features/sidebar/ src/features/list/ src/features/home/ src/features/side/ src/pages/Header.tsx src/model/items.ts src/model/projects.ts src/app/projectLists.ts src/app/actions.ts server/taska/services/ server/taska/http/workspace_routes.py server/taska/domain/
@@ -10,6 +11,8 @@ import { view } from './ui'
 
 /** the count on the Needs you view's chip */
 const needsCount = (page: Page) => view(page, 'Needs you').locator('.font-mono')
+/** a project's Needs you mark: the mark alone, how many in its label (B664) */
+const needsSaid = (n: number) => `${n} ${n === 1 ? 'item needs' : 'items need'} you`
 
 const server = async (request: APIRequestContext, p: Project) => {
   const list = (await (await request.get('/api/projects')).json()) as { name: string; needs: number }[]
@@ -49,12 +52,12 @@ T6 ask Anything else?
     view = needsCount(page)
   // T1 asks, I2 is proposed, T3 is in review, the rule R5 asks: 4
   await expect(view).toHaveText('4')
-  await expect(badge).toHaveText('4')
+  await expect(badge).toHaveAttribute('aria-label', needsSaid(4))
   expect(await server(request, p)).toEqual({ projects: 4, needs: 4 })
   // archived while the page is open: all of them go down together
   await p.op({ op: 'set', ref: 'T1', f: { archived: true } })
   await expect(view).toHaveText('3')
-  await expect(badge).toHaveText('3')
+  await expect(badge).toHaveAttribute('aria-label', needsSaid(3))
   expect(await server(request, p)).toEqual({ projects: 3, needs: 3 })
 })
 
@@ -63,14 +66,11 @@ T6 ask Anything else?
 async function showsEverywhere(page: Page, p: Project, n: number) {
   await expect(needsCount(page), 'the Needs you view').toHaveText(String(n))
   if (isDesk(page))
-    await expect(page.locator(`a[data-slug="${p.name}"] [data-needs]`), 'the sidebar').toHaveText(String(n))
+    await expect(page.locator(`a[data-slug="${p.name}"] [data-needs]`), 'the sidebar').toHaveAttribute('aria-label', needsSaid(n))
   else {
     await page.getByRole('button', { name: 'Projects and settings', exact: true }).filter({ visible: true }).first().click()
-    // its badge alone (the title before it may end in digits too)
     const row = page.locator(`a[data-slug="${p.name}"]`).filter({ visible: true }).first()
-    await expect(row.locator('[data-needs]'), 'the project list').toHaveText(
-      `${n} ${n === 1 ? 'needs' : 'need'} you`,
-    )
+    await expect(row.locator('[data-needs]'), 'the project list').toHaveAttribute('aria-label', needsSaid(n))
     await page.keyboard.press('Escape')
   }
   await view(page, 'Needs you').click()
@@ -117,7 +117,7 @@ I11 merge I3
   // the home table: this project's number, and the total is the sum of the rows
   await page.goto('/')
   const row = page.locator(`a[href="${p.url}"]`).filter({ visible: true }).first()
-  await expect(row.locator('[data-needs]')).toHaveText('6')
+  await expect(row.locator('[data-needs]')).toHaveAttribute('aria-label', needsSaid(6))
   const list = (await (await request.get('/api/projects')).json()) as { needs: number }[]
   const sum = list.reduce((a, x) => a + x.needs, 0)
   if (isDesk(page))
