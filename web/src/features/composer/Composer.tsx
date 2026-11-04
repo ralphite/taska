@@ -6,6 +6,7 @@ import { useLayoutEffect, useRef, type ReactNode, type RefObject } from 'react'
 import type { BoxLine, BoxRight, FeedbackLine } from '../../model/boxFoot'
 import { VC_MARK } from '../../model/voiceComments'
 import { Icon, type IconName } from '../../ui/Icon'
+import { RecBar } from '../../ui/PlaceVoice'
 import { HIT, MUTED } from '../../ui/tones'
 
 /** What the line's buttons do: stop what the box is in, let go of what is picked in the document, send or clear the
@@ -122,22 +123,6 @@ interface Btn {
   run(): void
 }
 const btn = (label: string, tip: string, icon: IconName, run: () => void, iconCls = 'size-6 lg:size-5', sw = '1.75'): Btn => ({ label, tip, icon, iconCls, sw, run })
-
-/** The recording: a red dot, its time, and a bar for each moment of sound lately. */
-export function RecBar({ time, levels }: { time: string; levels: readonly number[] }) {
-  return (
-    <>
-      <span className="size-2.5 shrink-0 animate-pulse rounded-full bg-red-500" />
-      <span className="shrink-0 font-mono text-[15px] text-zinc-800 tabular-nums dark:text-zinc-100">{time}</span>
-      <span className="flex h-8 min-w-0 flex-1 items-center justify-end gap-[3px] overflow-hidden">
-        {levels.map((l, i) => (
-          <span key={i} className="w-[3px] shrink-0 rounded-full bg-zinc-500 dark:bg-zinc-400" style={{ height: Math.round(4 + l * 24) }} />
-        ))}
-      </span>
-    </>
-  )
-}
-
 
 /** Where words were put in, when that is all that changed (null: more than that changed). */
 function insertedAt(was: string, now: string): number | null {

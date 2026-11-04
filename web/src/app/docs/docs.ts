@@ -135,9 +135,12 @@ export class Docs {
     this.d.fields.focus('box')
   }
 
+  /** Comment on what is picked: the box (on the phone it comes for it, B498). */
   type(): void {
     this.d.view.getState().setTyping(true)
     this.d.fields.focus('box')
+    // the phone's box shows once the page is drawn again
+    if (!this.d.fields.focused('box')) requestAnimationFrame(() => this.d.fields.focus('box'))
   }
 
   /** What the box's comment goes to now. */

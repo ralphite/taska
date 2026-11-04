@@ -46,9 +46,11 @@ export function factsOf(m: ProjectModel, d: Doc, v: DocLook, seen: Readonly<Reco
       picked: v.sel.has(b.key),
       quote: v.quote?.key === b.key ? v.quote.text : null,
       skipped: skip,
-      // recording: the row stays under the paragraph its own mic speaks about; else under the one picked
-      say: !web && !desk && !v.typing && (speaking ? !speaking.bar && speaking.key === b.key : v.sel.has(b.key) || v.quote?.key === b.key),
-      speaking: speaking?.key === b.key,
+      // the phone's row to speak or write about it (B498): under the paragraph its own Voice speaks about; else under
+      // the one picked
+      say: !web && !desk && (speaking ? !speaking.bar && speaking.key === b.key : v.sel.has(b.key) || v.quote?.key === b.key),
+      // its own Voice records (the bar over selected words has its own strip)
+      speaking: !!speaking && !speaking.bar && speaking.key === b.key,
     }
   })
   const wholeThreads = threadsOf(d.whole || [])
@@ -69,19 +71,8 @@ export function factsOf(m: ProjectModel, d: Doc, v: DocLook, seen: Readonly<Reco
     replying: v.reply,
     asking: Object.keys(asked).find((k) => k.startsWith(`unfile ${d.d} `))?.slice(`unfile ${d.d} `.length) ?? null,
     wholeButton: !(v.typing && !v.sel.size && !v.quote && !v.reply),
-    recording: speaking != null,
-    // a web page's part, for the same button (its parts are not paragraphs): the one its mic records about, else the
-    // one picked
-    sayPart:
-      web && !desk && !v.typing
-        ? speaking
-          ? !speaking.bar && speaking.key?.startsWith('h:')
-            ? { key: speaking.key, quote: speaking.quote ?? '' }
-            : null
-          : v.quote?.key.startsWith('h:')
-            ? { key: v.quote.key, quote: v.quote.text }
-            : null
-        : null,
+    // the phone's comment on the whole document is spoken: its button is the recording strip meanwhile
+    wholeRec: !desk && speaking != null && !speaking.bar && speaking.key === 'doc',
   }
 }
 

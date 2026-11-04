@@ -23,16 +23,10 @@ import { DocEditContainer } from './DocEditContainer'
 import { DocView, PHONE_DOC_LOOK, type DocEvents } from './DocView'
 import type { DocEnv } from './Thread'
 import { docDraft } from '../../model/draftTarget'
-import { clock } from '../../model/time'
+import { RecMeter } from '../../app/RecMeter'
+import { PLACE_LEVELS } from '../../ui/PlaceVoice'
 
 const SIDE_NAME = { docs: 'Documents', log: 'Activity', deleted: 'Deleted' } as const
-
-/** How long the recording has gone on (on its own, so the document is not drawn again at every tick). */
-function RecTime() {
-  const stores = useStores('recording')
-  const ms = useStoreValue(stores.recording, (s) => s.rec?.ms ?? null)
-  return ms == null ? null : <>{clock(ms)}</>
-}
 
 /** The document's view, with what it does. */
 function useDoc(slug: string, dn: number) {
@@ -89,9 +83,11 @@ function useDoc(slug: string, dn: number) {
     toggle: (tk) => docs.toggle(tk),
     away: (tk) => docs.away(tk),
     pick: (key, quote, by) => docs.pick(key, quote, by),
-    // a part of a web page posts when stopped on the phone, as its own mic did
-    say: (key, quote) => void app.docVoice.say(slug, dn, key, quote ?? d?.blocks.find((b) => b.key === key)?.text ?? '', key.startsWith('h:')),
+    // a place's Voice, and its recording strip's ✕, ✓ (the phone sends) and ↑ (B498)
+    say: (key, quote) => void app.docVoice.say(slug, dn, key, quote ?? d?.blocks.find((b) => b.key === key)?.text ?? ''),
     sayCancel: () => void app.voice.cancel(),
+    sayCheck: () => void app.docVoice.check(),
+    saySend: () => void app.docVoice.sendNow(),
     type: () => docs.type(),
     moveDoc: (from?: HTMLElement) => (desk && from ? app.sheets.openFrom(from, { kind: 'doc-move', d: dn }, { focus: false }) : app.sheets.open({ kind: 'doc-move', d: dn }, { focus: false })),
     deleteDoc: () => app.docEditor.remove(dn),
@@ -115,7 +111,7 @@ function WebPageContainer({ slug, d, v, seen, env, on, waiting }: { slug: string
   const app = useServices('actions', 'docVoice', 'docs', 'fields', 'voice')
   const stores = useStores('docView', 'recording', 'sheet')
   const asked = useStoreValue(stores.sheet, (s) => s.asked)
-  // the part spoken about: the mic pressed turns into Stop right there, and no other part lights
+  // the part spoken about: its buttons are its recording strip right there, and no other part lights
   const spoken = useStoreValue(stores.recording, (s) => {
     const a = s.rec?.about
     return a && a.d === d.d && a.key?.startsWith('h:') && !a.bar ? JSON.stringify({ key: a.key, text: a.quote }) : ''
@@ -130,6 +126,7 @@ function WebPageContainer({ slug, d, v, seen, env, on, waiting }: { slug: string
       threads={w.threads}
       held={held}
       rec={rec}
+      meter={<RecMeter n={env.desk ? PLACE_LEVELS.desk : PLACE_LEVELS.phone} />}
       open={w.open}
       desk={env.desk}
       inspect={v.inspect}
@@ -139,7 +136,16 @@ function WebPageContainer({ slug, d, v, seen, env, on, waiting }: { slug: string
           stores.docView.getState().pick({ quote: p, sel: new Set(), reply: null })
           if (env.desk) app.fields.get('box')?.focus({ preventScroll: true })
         },
-        say: (part) => void app.docVoice.say(slug, d.d, part.key, part.text, true),
+        // a part's Comment: what you write in the box comments on it (the phone's box opens for it)
+        comment: (p) => {
+          stores.docView.getState().pick({ quote: p, sel: new Set(), reply: null })
+          if (env.desk) app.fields.get('box')?.focus({ preventScroll: true })
+          else app.docs.type()
+        },
+        say: (part) => void app.docVoice.say(slug, d.d, part.key, part.text),
+        cancel: on.sayCancel,
+        check: on.sayCheck,
+        send: on.saySend,
         esc: () => app.actions.run('back'),
         toggle: (tk) => app.docs.toggle(tk),
         away: (tk, key) => stores.docView.getState().closeThreads(tk, key),
@@ -182,11 +188,11 @@ export function DocPaneContainer({ route, dn, place, hidden, bodyRef, beside }: 
       onBack={() => app.docs.close()}
     >
       {beside ? (
-        beside(<DocView facts={facts} env={env} on={on} page={page} recTime={<RecTime />} aim={v.aim} onAimed={aimed} lasso={v.circle ? <Lasso onDrawn={(keys) => app.docs.circled(keys)} /> : null} />, web)
+        beside(<DocView facts={facts} env={env} on={on} page={page} meter={<RecMeter n={PLACE_LEVELS.desk} />} aim={v.aim} onAimed={aimed} lasso={v.circle ? <Lasso onDrawn={(keys) => app.docs.circled(keys)} /> : null} />, web)
       ) : (
         // a web page brings its own margins: none are added around it
         <div className={web ? 'w-full' : 'w-full px-8 pt-8 pb-12'}>
-          <DocView facts={facts} env={env} on={on} page={page} recTime={<RecTime />} aim={v.aim} onAimed={aimed} lasso={v.circle ? <Lasso onDrawn={(keys) => app.docs.circled(keys)} /> : null} />
+          <DocView facts={facts} env={env} on={on} page={page} meter={<RecMeter n={PLACE_LEVELS.desk} />} aim={v.aim} onAimed={aimed} lasso={v.circle ? <Lasso onDrawn={(keys) => app.docs.circled(keys)} /> : null} />
         </div>
       )}
     </PaneFrame>
@@ -201,7 +207,7 @@ export function DocSheetContainer({ slug, dn, footRoom }: { slug: string; dn: nu
   return (
     // above the box, which stays under it (what it says shows), so nothing of the document is under the box (r672)
     <Sheet open look={PHONE_DOC_LOOK} desk={false} footRoom={footRoom} onClose={() => app.docs.close()}>
-      <SheetLayout title={`D${d.d}`} body={<DocView facts={facts} env={env} on={on} page={page} recTime={<RecTime />} aim={v.aim} onAimed={aimed} lasso={v.circle ? <Lasso onDrawn={(keys) => app.docs.circled(keys)} /> : null} />} />
+      <SheetLayout title={`D${d.d}`} body={<DocView facts={facts} env={env} on={on} page={page} meter={<RecMeter n={PLACE_LEVELS.phone} />} aim={v.aim} onAimed={aimed} lasso={v.circle ? <Lasso onDrawn={(keys) => app.docs.circled(keys)} /> : null} />} />
     </Sheet>
   )
 }

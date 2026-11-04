@@ -185,10 +185,10 @@ function PhoneLayout({ route }: { route: ProjectRoute }) {
   const help = route.place.kind === 'help'
   const settings = route.place.kind === 'settings' || route.place.kind === 'side' || help
   const prefsEditing = useStoreValue(stores.box, (s) => s.mode?.kind === 'prefs')
-  // a document on the phone has no box (B643): its voice button floats over it; the box comes only to edit something
-  // (a comment of yours, or the document, whose editor speaks through it)
+  // a document on the phone has no box (B643): a part picked has its own Voice and Comment under it; the box comes
+  // only to write: that Comment (B498), or an edit (a comment of yours, or the document, whose editor speaks through it)
   const boxMode = useStoreValue(stores.box, (s) => !!s.mode)
-  const docEdit = useStoreValue(stores.docView, (s) => s.editing)
+  const docEdit = useStoreValue(stores.docView, (s) => s.editing || s.typing)
   const docNoBox = route.place.kind === 'doc' && !boxMode && !docEdit
   // while the item's page is swiped back, what it was opened from shows underneath it: the list, or the search page
   // (F479), which stays while a result is open, as you left it

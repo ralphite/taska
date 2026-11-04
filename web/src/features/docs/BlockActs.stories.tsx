@@ -14,7 +14,7 @@ type Story = StoryObj
 const PLAN = doc()
 const one = (h: DocHere, d: Doc = PLAN): Story => ({ render: () => <Frames height={760} deskWidth={900} phoneWidth={393}>{(layout) => docAt(d, layout === 'desk', h)}</Frames> })
 
-/** A paragraph picked: its amber ring; on the phone its voice button floats over the bottom right (Document › On the phone). */
+/** A paragraph picked: its amber ring and its Voice and Comment beside it (on the phone a row under it; Document › On the phone). */
 export const ParagraphPicked: Story = { ...one({ sel: ['p1'] }), name: 'Paragraph picked' }
 /** Reply pressed in a thread: what you write goes to it (the box says so). */
 export const Replying: Story = { ...one({ threads: ['p1#1'], reply: 'p1#1' }), name: 'Replying in a thread' }

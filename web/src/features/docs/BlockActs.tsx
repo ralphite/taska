@@ -1,9 +1,10 @@
-// Beside a paragraph, on the desktop: speak a comment (the icon itself records, and stops) or write one (in the box
-// below); each thread's count, level with the words it quotes and never on another, which opens its comments over the
+// Beside a paragraph, on the desktop: speak a comment (Voice turns the two buttons into a recording strip there: ✕,
+// ✓ into the box below, ↑ sent at once; B498) or write one (in the box below); each thread's count, level with the words it quotes and never on another, which opens its comments over the
 // text; in a list each item is its own place to comment on (pointing at one puts the buttons beside it). Props only.
 
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { Icon } from '../../ui/Icon'
+import { PlaceVoice } from '../../ui/PlaceVoice'
 
 export interface CountInfo {
   tk: string
@@ -18,6 +19,10 @@ export interface CountInfo {
 export interface BlockActsEvents {
   say(quote: string | null): void
   comment(quote: string | null): void
+  /** the recording strip's ✕, ✓ and ↑ */
+  cancel(): void
+  check(): void
+  send(): void
   toggle(tk: string): void
   /** a click away from the open comments closes them */
   away(tk: string): void
@@ -45,12 +50,16 @@ function quoteTop(sec: HTMLElement, quote: string): number {
   return 0
 }
 
-export function BlockActs({ counts, open, rec, children, on }: {
+export function BlockActs({ counts, open, rec, picked = false, meter, children, on }: {
   counts: CountInfo[]
   /** the thread whose comments are open over the text */
   open: string | null
-  /** a voice comment is being recorded here */
+  /** a voice comment is being recorded here: the buttons are its recording strip */
   rec: boolean
+  /** the paragraph is picked: its buttons stay beside it */
+  picked?: boolean
+  /** the recording's time and level */
+  meter?: ReactNode
   /** the open comments */
   children?: ReactNode
   on: BlockActsEvents
@@ -59,6 +68,11 @@ export function BlockActs({ counts, open, rec, children, on }: {
   const pop = useRef<HTMLDivElement>(null)
   const btns = useRef(new Map<string, HTMLButtonElement>())
   const [at, setAt] = useState<{ top: number; quote: string } | null>(null)
+  // recording, the strip stays where it began, wherever the pointer goes
+  const still = useRef(rec)
+  useLayoutEffect(() => {
+    still.current = rec
+  })
   useEffect(() => {
     // pointing at an item of a list: the buttons go beside it, and what you say quotes it
     const sec = box.current?.closest('section')
@@ -71,6 +85,7 @@ export function BlockActs({ counts, open, rec, children, on }: {
       lit = li
     }
     const move = (e: MouseEvent) => {
+      if (still.current) return
       const li = (e.target as Element).closest<HTMLElement>('li')
       if (!li || !sec.contains(li) || box.current?.contains(li)) return // between items or on the buttons: it stays
       light(li)
@@ -78,6 +93,7 @@ export function BlockActs({ counts, open, rec, children, on }: {
       setAt((a) => (a && a.top === top ? a : { top, quote: li.innerText.trim().slice(0, 500) }))
     }
     const leave = () => {
+      if (still.current) return
       light(null)
       setAt(null)
     }
@@ -146,24 +162,14 @@ export function BlockActs({ counts, open, rec, children, on }: {
           {children}
         </div>
       ) : null}
-      {/* side by side, the voice first, from the paragraph's edge (its pointing area reaches over this column) */}
-      <div ref={box} className={`absolute left-full z-10 flex-row gap-1 pl-1 ${rec ? 'flex' : 'hidden group-hover/blk:flex'}`}>
-        <button
-          onClick={() => on.say(at?.quote ?? null)}
-          title={rec ? 'Stop' : 'Voice comment'}
-          className={`grid size-7 place-items-center rounded-lg shadow-sm ring-1 ${rec ? 'bg-red-600 text-white ring-red-700' : 'bg-white text-zinc-500 ring-zinc-900/10 hover:text-zinc-900 dark:bg-zinc-800 dark:text-zinc-300 dark:ring-white/10 dark:hover:text-white'}`}
-        >
-          <Icon n={rec ? 'stop' : 'mic'} c="size-4" />
-        </button>
-        {rec ? null : (
-          <button
-            onClick={(e) => (e.stopPropagation(), on.comment(at?.quote ?? null))}
-            title="Comment"
-            className="grid size-7 place-items-center rounded-lg bg-white text-zinc-500 shadow-sm ring-1 ring-zinc-900/10 hover:text-zinc-900 dark:bg-zinc-800 dark:text-zinc-300 dark:ring-white/10 dark:hover:text-white"
-          >
-            <Icon n="comment" c="size-4" />
-          </button>
-        )}
+      {/* side by side, the voice first, beside the paragraph (its pointing area reaches over this column); speaking,
+          the strip ends where they end and grows to the left, over the paragraph's first line (B498) */}
+      <div ref={box} className={`absolute -right-16 z-10 justify-end ${rec || picked ? 'flex' : 'hidden group-hover/blk:flex'}`}>
+        <PlaceVoice
+          rec={rec}
+          meter={meter}
+          on={{ say: () => on.say(at?.quote ?? null), comment: () => on.comment(at?.quote ?? null), cancel: on.cancel, check: on.check, send: on.send }}
+        />
       </div>
     </>
   )

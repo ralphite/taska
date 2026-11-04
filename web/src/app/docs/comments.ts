@@ -70,6 +70,9 @@ export class DocComments {
     const picked = { sel: v.sel, quote: v.quote, reply: v.reply }
     v.openThread(t.th ? `${t.key}#${t.th}` : t.key)
     v.unpick()
+    // the phone's box came only to write this comment (B498): it goes with it
+    const typing = v.typing
+    if (!this.d.desk()) v.setTyping(false)
     if (typeof getSelection !== 'undefined') getSelection()?.removeAllRanges()
     if (this.d.desk()) this.d.fields.get('box')?.focus({ preventScroll: true })
     for (let i = 0; live().some((f) => f.uploading || f.transcribing) && i < 240; i++) await new Promise((ok) => setTimeout(ok, 500))
@@ -80,6 +83,7 @@ export class DocComments {
     this.d.changes.getState().remove(showing.id)
     if (!text && !sent.length) {
       this.d.box.putBack(slug, key, typed, held)
+      if (typing) this.d.view.getState().setTyping(true)
       return false
     }
     const ok = await this.d.runner.send({
@@ -96,6 +100,7 @@ export class DocComments {
       // what it was on is picked again, so Send comments there again (D83 #3), unless you picked something else since
       const now = this.d.view.getState()
       if (now.d === dn && !now.sel.size && !now.quote && !now.reply) now.pick(picked)
+      if (typing) now.setTyping(true)
     }
     return ok
   }

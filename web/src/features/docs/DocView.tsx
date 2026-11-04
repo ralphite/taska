@@ -13,6 +13,7 @@ import type { SheetLook } from '../../ui/Sheet'
 import { BTN, BTN_DANGER, HIT, MUTED, NEEDS_PILL, PRIMARY, SEP_V } from '../../ui/tones'
 import { BlockActs, type CountInfo } from './BlockActs'
 import { DocBlock } from './DocBlock'
+import { PlaceVoiceRow } from '../../ui/PlaceVoice'
 import { DraftCard, NewDot, Thread, type DocEnv, type ThreadEvents } from './Thread'
 import type { NotSent } from '../../model/voiceComments'
 
@@ -44,9 +45,9 @@ export interface DocRow {
   /** words picked in it (the phone marks the item of a list) */
   quote: string | null
   skipped: boolean
-  /** the phone's row to speak or type a comment, under the paragraph picked */
+  /** the phone's row to speak or write a comment, under the paragraph picked */
   say: boolean
-  /** its own mic is recording a comment about it */
+  /** its own Voice is recording a comment about it */
   speaking: boolean
   /** voice comments on it not sent yet */
   drafts: readonly NotSent[]
@@ -76,9 +77,8 @@ export interface DocFacts {
   asking: string | null
   /** the phone shows Comment on the whole document */
   wholeButton: boolean
-  recording: boolean
-  /** the phone's: the part of a web page its voice button speaks about */
-  sayPart: { key: string; quote: string } | null
+  /** the phone's comment on the whole document is being spoken */
+  wholeRec: boolean
 }
 
 export interface DocEvents extends ThreadEvents {
@@ -87,8 +87,12 @@ export interface DocEvents extends ThreadEvents {
   away(tk: string): void
   /** a paragraph tapped, or its Comment pressed (`quote`: one item of its list) */
   pick(key: string, quote: string | null, by: 'button' | 'tap'): void
+  /** a place's Voice; its recording strip's ✕, ✓ and ↑ (B498) */
   say(key: string, quote: string | null): void
   sayCancel(): void
+  sayCheck(): void
+  saySend(): void
+  /** the phone's Comment under a part picked: the box opens to write about it */
   type(): void
   moveDoc(from?: HTMLElement): void
   deleteDoc(): void
@@ -135,36 +139,6 @@ function useMarkQuotes(root: React.RefObject<HTMLDivElement | null>, rows: DocRo
   })
 }
 
-/** On the phone, under the paragraph you tapped: speak (the same button stops and posts), or type. */
-/** The phone's voice comment: one round button floating over the bottom right of the document while a part is picked
- * (or the whole document), so nothing on the page moves (B643); while it records, the time and Cancel beside it. */
-export function SayRow({ rec, part, time, on }: { rec: boolean; part?: { key: string; quote: string }; /** how long it has recorded */ time?: ReactNode; on: { say(): void; cancel(): void } }) {
-  const marks = part ? { 'data-part-say': '', 'data-key': part.key, 'data-quote': part.quote } : {}
-  return (
-    <div className="fixed right-4 bottom-[max(1.25rem,env(safe-area-inset-bottom))] z-40 flex items-center gap-2">
-      {rec ? (
-        <>
-          <button onClick={on.cancel} className="h-10 rounded-full bg-white px-3 text-sm font-semibold text-zinc-600 shadow-md ring-1 ring-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:ring-zinc-700">
-            Cancel
-          </button>
-          {time ? (
-            <span data-rec-time className="rounded-full bg-white px-2.5 py-1 font-mono text-[13px] text-red-600 tabular-nums shadow-md dark:bg-zinc-800 dark:text-red-400">
-              {time}
-            </span>
-          ) : null}
-          <button {...marks} onClick={on.say} aria-label="Stop and post the comment" className="grid size-14 shrink-0 place-items-center rounded-full bg-red-600 text-white shadow-lg">
-            <Icon n="stop" c="size-6" />
-          </button>
-        </>
-      ) : (
-        <button {...marks} onClick={on.say} aria-label="Speak a comment" className="grid size-14 shrink-0 place-items-center rounded-full bg-zinc-900 text-white shadow-lg dark:bg-zinc-100 dark:text-zinc-900">
-          <Icon n="mic" c="size-6" />
-        </button>
-      )}
-    </div>
-  )
-}
-
 function Outline({ heads, onJump }: { heads: DocFacts['outline']; onJump(key: string): void }) {
   if (!heads.length) return null
   return (
@@ -185,7 +159,7 @@ function Outline({ heads, onJump }: { heads: DocFacts['outline']; onJump(key: st
   )
 }
 
-export function DocView({ facts, env, on, lasso, page, recTime, aim = null, onAimed }: {
+export function DocView({ facts, env, on, lasso, page, meter, aim = null, onAimed }: {
   facts: DocFacts
   env: DocEnv
   on: DocEvents
@@ -197,8 +171,8 @@ export function DocView({ facts, env, on, lasso, page, recTime, aim = null, onAi
   lasso?: ReactNode
   /** a web page's own view (WebPage) */
   page?: ReactNode
-  /** how long the phone's mic under a paragraph has recorded */
-  recTime?: ReactNode
+  /** the recording's time and level, for the strip of the place it is about (B498) */
+  meter?: ReactNode
 }) {
   const { d, rows, desk } = { ...facts, desk: env.desk }
   const web = d.fmt === 'html'
@@ -226,6 +200,8 @@ export function DocView({ facts, env, on, lasso, page, recTime, aim = null, onAi
     <Thread key={s.t.tk} t={s.t} blockText={blockText} rail={rail} isNew={s.isNew} done={s.done} replying={facts.replying === s.t.tk} asking={facts.asking} env={env} on={on} />
   )
   const phoneBtn = `${HIT} ${BTN} text-sm lg:hidden`
+  // the phone's row to speak or write goes under the last paragraph picked (an area drawn picks several)
+  const sayAt = rows.filter((r) => r.say).at(-1)?.tk
   return (
     <div ref={root} className="flex min-h-full flex-col">
       {/* a web page takes the pane's whole width, as a page in a browser does */}
@@ -330,6 +306,18 @@ export function DocView({ facts, env, on, lasso, page, recTime, aim = null, onAi
                     </button>
                   ) : null}
                 </div>
+                {r.tk === sayAt ? (
+                  // the phone's row under the place picked: speak or write about it; speaking, its recording strip
+                  // (B498). A tap on it is not a tap on the paragraph.
+                  <div className="mt-2" onClick={(e) => e.stopPropagation()}>
+                    <PlaceVoiceRow
+                      rec={r.speaking}
+                      meter={meter}
+                      say={{ 'data-part-say': '', 'data-key': r.b.key, 'data-quote': r.quote ?? '' }}
+                      on={{ say: () => on.say(r.b.key, r.quote), comment: on.type, cancel: on.sayCancel, check: on.sayCheck, send: on.saySend }}
+                    />
+                  </div>
+                ) : null}
                 {r.skipped && CHOICE_LINE.test(r.b.text) && !TICKED_LINE.test(r.b.text) ? (
                   <div className="mt-1.5 flex items-center gap-1 text-[13px] font-medium text-zinc-500 dark:text-zinc-400">
                     <Icon n="reply" c="size-3.5" />
@@ -349,7 +337,9 @@ export function DocView({ facts, env, on, lasso, page, recTime, aim = null, onAi
                     counts={r.counts}
                     open={r.open}
                     rec={r.speaking}
-                    on={{ say: (q) => on.say(r.b.key, q), comment: (q) => on.pick(r.b.key, q, 'button'), toggle: on.toggle, away: on.away }}
+                    picked={r.picked || r.quote != null}
+                    meter={meter}
+                    on={{ say: (q) => on.say(r.b.key, q), comment: (q) => on.pick(r.b.key, q, 'button'), cancel: on.sayCancel, check: on.sayCheck, send: on.saySend, toggle: on.toggle, away: on.away }}
                   >
                     {r.open ? (
                       <>
@@ -381,26 +371,15 @@ export function DocView({ facts, env, on, lasso, page, recTime, aim = null, onAi
             ))}
           </div>
         ) : null}
-        {desk
-          ? null
-          : (() => {
-              // the phone's one voice button, floating while a part is picked or while it records (B643): a paragraph
-              // or a part of a web page alike
-              const picked = rows.find((r) => r.say)
-              const part = facts.sayPart
-              return part || picked || facts.recording ? (
-                <SayRow
-                  rec={facts.recording}
-                  time={recTime}
-                  part={part ?? (picked ? { key: picked.b.key, quote: picked.quote ?? '' } : undefined)}
-                  on={{ say: () => (part ? on.say(part.key, part.quote) : picked ? on.say(picked.b.key, picked.quote) : on.say('doc', null)), cancel: on.sayCancel }}
-                />
-              ) : null
-            })()}
         {desk ? null : (
           <>
             <p className={`mt-6 text-center text-xs ${MUTED}`}>{web ? 'Tap a part to comment' : 'Tap, select or circle to comment'}</p>
-            {facts.wholeButton ? (
+            {facts.wholeRec ? (
+              // speaking about the whole document: its button is the recording strip (B498)
+              <div className="mx-auto mt-1 w-full max-w-sm">
+                <PlaceVoiceRow rec meter={meter} on={{ say: on.whole, comment: on.type, cancel: on.sayCancel, check: on.sayCheck, send: on.saySend }} />
+              </div>
+            ) : facts.wholeButton ? (
               <button onClick={on.whole} className="mx-auto mt-1 flex h-11 items-center gap-1.5 px-3 text-sm font-semibold text-blue-600 dark:text-blue-400">
                 <Icon n="mic" c="size-4" />
                 Comment on the whole document

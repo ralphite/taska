@@ -1,5 +1,6 @@
-// Speaking about a document: a paragraph's own mic (or the bar on selected words) records a voice comment about it;
-// the same button stops it: on the desktop the quote and the voice note go into the box, on the phone it is posted.
+// Speaking about a document: a place's own Voice (a paragraph, a part of a web page, the bar on selected words)
+// records a voice comment about it and turns into a recording strip there (B498): ✓ stops it (on the desktop the
+// quote and the voice note go into the box; on the phone it is posted), ↑ posts it at once, ✕ cancels.
 // Send with quote lines in the box posts each one's words as a comment on its passage: each shows where it goes at
 // once and the box empties; it is saved behind you once its voice notes' words are there; not saved, it all comes
 // back into the box.
@@ -52,23 +53,20 @@ export class DocVoice {
     return doc && m && m.byN.has(liveN(m, doc.n)) ? codeOf(m, liveN(m, doc.n)) : null
   }
 
-  /** A paragraph's mic (or a part of a web page): speak about it; pressed again it stops (the phone posts it). */
-  async say(slug: string, dn: number, key: string, quote: string, page = false): Promise<void> {
-    const r = this.d.recording.getState().rec
-    if (r) {
-      // a part of a web page: on the phone it posts, the box open or not
-      if (r.about) await this.d.voice.finish(!this.d.desk() && (page || !this.d.view.getState().typing))
-      return
-    }
+  /** A place's Voice (a paragraph, a part of a web page, the whole document): speak about it; it turns into the
+   * recording strip there, whose ✓, ↑ and ✕ stop it (B498). Pressed while it records, it is ✓. */
+  async say(slug: string, dn: number, key: string, quote: string): Promise<void> {
+    if (this.d.recording.getState().rec) return this.check()
     await this.d.voice.start(slug, docDraft(dn), this.host(slug, dn), 'main', { d: dn, key, quote: quote.slice(0, 500), bar: false })
   }
 
   /** The bar on selected words: speak about them (words of document `d`'s passage `key`, or words elsewhere, which
-   * go into the box shown now); pressed again it stops (the phone sends it). -> it started */
+   * go into the box shown now); the bar turns into the recording strip (pressed while it records, it is ✓).
+   * -> it started */
   async bar(slug: string, sel: { d: number | null; key: string | null; quote: string } | null): Promise<boolean> {
     const r = this.d.recording.getState().rec
     if (r?.about?.bar) {
-      await this.d.voice.finish(!this.d.desk() && !this.d.view.getState().typing)
+      await this.check()
       return false
     }
     if (r || !sel) return false
@@ -77,6 +75,17 @@ export class DocVoice {
     const scope = sel.d != null ? this.host(slug, sel.d) : shown.scope
     await this.d.voice.start(slug, key, scope, 'main', { ...sel, quote: sel.quote.slice(0, 500), bar: true })
     return !!this.d.recording.getState().rec
+  }
+
+  /** ✓ on a place's recording strip: on the desktop the voice note and its words go into the box below, at this
+   * place, to add to and send; on the phone, which has no box over a document (B643), it is sent. */
+  check(): Promise<void> {
+    return this.d.voice.finish(!this.d.desk())
+  }
+
+  /** ↑ on a place's recording strip: sent at once, as a voice comment is. */
+  sendNow(): Promise<void> {
+    return this.d.voice.finish(true)
   }
 
   /** The voice comment stopped: the box comments on what it was about. */

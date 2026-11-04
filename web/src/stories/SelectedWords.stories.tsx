@@ -5,7 +5,7 @@ import { useState } from 'react'
 import { SelectionBar, type Box } from '../features/composer/SelectionBar'
 import { After, Frames } from './Frames'
 import { doc } from './docFixtures'
-import { docAt } from './docPage'
+import { docAt, recMeter } from './docPage'
 
 export default { title: 'Components/Document/Commenting/Selected words' } satisfies Meta
 type Story = StoryObj
@@ -41,7 +41,7 @@ function Selected({ desk, recording }: { desk: boolean; recording: boolean }) {
       >
         {docAt(doc(), desk)}
       </After>
-      <SelectionBar at={at} recording={recording} comment fix={false} on={{ mic() {}, comment() {}, fix() {} }} />
+      <SelectionBar at={at} recording={recording} desk={desk} meter={recMeter(desk)} comment fix={false} on={{ mic() {}, comment() {}, fix() {}, cancel() {}, check() {}, send() {} }} />
     </>
   )
 }

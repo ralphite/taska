@@ -304,15 +304,15 @@
   "Review/About this section": [
    "About"
   ],
-  "Review/B498 Comment on a place: voice and words": [
+  "Review/B510 Finished and asks you": [
+   "Now One Card",
+   "Option 1 Ask First Then Finish"
+  ],
+  "Components/Document/Commenting/Voice and words on a place": [
    "Desktop · Markdown paragraph",
    "Desktop · web page part",
    "Phone 393 · Markdown paragraph",
    "Phone 393 · web page part"
-  ],
-  "Review/B510 Finished and asks you": [
-   "Now One Card",
-   "Option 1 Ask First Then Finish"
   ]
  }
 }

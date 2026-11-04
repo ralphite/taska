@@ -1,9 +1,9 @@
 // Yadong's requirements on documents (D29, "Documents"; T475, D45): each check is named by the codes of his inputs, so
 // a change that breaks one is stopped before it ships with his own words.
-// guards: src/features/docs/ src/features/composer/ src/features/item/ src/app/docs/ src/model/docs.ts src/model/boxFoot.ts src/pages/DetailContainer.tsx src/pages/ProjectPageContainer.tsx src/ui/PaneFrame.tsx
+// guards: src/features/docs/ src/features/composer/ src/features/item/ src/app/docs/ src/model/docs.ts src/model/boxFoot.ts src/pages/DetailContainer.tsx src/pages/ProjectPageContainer.tsx src/ui/PaneFrame.tsx src/ui/PlaceVoice.tsx src/app/voice/docVoice.ts src/app/RecMeter.tsx
 import { expect, test, type Page } from '@playwright/test'
 import { LOOP, isDesk, open, project } from '../seed'
-import { blockPick, blockSay, box, boxAux, boxLine, boxMain, choice, commentRail, docBlock, docBlocks, docCard, duo, form, partSay, sayCancel, sendChoices, talk, threadCounts } from '../ui'
+import { blockPick, blockSay, box, boxAux, boxLine, boxMain, choice, commentRail, docBlock, docBlocks, docCard, draftFiles, duo, form, partSay, placeRec, sayCancel, sayCheck, saySend, sendChoices, talk, threadCounts } from '../ui'
 
 // a microphone that hears a tone, so a spoken comment records as it does for him (the phone's, B643)
 test.use({ launchOptions: { args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'] } })
@@ -231,11 +231,12 @@ test('r280 B340 B643: on the phone a comment needs no place picked: it is on the
   // B643 (r955): no box over a document on the phone; nothing picked, its comment is on the whole of it, spoken
   await expect(page.locator('#composer')).toBeHidden()
   await page.getByRole('button', { name: 'Comment on the whole document', exact: true }).click()
-  // recording: Cancel, the time, and the button that stops it and posts the comment
-  const stop = page.getByRole('button', { name: 'Stop and post the comment', exact: true }).filter({ visible: true })
-  await expect(stop).toHaveCount(1)
+  // recording (B498): its button is the recording strip: ✕, the time, ✓ and ↑, which post it
+  await expect(placeRec(page)).toHaveCount(1)
+  await expect(sayCheck(page)).toHaveCount(1)
+  await expect(saySend(page)).toHaveCount(1)
   await sayCancel(page).click()
-  await expect(stop).toHaveCount(0)
+  await expect(placeRec(page)).toHaveCount(0)
 })
 
 test("r292 r298: any comment on a document can be deleted, yours and an agent's", async ({ page, request }) => {
@@ -403,4 +404,80 @@ test('D83 #4 (r767 r774): choices ticked and then a paragraph picked: the box sa
   await sendChoices(page).click()
   await expect.poll(() => p.read('D1')).toMatch(/\[x\] Apples/i)
   await expect(partSay(page)).toHaveCount(1) // the paragraph is still what a comment goes to
+})
+
+// ---------------------------------------------------------------- B498: Voice on a place, its recording strip
+
+const TWO = `${LOOP.then}T4 doc The plan
+  First part of the plan.
+
+  Second part of the plan.
+`
+
+test('B498 r1047: on the desktop Voice beside a paragraph becomes its recording strip: ✕ cancels, ✓ puts the words in the box at this place, ↑ sends at once', async ({
+  page,
+  request,
+}) => {
+  test.skip(!isDesk(page), 'the phone sends with ✓ (below)')
+  const p = await project(request, { ...LOOP, then: TWO })
+  await page.context().grantPermissions(['microphone'])
+  await open(page, p, 'D1')
+  const first = docBlock(page, 'First part'),
+    second = docBlock(page, 'Second part')
+  const speak = async (para: typeof first) => {
+    await para.hover()
+    await para.locator(blockSay(page)).click()
+    await expect(placeRec(page)).toHaveCount(1)
+    // the box below stays as it was: the strip is at the place
+    await expect(page.locator('#composer [role="status"]').filter({ visible: true })).toHaveCount(0)
+    await expect(placeRec(page)).toContainText(/0:0[1-9]/, { timeout: 15000 })
+  }
+  // ✕: nothing sent, the buttons are back
+  await speak(first)
+  await sayCancel(page).click()
+  await expect(placeRec(page)).toHaveCount(0)
+  await expect(page.getByText('Recording discarded')).toBeVisible()
+  await expect(threadCounts(page)).toHaveCount(0)
+  // ↑: sent at once, its count on the paragraph, the box empty
+  await speak(first)
+  await saySend(page).click()
+  await expect(placeRec(page)).toHaveCount(0)
+  await expect(first.locator('[data-thread-count]')).toHaveCount(1, { timeout: 2500 })
+  await expect(box(page)).toHaveValue('')
+  // ✓: the voice note goes into the box below, which comments on this paragraph; it waits beside it, not sent
+  await speak(second)
+  await sayCheck(page).click()
+  await expect(placeRec(page)).toHaveCount(0)
+  // the box holds its quote line and the voice note, and says a comment on D1 waits there
+  await expect(box(page)).toHaveValue(/Second part/)
+  await expect(boxLine(page)).toContainText('1 comment on D1 not sent')
+  await expect(draftFiles(page)).toHaveCount(1)
+  await expect(second.locator('[data-thread-count]')).toHaveCount(1)
+})
+
+test('B498 r1047: on the phone the row under a paragraph picked speaks (✓ sends: no box over a document) or opens the box to write', async ({
+  page,
+  request,
+}) => {
+  test.skip(isDesk(page), 'the desktop puts the words in the box with ✓ (above)')
+  const p = await project(request, { ...LOOP, then: TWO })
+  await page.context().grantPermissions(['microphone'])
+  await open(page, p, 'D1')
+  await docBlock(page, 'First part').click()
+  await partSay(page).click()
+  await expect(placeRec(page)).toContainText(/0:0[1-9]/, { timeout: 15000 })
+  await expect(page.locator('#composer')).toBeHidden()
+  await sayCheck(page).click() // ✓ sends it
+  await expect(placeRec(page)).toHaveCount(0)
+  await expect(threadCounts(page)).toHaveCount(1, { timeout: 2500 })
+  await expect(page.locator('#composer')).toBeHidden()
+  // Comment under the place picked: the box comes to write about it, and goes once it is sent
+  await docBlock(page, 'Second part').click()
+  await docBlocks(page).getByRole('button', { name: 'Comment', exact: true }).filter({ visible: true }).click()
+  await expect(box(page)).toBeVisible()
+  await expect(boxLine(page)).toContainText('Comment on D1')
+  await box(page).fill('Which part comes first?')
+  await page.keyboard.press('Shift+Enter')
+  await expect(page.locator('#composer')).toBeHidden()
+  await expect.poll(() => p.read('D1')).toContain('Which part comes first?')
 })

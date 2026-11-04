@@ -16,7 +16,7 @@ export const boxAux = (page: Page) => page.locator('#composer [data-box="aux"]')
 export const docBlocks = (page: Page) => page.locator('[data-doc-blocks]').filter({ visible: true }).first()
 export const docBlock = (page: Page, words: string) => docBlocks(page).locator('section[data-key]').filter({ hasText: words })
 /** A block's comment counts: thread chips on the desktop, the block's total on the phone. */
-export const THREAD_COUNTS = 'button[data-thread-count], button[aria-label$=" comment"], button[aria-label$=" comments"]'
+export const THREAD_COUNTS = 'button[data-thread-count], button[aria-label$=" comment"]:not([aria-label="Voice comment"]), button[aria-label$=" comments"]'
 export const threadCounts = (page: Page) => shown(page.locator(THREAD_COUNTS))
 /** The comments' own column beside a document. */
 export const commentRail = (page: Page) => page.locator('aside[aria-label="Comments"]')
@@ -96,8 +96,9 @@ export const partPick = (page: Page) => shown(page.locator('[data-part-pick]'))
 /** The speak button of the part that quotes these words. */
 export const partSayFor = (page: Page, quote: string) =>
   shown(page.locator(`[data-part-say][data-quote="${quote}"]`))
-/** A part's speak button while it records: Stop. */
-export const partStop = (page: Page) => shown(page.locator('[data-part-say].bg-red-600'))
+/** A part's speak button while it records: ✓ on its recording strip (it stops it: the desktop's words into the box,
+ * the phone's posted; B498). */
+export const partStop = (page: Page) => shown(page.locator('[data-place-rec] [data-part-say]'))
 /** The outline round a part (its comments under the pointer or open, or it picked), by the part's key. */
 export const partRing = (page: Page, key?: string) => page.locator(key == null ? '[data-ring]' : `[data-ring="${key}"]`)
 /** The comments of a part, open under it. */
@@ -109,8 +110,12 @@ export const pageCount = (page: Page, key: string) =>
 /** Comment mode (the desktop): a click on the page picks a part instead of working it. */
 export const commentMode = (page: Page) =>
   page.locator('[data-part="pane"] > header').getByRole('button', { name: /^Comment/ })
-/** Under a part picked on the phone: type instead, or cancel the recording. */
-export const sayCancel = (page: Page) => shown(page.getByRole('button', { name: 'Cancel', exact: true }))
+/** A place's recording strip (B498): ✕ cancels, ✓ stops (the desktop's words into the box, the phone's posted), ↑
+ * sends at once. */
+export const placeRec = (page: Page) => shown(page.locator('[data-place-rec]'))
+export const sayCancel = (page: Page) => placeRec(page).getByRole('button', { name: 'Cancel', exact: true })
+export const sayCheck = (page: Page) => placeRec(page).getByRole('button', { name: /^Stop(:| and post)/ })
+export const saySend = (page: Page) => placeRec(page).getByRole('button', { name: 'Stop and send', exact: true })
 /** Taska answering a comment slowly: what the page sends with one waits this long first. */
 export const slowComments = (page: Page, ms: number) =>
   page.route(/\/api\/commands\b/, async (route) => {

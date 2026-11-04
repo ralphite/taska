@@ -5,7 +5,7 @@
 // highlighted row's preview beside it, and the keys at the foot. Props only; it sits in the page's sheet.
 
 import { useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode, type RefObject } from 'react'
-import { RecBar } from '../features/composer/Composer'
+import { RecBar } from '../ui/PlaceVoice'
 import { DraftWords } from '../features/composer/Doubts'
 import { CHIP, ViewBar } from '../features/list/ViewBar'
 import type { FindKind, Found } from '../model/find'

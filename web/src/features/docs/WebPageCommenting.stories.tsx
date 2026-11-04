@@ -17,7 +17,7 @@ const saving = { ...WEB, blocks: WEB.blocks.map((b, i) => (i ? b : { ...b, comme
 
 /** The desktop's Comment mode: the part under the pointer is outlined, with its speak and comment buttons. */
 export const WebPageCommentMode: Story = { ...one({ inspect: true }, WEB, false), name: 'Comment mode' }
-/** A part picked to comment on: its amber ring (the phone's row to speak or type under it). */
+/** A part picked to comment on: its amber ring, its Voice and Comment (on the phone a row under it). */
 export const WebPagePartPicked: Story = { ...one({ quote: B }), name: 'A part picked' }
 export const WebPageRecording: Story = { ...one({ spoken: B }), name: 'A part picked, speaking' }
 export const WebPageCommentOpen: Story = { ...one({ threads: [tk(a)] }), name: 'A comment open' }

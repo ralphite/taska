@@ -16,14 +16,16 @@ import { clock } from '../model/time'
 import type { Doc, Item } from '../model/types'
 import type { NotSent } from '../model/voiceComments'
 import { PaneFrame } from '../ui/PaneFrame'
+import { PLACE_LEVELS, RecBar } from '../ui/PlaceVoice'
 import { Sheet, SheetLayout } from '../ui/Sheet'
 import { DIAGRAMS, PICTURE, T, item, modelOf } from './fixtures'
 
 const no = () => {}
-/** How long a voice comment has recorded, as the page's own clock writes it. */
-const RECORDED = <>{clock(4000)}</>
+/** A voice comment recording: how long, as the page's own clock writes it, and its level lately (B498's strip). */
+const LEVELS = [0.3, 0.75, 0.5, 0.95, 0.4, 0.65, 0.2, 0.85, 0.55, 0.35, 0.9, 0.6]
+export const recMeter = (desk: boolean) => <RecBar time={clock(2000)} levels={LEVELS.slice(-(desk ? PLACE_LEVELS.desk : PLACE_LEVELS.phone))} />
 
-export const docOn: DocEvents = { copyDoc: no, ref: no, picture: no, play: no, words: no, view: no, edit: no, move: no, takeOff: no, remove: no, menu: no, resolve: no, reply: no, goItem: no, toggle: no, away: no, pick: no, say: no, sayCancel: no, type: no, moveDoc: no, deleteDoc: no, circle: no, editDoc: no, whole: no, tick: no, modifyTicks: no, sendTicks: no }
+export const docOn: DocEvents = { copyDoc: no, ref: no, picture: no, play: no, words: no, view: no, edit: no, move: no, takeOff: no, remove: no, menu: no, resolve: no, reply: no, goItem: no, toggle: no, away: no, pick: no, say: no, sayCancel: no, sayCheck: no, saySend: no, type: no, moveDoc: no, deleteDoc: no, circle: no, editDoc: no, whole: no, tick: no, modifyTicks: no, sendTicks: no }
 
 /** How you have the document open, and what is going on around it. */
 export interface DocHere {
@@ -82,11 +84,12 @@ export function docAt(d: Doc, desk: boolean, h: DocHere = {}) {
         desk={desk}
         inspect={!!h.inspect}
         renderThread={(tk, rail) => <WebThread card={w.cards[tk]} rail={rail} replying={v.reply === tk} asking={w.asking} env={env} on={docOn} />}
-        on={{ pick: no, say: no, esc: no, toggle: no, away: no }}
+        meter={recMeter(desk)}
+        on={{ pick: no, comment: no, say: no, cancel: no, check: no, send: no, esc: no, toggle: no, away: no }}
       />
     )
   }
-  const view = <DocView facts={facts} env={env} on={docOn} page={page} recTime={RECORDED} lasso={h.circle ? <Lasso onDrawn={no} /> : null} />
+  const view = <DocView facts={facts} env={env} on={docOn} page={page} meter={recMeter(desk)} lasso={h.circle ? <Lasso onDrawn={no} /> : null} />
   if (h.viewOnly) return view
   return desk ? (
     <div className="flex h-full flex-col">

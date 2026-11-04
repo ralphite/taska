@@ -5,7 +5,7 @@
 
 import { useRef, type ReactNode } from 'react'
 import { flushSync } from 'react-dom'
-import { RecBar } from '../features/composer/Composer'
+import { RecBar } from '../ui/PlaceVoice'
 import { BOX_WORDS_LOOK, Doubts, DraftWords } from '../features/composer/Doubts'
 import { ItemRow, type RowEvents, type RowFacts, type RowLook } from '../features/list/ListRows'
 import { ViewBar } from '../features/list/ViewBar'

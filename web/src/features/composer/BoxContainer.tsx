@@ -24,8 +24,11 @@ export function BoxContainer({ route, composePage, boxRef, bare = false }: { rou
     if (!bare) stores.box.getState().setShown(key, role.scope)
   }, [app, stores, key, role.scope, bare])
   const recording = useStoreValue(stores.recording, (s) => s.rec)
-  // the recording shows in the box wherever you are; it goes to the draft it was started in
-  const rec = recording && recording.slug === route.slug ? { time: clock(recording.ms), levels: recording.levels, from: recording.from } : null
+  // the recording shows in the box wherever you are (it goes to the draft it was started in), except a voice comment
+  // about a place in sight: its own strip is there, and the box stays as it was (B498)
+  const about = recording?.about
+  const atPlace = !!about && (about.bar || (route.place.kind === 'doc' && route.place.d === about.d))
+  const rec = recording && recording.slug === route.slug && !atPlace ? { time: clock(recording.ms), levels: recording.levels, from: recording.from } : null
   const drafts = useStoreValue(stores.drafts, (s) => s.bySlug[route.slug]) || EMPTY
   const text = drafts[key] ?? ''
   const shown = shownBox(role, { mode, text, key, recordingFor: recording && rec ? recording.key : null })

@@ -1,9 +1,11 @@
 // The bar on selected words, with the page: what is selected (a document's passage, an item's words and its talk,
 // what you said), where it is, and what the bar does with it. It follows the selection, the scrolling and the window;
-// while it records it stays where the words were.
+// while it records it is the recording strip, where the words were.
 
 import { useEffect, useReducer, useRef } from 'react'
-import { useServices, useStores, useStoreValue } from '../../app/context'
+import { useLayout, useServices, useStores, useStoreValue } from '../../app/context'
+import { RecMeter } from '../../app/RecMeter'
+import { PLACE_LEVELS } from '../../ui/PlaceVoice'
 import { useProjectModel, type ProjectRoute } from '../../app/hooks'
 import { SelectionBar, type Box } from './SelectionBar'
 
@@ -43,7 +45,8 @@ function fixable(byId: ReadonlyMap<string, { text: string; v?: number }> | undef
 }
 
 export function SelectionBarContainer({ route }: { route: ProjectRoute }) {
-  const app = useServices('box', 'docVoice', 'fields')
+  const app = useServices('box', 'docVoice', 'fields', 'voice')
+  const desk = useLayout() === 'desk'
   const stores = useStores('box', 'docView', 'recording')
   const m = useProjectModel(route.slug)
   const rec = useStoreValue(stores.recording, (s) => s.rec)
@@ -94,6 +97,8 @@ export function SelectionBarContainer({ route }: { route: ProjectRoute }) {
     <SelectionBar
       at={at}
       recording={on}
+      desk={desk}
+      meter={<RecMeter n={desk ? PLACE_LEVELS.desk : PLACE_LEVELS.phone} />}
       comment={!rec && !!s?.key && doc != null}
       fix={!!fixNow}
       on={{
@@ -114,6 +119,10 @@ export function SelectionBarContainer({ route }: { route: ProjectRoute }) {
           if (pick?.key) stores.docView.getState().pick({ quote: { key: pick.key, text: pick.text }, sel: new Set(), reply: null })
           app.fields.get('box')?.focus({ preventScroll: true })
         },
+        // its recording strip: ✕, ✓ (the desktop's box, the phone sends) and ↑ (B498)
+        cancel: () => void app.voice.cancel(),
+        check: () => void app.docVoice.check(),
+        send: () => void app.docVoice.sendNow(),
         fix: () => {
           if (!fixNow) return
           app.box.correctStart(fixNow.id, fixNow.wrong, fixNow.v)

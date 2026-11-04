@@ -1,12 +1,14 @@
 // A document that is a web page an agent wrote: it runs as it is, in a frame of its own (pageHelper tells Taska what
 // happens in it). Over it, as over a Markdown document: in Comment mode (the desktop) the part under the pointer is
 // outlined with the speak and comment buttons at its corner; a tap picks a part (the phone); a picked part has the
-// amber ring and the box says what you comment on; each thread's count sits in its part's corner, and opens its
+// amber ring, its speak and comment buttons (on the phone a row under it; speaking, they become its recording strip,
+// B498) and the box says what you comment on; each thread's count sits in its part's corner, and opens its
 // comments under it. Words selected are only selected, as on any page. Props, and the page's own state.
 
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
 import { plainQuote } from '../../model/markdown'
 import { Icon } from '../../ui/Icon'
+import { PlaceVoice, PlaceVoiceRow } from '../../ui/PlaceVoice'
 import { PAGE_HELPER } from './pageHelper'
 import { MUTED } from '../../ui/tones'
 
@@ -31,7 +33,13 @@ export interface PageThread {
 
 export interface WebPageEvents {
   pick(part: { key: string; text: string }): void
+  /** a part's Comment: write about it in the box */
+  comment(part: { key: string; text: string }): void
+  /** a part's Voice; its recording strip's ✕, ✓ and ↑ (B498) */
   say(part: { key: string; text: string }): void
+  cancel(): void
+  check(): void
+  send(): void
   esc(): void
   toggle(tk: string): void
   /** a click away from the open comments */
@@ -59,14 +67,16 @@ function inside(p: XY, a: XY, b: XY, c: XY) {
   return !((d1 < 0 || d2 < 0 || d3 < 0) && (d1 > 0 || d2 > 0 || d3 > 0))
 }
 
-export function WebPage({ title, html, threads, held, rec = false, open, desk, inspect, renderThread, on }: {
+export function WebPage({ title, html, threads, held, rec = false, meter, open, desk, inspect, renderThread, on }: {
   title: string
   html: string
   threads: PageThread[]
   /** the part picked to comment on */
   held: { key: string; text: string } | null
-  /** a voice comment about the part held is being recorded: its mic is Stop */
+  /** a voice comment about the part held is being recorded: its buttons are the recording strip */
   rec?: boolean
+  /** the recording's time and level */
+  meter?: ReactNode
   /** the thread open */
   open: string | null
   desk: boolean
@@ -262,13 +272,13 @@ export function WebPage({ title, html, threads, held, rec = false, open, desk, i
   )
   // the part a comment is on is outlined while its count is under the pointer and while it is open
   const amber = [...new Set([lit, openKey])].filter((k): k is string => !!k && k !== held?.key && !!rects[k])
-  const btn = 'grid size-7 place-items-center rounded-lg bg-white text-zinc-500 shadow-sm ring-1 ring-zinc-900/10 hover:text-zinc-900 dark:bg-zinc-800 dark:text-zinc-300 dark:ring-white/10 dark:hover:text-white'
+  const marks = (p: { key: string; text: string }) => ({ say: { 'data-part-say': '', 'data-key': p.key, 'data-quote': p.text }, comment: { 'data-part-pick': '', 'data-key': p.key, 'data-quote': p.text } })
+  const voiceOn = (p: { key: string; text: string }) => ({ say: () => on.say(p), comment: () => on.comment(p), cancel: on.cancel, check: on.check, send: on.send })
   const buttons = (p: { key: string; text: string }, r: Box, hovering: boolean) => {
     const at = btnsAt(r, counts)
-    const stop = rec && !hovering
     return (
       <div
-        className="absolute z-20 flex flex-row gap-1"
+        className="absolute z-20 flex h-7 w-15 items-center justify-end"
         style={{ left: at.x, top: at.y }}
         // whether the pointer is on them, whichever part they are for (r799: else it says so after they moved on);
         // one wait to let the part go at a time (r799: an earlier one let go the part the pointer went to)
@@ -286,15 +296,9 @@ export function WebPage({ title, html, threads, held, rec = false, open, desk, i
           }, 150)
         }}
       >
-        {/* the part spoken about keeps its buttons right there; the mic pressed turns into Stop */}
-        <button data-part-say data-key={p.key} data-quote={p.text} onClick={() => on.say(p)} title={stop ? 'Stop' : 'Voice comment'} className={stop ? 'grid size-7 place-items-center rounded-lg bg-red-600 text-white shadow-sm ring-1 ring-red-700' : btn}>
-          <Icon n={stop ? 'stop' : 'mic'} c="size-4" />
-        </button>
-        {stop ? null : (
-          <button data-part-pick data-key={p.key} data-quote={p.text} onClick={() => on.pick(p)} title="Comment" className={btn}>
-            <Icon n="comment" c="size-4" />
-          </button>
-        )}
+        {/* the part spoken about keeps its buttons right there; speaking, they are its recording strip, which ends
+            where they end (B498) */}
+        <PlaceVoice rec={rec && !hovering} meter={meter} {...marks(p)} on={voiceOn(p)} />
       </div>
     )
   }
@@ -318,6 +322,15 @@ export function WebPage({ title, html, threads, held, rec = false, open, desk, i
       {held && rects[held.key] ? ring(held.key, rects[held.key], 'ring-amber-300') : null}
       {amber.map((k) => ring(k, rects[k], 'ring-amber-400'))}
       {desk && held && rects[held.key] ? buttons(held, rects[held.key], false) : hover && mode === true && !held ? buttons(hover, hover.rect, true) : null}
+      {!desk && held && rects[held.key] ? (
+        // the phone's row under the part picked, over the page: speak or write about it (B498)
+        <div
+          className="absolute inset-x-3 z-20 rounded-xl bg-white p-1.5 shadow-sm ring-1 ring-zinc-900/10 dark:bg-zinc-900 dark:ring-white/10"
+          style={{ top: rects[held.key].y + rects[held.key].h + 12 }}
+        >
+          <PlaceVoiceRow rec={rec} meter={meter} {...marks(held)} on={voiceOn(held)} />
+        </div>
+      ) : null}
       {counts.map((c) => (
         <button
           key={c.tk}

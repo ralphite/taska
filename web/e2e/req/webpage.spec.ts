@@ -1,6 +1,6 @@
 // Yadong's requirements on web page documents (F432; D29, "Documents"; T475, D45): each check is named by the codes of
 // his inputs, so a change that breaks one is stopped before it ships with his own words.
-// guards: src/features/docs/ src/app/docs/ src/app/voice/ src/model/docs.ts src/model/voiceComments.ts src/app/actions.ts src/app/keys.ts
+// guards: src/features/docs/ src/app/docs/ src/app/voice/ src/model/docs.ts src/model/voiceComments.ts src/app/actions.ts src/app/keys.ts src/ui/PlaceVoice.tsx src/app/RecMeter.tsx
 import { expect, test, type Page } from '@playwright/test'
 import { LOOP, isDesk, open, project } from '../seed'
 import {
