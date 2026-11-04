@@ -1,16 +1,16 @@
 // The sidebar and the phone's drawer: its projects, under the pointer, from the keys, pressed; the drawer's foot; loading; a project not listed yet.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { After, Frame, Frames } from '../../stories/Frames'
-import { side, sideOn } from '../../stories/sideFixtures'
-import { Sidebar } from './Sidebar'
-import { SIDE_KEYS } from './sideLinks'
+import { side } from '../../stories/sideFixtures'
 import { mark } from '../../stories/sidebarFixtures'
 
 export default { title: 'Components/Around the page/Sidebar/The sidebar' } satisfies Meta
 type Story = StoryObj
 
 /** The desktop's sidebar (New input lit while you write one) and the phone's drawer: the projects in your order, each
- * with what needs you and how many are open; Documents, Activity, Deleted; the foot. */
+ * with what needs you and how many are open; Documents, Activity, Deleted; the foot. On the desktop Hide sidebar folds
+ * it to the rail (Show sidebar unfolds it) and its right edge drags it wider or narrower (a double-click puts it back);
+ * New project names one. What needs the rest of the page (a project, Settings, Search) shows in the Actions panel. */
 export const Projects: Story = { name: 'Sidebar and phone drawer', render: () => <Frames phoneWidth={320} deskWidth={240} height={760}>{(layout) => side(layout === 'phone', { composing: true })}</Frames> }
 /** A project under the pointer, from the keys, pressed, dragged to a new place, and one an item from the list is
  * dragged over. */
@@ -46,7 +46,7 @@ export const ProjectsLoading: Story = { name: 'Projects loading (phone drawer)',
 /** Before the projects were ever listed in this browser. */
 export const NotListedYet: Story = {
   name: 'Not listed yet',
-  render: () => <Frames phoneWidth={320} deskWidth={240} height={420}>{(layout) => <Sidebar phone={layout === 'phone'} keys={SIDE_KEYS} projects={null} composing={false} links={[]} place={layout === 'phone' ? 'h-full bg-zinc-100' : 'h-full bg-zinc-50'} on={sideOn} />}</Frames>,
+  render: () => <Frames phoneWidth={320} deskWidth={240} height={420}>{(layout) => side(layout === 'phone', { loading: true, noLinks: true })}</Frames>,
 }
 // ---- more states (T639)
 /** a project in the phone's drawer pressed (a finger on it) */
