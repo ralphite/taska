@@ -79,8 +79,6 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
   const compose = route.place.kind === 'new' || (route.place.kind === 'tab' && route.tab !== 'inputs')
   const filtersOpen = useStoreValue(stores.ui, (s) => s.deskFilters)
   const set = filtersSet(route.tab, route.list)
-  // the pane, and the foot under it, take the list's column too when an item is full width (O)
-  const pane = full ? 'col-span-2 col-start-1' : 'col-start-2'
   const [footH, setFootH] = useState(0)
   const tabs = deskTabs(counts, route.tab, settings || side)
   return (
@@ -98,7 +96,7 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
         {...(compose ? { 'data-compose': '' } : {})}
         {...(duo ? { 'data-duo': '' } : {})}
         style={{ '--foot-h': footH + 'px' } as CSSProperties}
-        className="group/app relative z-10 grid h-full min-w-0 flex-1 grid-cols-[var(--list-w,360px)_minmax(0,1fr)] grid-rows-[auto_auto_auto_minmax(0,1fr)_auto] bg-white pt-[env(safe-area-inset-top)] wide:grid-cols-[var(--list-w,420px)_minmax(0,1fr)] huge:grid-cols-[var(--list-w,460px)_minmax(0,1fr)] dark:bg-zinc-950"
+        className="group/app relative z-10 grid h-full min-w-0 flex-1 grid-cols-[var(--list-w,360px)_minmax(0,1fr)] grid-rows-[auto_minmax(0,1fr)] bg-white pt-[env(safe-area-inset-top)] wide:grid-cols-[var(--list-w,420px)_minmax(0,1fr)] huge:grid-cols-[var(--list-w,460px)_minmax(0,1fr)] dark:bg-zinc-950"
       >
         <ProjectBar
           title={title}
@@ -110,28 +108,43 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
           hidden={settings}
           on={{ tab: (t) => app.nav.tab(t), agents: () => app.sheets.open({ kind: 'agents' }, { tall: true, wide: true }), notSaved: (from) => app.sheets.openFrom(from, { kind: 'not-saved' }, { focus: false }) }}
         />
-        <DeskFilters
-          tab={route.tab}
-          list={route.list}
-          set={set}
-          open={filtersOpen}
-          place="col-start-1 row-start-3"
-          hidden={settings || full || side || !(filtersOpen || set.length)}
-          on={{ ...filterEvents(app), toggle: () => stores.ui.getState().setDeskFilters(!filtersOpen) }}
-        />
-        <section data-part="items" className="col-start-1 row-span-2 row-start-4 flex min-h-0 flex-1 flex-col" hidden={settings || full}>
-          {shownSide ? <SideListContainer slug={route.slug} side={shownSide} /> : <ItemListContainer route={route} />}
-        </section>
-        <DetailContainer route={route} place={`row-span-3 row-start-2 group-data-[compose]/app:row-span-1 ${pane}`} hidden={settings} full={full} />
-        {help ? <HelpContainer route={route} place="col-span-2 col-start-1 row-span-5 row-start-1" /> : null}
-        {settings && !help ? <SettingsContainer route={route} place="col-span-2 col-start-1 row-span-5 row-start-1" prefsBox={<BoxContainer route={route} composePage={false} bare />} /> : null}
+        {/* two columns under the bar, each laid out by itself: nothing the pane shows moves the list, or the other way
+            round (B663) */}
+        <div data-part="list-column" hidden={settings || full} className="col-start-1 row-start-2 flex min-h-0 min-w-0 flex-col">
+          <DeskFilters
+            tab={route.tab}
+            list={route.list}
+            set={set}
+            open={filtersOpen}
+            place="shrink-0"
+            hidden={side || !(filtersOpen || set.length)}
+            on={{ ...filterEvents(app), toggle: () => stores.ui.getState().setDeskFilters(!filtersOpen) }}
+          />
+          <section data-part="items" className="flex min-h-0 flex-1 flex-col">
+            {shownSide ? <SideListContainer slug={route.slug} side={shownSide} /> : <ItemListContainer route={route} />}
+          </section>
+        </div>
+        {/* the pane over the box; on the New input page the pane is only its bar and the box's page fills the rest. An
+            item full width (O) takes the list's column too */}
+        <div data-part="pane-column" hidden={settings} className={`row-start-2 flex min-h-0 min-w-0 flex-col ${full ? 'col-span-2 col-start-1' : 'col-start-2'}`}>
+          <DetailContainer route={route} place="group-data-[compose]/app:flex-none" hidden={settings} full={full} />
+          <FootContainer
+            route={route}
+            composePage={compose}
+            place="group-data-duo/app:ml-[var(--duo-w,55%)] group-data-duo/app:after:left-1 group-data-[compose]/app:min-h-0 group-data-[compose]/app:flex-1"
+            hidden={settings || route.place.kind === 'side' || docEditing}
+            onHeight={setFootH}
+          />
+        </div>
+        {help ? <HelpContainer route={route} place="col-span-2 col-start-1 row-span-2 row-start-1" /> : null}
+        {settings && !help ? <SettingsContainer route={route} place="col-span-2 col-start-1 row-span-2 row-start-1" prefsBox={<BoxContainer route={route} composePage={false} bare />} /> : null}
         {settings || full ? null : (
           // the line between the list and the pane, from under the project's bar to the bottom: one line, drawn here only
           // (B573), dragged sideways like the other lines
           <Grip
             name="list"
             axis="x"
-            place="relative z-30 col-start-1 row-span-4 row-start-2 block w-px justify-self-end bg-zinc-200 after:absolute after:-inset-x-1.5 after:inset-y-0 dark:bg-zinc-800"
+            place="relative z-30 col-start-1 row-start-2 block w-px justify-self-end bg-zinc-200 after:absolute after:-inset-x-1.5 after:inset-y-0 dark:bg-zinc-800"
             measure={(el) => {
               const from = el.parentElement?.getBoundingClientRect().left ?? 0
               return { from, most: innerWidth - from }
@@ -141,13 +154,6 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
             onReset={() => stores.grips.getState().keep('list', 0)}
           />
         )}
-        <FootContainer
-          route={route}
-          composePage={compose}
-          place={`row-start-5 group-data-duo/app:ml-[var(--duo-w,55%)] group-data-duo/app:after:left-1 group-data-[compose]/app:row-span-3 group-data-[compose]/app:row-start-3 ${pane}`}
-          hidden={settings || route.place.kind === 'side' || docEditing}
-          onHeight={setFootH}
-        />
       </div>
     </div>
   )
@@ -222,7 +228,6 @@ function PhoneLayout({ route }: { route: ProjectRoute }) {
           placeholder="Search items"
           agent={agent}
           notSaved={notSaved}
-          place=""
           hidden={!under}
           searchRef={app.fields.ref('search')}
           on={{

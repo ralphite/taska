@@ -141,7 +141,6 @@ export function ListHead({
   placeholder,
   agent,
   notSaved,
-  place,
   hidden,
   searchRef,
   on,
@@ -153,7 +152,6 @@ export function ListHead({
   placeholder: string
   agent: AgentInfo | null
   notSaved: number
-  place: string
   hidden?: boolean
   /** the search field's element */
   searchRef?: (el: HTMLInputElement | null) => void
@@ -173,7 +171,7 @@ export function ListHead({
     if (el && el.value !== q && document.activeElement !== el) el.value = q
   })
   return (
-    <header data-part="list-head" data-tip-side="bottom" hidden={hidden} className={`flex h-14 shrink-0 items-center gap-1 px-2 ${place}`}>
+    <header data-part="list-head" data-tip-side="bottom" hidden={hidden} className="flex h-14 shrink-0 items-center gap-1 px-2">
       <div hidden={showSearch} className="contents">
         <button onClick={on.menu} aria-label="Projects and settings" className="flex h-12 min-w-0 flex-1 items-center gap-2.5 rounded-xl px-2.5 text-left data-pressed:bg-zinc-100 dark:data-pressed:bg-zinc-800">
           <span className="relative text-zinc-700 dark:text-zinc-300">

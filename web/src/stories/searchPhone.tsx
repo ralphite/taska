@@ -153,7 +153,6 @@ function ListPage({ onSearch }: { onSearch(): void }) {
         placeholder=""
         agent={agentInfo(SHOP, 0)}
         notSaved={0}
-        place=""
         on={{ menu() {}, agents() {}, notSaved() {}, search: onSearch, query() {}, clear() {} }}
       />
       <PhoneTabs tabs={phoneTabs(tabCounts(SHOP, 'items', NO_FILTERS, false), 'items')} filtersSet={false} showFilter on={{ tab() {}, filters() {} }} />

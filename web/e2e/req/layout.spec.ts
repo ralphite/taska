@@ -191,3 +191,31 @@ for (const [name, path, fold] of [
       expect(await shape(page), `at ${w}px`).toEqual(want[w])
     }
   })
+
+test('r1052: what the pane shows never moves the list: on the New input page the views sit right under the bar and the filters, as with an item open (B663)', async ({
+  page,
+  request,
+}) => {
+  test.skip(!isDesk(page), 'the list beside the pane is the desktop’s')
+  const p = await project(request, LOOP)
+  /** from the bottom of the project's bar to the top of the list's views */
+  const gap = async (path: string) => {
+    await open(page, p, path)
+    const viewsRow = page.locator('#list [data-views]').filter({ visible: true }).first()
+    await expect(viewsRow).toBeVisible()
+    await page.waitForTimeout(200)
+    const bar = await page.locator('nav[aria-label="This project"]').filter({ visible: true }).first().boundingBox()
+    const views = await viewsRow.boundingBox()
+    if (!bar || !views) throw new Error('not drawn')
+    return views.y - (bar.y + bar.height)
+  }
+  for (const filters of ['', '?type=task']) {
+    const withItem = await gap('T1' + filters)
+    if (!filters) expect(Math.abs(withItem), 'nothing between the bar and the views').toBeLessThan(1)
+    else expect(withItem, 'the filters between them').toBeGreaterThan(20)
+    for (const path of ['', 'new']) {
+      const here = await gap(path + filters)
+      expect(Math.abs(here - withItem), `${path || 'the list'}${filters}: the views where an item open has them`).toBeLessThan(1)
+    }
+  }
+})

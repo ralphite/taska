@@ -93,7 +93,6 @@ function LiveHead({ desk, h }: { desk: boolean; h: HeadHere }) {
         placeholder="Search items"
         agent={agent}
         notSaved={h.notSaved ?? 0}
-        place=""
         on={{
           menu: on.menu,
           agents: on.agents,
