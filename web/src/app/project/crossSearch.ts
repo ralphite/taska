@@ -1,5 +1,7 @@
-// Searching the other projects for the list's search words: a while after you stop typing, once per words.
+// Searching the other projects for the list's search words: a while after you stop typing, once per words; out of
+// reach, asked again until Taska answers or the words change (T424).
 
+import { Abandoned, untilAnswered } from '../../api/http'
 import type { TaskaApi } from '../../api/taska'
 import type { SearchStore } from '../../stores/search'
 
@@ -19,10 +21,12 @@ export class CrossSearch {
     clearTimeout(this.timer)
     if (!q) return
     this.timer = window.setTimeout(async () => {
+      const s = () => this.store.getState()
+      const ask = () => (s().q === q ? this.api.search(q, slug) : Promise.reject(new Abandoned()))
       try {
-        this.store.getState().answered(q, await this.api.search(q, slug), false)
-      } catch {
-        this.store.getState().answered(q, null, true)
+        s().answered(q, await untilAnswered(ask, () => s().retrying(q)), false)
+      } catch (ex) {
+        if (!(ex instanceof Abandoned)) s().answered(q, null, true)
       }
     }, wait)
   }

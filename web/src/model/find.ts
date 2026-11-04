@@ -83,12 +83,10 @@ export function foundGroups(a: FindAnswer, here: string, order: readonly string[
 export const foundKinds = (a: FindAnswer): [FindKind, string, number][] =>
   FIND_KINDS.map(([k, label]) => [k, label, a.found.filter((x) => x.kind === k).length] as [FindKind, string, number]).filter(([, , n]) => n > 0)
 
-/** The line under an input or a document: "Oct 23 · became F001", "Today 09:12", "On F001". */
+/** The line under an input or a document: "Oct 23 09:12 · became F001", "09:12", "On F001". */
 export function foundMeta(x: Found, now: number): string {
   if (x.kind === 'docs') return x.on ? `On ${x.on}` : ''
-  const t = when(x.t, now)
-  const day = /^\d\d:\d\d$/.test(t) ? `Today ${t}` : t
-  return [day, x.became ? `became ${x.became}` : ''].filter(Boolean).join(' · ')
+  return [when(x.t, now), x.became ? `became ${x.became}` : ''].filter(Boolean).join(' · ')
 }
 
 /** The address a result opens: an item its page, a document its own, an input the item it became (none: the inputs

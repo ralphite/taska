@@ -3,6 +3,7 @@
 // document, else its input), and what an Undo of one of your changes says.
 
 import { codeOf, type ProjectModel } from './project'
+import { when } from './time'
 import type { LogRow, UndoEntry } from './types'
 import { DID, STATUS_WORD, WHEN_WORD, inputCode, whoName } from './words'
 
@@ -17,7 +18,7 @@ export interface LogSentence {
   time: string
 }
 
-type World = Pick<ProjectModel, 'byN' | 'byId' | 'docs' | 'width'>
+type World = Pick<ProjectModel, 'byN' | 'byId' | 'docs' | 'width' | 'at'>
 
 const FLD = 'status|when|pri|type|archived|parent|title|body|next'
 const SAYS: Record<string, string> = {
@@ -89,7 +90,7 @@ export function logSentence(m: World, e: LogRow): LogSentence {
     who: e.who === 'you' ? '' : whoName(e.who),
     session: e.ses || '',
     parts: linked(m, said(m, e.what)),
-    time: `${e.t.slice(5, 10)} ${e.t.slice(11, 16)}`,
+    time: when(e.t, m.at),
   }
 }
 

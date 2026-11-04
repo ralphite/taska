@@ -79,3 +79,6 @@ export const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' :
 /** An input's number as the page shows it: r315 reads #315 (so it is not taken for rule R315). */
 export const inputCode = (id: string | null | undefined) => String(id || '').replace(/^r(\d+)$/, '#$1')
 
+
+/** A search that found nothing, said one way everywhere. */
+export const noMatches = (q: string) => `No matches for “${q.trim()}”`

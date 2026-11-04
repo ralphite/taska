@@ -1,5 +1,6 @@
-// The search in the other projects: the words asked, what came back (null while it is asked), whether it failed, and
-// the last answer whatever its words (shown while the next is asked, as on the home page).
+// The search in the other projects: the words asked, what came back (null while it is asked), whether Taska refused
+// it or is out of reach (asked again), and the last answer whatever its words (shown while the next is asked, as on
+// the home page).
 
 import { createStore, type StoreApi } from 'zustand/vanilla'
 import type { SearchHit } from '../model/types'
@@ -8,8 +9,11 @@ export interface SearchState {
   q: string
   list: SearchHit[] | null
   failed: boolean
+  waiting: boolean
   last: SearchHit[] | null
   asked(q: string): void
+  /** Taska out of reach while `q` is asked: it is asked again */
+  retrying(q: string): void
   answered(q: string, list: SearchHit[] | null, failed: boolean): void
 }
 
@@ -20,10 +24,14 @@ export function createSearchStore(): SearchStore {
     q: '',
     list: null,
     failed: false,
+    waiting: false,
     last: null,
-    asked: (q) => set({ q, list: null, failed: false }),
+    asked: (q) => set({ q, list: null, failed: false, waiting: false }),
+    retrying: (q) => {
+      if (get().q === q) set({ waiting: true })
+    },
     answered: (q, list, failed) => {
-      if (get().q === q) set({ list, failed, last: list ?? [] })
+      if (get().q === q) set({ list, failed, waiting: false, last: list ?? [] })
     },
   }))
 }

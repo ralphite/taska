@@ -6,7 +6,7 @@
 // long so far, and shows until pressed again. Undo, just after sending, always shows. What is still on its way, and a voice note being recorded, are drawn as lines of the same shape. Props only.
 
 import type { ReactNode, Ref } from 'react'
-import { BECAME_WORD as W, whenParts, type Became, type InputLine, type ItemRef } from '../model/became'
+import { BECAME_WORD as W, type Became, type InputLine, type ItemRef } from '../model/became'
 import { voiceMark } from '../model/inputs'
 import { DraftMark, Hit } from './bits'
 import { Icon, StateIcon } from './Icon'
@@ -306,7 +306,7 @@ export function InputRow({ x, words, text, files, lit = false, undo = false, rec
       </button>
     ) : null
   const filesRow = files ? <div className={`flex flex-wrap items-end gap-2 ${r.text ? 'mt-1.5' : 'mt-1'}`}>{files}</div> : null
-  const { time } = whenParts(x.when)
+  const { time } = x
   if (look === 'rail')
     return (
       <article ref={rowRef} className={`${RAIL_ROW} ${lit ? LIT : ''}`}>

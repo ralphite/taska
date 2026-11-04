@@ -2,22 +2,27 @@
 // search there says it is searching, that it found nothing there, or that it could not search. Props only.
 
 import type { SearchHit } from '../model/types'
+import { searchWords } from '../model/visible'
 import { hitWhere, TAB_WORD, type Tab } from '../model/words'
-import { ProjTile } from './bits'
+import { Hit, ProjTile } from './bits'
 import { LINK_BTN } from './tones'
 
 export interface CrossFacts {
   list: SearchHit[] | null
+  /** Taska refused the search */
   failed: boolean
+  /** Taska out of reach: asking again */
+  waiting?: boolean
   q: string
 }
 
 function CrossHits({ cross, tone, onGo }: { cross: CrossFacts; tone(slug: string): string; onGo(href: string): void }) {
   const list = cross.list
+  const words = searchWords(cross.q)
   if (!list?.length)
     return (
       <p className="mt-4 px-3 text-center text-xs text-zinc-500 dark:text-zinc-400">
-        {cross.failed ? "Couldn't search other projects" : list ? 'Not in other projects' : 'Searching other projects…'}
+        {cross.failed ? "Couldn't search other projects" : list ? 'Not in other projects' : cross.waiting ? 'Taska is out of reach, retrying…' : 'Searching other projects…'}
       </p>
     )
   return (
@@ -42,7 +47,10 @@ function CrossHits({ cross, tone, onGo }: { cross: CrossFacts; tone(slug: string
             <ProjTile title={x.ptitle || x.project} tone={tone(x.project)} cls="size-5 rounded text-[10px]" />
             <span className="min-w-0 flex-1">
               <span className="block truncate text-sm">
-                <span className="font-mono text-xs font-bold text-zinc-500 dark:text-zinc-400">{x.code}</span> {x.title}
+                <span className="font-mono text-xs font-bold text-zinc-500 dark:text-zinc-400">
+                  <Hit text={x.code} words={words} />
+                </span>{' '}
+                <Hit text={x.title} words={words} />
               </span>
               <span className="block truncate text-xs text-zinc-500 dark:text-zinc-400">
                 {x.ptitle || x.project}

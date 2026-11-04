@@ -10,6 +10,7 @@ import { InputRow, OutgoingRow as OutgoingLine, RecordingRow } from '../../ui/In
 import { Rich } from '../../ui/Markdown'
 import type { InlineWorld } from '../../ui/markdown/inline'
 import { useMarks } from '../../ui/marks'
+import { noMatches } from '../../model/words'
 
 export interface InputFacts extends InputLine {
   /** gone to: lit up for a moment, brought into view ('shown') or where the list is ('still') */
@@ -132,7 +133,7 @@ export function InputsView({ hidden, rows, more, outgoing, words, world, files, 
         </>
       ) : outgoing.length || recording ? null : (
         <Empty>
-          {words.length ? 'No matching inputs' : 'No inputs yet.'}
+          {words.length ? noMatches(words.join(' ')) : 'No inputs yet'}
           {words.length ? <span className="mt-3 flex flex-col">{hints}</span> : null}
         </Empty>
       )}

@@ -32,7 +32,7 @@ function Card({ title, children, wide = false, note, cls = '' }: { title: string
 /** A list of names with a bar each, the longest the largest. */
 function Bars({ rows }: { rows: Pair[] }) {
   const max = Math.max(1, ...rows.map((r) => r[1]))
-  if (!rows.length) return <p className={`text-sm ${MUTED}`}>Nothing yet.</p>
+  if (!rows.length) return <p className={`text-sm ${MUTED}`}>Nothing yet</p>
   return (
     <ul className="flex flex-col gap-1.5 text-sm">
       {rows.map(([k, n]) => (
@@ -225,7 +225,7 @@ export function Dashboard({ d, err, range, onRange, rounds, now, onRounds, onRet
           <div className="grid gap-3 lg:grid-cols-2">
             <Rounds all={d.rounds} range={rounds} now={now} onRange={onRounds} />
             <Card title={d.hourly ? 'By hour' : 'By day'} wide>
-              {d.span.every(([, n]) => !n) ? <p className={`text-sm ${MUTED}`}>Nothing yet.</p> : null}
+              {d.span.every(([, n]) => !n) ? <p className={`text-sm ${MUTED}`}>Nothing yet</p> : null}
               <div className={`flex h-36 items-end gap-0.5 ${d.span.every(([, n]) => !n) ? 'hidden' : ''}`}>
                 {d.span.map(([k, n]) => (
                   <div key={k} className="group relative flex h-full min-w-0 flex-1 flex-col justify-end" title={`${k}: ${n}`}>
@@ -259,7 +259,7 @@ export function Dashboard({ d, err, range, onRange, rounds, now, onRounds, onRet
                   ))}
                 </ul>
               ) : (
-                <p className={`text-sm ${MUTED}`}>Nothing yet.</p>
+                <p className={`text-sm ${MUTED}`}>Nothing yet</p>
               )}
             </Card>
             <Card title="Where">
@@ -330,7 +330,7 @@ export function Dashboard({ d, err, range, onRange, rounds, now, onRounds, onRet
                   </tbody>
                 </table>
               ) : (
-                <p className={`text-sm ${MUTED}`}>Nothing yet.</p>
+                <p className={`text-sm ${MUTED}`}>Nothing yet</p>
               )}
             </Card>
             <Card title="Analyses" wide>

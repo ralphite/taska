@@ -9,6 +9,7 @@ import { NeedsCount, ProjTile, Skeleton } from '../../ui/bits'
 import { StateIcon } from '../../ui/Icon'
 import type { SheetParts } from '../../ui/Sheet'
 import { FIELD, MUTED, TYPE_TEXT } from '../../ui/tones'
+import { noMatches } from '../../model/words'
 
 /** The keys sheet's groups: [group, [keys, what][]] (from the table of actions). */
 export type KeyGroups = [string, [string, string][]][]
@@ -128,7 +129,7 @@ export function Switcher({ rows, loading, onOpen }: { rows: SwitchRow[]; loading
             </a>
           ))
         ) : (
-          loading ? <Skeleton shape="tile" /> : <p className="px-3 py-2 text-sm text-zinc-500">No project matches</p>
+          loading ? <Skeleton shape="tile" /> : <p className="px-3 py-2 text-sm text-zinc-500">{noMatches(q)}</p>
         )}
       </div>
     </>
@@ -213,7 +214,7 @@ export function Palette<Id extends string>({ items, code, open, commands: all, d
             </button>
           ))
         ) : (
-          <p className="px-3 py-2 text-sm text-zinc-500 dark:text-zinc-400">Nothing matches</p>
+          <p className="px-3 py-2 text-sm text-zinc-500 dark:text-zinc-400">{noMatches(q0)}</p>
         )}
       </div>
     </>

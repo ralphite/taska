@@ -8,6 +8,7 @@ import { ArchiveAllLine, HeldRow, HiddenKidsLine, ItemRow, NeedsMoreLine, NeedsR
 import type { ViewChip, ZoneKind } from './rows'
 import { ViewBar, type OwnViewChip } from './ViewBar'
 import { useRowSwipe, type RowSwipe } from './rowSwipe'
+import { noMatches } from '../../model/words'
 
 export type DrawnRow =
   | { kind: 'item'; key: string; it: Item; depth: number; band: string; foldable: boolean; folded: boolean; facts: RowFacts; look: RowLook }
@@ -163,8 +164,10 @@ export const ItemList = forwardRef<HTMLDivElement, ItemListProps>(function ItemL
 })
 
 /** The words for an empty list. */
-export function EmptyList({ why, status, organizerOn, onReset, onConnect, hints }: {
+export function EmptyList({ why, q = '', status, organizerOn, onReset, onConnect, hints }: {
   why: string
+  /** the search's words (none: only filters left nothing) */
+  q?: string
   status: string
   organizerOn: boolean
   onReset(): void
@@ -189,7 +192,7 @@ export function EmptyList({ why, status, organizerOn, onReset, onConnect, hints 
   if (why === 'no-match' || why === 'no-match-rules')
     return (
       <Empty>
-        {why === 'no-match-rules' ? 'No matching rules' : 'No matching items'}
+        {q.trim() ? noMatches(q) : why === 'no-match-rules' ? 'No matching rules' : 'No matching items'}
         <span className="mt-3 flex flex-col">{hints}</span>
         <button onClick={onReset} className="mt-3 h-11 text-blue-600 hover:underline dark:text-blue-400">
           Clear search and filters

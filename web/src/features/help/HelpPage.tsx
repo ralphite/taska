@@ -9,6 +9,7 @@ import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Hit, Kbd } from '../../ui/bits'
 import { Icon } from '../../ui/Icon'
 import { HELP_GROUPS, HELP_TOPICS, searchWordsOf, topicParts, type HelpFound, type HelpTopic } from './topics'
+import { noMatches } from '../../model/words'
 
 export interface HelpEvents {
   open(key: string): void
@@ -125,7 +126,7 @@ export function HelpPage({ desk, topic, q, found, back, menu, render, place, on 
       ))}
     </ul>
   ) : (
-    <p className="text-[15px] text-zinc-500 dark:text-zinc-400">No matches for “{q.trim()}”</p>
+    <p className="text-[15px] text-zinc-500 dark:text-zinc-400">{noMatches(q)}</p>
   )
   const pager =
     prev || next ? (

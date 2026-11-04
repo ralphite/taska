@@ -4,7 +4,6 @@
 // its own line (F657). A search of its own. Props only.
 
 import { useEffect, useRef, type ReactNode } from 'react'
-import { whenParts } from '../../model/became'
 import type { SaidInput, SaidOutgoing } from '../../model/saidLately'
 import type { FileRef } from '../../model/types'
 import { Hit } from '../../ui/bits'
@@ -12,6 +11,7 @@ import { isAudio } from '../../ui/Files'
 import { Icon } from '../../ui/Icon'
 import { DayHead, InputRow, OutgoingRow, RecordingRow, type InputLook, type OutgoingAct } from '../../ui/InputRow'
 import { MUTED } from '../../ui/tones'
+import { noMatches } from '../../model/words'
 
 export interface SaidEvents {
   goto(n: number): void
@@ -156,7 +156,7 @@ export function SaidLately({
   // a prototype's look: the rows under the name of each day, in order
   const days = look
     ? rows.reduce<{ day: string; rows: SaidInput[] }[]>((ds, x) => {
-        const day = whenParts(x.when).day
+        const day = x.day
         const last = ds[ds.length - 1]
         if (last?.day === day) last.rows.push(x)
         else ds.push({ day, rows: [x] })
@@ -224,7 +224,7 @@ export function SaidLately({
           ) : null}
         </div>
       ) : (
-        <p className={`mt-3 text-sm ${MUTED}`}>{words.length ? `No matches for “${q.trim()}”` : null}</p>
+        <p className={`mt-3 text-sm ${MUTED}`}>{words.length ? noMatches(q) : null}</p>
       )}
     </div>
   )

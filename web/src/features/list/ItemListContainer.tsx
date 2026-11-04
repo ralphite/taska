@@ -127,6 +127,7 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
     body.kind === 'empty' || (body.kind === 'rows' && body.empty) ? (
       <EmptyList
         hints={hints(0)}
+        q={words.join(' ')}
         why={body.kind === 'empty' ? body.why : (body.empty as string)}
         status={route.list.status}
         organizerOn={!!m?.facts.organizer.on}

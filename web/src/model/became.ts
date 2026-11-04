@@ -5,6 +5,7 @@
 // whether it is long. Pure.
 
 import { canSend, dayOf, organizing, timeOf } from './inputs'
+import { when } from './time'
 import { shownStatus } from './items'
 import { codeOf, inputDraft, type ProjectModel } from './project'
 import type { Input, ItemType } from './types'
@@ -155,8 +156,12 @@ export const isLong = (text: string) => text.split('\n').length > 4 || [...text]
 export interface InputLine {
   r: Input
   code: string
-  /** its day and time, told against the project's time: "Today 14:28", "Yesterday 09:10", "Oct 21 11:30" */
+  /** when it was said, as the page says a time (`when`): "14:28", "Yesterday 09:10", "Oct 21 11:30" */
   when: string
+  /** its day ("Today", "Yesterday", "Oct 21") and its time ("14:28"), for a list that says each day once over its
+   * lines */
+  day: string
+  time: string
   became: Became
   /** a draft of yours on it, not sent: an edit, or more to add */
   draft: 'edit' | 'append' | null
@@ -174,13 +179,11 @@ export interface InputLineWith {
 export const inputLine = (m: ProjectModel, r: Input, a: InputLineWith): InputLine => ({
   r,
   code: inputCode(r.id),
-  when: `${dayOf(r.t, new Date(m.at))} ${timeOf(r.t)}`,
+  when: when(r.t, m.at),
+  day: dayOf(r.t, new Date(m.at)),
+  time: timeOf(r.t),
   became: becameOf(r, m, a.title),
   draft: inputDraft(r.id, a.drafts, a.writing),
   long: isLong(r.text),
   opened: a.opened.has(r.id),
 })
-
-/** A line's `when` in its two parts: its day ("Today", "Oct 21") and its time ("14:28"), for a list that says each day
- * once over its lines (a prototype, T661). */
-export const whenParts = (when: string) => ({ day: when.slice(0, -6), time: when.slice(-5) })

@@ -102,7 +102,7 @@ export function ActivityList({ rows, end, picked, asking, on }: { rows: Activity
           <span className="min-w-0 flex-1 break-words">
             <LogLine s={s} on={on} />
           </span>
-          <span className={`shrink-0 pt-px font-mono text-[11px] whitespace-nowrap ${MUTED}`}>{s.time}</span>
+          <span className={`shrink-0 pt-px text-xs whitespace-nowrap tabular-nums ${MUTED}`}>{s.time}</span>
           {undo != null ? (
             // on the desktop over the time, under the pointer (or while it asks), so it takes no room of its own
             <button onClick={() => on.undo(undo)} className={`${HOVER_BTN} -my-1 lg:absolute lg:top-2 lg:right-2 lg:my-0 lg:min-w-28 lg:bg-zinc-50 lg:text-right dark:lg:bg-zinc-900 ${asking.has(undo) ? 'lg:opacity-100' : ''}`}>

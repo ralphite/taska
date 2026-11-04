@@ -4,7 +4,7 @@
 
 import type { MouseEvent, Ref } from 'react'
 import type { SearchHit } from '../../model/types'
-import { hitWhere, inputCode } from '../../model/words'
+import { hitWhere, inputCode, noMatches } from '../../model/words'
 import { Icon } from '../../ui/Icon'
 import { NewProjectForm } from '../../ui/NewProjectForm'
 import { Hit, NeedsCount, ProjTile, Skeleton } from '../../ui/bits'
@@ -165,7 +165,7 @@ export function Home({ facts, on, searchRef }: { facts: HomeFacts; on: HomeEvent
               </a>
             ))
           ) : (
-            <p className="px-4 py-3 text-sm text-zinc-500">No matches for “{q.trim()}”</p>
+            <p className="px-4 py-3 text-sm text-zinc-500">{noMatches(q)}</p>
           )}
         </div>
       ) : null}
@@ -181,7 +181,7 @@ export function Home({ facts, on, searchRef }: { facts: HomeFacts; on: HomeEvent
           {!rows ? (
             <li className={away ? 'px-4 py-3 text-sm text-zinc-500' : ''}>{away ? 'Taska is out of reach, retrying…' : <Skeleton shape="tile" cls="px-1 py-1.5" />}</li>
           ) : !rows.length ? (
-            <li className="px-4 py-3 text-sm text-zinc-500">No projects yet.</li>
+            <li className="px-4 py-3 text-sm text-zinc-500">No projects yet</li>
           ) : (
             rows.map((p) => {
               const next = p.next ? (

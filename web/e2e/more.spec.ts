@@ -25,7 +25,7 @@ test('search narrows the list and says where else the words are', async ({ page,
   await search(page).fill('docs')
   await expect(page.locator('#list article[data-n]')).toHaveCount(1)
   await search(page).fill('zzzz-nothing')
-  await expect(page.locator('#list')).toContainText('No matching items')
+  await expect(page.locator('#list')).toContainText('No matches for “zzzz-nothing”')
 })
 
 test('a subitem is added under its item', async ({ page, request }) => {

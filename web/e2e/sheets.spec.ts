@@ -83,7 +83,7 @@ test("D115: the desktop's item menu has Status…, Priority… and Type…, each
   await expect.poll(async () => (await p.read('T4')).split('\n')[0]).toMatch(/\bdone\b/i)
 })
 
-test('T529: Put under… says Nothing matches when the search finds no item', async ({ page, request }) => {
+test('T529, R4-5 #8: Put under… says No matches for the words when the search finds no item', async ({ page, request }) => {
   const p = await project(request, LOOP)
   await open(page, p, 'T4')
   await itemMenu(page).click()
@@ -91,7 +91,7 @@ test('T529: Put under… says Nothing matches when the search finds no item', as
   const sheet = sheetBody(page)
   await sheet.locator('input').fill('zzzz')
   await expect(sheet.getByRole('button', { name: /^[A-Z]\d+\b/ })).toHaveCount(0)
-  await expect(sheet.getByText('Nothing matches')).toBeVisible()
+  await expect(sheet.getByText('No matches for “zzzz”')).toBeVisible()
   await expect(sheet.getByRole('button', { name: /^No parent/ })).toBeVisible()
 })
 

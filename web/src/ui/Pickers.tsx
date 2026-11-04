@@ -8,6 +8,7 @@ import { hay } from '../model/visible'
 import { Icon, StateIcon } from './Icon'
 import type { SheetParts } from './Sheet'
 import { FIELD, TYPE_TEXT } from './tones'
+import { noMatches } from '../model/words'
 
 export function Picker({ items, code, placeholder, skip, sort, current, desk, extra, onPick }: {
   items: readonly Item[]
@@ -41,7 +42,7 @@ export function Picker({ items, code, placeholder, skip, sort, current, desk, ex
             </button>
           ))
         ) : (
-          <p className="px-2.5 py-2 text-sm text-zinc-500 dark:text-zinc-400">Nothing matches</p>
+          <p className="px-2.5 py-2 text-sm text-zinc-500 dark:text-zinc-400">{q.trim() ? noMatches(q) : 'Nothing to pick'}</p>
         )}
         {extra}
       </div>

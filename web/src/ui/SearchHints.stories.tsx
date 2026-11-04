@@ -19,7 +19,7 @@ const hints = (p: Partial<Parameters<typeof SearchHints>[0]>) => (
   </div>
 )
 
-/** Under a search: matches in the other tabs, and the other projects (searching, none, could not search, found). */
+/** Under a search: matches in the other tabs, and the other projects (searching, none, out of reach and asking again, refused, found). */
 export const Hints: Story = {
   name: 'Hints as you type',
   render: () => (
@@ -30,7 +30,8 @@ export const Hints: Story = {
             ['matches in other tabs', hints({ other: [['inputs', 3], ['rules', 1]] })],
             ['searching the other projects', hints({ cross: { q: 'voice', list: null, failed: false } })],
             ['not in other projects', hints({ cross: { q: 'voice', list: [], failed: false } })],
-            ['could not search', hints({ cross: { q: 'voice', list: null, failed: true } })],
+            ['out of reach: asking again', hints({ cross: { q: 'voice', list: null, failed: false, waiting: true } })],
+            ['Taska refused the search', hints({ cross: { q: 'voice', list: null, failed: true } })],
             ['found in other projects', hints({ cross: { q: 'voice', list: hits, failed: false } })],
           ]}
         />

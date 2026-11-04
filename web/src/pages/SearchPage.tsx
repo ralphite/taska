@@ -16,6 +16,7 @@ import type { FindPhase, Found } from '../model/find'
 import type { Item } from '../model/types'
 import { Hit, ProjTile } from '../ui/bits'
 import { Icon } from '../ui/Icon'
+import { noMatches } from '../model/words'
 
 /** A row of what it found: an item or a rule is the list's own row; an input or a document, a row like it. */
 export type FoundRowView =
@@ -235,7 +236,7 @@ export function SearchBody({ v, on, desk = false }: { v: SearchView; on: SearchE
   let body: ReactNode = null
   if (v.groups) body = <Results groups={v.groups} marks={v.marks} faded={v.phase === 'searching'} onOpen={on.open} />
   else if (v.phase === 'searching') body = <Middle title={<Icon n="spinner" c="mx-auto size-7 animate-spin text-zinc-400" sw="2" />}>Searching…</Middle>
-  else if (v.phase === 'nothing') body = <Middle title="Nothing found" />
+  else if (v.phase === 'nothing') body = <Middle title={noMatches(v.words)} />
   else if (v.phase === 'unheard') body = <Middle title="Didn't catch that" />
   else if (v.phase === 'nomic') body = <Middle title="Microphone not allowed">{micAllow(desk)}</Middle>
   else if (v.phase === 'offline')
