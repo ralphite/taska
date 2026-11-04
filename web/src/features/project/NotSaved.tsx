@@ -3,6 +3,7 @@
 
 import { Icon } from '../../ui/Icon'
 import type { SheetParts } from '../../ui/Sheet'
+import { MUTED } from '../../ui/tones'
 
 export interface NotSavedRow {
   sid: string
@@ -52,7 +53,7 @@ export function notSavedSheet(rows: readonly NotSavedRow[], on: { go(url: string
               onClick={() => on.drop(f.sid)}
               aria-label="OK"
               title="OK"
-              className="-my-1 grid size-7 shrink-0 place-items-center rounded-lg text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 dark:text-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+              className={`relative -my-1 grid size-7 shrink-0 place-items-center rounded-lg after:absolute after:-inset-2 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 ${MUTED}`}
             >
               <Icon n="x" c="size-4" />
             </button>

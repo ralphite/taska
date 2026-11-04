@@ -10,7 +10,7 @@ import { priOpts, SegCtl, typeOpts } from '../../ui/Segments'
 import { StateIcon, Icon } from '../../ui/Icon'
 import { STATE_ICON, type IconName } from '../../ui/icon-paths'
 import type { SheetParts } from '../../ui/Sheet'
-import { DANGER, MENU_SEP, STATE_ON, TYPE_TEXT } from '../../ui/tones'
+import { DANGER, MENU_SEP, MUTED, STATE_ON, TYPE_TEXT } from '../../ui/tones'
 
 export interface ItemMenuEvents {
   edit(): void
@@ -174,9 +174,9 @@ export function itemMenuPop({ it, code, parentCode, asking, arm, keys }: ItemMen
       {typeof icon === 'string' ? <Icon n={icon as IconName} c={`size-[18px] ${danger ? '' : 'text-zinc-500 dark:text-zinc-400'}`} /> : icon}
       <span className="min-w-0 flex-1 truncate">
         {label}
-        {sub ? <span className="ml-2 text-xs text-zinc-400">{sub}</span> : null}
+        {sub ? <span className={`ml-2 text-xs ${MUTED}`}>{sub}</span> : null}
       </span>
-      {k ? <kbd className="grid h-5 min-w-5 place-items-center rounded-md px-1 font-sans text-[11px] font-semibold text-zinc-400 ring-1 ring-zinc-300 dark:ring-zinc-600">{k}</kbd> : null}
+      {k ? <kbd className={`grid h-5 min-w-5 place-items-center rounded-md px-1 font-sans text-[11px] font-semibold ring-1 ring-zinc-300 dark:ring-zinc-600 ${MUTED}`}>{k}</kbd> : null}
     </button>
   )
   if (arm) {
@@ -209,7 +209,7 @@ export function itemMenuPop({ it, code, parentCode, asking, arm, keys }: ItemMen
               className="flex h-9 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-sm hover:bg-zinc-100 aria-pressed:font-semibold dark:hover:bg-zinc-800"
             >
               <span className="min-w-0 flex-1 truncate">{l}</span>
-              {cur === v ? <Icon n="check" c="size-4 text-blue-600 dark:text-blue-400" sw="2.5" /> : <kbd className="grid h-5 min-w-5 place-items-center rounded-md px-1 font-sans text-[11px] font-semibold text-zinc-400 ring-1 ring-zinc-300 dark:ring-zinc-600">{k}</kbd>}
+              {cur === v ? <Icon n="check" c="size-4 text-blue-600 dark:text-blue-400" sw="2.5" /> : <kbd className={`grid h-5 min-w-5 place-items-center rounded-md px-1 font-sans text-[11px] font-semibold ring-1 ring-zinc-300 dark:ring-zinc-600 ${MUTED}`}>{k}</kbd>}
             </button>
           ))}
         </div>

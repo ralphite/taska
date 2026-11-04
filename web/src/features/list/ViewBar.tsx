@@ -7,7 +7,7 @@ import { Icon, StateIcon } from '../../ui/Icon'
 import type { ViewChip } from './rows'
 
 export const CHIP =
-  'flex h-8 shrink-0 items-center gap-1 rounded-full bg-zinc-100 px-2 text-[13px] font-medium text-zinc-700 outline-offset-2 outline-blue-500 hover:bg-zinc-200 focus-visible:outline-2 aria-pressed:bg-zinc-900 aria-pressed:text-white dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700 dark:aria-pressed:bg-zinc-100 dark:aria-pressed:text-zinc-900'
+  'relative flex h-8 shrink-0 items-center gap-1 rounded-full bg-zinc-100 after:absolute after:inset-x-0 after:-inset-y-1.5 px-2 text-[13px] font-medium text-zinc-700 outline-offset-2 outline-blue-500 hover:bg-zinc-200 focus-visible:outline-2 aria-pressed:bg-zinc-900 aria-pressed:text-white dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700 dark:aria-pressed:bg-zinc-100 dark:aria-pressed:text-zinc-900'
 
 export interface OwnViewChip {
   name: string
@@ -90,7 +90,7 @@ export function ViewBar({
           <button key={v.value} ref={v.on ? shown : undefined} aria-pressed={v.on} onClick={() => onView(v.value)} className={CHIP}>
             {v.needs ? <StateIcon s="wait" cls="size-3.5" /> : null}
             {v.label}
-            <span className="font-mono text-[11px] tabular-nums opacity-60">{v.count}</span>
+            <span className="font-mono text-[11px] tabular-nums opacity-80">{v.count}</span>
           </button>
         ))}
         {own.map((v, i) =>
@@ -127,7 +127,7 @@ export function ViewBar({
               className={CHIP}
             >
               {v.name}
-              <span className="font-mono text-[11px] tabular-nums opacity-60">{v.count}</span>
+              <span className="font-mono text-[11px] tabular-nums opacity-80">{v.count}</span>
             </button>
           ),
         )}

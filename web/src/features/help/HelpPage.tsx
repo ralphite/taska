@@ -80,7 +80,7 @@ export function HelpPage({ desk, topic, q, found, back, menu, render, place, on 
   const searchBox = (
     <label className="flex h-9 items-center gap-2 rounded-lg bg-white px-2.5 ring-1 ring-zinc-200 focus-within:ring-2 focus-within:ring-blue-500 dark:bg-zinc-900 dark:ring-zinc-700">
       <Icon n="search" c="size-4 shrink-0 text-zinc-400" />
-      <input value={q} onChange={(e) => on.search(e.target.value)} type="search" placeholder="Search help" aria-label="Search help" className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-zinc-400" />
+      <input value={q} onChange={(e) => on.search(e.target.value)} type="search" placeholder="Search help" aria-label="Search help" className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-zinc-500 dark:placeholder:text-zinc-400" />
     </label>
   )
   const nav = (

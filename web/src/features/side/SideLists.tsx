@@ -5,7 +5,7 @@ import type { MouseEvent, ReactNode } from 'react'
 import type { LogSentence } from '../../model/activity'
 import { plural } from '../../model/words'
 import { Icon } from '../../ui/Icon'
-import { PRIMARY } from '../../ui/tones'
+import { MUTED, PRIMARY } from '../../ui/tones'
 import { Empty, Skeleton } from '../../ui/bits'
 import { LogLine, LogMore, type LogEvents } from '../../ui/Log'
 
@@ -28,7 +28,7 @@ export function SideFrame({ side, count, children }: { side: Side; count: number
     <div className="flex min-h-0 flex-1 flex-col">
       <div className="flex h-12 shrink-0 items-center gap-2 border-b border-zinc-200 px-4 dark:border-zinc-800">
         <h2 className="text-[15px] font-semibold">{TITLE[side]}</h2>
-        {count ? <span className="font-mono text-xs text-zinc-400 tabular-nums dark:text-zinc-500">{count}</span> : null}
+        {count ? <span className={`font-mono text-xs tabular-nums ${MUTED}`}>{count}</span> : null}
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto outline-none lg:scrollbar-thin">
         {children}
@@ -102,7 +102,7 @@ export function ActivityList({ rows, end, picked, asking, on }: { rows: Activity
           <span className="min-w-0 flex-1 break-words">
             <LogLine s={s} on={on} />
           </span>
-          <span className="shrink-0 pt-px font-mono text-[11px] whitespace-nowrap text-zinc-400 dark:text-zinc-500">{s.time}</span>
+          <span className={`shrink-0 pt-px font-mono text-[11px] whitespace-nowrap ${MUTED}`}>{s.time}</span>
           {undo != null ? (
             // on the desktop over the time, under the pointer (or while it asks), so it takes no room of its own
             <button onClick={() => on.undo(undo)} className={`${HOVER_BTN} -my-1 lg:absolute lg:top-2 lg:right-2 lg:my-0 lg:min-w-28 lg:bg-zinc-50 lg:text-right dark:lg:bg-zinc-900 ${asking.has(undo) ? 'lg:opacity-100' : ''}`}>

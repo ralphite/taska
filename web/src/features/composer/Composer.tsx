@@ -6,7 +6,7 @@ import { useLayoutEffect, useRef, type ReactNode, type RefObject } from 'react'
 import type { BoxLine, BoxRight, FeedbackLine } from '../../model/boxFoot'
 import { VC_MARK } from '../../model/voiceComments'
 import { Icon, type IconName } from '../../ui/Icon'
-import { HIT } from '../../ui/tones'
+import { HIT, MUTED } from '../../ui/tones'
 
 /** What the line's buttons do: stop what the box is in, let go of what is picked in the document, send or clear the
  * choices ticked, reply to the document's item instead. */
@@ -27,7 +27,7 @@ const xButton = (label: string, run: () => void, esc = true) => (
     onClick={run}
     aria-label={label}
     title={esc ? `${label} · Esc` : label}
-    className="-my-1.5 grid size-11 shrink-0 place-items-center rounded-full text-zinc-400 hover:text-zinc-800 lg:size-8 lg:hover:bg-zinc-100 dark:text-zinc-500 dark:hover:text-zinc-200 dark:lg:hover:bg-zinc-800"
+    className={`-my-1.5 grid size-11 shrink-0 place-items-center rounded-full hover:text-zinc-800 lg:size-8 lg:hover:bg-zinc-100 dark:hover:text-zinc-200 dark:lg:hover:bg-zinc-800 ${MUTED}`}
   >
     <Icon n="x" c="size-4" />
   </button>
@@ -257,7 +257,7 @@ export function Composer({ line, waiting = null, lineOn, lineOnComposePage, plac
             value={text}
             placeholder={placeholder}
             aria-label="Input"
-            className={`col-start-1 row-start-1 max-h-48 min-h-11 w-full min-w-0 resize-none bg-transparent px-1 py-2.5 text-[17px] leading-6 outline-none placeholder:text-zinc-400 roomy:text-[15px] lg:scrollbar-thin dark:placeholder:text-zinc-500 ${rec || words ? 'invisible' : ''} ${quoted ? 'text-transparent caret-zinc-900 selection:bg-blue-500/25 dark:caret-zinc-100' : ''}`}
+            className={`col-start-1 row-start-1 max-h-48 min-h-11 w-full min-w-0 resize-none bg-transparent px-1 py-2.5 text-[17px] leading-6 outline-none placeholder:text-zinc-500 dark:placeholder:text-zinc-400 roomy:text-[15px] lg:scrollbar-thin ${rec || words ? 'invisible' : ''} ${quoted ? 'text-transparent caret-zinc-900 selection:bg-blue-500/25 dark:caret-zinc-100' : ''}`}
             onScroll={(e) => {
               if (back.current) back.current.scrollTop = e.currentTarget.scrollTop
               more(e.currentTarget)
@@ -334,7 +334,7 @@ export function Composer({ line, waiting = null, lineOn, lineOnComposePage, plac
 }
 
 const Dismiss = ({ onClick }: { onClick(): void }) => (
-  <button onClick={onClick} aria-label="Dismiss" className="-my-2 grid size-11 shrink-0 place-items-center rounded-full text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200">
+  <button onClick={onClick} aria-label="Dismiss" className={`-my-2 grid size-11 shrink-0 place-items-center rounded-full hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 ${MUTED}`}>
     <Icon n="x" c="size-3.5" sw="2" />
   </button>
 )

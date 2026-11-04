@@ -13,7 +13,7 @@ import { Kbd } from '../../ui/bits'
 import { Icon } from '../../ui/Icon'
 import type { IconName } from '../../ui/icon-paths'
 import { Rich } from '../../ui/Markdown'
-import { ACT_ICON, CHOSEN_TONE, DECIDED_OFF, DECIDED_ON, MODIFY_LINK, NEED, NEEDS_CARD, PRIMARY_BASE, SECOND } from '../../ui/tones'
+import { ACT_ICON, CHOSEN_TONE, DECIDED_OFF, DECIDED_ON, MODIFY_LINK, MUTED, NEED, NEEDS_CARD, PRIMARY_BASE, SECOND } from '../../ui/tones'
 import { Thumbs } from '../../ui/Files'
 import { MsgText } from './MsgText'
 import type { TalkEnv, TalkEvents } from './talkEnv'
@@ -56,7 +56,7 @@ export function NeedFrame({ icon, title, t, done = false, body, foot, hint = '',
         {going ? (
           <span className="animate-pulse text-xs text-blue-600 dark:text-blue-400">{going}</span>
         ) : t ? (
-          <span className={`text-xs ${act ? 'hidden lg:inline' : ''} ${done ? 'text-zinc-400 dark:text-zinc-500' : 'text-amber-700/80 dark:text-amber-300/70'}`}>{when(t, now)}</span>
+          <span className={`text-xs ${act ? 'hidden lg:inline' : ''} ${done ? ' ' : 'text-amber-700/80 dark:text-amber-300/70'} ${MUTED}`}>{when(t, now)}</span>
         ) : null}
       </div>
       {body ? <div className="space-y-2 px-4 pt-2 text-[15px] leading-relaxed text-zinc-800 lg:px-5 lg:pl-12 dark:text-zinc-200">{body}</div> : null}

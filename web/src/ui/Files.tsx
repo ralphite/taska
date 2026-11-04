@@ -4,7 +4,7 @@
 import type { FileRef } from '../model/types'
 import { Pic } from './bits'
 import { Icon } from './Icon'
-import { HIT } from './tones'
+import { HIT, MUTED } from './tones'
 import { clock } from '../model/time'
 
 export const isAudio = (f: { mime?: string }) => (f.mime || '').startsWith('audio/')
@@ -28,7 +28,7 @@ function VoiceTime({ total, play }: { total: number | null; play: PlayState }) {
     return (
       <>
         {clock(play.t)}
-        {total !== null ? <span className="text-zinc-400 dark:text-zinc-500"> / {clock(total)}</span> : null}
+        {total !== null ? <span className={`${MUTED}`}> / {clock(total)}</span> : null}
       </>
     )
   return <>{total !== null ? clock(total) : play.t !== null ? clock(play.t) : 'Play'}</>
@@ -60,7 +60,7 @@ export function VoiceChip({ f, src, play, tidy, onPlay, onWords }: { f: FileRef;
         <button
           aria-label="Original words"
           onClick={(e) => (e.stopPropagation(), onWords(f.f))}
-          className="mr-1 -ml-1.5 grid size-7 place-items-center rounded-full text-zinc-400 hover:bg-zinc-100 lg:hidden dark:text-zinc-500 dark:hover:bg-zinc-800"
+          className={`relative mr-1 -ml-1.5 grid size-7 place-items-center rounded-full after:absolute after:-inset-2 hover:bg-zinc-100 lg:hidden dark:hover:bg-zinc-800 ${MUTED}`}
         >
           <Icon n="quote" c="size-4" />
         </button>
@@ -169,7 +169,7 @@ export function VoiceLine({ files, url, play, tidy, bare = false, on }: { files:
         const src = url(f.f)
         const p = play(src)
         return (
-          <span key={f.f} className="flex items-center gap-1 px-1 text-[11px] text-zinc-400 dark:text-zinc-500">
+          <span key={f.f} className={`flex items-center gap-1 px-1 text-[11px] ${MUTED}`}>
             <button
               aria-label={`Play ${f.name}`}
               {...saidTip(f, tidy)}

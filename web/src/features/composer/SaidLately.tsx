@@ -11,6 +11,7 @@ import { Hit } from '../../ui/bits'
 import { isAudio } from '../../ui/Files'
 import { Icon } from '../../ui/Icon'
 import { DayHead, InputRow, OutgoingRow, RecordingRow, type InputLook, type OutgoingAct } from '../../ui/InputRow'
+import { MUTED } from '../../ui/tones'
 
 export interface SaidEvents {
   goto(n: number): void
@@ -175,9 +176,9 @@ export function SaidLately({
     <div>
       <div hidden={!head || (!total && !outgoing.length && !recording)} className="flex h-9 items-center gap-3">
         <h2 className="text-xs font-semibold tracking-wider text-zinc-500 uppercase dark:text-zinc-400">Inputs</h2>
-        <span className="font-mono text-xs text-zinc-400 tabular-nums dark:text-zinc-500">{count || ''}</span>
+        <span className={`font-mono text-xs tabular-nums ${MUTED}`}>{count || ''}</span>
         {total ? (
-          <label className="ml-auto flex h-9 w-64 min-w-0 items-center gap-2 rounded-xl bg-zinc-100 pl-3 text-zinc-400 ring-blue-500/40 focus-within:bg-white focus-within:ring-2 dark:bg-zinc-800 dark:text-zinc-500 dark:focus-within:bg-zinc-900">
+          <label className={`ml-auto flex h-9 w-64 min-w-0 items-center gap-2 rounded-xl bg-zinc-100 pl-3 ring-blue-500/40 focus-within:bg-white focus-within:ring-2 dark:bg-zinc-800 dark:focus-within:bg-zinc-900 ${MUTED}`}>
             <Icon n="search" c="size-4" />
             <input
               type="search"
@@ -185,7 +186,7 @@ export function SaidLately({
               placeholder="Search"
               value={q}
               onChange={(e) => on.query(e.target.value)}
-              className="min-w-0 flex-1 bg-transparent text-sm text-zinc-900 outline-none placeholder:text-zinc-400 dark:text-zinc-100 [&::-webkit-search-cancel-button]:hidden"
+              className="min-w-0 flex-1 bg-transparent text-sm text-zinc-900 outline-none placeholder:text-zinc-500 dark:placeholder:text-zinc-400 dark:text-zinc-100 [&::-webkit-search-cancel-button]:hidden"
             />
           </label>
         ) : null}
@@ -217,13 +218,13 @@ export function SaidLately({
             </>
           )}
           {more ? (
-            <div ref={end} className="flex h-16 items-center text-sm text-zinc-400 dark:text-zinc-500">
+            <div ref={end} className={`flex h-16 items-center text-sm ${MUTED}`}>
               Loading more…
             </div>
           ) : null}
         </div>
       ) : (
-        <p className="mt-3 text-sm text-zinc-400 dark:text-zinc-500">{words.length ? `No matches for “${q.trim()}”` : null}</p>
+        <p className={`mt-3 text-sm ${MUTED}`}>{words.length ? `No matches for “${q.trim()}”` : null}</p>
       )}
     </div>
   )

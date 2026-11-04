@@ -10,7 +10,7 @@ import type { Comment, FileRef } from '../../model/types'
 import { plural, whoName } from '../../model/words'
 import { Icon } from '../../ui/Icon'
 import { Rich } from '../../ui/Markdown'
-import { BUSY, COMMENT_CARD, COMMENT_WHO, DC_BTN, DC_DANGER, HIT, SEP_V } from '../../ui/tones'
+import { BUSY, COMMENT_CARD, COMMENT_WHO, DC_BTN, DC_DANGER, HIT, MUTED, SEP_V } from '../../ui/tones'
 import { Thumbs, VoiceLine, type FileEvents, type PlayState } from '../../ui/Files'
 import type { InlineWorld } from '../../ui/markdown/inline'
 import type { WebCard } from './docFacts'
@@ -154,7 +154,7 @@ export function Thread({ t, blockText, rail = false, isNew, done, replying, aski
           ) : null}
           <div className="flex min-h-6 flex-wrap items-center gap-1 lg:relative">
             {c.by === 'you' ? null : <span className={COMMENT_WHO(c.by)}>{whoName(c.by)}</span>}{' '}
-            <span className="text-xs text-zinc-400">
+            <span className={`text-xs ${MUTED}`}>
               {/* shown while it is being saved (D83 #1): it says so, as what you send in the talk does */}
               {c.id > 0 ? when(c.t, env.now) : <span className={BUSY}>Sending…</span>}
               {c.edited ? ` · edited ${when(c.edited, env.now)}` : ''}

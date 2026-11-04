@@ -10,7 +10,7 @@ import { BECAME_WORD as W, whenParts, type Became, type InputLine, type ItemRef 
 import { voiceMark } from '../model/inputs'
 import { DraftMark, Hit } from './bits'
 import { Icon, StateIcon } from './Icon'
-import { HIT, TYPE_TEXT } from './tones'
+import { HIT, MUTED, TYPE_TEXT } from './tones'
 
 export interface InputRowEvents {
   goto(n: number): void
@@ -40,10 +40,9 @@ const ROW_QUIET = ROW.replace('lg:hover:bg-zinc-50', 'lg:hover:bg-zinc-100/70').
 /** gone to: lit up for a moment */
 const LIT = 'bg-blue-50 dark:bg-blue-400/10'
 const META = 'flex h-5 min-w-0 items-center gap-2 text-[13px]'
-const MUTED = 'text-zinc-500 dark:text-zinc-400'
-const LINK = `${HIT} shrink-0 font-semibold text-blue-600 hover:underline dark:text-blue-400`
+const LINK = 'relative shrink-0 font-semibold text-blue-600 after:absolute after:inset-x-0 after:-inset-y-3 hover:underline dark:text-blue-400'
 const BTN =
-  'flex h-7 shrink-0 items-center gap-1 rounded-md px-1.5 text-[13px] font-medium text-zinc-500 hover:bg-zinc-200/60 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200'
+  'relative flex h-7 shrink-0 items-center gap-1 rounded-md px-1.5 after:absolute after:-inset-2 text-[13px] font-medium text-zinc-500 hover:bg-zinc-200/60 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200'
 /** Undo, just after sending: blue, as every other thing to do here (not the grey of the row's buttons) */
 const UNDO =
   'flex h-7 shrink-0 items-center gap-1 rounded-md px-1.5 text-[13px] font-semibold text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10'
@@ -215,7 +214,7 @@ const DOT: Record<Became['k'], string> = {
 const RAIL_ROW = 'group/row grid grid-cols-[3rem_1.25rem_minmax(0,1fr)] transition-colors duration-700 lg:-mx-3 lg:rounded-lg lg:pr-3 lg:hover:bg-zinc-100/70 dark:lg:hover:bg-zinc-900'
 const GUTTER = 'py-2.5 text-right'
 const GUTTER_TIME = `mt-0.5 text-[13px] leading-6 tabular-nums ${MUTED}`
-const GUTTER_SMALL = 'font-mono text-[11px] leading-4 text-zinc-400 dark:text-zinc-500'
+const GUTTER_SMALL = `font-mono text-[11px] leading-4 ${MUTED}`
 
 /** The day's line through a rail row, with the row's dot by its first line. */
 function RailDot({ dot }: { dot: string }) {
@@ -350,7 +349,7 @@ export function InputRow({ x, words, text, files, lit = false, undo = false, rec
                 {time}
                 {edited}
               </span>
-              <span className="shrink-0 font-mono text-xs text-zinc-400 dark:text-zinc-500">
+              <span className={`shrink-0 font-mono text-xs ${MUTED}`}>
                 <Hit text={x.code} words={words} />
               </span>
               {voice ? <span className="-my-1.5 -ml-1.5 flex shrink-0 items-center">{voice}</span> : null}

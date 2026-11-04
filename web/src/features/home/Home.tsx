@@ -8,6 +8,7 @@ import { inputCode } from '../../model/words'
 import { Icon } from '../../ui/Icon'
 import { NewProjectForm } from '../../ui/NewProjectForm'
 import { Hit, NeedsCount, ProjTile, Skeleton } from '../../ui/bits'
+import { MUTED } from '../../ui/tones'
 
 export interface HomeRow {
   name: string
@@ -54,7 +55,7 @@ const GRID = 'lg:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)_4.5rem_5.5rem_minmax(0
 const NOTE = 'mb-3 rounded-xl bg-zinc-100 px-4 py-3 text-sm text-zinc-800 dark:bg-zinc-800 dark:text-zinc-100'
 /** A notice about the link you came by (a deleted project, none of that name): one bar, its × at its end. */
 const NOTICE = 'mb-3 flex items-center gap-3 rounded-xl bg-amber-50 px-4 py-2 text-sm text-amber-950 ring-1 ring-amber-200 dark:bg-amber-400/10 dark:text-amber-100 dark:ring-amber-400/25'
-const NOTICE_X = 'grid size-9 shrink-0 place-items-center rounded-lg text-amber-800 hover:bg-amber-100 dark:text-amber-200 dark:hover:bg-amber-400/15'
+const NOTICE_X = 'relative grid size-9 shrink-0 place-items-center rounded-lg after:absolute after:-inset-1 text-amber-800 hover:bg-amber-100 dark:text-amber-200 dark:hover:bg-amber-400/15'
 
 const hitUrl = (x: SearchHit, q: string) => `/p/${encodeURIComponent(x.project)}/${x.kind === 'input' ? 'inputs?q=' + encodeURIComponent(q.trim()) : encodeURIComponent(x.code)}`
 const hitWhere = (x: SearchHit) => (x.kind === 'input' ? ' · what you said' : x.archived ? ' · archived' : x.status === 'done' ? ' · done' : x.status === 'dropped' ? " · won't do" : '')
@@ -101,7 +102,7 @@ export function Home({ facts, on, searchRef }: { facts: HomeFacts; on: HomeEvent
         </h1>
         <span className="hidden text-sm text-zinc-500 sm:inline dark:text-zinc-400">{rows ? `${rows.length} projects · ${needs ? `${needs} need you` : 'nothing needs you'}` : ''}</span>
         <span className="flex-1" />
-        <label className="order-last flex h-10 w-full items-center gap-2 rounded-xl bg-white px-3 text-sm text-zinc-400 ring-1 ring-zinc-900/10 focus-within:ring-2 focus-within:ring-blue-500 sm:order-none sm:w-72 dark:bg-zinc-800 dark:ring-white/10">
+        <label className={`order-last flex h-10 w-full items-center gap-2 rounded-xl bg-white px-3 text-sm ring-1 ring-zinc-900/10 focus-within:ring-2 focus-within:ring-blue-500 sm:order-none sm:w-72 dark:bg-zinc-800 dark:ring-white/10 ${MUTED}`}>
           <Icon n="find" c="size-4" sw="2" />
           <input
             ref={searchRef}
@@ -116,7 +117,7 @@ export function Home({ facts, on, searchRef }: { facts: HomeFacts; on: HomeEvent
               on.query('')
               e.currentTarget.blur()
             }}
-            className="min-w-0 flex-1 bg-transparent text-base text-zinc-900 outline-none placeholder:text-zinc-400 sm:text-sm dark:text-zinc-100"
+            className="min-w-0 flex-1 bg-transparent text-base text-zinc-900 outline-none placeholder:text-zinc-500 dark:placeholder:text-zinc-400 sm:text-sm dark:text-zinc-100"
           />
           <kbd className="hidden h-5 min-w-5 place-items-center rounded-md px-1 font-sans text-[11px] font-semibold ring-1 ring-zinc-300 lg:grid dark:ring-zinc-600">⌘K</kbd>
         </label>

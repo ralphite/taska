@@ -3,6 +3,7 @@
 
 import { useEffect, useRef } from 'react'
 import type { LogSentence } from '../model/activity'
+import { MUTED } from './tones'
 
 export interface LogEvents {
   item(n: number): void
@@ -40,7 +41,7 @@ export function LogLine({ s, withTime = false, on }: { s: LogSentence; withTime?
           </button>
         ),
       )}
-      {withTime ? <span className="font-mono text-[11px] whitespace-nowrap text-zinc-400">{s.time}</span> : null}
+      {withTime ? <span className={`font-mono text-[11px] whitespace-nowrap ${MUTED}`}>{s.time}</span> : null}
     </>
   )
 }
@@ -56,7 +57,7 @@ export function LogMore({ end, cls, onNear }: { end: boolean; cls: string; onNea
     return () => io.disconnect()
   })
   return (
-    <p ref={ref} className={`text-[13px] text-zinc-400 dark:text-zinc-500 ${cls}`}>
+    <p ref={ref} className={`text-[13px] ${cls} ${MUTED}`}>
       {end ? 'No earlier changes' : 'Loading…'}
     </p>
   )

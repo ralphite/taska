@@ -155,7 +155,7 @@ export function SearchBox({ v, on }: { v: SearchView; on: SearchEvents }) {
               e.preventDefault()
               on.search()
             }}
-            className="field-sizing-content max-h-48 min-h-11 w-full min-w-0 resize-none bg-transparent px-1 py-2.5 text-[17px] leading-6 outline-none placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
+            className="field-sizing-content max-h-48 min-h-11 w-full min-w-0 resize-none bg-transparent px-1 py-2.5 text-[17px] leading-6 outline-none placeholder:text-zinc-500 dark:placeholder:text-zinc-400"
           />
         </div>
         {v.typed && v.words.trim() && !busy && v.phase !== 'nomic' ? (

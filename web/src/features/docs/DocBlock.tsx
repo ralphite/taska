@@ -29,7 +29,7 @@ function TickForm({ lines, from, foot, t, world }: { lines: string[]; from: numb
           <div
             key={i}
             aria-pressed={on}
-            className="group flex min-h-10 w-full items-center gap-3 rounded-xl border border-zinc-200 px-3 py-2 text-[15px] leading-snug text-zinc-500 aria-pressed:border-zinc-400 aria-pressed:text-zinc-800 dark:border-zinc-800 dark:text-zinc-500 dark:aria-pressed:border-zinc-600 dark:aria-pressed:text-zinc-200"
+            className="group flex min-h-10 w-full items-center gap-3 rounded-xl border border-zinc-200 px-3 py-2 text-[15px] leading-snug text-zinc-500 aria-pressed:border-zinc-400 aria-pressed:text-zinc-800 dark:border-zinc-800 dark:text-zinc-400 dark:aria-pressed:border-zinc-600 dark:aria-pressed:text-zinc-200"
           >
             <span className={`${box} border-zinc-300 group-aria-pressed:border-zinc-500 group-aria-pressed:bg-zinc-500 group-aria-pressed:text-white dark:border-zinc-700 dark:group-aria-pressed:border-zinc-500 dark:group-aria-pressed:bg-zinc-500 dark:group-aria-pressed:text-zinc-900`}>{check}</span>
             {words}
@@ -51,7 +51,7 @@ function TickForm({ lines, from, foot, t, world }: { lines: string[]; from: numb
           Sent
           <button
             onClick={(e) => (e.stopPropagation(), t.modify())}
-            className="rounded-md px-1.5 py-0.5 font-semibold text-blue-600 hover:bg-blue-50 lg:opacity-0 lg:group-hover/form:opacity-100 lg:focus-visible:opacity-100 dark:text-blue-400 dark:hover:bg-blue-400/10"
+            className="relative rounded-md px-1.5 py-0.5 font-semibold text-blue-600 after:absolute after:inset-x-0 after:-inset-y-3 hover:bg-blue-50 lg:opacity-0 lg:group-hover/form:opacity-100 lg:focus-visible:opacity-100 dark:text-blue-400 dark:hover:bg-blue-400/10"
           >
             Modify
           </button>

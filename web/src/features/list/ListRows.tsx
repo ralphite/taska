@@ -10,7 +10,7 @@ import type { ZoneKind } from './rows'
 import { plural, whoName } from '../../model/words'
 import { Avatar, Count, DraftMark, Hit, Pic, Soft } from '../../ui/bits'
 import { Icon, StateIcon } from '../../ui/Icon'
-import { ACT_BG, ACT_ICON, ACT_TONE, ACTION_PILL, FORWARD_NEED, NEED, PRI_TEXT, TYPE_TEXT } from '../../ui/tones'
+import { ACT_BG, ACT_ICON, ACT_TONE, ACTION_PILL, FORWARD_NEED, MUTED, NEED, PRI_TEXT, TYPE_TEXT } from '../../ui/tones'
 
 /** What a row needs to know beyond its item. */
 export interface RowFacts {
@@ -272,7 +272,7 @@ export function ItemRow(props: {
             aria-expanded={!folded}
             aria-label={`${folded ? 'Show' : 'Hide'} subitems`}
             onClick={(e) => (e.stopPropagation(), on.fold(it.n))}
-            className="-my-2 -mr-1 grid size-11 shrink-0 place-items-center rounded-full text-zinc-400 hover:bg-zinc-100 hover:text-zinc-600 dark:text-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-zinc-300"
+            className={`-my-2 -mr-1 grid size-11 shrink-0 place-items-center rounded-full hover:bg-zinc-100 hover:text-zinc-600 dark:hover:bg-zinc-800 dark:hover:text-zinc-300 ${MUTED}`}
           >
             <Icon n={folded ? 'right' : 'down'} c="size-4" sw="2" />
           </button>

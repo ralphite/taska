@@ -4,6 +4,7 @@
 import { useState, type ReactNode } from 'react'
 import { AVATAR_LETTER, plural } from '../model/words'
 import { Icon, StateIcon, type IconName } from './Icon'
+import { MUTED } from './tones'
 
 const BONE = 'rounded-md bg-zinc-200 dark:bg-zinc-800'
 const WIDE = ['w-3/4', 'w-1/2', 'w-2/3', 'w-5/12', 'w-7/12']
@@ -40,7 +41,7 @@ export function Skeleton({ shape, n = 3, cls = '' }: { shape: 'item' | 'tile' | 
 /** A key cap, shown on the desktop only. */
 export function Kbd({ k }: { k: string }) {
   return (
-    <kbd className="ml-1 hidden h-5 min-w-5 place-items-center rounded-md px-1 font-sans text-[11px] font-semibold opacity-70 ring-1 ring-current/30 lg:inline-grid">
+    <kbd className="ml-1 hidden h-5 min-w-5 place-items-center rounded-md px-1 font-sans text-[11px] font-semibold ring-1 ring-current/30 lg:inline-grid">
       {k}
     </kbd>
   )
@@ -141,7 +142,7 @@ export function Pic({ src, alt = '', cls = '' }: { src: string; alt?: string; cl
           <span className="size-5 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-600 dark:border-zinc-600 dark:border-t-zinc-300" />
         </span>
       ) : state === 'failed' ? (
-        <span className="pointer-events-none absolute inset-0 grid place-items-center text-zinc-400 dark:text-zinc-500">
+        <span className={`pointer-events-none absolute inset-0 grid place-items-center ${MUTED}`}>
           <Icon n="image" c="size-5" />
         </span>
       ) : null}

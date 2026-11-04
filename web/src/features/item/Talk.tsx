@@ -14,7 +14,7 @@ import { KIND_WORD, inputCode, whoName } from '../../model/words'
 import { Avatar } from '../../ui/bits'
 import { Icon } from '../../ui/Icon'
 import { Rich } from '../../ui/Markdown'
-import { BUSY, DC_BTN, DC_LINK } from '../../ui/tones'
+import { BUSY, DC_BTN, DC_LINK, MUTED } from '../../ui/tones'
 import { FileRows, VoiceLine, isAudio } from '../../ui/Files'
 import { MsgText } from './MsgText'
 import { Answered, type CardEvents } from './NeedsCard'
@@ -152,7 +152,7 @@ function MsgView({ it, x, env, on, facts, docs, code, done, ver, gone, read }: {
         {/* one line under what you wrote: the voice note, who and when, and ⋯ with Edit, Add more and the rest */}
         <div className="flex flex-wrap items-center justify-end gap-x-1">
           {ver?.old ? null : <VoiceLine files={src?.files || []} url={env.url} play={env.play} tidy={env.tidy} bare={!!src && !src.moved} on={on} />}
-          <span className="px-1 text-[11px] text-zinc-400 dark:text-zinc-500">
+          <span className={`px-1 text-[11px] ${MUTED}`}>
             {ver?.old ? 'earlier version · ' : ver?.label ? ver.label + ' · ' : ''}
             {when(x.t, env.now)}
             {x.edited && !ver?.old ? (
@@ -221,13 +221,13 @@ function MsgView({ it, x, env, on, facts, docs, code, done, ver, gone, read }: {
       <div className="flex items-start gap-2 px-1 text-[13px] leading-snug text-zinc-500 dark:text-zinc-400">
         <Icon n="undo" c="mt-0.5 size-3.5 shrink-0" />
         <div className="min-w-0 flex-1">
-          <span className="font-medium text-zinc-600 dark:text-zinc-300">{whoName(x.by)} took back its question</span> <span className="text-[11px] text-zinc-400 dark:text-zinc-500">{when(x.t, env.now)}</span>
+          <span className="font-medium text-zinc-600 dark:text-zinc-300">{whoName(x.by)} took back its question</span> <span className={`text-[11px] ${MUTED}`}>{when(x.t, env.now)}</span>
           {x.text.trim() ? <Rich text={x.text} world={env.world} cls="mt-0.5" onRef={on.ref} onPicture={on.picture} /> : null}
         </div>
       </div>
     )
   const head = (tag: ReactNode) => (
-    <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 px-1 text-[11px] whitespace-nowrap text-zinc-400 dark:text-zinc-500">
+    <div className={`flex flex-wrap items-center gap-x-2 gap-y-0.5 px-1 text-[11px] whitespace-nowrap ${MUTED}`}>
       <Avatar by={x.by} />
       <span className="text-xs font-semibold text-zinc-700 dark:text-zinc-300">{whoName(x.by)}</span>
       {x.ses ? <span className="-ml-1 text-xs text-zinc-500 dark:text-zinc-400">· {x.ses}</span> : null}
@@ -251,7 +251,7 @@ function MsgView({ it, x, env, on, facts, docs, code, done, ver, gone, read }: {
     )
   if (x.hidden && !facts.peeking.has(x.id))
     return (
-      <button onClick={() => on.peek(x.id)} className="flex items-center gap-1.5 self-start px-1 text-[12px] text-zinc-400 hover:text-zinc-600 dark:text-zinc-500 dark:hover:text-zinc-300">
+      <button onClick={() => on.peek(x.id)} className={`relative flex items-center gap-1.5 self-start px-1 after:absolute after:inset-x-0 after:-inset-y-3.5 text-[12px] hover:text-zinc-600 dark:hover:text-zinc-300 ${MUTED}`}>
         {whoName(x.by)} · hidden message · {when(x.t, env.now)} · Show
       </button>
     )
@@ -361,7 +361,7 @@ export function docNotes(docs: readonly Doc[], env: TalkEnv, on: TalkLineEvents,
             </div>
           ) : null}
           {strip('items-end max-w-full [&>div]:max-w-full')}
-          <div className="flex max-w-full flex-wrap items-center justify-end gap-x-1 text-[11px] text-zinc-400 dark:text-zinc-500">
+          <div className={`flex max-w-full flex-wrap items-center justify-end gap-x-1 text-[11px] ${MUTED}`}>
             <VoiceLine files={c.files || []} url={env.url} play={env.play} tidy={env.tidy} bare on={on} />
             <span className="flex max-w-full min-w-0 items-center gap-0.5 px-1">
               <Icon n="comment" c="size-3 shrink-0" />
@@ -373,7 +373,7 @@ export function docNotes(docs: readonly Doc[], env: TalkEnv, on: TalkLineEvents,
         </div>
       ) : (
         <div key={`dn${d.d}-${c.id}`} className="flex flex-col items-start gap-1.5">
-          <div className="flex max-w-full min-w-0 items-center gap-2 px-1 text-[11px] text-zinc-400 dark:text-zinc-500">
+          <div className={`flex max-w-full min-w-0 items-center gap-2 px-1 text-[11px] ${MUTED}`}>
             <Avatar by={c.by} />
             <span className="shrink-0 text-xs font-semibold text-zinc-700 dark:text-zinc-300">{whoName(c.by)}</span>
             <Icon n="comment" c="size-3 shrink-0" />
@@ -407,7 +407,7 @@ function Pending({ list, on }: { list: Outgoing[]; on: TalkLineEvents }) {
             </div>
           ) : null}
           <div className="flex flex-wrap items-center justify-end gap-x-1">
-            <span className="px-1 text-[11px] text-zinc-400 dark:text-zinc-500">
+            <span className={`px-1 text-[11px] ${MUTED}`}>
               <span className={q.bad ? 'text-red-600 dark:text-red-400' : 'animate-pulse text-blue-600 dark:text-blue-400'}>{q.state}</span>
             </span>
             {q.bad ? (

@@ -12,7 +12,7 @@ import { Icon, StateIcon } from '../../ui/Icon'
 import type { IconName } from '../../ui/icon-paths'
 import { Rich } from '../../ui/Markdown'
 import { clean, inlineHtml } from '../../ui/markdown/inline'
-import { ACT_ICON, CHIP, FIELD, NEED, PRIMARY, SECOND, TYPE_TEXT } from '../../ui/tones'
+import { ACT_ICON, CHIP, FIELD, MUTED, NEED, PRIMARY, SECOND, TYPE_TEXT } from '../../ui/tones'
 import { FileRows } from '../../ui/Files'
 import { DocCard } from './DocCard'
 import { NeedsCard } from './NeedsCard'
@@ -587,7 +587,7 @@ export function NoSelection({ side }: { side: 'docs' | 'log' | null }): ReactNod
     <div className="grid h-full place-items-center p-8 text-center">
       <div>
         <p className="text-[15px] text-zinc-500 dark:text-zinc-400">Select an item or type below</p>
-        <p className="mt-2 flex items-center justify-center gap-1 text-[13px] text-zinc-400">
+        <p className={`mt-2 flex items-center justify-center gap-1 text-[13px] ${MUTED}`}>
           <Kbd k="J" />
           <Kbd k="K" />
           <span className="ml-1">to move</span>

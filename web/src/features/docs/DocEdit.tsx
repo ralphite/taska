@@ -39,7 +39,7 @@ export function DocEdit({ isNew, text, hint, mic, fieldRef, on }: { isNew: boole
         value={text}
         onChange={(e) => on.change(e.target.value)}
         placeholder={'Title\n\nText (Markdown)'}
-        className="min-h-[40dvh] w-full flex-1 resize-none bg-transparent text-base leading-relaxed outline-none placeholder:text-zinc-400"
+        className="min-h-[40dvh] w-full flex-1 resize-none bg-transparent text-base leading-relaxed outline-none placeholder:text-zinc-500 dark:placeholder:text-zinc-400"
       />
     </div>
   )

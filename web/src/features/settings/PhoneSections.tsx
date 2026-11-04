@@ -8,7 +8,7 @@ import { plural } from '../../model/words'
 import { ProjTile, Skeleton } from '../../ui/bits'
 import { Icon } from '../../ui/Icon'
 import { NewProjectForm } from '../../ui/NewProjectForm'
-import { P_BTN, SECOND, TYPE_TEXT } from '../../ui/tones'
+import { MUTED, P_BTN, SECOND, TYPE_TEXT } from '../../ui/tones'
 import { Empty } from '../../ui/bits'
 import { LogLine, LogMore, type LogEvents } from '../../ui/Log'
 import { NameField, type ProjectsEvents, type ProjectsFacts } from './Sections'
@@ -24,7 +24,7 @@ export function PhoneProjectsBody({ f, on }: { f: ProjectsFacts; on: ProjectsEve
       onClick={() => on.menu(key)}
       aria-label={`More for ${title}`}
       aria-expanded={f.menu === key}
-      className="grid size-11 shrink-0 place-items-center rounded-full text-zinc-400 aria-expanded:bg-zinc-100 aria-expanded:text-zinc-700 dark:text-zinc-500 dark:aria-expanded:bg-zinc-800 dark:aria-expanded:text-zinc-200"
+      className={`grid size-11 shrink-0 place-items-center rounded-full aria-expanded:bg-zinc-100 aria-expanded:text-zinc-700 dark:aria-expanded:bg-zinc-800 dark:aria-expanded:text-zinc-200 ${MUTED}`}
     >
       <Icon n="more" c="size-5" />
     </button>
@@ -119,7 +119,7 @@ export function PhoneProjectsBody({ f, on }: { f: ProjectsFacts; on: ProjectsEve
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="block text-[15px] font-medium break-words text-zinc-500 dark:text-zinc-400">{d.title}</span>
-                    <span className="mt-0.5 block truncate text-xs text-zinc-400 dark:text-zinc-500">
+                    <span className={`mt-0.5 block truncate text-xs ${MUTED}`}>
                       Deleted {d.when} · {plural(d.items, 'item')}
                     </span>
                   </span>

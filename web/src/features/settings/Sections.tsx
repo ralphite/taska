@@ -8,7 +8,7 @@ import { plural } from '../../model/words'
 import { Kbd, ProjTile } from '../../ui/bits'
 import { Icon } from '../../ui/Icon'
 import { NewProjectForm } from '../../ui/NewProjectForm'
-import { DISABLED, FIELD, P_BTN, PRIMARY, SECOND } from '../../ui/tones'
+import { DISABLED, FIELD, MUTED, P_BTN, PRIMARY, SECOND } from '../../ui/tones'
 import { CopyBtn, Loading, Part, Setting, TextBox, Toggle } from './SettingsParts'
 
 // ---- Projects
@@ -336,7 +336,7 @@ export function SpellingsBody({ fixes, prefs, editing, prefsSlot, on }: { fixes:
         title={
           <>
             Transcription preferences
-            {prefs.default ? <span className="ml-2 text-[13px] font-normal text-zinc-400">default</span> : null}
+            {prefs.default ? <span className={`ml-2 text-[13px] font-normal ${MUTED}`}>default</span> : null}
           </>
         }
         about="All projects"
@@ -391,8 +391,8 @@ export function SpellingsBody({ fixes, prefs, editing, prefsSlot, on }: { fixes:
               <span className="min-w-0 flex-1 break-words">
                 {c.wrong ? (
                   <>
-                    <span className="text-zinc-400 line-through decoration-zinc-400 dark:text-zinc-500">{c.wrong}</span>
-                    <span className="px-2 text-zinc-400 dark:text-zinc-500">→</span>
+                    <span className={`line-through decoration-zinc-400 ${MUTED}`}>{c.wrong}</span>
+                    <span className={`px-2 ${MUTED}`}>→</span>
                   </>
                 ) : null}
                 <span className="font-medium">{c.right}</span>
@@ -401,7 +401,7 @@ export function SpellingsBody({ fixes, prefs, editing, prefsSlot, on }: { fixes:
                 onClick={() => on.forget(c)}
                 aria-label="Forget this spelling"
                 title="Forget this spelling"
-                className={`grid size-11 shrink-0 place-items-center rounded-lg text-zinc-400 hover:bg-zinc-100 hover:text-zinc-700 lg:size-9 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 ${ROW_ACT}`}
+                className={`grid size-11 shrink-0 place-items-center rounded-lg hover:bg-zinc-100 hover:text-zinc-700 lg:size-9 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 ${ROW_ACT} ${MUTED}`}
               >
                 <Icon n="x" c="size-4" />
               </button>

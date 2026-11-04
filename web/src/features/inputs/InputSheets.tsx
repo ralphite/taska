@@ -8,7 +8,7 @@ import { inputCode } from '../../model/words'
 import { Icon } from '../../ui/Icon'
 import type { IconName } from '../../ui/icon-paths'
 import type { SheetParts } from '../../ui/Sheet'
-import { DANGER, MENU_ROW, MENU_SEP } from '../../ui/tones'
+import { DANGER, MENU_ROW, MENU_SEP, MUTED } from '../../ui/tones'
 
 export interface InputMenuEvents {
   send(): void
@@ -87,7 +87,7 @@ export function historySheet(r: Input, now: number): SheetParts {
           <section key={i} className="mb-5">
             <h3 className="mb-2 text-sm font-semibold">
               {v.label}
-              <span className="ml-2 font-normal text-zinc-400">{when(v.t, now)}</span>
+              <span className={`ml-2 font-normal ${MUTED}`}>{when(v.t, now)}</span>
             </h3>
             <p className="text-[15px] break-words whitespace-pre-wrap">{v.text}</p>
           </section>

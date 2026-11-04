@@ -8,6 +8,7 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 're
 import { plainQuote } from '../../model/markdown'
 import { Icon } from '../../ui/Icon'
 import { PAGE_HELPER } from './pageHelper'
+import { MUTED } from '../../ui/tones'
 
 type Box = { x: number; y: number; w: number; h: number }
 /** at a part's top right corner (T501, each at most 40): how far below its top its own words start, and the room above
@@ -307,7 +308,7 @@ export function WebPage({ title, html, threads, held, rec = false, open, desk, i
           <div className="text-xs font-medium text-zinc-500">Not on the page now</div>
           {elsewhere.map((t) => (
             <section key={t.tk}>
-              <div className="line-clamp-2 text-sm text-zinc-400">“{plainQuote(t.quote)}”</div>
+              <div className={`line-clamp-2 text-sm ${MUTED}`}>“{plainQuote(t.quote)}”</div>
               {renderThread(t.tk, false)}
             </section>
           ))}

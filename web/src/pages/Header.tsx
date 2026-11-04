@@ -8,6 +8,7 @@ import type { AgentTone } from '../model/agents'
 import { TAB_WORD, type Tab } from '../model/words'
 import { ProjTile } from '../ui/bits'
 import { Icon, StateIcon } from '../ui/Icon'
+import { MUTED } from '../ui/tones'
 
 const PILL: Record<AgentTone, [string, string]> = {
   ready: [
@@ -113,7 +114,7 @@ export function ProjectBar({
             className="group -mb-px flex shrink-0 items-center gap-1.5 border-b-2 border-transparent px-0.5 text-sm font-medium text-zinc-500 hover:text-zinc-800 aria-selected:border-zinc-900 aria-selected:font-semibold aria-selected:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200 dark:aria-selected:border-zinc-100 dark:aria-selected:text-zinc-50"
           >
             {TAB_WORD[t.tab]}
-            <span className="font-mono text-[11px] font-medium text-zinc-400 tabular-nums">{t.count}</span>
+            <span className={`font-mono text-[11px] font-medium tabular-nums ${MUTED}`}>{t.count}</span>
           </button>
         ))}
       </div>
@@ -204,7 +205,7 @@ export function ListHead({
         </button>
       </div>
       <div hidden={!showSearch} className="contents">
-        <label className="ml-1 flex h-11 min-w-0 flex-1 items-center gap-2 rounded-xl bg-zinc-100 pl-3 text-zinc-400 lg:ml-0 lg:h-9 lg:ring-blue-500/40 lg:focus-within:bg-white lg:focus-within:ring-2 dark:bg-zinc-800 dark:text-zinc-500 dark:lg:focus-within:bg-zinc-900">
+        <label className={`ml-1 flex h-11 min-w-0 flex-1 items-center gap-2 rounded-xl bg-zinc-100 pl-3 lg:ml-0 lg:h-9 lg:ring-blue-500/40 lg:focus-within:bg-white lg:focus-within:ring-2 dark:bg-zinc-800 dark:lg:focus-within:bg-zinc-900 ${MUTED}`}>
           <Icon n="search" c="size-4.5" />
           <input
             ref={(el) => {
@@ -215,7 +216,7 @@ export function ListHead({
             autoComplete="off"
             placeholder={placeholder}
             defaultValue={q}
-            className="min-w-0 flex-1 bg-transparent text-base text-zinc-900 outline-none placeholder:text-zinc-400 lg:text-sm dark:text-zinc-100 [&::-webkit-search-cancel-button]:hidden"
+            className="min-w-0 flex-1 bg-transparent text-base text-zinc-900 outline-none placeholder:text-zinc-500 dark:placeholder:text-zinc-400 lg:text-sm dark:text-zinc-100 [&::-webkit-search-cancel-button]:hidden"
             onInput={(e) => on.query(e.currentTarget.value)}
             onFocus={() => phone && !searching && on.search(true)}
             onKeyDown={(e) => {
@@ -225,7 +226,7 @@ export function ListHead({
               on.firstResult()
             }}
           />
-          <kbd className={`mr-2 hidden h-5 min-w-5 place-items-center rounded-md px-1 font-sans text-[11px] font-semibold text-zinc-400 ring-1 ring-zinc-300 dark:ring-zinc-600 ${q ? '' : 'lg:grid'}`}>/</kbd>
+          <kbd className={`mr-2 hidden h-5 min-w-5 place-items-center rounded-md px-1 font-sans text-[11px] font-semibold ring-1 ring-zinc-300 dark:ring-zinc-600 ${q ? '' : 'lg:grid'} ${MUTED}`}>/</kbd>
           <button onClick={on.clear} aria-label="Clear search" className={`group -mr-1 grid size-11 shrink-0 place-items-center rounded-full lg:size-9 ${q ? '' : 'lg:hidden'}`}>
             <span className="grid size-5 place-items-center rounded-full bg-zinc-400 text-white group-hover:bg-zinc-500 dark:bg-zinc-600 dark:text-zinc-900 dark:group-hover:bg-zinc-500">
               <Icon n="x" c="size-3" sw="3" />
@@ -281,7 +282,7 @@ export function PhoneTabs({ tabs, filtersSet, showFilter, hidden, on }: {
           >
             {TAB_WORD[t.tab]}
             <span
-              className="rounded-full px-1.5 py-px font-mono text-[11px] font-medium text-zinc-400 tabular-nums group-aria-selected:bg-zinc-900/7 group-aria-selected:text-zinc-600 group-aria-[selected=false]:px-0.5 empty:hidden wide-phone:group-aria-[selected=false]:px-1 dark:text-zinc-500 dark:group-aria-selected:bg-white/10 dark:group-aria-selected:text-zinc-300"
+              className={`rounded-full px-1.5 py-px font-mono text-[11px] font-medium tabular-nums group-aria-selected:bg-zinc-900/7 group-aria-selected:text-zinc-600 group-aria-[selected=false]:px-0.5 empty:hidden wide-phone:group-aria-[selected=false]:px-1 dark:group-aria-selected:bg-white/10 dark:group-aria-selected:text-zinc-300 ${MUTED}`}
             >
               {t.count}
             </span>

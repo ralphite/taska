@@ -6,7 +6,7 @@ import { clock } from '../../model/time'
 import { plural } from '../../model/words'
 import { Kbd } from '../../ui/bits'
 import { Icon } from '../../ui/Icon'
-import { BUSY } from '../../ui/tones'
+import { BUSY, MUTED } from '../../ui/tones'
 
 export type DraftHint =
   /** misheard words not picked yet */
@@ -32,7 +32,7 @@ export function DraftCard({ voice, ms, files, transcribing, words, hint }: { voi
           {files ? <span>· {plural(files, 'file')}</span> : null}
           {/* Send only with words to send */}
           {words && !transcribing ? (
-            <span className="ml-auto flex items-center gap-1 text-zinc-400 dark:text-zinc-500">
+            <span className={`ml-auto flex items-center gap-1 ${MUTED}`}>
               <Kbd k="⇧↵" />
               <span>send</span>
             </span>
@@ -40,7 +40,7 @@ export function DraftCard({ voice, ms, files, transcribing, words, hint }: { voi
         </div>
         {words ?? (
           <div className={DRAFT_WORDS}>
-            <span className={transcribing ? BUSY : 'text-zinc-400 dark:text-zinc-500'}>{transcribing ? 'Transcribing…' : 'No words yet'}</span>
+            <span className={transcribing ? BUSY : `${MUTED}`}>{transcribing ? 'Transcribing…' : 'No words yet'}</span>
           </div>
         )}
         {hint ? (

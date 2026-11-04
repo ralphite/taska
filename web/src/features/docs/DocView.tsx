@@ -10,7 +10,7 @@ import { plural } from '../../model/words'
 import { Icon } from '../../ui/Icon'
 import { RichFrame } from '../../ui/Markdown'
 import type { SheetLook } from '../../ui/Sheet'
-import { BTN, BTN_DANGER, HIT, NEEDS_PILL, PRIMARY, SEP_V } from '../../ui/tones'
+import { BTN, BTN_DANGER, HIT, MUTED, NEEDS_PILL, PRIMARY, SEP_V } from '../../ui/tones'
 import { BlockActs, type CountInfo } from './BlockActs'
 import { DocBlock } from './DocBlock'
 import { DraftCard, NewDot, Thread, type DocEnv, type ThreadEvents } from './Thread'
@@ -375,7 +375,7 @@ export function DocView({ facts, env, on, lasso, page, recTime, aim = null, onAi
             <div className="text-xs font-medium text-zinc-500">Original text changed</div>
             {facts.detached.map((t) => (
               <section key={t.key}>
-                <div className="text-sm text-zinc-400 line-through">{t.quote}</div>
+                <div className={`text-sm line-through ${MUTED}`}>{t.quote}</div>
                 {t.threads.map((s) => thread(s))}
               </section>
             ))}
@@ -399,7 +399,7 @@ export function DocView({ facts, env, on, lasso, page, recTime, aim = null, onAi
             })()}
         {desk ? null : (
           <>
-            <p className="mt-6 text-center text-xs text-zinc-400">{web ? 'Tap a part to comment' : 'Tap, select or circle to comment'}</p>
+            <p className={`mt-6 text-center text-xs ${MUTED}`}>{web ? 'Tap a part to comment' : 'Tap, select or circle to comment'}</p>
             {facts.wholeButton ? (
               <button onClick={on.whole} className="mx-auto mt-1 flex h-11 items-center gap-1.5 px-3 text-sm font-semibold text-blue-600 dark:text-blue-400">
                 <Icon n="mic" c="size-4" />

@@ -106,7 +106,7 @@ function Choices({ b, world, choosing, done }: { b: Extract<MdBlock, { kind: 'ch
             <div
               key={k}
               aria-pressed={on}
-              className="group flex min-h-11 w-full items-center gap-3 rounded-xl border border-zinc-200 px-3 py-2.5 text-[15px] leading-snug text-zinc-500 aria-pressed:border-zinc-400 aria-pressed:text-zinc-800 dark:border-zinc-800 dark:text-zinc-500 dark:aria-pressed:border-zinc-600 dark:aria-pressed:text-zinc-200"
+              className="group flex min-h-11 w-full items-center gap-3 rounded-xl border border-zinc-200 px-3 py-2.5 text-[15px] leading-snug text-zinc-500 aria-pressed:border-zinc-400 aria-pressed:text-zinc-800 dark:border-zinc-800 dark:text-zinc-400 dark:aria-pressed:border-zinc-600 dark:aria-pressed:text-zinc-200"
             >
               <span className={`${box} border-zinc-300 group-aria-pressed:border-zinc-500 group-aria-pressed:bg-zinc-500 group-aria-pressed:text-white dark:border-zinc-700 dark:group-aria-pressed:border-zinc-500 dark:group-aria-pressed:bg-zinc-500 dark:group-aria-pressed:text-zinc-900`}>{check}</span>
               {words}

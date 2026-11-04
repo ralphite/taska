@@ -128,7 +128,7 @@ export function BlockActs({ counts, open, rec, children, on }: {
             else btns.current.delete(c.tk)
           }}
           onClick={() => on.toggle(c.tk)}
-          className={`absolute left-[calc(100%+0.25rem)] z-10 flex h-7 min-w-7 items-center justify-center gap-0.5 rounded-lg px-1.5 text-xs font-semibold ${
+          className={`absolute left-[calc(100%+0.25rem)] z-10 flex h-7 min-w-7 items-center after:absolute after:-inset-2 justify-center gap-0.5 rounded-lg px-1.5 text-xs font-semibold ${
             c.draft
               ? 'border border-dashed border-amber-400 bg-amber-50 text-amber-900 hover:bg-amber-100 dark:border-amber-500/60 dark:bg-amber-400/10 dark:text-amber-100 dark:hover:bg-amber-400/20'
               : c.done

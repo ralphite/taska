@@ -15,7 +15,7 @@ export const PRI_TEXT: Record<Pri, string> = {
   P0: 'font-semibold text-red-600 dark:text-red-400',
   P1: 'font-semibold text-zinc-700 dark:text-zinc-200',
   P2: 'text-zinc-500 dark:text-zinc-400',
-  P3: 'text-zinc-400 dark:text-zinc-500',
+  P3: 'text-zinc-500 dark:text-zinc-400',
 }
 
 export const STATE_ON: Record<Status, string> = {
@@ -43,6 +43,9 @@ export const LINK_BTN = `${HIT} flex h-8 items-center gap-1 rounded-lg px-2 text
 export const DISABLED = 'disabled:cursor-not-allowed disabled:opacity-40 disabled:filter-none'
 /** Words for what is under way (Sending…, Transcribing…): blue, pulsing, wherever they are. */
 export const BUSY = 'animate-pulse text-blue-600 dark:text-blue-400'
+/** Words that matter less (times, counts, hints): readable on white and on dark (WCAG AA, 4.5:1). Pale grey
+ * (zinc-400) is for marks only, and for what is disabled. */
+export const MUTED = 'text-zinc-500 dark:text-zinc-400'
 /** A main button. */
 export const PRIMARY_BASE = `inline-flex h-11 items-center justify-center gap-1.5 rounded-xl border border-transparent px-4 text-[15px] font-semibold ${DISABLED}`
 export const PRIMARY = PRIMARY_BASE + ' bg-zinc-900 text-white hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200'
@@ -60,7 +63,7 @@ export const DECIDED_ON = (tone: string) => `${DECIDED_BASE} border-transparent 
 export const DECIDED_OFF = `${DECIDED_BASE} border-zinc-200 font-medium text-zinc-400 dark:border-zinc-800 dark:text-zinc-500`
 /** Each choice's colour, chosen (no hover: it cannot be pressed). */
 export const CHOSEN_TONE: Record<string, string> = {
-  Approve: 'bg-blue-600 text-white dark:bg-blue-500 dark:text-blue-950',
+  Approve: 'bg-blue-600 text-white dark:bg-blue-500 dark:text-white',
   Accept: 'bg-emerald-600 text-white dark:bg-emerald-500 dark:text-emerald-950',
   Answer: 'bg-amber-500 text-amber-950 dark:bg-amber-400 dark:text-amber-950',
   "Won't do": 'bg-red-600 text-white dark:bg-red-500 dark:text-red-950',
@@ -68,7 +71,7 @@ export const CHOSEN_TONE: Record<string, string> = {
   Reply: 'bg-zinc-600 text-white dark:bg-zinc-500 dark:text-zinc-950',
 }
 export const MODIFY_LINK =
-  '-my-2 h-9 shrink-0 rounded-lg px-2.5 text-sm font-semibold text-blue-600 hover:bg-blue-50 lg:opacity-0 lg:group-hover/form:opacity-100 lg:focus-visible:opacity-100 dark:text-blue-400 dark:hover:bg-blue-400/10'
+  'relative -my-2 h-9 shrink-0 rounded-lg px-2.5 after:absolute after:inset-x-0 after:-inset-y-1 text-sm font-semibold text-blue-600 hover:bg-blue-50 lg:opacity-0 lg:group-hover/form:opacity-100 lg:focus-visible:opacity-100 dark:text-blue-400 dark:hover:bg-blue-400/10'
 export const CHIP = `${HIT} flex h-8 items-center gap-1.5 rounded-lg bg-zinc-100 px-2.5 text-[13px] hover:bg-zinc-200/70 dark:bg-zinc-800/80 dark:hover:bg-zinc-700/80`
 export const NEEDS_CARD = 'rounded-2xl border border-amber-200 bg-amber-50 dark:border-amber-400/25 dark:bg-amber-400/7'
 /** A small button in a message's line: 24px tall, 44px to tap. */
@@ -91,7 +94,7 @@ export const NEED = {
     icon: 'thumb',
     pill: 'bg-blue-100 text-blue-900 ring-blue-300/80 dark:bg-blue-400/15 dark:text-blue-100 dark:ring-blue-400/30',
     text: 'text-blue-700 dark:text-blue-400',
-    btn: 'bg-blue-600 text-white hover:brightness-95 dark:bg-blue-500 dark:text-blue-950 dark:hover:brightness-110',
+    btn: 'bg-blue-600 text-white hover:brightness-95 dark:bg-blue-500 dark:text-white dark:hover:brightness-110',
   },
   answer: {
     icon: 'ask',

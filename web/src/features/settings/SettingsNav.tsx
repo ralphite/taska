@@ -6,6 +6,7 @@ import { Kbd } from '../../ui/bits'
 import { Icon } from '../../ui/Icon'
 import { ALL_PROJECTS, SECTIONS, type SectionKey } from './sectionList'
 import { PH_GROUP, PhHead } from './SettingsParts'
+import { MUTED } from '../../ui/tones'
 
 export interface NavFacts {
   /** what each section's row says on its right */
@@ -27,7 +28,7 @@ export function DeskNav({ current, back, f, on }: { current: SectionKey; back: s
     >
       <Icon n={SECTIONS[k].icon} c="size-4 opacity-70" />
       <span className="min-w-0 flex-1 truncate">{SECTIONS[k].name}</span>
-      <span className="max-w-28 truncate text-xs font-normal text-zinc-400 tabular-nums dark:text-zinc-500">{f.right[k] ?? ''}</span>
+      <span className={`max-w-28 truncate text-xs font-normal tabular-nums ${MUTED}`}>{f.right[k] ?? ''}</span>
     </a>
   )
   return (
