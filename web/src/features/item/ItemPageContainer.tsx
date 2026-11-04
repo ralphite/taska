@@ -26,9 +26,9 @@ export function openItemMenu(app: Pick<App, 'sheets'>, desk: boolean, n: number,
   else app.sheets.open({ kind: 'item-menu', n, arm }, { focus: false })
 }
 
-export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = false }: { it: Item; m: ProjectModel; slug: string; tab: Tab; desk: boolean; /** in two columns, its document on the left */ left?: ReactNode; bare?: boolean }) {
+export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = false, preview = false }: { it: Item; m: ProjectModel; slug: string; tab: Tab; desk: boolean; /** in two columns, its document on the left */ left?: ReactNode; bare?: boolean; /** the search's preview of it: read only, not counted as seen or opened */ preview?: boolean }) {
   const app = useServices('answers', 'box', 'docs', 'fields', 'inputs', 'itemEdits', 'items', 'nav', 'runner', 'seen', 'sheets', 'toasts')
-  const stores = useStores('box', 'data', 'docTicks', 'grips', 'itemView', 'keptEdits', 'outbox', 'ui')
+  const stores = useStores('box', 'data', 'docTicks', 'grips', 'itemView', 'keptEdits', 'outbox', 'recent', 'ui')
   const projects = useStoreValue(stores.data, (s) => s.projects)
   const ticks = useStoreValue(stores.docTicks, (s) => s)
   const duo = useStoreValue(stores.ui, (s) => s.duo) && desk
@@ -44,7 +44,11 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
   const ref = code(n)
   // seen once it shows: what its agents wrote has no dot on its row any more
   const lastAgentT = lastAgentMessage(it)?.t
-  useEffect(() => app.seen.see(slug, n, lastAgentT, !!it.archived), [app, slug, n, lastAgentT, it.archived])
+  useEffect(() => (preview ? undefined : app.seen.see(slug, n, lastAgentT, !!it.archived)), [app, slug, n, lastAgentT, it.archived, preview])
+  // opened: one of the search's Recent
+  useEffect(() => {
+    if (!preview) stores.recent.getState().saw({ project: slug, kind: 'items', n, code: ref, title: it.title, type: it.type, status: it.status })
+  }, [stores, preview, slug, n, ref, it.title, it.type, it.status])
 
   // the open question's choices: picked here, or before a reload (kept by their words)
   void view.choice

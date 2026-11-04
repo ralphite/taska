@@ -1,10 +1,9 @@
 // More of what you do every day, on the phone and the desktop (D20 sections 4 to 6).
 // guards: src/features/ src/pages/ src/app/page/navigation.ts src/app/keys.ts src/app/actions.ts src/app/items/ src/app/inputs/ src/model/route.ts server/
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test } from '@playwright/test'
 import { LOOP, isDesk, open, project } from './seed'
-import { box, docEdit, itemMenu, menuChoice, pane, paletteRows, row, sheetBody, view } from './ui'
+import { box, docEdit, itemMenu, menuChoice, pane, row, sheetBody, view } from './ui'
 
-const search = (page: Page) => page.locator('input[type="search"]').filter({ visible: true }).first()
 
 test('the phone: an item is a page of its own, and Back returns to the list', async ({ page, request }) => {
   test.skip(isDesk(page), 'phone only')
@@ -18,13 +17,12 @@ test('the phone: an item is a page of its own, and Back returns to the list', as
   await expect(pane(page)).toHaveCount(0)
 })
 
-test('search narrows the list and says where else the words are', async ({ page, request }) => {
+test("a link with words narrows the list to them (the search's link to an input not filed yet)", async ({ page, request }) => {
   test.skip(!isDesk(page), 'the phone has its own search page (F479): search.spec.ts')
   const p = await project(request, LOOP)
-  await open(page, p)
-  await search(page).fill('docs')
+  await open(page, p, '?q=docs')
   await expect(page.locator('#list article[data-n]')).toHaveCount(1)
-  await search(page).fill('zzzz-nothing')
+  await open(page, p, '?q=zzzz-nothing')
   await expect(page.locator('#list')).toContainText('No matches for “zzzz-nothing”')
 })
 
@@ -74,15 +72,26 @@ test('the desktop: picked rows change together', async ({ page, request }) => {
   await expect.poll(async () => (await p.read('T5')).split('\n')[0]).toContain(' done ')
 })
 
-test('the desktop: Cmd-K finds an item and opens it', async ({ page, request }) => {
+test('the desktop: Cmd-K searches as you type and opens what it found in its pane', async ({ page, request }) => {
   test.skip(!isDesk(page), 'desktop only')
   const p = await project(request, LOOP)
   await open(page, p)
-  await page.keyboard.press('Meta+k')
+  await page.keyboard.press('ControlOrMeta+k')
+  await expect(page.getByRole('textbox', { name: 'What to find' })).toBeFocused()
   await page.keyboard.type('branches')
-  await page.keyboard.press('ArrowDown')
-  await paletteRows(page).filter({ hasText: 'Clean up old branches' }).first().click()
+  const found = page.locator('[data-part="search"] [data-found]').filter({ hasText: 'Clean up old branches' }).first()
+  await expect(found).toBeVisible()
+  await found.click()
+  await expect(page.locator('[data-part="search"]')).toHaveCount(0)
   await expect(pane(page).locator('h1')).toHaveText('Clean up old branches')
+  // Cmd-K again: the same words, selected, and what they found
+  await page.keyboard.press('ControlOrMeta+k')
+  const field = page.getByRole('textbox', { name: 'What to find' })
+  await expect(field).toHaveValue('branches')
+  expect(await field.evaluate((e: HTMLInputElement) => [e.selectionStart, e.selectionEnd])).toEqual([0, 8])
+  await expect(page.locator('[data-part="search"] [data-found]').first()).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(page.locator('[data-part="search"]')).toHaveCount(0)
 })
 
 test('the desktop: G then N shows the inputs, Settings opens on G S and Esc goes back', async ({ page, request }) => {

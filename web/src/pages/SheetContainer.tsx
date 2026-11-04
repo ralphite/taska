@@ -6,7 +6,8 @@ import { useLayout, useServices, useStores, useStoreValue } from '../app/context
 import type { SheetKind, SheetRequest } from '../stores/sheet'
 import { Sheet } from '../ui/Sheet'
 import { usePaneRef } from '../app/panes'
-import { KeysSheet, PaletteSheet, SwitchProjectSheet } from '../features/find/FindersContainer'
+import { KeysSheet, SwitchProjectSheet } from '../features/find/FindersContainer'
+import { SearchSheet } from './SearchDialogContainer'
 import { AsSaidSheet, InputHistorySheet, InputMenuSheet, InputMoveSheet, InputRescopeSheet } from '../features/inputs/InputSheetsContainer'
 import { AgentCardSheet, ItemMenuSheet, MessageMenuSheet, MoveItemProjectSheet, MoveParentSheet, SourcesSheet } from '../features/item/ItemSheetsContainer'
 import { AgentsSheet } from '../features/agents/AgentsContainer'
@@ -32,7 +33,7 @@ const KINDS: { [K in SheetKind]: ComponentType<{ req: Extract<SheetRequest, { ki
   filters: FiltersSheet,
   keys: KeysSheet,
   'switch-project': SwitchProjectSheet,
-  palette: PaletteSheet,
+  search: SearchSheet,
   'doc-move': DocMoveSheet,
   'comment-move': CommentMoveSheet,
   'comment-menu': CommentMenuSheet,
@@ -55,7 +56,7 @@ export function SheetContainer() {
   const desk = useLayout() === 'desk'
   const spec = useStoreValue(stores.sheet, (s) => s.spec)
   return (
-    <Sheet footRef={sheetFoot} open={!!spec} look={{ pop: spec?.pop, narrow: spec?.narrow, wide: spec?.wide, tall: spec?.tall, at: spec?.at }} desk={desk} focus={!!spec?.focus} bodyRef={app.fields.ref('sheet')} onClose={() => (spec?.req.kind === 'doc-edit' ? app.docEditor.keep() : app.sheets.close())}>
+    <Sheet footRef={sheetFoot} open={!!spec} look={{ pop: spec?.pop, narrow: spec?.narrow, wide: spec?.wide, tall: spec?.tall, search: spec?.search, at: spec?.at }} desk={desk} focus={!!spec?.focus} bodyRef={app.fields.ref('sheet')} onClose={() => (spec?.req.kind === 'doc-edit' ? app.docEditor.keep() : app.sheets.close())}>
       {spec ? <Holds key={JSON.stringify(spec.req)} req={spec.req} /> : null}
     </Sheet>
   )

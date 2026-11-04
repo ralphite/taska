@@ -15,7 +15,7 @@ const DEV_LINKS = [
 ]
 
 export function SidebarContainer({ slug, place, hidden, rail }: { slug: string; place: string; hidden?: boolean; rail?: boolean }) {
-  const app = useServices('actions', 'itemDrag', 'nav', 'projects', 'sheets', 'voice')
+  const app = useServices('actions', 'finder', 'itemDrag', 'nav', 'projects', 'sheets', 'voice')
   const stores = useStores('drag', 'feedback', 'grips', 'route', 'ui')
   const layout = useLayout()
   const drawerFoot = usePaneRef('drawerFoot')
@@ -36,6 +36,7 @@ export function SidebarContainer({ slug, place, hidden, rail }: { slug: string; 
   const links = sideLinks(slug, side)
   const on: SidebarEvents = {
     newInput: () => app.actions.run('new-input'),
+    search: () => app.finder.openDesk(),
     newVoice: () => {
       // New input, recording at once (again: stop and send)
       if (app.voice.recording()) return void app.voice.finish(true)

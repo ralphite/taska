@@ -30,7 +30,8 @@ export type SheetRequest =
   | { kind: 'filters' }
   | { kind: 'keys' }
   | { kind: 'switch-project' }
-  | { kind: 'palette' }
+  /** the desktop's search (F479) */
+  | { kind: 'search' }
   /** a document onto another item; a comment to another paragraph */
   | { kind: 'doc-move'; d: number }
   /** one of your views of the list */
@@ -58,6 +59,8 @@ export interface SheetPlace {
   /** wider on the desktop */
   wide?: boolean
   tall?: boolean
+  /** the desktop's search: in the top third, wide, its height fixed */
+  search?: boolean
   /** its first button takes the focus */
   focus?: boolean
   /** where a desktop menu sits: at the pointer, or under the button it came from (its right edge on the button's) */

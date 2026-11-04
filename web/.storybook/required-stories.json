@@ -259,10 +259,10 @@
   "Prototype/New mobile layout": [
    "New Mobile Layout"
   ],
-  "Prototype/F479 Search on the desktop/Walk through": [
+  "Components/Search on the desktop/Walk through": [
    "Walk through"
   ],
-  "Prototype/F479 Search on the desktop/Type and find": [
+  "Components/Search on the desktop/Type and find": [
    "Search in the sidebar",
    "Search under the pointer",
    "Sidebar folded",
@@ -275,7 +275,7 @@
    "A result open",
    "Opened again"
   ],
-  "Prototype/F479 Search on the desktop/Filters and actions": [
+  "Components/Search on the desktop/Filters and actions": [
    "One kind",
    "Project: its menu",
    "In one project",
@@ -283,14 +283,14 @@
    "Results and an action",
    "Only an action"
   ],
-  "Prototype/F479 Search on the desktop/Say it": [
+  "Components/Search on the desktop/Say it": [
    "Listening",
    "Transcribing",
    "A word may be misheard",
    "Saying more",
    "Said more"
   ],
-  "Prototype/F479 Search on the desktop/When it goes wrong, dark, narrower": [
+  "Components/Search on the desktop/When it goes wrong, dark, narrower": [
    "Nothing found",
    "Didn't catch that",
    "Microphone not allowed",
@@ -305,10 +305,10 @@
    "About"
   ],
   "Review/B498 Comment on a place: voice and words": [
-   "Desktop \u00b7 Markdown paragraph",
-   "Desktop \u00b7 web page part",
-   "Phone 393 \u00b7 Markdown paragraph",
-   "Phone 393 \u00b7 web page part"
+   "Desktop · Markdown paragraph",
+   "Desktop · web page part",
+   "Phone 393 · Markdown paragraph",
+   "Phone 393 · web page part"
   ],
   "Review/B510 Finished and asks you": [
    "Now One Card",

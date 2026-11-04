@@ -4,7 +4,6 @@
 import type { ReactNode } from 'react'
 import { EmptyList, ItemList, type ListEvents } from '../features/list/ItemList'
 import { drawRows, listViews } from '../features/list/drawRows'
-import { ViewBar } from '../features/list/ViewBar'
 import { heldRows, listBody } from '../features/list/rows'
 import { queueHead, type DropHow } from '../model/items'
 import { NO_FILTERS, type ListQuery } from '../model/route'
@@ -49,7 +48,7 @@ export interface Holding {
   held?: { before: Item[]; said: Record<number, string> }
   saved?: readonly SavedView[]
   top?: ReactNode
-  /** drawn at the end of the views' row (a prototype's part not built yet) */
+  /** at the end of the views' row (the desktop's Filters button) */
   viewsEnd?: ReactNode
   /** a row being dragged (`out`: off every row) */
   dragging?: { out: boolean }
@@ -84,24 +83,11 @@ export function listOf(items: Item[], tab: Tab, q: Partial<ListQuery>, desk: boo
         desk={desk}
         openN={h.open ?? null}
         dragging={h.dragging ?? (h.drag ? { out: h.drag.at?.how === 'out' } : null)}
-        views={h.viewsEnd ? null : views}
+        views={views}
+        viewsEnd={h.viewsEnd}
         ownViews={ownViews}
         rows={drawn}
-        top={
-          h.viewsEnd ? (
-            <>
-              {h.top}
-              <div className="flex items-center">
-                <div className="min-w-0 flex-1">
-                  <ViewBar views={views ?? []} own={ownViews} onView={() => {}} />
-                </div>
-                {h.viewsEnd}
-              </div>
-            </>
-          ) : (
-            h.top
-          )
-        }
+        top={h.top}
         empty={why ? <EmptyList why={why} q={words.join(' ')} status={query.status} organizerOn={m.facts.organizer.on} onReset={() => {}} onConnect={() => {}} hints={hints(0)} /> : null}
         bottom={words.length && drawn.length ? <div className="flex flex-col py-4">{hints(drawn.length)}</div> : null}
         on={{ ...listOn, ...h.on }}

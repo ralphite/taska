@@ -1,14 +1,12 @@
-// Finding by typing, with the page's data: the sheet of every key, the project switcher, and the command palette
-// (an item, or an action of the table: done once the palette has closed, as its key would).
+// The sheet of every key and the project switcher, with the page's data.
 
-import { useLayout, useServices } from '../../app/context'
-import { useProjectModel, useProjectRoute } from '../../app/hooks'
-import { codeOf } from '../../model/project'
+import { useServices } from '../../app/context'
+import { useProjectRoute } from '../../app/hooks'
 import type { SheetRequest } from '../../stores/sheet'
 import { SheetLayout } from '../../ui/Sheet'
 import { useSideProjects } from '../../app/projectLists'
-import { keyHelp, paletteRows } from '../../app/actions'
-import { keysSheet, Palette, Switcher } from './Finders'
+import { keyHelp } from '../../app/actions'
+import { keysSheet, Switcher } from './Finders'
 
 type Req<K extends SheetRequest['kind']> = { req: Extract<SheetRequest, { kind: K }> }
 
@@ -27,36 +25,4 @@ export function SwitchProjectSheet(_: Req<'switch-project'>) {
     app.nav.to(`/p/${encodeURIComponent(s)}/`)
   }
   return <SheetLayout title="Switch project" body={<Switcher rows={list} loading={!side} onOpen={open} />} />
-}
-
-const COMMANDS = [...paletteRows(true), ...paletteRows(false)]
-
-export function PaletteSheet(_: Req<'palette'>) {
-  const app = useServices('nav', 'actions', 'sheets')
-  const route = useProjectRoute()
-  const m = useProjectModel(route?.slug ?? '')
-  const code = (n: number) => (m ? codeOf(m, n) : '')
-  const open = route?.place.kind === 'item' && m ? (m.byN.get(Number(/\d+/.exec(route.place.ref)?.[0]))?.n ?? null) : null
-  const close = () => app.sheets.close()
-  const desk = useLayout() === 'desk'
-  return (
-    <SheetLayout
-      title="Go to or do"
-      body={
-        <Palette
-          items={m?.items || []}
-          code={code}
-          open={open}
-          onItem={(n) => (close(), app.nav.openItem(code(n)))}
-          commands={COMMANDS}
-          desk={desk}
-          onCommand={(id) => {
-            close()
-            ;(document.activeElement as HTMLElement | null)?.blur()
-            requestAnimationFrame(() => app.actions.run(id))
-          }}
-        />
-      }
-    />
-  )
 }

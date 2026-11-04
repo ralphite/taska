@@ -1,6 +1,6 @@
 // The project's head: on the desktop the bar over the panes (the project's name, its tabs, whether an agent is
-// around), and the list's head (its search, the filters button); on the phone one head (the menu with the project's
-// name, the agent pill, search) and the tabs under it. Props only.
+// around) and the Filters button the list's views end with; on the phone one head (the menu with the project's name,
+// the agent pill, search) and the tabs under it. Props only.
 
 import { useLayoutEffect, useRef } from 'react'
 import { flushSync } from 'react-dom'
@@ -8,6 +8,7 @@ import type { AgentTone } from '../model/agents'
 import { TAB_WORD, type Tab } from '../model/words'
 import { ProjTile } from '../ui/bits'
 import { Icon, StateIcon } from '../ui/Icon'
+import { FilterDot } from '../features/list/Filters'
 import { MUTED } from '../ui/tones'
 
 const PILL: Record<AgentTone, [string, string]> = {
@@ -130,9 +131,9 @@ export function ProjectBar({
   )
 }
 
-/** The list's head: the phone's head (menu, name, agent, search) or, on the desktop and while searching, the search. */
+/** The phone's head over the list (menu, name, agent, search), or the list's words while they are searched (the
+ * desktop has no head over the list: its search is the dialog, its filter at the end of the views' row, F479). */
 export function ListHead({
-  phone,
   title,
   otherNeeds,
   searching,
@@ -140,14 +141,11 @@ export function ListHead({
   placeholder,
   agent,
   notSaved,
-  filtersSet,
-  filtersOpen,
   place,
   hidden,
   searchRef,
   on,
 }: {
-  phone: boolean
   title: string
   otherNeeds: boolean
   searching: boolean
@@ -155,11 +153,9 @@ export function ListHead({
   placeholder: string
   agent: AgentInfo | null
   notSaved: number
-  filtersSet: boolean
-  filtersOpen: boolean
   place: string
   hidden?: boolean
-  /** the search field's element, for the keys (/ goes there) */
+  /** the search field's element */
   searchRef?: (el: HTMLInputElement | null) => void
   on: {
     menu(): void
@@ -168,18 +164,16 @@ export function ListHead({
     search(on: boolean): void
     query(q: string): void
     clear(): void
-    firstResult(): void
-    filters(): void
   }
 }) {
-  const showSearch = !phone || searching || !!q
+  const showSearch = searching || !!q
   const input = useRef<HTMLInputElement | null>(null)
   useLayoutEffect(() => {
     const el = input.current
     if (el && el.value !== q && document.activeElement !== el) el.value = q
   })
   return (
-    <header data-part="list-head" data-tip-side="bottom" hidden={hidden} className={`flex h-14 shrink-0 items-center gap-1 px-2 lg:gap-2 lg:border-b lg:border-zinc-200 lg:px-3 dark:lg:border-zinc-800 ${place}`}>
+    <header data-part="list-head" data-tip-side="bottom" hidden={hidden} className={`flex h-14 shrink-0 items-center gap-1 px-2 ${place}`}>
       <div hidden={showSearch} className="contents">
         <button onClick={on.menu} aria-label="Projects and settings" className="flex h-12 min-w-0 flex-1 items-center gap-2.5 rounded-xl px-2.5 text-left data-pressed:bg-zinc-100 dark:data-pressed:bg-zinc-800">
           <span className="relative text-zinc-700 dark:text-zinc-300">
@@ -205,7 +199,7 @@ export function ListHead({
         </button>
       </div>
       <div hidden={!showSearch} className="contents">
-        <label className={`ml-1 flex h-11 min-w-0 flex-1 items-center gap-2 rounded-xl bg-zinc-100 pl-3 lg:ml-0 lg:h-9 lg:ring-blue-500/40 lg:focus-within:bg-white lg:focus-within:ring-2 dark:bg-zinc-800 dark:lg:focus-within:bg-zinc-900 ${MUTED}`}>
+        <label className={`ml-1 flex h-11 min-w-0 flex-1 items-center gap-2 rounded-xl bg-zinc-100 pl-3 dark:bg-zinc-800 ${MUTED}`}>
           <Icon n="search" c="size-4.5" />
           <input
             ref={(el) => {
@@ -216,50 +210,23 @@ export function ListHead({
             autoComplete="off"
             placeholder={placeholder}
             defaultValue={q}
-            className="min-w-0 flex-1 bg-transparent text-base text-zinc-900 outline-none placeholder:text-zinc-500 dark:placeholder:text-zinc-400 lg:text-sm dark:text-zinc-100 [&::-webkit-search-cancel-button]:hidden"
+            className="min-w-0 flex-1 bg-transparent text-base text-zinc-900 outline-none placeholder:text-zinc-500 dark:placeholder:text-zinc-400 dark:text-zinc-100 [&::-webkit-search-cancel-button]:hidden"
             onInput={(e) => on.query(e.currentTarget.value)}
-            onFocus={() => phone && !searching && on.search(true)}
-            onKeyDown={(e) => {
-              if (phone || !(e.key === 'ArrowDown' || (e.key === 'Enter' && !e.nativeEvent.isComposing))) return
-              e.preventDefault()
-              e.currentTarget.blur()
-              on.firstResult()
-            }}
+            onFocus={() => !searching && on.search(true)}
           />
-          <kbd className={`mr-2 hidden h-5 min-w-5 place-items-center rounded-md px-1 font-sans text-[11px] font-semibold ring-1 ring-zinc-300 dark:ring-zinc-600 ${q ? '' : 'lg:grid'} ${MUTED}`}>/</kbd>
-          <button onClick={on.clear} aria-label="Clear search" className={`group -mr-1 grid size-11 shrink-0 place-items-center rounded-full lg:size-9 ${q ? '' : 'lg:hidden'}`}>
+          <button onClick={on.clear} aria-label="Clear search" className="group -mr-1 grid size-11 shrink-0 place-items-center rounded-full">
             <span className="grid size-5 place-items-center rounded-full bg-zinc-400 text-white group-hover:bg-zinc-500 dark:bg-zinc-600 dark:text-zinc-900 dark:group-hover:bg-zinc-500">
               <Icon n="x" c="size-3" sw="3" />
             </span>
           </button>
         </label>
-        <button onClick={() => on.search(false)} className="h-11 shrink-0 px-2.5 text-[15px] font-medium text-blue-600 lg:hidden dark:text-blue-400">
+        <button onClick={() => on.search(false)} className="h-11 shrink-0 px-2.5 text-[15px] font-medium text-blue-600 dark:text-blue-400">
           Cancel
         </button>
       </div>
-      <FiltersButton set={filtersSet} open={filtersOpen} onClick={on.filters} />
     </header>
   )
 }
-
-/** The desktop's Filters button: the filters' row opens under the list's head. */
-export function FiltersButton({ set, open, onClick }: { set: boolean; open: boolean; onClick(): void }) {
-  return (
-    <button
-      onClick={onClick}
-      title="Filters · F"
-      aria-label="Filters"
-      aria-expanded={open}
-      className="relative hidden size-9 shrink-0 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-100 aria-expanded:bg-zinc-100 lg:grid dark:text-zinc-400 dark:hover:bg-zinc-800 dark:aria-expanded:bg-zinc-800"
-    >
-      <Icon n="sliders" c="size-[18px]" />
-      <FilterDot on={set} />
-    </button>
-  )
-}
-
-export const FilterDot = ({ on }: { on: boolean }) =>
-  on ? <span className="absolute top-2 right-2 size-2 rounded-full bg-blue-600 ring-2 ring-white dark:bg-blue-400 dark:ring-zinc-950" /> : null
 
 /** The phone's tabs. From 400 px the four fit with their counts; narrower, only the open one keeps its count. */
 export function PhoneTabs({ tabs, filtersSet, showFilter, hidden, on }: {

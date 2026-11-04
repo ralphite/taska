@@ -6,7 +6,6 @@ import { LOOP, isDesk, open, project } from './seed'
 import { blockPick, boxLine, commentMode, docBlock, docCard, itemMenu, menuChoice, pageCount, pane, partPick, row, talk, threadPop } from './ui'
 
 const frameOf = (page: Page) => pane(page).frameLocator('iframe')
-const search = (page: Page) => page.locator('input[type="search"]').filter({ visible: true }).first()
 const sheet = (page: Page) => page.locator('[data-part="sheet"]').first()
 
 test.beforeEach(({ page }) => {
@@ -306,7 +305,7 @@ test('a comment count outlines its part while pointed at and while open; a press
   await expect(pop).toContainText('Why not B?')
   await page.mouse.move(5, 5)
   await expect(lit).toHaveCount(1) // still outlined while open
-  await search(page).click() // elsewhere on the page
+  await page.locator('#drawer').getByText('Projects', { exact: true }).click() // elsewhere on the page
   await expect(pop).toHaveCount(0)
   await count.click()
   await expect(pop).toContainText('Why not B?')

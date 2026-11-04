@@ -1,7 +1,7 @@
 // The keys, for the whole page: each key is looked up in the table of actions (actions.ts), which says whether it can
 // act here and does it. On the desktop a single key acts while you are not typing; G then a letter, and S, P or T then
-// a digit or letter, are two keys. Esc steps back one level, on the phone too; Cmd-K opens Go to or do. The home page
-// has one key: Cmd-K or / go to its search.
+// a digit or letter, are two keys. Esc steps back one level, on the phone too; Cmd-K (or /) opens the search (F479).
+// The home page has one key: Cmd-K or / search (the phone: its search field).
 
 import { actionOfKeys, type ActionId } from './actions'
 import { armedSet } from '../model/actions'
@@ -19,7 +19,9 @@ export function pageKeys(app: App): (e: KeyboardEvent) => void {
     if (app.stores.route.getState().route.page === 'home') {
       if (((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') || (e.key === '/' && !typingIn(active))) {
         e.preventDefault()
-        app.fields.focus('home')
+        if (!app.desk()) app.fields.focus('home')
+        else if (app.stores.sheet.getState().spec?.req.kind === 'search') app.finder.closeDesk()
+        else app.finder.openDesk()
       }
       return
     }
@@ -37,13 +39,12 @@ export function pageKeys(app: App): (e: KeyboardEvent) => void {
       }
       return
     }
-    // Cmd-K anywhere on the desktop, even while typing (again: closes it)
+    // Cmd-K anywhere on the desktop, even while typing: the search (again: it closes)
     if (app.desk() && (e.metaKey || e.ctrlKey) && !e.altKey && e.key.toLowerCase() === 'k') {
       e.preventDefault()
       const open = app.stores.sheet.getState().spec
-      if (open) app.sheets.close()
-      if (open?.req.kind !== 'palette') act('palette')
-      return
+      if (open && open.req.kind !== 'search') app.sheets.close()
+      return act('search')
     }
     // the desktop's item menu: arrows walk it, S P T and then a digit or letter set a field, and the keys it shows
     // work from it (it closes, the key acts)
@@ -51,10 +52,8 @@ export function pageKeys(app: App): (e: KeyboardEvent) => void {
     if (menu && menuKey(app, e, h.m?.byN.get(menu.n), menu.arm)) return
     if (menu && /^[a-zA-Z]$/.test(e.key)) app.sheets.close()
     else if (app.stores.sheet.getState().spec) return // a sheet or menu is open: it has its own keys
-    if (!app.desk()) {
-      if (e.key === '/' && !typingIn(active)) act('search') // the phone's keyboard
-      return
-    }
+    if (e.key === '/' && !typingIn(active) && !e.metaKey && !e.ctrlKey) return act('search') // and the phone's keyboard
+    if (!app.desk()) return
     // Option-V in the document editor speaks into the document
     if (e.altKey && e.code === 'KeyV' && !e.metaKey && !e.ctrlKey && app.stores.docView.getState().editing && app.fields.get('doc')) {
       e.preventDefault()

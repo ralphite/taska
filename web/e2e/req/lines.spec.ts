@@ -119,8 +119,8 @@ test('r448 r458 r464 r470: a line goes wherever it is dragged, and stays there f
 async function downTheLine(page: Page): Promise<string[]> {
   await page.mouse.move(2, 2)
   const list = await page.locator('[data-part="items"]').filter({ visible: true }).first().boundingBox()
-  const head = await page.locator('[data-part="list-head"]').filter({ visible: true }).first().boundingBox()
-  if (!list || !head) throw new Error('not drawn')
+  const bar = await page.locator('nav[aria-label="This project"]').filter({ visible: true }).first().boundingBox()
+  if (!list || !bar) throw new Error('not drawn')
   const shot = (await page.screenshot({ scale: 'css' })).toString('base64')
   return page.evaluate(
     async ({ shot, x, top }) => {
@@ -137,7 +137,7 @@ async function downTheLine(page: Page): Promise<string[]> {
       for (let y = top; y < img.height; y++) out.push(`${px[y * 4]},${px[y * 4 + 1]},${px[y * 4 + 2]}`)
       return out
     },
-    { shot, x: Math.round(list.x + list.width) - 1, top: Math.ceil(head.y) },
+    { shot, x: Math.round(list.x + list.width) - 1, top: Math.ceil(bar.y + bar.height) },
   )
 }
 

@@ -5,7 +5,7 @@ import { T } from './fixtures'
 import { Home, type HomeEvents, type HomeFacts } from '../features/home/Home'
 import { homeRows } from '../features/home/homeRows'
 
-export const on: HomeEvents = { query() {}, restore() {}, closeGone() {}, closeNone() {}, startNew() {}, cancelNew() {}, create() {}, open() {} }
+export const on: HomeEvents = { query() {}, search() {}, restore() {}, closeGone() {}, closeNone() {}, startNew() {}, cancelNew() {}, create() {}, open() {} }
 export const now = Date.parse(T)
 export const PROJECTS: ProjectRow[] = [
   { name: 'taska', title: 'taska', open: 32, needs: 2, pos: 0, agents: [{ name: 'claude-code', t: now - 60_000, waiting: true }] },

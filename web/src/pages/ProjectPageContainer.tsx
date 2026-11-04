@@ -20,7 +20,6 @@ import { SideListContainer } from '../features/side/SideListContainer'
 import { HelpContainer } from '../features/help/HelpContainer'
 import { SettingsContainer } from '../features/settings/SettingsContainer'
 import { settingsTitle } from '../features/settings/sectionList'
-import { codeOf } from '../model/project'
 import { InputsContainer } from '../features/inputs/InputsContainer'
 import { SearchContainer } from './SearchContainer'
 import { DeskFilters, FilterStrip } from '../features/list/Filters'
@@ -110,31 +109,6 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
           place="col-span-2 col-start-1 row-start-1"
           hidden={settings}
           on={{ tab: (t) => app.nav.tab(t), agents: () => app.sheets.open({ kind: 'agents' }, { tall: true, wide: true }), notSaved: (from) => app.sheets.openFrom(from, { kind: 'not-saved' }, { focus: false }) }}
-        />
-        <ListHead
-          phone={false}
-          title={title}
-          otherNeeds={false}
-          searching={false}
-          q={route.list.q}
-          placeholder={route.tab === 'rules' ? 'Search rules' : 'Search items'}
-          agent={agent}
-          notSaved={notSaved}
-          filtersSet={set.length > 0}
-          filtersOpen={filtersOpen}
-          place="col-start-1 row-start-2"
-          hidden={settings || full || side}
-          searchRef={app.fields.ref('search')}
-          on={{
-            menu: () => {},
-            agents: () => {},
-            notSaved: () => {},
-            search: () => {},
-            query: (q) => app.nav.setList({ q }),
-            clear: () => app.nav.setList({ q: '' }),
-            firstResult: () => app.nav.first(app.listOrder, (n) => codeOf(app.model(route.slug) ?? { byN: new Map(), width: 0 }, n)),
-            filters: () => stores.ui.getState().setDeskFilters(!filtersOpen),
-          }}
         />
         <DeskFilters
           tab={route.tab}
@@ -241,7 +215,6 @@ function PhoneLayout({ route }: { route: ProjectRoute }) {
         className={`group/app relative z-10 mx-auto flex h-full max-w-3xl flex-col bg-white pt-[env(safe-area-inset-top)] md:border-x md:border-zinc-200 dark:bg-zinc-950 md:dark:border-zinc-800 ${drawer || drawerPull.pull ? 'overflow-hidden rounded-l-3xl shadow-2xl' : ''}`}
       >
         <ListHead
-          phone
           title={title}
           otherNeeds={otherNeeds}
           searching={false}
@@ -249,8 +222,6 @@ function PhoneLayout({ route }: { route: ProjectRoute }) {
           placeholder="Search items"
           agent={agent}
           notSaved={notSaved}
-          filtersSet={phoneSet.length > 0}
-          filtersOpen={false}
           place=""
           hidden={!under}
           searchRef={app.fields.ref('search')}
@@ -261,8 +232,6 @@ function PhoneLayout({ route }: { route: ProjectRoute }) {
             search: (on) => (on ? app.finder.open() : app.nav.search(false)),
             query: (q) => app.nav.setList({ q }),
             clear: () => app.nav.setList({ q: '' }),
-            firstResult: () => {},
-            filters: () => {},
           }}
         />
         <PhoneTabs tabs={tabs} filtersSet={phoneSet.length > 0} showFilter={route.tab !== 'inputs'} hidden={!under} on={{ tab: (t) => app.nav.tab(t), filters: () => app.sheets.open({ kind: 'filters' }, { focus: false }) }} />

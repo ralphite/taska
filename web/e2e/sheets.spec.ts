@@ -1,10 +1,10 @@
-// The menus and sheets: the command palette, an item's menu, Put under… and Delete's second click (T529).
+// The menus and sheets: the search's Actions, an item's menu, Put under… and Delete's second click (T529).
 // guards: src/features/find/ src/features/item/ItemMenu.tsx src/features/item/ItemSheetsContainer.tsx src/ui/Pickers.tsx src/ui/Sheet.tsx src/app/page/sheets.ts src/app/items/ src/features/agents/ src/model/guide.ts
 import { expect, test } from '@playwright/test'
 import { LOOP, isDesk, open, project } from './seed'
-import { itemMenu, menuChoice, pane, paletteRows, row, sheetBody, undo } from './ui'
+import { itemMenu, menuChoice, pane, row, sheetBody, undo } from './ui'
 
-test('T529: with an item open, the command palette keeps its rows whole and scrolls them', async ({
+test("F479: with an item open, words that name an action show it under the search's Actions, and it acts on the item", async ({
   page,
   request,
 }) => {
@@ -13,17 +13,12 @@ test('T529: with an item open, the command palette keeps its rows whole and scro
   await open(page, p, 'T4')
   await expect(pane(page).locator('h1')).toHaveText('Write the user docs')
   await page.keyboard.press('ControlOrMeta+k')
-  const rows = paletteRows(page)
-  await expect(rows.first()).toBeVisible()
-  // the item's own commands and the page's: more than the sheet has room for
-  expect(await rows.count()).toBeGreaterThan(20)
-  const heights = await rows.evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().height)))
-  expect(new Set(heights)).toEqual(new Set([40]))
-  // the last one is a scroll away: Up from the first goes to it, and it shows
-  await page.keyboard.press('ArrowUp')
-  await expect(rows.last()).toHaveAttribute('aria-selected', 'true')
-  await expect(rows.last()).toBeInViewport()
-  await expect(rows.first()).not.toBeInViewport()
+  await page.keyboard.type('done')
+  const action = page.locator('[data-part="search"] [data-action="done"]')
+  await expect(action).toContainText('T4')
+  await action.click()
+  await expect(page.locator('[data-part="search"]')).toHaveCount(0)
+  await expect.poll(async () => (await p.read('T4')).split('\n')[0]).toContain(' done ')
 })
 
 test('T529: Delete asked again soon after an Undo keeps asking for its own 3 seconds', async ({ page, request }) => {

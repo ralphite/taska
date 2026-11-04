@@ -10,7 +10,7 @@ import { homeRows } from './homeRows'
 type HomeRoute = Extract<Route, { page: 'home' }>
 
 export function HomeContainer({ route }: { route: HomeRoute }) {
-  const app = useServices('crossSearch', 'fields', 'projects')
+  const app = useServices('crossSearch', 'fields', 'finder', 'projects')
   const stores = useStores('data', 'route', 'search')
   const projects = useStoreValue(stores.data, (s) => s.projects)
   const needs = useStoreValue(stores.data, (s) => s.needs)
@@ -41,6 +41,7 @@ export function HomeContainer({ route }: { route: HomeRoute }) {
       setQ(v)
       app.crossSearch.want(v.trim(), '', 250)
     },
+    search: () => app.finder.openDesk(),
     restore: async () => {
       if (!gone) return
       const r = await app.projects.restore(gone.name)

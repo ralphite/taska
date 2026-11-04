@@ -8,7 +8,6 @@ const projects = (page: Page) => page.getByRole('button', { name: 'Projects and 
 /** the New input page's head (the project's name over the box), and what you said under the box */
 const composeHead = (page: Page) => page.locator('footer:has(#composer) h1').first()
 const composeList = (page: Page) => page.locator('section[aria-label="Latest inputs"]').first()
-const search = (page: Page) => page.locator('input[type="search"]').filter({ visible: true }).first()
 /** The project's initial view model. */
 const DATA = /\/api\/view\b/
 
@@ -197,13 +196,13 @@ test('D82 #7, R4-5 #7: a search says what the other projects gave: searching, no
     return answer === 'fail' ? r.abort() : r.continue()
   })
   test.skip(!isDesk(page), 'the phone has its own search page (F479): search.spec.ts')
-  await open(page, p)
-  await search(page).fill('zqxj-one')
+  // the list's words come from a link (the search's link to an input not filed yet)
+  await open(page, p, '?q=zqxj-one')
   await expect(page.getByText('Searching other projects\u2026', { exact: true }).filter({ visible: true }).first()).toBeVisible()
   answer = 'go'
   await expect(page.getByText('Not in other projects', { exact: true }).filter({ visible: true }).first()).toHaveText('Not in other projects')
   answer = 'fail'
-  await search(page).fill('zqxj-two')
+  await page.goto(p.url + '?q=zqxj-two')
   await expect(page.getByText('Taska is out of reach, retrying\u2026', { exact: true }).filter({ visible: true }).first()).toBeVisible()
   answer = 'go'
   await expect(page.getByText('Not in other projects', { exact: true }).filter({ visible: true }).first()).toBeVisible({ timeout: 15000 })

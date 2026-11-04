@@ -17,6 +17,7 @@ import { createDraftsStore, type DraftsStore } from '../stores/drafts'
 import { createItemViewStore, type ItemViewStore } from '../stores/itemView'
 import { createSearchStore, type SearchStore } from '../stores/search'
 import { createFindStore, type FindStore } from '../stores/find'
+import { createRecentStore, type RecentStore } from '../stores/recent'
 import { Finder } from './search/finder'
 import { createSheetStore, type SheetStore } from '../stores/sheet'
 import { createUiStore, type UiStore } from '../stores/ui'
@@ -117,6 +118,7 @@ export interface App {
     search: SearchStore
     /** the phone's search page (F479) */
     find: FindStore
+    recent: RecentStore
     drafts: DraftsStore
     box: BoxStore
     sheet: SheetStore
@@ -218,6 +220,7 @@ export function createApp(env: AppEnv): App {
   const keptEdits = createKeptEditsStore(env.kv)
   const search = createSearchStore()
   const find = createFindStore()
+  const recent = createRecentStore(env.kv)
   const activityStore = createActivityStore()
   const docView = createDocViewStore()
   const docTicks = createDocTicksStore(env.kv)
@@ -327,7 +330,15 @@ export function createApp(env: AppEnv): App {
   const itemEdits = new ItemEdits({ view: itemView, kept: keptEdits, route, toasts, desk: env.desk, model: here })
   const keyArm = new KeyArm()
   const answers = new Answers({ inputs, view: itemView, outbox })
-  const finder = new Finder({ api, store: find, slug, layer: (on) => nav.search(on), pauses: uploadPauses })
+  const finder = new Finder({
+    api,
+    store: find,
+    slug,
+    layer: (on) => nav.search(on),
+    dialog: (on) => (on ? sheets.open({ kind: 'search' }, { search: true, focus: false }) : sheetStore.getState().spec?.req.kind === 'search' && sheets.close()),
+    voiceSlug: () => slug() || data.getState().projects?.[0]?.name || '',
+    pauses: uploadPauses,
+  })
   const actions = new Actions({ finder, items, itemEdits, keyArm, answers, toasts, nav, fields, sheets, docs, docEditor, box, voice, media, selection, listOrder, route, ui, feedback, sheet: sheetStore, itemView, docView, boxStore, desk: env.desk, model })
   const keptNotes: KeptNotes = new KeptNotes({
     vault: env.vault ?? memoryVault(),
@@ -396,7 +407,7 @@ export function createApp(env: AppEnv): App {
 
   const app: App = {
     api,
-    stores: { data, changes, outbox, feedback, ui, itemView, search, find, drafts, box: boxStore, sheet: sheetStore, route, activity: activityStore, docView, docTicks, settings: settingsStore, recording, dictation: dictationStore, media: mediaStore, views: viewsStore, grips: gripsStore, drag: dragStore, keptEdits },
+    stores: { data, changes, outbox, feedback, ui, itemView, search, find, recent, drafts, box: boxStore, sheet: sheetStore, route, activity: activityStore, docView, docTicks, settings: settingsStore, recording, dictation: dictationStore, media: mediaStore, views: viewsStore, grips: gripsStore, drag: dragStore, keptEdits },
     toasts,
     items,
     inputs,

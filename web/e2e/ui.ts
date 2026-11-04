@@ -149,8 +149,8 @@ export const refuseComments = (page: Page, why: string) =>
     if (!o.commands.some((x) => x.op === 'dc')) return route.continue()
     return route.fulfill({ status: 400, json: { ok: false, results: [why] } })
   })
-/** The command palette's rows. */
-export const paletteRows = (page: Page) => page.locator('[role="dialog"] button[aria-selected]')
+/** The desktop search's rows (F479): what it found, Recent, Actions. */
+export const searchRows = (page: Page) => page.locator('[data-part="search"] button[aria-selected]')
 /** An item's menu (the button that opens it), and one of its choices by its words. */
 export const itemMenu = (page: Page) => shown(page.getByRole('button', { name: 'Item actions', exact: true })).first()
 export const menuChoice = (page: Page, words: RegExp) => sheetBody(page).getByRole('button', { name: words })

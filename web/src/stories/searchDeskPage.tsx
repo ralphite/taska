@@ -1,8 +1,7 @@
-// F479 on the desktop, a prototype: the page around the search (stories/searchDesk.tsx), each part the page's own
+// The desktop's search (F479) in its stories: the page around it (stories/searchDesk.tsx), each part the page's own
 // component with the demo projects Shop and Home (searchFixtures.ts): the sidebar with its Search button (or the rail
-// with its magnifier), the project's bar, the list with no search box over it (its filter at the end of the views'
-// row, r796), the item open in its pane, the box under it; and the preview of what the search found, drawn by the
-// pages that show it (an item's page, a document, an input as the New input page lists it).
+// with its magnifier), the project's bar, the list (its filter at the end of the views' row), the item open in its
+// pane, the box under it; and an item's preview, drawn as its page draws it.
 import type { ReactNode } from 'react'
 import { sideProjects } from '../app/sideProjects'
 import { Composer } from '../features/composer/Composer'
@@ -15,14 +14,12 @@ import { codeOf, type ProjectModel } from '../model/project'
 import { NO_FILTERS, parseRoute } from '../model/route'
 import { latestMessage } from '../model/talk'
 import type { Item, ProjectRow } from '../model/types'
-import { FiltersButton, ProjectBar } from '../pages/Header'
+import { FiltersButton } from '../features/list/Filters'
+import { ProjectBar } from '../pages/Header'
 import { agentInfo, deskTabs, tabCounts } from '../pages/headFacts'
 import { toneOf } from '../ui/tones'
-import { docAt } from './docPage'
-import { input } from './fixtures'
 import { pageOf } from './itemPage'
 import { itemFacts, noItemEvents, talkEnv, talkFacts } from './itemFixtures'
-import { saidRowOf } from './inputFixtures'
 import { listOf } from './listFixtures'
 import { D1, HOME, SHOP } from './searchFixtures'
 import { sideOn } from './sideFixtures'
@@ -42,19 +39,12 @@ export const itemOf = (x: Found): Item | undefined => (x.n == null ? undefined :
 
 // ---------------------------------------------------------------- the preview
 
-/** What the search's highlighted row shows beside the list, as the page that opens it draws it (read only). */
+/** An item's preview beside the search's list, as its page draws it (read only). */
 export function previewOf(x: Found): ReactNode {
   const m = modelFor(x.project)
-  if (x.kind === 'docs') return <div className="px-6 pt-5 pb-8">{docAt(D1, true, { viewOnly: true })}</div>
-  if (x.kind === 'inputs')
-    return saidRowOf(input({ id: x.key, text: x.title ?? '', t: x.t ?? '', acked: true, touched: x.n == null ? [] : [x.n] }))
   const it = itemOf(x)
   if (!it) return null
-  return (
-    <div className="px-1 pt-1">
-      <ItemPage it={it} f={itemFacts(m, it)} env={talkEnv(m, true, { latest: latestMessage(it) })} facts={talkFacts(m)} on={noItemEvents} />
-    </div>
-  )
+  return <ItemPage it={it} f={itemFacts(m, it)} env={talkEnv(m, true, { latest: latestMessage(it) })} facts={talkFacts(m)} on={noItemEvents} />
 }
 
 // ---------------------------------------------------------------- the page
@@ -73,11 +63,7 @@ function DeskBox({ m, n }: { m: ProjectModel; n: number }) {
 }
 
 /** The end of the views' row: the list's filter, where the search box was (r796: no row of its own over the list). */
-const FiltersEnd = () => (
-  <div className="flex shrink-0 items-center self-stretch border-b border-zinc-200 pr-2 dark:border-zinc-800">
-    <FiltersButton set={false} open={false} onClick={() => {}} />
-  </div>
-)
+const FiltersEnd = () => <FiltersButton set={false} open={false} onClick={() => {}} />
 
 /** The desktop's project page: the sidebar (or its rail), the project's bar, the list, the item open in its pane. */
 export function DeskPage({ slug, n, rail, onSearch }: { slug: string; n: number; rail: boolean; onSearch(): void }) {

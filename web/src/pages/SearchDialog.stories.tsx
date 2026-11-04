@@ -1,10 +1,10 @@
-// F479 on the desktop, a prototype: the Search button in the sidebar's head, and each state of finding by typing. The journeys:
-// stories/searchDesk.tsx.
+// F479: the desktop's search (pages/SearchDialog): the Search button in the sidebar's head, and each state of
+// finding by typing. The journeys: stories/searchDesk.tsx.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { After } from './Frames'
-import { DeskFrame, SearchDesk, deskStory } from './searchDesk'
+import { After } from '../stories/Frames'
+import { DeskFrame, SearchDesk, deskStory } from '../stories/searchDesk'
 
-export default { title: 'Prototype/F479 Search on the desktop/Type and find' } satisfies Meta
+export default { title: 'Components/Search on the desktop/Type and find' } satisfies Meta
 
 /** The page before the search: the magnifier right of the logo (⌘K); no search box over the list. */
 export const InTheSidebar: StoryObj = { name: 'Search in the sidebar', ...deskStory('closed') }

@@ -1,16 +1,15 @@
-// The command palette (⌘K): on the list, on an item, finding items, nothing matches, keys on one row and the pointer on another.
+// Switch project (G P): the list, nothing matches, keys on one row and the pointer on another.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { press, typeInto } from '../../stories/Frames'
-import { field, one, palette } from '../../stories/findersFixtures'
+import { typeInto } from '../../stories/Frames'
+import { field, one, switcher, switcherLoading } from '../../stories/findersFixtures'
 
-export default { title: 'Components/Around the page/Menus and sheets/Sheets/Command palette' } satisfies Meta
+export default { title: 'Components/Around the page/Menus and sheets/Sheets/Switch project' } satisfies Meta
 type Story = StoryObj
 
-/** Cmd-K with no item open: the page's commands. */
-export const Palette0: Story = { ...one((desk) => palette(desk, null)), name: 'Every command' }
-/** On an item: its commands first. */
-export const PaletteOnItem: Story = { ...one((desk) => palette(desk, 1)), name: 'On an item' }
-export const PaletteFinding: Story = { ...one((desk) => palette(desk, null), (r) => typeInto(field(r), 'export')), name: 'Finding items' }
-export const PaletteNothing: Story = { ...one((desk) => palette(desk, null), (r) => typeInto(field(r), 'invoices'), 360), name: 'Nothing matches' }
-/** ↓ twice moves the keys' row; the pointer lights another. */
-export const PaletteLooks: Story = { ...one((desk) => palette(desk, null), (r) => press(field(r), 'ArrowDown', 2), 720, { hover: ['[role="dialog"] button:nth-of-type(5)'] }), name: 'Keys on one, pointer on another' }
+/** G P: the projects in your order, the keys' row on the first that is not this one. */
+export const Switch: Story = { ...one(switcher, undefined, 420), name: 'Every project' }
+export const SwitchNothing: Story = { ...one(switcher, (r) => typeInto(field(r), 'invoices'), 300), name: 'Nothing matches' }
+/** the keys' row on Home (the first that is not this one), the pointer on todos */
+export const SwitchLooks: Story = { ...one(switcher, undefined, 420, { hover: ['[role="dialog"] a:nth-of-type(3)'] }), name: 'Keys on one, pointer on another' }
+// ---- more states (T639)
+export const SwitchLoading: Story = { ...one(switcherLoading, undefined, 300), name: 'Loading' }

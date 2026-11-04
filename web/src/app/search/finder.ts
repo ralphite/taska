@@ -1,15 +1,17 @@
-// The phone's search (F479): the magnifier opens it and its box records at once; the up arrow stops, the words are
-// written out (the voice notes' own way: up, then their words, with the words two models heard differently), and it
-// searches every project (by meaning, then by the words: one step). Saying more puts the new words at the end and
-// searches all of them again; a misheard word set right, or words typed, search again. While Taska is out of reach it
-// keeps trying, and goes on by itself when it answers.
+// The search (F479). The phone: the magnifier opens its page and its box records at once; the up arrow stops, the
+// words are written out (the voice notes' own way: up, then their words, with the words two models heard
+// differently), and it searches every project (by meaning, then by the words: one step). Saying more puts the new
+// words at the end and searches all of them again; a misheard word set right, or words typed, search again. The
+// desktop: ⌘K, / or the sidebar's magnifier open its dialog on the last words (selected), not listening; what you
+// type searches a moment after you stop; the mic runs the phone's way, and what you say takes the words' place when
+// they were all selected. While Taska is out of reach it keeps trying, and goes on by itself when it answers.
 
 import { Refused } from '../../api/http'
 import type { TaskaApi } from '../../api/taska'
 import { pickSide, type HeardFile } from '../../model/doubts'
 import { heardWords, saidMore, type FindKind } from '../../model/find'
 import { clock } from '../../model/time'
-import type { FindStore } from '../../stores/find'
+import type { FindState, FindStore } from '../../stores/find'
 import { Pauses } from '../inputs/pauses'
 import { canRecord, openMic } from '../voice/mic'
 import { levelOf } from '../voice/voice'
@@ -21,8 +23,15 @@ export interface FinderDeps {
   slug(): string
   /** the search opens over the page, or closes (a step Back undoes) */
   layer(on: boolean): void
+  /** the desktop's dialog opens, or closes */
+  dialog(on: boolean): void
+  /** the project a voice note is put in (the home page has none: the first listed) */
+  voiceSlug(): string
   pauses: Pauses
 }
+
+/** how long typing pauses before the desktop searches what was typed (ms) */
+export const TYPE_PAUSE = 300
 
 interface Live {
   rec: MediaRecorder
@@ -38,6 +47,7 @@ export class Finder {
   private live: Live | null = null
   /** bumps whenever what is under way stops mattering (discarded, cleared, left): its answer goes nowhere */
   private gen = 0
+  private typing = 0
   constructor(d: FinderDeps) {
     this.d = d
   }
@@ -66,6 +76,56 @@ export class Finder {
   quit(): void {
     this.stopMic()
     this.gen++
+    clearTimeout(this.typing)
+  }
+
+  /** The desktop's dialog: on the last words, all selected (typing starts over), with what they found and no filter;
+   * none: Recent. It does not listen. */
+  openDesk(): void {
+    this.quit()
+    if (!this.s.words.trim()) this.s.reset()
+    else this.s.set({ phase: this.s.answer ? 'found' : 'ready', added: '', heard: [], typed: true, replace: true, kind: 'all', project: null, status: null, sel: 0 })
+    this.d.dialog(true)
+  }
+
+  /** The dialog closes (Esc, a click outside, ⌘K again, a result opened): the microphone stops; the words and what
+   * they found stay for the next time. */
+  closeDesk(): void {
+    this.leaveDesk()
+    this.d.dialog(false)
+  }
+
+  /** The dialog went: nothing under way goes on. */
+  leaveDesk(): void {
+    const busy = this.s.phase === 'listening' || this.s.phase === 'writing' || this.s.phase === 'searching'
+    this.quit()
+    if (busy) this.s.set({ phase: this.s.answer ? 'found' : 'ready' })
+  }
+
+  /** Words typed in the dialog: what they find comes a moment after you stop (two letters at least; fewer: Recent). */
+  typeLive(words: string): void {
+    this.gen++
+    clearTimeout(this.typing)
+    this.s.set({ words, added: '', heard: [], typed: true, replace: false, sel: 0, ...(this.s.phase === 'unheard' || this.s.phase === 'listening' || this.s.phase === 'writing' ? { phase: this.s.answer ? ('found' as const) : ('ready' as const) } : {}) })
+    if (this.live) void this.stopMic()
+    if (words.trim().length < 2) return this.s.set({ phase: 'ready', answer: null })
+    this.typing = window.setTimeout(() => void this.search(++this.gen, true), TYPE_PAUSE)
+  }
+
+  /** The dialog's mic: what you say takes the words' place when they are all selected, else goes after them. */
+  listenDesk(replace: boolean): Promise<void> {
+    clearTimeout(this.typing)
+    this.s.set({ replace, typed: false })
+    return this.listen()
+  }
+
+  /** The dialog's filters and highlighted row. */
+  narrow(p: Partial<Pick<FindState, 'kind' | 'project' | 'status'>>): void {
+    this.s.set({ ...p, sel: 0 })
+  }
+
+  select(i: number): void {
+    if (i !== this.s.sel) this.s.set({ sel: i })
   }
 
   /** The mic: say what to find, or say more (the words and the results stay while you speak). */
@@ -135,7 +195,7 @@ export class Finder {
   /** The up arrow while it records: stop, write out what you said, search all the words. */
   async stop(): Promise<void> {
     const gen = ++this.gen
-    const slug = this.d.slug()
+    const slug = this.d.voiceSlug()
     const before = this.s.answer
     this.s.set({ phase: 'writing' })
     const got = await this.stopMic()
@@ -145,9 +205,10 @@ export class Finder {
     if (gen !== this.gen) return
     const tr = heard ? heardWords(heard.tr) : ''
     if (!heard || !tr) return this.s.set({ phase: before ? 'found' : 'unheard' })
-    const { words, added } = saidMore(this.s.words, tr)
+    const replace = this.s.replace
+    const { words, added } = replace ? { words: tr, added: '' } : saidMore(this.s.words, tr)
     const file: HeardFile = { key: heard.f, trAdded: tr, doubts: heard.doubts }
-    this.s.set({ words, added, heard: [...this.s.heard, file], typed: false })
+    this.s.set({ words, added, heard: replace ? [file] : [...this.s.heard, file], typed: false, replace: false })
     void this.search(gen)
   }
 
@@ -176,16 +237,17 @@ export class Finder {
     return null
   }
 
-  /** Search the words in the box (the results before stay, faded, until the new ones come). */
-  async search(gen = ++this.gen): Promise<void> {
+  /** Search the words in the box (the results before stay, faded, until the new ones come); `keep`: the desktop's
+   * typing, its filters and the words' place stay. */
+  async search(gen = ++this.gen, keep = false): Promise<void> {
     const q = this.s.words.trim()
     if (!q) return
-    this.s.set({ phase: 'searching', typed: false, kind: 'all' })
+    this.s.set(keep ? { phase: 'searching', sel: 0 } : { phase: 'searching', typed: false, kind: 'all', sel: 0 })
     for (let n = 0; gen === this.gen; ) {
       try {
         const a = await this.d.api.find(q, this.d.slug())
         if (gen !== this.gen) return
-        return this.s.set(a.found.length ? { phase: 'found', answer: a } : { phase: 'nothing', answer: null })
+        return this.s.set(a.found.length ? { phase: 'found', answer: a, sel: 0 } : { phase: 'nothing', answer: null })
       } catch (e) {
         if (gen !== this.gen) return
         if (e instanceof Refused) return this.s.set({ phase: 'nothing', answer: null })

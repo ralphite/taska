@@ -146,7 +146,6 @@ function ListPage({ onSearch }: { onSearch(): void }) {
   return (
     <div className="flex h-full flex-col">
       <ListHead
-        phone
         title="Shop"
         otherNeeds={false}
         searching={false}
@@ -154,10 +153,8 @@ function ListPage({ onSearch }: { onSearch(): void }) {
         placeholder=""
         agent={agentInfo(SHOP, 0)}
         notSaved={0}
-        filtersSet={false}
-        filtersOpen={false}
         place=""
-        on={{ menu() {}, agents() {}, notSaved() {}, search: onSearch, query() {}, clear() {}, firstResult() {}, filters() {} }}
+        on={{ menu() {}, agents() {}, notSaved() {}, search: onSearch, query() {}, clear() {} }}
       />
       <PhoneTabs tabs={phoneTabs(tabCounts(SHOP, 'items', NO_FILTERS, false), 'items')} filtersSet={false} showFilter on={{ tab() {}, filters() {} }} />
       <div className="flex min-h-0 flex-1 flex-col">{listOf(ITEMS, 'items', {}, false)}</div>

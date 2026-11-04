@@ -167,7 +167,7 @@ The views over the list are **Needs you**, **Active**, **All**, **Archive**, **O
 
 ## Search
 
-Search looks through titles, conversations and documents. The command palette goes straight to an item by its code, or to anything you can do.
+Search (**⌘K** or **/**, or the magnifier beside Taska in the sidebar) finds items, inputs, rules and documents in every project, by what the words mean. Type, or click the mic and say it. Words that name something you can do, like **Done** or **Settings**, show it under Actions.
 
 ## Order the queue
 

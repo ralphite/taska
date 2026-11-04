@@ -1,5 +1,5 @@
-// The project's head as the page draws it: on the desktop the bar over the panes (name, tabs, agent) and the list's
-// head (search, filters) with the filters' row under it; on the phone the head (menu and name, agent, search) and the
+// The project's head as the page draws it: on the desktop the bar over the panes (name, tabs, agent) with the
+// filters' row under it; on the phone the head (menu and name, agent, search) and the
 // tabs, with the row of filters set. What it says comes from the page's own headFacts (tabCounts, agentInfo, deskTabs,
 // phoneTabs) and filtersSet, with the item list's demo project. Used by the stories of the top bar and the list head.
 import { DeskFilters, FilterStrip } from '../features/list/Filters'
@@ -46,7 +46,7 @@ export interface HeadHere {
 }
 
 const no = () => {}
-const headOn = { menu: no, agents: no, notSaved: no, search: no, query: no, clear: no, firstResult: no, filters: no }
+const headOn = { menu: no, agents: no, notSaved: no, search: no, query: no, clear: no }
 const filterOn = { set: no, unset: no, reset: no, saveView: no }
 const INPUTS = [input({ id: 'r3' }), input({ id: 'r2' }), input({ id: 'r1', acked: true })]
 
@@ -61,13 +61,12 @@ export function headOf(desk: boolean, h: HeadHere = {}) {
     return (
       <div className="grid grid-cols-[420px_minmax(0,1fr)]">
         <ProjectBar title="Shop" tone={PROJECT_TONES[4]} tabs={deskTabs(counts, tab, !!h.awayTab)} agent={agent} notSaved={h.notSaved ?? 0} place="col-span-2" on={{ tab: no, agents: no, notSaved: no }} />
-        <ListHead phone={false} title="Shop" otherNeeds={false} searching={false} q={list.q} placeholder={tab === 'rules' ? 'Search rules' : 'Search items'} agent={agent} notSaved={h.notSaved ?? 0} filtersSet={set.length > 0} filtersOpen={!!h.filtersOpen} place="col-start-1" on={headOn} />
         <DeskFilters tab={tab} list={list} set={set} open={!!h.filtersOpen} place="col-start-1" hidden={!(h.filtersOpen || set.length)} on={{ ...filterOn, toggle: no }} />
       </div>
     )
   return (
     <div className="flex flex-col">
-      <ListHead phone title="Shop" otherNeeds={!!h.otherNeeds} searching={!!h.searching} q={list.q} placeholder="Search items" agent={agent} notSaved={h.notSaved ?? 0} filtersSet={set.length > 0} filtersOpen={false} place="" on={headOn} />
+      <ListHead title="Shop" otherNeeds={!!h.otherNeeds} searching={!!h.searching} q={list.q} placeholder="Search items" agent={agent} notSaved={h.notSaved ?? 0} place="" on={headOn} />
       <PhoneTabs tabs={phoneTabs(counts, tab)} filtersSet={set.length > 0} showFilter={tab !== 'inputs'} on={{ tab: no, filters: no }} />
       <FilterStrip set={set} hidden={tab === 'inputs' || !set.length} onUnset={no} onReset={no} />
     </div>

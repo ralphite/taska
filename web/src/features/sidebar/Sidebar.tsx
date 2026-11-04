@@ -45,8 +45,8 @@ export interface SidebarEvents {
   dropProject(): void
   /** a project's menu, at the pointer (right-click, the desktop) */
   projectMenu(slug: string, x: number, y: number): void
-  /** search everything (F479, a prototype for now: without it, no Search button) */
-  search?(): void
+  /** the desktop's search (F479): every project, by meaning and by the words */
+  search(): void
 }
 
 /** the keys its buttons show (the actions' table has them) */
@@ -171,7 +171,7 @@ export function Sidebar(props: SidebarProps) {
           </span>
           <span className="text-xl font-semibold tracking-tight lg:text-[19px]">Taska</span>
         </a>
-        {on.search ? (
+        {!phone ? (
           <button
             onClick={on.search}
             title={`Search · ${keys.search}`}
@@ -343,7 +343,7 @@ export function Rail({ keys, projects, links, composing, settingsOpen, hidden, o
         `Show sidebar · ${keys.sidebar}`,
         on.hide,
       )}
-      {on.search ? btn('search', <Icon n="search" c="size-5" />, `Search · ${keys.search}`, on.search) : null}
+      {btn('search', <Icon n="search" c="size-5" />, `Search · ${keys.search}`, on.search)}
       {btn('new', <Icon n="newinput" c="size-5" />, `New input · ${keys.newInput}`, on.newInput, { 'aria-pressed': composing })}
       <div className="my-1 h-px w-8 bg-zinc-200 dark:bg-zinc-800" />
       <div className="-my-1 flex min-h-0 [scrollbar-width:none] flex-col items-center gap-1 overflow-y-auto outline-none p-1">

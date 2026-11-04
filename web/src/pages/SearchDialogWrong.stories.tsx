@@ -1,9 +1,9 @@
-// F479 on the desktop, a prototype: each state of something going wrong (the phone's words), then the modal in dark
-// and on a narrower desktop. The journeys: stories/searchDesk.tsx.
+// F479: the desktop's search (pages/SearchDialog): each state of something going wrong (the phone's words), then
+// the dialog in dark and on a narrower desktop. The journeys: stories/searchDesk.tsx.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { deskStory } from './searchDesk'
+import { deskStory } from '../stories/searchDesk'
 
-export default { title: 'Prototype/F479 Search on the desktop/When it goes wrong, dark, narrower' } satisfies Meta
+export default { title: 'Components/Search on the desktop/When it goes wrong, dark, narrower' } satisfies Meta
 
 export const NothingFound: StoryObj = { name: 'Nothing found', ...deskStory('nothing') }
 export const DidntCatchThat: StoryObj = { name: "Didn't catch that", ...deskStory('unheard') }

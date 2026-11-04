@@ -1,6 +1,6 @@
-// The home page: one table of the projects and what needs you in each; a search across every project; a new
-// project made in place; a deleted project's old link says so (Restore), and so does a project that never was.
-// Props only.
+// The home page: one table of the projects and what needs you in each; a search across every project (the phone: a
+// field; the desktop: the search dialog, F479); a new project made in place; a deleted project's old link says so
+// (Restore), and so does a project that never was. Props only.
 
 import type { MouseEvent, Ref } from 'react'
 import type { SearchHit } from '../../model/types'
@@ -40,7 +40,10 @@ export interface HomeFacts {
 }
 
 export interface HomeEvents {
+  /** the phone's search field */
   query(q: string): void
+  /** the desktop's search (F479): the dialog, as ⌘K */
+  search(): void
   restore(): void
   closeGone(): void
   closeNone(): void
@@ -101,7 +104,15 @@ export function Home({ facts, on, searchRef }: { facts: HomeFacts; on: HomeEvent
         </h1>
         <span className="hidden text-sm text-zinc-500 sm:inline dark:text-zinc-400">{rows ? `${rows.length} projects · ${needs ? `${needs} need you` : 'nothing needs you'}` : ''}</span>
         <span className="flex-1" />
-        <label className={`order-last flex h-10 w-full items-center gap-2 rounded-xl bg-white px-3 text-sm ring-1 ring-zinc-900/10 focus-within:ring-2 focus-within:ring-blue-500 sm:order-none sm:w-72 dark:bg-zinc-800 dark:ring-white/10 ${MUTED}`}>
+        <button
+          onClick={on.search}
+          title="Search · ⌘K"
+          aria-label="Search"
+          className="hidden size-10 place-items-center rounded-xl bg-white text-zinc-600 ring-1 ring-zinc-900/10 hover:bg-zinc-50 hover:text-zinc-900 lg:grid dark:bg-zinc-800 dark:text-zinc-300 dark:ring-white/10 dark:hover:bg-zinc-700 dark:hover:text-white"
+        >
+          <Icon n="search" c="size-[18px]" />
+        </button>
+        <label className={`order-last flex h-10 w-full items-center gap-2 rounded-xl bg-white px-3 text-sm ring-1 ring-zinc-900/10 focus-within:ring-2 focus-within:ring-blue-500 sm:order-none sm:w-72 lg:hidden dark:bg-zinc-800 dark:ring-white/10 ${MUTED}`}>
           <Icon n="find" c="size-4" sw="2" />
           <input
             ref={searchRef}
@@ -118,7 +129,6 @@ export function Home({ facts, on, searchRef }: { facts: HomeFacts; on: HomeEvent
             }}
             className="min-w-0 flex-1 bg-transparent text-base text-zinc-900 outline-none placeholder:text-zinc-500 dark:placeholder:text-zinc-400 sm:text-sm dark:text-zinc-100"
           />
-          <kbd className="hidden h-5 min-w-5 place-items-center rounded-md px-1 font-sans text-[11px] font-semibold ring-1 ring-zinc-300 lg:grid dark:ring-zinc-600">⌘K</kbd>
         </label>
       </header>
       {gone ? (

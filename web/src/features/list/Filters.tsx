@@ -1,6 +1,6 @@
 // The list's filters: type, when (Archive), status (not on Items, whose views are its status), priority and sort,
-// and saving them as a view of your own (Items). On the phone a sheet with Show N items; on the desktop a row under
-// the search with what is set, opening to the controls. Props only.
+// and saving them as a view of your own (Items). On the phone a sheet with Show N items; on the desktop the Filters
+// button at the end of the views' row, and a row over the list with what is set, opening to the controls. Props only.
 
 import { useState, type ReactNode } from 'react'
 import type { ListKey, ListQuery } from '../../model/route'
@@ -197,3 +197,22 @@ export function FilterStrip({ set, hidden, onUnset, onReset }: { set: [string, R
     </div>
   )
 }
+
+/** The desktop's Filters button, at the end of the views' row: the filters' row opens over the list. */
+export function FiltersButton({ set, open, onClick }: { set: boolean; open: boolean; onClick(): void }) {
+  return (
+    <button
+      onClick={onClick}
+      title="Filters · F"
+      aria-label="Filters"
+      aria-expanded={open}
+      className="relative hidden size-9 shrink-0 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-100 aria-expanded:bg-zinc-100 lg:grid dark:text-zinc-400 dark:hover:bg-zinc-800 dark:aria-expanded:bg-zinc-800"
+    >
+      <Icon n="sliders" c="size-[18px]" />
+      <FilterDot on={set} />
+    </button>
+  )
+}
+
+export const FilterDot = ({ on }: { on: boolean }) =>
+  on ? <span className="absolute top-2 right-2 size-2 rounded-full bg-blue-600 ring-2 ring-white dark:bg-blue-400 dark:ring-zinc-950" /> : null

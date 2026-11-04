@@ -1,6 +1,6 @@
 // What you can do in a project, each defined once: its words, its keys, when it can be done here (or why not, in a
-// few words, said instead) and what it does, with only the services it names. The keys (keys.ts), the command
-// palette, the keys sheet and the item's menu all read this table, so a key, a palette row and a menu row always do
+// few words, said instead) and what it does, with only the services it names. The keys (keys.ts), the search's
+// Actions, the keys sheet and the item's menu all read this table, so a key, an action row and a menu row always do
 // the same thing.
 
 import { closed } from '../model/items'
@@ -61,7 +61,7 @@ export interface ActionWorld {
   itemView: ItemViewStore
   docView: DocViewStore
   boxStore: BoxStore
-  /** the phone's search page */
+  /** the search: the phone's page, the desktop's dialog */
   finder: Finder
   desk(): boolean
   model(slug: string): ProjectModel | null
@@ -85,9 +85,9 @@ interface PageAction<K extends Uses = Uses> {
   label: string
   /** the keys, as the keyboard names them; a space between keys pressed one after the other */
   keys?: string
-  /** in the command palette, with these words when they differ */
-  palette?: string | true
-  /** only of use on the desktop (the sidebar, the keys): not in the phone's palette */
+  /** among the search's Actions when its words name it (F479), with these words when they differ */
+  listed?: string | true
+  /** only of use on the desktop (the sidebar, the keys) */
   desk?: true
   why?(w: Pick<ActionWorld, K>, h: Here): string | null
   /** false: nothing to do after all (the key goes on as a key) */
@@ -100,7 +100,7 @@ interface ItemAction<K extends Uses = Uses> {
   none?: string
   label: string
   keys?: string
-  palette?: string | true
+  listed?: string | true
   desk?: true
   why?(w: Pick<ActionWorld, K>, h: OnItem): string | null
   run(w: Pick<ActionWorld, K>, h: OnItem): void | boolean
@@ -134,7 +134,7 @@ export const ACTIONS = {
   next: item(['fields', 'items'], {
     label: 'Accept or approve',
     keys: 'a',
-    palette: true,
+    listed: true,
     why: (_, h) => whyNot.next(h.it, h.code),
     run: (w, h) => {
       const step = yourStep(h.it)
@@ -145,30 +145,30 @@ export const ACTIONS = {
       else w.fields.get('talk')?.querySelector<HTMLElement>('button[data-choice]')?.focus()
     },
   }),
-  reply: item(['fields'], { label: 'Reply', keys: 'r', palette: true, run: (w) => w.fields.focus('box') }),
-  'not-yet': item(['items'], { label: 'Not yet', keys: 'n', palette: true, why: (_, h) => whyNot.notYet(h.it), run: (w, h) => set(w, h, 'status', 'open', { said: 'is back to open' }) }),
-  done: item(['items'], { label: 'Done', keys: 'd', palette: true, why: (_, h) => whyNot.done(h.it, h.code), run: (w, h) => set(w, h, 'status', doneTo(h.it)) }),
-  later: item(['items'], { label: 'Later', keys: 'l', palette: 'Later or back to now', why: (_, h) => whyNot.later(h.it), run: (w, h) => set(w, h, 'when', h.it.when === 'now' ? 'later' : 'now') }),
+  reply: item(['fields'], { label: 'Reply', keys: 'r', listed: true, run: (w) => w.fields.focus('box') }),
+  'not-yet': item(['items'], { label: 'Not yet', keys: 'n', listed: true, why: (_, h) => whyNot.notYet(h.it), run: (w, h) => set(w, h, 'status', 'open', { said: 'is back to open' }) }),
+  done: item(['items'], { label: 'Done', keys: 'd', listed: true, why: (_, h) => whyNot.done(h.it, h.code), run: (w, h) => set(w, h, 'status', doneTo(h.it)) }),
+  later: item(['items'], { label: 'Later', keys: 'l', listed: 'Later or back to now', why: (_, h) => whyNot.later(h.it), run: (w, h) => set(w, h, 'when', h.it.when === 'now' ? 'later' : 'now') }),
   archive: item(['items', 'nav'], {
     label: 'Archive',
     keys: 'e',
-    palette: true,
+    listed: true,
     run: (w, h) => {
       const on = !h.it.archived
       set(w, h, 'archived', on)
       if (on && h.r.place.kind === 'item') w.nav.closeItem()
     },
   }),
-  drop: item(['items'], { label: "Won't do", keys: 'w', palette: true, why: (_, h) => whyNot.drop(h.it, h.code), run: (w, h) => set(w, h, 'status', dropTo()) }),
-  edit: item(['itemEdits'], { label: 'Edit', keys: 'i', palette: true, run: (w, h) => w.itemEdits.start(h.it.n) }),
-  status: item(['keyArm', 'toasts'], { label: 'Status…', keys: 's', palette: true, run: arm('s', 'Status: 1–6') }),
-  priority: item(['keyArm', 'toasts'], { label: 'Priority…', keys: 'p', palette: true, run: arm('p', 'Priority: 0–3') }),
-  type: item(['keyArm', 'toasts'], { label: 'Type…', keys: 't', palette: true, run: arm('t', 'Type: F B I T R') }),
-  'put-under': item(['sheets'], { label: 'Put under…', keys: 'm', palette: true, run: (w, h) => w.sheets.open({ kind: 'item-move-parent', n: h.it.n }, { pop: true, focus: false }) }),
-  'add-sub': item(['itemEdits'], { label: 'Add subitem', keys: 'A', palette: true, run: (w, h) => w.itemEdits.subStart(h.it.n) }),
-  'new-doc': item(['docEditor'], { label: 'New doc', keys: 'D', palette: true, run: (w, h) => w.docEditor.create(h.it.n) }),
-  copy: item(['toasts'], { label: 'Copy for agent', keys: 'C', palette: true, run: (w, h) => void copyText(forAgent(h.it, h.code, h.m.facts.base)).then(() => w.toasts.show('Copied')) }),
-  full: item(['nav', 'route'], { none: 'First pick an item: J or a click', label: 'Full width', keys: 'o', palette: true, run: (w) => w.nav.full(!w.route.getState().full) }),
+  drop: item(['items'], { label: "Won't do", keys: 'w', listed: true, why: (_, h) => whyNot.drop(h.it, h.code), run: (w, h) => set(w, h, 'status', dropTo()) }),
+  edit: item(['itemEdits'], { label: 'Edit', keys: 'i', listed: true, run: (w, h) => w.itemEdits.start(h.it.n) }),
+  status: item(['keyArm', 'toasts'], { label: 'Status…', keys: 's', listed: true, run: arm('s', 'Status: 1–6') }),
+  priority: item(['keyArm', 'toasts'], { label: 'Priority…', keys: 'p', listed: true, run: arm('p', 'Priority: 0–3') }),
+  type: item(['keyArm', 'toasts'], { label: 'Type…', keys: 't', listed: true, run: arm('t', 'Type: F B I T R') }),
+  'put-under': item(['sheets'], { label: 'Put under…', keys: 'm', listed: true, run: (w, h) => w.sheets.open({ kind: 'item-move-parent', n: h.it.n }, { pop: true, focus: false }) }),
+  'add-sub': item(['itemEdits'], { label: 'Add subitem', keys: 'A', listed: true, run: (w, h) => w.itemEdits.subStart(h.it.n) }),
+  'new-doc': item(['docEditor'], { label: 'New doc', keys: 'D', listed: true, run: (w, h) => w.docEditor.create(h.it.n) }),
+  copy: item(['toasts'], { label: 'Copy for agent', keys: 'C', listed: true, run: (w, h) => void copyText(forAgent(h.it, h.code, h.m.facts.base)).then(() => w.toasts.show('Copied')) }),
+  full: item(['nav', 'route'], { none: 'First pick an item: J or a click', label: 'Full width', keys: 'o', listed: true, run: (w) => w.nav.full(!w.route.getState().full) }),
   menu: item(['sheets'], { label: 'All actions', keys: '.', run: (w, h) => w.sheets.open({ kind: 'item-menu', n: h.it.n, arm: null }, { pop: true, focus: false }) }),
   'send-answer': item(['answers'], { none: '', label: 'Send the answer', keys: 'Meta+Enter', run: (w, h) => w.answers.send(h.m, h.r.slug, h.it) }),
   scroll: item(['fields'], {
@@ -182,22 +182,21 @@ export const ACTIONS = {
     },
   }),
   // the page
-  'new-input': page(['box', 'route', 'nav', 'fields'], { label: 'New input', keys: 'c', palette: true, run: newInput }),
-  search: page(['desk', 'route', 'nav', 'fields', 'finder'], {
+  'new-input': page(['box', 'route', 'nav', 'fields'], { label: 'New input', keys: 'c', listed: true, run: newInput }),
+  search: page(['desk', 'route', 'sheet', 'finder'], {
     label: 'Search',
-    keys: '/',
-    palette: true,
+    keys: 'Meta+k',
     run: (w) => {
-      // the phone's search is a page over the page, listening at once (F479)
-      if (!w.desk()) return w.route.getState().layers.includes('search') ? undefined : w.finder.open()
-      requestAnimationFrame(() => w.fields.focus('search'))
+      // the desktop's dialog (again: it closes); the phone's search is a page over the page, listening at once (F479)
+      if (w.desk()) return w.sheet.getState().spec?.req.kind === 'search' ? w.finder.closeDesk() : w.finder.openDesk()
+      if (!w.route.getState().layers.includes('search')) w.finder.open()
     },
   }),
-  filters: page(['ui'], { label: 'Filters', keys: 'f', palette: true, run: (w) => w.ui.getState().setDeskFilters(!w.ui.getState().deskFilters) }),
+  filters: page(['ui'], { label: 'Filters', keys: 'f', listed: true, run: (w) => w.ui.getState().setDeskFilters(!w.ui.getState().deskFilters) }),
   voice: page(['voice', 'box', 'route', 'nav', 'fields'], {
     label: 'Record voice input',
     keys: 'V',
-    palette: true,
+    listed: true,
     // a new input by voice; again: it stops and is sent
     run: (w, h) => {
       if (w.voice.recording()) return void w.voice.finish(true)
@@ -215,8 +214,8 @@ export const ACTIONS = {
       void w.voice.start(h.r.slug, key, scope, 'main')
     },
   }),
-  items: page(['nav'], { label: 'Items', keys: 'g i', palette: true, run: tab('items') }),
-  inputs: page(['nav'], { label: 'Inputs', keys: 'g n', palette: true, run: tab('inputs') }),
+  items: page(['nav'], { label: 'Items', keys: 'g i', listed: true, run: tab('items') }),
+  inputs: page(['nav'], { label: 'Inputs', keys: 'g n', listed: true, run: tab('inputs') }),
   'archive-all': page(['items'], {
     label: 'Archive every finished item',
     keys: 'E',
@@ -225,23 +224,22 @@ export const ACTIONS = {
       if (h.m) w.items.archiveAll(visible(h.m.items, h.r.tab, h.r.list).filter((it) => !it.archived && closed(it.status)).map((it) => it.n))
     },
   }),
-  'archive-tab': page(['nav'], { label: 'Archive', keys: 'g a', palette: true, run: tab('archive') }),
-  rules: page(['nav'], { label: 'Rules', keys: 'g r', palette: true, run: tab('rules') }),
-  'switch-project': page(['sheets'], { label: 'Switch project', keys: 'g p', palette: true, run: (w) => w.sheets.open({ kind: 'switch-project' }, { focus: false }) }),
-  settings: page(['nav'], { label: 'Settings', keys: 'g s', palette: true, run: (w, h) => w.nav.to(`/p/${encodeURIComponent(h.r.slug)}/settings`) }),
-  documents: page(['nav'], { label: 'Documents', keys: 'g d', palette: true, run: (w, h) => w.nav.to(`/p/${encodeURIComponent(h.r.slug)}/docs`) }),
-  activity: page(['nav'], { label: 'Activity', keys: 'g h', palette: true, run: (w, h) => w.nav.to(`/p/${encodeURIComponent(h.r.slug)}/log`) }),
-  deleted: page(['nav'], { label: 'Deleted', keys: 'g x', palette: true, run: (w, h) => w.nav.to(`/p/${encodeURIComponent(h.r.slug)}/deleted`) }),
-  sidebar: page(['ui'], { label: 'Toggle sidebar', keys: '[', palette: true, desk: true, run: (w) => w.ui.getState().setSideHidden(!w.ui.getState().sideHidden) }),
+  'archive-tab': page(['nav'], { label: 'Archive', keys: 'g a', listed: true, run: tab('archive') }),
+  rules: page(['nav'], { label: 'Rules', keys: 'g r', listed: true, run: tab('rules') }),
+  'switch-project': page(['sheets'], { label: 'Switch project', keys: 'g p', listed: true, run: (w) => w.sheets.open({ kind: 'switch-project' }, { focus: false }) }),
+  settings: page(['nav'], { label: 'Settings', keys: 'g s', listed: true, run: (w, h) => w.nav.to(`/p/${encodeURIComponent(h.r.slug)}/settings`) }),
+  documents: page(['nav'], { label: 'Documents', keys: 'g d', listed: true, run: (w, h) => w.nav.to(`/p/${encodeURIComponent(h.r.slug)}/docs`) }),
+  activity: page(['nav'], { label: 'Activity', keys: 'g h', listed: true, run: (w, h) => w.nav.to(`/p/${encodeURIComponent(h.r.slug)}/log`) }),
+  deleted: page(['nav'], { label: 'Deleted', keys: 'g x', listed: true, run: (w, h) => w.nav.to(`/p/${encodeURIComponent(h.r.slug)}/deleted`) }),
+  sidebar: page(['ui'], { label: 'Toggle sidebar', keys: '[', listed: true, desk: true, run: (w) => w.ui.getState().setSideHidden(!w.ui.getState().sideHidden) }),
   undo: page(['feedback'], {
     label: 'Undo',
     keys: 'z',
-    palette: true,
+    listed: true,
     why: (w) => (w.feedback.getState().undo.length ? null : 'Nothing of yours to undo here. Older changes are in Activity'),
     run: (w) => void w.feedback.getState().undo.at(-1)?.run(),
   }),
-  keys: page(['sheets'], { label: 'Keyboard shortcuts', keys: '?', palette: true, desk: true, run: (w) => w.sheets.open({ kind: 'keys' }) }),
-  palette: page(['sheets'], { label: 'Go to or do', keys: 'Meta+k', run: (w) => w.sheets.open({ kind: 'palette' }, { focus: false }) }),
+  keys: page(['sheets'], { label: 'Keyboard shortcuts', keys: '?', listed: true, desk: true, run: (w) => w.sheets.open({ kind: 'keys' }) }),
   back: page(['finder', 'route', 'nav', 'media', 'ui', 'sheet', 'sheets', 'selection', 'voice', 'desk', 'fields', 'boxStore', 'box', 'docs', 'docEditor', 'itemEdits', 'itemView', 'docView'], { label: 'Step back one level', keys: 'Escape', run: (w, h) => stepBack(w, h) }),
   step: page(['nav', 'listOrder', 'toasts'], { label: 'Next item', keys: 'j', why: stepWhy, run: steps(1) }),
   'step-back': page(['nav', 'listOrder', 'toasts'], { label: 'Previous item', keys: 'k', why: stepWhy, run: steps(-1) }),
@@ -299,10 +297,6 @@ function stepBack(w: BackWorld, h: Here): void {
     // the New input page opened from an item or a document: Esc in the empty box goes back there
     const boxEmpty = !(w.fields.get('box') as HTMLTextAreaElement | null)?.value.trim() && !w.boxStore.getState().files[w.boxStore.getState().shown.key]?.length
     if (r.place.kind === 'new' && w.fields.focused('box') && boxEmpty && w.nav.composeBack()) return
-    if (w.fields.focused('search')) {
-      if (r.list.q) w.nav.setList({ q: '' })
-      return w.fields.get('search')?.blur()
-    }
     if (typingIn(active)) return (active as HTMLElement).blur()
     if (w.route.getState().full) return w.nav.full(false)
     if (r.place.kind === 'new' && w.nav.composeBack()) return
@@ -413,11 +407,11 @@ export function keysShown(id: ActionId): string {
     .join(' ')
 }
 
-/** The command palette's rows: what can be done on the open item, then on the page, in the table's order. */
-export function paletteRows(item: boolean): { id: ActionId; label: string; keys: string; item: boolean; desk: boolean }[] {
+/** The search's Actions: what can be done on the open item, then on the page, in the table's order. */
+export function listedActions(item: boolean): { id: ActionId; label: string; keys: string; item: boolean; desk: boolean }[] {
   return ACTION_IDS.map((id) => [id, byId(id)] as const)
-    .filter(([, a]) => a.palette && ('item' in a) === item)
-    .map(([id, a]) => ({ id, label: typeof a.palette === 'string' ? a.palette : a.label, keys: keysShown(id), item: 'item' in a, desk: !!a.desk }))
+    .filter(([, a]) => a.listed && ('item' in a) === item)
+    .map(([id, a]) => ({ id, label: typeof a.listed === 'string' ? a.listed : a.label, keys: keysShown(id), item: 'item' in a, desk: !!a.desk }))
 }
 
 /** The keys sheet (?): its groups of rows; a row made of actions shows their keys as the table has them. */
@@ -464,7 +458,6 @@ const HELP: [string, HelpRow[]][] = [
   [
     'Write and find',
     [
-      { ids: ['palette'], sep: '', text: 'Go to an item or do anything here' },
       { keys: '⌘ / ⇧ click', text: 'Select multiple rows to act on together' },
       { ids: ['new-input'], sep: '', text: 'New input' },
       { ids: ['voice-note'], sep: '', text: 'Voice note for the selected item; V again stops' },
@@ -472,7 +465,7 @@ const HELP: [string, HelpRow[]][] = [
       { keys: '⌥V', text: 'Voice note while typing' },
       { keys: '↵', text: 'While recording: stop, into the box' },
       { keys: '⇧↵ or ⌘↵', text: 'Send; while recording: stop and send' },
-      { ids: ['search'], sep: '', text: 'Search' },
+      { ids: ['search'], sep: '', text: 'Search every project (or /); the words of an action do it' },
       { ids: ['filters'], sep: '', text: 'Filters' },
       { ids: ['keys'], sep: '', text: 'This sheet' },
       { keys: 'Esc', text: 'Step back one level' },

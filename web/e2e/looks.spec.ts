@@ -3,7 +3,7 @@
 // guards: src/features/list/ src/features/find/ src/features/settings/ src/features/sidebar/ src/features/home/ src/pages/Header.tsx src/app/keys.ts src/index.css
 import { expect, test } from '@playwright/test'
 import { isDesk, open, project } from './seed'
-import { needAct, sheetBody } from './ui'
+import { needAct } from './ui'
 
 /** The clickable content of an item row. */
 const HIT = (n: number | string) => `#list article[data-n="${n}"] .group.cursor-pointer`
@@ -41,19 +41,21 @@ test('D84 #2: a row dragged over another shows where it would go, drawn over tha
   expect(mark.over).toMatch(/rgb|oklch/) // a ring drawn on the layer over the row, not under its own colour
 })
 
-test("D84 #3: in Go to or do, the keyboard's row and the pointer's row never look the same", async ({
-  page,
-  request,
-}) => {
+test('F479: in the search, the keys and the pointer move the one highlighted row', async ({ page, request }) => {
+  test.skip(!isDesk(page), 'the search dialog is the desktop')
   const p = await project(request, SEED)
-  await open(page, p)
-  await page.keyboard.press('Meta+k')
-  const rows = sheetBody(page).locator('[aria-selected]')
+  await open(page, p, 'B2')
+  await open(page, p, 'B1')
+  await page.keyboard.press('ControlOrMeta+k')
+  // nothing typed: Recent, the first highlighted
+  const rows = page.locator('[data-part="search"] [data-recent]')
   await expect(rows.nth(1)).toBeVisible()
-  await rows.nth(1).hover()
-  expect(await sheetBody(page).locator('[aria-selected="true"]').first().evaluate((e) => getComputedStyle(e).backgroundColor)).not.toBe(
-    await rows.nth(1).evaluate((e) => getComputedStyle(e).backgroundColor),
-  )
+  await expect(rows.first()).toHaveAttribute('aria-selected', 'true')
+  await page.keyboard.press('ArrowDown')
+  await expect(rows.nth(1)).toHaveAttribute('aria-selected', 'true')
+  await rows.first().hover()
+  await expect(rows.first()).toHaveAttribute('aria-selected', 'true')
+  await expect(page.locator('[data-part="search"] [aria-selected="true"]')).toHaveCount(1)
 })
 
 test('D84 #1 #9: a picked row stays blue while pressed, and its buttons darken it rather than lay a grey square on it', async ({

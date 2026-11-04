@@ -1,43 +1,24 @@
-// F479 on the desktop, a prototype (nothing here changes Taska), the search as desktop apps have it (Notion's): a
-// Search button right of the sidebar's logo, and ⌘K (or /) anywhere, open a wide modal in the top third over the page.
-// Its top is a large field, focused: you type, and what it finds comes as you type, best first, each row with its
-// project as a path. The mic at the field's end records (no words while you speak, r797), then Transcribing…, then
-// the results, as on the phone. Under the field, the kinds and the Project and Status filters; beside the list, the
-// highlighted row's preview; at the foot, the keys. ⌘K's commands come in it as Actions when the words match them.
-// The modal is the command palette's sheet; the field's recording, its words to check and the words you added are
-// the box's own parts (RecBar, DraftWords); the empty states are the phone's (SearchBody). The demo: Shop and Home
-// (searchFixtures.ts), with a pause in place of the microphone and the server.
-//
-// The journeys
-// 1. Find by typing. Click Search or press ⌘K: the field has the focus; Recent shows. Type: the results come, the
-//    words found lit; ↑↓ (or the pointer) move the highlight and the preview follows; ↵ opens it in its project's
-//    pane, ⌘↵ in a new tab; the modal goes.
-// 2. Narrow it: a kind (Items, Inputs, Rules, Documents), a Project, a Status (Open or Finished).
-// 3. Say it: the mic, or ⌥V. ↵ stops; the words are written out into the field and it searches. What you say goes
-//    where typing would: over the words if they are all selected, else after them (said more: lit).
-// 4. Fix what it heard: click the right one of a word's two versions. Click the words, or type, to edit them.
-// 5. Come back: ⌘K again shows the last words, selected (type to start over), and what they found.
-// 6. Do something: words that name a command (Done, Settings…) show it under Actions; ↵ does it.
-import { useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
-import { paletteRows } from '../app/actions'
+// The desktop's search (F479) as the stories show it: the page's own dialog (pages/SearchDialog, drawn from
+// searchDialogView) over the desktop's project page (searchDeskPage.tsx), fed by the demo projects Shop and Home
+// (searchFixtures.ts), with a pause in place of the microphone and the server: ⌘K (or /, or the sidebar's magnifier)
+// opens it on the last words, selected; typing searches a moment after you stop; the mic records, writes out and
+// searches; a row opens in its project's pane.
+import { useEffect, useState, type ReactNode } from 'react'
+import { listedActions } from '../app/actions'
 import { Tooltip } from '../app/Tooltip'
-import { RecBar } from '../features/composer/Composer'
-import { DraftWords } from '../features/composer/Doubts'
-import { CHIP, ViewBar } from '../features/list/ViewBar'
-import { pickSide, spotsIn, type HeardFile } from '../model/doubts'
-import { FIND_KINDS, saidMore, type FindAnswer, type FindKind, type FindPhase, type Found } from '../model/find'
-import { closed, shownStatus } from '../model/items'
+import type { HeardFile } from '../model/doubts'
+import { foundMeta, saidMore, type FindAnswer, type FindKind, type FindPhase, type Found } from '../model/find'
 import { codeOf } from '../model/project'
 import { refCard } from '../model/refCard'
-import { clock } from '../model/time'
-import { SearchBody, type SearchEvents, type SearchView } from '../pages/SearchPage'
-import { Hit, ProjTile } from '../ui/bits'
-import { Icon, StateIcon } from '../ui/Icon'
+import type { Visit } from '../stores/recent'
+import { FoundPreview, SearchDialog, type DialogEvents } from '../pages/SearchDialog'
+import { isFound, searchDialogView, type DialogPlace, type FoundLine } from '../pages/searchDialogView'
 import { Sheet } from '../ui/Sheet'
-import { TYPE_TEXT, toneOf } from '../ui/tones'
+import { toneOf } from '../ui/tones'
 import { Frame } from './Frames'
-import { HEARD, MISHEARD, MORE, ADDED, RIGHT, SHOP, searchOf } from './searchFixtures'
-import { DeskPage, TONES, itemOf, modelFor, previewOf, titleOf } from './searchDeskPage'
+import { ADDED, HEARD, MISHEARD, MORE, RIGHT, SHOP, searchOf } from './searchFixtures'
+import { DeskPage, TONES, modelFor, previewOf, titleOf } from './searchDeskPage'
+import { pickSide } from '../model/doubts'
 
 // ---------------------------------------------------------------- where the search is
 
@@ -52,6 +33,7 @@ export interface Desk {
   kind: 'all' | FindKind
   project: string | null
   status: 'open' | 'finished' | null
+  /** a filter's menu open (a story's) */
   menu: 'project' | 'status' | null
   /** the highlighted row */
   sel: number
@@ -107,17 +89,6 @@ function deskFind(words: string): FindAnswer | null {
   return /\b(exp|fil|pho)/i.test(words) ? { ...RIGHT, q: words } : null
 }
 
-/** The commands ⌘K had, as Actions when the words name one (those on an item act on the one open). */
-const COMMANDS = [...paletteRows(true), ...paletteRows(false)].filter((c) => c.id !== 'palette')
-function actionsFor(words: string, open: string) {
-  const q = words.trim().toLowerCase()
-  if (q.length < 3) return []
-  return COMMANDS.filter((c) => c.label.toLowerCase().split(/[^a-z']+/).some((w) => w.startsWith(q)) || c.label.toLowerCase().startsWith(q))
-    .slice(0, 3)
-    .map((c) => ({ id: c.id, label: c.label.replace(/…$/, ''), sub: c.item ? open : '', keys: c.keys }))
-}
-type Action = ReturnType<typeof actionsFor>[number]
-
 /** The search as it goes: typing searches as you type (a pause first); the mic records, writes out, searches. */
 function useDesk(start: Partial<Desk>, still: boolean) {
   const [f, setF] = useState<Desk>({ ...START, ...start })
@@ -152,357 +123,61 @@ function useDesk(start: Partial<Desk>, still: boolean) {
   return { f, set, setF }
 }
 
-// ---------------------------------------------------------------- the rows
+// ---------------------------------------------------------------- the dialog
 
-interface Line {
-  key: string
-  found: Found
-  icon: ReactNode
-  code: string
-  codeCls: string
-  title: string
-  /** where it is: its project, and the item it is under or on */
-  path: string
-  project: string
+/** What you opened lately: F001, its document D1, B002, B018, and Home's F021. */
+const visit = (slug: string, n: number): Visit => {
+  const it = modelFor(slug).byN.get(n)
+  return { project: slug, kind: 'items', n, code: codeOf(modelFor(slug), n), title: it?.title ?? '', type: it?.type, status: it?.status }
+}
+const RECENT: Visit[] = [visit('shop', 1), { project: 'shop', kind: 'docs', n: 1, d: 1, code: 'D1', title: 'Plan: the export keeps the filter', on: 'F001' }, visit('shop', 2), visit('shop', 18), visit('home', 21)]
+const ACTIONS = [...listedActions(true), ...listedActions(false)]
+const NOW = Date.parse('2026-11-02T18:00:00-08:00')
+
+/** The highlighted row's preview, as the page draws it: an item's page; anything else, what the search knows of it. */
+function Preview({ l }: { l: FoundLine }) {
+  const x = l.found
+  if (x.kind === 'items' || x.kind === 'rules') return previewOf(x)
+  return <FoundPreview l={l} text={x.kind === 'docs' ? (modelFor(x.project).docs.find((d) => d.d === x.d)?.md ?? '') : ''} meta={foundMeta(x, NOW)} />
 }
 
-function lineOf(x: Found): Line {
-  const m = modelFor(x.project)
-  const it = itemOf(x)
-  const base = { key: x.project + '/' + x.key, found: x, project: x.project }
-  if ((x.kind === 'items' || x.kind === 'rules') && it) {
-    const code = x.item?.code ?? codeOf(m, it.n)
-    const under = it.parent ? codeOf(m, it.parent) : ''
-    return { ...base, icon: <StateIcon {...shownStatus(it)} cls="size-4 shrink-0" />, code, codeCls: TYPE_TEXT[it.type], title: it.title, path: [titleOf(x.project), under].filter(Boolean).join(' / ') }
+/** The dialog in the page's sheet, from where the search is. */
+function StoryDialog({ f, set, onOpen, onClose }: { f: Desk; set(p: Partial<Desk>): void; onOpen(x: Found): void; onClose(): void }) {
+  const place: DialogPlace = {
+    here: 'shop',
+    model: (slug) => (slug === 'shop' || slug === 'home' ? modelFor(slug) : null),
+    title: titleOf,
+    tone: (slug) => toneOf(TONES, slug),
+    projects: ['shop', 'home'],
+    recent: RECENT,
+    actions: ACTIONS,
+    openCode: codeOf(modelFor(f.pane.slug), f.pane.n),
   }
-  const on = x.kind === 'docs' ? x.on : x.became
-  return {
-    ...base,
-    icon: <Icon n={x.kind === 'docs' ? 'doc' : 'newinput'} c="size-4 shrink-0 text-zinc-400 dark:text-zinc-500" />,
-    code: x.code ?? '',
-    codeCls: 'text-zinc-500 dark:text-zinc-400',
-    title: x.title ?? '',
-    path: [titleOf(x.project), on].filter(Boolean).join(' / '),
-  }
-}
-
-const ROW =
-  'flex h-10 w-full min-w-0 shrink-0 items-center gap-2.5 rounded-lg px-2.5 text-left text-sm aria-selected:bg-blue-50 dark:aria-selected:bg-blue-400/15'
-const LABEL = 'px-2.5 pt-2 pb-1 text-xs font-medium text-zinc-500 dark:text-zinc-400'
-const KEY = 'grid h-5 min-w-5 place-items-center rounded-md px-1 font-sans text-[11px] font-semibold text-zinc-500 ring-1 ring-zinc-300 dark:text-zinc-400 dark:ring-zinc-600'
-
-function FoundRow({ l, i, sel, marks, attr, on }: { l: Line; i: number; sel: boolean; marks: readonly string[]; attr: string; on: { sel(i: number): void; open(x: Found): void } }) {
-  return (
-    <button {...{ [attr]: l.key }} aria-selected={sel} onMouseMove={() => !sel && on.sel(i)} onClick={() => on.open(l.found)} className={`${ROW} h-auto items-start py-2`}>
-      <span className="grid h-5 shrink-0 place-items-center">{l.icon}</span>
-      <span className="min-w-0 flex-1">
-        <span className="block truncate leading-5">
-          {l.code ? <span className={`mr-1.5 font-mono text-xs font-bold ${l.codeCls}`}>{l.code}</span> : null}
-          <Hit text={l.title} words={marks} />
-        </span>
-        <span className="mt-0.5 flex items-center gap-1.5 text-xs text-zinc-400 dark:text-zinc-500">
-          <ProjTile title={titleOf(l.project)} tone={toneOf(TONES, l.project)} cls="size-3.5 rounded-[3px] text-[8px]" />
-          <span className="truncate">{l.path}</span>
-        </span>
-      </span>
-    </button>
-  )
-}
-
-function ActionRow({ a, i, sel, on }: { a: Action; i: number; sel: boolean; on: { sel(i: number): void; act(): void } }) {
-  return (
-    <button data-action={a.id} aria-selected={sel} onMouseMove={() => !sel && on.sel(i)} onClick={on.act} className={ROW}>
-      <Icon n="arrow" c="size-4 shrink-0 text-zinc-400 dark:text-zinc-500" />
-      <span className="min-w-0 flex-1 truncate">
-        {a.label}
-        {a.sub ? <span className="ml-1.5 font-mono text-xs text-zinc-500 dark:text-zinc-400">{a.sub}</span> : null}
-      </span>
-      {a.keys.split(' ').map((k, j) => (
-        <kbd key={j} className={KEY}>
-          {k}
-        </kbd>
-      ))}
-    </button>
-  )
-}
-
-// ---------------------------------------------------------------- the filters
-
-function Pick({ label, set, open, rows, onOpen, onPick }: { label: string; set: string | null; open: boolean; rows: [string | null, ReactNode][]; onOpen(): void; onPick(v: string | null): void }) {
-  return (
-    <div className="relative shrink-0">
-      <button onClick={onOpen} aria-pressed={!!set} aria-expanded={open} className={`${CHIP} gap-1.5 pr-1.5`}>
-        {set ?? label}
-        <Icon n="down" c="size-3.5 opacity-60" sw="2.25" />
-      </button>
-      {open ? (
-        <div role="menu" className="absolute top-full right-0 z-30 mt-1 w-48 rounded-xl bg-white p-1 shadow-lg ring-1 ring-zinc-900/10 dark:bg-zinc-800 dark:ring-white/10">
-          {rows.map(([v, inner]) => (
-            <button key={v ?? 'any'} role="menuitem" onClick={() => onPick(v)} className="flex h-9 w-full items-center gap-2 rounded-lg px-2.5 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-700">
-              {inner}
-            </button>
-          ))}
-        </div>
-      ) : null}
-    </div>
-  )
-}
-
-// ---------------------------------------------------------------- the field
-
-function Field({ f, field, on }: { f: Desk; field: React.RefObject<HTMLInputElement | null>; on: { type(w: string): void; mic(): void; stop(): void; discard(): void; pick(fk: string, k: number, side: 'was' | 'alt'): void; toTyping(): void } }) {
-  const rec = f.phase === 'listening'
-  const writing = f.phase === 'writing'
-  const busy = rec || writing
-  const spots = !f.typing && f.heard.length ? spotsIn(f.words, f.heard) : []
-  const lit = !f.typing && f.added && f.words.endsWith(f.added) ? f.added.replace(/^[\s,，]+/, '') : ''
-  let words: ReactNode = null
-  if (rec)
-    words = (
-      <div role="status" aria-label="Recording" className="flex min-w-0 flex-1 items-center gap-2.5">
-        {f.words && !f.replace ? <span className="max-w-[45%] truncate text-lg text-zinc-400 dark:text-zinc-500">{f.words}</span> : null}
-        <RecBar time={clock(f.ms)} levels={LEVELS} />
-      </div>
-    )
-  else if (writing)
-    words = (
-      <p className="flex min-w-0 flex-1 items-center gap-2 text-lg text-zinc-500 dark:text-zinc-400">
-        <span className="size-2 shrink-0 animate-pulse rounded-full bg-blue-500 dark:bg-blue-400" />
-        Transcribing…
-      </p>
-    )
-  else if (spots.length)
-    words = <DraftWords text={f.words} spots={spots} className="min-w-0 flex-1 truncate text-lg leading-8 outline-none" on={{ pick: on.pick, escape() {}, plain: on.toTyping }} />
-  else if (lit)
-    words = (
-      <button onClick={on.toTyping} aria-label="Change the words" className="min-w-0 flex-1 truncate text-left text-lg">
-        {f.words.slice(0, -lit.length)}
-        <mark className="rounded bg-blue-100 text-inherit dark:bg-blue-400/25">{lit}</mark>
-      </button>
-    )
-  const icon = 'grid size-8 shrink-0 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100'
-  return (
-    <div className="flex h-16 shrink-0 items-center gap-2.5 border-b border-zinc-200 pr-3 pl-4 dark:border-zinc-800">
-      {busy ? (
-        <button onClick={on.discard} aria-label="Discard the recording" title="Discard" className={`${icon} -ml-1.5`}>
-          <Icon n="x" c="size-5" />
-        </button>
-      ) : (
-        <Icon n="search" c="size-5 shrink-0 text-zinc-400 dark:text-zinc-500" sw="2" />
-      )}
-      {words}
-      <input
-        ref={field}
-        hidden={!!words}
-        value={f.words}
-        aria-label="What to find"
-        placeholder="Search Taska…"
-        autoComplete="off"
-        onChange={(e) => on.type(e.currentTarget.value)}
-        className="min-w-0 flex-1 bg-transparent text-lg outline-none placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
-      />
-      {f.phase === 'searching' && f.typing && f.answer ? <Icon n="spinner" c="size-4 shrink-0 animate-spin text-zinc-400" sw="2.25" /> : null}
-      {rec ? (
-        <button onClick={on.stop} aria-label="Stop and search" title="Stop and search · ↵" className="grid size-8 shrink-0 place-items-center rounded-full bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900">
-          <Icon n="up" c="size-4" sw="2.25" />
-        </button>
-      ) : writing ? null : (
-        <button onClick={on.mic} aria-label="Speak" title="Speak · ⌥V" className={icon}>
-          <Icon n="mic" c="size-5" />
-        </button>
-      )}
-    </div>
-  )
-}
-
-// ---------------------------------------------------------------- the modal
-
-const RECENT: Found[] = [RIGHT.found[0], RIGHT.found[2], { project: 'shop', kind: 'items', key: 'i2', n: 2 }, MORE.found[0], RIGHT.found.find((x) => x.project === 'home') as Found]
-const noSearch: SearchEvents = { leave() {}, mic() {}, stop() {}, discard() {}, clear() {}, type() {}, search() {}, pick() {}, kind() {}, open() {} }
-
-export function SearchModal({ f, set, onOpen, onClose }: { f: Desk; set(p: Partial<Desk>): void; onOpen(x: Found): void; onClose(): void }) {
-  const root = useRef<HTMLDivElement>(null)
-  const field = useRef<HTMLInputElement>(null)
-  const list = useRef<HTMLDivElement>(null)
-  const a = f.answer
-  const marks = a?.marks ?? []
-  const it = (x: Found) => itemOf(x)
-  const pass = (x: Found) =>
-    (f.project === null || x.project === f.project) &&
-    (f.status === null || ((x.kind === 'items' || x.kind === 'rules') && !!it(x) && closed((it(x) as NonNullable<ReturnType<typeof it>>).status) === (f.status === 'finished')))
-  const narrowed = a ? a.found.filter(pass) : []
-  const shown = narrowed.filter((x) => f.kind === 'all' || x.kind === f.kind)
-  const results = f.words.trim() ? shown.map(lineOf) : []
+  const v = searchDialogView({ ...f, typed: f.typing, levels: LEVELS }, place)
   const busy = f.phase === 'listening' || f.phase === 'writing'
-  // nothing typed or said yet: what you opened lately (while you speak, too)
-  const recent = !f.words.trim() && (f.phase === 'ready' || busy) ? RECENT.map(lineOf) : []
-  const typed = f.typing && f.phase !== 'listening' && f.phase !== 'writing'
-  const actions = typed && f.kind === 'all' && !f.project && !f.status ? actionsFor(f.words, codeOf(modelFor(f.pane.slug), f.pane.n)) : []
-  const rows: (Line | Action)[] = [...recent, ...results, ...actions]
-  const sel = Math.min(f.sel, Math.max(0, rows.length - 1))
-  const lit = rows[sel]
-  // only commands listed: no preview, the list takes the width
-  const hasPreview = rows.some((r) => 'found' in r)
-  // nothing to list: what it is doing, or why not (the phone's words)
-  const middle: FindPhase | null = busy || rows.length ? null : f.phase === 'found' ? 'nothing' : f.phase
-  const mid: SearchView = { phase: middle ?? 'ready', words: f.words, added: '', typed: false, doubts: null, rec: null, kinds: null, groups: null, marks: [] }
-  const faded = f.phase === 'searching' && !!a
-  // the focus: the field when it shows (all of it selected when the modal opens on old words), else the modal
-  useLayoutEffect(() => {
-    const el = field.current
-    if (el && !el.hidden) {
-      if (document.activeElement !== el) el.focus({ preventScroll: true })
-    } else if (!root.current?.contains(document.activeElement) || document.activeElement === el) root.current?.focus({ preventScroll: true })
-  }, [f.typing, f.phase])
-  useLayoutEffect(() => {
-    if (f.replace && field.current && !field.current.hidden) field.current.select()
-  }, [f.replace])
-  useLayoutEffect(() => {
-    list.current?.querySelector('[aria-selected="true"]')?.scrollIntoView({ block: 'nearest' })
-  }, [sel])
-  const open = (r: Line | Action | undefined) => {
-    if (!r) return
-    if ('found' in r) onOpen(r.found)
-    else onClose()
-  }
-  const speak = () => {
-    const el = field.current
-    const all = !!el && !el.hidden && !!f.words && el.selectionStart === 0 && el.selectionEnd === f.words.length
-    set({ phase: 'listening', typing: false, replace: all || f.replace, voice: true, ms: 0, menu: null })
-  }
-  const on = {
-    type: (w: string) => set({ words: w, added: '', heard: [], typing: true, replace: false, sel: 0, ...(busy ? { phase: a ? 'found' : 'ready' } : {}) }),
-    mic: speak,
+  const on: DialogEvents = {
+    type: (w) => set({ words: w, added: '', heard: [], typing: true, replace: false, sel: 0, ...(busy || f.phase === 'unheard' ? { phase: f.answer ? 'found' : 'ready' } : {}) }),
+    toTyping: () => set({ typing: true, added: '', heard: [] }),
+    mic: (replace) => set({ phase: 'listening', typing: false, replace, voice: true, ms: 0 }),
     stop: () => set({ phase: 'writing' }),
-    discard: () => set({ phase: a ? 'found' : f.words ? 'nothing' : 'ready', typing: true, replace: false }),
-    pick: (fk: string, k: number, side: 'was' | 'alt') => {
+    discard: () => set({ phase: f.answer ? 'found' : f.words ? 'nothing' : 'ready', typing: true, replace: false }),
+    pick: (fk, k, side) => {
       const h = f.heard.find((x) => x.key === fk)
       if (!h) return
       const r = pickSide(f.words, h, k, side)
       set({ words: r.text, heard: f.heard.map((x) => (x === h ? { ...x, trAdded: r.trAdded, doubts: r.doubts } : x)), phase: 'searching', voice: true })
     },
-    toTyping: () => set({ typing: true, added: '' }),
+    kind: (k) => set({ kind: k, sel: 0 }),
+    project: (p) => set({ project: p, sel: 0 }),
+    status: (x) => set({ status: x, sel: 0 }),
+    select: (i) => set({ sel: i }),
+    open: (x, tab) => (tab ? undefined : onOpen(x)),
+    act: () => onClose(),
+    close: onClose,
   }
-  const keys = (e: KeyboardEvent) => {
-    if (e.nativeEvent.isComposing) return
-    const stop = () => (e.preventDefault(), e.stopPropagation())
-    if (e.key === 'Escape') return (stop(), f.menu ? set({ menu: null }) : onClose())
-    if (e.altKey && e.code === 'KeyV') return (stop(), f.phase === 'listening' ? on.stop() : f.phase === 'writing' ? undefined : speak())
-    if (f.phase === 'listening') {
-      if (e.key === 'Enter') return (stop(), on.stop())
-      if (e.key.length === 1 && !e.metaKey && !e.ctrlKey && !e.altKey) {
-        stop()
-        const base = f.replace ? '' : f.words
-        return on.type(base + (base && !/\s$/.test(base) && e.key !== ' ' ? ' ' : '') + e.key)
-      }
-      return
-    }
-    if (f.phase === 'writing') return
-    if (!f.typing && (e.key.length === 1 || e.key === 'Backspace') && !e.metaKey && !e.ctrlKey && !e.altKey) {
-      stop()
-      return on.type(e.key === 'Backspace' ? f.words.slice(0, -1) : f.words + e.key)
-    }
-    if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && rows.length) return (stop(), set({ sel: (sel + (e.key === 'ArrowDown' ? 1 : -1) + rows.length) % rows.length }))
-    // ⌘↵ opens it in a new tab (the browser's: nothing to draw here)
-    if (e.key === 'Enter' && !e.metaKey && !e.ctrlKey) return (stop(), open(lit))
-  }
-  const kinds = a
-    ? [{ value: 'all', label: 'All', count: narrowed.length, on: f.kind === 'all', needs: false }, ...FIND_KINDS.map(([k, label]) => ({ value: k, label, count: narrowed.filter((x) => x.kind === k).length, on: f.kind === k, needs: false })).filter((c) => c.count || c.on)]
-    : null
-  const listRows = (
-    <div ref={list} className={`flex flex-col gap-0.5 p-1.5 transition-opacity ${faded ? 'opacity-45' : ''}`}>
-      {recent.length ? <p className={LABEL}>Recent</p> : null}
-      {[...recent, ...results].map((l, i) => (
-        <FoundRow key={l.key} l={l} i={i} sel={i === sel} marks={recent.length ? [] : marks} attr={recent.length ? 'data-recent' : 'data-found'} on={{ sel: (j) => set({ sel: j }), open: onOpen }} />
-      ))}
-      {actions.length ? <p className={LABEL}>Actions</p> : null}
-      {actions.map((x, j) => {
-        const i = recent.length + results.length + j
-        return <ActionRow key={x.id} a={x} i={i} sel={i === sel} on={{ sel: (k) => set({ sel: k }), act: onClose }} />
-      })}
-    </div>
-  )
   return (
     <Sheet open look={{ search: true }} desk onClose={onClose}>
-      <div ref={root} tabIndex={-1} onKeyDownCapture={keys} data-part="search" aria-label="Search" className="flex min-h-0 flex-1 flex-col outline-none">
-        <Field f={f} field={field} on={on} />
-        {kinds ? (
-          <div data-chips className="flex h-12 shrink-0 items-center gap-1 border-b border-zinc-200 pr-3 pl-2 dark:border-zinc-800">
-            <div className="min-w-0 flex-1 [&>[data-views]]:border-0">
-              <ViewBar views={kinds} onView={(k) => set({ kind: k as Desk['kind'], sel: 0 })} />
-            </div>
-            <Pick
-              label="Project"
-              set={f.project ? titleOf(f.project) : null}
-              open={f.menu === 'project'}
-              onOpen={() => set({ menu: f.menu === 'project' ? null : 'project' })}
-              onPick={(v) => set({ project: v, menu: null, sel: 0 })}
-              rows={[
-                [null, <span className="flex-1">Any project</span>],
-                ...(['shop', 'home'] as const).map((p): [string, ReactNode] => [
-                  p,
-                  <>
-                    <ProjTile title={titleOf(p)} tone={toneOf(TONES, p)} cls="size-5 rounded-md text-[10px]" />
-                    <span className="flex-1">{titleOf(p)}</span>
-                    {f.project === p ? <Icon n="check" c="size-4 text-blue-600 dark:text-blue-400" sw="2.25" /> : null}
-                  </>,
-                ]),
-              ]}
-            />
-            <Pick
-              label="Status"
-              set={f.status === 'open' ? 'Open' : f.status === 'finished' ? 'Finished' : null}
-              open={f.menu === 'status'}
-              onOpen={() => set({ menu: f.menu === 'status' ? null : 'status' })}
-              onPick={(v) => set({ status: v as Desk['status'], menu: null, sel: 0 })}
-              rows={[
-                [null, <span className="flex-1">Any status</span>],
-                ...(
-                  [
-                    ['open', 'Open'],
-                    ['finished', 'Finished'],
-                  ] as const
-                ).map(([v, w]): [string, ReactNode] => [
-                  v,
-                  <>
-                    <span className="flex-1">{w}</span>
-                    {f.status === v ? <Icon n="check" c="size-4 text-blue-600 dark:text-blue-400" sw="2.25" /> : null}
-                  </>,
-                ]),
-              ]}
-            />
-          </div>
-        ) : null}
-        <div className="flex min-h-0 flex-1">
-          {middle || !rows.length ? (
-            <div className="flex min-w-0 flex-1 flex-col justify-center">{middle ? <SearchBody v={mid} on={noSearch} desk /> : null}</div>
-          ) : (
-            <>
-              <div className={`overflow-y-auto lg:scrollbar-thin ${hasPreview ? 'w-[clamp(22rem,40%,30rem)] shrink-0' : 'flex-1'}`}>{listRows}</div>
-              <div hidden={!hasPreview} data-preview={lit && 'found' in lit ? lit.found.kind : ''} className="relative min-w-0 flex-1 overflow-hidden border-l border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-950">
-                <div className={`pointer-events-none origin-top-left transition-opacity ${faded ? 'opacity-45' : ''}`}>{lit && 'found' in lit ? previewOf(lit.found) : null}</div>
-                <div className="pointer-events-none absolute inset-x-0 bottom-0 h-12 bg-linear-to-t from-white dark:from-zinc-950" />
-              </div>
-            </>
-          )}
-        </div>
-        <footer className="flex h-9 shrink-0 items-center gap-4 border-t border-zinc-200 px-4 text-xs text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
-          {(
-            [
-              ['↑↓', 'Select'],
-              ['↵', 'Open'],
-              ['⌘↵', 'New tab'],
-              ['⌥V', 'Speak'],
-              ['Esc', 'Close'],
-            ] as const
-          ).map(([k, w]) => (
-            <span key={k} className="flex items-center gap-1.5">
-              <kbd className={KEY}>{k}</kbd>
-              {w}
-            </span>
-          ))}
-        </footer>
-      </div>
+      <SearchDialog v={v} menuAt={f.menu} preview={isFound(v.lit) ? <Preview l={v.lit} /> : null} on={on} />
     </Sheet>
   )
 }
@@ -538,7 +213,7 @@ export function SearchDesk({ start = {}, still = false, rail = false }: { start?
   return (
     <>
       <DeskPage slug={f.pane.slug} n={f.pane.n} rail={rail} onSearch={show} />
-      {f.open ? <SearchModal f={f} set={set} onOpen={(x) => x.n != null && set({ open: false, menu: null, pane: { slug: x.project, n: x.n } })} onClose={close} /> : null}
+      {f.open ? <StoryDialog f={f} set={set} onOpen={(x) => x.n != null && set({ open: false, menu: null, pane: { slug: x.project, n: x.n } })} onClose={close} /> : null}
     </>
   )
 }

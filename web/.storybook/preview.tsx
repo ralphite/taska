@@ -81,6 +81,7 @@ const preview: Preview = {
               'On its way',
             ],
             'Search on the phone', ['Walk through', 'Say and search', 'Say more or change it', 'When it goes wrong'],
+            'Search on the desktop', ['Walk through', 'Type and find', 'Filters and actions', 'Say it', 'When it goes wrong, dark, narrower'],
             'Document',
             [
               'Reading',
@@ -136,7 +137,7 @@ const preview: Preview = {
               'About this section',
             ],
           ],
-          'Prototype', ['About this section', 'F479 Search on the desktop', ['Walk through', 'Type and find', 'Filters and actions', 'Say it', 'When it goes wrong, dark, narrower']],
+          'Prototype', ['About this section'],
           '*',
         ],
       },

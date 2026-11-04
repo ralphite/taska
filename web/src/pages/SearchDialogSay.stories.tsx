@@ -1,9 +1,9 @@
-// F479 on the desktop, a prototype: saying what to find with the mic at the field's end. The journeys:
-// stories/searchDesk.tsx.
+// F479: the desktop's search (pages/SearchDialog): saying what to find with the mic at the field's end. The
+// journeys: stories/searchDesk.tsx.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { deskStory } from './searchDesk'
+import { deskStory } from '../stories/searchDesk'
 
-export default { title: 'Prototype/F479 Search on the desktop/Say it' } satisfies Meta
+export default { title: 'Components/Search on the desktop/Say it' } satisfies Meta
 
 /** The mic (or ⌥V): the time and the level, no words (r797); Recent stays under it. */
 export const Listening: StoryObj = { name: 'Listening', ...deskStory('listening') }

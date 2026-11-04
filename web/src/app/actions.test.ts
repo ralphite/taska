@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ACTIONS, actionOfKeys, helpedActions, keyHelp, keysShown, paletteRows, type ActionId } from './actions'
+import { ACTIONS, actionOfKeys, helpedActions, keyHelp, keysShown, listedActions, type ActionId } from './actions'
 
 // the actions whose keys the keys sheet tells in words of its own ("G then I N A R", "O or ↵", "Space", "Esc", "1–9, ⌘↵",
 // "E / ⇧E")
@@ -26,13 +26,13 @@ describe('the table of actions', () => {
     expect(keys["Done · Won't do · Later / Now"]).toBe('D · W · L')
     expect(keys['Edit · New doc · Add subitem']).toBe('I · ⇧D · ⇧A')
     expect(keys['Next or previous item']).toBe('J / K')
-    expect(keys['Go to an item or do anything here']).toBe('⌘K')
-    expect(keysShown('palette')).toBe('⌘K')
+    expect(keys['Search every project (or /); the words of an action do it']).toBe('⌘K')
+    expect(keysShown('search')).toBe('⌘K')
     expect(keysShown('copy')).toBe('⇧C')
   })
 
-  it('lists the palette in its order', () => {
-    expect(paletteRows(true).map((r) => r.keys)).toEqual(['A', 'R', 'N', 'D', 'L', 'E', 'W', 'I', 'S', 'P', 'T', 'M', '⇧A', '⇧D', '⇧C', 'O'])
-    expect(paletteRows(false).map((r) => r.keys)).toEqual(['C', '/', 'F', '⇧V', 'G I', 'G N', 'G A', 'G R', 'G P', 'G S', 'G D', 'G H', 'G X', '[', 'Z', '?'])
+  it("lists the search's Actions in its order (not the search itself)", () => {
+    expect(listedActions(true).map((r) => r.keys)).toEqual(['A', 'R', 'N', 'D', 'L', 'E', 'W', 'I', 'S', 'P', 'T', 'M', '⇧A', '⇧D', '⇧C', 'O'])
+    expect(listedActions(false).map((r) => r.keys)).toEqual(['C', 'F', '⇧V', 'G I', 'G N', 'G A', 'G R', 'G P', 'G S', 'G D', 'G H', 'G X', '[', 'Z', '?'])
   })
 })
