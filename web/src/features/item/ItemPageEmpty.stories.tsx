@@ -4,6 +4,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frames } from '../../stories/Frames'
 import { PaneFrame } from '../../ui/PaneFrame'
 import { Missing, NoSelection } from './ItemPage'
+import { act } from '../../stories/acts'
 
 export default { title: 'Components/Item page/Loading and empty' } satisfies Meta
 type Story = StoryObj
@@ -15,7 +16,7 @@ const missing = (what: string, loading: boolean, away: boolean): Story => ({
     <Frames phoneWidth={393} deskWidth={720} height={260}>
       {(layout) => (
         <div className="flex h-full flex-col">
-          <PaneFrame place="" desk={layout === 'desk'} head={<span className="font-mono text-sm font-bold">{what}</span>} onBack={() => {}}>
+          <PaneFrame place="" desk={layout === 'desk'} head={<span className="font-mono text-sm font-bold">{what}</span>} onBack={act('Pane: back')}>
             <Missing what={what} loading={loading} away={away} />
           </PaneFrame>
         </div>

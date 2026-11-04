@@ -3,6 +3,7 @@ import { Frames } from '../../stories/Frames'
 import { T } from '../../stories/fixtures'
 import { comment, doc } from '../../stories/itemFixtures'
 import { DocCard } from './DocCard'
+import { act } from '../../stories/acts'
 
 const meta: Meta = { title: 'Components/Item page/Document card' }
 export default meta
@@ -11,7 +12,7 @@ type Story = StoryObj
 const now = Date.parse(T) + 60_000
 const card = (d: Parameters<typeof DocCard>[0]['d'], waiting = '') => (
   <div className="p-3">
-    <DocCard d={d} now={now} waiting={waiting} onOpen={() => {}} />
+    <DocCard d={d} now={now} waiting={waiting} onOpen={act('Document card: open → Document › Reading')} />
   </div>
 )
 

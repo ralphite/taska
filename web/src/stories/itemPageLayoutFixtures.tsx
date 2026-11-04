@@ -8,6 +8,7 @@ import { item, message } from './fixtures'
 import { KIDS, PARENT, pageOf, you, type PageOpts } from './itemPage'
 import { Icon } from '../ui/Icon'
 import { PaneFrame } from '../ui/PaneFrame'
+import { act } from './acts'
 
 type Story = StoryObj
 
@@ -33,7 +34,7 @@ export const newInputHead = (
 /** The pane's frame as the page draws it, around a stand-in for the page. */
 export const frame = (props: Partial<Parameters<typeof PaneFrame>[0]>, desk: boolean, children: ReactNode = <p className="px-8 py-4 text-[15px]">The page goes here.</p>) => (
   <div className="flex h-56 flex-col">
-    <PaneFrame place="" desk={desk} onBack={() => {}} {...props}>
+    <PaneFrame place="" desk={desk} onBack={act('Pane: back')} {...props}>
       {children}
     </PaneFrame>
   </div>
