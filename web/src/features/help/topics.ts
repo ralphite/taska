@@ -34,11 +34,10 @@ export const HELP_GROUPS: HelpGroup[] = [
 
 ## What a project holds
 
-| Tab | What it holds |
+| Place | What it holds |
 | --- | --- |
-| Items | The work, with what needs you at the top |
-| Inputs | Everything you said, as you said it, and what each became |
-| Archive | Finished items you put away |
+| Items | The work, with what needs you at the top; its views include **Archive**, the finished items you put away |
+| Inputs | Everything you said, as you said it, and what each became: on the desktop under **New input**, on the phone its own tab |
 | Rules | How agents work in this project |
 
 ## Finding your way
@@ -53,7 +52,7 @@ The sidebar lists your projects, each with how many things need you. **Documents
 
 ## Write a new input
 
-Press **New input** and write as you would to a person: one thing or many, in any language. Paste or drop pictures and files, or use the paper clip.
+Press **New input** and write as you would to a person: one thing or many, in any language. Paste or drop pictures and files, or use **+**.
 
 ## Speak instead
 
@@ -64,7 +63,7 @@ The microphone records a voice note. Taska writes out what you said and keeps th
 
 ## What happens next
 
-The organizer reads each input and turns it into items: new ones, or words added to the item it is about. Every input keeps a link to what it became, under **Inputs**.
+The organizer reads each input and turns it into items: new ones, or words added to the item it is about. Every input keeps a link to what it became, with your inputs.
 
 ## Reply on an item
 
@@ -176,7 +175,7 @@ On the desktop, drag a row over the top or bottom edge of another row to put it 
 
 ## Act on many at once
 
-Pick several rows, then act on all of them together.
+On the desktop, pick several rows, then act on all of them together.
 
 ## Order your projects
 

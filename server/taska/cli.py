@@ -14,6 +14,7 @@ from __future__ import annotations
 import argparse
 import os
 import signal
+import socket
 import sys
 import threading
 import time
@@ -53,6 +54,22 @@ def main(argv: Optional[List[str]] = None) -> None:
           os.path.join(os.path.expanduser(args.root), "logs.db") if args.log_db is None else args.log_db, args.log_level)
 
 
+def lan_address(host: str, port: int) -> str:
+    """This machine's address on its network, when Taska listens beyond this machine ("" when it does not): a phone
+    on the same network opens it without the key."""
+    if host in ("127.0.0.1", "localhost", "::1"):
+        return ""
+    ip = host
+    if host in ("", "0.0.0.0", "::"):
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+                s.connect(("10.255.255.255", 1))  # sends nothing: only picks the interface a packet would leave by
+                ip = s.getsockname()[0]
+        except OSError:
+            return ""
+    return f"http://{ip}:{port}"
+
+
 def serve(root: str, host: str, port: int, organizer: bool, public: str, log_db: Optional[str], log_level: str) -> None:
     from .infra import logs
     from .services.workspace import Workspace
@@ -89,6 +106,7 @@ def serve(root: str, host: str, port: int, organizer: bool, public: str, log_db:
         srv = Server((host, port), ctx)
     except OSError as ex:
         sys.exit(f"taska: cannot listen on {host}:{port}: {ex}")
+    ws.lan = lan_address(host, port)
     print(f"Taska  http://{host}:{port}/  started {time.strftime('%Y-%m-%d %H:%M:%S')}\n  data       {ws.root}  "
           f"({', '.join(sorted(ws.projects))})\n  organizer  "
           + (f"Gemini {MODEL}" if organizer else "off (set GEMINI_API_KEY to turn it on)")

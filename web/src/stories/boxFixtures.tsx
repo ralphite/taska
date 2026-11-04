@@ -71,6 +71,7 @@ export function boxAt(h: Here, desk: boolean, extra: Partial<ComposerProps> = {}
   return (
     <div className="bg-zinc-50 p-3 dark:bg-zinc-950">
       <Composer
+        attach={shown.attach}
         line={shown.line}
         waiting={shown.waiting}
         placeholder={shown.placeholder}

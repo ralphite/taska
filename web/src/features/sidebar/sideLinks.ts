@@ -5,7 +5,7 @@
 import { keysShown } from '../../app/actions'
 import type { SideKeys, SideLinkInfo } from './Sidebar'
 
-export const SIDE_KEYS: SideKeys = { search: keysShown('palette'), newInput: keysShown('new-input'), voice: keysShown('voice'), settings: keysShown('settings'), sidebar: keysShown('sidebar'), keys: keysShown('keys') }
+export const SIDE_KEYS: SideKeys = { search: keysShown('palette'), newInput: keysShown('new-input'), voice: keysShown('voice'), settings: keysShown('settings'), sidebar: keysShown('sidebar'), keys: keysShown('keys'), links: { docs: keysShown('documents'), log: keysShown('activity'), deleted: keysShown('deleted') } }
 
 export function sideLinks(slug: string, side: 'docs' | 'log' | 'deleted' | null): SideLinkInfo[] {
   const base = `/p/${encodeURIComponent(slug)}/`

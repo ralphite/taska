@@ -93,6 +93,8 @@ export interface ComposerProps {
   words?: ReactNode
   /** files wait in the draft: Send shows, as words do */
   hasFiles?: boolean
+  /** files can be added here (+); not to a corrected word, the transcription preferences or a comment being edited */
+  attach?: boolean
   /** the box's element, for the layout to measure */
   boxRef?: RefObject<HTMLDivElement | null>
   /** where you write, for the keys (R replies) */
@@ -145,7 +147,7 @@ function insertedAt(was: string, now: string): number | null {
   return now.endsWith(was.slice(a)) ? a : null
 }
 
-export function Composer({ line, waiting = null, lineOn, lineOnComposePage, placeholder, sendWord, text, desk, composePage, micTip, files, doubts, words, hasFiles = false, boxRef, fieldRef, rec = null, on }: ComposerProps) {
+export function Composer({ line, waiting = null, lineOn, lineOnComposePage, placeholder, sendWord, text, desk, composePage, micTip, files, doubts, words, hasFiles = false, attach = true, boxRef, fieldRef, rec = null, on }: ComposerProps) {
   const area = useRef<HTMLTextAreaElement | null>(null)
   const box = useRef<HTMLDivElement | null>(null)
   const back = useRef<HTMLDivElement | null>(null)
@@ -214,8 +216,9 @@ export function Composer({ line, waiting = null, lineOn, lineOnComposePage, plac
       </div>
       {files}
       {doubts}
-      <div className="flex items-end gap-2 p-1.5 group-data-[multi]/box:flex-wrap lg:gap-0.5 lg:group-data-[compose]/app:order-first">
+      <div className={`flex items-end gap-2 p-1.5 group-data-[multi]/box:flex-wrap lg:gap-0.5 lg:group-data-[compose]/app:order-first ${attach || rec ? '' : 'pl-3.5 group-data-[multi]/box:justify-end group-data-[multi]/box:pl-1.5'}`}>
         <button
+          hidden={!rec && !attach}
           aria-label={rec ? 'Discard the recording' : 'Add files'}
           title={desk ? (rec ? 'Discard · Esc' : 'Add files') : undefined}
           onClick={() => (rec ? on.recCancel?.() : picker.current?.click())}

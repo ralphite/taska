@@ -229,6 +229,9 @@ export const ACTIONS = {
   rules: page(['nav'], { label: 'Rules', keys: 'g r', palette: true, run: tab('rules') }),
   'switch-project': page(['sheets'], { label: 'Switch project', keys: 'g p', palette: true, run: (w) => w.sheets.open({ kind: 'switch-project' }, { focus: false }) }),
   settings: page(['nav'], { label: 'Settings', keys: 'g s', palette: true, run: (w, h) => w.nav.to(`/p/${encodeURIComponent(h.r.slug)}/settings`) }),
+  documents: page(['nav'], { label: 'Documents', keys: 'g d', palette: true, run: (w, h) => w.nav.to(`/p/${encodeURIComponent(h.r.slug)}/docs`) }),
+  activity: page(['nav'], { label: 'Activity', keys: 'g h', palette: true, run: (w, h) => w.nav.to(`/p/${encodeURIComponent(h.r.slug)}/log`) }),
+  deleted: page(['nav'], { label: 'Deleted', keys: 'g x', palette: true, run: (w, h) => w.nav.to(`/p/${encodeURIComponent(h.r.slug)}/deleted`) }),
   sidebar: page(['ui'], { label: 'Toggle sidebar', keys: '[', palette: true, desk: true, run: (w) => w.ui.getState().setSideHidden(!w.ui.getState().sideHidden) }),
   undo: page(['feedback'], {
     label: 'Undo',
@@ -429,6 +432,7 @@ const HELP: [string, HelpRow[]][] = [
       { keys: 'G then I N A R', text: 'Items, Inputs, Archive, Rules' },
       { keys: 'G then P', text: 'Switch project' },
       { keys: 'G then S', text: 'Settings' },
+      { keys: 'G then D H X', text: 'Documents, Activity, Deleted' },
       { ids: ['sidebar'], sep: '', text: 'Toggle sidebar' },
     ],
   ],

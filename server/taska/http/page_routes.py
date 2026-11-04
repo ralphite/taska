@@ -46,7 +46,8 @@ def _view(ctx: "AppContext", req: Request, p: Project, since: Optional[Cursor]) 
                                             presence=pres["agents"], work=pres["work"], db_path=p.store.path)
     key = ws.key.value
     out["project"].update(base=f"{req.host()}{req.prefix}/p/{p.slug}", key=key,
-                          remote=f"{ws.public}/k/{key}/p/{p.slug}" if ws.public else "")
+                          remote=f"{ws.public}/k/{key}/p/{p.slug}" if ws.public else "",
+                          lan=f"{ws.lan}/p/{p.slug}" if ws.lan else "")
     out["server"] = {"page": ctx.page.version(), "update": ctx.status.update_ready()}
     return out
 

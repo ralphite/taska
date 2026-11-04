@@ -88,7 +88,7 @@ export function DeskPage({ slug, n, rail, onSearch }: { slug: string; n: number;
   return (
     <div className="flex h-full">
       {rail ? (
-        <Rail keys={SIDE_KEYS} projects={projects} composing={false} settingsOpen={false} on={sOn} />
+        <Rail keys={SIDE_KEYS} projects={projects} links={sideLinks(slug, null)} composing={false} settingsOpen={false} on={sOn} />
       ) : (
         <Sidebar phone={false} keys={SIDE_KEYS} projects={projects} composing={false} links={sideLinks(slug, null)} place="w-60 shrink-0 border-r border-zinc-200 bg-zinc-50 dark:border-zinc-800" on={sOn} />
       )}

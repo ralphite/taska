@@ -12,7 +12,7 @@ export const SECTIONS: Record<SectionKey, { path: string; icon: IconName; name: 
   log: { path: 'log', icon: 'history', name: 'Activity', about: () => 'Undo puts back your changes' },
   deleted: { path: 'deleted', icon: 'trash', name: 'Deleted', about: () => 'Inputs, items and documents' },
   projects: { path: 'projects', icon: 'folder', name: 'Projects', about: () => 'Renaming keeps links working' },
-  phone: { path: 'phone', icon: 'phone', name: 'Use on your phone', about: () => 'Open Taska from anywhere with a link or key.' },
+  phone: { path: 'phone', icon: 'phone', name: 'Use on your phone', about: () => 'Open Taska on your phone.' },
   notifications: { path: 'notifications', icon: 'bell', name: 'Notifications', about: () => 'Alerts when something needs you' },
   spellings: { path: 'spellings', icon: 'pencil', name: 'Voice spellings', about: () => 'Add one by selecting wrong words in a voice note.' },
   organizer: { path: 'organizer', icon: 'sparkle', name: 'Organizer', about: () => 'Turns what you say into items across all projects.' },

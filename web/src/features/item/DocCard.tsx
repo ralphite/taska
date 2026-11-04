@@ -1,4 +1,4 @@
-// A document as a card: its title, code, comments and time; it opens in Taska. Choices ticked in it and not sent are
+// A document as a card: its title, code, time and comments; it opens in Taska. Choices ticked in it and not sent are
 // said on it too, so they are not forgotten. Props only.
 
 import { when } from '../../model/time'
@@ -19,8 +19,8 @@ export function DocCard({ d, now, waiting = '', onOpen }: { d: Doc; now: number;
         <span className="block truncate text-[15px] font-medium">{d.title}</span>
         <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-zinc-500 dark:text-zinc-400">
           <span className="min-w-0 truncate">
-            {/* no comments: nothing said of them */}
-            {[`D${d.d}`, commentCount(d) ? plural(commentCount(d), 'comment') : '', when(d.t1, now)].filter(Boolean).join(' · ')}
+            {/* its time always after its code, then what waits in it (no comments: nothing said of them) */}
+            {[`D${d.d}`, when(d.t1, now), commentCount(d) ? plural(commentCount(d), 'comment') : ''].filter(Boolean).join(' · ')}
           </span>
           {waiting ? <span className={`${NEEDS_PILL} -my-0.5`}>{waiting}</span> : null}
         </span>

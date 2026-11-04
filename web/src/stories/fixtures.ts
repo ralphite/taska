@@ -81,6 +81,7 @@ export function projectFacts(f: Partial<ProjectFacts> = {}): ProjectFacts {
     base: '',
     key: '',
     remote: '',
+    lan: '',
     ...f,
   }
 }

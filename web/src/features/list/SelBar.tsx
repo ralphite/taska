@@ -5,7 +5,7 @@ import { Icon } from '../../ui/Icon'
 export const SEL_ACTS: readonly [string, unknown, string, string][] = [
   ['status', 'done', 'Done', 'are done'],
   ['when', 'later', 'Later', 'moved to Later'],
-  ['when', 'now', 'Now', 'are back to now'],
+  ['when', 'now', 'Back to now', 'are back to now'],
   ['archived', true, 'Archive', 'archived'],
   ['status', 'dropped', "Won't do", "are marked won't do"],
 ]

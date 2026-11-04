@@ -280,9 +280,15 @@ export function PhoneTabs({ tabs, filtersSet, showFilter, hidden, on }: {
             onClick={() => on.tab(t.tab)}
             className="group -mb-px flex h-11 shrink-0 items-center gap-0.5 border-b-2 border-transparent text-[14px] font-medium text-zinc-500 aria-selected:border-zinc-900 aria-selected:font-semibold aria-selected:text-zinc-900 wide-phone:gap-1 wide-phone:text-[15px] dark:text-zinc-400 dark:aria-selected:border-zinc-100 dark:aria-selected:text-zinc-50"
           >
-            {TAB_WORD[t.tab]}
+            {/* as wide picked as not (its bold word held unseen under it): the tabs keep their places */}
+            <span className="grid">
+              <span className="col-start-1 row-start-1">{TAB_WORD[t.tab]}</span>
+              <span aria-hidden className="invisible col-start-1 row-start-1 font-semibold">
+                {TAB_WORD[t.tab]}
+              </span>
+            </span>
             <span
-              className={`rounded-full px-1.5 py-px font-mono text-[11px] font-medium tabular-nums group-aria-selected:bg-zinc-900/7 group-aria-selected:text-zinc-600 group-aria-[selected=false]:px-0.5 empty:hidden wide-phone:group-aria-[selected=false]:px-1 dark:group-aria-selected:bg-white/10 dark:group-aria-selected:text-zinc-300 ${MUTED}`}
+              className={`rounded-full px-1.5 py-px font-mono text-[11px] font-medium tabular-nums group-aria-selected:bg-zinc-900/7 group-aria-selected:text-zinc-600 empty:hidden dark:group-aria-selected:bg-white/10 dark:group-aria-selected:text-zinc-300 ${MUTED}`}
             >
               {t.count}
             </span>

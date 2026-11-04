@@ -395,7 +395,7 @@ export function HiddenKidsLine({ parent, depth, open, later, onToggle }: { paren
       onClick={onToggle}
       className={`flex h-11 w-full items-center gap-1.5 border-b border-zinc-100 ${pad(depth)} text-[13px] font-semibold text-zinc-500 hover:bg-zinc-50 data-pressed:bg-zinc-100 lg:h-10 dark:border-zinc-800/70 dark:text-zinc-400 dark:hover:bg-zinc-900 dark:data-pressed:bg-zinc-900`}
     >
-      <Icon n={open ? 'chevup' : 'down'} c="size-4" sw="2.25" />
+      <Icon n={open ? 'down' : 'right'} c="size-4" sw="2.25" />
       {open ? 'Show fewer' : `${later} more in Later`}
     </button>
   )
@@ -407,7 +407,7 @@ export function NeedsMoreLine({ open, rest, onToggle }: { open: boolean; rest: n
       onClick={onToggle}
       className="flex h-10 w-full items-center gap-1.5 border-b border-zinc-100 pl-4 text-[13px] font-semibold text-amber-800 hover:bg-amber-50 dark:border-zinc-800/70 dark:text-amber-300 dark:hover:bg-amber-400/10"
     >
-      <Icon n={open ? 'chevup' : 'down'} c="size-4" sw="2.25" />
+      <Icon n={open ? 'down' : 'right'} c="size-4" sw="2.25" />
       {open ? 'Show fewer' : `Show ${rest} more`}
     </button>
   )

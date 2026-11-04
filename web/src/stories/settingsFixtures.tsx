@@ -55,6 +55,8 @@ export interface SettingsHere {
   projectsLoading?: boolean
   noneDeleted?: boolean
   noRemote?: boolean
+  /** no public address, and Taska listens on this machine only */
+  noLan?: boolean
   pushLoading?: boolean
   pushUnsupported?: boolean
   spellingsLoading?: boolean
@@ -98,7 +100,7 @@ export function settingsAt(sec: SectionKey | null, desk: boolean, h: SettingsHer
   const navOn = { open: no, back: no, keys: no, href: () => '#' }
   const bodies: Record<SectionKey, () => ReactNode> = {
     projects: () => (desk ? <ProjectsBody f={projectsOf(rows, side, st, asked, '~/.taska/shop/shop.db')} on={pOn} /> : <PhoneProjectsBody f={projectsOf(rows, side, st, asked, '')} on={pOn} />),
-    phone: () => <PhoneBody link={h.noRemote ? '' : m.facts.remote + '/'} keyText={m.facts.key} asking={!!h.newKeyAsking} desk={desk} on={{ copy: no, newKey: no }} />,
+    phone: () => <PhoneBody link={h.noRemote ? '' : m.facts.remote + '/'} lan={h.noRemote && !h.noLan ? 'http://192.168.1.20:7340/p/shop/' : ''} keyText={m.facts.key} asking={!!h.newKeyAsking} desk={desk} on={{ copy: no, newKey: no }} />,
     notifications: () =>
       desk ? (
         <NotificationsBody state={h.notifications?.state ?? 'On'} quiet={h.notifications?.quiet ?? false} on={{ turnOn: no, turnOff: no, quiet: no }} />

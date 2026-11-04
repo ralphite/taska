@@ -372,7 +372,7 @@ export function ItemPage({ it, f, env, facts, on, talkRef, duo = false, left = n
     ) : null
 
   return (
-    <div className={`group/item flex flex-col gap-6 px-5 pt-5 pb-10 lg:h-full lg:gap-0 lg:p-0 ${duo ? 'lg:flex-row' : ''}`}>
+    <div className={`group/item flex flex-col gap-6 px-4 pt-5 pb-10 lg:h-full lg:gap-0 lg:p-0 ${duo ? 'lg:flex-row' : ''}`}>
       {duo && left ? (
         <div data-item-top className={`lg:h-full lg:w-[var(--duo-w,55%)] lg:shrink-0 lg:scrollbar-thin lg:overflow-y-auto outline-none ${bare ? '' : 'lg:px-8 lg:pt-8 lg:pb-12'}`}>
           {left}
@@ -582,11 +582,11 @@ export function BackTo({ label, onBack }: { label: string; onBack(): void }) {
 /** The pane with nothing open: what to do. */
 export function NoSelection({ side }: { side: 'docs' | 'log' | null }): ReactNode {
   if (side)
-    return <div className="grid h-full place-items-center p-8 text-center text-[15px] text-zinc-500 dark:text-zinc-400">{side === 'docs' ? 'Pick a document' : 'Select a line to view'}</div>
+    return <div className="grid h-full place-items-center p-8 text-center text-[15px] text-zinc-500 dark:text-zinc-400">{side === 'docs' ? 'Pick a document' : 'Pick a line to view'}</div>
   return (
     <div className="grid h-full place-items-center p-8 text-center">
       <div>
-        <p className="text-[15px] text-zinc-500 dark:text-zinc-400">Select an item or type below</p>
+        <p className="text-[15px] text-zinc-500 dark:text-zinc-400">Pick an item or type below</p>
         <p className={`mt-2 flex items-center justify-center gap-1 text-[13px] ${MUTED}`}>
           <Kbd k="J" />
           <Kbd k="K" />

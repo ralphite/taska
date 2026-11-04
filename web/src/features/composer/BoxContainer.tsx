@@ -77,6 +77,7 @@ export function BoxContainer({ route, composePage, boxRef, bare = false }: { rou
       fieldRef={app.fields.ref('box')}
       lineOnComposePage={!!mode}
       hasFiles={!!draftFiles?.length}
+      attach={shown.attach}
       files={
         <DraftFiles
           files={draftFiles || []}

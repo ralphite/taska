@@ -195,7 +195,10 @@ export function ProjectsBody({ f, on }: { f: ProjectsFacts; on: ProjectsEvents }
 
 // ---- Use on your phone
 
-export function PhoneBody({ link, keyText, asking, desk, on }: { link: string; keyText: string; asking: boolean; desk: boolean; on: { copy(t: string): void; newKey(): void } }) {
+/** `link`: the public link (with the key); `lan`: the address on this network, where a phone needs no key. Without a
+ * public link the key is of no use to a phone: it is not offered. */
+export function PhoneBody({ link, lan, keyText, asking, desk, on }: { link: string; lan: string; keyText: string; asking: boolean; desk: boolean; on: { copy(t: string): void; newKey(): void } }) {
+  const flag = (f: string) => <code className="font-mono whitespace-nowrap">{f}</code>
   return (
     <>
       {link ? (
@@ -203,26 +206,26 @@ export function PhoneBody({ link, keyText, asking, desk, on }: { link: string; k
           <TextBox t={link} />
           <CopyBtn label="Copy link" onCopy={() => on.copy(link)} />
         </Part>
+      ) : lan ? (
+        <Part title="Link" about={<>On this network, no key needed. From anywhere: start Taska with {flag('--public')}.</>}>
+          <TextBox t={lan} />
+          <CopyBtn label="Copy link" onCopy={() => on.copy(lan)} />
+        </Part>
       ) : (
-        <Part
-          title="Link"
-          about={
-            <>
-              Taska has no public address yet (start it with <code className="font-mono whitespace-nowrap">--public</code>). On the same network your phone needs no key.
-            </>
-          }
-        />
+        <Part title="Link" about={<>Taska listens on this computer only. Start it with {flag('--host 0.0.0.0')} for your network, or {flag('--public')} for anywhere.</>} />
       )}
       <Part title="On the Home Screen" about="iPhone: Share › Add to Home Screen. Android: Menu › Install app. Taska then runs full screen and can record voice notes." />
-      <Part title="Key" about={`${link ? 'Or enter' : 'Enter'} this key once on the device.`}>
-        <div className="mt-3 flex items-center gap-4">
-          <span className="font-mono text-2xl tracking-wider select-all">{keyText}</span>
-          <button onClick={() => on.copy(keyText)} className={SECOND}>
-            <Icon n="copy" c="size-4" />
-            Copy key
-          </button>
-        </div>
-      </Part>
+      {link ? (
+        <Part title="Key" about="Or enter this key once on the device.">
+          <div className="mt-3 flex items-center gap-4">
+            <span className="font-mono text-2xl tracking-wider select-all">{keyText}</span>
+            <button onClick={() => on.copy(keyText)} className={SECOND}>
+              <Icon n="copy" c="size-4" />
+              Copy key
+            </button>
+          </div>
+        </Part>
+      ) : null}
       <Setting
         title="New key"
         about={asking ? 'A new key signs out all other devices: each needs the new link or key.' : 'A new key signs out all other devices.'}

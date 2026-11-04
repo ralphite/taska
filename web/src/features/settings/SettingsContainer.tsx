@@ -76,7 +76,7 @@ export function SettingsContainer({ route, place, prefsBox }: { route: ProjectRo
       case 'projects':
         return desk ? <ProjectsBody f={projectsFacts} on={projectsOn} /> : <PhoneProjectsBody f={projectsFacts} on={projectsOn} />
       case 'phone':
-        return <PhoneBody link={m.facts.remote ? m.facts.remote + '/' : ''} keyText={m.facts.key} asking={!!asked['new-key']} desk={desk} on={{ copy: (t) => s.copy(t), newKey: () => void s.newKey(route.slug) }} />
+        return <PhoneBody link={m.facts.remote ? m.facts.remote + '/' : ''} lan={m.facts.lan ? m.facts.lan + '/' : ''} keyText={m.facts.key} asking={!!asked['new-key']} desk={desk} on={{ copy: (t) => s.copy(t), newKey: () => void s.newKey(route.slug) }} />
       case 'notifications':
         return desk ? (
           <NotificationsBody state={app.notices.state()} quiet={app.notices.quiet()} on={{ turnOn: () => void app.notices.turnOn(), turnOff: () => app.notices.turnOff(), quiet: () => app.notices.setQuiet(!app.notices.quiet()) }} />

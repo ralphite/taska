@@ -144,8 +144,9 @@ export function boxRole(m: ProjectModel | null, route: ProjectPlace, desk: boole
 
 /** What the box shows with what it holds: voice comments in a document's box (Send posts each beside its paragraph),
  * the correction as you type it, or a recording made for another draft. -> the line, the placeholder, what Send
- * says, and how many voice comments wait */
-export function shownBox(role: BoxRole, a: { mode: BoxMode; text: string; key: string; recordingFor: string | null }): { line: BoxLine | null; waiting: BoxLine | null; placeholder: string; send: string; voiceComments: number } {
+ * says, how many voice comments wait, and whether files can be added (not to a corrected word, the transcription
+ * preferences or a comment being edited) */
+export function shownBox(role: BoxRole, a: { mode: BoxMode; text: string; key: string; recordingFor: string | null }): { line: BoxLine | null; waiting: BoxLine | null; placeholder: string; send: string; voiceComments: number; attach: boolean } {
   const vcN = role.doc != null && !a.mode ? vcCount(a.text) : 0
   const told = vcN
     ? { line: { icon: 'comment', label: `${plural(vcN, 'comment')} on D${role.doc} not sent`, detail: '', right: { kind: 'x', label: vcN > 1 ? 'Discard the comments' : 'Discard the comment', act: 'discard' } } as BoxLine, placeholder: role.aim ? 'Write…' : 'Add to the comments…', send: vcN > 1 ? `Post ${vcN} comments` : 'Post comment' }
@@ -154,7 +155,7 @@ export function shownBox(role: BoxRole, a: { mode: BoxMode; text: string; key: s
     a.recordingFor != null && a.recordingFor !== a.key
         ? { icon: 'mic', label: `Recording for ${draftName(a.recordingFor)}`, detail: '' }
         : told.line
-  return { line, waiting: a.mode ? null : (role.waiting ?? null), placeholder: told.placeholder, send: told.send, voiceComments: vcN }
+  return { line, waiting: a.mode ? null : (role.waiting ?? null), placeholder: told.placeholder, send: told.send, voiceComments: vcN, attach: !a.mode || a.mode.kind === 'amend' }
 }
 
 /** The line over the box: what you sent is on its way, or what became of the last one you sent from here. */

@@ -4,7 +4,7 @@
 import type { ViewAnswer } from './types'
 
 export const VIEW_SAMPLE = {
- "cursor": "1a19d9d0a5c.5.8.1",
+ "cursor": "1a1a476a113.5.8.1",
  "full": true,
  "items": [
   {
@@ -23,8 +23,8 @@ export const VIEW_SAMPLE = {
    ],
    "mergedInto": null,
    "archived": false,
-   "t0": "2026-11-02T10:54:37-08:00",
-   "t1": "2026-11-02T10:54:37-08:00",
+   "t0": "2026-11-03T18:50:00-08:00",
+   "t1": "2026-11-03T18:50:00-08:00",
    "by": "claude-code",
    "thread": [
     {
@@ -32,7 +32,7 @@ export const VIEW_SAMPLE = {
      "by": "claude-code",
      "kind": "progress",
      "text": "Reproduced it: the export reads the list before the filter",
-     "t": "2026-11-02T10:54:37-08:00",
+     "t": "2026-11-03T18:50:00-08:00",
      "src": null,
      "files": []
     },
@@ -41,7 +41,7 @@ export const VIEW_SAMPLE = {
      "by": "claude-code",
      "kind": "ask",
      "text": "Which format should the export use?\n- ( ) CSV\n- ( ) Excel",
-     "t": "2026-11-02T10:54:37-08:00",
+     "t": "2026-11-03T18:50:00-08:00",
      "src": null,
      "files": []
     },
@@ -50,7 +50,7 @@ export const VIEW_SAMPLE = {
      "by": "you",
      "kind": "say",
      "text": "And the sort, please.",
-     "t": "2026-11-02T10:54:37-08:00",
+     "t": "2026-11-03T18:50:00-08:00",
      "src": "r1",
      "files": []
     }
@@ -59,7 +59,7 @@ export const VIEW_SAMPLE = {
    "talked": true,
    "agent": {
     "by": "claude-code",
-    "t": "2026-11-02T10:54:37-08:00",
+    "t": "2026-11-03T18:50:00-08:00",
     "ses": null
    }
   },
@@ -77,15 +77,15 @@ export const VIEW_SAMPLE = {
    "srcs": [],
    "mergedInto": null,
    "archived": false,
-   "t0": "2026-11-02T10:54:37-08:00",
-   "t1": "2026-11-02T10:54:37-08:00",
+   "t0": "2026-11-03T18:50:00-08:00",
+   "t1": "2026-11-03T18:50:00-08:00",
    "by": "claude-code",
    "thread": [],
    "wait": null,
    "talked": false,
    "agent": {
     "by": "claude-code",
-    "t": "2026-11-02T10:54:37-08:00",
+    "t": "2026-11-03T18:50:00-08:00",
     "ses": null
    }
   },
@@ -103,15 +103,15 @@ export const VIEW_SAMPLE = {
    "srcs": [],
    "mergedInto": null,
    "archived": false,
-   "t0": "2026-11-02T10:54:37-08:00",
-   "t1": "2026-11-02T10:54:37-08:00",
+   "t0": "2026-11-03T18:50:00-08:00",
+   "t1": "2026-11-03T18:50:00-08:00",
    "by": "claude-code",
    "thread": [],
    "wait": null,
    "talked": false,
    "agent": {
     "by": "claude-code",
-    "t": "2026-11-02T10:54:37-08:00",
+    "t": "2026-11-03T18:50:00-08:00",
     "ses": null
    }
   }
@@ -119,7 +119,7 @@ export const VIEW_SAMPLE = {
  "inputs": [
   {
    "id": "r1",
-   "t": "2026-11-02T10:54:37-08:00",
+   "t": "2026-11-03T18:50:00-08:00",
    "by": "you",
    "text": "And the sort, please.",
    "scope": 1,
@@ -139,8 +139,8 @@ export const VIEW_SAMPLE = {
    "n": 1,
    "title": "Plan",
    "md": "# Plan\nFirst read the filter, then write the rows.",
-   "t0": "2026-11-02T10:54:37-08:00",
-   "t1": "2026-11-02T10:54:37-08:00",
+   "t0": "2026-11-03T18:50:00-08:00",
+   "t1": "2026-11-03T18:50:00-08:00",
    "by": "claude-code",
    "versions": 1,
    "fmt": "md",
@@ -177,7 +177,7 @@ export const VIEW_SAMPLE = {
   "agents": [
    {
     "name": "claude-code",
-    "t": 1793645677149,
+    "t": 1793760600340,
     "waiting": false
    }
   ],
@@ -187,11 +187,12 @@ export const VIEW_SAMPLE = {
   "deletedInputs": [],
   "deleted": [],
   "base": "http://127.0.0.1:7340/p/shop",
-  "key": "3jgj-dt6p",
-  "remote": ""
+  "key": "cu5k-mwpb",
+  "remote": "",
+  "lan": ""
  },
  "server": {
-  "page": "index-MUIAfG4s.js",
+  "page": "index-Cr5r0E7o.js",
   "update": false
  }
 } satisfies ViewAnswer

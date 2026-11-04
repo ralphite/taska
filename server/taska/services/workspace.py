@@ -36,6 +36,7 @@ class Workspace:
                  voice_fix: Optional[Callable[..., None]] = None, gemini: bool = False):
         self.root = os.path.abspath(os.path.expanduser(root))
         self.public = public.rstrip("/")  # the tunnel's address, for the phone link
+        self.lan = ""  # this machine on its own network ("http://192.168.1.20:7340"), when Taska listens there
         self.trash = os.path.join(self.root, ".deleted")
         self._lock = threading.Lock()
         self._on_open = on_open

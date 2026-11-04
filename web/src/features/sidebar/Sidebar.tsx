@@ -57,6 +57,8 @@ export interface SideKeys {
   settings: string
   sidebar: string
   keys: string
+  /** Documents, Activity, Deleted: their keys by the link's key */
+  links: Record<SideLinkInfo['key'], string>
 }
 
 export interface SidebarProps {
@@ -318,7 +320,7 @@ export function Sidebar(props: SidebarProps) {
 }
 
 /** The sidebar folded: a narrow rail of the same. */
-export function Rail({ keys, projects, composing, settingsOpen, hidden, on }: { keys: SideKeys; projects: SideProject[] | null; composing: boolean; settingsOpen: boolean; hidden?: boolean; on: SidebarEvents }) {
+export function Rail({ keys, projects, links, composing, settingsOpen, hidden, on }: { keys: SideKeys; projects: SideProject[] | null; links: SideLinkInfo[]; composing: boolean; settingsOpen: boolean; hidden?: boolean; on: SidebarEvents }) {
   const btn = (key: string, inner: ReactNode, title: string, onClick: () => void, attrs: Record<string, unknown> = {}) => (
     <button
       key={key}
@@ -367,6 +369,21 @@ export function Rail({ keys, projects, composing, settingsOpen, hidden, on }: { 
       </div>
       {btn('np', <Icon n="plus" c="size-5" />, 'New project', on.newProject)}
       <div className="flex-1" />
+      {/* this project's Documents, Activity and Deleted, as the sidebar's foot has them */}
+      {links.map((l) => (
+        <a
+          key={l.key}
+          href={l.href}
+          onClick={(e) => on.go(l.href, e)}
+          aria-current={l.current ? 'page' : undefined}
+          title={`${l.label} · ${keys.links[l.key]}`}
+          aria-label={l.label}
+          className="relative grid size-10 place-items-center rounded-xl text-zinc-500 hover:bg-zinc-200/60 aria-[current=page]:bg-zinc-200/80 aria-[current=page]:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:aria-[current=page]:bg-zinc-700 dark:aria-[current=page]:text-zinc-50"
+        >
+          <Icon n={l.icon} c="size-5" />
+        </a>
+      ))}
+      {links.length ? <div className="my-1 h-px w-8 bg-zinc-200 dark:bg-zinc-800" /> : null}
       {btn('settings', <Icon n="gear" c="size-5" />, `Settings · ${keys.settings}`, on.settings, settingsOpen ? { 'aria-current': 'page' } : {})}
       {btn('help', <Icon n="info" c="size-5" />, 'Help', on.help)}
       {btn('keys', <Icon n="keyboard" c="size-5" />, `Keyboard shortcuts · ${keys.keys}`, on.keys)}
