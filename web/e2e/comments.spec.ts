@@ -52,3 +52,15 @@ test("D80 #16: pointed at, a comment's Edit, Move and Delete cover none of the w
   if (!a || !q) throw new Error('not drawn')
   expect(a.y, 'the buttons start below the quoted words').toBeGreaterThanOrEqual(q.y + q.height - 1)
 })
+
+test('D115 #40: a thread you resolve folds into the count beside its paragraph; the count opens it again', async ({ page, request }) => {
+  const card = await commented(page, request)
+  const thread = page.locator('[data-thread]').filter({ has: card })
+  await thread.getByRole('button', { name: 'Resolve', exact: true }).click()
+  await expect(card).toBeHidden()
+  const count = docBlock(page, 'The export keeps').locator(threadCounts(page))
+  await expect(count).toHaveText('1')
+  await count.click()
+  await expect(card).toBeVisible()
+  await expect(thread.getByRole('button', { name: 'Reopen', exact: true })).toBeVisible()
+})

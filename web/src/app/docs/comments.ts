@@ -2,7 +2,7 @@
 // first), edited, resolved and opened again, moved to another paragraph, deleted, a file taken off. Each change shows
 // at once and is saved behind you, with Undo.
 
-import { allComments, sameText, splitThread, type DocTarget } from '../../model/docs'
+import { allComments, resolved, sameText, splitThread, threadsOf, type DocTarget } from '../../model/docs'
 import { draftKey, type DraftKey } from '../../model/draftTarget'
 import type { DocPatch } from '../../model/project'
 import type { Comment } from '../../model/types'
@@ -41,9 +41,21 @@ export class DocComments {
     const { key, th } = splitThread(tk)
     const put = (v: boolean) => docSend(this.d, h.slug, { op: 'dcres', d: dn, key, on: v, ...(th ? { th } : {}) }, v ? 'resolving a thread' : 'reopening a thread', [{ d: dn, resolved: { tk, on: v } }])
     void put(on)
-    if (on) this.d.view.getState().closeThreads(tk)
+    if (on) this.fold(h.slug, dn, tk)
     else this.d.view.getState().openThread(tk)
     this.d.toasts.show(on ? 'Resolved' : 'Open again', this.d.toasts.undoable(on ? 'Resolve a thread' : 'Reopen a thread', () => put(!on)))
+  }
+
+  /** A thread resolved folds into its paragraph's count, ✓ 2 (D115 #40). Opened by its paragraph (the phone's count),
+   * the paragraph's other threads still to resolve stay open. */
+  private fold(slug: string, dn: number, tk: string): void {
+    const { key } = splitThread(tk)
+    const v = this.d.view.getState()
+    const doc = this.d.model(slug)?.docs.find((x) => x.d === dn)
+    const block = doc?.blocks.find((b) => b.key === key)
+    const others = doc && block && v.threads.has(key) ? threadsOf(block.comments).map((t) => t.tk).filter((k) => k !== tk && !resolved(doc, k)) : []
+    v.closeThreads(tk, key)
+    for (const k of others) v.openThread(k)
   }
 
   /** The box's words as a comment where it goes: there at once (in the thread it will be in: the same words quoted
