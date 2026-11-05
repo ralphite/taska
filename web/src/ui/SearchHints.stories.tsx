@@ -3,6 +3,7 @@ import { Frames, States } from '../stories/Frames'
 import { T } from '../stories/fixtures'
 import { PROJECT_TONES } from './tones'
 import { SearchHints } from './SearchHints'
+import { act } from '../stories/acts'
 
 const meta: Meta = { title: 'Components/Item list/Search and filters' }
 export default meta
@@ -15,7 +16,7 @@ const hits = [
 ]
 const hints = (p: Partial<Parameters<typeof SearchHints>[0]>) => (
   <div className="flex flex-col py-4">
-    <SearchHints other={[]} cross={null} tone={(s) => PROJECT_TONES[s.length % PROJECT_TONES.length]} onShow={() => {}} onGo={() => {}} {...p} />
+    <SearchHints other={[]} cross={null} tone={(s) => PROJECT_TONES[s.length % PROJECT_TONES.length]} onShow={act('Search hints: show the tab')} onGo={act('Search hints: go')} {...p} />
   </div>
 )
 
