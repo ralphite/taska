@@ -10,7 +10,7 @@ from typing import Any, Dict, List, Optional
 from ..domain import events as ev
 from ..domain.history import followed, last_archive, status_set_by
 from ..domain.model import FileRef, Item
-from ..domain.rules import RefContext, descendants, item_at, open_kids, replied
+from ..domain.rules import RefContext, descendants, item_at, open_kids, replied, user_word
 from ..domain.state import ProjectState
 from ..domain.vocab import ASK_WORDS, CLOSED, LETTER, MAX_TEXT, MESSAGE_KINDS, PEOPLE, PRIORITIES, STATUSES, WHENS, Refused
 from .base import Args, Outcome, Run, handles
@@ -298,6 +298,10 @@ def delete_item(r: Run, a: Args) -> Outcome:
         return Outcome(f"ok {code} restored", f"Restored {code}")
     if it.deleted:
         raise Refused(f"{code} is deleted already")
+    if r.by not in PEOPLE and not (it.by == r.by and it.status == "proposed" and not any(user_word(x) for x in it.thread)):
+        # an agent deletes only what it proposed itself and the user has not taken up (r1069: a monitor's alarm that
+        # went away); everything else is the user's to delete
+        raise Refused(f"{code}: an agent deletes only an item it proposed that the user has not answered")
     ns: List[int] = []
     todo = [it.n]
     while todo:  # its subitems go with it

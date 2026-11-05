@@ -125,6 +125,8 @@ def command(head: str, cont: str) -> Union[Command, List[Command]]:
                 "files": [f for f in (opts.get("files") or "").split(",") if f]}
     if verb_l == "merge":
         return {"op": "merge", "ref": word, "into": rest2.strip().split()[0] if rest2.strip() else ""}
+    if verb_l == "delete" and not rest2.strip():
+        return {"op": "idel", "ref": word}
     opts, left = options(rest)
     if not opts:
         raise Refused(f"cannot read '{rest or '(nothing)'}' after {word}")

@@ -19,7 +19,7 @@ phone does (Taska answers 98 bytes asking for the key), and writes one JSON line
 A failed check is checked again a minute later; after 2 failed checks in a row it restarts the tunnel host (launchctl
 kickstart -k), not more than once in 10 minutes. When it is still down after two restarts, or devtunnel is no longer logged in, it opens a
 P0 bug in Taska and blocks on it: a block is what Taska pushes to the phone (F195), and the push does not go through
-the tunnel. When the link answers again it says so on that bug. It also keeps the Dashboard panel
+the tunnel. When the link answers again it deletes that bug (or, once the user answered it, says so on it). It also keeps the Dashboard panel
 ~/.taska/dev/panels/tunnel.md (now, the last 24 hours, restarts).
 """
 
@@ -235,8 +235,10 @@ def main() -> None:
             }
             if up:
                 if state.get("code"):
-                    taska("%s say %s\n" % (state["code"], BACK % time.strftime("%H:%M")))
-                    taska("%s withdraw %s\n" % (state["code"], BACK % time.strftime("%H:%M")))
+                    # the alarm went away: its bug goes too (r1069); if the user took it up, it stays with a note
+                    if not taska("%s delete\n" % state["code"]).startswith("ok"):
+                        taska("%s say %s\n" % (state["code"], BACK % time.strftime("%H:%M")))
+                        taska("%s withdraw %s\n" % (state["code"], BACK % time.strftime("%H:%M")))
                     state = {}
                     save_state(state)
                 down_since, fails, restarts = None, 0, 0

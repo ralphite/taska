@@ -17,6 +17,7 @@ GRAMMAR = (
     '                                  propose = suggestion (not decided), decide = decision made\n'
     '  B03 say @worker <text>    to another agent session (its session= name): it gets B03 on its next /next or /do reply\n'
     '  B03 merge F01             merge B03 into F01 (use only for clear duplicates)\n'
+    '  B03 delete                delete an item you proposed that the user has not answered (an alarm that went away)\n'
     '  Messages and docs are Markdown (lists, **bold**, `code`, links). Show an image where it belongs with\n'
     '  ![what it shows](f12-a.png): upload it first with\n'
     '  curl -s BASE/api/file?name=a.png -H \'Content-Type: image/png\' --data-binary @a.png   (prints its "f")\n'
