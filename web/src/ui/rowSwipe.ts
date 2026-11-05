@@ -1,16 +1,21 @@
-// The phone's swipe on a row. Right: its way forward (Done, Approve, Accept, Archive; an answer opens its card); the
-// row slides out first. Left: the ways back sit under the row and stay open until a tap anywhere else. Nothing new
+// The phone's swipe on a row (the item list's, the Inputs tab's: D115 #42). Right: its way forward (Done, Approve,
+// Accept, Archive; an answer opens its card; an input opens the item it became); the row slides out first. Left: the ways back sit under the row and stay open until a tap anywhere else. Nothing new
 // shows until the finger really moves sideways (iPhone Safari takes a tap that reveals content as a hover and never
 // sends the click); a sideways swipe keeps the list still; the screen's left edge is the phone's own Back. The row
-// only moves with a transform while you swipe.
+// only moves with a transform while you swipe. A row whose list says so opens its menu on a long press (held still for
+// half a second). Each row is marked data-swipe="its key", its layers data-swipe-left and data-swipe-right beside it.
 
 import { useEffect, useRef, type RefObject } from 'react'
 
 export const EDGE_W = 24
+/** how long a finger stays still on a row for its menu */
+const HOLD_MS = 500
 
 export interface RowSwipe {
   /** whether a row can swipe right, and what it does then (`slide`: the row slides out before it happens) */
-  right(n: number): { slide: boolean; run(): void } | null
+  right(key: string): { slide: boolean; run(): void } | null
+  /** a long press on a row: its menu */
+  hold?(key: string, el: HTMLElement): void
   /** something over the list (the drawer) takes the touch */
   blocked(): boolean
 }
@@ -42,7 +47,7 @@ export function useRowSwipe(listRef: RefObject<HTMLElement | null>, enabled: boo
   useEffect(() => {
     told.current = opts
   })
-  const s = useRef({ el: null as HTMLElement | null, open: null as HTMLElement | null, swallow: 0, x0: 0, y0: 0, mode: null as null | 'h' | 'v', dx: 0, reveal: 0, base: 0 })
+  const s = useRef({ el: null as HTMLElement | null, open: null as HTMLElement | null, swallow: 0, x0: 0, y0: 0, mode: null as null | 'h' | 'v', dx: 0, reveal: 0, base: 0, hold: 0, held: null as HTMLElement | null })
   useEffect(() => {
     // rows drawn again are drawn closed: a stale one would swallow the next tap
     s.current.open = s.current.el = null
@@ -51,12 +56,16 @@ export function useRowSwipe(listRef: RefObject<HTMLElement | null>, enabled: boo
     const list = listRef.current
     if (!list || !enabled) return
     const w = s.current
+    const unhold = () => {
+      clearTimeout(w.hold)
+      w.hold = 0
+    }
     const close = () => {
       if (w.open) slideTo(w.open, 0)
       w.open = null
     }
     const start = (e: TouchEvent) => {
-      w.el = null
+      w.el = w.held = null
       const t = e.touches[0]
       if (e.touches.length !== 1 || t.clientX <= EDGE_W || told.current.blocked()) return
       const el = (e.target as Element).closest<HTMLElement>('[data-swipe]')
@@ -64,6 +73,17 @@ export function useRowSwipe(listRef: RefObject<HTMLElement | null>, enabled: boo
       if (w.open && w.open !== el) close()
       const reveal = w.open === el ? layer(el, 'right')?.offsetWidth || 0 : 0
       Object.assign(w, { el, x0: t.clientX, y0: t.clientY, mode: null, dx: 0, reveal, base: -reveal })
+      unhold()
+      const hold = told.current.hold
+      if (hold)
+        w.hold = window.setTimeout(() => {
+          w.hold = 0
+          if (w.el !== el || w.mode) return
+          // held still: its menu; the click the finger makes on the row as it lifts is not a tap
+          w.el = null
+          w.held = el
+          hold(el.dataset.swipe ?? '', el)
+        }, HOLD_MS)
     }
     const move = (e: TouchEvent) => {
       const el = w.el
@@ -73,6 +93,7 @@ export function useRowSwipe(listRef: RefObject<HTMLElement | null>, enabled: boo
       const dy = t.clientY - w.y0
       if (!w.mode) {
         if (Math.hypot(dx, dy) < 10) return
+        unhold()
         w.mode = Math.abs(dx) > Math.abs(dy) ? 'h' : 'v'
         if (w.mode === 'v') {
           w.el = null
@@ -86,10 +107,11 @@ export function useRowSwipe(listRef: RefObject<HTMLElement | null>, enabled: boo
         }
       }
       if (e.cancelable) e.preventDefault() // a sideways swipe: the list doesn't scroll under it
-      w.dx = Math.max(-w.reveal - 30, Math.min(told.current.right(Number(el.dataset.swipe)) ? el.offsetWidth * 0.7 : 0, w.base + dx))
+      w.dx = Math.max(-w.reveal - 30, Math.min(told.current.right(el.dataset.swipe ?? '') ? el.offsetWidth * 0.7 : 0, w.base + dx))
       showSwiped(el, w.dx)
     }
     const end = () => {
+      unhold()
       const el = w.el
       if (!el) return
       w.el = null
@@ -97,7 +119,7 @@ export function useRowSwipe(listRef: RefObject<HTMLElement | null>, enabled: boo
       w.swallow = Date.now()
       el.style.transition = ''
       if (w.dx > el.offsetWidth * 0.33) {
-        const r = told.current.right(Number(el.dataset.swipe))
+        const r = told.current.right(el.dataset.swipe ?? '')
         if (!r) return slideTo(el, 0)
         if (!r.slide) {
           slideTo(el, 0)
@@ -114,6 +136,7 @@ export function useRowSwipe(listRef: RefObject<HTMLElement | null>, enabled: boo
       }
     }
     const cancel = () => {
+      unhold()
       if (!w.el) return
       slideTo(w.el, w.el === w.open ? -w.reveal : 0)
       w.el.style.transition = ''
@@ -121,7 +144,9 @@ export function useRowSwipe(listRef: RefObject<HTMLElement | null>, enabled: boo
     }
     // a tap right after a swipe is not a tap; a tap anywhere but the open row's buttons closes it
     const click = (e: MouseEvent) => {
-      if (Date.now() - w.swallow < 400) {
+      const held = w.held
+      w.held = null
+      if (Date.now() - w.swallow < 400 || held?.contains(e.target as Node)) {
         e.preventDefault()
         e.stopPropagation()
         return
@@ -143,6 +168,7 @@ export function useRowSwipe(listRef: RefObject<HTMLElement | null>, enabled: boo
       list.removeEventListener('touchend', end)
       list.removeEventListener('touchcancel', cancel)
       document.removeEventListener('click', click, true)
+      unhold()
     }
   }, [listRef, enabled])
 }

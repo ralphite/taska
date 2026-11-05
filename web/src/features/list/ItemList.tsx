@@ -7,7 +7,7 @@ import { Empty, Skeleton } from '../../ui/bits'
 import { ArchiveAllLine, HeldRow, HiddenKidsLine, ItemRow, NeedsMoreLine, NeedsRow, Zone, type RowEvents, type RowFacts, type RowLook } from './ListRows'
 import type { ViewChip, ZoneKind } from './rows'
 import { ViewBar, type OwnViewChip } from './ViewBar'
-import { useRowSwipe, type RowSwipe } from './rowSwipe'
+import { useRowSwipe, type RowSwipe } from '../../ui/rowSwipe'
 import { noMatches } from '../../model/words'
 
 export type DrawnRow =

@@ -127,6 +127,25 @@ export const slowComments = (page: Page, ms: number) =>
 // ---------------------------------------------------------------- documents: comments and the editor
 /** A comment on a document, as its card. */
 export const commentCard = (page: Page, words: string) => shown(page.locator('[data-dc]').filter({ hasText: words })).first()
+/** A finger on a row of the phone (D115 #42): held still for its menu (`dx` 0), or swiped sideways by `dx` px. */
+export async function touchRow(page: Page, row: Locator, dx = 0) {
+  const box = await row.boundingBox()
+  if (!box) throw new Error('the row is not drawn')
+  const at = { x: box.x + box.width / 2, y: box.y + Math.min(30, box.height / 2) }
+  await row.evaluate(
+    async (el, { at, dx }) => {
+      const touch = (x: number) => new Touch({ identifier: 1, target: el, clientX: x, clientY: at.y })
+      const fire = (type: string, x: number, ended = false) =>
+        el.dispatchEvent(new TouchEvent(type, { bubbles: true, cancelable: true, touches: ended ? [] : [touch(x)], changedTouches: [touch(x)] }))
+      fire('touchstart', at.x)
+      if (!dx) await new Promise((ok) => setTimeout(ok, 650))
+      else for (let i = 1; i <= 6; i++) fire('touchmove', at.x + (dx * i) / 6)
+      fire('touchend', at.x + dx, true)
+    },
+    { at, dx },
+  )
+}
+
 /** A document's Edit pressed (its editor opens): in the pane's bar on the desktop, in the ⋯ by its sheet's close
  * button on the phone (D115 #41; not a card's Edit). */
 export async function docEdit(page: Page) {

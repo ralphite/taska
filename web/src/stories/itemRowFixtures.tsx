@@ -5,7 +5,7 @@ import type { Item } from '../model/types'
 import { After, Frames } from './Frames'
 import { facts, item, look, noRowEvents } from './fixtures'
 import { ItemRow, type RowFacts, type RowLook } from '../features/list/ListRows'
-import { showSwiped } from '../features/list/rowSwipe'
+import { showSwiped } from '../ui/rowSwipe'
 
 type Story = StoryObj
 

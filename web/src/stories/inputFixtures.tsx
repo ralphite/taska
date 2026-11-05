@@ -94,6 +94,7 @@ export interface Said {
 const title = (slug: string) => ({ 'mobile-app': 'Mobile app' })[slug] ?? slug
 const project = (s: Said, items = ITEMS) => modelOf(items, s.inputs ?? DAY, { organizer: { on: s.organizer ?? true, model: 'gemini-flash-latest', busy: s.busy ?? null } })
 const fileUrl = (x: string) => (x.endsWith('.png') ? PICTURE : '#' + x)
+const swipeActs = acts('Input swipe', ['open'] as const)
 const inputActs = acts('Input', ['goto', 'retry', 'send', 'draft', 'moved', 'ref', 'outboxRetry', 'outboxEdit', 'end', 'append', 'loadMore'] as const, { append: 'Input box › What it writes to › Changing what you said', draft: 'Input box › What it writes to › Changing what you said' })
 const menuActs = acts('Input menu', ['send', 'edit', 'append', 'asSaid', 'undo', 'move', 'history', 'rescope', 'takeOff', 'remove'] as const, {
   move: 'Move and pick › Input to another project',
@@ -144,7 +145,9 @@ export function useInputs(m: ProjectModel, desk: boolean, s: Pick<Said, 'opened'
       {media.node}
     </>
   )
-  const inputOn: InputEvents = { ...inputActs, more, menu: (id) => openMenu(id), picture: (f, all) => media.on.view(f, all), outboxCancel: cancel }
+  // the phone's swipe (D115 #42): right opens what it became, left Move and Delete, held its menu
+  const swipe = { right: (id: string) => ({ slide: false, run: () => swipeActs.open(id) }), hold: (id: string) => openMenu(id), blocked: () => false }
+  const inputOn: InputEvents = { ...inputActs, more, menu: (id) => openMenu(id), picture: (f, all) => media.on.view(f, all), outboxCancel: cancel, moveInput: menuActs.move, remove: menuActs.remove, swipe }
   const saidOn: SaidEvents = {
     ...inputActs,
     more,
@@ -164,7 +167,7 @@ function rowsOf(s: Said, opened: ReadonlySet<string>) {
   const words = searchWords(s.q ?? '')
   const drafts = Object.fromEntries((s.editDrafts ?? []).map((id) => [draftKey({ kind: 'amend', mode: 'edit', id }), 'my edit']))
   const { rows, total } = inputRows(m, { words, title, opened, drafts, writing: null, lit: s.lit ?? null, litStill: !!s.litStill, upTo: 40 })
-  return { m, words, rows, total }
+  return { m, words, rows: rows.map((x) => ({ ...x, movable: true })), total }
 }
 
 /** The phone's Inputs tab as the page draws it. */

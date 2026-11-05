@@ -2,7 +2,7 @@
 // guards: src/features/ src/pages/ src/app/page/navigation.ts src/app/keys.ts src/app/actions.ts src/app/items/ src/app/inputs/ src/model/route.ts server/
 import { expect, test } from '@playwright/test'
 import { LOOP, isDesk, open, project } from './seed'
-import { box, docEdit, itemMenu, menuChoice, pane, row, sheetBody, view } from './ui'
+import { box, docEdit, itemMenu, menuChoice, pane, row, sheetBody, touchRow, view } from './ui'
 
 
 test('the phone: an item is a page of its own, and Back returns to the list', async ({ page, request }) => {
@@ -47,10 +47,16 @@ test('B666: an input can be deleted from its ⋯ (Delete asks again in place) an
   await page.keyboard.press('Shift+Enter')
   await expect.poll(async () => p.read('inbox')).toContain('A thought to throw away')
   await open(page, p, 'inputs')
-  if (isDesk(page)) await page.getByText('A thought to throw away').filter({ visible: true }).first().hover() // T359: its ⋯ shows where you point
-  await page.getByRole('button', { name: /^More for / }).filter({ visible: true })
-    .first()
-    .click()
+  if (isDesk(page)) {
+    await page.getByText('A thought to throw away').filter({ visible: true }).first().hover() // T359: its ⋯ shows where you point
+    await page.getByRole('button', { name: /^More for / }).filter({ visible: true })
+      .first()
+      .click()
+  } else {
+    // the phone's row has no ⋯: a long press opens its menu (D115 #42)
+    await expect(page.locator('section[data-part="inputs"]').getByRole('button', { name: /^More for / })).toHaveCount(0)
+    await touchRow(page, page.locator('[data-swipe]').filter({ hasText: 'A thought to throw away' }).first())
+  }
   // no Undo after sending (B666)
   await expect(page.getByRole('button', { name: 'Undo', exact: true }).filter({ visible: true })).toHaveCount(0)
   await sheetBody(page).getByRole('button', { name: /^Delete/ }).first().click()
@@ -62,6 +68,24 @@ test('B666: an input can be deleted from its ⋯ (Delete asks again in place) an
   await open(page, p, 'deleted')
   await page.getByRole('button', { name: /^Restore/ }).filter({ visible: true }).first().click()
   await expect.poll(async () => p.read('inbox')).toContain('A thought to throw away')
+})
+
+test('D115 #42: on the phone an input swiped left shows Move and Delete; Delete deletes it', async ({ page, request }) => {
+  test.skip(isDesk(page), "the phone's rows swipe")
+  const p = await project(request, LOOP)
+  await open(page, p)
+  await box(page).click()
+  await page.keyboard.type('Another thought to throw away')
+  await page.keyboard.press('Shift+Enter')
+  await expect.poll(async () => p.read('inbox')).toContain('Another thought to throw away')
+  await open(page, p, 'inputs')
+  const r = page.locator('[data-swipe]').filter({ hasText: 'Another thought to throw away' }).first()
+  await touchRow(page, r, -160)
+  const under = r.locator('xpath=..').locator('[data-swipe-right]')
+  await page.waitForTimeout(450) // a tap right after a swipe is not a tap
+  await expect(under.getByRole('button', { name: /Move/ })).toBeVisible()
+  await under.getByRole('button', { name: /Delete/ }).click()
+  await expect.poll(async () => p.read('inbox')).not.toContain('Another thought to throw away')
 })
 
 test('the desktop: picked rows change together', async ({ page, request }) => {

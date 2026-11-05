@@ -2,7 +2,8 @@
 // page's own rows (inputRows, outgoingRows) and InputsView with a demo project's inputs. The desktop has no Inputs tab:
 // what you said is under New input there.
 import type { Meta, StoryObj } from '@storybook/react-vite'
-import { Frames } from '../../stories/Frames'
+import { After, Frames } from '../../stories/Frames'
+import { showSwiped } from '../../ui/rowSwipe'
 import { out } from '../../stories/boxFixtures'
 import { inputsOf, type Said } from '../../stories/inputFixtures'
 
@@ -25,3 +26,28 @@ export const SearchNothingFound: Story = { ...one({ q: 'zebra' }), name: 'Search
 export const EmptyOneOnItsWay: Story = { name: 'Empty, one on its way', render: () => <Frames desk={false} phoneWidth={393} height={360}>{() => inputsOf({ inputs: [], outbox: [out({ q: 'a', text: 'Buy milk on the way home' })] })}</Frames> }
 /** a voice note being recorded into a new input: its row comes first, with how long so far (B627) */
 export const InputsTabRecording: Story = { ...one({ recording: '0:12' }), name: 'A voice note being recorded' }
+// ---- the swipe (D115 #42), drawn by the swipe's own code: the first row, mid-swipe
+/** `dx` right: opening the item it became, mid-swipe; left: Move and Delete left open, as wide as their buttons */
+const swiped = (dx: number): Story => ({
+  render: () => (
+    <Frames desk={false} phoneWidth={393} height={852}>
+      {() => (
+        <After
+          run={(root) => {
+            const el = root.querySelector<HTMLElement>('[data-swipe]')
+            if (!el) return
+            if (dx >= 0) return showSwiped(el, dx)
+            showSwiped(el, -1)
+            showSwiped(el, -(el.parentElement?.querySelector<HTMLElement>('[data-swipe-right]')?.offsetWidth || -dx))
+          }}
+        >
+          {inputsOf({})}
+        </After>
+      )}
+    </Frames>
+  ),
+})
+/** swiped left: Move and Delete under it (Delete: Undo puts it back) */
+export const SwipedLeft: Story = { ...swiped(-1), name: 'Swiped left: Move, Delete' }
+/** swiped right: the item it became opens */
+export const SwipedRight: Story = { ...swiped(140), name: 'Swiped right: open its item' }

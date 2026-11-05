@@ -86,7 +86,8 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
 
   // the phone's swipe right: the row's way forward (an answer opens its card)
   const swipe = {
-    right: (n: number) => {
+    right: (key: string) => {
+      const n = Number(key)
       const r = forward(m?.byN.get(n))
       if (!r) return null
       return r[0] === 'need' ? { slide: false, run: () => on.need(n, r[1]) } : { slide: true, run: () => on.act(n, r[0], r[1], r[2]) }

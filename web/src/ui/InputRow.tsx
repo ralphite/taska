@@ -1,7 +1,7 @@
 // One input as every list of inputs draws it (T661, the approved "Anchored Stream"): a line with its number and its
 // day and time (edited, a draft of yours on it), its buttons at the end; its words (a long one: four lines, More); its
 // voice notes, pictures and files as chips; and what became of it on a shelf of its own under them. A hairline
-// between rows; under the pointer a row is a shade darker, as the item list's are. Its buttons: the phone's ⋯ (Add
+// between rows; under the pointer a row is a shade darker, as the item list's are. Its buttons: the phone's ⋯ (where it does not swipe, D115 #42; Add
 // more, Edit and the rest are in it); the desktop's Voice, Comment and ⋯ as the page's other places have them
 // (PlaceVoice, B498), under the pointer only (or the keys); Voice turns them into the recording strip right there, its
 // ✓ where Voice was, which stops and adds the note to this input. Its ⋯ has Delete, last (B666: no Undo for a while
@@ -211,8 +211,9 @@ function Words({ x, text, on }: { x: InputLine; text(cut: boolean): ReactNode; o
 }
 
 /** Its buttons: on the desktop Voice and Comment as the page's other places have them (PlaceVoice; recording, its
- * strip: ✕, the time and level, ✓ where Voice was), and ⋯ beside them; on the phone ⋯ alone. */
-function RowButtons({ x, rec, on }: { x: InputLine; rec: ReactNode | null; on: InputRowEvents }) {
+ * strip: ✕, the time and level, ✓ where Voice was), and ⋯ beside them; on the phone ⋯ alone, or none where the row
+ * swipes (D115 #42: a long press opens the menu). */
+function RowButtons({ x, rec, swiped, on }: { x: InputLine; rec: ReactNode | null; swiped: boolean; on: InputRowEvents }) {
   const r = x.r
   if (x.became.k === 'moved') return null
   const more = (cls: string) => (
@@ -233,12 +234,12 @@ function RowButtons({ x, rec, on }: { x: InputLine; rec: ReactNode | null; on: I
         ) : null}
         {more(PLACE_BUTTON)}
       </span>
-      <span className="lg:hidden">{more(MORE)}</span>
+      {swiped ? null : <span className="lg:hidden">{more(MORE)}</span>}
     </>
   )
 }
 
-export function InputRow({ x, words, text, files, lit = false, rec = null, rowRef, on }: {
+export function InputRow({ x, words, text, files, lit = false, rec = null, rowRef, swipe = null, on }: {
   x: InputLine
   /** the searched words, marked in its number */
   words: readonly string[]
@@ -249,12 +250,14 @@ export function InputRow({ x, words, text, files, lit = false, rec = null, rowRe
   /** more to add being recorded here (Voice): its time and level */
   rec?: ReactNode | null
   rowRef?: Ref<HTMLElement>
+  /** the phone swipes it (its ⋯ goes: a long press opens its menu) */
+  swipe?: InputSwipe | null
   on: InputRowEvents
 }) {
   const r = x.r
   const edited = r.history?.some((h) => h.mode === 'edit')
   const voiceOnly = r.files.every((f) => (f.mime || '').startsWith('audio/'))
-  return (
+  const row = (
     <article ref={rowRef} className={`${ROW} ${lit ? LIT : ''}`}>
       <header className={`mb-1.5 flex items-center justify-between gap-2 ${x.draft || rec ? 'h-6' : 'h-5'}`}>
         <div className="flex min-w-0 items-center gap-1.5 font-mono text-[11px] whitespace-nowrap text-zinc-400 dark:text-zinc-500">
@@ -276,7 +279,7 @@ export function InputRow({ x, words, text, files, lit = false, rec = null, rowRe
           ) : null}
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
-          <RowButtons x={x} rec={rec} on={on} />
+          <RowButtons x={x} rec={rec} swiped={!!swipe} on={on} />
         </div>
       </header>
       {r.text ? <Words x={x} text={text} on={on} /> : null}
@@ -286,6 +289,45 @@ export function InputRow({ x, words, text, files, lit = false, rec = null, rowRe
       </footer>
     </article>
   )
+  if (!swipe) return row
+  // the phone's swipe (D115 #42): right opens the item it became, left shows Move and Delete; a long press, its menu
+  return (
+    <div className="relative overflow-hidden">
+      <div data-swipe-left hidden className="absolute inset-0 flex items-center gap-2 bg-blue-600 pl-6 text-sm font-semibold text-white dark:bg-blue-500">
+        {swipe.open ? (
+          <>
+            <Icon n="open" c="size-5" />
+            Open {swipe.open}
+          </>
+        ) : null}
+      </div>
+      <div data-swipe-right hidden className="absolute inset-y-0 right-0 flex">
+        {swipe.move ? (
+          <button onClick={() => swipe.on.move(r.id)} className={`${SWIPE_BTN} bg-zinc-600 dark:bg-zinc-700`}>
+            <Icon n="arrow" c="size-5" />
+            Move
+          </button>
+        ) : null}
+        <button onClick={() => swipe.on.remove(r.id)} className={`${SWIPE_BTN} bg-red-600 dark:bg-red-500`}>
+          <Icon n="trash" c="size-5" />
+          Delete
+        </button>
+      </div>
+      <div data-swipe={r.id} className="relative touch-pan-y bg-white transition-transform duration-200 select-none [-webkit-touch-callout:none] dark:bg-zinc-950">
+        {row}
+      </div>
+    </div>
+  )
+}
+
+const SWIPE_BTN = 'flex w-19 flex-col items-center justify-center gap-1 text-xs font-semibold text-white'
+
+/** What a row swiped shows (the phone's Inputs tab): the item it opens (its code; none: no swipe right), Move (when it
+ * can go to another project), Delete. */
+export interface InputSwipe {
+  open: string | null
+  move: boolean
+  on: { move(id: string): void; remove(id: string): void }
 }
 
 export interface OutgoingAct {

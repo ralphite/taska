@@ -1,6 +1,7 @@
 // The phone's Inputs tab: everything you said, newest first, each as the row every list of inputs draws (its number
 // and when, its words, its files, what became of it on a shelf under them); a voice note being recorded and what is
-// still on its way as lines of their own on top. Props only.
+// still on its way as lines of their own on top. A row swipes as the item list's do (D115 #42): right opens the item
+// it became, left shows Move and Delete; held, its menu opens. Props only.
 
 import { useEffect, useRef, type ReactNode } from 'react'
 import type { InputLine } from '../../model/became'
@@ -11,11 +12,14 @@ import { INPUT_LIST, InputRow, OutgoingRow as OutgoingLine, RecordingRow } from 
 import { Rich } from '../../ui/Markdown'
 import type { InlineWorld } from '../../ui/markdown/inline'
 import { useMarks } from '../../ui/marks'
+import { useRowSwipe, type RowSwipe } from '../../ui/rowSwipe'
 import { noMatches } from '../../model/words'
 
 export interface InputFacts extends InputLine {
   /** gone to: lit up for a moment, brought into view ('shown') or where the list is ('still') */
   lit?: 'shown' | 'still'
+  /** it can go to another project (Move, a swipe left) */
+  movable?: boolean
 }
 
 export interface OutgoingRow {
@@ -50,6 +54,11 @@ export interface InputEvents {
   outboxCancel(q: string): void
   /** the list scrolled to its last drawn rows: draw more */
   end(): void
+  /** swiped left: Move (its sheet) and Delete (Undo puts it back) (D115 #42) */
+  moveInput(id: string): void
+  remove(id: string): void
+  /** swiped right: the item it became; held: its menu */
+  swipe: RowSwipe
 }
 
 /** One input: the line every list of inputs draws, its words drawn as Markdown (references and pictures in them work),
@@ -57,6 +66,7 @@ export interface InputEvents {
 export function InputCard({ x, words, world, files, on }: { x: InputFacts; words: readonly string[]; world: InlineWorld; files(f: FileRef[]): ReactNode; on: InputEvents }) {
   const litRef = useLitRow<HTMLElement>(x.lit === 'shown')
   const r = x.r
+  const to = x.became.k === 'filed' ? (x.became.items[0]?.item ?? null) : x.became.k === 'answer' ? x.became.item : null
   return (
     <InputRow
       x={x}
@@ -65,6 +75,7 @@ export function InputCard({ x, words, world, files, on }: { x: InputFacts; words
       rowRef={litRef}
       text={(cut) => <Rich text={cut ? r.text.replace(/\n{2,}/g, '\n') : r.text} world={world} onRef={on.ref} onPicture={on.picture} />}
       files={r.files.length ? files(r.files) : null}
+      swipe={x.became.k === 'moved' ? null : { open: to?.code ?? null, move: !!x.movable, on: { move: on.moveInput, remove: on.remove } }}
       on={{ ...on, menu: (id) => on.menu(id) }}
     />
   )
@@ -109,6 +120,7 @@ export function InputsView({ hidden, rows, more, outgoing, words, world, files, 
 }) {
   const ref = useRef<HTMLElement | null>(null)
   useMarks(ref, words)
+  useRowSwipe(ref, !hidden, on.swipe, rows)
   const end = useRef<HTMLDivElement | null>(null)
   const told = useRef(on.end)
   useEffect(() => {

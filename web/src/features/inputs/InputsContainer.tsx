@@ -13,6 +13,8 @@ import { useSearchHints } from '../../app/searchHints'
 import { FileChips } from '../../ui/Files'
 import { useBoxHere } from '../../app/inputs/boxHere'
 import { InputsView, type InputFacts } from './InputsView'
+import { useOtherProjects } from '../../app/projectLists'
+import { organizing } from '../../model/inputs'
 import { inputRows, outgoingRows } from './inputRows'
 
 /** how many inputs are drawn at first, and how many more each time the list nears its end */
@@ -20,7 +22,8 @@ const PAGE = 40
 
 export function InputsContainer({ route, hidden }: { route: ProjectRoute; hidden: boolean }) {
   const app = useServices('box', 'docs', 'fields', 'inputActions', 'inputs', 'nav', 'sheets')
-  const stores = useStores('box', 'recording', 'data', 'drafts', 'outbox', 'ui')
+  const others = useOtherProjects(route.slug).length
+  const stores = useStores('box', 'recording', 'data', 'drafts', 'outbox', 'route', 'ui')
   // a voice note being recorded into a new input here: its row comes first, with how long so far (B627)
   const recording = useStoreValue(stores.recording, (st) => (st.rec && st.rec.slug === route.slug && !st.rec.about && st.rec.key === NEW_DRAFT ? clock(st.rec.ms) : null))
   const m = useProjectModel(route.slug)
@@ -44,8 +47,10 @@ export function InputsContainer({ route, hidden }: { route: ProjectRoute; hidden
   const { rows, total }: { rows: InputFacts[]; total: number } = useMemo(() => {
     if (!m || hidden) return { rows: [], total: 0 }
     const title = (slug: string) => projects?.find((p) => p.name === slug)?.title || slug
-    return inputRows(m, { words, title, opened, drafts: draftWords || stores.drafts.getState().of(route.slug), writing, lit, litStill, upTo })
-  }, [m, hidden, words, projects, opened, draftWords, stores, route.slug, writing, lit, litStill, upTo])
+    const got = inputRows(m, { words, title, opened, drafts: draftWords || stores.drafts.getState().of(route.slug), writing, lit, litStill, upTo })
+    // Move, as its menu has it: another project to go to, and the organizer not on it
+    return { ...got, rows: got.rows.map((x) => ({ ...x, movable: others > 0 && !organizing(x.r, m.facts.organizer) })) }
+  }, [m, hidden, words, projects, opened, draftWords, stores, route.slug, writing, lit, litStill, upTo, others])
   // an input gone to further down is drawn with those above it, and stays drawn once it is no longer lit (React's
   // adjust-state-while-rendering pattern)
   if (rows.length > upTo) setUpTo(rows.length)
@@ -80,6 +85,17 @@ export function InputsContainer({ route, hidden }: { route: ProjectRoute; hidden
         outboxEdit: () => app.box.editOutgoing(route.slug, boxKey) && app.fields.focus('box'),
         outboxCancel: (q) => app.box.cancel(q),
         end: () => setUpTo((n) => n + PAGE),
+        moveInput: (id) => app.sheets.open({ kind: 'input-move', id }),
+        remove: (id) => app.inputActions.remove(route.slug, id),
+        swipe: {
+          right: (id) => {
+            const x = rows.find((y) => y.r.id === id)?.became
+            const to = x?.k === 'filed' ? x.items[0]?.item : x?.k === 'answer' ? x.item : undefined
+            return to && m ? { slide: false, run: () => app.nav.openItem(codeOf(m, to.n), 'items') } : null
+          },
+          hold: (id) => app.sheets.open({ kind: 'input-menu', id }, { focus: false }),
+          blocked: () => stores.route.getState().layers.includes('drawer'),
+        },
       }}
     />
   )
