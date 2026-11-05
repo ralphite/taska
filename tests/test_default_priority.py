@@ -30,7 +30,8 @@ class DefaultPriority(unittest.TestCase):
                 p.close()
 
     def test_the_organizer_is_told_p1(self):
-        self.assertIn("P1 = normal, the default", INSTRUCTIONS)
+        self.assertIn("P1 is the default", INSTRUCTIONS)
+        self.assertIn("use P2 rarely", INSTRUCTIONS)
         self.assertNotIn("P2 = normal", INSTRUCTIONS)
 
 
