@@ -15,7 +15,7 @@ import { Avatar } from '../../ui/bits'
 import { Icon } from '../../ui/Icon'
 import { Rich } from '../../ui/Markdown'
 import { BUSY, DC_BTN, DC_LINK, MUTED } from '../../ui/tones'
-import { FileRows, VoiceLine, isAudio } from '../../ui/Files'
+import { FileRows, VoiceBubble, VoiceLine, isAudio } from '../../ui/Files'
 import { MsgText } from './MsgText'
 import { Answered, type CardEvents } from './NeedsCard'
 import type { TalkEnv } from './talkEnv'
@@ -48,6 +48,8 @@ export interface Outgoing {
   canUndo: boolean
   /** its pictures, as they were picked (shown while they go up) */
   previews?: string[]
+  /** T668, a prototype: its voice notes, drawn in the bubble while it goes (the page does not give them) */
+  voices?: FileRef[]
 }
 
 export interface TalkFacts {
@@ -135,9 +137,24 @@ function MsgView({ it, x, env, on, facts, docs, code, done, ver, gone, read }: {
   if (you) {
     const undo = src ? facts.undo(src.id) : null
     const moved = src?.moved && !ver?.old ? movedOf(src.moved, facts.title) : null
+    // T668 (a prototype): the voice notes inside the bubble, in the look being tried
+    const inside = env.voiceLook && !ver?.old ? (src?.files || []).filter(isAudio) : []
     return (
       <div className={`group group/msg flex scroll-mb-4 flex-col items-end gap-1 rounded-2xl ${ver?.old ? 'opacity-60' : ''}`}>
-        {y.text ? (
+        {inside.length && env.voiceLook ? (
+          <VoiceBubble
+            look={env.voiceLook}
+            cls={YOU_BUBBLE}
+            files={inside}
+            url={env.url}
+            play={env.play}
+            tidy={env.tidy}
+            top={y.text ? <MsgText x={y} env={env} on={on} /> : null}
+            hearing={!y.text && !!src?.trWait}
+            attrs={voiceMark(src)}
+            onPlay={on.play}
+          />
+        ) : y.text ? (
           <div {...voiceMark(src)} className={YOU_BUBBLE}>
             {ver?.old ? (
               <div className="line-clamp-2">
@@ -151,7 +168,7 @@ function MsgView({ it, x, env, on, facts, docs, code, done, ver, gone, read }: {
         {ver?.old ? null : strip(src?.files?.filter((f) => !isAudio(f)))}
         {/* one line under what you wrote: the voice note, who and when, and ⋯ with Edit, Add more and the rest */}
         <div className="flex flex-wrap items-center justify-end gap-x-1">
-          {ver?.old ? null : <VoiceLine files={src?.files || []} url={env.url} play={env.play} tidy={env.tidy} bare={!!src && !src.moved} on={on} />}
+          {ver?.old || inside.length ? null : <VoiceLine files={src?.files || []} url={env.url} play={env.play} tidy={env.tidy} bare={!!src && !src.moved} on={on} />}
           <span className={`px-1 text-[11px] ${MUTED}`}>
             {ver?.old ? 'earlier version · ' : ver?.label ? ver.label + ' · ' : ''}
             {when(x.t, env.now)}
@@ -186,7 +203,7 @@ function MsgView({ it, x, env, on, facts, docs, code, done, ver, gone, read }: {
                 </a>
               </>
             ) : null}
-            {src?.trWait ? (
+            {src?.trWait && !inside.length ? (
               <>
                 {' · '}
                 <span className="animate-pulse text-blue-600 dark:text-blue-400">transcribing…</span>
@@ -350,7 +367,9 @@ export function docNotes(docs: readonly Doc[], env: TalkEnv, on: TalkLineEvents,
         {about}
       </button>
     ) : null
-    const words = c.text.trim() ? <Rich text={c.text} world={env.world} onRef={on.ref} onPicture={on.picture} /> : c.files?.some(isAudio) ? 'Voice note' : null
+    // T668 (a prototype): your voice notes inside the bubble, no "Voice note" word
+    const inside = you && env.voiceLook ? (c.files || []).filter(isAudio) : []
+    const words = c.text.trim() ? <Rich text={c.text} world={env.world} onRef={on.ref} onPicture={on.picture} /> : c.files?.some(isAudio) && !inside.length ? 'Voice note' : null
     // its pictures and files as a message's: thumbnails to open (yours under the bubble, an agent's in its card)
     const pics = (c.files || []).filter((f) => !isAudio(f))
     const strip = (cls: string) => (pics.length ? <FileRows files={pics} url={env.url} play={env.play} tidy={env.tidy} on={on} cls={cls} /> : null)
@@ -358,7 +377,19 @@ export function docNotes(docs: readonly Doc[], env: TalkEnv, on: TalkLineEvents,
       t: c.t,
       node: you ? (
         <div key={`dn${d.d}-${c.id}`} className="flex flex-col items-end gap-1">
-          {quote || words ? (
+          {inside.length && env.voiceLook ? (
+            <VoiceBubble
+              look={env.voiceLook}
+              cls={YOU_BUBBLE}
+              files={inside}
+              url={env.url}
+              play={env.play}
+              tidy={env.tidy}
+              top={quote || words ? <>{quote}{words}</> : null}
+              busy={c.id <= 0}
+              onPlay={on.play}
+            />
+          ) : quote || words ? (
             <div className={YOU_BUBBLE}>
               {quote}
               {words}
@@ -366,7 +397,7 @@ export function docNotes(docs: readonly Doc[], env: TalkEnv, on: TalkLineEvents,
           ) : null}
           {strip('items-end max-w-full [&>div]:max-w-full')}
           <div className={`flex max-w-full flex-wrap items-center justify-end gap-x-1 text-[11px] ${MUTED}`}>
-            <VoiceLine files={c.files || []} url={env.url} play={env.play} tidy={env.tidy} bare on={on} />
+            {inside.length ? null : <VoiceLine files={c.files || []} url={env.url} play={env.play} tidy={env.tidy} bare on={on} />}
             <span className="flex max-w-full min-w-0 items-center gap-0.5 px-1">
               <Icon n="comment" c="size-3 shrink-0" />
               <span className="min-w-0 truncate">
@@ -397,12 +428,14 @@ export function docNotes(docs: readonly Doc[], env: TalkEnv, on: TalkLineEvents,
 }
 
 /** What you sent to this item, in the talk at once, saying where it is, until Taska has it. */
-function Pending({ list, on }: { list: Outgoing[]; on: TalkLineEvents }) {
+function Pending({ list, env, on }: { list: Outgoing[]; env: TalkEnv; on: TalkLineEvents }) {
   return (
     <>
       {list.map((q) => (
         <div key={q.q} className="flex flex-col items-end gap-1">
-          {q.text ? <div className={`${YOU_BUBBLE} break-words whitespace-pre-wrap ${q.bad ? 'opacity-70' : ''}`}>{q.text}</div> : null}
+          {q.voices?.length && env.voiceLook ? (
+            <VoiceBubble look={env.voiceLook} cls={`${YOU_BUBBLE} break-words whitespace-pre-wrap`} files={q.voices} url={env.url} play={env.play} tidy={env.tidy} top={q.text || null} busy onPlay={on.play} />
+          ) : q.text ? <div className={`${YOU_BUBBLE} break-words whitespace-pre-wrap ${q.bad ? 'opacity-70' : ''}`}>{q.text}</div> : null}
           {q.previews?.length ? (
             <div className={`flex max-w-full flex-wrap justify-end gap-2 ${q.bad ? 'opacity-70' : ''}`}>
               {q.previews.map((src, i) => (
@@ -480,7 +513,7 @@ export function Talk({ it, list, notes, card, env, on, facts, docs, code }: {
     )
   }
   before('')
-  out.push(<Pending key="pending" list={facts.outgoing} on={on} />)
+  out.push(<Pending key="pending" list={facts.outgoing} env={env} on={on} />)
   return <>{out}</>
 }
 

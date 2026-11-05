@@ -1,6 +1,6 @@
 // What every part of an item's talk draws with, and what it can do: given by the item page's container.
 
-import type { FileEvents, PlayState } from '../../ui/Files'
+import type { BubbleVoiceLook, FileEvents, PlayState } from '../../ui/Files'
 import type { Choosing } from '../../ui/Markdown'
 import type { InlineWorld } from '../../ui/markdown/inline'
 
@@ -19,6 +19,9 @@ export interface TalkEnv {
   latest: number | null
   /** picking the choices of the item's open question */
   choosing: Choosing | null
+  /** T668, a prototype: your voice notes inside your bubble, in one of the looks to pick from; the page leaves it
+   * unset (under the bubble) */
+  voiceLook?: BubbleVoiceLook
 }
 
 export interface TalkEvents extends FileEvents {
