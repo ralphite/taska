@@ -10,7 +10,7 @@ import { plural } from '../../model/words'
 import { Icon } from '../../ui/Icon'
 import { RichFrame } from '../../ui/Markdown'
 import type { SheetLook } from '../../ui/Sheet'
-import { BTN, BTN_DANGER, HIT, MUTED, NEEDS_PILL, PRIMARY, SEP_V } from '../../ui/tones'
+import { MUTED, NEEDS_PILL, PRIMARY } from '../../ui/tones'
 import { BlockActs, type CountInfo } from './BlockActs'
 import { DocBlock } from './DocBlock'
 import { PlaceVoiceRow } from '../../ui/PlaceVoice'
@@ -71,8 +71,6 @@ export interface DocFacts {
   /** choices ticked and not sent */
   waiting: string
   circle: boolean
-  /** Delete waits for its second click */
-  deleting: boolean
   replying: string | null
   asking: string | null
   /** the phone shows Comment on the whole document */
@@ -199,7 +197,6 @@ export function DocView({ facts, env, on, lasso, page, meter, aim = null, onAime
   const thread = (s: ShownThread, blockText?: string, rail = false) => (
     <Thread key={s.t.tk} t={s.t} blockText={blockText} rail={rail} isNew={s.isNew} done={s.done} replying={facts.replying === s.t.tk} asking={facts.asking} env={env} on={on} />
   )
-  const phoneBtn = `${HIT} ${BTN} text-sm lg:hidden`
   // the phone's row to speak or write goes under the last paragraph picked (an area drawn picks several)
   const sayAt = rows.filter((r) => r.say).at(-1)?.tk
   return (
@@ -232,28 +229,8 @@ export function DocView({ facts, env, on, lasso, page, meter, aim = null, onAime
             </button>{' '}
             · {facts.by} · {facts.when}
           </span>
-          <button onClick={on.copyDoc} className={phoneBtn}>
-            Copy
-          </button>
-          <button onClick={() => on.moveDoc()} className={phoneBtn}>
-            Move
-          </button>
-          <button
-            onClick={on.circle}
-            hidden={web}
-            aria-pressed={facts.circle}
-            className={`${phoneBtn} aria-pressed:bg-amber-100 aria-pressed:text-amber-900 dark:aria-pressed:bg-amber-900/60 dark:aria-pressed:text-amber-100`}
-          >
-            {facts.circle ? 'Done' : 'Mark an area'}
-          </button>
-          <button onClick={on.editDoc} className={phoneBtn}>
-            Edit
-          </button>
-          {/* Delete last, after a line, red (the phone's row; the desktop's are in the pane's bar) */}
-          <span className={`${SEP_V} lg:hidden`} />
-          <button onClick={on.deleteDoc} className={`${HIT} ${BTN_DANGER} text-sm lg:hidden ${facts.deleting ? 'font-semibold' : ''}`}>
-            {facts.deleting ? 'Delete?' : 'Delete'}
-          </button>
+          {/* the phone's Copy, Move, Mark an area, Edit and Delete are in the ⋯ by its close button (D115 #41); the
+              desktop's are in the pane's bar */}
         </div>
         {facts.waiting ? (
           // the phone sends them from here, having no box over a document (B643); the desktop's box line has Send choices

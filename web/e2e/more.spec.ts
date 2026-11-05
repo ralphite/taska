@@ -165,7 +165,7 @@ test('a document is edited where it is read', async ({ page, request }) => {
 `,
   })
   await open(page, p, 'D1')
-  await docEdit(page).click()
+  await docEdit(page)
   await page.getByPlaceholder(/^Title\n/).first().fill('The plan\n\nFirst part, rewritten.')
   await page.getByRole('button', { name: 'Save', exact: true }).filter({ visible: true }).first().click()
   await expect.poll(async () => p.read('D1')).toContain('First part, rewritten.')

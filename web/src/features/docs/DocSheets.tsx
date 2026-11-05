@@ -7,7 +7,8 @@ import { plainQuote } from '../../model/markdown'
 import type { Block, Doc } from '../../model/types'
 import { Icon } from '../../ui/Icon'
 import type { SheetParts } from '../../ui/Sheet'
-import { DANGER, MENU_ROW } from '../../ui/tones'
+import type { IconName } from '../../ui/icon-paths'
+import { DANGER, MENU_ROW, MENU_SEP } from '../../ui/tones'
 
 /** The phone's menu of a comment: Edit (yours), Move, Delete. */
 export function commentMenuSheet(yours: boolean, on: { edit(): void; move(): void; remove(): void }): SheetParts {
@@ -29,6 +30,49 @@ export function commentMenuSheet(yours: boolean, on: { edit(): void; move(): voi
         <button onClick={on.remove} className={`${MENU_ROW} h-11 ${DANGER}`}>
           <Icon n="trash" c="size-4" />
           Delete
+        </button>
+      </div>
+    ),
+  }
+}
+
+/** The phone's ⋯ beside a document's close button (D115 #41); while an area is being marked, Done in its place. */
+export function DocSheetMore({ code, circle, on }: { code: string; circle: boolean; on: { more(): void; done(): void } }) {
+  return circle ? (
+    <button onClick={on.done} className="h-9 rounded-full bg-amber-100 px-3.5 text-sm font-semibold text-amber-900 dark:bg-amber-900/60 dark:text-amber-100">
+      Done
+    </button>
+  ) : (
+    <button onClick={on.more} aria-label={`More for ${code}`} className="group -mr-2 grid size-11 shrink-0 place-items-center rounded-full">
+      <span className="grid size-8 place-items-center rounded-full text-zinc-500 group-hover:bg-zinc-100 dark:text-zinc-400 dark:group-hover:bg-zinc-800">
+        <Icon n="more" c="size-5" />
+      </span>
+    </button>
+  )
+}
+
+/** The phone's menu of a document: Copy, Move, Mark an area (not on a web page), Edit, and Delete last, red, asking
+ * again before it deletes. */
+export function docMenuSheet(code: string, f: { web: boolean; deleting: boolean }, on: { copy(): void; move(): void; mark(): void; edit(): void; remove(): void }): SheetParts {
+  const row = (icon: IconName, label: string, onClick: () => void) => (
+    <button onClick={onClick} className={`${MENU_ROW} h-11`}>
+      <Icon n={icon} c="size-4 text-zinc-500 dark:text-zinc-400" />
+      {label}
+    </button>
+  )
+  return {
+    menu: true,
+    title: code,
+    body: (
+      <div className="-mx-1 flex flex-col gap-0.5">
+        {row('copy', 'Copy', on.copy)}
+        {row('arrow', 'Move', on.move)}
+        {f.web ? null : row('lasso', 'Mark an area', on.mark)}
+        {row('pencil', 'Edit', on.edit)}
+        <div className={MENU_SEP} />
+        <button onClick={on.remove} className={`${MENU_ROW} h-11 ${DANGER} ${f.deleting ? 'font-semibold' : ''}`}>
+          <Icon n="trash" c="size-4" />
+          {f.deleting ? 'Delete?' : 'Delete'}
         </button>
       </div>
     ),

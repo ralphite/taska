@@ -45,6 +45,8 @@ export type SheetRequest =
   | { kind: 'comment-move'; d: number; id: number }
   /** the phone's menu of a document's comment */
   | { kind: 'comment-menu'; d: number; id: number }
+  /** the phone's menu of a document (D115 #41) */
+  | { kind: 'doc-menu'; d: number }
   /** a document's editor (the phone's, and a new one's): an existing one, or a new one on item n */
   | { kind: 'doc-edit'; d: number }
   | { kind: 'doc-edit'; n: number }

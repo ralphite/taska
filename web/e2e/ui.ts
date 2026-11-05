@@ -1,5 +1,5 @@
 // The parts of the page the checks look at, found by what you see where the page says it (roles, names, words).
-import type { Locator, Page } from '@playwright/test'
+import { expect, type Locator, type Page } from '@playwright/test'
 
 const shown = (l: Locator) => l.filter({ visible: true })
 
@@ -127,8 +127,16 @@ export const slowComments = (page: Page, ms: number) =>
 // ---------------------------------------------------------------- documents: comments and the editor
 /** A comment on a document, as its card. */
 export const commentCard = (page: Page, words: string) => shown(page.locator('[data-dc]').filter({ hasText: words })).first()
-/** A document's Edit (its editor opens): in the pane's bar on the desktop, in its sheet on the phone (not a card's Edit). */
-export const docEdit = (page: Page) => shown(page.locator('header:has([data-pane-head]), [role="dialog"]').getByRole('button', { name: 'Edit', exact: true })).first()
+/** A document's Edit pressed (its editor opens): in the pane's bar on the desktop, in the ⋯ by its sheet's close
+ * button on the phone (D115 #41; not a card's Edit). */
+export async function docEdit(page: Page) {
+  const edit = shown(page.locator('header:has([data-pane-head])').getByRole('button', { name: 'Edit', exact: true })).first()
+  const more = shown(page.locator('[role="dialog"]').getByRole('button', { name: /^More for D\d+$/ })).first()
+  await expect(edit.or(more).first()).toBeVisible()
+  if (await edit.isVisible()) return edit.click()
+  await more.click()
+  await shown(page.locator('[role="dialog"]').getByRole('button', { name: 'Edit', exact: true })).last().click()
+}
 /** The editor's mic, and the line that says what it does. */
 export const docMic = (page: Page) => page.getByRole('button', { name: /^(Speak|Stop \d)/ }).first()
 export const docHint = (page: Page) => page.getByText(/^Listening/).first()

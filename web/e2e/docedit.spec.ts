@@ -17,7 +17,7 @@ test('D80 #17: on the phone, speaking into a document, the hint reads on a line 
     then: 'T1 doc The plan\n  Ship option A today.\n',
   })
   await open(page, p, 'D1')
-  await docEdit(page).click()
+  await docEdit(page)
   await docMic(page).click()
   const hint = docHint(page)
   await expect(hint).toContainText('Listening')

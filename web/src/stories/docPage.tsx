@@ -5,6 +5,7 @@
 import { useState, type ReactNode } from 'react'
 import { DocEdit } from '../features/docs/DocEdit'
 import { DocPaneActs, DocPaneHead, DocPaneNav } from '../features/docs/DocPane'
+import { DocSheetMore } from '../features/docs/DocSheets'
 import { DocView, PHONE_DOC_LOOK, type DocEvents } from '../features/docs/DocView'
 import { Lasso } from '../features/docs/Lasso'
 import { WebThread, type DocEnv } from '../features/docs/Thread'
@@ -74,6 +75,7 @@ const docActs = acts('Document', ['ref', 'edit', 'move', 'takeOff', 'remove', 'm
   moveDoc: 'Move and pick',
 })
 const paneActs = acts('Document pane', ['copy', 'edit', 'move', 'back'] as const, { edit: 'Document › Editing', move: 'Move and pick' })
+const sheetActs = acts('Document sheet', ['more', 'done'] as const, { more: 'Document › On the phone › Its ⋯' })
 
 /** The document with what the page holds for it (stores.docView: the threads open, what is picked, circling, the
  * web page's Comment mode; the ticks; a voice comment recording; Delete asking again; the player and viewer): a
@@ -198,7 +200,7 @@ function LiveDoc({ d, desk, h }: { d: Doc; desk: boolean; h: DocHere }) {
   ) : (
     <>
       <Sheet open look={PHONE_DOC_LOOK} desk={false} onClose={paneActs.back}>
-        <SheetLayout title={`D${d.d}`} body={view} />
+        <SheetLayout title={`D${d.d}`} extra={<DocSheetMore code={`D${d.d}`} circle={!!h.circle} on={{ more: sheetActs.more, done: sheetActs.done }} />} body={view} />
       </Sheet>
       {media.node}
     </>

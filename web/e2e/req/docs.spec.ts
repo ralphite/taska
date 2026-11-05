@@ -483,3 +483,23 @@ test('B498 r1047 r1062: on the phone the row under a paragraph picked speaks (âœ
   await expect(page.locator('#composer')).toBeHidden()
   await expect.poll(() => p.read('D1')).toContain('Which part comes first?')
 })
+
+test("D115 #41: on the phone a document's Copy, Move, Mark an area, Edit and Delete are in the â‹¯ by its close button, not over its words", async ({
+  page,
+  request,
+}) => {
+  test.skip(isDesk(page), "the phone's document sheet")
+  const p = await project(request, { ...LOOP, then: `${LOOP.then}T4 doc The plan\n  First part of the plan.\n` })
+  await open(page, p, 'D1')
+  const sheet = page.locator('[role="dialog"]').filter({ visible: true })
+  await expect(sheet.first()).toContainText('First part of the plan.')
+  await expect(sheet.first().getByRole('button', { name: 'Copy', exact: true })).toHaveCount(0)
+  await sheet.first().getByRole('button', { name: 'More for D1', exact: true }).click()
+  const menu = sheet.last()
+  await expect(menu.getByRole('button', { name: 'Mark an area', exact: true })).toBeVisible()
+  expect(await menu.getByRole('button').allInnerTexts()).toEqual(expect.arrayContaining(['Copy', 'Move', 'Mark an area', 'Edit', 'Delete']))
+  await menu.getByRole('button', { name: 'Delete', exact: true }).click()
+  await menu.getByRole('button', { name: 'Delete?', exact: true }).click()
+  await expect(page.getByText('Deleted D1').first()).toBeVisible()
+  await expect(page.getByText('First part of the plan.')).toHaveCount(0)
+})

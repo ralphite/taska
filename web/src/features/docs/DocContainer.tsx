@@ -20,6 +20,7 @@ import { useItemWorld } from '../../app/hooks'
 import { PaneFrame } from '../../ui/PaneFrame'
 import { DocPaneActs, DocPaneHead, DocPaneNav } from './DocPane'
 import { DocEditContainer } from './DocEditContainer'
+import { DocSheetMore } from './DocSheets'
 import { DocView, PHONE_DOC_LOOK, type DocEvents } from './DocView'
 import type { DocEnv } from './Thread'
 import { docDraft } from '../../model/draftTarget'
@@ -201,13 +202,16 @@ export function DocPaneContainer({ route, dn, place, hidden, bodyRef, beside }: 
 
 /** The phone's sheet with a document, over its item. */
 export function DocSheetContainer({ slug, dn, footRoom }: { slug: string; dn: number; footRoom: number }) {
-  const app = useServices('docs')
+  const app = useServices('docs', 'sheets')
   const { m, d, facts, env, on, v, page, aimed } = useDoc(slug, dn)
   if (!m || !d || !facts) return null
   return (
     // above the box, which stays under it (what it says shows), so nothing of the document is under the box (r672)
     <Sheet open look={PHONE_DOC_LOOK} desk={false} footRoom={footRoom} onClose={() => app.docs.close()}>
-      <SheetLayout title={`D${d.d}`} body={<DocView facts={facts} env={env} on={on} page={page} meter={<RecMeter n={PLACE_LEVELS.phone} />} aim={v.aim} onAimed={aimed} lasso={v.circle ? <Lasso onDrawn={(keys) => app.docs.circled(keys)} /> : null} />} />
+      <SheetLayout
+        title={`D${d.d}`}
+        extra={<DocSheetMore code={`D${d.d}`} circle={v.circle} on={{ more: () => app.sheets.open({ kind: 'doc-menu', d: d.d }, { focus: false }), done: on.circle }} />}
+        body={<DocView facts={facts} env={env} on={on} page={page} meter={<RecMeter n={PLACE_LEVELS.phone} />} aim={v.aim} onAimed={aimed} lasso={v.circle ? <Lasso onDrawn={(keys) => app.docs.circled(keys)} /> : null} />} />
     </Sheet>
   )
 }

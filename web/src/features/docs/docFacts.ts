@@ -67,7 +67,6 @@ export function factsOf(m: ProjectModel, d: Doc, v: DocLook, seen: Readonly<Reco
     detached: desk ? [] : d.detached.map((t) => ({ key: t.key, quote: t.quote, threads: threadsOf(t.comments).map((x) => shown(x, t.key)) })),
     waiting: ticksNotSent(ticks, d),
     circle: v.circle,
-    deleting: !!asked['doc-delete ' + d.d],
     replying: v.reply,
     asking: Object.keys(asked).find((k) => k.startsWith(`unfile ${d.d} `))?.slice(`unfile ${d.d} `.length) ?? null,
     wholeButton: !(v.typing && !v.sel.size && !v.quote && !v.reply),
