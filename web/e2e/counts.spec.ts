@@ -2,7 +2,7 @@
 // label, B664), the Needs you view (its chip
 // and its rows), the home table and its total, the phone's project list, and what the server tells the other pages
 // (B482, R483: "this inconsistency must never happen").
-// guards: src/features/sidebar/ src/features/list/ src/features/home/ src/features/side/ src/pages/Header.tsx src/model/items.ts src/model/projects.ts src/app/projectLists.ts src/app/actions.ts server/taska/services/ server/taska/http/workspace_routes.py server/taska/domain/
+// guards: src/app/project/notices.ts src/features/sidebar/ src/features/list/ src/features/home/ src/features/side/ src/pages/Header.tsx src/model/items.ts src/model/projects.ts src/app/projectLists.ts src/app/actions.ts server/taska/services/ server/taska/http/workspace_routes.py server/taska/domain/
 import { expect, test } from '@playwright/test'
 import type { APIRequestContext, Page } from '@playwright/test'
 import { isDesk, open, project } from './seed'
@@ -123,4 +123,19 @@ I11 merge I3
   if (isDesk(page))
     await expect(page.getByText(/ projects · /).first()).toContainText(sum ? new RegExp(`(^|\\D)${sum} need you`) : 'nothing needs you')
   expect((await (await request.get('/api/needs')).json()).length).toBe(sum)
+})
+
+test("D115 #19: the app's icon counts what needs you in every project", async ({ page, request }) => {
+  await page.addInitScript(() => {
+    const w = window as unknown as { badges: (number | null)[] }
+    w.badges = []
+    Object.assign(navigator, {
+      setAppBadge: (n: number) => (w.badges.push(n), Promise.resolve()),
+      clearAppBadge: () => (w.badges.push(null), Promise.resolve()),
+    })
+  })
+  await project(request, { agent: 'new task P1 now Ship the export\n', approve: ['T1'], then: 'T1 ask Which format?\n' })
+  await page.goto('/')
+  const sum = (await (await request.get('/api/needs')).json()).length
+  await expect.poll(() => page.evaluate(() => (window as unknown as { badges: (number | null)[] }).badges.at(-1))).toBe(sum)
 })

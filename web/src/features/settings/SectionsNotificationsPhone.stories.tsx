@@ -11,6 +11,8 @@ export const PhonePushesOnQuiet: Story = { ...onPhone('notifications', { push: {
 export const PhonePushesOnQuietChanged: Story = { ...onPhone('notifications', { push: { sub: true, blocked: false, quiet: true, hours: { from: '23:30', to: '07:00' } } }), name: 'Pushes on, quiet hours changed' }
 export const PhonePushesOff: Story = { ...onPhone('notifications', { push: { sub: false, blocked: false, quiet: false } }), name: 'Pushes off' }
 export const PhonePushesBlocked: Story = { ...onPhone('notifications', { push: { sub: false, blocked: true, quiet: false } }), name: 'Blocked by the phone' }
+/** the app's icon count turned off (D115 #19) */
+export const PhoneBadgeOff: Story = { ...onPhone('notifications', { push: { sub: true, blocked: false, quiet: true }, badgeOff: true }), name: 'Pushes on, no count on the app icon' }
 export const PhoneNotSupported: Story = { ...onPhone('notifications', { pushUnsupported: true }), name: 'Not supported on this phone' }
 /** opened in the phone's browser, not from the Home Screen: how to add it there first */
 export const PhoneNotOnHomeScreen: Story = { ...onPhone('notifications'), name: 'In the browser, not on the Home Screen' }

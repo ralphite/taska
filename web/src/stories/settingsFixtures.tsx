@@ -48,6 +48,9 @@ export interface SettingsHere {
   notifications?: { state: 'On' | 'Off' | 'Blocked by the browser'; quiet: boolean; hours?: { from: string; to: string } }
   /** the phone on its Home Screen with a push service: this phone's pushes */
   push?: { sub: boolean; blocked: boolean; quiet: boolean; hours?: { from: string; to: string } }
+  /** the app's icon count (D115 #19): off; or the browser cannot show one */
+  badgeOff?: boolean
+  noBadge?: boolean
   /** Use on your phone: New key pressed once */
   newKeyAsking?: boolean
   /** Voice spellings: none yet */
@@ -104,6 +107,8 @@ function LiveSettings({ sec: start, desk, h }: { sec: SectionKey | null; desk: b
   const [asked, setAsked] = useState<Record<string, number>>(() => ({ ...Object.fromEntries((h.projects?.purging ?? []).map((n) => [`purge ${n}`, 1])), ...(h.newKeyAsking ? { 'new-key': 1 } : {}) }))
   const [notices, setNotices] = useState<NonNullable<SettingsHere['notifications']>>(h.notifications ?? { state: 'On', quiet: false })
   const [push, setPush] = useState(h.push ?? null)
+  const [badgeOn, setBadgeOn] = useState(!h.badgeOff)
+  const badge = h.noBadge ? null : { on: badgeOn, toggle: () => setBadgeOn(!badgeOn) }
   const [editing, setEditing] = useState(!!h.prefs?.editing)
   const [tidy, setTidy] = useState(!h.prefs?.tidyOff)
   const [logAsking, setLogAsking] = useState<ReadonlySet<number> | null>(null)
@@ -135,13 +140,13 @@ function LiveSettings({ sec: start, desk, h }: { sec: SectionKey | null; desk: b
     phone: () => <PhoneBody link={h.noRemote ? '' : m.facts.remote + '/'} lan={h.noRemote && !h.noLan ? 'http://192.168.1.20:7340/p/shop/' : ''} keyText={m.facts.key} asking={!!asked['new-key']} desk={desk} on={{ copy: setActs.copy, newKey: () => ask('new-key', setActs.newKey) }} />,
     notifications: () =>
       desk ? (
-        <NotificationsBody state={notices.state} quiet={notices.quiet} hours={notices.hours ?? QUIET} on={{ ...toggles((on) => setNotices({ ...notices, state: on ? 'On' : 'Off' })), quiet: () => setNotices({ ...notices, quiet: !notices.quiet }), hours: (hours) => setNotices({ ...notices, hours }) }} />
+        <NotificationsBody state={notices.state} quiet={notices.quiet} hours={notices.hours ?? QUIET} badge={badge} on={{ ...toggles((on) => setNotices({ ...notices, state: on ? 'On' : 'Off' })), quiet: () => setNotices({ ...notices, quiet: !notices.quiet }), hours: (hours) => setNotices({ ...notices, hours }) }} />
       ) : h.pushLoading ? (
         <Loading />
       ) : h.pushUnsupported ? (
         <PhonePushBody standalone onPhone={setActs.onPhone} phoneHref="#" />
       ) : push ? (
-        <PhonePushBody standalone onPhone={setActs.onPhone} phoneHref="#" push={{ hours: QUIET, ...push, on: { ...toggles((on) => setPush({ ...push, sub: on })), quiet: () => setPush({ ...push, quiet: !push.quiet }), hours: (hours) => setPush({ ...push, hours }) } }} />
+        <PhonePushBody standalone onPhone={setActs.onPhone} phoneHref="#" push={{ hours: QUIET, ...push, badge, on: { ...toggles((on) => setPush({ ...push, sub: on })), quiet: () => setPush({ ...push, quiet: !push.quiet }), hours: (hours) => setPush({ ...push, hours }) } }} />
       ) : (
         <PhonePushBody standalone={false} onPhone={setActs.onPhone} phoneHref="#" />
       ),

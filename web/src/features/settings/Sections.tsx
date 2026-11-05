@@ -8,7 +8,7 @@ import { plural } from '../../model/words'
 import { Kbd, ProjTile } from '../../ui/bits'
 import { Icon } from '../../ui/Icon'
 import { DISABLED, FIELD, MUTED, P_BTN, PRIMARY, SECOND } from '../../ui/tones'
-import { CopyBtn, Loading, Part, QuietHoursSetting, Setting, TextBox } from './SettingsParts'
+import { CopyBtn, Loading, Part, QuietHoursSetting, Setting, TextBox, Toggle } from './SettingsParts'
 
 // ---- Projects
 
@@ -239,9 +239,19 @@ export function PhoneBody({ link, lan, keyText, asking, desk, on }: { link: stri
 
 // ---- Notifications (the desktop's; the phone's are pushes)
 
+/** The app's icon count (D115 #19): on unless turned off. */
+export interface BadgeSwitch {
+  on: boolean
+  toggle(): void
+}
+
+function BadgeSetting({ badge }: { badge: BadgeSwitch }) {
+  return <Setting title="Count on the app icon" about="What needs you, in every project." control={<Toggle on={badge.on} label="Count on the app icon" onToggle={badge.toggle} />} />
+}
+
 /** On: Turn off is Taska's own (a page cannot take back the browser's permission), as the phone's. Blocked: the page
  * cannot ask again, so no button, only where to allow them. */
-export function NotificationsBody({ state, quiet, hours, on }: { state: 'On' | 'Off' | 'Blocked by the browser'; quiet: boolean; hours: { from: string; to: string }; on: { turnOn(): void; turnOff(): void; quiet(): void; hours(h: { from: string; to: string }): void } }) {
+export function NotificationsBody({ state, quiet, hours, badge = null, on }: { state: 'On' | 'Off' | 'Blocked by the browser'; quiet: boolean; hours: { from: string; to: string }; /** the app's icon count (null: the browser cannot) */ badge?: BadgeSwitch | null; on: { turnOn(): void; turnOff(): void; quiet(): void; hours(h: { from: string; to: string }): void } }) {
   return (
     <>
       <Setting
@@ -260,13 +270,14 @@ export function NotificationsBody({ state, quiet, hours, on }: { state: 'On' | '
         }
       />
       {state === 'On' ? <QuietHoursSetting about="Your local time." on={quiet} hours={hours} events={{ toggle: on.quiet, hours: on.hours }} /> : null}
+      {badge ? <BadgeSetting badge={badge} /> : null}
     </>
   )
 }
 
 /** The phone's: Taska on the Home Screen subscribes for pushes (not on the Home Screen yet: it says so). `push`: what
  * this phone has (null: it cannot have them here). */
-export function PhonePushBody({ standalone, onPhone, phoneHref = '', push = null }: { standalone: boolean; onPhone(): void; /** Use on your phone's address */ phoneHref?: string; push?: { sub: boolean; blocked: boolean; quiet: boolean; hours: { from: string; to: string }; on: { turnOn(): void; turnOff(): void; quiet(): void; hours(h: { from: string; to: string }): void } } | null }) {
+export function PhonePushBody({ standalone, onPhone, phoneHref = '', push = null }: { standalone: boolean; onPhone(): void; /** Use on your phone's address */ phoneHref?: string; push?: { sub: boolean; blocked: boolean; quiet: boolean; hours: { from: string; to: string }; badge?: BadgeSwitch | null; on: { turnOn(): void; turnOff(): void; quiet(): void; hours(h: { from: string; to: string }): void } } | null }) {
   if (push)
     return (
       <>
@@ -286,6 +297,7 @@ export function PhonePushBody({ standalone, onPhone, phoneHref = '', push = null
           }
         />
         {push.sub ? <QuietHoursSetting about="Alerts held until it ends." on={push.quiet} hours={push.hours} events={{ toggle: push.on.quiet, hours: push.on.hours }} /> : null}
+        {push.badge ? <BadgeSetting badge={push.badge} /> : null}
       </>
     )
   return (

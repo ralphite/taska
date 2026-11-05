@@ -107,6 +107,15 @@ self.addEventListener('push', (e) => {
       } catch {
         list = []
       }
+      // the app's icon counts what needs you everywhere (D115 #19), unless turned off in Settings › Notifications
+      if ('setAppBadge' in self.navigator) {
+        const pref = await caches
+          .open('taska-prefs')
+          .then((c) => c.match('/taska-prefs/badge'))
+          .then((r) => (r ? r.text() : 'on'))
+          .catch(() => 'on')
+        await (pref !== 'off' && list.length ? self.navigator.setAppBadge(list.length) : self.navigator.clearAppBadge()).catch(() => {})
+      }
       const one = list.length === 1 ? list[0] : undefined
       const say = (x: Need) => `${x.code} ${WORDS[x.kind] || 'needs you'} · ${x.ptitle || x.project}`
       const first = list[0]

@@ -12,3 +12,6 @@ export const OnQuietHoursChanged: Story = { ...onDesk('notifications', { notific
 export const OnQuietHoursOff: Story = { ...onDesk('notifications', { notifications: { state: 'On', quiet: false } }), name: 'On, quiet hours off' }
 export const NotificationsOffQuietHours: Story = { ...onDesk('notifications', { notifications: { state: 'Off', quiet: true } }), name: 'Off' }
 export const NotificationsBlocked: Story = { ...onDesk('notifications', { notifications: { state: 'Blocked by the browser', quiet: false } }), name: 'Blocked by the browser' }
+/** the app's icon count turned off (D115 #19; where the browser cannot show one, the switch is not there) */
+export const BadgeOff: Story = { ...onDesk('notifications', { badgeOff: true }), name: 'On, no count on the app icon' }
+export const NoBadge: Story = { ...onDesk('notifications', { noBadge: true }), name: 'On, a browser with no app icon count' }

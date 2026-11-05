@@ -41,6 +41,16 @@ const QUIET: QuietHours = { from: '22:00', to: '08:00' }
 const TIME = /^([01]\d|2[0-3]):[0-5]\d$/
 const minutesOf = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3))
 
+/** The app's icon count on or off, where the service worker reads it when a push comes (it has no localStorage). */
+export const BADGE_PREF = '/taska-prefs/badge'
+async function keepBadgePref(on: boolean): Promise<void> {
+  try {
+    if (typeof caches !== 'undefined') await (await caches.open('taska-prefs')).put(BADGE_PREF, new Response(on ? 'on' : 'off'))
+  } catch {
+    /* no Cache Storage here: the worker counts as on */
+  }
+}
+
 /** Whether `now` (minutes after midnight) is in the hours: a span may run over midnight; from equal to to is none. */
 export function inQuiet(h: QuietHours, now: number): boolean {
   const [a, b] = [minutesOf(h.from), minutesOf(h.to)]
@@ -62,11 +72,38 @@ export class Notices {
     this.kv = kv
     this.changed = changed
     this.d = d
-    // the projects listed again: what newly needs you in the others
-    if (d)
+    // the projects listed again: what newly needs you in the others; the app's icon counts what needs you everywhere
+    if (d) {
       this.stop = d.data.subscribe((s, was) => {
         if (s.projects && s.projects !== was.projects) this.projects(s.projects, d.slug())
+        if (s.needs !== was.needs) this.badge()
       })
+      this.badge()
+      void keepBadgePref(this.badgeOn())
+    }
+  }
+
+  // ---- the app's icon (D115 #19): the number of things that need you in every project, where the browser can
+
+  static badgeable(): boolean {
+    return typeof navigator !== 'undefined' && 'setAppBadge' in navigator
+  }
+
+  badgeOn(): boolean {
+    return this.read('badge', true)
+  }
+
+  setBadgeOn(on: boolean): void {
+    this.kv.setJson('taska.notifications.badge', on)
+    this.changed()
+    this.badge()
+    void keepBadgePref(on)
+  }
+
+  private badge(): void {
+    if (!Notices.badgeable()) return
+    const n = this.d?.data.getState().needs.length ?? 0
+    void (this.badgeOn() && n ? navigator.setAppBadge(n) : navigator.clearAppBadge()).catch(() => {})
   }
 
   private read<T>(key: string, fallback: T): T {
