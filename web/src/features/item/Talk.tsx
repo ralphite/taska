@@ -214,7 +214,7 @@ function MsgView({ it, x, env, on, facts, docs, code, done, ver, gone, read }: {
             ) : null}
           </span>
           {src && !ver?.old && !src.moved ? (
-            <button aria-label={`More for ${inputCode(src.id)}`} onClick={(e) => on.inputMore(src.id, e.currentTarget)} className={`${DC_BTN} min-w-11 justify-center lg:order-first lg:opacity-0 lg:group-hover/msg:opacity-100 lg:focus-visible:opacity-100`}>
+            <button aria-label={`More for ${inputCode(src.id)}`} onClick={(e) => on.inputMore(src.id, e.currentTarget)} className={`${DC_BTN} min-w-11 justify-center order-first lg:opacity-0 lg:group-hover/msg:opacity-100 lg:focus-visible:opacity-100`}>
               <Icon n="more" c="size-3.5" />
             </button>
           ) : null}
