@@ -97,5 +97,3 @@ export const PhHead = ({ title, onBack }: { title: string; onBack(): void }) => 
 )
 
 export const PhLabel = ({ children }: { children: ReactNode }) => <div className="flex min-w-0 items-center gap-1.5 px-5 pt-6 pb-1.5 text-xs font-semibold text-zinc-500 dark:text-zinc-400">{children}</div>
-
-export const PhNote = ({ children }: { children: ReactNode }) => <p className="px-5 pt-2 text-xs leading-snug text-zinc-500 dark:text-zinc-400">{children}</p>

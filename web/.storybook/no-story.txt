@@ -1,0 +1,2 @@
+# Components that need no story (scripts/story-coverage.mjs), one per line: path under src/#Name: why.
+# Keep this short; a story is the better answer.

@@ -1,5 +1,6 @@
 // The page's architecture rules that a lint rule cannot say (docs/architecture.md; the import rules are in
-// eslint.config.js). Prints each break and exits 1 when there is one.
+// eslint.config.js), and that every component the page draws is drawn by a story (scripts/story-coverage.mjs).
+// Prints each break and exits 1 when there is one.
 //
 //   node scripts/check-architecture.mjs          check src/
 //   node scripts/check-architecture.mjs --self   also plant one break of each rule in a copy and see each is caught
@@ -8,6 +9,7 @@ import { cpSync, existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, sta
 import { tmpdir } from 'node:os'
 import { basename, dirname, join, relative, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { readAllow, storyCoverage } from './story-coverage.mjs'
 
 const WEB = join(dirname(fileURLToPath(import.meta.url)), '..')
 const MAX_LINES = 600
@@ -22,8 +24,8 @@ function files(dir) {
   return out
 }
 
-/** Every break of the rules in the page's source folder. */
-export function check(src) {
+/** Every break of the rules in the page's source folder; `allow`: the components that need no story. */
+export function check(src, allow = readAllow(WEB)) {
   const breaks = []
   const all = files(src)
   const rel = (p) => relative(src, p).split(sep).join('/')
@@ -73,6 +75,8 @@ export function check(src) {
     if (!/^(features|pages|ui)\//.test(r) || r === 'pages/App.tsx' || !r.endsWith('.tsx') || r.endsWith('.stories.tsx') || r.endsWith('Container.tsx')) continue
     if (!existsSync(p.replace(/\.tsx$/, '.stories.tsx'))) say(p, `no ${basename(p, '.tsx')}.stories.tsx next to it`)
   }
+  // every component the page draws is drawn by a story, directly or through what the story renders
+  breaks.push(...storyCoverage(src, allow))
   return breaks
 }
 
@@ -84,13 +88,15 @@ function selfCheck() {
     const plant = {
       'extra.css': '.x { color: red }\n',
       'features/list/Planted.tsx': 'export const Planted = () => <div style={{ color: "#ff0000" }} />\n',
+      'features/list/PlantedContainer.tsx': "import { Planted } from './Planted'\nexport function PlantedContainer() {\n  return <Planted />\n}\n",
       'stories/Planted.stories.tsx': "import { App } from '../pages/App'\nexport default { title: 'Components/X' }\nexport const A = {\n  play: async () => {},\n  render: () => <App />,\n}\n",
       'model/planted.ts': 'let count = 0\nexport const seen = new Map()\nexport const up = () => ++count\n',
       'ui/Long.tsx': 'export const Long = () => null\n' + '// filler\n'.repeat(MAX_LINES + 1),
       'features/list/leans.ts': "import { Sidebar } from '../sidebar/Sidebar'\nimport { Header } from '../../pages/Header'\nexport const s = [Sidebar, Header]\n",
     }
     for (const [p, text] of Object.entries(plant)) writeFileSync(join(tmp, p), text)
-    const got = check(tmp).join('\n')
+    const allow = 'ui/Gone.tsx#Gone: planted\nui/Icon.tsx#Icon: planted\nui/Grip.tsx#Grip\n'
+    const got = check(tmp, allow).join('\n')
     const want = [
       'extra.css: a stylesheet',
       'features/list/Planted.tsx: a raw colour',
@@ -102,8 +108,17 @@ function selfCheck() {
       'ui/Long.tsx: 603 lines',
       'features/list/leans.ts: imports features/sidebar/Sidebar',
       'features/list/leans.ts: imports pages/Header',
+      'features/list/Planted.tsx: Planted is drawn by no story',
+      'features/list/PlantedContainer.tsx: PlantedContainer is drawn by no story (a container: it renders features/list/Planted.tsx#Planted',
+      'no-story.txt line 1: ui/Gone.tsx#Gone is not a component any more',
+      'no-story.txt line 2: ui/Icon.tsx#Icon has a story now',
+      'no-story.txt line 3: write it as',
     ]
     const missed = want.filter((w) => !got.includes(w))
+    // a story that renders the new component covers it, and its container with it
+    writeFileSync(join(tmp, 'features/list/Planted.stories.tsx'), "import { Planted } from './Planted'\nexport default { title: 'Components/X' }\nexport const A = { render: () => <Planted /> }\n")
+    const after = storyCoverage(tmp, '').filter((b) => b.includes('Planted'))
+    missed.push(...after.map((b) => `a story renders it now, yet: ${b}`))
     return missed
   } finally {
     rmSync(tmp, { recursive: true, force: true })

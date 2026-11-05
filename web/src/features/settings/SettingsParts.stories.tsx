@@ -1,13 +1,13 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frame, Hold } from '../../stories/Frames'
 import { act } from '../../stories/acts'
-import { CopyBtn, Loading, Part, PhHead, PhLabel, PhNote, PH_GROUP, Setting, TextBox, Toggle } from './SettingsParts'
+import { CopyBtn, Loading, Part, PhHead, PhLabel, PH_GROUP, Setting, TextBox, Toggle } from './SettingsParts'
 
 const meta: Meta = { title: 'Components/Settings, help and parts/Settings/The page and its parts' }
 export default meta
 type Story = StoryObj
 
-/** A part with text to copy, a setting with a switch, Loading; and the phone's head, label, group and note. */
+/** A part with text to copy, a setting with a switch, Loading; and the phone's head, label and group. */
 export const Parts: Story = {
   name: "Its parts: a part to copy from, a setting with a switch, the phone's head and rows",
   render: () => (
@@ -30,7 +30,6 @@ export const Parts: Story = {
             <div className="min-h-12 px-3.5 py-2.5 text-[15px]">Projects</div>
             <div className="min-h-12 px-3.5 py-2.5 text-[15px]">Use on your phone</div>
           </div>
-          <PhNote>Create, rename, delete, or restore.</PhNote>
         </div>
       </Frame>
     </div>

@@ -111,7 +111,10 @@ Rules, checked by `web/eslint.config.js` (imports, page lookups) and `web/script
 6. Styling: Tailwind utility classes only; the one CSS file imports Tailwind and declares the variants; no raw
    colours, no `<style>`.
 7. Every presentational component has a story file next to it: its states side by side, drawn from props (static);
-   demos (played) are under `Demos/` and are the only stories with `play`; no story loads the app.
+   demos (played) are under `Demos/` and are the only stories with `play`; no story loads the app. Every exported
+   component under `ui/` and `features/` is drawn by some story, directly or through what the story renders (read
+   from the source by `web/scripts/story-coverage.mjs`); a container (`*Container`, or in `app/`) is covered when
+   everything it renders is. The few that need no story are listed with a reason in `web/.storybook/no-story.txt`.
 8. Rendering is pure: no ref read or written while drawing, no `Date.now()` (a project's times are told against
    `ProjectModel.at`, when its data last came or you last changed something).
 
