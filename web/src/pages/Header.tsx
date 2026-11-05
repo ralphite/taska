@@ -2,8 +2,6 @@
 // around) and the Filters button the list's views end with; on the phone one head (the menu with the project's name,
 // the agent pill, search) and the tabs under it. Props only.
 
-import { useLayoutEffect, useRef } from 'react'
-import { flushSync } from 'react-dom'
 import type { AgentTone } from '../model/agents'
 import { TAB_WORD, type Tab } from '../model/words'
 import { ProjTile } from '../ui/bits'
@@ -131,97 +129,46 @@ export function ProjectBar({
   )
 }
 
-/** The phone's head over the list (menu, name, agent, search), or the list's words while they are searched (the
- * desktop has no head over the list: its search is the dialog, its filter at the end of the views' row, F479). */
+/** The phone's head over the list: menu, name, agent, and Search, which opens the search page (the desktop has no
+ * head over the list: its search is the dialog, its filter at the end of the views' row, F479). */
 export function ListHead({
   title,
   otherNeeds,
-  searching,
-  q,
-  placeholder,
   agent,
   notSaved,
   hidden,
-  searchRef,
   on,
 }: {
   title: string
   otherNeeds: boolean
-  searching: boolean
-  q: string
-  placeholder: string
   agent: AgentInfo | null
   notSaved: number
   hidden?: boolean
-  /** the search field's element */
-  searchRef?: (el: HTMLInputElement | null) => void
   on: {
     menu(): void
     agents(): void
     notSaved(from: HTMLElement): void
-    search(on: boolean): void
-    query(q: string): void
-    clear(): void
+    search(): void
   }
 }) {
-  const showSearch = searching || !!q
-  const input = useRef<HTMLInputElement | null>(null)
-  useLayoutEffect(() => {
-    const el = input.current
-    if (el && el.value !== q && document.activeElement !== el) el.value = q
-  })
   return (
     <header data-part="list-head" data-tip-side="bottom" hidden={hidden} className="flex h-14 shrink-0 items-center gap-1 px-2">
-      <div hidden={showSearch} className="contents">
-        <button onClick={on.menu} aria-label="Projects and settings" className="flex h-12 min-w-0 flex-1 items-center gap-2.5 rounded-xl px-2.5 text-left data-pressed:bg-zinc-100 dark:data-pressed:bg-zinc-800">
-          <span className="relative text-zinc-700 dark:text-zinc-300">
-            <Icon n="menu" c="size-6" />
-            <span hidden={!otherNeeds} title="Another project needs you" className="absolute -top-1 -right-1 rounded-full bg-white dark:bg-zinc-950">
-              <StateIcon s="wait" cls="size-3" />
-            </span>
+      <button onClick={on.menu} aria-label="Projects and settings" className="flex h-12 min-w-0 flex-1 items-center gap-2.5 rounded-xl px-2.5 text-left data-pressed:bg-zinc-100 dark:data-pressed:bg-zinc-800">
+        <span className="relative text-zinc-700 dark:text-zinc-300">
+          <Icon n="menu" c="size-6" />
+          <span hidden={!otherNeeds} title="Another project needs you" className="absolute -top-1 -right-1 rounded-full bg-white dark:bg-zinc-950">
+            <StateIcon s="wait" cls="size-3" />
           </span>
-          <span className="truncate text-[19px] font-semibold tracking-tight">{title}</span>
-        </button>
-        <NotSavedPill n={notSaved} onOpen={on.notSaved} />
-        <button onClick={on.agents} aria-label="Agents" title={agent?.tip} className="flex h-11 shrink-0 items-center px-1">
-          {agent ? <AgentPill tone={agent.tone} label={agent.label} offline={agent.offline} /> : null}
-        </button>
-        <button
-          onClick={() => {
-            // the field takes the focus in the tap itself, or the phone's keyboard does not come up
-            flushSync(() => on.search(true))
-            input.current?.focus()
-          }}
-          aria-label="Search" className="grid size-11 shrink-0 place-items-center rounded-full text-zinc-500 data-pressed:bg-zinc-100 dark:text-zinc-400 dark:data-pressed:bg-zinc-800">
-          <Icon n="search" c="size-5.5" />
-        </button>
-      </div>
-      <div hidden={!showSearch} className="contents">
-        <label className={`ml-1 flex h-11 min-w-0 flex-1 items-center gap-2 rounded-xl bg-zinc-100 pl-3 dark:bg-zinc-800 ${MUTED}`}>
-          <Icon n="search" c="size-4.5" />
-          <input
-            ref={(el) => {
-              input.current = el
-              searchRef?.(el)
-            }}
-            type="search"
-            autoComplete="off"
-            placeholder={placeholder}
-            defaultValue={q}
-            className="min-w-0 flex-1 bg-transparent text-base text-zinc-900 outline-none placeholder:text-zinc-500 dark:placeholder:text-zinc-400 dark:text-zinc-100 [&::-webkit-search-cancel-button]:hidden"
-            onInput={(e) => on.query(e.currentTarget.value)}
-            onFocus={() => !searching && on.search(true)}
-          />
-          <button onClick={on.clear} aria-label="Clear search" className="group -mr-1 grid size-11 shrink-0 place-items-center rounded-full">
-            <span className="grid size-5 place-items-center rounded-full bg-zinc-400 text-white group-hover:bg-zinc-500 dark:bg-zinc-600 dark:text-zinc-900 dark:group-hover:bg-zinc-500">
-              <Icon n="x" c="size-3" sw="3" />
-            </span>
-          </button>
-        </label>
-        <button onClick={() => on.search(false)} className="h-11 shrink-0 px-2.5 text-[15px] font-medium text-blue-600 dark:text-blue-400">
-          Cancel
-        </button>
-      </div>
+        </span>
+        <span className="truncate text-[19px] font-semibold tracking-tight">{title}</span>
+      </button>
+      <NotSavedPill n={notSaved} onOpen={on.notSaved} />
+      <button onClick={on.agents} aria-label="Agents" title={agent?.tip} className="flex h-11 shrink-0 items-center px-1">
+        {agent ? <AgentPill tone={agent.tone} label={agent.label} offline={agent.offline} /> : null}
+      </button>
+      <button onClick={on.search} aria-label="Search" className="grid size-11 shrink-0 place-items-center rounded-full text-zinc-500 data-pressed:bg-zinc-100 dark:text-zinc-400 dark:data-pressed:bg-zinc-800">
+        <Icon n="search" c="size-5.5" />
+      </button>
     </header>
   )
 }

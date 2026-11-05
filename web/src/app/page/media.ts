@@ -81,11 +81,10 @@ export class Media {
     return this.d.route.getState().layers.includes('viewer')
   }
 
-  /** A voice note's words in their sheet, word for word and tidied (F568): the ones kept with its input; asked for
-   * only when they are not in yet. Never worked out again. */
+  /** A voice note's words in their sheet on the phone, word for word and tidied (F568; the desktop shows them under
+   * the pointer, B640): the ones kept with its input; asked for only when they are not in yet. Never worked out again. */
   words(slug: string, f: string): void {
-    const show = (w: { heard?: string; tr?: string }) =>
-      this.d.sheets.open({ kind: 'as-said', heard: w.heard || '', tr: w.tr || '' }, this.d.desk() ? { pop: true, focus: false } : {})
+    const show = (w: { heard?: string; tr?: string }) => this.d.sheets.open({ kind: 'as-said', heard: w.heard || '', tr: w.tr || '' })
     const kept = this.d.kept(slug, f)
     if (kept?.tr) return show(kept)
     void this.d.api.words(slug, f).then(show, () => show({}))

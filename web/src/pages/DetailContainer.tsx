@@ -119,7 +119,7 @@ export function DetailContainer({ route, place, hidden, full = false, footRoom =
         ) : null
       }
     >
-      {compose ? null : side === 'deleted' ? <DeletedPickContainer slug={route.slug} /> : <NoSelection side={side} />}
+      {compose || !side ? null : side === 'deleted' ? <DeletedPickContainer slug={route.slug} /> : <NoSelection side={side} />}
     </PaneFrame>
   )
 }

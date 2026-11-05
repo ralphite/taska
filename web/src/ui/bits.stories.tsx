@@ -15,7 +15,7 @@ export const Bits: Story = {
       {() => (
         <States
           items={[
-            ['quiet words, counts, a draft', <div className="flex items-center gap-3 p-3 text-xs"><Soft>Later</Soft><Count icon="comment" n={4} label="4 messages" /><DraftMark /><DraftMark small /></div>],
+            ['quiet words, counts, a draft', <div className="flex items-center gap-3 p-3 text-xs"><Soft>Later</Soft><Count icon="comment" n={4} label="4 messages" /><DraftMark /></div>],
             ['a section head', <SectionHead text="Needs you" right={<span className="text-xs text-zinc-400">3</span>} />],
             ['an empty list', <Empty>Nothing needs you.</Empty>],
             ['a picture', <div className="size-20 p-3"><Pic src={PICTURE} alt="A screenshot" cls="size-full object-contain" /></div>],

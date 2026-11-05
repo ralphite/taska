@@ -1,10 +1,10 @@
 // A voice note's words as said, and what you said's earlier versions (T591: Menus and sheets > Sheets): the page's
-// own sheets, beside the note on the desktop (Original words), a sheet on the phone. Its menu is in
+// own sheets: Original words on the phone (the desktop shows them under the pointer), the history on both. Its menu is in
 // stories/OtherMenus.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frames } from '../../stories/Frames'
 import { input, T } from '../../stories/fixtures'
-import { AT_BUTTON, opened } from '../../stories/menuFixtures'
+import { opened } from '../../stories/menuFixtures'
 import { asSaidSheet, historySheet } from './InputSheets'
 
 export default { title: 'Components/Around the page/Menus and sheets/Sheets/An input: its words and history' } satisfies Meta
@@ -20,8 +20,9 @@ const r = input({
   ],
 })
 
-/** Before its words were tidied: as the speech model heard them. */
-const sheetAt = (heard: string, tr: string, height = 360) => () => <Frames height={height} deskWidth={900} phoneWidth={393}>{(layout) => opened(asSaidSheet(heard, tr), layout === 'desk', { look: layout === 'desk' ? { pop: true, at: AT_BUTTON } : {} })}</Frames>
+/** Before its words were tidied: as the speech model heard them. Only the phone has this sheet (the desktop shows the
+ * words under the pointer, B640). */
+const sheetAt = (heard: string, tr: string, height = 360) => () => <Frames height={height} desk={false} phoneWidth={393}>{() => opened(asSaidSheet(heard, tr), false)}</Frames>
 export const AsSaid: Story = { name: 'Original words: word for word and tidied', render: sheetAt('Keep the filter, um, in the export, and, uh, the sort. The sort too.', 'Keep the filter and the sort in the export.', 440) }
 export const AsSaidNothingTidied: Story = { name: 'Original words: nothing tidied', render: sheetAt('', 'Keep the filter in the export.') }
 /** Each version, the latest first, with when and how it changed. */

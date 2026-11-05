@@ -1,5 +1,5 @@
 // The item's pane while its item is loading, when it is not in this project or Taska is out of reach, and with nothing
-// picked (beside the items, Documents or Activity).
+// picked beside Documents or Activity.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frames } from '../../stories/Frames'
 import { PaneFrame } from '../../ui/PaneFrame'
@@ -28,8 +28,7 @@ const missing = (what: string, loading: boolean, away: boolean): Story => ({
 export const LoadingAfterAReload: Story = { ...missing('F012', true, false), name: 'Loading (after a reload)' }
 export const TaskaOutOfReach: Story = { ...missing('F012', true, true), name: 'Taska out of reach' }
 export const NotInThisProject: Story = { ...missing('F099', false, false), name: 'Not in this project' }
-/** Nothing picked: the desktop's pane beside the list (on the phone the list shows instead). */
+/** Nothing picked: the desktop's pane beside a side list (on the phone the list shows instead). */
 const deskPane = (node: React.ReactNode): Story => ({ render: () => <Frames phone={false} deskWidth={720} height={260}>{() => node}</Frames> })
-export const NothingPicked: Story = { ...deskPane(<NoSelection side={null} />), name: 'Nothing picked' }
 export const NothingPickedDocuments: Story = { ...deskPane(<NoSelection side="docs" />), name: 'Nothing picked: documents' }
 export const NothingPickedActivity: Story = { ...deskPane(<NoSelection side="log" />), name: 'Nothing picked: activity' }

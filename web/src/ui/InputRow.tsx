@@ -45,7 +45,6 @@ const ROW =
 /** gone to: lit up for a moment */
 const LIT = 'bg-blue-50 dark:bg-blue-400/10'
 /** ⋯ on the phone: 44px */
-const MORE = '-mr-2 flex size-11 items-center justify-center text-zinc-400 active:text-zinc-800 dark:active:text-zinc-200'
 /** under the pointer only on the desktop (or while the keys are in the row); always on the phone */
 const HOVER = 'lg:opacity-0 lg:transition-opacity lg:group-focus-within/row:opacity-100 lg:group-hover/row:opacity-100'
 const LINK = 'text-blue-600 hover:underline dark:text-blue-400'
@@ -208,17 +207,12 @@ function Words({ x, text, on }: { x: InputLine; text(cut: boolean): ReactNode; o
   )
 }
 
-/** Its buttons: on the desktop Voice and Comment as the page's other places have them (PlaceVoice; recording, its
- * strip: ✕, the time and level, ✓ where Voice was), and ⋯ beside them; on the phone ⋯ alone, or none where the row
- * swipes (D115 #42: a long press opens the menu). */
-function RowButtons({ x, rec, swiped, on }: { x: InputLine; rec: ReactNode | null; swiped: boolean; on: InputRowEvents }) {
+/** Its buttons, on the desktop: Voice and Comment as the page's other places have them (PlaceVoice; recording, its
+ * strip: ✕, the time and level, ✓ where Voice was), and ⋯ beside them. The phone has none: the row swipes, and a long
+ * press opens the menu (D115 #42, r1059). */
+function RowButtons({ x, rec, on }: { x: InputLine; rec: ReactNode | null; on: InputRowEvents }) {
   const r = x.r
   if (x.became.k === 'moved') return null
-  const more = (cls: string) => (
-    <button title="More" aria-label={`More for ${x.code}`} onClick={(e) => on.menu(r.id, e.currentTarget)} className={cls}>
-      <Icon n="more" c="size-4" sw="2" />
-    </button>
-  )
   return (
     <>
       <span className={`hidden items-center gap-1 lg:flex ${rec ? '' : HOVER}`}>
@@ -230,9 +224,10 @@ function RowButtons({ x, rec, swiped, on }: { x: InputLine; rec: ReactNode | nul
             on={{ say: () => on.voice?.(r.id), comment: () => on.append?.(r.id), check: () => on.voice?.(r.id), cancel: () => on.discard?.() }}
           />
         ) : null}
-        {more(PLACE_BUTTON)}
+        <button title="More" aria-label={`More for ${x.code}`} onClick={(e) => on.menu(r.id, e.currentTarget)} className={PLACE_BUTTON}>
+          <Icon n="more" c="size-4" sw="2" />
+        </button>
       </span>
-      {swiped ? null : <span className="lg:hidden">{more(MORE)}</span>}
     </>
   )
 }
@@ -277,7 +272,7 @@ export function InputRow({ x, words, text, files, lit = false, rec = null, rowRe
           ) : null}
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
-          <RowButtons x={x} rec={rec} swiped={!!swipe} on={on} />
+          <RowButtons x={x} rec={rec} on={on} />
         </div>
       </header>
       {r.text ? <Words x={x} text={text} on={on} /> : null}

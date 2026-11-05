@@ -233,10 +233,10 @@ export function FileRows({ files, cls = '', ...rest }: { files: FileRef[]; cls?:
 }
 
 /** A voice note under a comment's words in a document's thread: one small line: play, its length, the original words
- * (the phone's button; on the desktop, pointing at play shows them). `bare`: the phone has them in a menu instead.
+ * (the phone's button; on the desktop, pointing at play shows them).
  * (In an item's talk your voice notes are in your bubble: VoiceBubble.) */
-export function VoiceLine({ files, url, play, tidy, bare = false, on }: { files: FileRef[]; url(f: string): string; play(src: string): PlayState; tidy: boolean; bare?: boolean; on: FileEvents }) {
-  const words = tidy && !bare
+export function VoiceLine({ files, url, play, tidy, on }: { files: FileRef[]; url(f: string): string; play(src: string): PlayState; tidy: boolean; on: FileEvents }) {
+  const words = tidy
   return (
     <>
       {files.filter(isAudio).map((f) => {

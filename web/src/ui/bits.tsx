@@ -107,9 +107,9 @@ export const NeedsCount = ({ n }: { n: number }) => {
   )
 }
 
-export const DraftMark = ({ small = false }: { small?: boolean }) => (
+export const DraftMark = () => (
   <span data-draft className="inline-flex shrink-0 items-center gap-1 font-semibold text-blue-600 dark:text-blue-400">
-    <Icon n="pencil" c={small ? 'size-2.5' : 'size-3'} sw="2.25" />
+    <Icon n="pencil" c="size-3" sw="2.25" />
     Draft
   </span>
 )

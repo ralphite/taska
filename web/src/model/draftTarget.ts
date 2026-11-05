@@ -1,11 +1,10 @@
-// What a draft is written to: a new input, a new rule, a reply on an item, a comment on a document, an edit of
+// What a draft is written to: a new input, a reply on an item, a comment on a document, an edit of
 // something you said (or details added to it), a correction in a voice note's words, an edit of one of your comments,
 // your transcription rules. The browser keeps drafts under a short key ("new", "F12", "doc 4", "edit r12", ...): that
 // key is made and read here only, so everything else works with what it means.
 
 export type DraftTarget =
   | { kind: 'new' }
-  | { kind: 'rule' }
   | { kind: 'reply'; code: string }
   | { kind: 'doc'; d: number }
   | { kind: 'amend'; mode: 'edit' | 'append'; id: string }
@@ -24,7 +23,6 @@ export function draftKey(t: DraftTarget): DraftKey {
   const k = (() => {
     switch (t.kind) {
       case 'new':
-      case 'rule':
       case 'prefs':
         return t.kind
       case 'reply':
@@ -47,7 +45,7 @@ export function draftKey(t: DraftTarget): DraftKey {
 }
 
 export function draftTarget(key: string): DraftTarget {
-  if (key === 'new' || key === 'rule' || key === 'prefs') return { kind: key }
+  if (key === 'new' || key === 'prefs') return { kind: key }
   if (/^[A-Z]\d+$/.test(key)) return { kind: 'reply', code: key }
   let m = /^doc (\d+)$/.exec(key)
   if (m) return { kind: 'doc', d: Number(m[1]) }
@@ -80,8 +78,6 @@ export function draftName(key: string): string {
   switch (t.kind) {
     case 'new':
       return 'a new input'
-    case 'rule':
-      return 'a new rule'
     case 'reply':
       return t.code
     case 'doc':

@@ -18,6 +18,7 @@ const projectOn = acts('Project menu', ['open', 'settings', 'rename', 'remove'])
 
 /** A message's ⋯: hide it from the talk. */
 export const MessageMenu: Story = { ...both((desk) => opened(messageMenuSheet(act('Message menu: hide')), desk, { look: desk ? { pop: true, at: AT_BUTTON } : {} }), 320), name: 'Message' }
-/** The sidebar's right-click on the project you are in. */
-export const ProjectMenuHere: Story = { ...both((desk) => opened(projectMenuSheet({ here: true, slug: 'taska', title: 'taska', tone: PROJECT_TONES[0], open: 24, settingsKeys: keysShown('settings') }, projectOn), desk, { look: desk ? { pop: true, at: AT_POINTER(40, 120) } : {} }), 360), name: 'This project' }
-export const ProjectMenuOther: Story = { ...both((desk) => opened(projectMenuSheet({ here: false, ...home, settingsKeys: keysShown('settings') }, projectOn), desk, { look: desk ? { pop: true, at: AT_POINTER(40, 160) } : {} }), 360), name: 'Another project' }
+/** The sidebar's right-click on the project you are in: the desktop only (the phone's projects have no menu). */
+const deskOnly = (draw: () => ReturnType<typeof opened>): Story => ({ render: () => <Frames height={360} deskWidth={900} phone={false}>{() => draw()}</Frames> })
+export const ProjectMenuHere: Story = { ...deskOnly(() => opened(projectMenuSheet({ here: true, slug: 'taska', title: 'taska', tone: PROJECT_TONES[0], open: 24, settingsKeys: keysShown('settings') }, projectOn), true, { look: { pop: true, at: AT_POINTER(40, 120) } })), name: 'This project' }
+export const ProjectMenuOther: Story = { ...deskOnly(() => opened(projectMenuSheet({ here: false, ...home, settingsKeys: keysShown('settings') }, projectOn), true, { look: { pop: true, at: AT_POINTER(40, 160) } })), name: 'Another project' }

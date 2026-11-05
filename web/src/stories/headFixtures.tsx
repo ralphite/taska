@@ -33,8 +33,6 @@ export interface HeadHere {
   /** how long Taska has not answered */
   away?: number
   notSaved?: number
-  /** the phone's search is open */
-  searching?: boolean
   /** another project needs you (the Needs you mark on the phone's menu) */
   otherNeeds?: boolean
   /** the desktop's filters opened */
@@ -61,7 +59,6 @@ function LiveHead({ desk, h }: { desk: boolean; h: HeadHere }) {
   const [awayTab, setAwayTab] = useState(!!h.awayTab)
   const [list, setList] = useState<ListQuery>({ ...NO_FILTERS, ...h.list })
   const [filtersOpen, setFiltersOpen] = useState(!!h.filtersOpen)
-  const [searching, setSearching] = useState(!!h.searching)
   const counts = h.loading ? null : tabCounts(m, tab, list, desk)
   const agent = h.loading ? null : agentInfo(m, h.away ?? 0)
   const set = filtersSet(tab, list)
@@ -88,19 +85,14 @@ function LiveHead({ desk, h }: { desk: boolean; h: HeadHere }) {
       <ListHead
         title="Shop"
         otherNeeds={!!h.otherNeeds}
-        searching={searching}
-        q={list.q}
-        placeholder="Search items"
         agent={agent}
         notSaved={h.notSaved ?? 0}
         on={{
           menu: on.menu,
           agents: on.agents,
           notSaved: on.notSaved,
-          // Search opens the phone's search (its own stories); off, the head's search closes and its words go
-          search: (open) => (open ? on.search() : (setSearching(false), setList({ ...list, q: '' }))),
-          query: (q) => setList({ ...list, q }),
-          clear: () => setList({ ...list, q: '' }),
+          // Search opens the phone's search (its own stories)
+          search: on.search,
         }}
       />
       <PhoneTabs tabs={phoneTabs(counts, tab)} filtersSet={set.length > 0} showFilter={tab !== 'inputs'} on={{ tab: toTab, filters: on.filters }} />

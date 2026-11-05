@@ -148,12 +148,9 @@ function ListPage({ onSearch }: { onSearch(): void }) {
       <ListHead
         title="Shop"
         otherNeeds={false}
-        searching={false}
-        q=""
-        placeholder=""
         agent={agentInfo(SHOP, 0)}
         notSaved={0}
-        on={{ menu() {}, agents() {}, notSaved() {}, search: onSearch, query() {}, clear() {} }}
+        on={{ menu() {}, agents() {}, notSaved() {}, search: onSearch }}
       />
       <PhoneTabs tabs={phoneTabs(tabCounts(SHOP, 'items', NO_FILTERS, false), 'items')} filtersSet={false} showFilter on={{ tab() {}, filters() {} }} />
       <div className="flex min-h-0 flex-1 flex-col">{listOf(ITEMS, 'items', {}, false)}</div>

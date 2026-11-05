@@ -216,20 +216,14 @@ function PhoneLayout({ route }: { route: ProjectRoute }) {
         <ListHead
           title={title}
           otherNeeds={otherNeeds}
-          searching={false}
-          q={route.list.q}
-          placeholder="Search items"
           agent={agent}
           notSaved={notSaved}
           hidden={!under}
-          searchRef={app.fields.ref('search')}
           on={{
             menu: () => app.nav.drawer(true),
             agents: () => app.sheets.open({ kind: 'agents' }, { tall: true, wide: true }),
             notSaved: () => app.sheets.open({ kind: 'not-saved' }, { focus: false }),
-            search: (on) => (on ? app.finder.open() : app.nav.search(false)),
-            query: (q) => app.nav.setList({ q }),
-            clear: () => app.nav.setList({ q: '' }),
+            search: () => app.finder.open(),
           }}
         />
         <PhoneTabs tabs={tabs} filtersSet={phoneSet.length > 0} showFilter={route.tab !== 'inputs'} hidden={!under} on={{ tab: (t) => app.nav.tab(t), filters: () => app.sheets.open({ kind: 'filters' }, { focus: false }) }} />

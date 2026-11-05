@@ -3,7 +3,7 @@ import { draftKey, draftName, draftTarget, keyOf } from './draftTarget'
 
 describe('draft targets', () => {
   it('read the keys the browser keeps, and make them again as they were', () => {
-    for (const k of ['new', 'rule', 'prefs', 'F12', 'doc 4', 'edit r12', 'append r12', 'correct r3', 'dc 5 12', 'dc 12', 'sending abc1'])
+    for (const k of ['new', 'prefs', 'F12', 'doc 4', 'edit r12', 'append r12', 'correct r3', 'dc 5 12', 'dc 12', 'sending abc1'])
       expect(draftKey(draftTarget(k))).toBe(k)
     expect(draftTarget('doc 4')).toEqual({ kind: 'doc', d: 4 })
     expect(draftTarget('edit r12')).toEqual({ kind: 'amend', mode: 'edit', id: 'r12' })
@@ -14,7 +14,6 @@ describe('draft targets', () => {
   })
   it('name them as the page says them', () => {
     expect(draftName('new')).toBe('a new input')
-    expect(draftName('rule')).toBe('a new rule')
     expect(draftName('B12')).toBe('B12')
     expect(draftName('edit r461')).toBe('the edit of #461')
     expect(draftName('append r461')).toBe('the details for #461')
