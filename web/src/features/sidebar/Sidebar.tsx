@@ -3,7 +3,7 @@
 // project's Documents, Activity, Deleted, and Settings; on the desktop a project's card beside it while the pointer is
 // on it (F667). Props only.
 
-import { useRef, type MouseEvent, type ReactNode, type Ref } from 'react'
+import { useLayoutEffect, useRef, type MouseEvent, type ReactNode, type Ref } from 'react'
 import type { ProjectCardFacts } from '../../model/projects'
 import { useOrderDrag } from './orderDrag'
 import { FloatingProjectCard, useProjectCard } from './ProjectCard'
@@ -346,6 +346,22 @@ export function Sidebar(props: SidebarProps) {
 /** The sidebar folded: a narrow rail of the same. */
 export function Rail({ keys, projects, links, composing, settingsOpen, hidden, on }: { keys: SideKeys; projects: SideProject[] | null; links: SideLinkInfo[]; composing: boolean; settingsOpen: boolean; hidden?: boolean; on: SidebarEvents }) {
   const hover = useProjectCard(!!hidden)
+  // the projects more than it holds: its edges fade where more of them are above or below (no scrollbar on the rail)
+  const list = useRef<HTMLDivElement>(null)
+  const edges = () => {
+    const el = list.current
+    if (!el) return
+    el.toggleAttribute('data-up', el.scrollTop > 1)
+    el.toggleAttribute('data-down', el.scrollTop + el.clientHeight < el.scrollHeight - 1)
+  }
+  useLayoutEffect(() => {
+    const el = list.current
+    if (!el || typeof ResizeObserver === 'undefined') return
+    const ro = new ResizeObserver(edges)
+    ro.observe(el)
+    edges()
+    return () => ro.disconnect()
+  })
   const btn = (key: string, inner: ReactNode, title: string, onClick: (e: MouseEvent<HTMLButtonElement>) => void, attrs: Record<string, unknown> = {}) => (
     <button
       key={key}
@@ -371,7 +387,7 @@ export function Rail({ keys, projects, links, composing, settingsOpen, hidden, o
       {btn('search', <Icon n="search" c="size-5" />, `Search · ${keys.search}`, on.search)}
       {btn('new', <Icon n="newinput" c="size-5" />, `New input · ${keys.newInput}`, on.newInput, { 'aria-pressed': composing })}
       <div className="my-1 h-px w-8 bg-zinc-200 dark:bg-zinc-800" />
-      <div onScroll={hover.hide} className="-my-1 flex min-h-0 [scrollbar-width:none] flex-col items-center gap-1 overflow-y-auto outline-none p-1">
+      <div ref={list} onScroll={() => (hover.hide(), edges())} className="-my-1 flex min-h-0 w-full [scrollbar-width:none] flex-col items-center gap-1 overflow-y-auto outline-none py-1 data-down:mask-b-from-[calc(100%-1.5rem)] data-up:mask-t-from-[calc(100%-1.5rem)]">
         {(projects || []).map((p) => (
           <a
             key={p.slug}
@@ -380,7 +396,7 @@ export function Rail({ keys, projects, links, composing, settingsOpen, hidden, o
             aria-current={p.current ? 'page' : undefined}
             onClick={(e) => (p.current ? (e.preventDefault(), on.newInput()) : on.go(p.href, e))}
             aria-label={p.title}
-            className="relative grid size-10 place-items-center rounded-xl hover:bg-zinc-200/60 aria-[current=page]:bg-blue-100 aria-[current=page]:ring-1 aria-[current=page]:ring-blue-300 dark:hover:bg-zinc-800 dark:aria-[current=page]:bg-blue-400/20 dark:aria-[current=page]:ring-blue-400/40"
+            className="relative grid size-10 shrink-0 place-items-center rounded-xl hover:bg-zinc-200/60 focus-visible:outline-2 focus-visible:outline-blue-500 aria-[current=page]:bg-blue-100 aria-[current=page]:ring-1 aria-[current=page]:ring-blue-300 dark:hover:bg-zinc-800 dark:aria-[current=page]:bg-blue-400/20 dark:aria-[current=page]:ring-blue-400/40"
           >
             <ProjTile title={p.title} tone={p.tone} cls="size-7 rounded-lg text-xs" />
             {p.needs ? (

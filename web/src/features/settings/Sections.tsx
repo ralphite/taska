@@ -303,7 +303,7 @@ export function PhonePushBody({ standalone, onPhone, phoneHref = '', push = null
   return (
     <Part
       title={standalone ? 'Notifications not supported' : 'Add Taska to the Home Screen first'}
-      about={standalone ? 'This browser has no push service.' : 'See Use on your phone, then open Taska from the Home Screen and turn notifications on.'}
+      about={standalone ? "This browser can't show notifications." : 'Then open Taska from the Home Screen and turn them on.'}
     >
       {standalone ? null : (
         <a

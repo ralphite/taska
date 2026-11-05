@@ -10,7 +10,7 @@ export const RailFolded: Story = { name: 'As it is', render: () => <div classNam
 /** The sidebar folded to icons: a project under the pointer and from the keys. */
 export const RailLooks: Story = {
   name: 'Pointer, keys',
-  parameters: { pseudo: { hover: ['[data-look="pointer"] #rail a:nth-of-type(1)'], focusVisible: ['[data-look="keys"] #rail a:nth-of-type(1)'] } },
+  parameters: { pseudo: { hover: ['[data-look="pointer"] #rail > div > a:first-child'], focusVisible: ['[data-look="keys"] #rail > div > a:first-child'] } },
   render: () => (
     <div className="flex gap-6 bg-zinc-200 p-6 dark:bg-zinc-800">
       {(['pointer', 'keys'] as const).map((look) => (
