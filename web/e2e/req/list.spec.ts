@@ -73,6 +73,22 @@ test('D115 #21: Later offers Tomorrow, Next week, a day picked; the row then say
   await expect(row(page, 'Ship the export').first()).toContainText(/Later · (Mon|[A-Z][a-z]{2} \d+)/)
 })
 
+test('R6-3 #3: Pick a date is a row like the others; the day picked is said on its right', async ({ page, request }) => {
+  const p = await project(request, { agent: 'new task P1 now Ship the export\n', approve: ['T1'] })
+  await open(page, p, 'T1')
+  await page.getByRole('button', { name: /^Now/ }).filter({ visible: true }).first().click()
+  const sheet = page.locator('[role="dialog"]').filter({ visible: true }).last()
+  // the whole row a button (it opens the system's picker); the day picked as the picker gives it
+  await sheet.getByRole('button', { name: 'Pick a date', exact: true }).click()
+  const d = new Date(Date.now() + 20 * 864e5)
+  const day = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+  await sheet.getByLabel('Later until').fill(day)
+  await expect.poll(async () => p.read('T1')).toContain(`later until ${day}`)
+  await page.getByRole('button', { name: /^Later · / }).filter({ visible: true }).first().click()
+  const said = d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  await expect(page.locator('[role="dialog"]').filter({ visible: true }).last().getByRole('button', { name: /^Pick a date/ })).toContainText(said)
+})
+
 test('D115 #30: work in progress says on its row what its agent last said and how long ago', async ({ page, request }) => {
   const p = await project(request, { agent: 'new task P1 now Ship the export\n', approve: ['T1'], then: 'T1 doing\nT1 progress Testing with three filters\n' })
   await open(page, p)

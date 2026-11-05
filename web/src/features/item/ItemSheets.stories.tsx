@@ -82,3 +82,5 @@ const later = (f: { later: boolean; until: string | null }): Story => ({
 export const LaterChoices: Story = { ...later({ later: false, until: null }), name: "Later's choices" }
 /** Later until a day already: Back to now first, the day it has marked */
 export const LaterChoicesLaterAlready: Story = { ...later({ later: true, until: days.nextWeek }), name: "Later's choices, Later until a day already" }
+/** Later until a day picked from the system's picker (Pick a date is a row like the others): that day on its right */
+export const LaterChoicesDayPicked: Story = { ...later({ later: true, until: '2026-11-21' }), name: "Later's choices, a day picked" }

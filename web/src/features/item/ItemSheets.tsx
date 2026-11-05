@@ -40,19 +40,39 @@ export function laterSheet(code: string, f: { later: boolean; until: string | nu
         ) : null}
         {row('Tomorrow', f.days.tomorrow, f.say(f.days.tomorrow))}
         {row('Next week', f.days.nextWeek, f.say(f.days.nextWeek))}
-        <label className={`${MENU_ROW} h-11 cursor-pointer`}>
-          <Icon n="clock" c="size-4 text-zinc-500 dark:text-zinc-400" />
-          <span className="flex-1">Pick a date</span>
+        {/* the whole row a button: it opens the system's date picker at once (R6-3 #3); the day picked said on its right as
+            the other rows say theirs. The date's own field is out of sight beside it (not inside a button). */}
+        <div className="relative">
+          <button
+            onClick={(e) => {
+              const input = e.currentTarget.nextElementSibling
+              if (!(input instanceof HTMLInputElement)) return
+              try {
+                if ('showPicker' in input) return input.showPicker()
+              } catch {
+                // not allowed here: the field itself, as in a browser without showPicker
+              }
+              input.focus()
+              input.click()
+            }}
+            aria-current={picked ? 'true' : undefined}
+            className={`${MENU_ROW} h-11 aria-[current=true]:font-semibold`}
+          >
+            <Icon n="clock" c="size-4 text-zinc-500 dark:text-zinc-400" />
+            <span className="flex-1">Pick a date</span>
+            {picked && f.until ? <span className="text-xs font-normal text-zinc-500 dark:text-zinc-400">{f.say(f.until)}</span> : null}
+            {picked ? check : null}
+          </button>
           <input
             type="date"
+            tabIndex={-1}
             aria-label="Later until"
             min={f.days.tomorrow}
-            defaultValue={f.until && f.until !== f.days.tomorrow && f.until !== f.days.nextWeek ? f.until : ''}
+            defaultValue={picked && f.until ? f.until : ''}
             onChange={(e) => e.target.value && on.pick(e.target.value)}
-            className="h-8 rounded-md bg-transparent text-xs text-zinc-600 tabular-nums dark:text-zinc-300"
+            className="pointer-events-none absolute right-3 bottom-0 size-px opacity-0"
           />
-          {picked ? check : null}
-        </label>
+        </div>
         {row('No date', null)}
       </div>
     ),
