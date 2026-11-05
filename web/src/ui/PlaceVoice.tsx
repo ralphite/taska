@@ -104,7 +104,8 @@ export function PlaceVoiceRow({ rec, meter, say, comment, on }: { rec: boolean; 
         <Strip phone meter={meter} marks={say} on={{ ...on, send: undefined }} />
       ) : (
         <>
-          <span className="min-w-0 flex-1 pl-2 text-[13px] text-zinc-500 dark:text-zinc-400">Speak or write about it</span>
+          {/* no words beside the two buttons (r1080: "Speak or write about it" said nothing they do not) */}
+          <span className="min-w-0 flex-1" />
           <B icon="mic" label="Voice comment" cls={`${MAIN(true)} shadow-lg`} on={on.say} big marks={say} />
           <B icon="comment" label="Comment" cls={RING} on={on.comment} big marks={comment} />
         </>

@@ -359,7 +359,10 @@ export function docNotes(docs: readonly Doc[], env: TalkEnv, on: TalkLineEvents,
     ) : null
     // T668 (a prototype): your voice notes inside the bubble, no "Voice note" word
     const inside = you && env.voiceLook ? (c.files || []).filter(isAudio) : []
-    const words = c.text.trim() ? <Rich text={c.text} world={env.world} onRef={on.ref} onPicture={on.picture} /> : c.files?.some(isAudio) && !inside.length ? 'Voice note' : null
+    // a comment by voice reads as its words once they are written out (r1080), "Voice note" only until then
+    const heard = (c.files || []).filter(isAudio).map((f) => f.tr || '').filter(Boolean).join('\n')
+    const said = c.text.trim() || heard
+    const words = said ? <Rich text={said} world={env.world} onRef={on.ref} onPicture={on.picture} /> : c.files?.some(isAudio) && !inside.length ? 'Voice note' : null
     // its pictures and files as a message's: thumbnails to open (yours under the bubble, an agent's in its card)
     const pics = (c.files || []).filter((f) => !isAudio(f))
     const strip = (cls: string) => (pics.length ? <FileRows files={pics} url={env.url} play={env.play} tidy={env.tidy} on={on} cls={cls} /> : null)
