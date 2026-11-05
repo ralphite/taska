@@ -1,5 +1,6 @@
 // Sheets about what you said: an input's menu (Send, for a recording kept as cancelled; Edit, Add more, its original words, Undo organizing, Move to…,
-// History, Put with an item…, Take off a file, Delete), its versions, a voice note's original words. Props only.
+// History, Put with an item…, Take off a file, Delete: red and last, it asks again in place, B666), its versions, a voice
+// note's original words. Props only.
 
 import type { ReactNode } from 'react'
 import { when } from '../../model/time'
@@ -36,10 +37,12 @@ export interface InputMenuFacts {
   scope: string | null
   /** the file whose Take off waits for its second click */
   asking: string | null
+  /** Delete asked once: it says Delete? until the second click (or a moment passes) */
+  deleting: boolean
   deleteTip: string
 }
 
-export function inputMenuSheet({ r, send, tidy, undo, move, history, scope, asking, deleteTip }: InputMenuFacts, on: InputMenuEvents): SheetParts {
+export function inputMenuSheet({ r, send, tidy, undo, move, history, scope, asking, deleting, deleteTip }: InputMenuFacts, on: InputMenuEvents): SheetParts {
   const row = (key: string, icon: IconName, label: ReactNode, run: () => void, tip = '') => (
     <button key={key} onClick={run} {...(tip ? { title: tip } : {})} className={MENU_ROW}>
       <Icon n={icon} c="size-4 text-zinc-500 dark:text-zinc-400" />
@@ -68,7 +71,7 @@ export function inputMenuSheet({ r, send, tidy, undo, move, history, scope, aski
         <div className={MENU_SEP} />
         <button onClick={on.remove} {...(deleteTip ? { title: deleteTip } : {})} className={`${MENU_ROW} ${DANGER} hover:bg-red-50 dark:hover:bg-red-400/10`}>
           <Icon n="trash" c="size-4" />
-          Delete
+          {deleting ? 'Delete?' : 'Delete'}
         </button>
       </div>
     ),

@@ -92,12 +92,11 @@ const INPUTS: Input[] = [
   input({ id: 'r1015', t: at(60 * 51 + 28), acked: true, touched: [651], text: '这个 CSV 导出来列的顺序不对，跟页面上的不一样。', files: [{ f: 'f92-orders-export.csv', name: 'orders-export.csv', mime: 'text/csv', size: 34_816 }], org: org('Created B651') }),
 ]
 
-/** One just sent and on its way (Undo while it may), one waiting for Taska (Edit). */
+/** One on its way and one waiting for Taska (Edit); × cancels either. */
 const OUTBOX = [
   out({ q: 'q8', slug: 'taska', text: 'Also check the phone layout after that.', state: 'failed', net: true }),
   out({ q: 'q9', slug: 'taska', text: '把输入列表上面的搜索框去掉，用侧栏里的搜索。', state: 'sending' }),
 ]
-const JUST_SENT = [{ q: 'q9' }]
 const M = modelOf(ITEMS, INPUTS, { slug: 'taska', title: 'taska', organizer: { on: true, model: 'gemini-flash-latest', busy: 'r1030' } })
 const title = (slug: string) => ({ home: 'Home' })[slug] ?? slug
 const DRAFTS = { [draftKey({ kind: 'amend', mode: 'edit', id: 'r1023' })]: 'my edit' }
@@ -132,10 +131,10 @@ const draftCard = (
  * More, ⋯ menus, Voice on a row, voice notes and pictures). */
 function DeskList() {
   const live = useInputs(M, true, { adding: { id: 'r1023', clock: '0:11' } })
-  const said = saidRows(M, { words: [], upTo: 30, opened: live.opened, justSent: [{ rid: 'r1029' }], drafts: DRAFTS, mode: null, title })
+  const said = saidRows(M, { words: [], upTo: 30, opened: live.opened, drafts: DRAFTS, mode: null, title })
   return (
     <section aria-label="Latest inputs" className="mx-auto mt-8 block max-w-[42rem]">
-      <SaidLately recording="0:07" adding={live.adding ? { id: live.adding.id, meter: <RecBar time={live.adding.clock} levels={[0.3, 0.75, 0.5, 0.95, 0.4, 0.65]} /> } : null} rows={said.rows} outgoing={saidOutgoing(OUTBOX, [], 0, JUST_SENT)} more draft={draftCard} files={live.chips} on={live.saidOn} />
+      <SaidLately recording="0:07" adding={live.adding ? { id: live.adding.id, meter: <RecBar time={live.adding.clock} levels={[0.3, 0.75, 0.5, 0.95, 0.4, 0.65]} /> } : null} rows={said.rows} outgoing={saidOutgoing(live.going(OUTBOX), [], 0)} more draft={draftCard} files={live.chips} on={live.saidOn} />
       {live.node}
     </section>
   )
@@ -175,7 +174,7 @@ export function PhonePage() {
     <Frame layout="phone" width={PHONE.width}>
       <div className="flex h-full flex-col bg-zinc-50 dark:bg-zinc-950">
         <div data-phone-list className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-          <InputsView hidden={false} rows={rows} more={total > rows.length} outgoing={outgoingRows(OUTBOX, 'taska', 0)} words={[]} world={talkEnv(M, false).world} hints={null} files={live.chips} recording="0:07" on={live.inputOn} />
+          <InputsView hidden={false} rows={rows} more={total > rows.length} outgoing={outgoingRows(live.going(OUTBOX), 'taska', 0)} words={[]} world={talkEnv(M, false).world} hints={null} files={live.chips} recording="0:07" on={live.inputOn} />
         </div>
         {live.node}
         <div className="shrink-0 border-t border-zinc-200 dark:border-zinc-800">{boxAt({ at: '' }, false, { placeholder: 'Write to taska…' })}</div>

@@ -63,8 +63,8 @@ const LINKS: SideLinkInfo[] = [
   { key: 'log', label: 'Activity', icon: 'history', href: '#', current: false },
   { key: 'deleted', label: 'Deleted', icon: 'trash', href: '#', current: false },
 ]
-const SAID: SaidInput[] = INPUTS.map((r, i) => ({ r, code: '#' + r.id.slice(1), when: ['14:57', '14:10', '09:02'][i], day: 'Today', time: ['14:57', '14:10', '09:02'][i], became: { k: 'waiting' }, draft: null, long: false, opened: false, canUndoSend: false }))
-const noSaid: SaidEvents = { goto() {}, more() {}, append() {}, voice() {}, draft() {}, menu() {}, undoSend() {}, retry() {}, send() {}, outboxRetry() {}, outboxEdit() {}, discard() {}, loadMore() {}, moved() {} }
+const SAID: SaidInput[] = INPUTS.map((r, i) => ({ r, code: '#' + r.id.slice(1), when: ['14:57', '14:10', '09:02'][i], day: 'Today', time: ['14:57', '14:10', '09:02'][i], became: { k: 'waiting' }, draft: null, long: false, opened: false }))
+const noSaid: SaidEvents = { goto() {}, more() {}, append() {}, voice() {}, draft() {}, menu() {}, cancel() {}, retry() {}, send() {}, outboxRetry() {}, outboxEdit() {}, discard() {}, loadMore() {}, moved() {} }
 const noDoc = () => {}
 
 // ---------------------------------------------------------------- the parts not built yet

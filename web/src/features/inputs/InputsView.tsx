@@ -46,6 +46,8 @@ export interface InputEvents {
   /** what is on its way and was not sent: send it again, or take it back into the box */
   outboxRetry(): void
   outboxEdit(): void
+  /** one on its way, cancelled (its ×): it does not go */
+  outboxCancel(q: string): void
   /** the list scrolled to its last drawn rows: draw more */
   end(): void
 }
@@ -68,8 +70,9 @@ export function InputCard({ x, words, world, files, on }: { x: InputFacts; words
   )
 }
 
-/** What is still on its way, shown first where your inputs are listed: Retry when Taska said no, Edit when not sent. */
-export function OutboxRows({ list, on }: { list: OutgoingRow[]; on: Pick<InputEvents, 'outboxRetry' | 'outboxEdit'> }) {
+/** What is still on its way, shown first where your inputs are listed: Retry when Taska said no, Edit when not sent,
+ * × to cancel it. */
+export function OutboxRows({ list, on }: { list: OutgoingRow[]; on: Pick<InputEvents, 'outboxRetry' | 'outboxEdit' | 'outboxCancel'> }) {
   return (
     <>
       {list.map((q) => (
@@ -82,6 +85,7 @@ export function OutboxRows({ list, on }: { list: OutgoingRow[]; on: Pick<InputEv
           scope={q.scope}
           previews={q.previews}
           acts={[...(q.bad ? [{ label: 'Retry', run: on.outboxRetry }] : []), ...(q.failed ? [{ label: 'Edit', run: on.outboxEdit }] : [])]}
+          cancel={() => on.outboxCancel(q.q)}
         />
       ))}
     </>

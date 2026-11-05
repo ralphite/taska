@@ -1,7 +1,7 @@
 // Under New input on the desktop (T661, the approved "Anchored Stream"): a voice note being recorded, what is still on
 // its way and the draft to check, as lines of their own; then every input, the latest first (more comes as you
 // scroll), each as the row every list of inputs draws (its number and when, its words, its files, what became of it
-// on a shelf under them), Undo on what you just sent; more being said into one of them, on its line (F657). Search is
+// on a shelf under them; its ⋯ deletes it); more being said into one of them, on its line (F657). Search is
 // the sidebar's (F479). Props only.
 
 import { useEffect, useRef, type ReactNode } from 'react'
@@ -21,7 +21,8 @@ export interface SaidEvents {
   /** the draft of an edit, or of details to add, written on */
   draft(id: string, mode: 'edit' | 'append'): void
   menu(id: string, from: HTMLElement): void
-  undoSend(key: string): void
+  /** one on its way, cancelled (its ×) */
+  cancel(q: string): void
   retry(id: string): void
   /** a recording kept as cancelled, sent after all */
   send(id: string): void
@@ -78,12 +79,11 @@ export function SaidRow({ x, files, rec = null, on }: {
   rec?: ReactNode | null
   on: SaidEvents
 }) {
-  return <InputRow x={x} words={[]} undo={x.canUndoSend} rec={rec} text={(cut) => <Said text={x.r.text} cut={cut} />} files={files} on={on} />
+  return <InputRow x={x} words={[]} rec={rec} text={(cut) => <Said text={x.r.text} cut={cut} />} files={files} on={on} />
 }
 
-/** What can be done about one on its way: Undo just after sending, Retry when Taska said no, Edit when not sent. */
+/** What can be done about one on its way besides its × (cancel): Retry when Taska said no, Edit when not sent. */
 const outgoingActs = (q: SaidOutgoing, on: SaidEvents): OutgoingAct[] => [
-  ...(q.canUndo ? [{ label: 'Undo', run: () => on.undoSend(q.q) }] : []),
   ...(q.failed && !q.net ? [{ label: 'Retry', run: on.outboxRetry }] : []),
   ...(q.failed ? [{ label: 'Edit', run: on.outboxEdit }] : []),
 ]
@@ -118,7 +118,7 @@ export function SaidLately({ rows, outgoing, more, draft, files, recording = nul
       {/* what is on its way; empty, no room taken */}
       <div className="mt-3 mb-6 space-y-2 empty:hidden">
         {outgoing.map((o) => (
-          <OutgoingRow key={o.q} text={o.text} state={o.state} bad={o.failed && !o.net} waiting={o.waiting} acts={outgoingActs(o, on)} />
+          <OutgoingRow key={o.q} text={o.text} state={o.state} bad={o.failed && !o.net} waiting={o.waiting} acts={outgoingActs(o, on)} cancel={() => on.cancel(o.q)} />
         ))}
       </div>
       {rows.length ? (

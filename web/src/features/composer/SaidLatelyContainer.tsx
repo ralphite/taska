@@ -57,10 +57,9 @@ export function SaidLatelyContainer({ route, boxKey, view, draft }: { route: Pro
   const outbox = useStoreValue(stores.outbox, (s) => s.list)
   const drafts = useStoreValue(stores.drafts, (s) => s.bySlug[route.slug]) || EMPTY
   const mode = useStoreValue(stores.box, (s) => s.mode)
-  const justSent = useStoreValue(stores.box, (s) => s.sent)
   const projects = useStoreValue(stores.data, (s) => s.projects)
   const { upTo, opened } = view
-  const said = useMemo(() => (m ? saidRows(m, { words: NO_WORDS, upTo, opened, justSent, drafts, mode, title: (s) => projects?.find((p) => p.name === s)?.title || s, adding: new Set(onItsWay.split(' ')) }) : null), [m, upTo, opened, justSent, drafts, mode, projects, onItsWay])
+  const said = useMemo(() => (m ? saidRows(m, { words: NO_WORDS, upTo, opened, drafts, mode, title: (s) => projects?.find((p) => p.name === s)?.title || s, adding: new Set(onItsWay.split(' ')) }) : null), [m, upTo, opened, drafts, mode, projects, onItsWay])
   const media = useFiles(route.slug)
   if (!m || !said) return null
   const mine = outbox.filter((o) => o.slug === route.slug && !o.unsent && showsOnItsWay(o))
@@ -71,7 +70,7 @@ export function SaidLatelyContainer({ route, boxKey, view, draft }: { route: Pro
         recording={recording}
         adding={adding ? { id: adding, meter: <RecMeter n={PLACE_LEVELS.desk} /> } : null}
         rows={said.rows}
-        outgoing={saidOutgoing(mine, NO_WORDS, away, justSent)}
+        outgoing={saidOutgoing(mine, NO_WORDS, away)}
         more={said.all.length > said.rows.length}
         draft={draft}
         files={(f) => <FileChips files={f} url={url} play={media.play} tidy={media.tidy} on={media.on} />}
@@ -89,7 +88,7 @@ export function SaidLatelyContainer({ route, boxKey, view, draft }: { route: Pro
           },
           draft: (id, mode) => app.box.amendStart(route.slug, m, id, mode),
           menu: (id, from) => app.sheets.openFrom(from, { kind: 'input-menu', id }, { focus: false }),
-          undoSend: (k) => app.box.unsend(justSent.find((x) => x.q === k || x.rid === k)?.q ?? k),
+          cancel: (q) => app.box.cancel(q),
           retry: (id) => app.inputActions.organizeAgain(route.slug, id),
           send: (id) => app.inputActions.sendCancelled(route.slug, id),
           outboxRetry: () => void app.inputs.flush(),

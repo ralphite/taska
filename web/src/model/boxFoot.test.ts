@@ -56,10 +56,10 @@ describe('what the box writes to', () => {
 
 describe('the line over the box', () => {
   const out = (o: Partial<Outgoing>): Outgoing => ({ q: 'q1', slug: 'taska', text: 'Keep the filter', scope: null, files: [], t: 1, state: 'sending', tries: 0, ...o })
-  const base = { m, desk: false, composePage: false, scope: null, mine: [] as Outgoing[], lastSent: null, others: false, undoable: () => true }
+  const base = { m, desk: false, composePage: false, scope: null, mine: [] as Outgoing[], lastSent: null, others: false }
 
   test('on its way, or not sent', () => {
-    expect(feedbackLine({ ...base, mine: [out({})] })?.line).toEqual({ kind: 'sending', text: 'Keep the filter', more: 0, uploading: false, canUndo: true })
+    expect(feedbackLine({ ...base, mine: [out({})] })?.line).toEqual({ kind: 'sending', q: 'q1', text: 'Keep the filter', more: 0, uploading: false })
     expect(feedbackLine({ ...base, mine: [out({ state: 'failed' })] })?.line.kind).toBe('not-sent')
     expect(feedbackLine({ ...base, mine: [out({ state: 'failed', net: true })] })?.line.kind).toBe('waiting')
   })

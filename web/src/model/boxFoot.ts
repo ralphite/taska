@@ -157,29 +157,30 @@ export function shownBox(role: BoxRole, a: { mode: BoxMode; text: string; key: s
   return { line, waiting: a.mode ? null : (role.waiting ?? null), placeholder: told.placeholder, send: told.send, voiceComments: vcN, attach: !a.mode || a.mode.kind === 'amend' }
 }
 
-/** The line over the box: what you sent is on its way, or what became of the last one you sent from here. */
+/** The line over the box: what you sent is on its way (`q`: the one it names, which its × cancels), or what became of
+ * the last one you sent from here. */
 export type FeedbackLine =
-  | { kind: 'sending'; text: string; more: number; uploading: boolean; canUndo: boolean }
-  | { kind: 'waiting'; text: string; more: number }
-  | { kind: 'not-sent'; text: string; more: number }
+  | { kind: 'sending'; q: string; text: string; more: number; uploading: boolean }
+  | { kind: 'waiting'; q: string; text: string; more: number }
+  | { kind: 'not-sent'; q: string; text: string; more: number }
   | { kind: 'organizing' }
   | { kind: 'transcribing' }
   /** why in plain words; `raw`: the words as they came; `retry`: trying again could help (not with its key refused) */
   | { kind: 'org-failed'; msg: string; raw: string; retry: boolean }
   | { kind: 'undone'; code: string }
   | { kind: 'organized'; msg: string; view: boolean; undo: boolean; move: boolean }
-  | { kind: 'sent'; organizer: boolean; canUndo: boolean; move: boolean }
+  | { kind: 'sent'; organizer: boolean; move: boolean }
   | { kind: 'moved'; code: string; to: string; as: string; href: string }
 
-export function feedbackLine(a: { m: ProjectModel | null; desk: boolean; composePage: boolean; scope: string | null; mine: Outgoing[]; lastSent: string | null; others: boolean; undoable(q: string | undefined): boolean; lastQ?: string }): { line: FeedbackLine; final?: string } | null {
+export function feedbackLine(a: { m: ProjectModel | null; desk: boolean; composePage: boolean; scope: string | null; mine: Outgoing[]; lastSent: string | null; others: boolean }): { line: FeedbackLine; final?: string } | null {
   if ((a.desk && a.composePage) || a.scope) return null // on the New input page each input is in the list; in an item, in its talk
   const first = a.mine[0]
   const q = first?.quiet && first.state !== 'failed' ? null : first
   if (q) {
     const more = a.mine.length - 1
-    if (q.state === 'failed' && q.net) return { line: { kind: 'waiting', text: outgoingLine(q), more } }
-    if (q.state === 'failed') return { line: { kind: 'not-sent', text: outgoingLine(q), more } }
-    return { line: { kind: 'sending', text: outgoingLine(q), more, uploading: q.files.some((f) => f.uploading), canUndo: a.undoable(q.q) } }
+    if (q.state === 'failed' && q.net) return { line: { kind: 'waiting', q: q.q, text: outgoingLine(q), more } }
+    if (q.state === 'failed') return { line: { kind: 'not-sent', q: q.q, text: outgoingLine(q), more } }
+    return { line: { kind: 'sending', q: q.q, text: outgoingLine(q), more, uploading: q.files.some((f) => f.uploading) } }
   }
   const r = a.lastSent && a.m ? a.m.byId.get(a.lastSent) : undefined
   if (!r || !a.m || r.scope) return null
@@ -199,7 +200,7 @@ export function feedbackLine(a: { m: ProjectModel | null; desk: boolean; compose
       undo: !!(r.org && r.org.ok && !r.org.undone && !r.org.keep && r.touched.length),
       move,
     }
-  else line = { kind: 'sent', organizer: !!r.org, canUndo: a.undoable(a.lastQ), move }
+  else line = { kind: 'sent', organizer: !!r.org, move }
   const final = r.acked || (r.org && r.org.ok) || r.moved
   return { line, final: final ? r.id : undefined }
 }

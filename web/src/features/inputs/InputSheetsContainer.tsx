@@ -11,7 +11,7 @@ import { pickSheet } from '../../ui/Pickers'
 import { moveInputSheet } from '../../ui/ProjectSheets'
 import { useOtherProjects } from '../../app/projectLists'
 import { asSaidSheet, historySheet, inputMenuSheet } from './InputSheets'
-import { inputMenuFacts, inputMoveFacts } from './inputSheetFacts'
+import { inputDeleteAsk, inputMenuFacts, inputMoveFacts } from './inputSheetFacts'
 
 type Req<K extends SheetRequest['kind']> = { req: Extract<SheetRequest, { kind: K }> }
 
@@ -55,7 +55,11 @@ export function InputMenuSheet({ req }: Req<'input-menu'>) {
           close()
           app.inputActions.takeOff(slug, id, f)
         },
-        remove: done(() => app.inputActions.remove(slug, id)),
+        remove: () => {
+          if (!app.sheets.confirm(inputDeleteAsk(id))) return
+          close()
+          app.inputActions.remove(slug, id)
+        },
       })}
     />
   )

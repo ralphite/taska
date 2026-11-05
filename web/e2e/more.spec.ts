@@ -39,7 +39,7 @@ test('a subitem is added under its item', async ({ page, request }) => {
   await expect.poll(async () => p.read('items')).toMatch(/Install page.*\^T4/)
 })
 
-test('an input can be deleted and restored', async ({ page, request }) => {
+test('B666: an input can be deleted from its ⋯ (Delete asks again in place) and restored', async ({ page, request }) => {
   const p = await project(request, LOOP)
   await open(page, p)
   await box(page).click()
@@ -51,7 +51,13 @@ test('an input can be deleted and restored', async ({ page, request }) => {
   await page.getByRole('button', { name: /^More for / }).filter({ visible: true })
     .first()
     .click()
+  // no Undo after sending (B666)
+  await expect(page.getByRole('button', { name: 'Undo', exact: true }).filter({ visible: true })).toHaveCount(0)
   await sheetBody(page).getByRole('button', { name: /^Delete/ }).first().click()
+  // asked once: it says Delete? and nothing is deleted yet
+  await expect(sheetBody(page).getByRole('button', { name: 'Delete?' })).toBeVisible()
+  expect(await p.read('inbox')).toContain('A thought to throw away')
+  await sheetBody(page).getByRole('button', { name: 'Delete?' }).click()
   await expect.poll(async () => p.read('inbox')).not.toContain('A thought to throw away')
   await open(page, p, 'deleted')
   await page.getByRole('button', { name: /^Restore/ }).filter({ visible: true }).first().click()

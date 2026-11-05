@@ -20,7 +20,7 @@ import { act, acts } from './acts'
 import { useMedia, usePop } from './liveParts'
 import { useState } from 'react'
 import { inputMenuSheet } from '../features/inputs/InputSheets'
-import { inputMenuFacts } from '../features/inputs/inputSheetFacts'
+import { inputDeleteAsk, inputMenuFacts } from '../features/inputs/inputSheetFacts'
 
 const at = (min: number) => new Date(Date.parse(T) - min * 60_000).toISOString()
 const org = (msg: string, f: Partial<OrgNote> = {}): OrgNote => ({ ok: true, msg, t: '', keep: false, changed: true, undone: false, ...f })
@@ -78,8 +78,6 @@ export interface Said {
   /** how long Taska has not answered */
   away?: number
   opened?: string[]
-  /** just sent: Undo shows on these */
-  justSent?: string[]
   /** an edit not saved, by input */
   editDrafts?: string[]
   /** jumped to this input (lit; `litStill`: stays lit) */
@@ -96,7 +94,7 @@ export interface Said {
 const title = (slug: string) => ({ 'mobile-app': 'Mobile app' })[slug] ?? slug
 const project = (s: Said, items = ITEMS) => modelOf(items, s.inputs ?? DAY, { organizer: { on: s.organizer ?? true, model: 'gemini-flash-latest', busy: s.busy ?? null } })
 const fileUrl = (x: string) => (x.endsWith('.png') ? PICTURE : '#' + x)
-const inputActs = acts('Input', ['goto', 'retry', 'send', 'draft', 'moved', 'ref', 'outboxRetry', 'outboxEdit', 'end', 'append', 'undoSend', 'loadMore'] as const, { append: 'Input box › What it writes to › Changing what you said', draft: 'Input box › What it writes to › Changing what you said' })
+const inputActs = acts('Input', ['goto', 'retry', 'send', 'draft', 'moved', 'ref', 'outboxRetry', 'outboxEdit', 'end', 'append', 'loadMore'] as const, { append: 'Input box › What it writes to › Changing what you said', draft: 'Input box › What it writes to › Changing what you said' })
 const menuActs = acts('Input menu', ['send', 'edit', 'append', 'asSaid', 'undo', 'move', 'history', 'rescope', 'takeOff', 'remove'] as const, {
   move: 'Move and pick › Input to another project',
   history: 'Sheets › An input: its words and history',
@@ -105,11 +103,15 @@ const menuActs = acts('Input menu', ['send', 'edit', 'append', 'asSaid', 'undo',
 })
 
 /** What the page holds around inputs (T662): a long one opened (More, Less), its menu from ⋯ (the page's own
- * inputMenuSheet: Take off asks again), Voice recording more for one (its strip; again or ✕ stops it),
- * voice notes playing and pictures opening. What needs Taska (Retry, Send, Undo, Move) shows in the Actions panel. */
+ * inputMenuSheet: Take off and Delete ask again), Voice recording more for one (its strip; again or ✕ stops it),
+ * voice notes playing and pictures opening, one on its way cancelled with its × (it goes). What needs Taska (Retry,
+ * Send, Undo organizing, Move, Delete) shows in the Actions panel. */
 export function useInputs(m: ProjectModel, desk: boolean, s: Pick<Said, 'opened' | 'adding'>) {
   const [opened, setOpened] = useState(() => new Set(s.opened))
   const [adding, setAdding] = useState(s.adding ?? null)
+  // on its way, cancelled with its ×
+  const [cancelled, setCancelled] = useState<ReadonlySet<string>>(() => new Set())
+  const cancel = (q: string) => setCancelled(new Set([...cancelled, q]))
   const media = useMedia(fileUrl)
   const menu = usePop<{ id: string; asked: Record<string, number> }>(desk)
   const more = (id: string) => {
@@ -133,7 +135,7 @@ export function useInputs(m: ProjectModel, desk: boolean, s: Pick<Said, 'opened'
       history: done(() => menuActs.history(id)),
       rescope: done(() => menuActs.rescope(id)),
       takeOff: (f) => ask(`unfile ${id} ${f}`, () => menuActs.takeOff(f)),
-      remove: done(() => menuActs.remove(id)),
+      remove: () => ask(inputDeleteAsk(id), () => menuActs.remove(id)),
     })
   })
   const node = (
@@ -142,16 +144,19 @@ export function useInputs(m: ProjectModel, desk: boolean, s: Pick<Said, 'opened'
       {media.node}
     </>
   )
-  const inputOn: InputEvents = { ...inputActs, more, menu: (id) => openMenu(id), picture: (f, all) => media.on.view(f, all) }
+  const inputOn: InputEvents = { ...inputActs, more, menu: (id) => openMenu(id), picture: (f, all) => media.on.view(f, all), outboxCancel: cancel }
   const saidOn: SaidEvents = {
     ...inputActs,
     more,
+    cancel,
     menu: (id, from) => openMenu(id, from),
     // Voice on a row records more for it (its strip); again it stops and is added (Taska), ✕ lets it go
     voice: (id) => (adding?.id === id ? (setAdding(null), inputActs.append(id)) : setAdding({ id, clock: '0:00' })),
     discard: () => setAdding(null),
   }
-  return { opened, adding, chips, inputOn, saidOn, node }
+  /** what is on its way, less what was cancelled */
+  const going = (list: readonly Outgoing[] = []) => list.filter((o) => !cancelled.has(o.q))
+  return { opened, adding, chips, inputOn, saidOn, node, going }
 }
 
 function rowsOf(s: Said, opened: ReadonlySet<string>) {
@@ -170,7 +175,7 @@ function LiveInputs({ s }: { s: Said }) {
   const hints = words.length ? <SearchHints other={otherTabs(m, words, 'inputs', total)} cross={{ list: [], failed: false, q: words.join(' ') }} tone={() => PROJECT_TONES[1]} onShow={act('Search hints: show')} onGo={act('Search hints: go')} /> : null
   return (
     <div className="flex h-full flex-col">
-      <InputsView hidden={false} rows={rows} more={total > rows.length} outgoing={outgoingRows(s.outbox ?? [], 'demo', s.away ?? 0)} words={words} world={talkEnv(m, false).world} hints={hints} files={live.chips} recording={s.recording ?? null} on={live.inputOn} />
+      <InputsView hidden={false} rows={rows} more={total > rows.length} outgoing={outgoingRows(live.going(s.outbox), 'demo', s.away ?? 0)} words={words} world={talkEnv(m, false).world} hints={hints} files={live.chips} recording={s.recording ?? null} on={live.inputOn} />
       {live.node}
     </div>
   )
@@ -195,7 +200,7 @@ function LiveSaidRow({ r, s }: { r: Input; s: Said }) {
   const m = project({ ...s, inputs: [r] })
   const live = useInputs(m, true, s)
   const drafts = Object.fromEntries((s.editDrafts ?? []).map((id) => [draftKey({ kind: 'amend', mode: 'edit', id }), 'my edit']))
-  const x = saidRows(m, { words: [], upTo: 1, opened: live.opened, justSent: (s.justSent ?? []).map((rid) => ({ rid })), drafts, mode: null, title }).rows[0]
+  const x = saidRows(m, { words: [], upTo: 1, opened: live.opened, drafts, mode: null, title }).rows[0]
   return (
     <div className="px-6 py-3">
       <SaidRow x={x} files={r.files.length ? live.chips(r.files) : null} on={live.saidOn} />
@@ -210,12 +215,12 @@ function LiveSaid({ s }: { s: Said }) {
   const m = project(s)
   const live = useInputs(m, true, s)
   const drafts = Object.fromEntries((s.editDrafts ?? []).map((id) => [draftKey({ kind: 'amend', mode: 'edit', id }), 'my edit']))
-  const said = saidRows(m, { words: [], upTo: 30, opened: live.opened, justSent: (s.justSent ?? []).map((rid) => ({ rid })), drafts, mode: null, title, adding: new Set(s.addingUp) })
+  const said = saidRows(m, { words: [], upTo: 30, opened: live.opened, drafts, mode: null, title, adding: new Set(s.addingUp) })
   return (
     <div className="mx-auto mt-8 max-w-[42rem]">
       <SaidLately
         rows={said.rows}
-        outgoing={saidOutgoing(s.outbox ?? [], [], s.away ?? 0, (s.justSent ?? []).map((q) => ({ q })))}
+        outgoing={saidOutgoing(live.going(s.outbox), [], s.away ?? 0)}
         more={said.all.length > said.rows.length}
         files={live.chips}
         recording={s.recording ?? null}

@@ -193,20 +193,21 @@ function LiveBox({ h, desk, extra }: { h: Here; desk: boolean; extra: Partial<Co
   )
 }
 
-const noLine = acts('Sent line', ['dismiss', 'undo', 'retry', 'edit', 'view', 'undoFiling', 'move', 'retryOrganizer'] as const, { move: 'Move and pick › Input to another project', edit: 'Input box › What it writes to › Changing what you said' })
+const noLine = acts('Sent line', ['dismiss', 'cancel', 'retry', 'edit', 'view', 'undoFiling', 'move', 'retryOrganizer'] as const, { move: 'Move and pick › Input to another project', edit: 'Input box › What it writes to › Changing what you said' })
 
 /** The line over the box about what you sent last, as the page works it out (feedbackLine): what is on its way, or
  * what became of the input you sent. */
-type SentFacts = { mine?: Outgoing[]; sent?: Input; organizer?: boolean; others?: boolean; undoable?: boolean }
+type SentFacts = { mine?: Outgoing[]; sent?: Input; organizer?: boolean; others?: boolean }
 export const sentLine = (f: SentFacts, desk: boolean) => <LiveLine f={f} desk={desk} />
-/** the line as the page keeps it: Dismiss lets it go; Undo, Retry, View, Move need Taska (the Actions panel) */
+/** the line as the page keeps it: Dismiss lets it go, and so does × on what is on its way (it is cancelled); Retry,
+ * View, Move need Taska (the Actions panel) */
 function LiveLine({ f, desk }: { f: SentFacts; desk: boolean }) {
   const [gone, setGone] = useState(false)
   const m = boxProject(f.sent ? [f.sent] : [], f.organizer)
-  const r = feedbackLine({ m, desk, composePage: false, scope: null, mine: f.mine ?? [], lastSent: f.sent?.id ?? null, others: !!f.others, undoable: () => !!f.undoable })
+  const r = feedbackLine({ m, desk, composePage: false, scope: null, mine: f.mine ?? [], lastSent: f.sent?.id ?? null, others: !!f.others })
   return (
     <div className="bg-zinc-50 p-3 dark:bg-zinc-950">
-      <Feedback line={gone ? null : (r?.line ?? null)} on={{ ...noLine, dismiss: () => setGone(true) }} />
+      <Feedback line={gone ? null : (r?.line ?? null)} on={{ ...noLine, dismiss: () => setGone(true), cancel: (q) => (noLine.cancel(q), setGone(true)) }} />
     </div>
   )
 }

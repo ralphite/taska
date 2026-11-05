@@ -20,6 +20,6 @@ export const at = (thread: Message[], o: PageOpts = {}, f: Partial<Item> = {}): 
 export const LONG = Array.from({ length: 12 }, (_, i) => `Line ${i + 1} of what I said, with some words to fill it.`).join('\n')
 /** what you sent, still on its way */
 /** What you sent, on its way, in each state the page's outgoingState gives; only one Taska refused is bad (Retry, Edit),
- * as the page has it. */
-export const out = (state: 'Sending…' | 'Uploading…' | 'Waiting for Taska…' | 'Not sent', canUndo = false, previews: string[] = []) => ({ t: { outgoing: [{ q: 'q1', text: 'Also keep the sort.', state, bad: state === 'Not sent', canUndo, previews }] } })
+ * as the page has it; × cancels any of them. */
+export const out = (state: 'Sending…' | 'Uploading…' | 'Waiting for Taska…' | 'Not sent', previews: string[] = []) => ({ t: { outgoing: [{ q: 'q1', text: 'Also keep the sort.', state, bad: state === 'Not sent', previews }] } })
 export { message, T }

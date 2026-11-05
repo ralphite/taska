@@ -2,7 +2,7 @@
 // a sheet on the phone. The desktop has no Original words: pointing at a voice note shows them.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { inputMenuSheet } from '../features/inputs/InputSheets'
-import { inputMenuFacts } from '../features/inputs/inputSheetFacts'
+import { inputDeleteAsk, inputMenuFacts } from '../features/inputs/inputSheetFacts'
 import { Frames } from './Frames'
 import { input, item, modelOf } from './fixtures'
 import { AT_BUTTON, acts, opened } from './menuFixtures'
@@ -51,6 +51,9 @@ const inputMenu = (r: typeof said, other: number, asked: Record<string, number> 
 export const InputMenuPlain: Story = { ...both(inputMenu(plain, 0), 420), name: 'Typed, nothing filed, no other project' }
 /** a file's Take off asking again */
 export const InputMenuTakeOffAsks: Story = { ...both(inputMenu(said, 2, { [`unfile ${said.id} ${SHOT.f}`]: 1 }), 720), name: "A file's Take it off? asking" }
+/** Delete clicked once: it asks again in place (Delete?); the second click deletes it, and Deleted brings it back
+ * (B666: any input, the one just sent too) */
+export const InputMenuDeleteAsks: Story = { ...both(inputMenu(plain, 0, { [inputDeleteAsk(plain.id)]: 1 }), 420), name: 'Delete? asking' }
 /** a recording cancelled with Esc (B627): Send first; it goes with no item until it is sent */
 export const InputMenuCancelled: Story = { ...both(inputMenu(input({ id: 'r24', kind: 'cancelled', text: 'Maybe the export should keep the columns too.', files: [VOICE] }), 2), 560), name: 'A cancelled recording: Send' }
 /** voice notes not tidied (Settings): the phone's menu has no Original words either */

@@ -41,7 +41,6 @@ export class Delivered {
 
   sent(o: Outgoing, rid: string): void {
     const d = this.d
-    if (rid) d.box.getState().sentAs(o.q, rid)
     if (o.unsent && rid) {
       const m = d.model(o.slug)
       const r = m?.byId.get(rid)
@@ -49,6 +48,6 @@ export class Delivered {
       else void d.runner.send({ id: newId(), slug: o.slug, commands: [{ op: 'delete', id: rid }], patches: [], said: `taking back ${rid}`, t: Date.now() })
     }
     const here = o.slug === d.slug()
-    if (here) d.ui.getState().setLastSent(o.quiet || o.unsent ? null : { slug: o.slug, rid, q: o.q })
+    if (here) d.ui.getState().setLastSent(o.quiet || o.unsent ? null : { slug: o.slug, rid })
   }
 }

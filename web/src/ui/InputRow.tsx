@@ -4,8 +4,9 @@
 // between rows; under the pointer a row is a shade darker, as the item list's are. Its buttons: the phone's ⋯ (Add
 // more, Edit and the rest are in it); the desktop's Voice, Comment and ⋯ as the page's other places have them
 // (PlaceVoice, B498), under the pointer only (or the keys); Voice turns them into the recording strip right there, its
-// ✓ where Voice was, which stops and adds the note to this input. Undo, just after sending, always shows. What is
-// still on its way, and a voice note being recorded, are lines of their own over the list. Props only.
+// ✓ where Voice was, which stops and adds the note to this input. Its ⋯ has Delete, last (B666: no Undo for a while
+// after sending). What is still on its way (its × cancels it), and a voice note being recorded, are lines of their own
+// over the list. Props only.
 
 import type { ReactNode, Ref } from 'react'
 import { BECAME_WORD as W, type Became, type InputLine, type ItemRef } from '../model/became'
@@ -33,7 +34,6 @@ export interface InputRowEvents {
   voice?(id: string): void
   /** the recording here let go (its ✕, or Esc) */
   discard?(): void
-  undoSend?(id: string): void
 }
 
 /** The rows of a list: a hairline between them, across the whole row. */
@@ -238,7 +238,7 @@ function RowButtons({ x, rec, on }: { x: InputLine; rec: ReactNode | null; on: I
   )
 }
 
-export function InputRow({ x, words, text, files, lit = false, undo = false, rec = null, rowRef, on }: {
+export function InputRow({ x, words, text, files, lit = false, rec = null, rowRef, on }: {
   x: InputLine
   /** the searched words, marked in its number */
   words: readonly string[]
@@ -246,8 +246,6 @@ export function InputRow({ x, words, text, files, lit = false, undo = false, rec
   /** its voice notes, pictures and files */
   files: ReactNode
   lit?: boolean
-  /** just sent: Undo */
-  undo?: boolean
   /** more to add being recorded here (Voice): its time and level */
   rec?: ReactNode | null
   rowRef?: Ref<HTMLElement>
@@ -278,11 +276,6 @@ export function InputRow({ x, words, text, files, lit = false, undo = false, rec
           ) : null}
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
-          {undo && on.undoSend ? (
-            <button onClick={() => on.undoSend?.(r.id)} className="px-1 py-0.5 text-xs font-semibold text-blue-600 hover:underline dark:text-blue-400">
-              Undo
-            </button>
-          ) : null}
           <RowButtons x={x} rec={rec} on={on} />
         </div>
       </header>
@@ -301,8 +294,8 @@ export interface OutgoingAct {
 }
 
 /** What is still on its way, as a line over the list: its words on one line, where it is (blue on its way, amber
- * waiting for Taska, red when Taska said no) and what can be done. */
-export function OutgoingRow({ text, state, bad, waiting, scope = null, previews = [], acts }: {
+ * waiting for Taska, red when Taska said no), what can be done, and × at the end, which cancels it (B666). */
+export function OutgoingRow({ text, state, bad, waiting, scope = null, previews = [], acts, cancel }: {
   text: string
   state: string
   /** Taska said no */
@@ -312,6 +305,8 @@ export function OutgoingRow({ text, state, bad, waiting, scope = null, previews 
   scope?: string | null
   previews?: string[]
   acts: OutgoingAct[]
+  /** ×: it does not go */
+  cancel(): void
 }) {
   const tone = bad
     ? { box: 'border-red-200/80 bg-red-50/70 dark:border-red-900/40 dark:bg-red-950/25', state: 'text-red-700 dark:text-red-400', act: 'font-semibold text-red-800 hover:underline dark:text-red-300' }
@@ -337,6 +332,9 @@ export function OutgoingRow({ text, state, bad, waiting, scope = null, previews 
             {a.label}
           </button>
         ))}
+        <button onClick={cancel} aria-label="Cancel" title="Cancel: it is not sent" className="-my-1 -mr-1.5 grid size-6 place-items-center rounded-full text-zinc-500 hover:bg-zinc-900/5 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-white/10 dark:hover:text-zinc-100">
+          <Icon n="x" c="size-3.5" sw="2" />
+        </button>
       </div>
     </div>
   )

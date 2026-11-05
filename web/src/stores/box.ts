@@ -1,7 +1,6 @@
 // The box you write in, beyond its words (those are drafts): what it writes to when that is not the place you are
 // (an edit of something you said, details added to it, a correction of a misheard word), the files waiting in each
-// draft (pictures and files kept over a reload of this tab, as taska.draftfiles.<project>), and what you just sent
-// that you can still take back.
+// draft (pictures and files kept over a reload of this tab, as taska.draftfiles.<project>).
 
 import type { BoxMode } from '../model/boxFoot'
 import { createStore, type StoreApi } from 'zustand/vanilla'
@@ -36,22 +35,10 @@ export interface DraftFile extends OutFile {
   vc?: string
 }
 
-export interface JustSent {
-  q: string
-  slug: string
-  /** the draft it was written in */
-  key: DraftKey
-  /** until when it can be taken back (ms) */
-  until: number
-  /** the input it became, once Taska has it */
-  rid?: string
-}
-
 export interface BoxState {
   slug: string
   mode: BoxMode
   files: Readonly<Record<string, readonly DraftFile[]>>
-  sent: readonly JustSent[]
   /** the draft the box shows now, and the item it writes to (a voice note stopped elsewhere knows where it goes) */
   shown: { key: DraftKey; scope: string | null }
   setShown(key: DraftKey, scope: string | null): void
@@ -69,9 +56,6 @@ export interface BoxState {
   /** the draft's files go (with what it sends) */
   takeFiles(key: DraftKey): DraftFile[]
   putFiles(key: DraftKey, files: DraftFile[]): void
-  sentNow(j: JustSent): void
-  sentAs(q: string, rid: string): void
-  forgetSent(q: string): void
 }
 
 export type BoxStore = StoreApi<BoxState>
@@ -102,7 +86,6 @@ export function createBoxStore(session: KeyValueStore): BoxStore {
       slug: '',
       mode: null,
       files: {},
-      sent: [],
       shown: { key: NEW_DRAFT, scope: null },
       showWords: false,
       setShowWords: (showWords) => set({ showWords }),
@@ -132,9 +115,6 @@ export function createBoxStore(session: KeyValueStore): BoxStore {
         return out
       },
       putFiles: (key, fs) => files({ ...get().files, [key]: [...fs, ...(get().files[key] || [])] }),
-      sentNow: (j) => set((s) => ({ sent: [...s.sent.filter((x) => x.q !== j.q), j] })),
-      sentAs: (q, rid) => set((s) => ({ sent: s.sent.map((x) => (x.q === q ? { ...x, rid } : x)) })),
-      forgetSent: (q) => set((s) => ({ sent: s.sent.filter((x) => x.q !== q) })),
     }
   })
 }

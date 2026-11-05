@@ -31,7 +31,6 @@ export const talkFacts = (m: ProjectModel, f: Partial<TalkFacts> = {}): TalkFact
   reask: null,
   going: null,
   outgoing: [],
-  undo: () => null,
   title: (s) => (s === 'mobile-app' ? 'Mobile app' : s),
   ...f,
 })
@@ -56,7 +55,7 @@ export function itemFacts(m: ProjectModel, it: Item, f: Partial<ItemFacts> = {})
 export const noItemEvents: ItemEvents = acts('Item', [
   'decide', 'notYet', 'modify', 'cancelModify', 'sendAnswer', 'reask', 'cancelReask',
   'ref', 'picture', 'more', 'play', 'words', 'view', 'topSize', 'duoSize',
-  'inputMore', 'inputHistory', 'goInput', 'moved', 'msgMenu', 'peek', 'unhide', 'docAt', 'unsend', 'outboxRetry', 'outboxEdit',
+  'inputMore', 'inputHistory', 'goInput', 'moved', 'msgMenu', 'peek', 'unhide', 'docAt', 'cancel', 'outboxRetry', 'outboxEdit',
   'menu', 'set', 'sources', 'goto', 'doc', 'earlier', 'subNew', 'subAdd', 'subCancel', 'subTyped', 'editSave', 'editCancel', 'editTyped',
 ] as const, { sources: 'Sheets › An item: what it came from', inputMore: 'What you said: its menu', inputHistory: 'Sheets › An input: its words and history' })
 

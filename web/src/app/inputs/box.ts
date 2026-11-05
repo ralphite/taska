@@ -1,14 +1,14 @@
 // The box: what it writes to, its draft there (words and files), and sending. A draft belongs to what it is written
 // to: an item (a reply, "F12"), a new input ("new"), an edit of something you said ("edit r12", "append r12"), so
 // unsent words never go elsewhere. A file is sent to Taska as soon as you add it; what you send waits for its files.
-// What you just sent can be taken back for a while (Undo, Z); an edit or details added show at once and are saved
-// behind you.
+// What is still on its way can be cancelled (its ×); once Taska has it, its ⋯ deletes it (B666: no Undo for a while
+// after sending). An edit or details added show at once and are saved behind you.
 
 import { Refused } from '../../api/http'
 import type { TaskaApi } from '../../api/taska'
 import type { ProjectModel } from '../../model/project'
 import { inputCode } from '../../model/words'
-import { docDraft, draftKey, draftName, keyOf, NEW_DRAFT, PREFS_DRAFT, scopeDraft, type DraftKey } from '../../model/draftTarget'
+import { docDraft, draftKey, keyOf, NEW_DRAFT, PREFS_DRAFT, scopeDraft, type DraftKey } from '../../model/draftTarget'
 import type { BoxStore, DraftFile } from '../../stores/box'
 import type { BoxMode } from '../../model/boxFoot'
 import type { DraftsStore } from '../../stores/drafts'
@@ -18,8 +18,6 @@ import { newId, type ChangeRunner } from '../changeRunner'
 import type { InputSender } from './inputSender'
 import { Pauses } from './pauses'
 import type { Toasts } from '../page/toasts'
-
-const UNSEND_MS = 10000
 
 export interface BoxDeps {
   api: TaskaApi
@@ -191,15 +189,9 @@ export class Box {
     }
     this.write(slug, key, '')
     st.takeFiles(key)
-    const o = this.d.inputs.push({ slug, text, scope, files: files.map(({ key: k, ...f }) => ({ ...f, key: k })) })
-    st.sentNow({ q: o.q, slug, key, until: Date.now() + UNSEND_MS })
+    this.d.inputs.push({ slug, text, scope, files: files.map(({ key: k, ...f }) => ({ ...f, key: k })) })
     this.markSent(slug, key)
     if (scope) this.d.replied?.(slug, scope)
-    const step = this.d.toasts.undoable(`Send to ${scope || 'New input'}`, async () => (this.unsend(o.q), true))
-    setTimeout(() => {
-      this.d.toasts.forget(step)
-      this.d.store.getState().forgetSent(o.q)
-    }, UNSEND_MS)
     return true
   }
 
@@ -305,25 +297,14 @@ export class Box {
     return true
   }
 
-  /** Take back what you just sent: its words come back to the box (there, or to the draft it was written in). */
-  unsend(q: string): void {
-    const st = this.d.store.getState()
-    const j = st.sent.find((x) => x.q === q)
-    const o = this.d.outbox.getState().list.find((x) => x.q === q)
-    if (!j) return
-    st.forgetSent(q)
-    if (o && o.state !== 'sending') this.d.outbox.getState().remove(q)
-    else if (o) this.d.outbox.getState().update(q, { unsent: true })
-    const was = this.text(j.slug, j.key)
-    const text = o?.text ?? ''
-    this.write(j.slug, j.key, was.trim() ? text + '\n\n' + was : text)
-    if (o) st.putFiles(j.key, o.files.filter((f) => !f.failed).map((f) => ({ ...f, key: f.key || f.f })) as DraftFile[])
-    this.d.toasts.show(j.key === st.shown.key ? 'Not sent. Text restored' : `Not sent. Text restored to ${draftName(j.key)}`)
-  }
-
-  /** Whether what you sent can still be taken back. */
-  canUnsend(q: string, now: number): boolean {
-    return this.d.store.getState().sent.some((x) => x.q === q && x.until > now)
+  /** What you sent and Taska does not have yet, cancelled (its ×, B666): it does not go; one going out right now is
+   * deleted as soon as Taska has it. Once Taska has an input, its ⋯ deletes it. */
+  cancel(q: string): void {
+    const out = this.d.outbox.getState()
+    const o = out.list.find((x) => x.q === q)
+    if (!o) return
+    if (o.state === 'sending') out.update(q, { unsent: true })
+    else out.remove(q)
   }
 
   /** Edit or add details to something you said: the box writes there (an edit begins with its words). */

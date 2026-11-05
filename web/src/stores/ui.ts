@@ -40,9 +40,9 @@ export interface UiState {
   openedInputs: ReadonlySet<string>
   toggleInput(id: string): void
   /** the input you sent last from this page, for the line over the box */
-  lastSent: { slug: string; rid: string; q?: string } | null
+  lastSent: { slug: string; rid: string } | null
   /** what you sent, just taken in by Taska: in view where you are and lit up for a moment (an input's id) */
-  setLastSent(x: { slug: string; rid: string; q?: string } | null): void
+  setLastSent(x: { slug: string; rid: string } | null): void
   toggleFold(n: number): void
   unfold(n: number): void
   toggleSubMore(n: number): void

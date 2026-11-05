@@ -33,7 +33,7 @@ export interface Outgoing {
   back?: boolean
   /** its toast says nothing (an answer, a note with a decision) */
   quiet?: boolean
-  /** taken back while on its way: deleted once the server has it */
+  /** cancelled while on its way (its ×): deleted once the server has it */
   unsent?: boolean
 }
 

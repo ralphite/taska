@@ -9,8 +9,8 @@ type Story = StoryObj
 
 const pad = (node: ReactNode) => <div className="bg-zinc-200 p-6 dark:bg-zinc-800">{node}</div>
 
-/** The project's name, the box; a voice note being recorded, one on its way, one waiting for Taska, the draft to
- * check; then every input with what became of it, the one just sent with Undo, one being added to by voice. */
+/** The project's name, the box; a voice note being recorded, one on its way, one waiting for Taska (× cancels each),
+ * the draft to check; then every input with what became of it (its ⋯ deletes it), one being added to by voice. */
 export const Desktop: Story = { name: 'Desktop', render: () => pad(<DeskPage />) }
 
 /** Under the pointer: a row a shade darker, its Voice, Comment and ⋯ at the end of its first line. */

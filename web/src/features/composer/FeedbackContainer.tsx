@@ -12,17 +12,16 @@ import { Feedback } from './Composer'
 
 export function FeedbackContainer({ route, composePage, scope, boxKey }: { route: ProjectRoute; composePage: boolean; scope: string | null; boxKey: DraftKey }) {
   const app = useServices('box', 'fields', 'inputActions', 'inputs', 'nav', 'sheets')
-  const stores = useStores('box', 'data', 'outbox', 'ui')
+  const stores = useStores('data', 'outbox', 'ui')
   const desk = useLayout() === 'desk'
   const m = useProjectModel(route.slug)
   const outbox = useStoreValue(stores.outbox, (s) => s.list)
-  const justSent = useStoreValue(stores.box, (s) => s.sent)
   const lastSent = useStoreValue(stores.ui, (s) => s.lastSent)
   const projects = useStoreValue(stores.data, (s) => s.projects)
   const mine = outbox.filter((o) => o.slug === route.slug && !o.unsent && showsOnItsWay(o))
   // the input the line speaks of
   const sentRow = lastSent?.slug === route.slug && m ? m.byId.get(lastSent.rid) : undefined
-  const feedback = feedbackLine({ m, desk, composePage, scope, mine, lastSent: lastSent?.slug === route.slug ? lastSent.rid : null, lastQ: lastSent?.q, others: (projects || []).some((p) => p.name !== route.slug), undoable: (q) => !!q && justSent.some((x) => x.q === q) })
+  const feedback = feedbackLine({ m, desk, composePage, scope, mine, lastSent: lastSent?.slug === route.slug ? lastSent.rid : null, others: (projects || []).some((p) => p.name !== route.slug) })
   // a line that says where it ended up goes after a while
   useEffect(() => {
     if (!feedback?.final) return
@@ -34,10 +33,7 @@ export function FeedbackContainer({ route, composePage, scope, boxKey }: { route
       line={feedback?.line ?? null}
       on={{
         dismiss: () => stores.ui.getState().setLastSent(null),
-        undo: () => {
-          const q = mine[0]?.q ?? lastSent?.q
-          if (q) app.box.unsend(q)
-        },
+        cancel: (q) => app.box.cancel(q),
         retry: () => void app.inputs.flush(),
         edit: () => app.box.editOutgoing(route.slug, boxKey) && app.fields.focus('box'),
         view: () => {

@@ -321,16 +321,17 @@ export function Composer({ line, waiting = null, lineOn, lineOnComposePage, plac
   )
 }
 
-const Dismiss = ({ onClick }: { onClick(): void }) => (
-  <button onClick={onClick} aria-label="Dismiss" className={`-my-2 grid size-11 shrink-0 place-items-center rounded-full hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 ${MUTED}`}>
+/** × at the end of the line: it goes (`cancel`: what it names, still on its way, is not sent, B666) */
+const Dismiss = ({ onClick, cancel = false }: { onClick(): void; cancel?: boolean }) => (
+  <button onClick={onClick} aria-label={cancel ? 'Cancel' : 'Dismiss'} {...(cancel ? { title: 'Cancel: it is not sent' } : {})} className={`-my-2 grid size-11 shrink-0 place-items-center rounded-full hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 ${MUTED}`}>
     <Icon n="x" c="size-3.5" sw="2" />
   </button>
 )
 
 const Pulse = () => <span className="size-2 shrink-0 animate-pulse rounded-full bg-blue-500 dark:bg-blue-400" />
 
-/** The line above the box: what happened to what you sent last. */
-export function Feedback({ line, on }: { line: FeedbackLine | null; on: { dismiss(): void; undo(): void; retry(): void; edit(): void; view(): void; undoFiling(): void; move(): void; retryOrganizer(): void } }) {
+/** The line above the box: what happened to what you sent last; while it is on its way, its × cancels it. */
+export function Feedback({ line, on }: { line: FeedbackLine | null; on: { dismiss(): void; cancel(q: string): void; retry(): void; edit(): void; view(): void; undoFiling(): void; move(): void; retryOrganizer(): void } }) {
   const link = (label: string, run: () => void) => (
     <button onClick={run} className="-my-2 h-11 shrink-0 rounded-full px-2 font-semibold text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10">
       {label}
@@ -348,6 +349,7 @@ export function Feedback({ line, on }: { line: FeedbackLine | null; on: { dismis
               Waiting for Taska…{more(line.more)} · {line.text}
             </span>
             {link('Edit', on.edit)}
+            <Dismiss cancel onClick={() => on.cancel(line.q)} />
           </>
         )
         break
@@ -360,6 +362,7 @@ export function Feedback({ line, on }: { line: FeedbackLine | null; on: { dismis
             </span>
             {link('Retry', on.retry)}
             {link('Edit', on.edit)}
+            <Dismiss cancel onClick={() => on.cancel(line.q)} />
           </>
         )
         break
@@ -371,7 +374,7 @@ export function Feedback({ line, on }: { line: FeedbackLine | null; on: { dismis
               {line.uploading ? 'Uploading' : 'Sending'}
               {more(line.more)} · {line.text}
             </span>
-            {line.canUndo ? link('Undo', on.undo) : null}
+            <Dismiss cancel onClick={() => on.cancel(line.q)} />
           </>
         )
         break
@@ -448,7 +451,6 @@ export function Feedback({ line, on }: { line: FeedbackLine | null; on: { dismis
           <>
             <span className="size-2 shrink-0 rounded-full bg-zinc-400" />
             <span className="line-clamp-2 min-w-0 flex-1 leading-snug">Sent · {line.organizer ? 'left for agent' : 'waiting for agent'}</span>
-            {line.canUndo ? link('Undo', on.undo) : null}
             {line.move ? link('Move to…', on.move) : null}
             <Dismiss onClick={on.dismiss} />
           </>

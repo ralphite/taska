@@ -78,6 +78,7 @@ export function InputsContainer({ route, hidden }: { route: ProjectRoute; hidden
         picture: (f, all) => media.on.view(f, all),
         outboxRetry: () => void app.inputs.flush(),
         outboxEdit: () => app.box.editOutgoing(route.slug, boxKey) && app.fields.focus('box'),
+        outboxCancel: (q) => app.box.cancel(q),
         end: () => setUpTo((n) => n + PAGE),
       }}
     />

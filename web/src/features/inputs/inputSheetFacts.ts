@@ -8,6 +8,9 @@ import type { Input } from '../../model/types'
 import { inputCode } from '../../model/words'
 import type { InputMenuFacts } from './InputSheets'
 
+/** What Delete in an input's menu asks by (its second click deletes). */
+export const inputDeleteAsk = (id: string) => `input-delete ${id}`
+
 /** `desk`: the desktop shows a voice note's original words under the pointer, so its menu has no Original words (B640);
  * `tidy`: voice notes' words are tidied (Settings), so the phone's menu offers them. */
 export function inputMenuFacts(m: ProjectModel, r: Input, otherProjects: number, asked: Readonly<Record<string, number>>, desk: boolean, tidy: boolean): InputMenuFacts {
@@ -21,6 +24,7 @@ export function inputMenuFacts(m: ProjectModel, r: Input, otherProjects: number,
     history: !!r.history?.length,
     scope: r.scope ? code(r.scope) : null,
     asking: r.files.find((f) => asked[`unfile ${r.id} ${f.f}`])?.f ?? null,
+    deleting: !!asked[inputDeleteAsk(r.id)],
     deleteTip:
       `Delete ${inputCode(r.id)}` +
       (r.deletion?.go.length ? ` and ${r.deletion.go.map(code).join(', ')}` : '') +

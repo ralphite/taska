@@ -26,6 +26,31 @@ test('r113 r525: Send empties the box at once, and what was sent arrives even wi
   await expect.poll(async () => p.read('inbox'), { timeout: 20000 }).toContain('Pick up the parcel before six')
 })
 
+test('B666 r1055: what was just sent has no Undo; while it is on its way its × cancels it, and it never arrives', async ({
+  page,
+  context,
+  request,
+}) => {
+  const p = await project(request, LOOP)
+  await open(page, p)
+  // Taska out of reach: it waits on its line, with ×
+  await context.setOffline(true)
+  await box(page).fill('A thought sent by mistake')
+  await page.keyboard.press('Shift+Enter')
+  const cancel = page.getByRole('status').getByRole('button', { name: 'Cancel', exact: true }).filter({ visible: true })
+  await expect(cancel).toHaveCount(1, { timeout: 10000 })
+  await cancel.click()
+  await expect(cancel).toHaveCount(0)
+  await expect(page.getByText('A thought sent by mistake').filter({ visible: true })).toHaveCount(0)
+  await context.setOffline(false)
+  // sent for real: it arrives, with no Undo anywhere
+  await box(page).fill('A thought to keep')
+  await page.keyboard.press('Shift+Enter')
+  await expect.poll(async () => p.read('inbox'), { timeout: 15000 }).toContain('A thought to keep')
+  await expect(page.getByRole('button', { name: 'Undo', exact: true }).filter({ visible: true })).toHaveCount(0)
+  expect(await p.read('inbox')).not.toContain('A thought sent by mistake')
+})
+
 test('r382 r389: words not sent stay in the box after a reload, and leaving is never stopped while not recording', async ({
   page,
   request,

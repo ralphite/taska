@@ -33,8 +33,8 @@ export interface TalkLineEvents extends CardEvents {
   unhide(id: number): void
   /** a place in one of the item's documents */
   docAt(d: number, key: string): void
-  /** what you sent and Taska has not yet */
-  unsend(q: string): void
+  /** what you sent and Taska has not yet, cancelled (its ×, B666): it does not go */
+  cancel(q: string): void
   outboxRetry(): void
   outboxEdit(): void
 }
@@ -44,8 +44,6 @@ export interface Outgoing {
   text: string
   state: string
   bad: boolean
-  /** you just sent it: Undo takes it back */
-  canUndo: boolean
   /** its pictures, as they were picked (shown while they go up) */
   previews?: string[]
   /** T668, a prototype: its voice notes, drawn in the bubble while it goes (the page does not give them) */
@@ -63,8 +61,6 @@ export interface TalkFacts {
   going: { text: string; state: string } | null
   /** what you sent to this item and Taska has not yet */
   outgoing: Outgoing[]
-  /** a message's Undo (what you just sent), by its input */
-  undo(rid: string): string | null
   /** a project's title by its name (where an input was moved to) */
   title(slug: string): string
 }
@@ -135,7 +131,6 @@ function MsgView({ it, x, env, on, facts, docs, code, done, ver, gone, read }: {
     ) : null
   if (you && y.text && y.text.trim().split('\n').every((l) => /^\s*✓/.test(l)) && !src?.files?.length) return null // an answer's ticks show on its card
   if (you) {
-    const undo = src ? facts.undo(src.id) : null
     const moved = src?.moved && !ver?.old ? movedOf(src.moved, facts.title) : null
     // T668 (a prototype): the voice notes inside the bubble, in the look being tried
     const inside = env.voiceLook && !ver?.old ? (src?.files || []).filter(isAudio) : []
@@ -219,11 +214,6 @@ function MsgView({ it, x, env, on, facts, docs, code, done, ver, gone, read }: {
               </>
             ) : null}
           </span>
-          {undo && !ver?.old ? (
-            <button onClick={() => on.unsend(undo)} className={DC_LINK}>
-              Undo
-            </button>
-          ) : null}
           {src && !ver?.old && !src.moved ? (
             <button aria-label={`More for ${inputCode(src.id)}`} onClick={(e) => on.inputMore(src.id, e.currentTarget)} className={`${DC_BTN} min-w-11 justify-center lg:order-first lg:opacity-0 lg:group-hover/msg:opacity-100 lg:focus-visible:opacity-100`}>
               <Icon n="more" c="size-3.5" />
@@ -456,11 +446,10 @@ function Pending({ list, env, on }: { list: Outgoing[]; env: TalkEnv; on: TalkLi
                   Edit
                 </button>
               </>
-            ) : q.canUndo ? (
-              <button onClick={() => on.unsend(q.q)} className={DC_LINK}>
-                Undo
-              </button>
             ) : null}
+            <button onClick={() => on.cancel(q.q)} aria-label="Cancel" title="Cancel: it is not sent" className={`${DC_BTN} min-w-11 justify-center`}>
+              <Icon n="x" c="size-3.5" />
+            </button>
           </div>
         </div>
       ))}

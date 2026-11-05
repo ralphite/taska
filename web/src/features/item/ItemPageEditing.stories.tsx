@@ -10,4 +10,5 @@ export const Editing: Story = { ...at({ f: { editing: true } }), name: 'Editing 
 export const AddingASubitem: Story = { ...at({ f: { addingSub: true } }), name: 'Adding a subitem' }
 /** adding the first subitem of an item with none: the Subitems head with no count, only the field */
 export const AddingTheFirstSubitem: Story = { ...at({ others: [PARENT], f: { addingSub: true } }), name: 'Adding the first subitem' }
-export const YourReplyOnItsWay: Story = { ...at({ t: { outgoing: [{ q: 'q1', text: 'Also keep the sort.', state: 'Sending…', bad: false, canUndo: true }] } }), name: 'Your reply on its way' }
+/** on its way: × cancels it (it is not sent) */
+export const YourReplyOnItsWay: Story = { ...at({ t: { outgoing: [{ q: 'q1', text: 'Also keep the sort.', state: 'Sending…', bad: false }] } }), name: 'Your reply on its way' }

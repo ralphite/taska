@@ -28,14 +28,12 @@ export function openItemMenu(app: Pick<App, 'sheets'>, desk: boolean, n: number,
 
 export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = false, preview = false }: { it: Item; m: ProjectModel; slug: string; tab: Tab; desk: boolean; /** in two columns, its document on the left */ left?: ReactNode; bare?: boolean; /** the search's preview of it: read only, not counted as seen or opened */ preview?: boolean }) {
   const app = useServices('answers', 'box', 'docs', 'fields', 'inputs', 'itemEdits', 'items', 'nav', 'runner', 'seen', 'sheets', 'toasts')
-  const stores = useStores('box', 'data', 'docTicks', 'grips', 'itemView', 'keptEdits', 'outbox', 'recent', 'ui')
+  const stores = useStores('data', 'docTicks', 'grips', 'itemView', 'keptEdits', 'outbox', 'recent', 'ui')
   const projects = useStoreValue(stores.data, (s) => s.projects)
   const ticks = useStoreValue(stores.docTicks, (s) => s)
   const duo = useStoreValue(stores.ui, (s) => s.duo) && desk
   const view = useStoreValue(stores.itemView, (s) => s)
   const kept = useStoreValue(stores.keptEdits, (s) => s)
-  // what you sent here that you can still take back
-  const takeBack = useStoreValue(stores.box, (s) => s.sent)
   const outbox = useStoreValue(stores.outbox, (s) => s.list)
   const away = useAway(slug)
   const world = useItemWorld(m, slug)
@@ -61,7 +59,7 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
     .filter((o) => !(o.kind === 'answer' && !o.files.length))
     .map((o) => {
       const previews = o.files.flatMap((f) => (f.preview ? [f.preview] : []))
-      return { q: o.q, text: o.text || (previews.length ? '' : outgoingLine(o)), state: outgoingState(o, away), bad: o.state === 'failed' && !o.net, canUndo: takeBack.some((x) => x.q === o.q), previews }
+      return { q: o.q, text: o.text || (previews.length ? '' : outgoingLine(o)), state: outgoingState(o, away), bad: o.state === 'failed' && !o.net, previews }
     })
 
   const media = useFiles(slug)
@@ -82,7 +80,6 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
     reask: view.reask,
     going: answering ? { text: answering.text, state: outgoingState(answering, away) } : null,
     outgoing,
-    undo: (rid) => takeBack.find((x) => x.rid === rid)?.q ?? null,
     title: (s) => projects?.find((p) => p.name === s)?.title || s,
   }
   const f: ItemFacts = {
@@ -185,7 +182,7 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
     peek: (id) => iv().peek(id),
     unhide: (id) => void send([{ op: 'hide', ref, id, on: false }], `showing a message on ${ref} again`),
     docAt: (d, key) => app.docs.openAt(d, key),
-    unsend: (q) => app.box.unsend(q),
+    cancel: (q) => app.box.cancel(q),
     outboxRetry: () => void app.inputs.flush(),
     outboxEdit: () => app.box.editOutgoing(slug, replyDraft(ref)) && app.fields.focus('box'),
   }
