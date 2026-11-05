@@ -232,8 +232,9 @@ export function FileRows({ files, cls = '', ...rest }: { files: FileRef[]; cls?:
   )
 }
 
-/** Your voice note under your words: one small line: play, its length, the original words (the phone's button; on
- * the desktop, pointing at play shows them). `bare`: the phone has them in the message's menu instead. */
+/** A voice note under a comment's words in a document's thread: one small line: play, its length, the original words
+ * (the phone's button; on the desktop, pointing at play shows them). `bare`: the phone has them in a menu instead.
+ * (In an item's talk your voice notes are in your bubble: VoiceBubble.) */
 export function VoiceLine({ files, url, play, tidy, bare = false, on }: { files: FileRef[]; url(f: string): string; play(src: string): PlayState; tidy: boolean; bare?: boolean; on: FileEvents }) {
   const words = tidy && !bare
   return (
@@ -275,127 +276,61 @@ export function VoiceLine({ files, url, play, tidy, bare = false, on }: { files:
   )
 }
 
-/** T668, a prototype (Yadong picks one): your voice note inside your own blue bubble, not under it. The page leaves
- * it unset: the note stays under the bubble (VoiceLine). pill: a soft pill with a white disc and its time; shelf: a
- * strip docked at the bubble's foot with a track for how far it got; disc: a white disc and its time right on the
- * blue, a row of dots for how far it got. Each design is Gemini's. */
-export type BubbleVoiceLook = 'pill' | 'shelf' | 'disc'
-
 const DELAYS = [0, 200, 400]
 /** words still being written out: a quiet mark in the bubble where they will be */
-function Hearing({ look }: { look: BubbleVoiceLook }) {
-  const dots = (
-    <span className="inline-flex items-center gap-1" aria-hidden="true">
-      {DELAYS.map((d) => (
-        <span key={d} className="size-1.5 animate-pulse rounded-full bg-white/70" style={{ animationDelay: `${d}ms` }} />
-      ))}
-    </span>
-  )
-  if (look === 'disc')
-    return (
-      <span role="status" aria-label="Transcribing" className="flex py-1.5">
-        {dots}
-      </span>
-    )
+function Transcribing() {
   return (
     <span role="status" className="flex items-center gap-1.5 py-0.5 text-[13px] text-white/70">
-      {look === 'shelf' ? dots : null}
-      {look === 'shelf' ? 'transcribing…' : 'transcribing'}
-      {look === 'pill' ? dots : null}
+      transcribing
+      <span className="inline-flex items-center gap-1" aria-hidden="true">
+        {DELAYS.map((d) => (
+          <span key={d} className="size-1.5 animate-pulse rounded-full bg-white/70" style={{ animationDelay: `${d}ms` }} />
+        ))}
+      </span>
     </span>
   )
 }
 
-/** how far it got, 0 to 1 */
-const part = (total: number | null, play: PlayState) => (total && play.t !== null ? Math.min(1, play.t / total) : 0)
-
-/** One voice note's player in the bubble. `solo`: nothing else is in the bubble, so the bubble is the player.
- * `busy`: still on its way, it cannot be played yet. */
-export function BubblePlayer({ f, src, play, tidy, look, solo = false, busy = false, meter = true, onPlay }: {
+/** One voice note of yours in your blue bubble (T668): a soft pill, a white play disc and its time (on the desktop,
+ * pointing at it shows its original words). `solo`: nothing else is in the bubble, so the bubble is the pill. `busy`:
+ * still on its way, it cannot be played yet. */
+export function VoicePill({ f, src, play, tidy, solo = false, busy = false, onPlay }: {
   f: FileRef
   src: string
   play: PlayState
   tidy: boolean
-  look: BubbleVoiceLook
   solo?: boolean
   busy?: boolean
-  meter?: boolean
   onPlay(src: string): void
 }) {
   const total = voiceLength(f)
-  const icon = <Icon n={play.playing ? 'pausefill' : 'play'} c="size-3.5" />
-  const time = <VoiceTime total={total} play={play} quiet="text-white/60" />
-  const press = {
-    'aria-label': `${play.playing ? 'Pause' : 'Play'} the voice note${total ? `, ${clock(total)}` : ''}`,
-    ...saidTip(f, tidy),
-    disabled: busy,
-    onClick: (e: { stopPropagation(): void }) => (e.stopPropagation(), onPlay(src)),
-  }
-  const disc = (size: string) => <span className={`grid ${size} shrink-0 place-items-center rounded-full bg-white text-blue-600 shadow-sm dark:text-blue-500`}>{icon}</span>
-  if (look === 'pill')
-    return solo ? (
-      <button {...press} className="flex min-h-11 min-w-34 items-center gap-2.5 rounded-2xl rounded-tr-md bg-blue-600 py-2 pr-4 pl-2 text-white transition-colors hover:bg-blue-700 disabled:opacity-70 dark:bg-blue-500 dark:hover:bg-blue-600">
-        {disc('size-7')}
-        <span className="font-mono text-[13px] font-medium tabular-nums">{time}</span>
-      </button>
-    ) : (
-      <button
-        {...press}
-        className={`inline-flex min-h-[38px] items-center gap-2.5 rounded-full border py-1 pr-3.5 pl-1.5 text-white transition-colors disabled:opacity-60 ${play.playing ? 'border-white/30 bg-white/25' : 'border-white/20 bg-white/15 hover:bg-white/25'}`}
-      >
-        {disc('size-7')}
-        <span className="font-mono text-[13px] font-medium tabular-nums">{time}</span>
-      </button>
-    )
-  if (look === 'shelf') {
-    const row = (
-      <>
-        <button {...press} className="grid size-9 shrink-0 place-items-center rounded-full bg-white/20 text-white transition-colors hover:bg-white/30 disabled:bg-white/10 disabled:text-white/50 lg:size-7">
-          {icon}
-        </button>
-        <span className="flex flex-1 items-center py-2" aria-hidden="true">
-          <span className="block h-1 w-full overflow-hidden rounded-full bg-white/25">
-            <span className="block h-full rounded-full bg-white" style={{ width: `${part(total, play) * 100}%` }} />
-          </span>
-        </span>
-        <span className="shrink-0 font-mono text-[11px] text-white/95 tabular-nums">{time}</span>
-      </>
-    )
-    return solo ? (
-      <span className={`flex w-fit max-w-[85%] min-w-50 items-center gap-2.5 rounded-2xl rounded-tr-md bg-blue-600 px-3.5 py-2 text-white dark:bg-blue-500 ${busy ? 'opacity-70' : ''}`}>{row}</span>
-    ) : (
-      <span className="flex items-center gap-2.5 px-3.5 py-1.5">{row}</span>
-    )
-  }
-  if (solo)
-    return (
-      <button {...press} className="flex h-10 items-center gap-2.5 rounded-full bg-blue-600 pr-3.5 pl-1.5 text-white transition-colors hover:bg-blue-700 disabled:opacity-70 dark:bg-blue-500 dark:hover:bg-blue-600">
-        {disc('size-7')}
-        <span className="font-mono text-[13px] font-medium tabular-nums">{time}</span>
-      </button>
-    )
-  const lit = Math.round(part(total, play) * 8)
   return (
-    <span className={`flex items-center gap-2.5 ${busy ? 'opacity-60' : ''}`}>
-      <button {...press} className="rounded-full transition-transform active:scale-95">
-        {disc('size-9 lg:size-8')}
-      </button>
-      <span className="font-mono text-[13px] font-medium text-white/95 tabular-nums">{time}</span>
-      {meter ? (
-        <span className="flex items-center gap-1" aria-hidden="true">
-          {Array.from({ length: 8 }, (_, i) => (
-            <span key={i} className={`size-1 rounded-full ${play.t === null ? 'bg-white/40' : i < lit ? 'bg-white' : 'bg-white/35'}`} />
-          ))}
-        </span>
-      ) : null}
-    </span>
+    <button
+      aria-label={`${play.playing ? 'Pause' : 'Play'} the voice note${total ? `, ${clock(total)}` : ''}`}
+      {...saidTip(f, tidy)}
+      disabled={busy}
+      onClick={(e) => (e.stopPropagation(), onPlay(src))}
+      className={
+        solo
+          ? 'flex min-h-11 min-w-34 items-center gap-2.5 rounded-2xl rounded-tr-md bg-blue-600 py-2 pr-4 pl-2 text-white transition-colors hover:bg-blue-700 disabled:opacity-70 dark:bg-blue-500 dark:hover:bg-blue-600'
+          : `inline-flex min-h-[38px] items-center gap-2.5 rounded-full border py-1 pr-3.5 pl-1.5 text-white transition-colors disabled:opacity-60 ${play.playing ? 'border-white/30 bg-white/25' : 'border-white/20 bg-white/15 hover:bg-white/25'}`
+      }
+    >
+      <span className="grid size-7 shrink-0 place-items-center rounded-full bg-white text-blue-600 shadow-sm dark:text-blue-500">
+        <Icon n={play.playing ? 'pausefill' : 'play'} c="size-3.5" />
+      </span>
+      {/* the time grows to the right: the disc stays where it was pressed */}
+      <span className="font-mono text-[13px] font-medium tabular-nums">
+        <VoiceTime total={total} play={play} quiet="text-white/60" />
+      </span>
+    </button>
   )
 }
 
-/** Your bubble with its voice notes inside (T668): what you said on top (`top`: the quote of a comment, the words),
- * the notes under it; with nothing on top, the bubble is the player. */
-export function VoiceBubble({ look, cls, files, url, play, tidy, top, hearing = false, busy = false, attrs, onPlay }: {
-  look: BubbleVoiceLook
+/** Your blue bubble with your voice notes inside it (T668): what you said on top (`top`: a comment's quote, the
+ * words), each note's pill under it; with nothing on top, the bubble is the pill. `words`: the phone shows a mark for
+ * a note's original words beside it (where the message's menu does not have them). */
+export function VoiceBubble({ cls, files, url, play, tidy, top, hearing = false, busy = false, words = false, attrs, on }: {
   /** the blue bubble's own classes */
   cls: string
   files: FileRef[]
@@ -405,36 +340,41 @@ export function VoiceBubble({ look, cls, files, url, play, tidy, top, hearing = 
   top?: ReactNode
   hearing?: boolean
   busy?: boolean
+  words?: boolean
   attrs?: Record<string, string>
-  onPlay(src: string): void
+  on: Pick<FileEvents, 'play' | 'words'>
 }) {
-  const one = (f: FileRef, o: { solo?: boolean; meter?: boolean } = {}) => {
+  const pill = (f: FileRef, i: number, solo: boolean) => {
     const src = url(f.f)
-    return <BubblePlayer key={f.f} f={f} src={src} play={play(src)} tidy={tidy} look={look} busy={busy} onPlay={onPlay} {...o} />
+    const quote =
+      words && tidy ? (
+        <button
+          aria-label="Original words"
+          onClick={(e) => (e.stopPropagation(), on.words(f.f))}
+          className={`relative grid size-7 place-items-center rounded-full after:absolute after:-inset-2 lg:hidden ${solo ? `hover:bg-zinc-100 dark:hover:bg-zinc-800 ${MUTED}` : 'text-white/80 hover:bg-white/15'}`}
+        >
+          <Icon n="quote" c="size-4" />
+        </button>
+      ) : null
+    return (
+      <span key={`${f.f}-${i}`} className="flex items-center gap-1">
+        {solo ? quote : null}
+        <VoicePill f={f} src={src} play={play(src)} tidy={tidy} solo={solo} busy={busy} onPlay={on.play} />
+        {solo ? null : quote}
+      </span>
+    )
   }
   if (!top && !hearing)
     return (
       <div {...attrs} className="flex max-w-full flex-col items-end gap-1">
-        {files.map((f) => one(f, { solo: true }))}
-      </div>
-    )
-  const head = (
-    <>
-      {top}
-      {hearing ? <Hearing look={look} /> : null}
-    </>
-  )
-  if (look === 'shelf')
-    return (
-      <div {...attrs} className={`${cls} min-w-52 ${busy ? 'opacity-70' : ''}`}>
-        {head}
-        <div className="-mx-4 mt-2.5 -mb-2.5 divide-y divide-white/10 rounded-b-2xl border-t border-white/15 bg-black/[0.08] dark:bg-black/20">{files.map((f) => one(f))}</div>
+        {files.map((f, i) => pill(f, i, true))}
       </div>
     )
   return (
     <div {...attrs} className={`${cls} ${busy ? 'opacity-70' : ''}`}>
-      {head}
-      <div className={`mt-2.5 flex flex-wrap items-center ${look === 'disc' ? 'gap-x-5 gap-y-2' : 'gap-2'}`}>{files.map((f) => one(f, { meter: files.length === 1 }))}</div>
+      {top}
+      {hearing ? <Transcribing /> : null}
+      <div className="mt-2.5 flex flex-wrap items-center gap-2">{files.map((f, i) => pill(f, i, false))}</div>
     </div>
   )
 }

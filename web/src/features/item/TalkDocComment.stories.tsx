@@ -33,6 +33,15 @@ export const VoiceCommentNoWordsHeard: Story = {
   ...at([comment({ id: 9, t: later(1), quote: 'keeps the filter', text: '', files: [{ f: 'f5-voice_0-03.webm', name: 'voice_0-03.webm', mime: 'audio/webm' }] })]),
   name: 'Voice comment, no words heard',
 }
+// T668: the voice note's pill in the bubble, under the words it was written out to (r1080)
+export const VoiceCommentItsWordsWrittenOut: Story = {
+  ...at([comment({ id: 9, t: later(1), quote: 'keeps the filter', text: '', files: [{ f: 'f5-voice_0-05.webm', name: 'voice_0-05.webm', mime: 'audio/webm', tr: 'And the sort too?' }] })]),
+  name: 'Voice comment, its words written out',
+}
+export const VoiceCommentBeingSent: Story = {
+  ...at([comment({ id: -1, t: later(1), quote: 'keeps the filter', text: 'And the sort too?', files: [{ f: 'f5-voice_0-05.webm', name: 'voice_0-05.webm', mime: 'audio/webm' }] })]),
+  name: 'Voice comment, being sent',
+}
 // ---- more states (B636)
 const detachedAt = (comments: Comment[]): Story => ({
   render: () => (

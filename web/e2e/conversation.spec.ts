@@ -181,7 +181,7 @@ test('T529 B640: on an input moved to another project, its voice note\'s origina
   page,
   request,
 }) => {
-  test.skip(!isDesk(page), 'pointing is the desktop; the phone has Original words in the line')
+  test.skip(!isDesk(page), 'pointing is the desktop; the phone has a mark for the original words beside the note')
   const p = await project(request, LOOP),
     q = await project(request)
   const up = await request.post(`${p.url}api/file?name=${encodeURIComponent('voice 0-07.webm')}`, {
@@ -210,12 +210,12 @@ test('T529 B640: on an input moved to another project, its voice note\'s origina
   const moved = (await answer.json()) as { ok: boolean }
   expect(moved.ok).toBe(true)
   await open(page, p, 'T4')
-  // The input's words and its voice note share one conversation card.
-  const play = page.getByRole('button', { name: 'Play voice 0-07.webm', exact: true })
+  // The input's words and its voice note share one bubble (T668): its words, the note's pill under them.
+  const play = page.getByRole('button', { name: 'Play the voice note, 0:07', exact: true })
   const mine = pane(page).locator('div').filter({ has: page.locator(`[data-voice="${rid}"]`) }).filter({ has: play }).last()
     .filter({ visible: true })
     .first()
-  const words = mine.locator(`[data-voice="${rid}"]`)
+  const words = mine.locator(`[data-voice="${rid}"] > :first-child`)
   await expect(words).toBeVisible()
   await mine.locator(play).first().hover()
   const tip = page.locator('#tip[data-said]')
