@@ -71,7 +71,7 @@ export const STATES: State[] = [
   {
     name: 'Sending',
     // (the talk draws what is on its way under a message: an agent's before it)
-    data: { thread: [message({ id: 1, by: 'claude-code', kind: 'say', text: 'Which filter should the export keep?' })], o: { t: { outgoing: [{ q: 'q1', text: WORDS, state: 'Sending…', bad: false, canUndo: false, voices: [v12] }] } } },
+    data: { thread: [message({ id: 1, by: 'claude-code', kind: 'say', text: 'Which filter should the export keep?' })], o: { t: { outgoing: [{ q: 'q1', text: WORDS, state: 'Sending…', bad: false, voices: [v12] }] } } },
   },
   { name: 'A long voice note', data: said(LONG, [v437]) },
   { name: 'Two voice notes', data: said(TWO, [v12, v41]) },
