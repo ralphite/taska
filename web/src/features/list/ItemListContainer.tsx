@@ -7,7 +7,8 @@ import { usePaneRef } from '../../app/panes'
 import { useProjectModel, type ProjectRoute } from '../../app/hooks'
 import { closed, queueHead } from '../../model/items'
 import { forward } from '../../model/actions'
-import { codeOf, draftCodes, liveN, type ProjectModel } from '../../model/project'
+import { codeOf, draftCodes, firstSteps, liveN, type ProjectModel } from '../../model/project'
+import { NEW_DRAFT } from '../../model/draftTarget'
 import { holdKey } from '../../model/route'
 import { filtersSet, searchWords, visible } from '../../model/visible'
 import { useSearchHints } from '../../app/searchHints'
@@ -18,7 +19,7 @@ import { drawRows, listViews } from './drawRows'
 import { heldRows, listBody, type Row } from './rows'
 
 export function ItemListContainer({ route }: { route: ProjectRoute }) {
-  const app = useServices('fields', 'itemDrag', 'items', 'listHold', 'listOrder', 'media', 'nav', 'rows', 'seen', 'selection', 'sheets', 'views')
+  const app = useServices('fields', 'itemDrag', 'items', 'listHold', 'listOrder', 'media', 'nav', 'rows', 'seen', 'selection', 'sheets', 'views', 'voice')
   const stores = useStores('box', 'drafts', 'drag', 'route', 'ui', 'views')
   const layout = useLayout()
   const m = useProjectModel(route.slug)
@@ -139,6 +140,22 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
         organizerOn={!!m?.facts.organizer.on}
         onReset={() => app.nav.setList({ q: '', type: 'all', when: 'all', status: 'all', pri: 'all', sort: 'all' })}
         onConnect={() => app.sheets.open({ kind: 'agents' }, { tall: true, wide: true })}
+        firstRun={
+          m
+            ? {
+                ...firstSteps(m),
+                on: {
+                  connect: () => app.sheets.open({ kind: 'agents' }, { tall: true, wide: true }),
+                  // the first input said: New input, recording at once
+                  say: () => {
+                    app.nav.newInput()
+                    void app.voice.start(route.slug, NEW_DRAFT, null, 'main')
+                  },
+                  phone: () => app.nav.to(`/p/${encodeURIComponent(route.slug)}/phone`),
+                },
+              }
+            : null
+        }
       />
     ) : null
   const saved = useStoreValue(stores.views, (s) => s)

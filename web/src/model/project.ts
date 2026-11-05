@@ -230,3 +230,9 @@ export function draftCodes(m: ProjectModel, words: Readonly<Record<string, strin
 export function inputDraft(id: string, words: Readonly<Record<string, string>>, writing: { id: string; mode: 'edit' | 'append' } | null): 'edit' | 'append' | null {
   return (['edit', 'append'] as const).find((mode) => !(writing?.id === id && writing.mode === mode) && String(words[draftKey({ kind: 'amend', mode, id })] || '').trim()) || null
 }
+
+/** A new project's first steps (D115 #20), each done when the data says so: an agent has come, something was said
+ * here (one deleted since counts), Taska was used on a phone. */
+export function firstSteps(m: ProjectModel): { agent: boolean; input: boolean; phone: boolean } {
+  return { agent: m.facts.agents.length > 0, input: m.inputs.length > 0 || m.facts.deletedInputs.length > 0, phone: !!m.facts.phone }
+}

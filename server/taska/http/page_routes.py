@@ -34,6 +34,9 @@ if TYPE_CHECKING:
     from .app import AppContext
 
 
+_PHONE = re.compile(r"iPhone|Android.*Mobile")
+
+
 def _view(ctx: "AppContext", req: Request, p: Project, since: Optional[Cursor]) -> Dict[str, Any]:
     """The project for the page (all of it, or what changed since the cursor), with its own facts."""
     ws = ctx.workspace
@@ -45,6 +48,10 @@ def _view(ctx: "AppContext", req: Request, p: Project, since: Optional[Cursor]) 
                                             organizer_busy=p.organizing.busy, organizer_model=gemini.MODEL,
                                             presence=pres["agents"], work=pres["work"], db_path=p.store.path)
     key = ws.key.value
+    if _PHONE.search(req.header("User-Agent")):
+        ws.saw_phone()
+    # used on a phone (opened there, or a phone gets pushes): the first-run checklist ticks it (D115 #20)
+    out["project"]["phone"] = ws.phone_seen or bool(ctx.push.subs)
     out["project"].update(base=f"{req.host()}{req.prefix}/p/{p.slug}", key=key,
                           remote=f"{ws.public}/k/{key}/p/{p.slug}" if ws.public else "",
                           lan=f"{ws.lan}/p/{p.slug}" if ws.lan else "")

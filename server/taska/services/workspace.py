@@ -10,6 +10,7 @@ from __future__ import annotations
 import contextlib
 import json
 import os
+import time
 import secrets
 import shutil
 import threading
@@ -210,6 +211,18 @@ class Workspace:
                     row["pos"] = pos
                 out.append(row)
         return out
+
+    # -- a phone, once (D115 #20: the first-run checklist's Use on your phone) ------------------
+
+    @property
+    def phone_seen(self) -> bool:
+        """Whether Taska was ever opened on a phone."""
+        return os.path.exists(os.path.join(self.root, ".phone-seen"))
+
+    def saw_phone(self) -> None:
+        if not self.phone_seen:
+            with open(os.path.join(self.root, ".phone-seen"), "w", encoding="utf-8") as f:
+                f.write(time.strftime("%Y-%m-%d %H:%M:%S\n"))
 
     def bring_back_laters(self, today: str) -> int:
         """In every project, what was Later until `today` or before is back to Now (D115 #21). -> how many."""

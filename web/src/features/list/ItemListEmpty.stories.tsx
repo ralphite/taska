@@ -2,7 +2,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frames } from '../../stories/Frames'
 import { item } from '../../stories/fixtures'
-import { listOn } from '../../stories/listFixtures'
+import { listOf, listOn } from '../../stories/listFixtures'
 import { act } from '../../stories/menuFixtures'
 import { EmptyList, ItemList } from './ItemList'
 import { view } from '../../stories/itemListFixtures'
@@ -10,7 +10,15 @@ import { view } from '../../stories/itemListFixtures'
 export default { title: 'Components/Item list/Views/Empty, small, loading' } satisfies Meta
 type Story = StoryObj
 
-export const EmptyProject: Story = { ...view('items', { status: 'all' }, []), name: 'An empty project' }
+/** An empty project: its first steps as done (D115 #20) */
+const emptyProject = (firstRun: { agent: boolean; input: boolean; phone: boolean }): Story => ({
+  render: () => <Frames phoneWidth={393} deskWidth={460} height={760}>{(layout) => listOf([], 'items', { status: 'all' }, layout === 'desk', { firstRun })}</Frames>,
+})
+export const EmptyProject: Story = { ...emptyProject({ agent: true, input: false, phone: false }), name: 'An empty project' }
+/** its first steps, none done yet; each ticks itself when its data says so (D115 #20) */
+export const EmptyProjectNothingDone: Story = { ...emptyProject({ agent: false, input: false, phone: false }), name: 'An empty project: first steps' }
+/** all three done: the checklist is gone for good, the list's own words */
+export const EmptyProjectAllDone: Story = { ...emptyProject({ agent: true, input: true, phone: true }), name: 'An empty project: first steps done' }
 /** a view with nothing in it while the project has items: the views stay above, Nothing here. under them */
 export const AnEmptyView: Story = { ...view('items', { status: 'open' }, [item({ n: 1, status: 'done', title: 'Book the flights' }), item({ n: 2, status: 'review', title: 'Plan the trip' })]), name: 'A view with nothing in it (Open)' }
 export const SmallProject: Story = { ...view('items', { status: 'all' }, [item({ n: 1, title: 'Plan the trip' }), item({ n: 2, status: 'done', title: 'Book the flights' })]), name: 'A small project' }

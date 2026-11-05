@@ -240,6 +240,8 @@ export interface ProjectFacts {
   /** this project on Taska's own network ("http://192.168.1.20:7340/p/x"): a phone there needs no key; '' when Taska
    * listens on this machine only */
   lan: string
+  /** Taska was opened on a phone, or a phone gets its pushes (D115 #20) */
+  phone?: boolean
 }
 
 export interface ServerFacts {

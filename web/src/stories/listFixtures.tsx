@@ -9,6 +9,7 @@ import { drawRows, listViews } from '../features/list/drawRows'
 import { heldRows, listBody } from '../features/list/rows'
 import { queueHead, type DropHow } from '../model/items'
 import { NO_FILTERS, type ListKey, type ListQuery } from '../model/route'
+import { firstSteps } from '../model/project'
 import type { Item, SavedView } from '../model/types'
 import { filtersSet, otherTabs, searchWords } from '../model/visible'
 import { SearchHints, type CrossFacts } from '../ui/SearchHints'
@@ -17,6 +18,7 @@ import type { Tab } from '../model/words'
 import { T, item, message, noRowEvents, modelOf } from './fixtures'
 import { act, acts } from './acts'
 
+const firstActs = acts('First steps', ['connect', 'say', 'phone'] as const, { connect: 'Agents › Who works here', phone: 'Settings › Use on your phone' })
 export const listOn: ListEvents = {
   ...noRowEvents,
   ...acts('List', ['view', 'ownView', 'drop', 'dragEnd', 'ownMenu', 'rename', 'renameStop', 'subMore', 'needsMore', 'archiveAll'] as const, { ownMenu: 'Item list › Views › Your own views, sorting' }),
@@ -67,6 +69,8 @@ export interface Holding {
   /** the row being dragged and where it would go, as the page works it out */
   drag?: { n: number; at?: { n?: number; how: DropHow } }
   on?: Partial<ListEvents>
+  /** an empty project's first steps, as done (D115 #20; else as its data says) */
+  firstRun?: Partial<{ agent: boolean; input: boolean; phone: boolean }>
 }
 
 /** The list as the page draws it, holding what the page holds for it (the route's tab and filters, stores.ui's folded
@@ -170,6 +174,7 @@ function LiveList({ items, tab: tab0, q: q0, desk, h }: { items: Item[]; tab: Ta
               onReset={() => setWhere({ tab, query: { ...query, q: '', type: 'all', when: 'all', status: 'all', pri: 'all', sort: 'all' } })}
               onConnect={act('List: connect an agent → Agents › Who works here')}
               hints={hints(0)}
+              firstRun={{ ...firstSteps(m), ...h.firstRun, on: firstActs }}
             />
           ) : null
         }

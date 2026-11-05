@@ -80,3 +80,14 @@ test('D115 #30: work in progress says on its row what its agent last said and ho
   await expect(r).toContainText('Testing with three filters')
   await expect(r).toContainText(/· (now|\d+ min)/)
 })
+
+test('D115 #20: an empty project shows its first steps, each ticked by itself once done', async ({ page, request }) => {
+  const p = await project(request)
+  await open(page, p)
+  const steps = page.getByRole('list', { name: 'First steps' }).filter({ visible: true })
+  const say = steps.getByRole('button', { name: 'Say your first input' })
+  await expect(steps.getByRole('button', { name: 'Connect an agent' })).toBeEnabled()
+  await expect(say).toBeEnabled()
+  expect((await p.op({ op: 'input', text: 'A first thought' })).ok).toBe(true)
+  await expect(say).toBeDisabled()
+})

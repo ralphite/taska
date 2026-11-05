@@ -3,6 +3,7 @@
 
 import { forwardRef, type ReactNode, useLayoutEffect, useRef } from 'react'
 import type { Item } from '../../model/types'
+import { Icon, type IconName } from '../../ui/Icon'
 import { Empty, Skeleton } from '../../ui/bits'
 import { ArchiveAllLine, HeldRow, HiddenKidsLine, ItemRow, NeedsMoreLine, NeedsRow, Zone, type RowEvents, type RowFacts, type RowLook } from './ListRows'
 import type { ViewChip, ZoneKind } from './rows'
@@ -175,7 +176,36 @@ export const ItemList = forwardRef<HTMLDivElement, ItemListProps>(function ItemL
 })
 
 /** The words for an empty list. */
-export function EmptyList({ why, q = '', status, organizerOn, onReset, onConnect, hints }: {
+/** An empty project's first steps (D115 #20): each ticks itself once done; with all done, the list's own words. */
+export interface FirstSteps {
+  agent: boolean
+  input: boolean
+  phone: boolean
+  on: { connect(): void; say(): void; phone(): void }
+}
+
+function FirstRun({ steps }: { steps: FirstSteps }) {
+  const step = (done: boolean, label: string, icon: IconName, run: () => void) => (
+    <li>
+      <button onClick={run} disabled={done} className="flex h-12 w-full items-center gap-3 rounded-xl px-3 text-left text-[15px] hover:bg-zinc-100 disabled:cursor-default disabled:hover:bg-transparent dark:hover:bg-zinc-800">
+        {done ? <Icon n="check" c="size-5 text-emerald-600 dark:text-emerald-400" sw="2.5" /> : <span className="size-5 rounded-full border-2 border-zinc-300 dark:border-zinc-600" />}
+        <span className={`flex-1 ${done ? 'text-zinc-500 line-through decoration-zinc-300 dark:text-zinc-400 dark:decoration-zinc-600' : 'font-medium'}`}>{label}</span>
+        {done ? null : <Icon n={icon} c="size-4 text-zinc-400" />}
+      </button>
+    </li>
+  )
+  return (
+    <div className="mx-auto w-full max-w-sm px-4 py-10">
+      <ol aria-label="First steps" className="flex flex-col gap-1">
+        {step(steps.agent, 'Connect an agent', 'bot', steps.on.connect)}
+        {step(steps.input, 'Say your first input', 'mic', steps.on.say)}
+        {step(steps.phone, 'Use on your phone', 'phone', steps.on.phone)}
+      </ol>
+    </div>
+  )
+}
+
+export function EmptyList({ why, q = '', status, organizerOn, onReset, onConnect, hints, firstRun = null }: {
   why: string
   /** the search's words (none: only filters left nothing) */
   q?: string
@@ -184,7 +214,10 @@ export function EmptyList({ why, q = '', status, organizerOn, onReset, onConnect
   onReset(): void
   onConnect(): void
   hints?: ReactNode
+  /** an empty project's first steps, until all are done */
+  firstRun?: FirstSteps | null
 }) {
+  if (why === 'no-items' && firstRun && !(firstRun.agent && firstRun.input && firstRun.phone)) return <FirstRun steps={firstRun} />
   if (why === 'no-items')
     return (
       <Empty>
