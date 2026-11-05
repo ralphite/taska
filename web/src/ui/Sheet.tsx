@@ -124,7 +124,8 @@ export function Sheet({ open, look, children, desk, footRoom = 0, focus = false,
     'flex max-h-[min(88dvh,100%)] w-full max-w-2xl flex-col bg-white shadow-xl transition-transform duration-150 sm:rounded-3xl dark:bg-zinc-900 dark:ring-1 dark:ring-white/10',
     look.tall ? 'h-[88dvh] sm:h-[85dvh]' : '',
     look.wide ? 'lg:max-w-5xl' : '',
-    look.search && !look.pop ? 'overflow-hidden lg:h-full lg:max-h-full lg:max-w-none' : '',
+    // the search: the window less its margins, at most about three reading columns wide (r1068)
+    look.search && !look.pop ? 'overflow-hidden lg:h-full lg:max-h-full lg:max-w-[132rem]' : '',
     'max-h-[88dvh] rounded-t-3xl',
     pop ? `${look.narrow ? 'lg:w-56' : 'lg:w-[24rem]'} lg:max-h-[80dvh] lg:rounded-2xl lg:ring-1 lg:ring-zinc-900/10 dark:lg:ring-white/10` : '',
   ].join(' ')
