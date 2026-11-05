@@ -47,6 +47,13 @@ def _set(state: ProjectState, e: ev.Event) -> None:
     link(state, it.n, e.src, handled=not e.keep)
 
 
+@reduces(ev.LaterEnded)
+def _due(state: ProjectState, e: ev.Event) -> None:
+    assert isinstance(e, ev.LaterEnded)
+    it = state.items[e.n]
+    it.when, it.later_until, it.t1 = "now", None, e.t
+
+
 @reduces(ev.MessagePosted)
 def _say(state: ProjectState, e: ev.Event) -> None:
     assert isinstance(e, ev.MessagePosted)

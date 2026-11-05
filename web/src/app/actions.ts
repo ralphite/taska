@@ -148,7 +148,8 @@ export const ACTIONS = {
   reply: item(['fields'], { label: 'Reply', keys: 'r', listed: true, run: (w) => w.fields.focus('box') }),
   'not-yet': item(['items'], { label: 'Not yet', keys: 'n', listed: true, why: (_, h) => whyNot.notYet(h.it), run: (w, h) => set(w, h, 'status', 'open', { said: 'is back to open' }) }),
   done: item(['items'], { label: 'Done', keys: 'd', listed: true, why: (_, h) => whyNot.done(h.it, h.code), run: (w, h) => set(w, h, 'status', doneTo(h.it)) }),
-  later: item(['items'], { label: 'Later', keys: 'l', listed: 'Later or back to now', why: (_, h) => whyNot.later(h.it), run: (w, h) => set(w, h, 'when', h.it.when === 'now' ? 'later' : 'now') }),
+  // Later asks until when: Tomorrow, Next week, a day picked, or none (D115 #21); back to now at once
+  later: item(['items', 'sheets'], { label: 'Later', keys: 'l', listed: 'Later or back to now', why: (_, h) => whyNot.later(h.it), run: (w, h) => (h.it.when === 'now' ? w.sheets.open({ kind: 'later', n: h.it.n }, { focus: false }) : set(w, h, 'when', 'now')) }),
   archive: item(['items', 'nav'], {
     label: 'Archive',
     keys: 'e',

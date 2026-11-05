@@ -59,6 +59,20 @@ test('r445 r451 R337: archiving an item takes its finished subitems with it; one
   expect(await p.read('items?status=all&archived=1')).not.toContain('Print the posters')
 })
 
+test('D115 #21: Later offers Tomorrow, Next week, a day picked; the row then says which day', async ({ page, request }) => {
+  const p = await project(request, { agent: 'new task P1 now Ship the export\n', approve: ['T1'] })
+  await open(page, p, 'T1')
+  await page.getByRole('button', { name: /^Now/ }).filter({ visible: true }).first().click()
+  const sheet = page.locator('[role="dialog"]').filter({ visible: true }).last()
+  await expect(sheet.getByRole('button', { name: /Tomorrow/ })).toBeVisible()
+  await sheet.getByRole('button', { name: /Next week/ }).click()
+  await expect.poll(async () => p.read('T1')).toMatch(/later until \d{4}-\d{2}-\d{2}/)
+  await expect(page.getByRole('button', { name: /^Later · (Mon|[A-Z][a-z]{2} \d+)/ }).filter({ visible: true }).first()).toBeVisible()
+  await open(page, p)
+  await view(page, 'Later').click()
+  await expect(row(page, 'Ship the export').first()).toContainText(/Later · (Mon|[A-Z][a-z]{2} \d+)/)
+})
+
 test('D115 #30: work in progress says on its row what its agent last said and how long ago', async ({ page, request }) => {
   const p = await project(request, { agent: 'new task P1 now Ship the export\n', approve: ['T1'], then: 'T1 doing\nT1 progress Testing with three filters\n' })
   await open(page, p)

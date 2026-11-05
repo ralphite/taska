@@ -119,6 +119,14 @@ class Project:
             if ids:
                 self.emit(ev.BlocksAsked(ids=ids, by="taska"))
 
+    def bring_back_laters(self, today: str) -> int:
+        """Items Later until `today` (YYYY-MM-DD, local) or before go back to Now by themselves (D115 #21). -> how many."""
+        with self.lock:
+            due = [self.state.code(i.n) for i in self.state.live_items() if i.when == "later" and i.later_until and i.later_until <= today]
+            if due:
+                self.run([(0, {"op": "due", "ref": c, "today": today}) for c in due], "taska")
+            return len(due)
+
     def run(self, commands: Sequence[Tuple[int, Command]], by: str, src: Optional[str] = None, keep: bool = False,
             session: str = "") -> Tuple[List[str], List[str]]:
         with self.lock:

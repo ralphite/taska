@@ -22,6 +22,8 @@ export type SheetRequest =
   | { kind: 'input-rescope'; id: string }
   /** what an agent reading item n gets (F568) */
   | { kind: 'agent-card'; n: number }
+  /** Later, until a day or with none (D115 #21) */
+  | { kind: 'later'; n: number }
   /** who works on the project, how to connect one more, what they read */
   | { kind: 'agents' }
   /** how a connected agent gets work without spending tokens (F613) */

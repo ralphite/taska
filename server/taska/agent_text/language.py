@@ -127,11 +127,16 @@ def command(head: str, cont: str) -> Union[Command, List[Command]]:
         return {"op": "merge", "ref": word, "into": rest2.strip().split()[0] if rest2.strip() else ""}
     if verb_l == "delete" and not rest2.strip():
         return {"op": "idel", "ref": word}
+    until = re.fullmatch(r"(?i)later\s+until\s+(\S+)(?:\s+(.*))?", rest, re.S)
+    if until:  # B03 later until 2026-11-10: Later, and back to Now on that day by itself (D115 #21)
+        change: Command = {"op": "set", "ref": word, "f": {"when": "later", "later_until": until[1]}}
+        words = ((until[2] or "") + ("\n" + cont if cont else "")).strip()
+        return [change, {"op": "say", "ref": word, "kind": "progress", "text": words}] if words else change
     opts, left = options(rest)
     if not opts:
         raise Refused(f"cannot read '{rest or '(nothing)'}' after {word}")
     src = opts.pop("src", None)
-    change: Command = {"op": "set", "ref": word, "f": opts, "src": src}
+    change = {"op": "set", "ref": word, "f": opts, "src": src}
     words = (left + ("\n" + cont if cont else "")).strip()
     # "B03 done <what changed>" says it too
     return [change, {"op": "say", "ref": word, "kind": "progress", "text": words}] if words else change

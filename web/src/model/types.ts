@@ -65,6 +65,8 @@ export interface Item {
   talked: boolean
   agent?: { by: string; t: string; ses?: string | null }
   rank?: number | null
+  /** Later until this day (YYYY-MM-DD, local): then back to Now by itself (D115 #21) */
+  later_until?: string | null
   decided?: { from: string; to: string; msg: number | null; t: string } | null
   readBy?: Record<string, number>
 }

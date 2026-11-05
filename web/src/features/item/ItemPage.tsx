@@ -2,7 +2,7 @@
 // documents, files and subitems, then its talk. On the desktop the item and its talk are two parts, each scrolling
 // on its own, with a line between them; the talk opens at its latest message. The phone has one page. Props only.
 
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type MouseEvent, type ReactNode } from 'react'
 import { ACT_KEY, deskSlots, type Slot } from '../../model/actions'
 import { closed, needsYou, shownStatus } from '../../model/items'
 import { talkPlan } from '../../model/talk'
@@ -24,6 +24,8 @@ export interface ItemEvents extends TalkLineEvents {
   /** the item's menu, or one of its fields' (status, priority, type) */
   menu(arm: 's' | 'p' | 't' | null, from: Element): void
   set(f: 'when' | 'archived' | 'status', v: string | boolean): void
+  /** Later's choices: until a day, none, or back to now (D115 #21), from its chip or the bar's Later */
+  later(from: Element | null): void
   sources(): void
   /** the item's part over its talk dragged to this height (`done`: let go, kept) */
   topSize(px: number, done: boolean): void
@@ -51,6 +53,8 @@ export interface ItemFacts {
   files: FileRef[]
   /** how many inputs it was made from (answers to its questions not counted) */
   sources: number
+  /** the day its Later ends, as said ("Mon", "Nov 21"; D115 #21) */
+  laterOn?: string
   docs: Doc[]
   /** each document's choices ticked and not sent ("1 choice not sent"), by its number */
   docWaiting?: Record<number, string>
@@ -98,13 +102,10 @@ function Chips({ it, f, on }: { it: Item; f: ItemFacts; on: ItemEvents }) {
         </button>
       )}
       {closed(it.status) || it.type === 'rule' ? null : (
-        <button
-          title={`${it.when === 'later' ? 'Back to now' : 'Later'} · L`}
-          onClick={() => on.set('when', it.when === 'later' ? 'now' : 'later')}
-          className={`${CHIP} shrink-0 text-zinc-700 dark:text-zinc-200`}
-        >
+        <button title="Later · L" onClick={(e) => on.later(e.currentTarget)} className={`${CHIP} shrink-0 text-zinc-700 dark:text-zinc-200`}>
           <Icon n="clock" c="size-3.5 opacity-60" />
-          {it.when === 'later' ? 'Later' : 'Now'}
+          {it.when === 'later' ? (f.laterOn ? `Later · ${f.laterOn}` : 'Later') : 'Now'}
+          {caret}
         </button>
       )}
       {it.archived ? (
@@ -497,7 +498,7 @@ export function ItemHead({ it, code }: { it: Item; code: string }) {
   )
 }
 
-function BarText({ icon, label, title, onClick }: { icon: IconName; label: string; title: string; onClick(): void }) {
+function BarText({ icon, label, title, onClick }: { icon: IconName; label: string; title: string; onClick(e: MouseEvent<HTMLButtonElement>): void }) {
   return (
     <button
       title={title}
@@ -526,7 +527,7 @@ function BarIcon({ icon, title, onClick }: { icon: IconName; title: string; onCl
 /** The actions you use, with their words: the list row's, in its order (D115 #11): Done, Won't do, Later on what is
  * not finished; Archive and Reopen once it is done or won't be. What waits on you is decided in its card, as on its
  * row in Needs you. */
-export function ItemActs({ it, on }: { it: Item; on: Pick<ItemEvents, 'set'> }) {
+export function ItemActs({ it, on }: { it: Item; on: Pick<ItemEvents, 'set' | 'later'> }) {
   const slots = deskSlots(it, needsYou(it)).filter((a): a is Slot => a !== null)
   return (
     <>
@@ -536,7 +537,7 @@ export function ItemActs({ it, on }: { it: Item; on: Pick<ItemEvents, 'set'> }) 
           icon={ACT_ICON[label]}
           label={label}
           title={ACT_KEY[label] ? `${label} · ${ACT_KEY[label]}` : label}
-          onClick={() => (f === 'reopen' ? on.set('status', 'open') : on.set(f as 'when' | 'archived' | 'status', f === 'archived' ? v === 'true' : v))}
+          onClick={(e) => (f === 'reopen' ? on.set('status', 'open') : f === 'when' && v === 'later' ? on.later(e.currentTarget) : on.set(f as 'when' | 'archived' | 'status', f === 'archived' ? v === 'true' : v))}
         />
       ))}
     </>

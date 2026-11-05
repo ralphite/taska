@@ -5,6 +5,7 @@ from __future__ import annotations
 import mimetypes
 import os
 import re
+from datetime import date
 from typing import Any, Dict, List, Optional
 
 from ..domain import events as ev
@@ -16,6 +17,7 @@ from ..domain.vocab import ASK_WORDS, CLOSED, LETTER, MAX_TEXT, MESSAGE_KINDS, P
 from .base import Args, Outcome, Run, handles
 
 _NONE_WORDS = ("", "-", "none", "null")
+_DAY = re.compile(r"\d{4}-\d{2}-\d{2}")
 
 
 def field_value(state: ProjectState, name: str, v: Any, ctx: Optional[RefContext] = None, me: Optional[Item] = None) -> Any:
@@ -45,6 +47,16 @@ def field_value(state: ProjectState, name: str, v: Any, ctx: Optional[RefContext
         v = str(v).strip()[:MAX_TEXT]
     elif name == "archived":
         v = v if isinstance(v, bool) else str(v).lower() in ("1", "true", "yes", "on")
+    elif name == "later_until":  # Later until a day (D115 #21); none: Later with no day
+        if v is None or str(v).strip().lower() in _NONE_WORDS:
+            return None
+        v = str(v).strip()
+        if not _DAY.fullmatch(v):
+            raise Refused("later until needs a day: YYYY-MM-DD")
+        try:
+            date.fromisoformat(v)
+        except ValueError:
+            raise Refused(f"no such day: {v}")
     elif name == "rank":  # "do this next": first in its priority (smaller goes first); none keeps the usual order
         if v is None or str(v).strip().lower() in _NONE_WORDS:
             return None
@@ -133,6 +145,13 @@ def set_fields(r: Run, a: Args) -> Outcome:
         v = field_value(s, k, v, r.ctx, it)
         if v != it.get(k):
             f[k], was[k] = v, it.get(k)
+    # Later until a day is Later; back to Now, or Later with no day, the day goes (D115 #21)
+    if f.get("later_until") and it.when != "later":
+        f["when"], was["when"] = "later", it.when
+    if it.later_until and "later_until" not in f and f.get("when") in WHENS:
+        f["later_until"], was["later_until"] = None, it.later_until
+    if f.get("when") == "now" and f.get("later_until"):
+        raise Refused(f"{code}: later until a day is later; say `{code} later until <day>` or `{code} now`")
     note = ""
     if r.by == "org" and f.get("status") == "review":  # the organizer writes down what you said; it finishes no work
         raise Refused(f"{code}: only an agent that did the work puts it in review; to close it, set it done")
@@ -166,7 +185,7 @@ def set_fields(r: Run, a: Args) -> Outcome:
     r.emit(ev.FieldsSet(n=it.n, by=r.by, f=f, was=was, src=src, keep=r.keep(), undo_of=a.get("undo_of") or None))
     if r.person:  # what you do from the page goes to the subitems; an agent's changes stay as they were
         cascade(r, it, f, was, src)
-    said = " ".join(f"{k}={v}" if k in ("pri", "when", "status", "type", "parent", "archived") else k for k, v in f.items())
+    said = " ".join(f"{k}={v}" if k in ("pri", "when", "status", "type", "parent", "archived", "later_until") else k for k, v in f.items())
     return Outcome(f"ok {code} {said}{note}{r.gone_note(it)}", "Updated " + code)
 
 
@@ -323,3 +342,19 @@ def hide(r: Run, a: Args) -> Outcome:
         raise Refused("only an agent's message can be hidden")
     r.emit(ev.MessageHidden(n=it.n, id=mid, on=on, by=r.by))
     return Outcome(f"ok {'hidden' if on else 'shown'}", f"{'Hid' if on else 'Showed'} a message on {s.code(it.n)}")
+
+
+@handles("due")
+def later_ended(r: Run, a: Args) -> Outcome:
+    """Taska's own (D115 #21): an item Later until `today` or before is back to Now, with the subitems that followed it
+    to Later."""
+    if r.by != "taska":
+        raise Refused("only Taska brings an item back from Later on its day")
+    s = r.state
+    it = item_at(s, a.get("ref", ""), r.ctx)
+    code = s.code(it.n)
+    if it.when != "later" or not it.later_until or it.later_until > str(a.get("today") or ""):
+        return Outcome(f"ok {code} no change", "")
+    r.emit(ev.LaterEnded(n=it.n, by=r.by))
+    cascade(r, it, {"when": "now"}, {"when": "later"}, None)
+    return Outcome(f"ok {code} back to now (its day came)", "Back to now: " + code)

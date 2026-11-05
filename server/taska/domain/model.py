@@ -119,7 +119,7 @@ class Decision:
         return {"from": self.from_, "to": self.to, "msg": self.msg, "t": self.t}
 
 
-ITEM_FIELDS = ("title", "body", "next", "pri", "when", "status", "type", "parent", "archived", "rank")
+ITEM_FIELDS = ("title", "body", "next", "pri", "when", "status", "type", "parent", "archived", "rank", "later_until")
 
 
 @dataclass
@@ -145,6 +145,7 @@ class Item:
     decided: Optional[Decision] = None
     deleted: Optional[str] = None  # the input it was deleted with, or "#item" when deleted by itself
     deleted_at: Optional[str] = None
+    later_until: Optional[str] = None  # Later until this day (YYYY-MM-DD, local): then back to Now by itself (D115 #21)
 
     def get(self, name: str) -> Any:
         """A field that a change can set (ITEM_FIELDS)."""
@@ -175,6 +176,8 @@ class Item:
             out["deleted"] = self.deleted
         if self.deleted_at:
             out["deleted_at"] = self.deleted_at
+        if self.later_until:
+            out["later_until"] = self.later_until
         return out
 
 

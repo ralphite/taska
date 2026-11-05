@@ -210,6 +210,20 @@ class FileTakenOff(Event):
 
 
 @dataclass
+class LaterEnded(Event):
+    """An item put Later until a day: the day came, it is back to Now (D115 #21)."""
+
+    KIND: ClassVar[str] = "due"
+    n: int = 0
+
+    def body(self) -> Row:
+        return {"n": self.n, "by": self.by}
+
+    def items_touched(self) -> List[int]:
+        return [self.n] if self.n else []
+
+
+@dataclass
 class ProjectRenamed(Event):
     KIND: ClassVar[str] = "cfg"
     name: Optional[str] = None
@@ -238,5 +252,6 @@ READERS: Dict[str, Reader] = {
     "iundel": lambda r: ItemsRestored(ns=list(need(r, "ns")), **common(r)),
     "hide": lambda r: MessageHidden(n=need(r, "n"), id=need(r, "id"), on=bool(r.get("on", True)), **common(r)),
     "unfile": lambda r: FileTakenOff(d=r.get("d"), id=r.get("id"), src=r.get("src"), f=need(r, "f"), **common(r)),
+    "due": lambda r: LaterEnded(n=need(r, "n"), **common(r)),
     "cfg": lambda r: ProjectRenamed(name=(need(r, "f") or {}).get("name"), **common(r)),
 }

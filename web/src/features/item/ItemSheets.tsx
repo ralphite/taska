@@ -13,6 +13,47 @@ import { MENU_ROW } from '../../ui/tones'
 import { Skeleton } from '../../ui/bits'
 
 /** What an agent reading the item gets, word for word (F568); null while it comes. */
+/** Later (D115 #21): Tomorrow, Next week, a day picked (then back to Now by itself), or no day; Back to now when it is
+ * Later already. `days`: from laterDays; `until`: its day now. */
+export function laterSheet(code: string, f: { later: boolean; until: string | null; days: { today: string; tomorrow: string; nextWeek: string }; say(day: string): string }, on: { pick(day: string | null): void; now(): void }): SheetParts {
+  const row = (label: string, day: string | null, note = '') => (
+    <button key={label} onClick={() => on.pick(day)} aria-current={f.later && f.until === day ? 'true' : undefined} className={`${MENU_ROW} h-11 aria-[current=true]:font-semibold`}>
+      <Icon n="clock" c="size-4 text-zinc-500 dark:text-zinc-400" />
+      <span className="flex-1">{label}</span>
+      {note ? <span className="text-xs text-zinc-500 dark:text-zinc-400">{note}</span> : null}
+    </button>
+  )
+  return {
+    menu: true,
+    title: `${code} later`,
+    body: (
+      <div className="-mx-1 flex flex-col gap-0.5">
+        {f.later ? (
+          <button onClick={on.now} className={`${MENU_ROW} h-11`}>
+            <Icon n="up" c="size-4 text-zinc-500 dark:text-zinc-400" />
+            Back to now
+          </button>
+        ) : null}
+        {row('Tomorrow', f.days.tomorrow, f.say(f.days.tomorrow))}
+        {row('Next week', f.days.nextWeek, f.say(f.days.nextWeek))}
+        <label className={`${MENU_ROW} h-11 cursor-pointer`}>
+          <Icon n="clock" c="size-4 text-zinc-500 dark:text-zinc-400" />
+          <span className="flex-1">Pick a date</span>
+          <input
+            type="date"
+            aria-label="Later until"
+            min={f.days.tomorrow}
+            defaultValue={f.until && f.until !== f.days.tomorrow && f.until !== f.days.nextWeek ? f.until : ''}
+            onChange={(e) => e.target.value && on.pick(e.target.value)}
+            className="h-8 rounded-md bg-transparent text-xs text-zinc-600 tabular-nums dark:text-zinc-300"
+          />
+        </label>
+        {row('No date', null)}
+      </div>
+    ),
+  }
+}
+
 export function agentCardSheet(code: string, text: string | null): SheetParts {
   return {
     title: `What agents see · ${code}`,

@@ -6,6 +6,7 @@ import type { Command } from '../../api/taska'
 import { closed, ranksFor } from '../../model/items'
 import { codeOf, type ItemPatch, type ProjectModel } from '../../model/project'
 import { decidedWord } from '../../model/talk'
+import { laterDay } from '../../model/time'
 import type { Item, Status } from '../../model/types'
 import { DID, LETTER, STATUS_WORD, plural } from '../../model/words'
 import type { UiStore } from '../../stores/ui'
@@ -115,6 +116,40 @@ export class ItemActions {
     )
     const patch: ItemPatch = { n, f: { [f]: v, ...dec } as Partial<Item> }
     const saved = this.d.runner.send({ id: newId(), slug, commands: [{ op: 'set', ref, f: { [f]: wire(f, v) } }], patches: [patch], said: `${ref} ${words}`, t: Date.now() })
+    void saved.then((ok) => {
+      job.saved = ok
+      if (!ok) {
+        this.d.toasts.forget(undo)
+        this.d.ui.getState().dropHeld(n)
+      }
+    })
+    return saved
+  }
+
+  /** Later until a day, or Later with no day (`day` null) (D115 #21): one change, held and told as the others; Undo
+   * puts back both when it was and its day. The server sends the subitems Later with it. */
+  later(n: number, day: string | null): Promise<boolean> {
+    const m = this.d.model()
+    const it = m?.byN.get(n)
+    if (!m || !it) return Promise.resolve(false)
+    if (it.when === 'later' && (it.later_until ?? null) === day) return Promise.resolve(true)
+    const slug = this.d.slug()
+    const ref = codeOf(m, n)
+    const was = { when: it.when, later_until: it.later_until ?? null }
+    const f = { when: 'later' as const, later_until: day }
+    const words = day ? `moved to Later until ${laterDay(day, m.at)}` : 'moved to Later'
+    const job = { saved: false }
+    const undo = this.d.toasts.undoable(`${ref} ${words}`, async () => {
+      this.d.ui.getState().dropHeld(n)
+      this.d.toasts.show(`${ref} put back`)
+      return this.d.runner.send({ id: newId(), slug, commands: [{ op: 'set', ref, f: was }], patches: [{ n, f: was }], said: `putting ${ref} back`, t: Date.now() }, () => job.saved)
+    })
+    if (n !== this.d.openItem() || this.d.desk()) {
+      this.d.ui.getState().hold(n, { said: day ? `Later · ${laterDay(day, m.at)}` : 'Moved to Later', f: 'when', v: 'later', height: this.d.rowHeight(n) }, this.d.listKey())
+      this.d.held()
+    }
+    this.d.toasts.show(`${ref} ${words}`, undo)
+    const saved = this.d.runner.send({ id: newId(), slug, commands: [{ op: 'set', ref, f }], patches: [{ n, f }], said: `${ref} ${words}`, t: Date.now() })
     void saved.then((ok) => {
       job.saved = ok
       if (!ok) {

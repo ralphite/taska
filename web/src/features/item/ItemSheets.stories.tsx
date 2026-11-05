@@ -5,9 +5,10 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frames } from '../../stories/Frames'
 import { input, item, modelOf, T } from '../../stories/fixtures'
 import { talkEnv } from '../../stories/itemFixtures'
-import { act, acts, opened } from '../../stories/menuFixtures'
+import { AT_BUTTON, act, acts, opened } from '../../stories/menuFixtures'
+import { laterDay, laterDays } from '../../model/time'
 import { Thumbs } from '../../ui/Files'
-import { agentCardSheet, sourcesSheet } from './ItemSheets'
+import { agentCardSheet, laterSheet, sourcesSheet } from './ItemSheets'
 
 export default { title: 'Components/Around the page/Menus and sheets/Sheets/An item: what it came from, what agents see' } satisfies Meta
 type Story = StoryObj
@@ -68,3 +69,16 @@ export const SourcesFiled: Story = {
     </Frames>
   ),
 }
+// ---- Later's choices (D115 #21): from Later on its row, its bar, its chip, its menu or L
+const laterOn = acts('Later', ['pick', 'now'])
+const days = laterDays(Date.parse(T))
+const later = (f: { later: boolean; until: string | null }): Story => ({
+  render: () => (
+    <Frames height={420} deskWidth={900} phoneWidth={393}>
+      {(layout) => opened(laterSheet('F012', { ...f, days, say: (d) => laterDay(d, Date.parse(T)) }, laterOn), layout === 'desk', { look: layout === 'desk' ? { pop: true, at: AT_BUTTON } : {} })}
+    </Frames>
+  ),
+})
+export const LaterChoices: Story = { ...later({ later: false, until: null }), name: "Later's choices" }
+/** Later until a day already: Back to now first, the day it has marked */
+export const LaterChoicesLaterAlready: Story = { ...later({ later: true, until: days.nextWeek }), name: "Later's choices, Later until a day already" }

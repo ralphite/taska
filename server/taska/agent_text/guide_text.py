@@ -9,6 +9,7 @@ GRAMMAR = (
     '                            each optional and go before the title as plain words, no brackets\n'
     '    <optional body, indented>\n'
     "  B03 P1 later doing        set priority / when / status / type, any mix (status: open|doing|done|drop; drop = won't do)\n"
+    '  B03 later until 2026-11-10    Later until that day: then it is back to now by itself\n'
     '  B03 done <text>           words after the fields (and indented lines) are posted as progress, e.g. the done report\n'
     '  B03 title|body|next <text>      replace that field (body may continue on indented lines)\n'
     '  B03 say|ask|propose|decide|progress <text>     add to the thread: ask = question for the user, also when\n'

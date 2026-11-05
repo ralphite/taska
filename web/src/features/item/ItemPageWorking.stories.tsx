@@ -16,4 +16,6 @@ export const AgentsTurnYouReplied: Story = { ...at({ talked: true, thread: [said
 // ---- more states (B636)
 export const P0: Story = { ...at({ pri: 'P0', thread: [said] }), name: 'P0' }
 export const Later = at({ when: 'later', thread: [said] })
+/** Later until a day: its chip says the day; then it is back to Now by itself (D115 #21) */
+export const LaterUntilADay: Story = { ...at({ when: 'later', later_until: '2026-10-26', thread: [said] }), name: 'Later until a day' }
 export const MadeFromTwoInputs: Story = { ...at({ thread: [said, { ...said, id: 2, text: 'And keep the sort too.', src: 'r5' }], srcs: ['r4', 'r5'] }), name: 'Made from two inputs' }

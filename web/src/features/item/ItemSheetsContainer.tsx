@@ -10,7 +10,8 @@ import type { Input } from '../../model/types'
 import type { SheetRequest } from '../../stores/sheet'
 import { SheetLayout } from '../../ui/Sheet'
 import { Thumbs } from '../../ui/Files'
-import { agentCardSheet, messageMenuSheet, sourcesSheet } from './ItemSheets'
+import { agentCardSheet, laterSheet, messageMenuSheet, sourcesSheet } from './ItemSheets'
+import { laterDay, laterDays } from '../../model/time'
 import { itemMoveProjectSheet } from '../../ui/ProjectSheets'
 import { useOtherProjects } from '../../app/projectLists'
 import { itemMenuPop, itemMenuSheet, type ItemMenuEvents } from './ItemMenu'
@@ -153,6 +154,22 @@ export function MessageMenuSheet({ req }: Req<'message-menu'>) {
     void app.items.hideMessage(it.n, req.id)
   }
   return <SheetLayout {...messageMenuSheet(hide)} />
+}
+
+/** Later (D115 #21): until Tomorrow, Next week or a day picked, then back to Now by itself; or no day. */
+export function LaterSheet({ req }: Req<'later'>) {
+  const app = useServices('items', 'sheets')
+  const { m, it, code } = useSubject(req.n)
+  if (!m || !it) return null
+  const now = m.at
+  return (
+    <SheetLayout
+      {...laterSheet(code(it.n), { later: it.when === 'later', until: it.later_until ?? null, days: laterDays(now), say: (day) => laterDay(day, now) }, {
+        pick: (day) => app.sheets.close(() => void app.items.later(it.n, day)),
+        now: () => app.sheets.close(() => void app.items.change(it.n, 'when', 'now')),
+      })}
+    />
+  )
 }
 
 /** What an agent reading the item gets: its card, read as an agent reads it (not counted as an agent's visit). */

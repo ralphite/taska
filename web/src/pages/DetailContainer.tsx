@@ -9,7 +9,7 @@ import { useAway, useProjectModel, type ProjectRoute } from '../app/hooks'
 import { codeOf, liveN } from '../model/project'
 import { Icon } from '../ui/Icon'
 import { BackTo, ItemActs, ItemHead, ItemNav, Missing, NoSelection } from '../features/item/ItemPage'
-import { ItemPageContainer, openItemMenu } from '../features/item/ItemPageContainer'
+import { ItemPageContainer, openItemMenu, openLater } from '../features/item/ItemPageContainer'
 import { PaneFrame } from '../ui/PaneFrame'
 import { OfflinePill } from './Header'
 import { DeletedPickContainer } from '../features/side/SideListContainer'
@@ -80,7 +80,7 @@ export function DetailContainer({ route, place, hidden, full = false, footRoom =
         duo={duo && desk}
         split
         head={<ItemHead it={it} code={code} />}
-        acts={<ItemActs it={it} on={{ set }} />}
+        acts={<ItemActs it={it} on={{ set, later: (from) => openLater(app, desk, it.n, from) }} />}
         nav={<ItemNav full={full} on={nav} />}
         menu
         notice={!desk && away >= 2 ? <OfflinePill /> : null}

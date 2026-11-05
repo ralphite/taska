@@ -211,6 +211,10 @@ class Workspace:
                 out.append(row)
         return out
 
+    def bring_back_laters(self, today: str) -> int:
+        """In every project, what was Later until `today` or before is back to Now (D115 #21). -> how many."""
+        return sum(p.bring_back_laters(today) for p in list(self.projects.values()))
+
     def needs(self) -> List[Dict[str, Any]]:
         """What needs you in every project, newest first."""
         out: List[Dict[str, Any]] = []

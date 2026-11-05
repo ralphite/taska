@@ -96,7 +96,11 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
   }
   const on: ListEvents = {
     open: (n, how) => (desk && how && (how.metaKey || how.ctrlKey || how.shiftKey) ? app.selection.pick(n, how.shiftKey) : app.nav.openItem(codeOf(m as ProjectModel, n))),
-    act: (n, f, v) => void app.items.change(n, f, f === 'archived' ? v === 'true' : v),
+    act: (n, f, v, _label, from) => {
+      // Later asks until when (D115 #21): at its button on the desktop, a sheet on the phone
+      if (f === 'when' && v === 'later') return desk && from ? app.sheets.openFrom(from, { kind: 'later', n }, { focus: false }) : app.sheets.open({ kind: 'later', n }, { focus: false })
+      void app.items.change(n, f, f === 'archived' ? v === 'true' : v)
+    },
     need: (n, action) => {
       const it = m?.byN.get(n)
       if (!it) return

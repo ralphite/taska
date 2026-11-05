@@ -121,6 +121,17 @@ def serve(root: str, host: str, port: int, organizer: bool, public: str, log_db:
                 print(f"taska: push: {ex}", file=sys.stderr)
 
     threading.Thread(target=pushes, daemon=True).start()
+
+    def laters() -> None:  # once a minute (and at the start): an item Later until today is back to Now (D115 #21)
+        while True:
+            try:
+                ws.bring_back_laters(time.strftime("%Y-%m-%d"))
+            except Exception as ex:  # a Later coming back must never stop Taska
+                print(f"taska: later: {ex}", file=sys.stderr)
+            if stop.wait(60):
+                return
+
+    threading.Thread(target=laters, daemon=True).start()
     # a restart or a deploy (SIGTERM): stop taking requests and finish the ones at work first
     signal.signal(signal.SIGTERM, lambda *_: threading.Thread(target=srv.shutdown, daemon=True).start())
     try:

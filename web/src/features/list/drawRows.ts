@@ -4,6 +4,7 @@
 
 import { closed, excerpt, lastAgentMessage, workNews, type DropHow } from '../../model/items'
 import { codeOf, filesOf, type ProjectModel } from '../../model/project'
+import { laterDay } from '../../model/time'
 import type { Item, SavedView } from '../../model/types'
 import { showsView, visible } from '../../model/visible'
 import type { ListQuery } from '../../model/route'
@@ -68,6 +69,7 @@ export function rowFacts(m: ProjectModel, it: Item, w: DrawWith): RowFacts {
     unread: unreadSince(w.seen, it.n, lastAgentMessage(it)?.t, it.archived),
     worker,
     news: it.status === 'doing' ? workNews(it, m.at) : null,
+    ...(it.when === 'later' && it.later_until ? { laterOn: laterDay(it.later_until, m.at) } : {}),
     hitLine: w.words.length ? hitLine(it, code, w.words) : null,
   }
 }

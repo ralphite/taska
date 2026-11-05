@@ -32,8 +32,13 @@ class Reading:
     file_path: FileRefText  # always the path on this machine
 
 
+def when(it: Item) -> str:
+    """Now or later, and the day a Later ends (D115 #21): "later until 2026-11-10"."""
+    return f"later until {it.later_until}" if it.when == "later" and it.later_until else it.when
+
+
 def line(st: ProjectState, it: Item) -> str:
-    out = f"{st.code(it.n)} {it.pri} {it.when} {it.status} {it.title}"
+    out = f"{st.code(it.n)} {it.pri} {when(it)} {it.status} {it.title}"
     w = rules.waiting(st, it)
     if w:
         out += " ?"
@@ -97,7 +102,7 @@ def _files_of(rd: Reading, it: Item) -> List[str]:
 def card(rd: Reading, it: Item) -> str:
     st = rd.state
     c = st.code(it.n)
-    out = [f"{c} {it.type} {it.pri} {it.when} {it.status}{' archived' if it.archived else ''}  {it.title}"]
+    out = [f"{c} {it.type} {it.pri} {when(it)} {it.status}{' archived' if it.archived else ''}  {it.title}"]
     if it.deleted:
         out.append(f"deleted by the user together with input {it.deleted}: stop working on it")
     if it.merged_into:
@@ -303,6 +308,8 @@ def _said(st: ProjectState, e: ev.Event) -> "tuple[str, str]":
         return who, f"{c(e.n)} merged into {c(e.into)}"
     if isinstance(e, ev.ItemUnmerged):
         return who, f"{c(e.n)} taken out of {c(e.into)}"
+    if isinstance(e, ev.LaterEnded):
+        return who, f"{c(e.n)} back to now (its day came)"
     if isinstance(e, ev.InputsAcked):
         return who, "ack " + " ".join(e.ids)
     if isinstance(e, ev.ProjectRenamed) and e.name is not None:

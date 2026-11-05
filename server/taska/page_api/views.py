@@ -55,6 +55,8 @@ def item_view(st: ProjectState, agents: AgentActivity, it: Item) -> View:
                  "talked": rules.talked(st, it)}
     if it.agent:
         out["agent"] = {"by": it.agent.by, "t": it.agent.t, "ses": it.agent.ses}
+    if it.later_until:
+        out["later_until"] = it.later_until
     if it.rank is not None:
         out["rank"] = it.rank
     if it.decided:

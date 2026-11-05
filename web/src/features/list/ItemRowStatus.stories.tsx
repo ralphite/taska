@@ -19,3 +19,5 @@ export const InProgressQuiet: Story = { ...one({ it: { status: 'doing', agent },
 export const InProgressNothingSaid: Story = { ...one({ it: { status: 'doing', agent }, f: { worker } }), name: 'In progress, nothing said yet' }
 export const WaitsForReview: Story = { ...one({ it: { status: 'review' } }), name: 'Waits for review' }
 export const Later = one({ it: { when: 'later', pri: 'P3' } })
+/** Later until a day: the row says which (D115 #21) */
+export const LaterUntilADay: Story = { ...one({ it: { when: 'later', pri: 'P3', later_until: '2026-10-26' }, f: { laterOn: 'Mon' } }), name: 'Later until a day' }

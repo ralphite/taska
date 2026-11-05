@@ -25,6 +25,8 @@ export interface RowFacts {
   next: boolean
   unread: boolean
   worker: { by: string; tip: string } | null
+  /** the day its Later ends, as said ("Mon", "Nov 21"; D115 #21) */
+  laterOn?: string
   /** work in progress: what its agent last said, how long ago, and whether over an hour (D115 #30) */
   news: { text: string; age: string; quiet: boolean } | null
   /** where the searched words were found, when not in the title */
@@ -34,7 +36,8 @@ export interface RowFacts {
 export interface RowEvents {
   /** a row clicked (the desktop's Cmd- or Shift-click picks it instead) */
   open(n: number, how?: { metaKey: boolean; ctrlKey: boolean; shiftKey: boolean }): void
-  act(n: number, field: string, value: string, label: string): void
+  /** `from`: the button pressed (Later's choices open at it on the desktop, D115 #21) */
+  act(n: number, field: string, value: string, label: string, from?: Element): void
   need(n: number, action: string): void
   reopen(n: number): void
   fold(n: number): void
@@ -125,7 +128,7 @@ function RowActs({ it, needs, on }: { it: Item; needs: boolean; on: RowEvents })
               key={label}
               title={`${label}${ACT_KEY[label] ? ' · ' + ACT_KEY[label] : ''}`}
               aria-label={label}
-              onClick={(e) => (e.stopPropagation(), on.act(it.n, f, v, label))}
+              onClick={(e) => (e.stopPropagation(), on.act(it.n, f, v, label, e.currentTarget))}
               className={`grid size-8 place-items-center rounded-lg hover:bg-zinc-900/7 dark:hover:bg-white/10 ${ACT_TONE[label] || 'text-zinc-500 dark:text-zinc-400'}`}
             >
               <Icon n={ACT_ICON[label]} c="size-[18px]" />
@@ -227,7 +230,7 @@ export function ItemRow(props: {
       <span key="s">{statusWord(it)}</span>
     ) : null,
     it.when === 'later' && !isClosed ? (
-      <Soft key="l">Later</Soft>
+      <Soft key="l">{facts.laterOn ? `Later · ${facts.laterOn}` : 'Later'}</Soft>
     ) : facts.next ? (
       <span key="l" className="font-semibold text-zinc-700 dark:text-zinc-200">
         Next

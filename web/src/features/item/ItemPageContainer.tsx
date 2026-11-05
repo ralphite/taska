@@ -6,6 +6,7 @@ import { useServices, useStores, useStoreValue } from '../../app/context'
 import { useAway, useFiles, useItemWorld } from '../../app/hooks'
 import { newId } from '../../app/changeRunner'
 import { CHOICE } from '../../model/markdown'
+import { laterDay } from '../../model/time'
 import { codeOf, docsOf, filesOf, findRef, liveN, sourceCount, STAND, type ProjectModel } from '../../model/project'
 import { ticksNotSent } from '../../model/docTicks'
 import { lastAgentMessage } from '../../model/items'
@@ -21,6 +22,12 @@ import type { App } from '../../app/createApp'
 import { replyDraft } from '../../model/draftTarget'
 
 /** The item's menu: under the button on the desktop (one field's choices from its chip), a sheet on the phone. */
+/** Later's choices (D115 #21): at the button on the desktop, a sheet on the phone. */
+export function openLater(app: Pick<App, 'sheets'>, desk: boolean, n: number, from: Element | null) {
+  if (desk && from) app.sheets.openFrom(from, { kind: 'later', n }, { focus: false })
+  else app.sheets.open({ kind: 'later', n }, { focus: false })
+}
+
 export function openItemMenu(app: Pick<App, 'sheets'>, desk: boolean, n: number, arm: 's' | 'p' | 't' | null, from: Element | null) {
   if (desk) app.sheets.openFrom(from, { kind: 'item-menu', n, arm }, { focus: false, narrow: !!arm })
   else app.sheets.open({ kind: 'item-menu', n, arm }, { focus: false })
@@ -88,6 +95,7 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
     kids: m.kids.get(n) || [],
     files: filesOf(m, it),
     sources: sourceCount(m, it),
+    laterOn: it.when === 'later' && it.later_until ? laterDay(it.later_until, m.at) : undefined,
     docs: docsOf(m, n),
     docWaiting: Object.fromEntries(docsOf(m, n).map((d) => [d.d, ticksNotSent(ticks, d)])),
     remodify: view.remodify === n,
@@ -135,6 +143,7 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
       } else void app.items.change(n, field, v)
     },
     menu: (arm, from) => openItemMenu(app, desk, n, arm, from),
+    later: (from) => openLater(app, desk, n, from),
     sources: () => app.sheets.open({ kind: 'item-sources', n }),
     goto,
     doc: (d: number) => app.docs.open(d),
