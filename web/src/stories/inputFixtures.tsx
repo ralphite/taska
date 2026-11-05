@@ -103,6 +103,27 @@ const menuActs = acts('Input menu', ['send', 'edit', 'append', 'asSaid', 'undo',
   append: 'Input box › What it writes to › Changing what you said',
 })
 
+/** An input's menu from its ⋯, as the page's InputMenuSheet runs it (Take off and Delete ask again); also the menu of
+ * your message in an item's talk. */
+export type InputMenuAt = { id: string; asked: Record<string, number> }
+export function inputMenuParts(m: ProjectModel, desk: boolean, { id, asked }: InputMenuAt, menu: { close(): void; change(w: InputMenuAt): void }) {
+  const r = m.byId.get(id)!
+  const done = (run: () => void) => () => (menu.close(), run())
+  const ask = (key: string, run: () => void) => (asked[key] ? (menu.close(), run()) : menu.change({ id, asked: { ...asked, [key]: 1 } }))
+  return inputMenuSheet(inputMenuFacts(m, r, 2, asked, desk, true), {
+    send: done(() => menuActs.send(id)),
+    edit: done(() => menuActs.edit(id)),
+    append: done(() => menuActs.append(id)),
+    asSaid: menuActs.asSaid,
+    undo: done(() => menuActs.undo(id)),
+    move: done(() => menuActs.move(id)),
+    history: done(() => menuActs.history(id)),
+    rescope: done(() => menuActs.rescope(id)),
+    takeOff: (f) => ask(`unfile ${id} ${f}`, () => menuActs.takeOff(f)),
+    remove: () => ask(inputDeleteAsk(id), () => menuActs.remove(id)),
+  })
+}
+
 /** What the page holds around inputs (T662): a long one opened (More, Less), its menu from ⋯ (the page's own
  * inputMenuSheet: Take off and Delete ask again), Voice recording more for one (its strip; again or ✕ stops it),
  * voice notes playing and pictures opening, one on its way cancelled with its × (it goes). What needs Taska (Retry,
@@ -122,23 +143,7 @@ export function useInputs(m: ProjectModel, desk: boolean, s: Pick<Said, 'opened'
   }
   const chips = (f: FileRef[]) => <FileChips files={f} url={fileUrl} play={media.play} tidy on={media.on} />
   const openMenu = (id: string, from?: HTMLElement) => menu.open({ id, asked: {} }, from, desk ? { at: undefined } : {})
-  const done = (run: () => void) => () => (menu.close(), run())
-  const menuNode = menu.draw(({ id, asked }) => {
-    const r = m.byId.get(id)!
-    const ask = (key: string, run: () => void) => (asked[key] ? (menu.close(), run()) : menu.change({ id, asked: { ...asked, [key]: 1 } }))
-    return inputMenuSheet(inputMenuFacts(m, r, 2, asked, desk, true), {
-      send: done(() => menuActs.send(id)),
-      edit: done(() => menuActs.edit(id)),
-      append: done(() => menuActs.append(id)),
-      asSaid: menuActs.asSaid,
-      undo: done(() => menuActs.undo(id)),
-      move: done(() => menuActs.move(id)),
-      history: done(() => menuActs.history(id)),
-      rescope: done(() => menuActs.rescope(id)),
-      takeOff: (f) => ask(`unfile ${id} ${f}`, () => menuActs.takeOff(f)),
-      remove: () => ask(inputDeleteAsk(id), () => menuActs.remove(id)),
-    })
-  })
+  const menuNode = menu.draw((w) => inputMenuParts(m, desk, w, menu))
   const node = (
     <>
       {menuNode}

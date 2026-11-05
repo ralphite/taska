@@ -19,6 +19,10 @@ import { itemFacts, noItemEvents, talkEnv, talkFacts } from './itemFixtures'
 import { modelOf } from './fixtures'
 import { act, acts } from './acts'
 import { useMedia, usePop } from './liveParts'
+import { inputMenuParts, type InputMenuAt } from './inputFixtures'
+import { createPortal } from 'react-dom'
+import { Tooltip } from '../app/Tooltip'
+import { refCard } from '../model/refCard'
 
 /** The item's parent and a long talk, for the stories that need them. */
 export const PARENT = item({ n: 3, title: 'Exports that keep what you see' })
@@ -93,6 +97,10 @@ function LiveItem({ it, desk, o, talkOnly = false }: { it: Item; desk: boolean; 
   const [sizes, setSizes] = useState({ top: 0, duo: 0 })
   const media = useMedia(e0.url)
   const menu = usePop<{ arm: ItemMenuFacts['arm']; asking: boolean } | { msg: number }>(desk)
+  const inputMenu = usePop<InputMenuAt>(desk)
+  // the page's one tooltip (a voice note's words, icon buttons' names), over the whole window as the page has it; the
+  // phone has none
+  const tip = desk && createPortal(<Tooltip card={(ref) => refCard(m, ref)} />, document.body)
   const facts = { ...start, remodify, allTalk, editing, addingSub }
   const env = { ...e0, play: o.env?.play && !media.touched ? o.env.play : media.play, opened, choosing: e0.choosing && { picked, pick: (i: number, multi: boolean) => setPicked(multi ? toggle(picked, i) : new Set([i])) } }
   const tf = { ...t0, reask, peeking }
@@ -121,6 +129,8 @@ function LiveItem({ it, desk, o, talkOnly = false }: { it: Item; desk: boolean; 
     view: (f, all) => media.on.view(f, all),
     menu: (arm, from) => openMenu(arm, from),
     msgMenu: (id, from) => menu.open({ msg: id }, from),
+    // your message's ⋯: the menu of the input its words came from, as the page opens it
+    inputMore: (id, from) => inputMenu.open({ id, asked: {} }, from),
   }
   // the item's menu as the page's ItemMenuSheet runs it: a row does its thing and the menu closes; Status..., Priority...,
   // Type... show that field's choices in its place; Delete asks again
@@ -150,6 +160,8 @@ function LiveItem({ it, desk, o, talkOnly = false }: { it: Item; desk: boolean; 
         <ItemTalk it={it} f={facts} env={env} facts={tf} on={on} />
         {media.node}
         {menu.draw(menuParts)}
+        {inputMenu.draw((w) => inputMenuParts(m, desk, w, inputMenu))}
+        {tip}
       </div>
     )
   const page = <ItemPage it={it} f={facts} env={env} facts={tf} on={on} duo={o.duo} left={o.left} bare={o.bare} />
@@ -170,6 +182,8 @@ function LiveItem({ it, desk, o, talkOnly = false }: { it: Item; desk: boolean; 
         </PaneFrame>
         {media.node}
         {menu.draw(menuParts)}
+        {inputMenu.draw((w) => inputMenuParts(m, desk, w, inputMenu))}
+        {tip}
       </div>
     )
   return (
@@ -190,6 +204,8 @@ function LiveItem({ it, desk, o, talkOnly = false }: { it: Item; desk: boolean; 
       </PaneFrame>
       {media.node}
       {menu.draw(menuParts)}
+      {inputMenu.draw((w) => inputMenuParts(m, desk, w, inputMenu))}
+      {tip}
     </div>
   )
 }

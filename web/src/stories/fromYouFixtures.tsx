@@ -9,7 +9,8 @@ import { talkOf, type PageOpts } from './itemPage'
 type Story = StoryObj
 
 export const later = (min: number) => new Date(Date.parse(T) + min * 60_000).toISOString()
-export const voice = { f: 'f2-voice_0-12.webm', name: 'voice_0-12.webm', mime: 'audio/webm' }
+/** a voice note with its words: tidied (what agents get) and as said, which the play button shows under the pointer */
+export const voice = { f: 'f2-voice_0-12.webm', name: 'voice_0-12.webm', mime: 'audio/webm', tr: 'The export should keep the filter I set.', heard: 'So um the export should, uh, keep the filter I set.' }
 export const shot = { f: 'f3-shot.png', name: 'shot.png', mime: 'image/png' }
 export const pdf = { f: 'f5-export.pdf', name: 'export.pdf', mime: 'application/pdf' }
 export const r4 = (f: Partial<Input> = {}) => input({ id: 'r4', text: 'The export should keep the filter I set.', ...f })

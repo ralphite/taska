@@ -26,7 +26,7 @@ export const VoiceNoteOnItsWay: Story = {
   ...at([message({ id: 1, by: 'claude-code', kind: 'say', text: 'Which filter should the export keep?' })], { t: { outgoing: [{ ...out('Sending…').t.outgoing[0], text: 'The export should keep the filter I set.', voices: [voice] }] } }),
   name: 'Its voice note on its way',
 }
-export const ALongVoiceNote: Story = { ...at([mine({ text: LONG })], { inputs: [r4({ text: LONG, files: [note('4-37')] })] }), name: 'A long voice note' }
+export const ALongVoiceNote: Story = { ...at([mine({ text: LONG })], { inputs: [r4({ text: LONG, files: [{ ...note('4-37'), tr: LONG }] })] }), name: 'A long voice note' }
 export const TwoVoiceNotes: Story = {
   ...at([mine({ text: 'The first note is the export bug, the second how to make it happen again.' })], { inputs: [r4({ text: 'The first note is the export bug, the second how to make it happen again.', files: [voice, note('0-41')] })] }),
   name: 'Two voice notes',
