@@ -139,7 +139,8 @@ export const ItemList = forwardRef<HTMLDivElement, ItemListProps>(function ItemL
         <>
           {top}
           {views ? (
-            <div className="flex items-stretch">
+            // the desktop: as high as the pane's bar beside it, one line under both (B669)
+            <div className="flex items-stretch lg:h-bar">
               <div className="min-w-0 flex-1">
                 <ViewBar views={views} own={ownViews} onView={on.view} onOwn={on.ownView} onOwnMenu={on.ownMenu} onRename={on.rename} onRenameStop={on.renameStop} />
               </div>

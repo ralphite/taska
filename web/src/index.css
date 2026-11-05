@@ -36,6 +36,12 @@
   }
 }
 
+/* The height of the desktop's bars under the project's: the pane's bar and, beside it, the list's views row, so their
+   bottom borders are one line (B669). h-bar. */
+@theme {
+  --spacing-bar: 3.5rem;
+}
+
 /* Tailwind v4 leaves buttons the arrow: an enabled one shows the hand, as links and rows do; a disabled one says so. */
 @layer base {
   button:not(:disabled),

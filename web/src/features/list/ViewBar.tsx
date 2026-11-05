@@ -84,8 +84,9 @@ export function ViewBar({
     </button>,
   ]
   return (
-    <div data-views className="relative border-b border-zinc-200 dark:border-zinc-800">
-      <div ref={row} onScroll={measure} className="flex h-12 [scrollbar-width:none] items-center gap-1 overflow-x-auto px-2">
+    // as high as what holds it (the desktop's list: the pane's bar, B669), at least 48px
+    <div data-views className="relative h-full border-b border-zinc-200 dark:border-zinc-800">
+      <div ref={row} onScroll={measure} className="flex h-full min-h-12 [scrollbar-width:none] items-center gap-1 overflow-x-auto px-2">
         {views.map((v) => (
           <button key={v.value} ref={v.on ? shown : undefined} aria-pressed={v.on} onClick={() => onView(v.value)} className={CHIP}>
             {v.needs ? <StateIcon s="wait" cls="size-3.5" /> : null}

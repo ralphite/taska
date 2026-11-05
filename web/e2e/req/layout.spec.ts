@@ -192,6 +192,28 @@ for (const [name, path, fold] of [
     }
   })
 
+test('B669 r1065: the list\'s views row and the pane\'s bar are one height, their bottom borders one line (New input, Inputs, an item, a document)', async ({
+  page,
+  request,
+}) => {
+  test.skip(!isDesk(page), 'the list beside the pane is the desktop\u2019s')
+  const p = await project(request, DOC)
+  for (const path of ['new', 'inputs', 'T1', 'D1']) {
+    await open(page, p, path)
+    const viewsRow = page.locator('#list [data-views]').filter({ visible: true }).first()
+    const bar = page.locator('[data-part="pane-column"] header').filter({ visible: true }).first()
+    await expect(viewsRow).toBeVisible()
+    await expect(bar).toBeVisible()
+    await page.waitForTimeout(200)
+    const v = await viewsRow.boundingBox()
+    const b = await bar.boundingBox()
+    if (!v || !b) throw new Error('not drawn')
+    if (process.env.TASKA_SHOTS) await page.screenshot({ path: `${process.env.TASKA_SHOTS}-${path}.png`, clip: { x: 0, y: 0, width: page.viewportSize()?.width ?? 1440, height: 200 } })
+    expect(Math.abs(v.height - b.height), `${path}: the same height`).toBeLessThan(0.5)
+    expect(Math.abs(v.y + v.height - (b.y + b.height)), `${path}: the bottoms on one line`).toBeLessThan(0.5)
+  }
+})
+
 test('r1052: what the pane shows never moves the list: on the New input page the views sit right under the bar and the filters, as with an item open (B663)', async ({
   page,
   request,
