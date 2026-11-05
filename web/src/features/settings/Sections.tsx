@@ -9,7 +9,7 @@ import { Kbd, ProjTile } from '../../ui/bits'
 import { Icon } from '../../ui/Icon'
 import { NewProjectForm } from '../../ui/NewProjectForm'
 import { DISABLED, FIELD, MUTED, P_BTN, PRIMARY, SECOND } from '../../ui/tones'
-import { CopyBtn, Loading, Part, Setting, TextBox, Toggle } from './SettingsParts'
+import { CopyBtn, Loading, Part, QuietHoursSetting, Setting, TextBox } from './SettingsParts'
 
 // ---- Projects
 
@@ -246,7 +246,7 @@ export function PhoneBody({ link, lan, keyText, asking, desk, on }: { link: stri
 
 /** On: Turn off is Taska's own (a page cannot take back the browser's permission), as the phone's. Blocked: the page
  * cannot ask again, so no button, only where to allow them. */
-export function NotificationsBody({ state, quiet, on }: { state: 'On' | 'Off' | 'Blocked by the browser'; quiet: boolean; on: { turnOn(): void; turnOff(): void; quiet(): void } }) {
+export function NotificationsBody({ state, quiet, hours, on }: { state: 'On' | 'Off' | 'Blocked by the browser'; quiet: boolean; hours: { from: string; to: string }; on: { turnOn(): void; turnOff(): void; quiet(): void; hours(h: { from: string; to: string }): void } }) {
   return (
     <>
       <Setting
@@ -264,14 +264,14 @@ export function NotificationsBody({ state, quiet, on }: { state: 'On' | 'Off' | 
           ) : null
         }
       />
-      {state === 'On' ? <Setting title="Quiet 22:00–08:00" about="Your local time." control={<Toggle on={quiet} label="Quiet 22:00–08:00" onToggle={on.quiet} />} /> : null}
+      {state === 'On' ? <QuietHoursSetting about="Your local time." on={quiet} hours={hours} events={{ toggle: on.quiet, hours: on.hours }} /> : null}
     </>
   )
 }
 
 /** The phone's: Taska on the Home Screen subscribes for pushes (not on the Home Screen yet: it says so). `push`: what
  * this phone has (null: it cannot have them here). */
-export function PhonePushBody({ standalone, onPhone, phoneHref = '', push = null }: { standalone: boolean; onPhone(): void; /** Use on your phone's address */ phoneHref?: string; push?: { sub: boolean; blocked: boolean; quiet: boolean; on: { turnOn(): void; turnOff(): void; quiet(): void } } | null }) {
+export function PhonePushBody({ standalone, onPhone, phoneHref = '', push = null }: { standalone: boolean; onPhone(): void; /** Use on your phone's address */ phoneHref?: string; push?: { sub: boolean; blocked: boolean; quiet: boolean; hours: { from: string; to: string }; on: { turnOn(): void; turnOff(): void; quiet(): void; hours(h: { from: string; to: string }): void } } | null }) {
   if (push)
     return (
       <>
@@ -290,7 +290,7 @@ export function PhonePushBody({ standalone, onPhone, phoneHref = '', push = null
             )
           }
         />
-        {push.sub ? <Setting title="Quiet 22:00–08:00" about="Alerts held until morning." control={<Toggle on={push.quiet} label="Quiet 22:00–08:00" onToggle={push.on.quiet} />} /> : null}
+        {push.sub ? <QuietHoursSetting about="Alerts held until it ends." on={push.quiet} hours={push.hours} events={{ toggle: push.on.quiet, hours: push.on.hours }} /> : null}
       </>
     )
   return (

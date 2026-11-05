@@ -19,8 +19,26 @@ from ..infra import p256
 Need = Tuple[str, str, str]  # project, code, kind
 
 
+def minutes(hhmm: Any, default: int) -> int:
+    """A time of day "HH:MM" as minutes after midnight; anything else: the default."""
+    try:
+        h, m = (int(x) for x in str(hhmm).split(":"))
+    except ValueError:
+        return default
+    return h * 60 + m if 0 <= h < 24 and 0 <= m < 60 else default
+
+
+def in_quiet(sub: Dict[str, Any], now: int) -> bool:
+    """Whether a subscription keeps quiet at `now` (minutes after local midnight): its own hours (D115 #43), 22:00 to
+    08:00 when it has none; a span may run over midnight; from equal to to keeps none."""
+    if not sub.get("quiet", True):
+        return False
+    start, end = sub.get("from", Push.QUIET[0] * 60), sub.get("to", Push.QUIET[1] * 60)
+    return start <= now < end if start <= end else now >= start or now < end
+
+
 class Push:
-    QUIET = (22, 8)  # local hours with no push, for a subscription that keeps quiet hours
+    QUIET = (22, 8)  # local hours with no push, for a subscription that keeps quiet hours and has none of its own
 
     def __init__(self, root: str):
         self._dir = os.path.join(root, ".push")
@@ -48,12 +66,14 @@ class Push:
         with open(os.path.join(self._dir, "subs.json"), "w", encoding="utf-8") as f:
             json.dump(self.subs, f)
 
-    def subscribe(self, sub: Any, quiet: bool = True) -> None:
+    def subscribe(self, sub: Any, quiet: bool = True, start: Any = None, end: Any = None) -> None:
+        """A phone's subscription, with its quiet hours: on or off, and from when to when ("HH:MM", local time)."""
         ep = str((sub or {}).get("endpoint", ""))
         if not ep.startswith("https://"):
             raise Refused("a push subscription needs an https endpoint")
+        span = {"from": minutes(start, self.QUIET[0] * 60), "to": minutes(end, self.QUIET[1] * 60)}
         with self._lock:
-            self.subs = [x for x in self.subs if x["endpoint"] != ep] + [{"endpoint": ep, "quiet": bool(quiet), "t": int(time.time())}]
+            self.subs = [x for x in self.subs if x["endpoint"] != ep] + [{"endpoint": ep, "quiet": bool(quiet), **span, "t": int(time.time())}]
             self._save()
 
     def unsubscribe(self, ep: str) -> None:
@@ -94,10 +114,10 @@ class Push:
         new, self._seen = (now - self._seen if self._seen is not None else set()), now
         if not new:
             return 0
-        hour = time.localtime().tm_hour
-        quiet = hour >= self.QUIET[0] or hour < self.QUIET[1]
+        t = time.localtime()
+        now_min = t.tm_hour * 60 + t.tm_min
         with self._lock:
-            subs = [x for x in self.subs if not (x.get("quiet", True) and quiet)]
+            subs = [x for x in self.subs if not in_quiet(x, now_min)]
         gone = [x["endpoint"] for x in subs if not self._send(x)]
         for ep in gone:
             self.unsubscribe(ep)

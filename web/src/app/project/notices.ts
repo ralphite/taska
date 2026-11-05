@@ -1,4 +1,4 @@
-// Notifications. On a computer: whether this browser shows them (asked once), and quiet hours (22:00–08:00, local
+// Notifications. On a computer: whether this browser shows them (asked once), and quiet hours (22:00–08:00 unless changed, local
 // time), kept in this browser; while Taska is open but not in front, a notification when something newly needs you
 // here or in another project (what came within 8 s, in one). On the phone: Taska on the Home Screen subscribes with
 // the browser's push service; Taska then pushes when something newly needs you, and the phone shows what it is (sw.ts).
@@ -31,6 +31,21 @@ export interface NoticesDeps {
 }
 
 export type NoticeState = 'On' | 'Off' | 'Blocked by the browser'
+
+/** Quiet hours, local time "HH:MM": the server keeps a phone's the same way (services/push.py in_quiet). */
+export interface QuietHours {
+  from: string
+  to: string
+}
+const QUIET: QuietHours = { from: '22:00', to: '08:00' }
+const TIME = /^([01]\d|2[0-3]):[0-5]\d$/
+const minutesOf = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3))
+
+/** Whether `now` (minutes after midnight) is in the hours: a span may run over midnight; from equal to to is none. */
+export function inQuiet(h: QuietHours, now: number): boolean {
+  const [a, b] = [minutesOf(h.from), minutesOf(h.to)]
+  return a <= b ? a <= now && now < b : now >= a || now < b
+}
 
 export class Notices {
   private readonly kv: KeyValueStore
@@ -76,6 +91,19 @@ export class Notices {
     if (!this.d?.desk() && this.sub) void this.pushOn() // the phone's quiet hours are the server's to keep
   }
 
+  /** From when to when quiet hours are ("HH:MM", local time; 22:00 to 08:00 unless changed, D115 #43). */
+  quietHours(): QuietHours {
+    const h = this.read<Partial<QuietHours>>('quietHours', {})
+    return { from: h.from && TIME.test(h.from) ? h.from : QUIET.from, to: h.to && TIME.test(h.to) ? h.to : QUIET.to }
+  }
+
+  setQuietHours(h: QuietHours): void {
+    if (!TIME.test(h.from) || !TIME.test(h.to)) return
+    this.kv.setJson('taska.notifications.quietHours', h)
+    this.changed()
+    if (!this.d?.desk() && this.sub) void this.pushOn()
+  }
+
   async turnOn(): Promise<void> {
     if (typeof Notification === 'undefined') return
     try {
@@ -93,8 +121,8 @@ export class Notices {
   }
 
   private quietNow(): boolean {
-    const h = new Date().getHours()
-    return this.quiet() && (h >= 22 || h < 8)
+    const d = new Date()
+    return this.quiet() && inQuiet(this.quietHours(), d.getHours() * 60 + d.getMinutes())
   }
 
   private allowed(): boolean {
@@ -196,7 +224,7 @@ export class Notices {
       const { key } = (await this.d?.api.pushKey()) || { key: '' }
       const bytes = Uint8Array.from(atob(key.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((key.length + 3) % 4)), (c) => c.charCodeAt(0))
       const sub = (await reg.pushManager.getSubscription()) || (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: bytes }))
-      await this.d?.api.setPush({ sub: sub.toJSON(), quiet: this.quiet() })
+      await this.d?.api.setPush({ sub: sub.toJSON(), quiet: this.quiet(), ...this.quietHours() })
       if (!this.sub) this.d?.toasts.show('Notifications are on')
       this.sub = sub
     } catch (ex) {

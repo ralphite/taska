@@ -94,12 +94,12 @@ def post(ctx: "AppContext", req: Request, path: str) -> Optional[Response]:
                 voice_fix(" ".join(str(d["wrong"]).split()), " ".join(str(d["right"]).split()), via="draft", who="you",
                           **{k: str(d[k])[:200] for k in ("project", "item", "file") if d.get(k)})
         return as_json({"ok": True, "corrections": ws.spellings.all()})
-    if path == "/api/push":  # {sub, quiet} turns pushes on for a phone; {endpoint, off: true} turns them off
+    if path == "/api/push":  # {sub, quiet, from, to} turns pushes on for a phone; {endpoint, off: true} turns them off
         d = req.json_body(10_000)
         if d.get("off"):
             ctx.push.unsubscribe(str(d.get("endpoint", "")))
         else:
-            ctx.push.subscribe(d.get("sub"), d.get("quiet", True))
+            ctx.push.subscribe(d.get("sub"), d.get("quiet", True), d.get("from"), d.get("to"))
         return as_json({"ok": True})
     if path == "/api/voicetidy":
         ws.voice_prefs.set_tidy(bool(req.json_body(1000).get("on")))

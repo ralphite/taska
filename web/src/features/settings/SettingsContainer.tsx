@@ -79,7 +79,7 @@ export function SettingsContainer({ route, place, prefsBox }: { route: ProjectRo
         return <PhoneBody link={m.facts.remote ? m.facts.remote + '/' : ''} lan={m.facts.lan ? m.facts.lan + '/' : ''} keyText={m.facts.key} asking={!!asked['new-key']} desk={desk} on={{ copy: (t) => s.copy(t), newKey: () => void s.newKey(route.slug) }} />
       case 'notifications':
         return desk ? (
-          <NotificationsBody state={app.notices.state()} quiet={app.notices.quiet()} on={{ turnOn: () => void app.notices.turnOn(), turnOff: () => app.notices.turnOff(), quiet: () => app.notices.setQuiet(!app.notices.quiet()) }} />
+          <NotificationsBody state={app.notices.state()} quiet={app.notices.quiet()} hours={app.notices.quietHours()} on={{ turnOn: () => void app.notices.turnOn(), turnOff: () => app.notices.turnOff(), quiet: () => app.notices.setQuiet(!app.notices.quiet()), hours: (h) => app.notices.setQuietHours(h) }} />
         ) : (
           (() => {
             // on the Home Screen with a push service: this phone's pushes (asked once)
@@ -88,7 +88,7 @@ export function SettingsContainer({ route, place, prefsBox }: { route: ProjectRo
               void app.notices.pushState()
               return <Loading />
             }
-            const push = { sub: !!app.notices.sub, blocked: Notification.permission === 'denied', quiet: app.notices.quiet(), on: { turnOn: () => void app.notices.pushOn(), turnOff: () => void app.notices.pushOff(), quiet: () => app.notices.setQuiet(!app.notices.quiet()) } }
+            const push = { sub: !!app.notices.sub, blocked: Notification.permission === 'denied', quiet: app.notices.quiet(), hours: app.notices.quietHours(), on: { turnOn: () => void app.notices.pushOn(), turnOff: () => void app.notices.pushOff(), quiet: () => app.notices.setQuiet(!app.notices.quiet()), hours: (h: { from: string; to: string }) => app.notices.setQuietHours(h) } }
             return <PhonePushBody standalone onPhone={() => open('phone')} push={push} />
           })()
         )

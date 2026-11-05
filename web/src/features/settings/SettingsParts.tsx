@@ -56,7 +56,35 @@ export const Toggle = ({ on, label, onToggle }: { on: boolean; label: string; on
   </button>
 )
 
-export const PH_GROUP = 'mx-3 divide-y divide-zinc-100 overflow-hidden rounded-2xl bg-white dark:divide-zinc-800 dark:bg-zinc-900'
+/** A time of day to pick, shown as its words: a tap opens the browser's own time picker. */
+const TimeAt = ({ label, value, onPick }: { label: string; value: string; onPick(v: string): void }) => (
+  <input
+    type="time"
+    aria-label={label}
+    value={value}
+    onChange={(e) => e.target.value && onPick(e.target.value)}
+    className="h-8 rounded-md bg-transparent px-1 text-sm font-medium text-blue-600 tabular-nums outline-none hover:bg-zinc-100 focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-blue-400 dark:hover:bg-zinc-800 [&::-webkit-calendar-picker-indicator]:hidden"
+  />
+)
+
+/** Quiet hours: the switch, and beside it from when to when, each time a tap away from changing (D115 #43). */
+export const QuietHoursSetting = ({ about, on, hours, events }: { about: string; on: boolean; hours: { from: string; to: string }; events: { toggle(): void; hours(h: { from: string; to: string }): void } }) => (
+  <Setting
+    title="Quiet hours"
+    about={about}
+    control={
+      <div className="flex items-center gap-3">
+        <span className={`flex items-center text-sm ${on ? '' : 'opacity-50'}`}>
+          <TimeAt label="Quiet from" value={hours.from} onPick={(from) => events.hours({ ...hours, from })} />–
+          <TimeAt label="Quiet until" value={hours.to} onPick={(to) => events.hours({ ...hours, to })} />
+        </span>
+        <Toggle on={on} label="Quiet hours" onToggle={events.toggle} />
+      </div>
+    }
+  />
+)
+
+export const PH_GROUP ='mx-3 divide-y divide-zinc-100 overflow-hidden rounded-2xl bg-white dark:divide-zinc-800 dark:bg-zinc-900'
 
 export const PhHead = ({ title, onBack }: { title: string; onBack(): void }) => (
   <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-1 bg-zinc-100/90 px-1 backdrop-blur dark:bg-zinc-950/90">

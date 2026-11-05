@@ -8,5 +8,7 @@ type Story = StoryObj
 
 export const Notifications: Story = { ...onDesk('notifications'), name: 'On' }
 export const OnQuietHours: Story = { ...onDesk('notifications', { notifications: { state: 'On', quiet: true } }), name: 'On, quiet hours on' }
+export const OnQuietHoursChanged: Story = { ...onDesk('notifications', { notifications: { state: 'On', quiet: true, hours: { from: '21:00', to: '09:30' } } }), name: 'On, quiet hours changed' }
+export const OnQuietHoursOff: Story = { ...onDesk('notifications', { notifications: { state: 'On', quiet: false } }), name: 'On, quiet hours off' }
 export const NotificationsOffQuietHours: Story = { ...onDesk('notifications', { notifications: { state: 'Off', quiet: true } }), name: 'Off' }
 export const NotificationsBlocked: Story = { ...onDesk('notifications', { notifications: { state: 'Blocked by the browser', quiet: false } }), name: 'Blocked by the browser' }

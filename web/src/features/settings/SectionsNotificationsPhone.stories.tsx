@@ -7,6 +7,8 @@ export default { title: 'Components/Settings, help and parts/Settings/Notificati
 type Story = StoryObj
 
 export const PhonePushesOnQuiet: Story = { ...onPhone('notifications', { push: { sub: true, blocked: false, quiet: true } }), name: 'Pushes on, quiet hours' }
+/** quiet hours changed: a tap on a time opens the phone's own picker (D115 #43) */
+export const PhonePushesOnQuietChanged: Story = { ...onPhone('notifications', { push: { sub: true, blocked: false, quiet: true, hours: { from: '23:30', to: '07:00' } } }), name: 'Pushes on, quiet hours changed' }
 export const PhonePushesOff: Story = { ...onPhone('notifications', { push: { sub: false, blocked: false, quiet: false } }), name: 'Pushes off' }
 export const PhonePushesBlocked: Story = { ...onPhone('notifications', { push: { sub: false, blocked: true, quiet: false } }), name: 'Blocked by the phone' }
 export const PhoneNotSupported: Story = { ...onPhone('notifications', { pushUnsupported: true }), name: 'Not supported on this phone' }

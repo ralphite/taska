@@ -147,7 +147,7 @@ export class TaskaApi {
     return this.http.json('/api/push')
   }
 
-  setPush(body: { sub?: unknown; quiet?: boolean; endpoint?: string; off?: boolean }): Promise<unknown> {
+  setPush(body: { sub?: unknown; quiet?: boolean; from?: string; to?: string; endpoint?: string; off?: boolean }): Promise<unknown> {
     return this.http.json('/api/push', { method: 'POST', body })
   }
 

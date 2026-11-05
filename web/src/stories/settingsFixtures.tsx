@@ -20,6 +20,7 @@ import { PROJECT } from './listFixtures'
 import { acts } from './acts'
 
 const now = Date.parse(T)
+const QUIET = { from: '22:00', to: '08:00' }
 const at = (min: number) => new Date(now - min * 60_000).toISOString()
 export const SEEN: AgentSeen[] = [
   { name: 'claude-code', t: now - 60_000, waiting: true },
@@ -43,9 +44,9 @@ export interface SettingsHere {
   /** Projects: a new one being named, one being renamed, why it was not done, a deleted one asking */
   projects?: { pNew?: boolean; pNewText?: string; pErr?: string; renaming?: string; purging?: string[]; menu?: string }
   /** Notifications on the desktop: how the browser has them, quiet hours */
-  notifications?: { state: 'On' | 'Off' | 'Blocked by the browser'; quiet: boolean }
+  notifications?: { state: 'On' | 'Off' | 'Blocked by the browser'; quiet: boolean; hours?: { from: string; to: string } }
   /** the phone on its Home Screen with a push service: this phone's pushes */
-  push?: { sub: boolean; blocked: boolean; quiet: boolean }
+  push?: { sub: boolean; blocked: boolean; quiet: boolean; hours?: { from: string; to: string } }
   /** Use on your phone: New key pressed once */
   newKeyAsking?: boolean
   /** Voice spellings: none yet */
@@ -99,7 +100,7 @@ function LiveSettings({ sec: start, desk, h }: { sec: SectionKey | null; desk: b
   const [sec, setSec] = useState(start)
   const [p, setP] = useState({ pNew: !!h.projects?.pNew, pNewText: h.projects?.pNewText ?? '', pErr: h.projects?.pErr ?? '', renaming: h.projects?.renaming ?? null, pMenu: h.projects?.menu ?? null })
   const [asked, setAsked] = useState<Record<string, number>>(() => ({ ...Object.fromEntries((h.projects?.purging ?? []).map((n) => [`purge ${n}`, 1])), ...(h.newKeyAsking ? { 'new-key': 1 } : {}) }))
-  const [notices, setNotices] = useState(h.notifications ?? { state: 'On' as const, quiet: false })
+  const [notices, setNotices] = useState<NonNullable<SettingsHere['notifications']>>(h.notifications ?? { state: 'On', quiet: false })
   const [push, setPush] = useState(h.push ?? null)
   const [editing, setEditing] = useState(!!h.prefs?.editing)
   const [tidy, setTidy] = useState(!h.prefs?.tidyOff)
@@ -133,13 +134,13 @@ function LiveSettings({ sec: start, desk, h }: { sec: SectionKey | null; desk: b
     phone: () => <PhoneBody link={h.noRemote ? '' : m.facts.remote + '/'} lan={h.noRemote && !h.noLan ? 'http://192.168.1.20:7340/p/shop/' : ''} keyText={m.facts.key} asking={!!asked['new-key']} desk={desk} on={{ copy: setActs.copy, newKey: () => ask('new-key', setActs.newKey) }} />,
     notifications: () =>
       desk ? (
-        <NotificationsBody state={notices.state} quiet={notices.quiet} on={{ ...toggles((on) => setNotices({ ...notices, state: on ? 'On' : 'Off' })), quiet: () => setNotices({ ...notices, quiet: !notices.quiet }) }} />
+        <NotificationsBody state={notices.state} quiet={notices.quiet} hours={notices.hours ?? QUIET} on={{ ...toggles((on) => setNotices({ ...notices, state: on ? 'On' : 'Off' })), quiet: () => setNotices({ ...notices, quiet: !notices.quiet }), hours: (hours) => setNotices({ ...notices, hours }) }} />
       ) : h.pushLoading ? (
         <Loading />
       ) : h.pushUnsupported ? (
         <PhonePushBody standalone onPhone={setActs.onPhone} phoneHref="#" />
       ) : push ? (
-        <PhonePushBody standalone onPhone={setActs.onPhone} phoneHref="#" push={{ ...push, on: { ...toggles((on) => setPush({ ...push, sub: on })), quiet: () => setPush({ ...push, quiet: !push.quiet }) } }} />
+        <PhonePushBody standalone onPhone={setActs.onPhone} phoneHref="#" push={{ hours: QUIET, ...push, on: { ...toggles((on) => setPush({ ...push, sub: on })), quiet: () => setPush({ ...push, quiet: !push.quiet }), hours: (hours) => setPush({ ...push, hours }) } }} />
       ) : (
         <PhonePushBody standalone={false} onPhone={setActs.onPhone} phoneHref="#" />
       ),
