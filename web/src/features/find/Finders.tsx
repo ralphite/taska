@@ -2,9 +2,9 @@
 // anything else, and the actions by their words, is the search's (F479: pages/SearchDialog).
 
 import { useLayoutEffect, useRef, useState } from 'react'
-import { NeedsCount, ProjTile, Skeleton } from '../../ui/bits'
+import { CurrentMark, NeedsCount, ProjTile, Skeleton } from '../../ui/bits'
 import type { SheetParts } from '../../ui/Sheet'
-import { FIELD, MUTED } from '../../ui/tones'
+import { FIELD } from '../../ui/tones'
 import { noMatches } from '../../model/words'
 
 /** The keys sheet's groups: [group, [keys, what][]] (from the table of actions). */
@@ -99,9 +99,9 @@ export function Switcher({ rows, loading, onOpen }: { rows: SwitchRow[]; loading
               className="flex h-11 items-center gap-3 rounded-xl px-3 hover:bg-zinc-100 aria-selected:bg-blue-50 aria-selected:ring-1 aria-selected:ring-blue-200 dark:hover:bg-zinc-800 dark:aria-selected:bg-blue-400/15 dark:aria-selected:ring-blue-400/30"
             >
               <ProjTile title={p.title} tone={p.tone} cls="size-6 rounded-md text-xs" />
-              <span className={`min-w-0 flex-1 truncate ${p.here ? 'font-semibold' : ''}`}>{p.title}</span>
-              {p.here ? <span className={`text-xs ${MUTED}`}>this one</span> : null}
+              <span className="min-w-0 flex-1 truncate">{p.title}</span>
               {p.needs ? <NeedsCount n={p.needs} /> : null}
+              {p.here ? <CurrentMark /> : null}
             </a>
           ))
         ) : (

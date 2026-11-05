@@ -10,7 +10,8 @@ import { boxAt } from './boxFixtures'
 import { NotificationsBody, OrganizerBody, PhoneBody, PhonePushBody, ProjectsBody, SpellingsBody, type ProjectsEvents } from '../features/settings/Sections'
 import { SettingsFrame } from '../features/settings/SettingsFrame'
 import { DeskNav, PhoneIndex } from '../features/settings/SettingsNav'
-import { deletedRows, docRows, logRows, navFacts, projectsOf } from '../features/settings/settingsFacts'
+import { docRows, logRows, navFacts, projectsOf } from '../features/settings/settingsFacts'
+import { goneRows } from '../model/goneRows'
 import type { SectionKey } from '../features/settings/sectionList'
 import type { AgentSeen, Item, LogRow, ProjectRow, Spelling } from '../model/types'
 import type { DeletedProject } from '../stores/settings'
@@ -166,7 +167,7 @@ function LiveSettings({ sec: start, desk, h }: { sec: SectionKey | null; desk: b
       const asking = logAsking ?? new Set(h.log === 'asking' && rows?.length ? [rows.find((x) => x.undo != null)?.undo ?? -1] : [])
       return <LogBody rows={rows} end={h.log !== 'more'} asking={asking} on={{ item: setActs.item, input: setActs.input, undo: (seq) => (asking.has(seq) ? setActs.undo(seq) : setLogAsking(new Set([...asking, seq]))), more: setActs.more }} />
     },
-    deleted: () => <DeletedBody {...(h.nothingDeleted ? { things: [], inputs: [] } : deletedRows(m))} on={{ restore: setActs.restoreThing, restoreInput: setActs.restoreInput }} />,
+    deleted: () => <DeletedBody rows={h.nothingDeleted ? [] : goneRows(m)} on={{ restore: (x) => (x.kind === 'input' ? setActs.restoreInput(x.id) : setActs.restoreThing(x.key)) }} />,
   }
   const page = (
     <div className="flex h-full flex-col">

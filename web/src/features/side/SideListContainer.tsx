@@ -7,7 +7,7 @@ import { useProjectModel } from '../../app/hooks'
 import { activityRows, logTarget } from '../../model/activity'
 import { codeOf, type ProjectModel } from '../../model/project'
 import { listedDocs } from '../../model/docs'
-import { goneRows } from './goneRows'
+import { goneRows } from '../../model/goneRows'
 import { ActivityList, DeletedList, DeletedView, DocsList, SideFrame, type ActivityRow, type DocRow, type Side } from './SideLists'
 
 function useRestore(slug: string, m: ProjectModel | null) {

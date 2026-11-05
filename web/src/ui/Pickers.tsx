@@ -6,6 +6,7 @@ import { closed, shownStatus } from '../model/items'
 import type { Item } from '../model/types'
 import { hay } from '../model/visible'
 import { Icon, StateIcon } from './Icon'
+import { CurrentMark } from './bits'
 import type { SheetParts } from './Sheet'
 import { FIELD, TYPE_TEXT } from './tones'
 import { noMatches } from '../model/words'
@@ -34,11 +35,12 @@ export function Picker({ items, code, placeholder, skip, sort, current, desk, ex
               key={c.n}
               onClick={() => onPick(c.n)}
               {...(current === c.n ? { 'aria-current': 'true' as const } : {})}
-              className="flex h-12 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-[15px] hover:bg-zinc-100 aria-[current=true]:bg-blue-50 lg:h-9 lg:text-sm dark:hover:bg-zinc-800 dark:aria-[current=true]:bg-blue-400/10"
+              className="flex h-12 w-full items-center gap-2.5 rounded-lg px-2.5 text-left text-[15px] hover:bg-zinc-100 lg:h-9 lg:text-sm dark:hover:bg-zinc-800"
             >
               <StateIcon {...shownStatus(c)} cls="size-4" />
               <span className={`font-mono text-xs font-bold ${TYPE_TEXT[c.type]}`}>{code(c.n)}</span>
               <span className="min-w-0 flex-1 truncate">{c.title}</span>
+              {current === c.n ? <CurrentMark /> : null}
             </button>
           ))
         ) : (
@@ -78,10 +80,12 @@ export function moveParentSheet({ it, items, kids, code, desk }: { it: Item; ite
         extra={
           <button
             onClick={() => onPick(null)}
+            {...(it.parent ? {} : { 'aria-current': 'true' as const })}
             className="mt-1 flex h-12 w-full items-center gap-2.5 rounded-lg border-t border-zinc-100 px-2.5 text-left text-[15px] hover:bg-zinc-100 lg:h-9 lg:text-sm dark:border-zinc-800 dark:hover:bg-zinc-800"
           >
-            <Icon n={it.parent ? 'x' : 'check'} c="size-4 text-zinc-500" />
-            No parent
+            <Icon n="x" c="size-4 text-zinc-500" />
+            <span className="min-w-0 flex-1">No parent</span>
+            {it.parent ? null : <CurrentMark />}
           </button>
         }
       />

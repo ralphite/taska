@@ -5,8 +5,9 @@ import { useState, type ReactNode } from 'react'
 import { activityRows } from '../model/activity'
 import { Frames } from './Frames'
 import { LOG, shopWithHistory } from './settingsFixtures'
-import { goneRows } from '../features/side/goneRows'
-import { ActivityList, DeletedList, DeletedView, SideFrame, type ActivityRow, type GoneRow, type Side } from '../features/side/SideLists'
+import { goneRows } from '../model/goneRows'
+import { ActivityList, DeletedList, DeletedView, SideFrame, type ActivityRow, type Side } from '../features/side/SideLists'
+import type { GoneRow } from '../model/goneRows'
 import { acts } from './acts'
 
 type Story = StoryObj

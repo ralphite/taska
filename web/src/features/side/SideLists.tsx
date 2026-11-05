@@ -8,6 +8,7 @@ import { Icon } from '../../ui/Icon'
 import { MUTED, PRIMARY } from '../../ui/tones'
 import { Empty, Skeleton } from '../../ui/bits'
 import { LogLine, LogMore, type LogEvents } from '../../ui/Log'
+import type { GoneRow } from '../../model/goneRows'
 
 export type Side = 'docs' | 'log' | 'deleted'
 const TITLE: Record<Side, string> = { docs: 'Documents', log: 'Activity', deleted: 'Deleted' }
@@ -117,9 +118,6 @@ export function ActivityList({ rows, end, picked, asking, on }: { rows: Activity
 }
 
 /** Something deleted: an item (with its subitems), a document, or an input (with the items only it made). */
-export type GoneRow =
-  | { key: string; kind: 'item' | 'doc'; title: string; what: string; at: string }
-  | { key: string; kind: 'input'; id: string; text: string; code: string; with: string; at: string }
 
 const goneWhat = (x: GoneRow) => (x.kind === 'input' ? `Input ${x.code}` : x.what)
 

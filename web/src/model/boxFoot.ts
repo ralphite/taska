@@ -2,7 +2,7 @@
 // (its line on top, its placeholder, what Send says, what a comment from it goes to) and the line over the box about
 // what you sent last. Pure, so it is tested alone and the containers only connect it.
 
-import { becameOf, failWhy, keyRefused } from './became'
+import { becameOf, failWhy } from './became'
 import { allComments, docTarget, type DocTarget } from './docs'
 import { ticksNotSent, type TickState } from './docTicks'
 import { draftName } from './draftTarget'
@@ -196,7 +196,7 @@ export function feedbackLine(a: { m: ProjectModel | null; desk: boolean; compose
   if (r.moved) line = { kind: 'moved', code: inputCode(r.id), to: r.moved.to, as: r.moved.as ? inputCode(r.moved.as) : '', href: `/p/${encodeURIComponent(r.moved.to)}/` }
   else if (r.trWait) line = { kind: 'transcribing' }
   else if (org.busy === r.id || (!r.acked && org.on && !r.org)) line = { kind: 'organizing' }
-  else if (r.org && !r.org.ok) line = { kind: 'org-failed', msg: failWhy(r.org.msg), raw: r.org.msg, retry: !keyRefused(r.org.msg) }
+  else if (r.org && !r.org.ok) line = { kind: 'org-failed', msg: failWhy(r.org.msg), raw: r.org.msg, retry: true }
   else if (r.org?.undone) line = { kind: 'undone', code: inputCode(r.id) }
   else if (r.acked)
     line = {

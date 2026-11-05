@@ -131,7 +131,8 @@ export function becameOf(r: Input, m: ProjectModel, title: (slug: string) => str
     const it = itemRef(m, r.scope)
     if (it) return { k: 'answer', item: it }
   }
-  if (r.org && !r.org.ok) return { k: 'failed', why: failWhy(r.org.msg), retry: retry && !keyRefused(r.org.msg) }
+  // its key refused too: once the key is fixed, Retry is the way to have it organized (nothing asks again by itself)
+  if (r.org && !r.org.ok) return { k: 'failed', why: failWhy(r.org.msg), retry }
   // said on an item (its own box): added to it; then what the organizer or an agent did with it
   const ns = [...new Set([...(r.scope ? [r.scope] : []), ...r.touched])]
   const items = ns.map((n) => itemRef(m, n)).filter((x): x is ItemRef => !!x)

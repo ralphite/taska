@@ -6,6 +6,7 @@ import { oneLine } from '../../model/items'
 import { plainQuote } from '../../model/markdown'
 import type { Block, Doc } from '../../model/types'
 import { Icon } from '../../ui/Icon'
+import { CurrentMark } from '../../ui/bits'
 import type { SheetParts } from '../../ui/Sheet'
 import type { IconName } from '../../ui/icon-paths'
 import { DANGER, MENU_ROW, MENU_SEP } from '../../ui/tones'
@@ -96,15 +97,10 @@ export function commentMoveSheet(doc: Doc, current: string, onPick: (key: string
       key={key}
       onClick={() => onPick(key)}
       {...(key === current ? { 'aria-current': 'true' as const } : {})}
-      className="flex min-h-11 w-full items-center gap-2 rounded-lg px-3 py-1.5 text-left text-sm hover:bg-zinc-100 aria-[current=true]:bg-blue-50 dark:hover:bg-zinc-800 dark:aria-[current=true]:bg-blue-400/10"
+      className="flex min-h-11 w-full items-center gap-2 rounded-lg px-3 py-1.5 text-left text-sm hover:bg-zinc-100 dark:hover:bg-zinc-800"
     >
       <span className="line-clamp-2 min-w-0 flex-1">{label}</span>
-      {key === current ? (
-        <span className="flex shrink-0 items-center gap-1 text-xs font-medium text-blue-700 dark:text-blue-300">
-          <Icon n="check" c="size-3.5" sw="2.5" />
-          Now
-        </span>
-      ) : null}
+      {key === current ? <CurrentMark /> : null}
     </button>
   )
   return {

@@ -97,7 +97,7 @@ export class Voice {
   /** Record a voice note for draft `key` (it belongs where it was started, whatever is open when it stops). */
   async start(slug: string, key: DraftKey, scope: string | null, from: 'main' | 'aux', about: Recording['about'] = null): Promise<void> {
     if (this.rec) return
-    if (!this.can()) return this.d.toasts.show(CANT_RECORD)
+    if (!this.can()) return this.d.toasts.show(CANT_RECORD, null, { error: true })
     const box = this.d.fields.get('box')
     this.typing = !!box && box === box.ownerDocument.activeElement
     try {
@@ -176,7 +176,8 @@ export class Voice {
     if (!blob || !slug || key == null) return
     if (ms < 800 || !blob.size) {
       void this.d.api.pageLog(slug, [{ kind: 'mic', level: 'warn', msg: `${ms} ms, ${blob.size} bytes`, name: blob.size ? 'short' : 'empty', where: 'stop' }]).catch(() => {})
-      return this.d.toasts.show(blob.size ? TOO_SHORT : noSound(this.d.desk()))
+      // too short is yours to say again; no sound at all is the microphone failing, as its other failures say
+      return blob.size ? this.d.toasts.show(TOO_SHORT) : this.d.toasts.show(noSound(this.d.desk()), null, { error: true })
     }
     // a voice comment: the quote first, then its words
     const label = about ? vcLabel(about.quote) : null

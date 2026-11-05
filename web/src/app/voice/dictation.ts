@@ -83,7 +83,7 @@ export class Dictation {
     const slug = this.slug()
     if (this.live || !slug || !this.editing(slug)) return
     if (this.d.recording()) return this.d.toasts.show('Stop the current recording first')
-    if (!canRecord()) return this.d.toasts.show(CANT_RECORD)
+    if (!canRecord()) return this.d.toasts.show(CANT_RECORD, null, { error: true })
     let stream: MediaStream
     try {
       stream = await openMic()

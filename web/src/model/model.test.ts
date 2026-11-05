@@ -141,8 +141,8 @@ describe('what became of an input, in one set of words (B629)', () => {
     expect(of({ id: 'r2', org: org('B99 is not in this project', { ok: false }) })).toEqual({ k: 'failed', why: 'B99 is not in this project', retry: true })
     // the service's own words in plain ones; Taska's own reason as it is
     expect(of({ id: 'r2', org: org('Gemini HTTP 503: overloaded', { ok: false }) })).toMatchObject({ k: 'failed', why: 'busy' })
-    // its key refused: where to fix it, and no Try again (it would fail the same way)
-    expect(of({ id: 'r2', org: org('Gemini HTTP 401: API key not valid', { ok: false }) })).toMatchObject({ k: 'failed', why: 'Gemini key not accepted · check GEMINI_API_KEY on the server', retry: false })
+    // its key refused: where to fix it, and Retry once it is fixed (nothing asks again by itself)
+    expect(of({ id: 'r2', org: org('Gemini HTTP 401: API key not valid', { ok: false }) })).toMatchObject({ k: 'failed', why: 'Gemini key not accepted · check GEMINI_API_KEY on the server', retry: true })
     expect(of({ id: 'r2', org: org('B500 is not in this project', { ok: false }) })).toMatchObject({ k: 'failed', why: 'B500 is not in this project' })
     expect(of({ id: 'r3', org: org('Left for your agent', { keep: true }) })).toEqual({ k: 'agent' })
     expect(of({ id: 'r4', acked: true, org: org('Left for your agent', { keep: true }) })).toEqual({ k: 'handled' })

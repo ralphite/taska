@@ -107,6 +107,9 @@ export const NeedsCount = ({ n }: { n: number }) => {
   )
 }
 
+/** The choice that is set now, in every menu and picker: a blue ✓ at the row's end (as Status and Later have it). */
+export const CurrentMark = () => <Icon n="check" c="size-4 shrink-0 text-blue-600 dark:text-blue-400" sw="2.5" />
+
 export const DraftMark = () => (
   <span data-draft className="inline-flex shrink-0 items-center gap-1 font-semibold text-blue-600 dark:text-blue-400">
     <Icon n="pencil" c="size-3" sw="2.25" />

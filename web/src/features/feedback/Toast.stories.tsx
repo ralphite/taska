@@ -52,6 +52,6 @@ export const MicNoHttps: Story = { ...mic((desk) => micTrouble('', desk, false),
 export const NoMicrophone: Story = { ...mic((desk) => micTrouble('NotFoundError', desk, true), true), name: 'No microphone found' }
 export const MutedByPhone: Story = { ...mic(() => MUTED_BY_PHONE, true), name: 'Phone muted the microphone' }
 export const TooShort: Story = { ...mic(() => TOO_SHORT), name: 'Too short, discarded' }
-export const NoSound: Story = { ...mic(noSound), name: 'No sound from the microphone' }
-export const CantRecord: Story = { ...mic(() => CANT_RECORD), name: "This browser can't record" }
+export const NoSound: Story = { ...mic(noSound, true), name: 'No sound from the microphone' }
+export const CantRecord: Story = { ...mic(() => CANT_RECORD, true), name: "This browser can't record" }
 export const RecordingCancelled: Story = { ...mic(cancelledKept), name: 'Recording cancelled, kept' }

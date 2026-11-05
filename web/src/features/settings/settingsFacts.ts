@@ -6,11 +6,10 @@ import type { ListedProject } from '../../app/sideProjects'
 import { activityRows } from '../../model/activity'
 import { listedDocs } from '../../model/docs'
 import type { ProjectModel } from '../../model/project'
-import { dayShort, when } from '../../model/time'
+import { dayShort } from '../../model/time'
 import type { LogRow, ProjectRow } from '../../model/types'
 import type { DeletedProject } from '../../stores/settings'
-import { inputCode, plural } from '../../model/words'
-import type { GoneInputRow, GoneThingRow, PhoneDocRow } from './PhoneSections'
+import type { PhoneDocRow } from './PhoneSections'
 import type { ProjectsFacts } from './Sections'
 import type { NavFacts } from './SettingsNav'
 
@@ -39,16 +38,6 @@ export const docRows = (m: ProjectModel): PhoneDocRow[] => listedDocs(m)
 /** Activity: each change in words, and whether it can be undone. */
 export const logRows = (m: ProjectModel, rows: readonly LogRow[]) => activityRows(m, rows)
 
-/** Deleted: the items and documents, and what you said. */
-export const deletedRows = (m: ProjectModel): { things: GoneThingRow[]; inputs: GoneInputRow[] } => ({
-  things: m.facts.deleted.map((x) => ({
-    label: x.kind === 'item' ? x.code || '' : `D${x.d}`,
-    title: x.title,
-    what: x.kind === 'item' ? `Item${x.more ? `, with ${plural(x.more, 'subitem')}` : ''}` : `Document${x.on ? ` on ${x.on}` : ''}`,
-    at: when(x.at, m.at),
-  })),
-  inputs: m.facts.deletedInputs.map((x) => ({ id: x.id, code: inputCode(x.id), t: when(x.t, m.at), at: when(x.at, m.at), text: x.text || (x.files ? plural(x.files, 'file') : ''), items: x.items })),
-})
 
 
 /** The way through Settings: what each section's row says on its right (`said`: what the page knows of

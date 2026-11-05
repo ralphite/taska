@@ -26,7 +26,7 @@ export function FilterControls({ tab, list, small = false, on }: { tab: Tab; lis
       {tab === 'rules' ? null : (
         <div>
           {lab('Type')}
-          <SegCtl opts={typeOpts(false)} on={list.type} small={small} pick={(v) => on.set('type', v)} />
+          <SegCtl opts={typeOpts(true, true)} on={list.type} small={small} pick={(v) => on.set('type', v)} />
         </div>
       )}
       {tab === 'archive' ? (

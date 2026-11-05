@@ -15,7 +15,8 @@ import { SECTIONS, sectionOf, type SectionKey } from './sectionList'
 import { DeskNav, PhoneIndex } from './SettingsNav'
 import { Loading } from './SettingsParts'
 import { SettingsFrame } from './SettingsFrame'
-import { deletedRows, docRows, logRows, navFacts, projectsOf } from './settingsFacts'
+import { docRows, logRows, navFacts, projectsOf } from './settingsFacts'
+import { goneRows } from '../../model/goneRows'
 
 const standalone = () => typeof matchMedia !== 'undefined' && (matchMedia('(display-mode: standalone)').matches || (navigator as unknown as { standalone?: boolean }).standalone === true)
 
@@ -129,10 +130,9 @@ export function SettingsContainer({ route, place, prefsBox }: { route: ProjectRo
       case 'deleted':
         return (
           <DeletedBody
-            {...deletedRows(m)}
+            rows={goneRows(m)}
             on={{
-              restore: (label) => (/^D\d+$/.test(label) ? void app.restores.doc(route.slug, Number(label.slice(1))) : void app.restores.item(route.slug, label)),
-              restoreInput: (id) => app.restores.input(route.slug, id),
+              restore: (x) => (x.kind === 'input' ? void app.restores.input(route.slug, x.id) : x.kind === 'doc' ? void app.restores.doc(route.slug, Number(x.key.slice(1))) : void app.restores.item(route.slug, x.key)),
             }}
           />
         )

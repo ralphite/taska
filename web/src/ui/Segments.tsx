@@ -23,8 +23,9 @@ export function SegCtl({ opts, on, small = false, pick }: { opts: [string, React
   )
 }
 
-export const typeOpts = (withRule: boolean): [string, ReactNode][] => [
-  ...(withRule ? [] : [['all', 'All'] as [string, ReactNode]]),
+/** The types to pick: an item's own (with Rule, no All), or a filter's (All, and Rule where rules are listed too). */
+export const typeOpts = (withRule: boolean, withAll = !withRule): [string, ReactNode][] => [
+  ...(withAll ? [['all', 'All'] as [string, ReactNode]] : []),
   ...[...WORK_TYPES, ...(withRule ? ['rule' as const] : [])].map((t) => [t, <span className="truncate">{t[0].toUpperCase() + t.slice(1)}</span>] as [string, ReactNode]),
 ]
 const P0 = <span className="font-semibold text-red-600 dark:text-red-400">P0</span>

@@ -1,15 +1,15 @@
 // The phone's pages of Settings that look their own way: Projects in grouped rows (each row's actions under its ⋯),
 // and Documents, Activity and Deleted, which the desktop shows beside the items. Props only.
 
-import { useState, type ReactNode } from 'react'
+import { useState } from 'react'
 import type { LogSentence } from '../../model/activity'
-import type { ItemType } from '../../model/types'
 import { plural } from '../../model/words'
 import { ProjTile, Skeleton } from '../../ui/bits'
 import { Icon } from '../../ui/Icon'
-import { MUTED, P_BTN, SECOND, TYPE_TEXT } from '../../ui/tones'
+import { MUTED, P_BTN } from '../../ui/tones'
 import { Empty } from '../../ui/bits'
 import { LogLine, LogMore, type LogEvents } from '../../ui/Log'
+import type { GoneRow } from '../../model/goneRows'
 import { NameField, type ProjectsEvents, type ProjectsFacts } from './Sections'
 import { PH_GROUP, PhLabel, Ruled } from './SettingsParts'
 
@@ -220,79 +220,45 @@ export function LogBody({ rows, end, asking, on }: { rows: { s: LogSentence; und
   )
 }
 
-export interface GoneThingRow {
-  label: string
-  title: string
-  what: string
-  at: string
-}
-
-export interface GoneInputRow {
-  id: string
-  code: string
-  t: string
-  at: string
-  text: string
-  items: { code: string; title: string; type: ItemType }[]
-}
-
-export function DeletedBody({ things, inputs, on }: { things: GoneThingRow[]; inputs: GoneInputRow[]; on: { restore(label: string): void; restoreInput(id: string): void } }) {
-  const rows: ReactNode = things.length ? (
-    <ul className="mb-6 divide-y divide-zinc-200 border-y border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
-      {things.map((x) => (
-        <li key={x.label} className="flex items-center gap-3 py-3">
-          <span className="min-w-0 flex-1">
-            <span className="block truncate text-[15px]">
-              <span className="mr-1.5 font-mono text-[13px] font-bold">{x.label}</span>
-              {x.title}
-            </span>
-            <span className="block text-xs text-zinc-500 dark:text-zinc-400">
-              {x.what} · deleted {x.at}
-            </span>
-          </span>
-          <button onClick={() => on.restore(x.label)} className={P_BTN}>
+/** What was deleted, as the desktop's Deleted lists it (goneRows: one list, the latest first, whatever it was), each
+ * with Restore. */
+export function DeletedBody({ rows, on }: { rows: GoneRow[]; on: { restore(x: GoneRow): void } }) {
+  if (!rows.length)
+    return (
+      <Ruled>
+        <Empty>Nothing deleted</Empty>
+      </Ruled>
+    )
+  return (
+    <ul className="divide-y divide-zinc-200 border-y border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
+      {rows.map((x) => (
+        <li key={x.key} className="flex items-center gap-3 py-3">
+          <div className="min-w-0 flex-1">
+            {x.kind === 'input' ? (
+              <>
+                <p className="line-clamp-2 text-[15px] leading-snug break-words">{x.text}</p>
+                <p className="mt-0.5 truncate text-xs text-zinc-500 dark:text-zinc-400">
+                  <span className="font-mono">{x.code}</span> · deleted {x.at}
+                  {x.with ? ` · with ${x.with}` : ''}
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="truncate text-[15px]">
+                  <span className="mr-1.5 font-mono text-[13px] font-bold">{x.key}</span>
+                  {x.title}
+                </p>
+                <p className="mt-0.5 truncate text-xs text-zinc-500 dark:text-zinc-400">
+                  {x.what} · deleted {x.at}
+                </p>
+              </>
+            )}
+          </div>
+          <button onClick={() => on.restore(x)} className={P_BTN}>
             Restore
           </button>
         </li>
       ))}
     </ul>
-  ) : null
-  return (
-    <>
-      {rows}
-      {inputs.length ? (
-        <ul className="divide-y divide-zinc-200 border-y border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
-          {inputs.map((x) => (
-            <li key={x.id} className="flex items-start gap-3 py-3.5">
-              <div className="min-w-0 flex-1">
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                  <span className="font-mono">{x.code}</span> · {x.t} · deleted {x.at}
-                </p>
-                <p className="mt-1 line-clamp-3 text-[15px] leading-snug break-words">{x.text}</p>
-                {x.items.length ? (
-                  <p className="mt-1.5 text-[13px] leading-snug text-zinc-500 dark:text-zinc-400">
-                    With{' '}
-                    {x.items.map((i, k) => (
-                      <span key={i.code}>
-                        {k ? ' · ' : ''}
-                        <span className={`font-mono text-xs font-bold ${TYPE_TEXT[i.type]}`}>{i.code}</span> {i.title}
-                      </span>
-                    ))}
-                  </p>
-                ) : null}
-              </div>
-              <button onClick={() => on.restoreInput(x.id)} className={`${SECOND} shrink-0`}>
-                <Icon n="undo" c="size-4" />
-                Restore
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : things.length ? null : (
-        <Ruled>
-          <Empty>Nothing deleted</Empty>
-        </Ruled>
-      )}
-    </>
   )
 }

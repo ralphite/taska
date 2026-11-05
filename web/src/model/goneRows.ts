@@ -1,10 +1,14 @@
 // Deleted's rows: everything deleted, one list, the latest first, whatever it was (an item with its subitems, a
 // document with its item, what you said with the items it had made). Pure: the container and the stories both use it.
 
-import type { ProjectModel } from '../../model/project'
-import { when } from '../../model/time'
-import { inputCode, plural } from '../../model/words'
-import type { GoneRow } from './SideLists'
+import type { ProjectModel } from './project'
+import { when } from './time'
+import { inputCode, plural } from './words'
+
+/** One deleted thing as Deleted lists it, on the desktop and the phone. */
+export type GoneRow =
+  | { key: string; kind: 'item' | 'doc'; title: string; what: string; at: string }
+  | { key: string; kind: 'input'; id: string; text: string; code: string; with: string; at: string }
 
 export function goneRows(m: ProjectModel): GoneRow[] {
   const at = (t: string) => when(t, m.at)
