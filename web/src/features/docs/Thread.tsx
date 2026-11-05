@@ -124,7 +124,7 @@ function CommentFiles({ c, asking, env, on }: { c: Comment; asking: string | nul
   )
 }
 
-export function Thread({ t, blockText, rail = false, isNew, done, replying, asking, env, on }: {
+export function Thread({ t, blockText, rail = false, isNew, done, doneAt, replying, asking, env, on }: {
   t: DocThread
   /** the paragraph's words (a quote of all of them is not shown again) */
   blockText?: string
@@ -132,6 +132,8 @@ export function Thread({ t, blockText, rail = false, isNew, done, replying, aski
   rail?: boolean
   isNew: boolean
   done: boolean
+  /** when it was resolved: said, quietly, by Reopen */
+  doneAt?: string
   replying: boolean
   /** the file whose Take off waits for its second click: "id fid" */
   asking: string | null
@@ -173,6 +175,8 @@ export function Thread({ t, blockText, rail = false, isNew, done, replying, aski
         <Icon n={done ? 'reopen' : 'check'} c="size-3.5" />
         {done ? 'Reopen' : 'Resolve'}
       </button>
+      {/* resolved, opened again: when, left of Reopen (R6-3 #4) */}
+      {done ? <span className={`float-right flex h-8 items-center px-1 text-xs ${MUTED}`}>{doneAt ? `Resolved ${when(doneAt, env.now)}` : 'Resolved'}</span> : null}
       {replying ? null : (
         <button
           onClick={() => on.reply(t.tk)}
@@ -209,5 +213,5 @@ export function WebThread({ card, rail, replying, asking, env, on }: { card: Web
         ))}
       </div>
     ) : null
-  return <Thread t={card.s.t} rail={rail} isNew={card.s.isNew} done={card.s.done} replying={replying} asking={asking} env={env} on={on} />
+  return <Thread t={card.s.t} rail={rail} isNew={card.s.isNew} done={card.s.done} doneAt={card.s.doneAt} replying={replying} asking={asking} env={env} on={on} />
 }

@@ -21,7 +21,8 @@ export const Replying: Story = { ...one({ threads: ['p1#1'], reply: 'p1#1' }), n
 /** Resolved, the thread folds into ✓ 1 beside its paragraph (D115 #40). */
 export const ResolvedThread: Story = { ...one({}, { ...PLAN, resolved: { 'p1#1': PLAN.t1 } }), name: 'Thread resolved' }
 /** ✓ 1 pressed: the resolved thread open again, its rule grey (the phone's; the desktop's is a card beside it). */
-export const ResolvedThreadOpened: Story = { ...one({ threads: ['p1#1'] }, { ...PLAN, resolved: { 'p1#1': PLAN.t1 } }), name: 'Thread resolved, opened again' }
+/** resolved after its reply, opened again: when, quietly, left of Reopen (R6-3 #4) */
+export const ResolvedThreadOpened: Story = { ...one({ threads: ['p1#1'] }, { ...PLAN, resolved: { 'p1#1': '2026-10-23T14:25:00-07:00' } }), name: 'Thread resolved, opened again' }
 // ---- more states (B636)
 export const SpeakingAboutAParagraph: Story = { ...one({ speaking: { key: 'p1', bar: false } }), name: 'Speaking about a paragraph' }
 export const AnItemOfAListPicked: Story = { ...one({ quote: { key: 'l1', text: 'Write the goals' } }), name: 'An item of a list picked' }

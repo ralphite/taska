@@ -63,4 +63,6 @@ test('D115 #40: a thread you resolve folds into the count beside its paragraph; 
   await count.click()
   await expect(card).toBeVisible()
   await expect(thread.getByRole('button', { name: 'Reopen', exact: true })).toBeVisible()
+  // when it was resolved, left of Reopen (R6-3 #4)
+  await expect(thread).toContainText(/Resolved \d\d:\d\d/)
 })

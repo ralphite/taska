@@ -24,6 +24,8 @@ export interface ShownThread {
   t: DocThread
   isNew: boolean
   done: boolean
+  /** when it was resolved (the time Taska keeps; none yet while that is on its way) */
+  doneAt?: string
 }
 
 export interface DocRow {
@@ -195,7 +197,7 @@ export function DocView({ facts, env, on, lasso, page, meter, aim = null, onAime
     li?.setAttribute('data-q', '')
   })
   const thread = (s: ShownThread, blockText?: string, rail = false) => (
-    <Thread key={s.t.tk} t={s.t} blockText={blockText} rail={rail} isNew={s.isNew} done={s.done} replying={facts.replying === s.t.tk} asking={facts.asking} env={env} on={on} />
+    <Thread key={s.t.tk} t={s.t} blockText={blockText} rail={rail} isNew={s.isNew} done={s.done} doneAt={s.doneAt} replying={facts.replying === s.t.tk} asking={facts.asking} env={env} on={on} />
   )
   // the phone's row to speak or write goes under the last paragraph picked (an area drawn picks several)
   const sayAt = rows.filter((r) => r.say).at(-1)?.tk

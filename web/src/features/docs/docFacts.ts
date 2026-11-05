@@ -12,10 +12,16 @@ import type { DocFacts, ShownThread } from './DocView'
 import type { PageThread } from './WebPage'
 import type { NotSent } from '../../model/voiceComments'
 
+/** Resolved, and when (none while the resolving is on its way: Taska has not said its time yet) */
+const doneOf = (d: Doc, tk: string) => {
+  const at = d.resolved?.[tk]
+  return { done: resolved(d, tk), doneAt: at && Date.parse(at) > 0 ? at : undefined }
+}
+
 export type DocLook = Pick<DocViewState, 'threads' | 'sel' | 'quote' | 'reply' | 'circle' | 'typing'>
 
 export function factsOf(m: ProjectModel, d: Doc, v: DocLook, seen: Readonly<Record<string, string>>, desk: boolean, asked: Readonly<Record<string, number>>, speaking: { key: string | null; bar: boolean; quote?: string } | null, ticks: TickState, notSent: readonly NotSent[] = []): DocFacts {
-  const shown = (t: ReturnType<typeof threadsOf>[number], key: string): ShownThread => ({ t, isNew: threadNew(seen, d, key, t.comments), done: resolved(d, t.tk) })
+  const shown = (t: ReturnType<typeof threadsOf>[number], key: string): ShownThread => ({ t, isNew: threadNew(seen, d, key, t.comments), ...doneOf(d, t.tk) })
   const isOpen = (tk: string, key: string) => v.threads.has(tk) || v.threads.has(key)
   const tks = blockKeys(d)
   const first = titleLine(d)
@@ -62,7 +68,7 @@ export function factsOf(m: ProjectModel, d: Doc, v: DocLook, seen: Readonly<Reco
     rows,
     showTitle: !isTitled && d.fmt !== 'html',
     outline: d.fmt === 'html' ? [] : outline(d),
-    whole: { n: (d.whole || []).length, open: desk && v.threads.has('doc') && d.whole.length ? { t: { tk: 'doc', comments: d.whole, quote: '' }, isNew: threadNew(seen, d, 'doc', d.whole), done: resolved(d, 'doc') } : null },
+    whole: { n: (d.whole || []).length, open: desk && v.threads.has('doc') && d.whole.length ? { t: { tk: 'doc', comments: d.whole, quote: '' }, isNew: threadNew(seen, d, 'doc', d.whole), ...doneOf(d, 'doc') } : null },
     wholeThreads: desk ? [] : wholeThreads.map((t) => shown(t, 'doc')),
     detached: desk ? [] : d.detached.map((t) => ({ key: t.key, quote: t.quote, threads: threadsOf(t.comments).map((x) => shown(x, t.key)) })),
     waiting: ticksNotSent(ticks, d),
@@ -93,7 +99,7 @@ export function webFacts(d: Doc, v: Pick<DocViewState, 'threads' | 'quote'>, see
   const drafts = notSent.filter((x) => x.key.startsWith('h:'))
   const draftKeys = [...new Set(drafts.map((x) => x.key))]
   const cards: Record<string, WebCard> = {}
-  for (const { t, key } of all) cards[t.tk] = { kind: 'thread', s: { t, isNew: threadNew(seen, d, key, t.comments), done: resolved(d, t.tk) } }
+  for (const { t, key } of all) cards[t.tk] = { kind: 'thread', s: { t, isNew: threadNew(seen, d, key, t.comments), ...doneOf(d, t.tk) } }
   for (const key of draftKeys) cards[`${key}#new`] = { kind: 'drafts', list: drafts.filter((x) => x.key === key) }
   return {
     threads: [
