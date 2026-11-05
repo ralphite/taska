@@ -47,10 +47,11 @@ def new_input(r: Run, a: Args) -> Outcome:
     if cancelled:
         return Outcome(f"ok {rid} kept as cancelled", "Kept in Inputs")
     # words on an item that waits for review, not Accept, take it back to open (Yadong r961: open is the agent's turn;
-    # in progress only while an agent works on it)
+    # in progress only while an agent works on it); so do words on an item already done (r1082: replying to a done
+    # item means it is not done)
     it = s.items.get(scope) if scope is not None else None
-    if it is not None and it.status == "review" and r.by == "you":
-        r.emit(ev.FieldsSet(n=it.n, by=r.by, f={"status": "open"}, was={"status": "review"}, src=rid))
+    if it is not None and it.status in ("review", "done") and r.by == "you":
+        r.emit(ev.FieldsSet(n=it.n, by=r.by, f={"status": "open"}, was={"status": it.status}, src=rid))
     return Outcome(f"ok {rid}", "Received")
 
 
