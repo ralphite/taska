@@ -4,7 +4,7 @@
 
 import type { ReactNode } from 'react'
 import { Icon } from '../../ui/Icon'
-import { PRIMARY } from '../../ui/tones'
+import { DISABLED, PRIMARY } from '../../ui/tones'
 import { Skeleton } from '../../ui/bits'
 
 export const Part = ({ title, about, children }: { title: ReactNode; about?: ReactNode; children?: ReactNode }) => (
@@ -45,12 +45,13 @@ export const Loading = () => (
   </Ruled>
 )
 
-export const Toggle = ({ on, label, onToggle }: { on: boolean; label: string; onToggle(): void }) => (
+export const Toggle = ({ on, label, onToggle, disabled = false }: { on: boolean; label: string; onToggle(): void; /** of no use now: greyed, not to be pressed */ disabled?: boolean }) => (
   <button
     onClick={onToggle}
+    disabled={disabled}
     aria-pressed={on}
     aria-label={label}
-    className="group relative h-6.5 w-11 shrink-0 rounded-full bg-zinc-300 transition-colors after:absolute after:inset-x-0 after:-inset-y-[9px] hover:brightness-95 aria-pressed:bg-emerald-500 dark:bg-zinc-600 dark:hover:brightness-125"
+    className={`group relative h-6.5 w-11 shrink-0 rounded-full bg-zinc-300 transition-colors after:absolute after:inset-x-0 after:-inset-y-[9px] hover:brightness-95 aria-pressed:bg-emerald-500 disabled:hover:brightness-100 dark:bg-zinc-600 dark:hover:brightness-125 ${DISABLED}`}
   >
     <span className="absolute top-0.75 left-0.75 size-5 rounded-full bg-white shadow transition-transform group-aria-pressed:translate-x-4.5" />
   </button>

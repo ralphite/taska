@@ -245,8 +245,15 @@ export interface BadgeSwitch {
   toggle(): void
 }
 
-function BadgeSetting({ badge }: { badge: BadgeSwitch }) {
-  return <Setting title="Count on the app icon" about="What needs you, in every project." control={<Toggle on={badge.on} label="Count on the app icon" onToggle={badge.toggle} />} />
+/** `blocked`: notifications not allowed, so the count cannot show either: the switch greyed, off, not to be pressed */
+function BadgeSetting({ badge, blocked = false }: { badge: BadgeSwitch; blocked?: boolean }) {
+  return (
+    <Setting
+      title="Count on the app icon"
+      about={blocked ? 'Needs notifications allowed.' : 'What needs you, in every project.'}
+      control={<Toggle on={badge.on && !blocked} disabled={blocked} label="Count on the app icon" onToggle={badge.toggle} />}
+    />
+  )
 }
 
 /** On: Turn off is Taska's own (a page cannot take back the browser's permission), as the phone's. Blocked: the page
@@ -270,7 +277,7 @@ export function NotificationsBody({ state, quiet, hours, badge = null, on }: { s
         }
       />
       {state === 'On' ? <QuietHoursSetting on={quiet} hours={hours} events={{ toggle: on.quiet, hours: on.hours }} /> : null}
-      {badge ? <BadgeSetting badge={badge} /> : null}
+      {badge ? <BadgeSetting badge={badge} blocked={state === 'Blocked by the browser'} /> : null}
     </>
   )
 }
@@ -297,7 +304,7 @@ export function PhonePushBody({ standalone, onPhone, phoneHref = '', push = null
           }
         />
         {push.sub ? <QuietHoursSetting on={push.quiet} hours={push.hours} events={{ toggle: push.on.quiet, hours: push.on.hours }} /> : null}
-        {push.badge ? <BadgeSetting badge={push.badge} /> : null}
+        {push.badge ? <BadgeSetting badge={push.badge} blocked={push.blocked} /> : null}
       </>
     )
   return (
