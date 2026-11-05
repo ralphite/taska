@@ -200,13 +200,15 @@ def voice_by_pieces(path: Optional[str], prompt: str, vocab: List[str]) -> str:
 
 
 def transcribe(h: Hearing, data: bytes, mime: str, scope: Optional[int], path: Optional[str] = None,
-               later: Optional[Callable[[Optional[str]], None]] = None) -> Dict[str, Any]:
+               later: Optional[Callable[[Optional[str]], None]] = None, first: Optional[Callable[[str], None]] = None) -> Dict[str, Any]:
     """Voice note -> {"tr": its words ("" when nobody spoke), "tr_by": "main", "asr" or "pro", "alt": the other model's
     words, "doubts": what may be misheard}, biased toward the project's own vocabulary. path: the note on disk, to tell
     a phone's voice-processed recording, which the strong model hears too. Raises Err when no model answered.
     later(words or None): when the strong model ran out of time, it goes on for up to PRO_LATE; later gets its words
     once they are in, if they hold clearly more than the words given (these hold under 90% of them), else None. The
-    answer then says "more": the words may be cut short, fuller ones may follow."""
+    answer then says "more": the words may be cut short, fuller ones may follow. first(words): the speech model's
+    words, as soon as they are in while the main model still works (T687: about 2 s instead of up to a minute); the
+    answer's words then take their place."""
     words, items, titles = h.context(scope)
     fixes = h.fixes()
     terms = voice_terms(words, fixes)
@@ -215,8 +217,17 @@ def transcribe(h: Hearing, data: bytes, mime: str, scope: Optional[int], path: O
     prompt = voice_prompt(terms, items, fixes, h.prefs())
     t0, times = time.time(), {}
     gated = tools.processed_silence(path, mime) >= 0.5
+    def told(words: str) -> str:  # the speech model's words go ahead while the main model still works (T687)
+        if first and words.strip() and "main" not in times:
+            early = words.strip()
+            for c in fixes:
+                if c.get("wrong"):
+                    early = early.replace(c["wrong"], c["right"])
+            first(early)
+        return words
+
     calls = [lambda: capped(lambda: voice_main(audio, prompt), VOICE_CAP, "the main model", times, "main"),
-             lambda: capped(lambda: voice_asr(audio, vocab), VOICE_CAP, "the speech model", times, "asr")]
+             lambda: told(capped(lambda: voice_asr(audio, vocab), VOICE_CAP, "the speech model", times, "asr"))]
     slow = {}  # the strong model's run, when it ran out of time
     if gated:  # the strong model is slow at times: it gets PRO_CAP, then the others' words go on without it
         calls.append(lambda: capped(lambda: voice_main(audio, prompt, PRO_MODEL), PRO_CAP, "the strong model", times, "pro", slow))

@@ -30,6 +30,7 @@ class Job:
     tr: str = ""
     err: str = ""
     res: Transcript = field(default_factory=dict)
+    early: str = ""  # the speech model's words, shown while the main model still works (T687)
 
 
 class VoiceProject(Protocol):
@@ -47,7 +48,7 @@ class VoiceProject(Protocol):
     def file_path(self, fid: str) -> str: ...
 
 
-Transcriber = Callable[[bytes, str, Optional[int], Optional[str], Callable[[Optional[str]], None]], Transcript]
+Transcriber = Callable[[bytes, str, Optional[int], Optional[str], Callable[[Optional[str]], None], Callable[[str], None]], Transcript]
 
 
 def _now_iso() -> str:
@@ -158,7 +159,8 @@ class VoiceJobs:
         try:
             if self._transcriber is None:
                 raise RuntimeError("voice notes are not transcribed here")
-            res = self._transcriber(data, mime, scope, self._p.file_path(fid), lambda words: self._more(fid, job, words)) or {}
+            res = self._transcriber(data, mime, scope, self._p.file_path(fid), lambda words: self._more(fid, job, words),
+                                    lambda words: self._first(fid, job, words)) or {}
             self.keep(fid, res)
         except Exception as ex:  # a failed transcription is said on the page; Taska goes on
             err = str(ex) or "transcription failed"
@@ -172,6 +174,19 @@ class VoiceJobs:
                 jobs.keep(other, res)
             with jobs._p.lock:
                 jobs.words_in(other, job)
+
+    def _first(self, fid: str, job: Job, words: str) -> None:
+        """The speech model's words, while the main model still works (T687): the page and the input show them at
+        once; the input still waits for the final words (held), so nobody organizes or reads it twice."""
+        with self._p.lock:
+            if job.done:
+                return
+            job.early = words
+            inp = self._input_with(fid)
+            if inp and not any(f.f == fid and f.tr for f in inp.files):
+                self._p.emit(ev.WordsIn(src=inp.id, f=fid, tr=words, by="you", late=self._late(inp)))
+            else:
+                self._p.news.bump()
 
     def _more(self, fid: str, job: Job, words: Optional[str]) -> None:
         """The strong model's words after its cap: fuller ones replace those given."""
@@ -213,8 +228,11 @@ class VoiceJobs:
         """A note's words are in: the input that has the note gets them. They come late when an agent or the
         organizer had the input: it is then organized again with them."""
         inp = self._input_with(fid)
-        if inp and job.tr and not any(f.f == fid and f.tr for f in inp.files):
+        shown = next((f.tr for f in inp.files if f.f == fid), None) if inp else None
+        if inp and job.tr and not shown:
             self._p.emit(ev.WordsIn(src=inp.id, f=fid, tr=job.tr, by="you", late=self._late(inp), heard=self.said(fid, job.tr)))
+        elif inp and job.tr and job.early and shown == job.early and job.tr != shown:  # the first words give way (T687)
+            self.words_more(fid, job.early, job.tr)
         else:
             self._p.news.bump()  # an input waiting for these words goes on without them; the page hears it is done
 
@@ -262,6 +280,8 @@ class VoiceJobs:
 def answer(fid: str, job: Optional[Job]) -> Dict[str, Any]:
     """What a page gets for a voice note: its words once they are in, whose they are, what may be misheard."""
     res = job.res if job else {}
+    if job and not job.done and job.early:  # the first words, better ones to follow (T687)
+        return {"f": fid, "done": True, "tr": job.early, "tr_error": "", "tr_by": "asr", "more": True}
     return {"f": fid, "done": not job or job.done, "tr": job.tr if job else "",
             "tr_error": (job.err if job else "no such voice note") or "",
             **{k: res[k] for k in ("tr_by", "doubts", "gated", "main_error", "asr_error", "pro_error", "times", "more", "heard")

@@ -23,7 +23,8 @@ def transcriber_for(p: Project, workspace: Callable[[], Any]) -> Transcriber:
         tidy=lambda: workspace().voice_prefs.tidy(),
     )
 
-    def run(data: bytes, mime: str, scope: Optional[int], path: Optional[str], later: Callable[[Optional[str]], None]) -> Dict[str, Any]:
-        return transcribe(hearing, data, mime, scope, path, later)
+    def run(data: bytes, mime: str, scope: Optional[int], path: Optional[str], later: Callable[[Optional[str]], None],
+            first: Callable[[str], None]) -> Dict[str, Any]:
+        return transcribe(hearing, data, mime, scope, path, later, first)
 
     return run
