@@ -128,7 +128,7 @@ test("r802: the card an item's code shows under the pointer says its status in o
   await expect(tip(page)).not.toContainText('In progress')
 })
 
-test('D115 #8: a proposal you decline and work you send back from the list say so on their rows as their cards do: Declined, Sent back', async ({
+test('D115 #8: a proposal you decline and work you send back from the list say so on their rows as their cards do: Declined, Sent back, then which it was', async ({
   page,
   request,
 }) => {
@@ -146,7 +146,7 @@ test('D115 #8: a proposal you decline and work you send back from the list say s
   ]) {
     await row(page, title).first().hover()
     await rowActs(page, n).and(page.getByRole('button', { name: button, exact: true })).click()
-    await expect(page.locator(`#list article[data-n="${n}"]`)).toContainText(word) // the held row: its code and the word
+    await expect(page.locator(`#list article[data-n="${n}"]`)).toContainText(`${word} · ${title}`) // the held row: its code, the word, then its title (R6-1 #11)
   }
 })
 

@@ -356,7 +356,7 @@ export function NeedsRow({ it, depth, facts, look, excerpt, on, rowRef }: { it: 
   )
 }
 
-/** A row you just acted on, while the list holds still: one quiet line saying what you did. */
+/** A row you just acted on, while the list holds still: one quiet line saying what you did, then which it was. */
 export function HeldRow({ it, code, said, height, on }: { it: Item; code: string; said: string; height: number; on: RowEvents }) {
   return (
     <article data-n={it.n} className={ARTICLE}>
@@ -368,7 +368,8 @@ export function HeldRow({ it, code, said, height, on }: { it: Item; code: string
         <StateIcon {...shownStatus(it)} />
         <span className="min-w-0 flex-1 truncate">
           <span className={`mr-1.5 font-mono text-[13px] font-bold ${TYPE_TEXT[it.type]}`}>{code}</span>
-          {said}
+          <span className="font-medium text-zinc-700 dark:text-zinc-200">{said}</span>
+          {/* which it was, quieter after what you did: several done in a row are still told apart */} · {it.title}
         </span>
       </div>
     </article>
