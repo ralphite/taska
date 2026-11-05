@@ -18,7 +18,7 @@ export const Parts: Story = {
             <TextBox t="https://taska.example/k/abc/p/home/" />
             <CopyBtn label="Copy link" onCopy={act('Settings: copy')} />
           </Part>
-          <Setting title="Quiet 22:00–08:00" about="Your local time." control={<Hold<boolean> start>{(on, set) => <Toggle on={on} label="Quiet" onToggle={() => set(!on)} />}</Hold>} />
+          <Setting title="Count on the app icon" about="What needs you, in every project." control={<Hold<boolean> start>{(on, set) => <Toggle on={on} label="Count on the app icon" onToggle={() => set(!on)} />}</Hold>} />
           <Loading />
         </div>
       </Frame>

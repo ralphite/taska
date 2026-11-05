@@ -21,11 +21,13 @@ export const clock = (ms: number) => `${Math.floor(ms / 60000)}:${String(Math.fl
 const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 const dayOf = (day: string) => new Date(Number(day.slice(0, 4)), Number(day.slice(5, 7)) - 1, Number(day.slice(8, 10)))
 
-/** The days Later offers, from `now` (ms): tomorrow, and next week (its Monday). */
+/** The days Later offers, from `now` (ms): tomorrow, and next week (its Monday; on a Sunday, the Monday after
+ * tomorrow's, so the two are never the same day). */
 export function laterDays(now: number): { tomorrow: string; nextWeek: string; today: string } {
   const d = new Date(now)
   const at = (k: number) => iso(new Date(d.getFullYear(), d.getMonth(), d.getDate() + k))
-  return { today: at(0), tomorrow: at(1), nextWeek: at(((8 - d.getDay()) % 7) || 7) }
+  const monday = ((8 - d.getDay()) % 7) || 7
+  return { today: at(0), tomorrow: at(1), nextWeek: at(monday === 1 ? 8 : monday) }
 }
 
 /** A day Later ends on, as a row says it: within the week its weekday ("Mon"), further off its date ("Nov 21"). */
@@ -35,6 +37,10 @@ export function laterDay(day: string, now: number): string {
   const days = Math.round((d.getTime() - new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime()) / 864e5)
   return days >= 0 && days < 7 ? d.toLocaleDateString('en-US', { weekday: 'short' }) : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
+
+/** The day an item is Later until, as its row and its page say it ("Mon"); none when it is not Later until a day. */
+export const laterOn = (it: { when: string; later_until?: string | null }, now: number): string | undefined =>
+  it.when === 'later' && it.later_until ? laterDay(it.later_until, now) : undefined
 
 /** A day as the page says it: "Oct 21", today's too. */
 export const dayShort = (t: string | null | undefined) => (t ? new Date(t).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : '')

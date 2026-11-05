@@ -70,7 +70,7 @@ export interface ItemFacts {
   subDraft?: string
 }
 
-const caret = <Icon n="down" c="size-3 opacity-50" sw="2.25" />
+const caret = <Icon n="down" c="size-3 opacity-50 group-data-ro/item:hidden" sw="2.25" /> // none read only (data-ro)
 
 function Chips({ it, f, on }: { it: Item; f: ItemFacts; on: ItemEvents }) {
   const shown = shownStatus(it)
@@ -225,7 +225,7 @@ function Subitems({ it, f, on }: { it: Item; f: ItemFacts; on: ItemEvents }) {
         text={`Subitems${kids.length ? ` · ${kids.filter((k) => closed(k.status)).length}/${kids.length}` : ''}`}
         right={
           f.addingSub ? null : (
-            <button onClick={on.subNew} className="-my-2.5 flex h-11 items-center gap-1 rounded-lg px-2 text-sm font-medium text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10">
+            <button onClick={on.subNew} className="-my-2.5 flex h-11 items-center gap-1 rounded-lg px-2 text-sm font-medium text-blue-600 group-data-ro/item:hidden hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-400/10">
               <Icon n="plus" c="size-4" sw="2" />
               Add
             </button>
@@ -290,7 +290,7 @@ const marks = (el: HTMLElement) => {
   el.toggleAttribute('data-up', el.scrollTop > 2)
 }
 
-export function ItemPage({ it, f, env, facts, on, talkRef, duo = false, left = null, bare = false }: {
+export function ItemPage({ it, f, env, facts, on, talkRef, duo = false, left = null, bare = false, readOnly = false }: {
   it: Item
   f: ItemFacts
   env: TalkEnv
@@ -303,6 +303,8 @@ export function ItemPage({ it, f, env, facts, on, talkRef, duo = false, left = n
   left?: ReactNode
   /** `left` brings its own margins (a web page) */
   bare?: boolean
+  /** the search's preview: to look at only (its code before its title, nothing to press: ↵ opens it) */
+  readOnly?: boolean
 }) {
   const clip = useRef<HTMLDivElement>(null)
   const talk = useRef<HTMLDivElement | null>(null)
@@ -354,7 +356,7 @@ export function ItemPage({ it, f, env, facts, on, talkRef, duo = false, left = n
     <Editor key={it.n} it={it} kept={f.editDraft ?? null} on={on} />
   ) : (
     <div className="flex flex-col gap-3">
-      <h1 className={`text-[22px] leading-[1.35] font-semibold break-words ${it.status === 'dropped' ? 'line-through' : ''}`}>{it.title}</h1>
+      <h1 className={`text-[22px] leading-[1.35] font-semibold break-words ${it.status === 'dropped' ? 'line-through' : ''}`}>{readOnly ? <span className={`mr-2 font-mono text-lg font-bold ${TYPE_TEXT[it.type]}`}>{f.code(it.n)}</span> : null}{it.title}</h1>
       <div className="flex flex-wrap items-center gap-2">
         <Chips it={it} f={f} on={on} />
       </div>
@@ -374,7 +376,7 @@ export function ItemPage({ it, f, env, facts, on, talkRef, duo = false, left = n
     ) : null
 
   return (
-    <div className={`group/item flex flex-col gap-6 px-4 pt-5 pb-10 lg:h-full lg:gap-0 lg:p-0 ${duo ? 'lg:flex-row' : ''}`}>
+    <div data-ro={readOnly || undefined} className={`group/item flex flex-col gap-6 px-4 pt-5 pb-10 lg:h-full lg:gap-0 lg:p-0 ${duo ? 'lg:flex-row' : ''}`}>
       {duo && left ? (
         <div data-item-top className={`lg:h-full lg:w-[var(--duo-w,55%)] lg:shrink-0 lg:scrollbar-thin lg:overflow-y-auto outline-none ${bare ? '' : 'lg:px-8 lg:pt-8 lg:pb-12'}`}>
           {left}
@@ -382,7 +384,7 @@ export function ItemPage({ it, f, env, facts, on, talkRef, duo = false, left = n
       ) : (
       <div data-item-top className={`flex flex-col lg:shrink-0 ${duo ? 'lg:h-full lg:w-[var(--duo-w,55%)]' : f.editing ? 'lg:max-h-full' : 'lg:h-(--top-h) lg:max-h-[var(--top-h,60%)]'}`}>
         <div ref={clip} data-item-clip onScroll={(e) => e.currentTarget.toggleAttribute('data-over', overflows(e.currentTarget))} className="lg:min-h-0 lg:scrollbar-thin lg:overflow-y-auto outline-none lg:data-over:mask-b-from-[calc(100%-4rem)]">
-          <div className="flex flex-col gap-6 lg:mx-auto lg:w-full lg:max-w-[46rem] lg:px-8 lg:pt-7 lg:pb-6">
+          <div inert={readOnly} className="flex flex-col gap-6 lg:mx-auto lg:w-full lg:max-w-[46rem] lg:px-8 lg:pt-7 lg:pb-6">
             {head}
             {desc}
             {f.docs.length ? (
@@ -440,7 +442,7 @@ export function ItemPage({ it, f, env, facts, on, talkRef, duo = false, left = n
         // runs on under the box, its own padding keeping its end where it was
         className={`lg:min-h-0 lg:flex-1 lg:scrollbar-thin lg:overflow-y-auto outline-none lg:data-up:mask-t-from-[calc(100%-2rem)] ${duo ? 'lg:h-full lg:min-w-0 lg:pb-[calc(var(--foot-h,0px)+1.5rem)]' : 'lg:-mb-(--foot-h) lg:pb-(--foot-h) dark:lg:-mb-[calc(var(--foot-h,0px)+1.5rem)] dark:lg:pb-[calc(var(--foot-h,0px)+1.5rem)]'}`}
       >
-        <div className="flex flex-col gap-6 lg:mx-auto lg:w-full lg:max-w-[46rem] lg:px-8 lg:py-6">
+        <div inert={readOnly} className="flex flex-col gap-6 lg:mx-auto lg:w-full lg:max-w-[46rem] lg:px-8 lg:py-6">
           <ItemTalk it={it} f={f} env={env} facts={facts} on={on} />
         </div>
       </div>

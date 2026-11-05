@@ -16,6 +16,8 @@ describe('Later until a day (D115 #21)', () => {
   test('tomorrow, and next week its Monday', () => {
     expect(laterDays(thu)).toEqual({ today: '2026-11-05', tomorrow: '2026-11-06', nextWeek: '2026-11-09' })
     expect(laterDays(new Date(2026, 10, 9, 9, 0).getTime()).nextWeek).toBe('2026-11-16') // from a Monday: the next one
+    // from a Sunday: not tomorrow's Monday, the one after (R6-1 #4)
+    expect(laterDays(new Date(2026, 10, 8, 9, 0).getTime())).toMatchObject({ tomorrow: '2026-11-09', nextWeek: '2026-11-16' })
   })
   test('within the week its weekday, further its date', () => {
     expect(laterDay('2026-11-09', thu)).toBe('Mon')

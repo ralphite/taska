@@ -7,6 +7,6 @@ export default { title: 'Components/Input box/Line after sending/Move and filing
 type Story = StoryObj
 
 /** sent and left for an agent: Move to… */
-export const SentMoveTo: Story = { ...at({ sent: sent({ org: { ...org(true, 'Left for your coding agent'), keep: true, changed: false } }), others: true }), name: 'Sent, Move to…' }
+export const SentMoveTo: Story = { ...at({ sent: sent({ org: { ...org(true, 'Left for agent'), keep: true, changed: false } }), others: true }), name: 'Sent, Move to…' }
 export const FiledMoveTo: Story = { ...at({ sent: sent({ acked: true, touched: [12], org: org(true, 'Created F012') }), others: true }), name: 'Filed, Move to…' }
 export const FilingUndone: Story = { ...at({ sent: sent({ org: { ...org(true, 'Created F012'), undone: true } }) }), name: 'Filing undone' }

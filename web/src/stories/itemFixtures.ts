@@ -4,6 +4,7 @@
 import type { ItemEvents, ItemFacts } from '../features/item/ItemPage'
 import type { TalkFacts } from '../features/item/Talk'
 import type { TalkEnv } from '../features/item/talkEnv'
+import { laterOn } from '../model/time'
 import { codeOf, filesOf, findRef, sourceCount, type ProjectModel } from '../model/project'
 import type { Comment, Doc, Item } from '../model/types'
 import { DIAGRAMS, PICTURE, T } from './fixtures'
@@ -42,6 +43,7 @@ export function itemFacts(m: ProjectModel, it: Item, f: Partial<ItemFacts> = {})
     kids: m.kids.get(it.n) || [],
     files: filesOf(m, it),
     sources: sourceCount(m, it),
+    laterOn: laterOn(it, m.at),
     docs: m.docs.filter((d) => d.n === it.n),
     remodify: false,
     allTalk: false,

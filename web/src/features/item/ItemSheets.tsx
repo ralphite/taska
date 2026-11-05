@@ -16,11 +16,15 @@ import { Skeleton } from '../../ui/bits'
 /** Later (D115 #21): Tomorrow, Next week, a day picked (then back to Now by itself), or no day; Back to now when it is
  * Later already. `days`: from laterDays; `until`: its day now. */
 export function laterSheet(code: string, f: { later: boolean; until: string | null; days: { today: string; tomorrow: string; nextWeek: string }; say(day: string): string }, on: { pick(day: string | null): void; now(): void }): SheetParts {
+  // the one it is now: the blue check on its right, as the status, priority and type menus have it
+  const check = <Icon n="check" c="size-4 shrink-0 text-blue-600 dark:text-blue-400" sw="2.5" />
+  const picked = f.later && !!f.until && f.until !== f.days.tomorrow && f.until !== f.days.nextWeek
   const row = (label: string, day: string | null, note = '') => (
     <button key={label} onClick={() => on.pick(day)} aria-current={f.later && f.until === day ? 'true' : undefined} className={`${MENU_ROW} h-11 aria-[current=true]:font-semibold`}>
       <Icon n="clock" c="size-4 text-zinc-500 dark:text-zinc-400" />
       <span className="flex-1">{label}</span>
-      {note ? <span className="text-xs text-zinc-500 dark:text-zinc-400">{note}</span> : null}
+      {note ? <span className="text-xs font-normal text-zinc-500 dark:text-zinc-400">{note}</span> : null}
+      {f.later && f.until === day ? check : null}
     </button>
   )
   return {
@@ -47,6 +51,7 @@ export function laterSheet(code: string, f: { later: boolean; until: string | nu
             onChange={(e) => e.target.value && on.pick(e.target.value)}
             className="h-8 rounded-md bg-transparent text-xs text-zinc-600 tabular-nums dark:text-zinc-300"
           />
+          {picked ? check : null}
         </label>
         {row('No date', null)}
       </div>

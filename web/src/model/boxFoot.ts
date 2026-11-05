@@ -2,7 +2,7 @@
 // (its line on top, its placeholder, what Send says, what a comment from it goes to) and the line over the box about
 // what you sent last. Pure, so it is tested alone and the containers only connect it.
 
-import { failWhy, keyRefused } from './became'
+import { becameOf, failWhy, keyRefused } from './became'
 import { allComments, docTarget, type DocTarget } from './docs'
 import { ticksNotSent, type TickState } from './docTicks'
 import { draftName } from './draftTarget'
@@ -172,6 +172,13 @@ export type FeedbackLine =
   | { kind: 'sent'; organizer: boolean; move: boolean }
   | { kind: 'moved'; code: string; to: string; as: string; href: string }
 
+/** What an agent did for an input the organizer said nothing of, as the input's own row says it ("Changed F012 ·
+ * Added to B014"); '' when it made no item. */
+function agentDid(r: Input, m: ProjectModel): string {
+  const b = becameOf(r, m, (slug) => slug)
+  return b.k === 'filed' ? b.items.map((x) => [x.did, x.item.code].filter(Boolean).join(' ')).join(' · ') : ''
+}
+
 export function feedbackLine(a: { m: ProjectModel | null; desk: boolean; composePage: boolean; scope: string | null; mine: Outgoing[]; lastSent: string | null; others: boolean }): { line: FeedbackLine; final?: string } | null {
   if ((a.desk && a.composePage) || a.scope) return null // on the New input page each input is in the list; in an item, in its talk
   const first = a.mine[0]
@@ -195,7 +202,7 @@ export function feedbackLine(a: { m: ProjectModel | null; desk: boolean; compose
   else if (r.acked)
     line = {
       kind: 'organized',
-      msg: r.org?.msg || (r.touched.length ? 'Organized' : 'Seen, no item made'),
+      msg: r.org?.msg || agentDid(r, a.m) || 'Seen, no item made',
       view: !!r.touched.length,
       undo: !!(r.org && r.org.ok && !r.org.undone && !r.org.keep && r.touched.length),
       move,

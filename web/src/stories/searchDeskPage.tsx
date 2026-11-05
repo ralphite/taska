@@ -43,7 +43,7 @@ export function previewOf(x: Found): ReactNode {
   const m = modelFor(x.project)
   const it = itemOf(x)
   if (!it) return null
-  return <ItemPage it={it} f={itemFacts(m, it)} env={talkEnv(m, true, { latest: latestMessage(it) })} facts={talkFacts(m)} on={noItemEvents} />
+  return <ItemPage it={it} f={itemFacts(m, it)} env={talkEnv(m, true, { latest: latestMessage(it) })} facts={talkFacts(m)} on={noItemEvents} readOnly />
 }
 
 // ---------------------------------------------------------------- the page

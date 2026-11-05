@@ -128,7 +128,7 @@ class Organizer(threading.Thread):
             noted = f"Added to {p.state.code(scope)}" if scope in p.state.items else "No changes needed"
             msg = " · ".join(labels) if labels else ("" if keep else noted)
             if keep:
-                msg = (msg + " · " if msg else "") + "Left for your coding agent"
+                msg = (msg + " · " if msg else "") + "Left for agent"
             if bad:
                 msg += " · Some commands failed: " + "; ".join(bad)
             p.emit(ev.Organized(src=rid, ok=not bad, msg=msg, plan=plan, keep=keep, changed=bool(labels),

@@ -76,7 +76,7 @@ const INPUTS: Input[] = [
   }),
   input({ id: 'r1021', t: at(916), acked: true, text: '周末买菜：牛奶、鸡蛋、番茄。', moved: { to: 'home', as: 'r88' } }),
   input({ id: 'r1020', t: at(920), acked: true, kind: 'answer', scope: 447, text: '✓ 继续做 manager，在下面说要什么' }),
-  input({ id: 'r1019', t: at(925), text: 'Look at why the build takes so long on the release branch.', org: org('Left for your coding agent', { keep: true, changed: false }) }),
+  input({ id: 'r1019', t: at(925), text: 'Look at why the build takes so long on the release branch.', org: org('Left for agent', { keep: true, changed: false }) }),
   input({ id: 'r1018', t: at(930), text: '把 coupon 那个 bug 关掉。', files: [voice(18, '0-03')], org: org('Created B660', { undone: true }) }),
   input({ id: 'r1017', t: at(60 * 47), acked: true, text: 'Restart the nightly checks after the deploy.' }),
   input({
@@ -128,13 +128,14 @@ const draftCard = (
 )
 
 /** What you said lately under the box, as the desktop's page draws it, with what the page holds for it (useInputs:
- * More, ⋯ menus, Voice on a row, voice notes and pictures). */
+ * More, ⋯ menus, Voice on a row, voice notes and pictures). One recording at a time, as the page has it: #1023's added
+ * voice note (the box recording is a story of its own). */
 function DeskList() {
   const live = useInputs(M, true, { adding: { id: 'r1023', clock: '0:11' } })
   const said = saidRows(M, { words: [], upTo: 30, opened: live.opened, drafts: DRAFTS, mode: null, title })
   return (
     <section aria-label="Latest inputs" className="mx-auto mt-8 block max-w-[42rem]">
-      <SaidLately recording="0:07" adding={live.adding ? { id: live.adding.id, meter: <RecBar time={live.adding.clock} levels={[0.3, 0.75, 0.5, 0.95, 0.4, 0.65]} /> } : null} rows={said.rows} outgoing={saidOutgoing(live.going(OUTBOX), [], 0)} more draft={draftCard} files={live.chips} on={live.saidOn} />
+      <SaidLately adding={live.adding ? { id: live.adding.id, meter: <RecBar time={live.adding.clock} levels={[0.3, 0.75, 0.5, 0.95, 0.4, 0.65]} /> } : null} rows={said.rows} outgoing={saidOutgoing(live.going(OUTBOX), [], 0)} more draft={draftCard} files={live.chips} on={live.saidOn} />
       {live.node}
     </section>
   )

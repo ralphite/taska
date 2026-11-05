@@ -26,7 +26,8 @@ export const SearchNothingFound: Story = { ...one({ q: 'zebra' }), name: 'Search
 export const EmptyOneOnItsWay: Story = { name: 'Empty, one on its way', render: () => <Frames desk={false} phoneWidth={393} height={360}>{() => inputsOf({ inputs: [], outbox: [out({ q: 'a', text: 'Buy milk on the way home' })] })}</Frames> }
 /** a voice note being recorded into a new input: its row comes first, with how long so far (B627) */
 export const InputsTabRecording: Story = { ...one({ recording: '0:12' }), name: 'A voice note being recorded' }
-// ---- the swipe (D115 #42), drawn by the swipe's own code: the first row, mid-swipe
+// ---- the swipe (D115 #42), drawn by the swipe's own code, mid-swipe: right on the first row that became an item (only
+// such a row opens one), left on the first row
 /** `dx` right: opening the item it became, mid-swipe; left: Move and Delete left open, as wide as their buttons */
 const swiped = (dx: number): Story => ({
   render: () => (
@@ -34,7 +35,8 @@ const swiped = (dx: number): Story => ({
       {() => (
         <After
           run={(root) => {
-            const el = root.querySelector<HTMLElement>('[data-swipe]')
+            const rows = [...root.querySelectorAll<HTMLElement>('[data-swipe]')]
+            const el = dx >= 0 ? rows.find((x) => x.parentElement?.querySelector('[data-swipe-left]')?.textContent?.trim()) : rows[0]
             if (!el) return
             if (dx >= 0) return showSwiped(el, dx)
             showSwiped(el, -1)

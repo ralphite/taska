@@ -67,21 +67,22 @@ const TimeAt = ({ label, value, onPick }: { label: string; value: string; onPick
   />
 )
 
-/** Quiet hours: the switch, and beside it from when to when, each time a tap away from changing (D115 #43). */
-export const QuietHoursSetting = ({ about, on, hours, events }: { about: string; on: boolean; hours: { from: string; to: string }; events: { toggle(): void; hours(h: { from: string; to: string }): void } }) => (
-  <Setting
-    title="Quiet hours"
-    about={about}
-    control={
-      <div className="flex items-center gap-3">
-        <span className={`flex items-center text-sm ${on ? '' : 'opacity-50'}`}>
-          <TimeAt label="Quiet from" value={hours.from} onPick={(from) => events.hours({ ...hours, from })} />–
-          <TimeAt label="Quiet until" value={hours.to} onPick={(to) => events.hours({ ...hours, to })} />
-        </span>
-        <Toggle on={on} label="Quiet hours" onToggle={events.toggle} />
+/** Quiet hours: the switch at its title's right as every setting has it, from when to when on a line of their own
+ * under it, each time a tap away from changing (D115 #43); one line about it, the desktop's and the phone's. */
+export const QuietHoursSetting = ({ on, hours, events }: { on: boolean; hours: { from: string; to: string }; events: { toggle(): void; hours(h: { from: string; to: string }): void } }) => (
+  <section className="border-t border-zinc-200 py-6 dark:border-zinc-800">
+    <div className="flex items-center gap-6">
+      <div className="min-w-0 flex-1">
+        <h2 className="text-[15px] font-semibold">Quiet hours</h2>
+        <p className="mt-1 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">Alerts wait until it ends, in your local time.</p>
       </div>
-    }
-  />
+      <Toggle on={on} label="Quiet hours" onToggle={events.toggle} />
+    </div>
+    <div className={`mt-2 -ml-1 flex items-center text-sm ${on ? '' : 'opacity-50'}`}>
+      <TimeAt label="Quiet from" value={hours.from} onPick={(from) => events.hours({ ...hours, from })} />–
+      <TimeAt label="Quiet until" value={hours.to} onPick={(to) => events.hours({ ...hours, to })} />
+    </div>
+  </section>
 )
 
 export const PH_GROUP ='mx-3 divide-y divide-zinc-100 overflow-hidden rounded-2xl bg-white dark:divide-zinc-800 dark:bg-zinc-900'

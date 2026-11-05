@@ -269,7 +269,7 @@ export function NotificationsBody({ state, quiet, hours, badge = null, on }: { s
           ) : null
         }
       />
-      {state === 'On' ? <QuietHoursSetting about="Your local time." on={quiet} hours={hours} events={{ toggle: on.quiet, hours: on.hours }} /> : null}
+      {state === 'On' ? <QuietHoursSetting on={quiet} hours={hours} events={{ toggle: on.quiet, hours: on.hours }} /> : null}
       {badge ? <BadgeSetting badge={badge} /> : null}
     </>
   )
@@ -283,7 +283,7 @@ export function PhonePushBody({ standalone, onPhone, phoneHref = '', push = null
       <>
         <Setting
           title={push.blocked ? 'Blocked by the phone' : push.sub ? 'On' : 'Off'}
-          about={push.blocked ? "Allow notifications for Taska in the phone's Settings." : 'Alerts when something needs you, even with Taska closed.'}
+          about={push.blocked ? "Allow notifications for Taska in the phone's Settings." : 'Even with Taska closed.'}
           control={
             push.sub ? (
               <button onClick={push.on.turnOff} className={SECOND}>
@@ -296,7 +296,7 @@ export function PhonePushBody({ standalone, onPhone, phoneHref = '', push = null
             )
           }
         />
-        {push.sub ? <QuietHoursSetting about="Alerts held until it ends." on={push.quiet} hours={push.hours} events={{ toggle: push.on.quiet, hours: push.on.hours }} /> : null}
+        {push.sub ? <QuietHoursSetting on={push.quiet} hours={push.hours} events={{ toggle: push.on.quiet, hours: push.on.hours }} /> : null}
         {push.badge ? <BadgeSetting badge={push.badge} /> : null}
       </>
     )
