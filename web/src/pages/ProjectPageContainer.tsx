@@ -112,7 +112,7 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
             hidden={side || !(filtersOpen || set.length)}
             on={{ ...filterEvents(app), toggle: () => stores.ui.getState().setDeskFilters(!filtersOpen) }}
           />
-          <section data-part="items" className="flex min-h-0 flex-1 flex-col">
+          <section data-part="items" className="@container/list flex min-h-0 flex-1 flex-col">
             {shownSide ? <SideListContainer slug={route.slug} side={shownSide} /> : <ItemListContainer route={route} />}
           </section>
         </div>

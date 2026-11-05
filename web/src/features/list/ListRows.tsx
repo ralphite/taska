@@ -339,14 +339,16 @@ export function NeedsRow({ it, depth, facts, look, excerpt, on, rowRef }: { it: 
         <button
           data-need={v}
           title={`${label} · A`}
+          aria-label={label}
           onClick={(e) => (e.stopPropagation(), on.need(it.n, v))}
           className="group/pill -my-1 grid h-11 shrink-0 place-items-center outline-none"
         >
           <span
-            className={`${ACTION_PILL(v)} group-hover/pill:brightness-95 group-focus-visible/pill:outline-2 group-focus-visible/pill:outline-offset-2 group-focus-visible/pill:outline-blue-500 dark:group-hover/pill:brightness-125 dark:group-focus-visible/pill:outline-blue-400`}
+            className={`${ACTION_PILL(v)} @max-[22rem]/list:w-8 @max-[22rem]/list:px-0 group-hover/pill:brightness-95 group-focus-visible/pill:outline-2 group-focus-visible/pill:outline-offset-2 group-focus-visible/pill:outline-blue-500 dark:group-hover/pill:brightness-125 dark:group-focus-visible/pill:outline-blue-400`}
           >
             <Icon n={NEED[v].icon} c="size-3.5" sw="2.25" />
-            {label}
+            {/* a narrow list keeps the icon only, its name in the tip (B678) */}
+            <span className="@max-[22rem]/list:hidden">{label}</span>
           </span>
         </button>
       </div>
