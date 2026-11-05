@@ -35,8 +35,9 @@ export interface SideLinkInfo {
 export interface SidebarEvents {
   newInput(): void
   newVoice(): void
-  /** New project, from its button: a popover there on the desktop, a sheet on the phone (D115 #7) */
-  newProject(from: HTMLElement): void
+  /** New project, from its button: a popover there on the desktop (`beside`: right of it, from the rail), a sheet on
+   * the phone (D115 #7) */
+  newProject(from: HTMLElement, beside?: boolean): void
   hide(): void
   settings(): void
   /** how agents get work, without spending tokens (F613) */
@@ -391,7 +392,7 @@ export function Rail({ keys, projects, links, composing, settingsOpen, hidden, o
         ))}
       </div>
       <HoverCard hover={hover} projects={projects} on={on} />
-      {btn('np', <Icon n="plus" c="size-5" />, 'New project', (e) => on.newProject(e.currentTarget))}
+      {btn('np', <Icon n="plus" c="size-5" />, 'New project', (e) => on.newProject(e.currentTarget, true))}
       <div className="flex-1" />
       {/* this project's Documents, Activity and Deleted, as the sidebar's foot has them */}
       {links.map((l) => (

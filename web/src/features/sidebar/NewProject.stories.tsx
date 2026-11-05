@@ -12,5 +12,5 @@ export const NewProject: Story = { name: 'Naming it', render: () => <Frames phon
 export const NewProjectNotMade: Story = { name: 'Not made', render: () => <Frames phoneWidth={393} deskWidth={640} height={760}>{(layout) => side(layout === 'phone', { naming: 'A project of that name exists', namingValue: 'Shop', width: 240 })}</Frames> }
 /** nothing typed yet: a grey tile, Create not to be pressed */
 export const NewProjectEmpty: Story = { name: 'Opened, nothing typed', render: () => <Frames phoneWidth={393} deskWidth={640} height={760}>{(layout) => side(layout === 'phone', { naming: '', width: 240 })}</Frames> }
-/** from the folded sidebar's rail: the popover at its + */
+/** from the folded sidebar's rail: the popover right of the rail at its +, as a project's card opens */
 export const FromTheRail: Story = { name: 'From the rail', render: () => <Frames phone={false} deskWidth={640} height={760}>{() => rail({ naming: '' })}</Frames> }

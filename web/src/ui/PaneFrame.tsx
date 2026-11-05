@@ -58,14 +58,14 @@ export function PaneFrame({
           <Icon n="left" c="size-6" sw="2" />
         </button>
         {lead ? <div className="hidden shrink-0 lg:flex">{lead}</div> : null}
-        <div data-pane-head className="flex min-w-0 flex-1 flex-col items-center leading-tight lg:flex-row lg:items-center lg:gap-2 lg:pl-2">{head}</div>
-        <div className="hidden items-center gap-0.5 lg:flex">{desk ? acts : null}</div>
+        <div data-pane-head className="flex min-w-0 flex-1 flex-col items-center leading-tight lg:flex-row lg:items-center lg:gap-2 lg:overflow-hidden lg:pl-2">{head}</div>
+        <div className="hidden shrink-0 items-center gap-0.5 lg:flex">{desk ? acts : null}</div>
         <button
           hidden={!menu}
           aria-label="Item actions"
           title="All actions · ."
           onClick={(e) => onMenu?.(e.currentTarget)}
-          className="grid size-11 shrink-0 place-items-center rounded-full text-zinc-600 data-pressed:bg-zinc-100 lg:size-9 lg:rounded-lg lg:hover:bg-zinc-100 dark:text-zinc-400 dark:data-pressed:bg-zinc-800 dark:lg:hover:bg-zinc-800"
+          className="grid size-11 shrink-0 place-items-center rounded-full text-zinc-600 focus-visible:outline-2 focus-visible:outline-blue-500 data-pressed:bg-zinc-100 lg:size-9 lg:rounded-lg lg:hover:bg-zinc-100 lg:active:bg-zinc-200 dark:text-zinc-400 dark:focus-visible:outline-blue-400 dark:data-pressed:bg-zinc-800 dark:lg:hover:bg-zinc-800 dark:lg:active:bg-zinc-700"
         >
           <Icon n="more" c="size-6 lg:size-5" />
         </button>

@@ -4,7 +4,7 @@
 
 import type { MouseEvent, Ref } from 'react'
 import type { SearchHit } from '../../model/types'
-import { hitWhere, inputCode, noMatches } from '../../model/words'
+import { hitWhere, inputCode, noMatches, plural } from '../../model/words'
 import { Icon } from '../../ui/Icon'
 import { Hit, NeedsCount, ProjTile, Skeleton } from '../../ui/bits'
 import { MUTED, PRIMARY } from '../../ui/tones'
@@ -82,9 +82,10 @@ export function Home({ facts, on, searchRef }: { facts: HomeFacts; on: HomeEvent
           <Icon n="logo" c="size-6 text-blue-600 dark:text-blue-400" sw="2.25" />
           Taska
         </h1>
-        <span className="hidden text-sm text-zinc-500 sm:inline dark:text-zinc-400">{rows ? `${rows.length} projects · ${needs ? `${needs} need you` : 'nothing needs you'}` : ''}</span>
+        <span className="hidden text-sm text-zinc-500 sm:inline dark:text-zinc-400">{rows?.length ? `${plural(rows.length, 'project')} · ${needs ? `${needs} need you` : 'nothing needs you'}` : ''}</span>
         <span className="flex-1" />
         <button
+          hidden={!!rows && !rows.length}
           onClick={on.search}
           title="Search · ⌘K"
           aria-label="Search"
@@ -92,7 +93,8 @@ export function Home({ facts, on, searchRef }: { facts: HomeFacts; on: HomeEvent
         >
           <Icon n="search" c="size-[18px]" />
         </button>
-        <label className={`order-last flex h-10 w-full items-center gap-2 rounded-xl bg-white px-3 text-sm ring-1 ring-zinc-900/10 focus-within:ring-2 focus-within:ring-blue-500 sm:order-none sm:w-72 lg:hidden dark:bg-zinc-800 dark:ring-white/10 ${MUTED}`}>
+        {/* no projects: nothing to search, only New project below */}
+        <label hidden={!!rows && !rows.length} className={`order-last flex h-10 w-full items-center gap-2 rounded-xl bg-white px-3 text-sm ring-1 ring-zinc-900/10 focus-within:ring-2 focus-within:ring-blue-500 sm:order-none sm:w-72 lg:hidden dark:bg-zinc-800 dark:ring-white/10 ${MUTED}`}>
           <Icon n="find" c="size-4" sw="2" />
           <input
             ref={searchRef}

@@ -58,7 +58,7 @@ function LiveSidebar({ phone, f, folded = false }: { phone: boolean; f: SideFact
     },
   }
   // New project: a popover at its button (the desktop), a sheet (the phone), over the sidebar (D115 #7)
-  const naming_ = (under: ReactNode) => (naming ? withNewProject(under, !phone, { at: { x: 8, y: hidden ? 200 : 300 }, value: f.namingValue, error: naming.error, onDone: () => setNaming(null) }) : under)
+  const naming_ = (under: ReactNode) => (naming ? withNewProject(under, !phone, { beside: hidden, value: f.namingValue, error: naming.error, onDone: () => setNaming(null) }) : under)
   const list = f.loading ? null : projects(f.drop)
   const links = f.noLinks ? [] : sideLinks('shop', f.side ?? null)
   if (hidden) return naming_(<Rail keys={SIDE_KEYS} projects={list} links={links} composing={f.composing ?? true} settingsOpen={!!f.settings} on={on} />)

@@ -5,6 +5,11 @@
 import type { RouteStore } from '../../stores/route'
 import type { SheetPlace, SheetRequest, SheetStore } from '../../stores/sheet'
 
+/** Where a popover opens from an element's box: under it (kept on screen, its right edge with the element's when it
+ * would run off), or beside it on the right. The page and the stories place it so. */
+export const popAt = (r: { left: number; right: number; top: number; bottom: number }, beside = false) =>
+  beside ? { x: r.right + 8, y: r.top } : { x: r.right, y: r.bottom + 4, right: true, top: r.top, left: r.left }
+
 export class Sheets {
   private readonly store: SheetStore
   private readonly route: RouteStore
@@ -29,10 +34,9 @@ export class Sheets {
     this.store.getState().open({ focus: true, ...place, req })
   }
 
-  /** A desktop menu under the element it came from. */
-  openFrom(el: Element | null, req: SheetRequest, place: SheetPlace = {}): void {
-    const r = el?.getBoundingClientRect()
-    this.open(req, { ...place, pop: true, at: r ? { x: r.right, y: r.bottom + 4, right: true, top: r.top, left: r.left } : null })
+  /** A desktop menu under the element it came from (`beside`: right of it, level with its top, as from the rail). */
+  openFrom(el: Element | null, req: SheetRequest, place: SheetPlace = {}, beside = false): void {
+    this.open(req, { ...place, pop: true, at: el ? popAt(el.getBoundingClientRect(), beside) : null })
   }
 
   /** What is open now, if it is of this kind. */

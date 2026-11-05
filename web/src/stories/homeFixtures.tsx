@@ -42,7 +42,7 @@ function LiveHome({ f, desk, making: start }: { f: HomeFacts; desk: boolean; mak
   const live: HomeEvents = { ...on, query: setQ, startNew: () => setMaking({ error: '' }), closeGone: () => setGone(null), closeNone: () => setNone(null) }
   const home = <Home facts={{ ...f, q, gone, none }} on={live} />
   // New project: a popover under its button on the desktop, a sheet on the phone (D115 #7)
-  return making ? withNewProject(home, desk, { at: { x: 40, y: f.rows?.length ? 300 : 230 }, value: making.value, error: making.error, onDone: () => setMaking(null) }) : home
+  return making ? withNewProject(home, desk, { value: making.value, error: making.error, onDone: () => setMaking(null) }) : home
 }
 
 export const shown = (f: Partial<HomeFacts>, height = 620, making?: { value?: string; error: string }) => (

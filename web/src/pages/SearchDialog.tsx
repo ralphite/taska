@@ -264,7 +264,13 @@ export function SearchDialog({ v, preview, menuAt = null, on }: { v: SearchDialo
             onOpen={() => setMenu(menu === 'project' ? null : 'project')}
             onPick={(x) => (setMenu(null), on.project(x))}
             rows={[
-              [null, <span className="flex-1">Any project</span>],
+              [
+                null,
+                <>
+                  <span className="flex-1">Any project</span>
+                  <Check on={v.project === null} />
+                </>,
+              ],
               ...v.projects.map((p): [string, ReactNode] => [
                 p.slug,
                 <>
@@ -282,7 +288,13 @@ export function SearchDialog({ v, preview, menuAt = null, on }: { v: SearchDialo
             onOpen={() => setMenu(menu === 'status' ? null : 'status')}
             onPick={(x) => (setMenu(null), on.status(x as SearchDialogView['status']))}
             rows={[
-              [null, <span className="flex-1">Any status</span>],
+              [
+                null,
+                <>
+                  <span className="flex-1">Any status</span>
+                  <Check on={v.status === null} />
+                </>,
+              ],
               ...(
                 [
                   ['open', 'Open'],
@@ -327,7 +339,8 @@ export function SearchDialog({ v, preview, menuAt = null, on }: { v: SearchDialo
         )}
       </div>
       <footer className="flex h-9 shrink-0 items-center gap-4 border-t border-zinc-200 px-4 text-xs text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
-        {FOOT.map(([k, w]) => (
+        {/* nothing to pick (nothing found, the microphone not allowed, out of reach): only Speak and Close */}
+        {FOOT.filter(([k]) => rows.length || k === '⌥V' || k === 'Esc').map(([k, w]) => (
           <span key={k} className="flex items-center gap-1.5">
             <kbd className={KEY}>{k}</kbd>
             {w}

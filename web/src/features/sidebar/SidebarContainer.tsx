@@ -42,7 +42,7 @@ export function SidebarContainer({ slug, place, hidden, rail }: { slug: string; 
       app.nav.newInput()
       void app.voice.start(slug, NEW_DRAFT, null, 'main')
     },
-    newProject: (from) => (layout === 'desk' ? app.sheets.openFrom(from, NEW_PROJECT, { focus: false }) : app.sheets.open(NEW_PROJECT, { focus: false })),
+    newProject: (from, beside) => (layout === 'desk' ? app.sheets.openFrom(from, NEW_PROJECT, { focus: false }, beside) : app.sheets.open(NEW_PROJECT, { focus: false })),
     hide: () => stores.ui.getState().setSideHidden(!sideHidden),
     settings: () => app.nav.to(base + 'settings'),
     help: () => app.nav.to(base + 'help'),

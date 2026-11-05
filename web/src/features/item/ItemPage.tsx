@@ -495,20 +495,18 @@ export function ItemHead({ it, code }: { it: Item; code: string }) {
       <span className="hidden lg:inline">
         <StateIcon {...shownStatus(it)} cls="size-[18px]" />
       </span>
-      <span className={`font-mono text-sm font-bold ${TYPE_TEXT[it.type]}`}>{code}</span>
+      <span className={`shrink-0 font-mono text-sm font-bold ${TYPE_TEXT[it.type]}`}>{code}</span>
     </>
   )
 }
 
+// a bar too narrow for the words: its actions are their icons, the words in the tip (the item's code is never covered)
+const BAR_BTN = 'rounded-lg hover:bg-zinc-100 focus-visible:outline-2 focus-visible:outline-blue-500 active:bg-zinc-200 dark:hover:bg-zinc-800 dark:focus-visible:outline-blue-400 dark:active:bg-zinc-700'
 function BarText({ icon, label, title, onClick }: { icon: IconName; label: string; title: string; onClick(e: MouseEvent<HTMLButtonElement>): void }) {
   return (
-    <button
-      title={title}
-      onClick={onClick}
-      className="flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
-    >
+    <button title={title} aria-label={label} onClick={onClick} className={`flex h-9 shrink-0 items-center gap-1.5 px-2.5 text-sm font-medium text-zinc-600 @max-[34rem]/bar:w-9 @max-[34rem]/bar:justify-center @max-[34rem]/bar:px-0 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-zinc-100 ${BAR_BTN}`}>
       <Icon n={icon} c="size-4" />
-      {label}
+      <span className="@max-[34rem]/bar:hidden">{label}</span>
     </button>
   )
 }
@@ -519,7 +517,7 @@ function BarIcon({ icon, title, onClick }: { icon: IconName; title: string; onCl
       title={title}
       aria-label={title.split(' · ')[0]}
       onClick={onClick}
-      className="grid size-9 place-items-center rounded-lg text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+      className={`grid size-9 shrink-0 place-items-center text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200 ${BAR_BTN}`}
     >
       <Icon n={icon} c="size-[18px]" />
     </button>

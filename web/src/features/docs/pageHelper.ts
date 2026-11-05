@@ -44,7 +44,8 @@ export const PAGE_HELPER = String.raw`<script>(() => {
     }
     return place(el)
   }
-  const info = (el) => ({ key: keyOf(el), text: (el.innerText || '').trim().slice(0, 500), rect: box(el.getBoundingClientRect()) })
+  // with the room above it, as a part with comments has it: its buttons go elsewhere when another part's words sit there
+  const info = (el) => { const r = el.getBoundingClientRect(); return { key: keyOf(el), text: (el.innerText || '').trim().slice(0, 500), rect: Object.assign(box(r), corner(el, r)) } }
   // r672: the page's height, not its window's: a page as tall as its window (100vh, as apps are) keeps the height it
   // was given, instead of growing with its frame without end; it says so (fill), as it is when it measures
   let tall = ''

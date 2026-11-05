@@ -16,7 +16,7 @@ type Box = { x: number; y: number; w: number; h: number }
 /** at a part's top right corner (T501, each at most 40): how far below its top its own words start, and the room above
  * it before another part's words end */
 type Corner = { in?: number; up?: number }
-export type Part = { key: string; text: string; rect: Box }
+export type Part = { key: string; text: string; rect: Box & Corner }
 type XY = [number, number]
 type Spot = { top: number; left: number }
 
@@ -50,8 +50,13 @@ export interface WebPageEvents {
 const shown = (r: Box | undefined): r is Box => !!r && r.w > 0 && r.h > 0
 
 /** Where the speak and comment buttons go: just above the outline at its right end, hiding none of the part, and
- * left of a comment count there (never under it, where a click could not reach them). */
-function btnsAt(r: Box, counts: Spot[] = []) {
+ * left of a comment count there (never under it, where a click could not reach them). Another part's words right
+ * above it (rows of a chart, as r799 has it for the counts): beside it on the right, else just under it. */
+function btnsAt(r: Box & Corner, counts: Spot[] = [], width = Infinity) {
+  if ((r.up ?? 40) < 34) {
+    const y = Math.max(0, r.y + Math.round((r.h - 28) / 2))
+    return r.x + r.w + 66 <= width ? { x: r.x + r.w + 4, y } : { x: Math.max(4, r.x + r.w - 64), y: r.y + r.h + 6 }
+  }
   let x = Math.max(4, r.x + r.w - 64)
   const y = Math.max(0, r.y - 34)
   for (const c of [...counts].sort((a, b) => b.left - a.left)) if (c.top < y + 30 && c.top + 30 > y && c.left < x + 62 && c.left + 46 > x) x = Math.max(4, c.left - 64)
@@ -182,7 +187,7 @@ export function WebPage({ title, html, threads, held, rec = false, meter, open, 
       if (h) {
         const was = cur.current
         if (was && at && h.key !== was.part.key) {
-          const b = btnsAt(was.part.rect, spots.current)
+          const b = btnsAt(was.part.rect, spots.current, root.current?.clientWidth ?? Infinity)
           if (inside(at, was.from, [b.x - 24, b.y + 52], [b.x + 84, b.y - 24])) {
             swap.current = window.setTimeout(() => take(h, at), 300)
             return
@@ -275,8 +280,8 @@ export function WebPage({ title, html, threads, held, rec = false, meter, open, 
   const marks = (p: { key: string; text: string }) => ({ say: { 'data-part-say': '', 'data-key': p.key, 'data-quote': p.text }, comment: { 'data-part-pick': '', 'data-key': p.key, 'data-quote': p.text } })
   // the phone's strip has no ↑: its ✓ sends (r1062)
   const voiceOn = (p: { key: string; text: string }) => ({ say: () => on.say(p), comment: () => on.comment(p), cancel: on.cancel, check: on.check })
-  const buttons = (p: { key: string; text: string }, r: Box, hovering: boolean) => {
-    const at = btnsAt(r, counts)
+  const buttons = (p: { key: string; text: string }, r: Box & Corner, hovering: boolean) => {
+    const at = btnsAt(r, counts, width)
     return (
       <div
         className="absolute z-20 flex h-7 w-15 items-center justify-end"
