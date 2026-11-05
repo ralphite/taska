@@ -16,7 +16,7 @@ class ItemAdded(Event):
     n: int = 0
     title: str = ""  # as written; `clean` is what the item gets
     type: str = "idea"
-    pri: str = "P2"
+    pri: str = "P1"  # DEFAULT_PRI (r1072); stored events always say theirs
     when: str = "now"
     status: str = "open"
     body_text: str = ""

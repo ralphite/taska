@@ -40,9 +40,10 @@ INSTRUCTIONS = (
     '  ambiguous or missing. If the input only answers an open question, record it with `say` and stop.\n'
     '- "Not now / later / put it off" (in any language) about something not tracked yet still means: create it with `later`,\n'
     '  so it is not lost. Only greetings, thanks or pure acknowledgements need no item.\n'
-    "- Priority (always write it on new items): P2 = normal, the default for every type. Only the user's words move it:\n"
-    '  P0 when they say it is urgent or blocks them, P1 when they say it is important or should come soon, P3 when\n'
-    '  they say it can wait or "someday". Do not raise it because it sounds big. New items are `now` unless the user says later.\n'
+    "- Priority (always write it on new items): P1 = normal, the default for every type (the user's rule, r10 and r1072).\n"
+    '  Only the user\'s words move it: P0 when they say it is urgent or blocks them, P2 when they say it is not urgent,\n'
+    '  P3 when they say it can wait or "someday". Do not raise it because it sounds big. New items are `now` unless the\n'
+    '  user says later.\n'
     '  Explicit words from the user ("P0", "urgent", "not urgent", "later") always win, and the project rules\n'
     '  below override these defaults.\n'
     '- Merge only clear duplicates. Prefer fewer, accurate changes. If nothing needs changing, reply: ack <input id>\n'

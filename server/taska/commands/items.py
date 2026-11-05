@@ -13,7 +13,7 @@ from ..domain.history import followed, last_archive, status_set_by
 from ..domain.model import FileRef, Item
 from ..domain.rules import RefContext, descendants, item_at, open_kids, replied, user_word
 from ..domain.state import ProjectState
-from ..domain.vocab import ASK_WORDS, CLOSED, LETTER, MAX_TEXT, MESSAGE_KINDS, PEOPLE, PRIORITIES, STATUSES, WHENS, Refused
+from ..domain.vocab import ASK_WORDS, CLOSED, DEFAULT_PRI, LETTER, MAX_TEXT, MESSAGE_KINDS, PEOPLE, PRIORITIES, STATUSES, WHENS, Refused
 from .base import Args, Outcome, Run, handles
 
 _NONE_WORDS = ("", "-", "none", "null")
@@ -85,7 +85,7 @@ def new_item(r: Run, a: Args) -> Outcome:
     s = r.state
     title = field_value(s, "title", a.get("title", ""))  # checked in this order, so the first problem is the one told
     kind = field_value(s, "type", a.get("type") or "idea")
-    pri = field_value(s, "pri", a.get("pri") or "P2")
+    pri = field_value(s, "pri", a.get("pri") or DEFAULT_PRI)
     when = field_value(s, "when", a.get("when") or "now")
     status = "proposed" if not r.person else field_value(s, "status", a.get("status") or "open")
     body = field_value(s, "body", a.get("body") or "")

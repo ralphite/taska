@@ -10,6 +10,8 @@ import re
 LETTER = {"feature": "F", "bug": "B", "idea": "I", "task": "T", "rule": "R"}
 TYPE_OF = {letter: kind for kind, letter in LETTER.items()}
 PRIORITIES = ("P0", "P1", "P2", "P3")
+# a new item's priority when nobody says one: P1, the user's rule (r10, r1072); tests/test_default_priority.py holds it
+DEFAULT_PRI = "P1"
 WHENS = ("now", "later")
 STATUSES = ("proposed", "open", "doing", "review", "done", "dropped")
 CLOSED = ("done", "dropped")
