@@ -45,6 +45,7 @@ function otherFacts(x: Found, words: string[]): RowFacts {
     next: false,
     unread: false,
     worker: null,
+    news: null,
     hitLine: words.length ? hitLine(it, it.code, words) : null,
   }
 }

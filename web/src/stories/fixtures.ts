@@ -44,7 +44,7 @@ export function input(f: Partial<Input> & { id: string }): Input {
 }
 
 export function facts(f: Partial<RowFacts> = {}): RowFacts {
-  return { code: 'F012', parentCode: null, image: null, kids: null, openKids: 0, talk: 0, draft: false, next: false, unread: false, worker: null, hitLine: null, ...f }
+  return { code: 'F012', parentCode: null, image: null, kids: null, openKids: 0, talk: 0, draft: false, next: false, unread: false, worker: null, news: null, hitLine: null, ...f }
 }
 
 export const look = (desk: boolean, f: Partial<RowLook> = {}): RowLook => ({ current: false, selected: false, words: [], desk, ...f })

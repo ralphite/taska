@@ -25,6 +25,8 @@ export interface RowFacts {
   next: boolean
   unread: boolean
   worker: { by: string; tip: string } | null
+  /** work in progress: what its agent last said, how long ago, and whether over an hour (D115 #30) */
+  news: { text: string; age: string; quiet: boolean } | null
   /** where the searched words were found, when not in the title */
   hitLine: string | null
 }
@@ -213,6 +215,12 @@ export function ItemRow(props: {
     ),
     facts.draft ? (
       <DraftMark key="s" />
+    ) : it.status === 'doing' && facts.news ? (
+      // what its agent last said and how long ago, amber after an hour without news (D115 #30)
+      <span key="s" className="flex min-w-0 items-center gap-1" title={facts.news.text}>
+        <span className="min-w-0 truncate">{facts.news.text}</span>
+        <span className={`shrink-0 ${facts.news.quiet ? 'text-amber-700 dark:text-amber-400' : ''}`}>· {facts.news.age}</span>
+      </span>
     ) : it.status === 'doing' ? (
       <span key="s">In progress</span>
     ) : isClosed && band !== 'retired' ? (

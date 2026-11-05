@@ -58,3 +58,11 @@ test('r445 r451 R337: archiving an item takes its finished subitems with it; one
   expect(await p.read('items?status=all&archived=1')).toContain('Book the venue')
   expect(await p.read('items?status=all&archived=1')).not.toContain('Print the posters')
 })
+
+test('D115 #30: work in progress says on its row what its agent last said and how long ago', async ({ page, request }) => {
+  const p = await project(request, { agent: 'new task P1 now Ship the export\n', approve: ['T1'], then: 'T1 doing\nT1 progress Testing with three filters\n' })
+  await open(page, p)
+  const r = row(page, 'Ship the export').first()
+  await expect(r).toContainText('Testing with three filters')
+  await expect(r).toContainText(/· (now|\d+ min)/)
+})

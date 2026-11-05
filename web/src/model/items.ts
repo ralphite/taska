@@ -35,6 +35,21 @@ export const userWord = (m: Message) =>
 
 export const lastAgentMessage = (it: Item) => [...it.thread].reverse().find((m) => !userWord(m))
 
+/** An hour without news from the agent on work in progress: its row says how long in amber (D115 #30). */
+export const QUIET_WORK_MS = 3600e3
+
+/** The latest news on work in progress (D115 #30): the start of what an agent last said there (not the organizer,
+ * not a hidden or taken-back message), how long ago, and whether that is over an hour; null when none has spoken. */
+export function workNews(it: Item, now: number): { text: string; age: string; quiet: boolean } | null {
+  const m = [...it.thread].reverse().find((x) => !userWord(x) && x.by !== 'org' && x.kind !== 'withdraw' && !x.hidden)
+  const text = m ? oneLine(m.text) : ''
+  if (!m || !text) return null
+  const ms = Math.max(0, now - Date.parse(m.t))
+  const min = Math.round(ms / 60000)
+  const age = min < 1 ? 'now' : min < 60 ? `${min} min` : min < 1440 ? `${Math.round(min / 60)} h` : `${Math.round(min / 1440)} d`
+  return { text, age, quiet: ms > QUIET_WORK_MS }
+}
+
 /** The first line that says something, without Markdown marks. */
 export const oneLine = (t: unknown) =>
   String(t || '')
