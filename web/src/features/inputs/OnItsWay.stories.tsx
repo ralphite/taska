@@ -18,7 +18,7 @@ export const OnItsWay: Story = {
           away: 0,
           outbox: [
             out({ q: 'q1', text: 'This one Taska refused', state: 'failed', net: false, t: 1 }),
-            out({ q: 'q2', text: 'Buy milk on the way home', state: 'failed', net: true, t: 2 }),
+            out({ q: 'q2', text: 'Make the export button bigger', state: 'failed', net: true, t: 2 }),
             out({ q: 'q3', text: 'Also the sort, please.', scope: 'F012', t: 3 }),
           ],
         })

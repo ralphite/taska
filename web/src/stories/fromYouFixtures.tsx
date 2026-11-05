@@ -9,8 +9,14 @@ import { talkOf, type PageOpts } from './itemPage'
 type Story = StoryObj
 
 export const later = (min: number) => new Date(Date.parse(T) + min * 60_000).toISOString()
-/** a voice note with its words: tidied (what agents get) and as said, which the play button shows under the pointer */
-export const voice = { f: 'f2-voice_0-12.webm', name: 'voice_0-12.webm', mime: 'audio/webm', tr: 'The export should keep the filter I set.', heard: 'So um the export should, uh, keep the filter I set.' }
+/** a sent voice note, as Taska has it: its words tidied, and word for word as heard */
+export const voice = {
+  f: 'f2-voice_0-12.webm',
+  name: 'voice_0-12.webm',
+  mime: 'audio/webm',
+  tr: 'The export should keep the filter I set.',
+  heard: 'So the export, um, it should keep the, the filter I set.',
+}
 export const shot = { f: 'f3-shot.png', name: 'shot.png', mime: 'image/png' }
 export const pdf = { f: 'f5-export.pdf', name: 'export.pdf', mime: 'application/pdf' }
 export const r4 = (f: Partial<Input> = {}) => input({ id: 'r4', text: 'The export should keep the filter I set.', ...f })
@@ -18,7 +24,20 @@ export const mine = (f: Partial<Message> = {}) => message({ id: 1, by: 'you', ki
 export const at = (thread: Message[], o: PageOpts = {}, f: Partial<Item> = {}): Story => ({
   render: () => <Frames phoneWidth={393} deskWidth={720}>{(layout) => talkOf(item({ n: 12, thread, ...f }), layout === 'desk', { inputs: [r4()], ...o })}</Frames>,
 })
-export const LONG = Array.from({ length: 12 }, (_, i) => `Line ${i + 1} of what I said, with some words to fill it.`).join('\n')
+export const LONG = [
+  'The export is still wrong on the orders page.',
+  'I filtered the list to Paid and Last 30 days, then pressed Export.',
+  'The CSV had every order since March, about four thousand rows.',
+  'The columns were also in a different order from the list on the screen.',
+  'Finance opens this file in Excel every Monday, so they noticed straight away.',
+  'What I expect: the file has exactly the rows the list shows, in the same order.',
+  'The columns should be the ones I see, left to right, with the same names.',
+  'The file name should say the filter, like orders-paid-last-30-days.csv.',
+  'Dates in the file should use the format chosen in Settings, not ISO.',
+  'On the phone, Export does nothing at all; it should work there too.',
+  'If the list is empty, say so instead of writing an empty file.',
+  'Please check the sort as well; it went back to newest first last time.',
+].join('\n')
 /** what you sent, still on its way */
 /** What you sent, on its way, in each state the page's outgoingState gives; only one Taska refused is bad (Retry, Edit),
  * as the page has it; × cancels any of them. */

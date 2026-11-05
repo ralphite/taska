@@ -11,7 +11,7 @@ export default { title: 'Components/Around the page/Menus and sheets/What you sa
 type Story = StoryObj
 
 const both = (draw: (desk: boolean) => ReturnType<typeof opened>, height = 480): Story => ({ render: () => <Frames height={height} deskWidth={900} phoneWidth={393}>{(layout) => draw(layout === 'desk')}</Frames> })
-const VOICE = { f: 'f2-voice_0-12.webm', name: 'voice_0-12.webm', mime: 'audio/webm' }
+const VOICE = { f: 'f2-voice_0-12.webm', name: 'voice_0-12.webm', mime: 'audio/webm', tr: 'The export should keep the filter I set.', heard: 'So the export, it should keep the, um, the filter I set.' }
 const SHOT = { f: 'f3-shot.png', name: 'shot.png', mime: 'image/png' }
 const said = input({
   id: 'r12',

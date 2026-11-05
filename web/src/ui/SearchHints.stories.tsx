@@ -41,7 +41,40 @@ export const Hints: Story = {
   ),
 }
 // ---- more states (T639)
-const many = Array.from({ length: 30 }, (_, i) => ({ project: i % 2 ? 'home' : 'lumina', ptitle: i % 2 ? 'Home' : 'lumina', kind: 'item' as const, code: `T${i + 10}`, title: `Export step ${i + 1}`, status: (i === 1 ? 'dropped' : 'open') as 'open', archived: i === 2, t: T }))
+/** what a search for "export" finds: the app's items (lumina) and the home ones, in turn */
+const FOUND = [
+  'Export keeps the filter you set',
+  'Export the bank statements as one CSV',
+  'Excel export',
+  'Export the tax receipts for the accountant',
+  'Export dates use the format from Settings',
+  'Export the photo backup list',
+  'Export column order matches the list',
+  'Export the shopping list to Notes',
+  'Put the filter in the export file name',
+  'Export the car service history',
+  'Export refunds as their own rows',
+  'Export the electricity readings by month',
+  'Export shipping costs with each order',
+  'Export the contacts for the wedding invitations',
+  'Say why an export failed',
+  'Export last year’s medical bills',
+  'Export with ten thousand orders under 3 seconds',
+  'Export the recipes to a PDF',
+  'Export sheet in dark mode',
+  'Export the warranty list',
+  'Export keeps leading zeros in order numbers',
+  'Export the school calendar to Google Calendar',
+  'Export opens in Files on the iPhone',
+  'Export the holiday budget',
+  'Show the export’s filter at the top of the file',
+  'Export the reading list from the old app',
+  'Export through the API keeps the filter',
+  'Export the gym log to a spreadsheet',
+  'Refuse exports over 50 MB with a message',
+  'Export the plant watering schedule',
+]
+const many = Array.from({ length: 30 }, (_, i) => ({ project: i % 2 ? 'home' : 'lumina', ptitle: i % 2 ? 'Home' : 'lumina', kind: 'item' as const, code: `T${i + 10}`, title: FOUND[i], status: (i === 1 ? 'dropped' : 'open') as 'open', archived: i === 2, t: T }))
 /** many found: the first eight, "+N more · refine search", 30 shown as 30+; one archived, one won't do */
 export const ManyFound: Story = { name: "Hints: many found, one archived, one won't do", render: () => <Frames phoneWidth={393} deskWidth={460}>{() => hints({ cross: { q: 'export', list: many, failed: false } })}</Frames> }
 /** under a list: other tabs and other projects together */

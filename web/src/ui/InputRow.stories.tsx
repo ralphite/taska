@@ -71,7 +71,7 @@ export const OnItsWayAndRecording: Story = {
           <div className="space-y-2 px-4 py-3 lg:px-0">
             <RecordingRow clock="0:12" />
             <OutgoingRow text="Also the sort, please." state="Sending…" bad={false} waiting={false} scope="F012" acts={[]} cancel={outAct('Cancel')} />
-            <OutgoingRow text="Buy milk on the way home" state="Waiting for Taska…" bad={false} waiting acts={[{ label: 'Edit', run: outAct('Edit') }]} cancel={outAct('Cancel')} />
+            <OutgoingRow text="Make the export button bigger" state="Waiting for Taska…" bad={false} waiting acts={[{ label: 'Edit', run: outAct('Edit') }]} cancel={outAct('Cancel')} />
             <OutgoingRow text="This one Taska refused" state="Not sent" bad waiting={false} acts={[{ label: 'Retry', run: outAct('Retry') }, { label: 'Edit', run: outAct('Edit') }]} cancel={outAct('Cancel')} />
           </div>
         </div>

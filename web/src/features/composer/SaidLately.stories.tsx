@@ -3,7 +3,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Frames, States } from '../../stories/Frames'
 import { out } from '../../stories/boxFixtures'
-import { DAY, ONE, VOICE, saidOf } from '../../stories/inputFixtures'
+import { DAY, ONE, said, saidOf } from '../../stories/inputFixtures'
 
 export default { title: 'Components/Inputs/New input page/Latest inputs/The list' } satisfies Meta
 type Story = StoryObj
@@ -13,7 +13,7 @@ export const SaidLatelyList: Story = {
   name: 'The latest first, what each became',
   render: () => (
     <Frames phone={false} deskWidth={1024}>
-      {() => <div className="p-6">{saidOf({ inputs: [...DAY, ONE.left, ONE.undone], outbox: [out({ q: 'a', text: 'Buy milk on the way home', state: 'failed', net: true })] })}</div>}
+      {() => <div className="p-6">{saidOf({ inputs: [...DAY, ONE.left, ONE.undone], outbox: [out({ q: 'a', text: 'Make the export button bigger', state: 'failed', net: true })] })}</div>}
     </Frames>
   ),
 }
@@ -51,7 +51,7 @@ export const SaidVoice: Story = {
           items={[
             ['recording (the pointer elsewhere): ✕, the time and level, ✓', saidOf({ inputs: [ONE.made], adding: { id: ONE.made.id, clock: '0:07' } })],
             ['stopped: transcribing', saidOf({ inputs: [ONE.made], addingUp: [ONE.made.id] })],
-            ['its words added at the end, with the voice note', saidOf({ inputs: [{ ...ONE.made, text: `${ONE.made.text}\n\nAnd on the tablet too.`, files: [VOICE] }] })],
+            ['its words added at the end, with the voice note', saidOf({ inputs: [{ ...ONE.made, text: `${ONE.made.text}\n\nAnd on the tablet too.`, files: [said('And on the tablet too.', 'And, uh, on the tablet too.')] }] })],
           ]}
         />
       )}
@@ -60,6 +60,43 @@ export const SaidVoice: Story = {
 }
 
 const list = (s: Parameters<typeof saidOf>[0]): Story => ({ render: () => <Frames phone={false} deskWidth={1024}>{() => <div className="p-6">{saidOf(s)}</div>}</Frames> })
-const MANY = Array.from({ length: 34 }, (_, i) => ({ ...ONE.added, id: 'r' + (100 + i), text: `Thing ${i + 1} to do`, t: new Date(Date.parse(ONE.waiting.t) - i * 3600_000).toISOString() }))
+/** what one person says to Taska over a couple of days, newest first */
+const SAID = [
+  'The export should keep the sort too.',
+  'Put the filter in the file name.',
+  'The coupon box is still behind the keyboard on the iPhone.',
+  'Excel export as well, later.',
+  'Dates in the CSV should use the format from Settings.',
+  'The orders list loads slowly when the filter is Last year.',
+  'Search should find words in the talk too.',
+  'The app icon looks blurry on the home screen.',
+  'Close B014 once the fix is on the phone.',
+  'The total at the bottom of the cart is cut off on small screens.',
+  'Look at why the build takes so long on the release branch.',
+  'The Pay button stays grey after the card is filled in.',
+  'Add a way to export only the selected orders.',
+  'Remember the last filter when the page is opened again.',
+  'The checkout page jumps when the keyboard opens.',
+  'Show which filter the export used at the top of the file.',
+  'Refunds should be in the export as their own rows.',
+  'The CSV columns are in a different order from the screen.',
+  'Restart the nightly checks after the deploy.',
+  'The empty cart page has no way back to the shop.',
+  'Write the plan for the export in a document first.',
+  'Two orders with the same number showed up in the list.',
+  'The date picker opens behind the filters sheet on the phone.',
+  'Make the export button bigger on the phone.',
+  'Saving an address drops the last word of the street.',
+  'The order page says Paid before the payment goes through.',
+  'Ask finance which columns they really use.',
+  'The shipping cost is missing from the export.',
+  'When the export fails, say why instead of nothing.',
+  'Dark mode: the coupon code is black on dark grey.',
+  'The filters chips wrap onto three lines on the phone.',
+  'Keep the scroll place when coming back to the list.',
+  'The search box loses its words after a refresh.',
+  'Check the export with ten thousand orders.',
+]
+const MANY = SAID.map((text, i) => ({ ...ONE.added, id: 'r' + (100 + i), text, t: new Date(Date.parse(ONE.waiting.t) - i * 3600_000).toISOString() }))
 export const LatestInputsMoreToLoad: Story = { ...list({ inputs: MANY }), name: 'More to load' }
 export const LatestInputsNoneYet: Story = { ...list({ inputs: [] }), name: 'None yet' }

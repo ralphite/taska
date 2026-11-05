@@ -43,11 +43,19 @@ export const LONG = doc({
   title: 'How the page is built',
   blocks: [
     { key: 'title', kind: 'heading', text: '# How the page is built', comments: [] },
-    ...['Pages', 'Features', 'Stores', 'Services', 'Checks'].flatMap((h, i) => [
+    ...(
+      [
+        ['Pages', 'A page puts features together for one address: the project, an item, a document, search. It reads the stores and hands each feature its facts; it draws nothing of its own.', 'The item page', 'ItemPageContainer reads the item, its talk and its documents from the project store and gives ItemPage only what it shows. Opening another item changes the address, not the page.'],
+        ['Features', 'A feature is one part of the screen with its own stories: the input box, the talk, the item list. Its components take props only and never import a store, so a story can draw any state with plain data.', 'The talk', 'Talk draws the messages it is given. Who wrote each one, what it came from and whether it is folded are worked out before, in talkFacts.'],
+        ['Stores', 'Stores hold what Taska sent and what is on its way back. Each one has a single owner that writes to it; everyone else reads.', 'The outbox', 'What you send waits in the outbox until Taska has it. A reload keeps it, and a voice note keeps its audio in the browser until it is up.'],
+        ['Services', 'Services talk to the server and the browser: the live connection, uploads, the microphone, the player. They are the only code that waits on the network.', 'Sending', 'The sender tries again by itself while Taska is out of reach and only gives up when the server refuses; then the input shows Not sent with Retry and Edit.'],
+        ['Checks', 'The architecture check fails the build when a feature imports a store, when a page draws a component that has no story, or when a story draws a copy of a product component instead of the real one.', 'A failing check', 'Moving the export button into a new component without a story fails the check with the component’s name and the page that draws it.'],
+      ] as const
+    ).flatMap(([h, p, ex, e], i) => [
       { key: `h${i}`, kind: 'heading' as const, text: `## ${h}`, comments: [] },
-      { key: `p${i}`, kind: 'para' as const, text: `${h}: what each one does, what it reads, and what it may not import. Each rule has a check that fails when it is broken.`, comments: [] },
-      { key: `s${i}`, kind: 'heading' as const, text: `### ${h}: an example`, comments: [] },
-      { key: `e${i}`, kind: 'para' as const, text: 'One file, its stories next to it, and the data it is drawn with.', comments: [] },
+      { key: `p${i}`, kind: 'para' as const, text: p, comments: [] },
+      { key: `s${i}`, kind: 'heading' as const, text: `### ${ex}`, comments: [] },
+      { key: `e${i}`, kind: 'para' as const, text: e, comments: [] },
     ]),
   ],
   detached: [],

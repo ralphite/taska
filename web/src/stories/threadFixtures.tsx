@@ -11,7 +11,7 @@ type Story = StoryObj
 export const PLAN = doc()
 export const at = (min: number) => new Date(Date.parse(T) - min * 60_000).toISOString()
 export const one = (h: DocHere, d: Doc = PLAN, height = 760): Story => ({ render: () => <Frames height={height} deskWidth={900} phoneWidth={393}>{(layout) => docAt(d, layout === 'desk', h)}</Frames> })
-export const VOICE = { f: 'f8-voice_0-07.webm', name: 'voice_0-07.webm', mime: 'audio/webm' }
+export const VOICE = { f: 'f8-voice_0-07.webm', name: 'voice_0-07.webm', mime: 'audio/webm', tr: 'Like this, with the filter kept.', heard: 'Like this, um, with the filter kept.' }
 export const SHOT = { f: 'f9-filter.png', name: 'filter.png', mime: 'image/png' }
 export const withFiles = doc({ blocks: PLAN.blocks.map((b) => (b.key === 'p1' ? { ...b, comments: [...b.comments, comment({ id: 7, key: 'p1', th: 1, quote: 'stays in use', text: 'Like this, with the filter kept.', by: 'you', t: at(5), files: [SHOT, VOICE] })] } : b)) })
 

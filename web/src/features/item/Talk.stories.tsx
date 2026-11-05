@@ -35,8 +35,25 @@ export const EveryMessageWithDocumentComments: Story = {
   name: 'Every message, with document comments',
 }
 export const WithTheCardThatAsksYou: Story = { ...whole([you(1, 0, 'The export should keep the filter I set.'), agent(2, 3, 'Reproduced it.'), agent(3, 5, 'Which format?\n- ( ) CSV\n- ( ) Excel', { kind: 'ask' })], { wait: { id: 3, kind: 'ask', text: 'Which format?\n- ( ) CSV\n- ( ) Excel', by: 'claude-code', files: [] } }), name: 'With the card that asks you' }
+/** a day of working on the export with an agent, one step at a time */
+const BACK_AND_FORTH = [
+  'The export should keep the filter I set.',
+  'Reproduced it: the export reads the whole orders table before the filter. Fixed; the CSV now has the rows the list shows.',
+  'Good. Now the sort, please.',
+  'Done: the CSV keeps the sort, largest total first when the list is sorted that way.',
+  'The columns are in a different order from the screen.',
+  'Fixed: the columns follow the list, with the same names.',
+  'Put the filter in the file name too.',
+  'Done: orders-paid-last-30-days.csv.',
+  'Dates should use the format from Settings, not ISO.',
+  'Done: the dates follow Settings; finance’s sample opens correctly in Excel.',
+  'And on the phone Export does nothing.',
+  'Found it: the button was under the keyboard’s toolbar. It is above it now, and the file opens in Files.',
+  'Great. Can you try it with ten thousand orders?',
+  'Tried with 10,000 orders: 1.8 s, and the file is 2.1 MB. Ready for you to look at.',
+].map((text, i) => (i % 2 ? agent(i + 1, i * 3, text) : you(i + 1, i * 3, text)))
 export const LongBackAndForth: Story = { ...whole(
-  Array.from({ length: 14 }, (_, i) => (i % 2 ? agent(i + 1, i * 3, `Step ${(i + 1) / 2} done.`) : you(i + 1, i * 3, `Then step ${i / 2 + 1}, please.`))),
+  BACK_AND_FORTH,
   {},
   {},
   900,
@@ -44,7 +61,7 @@ export const LongBackAndForth: Story = { ...whole(
 // ---- more states (B636)
 export const LongBackAndForthAllShown: Story = {
   ...whole(
-    Array.from({ length: 14 }, (_, i) => (i % 2 ? agent(i + 1, i * 3, `Step ${(i + 1) / 2} done.`) : you(i + 1, i * 3, `Then step ${i / 2 + 1}, please.`))),
+    BACK_AND_FORTH,
     {},
     { f: { allTalk: true } },
     900,

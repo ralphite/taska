@@ -23,7 +23,7 @@ export const InputsTabEmpty: Story = { ...one({ inputs: [] }), name: 'Empty' }
 export const SearchNothingFound: Story = { ...one({ q: 'zebra' }), name: 'Search, nothing found' }
 // ---- more states (T639)
 /** the first input of a project still on its way: only its row, no "No inputs yet." */
-export const EmptyOneOnItsWay: Story = { name: 'Empty, one on its way', render: () => <Frames desk={false} phoneWidth={393} height={360}>{() => inputsOf({ inputs: [], outbox: [out({ q: 'a', text: 'Buy milk on the way home' })] })}</Frames> }
+export const EmptyOneOnItsWay: Story = { name: 'Empty, one on its way', render: () => <Frames desk={false} phoneWidth={393} height={360}>{() => inputsOf({ inputs: [], outbox: [out({ q: 'a', text: 'Make the export button bigger' })] })}</Frames> }
 /** a voice note being recorded into a new input: its row comes first, with how long so far (B627) */
 export const InputsTabRecording: Story = { ...one({ recording: '0:12' }), name: 'A voice note being recorded' }
 // ---- the swipe (D115 #42), drawn by the swipe's own code, mid-swipe: right on the first row that became an item (only

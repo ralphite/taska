@@ -25,7 +25,10 @@ import { inputDeleteAsk, inputMenuFacts } from '../features/inputs/inputSheetFac
 const at = (min: number) => new Date(Date.parse(T) - min * 60_000).toISOString()
 const org = (msg: string, f: Partial<OrgNote> = {}): OrgNote => ({ ok: true, msg, t: '', keep: false, changed: true, undone: false, ...f })
 export const SHOT: FileRef = { f: 'f3-export.png', name: 'export.png', mime: 'image/png' }
+/** a voice note before its words are in (still being written out) */
 export const VOICE: FileRef = { f: 'f4-voice_0-12.webm', name: 'voice_0-12.webm', mime: 'audio/webm' }
+/** a voice note with its words, as Taska has it once they are written out; the input's text holds them too */
+export const said = (tr: string, heard?: string): FileRef => ({ ...VOICE, tr, ...(heard ? { heard } : {}) })
 
 /** The items what you said made or changed. */
 export const ITEMS: Item[] = [
@@ -37,7 +40,7 @@ export const ITEMS: Item[] = [
 /** One input in each state it can be in. */
 export const ONE = {
   waiting: input({ id: 'r23', t: at(2), text: 'The export button does nothing on the orders page.', files: [SHOT] }),
-  voice: input({ id: 'r22', t: at(6), acked: true, touched: [12], text: 'Keep the filter, and the sort as well.', files: [VOICE], org: org('Noted on F012') }),
+  voice: input({ id: 'r22', t: at(6), acked: true, touched: [12], text: 'Keep the filter, and the sort as well.', files: [said('Keep the filter, and the sort as well.', 'Keep the filter, and, um, the sort as well.')], org: org('Noted on F012') }),
   transcribing: input({ id: 'r21', t: at(1), text: '', files: [VOICE], trWait: true }),
   organizing: input({ id: 'r20', t: at(1), text: 'The coupon box hides behind the keyboard.' }),
   made: input({ id: 'r19', t: at(20), acked: true, touched: [14], text: 'The coupon box hides behind the keyboard on the phone.', org: org('Created B014') }),
@@ -60,8 +63,18 @@ export const ONE = {
   moved: input({ id: 'r11', t: at(60), acked: true, text: 'The app icon looks blurry on the home screen.', moved: { to: 'mobile-app', as: 'r4' } }),
   answer: input({ id: 'r10', t: at(65), acked: true, kind: 'answer', scope: 7, text: 'CSV and Excel.' }),
   /** a recording cancelled with Esc, kept with its words: no one's work until it is sent (B627) */
-  cancelled: input({ id: 'r24', t: at(3), kind: 'cancelled', text: 'Maybe the export should keep the columns too.', files: [VOICE] }),
-  long: input({ id: 'r9', t: at(60 * 24), acked: true, touched: [7], org: org('Created T007'), text: Array.from({ length: 8 }, (_, i) => `Step ${i + 1}: open the orders page, set a filter, export.`).join('\n') }),
+  cancelled: input({ id: 'r24', t: at(3), kind: 'cancelled', text: 'Maybe the export should keep the columns too.', files: [said('Maybe the export should keep the columns too.', 'Maybe the export should, hmm, keep the columns too.')] }),
+  long: input({ id: 'r9', t: at(60 * 24), acked: true, touched: [7], org: org('Created T007'), text: [
+      'Work out which formats the export should offer.',
+      'Finance opens the file in Excel every Monday, so Excel matters most.',
+      'CSV is what the warehouse script reads; it must stay as it is.',
+      'Ask whether anyone still needs PDF; I think no one prints these.',
+      'Whatever we pick, the file keeps the filter and the sort the list shows.',
+      'The columns come in the same order as on the screen.',
+      'Dates use the format chosen in Settings, not ISO.',
+      'Write down what we decide, and why, before anyone starts on it.',
+    ].join('\n'),
+  }),
 }
 
 /** A usual day's inputs, newest first by day: today's and yesterday's. */

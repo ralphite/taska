@@ -49,7 +49,7 @@ const F1 = {
 const ITEMS = [F1, ...PROJECT.slice(1)]
 const INPUTS: Input[] = [
   input({ id: 'r9', text: 'Search should find words in the talk too.', acked: true, touched: [5] }),
-  input({ id: 'r8', text: 'The export should keep the filter I set.', acked: true, touched: [1], files: [{ f: 'f8-voice_0-07.webm', name: 'voice_0-07.webm', mime: 'audio/webm' }] }),
+  input({ id: 'r8', text: 'The export should keep the filter I set.', acked: true, touched: [1], files: [{ f: 'f8-voice_0-07.webm', name: 'voice_0-07.webm', mime: 'audio/webm', tr: 'The export should keep the filter I set.' }] }),
   input({ id: 'r7', text: 'Excel export as well, later.', acked: true, touched: [6] }),
 ]
 const M = modelOf(ITEMS, INPUTS, { title: 'Shop' }, [D1])

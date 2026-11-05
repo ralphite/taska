@@ -43,10 +43,10 @@ export const Blocks: Story = {
       {() => (
         <States
           items={[
-            ['words: **bold**, *italic*, `code`, a link, a web address, codes', rich('The export *ignores* the **active filter**: see `export.ts`.\nLine two keeps its break. Docs: [the guide](https://example.com/guide), https://example.com/a/b.\nF012 and B003 are links; F099 names nothing.')],
-            ['headings', rich('# Plan\n\n## Steps\n\n### A small one')],
+            ['words: **bold**, *italic*, `code`, a link, a web address, codes', rich('The export *ignores* the **active filter**: see `export.ts`.\nIt still writes every order. Docs: [the guide](https://example.com/guide), https://example.com/a/b.\nF012 and B003 are links; F099 names nothing.')],
+            ['headings', rich('# Plan\n\n## Steps\n\n### Keep the sort')],
             ['a quote', rich('> The export should keep the filter I set.\n> Every time.')],
-            ['lists, nested by their indent', rich('- Read the filter\n  - from the address\n  - or the saved view\n- Write the rows\n\n1. First\n2. Second')],
+            ['lists, nested by their indent', rich('- Read the filter\n  - from the address\n  - or the saved view\n- Write the rows\n\n1. Fix the filter\n2. Then the sort')],
             ['a table (cards on a phone)', rich('| Step | Who | When |\n|---|:-:|--:|\n| Read the filter | agent | now |\n| Write the rows | agent | later |')],
             ['a narrow table', rich('| Format | Size |\n|---|---|\n| CSV | small |')],
             ['code', rich('```\nconst rows = list.filter(shown)\nexport(rows)\n```')],

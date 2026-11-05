@@ -10,10 +10,16 @@ const meta: Meta = { title: 'Components/Conversation/Message parts/Voice notes, 
 export default meta
 type Story = StoryObj
 
-const voice: FileRef = { f: 'f3-voice_1-05.webm', name: 'voice_1-05.webm', mime: 'audio/webm' }
-const unnamed: FileRef = { f: 'f4-note.webm', name: 'note.webm', mime: 'audio/webm' }
+const voice: FileRef = {
+  f: 'f3-voice_1-05.webm',
+  name: 'voice_1-05.webm',
+  mime: 'audio/webm',
+  tr: 'The export ignores the filter on the orders page: with Paid and Last 30 days set it still writes every order. It should write only the rows the list shows, in the same order.',
+  heard: 'So on the orders page, the export, it ignores the filter. Like I set Paid and Last 30 days and it still writes, um, every order. It should write only the rows the list shows, and in the same order, the same order as the list.',
+}
+const unnamed: FileRef = { f: 'f4-note.webm', name: 'note.webm', mime: 'audio/webm', tr: 'And the sort too.' }
 const picture: FileRef = { f: 'f5-shot.png', name: 'shot.png', mime: 'image/png' }
-const pdf: FileRef = { f: 'f6-report.pdf', name: 'Quarterly report with a long name.pdf', mime: 'application/pdf' }
+const pdf: FileRef = { f: 'f6-report.pdf', name: 'Orders export, Paid, last 30 days, sorted by total.pdf', mime: 'application/pdf' }
 /** a voice note that plays and pauses from where it is (the page's player) */
 function LiveChip({ f, start, tidy }: { f: FileRef; start: PlayState; tidy: boolean }) {
   const media = useMedia(() => '#', start.t == null && !start.playing ? null : { src: f.f, ...start })

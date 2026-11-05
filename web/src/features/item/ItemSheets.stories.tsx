@@ -18,7 +18,7 @@ const fileOn = acts('A file', ['play', 'words', 'view'])
 const at = (min: number) => new Date(Date.parse(T) - min * 60_000).toISOString()
 const inputs = [
   input({ id: 'r12', t: at(90), acked: true, touched: [12], text: 'The export should keep the filter I set.', files: [{ f: 'f3-shot.png', name: 'shot.png', mime: 'image/png' }] }),
-  input({ id: 'r15', t: at(30), acked: true, touched: [12], text: 'And the sort, please.', files: [{ f: 'f4-voice_0-07.webm', name: 'voice_0-07.webm', mime: 'audio/webm' }] }),
+  input({ id: 'r15', t: at(30), acked: true, touched: [12], text: 'And the sort, please.', files: [{ f: 'f4-voice_0-07.webm', name: 'voice_0-07.webm', mime: 'audio/webm', tr: 'And the sort, please.', heard: 'And the, um, the sort, please.' }] }),
 ]
 const m = modelOf([item({ n: 12, srcs: ['r12', 'r15'] })], inputs)
 
@@ -55,7 +55,7 @@ export const WhatAgentsSeeLoading: Story = {
 // ---- more states (T639): what the organizer made of each input, and an input that is only a voice note
 const filed = [
   input({ id: 'r12', t: at(90), acked: true, touched: [12], text: 'The export should keep the filter I set.', org: { ok: true, msg: 'Created F012', t: '', keep: false, changed: true, undone: false } }),
-  input({ id: 'r15', t: at(30), acked: true, touched: [12], text: '', files: [{ f: 'f4-voice_0-07.webm', name: 'voice_0-07.webm', mime: 'audio/webm' }], org: { ok: true, msg: 'Noted on F012', t: '', keep: false, changed: true, undone: false } }),
+  input({ id: 'r15', t: at(30), acked: true, touched: [12], text: 'And the sort, please.', files: [{ f: 'f4-voice_0-07.webm', name: 'voice_0-07.webm', mime: 'audio/webm', tr: 'And the sort, please.', heard: 'And the, um, the sort, please.' }], org: { ok: true, msg: 'Noted on F012', t: '', keep: false, changed: true, undone: false } }),
 ]
 const mf = modelOf([item({ n: 12, srcs: ['r12', 'r15'] })], filed)
 export const SourcesFiled: Story = {

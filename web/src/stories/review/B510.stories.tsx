@@ -16,7 +16,7 @@ const report = (id: number, min: number) => message({ id, t: at(min), text: 'Don
 const ask = (id: number, min: number) => message({ id, t: at(min), kind: 'ask', text: 'Which format should the export use?\n- ( ) CSV\n- ( ) Excel' })
 const waits = (x: Message): Item['wait'] => ({ id: x.id, kind: 'ask', text: x.text, by: x.by, files: [] })
 const you = (id: number, min: number, text: string, src: string) => message({ id, t: at(min), by: 'you', kind: 'say', text, src })
-const voice = input({ id: 'r2', text: 'CSV for now, Excel later. And keep the sort too.', files: [{ f: 'f2-voice_0-09.webm', name: 'voice_0-09.webm', mime: 'audio/webm' }] })
+const voice = input({ id: 'r2', text: 'CSV for now, Excel later. And keep the sort too.', files: [{ f: 'f2-voice_0-09.webm', name: 'voice_0-09.webm', mime: 'audio/webm', tr: 'CSV for now, Excel later. And keep the sort too.', heard: 'CSV for now, and Excel, Excel later. Oh and keep the sort too.' }] })
 
 function talk(it: Item, desk: boolean) {
   const m = modelOf([it], [voice])
