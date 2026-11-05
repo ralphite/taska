@@ -114,8 +114,15 @@ describe('a recording cancelled with Esc, kept in the inputs (B627)', () => {
     const copy = { cursor: '', items: new Map(), inputs: new Map([[kept.id, kept]]), docs: new Map(), facts: projectFacts(), server: { page: '', update: false }, at: 0 }
     const sent = project(copy, [], 0, [{ id: kept.id, f: { kind: undefined } }]).byId.get(kept.id)!
     expect(canSend(sent)).toBe(false)
-    expect(becameOf(sent, project({ ...copy, facts: projectFacts({ organizer: { ...organizer, model: '' } }) }), (s) => s)).toEqual({ k: 'queued' })
+    expect(becameOf(sent, project({ ...copy, facts: projectFacts({ organizer: { ...organizer, model: '' } }) }), (s) => s)).toEqual({ k: 'organizing' })
     expect(organizing(sent, organizer)).toBe(true)
+  })
+
+  test('B684: an input the organizer has not finished reads Organizing whether it is on it, next or trying again', () => {
+    const copy = { cursor: '', items: new Map(), inputs: new Map([[kept.id, kept]]), docs: new Map(), facts: projectFacts(), server: { page: '', update: false }, at: 0 }
+    const sent = project(copy, [], 0, [{ id: kept.id, f: { kind: undefined } }]).byId.get(kept.id)!
+    for (const busy of [sent.id, 'r999', null])
+      expect(becameOf(sent, project({ ...copy, facts: projectFacts({ organizer: { model: '', ...organizer, busy } }) }), (s) => s)).toEqual({ k: 'organizing' })
   })
 })
 

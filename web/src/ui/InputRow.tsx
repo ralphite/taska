@@ -117,8 +117,6 @@ export function BecameLine({ b, id, on }: { b: Became; id: string; on: Pick<Inpu
           <span>{W[b.k]}</span>
         </div>
       )
-    case 'queued':
-      return <div className={`${SHELF} ${BUSY}`}>{W.queued}</div>
     case 'failed':
       return (
         <div className={`${SHELF} ${FAILED} flex-wrap`}>

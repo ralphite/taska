@@ -23,7 +23,6 @@ export type Became =
   | { k: 'transcribing' }
   | { k: 'organizing' }
   /** the organizer is on and will take it, after the ones before it */
-  | { k: 'queued' }
   /** `retry`: the organizer is on, so it can try again */
   | { k: 'failed'; why: string; retry: boolean }
   | { k: 'undone'; retry: boolean }
@@ -44,7 +43,6 @@ export type Became =
 export const BECAME_WORD = {
   transcribing: 'Transcribing…',
   organizing: 'Organizing…',
-  queued: 'Queued',
   failed: "Couldn't organize",
   undone: 'Undone',
   cancelled: 'Cancelled',
@@ -124,8 +122,9 @@ export function becameOf(r: Input, m: ProjectModel, title: (slug: string) => str
   if (r.moved) return movedOf(r.moved, title)
   if (canSend(r)) return { k: 'cancelled' }
   if (r.trWait) return { k: 'transcribing' }
-  if (organizer.busy === r.id) return { k: 'organizing' }
-  if (organizing(r, organizer)) return { k: 'queued' }
+  // one word for every input the organizer has not finished: whether it is on it now, next in line or asking Gemini
+  // again after a busy answer, it is being organized; no "Queued" to fall back to (B684: it jumped back and forth)
+  if (organizer.busy === r.id || organizing(r, organizer)) return { k: 'organizing' }
   const retry = !r.acked && organizer.on
   if (r.org?.undone) return { k: 'undone', retry }
   if (r.kind === 'answer' && r.scope) {
