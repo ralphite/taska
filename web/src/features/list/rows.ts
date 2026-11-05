@@ -138,8 +138,10 @@ export function listBody(m: ProjectModel | null, tab: Tab, list: ListQuery, st: 
   if (tab === 'rules') {
     if (!rows.length) return { kind: 'empty', why: 'no-rules', status: list.status }
     const wait = rows.filter((it) => it.status === 'proposed' || needsYou(it)).sort(needsOrder)
-    const on = rows.filter((it) => it.status === 'open' && !needsYou(it))
-    const off = rows.filter((it) => it.status === 'dropped' && !needsYou(it))
+    // in force is any rule not finished and not waiting on you; done and dropped ones are retired (r1075: a done rule
+    // showed nowhere yet the tab counted it)
+    const on = rows.filter((it) => !closed(it.status) && it.status !== 'proposed' && !needsYou(it))
+    const off = rows.filter((it) => closed(it.status) && !needsYou(it))
     const out: Row[] = needsBand(wait, st)
     const plain = (it: Item, band = ''): Row => ({ kind: 'item', it, depth: 0, foldable: false, folded: false, band })
     if (on.length) out.push({ kind: 'zone', zone: 'rules', label: 'Active', n: on.length }, ...on.map((it) => plain(it)))

@@ -3,6 +3,7 @@
 // both use it.
 
 import { agentLine } from '../model/agents'
+import { closed } from '../model/items'
 import type { ProjectModel } from '../model/project'
 import { NO_FILTERS, type ListQuery } from '../model/route'
 import { filtered, inputMatch, openCount, searchWords, tabNumber, visible } from '../model/visible'
@@ -21,7 +22,7 @@ export function tabCounts(m: ProjectModel, tab: Tab, list: ListQuery, desk: bool
     items: words.length ? num(found('items')) : num(isFiltered ? visible(m.items, 'items', list).filter((it) => !it.archived).length : openCount(m.items), true),
     inputs: num(words.length ? m.inputs.filter((r) => inputMatch(r, words)).length : m.inputs.filter((r) => !r.acked && r.kind !== 'cancelled').length),
     archive: num(words.length ? found('archive') : m.items.filter((it) => it.archived && !it.mergedInto).length),
-    rules: num(words.length ? found('rules') : m.items.filter((it) => it.type === 'rule' && !it.mergedInto && !it.archived && it.status !== 'dropped').length),
+    rules: num(words.length ? found('rules') : m.items.filter((it) => it.type === 'rule' && !it.mergedInto && !it.archived && !closed(it.status)).length),
   }
 }
 
