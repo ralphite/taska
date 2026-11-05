@@ -38,7 +38,8 @@ export function ItemPageContainer({ it, m, slug, tab, desk, left = null, bare = 
   const stores = useStores('data', 'docTicks', 'grips', 'itemView', 'keptEdits', 'outbox', 'recent', 'ui')
   const projects = useStoreValue(stores.data, (s) => s.projects)
   const ticks = useStoreValue(stores.docTicks, (s) => s)
-  const duo = useStoreValue(stores.ui, (s) => s.duo) && desk
+  // the search's preview is always one column, whatever the page's own layout (r1070)
+  const duo = useStoreValue(stores.ui, (s) => s.duo) && desk && !preview
   const view = useStoreValue(stores.itemView, (s) => s)
   const kept = useStoreValue(stores.keptEdits, (s) => s)
   const outbox = useStoreValue(stores.outbox, (s) => s.list)

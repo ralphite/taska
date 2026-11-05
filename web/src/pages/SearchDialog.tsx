@@ -304,7 +304,7 @@ export function SearchDialog({ v, preview, menuAt = null, on }: { v: SearchDialo
           <div className="flex min-w-0 flex-1 flex-col justify-center">{v.middle ? <SearchBody v={mid} on={noSearch} desk /> : null}</div>
         ) : (
           <>
-            <div className={`overflow-y-auto lg:scrollbar-thin ${hasPreview ? 'w-[max(22rem,40%)] shrink-0' : 'flex-1'}`}>
+            <div className={`overflow-y-auto lg:scrollbar-thin ${hasPreview ? 'w-[clamp(22rem,34%,28rem)] shrink-0' : 'flex-1'}`}>
               <div ref={list} className={`flex flex-col gap-0.5 p-1.5 transition-opacity ${v.faded ? 'opacity-45' : ''}`}>
                 {v.recent.length ? <p className={LABEL}>Recent</p> : null}
                 {[...v.recent, ...v.results].map((l, i) => (
