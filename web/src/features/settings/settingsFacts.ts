@@ -18,7 +18,7 @@ import type { NavFacts } from './SettingsNav'
 export function projectsOf(
   projects: readonly ProjectRow[] | null | undefined,
   side: readonly ListedProject[] | null,
-  st: { deleted: readonly DeletedProject[] | null; pNew: boolean; pNewText: string; pErr: string; renaming: string | null; pMenu: string | null },
+  st: { deleted: readonly DeletedProject[] | null; pErr: string; renaming: string | null; pMenu: string | null },
   asked: Readonly<Record<string, number>>,
   file: string,
 ): ProjectsFacts {
@@ -26,8 +26,6 @@ export function projectsOf(
     live: projects && side ? side.map((p) => ({ name: p.slug, title: p.title, tone: p.tone, open: typeof p.open === 'number' ? p.open : 0, here: p.current })) : null,
     gone: (st.deleted || []).map((d) => ({ name: d.name, title: d.title, when: dayShort(d.t), items: d.items })),
     file,
-    pNew: st.pNew,
-    pNewText: st.pNewText,
     pErr: st.pErr,
     renaming: st.renaming,
     purging: new Set(Object.keys(asked).filter((k) => k.startsWith('purge ')).map((k) => k.slice(6))),

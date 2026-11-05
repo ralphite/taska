@@ -1,7 +1,6 @@
 // The sidebar with the page's data: every project in your order, this one with what this page knows now.
 
 import { Grip } from '../../ui/Grip'
-import { NewProjectField } from './NewProjectField'
 import { useLayout, useServices, useStores, useStoreValue } from '../../app/context'
 import { useSideProjects } from '../../app/projectLists'
 import { usePaneRef } from '../../app/panes'
@@ -14,6 +13,9 @@ const DEV_LINKS = [
   { label: 'Dashboard', href: '/dev/dashboard', icon: 'chart' as const },
 ]
 
+/** New project, opened once made (D115 #7) */
+const NEW_PROJECT = { kind: 'new-project' } as const
+
 export function SidebarContainer({ slug, place, hidden, rail }: { slug: string; place: string; hidden?: boolean; rail?: boolean }) {
   const app = useServices('actions', 'finder', 'itemDrag', 'nav', 'projects', 'sheets', 'voice')
   const stores = useStores('drag', 'feedback', 'grips', 'route', 'ui')
@@ -24,9 +26,6 @@ export function SidebarContainer({ slug, place, hidden, rail }: { slug: string; 
   const dropOn = useStoreValue(stores.drag, (s) => s.project)
   const list = dropOn && listed ? listed.map((p) => (p.slug === dropOn ? { ...p, drop: true } : p)) : listed
   const route = useStoreValue(stores.route, (s) => s.route)
-  // the sidebar's New project, being named (and why it was not made)
-  const making = useStoreValue(stores.ui, (s) => s.naming)
-  const setMaking = (n: { error: string } | null) => stores.ui.getState().setNaming(n)
   const undo = useStoreValue(stores.feedback, (s) => s.undo.at(-1) ?? null)
   const sideHidden = useStoreValue(stores.ui, (s) => s.sideHidden)
   const composing = route.page === 'project' && (route.place.kind === 'new' || (route.place.kind === 'tab' && route.tab !== 'inputs'))
@@ -43,11 +42,7 @@ export function SidebarContainer({ slug, place, hidden, rail }: { slug: string; 
       app.nav.newInput()
       void app.voice.start(slug, NEW_DRAFT, null, 'main')
     },
-    newProject: () => {
-      // from the folded sidebar's rail: the sidebar comes over the page
-      if (rail && layout === 'desk') stores.ui.getState().setSideOver(true)
-      setMaking({ error: '' })
-    },
+    newProject: (from) => (layout === 'desk' ? app.sheets.openFrom(from, NEW_PROJECT, { focus: false }) : app.sheets.open(NEW_PROJECT, { focus: false })),
     hide: () => stores.ui.getState().setSideHidden(!sideHidden),
     settings: () => app.nav.to(base + 'settings'),
     help: () => app.nav.to(base + 'help'),
@@ -79,20 +74,6 @@ export function SidebarContainer({ slug, place, hidden, rail }: { slug: string; 
       devLinks={dev ? DEV_LINKS : []}
       place={place}
       hidden={hidden}
-      newProjectField={
-        making ? (
-          <NewProjectField
-            error={making.error}
-            on={{
-              create: (title) => {
-                if (!title.trim()) return
-                void app.projects.create(title.trim()).then((r) => ('name' in r ? app.nav.to(`/p/${r.name}/`) : setMaking({ error: r.error })))
-              },
-              cancel: () => setMaking(null),
-            }}
-          />
-        ) : undefined
-      }
       edge={
         layout === 'desk' ? (
           <Grip

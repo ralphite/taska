@@ -273,3 +273,15 @@ test('r1057 r1066 F667: on the desktop a project in the sidebar shows its card a
   await expect(card).toBeHidden()
   await expect(page).toHaveURL(new RegExp(p.url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
 })
+
+test('D115 #7: New project opens a popover (the phone: a sheet) titled New project with its tile; Create makes it and opens it', async ({ page }) => {
+  await page.goto('/')
+  await page.getByRole('button', { name: /^New project$/ }).filter({ visible: true }).first().click()
+  const sheet = page.locator('[role="dialog"]').filter({ visible: true }).last()
+  await expect(sheet.getByRole('heading', { name: 'New project' })).toBeVisible()
+  const name = `Garden ${Date.now() % 100000}`
+  await sheet.getByRole('textbox', { name: 'New project name' }).fill(name)
+  await sheet.getByRole('button', { name: 'Create', exact: true }).click()
+  await expect(page).toHaveURL(/\/p\/garden-\d+\//)
+  await expect(sheet).toBeHidden()
+})

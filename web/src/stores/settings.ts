@@ -17,8 +17,6 @@ export interface SettingsState {
   prefs: VoicePrefs | null
   deleted: DeletedProject[] | null
   /** a new project's row is open (its name so far, and why it was not made) */
-  pNew: boolean
-  pNewText: string
   pErr: string
   /** the project being renamed */
   renaming: string | null
@@ -37,8 +35,6 @@ export function createSettingsStore(): SettingsStore {
     fixes: null,
     prefs: null,
     deleted: null,
-    pNew: false,
-    pNewText: '',
     pErr: '',
     renaming: null,
     pMenu: null,

@@ -270,7 +270,6 @@ function stepBack(w: BackWorld, h: Here): void {
   if (w.boxStore.getState().mode && !inBox) return w.box.stop()
   if (w.sheet.getState().spec?.req.kind === 'doc-edit') return w.docEditor.keep() // its text kept as a draft
   if (w.sheet.getState().spec) return w.sheets.close()
-  if (w.ui.getState().sideOver) return w.ui.getState().setSideOver(false)
   const view = w.itemView.getState()
   if (view.subFor != null && typingIn(active)) return w.itemEdits.subLeave()
   if (view.editing != null) return w.itemEdits.leave()

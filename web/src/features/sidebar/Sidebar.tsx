@@ -35,7 +35,8 @@ export interface SideLinkInfo {
 export interface SidebarEvents {
   newInput(): void
   newVoice(): void
-  newProject(): void
+  /** New project, from its button: a popover there on the desktop, a sheet on the phone (D115 #7) */
+  newProject(from: HTMLElement): void
   hide(): void
   settings(): void
   /** how agents get work, without spending tokens (F613) */
@@ -83,7 +84,6 @@ export interface SidebarProps {
   hidden?: boolean
   /** its right edge, to drag wider or narrower (the desktop) */
   edge?: ReactNode
-  newProjectField?: ReactNode
   on: SidebarEvents
 }
 
@@ -175,7 +175,7 @@ function SideLink({ link, phone, on }: { link: SideLinkInfo; phone: boolean; on:
 }
 
 export function Sidebar(props: SidebarProps) {
-  const { phone, keys, projects, composing, links, undoLabel, devLinks, place, hidden, newProjectField, edge, footRef, on } = props
+  const { phone, keys, projects, composing, links, undoLabel, devLinks, place, hidden, edge, footRef, on } = props
   const rows = useRef<HTMLDivElement>(null)
   const hover = useProjectCard(phone || !!hidden)
   useOrderDrag(rows, (names, moved) => on.order(names, moved))
@@ -258,15 +258,13 @@ export function Sidebar(props: SidebarProps) {
           <ProjectRows phone={phone} projects={projects} hover={hover} on={on} />
         </div>
         <HoverCard hover={hover} projects={projects} on={on} />
-        {newProjectField ?? (
-          <button
-            onClick={on.newProject}
-            className="mt-1 flex h-12 w-full items-center gap-3 rounded-2xl px-3 text-[15px] font-medium text-blue-600 hover:bg-zinc-200/60 lg:h-9 lg:rounded-xl lg:text-sm dark:text-blue-400 dark:hover:bg-zinc-800"
-          >
-            <Icon n="plus" c="size-5" />
-            New project
-          </button>
-        )}
+        <button
+          onClick={(e) => on.newProject(e.currentTarget)}
+          className="mt-1 flex h-12 w-full items-center gap-3 rounded-2xl px-3 text-[15px] font-medium text-blue-600 hover:bg-zinc-200/60 lg:h-9 lg:rounded-xl lg:text-sm dark:text-blue-400 dark:hover:bg-zinc-800"
+        >
+          <Icon n="plus" c="size-5" />
+          New project
+        </button>
       </div>
       {phone ? (
         <div ref={footRef} className="mx-2 mt-2 shrink-0 divide-y divide-zinc-100 overflow-hidden rounded-2xl bg-white dark:divide-zinc-700/60 dark:bg-zinc-800">
@@ -347,7 +345,7 @@ export function Sidebar(props: SidebarProps) {
 /** The sidebar folded: a narrow rail of the same. */
 export function Rail({ keys, projects, links, composing, settingsOpen, hidden, on }: { keys: SideKeys; projects: SideProject[] | null; links: SideLinkInfo[]; composing: boolean; settingsOpen: boolean; hidden?: boolean; on: SidebarEvents }) {
   const hover = useProjectCard(!!hidden)
-  const btn = (key: string, inner: ReactNode, title: string, onClick: () => void, attrs: Record<string, unknown> = {}) => (
+  const btn = (key: string, inner: ReactNode, title: string, onClick: (e: MouseEvent<HTMLButtonElement>) => void, attrs: Record<string, unknown> = {}) => (
     <button
       key={key}
       onClick={onClick}
@@ -393,7 +391,7 @@ export function Rail({ keys, projects, links, composing, settingsOpen, hidden, o
         ))}
       </div>
       <HoverCard hover={hover} projects={projects} on={on} />
-      {btn('np', <Icon n="plus" c="size-5" />, 'New project', on.newProject)}
+      {btn('np', <Icon n="plus" c="size-5" />, 'New project', (e) => on.newProject(e.currentTarget))}
       <div className="flex-1" />
       {/* this project's Documents, Activity and Deleted, as the sidebar's foot has them */}
       {links.map((l) => (

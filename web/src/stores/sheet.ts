@@ -40,6 +40,8 @@ export type SheetRequest =
   | { kind: 'sign-in' }
   /** a project's menu (the sidebar's) */
   | { kind: 'project-menu'; slug: string }
+  /** a new project named, opened once made (D115 #7) */
+  | { kind: 'new-project' }
   /** what was not saved */
   | { kind: 'not-saved' }
   | { kind: 'comment-move'; d: number; id: number }

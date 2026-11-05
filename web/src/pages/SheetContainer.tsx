@@ -14,7 +14,7 @@ import { AgentsSheet } from '../features/agents/AgentsContainer'
 import { FiltersSheet } from '../features/list/FiltersContainer'
 import { ViewMenuSheet } from '../features/list/ViewMenuContainer'
 import { SignInSheet } from '../features/project/SignInContainer'
-import { NotSavedSheet, ProjectMenuSheet } from '../features/project/ProjectSheetsContainer'
+import { NewProjectSheet, NotSavedSheet, ProjectMenuSheet } from '../features/project/ProjectSheetsContainer'
 import { CommentMenuSheet, CommentMoveSheet, DocEditSheet, DocMenuSheet, DocMoveSheet } from '../features/docs/DocSheetsContainer'
 
 const KINDS: { [K in SheetKind]: ComponentType<{ req: Extract<SheetRequest, { kind: K }> }> } = {
@@ -42,6 +42,7 @@ const KINDS: { [K in SheetKind]: ComponentType<{ req: Extract<SheetRequest, { ki
   'view-menu': ViewMenuSheet,
   'sign-in': SignInSheet,
   'project-menu': ProjectMenuSheet,
+  'new-project': NewProjectSheet,
   'not-saved': NotSavedSheet,
 }
 

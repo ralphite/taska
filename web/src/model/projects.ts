@@ -33,3 +33,15 @@ export function projectCard(p: Pick<ProjectRow, 'needs' | 'closed' | 'inputs' | 
     changed: p.t && at ? agoLong(p.t, at) : '',
   }
 }
+
+/** The address a new project will get from its name, as the server makes it (domain/text.py slug_of, then -2, -3 while
+ * taken); '' when the name has no a-z or 0-9 (the server then picks one by chance). */
+export function newSlug(title: string, taken: readonly string[]): string {
+  // eslint-disable-next-line no-control-regex
+  const ascii = title.normalize('NFKD').replace(/[^\x00-\x7f]/g, '').toLowerCase()
+  const base = ascii.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40).replace(/-+$/, '')
+  if (!base) return ''
+  let slug = base
+  for (let k = 2; taken.includes(slug); k++) slug = `${base.slice(0, 36).replace(/-+$/, '')}-${k}`
+  return slug
+}

@@ -1,17 +1,25 @@
-// Naming a new project, the same wherever it is asked (the sidebar, the home page, Settings on the desktop and the
-// phone): its name (any name), Create, and × to stop; Enter makes it, Esc stops; why it was not made under it. Props
-// only.
+// Naming a new project, the same wherever it is asked (the sidebar, the home page, Settings), in a small popover on the
+// desktop and a sheet on the phone titled New project (D115 #7): its tile as it will be, its name (any name), Create;
+// Enter makes it, Esc stops; why it was not made under it. Props only.
 
 import { useState } from 'react'
-import { Icon } from './Icon'
-import { DISABLED, FIELD } from './tones'
+import { ProjTile } from './bits'
+import { DISABLED, FIELD, PRIMARY } from './tones'
 
-export function NewProjectForm({ value = '', error, onCreate, onCancel }: { value?: string; error: string; onCreate(title: string): void; onCancel(): void }) {
+export function NewProjectForm({ value = '', error, tone, onCreate, onCancel }: {
+  value?: string
+  error: string
+  /** the colour its tile will have, for the name typed */
+  tone(name: string): string
+  onCreate(title: string): void
+  onCancel(): void
+}) {
   const [name, setName] = useState(value)
   const create = () => name.trim() && onCreate(name.trim())
   return (
-    <div className="min-w-0 flex-1">
-      <div className="flex items-center gap-1.5">
+    <div className="min-w-0">
+      <div className="flex items-center gap-3">
+        <ProjTile title={name.trim() || '?'} tone={name.trim() ? tone(name.trim()) : 'bg-zinc-300 dark:bg-zinc-600'} cls="size-11 rounded-xl text-lg lg:size-10" />
         <input
           autoFocus
           value={name}
@@ -34,22 +42,17 @@ export function NewProjectForm({ value = '', error, onCreate, onCancel }: { valu
           autoComplete="off"
           spellCheck={false}
         />
-        <button
-          onClick={create}
-          disabled={!name.trim()}
-          className={`h-11 shrink-0 rounded-xl bg-zinc-900 px-3.5 text-[15px] font-semibold text-white hover:bg-zinc-700 lg:h-10 lg:text-sm dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white ${DISABLED}`}
-        >
-          Create
-        </button>
-        <button onClick={onCancel} aria-label="Cancel" className="grid size-11 shrink-0 place-items-center rounded-xl text-zinc-500 hover:bg-zinc-200/60 hover:text-zinc-800 lg:size-10 dark:hover:bg-zinc-800 dark:hover:text-zinc-200">
-          <Icon n="x" c="size-4" />
-        </button>
       </div>
       {error ? (
-        <p role="alert" className="px-1 pt-1.5 text-xs text-red-600 dark:text-red-400">
+        <p role="alert" className="pt-2 text-xs text-red-600 dark:text-red-400">
           {error}
         </p>
       ) : null}
+      <div className="flex justify-end pt-4">
+        <button onClick={create} disabled={!name.trim()} className={`${PRIMARY} phone:h-11 phone:w-full phone:justify-center ${DISABLED}`}>
+          Create
+        </button>
+      </div>
     </div>
   )
 }

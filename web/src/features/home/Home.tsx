@@ -1,14 +1,13 @@
 // The home page: one table of the projects and what needs you in each; a search across every project (the phone: a
-// field; the desktop: the search dialog, F479); a new project made in place; a deleted project's old link says so
+// field; the desktop: the search dialog, F479); New project in a popover (the phone: a sheet), and with no projects yet one line and its button; a deleted project's old link says so
 // (Restore), and so does a project that never was. Props only.
 
 import type { MouseEvent, Ref } from 'react'
 import type { SearchHit } from '../../model/types'
 import { hitWhere, inputCode, noMatches } from '../../model/words'
 import { Icon } from '../../ui/Icon'
-import { NewProjectForm } from '../../ui/NewProjectForm'
 import { Hit, NeedsCount, ProjTile, Skeleton } from '../../ui/bits'
-import { MUTED } from '../../ui/tones'
+import { MUTED, PRIMARY } from '../../ui/tones'
 
 export interface HomeRow {
   name: string
@@ -35,8 +34,6 @@ export interface HomeFacts {
   q: string
   /** the last answer to the search (shown while words are typed) */
   hits: SearchHit[] | null
-  /** the new project's row is open; why it was not made */
-  making: { error: string } | null
 }
 
 export interface HomeEvents {
@@ -47,9 +44,8 @@ export interface HomeEvents {
   restore(): void
   closeGone(): void
   closeNone(): void
-  startNew(): void
-  cancelNew(): void
-  create(title: string): void
+  /** New project, from its button: a popover there on the desktop, a sheet on the phone (D115 #7) */
+  startNew(from: HTMLElement): void
   /** a place in Taska, opened in the page */
   open(url: string): void
 }
@@ -68,22 +64,6 @@ function AgentCell({ agent }: { agent: HomeRow['agent'] }) {
       <span className={`size-1.5 shrink-0 rounded-full ${agent?.on ? 'bg-emerald-500' : 'bg-zinc-300 dark:bg-zinc-600'}`} />
       <span className="truncate">{!agent ? 'No agent' : agent.on ? agent.name : agent.name + ' · idle'}</span>
     </span>
-  )
-}
-
-function NewProject({ making, on }: { making: { error: string } | null; on: HomeEvents }) {
-  if (!making)
-    return (
-      <button onClick={on.startNew} className="mt-1 flex h-12 w-full items-center gap-3 rounded-2xl px-3 text-[15px] font-medium text-blue-600 dark:text-blue-400">
-        <Icon n="plus" c="size-5" />
-        New project
-      </button>
-    )
-  // any name: spaces, Chinese, emoji
-  return (
-    <div className="mt-1 px-1">
-      <NewProjectForm error={making.error} onCreate={on.create} onCancel={on.cancelNew} />
-    </div>
   )
 }
 
@@ -179,6 +159,16 @@ export function Home({ facts, on, searchRef }: { facts: HomeFacts; on: HomeEvent
           )}
         </div>
       ) : null}
+      {rows && !rows.length ? (
+        // no projects yet: one line and one button, no table (D115 #7)
+        <div className="flex flex-col items-center gap-4 rounded-xl bg-white px-4 py-12 text-center ring-1 ring-zinc-900/10 dark:bg-zinc-800 dark:ring-white/10">
+          <p className="text-[15px] text-zinc-600 dark:text-zinc-300">No projects yet</p>
+          <button onClick={(e) => on.startNew(e.currentTarget)} className={PRIMARY}>
+            <Icon n="plus" c="size-4" sw="2" />
+            New project
+          </button>
+        </div>
+      ) : (
       <div className="overflow-hidden rounded-xl bg-white ring-1 ring-zinc-900/10 dark:bg-zinc-800 dark:ring-white/10">
         <div className={`hidden ${GRID} gap-3 border-b border-zinc-200 bg-zinc-50 px-4 py-2 text-xs font-semibold text-zinc-500 lg:grid dark:border-zinc-700 dark:bg-zinc-800/60 dark:text-zinc-400`}>
           <span>Project</span>
@@ -190,8 +180,6 @@ export function Home({ facts, on, searchRef }: { facts: HomeFacts; on: HomeEvent
         <ul>
           {!rows ? (
             <li className={away ? 'px-4 py-3 text-sm text-zinc-500' : ''}>{away ? 'Taska is out of reach, retrying…' : <Skeleton shape="tile" cls="px-1 py-1.5" />}</li>
-          ) : !rows.length ? (
-            <li className="px-4 py-3 text-sm text-zinc-500">No projects yet</li>
           ) : (
             rows.map((p) => {
               const next = p.next ? (
@@ -234,7 +222,13 @@ export function Home({ facts, on, searchRef }: { facts: HomeFacts; on: HomeEvent
           )}
         </ul>
       </div>
-      <NewProject making={facts.making} on={on} />
+      )}
+      {rows?.length ? (
+        <button onClick={(e) => on.startNew(e.currentTarget)} className="mt-1 flex h-12 w-full items-center gap-3 rounded-2xl px-3 text-[15px] font-medium text-blue-600 lg:w-auto dark:text-blue-400">
+          <Icon n="plus" c="size-5" />
+          New project
+        </button>
+      ) : null}
     </main>
   )
 }

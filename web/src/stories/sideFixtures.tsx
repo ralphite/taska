@@ -4,9 +4,8 @@
 // double-click puts it back), and New project names one, as the page's SidebarContainer does with the page's own
 // state (T662); what needs the rest of the page (a project, Settings, Search...) shows in the Actions panel. Used by
 // the sidebar's stories.
-import { useRef, useState, type CSSProperties } from 'react'
+import { useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { sideProjects } from '../app/sideProjects'
-import { NewProjectField } from '../features/sidebar/NewProjectField'
 import { Rail, Sidebar, type SidebarEvents } from '../features/sidebar/Sidebar'
 import { SIDE_KEYS, sideLinks } from '../features/sidebar/sideLinks'
 import type { ProjectRow } from '../model/types'
@@ -15,8 +14,9 @@ import { Grip } from '../ui/Grip'
 import { T, modelOf } from './fixtures'
 import { PROJECT } from './listFixtures'
 import { act, acts } from './acts'
+import { withNewProject } from './newProjectFixtures'
 
-const sideActs = acts('Sidebar', ['newInput', 'newVoice', 'newProject', 'hide', 'settings', 'help', 'keys', 'undo', 'order', 'dropProject', 'projectMenu', 'search', 'create'] as const, { keys: 'Keyboard shortcuts', search: 'Search on the desktop' })
+const sideActs = acts('Sidebar', ['newInput', 'newVoice', 'newProject', 'hide', 'settings', 'help', 'keys', 'undo', 'order', 'dropProject', 'projectMenu', 'search'] as const, { keys: 'Keyboard shortcuts', search: 'Search on the desktop' })
 const goAct = act('Sidebar: go')
 export const sideOn: SidebarEvents = { ...sideActs, go: (href, e) => (e.preventDefault(), goAct(href)), dragProject: () => false }
 /** when the projects were listed */
@@ -38,7 +38,7 @@ const projects = (drop?: string) => {
   const list = sideProjects(ROWS, modelOf(PROJECT, [], { title: 'Shop' }), 'shop', AT).list
   return list && drop ? list.map((p) => (p.slug === drop ? { ...p, drop: true } : p)) : list
 }
-type SideFacts = { side?: 'docs' | 'log' | 'deleted'; undo?: string; composing?: boolean; drop?: string; naming?: string; loading?: boolean; settings?: boolean; noLinks?: boolean }
+type SideFacts = { side?: 'docs' | 'log' | 'deleted'; undo?: string; composing?: boolean; drop?: string; naming?: string; namingValue?: string; width?: number; loading?: boolean; settings?: boolean; noLinks?: boolean }
 // naming: New project being named (and why it was not made: '' none yet); noLinks: no project open, so no Documents, Activity, Deleted
 
 /** The sidebar with the state the page keeps for it (stores.ui's sideHidden and naming, stores.grips' side width),
@@ -46,32 +46,22 @@ type SideFacts = { side?: 'docs' | 'log' | 'deleted'; undo?: string; composing?:
  * `folded` starts it as the rail. */
 function LiveSidebar({ phone, f, folded = false }: { phone: boolean; f: SideFacts; folded?: boolean }) {
   const [hidden, setHidden] = useState(folded && !phone)
-  const [width, setWidth] = useState(0)
+  const [width, setWidth] = useState(f.width ?? 0)
   const frame = useRef<HTMLElement | null>(null)
   const [naming, setNaming] = useState<{ error: string } | null>(f.naming == null ? null : { error: f.naming })
   const on: SidebarEvents = {
     ...sideOn,
     hide: () => setHidden(!hidden),
-    newProject: () => {
-      setHidden(false)
+    newProject: (from) => {
+      sideActs.newProject(from)
       setNaming({ error: '' })
     },
   }
-  const field = naming ? (
-      <NewProjectField
-        error={naming.error}
-        on={{
-          create: (title) => {
-            sideActs.create(title)
-            setNaming(null)
-          },
-          cancel: () => setNaming(null),
-        }}
-      />
-    ) : undefined
+  // New project: a popover at its button (the desktop), a sheet (the phone), over the sidebar (D115 #7)
+  const naming_ = (under: ReactNode) => (naming ? withNewProject(under, !phone, { at: { x: 8, y: hidden ? 200 : 300 }, value: f.namingValue, error: naming.error, onDone: () => setNaming(null) }) : under)
   const list = f.loading ? null : projects(f.drop)
   const links = f.noLinks ? [] : sideLinks('shop', f.side ?? null)
-  if (hidden) return <Rail keys={SIDE_KEYS} projects={list} links={links} composing={f.composing ?? true} settingsOpen={!!f.settings} on={on} />
+  if (hidden) return naming_(<Rail keys={SIDE_KEYS} projects={list} links={links} composing={f.composing ?? true} settingsOpen={!!f.settings} on={on} />)
   const edge = phone ? null : (
     <Grip
       name="side"
@@ -93,16 +83,16 @@ function LiveSidebar({ phone, f, folded = false }: { phone: boolean; f: SideFact
   )
   // dragged: the page's own width for it (SidebarContainer's place), the rest of the window the page's
   const sized = width ? 'relative w-[var(--side-w,15rem)] shrink-0 border-r border-zinc-200 dark:border-zinc-800' : 'relative w-full'
-  return (
+  return naming_(
     <div className="flex h-full" style={gripVars({ side: width, list: 0, top: 0, duo: 0 }) as CSSProperties}>
-      <Sidebar phone={phone} keys={SIDE_KEYS} projects={list} composing={!!f.composing} links={links} undoLabel={f.undo ?? null} devLinks={phone ? [] : DEV} newProjectField={field} edge={edge} place={phone ? 'h-full w-full bg-zinc-100' : `h-full bg-zinc-50 ${sized}`} on={on} />
+      <Sidebar phone={phone} keys={SIDE_KEYS} projects={list} composing={!!f.composing} links={links} undoLabel={f.undo ?? null} devLinks={phone ? [] : DEV} edge={edge} place={phone ? 'h-full w-full bg-zinc-100' : `h-full bg-zinc-50 ${sized}`} on={on} />
     </div>
   )
 }
 
 export const side = (phone: boolean, f: SideFacts = {}) => <LiveSidebar phone={phone} f={f} />
 /** the sidebar folded to icons; `settings`: Settings open (its icon lit), `composing`: New input lit, `loading`: projects never listed yet. Show sidebar unfolds it. */
-export const rail = (f: Omit<SideFacts, 'undo' | 'drop' | 'naming'> = {}) => <LiveSidebar phone={false} folded f={f} />
+export const rail = (f: Omit<SideFacts, 'undo' | 'drop'> = {}) => <LiveSidebar phone={false} folded f={f} />
 /** A mouse comes onto a project (its row in the sidebar, or its icon on the rail, by its name), as the page hears it. */
 export const pointTo = (title: string) => (root: HTMLElement) => {
   const a = [...root.querySelectorAll<HTMLElement>('nav a')].find((x) => x.getAttribute('aria-label') === title || x.dataset.slug === title)

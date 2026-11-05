@@ -6,8 +6,9 @@ import { useState } from 'react'
 import { Home, type HomeEvents, type HomeFacts } from '../features/home/Home'
 import { acts } from './acts'
 import { homeRows } from '../features/home/homeRows'
+import { withNewProject } from './newProjectFixtures'
 
-export const on: HomeEvents = { ...acts('Home', ['search', 'restore', 'create', 'open'] as const, { search: 'Search on the desktop' }), query() {}, closeGone() {}, closeNone() {}, startNew() {}, cancelNew() {} }
+export const on: HomeEvents = { ...acts('Home', ['search', 'restore', 'open'] as const, { search: 'Search on the desktop' }), query() {}, closeGone() {}, closeNone() {}, startNew() {} }
 export const now = Date.parse(T)
 export const PROJECTS: ProjectRow[] = [
   { name: 'taska', title: 'taska', open: 32, needs: 2, pos: 0, agents: [{ name: 'claude-code', t: now - 60_000, waiting: true }] },
@@ -21,7 +22,7 @@ export const NEEDS: Need[] = [
   { project: 'home', ptitle: 'Home', n: 12, code: 'B012', title: 'The garden tap drips when it is turned off all the way', kind: 'review', pri: 'P2', t: '' },
 ]
 export const rows = homeRows(PROJECTS, NEEDS, now)
-export const facts: HomeFacts = { rows, needs: 13, away: false, gone: null, none: null, q: '', hits: null, making: null }
+export const facts: HomeFacts = { rows, needs: 13, away: false, gone: null, none: null, q: '', hits: null }
 export const hits: SearchHit[] = [
   { project: 'taska', ptitle: 'taska', kind: 'item', code: 'F581', title: 'Rewrite Taska from scratch', status: 'doing', t: '' },
   { project: 'home', ptitle: 'Home', kind: 'item', code: 'B3', title: 'Fix the rewrite of the shelf', status: 'done', t: '' },
@@ -33,17 +34,19 @@ export const hits: SearchHit[] = [
 /** The home page with what the page's HomeContainer holds: the phone's search typed, New project named and
  * cancelled, a deleted or missing project's note closed (T662). Searching every project, Create, Restore and opening a
  * project need Taska or the rest of the page: the Actions panel. */
-function LiveHome({ f }: { f: HomeFacts }) {
+function LiveHome({ f, desk, making: start }: { f: HomeFacts; desk: boolean; making?: { value?: string; error: string } }) {
   const [q, setQ] = useState(f.q)
-  const [making, setMaking] = useState(f.making)
+  const [making, setMaking] = useState(start ?? null)
   const [gone, setGone] = useState(f.gone)
   const [none, setNone] = useState(f.none)
-  const live: HomeEvents = { ...on, query: setQ, startNew: () => setMaking({ error: '' }), cancelNew: () => setMaking(null), closeGone: () => setGone(null), closeNone: () => setNone(null) }
-  return <Home facts={{ ...f, q, making, gone, none }} on={live} />
+  const live: HomeEvents = { ...on, query: setQ, startNew: () => setMaking({ error: '' }), closeGone: () => setGone(null), closeNone: () => setNone(null) }
+  const home = <Home facts={{ ...f, q, gone, none }} on={live} />
+  // New project: a popover under its button on the desktop, a sheet on the phone (D115 #7)
+  return making ? withNewProject(home, desk, { at: { x: 40, y: f.rows?.length ? 300 : 230 }, value: making.value, error: making.error, onDone: () => setMaking(null) }) : home
 }
 
-export const shown = (f: Partial<HomeFacts>, height = 620) => (
+export const shown = (f: Partial<HomeFacts>, height = 620, making?: { value?: string; error: string }) => (
   <Frames phoneWidth={393} deskWidth={1100} height={height} page>
-    {() => <LiveHome f={{ ...facts, ...f }} />}
+    {(layout) => <LiveHome f={{ ...facts, ...f }} desk={layout === 'desk'} making={making} />}
   </Frames>
 )

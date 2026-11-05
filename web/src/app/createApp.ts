@@ -87,7 +87,6 @@ import { ProjectModels } from './project/projectModels'
 import { ProjectSession } from './project/projectSession'
 import { Delivered } from './inputs/delivered'
 import { DraftSender } from './inputs/draftSender'
-import { SideOver } from './page/sideOver'
 import { Arrival } from './page/arrival'
 
 export interface AppEnv {
@@ -357,7 +356,6 @@ export function createApp(env: AppEnv): App {
   const draftPlaces: DraftPlaces = new DraftPlaces({ route, nav, box, docs, comments: docComments, fields, toasts, slug, model })
   // a merged item gives way to the one it went into; what you wrote for it goes along
   const merges = new Merges({ route, data, drafts, box: boxStore, toasts, model, showItem: (code, tab) => nav.openItemHere(code, tab), goDraft })
-  const sideOver = new SideOver(route, ui)
   // leaving while a voice note or dictation records asks first
   const leaveGuard = new LeaveGuard(() => recordingNow() || !!dictationStore.getState().rec)
   const arrival = new Arrival({ route, fields, data, model, desk: env.desk, session: env.session ?? memoryStore() })
@@ -451,7 +449,7 @@ export function createApp(env: AppEnv): App {
     access,
     refreshProjects,
     stop: () => {
-      for (const s of [projects, projectSession, pictureSizes, sheets, docs, docEditor, merges, sideOver, arrival, notices, pageErrors, leaveGuard]) s.stop()
+      for (const s of [projects, projectSession, pictureSizes, sheets, docs, docEditor, merges, arrival, notices, pageErrors, leaveGuard]) s.stop()
       unlisten()
     },
     actions,

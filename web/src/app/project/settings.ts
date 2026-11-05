@@ -82,23 +82,8 @@ export class Settings {
 
   // ---- projects
 
-  newProject(on: boolean): void {
-    this.s.set({ pNew: on, pNewText: on ? this.s.pNewText : '', pErr: '', renaming: null, pMenu: null })
-  }
-
-  async create(title: string): Promise<void> {
-    const t = title.trim()
-    if (!t) return
-    const r = await this.d.projects.create(t)
-    if ('name' in r) {
-      this.s.set({ pNew: false, pNewText: '', pErr: '' })
-      return this.d.route.getState().go(`/p/${encodeURIComponent(r.name)}/`, true)
-    }
-    this.s.set({ pErr: r.error, pNewText: t })
-  }
-
   rename(slug: string | null): void {
-    this.s.set({ renaming: slug, pNew: false, pMenu: null })
+    this.s.set({ renaming: slug, pMenu: null })
   }
 
   async saveRename(slug: string, title: string, was: string): Promise<void> {

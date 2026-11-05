@@ -2,7 +2,7 @@
 // every project, a new project, and the note a deleted or unknown project's link brought.
 
 import { useEffect, useMemo, useState } from 'react'
-import { useServices, useStores, useStoreValue } from '../../app/context'
+import { useLayout, useServices, useStores, useStoreValue } from '../../app/context'
 import type { Route } from '../../model/route'
 import { Home, type HomeEvents } from './Home'
 import { homeRows } from './homeRows'
@@ -10,7 +10,8 @@ import { homeRows } from './homeRows'
 type HomeRoute = Extract<Route, { page: 'home' }>
 
 export function HomeContainer({ route }: { route: HomeRoute }) {
-  const app = useServices('crossSearch', 'fields', 'finder', 'projects')
+  const app = useServices('crossSearch', 'fields', 'finder', 'projects', 'sheets')
+  const desk = useLayout() === 'desk'
   const stores = useStores('data', 'route', 'search')
   const projects = useStoreValue(stores.data, (s) => s.projects)
   const needs = useStoreValue(stores.data, (s) => s.needs)
@@ -24,7 +25,6 @@ export function HomeContainer({ route }: { route: HomeRoute }) {
     return name ? { name, said: '' } : null
   })
   const [none, setNone] = useState(() => route.query.get('none'))
-  const [making, setMaking] = useState<{ error: string } | null>(null)
 
   useEffect(() => {
     void app.projects.refresh()
@@ -50,15 +50,9 @@ export function HomeContainer({ route }: { route: HomeRoute }) {
     },
     closeGone: () => setGone(null),
     closeNone: () => setNone(null),
-    startNew: () => setMaking({ error: '' }),
-    cancelNew: () => setMaking(null),
-    create: async (title) => {
-      const r = await app.projects.create(title)
-      if ('name' in r) open(`/p/${r.name}/`)
-      else setMaking({ error: r.error })
-    },
+    startNew: (from) => (desk ? app.sheets.openFrom(from, { kind: 'new-project' }, { focus: false }) : app.sheets.open({ kind: 'new-project' }, { focus: false })),
     open,
   }
 
-  return <Home facts={{ rows, needs: needs.length, away, gone, none, q, hits, making }} on={on} searchRef={app.fields.ref('home')} />
+  return <Home facts={{ rows, needs: needs.length, away, gone, none, q, hits }} on={on} searchRef={app.fields.ref('home')} />
 }

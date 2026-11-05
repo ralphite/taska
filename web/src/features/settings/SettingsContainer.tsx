@@ -59,8 +59,7 @@ export function SettingsContainer({ route, place, prefsBox }: { route: ProjectRo
 
   const projectsFacts = projectsOf(projects, side, st, asked, m?.facts.file || '')
   const projectsOn: ProjectsEvents = {
-    newProject: (on) => s.newProject(on),
-    create: (t) => void s.create(t),
+    newProject: (from) => (desk ? app.sheets.openFrom(from, { kind: 'new-project' }, { focus: false }) : app.sheets.open({ kind: 'new-project' }, { focus: false })),
     rename: (slug) => s.rename(slug),
     saveRename: (slug, t, was) => void s.saveRename(slug, t, was),
     remove: (slug) => void s.remove(slug, route.slug),

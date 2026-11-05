@@ -11,7 +11,7 @@ export const Projects: Story = { ...one('projects', { projects: { purging: ['old
 export const ProjectsRenaming: Story = { ...one('projects', { projects: { renaming: 'home', pErr: 'A project with that address exists' } }), name: 'Renaming a project' }
 // ---- more states (T639)
 export const NewProjectNaming: Story = { ...one('projects', { projects: { pNew: true, pNewText: 'Garden' } }), name: 'New project: naming it' }
-export const NewProjectNotMade: Story = { ...one('projects', { projects: { pNew: true, pNewText: 'Shop', pErr: 'A project with that address exists' } }), name: 'New project: not made' }
+export const NewProjectNotMade: Story = { ...one('projects', { projects: { pNew: true, pNewText: 'Shop', newErr: 'A project with that address exists' } }), name: 'New project: not made' }
 export const PhoneProjectMenuOpen: Story = { ...onPhone('projects', { projects: { menu: 'home' } }), name: "On the phone: a project's ⋯ open" }
 export const PhoneDeletedProjectPurging: Story = { ...onPhone('projects', { projects: { menu: 'gone:old', purging: ['old'] } }), name: "On the phone: a deleted project's Delete forever asks again" }
 export const ProjectsLoading: Story = { ...one('projects', { projectsLoading: true }), name: 'Loading' }

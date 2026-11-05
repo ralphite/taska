@@ -1,6 +1,7 @@
 // The looks every part shares, as Tailwind classes: colours carry one meaning each (amber = needs you, blue = in
 // progress, red = P0 and errors, green = done, faded = closed), and the buttons and fields come in a few kinds.
 
+import { newSlug } from '../model/projects'
 import type { ItemType, Pri, Status } from '../model/types'
 
 export const TYPE_TEXT: Record<ItemType, string> = {
@@ -149,6 +150,13 @@ export function projectTones(names: readonly string[]): Map<string, string> {
 
 export const toneOf = (tones: ReadonlyMap<string, string>, name: string) =>
   tones.get(name) ?? PROJECT_TONES[nameHash(name) % PROJECT_TONES.length]
+
+/** The colour a new project's tile will have, from the address its name gives it among every project's; grey when
+ * the server will pick the address by chance. */
+export function newProjectTone(names: readonly string[], title: string): string {
+  const slug = newSlug(title, names)
+  return slug ? toneOf(projectTones([...names, slug]), slug) : 'bg-zinc-400 dark:bg-zinc-500'
+}
 
 /** A quick action's colour, icon and swipe background. */
 export const ACT_TONE: Record<string, string> = {

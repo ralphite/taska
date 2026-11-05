@@ -18,6 +18,7 @@ import { T, modelOf } from './fixtures'
 import { doc } from './docFixtures'
 import { PROJECT } from './listFixtures'
 import { acts } from './acts'
+import { withNewProject } from './newProjectFixtures'
 
 const now = Date.parse(T)
 const QUIET = { from: '22:00', to: '08:00' }
@@ -42,7 +43,7 @@ const FIXES: Spelling[] = [{ wrong: 'tasker', right: 'Taska' }, { wrong: 'cloud 
 /** How Settings is, besides where you are in it. */
 export interface SettingsHere {
   /** Projects: a new one being named, one being renamed, why it was not done, a deleted one asking */
-  projects?: { pNew?: boolean; pNewText?: string; pErr?: string; renaming?: string; purging?: string[]; menu?: string }
+  projects?: { pNew?: boolean; pNewText?: string; /** why the new one was not made */ newErr?: string; pErr?: string; renaming?: string; purging?: string[]; menu?: string }
   /** Notifications on the desktop: how the browser has them, quiet hours */
   notifications?: { state: 'On' | 'Off' | 'Blocked by the browser'; quiet: boolean; hours?: { from: string; to: string } }
   /** the phone on its Home Screen with a push service: this phone's pushes */
@@ -89,7 +90,7 @@ export const shopWithHistory = (agents: AgentSeen[] = SEEN, o: { work?: boolean;
 
 export const settingsAt = (sec: SectionKey | null, desk: boolean, h: SettingsHere = {}) => <LiveSettings sec={sec} desk={desk} h={h} />
 
-const setActs = acts('Settings', ['create', 'saveRename', 'remove', 'restore', 'purge', 'open', 'leave', 'keys', 'copy', 'newKey', 'addWord', 'forget', 'openDoc', 'item', 'input', 'undo', 'more', 'restoreThing', 'restoreInput', 'onPhone'] as const, { keys: 'Sheets › Keyboard shortcuts', openDoc: 'Document › Reading' })
+const setActs = acts('Settings', ['saveRename', 'remove', 'restore', 'purge', 'open', 'leave', 'keys', 'copy', 'newKey', 'addWord', 'forget', 'openDoc', 'item', 'input', 'undo', 'more', 'restoreThing', 'restoreInput', 'onPhone'] as const, { keys: 'Sheets › Keyboard shortcuts', openDoc: 'Document › Reading' })
 
 /** Settings with what the page holds for it (the route's section, stores.settings: a project being named, renamed or
  * its menu open, what asks again; the notifications' and spellings' switches): a section opens (the phone's back goes
@@ -98,7 +99,8 @@ const setActs = acts('Settings', ['create', 'saveRename', 'remove', 'restore', '
  * needs Taska shows in the Actions panel. */
 function LiveSettings({ sec: start, desk, h }: { sec: SectionKey | null; desk: boolean; h: SettingsHere }) {
   const [sec, setSec] = useState(start)
-  const [p, setP] = useState({ pNew: !!h.projects?.pNew, pNewText: h.projects?.pNewText ?? '', pErr: h.projects?.pErr ?? '', renaming: h.projects?.renaming ?? null, pMenu: h.projects?.menu ?? null })
+  const [p, setP] = useState({ pErr: h.projects?.pErr ?? '', renaming: h.projects?.renaming ?? null, pMenu: h.projects?.menu ?? null })
+  const [naming, setNaming] = useState(h.projects?.pNew ? { value: h.projects.pNewText, error: h.projects.newErr ?? '' } : null)
   const [asked, setAsked] = useState<Record<string, number>>(() => ({ ...Object.fromEntries((h.projects?.purging ?? []).map((n) => [`purge ${n}`, 1])), ...(h.newKeyAsking ? { 'new-key': 1 } : {}) }))
   const [notices, setNotices] = useState<NonNullable<SettingsHere['notifications']>>(h.notifications ?? { state: 'On', quiet: false })
   const [push, setPush] = useState(h.push ?? null)
@@ -115,8 +117,7 @@ function LiveSettings({ sec: start, desk, h }: { sec: SectionKey | null; desk: b
   // the column says what the section shows (the desktop's state; the phone's pushes on or off)
   const nav = navFacts(m, { notifications: desk ? notices.state.replace('Blocked by the browser', 'Blocked') : push?.sub ? 'On' : 'Off', projects: ROWS.length, spellings: h.spellingsLoading || h.noSpellings ? '' : FIXES.length })
   const pOn: ProjectsEvents = {
-    newProject: (on) => setP({ ...p, pNew: on, pNewText: on ? p.pNewText : '', pErr: '', renaming: null, pMenu: null }),
-    create: (t) => (setActs.create(t), setP({ ...p, pNew: false })),
+    newProject: () => (setP({ ...p, pErr: '', renaming: null, pMenu: null }), setNaming({ value: '', error: '' })),
     rename: (slug) => setP({ ...p, renaming: slug, pMenu: null }),
     saveRename: (slug, t, was) => (setActs.saveRename(slug, t, was), setP({ ...p, renaming: null })),
     remove: (slug) => (setActs.remove(slug), setP({ ...p, pMenu: null })),
@@ -162,7 +163,7 @@ function LiveSettings({ sec: start, desk, h }: { sec: SectionKey | null; desk: b
     },
     deleted: () => <DeletedBody {...(h.nothingDeleted ? { things: [], inputs: [] } : deletedRows(m))} on={{ restore: setActs.restoreThing, restoreInput: setActs.restoreInput }} />,
   }
-  return (
+  const page = (
     <div className="flex h-full flex-col">
       <SettingsFrame
         desk={desk}
@@ -175,4 +176,6 @@ function LiveSettings({ sec: start, desk, h }: { sec: SectionKey | null; desk: b
       />
     </div>
   )
+  // New project: a popover under its button on the desktop, a sheet on the phone (D115 #7)
+  return naming ? withNewProject(page, desk, { at: { x: 330, y: 170 }, value: naming.value, error: naming.error, onDone: () => setNaming(null) }) : page
 }

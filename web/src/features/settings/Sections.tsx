@@ -7,7 +7,6 @@ import type { Spelling, VoicePrefs } from '../../model/types'
 import { plural } from '../../model/words'
 import { Kbd, ProjTile } from '../../ui/bits'
 import { Icon } from '../../ui/Icon'
-import { NewProjectForm } from '../../ui/NewProjectForm'
 import { DISABLED, FIELD, MUTED, P_BTN, PRIMARY, SECOND } from '../../ui/tones'
 import { CopyBtn, Loading, Part, QuietHoursSetting, Setting, TextBox } from './SettingsParts'
 
@@ -32,8 +31,6 @@ export interface ProjectsFacts {
   live: ProjectRowFacts[] | null
   gone: GoneProject[]
   file: string
-  pNew: boolean
-  pNewText: string
   pErr: string
   renaming: string | null
   /** the deleted projects whose Delete forever waits for its second click */
@@ -43,8 +40,8 @@ export interface ProjectsFacts {
 }
 
 export interface ProjectsEvents {
-  newProject(on: boolean): void
-  create(title: string): void
+  /** New project, from its button: a popover there on the desktop, a sheet on the phone (D115 #7) */
+  newProject(from: HTMLElement): void
   rename(slug: string | null): void
   saveRename(slug: string, title: string, was: string): void
   remove(slug: string): void
@@ -95,10 +92,8 @@ const ROW_ACT = 'lg:opacity-0 lg:group-hover:opacity-100 lg:group-focus-within:o
 
 export function ProjectsBody({ f, on }: { f: ProjectsFacts; on: ProjectsEvents }) {
   if (!f.live) return <Loading />
-  const add = f.pNew ? (
-    <NewProjectForm value={f.pNewText} error={f.pErr} onCreate={on.create} onCancel={() => on.newProject(false)} />
-  ) : (
-    <button onClick={() => on.newProject(true)} className={`${SECOND} shrink-0`}>
+  const add = (
+    <button onClick={(e) => on.newProject(e.currentTarget)} className={`${SECOND} shrink-0`}>
       <Icon n="plus" c="size-4" sw="2" />
       New project
     </button>

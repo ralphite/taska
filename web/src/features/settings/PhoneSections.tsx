@@ -7,7 +7,6 @@ import type { ItemType } from '../../model/types'
 import { plural } from '../../model/words'
 import { ProjTile, Skeleton } from '../../ui/bits'
 import { Icon } from '../../ui/Icon'
-import { NewProjectForm } from '../../ui/NewProjectForm'
 import { MUTED, P_BTN, SECOND, TYPE_TEXT } from '../../ui/tones'
 import { Empty } from '../../ui/bits'
 import { LogLine, LogMore, type LogEvents } from '../../ui/Log'
@@ -42,16 +41,10 @@ export function PhoneProjectsBody({ f, on }: { f: ProjectsFacts; on: ProjectsEve
   return (
     <>
       <div className={`${PH_GROUP} mt-4`}>
-        {f.pNew ? (
-          <div className="px-3.5 py-3">
-            <NewProjectForm value={f.pNewText} error={f.pErr} onCreate={on.create} onCancel={() => on.newProject(false)} />
-          </div>
-        ) : (
-          <button onClick={() => on.newProject(true)} className="flex min-h-12 w-full items-center gap-3 px-3.5 py-2.5 text-left text-[15px] font-medium text-blue-600 dark:text-blue-400">
-            <Icon n="plus" c="size-5" />
-            New project
-          </button>
-        )}
+        <button onClick={(e) => on.newProject(e.currentTarget)} className="flex min-h-12 w-full items-center gap-3 px-3.5 py-2.5 text-left text-[15px] font-medium text-blue-600 dark:text-blue-400">
+          <Icon n="plus" c="size-5" />
+          New project
+        </button>
       </div>
       <PhLabel>Projects</PhLabel>
       <div className={PH_GROUP}>

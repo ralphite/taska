@@ -1,16 +1,46 @@
 // The project's menu (from the sidebar) and the list of what was not saved, with what they do.
 
+import { useState } from 'react'
 import { keysShown } from '../../app/actions'
 import { useServices, useStores, useStoreValue } from '../../app/context'
 import { useProjectModel, useProjectRoute } from '../../app/hooks'
 import { openCount } from '../../model/visible'
 import type { SheetRequest } from '../../stores/sheet'
 import { SheetLayout } from '../../ui/Sheet'
-import { toneOf } from '../../ui/tones'
+import { newProjectTone, toneOf } from '../../ui/tones'
+import { NewProjectForm } from '../../ui/NewProjectForm'
 import { useSideProjects } from '../../app/projectLists'
 import { notSavedSheet } from './NotSaved'
 import { notSavedRows } from './notSavedRows'
 import { projectMenuSheet } from '../../ui/ProjectSheets'
+
+/** New project (D115 #7): its name and its tile as it will be; made, it opens. */
+export function NewProjectSheet() {
+  const app = useServices('nav', 'projects', 'sheets')
+  const stores = useStores('data')
+  const names = useStoreValue(stores.data, (s) => s.projects)?.map((p) => p.name) ?? []
+  const [error, setError] = useState('')
+  return (
+    <SheetLayout
+      title="New project"
+      body={
+        <div className="pb-1">
+          <NewProjectForm
+            error={error}
+            tone={(name) => newProjectTone(names, name)}
+            onCreate={(title) =>
+              void app.projects.create(title).then((r) => {
+                if (!('name' in r)) return setError(r.error)
+                app.sheets.close(() => app.nav.to(`/p/${encodeURIComponent(r.name)}/`))
+              })
+            }
+            onCancel={() => app.sheets.close()}
+          />
+        </div>
+      }
+    />
+  )
+}
 
 export function ProjectMenuSheet({ req }: { req: Extract<SheetRequest, { kind: 'project-menu' }> }) {
   const app = useServices('nav', 'settings', 'sheets')

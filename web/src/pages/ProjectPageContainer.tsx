@@ -66,7 +66,6 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
   const { title, agent, counts, notSaved } = useHeadFacts(route, true)
   const { tones } = useSideProjects(route.slug)
   const sideHidden = useStoreValue(stores.ui, (s) => s.sideHidden)
-  const sideOver = useStoreValue(stores.ui, (s) => s.sideOver)
   const help = route.place.kind === 'help'
   const settings = route.place.kind === 'settings' || help
   const full = useStoreValue(stores.route, (s) => s.full) && route.place.kind === 'item' && !settings
@@ -83,15 +82,8 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
   const tabs = deskTabs(counts, route.tab, settings || side)
   return (
     <div className="flex h-full w-full" style={gripVars(grips) as CSSProperties}>
-      {/* folded, it opens over the page (New project from its rail) */}
-      <SidebarContainer slug={route.slug} hidden={(sideHidden && !sideOver) || settings} place={`z-40 w-[var(--side-w,15rem)] shrink-0 border-r border-zinc-200 bg-zinc-50 huge:w-[var(--side-w,16rem)] dark:border-zinc-800 ${sideHidden && sideOver ? 'fixed top-0 left-0 shadow-2xl' : 'relative'}`} />
+      <SidebarContainer slug={route.slug} hidden={sideHidden || settings} place="relative z-40 w-[var(--side-w,15rem)] shrink-0 border-r border-zinc-200 bg-zinc-50 huge:w-[var(--side-w,16rem)] dark:border-zinc-800" />
       <SidebarContainer slug={route.slug} place="" rail hidden={!sideHidden || settings} />
-      <div
-        hidden={!(sideHidden && sideOver) || settings}
-        onClick={() => stores.ui.getState().setSideOver(false)}
-        aria-label="Close projects"
-        className="fixed top-0 right-0 left-[var(--side-w,15rem)] z-30 h-dvh bg-zinc-900/20 huge:left-[var(--side-w,16rem)] dark:bg-black/50"
-      />
       <div
         {...(compose ? { 'data-compose': '' } : {})}
         {...(duo ? { 'data-duo': '' } : {})}
