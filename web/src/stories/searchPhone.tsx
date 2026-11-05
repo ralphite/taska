@@ -26,6 +26,7 @@ import { saidMore, type Found } from '../model/find'
 import { codeOf, type ProjectModel } from '../model/project'
 import { NO_FILTERS, parseRoute } from '../model/route'
 import type { Item } from '../model/types'
+import type { Visit } from '../stores/recent'
 import { PROJECT_TONES } from '../ui/tones'
 import { Frame } from './Frames'
 import { noRowEvents, T } from './fixtures'
@@ -61,6 +62,10 @@ export const AT: Record<string, Partial<Flow>> = {
   offline: { at: 'search', phase: 'offline', words: RIGHT.q },
 }
 
+const visit = (m: ProjectModel, slug: string, n: number): Visit | null => {
+  const it = m.byN.get(n)
+  return it ? { project: slug, kind: 'items', n, code: codeOf(m, n), title: it.title, type: it.type, status: it.status } : null
+}
 /** The page's data around the search: the project you are in is Shop. */
 const PLACE: SearchPlace = {
   here: 'shop',
@@ -72,6 +77,9 @@ const PLACE: SearchPlace = {
   on: () => noRowEvents,
   // the demo's day: the second time you speak is today
   now: Date.parse('2026-11-02T18:00:00-08:00'),
+  // the pages visited last: Recent while nothing is asked yet
+  recent: [visit(SHOP, 'shop', 1), visit(SHOP, 'shop', 2), visit(HOME, 'home', 21)].filter((v): v is Visit => !!v),
+  model: (slug) => (slug === 'shop' ? SHOP : slug === 'home' ? HOME : null),
 }
 const placeFor = (onOpen: (x: Found) => void): SearchPlace => ({ ...PLACE, on: (x) => ({ ...noRowEvents, open: () => onOpen(x) }) })
 

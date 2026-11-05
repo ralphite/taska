@@ -4,10 +4,12 @@
 // the stories draw the same page from the same data.
 
 import { clock } from '../model/time'
-import type { ProjectModel } from '../model/project'
+import { codeOf, type ProjectModel } from '../model/project'
 import { openDoubts, spotsIn } from '../model/doubts'
 import { foundGroups, foundKinds, foundMeta, type Found } from '../model/find'
 import type { FindState } from '../stores/find'
+import type { Visit } from '../stores/recent'
+import { visitFound } from './searchDialogView'
 import type { SeenMap } from '../stores/seen'
 import { hitLine, rowFacts, rowLook, type DrawWith } from '../features/list/drawRows'
 import type { RowEvents, RowFacts } from '../features/list/ListRows'
@@ -29,6 +31,9 @@ export interface SearchPlace {
   on(x: Found): RowEvents
   /** the time the page tells times against (ms): the model's */
   now: number
+  /** the pages you visited last (Recent, as the desktop's search has them), and each project's model */
+  recent: readonly Visit[]
+  model(slug: string): ProjectModel | null
 }
 
 /** A row of another project's item: what the list would show, from what the search sent. */
@@ -57,14 +62,18 @@ export function searchView(s: SearchNow, p: SearchPlace): SearchView {
   const row = (x: Found): FoundRowView[] => {
     if (x.kind === 'items' || x.kind === 'rules') {
       const mine = x.project === p.here && p.m && x.n != null ? p.m.byN.get(x.n) : undefined
-      const it = mine ?? x.item
+      // another project's: what the search sent, or (a page visited there) its model's
+      const there = !mine && x.n != null ? p.model(x.project)?.byN.get(x.n) : undefined
+      const it = mine ?? x.item ?? there
       if (!it) return []
-      const facts = mine && p.m ? rowFacts(p.m, mine, w) : otherFacts(x, marks)
+      const facts = mine && p.m ? rowFacts(p.m, mine, w) : otherFacts({ ...x, item: x.item ?? (there && p.model(x.project) ? { ...there, code: codeOf(p.model(x.project) as ProjectModel, there.n) } : undefined) }, marks)
       return [{ kind: 'item', key: x.project + '/' + x.key, found: x, it, facts, look: rowLook(it, w), on: p.on(x) }]
     }
     return [{ kind: 'other', key: x.project + '/' + x.key, found: x, icon: x.kind === 'docs' ? 'doc' : 'newinput', code: x.code ?? '', title: x.title ?? '', meta: foundMeta(x, p.now) }]
   }
   const toCheck = s.heard.length ? openDoubts(s.words, s.heard).length : 0
+  // nothing asked yet: Recent, by project in the order you visited them, as the desktop's search opens with it
+  const recent = !a && !s.words.trim() && (s.phase === 'ready' || s.phase === 'listening') && p.recent.length ? recentGroups(p.recent.map((v) => visitFound(v, p.model))) : null
   return {
     phase: s.phase,
     words: s.words,
@@ -76,6 +85,13 @@ export function searchView(s: SearchNow, p: SearchPlace): SearchView {
       ? [{ value: 'all', label: 'All', count: a.found.length, on: s.kind === 'all', needs: false }, ...foundKinds(a).map(([k, label, n]) => ({ value: k, label, count: n, on: s.kind === k, needs: false }))]
       : null,
     groups: a ? foundGroups(a, p.here, p.order, s.kind).map((g) => ({ project: g.project, title: g.project === p.here && p.m ? p.m.facts.title : g.title, tone: p.tone(g.project), rows: g.rows.flatMap(row) })) : null,
+    recent,
     marks,
+  }
+
+  function recentGroups(found: Found[]) {
+    const by = new Map<string, Found[]>()
+    for (const x of found) by.set(x.project, [...(by.get(x.project) ?? []), x])
+    return [...by].map(([project, xs]) => ({ project, title: project === p.here && p.m ? p.m.facts.title : (p.model(project)?.facts.title ?? project), tone: p.tone(project), rows: xs.flatMap(row) })).filter((g) => g.rows.length)
   }
 }

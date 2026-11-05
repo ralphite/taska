@@ -20,9 +20,9 @@ export const Lines: Story = {
       {() => (
         <States
           items={[
-            ['yours', <p className="px-4 py-2 text-sm"><LogLine s={s('You', [{ n: 12, code: 'F12' }, ' Open → Done'])} on={on} /></p>],
-            ['an agent, its session', <p className="px-4 py-2 text-sm"><LogLine s={s('Claude Code', ['progress: ', { n: 12, code: 'F12' }, ' the list is in'], 'taska rewrite')} on={on} /></p>],
-            ['with its time', <p className="px-4 py-2 text-sm"><LogLine s={s('Organizer', ['filed ', { id: 'r315', code: '#315' }, ': made F12'])} withTime on={on} /></p>],
+            ['yours', <p className="px-4 py-2 text-sm"><LogLine s={s('', [{ n: 12, code: 'F012' }, ' Open → Done'])} on={on} /></p>],
+            ['an agent, its session', <p className="px-4 py-2 text-sm"><LogLine s={s('Claude Code', ['progress: ', { n: 12, code: 'F012' }, ' the list is in'], 'taska rewrite')} on={on} /></p>],
+            ['with its time', <p className="px-4 py-2 text-sm"><LogLine s={s('Organizer', ['filed ', { id: 'r315', code: '#315' }, ': made F012'])} withTime on={on} /></p>],
             ['the end', <LogMore end cls="px-4 py-3" onNear={() => {}} />],
           ]}
         />

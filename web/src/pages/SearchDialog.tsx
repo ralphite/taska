@@ -282,7 +282,7 @@ export function SearchDialog({ v, preview, menuAt = null, on }: { v: SearchDialo
     if ((e.key === 'ArrowDown' || e.key === 'ArrowUp') && rows.length) return (stop(), on.select((v.sel + (e.key === 'ArrowDown' ? 1 : -1) + rows.length) % rows.length))
     if (e.key === 'Enter') return (stop(), open(v.lit, e.metaKey || e.ctrlKey))
   }
-  const mid: SearchView = { phase: v.middle ?? 'ready', words: v.words, added: '', typed: false, doubts: null, rec: null, kinds: null, groups: null, marks: [] }
+  const mid: SearchView = { phase: v.middle ?? 'ready', words: v.words, added: '', typed: false, doubts: null, rec: null, kinds: null, groups: null, recent: null, marks: [] }
   return (
     <div ref={root} tabIndex={-1} onKeyDownCapture={keys} data-part="search" aria-label="Search" className="flex min-h-0 flex-1 flex-col outline-none">
       <Field v={v} field={field} on={on} />

@@ -109,8 +109,9 @@ export function lineOf(x: Found, p: DialogPlace): FoundLine {
 }
 
 /** A visit as a row: from the project's data when it is here (its words now), else as it was opened. */
-function visitFound(v: Visit, p: DialogPlace): Found {
-  const m = p.model(v.project)
+/** A page you visited, as a search finds it (Recent: the desktop's dialog and the phone's page). */
+export function visitFound(v: Visit, model: (slug: string) => ProjectModel | null): Found {
+  const m = model(v.project)
   if (v.kind === 'docs') {
     const d = m?.docs.find((x) => x.d === v.d)
     return { project: v.project, kind: 'docs', key: 'd' + v.d, n: v.n, d: v.d, code: 'D' + v.d, title: d?.title ?? v.title, on: v.on }
@@ -140,7 +141,7 @@ export function searchDialogView(s: DialogNow, p: DialogPlace): SearchDialogView
   }
   const narrowed = a ? a.found.filter((x) => (s.project === null || x.project === s.project) && (s.status === null || status(x))) : []
   const results = typed && a ? narrowed.filter((x) => s.kind === 'all' || x.kind === s.kind).map((x) => lineOf(x, p)) : []
-  const recent = !typed && (s.phase === 'ready' || busy) ? p.recent.map((v) => lineOf(visitFound(v, p), p)) : []
+  const recent = !typed && (s.phase === 'ready' || busy) ? p.recent.map((v) => lineOf(visitFound(v, p.model), p)) : []
   const actions = s.typed && !busy && s.kind === 'all' && !s.project && !s.status ? actionsFor(s.words, p) : []
   const rows: DialogLine[] = [...recent, ...results, ...actions]
   const sel = Math.min(s.sel, Math.max(0, rows.length - 1))

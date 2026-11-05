@@ -46,6 +46,8 @@ export interface SearchView {
   kinds: ViewChip[] | null
   /** what it found last, by project (none: null) */
   groups: FoundGroupView[] | null
+  /** nothing asked yet: the pages you visited last, by project (none: null) */
+  recent: FoundGroupView[] | null
   /** the words it marks where they are found */
   marks: readonly string[]
 }
@@ -235,6 +237,13 @@ const Middle = ({ title, children }: { title: ReactNode; children?: ReactNode })
 export function SearchBody({ v, on, desk = false }: { v: SearchView; on: SearchEvents; desk?: boolean }) {
   let body: ReactNode = null
   if (v.groups) body = <Results groups={v.groups} marks={v.marks} faded={v.phase === 'searching'} onOpen={on.open} />
+  else if (v.recent)
+    body = (
+      <>
+        <p className="px-4 pt-3 pb-1 text-xs font-semibold text-zinc-500 dark:text-zinc-400">Recent</p>
+        <Results groups={v.recent} marks={[]} faded={false} onOpen={on.open} />
+      </>
+    )
   else if (v.phase === 'searching') body = <Middle title={<Icon n="spinner" c="mx-auto size-7 animate-spin text-zinc-400" sw="2" />}>Searching…</Middle>
   else if (v.phase === 'nothing') body = <Middle title={noMatches(v.words)} />
   else if (v.phase === 'unheard') body = <Middle title="Didn't catch that" />

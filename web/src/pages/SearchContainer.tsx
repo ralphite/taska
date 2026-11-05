@@ -13,8 +13,9 @@ import { SearchPage, type SearchEvents } from './SearchPage'
 import { searchView } from './searchView'
 
 export function SearchContainer({ route, hidden }: { route: ProjectRoute; hidden: boolean }) {
-  const app = useServices('finder', 'nav', 'seen')
-  const stores = useStores('find', 'drafts', 'box', 'route')
+  const app = useServices('finder', 'nav', 'seen', 'model')
+  const stores = useStores('find', 'drafts', 'box', 'route', 'recent')
+  const recent = useStoreValue(stores.recent, (x) => x.list)
   const s = useStoreValue(stores.find, (x) => x)
   const m = useProjectModel(route.slug)
   const { list, tones } = useSideProjects(route.slug)
@@ -36,8 +37,8 @@ export function SearchContainer({ route, hidden }: { route: ProjectRoute; hidden
       fold() {},
       picture() {},
     })
-    return searchView(s, { here: route.slug, m, order: (list ?? []).map((p) => p.slug), tone: (slug) => toneOf(tones, slug), seen: app.seen.of(route.slug), drafts, on: rowOn, now: m?.at ?? 0 })
-  }, [s, m, list, tones, route.slug, draftWords, draftFiles]) // eslint-disable-line react-hooks/exhaustive-deps
+    return searchView(s, { here: route.slug, m, order: (list ?? []).map((p) => p.slug), tone: (slug) => toneOf(tones, slug), seen: app.seen.of(route.slug), drafts, on: rowOn, now: m?.at ?? 0, recent, model: (slug) => app.model(slug) })
+  }, [s, m, list, tones, route.slug, draftWords, draftFiles, recent]) // eslint-disable-line react-hooks/exhaustive-deps
   const on: SearchEvents = {
     leave: () => app.finder.leave(),
     mic: () => void app.finder.listen(),
