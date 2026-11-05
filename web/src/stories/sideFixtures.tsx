@@ -108,3 +108,12 @@ export const pointTo = (title: string) => (root: HTMLElement) => {
   const a = [...root.querySelectorAll<HTMLElement>('nav a')].find((x) => x.getAttribute('aria-label') === title || x.dataset.slug === title)
   a?.dispatchEvent(new PointerEvent('pointerover', { bubbles: true, pointerType: 'mouse' }))
 }
+/** Then the mouse moves off the project and into its card (r1066), as the page hears it: it stays open. */
+export const pointIntoCard = (title: string) => (root: HTMLElement) => {
+  pointTo(title)(root)
+  setTimeout(() => {
+    const a = [...root.querySelectorAll<HTMLElement>('nav a')].find((x) => x.getAttribute('aria-label') === title || x.dataset.slug === title)
+    const card = root.ownerDocument.querySelector('[data-project-card]')
+    a?.dispatchEvent(new PointerEvent('pointerout', { bubbles: true, pointerType: 'mouse', relatedTarget: card }))
+  }, 50)
+}

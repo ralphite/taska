@@ -1,8 +1,9 @@
-// A project's card (F667): beside its row while a mouse is on it, the same beside its icon on the folded rail; one with
-// nothing open; dark; and the card alone in each of its states.
+// A project's card (F667): beside its row while a mouse is on it (its left edge over the sidebar's, r1066), and while
+// the mouse moved into it; the same beside its icon on the folded rail; one with nothing open; dark; and the card alone
+// in each of its states.
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { After, Frame } from '../../stories/Frames'
-import { pointTo, rail, side } from '../../stories/sideFixtures'
+import { pointIntoCard, pointTo, rail, side } from '../../stories/sideFixtures'
 import { projectCard } from '../../model/projects'
 import { PROJECT_TONES } from '../../ui/tones'
 import { ProjectCard } from './ProjectCard'
@@ -11,12 +12,12 @@ export default { title: 'Components/Around the page/Sidebar/Project card' } sati
 type Story = StoryObj
 
 /** the sidebar with a mouse on a project (by its slug), its card beside it */
-const sidebarOn = (slug: string): Story => ({
-  parameters: { pseudo: { hover: [`a[data-slug="${slug}"]`] } },
+const sidebarOn = (slug: string, into = false): Story => ({
+  parameters: { pseudo: { hover: into ? [] : [`a[data-slug="${slug}"]`] } },
   render: () => (
     <div className="h-[760px] bg-zinc-200 p-6 dark:bg-zinc-800">
       <Frame layout="desk" width={240} height={700}>
-        <After run={pointTo(slug)}>{side(false)}</After>
+        <After run={(into ? pointIntoCard : pointTo)(slug)}>{side(false)}</After>
       </Frame>
     </div>
   ),
@@ -25,6 +26,8 @@ const sidebarOn = (slug: string): Story => ({
 /** A mouse on Home: what is open and finished there, what needs you, its inputs and documents, the agent last heard
  * of, when it last changed. */
 export const OnAProject: Story = { name: 'On a project', ...sidebarOn('home') }
+/** The mouse moved off Home into its card: the card stays while the mouse is on it (its name opens Home). */
+export const PointerInTheCard: Story = { name: 'Pointer in the card', ...sidebarOn('home', true) }
 /** Nothing open: the long name over two lines, what was finished. */
 export const NothingOpen: Story = { name: 'Nothing open', ...sidebarOn('long') }
 /** The sidebar folded to icons: the same card beside the icon. */

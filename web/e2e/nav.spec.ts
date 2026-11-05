@@ -228,7 +228,7 @@ test('D82 #9: switching to another project, its name shows at once (not its addr
   if (isDesk(page)) await expect(sideFoot(page)).toContainText('Documents', { timeout: 2000 })
 })
 
-test('r1057 F667: on the desktop a project in the sidebar shows its card at once while the pointer is on it, and it goes when the pointer leaves or presses', async ({
+test('r1057 r1066 F667: on the desktop a project in the sidebar shows its card at once, right beside it over the sidebar\'s edge; the pointer can move into the card, which stays until the pointer has left both', async ({
   page,
   request,
 }) => {
@@ -248,12 +248,28 @@ test('r1057 F667: on the desktop a project in the sidebar shows its card at once
   await expect(card.locator('[data-card-open]')).toHaveText('4 open')
   await expect(card.locator('[data-card-closed]')).toHaveText('1 closed · 5 items')
   await expect(card).toContainText('3 need you')
-  await page.mouse.move(700, 400)
-  await expect(card).toBeHidden()
-  // it takes no clicks: the row under it opens its project
-  await row.hover()
+  // r1066: right beside the row, its left edge inside the sidebar
+  const r = (await row.boundingBox())!,
+    c = (await card.boundingBox())!,
+    nav = (await page.locator('#drawer').boundingBox())!
+  expect(c.x).toBeGreaterThanOrEqual(r.x + r.width)
+  expect(c.x).toBeLessThan(nav.x + nav.width)
+  // the pointer moves off the row into the card: it stays, and a click on its counts goes nowhere
+  const y = r.y + r.height / 2
+  await page.mouse.move(c.x + 60, y, { steps: 8 })
+  await page.waitForTimeout(500)
   await expect(card).toBeVisible()
-  await row.click()
+  await card.locator('[data-card-open]').click()
+  await expect(card).toBeVisible()
+  await expect(page).toHaveURL(new RegExp(here.url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
+  // off both: it goes
+  const v = page.viewportSize()!
+  await page.mouse.move(v.width - 20, v.height - 20, { steps: 4 })
+  await expect(card).toBeHidden()
+  // its name opens the project, as the row does
+  await row.hover()
+  await page.mouse.move(c.x + 60, y, { steps: 8 })
+  await card.getByRole('link', { name: p.title }).click()
   await expect(card).toBeHidden()
   await expect(page).toHaveURL(new RegExp(p.url.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
 })

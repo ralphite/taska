@@ -1,10 +1,12 @@
 // A project's card beside its row in the sidebar, and beside its icon on the folded rail (F667, as Nota's card beside
 // a note): its tile and name; how many things are open, finished, need you; its inputs and documents; the agent last
 // heard of; when it last changed. It shows at once while a mouse is over the project, with no delay and no motion,
-// and goes when the pointer leaves, a button goes down (a click, a drag), or the list scrolls. Never on the phone;
-// it takes no clicks.
+// right beside the row, its left edge over the sidebar's own (r1066). The pointer can move from the row into it: it
+// stays a moment after leaving the row (a hover card's grace), and while the pointer is on it; it goes when the pointer
+// has left both, a button goes down on the row (a click, a drag), or the list scrolls. Its name opens the project, as
+// the row does. Never on the phone.
 
-import { useLayoutEffect, useRef, useState, type PointerEvent, type RefObject } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type MouseEvent, type PointerEvent } from 'react'
 import { createPortal } from 'react-dom'
 import type { AgentTone } from '../../model/agents'
 import type { ProjectCardFacts } from '../../model/projects'
@@ -20,8 +22,8 @@ const AGENT: Record<AgentTone, string> = {
   bad: 'text-red-600 dark:text-red-400',
 }
 
-/** The card itself (props only): its stories draw it alone. */
-export function ProjectCard({ title, tone, card }: { title: string; tone: string; card: ProjectCardFacts }) {
+/** The card itself (props only): its stories draw it alone. `href`/`onOpen`: its name opens the project. */
+export function ProjectCard({ title, tone, card, href, onOpen }: { title: string; tone: string; card: ProjectCardFacts; href?: string; onOpen?(e: MouseEvent<HTMLAnchorElement>): void }) {
   const open = typeof card.open === 'number' ? card.open : null
   const items = open != null && card.closed != null ? open + card.closed : null
   const any = items !== 0 || card.needs || card.inputs || card.docs || card.agent || card.changed
@@ -29,7 +31,13 @@ export function ProjectCard({ title, tone, card }: { title: string; tone: string
     <div data-project-card className="w-80 overflow-hidden rounded-xl bg-white text-sm shadow-lg ring-1 ring-zinc-900/10 dark:bg-zinc-800 dark:ring-white/10">
       <div className="flex items-start gap-2.5 px-4 pt-3.5 pb-3">
         <ProjTile title={title} tone={tone} cls="mt-px size-6 rounded-md text-xs" />
-        <span className="line-clamp-2 min-w-0 text-[15px] leading-snug font-semibold text-zinc-900 dark:text-zinc-50">{title}</span>
+        {href ? (
+          <a href={href} onClick={onOpen} className="line-clamp-2 min-w-0 text-[15px] leading-snug font-semibold text-zinc-900 hover:underline dark:text-zinc-50">
+            {title}
+          </a>
+        ) : (
+          <span className="line-clamp-2 min-w-0 text-[15px] leading-snug font-semibold text-zinc-900 dark:text-zinc-50">{title}</span>
+        )}
       </div>
       {any ? (
       <div className={`flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-zinc-100 bg-zinc-50 px-4 py-2 text-xs dark:border-zinc-700/60 dark:bg-zinc-900/40 ${MUTED}`}>
@@ -87,36 +95,65 @@ interface Hovered {
   top: number
 }
 
-/** Which project's card shows, and the handlers its rows take: a mouse over a row (no button held) shows its card
- * beside `edge` (the sidebar or the rail), level with the row. */
-export function useProjectCard(edge: RefObject<HTMLElement | null>, off = false) {
+/** how long the card stays after the pointer leaves the row or the card: time to cross to the other */
+const GRACE = 200
+
+/** Which project's card shows, and the handlers its rows and the card take: a mouse over a row (no button held) shows
+ * its card at once, right beside the row; leaving the row or the card puts it away after GRACE unless the pointer has
+ * come onto the other. */
+export function useProjectCard(off = false) {
   const [hovered, setHovered] = useState<Hovered | null>(null)
-  const hide = () => setHovered(null)
+  const timer = useRef(0)
+  useEffect(() => () => clearTimeout(timer.current), [])
+  const stay = () => clearTimeout(timer.current)
+  const hide = () => {
+    clearTimeout(timer.current)
+    setHovered(null)
+  }
+  const leave = () => {
+    clearTimeout(timer.current)
+    timer.current = window.setTimeout(() => setHovered(null), GRACE)
+  }
   const rowProps = (slug: string) =>
     off
       ? {}
       : {
           onPointerEnter: (e: PointerEvent<HTMLElement>) => {
             if (e.pointerType === 'touch' || e.buttons) return
+            stay()
             const r = e.currentTarget.getBoundingClientRect()
-            setHovered({ slug, left: (edge.current?.getBoundingClientRect().right ?? r.right) + 8, top: r.top })
+            setHovered({ slug, left: r.right + 4, top: r.top })
           },
-          onPointerLeave: hide,
+          onPointerLeave: leave,
           onPointerDown: hide,
         }
-  return { hovered: off ? null : hovered, rowProps, hide }
+  return { hovered: off ? null : hovered, rowProps, card: { onPointerEnter: stay, onPointerLeave: leave }, hide }
 }
 
 /** The card where the pointer is: over the page (not clipped by the sidebar), kept inside the window. */
-export function FloatingProjectCard({ at, title, tone, card }: { at: Hovered; title: string; tone: string; card: ProjectCardFacts }) {
+export function FloatingProjectCard({
+  at,
+  title,
+  tone,
+  card,
+  href,
+  on,
+}: {
+  at: Hovered
+  title: string
+  tone: string
+  card: ProjectCardFacts
+  href: string
+  on: { onPointerEnter(): void; onPointerLeave(): void; open(e: MouseEvent<HTMLAnchorElement>): void }
+}) {
   const box = useRef<HTMLDivElement>(null)
   useLayoutEffect(() => {
     const el = box.current
     if (el) el.style.top = `${Math.round(Math.max(8, Math.min(at.top - 6, innerHeight - el.offsetHeight - 8)))}px`
   })
   return createPortal(
-    <div ref={box} role="tooltip" className="pointer-events-none fixed z-[70]" style={{ left: at.left, top: at.top - 6 }}>
-      <ProjectCard title={title} tone={tone} card={card} />
+    <div ref={box} role="dialog" aria-label={title} onPointerEnter={on.onPointerEnter} onPointerLeave={on.onPointerLeave} className="fixed z-[70]" style={{ left: at.left, top: at.top - 6 }}>
+      <ProjectCard title={title} tone={tone} card={card} href={href} onOpen={on.open} />
     </div>,
     document.body,
   )
