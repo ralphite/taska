@@ -76,7 +76,6 @@ export function boxRole(m: ProjectModel | null, route: ProjectPlace, desk: boole
   const place = route.place
   const docOf = place.kind === 'doc' ? m?.docs.find((x) => x.d === place.d) : undefined
   const open = place.kind === 'item' ? m?.byN.get(Number(/\d+/.exec(place.ref)?.[0])) : docOf && m ? m.byN.get(liveN(m, docOf.n)) : undefined
-  const files = m?.facts.organizer.on ? 'organizer files it' : 'agent files it'
   const none = { aim: null as DocAim }
   if (mode?.kind === 'prefs') {
     const line: BoxLine = { icon: 'pencil', label: 'Edit transcription preferences', detail: '· all projects', right: stop('Stop editing') }
@@ -137,8 +136,8 @@ export function boxRole(m: ProjectModel | null, route: ProjectPlace, desk: boole
   }
   // a document open, nothing picked (the desktop): a reply to its item, written in the document's own draft
   if (open && m) return { ...none, scope: codeOf(m, open.n), doc: docOf ? docOf.d : null, line: null, placeholder: `Reply to ${codeOf(m, open.n)}…`, send: 'Send' }
-  const line: BoxLine | null = desk ? { icon: 'newinput', label: 'New input', detail: `· ${files}` } : null
-  return { ...none, scope: null, doc: null, line, placeholder: m ? `Write to ${title}…` : 'Write anything…', send: 'Send' }
+  // a new input: no line, the New input page's head says what it is (Yadong, r583 and r1092: that line is gone)
+  return { ...none, scope: null, doc: null, line: null, placeholder: m ? `Write to ${title}…` : 'Write anything…', send: 'Send' }
 }
 
 /** What the box shows with what it holds: voice comments in a document's box (Send posts each beside its paragraph),

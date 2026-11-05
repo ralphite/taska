@@ -78,7 +78,6 @@ export function BoxContainer({ route, composePage, boxRef, bare = false }: { rou
       micTip={composePage ? 'Voice note · ⌥V' : 'Voice note · V'}
       boxRef={boxRef}
       fieldRef={app.fields.ref('box')}
-      lineOnComposePage={!!mode}
       hasFiles={!!draftFiles?.length}
       attach={shown.attach}
       files={

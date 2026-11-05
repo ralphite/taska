@@ -159,7 +159,7 @@ export function DeskPage() {
         </div>
         <div className="min-w-0 flex-1 px-8 pt-12 pb-16">
           <ComposeHead title="taska" tone={toneOf(SIDE.tones, 'taska')} />
-          <div className="[&>div]:bg-transparent [&>div]:p-0">{boxAt({ at: 'new', composePage: true }, true, { placeholder: 'Write to taska…' })}</div>
+          <div className="[&>div]:bg-transparent [&>div]:p-0">{boxAt({ at: 'new' }, true, { placeholder: 'Write to taska…' })}</div>
           <DeskList />
         </div>
       </div>

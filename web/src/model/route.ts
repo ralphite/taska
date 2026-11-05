@@ -40,6 +40,9 @@ export const routeSlug = (r: Route): string => (r.page === 'project' ? r.slug : 
 
 /** What rows you acted on hold still for: the list (its project, tab, search and filters) and, on the desktop, what
  * the pane shows (going on to another item lets them go). */
+/** The desktop's New input page: nothing open, New input itself or a tab other than Inputs (the phone has none). */
+export const composing = (r: Extract<Route, { page: 'project' }>): boolean => r.place.kind === 'new' || (r.place.kind === 'tab' && r.tab !== 'inputs')
+
 export function holdKey(r: Route, desk: boolean): string {
   return r.page === 'project' ? JSON.stringify([r.slug, r.tab, r.list, desk ? r.place : null]) : ''
 }

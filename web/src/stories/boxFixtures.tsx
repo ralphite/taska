@@ -10,7 +10,7 @@ import { openDoubts, pickSide, spotsIn, type HeardFile } from '../model/doubts'
 import { boxRole, feedbackLine, shownBox, type BoxMode } from '../model/boxFoot'
 import { blockKeys } from '../model/docs'
 import type { Outgoing } from '../model/outgoing'
-import { parseRoute } from '../model/route'
+import { composing, parseRoute } from '../model/route'
 import type { Input } from '../model/types'
 import { input, item, modelOf } from './fixtures'
 import { comment, doc } from './itemFixtures'
@@ -55,7 +55,6 @@ export interface Here {
   recAux?: boolean
   /** the document's item is gone (deleted or merged away) */
   docItemGone?: boolean
-  composePage?: boolean
   doubts?: ReactNode
   /** its voice notes' words may be misheard (their doubts in `files`): the box draws them as the page's BoxContainer
    * does, and a version picked or used swaps the words (`showing`: the phone shows the words in the box) */
@@ -97,6 +96,8 @@ function LiveBox({ h, desk, extra }: { h: Here; desk: boolean; extra: Partial<Co
   const mine: Record<number, Record<string, string>> = h.at === 'D1' && ticked ? { 1: ticked } : {}
   const ticks = { mine, going: {}, open: new Set<string>() }
   const role = boxRole(m, route, desk, 'demo', mode, pick, ticks)
+  // the desktop's box with nothing open is the New input page's, as the page has it
+  const compose = desk && composing(route)
   const shown = shownBox(role, { mode, text, key: 'here', recordingFor: h.recordingFor ?? null })
   const stopRec = () => setRec(null)
   // the words that may be misheard (BoxContainer and useHeard): under the box, or on the phone in the box to pick from;
@@ -116,7 +117,7 @@ function LiveBox({ h, desk, extra }: { h: Here; desk: boolean; extra: Partial<Co
   const viewWords = !desk && pickable && showing && !rec
   const doubtsView: DoubtsView | null = !h.heard
     ? null
-    : desk && h.composePage
+    : compose
       ? altOpen
         ? { kind: 'card', toCheck: altOpen }
         : null
@@ -148,7 +149,7 @@ function LiveBox({ h, desk, extra }: { h: Here; desk: boolean; extra: Partial<Co
         sendWord={shown.send}
         text={text}
         desk={desk}
-        composePage={desk && !!h.composePage}
+        composePage={compose}
         micTip="Voice note · V"
         hasFiles={files.length > 0}
         files={

@@ -9,6 +9,7 @@ import { useLayout, useServices, useStores, useStoreValue } from '../app/context
 import { useAway, useProjectModel, type ProjectRoute } from '../app/hooks'
 import { needsYou } from '../model/items'
 import { filtersSet } from '../model/visible'
+import { composing } from '../model/route'
 import { toneOf } from '../ui/tones'
 import { FootContainer } from '../features/composer/FootContainer'
 import { BoxContainer } from '../features/composer/BoxContainer'
@@ -75,7 +76,7 @@ function DeskLayout({ route }: { route: ProjectRoute }) {
   const side = !!shownSide && !settings
   const grips = useStoreValue(stores.grips, (s) => s.px)
   const duo = useStoreValue(stores.ui, (s) => s.duo)
-  const compose = route.place.kind === 'new' || (route.place.kind === 'tab' && route.tab !== 'inputs')
+  const compose = composing(route)
   const filtersOpen = useStoreValue(stores.ui, (s) => s.deskFilters)
   const set = filtersSet(route.tab, route.list)
   const [footH, setFootH] = useState(0)

@@ -17,9 +17,10 @@ const noTicks: TickState = { mine: {}, going: {}, open: new Set() }
 const code = codeOf(m, 12)
 
 describe('what the box writes to', () => {
-  test('a new input: the desktop says so; the phone says nothing', () => {
+  // Yadong (r583, r1092): no line over the box for a new input; change only on his explicit word
+  test('a new input: no line over the box, on the desktop or the phone', () => {
     const desk = boxRole(m, at({ kind: 'tab' }), true, 'taska', null, nothing, noTicks)
-    expect([desk.scope, desk.line?.label, desk.placeholder, desk.send]).toEqual([null, 'New input', 'Write to taska…', 'Send'])
+    expect([desk.scope, desk.line, desk.placeholder, desk.send]).toEqual([null, null, 'Write to taska…', 'Send'])
     expect(boxRole(m, at({ kind: 'tab' }), false, 'taska', null, nothing, noTicks).line).toBeNull()
   })
 

@@ -30,7 +30,7 @@ export const MaybeMisheardOnTheNewInputPage: Story = {
     <Frames phone={false} deskWidth={640}>
       {() => (
         <>
-          {boxAt({ text: HEARD_TEXT, files: HEARD.map((h) => ({ ...VOICE, ...h, tr: HEARD_TEXT })), composePage: true, heard: {} }, true)}
+          {boxAt({ text: HEARD_TEXT, files: HEARD.map((h) => ({ ...VOICE, ...h, tr: HEARD_TEXT })), heard: {} }, true)}
           <div className="px-3 pb-3">
             <DraftCard voice={1} ms={14000} files={0} transcribing={false} words={<LiveWords text={HEARD_TEXT} heard={HEARD} className={DRAFT_WORDS} />} hint={{ kind: 'check', n: 1 }} />
           </div>
