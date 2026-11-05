@@ -51,6 +51,23 @@ const FOOT: [string, string][] = [
 ]
 const noSearch: SearchEvents = { leave() {}, mic() {}, stop() {}, discard() {}, clear() {}, type() {}, search() {}, pick() {}, kind() {}, open() {} }
 
+/** Where the words are in `root`'s text, as the list's Hit finds them (any case). */
+function foundRanges(root: HTMLElement, words: readonly string[]): Range[] {
+  const ws = words.filter(Boolean)
+  if (!ws.length) return []
+  const re = new RegExp(ws.map((w) => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'), 'gi')
+  const out: Range[] = []
+  const walk = document.createTreeWalker(root, NodeFilter.SHOW_TEXT)
+  for (let n = walk.nextNode(); n && out.length < 200; n = walk.nextNode())
+    for (const m of (n.textContent ?? '').matchAll(re)) {
+      const r = document.createRange()
+      r.setStart(n, m.index)
+      r.setEnd(n, m.index + m[0].length)
+      out.push(r)
+    }
+  return out
+}
+
 function Mark({ l }: { l: FoundLine }) {
   if (l.mark.kind === 'item') return <StateIcon s={l.mark.s} label={l.mark.label} cls="size-4 shrink-0" />
   return <Icon n={l.mark.kind === 'doc' ? 'doc' : 'newinput'} c="size-4 shrink-0 text-zinc-400 dark:text-zinc-500" />
@@ -215,6 +232,23 @@ export function SearchDialog({ v, preview, menuAt = null, on }: { v: SearchDialo
   useLayoutEffect(() => {
     if (look.current) look.current.scrollTop = 0
   }, [v.sel, v.words])
+  // the words searched lit in the preview as in the list, the first of them in sight (R6-2 #12); a highlight of the
+  // page's (CSS highlights), so the preview's own words are left as they are
+  const litKey = isFound(v.lit) ? v.lit.key : ''
+  useLayoutEffect(() => {
+    const el = look.current
+    const all = typeof CSS !== 'undefined' ? CSS.highlights : undefined
+    if (!el || !all || typeof Highlight === 'undefined' || !litKey) return
+    const t = setTimeout(() => {
+      const ranges = foundRanges(el, v.marks)
+      all.set('found', new Highlight(...ranges))
+      ranges[0]?.startContainer.parentElement?.scrollIntoView({ block: 'center' })
+    }, 60)
+    return () => {
+      clearTimeout(t)
+      all.delete('found')
+    }
+  }, [litKey, v.marks])
   const open = (l: (typeof rows)[number] | null, tab: boolean) => {
     if (!l) return
     if (isFound(l)) on.open(l.found, tab)
@@ -330,7 +364,7 @@ export function SearchDialog({ v, preview, menuAt = null, on }: { v: SearchDialo
               </div>
             </div>
             {/* only a look: nothing in it is reached, but the wheel scrolls what does not fit */}
-            <div ref={look} hidden={!hasPreview} data-preview={isFound(v.lit) ? v.lit.found.kind : ''} className="min-w-0 flex-1 overflow-y-auto border-l border-zinc-200 bg-white lg:scrollbar-thin dark:border-zinc-800 dark:bg-zinc-950">
+            <div ref={look} hidden={!hasPreview} data-preview={isFound(v.lit) ? v.lit.found.kind : ''} className="min-w-0 flex-1 overflow-y-auto border-l border-zinc-200 bg-white lg:scrollbar-thin dark:border-zinc-800 dark:bg-zinc-950 [&_*::highlight(found)]:bg-yellow-200 [&_*::highlight(found)]:text-zinc-900 dark:[&_*::highlight(found)]:bg-yellow-400/30 dark:[&_*::highlight(found)]:text-white">
               <div inert className={`transition-opacity ${v.faded ? 'opacity-45' : ''}`}>
                 {preview}
               </div>

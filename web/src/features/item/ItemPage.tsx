@@ -323,7 +323,7 @@ export function ItemPage({ it, f, env, facts, on, talkRef, duo = false, left = n
     // the talk at its latest message stays there when the part above grows or shrinks (and opens there)
     const el = talk.current
     if (!el || typeof ResizeObserver === 'undefined') return
-    let atEnd = true
+    let atEnd = !readOnly // read only (the search's preview): where its words were found, not its end
     const seen = () => (atEnd = el.scrollTop + el.clientHeight >= el.scrollHeight - 4)
     const ro = new ResizeObserver(() => {
       if (atEnd) el.scrollTop = el.scrollHeight
@@ -336,13 +336,13 @@ export function ItemPage({ it, f, env, facts, on, talkRef, duo = false, left = n
       el.scrollTop = el.scrollHeight
       atEnd = true
     }
-    const timers = [120, 400, 1000].map((ms) => setTimeout(end, ms))
+    const timers = readOnly ? [] : [120, 400, 1000].map((ms) => setTimeout(end, ms))
     return () => {
       ro.disconnect()
       el.removeEventListener('scroll', seen)
       timers.forEach(clearTimeout)
     }
-  }, [])
+  }, [readOnly])
   const asks = !!it.wait || ((it.status === 'proposed' || it.status === 'review') && !it.talked)
   const asked = useRef({ n: it.n, on: asks })
   useLayoutEffect(() => {
