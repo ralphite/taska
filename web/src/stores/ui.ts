@@ -36,6 +36,9 @@ export interface UiState {
   /** the desktop's filters opened under the search (F) */
   deskFilters: boolean
   setDeskFilters(on: boolean): void
+  /** the desktop list's views opened onto all their lines (F670; kept in this browser) */
+  viewsOpen: boolean
+  setViewsOpen(on: boolean): void
   /** long inputs opened whole (More) */
   openedInputs: ReadonlySet<string>
   toggleInput(id: string): void
@@ -90,6 +93,11 @@ export function createUiStore(kv: KeyValueStore): UiStore {
     setSideSel: (sideSel) => set({ sideSel }),
     deskFilters: false,
     setDeskFilters: (deskFilters) => set({ deskFilters }),
+    viewsOpen: !!kv.get('taska.viewsOpen'),
+    setViewsOpen: (on) => {
+      kv.set('taska.viewsOpen', on ? '1' : null)
+      set({ viewsOpen: on })
+    },
     openedInputs: new Set(),
     toggleInput: (id) => set((s) => ({ openedInputs: flip(s.openedInputs, id) })),
     lastSent: null,

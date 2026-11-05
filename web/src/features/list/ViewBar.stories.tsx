@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { After, Frames, Hold, States } from '../../stories/Frames'
 import { act } from '../../stories/menuFixtures'
+import { FiltersButton } from './Filters'
 import { VIEWS, type ViewChip } from './rows'
 import { ViewBar } from './ViewBar'
 
@@ -19,14 +20,18 @@ const views = (on: string, needs = 2): ViewChip[] =>
 type Own = { name: string; count: number; on: boolean; editing?: boolean }
 /** The bar with the view it shows: a chip shows its view, one of your own views shows it (the page's nav.view and
  * views.show); its menu and renaming show in the Actions panel. */
-const bar = (on: string, o: { needs?: number; own?: Own[] } = {}) => (
-  <Hold start={{ on, own: o.own?.findIndex((v) => v.on) ?? -1 }}>
+const bar = (on: string, o: { needs?: number; own?: Own[]; list?: { open: boolean } } = {}) => (
+  <Hold start={{ on, own: o.own?.findIndex((v) => v.on) ?? -1, open: !!o.list?.open, filters: false }}>
     {(v, set) => (
       <ViewBar
         views={views(v.own >= 0 ? '' : v.on, o.needs)}
         own={o.own?.map((x, i) => ({ ...x, on: i === v.own }))}
-        onView={(value) => set({ on: value, own: -1 })}
-        onOwn={(i) => set({ on: '', own: i })}
+        // the desktop list's: Filters first, ⌄ / ⌃ last (F670)
+        {...(o.list
+          ? { lead: <FiltersButton set={false} open={v.filters} onClick={() => set({ ...v, filters: !v.filters })} />, more: { open: v.open, toggle: () => set({ ...v, open: !v.open }) } }
+          : {})}
+        onView={(value) => set({ ...v, on: value, own: -1 })}
+        onOwn={(i) => set({ ...v, on: '', own: i })}
         onOwnMenu={act('Views: own view menu')}
         onRename={act('Views: rename')}
         onRenameStop={act('Views: rename stop')}
@@ -52,6 +57,28 @@ export const Views: Story = {
       )}
     </Frames>
   ),
+}
+/** The desktop's list (F670): Filters at the far left; when the views do not fit, ⌄ at the far right opens the row onto
+ * as many lines as it takes, your own views too, and ⌃ closes it to one line (kept in this browser). All fitting: no ⌄. */
+export const DesktopList: Story = {
+  name: 'Desktop list: Filters first, ⌄ shows all',
+  render: () => (
+    <Frames phone={false} deskWidth={420}>
+      {() => (
+        <States
+          items={[
+            ['one line: ⌄ (the views do not fit)', bar('all', { list: { open: false }, own: [{ name: 'Bugs now', count: 6, on: false }, { name: 'P0', count: 1, on: false }] })],
+            ['opened onto all its lines: ⌃', bar('all', { list: { open: true }, own: [{ name: 'Bugs now', count: 6, on: false }, { name: 'P0', count: 1, on: false }] })],
+          ]}
+        />
+      )}
+    </Frames>
+  ),
+}
+/** wide enough for every view: no ⌄ */
+export const DesktopListAllFit: Story = {
+  name: 'Desktop list: all fit, no ⌄',
+  render: () => <Frames phone={false} deskWidth={1100}>{() => bar('all', { list: { open: false } })}</Frames>,
 }
 // ---- more states (B636)
 export const YourOwnViewShownBeingRenamed: Story = {

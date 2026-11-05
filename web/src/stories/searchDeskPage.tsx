@@ -14,7 +14,6 @@ import { codeOf, type ProjectModel } from '../model/project'
 import { NO_FILTERS, parseRoute } from '../model/route'
 import { latestMessage } from '../model/talk'
 import type { Item, ProjectRow } from '../model/types'
-import { FiltersButton } from '../features/list/Filters'
 import { ProjectBar } from '../pages/Header'
 import { agentInfo, deskTabs, tabCounts } from '../pages/headFacts'
 import { toneOf } from '../ui/tones'
@@ -62,9 +61,6 @@ function DeskBox({ m, n }: { m: ProjectModel; n: number }) {
   )
 }
 
-/** The end of the views' row: the list's filter, where the search box was (r796: no row of its own over the list). */
-const FiltersEnd = () => <FiltersButton set={false} open={false} onClick={() => {}} />
-
 /** The desktop's project page: the sidebar (or its rail), the project's bar, the list, the item open in its pane. */
 export function DeskPage({ slug, n, rail, onSearch }: { slug: string; n: number; rail: boolean; onSearch(): void }) {
   const m = modelFor(slug)
@@ -88,7 +84,7 @@ export function DeskPage({ slug, n, rail, onSearch }: { slug: string; n: number;
           place="col-span-2"
           on={{ tab() {}, agents() {}, notSaved() {} }}
         />
-        <section className="flex min-h-0 flex-col border-r border-zinc-200 dark:border-zinc-800">{listOf(m.items, 'items', {}, true, { open: n, viewsEnd: <FiltersEnd /> })}</section>
+        <section className="flex min-h-0 flex-col border-r border-zinc-200 dark:border-zinc-800">{listOf(m.items, 'items', {}, true, { open: n })}</section>
         <div className="flex min-h-0 min-w-0 flex-col">
           <div className="min-h-0 flex-1">{pageOf(it, true, { docs: n === 1 && slug === 'shop' ? [D1] : [] })}</div>
           <DeskBox m={m} n={n} />

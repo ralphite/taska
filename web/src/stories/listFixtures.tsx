@@ -4,7 +4,7 @@
 import { useRef, useState, type ReactNode } from 'react'
 import { EmptyList, ItemList, type ListEvents } from '../features/list/ItemList'
 import { SelBar } from '../features/list/SelBar'
-import { DeskFilters, FilterStrip, type FilterEvents } from '../features/list/Filters'
+import { DeskFilters, FiltersButton, FilterStrip, type FilterEvents } from '../features/list/Filters'
 import { drawRows, listViews } from '../features/list/drawRows'
 import { heldRows, listBody } from '../features/list/rows'
 import { queueHead, type DropHow } from '../model/items'
@@ -58,8 +58,8 @@ export interface Holding {
   top?: ReactNode
   /** the filters set show over the rows (and take themselves off) */
   filters?: boolean
-  /** at the end of the views' row (the desktop's Filters button) */
-  viewsEnd?: ReactNode
+  /** the desktop's views opened onto all their lines from the start (⌄, F670) */
+  viewsOpen?: boolean
   /** a row being dragged (`out`: off every row) */
   dragging?: { out: boolean }
   /** what a search finds in other projects (the hints under the list and in its empty line) */
@@ -130,6 +130,8 @@ function LiveList({ items, tab: tab0, q: q0, desk, h }: { items: Item[]; tab: Ta
   }
   // the filters set, over the rows (the page's filterEvents: they change the list; Save as a view needs Taska)
   const [filtersOpen, setFiltersOpen] = useState(false)
+  // the desktop's views row: Filters at its start (opens the filters over the rows), ⌄ opens it onto all its lines
+  const [viewsOpen, setViewsOpen] = useState(!!h.viewsOpen)
   const set = filtersSet(tab, query)
   const filterOn: FilterEvents = {
     set: (k, v) => setWhere({ tab, query: { ...query, [k]: v } }),
@@ -153,10 +155,11 @@ function LiveList({ items, tab: tab0, q: q0, desk, h }: { items: Item[]; tab: Ta
         openN={h.open ?? null}
         dragging={h.dragging ?? (h.drag ? { out: h.drag.at?.how === 'out' } : null)}
         views={views}
-        viewsEnd={h.viewsEnd}
+        viewsLead={desk ? <FiltersButton set={set.length > 0} open={filtersOpen} onClick={() => setFiltersOpen(!filtersOpen)} /> : undefined}
+        viewsMore={desk ? { open: viewsOpen, toggle: () => setViewsOpen(!viewsOpen) } : undefined}
         ownViews={ownViews}
         rows={drawn}
-        top={h.top ?? (h.filters && set.length ? filters : selected.size && desk ? <SelBar n={selected.size} on={{ set: act('Picked: set'), clear: () => setSelected(new Set()) }} /> : undefined)}
+        top={h.top ?? ((h.filters && set.length) || (desk && filtersOpen) ? filters : selected.size && desk ? <SelBar n={selected.size} on={{ set: act('Picked: set'), clear: () => setSelected(new Set()) }} /> : undefined)}
         empty={
           why ? (
             <EmptyList

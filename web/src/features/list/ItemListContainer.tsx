@@ -151,7 +151,8 @@ export function ItemListContainer({ route }: { route: ProjectRoute }) {
         itemShown={route.place.kind === 'item'}
         listKey={route.tab}
         dragging={drag.n != null ? { out: drag.at?.how === 'out' } : null}
-        viewsEnd={desk ? <FiltersButton set={filtersSet(route.tab, route.list).length > 0} open={ui.deskFilters} onClick={() => stores.ui.getState().setDeskFilters(!ui.deskFilters)} /> : undefined}
+        viewsMore={desk ? { open: ui.viewsOpen, toggle: () => stores.ui.getState().setViewsOpen(!ui.viewsOpen) } : undefined}
+        viewsLead={desk ? <FiltersButton set={filtersSet(route.tab, route.list).length > 0} open={ui.deskFilters} onClick={() => stores.ui.getState().setDeskFilters(!ui.deskFilters)} /> : undefined}
         top={ui.selected.size && desk ? <SelBar n={ui.selected.size} on={{ set: (f, v, said) => app.selection.set(f, v, said), clear: () => app.selection.clear() }} /> : undefined}
         swipe={swipe}
         loading={!m}

@@ -214,6 +214,38 @@ test('B669 r1065: the list\'s views row and the pane\'s bar are one height, thei
   }
 })
 
+test('F670 r1065: on the desktop Filters is first in the views row; ⌄ at its end opens it onto all its lines, ⌃ closes it, and it stays so after a reload', async ({
+  page,
+  request,
+}) => {
+  test.skip(!isDesk(page), 'the phone\u2019s views row swipes, its edges fade')
+  const p = await project(request, LOOP)
+  await open(page, p)
+  const viewsRow = page.locator('#list [data-views]').filter({ visible: true }).first()
+  const chips = viewsRow.locator('[data-views-open]')
+  const filters = viewsRow.getByRole('button', { name: 'Filters', exact: true })
+  const first = await chips.locator('button').first().boundingBox()
+  const f = await filters.boundingBox()
+  if (!first || !f) throw new Error('not drawn')
+  expect(f.x, 'Filters before the first view').toBeLessThan(first.x)
+  // no arrow on the desktop list: ⌄ opens it onto all its lines
+  await expect(viewsRow.getByRole('button', { name: 'More views' })).toHaveCount(0)
+  await viewsRow.getByRole('button', { name: 'All views' }).click()
+  await expect(chips).toHaveAttribute('data-views-open', 'true')
+  const last = chips.locator('button').last()
+  const lb = await last.boundingBox()
+  const rb = await viewsRow.boundingBox()
+  if (!lb || !rb) throw new Error('not drawn')
+  expect(lb.y, 'the last view on a line of its own under the first').toBeGreaterThan(first.y + 10)
+  expect(lb.x + lb.width, 'the last view inside the row').toBeLessThanOrEqual(rb.x + rb.width)
+  // kept in this browser
+  await page.reload()
+  await expect(chips).toHaveAttribute('data-views-open', 'true')
+  await viewsRow.getByRole('button', { name: 'One line of views' }).click()
+  await expect(chips).toHaveAttribute('data-views-open', 'false')
+  await expect((await viewsRow.boundingBox())?.height).toBeLessThan(57)
+})
+
 test('r1052: what the pane shows never moves the list: on the New input page the views sit right under the bar and the filters, as with an item open (B663)', async ({
   page,
   request,

@@ -45,8 +45,10 @@ export interface ItemListProps {
   empty?: ReactNode
   /** above the rows: the bar of what is selected */
   top?: ReactNode
-  /** at the end of the views' row (the desktop's Filters button) */
-  viewsEnd?: ReactNode
+  /** at the start of the views' row (the desktop's Filters button, F670) */
+  viewsLead?: ReactNode
+  /** the desktop's views row opened onto all its lines (⌄, ⌃; F670) */
+  viewsMore?: { open: boolean; toggle(): void }
   /** under the rows: search hints */
   bottom?: ReactNode
   on: ListEvents
@@ -70,7 +72,7 @@ export interface ItemListProps {
 const NO_SWIPE: RowSwipe = { right: () => null, blocked: () => true }
 
 export const ItemList = forwardRef<HTMLDivElement, ItemListProps>(function ItemList(props, ref) {
-  const { loading, views, ownViews, rows, empty, top, viewsEnd, bottom, on, rowRef, dragging = null, desk = false, swipe, openN = null, itemShown = false, listKey = '' } = props
+  const { loading, views, ownViews, rows, empty, top, viewsLead, viewsMore, bottom, on, rowRef, dragging = null, desk = false, swipe, openN = null, itemShown = false, listKey = '' } = props
   const own = useRef<HTMLDivElement | null>(null)
   const wasOpen = useRef<{ n: number | null; list: string; loading: boolean } | null>(null)
   /** the page opened at an item: its row comes into view the first time it shows, in whichever list it is */
@@ -139,12 +141,11 @@ export const ItemList = forwardRef<HTMLDivElement, ItemListProps>(function ItemL
         <>
           {top}
           {views ? (
-            // the desktop: as high as the pane's bar beside it, one line under both (B669)
-            <div className="flex items-stretch lg:h-bar">
+            // the desktop: as high as the pane's bar beside it, one line under both (B669); opened, as tall as its lines
+            <div className="flex items-stretch lg:min-h-bar">
               <div className="min-w-0 flex-1">
-                <ViewBar views={views} own={ownViews} onView={on.view} onOwn={on.ownView} onOwnMenu={on.ownMenu} onRename={on.rename} onRenameStop={on.renameStop} />
+                <ViewBar views={views} own={ownViews} lead={viewsLead} more={viewsMore} onView={on.view} onOwn={on.ownView} onOwnMenu={on.ownMenu} onRename={on.rename} onRenameStop={on.renameStop} />
               </div>
-              {viewsEnd ? <div className="flex shrink-0 items-center border-b border-zinc-200 pr-2 dark:border-zinc-800">{viewsEnd}</div> : null}
             </div>
           ) : null}
           {rows.map((r) => {
