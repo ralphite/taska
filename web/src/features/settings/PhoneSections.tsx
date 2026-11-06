@@ -175,7 +175,7 @@ export function LogBody({ rows, end, asking, on }: { rows: { s: LogSentence; und
         <div className="pt-2">
           <ol className="divide-y divide-zinc-100 text-[13px] leading-relaxed text-zinc-600 dark:divide-zinc-800 dark:text-zinc-300">
             {rows.map(({ s, undo }) => (
-              <li key={s.key} className="flex items-start gap-2 py-1.5">
+              <li key={s.key} className="flex items-baseline gap-2 py-1.5">
                 <span className="min-w-0 flex-1 break-words">
                   <LogLine s={s} withTime on={on} />
                 </span>

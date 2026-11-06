@@ -117,7 +117,7 @@ export function Thumbs({
             href={url(f.f)}
             target="_blank"
             rel="noopener"
-            className="flex h-11 max-w-56 shrink-0 items-center gap-1.5 self-end rounded-xl border border-zinc-200 px-3 text-xs text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+            className={`${HIT} flex h-9 max-w-56 shrink-0 items-center gap-1.5 self-end rounded-xl border border-zinc-200 px-3 text-xs text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800`}
           >
             <Icon n="file" c="size-4" />
             <FileName name={f.name} />

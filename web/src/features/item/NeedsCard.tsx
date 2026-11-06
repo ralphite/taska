@@ -82,7 +82,7 @@ export function NeedFrame({ icon, title, t, done = false, body, foot, hint = '',
 /** A decision button's word, as wide as the widest it can say (to decide, decided; bold), stacked unseen in one cell:
  * the button keeps its width and place when you decide (r1003). */
 const Word = ({ shown, all }: { shown: string; all: readonly string[] }) => (
-  <span className="grid justify-items-center">
+  <span className="grid justify-items-center whitespace-nowrap">
     <span className="col-start-1 row-start-1">{shown}</span>
     {all.map((w) => (
       <span key={w} aria-hidden className="invisible col-start-1 row-start-1 font-semibold">

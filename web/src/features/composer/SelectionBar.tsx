@@ -62,7 +62,7 @@ export function SelectionBar({ at, recording, desk = true, meter, comment, fix, 
       aria-label="On the selected text"
       data-selection-bar
       {...keep}
-      className="fixed z-[65] flex rounded-full bg-zinc-900 p-1 shadow-lg ring-1 ring-black/10 dark:bg-zinc-100 dark:ring-white/10"
+      className="fixed z-[65] flex items-center rounded-full bg-zinc-900 p-1 shadow-lg ring-1 ring-black/10 dark:bg-zinc-100 dark:ring-white/10"
     >
       <button
         onClick={on.mic}
@@ -77,17 +77,17 @@ export function SelectionBar({ at, recording, desk = true, meter, comment, fix, 
         hidden={!comment}
         aria-label="Comment"
         title="Comment"
-        className="grid size-9 place-items-center self-center rounded-full text-white hover:bg-white/15 dark:text-zinc-900 dark:hover:bg-zinc-900/10"
+        className="grid size-11 place-items-center rounded-full text-white hover:bg-white/15 dark:text-zinc-900 dark:hover:bg-zinc-900/10"
       >
-        <Icon n="comment" c="size-4" />
+        <Icon n="comment" c="size-5" />
       </button>
       <button
         onClick={on.fix}
         hidden={!fix}
         aria-label="Correct the words"
-        className="flex h-9 items-center gap-1.5 rounded-full pr-3.5 pl-2.5 text-sm font-semibold whitespace-nowrap text-white hover:bg-white/15 dark:text-zinc-900 dark:hover:bg-zinc-900/10"
+        className="flex h-11 items-center gap-1.5 rounded-full pr-4 pl-3 text-sm font-semibold whitespace-nowrap text-white hover:bg-white/15 dark:text-zinc-900 dark:hover:bg-zinc-900/10"
       >
-        <Icon n="pencil" c="size-4" />
+        <Icon n="pencil" c="size-5" />
         Correct
       </button>
     </div>
