@@ -349,13 +349,14 @@ def _said(st: ProjectState, e: ev.Event) -> "tuple[str, str]":
     if isinstance(e, ev.CommentEdited):
         return who, f"edited a comment on D{e.d}: {first_line(e.text)!r}"
     if isinstance(e, ev.VoiceHeard):
-        v = st.voices.get(e.f)
-        words = (e.tidied or e.early) if not (v and v.fixed) else v.tidied
-        state = {"wait": "first words" if e.early else "being transcribed", "done": "words", "none": "no words heard",
-                 "failed": "transcription failed"}.get(e.state, e.state)
-        return who, f"voice {e.f}{' of ' + e.src if e.src else ''}: {state}" + (f" {first_line(words)!r}" if words else "")
+        note = f"{e.src} voice note" if e.src else "a voice note"
+        if e.state == "wait":
+            return who, f"{note} first words: {first_line(e.early)!r}" if e.early else f"{note} being transcribed"
+        if e.state == "done":
+            return who, f"{note} words: {first_line(e.tidied)!r}"
+        return who, f"{note}: {'no words heard' if e.state == 'none' else 'transcription failed'}"
     if isinstance(e, ev.VoiceFixed):
-        return who, f"corrected the words of voice {e.f}{' of ' + e.src if e.src else ''}: {first_line(e.tidied)!r}"
+        return who, f"{e.src + ' ' if e.src else ''}voice note words corrected: {first_line(e.tidied)!r}"
     if isinstance(e, ev.VoicesSplit):
         return who, f"kept each voice note's words in one place ({len(e.voices)} voice notes)"
     if isinstance(e, ev.CommentDeleted):

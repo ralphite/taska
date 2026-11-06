@@ -3,16 +3,15 @@ organizer's note."""
 
 from __future__ import annotations
 
-from dataclasses import replace
-
 from typing import List
 
 from .. import events as ev
 from ..model import Input, InputDeletion, InputVersion, Moved
 from ..state import ProjectState, Taken, TakenMessage, TakenSource
+from ..voices import said
 from .core import reduces
 from .steps import by_id, changed_words, link, org_note, post, show_edit
-from .voices import heard
+from .voices import came_late, heard, inputs_with
 
 
 @reduces(ev.InputAdded)
@@ -55,40 +54,24 @@ def _amend(state: ProjectState, e: ev.Event) -> None:
 
 @reduces(ev.WordsIn)
 def _words(state: ProjectState, e: ev.Event) -> None:
+    """A voice note's words, in after its input was sent, as changes stored before B682 said it: into the note's
+    record (the input keeps what was typed). Late: an agent or the organizer had the input without them, so it comes
+    back to them updated; you changed nothing (B626)."""
     assert isinstance(e, ev.WordsIn)
+    before = [said(state, i.text, i.files) for i in inputs_with(state, e.f)] if e.late else []
     heard(state, e.f, e, "done", e.heard or "", e.tr)
-    inp = state.inputs.get(str(e.src))
-    if not inp:
-        return
-    old = inp.text
-    inp.files = [f.with_words(e.tr, e.heard) if f.f == e.f else f for f in inp.files]
-    if e.was and e.was in old:  # fuller words in place of the shorter ones given first
-        inp.text = old.replace(e.was, e.tr, 1)
-    elif e.was:  # you changed those words: the fuller ones follow, said as such
-        inp.text = old.rstrip() + "\n\nFuller words of the voice note:\n" + e.tr
-    elif e.tr not in old:
-        inp.text = old.rstrip() + "\n" + e.tr if old.strip() else e.tr
-    if e.late:  # an agent or the organizer saw it without its words: it comes back to them updated
-        inp.history.append(InputVersion(text=old, t=e.t, mode="append"))
-        changed_words(inp, e)
-        show_edit(state, inp, e, edited=False)  # the agents are told; you changed nothing (B626)
-    else:  # nobody read it yet: its message simply shows the words now
-        inp.v += 1
-        show_edit(state, inp, e, mark=False)
+    if e.late:
+        came_late(state, e.f, e, before)
 
 
 @reduces(ev.WordsKept)
 def _kept(state: ProjectState, e: ev.Event) -> None:
-    """Words as said, kept with their inputs (F568); nothing else changes."""
+    """Words as said, word for word, of notes heard before F568: into their records."""
     assert isinstance(e, ev.WordsKept)
     for notes in e.notes.values():
         for f, words in notes.items():
             if f in state.voices:
                 state.voices[f].said = words
-    for rid, notes in e.notes.items():
-        inp = state.inputs.get(rid)
-        if inp:
-            inp.files = [replace(f, heard=notes[f.f]) if f.f in notes else f for f in inp.files]
 
 
 @reduces(ev.InputDeleted)

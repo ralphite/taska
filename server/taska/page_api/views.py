@@ -8,7 +8,7 @@ Keys are the page's (camelCase); the shapes are this version's own page interfac
 from __future__ import annotations
 
 import os
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List, Optional
 
 from ..domain import rules
 from ..domain.history import DeletionPlan, Filing, deletions, filings, undoable
@@ -81,7 +81,7 @@ def item_view(st: ProjectState, agents: AgentActivity, it: Item) -> View:
     return out
 
 
-def input_view(inp: Input, held: bool, filing: Optional[Filing], plan: Optional[DeletionPlan]) -> View:
+def input_view(inp: Input, filing: Optional[Filing], plan: Optional[DeletionPlan]) -> View:
     out: View = {"id": inp.id, "t": inp.t, "by": inp.by, "text": inp.text, "scope": inp.scope,
                  "files": [file_view(f) for f in inp.files], "acked": inp.acked, "touched": list(inp.touched),
                  "org": None, "seq": inp.seq, "v": inp.v}
@@ -95,8 +95,6 @@ def input_view(inp: Input, held: bool, filing: Optional[Filing], plan: Optional[
         out["updated"] = inp.updated
     if inp.moved:
         out["moved"] = {"to": inp.moved.to, "as": inp.moved.as_}
-    if held:
-        out["trWait"] = True
     if filing:
         out["filing"] = {"can": filing.can, "what": filing.what, "why": filing.why}
     if plan:
@@ -156,13 +154,13 @@ def home_short(path: str) -> str:
     return "~" + path[len(home):] if path == home or path.startswith(home + os.sep) else path
 
 
-def entities(st: ProjectState, agents: AgentActivity, held: Callable[[Input], bool]) -> Dict[str, List[View]]:
+def entities(st: ProjectState, agents: AgentActivity) -> Dict[str, List[View]]:
     """Every item, input and document the page shows, and the words of every voice note."""
     plans = deletions(st)
     filed = filings(st)
     return {
         "items": [item_view(st, agents, it) for it in st.items.values() if not it.deleted],
-        "inputs": [input_view(i, held(i), filed.get(i.id), plans.get(i.id)) for i in st.inputs.values() if not i.deleted],
+        "inputs": [input_view(i, filed.get(i.id), plans.get(i.id)) for i in st.inputs.values() if not i.deleted],
         "docs": [doc_view(d) for d in st.docs.values()
                  if not d.deleted and not (st.items[d.n].deleted if d.n in st.items else None)],
         "voices": [voice_view(v) for v in st.voices.values()],

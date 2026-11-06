@@ -42,7 +42,7 @@ def _view(ctx: "AppContext", req: Request, p: Project, since: Optional[Cursor]) 
     ws = ctx.workspace
     with p.lock:
         at = (p.news.rev, p.agents.version)
-        out = ctx.pages(p).feed.view(at, p.news.boot, lambda: views.entities(p.state, p.agents, p.held), since)
+        out = ctx.pages(p).feed.view(at, p.news.boot, lambda: views.entities(p.state, p.agents), since)
         pres = presence(p)
         out["project"] = views.project_view(p.state, p.agents, slug=p.slug, title=p.title, organizer_on=p.organizing.on,
                                             organizer_busy=sorted(p.organizing.busy), organizer_model=gemini.MODEL,

@@ -46,8 +46,8 @@ Rules, checked by `tests/test_architecture.py`:
 1. A module imports only from its own layer or the layers listed for it above (the composition root excepted).
    `domain`, `commands` and `agent_text` do no I/O (no `sqlite3`, `socket`, `http`, `threading`, `urllib`,
    `subprocess`, `logging`; `domain` and `agent_text` not even `os`).
-2. State is typed: `domain.model` dataclasses for items, messages, inputs, documents, comments, files; events are
-   `domain.events` dataclasses, one per kind (a module per area: items, inputs, documents), each kind's stored row
+2. State is typed: `domain.model` dataclasses for items, messages, inputs, documents, comments, files, voice notes' words (one record per note, `Voice`, read by its file wherever the note is); events are
+   `domain.events` dataclasses, one per kind (a module per area: items, inputs, documents, voice notes), each kind's stored row
    written by its `to_row` and read by its reader next to it. Plain dicts appear only at the edges: the stored JSON,
    the HTTP JSON bodies.
 3. Every change goes through a command handler, which returns events; only `Project.emit` commits them

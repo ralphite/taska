@@ -142,6 +142,20 @@ def plan(st: ProjectState, kept: Kept, copies: Kept, t: str) -> Tuple[ev.VoicesS
     rep.voices = len(voices)
     inputs: Dict[str, str] = {}
     comments: Dict[str, Dict[str, str]] = {}
+    written: Dict[str, int] = {}  # each input's last change of its words
+    came: Dict[str, int] = {}  # when each note's words first came
+    for e in st.events:
+        if isinstance(e, ev.InputAdded):
+            written[e.id] = e.seq
+        elif isinstance(e, ev.InputAmended) and e.src:
+            written[e.src] = e.seq
+        elif isinstance(e, (ev.WordsIn, ev.VoiceHeard)) and e.f not in came:
+            came[e.f] = e.seq
+
+    def after_text(f: str, inp: Input) -> bool:
+        """Its words came after its input's words were last written: they were never in that text."""
+        return came.get(f, 0) > written.get(inp.id, 0)
+
     for kind, owner, files in owners:
         notes = [f for f in voices_of(files) if voices[f.f].tidied]
         if kind == "message" or not notes:
@@ -155,8 +169,8 @@ def plan(st: ProjectState, kept: Kept, copies: Kept, t: str) -> Tuple[ev.VoicesS
                 if v.was is None:
                     v.was = v.tidied
                 v.tidied, v.fixed = found, (owner.updated if isinstance(owner, Input) else None) or t
-            if got == "none" and text.strip():
-                rep.not_found.append(f.f)
+            if got == "none" and text.strip() and not (isinstance(owner, Input) and after_text(f.f, owner)):
+                rep.not_found.append(f.f)  # its words came before its text was last written, yet are not in it
             how = "fuzzy" if got == "fuzzy" or how == "fuzzy" else ("exact" if got == "exact" else how)
         setattr(rep, f"texts_{how}", getattr(rep, f"texts_{how}") + 1)
         if rest != text:

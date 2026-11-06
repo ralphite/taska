@@ -6,7 +6,7 @@ the stored state tables have always had.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
 Row = Dict[str, Any]
@@ -14,22 +14,19 @@ Row = Dict[str, Any]
 
 @dataclass(frozen=True)
 class FileRef:
-    """A file that came with an input, a message or a comment: taska-files/<f>."""
+    """A file that came with an input, a message or a comment: taska-files/<f>. A voice note's words are not here:
+    they are its one record (Voice, state.voices), by its file (B682)."""
 
     f: str
     name: str
     mime: Optional[str] = None
     size: Optional[int] = None
-    tr: Optional[str] = None  # a voice note's words, tidied (what everyone reads)
-    heard: Optional[str] = None  # its words as said, word for word, when they differ from tr (F568)
-    wait: Optional[bool] = None  # a voice note whose words were still to come when it was sent
 
     @classmethod
     def from_row(cls, d: Any) -> FileRef:
         if isinstance(d, str):
             return cls(f=d, name=d.split("-", 1)[-1])
-        return cls(f=str(d.get("f", "")), name=str(d.get("name", "")), mime=d.get("mime"), size=d.get("size"),
-                   tr=d.get("tr"), heard=d.get("heard"), wait=d.get("wait"))
+        return cls(f=str(d.get("f", "")), name=str(d.get("name", "")), mime=d.get("mime"), size=d.get("size"))
 
     def to_row(self) -> Row:
         out: Row = {"f": self.f, "name": self.name}
@@ -37,20 +34,7 @@ class FileRef:
             out["mime"] = self.mime
         if self.size is not None:
             out["size"] = self.size
-        if self.tr is not None:
-            out["tr"] = self.tr
-        if self.heard is not None:
-            out["heard"] = self.heard
-        if self.wait is not None:
-            out["wait"] = self.wait
         return out
-
-    def with_words(self, tr: str, heard: Optional[str] = None) -> FileRef:
-        """Its words; as said too, when they differ from the tidied ones (else what was kept stays)."""
-        return replace(self, tr=tr, heard=heard if heard and heard != tr else self.heard)
-
-    def with_wait(self, wait: Optional[bool]) -> FileRef:
-        return replace(self, wait=wait)
 
     @property
     def is_audio(self) -> bool:
