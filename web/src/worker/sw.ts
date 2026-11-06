@@ -30,6 +30,22 @@ async function keepPage(): Promise<boolean> {
   }
 }
 
+/** The built files a page names (its scripts and styles). */
+const filesOf = async (page: Response) => [...new Set((await page.clone().text()).match(/\/assets\/[\w.-]+\.(?:js|css)/g) ?? [])]
+
+/** Whether every file a kept page names is kept too. A kept page newer than the kept files would otherwise open on files
+ * the server may no longer have (a later update removed them): a white page until the app is opened again (r1125). */
+async function whole(page: Response): Promise<boolean> {
+  const c = await caches.open(CACHE)
+  return (await Promise.all((await filesOf(page)).map((f) => c.match(f)))).every(Boolean)
+}
+
+/** Keep the files a page just kept names, so it opens whole next time. */
+async function keepFiles(page: Response): Promise<void> {
+  const c = await caches.open(CACHE)
+  await Promise.allSettled((await filesOf(page)).map(async (f) => (await c.match(f)) || c.add(f)))
+}
+
 self.addEventListener('install', (e) => {
   e.waitUntil(
     (async () => {
@@ -71,11 +87,15 @@ self.addEventListener('fetch', (e) => {
         const pages = await caches.open(PAGES)
         const kept = await pages.match(PAGE_KEY)
         const fresh = fetch(req).then(async (res) => {
-          if (res.ok && res.headers.get('X-Taska-Page')) await pages.put(PAGE_KEY, res.clone())
+          if (res.ok && res.headers.get('X-Taska-Page')) {
+            await pages.put(PAGE_KEY, res.clone())
+            e.waitUntil(keepFiles(res.clone()))
+          }
           else if (res.status === 401 || res.status === 403) await pages.delete(PAGE_KEY) // the key changed: the sign-in shows next time
           return res
         })
-        if (!kept) return fresh.catch(async () => (await caches.match('/index.html')) || Response.error())
+        // a kept page whose files are not all kept comes from the network (it is kept only when that fails)
+        if (!kept || !(await whole(kept))) return fresh.catch(async () => kept || (await caches.match('/index.html')) || Response.error())
         e.waitUntil(fresh.catch(() => undefined))
         return kept
       })(),
