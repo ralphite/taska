@@ -356,7 +356,7 @@ export function ItemPage({ it, f, env, facts, on, talkRef, duo = false, left = n
     <Editor key={it.n} it={it} kept={f.editDraft ?? null} on={on} />
   ) : (
     <div className="flex flex-col gap-3">
-      <h1 className={`text-[22px] leading-[1.35] font-semibold break-words ${it.status === 'dropped' ? 'line-through' : ''}`}>{readOnly ? <span className={`mr-2 font-mono text-lg font-bold ${TYPE_TEXT[it.type]}`}>{f.code(it.n)}</span> : null}{it.title}</h1>
+      <h1 data-part="item-title" className={`text-[22px] leading-[1.35] font-semibold break-words ${it.status === 'dropped' ? 'line-through' : ''}`}>{readOnly ? <span className={`mr-2 font-mono text-lg font-bold ${TYPE_TEXT[it.type]}`}>{f.code(it.n)}</span> : null}{it.title}</h1>
       <div className="flex flex-wrap items-center gap-2">
         <Chips it={it} f={f} on={on} />
       </div>
@@ -489,13 +489,17 @@ export function ItemTalk({ it, f, env, facts, on }: { it: Item; f: ItemFacts; en
 
 /** The bar's head: the item's status icon (desktop) and its code. (Open says it is the agent's turn: no word of its
  * own, Yadong r961.) */
-export function ItemHead({ it, code }: { it: Item; code: string }) {
+/** The pane's bar: the item's mark and code; `titled`: its title has scrolled out of sight (the phone), so the bar says
+ * it after the code, cut short (as iOS's large titles do, D115 R8 #5). */
+export function ItemHead({ it, code, titled = false }: { it: Item; code: string; titled?: boolean }) {
   return (
     <>
       <span className="hidden lg:inline">
         <StateIcon {...shownStatus(it)} cls="size-[18px]" />
       </span>
       <span className={`shrink-0 font-mono text-sm font-bold ${TYPE_TEXT[it.type]}`}>{code}</span>
+      {/* under the code, cut short to the space between Back and ⋯ (the phone's bar is a column) */}
+      {titled ? <span className="block max-w-full truncate text-[13px] font-medium text-zinc-600 dark:text-zinc-300">{it.title}</span> : null}
     </>
   )
 }

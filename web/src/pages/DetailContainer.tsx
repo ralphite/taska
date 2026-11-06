@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 // The pane beside the list on the desktop (the whole screen on the phone): an item, a document, or the New input
 // page's head.
 
@@ -33,6 +33,18 @@ export function DetailContainer({ route, place, hidden, full = false, footRoom =
   const from = useStoreValue(stores.route, (s) => s.from)
   // the desktop's two columns, while the pane is wide: the item (or its document) on the left, its talk on the right
   const [body, setBody] = useState<HTMLElement | null>(null)
+  // the phone: the item's title scrolled out of sight, the bar says it (D115 R8 #5)
+  // (kept by the item whose title it is, so another item opens with its title in the page)
+  const [titledRef, setTitledRef] = useState<string | null>(null)
+  const itemN = route.place.kind === 'item' ? route.place.ref : ''
+  const titled = !!itemN && titledRef === itemN
+  useEffect(() => {
+    const h = !desk && body ? body.querySelector('[data-part=item-title]') : null
+    if (!h || typeof IntersectionObserver === 'undefined') return
+    const io = new IntersectionObserver(([e]) => setTitledRef(!e.isIntersecting && e.boundingClientRect.top < (e.rootBounds?.top ?? 0) ? itemN : null), { root: body })
+    io.observe(h)
+    return () => io.disconnect()
+  }, [body, desk, itemN])
   const duo = useStoreValue(stores.ui, (s) => s.duo)
   const editingDoc = useStoreValue(stores.docView, (s) => s.editing)
   const docIt = doc && m ? m.byN.get(liveN(m, doc.n)) : undefined
@@ -79,7 +91,7 @@ export function DetailContainer({ route, place, hidden, full = false, footRoom =
         bodyRef={setBody}
         duo={duo && desk}
         split
-        head={<ItemHead it={it} code={code} />}
+        head={<ItemHead it={it} code={code} titled={titled} />}
         acts={<ItemActs it={it} on={{ set, later: (from) => openLater(app, desk, it.n, from) }} />}
         nav={<ItemNav full={full} on={nav} />}
         menu
